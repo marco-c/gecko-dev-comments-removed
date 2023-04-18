@@ -706,6 +706,11 @@ void nsIOService::OnProcessUnexpectedShutdown(SocketProcessHost* aHost) {
   DestroySocketProcess();
   mPendingEvents.Clear();
 
+  
+  if (!UseSocketProcess()) {
+    return;
+  }
+
   sSocketProcessCrashedCount++;
   if (TooManySocketProcessCrash()) {
     sUseSocketProcessChecked = false;
@@ -717,6 +722,9 @@ void nsIOService::OnProcessUnexpectedShutdown(SocketProcessHost* aHost) {
     (void)observerService->NotifyObservers(
         nullptr, "network:socket-process-crashed", nullptr);
   }
+
+  
+  
   if (UseSocketProcess()) {
     MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(
         NewRunnableMethod("nsIOService::LaunchSocketProcess", this,

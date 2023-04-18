@@ -632,6 +632,10 @@ already_AddRefed<nsIDNSService> DNSServiceWrapper::GetSingleton() {
 
 
 void DNSServiceWrapper::SwitchToBackupDNSService() {
+  if (!gDNSServiceWrapper) {
+    return;
+  }
+
   gDNSServiceWrapper->mBackupDNSService = nsDNSService::GetSingleton();
 
   MutexAutoLock lock(gDNSServiceWrapper->mLock);
