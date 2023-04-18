@@ -538,18 +538,21 @@ class LoaderListener final : public nsIStreamLoaderObserver,
  public:
   NS_DECL_ISUPPORTS
 
-  LoaderListener(WorkerScriptLoader* aLoader, ScriptLoadInfo& aLoadInfo)
-      : mLoader(aLoader), mLoadInfo(aLoadInfo) {
-    MOZ_ASSERT(mLoader);
-  }
+  LoaderListener(WorkerScriptLoader* aLoader, ScriptLoadInfo& aLoadInfo);
 
   NS_IMETHOD
   OnStreamComplete(nsIStreamLoader* aLoader, nsISupports* aContext,
                    nsresult aStatus, uint32_t aStringLen,
                    const uint8_t* aString) override;
 
+  nsresult OnStreamCompleteInternal(nsIStreamLoader* aLoader, nsresult aStatus,
+                                    uint32_t aStringLen,
+                                    const uint8_t* aString);
+
   NS_IMETHOD
   OnStartRequest(nsIRequest* aRequest) override;
+
+  nsresult OnStartRequestInternal(nsIRequest* aRequest);
 
   NS_IMETHOD
   OnStopRequest(nsIRequest* aRequest, nsresult aStatusCode) override {
@@ -561,6 +564,7 @@ class LoaderListener final : public nsIStreamLoaderObserver,
   ~LoaderListener() = default;
 
   RefPtr<WorkerScriptLoader> mLoader;
+  WorkerPrivate* const mWorkerPrivate;
   ScriptLoadInfo& mLoadInfo;
 };
 
@@ -802,128 +806,10 @@ class WorkerScriptLoader final : public nsINamed {
     return true;
   }
 
-  nsresult OnStreamComplete(nsIStreamLoader* aLoader, ScriptLoadInfo& aLoadInfo,
-                            nsresult aStatus, uint32_t aStringLen,
-                            const uint8_t* aString) {
+  nsresult OnStreamComplete(ScriptLoadInfo& aLoadInfo, nsresult aStatus) {
     AssertIsOnMainThread();
 
-    nsresult rv = OnStreamCompleteInternal(aLoader, aStatus, aStringLen,
-                                           aString, aLoadInfo);
-    LoadingFinished(aLoadInfo, rv);
-    return NS_OK;
-  }
-
-  nsresult OnStartRequest(nsIRequest* aRequest, ScriptLoadInfo& aLoadInfo) {
-    nsresult rv = OnStartRequestInternal(aRequest, aLoadInfo);
-
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      aRequest->Cancel(rv);
-    }
-
-    return rv;
-  }
-
-  nsresult OnStartRequestInternal(nsIRequest* aRequest,
-                                  ScriptLoadInfo& aLoadInfo) {
-    AssertIsOnMainThread();
-
-    
-    
-    if (mCanceledMainThread || !mCacheCreator) {
-      return NS_ERROR_FAILURE;
-    }
-
-    nsCOMPtr<nsIChannel> channel = do_QueryInterface(aRequest);
-
-    
-    
-    
-    
-    
-    
-    
-    if (mWorkerPrivate->IsServiceWorker()) {
-      nsAutoCString mimeType;
-      channel->GetContentType(mimeType);
-
-      if (!nsContentUtils::IsJavascriptMIMEType(
-              NS_ConvertUTF8toUTF16(mimeType))) {
-        const nsCString& scope =
-            mWorkerPrivate->GetServiceWorkerRegistrationDescriptor().Scope();
-
-        ServiceWorkerManager::LocalizeAndReportToAllClients(
-            scope, "ServiceWorkerRegisterMimeTypeError2",
-            nsTArray<nsString>{NS_ConvertUTF8toUTF16(scope),
-                               NS_ConvertUTF8toUTF16(mimeType),
-                               aLoadInfo.mURL});
-
-        return NS_ERROR_DOM_NETWORK_ERR;
-      }
-    }
-
-    
-    
-    
-    MOZ_ASSERT_IF(mIsMainScript, channel == aLoadInfo.mChannel);
-    aLoadInfo.mChannel = channel;
-
-    
-    SafeRefPtr<mozilla::dom::InternalResponse> ir =
-        MakeSafeRefPtr<mozilla::dom::InternalResponse>(200, "OK"_ns);
-    ir->SetBody(aLoadInfo.mCacheReadStream,
-                InternalResponse::UNKNOWN_BODY_SIZE);
-
-    
-    
-    aLoadInfo.mCacheReadStream = nullptr;
-
-    
-    
-    ir->InitChannelInfo(channel);
-
-    
-    
-    nsIScriptSecurityManager* ssm = nsContentUtils::GetSecurityManager();
-    NS_ASSERTION(ssm, "Should never be null!");
-
-    nsCOMPtr<nsIPrincipal> channelPrincipal;
-    MOZ_TRY(ssm->GetChannelResultPrincipal(channel,
-                                           getter_AddRefs(channelPrincipal)));
-
-    UniquePtr<PrincipalInfo> principalInfo(new PrincipalInfo());
-    MOZ_TRY(PrincipalToPrincipalInfo(channelPrincipal, principalInfo.get()));
-
-    ir->SetPrincipalInfo(std::move(principalInfo));
-    ir->Headers()->FillResponseHeaders(aLoadInfo.mChannel);
-
-    RefPtr<mozilla::dom::Response> response = new mozilla::dom::Response(
-        mCacheCreator->Global(), std::move(ir), nullptr);
-
-    mozilla::dom::RequestOrUSVString request;
-
-    MOZ_ASSERT(!aLoadInfo.mFullURL.IsEmpty());
-    request.SetAsUSVString().ShareOrDependUpon(aLoadInfo.mFullURL);
-
-    
-    
-    AutoJSAPI jsapi;
-    jsapi.Init();
-
-    ErrorResult error;
-    RefPtr<Promise> cachePromise =
-        mCacheCreator->Cache_()->Put(jsapi.cx(), request, *response, error);
-    error.WouldReportJSException();
-    if (NS_WARN_IF(error.Failed())) {
-      return error.StealNSResult();
-    }
-
-    RefPtr<CachePromiseHandler> promiseHandler =
-        new CachePromiseHandler(this, aLoadInfo);
-    cachePromise->AppendNativeHandler(promiseHandler);
-
-    aLoadInfo.mCachePromise.swap(cachePromise);
-    aLoadInfo.mCacheStatus = ScriptLoadInfo::WritingToCache;
-
+    LoadingFinished(aLoadInfo, aStatus);
     return NS_OK;
   }
 
@@ -1220,209 +1106,6 @@ class WorkerScriptLoader final : public nsINamed {
     }
 
     aLoadInfo.mChannel.swap(channel);
-
-    return NS_OK;
-  }
-
-  nsresult OnStreamCompleteInternal(nsIStreamLoader* aLoader, nsresult aStatus,
-                                    uint32_t aStringLen, const uint8_t* aString,
-                                    ScriptLoadInfo& aLoadInfo) {
-    AssertIsOnMainThread();
-
-    if (!aLoadInfo.mChannel) {
-      return NS_BINDING_ABORTED;
-    }
-
-    aLoadInfo.mChannel = nullptr;
-
-    if (NS_FAILED(aStatus)) {
-      return aStatus;
-    }
-
-    NS_ASSERTION(aString, "This should never be null!");
-
-    nsCOMPtr<nsIRequest> request;
-    nsresult rv = aLoader->GetRequest(getter_AddRefs(request));
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    nsCOMPtr<nsIChannel> channel = do_QueryInterface(request);
-    MOZ_ASSERT(channel);
-
-    nsIScriptSecurityManager* ssm = nsContentUtils::GetSecurityManager();
-    NS_ASSERTION(ssm, "Should never be null!");
-
-    nsCOMPtr<nsIPrincipal> channelPrincipal;
-    rv = ssm->GetChannelResultPrincipal(channel,
-                                        getter_AddRefs(channelPrincipal));
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-
-    nsIPrincipal* principal = mWorkerPrivate->GetPrincipal();
-    if (!principal) {
-      WorkerPrivate* parentWorker = mWorkerPrivate->GetParent();
-      MOZ_ASSERT(parentWorker, "Must have a parent!");
-      principal = parentWorker->GetPrincipal();
-    }
-
-#ifdef DEBUG
-    if (IsMainWorkerScript()) {
-      nsCOMPtr<nsIPrincipal> loadingPrincipal =
-          mWorkerPrivate->GetLoadingPrincipal();
-      
-      
-      
-      MOZ_ASSERT(!loadingPrincipal || loadingPrincipal->GetIsNullPrincipal() ||
-                 principal->GetIsNullPrincipal() ||
-                 loadingPrincipal->Subsumes(principal));
-    }
-#endif
-
-    
-    
-    
-    
-    aLoadInfo.mMutedErrorFlag.emplace(!IsMainWorkerScript() &&
-                                      !principal->Subsumes(channelPrincipal));
-
-    
-    
-    nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(request);
-    nsAutoCString tCspHeaderValue, tCspROHeaderValue, tRPHeaderCValue;
-
-    if (httpChannel) {
-      bool requestSucceeded;
-      rv = httpChannel->GetRequestSucceeded(&requestSucceeded);
-      NS_ENSURE_SUCCESS(rv, rv);
-
-      if (!requestSucceeded) {
-        return NS_ERROR_NOT_AVAILABLE;
-      }
-
-      Unused << httpChannel->GetResponseHeader("content-security-policy"_ns,
-                                               tCspHeaderValue);
-
-      Unused << httpChannel->GetResponseHeader(
-          "content-security-policy-report-only"_ns, tCspROHeaderValue);
-
-      Unused << httpChannel->GetResponseHeader("referrer-policy"_ns,
-                                               tRPHeaderCValue);
-
-      nsAutoCString sourceMapURL;
-      if (nsContentUtils::GetSourceMapURL(httpChannel, sourceMapURL)) {
-        aLoadInfo.mSourceMapURL = Some(NS_ConvertUTF8toUTF16(sourceMapURL));
-      }
-    }
-
-    
-    Document* parentDoc = mWorkerPrivate->GetDocument();
-
-    
-    
-    
-    
-    if (StaticPrefs::dom_worker_script_loader_utf8_parsing_enabled()) {
-      aLoadInfo.InitUTF8Script();
-      rv = ScriptLoader::ConvertToUTF8(
-          nullptr, aString, aStringLen, u"UTF-8"_ns, parentDoc,
-          aLoadInfo.mScript.mUTF8, aLoadInfo.mScriptLength);
-    } else {
-      aLoadInfo.InitUTF16Script();
-      rv = ScriptLoader::ConvertToUTF16(
-          nullptr, aString, aStringLen, u"UTF-8"_ns, parentDoc,
-          aLoadInfo.mScript.mUTF16, aLoadInfo.mScriptLength);
-    }
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-
-    if (aLoadInfo.ScriptTextIsNull()) {
-      if (aLoadInfo.mScriptLength != 0) {
-        return NS_ERROR_FAILURE;
-      }
-
-      nsContentUtils::ReportToConsole(
-          nsIScriptError::warningFlag, "DOM"_ns, parentDoc,
-          nsContentUtils::eDOM_PROPERTIES, "EmptyWorkerSourceWarning");
-    }
-
-    
-    nsCOMPtr<nsIURI> finalURI;
-    rv = NS_GetFinalChannelURI(channel, getter_AddRefs(finalURI));
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    if (principal->IsSameOrigin(finalURI)) {
-      nsCString filename;
-      rv = finalURI->GetSpec(filename);
-      NS_ENSURE_SUCCESS(rv, rv);
-
-      if (!filename.IsEmpty()) {
-        
-        
-        aLoadInfo.mURL.Assign(NS_ConvertUTF8toUTF16(filename));
-      }
-    }
-
-    
-    
-    if (IsMainWorkerScript()) {
-      
-      mWorkerPrivate->SetBaseURI(finalURI);
-
-      
-      mWorkerPrivate->InitChannelInfo(channel);
-
-      
-      
-      
-      
-      NS_ENSURE_TRUE(mWorkerPrivate->FinalChannelPrincipalIsValid(channel),
-                     NS_ERROR_FAILURE);
-
-      
-      
-      
-      
-      
-      rv = mWorkerPrivate->SetPrincipalsAndCSPFromChannel(channel);
-      NS_ENSURE_SUCCESS(rv, rv);
-
-      nsCOMPtr<nsIContentSecurityPolicy> csp = mWorkerPrivate->GetCSP();
-      
-      
-      if (!csp) {
-        rv = mWorkerPrivate->SetCSPFromHeaderValues(tCspHeaderValue,
-                                                    tCspROHeaderValue);
-        NS_ENSURE_SUCCESS(rv, rv);
-      } else {
-        csp->EnsureEventTarget(mWorkerPrivate->MainThreadEventTarget());
-      }
-
-      mWorkerPrivate->UpdateReferrerInfoFromHeader(tRPHeaderCValue);
-
-      WorkerPrivate* parent = mWorkerPrivate->GetParent();
-      if (parent) {
-        
-        mWorkerPrivate->SetXHRParamsAllowed(parent->XHRParamsAllowed());
-      }
-
-      nsCOMPtr<nsILoadInfo> chanLoadInfo = channel->LoadInfo();
-      if (chanLoadInfo) {
-        mController = chanLoadInfo->GetController();
-      }
-
-      
-      
-      
-      
-      
-      
-      
-      if (IsBlobURI(mWorkerPrivate->GetBaseURI())) {
-        MOZ_DIAGNOSTIC_ASSERT(mController.isNothing());
-        mController = mWorkerPrivate->GetParentController();
-      }
-    }
 
     return NS_OK;
   }
@@ -1773,17 +1456,336 @@ bool WorkerScriptLoader::DispatchLoadScripts() {
   return true;
 }
 
+LoaderListener::LoaderListener(WorkerScriptLoader* aLoader,
+                               ScriptLoadInfo& aLoadInfo)
+    : mLoader(aLoader),
+      mWorkerPrivate(aLoader->mWorkerPrivate),
+      mLoadInfo(aLoadInfo) {
+  MOZ_ASSERT(mLoader);
+}
+
 NS_IMETHODIMP
 LoaderListener::OnStreamComplete(nsIStreamLoader* aLoader,
                                  nsISupports* aContext, nsresult aStatus,
                                  uint32_t aStringLen, const uint8_t* aString) {
-  return mLoader->OnStreamComplete(aLoader, mLoadInfo, aStatus, aStringLen,
-                                   aString);
+  nsresult rv = OnStreamCompleteInternal(aLoader, aStatus, aStringLen, aString);
+  return mLoader->OnStreamComplete(mLoadInfo, rv);
+}
+
+nsresult LoaderListener::OnStreamCompleteInternal(nsIStreamLoader* aLoader,
+                                                  nsresult aStatus,
+                                                  uint32_t aStringLen,
+                                                  const uint8_t* aString) {
+  AssertIsOnMainThread();
+
+  if (!mLoadInfo.mChannel) {
+    return NS_BINDING_ABORTED;
+  }
+
+  mLoadInfo.mChannel = nullptr;
+
+  if (NS_FAILED(aStatus)) {
+    return aStatus;
+  }
+
+  NS_ASSERTION(aString, "This should never be null!");
+
+  nsCOMPtr<nsIRequest> request;
+  nsresult rv = aLoader->GetRequest(getter_AddRefs(request));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsCOMPtr<nsIChannel> channel = do_QueryInterface(request);
+  MOZ_ASSERT(channel);
+
+  nsIScriptSecurityManager* ssm = nsContentUtils::GetSecurityManager();
+  NS_ASSERTION(ssm, "Should never be null!");
+
+  nsCOMPtr<nsIPrincipal> channelPrincipal;
+  rv =
+      ssm->GetChannelResultPrincipal(channel, getter_AddRefs(channelPrincipal));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  nsIPrincipal* principal = mWorkerPrivate->GetPrincipal();
+  if (!principal) {
+    WorkerPrivate* parentWorker = mWorkerPrivate->GetParent();
+    MOZ_ASSERT(parentWorker, "Must have a parent!");
+    principal = parentWorker->GetPrincipal();
+  }
+
+#ifdef DEBUG
+  if (mLoader->IsMainWorkerScript()) {
+    nsCOMPtr<nsIPrincipal> loadingPrincipal =
+        mWorkerPrivate->GetLoadingPrincipal();
+    
+    
+    
+    MOZ_ASSERT(!loadingPrincipal || loadingPrincipal->GetIsNullPrincipal() ||
+               principal->GetIsNullPrincipal() ||
+               loadingPrincipal->Subsumes(principal));
+  }
+#endif
+
+  
+  
+  
+  
+  mLoadInfo.mMutedErrorFlag.emplace(!mLoader->IsMainWorkerScript() &&
+                                    !principal->Subsumes(channelPrincipal));
+
+  
+  
+  nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(request);
+  nsAutoCString tCspHeaderValue, tCspROHeaderValue, tRPHeaderCValue;
+
+  if (httpChannel) {
+    bool requestSucceeded;
+    rv = httpChannel->GetRequestSucceeded(&requestSucceeded);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    if (!requestSucceeded) {
+      return NS_ERROR_NOT_AVAILABLE;
+    }
+
+    Unused << httpChannel->GetResponseHeader("content-security-policy"_ns,
+                                             tCspHeaderValue);
+
+    Unused << httpChannel->GetResponseHeader(
+        "content-security-policy-report-only"_ns, tCspROHeaderValue);
+
+    Unused << httpChannel->GetResponseHeader("referrer-policy"_ns,
+                                             tRPHeaderCValue);
+
+    nsAutoCString sourceMapURL;
+    if (nsContentUtils::GetSourceMapURL(httpChannel, sourceMapURL)) {
+      mLoadInfo.mSourceMapURL = Some(NS_ConvertUTF8toUTF16(sourceMapURL));
+    }
+  }
+
+  
+  Document* parentDoc = mWorkerPrivate->GetDocument();
+
+  
+  
+  
+  
+  if (StaticPrefs::dom_worker_script_loader_utf8_parsing_enabled()) {
+    mLoadInfo.InitUTF8Script();
+    rv = ScriptLoader::ConvertToUTF8(nullptr, aString, aStringLen, u"UTF-8"_ns,
+                                     parentDoc, mLoadInfo.mScript.mUTF8,
+                                     mLoadInfo.mScriptLength);
+  } else {
+    mLoadInfo.InitUTF16Script();
+    rv = ScriptLoader::ConvertToUTF16(nullptr, aString, aStringLen, u"UTF-8"_ns,
+                                      parentDoc, mLoadInfo.mScript.mUTF16,
+                                      mLoadInfo.mScriptLength);
+  }
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  if (mLoadInfo.ScriptTextIsNull()) {
+    if (mLoadInfo.mScriptLength != 0) {
+      return NS_ERROR_FAILURE;
+    }
+
+    nsContentUtils::ReportToConsole(nsIScriptError::warningFlag, "DOM"_ns,
+                                    parentDoc, nsContentUtils::eDOM_PROPERTIES,
+                                    "EmptyWorkerSourceWarning");
+  }
+
+  
+  nsCOMPtr<nsIURI> finalURI;
+  rv = NS_GetFinalChannelURI(channel, getter_AddRefs(finalURI));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  if (principal->IsSameOrigin(finalURI)) {
+    nsCString filename;
+    rv = finalURI->GetSpec(filename);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    if (!filename.IsEmpty()) {
+      
+      
+      mLoadInfo.mURL.Assign(NS_ConvertUTF8toUTF16(filename));
+    }
+  }
+
+  
+  
+  if (mLoader->IsMainWorkerScript()) {
+    
+    mWorkerPrivate->SetBaseURI(finalURI);
+
+    
+    mWorkerPrivate->InitChannelInfo(channel);
+
+    
+    
+    
+    
+    NS_ENSURE_TRUE(mWorkerPrivate->FinalChannelPrincipalIsValid(channel),
+                   NS_ERROR_FAILURE);
+
+    
+    
+    
+    
+    
+    rv = mWorkerPrivate->SetPrincipalsAndCSPFromChannel(channel);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    nsCOMPtr<nsIContentSecurityPolicy> csp = mWorkerPrivate->GetCSP();
+    
+    
+    if (!csp) {
+      rv = mWorkerPrivate->SetCSPFromHeaderValues(tCspHeaderValue,
+                                                  tCspROHeaderValue);
+      NS_ENSURE_SUCCESS(rv, rv);
+    } else {
+      csp->EnsureEventTarget(mWorkerPrivate->MainThreadEventTarget());
+    }
+
+    mWorkerPrivate->UpdateReferrerInfoFromHeader(tRPHeaderCValue);
+
+    WorkerPrivate* parent = mWorkerPrivate->GetParent();
+    if (parent) {
+      
+      mWorkerPrivate->SetXHRParamsAllowed(parent->XHRParamsAllowed());
+    }
+
+    nsCOMPtr<nsILoadInfo> chanLoadInfo = channel->LoadInfo();
+    if (chanLoadInfo) {
+      mLoader->mController = chanLoadInfo->GetController();
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    if (IsBlobURI(mWorkerPrivate->GetBaseURI())) {
+      MOZ_DIAGNOSTIC_ASSERT(mLoader->mController.isNothing());
+      mLoader->mController = mWorkerPrivate->GetParentController();
+    }
+  }
+
+  return NS_OK;
 }
 
 NS_IMETHODIMP
 LoaderListener::OnStartRequest(nsIRequest* aRequest) {
-  return mLoader->OnStartRequest(aRequest, mLoadInfo);
+  nsresult rv = OnStartRequestInternal(aRequest);
+
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    aRequest->Cancel(rv);
+  }
+
+  return rv;
+}
+
+nsresult LoaderListener::OnStartRequestInternal(nsIRequest* aRequest) {
+  AssertIsOnMainThread();
+
+  
+  
+  if (mLoader->mCanceledMainThread || !mLoader->mCacheCreator) {
+    return NS_ERROR_FAILURE;
+  }
+
+  nsCOMPtr<nsIChannel> channel = do_QueryInterface(aRequest);
+
+  
+  
+  
+  
+  
+  
+  
+  if (mWorkerPrivate->IsServiceWorker()) {
+    nsAutoCString mimeType;
+    channel->GetContentType(mimeType);
+
+    if (!nsContentUtils::IsJavascriptMIMEType(
+            NS_ConvertUTF8toUTF16(mimeType))) {
+      const nsCString& scope =
+          mWorkerPrivate->GetServiceWorkerRegistrationDescriptor().Scope();
+
+      ServiceWorkerManager::LocalizeAndReportToAllClients(
+          scope, "ServiceWorkerRegisterMimeTypeError2",
+          nsTArray<nsString>{NS_ConvertUTF8toUTF16(scope),
+                             NS_ConvertUTF8toUTF16(mimeType), mLoadInfo.mURL});
+
+      return NS_ERROR_DOM_NETWORK_ERR;
+    }
+  }
+
+  
+  
+  
+  MOZ_ASSERT_IF(mLoader->mIsMainScript, channel == mLoadInfo.mChannel);
+  mLoadInfo.mChannel = channel;
+
+  
+  SafeRefPtr<mozilla::dom::InternalResponse> ir =
+      MakeSafeRefPtr<mozilla::dom::InternalResponse>(200, "OK"_ns);
+  ir->SetBody(mLoadInfo.mCacheReadStream, InternalResponse::UNKNOWN_BODY_SIZE);
+
+  
+  
+  mLoadInfo.mCacheReadStream = nullptr;
+
+  
+  
+  ir->InitChannelInfo(channel);
+
+  
+  
+  nsIScriptSecurityManager* ssm = nsContentUtils::GetSecurityManager();
+  NS_ASSERTION(ssm, "Should never be null!");
+
+  nsCOMPtr<nsIPrincipal> channelPrincipal;
+  MOZ_TRY(ssm->GetChannelResultPrincipal(channel,
+                                         getter_AddRefs(channelPrincipal)));
+
+  UniquePtr<PrincipalInfo> principalInfo(new PrincipalInfo());
+  MOZ_TRY(PrincipalToPrincipalInfo(channelPrincipal, principalInfo.get()));
+
+  ir->SetPrincipalInfo(std::move(principalInfo));
+  ir->Headers()->FillResponseHeaders(mLoadInfo.mChannel);
+
+  RefPtr<mozilla::dom::Response> response = new mozilla::dom::Response(
+      mLoader->mCacheCreator->Global(), std::move(ir), nullptr);
+
+  mozilla::dom::RequestOrUSVString request;
+
+  MOZ_ASSERT(!mLoadInfo.mFullURL.IsEmpty());
+  request.SetAsUSVString().ShareOrDependUpon(mLoadInfo.mFullURL);
+
+  
+  
+  AutoJSAPI jsapi;
+  jsapi.Init();
+
+  ErrorResult error;
+  RefPtr<Promise> cachePromise = mLoader->mCacheCreator->Cache_()->Put(
+      jsapi.cx(), request, *response, error);
+  error.WouldReportJSException();
+  if (NS_WARN_IF(error.Failed())) {
+    return error.StealNSResult();
+  }
+
+  RefPtr<CachePromiseHandler> promiseHandler =
+      new CachePromiseHandler(mLoader, mLoadInfo);
+  cachePromise->AppendNativeHandler(promiseHandler);
+
+  mLoadInfo.mCachePromise.swap(cachePromise);
+  mLoadInfo.mCacheStatus = ScriptLoadInfo::WritingToCache;
+
+  return NS_OK;
 }
 
 void CachePromiseHandler::ResolvedCallback(JSContext* aCx,
