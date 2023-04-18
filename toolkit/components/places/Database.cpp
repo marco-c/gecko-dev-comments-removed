@@ -1266,6 +1266,11 @@ nsresult Database::InitSchema(bool* aDatabaseMigrated) {
         NS_ENSURE_SUCCESS(rv, rv);
       }
 
+      if (currentSchemaVersion < 68) {
+        rv = MigrateV68Up();
+        NS_ENSURE_SUCCESS(rv, rv);
+      }
+
       
 
       
@@ -2538,6 +2543,29 @@ nsresult Database::MigrateV67Up() {
   NS_ENSURE_SUCCESS(rv, rv);
   rv = mMainConn->ExecuteSimpleSQL(
       "DELETE FROM moz_inputhistory WHERE LOWER(input) <> input"_ns);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  return NS_OK;
+}
+
+nsresult Database::MigrateV68Up() {
+  
+  nsCOMPtr<mozIStorageStatement> stmt;
+  nsresult rv = mMainConn->CreateStatement(
+      "SELECT removed_reason FROM moz_places_metadata_snapshots"_ns,
+      getter_AddRefs(stmt));
+  if (NS_FAILED(rv)) {
+    rv = mMainConn->ExecuteSimpleSQL(
+        "ALTER TABLE moz_places_metadata_snapshots "
+        "ADD COLUMN removed_reason INTEGER"_ns);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  
+  
+  rv = mMainConn->ExecuteSimpleSQL(
+      "UPDATE moz_places_metadata_snapshots SET removed_reason = 0 "
+      "WHERE removed_at IS NOT NULL AND removed_reason IS NULL"_ns);
   NS_ENSURE_SUCCESS(rv, rv);
 
   return NS_OK;
