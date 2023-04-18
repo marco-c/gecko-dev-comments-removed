@@ -2754,10 +2754,7 @@ nsEventStatus AsyncPanZoomController::OnPanEnd(const PanGestureInput& aEvent) {
   }
 
   RequestContentRepaint();
-
-  if (!aEvent.mFollowedByMomentum) {
-    ScrollSnap();
-  }
+  ScrollSnapToDestination();
 
   return nsEventStatus_eConsumeNoDefault;
 }
@@ -2771,7 +2768,6 @@ nsEventStatus AsyncPanZoomController::OnPanMomentumStart(
   }
 
   SetState(PAN_MOMENTUM);
-  ScrollSnapToDestination();
 
   
   OnPan(aEvent, FingersOnTouchpad::No);
