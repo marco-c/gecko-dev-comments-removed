@@ -680,11 +680,6 @@ bool LazyStubSegment::addIndirectStubs(
 }
 
 const CodeRange* LazyStubSegment::lookupRange(const void* pc) const {
-  
-  
-  if (pc < base() || pc >= base() + length()) {
-    return nullptr;
-  }
   return LookupInSorted(codeRanges_,
                         CodeRange::OffsetInCode((uint8_t*)pc - base()));
 }
