@@ -1301,10 +1301,14 @@ FetchDriver::OnDataAvailable(nsIRequest* aRequest, nsIInputStream* aInputStream,
     }
   }
 
+  if (!mResponse) {
+    MOZ_ASSERT(false);
+    return NS_ERROR_UNEXPECTED;
+  }
+
   
   
   uint32_t aRead = 0;
-  MOZ_ASSERT(mResponse);
   MOZ_ASSERT(mPipeOutputStream);
 
   
