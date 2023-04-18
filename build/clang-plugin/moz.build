@@ -109,6 +109,11 @@ if CONFIG["ENABLE_CLANG_PLUGIN_ALPHA"]:
 
 if CONFIG["HOST_OS_ARCH"] == "WINNT":
     extra_cxxflags = ["-GR-", "-EHsc"]
+    
+    
+    
+    
+    HOST_DEFINES["LLVM_FORCE_USE_OLD_TOOLCHAIN"] = True
 else:
     extra_cxxflags = ["-fno-rtti", "-fno-exceptions"]
 
