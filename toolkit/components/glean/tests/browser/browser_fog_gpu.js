@@ -30,8 +30,8 @@ add_task(async () => {
   await Services.fog.testFlushAllChildren();
 
   is(
-    45326, 
     Glean.testOnlyIpc.aCounter.testGetValue(),
+    Ci.nsIXULRuntime.PROCESS_TYPE_GPU,
     "Ensure the GPU-process-set value shows up in the parent process."
   );
 });
