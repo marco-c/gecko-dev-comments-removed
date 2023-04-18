@@ -498,6 +498,12 @@ class Preferences {
 
     
     
+    this._firefoxSuggestScenarioStartupPromise = new Promise(
+      resolve => (this._resolveFirefoxSuggestScenarioStartupPromise = resolve)
+    );
+
+    
+    
     this._updatingFirefoxSuggestScenario = false;
 
     NimbusFeatures.urlbar.onUpdate(() => this._onNimbusUpdate());
@@ -630,6 +636,13 @@ class Preferences {
       this._updateFirefoxSuggestScenarioHelper(isStartup, testOverrides);
     } finally {
       this._updatingFirefoxSuggestScenario = false;
+    }
+
+    
+    
+    if (isStartup && this._resolveFirefoxSuggestScenarioStartupPromise) {
+      this._resolveFirefoxSuggestScenarioStartupPromise();
+      this._resolveFirefoxSuggestScenarioStartupPromise = null;
     }
   }
 
@@ -1037,6 +1050,16 @@ class Preferences {
         this.set("suggest.quicksuggest.sponsored", false);
       }
     }
+  }
+
+  
+
+
+
+
+
+  get firefoxSuggestScenarioStartupPromise() {
+    return this._firefoxSuggestScenarioStartupPromise;
   }
 
   

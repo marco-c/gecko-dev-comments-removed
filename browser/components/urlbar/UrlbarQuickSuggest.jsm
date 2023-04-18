@@ -206,6 +206,11 @@ class Suggestions {
     
     
     
+    await UrlbarPrefs.firefoxSuggestScenarioStartupPromise;
+
+    
+    
+    
     if (
       !UrlbarPrefs.get(FEATURE_AVAILABLE) ||
       !UrlbarPrefs.get("quickSuggestShouldShowOnboardingDialog") ||
