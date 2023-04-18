@@ -1585,14 +1585,31 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
   }
 
   void loadConstantDouble(double d, FloatRegister dest) {
-    
-    
-    
-    Fmov(ARMFPRegister(dest, 64), d);
+    ARMFPRegister r(dest, 64);
+    if (d == 0.0) {
+      
+      
+      
+      Movi(r, 0);
+      if (std::signbit(d)) {
+        Fneg(r, r);
+      }
+    } else {
+      Fmov(r, d);
+    }
   }
   void loadConstantFloat32(float f, FloatRegister dest) {
-    
-    Fmov(ARMFPRegister(dest, 32), f);
+    ARMFPRegister r(dest, 32);
+    if (f == 0.0) {
+      
+      
+      Movi(ARMFPRegister(dest, 64), 0);
+      if (std::signbit(f)) {
+        Fneg(r, r);
+      }
+    } else {
+      Fmov(r, f);
+    }
   }
 
   void cmpTag(Register tag, ImmTag ref) {
