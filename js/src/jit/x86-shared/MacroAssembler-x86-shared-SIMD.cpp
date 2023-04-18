@@ -1311,25 +1311,29 @@ void MacroAssemblerX86Shared::truncSatFloat32x4ToInt32x4(FloatRegister src,
   
 
   
-  vmovaps(src, scratch);
-  vcmpeqps(Operand(scratch), scratch, scratch);
-  src = asMasm().moveSimd128FloatIfNotAVX(src, dest);
-  vpand(Operand(scratch), src, dest);
+  if (HasAVX()) {
+    vcmpeqps(Operand(src), src, scratch);
+    vpand(Operand(scratch), src, dest);
+  } else {
+    vmovaps(src, scratch);
+    vcmpeqps(Operand(scratch), scratch, scratch);
+    moveSimd128Float(src, dest);
+    vpand(Operand(scratch), dest, dest);
+  }
 
   
   
-  vpxor(Operand(dest), scratch, scratch);
+  static const SimdConstant minOverflowedInt =
+      SimdConstant::SplatX4(2147483648.f);
+  if (HasAVX()) {
+    asMasm().vcmpgepsSimd128(minOverflowedInt, dest, scratch);
+  } else {
+    asMasm().loadConstantSimd128Float(minOverflowedInt, scratch);
+    vcmpleps(Operand(dest), scratch, scratch);
+  }
 
   
   vcvttps2dq(dest, dest);
-
-  
-  
-  vpand(Operand(dest), scratch, scratch);
-
-  
-  
-  vpsrad(Imm32(31), scratch, scratch);
 
   
   vpxor(Operand(scratch), dest, dest);
