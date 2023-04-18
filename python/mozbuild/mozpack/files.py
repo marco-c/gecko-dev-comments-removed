@@ -363,22 +363,6 @@ class AbsoluteSymlinkFile(File):
 
         File.__init__(self, path)
 
-    @staticmethod
-    def excluded(dest):
-        if platform.system() != "Windows":
-            return False
-
-        
-        
-        from buildconfig import topobjdir
-
-        denylist = [("dist", "bin"), ("_tests", "modules")]
-        fulllist = [os.path.join(topobjdir, *paths) for paths in denylist]
-
-        fulldest = os.path.join(os.path.abspath(os.curdir), dest)
-
-        return mozpath.basedir(fulldest, fulllist) is not None
-
     def copy(self, dest, skip_if_older=True):
         assert isinstance(dest, six.string_types)
 
@@ -389,7 +373,7 @@ class AbsoluteSymlinkFile(File):
 
         
         
-        if not hasattr(os, "symlink") or AbsoluteSymlinkFile.excluded(dest):
+        if not hasattr(os, "symlink"):
             return File.copy(self, dest, skip_if_older=skip_if_older)
 
         
