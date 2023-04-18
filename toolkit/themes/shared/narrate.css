@@ -1,9 +1,9 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
+/* Avoid adding ID selector rules in this style sheet, since they could
+ * inadvertently match elements in the article content. */
 :root {
   --blue-60: #0060df;
 }
@@ -68,7 +68,7 @@ body.dark .narrate-word-highlight {
 }
 
 .speaking .narrate-toggle {
-  
+  /* This shows with an animation. */
   background-image: url("chrome://global/skin/narrate/headphone-active.svg");
 }
 
@@ -104,7 +104,7 @@ body.dark .narrate-word-highlight {
   border-top: 1px solid var(--border-color);
 }
 
-
+/* Control buttons */
 
 .narrate-control > button {
   background-size: 24px 24px;
@@ -139,7 +139,7 @@ body.dark .narrate-word-highlight {
   background-image: url("chrome://global/skin/narrate/stop.svg");
 }
 
-
+/* Rate control */
 
 .narrate-rate::before, .narrate-rate::after {
   content: '';
@@ -189,7 +189,7 @@ body.dark .narrate-word-highlight {
   background-color: var(--blue-60);
 }
 
-
+/* Voice selection */
 
 .voiceselect {
   width: 246px;
@@ -201,10 +201,6 @@ body.dark .narrate-word-highlight {
   border: none;
   width: 100%;
   min-height: 40px;
-}
-
-.voiceselect.open > button.select-toggle {
-  border-bottom: 1px solid var(--border-color);
 }
 
 .voiceselect > button.select-toggle::after {
@@ -251,6 +247,7 @@ body.dark .voiceselect > .options:not(.hovering) > button.option:focus {
 
 .voiceselect.open > .options {
   display: block;
+  border-top: 1px solid var(--border-color);
 }
 
 .current-voice {
