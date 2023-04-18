@@ -307,17 +307,6 @@ class TextureData {
     return mozilla::ipc::FileDescriptor();
   }
 
-  
-
-
-
-
-
-  virtual bool CropYCbCrPlanes(const gfx::IntSize& aYSize,
-                               const gfx::IntSize& aCbCrSize) {
-    return false;
-  }
-
  protected:
   MOZ_COUNTED_DEFAULT_CTOR(TextureData)
 };
@@ -479,15 +468,6 @@ class TextureClient : public AtomicRefCountedWithFinalize<TextureClient> {
 
   bool CopyToTextureClient(TextureClient* aTarget, const gfx::IntRect* aRect,
                            const gfx::IntPoint* aPoint);
-
-  
-
-
-
-
-
-  bool CropYCbCrPlanes(const gfx::IntSize& aYSize,
-                       const gfx::IntSize& aCbCrSize);
 
   
 

@@ -661,12 +661,6 @@ struct PlanarYCbCrData {
   }
 
   static Maybe<PlanarYCbCrData> From(const SurfaceDescriptorBuffer&);
-
-  
-  
-  
-  Maybe<gfx::IntSize> mCroppedYSize;
-  Maybe<gfx::IntSize> mCroppedCbCrSize;
 };
 
 

@@ -17,16 +17,40 @@ namespace gfx {
 
 
 
+IntSize GetCroppedCbCrSize(const IntSize& aYSize,
+                           const IntSize& aCbCrSize,
+                           const IntSize& aDisplaySize) {
+  
+  
+  
+  
+  
+  
+  IntSize croppedCbCrSize = Min(aDisplaySize, aCbCrSize);
+  if (aCbCrSize.height < aYSize.height &&
+      aCbCrSize.height >= aYSize.height / 2) {
+    croppedCbCrSize.width = (aDisplaySize.width + 1) / 2;
+    croppedCbCrSize.height = (aDisplaySize.height + 1) / 2;
+  } else if (aCbCrSize.width < aYSize.width &&
+             aCbCrSize.width >= aYSize.width / 2) {
+    croppedCbCrSize.width = (aDisplaySize.width + 1) / 2;
+  }
+  return croppedCbCrSize;
+}
+
+static YUVType GetYUVType(const layers::PlanarYCbCrData& aData) {
+  IntSize croppedCbCrSize =
+      GetCroppedCbCrSize(aData.mYSize, aData.mCbCrSize, aData.mPicSize);
+  return TypeFromSize(aData.mPicSize.width, aData.mPicSize.height,
+                      croppedCbCrSize.width, croppedCbCrSize.height);
+}
+
 void
 GetYCbCrToRGBDestFormatAndSize(const layers::PlanarYCbCrData& aData,
                                SurfaceFormat& aSuggestedFormat,
                                IntSize& aSuggestedSize)
 {
-  YUVType yuvtype =
-    TypeFromSize(aData.mYSize.width,
-                 aData.mYSize.height,
-                 aData.mCbCrSize.width,
-                 aData.mCbCrSize.height);
+  YUVType yuvtype = GetYUVType(aData);
 
   
   
@@ -109,12 +133,7 @@ ConvertYCbCrToRGBInternal(const layers::PlanarYCbCrData& aData,
 {
   
   
-  MOZ_ASSERT(aData.mCbCrSize.width == aData.mYSize.width ||
-             aData.mCbCrSize.width == (aData.mYSize.width + 1) >> 1 ||
-             aData.mCbCrSize.width == 0);
-  MOZ_ASSERT(aData.mCbCrSize.height == aData.mYSize.height ||
-             aData.mCbCrSize.height == (aData.mYSize.height + 1) >> 1 ||
-             aData.mCbCrSize.height == 0);
+  YUVType yuvtype = GetYUVType(aData);
 
   
   UniquePtr<uint8_t[]> yChannel;
@@ -184,12 +203,6 @@ ConvertYCbCrToRGBInternal(const layers::PlanarYCbCrData& aData,
                             bitDepth);
     }
   }
-
-  YUVType yuvtype =
-    TypeFromSize(srcData.mYSize.width,
-                 srcData.mYSize.height,
-                 srcData.mCbCrSize.width,
-                 srcData.mCbCrSize.height);
 
   
   if (aDestSize != srcData.mPicSize) {
