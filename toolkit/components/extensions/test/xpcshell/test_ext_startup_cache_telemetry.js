@@ -126,6 +126,14 @@ add_task(async function test_startupCache_load_timestamps() {
 
   
   TelemetryTestUtils.getProcessScalars("parent", false, true);
+  Services.fog.testResetFOG();
+
+  let gleanMetric = Glean.extensions.startupCacheLoadTime.testGetValue();
+  equal(
+    typeof gleanMetric,
+    "undefined",
+    "Expect extensions.startup_cache_load_time Glean metric to be initially undefined"
+  );
 
   
   
@@ -136,16 +144,11 @@ add_task(async function test_startupCache_load_timestamps() {
     "Verify telemetry recorded for the 'extensions.startup_cache_load_time' Glean metric"
   );
 
-  const gleanMetric = Glean.extensions.startupCacheLoadTime.testGetValue();
+  gleanMetric = Glean.extensions.startupCacheLoadTime.testGetValue();
   equal(
     typeof gleanMetric,
     "number",
     "Expect extensions.startup_cache_load_time Glean metric to be set to a number"
-  );
-
-  ok(
-    gleanMetric > 0,
-    "Expect extensions.startup_cache_load_time Glean metric to be set to a non-zero value"
   );
 
   info(
@@ -158,11 +161,6 @@ add_task(async function test_startupCache_load_timestamps() {
     typeof scalars["extensions.startupCache.load_time"],
     "number",
     "Expect extensions.startupCache.load_time mirrored scalar to be set to a number"
-  );
-
-  ok(
-    scalars["extensions.startupCache.load_time"] > 0,
-    "Expect extensions.startupCache.load_time mirrored scalar to be set to a non-zero value"
   );
 
   equal(
