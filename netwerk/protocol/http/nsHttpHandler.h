@@ -641,9 +641,6 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   nsCString mUserAgent;
   nsCString mSpoofedUserAgent;
   nsCString mUserAgentOverride;
-
-  nsCString mExperimentUserAgent;
-
   bool mUserAgentIsDirty{true};  
   bool mAcceptLanguagesIsDirty{true};
 
