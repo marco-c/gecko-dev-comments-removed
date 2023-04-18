@@ -328,12 +328,7 @@ BrowserTabList.prototype._getActorForBrowser = async function(browser) {
 
 
 
-
-BrowserTabList.prototype.getTab = function({
-  browserId,
-  outerWindowID,
-  tabId,
-}) {
+BrowserTabList.prototype.getTab = function({ browserId, tabId }) {
   if (typeof browserId == "number") {
     const browsingContext = BrowsingContext.getCurrentTopByBrowserId(browserId);
     if (!browsingContext) {
@@ -351,34 +346,7 @@ BrowserTabList.prototype.getTab = function({
     }
     return this._getActorForBrowser(browser);
   }
-  if (typeof outerWindowID == "number") {
-    
-    const window = Services.wm.getOuterWindowWithId(outerWindowID);
-    
-    if (window?.isChromeWindow) {
-      return Promise.reject({
-        error: "forbidden",
-        message: "Window with outerWindowID '" + outerWindowID + "' is chrome",
-      });
-    }
-    if (window) {
-      const iframe = window.browsingContext.embedderElement;
-      if (iframe) {
-        return this._getActorForBrowser(iframe);
-      }
-    }
-    
-    
-    for (const browser of this._getBrowsers()) {
-      if (browser.outerWindowID == outerWindowID) {
-        return this._getActorForBrowser(browser);
-      }
-    }
-    return Promise.reject({
-      error: "noTab",
-      message: "Unable to find tab with outerWindowID '" + outerWindowID + "'",
-    });
-  } else if (typeof tabId == "number") {
+  if (typeof tabId == "number") {
     
     for (const browser of this._getBrowsers()) {
       if (
