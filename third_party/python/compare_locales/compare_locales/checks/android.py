@@ -251,3 +251,15 @@ def check_params(params, string):
                 "Mismatching formatter",
                 "android"
             )
+    
+    
+    for order in params:
+        if order not in sorted(lparams):
+            yield (
+                "warning",
+                0,
+                "Formatter %{}${} not found in translation".format(
+                    order, params[order]
+                ),
+                "android",
+            )
