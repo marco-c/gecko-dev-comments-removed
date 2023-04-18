@@ -65,9 +65,19 @@ nsresult BodyDeleteOrphanedFiles(const ClientMetadata& aClientMetadata,
 
 
 template <typename Func>
-nsresult BodyTraverseFiles(const ClientMetadata& aClientMetadata,
+nsresult BodyTraverseFiles(const Maybe<ClientMetadata>& aClientMetadata,
                            nsIFile& aBodyDir, const Func& aHandleFileFunc,
                            bool aCanRemoveFiles, bool aTrackQuota = true);
+
+
+
+template <typename Func>
+nsresult BodyTraverseFiles(const ClientMetadata& aClientMetadata,
+                           nsIFile& aBodyDir, const Func& aHandleFileFunc,
+                           bool aCanRemoveFiles, bool aTrackQuota = true) {
+  return BodyTraverseFiles(Some(aClientMetadata), aBodyDir, aHandleFileFunc,
+                           aCanRemoveFiles, aTrackQuota);
+}
 
 nsresult CreateMarkerFile(const ClientMetadata& aClientMetadata);
 
@@ -75,15 +85,30 @@ nsresult DeleteMarkerFile(const ClientMetadata& aClientMetadata);
 
 bool MarkerFileExists(const ClientMetadata& aClientMetadata);
 
-nsresult RemoveNsIFileRecursively(const ClientMetadata& aClientMetadata,
+nsresult RemoveNsIFileRecursively(const Maybe<ClientMetadata>& aClientMetadata,
                                   nsIFile& aFile, bool aTrackQuota = true);
 
 
 
+inline nsresult RemoveNsIFileRecursively(const ClientMetadata& aClientMetadata,
+                                         nsIFile& aFile,
+                                         bool aTrackQuota = true) {
+  return RemoveNsIFileRecursively(Some(aClientMetadata), aFile, aTrackQuota);
+}
 
 
-nsresult RemoveNsIFile(const ClientMetadata& aClientMetadata, nsIFile& aFile,
-                       bool aTrackQuota = true);
+
+
+
+nsresult RemoveNsIFile(const Maybe<ClientMetadata>& aClientMetadata,
+                       nsIFile& aFile, bool aTrackQuota = true);
+
+
+
+inline nsresult RemoveNsIFile(const ClientMetadata& aClientMetadata,
+                              nsIFile& aFile, bool aTrackQuota = true) {
+  return RemoveNsIFile(Some(aClientMetadata), aFile, aTrackQuota);
+}
 
 void DecreaseUsageForClientMetadata(const ClientMetadata& aClientMetadata,
                                     int64_t aUpdatingSize);

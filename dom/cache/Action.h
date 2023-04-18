@@ -56,7 +56,7 @@ class Action : public SafeRefCounted<Action> {
   
   
   virtual void RunOnTarget(SafeRefPtr<Resolver> aResolver,
-                           const ClientMetadata& aClientMetadata,
+                           const Maybe<ClientMetadata>& aClientMetadata,
                            Data* aOptionalData) = 0;
 
   
