@@ -2342,24 +2342,35 @@ function createVersionizedHttpTestServer(testFolderName) {
     }
     
     
+    let fetchResponse;
     if (request.queryString) {
       const url = `${URL_ROOT}${testFolderName}/v${currentVersion}${request.path}.${request.queryString}`;
       try {
-        const content = await fetch(url);
+        fetchResponse = await fetch(url);
         
         info(`[test-http-server] serving: ${url}`);
-        const text = await content.text();
-        response.write(text);
-        response.finish();
-        return;
       } catch (e) {
         
+        fetchResponse = null;
       }
     }
-    const url = `${URL_ROOT}${testFolderName}/v${currentVersion}${request.path}`;
-    info(`[test-http-server] serving: ${url}`);
-    const content = await fetch(url);
-    const text = await content.text();
+    if (!fetchResponse) {
+      const url = `${URL_ROOT}${testFolderName}/v${currentVersion}${request.path}`;
+      info(`[test-http-server] serving: ${url}`);
+      fetchResponse = await fetch(url);
+    }
+
+    
+    
+    for (const [name, value] of fetchResponse.headers.entries()) {
+      response.setHeader(name, value);
+    }
+
+    
+    
+    response.setHeader("Cache-Control", "no-store");
+
+    const text = await fetchResponse.text();
     response.write(text);
     response.finish();
   });
