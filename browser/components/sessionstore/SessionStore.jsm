@@ -4920,46 +4920,56 @@ var SessionStoreInternal = {
         screenWidth,
         screenHeight
       );
+
       
-      let screenLeftCss = screenLeft.value;
-      let screenTopCss = screenTop.value;
       
-      screen.GetAvailRect(screenLeft, screenTop, screenWidth, screenHeight);
-      let cssToDevScale = screen.defaultCSSScaleFactor;
-      let screenRightCss = screenLeftCss + screenWidth.value / cssToDevScale;
-      let screenBottomCss = screenTopCss + screenHeight.value / cssToDevScale;
+      screenLeft = screenLeft.value;
+      screenTop = screenTop.value;
+      screenWidth = screenWidth.value;
+      screenHeight = screenHeight.value;
+
+      let screenBottom = screenTop + screenHeight;
+      let screenRight = screenLeft + screenWidth;
+
+      
+      
+      let cssToDesktopScale =
+        screen.defaultCSSScaleFactor / screen.contentsScaleFactor;
+
+      let slop = SCREEN_EDGE_SLOP * cssToDesktopScale;
 
       
       
       
       
-      if (aLeft < screenLeftCss - SCREEN_EDGE_SLOP) {
-        aLeft = screenLeftCss;
+      if (aLeft < screenLeft - slop) {
+        aLeft = screenLeft;
       }
       
-      let right = aLeft + aWidth;
-      if (right > screenRightCss + SCREEN_EDGE_SLOP) {
-        right = screenRightCss;
+      let right = aLeft + aWidth * cssToDesktopScale;
+      if (right > screenRight + slop) {
+        right = screenRight;
         
-        if (aLeft > screenLeftCss) {
-          aLeft = Math.max(right - aWidth, screenLeftCss);
+        if (aLeft > screenLeft) {
+          aLeft = Math.max(right - aWidth * cssToDesktopScale, screenLeft);
         }
       }
       
-      aWidth = right - aLeft;
+      
+      aWidth = (right - aLeft) / cssToDesktopScale;
 
       
-      if (aTop < screenTopCss - SCREEN_EDGE_SLOP) {
-        aTop = screenTopCss;
+      if (aTop < screenTop - slop) {
+        aTop = screenTop;
       }
-      let bottom = aTop + aHeight;
-      if (bottom > screenBottomCss + SCREEN_EDGE_SLOP) {
-        bottom = screenBottomCss;
-        if (aTop > screenTopCss) {
-          aTop = Math.max(bottom - aHeight, screenTopCss);
+      let bottom = aTop + aHeight * cssToDesktopScale;
+      if (bottom > screenBottom + slop) {
+        bottom = screenBottom;
+        if (aTop > screenTop) {
+          aTop = Math.max(bottom - aHeight * cssToDesktopScale, screenTop);
         }
       }
-      aHeight = bottom - aTop;
+      aHeight = (bottom - aTop) / cssToDesktopScale;
     }
 
     
@@ -4973,7 +4983,12 @@ var SessionStoreInternal = {
         !isNaN(aTop) &&
         (aLeft != win_("screenX") || aTop != win_("screenY"))
       ) {
-        aWindow.moveTo(aLeft, aTop);
+        
+        
+        
+        let desktopToCssScale =
+          aWindow.desktopToDeviceScale / aWindow.devicePixelRatio;
+        aWindow.moveTo(aLeft * desktopToCssScale, aTop * desktopToCssScale);
       }
       if (
         aWidth &&
@@ -5339,6 +5354,17 @@ var SessionStoreInternal = {
         return aWindow.outerWidth;
       case "height":
         return aWindow.outerHeight;
+      case "screenX":
+      case "screenY":
+        
+        
+        
+        
+        
+        return (
+          (aWindow[aAttribute] * aWindow.devicePixelRatio) /
+          aWindow.desktopToDeviceScale
+        );
       default:
         return aAttribute in aWindow ? aWindow[aAttribute] : "";
     }
