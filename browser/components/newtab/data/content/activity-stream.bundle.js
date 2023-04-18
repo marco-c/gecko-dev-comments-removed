@@ -3186,7 +3186,8 @@ class _DiscoveryStreamBase extends react__WEBPACK_IMPORTED_MODULE_12___default.a
           const prefix = `.ds-layout > .ds-column:nth-child(${rowIndex + 1}) .ds-column-grid > :nth-child(${componentIndex + 1})`; 
           
 
-          rule.selectorText = selectors.split(",").map(selector => prefix + (selector[0] === ":" ? "" : " ") + selector).join(","); 
+          rule.selectorText = selectors.split(",").map(selector => prefix + ( 
+          selector[0] === ":" ? "" : " ") + selector).join(","); 
 
           if (rule.selectorText === DUMMY_CSS_SELECTOR) {
             console.error(`Bad CSS selector ${selectors}`); 
@@ -5837,7 +5838,10 @@ class Section extends react__WEBPACK_IMPORTED_MODULE_8___default.a.PureComponent
     const wasCollapsed = prevProps.pref.collapsed;
 
     if ( 
-    props.rows.length && (props.rows !== prevProps.rows && !isCollapsed || wasCollapsed && !isCollapsed)) {
+    props.rows.length && ( 
+    
+    props.rows !== prevProps.rows && !isCollapsed || 
+    wasCollapsed && !isCollapsed)) {
       this.sendImpressionStatsOrAddListener();
     }
   }
