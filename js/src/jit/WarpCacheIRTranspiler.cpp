@@ -3339,6 +3339,10 @@ bool WarpCacheIRTranspiler::emitCallRegExpTesterResult(
 
 MInstruction* WarpCacheIRTranspiler::convertToBoolean(MDefinition* input) {
   
+  
+  
+  
+
   auto* resultInverted = MNot::New(alloc(), input);
   add(resultInverted);
   auto* result = MNot::New(alloc(), resultInverted);
