@@ -103,7 +103,7 @@ pub fn need_ipc() -> bool {
 
 #[cfg(feature = "with_gecko")]
 fn register_process_shutdown(process_type: u32) {
-    match process_type as i64 {
+    match process_type {
         nsIXULRuntime::PROCESS_TYPE_DEFAULT => {
             
         }
