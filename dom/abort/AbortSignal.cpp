@@ -153,6 +153,11 @@ void AbortSignal::ThrowIfAborted(JSContext* aCx, ErrorResult& aRv) {
 
 void AbortSignal::SignalAbort(JS::Handle<JS::Value> aReason) {
   
+  if (Aborted()) {
+    return;
+  }
+
+  
   AbortSignalImpl::SignalAbort(aReason);
 
   
