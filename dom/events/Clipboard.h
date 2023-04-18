@@ -8,8 +8,11 @@
 #define mozilla_dom_Clipboard_h_
 
 #include "nsString.h"
+#include "nsStringFwd.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/Logging.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/DataTransfer.h"
 
 namespace mozilla::dom {
@@ -43,6 +46,9 @@ class Clipboard : public DOMEventTargetHelper {
                                       nsIPrincipal& aSubjectPrincipal,
                                       ErrorResult& aRv);
 
+  
+  void OnUserReactedToPasteMenuPopup(bool aAllowed);
+
   static LogModule* GetClipboardLog();
 
   
@@ -62,20 +68,75 @@ class Clipboard : public DOMEventTargetHelper {
   
   static bool IsTestingPrefEnabled();
 
+  static bool IsTestingPrefEnabledOrHasReadPermission(
+      nsIPrincipal& aSubjectPrincipal);
+
+  
+  already_AddRefed<nsIRunnable> HandleReadTextRequestWhichRequiresPasteButton(
+      Promise& aPromise, nsIPrincipal& aSubjectPrincipal);
+
   already_AddRefed<Promise> ReadHelper(nsIPrincipal& aSubjectPrincipal,
                                        ClipboardReadType aClipboardReadType,
                                        ErrorResult& aRv);
 
   
   
+  
+  
+  
   static void ProcessDataTransfer(DataTransfer& aDataTransfer,
                                   Promise& aPromise,
                                   ClipboardReadType aClipboardReadType,
-                                  nsPIDOMWindowInner& aOwner,
+                                  nsPIDOMWindowInner* aOwner,
                                   nsIPrincipal& aSubjectPrincipal,
                                   bool aNeedToFill);
 
   ~Clipboard();
+
+  class ReadTextRequest final {
+   public:
+    ReadTextRequest(Promise& aPromise, nsIPrincipal& aSubjectPrincipal)
+        : mPromise{&aPromise}, mSubjectPrincipal{&aSubjectPrincipal} {}
+
+    
+    already_AddRefed<nsIRunnable> Answer();
+
+    void MaybeRejectWithNotAllowedError(const nsACString& aMessage);
+
+   private:
+    
+    
+    RefPtr<Promise> mPromise;
+    
+    
+    RefPtr<nsIPrincipal> mSubjectPrincipal;
+  };
+
+  AutoTArray<UniquePtr<ReadTextRequest>, 1> mReadTextRequests;
+
+  class TransientUserPasteState final {
+   public:
+    enum class Value {
+      Initial,
+      WaitingForUserReactionToPasteMenuPopup,
+      TransientlyForbiddenByUser,
+      TransientlyAllowedByUser,
+    };
+
+    
+    Value RefreshAndGet(WindowContext& aWindowContext);
+
+    void OnStartWaitingForUserReactionToPasteMenuPopup(
+        const TimeStamp& aUserGestureStart);
+    void OnUserReactedToPasteMenuPopup(bool aAllowed);
+
+   private:
+    TimeStamp mUserGestureStart;
+
+    Value mValue = Value::Initial;
+  };
+
+  TransientUserPasteState mTransientUserPasteState;
 };
 
 }  
