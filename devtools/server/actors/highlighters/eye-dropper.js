@@ -162,14 +162,15 @@ class EyeDropper {
     
     const { pageListenerTarget } = this.highlighterEnv;
     this.#pageEventListenersAbortController = new AbortController();
-    const config = {
-      signal: this.#pageEventListenersAbortController.signal,
-    };
-    pageListenerTarget.addEventListener("mousemove", this, config);
-    pageListenerTarget.addEventListener("click", this, true, config);
-    pageListenerTarget.addEventListener("keydown", this, config);
-    pageListenerTarget.addEventListener("DOMMouseScroll", this, config);
-    pageListenerTarget.addEventListener("FullZoomChange", this, config);
+    const signal = this.#pageEventListenersAbortController.signal;
+    pageListenerTarget.addEventListener("mousemove", this, { signal });
+    pageListenerTarget.addEventListener("click", this, {
+      signal,
+      useCapture: true,
+    });
+    pageListenerTarget.addEventListener("keydown", this, { signal });
+    pageListenerTarget.addEventListener("DOMMouseScroll", this, { signal });
+    pageListenerTarget.addEventListener("FullZoomChange", this, { signal });
 
     
     this.getElement("root").removeAttribute("hidden");
