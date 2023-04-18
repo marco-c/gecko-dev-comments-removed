@@ -307,7 +307,7 @@ bool AppShutdown::IsNoOrLegalShutdownTopic(const char* aTopic) {
 }
 #endif
 
-void AdvanceShutdownPhaseInternal(
+void AppShutdown::AdvanceShutdownPhaseInternal(
     ShutdownPhase aPhase, bool doNotify, const char16_t* aNotificationData,
     const nsCOMPtr<nsISupports>& aNotificationSubject) {
   AssertIsOnMainThread();
@@ -320,6 +320,13 @@ void AdvanceShutdownPhaseInternal(
     return;
   }
   sCurrentShutdownPhase = aPhase;
+
+  
+  
+  
+  
+  
+  
 
 #ifndef ANDROID
   if (sTerminator) {

@@ -660,7 +660,8 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
     
     
     
-    mozilla::KillClearOnShutdown(ShutdownPhase::XPCOMShutdownFinal);
+    AppShutdown::AdvanceShutdownPhase(ShutdownPhase::XPCOMShutdownFinal);
+
     NS_ProcessPendingEvents(thread);
 
     
@@ -674,9 +675,6 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
   }
 
   AbstractThread::ShutdownMainThread();
-
-  mozilla::AppShutdown::MaybeFastShutdown(
-      mozilla::ShutdownPhase::XPCOMShutdownFinal);
 
   
   
@@ -719,9 +717,7 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
 
   
   
-  mozilla::KillClearOnShutdown(ShutdownPhase::CCPostLastCycleCollection);
-  mozilla::AppShutdown::MaybeFastShutdown(
-      mozilla::ShutdownPhase::CCPostLastCycleCollection);
+  AppShutdown::AdvanceShutdownPhase(ShutdownPhase::CCPostLastCycleCollection);
 
   mozilla::scache::StartupCache::DeleteSingleton();
   mozilla::ScriptPreloader::DeleteSingleton();

@@ -87,12 +87,6 @@ class AppShutdown {
   
 
 
-
-  static void MaybeFastShutdown(ShutdownPhase aPhase);
-
-  
-
-
   static const char* GetObserverKey(ShutdownPhase aPhase);
 
   
@@ -108,6 +102,20 @@ class AppShutdown {
 
   static bool IsNoOrLegalShutdownTopic(const char* aTopic);
 #endif
+
+ private:
+  
+
+
+
+  static void MaybeFastShutdown(ShutdownPhase aPhase);
+
+  
+
+
+  static void AdvanceShutdownPhaseInternal(
+      ShutdownPhase aPhase, bool doNotify, const char16_t* aNotificationData,
+      const nsCOMPtr<nsISupports>& aNotificationSubject);
 };
 
 }  
