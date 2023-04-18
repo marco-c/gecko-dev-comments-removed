@@ -8,10 +8,22 @@
 #define mozilla_dom_serviceworkerprivate_h
 
 #include <type_traits>
+#include <functional>
 
 #include "nsCOMPtr.h"
-#include "mozilla/dom/WorkerPrivate.h"
+#include "nsISupportsImpl.h"
+#include "nsTArray.h"
+
+#include "mozilla/Attributes.h"
 #include "mozilla/MozPromise.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/TimeStamp.h"
+#include "mozilla/UniquePtr.h"
+#include "mozilla/dom/FetchService.h"
+#include "mozilla/dom/RemoteWorkerController.h"
+#include "mozilla/dom/RemoteWorkerTypes.h"
+#include "mozilla/dom/ServiceWorkerOpArgs.h"
+#include "mozilla/dom/WorkerPrivate.h"
 
 #define NOTIFICATION_CLICK_EVENT_NAME u"notificationclick"
 #define NOTIFICATION_CLOSE_EVENT_NAME u"notificationclose"
@@ -21,15 +33,18 @@ class nsIWorkerDebugger;
 
 namespace mozilla {
 
+template <typename T>
+class Maybe;
+
 class JSObjectHolder;
 
 namespace dom {
 
 class ClientInfoAndState;
+class RemoteWorkerControllerChild;
 class ServiceWorkerCloneData;
 class ServiceWorkerInfo;
 class ServiceWorkerPrivate;
-class ServiceWorkerPrivateImpl;
 class ServiceWorkerRegistrationInfo;
 
 namespace ipc {
@@ -58,103 +73,13 @@ class KeepAliveToken final : public nsISupports {
   RefPtr<ServiceWorkerPrivate> mPrivate;
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class ServiceWorkerPrivate final {
+class ServiceWorkerPrivate final : public RemoteWorkerObserver {
   friend class KeepAliveToken;
-  friend class ServiceWorkerPrivateImpl;
 
  public:
-  NS_IMETHOD_(MozExternalRefCountType) AddRef();
-  NS_IMETHOD_(MozExternalRefCountType) Release();
-  NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(ServiceWorkerPrivate)
+  NS_INLINE_DECL_REFCOUNTING(ServiceWorkerPrivate, override);
 
-  using HasThreadSafeRefCnt = std::false_type;
   using PromiseExtensionWorkerHasListener = MozPromise<bool, nsresult, false>;
-
- protected:
-  nsCycleCollectingAutoRefCnt mRefCnt;
-  NS_DECL_OWNINGTHREAD
-
- public:
-  
-  
-  class Inner {
-   public:
-    NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
-
-    virtual nsresult SendMessageEvent(
-        RefPtr<ServiceWorkerCloneData>&& aData,
-        const ClientInfoAndState& aClientInfoAndState) = 0;
-
-    virtual nsresult CheckScriptEvaluation(
-        RefPtr<LifeCycleEventCallback> aScriptEvaluationCallback) = 0;
-
-    virtual nsresult SendLifeCycleEvent(
-        const nsAString& aEventName,
-        RefPtr<LifeCycleEventCallback> aCallback) = 0;
-
-    virtual nsresult SendPushEvent(
-        RefPtr<ServiceWorkerRegistrationInfo> aRegistration,
-        const nsAString& aMessageId, const Maybe<nsTArray<uint8_t>>& aData) = 0;
-
-    virtual nsresult SendPushSubscriptionChangeEvent() = 0;
-
-    virtual nsresult SendNotificationEvent(
-        const nsAString& aEventName, const nsAString& aID,
-        const nsAString& aTitle, const nsAString& aDir, const nsAString& aLang,
-        const nsAString& aBody, const nsAString& aTag, const nsAString& aIcon,
-        const nsAString& aData, const nsAString& aBehavior,
-        const nsAString& aScope, uint32_t aDisableOpenClickDelay) = 0;
-
-    virtual nsresult SendFetchEvent(
-        RefPtr<ServiceWorkerRegistrationInfo> aRegistration,
-        nsCOMPtr<nsIInterceptedChannel> aChannel, const nsAString& aClientId,
-        const nsAString& aResultingClientId) = 0;
-
-    virtual RefPtr<PromiseExtensionWorkerHasListener> WakeForExtensionAPIEvent(
-        const nsAString& aExtensionAPINamespace,
-        const nsAString& aExtensionAPIEventName) = 0;
-
-    virtual nsresult SpawnWorkerIfNeeded() = 0;
-
-    virtual void TerminateWorker() = 0;
-
-    virtual void UpdateState(ServiceWorkerState aState) = 0;
-
-    virtual void NoteDeadOuter() = 0;
-
-    virtual bool WorkerIsDead() const = 0;
-  };
 
   explicit ServiceWorkerPrivate(ServiceWorkerInfo* aInfo);
 
@@ -163,14 +88,14 @@ class ServiceWorkerPrivate final {
 
   
   
-  nsresult CheckScriptEvaluation(LifeCycleEventCallback* aCallback);
+  nsresult CheckScriptEvaluation(RefPtr<LifeCycleEventCallback> aCallback);
 
   nsresult SendLifeCycleEvent(const nsAString& aEventType,
-                              LifeCycleEventCallback* aCallback);
+                              RefPtr<LifeCycleEventCallback> aCallback);
 
   nsresult SendPushEvent(const nsAString& aMessageId,
                          const Maybe<nsTArray<uint8_t>>& aData,
-                         ServiceWorkerRegistrationInfo* aRegistration);
+                         RefPtr<ServiceWorkerRegistrationInfo> aRegistration);
 
   nsresult SendPushSubscriptionChangeEvent();
 
@@ -182,17 +107,13 @@ class ServiceWorkerPrivate final {
                                  const nsAString& aBehavior,
                                  const nsAString& aScope);
 
-  nsresult SendFetchEvent(nsIInterceptedChannel* aChannel,
+  nsresult SendFetchEvent(nsCOMPtr<nsIInterceptedChannel> aChannel,
                           nsILoadGroup* aLoadGroup, const nsAString& aClientId,
                           const nsAString& aResultingClientId);
 
   Result<RefPtr<PromiseExtensionWorkerHasListener>, nsresult>
   WakeForExtensionAPIEvent(const nsAString& aExtensionAPINamespace,
                            const nsAString& aEXtensionAPIEventName);
-
-  bool MaybeStoreISupports(nsISupports* aSupports);
-
-  void RemoveISupports(nsISupports* aSupports);
 
   
   
@@ -229,7 +150,117 @@ class ServiceWorkerPrivate final {
 
   void SetHandlesFetch(bool aValue);
 
+  RefPtr<GenericPromise> SetSkipWaitingFlag();
+
+  static void RunningShutdown() {
+    
+    UpdateRunning(0, 0);
+    MOZ_ASSERT(sRunningServiceWorkers == 0);
+    MOZ_ASSERT(sRunningServiceWorkersFetch == 0);
+  }
+
+  
+
+
+  static void UpdateRunning(int32_t aDelta, int32_t aFetchDelta);
+
  private:
+  class PendingFunctionalEvent {
+   public:
+    PendingFunctionalEvent(
+        ServiceWorkerPrivate* aOwner,
+        RefPtr<ServiceWorkerRegistrationInfo>&& aRegistration);
+
+    virtual ~PendingFunctionalEvent();
+
+    virtual nsresult Send() = 0;
+
+   protected:
+    ServiceWorkerPrivate* const MOZ_NON_OWNING_REF mOwner;
+    RefPtr<ServiceWorkerRegistrationInfo> mRegistration;
+  };
+
+  class PendingPushEvent final : public PendingFunctionalEvent {
+   public:
+    PendingPushEvent(ServiceWorkerPrivate* aOwner,
+                     RefPtr<ServiceWorkerRegistrationInfo>&& aRegistration,
+                     ServiceWorkerPushEventOpArgs&& aArgs);
+
+    nsresult Send() override;
+
+   private:
+    ServiceWorkerPushEventOpArgs mArgs;
+  };
+
+  class PendingFetchEvent final : public PendingFunctionalEvent {
+   public:
+    PendingFetchEvent(
+        ServiceWorkerPrivate* aOwner,
+        RefPtr<ServiceWorkerRegistrationInfo>&& aRegistration,
+        ParentToParentServiceWorkerFetchEventOpArgs&& aArgs,
+        nsCOMPtr<nsIInterceptedChannel>&& aChannel,
+        RefPtr<FetchServicePromises>&& aPreloadResponseReadyPromises);
+
+    nsresult Send() override;
+
+    ~PendingFetchEvent();
+
+   private:
+    ParentToParentServiceWorkerFetchEventOpArgs mArgs;
+    nsCOMPtr<nsIInterceptedChannel> mChannel;
+    
+    
+    
+    
+    
+    
+    RefPtr<FetchServicePromises> mPreloadResponseReadyPromises;
+  };
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  class RAIIActorPtrHolder final {
+   public:
+    NS_INLINE_DECL_REFCOUNTING(RAIIActorPtrHolder)
+
+    explicit RAIIActorPtrHolder(
+        already_AddRefed<RemoteWorkerControllerChild> aActor);
+
+    RAIIActorPtrHolder(const RAIIActorPtrHolder& aOther) = delete;
+    RAIIActorPtrHolder& operator=(const RAIIActorPtrHolder& aOther) = delete;
+
+    RAIIActorPtrHolder(RAIIActorPtrHolder&& aOther) = delete;
+    RAIIActorPtrHolder& operator=(RAIIActorPtrHolder&& aOther) = delete;
+
+    RemoteWorkerControllerChild* operator->() const
+        MOZ_NO_ADDREF_RELEASE_ON_RETURN;
+
+    RemoteWorkerControllerChild* get() const;
+
+    RefPtr<GenericPromise> OnDestructor();
+
+   private:
+    ~RAIIActorPtrHolder();
+
+    MozPromiseHolder<GenericPromise> mDestructorPromiseHolder;
+
+    const RefPtr<RemoteWorkerControllerChild> mActor;
+  };
+
   enum WakeUpReason {
     FetchEvent = 0,
     PushEvent,
@@ -255,23 +286,67 @@ class ServiceWorkerPrivate final {
 
   void ReleaseToken();
 
-  nsresult SpawnWorkerIfNeeded(WakeUpReason aWhy,
-                               bool* aNewWorkerCreated = nullptr,
-                               nsILoadGroup* aLoadGroup = nullptr);
+  nsresult SpawnWorkerIfNeeded();
 
   ~ServiceWorkerPrivate();
 
   already_AddRefed<KeepAliveToken> CreateEventKeepAliveToken();
+
+  nsresult Initialize();
+
+  bool WorkerIsDead() const;
+
+  
+
+
+  void CreationFailed() override;
+
+  void CreationSucceeded() override;
+
+  void ErrorReceived(const ErrorValue& aError) override;
+
+  void LockNotified(bool aCreated) final {
+    
+  }
+
+  void Terminated() override;
+
+  
+  void RefreshRemoteWorkerData(
+      const RefPtr<ServiceWorkerRegistrationInfo>& aRegistration);
+
+  nsresult SendPushEventInternal(
+      RefPtr<ServiceWorkerRegistrationInfo>&& aRegistration,
+      ServiceWorkerPushEventOpArgs&& aArgs);
+
+  
+  
+  RefPtr<FetchServicePromises> SetupNavigationPreload(
+      nsCOMPtr<nsIInterceptedChannel>& aChannel,
+      const RefPtr<ServiceWorkerRegistrationInfo>& aRegistration);
+
+  nsresult SendFetchEventInternal(
+      RefPtr<ServiceWorkerRegistrationInfo>&& aRegistration,
+      ParentToParentServiceWorkerFetchEventOpArgs&& aArgs,
+      nsCOMPtr<nsIInterceptedChannel>&& aChannel,
+      RefPtr<FetchServicePromises>&& aPreloadResponseReadyPromises);
+
+  void Shutdown();
+
+  RefPtr<GenericNonExclusivePromise> ShutdownInternal(
+      uint32_t aShutdownStateId);
+
+  nsresult ExecServiceWorkerOp(
+      ServiceWorkerOpArgs&& aArgs,
+      std::function<void(ServiceWorkerOpResult&&)>&& aSuccessCallback,
+      std::function<void()>&& aFailureCallback = [] {});
 
   
   
   
   ServiceWorkerInfo* MOZ_NON_OWNING_REF mInfo;
 
-  
-  
-  
-  RefPtr<WorkerPrivate> mWorkerPrivate;
+  nsTArray<UniquePtr<PendingFunctionalEvent>> mPendingFunctionalEvents;
 
   nsCOMPtr<nsITimer> mIdleWorkerTimer;
 
@@ -287,18 +362,6 @@ class ServiceWorkerPrivate final {
   
   
   
-  nsTArray<nsCOMPtr<nsISupports>> mSupportsArray;
-
-  
-  
-  nsTArray<RefPtr<WorkerRunnable>> mPendingFunctionalEvents;
-
-  RefPtr<Inner> mInner;
-
-  
-  
-  
-  
   
   
   MozPromiseHolder<GenericPromise> mIdlePromiseHolder;
@@ -306,6 +369,24 @@ class ServiceWorkerPrivate final {
 #ifdef DEBUG
   bool mIdlePromiseObtained = false;
 #endif
+
+  RefPtr<RAIIActorPtrHolder> mControllerChild;
+
+  RemoteWorkerData mRemoteWorkerData;
+
+  TimeStamp mServiceWorkerLaunchTimeStart;
+
+  
+  
+  static uint32_t sRunningServiceWorkers;
+  static uint32_t sRunningServiceWorkersFetch;
+  static uint32_t sRunningServiceWorkersMax;
+  static uint32_t sRunningServiceWorkersFetchMax;
+
+  
+  
+  
+  enum { UnknownState, Enabled, Disabled } mHandlesFetch{UnknownState};
 };
 
 }  
