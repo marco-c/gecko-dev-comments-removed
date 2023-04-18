@@ -501,9 +501,7 @@ JSObject* js::TenuringTracer::moveToTenuredSlow(JSObject* src) {
   
   
   
-  if (src->is<ArrayObject>()) {
-    srcSize = sizeof(NativeObject);
-  } else if (src->is<TypedArrayObject>()) {
+  if (src->is<TypedArrayObject>()) {
     TypedArrayObject* tarray = &src->as<TypedArrayObject>();
     
     
@@ -518,6 +516,8 @@ JSObject* js::TenuringTracer::moveToTenuredSlow(JSObject* src) {
       size_t headerSize = Arena::thingSize(srcKind);
       srcSize = headerSize + tarray->byteLength();
     }
+  } else if (src->canHaveFixedElements()) {
+    srcSize = sizeof(NativeObject);
   }
 
   tenuredSize += srcSize;
