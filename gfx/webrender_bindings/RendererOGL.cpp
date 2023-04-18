@@ -157,7 +157,6 @@ RenderedFrameId RendererOGL::UpdateAndRender(
     
     
     return RenderedFrameId();
-    ;
   }
   
 
