@@ -3641,7 +3641,8 @@ ContentParent::Observe(nsISupports* aSubject, const char* aTopic,
     NS_LossyConvertUTF16toASCII strData(aData);
 
     
-    if (!ShouldSyncPreference(strData.Data())) {
+    if (!ShouldSyncPreference(strData.Data(),
+                               false)) {
       return NS_OK;
     }
 
