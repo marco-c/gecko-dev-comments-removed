@@ -64,78 +64,84 @@ add_setup(async () => {
   });
 });
 
-add_task(async function() {
-  
-  async function testOnce({
-    isPrivileged = false,
-    temporarilyInstalled = false,
-  } = {}) {
-    let extension = ExtensionTestUtils.loadExtension({
-      manifest: {
-        permissions: ["mozillaAddons", "tabs"],
-      },
-      background() {
-        browser.test.sendMessage(
-          "result",
-          browser.privileged instanceof Object
-        );
-      },
-      isPrivileged,
-      temporarilyInstalled,
-    });
-
-    if (temporarilyInstalled && !isPrivileged) {
-      ExtensionTestUtils.failOnSchemaWarnings(false);
-      let { messages } = await promiseConsoleOutput(async () => {
-        await Assert.rejects(
-          extension.startup(),
-          /Using the privileged permission/,
-          "Startup failed with privileged permission"
-        );
-      });
-      ExtensionTestUtils.failOnSchemaWarnings(true);
-      AddonTestUtils.checkMessages(
-        messages,
-        {
-          expected: [
-            {
-              message: /Using the privileged permission 'mozillaAddons' requires a privileged add-on/,
-            },
-          ],
+add_task(
+  {
+    
+    pref_set: [["extensions.experiments.enabled", false]],
+  },
+  async function test_privileged_namespace_disallowed() {
+    
+    async function testOnce({
+      isPrivileged = false,
+      temporarilyInstalled = false,
+    } = {}) {
+      let extension = ExtensionTestUtils.loadExtension({
+        manifest: {
+          permissions: ["mozillaAddons", "tabs"],
         },
-        true
-      );
-      return null;
+        background() {
+          browser.test.sendMessage(
+            "result",
+            browser.privileged instanceof Object
+          );
+        },
+        isPrivileged,
+        temporarilyInstalled,
+      });
+
+      if (temporarilyInstalled && !isPrivileged) {
+        ExtensionTestUtils.failOnSchemaWarnings(false);
+        let { messages } = await promiseConsoleOutput(async () => {
+          await Assert.rejects(
+            extension.startup(),
+            /Using the privileged permission/,
+            "Startup failed with privileged permission"
+          );
+        });
+        ExtensionTestUtils.failOnSchemaWarnings(true);
+        AddonTestUtils.checkMessages(
+          messages,
+          {
+            expected: [
+              {
+                message: /Using the privileged permission 'mozillaAddons' requires a privileged add-on/,
+              },
+            ],
+          },
+          true
+        );
+        return null;
+      }
+      await extension.startup();
+      let result = await extension.awaitMessage("result");
+      await extension.unload();
+      return result;
     }
-    await extension.startup();
-    let result = await extension.awaitMessage("result");
-    await extension.unload();
-    return result;
+
+    
+    let result = await testOnce({ temporarilyInstalled: true });
+    equal(
+      result,
+      null,
+      "Privileged namespace should not be accessible to a regular webextension"
+    );
+
+    result = await testOnce({ isPrivileged: true });
+    equal(
+      result,
+      true,
+      "Privileged namespace should be accessible to a webextension signed with Mozilla Extensions"
+    );
+
+    
+    result = await testOnce();
+    equal(
+      result,
+      false,
+      "Privileged namespace should not be accessible to a regular webextension"
+    );
   }
-
-  
-  let result = await testOnce({ temporarilyInstalled: true });
-  equal(
-    result,
-    null,
-    "Privileged namespace should not be accessible to a regular webextension"
-  );
-
-  result = await testOnce({ isPrivileged: true });
-  equal(
-    result,
-    true,
-    "Privileged namespace should be accessible to a webextension signed with Mozilla Extensions"
-  );
-
-  
-  result = await testOnce();
-  equal(
-    result,
-    false,
-    "Privileged namespace should not be accessible to a regular webextension"
-  );
-});
+);
 
 
 add_task(function test_privileged_permissions_match() {
