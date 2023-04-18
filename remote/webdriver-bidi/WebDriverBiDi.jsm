@@ -136,6 +136,30 @@ class WebDriverBiDi {
   
 
 
+
+
+
+
+
+
+  getSessionReadinessStatus() {
+    if (this.session) {
+      
+      return {
+        ready: false,
+        message: "Session already started",
+      };
+    }
+
+    return {
+      ready: true,
+      message: "",
+    };
+  }
+
+  
+
+
   start() {
     if (this._running) {
       return;
