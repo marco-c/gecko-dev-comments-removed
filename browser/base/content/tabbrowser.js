@@ -1183,8 +1183,7 @@
         this.updateTitlebar();
 
         newTab.removeAttribute("titlechanged");
-        newTab.removeAttribute("attention");
-        this._tabAttrModified(newTab, ["attention"]);
+        newTab.attention = false;
 
         
         
@@ -5924,8 +5923,7 @@
 
             
             if (!promptPrincipal || promptPrincipal.isNullPrincipal) {
-              tabForEvent.setAttribute("attention", "true");
-              this._tabAttrModified(tabForEvent, ["attention"]);
+              tabForEvent.attention = true;
               return;
             }
 
@@ -5946,8 +5944,7 @@
                 tabPrompt.onNextPromptShowAllowFocusCheckboxFor(
                   promptPrincipal
                 );
-                tabForEvent.setAttribute("attention", "true");
-                this._tabAttrModified(tabForEvent, ["attention"]);
+                tabForEvent.attention = true;
                 return;
               }
             }
