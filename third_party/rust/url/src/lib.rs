@@ -105,22 +105,35 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/url/2.0.0")]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#![doc(html_root_url = "https://docs.rs/url/2.2.2")]
 
 #[macro_use]
 extern crate matches;
-extern crate idna;
-extern crate percent_encoding;
+pub use form_urlencoded;
+
 #[cfg(feature = "serde")]
 extern crate serde;
 
-use host::HostInternal;
-use parser::{to_u32, Context, Parser, SchemeType, PATH_SEGMENT, USERINFO};
+use crate::host::HostInternal;
+use crate::parser::{to_u32, Context, Parser, SchemeType, PATH_SEGMENT, USERINFO};
 use percent_encoding::{percent_decode, percent_encode, utf8_percent_encode};
 use std::borrow::Borrow;
 use std::cmp;
-#[cfg(feature = "serde")]
-use std::error::Error;
 use std::fmt::{self, Write};
 use std::hash;
 use std::io;
@@ -130,21 +143,21 @@ use std::ops::{Range, RangeFrom, RangeTo};
 use std::path::{Path, PathBuf};
 use std::str;
 
-pub use host::Host;
-pub use origin::{OpaqueOrigin, Origin};
-pub use parser::{ParseError, SyntaxViolation};
-pub use path_segments::PathSegmentsMut;
-pub use query_encoding::EncodingOverride;
-pub use slicing::Position;
+use std::convert::TryFrom;
+
+pub use crate::host::Host;
+pub use crate::origin::{OpaqueOrigin, Origin};
+pub use crate::parser::{ParseError, SyntaxViolation};
+pub use crate::path_segments::PathSegmentsMut;
+pub use crate::slicing::Position;
+pub use form_urlencoded::EncodingOverride;
 
 mod host;
 mod origin;
 mod parser;
 mod path_segments;
-mod query_encoding;
 mod slicing;
 
-pub mod form_urlencoded;
 #[doc(hidden)]
 pub mod quirks;
 
@@ -224,7 +237,7 @@ impl<'a> ParseOptions<'a> {
     }
 
     
-    pub fn parse(self, input: &str) -> Result<Url, ::ParseError> {
+    pub fn parse(self, input: &str) -> Result<Url, crate::ParseError> {
         Parser {
             serialization: String::with_capacity(input.len()),
             base_url: self.base_url,
@@ -259,7 +272,7 @@ impl Url {
     
     
     #[inline]
-    pub fn parse(input: &str) -> Result<Url, ::ParseError> {
+    pub fn parse(input: &str) -> Result<Url, crate::ParseError> {
         Url::options().parse(input)
     }
 
@@ -287,8 +300,9 @@ impl Url {
     
     
     
+    
     #[inline]
-    pub fn parse_with_params<I, K, V>(input: &str, iter: I) -> Result<Url, ::ParseError>
+    pub fn parse_with_params<I, K, V>(input: &str, iter: I) -> Result<Url, crate::ParseError>
     where
         I: IntoIterator,
         I::Item: Borrow<(K, V)>,
@@ -335,9 +349,144 @@ impl Url {
     
     
     
+    
+    
+    
     #[inline]
-    pub fn join(&self, input: &str) -> Result<Url, ::ParseError> {
+    pub fn join(&self, input: &str) -> Result<Url, crate::ParseError> {
         Url::options().base_url(Some(self)).parse(input)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn make_relative(&self, url: &Url) -> Option<String> {
+        if self.cannot_be_a_base() {
+            return None;
+        }
+
+        
+        if self.scheme() != url.scheme() || self.host() != url.host() || self.port() != url.port() {
+            return None;
+        }
+
+        
+
+        
+        let mut relative = String::new();
+
+        
+        fn extract_path_filename(s: &str) -> (&str, &str) {
+            let last_slash_idx = s.rfind('/').unwrap_or(0);
+            let (path, filename) = s.split_at(last_slash_idx);
+            if filename.is_empty() {
+                (path, "")
+            } else {
+                (path, &filename[1..])
+            }
+        }
+
+        let (base_path, base_filename) = extract_path_filename(self.path());
+        let (url_path, url_filename) = extract_path_filename(url.path());
+
+        let mut base_path = base_path.split('/').peekable();
+        let mut url_path = url_path.split('/').peekable();
+
+        
+        while base_path.peek().is_some() && base_path.peek() == url_path.peek() {
+            base_path.next();
+            url_path.next();
+        }
+
+        
+        for base_path_segment in base_path {
+            
+            if base_path_segment.is_empty() {
+                break;
+            }
+
+            if !relative.is_empty() {
+                relative.push('/');
+            }
+
+            relative.push_str("..");
+        }
+
+        
+        for url_path_segment in url_path {
+            if !relative.is_empty() {
+                relative.push('/');
+            }
+
+            relative.push_str(url_path_segment);
+        }
+
+        
+        if base_filename != url_filename {
+            
+            
+            
+            
+            if url_filename.is_empty() {
+                relative.push('/');
+            } else {
+                if !relative.is_empty() {
+                    relative.push('/');
+                }
+                relative.push_str(url_filename);
+            }
+        }
+
+        
+        if let Some(query) = url.query() {
+            relative.push('?');
+            relative.push_str(query);
+        }
+
+        if let Some(fragment) = url.fragment() {
+            relative.push('#');
+            relative.push_str(fragment);
+        }
+
+        Some(relative)
     }
 
     
@@ -409,8 +558,9 @@ impl Url {
     
     
     #[inline]
+    #[deprecated(since = "2.3.0", note = "use Into<String>")]
     pub fn into_string(self) -> String {
-        self.serialization
+        self.into()
     }
 
     
@@ -456,13 +606,15 @@ impl Url {
 
         if self.slice(self.scheme_end + 1..).starts_with("//") {
             
-            match self.byte_at(self.username_end) {
-                b':' => {
-                    assert!(self.host_start >= self.username_end + 2);
-                    assert_eq!(self.byte_at(self.host_start - 1), b'@');
+            if self.username_end != self.serialization.len() as u32 {
+                match self.byte_at(self.username_end) {
+                    b':' => {
+                        assert!(self.host_start >= self.username_end + 2);
+                        assert_eq!(self.byte_at(self.host_start - 1), b'@');
+                    }
+                    b'@' => assert!(self.host_start == self.username_end + 1),
+                    _ => assert_eq!(self.username_end, self.scheme_end + 3),
                 }
-                b'@' => assert!(self.host_start == self.username_end + 1),
-                _ => assert_eq!(self.username_end, self.scheme_end + 3),
             }
             assert!(self.host_start >= self.username_end);
             assert!(self.host_end >= self.host_start);
@@ -490,7 +642,10 @@ impl Url {
                     Some(port_str.parse::<u16>().expect("Couldn't parse port?"))
                 );
             }
-            assert_eq!(self.byte_at(self.path_start), b'/');
+            assert!(
+                self.path_start as usize == self.serialization.len()
+                    || matches!(self.byte_at(self.path_start), b'/' | b'#' | b'?')
+            );
         } else {
             
             assert_eq!(self.username_end, self.scheme_end + 1);
@@ -501,11 +656,11 @@ impl Url {
             assert_eq!(self.path_start, self.scheme_end + 1);
         }
         if let Some(start) = self.query_start {
-            assert!(start > self.path_start);
+            assert!(start >= self.path_start);
             assert_eq!(self.byte_at(start), b'?');
         }
         if let Some(start) = self.fragment_start {
-            assert!(start > self.path_start);
+            assert!(start >= self.path_start);
             assert_eq!(self.byte_at(start), b'#');
         }
         if let (Some(query_start), Some(fragment_start)) = (self.query_start, self.fragment_start) {
@@ -685,7 +840,7 @@ impl Url {
     
     #[inline]
     pub fn cannot_be_a_base(&self) -> bool {
-        !self.slice(self.path_start..).starts_with('/')
+        !self.slice(self.scheme_end + 1..).starts_with('/')
     }
 
     
@@ -711,8 +866,9 @@ impl Url {
     
     
     pub fn username(&self) -> &str {
-        if self.has_authority() {
-            self.slice(self.scheme_end + ("://".len() as u32)..self.username_end)
+        let scheme_separator_len = "://".len() as u32;
+        if self.has_authority() && self.username_end > self.scheme_end + scheme_separator_len {
+            self.slice(self.scheme_end + scheme_separator_len..self.username_end)
         } else {
             ""
         }
@@ -745,7 +901,10 @@ impl Url {
     pub fn password(&self) -> Option<&str> {
         
         
-        if self.has_authority() && self.byte_at(self.username_end) == b':' {
+        if self.has_authority()
+            && self.username_end != self.serialization.len() as u32
+            && self.byte_at(self.username_end) == b':'
+        {
             debug_assert!(self.byte_at(self.host_start - 1) == b'@');
             Some(self.slice(self.username_end + 1..self.host_start - 1))
         } else {
@@ -778,6 +937,7 @@ impl Url {
         !matches!(self.host, HostInternal::None)
     }
 
+    
     
     
     
@@ -848,6 +1008,7 @@ impl Url {
     
     
     
+    
     pub fn host(&self) -> Option<Host<&str>> {
         match self.host {
             HostInternal::None => None,
@@ -857,6 +1018,8 @@ impl Url {
         }
     }
 
+    
+    
     
     
     
@@ -1071,7 +1234,8 @@ impl Url {
     
     
     
-    pub fn path_segments(&self) -> Option<str::Split<char>> {
+    #[allow(clippy::manual_strip)] 
+    pub fn path_segments(&self) -> Option<str::Split<'_, char>> {
         let path = self.path();
         if path.starts_with('/') {
             Some(path[1..].split('/'))
@@ -1143,7 +1307,7 @@ impl Url {
     
 
     #[inline]
-    pub fn query_pairs(&self) -> form_urlencoded::Parse {
+    pub fn query_pairs(&self) -> form_urlencoded::Parse<'_> {
         form_urlencoded::parse(self.query().unwrap_or("").as_bytes())
     }
 
@@ -1186,7 +1350,7 @@ impl Url {
         })
     }
 
-    fn mutate<F: FnOnce(&mut Parser) -> R, R>(&mut self, f: F) -> R {
+    fn mutate<F: FnOnce(&mut Parser<'_>) -> R, R>(&mut self, f: F) -> R {
         let mut parser = Parser::for_setter(mem::replace(&mut self.serialization, String::new()));
         let result = f(&mut parser);
         self.serialization = parser.serialization;
@@ -1226,7 +1390,7 @@ impl Url {
         if let Some(input) = fragment {
             self.fragment_start = Some(to_u32(self.serialization.len()).unwrap());
             self.serialization.push('#');
-            self.mutate(|parser| parser.parse_fragment(parser::Input::new(input)))
+            self.mutate(|parser| parser.parse_fragment(parser::Input::no_trim(input)))
         } else {
             self.fragment_start = None
         }
@@ -1284,7 +1448,12 @@ impl Url {
             let scheme_type = SchemeType::from(self.scheme());
             let scheme_end = self.scheme_end;
             self.mutate(|parser| {
-                parser.parse_query(scheme_type, scheme_end, parser::Input::new(input))
+                let vfn = parser.violation_fn;
+                parser.parse_query(
+                    scheme_type,
+                    scheme_end,
+                    parser::Input::trim_tab_and_newlines(input, vfn),
+                )
             });
         }
 
@@ -1323,7 +1492,7 @@ impl Url {
     
     
     
-    pub fn query_pairs_mut(&mut self) -> form_urlencoded::Serializer<UrlQuery> {
+    pub fn query_pairs_mut(&mut self) -> form_urlencoded::Serializer<'_, UrlQuery<'_>> {
         let fragment = self.take_fragment();
 
         let query_start;
@@ -1400,7 +1569,8 @@ impl Url {
     
     
     
-    pub fn path_segments_mut(&mut self) -> Result<PathSegmentsMut, ()> {
+    #[allow(clippy::result_unit_err)]
+    pub fn path_segments_mut(&mut self) -> Result<PathSegmentsMut<'_>, ()> {
         if self.cannot_be_a_base() {
             Err(())
         } else {
@@ -1483,6 +1653,7 @@ impl Url {
     
     
     
+    #[allow(clippy::result_unit_err)]
     pub fn set_port(&mut self, mut port: Option<u16>) -> Result<(), ()> {
         
         if !self.has_host() || self.host() == Some(Host::Domain("")) || self.scheme() == "file" {
@@ -1622,17 +1793,35 @@ impl Url {
         }
 
         if let Some(host) = host {
-            if host == "" && SchemeType::from(self.scheme()).is_special() {
+            if host.is_empty() && SchemeType::from(self.scheme()).is_special() {
                 return Err(ParseError::EmptyHost);
             }
+            let mut host_substr = host;
+            
+            if !host.starts_with('[') || !host.ends_with(']') {
+                match host.find(':') {
+                    Some(0) => {
+                        
+                        return Err(ParseError::InvalidDomainCharacter);
+                    }
+                    
+                    Some(colon_index) => {
+                        host_substr = &host[..colon_index];
+                    }
+                    None => {}
+                }
+            }
             if SchemeType::from(self.scheme()).is_special() {
-                self.set_host_internal(Host::parse(host)?, None)
+                self.set_host_internal(Host::parse(host_substr)?, None);
             } else {
-                self.set_host_internal(Host::parse_opaque(host)?, None)
+                self.set_host_internal(Host::parse_opaque(host_substr)?, None);
             }
         } else if self.has_host() {
-            if SchemeType::from(self.scheme()).is_special() {
+            let scheme_type = SchemeType::from(self.scheme());
+            if scheme_type.is_special() {
                 return Err(ParseError::EmptyHost);
+            } else if self.serialization.len() == self.path_start as usize {
+                self.serialization.push('/');
             }
             debug_assert!(self.byte_at(self.scheme_end) == b':');
             debug_assert!(self.byte_at(self.path_start) == b'/');
@@ -1735,6 +1924,7 @@ impl Url {
     
     
     
+    #[allow(clippy::result_unit_err)]
     pub fn set_ip_host(&mut self, address: IpAddr) -> Result<(), ()> {
         if self.cannot_be_a_base() {
             return Err(());
@@ -1774,6 +1964,7 @@ impl Url {
     
     
     
+    #[allow(clippy::result_unit_err)]
     pub fn set_password(&mut self, password: Option<&str>) -> Result<(), ()> {
         
         if !self.has_host() || self.host() == Some(Host::Domain("")) || self.scheme() == "file" {
@@ -1866,6 +2057,7 @@ impl Url {
     
     
     
+    #[allow(clippy::result_unit_err)]
     pub fn set_username(&mut self, username: &str) -> Result<(), ()> {
         
         if !self.has_host() || self.host() == Some(Host::Domain("")) || self.scheme() == "file" {
@@ -1975,12 +2167,76 @@ impl Url {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[allow(clippy::result_unit_err, clippy::suspicious_operation_groupings)]
     pub fn set_scheme(&mut self, scheme: &str) -> Result<(), ()> {
         let mut parser = Parser::for_setter(String::new());
         let remaining = parser.parse_scheme(parser::Input::new(scheme))?;
-        if !remaining.is_empty()
-            || (!self.has_host() && SchemeType::from(&parser.serialization).is_special())
+        let new_scheme_type = SchemeType::from(&parser.serialization);
+        let old_scheme_type = SchemeType::from(self.scheme());
+        
+        if (new_scheme_type.is_special() && !old_scheme_type.is_special()) ||
+            
+            (!new_scheme_type.is_special() && old_scheme_type.is_special()) ||
+            
+            
+            (new_scheme_type.is_file() && self.has_authority())
         {
+            return Err(());
+        }
+
+        if !remaining.is_empty() || (!self.has_host() && new_scheme_type.is_special()) {
             return Err(());
         }
         let old_scheme_end = self.scheme_end;
@@ -2004,6 +2260,14 @@ impl Url {
 
         parser.serialization.push_str(self.slice(old_scheme_end..));
         self.serialization = parser.serialization;
+
+        
+        
+        
+        
+        let previous_port = self.port();
+        let _ = self.set_port(previous_port);
+
         Ok(())
     }
 
@@ -2035,6 +2299,7 @@ impl Url {
     
     
     #[cfg(any(unix, windows, target_os = "redox"))]
+    #[allow(clippy::result_unit_err)]
     pub fn from_file_path<P: AsRef<Path>>(path: P) -> Result<Url, ()> {
         let mut serialization = "file://".to_owned();
         let host_start = serialization.len() as u32;
@@ -2071,6 +2336,7 @@ impl Url {
     
     
     #[cfg(any(unix, windows, target_os = "redox"))]
+    #[allow(clippy::result_unit_err)]
     pub fn from_directory_path<P: AsRef<Path>>(path: P) -> Result<Url, ()> {
         let mut url = Url::from_file_path(path)?;
         if !url.serialization.ends_with('/') {
@@ -2187,6 +2453,7 @@ impl Url {
     
     #[inline]
     #[cfg(any(unix, windows, target_os = "redox"))]
+    #[allow(clippy::result_unit_err)]
     pub fn to_file_path(&self) -> Result<PathBuf, ()> {
         if let Some(segments) = self.path_segments() {
             let host = match self.host() {
@@ -2223,16 +2490,31 @@ impl str::FromStr for Url {
     type Err = ParseError;
 
     #[inline]
-    fn from_str(input: &str) -> Result<Url, ::ParseError> {
+    fn from_str(input: &str) -> Result<Url, crate::ParseError> {
         Url::parse(input)
+    }
+}
+
+impl<'a> TryFrom<&'a str> for Url {
+    type Error = ParseError;
+
+    fn try_from(s: &'a str) -> Result<Self, Self::Error> {
+        Url::parse(s)
     }
 }
 
 
 impl fmt::Display for Url {
     #[inline]
-    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Display::fmt(&self.serialization, formatter)
+    }
+}
+
+
+impl From<Url> for String {
+    fn from(value: Url) -> String {
+        value.serialization
     }
 }
 
@@ -2240,7 +2522,18 @@ impl fmt::Display for Url {
 impl fmt::Debug for Url {
     #[inline]
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Debug::fmt(&self.serialization, formatter)
+        formatter
+            .debug_struct("Url")
+            .field("scheme", &self.scheme())
+            .field("cannot_be_a_base", &self.cannot_be_a_base())
+            .field("username", &self.username())
+            .field("password", &self.password())
+            .field("host", &self.host())
+            .field("port", &self.port())
+            .field("path", &self.path())
+            .field("query", &self.query())
+            .field("fragment", &self.fragment())
+            .finish()
     }
 }
 
@@ -2352,8 +2645,10 @@ impl<'de> serde::Deserialize<'de> for Url {
             where
                 E: Error,
             {
-                Url::parse(s)
-                    .map_err(|err| Error::invalid_value(Unexpected::Str(s), &err.description()))
+                Url::parse(s).map_err(|err| {
+                    let err_s = format!("{}", err);
+                    Error::invalid_value(Unexpected::Str(s), &err_s.as_str())
+                })
             }
         }
 
@@ -2408,6 +2703,7 @@ fn path_to_file_url_segments_windows(
     }
     let mut components = path.components();
 
+    let host_start = serialization.len() + 1;
     let host_end;
     let host_internal;
     match components.next() {
@@ -2434,14 +2730,23 @@ fn path_to_file_url_segments_windows(
         _ => return Err(()),
     }
 
+    let mut path_only_has_prefix = true;
     for component in components {
         if component == Component::RootDir {
             continue;
         }
+        path_only_has_prefix = false;
         
         let component = component.as_os_str().to_str().ok_or(())?;
         serialization.push('/');
         serialization.extend(percent_encode(component.as_bytes(), PATH_SEGMENT));
+    }
+    
+    if serialization.len() > host_start
+        && parser::is_windows_drive_letter(&serialization[host_start..])
+        && path_only_has_prefix
+    {
+        serialization.push('/');
     }
     Ok((host_end, host_internal))
 }
@@ -2449,7 +2754,7 @@ fn path_to_file_url_segments_windows(
 #[cfg(any(unix, target_os = "redox"))]
 fn file_url_segments_to_pathbuf(
     host: Option<&str>,
-    segments: str::Split<char>,
+    segments: str::Split<'_, char>,
 ) -> Result<PathBuf, ()> {
     use std::ffi::OsStr;
     use std::os::unix::prelude::OsStrExt;
@@ -2466,6 +2771,13 @@ fn file_url_segments_to_pathbuf(
     for segment in segments {
         bytes.push(b'/');
         bytes.extend(percent_decode(segment.as_bytes()));
+    }
+    
+    if bytes.len() > 2
+        && matches!(bytes[bytes.len() - 2], b'a'..=b'z' | b'A'..=b'Z')
+        && matches!(bytes[bytes.len() - 1], b':' | b'|')
+    {
+        bytes.push(b'/');
     }
     let os_str = OsStr::from_bytes(&bytes);
     let path = PathBuf::from(os_str);
@@ -2488,7 +2800,7 @@ fn file_url_segments_to_pathbuf(
 #[cfg_attr(not(windows), allow(dead_code))]
 fn file_url_segments_to_pathbuf_windows(
     host: Option<&str>,
-    mut segments: str::Split<char>,
+    mut segments: str::Split<'_, char>,
 ) -> Result<PathBuf, ()> {
     let mut string = if let Some(host) = host {
         r"\\".to_owned() + host
@@ -2542,6 +2854,30 @@ fn file_url_segments_to_pathbuf_windows(
 pub struct UrlQuery<'a> {
     url: Option<&'a mut Url>,
     fragment: Option<String>,
+}
+
+
+
+
+
+
+
+
+
+
+
+impl<'a> form_urlencoded::Target for UrlQuery<'a> {
+    fn as_mut_string(&mut self) -> &mut String {
+        &mut self.url.as_mut().unwrap().serialization
+    }
+
+    fn finish(mut self) -> &'a mut Url {
+        let url = self.url.take().unwrap();
+        url.restore_already_parsed_fragment(self.fragment.take());
+        url
+    }
+
+    type Finished = &'a mut Url;
 }
 
 impl<'a> Drop for UrlQuery<'a> {
