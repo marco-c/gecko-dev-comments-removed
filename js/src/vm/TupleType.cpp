@@ -297,14 +297,14 @@ bool TupleConstructor(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
-bool IsTuple(const Value& v) {
+bool js::IsTuple(const Value& v) {
   if (v.isExtendedPrimitive()) return v.toExtendedPrimitive().is<TupleType>();
   if (v.isObject()) return v.toObject().is<TupleObject>();
   return false;
 }
 
 
-TupleType& ThisTupleValue(const Value& val) {
+TupleType& TupleType::thisTupleValue(const Value& val) {
   MOZ_ASSERT(IsTuple(val));
   return (val.isExtendedPrimitive() ? val.toExtendedPrimitive().as<TupleType>()
                                     : val.toObject().as<TupleObject>().unbox());
@@ -315,7 +315,7 @@ bool HandleIsTuple(HandleValue v) { return IsTuple(v.get()); }
 
 bool lengthAccessor_impl(JSContext* cx, const CallArgs& args) {
   
-  TupleType& tuple = ThisTupleValue(args.thisv().get());
+  TupleType& tuple = TupleType::thisTupleValue(args.thisv().get());
   
   args.rval().setInt32(tuple.length());
   return true;
