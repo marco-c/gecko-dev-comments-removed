@@ -26,6 +26,7 @@ class TextCompositionArray;
 class TextComposition;
 
 namespace dom {
+class Element;
 class Selection;
 }  
 
@@ -153,14 +154,14 @@ class IMEStateManager {
   MOZ_CAN_RUN_SCRIPT static nsresult OnDestroyPresContext(
       nsPresContext& aPresContext);
   MOZ_CAN_RUN_SCRIPT static nsresult OnRemoveContent(
-      nsPresContext& aPresContext, nsIContent& aContent);
+      nsPresContext& aPresContext, dom::Element& aElement);
   
 
 
 
 
   MOZ_CAN_RUN_SCRIPT static nsresult OnChangeFocus(
-      nsPresContext* aPresContext, nsIContent* aContent,
+      nsPresContext* aPresContext, dom::Element* aElement,
       InputContextAction::Cause aCause);
 
   
@@ -196,15 +197,15 @@ class IMEStateManager {
   };
   using UpdateIMEStateOptions = EnumSet<UpdateIMEStateOption, uint32_t>;
   MOZ_CAN_RUN_SCRIPT static void UpdateIMEState(
-      const IMEState& aNewIMEState, nsIContent* aContent,
+      const IMEState& aNewIMEState, dom::Element* aElement,
       EditorBase& aEditorBase, const UpdateIMEStateOptions& aOptions = {});
 
   
   
   
   MOZ_CAN_RUN_SCRIPT static bool OnMouseButtonEventInEditor(
-      nsPresContext* aPresContext, nsIContent* aContent,
-      WidgetMouseEvent* aMouseEvent);
+      nsPresContext& aPresContext, dom::Element* aElement,
+      WidgetMouseEvent& aMouseEvent);
 
   
   
@@ -212,7 +213,7 @@ class IMEStateManager {
   
   
   MOZ_CAN_RUN_SCRIPT static void OnClickInEditor(
-      nsPresContext& aPresContext, nsIContent* aContent,
+      nsPresContext& aPresContext, dom::Element* aElement,
       const WidgetMouseEvent& aMouseEvent);
 
   
@@ -220,8 +221,8 @@ class IMEStateManager {
   
   
   
-  static void OnFocusInEditor(nsPresContext* aPresContext, nsIContent* aContent,
-                              EditorBase& aEditorBase);
+  static void OnFocusInEditor(nsPresContext& aPresContext,
+                              dom::Element* aElement, EditorBase& aEditorBase);
 
   
   static void OnEditorInitialized(EditorBase& aEditorBase);
@@ -232,7 +233,7 @@ class IMEStateManager {
 
   
   MOZ_CAN_RUN_SCRIPT static void OnReFocus(nsPresContext& aPresContext,
-                                           nsIContent& aContent);
+                                           dom::Element& aElement);
 
   
 
@@ -306,19 +307,19 @@ class IMEStateManager {
 
  protected:
   MOZ_CAN_RUN_SCRIPT static nsresult OnChangeFocusInternal(
-      nsPresContext* aPresContext, nsIContent* aContent,
+      nsPresContext* aPresContext, dom::Element* aElement,
       InputContextAction aAction);
   MOZ_CAN_RUN_SCRIPT static void SetIMEState(const IMEState& aState,
-                                             nsPresContext* aPresContext,
-                                             nsIContent* aContent,
-                                             nsIWidget* aWidget,
+                                             const nsPresContext* aPresContext,
+                                             dom::Element* aElement,
+                                             nsIWidget& aWidget,
                                              InputContextAction aAction,
                                              InputContext::Origin aOrigin);
-  static void SetInputContext(nsIWidget* aWidget,
+  static void SetInputContext(nsIWidget& aWidget,
                               const InputContext& aInputContext,
                               const InputContextAction& aAction);
-  static IMEState GetNewIMEState(nsPresContext* aPresContext,
-                                 nsIContent* aContent);
+  static IMEState GetNewIMEState(const nsPresContext& aPresContext,
+                                 dom::Element* aElement);
 
   static void EnsureTextCompositionArray();
 
@@ -326,27 +327,27 @@ class IMEStateManager {
   
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY static void CreateIMEContentObserver(
-      EditorBase& aEditorBase, nsIContent* aFocusedContent);
+      EditorBase& aEditorBase, dom::Element* aFocusedElement);
 
   
 
 
 
-  static bool IsFocusedContent(const nsPresContext* aPresContext,
-                               const nsIContent* aFocusedContent);
+  [[nodiscard]] static bool IsFocusedElement(
+      const nsPresContext& aPresContext, const dom::Element* aFocusedElement);
 
   static void DestroyIMEContentObserver();
 
-  static bool IsEditable(nsINode* node);
+  [[nodiscard]] static bool IsEditable(nsINode* node);
 
-  static bool IsIMEObserverNeeded(const IMEState& aState);
+  [[nodiscard]] static bool IsIMEObserverNeeded(const IMEState& aState);
 
-  static nsIContent* GetRootContent(nsPresContext* aPresContext);
+  [[nodiscard]] static nsIContent* GetRootContent(nsPresContext* aPresContext);
 
   
 
 
-  static bool CanHandleWith(nsPresContext* aPresContext);
+  [[nodiscard]] static bool CanHandleWith(const nsPresContext* aPresContext);
 
   
 
@@ -364,7 +365,7 @@ class IMEStateManager {
   
   
   
-  static StaticRefPtr<nsIContent> sFocusedContent;
+  static StaticRefPtr<dom::Element> sFocusedElement;
   static StaticRefPtr<nsPresContext> sFocusedPresContext;
   
   

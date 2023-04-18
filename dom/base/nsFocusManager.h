@@ -290,7 +290,7 @@ class nsFocusManager final : public nsIFocusManager,
 
 
 
-  MOZ_CAN_RUN_SCRIPT void NotifyOfReFocus(nsIContent& aContent);
+  MOZ_CAN_RUN_SCRIPT void NotifyOfReFocus(mozilla::dom::Element& aElement);
 
   static void MarkUncollectableForCCGeneration(uint32_t aGeneration);
 
