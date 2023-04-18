@@ -1829,7 +1829,8 @@ public class GeckoSession {
       return GeckoResult.allow();
     }
 
-    final GeckoResult<AllowOrDeny> result = new GeckoResult<>();
+    
+    final GeckoResult<AllowOrDeny> result = new GeckoResult<>(ThreadUtils.getUiHandler());
 
     ThreadUtils.runOnUiThread(
         () -> {
