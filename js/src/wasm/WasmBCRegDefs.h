@@ -564,6 +564,11 @@ class BaseRegAlloc {
   {
     RegisterAllocator::takeWasmRegisters(availGPR);
 
+#ifdef RABALDR_PIN_INSTANCE
+    
+    availGPR.take(WasmTlsReg);
+#endif
+
     
 #if defined(RABALDR_SCRATCH_I32)
     if (RabaldrScratchI32 != RegI32::Invalid()) {
