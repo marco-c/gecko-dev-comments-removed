@@ -101,7 +101,7 @@ nsresult MediaEngineWebRTCMicrophoneSource::EvaluateSettings(
   
   
   
-  int32_t maxChannels = mDeviceInfo->MaxChannels();
+  int32_t maxChannels = static_cast<int32_t>(mDeviceInfo->MaxChannels());
 
   
   
