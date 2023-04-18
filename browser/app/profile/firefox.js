@@ -2163,22 +2163,30 @@ pref("app.normandy.onsync_skew_sec", 600);
 #endif
 
 
+
+
+
+
+
+
+
+
+
+
+
 #if defined(RELEASE_OR_BETA) && !defined(MOZ_DEV_EDITION)
   pref("intl.multilingual.enabled", true);
   pref("intl.multilingual.downloadEnabled", true);
+  pref("intl.multilingual.liveReload", false);
+  pref("intl.multilingual.liveReloadBidirectional", false);
+  pref("intl.multilingual.aboutWelcome.languageMismatchEnabled", false);
 #else
   pref("intl.multilingual.enabled", false);
-  
   pref("intl.multilingual.downloadEnabled", false);
+  pref("intl.multilingual.liveReload", false);
+  pref("intl.multilingual.liveReloadBidirectional", false);
+  pref("intl.multilingual.aboutWelcome.languageMismatchEnabled", false);
 #endif
-
-
-
-pref("intl.multilingual.liveReload", false);
-pref("intl.multilingual.liveReloadBidirectional", false);
-
-pref("intl.multilingual.aboutWelcome.languageMismatchEnabled", false);
-
 
 
 
