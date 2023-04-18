@@ -3,6 +3,17 @@
 
 
 
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/gfx/layers/apz/test/mochitest/apz_test_utils.js",
+  this
+);
+
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/gfx/layers/apz/test/mochitest/apz_test_native_event_utils.js",
+  this
+);
+
+
 
 
 
@@ -11,8 +22,9 @@
 var test_utils;
 var test_commandset;
 var test_prefBranch = "browser.gesture.";
+var test_normalTab;
 
-function test() {
+async function test() {
   waitForExplicitFinish();
 
   
@@ -29,11 +41,18 @@ function test() {
   
   gGestureSupport.init(true);
 
+  const aPage = "about:about";
+  test_normalTab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    aPage,
+    true 
+  );
+
   
   test_commandset = document.getElementById("mainCommandSet");
-  test_swipeGestures();
-  test_latchedGesture("pinch", "out", "in", "MozMagnifyGesture");
-  test_thresholdGesture("pinch", "out", "in", "MozMagnifyGesture");
+  await test_swipeGestures();
+  await test_latchedGesture("pinch", "out", "in", "MozMagnifyGesture");
+  await test_thresholdGesture("pinch", "out", "in", "MozMagnifyGesture");
   test_rotateGestures();
 }
 
@@ -381,7 +400,7 @@ function test_EnsureConstantsAreDisjoint() {
 
 
 
-function test_emitLatchedEvents(eventPrefix, initialDelta, cmd) {
+async function test_emitLatchedEvents(eventPrefix, initialDelta, cmd) {
   let cumulativeDelta = 0;
   let isIncreasing = initialDelta > 0;
 
@@ -399,12 +418,14 @@ function test_emitLatchedEvents(eventPrefix, initialDelta, cmd) {
   };
 
   
-  test_utils.sendSimpleGestureEvent(
+  await synthesizeSimpleGestureEvent(
+    test_normalTab.linkedBrowser,
     eventPrefix + "Start",
-    0,
-    0,
+    10,
+    10,
     0,
     initialDelta,
+    0,
     0
   );
   cumulativeDelta += initialDelta;
@@ -428,12 +449,15 @@ function test_emitLatchedEvents(eventPrefix, initialDelta, cmd) {
   
   for (let i = 0; i < 5; i++) {
     let delta = Math.random() * (isIncreasing ? 100 : -100);
-    test_utils.sendSimpleGestureEvent(
+
+    await synthesizeSimpleGestureEvent(
+      test_normalTab.linkedBrowser,
       eventPrefix + "Update",
-      0,
-      0,
+      10,
+      10,
       0,
       delta,
+      0,
       0
     );
     cumulativeDelta += delta;
@@ -445,12 +469,14 @@ function test_emitLatchedEvents(eventPrefix, initialDelta, cmd) {
   }
 
   
-  test_utils.sendSimpleGestureEvent(
+  await synthesizeSimpleGestureEvent(
+    test_normalTab.linkedBrowser,
     eventPrefix + "Update",
-    0,
-    0,
+    10,
+    10,
     0,
     -initialDelta,
+    0,
     0
   );
   cumulativeDelta += -initialDelta;
@@ -474,12 +500,14 @@ function test_emitLatchedEvents(eventPrefix, initialDelta, cmd) {
   
   for (let i = 0; i < 5; i++) {
     let delta = Math.random() * (isIncreasing ? -100 : 100);
-    test_utils.sendSimpleGestureEvent(
+    await synthesizeSimpleGestureEvent(
+      test_normalTab.linkedBrowser,
       eventPrefix + "Update",
-      0,
-      0,
+      10,
+      10,
       0,
       delta,
+      0,
       0
     );
     cumulativeDelta += delta;
@@ -491,12 +519,14 @@ function test_emitLatchedEvents(eventPrefix, initialDelta, cmd) {
   }
 
   
-  test_utils.sendSimpleGestureEvent(
+  await synthesizeSimpleGestureEvent(
+    test_normalTab.linkedBrowser,
     eventPrefix + "Update",
-    0,
-    0,
+    10,
+    10,
     0,
     initialDelta,
+    0,
     0
   );
   cumulativeDelta += initialDelta;
@@ -517,7 +547,16 @@ function test_emitLatchedEvents(eventPrefix, initialDelta, cmd) {
   }
 
   
-  test_utils.sendSimpleGestureEvent(eventPrefix, 0, 0, 0, cumulativeDelta, 0);
+  await synthesizeSimpleGestureEvent(
+    test_normalTab.linkedBrowser,
+    eventPrefix,
+    10,
+    10,
+    0,
+    cumulativeDelta,
+    0,
+    0
+  );
   checkBoth(
     6,
     "Increasing command was triggered",
@@ -543,7 +582,7 @@ function test_removeCommand(cmd) {
 }
 
 
-function test_latchedGesture(gesture, inc, dec, eventPrefix) {
+async function test_latchedGesture(gesture, inc, dec, eventPrefix) {
   let branch = test_prefBranch + gesture + ".";
 
   
@@ -557,8 +596,8 @@ function test_latchedGesture(gesture, inc, dec, eventPrefix) {
   };
 
   
-  test_emitLatchedEvents(eventPrefix, 500, cmd);
-  test_emitLatchedEvents(eventPrefix, -500, cmd);
+  await test_emitLatchedEvents(eventPrefix, 500, cmd);
+  await test_emitLatchedEvents(eventPrefix, -500, cmd);
 
   
   Services.prefs.setBoolPref(branch + "latched", oldLatchedValue);
@@ -568,7 +607,7 @@ function test_latchedGesture(gesture, inc, dec, eventPrefix) {
 }
 
 
-function test_thresholdGesture(gesture, inc, dec, eventPrefix) {
+async function test_thresholdGesture(gesture, inc, dec, eventPrefix) {
   let branch = test_prefBranch + gesture + ".";
 
   
@@ -585,32 +624,77 @@ function test_thresholdGesture(gesture, inc, dec, eventPrefix) {
 
   
   cmdInc.callCount = cmdDec.callCount = 0;
-  test_utils.sendSimpleGestureEvent(eventPrefix + "Start", 0, 0, 0, 49.5, 0);
+  await synthesizeSimpleGestureEvent(
+    test_normalTab.linkedBrowser,
+    eventPrefix + "Start",
+    10,
+    10,
+    0,
+    49.5,
+    0,
+    0
+  );
   ok(cmdInc.callCount == 0, "Increasing command was triggered");
   ok(cmdDec.callCount == 0, "Decreasing command was triggered");
 
   
   cmdInc.callCount = cmdDec.callCount = 0;
-  test_utils.sendSimpleGestureEvent(eventPrefix + "Update", 0, 0, 0, 1, 0);
+  await synthesizeSimpleGestureEvent(
+    test_normalTab.linkedBrowser,
+    eventPrefix + "Update",
+    10,
+    10,
+    0,
+    1,
+    0,
+    0
+  );
   ok(cmdInc.callCount == 1, "Increasing command was not triggered");
   ok(cmdDec.callCount == 0, "Decreasing command was triggered");
 
   
   
   cmdInc.callCount = cmdDec.callCount = 0;
-  test_utils.sendSimpleGestureEvent(eventPrefix + "Update", 0, 0, 0, -49.5, 0);
+  await synthesizeSimpleGestureEvent(
+    test_normalTab.linkedBrowser,
+    eventPrefix + "Update",
+    10,
+    10,
+    0,
+    -49.5,
+    0,
+    0
+  );
   ok(cmdInc.callCount == 0, "Increasing command was triggered");
   ok(cmdDec.callCount == 0, "Decreasing command was triggered");
 
   
   cmdInc.callCount = cmdDec.callCount = 0;
-  test_utils.sendSimpleGestureEvent(eventPrefix + "Update", 0, 0, 0, -1.5, 0);
+  await synthesizeSimpleGestureEvent(
+    test_normalTab.linkedBrowser,
+    eventPrefix + "Update",
+    10,
+    10,
+    0,
+    -1.5,
+    0,
+    0
+  );
   ok(cmdInc.callCount == 0, "Increasing command was triggered");
   ok(cmdDec.callCount == 1, "Decreasing command was not triggered");
 
   
   cmdInc.callCount = cmdDec.callCount = 0;
-  test_utils.sendSimpleGestureEvent(eventPrefix, 0, 0, 0, -0.5, 0);
+  await synthesizeSimpleGestureEvent(
+    test_normalTab.linkedBrowser,
+    eventPrefix,
+    0,
+    0,
+    0,
+    -0.5,
+    0,
+    0
+  );
   ok(cmdInc.callCount == 0, "Increasing command was triggered");
   ok(cmdDec.callCount == 0, "Decreasing command was triggered");
 
@@ -621,7 +705,7 @@ function test_thresholdGesture(gesture, inc, dec, eventPrefix) {
   test_removeCommand(cmdDec);
 }
 
-function test_swipeGestures() {
+async function test_swipeGestures() {
   
   let up = SimpleGestureEvent.DIRECTION_UP;
   let down = SimpleGestureEvent.DIRECTION_DOWN;
@@ -645,7 +729,16 @@ function test_swipeGestures() {
 
   
   resetCounts();
-  test_utils.sendSimpleGestureEvent("MozSwipeGesture", 0, 0, up, 0, 0);
+  await synthesizeSimpleGestureEvent(
+    test_normalTab.linkedBrowser,
+    "MozSwipeGesture",
+    10,
+    10,
+    up,
+    0,
+    0,
+    0
+  );
   ok(cmdUp.callCount == 1, "Step 1: Up command was not triggered");
   ok(cmdDown.callCount == 0, "Step 1: Down command was triggered");
   ok(cmdLeft.callCount == 0, "Step 1: Left command was triggered");
@@ -653,7 +746,16 @@ function test_swipeGestures() {
 
   
   resetCounts();
-  test_utils.sendSimpleGestureEvent("MozSwipeGesture", 0, 0, down, 0, 0);
+  await synthesizeSimpleGestureEvent(
+    test_normalTab.linkedBrowser,
+    "MozSwipeGesture",
+    10,
+    10,
+    down,
+    0,
+    0,
+    0
+  );
   ok(cmdUp.callCount == 0, "Step 2: Up command was triggered");
   ok(cmdDown.callCount == 1, "Step 2: Down command was not triggered");
   ok(cmdLeft.callCount == 0, "Step 2: Left command was triggered");
@@ -661,7 +763,16 @@ function test_swipeGestures() {
 
   
   resetCounts();
-  test_utils.sendSimpleGestureEvent("MozSwipeGesture", 0, 0, left, 0, 0);
+  await synthesizeSimpleGestureEvent(
+    test_normalTab.linkedBrowser,
+    "MozSwipeGesture",
+    10,
+    10,
+    left,
+    0,
+    0,
+    0
+  );
   ok(cmdUp.callCount == 0, "Step 3: Up command was triggered");
   ok(cmdDown.callCount == 0, "Step 3: Down command was triggered");
   ok(cmdLeft.callCount == 1, "Step 3: Left command was not triggered");
@@ -669,7 +780,16 @@ function test_swipeGestures() {
 
   
   resetCounts();
-  test_utils.sendSimpleGestureEvent("MozSwipeGesture", 0, 0, right, 0, 0);
+  await synthesizeSimpleGestureEvent(
+    test_normalTab.linkedBrowser,
+    "MozSwipeGesture",
+    10,
+    10,
+    right,
+    0,
+    0,
+    0
+  );
   ok(cmdUp.callCount == 0, "Step 4: Up command was triggered");
   ok(cmdDown.callCount == 0, "Step 4: Down command was triggered");
   ok(cmdLeft.callCount == 0, "Step 4: Left command was triggered");
@@ -679,7 +799,16 @@ function test_swipeGestures() {
   let combos = [up | left, up | right, down | left, down | right];
   for (let i = 0; i < combos.length; i++) {
     resetCounts();
-    test_utils.sendSimpleGestureEvent("MozSwipeGesture", 0, 0, combos[i], 0, 0);
+    await synthesizeSimpleGestureEvent(
+      test_normalTab.linkedBrowser,
+      "MozSwipeGesture",
+      10,
+      10,
+      combos[i],
+      0,
+      0,
+      0
+    );
     ok(cmdUp.callCount == 0, "Step 5-" + i + ": Up command was triggered");
     ok(cmdDown.callCount == 0, "Step 5-" + i + ": Down command was triggered");
     ok(cmdLeft.callCount == 0, "Step 5-" + i + ": Left command was triggered");
@@ -714,7 +843,7 @@ function test_rotateHelperGetImageRotation(aImageElement) {
   return rotation < 0 ? rotation + 360 : rotation;
 }
 
-function test_rotateHelperOneGesture(
+async function test_rotateHelperOneGesture(
   aImageElement,
   aCurrentRotation,
   aDirection,
@@ -735,20 +864,24 @@ function test_rotateHelperOneGesture(
   aImageElement.style.transitionDuration = "0s";
 
   
-  test_utils.sendSimpleGestureEvent(
+  await synthesizeSimpleGestureEvent(
+    test_imageTab.linkedBrowser,
     "MozRotateGestureStart",
-    0,
-    0,
+    10,
+    10,
     aDirection,
     0.001,
+    0,
     0
   );
-  test_utils.sendSimpleGestureEvent(
+  await synthesizeSimpleGestureEvent(
+    test_imageTab.linkedBrowser,
     "MozRotateGestureUpdate",
-    0,
-    0,
+    10,
+    10,
     aDirection,
     delta,
+    0,
     0
   );
   aImageElement.clientTop;
@@ -756,12 +889,14 @@ function test_rotateHelperOneGesture(
   
   if (aStop) {
     
-    test_utils.sendSimpleGestureEvent(
+    await synthesizeSimpleGestureEvent(
+      test_imageTab.linkedBrowser,
       "MozRotateGestureUpdate",
-      0,
-      0,
+      10,
+      10,
       aDirection,
       0.001,
+      0,
       0
     );
     aImageElement.clientTop;
@@ -787,7 +922,16 @@ function test_rotateHelperOneGesture(
     );
   }
   
-  test_utils.sendSimpleGestureEvent("MozRotateGesture", 0, 0, aDirection, 0, 0);
+  await synthesizeSimpleGestureEvent(
+    test_imageTab.linkedBrowser,
+    "MozRotateGesture",
+    10,
+    10,
+    aDirection,
+    0,
+    0,
+    0
+  );
   aImageElement.clientTop;
 
   let finalExpectedRotation;
@@ -821,7 +965,7 @@ function test_rotateHelperOneGesture(
   );
 }
 
-function test_rotateGesturesOnTab() {
+async function test_rotateGesturesOnTab() {
   gBrowser.selectedBrowser.removeEventListener(
     "load",
     test_rotateGesturesOnTab,
@@ -831,6 +975,9 @@ function test_rotateGesturesOnTab() {
   if (!(content.document instanceof ImageDocument)) {
     ok(false, "Image document failed to open for rotation testing");
     gBrowser.removeTab(test_imageTab);
+    BrowserTestUtils.removeTab(test_normalTab);
+    test_imageTab = null;
+    test_normalTab = null;
     finish();
     return;
   }
@@ -845,6 +992,9 @@ function test_rotateGesturesOnTab() {
   if (!imgElem) {
     ok(false, "Could not get image element on ImageDocument for rotation!");
     gBrowser.removeTab(test_imageTab);
+    BrowserTestUtils.removeTab(test_normalTab);
+    test_imageTab = null;
+    test_normalTab = null;
     finish();
     return;
   }
@@ -862,53 +1012,112 @@ function test_rotateGesturesOnTab() {
     
     
     
-    test_rotateHelperOneGesture(imgElem, normRot(initRot + 0), cl, 35, true);
-    test_rotateHelperOneGesture(imgElem, normRot(initRot + 0), cl, 35, false);
-    test_rotateHelperOneGesture(imgElem, normRot(initRot + 90), cl, 55, true);
-    test_rotateHelperOneGesture(imgElem, normRot(initRot + 180), cl, 55, false);
-    test_rotateHelperOneGesture(imgElem, normRot(initRot + 270), ccl, 35, true);
-    test_rotateHelperOneGesture(
+    await test_rotateHelperOneGesture(
+      imgElem,
+      normRot(initRot + 0),
+      cl,
+      35,
+      true
+    );
+    await test_rotateHelperOneGesture(
+      imgElem,
+      normRot(initRot + 0),
+      cl,
+      35,
+      false
+    );
+    await test_rotateHelperOneGesture(
+      imgElem,
+      normRot(initRot + 90),
+      cl,
+      55,
+      true
+    );
+    await test_rotateHelperOneGesture(
+      imgElem,
+      normRot(initRot + 180),
+      cl,
+      55,
+      false
+    );
+    await test_rotateHelperOneGesture(
+      imgElem,
+      normRot(initRot + 270),
+      ccl,
+      35,
+      true
+    );
+    await test_rotateHelperOneGesture(
       imgElem,
       normRot(initRot + 270),
       ccl,
       35,
       false
     );
-    test_rotateHelperOneGesture(imgElem, normRot(initRot + 180), ccl, 55, true);
-    test_rotateHelperOneGesture(imgElem, normRot(initRot + 90), ccl, 55, false);
+    await test_rotateHelperOneGesture(
+      imgElem,
+      normRot(initRot + 180),
+      ccl,
+      55,
+      true
+    );
+    await test_rotateHelperOneGesture(
+      imgElem,
+      normRot(initRot + 90),
+      ccl,
+      55,
+      false
+    );
 
     
     
-    test_utils.sendSimpleGestureEvent(
+    await synthesizeSimpleGestureEvent(
+      test_imageTab.linkedBrowser,
       "MozRotateGestureStart",
-      0,
-      0,
+      10,
+      10,
       cl,
       0.001,
+      0,
       0
     );
-    test_utils.sendSimpleGestureEvent(
+    await synthesizeSimpleGestureEvent(
+      test_imageTab.linkedBrowser,
       "MozRotateGestureUpdate",
-      0,
-      0,
+      10,
+      10,
       cl,
       90,
+      0,
       0
     );
-    test_utils.sendSimpleGestureEvent(
+    await synthesizeSimpleGestureEvent(
+      test_imageTab.linkedBrowser,
       "MozRotateGestureUpdate",
-      0,
-      0,
+      10,
+      10,
       cl,
       0.001,
+      0,
       0
     );
-    test_utils.sendSimpleGestureEvent("MozRotateGesture", 0, 0, cl, 0, 0);
+    await synthesizeSimpleGestureEvent(
+      test_imageTab.linkedBrowser,
+      "MozRotateGesture",
+      10,
+      10,
+      cl,
+      0,
+      0,
+      0
+    );
     imgElem.clientTop;
   }
 
   gBrowser.removeTab(test_imageTab);
+  BrowserTestUtils.removeTab(test_normalTab);
   test_imageTab = null;
+  test_normalTab = null;
   finish();
 }
 
