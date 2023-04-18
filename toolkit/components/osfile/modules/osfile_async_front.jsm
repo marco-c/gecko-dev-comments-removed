@@ -996,21 +996,6 @@ File.getCurrentDirectory = function getCurrentDirectory() {
 
 
 
-File.setCurrentDirectory = function setCurrentDirectory(path) {
-  return Scheduler.post("setCurrentDirectory", [Type.path.toMsg(path)], path);
-};
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
