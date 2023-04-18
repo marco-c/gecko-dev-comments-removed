@@ -7,30 +7,7 @@ const { Preferences } = ChromeUtils.import(
   "resource://gre/modules/Preferences.jsm"
 );
 
-
-
-const remoteAgentInstance = Cc["@mozilla.org/remote/agent;1"].createInstance(
-  Ci.nsIRemoteAgent
-);
-
 const URL = "http://localhost:0";
-
-
-function add_agent_task(originalTask) {
-  const task = async function() {
-    try {
-      await RemoteAgent.close();
-      await originalTask();
-    } finally {
-      Preferences.reset("remote.force-local");
-    }
-  };
-  Object.defineProperty(task, "name", {
-    value: originalTask.name,
-    writable: false,
-  });
-  add_plain_task(task);
-}
 
 add_agent_task(async function debuggerAddress() {
   const port = getNonAtomicFreePort();
@@ -120,8 +97,13 @@ add_agent_task(async function listenRestrictedToLoopbackDevice() {
 });
 
 add_agent_task(async function listenNonLoopbackDevice() {
-  Preferences.set("remote.force-local", false);
-  await RemoteAgent.listen("http://0.0.0.0:0");
+  try {
+    Preferences.set("remote.force-local", false);
+    await RemoteAgent.listen("http://0.0.0.0:0");
+    await RemoteAgent.close();
+  } finally {
+    Preferences.reset("remote.force-local");
+  }
 });
 
 add_agent_task(async function test_close() {
@@ -130,15 +112,3 @@ add_agent_task(async function test_close() {
   
   await RemoteAgent.close();
 });
-
-function getNonAtomicFreePort() {
-  const so = Cc["@mozilla.org/network/server-socket;1"].createInstance(
-    Ci.nsIServerSocket
-  );
-  try {
-    so.init(-1, true , -1 );
-    return so.port;
-  } finally {
-    so.close();
-  }
-}
