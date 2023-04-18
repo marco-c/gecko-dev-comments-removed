@@ -43,7 +43,7 @@ add_task(async function() {
 
   
   
-  await waitForTime(1000);
+  await wait(1000);
 
   assertNotPaused(dbg);
 });

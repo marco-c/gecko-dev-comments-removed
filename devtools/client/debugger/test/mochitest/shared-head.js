@@ -524,16 +524,6 @@ async function waitForPausedThread(dbg, thread) {
   return waitForState(dbg, state => dbg.selectors.getIsPaused(thread));
 }
 
-
-
-
-
-
-
-function waitForTime(ms) {
-  return new Promise(r => setTimeout(r, ms));
-}
-
 function isSelectedFrameSelected(dbg, state) {
   const frame = dbg.selectors.getVisibleSelectedFrame();
 
