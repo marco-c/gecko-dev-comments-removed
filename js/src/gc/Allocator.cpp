@@ -726,7 +726,7 @@ TenuredChunk* GCRuntime::getOrAllocChunk(AutoLockGCBgAlloc& lock) {
       return nullptr;
     }
 
-    chunk->init(this);
+    chunk->init(this,  true);
     MOZ_ASSERT(chunk->info.numArenasFreeCommitted == 0);
   }
 
@@ -794,7 +794,7 @@ void BackgroundAllocTask::run(AutoLockHelperThreadState& lock) {
       if (!chunk) {
         break;
       }
-      chunk->init(gc);
+      chunk->init(gc,  true);
     }
     chunkPool_.ref().push(chunk);
   }
@@ -811,7 +811,16 @@ TenuredChunk* TenuredChunk::allocate(GCRuntime* gc) {
   return static_cast<TenuredChunk*>(chunk);
 }
 
-void TenuredChunk::init(GCRuntime* gc) {
+static inline bool ShouldDecommitNewChunk(bool allMemoryCommitted,
+                                          const GCSchedulingState& state) {
+  if (!DecommitEnabled()) {
+    return false;
+  }
+
+  return !allMemoryCommitted || !state.inHighFrequencyGCMode();
+}
+
+void TenuredChunk::init(GCRuntime* gc, bool allMemoryCommitted) {
   
   MOZ_MAKE_MEM_UNDEFINED(this, ChunkSize);
 
@@ -824,28 +833,31 @@ void TenuredChunk::init(GCRuntime* gc) {
 
   new (this) TenuredChunk(gc->rt);
 
-  
+  if (ShouldDecommitNewChunk(allMemoryCommitted, gc->schedulingState)) {
+    
+    
+    decommitAllArenas();
+  } else {
+    
+    
+    initAsDecommitted();
+  }
 
-
-
-  decommitAllArenas();
-
-#ifdef DEBUG
   verify();
-#endif
 }
 
 void TenuredChunk::decommitAllArenas() {
   MOZ_ASSERT(unused());
+  MarkPagesUnusedSoft(&arenas[0], ArenasPerChunk * ArenaSize);
+  initAsDecommitted();
+}
 
-  if (DecommitEnabled()) {
-    MarkPagesUnusedSoft(&arenas[0], ArenasPerChunk * ArenaSize);
-  }
-
+void TenuredChunkBase::initAsDecommitted() {
+  
+  
+  
   decommittedPages.SetAll();
   freeCommittedArenas.ResetAll();
   info.numArenasFree = ArenasPerChunk;
   info.numArenasFreeCommitted = 0;
-
-  verify();
 }

@@ -690,7 +690,7 @@ class GCSchedulingState {
 
 
 
-  MainThreadOrGCTaskData<bool> inHighFrequencyGCMode_;
+  mozilla::Atomic<bool, mozilla::ReleaseAcquire> inHighFrequencyGCMode_;
 
  public:
   
