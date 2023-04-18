@@ -139,17 +139,25 @@ inline bool NestableControl::is<LoopControl>() const {
   return StatementKindIsLoop(kind_);
 }
 
+enum class NonLocalExitKind { Continue, Break, Return };
+
+class TryFinallyContinuation {
+ public:
+  TryFinallyContinuation(NestableControl* target, NonLocalExitKind kind)
+      : target_(target), kind_(kind) {}
+
+  NestableControl* target_;
+  NonLocalExitKind kind_;
+};
+
 class TryFinallyControl : public NestableControl {
   bool emittingSubroutine_ = false;
-  bool hasNonLocalJumps_ = false;
 
  public:
   
   JumpList finallyJumps_;
 
-  
-  
-  js::Vector<BytecodeOffset, 2, SystemAllocPolicy> defaultResumeIndexOffsets_;
+  js::Vector<TryFinallyContinuation, 4, SystemAllocPolicy> continuations_;
 
   TryFinallyControl(BytecodeEmitter* bce, StatementKind kind);
 
@@ -157,8 +165,10 @@ class TryFinallyControl : public NestableControl {
 
   bool emittingSubroutine() const { return emittingSubroutine_; }
 
-  void setHasNonLocalJumps() { hasNonLocalJumps_ = true; }
-  bool hasNonLocalJumps() const { return hasNonLocalJumps_; }
+  enum SpecialContinuations { Fallthrough, Count };
+  bool allocateContinuation(NestableControl* target, NonLocalExitKind kind,
+                            uint32_t* idx);
+  bool emitContinuations(BytecodeEmitter* bce);
 };
 template <>
 inline bool NestableControl::is<TryFinallyControl>() const {
@@ -166,25 +176,11 @@ inline bool NestableControl::is<TryFinallyControl>() const {
 }
 
 class NonLocalExitControl {
- public:
-  enum Kind {
-    
-    
-    Continue,
-
-    
-    
-    
-    Break,
-    Return
-  };
-
- private:
   BytecodeEmitter* bce_;
   const uint32_t savedScopeNoteIndex_;
   const int savedDepth_;
   uint32_t openScopeNoteIndex_;
-  Kind kind_;
+  NonLocalExitKind kind_;
 
   
   
@@ -195,10 +191,11 @@ class NonLocalExitControl {
 
  public:
   NonLocalExitControl(const NonLocalExitControl&) = delete;
-  NonLocalExitControl(BytecodeEmitter* bce, Kind kind);
+  NonLocalExitControl(BytecodeEmitter* bce, NonLocalExitKind kind);
   ~NonLocalExitControl();
 
-  [[nodiscard]] bool emitNonLocalJump(NestableControl* target);
+  [[nodiscard]] bool emitNonLocalJump(NestableControl* target,
+                                      NestableControl* startingAfter = nullptr);
   [[nodiscard]] bool emitReturn(BytecodeOffset setRvalOffset);
 };
 

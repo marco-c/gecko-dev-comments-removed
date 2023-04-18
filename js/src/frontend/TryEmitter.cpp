@@ -60,33 +60,16 @@ bool TryEmitter::emitTry() {
 }
 
 bool TryEmitter::emitJumpToFinallyWithFallthrough() {
+  uint32_t stackDepthForNextBlock = bce_->bytecodeSection().stackDepth();
+
   
-  
-  
-  
-  
-  BytecodeOffset off;
-  if (!bce_->emitN(JSOp::ResumeIndex, 3, &off)) {
-    return false;
-  }
-  if (!controlInfo_->defaultResumeIndexOffsets_.append(off)) {
+  uint32_t idx = TryFinallyControl::SpecialContinuations::Fallthrough;
+  if (!bce_->emitJumpToFinally(&controlInfo_->finallyJumps_, idx)) {
     return false;
   }
 
   
-  if (!bce_->emit1(JSOp::False)) {
-    return false;
-  }
-
-  
-  if (!bce_->emitJumpNoFallthrough(JSOp::Goto, &controlInfo_->finallyJumps_)) {
-    return false;
-  }
-
-  
-  uint32_t stackDepthForNextBlock = bce_->bytecodeSection().stackDepth() - 2;
   bce_->bytecodeSection().setStackDepth(stackDepthForNextBlock);
-
   return true;
 }
 
@@ -261,8 +244,8 @@ bool TryEmitter::emitFinallyEnd() {
     return false;
   }
 
-  if (controlInfo_ && controlInfo_->hasNonLocalJumps()) {
-    if (!bce_->emit1(JSOp::Retsub)) {
+  if (controlInfo_ && !controlInfo_->continuations_.empty()) {
+    if (!controlInfo_->emitContinuations(bce_)) {
       return false;
     }
   } else {
@@ -297,24 +280,7 @@ bool TryEmitter::emitEnd() {
 
   MOZ_ASSERT(bce_->bytecodeSection().stackDepth() == depth_);
 
-  
-  if (hasFinally() && controlInfo_) {
-    MOZ_ASSERT(!catchAndFinallyJump_.offset.valid());
-
-    JumpTarget target;
-    if (!bce_->emitJumpTarget(&target)) {
-      return false;
-    }
-
-    uint32_t resumeIndex;
-    if (!bce_->allocateResumeIndex(target.offset, &resumeIndex)) {
-      return false;
-    }
-
-    for (BytecodeOffset offset : controlInfo_->defaultResumeIndexOffsets_) {
-      SET_RESUMEINDEX(bce_->bytecodeSection().code(offset), resumeIndex);
-    }
-  } else {
+  if (catchAndFinallyJump_.offset.valid()) {
     
     if (!bce_->emitJumpTargetAndPatch(catchAndFinallyJump_)) {
       return false;
