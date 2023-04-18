@@ -277,8 +277,8 @@ void ReadableStreamClose(JSContext* aCx, ReadableStream* aStream,
   aStream->SetState(ReadableStream::ReaderState::Closed);
 
   
-
   ReadableStreamGenericReader* reader = aStream->GetReader();
+
   
   if (!reader) {
     return;
@@ -346,6 +346,7 @@ already_AddRefed<Promise> ReadableStreamCancel(JSContext* aCx,
 
   
   if (reader && reader->IsBYOB()) {
+    
     for (RefPtr<ReadIntoRequest> readIntoRequest :
          reader->AsBYOB()->ReadIntoRequests()) {
       readIntoRequest->CloseSteps(aCx, JS::UndefinedHandleValue, aRv);
@@ -353,6 +354,9 @@ already_AddRefed<Promise> ReadableStreamCancel(JSContext* aCx,
         return nullptr;
       }
     }
+
+    
+    reader->AsBYOB()->ReadIntoRequests().clear();
   }
 
   
@@ -484,7 +488,6 @@ void ReadableStreamError(JSContext* aCx, ReadableStream* aStream,
   
   reader->ClosedPromise()->SetSettledPromiseIsHandled();
 
-  
   
   if (reader->IsDefault()) {
     
