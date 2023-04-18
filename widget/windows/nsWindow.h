@@ -693,10 +693,6 @@ class nsWindow final : public nsBaseWidget {
   static void OnCloakEvent(HWND aWnd, bool aCloaked);
   void OnCloakChanged(bool aCloaked);
 
-  
-  
-  mozilla::Maybe<UINT> GetHiddenTaskbarEdge();
-
   static bool sTouchInjectInitialized;
   static InjectTouchInputPtr sInjectTouchFuncPtr;
   static bool sDropShadowEnabled;
@@ -887,13 +883,7 @@ class nsWindow final : public nsBaseWidget {
 
   mozilla::DataMutex<Desktop> mDesktopId;
 
-  
-  
-  mozilla::Maybe<UINT> mClearNCEdge;
-
   friend class nsWindowGfx;
-
-  static constexpr int kHiddenTaskbarSize = 2;
 };
 
 #endif  
