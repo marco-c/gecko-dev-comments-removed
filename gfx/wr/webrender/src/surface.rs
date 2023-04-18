@@ -6,7 +6,7 @@ use api::units::*;
 use crate::batch::{CommandBufferBuilderKind, CommandBufferList, CommandBufferBuilder, CommandBufferIndex};
 use crate::internal_types::FastHashMap;
 use crate::picture::{SurfaceInfo, SurfaceIndex, TileKey, SubSliceIndex};
-use crate::prim_store::{PrimitiveInstanceIndex};
+use crate::prim_store::{PrimitiveInstanceIndex, PictureIndex};
 use crate::render_task_graph::{RenderTaskId, RenderTaskGraphBuilder};
 use crate::spatial_tree::SpatialNodeIndex;
 use crate::render_target::ResolveOp;
@@ -206,7 +206,7 @@ pub struct SurfaceBuilder {
     dirty_rect_stack: Vec<Vec<PictureRect>>,
     
     
-    pub sub_graph_output_stack: Vec<RenderTaskId>,
+    pub sub_graph_output_map: FastHashMap<PictureIndex, RenderTaskId>,
 }
 
 impl SurfaceBuilder {
@@ -215,7 +215,7 @@ impl SurfaceBuilder {
             current_cmd_buffers: CommandBufferTargets::Tiled { tiles: FastHashMap::default() },
             builder_stack: Vec::new(),
             dirty_rect_stack: Vec::new(),
-            sub_graph_output_stack: Vec::new(),
+            sub_graph_output_map: FastHashMap::default(),
         }
     }
 
@@ -382,6 +382,7 @@ impl SurfaceBuilder {
     
     pub fn pop_surface(
         &mut self,
+        pic_index: PictureIndex,
         rg_builder: &mut RenderTaskGraphBuilder,
         cmd_buffers: &mut CommandBufferList,
     ) {
@@ -401,7 +402,11 @@ impl SurfaceBuilder {
                     let mut src_task_ids = Vec::new();
 
                     
-                    self.sub_graph_output_stack.push(child_root_task_id.unwrap_or(child_render_task_id));
+                    let _old = self.sub_graph_output_map.insert(
+                        pic_index,
+                        child_root_task_id.unwrap_or(child_render_task_id),
+                    );
+                    debug_assert!(_old.is_none());
 
                     
                     

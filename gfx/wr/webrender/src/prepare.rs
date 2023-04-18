@@ -164,6 +164,7 @@ fn prepare_prim_for_render(
                 
                 store.pictures[pic_context_for_children.pic_index.0]
                     .restore_context(
+                        pic_context_for_children.pic_index,
                         prim_list,
                         pic_context_for_children,
                         prim_instances,
@@ -805,17 +806,20 @@ fn prepare_interned_prim_for_render(
             
             frame_state.surface_builder.register_resolve_source();
         }
-        PrimitiveInstanceKind::BackdropRender { .. } => {
-            let sub_graph_output_id = frame_state
-                .surface_builder
-                .sub_graph_output_stack
-                .pop()
-                .expect("bug: no sub-graph output");
-
-            frame_state.surface_builder.add_child_render_task(
-                sub_graph_output_id,
-                frame_state.rg_builder,
-            );
+        PrimitiveInstanceKind::BackdropRender { pic_index, .. } => {
+            match frame_state.surface_builder.sub_graph_output_map.get(pic_index).cloned() {
+                Some(sub_graph_output_id) => {
+                    frame_state.surface_builder.add_child_render_task(
+                        sub_graph_output_id,
+                        frame_state.rg_builder,
+                    );
+                }
+                None => {
+                    
+                    
+                    prim_instance.clear_visibility();
+                }
+            }
         }
     };
 }
