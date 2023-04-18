@@ -229,21 +229,26 @@ add_task(async function testInstallTriggerFromSubframe() {
 
   const testCases = [
     ["blank iframe with no attributes", SECURE_TESTROOT, {}, expected.http],
-    ["iframe srcdoc=''", SECURE_TESTROOT, { srcdoc: "" }, true, expected.http],
+
+    
     [
       "http page iframe src='blob:...'",
       SECURE_TESTROOT,
       { src: "blob:" },
-      expected.httpBlob,
+      expected.httpBlockedOnOrigin,
     ],
     [
       "file page iframe src='blob:...'",
       fileURL,
       { src: "blob:" },
-      expected.fileBlob,
+      expected.otherBlockedOnOrigin,
     ],
-
-    
+    [
+      "iframe srcdoc=''",
+      SECURE_TESTROOT,
+      { srcdoc: "" },
+      expected.httpBlockedOnOrigin,
+    ],
     [
       "blank iframe embedded into a top-level sandbox page",
       `${SECURE_TESTROOT}sandboxed.html`,
@@ -316,9 +321,8 @@ add_task(function testInstallBlankFrameNestedIntoBlobURLPage() {
     },
     {
       source: "test-host",
-      sourceURL:
-        "https://example.com/browser/toolkit/mozapps/extensions/test/browser/",
-    }
+    },
+     true
   );
 });
 

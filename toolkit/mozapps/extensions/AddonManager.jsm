@@ -2136,7 +2136,18 @@ var AddonManagerInternal = {
 
 
 
-  installAddonFromWebpage(aMimetype, aBrowser, aInstallingPrincipal, aInstall) {
+
+
+
+
+
+  installAddonFromWebpage(
+    aMimetype,
+    aBrowser,
+    aInstallingPrincipal,
+    aInstall,
+    aDetails
+  ) {
     if (!gStarted) {
       throw Components.Exception(
         "AddonManager is not initialized",
@@ -2212,6 +2223,10 @@ var AddonManagerInternal = {
         );
         return;
       } else if (
+        
+        
+        aDetails?.hasCrossOriginAncestor ||
+        
         aInstallingPrincipal.isNullPrincipal ||
         (aBrowser &&
           (!aBrowser.contentPrincipal ||
@@ -2294,7 +2309,8 @@ var AddonManagerInternal = {
           topBrowser,
           aInstallingPrincipal.URI,
           aInstall,
-          () => startInstall("other")
+          () => startInstall("other"),
+          () => aInstall.cancel()
         );
       } else {
         
@@ -4073,12 +4089,19 @@ var AddonManager = {
     return AddonManagerInternal.isInstallAllowed(aType, aInstallingPrincipal);
   },
 
-  installAddonFromWebpage(aType, aBrowser, aInstallingPrincipal, aInstall) {
+  installAddonFromWebpage(
+    aType,
+    aBrowser,
+    aInstallingPrincipal,
+    aInstall,
+    details
+  ) {
     AddonManagerInternal.installAddonFromWebpage(
       aType,
       aBrowser,
       aInstallingPrincipal,
-      aInstall
+      aInstall,
+      details
     );
   },
 

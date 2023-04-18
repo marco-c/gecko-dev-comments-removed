@@ -90,6 +90,12 @@ amManager.prototype = {
 
     const { mimetype, triggeringPrincipal, hash, icon, name, uri } = aPayload;
 
+    
+    
+    
+    
+    
+    
     if (!AddonManager.isInstallAllowed(mimetype, triggeringPrincipal)) {
       aCallback = null;
       retval = false;
@@ -115,14 +121,14 @@ amManager.prototype = {
     }).then(aInstall => {
       function callCallback(status) {
         try {
-          aCallback.onInstallEnded(uri, status);
+          aCallback?.onInstallEnded(uri, status);
         } catch (e) {
           Cu.reportError(e);
         }
       }
 
       if (!aInstall) {
-        aCallback.onInstallEnded(uri, UNSUPPORTED_TYPE);
+        callCallback(UNSUPPORTED_TYPE);
         return;
       }
 
@@ -154,7 +160,10 @@ amManager.prototype = {
         mimetype,
         aBrowser,
         triggeringPrincipal,
-        aInstall
+        aInstall,
+        {
+          hasCrossOriginAncestor: aPayload.hasCrossOriginAncestor,
+        }
       );
     });
 
