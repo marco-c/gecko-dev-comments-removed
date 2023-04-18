@@ -2093,7 +2093,10 @@
       
       
       
-      if (aTab.selected) {
+      if (!aTab.linkedPanel) {
+        if (!aTab.selected) {
+          return null;
+        }
         gBrowser._insertBrowser(aTab);
       }
       return document.getElementById(aTab.linkedPanel);
