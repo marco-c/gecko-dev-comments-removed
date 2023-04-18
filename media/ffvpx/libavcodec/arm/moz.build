@@ -5,8 +5,6 @@
 
 
 SOURCES += [
-    'fft_fixed_init_arm.c',
-    'fft_fixed_neon.S',
     'fft_init_arm.c',
     'fft_neon.S',
     'fft_vfp.S',
