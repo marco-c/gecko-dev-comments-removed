@@ -1542,9 +1542,17 @@ class AddonInstall {
         }
 
         if (this.existingAddon.isWebExtension && !this.addon.isWebExtension) {
+          
+          
           return Promise.reject([
             AddonManager.ERROR_UNEXPECTED_ADDON_TYPE,
             "WebExtensions may not be updated to other extension types",
+          ]);
+        }
+        if (this.existingAddon.type != this.addon.type) {
+          return Promise.reject([
+            AddonManager.ERROR_UNEXPECTED_ADDON_TYPE,
+            `Refusing to change addon type from ${this.existingAddon.type} to ${this.addon.type}`,
           ]);
         }
       }
