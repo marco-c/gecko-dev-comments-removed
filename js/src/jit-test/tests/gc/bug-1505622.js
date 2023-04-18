@@ -3,13 +3,11 @@
 
 gczeal(0);
 
-
-gc();
-const initialSize = gcparam("gcBytes");
-const initialMaxSize = gcparam("maxBytes");
-
 function allocUntilFail() {
-  gc();
+  gc(null, 'shrinking');
+
+  const initialSize = gcparam("gcBytes");
+  const initialMaxSize = gcparam("maxBytes");
   const initGCNumber = gcparam("majorGCNumber");
 
   
