@@ -9,41 +9,35 @@
 
 "use strict";
 
-
-
-
-
 var path = require("path");
 var helpers = require("../helpers");
 var browserWindowEnv = require("../environments/browser-window");
 
-module.exports = function(context) {
-  
-  
-  
-
-  return {
-    Program(node) {
-      let filePath = helpers.getAbsoluteFilePath(context);
-      let relativePath = path.relative(helpers.rootDir, filePath);
-      
-      
-      if (path.win32) {
-        relativePath = relativePath.split(path.sep).join("/");
-      }
-
-      if (
-        browserWindowEnv.browserjsScripts &&
-        browserWindowEnv.browserjsScripts.includes(relativePath)
-      ) {
-        for (let global in browserWindowEnv.globals) {
-          helpers.addVarToScope(
-            global,
-            context.getScope(),
-            browserWindowEnv.globals[global]
-          );
+module.exports = {
+  create(context) {
+    return {
+      Program(node) {
+        let filePath = helpers.getAbsoluteFilePath(context);
+        let relativePath = path.relative(helpers.rootDir, filePath);
+        
+        
+        if (path.win32) {
+          relativePath = relativePath.split(path.sep).join("/");
         }
-      }
-    },
-  };
+
+        if (
+          browserWindowEnv.browserjsScripts &&
+          browserWindowEnv.browserjsScripts.includes(relativePath)
+        ) {
+          for (let global in browserWindowEnv.globals) {
+            helpers.addVarToScope(
+              global,
+              context.getScope(),
+              browserWindowEnv.globals[global]
+            );
+          }
+        }
+      },
+    };
+  },
 };

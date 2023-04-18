@@ -8,10 +8,6 @@
 
 "use strict";
 
-
-
-
-
 function isCr(object) {
   return object.type === "Identifier" && object.name === "Cr";
 }

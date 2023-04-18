@@ -9,30 +9,24 @@
 
 "use strict";
 
-
-
-
-
 function isIdentifier(node, id) {
   return node && node.type === "Identifier" && node.name === id;
 }
 
-module.exports = function(context) {
-  
-  
-  
-
-  return {
-    MemberExpression(node) {
-      if (
-        isIdentifier(node.object, "OS") &&
-        isIdentifier(node.property, "File")
-      ) {
-        context.report(
-          node,
-          "OS.File is deprecated. You should use IOUtils instead."
-        );
-      }
-    },
-  };
+module.exports = {
+  create(context) {
+    return {
+      MemberExpression(node) {
+        if (
+          isIdentifier(node.object, "OS") &&
+          isIdentifier(node.property, "File")
+        ) {
+          context.report(
+            node,
+            "OS.File is deprecated. You should use IOUtils instead."
+          );
+        }
+      },
+    };
+  },
 };

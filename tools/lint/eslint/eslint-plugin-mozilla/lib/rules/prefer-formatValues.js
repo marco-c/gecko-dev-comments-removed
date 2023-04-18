@@ -9,10 +9,6 @@
 
 "use strict";
 
-
-
-
-
 function isIdentifier(node, id) {
   return node && node.type === "Identifier" && node.name === id;
 }
@@ -31,10 +27,6 @@ module.exports = {
     },
     schema: [],
   },
-
-  
-  
-  
 
   create(context) {
     function enterBlock() {

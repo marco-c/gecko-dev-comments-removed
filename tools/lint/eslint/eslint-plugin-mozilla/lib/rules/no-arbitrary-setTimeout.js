@@ -8,10 +8,6 @@
 
 "use strict";
 
-
-
-
-
 var helpers = require("../helpers");
 var testTypes = new Set(["browser", "xpcshell"]);
 
@@ -23,10 +19,6 @@ module.exports = {
     },
     schema: [],
   },
-
-  
-  
-  
 
   create(context) {
     

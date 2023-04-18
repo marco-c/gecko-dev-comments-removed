@@ -9,48 +9,38 @@
 
 "use strict";
 
+function isPrefixed(name) {
+  return name.length >= 2 && /^a[A-Z]/.test(name);
+}
 
+function deHungarianize(name) {
+  return name.substring(1, 2).toLowerCase() + name.substring(2, name.length);
+}
 
-
-
-module.exports = function(context) {
-  
-  
-  
-
-  function isPrefixed(name) {
-    return name.length >= 2 && /^a[A-Z]/.test(name);
-  }
-
-  function deHungarianize(name) {
-    return name.substring(1, 2).toLowerCase() + name.substring(2, name.length);
-  }
-
-  function checkFunction(node) {
-    for (var i = 0; i < node.params.length; i++) {
-      var param = node.params[i];
-      if (param.name && isPrefixed(param.name)) {
-        var errorObj = {
-          name: param.name,
-          suggestion: deHungarianize(param.name),
-        };
-        context.report(
-          param,
-          "Parameter '{{name}}' uses Hungarian Notation, " +
-            "consider using '{{suggestion}}' instead.",
-          errorObj
-        );
+module.exports = {
+  create(context) {
+    function checkFunction(node) {
+      for (var i = 0; i < node.params.length; i++) {
+        var param = node.params[i];
+        if (param.name && isPrefixed(param.name)) {
+          var errorObj = {
+            name: param.name,
+            suggestion: deHungarianize(param.name),
+          };
+          context.report(
+            param,
+            "Parameter '{{name}}' uses Hungarian Notation, " +
+              "consider using '{{suggestion}}' instead.",
+            errorObj
+          );
+        }
       }
     }
-  }
 
-  
-  
-  
-
-  return {
-    FunctionDeclaration: checkFunction,
-    ArrowFunctionExpression: checkFunction,
-    FunctionExpression: checkFunction,
-  };
+    return {
+      FunctionDeclaration: checkFunction,
+      ArrowFunctionExpression: checkFunction,
+      FunctionExpression: checkFunction,
+    };
+  },
 };

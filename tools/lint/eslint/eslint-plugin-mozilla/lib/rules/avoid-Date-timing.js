@@ -8,10 +8,6 @@
 
 "use strict";
 
-
-
-
-
 module.exports = {
   meta: {
     docs: {
@@ -20,10 +16,6 @@ module.exports = {
     },
     schema: [],
   },
-
-  
-  
-  
 
   create(context) {
     return {

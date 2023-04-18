@@ -8,27 +8,21 @@
 
 "use strict";
 
-
-
-
-
-module.exports = function(context) {
-  
-  
-  
-
-  return {
-    BinaryExpression(node) {
-      if (
-        ["==", "!="].includes(node.operator) &&
-        (["true", "false"].includes(node.left.raw) ||
-          ["true", "false"].includes(node.right.raw))
-      ) {
-        context.report(
-          node,
-          "Don't compare for inexact equality against boolean literals"
-        );
-      }
-    },
-  };
+module.exports = {
+  create(context) {
+    return {
+      BinaryExpression(node) {
+        if (
+          ["==", "!="].includes(node.operator) &&
+          (["true", "false"].includes(node.left.raw) ||
+            ["true", "false"].includes(node.right.raw))
+        ) {
+          context.report(
+            node,
+            "Don't compare for inexact equality against boolean literals"
+          );
+        }
+      },
+    };
+  },
 };

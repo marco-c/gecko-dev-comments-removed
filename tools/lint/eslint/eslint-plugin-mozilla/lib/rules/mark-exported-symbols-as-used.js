@@ -28,56 +28,50 @@ function markArrayElementsAsUsed(context, node, expression) {
 
 
 
+function isGlobalScope(context) {
+  return !context.getScope().upper;
+}
 
-module.exports = function(context) {
-  
-  
-  
-  function isGlobalScope() {
-    return !context.getScope().upper;
-  }
-
-  
-  
-  
-
-  return {
-    AssignmentExpression(node, parents) {
-      if (
-        node.operator === "=" &&
-        node.left.type === "MemberExpression" &&
-        node.left.object.type === "ThisExpression" &&
-        node.left.property.name === "EXPORTED_SYMBOLS" &&
-        isGlobalScope()
-      ) {
-        markArrayElementsAsUsed(context, node, node.right);
-      }
-    },
-
-    VariableDeclaration(node, parents) {
-      if (!isGlobalScope()) {
-        return;
-      }
-
-      for (let item of node.declarations) {
+module.exports = {
+  create(context) {
+    return {
+      AssignmentExpression(node, parents) {
         if (
-          item.id &&
-          item.id.type == "Identifier" &&
-          item.id.name === "EXPORTED_SYMBOLS"
+          node.operator === "=" &&
+          node.left.type === "MemberExpression" &&
+          node.left.object.type === "ThisExpression" &&
+          node.left.property.name === "EXPORTED_SYMBOLS" &&
+          isGlobalScope(context)
         ) {
-          if (node.kind === "let") {
-            
-            
-            context.report({
-              node,
-              message:
-                "EXPORTED_SYMBOLS cannot be declared via `let`. Use `var` or `this.EXPORTED_SYMBOLS =`",
-            });
-          }
-
-          markArrayElementsAsUsed(context, node, item.init);
+          markArrayElementsAsUsed(context, node, node.right);
         }
-      }
-    },
-  };
+      },
+
+      VariableDeclaration(node, parents) {
+        if (!isGlobalScope(context)) {
+          return;
+        }
+
+        for (let item of node.declarations) {
+          if (
+            item.id &&
+            item.id.type == "Identifier" &&
+            item.id.name === "EXPORTED_SYMBOLS"
+          ) {
+            if (node.kind === "let") {
+              
+              
+              context.report({
+                node,
+                message:
+                  "EXPORTED_SYMBOLS cannot be declared via `let`. Use `var` or `this.EXPORTED_SYMBOLS =`",
+              });
+            }
+
+            markArrayElementsAsUsed(context, node, item.init);
+          }
+        }
+      },
+    };
+  },
 };
