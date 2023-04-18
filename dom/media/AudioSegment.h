@@ -422,8 +422,7 @@ class AudioSegment : public MediaSegmentBase<AudioSegment, AudioChunk> {
   size_t WriteToInterleavedBuffer(nsTArray<AudioDataValue>& aBuffer,
                                   uint32_t aChannels) const;
   
-  
-  AudioChunk* AppendAndConsumeChunk(AudioChunk&& aChunk) {
+  void AppendAndConsumeChunk(AudioChunk&& aChunk) {
     AudioChunk* chunk = AppendChunk(aChunk.mDuration);
     chunk->mBuffer = std::move(aChunk.mBuffer);
     chunk->mChannelData = std::move(aChunk.mChannelData);
@@ -434,7 +433,6 @@ class AudioSegment : public MediaSegmentBase<AudioSegment, AudioChunk> {
     chunk->mVolume = aChunk.mVolume;
     chunk->mBufferFormat = aChunk.mBufferFormat;
     chunk->mPrincipalHandle = std::move(aChunk.mPrincipalHandle);
-    return chunk;
   }
   void ApplyVolume(float aVolume);
   
