@@ -307,14 +307,6 @@ void ExceptionHandler::Initialize(
 }
 
 ExceptionHandler::~ExceptionHandler() {
-  if (dbghelp_module_) {
-    FreeLibrary(dbghelp_module_);
-  }
-
-  if (rpcrt4_module_) {
-    FreeLibrary(rpcrt4_module_);
-  }
-
   if (handler_types_ != HANDLER_NONE) {
     EnterCriticalSection(&handler_stack_critical_section_);
 
@@ -391,6 +383,17 @@ ExceptionHandler::~ExceptionHandler() {
   
   if (InterlockedDecrement(&instance_count_) == 0) {
     DeleteCriticalSection(&handler_stack_critical_section_);
+  }
+
+  
+  
+  
+  if (dbghelp_module_) {
+    FreeLibrary(dbghelp_module_);
+  }
+
+  if (rpcrt4_module_) {
+    FreeLibrary(rpcrt4_module_);
   }
 }
 
