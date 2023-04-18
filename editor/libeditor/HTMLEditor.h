@@ -3247,6 +3247,13 @@ class HTMLEditor final : public EditorBase,
 
 
 
+  Result<RefPtr<Element>, nsresult> GetFirstSelectedCellElementInTable() const;
+
+  
+
+
+
+
 
 
 
@@ -3600,14 +3607,8 @@ class HTMLEditor final : public EditorBase,
 
 
 
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT nsresult InsertTableColumnsWithTransaction(
-      int32_t aNumberOfColumnsToInsert, InsertPosition aInsertPosition);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult InsertTableColumnsWithTransaction(
+      const EditorDOMPoint& aPointToInsert, int32_t aNumberOfColumnsToInsert);
 
   
 
