@@ -48,7 +48,7 @@ function toolboxRegister(aToolbox) {
     
     label: "Test Tool",
     inMenu: true,
-    isTargetSupported: () => true,
+    isToolSupported: () => true,
     build: function() {
       info("per-toolbox tool has been built.");
       resolveToolInstanceBuild();

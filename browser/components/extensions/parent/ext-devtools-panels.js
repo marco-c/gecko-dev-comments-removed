@@ -156,7 +156,7 @@ class ParentDevToolsPanel extends BaseDevToolsPanel {
       
       panelLabel: title,
       tooltip: `DevTools Panel added by "${extensionName}" add-on.`,
-      isTargetSupported: target => target.isLocalTab,
+      isToolSupported: toolbox => toolbox.target.isLocalTab,
       build: (window, toolbox) => {
         if (toolbox !== this.toolbox) {
           throw new Error(

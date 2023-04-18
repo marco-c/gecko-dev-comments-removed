@@ -50,9 +50,8 @@ async function testToggleToolboxButtons(toolbox, optionsPanelWin) {
 
   
   
-  const target = toolbox.target;
   const toolbarButtons = toolbox.toolbarButtons.filter(tool =>
-    tool.isTargetSupported(target)
+    tool.isToolSupported(toolbox)
   );
 
   const visibleToolbarButtons = toolbarButtons.filter(tool => tool.isVisible);

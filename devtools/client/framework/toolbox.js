@@ -961,7 +961,7 @@ Toolbox.prototype = {
       
       
       const toolDef = gDevTools.getToolDefinition(this._defaultToolId);
-      if (!toolDef || !toolDef.isTargetSupported(this.target)) {
+      if (!toolDef || !toolDef.isToolSupported(this)) {
         this._defaultToolId = "webconsole";
       }
 
@@ -1597,7 +1597,7 @@ Toolbox.prototype = {
       isInStartContainer,
       setup,
       teardown,
-      isTargetSupported,
+      isToolSupported,
       isCurrentlyVisible,
       isChecked,
       onKeyDown,
@@ -1620,7 +1620,7 @@ Toolbox.prototype = {
           onKeyDown(event, toolbox);
         }
       },
-      isTargetSupported,
+      isToolSupported,
       isCurrentlyVisible,
       get isChecked() {
         if (typeof isChecked == "function") {
@@ -1854,7 +1854,7 @@ Toolbox.prototype = {
     
     this.panelDefinitions = definitions.filter(
       definition =>
-        definition.isTargetSupported(this.target) && definition.id !== "options"
+        definition.isToolSupported(this) && definition.id !== "options"
     );
 
     
@@ -1992,8 +1992,8 @@ Toolbox.prototype = {
     this.frameButton = this._createButtonState({
       id: "command-button-frames",
       description: L10N.getStr("toolbox.frames.tooltip"),
-      isTargetSupported: target => {
-        return target.getTrait("frames");
+      isToolSupported: toolbox => {
+        return toolbox.target.getTrait("frames");
       },
       isCurrentlyVisible: () => {
         const hasFrames = this.frameMap.size > 1;
@@ -2012,7 +2012,7 @@ Toolbox.prototype = {
     this.errorCountButton = this._createButtonState({
       id: "command-button-errorcount",
       isInStartContainer: false,
-      isTargetSupported: target => true,
+      isToolSupported: toolbox => true,
       description: L10N.getStr("toolbox.errorCountButton.description"),
     });
     
@@ -2140,8 +2140,8 @@ Toolbox.prototype = {
       description: this._getPickerTooltip(),
       onClick: this._onPickerClick,
       isInStartContainer: true,
-      isTargetSupported: target => {
-        return target.getTrait("frames");
+      isToolSupported: toolbox => {
+        return toolbox.target.getTrait("frames");
       },
     });
 
@@ -2330,13 +2330,13 @@ Toolbox.prototype = {
 
 
   _commandIsVisible: function(button) {
-    const { isTargetSupported, isCurrentlyVisible, visibilityswitch } = button;
+    const { isToolSupported, isCurrentlyVisible, visibilityswitch } = button;
 
     if (!Services.prefs.getBoolPref(visibilityswitch, true)) {
       return false;
     }
 
-    if (isTargetSupported && !isTargetSupported(this.target)) {
+    if (isToolSupported && !isToolSupported(this)) {
       return false;
     }
 
@@ -2354,7 +2354,7 @@ Toolbox.prototype = {
 
 
   _buildPanelForTool: function(toolDefinition) {
-    if (!toolDefinition.isTargetSupported(this.target)) {
+    if (!toolDefinition.isToolSupported(this)) {
       return;
     }
 
@@ -3704,7 +3704,7 @@ Toolbox.prototype = {
       isAdditionalTool = true;
     }
 
-    if (definition.isTargetSupported(this.target)) {
+    if (definition.isToolSupported(this)) {
       if (isAdditionalTool) {
         this.visibleAdditionalTools = [...this.visibleAdditionalTools, toolId];
         this._combineAndSortPanelDefinitions();
