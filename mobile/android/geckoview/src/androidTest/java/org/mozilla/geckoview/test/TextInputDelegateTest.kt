@@ -628,7 +628,9 @@ class TextInputDelegateTest : BaseSessionTest() {
         
         
         
-        
+        syncShadowText(ic)
+        assertTextAndSelection("Can select using key event", ic,
+                               "frabar", 6, 5)
 
         promise = mainSession.evaluatePromiseJS(
             when (id) {
