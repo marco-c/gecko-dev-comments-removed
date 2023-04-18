@@ -21,14 +21,6 @@ struct UPluralRules;
 
 namespace mozilla::intl {
 
-#ifndef U_HIDE_DRAFT_API
-
-
-
-
-#  define MOZ_INTL_HAS_NUMBER_RANGE_FORMAT
-#endif
-
 
 
 
@@ -108,7 +100,6 @@ class NumberRangeFormat final {
   NumberRangeFormat(const NumberRangeFormat&) = delete;
   NumberRangeFormat& operator=(const NumberRangeFormat&) = delete;
 
-#ifdef MOZ_INTL_HAS_NUMBER_RANGE_FORMAT
   ~NumberRangeFormat();
 
   
@@ -239,7 +230,6 @@ class NumberRangeFormat final {
   Result<std::u16string_view, ICUError> formatResultToParts(
       Maybe<double> start, bool startIsNegative, Maybe<double> end,
       bool endIsNegative, NumberPartVector& parts) const;
-#endif
 };
 
 }  

@@ -21,13 +21,6 @@
 
 namespace mozilla::intl {
 
-#ifndef U_HIDE_DRAFT_API
-
-
-
-#  define MOZ_INTL_PLURAL_RULES_HAS_SELECT_RANGE
-#endif
-
 class PluralRules final {
  public:
   
@@ -71,7 +64,6 @@ class PluralRules final {
 
   Result<PluralRules::Keyword, ICUError> Select(double aNumber) const;
 
-#ifdef MOZ_INTL_PLURAL_RULES_HAS_SELECT_RANGE
   
 
 
@@ -80,7 +72,6 @@ class PluralRules final {
 
   Result<PluralRules::Keyword, ICUError> SelectRange(double aStart,
                                                      double aEnd) const;
-#endif
 
   
 

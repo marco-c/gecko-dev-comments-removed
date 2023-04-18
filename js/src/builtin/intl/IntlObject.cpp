@@ -651,30 +651,6 @@ static ArrayObject* AvailableCollations(JSContext* cx) {
     }
   }
 
-  
-  
-  
-  
-  
-  
-  {
-    
-    
-    
-    
-    auto keywords = mozilla::intl::Collator::GetBcp47KeywordValuesForLocale("");
-    if (keywords.isErr()) {
-      intl::ReportInternalError(cx, keywords.unwrapErr());
-      return nullptr;
-    }
-
-    static constexpr auto& unsupported = UnsupportedCollationsArray;
-
-    if (!EnumerationIntoList<unsupported>(cx, keywords.unwrap(), &list)) {
-      return nullptr;
-    }
-  }
-
   return CreateArrayFromList(cx, &list);
 }
 
@@ -687,26 +663,13 @@ static constexpr auto UnsupportedCurrencies() {
   
   
   return std::array{
-      "EQE",  
       "LSM",  
   };
 }
 
 
 
-
-
-static constexpr auto MissingCurrencies() {
-  return std::array{
-      "UYW",  
-      "VES",  
-  };
-}
-
-
-
 static constexpr auto UnsupportedCurrenciesArray = UnsupportedCurrencies();
-static constexpr auto MissingCurrenciesArray = MissingCurrencies();
 
 
 
@@ -728,19 +691,6 @@ static ArrayObject* AvailableCurrencies(JSContext* cx) {
     static constexpr auto& unsupported = UnsupportedCurrenciesArray;
 
     if (!EnumerationIntoList<unsupported>(cx, currencies.unwrap(), &list)) {
-      return nullptr;
-    }
-  }
-
-  static constexpr auto& missing = MissingCurrenciesArray;
-
-  
-  for (const char* value : missing) {
-    auto* string = NewStringCopyZ<CanGC>(cx, value);
-    if (!string) {
-      return nullptr;
-    }
-    if (!list.append(string)) {
       return nullptr;
     }
   }
