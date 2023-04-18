@@ -296,6 +296,11 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:js::wasm::Code::setTier2\n"
          "race:js::wasm::Code::setAndBorrowTier2\n"
 
+         
+         
+         
+         "thread:glean::initialize\n"
+
       
       ;  
 }
