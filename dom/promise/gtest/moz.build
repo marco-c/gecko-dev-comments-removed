@@ -1,0 +1,14 @@
+
+
+
+
+
+
+UNIFIED_SOURCES += [
+    "NativeThenHandler.cpp",
+    "ThenWithCycleCollectedArgsJS.cpp",
+]
+
+LOCAL_INCLUDES += ["/dom/promise"]
+
+FINAL_LIBRARY = "xul-gtest"
