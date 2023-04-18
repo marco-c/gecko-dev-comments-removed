@@ -50,9 +50,6 @@ class ArchlinuxBootstrapper(LinuxBootstrapper, BaseBootstrapper):
 
     MOBILE_ANDROID_COMMON_PACKAGES = [
         
-        
-        "jdk8-openjdk",
-        
         "multilib/lib32-ncurses",
         "multilib/lib32-readline",
         "multilib/lib32-zlib",
@@ -100,7 +97,6 @@ class ArchlinuxBootstrapper(LinuxBootstrapper, BaseBootstrapper):
             raise e
 
         
-        self.ensure_java(mozconfig_builder)
         super().install_mobile_android_packages(
             mozconfig_builder, artifact_mode=artifact_mode
         )

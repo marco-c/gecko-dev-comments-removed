@@ -64,7 +64,6 @@ class DebianBootstrapper(LinuxBootstrapper, BaseBootstrapper):
     
     
     MOBILE_ANDROID_COMMON_PACKAGES = [
-        "openjdk-8-jdk-headless",  
         "libncurses5",  
     ]
 
@@ -113,7 +112,6 @@ class DebianBootstrapper(LinuxBootstrapper, BaseBootstrapper):
         self.apt_install(*self.MOBILE_ANDROID_COMMON_PACKAGES)
 
         
-        self.ensure_java(mozconfig_builder)
         super().install_mobile_android_packages(
             mozconfig_builder, artifact_mode=artifact_mode
         )
