@@ -24,18 +24,18 @@ class SerializedStackHolder {
   RefPtr<ThreadSafeWorkerRef> mWorkerRef;
 
   
-  void WriteStack(JSContext* aCx, JS::HandleObject aStack);
+  void WriteStack(JSContext* aCx, JS::Handle<JSObject*> aStack);
 
  public:
   SerializedStackHolder();
 
   
   void SerializeMainThreadOrWorkletStack(JSContext* aCx,
-                                         JS::HandleObject aStack);
+                                         JS::Handle<JSObject*> aStack);
 
   
   void SerializeWorkerStack(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
-                            JS::HandleObject aStack);
+                            JS::Handle<JSObject*> aStack);
 
   
   void SerializeCurrentStack(JSContext* aCx);

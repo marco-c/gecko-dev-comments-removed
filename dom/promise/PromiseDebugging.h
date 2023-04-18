@@ -54,10 +54,10 @@ class PromiseDebugging {
       GlobalObject&, UncaughtRejectionObserver& aObserver);
 
   
-  static void AddUncaughtRejection(JS::HandleObject);
+  static void AddUncaughtRejection(JS::Handle<JSObject*>);
   
   
-  static void AddConsumedRejection(JS::HandleObject);
+  static void AddConsumedRejection(JS::Handle<JSObject*>);
   
   
   static void FlushUncaughtRejections();

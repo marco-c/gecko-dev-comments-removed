@@ -72,9 +72,9 @@ class JSActorManager : public nsISupports {
 
 
 
-  virtual already_AddRefed<JSActor> InitJSActor(JS::HandleObject aMaybeActor,
-                                                const nsACString& aName,
-                                                ErrorResult& aRv) = 0;
+  virtual already_AddRefed<JSActor> InitJSActor(
+      JS::Handle<JSObject*> aMaybeActor, const nsACString& aName,
+      ErrorResult& aRv) = 0;
 
   
 

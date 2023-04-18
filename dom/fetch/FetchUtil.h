@@ -65,7 +65,7 @@ class FetchUtil final {
 
 
 
-  static bool StreamResponseToJS(JSContext* aCx, JS::HandleObject aObj,
+  static bool StreamResponseToJS(JSContext* aCx, JS::Handle<JSObject*> aObj,
                                  JS::MimeType aMimeType,
                                  JS::StreamConsumer* aConsumer,
                                  WorkerPrivate* aMaybeWorker);
