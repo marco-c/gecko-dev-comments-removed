@@ -115,10 +115,7 @@ class SelectionManager : public nsISelectionListener {
 
 
 
-
-
-
-  void SpellCheckRangeAdded(const nsRange& aRange);
+  void SpellCheckRangeChanged(const nsRange& aRange);
 
   ~SelectionManager();
 

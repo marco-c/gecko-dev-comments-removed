@@ -228,7 +228,7 @@ void SelectionManager::ProcessSelectionChanged(SelData* aSelData) {
   }
 }
 
-void SelectionManager::SpellCheckRangeAdded(const nsRange& aRange) {
+void SelectionManager::SpellCheckRangeChanged(const nsRange& aRange) {
   
   
   if (StaticPrefs::accessibility_cache_enabled_AtStartup()) {
