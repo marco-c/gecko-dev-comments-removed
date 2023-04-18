@@ -14,6 +14,7 @@
 
 #ifndef XP_WIN
 #  include <fcntl.h>
+#  include <shlwapi.h>
 #  include <sys/stat.h>
 #  include <sys/types.h>
 #endif
@@ -22,29 +23,69 @@ namespace mozilla {
 
 static bool GetLockFileName(const char* nameToken, const char16_t* installPath,
                             nsCString& filePath) {
+#ifdef XP_WIN
+  
+  
+  
+
+  
+  
+  
+  
+  
+  mozilla::UniquePtr<wchar_t[]> updateDir;
+  HRESULT hr = GetCommonUpdateDirectory(
+      reinterpret_cast<const wchar_t*>(installPath), updateDir);
+  if (FAILED(hr)) {
+    return false;
+  }
+
+  
+  
+  size_t len = wcslen(updateDir.get());
+  if (len == 0) {
+    return false;
+  }
+  if (updateDir.get()[len - 1] == '/' || updateDir.get()[len - 1] == '\\') {
+    updateDir.get()[len - 1] = '\0';
+  }
+
+  wchar_t* hashPtr = PathFindFileNameW(updateDir.get());
+  
+  
+  if (hashPtr == updateDir.get()) {
+    return false;
+  }
+
+  
+  
+  size_t hashSize = wcslen(hashPtr) + 1;
+  mozilla::UniquePtr<wchar_t[]> hash = mozilla::MakeUnique<wchar_t[]>(hashSize);
+  errno_t error = wcscpy_s(hash.get(), hashSize, hashPtr);
+  if (error != 0) {
+    return false;
+  }
+
+  
+  BOOL success = PathRemoveFileSpecW(updateDir.get());
+  if (!success) {
+    return false;
+  }
+  success = PathRemoveFileSpecW(updateDir.get());
+  if (!success) {
+    return false;
+  }
+
+  filePath =
+      nsPrintfCString("%s\\%s-%s", NS_ConvertUTF16toUTF8(updateDir.get()).get(),
+                      nameToken, NS_ConvertUTF16toUTF8(hash.get()).get());
+
+#else
   mozilla::UniquePtr<NS_tchar[]> pathHash;
   if (!GetInstallHash(installPath, pathHash)) {
     return false;
   }
 
-#ifdef XP_WIN
-  
-  
-  
-  PWSTR programDataPath;
-  HRESULT hr = SHGetKnownFolderPath(FOLDERID_ProgramData, KF_FLAG_CREATE,
-                                    nullptr, &programDataPath);
-  if (FAILED(hr)) {
-    return false;
-  }
-  mozilla::UniquePtr<wchar_t, CoTaskMemFreeDeleter> programDataPathUnique(
-      programDataPath);
-
-  filePath = nsPrintfCString(
-      "%s\\%s\\%s-%s", NS_ConvertUTF16toUTF8(programDataPath).get(),
-      MOZ_APP_VENDOR, nameToken, NS_ConvertUTF16toUTF8(pathHash.get()).get());
-
-#else
   
   filePath = nsPrintfCString("/tmp/%s%s-%s", MOZ_APP_VENDOR, nameToken,
                              pathHash.get());
