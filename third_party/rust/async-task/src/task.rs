@@ -124,18 +124,56 @@ impl<T> Task<T> {
     pub async fn cancel(self) -> Option<T> {
         let mut this = self;
         this.set_canceled();
+        this.fallible().await
+    }
 
-        struct Fut<T>(Task<T>);
-
-        impl<T> Future for Fut<T> {
-            type Output = Option<T>;
-
-            fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-                self.0.poll_task(cx)
-            }
-        }
-
-        Fut(this).await
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn fallible(self) -> FallibleTask<T> {
+        FallibleTask { task: self }
     }
 
     
@@ -351,6 +389,12 @@ impl<T> Task<T> {
             }
         }
     }
+
+    fn header(&self) -> &Header {
+        let ptr = self.ptr.as_ptr();
+        let header = ptr as *const Header;
+        unsafe { &*header }
+    }
 }
 
 impl<T> Drop for Task<T> {
@@ -373,11 +417,101 @@ impl<T> Future for Task<T> {
 
 impl<T> fmt::Debug for Task<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let ptr = self.ptr.as_ptr();
-        let header = ptr as *const Header;
-
         f.debug_struct("Task")
-            .field("header", unsafe { &(*header) })
+            .field("header", self.header())
+            .finish()
+    }
+}
+
+
+
+
+
+
+
+
+
+#[must_use = "tasks get canceled when dropped, use `.detach()` to run them in the background"]
+pub struct FallibleTask<T> {
+    task: Task<T>,
+}
+
+impl<T> FallibleTask<T> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn detach(self) {
+        self.task.detach()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub async fn cancel(self) -> Option<T> {
+        self.task.cancel().await
+    }
+}
+
+impl<T> Future for FallibleTask<T> {
+    type Output = Option<T>;
+
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        self.task.poll_task(cx)
+    }
+}
+
+impl<T> fmt::Debug for FallibleTask<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("FallibleTask")
+            .field("header", self.task.header())
             .finish()
     }
 }
