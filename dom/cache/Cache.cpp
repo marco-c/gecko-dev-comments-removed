@@ -391,6 +391,17 @@ already_AddRefed<Promise> Cache::Put(JSContext* aCx,
     return nullptr;
   }
 
+  if (NS_WARN_IF(aResponse.GetPrincipalInfo() &&
+                 aResponse.GetPrincipalInfo()->type() ==
+                     mozilla::ipc::PrincipalInfo::TExpandedPrincipalInfo)) {
+    
+    
+    
+    
+    aRv.ThrowSecurityError("Disallowed on WebExtension ContentScript Request");
+    return nullptr;
+  }
+
   SafeRefPtr<InternalRequest> ir =
       ToInternalRequest(aCx, aRequest, ReadBody, aRv);
   if (NS_WARN_IF(aRv.Failed())) {
