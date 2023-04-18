@@ -12,6 +12,7 @@
 #endif
 
 #include "GeckoProfiler.h"
+#include "mozilla/BaseAndGeckoProfilerDetail.h"
 #include "mozilla/BaseProfilerDetail.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/DataMutex.h"
@@ -626,15 +627,22 @@ void ProfilerParent::Init() {
     ipcParams.features() = features;
     ipcParams.activeTabID() = activeTabID;
 
-    for (uint32_t i = 0; i < filters.length(); ++i) {
-      ipcParams.filters().AppendElement(filters[i]);
-    }
+    
+    
+    if (!profiler::detail::FiltersExcludePid(
+            filters, ProfilerProcessId::FromNumber(mChildPid))) {
+      ipcParams.filters().SetCapacity(filters.length());
+      for (const char* filter : filters) {
+        ipcParams.filters().AppendElement(filter);
+      }
 
-    Unused << SendEnsureStarted(ipcParams);
-    RequestChunkManagerUpdate();
-  } else {
-    Unused << SendStop();
+      Unused << SendEnsureStarted(ipcParams);
+      RequestChunkManagerUpdate();
+      return;
+    }
   }
+
+  Unused << SendStop();
 }
 
 ProfilerParent::~ProfilerParent() {
@@ -753,10 +761,21 @@ void ProfilerParent::ProfilerStarted(nsIProfilerStartParams* aParams) {
   aParams->GetInterval(&ipcParams.interval());
   aParams->GetFeatures(&ipcParams.features());
   ipcParams.filters() = aParams->GetFilters().Clone();
+  
+  auto filtersCStrings = nsTArray<const char*>{aParams->GetFilters().Length()};
+  for (const auto& filter : aParams->GetFilters()) {
+    filtersCStrings.AppendElement(filter.Data());
+  }
   aParams->GetActiveTabID(&ipcParams.activeTabID());
 
   ProfilerParentTracker::ProfilerStarted(ipcParams.entries());
   ProfilerParentTracker::Enumerate([&](ProfilerParent* profilerParent) {
+    if (profiler::detail::FiltersExcludePid(
+            filtersCStrings,
+            ProfilerProcessId::FromNumber(profilerParent->mChildPid))) {
+      
+      return;
+    }
     Unused << profilerParent->SendStart(ipcParams);
     profilerParent->RequestChunkManagerUpdate();
   });

@@ -298,15 +298,19 @@ void ProfilerChild::GatherProfileThreadFunction(
   using namespace mozilla::literals::ProportionValue_literals;  
 
   auto writer = MakeUnique<SpliceableChunkedJSONWriter>();
-  profiler_get_profile_json(
-      *writer,
-       0,
-       false,
-      progressLogger.CreateSubLoggerFromTo(
-          1_pc,
-          "profiler_get_profile_json_into_lazily_allocated_buffer started",
-          99_pc,
-          "profiler_get_profile_json_into_lazily_allocated_buffer done"));
+  if (!profiler_get_profile_json(
+          *writer,
+           0,
+           false,
+          progressLogger.CreateSubLoggerFromTo(
+              1_pc,
+              "profiler_get_profile_json_into_lazily_allocated_buffer started",
+              99_pc,
+              "profiler_get_profile_json_into_lazily_allocated_buffer done"))) {
+    
+    
+    writer.reset();
+  }
 
   if (NS_WARN_IF(NS_FAILED(
           parameters->profilerChild->mThread->Dispatch(NS_NewRunnableFunction(
@@ -330,17 +334,26 @@ void ProfilerChild::GatherProfileThreadFunction(
                 
                 
                 mozilla::ipc::Shmem shmem;
-                writer->ChunkedWriteFunc().CopyDataIntoLazilyAllocatedBuffer(
-                    [&](size_t allocationSize) -> char* {
-                      if (parameters->profilerChild->AllocShmem(
-                              allocationSize,
-                              mozilla::ipc::Shmem::SharedMemory::TYPE_BASIC,
-                              &shmem)) {
-                        return shmem.get<char>();
-                      }
-                      return nullptr;
-                    });
-                writer = nullptr;
+                if (writer) {
+                  writer->ChunkedWriteFunc().CopyDataIntoLazilyAllocatedBuffer(
+                      [&](size_t allocationSize) -> char* {
+                        if (parameters->profilerChild->AllocShmem(
+                                allocationSize,
+                                mozilla::ipc::Shmem::SharedMemory::TYPE_BASIC,
+                                &shmem)) {
+                          return shmem.get<char>();
+                        }
+                        return nullptr;
+                      });
+                  writer = nullptr;
+                } else {
+                  
+                  if (parameters->profilerChild->AllocShmem(
+                          1, mozilla::ipc::Shmem::SharedMemory::TYPE_BASIC,
+                          &shmem)) {
+                    shmem.get<char>()[0] = '\0';
+                  }
+                }
 
                 parameters->resolver(std::move(shmem));
               }))))) {
