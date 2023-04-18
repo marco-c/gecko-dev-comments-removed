@@ -267,28 +267,16 @@ class CodeGenerator final : public CodeGeneratorSpecific {
 
   void testValueTruthyForType(JSValueType type, ScratchTagScope& tag,
                               const ValueOperand& value, Register scratch1,
-                              Register scratch2, FloatRegister fr,
+                              Register scratch2, FloatRegister floatTemp,
                               Label* ifTruthy, Label* ifFalsy,
                               OutOfLineTestObject* ool, bool skipTypeTest);
 
   
   
   
-  
-  void testValueTruthyKernel(const ValueOperand& value,
-                             const LDefinition* scratch1,
-                             const LDefinition* scratch2, FloatRegister fr,
-                             TypeDataList observedTypes, Label* ifTruthy,
-                             Label* ifFalsy, OutOfLineTestObject* ool);
-
-  
-  
-  
-  
-  
-  void testValueTruthy(const ValueOperand& value, const LDefinition* scratch1,
-                       const LDefinition* scratch2, FloatRegister fr,
-                       TypeDataList observedTypes, Label* ifTruthy,
+  void testValueTruthy(const ValueOperand& value, Register scratch1,
+                       Register scratch2, FloatRegister floatTemp,
+                       const TypeDataList& observedTypes, Label* ifTruthy,
                        Label* ifFalsy, OutOfLineTestObject* ool);
 
   
