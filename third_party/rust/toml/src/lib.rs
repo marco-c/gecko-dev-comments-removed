@@ -144,32 +144,37 @@
 
 
 
-
-
-
-
-#![doc(html_root_url = "https://docs.rs/toml/0.4")]
+#![doc(html_root_url = "https://docs.rs/toml/0.5")]
 #![deny(missing_docs)]
+#![warn(rust_2018_idioms)]
 
-#[macro_use]
-extern crate serde;
 
+
+
+#![forbid(unsafe_code)]
+
+pub mod map;
 pub mod value;
 #[doc(no_inline)]
-pub use value::Value;
+pub use crate::value::Value;
 mod datetime;
 
 pub mod ser;
 #[doc(no_inline)]
-pub use ser::{to_string, to_string_pretty, to_vec, Serializer};
+pub use crate::ser::{to_string, to_string_pretty, to_vec, Serializer};
 pub mod de;
 #[doc(no_inline)]
-pub use de::{from_slice, from_str, Deserializer};
+pub use crate::de::{from_slice, from_str, Deserializer};
 mod tokens;
 
 #[doc(hidden)]
 pub mod macros;
 
 mod spanned;
-#[doc(no_inline)]
-pub use spanned::Spanned;
+pub use crate::spanned::Spanned;
+
+
+#[allow(unused_imports)]
+use crate::datetime::Datetime;
+#[allow(unused_imports)]
+use core::str::FromStr;

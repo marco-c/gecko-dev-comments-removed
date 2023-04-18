@@ -1,9 +1,6 @@
 pub use serde::de::{Deserialize, IntoDeserializer};
 
-use value::{Value, Table, Array};
-
-
-
+use crate::value::{Array, Table, Value};
 
 
 
@@ -36,7 +33,7 @@ macro_rules! toml {
     ($($toml:tt)+) => {{
         let table = $crate::value::Table::new();
         let mut root = $crate::Value::Table(table);
-        toml_internal!(@toplevel root [] $($toml)+);
+        $crate::toml_internal!(@toplevel root [] $($toml)+);
         root
     }};
 }
@@ -81,63 +78,63 @@ macro_rules! toml_internal {
 
     
     (@toplevel $root:ident [$($path:tt)*] $($($k:tt)-+).+ = - $v:tt $($rest:tt)*) => {
-        toml_internal!(@toplevel $root [$($path)*] $($($k)-+).+ = (-$v) $($rest)*);
+        $crate::toml_internal!(@toplevel $root [$($path)*] $($($k)-+).+ = (-$v) $($rest)*);
     };
 
     
     (@toplevel $root:ident [$($path:tt)*] $($($k:tt)-+).+ = + $v:tt $($rest:tt)*) => {
-        toml_internal!(@toplevel $root [$($path)*] $($($k)-+).+ = ($v) $($rest)*);
+        $crate::toml_internal!(@toplevel $root [$($path)*] $($($k)-+).+ = ($v) $($rest)*);
     };
 
     
     (@toplevel $root:ident [$($path:tt)*] $($($k:tt)-+).+ = $yr:tt - $mo:tt - $dhr:tt : $min:tt : $sec:tt . $frac:tt - $tzh:tt : $tzm:tt $($rest:tt)*) => {
-        toml_internal!(@topleveldatetime $root [$($path)*] $($($k)-+).+ = ($yr - $mo - $dhr : $min : $sec . $frac - $tzh : $tzm) $($rest)*);
+        $crate::toml_internal!(@topleveldatetime $root [$($path)*] $($($k)-+).+ = ($yr - $mo - $dhr : $min : $sec . $frac - $tzh : $tzm) $($rest)*);
     };
     
     (@toplevel $root:ident [$($path:tt)*] $($($k:tt)-+).+ = $yr:tt - $mo:tt - $day:tt $hr:tt : $min:tt : $sec:tt . $frac:tt - $tzh:tt : $tzm:tt $($rest:tt)*) => {
-        toml_internal!(@topleveldatetime $root [$($path)*] $($($k)-+).+ = ($yr - $mo - $day T $hr : $min : $sec . $frac - $tzh : $tzm) $($rest)*);
+        $crate::toml_internal!(@topleveldatetime $root [$($path)*] $($($k)-+).+ = ($yr - $mo - $day T $hr : $min : $sec . $frac - $tzh : $tzm) $($rest)*);
     };
 
     
     (@toplevel $root:ident [$($path:tt)*] $($($k:tt)-+).+ = $yr:tt - $mo:tt - $dhr:tt : $min:tt : $sec:tt - $tzh:tt : $tzm:tt $($rest:tt)*) => {
-        toml_internal!(@topleveldatetime $root [$($path)*] $($($k)-+).+ = ($yr - $mo - $dhr : $min : $sec - $tzh : $tzm) $($rest)*);
+        $crate::toml_internal!(@topleveldatetime $root [$($path)*] $($($k)-+).+ = ($yr - $mo - $dhr : $min : $sec - $tzh : $tzm) $($rest)*);
     };
     
     (@toplevel $root:ident [$($path:tt)*] $($($k:tt)-+).+ = $yr:tt - $mo:tt - $day:tt $hr:tt : $min:tt : $sec:tt - $tzh:tt : $tzm:tt $($rest:tt)*) => {
-        toml_internal!(@topleveldatetime $root [$($path)*] $($($k)-+).+ = ($yr - $mo - $day T $hr : $min : $sec - $tzh : $tzm) $($rest)*);
+        $crate::toml_internal!(@topleveldatetime $root [$($path)*] $($($k)-+).+ = ($yr - $mo - $day T $hr : $min : $sec - $tzh : $tzm) $($rest)*);
     };
 
     
     (@toplevel $root:ident [$($path:tt)*] $($($k:tt)-+).+ = $yr:tt - $mo:tt - $dhr:tt : $min:tt : $sec:tt . $frac:tt $($rest:tt)*) => {
-        toml_internal!(@topleveldatetime $root [$($path)*] $($($k)-+).+ = ($yr - $mo - $dhr : $min : $sec . $frac) $($rest)*);
+        $crate::toml_internal!(@topleveldatetime $root [$($path)*] $($($k)-+).+ = ($yr - $mo - $dhr : $min : $sec . $frac) $($rest)*);
     };
     
     (@toplevel $root:ident [$($path:tt)*] $($($k:tt)-+).+ = $yr:tt - $mo:tt - $day:tt $hr:tt : $min:tt : $sec:tt . $frac:tt $($rest:tt)*) => {
-        toml_internal!(@topleveldatetime $root [$($path)*] $($($k)-+).+ = ($yr - $mo - $day T $hr : $min : $sec . $frac) $($rest)*);
+        $crate::toml_internal!(@topleveldatetime $root [$($path)*] $($($k)-+).+ = ($yr - $mo - $day T $hr : $min : $sec . $frac) $($rest)*);
     };
 
     
     (@toplevel $root:ident [$($path:tt)*] $($($k:tt)-+).+ = $yr:tt - $mo:tt - $dhr:tt : $min:tt : $sec:tt $($rest:tt)*) => {
-        toml_internal!(@topleveldatetime $root [$($path)*] $($($k)-+).+ = ($yr - $mo - $dhr : $min : $sec) $($rest)*);
+        $crate::toml_internal!(@topleveldatetime $root [$($path)*] $($($k)-+).+ = ($yr - $mo - $dhr : $min : $sec) $($rest)*);
     };
     
     (@toplevel $root:ident [$($path:tt)*] $($($k:tt)-+).+ = $yr:tt - $mo:tt - $day:tt $hr:tt : $min:tt : $sec:tt $($rest:tt)*) => {
-        toml_internal!(@topleveldatetime $root [$($path)*] $($($k)-+).+ = ($yr - $mo - $day T $hr : $min : $sec) $($rest)*);
+        $crate::toml_internal!(@topleveldatetime $root [$($path)*] $($($k)-+).+ = ($yr - $mo - $day T $hr : $min : $sec) $($rest)*);
     };
 
     
     (@toplevel $root:ident [$($path:tt)*] $($($k:tt)-+).+ = $yr:tt - $mo:tt - $day:tt $($rest:tt)*) => {
-        toml_internal!(@topleveldatetime $root [$($path)*] $($($k)-+).+ = ($yr - $mo - $day) $($rest)*);
+        $crate::toml_internal!(@topleveldatetime $root [$($path)*] $($($k)-+).+ = ($yr - $mo - $day) $($rest)*);
     };
 
     
     (@toplevel $root:ident [$($path:tt)*] $($($k:tt)-+).+ = $hr:tt : $min:tt : $sec:tt . $frac:tt $($rest:tt)*) => {
-        toml_internal!(@topleveldatetime $root [$($path)*] $($($k)-+).+ = ($hr : $min : $sec . $frac) $($rest)*);
+        $crate::toml_internal!(@topleveldatetime $root [$($path)*] $($($k)-+).+ = ($hr : $min : $sec . $frac) $($rest)*);
     };
 
     
     (@toplevel $root:ident [$($path:tt)*] $($($k:tt)-+).+ = $hr:tt : $min:tt : $sec:tt $($rest:tt)*) => {
-        toml_internal!(@topleveldatetime $root [$($path)*] $($($k)-+).+ = ($hr : $min : $sec) $($rest)*);
+        $crate::toml_internal!(@topleveldatetime $root [$($path)*] $($($k)-+).+ = ($hr : $min : $sec) $($rest)*);
     };
 
     
@@ -145,35 +142,35 @@ macro_rules! toml_internal {
     (@toplevel $root:ident [$($path:tt)*] $($($k:tt)-+).+ = $v:tt $($rest:tt)*) => {{
         $crate::macros::insert_toml(
             &mut $root,
-            &[$($path)* $(&concat!($("-", toml_internal!(@path $k),)+)[1..], )+],
-            toml_internal!(@value $v));
-        toml_internal!(@toplevel $root [$($path)*] $($rest)*);
+            &[$($path)* $(&concat!($("-", $crate::toml_internal!(@path $k),)+)[1..], )+],
+            $crate::toml_internal!(@value $v));
+        $crate::toml_internal!(@toplevel $root [$($path)*] $($rest)*);
     }};
 
     
     (@toplevel $root:ident $oldpath:tt [[$($($path:tt)-+).+]] $($rest:tt)*) => {
         $crate::macros::push_toml(
             &mut $root,
-            &[$(&concat!($("-", toml_internal!(@path $path),)+)[1..],)+]);
-        toml_internal!(@toplevel $root [$(&concat!($("-", toml_internal!(@path $path),)+)[1..],)+] $($rest)*);
+            &[$(&concat!($("-", $crate::toml_internal!(@path $path),)+)[1..],)+]);
+        $crate::toml_internal!(@toplevel $root [$(&concat!($("-", $crate::toml_internal!(@path $path),)+)[1..],)+] $($rest)*);
     };
 
     
     (@toplevel $root:ident $oldpath:tt [$($($path:tt)-+).+] $($rest:tt)*) => {
         $crate::macros::insert_toml(
             &mut $root,
-            &[$(&concat!($("-", toml_internal!(@path $path),)+)[1..],)+],
+            &[$(&concat!($("-", $crate::toml_internal!(@path $path),)+)[1..],)+],
             $crate::Value::Table($crate::value::Table::new()));
-        toml_internal!(@toplevel $root [$(&concat!($("-", toml_internal!(@path $path),)+)[1..],)+] $($rest)*);
+        $crate::toml_internal!(@toplevel $root [$(&concat!($("-", $crate::toml_internal!(@path $path),)+)[1..],)+] $($rest)*);
     };
 
     
     (@topleveldatetime $root:ident [$($path:tt)*] $($($k:tt)-+).+ = ($($datetime:tt)+) $($rest:tt)*) => {
         $crate::macros::insert_toml(
             &mut $root,
-            &[$($path)* $(&concat!($("-", toml_internal!(@path $k),)+)[1..], )+],
+            &[$($path)* $(&concat!($("-", $crate::toml_internal!(@path $k),)+)[1..], )+],
             $crate::Value::Datetime(concat!($(stringify!($datetime)),+).parse().unwrap()));
-        toml_internal!(@toplevel $root [$($path)*] $($rest)*);
+        $crate::toml_internal!(@toplevel $root [$($path)*] $($rest)*);
     };
 
     
@@ -190,14 +187,14 @@ macro_rules! toml_internal {
     
     (@value { $($inline:tt)* }) => {{
         let mut table = $crate::Value::Table($crate::value::Table::new());
-        toml_internal!(@trailingcomma (@table table) $($inline)*);
+        $crate::toml_internal!(@trailingcomma (@table table) $($inline)*);
         table
     }};
 
     
     (@value [ $($inline:tt)* ]) => {{
         let mut array = $crate::value::Array::new();
-        toml_internal!(@trailingcomma (@array array) $($inline)*);
+        $crate::toml_internal!(@trailingcomma (@array array) $($inline)*);
         $crate::Value::Array(array)
     }};
 
@@ -237,81 +234,81 @@ macro_rules! toml_internal {
 
     
     (@table $root:ident $($($k:tt)-+).+ = - $v:tt , $($rest:tt)*) => {
-        toml_internal!(@table $root $($($k)-+).+ = (-$v) , $($rest)*);
+        $crate::toml_internal!(@table $root $($($k)-+).+ = (-$v) , $($rest)*);
     };
 
     
     (@table $root:ident $($($k:tt)-+).+ = + $v:tt , $($rest:tt)*) => {
-        toml_internal!(@table $root $($($k)-+).+ = ($v) , $($rest)*);
+        $crate::toml_internal!(@table $root $($($k)-+).+ = ($v) , $($rest)*);
     };
 
     
     (@table $root:ident $($($k:tt)-+).+ = $yr:tt - $mo:tt - $dhr:tt : $min:tt : $sec:tt . $frac:tt - $tzh:tt : $tzm:tt , $($rest:tt)*) => {
-        toml_internal!(@tabledatetime $root $($($k)-+).+ = ($yr - $mo - $dhr : $min : $sec . $frac - $tzh : $tzm) $($rest)*);
+        $crate::toml_internal!(@tabledatetime $root $($($k)-+).+ = ($yr - $mo - $dhr : $min : $sec . $frac - $tzh : $tzm) $($rest)*);
     };
     
     (@table $root:ident $($($k:tt)-+).+ = $yr:tt - $mo:tt - $day:tt $hr:tt : $min:tt : $sec:tt . $frac:tt - $tzh:tt : $tzm:tt , $($rest:tt)*) => {
-        toml_internal!(@tabledatetime $root $($($k)-+).+ = ($yr - $mo - $day T $hr : $min : $sec . $frac - $tzh : $tzm) $($rest)*);
+        $crate::toml_internal!(@tabledatetime $root $($($k)-+).+ = ($yr - $mo - $day T $hr : $min : $sec . $frac - $tzh : $tzm) $($rest)*);
     };
 
     
     (@table $root:ident $($($k:tt)-+).+ = $yr:tt - $mo:tt - $dhr:tt : $min:tt : $sec:tt - $tzh:tt : $tzm:tt , $($rest:tt)*) => {
-        toml_internal!(@tabledatetime $root $($($k)-+).+ = ($yr - $mo - $dhr : $min : $sec - $tzh : $tzm) $($rest)*);
+        $crate::toml_internal!(@tabledatetime $root $($($k)-+).+ = ($yr - $mo - $dhr : $min : $sec - $tzh : $tzm) $($rest)*);
     };
     
     (@table $root:ident $($($k:tt)-+).+ = $yr:tt - $mo:tt - $day:tt $hr:tt : $min:tt : $sec:tt - $tzh:tt : $tzm:tt , $($rest:tt)*) => {
-        toml_internal!(@tabledatetime $root $($($k)-+).+ = ($yr - $mo - $day T $hr : $min : $sec - $tzh : $tzm) $($rest)*);
+        $crate::toml_internal!(@tabledatetime $root $($($k)-+).+ = ($yr - $mo - $day T $hr : $min : $sec - $tzh : $tzm) $($rest)*);
     };
 
     
     (@table $root:ident $($($k:tt)-+).+ = $yr:tt - $mo:tt - $dhr:tt : $min:tt : $sec:tt . $frac:tt , $($rest:tt)*) => {
-        toml_internal!(@tabledatetime $root $($($k)-+).+ = ($yr - $mo - $dhr : $min : $sec . $frac) $($rest)*);
+        $crate::toml_internal!(@tabledatetime $root $($($k)-+).+ = ($yr - $mo - $dhr : $min : $sec . $frac) $($rest)*);
     };
     
     (@table $root:ident $($($k:tt)-+).+ = $yr:tt - $mo:tt - $day:tt $hr:tt : $min:tt : $sec:tt . $frac:tt , $($rest:tt)*) => {
-        toml_internal!(@tabledatetime $root $($($k)-+).+ = ($yr - $mo - $day T $hr : $min : $sec . $frac) $($rest)*);
+        $crate::toml_internal!(@tabledatetime $root $($($k)-+).+ = ($yr - $mo - $day T $hr : $min : $sec . $frac) $($rest)*);
     };
 
     
     (@table $root:ident $($($k:tt)-+).+ = $yr:tt - $mo:tt - $dhr:tt : $min:tt : $sec:tt , $($rest:tt)*) => {
-        toml_internal!(@tabledatetime $root $($($k)-+).+ = ($yr - $mo - $dhr : $min : $sec) $($rest)*);
+        $crate::toml_internal!(@tabledatetime $root $($($k)-+).+ = ($yr - $mo - $dhr : $min : $sec) $($rest)*);
     };
     
     (@table $root:ident $($($k:tt)-+).+ = $yr:tt - $mo:tt - $day:tt $hr:tt : $min:tt : $sec:tt , $($rest:tt)*) => {
-        toml_internal!(@tabledatetime $root $($($k)-+).+ = ($yr - $mo - $day T $hr : $min : $sec) $($rest)*);
+        $crate::toml_internal!(@tabledatetime $root $($($k)-+).+ = ($yr - $mo - $day T $hr : $min : $sec) $($rest)*);
     };
 
     
     (@table $root:ident $($($k:tt)-+).+ = $yr:tt - $mo:tt - $day:tt , $($rest:tt)*) => {
-        toml_internal!(@tabledatetime $root $($($k)-+).+ = ($yr - $mo - $day) $($rest)*);
+        $crate::toml_internal!(@tabledatetime $root $($($k)-+).+ = ($yr - $mo - $day) $($rest)*);
     };
 
     
     (@table $root:ident $($($k:tt)-+).+ = $hr:tt : $min:tt : $sec:tt . $frac:tt , $($rest:tt)*) => {
-        toml_internal!(@tabledatetime $root $($($k)-+).+ = ($hr : $min : $sec . $frac) $($rest)*);
+        $crate::toml_internal!(@tabledatetime $root $($($k)-+).+ = ($hr : $min : $sec . $frac) $($rest)*);
     };
 
     
     (@table $root:ident $($($k:tt)-+).+ = $hr:tt : $min:tt : $sec:tt , $($rest:tt)*) => {
-        toml_internal!(@tabledatetime $root $($($k)-+).+ = ($hr : $min : $sec) $($rest)*);
+        $crate::toml_internal!(@tabledatetime $root $($($k)-+).+ = ($hr : $min : $sec) $($rest)*);
     };
 
     
     (@table $root:ident $($($k:tt)-+).+ = $v:tt , $($rest:tt)*) => {
         $crate::macros::insert_toml(
             &mut $root,
-            &[$(&concat!($("-", toml_internal!(@path $k),)+)[1..], )+],
-            toml_internal!(@value $v));
-        toml_internal!(@table $root $($rest)*);
+            &[$(&concat!($("-", $crate::toml_internal!(@path $k),)+)[1..], )+],
+            $crate::toml_internal!(@value $v));
+        $crate::toml_internal!(@table $root $($rest)*);
     };
 
     
     (@tabledatetime $root:ident $($($k:tt)-+).+ = ($($datetime:tt)*) $($rest:tt)*) => {
         $crate::macros::insert_toml(
             &mut $root,
-            &[$(&concat!($("-", toml_internal!(@path $k),)+)[1..], )+],
+            &[$(&concat!($("-", $crate::toml_internal!(@path $k),)+)[1..], )+],
             $crate::Value::Datetime(concat!($(stringify!($datetime)),+).parse().unwrap()));
-        toml_internal!(@table $root $($rest)*);
+        $crate::toml_internal!(@table $root $($rest)*);
     };
 
     
@@ -319,95 +316,95 @@ macro_rules! toml_internal {
 
     
     (@array $root:ident - $v:tt , $($rest:tt)*) => {
-        toml_internal!(@array $root (-$v) , $($rest)*);
+        $crate::toml_internal!(@array $root (-$v) , $($rest)*);
     };
 
     
     (@array $root:ident + $v:tt , $($rest:tt)*) => {
-        toml_internal!(@array $root ($v) , $($rest)*);
+        $crate::toml_internal!(@array $root ($v) , $($rest)*);
     };
 
     
     (@array $root:ident $yr:tt - $mo:tt - $dhr:tt : $min:tt : $sec:tt . $frac:tt - $tzh:tt : $tzm:tt , $($rest:tt)*) => {
-        toml_internal!(@arraydatetime $root ($yr - $mo - $dhr : $min : $sec . $frac - $tzh : $tzm) $($rest)*);
+        $crate::toml_internal!(@arraydatetime $root ($yr - $mo - $dhr : $min : $sec . $frac - $tzh : $tzm) $($rest)*);
     };
     
     (@array $root:ident $yr:tt - $mo:tt - $day:tt $hr:tt : $min:tt : $sec:tt . $frac:tt - $tzh:tt : $tzm:tt , $($rest:tt)*) => {
-        toml_internal!(@arraydatetime $root ($yr - $mo - $day T $hr : $min : $sec . $frac - $tzh : $tzm) $($rest)*);
+        $crate::toml_internal!(@arraydatetime $root ($yr - $mo - $day T $hr : $min : $sec . $frac - $tzh : $tzm) $($rest)*);
     };
 
     
     (@array $root:ident $yr:tt - $mo:tt - $dhr:tt : $min:tt : $sec:tt - $tzh:tt : $tzm:tt , $($rest:tt)*) => {
-        toml_internal!(@arraydatetime $root ($yr - $mo - $dhr : $min : $sec - $tzh : $tzm) $($rest)*);
+        $crate::toml_internal!(@arraydatetime $root ($yr - $mo - $dhr : $min : $sec - $tzh : $tzm) $($rest)*);
     };
     
     (@array $root:ident $yr:tt - $mo:tt - $day:tt $hr:tt : $min:tt : $sec:tt - $tzh:tt : $tzm:tt , $($rest:tt)*) => {
-        toml_internal!(@arraydatetime $root ($yr - $mo - $day T $hr : $min : $sec - $tzh : $tzm) $($rest)*);
+        $crate::toml_internal!(@arraydatetime $root ($yr - $mo - $day T $hr : $min : $sec - $tzh : $tzm) $($rest)*);
     };
 
     
     (@array $root:ident $yr:tt - $mo:tt - $dhr:tt : $min:tt : $sec:tt . $frac:tt , $($rest:tt)*) => {
-        toml_internal!(@arraydatetime $root ($yr - $mo - $dhr : $min : $sec . $frac) $($rest)*);
+        $crate::toml_internal!(@arraydatetime $root ($yr - $mo - $dhr : $min : $sec . $frac) $($rest)*);
     };
     
     (@array $root:ident $yr:tt - $mo:tt - $day:tt $hr:tt : $min:tt : $sec:tt . $frac:tt , $($rest:tt)*) => {
-        toml_internal!(@arraydatetime $root ($yr - $mo - $day T $hr : $min : $sec . $frac) $($rest)*);
+        $crate::toml_internal!(@arraydatetime $root ($yr - $mo - $day T $hr : $min : $sec . $frac) $($rest)*);
     };
 
     
     (@array $root:ident $yr:tt - $mo:tt - $dhr:tt : $min:tt : $sec:tt , $($rest:tt)*) => {
-        toml_internal!(@arraydatetime $root ($yr - $mo - $dhr : $min : $sec) $($rest)*);
+        $crate::toml_internal!(@arraydatetime $root ($yr - $mo - $dhr : $min : $sec) $($rest)*);
     };
     
     (@array $root:ident $yr:tt - $mo:tt - $day:tt $hr:tt : $min:tt : $sec:tt , $($rest:tt)*) => {
-        toml_internal!(@arraydatetime $root ($yr - $mo - $day T $hr : $min : $sec) $($rest)*);
+        $crate::toml_internal!(@arraydatetime $root ($yr - $mo - $day T $hr : $min : $sec) $($rest)*);
     };
 
     
     (@array $root:ident $yr:tt - $mo:tt - $day:tt , $($rest:tt)*) => {
-        toml_internal!(@arraydatetime $root ($yr - $mo - $day) $($rest)*);
+        $crate::toml_internal!(@arraydatetime $root ($yr - $mo - $day) $($rest)*);
     };
 
     
     (@array $root:ident $hr:tt : $min:tt : $sec:tt . $frac:tt , $($rest:tt)*) => {
-        toml_internal!(@arraydatetime $root ($hr : $min : $sec . $frac) $($rest)*);
+        $crate::toml_internal!(@arraydatetime $root ($hr : $min : $sec . $frac) $($rest)*);
     };
 
     
     (@array $root:ident $hr:tt : $min:tt : $sec:tt , $($rest:tt)*) => {
-        toml_internal!(@arraydatetime $root ($hr : $min : $sec) $($rest)*);
+        $crate::toml_internal!(@arraydatetime $root ($hr : $min : $sec) $($rest)*);
     };
 
     
     (@array $root:ident $v:tt , $($rest:tt)*) => {
-        $root.push(toml_internal!(@value $v));
-        toml_internal!(@array $root $($rest)*);
+        $root.push($crate::toml_internal!(@value $v));
+        $crate::toml_internal!(@array $root $($rest)*);
     };
 
     
     (@arraydatetime $root:ident ($($datetime:tt)*) $($rest:tt)*) => {
         $root.push($crate::Value::Datetime(concat!($(stringify!($datetime)),+).parse().unwrap()));
-        toml_internal!(@array $root $($rest)*);
+        $crate::toml_internal!(@array $root $($rest)*);
     };
 
     
     (@trailingcomma ($($args:tt)*)) => {
-        toml_internal!($($args)*);
+        $crate::toml_internal!($($args)*);
     };
 
     
     (@trailingcomma ($($args:tt)*) ,) => {
-        toml_internal!($($args)* ,);
+        $crate::toml_internal!($($args)* ,);
     };
 
     
     (@trailingcomma ($($args:tt)*) $last:tt) => {
-        toml_internal!($($args)* $last ,);
+        $crate::toml_internal!($($args)* $last ,);
     };
 
     
     (@trailingcomma ($($args:tt)*) $first:tt $($rest:tt)+) => {
-        toml_internal!(@trailingcomma ($($args)* $first) $($rest)+);
+        $crate::toml_internal!(@trailingcomma ($($args)* $first) $($rest)+);
     };
 }
 
@@ -424,7 +421,10 @@ pub fn push_toml(root: &mut Value, path: &[&str]) {
     if !target.is_array() {
         *target = Value::Array(Array::new());
     }
-    target.as_array_mut().unwrap().push(Value::Table(Table::new()));
+    target
+        .as_array_mut()
+        .unwrap()
+        .push(Value::Table(Table::new()));
 }
 
 fn traverse<'a>(root: &'a mut Value, path: &[&str]) -> &'a mut Value {
