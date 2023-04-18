@@ -424,7 +424,7 @@ void FinishAntiTrackingRedirectHeuristic(nsIChannel* aNewChannel,
   
   RefPtr<ContentBlocking::ParentAccessGrantPromise> promise =
       ContentBlocking::SaveAccessForOriginOnParentProcess(
-          newPrincipal, oldPrincipal, oldOrigin,
+          newPrincipal, oldPrincipal,
           ContentBlocking::StorageAccessPromptChoices::eAllow,
           StaticPrefs::privacy_restrict3rdpartystorage_expiration_redirect());
   Unused << promise;
