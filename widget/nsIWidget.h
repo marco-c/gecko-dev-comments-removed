@@ -1172,12 +1172,7 @@ class nsIWidget : public nsISupports {
 
 
 
-
-
-
-
-  virtual nsresult MakeFullScreen(bool aFullScreen,
-                                  nsIScreen* aTargetScreen = nullptr) = 0;
+  virtual nsresult MakeFullScreen(bool aFullScreen) = 0;
 
   
 
@@ -1185,9 +1180,8 @@ class nsIWidget : public nsISupports {
 
 
 
-  virtual nsresult MakeFullScreenWithNativeTransition(
-      bool aFullScreen, nsIScreen* aTargetScreen = nullptr) {
-    return MakeFullScreen(aFullScreen, aTargetScreen);
+  virtual nsresult MakeFullScreenWithNativeTransition(bool aFullScreen) {
+    return MakeFullScreen(aFullScreen);
   }
 
   

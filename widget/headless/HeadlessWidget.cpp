@@ -351,8 +351,7 @@ void HeadlessWidget::ApplySizeModeSideEffects() {
   }
 }
 
-nsresult HeadlessWidget::MakeFullScreen(bool aFullScreen,
-                                        nsIScreen* aTargetScreen) {
+nsresult HeadlessWidget::MakeFullScreen(bool aFullScreen) {
   
   
   if (aFullScreen) {
@@ -377,11 +376,9 @@ nsresult HeadlessWidget::MakeFullScreen(bool aFullScreen,
   
   
   RefPtr<HeadlessWidget> self(this);
-  nsCOMPtr<nsIScreen> targetScreen(aTargetScreen);
   NS_DispatchToCurrentThread(NS_NewRunnableFunction(
-      "HeadlessWidget::MakeFullScreen",
-      [self, targetScreen, aFullScreen]() -> void {
-        self->InfallibleMakeFullScreen(aFullScreen, targetScreen);
+      "HeadlessWidget::MakeFullScreen", [self, aFullScreen]() -> void {
+        self->InfallibleMakeFullScreen(aFullScreen);
       }));
 
   return NS_OK;
