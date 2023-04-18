@@ -3130,15 +3130,6 @@ void nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext, nsIFrame* aFrame,
 
   MOZ_ASSERT(builder && list && metrics);
 
-  
-  if (!useRetainedBuilder && retainedBuilder) {
-    
-    retainedBuilder->ClearFramesWithProps();
-
-    
-    retainedBuilder->List()->DeleteAll(retainedBuilder->Builder());
-  }
-
   metrics->Reset();
   metrics->StartBuild();
 
@@ -3320,15 +3311,11 @@ void nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext, nsIFrame* aFrame,
       
       
       
-      bool shouldAttemptPartialUpdate = useRetainedBuilder;
-      if (builder->ShouldRebuildDisplayListDueToPrefChange()) {
-        shouldAttemptPartialUpdate = false;
-      }
-
-      
-      
-      
-      if (shouldAttemptPartialUpdate) {
+      if (useRetainedBuilder &&
+          !builder->ShouldRebuildDisplayListDueToPrefChange()) {
+        
+        
+        
         updateState = retainedBuilder->AttemptPartialUpdate(aBackstop);
         metrics->EndPartialBuild(updateState);
       } else {
@@ -3349,16 +3336,25 @@ void nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext, nsIFrame* aFrame,
       }
 
       if (doFullRebuild) {
-        DL_LOGI("Starting full display list build, root frame: %p",
-                builder->RootReferenceFrame());
         list->DeleteAll(builder);
         list->RestoreState();
+
+        if (useRetainedBuilder) {
+          retainedBuilder->ClearFramesWithProps();
+          mozilla::RDLUtils::AssertFrameSubtreeUnmodified(
+              builder->RootReferenceFrame());
+          MOZ_ASSERT(retainedBuilder->List()->IsEmpty());
+        }
 
         builder->ClearRetainedWindowRegions();
         builder->ClearWillChangeBudgets();
 
         builder->EnterPresShell(aFrame);
         builder->SetDirtyRect(visibleRect);
+
+        DL_LOGI("Starting full display list build, root frame: %p",
+                builder->RootReferenceFrame());
+
         aFrame->BuildDisplayListForStackingContext(builder, list);
         AddExtraBackgroundItems(builder, list, aFrame, canvasArea,
                                 visibleRegion, aBackstop);
