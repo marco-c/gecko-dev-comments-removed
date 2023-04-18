@@ -729,15 +729,8 @@ namespace js {
 
 extern bool ObjectMayBeSwapped(const JSObject* obj);
 
-
-
-
-
-enum DefineAsIntrinsic { NotIntrinsic, AsIntrinsic };
-
 extern bool DefineFunctions(JSContext* cx, HandleObject obj,
-                            const JSFunctionSpec* fs,
-                            DefineAsIntrinsic intrinsic);
+                            const JSFunctionSpec* fs);
 
 
 extern bool ToPrimitiveSlow(JSContext* cx, JSType hint, MutableHandleValue vp);
