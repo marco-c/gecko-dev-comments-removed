@@ -1905,17 +1905,19 @@ class Document : public nsINode,
   void RequestFullscreenInParentProcess(UniquePtr<FullscreenRequest> aRequest,
                                         bool applyFullScreenDirectly);
 
+  static void ClearFullscreenStateOnElement(Element&);
+
+  
+  void TopLayerPush(Element&);
+
+  
+  
+  Element* TopLayerPop(FunctionRef<bool(Element*)> aPredicate);
+
  public:
   
   
   void CleanupFullscreenState();
-
-  
-  void TopLayerPush(Element* aElement);
-
-  
-  
-  Element* TopLayerPop(FunctionRef<bool(Element*)> aPredicateFunc);
 
   
   
@@ -1923,14 +1925,13 @@ class Document : public nsINode,
 
   
   
-  void SetFullscreenElement(Element* aElement);
+  void SetFullscreenElement(Element&);
 
   
   void TryCancelDialog();
 
-  void SetBlockedByModalDialog(HTMLDialogElement&);
-
-  void UnsetBlockedByModalDialog(HTMLDialogElement&);
+  void AddModalDialog(HTMLDialogElement&);
+  void RemoveModalDialog(HTMLDialogElement&);
 
   
 
