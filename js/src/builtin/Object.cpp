@@ -814,9 +814,7 @@ static bool PropertyIsEnumerable(JSContext* cx, HandleObject obj, HandleId id,
 
 
 static bool CanAddNewPropertyExcludingProtoFast(PlainObject* obj) {
-  
-  
-  if (!obj->isExtensible() || obj->isUsedAsPrototype()) {
+  if (!obj->isExtensible()) {
     return false;
   }
 
@@ -912,6 +910,8 @@ static bool CanAddNewPropertyExcludingProtoFast(PlainObject* obj) {
   
   if (toWasEmpty && !hasPropsWithNonDefaultAttrs &&
       toPlain->canReuseShapeForNewProperties(fromPlain->shape())) {
+    MOZ_ASSERT(!toPlain->isUsedAsPrototype(),
+               "prototypes require extra checks for shape teleporting");
     Shape* newShape = fromPlain->shape();
     if (!toPlain->setShapeAndUpdateSlots(cx, newShape)) {
       return false;
