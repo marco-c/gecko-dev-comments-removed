@@ -1,3 +1,5 @@
+
+
 """This file provides the opening handshake processor for the Bootstrapping
 WebSockets with HTTP/2 protocol (RFC 8441).
 

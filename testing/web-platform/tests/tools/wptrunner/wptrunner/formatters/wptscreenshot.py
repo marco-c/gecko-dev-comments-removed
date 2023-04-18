@@ -1,3 +1,5 @@
+
+
 import requests
 from mozlog.structured.formatters.base import BaseFormatter
 

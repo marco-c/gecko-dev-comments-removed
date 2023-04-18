@@ -1,3 +1,5 @@
+
+
 def check_errors(errors):
     for e in errors:
         error_type, description, path, line_number = e
