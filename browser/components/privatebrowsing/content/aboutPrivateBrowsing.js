@@ -116,14 +116,17 @@ async function renderPromo({
     linkEl.addEventListener("click", () => {
       window.PrivateBrowsingRecordClick("promo_link");
     });
-  } else if (promoButton?.action?.type === "SHOW_SPOTLIGHT") {
+  } else if (promoButton?.action) {
     linkEl.addEventListener("click", async event => {
       event.preventDefault();
       
       
       let isExperiment = window.PrivateBrowsingRecordClick("promo_link");
       const promoButtonData = promoButton?.action?.data;
-      if (promoButtonData?.content) {
+      if (
+        promoButton?.action?.type === "SHOW_SPOTLIGHT" &&
+        promoButtonData?.content
+      ) {
         promoButtonData.content.metrics = isExperiment ? "allow" : "block";
       }
 
