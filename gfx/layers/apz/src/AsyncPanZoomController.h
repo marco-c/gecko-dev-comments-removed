@@ -443,7 +443,10 @@ class AsyncPanZoomController {
   
 
 
-  bool IsAutoscroll() const { return mState == AUTOSCROLL; }
+  bool IsAutoscroll() const {
+    RecursiveMutexAutoLock lock(mRecursiveMutex);
+    return mState == AUTOSCROLL;
+  }
 
   
 
