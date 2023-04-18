@@ -105,6 +105,14 @@ int X11Error(Display* display, XErrorEvent* event) {
     }
   }
 
+  switch (XRE_GetProcessType()) {
+    case GeckoProcessType_Default:
+    case GeckoProcessType_Content:
+      CrashReporter::AppendAppNotesToCrashReport(notes);
+      break;
+    default:;  
+  }
+
 #ifdef DEBUG
   
   
@@ -122,8 +130,7 @@ int X11Error(Display* display, XErrorEvent* event) {
 #  endif
 #endif
 
-  NS_WARNING(notes.get());
-  return 0;
+  MOZ_CRASH_UNSAFE(notes.get());
 }
 }
 
