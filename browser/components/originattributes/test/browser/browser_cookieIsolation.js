@@ -11,6 +11,14 @@ const key = "key" + Math.random().toString();
 const re = new RegExp(key + "=([0-9.]+)");
 
 
+
+async function prefOffHttpsFirstMode() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["dom.security.https_first", false]],
+  });
+}
+
+
 function doTest(aBrowser) {
   return SpecialPowers.spawn(aBrowser, [key, re], function(
     contentKey,
@@ -31,4 +39,4 @@ registerCleanupFunction(() => {
   Services.cookies.removeAll();
 });
 
-IsolationTestTools.runTests(TEST_PAGE, doTest);
+IsolationTestTools.runTests(TEST_PAGE, doTest, null, prefOffHttpsFirstMode);

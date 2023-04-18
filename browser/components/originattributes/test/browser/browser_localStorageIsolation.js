@@ -10,6 +10,14 @@ const TEST_PAGE =
 const key = Math.random().toString();
 
 
+
+async function prefOffHttpsFirstMode() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["dom.security.https_first", false]],
+  });
+}
+
+
 function doTest(aBrowser) {
   return SpecialPowers.spawn(aBrowser, [key], function(contentKey) {
     let value = content.localStorage.getItem(contentKey);
@@ -22,4 +30,4 @@ function doTest(aBrowser) {
   });
 }
 
-IsolationTestTools.runTests(TEST_PAGE, doTest);
+IsolationTestTools.runTests(TEST_PAGE, doTest, null, prefOffHttpsFirstMode);
