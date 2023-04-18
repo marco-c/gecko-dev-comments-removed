@@ -16,6 +16,38 @@ Services.scriptloader.loadSubScript(
 
 const EventEmitter = require("devtools/shared/event-emitter");
 
+
+
+
+
+
+
+
+async function getSupportedToolIds(tab) {
+  info("Getting the entire list of tools supported in this tab");
+
+  let shouldDestroyToolbox = false;
+
+  
+  let toolbox = await gDevTools.getToolboxForTab(tab);
+  if (!toolbox) {
+    toolbox = await gDevTools.showToolboxForTab(tab);
+    shouldDestroyToolbox = true;
+  }
+
+  const toolIds = gDevTools
+    .getToolDefinitionArray()
+    .filter(def => def.isTargetSupported(toolbox.target))
+    .map(def => def.id);
+
+  if (shouldDestroyToolbox) {
+    
+    await toolbox.destroy();
+  }
+
+  return toolIds;
+}
+
 function toggleAllTools(state) {
   for (const [, tool] of gDevTools._tools) {
     if (!tool.visibilityswitch) {
