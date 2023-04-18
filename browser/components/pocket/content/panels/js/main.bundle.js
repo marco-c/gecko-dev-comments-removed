@@ -2,7 +2,7 @@
  	"use strict";
  	var __webpack_modules__ = ({
 
- 503:
+ 122:
  ((__unused_webpack_module, __unused_webpack___webpack_exports__, __webpack_require__) => {
 
 
@@ -51,105 +51,6 @@ function Header(props) {
  const Header_Header = (Header);
 ;
 
-
-
-
-
-function ArticleUrl(props) {
-  
-  if (props.savedArticle || !props.url) {
-    return react.createElement("div", {
-      className: "stp_article_list_saved_article"
-    }, props.children);
-  }
-
-  return react.createElement("a", {
-    className: "stp_article_list_link",
-    href: props.url
-  }, props.children);
-}
-
-function Article(props) {
-  function encodeThumbnail(rawSource) {
-    return rawSource ? `https://img-getpocket.cdn.mozilla.net/80x80/filters:format(jpeg):quality(60):no_upscale():strip_exif()/${encodeURIComponent(rawSource)}` : null;
-  }
-
-  const {
-    article
-  } = props;
-  const url = article.url || article.resolved_url; 
-
-  const thumbnail = article.thumbnail || encodeThumbnail(article?.top_image_url || article?.images?.["1"]?.src);
-  const alt = article.alt || "thumbnail image";
-  const title = article.title || article.resolved_title; 
-
-  const publisher = article.publisher || article.domain_metadata?.name || article.resolved_domain;
-  return react.createElement("li", {
-    className: "stp_article_list_item"
-  }, react.createElement(ArticleUrl, {
-    url: url,
-    savedArticle: props.savedArticle
-  }, react.createElement(react.Fragment, null, thumbnail ? react.createElement("img", {
-    className: "stp_article_list_thumb",
-    src: thumbnail,
-    alt: alt
-  }) : react.createElement("div", {
-    className: "stp_article_list_thumb_placeholder"
-  }), react.createElement("div", {
-    className: "stp_article_list_meta"
-  }, react.createElement("header", {
-    className: "stp_article_list_header"
-  }, title), react.createElement("p", {
-    className: "stp_article_list_publisher"
-  }, publisher)))));
-}
-
-function ArticleList(props) {
-  return react.createElement("ul", {
-    className: "stp_article_list"
-  }, props.articles?.map(article => react.createElement(Article, {
-    article: article,
-    savedArticle: props.savedArticle
-  })));
-}
-
- const ArticleList_ArticleList = (ArticleList);
-;
-
-
-
-
-
-function PopularTopics(props) {
-  return react.createElement("ul", {
-    className: "stp_popular_topics"
-  }, props.topics?.map(topic => react.createElement("li", {
-    key: `item-${topic.topic}`,
-    className: "stp_popular_topic"
-  }, react.createElement("a", {
-    className: "stp_popular_topic_link",
-    href: `https://${props.pockethost}/explore/${topic.topic}?utm_source=${props.utmsource}`
-  }, topic.title))));
-}
-
- const PopularTopics_PopularTopics = (PopularTopics);
-;
-
-
-
-
-
-function Button(props) {
-  return react.createElement("a", {
-    href: props.url,
-    onClick: props.onClick,
-    className: `stp_button${props?.style && ` stp_button_${props.style}`}`
-  }, props.children);
-}
-
- const Button_Button = (Button);
-;
-
 var pktPanelMessaging = {
   removeMessageListener(messageId, callback) {
     RPMRemoveMessageListener(messageId, callback);
@@ -189,7 +90,6 @@ var pktPanelMessaging = {
       event.preventDefault();
       this.sendMessage("PKT_openTabWithUrl", {
         url: event.currentTarget.getAttribute(`href`),
-        activate: true,
         source,
         position
       });
@@ -209,6 +109,149 @@ var pktPanelMessaging = {
 
 
 
+function TelemetryLink(props) {
+  function onClick(event) {
+    if (props.onClick) {
+      onClick(event);
+    } else {
+      event.preventDefault();
+      messages.sendMessage("PKT_openTabWithUrl", {
+        url: event.currentTarget.getAttribute(`href`),
+        source: props.source,
+        ...(props.position || props.position === 0 ? {
+          position: props.position
+        } : {})
+      });
+    }
+  }
+
+  return react.createElement("a", {
+    href: props.href,
+    onClick: onClick,
+    target: "_blank",
+    className: props.className
+  }, props.children);
+}
+
+ const TelemetryLink_TelemetryLink = (TelemetryLink);
+;
+
+
+
+
+
+
+function ArticleUrl(props) {
+  
+  if (props.savedArticle || !props.url) {
+    return react.createElement("div", {
+      className: "stp_article_list_saved_article"
+    }, props.children);
+  }
+
+  return react.createElement(TelemetryLink_TelemetryLink, {
+    className: "stp_article_list_link",
+    href: props.url,
+    source: props.source,
+    position: props.position
+  }, props.children);
+}
+
+function Article(props) {
+  function encodeThumbnail(rawSource) {
+    return rawSource ? `https://img-getpocket.cdn.mozilla.net/80x80/filters:format(jpeg):quality(60):no_upscale():strip_exif()/${encodeURIComponent(rawSource)}` : null;
+  }
+
+  const {
+    article
+  } = props;
+  const url = article.url || article.resolved_url; 
+
+  const thumbnail = article.thumbnail || encodeThumbnail(article?.top_image_url || article?.images?.["1"]?.src);
+  const alt = article.alt || "thumbnail image";
+  const title = article.title || article.resolved_title; 
+
+  const publisher = article.publisher || article.domain_metadata?.name || article.resolved_domain;
+  return react.createElement("li", {
+    className: "stp_article_list_item"
+  }, react.createElement(ArticleUrl, {
+    url: url,
+    savedArticle: props.savedArticle,
+    position: props.position,
+    source: props.source
+  }, react.createElement(react.Fragment, null, thumbnail ? react.createElement("img", {
+    className: "stp_article_list_thumb",
+    src: thumbnail,
+    alt: alt
+  }) : react.createElement("div", {
+    className: "stp_article_list_thumb_placeholder"
+  }), react.createElement("div", {
+    className: "stp_article_list_meta"
+  }, react.createElement("header", {
+    className: "stp_article_list_header"
+  }, title), react.createElement("p", {
+    className: "stp_article_list_publisher"
+  }, publisher)))));
+}
+
+function ArticleList(props) {
+  return react.createElement("ul", {
+    className: "stp_article_list"
+  }, props.articles?.map((article, position) => react.createElement(Article, {
+    article: article,
+    savedArticle: props.savedArticle,
+    position: position,
+    source: props.source
+  })));
+}
+
+ const ArticleList_ArticleList = (ArticleList);
+;
+
+
+
+
+
+
+function PopularTopics(props) {
+  return react.createElement("ul", {
+    className: "stp_popular_topics"
+  }, props.topics?.map((topic, position) => react.createElement("li", {
+    key: `item-${topic.topic}`,
+    className: "stp_popular_topic"
+  }, react.createElement(TelemetryLink_TelemetryLink, {
+    className: "stp_popular_topic_link",
+    href: `https://${props.pockethost}/explore/${topic.topic}?${props.utmParams}`,
+    source: props.source,
+    position: position
+  }, topic.title))));
+}
+
+ const PopularTopics_PopularTopics = (PopularTopics);
+;
+
+
+
+
+
+
+function Button(props) {
+  return react.createElement(TelemetryLink_TelemetryLink, {
+    href: props.url,
+    onClick: props.onClick,
+    className: `stp_button${props?.style && ` stp_button_${props.style}`}`,
+    source: props.source
+  }, props.children);
+}
+
+ const Button_Button = (Button);
+;
+
+
+
+
+
+
 
 
 
@@ -218,7 +261,10 @@ function Home(props) {
     locale,
     topics,
     pockethost,
-    hideRecentSaves
+    hideRecentSaves,
+    utmSource,
+    utmCampaign,
+    utmContent
   } = props;
   const [{
     articles,
@@ -228,6 +274,7 @@ function Home(props) {
     
     status: ""
   });
+  const utmParams = `utm_source=${utmSource}${utmCampaign && utmContent ? `&utm_campaign=${utmCampaign}&utm_content=${utmContent}` : ``}`;
   (0,react.useEffect)(() => {
     if (!hideRecentSaves) {
       
@@ -278,11 +325,14 @@ function Home(props) {
         className: "header_medium",
         "data-l10n-id": "pocket-panel-home-most-recent-saves"
       }), articles.length > 3 ? react.createElement(react.Fragment, null, react.createElement(ArticleList_ArticleList, {
-        articles: articles.slice(0, 3)
+        articles: articles.slice(0, 3),
+        source: "home_recent_save"
       }), react.createElement("span", {
         className: "stp_button_wide"
       }, react.createElement(Button_Button, {
-        style: "secondary"
+        style: "secondary",
+        url: `https://${pockethost}/a?${utmParams}`,
+        source: "home_view_list"
       }, react.createElement("span", {
         "data-l10n-id": "pocket-panel-button-show-all"
       })))) : react.createElement(ArticleList_ArticleList, {
@@ -304,14 +354,18 @@ function Home(props) {
   }, react.createElement("div", {
     className: "stp_panel stp_panel_home"
   }, react.createElement(Header_Header, null, react.createElement(Button_Button, {
-    style: "primary"
+    style: "primary",
+    url: `https://${pockethost}/a?${utmParams}`,
+    source: "home_view_list"
   }, react.createElement("span", {
     "data-l10n-id": "pocket-panel-header-my-list"
   }))), react.createElement("hr", null), recentSavesSection, react.createElement("hr", null), pockethost && locale?.startsWith("en") && topics?.length && react.createElement(react.Fragment, null, react.createElement("h3", {
     className: "header_medium"
   }, "Explore popular topics:"), react.createElement(PopularTopics_PopularTopics, {
     topics: topics,
-    pockethost: pockethost
+    pockethost: pockethost,
+    utmParams: utmParams,
+    source: "home_popular_topic"
   }))));
 }
 
@@ -363,6 +417,9 @@ HomeOverlay.prototype = {
     const locale = searchParams.get(`locale`) || ``;
     const layoutRefresh = searchParams.get(`layoutRefresh`) === `true`;
     const hideRecentSaves = searchParams.get(`hiderecentsaves`) === `true`;
+    const utmSource = searchParams.get(`utmSource`);
+    const utmCampaign = searchParams.get(`utmCampaign`);
+    const utmContent = searchParams.get(`utmContent`);
 
     if (this.active) {
       return;
@@ -376,6 +433,9 @@ HomeOverlay.prototype = {
         locale: locale,
         hideRecentSaves: hideRecentSaves,
         pockethost: pockethost,
+        utmSource: utmSource,
+        utmCampaign: utmCampaign,
+        utmContent: utmContent,
         topics: [{
           title: "Technology",
           topic: "technology"
@@ -463,14 +523,21 @@ HomeOverlay.prototype = {
 
 function Signup(props) {
   const {
-    locale
+    locale,
+    pockethost,
+    utmSource,
+    utmCampaign,
+    utmContent
   } = props;
+  const utmParams = `utm_source=${utmSource}${utmCampaign && utmContent ? `&utm_campaign=${utmCampaign}&utm_content=${utmContent}` : ``}`;
   return react.createElement("div", {
     className: "stp_panel_container"
   }, react.createElement("div", {
     className: "stp_panel stp_panel_signup"
   }, react.createElement(Header_Header, null, react.createElement(Button_Button, {
-    style: "secondary"
+    style: "secondary",
+    url: `https://${pockethost}/login?${utmParams}`,
+    source: "log_in"
   }, react.createElement("span", {
     "data-l10n-id": "pocket-panel-signup-login"
   }))), react.createElement("hr", null), locale?.startsWith("en") ? react.createElement(react.Fragment, null, react.createElement("div", {
@@ -500,7 +567,9 @@ function Signup(props) {
   }))), react.createElement("hr", null), react.createElement("span", {
     className: "stp_button_wide"
   }, react.createElement(Button_Button, {
-    style: "primary"
+    style: "primary",
+    url: `https://${pockethost}/ff_signup?${utmParams}`,
+    source: "sign_up_1"
   }, react.createElement("span", {
     "data-l10n-id": "pocket-panel-button-activate"
   })))));
@@ -549,9 +618,10 @@ var SignupOverlay = function (options) {
     const pockethost = searchParams.get(`pockethost`) || `getpocket.com`;
     const locale = searchParams.get(`locale`) || ``;
     const language = locale.split(`-`)[0].toLowerCase();
-    const utmCampaign = searchParams.get(`utmCampaign`) || `firefox_door_hanger_menu`;
-    const utmSource = searchParams.get(`utmSource`) || `control`;
     const layoutRefresh = searchParams.get(`layoutRefresh`) === `true`;
+    const utmSource = searchParams.get(`utmSource`);
+    const utmCampaign = searchParams.get(`utmCampaign`);
+    const utmContent = searchParams.get(`utmContent`);
 
     if (this.active) {
       return;
@@ -567,13 +637,18 @@ var SignupOverlay = function (options) {
 
       react_dom.render( react.createElement(Signup_Signup, {
         pockethost: pockethost,
+        utmSource: utmSource,
+        utmCampaign: utmCampaign,
+        utmContent: utmContent,
         locale: locale
       }), document.querySelector(`body`));
     } else {
       const templateData = {
         pockethost,
-        utmCampaign,
-        utmSource
+        utmCampaign: utmCampaign || `firefox_door_hanger_menu`,
+        
+        
+        utmSource: utmContent || `control`
       }; 
 
       if (language) {
@@ -1276,6 +1351,9 @@ SavedOverlay.prototype = {
     const locale = searchParams.get(`locale`) || ``;
     const language = locale.split(`-`)[0].toLowerCase();
     const layoutRefresh = searchParams.get(`layoutRefresh`) === `true`;
+    const utmSource = searchParams.get(`utmSource`);
+    const utmCampaign = searchParams.get(`utmCampaign`);
+    const utmContent = searchParams.get(`utmContent`);
 
     if (layoutRefresh) {
       
@@ -1284,8 +1362,11 @@ SavedOverlay.prototype = {
       document.querySelector(`.pkt_ext_containersaved`)?.classList.remove(`pkt_ext_containersaved`); 
 
       react_dom.render( react.createElement(Saved_Saved, {
+        locale: locale,
         pockethost: pockethost,
-        locale: locale
+        utmSource: utmSource,
+        utmCampaign: utmCampaign,
+        utmContent: utmContent
       }), document.querySelector(`body`));
     } else {
       
@@ -1425,28 +1506,40 @@ StyleGuideOverlay.prototype = {
       className: "stp_styleguide_h4"
     }, "Button"), react.createElement(Button_Button, {
       style: "text",
-      url: "https://example.org"
+      url: "https://example.org",
+      source: "styleguide"
     }, "Text Button"), react.createElement("br", null), react.createElement(Button_Button, {
-      style: "primary"
+      style: "primary",
+      url: "https://example.org",
+      source: "styleguide"
     }, "Primary Button"), react.createElement("br", null), react.createElement(Button_Button, {
-      style: "secondary"
+      style: "secondary",
+      url: "https://example.org",
+      source: "styleguide"
     }, "Secondary Button"), react.createElement("span", {
       className: "stp_button_wide"
     }, react.createElement(Button_Button, {
-      style: "primary"
+      style: "primary",
+      url: "https://example.org",
+      source: "styleguide"
     }, "Primary Wide Button")), react.createElement("span", {
       className: "stp_button_wide"
     }, react.createElement(Button_Button, {
-      style: "secondary"
+      style: "secondary",
+      url: "https://example.org",
+      source: "styleguide"
     }, "Secondary Wide Button")), react.createElement("h4", {
       className: "stp_styleguide_h4"
     }, "Header"), react.createElement(Header_Header, null, react.createElement(Button_Button, {
-      style: "primary"
+      style: "primary",
+      url: "https://example.org",
+      source: "styleguide"
     }, "View My List")), react.createElement("h4", {
       className: "stp_styleguide_h4"
     }, "PopularTopics"), react.createElement(PopularTopics_PopularTopics, {
       pockethost: `getpocket.com`,
-      utmsource: `styleguide`,
+      source: `styleguide`,
+      utmParams: `utm_source=styleguide`,
       topics: [{
         title: "Self Improvement",
         topic: "self-improvement"
@@ -1463,6 +1556,7 @@ StyleGuideOverlay.prototype = {
     }), react.createElement("h4", {
       className: "stp_styleguide_h4"
     }, "ArticleList"), react.createElement(ArticleList_ArticleList, {
+      source: `styleguide`,
       articles: [{
         title: "Article Title",
         publisher: "Publisher",
@@ -1742,7 +1836,7 @@ window.pktPanelMessaging = messages;
  	
  	
  	
- 	var __webpack_exports__ = __webpack_require__.O(undefined, [736], () => (__webpack_require__(503)))
+ 	var __webpack_exports__ = __webpack_require__.O(undefined, [736], () => (__webpack_require__(122)))
  	__webpack_exports__ = __webpack_require__.O(__webpack_exports__);
  	
  })()

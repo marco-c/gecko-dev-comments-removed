@@ -158,18 +158,9 @@ var pktUI = (function() {
   function showSignUp() {
     getFirefoxAccountSignedInUser(function(userdata) {
       let sizes = initialPanelSize.signup.control;
-      const experiment = ExperimentAPI.getExperiment({
-        featureId: "pocketNewtab",
-      });
-      let utmCampaign = experiment?.slug || `firefox_door_hanger_menu`;
-      let utmSource = experiment?.branch?.slug || `control`;
-
       showPanel(
-        "about:pocket-signup?utmCampaign=" +
-          utmCampaign +
-          "&utmSource=" +
-          utmSource +
-          "&emailButton=" +
+        "about:pocket-signup?" +
+          "emailButton=" +
           NimbusFeatures.saveToPocket.getVariable("emailButton"),
         sizes
       );
@@ -236,9 +227,29 @@ var pktUI = (function() {
       width: options.width,
       height: options.height,
     });
+    const saveToPocketExperiment = ExperimentAPI.getExperiment({
+      featureId: "saveToPocket",
+    });
+    const pocketNewtabExperiment = ExperimentAPI.getExperiment({
+      featureId: "pocketNewtab",
+    });
+
+    let utmSource = "firefox_pocket_save_button";
+    
+    
+    let utmCampaign =
+      saveToPocketExperiment?.slug || pocketNewtabExperiment?.slug;
+    let utmContent =
+      saveToPocketExperiment?.branch?.slug ||
+      pocketNewtabExperiment?.branch?.slug;
 
     const url = new URL(urlString);
     
+    url.searchParams.append("utmSource", utmSource);
+    if (utmCampaign && utmContent) {
+      url.searchParams.append("utmCampaign", utmCampaign);
+      url.searchParams.append("utmContent", utmContent);
+    }
     url.searchParams.append(
       "layoutRefresh",
       NimbusFeatures.saveToPocket.getVariable("layoutRefresh")
