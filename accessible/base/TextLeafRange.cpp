@@ -684,8 +684,7 @@ bool TextLeafPoint::IsCaretAtEndOfLine() const {
     
     return ht->IsCaretAtEndOfLine();
   }
-  
-  return false;
+  return mAcc->AsRemote()->Document()->IsCaretAtEndOfLine();
 }
 
 TextLeafPoint TextLeafPoint::ActualizeCaret(bool aAdjustAtEndOfLine) const {
@@ -706,7 +705,11 @@ TextLeafPoint TextLeafPoint::ActualizeCaret(bool aAdjustAtEndOfLine) const {
     }
   } else {
     
-    return TextLeafPoint();
+    
+    std::tie(ht, htOffset) = mAcc->AsRemote()->Document()->GetCaret();
+    if (!ht) {
+      return TextLeafPoint();
+    }
   }
   if (aAdjustAtEndOfLine && htOffset > 0 && IsCaretAtEndOfLine()) {
     

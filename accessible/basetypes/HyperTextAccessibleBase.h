@@ -78,7 +78,7 @@ class HyperTextAccessibleBase {
   
 
 
-  virtual int32_t CaretOffset() const = 0;
+  virtual int32_t CaretOffset() const;
 
   
 
