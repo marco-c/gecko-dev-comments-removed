@@ -29,6 +29,7 @@
 #include "gc/Barrier.h"
 #include "gc/Rooting.h"
 #include "js/CompileOptions.h"
+#include "js/Transcoding.h"
 #include "js/UbiNode.h"
 #include "js/UniquePtr.h"
 #include "js/Utility.h"
@@ -46,7 +47,6 @@
 #include "vm/SharedStencil.h"  
 #include "vm/StencilEnums.h"  
 #include "vm/Time.h"
-#include "vm/Xdr.h"  
 
 namespace JS {
 struct ScriptSourceInfo;
@@ -55,6 +55,8 @@ class SourceText;
 }  
 
 namespace js {
+
+class ScriptSource;
 
 class VarScope;
 class LexicalScope;
@@ -84,7 +86,9 @@ class DebugScript;
 
 namespace frontend {
 struct CompilationStencil;
+struct ExtensibleCompilationStencil;
 struct CompilationGCOutput;
+struct CompilationStencilMerger;
 class StencilXDR;
 }  
 
@@ -190,7 +194,28 @@ using ScriptFinalWarmUpCountMap =
                        DefaultHasher<HeapPtr<BaseScript*>>, SystemAllocPolicy>;
 #endif
 
-class ScriptSource;
+
+
+
+
+
+class StencilIncrementalEncoderPtr {
+ public:
+  frontend::CompilationStencilMerger* merger_ = nullptr;
+
+  StencilIncrementalEncoderPtr() = default;
+  ~StencilIncrementalEncoderPtr() { reset(); }
+
+  bool hasEncoder() const { return bool(merger_); }
+
+  void reset();
+
+  bool setInitial(JSContext* cx,
+                  UniquePtr<frontend::ExtensibleCompilationStencil>&& initial);
+
+  bool addDelazification(JSContext* cx,
+                         const frontend::CompilationStencil& delazification);
+};
 
 struct ScriptSourceChunk {
   ScriptSource* ss = nullptr;
@@ -557,7 +582,7 @@ class ScriptSource {
   
   
   
-  UniquePtr<XDRIncrementalStencilEncoder> xdrEncoder_ = nullptr;
+  StencilIncrementalEncoderPtr xdrEncoder_;
 
   
   
@@ -1007,7 +1032,7 @@ class ScriptSource {
   }
 
   
-  bool hasEncoder() const { return bool(xdrEncoder_); }
+  bool hasEncoder() const { return xdrEncoder_.hasEncoder(); }
 
   [[nodiscard]] bool startIncrementalEncoding(
       JSContext* cx,
