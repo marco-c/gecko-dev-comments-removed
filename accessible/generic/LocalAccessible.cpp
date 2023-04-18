@@ -1097,9 +1097,7 @@ already_AddRefed<AccAttributes> LocalAccessible::Attributes() {
   
   aria::AttrIterator attribIter(mContent);
   while (attribIter.Next()) {
-    nsString value;
-    attribIter.AttrValue(value);
-    attributes->SetAttribute(attribIter.AttrName(), std::move(value));
+    attribIter.ExposeAttr(attributes);
   }
 
   

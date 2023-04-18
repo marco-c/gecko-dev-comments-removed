@@ -7,6 +7,7 @@
 
 #include "ARIAMap.h"
 
+#include "AccAttributes.h"
 #include "nsAccUtils.h"
 #include "nsCoreUtils.h"
 #include "Role.h"
@@ -1479,7 +1480,9 @@ bool aria::HasDefinedARIAHidden(nsIContent* aContent) {
 
 
 AttrIterator::AttrIterator(nsIContent* aContent)
-    : mElement(dom::Element::FromNode(aContent)), mAttrIdx(0) {
+    : mElement(dom::Element::FromNode(aContent)),
+      mAttrIdx(0),
+      mAttrCharacteristics(0) {
   mAttrCount = mElement ? mElement->GetAttrCount() : 0;
 }
 
@@ -1492,17 +1495,19 @@ bool AttrIterator::Next() {
       nsDependentAtomString attrStr(mAttrAtom);
       if (!StringBeginsWith(attrStr, u"aria-"_ns)) continue;  
 
-      uint8_t attrFlags = aria::AttrCharacteristicsFor(mAttrAtom);
-      if (attrFlags & ATTR_BYPASSOBJ) {
+      
+      
+      mAttrCharacteristics = aria::AttrCharacteristicsFor(mAttrAtom);
+      if (mAttrCharacteristics & ATTR_BYPASSOBJ) {
         continue;  
       }
 
-      if ((attrFlags & ATTR_VALTOKEN) &&
+      if ((mAttrCharacteristics & ATTR_VALTOKEN) &&
           !nsAccUtils::HasDefinedARIAToken(mElement, mAttrAtom)) {
         continue;  
       }
 
-      if ((attrFlags & ATTR_BYPASSOBJ_IF_FALSE) &&
+      if ((mAttrCharacteristics & ATTR_BYPASSOBJ_IF_FALSE) &&
           mElement->AttrValueIs(kNameSpaceID_None, mAttrAtom, nsGkAtoms::_false,
                                 eCaseMatters)) {
         continue;  
@@ -1512,16 +1517,10 @@ bool AttrIterator::Next() {
     }
   }
 
+  mAttrCharacteristics = 0;
   mAttrAtom = nullptr;
 
   return false;
-}
-
-void AttrIterator::AttrName(nsAString& aAttrName) const {
-  nsDependentAtomString attrStr(mAttrAtom);
-  MOZ_ASSERT(StringBeginsWith(attrStr, u"aria-"_ns),
-             "Stored atom is an aria attribute.");
-  aAttrName.Assign(Substring(attrStr, 5));
 }
 
 nsAtom* AttrIterator::AttrName() const { return mAttrAtom; }
@@ -1529,7 +1528,7 @@ nsAtom* AttrIterator::AttrName() const { return mAttrAtom; }
 void AttrIterator::AttrValue(nsAString& aAttrValue) const {
   nsAutoString value;
   if (mElement->GetAttr(kNameSpaceID_None, mAttrAtom, value)) {
-    if (aria::AttrCharacteristicsFor(mAttrAtom) & ATTR_VALTOKEN) {
+    if (mAttrCharacteristics & ATTR_VALTOKEN) {
       nsAtom* normalizedValue =
           nsAccUtils::NormalizeARIAToken(mElement, mAttrAtom);
       if (normalizedValue) {
@@ -1540,4 +1539,21 @@ void AttrIterator::AttrValue(nsAString& aAttrValue) const {
     }
     aAttrValue.Assign(value);
   }
+}
+
+bool AttrIterator::ExposeAttr(AccAttributes* aTargetAttrs) const {
+  if (mAttrCharacteristics & ATTR_VALTOKEN) {
+    nsAtom* normalizedValue =
+        nsAccUtils::NormalizeARIAToken(mElement, mAttrAtom);
+    if (normalizedValue) {
+      aTargetAttrs->SetAttribute(mAttrAtom, normalizedValue);
+      return true;
+    }
+  }
+  nsAutoString value;
+  if (mElement->GetAttr(kNameSpaceID_None, mAttrAtom, value)) {
+    aTargetAttrs->SetAttribute(mAttrAtom, std::move(value));
+    return true;
+  }
+  return false;
 }
