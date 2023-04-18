@@ -106,22 +106,40 @@ const SnapshotGroups = new (class SnapshotGroups {
 
 
 
+
+
   async updateMetadata(group) {
     await PlacesUtils.withConnectionWrapper(
       "SnapshotsGroups.jsm:updateMetadata",
-      db => {
-        return db.executeCached(
-          `
-        UPDATE moz_places_metadata_snapshots_groups
-        SET title = :title, builder = :builder, builder_data = :builder_data
-        WHERE id = :id
-      `,
-          {
-            id: group.id,
-            title: group.title,
-            builder: group.builder,
-            builder_data: JSON.stringify(group.builderMetadata),
+      async db => {
+        let params = { id: group.id };
+        let updates = {
+          title: group.title,
+          builder_data:
+            "builderMetadata" in group
+              ? JSON.stringify(group.builderMetadata)
+              : undefined,
+        };
+
+        let setters = [];
+        for (let [key, value] of Object.entries(updates)) {
+          if (value !== undefined) {
+            setters.push(`${key} = :${key}`);
+            params[key] = value;
           }
+        }
+
+        if (!setters.length) {
+          return;
+        }
+
+        await db.executeCached(
+          `
+            UPDATE moz_places_metadata_snapshots_groups
+            SET ${setters.join(", ")}
+            WHERE id = :id
+          `,
+          params
         );
       }
     );
