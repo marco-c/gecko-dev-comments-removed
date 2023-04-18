@@ -1061,7 +1061,8 @@ class Element : public FragmentOrElement {
 
 
 
-  void Describe(nsAString& aOutDescription) const;
+
+  void Describe(nsAString& aOutDescription, bool aShort = false) const;
 
   
 
