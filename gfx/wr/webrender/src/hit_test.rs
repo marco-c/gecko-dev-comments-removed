@@ -407,9 +407,8 @@ impl HitTester {
             }
 
             
-            let mut is_valid = true;
             let clip_nodes = &self.scene.clip_nodes[item.clip_nodes_range.start.0 as usize .. item.clip_nodes_range.end.0 as usize];
-            for clip_node in clip_nodes {
+            let is_valid = clip_nodes.iter().all(|clip_node| {
                 let transform = self
                     .spatial_nodes[&clip_node.spatial_node_index]
                     .world_content_transform;
@@ -418,13 +417,13 @@ impl HitTester {
                     .and_then(|inverted| inverted.transform_point2d(test.point))
                 {
                     Some(point) => point,
-                    None => continue,
+                    
+                    
+                    None => return true,
                 };
-                if !clip_node.region.contains(&transformed_point) {
-                    is_valid = false;
-                    break;
-                }
-            }
+                clip_node.region.contains(&transformed_point)
+            });
+
             if !is_valid {
                 continue;
             }
