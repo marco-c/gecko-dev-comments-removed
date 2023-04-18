@@ -8,10 +8,12 @@
 
 #include <stdint.h>  
 
+#include "jsapi.h"                 
 #include "js/CharacterEncoding.h"  
 #include "js/CompileOptions.h"     
 #include "js/Conversions.h"  
 #include "js/PropertyAndElement.h"  
+#include "js/PropertyDescriptor.h"  
 #include "js/RootingAPI.h"          
 #include "js/Utility.h"             
 #include "js/Value.h"               
@@ -152,6 +154,61 @@ bool js::SetSourceOptions(JSContext* cx, ScriptSource* source,
     if (!source->setSourceMapURL(cx, std::move(chars))) {
       return false;
     }
+  }
+
+  return true;
+}
+
+JSObject* js::CreateScriptPrivate(JSContext* cx,
+                                  JS::Handle<JSString*> path ) {
+  JS::Rooted<JSObject*> info(cx, JS_NewPlainObject(cx));
+  if (!info) {
+    return nullptr;
+  }
+
+  if (path) {
+    JS::Rooted<JS::Value> pathValue(cx, JS::StringValue(path));
+    if (!JS_DefineProperty(cx, info, "path", pathValue, JSPROP_ENUMERATE)) {
+      return nullptr;
+    }
+  }
+
+  return info;
+}
+
+bool js::ParseDebugMetadata(JSContext* cx, JS::Handle<JSObject*> opts,
+                            JS::MutableHandle<JS::Value> privateValue,
+                            JS::MutableHandle<JSString*> elementAttributeName) {
+  JS::Rooted<JS::Value> v(cx);
+  JS::Rooted<JSString*> s(cx);
+
+  if (!JS_GetProperty(cx, opts, "element", &v)) {
+    return false;
+  }
+  if (v.isObject()) {
+    JS::Rooted<JSObject*> infoObject(cx, CreateScriptPrivate(cx));
+    if (!infoObject) {
+      return false;
+    }
+    JS::Rooted<JS::Value> elementValue(cx, v);
+    if (!JS_WrapValue(cx, &elementValue)) {
+      return false;
+    }
+    if (!JS_DefineProperty(cx, infoObject, "element", elementValue, 0)) {
+      return false;
+    }
+    privateValue.set(ObjectValue(*infoObject));
+  }
+
+  if (!JS_GetProperty(cx, opts, "elementAttributeName", &v)) {
+    return false;
+  }
+  if (!v.isUndefined()) {
+    s = ToString(cx, v);
+    if (!s) {
+      return false;
+    }
+    elementAttributeName.set(s);
   }
 
   return true;
