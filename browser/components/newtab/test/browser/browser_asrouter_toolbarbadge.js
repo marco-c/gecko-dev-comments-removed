@@ -14,6 +14,8 @@ add_task(async function test_setup() {
     
     
     gBrowser.removeAllTabsBut(gBrowser.tabs[0]);
+    
+    gBrowser.stop();
     Services.prefs.clearUserPref("identity.fxaccounts.toolbar.accessed");
   });
 });
