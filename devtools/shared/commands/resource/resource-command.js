@@ -9,6 +9,12 @@ const { throttle } = require("devtools/shared/throttle");
 
 const BROWSERTOOLBOX_FISSION_ENABLED = "devtools.browsertoolbox.fission";
 
+let gLastResourceId = 0;
+
+function cacheKey(resourceType, resourceId) {
+  return `${resourceType}:${resourceId}`;
+}
+
 class ResourceCommand {
   
 
@@ -43,7 +49,7 @@ class ResourceCommand {
     this._pendingWatchers = new Set();
 
     
-    this._cache = [];
+    this._cache = new Map();
     this._listenedResources = new Set();
 
     
@@ -66,6 +72,11 @@ class ResourceCommand {
     return this.targetCommand.watcherFront;
   }
 
+  addResourceToCache(resource) {
+    const { resourceId, resourceType } = resource;
+    this._cache.set(cacheKey(resourceType, resourceId), resource);
+  }
+
   
 
 
@@ -73,7 +84,13 @@ class ResourceCommand {
 
 
   getAllResources(resourceType) {
-    return this._cache.filter(r => r.resourceType === resourceType);
+    const result = [];
+    for (const resource of this._cache.values()) {
+      if (resource.resourceType === resourceType) {
+        result.push(resource);
+      }
+    }
+    return result;
   }
 
   
@@ -84,9 +101,7 @@ class ResourceCommand {
 
 
   getResourceById(resourceType, resourceId) {
-    return this._cache.find(
-      r => r.resourceType === resourceType && r.resourceId === resourceId
-    );
+    return this._cache.get(cacheKey(resourceType, resourceId));
   }
 
   
@@ -531,9 +546,12 @@ class ResourceCommand {
     
     
     if (!targetFront.isTopLevel || !targetFront.isBrowsingContext) {
-      this._cache = this._cache.filter(
-        cachedResource => cachedResource.targetFront !== targetFront
-      );
+      for (const [key, resource] of this._cache) {
+        if (resource.targetFront === targetFront) {
+          
+          this._cache.delete(key);
+        }
+      }
     }
 
     
@@ -588,6 +606,10 @@ class ResourceCommand {
         });
       }
 
+      if (!resource.resourceId) {
+        resource.resourceId = `auto:${++gLastResourceId}`;
+      }
+
       
       const isWillNavigate =
         resourceType == ResourceCommand.TYPES.DOCUMENT_EVENT &&
@@ -611,7 +633,7 @@ class ResourceCommand {
       
       
       if (!isWillNavigate) {
-        this._cache.push(resource);
+        this.addResourceToCache(resource);
       }
     }
 
@@ -682,12 +704,9 @@ class ResourceCommand {
         console.warn(`Expected resource ${resourceType} to have a resourceId`);
       }
 
-      const existingResource = this._cache.find(
-        cachedResource =>
-          cachedResource.resourceType === resourceType &&
-          cachedResource.resourceId === resourceId
+      const existingResource = this._cache.get(
+        cacheKey(resourceType, resourceId)
       );
-
       if (!existingResource) {
         continue;
       }
@@ -722,25 +741,7 @@ class ResourceCommand {
   async _onResourceDestroyed({ targetFront, watcherFront }, resources) {
     for (const resource of resources) {
       const { resourceType, resourceId } = resource;
-
-      let index = -1;
-      if (resourceId) {
-        index = this._cache.findIndex(
-          cachedResource =>
-            cachedResource.resourceType == resourceType &&
-            cachedResource.resourceId == resourceId
-        );
-      } else {
-        index = this._cache.indexOf(resource);
-      }
-      if (index >= 0) {
-        this._cache.splice(index, 1);
-      } else {
-        console.warn(
-          `Resource ${resourceId || ""} of ${resourceType} was not found.`
-        );
-      }
-
+      this._cache.delete(cacheKey(resourceType, resourceId));
       this._queueResourceEvent("destroyed", resourceType, resource);
     }
     this._throttledNotifyWatchers();
@@ -840,7 +841,12 @@ class ResourceCommand {
     
     
     
-    this._cache = [];
+
+    
+    
+    
+    
+    this._cache = new Map();
   }
 
   
@@ -953,9 +959,12 @@ class ResourceCommand {
   }
 
   async _forwardExistingResources(resourceTypes, onAvailable) {
-    const existingResources = this._cache.filter(resource =>
-      resourceTypes.includes(resource.resourceType)
-    );
+    const existingResources = [];
+    for (const resource of this._cache.values()) {
+      if (resourceTypes.includes(resource.resourceType)) {
+        existingResources.push(resource);
+      }
+    }
     if (existingResources.length > 0) {
       await onAvailable(existingResources, { areExistingResources: true });
     }
@@ -1041,9 +1050,12 @@ class ResourceCommand {
     }
 
     
-    this._cache = this._cache.filter(
-      cachedResource => cachedResource.resourceType !== resourceType
-    );
+    for (const [key, resource] of this._cache) {
+      if (resource.resourceType == resourceType) {
+        
+        this._cache.delete(key);
+      }
+    }
 
     
     
