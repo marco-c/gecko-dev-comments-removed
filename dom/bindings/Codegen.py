@@ -21501,7 +21501,7 @@ class CGMaplikeOrSetlikeMethodGenerator(CGThing):
 
     def appendBoolResult(self):
         if self.helperImpl:
-            return ([CGGeneric()], ["&aRetVal"], [])
+            return ([CGGeneric("bool retVal;\n")], ["&retVal"], [])
         return ([CGGeneric("bool result;\n")], ["&result"], [])
 
     def forEach(self):
@@ -21578,7 +21578,7 @@ class CGMaplikeOrSetlikeMethodGenerator(CGThing):
         code = []
         
         
-        if not self.helperImpl or not self.helperImpl.handleJSObjectGetHelper():
+        if not self.helperImpl or not self.helperImpl.needsScopeBody():
             code = [
                 CGGeneric(
                     dedent(
@@ -21647,19 +21647,20 @@ class CGMaplikeOrSetlikeMethodGenerator(CGThing):
         return self.cgRoot.define()
 
 
-class CGMaplikeOrSetlikeHelperFunctionGenerator(CallbackMember):
+class CGHelperFunctionGenerator(CallbackMember):
     """
-    Generates code to allow C++ to perform operations on backing objects. Gets
-    a context from the binding wrapper, turns arguments into JS::Values (via
+    Generates code to allow C++ to perform operations. Gets a context from the
+    binding wrapper, turns arguments into JS::Values (via
     CallbackMember/CGNativeMember argument conversion), then uses
-    CGMaplikeOrSetlikeMethodGenerator to generate the body.
-
+    getCall to generate the body for getting result, and maybe convert the
+    result into return type (via CallbackMember/CGNativeMember result
+    conversion)
     """
 
     class HelperFunction(CGAbstractMethod):
         """
         Generates context retrieval code and rooted JSObject for interface for
-        CGMaplikeOrSetlikeMethodGenerator to use
+        method generator to use
         """
 
         def __init__(self, descriptor, name, args, code, returnType):
@@ -21672,31 +21673,14 @@ class CGMaplikeOrSetlikeHelperFunctionGenerator(CallbackMember):
     def __init__(
         self,
         descriptor,
-        maplikeOrSetlike,
         name,
-        needsKeyArg=False,
-        needsValueArg=False,
-        needsValueTypeReturn=False,
-        needsBoolReturn=False,
+        args,
+        returnType=BuiltinTypes[IDLBuiltinType.Types.void],
+        needsResultConversion=True,
     ):
-        assert not (needsValueTypeReturn and needsBoolReturn)
-        args = []
-        self.maplikeOrSetlike = maplikeOrSetlike
-        self.needsBoolReturn = needsBoolReturn
-        self.needsValueTypeReturn = needsValueTypeReturn
+        assert returnType.isType()
+        self.needsResultConversion = needsResultConversion
 
-        returnType = (
-            BuiltinTypes[IDLBuiltinType.Types.void]
-            if not self.needsValueTypeReturn
-            else maplikeOrSetlike.valueType
-        )
-
-        if needsKeyArg:
-            args.append(FakeArgument(maplikeOrSetlike.keyType, "aKey"))
-        if needsValueArg:
-            assert needsKeyArg
-            assert not needsValueTypeReturn
-            args.append(FakeArgument(maplikeOrSetlike.valueType, "aValue"))
         
         
         
@@ -21708,26 +21692,21 @@ class CGMaplikeOrSetlikeHelperFunctionGenerator(CallbackMember):
             descriptor,
             False,
             wrapScope="obj",
-            passJSBitsAsNeeded=self.handleJSObjectGetHelper(),
+            passJSBitsAsNeeded=typeNeedsCx(returnType),
         )
 
-        if self.needsValueTypeReturn:
-            finalReturnType = self.returnType
-        elif needsBoolReturn:
-            finalReturnType = "bool"
-        else:
-            finalReturnType = "void"
         
         
-        self.implMethod = CGMaplikeOrSetlikeHelperFunctionGenerator.HelperFunction(
-            descriptor, name, self.args, self.body, finalReturnType
+        self.implMethod = CGHelperFunctionGenerator.HelperFunction(
+            descriptor, name, self.args, self.body, self.returnType
         )
 
     def getCallSetup(self):
         
         
+        
         code = "MOZ_ASSERT(self);\n"
-        if not self.handleJSObjectGetHelper():
+        if not self.passJSBitsAsNeeded:
             code += dedent(
                 """
                 AutoJSAPI jsapi;
@@ -21764,18 +21743,9 @@ class CGMaplikeOrSetlikeHelperFunctionGenerator(CallbackMember):
         
         
         
-        if self.handleJSObjectGetHelper():
-            code += dedent(
-                """
-                JS::Rooted<JS::Value> result(cx);
-                """
-            )
-        else:
-            code += dedent(
-                """
-                JSAutoRealm reflectorRealm(cx, obj);
-                """
-            )
+        if self.needsScopeBody():
+            code += "JS::Rooted<JS::Value> result(cx);\n"
+
         return code
 
     def getArgs(self, returnType, argList):
@@ -21785,20 +21755,15 @@ class CGMaplikeOrSetlikeHelperFunctionGenerator(CallbackMember):
         return [Argument(self.descriptorProvider.nativeType + "*", "self")] + args
 
     def needsScopeBody(self):
-        return self.handleJSObjectGetHelper()
+        return self.passJSBitsAsNeeded
 
     def getArgvDeclFailureCode(self):
         return "aRv.Throw(NS_ERROR_UNEXPECTED);\n"
 
-    def handleJSObjectGetHelper(self):
-        return self.needsValueTypeReturn and self.maplikeOrSetlike.valueType.isObject()
-
     def getResultConversion(self):
-        if self.needsBoolReturn:
-            return "return aRetVal;\n"
-        elif self.needsValueTypeReturn:
+        if self.needsResultConversion:
             code = ""
-            if self.handleJSObjectGetHelper():
+            if self.needsScopeBody():
                 code = dedent(
                     """
                     if (!JS_WrapValue(cx, &result)) {
@@ -21811,7 +21776,7 @@ class CGMaplikeOrSetlikeHelperFunctionGenerator(CallbackMember):
             failureCode = dedent("aRv.Throw(NS_ERROR_UNEXPECTED);\nreturn nullptr;\n")
 
             exceptionCode = None
-            if self.maplikeOrSetlike.valueType.isPrimitive():
+            if self.retvalType.isPrimitive():
                 exceptionCode = dedent(
                     "aRv.NoteJSContextException(cx);\nreturn%s;\n"
                     % self.getDefaultRetval()
@@ -21824,34 +21789,26 @@ class CGMaplikeOrSetlikeHelperFunctionGenerator(CallbackMember):
                 isDefinitelyObject=True,
                 exceptionCode=exceptionCode,
             )
-        return "return;\n"
+
+        assignRetval = string.Template(
+            self.getRetvalInfo(self.retvalType, False)[2]
+        ).substitute(
+            {
+                "declName": "retVal",
+            }
+        )
+        return assignRetval
 
     def getRvalDecl(self):
-        if self.needsBoolReturn:
-            return "bool aRetVal;\n"
-        elif self.handleJSObjectGetHelper():
-            return "JSAutoRealm reflectorRealm(cx, obj);\n"
-        return ""
+        
+        return "JSAutoRealm reflectorRealm(cx, obj);\n"
 
     def getArgcDecl(self):
         
         return None
 
-    def getDefaultRetval(self):
-        if self.needsBoolReturn:
-            return " false"
-        elif self.needsValueTypeReturn:
-            return CallbackMember.getDefaultRetval(self)
-        return ""
-
     def getCall(self):
-        return CGMaplikeOrSetlikeMethodGenerator(
-            self.descriptorProvider,
-            self.maplikeOrSetlike,
-            self.name.lower(),
-            self.needsValueTypeReturn,
-            helperImpl=self,
-        ).define()
+        assert False  
 
     def getPrettyName(self):
         return self.name
@@ -21861,6 +21818,61 @@ class CGMaplikeOrSetlikeHelperFunctionGenerator(CallbackMember):
 
     def define(self):
         return self.implMethod.define()
+
+
+class CGMaplikeOrSetlikeHelperFunctionGenerator(CGHelperFunctionGenerator):
+    """
+    Generates code to allow C++ to perform operations on backing objects. Gets
+    a context from the binding wrapper, turns arguments into JS::Values (via
+    CallbackMember/CGNativeMember argument conversion), then uses
+    CGMaplikeOrSetlikeMethodGenerator to generate the body.
+    """
+
+    def __init__(
+        self,
+        descriptor,
+        maplikeOrSetlike,
+        name,
+        needsKeyArg=False,
+        needsValueArg=False,
+        needsValueTypeReturn=False,
+        needsBoolReturn=False,
+        needsResultConversion=True,
+    ):
+        self.maplikeOrSetlike = maplikeOrSetlike
+        self.needsValueTypeReturn = needsValueTypeReturn
+
+        args = []
+        if needsKeyArg:
+            args.append(FakeArgument(maplikeOrSetlike.keyType, "aKey"))
+        if needsValueArg:
+            assert needsKeyArg
+            assert not needsValueTypeReturn
+            args.append(FakeArgument(maplikeOrSetlike.valueType, "aValue"))
+
+        returnType = BuiltinTypes[IDLBuiltinType.Types.void]
+        if needsBoolReturn:
+            returnType = BuiltinTypes[IDLBuiltinType.Types.boolean]
+        elif needsValueTypeReturn:
+            returnType = maplikeOrSetlike.valueType
+
+        CGHelperFunctionGenerator.__init__(
+            self,
+            descriptor,
+            name,
+            args,
+            returnType,
+            needsResultConversion,
+        )
+
+    def getCall(self):
+        return CGMaplikeOrSetlikeMethodGenerator(
+            self.descriptorProvider,
+            self.maplikeOrSetlike,
+            self.name.lower(),
+            self.needsValueTypeReturn,
+            helperImpl=self,
+        ).define()
 
 
 class CGMaplikeOrSetlikeHelperGenerator(CGNamespace):
@@ -21889,6 +21901,7 @@ class CGMaplikeOrSetlikeHelperGenerator(CGNamespace):
                 "Delete",
                 needsKeyArg=True,
                 needsBoolReturn=True,
+                needsResultConversion=False,
             ),
             CGMaplikeOrSetlikeHelperFunctionGenerator(
                 descriptor,
@@ -21896,6 +21909,7 @@ class CGMaplikeOrSetlikeHelperGenerator(CGNamespace):
                 "Has",
                 needsKeyArg=True,
                 needsBoolReturn=True,
+                needsResultConversion=False,
             ),
         ]
         if self.maplikeOrSetlike.isMaplike():
