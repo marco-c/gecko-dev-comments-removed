@@ -128,6 +128,9 @@ var AboutReader = function(actor, articlePromise, docContentType = "document") {
   win.addEventListener("resize", this);
   win.addEventListener("wheel", this, { passive: false });
 
+  this.colorSchemeMediaList = win.matchMedia("(prefers-color-scheme: dark)");
+  this.colorSchemeMediaList.addEventListener("change", this);
+
   this._topScrollChange = this._topScrollChange.bind(this);
   this._intersectionObs = new win.IntersectionObserver(this._topScrollChange, {
     root: null,
@@ -164,8 +167,25 @@ var AboutReader = function(actor, articlePromise, docContentType = "document") {
       itemClass: value + "-button",
     };
   });
-
   let colorScheme = Services.prefs.getCharPref("reader.color_scheme");
+
+  
+  
+  
+  this.readerImprovementsEnabled = Services.prefs.getBoolPref(
+    "reader.improvements_H12022.enabled",
+    false
+  );
+  if (!this.readerImprovementsEnabled) {
+    colorSchemeOptions = colorSchemeOptions.filter(function(value) {
+      return value.name !== "Auto";
+    });
+
+    if (Services.prefs.getCharPref("reader.color_scheme") === "auto") {
+      colorScheme = "light";
+    }
+  }
+
   this._setupSegmentedButton(
     "color-scheme-buttons",
     colorSchemeOptions,
@@ -232,12 +252,13 @@ var AboutReader = function(actor, articlePromise, docContentType = "document") {
     ".light-button": "colorschemelight",
     ".dark-button": "colorschemedark",
     ".sepia-button": "colorschemesepia",
+    ".auto-button": "colorschemeauto",
   };
 
   for (let [selector, stringID] of Object.entries(elemL10nMap)) {
     dropdown
       .querySelector(selector)
-      .setAttribute(
+      ?.setAttribute(
         "title",
         gStrings.GetStringFromName("aboutReader.toolbar." + stringID)
       );
@@ -474,6 +495,19 @@ AboutReader.prototype = {
 
         delete this._intersectionObs;
         delete this._ctaIntersectionObserver;
+
+        break;
+
+      case "change":
+        
+        
+        if (Services.prefs.getCharPref("reader.color_scheme") === "auto") {
+          let colorScheme = this.colorSchemeMediaList.matches
+            ? "dark"
+            : "light";
+
+          this._setColorScheme(colorScheme);
+        }
 
         break;
     }
@@ -744,7 +778,7 @@ AboutReader.prototype = {
 
   _setColorScheme(newColorScheme) {
     
-    if (this._colorScheme === newColorScheme || newColorScheme === "auto") {
+    if (this._colorScheme === newColorScheme) {
       return;
     }
 
@@ -754,7 +788,12 @@ AboutReader.prototype = {
       bodyClasses.remove(this._colorScheme);
     }
 
-    this._colorScheme = newColorScheme;
+    if (newColorScheme === "auto") {
+      this._colorScheme = this.colorSchemeMediaList.matches ? "dark" : "light";
+    } else {
+      this._colorScheme = newColorScheme;
+    }
+
     bodyClasses.add(this._colorScheme);
   },
 

@@ -4187,10 +4187,10 @@ pref("reader.line_height", 4);
 
 
 
-pref("reader.color_scheme", "light");
+pref("reader.color_scheme", "auto");
 
 
-pref("reader.color_scheme.values", "[\"light\",\"dark\",\"sepia\"]");
+pref("reader.color_scheme.values", "[\"light\",\"dark\",\"sepia\",\"auto\"]");
 
 
 pref("reader.font_type", "sans-serif");
