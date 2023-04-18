@@ -275,7 +275,7 @@ class MediaDecoderStateMachine
   
   void SetVideoDecodeMode(VideoDecodeMode aMode);
 
-  RefPtr<GenericPromise> InvokeSetSink(const RefPtr<AudioDeviceInfo>& aSink);
+  RefPtr<GenericPromise> InvokeSetSink(RefPtr<AudioDeviceInfo> aSink);
 
   void InvokeSuspendMediaSink();
   void InvokeResumeMediaSink();
@@ -351,8 +351,8 @@ class MediaDecoderStateMachine
 
   
   
-  void ResetDecode(const TrackSet& aTracks = TrackSet(TrackInfo::kAudioTrack,
-                                                      TrackInfo::kVideoTrack));
+  void ResetDecode(TrackSet aTracks = TrackSet(TrackInfo::kAudioTrack,
+                                               TrackInfo::kVideoTrack));
 
   void SetVideoDecodeModeInternal(VideoDecodeMode aMode);
 
@@ -364,7 +364,7 @@ class MediaDecoderStateMachine
   
   
   
-  RefPtr<GenericPromise> SetSink(const RefPtr<AudioDeviceInfo>& aDevice);
+  RefPtr<GenericPromise> SetSink(RefPtr<AudioDeviceInfo> aSink);
 
   
   void SuspendMediaSink();
