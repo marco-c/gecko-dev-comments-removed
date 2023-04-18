@@ -70,6 +70,50 @@ static wchar_t** AllocConvertUTF8toUTF16Strings(int argc, char** argv) {
 
 
 
+
+static bool NeedToBreakAwayFromJob() {
+  
+  BOOL inJob = FALSE;
+  if (!::IsProcessInJob(::GetCurrentProcess(), nullptr, &inJob)) {
+    return false;
+  }
+
+  
+  if (!inJob) {
+    return false;
+  }
+
+  
+  
+  JOBOBJECT_EXTENDED_LIMIT_INFORMATION job_info = {};
+  if (!::QueryInformationJobObject(nullptr, JobObjectExtendedLimitInformation,
+                                   &job_info, sizeof(job_info), nullptr)) {
+    return false;
+  }
+
+  
+  
+  if (!(job_info.BasicLimitInformation.LimitFlags &
+        JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE)) {
+    return false;
+  }
+
+  
+  if (!(job_info.BasicLimitInformation.LimitFlags &
+        JOB_OBJECT_LIMIT_BREAKAWAY_OK)) {
+    return false;
+  }
+
+  
+  return true;
+}
+
+
+
+
+
+
+
 BOOL WinLaunchChild(const wchar_t* exePath, int argc, wchar_t** argv,
                     HANDLE userToken = nullptr, HANDLE* hProcess = nullptr);
 
@@ -92,6 +136,9 @@ BOOL WinLaunchChild(const wchar_t* exePath, int argc, wchar_t** argv,
     return FALSE;
   }
 
+  DWORD creationFlags =
+      NeedToBreakAwayFromJob() ? CREATE_BREAKAWAY_FROM_JOB : 0;
+
   STARTUPINFOW si = {0};
   si.cb = sizeof(STARTUPINFOW);
   si.lpDesktop = const_cast<LPWSTR>(L"winsta0\\Default");
@@ -102,7 +149,7 @@ BOOL WinLaunchChild(const wchar_t* exePath, int argc, wchar_t** argv,
                         nullptr,  
                         nullptr,  
                         FALSE,    
-                        0,        
+                        creationFlags,
                         nullptr,  
                         nullptr,  
                         &si, &pi);
@@ -118,8 +165,7 @@ BOOL WinLaunchChild(const wchar_t* exePath, int argc, wchar_t** argv,
                               nullptr,  
                               nullptr,  
                               FALSE,    
-                              0,        
-                              environmentBlock,
+                              creationFlags, environmentBlock,
                               nullptr,  
                               &si, &pi);
 
