@@ -1570,7 +1570,7 @@ void FetchBody<Derived>::LockStream(JSContext* aCx, ReadableStream* aStream,
                                     ErrorResult& aRv) {
   
   RefPtr<ReadableStreamDefaultReader> reader =
-      AcquireReadableStreamDefaultReader(aCx, aStream, aRv);
+      AcquireReadableStreamDefaultReader(aStream, aRv);
   if (aRv.Failed()) {
     return;
   }
