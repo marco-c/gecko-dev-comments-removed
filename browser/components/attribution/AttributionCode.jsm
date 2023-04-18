@@ -120,17 +120,7 @@ var AttributionCode = {
 
   async writeAttributionFile(code) {
     let file = AttributionCode.attributionFile;
-    let dir = file.parent;
-    try {
-      
-      
-      dir.create(Ci.nsIFile.DIRECTORY_TYPE, 0o755);
-    } catch (ex) {
-      if (ex.result != Cr.NS_ERROR_FILE_ALREADY_EXISTS) {
-        throw ex;
-      }
-      
-    }
+    await IOUtils.makeDirectory(file.parent.path);
     let bytes = new TextEncoder().encode(code);
     await AttributionIOUtils.write(file.path, bytes);
   },
