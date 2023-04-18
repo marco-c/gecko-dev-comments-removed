@@ -138,7 +138,8 @@ class ScriptLoadRequest
  public:
   ScriptLoadRequest(ScriptKind aKind, nsIURI* aURI,
                     ScriptFetchOptions* aFetchOptions,
-                    const SRIMetadata& aIntegrity, nsIURI* aReferrer);
+                    const SRIMetadata& aIntegrity, nsIURI* aReferrer,
+                    DOMScriptLoadContext* aContext);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(ScriptLoadRequest)
@@ -354,11 +355,13 @@ class DOMScriptLoadContext : public PreloaderBase {
   virtual ~DOMScriptLoadContext();
 
  public:
-  explicit DOMScriptLoadContext(Element* aElement, ScriptLoadRequest* aRequest,
+  explicit DOMScriptLoadContext(Element* aElement,
                                 nsIGlobalObject* aWebExtGlobal = nullptr);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(DOMScriptLoadContext)
+
+  void SetRequest(ScriptLoadRequest* aRequest);
 
   
   static void PrioritizeAsPreload(nsIChannel* aChannel);
@@ -480,7 +483,9 @@ class DOMScriptLoadContext : public PreloaderBase {
   nsCOMPtr<Element> mElement;
 
   
-  
+
+
+
   nsCOMPtr<nsIGlobalObject> mWebExtGlobal;
 
   RefPtr<ScriptLoadRequest> mRequest;
