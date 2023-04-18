@@ -3199,13 +3199,9 @@ class nsContentUtils {
   
   
   [[nodiscard]] static bool InitJSBytecodeMimeType();
-  static nsCString& JSScriptBytecodeMimeType() {
-    MOZ_ASSERT(sJSScriptBytecodeMimeType);
-    return *sJSScriptBytecodeMimeType;
-  }
-  static nsCString& JSModuleBytecodeMimeType() {
-    MOZ_ASSERT(sJSModuleBytecodeMimeType);
-    return *sJSModuleBytecodeMimeType;
+  static nsCString& JSBytecodeMimeType() {
+    MOZ_ASSERT(sJSBytecodeMimeType);
+    return *sJSBytecodeMimeType;
   }
 
   
@@ -3426,8 +3422,7 @@ class nsContentUtils {
 
   
   
-  static nsCString* sJSScriptBytecodeMimeType;
-  static nsCString* sJSModuleBytecodeMimeType;
+  static nsCString* sJSBytecodeMimeType;
 
   static mozilla::LazyLogModule gResistFingerprintingLog;
   static mozilla::LazyLogModule sDOMDumpLog;

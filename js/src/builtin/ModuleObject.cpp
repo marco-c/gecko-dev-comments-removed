@@ -1238,8 +1238,6 @@ bool ModuleObject::execute(JSContext* cx, HandleModuleObject self,
   
   
   
-  
-  
   auto guardA = mozilla::MakeScopeExit(
       [&] { self->setReservedSlot(ScriptSlot, UndefinedValue()); });
 

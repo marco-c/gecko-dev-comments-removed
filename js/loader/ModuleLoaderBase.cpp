@@ -113,12 +113,6 @@ bool ModuleLoaderBase::ModuleMapContainsURL(nsIURI* aURL,
   return mFetchingModules.Contains(key) || mFetchedModules.Contains(key);
 }
 
-bool ModuleLoaderBase::IsModuleFetching(nsIURI* aURL,
-                                        nsIGlobalObject* aGlobal) const {
-  ModuleMapKey key(aURL, aGlobal);
-  return mFetchingModules.Contains(key);
-}
-
 void ModuleLoaderBase::SetModuleFetchStarted(ModuleLoadRequest* aRequest) {
   
 
@@ -748,6 +742,10 @@ nsresult ModuleLoaderBase::EvaluateModule(nsIGlobalObject* aGlobalObject,
                             MarkerInnerWindowIdFromJSContext(cx),
                             profilerLabelString);
 
+  
+  
+  MOZ_ASSERT(aRequest->IsTextSource() || aRequest->IsUnknownDataType());
+
   ModuleLoadRequest* request = aRequest->AsModuleRequest();
   MOZ_ASSERT(request->mModuleScript);
   MOZ_ASSERT_IF(request->HasLoadContext(),
@@ -778,8 +776,6 @@ nsresult ModuleLoaderBase::EvaluateModule(nsIGlobalObject* aGlobalObject,
   }
 
   JS::Rooted<JS::Value> rval(cx);
-
-  mLoader->MaybePrepareModuleForBytecodeEncodingBeforeExecute(cx, request);
 
   rv = nsJSUtils::ModuleEvaluate(cx, module, &rval);
 
@@ -818,10 +814,11 @@ nsresult ModuleLoaderBase::EvaluateModule(nsIGlobalObject* aGlobalObject,
     }
   }
 
-  rv = mLoader->MaybePrepareModuleForBytecodeEncodingAfterExecute(request, rv);
-
-  mLoader->MaybeTriggerBytecodeEncoding();
-
+  if (aRequest->HasLoadContext()) {
+    TRACE_FOR_TEST_NONE(aRequest->GetLoadContext()->GetScriptElement(),
+                        "scriptloader_no_encode");
+  }
+  aRequest->mCacheInfo = nullptr;
   return rv;
 }
 
