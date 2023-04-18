@@ -257,10 +257,6 @@ class CompositorBridgeChild final : public PCompositorBridgeChild,
   
   nsTArray<RefPtr<TextureClient>> mTextureClientsForAsyncPaint;
 
-  
-  
-  Monitor mPaintLock;
-
   RefPtr<CanvasChild> mCanvasChild;
 
   RefPtr<webgpu::WebGPUChild> mWebGPUChild;

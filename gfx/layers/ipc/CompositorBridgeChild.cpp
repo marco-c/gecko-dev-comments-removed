@@ -86,8 +86,7 @@ CompositorBridgeChild::CompositorBridgeChild(CompositorManagerChild* aManager)
       mFwdTransactionId(0),
       mThread(NS_GetCurrentThread()),
       mProcessToken(0),
-      mSectionAllocator(nullptr),
-      mPaintLock("CompositorBridgeChild.mPaintLock") {
+      mSectionAllocator(nullptr) {
   MOZ_ASSERT(NS_IsMainThread());
 }
 
@@ -337,20 +336,8 @@ void CompositorBridgeChild::ActorDestroy(ActorDestroyReason aWhy) {
     gfxCriticalNote << "Receive IPC close with reason=AbnormalShutdown";
   }
 
-  {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    MonitorAutoLock lock(mPaintLock);
-    mCanSend = false;
-    mActorDestroyed = true;
-  }
+  mCanSend = false;
+  mActorDestroyed = true;
 
   if (mProcessToken && XRE_IsParentProcess()) {
     GPUProcessManager::Get()->NotifyRemoteActorDestroyed(mProcessToken);
