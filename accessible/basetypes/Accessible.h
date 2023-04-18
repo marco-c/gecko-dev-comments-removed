@@ -117,6 +117,11 @@ class Accessible {
 
   
 
+
+  virtual int32_t IndexOfEmbeddedChild(Accessible* aChild) = 0;
+
+  
+
   
 
 
