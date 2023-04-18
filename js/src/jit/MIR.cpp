@@ -2703,7 +2703,8 @@ MDefinition* MMinMax::foldsTo(TempAllocator& alloc) {
     }
   }
 
-  if ((operand->isArrayLength() || operand->isArrayBufferViewLength()) &&
+  if ((operand->isArrayLength() || operand->isArrayBufferViewLength() ||
+       operand->isArgumentsLength()) &&
       constant->type() == MIRType::Int32) {
     MOZ_ASSERT(operand->type() == MIRType::Int32);
 
