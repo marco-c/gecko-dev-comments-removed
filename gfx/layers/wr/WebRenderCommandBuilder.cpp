@@ -1660,6 +1660,14 @@ void WebRenderCommandBuilder::CreateWebRenderCommands(
   }
 }
 
+
+
+
+
+struct NewLayerData {
+  size_t mLayerCountBeforeRecursing = 0;
+};
+
 void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
     nsDisplayList* aDisplayList, nsDisplayItem* aWrappingItem,
     nsDisplayListBuilder* aDisplayListBuilder, const StackingContextHelper& aSc,
@@ -1750,13 +1758,14 @@ void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
       }
     }
 
-    bool forceNewLayerData = false;
-    size_t layerCountBeforeRecursing = mLayerScrollData.size();
+    Maybe<NewLayerData> newLayerData;
     if (apzEnabled) {
       
       
       
-      forceNewLayerData = item->UpdateScrollData(nullptr, nullptr);
+      if (item->UpdateScrollData(nullptr, nullptr)) {
+        newLayerData = Some(NewLayerData());
+      }
 
       
       
@@ -1765,7 +1774,7 @@ void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
       const ActiveScrolledRoot* asr = item->GetActiveScrolledRoot();
       if (asr != mLastAsr) {
         mLastAsr = asr;
-        forceNewLayerData = true;
+        newLayerData = Some(NewLayerData());
       }
 
       
@@ -1775,16 +1784,17 @@ void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
       
       
       
-      if (!forceNewLayerData && item->CreatesStackingContextHelper() &&
+      if (!newLayerData && item->CreatesStackingContextHelper() &&
           aSc.GetDeferredTransformItem() &&
           aSc.GetDeferredTransformItem()->GetActiveScrolledRoot() != asr) {
-        forceNewLayerData = true;
+        newLayerData = Some(NewLayerData());
       }
 
       
       
       
-      if (forceNewLayerData) {
+      if (newLayerData) {
+        newLayerData->mLayerCountBeforeRecursing = mLayerScrollData.size();
         mAsrStack.push_back(asr);
       }
     }
@@ -1822,7 +1832,7 @@ void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
     }
 
     if (apzEnabled) {
-      if (forceNewLayerData) {
+      if (newLayerData) {
         
         
         mAsrStack.pop_back();
@@ -1830,7 +1840,7 @@ void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
             mAsrStack.empty() ? nullptr : mAsrStack.back();
 
         int32_t descendants =
-            mLayerScrollData.size() - layerCountBeforeRecursing;
+            mLayerScrollData.size() - newLayerData->mLayerCountBeforeRecursing;
 
         
         
