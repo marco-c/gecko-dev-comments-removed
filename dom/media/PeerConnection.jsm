@@ -598,10 +598,7 @@ class RTCPeerConnection {
         namedCurve: "P-256",
       });
     }
-    
-    if (!this._closed) {
-      this._pc.certificate = certificate;
-    }
+    this._pc.certificate = certificate;
   }
 
   _resetPeerIdentityPromise() {
