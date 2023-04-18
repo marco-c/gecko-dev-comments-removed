@@ -48,23 +48,30 @@ function waitUntilState(store, predicate) {
 
 
 
-function waitUntilAction(store, actionType, count = 1) {
-  return new Promise(resolve => {
-    const unsubscribe = store.subscribe(check);
-    const history = store.history;
-    let index = history.length;
 
-    info(`Waiting for action "${actionType}"`);
-    function check() {
-      const action = history[index++];
-      if (action && action.type === actionType) {
-        info(`Found action "${actionType}"`);
-        count--;
-        if (count === 0) {
-          unsubscribe();
-          resolve(store.getState());
+
+
+
+function waitForDispatch(store, actionType, repeat = 1) {
+  let count = 0;
+  return new Promise(resolve => {
+    store.dispatch({
+      type: "@@service/waitUntil",
+      predicate: action => {
+        const isDone =
+          !action.status ||
+          action.status === "done" ||
+          action.status === "error";
+
+        if (action.type === actionType && isDone && ++count == repeat) {
+          return true;
         }
-      }
-    }
+
+        return false;
+      },
+      run: (dispatch, getState, action) => {
+        resolve(action);
+      },
+    });
   });
 }
