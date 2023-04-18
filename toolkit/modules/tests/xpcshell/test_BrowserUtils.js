@@ -136,16 +136,3 @@ add_task(async function test_sendToDeviceEmailsSupported() {
   setLanguage(disallowedLanguage);
   Assert.ok(!BrowserUtils.sendToDeviceEmailsSupported());
 });
-
-add_task(function test_isShareableURL() {
-  
-  Assert.ok(!BrowserUtils.isShareableURL(""));
-  
-  Assert.ok(
-    BrowserUtils.isShareableURL(Services.io.newURI("https://mozilla.org"))
-  );
-  
-  Assert.ok(
-    !BrowserUtils.isShareableURL(Services.io.newURI("file://path/to/pdf.pdf"))
-  );
-});
