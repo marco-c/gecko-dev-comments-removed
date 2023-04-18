@@ -19,6 +19,10 @@ add_task(async function testValidAttrCodes() {
   );
 
   for (let entry of validAttrCodes) {
+    if (entry.platforms && !entry.platforms.includes("mac")) {
+      continue;
+    }
+
     
     
     
