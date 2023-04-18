@@ -161,8 +161,7 @@ class TestCrash(BaseCrashTestCase):
             )
 
         
-        
-        self.assertEqual(self.marionette.instance.runner.returncode, 0)
+        self.assertEqual(self.marionette.instance.runner.returncode, 245)
 
         self.assertEqual(self.marionette.crashed, 1)
         self.assertIsNone(self.marionette.session)
