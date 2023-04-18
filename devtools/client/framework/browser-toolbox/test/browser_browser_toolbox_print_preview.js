@@ -25,10 +25,6 @@ add_task(async function() {
 
   
   
-  await pushPref("print.tab_modal.enabled", true);
-
-  
-  
   await addTab(`data:text/html,<div id="test-div">PRINT PREVIEW TEST</div>`);
 
   info("Start the print preview for the current tab");
