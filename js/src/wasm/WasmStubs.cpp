@@ -914,7 +914,7 @@ static void GenerateJitEntryLoadInstance(MacroAssembler& masm,
   
   
   offset = FunctionExtended::offsetOfExtendedSlot(
-      FunctionExtended::WASM_TLSDATA_SLOT);
+      FunctionExtended::WASM_INSTANCE_SLOT);
   masm.loadPrivate(Address(ScratchIonEntry, offset), InstanceReg);
 }
 

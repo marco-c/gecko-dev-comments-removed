@@ -811,11 +811,11 @@ class FunctionExtended : public JSFunction {
 
   
   
-  static const uint32_t WASM_INSTANCE_SLOT = 0;
+  static const uint32_t WASM_INSTANCE_OBJ_SLOT = 0;
 
   
   
-  static const uint32_t WASM_TLSDATA_SLOT = 1;
+  static const uint32_t WASM_INSTANCE_SLOT = 1;
 
   
   static const uint32_t ASMJS_MODULE_SLOT = 0;
