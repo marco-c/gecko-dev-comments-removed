@@ -82,6 +82,12 @@ class TextEventDispatcher final {
 
   nsIWidget* GetWidget() const { return mWidget; }
 
+  
+
+
+
+  bool HasFocus() const { return mHasFocus; }
+
   const IMENotificationRequests& IMENotificationRequestsRef() const {
     return mIMENotificationRequests;
   }
@@ -154,8 +160,19 @@ class TextEventDispatcher final {
 
 
 
+  const Maybe<WritingMode>& MaybeWritingModeRefAtSelection() const {
+    return mWritingMode;
+  }
 
-  MOZ_CAN_RUN_SCRIPT Maybe<WritingMode> MaybeWritingModeAtSelection() const;
+  
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT Maybe<WritingMode> MaybeQueryWritingModeAtSelection()
+      const;
 
   
 
@@ -271,7 +288,10 @@ class TextEventDispatcher final {
   
 
 
-  nsresult NotifyIME(const IMENotification& aIMENotification);
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
+  NotifyIME(const IMENotification& aIMENotification);
 
   
 
@@ -337,7 +357,9 @@ class TextEventDispatcher final {
   IMENotificationRequests mIMENotificationRequests;
   
   
-  mutable Maybe<WritingMode> mWritingMode;
+  
+  
+  Maybe<WritingMode> mWritingMode;
 
   
   

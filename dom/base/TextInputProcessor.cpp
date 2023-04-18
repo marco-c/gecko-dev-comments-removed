@@ -1038,7 +1038,7 @@ nsresult TextInputProcessor::InitEditCommands(
 
   Maybe<WritingMode> writingMode;
   if (RefPtr<TextEventDispatcher> dispatcher = mDispatcher) {
-    writingMode = dispatcher->MaybeWritingModeAtSelection();
+    writingMode = dispatcher->MaybeQueryWritingModeAtSelection();
   }
 
   
