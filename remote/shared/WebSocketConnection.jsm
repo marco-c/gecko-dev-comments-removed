@@ -28,7 +28,11 @@ class WebSocketConnection {
 
 
   constructor(webSocket, httpdConnection) {
-    this.id = Services.uuid.generateUUID().toString();
+    this.id = Services.uuid
+      .generateUUID()
+      .toString()
+      .slice(1, -1);
+
     this.httpdConnection = httpdConnection;
 
     this.transport = new WebSocketTransport(webSocket);
