@@ -46,6 +46,16 @@ enum class ScrollMode { Instant, Smooth, SmoothMsd, Normal };
 
 enum class ScrollUnit { DEVICE_PIXELS, LINES, PAGES, WHOLE };
 
+
+
+
+
+enum class APZScrollAnimationType {
+  No,                   
+  TriggeredByScript,    
+  TriggeredByUserInput  
+};
+
 }  
 
 #endif  

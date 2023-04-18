@@ -57,14 +57,14 @@ struct RepaintRequest {
         mTransformToAncestorScale(),
         mPaintRequestTime(),
         mScrollUpdateType(eNone),
+        mScrollAnimationType(APZScrollAnimationType::No),
         mIsRootContent(false),
-        mIsAnimationInProgress(false),
         mIsScrollInfoLayer(false) {}
 
   RepaintRequest(const FrameMetrics& aOther,
                  const ScreenMargin& aDisplayportMargins,
                  const ScrollOffsetUpdateType aScrollUpdateType,
-                 bool aIsAnimationInProgress)
+                 APZScrollAnimationType aScrollAnimationType)
       : mScrollId(aOther.GetScrollId()),
         mPresShellResolution(aOther.GetPresShellResolution()),
         mCompositionBounds(aOther.GetCompositionBounds()),
@@ -79,8 +79,8 @@ struct RepaintRequest {
         mTransformToAncestorScale(aOther.GetTransformToAncestorScale()),
         mPaintRequestTime(aOther.GetPaintRequestTime()),
         mScrollUpdateType(aScrollUpdateType),
+        mScrollAnimationType(aScrollAnimationType),
         mIsRootContent(aOther.IsRootContent()),
-        mIsAnimationInProgress(aIsAnimationInProgress),
         mIsScrollInfoLayer(aOther.IsScrollInfoLayer()) {}
 
   
@@ -101,8 +101,8 @@ struct RepaintRequest {
            mTransformToAncestorScale == aOther.mTransformToAncestorScale &&
            mPaintRequestTime == aOther.mPaintRequestTime &&
            mScrollUpdateType == aOther.mScrollUpdateType &&
+           mScrollAnimationType == aOther.mScrollAnimationType &&
            mIsRootContent == aOther.mIsRootContent &&
-           mIsAnimationInProgress == aOther.mIsAnimationInProgress &&
            mIsScrollInfoLayer == aOther.mIsScrollInfoLayer;
   }
 
@@ -148,7 +148,9 @@ struct RepaintRequest {
     return mDevPixelsPerCSSPixel;
   }
 
-  bool IsAnimationInProgress() const { return mIsAnimationInProgress; }
+  bool IsAnimationInProgress() const {
+    return mScrollAnimationType != APZScrollAnimationType::No;
+  }
 
   bool IsRootContent() const { return mIsRootContent; }
 
@@ -184,11 +186,11 @@ struct RepaintRequest {
 
   bool IsScrollInfoLayer() const { return mIsScrollInfoLayer; }
 
- protected:
-  void SetIsAnimationInProgress(bool aInProgress) {
-    mIsAnimationInProgress = aInProgress;
+  APZScrollAnimationType GetScrollAnimationType() const {
+    return mScrollAnimationType;
   }
 
+ protected:
   void SetIsRootContent(bool aIsRootContent) {
     mIsRootContent = aIsRootContent;
   }
@@ -279,11 +281,10 @@ struct RepaintRequest {
   
   ScrollOffsetUpdateType mScrollUpdateType;
 
-  
-  bool mIsRootContent : 1;
+  APZScrollAnimationType mScrollAnimationType;
 
   
-  bool mIsAnimationInProgress : 1;
+  bool mIsRootContent : 1;
 
   
   
