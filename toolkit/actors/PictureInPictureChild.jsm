@@ -47,6 +47,9 @@ ChromeUtils.defineModuleGetter(
 );
 
 const { WebVTT } = ChromeUtils.import("resource://gre/modules/vtt.jsm");
+const { setTimeout, clearTimeout } = ChromeUtils.import(
+  "resource://gre/modules/Timer.jsm"
+);
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
@@ -75,6 +78,7 @@ const MOUSEMOVE_PROCESSING_DELAY_MS = 50;
 const TOGGLE_HIDING_TIMEOUT_MS = 2000;
 
 const SEEK_TIME_SECS = 5;
+const EMPTIED_TIMEOUT_MS = 1000;
 
 
 const TEXT_TRACKS_STYLE_BOTTOM_MULTIPLIER = 0.066;
@@ -1532,6 +1536,22 @@ class PictureInPictureChild extends JSWindowActorChild {
         this.setupTextTracks(video);
         break;
       }
+      case "emptied": {
+        if (this.emptiedTimeout) {
+          clearTimeout(this.emptiedTimeout);
+          this.emptiedTimeout = null;
+        }
+        let video = this.getWeakVideo();
+        
+        
+        
+        this.emptiedTimeout = setTimeout(() => {
+          if (!video || !video.src) {
+            this.closePictureInPicture({ reason: "video-el-emptied" });
+          }
+        }, EMPTIED_TIMEOUT_MS);
+        break;
+      }
       case "change": {
         
         
@@ -1696,6 +1716,7 @@ class PictureInPictureChild extends JSWindowActorChild {
       originatingVideo.addEventListener("pause", this);
       originatingVideo.addEventListener("volumechange", this);
       originatingVideo.addEventListener("resize", this);
+      originatingVideo.addEventListener("emptied", this);
 
       if (DISPLAY_TEXT_TRACKS_PREF) {
         this.setupTextTracks(originatingVideo);
@@ -1740,6 +1761,7 @@ class PictureInPictureChild extends JSWindowActorChild {
       originatingVideo.removeEventListener("pause", this);
       originatingVideo.removeEventListener("volumechange", this);
       originatingVideo.removeEventListener("resize", this);
+      originatingVideo.removeEventListener("emptied", this);
 
       if (DISPLAY_TEXT_TRACKS_PREF) {
         this.removeTextTracks(originatingVideo);
