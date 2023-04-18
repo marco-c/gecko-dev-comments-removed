@@ -142,19 +142,7 @@ class FileAndPathHelper {
       throw new Error(`Path "${path}" is a directory.`);
     }
 
-    const file = IOUtils.openFileForSyncReading(path);
-
-    
-    
-    return {
-      getLength: () => file.size,
-      readBytesInto: (dest, offset) => {
-        file.readBytesInto(dest, offset);
-      },
-      drop: () => {
-        file.close();
-      },
-    };
+    return IOUtils.openFileForSyncReading(path);
   }
 }
 
