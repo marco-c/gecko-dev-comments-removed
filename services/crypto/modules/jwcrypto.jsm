@@ -8,7 +8,9 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
-XPCOMUtils.defineLazyGlobalGetters(this, ["crypto"]);
+const lazy = {};
+
+XPCOMUtils.defineLazyGlobalGetters(lazy, ["crypto"]);
 
 const EXPORTED_SYMBOLS = ["jwcrypto"];
 
@@ -45,10 +47,13 @@ class JWCrypto {
   async generateJWE(key, data) {
     
     
-    const epk = await crypto.subtle.generateKey(ECDH_PARAMS, true, [
+    const epk = await lazy.crypto.subtle.generateKey(ECDH_PARAMS, true, [
       "deriveKey",
     ]);
-    const ownPublicJWK = await crypto.subtle.exportKey("jwk", epk.publicKey);
+    const ownPublicJWK = await lazy.crypto.subtle.exportKey(
+      "jwk",
+      epk.publicKey
+    );
     
     
     
@@ -56,7 +61,7 @@ class JWCrypto {
     delete ownPublicJWK.ext;
     let header = { alg: "ECDH-ES", enc: "A256GCM", epk: ownPublicJWK };
     
-    const peerPublicKey = await crypto.subtle.importKey(
+    const peerPublicKey = await lazy.crypto.subtle.importKey(
       "jwk",
       key,
       ECDH_PARAMS,
@@ -76,14 +81,14 @@ class JWCrypto {
     
     
     
-    let iv = crypto.getRandomValues(new Uint8Array(AES_GCM_IV_SIZE));
+    let iv = lazy.crypto.getRandomValues(new Uint8Array(AES_GCM_IV_SIZE));
     
     const additionalData = UTF8_ENCODER.encode(
       ChromeUtils.base64URLEncode(UTF8_ENCODER.encode(JSON.stringify(header)), {
         pad: false,
       })
     );
-    const encrypted = await crypto.subtle.encrypt(
+    const encrypted = await lazy.crypto.subtle.encrypt(
       {
         name: "AES-GCM",
         iv,
@@ -138,7 +143,7 @@ class JWCrypto {
     if ("apu" in header || "apv" in header) {
       throw new Error("apu and apv header values are not supported.");
     }
-    const peerPublicKey = await crypto.subtle.importKey(
+    const peerPublicKey = await lazy.crypto.subtle.importKey(
       "jwk",
       header.epk,
       ECDH_PARAMS,
@@ -158,7 +163,7 @@ class JWCrypto {
     );
     const bundle = new Uint8Array([...ciphertext, ...authTag]);
 
-    const decrypted = await crypto.subtle.decrypt(
+    const decrypted = await lazy.crypto.subtle.decrypt(
       {
         name: "AES-GCM",
         iv,
@@ -185,7 +190,7 @@ class JWCrypto {
 
 async function deriveECDHSharedAESKey(privateKey, publicKey, keyUsages) {
   const params = { ...ECDH_PARAMS, ...{ public: publicKey } };
-  const sharedKey = await crypto.subtle.deriveKey(
+  const sharedKey = await lazy.crypto.subtle.deriveKey(
     params,
     privateKey,
     AES_PARAMS,
@@ -195,7 +200,7 @@ async function deriveECDHSharedAESKey(privateKey, publicKey, keyUsages) {
   
   
   
-  let sharedKeyBytes = await crypto.subtle.exportKey("raw", sharedKey);
+  let sharedKeyBytes = await lazy.crypto.subtle.exportKey("raw", sharedKey);
   sharedKeyBytes = new Uint8Array(sharedKeyBytes);
   const info = [
     "\x00\x00\x00\x07A256GCM", 
@@ -210,13 +215,13 @@ async function deriveECDHSharedAESKey(privateKey, publicKey, keyUsages) {
   const pkcsBuf = Uint8Array.from(
     Array.prototype.map.call(pkcs, c => c.charCodeAt(0))
   );
-  const derivedKeyBytes = await crypto.subtle.digest(
+  const derivedKeyBytes = await lazy.crypto.subtle.digest(
     {
       name: "SHA-256",
     },
     pkcsBuf
   );
-  return crypto.subtle.importKey(
+  return lazy.crypto.subtle.importKey(
     "raw",
     derivedKeyBytes,
     AES_PARAMS,
