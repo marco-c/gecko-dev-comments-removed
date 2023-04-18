@@ -1167,7 +1167,8 @@ void WinWindowOcclusionTracker::WindowOcclusionCalculator::
   }
 
   CALC_LOG(LogLevel::Debug,
-           "WindowOcclusionCalculator::ProcessEventHookCallback()");
+           "WindowOcclusionCalculator::ProcessEventHookCallback() aEvent 0x%x",
+           aEvent);
 
   
   
