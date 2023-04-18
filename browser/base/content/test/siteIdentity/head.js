@@ -18,6 +18,10 @@ function openPermissionPopup() {
   return viewShown;
 }
 
+function getIdentityMode(aWindow = window) {
+  return aWindow.document.getElementById("identity-box").className;
+}
+
 
 
 
