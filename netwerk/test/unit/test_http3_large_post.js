@@ -10,7 +10,9 @@ add_task(async function setup() {
   await http3_setup_tests("h3-29");
 });
 
-let Http3Listener = function() {};
+let Http3Listener = function(amount) {
+  this.amount = amount;
+};
 
 Http3Listener.prototype = {
   expectedStatus: Cr.NS_OK,
@@ -111,8 +113,7 @@ function generateContent(size) {
 
 add_task(async function test_large_post() {
   let amount = 1 << 16;
-  let listener = new Http3Listener();
-  listener.amount = amount;
+  let listener = new Http3Listener(amount);
   let chan = makeChan("https://foo.example.com/post", amount);
   chan.notificationCallbacks = listener;
   await chanPromise(chan, listener);
@@ -123,9 +124,42 @@ add_task(async function test_large_post() {
 
 add_task(async function test_large_post2() {
   let amount = 1 << 23;
-  let listener = new Http3Listener();
-  listener.amount = amount;
+  let listener = new Http3Listener(amount);
   let chan = makeChan("https://foo.example.com/post", amount);
+  chan.notificationCallbacks = listener;
+  await chanPromise(chan, listener);
+});
+
+
+add_task(async function test_bug1749957_bug1750056() {
+  let amount = 200; 
+  let uri = "https://foo.example.com/post";
+  let listener = new Http3Listener(amount);
+
+  let chan = NetUtil.newChannel({
+    uri,
+    loadUsingSystemPrincipal: true,
+  }).QueryInterface(Ci.nsIHttpChannel);
+
+  
+  {
+    chan.requestMethod = "POST";
+    chan.setRequestHeader("content-length", "" + amount,  false);
+
+    let stream = Cc["@mozilla.org/io/string-input-stream;1"].createInstance(
+      Ci.nsIStringInputStream
+    );
+    stream.data = generateContent(amount);
+    let uchan = chan.QueryInterface(Ci.nsIUploadChannel2);
+    uchan.explicitSetUploadStream(
+      stream,
+       "",
+       -1,
+      "POST",
+       false
+    );
+  }
+
   chan.notificationCallbacks = listener;
   await chanPromise(chan, listener);
 });
