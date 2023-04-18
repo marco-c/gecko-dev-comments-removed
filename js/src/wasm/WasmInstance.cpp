@@ -126,6 +126,12 @@ static bool IsImportedFunction(const uint32_t functionIndex,
   return functionIndex < metadataTier.funcImports.length();
 }
 
+static bool IsJSExportedFunction(JSFunction* fun) {
+  
+  
+  return !IsWasmExportedFunction(fun);
+}
+
 
 static bool IsNullFunction(const uint32_t functionIndex) {
   return functionIndex == NullFuncIndex;
@@ -869,6 +875,7 @@ bool Instance::initElems(uint32_t tableIndex, const ElemSegment& seg,
       if (IsImportedFunction(funcIndex, metadataTier)) {
         FuncImportTls& import = funcImportTls(funcImports[funcIndex]);
         JSFunction* fun = import.fun;
+        (void)IsJSExportedFunction(fun);  
         if (IsWasmExportedFunction(fun)) {
           
           
