@@ -258,6 +258,11 @@ interface nsIIOService : nsISupports
 
 
     readonly attribute boolean socketProcessLaunched;
+
+    
+
+
+    readonly attribute unsigned long long socketProcessId;
 };
 
 %{C++
