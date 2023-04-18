@@ -334,9 +334,7 @@ add_task(async function test_103_iframe() {
 });
 
 
-
-
-async function test_hint_asset(testName, asset, hinted) {
+add_task(async function test_103_anchor() {
   
   let headers = new Headers();
   headers.append("X-Early-Hint-Count-Start", "");
@@ -345,14 +343,13 @@ async function test_hint_asset(testName, asset, hinted) {
     { headers }
   );
 
-  let requestUrl = `http://example.com/browser/netwerk/test/browser/early_hint_asset_html.sjs?as=${asset}&hinted=${
-    hinted ? "1" : "0"
-  }`;
+  let anchorUri =
+    "http://example.com/browser/netwerk/test/browser/103_preload_anchor.html";
 
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
-      url: requestUrl,
+      url: anchorUri,
       waitForLoad: true,
     },
     async function() {}
@@ -364,31 +361,7 @@ async function test_hint_asset(testName, asset, hinted) {
 
   await Assert.deepEqual(
     gotRequestCount,
-    hinted ? { hinted: 1, normal: 0 } : { hinted: 0, normal: 1 },
-    `${testName} (${asset}): Unexpected amount of requests made`
+    { hinted: 1, normal: 0 },
+    "test_103_anchor: Unexpected amount of requests made"
   );
-}
-
-
-add_task(async function test_103_asset_style() {
-  await test_hint_asset("test_103_asset_hinted", "style", true);
-  await test_hint_asset("test_103_asset_normal", "style", false);
-});
-
-
-add_task(async function test_103_asset_javascript() {
-  await test_hint_asset("test_103_asset_hinted", "script", true);
-  await test_hint_asset("test_103_asset_normal", "script", false);
-});
-
-
-add_task(async function test_103_asset_fetch() {
-  await test_hint_asset("test_103_asset_hinted", "fetch", true);
-  await test_hint_asset("test_103_asset_normal", "fetch", false);
-});
-
-
-add_task(async function test_103_asset_font() {
-  await test_hint_asset("test_103_asset_hinted", "font", true);
-  await test_hint_asset("test_103_asset_normal", "font", false);
 });

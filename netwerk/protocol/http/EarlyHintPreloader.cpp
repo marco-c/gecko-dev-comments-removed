@@ -162,8 +162,7 @@ void EarlyHintPreloader::MaybeCreateAndInsertPreload(
 
   nsCOMPtr<nsIURI> uri;
   
-  NS_ENSURE_SUCCESS_VOID(
-      NS_NewURI(getter_AddRefs(uri), aHeader.mHref, nullptr, aBaseURI));
+  NS_ENSURE_SUCCESS_VOID(aHeader.NewResolveHref(getter_AddRefs(uri), aBaseURI));
 
   
   
