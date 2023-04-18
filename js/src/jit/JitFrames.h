@@ -689,33 +689,7 @@ class DirectWasmJitCallFrameLayout {
 
 class ICStub;
 
-class JitStubFrameLayout : public CommonFrameLayout {
-  
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-  
-
- public:
-  static size_t Size() { return sizeof(JitStubFrameLayout); }
-
-  static inline int reverseOffsetOfStubPtr() { return -int(sizeof(void*)); }
-
-  inline ICStub* maybeStubPtr() {
-    uint8_t* fp = reinterpret_cast<uint8_t*>(this);
-    return *reinterpret_cast<ICStub**>(fp + reverseOffsetOfStubPtr());
-  }
-};
-
-class BaselineStubFrameLayout : public JitStubFrameLayout {
+class BaselineStubFrameLayout : public CommonFrameLayout {
   
     
     
@@ -738,6 +712,13 @@ class BaselineStubFrameLayout : public JitStubFrameLayout {
 
   static inline int reverseOffsetOfSavedFramePtr() {
     return -int(2 * sizeof(void*));
+  }
+
+  static inline int reverseOffsetOfStubPtr() { return -int(sizeof(void*)); }
+
+  inline ICStub* maybeStubPtr() {
+    uint8_t* fp = reinterpret_cast<uint8_t*>(this);
+    return *reinterpret_cast<ICStub**>(fp + reverseOffsetOfStubPtr());
   }
 };
 
