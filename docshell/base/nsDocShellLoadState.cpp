@@ -583,6 +583,12 @@ void nsDocShellLoadState::MaybeStripTrackerQueryStrings(
 
   
   
+  if (!TriggeringPrincipal()) {
+    return;
+  }
+
+  
+  
   
   
   
