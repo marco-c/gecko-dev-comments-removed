@@ -197,7 +197,6 @@ module.exports = {
         "toolkit/crashreporter/test/unit/test_crash_AsyncShutdown.js",
         "toolkit/mozapps/update/tests/unit_aus_update/testConstants.js",
         "xpcom/tests/unit/test_hidden_files.js",
-        "xpcom/tests/unit/test_localfile.js",
 
         
         
