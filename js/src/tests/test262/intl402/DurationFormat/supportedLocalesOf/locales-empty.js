@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Intl.DurationFormat.supportedLocalesOf, "function",
+                 "Should support Intl.DurationFormat.supportedLocalesOf.");
+
+assert.compareArray(Intl.DurationFormat.supportedLocalesOf(), []);
+assert.compareArray(Intl.DurationFormat.supportedLocalesOf([]), []);
+
+reportCompare(0, 0);

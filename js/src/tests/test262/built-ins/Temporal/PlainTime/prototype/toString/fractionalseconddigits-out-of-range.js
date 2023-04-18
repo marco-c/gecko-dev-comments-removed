@@ -17,9 +17,13 @@
 
 const time = new Temporal.PlainTime(12, 34, 56, 987, 650, 0);
 
-assert.throws(RangeError, () => time.toString({ fractionalSecondDigits: -Infinity }));
-assert.throws(RangeError, () => time.toString({ fractionalSecondDigits: -1 }));
-assert.throws(RangeError, () => time.toString({ fractionalSecondDigits: 10 }));
-assert.throws(RangeError, () => time.toString({ fractionalSecondDigits: Infinity }));
+assert.throws(RangeError, () => time.toString({ fractionalSecondDigits: -Infinity }),
+  "−∞ is out of range for fractionalSecondDigits");
+assert.throws(RangeError, () => time.toString({ fractionalSecondDigits: -1 }),
+  "−1 is out of range for fractionalSecondDigits");
+assert.throws(RangeError, () => time.toString({ fractionalSecondDigits: 10 }),
+  "10 is out of range for fractionalSecondDigits");
+assert.throws(RangeError, () => time.toString({ fractionalSecondDigits: Infinity }),
+  "∞ is out of range for fractionalSecondDigits");
 
 reportCompare(0, 0);

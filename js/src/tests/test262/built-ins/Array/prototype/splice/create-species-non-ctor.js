@@ -22,6 +22,13 @@
 
 
 
+
+assert.sameValue(
+  isConstructor(parseInt),
+  false,
+  'precondition: isConstructor(parseInt) must return false'
+);
+
 var a = [];
 
 a.constructor = {};
@@ -29,6 +36,6 @@ a.constructor[Symbol.species] = parseInt;
 
 assert.throws(TypeError, function() {
   a.splice();
-});
+}, 'a.splice() throws a TypeError exception');
 
 reportCompare(0, 0);

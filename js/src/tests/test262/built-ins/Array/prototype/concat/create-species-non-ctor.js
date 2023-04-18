@@ -21,6 +21,13 @@
 
 
 
+
+assert.sameValue(
+  isConstructor(parseInt),
+  false,
+  'precondition: isConstructor(parseInt) must return false'
+);
+
 var a = [];
 
 a.constructor = {};

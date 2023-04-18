@@ -31,6 +31,9 @@
 
 
 
+
+
+
 function fn() {}
 
 Object.defineProperty(fn, "length", {value: NaN});
@@ -40,10 +43,12 @@ Object.defineProperty(fn, "length", {value: -0});
 assert.sameValue(fn.bind().length, 0);
 
 Object.defineProperty(fn, "length", {value: Infinity});
-assert.sameValue(fn.bind().length, Infinity);
+assert.sameValue(fn.bind().length, Infinity, "target length of infinity, zero bound arguments");
+assert.sameValue(fn.bind(0, 0).length, Infinity, "target length of infinity, one bound argument");
 
 Object.defineProperty(fn, "length", {value: -Infinity});
-assert.sameValue(fn.bind().length, 0);
+assert.sameValue(fn.bind().length, 0, "target length of negative infinity, zero bound arguments");
+assert.sameValue(fn.bind(0, 0).length, 0, "target length of negative infinity, one bound argument");
 
 Object.defineProperty(fn, "length", {value: 3.66});
 assert.sameValue(fn.bind().length, 3);

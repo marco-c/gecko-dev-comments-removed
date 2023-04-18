@@ -7,6 +7,8 @@
 
 
 
+
+
 var __FACTORY = RegExp.prototype.toString;
 
 try {
@@ -19,6 +21,12 @@ try {
     'The result of evaluating (e instanceof TypeError) is expected to be true'
   );
 }
+
+assert.sameValue(
+  isConstructor(RegExp.prototype.toString),
+  false,
+  'isConstructor(RegExp.prototype.toString) must return false'
+);
 
 
 

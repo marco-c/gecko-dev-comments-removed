@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+const d = new Temporal.Duration(1, 2, 3, 4, 5);
+assert.throws(RangeError, () => d.with({ hours: 1, minutes: -1 }));
+
+reportCompare(0, 0);

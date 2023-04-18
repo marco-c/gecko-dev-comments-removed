@@ -8,16 +8,33 @@
 
 
 
-const instance = Temporal.Instant.fromEpochSeconds(0);
 
-assert.throws(RangeError, () => instance.equals(undefined), "undefined");
-assert.throws(RangeError, () => instance.equals(null), "null");
-assert.throws(RangeError, () => instance.equals(true), "true");
-assert.throws(RangeError, () => instance.equals(""), "empty string");
-assert.throws(TypeError, () => instance.equals(Symbol()), "symbol");
-assert.throws(RangeError, () => instance.equals(1), "1");
-assert.throws(RangeError, () => instance.equals({}), "plain object");
-assert.throws(RangeError, () => instance.equals(Temporal.Instant), "Temporal.Instant");
-assert.throws(TypeError, () => instance.equals(Temporal.Instant.prototype), "Temporal.Instant.prototype");
+
+const instance = new Temporal.Instant(0n);
+
+const rangeErrorTests = [
+  [undefined, "undefined"],
+  [null, "null"],
+  [true, "boolean"],
+  ["", "empty string"],
+  [1, "number that doesn't convert to a valid ISO string"],
+  [19761118, "number that would convert to a valid ISO string in other contexts"],
+  [1n, "bigint"],
+  [{}, "plain object"],
+  [Temporal.Instant, "Temporal.Instant, object"],
+];
+
+for (const [arg, description] of rangeErrorTests) {
+  assert.throws(RangeError, () => instance.equals(arg), `${description} does not convert to a valid ISO string`);
+}
+
+const typeErrorTests = [
+  [Symbol(), "symbol"],
+  [Temporal.Instant.prototype, "Temporal.Instant.prototype, object"],  
+];
+
+for (const [arg, description] of typeErrorTests) {
+  assert.throws(TypeError, () => instance.equals(arg), `${description} does not convert to a string`);
+}
 
 reportCompare(0, 0);

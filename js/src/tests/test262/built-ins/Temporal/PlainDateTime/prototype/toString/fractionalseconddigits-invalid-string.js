@@ -17,6 +17,9 @@
 
 const datetime = new Temporal.PlainDateTime(2000, 5, 2, 12, 34, 56, 987, 650, 0);
 
-assert.throws(RangeError, () => datetime.toString({ fractionalSecondDigits: "other string" }));
+for (const fractionalSecondDigits of ["other string", "AUTO", "not-auto", "autos", "auto\0"]) {
+  assert.throws(RangeError, () => datetime.toString({ fractionalSecondDigits }),
+    `"${fractionalSecondDigits}" is not a valid value for fractionalSecondDigits`);
+}
 
 reportCompare(0, 0);

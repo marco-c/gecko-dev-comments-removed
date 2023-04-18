@@ -17,6 +17,9 @@
 
 const datetime = new Temporal.ZonedDateTime(1_000_000_000_987_650_000n, "UTC");
 
-assert.throws(RangeError, () => datetime.toString({ fractionalSecondDigits: "other string" }));
+for (const fractionalSecondDigits of ["other string", "AUTO", "not-auto", "autos", "auto\0"]) {
+  assert.throws(RangeError, () => datetime.toString({ fractionalSecondDigits }),
+    `"${fractionalSecondDigits}" is not a valid value for fractionalSecondDigits`);
+}
 
 reportCompare(0, 0);

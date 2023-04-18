@@ -8,13 +8,32 @@
 
 
 
-const instance = Temporal.PlainDate.from({ year: 2000, month: 5, day: 2 });
 
-assert.throws(RangeError, () => instance.equals(undefined), "undefined");
-assert.throws(RangeError, () => instance.equals(null), "null");
-assert.throws(RangeError, () => instance.equals(true), "true");
-assert.throws(RangeError, () => instance.equals(""), "empty string");
-assert.throws(TypeError, () => instance.equals(Symbol()), "symbol");
-assert.throws(RangeError, () => instance.equals(1), "1");
+
+const instance = new Temporal.PlainDate(2000, 5, 2);
+
+const rangeErrorTests = [
+  [undefined, "undefined"],
+  [null, "null"],
+  [true, "boolean"],
+  ["", "empty string"],
+  [1, "number that doesn't convert to a valid ISO string"],
+  [1n, "bigint"],
+];
+
+for (const [arg, description] of rangeErrorTests) {
+  assert.throws(RangeError, () => instance.equals(arg), `${description} does not convert to a valid ISO string`);
+}
+
+const typeErrorTests = [
+  [Symbol(), "symbol"],
+  [{}, "plain object"],
+  [Temporal.PlainDate, "Temporal.PlainDate, object"],
+  [Temporal.PlainDate.prototype, "Temporal.PlainDate.prototype, object"],
+];
+
+for (const [arg, description] of typeErrorTests) {
+  assert.throws(TypeError, () => instance.equals(arg), `${description} is not a valid property bag and does not convert to a string`);
+}
 
 reportCompare(0, 0);

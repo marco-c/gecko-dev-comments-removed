@@ -8,7 +8,7 @@
 
 
 
-const values = [
+const badOptions = [
   undefined,
   null,
   true,
@@ -18,9 +18,10 @@ const values = [
 ];
 
 const instance = new Temporal.Duration(0, 0, 0, 0, 1);
-assert.throws(TypeError, () => instance.total(), "TypeError on missing argument");
-values.forEach((value) => {
-  assert.throws(TypeError, () => instance.total(value), `TypeError on wrong argument type ${typeof(value)}`);
-});
+assert.throws(TypeError, () => instance.total(), "TypeError on missing options argument");
+for (const value of badOptions) {
+  assert.throws(TypeError, () => instance.total(value),
+    `TypeError on wrong options type ${typeof value}`);
+};
 
 reportCompare(0, 0);

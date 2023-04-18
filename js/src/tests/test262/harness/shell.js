@@ -1446,13 +1446,14 @@ var TemporalHelpers = {
 
 
 
-  assertPlainYearMonth(yearMonth, year, month, monthCode, description = "", era = undefined, eraYear = undefined) {
+  assertPlainYearMonth(yearMonth, year, month, monthCode, description = "", era = undefined, eraYear = undefined, referenceISODay = 1) {
     assert(yearMonth instanceof Temporal.PlainYearMonth, `${description} instanceof`);
     assert.sameValue(yearMonth.era, era, `${description} era result`);
     assert.sameValue(yearMonth.eraYear, eraYear, `${description} eraYear result`);
     assert.sameValue(yearMonth.year, year, `${description} year result`);
     assert.sameValue(yearMonth.month, month, `${description} month result`);
     assert.sameValue(yearMonth.monthCode, monthCode, `${description} monthCode result`);
+    assert.sameValue(yearMonth.getISOFields().isoDay, referenceISODay, `${description} referenceISODay result`);
   },
 
   
@@ -1524,39 +1525,6 @@ var TemporalHelpers = {
       assert.compareArray(actual, expected, `largestUnit passed to calendar.dateUntil() for largestUnit ${largestUnit}`);
       actual.splice(0, actual.length); 
     });
-  },
-
-  
-
-
-
-
-
-
-  checkFractionalSecondDigitsOptionWrongType(temporalObject) {
-    
-    assert.throws(RangeError, () => temporalObject.toString({ fractionalSecondDigits: null }), "null");
-    
-    assert.throws(RangeError, () => temporalObject.toString({ fractionalSecondDigits: true }), "true");
-    assert.throws(RangeError, () => temporalObject.toString({ fractionalSecondDigits: false }), "false");
-    
-    assert.throws(TypeError, () => temporalObject.toString({ fractionalSecondDigits: Symbol() }), "symbol");
-    
-    assert.throws(RangeError, () => temporalObject.toString({ fractionalSecondDigits: 2n }), "bigint");
-
-    
-    assert.throws(RangeError, () => temporalObject.toString({ fractionalSecondDigits: {} }), "plain object");
-
-    const toStringExpected = temporalObject.toString({ fractionalSecondDigits: 'auto' });
-    const expected = [
-      "get fractionalSecondDigits.toString",
-      "call fractionalSecondDigits.toString",
-    ];
-    const actual = [];
-    const observer = TemporalHelpers.toPrimitiveObserver(actual, "auto", "fractionalSecondDigits");
-    const result = temporalObject.toString({ fractionalSecondDigits: observer });
-    assert.sameValue(result, toStringExpected, "object with toString");
-    assert.compareArray(actual, expected, "order of operations");
   },
 
   

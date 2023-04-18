@@ -6,10 +6,18 @@
 
 
 
+
+
 assert.sameValue(
   RegExp.prototype.toString.prototype,
   undefined,
   'The value of RegExp.prototype.toString.prototype is expected to equal undefined'
+);
+
+assert.sameValue(
+  isConstructor(RegExp.prototype.toString),
+  false,
+  'isConstructor(RegExp.prototype.toString) must return false'
 );
 
 reportCompare(0, 0);

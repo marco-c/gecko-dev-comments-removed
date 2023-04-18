@@ -17,12 +17,25 @@
 
 
 
-const instant = new Temporal.Instant(1_000_000_000_987_650_000n);
+const zeroSeconds = new Temporal.Instant(0n);
+const wholeSeconds = new Temporal.Instant(30_000_000_000n);
+const subSeconds = new Temporal.Instant(30_123_400_000n);
 
-const explicit = instant.toString({ fractionalSecondDigits: undefined });
-assert.sameValue(explicit, "2001-09-09T01:46:40.98765Z", "default fractionalSecondDigits is auto");
+const tests = [
+  [zeroSeconds, "1970-01-01T00:00:00Z"],
+  [wholeSeconds, "1970-01-01T00:00:30Z"],
+  [subSeconds, "1970-01-01T00:00:30.1234Z"],
+];
 
-const implicit = instant.toString({});
-assert.sameValue(implicit, "2001-09-09T01:46:40.98765Z", "default fractionalSecondDigits is auto");
+for (const [instant, expected] of tests) {
+  const explicit = instant.toString({ fractionalSecondDigits: undefined });
+  assert.sameValue(explicit, expected, "default fractionalSecondDigits is auto (property present but undefined)");
+
+  const implicit = instant.toString({});
+  assert.sameValue(implicit, expected, "default fractionalSecondDigits is auto (property not present)");
+
+  const lambda = instant.toString(() => {});
+  assert.sameValue(lambda, expected, "default fractionalSecondDigits is auto (property not present, function object)");
+}
 
 reportCompare(0, 0);

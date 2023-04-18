@@ -10,9 +10,9 @@
 
 
 const cal = {
-  id: 'thisisnotiso',
-  era() { return "the era"; },
-  eraYear() { return 1909; },
+  id: "thisisnotiso",
+  era() { return undefined; },
+  eraYear() { return undefined; },
   toString() { return "this is a string"; },
   year() { return 2008; },
   month() { return 9; },
@@ -25,9 +25,8 @@ const shifted = dt.withPlainDate("2010-11-12");
 TemporalHelpers.assertPlainDateTime(
   shifted,
   2008, 9, "M09", 6, 3, 24, 30, 0, 0, 0,
-  "calendar is unchanged if input has ISO calendar (1)",
-  "the era",
-  1909
+  "calendar is unchanged if input has ISO calendar (1)"
+  
 );
 
 assert.sameValue(

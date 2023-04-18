@@ -17,11 +17,25 @@
 
 
 
-const datetime = new Temporal.PlainDateTime(2000, 5, 2, 12, 34, 56, 987, 650, 0);
+const zeroSeconds = new Temporal.PlainDateTime(1976, 11, 18, 15, 23);
+const wholeSeconds = new Temporal.PlainDateTime(1976, 11, 18, 15, 23, 30);
+const subSeconds = new Temporal.PlainDateTime(1976, 11, 18, 15, 23, 30, 123, 400);
 
-const explicit = datetime.toString({ fractionalSecondDigits: undefined });
-assert.sameValue(explicit, "2000-05-02T12:34:56.98765", "default fractionalSecondDigits is auto");
+const tests = [
+  [zeroSeconds, "1976-11-18T15:23:00"],
+  [wholeSeconds, "1976-11-18T15:23:30"],
+  [subSeconds, "1976-11-18T15:23:30.1234"],
+];
 
+for (const [datetime, expected] of tests) {
+  const explicit = datetime.toString({ fractionalSecondDigits: undefined });
+  assert.sameValue(explicit, expected, "default fractionalSecondDigits is auto (property present but undefined)");
 
+  const implicit = datetime.toString({});
+  assert.sameValue(implicit, expected, "default fractionalSecondDigits is auto (property not present)");
+
+  const lambda = datetime.toString(() => {});
+  assert.sameValue(lambda, expected, "default fractionalSecondDigits is auto (property not present, function object)");
+}
 
 reportCompare(0, 0);

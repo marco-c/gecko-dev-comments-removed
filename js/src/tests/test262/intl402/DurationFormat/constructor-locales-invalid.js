@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+for (const [locales, expectedError] of getInvalidLocaleArguments()) {
+    assert.throws(expectedError, function() { new Intl.DurationFormat(locales) })
+}
+
+reportCompare(0, 0);

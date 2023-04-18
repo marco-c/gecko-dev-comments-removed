@@ -17,9 +17,13 @@
 
 const instant = new Temporal.Instant(1_000_000_000_987_650_000n);
 
-assert.throws(RangeError, () => instant.toString({ fractionalSecondDigits: -1 }));
-assert.throws(RangeError, () => instant.toString({ fractionalSecondDigits: 10 }));
-assert.throws(RangeError, () => instant.toString({ fractionalSecondDigits: -Infinity }));
-assert.throws(RangeError, () => instant.toString({ fractionalSecondDigits: Infinity }));
+assert.throws(RangeError, () => instant.toString({ fractionalSecondDigits: -Infinity }),
+  "−∞ is out of range for fractionalSecondDigits");
+assert.throws(RangeError, () => instant.toString({ fractionalSecondDigits: -1 }),
+  "−1 is out of range for fractionalSecondDigits");
+assert.throws(RangeError, () => instant.toString({ fractionalSecondDigits: 10 }),
+  "10 is out of range for fractionalSecondDigits");
+assert.throws(RangeError, () => instant.toString({ fractionalSecondDigits: Infinity }),
+  "∞ is out of range for fractionalSecondDigits");
 
 reportCompare(0, 0);

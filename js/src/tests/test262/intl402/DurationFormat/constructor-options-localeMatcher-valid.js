@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+testOption(Intl.DurationFormat, "localeMatcher", "string", ["lookup", "best fit"], "best fit", {noReturn: true});
+
+reportCompare(0, 0);

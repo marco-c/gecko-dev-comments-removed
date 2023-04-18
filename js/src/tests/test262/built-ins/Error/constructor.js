@@ -34,6 +34,6 @@ new Error(
   },
 );
 
-assert.deepEqual(sequence, [ "toString", "cause" ], "accessing own properties on sequence");
+assert.compareArray(sequence, [ "toString", "cause" ], "accessing own properties on sequence");
 
 reportCompare(0, 0);

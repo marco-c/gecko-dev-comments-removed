@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Intl.DurationFormat, "function");
+
+assert.throws(TypeError, function() { new Intl.DurationFormat([], null) })
+
+reportCompare(0, 0);

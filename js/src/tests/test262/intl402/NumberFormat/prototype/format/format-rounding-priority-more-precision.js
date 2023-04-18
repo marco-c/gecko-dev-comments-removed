@@ -20,7 +20,7 @@ testNumberFormat(
   locales,
   numberingSystems,
   {useGrouping: false, roundingPriority: 'morePrecision', minimumSignificantDigits: 2, minimumFractionDigits: 2},
-  {'1': '1.00'}
+  {'1': '1.0'}
 );
 
 

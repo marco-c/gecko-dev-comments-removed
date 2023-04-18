@@ -17,23 +17,25 @@
 
 
 
+const zeroSeconds = new Temporal.PlainTime(15, 23);
+const wholeSeconds = new Temporal.PlainTime(15, 23, 30);
+const subSeconds = new Temporal.PlainTime(15, 23, 30, 123, 400);
+
 const tests = [
-  ["15:23", "15:23:00"],
-  ["15:23:30", "15:23:30"],
-  ["15:23:30.1234", "15:23:30.1234"],
+  [zeroSeconds, "15:23:00"],
+  [wholeSeconds, "15:23:30"],
+  [subSeconds, "15:23:30.1234"],
 ];
 
-for (const [input, expected] of tests) {
-  const time = Temporal.PlainTime.from(input);
-
+for (const [time, expected] of tests) {
   const explicit = time.toString({ fractionalSecondDigits: undefined });
-  assert.sameValue(explicit, expected, "default fractionalSecondDigits is auto");
+  assert.sameValue(explicit, expected, "default fractionalSecondDigits is auto (property present but undefined)");
 
   const implicit = time.toString({});
-  assert.sameValue(implicit, expected, "default fractionalSecondDigits is auto");
+  assert.sameValue(implicit, expected, "default fractionalSecondDigits is auto (property not present)");
 
   const lambda = time.toString(() => {});
-  assert.sameValue(lambda, expected, "default fractionalSecondDigits is auto");
+  assert.sameValue(lambda, expected, "default fractionalSecondDigits is auto (property not present, function object)");
 }
 
 reportCompare(0, 0);

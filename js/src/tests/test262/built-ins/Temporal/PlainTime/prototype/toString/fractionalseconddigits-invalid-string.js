@@ -17,8 +17,9 @@
 
 const time = new Temporal.PlainTime(12, 34, 56, 987, 650, 0);
 
-for (const fractionalSecondDigits of ["other string", "AUTO", "not-auto", "autos"]) {
-  assert.throws(RangeError, () => time.toString({ fractionalSecondDigits }));
+for (const fractionalSecondDigits of ["other string", "AUTO", "not-auto", "autos", "auto\0"]) {
+  assert.throws(RangeError, () => time.toString({ fractionalSecondDigits }),
+    `"${fractionalSecondDigits}" is not a valid value for fractionalSecondDigits`);
 }
 
 reportCompare(0, 0);

@@ -8,7 +8,7 @@
 
 
 
-const plainTime = Temporal.PlainTime.from("23:59:59.999999999");
+const plainTime = new Temporal.PlainTime(23, 59, 59, 999, 999, 999);  
 for (const roundingMode of ["ceil", "halfExpand"]) {
   assert.sameValue(plainTime.toString({ fractionalSecondDigits: 8, roundingMode }), "00:00:00.00000000");
 }

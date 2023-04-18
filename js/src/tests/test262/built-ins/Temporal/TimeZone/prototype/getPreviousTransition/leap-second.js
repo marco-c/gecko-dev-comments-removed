@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+const instance = new Temporal.TimeZone("UTC");
+
+const arg = "2016-12-31T23:59:60Z";
+const result = instance.getPreviousTransition(arg);
+assert.sameValue(
+  result,
+  null,
+  "leap second is a valid ISO string for Instant"
+);
+
+reportCompare(0, 0);

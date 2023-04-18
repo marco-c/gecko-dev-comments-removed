@@ -8,16 +8,32 @@
 
 
 
-const instance = Temporal.PlainDateTime.from({ year: 2000, month: 5, day: 2, minute: 34, second: 56, millisecond: 987, microsecond: 654, nanosecond: 321 });
 
-assert.throws(RangeError, () => instance.equals(undefined), "undefined");
-assert.throws(RangeError, () => instance.equals(null), "null");
-assert.throws(RangeError, () => instance.equals(true), "true");
-assert.throws(RangeError, () => instance.equals(""), "empty string");
-assert.throws(TypeError, () => instance.equals(Symbol()), "symbol");
-assert.throws(RangeError, () => instance.equals(1), "1");
-assert.throws(TypeError, () => instance.equals({}), "plain object");
-assert.throws(TypeError, () => instance.equals(Temporal.PlainDateTime), "Temporal.PlainDateTime");
-assert.throws(TypeError, () => instance.equals(Temporal.PlainDateTime.prototype), "Temporal.PlainDateTime.prototype");
+
+const instance = new Temporal.PlainDateTime(2000, 5, 2, 12, 34, 56, 987, 654, 321);
+
+const rangeErrorTests = [
+  [undefined, "undefined"],
+  [null, "null"],
+  [true, "boolean"],
+  ["", "empty string"],
+  [1, "number that doesn't convert to a valid ISO string"],
+  [1n, "bigint"],
+];
+
+for (const [arg, description] of rangeErrorTests) {
+  assert.throws(RangeError, () => instance.equals(arg), `${description} does not convert to a valid ISO string`);
+}
+
+const typeErrorTests = [
+  [Symbol(), "symbol"],
+  [{}, "plain object"],
+  [Temporal.PlainDateTime, "Temporal.PlainDateTime, object"],
+  [Temporal.PlainDateTime.prototype, "Temporal.PlainDateTime.prototype, object"],
+];
+
+for (const [arg, description] of typeErrorTests) {
+  assert.throws(TypeError, () => instance.equals(arg), `${description} is not a valid property bag and does not convert to a string`);
+}
 
 reportCompare(0, 0);

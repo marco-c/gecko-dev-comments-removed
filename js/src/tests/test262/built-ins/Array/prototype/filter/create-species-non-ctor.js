@@ -22,6 +22,13 @@
 
 
 
+
+assert.sameValue(
+  isConstructor(parseInt),
+  false,
+  'precondition: isConstructor(parseInt) must return false'
+);
+
 var a = [];
 var callCount = 0;
 var cb = function() {
@@ -33,7 +40,7 @@ a.constructor[Symbol.species] = parseInt;
 
 assert.throws(TypeError, function() {
   a.filter(cb);
-});
+}, 'a.filter(cb) throws a TypeError exception');
 assert.sameValue(callCount, 0);
 
 reportCompare(0, 0);
