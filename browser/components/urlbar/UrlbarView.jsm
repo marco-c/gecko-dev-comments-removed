@@ -16,6 +16,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Services: "resource://gre/modules/Services.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
   UrlbarProvidersManager: "resource:///modules/UrlbarProvidersManager.jsm",
+  UrlbarProviderTopSites: "resource:///modules/UrlbarProviderTopSites.jsm",
   UrlbarSearchOneOffs: "resource:///modules/UrlbarSearchOneOffs.jsm",
   UrlbarTokenizer: "resource:///modules/UrlbarTokenizer.jsm",
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
@@ -509,6 +510,12 @@ class UrlbarView {
       this.input.getAttribute("pageproxystate") == "valid"
     ) {
       if (!this.isOpen && ["mousedown", "command"].includes(event.type)) {
+        
+        
+        
+        if (!this.input.searchMode && this._queryContextCache.topSitesContext) {
+          this.onQueryResults(this._queryContextCache.topSitesContext);
+        }
         this.input.startQuery(queryOptions);
         if (suppressFocusBorder) {
           this.input.toggleAttribute("suppress-focus-border", true);
@@ -2485,8 +2492,28 @@ class QueryContextCache {
 
 
   constructor(size) {
-    this.size = size;
+    this._size = size;
     this._cache = [];
+
+    
+    
+    this._topSitesContext = null;
+    this._topSitesListener = () => (this._topSitesContext = null);
+    UrlbarProviderTopSites.addTopSitesListener(this._topSitesListener);
+  }
+
+  
+
+
+  get size() {
+    return this._size;
+  }
+
+  
+
+
+  get topSitesContext() {
+    return this._topSitesContext;
   }
 
   
@@ -2495,9 +2522,23 @@ class QueryContextCache {
 
 
 
+
   put(queryContext) {
+    if (!queryContext.results.length) {
+      return;
+    }
+
     let searchString = queryContext.searchString;
-    if (!searchString || !queryContext.results.length) {
+    if (!searchString) {
+      
+      
+      
+      
+      if (
+        queryContext.results?.[0]?.providerName == UrlbarProviderTopSites.name
+      ) {
+        this._topSitesContext = queryContext;
+      }
       return;
     }
 

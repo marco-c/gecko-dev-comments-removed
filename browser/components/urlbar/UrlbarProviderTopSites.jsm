@@ -2,6 +2,10 @@
 
 
 
+
+
+
+
 "use strict";
 
 var EXPORTED_SYMBOLS = ["UrlbarProviderTopSites"];
@@ -33,6 +37,10 @@ const SCALAR_CATEGORY_TOPSITES = "contextual.services.topsites.impression";
 
 
 
+const TOP_SITES_ENABLED_PREFS = [
+  "browser.urlbar.suggest.topsites",
+  "browser.newtabpage.activity-stream.feeds.system.topsites",
+];
 
 
 
@@ -40,6 +48,13 @@ const SCALAR_CATEGORY_TOPSITES = "contextual.services.topsites.impression";
 class ProviderTopSites extends UrlbarProvider {
   constructor() {
     super();
+
+    this._topSitesListeners = [];
+    let callListeners = () => this._callTopSitesListeners();
+    Services.obs.addObserver(callListeners, "newtab-top-sites-changed");
+    for (let pref of TOP_SITES_ENABLED_PREFS) {
+      Services.prefs.addObserver(pref, callListeners);
+    }
   }
 
   get PRIORITY() {
@@ -102,14 +117,10 @@ class ProviderTopSites extends UrlbarProvider {
     
     
     
-    
-    if (
-      !UrlbarPrefs.get("suggest.topsites") ||
-      !Services.prefs.getBoolPref(
-        "browser.newtabpage.activity-stream.feeds.system.topsites",
-        false
-      )
-    ) {
+    let enabled = TOP_SITES_ENABLED_PREFS.every(p =>
+      Services.prefs.getBoolPref(p, false)
+    );
+    if (!enabled) {
       return;
     }
 
@@ -328,6 +339,33 @@ class ProviderTopSites extends UrlbarProvider {
     }
 
     this.sponsoredSites = null;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  addTopSitesListener(callback) {
+    this._topSitesListeners.push(Cu.getWeakReference(callback));
+  }
+
+  _callTopSitesListeners() {
+    for (let i = 0; i < this._topSitesListeners.length; ) {
+      let listener = this._topSitesListeners[i].get();
+      if (!listener) {
+        
+        this._topSitesListeners.splice(i, 1);
+      } else {
+        listener();
+        ++i;
+      }
+    }
   }
 }
 
