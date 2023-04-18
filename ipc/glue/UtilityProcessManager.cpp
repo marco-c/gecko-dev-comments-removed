@@ -94,10 +94,13 @@ void UtilityProcessManager::OnPreferenceChange(const char16_t* aData) {
   
   NS_LossyConvertUTF16toASCII strData(aData);
 
-  mozilla::dom::Pref pref(strData,  false,
-                           false, Nothing(), Nothing());
-  Preferences::GetPreference(&pref, GeckoProcessType_Utility,
-                              ""_ns);
+  
+  if (!dom::ContentParent::ShouldSyncPreference(strData.Data())) {
+    return;
+  }
+
+  mozilla::dom::Pref pref(strData,  false, Nothing(), Nothing());
+  Preferences::GetPreference(&pref);
 
   for (auto& p : mProcesses) {
     if (!p) {
