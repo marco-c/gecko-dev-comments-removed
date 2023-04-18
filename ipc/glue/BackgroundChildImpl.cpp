@@ -1,12 +1,12 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "BackgroundChildImpl.h"
 
-#include "ActorsChild.h"  
+#include "ActorsChild.h"  // IndexedDB
 #include "BroadcastChannelChild.h"
 #ifdef MOZ_WEBRTC
 #  include "CamerasChild.h"
@@ -75,7 +75,7 @@ class TestChild final : public mozilla::ipc::PBackgroundTestChild {
   mozilla::ipc::IPCResult Recv__delete__(const nsCString& aTestArg) override;
 };
 
-}  
+}  // namespace
 
 namespace mozilla::ipc {
 
@@ -95,36 +95,36 @@ using mozilla::dom::WebAuthnTransactionChild;
 using mozilla::dom::PMIDIManagerChild;
 using mozilla::dom::PMIDIPortChild;
 
-
-
-
+// -----------------------------------------------------------------------------
+// BackgroundChildImpl::ThreadLocal
+// -----------------------------------------------------------------------------
 
 BackgroundChildImpl::ThreadLocal::ThreadLocal() : mCurrentFileHandle(nullptr) {
-  
+  // May happen on any thread!
   MOZ_COUNT_CTOR(mozilla::ipc::BackgroundChildImpl::ThreadLocal);
 }
 
 BackgroundChildImpl::ThreadLocal::~ThreadLocal() {
-  
+  // May happen on any thread!
   MOZ_COUNT_DTOR(mozilla::ipc::BackgroundChildImpl::ThreadLocal);
 }
 
-
-
-
+// -----------------------------------------------------------------------------
+// BackgroundChildImpl
+// -----------------------------------------------------------------------------
 
 BackgroundChildImpl::BackgroundChildImpl() {
-  
+  // May happen on any thread!
   MOZ_COUNT_CTOR(mozilla::ipc::BackgroundChildImpl);
 }
 
 BackgroundChildImpl::~BackgroundChildImpl() {
-  
+  // May happen on any thread!
   MOZ_COUNT_DTOR(mozilla::ipc::BackgroundChildImpl);
 }
 
 void BackgroundChildImpl::ProcessingError(Result aCode, const char* aReason) {
-  
+  // May happen on any thread!
 
   nsAutoCString abortMessage;
 
@@ -154,7 +154,7 @@ void BackgroundChildImpl::ProcessingError(Result aCode, const char* aReason) {
 }
 
 void BackgroundChildImpl::ActorDestroy(ActorDestroyReason aWhy) {
-  
+  // May happen on any thread!
 }
 
 PBackgroundTestChild* BackgroundChildImpl::AllocPBackgroundTestChild(
@@ -383,14 +383,6 @@ bool BackgroundChildImpl::DeallocPFileCreatorChild(PFileCreatorChild* aActor) {
   return true;
 }
 
-already_AddRefed<PRemoteLazyInputStreamChild>
-BackgroundChildImpl::AllocPRemoteLazyInputStreamChild(const nsID& aID,
-                                                      const uint64_t& aSize) {
-  RefPtr<RemoteLazyInputStreamChild> actor =
-      new RemoteLazyInputStreamChild(aID, aSize);
-  return actor.forget();
-}
-
 PUDPSocketChild* BackgroundChildImpl::AllocPUDPSocketChild(
     const Maybe<PrincipalInfo>& aPrincipalInfo, const nsCString& aFilter) {
   MOZ_CRASH("AllocPUDPSocket should not be called");
@@ -403,9 +395,9 @@ bool BackgroundChildImpl::DeallocPUDPSocketChild(PUDPSocketChild* child) {
   return true;
 }
 
-
-
-
+// -----------------------------------------------------------------------------
+// BroadcastChannel API
+// -----------------------------------------------------------------------------
 
 dom::PBroadcastChannelChild* BackgroundChildImpl::AllocPBroadcastChannelChild(
     const PrincipalInfo& aPrincipalInfo, const nsCString& aOrigin,
@@ -441,9 +433,9 @@ bool BackgroundChildImpl::DeallocPCamerasChild(camera::PCamerasChild* aActor) {
   return true;
 }
 
-
-
-
+// -----------------------------------------------------------------------------
+// ServiceWorkerManager
+// -----------------------------------------------------------------------------
 
 dom::PServiceWorkerManagerChild*
 BackgroundChildImpl::AllocPServiceWorkerManagerChild() {
@@ -460,9 +452,9 @@ bool BackgroundChildImpl::DeallocPServiceWorkerManagerChild(
   return true;
 }
 
-
-
-
+// -----------------------------------------------------------------------------
+// Cache API
+// -----------------------------------------------------------------------------
 
 PCacheStorageChild* BackgroundChildImpl::AllocPCacheStorageChild(
     const Namespace& aNamespace, const PrincipalInfo& aPrincipalInfo) {
@@ -490,9 +482,9 @@ BackgroundChildImpl::AllocPCacheStreamControlChild() {
   return dom::cache::AllocPCacheStreamControlChild();
 }
 
-
-
-
+// -----------------------------------------------------------------------------
+// MessageChannel/MessagePort API
+// -----------------------------------------------------------------------------
 
 dom::PMessagePortChild* BackgroundChildImpl::AllocPMessagePortChild(
     const nsID& aUUID, const nsID& aDestinationUUID,
@@ -518,9 +510,9 @@ bool BackgroundChildImpl::DeallocPQuotaChild(PQuotaChild* aActor) {
   return true;
 }
 
-
-
-
+// -----------------------------------------------------------------------------
+// WebMIDI API
+// -----------------------------------------------------------------------------
 
 PMIDIPortChild* BackgroundChildImpl::AllocPMIDIPortChild(
     const MIDIPortInfo& aPortInfo, const bool& aSysexEnabled) {
@@ -530,8 +522,8 @@ PMIDIPortChild* BackgroundChildImpl::AllocPMIDIPortChild(
 
 bool BackgroundChildImpl::DeallocPMIDIPortChild(PMIDIPortChild* aActor) {
   MOZ_ASSERT(aActor);
-  
-  
+  // The reference is increased in dom/midi/MIDIPort.cpp. We should
+  // decrease it after IPC.
   RefPtr<dom::MIDIPortChild> child =
       dont_AddRef(static_cast<dom::MIDIPortChild*>(aActor));
   child->Teardown();
@@ -545,8 +537,8 @@ PMIDIManagerChild* BackgroundChildImpl::AllocPMIDIManagerChild() {
 
 bool BackgroundChildImpl::DeallocPMIDIManagerChild(PMIDIManagerChild* aActor) {
   MOZ_ASSERT(aActor);
-  
-  
+  // The reference is increased in dom/midi/MIDIAccessManager.cpp. We should
+  // decrease it after IPC.
   RefPtr<dom::MIDIManagerChild> child =
       dont_AddRef(static_cast<dom::MIDIManagerChild*>(aActor));
   return true;
@@ -565,8 +557,8 @@ bool BackgroundChildImpl::DeallocPClientManagerChild(
 #ifdef EARLY_BETA_OR_EARLIER
 void BackgroundChildImpl::OnChannelReceivedMessage(const Message& aMsg) {
   if (aMsg.type() == dom::PVsync::MessageType::Msg_Notify__ID) {
-    
-    
+    // Not really necessary to look at the message payload, it will be
+    // <0.5ms away from TimeStamp::Now()
     SchedulerGroup::MarkVsyncReceived();
   }
 }
@@ -618,8 +610,8 @@ bool BackgroundChildImpl::DeallocPEndpointForReportChild(
 }
 
 dom::PMediaTransportChild* BackgroundChildImpl::AllocPMediaTransportChild() {
-  
-  
+  // We don't allocate here: MediaTransportHandlerIPC is in charge of that,
+  // so we don't need to know the implementation particulars here.
   MOZ_ASSERT_UNREACHABLE(
       "The only thing that ought to be creating a PMediaTransportChild is "
       "MediaTransportHandlerIPC!");
@@ -632,7 +624,7 @@ bool BackgroundChildImpl::DeallocPMediaTransportChild(
   return true;
 }
 
-}  
+}  // namespace mozilla::ipc
 
 mozilla::ipc::IPCResult TestChild::Recv__delete__(const nsCString& aTestArg) {
   MOZ_RELEASE_ASSERT(aTestArg == mTestArg,

@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef mozilla_net_SocketProcessParent_h
 #define mozilla_net_SocketProcessParent_h
@@ -17,14 +17,14 @@ namespace mozilla {
 namespace dom {
 class MemoryReport;
 class MemoryReportRequestHost;
-}  
+}  // namespace dom
 
 namespace net {
 
 class SocketProcessHost;
 
-
-
+// IPC actor of socket process in parent process. This is allocated and managed
+// by SocketProcessHost.
 class SocketProcessParent final
     : public PSocketProcessParent,
       public ipc::CrashReporterHelper<GeckoProcessType_Socket>,
@@ -104,9 +104,6 @@ class SocketProcessParent final
       nsIURI* aPushedURL, OriginAttributes&& aOriginAttributes,
       nsCString&& aRequestString, CachePushCheckResolver&& aResolver);
 
-  already_AddRefed<PRemoteLazyInputStreamParent>
-  AllocPRemoteLazyInputStreamParent(const nsID& aID, const uint64_t& aSize);
-
   mozilla::ipc::IPCResult RecvODoHServiceActivated(const bool& aActivated);
 
   mozilla::ipc::IPCResult RecvExcludeHttp2OrHttp3(
@@ -119,7 +116,7 @@ class SocketProcessParent final
   mozilla::ipc::IPCResult RecvGetModulesTrust(
       ModulePaths&& aModPaths, bool aRunAtNormalPriority,
       GetModulesTrustResolver&& aResolver);
-#endif  
+#endif  // defined(XP_WIN)
 
  private:
   SocketProcessHost* mHost;
@@ -128,7 +125,7 @@ class SocketProcessParent final
   static void Destroy(UniquePtr<SocketProcessParent>&& aParent);
 };
 
-}  
-}  
+}  // namespace net
+}  // namespace mozilla
 
-#endif  
+#endif  // mozilla_net_SocketProcessParent_h

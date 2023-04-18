@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "SocketProcessParent.h"
 #include "SocketProcessLogging.h"
@@ -36,7 +36,7 @@
 #if defined(MOZ_WIDGET_ANDROID)
 #  include "mozilla/java/GeckoProcessManagerWrappers.h"
 #  include "mozilla/java/GeckoProcessTypeWrappers.h"
-#endif  
+#endif  // defined(MOZ_WIDGET_ANDROID)
 #if defined(XP_WIN)
 #  include "mozilla/WinDllServices.h"
 #endif
@@ -62,7 +62,7 @@ SocketProcessParent::~SocketProcessParent() {
   sSocketProcessParent = nullptr;
 }
 
-
+/* static */
 SocketProcessParent* SocketProcessParent::GetSingleton() {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -83,7 +83,7 @@ void SocketProcessParent::ActorDestroy(ActorDestroyReason aWhy) {
       [selector = java::GeckoProcessManager::Selector::GlobalRef(selector)]() {
         java::GeckoProcessManager::ShutdownProcess(selector);
       }));
-#endif  
+#endif  // defined(MOZ_WIDGET_ANDROID)
 
   if (aWhy == AbnormalShutdown) {
     GenerateCrashReport(OtherPid());
@@ -340,7 +340,7 @@ mozilla::ipc::IPCResult SocketProcessParent::RecvCachePushCheck(
   return IPC_OK();
 }
 
-
+// To ensure that IPDL is finished before SocketParent gets deleted.
 class DeferredDeleteSocketProcessParent : public Runnable {
  public:
   explicit DeferredDeleteSocketProcessParent(
@@ -354,20 +354,10 @@ class DeferredDeleteSocketProcessParent : public Runnable {
   UniquePtr<SocketProcessParent> mParent;
 };
 
-
+/* static */
 void SocketProcessParent::Destroy(UniquePtr<SocketProcessParent>&& aParent) {
   NS_DispatchToMainThread(
       new DeferredDeleteSocketProcessParent(std::move(aParent)));
-}
-
-already_AddRefed<PRemoteLazyInputStreamParent>
-SocketProcessParent::AllocPRemoteLazyInputStreamParent(const nsID& aID,
-                                                       const uint64_t& aSize) {
-  
-  
-  RefPtr<RemoteLazyInputStreamParent> actor =
-      RemoteLazyInputStreamParent::Create(aID, aSize, this);
-  return actor.forget();
 }
 
 mozilla::ipc::IPCResult SocketProcessParent::RecvODoHServiceActivated(
@@ -428,7 +418,7 @@ mozilla::ipc::IPCResult SocketProcessParent::RecvGetModulesTrust(
           [aResolver](nsresult aRv) { aResolver(Nothing()); });
   return IPC_OK();
 }
-#endif  
+#endif  // defined(XP_WIN)
 
-}  
-}  
+}  // namespace net
+}  // namespace mozilla

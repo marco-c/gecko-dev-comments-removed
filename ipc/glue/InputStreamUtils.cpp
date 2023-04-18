@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "InputStreamUtils.h"
 
@@ -51,7 +51,6 @@ void SerializeInputStreamInternal(nsIInputStream* aInputStream,
                                   bool aDelayedStart, uint32_t aMaxSize,
                                   uint32_t* aSizeUsed, M* aManager) {
   MOZ_ASSERT(aInputStream);
-  MOZ_ASSERT(aManager);
 
   nsCOMPtr<nsIIPCSerializableInputStream> serializable =
       do_QueryInterface(aInputStream);
@@ -72,11 +71,10 @@ void SerializeInputStreamAsPipeInternal(nsIInputStream* aInputStream,
                                         InputStreamParams& aParams,
                                         bool aDelayedStart, M* aManager) {
   MOZ_ASSERT(aInputStream);
-  MOZ_ASSERT(aManager);
 
-  
-  
-  
+  // Let's try to take the length using InputStreamLengthHelper. If the length
+  // cannot be taken synchronously, and its length is needed, the stream needs
+  // to be fully copied in memory on the deserialization side.
   int64_t length;
   if (!InputStreamLengthHelper::GetSyncLength(aInputStream, &length)) {
     length = -1;
@@ -106,7 +104,7 @@ void SerializeInputStreamAsPipeInternal(nsIInputStream* aInputStream,
   }
 }
 
-}  
+}  // namespace
 
 void InputStreamHelper::SerializedComplexity(nsIInputStream* aInputStream,
                                              uint32_t aMaxSize,
@@ -164,31 +162,17 @@ already_AddRefed<nsIInputStream> InputStreamHelper::DeserializeInputStream(
     const RemoteLazyInputStreamParams& params =
         aParams.get_RemoteLazyInputStreamParams();
 
-    
-    
-    
-    if (params.type() ==
-        RemoteLazyInputStreamParams::TRemoteLazyInputStreamRef) {
-      MOZ_ASSERT(XRE_IsParentProcess());
-      const RemoteLazyInputStreamRef& ref =
-          params.get_RemoteLazyInputStreamRef();
-
-      auto storage = RemoteLazyInputStreamStorage::Get().unwrapOr(nullptr);
-      MOZ_ASSERT(storage);
-      nsCOMPtr<nsIInputStream> stream;
-      storage->GetStream(ref.id(), ref.start(), ref.length(),
-                         getter_AddRefs(stream));
-      return stream.forget();
+    // If the RemoteLazyInputStream already has an internal stream, unwrap it.
+    // This is required as some code unfortunately depends on the precise
+    // topology of received streams, and cannot handle being passed a
+    // `RemoteLazyInputStream` in the parent process.
+    nsCOMPtr<nsIInputStream> innerStream;
+    if (XRE_IsParentProcess() &&
+        NS_SUCCEEDED(
+            params.stream()->TakeInternalStream(getter_AddRefs(innerStream)))) {
+      return innerStream.forget();
     }
-
-    
-    MOZ_ASSERT(params.type() ==
-               RemoteLazyInputStreamParams::TPRemoteLazyInputStreamChild);
-    RemoteLazyInputStreamChild* actor =
-        static_cast<RemoteLazyInputStreamChild*>(
-            params.get_PRemoteLazyInputStreamChild());
-    nsCOMPtr<nsIInputStream> stream = actor->CreateStream();
-    return stream.forget();
+    return do_AddRef(params.stream());
   }
 
   if (aParams.type() == InputStreamParams::TDataPipeReceiverStreamParams) {
@@ -265,5 +249,5 @@ already_AddRefed<nsIInputStream> InputStreamHelper::DeserializeInputStream(
   return stream.forget();
 }
 
-}  
-}  
+}  // namespace ipc
+}  // namespace mozilla

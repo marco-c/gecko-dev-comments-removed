@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "BackgroundParentImpl.h"
 
@@ -114,7 +114,7 @@ class TestParent final : public mozilla::ipc::PBackgroundTestParent {
   void ActorDestroy(ActorDestroyReason aWhy) override;
 };
 
-}  
+}  // namespace
 
 namespace mozilla::ipc {
 
@@ -549,7 +549,7 @@ IPCResult BackgroundParentImpl::RecvPRemoteWorkerServiceConstructor(
       static_cast<mozilla::dom::RemoteWorkerServiceParent*>(aActor);
 
   RefPtr<ContentParent> parent = BackgroundParent::GetContentParent(this);
-  
+  // If the ContentParent is null we are dealing with a same-process actor.
   if (!parent) {
     actor->Initialize(NOT_REMOTE_TYPE);
   } else {
@@ -606,7 +606,7 @@ mozilla::ipc::IPCResult BackgroundParentImpl::RecvPFileCreatorConstructor(
     const bool& aIsFromNsIFile) {
   bool isFileRemoteType = false;
 
-  
+  // If the ContentParent is null we are dealing with a same-process actor.
   RefPtr<ContentParent> parent = BackgroundParent::GetContentParent(this);
   if (!parent) {
     isFileRemoteType = true;
@@ -617,8 +617,8 @@ mozilla::ipc::IPCResult BackgroundParentImpl::RecvPFileCreatorConstructor(
 
   dom::FileCreatorParent* actor = static_cast<dom::FileCreatorParent*>(aActor);
 
-  
-  
+  // We allow the creation of File via this IPC call only for the 'file' process
+  // or for testing.
   if (!isFileRemoteType && !StaticPrefs::dom_file_createInChild()) {
     Unused << dom::FileCreatorParent::Send__delete__(
         actor, dom::FileCreationErrorResult(NS_ERROR_DOM_INVALID_STATE_ERR));
@@ -652,20 +652,6 @@ bool BackgroundParentImpl::DeallocPTemporaryIPCBlobParent(
     dom::PTemporaryIPCBlobParent* aActor) {
   delete aActor;
   return true;
-}
-
-already_AddRefed<PRemoteLazyInputStreamParent>
-BackgroundParentImpl::AllocPRemoteLazyInputStreamParent(const nsID& aID,
-                                                        const uint64_t& aSize) {
-  AssertIsInMainOrSocketProcess();
-  AssertIsOnBackgroundThread();
-
-  
-  
-
-  RefPtr<RemoteLazyInputStreamParent> actor =
-      RemoteLazyInputStreamParent::Create(aID, aSize, this);
-  return actor.forget();
 }
 
 already_AddRefed<BackgroundParentImpl::PVsyncParent>
@@ -718,7 +704,7 @@ bool BackgroundParentImpl::DeallocPCamerasParent(
 }
 
 auto BackgroundParentImpl::AllocPUDPSocketParent(
-    const Maybe<PrincipalInfo>& , const nsCString& )
+    const Maybe<PrincipalInfo>& /* unused */, const nsCString& /* unused */)
     -> PUDPSocketParent* {
   RefPtr<UDPSocketParent> p = new UDPSocketParent(this);
 
@@ -732,18 +718,18 @@ mozilla::ipc::IPCResult BackgroundParentImpl::RecvPUDPSocketConstructor(
   AssertIsOnBackgroundThread();
 
   if (aOptionalPrincipal.isSome()) {
-    
-    
+    // Support for checking principals (for non-mtransport use) will be handled
+    // in bug 1167039
     return IPC_FAIL_NO_REASON(this);
   }
-  
-  
-  
-  
-  
+  // No principal - This must be from mtransport (WebRTC/ICE) - We'd want
+  // to DispatchToMainThread() here, but if we do we must block RecvBind()
+  // until Init() gets run.  Since we don't have a principal, and we verify
+  // we have a filter, we can safely skip the Dispatch and just invoke Init()
+  // to install the filter.
 
-  
-  
+  // For mtransport, this will always be "stun", which doesn't allow outbound
+  // packets if they aren't STUN packets until a STUN response is seen.
   if (!aFilter.EqualsASCII(NS_NETWORK_SOCKET_FILTER_HANDLER_STUN_SUFFIX)) {
     return IPC_FAIL_NO_REASON(this);
   }
@@ -803,8 +789,8 @@ BackgroundParentImpl::AllocPBroadcastChannelParent(
 
   nsString originChannelKey;
 
-  
-  
+  // The format of originChannelKey is:
+  //  <channelName>|<origin+OriginAttributes>
 
   originChannelKey.Assign(aChannel);
 
@@ -876,7 +862,7 @@ class CheckPrincipalRunnable final : public Runnable {
   nsCString mOrigin;
 };
 
-}  
+}  // namespace
 
 mozilla::ipc::IPCResult BackgroundParentImpl::RecvPBroadcastChannelConstructor(
     PBroadcastChannelParent* actor, const PrincipalInfo& aPrincipalInfo,
@@ -886,7 +872,7 @@ mozilla::ipc::IPCResult BackgroundParentImpl::RecvPBroadcastChannelConstructor(
 
   RefPtr<ContentParent> parent = BackgroundParent::GetContentParent(this);
 
-  
+  // If the ContentParent is null we are dealing with a same-process actor.
   if (!parent) {
     return IPC_OK();
   }
@@ -999,9 +985,9 @@ mozilla::ipc::IPCResult BackgroundParentImpl::RecvPMessagePortConstructor(
 
 already_AddRefed<psm::PIPCClientCertsParent>
 BackgroundParentImpl::AllocPIPCClientCertsParent() {
-  
-  
-  
+  // This should only be called in the parent process with the socket process
+  // as the child process, not any content processes, hence the check that the
+  // child ID be 0.
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(mozilla::ipc::BackgroundParent::GetChildID(this) == 0);
   if (!XRE_IsParentProcess() ||
@@ -1170,7 +1156,7 @@ mozilla::ipc::IPCResult BackgroundParentImpl::RecvPFileSystemRequestConstructor(
   return IPC_OK();
 }
 
-
+// Gamepad API Background IPC
 already_AddRefed<dom::PGamepadEventChannelParent>
 BackgroundParentImpl::AllocPGamepadEventChannelParent() {
   return dom::GamepadEventChannelParent::Create();
@@ -1286,7 +1272,7 @@ IPCResult BackgroundParentImpl::RecvStorageActivity(
 
 IPCResult BackgroundParentImpl::RecvPServiceWorkerManagerConstructor(
     PServiceWorkerManagerParent* const aActor) {
-  
+  // Only the parent process is allowed to construct this actor.
   if (BackgroundParent::IsOtherProcessActor(this)) {
     return IPC_FAIL_NO_REASON(aActor);
   }
@@ -1474,7 +1460,7 @@ BackgroundParentImpl::RecvPWebSocketConnectionConstructor(
   return IPC_OK();
 }
 
-}  
+}  // namespace mozilla::ipc
 
 void TestParent::ActorDestroy(ActorDestroyReason aWhy) {
   mozilla::ipc::AssertIsInMainOrSocketProcess();
