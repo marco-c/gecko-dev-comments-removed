@@ -124,7 +124,9 @@ interface nsIFOG : nsISupports
 
 
 
+  void testTriggerGPUMetrics();
 
+  
 
 
 
@@ -132,5 +134,5 @@ interface nsIFOG : nsISupports
 
 
   [implicit_jscontext]
-  Promise testTriggerMetrics(in unsigned long aProcessType);
+  Promise testTriggerRDDMetrics();
 };

@@ -12,7 +12,6 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/gfx/GPUProcessHost.h"
-#include "mozilla/gfx/PGPUChild.h"
 #include "mozilla/gfx/Point.h"
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/ipc/TaskFactory.h"
@@ -201,7 +200,7 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
 
 
 
-  RefPtr<PGPUChild::TestTriggerMetricsPromise> TestTriggerMetrics();
+  void TestTriggerMetrics();
 
  private:
   
