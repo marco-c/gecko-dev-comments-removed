@@ -45,8 +45,6 @@ function trr_test_setup() {
 
   Services.prefs.setBoolPref("network.trr.wait-for-portal", false);
   
-  Services.prefs.setBoolPref("network.trr.wait-for-A-and-AAAA", true);
-  
   Services.prefs.setCharPref("network.trr.confirmationNS", "skip");
   
   
@@ -80,8 +78,6 @@ function trr_clear_prefs() {
   Services.prefs.clearUserPref("network.trr.request_timeout_mode_trronly_ms");
   Services.prefs.clearUserPref("network.trr.disable-ECS");
   Services.prefs.clearUserPref("network.trr.early-AAAA");
-  Services.prefs.clearUserPref("network.trr.skip-AAAA-when-not-supported");
-  Services.prefs.clearUserPref("network.trr.wait-for-A-and-AAAA");
   Services.prefs.clearUserPref("network.trr.excluded-domains");
   Services.prefs.clearUserPref("network.trr.builtin-excluded-domains");
   Services.prefs.clearUserPref("network.trr.clear-cache-on-pref-change");
