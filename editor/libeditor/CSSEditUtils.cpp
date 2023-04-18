@@ -987,8 +987,8 @@ nsresult CSSEditUtils::GetCSSEquivalentToHTMLInlineStyleSetInternal(
 
 
 
-
-bool CSSEditUtils::IsCSSEquivalentToHTMLInlineStyleSetInternal(
+Result<bool, nsresult>
+CSSEditUtils::IsCSSEquivalentToHTMLInlineStyleSetInternal(
     nsIContent& aContent, nsAtom* aHTMLProperty, nsAtom* aAttribute,
     nsAString& aValue, StyleType aStyleType) {
   MOZ_ASSERT(aHTMLProperty || aAttribute);
@@ -1005,14 +1005,17 @@ bool CSSEditUtils::IsCSSEquivalentToHTMLInlineStyleSetInternal(
     
     nsresult rv = GetCSSEquivalentToHTMLInlineStyleSetInternal(
         *content, aHTMLProperty, aAttribute, aValue, aStyleType);
+    if (NS_WARN_IF(!mHTMLEditor || mHTMLEditor->Destroyed())) {
+      return Err(NS_ERROR_EDITOR_DESTROYED);
+    }
     if (NS_FAILED(rv)) {
       NS_WARNING(
           "CSSEditUtils::GetCSSEquivalentToHTMLInlineStyleSetInternal() "
           "failed");
-      return false;
+      return Err(rv);
     }
     if (NS_WARN_IF(parentNode != content->GetParentNode())) {
-      return false;
+      return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
     }
 
     
@@ -1143,10 +1146,9 @@ bool CSSEditUtils::IsCSSEquivalentToHTMLInlineStyleSetInternal(
   return isSet;
 }
 
-bool CSSEditUtils::HaveCSSEquivalentStylesInternal(nsIContent& aContent,
-                                                   nsAtom* aHTMLProperty,
-                                                   nsAtom* aAttribute,
-                                                   StyleType aStyleType) {
+Result<bool, nsresult> CSSEditUtils::HaveCSSEquivalentStylesInternal(
+    nsIContent& aContent, nsAtom* aHTMLProperty, nsAtom* aAttribute,
+    StyleType aStyleType) {
   MOZ_ASSERT(aHTMLProperty || aAttribute);
 
   
@@ -1159,14 +1161,17 @@ bool CSSEditUtils::HaveCSSEquivalentStylesInternal(nsIContent& aContent,
     
     nsresult rv = GetCSSEquivalentToHTMLInlineStyleSetInternal(
         *content, aHTMLProperty, aAttribute, valueString, aStyleType);
+    if (NS_WARN_IF(!mHTMLEditor || mHTMLEditor->Destroyed())) {
+      return Err(NS_ERROR_EDITOR_DESTROYED);
+    }
     if (NS_FAILED(rv)) {
       NS_WARNING(
           "CSSEditUtils::GetCSSEquivalentToHTMLInlineStyleSetInternal() "
           "failed");
-      return false;
+      return Err(rv);
     }
     if (NS_WARN_IF(parentNode != content->GetParentNode())) {
-      return false;
+      return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
     }
 
     if (!valueString.IsEmpty()) {
