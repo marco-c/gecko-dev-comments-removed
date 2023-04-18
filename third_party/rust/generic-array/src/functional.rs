@@ -4,7 +4,8 @@
 
 use super::ArrayLength;
 use core::iter::FromIterator;
-use sequence::*;
+
+use crate::sequence::*;
 
 
 

@@ -45,6 +45,16 @@ impl Authorization<Basic> {
 
         Authorization(Basic { decoded, colon_pos })
     }
+
+    
+    pub fn username(&self) -> &str {
+        self.0.username()
+    }
+
+    
+    pub fn password(&self) -> &str {
+        self.0.password()
+    }
 }
 
 impl Authorization<Bearer> {
@@ -53,6 +63,11 @@ impl Authorization<Bearer> {
         HeaderValueString::from_string(format!("Bearer {}", token))
             .map(|val| Authorization(Bearer(val)))
             .ok_or_else(|| InvalidBearerToken { _inner: () })
+    }
+
+    
+    pub fn token(&self) -> &str {
+        self.0.token()
     }
 }
 

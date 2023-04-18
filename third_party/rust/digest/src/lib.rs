@@ -12,63 +12,196 @@
 
 
 
-#![no_std]
-#![doc(html_logo_url =
-    "https://raw.githubusercontent.com/RustCrypto/meta/master/logo_small.png")]
-pub extern crate generic_array;
-#[cfg(feature = "std")]
-#[macro_use] extern crate std;
-#[cfg(feature = "dev")]
-pub extern crate blobby;
-use generic_array::{GenericArray, ArrayLength};
-#[cfg(feature = "std")]
-use std::vec::Vec;
 
-mod digest;
-mod dyn_digest;
-mod errors;
+
+
+
+
+
+
+
+
+
+#![no_std]
+#![cfg_attr(docsrs, feature(doc_cfg))]
+#![forbid(unsafe_code)]
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg",
+    html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg",
+    html_root_url = "https://docs.rs/digest/0.10.3"
+)]
+#![warn(missing_docs, rust_2018_idioms)]
+
+#[cfg(feature = "alloc")]
+#[macro_use]
+extern crate alloc;
+
+#[cfg(feature = "std")]
+extern crate std;
+
+#[cfg(feature = "rand_core")]
+#[cfg_attr(docsrs, doc(cfg(feature = "rand_core")))]
+pub use crypto_common::rand_core;
+
+#[cfg(feature = "alloc")]
+use alloc::boxed::Box;
+
 #[cfg(feature = "dev")]
+#[cfg_attr(docsrs, doc(cfg(feature = "dev")))]
 pub mod dev;
 
-pub use errors::InvalidOutputSize;
-pub use digest::Digest;
-#[cfg(feature = "std")]
-pub use dyn_digest::DynDigest;
+#[cfg(feature = "core-api")]
+#[cfg_attr(docsrs, doc(cfg(feature = "core-api")))]
+pub mod core_api;
+mod digest;
+#[cfg(feature = "mac")]
+mod mac;
+
+#[cfg(feature = "core-api")]
+#[cfg_attr(docsrs, doc(cfg(feature = "core-api")))]
+pub use block_buffer;
+pub use crypto_common;
+
+pub use crate::digest::{Digest, DynDigest, HashMarker};
+pub use crypto_common::{generic_array, typenum, typenum::consts, Output, OutputSizeUser, Reset};
+#[cfg(feature = "mac")]
+pub use crypto_common::{InnerInit, InvalidLength, Key, KeyInit};
+#[cfg(feature = "mac")]
+pub use mac::{CtOutput, Mac, MacError, MacMarker};
+
+use core::fmt;
 
 
-pub trait Input {
+pub trait Update {
     
-    
-    
-    
-    fn input<B: AsRef<[u8]>>(&mut self, data: B);
+    fn update(&mut self, data: &[u8]);
 
     
-    fn chain<B: AsRef<[u8]>>(mut self, data: B) -> Self where Self: Sized {
-        self.input(data);
+    #[must_use]
+    fn chain(mut self, data: impl AsRef<[u8]>) -> Self
+    where
+        Self: Sized,
+    {
+        self.update(data.as_ref());
         self
     }
 }
 
 
+pub trait FixedOutput: Update + OutputSizeUser + Sized {
+    
+    fn finalize_into(self, out: &mut Output<Self>);
 
-
-
-pub trait BlockInput {
-    type BlockSize: ArrayLength<u8>;
+    
+    #[inline]
+    fn finalize_fixed(self) -> Output<Self> {
+        let mut out = Default::default();
+        self.finalize_into(&mut out);
+        out
+    }
 }
 
 
-pub trait FixedOutput {
-    type OutputSize: ArrayLength<u8>;
+pub trait FixedOutputReset: FixedOutput + Reset {
+    
+    fn finalize_into_reset(&mut self, out: &mut Output<Self>);
 
     
-    fn fixed_result(self) -> GenericArray<u8, Self::OutputSize>;
+    #[inline]
+    fn finalize_fixed_reset(&mut self) -> Output<Self> {
+        let mut out = Default::default();
+        self.finalize_into_reset(&mut out);
+        out
+    }
 }
 
 
-pub trait VariableOutput: core::marker::Sized {
+
+pub trait XofReader {
     
+    fn read(&mut self, buffer: &mut [u8]);
+
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "alloc")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+    fn read_boxed(&mut self, n: usize) -> Box<[u8]> {
+        let mut buf = vec![0u8; n].into_boxed_slice();
+        self.read(&mut buf);
+        buf
+    }
+}
+
+
+pub trait ExtendableOutput: Sized + Update {
+    
+    type Reader: XofReader;
+
+    
+    fn finalize_xof(self) -> Self::Reader;
+
+    
+    fn finalize_xof_into(self, out: &mut [u8]) {
+        self.finalize_xof().read(out);
+    }
+
+    
+    fn digest_xof(input: impl AsRef<[u8]>, output: &mut [u8])
+    where
+        Self: Default,
+    {
+        let mut hasher = Self::default();
+        hasher.update(input.as_ref());
+        hasher.finalize_xof().read(output);
+    }
+
+    
+    
+    
+    
+    
+    #[cfg(feature = "alloc")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+    fn finalize_boxed(self, output_size: usize) -> Box<[u8]> {
+        let mut buf = vec![0u8; output_size].into_boxed_slice();
+        self.finalize_xof().read(&mut buf);
+        buf
+    }
+}
+
+
+pub trait ExtendableOutputReset: ExtendableOutput + Reset {
+    
+    fn finalize_xof_reset(&mut self) -> Self::Reader;
+
+    
+    fn finalize_xof_reset_into(&mut self, out: &mut [u8]) {
+        self.finalize_xof_reset().read(out);
+    }
+
+    
+    
+    
+    
+    
+    #[cfg(feature = "alloc")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+    fn finalize_boxed_reset(&mut self, output_size: usize) -> Box<[u8]> {
+        let mut buf = vec![0u8; output_size].into_boxed_slice();
+        self.finalize_xof_reset().read(&mut buf);
+        buf
+    }
+}
+
+
+pub trait VariableOutput: Sized + Update {
+    
+    const MAX_OUTPUT_SIZE: usize;
+
     
     
     
@@ -82,60 +215,85 @@ pub trait VariableOutput: core::marker::Sized {
     
     
     
-    fn variable_result<F: FnOnce(&[u8])>(self, f: F);
+    fn finalize_variable(self, out: &mut [u8]) -> Result<(), InvalidBufferSize>;
 
     
-    #[cfg(feature = "std")]
-    fn vec_result(self) -> Vec<u8> {
-        let mut buf = Vec::with_capacity(self.output_size());
-        self.variable_result(|res| buf.extend_from_slice(res));
+    
+    
+    
+    
+    fn digest_variable(
+        input: impl AsRef<[u8]>,
+        output: &mut [u8],
+    ) -> Result<(), InvalidOutputSize> {
+        let mut hasher = Self::new(output.len())?;
+        hasher.update(input.as_ref());
+        hasher
+            .finalize_variable(output)
+            .map_err(|_| InvalidOutputSize)
+    }
+
+    
+    
+    
+    
+    #[cfg(feature = "alloc")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+    fn finalize_boxed(self) -> Box<[u8]> {
+        let n = self.output_size();
+        let mut buf = vec![0u8; n].into_boxed_slice();
+        self.finalize_variable(&mut buf)
+            .expect("buf length is equal to output_size");
         buf
     }
 }
 
 
-
-pub trait XofReader {
+pub trait VariableOutputReset: VariableOutput + Reset {
     
-    fn read(&mut self, buffer: &mut [u8]);
-}
-
-
-pub trait ExtendableOutput: core::marker::Sized {
-    type Reader: XofReader;
+    
+    
+    
+    fn finalize_variable_reset(&mut self, out: &mut [u8]) -> Result<(), InvalidBufferSize>;
 
     
-    fn xof_result(self) -> Self::Reader;
-
     
-    #[cfg(feature = "std")]
-    fn vec_result(self, n: usize) -> Vec<u8> {
-        let mut buf = vec![0u8; n];
-        self.xof_result().read(&mut buf);
+    
+    
+    #[cfg(feature = "alloc")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+    fn finalize_boxed_reset(&mut self) -> Box<[u8]> {
+        let n = self.output_size();
+        let mut buf = vec![0u8; n].into_boxed_slice();
+        self.finalize_variable_reset(&mut buf)
+            .expect("buf length is equal to output_size");
         buf
     }
 }
 
 
-pub trait Reset {
-    
-    fn reset(&mut self);
-}
+#[derive(Clone, Copy, Debug, Default)]
+pub struct InvalidOutputSize;
 
-#[macro_export]
-
-macro_rules! impl_write {
-    ($hasher:ident) => {
-        #[cfg(feature = "std")]
-        impl ::std::io::Write for $hasher {
-            fn write(&mut self, buf: &[u8]) -> ::std::io::Result<usize> {
-                Input::input(self, buf);
-                Ok(buf.len())
-            }
-
-            fn flush(&mut self) -> ::std::io::Result<()> {
-                Ok(())
-            }
-        }
+impl fmt::Display for InvalidOutputSize {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("invalid output size")
     }
 }
+
+#[cfg(feature = "std")]
+#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
+impl std::error::Error for InvalidOutputSize {}
+
+
+#[derive(Default, Debug, Copy, Clone, Eq, PartialEq)]
+pub struct InvalidBufferSize;
+
+impl fmt::Display for InvalidBufferSize {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("invalid buffer length")
+    }
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for InvalidBufferSize {}

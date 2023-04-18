@@ -1,94 +1,81 @@
+
+
+
+
+
+
+
 extern crate byteorder;
-extern crate digest;
 extern crate murmurhash3;
+extern crate rand;
 extern crate sha2;
 
-use byteorder::ReadBytesExt;
+use byteorder::{ByteOrder, LittleEndian, ReadBytesExt};
 use murmurhash3::murmurhash3_x86_32;
+#[cfg(feature = "builder")]
+use rand::rngs::OsRng;
+#[cfg(feature = "builder")]
+use rand::RngCore;
 use sha2::{Digest, Sha256};
 use std::convert::{TryFrom, TryInto};
 use std::fmt;
-use std::io::{Error, ErrorKind, Read};
+use std::io::{ErrorKind, Read};
 use std::mem::size_of;
 
-
-struct BitVector {
-    
-    bytes: Vec<u8>,
-    
-    
-    bit_len: usize,
+#[derive(Debug)]
+pub enum CascadeError {
+    LongSalt,
+    TooManyLayers,
+    Collision,
+    UnknownHashFunction,
+    CapacityViolation(&'static str),
+    Parse(&'static str),
 }
 
-impl BitVector {
-    
-    
-    
-    
-    
-    
-    fn new(bytes: Vec<u8>, bit_len: usize) -> BitVector {
-        if bit_len > bytes.len() * 8 {
-            panic!(
-                "bit_len too large for given data: {} > {} * 8",
-                bit_len,
-                bytes.len()
-            );
+impl fmt::Display for CascadeError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            CascadeError::LongSalt => {
+                write!(f, "Cannot serialize a filter with a salt of length >= 256.")
+            }
+            CascadeError::TooManyLayers => {
+                write!(f, "Cannot serialize a filter with >= 255 layers.")
+            }
+            CascadeError::Collision => {
+                write!(f, "Collision between included and excluded sets.")
+            }
+            CascadeError::UnknownHashFunction => {
+                write!(f, "Unknown hash function.")
+            }
+            CascadeError::CapacityViolation(function) => {
+                write!(f, "Unexpected call to {}", function)
+            }
+            CascadeError::Parse(reason) => {
+                write!(f, "Cannot parse cascade: {}", reason)
+            }
         }
-        BitVector { bytes, bit_len }
-    }
-
-    
-    
-    
-    
-    
-    fn get(&self, bit_index: usize) -> bool {
-        if bit_index >= self.bit_len {
-            panic!(
-                "bit index out of range for bit vector: {} >= {}",
-                bit_index, self.bit_len
-            );
-        }
-        let byte_index = bit_index / 8;
-        let final_bit_index = bit_index % 8;
-        let byte = self.bytes[byte_index];
-        let test_value = match final_bit_index {
-            0 => byte & 0b0000_0001u8,
-            1 => byte & 0b0000_0010u8,
-            2 => byte & 0b0000_0100u8,
-            3 => byte & 0b0000_1000u8,
-            4 => byte & 0b0001_0000u8,
-            5 => byte & 0b0010_0000u8,
-            6 => byte & 0b0100_0000u8,
-            7 => byte & 0b1000_0000u8,
-            _ => panic!("impossible final_bit_index value: {}", final_bit_index),
-        };
-        test_value > 0
     }
 }
+
 
 
 struct Bloom {
-    
-    level: u8,
     
     n_hash_funcs: u32,
     
     size: u32,
     
-    bit_vector: BitVector,
-    
-    hash_algorithm: HashAlgorithm,
+    data: Vec<u8>,
 }
 
 #[repr(u8)]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 
 
-enum HashAlgorithm {
+pub enum HashAlgorithm {
     MurmurHash3 = 1,
-    Sha256 = 2,
+    Sha256l32 = 2, 
+    Sha256 = 3,    
 }
 
 impl fmt::Display for HashAlgorithm {
@@ -98,14 +85,168 @@ impl fmt::Display for HashAlgorithm {
 }
 
 impl TryFrom<u8> for HashAlgorithm {
-    type Error = ();
-    fn try_from(value: u8) -> Result<HashAlgorithm, ()> {
+    type Error = CascadeError;
+    fn try_from(value: u8) -> Result<HashAlgorithm, CascadeError> {
         match value {
             
             1 => Ok(Self::MurmurHash3),
-            2 => Ok(Self::Sha256),
-            _ => Err(()),
+            2 => Ok(Self::Sha256l32),
+            3 => Ok(Self::Sha256),
+            _ => Err(CascadeError::UnknownHashFunction),
         }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Debug)]
+enum CascadeIndexGenerator {
+    MurmurHash3 {
+        key: Vec<u8>,
+        counter: u32,
+        depth: u8,
+    },
+    Sha256l32 {
+        key: Vec<u8>,
+        counter: u32,
+        depth: u8,
+    },
+    Sha256Ctr {
+        key: Vec<u8>,
+        counter: u32,
+        state: [u8; 32],
+        state_available: u8,
+    },
+}
+
+impl PartialEq for CascadeIndexGenerator {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (
+                CascadeIndexGenerator::MurmurHash3 { key: ref a, .. },
+                CascadeIndexGenerator::MurmurHash3 { key: ref b, .. },
+            )
+            | (
+                CascadeIndexGenerator::Sha256l32 { key: ref a, .. },
+                CascadeIndexGenerator::Sha256l32 { key: ref b, .. },
+            )
+            | (
+                CascadeIndexGenerator::Sha256Ctr { key: ref a, .. },
+                CascadeIndexGenerator::Sha256Ctr { key: ref b, .. },
+            ) => a == b,
+            _ => false,
+        }
+    }
+}
+
+impl CascadeIndexGenerator {
+    fn new(hash_alg: HashAlgorithm, key: Vec<u8>) -> Self {
+        match hash_alg {
+            HashAlgorithm::MurmurHash3 => Self::MurmurHash3 {
+                key,
+                counter: 0,
+                depth: 1,
+            },
+            HashAlgorithm::Sha256l32 => Self::Sha256l32 {
+                key,
+                counter: 0,
+                depth: 1,
+            },
+            HashAlgorithm::Sha256 => Self::Sha256Ctr {
+                key,
+                counter: 0,
+                state: [0; 32],
+                state_available: 0,
+            },
+        }
+    }
+
+    fn next_layer(&mut self) {
+        match self {
+            Self::MurmurHash3 {
+                ref mut counter,
+                ref mut depth,
+                ..
+            }
+            | Self::Sha256l32 {
+                ref mut counter,
+                ref mut depth,
+                ..
+            } => {
+                *counter = 0;
+                *depth += 1;
+            }
+            Self::Sha256Ctr { .. } => (),
+        }
+    }
+
+    fn next_index(&mut self, salt: &[u8], range: u32) -> usize {
+        let index = match self {
+            Self::MurmurHash3 {
+                key,
+                ref mut counter,
+                depth,
+            } => {
+                let hash_seed = (*counter << 16) + *depth as u32;
+                *counter += 1;
+                murmurhash3_x86_32(key, hash_seed)
+            }
+
+            Self::Sha256l32 {
+                key,
+                ref mut counter,
+                depth,
+            } => {
+                let mut hasher = Sha256::new();
+                hasher.update(salt);
+                hasher.update(counter.to_le_bytes());
+                hasher.update(depth.to_le_bytes());
+                hasher.update(&key);
+                *counter += 1;
+                u32::from_le_bytes(
+                    hasher.finalize()[0..4]
+                        .try_into()
+                        .expect("sha256 should have given enough bytes"),
+                )
+            }
+
+            Self::Sha256Ctr {
+                key,
+                ref mut counter,
+                ref mut state,
+                ref mut state_available,
+            } => {
+                
+                let bytes_needed = ((range.next_power_of_two().trailing_zeros() + 7) / 8) as usize;
+                let mut index_arr = [0u8; 4];
+                for byte in index_arr.iter_mut().take(bytes_needed) {
+                    if *state_available == 0 {
+                        let mut hasher = Sha256::new();
+                        hasher.update(counter.to_le_bytes());
+                        hasher.update(salt);
+                        hasher.update(&key);
+                        hasher.finalize_into(state.into());
+                        *state_available = state.len() as u8;
+                        *counter += 1;
+                    }
+                    *byte = state[state.len() - *state_available as usize];
+                    *state_available -= 1;
+                }
+                LittleEndian::read_u32(&index_arr)
+            }
+        };
+        (index % range) as usize
     }
 }
 
@@ -117,76 +258,46 @@ impl Bloom {
     
     
     
-    
-    
-    
-    
-    
-    pub fn read<R: Read>(reader: &mut R) -> Result<Option<Bloom>, Error> {
+    #[cfg(feature = "builder")]
+    pub fn new_crlite_bloom(
+        include_capacity: usize,
+        exclude_capacity: usize,
+        top_layer: bool,
+    ) -> Self {
+        assert!(include_capacity != 0 && exclude_capacity != 0);
+
+        let r = include_capacity as f64;
+        let s = exclude_capacity as f64;
+
         
         
-        let hash_algorithm_val = match reader.read_u8() {
-            Ok(val) => val,
-            
-            Err(e) if e.kind() == ErrorKind::UnexpectedEof => return Ok(None),
-            Err(e) => return Err(e),
-        };
-        let hash_algorithm = match HashAlgorithm::try_from(hash_algorithm_val) {
-            Ok(algo) => algo,
-            Err(()) => {
-                return Err(Error::new(
-                    ErrorKind::InvalidData,
-                    "Unexpected hash algorithm",
-                ))
-            }
+        
+        
+        
+        
+        
+        
+        
+        let log2_fp_rate = match top_layer {
+            true => (r / s).log2() - 0.5f64,
+            false => -1f64,
         };
 
-        let size = reader.read_u32::<byteorder::LittleEndian>()?;
-        let n_hash_funcs = reader.read_u32::<byteorder::LittleEndian>()?;
-        let level = reader.read_u8()?;
-
-        let shifted_size = size.wrapping_shr(3) as usize;
-        let byte_count = if size % 8 != 0 {
-            shifted_size + 1
-        } else {
-            shifted_size
+        
+        
+        
+        
+        
+        let n_hash_funcs = (-log2_fp_rate).round() as u32;
+        let size = match (r * (-log2_fp_rate) / (f64::ln(2f64))).round() as u32 {
+            size if size >= 256 => size,
+            _ => 256,
         };
-        let mut bits_bytes = vec![0; byte_count];
-        reader.read_exact(&mut bits_bytes)?;
-        let bloom = Bloom {
-            level,
+
+        Bloom {
             n_hash_funcs,
             size,
-            bit_vector: BitVector::new(bits_bytes, size as usize),
-            hash_algorithm,
-        };
-        Ok(Some(bloom))
-    }
-
-    fn hash(&self, n_fn: u32, key: &[u8], salt: Option<&Vec<u8>>) -> u32 {
-        match self.hash_algorithm {
-            HashAlgorithm::MurmurHash3 => {
-                if salt.is_some() {
-                    panic!("murmur does not support salts")
-                }
-                let hash_seed = (n_fn << 16) + self.level as u32;
-                murmurhash3_x86_32(key, hash_seed) % self.size
-            }
-            HashAlgorithm::Sha256 => {
-                let mut hasher = Sha256::new();
-                if let Some(salt_bytes) = salt {
-                    hasher.input(salt_bytes)
-                }
-                hasher.input(n_fn.to_le_bytes());
-                hasher.input(self.level.to_le_bytes());
-                hasher.input(key);
-
-                u32::from_le_bytes(
-                    hasher.result()[0..4]
-                        .try_into()
-                        .expect("sha256 should have given enough bytes"),
-                ) % self.size
-            }
+            data: vec![0u8; ((size + 7) / 8) as usize],
         }
     }
 
@@ -194,34 +305,89 @@ impl Bloom {
     
     
     
-    fn has(&self, item: &[u8], salt: Option<&Vec<u8>>) -> bool {
-        for i in 0..self.n_hash_funcs {
-            if !self.bit_vector.get(self.hash(i, item, salt) as usize) {
+    
+    
+    
+    
+    
+    
+    
+    pub fn read<R: Read>(
+        reader: &mut R,
+    ) -> Result<Option<(Bloom, usize, HashAlgorithm)>, CascadeError> {
+        let hash_algorithm_val = match reader.read_u8() {
+            Ok(val) => val,
+            
+            Err(e) if e.kind() == ErrorKind::UnexpectedEof => return Ok(None),
+            Err(_) => return Err(CascadeError::Parse("read error")),
+        };
+        let hash_algorithm = HashAlgorithm::try_from(hash_algorithm_val)?;
+
+        let size = reader
+            .read_u32::<byteorder::LittleEndian>()
+            .or(Err(CascadeError::Parse("truncated at layer size")))?;
+        let n_hash_funcs = reader
+            .read_u32::<byteorder::LittleEndian>()
+            .or(Err(CascadeError::Parse("truncated at layer hash count")))?;
+        let layer = reader
+            .read_u8()
+            .or(Err(CascadeError::Parse("truncated at layer number")))?;
+
+        let byte_count = ((size + 7) / 8) as usize;
+        let mut data = vec![0; byte_count];
+        reader
+            .read_exact(&mut data)
+            .or(Err(CascadeError::Parse("truncated at layer data")))?;
+        let bloom = Bloom {
+            n_hash_funcs,
+            size,
+            data,
+        };
+        Ok(Some((bloom, layer as usize, hash_algorithm)))
+    }
+
+    fn has(&self, generator: &mut CascadeIndexGenerator, salt: &[u8]) -> bool {
+        for _ in 0..self.n_hash_funcs {
+            let bit_index = generator.next_index(salt, self.size);
+            assert!(bit_index < self.size as usize);
+            let byte_index = bit_index / 8;
+            let mask = 1 << (bit_index % 8);
+            if self.data[byte_index] & mask == 0 {
                 return false;
             }
         }
         true
     }
+
+    #[cfg(feature = "builder")]
+    fn insert(&mut self, generator: &mut CascadeIndexGenerator, salt: &[u8]) {
+        for _ in 0..self.n_hash_funcs {
+            let bit_index = generator.next_index(salt, self.size);
+            let byte_index = bit_index / 8;
+            let mask = 1 << (bit_index % 8);
+            self.data[byte_index] |= mask;
+        }
+    }
+
+    pub fn approximate_size_of(&self) -> usize {
+        size_of::<Bloom>() + self.data.len()
+    }
 }
 
 impl fmt::Display for Bloom {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "level={} n_hash_funcs={} hash_algorithm={} size={}",
-            self.level, self.n_hash_funcs, self.hash_algorithm, self.size
-        )
+        write!(f, "n_hash_funcs={} size={}", self.n_hash_funcs, self.size)
     }
 }
 
 
 pub struct Cascade {
     
-    filter: Bloom,
+    filters: Vec<Bloom>,
     
-    child_layer: Option<Box<Cascade>>,
+    salt: Vec<u8>,
     
-    salt: Option<Vec<u8>>,
+    hash_algorithm: HashAlgorithm,
     
     inverted: bool,
 }
@@ -236,78 +402,127 @@ impl Cascade {
     
     
     
-    pub fn from_bytes(bytes: Vec<u8>) -> Result<Option<Box<Cascade>>, Error> {
+    pub fn from_bytes(bytes: Vec<u8>) -> Result<Option<Self>, CascadeError> {
         if bytes.is_empty() {
             return Ok(None);
         }
         let mut reader = bytes.as_slice();
-        let version = reader.read_u16::<byteorder::LittleEndian>()?;
-        let mut salt = None;
+        let version = reader
+            .read_u16::<byteorder::LittleEndian>()
+            .or(Err(CascadeError::Parse("truncated at version")))?;
+
+        let mut filters = vec![];
+        let mut salt = vec![];
+        let mut top_hash_alg = None;
         let mut inverted = false;
 
-        if version >= 2 {
-            inverted = reader.read_u8()? != 0;
-            let salt_len = reader.read_u8()? as usize;
+        if version > 2 {
+            return Err(CascadeError::Parse("unknown version"));
+        }
+
+        if version == 2 {
+            let inverted_val = reader
+                .read_u8()
+                .or(Err(CascadeError::Parse("truncated at inverted")))?;
+            if inverted_val > 1 {
+                return Err(CascadeError::Parse("invalid value for inverted"));
+            }
+            inverted = 0 != inverted_val;
+            let salt_len: usize = reader
+                .read_u8()
+                .or(Err(CascadeError::Parse("truncated at salt length")))?
+                .into();
+            if salt_len >= 256 {
+                return Err(CascadeError::Parse("salt too long"));
+            }
             if salt_len > 0 {
                 let mut salt_bytes = vec![0; salt_len];
-                reader.read_exact(&mut salt_bytes)?;
-                salt = Some(salt_bytes);
+                reader
+                    .read_exact(&mut salt_bytes)
+                    .or(Err(CascadeError::Parse("truncated at salt")))?;
+                salt = salt_bytes;
             }
         }
 
-        if version > 2 {
-            return Err(Error::new(
-                ErrorKind::InvalidData,
-                format!("Invalid version: {}", version),
-            ));
+        while let Some((filter, layer_number, layer_hash_alg)) = Bloom::read(&mut reader)? {
+            filters.push(filter);
+
+            if layer_number != filters.len() {
+                return Err(CascadeError::Parse("irregular layer numbering"));
+            }
+
+            if *top_hash_alg.get_or_insert(layer_hash_alg) != layer_hash_alg {
+                return Err(CascadeError::Parse("Inconsistent hash algorithms"));
+            }
         }
 
-        Cascade::child_layer_from_bytes(reader, salt, inverted)
-    }
+        if filters.is_empty() {
+            return Err(CascadeError::Parse("missing filters"));
+        }
 
-    fn child_layer_from_bytes<R: Read>(
-        mut reader: R,
-        salt: Option<Vec<u8>>,
-        inverted: bool,
-    ) -> Result<Option<Box<Cascade>>, Error> {
-        let filter = match Bloom::read(&mut reader)? {
-            Some(filter) => filter,
-            None => return Ok(None),
-        };
-        let our_salt = salt.as_ref().cloned();
-        Ok(Some(Box::new(Cascade {
-            filter,
-            child_layer: Cascade::child_layer_from_bytes(reader, salt, inverted)?,
-            salt: our_salt,
+        let hash_algorithm = top_hash_alg.ok_or(CascadeError::Parse("missing hash algorithm"))?;
+
+        Ok(Some(Cascade {
+            filters,
+            salt,
+            hash_algorithm,
             inverted,
-        })))
+        }))
     }
 
     
-    
-    
-    
-    pub fn has(&self, entry: &[u8]) -> bool {
-        let result = self.has_internal(entry);
-        if self.inverted {
-            return !result;
+    pub fn to_bytes(&self) -> Result<Vec<u8>, CascadeError> {
+        if self.salt.len() >= 256 {
+            return Err(CascadeError::LongSalt);
         }
-        result
+        if self.filters.len() >= 255 {
+            return Err(CascadeError::TooManyLayers);
+        }
+        let mut out = vec![];
+        let version: u16 = 2;
+        let inverted: u8 = self.inverted.into();
+        let salt_len: u8 = self.salt.len() as u8;
+        let hash_alg: u8 = self.hash_algorithm as u8;
+        out.extend_from_slice(&version.to_le_bytes());
+        out.push(inverted);
+        out.push(salt_len);
+        out.extend_from_slice(&self.salt);
+        for (layer, bloom) in self.filters.iter().enumerate() {
+            out.push(hash_alg);
+            out.extend_from_slice(&bloom.size.to_le_bytes());
+            out.extend_from_slice(&bloom.n_hash_funcs.to_le_bytes());
+            out.push((1 + layer) as u8); 
+            out.extend_from_slice(&bloom.data);
+        }
+        Ok(out)
     }
 
-    fn has_internal(&self, entry: &[u8]) -> bool {
-        if self.filter.has(entry, self.salt.as_ref()) {
-            match self.child_layer {
-                Some(ref child) => {
-                    let child_value = !child.has_internal(entry);
-                    return child_value;
-                }
-                None => {
-                    return true;
-                }
+    
+    
+    
+    
+    pub fn has(&self, entry: Vec<u8>) -> bool {
+        
+        
+        
+        let mut generator = CascadeIndexGenerator::new(self.hash_algorithm, entry);
+        let mut rv = false;
+        for filter in &self.filters {
+            if filter.has(&mut generator, &self.salt) {
+                rv = !rv;
+                generator.next_layer();
+            } else {
+                break;
             }
         }
-        false
+        if self.inverted {
+            rv = !rv;
+        }
+        rv
+    }
+
+    pub fn invert(&mut self) {
+        self.inverted = !self.inverted;
     }
 
     
@@ -318,33 +533,240 @@ impl Cascade {
     
     pub fn approximate_size_of(&self) -> usize {
         size_of::<Cascade>()
-            + self.filter.bit_vector.bytes.len()
             + self
-                .child_layer
-                .as_ref()
-                .map_or(0, |child_layer| child_layer.approximate_size_of())
-            + self.salt.as_ref().map_or(0, |salt| salt.len())
+                .filters
+                .iter()
+                .map(|x| x.approximate_size_of())
+                .sum::<usize>()
+            + self.salt.len()
     }
 }
 
 impl fmt::Display for Cascade {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
+        writeln!(
             f,
-            "salt={:?} inverted={} filter=[{}] ",
-            self.salt, self.inverted, self.filter
+            "salt={:?} inverted={} hash_algorithm={}",
+            self.salt, self.inverted, self.hash_algorithm,
         )?;
-        match &self.child_layer {
-            Some(layer) => write!(f, "[child={}]", layer),
-            None => Ok(()),
+        for filter in &self.filters {
+            writeln!(f, "\t[{}]", filter)?;
+        }
+        Ok(())
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(feature = "builder")]
+pub struct CascadeBuilder {
+    filters: Vec<Bloom>,
+    salt: Vec<u8>,
+    hash_algorithm: HashAlgorithm,
+    to_include: Vec<CascadeIndexGenerator>,
+    to_exclude: Vec<CascadeIndexGenerator>,
+    status: BuildStatus,
+}
+
+#[cfg(feature = "builder")]
+impl CascadeBuilder {
+    pub fn default(include_capacity: usize, exclude_capacity: usize) -> Self {
+        let mut salt = vec![0u8; 16];
+        OsRng.fill_bytes(&mut salt);
+        CascadeBuilder::new(
+            HashAlgorithm::Sha256,
+            salt,
+            include_capacity,
+            exclude_capacity,
+        )
+    }
+
+    pub fn new(
+        hash_algorithm: HashAlgorithm,
+        salt: Vec<u8>,
+        include_capacity: usize,
+        exclude_capacity: usize,
+    ) -> Self {
+        CascadeBuilder {
+            filters: vec![Bloom::new_crlite_bloom(
+                include_capacity,
+                exclude_capacity,
+                true,
+            )],
+            salt,
+            to_include: vec![],
+            to_exclude: vec![],
+            hash_algorithm,
+            status: BuildStatus(include_capacity, exclude_capacity),
         }
     }
+
+    pub fn include(&mut self, item: Vec<u8>) -> Result<(), CascadeError> {
+        match self.status {
+            BuildStatus(ref mut cap, _) if *cap > 0 => *cap -= 1,
+            _ => return Err(CascadeError::CapacityViolation("include")),
+        }
+        let mut generator = CascadeIndexGenerator::new(self.hash_algorithm, item);
+        self.filters[0].insert(&mut generator, &self.salt);
+        self.to_include.push(generator);
+
+        Ok(())
+    }
+
+    pub fn exclude(&mut self, item: Vec<u8>) -> Result<(), CascadeError> {
+        match self.status {
+            BuildStatus(0, ref mut cap) if *cap > 0 => *cap -= 1,
+            _ => return Err(CascadeError::CapacityViolation("exclude")),
+        }
+        let mut generator = CascadeIndexGenerator::new(self.hash_algorithm, item);
+        if self.filters[0].has(&mut generator, &self.salt) {
+            self.to_exclude.push(generator);
+        }
+        Ok(())
+    }
+
+    
+    
+    pub fn exclude_threaded(&self, exclude_set: &mut ExcludeSet, item: Vec<u8>) {
+        exclude_set.size += 1;
+        let mut generator = CascadeIndexGenerator::new(self.hash_algorithm, item);
+        if self.filters[0].has(&mut generator, &self.salt) {
+            exclude_set.set.push(generator);
+        }
+    }
+
+    
+    pub fn collect_exclude_set(
+        &mut self,
+        exclude_set: &mut ExcludeSet,
+    ) -> Result<(), CascadeError> {
+        match self.status {
+            BuildStatus(0, ref mut cap) if *cap >= exclude_set.size => *cap -= exclude_set.size,
+            _ => return Err(CascadeError::CapacityViolation("exclude")),
+        }
+        self.to_exclude.append(&mut exclude_set.set);
+
+        Ok(())
+    }
+
+    fn push_layer(&mut self) -> Result<(), CascadeError> {
+        
+        
+        
+        let at_even_layer = self.filters.len() % 2 == 0;
+        let (to_encode, to_filter) = match at_even_layer {
+            true => (&mut self.to_include, &mut self.to_exclude),
+            false => (&mut self.to_exclude, &mut self.to_include),
+        };
+
+        
+        
+        let mut bloom = Bloom::new_crlite_bloom(to_encode.len(), to_filter.len(), false);
+
+        let salt = self.salt.as_slice();
+
+        to_encode.iter_mut().for_each(|x| {
+            x.next_layer();
+            bloom.insert(x, salt)
+        });
+
+        let mut delta = to_filter.len();
+        to_filter.retain_mut(|x| {
+            x.next_layer();
+            bloom.has(x, salt)
+        });
+        delta -= to_filter.len();
+
+        if delta == 0 {
+            
+            
+            
+            
+            for x in to_encode.iter_mut() {
+                if to_filter.contains(x) {
+                    return Err(CascadeError::Collision);
+                }
+            }
+        }
+
+        self.filters.push(bloom);
+        Ok(())
+    }
+
+    pub fn finalize(mut self) -> Result<Box<Cascade>, CascadeError> {
+        match self.status {
+            BuildStatus(0, 0) => (),
+            _ => return Err(CascadeError::CapacityViolation("finalize")),
+        }
+
+        loop {
+            if self.to_exclude.is_empty() {
+                break;
+            }
+            self.push_layer()?;
+
+            if self.to_include.is_empty() {
+                break;
+            }
+            self.push_layer()?;
+        }
+
+        Ok(Box::new(Cascade {
+            filters: self.filters,
+            salt: self.salt,
+            hash_algorithm: self.hash_algorithm,
+            inverted: false,
+        }))
+    }
+}
+
+
+
+
+#[cfg(feature = "builder")]
+struct BuildStatus(usize, usize);
+
+
+
+
+
+
+#[cfg(feature = "builder")]
+#[derive(Default)]
+pub struct ExcludeSet {
+    size: usize,
+    set: Vec<CascadeIndexGenerator>,
 }
 
 #[cfg(test)]
 mod tests {
     use Bloom;
     use Cascade;
+    #[cfg(feature = "builder")]
+    use CascadeBuilder;
+    #[cfg(feature = "builder")]
+    use CascadeError;
+    use CascadeIndexGenerator;
+    #[cfg(feature = "builder")]
+    use ExcludeSet;
+    use HashAlgorithm;
 
     #[test]
     fn bloom_v1_test_from_bytes() {
@@ -354,12 +776,21 @@ mod tests {
         let mut reader = src.as_slice();
 
         match Bloom::read(&mut reader) {
-            Ok(Some(bloom)) => {
-                assert!(bloom.has(b"this", None) == true);
-                assert!(bloom.has(b"that", None) == true);
-                assert!(bloom.has(b"other", None) == false);
+            Ok(Some((bloom, 1, HashAlgorithm::MurmurHash3))) => {
+                assert!(bloom.has(
+                    &mut CascadeIndexGenerator::new(HashAlgorithm::MurmurHash3, b"this".to_vec()),
+                    &vec![]
+                ));
+                assert!(bloom.has(
+                    &mut CascadeIndexGenerator::new(HashAlgorithm::MurmurHash3, b"that".to_vec()),
+                    &vec![]
+                ));
+                assert!(!bloom.has(
+                    &mut CascadeIndexGenerator::new(HashAlgorithm::MurmurHash3, b"other".to_vec()),
+                    &vec![]
+                ));
             }
-            Ok(None) => panic!("Parsing failed"),
+            Ok(_) => panic!("Parsing failed"),
             Err(_) => panic!("Parsing failed"),
         };
         assert!(reader.is_empty());
@@ -390,64 +821,61 @@ mod tests {
             .expect("parsing Cascade should succeed")
             .expect("Cascade should be Some");
         
-        #[rustfmt::skip]
-        let key_for_revoked_cert_1 =
-            [ 0x2e, 0xb2, 0xd5, 0xa8, 0x60, 0xfe, 0x50, 0xe9, 0xc2, 0x42, 0x36, 0x85, 0x52, 0x98,
-              0x01, 0x50, 0xe4, 0x5d, 0xb5, 0x32, 0x1a, 0x5b, 0x00, 0x5e, 0x26, 0xd6, 0x76, 0x25,
-              0x3a, 0x40, 0x9b, 0xf5,
-              0x06, 0x2d, 0xf5, 0x68, 0xa0, 0x51, 0x31, 0x08, 0x20, 0xd7, 0xec, 0x43, 0x27, 0xe1,
-              0xba, 0xfd ];
-        assert!(cascade.has(&key_for_revoked_cert_1));
-        #[rustfmt::skip]
-        let key_for_revoked_cert_2 =
-            [ 0xf1, 0x1c, 0x3d, 0xd0, 0x48, 0xf7, 0x4e, 0xdb, 0x7c, 0x45, 0x19, 0x2b, 0x83, 0xe5,
-              0x98, 0x0d, 0x2f, 0x67, 0xec, 0x84, 0xb4, 0xdd, 0xb9, 0x39, 0x6e, 0x33, 0xff, 0x51,
-              0x73, 0xed, 0x69, 0x8f,
-              0x00, 0xd2, 0xe8, 0xf6, 0xaa, 0x80, 0x48, 0x1c, 0xd4 ];
-        assert!(cascade.has(&key_for_revoked_cert_2));
-        #[rustfmt::skip]
-        let key_for_valid_cert =
-            [ 0x99, 0xfc, 0x9d, 0x40, 0xf1, 0xad, 0xb1, 0x63, 0x65, 0x61, 0xa6, 0x1d, 0x68, 0x3d,
-              0x9e, 0xa6, 0xb4, 0x60, 0xc5, 0x7d, 0x0c, 0x75, 0xea, 0x00, 0xc3, 0x41, 0xb9, 0xdf,
-              0xb9, 0x0b, 0x5f, 0x39,
-              0x0b, 0x77, 0x75, 0xf7, 0xaf, 0x9a, 0xe5, 0x42, 0x65, 0xc9, 0xcd, 0x32, 0x57, 0x10,
-              0x77, 0x8e ];
-        assert!(!cascade.has(&key_for_valid_cert));
+        let key_for_revoked_cert_1 = vec![
+            0x2e, 0xb2, 0xd5, 0xa8, 0x60, 0xfe, 0x50, 0xe9, 0xc2, 0x42, 0x36, 0x85, 0x52, 0x98,
+            0x01, 0x50, 0xe4, 0x5d, 0xb5, 0x32, 0x1a, 0x5b, 0x00, 0x5e, 0x26, 0xd6, 0x76, 0x25,
+            0x3a, 0x40, 0x9b, 0xf5, 0x06, 0x2d, 0xf5, 0x68, 0xa0, 0x51, 0x31, 0x08, 0x20, 0xd7,
+            0xec, 0x43, 0x27, 0xe1, 0xba, 0xfd,
+        ];
+        assert!(cascade.has(key_for_revoked_cert_1));
+        let key_for_revoked_cert_2 = vec![
+            0xf1, 0x1c, 0x3d, 0xd0, 0x48, 0xf7, 0x4e, 0xdb, 0x7c, 0x45, 0x19, 0x2b, 0x83, 0xe5,
+            0x98, 0x0d, 0x2f, 0x67, 0xec, 0x84, 0xb4, 0xdd, 0xb9, 0x39, 0x6e, 0x33, 0xff, 0x51,
+            0x73, 0xed, 0x69, 0x8f, 0x00, 0xd2, 0xe8, 0xf6, 0xaa, 0x80, 0x48, 0x1c, 0xd4,
+        ];
+        assert!(cascade.has(key_for_revoked_cert_2));
+        let key_for_valid_cert = vec![
+            0x99, 0xfc, 0x9d, 0x40, 0xf1, 0xad, 0xb1, 0x63, 0x65, 0x61, 0xa6, 0x1d, 0x68, 0x3d,
+            0x9e, 0xa6, 0xb4, 0x60, 0xc5, 0x7d, 0x0c, 0x75, 0xea, 0x00, 0xc3, 0x41, 0xb9, 0xdf,
+            0xb9, 0x0b, 0x5f, 0x39, 0x0b, 0x77, 0x75, 0xf7, 0xaf, 0x9a, 0xe5, 0x42, 0x65, 0xc9,
+            0xcd, 0x32, 0x57, 0x10, 0x77, 0x8e,
+        ];
+        assert!(!cascade.has(key_for_valid_cert));
 
-        assert_eq!(cascade.approximate_size_of(), 15632);
+        assert_eq!(cascade.approximate_size_of(), 15408);
 
         let v = include_bytes!("../test_data/test_v1_murmur_short_mlbf").to_vec();
         assert!(Cascade::from_bytes(v).is_err());
     }
 
     #[test]
-    fn cascade_v2_sha256_from_file_bytes_test() {
-        let v = include_bytes!("../test_data/test_v2_sha256_mlbf").to_vec();
+    fn cascade_v2_sha256l32_from_file_bytes_test() {
+        let v = include_bytes!("../test_data/test_v2_sha256l32_mlbf").to_vec();
         let cascade = Cascade::from_bytes(v)
             .expect("parsing Cascade should succeed")
             .expect("Cascade should be Some");
 
-        assert!(cascade.salt == None);
+        assert!(cascade.salt.len() == 0);
         assert!(cascade.inverted == false);
-        assert!(cascade.has(b"this") == true);
-        assert!(cascade.has(b"that") == true);
-        assert!(cascade.has(b"other") == false);
-        assert_eq!(cascade.approximate_size_of(), 10247);
+        assert!(cascade.has(b"this".to_vec()) == true);
+        assert!(cascade.has(b"that".to_vec()) == true);
+        assert!(cascade.has(b"other".to_vec()) == false);
+        assert_eq!(cascade.approximate_size_of(), 1001);
     }
 
     #[test]
-    fn cascade_v2_sha256_with_salt_from_file_bytes_test() {
-        let v = include_bytes!("../test_data/test_v2_sha256_salt_mlbf").to_vec();
+    fn cascade_v2_sha256l32_with_salt_from_file_bytes_test() {
+        let v = include_bytes!("../test_data/test_v2_sha256l32_salt_mlbf").to_vec();
         let cascade = Cascade::from_bytes(v)
             .expect("parsing Cascade should succeed")
             .expect("Cascade should be Some");
 
-        assert!(cascade.salt == Some(b"nacl".to_vec()));
+        assert!(cascade.salt == b"nacl".to_vec());
         assert!(cascade.inverted == false);
-        assert!(cascade.has(b"this") == true);
-        assert!(cascade.has(b"that") == true);
-        assert!(cascade.has(b"other") == false);
-        assert_eq!(cascade.approximate_size_of(), 10251);
+        assert!(cascade.has(b"this".to_vec()) == true);
+        assert!(cascade.has(b"that".to_vec()) == true);
+        assert!(cascade.has(b"other".to_vec()) == false);
+        assert_eq!(cascade.approximate_size_of(), 1001);
     }
 
     #[test]
@@ -457,12 +885,12 @@ mod tests {
             .expect("parsing Cascade should succeed")
             .expect("Cascade should be Some");
 
-        assert!(cascade.salt == None);
+        assert!(cascade.salt.len() == 0);
         assert!(cascade.inverted == false);
-        assert!(cascade.has(b"this") == true);
-        assert!(cascade.has(b"that") == true);
-        assert!(cascade.has(b"other") == false);
-        assert_eq!(cascade.approximate_size_of(), 10247);
+        assert!(cascade.has(b"this".to_vec()) == true);
+        assert!(cascade.has(b"that".to_vec()) == true);
+        assert!(cascade.has(b"other".to_vec()) == false);
+        assert_eq!(cascade.approximate_size_of(), 992);
     }
 
     #[test]
@@ -472,32 +900,230 @@ mod tests {
             .expect("parsing Cascade should succeed")
             .expect("Cascade should be Some");
 
-        assert!(cascade.salt == None);
+        assert!(cascade.salt.len() == 0);
         assert!(cascade.inverted == true);
-        assert!(cascade.has(b"this") == true);
-        assert!(cascade.has(b"that") == true);
-        assert!(cascade.has(b"other") == false);
-        assert_eq!(cascade.approximate_size_of(), 10247);
+        assert!(cascade.has(b"this".to_vec()) == true);
+        assert!(cascade.has(b"that".to_vec()) == true);
+        assert!(cascade.has(b"other".to_vec()) == false);
+        assert_eq!(cascade.approximate_size_of(), 1058);
     }
 
     #[test]
-    fn cascade_v2_sha256_inverted_from_file_bytes_test() {
-        let v = include_bytes!("../test_data/test_v2_sha256_inverted_mlbf").to_vec();
+    fn cascade_v2_sha256l32_inverted_from_file_bytes_test() {
+        let v = include_bytes!("../test_data/test_v2_sha256l32_inverted_mlbf").to_vec();
         let cascade = Cascade::from_bytes(v)
             .expect("parsing Cascade should succeed")
             .expect("Cascade should be Some");
 
-        assert!(cascade.salt == None);
+        assert!(cascade.salt.len() == 0);
         assert!(cascade.inverted == true);
-        assert!(cascade.has(b"this") == true);
-        assert!(cascade.has(b"that") == true);
-        assert!(cascade.has(b"other") == false);
-        assert_eq!(cascade.approximate_size_of(), 10247);
+        assert!(cascade.has(b"this".to_vec()) == true);
+        assert!(cascade.has(b"that".to_vec()) == true);
+        assert!(cascade.has(b"other".to_vec()) == false);
+        assert_eq!(cascade.approximate_size_of(), 1061);
+    }
+
+    #[test]
+    fn cascade_v2_sha256ctr_from_file_bytes_test() {
+        let v = include_bytes!("../test_data/test_v2_sha256ctr_salt_mlbf").to_vec();
+        let cascade = Cascade::from_bytes(v)
+            .expect("parsing Cascade should succeed")
+            .expect("Cascade should be Some");
+
+        assert!(cascade.salt == b"nacl".to_vec());
+        assert!(cascade.inverted == false);
+        assert!(cascade.has(b"this".to_vec()) == true);
+        assert!(cascade.has(b"that".to_vec()) == true);
+        assert!(cascade.has(b"other".to_vec()) == false);
+        assert_eq!(cascade.approximate_size_of(), 1070);
     }
 
     #[test]
     fn cascade_empty() {
         let cascade = Cascade::from_bytes(Vec::new()).expect("parsing Cascade should succeed");
         assert!(cascade.is_none());
+    }
+
+    #[test]
+    fn cascade_test_from_bytes() {
+        let unknown_version: Vec<u8> = vec![0xff, 0xff, 0x00, 0x00];
+        match Cascade::from_bytes(unknown_version) {
+            Ok(_) => panic!("Cascade::from_bytes allows unknown version."),
+            Err(_) => (),
+        }
+
+        let first_layer_is_zero: Vec<u8> = vec![
+            0x01, 0x00, 0x01, 0x08, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ];
+        match Cascade::from_bytes(first_layer_is_zero) {
+            Ok(_) => panic!("Cascade::from_bytes allows zero indexed layers."),
+            Err(_) => (),
+        }
+
+        let second_layer_is_three: Vec<u8> = vec![
+            0x01, 0x00, 0x01, 0x08, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01,
+            0x08, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x03, 0x00,
+        ];
+        match Cascade::from_bytes(second_layer_is_three) {
+            Ok(_) => panic!("Cascade::from_bytes allows non-sequential layers."),
+            Err(_) => (),
+        }
+    }
+
+    #[test]
+    #[cfg(feature = "builder")]
+    fn cascade_builder_test_collision() {
+        let mut builder = CascadeBuilder::default(1, 1);
+        builder.include(b"collision!".to_vec()).ok();
+        builder.exclude(b"collision!".to_vec()).ok();
+        assert!(matches!(builder.finalize(), Err(CascadeError::Collision)));
+    }
+
+    #[test]
+    #[cfg(feature = "builder")]
+    fn cascade_builder_test_exclude_too_few() {
+        let mut builder = CascadeBuilder::default(1, 1);
+        builder.include(b"1".to_vec()).ok();
+        assert!(matches!(
+            builder.finalize(),
+            Err(CascadeError::CapacityViolation(_))
+        ));
+    }
+
+    #[test]
+    #[cfg(feature = "builder")]
+    fn cascade_builder_test_include_too_few() {
+        let mut builder = CascadeBuilder::default(1, 1);
+        assert!(matches!(
+            builder.exclude(b"1".to_vec()),
+            Err(CascadeError::CapacityViolation(_))
+        ));
+    }
+
+    #[test]
+    #[cfg(feature = "builder")]
+    fn cascade_builder_test_include_too_many() {
+        let mut builder = CascadeBuilder::default(1, 1);
+        builder.include(b"1".to_vec()).ok();
+        assert!(matches!(
+            builder.include(b"2".to_vec()),
+            Err(CascadeError::CapacityViolation(_))
+        ));
+    }
+
+    #[test]
+    #[cfg(feature = "builder")]
+    fn cascade_builder_test_exclude_too_many() {
+        let mut builder = CascadeBuilder::default(1, 1);
+        builder.include(b"1".to_vec()).ok();
+        builder.exclude(b"2".to_vec()).ok();
+        assert!(matches!(
+            builder.exclude(b"3".to_vec()),
+            Err(CascadeError::CapacityViolation(_))
+        ));
+    }
+
+    #[test]
+    #[cfg(feature = "builder")]
+    fn cascade_builder_test_exclude_threaded_no_collect() {
+        let mut builder = CascadeBuilder::default(1, 3);
+        let mut exclude_set = ExcludeSet::default();
+        builder.include(b"1".to_vec()).ok();
+        builder.exclude_threaded(&mut exclude_set, b"2".to_vec());
+        builder.exclude_threaded(&mut exclude_set, b"3".to_vec());
+        builder.exclude_threaded(&mut exclude_set, b"4".to_vec());
+        assert!(matches!(
+            builder.finalize(),
+            Err(CascadeError::CapacityViolation(_))
+        ));
+    }
+
+    #[test]
+    #[cfg(feature = "builder")]
+    fn cascade_builder_test_exclude_threaded_too_many() {
+        let mut builder = CascadeBuilder::default(1, 3);
+        let mut exclude_set = ExcludeSet::default();
+        builder.include(b"1".to_vec()).ok();
+        builder.exclude_threaded(&mut exclude_set, b"2".to_vec());
+        builder.exclude_threaded(&mut exclude_set, b"3".to_vec());
+        builder.exclude_threaded(&mut exclude_set, b"4".to_vec());
+        builder.exclude_threaded(&mut exclude_set, b"5".to_vec());
+        assert!(matches!(
+            builder.collect_exclude_set(&mut exclude_set),
+            Err(CascadeError::CapacityViolation(_))
+        ));
+    }
+
+    #[test]
+    #[cfg(feature = "builder")]
+    fn cascade_builder_test_exclude_threaded() {
+        let mut builder = CascadeBuilder::default(1, 3);
+        let mut exclude_set = ExcludeSet::default();
+        builder.include(b"1".to_vec()).ok();
+        builder.exclude_threaded(&mut exclude_set, b"2".to_vec());
+        builder.exclude_threaded(&mut exclude_set, b"3".to_vec());
+        builder.exclude_threaded(&mut exclude_set, b"4".to_vec());
+        builder.collect_exclude_set(&mut exclude_set).ok();
+        builder.finalize().ok();
+    }
+
+    #[cfg(feature = "builder")]
+    fn cascade_builder_test_generate(hash_alg: HashAlgorithm, inverted: bool) {
+        let total = 10_000_usize;
+        let included = 100_usize;
+
+        let salt = vec![0u8; 16];
+        let mut builder =
+            CascadeBuilder::new(hash_alg, salt, included, (total - included) as usize);
+        for i in 0..included {
+            builder.include(i.to_le_bytes().to_vec()).ok();
+        }
+        for i in included..total {
+            builder.exclude(i.to_le_bytes().to_vec()).ok();
+        }
+        let mut cascade = builder.finalize().unwrap();
+
+        if inverted {
+            cascade.invert()
+        }
+
+        
+        let cascade_bytes = cascade.to_bytes().expect("failed to serialize cascade");
+
+        let cascade = Cascade::from_bytes(cascade_bytes)
+            .expect("failed to deserialize cascade")
+            .expect("cascade should not be None here");
+
+        
+        for i in 0..included {
+            assert!(cascade.has(i.to_le_bytes().to_vec()) == true ^ inverted)
+        }
+        for i in included..total {
+            assert!(cascade.has(i.to_le_bytes().to_vec()) == false ^ inverted)
+        }
+    }
+
+    #[test]
+    #[cfg(feature = "builder")]
+    fn cascade_builder_test_generate_murmurhash3_inverted() {
+        cascade_builder_test_generate(HashAlgorithm::MurmurHash3, true);
+    }
+
+    #[test]
+    #[cfg(feature = "builder")]
+    fn cascade_builder_test_generate_murmurhash3() {
+        cascade_builder_test_generate(HashAlgorithm::MurmurHash3, false);
+    }
+
+    #[test]
+    #[cfg(feature = "builder")]
+    fn cascade_builder_test_generate_sha256l32() {
+        cascade_builder_test_generate(HashAlgorithm::Sha256l32, false);
+    }
+
+    #[test]
+    #[cfg(feature = "builder")]
+    fn cascade_builder_test_generate_sha256() {
+        cascade_builder_test_generate(HashAlgorithm::Sha256, false);
     }
 }

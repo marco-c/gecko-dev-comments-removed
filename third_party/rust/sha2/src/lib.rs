@@ -43,72 +43,44 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 #![no_std]
-#![doc(html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo_small.png")]
+#![cfg_attr(docsrs, feature(doc_cfg))]
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg",
+    html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg",
+    html_root_url = "https://docs.rs/sha2/0.10.2"
+)]
+#![warn(missing_docs, rust_2018_idioms)]
 
+pub use digest::{self, Digest};
 
-#[cfg(all(
-    feature = "asm-aarch64",
-    target_arch = "aarch64",
-    not(target_os = "linux")
-))]
-compile_error!("Your OS isn’t yet supported for runtime-checking of AArch64 features.");
-#[cfg(all(feature = "asm-aarch64", not(target_arch = "aarch64")))]
-compile_error!("Enable the \"asm\" feature instead of \"asm-aarch64\" on non-AArch64 systems.");
-#[cfg(all(
-    feature = "asm-aarch64",
-    target_arch = "aarch64",
-    target_feature = "crypto"
-))]
-compile_error!("Enable the \"asm\" feature instead of \"asm-aarch64\" when building for AArch64 systems with crypto extensions.");
-#[cfg(all(
-    not(feature = "asm-aarch64"),
-    feature = "asm",
-    target_arch = "aarch64",
-    not(target_feature = "crypto"),
-    target_os = "linux"
-))]
-compile_error!("Enable the \"asm-aarch64\" feature on AArch64 if you want to use asm detected at runtime, or build with the crypto extensions support, for instance with RUSTFLAGS='-C target-cpu=native' on a compatible CPU.");
+use digest::{
+    consts::{U28, U32, U48, U64},
+    core_api::{CoreWrapper, CtVariableCoreWrapper},
+};
 
-extern crate block_buffer;
-extern crate fake_simd as simd;
-#[macro_use]
-extern crate opaque_debug;
-#[macro_use]
-pub extern crate digest;
-#[cfg(feature = "asm-aarch64")]
-extern crate libc;
-#[cfg(feature = "asm")]
-extern crate sha2_asm;
-#[cfg(feature = "std")]
-extern crate std;
-
-#[cfg(feature = "asm-aarch64")]
-mod aarch64;
+#[rustfmt::skip]
 mod consts;
+mod core_api;
 mod sha256;
-#[cfg(any(not(feature = "asm"), feature = "asm-aarch64", feature = "compress"))]
-mod sha256_utils;
 mod sha512;
-#[cfg(any(not(feature = "asm"), target_arch = "aarch64", feature = "compress"))]
-mod sha512_utils;
 
-pub use digest::Digest;
-pub use sha256::{Sha224, Sha256};
 #[cfg(feature = "compress")]
-pub use sha256_utils::compress256;
-pub use sha512::{Sha384, Sha512, Sha512Trunc224, Sha512Trunc256};
+pub use sha256::compress256;
 #[cfg(feature = "compress")]
-pub use sha512_utils::compress512;
+pub use sha512::compress512;
+
+pub use core_api::{Sha256VarCore, Sha512VarCore};
+
+
+pub type Sha224 = CoreWrapper<CtVariableCoreWrapper<Sha256VarCore, U28>>;
+
+pub type Sha256 = CoreWrapper<CtVariableCoreWrapper<Sha256VarCore, U32>>;
+
+pub type Sha512_224 = CoreWrapper<CtVariableCoreWrapper<Sha512VarCore, U28>>;
+
+pub type Sha512_256 = CoreWrapper<CtVariableCoreWrapper<Sha512VarCore, U32>>;
+
+pub type Sha384 = CoreWrapper<CtVariableCoreWrapper<Sha512VarCore, U48>>;
+
+pub type Sha512 = CoreWrapper<CtVariableCoreWrapper<Sha512VarCore, U64>>;
