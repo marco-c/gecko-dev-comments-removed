@@ -13693,18 +13693,27 @@ class CardGrid_CardGrid extends external_React_default.a.PureComponent {
     });
   }
 
+  get showLoadMore() {
+    const {
+      loadMoreEnabled,
+      data,
+      loadMoreThreshold
+    } = this.props;
+    return loadMoreEnabled && data.recommendations.length > loadMoreThreshold && !this.state.moreLoaded;
+  }
+
   renderCards() {
     let {
       items
     } = this.props;
     const {
-      loadMoreEnabled,
-      lastCardMessageEnabled
+      lastCardMessageEnabled,
+      loadMoreThreshold
     } = this.props;
     let showLastCardMessage = lastCardMessageEnabled;
 
-    if (loadMoreEnabled && !this.state.moreLoaded) {
-      items = 12; 
+    if (this.showLoadMore) {
+      items = loadMoreThreshold; 
 
       showLastCardMessage = false;
     }
@@ -13777,9 +13786,6 @@ class CardGrid_CardGrid extends external_React_default.a.PureComponent {
 
 
     const isEmpty = data.recommendations.length === 0;
-    const {
-      loadMoreEnabled
-    } = this.props;
     return external_React_default.a.createElement("div", null, this.props.title && external_React_default.a.createElement("div", {
       className: "ds-header"
     }, external_React_default.a.createElement("div", {
@@ -13794,7 +13800,7 @@ class CardGrid_CardGrid extends external_React_default.a.PureComponent {
       status: data.status,
       dispatch: this.props.dispatch,
       feed: this.props.feed
-    })) : this.renderCards(), loadMoreEnabled && !this.state.moreLoaded && external_React_default.a.createElement("button", {
+    })) : this.renderCards(), this.showLoadMore && external_React_default.a.createElement("button", {
       className: "ASRouterButton primary ds-card-grid-load-more-button",
       onClick: this.loadMoreClicked,
       "data-l10n-id": "newtab-pocket-load-more-stories-button"
@@ -13808,7 +13814,8 @@ CardGrid_CardGrid.defaultProps = {
   
   enable_video_playheads: false,
   lastCardMessageEnabled: false,
-  saveToPocketCard: false
+  saveToPocketCard: false,
+  loadMoreThreshold: 12
 };
 
  }),
