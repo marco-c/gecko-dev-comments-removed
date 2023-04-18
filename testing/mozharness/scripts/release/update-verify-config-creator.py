@@ -3,7 +3,7 @@
 
 
 from __future__ import absolute_import, division
-from packaging.version import Version
+from distutils.version import LooseVersion
 import json
 import math
 import os
@@ -23,7 +23,7 @@ from mozharness.base.script import BaseScript
 
 
 
-class CompareVersion(Version):
+class CompareVersion(LooseVersion):
     version = ""
 
     def __init__(self, versionMap):
@@ -38,7 +38,7 @@ class CompareVersion(Version):
         else:
             parts.append("0")
         self.version = ".".join(parts)
-        Version(versionMap)
+        LooseVersion(versionMap)
 
 
 def is_triangualar(x):
@@ -549,9 +549,9 @@ class UpdateVerifyConfigCreator(BaseScript):
 
             
             
-            if self.config["platform"] not in ("win32", "win64") or Version(
+            if self.config["platform"] not in ("win32", "win64") or LooseVersion(
                 fromVersion
-            ) < Version("42.0"):
+            ) < LooseVersion("42.0"):
                 update_platform = ftp2updatePlatforms(self.config["platform"])[0]
             else:
                 update_platform = ftp2updatePlatforms(self.config["platform"])[1]
