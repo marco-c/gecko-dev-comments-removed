@@ -343,6 +343,8 @@ with modules["NETWORK"]:
     
     
     errors["NS_ERROR_NON_LOCAL_CONNECTION_REFUSED"] = FAILURE(88)
+    
+    errors["NS_ERROR_BAD_HSTS_CERT"] = FAILURE(89)
 
     
     
