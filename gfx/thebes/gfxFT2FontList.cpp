@@ -618,6 +618,7 @@ void FT2FontEntry::AddSizeOfIncludingThis(MallocSizeOf aMallocSizeOf,
 
 
 void FT2FontFamily::AddFacesToFontList(nsTArray<FontListEntry>* aFontList) {
+  AutoReadLock lock(mLock);
   for (int i = 0, n = mAvailableFonts.Length(); i < n; ++i) {
     const FT2FontEntry* fe =
         static_cast<const FT2FontEntry*>(mAvailableFonts[i].get());
@@ -1168,7 +1169,9 @@ void gfxFT2FontList::AppendFacesFromFontFile(const nsCString& aFileName,
     CollectFunc unshared =
         [](const FontListEntry& aFLE, const nsCString& aPSName,
            const nsCString& aFullName, StandardFile aStdFile) {
-          PlatformFontList()->AppendFaceFromFontListEntry(aFLE, aStdFile);
+          auto* pfl = PlatformFontList();
+          pfl->mLock.AssertCurrentThreadIn();
+          pfl->AppendFaceFromFontListEntry(aFLE, aStdFile);
         };
     CollectFunc shared = [](const FontListEntry& aFLE, const nsCString& aPSName,
                             const nsCString& aFullName, StandardFile aStdFile) {
@@ -1339,7 +1342,9 @@ void gfxFT2FontList::AppendFacesFromOmnijarEntry(nsZipArchive* aArchive,
       CollectFunc unshared =
           [](const FontListEntry& aFLE, const nsCString& aPSName,
              const nsCString& aFullName, StandardFile aStdFile) {
-            PlatformFontList()->AppendFaceFromFontListEntry(aFLE, aStdFile);
+            auto* pfl = PlatformFontList();
+            pfl->mLock.AssertCurrentThreadIn();
+            pfl->AppendFaceFromFontListEntry(aFLE, aStdFile);
           };
       CollectFunc shared = [](const FontListEntry& aFLE,
                               const nsCString& aPSName,
@@ -1382,17 +1387,15 @@ void gfxFT2FontList::AppendFacesFromOmnijarEntry(nsZipArchive* aArchive,
 
 
 
-static void FinalizeFamilyMemberList(nsCStringHashKey::KeyType aKey,
-                                     const RefPtr<gfxFontFamily>& aFamily,
-                                     bool aSortFaces) {
-  gfxFontFamily* family = aFamily.get();
+void FT2FontFamily::FinalizeMemberList(bool aSortFaces) {
+  AutoWriteLock lock(mLock);
 
-  family->SetHasStyles(true);
+  SetHasStyles(true);
 
   if (aSortFaces) {
-    family->SortAvailableFonts();
+    SortAvailableFonts();
   }
-  family->CheckForSimpleFamily();
+  CheckForSimpleFamily();
 }
 
 void gfxFT2FontList::FindFonts() {
@@ -1640,6 +1643,7 @@ void gfxFT2FontList::AppendFaceFromFontListEntry(const FontListEntry& aFLE,
 }
 
 void gfxFT2FontList::ReadSystemFontList(dom::SystemFontList* aList) {
+  AutoLock lock(mLock);
   for (const auto& entry : mFontFamilies) {
     auto family = static_cast<FT2FontFamily*>(entry.GetData().get());
     family->AddFacesToFontList(&aList->entries());
@@ -1669,9 +1673,8 @@ nsresult gfxFT2FontList::InitFontListForPlatform() {
     
     
     for (const auto& entry : mFontFamilies) {
-      nsCStringHashKey::KeyType key = entry.GetKey();
-      const RefPtr<gfxFontFamily>& family = entry.GetData();
-      FinalizeFamilyMemberList(key, family,  true);
+      auto* family = static_cast<FT2FontFamily*>(entry.GetData().get());
+      family->FinalizeMemberList( true);
     }
 
     return NS_OK;
@@ -1689,9 +1692,8 @@ nsresult gfxFT2FontList::InitFontListForPlatform() {
   
   
   for (const auto& entry : mFontFamilies) {
-    nsCStringHashKey::KeyType key = entry.GetKey();
-    const RefPtr<gfxFontFamily>& family = entry.GetData();
-    FinalizeFamilyMemberList(key, family,  false);
+    auto* family = static_cast<FT2FontFamily*>(entry.GetData().get());
+    family->FinalizeMemberList( false);
   }
 
   LOG(("got font list from chrome process: %" PRIdPTR " faces in %" PRIu32
@@ -1747,10 +1749,13 @@ gfxFontEntry* gfxFT2FontList::LookupLocalFont(nsPresContext* aPresContext,
                                               WeightRange aWeightForEntry,
                                               StretchRange aStretchForEntry,
                                               SlantStyleRange aStyleForEntry) {
+  AutoLock lock(mLock);
+
   if (SharedFontList()) {
     return LookupInSharedFaceNameList(aPresContext, aFontName, aWeightForEntry,
                                       aStretchForEntry, aStyleForEntry);
   }
+
   
   FT2FontEntry* fontEntry = nullptr;
   FontVisibility level =
