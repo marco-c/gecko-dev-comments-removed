@@ -4637,9 +4637,6 @@ class HTMLEditor final : public EditorBase,
                             
                             
                             
-  friend class MoveNodeTransaction;   
-                                      
-                                      
   friend class JoinNodesTransaction;  
                                       
   friend class
@@ -4648,6 +4645,9 @@ class HTMLEditor final : public EditorBase,
   friend class
       ListItemElementSelectionState;  
                                       
+  friend class MoveNodeTransaction;  
+                                     
+                                     
   friend class
       ParagraphStateAtSelection;  
                                   

@@ -47,7 +47,7 @@ EditActionResult& EditActionResult::operator|=(
     const MoveNodeResult& aMoveNodeResult) {
   mHandled |= aMoveNodeResult.Handled();
   
-  if (mRv == aMoveNodeResult.Rv()) {
+  if (mRv == aMoveNodeResult.inspectErr()) {
     return *this;
   }
   
@@ -58,11 +58,11 @@ EditActionResult& EditActionResult::operator|=(
   }
   
   
-  if (aMoveNodeResult.Rv() == NS_ERROR_NOT_INITIALIZED) {
+  if (aMoveNodeResult.NotInitialized()) {
     return *this;
   }
   
-  if (Failed() || aMoveNodeResult.Failed()) {
+  if (Failed() || aMoveNodeResult.isErr()) {
     mRv = NS_ERROR_FAILURE;
     return *this;
   }

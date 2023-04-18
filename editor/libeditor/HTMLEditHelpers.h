@@ -109,15 +109,27 @@ class MOZ_STACK_CLASS EditResult final {
 
 
 
+
+
+
+
 class MOZ_STACK_CLASS MoveNodeResult final {
  public:
-  bool Succeeded() const { return NS_SUCCEEDED(mRv); }
-  bool Failed() const { return NS_FAILED(mRv); }
-  bool Handled() const { return mHandled; }
-  bool Ignored() const { return !mHandled; }
-  nsresult Rv() const { return mRv; }
-  bool EditorDestroyed() const { return mRv == NS_ERROR_EDITOR_DESTROYED; }
-  const EditorDOMPoint& NextInsertionPointRef() const {
+  
+  
+  bool isOk() const { return NS_SUCCEEDED(mRv); }
+  bool isErr() const { return NS_FAILED(mRv); }
+  constexpr bool Handled() const { return mHandled; }
+  constexpr bool Ignored() const { return !Handled(); }
+  constexpr nsresult inspectErr() const { return mRv; }
+  constexpr nsresult unwrapErr() const { return mRv; }
+  constexpr bool EditorDestroyed() const {
+    return MOZ_UNLIKELY(mRv == NS_ERROR_EDITOR_DESTROYED);
+  }
+  constexpr bool NotInitialized() const {
+    return mRv == NS_ERROR_NOT_INITIALIZED;
+  }
+  constexpr const EditorDOMPoint& NextInsertionPointRef() const {
     return mNextInsertionPoint;
   }
   EditorDOMPoint NextInsertionPoint() const { return mNextInsertionPoint; }
@@ -151,17 +163,17 @@ class MOZ_STACK_CLASS MoveNodeResult final {
     }
     
     
-    if (aOther.mRv == NS_ERROR_NOT_INITIALIZED) {
+    if (aOther.NotInitialized()) {
       return *this;
     }
     
-    if (mRv == NS_ERROR_NOT_INITIALIZED) {
+    if (NotInitialized()) {
       mRv = aOther.mRv;
       mNextInsertionPoint = aOther.mNextInsertionPoint;
       return *this;
     }
     
-    if (Failed() || aOther.Failed()) {
+    if (isErr() || aOther.isErr()) {
       mRv = NS_ERROR_FAILURE;
       mNextInsertionPoint.Clear();
       return *this;
@@ -173,8 +185,7 @@ class MOZ_STACK_CLASS MoveNodeResult final {
   }
 
  private:
-  template <typename PT, typename CT>
-  explicit MoveNodeResult(const EditorDOMPointBase<PT, CT>& aNextInsertionPoint,
+  explicit MoveNodeResult(const EditorDOMPoint& aNextInsertionPoint,
                           bool aHandled)
       : mNextInsertionPoint(aNextInsertionPoint),
         mRv(aNextInsertionPoint.IsSet() ? NS_OK : NS_ERROR_FAILURE),
@@ -184,65 +195,52 @@ class MOZ_STACK_CLASS MoveNodeResult final {
           mNextInsertionPoint);
     }
   }
-
-  MoveNodeResult(nsINode* aParentNode, uint32_t aOffsetOfNextInsertionPoint,
-                 bool aHandled) {
-    if (!aParentNode) {
-      mRv = NS_ERROR_FAILURE;
-      mHandled = false;
-      return;
+  explicit MoveNodeResult(EditorDOMPoint&& aNextInsertionPoint, bool aHandled)
+      : mNextInsertionPoint(std::move(aNextInsertionPoint)),
+        mRv(mNextInsertionPoint.IsSet() ? NS_OK : NS_ERROR_FAILURE),
+        mHandled(aHandled && mNextInsertionPoint.IsSet()) {
+    if (mNextInsertionPoint.IsSet()) {
+      AutoEditorDOMPointChildInvalidator computeOffsetAndForgetChild(
+          mNextInsertionPoint);
     }
-    aOffsetOfNextInsertionPoint =
-        std::min(aOffsetOfNextInsertionPoint, aParentNode->Length());
-    mNextInsertionPoint.Set(aParentNode, aOffsetOfNextInsertionPoint);
-    mRv = mNextInsertionPoint.IsSet() ? NS_OK : NS_ERROR_FAILURE;
-    mHandled = aHandled && mNextInsertionPoint.IsSet();
   }
 
   EditorDOMPoint mNextInsertionPoint;
   nsresult mRv;
   bool mHandled;
 
-  friend MoveNodeResult MoveNodeIgnored(nsINode* aParentNode,
-                                        uint32_t aOffsetOfNextInsertionPoint);
-  friend MoveNodeResult MoveNodeHandled(nsINode* aParentNode,
-                                        uint32_t aOffsetOfNextInsertionPoint);
-  template <typename PT, typename CT>
   friend MoveNodeResult MoveNodeIgnored(
-      const EditorDOMPointBase<PT, CT>& aNextInsertionPoint);
-  template <typename PT, typename CT>
+      const EditorDOMPoint& aNextInsertionPoint);
+  friend MoveNodeResult MoveNodeIgnored(EditorDOMPoint&& aNextInsertionPoint);
   friend MoveNodeResult MoveNodeHandled(
-      const EditorDOMPointBase<PT, CT>& aNextInsertionPoint);
+      const EditorDOMPoint& aNextInsertionPoint);
+  friend MoveNodeResult MoveNodeHandled(EditorDOMPoint&& aNextInsertionPoint);
 };
 
 
 
 
 
-inline MoveNodeResult MoveNodeIgnored(nsINode* aParentNode,
-                                      uint32_t aOffsetOfNextInsertionPoint) {
-  return MoveNodeResult(aParentNode, aOffsetOfNextInsertionPoint, false);
-}
-
-template <typename PT, typename CT>
 inline MoveNodeResult MoveNodeIgnored(
-    const EditorDOMPointBase<PT, CT>& aNextInsertionPoint) {
+    const EditorDOMPoint& aNextInsertionPoint) {
   return MoveNodeResult(aNextInsertionPoint, false);
 }
 
-
-
-
-
-inline MoveNodeResult MoveNodeHandled(nsINode* aParentNode,
-                                      uint32_t aOffsetOfNextInsertionPoint) {
-  return MoveNodeResult(aParentNode, aOffsetOfNextInsertionPoint, true);
+inline MoveNodeResult MoveNodeIgnored(EditorDOMPoint&& aNextInsertionPoint) {
+  return MoveNodeResult(std::move(aNextInsertionPoint), false);
 }
 
-template <typename PT, typename CT>
+
+
+
+
 inline MoveNodeResult MoveNodeHandled(
-    const EditorDOMPointBase<PT, CT>& aNextInsertionPoint) {
+    const EditorDOMPoint& aNextInsertionPoint) {
   return MoveNodeResult(aNextInsertionPoint, true);
+}
+
+inline MoveNodeResult MoveNodeHandled(EditorDOMPoint&& aNextInsertionPoint) {
+  return MoveNodeResult(std::move(aNextInsertionPoint), true);
 }
 
 
