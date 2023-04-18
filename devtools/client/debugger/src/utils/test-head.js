@@ -15,7 +15,7 @@ import * as selectors from "../selectors";
 import { parserWorker, evaluationsParser } from "../test/tests-setup";
 import configureStore from "../actions/utils/create-store";
 import sourceQueue from "../utils/source-queue";
-
+import { setupCreate } from "../client/firefox/create";
 
 
 
@@ -54,6 +54,8 @@ function createStore(client, initialState = {}, sourceMapsMock) {
 
   
   store.cx = selectors.getThreadContext(store.getState());
+
+  setupCreate({ store });
 
   return store;
 }

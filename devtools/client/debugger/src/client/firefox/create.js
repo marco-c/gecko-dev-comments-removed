@@ -4,7 +4,12 @@
 
 
 
-import { hasSourceActor, getSourceActor } from "../../selectors";
+import {
+  hasSource,
+  hasSourceActor,
+  getSourceActor,
+  getSourcesMap,
+} from "../../selectors";
 import { features } from "../../utils/prefs";
 import { isUrlExtension } from "../../utils/source";
 
@@ -80,6 +85,35 @@ async function waitForSourceActorToBeRegisteredInStore(sourceActorId) {
     });
   }
   return getSourceActor(store.getState(), sourceActorId);
+}
+
+
+
+
+
+
+
+export async function waitForSourceToBeRegisteredInStore(sourceId) {
+  return new Promise(resolve => {
+    if (hasSource(store.getState(), sourceId)) {
+      resolve();
+      return;
+    }
+    const unsubscribe = store.subscribe(check);
+    let currentSize = null;
+    function check() {
+      const previousSize = currentSize;
+      currentSize = getSourcesMap(store.getState()).size;
+      
+      if (previousSize == currentSize) {
+        return;
+      }
+      if (hasSource(store.getState(), sourceId)) {
+        unsubscribe();
+        resolve();
+      }
+    }
+  });
 }
 
 
