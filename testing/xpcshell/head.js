@@ -1609,9 +1609,57 @@ function add_test(properties, func = properties, isTask = false) {
 
 
 
+
+
 function add_task(properties, func = properties) {
   return add_test(properties, func, true);
 }
+
+const _setTaskPrefs = prefs => {
+  for (let [pref, value] of prefs) {
+    if (value === undefined) {
+      
+      info(`Clearing pref "${pref}"`);
+      _Services.prefs.clearUserPref(pref);
+      continue;
+    }
+
+    info(`Setting pref "${pref}": ${value}`);
+    switch (typeof value) {
+      case "boolean":
+        _Services.prefs.setBoolPref(pref, value);
+        break;
+      case "number":
+        _Services.prefs.setIntPref(pref, value);
+        break;
+      case "string":
+        _Services.prefs.setStringPref(pref, value);
+        break;
+      default:
+        throw new Error("runWithPrefs doesn't support this pref type yet");
+    }
+  }
+};
+
+const _getTaskPrefs = prefs => {
+  return prefs.map(([pref, value]) => {
+    info(`Getting initial pref value for "${pref}"`);
+    if (!_Services.prefs.prefHasUserValue(pref)) {
+      
+      return [pref, undefined];
+    }
+    switch (typeof value) {
+      case "boolean":
+        return [pref, _Services.prefs.getBoolPref(pref)];
+      case "number":
+        return [pref, _Services.prefs.getIntPref(pref)];
+      case "string":
+        return [pref, _Services.prefs.getStringPref(pref)];
+      default:
+        throw new Error("runWithPrefs doesn't support this pref type yet");
+    }
+  });
+};
 
 
 
@@ -1667,6 +1715,12 @@ function run_next_test() {
         return;
       }
 
+      let initialPrefsValues = [];
+      if (_properties.pref_set) {
+        initialPrefsValues = _getTaskPrefs(_properties.pref_set);
+        _setTaskPrefs(_properties.pref_set);
+      }
+
       if (_properties.isTask) {
         _gTaskRunning = true;
         let startTime = Cu.now();
@@ -1681,6 +1735,7 @@ function run_next_test() {
             if (_isGenerator(result)) {
               Assert.ok(false, "Task returned a generator");
             }
+            _setTaskPrefs(initialPrefsValues);
             run_next_test();
           },
           ex => {
@@ -1690,6 +1745,7 @@ function run_next_test() {
               { category: "Test", startTime },
               _gRunningTest.name || undefined
             );
+            _setTaskPrefs(initialPrefsValues);
             try {
               do_report_unexpected_exception(ex);
             } catch (error) {
@@ -1711,6 +1767,7 @@ function run_next_test() {
             { category: "Test", startTime },
             _gRunningTest.name || undefined
           );
+          _setTaskPrefs(initialPrefsValues);
         }
       }
     }
