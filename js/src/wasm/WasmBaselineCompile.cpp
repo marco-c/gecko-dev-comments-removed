@@ -580,79 +580,8 @@ bool BaseCompiler::endFunction() {
 
   JitSpew(JitSpew_Codegen, "# endFunction: end of OOL code");
   if (compilerEnv_.debugEnabled()) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     JitSpew(JitSpew_Codegen, "# endFunction: start of debug trap stub");
-
-    Label L;
-    masm.bind(&debugTrapStub_);
-
-#if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64)
-    {
-      ScratchPtr scratch(*this);
-
-      
-      masm.loadPtr(Address(WasmTlsReg, Instance::offsetOfDebugFilter()),
-                   scratch);
-
-      
-      
-      masm.branchTestPtr(Assembler::NonZero, Address(scratch, func_.index / 32),
-                         Imm32(1 << (func_.index % 32)), &L);
-
-      
-      masm.ret();
-    }
-#elif defined(JS_CODEGEN_ARM64)
-    {
-      ScratchPtr scratch(*this);
-
-      
-      masm.loadPtr(Address(WasmTlsReg, Instance::offsetOfDebugFilter()),
-                   scratch);
-      masm.branchTestPtr(Assembler::NonZero, Address(scratch, func_.index / 32),
-                         Imm32(1 << (func_.index % 32)), &L);
-      masm.abiret();
-    }
-#elif defined(JS_CODEGEN_ARM)
-    {
-      
-      
-      
-
-      static_assert(ScratchRegister != lr);
-      static_assert(Instance::offsetOfDebugFilter() < 0x1000);
-
-      ScratchRegisterScope tmp1(masm);
-      ScratchI32 tmp2(*this);
-      masm.ma_ldr(
-          DTRAddr(WasmTlsReg, DtrOffImm(Instance::offsetOfDebugFilter())),
-          tmp1);
-      masm.ma_mov(Imm32(func_.index / 32), tmp2);
-      masm.ma_ldr(DTRAddr(tmp1, DtrRegImmShift(tmp2, LSL, 0)), tmp2);
-      masm.ma_tst(tmp2, Imm32(1 << func_.index % 32), tmp1, Assembler::Always);
-      masm.ma_bx(lr, Assembler::Zero);
-    }
-#elif defined(JS_CODEGEN_MIPS64)
-    
-#elif defined(JS_CODEGEN_LOONG64)
-    
-#else
-    MOZ_CRASH("BaseCompiler platform hook: endFunction");
-#endif
-
-    
-    masm.bind(&L);
-    masm.jump(Address(WasmTlsReg, Instance::offsetOfDebugTrapHandler()));
-
+    insertBreakpointStub();
     JitSpew(JitSpew_Codegen, "# endFunction: end of debug trap stub");
   }
 
@@ -667,15 +596,167 @@ bool BaseCompiler::endFunction() {
   return !masm.oom();
 }
 
-void BaseCompiler::popStackReturnValues(const ResultType& resultType) {
-  uint32_t bytes = ABIResultIter::MeasureStackBytes(resultType);
-  if (bytes == 0) {
-    return;
+
+
+
+
+void BaseCompiler::insertBreakablePoint(CallSiteDesc::Kind kind) {
+#ifndef RABALDR_PIN_INSTANCE
+  fr.loadTlsPtr(WasmTlsReg);
+#endif
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+#if defined(JS_CODEGEN_X64)
+  
+  static_assert(Instance::offsetOfDebugTrapHandler() < 128);
+  masm.cmpq(Imm32(0),
+            Operand(Address(WasmTlsReg, Instance::offsetOfDebugTrapHandler())));
+
+  
+  Label L;
+  L.bind(masm.currentOffset() + 7);
+  masm.j(Assembler::Zero, &L);
+
+  
+  masm.call(&debugTrapStub_);
+  masm.append(CallSiteDesc(iter_.lastOpcodeOffset(), kind),
+              CodeOffset(masm.currentOffset()));
+
+  
+  MOZ_ASSERT(masm.currentOffset() == uint32_t(L.offset()));
+#elif defined(JS_CODEGEN_X86)
+  
+  static_assert(Instance::offsetOfDebugTrapHandler() < 128);
+  masm.cmpl(Imm32(0),
+            Operand(Address(WasmTlsReg, Instance::offsetOfDebugTrapHandler())));
+
+  
+  Label L;
+  L.bind(masm.currentOffset() + 7);
+  masm.j(Assembler::Zero, &L);
+
+  
+  masm.call(&debugTrapStub_);
+  masm.append(CallSiteDesc(iter_.lastOpcodeOffset(), kind),
+              CodeOffset(masm.currentOffset()));
+
+  
+  MOZ_ASSERT(masm.currentOffset() == uint32_t(L.offset()));
+#elif defined(JS_CODEGEN_ARM64)
+  ScratchPtr scratch(*this);
+  ARMRegister tmp(scratch, 64);
+  Label L;
+  masm.Ldr(tmp, MemOperand(
+                    Address(WasmTlsReg, Instance::offsetOfDebugTrapHandler())));
+  masm.Cbz(tmp, &L);
+  masm.Bl(&debugTrapStub_);
+  masm.append(CallSiteDesc(iter_.lastOpcodeOffset(), kind),
+              CodeOffset(masm.currentOffset()));
+  masm.bind(&L);
+#elif defined(JS_CODEGEN_ARM)
+  ScratchPtr scratch(*this);
+  masm.loadPtr(Address(WasmTlsReg, Instance::offsetOfDebugTrapHandler()),
+               scratch);
+  masm.ma_orr(scratch, scratch, SetCC);
+  masm.ma_bl(&debugTrapStub_, Assembler::NonZero);
+  masm.append(CallSiteDesc(iter_.lastOpcodeOffset(), kind),
+              CodeOffset(masm.currentOffset()));
+#elif defined(JS_CODEGEN_MIPS64)
+  
+#elif defined(JS_CODEGEN_LOONG64)
+  
+#else
+  MOZ_CRASH("BaseCompiler platform hook: insertBreakablePoint");
+#endif
+}
+
+void BaseCompiler::insertBreakpointStub() {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  Label L;
+  masm.bind(&debugTrapStub_);
+
+#if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64)
+  {
+    ScratchPtr scratch(*this);
+
+    
+    masm.loadPtr(Address(WasmTlsReg, Instance::offsetOfDebugFilter()), scratch);
+
+    
+    
+    masm.branchTestPtr(Assembler::NonZero, Address(scratch, func_.index / 32),
+                       Imm32(1 << (func_.index % 32)), &L);
+
+    
+    masm.ret();
   }
-  Register target = ABINonArgReturnReg0;
-  Register temp = ABINonArgReturnReg1;
-  fr.loadIncomingStackResultAreaPtr(RegPtr(target));
-  fr.popStackResultsToMemory(target, bytes, temp);
+#elif defined(JS_CODEGEN_ARM64)
+  {
+    ScratchPtr scratch(*this);
+
+    
+    masm.loadPtr(Address(WasmTlsReg, Instance::offsetOfDebugFilter()), scratch);
+    masm.branchTestPtr(Assembler::NonZero, Address(scratch, func_.index / 32),
+                       Imm32(1 << (func_.index % 32)), &L);
+    masm.abiret();
+  }
+#elif defined(JS_CODEGEN_ARM)
+  {
+    
+    
+    
+
+    static_assert(ScratchRegister != lr);
+    static_assert(Instance::offsetOfDebugFilter() < 0x1000);
+
+    ScratchRegisterScope tmp1(masm);
+    ScratchI32 tmp2(*this);
+    masm.ma_ldr(DTRAddr(WasmTlsReg, DtrOffImm(Instance::offsetOfDebugFilter())),
+                tmp1);
+    masm.ma_mov(Imm32(func_.index / 32), tmp2);
+    masm.ma_ldr(DTRAddr(tmp1, DtrRegImmShift(tmp2, LSL, 0)), tmp2);
+    masm.ma_tst(tmp2, Imm32(1 << func_.index % 32), tmp1, Assembler::Always);
+    masm.ma_bx(lr, Assembler::Zero);
+  }
+#elif defined(JS_CODEGEN_MIPS64)
+  
+#elif defined(JS_CODEGEN_LOONG64)
+  
+#else
+  MOZ_CRASH("BaseCompiler platform hook: endFunction");
+#endif
+
+  
+  masm.bind(&L);
+  masm.jump(Address(WasmTlsReg, Instance::offsetOfDebugTrapHandler()));
 }
 
 void BaseCompiler::saveRegisterReturnValues(const ResultType& resultType) {
@@ -779,6 +860,17 @@ void BaseCompiler::restoreRegisterReturnValues(const ResultType& resultType) {
 
 
 
+
+void BaseCompiler::popStackReturnValues(const ResultType& resultType) {
+  uint32_t bytes = ABIResultIter::MeasureStackBytes(resultType);
+  if (bytes == 0) {
+    return;
+  }
+  Register target = ABINonArgReturnReg0;
+  Register temp = ABINonArgReturnReg1;
+  fr.loadIncomingStackResultAreaPtr(RegPtr(target));
+  fr.popStackResultsToMemory(target, bytes, temp);
+}
 
 
 

@@ -896,7 +896,10 @@ struct BaseCompiler final {
 
   
   
-  inline void insertBreakablePoint(CallSiteDesc::Kind kind);
+  void insertBreakablePoint(CallSiteDesc::Kind kind);
+
+  
+  void insertBreakpointStub();
 
   
   
