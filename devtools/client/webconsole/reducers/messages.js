@@ -419,16 +419,20 @@ function messages(
       return limitTopLevelMessageCount(newState, logLimit);
 
     case constants.MESSAGES_CLEAR:
+      const frontsToRelease = [];
+      for (const message of state.mutableMessagesById.values()) {
+        
+        
+        
+        Array.prototype.push.apply(
+          frontsToRelease,
+          getAllFrontsInMessage(message)
+        );
+      }
       return MessageState({
         
         
-        frontsToRelease: [...state.mutableMessagesById.values()].reduce(
-          (res, msg) => {
-            res.push(...getAllFrontsInMessage(msg));
-            return res;
-          },
-          []
-        ),
+        frontsToRelease,
       });
 
     case constants.PRIVATE_MESSAGES_CLEAR: {
@@ -460,32 +464,28 @@ function messages(
       
       if (isGroupType(currMessage.type) || isWarningGroup(currMessage)) {
         
-        const messagesToShow = [...mutableMessagesById].reduce(
-          (res, [id, message]) => {
-            if (
-              !visibleMessages.includes(message.id) &&
-              ((isWarningGroup(currMessage) &&
-                !!getWarningGroupType(message)) ||
-                (isGroupType(currMessage.type) &&
-                  getParentGroups(message.groupId, groupsById).includes(
-                    action.id
-                  ))) &&
-              getMessageVisibility(message, {
-                messagesState: openState,
-                filtersState,
-                prefsState,
-                uiState,
-                
-                
-                checkGroup: message.groupId !== action.id,
-              }).visible
-            ) {
-              res.push(id);
-            }
-            return res;
-          },
-          []
-        );
+        const messagesToShow = [];
+        for (const [id, message] of mutableMessagesById) {
+          if (
+            !visibleMessages.includes(message.id) &&
+            ((isWarningGroup(currMessage) && !!getWarningGroupType(message)) ||
+              (isGroupType(currMessage.type) &&
+                getParentGroups(message.groupId, groupsById).includes(
+                  action.id
+                ))) &&
+            getMessageVisibility(message, {
+              messagesState: openState,
+              filtersState,
+              prefsState,
+              uiState,
+              
+              
+              checkGroup: message.groupId !== action.id,
+            }).visible
+          ) {
+            messagesToShow.push(id);
+          }
+        }
 
         
         const insertIndex = visibleMessages.indexOf(action.id) + 1;
@@ -631,8 +631,7 @@ function messages(
       }
 
       let needSort = false;
-      const messageEntries = state.mutableMessagesById.entries();
-      for (const [msgId, message] of messageEntries) {
+      for (const [msgId, message] of state.mutableMessagesById) {
         const warningGroupType = getWarningGroupType(message);
         if (warningGroupType) {
           const warningGroupMessageId = getParentWarningGroupMessageId(message);
@@ -928,8 +927,12 @@ function removeMessagesFromState(state, removedMessagesIds) {
       visibleMessages.splice(index, 1);
     }
 
-    frontsToRelease.push(
-      ...getAllFrontsInMessage(state.mutableMessagesById.get(id))
+    
+    
+    
+    Array.prototype.push.apply(
+      frontsToRelease,
+      getAllFrontsInMessage(state.mutableMessagesById.get(id))
     );
   });
 
