@@ -568,8 +568,6 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
     }
 
     void NotifyVsyncTimerOnMainThread() {
-      
-      
       MOZ_ASSERT(NS_IsMainThread());
 
       if (!mVsyncRefreshDriverTimer) {
@@ -587,7 +585,10 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
         vsyncEvent = pendingVsync->extract();
       }
 
-      mVsyncRefreshDriverTimer->NotifyVsyncOnMainThread(vsyncEvent);
+      
+      
+      RefPtr<VsyncRefreshDriverTimer> timer = mVsyncRefreshDriverTimer;
+      timer->NotifyVsyncOnMainThread(vsyncEvent);
     }
 
     void Shutdown() {
@@ -727,7 +728,6 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
       }
     }
 
-    RefPtr<VsyncRefreshDriverTimer> kungFuDeathGrip(this);
     TickRefreshDriver(aVsyncEvent.mId, aVsyncEvent.mTime);
   }
 
