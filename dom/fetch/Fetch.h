@@ -19,10 +19,8 @@
 #include "mozilla/dom/BodyStream.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/FetchStreamReader.h"
-#ifdef MOZ_DOM_STREAMS
-#  include "mozilla/dom/ReadableStream.h"
-#  include "mozilla/dom/ReadableStreamDefaultReaderBinding.h"
-#endif
+#include "mozilla/dom/ReadableStream.h"
+#include "mozilla/dom/ReadableStreamDefaultReaderBinding.h"
 #include "mozilla/dom/RequestBinding.h"
 #include "mozilla/dom/workerinternals/RuntimeService.h"
 
@@ -164,19 +162,13 @@ class FetchBody : public BodyStreamHolder, public AbortFollower {
     return ConsumeBody(aCx, BodyConsumer::CONSUME_TEXT, aRv);
   }
 
-#ifdef MOZ_DOM_STREAMS
   already_AddRefed<ReadableStream> GetBody(JSContext* aCx, ErrorResult& aRv);
-#else
-  void GetBody(JSContext* aCx, JS::MutableHandle<JSObject*> aBodyOut,
-               ErrorResult& aRv);
-#endif
   void GetMimeType(nsACString& aMimeType);
 
   const nsACString& BodyBlobURISpec() const;
 
   const nsAString& BodyLocalPath() const;
 
-#ifdef MOZ_DOM_STREAMS
   
   
   
@@ -188,15 +180,6 @@ class FetchBody : public BodyStreamHolder, public AbortFollower {
                                   FetchStreamReader** aStreamReader,
                                   nsIInputStream** aInputStream,
                                   ErrorResult& aRv);
-#else
-  
-  
-  void MaybeTeeReadableStreamBody(JSContext* aCx,
-                                  JS::MutableHandle<JSObject*> aBodyOut,
-                                  FetchStreamReader** aStreamReader,
-                                  nsIInputStream** aInputStream,
-                                  ErrorResult& aRv);
-#endif
 
   
 
@@ -229,19 +212,12 @@ class FetchBody : public BodyStreamHolder, public AbortFollower {
     mFetchStreamReader = nullptr;
   }
 
-#ifndef MOZ_DOM_STREAMS
-  void SetReadableStreamBody(JSObject* aBody) override {
-    mReadableStreamBody = aBody;
-  }
-  JSObject* GetReadableStreamBody() override { return mReadableStreamBody; }
-#else
   void SetReadableStreamBody(ReadableStream* aBody) override {
     mReadableStreamBody = aBody;
   }
   ReadableStream* GetReadableStreamBody() override {
     return mReadableStreamBody;
   }
-#endif
 
   void MarkAsRead() override { mBodyUsed = true; }
 
@@ -259,7 +235,6 @@ class FetchBody : public BodyStreamHolder, public AbortFollower {
  protected:
   nsCOMPtr<nsIGlobalObject> mOwner;
 
-#ifdef MOZ_DOM_STREAMS
   
   
   RefPtr<ReadableStream> mReadableStreamBody;
@@ -267,36 +242,20 @@ class FetchBody : public BodyStreamHolder, public AbortFollower {
   
   
   RefPtr<ReadableStreamDefaultReader> mReadableStreamReader;
-#else
-  
-  
-  JS::Heap<JSObject*> mReadableStreamBody;
-
-  
-  JS::Heap<JSObject*> mReadableStreamReader;
-#endif
   RefPtr<FetchStreamReader> mFetchStreamReader;
 
   explicit FetchBody(nsIGlobalObject* aOwner);
 
   virtual ~FetchBody();
 
-#ifdef MOZ_DOM_STREAMS
   void SetReadableStreamBody(JSContext* aCx, ReadableStream* aBody);
-#else
-  void SetReadableStreamBody(JSContext* aCx, JSObject* aBody);
-#endif
 
  private:
   Derived* DerivedClass() const {
     return static_cast<Derived*>(const_cast<FetchBody*>(this));
   }
 
-#ifdef MOZ_DOM_STREAMS
   void LockStream(JSContext* aCx, ReadableStream* aStream, ErrorResult& aRv);
-#else
-  void LockStream(JSContext* aCx, JS::HandleObject aStream, ErrorResult& aRv);
-#endif
 
   void AssertIsOnTargetThread() {
     MOZ_ASSERT(NS_IsMainThread() == !GetCurrentThreadWorkerPrivate());

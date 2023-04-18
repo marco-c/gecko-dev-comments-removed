@@ -59,10 +59,6 @@ EXPORTS.mozilla.dom += [
     "XrayExpandoClass.h",
 ]
 
-if not CONFIG["MOZ_DOM_STREAMS"]:
-    EXPORTS.mozilla.dom += [
-        "ReadableStream.h",
-    ]
 
 
 
