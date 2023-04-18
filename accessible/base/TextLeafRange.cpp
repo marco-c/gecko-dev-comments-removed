@@ -962,19 +962,31 @@ TextLeafPoint TextLeafPoint::FindParagraphSameAcc(nsDirection aDirection,
   Pivot pivot(nsAccUtils::DocumentFor(mAcc));
   Accessible* prevBlock = pivot.Prev(mAcc, blockRule);
   
-  if (prevBlock &&
+  if (prevBlock) {
+    if (
+        
+        
+        !prevLeaf ||
+        
+        prevBlock == prevLeaf) {
+      return TextLeafPoint(mAcc, 0);
+    }
+    if (prevBlock->IsAncestorOf(mAcc)) {
       
-      (!prevLeaf ||
-       
-       prevBlock == prevLeaf ||
-       
-       
-       
-       !prevBlock->IsAncestorOf(mAcc) ||
-       
-       
-       !prevBlock->IsAncestorOf(prevLeaf))) {
-    return TextLeafPoint(mAcc, 0);
+      if (!prevBlock->IsAncestorOf(prevLeaf)) {
+        
+        
+        return TextLeafPoint(mAcc, 0);
+      }
+    } else {
+      
+      if (prevBlock->IsAncestorOf(prevLeaf)) {
+        
+        
+        
+        return TextLeafPoint(mAcc, 0);
+      }
+    }
   }
   if (!prevLeaf || prevLeaf->IsHTMLBr()) {
     
