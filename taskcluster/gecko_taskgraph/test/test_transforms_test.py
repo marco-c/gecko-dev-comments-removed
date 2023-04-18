@@ -85,13 +85,22 @@ def test_split_variants(monkeypatch, run_transform, make_test_task):
     run_split_variants = partial(run_transform, test_transforms.variant.split_variants)
 
     
-    input_task = make_test_task()
+    input_task = make_test_task(
+        **{
+            "run-without-variant": True,
+        }
+    )
     tasks = list(run_split_variants(input_task))
     assert len(tasks) == 1
     assert tasks[0] == input_task
 
     
-    input_task["variants"] = ["foo", "bar"]
+    input_task = make_test_task(
+        **{
+            "run-without-variant": True,
+            "variants": ["foo", "bar"],
+        }
+    )
     tasks = list(run_split_variants(input_task))
     assert len(tasks) == 3
     assert tasks[0] == make_test_task()
@@ -104,6 +113,7 @@ def test_split_variants(monkeypatch, run_transform, make_test_task):
     
     input_task = make_test_task(
         **{
+            "run-without-variant": True,
             "variants": ["foo+bar"],
         }
     )
@@ -119,15 +129,27 @@ def test_split_variants(monkeypatch, run_transform, make_test_task):
     
     input_task = make_test_task(
         **{
-            "variants": ["foo", "bar", "foo+bar"],
+            "run-without-variant": True,
             
             "test-platform": "windows",
+            "variants": ["foo", "bar", "foo+bar"],
         }
     )
     tasks = list(run_split_variants(input_task))
     assert len(tasks) == 2
     assert "unittest_variant" not in tasks[0]["attributes"]
     assert tasks[1]["attributes"]["unittest_variant"] == "foo"
+
+    
+    input_task = make_test_task(
+        **{
+            "run-without-variant": False,
+            "variants": ["foo"],
+        }
+    )
+    tasks = list(run_split_variants(input_task))
+    assert len(tasks) == 1
+    assert tasks[0]["attributes"]["unittest_variant"] == "foo"
 
 
 @pytest.mark.parametrize(

@@ -120,12 +120,7 @@ test_description_schema = Schema(
         
         Optional("variants"): [str],
         
-        
-        
-        
-        Required("e10s"): optionally_keyed_by(
-            "test-platform", "project", Any(bool, "both")
-        ),
+        Required("run-without-variant"): optionally_keyed_by("test-platform", bool),
         
         Optional("webrender"): bool,
         Optional("webrender-run-on-projects"): optionally_keyed_by(
@@ -346,7 +341,6 @@ def set_defaults(config, tasks):
         else:
             task.setdefault("webrender", False)
 
-        task.setdefault("e10s", True)
         task.setdefault("try-name", task["test-name"])
         task.setdefault("os-groups", [])
         task.setdefault("run-as-administrator", False)
@@ -363,6 +357,7 @@ def set_defaults(config, tasks):
         task.setdefault("docker-image", {"in-tree": "ubuntu1804-test"})
         task.setdefault("checkout", False)
         task.setdefault("require-signed-extensions", False)
+        task.setdefault("run-without-variant", True)
         task.setdefault("variants", [])
         task.setdefault("supports-artifact-builds", True)
 
@@ -379,16 +374,21 @@ transforms.add_validate(test_description_schema)
 
 @transforms.add
 def resolve_keys(config, tasks):
+    keys = (
+        "require-signed-extensions",
+        "run-without-variant",
+    )
     for task in tasks:
-        resolve_keyed_by(
-            task,
-            "require-signed-extensions",
-            item_name=task["test-name"],
-            enforce_single_match=False,
-            **{
-                "release-type": config.params["release_type"],
-            },
-        )
+        for key in keys:
+            resolve_keyed_by(
+                task,
+                key,
+                item_name=task["test-name"],
+                enforce_single_match=False,
+                **{
+                    "release-type": config.params["release_type"],
+                },
+            )
         yield task
 
 
@@ -443,7 +443,7 @@ def make_job_description(config, tasks):
             label += suffix
             try_name += suffix
 
-        if task["e10s"]:
+        if "1proc" not in attributes.get("unittest_variant", ""):
             label += "-e10s"
 
         if task["chunks"] > 1:
