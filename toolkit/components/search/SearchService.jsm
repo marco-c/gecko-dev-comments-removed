@@ -566,6 +566,10 @@ SearchService.prototype = {
     let { engines, privateDefault } = await this._fetchEngineSelectorEngines();
     this._setDefaultAndOrdersFromSelector(engines, privateDefault);
 
+    
+    
+    await AddonManager.readyPromise;
+
     let newEngines = await this._loadEnginesFromConfig(engines);
     for (let engine of newEngines) {
       this._addEngineToStore(engine);
