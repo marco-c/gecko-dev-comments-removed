@@ -153,7 +153,7 @@ function getErrorDetails(error) {
 
 
 
-this.FxAccountsWebChannel = function(options) {
+function FxAccountsWebChannel(options) {
   if (!options) {
     throw new Error("Missing configuration options");
   }
@@ -173,7 +173,7 @@ this.FxAccountsWebChannel = function(options) {
   });
 
   this._setupChannel();
-};
+}
 
 FxAccountsWebChannel.prototype = {
   
@@ -400,14 +400,14 @@ FxAccountsWebChannel.prototype = {
   },
 };
 
-this.FxAccountsWebChannelHelpers = function(options) {
+function FxAccountsWebChannelHelpers(options) {
   options = options || {};
 
   this._fxAccounts = options.fxAccounts || fxAccounts;
   this._weaveXPCOM = options.weaveXPCOM || null;
   this._privateBrowsingUtils =
     options.privateBrowsingUtils || PrivateBrowsingUtils;
-};
+}
 
 FxAccountsWebChannelHelpers.prototype = {
   

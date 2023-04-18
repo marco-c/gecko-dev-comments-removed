@@ -118,7 +118,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 
 
-var AccountState = (this.AccountState = function(storageManager) {
+function AccountState(storageManager) {
   this.storageManager = storageManager;
   this.inFlightTokenRequests = new Map();
   this.promiseInitialized = this.storageManager
@@ -130,7 +130,7 @@ var AccountState = (this.AccountState = function(storageManager) {
       log.error("Failed to initialize the storage manager", err);
       
     });
-});
+}
 
 AccountState.prototype = {
   oauthTokens: null,
