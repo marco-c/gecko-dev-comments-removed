@@ -10,6 +10,7 @@
 
 #include "AudioMixer.h"
 #include "GraphDriver.h"
+#include "DeviceInputTrack.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Monitor.h"
@@ -34,55 +35,6 @@ class AudioContextOperationControlMessage;
 template <typename T>
 class LinkedList;
 class GraphRunner;
-
-
-class NativeInputTrack : public ProcessedMediaTrack {
-  ~NativeInputTrack() = default;
-  explicit NativeInputTrack(TrackRate aSampleRate)
-      : ProcessedMediaTrack(aSampleRate, MediaSegment::AUDIO,
-                            new AudioSegment()) {}
-
- public:
-  
-  static NativeInputTrack* Create(MediaTrackGraphImpl* aGraph);
-
-  size_t AddUser();
-  size_t RemoveUser();
-
-  
-  void DestroyImpl() override;
-  void ProcessInput(GraphTime aFrom, GraphTime aTo, uint32_t aFlags) override;
-  uint32_t NumberOfChannels() const override;
-
-  
-  void NotifyOutputData(MediaTrackGraphImpl* aGraph, AudioDataValue* aBuffer,
-                        size_t aFrames, TrackRate aRate, uint32_t aChannels);
-  void NotifyInputStopped(MediaTrackGraphImpl* aGraph);
-  void NotifyInputData(MediaTrackGraphImpl* aGraph,
-                       const AudioDataValue* aBuffer, size_t aFrames,
-                       TrackRate aRate, uint32_t aChannels,
-                       uint32_t aAlreadyBuffered);
-  void DeviceChanged(MediaTrackGraphImpl* aGraph);
-
-  
-  NativeInputTrack* AsNativeInputTrack() override { return this; }
-
- public:
-  
-  nsTArray<RefPtr<AudioDataListener>> mDataUsers;
-
- private:
-  
-  
-  AudioInputSamples mInputData;
-
-  
-  uint32_t mInputChannels = 0;
-
-  
-  
-  int32_t mUserCount = 0;
-};
 
 
 
