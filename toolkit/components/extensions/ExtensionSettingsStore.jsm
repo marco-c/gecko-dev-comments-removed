@@ -44,18 +44,20 @@ var EXPORTED_SYMBOLS = ["ExtensionSettingsStore"];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
+const lazy = {};
+
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "AddonManager",
   "resource://gre/modules/AddonManager.jsm"
 );
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "JSONFile",
   "resource://gre/modules/JSONFile.jsm"
 );
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "ExtensionParent",
   "resource://gre/modules/ExtensionParent.jsm"
 );
@@ -96,7 +98,7 @@ function dataPostProcessor(json) {
 
 function initialize() {
   if (!_initializePromise) {
-    _store = new JSONFile({
+    _store = new lazy.JSONFile({
       path: STORE_PATH,
       dataPostProcessor,
     });
@@ -324,7 +326,7 @@ function alterSetting(id, type, key, action) {
   }
 
   _store.saveSoon();
-  ExtensionParent.apiManager.emit("extension-setting-changed", {
+  lazy.ExtensionParent.apiManager.emit("extension-setting-changed", {
     action,
     id,
     type,
@@ -409,7 +411,7 @@ var ExtensionSettingsStore = {
     let newInstall = false;
     if (foundIndex === -1) {
       
-      let addon = await AddonManager.getAddonByID(id);
+      let addon = await lazy.AddonManager.getAddonByID(id);
       keyInfo.precedenceList.push({
         id,
         installDate: addon.installDate.valueOf(),
@@ -631,7 +633,7 @@ var ExtensionSettingsStore = {
       }
       
       
-      let addon = await AddonManager.getAddonByID(id);
+      let addon = await lazy.AddonManager.getAddonByID(id);
       return !addon || keyInfo.selectedDate > addon.installDate.valueOf()
         ? "not_controllable"
         : "controllable_by_this_extension";
@@ -647,7 +649,7 @@ var ExtensionSettingsStore = {
       return "controlled_by_this_extension";
     }
 
-    let addon = await AddonManager.getAddonByID(id);
+    let addon = await lazy.AddonManager.getAddonByID(id);
     return !addon || topItem.installDate > addon.installDate.valueOf()
       ? "controlled_by_other_extensions"
       : "controllable_by_this_extension";
@@ -671,20 +673,23 @@ var ExtensionSettingsStore = {
 };
 
 
-ExtensionParent.apiManager.on("uninstall-complete", async (type, { id }) => {
-  
-  await ExtensionSettingsStore.initialize();
-  for (let type in _store.data) {
+lazy.ExtensionParent.apiManager.on(
+  "uninstall-complete",
+  async (type, { id }) => {
     
-    if (type === "prefs") {
-      continue;
-    }
-    let items = ExtensionSettingsStore.getAllForExtension(id, type);
-    for (let key of items) {
-      ExtensionSettingsStore.removeSetting(id, type, key);
-      Services.console.logStringMessage(
-        `Post-Uninstall removal of addon settings for ${id}, type: ${type} key: ${key}`
-      );
+    await ExtensionSettingsStore.initialize();
+    for (let type in _store.data) {
+      
+      if (type === "prefs") {
+        continue;
+      }
+      let items = ExtensionSettingsStore.getAllForExtension(id, type);
+      for (let key of items) {
+        ExtensionSettingsStore.removeSetting(id, type, key);
+        Services.console.logStringMessage(
+          `Post-Uninstall removal of addon settings for ${id}, type: ${type} key: ${key}`
+        );
+      }
     }
   }
-});
+);
