@@ -96,6 +96,14 @@ class SyncHistory {
   
 
 
+  async last() {
+    
+    return (await this.list())[0];
+  }
+
+  
+
+
   async clear() {
     const rkv = await this.#init();
     await rkv.clear();

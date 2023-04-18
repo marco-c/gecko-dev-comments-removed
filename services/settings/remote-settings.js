@@ -27,6 +27,7 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
   pushBroadcastService: "resource://gre/modules/PushBroadcastService.jsm",
   RemoteSettingsClient: "resource://services-settings/RemoteSettingsClient.jsm",
   SyncHistory: "resource://services-settings/SyncHistory.jsm",
+  Database: "resource://services-settings/Database.jsm",
   Utils: "resource://services-settings/Utils.jsm",
   FilterExpressions:
     "resource://gre/modules/components-utils/FilterExpressions.jsm",
@@ -71,6 +72,13 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "gPrefBrokenSyncThreshold",
   PREF_SETTINGS_BRANCH + PREF_SETTINGS_SYNC_HISTORY_ERROR_THRESHOLD,
   10
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "gPrefDestroyBrokenEnabled",
+  PREF_SETTINGS_BRANCH + "destroy_broken_db_enabled",
+  true
 );
 
 
@@ -248,6 +256,38 @@ function remoteSettingsFunction() {
         );
       } else {
         lazy.gPrefs.clearUserPref(PREF_SETTINGS_SERVER_BACKOFF);
+      }
+    }
+
+    
+    
+    if (
+      lazy.gPrefDestroyBrokenEnabled &&
+      trigger == "timer" &&
+      (await isSynchronizationBroken())
+    ) {
+      
+      
+      const lastStatus = await lazy.gSyncHistory.last();
+      const lastErrorClass =
+        lazy.RemoteSettingsClient[lastStatus?.infos?.errorName] || Error;
+      const isLocalError = !(
+        lastErrorClass.prototype instanceof lazy.RemoteSettingsClient.APIError
+      );
+      if (isLocalError) {
+        console.warn(
+          "Synchronization has failed consistently. Destroy database."
+        );
+        
+        lazy.gPrefs.clearUserPref(PREF_SETTINGS_LAST_ETAG);
+        
+        await lazy.gSyncHistory.clear().catch(error => Cu.reportError(error));
+        
+        await lazy.Database.destroy().catch(error => Cu.reportError(error));
+      } else {
+        console.warn(
+          `Synchronization is broken, but last error is ${lastStatus}`
+        );
       }
     }
 

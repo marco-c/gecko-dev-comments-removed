@@ -26,6 +26,10 @@ var EXPORTED_SYMBOLS = ["Database"];
 
 
 class Database {
+  static destroy() {
+    return destroyIDB();
+  }
+
   constructor(identifier) {
     ensureShutdownBlocker();
     this.identifier = identifier;
@@ -403,6 +407,35 @@ async function executeIDB(storeNames, callback, options = {}) {
     finishedFn = () => gPendingWriteOperations.delete(obj);
   }
   return promise.finally(finishedFn);
+}
+
+async function destroyIDB() {
+  if (gDB) {
+    if (gShutdownStarted || Services.startup.shuttingDown) {
+      throw new lazy.IDBHelpers.ShutdownError(
+        "The application is shutting down",
+        "destroyIDB()"
+      );
+    }
+
+    
+    
+    gDB.close();
+    const allTransactions = new Set([
+      ...gPendingWriteOperations,
+      ...gPendingReadOnlyTransactions,
+    ]);
+    for (let transaction of Array.from(allTransactions)) {
+      try {
+        transaction.abort();
+      } catch (ex) {
+        
+      }
+    }
+  }
+  gDB = null;
+  gDBPromise = null;
+  return lazy.IDBHelpers.destroyIDB();
 }
 
 function makeNestedObjectFromArr(arr, val, nestedFiltersObj) {
