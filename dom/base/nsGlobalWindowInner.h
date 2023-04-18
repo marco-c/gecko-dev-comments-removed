@@ -306,10 +306,9 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   EventTarget* GetTargetForDOMEvent() override;
 
   using mozilla::dom::EventTarget::DispatchEvent;
-  
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY bool DispatchEvent(
-      mozilla::dom::Event& aEvent, mozilla::dom::CallerType aCallerType,
-      mozilla::ErrorResult& aRv) override;
+  bool DispatchEvent(mozilla::dom::Event& aEvent,
+                     mozilla::dom::CallerType aCallerType,
+                     mozilla::ErrorResult& aRv) override;
 
   void GetEventTargetParent(mozilla::EventChainPreVisitor& aVisitor) override;
 

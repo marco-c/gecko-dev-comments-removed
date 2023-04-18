@@ -1076,10 +1076,9 @@ class nsINode : public mozilla::dom::EventTarget {
   virtual nsIGlobalObject* GetOwnerGlobal() const override;
 
   using mozilla::dom::EventTarget::DispatchEvent;
-  
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY bool DispatchEvent(
-      mozilla::dom::Event& aEvent, mozilla::dom::CallerType aCallerType,
-      mozilla::ErrorResult& aRv) override;
+  bool DispatchEvent(mozilla::dom::Event& aEvent,
+                     mozilla::dom::CallerType aCallerType,
+                     mozilla::ErrorResult& aRv) override;
 
   MOZ_CAN_RUN_SCRIPT
   nsresult PostHandleEvent(mozilla::EventChainPostVisitor& aVisitor) override;

@@ -1564,10 +1564,9 @@ class Document : public nsINode,
 
   void DispatchContentLoadedEvents();
 
-  
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void DispatchPageTransition(
-      EventTarget* aDispatchTarget, const nsAString& aType, bool aInFrameSwap,
-      bool aPersisted, bool aOnlySystemGroup);
+  void DispatchPageTransition(EventTarget* aDispatchTarget,
+                              const nsAString& aType, bool aInFrameSwap,
+                              bool aPersisted, bool aOnlySystemGroup);
 
   
   

@@ -166,25 +166,20 @@ class EventTarget : public nsISupports, public nsWrapperCache {
   
 
 
-  
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY virtual bool DispatchEvent(Event& aEvent,
-                                                         CallerType aCallerType,
-                                                         ErrorResult& aRv) = 0;
+  virtual bool DispatchEvent(Event& aEvent, CallerType aCallerType,
+                             ErrorResult& aRv) = 0;
 
   
 
 
 
-  
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void DispatchEvent(Event& aEvent);
+  void DispatchEvent(Event& aEvent);
 
   
 
 
 
-  
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void DispatchEvent(Event& aEvent,
-                                                 ErrorResult& aRv);
+  void DispatchEvent(Event& aEvent, ErrorResult& aRv);
 
   nsIGlobalObject* GetParentObject() const { return GetOwnerGlobal(); }
 

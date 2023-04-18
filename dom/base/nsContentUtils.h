@@ -3325,18 +3325,18 @@ class nsContentUtils {
                              JS::MutableHandle<JS::Value> vp,
                              bool aAllowWrapping);
 
-  
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY static nsresult DispatchEvent(
-      Document* aDoc, nsISupports* aTarget, const nsAString& aEventName,
-      CanBubble, Cancelable, Composed, Trusted, bool* aDefaultAction = nullptr,
-      ChromeOnlyDispatch = ChromeOnlyDispatch::eNo);
+  static nsresult DispatchEvent(Document* aDoc, nsISupports* aTarget,
+                                const nsAString& aEventName, CanBubble,
+                                Cancelable, Composed, Trusted,
+                                bool* aDefaultAction = nullptr,
+                                ChromeOnlyDispatch = ChromeOnlyDispatch::eNo);
 
-  
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY static nsresult DispatchEvent(
-      Document* aDoc, nsISupports* aTarget, mozilla::WidgetEvent& aWidgetEvent,
-      EventMessage aEventMessage, CanBubble, Cancelable, Trusted,
-      bool* aDefaultAction = nullptr,
-      ChromeOnlyDispatch = ChromeOnlyDispatch::eNo);
+  static nsresult DispatchEvent(Document* aDoc, nsISupports* aTarget,
+                                mozilla::WidgetEvent& aWidgetEvent,
+                                EventMessage aEventMessage, CanBubble,
+                                Cancelable, Trusted,
+                                bool* aDefaultAction = nullptr,
+                                ChromeOnlyDispatch = ChromeOnlyDispatch::eNo);
 
   static void InitializeModifierStrings();
 

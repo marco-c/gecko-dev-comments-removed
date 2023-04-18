@@ -407,11 +407,9 @@ class nsFrameLoader final : public nsStubMutationObserver,
   void ConfigRemoteProcess(const nsACString& aRemoteType,
                            mozilla::dom::ContentParent* aContentParent);
 
-  
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void MaybeNotifyCrashed(
-      mozilla::dom::BrowsingContext* aBrowsingContext,
-      mozilla::dom::ContentParentId aChildID,
-      mozilla::ipc::MessageChannel* aChannel);
+  void MaybeNotifyCrashed(mozilla::dom::BrowsingContext* aBrowsingContext,
+                          mozilla::dom::ContentParentId aChildID,
+                          mozilla::ipc::MessageChannel* aChannel);
 
   void FireErrorEvent();
 
