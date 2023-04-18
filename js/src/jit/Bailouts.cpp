@@ -268,16 +268,10 @@ bool jit::EnsureHasEnvironmentObjects(JSContext* cx, AbstractFramePtr fp) {
   
   MOZ_ASSERT(!fp.isEvalFrame());
 
-  if (fp.isFunctionFrame()) {
-    
-    
-    MOZ_ASSERT(!fp.callee()->needsExtraBodyVarEnvironment());
-
-    if (!fp.hasInitialEnvironment() &&
-        fp.callee()->needsFunctionEnvironmentObjects()) {
-      if (!fp.initFunctionEnvironmentObjects(cx)) {
-        return false;
-      }
+  if (fp.isFunctionFrame() && !fp.hasInitialEnvironment() &&
+      fp.callee()->needsFunctionEnvironmentObjects()) {
+    if (!fp.initFunctionEnvironmentObjects(cx)) {
+      return false;
     }
   }
 

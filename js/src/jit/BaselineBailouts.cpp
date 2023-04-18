@@ -622,9 +622,9 @@ bool BaselineStackBuilder::buildBaselineFrame() {
     envChain = &envChainSlot.toObject();
 
     
+    MOZ_ASSERT(!script_->isForEval());
     if (fun_ && fun_->needsFunctionEnvironmentObjects()) {
       MOZ_ASSERT(fun_->nonLazyScript()->initialEnvironmentShape());
-      MOZ_ASSERT(!fun_->needsExtraBodyVarEnvironment());
       flags |= BaselineFrame::HAS_INITIAL_ENV;
     }
   } else {
