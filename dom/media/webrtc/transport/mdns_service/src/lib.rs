@@ -204,7 +204,6 @@ fn handle_mdns_socket(
     hosts: &mut HashMap<String, Vec<u8>>,
     pending_queries: &mut HashMap<String, Query>,
 ) -> bool {
-
     
     gecko_profiler::add_untyped_marker(
         "handle_mdns_socket",
