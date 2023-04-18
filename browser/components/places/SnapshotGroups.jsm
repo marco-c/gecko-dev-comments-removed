@@ -11,6 +11,9 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  BackgroundPageThumbs: "resource://gre/modules/BackgroundPageThumbs.jsm",
+  PageThumbs: "resource://gre/modules/PageThumbs.jsm",
+  PlacesPreviews: "resource://gre/modules/PlacesPreviews.jsm",
   PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
   Services: "resource://gre/modules/Services.jsm",
   Snapshots: "resource:///modules/Snapshots.jsm",
@@ -92,6 +95,7 @@ const SnapshotGroups = new (class SnapshotGroups {
       }
     );
 
+    this.#prefetchScreenshotForGroup(id).catch(console.error);
     Services.obs.notifyObservers(null, "places-snapshot-group-added");
     return id;
   }
@@ -151,6 +155,7 @@ const SnapshotGroups = new (class SnapshotGroups {
       }
     );
 
+    this.#prefetchScreenshotForGroup(id).catch(console.error);
     Services.obs.notifyObservers(null, "places-snapshot-group-updated");
   }
 
@@ -210,7 +215,19 @@ const SnapshotGroups = new (class SnapshotGroups {
 
     let rows = await db.executeCached(
       `
-      SELECT g.id, g.title, g.builder, g.builder_data, COUNT(s.group_id) AS snapshot_count, MAX(sn.last_interaction_at) AS last_access
+      SELECT g.id, g.title, g.builder, g.builder_data,
+            COUNT(s.group_id) AS snapshot_count,
+            MAX(sn.last_interaction_at) AS last_access,
+            (SELECT group_concat(IFNULL(preview_image_url, ''), '|')
+                    || '|' ||
+                    group_concat(IFNULL(url, ''), '|')
+            FROM moz_places_metadata_snapshots sns
+            JOIN moz_places_metadata_groups_to_snapshots gs USING(place_id)
+            JOIN moz_places h ON h.id = gs.place_id
+            WHERE gs.group_id = g.id
+            ORDER BY sns.last_interaction_at ASC
+            LIMIT 2
+            ) AS image_urls
       FROM moz_places_metadata_snapshots_groups g
       LEFT JOIN moz_places_metadata_groups_to_snapshots s ON s.group_id = g.id
       LEFT JOIN moz_places_metadata_snapshots sn ON sn.place_id = s.place_id
@@ -269,6 +286,7 @@ const SnapshotGroups = new (class SnapshotGroups {
 
 
 
+
   async getSnapshots({
     id,
     startIndex = 0,
@@ -276,22 +294,26 @@ const SnapshotGroups = new (class SnapshotGroups {
     sortDescending = true,
     sortBy = "last_interaction_at",
   } = {}) {
+    if (!["last_visit_date", "last_interaction_at"].includes(sortBy)) {
+      throw new Error("Unknown sortBy value");
+    }
+    let start = Math.max(0, startIndex);
     let db = await PlacesUtils.promiseDBConnection();
     let urlRows = await db.executeCached(
       `
       SELECT h.url
       FROM moz_places_metadata_groups_to_snapshots s
+      JOIN moz_places_metadata_snapshots sn USING(place_id)
       JOIN moz_places h ON h.id = s.place_id
       WHERE s.group_id = :group_id
-      ORDER BY h.last_visit_date DESC
+      ORDER BY ${sortBy} ${sortDescending ? "DESC" : "ASC"}
+      LIMIT ${start + count}
     `,
       { group_id: id }
     );
 
     let snapshots = [];
     let urls = urlRows.map(row => row.getResultByName("url"));
-
-    let start = Math.max(0, startIndex);
     let end = Math.min(urls.length, count + start);
     for (let i = start; i < end; i++) {
       let snapShot = await Snapshots.get(urls[i]);
@@ -344,8 +366,34 @@ const SnapshotGroups = new (class SnapshotGroups {
 
 
   #translateSnapshotGroupRow(row) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    let imageUrls = row.getResultByName("image_urls")?.split("|");
+    let imageUrl = null;
+    if (imageUrls) {
+      imageUrl = imageUrls[0] || imageUrls[2];
+      if (!imageUrl) {
+        imageUrl = imageUrls[1];
+        if (PlacesPreviews.enabled) {
+          imageUrl = PlacesPreviews.getPageThumbURL(imageUrl);
+        } else {
+          imageUrl = PageThumbs.getThumbnailURL(imageUrl);
+        }
+      }
+    }
+
     let snapshotGroup = {
       id: row.getResultByName("id"),
+      imageUrl,
       title: row.getResultByName("title"),
       builder: row.getResultByName("builder"),
       builderMetadata: JSON.parse(row.getResultByName("builder_data")),
@@ -354,5 +402,27 @@ const SnapshotGroups = new (class SnapshotGroups {
     };
 
     return snapshotGroup;
+  }
+
+  
+
+
+
+
+  async #prefetchScreenshotForGroup(id) {
+    let url = (
+      await this.getSnapshots({
+        id,
+        start: 0,
+        count: 1,
+        sortBy: "last_interaction_at",
+        sortDescending: false,
+      })
+    )[0].url;
+    if (PlacesPreviews.enabled) {
+      await PlacesPreviews.update(url);
+    } else {
+      await BackgroundPageThumbs.captureIfMissing(url);
+    }
   }
 })();
