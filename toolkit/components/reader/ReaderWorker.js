@@ -10,6 +10,9 @@
 
 
 
+
+
+
 importScripts(
   "resource://gre/modules/workers/require.js",
   "resource://gre/modules/reader/JSDOMParser.js",
