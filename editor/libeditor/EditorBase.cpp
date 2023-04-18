@@ -460,8 +460,7 @@ nsresult EditorBase::PostCreateInternal() {
   }
 
   
-  if (RefPtr<Element> focusedElement =
-          Element::FromNodeOrNull(GetFocusedContent())) {
+  if (RefPtr<Element> focusedElement = GetFocusedElement()) {
     DebugOnly<nsresult> rvIgnored = InitializeSelection(*focusedElement);
     NS_WARNING_ASSERTION(
         NS_SUCCEEDED(rvIgnored),
@@ -718,8 +717,7 @@ NS_IMETHODIMP EditorBase::SetFlags(uint32_t aFlags) {
 
   
   
-  if (RefPtr<Element> focusedElement =
-          Element::FromNodeOrNull(GetFocusedContent())) {
+  if (RefPtr<Element> focusedElement = GetFocusedElement()) {
     IMEState newState;
     nsresult rv = GetPreferredIMEState(&newState);
     NS_WARNING_ASSERTION(
@@ -5366,7 +5364,7 @@ void EditorBase::ReinitializeSelection(Element& aElement) {
   if (NS_WARN_IF(!presContext)) {
     return;
   }
-  RefPtr<Element> focusedElement = Element::FromNodeOrNull(GetFocusedContent());
+  RefPtr<Element> focusedElement = GetFocusedElement();
   IMEStateManager::OnFocusInEditor(*presContext, focusedElement, *this);
 }
 
@@ -5527,9 +5525,9 @@ nsresult EditorBase::SetTextDirectionTo(TextDirection aTextDirection) {
   return NS_OK;
 }
 
-nsIContent* EditorBase::GetFocusedContent() const {
-  EventTarget* piTarget = GetDOMEventTarget();
-  if (!piTarget) {
+Element* EditorBase::GetFocusedElement() const {
+  EventTarget* eventTarget = GetDOMEventTarget();
+  if (!eventTarget) {
     return nullptr;
   }
 
@@ -5538,10 +5536,11 @@ nsIContent* EditorBase::GetFocusedContent() const {
     return nullptr;
   }
 
-  nsIContent* content = focusManager->GetFocusedElement();
-  MOZ_ASSERT((content == piTarget) == SameCOMIdentity(content, piTarget));
+  Element* focusedElement = focusManager->GetFocusedElement();
+  MOZ_ASSERT((focusedElement == eventTarget) ==
+             SameCOMIdentity(focusedElement, eventTarget));
 
-  return (content == piTarget) ? content : nullptr;
+  return (focusedElement == eventTarget) ? focusedElement : nullptr;
 }
 
 bool EditorBase::IsActiveInDOMWindow() const {
@@ -5574,11 +5573,8 @@ bool EditorBase::IsAcceptableInputEvent(WidgetGUIEvent* aGUIEvent) const {
 
   
   
-  if (aGUIEvent->IsUsingCoordinates()) {
-    nsIContent* focusedContent = GetFocusedContent();
-    if (!focusedContent) {
-      return false;
-    }
+  if (aGUIEvent->IsUsingCoordinates() && !GetFocusedElement()) {
+    return false;
   }
 
   

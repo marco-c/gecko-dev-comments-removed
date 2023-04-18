@@ -733,43 +733,41 @@ EditorSpellCheck::UpdateCurrentDictionary(
   nsresult rv;
 
   RefPtr<EditorSpellCheck> kungFuDeathGrip = this;
-  uint32_t flags = 0;
-  mEditor->GetFlags(&flags);
 
   
-  nsCOMPtr<nsIContent> rootContent;
-  if (HTMLEditor* htmlEditor = mEditor->GetAsHTMLEditor()) {
-    if (flags & nsIEditor::eEditorMailMask) {
-      
-      
-      rootContent = htmlEditor->GetActiveEditingHost();
-    } else {
-      rootContent = htmlEditor->GetFocusedContent();
+  const RefPtr<Element> rootEditableElement =
+      [](const EditorBase& aEditorBase) -> Element* {
+    if (!aEditorBase.IsHTMLEditor()) {
+      return aEditorBase.GetRoot();
     }
-  } else {
-    rootContent = mEditor->GetRoot();
-  }
-
-  if (!rootContent) {
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  if (flags & nsIEditor::eEditorMailMask) {
-    RefPtr<Document> ownerDoc = rootContent->OwnerDoc();
-    Document* parentDoc = ownerDoc->GetInProcessParentDocument();
-    if (parentDoc) {
-      rootContent = parentDoc->GetDocumentElement();
-      if (!rootContent) {
-        return NS_ERROR_FAILURE;
+    if (aEditorBase.IsMailEditor()) {
+      
+      
+      Element* const editingHost =
+          aEditorBase.AsHTMLEditor()->GetActiveEditingHost();
+      if (!editingHost) {
+        return nullptr;
       }
+      
+      
+      Document* parentDoc =
+          editingHost->OwnerDoc()->GetInProcessParentDocument();
+      if (!parentDoc) {
+        return editingHost;
+      }
+      return parentDoc->GetDocumentElement();
     }
+    return aEditorBase.AsHTMLEditor()->GetFocusedElement();
+  }(*mEditor);
+
+  if (!rootEditableElement) {
+    return NS_ERROR_FAILURE;
   }
 
   RefPtr<DictionaryFetcher> fetcher =
       new DictionaryFetcher(this, aCallback, mDictionaryFetcherGroup);
-  rootContent->GetLang(fetcher->mRootContentLang);
-  RefPtr<Document> doc = rootContent->GetComposedDoc();
+  rootEditableElement->GetLang(fetcher->mRootContentLang);
+  RefPtr<Document> doc = rootEditableElement->GetComposedDoc();
   NS_ENSURE_STATE(doc);
   doc->GetContentLanguage(fetcher->mRootDocContentLang);
 

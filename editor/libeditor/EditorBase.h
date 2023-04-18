@@ -574,7 +574,7 @@ class EditorBase : public nsIEditor,
   
 
 
-  virtual nsIContent* GetFocusedContent() const;
+  virtual Element* GetFocusedElement() const;
 
   
 
