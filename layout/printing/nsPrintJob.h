@@ -129,7 +129,6 @@ class nsPrintJob final : public nsIWebProgressListener,
   
   
   int32_t GetPrintPreviewNumSheets() const;
-  already_AddRefed<nsIPrintSettings> GetCurrentPrintSettings();
 
   
   void SetIsPrinting(bool aIsPrinting);
