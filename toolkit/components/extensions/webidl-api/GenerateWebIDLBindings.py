@@ -53,6 +53,9 @@ WEBEXT_TYPES_MAPPING = glbl["WEBEXT_TYPES_MAPPING"]
 WEBEXT_STUBS_MAPPING = glbl["WEBEXT_STUBS_MAPPING"]
 
 
+WEBEXT_WORKER_HIDDEN_SET = glbl["WEBEXT_WORKER_HIDDEN_SET"]
+
+
 WEBIDL_PRIMITIVE_TYPES = glbl["WEBIDL_PRIMITIVE_TYPES"]
 
 
@@ -318,6 +321,10 @@ class WebIDLHelpers:
         
         
         def should_include(api_entry):
+            if isinstance(
+                api_entry, APIFunction
+            ) and WebIDLHelpers.webext_method_hidden_in_worker(api_entry):
+                return False
             if api_entry.is_mv2_only:
                 return False
             return "content_only" not in api_entry.get_allowed_contexts()
@@ -543,6 +550,16 @@ class WebIDLHelpers:
             )
 
         return browser_webidl
+
+    @classmethod
+    def webext_method_hidden_in_worker(cls, api_fun, schema_group=None):
+        """
+        Determine if a method should be hidden in the generated webidl
+        for a worker global.
+        """
+        cls.expect_instance(api_fun, APIFunction)
+        api_path = ".".join([*api_fun.path])
+        return api_path in WEBEXT_WORKER_HIDDEN_SET
 
     @classmethod
     def webext_method_stub(cls, api_fun, schema_group=None):
