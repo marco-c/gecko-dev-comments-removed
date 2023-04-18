@@ -5477,6 +5477,7 @@ static void locked_profiler_start(PSLockRef aLock, PowerOfTwo32 aCapacity,
   mozilla::base_profiler_markers_detail::EnsureBufferForMainThreadAddMarker();
 
   UniquePtr<ProfileBufferChunkManagerWithLocalLimit> baseChunkManager;
+  bool profilersHandOver = false;
   if (baseprofiler::profiler_is_active()) {
     
     
@@ -5486,6 +5487,13 @@ static void locked_profiler_start(PSLockRef aLock, PowerOfTwo32 aCapacity,
     
     
     baseChunkManager = baseprofiler::detail::ExtractBaseProfilerChunkManager();
+
+    if (baseChunkManager) {
+      profilersHandOver = true;
+      BASE_PROFILER_MARKER_TEXT(
+          "Profilers handover", PROFILER, MarkerTiming::IntervalStart(),
+          "Transition from Base to Gecko Profiler, some data may be missing");
+    }
 
     
     
@@ -5610,6 +5618,11 @@ static void locked_profiler_start(PSLockRef aLock, PowerOfTwo32 aCapacity,
 
   
   RacyFeatures::SetActive(ActivePS::Features(aLock));
+
+  if (profilersHandOver) {
+    PROFILER_MARKER_UNTYPED("Profilers handover", PROFILER,
+                            MarkerTiming::IntervalEnd());
+  }
 }
 
 void profiler_start(PowerOfTwo32 aCapacity, double aInterval,
