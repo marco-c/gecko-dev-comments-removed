@@ -483,7 +483,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
    final Pref<Boolean> mInputAutoZoom = new Pref<>("formhelper.autozoom", true);
    final Pref<Boolean> mDoubleTapZooming =
       new Pref<>("apz.allow_double_tap_zooming", true);
-   final Pref<Integer> mGlMsaaLevel = new Pref<>("gl.msaa-level", 0);
+   final Pref<Integer> mGlMsaaLevel = new Pref<>("webgl.msaa-samples", 4);
    final Pref<Boolean> mTelemetryEnabled =
       new Pref<>("toolkit.telemetry.geckoview.streaming", false);
    final Pref<String> mGeckoViewLogLevel = new Pref<>("geckoview.logging", "Debug");
