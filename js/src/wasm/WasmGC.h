@@ -105,7 +105,7 @@ struct StackMap final {
   
   
   
-  static_assert(FrameWithTls::sizeOf() / sizeof(void*) <= 8);
+  static_assert(FrameWithInstances::sizeOf() / sizeof(void*) <= 8);
   static_assert(maxFrameOffsetFromTop >=
                     (MaxParams * MaxParamSize / sizeof(void*)) + 16,
                 "limited size of the offset field");

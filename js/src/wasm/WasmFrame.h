@@ -365,51 +365,53 @@ static_assert(sizeof(Frame) == 2 * sizeof(void*),
 
 
 
-class FrameWithTls : public Frame {
+class FrameWithInstances : public Frame {
   
   
 
   
-  Instance* calleeTls_;
-  Instance* callerTls_;
+  Instance* calleeInstance_;
+  Instance* callerInstance_;
 
  public:
-  Instance* calleeTls() { return calleeTls_; }
-  Instance* callerTls() { return callerTls_; }
+  Instance* calleeInstance() { return calleeInstance_; }
+  Instance* callerInstance() { return callerInstance_; }
 
   constexpr static uint32_t sizeOf() {
-    return sizeof(wasm::FrameWithTls) + js::jit::ShadowStackSpace;
+    return sizeof(wasm::FrameWithInstances) + js::jit::ShadowStackSpace;
   }
 
-  constexpr static uint32_t sizeOfTlsFields() {
-    return sizeof(wasm::FrameWithTls) - sizeof(wasm::Frame);
+  constexpr static uint32_t sizeOfInstanceFields() {
+    return sizeof(wasm::FrameWithInstances) - sizeof(wasm::Frame);
   }
 
-  constexpr static uint32_t calleeTlsOffset() {
-    return offsetof(FrameWithTls, calleeTls_) + js::jit::ShadowStackSpace;
+  constexpr static uint32_t calleeInstanceOffset() {
+    return offsetof(FrameWithInstances, calleeInstance_) +
+           js::jit::ShadowStackSpace;
   }
 
-  constexpr static uint32_t calleeTlsOffsetWithoutFrame() {
-    return calleeTlsOffset() - sizeof(wasm::Frame);
+  constexpr static uint32_t calleeInstanceOffsetWithoutFrame() {
+    return calleeInstanceOffset() - sizeof(wasm::Frame);
   }
 
-  constexpr static uint32_t callerTlsOffset() {
-    return offsetof(FrameWithTls, callerTls_) + js::jit::ShadowStackSpace;
+  constexpr static uint32_t callerInstanceOffset() {
+    return offsetof(FrameWithInstances, callerInstance_) +
+           js::jit::ShadowStackSpace;
   }
 
-  constexpr static uint32_t callerTlsOffsetWithoutFrame() {
-    return callerTlsOffset() - sizeof(wasm::Frame);
+  constexpr static uint32_t callerInstanceOffsetWithoutFrame() {
+    return callerInstanceOffset() - sizeof(wasm::Frame);
   }
 };
 
-static_assert(FrameWithTls::calleeTlsOffsetWithoutFrame() ==
+static_assert(FrameWithInstances::calleeInstanceOffsetWithoutFrame() ==
                   js::jit::ShadowStackSpace,
               "Callee tls stored right above the return address.");
-static_assert(FrameWithTls::callerTlsOffsetWithoutFrame() ==
+static_assert(FrameWithInstances::callerInstanceOffsetWithoutFrame() ==
                   js::jit::ShadowStackSpace + sizeof(void*),
               "Caller tls stored right above the callee tls.");
 
-static_assert(FrameWithTls::sizeOfTlsFields() == 2 * sizeof(void*),
+static_assert(FrameWithInstances::sizeOfInstanceFields() == 2 * sizeof(void*),
               "There are only two additional slots");
 
 #if defined(JS_CODEGEN_ARM64)

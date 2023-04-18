@@ -820,8 +820,8 @@ static bool GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe,
   masm.movePtr(ImmWord(0), FramePointer);
   masm.loadWasmPinnedRegsFromTls();
 
-  masm.storePtr(InstanceReg,
-                Address(masm.getStackPointer(), WasmCalleeTlsOffsetBeforeCall));
+  masm.storePtr(InstanceReg, Address(masm.getStackPointer(),
+                                         WasmCalleeInstanceOffsetBeforeCall));
 
   
   
@@ -1279,8 +1279,8 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
   
   masm.loadWasmPinnedRegsFromTls();
 
-  masm.storePtr(InstanceReg,
-                Address(masm.getStackPointer(), WasmCalleeTlsOffsetBeforeCall));
+  masm.storePtr(InstanceReg, Address(masm.getStackPointer(),
+                                         WasmCalleeInstanceOffsetBeforeCall));
 
   
   
@@ -1601,8 +1601,8 @@ void wasm::GenerateDirectCallFromJit(MacroAssembler& masm, const FuncExport& fe,
 
   
   masm.movePtr(ImmPtr(&inst), InstanceReg);
-  masm.storePtr(InstanceReg,
-                Address(masm.getStackPointer(), WasmCalleeTlsOffsetBeforeCall));
+  masm.storePtr(InstanceReg, Address(masm.getStackPointer(),
+                                         WasmCalleeInstanceOffsetBeforeCall));
   masm.loadWasmPinnedRegsFromTls();
 
   
@@ -1745,7 +1745,7 @@ static void FillArgumentArrayForInterpExit(MacroAssembler& masm,
                                            Register scratch) {
   
   
-  const unsigned offsetFromFPToCallerStackArgs = sizeof(FrameWithTls);
+  const unsigned offsetFromFPToCallerStackArgs = sizeof(FrameWithInstances);
 
   GenPrintf(DebugChannel::Import, masm, "wasm-import[%u]; arguments ",
             funcImportIndex);
@@ -1841,7 +1841,7 @@ static void FillArgumentArrayForJitExit(MacroAssembler& masm, Register tls,
 
   
   
-  const unsigned offsetFromFPToCallerStackArgs = sizeof(FrameWithTls);
+  const unsigned offsetFromFPToCallerStackArgs = sizeof(FrameWithInstances);
 
   
   
@@ -2635,7 +2635,7 @@ bool wasm::GenerateBuiltinThunk(MacroAssembler& masm, ABIFunctionType abiType,
 
   
   
-  unsigned offsetFromFPToCallerStackArgs = sizeof(FrameWithTls);
+  unsigned offsetFromFPToCallerStackArgs = sizeof(FrameWithInstances);
   Register scratch = ABINonArgReturnReg0;
   for (ABIArgIter i(args); !i.done(); i++) {
     if (i->argInRegister()) {
