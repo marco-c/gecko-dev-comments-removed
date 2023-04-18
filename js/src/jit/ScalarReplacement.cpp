@@ -959,6 +959,16 @@ static bool IsArrayEscaped(MInstruction* ins, MInstruction* newArray) {
         break;
       }
 
+      
+      case MDefinition::Opcode::Compare: {
+        bool canFold;
+        if (!def->toCompare()->tryFold(&canFold)) {
+          JitSpewDef(JitSpew_Escape, "has an unsupported compare\n", def);
+          return true;
+        }
+        break;
+      }
+
       case MDefinition::Opcode::PostWriteBarrier:
       case MDefinition::Opcode::PostWriteElementBarrier:
         break;
@@ -1038,6 +1048,7 @@ class ArrayMemoryView : public MDefinitionVisitorDefaultNoop {
   void visitGuardToClass(MGuardToClass* ins);
   void visitGuardArrayIsPacked(MGuardArrayIsPacked* ins);
   void visitUnbox(MUnbox* ins);
+  void visitCompare(MCompare* ins);
   void visitApplyArray(MApplyArray* ins);
   void visitConstructArray(MConstructArray* ins);
 };
@@ -1385,6 +1396,25 @@ void ArrayMemoryView::visitUnbox(MUnbox* ins) {
 
   
   ins->replaceAllUsesWith(arr_);
+
+  
+  ins->block()->discard(ins);
+}
+
+void ArrayMemoryView::visitCompare(MCompare* ins) {
+  
+  if (ins->lhs() != arr_ && ins->rhs() != arr_) {
+    return;
+  }
+
+  bool folded;
+  MOZ_ALWAYS_TRUE(ins->tryFold(&folded));
+
+  auto* cst = MConstant::New(alloc_, BooleanValue(folded));
+  ins->block()->insertBefore(ins, cst);
+
+  
+  ins->replaceAllUsesWith(cst);
 
   
   ins->block()->discard(ins);
@@ -2003,6 +2033,7 @@ class RestReplacer : public MDefinitionVisitorDefaultNoop {
   void visitGuardShape(MGuardShape* ins);
   void visitGuardArrayIsPacked(MGuardArrayIsPacked* ins);
   void visitUnbox(MUnbox* ins);
+  void visitCompare(MCompare* ins);
   void visitLoadElement(MLoadElement* ins);
   void visitArrayLength(MArrayLength* ins);
   void visitInitializedLength(MInitializedLength* ins);
@@ -2114,6 +2145,16 @@ bool RestReplacer::escapes(MInstruction* ins) {
         }
         if (escapes(def->toInstruction())) {
           JitSpewDef(JitSpew_Escape, "is indirectly escaped by\n", def);
+          return true;
+        }
+        break;
+      }
+
+      
+      case MDefinition::Opcode::Compare: {
+        bool canFold;
+        if (!def->toCompare()->tryFold(&canFold)) {
+          JitSpewDef(JitSpew_Escape, "has an unsupported compare\n", def);
           return true;
         }
         break;
@@ -2289,6 +2330,25 @@ void RestReplacer::visitUnbox(MUnbox* ins) {
 
   
   ins->replaceAllUsesWith(rest_);
+
+  
+  ins->block()->discard(ins);
+}
+
+void RestReplacer::visitCompare(MCompare* ins) {
+  
+  if (ins->lhs() != rest_ && ins->rhs() != rest_) {
+    return;
+  }
+
+  bool folded;
+  MOZ_ALWAYS_TRUE(ins->tryFold(&folded));
+
+  auto* cst = MConstant::New(alloc(), BooleanValue(folded));
+  ins->block()->insertBefore(ins, cst);
+
+  
+  ins->replaceAllUsesWith(cst);
 
   
   ins->block()->discard(ins);

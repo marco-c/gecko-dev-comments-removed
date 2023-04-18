@@ -744,7 +744,6 @@ uint32_t BytecodeParser::simulateOp(JSOp op, uint32_t offset,
     case JSOp::IsGenClosing:
     case JSOp::IsNoIter:
     case JSOp::MoreIter:
-    case JSOp::OptimizeSpreadCall:
       
       MOZ_ASSERT(nuses == 1);
       MOZ_ASSERT(ndefs == 2);
@@ -2148,8 +2147,6 @@ bool ExpressionDecompiler::decompilePC(jsbytecode* pc, uint8_t defIndex) {
         return write("OBJ");
 
       case JSOp::OptimizeSpreadCall:
-        
-        MOZ_ASSERT(defIndex == 1);
         return write("OPTIMIZED");
 
       case JSOp::Rest:
