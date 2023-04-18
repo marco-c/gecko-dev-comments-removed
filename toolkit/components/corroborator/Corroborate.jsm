@@ -2,10 +2,6 @@
 
 
 
-const { AppConstants } = ChromeUtils.import(
-  "resource://gre/modules/AppConstants.jsm"
-);
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
@@ -20,19 +16,7 @@ var EXPORTED_SYMBOLS = ["Corroborate"];
 
 
 this.Corroborate = {
-  async init() {
-    
-    
-    
-    
-    let mismatchedOmnijar =
-      Services.appinfo.platformBuildID != AppConstants.MOZ_BUILDID;
-
-    Services.telemetry.scalarSet(
-      "corroborate.omnijar_mismatch",
-      mismatchedOmnijar
-    );
-  },
+  async init() {},
 
   
 
