@@ -2,6 +2,8 @@
 
 
 
+
+
 "use strict";
 
 const { ActorClassWithSpec, Actor } = require("devtools/shared/protocol");
@@ -1463,10 +1465,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
   clearMessagesCache: function() {
     if (isWorker) {
       
-      
-      
-      
-      
+      clearConsoleEvents();
       return;
     }
 
