@@ -23,35 +23,23 @@ async function getAndExpireCookiesForDefaultPathTest() {
 
 
 
-async function getRedirectedCookies(location, cookie) {
+async function getAndExpireCookiesForRedirectTest(location) {
   return new Promise((resolve, reject) => {
     try {
       const iframe = document.createElement('iframe');
       iframe.style = 'display: none';
       iframe.src = location;
-
+      const listener = (e) => {
+        if (typeof e.data == 'object' && 'cookies' in e.data) {
+          window.removeEventListener('message', listener);
+          document.documentElement.removeChild(iframe);
+          resolve(e.data.cookies);
+        }
+      };
+      window.addEventListener('message', listener);
       iframe.addEventListener('load', (e) => {
-        const win = e.target.contentWindow;
-        let iframeCookie;
-        
-        win.postMessage('getCookies', '*');
-
-        
-        
-        window.addEventListener('message', (e) => {
-          if (typeof e.data == 'object' && 'cookies' in e.data) {
-            iframeCookie = e.data.cookies;
-            e.source.postMessage({'expireCookie': cookie}, '*');
-          }
-
-          
-          
-          if (e.data == 'expired') {
-            resolve(iframeCookie);
-          }
-        });
+        e.target.contentWindow.postMessage('getAndExpireCookiesForRedirectTest', '*');
       }, {once: true});
-
       document.documentElement.appendChild(iframe);
     } catch (e) {
       reject(e);
@@ -96,21 +84,26 @@ function httpCookieTest(cookie, expectedValue, name, defaultPath = true) {
 
 
 
+
+
+
 function httpRedirectCookieTest(cookie, expectedValue, name, location) {
   return promise_test(async (t) => {
+    
+    await getAndExpireCookiesForRedirectTest(location);
+
     const encodedCookie = encodeURIComponent(JSON.stringify(cookie));
     const encodedLocation = encodeURIComponent(location);
     const setParams = `?set=${encodedCookie}&location=${encodedLocation}`;
     await fetch(`/cookies/resources/cookie.py${setParams}`);
     
     
-    const cookies = await getRedirectedCookies(location, cookie);
+    const cookies = await getAndExpireCookiesForRedirectTest(location);
     if (Boolean(expectedValue)) {
       assert_equals(cookies, expectedValue, 'The cookie was set as expected.');
     } else {
       assert_equals(cookies, expectedValue, 'The cookie was rejected.');
     }
-    await fetch(`/cookies/resources/cookie.py?drop=${encodedCookie}`);
   }, name);
 }
 
