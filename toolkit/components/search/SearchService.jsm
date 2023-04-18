@@ -742,14 +742,15 @@ SearchService.prototype = {
         }
 
         policy = await this._getExtensionPolicy(engine._extensionID);
-        manifest = policy.extension.manifest;
         locale =
           replacementEngines[0].webExtension.locale || SearchUtils.DEFAULT_TAG;
-        if (locale != SearchUtils.DEFAULT_TAG) {
-          manifest = await policy.extension.getLocalizedManifest(locale);
-        }
+        manifest = await this._getManifestForLocale(policy.extension, locale);
+
+        
+        
+        
         if (
-          manifest.name !=
+          engine.name !=
           manifest.chrome_settings_overrides.search_provider.name.trim()
         ) {
           
@@ -767,12 +768,8 @@ SearchService.prototype = {
         
         
         policy = await this._getExtensionPolicy(engine._extensionID);
-
-        manifest = policy.extension.manifest;
-        locale = engine._locale || SearchUtils.DEFAULT_TAG;
-        if (locale != SearchUtils.DEFAULT_TAG) {
-          manifest = await policy.extension.getLocalizedManifest(locale);
-        }
+        locale = engine._locale;
+        manifest = await this._getManifestForLocale(policy.extension, locale);
       }
       engine._updateFromManifest(
         policy.extension.id,
@@ -1767,11 +1764,8 @@ SearchService.prototype = {
     let extensionEngines = await this.getEnginesByExtensionID(extension.id);
 
     for (let engine of extensionEngines) {
-      let manifest = extension.manifest;
       let locale = engine._locale || SearchUtils.DEFAULT_TAG;
-      if (locale != SearchUtils.DEFAULT_TAG) {
-        manifest = await extension.getLocalizedManifest(locale);
-      }
+      let manifest = await this._getManifestForLocale(extension, locale);
       let configuration =
         engines.find(
           e =>
@@ -1827,10 +1821,7 @@ SearchService.prototype = {
         ? config.webExtension.locale
         : SearchUtils.DEFAULT_TAG;
 
-    let manifest = policy.extension.manifest;
-    if (locale != SearchUtils.DEFAULT_TAG) {
-      manifest = await policy.extension.getLocalizedManifest(locale);
-    }
+    let manifest = await this._getManifestForLocale(policy.extension, locale);
 
     let engine = new SearchEngine({
       name: manifest.chrome_settings_overrides.search_provider.name.trim(),
@@ -1851,10 +1842,7 @@ SearchService.prototype = {
     logConsole.debug("installExtensionEngine:", extension.id);
 
     let installLocale = async locale => {
-      let manifest =
-        locale == SearchUtils.DEFAULT_TAG
-          ? extension.manifest
-          : await extension.getLocalizedManifest(locale);
+      let manifest = await this._getManifestForLocale(extension, locale);
       return this._addEngineForManifest(
         extension,
         manifest,
@@ -2919,6 +2907,40 @@ SearchService.prototype = {
       prevCurrentEngine,
       newCurrentEngine
     );
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async _getManifestForLocale(extension, locale) {
+    let manifest = extension.manifest;
+
+    
+    
+    
+    
+    
+    let localeToLoad =
+      locale == SearchUtils.DEFAULT_TAG ? manifest.default_locale : locale;
+
+    if (localeToLoad) {
+      manifest = await extension.getLocalizedManifest(localeToLoad);
+    }
+    return manifest;
   },
 };
 
