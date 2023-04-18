@@ -4,10 +4,9 @@
 
 
 
-#include "ActorsChild.h"
-
 #include <type_traits>
 
+#include "ActorsChild.h"
 #include "BackgroundChildImpl.h"
 #include "IDBDatabase.h"
 #include "IDBEvents.h"
@@ -901,7 +900,7 @@ nsresult GetFileHandleResult(const RefPtr<IDBFileRequest>& aFileRequest,
   }
 
   nsString tmpString;
-  Tie(rv, Ignore) = encoding->Decode(data, tmpString);
+  std::tie(rv, std::ignore) = encoding->Decode(data, tmpString);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return NS_ERROR_DOM_FILEHANDLE_UNKNOWN_ERR;
   }
