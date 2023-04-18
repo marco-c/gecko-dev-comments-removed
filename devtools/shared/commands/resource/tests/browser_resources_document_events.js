@@ -171,7 +171,7 @@ async function testDocumentEventResourcesWithIgnoreExistingResources() {
   info(
     "Wait for will-navigate, dom-loading, dom-interactive and dom-complete events"
   );
-  await waitUntil(() => documentEvents.length === 4);
+  await waitFor(() => documentEvents.length === 4);
   assertEvents({ commands, targetBeforeNavigation, documentEvents });
 
   await commands.destroy();
@@ -195,11 +195,11 @@ async function testIframeNavigation() {
     }
   );
   let iframeTarget;
-  if (isFissionEnabled()) {
+  if (isFissionEnabled() || isEveryFrameTargetEnabled()) {
     is(
       documentEvents.length,
       6,
-      "With fission, we get two targets and two sets of events: dom-loading, dom-interactive, dom-complete"
+      "With fission/EFT, we get two targets and two sets of events: dom-loading, dom-interactive, dom-complete"
     );
     [, iframeTarget] = await commands.targetCommand.getAllTargets([
       commands.targetCommand.TYPES.FRAME,
@@ -237,12 +237,12 @@ async function testIframeNavigation() {
   });
 
   
-  if (isFissionEnabled()) {
-    await waitUntil(() => documentEvents.length >= 4);
+  if (isFissionEnabled() || isEveryFrameTargetEnabled()) {
+    await waitFor(() => documentEvents.length >= 4);
     is(
       documentEvents.length,
       4,
-      "With fission, we switch to a new target and get a will-navigate followed by a new set of events: dom-loading, dom-interactive, dom-complete"
+      "With fission/EFT, we switch to a new target and get a will-navigate followed by a new set of events: dom-loading, dom-interactive, dom-complete"
     );
     const [, newIframeTarget] = await commands.targetCommand.getAllTargets([
       commands.targetCommand.TYPES.FRAME,
@@ -307,14 +307,17 @@ async function testBfCacheNavigation() {
   gBrowser.goBack();
 
   
-  if (isFissionEnabled() && isBfCacheInParentEnabled()) {
+  if (
+    (isFissionEnabled() || isEveryFrameTargetEnabled()) &&
+    isBfCacheInParentEnabled()
+  ) {
     await onSwitched;
   }
 
   info(
     "Wait for will-navigate, dom-loading, dom-interactive and dom-complete events"
   );
-  await waitUntil(() => documentEvents.length >= 4);
+  await waitFor(() => documentEvents.length >= 4);
   
 
   assertEvents({
@@ -425,14 +428,14 @@ async function testCrossOriginNavigation() {
   await onLoaded;
 
   
-  if (isFissionEnabled()) {
+  if (isFissionEnabled() || isEveryFrameTargetEnabled()) {
     await onSwitched;
   }
 
   info(
     "Wait for will-navigate, dom-loading, dom-interactive and dom-complete events"
   );
-  await waitUntil(() => documentEvents.length >= 4);
+  await waitFor(() => documentEvents.length >= 4);
   assertEvents({ commands, targetBeforeNavigation, documentEvents });
 
   

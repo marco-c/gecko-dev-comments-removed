@@ -9,6 +9,11 @@ const {
 } = require("devtools/server/actors/resources/index");
 const { Ci } = require("chrome");
 const ChromeUtils = require("ChromeUtils");
+const Services = require("Services");
+const isEveryFrameTargetEnabled = Services.prefs.getBoolPref(
+  "devtools.every-frame-target.enabled",
+  false
+);
 const {
   getAllRemoteBrowsingContexts,
 } = require("devtools/server/actors/watcher/target-helpers/utils.js");
@@ -126,9 +131,11 @@ class ParentProcessDocumentEventWatcher {
     const isDocument = flag & Ci.nsIWebProgressListener.STATE_IS_DOCUMENT;
     if (isDocument && isStart) {
       const { browsingContext } = progress;
-
       
-      if (!browsingContext.currentWindowGlobal.isProcessRoot) {
+      if (
+        !browsingContext.currentWindowGlobal.isProcessRoot &&
+        !isEveryFrameTargetEnabled
+      ) {
         return;
       }
       
