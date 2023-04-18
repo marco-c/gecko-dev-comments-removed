@@ -640,13 +640,9 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
     NS_ProcessPendingEvents(thread);
 
     
-    
     nsTimerImpl::Shutdown();
 
     NS_ProcessPendingEvents(thread);
-
-    mozilla::KillClearOnShutdown(ShutdownPhase::XPCOMShutdownLoaders);
-    
 
     
     

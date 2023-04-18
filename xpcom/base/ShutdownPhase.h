@@ -21,7 +21,6 @@ enum class ShutdownPhase {
   XPCOMWillShutdown,
   XPCOMShutdown,
   XPCOMShutdownThreads,
-  XPCOMShutdownLoaders,
   XPCOMShutdownFinal,
   CCPostLastCycleCollection,
   ShutdownPhase_Length,         
