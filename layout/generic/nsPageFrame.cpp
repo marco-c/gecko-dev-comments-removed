@@ -55,7 +55,13 @@ nsReflowStatus nsPageFrame::ReflowPageContent(
   
   
   
-
+  const nsSize pageSize = ComputePageSize();
+  
+  
+  
+  
+  
+  const float pageSizeScale = ComputePageSizeScale(pageSize);
   
   
   
@@ -63,7 +69,7 @@ nsReflowStatus nsPageFrame::ReflowPageContent(
   
   
   
-  nsSize availableSpace = ComputePageSize();
+  nsSize availableSpace = pageSize;
 
   
   
@@ -95,6 +101,13 @@ nsReflowStatus nsPageFrame::ReflowPageContent(
   kidReflowInput.mFlags.mTableIsSplittable = true;
 
   nsMargin defaultMargins = aPresContext->GetDefaultPageMargin();
+  
+  
+  
+  for (const auto side : mozilla::AllPhysicalSides()) {
+    defaultMargins.Side(side) =
+        NSToCoordRound((float)defaultMargins.Side(side) / pageSizeScale);
+  }
   mPageContentMargin = defaultMargins;
 
   
@@ -115,8 +128,13 @@ nsReflowStatus nsPageFrame::ReflowPageContent(
         if (computed == 0) {
           mPageContentMargin.Side(side) = 0;
         } else {
+          
+          
+          
+          const int32_t unwriteableTwips =
+              mPD->mPrintSettings->GetUnwriteableMarginInTwips().Side(side);
           const nscoord unwriteable = nsPresContext::CSSTwipsToAppUnits(
-              mPD->mPrintSettings->GetUnwriteableMarginInTwips().Side(side));
+              (float)unwriteableTwips / pageSizeScale);
           mPageContentMargin.Side(side) = std::max(
               kidReflowInput.ComputedPhysicalMargin().Side(side), unwriteable);
         }
