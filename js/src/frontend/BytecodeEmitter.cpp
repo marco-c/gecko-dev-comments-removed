@@ -1101,7 +1101,13 @@ restart:
       return true;
 
     
-    case ParseNodeKind::NewTargetExpr:
+    case ParseNodeKind::NewTargetExpr: {
+      MOZ_ASSERT(pn->is<NewTargetNode>());
+      *answer = false;
+      return true;
+    }
+
+    
     case ParseNodeKind::ImportMetaExpr: {
       MOZ_ASSERT(pn->as<BinaryNode>().left()->isKind(ParseNodeKind::PosHolder));
       MOZ_ASSERT(
@@ -6218,6 +6224,13 @@ bool BytecodeEmitter::emitCheckDerivedClassConstructorReturn() {
     return false;
   }
   if (!emit1(JSOp::SetRval)) {
+    return false;
+  }
+  return true;
+}
+
+bool BytecodeEmitter::emitNewTarget(NewTargetNode* pn) {
+  if (!emit1(JSOp::NewTarget)) {
     return false;
   }
   return true;
@@ -11738,7 +11751,7 @@ bool BytecodeEmitter::emitTree(
       break;
 
     case ParseNodeKind::NewTargetExpr:
-      if (!emit1(JSOp::NewTarget)) {
+      if (!emitNewTarget(&pn->as<NewTargetNode>())) {
         return false;
       }
       break;
