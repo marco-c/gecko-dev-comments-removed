@@ -22,8 +22,7 @@ class nsIInputStream;
 class nsIPrincipal;
 class nsIUDPSocketInternal;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class UDPSocketChildBase : public nsISupports {
  public:
@@ -105,7 +104,6 @@ class UDPSocketChild : public mozilla::net::PUDPSocketChild,
   nsCString mFilterName;
 };
 
-}  
 }  
 
 #endif  

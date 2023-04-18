@@ -10,8 +10,7 @@
 #include "js/TypeDecls.h"
 #include "nsTArray.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 nsresult SerializeFromJSObject(JSContext* aCx, JS::HandleObject aObject,
                                nsAString& aSerializedObject);
@@ -25,7 +24,6 @@ nsresult DeserializeToJSObject(const nsAString& aSerializedObject,
 nsresult DeserializeToJSValue(const nsAString& aSerializedObject,
                               JSContext* aCx, JS::MutableHandleValue aValue);
 
-}  
 }  
 
 #endif

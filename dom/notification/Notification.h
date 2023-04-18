@@ -23,8 +23,7 @@
 class nsIPrincipal;
 class nsIVariant;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class NotificationRef;
 class WorkerNotificationObserver;
@@ -363,7 +362,6 @@ class Notification : public DOMEventTargetHelper,
   uint32_t mTaskCount;
 };
 
-}  
 }  
 
 #endif  

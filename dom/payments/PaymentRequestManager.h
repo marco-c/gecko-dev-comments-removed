@@ -15,8 +15,7 @@
 #include "nsCOMPtr.h"
 #include "nsTArray.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class PaymentRequestChild;
 class IPCMethodChangeDetails;
@@ -97,7 +96,6 @@ class PaymentRequestManager final {
   nsTArray<nsString> mSupportedRegions;
 };
 
-}  
 }  
 
 #endif

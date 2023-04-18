@@ -11,11 +11,11 @@
 #include "nsString.h"
 #include "nsWrapperCache.h"
 #include "nsAtom.h"
+#include "mozilla/dom/PerformanceObserverBinding.h"
 
 class nsISupports;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 class PerformanceResourceTiming;
 
 
@@ -46,7 +46,7 @@ class PerformanceEntry : public nsISupports, public nsWrapperCache {
     }
   }
 
-  const nsAtom* GetEntryType() { return mEntryType; }
+  const nsAtom* GetEntryType() const { return mEntryType; }
 
   void SetEntryType(const nsAString& aEntryType) {
     mEntryType = NS_Atomize(aEntryType);
@@ -59,6 +59,11 @@ class PerformanceEntry : public nsISupports, public nsWrapperCache {
   virtual const PerformanceResourceTiming* ToResourceTiming() const {
     return nullptr;
   }
+
+  virtual bool ShouldAddEntryToObserverBuffer(
+      PerformanceObserverInit& aOption) const;
+
+  virtual void BufferEntryIfNeeded() {}
 
   virtual size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
@@ -87,7 +92,6 @@ class MOZ_STACK_CLASS PerformanceEntryComparator final {
   }
 };
 
-}  
 }  
 
 #endif 

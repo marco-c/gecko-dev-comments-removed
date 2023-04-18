@@ -10,8 +10,7 @@
 #include "nsPIDOMWindow.h"
 #include "nsWrapperCache.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class PaymentAddress final : public nsISupports, public nsWrapperCache {
  public:
@@ -72,7 +71,6 @@ class PaymentAddress final : public nsISupports, public nsWrapperCache {
   nsCOMPtr<nsPIDOMWindowInner> mOwner;
 };
 
-}  
 }  
 
 #endif  

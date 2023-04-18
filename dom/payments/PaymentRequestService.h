@@ -13,8 +13,7 @@
 #include "nsTArray.h"
 #include "PaymentRequestData.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -57,7 +56,6 @@ class PaymentRequestService final : public nsIPaymentRequestService {
   RefPtr<payments::PaymentRequest> mShowingRequest;
 };
 
-}  
 }  
 
 #endif

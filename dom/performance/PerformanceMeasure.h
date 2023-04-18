@@ -9,8 +9,7 @@
 
 #include "mozilla/dom/PerformanceEntry.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 class PerformanceMeasure final : public PerformanceEntry {
@@ -35,7 +34,6 @@ class PerformanceMeasure final : public PerformanceEntry {
   DOMHighResTimeStamp mDuration;
 };
 
-}  
 }  
 
 #endif 
