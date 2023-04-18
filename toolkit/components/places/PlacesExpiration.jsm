@@ -39,11 +39,12 @@ const TOPIC_TEST_INTERVAL_CHANGED = "test-interval-changed";
 
 
 
+const DATABASE_MEMORY_CONSTRAINED_THRESHOLD = 2147483648; 
 
-const DATABASE_TO_MEMORY_PERC = 4;
 
 
-const DATABASE_TO_DISK_PERC = 2;
+const DATABASE_DISK_CONSTRAINED_THRESHOLD = 5368709120; 
+
 
 
 const DATABASE_MAX_SIZE = 78643200; 
@@ -688,11 +689,17 @@ nsPlacesExpiration.prototype = {
       diskAvailableBytes = DISKSIZE_FALLBACK_BYTES;
     }
 
-    let optimalDatabaseSize = Math.min(
-      (memSizeBytes * DATABASE_TO_MEMORY_PERC) / 100,
-      (diskAvailableBytes * DATABASE_TO_DISK_PERC) / 100,
-      DATABASE_MAX_SIZE
-    );
+    const isMemoryConstrained =
+      memSizeBytes < DATABASE_MEMORY_CONSTRAINED_THRESHOLD;
+    const isDiskConstrained =
+      diskAvailableBytes < DATABASE_DISK_CONSTRAINED_THRESHOLD;
+
+    let optimalDatabaseSize = DATABASE_MAX_SIZE;
+    if (isMemoryConstrained || isDiskConstrained) {
+      
+      
+      optimalDatabaseSize /= 2;
+    }
 
     
     let db;
