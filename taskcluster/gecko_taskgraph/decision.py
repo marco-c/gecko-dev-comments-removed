@@ -51,7 +51,9 @@ PER_PROJECT_PARAMETERS = {
         "target_tasks_method": "default",
     },
     "cedar": {
-        "target_tasks_method": "default",
+        
+        "target_tasks_method": "cedar_tasks",
+        "release_type": "nightly-cedar",
     },
     "oak": {
         "target_tasks_method": "nightly_desktop",
