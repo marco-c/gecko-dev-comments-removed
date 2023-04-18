@@ -4,8 +4,15 @@
 
 from __future__ import absolute_import
 
+from urllib.parse import quote
+
+from marionette_driver import errors, Wait
 from marionette_driver.keys import Keys
 from marionette_harness import MarionetteTestCase, WindowManagerMixin
+
+
+def inline(doc):
+    return "data:text/html;charset=utf-8,{}".format(quote(doc))
 
 
 class SessionStoreTestCase(WindowManagerMixin, MarionetteTestCase):
@@ -28,16 +35,16 @@ class SessionStoreTestCase(WindowManagerMixin, MarionetteTestCase):
             [
                 
                 
-                (self.marionette.absolute_url("layout/mozilla.html"),),
+                (inline("""<div">Lorem</div>"""),),
                 
                 (
-                    self.marionette.absolute_url("layout/mozilla_organizations.html"),
-                    self.marionette.absolute_url("layout/mozilla_community.html"),
+                    inline("""<div">ipsum</div>"""),
+                    inline("""<div">dolor</div>"""),
                 ),
                 
                 (
-                    self.marionette.absolute_url("layout/mozilla_governance.html"),
-                    self.marionette.absolute_url("layout/mozilla_grants.html"),
+                    inline("""<div">sit</div>"""),
+                    inline("""<div">amet</div>"""),
                 ),
             ]
         )
@@ -45,12 +52,12 @@ class SessionStoreTestCase(WindowManagerMixin, MarionetteTestCase):
         self.private_windows = set(
             [
                 (
-                    self.marionette.absolute_url("layout/mozilla_mission.html"),
-                    self.marionette.absolute_url("layout/mozilla_organizations.html"),
+                    inline("""<div">consectetur</div>"""),
+                    inline("""<div">ipsum</div>"""),
                 ),
                 (
-                    self.marionette.absolute_url("layout/mozilla_projects.html"),
-                    self.marionette.absolute_url("layout/mozilla_mission.html"),
+                    inline("""<div">adipiscing</div>"""),
+                    inline("""<div">consectetur</div>"""),
                 ),
             ]
         )
@@ -150,6 +157,24 @@ class SessionStoreTestCase(WindowManagerMixin, MarionetteTestCase):
                         tab = self.open_tab()
                         self.marionette.switch_to_window(tab)
                     self.marionette.navigate(url)
+
+    def wait_for_windows(self, expected_windows, message, timeout=5):
+        current_windows = None
+
+        def check(_):
+            nonlocal current_windows
+            current_windows = self.convert_open_windows_to_set()
+            return current_windows == expected_windows
+
+        try:
+            wait = Wait(self.marionette, timeout=timeout, interval=0.1)
+            wait.until(check, message=message)
+        except errors.TimeoutException as e:
+            
+            message = (
+                f"{e.message}. Expected {expected_windows}, got {current_windows}."
+            )
+            raise errors.TimeoutException(message)
 
     def get_urls_for_window(self, win):
         orig_handle = self.marionette.current_chrome_window_handle
@@ -376,16 +401,10 @@ class SessionStoreTestCase(WindowManagerMixin, MarionetteTestCase):
         finally:
             self.marionette.instance.app_args = saved_args
 
-        current_windows_set = self.convert_open_windows_to_set()
         if expect_restore:
-            self.assertEqual(
-                current_windows_set,
+            self.wait_for_windows(
                 self.test_windows,
-                msg="""Non private browsing windows should have
-                             been restored. Expected {}, got {}.
-                             """.format(
-                    self.test_windows, current_windows_set
-                ),
+                "Non private browsing windows should have been restored",
             )
         else:
             self.assertEqual(
