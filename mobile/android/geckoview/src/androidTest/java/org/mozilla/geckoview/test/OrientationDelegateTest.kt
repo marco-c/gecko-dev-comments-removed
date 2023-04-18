@@ -47,7 +47,7 @@ class OrientationDelegateTest : BaseSessionTest() {
 
     private fun lockPortrait() {
         val promise = mainSession.evaluatePromiseJS("screen.orientation.lock('portrait-primary')")
-        sessionRule.delegateDuringNextWait(object : OrientationController.OrientationDelegate {
+        sessionRule.waitUntilCalled(object : OrientationController.OrientationDelegate {
             @AssertCalled(count = 1)
             override fun onOrientationLock(aOrientation: Int): GeckoResult<AllowOrDeny> {
                 assertThat(
@@ -63,13 +63,11 @@ class OrientationDelegateTest : BaseSessionTest() {
         })
         sessionRule.runtime.orientationChanged(Configuration.ORIENTATION_PORTRAIT)
         promise.value
-        
-        mainSession.waitForRoundTrip()
     }
 
     private fun lockLandscape() {
         val promise = mainSession.evaluatePromiseJS("screen.orientation.lock('landscape-primary')")
-        sessionRule.delegateDuringNextWait(object : OrientationController.OrientationDelegate {
+        sessionRule.waitUntilCalled(object : OrientationController.OrientationDelegate {
             @AssertCalled(count = 1)
             override fun onOrientationLock(aOrientation: Int): GeckoResult<AllowOrDeny> {
                 assertThat(
@@ -85,8 +83,6 @@ class OrientationDelegateTest : BaseSessionTest() {
         })
         sessionRule.runtime.orientationChanged(Configuration.ORIENTATION_LANDSCAPE)
         promise.value
-        
-        mainSession.waitForRoundTrip()
     }
 
     @Test fun orientationLock() {
@@ -148,7 +144,7 @@ class OrientationDelegateTest : BaseSessionTest() {
         goFullscreen()
 
         val promise = mainSession.evaluatePromiseJS("screen.orientation.lock('landscape-primary')")
-        sessionRule.delegateDuringNextWait(object : OrientationController.OrientationDelegate {
+        sessionRule.waitUntilCalled(object : OrientationController.OrientationDelegate {
             @AssertCalled(count = 1)
             override fun onOrientationLock(aOrientation: Int): GeckoResult<AllowOrDeny> {
                 assertThat(
@@ -164,8 +160,6 @@ class OrientationDelegateTest : BaseSessionTest() {
         })
         sessionRule.runtime.orientationChanged(Configuration.ORIENTATION_LANDSCAPE)
         promise.value
-        
-        mainSession.waitForRoundTrip()
 
         
         mainSession.evaluateJS("screen.orientation.unlock()")
