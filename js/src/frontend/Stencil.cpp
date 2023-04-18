@@ -2382,6 +2382,44 @@ bool SharedDataContainer::prepareStorageFor(JSContext* cx,
   return true;
 }
 
+bool SharedDataContainer::cloneFrom(JSContext* cx,
+                                    const SharedDataContainer& other) {
+  MOZ_ASSERT(isEmpty());
+
+  if (other.isBorrow()) {
+    return cloneFrom(cx, *other.asBorrow());
+  }
+
+  if (other.isSingle()) {
+    
+    RefPtr<SharedImmutableScriptData> ref(other.asSingle());
+    setSingle(ref.forget());
+  } else if (other.isVector()) {
+    if (!initVector(cx)) {
+      return false;
+    }
+    if (!asVector()->appendAll(*other.asVector())) {
+      ReportOutOfMemory(cx);
+      return false;
+    }
+  } else if (other.isMap()) {
+    if (!initMap(cx)) {
+      return false;
+    }
+    auto& otherMap = *other.asMap();
+    if (!asMap()->reserve(otherMap.count())) {
+      ReportOutOfMemory(cx);
+      return false;
+    }
+    auto& map = *asMap();
+    for (auto iter = otherMap.iter(); !iter.done(); iter.next()) {
+      auto& entry = iter.get();
+      map.putNewInfallible(entry.key(), entry.value());
+    }
+  }
+  return true;
+}
+
 js::SharedImmutableScriptData* SharedDataContainer::get(
     ScriptIndex index) const {
   if (isSingle()) {
@@ -2739,9 +2777,25 @@ bool ExtensibleCompilationStencil::steal(JSContext* cx,
     }
   }
 
-  sharedData = std::move(other->sharedData);
-  moduleMetadata = std::move(other->moduleMetadata);
-  asmJS = std::move(other->asmJS);
+  if (storageType == StorageType::Borrowed) {
+    
+    
+    
+    
+    if (!sharedData.cloneFrom(cx, other->sharedData)) {
+      return false;
+    }
+
+    
+    
+    
+    moduleMetadata = other->moduleMetadata;
+    asmJS = other->asmJS;
+  } else {
+    sharedData = std::move(other->sharedData);
+    moduleMetadata = std::move(other->moduleMetadata);
+    asmJS = std::move(other->asmJS);
+  }
 
 #ifdef DEBUG
   assertNoExternalDependency();
@@ -4331,6 +4385,10 @@ bool CompilationStencilMerger::addDelazification(
                        mapAtomIndex, mapScopeIndex,
                        i == CompilationStencil::TopLevelIndex);
   }
+
+  
+  
+  
 
   
   MOZ_ASSERT(!delazification.moduleMetadata);
