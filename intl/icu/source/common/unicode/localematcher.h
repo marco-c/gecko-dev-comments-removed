@@ -465,9 +465,9 @@ public:
 
 
 
-        Builder &setDirection(ULocMatchDirection direction) {
+        Builder &setDirection(ULocMatchDirection matchDirection) {
             if (U_SUCCESS(errorCode_)) {
-                direction_ = direction;
+                direction_ = matchDirection;
             }
             return *this;
         }

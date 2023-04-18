@@ -22,6 +22,7 @@
 #include "unicode/parseerr.h"
 #include "unicode/plurrule.h"
 #include "unicode/ucurr.h"
+#include "unicode/unounclass.h"
 #include "unicode/unum.h"
 #include "unicode/unumberformatter.h"
 #include "unicode/uobject.h"
@@ -640,6 +641,33 @@ class U_I18N_API Precision : public UMemory {
 
     static IncrementPrecision increment(double roundingIncrement);
 
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static IncrementPrecision incrementExact(uint64_t mantissa, int16_t magnitude);
+#endif 
+
     
 
 
@@ -659,7 +687,6 @@ class U_I18N_API Precision : public UMemory {
 
     static CurrencyPrecision currency(UCurrencyUsage currencyUsage);
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -668,7 +695,6 @@ class U_I18N_API Precision : public UMemory {
 
 
     Precision trailingZeroDisplay(UNumberTrailingZeroDisplay trailingZeroDisplay) const;
-#endif 
 
   private:
     enum PrecisionType {
@@ -707,16 +733,23 @@ class U_I18N_API Precision : public UMemory {
             impl::digits_t fMaxSig;
             
             UNumberRoundingPriority fPriority;
+            
+
+
+
+            bool fRetain;
         } fracSig;
         
         struct IncrementSettings {
             
             
-            double fIncrement;
+            
+            
+            uint64_t fIncrement;
+            
+            impl::digits_t fIncrementMagnitude;
             
             impl::digits_t fMinFrac;
-            
-            impl::digits_t fMaxFrac;
         } increment;
         UCurrencyUsage currencyUsage; 
         UErrorCode errorCode; 
@@ -759,9 +792,10 @@ class U_I18N_API Precision : public UMemory {
         const FractionPrecision &base,
         int32_t minSig,
         int32_t maxSig,
-        UNumberRoundingPriority priority);
+        UNumberRoundingPriority priority,
+        bool retain);
 
-    static IncrementPrecision constructIncrement(double increment, int32_t minFrac);
+    static IncrementPrecision constructIncrement(uint64_t increment, impl::digits_t magnitude);
 
     static CurrencyPrecision constructCurrency(UCurrencyUsage usage);
 
@@ -801,7 +835,6 @@ class U_I18N_API Precision : public UMemory {
 
 class U_I18N_API FractionPrecision : public Precision {
   public:
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -820,7 +853,6 @@ class U_I18N_API FractionPrecision : public Precision {
         int32_t minSignificantDigits,
         int32_t maxSignificantDigits,
         UNumberRoundingPriority priority) const;
-#endif 
 
     
 
@@ -1175,25 +1207,26 @@ namespace impl {
 
 
 
+
 class U_I18N_API StringProp : public UMemory {
 
-#ifndef U_HIDE_INTERNAL_API
-
   public:
+    
+    ~StringProp();
+
     
     StringProp(const StringProp &other);
 
     
     StringProp &operator=(const StringProp &other);
 
+#ifndef U_HIDE_INTERNAL_API
+
     
     StringProp(StringProp &&src) U_NOEXCEPT;
 
     
     StringProp &operator=(StringProp &&src) U_NOEXCEPT;
-
-    
-    ~StringProp();
 
     
     int16_t length() const {
@@ -2735,14 +2768,20 @@ class U_I18N_API FormattedNumber : public UMemory, public FormattedValue {
 
     MeasureUnit getOutputUnit(UErrorCode& status) const;
 
-#ifndef U_HIDE_INTERNAL_API
+#ifndef U_HIDE_DRAFT_API
+
     
 
 
 
 
 
-    const char *getGender(UErrorCode& status) const;
+
+    NounClass getNounClass(UErrorCode &status) const;
+
+#endif 
+
+#ifndef U_HIDE_INTERNAL_API
 
     
 
@@ -2757,6 +2796,18 @@ class U_I18N_API FormattedNumber : public UMemory, public FormattedValue {
     void getAllFieldPositionsImpl(FieldPositionIteratorHandler& fpih, UErrorCode& status) const;
 
 #endif  
+
+#ifndef U_HIDE_DEPRECATED_API
+
+    
+
+
+
+
+
+    const char *getGender(UErrorCode &status) const;
+
+#endif 
 
   private:
     

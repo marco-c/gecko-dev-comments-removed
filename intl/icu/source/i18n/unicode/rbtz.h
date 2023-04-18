@@ -303,7 +303,6 @@ public:
     virtual void getTimeZoneRules(const InitialTimeZoneRule*& initial,
         const TimeZoneRule* trsrules[], int32_t& trscount, UErrorCode& status) const override;
 
-#ifndef U_FORCE_HIDE_DRAFT_API
     
 
 
@@ -312,7 +311,6 @@ public:
         UDate date, UTimeZoneLocalOption nonExistingTimeOpt,
         UTimeZoneLocalOption duplicatedTimeOpt,
         int32_t& rawOffset, int32_t& dstOffset, UErrorCode& status) const override;
-#endif 
 
 private:
     void deleteRules(void);

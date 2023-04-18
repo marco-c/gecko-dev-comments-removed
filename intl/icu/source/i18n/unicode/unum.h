@@ -303,7 +303,6 @@ typedef enum UNumberFormatRoundingMode {
 
 
     UNUM_ROUND_UNNECESSARY,
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -319,7 +318,6 @@ typedef enum UNumberFormatRoundingMode {
 
 
     UNUM_ROUND_HALF_FLOOR,
-#endif  
 } UNumberFormatRoundingMode;
 
 
@@ -401,15 +399,24 @@ typedef enum UNumberFormatFields {
     UNUM_MEASURE_UNIT_FIELD,
     
     UNUM_COMPACT_FIELD,
+#ifndef U_HIDE_DRAFT_API
+    
+
+
 
     UNUM_APPROXIMATELY_SIGN_FIELD,
+#endif 
 
 #ifndef U_HIDE_DEPRECATED_API
     
 
 
 
-    UNUM_FIELD_COUNT = UNUM_SIGN_FIELD + 4
+#ifndef U_HIDE_DRAFT_API
+    UNUM_FIELD_COUNT = UNUM_COMPACT_FIELD + 2
+#else  
+    UNUM_FIELD_COUNT = UNUM_COMPACT_FIELD + 1
+#endif  
 #endif  
 } UNumberFormatFields;
 
@@ -1526,6 +1533,6 @@ unum_setContext(UNumberFormat* fmt, UDisplayContext value, UErrorCode* status);
 U_CAPI UDisplayContext U_EXPORT2
 unum_getContext(const UNumberFormat *fmt, UDisplayContextType type, UErrorCode* status);
 
-#endif 
+#endif
 
 #endif
