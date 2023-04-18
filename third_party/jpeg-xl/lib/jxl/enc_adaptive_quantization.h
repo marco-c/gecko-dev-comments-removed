@@ -35,7 +35,7 @@ namespace jxl {
 
 
 ImageBundle RoundtripImage(const Image3F& opsin, PassesEncoderState* enc_state,
-                           const JxlCmsInterface& cms, ThreadPool* pool);
+                           ThreadPool* pool);
 
 
 
@@ -57,8 +57,7 @@ void AdjustQuantField(const AcStrategyImage& ac_strategy, const Rect& rect,
 
 
 void FindBestQuantizer(const ImageBundle* linear, const Image3F& opsin,
-                       PassesEncoderState* enc_state,
-                       const JxlCmsInterface& cms, ThreadPool* pool,
+                       PassesEncoderState* enc_state, ThreadPool* pool,
                        AuxOut* aux_out, double rescale = 1.0);
 
 }  

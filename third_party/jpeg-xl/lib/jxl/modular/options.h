@@ -37,10 +37,7 @@ enum class Predictor : uint32_t {
       15,  
 };
 
-constexpr size_t kNumModularPredictors =
-    static_cast<size_t>(Predictor::Average4) + 1;
-constexpr size_t kNumModularEncoderPredictors =
-    static_cast<size_t>(Predictor::Variable) + 1;
+constexpr size_t kNumModularPredictors = static_cast<size_t>(Predictor::Best);
 
 static constexpr ssize_t kNumStaticProperties = 2;  
 

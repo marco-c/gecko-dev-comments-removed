@@ -93,7 +93,6 @@ struct EntropyEncodingData {
 
 
 struct Token {
-  Token() {}
   Token(uint32_t c, uint32_t value)
       : is_lz77_length(false), context(c), value(value) {}
   uint32_t is_lz77_length : 1;

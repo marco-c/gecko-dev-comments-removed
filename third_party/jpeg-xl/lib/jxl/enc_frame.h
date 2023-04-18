@@ -20,9 +20,6 @@ namespace jxl {
 
 
 
-
-
-
 struct FrameInfo {
   
   bool save_before_color_transform = false;
@@ -38,26 +35,6 @@ struct FrameInfo {
   bool is_preview = false;
   
   size_t save_as_reference = 0;
-  
-  
-  
-  
-  
-  
-  
-  size_t source = 1;
-  
-  size_t clamp = 1;
-  
-  
-  
-  int alpha_channel = -1;
-
-  
-  
-  
-  
-  std::vector<BlendingInfo> extra_channel_blending_info;
 };
 
 
@@ -67,8 +44,7 @@ struct FrameInfo {
 Status EncodeFrame(const CompressParams& cparams_orig,
                    const FrameInfo& frame_info, const CodecMetadata* metadata,
                    const ImageBundle& ib, PassesEncoderState* passes_enc_state,
-                   const JxlCmsInterface& cms, ThreadPool* pool,
-                   BitWriter* writer, AuxOut* aux_out);
+                   ThreadPool* pool, BitWriter* writer, AuxOut* aux_out);
 
 }  
 

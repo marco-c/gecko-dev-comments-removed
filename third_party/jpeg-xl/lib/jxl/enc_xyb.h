@@ -24,18 +24,18 @@ namespace jxl {
 
 
 const ImageBundle* ToXYB(const ImageBundle& in, ThreadPool* pool,
-                         Image3F* JXL_RESTRICT xyb, const JxlCmsInterface& cms,
+                         Image3F* JXL_RESTRICT xyb,
                          ImageBundle* JXL_RESTRICT linear = nullptr);
 
 
 
 
-Status RgbToYcbcr(const ImageF& r_plane, const ImageF& g_plane,
-                  const ImageF& b_plane, ImageF* y_plane, ImageF* cb_plane,
-                  ImageF* cr_plane, ThreadPool* pool);
+void RgbToYcbcr(const ImageF& r_plane, const ImageF& g_plane,
+                const ImageF& b_plane, ImageF* y_plane, ImageF* cb_plane,
+                ImageF* cr_plane, ThreadPool* pool);
 
 
-Image3F OpsinDynamicsImage(const Image3B& srgb8, const JxlCmsInterface& cms);
+Image3F OpsinDynamicsImage(const Image3B& srgb8);
 
 
 void TestCubeRoot();

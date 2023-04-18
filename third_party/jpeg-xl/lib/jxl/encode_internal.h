@@ -21,15 +21,12 @@ namespace jxl {
 
 
 
-typedef struct JxlEncoderFrameSettingsValuesStruct {
+typedef struct JxlEncoderOptionsValuesStruct {
   
   
   bool lossless;
   CompressParams cparams;
-  JxlFrameHeader header;
-  std::vector<JxlBlendInfo> extra_channel_blend_info;
-  std::string frame_name;
-} JxlEncoderFrameSettingsValues;
+} JxlEncoderOptionsValues;
 
 typedef std::array<uint8_t, 4> BoxType;
 
@@ -49,7 +46,7 @@ constexpr unsigned char kContainerHeader[] = {
 constexpr unsigned char kLevelBoxHeader[] = {0, 0, 0, 0x9, 'j', 'x', 'l', 'l'};
 
 struct JxlEncoderQueuedFrame {
-  JxlEncoderFrameSettingsValues option_values;
+  JxlEncoderOptionsValues option_values;
   ImageBundle frame;
 };
 
@@ -109,9 +106,7 @@ struct JxlEncoderStruct {
   JxlMemoryManager memory_manager;
   jxl::MemoryManagerUniquePtr<jxl::ThreadPool> thread_pool{
       nullptr, jxl::MemoryManagerDeleteHelper(&memory_manager)};
-  JxlCmsInterface cms;
-  std::vector<jxl::MemoryManagerUniquePtr<JxlEncoderFrameSettings>>
-      encoder_options;
+  std::vector<jxl::MemoryManagerUniquePtr<JxlEncoderOptions>> encoder_options;
 
   size_t num_queued_frames;
   size_t num_queued_boxes;
@@ -162,9 +157,9 @@ struct JxlEncoderStruct {
   void AppendBoxHeader(const jxl::BoxType& type, size_t size, bool unbounded);
 };
 
-struct JxlEncoderFrameSettingsStruct {
+struct JxlEncoderOptionsStruct {
   JxlEncoder* enc;
-  jxl::JxlEncoderFrameSettingsValues values;
+  jxl::JxlEncoderOptionsValues values;
 };
 
 #endif  

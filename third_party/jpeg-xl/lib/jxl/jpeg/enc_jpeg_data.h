@@ -21,8 +21,7 @@ Status SetColorEncodingFromJpegData(const jpeg::JPEGData& jpg,
 
 
 
-Status DecodeImageJPG(Span<const uint8_t> bytes, CodecInOut* io);
-
+Status DecodeImageJPG(const Span<const uint8_t> bytes, CodecInOut* io);
 }  
 }  
 

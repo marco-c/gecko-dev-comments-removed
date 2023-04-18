@@ -17,8 +17,8 @@ namespace jxl {
 
 
 Status TransformIfNeeded(const ImageBundle& in, const ColorEncoding& c_desired,
-                         const JxlCmsInterface& cms, ThreadPool* pool,
-                         ImageBundle* store, const ImageBundle** out);
+                         ThreadPool* pool, ImageBundle* store,
+                         const ImageBundle** out);
 
 }  
 

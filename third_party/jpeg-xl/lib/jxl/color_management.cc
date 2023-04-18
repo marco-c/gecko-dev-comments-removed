@@ -3,6 +3,12 @@
 
 
 
+
+
+#ifndef JPEGXL_ENABLE_SKCMS
+#define JPEGXL_ENABLE_SKCMS 0
+#endif
+
 #include "lib/jxl/color_management.h"
 
 #include <math.h>

@@ -13,8 +13,7 @@
 
 #include <string>
 
-#include "lib/extras/dec/color_hints.h"
-#include "lib/extras/dec/decode.h"
+#include "lib/extras/color_hints.h"
 #include "lib/jxl/base/compiler_specific.h"
 #include "lib/jxl/base/data_parallel.h"
 #include "lib/jxl/base/padded_bytes.h"
@@ -27,29 +26,60 @@
 namespace jxl {
 
 
+enum class Codec : uint32_t {
+  kUnknown,  
+  kPNG,
+  kPNM,
+  kPGX,
+  kJPG,
+  kGIF,
+  kEXR,
+  kPSD
+};
 
-Status SetFromBytes(Span<const uint8_t> bytes,
-                    const extras::ColorHints& color_hints, CodecInOut* io,
-                    ThreadPool* pool = nullptr,
-                    extras::Codec* orig_codec = nullptr);
-
-JXL_INLINE Status SetFromBytes(const Span<const uint8_t> bytes, CodecInOut* io,
-                               ThreadPool* pool = nullptr,
-                               extras::Codec* orig_codec = nullptr) {
-  return SetFromBytes(bytes, extras::ColorHints(), io, pool, orig_codec);
+static inline constexpr uint64_t EnumBits(Codec ) {
+  
+  return MakeBit(Codec::kPNM) | MakeBit(Codec::kPNG)
+#if JPEGXL_ENABLE_JPEG
+         | MakeBit(Codec::kJPG)
+#endif
+#if JPEGXL_ENABLE_EXR
+         | MakeBit(Codec::kEXR)
+#endif
+         | MakeBit(Codec::kPSD);
 }
 
 
-Status SetFromFile(const std::string& pathname,
-                   const extras::ColorHints& color_hints, CodecInOut* io,
-                   ThreadPool* pool = nullptr,
-                   extras::Codec* orig_codec = nullptr);
+std::string ExtensionFromCodec(Codec codec, bool is_gray,
+                               size_t bits_per_sample);
 
 
 
-Status Encode(const CodecInOut& io, extras::Codec codec,
-              const ColorEncoding& c_desired, size_t bits_per_sample,
-              PaddedBytes* bytes, ThreadPool* pool = nullptr);
+Codec CodecFromExtension(const std::string& extension,
+                         size_t* JXL_RESTRICT bits_per_sample);
+
+
+
+Status SetFromBytes(const Span<const uint8_t> bytes,
+                    const ColorHints& color_hints, CodecInOut* io,
+                    ThreadPool* pool, Codec* orig_codec);
+
+JXL_INLINE Status SetFromBytes(const Span<const uint8_t> bytes, CodecInOut* io,
+                               ThreadPool* pool = nullptr,
+                               Codec* orig_codec = nullptr) {
+  return SetFromBytes(bytes, ColorHints(), io, pool, orig_codec);
+}
+
+
+Status SetFromFile(const std::string& pathname, const ColorHints& color_hints,
+                   CodecInOut* io, ThreadPool* pool = nullptr,
+                   Codec* orig_codec = nullptr);
+
+
+
+Status Encode(const CodecInOut& io, Codec codec, const ColorEncoding& c_desired,
+              size_t bits_per_sample, PaddedBytes* bytes,
+              ThreadPool* pool = nullptr);
 
 
 Status EncodeToFile(const CodecInOut& io, const ColorEncoding& c_desired,

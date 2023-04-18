@@ -44,10 +44,6 @@ struct DecompressParams {
   bool allow_partial_files = false;
   
   bool allow_more_progressive_steps = false;
-
-  
-  
-  bool use_slow_render_pipeline = false;
 };
 
 }  

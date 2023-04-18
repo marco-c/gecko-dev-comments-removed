@@ -16,7 +16,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "jxl/cms_interface.h"
 #include "jxl/codestream_header.h"
 #include "jxl/color_encoding.h"
 #include "jxl/jxl_export.h"
@@ -282,21 +281,7 @@ typedef enum {
 
 
 
-
   JXL_DEC_BOX = 0x4000,
-
-  
-
-
-
-
-
-
-
-
-
-
-  JXL_DEC_FRAME_PROGRESSION = 0x8000,
 } JxlDecoderStatus;
 
 
@@ -423,9 +408,8 @@ JXL_EXPORT JxlDecoderStatus JxlDecoderSubscribeEvents(JxlDecoder* dec,
 
 
 
-
 JXL_EXPORT JxlDecoderStatus
-JxlDecoderSetKeepOrientation(JxlDecoder* dec, JXL_BOOL skip_reorientation);
+JxlDecoderSetKeepOrientation(JxlDecoder* dec, JXL_BOOL keep_orientation);
 
 
 
@@ -1152,20 +1136,6 @@ JXL_EXPORT JxlDecoderStatus JxlDecoderGetBoxType(JxlDecoder* dec,
 
 JXL_EXPORT JxlDecoderStatus JxlDecoderGetBoxSizeRaw(const JxlDecoder* dec,
                                                     uint64_t* size);
-
-
-
-
-
-
-
-
-
-
-
-
-JXL_EXPORT void JxlDecoderSetProgressiveDetail(JxlDecoder* dec,
-                                               uint32_t detail);
 
 
 

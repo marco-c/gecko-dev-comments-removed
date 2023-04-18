@@ -22,7 +22,6 @@
 #include "lib/jxl/image.h"
 #include "lib/jxl/passes_state.h"
 #include "lib/jxl/quant_weights.h"
-#include "lib/jxl/render_pipeline/render_pipeline.h"
 #include "lib/jxl/sanitizers.h"
 
 namespace jxl {
@@ -106,13 +105,6 @@ struct PassesDecoderState {
 
   
   GroupBorderAssigner group_border_assigner;
-
-  
-  
-  std::unique_ptr<RenderPipeline> render_pipeline;
-
-  
-  ImageBundle frame_storage_for_referencing;
 
   
   
@@ -287,7 +279,7 @@ struct PassesDecoderState {
   }
 
   
-  Status InitForAC(ThreadPool* pool) {
+  void InitForAC(ThreadPool* pool) {
     shared_storage.coeff_order_size = 0;
     for (uint8_t o = 0; o < AcStrategy::kNumValidStrategies; ++o) {
       if (((1 << o) & used_acs) == 0) continue;
@@ -301,23 +293,21 @@ struct PassesDecoderState {
     if (sz > shared_storage.coeff_orders.size()) {
       shared_storage.coeff_orders.resize(sz);
     }
-    if (shared->frame_header.flags & FrameHeader::kNoise && !render_pipeline) {
+    if (shared->frame_header.flags & FrameHeader::kNoise) {
       noise = Image3F(shared->frame_dim.xsize_upsampled_padded,
                       shared->frame_dim.ysize_upsampled_padded);
       size_t num_x_groups = DivCeil(noise.xsize(), kGroupDim);
       size_t num_y_groups = DivCeil(noise.ysize(), kGroupDim);
       PROFILER_ZONE("GenerateNoise");
-      auto generate_noise = [&](const uint32_t group_index,
-                                size_t ) {
+      auto generate_noise = [&](int group_index, int _) {
         size_t gx = group_index % num_x_groups;
         size_t gy = group_index / num_x_groups;
         Rect rect(gx * kGroupDim, gy * kGroupDim, kGroupDim, kGroupDim,
                   noise.xsize(), noise.ysize());
         RandomImage3(noise_seed + group_index, rect, &noise);
       };
-      JXL_RETURN_IF_ERROR(RunOnPool(pool, 0, num_x_groups * num_y_groups,
-                                    ThreadPool::NoInit, generate_noise,
-                                    "Generate noise"));
+      RunOnPool(pool, 0, num_x_groups * num_y_groups, ThreadPool::SkipInit(),
+                generate_noise, "Generate noise");
       {
         PROFILER_ZONE("High pass noise");
         
@@ -346,7 +336,6 @@ struct PassesDecoderState {
     
     FillImage(msan::kSanitizerSentinel, &decoded);
 #endif
-    return true;
   }
 
   void EnsureBordersStorage();

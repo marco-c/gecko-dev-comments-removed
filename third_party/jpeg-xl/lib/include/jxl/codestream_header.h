@@ -73,15 +73,6 @@ typedef struct {
 } JxlPreviewHeader;
 
 
-typedef struct {
-  
-  uint32_t xsize;
-
-  
-  uint32_t ysize;
-} JxlIntrinsicSizeHeader;
-
-
 
 
 
@@ -244,23 +235,7 @@ typedef struct {
   
 
 
-
-
-
-  uint32_t intrinsic_xsize;
-
-  
-
-
-
-
-
-  uint32_t intrinsic_ysize;
-
-  
-
-
-  uint8_t padding[100];
+  uint8_t padding[108];
 } JxlBasicInfo;
 
 
@@ -328,10 +303,9 @@ typedef enum {
 
 
 
-
-
 typedef struct {
   
+
 
   JxlBlendMode blendmode;
   
@@ -349,38 +323,27 @@ typedef struct {
 
 
 
-
-
 typedef struct {
   
 
 
-
-
-
-  JXL_BOOL have_crop;
-
-  
-
   int32_t crop_x0;
-
   
+
 
   int32_t crop_y0;
-
   
+
 
   uint32_t xsize;
-
   
 
-  uint32_t ysize;
 
+  uint32_t ysize;
   
 
 
   JxlBlendInfo blend_info;
-
   
 
 
@@ -408,14 +371,9 @@ typedef struct {
   
 
 
-
-
   uint32_t name_length;
 
   
-
-
-
 
   JXL_BOOL is_last;
 

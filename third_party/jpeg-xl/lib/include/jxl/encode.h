@@ -48,11 +48,7 @@ typedef struct JxlEncoderStruct JxlEncoder;
 
 
 
-typedef struct JxlEncoderFrameSettingsStruct JxlEncoderFrameSettings;
-
-
-
-typedef JxlEncoderFrameSettings JxlEncoderOptions;
+typedef struct JxlEncoderOptionsStruct JxlEncoderOptions;
 
 
 
@@ -73,10 +69,12 @@ typedef enum {
 
   
 
-
   JXL_ENC_NOT_SUPPORTED = 3,
 
 } JxlEncoderStatus;
+
+
+
 
 
 
@@ -89,28 +87,13 @@ typedef enum {
 
 
 
-  JXL_ENC_FRAME_SETTING_EFFORT = 0,
+  JXL_ENC_OPTION_EFFORT = 0,
 
   
 
 
 
-  JXL_ENC_FRAME_SETTING_DECODING_SPEED = 1,
-
-  
-
-
-
-
-
-  JXL_ENC_FRAME_SETTING_RESAMPLING = 2,
-
-  
-
-
-
-
-  JXL_ENC_FRAME_SETTING_EXTRA_CHANNEL_RESAMPLING = 3,
+  JXL_ENC_OPTION_DECODING_SPEED = 1,
 
   
 
@@ -118,146 +101,14 @@ typedef enum {
 
 
 
-
-
-
-  JXL_ENC_FRAME_SETTING_ALREADY_DOWNSAMPLED = 4,
+  JXL_ENC_OPTION_RESAMPLING = 2,
 
   
 
 
 
 
-  JXL_ENC_FRAME_SETTING_PHOTON_NOISE = 5,
-
-  
-
-
-
-  JXL_ENC_FRAME_SETTING_NOISE = 6,
-
-  
-
-
-  JXL_ENC_FRAME_SETTING_DOTS = 7,
-
-  
-
-
-  JXL_ENC_FRAME_SETTING_PATCHES = 8,
-
-  
-
-
-  JXL_ENC_FRAME_SETTING_EPF = 9,
-
-  
-
-
-  JXL_ENC_FRAME_SETTING_GABORISH = 10,
-
-  
-
-
-
-  JXL_ENC_FRAME_SETTING_MODULAR = 11,
-
-  
-
-
-  JXL_ENC_FRAME_SETTING_KEEP_INVISIBLE = 12,
-
-  
-
-
-
-  JXL_ENC_FRAME_SETTING_GROUP_ORDER = 13,
-
-  
-
-
-
-  JXL_ENC_FRAME_SETTING_GROUP_ORDER_CENTER_X = 14,
-
-  
-
-
-  JXL_ENC_FRAME_SETTING_GROUP_ORDER_CENTER_Y = 15,
-
-  
-
-
-  JXL_ENC_FRAME_SETTING_RESPONSIVE = 16,
-
-  
-
-
-
-  JXL_ENC_FRAME_SETTING_PROGRESSIVE_AC = 17,
-
-  
-
-
-
-  JXL_ENC_FRAME_SETTING_QPROGRESSIVE_AC = 18,
-
-  
-
-
-
-  JXL_ENC_FRAME_SETTING_PROGRESSIVE_DC = 19,
-
-  
-
-
-
-  JXL_ENC_FRAME_SETTING_CHANNEL_COLORS_GLOBAL_PERCENT = 20,
-
-  
-
-
-
-  JXL_ENC_FRAME_SETTING_CHANNEL_COLORS_GROUP_PERCENT = 21,
-
-  
-
-
-  JXL_ENC_FRAME_SETTING_PALETTE_COLORS = 22,
-
-  
-
-
-  JXL_ENC_FRAME_SETTING_LOSSY_PALETTE = 23,
-
-  
-
-
-
-
-  JXL_ENC_FRAME_SETTING_COLOR_TRANSFORM = 24,
-
-  
-
-
-
-  JXL_ENC_FRAME_SETTING_MODULAR_COLOR_SPACE = 25,
-
-  
-
-  JXL_ENC_FRAME_SETTING_MODULAR_GROUP_SIZE = 26,
-
-  
-
-
-
-
-  JXL_ENC_FRAME_SETTING_MODULAR_PREDICTOR = 27,
-
-  
-
-
-
-  JXL_ENC_FRAME_SETTING_MODULAR_MA_TREE_LEARNING_PERCENT = 28,
+  JXL_ENC_OPTION_EXTRA_CHANNEL_RESAMPLING = 3,
 
   
 
@@ -265,19 +116,166 @@ typedef enum {
 
 
 
-  JXL_ENC_FRAME_SETTING_MODULAR_NB_PREV_CHANNELS = 29,
+
+
+
+  JXL_ENC_OPTION_ALREADY_DOWNSAMPLED = 4,
 
   
 
 
-  JXL_ENC_FRAME_SETTING_JPEG_RECON_CFL = 30,
+
+
+  JXL_ENC_OPTION_PHOTON_NOISE = 5,
 
   
 
 
-  JXL_ENC_FRAME_SETTING_FILL_ENUM = 65535,
 
-} JxlEncoderFrameSettingId;
+  JXL_ENC_OPTION_NOISE = 6,
+
+  
+
+
+  JXL_ENC_OPTION_DOTS = 7,
+
+  
+
+
+  JXL_ENC_OPTION_PATCHES = 8,
+
+  
+
+
+  JXL_ENC_OPTION_EPF = 9,
+
+  
+
+
+  JXL_ENC_OPTION_GABORISH = 10,
+
+  
+
+
+
+  JXL_ENC_OPTION_MODULAR = 11,
+
+  
+
+
+  JXL_ENC_OPTION_KEEP_INVISIBLE = 12,
+
+  
+
+
+
+  JXL_ENC_OPTION_GROUP_ORDER = 13,
+
+  
+
+
+
+  JXL_ENC_OPTION_GROUP_ORDER_CENTER_X = 14,
+
+  
+
+
+  JXL_ENC_OPTION_GROUP_ORDER_CENTER_Y = 15,
+
+  
+
+
+  JXL_ENC_OPTION_RESPONSIVE = 16,
+
+  
+
+
+
+  JXL_ENC_OPTION_PROGRESSIVE_AC = 17,
+
+  
+
+
+
+  JXL_ENC_OPTION_QPROGRESSIVE_AC = 18,
+
+  
+
+
+
+  JXL_ENC_OPTION_PROGRESSIVE_DC = 19,
+
+  
+
+
+
+  JXL_ENC_OPTION_CHANNEL_COLORS_GLOBAL_PERCENT = 20,
+
+  
+
+
+
+  JXL_ENC_OPTION_CHANNEL_COLORS_GROUP_PERCENT = 21,
+
+  
+
+
+  JXL_ENC_OPTION_PALETTE_COLORS = 22,
+
+  
+
+
+  JXL_ENC_OPTION_LOSSY_PALETTE = 23,
+
+  
+
+
+
+
+  JXL_ENC_OPTION_COLOR_TRANSFORM = 24,
+
+  
+
+
+
+  JXL_ENC_OPTION_MODULAR_COLOR_SPACE = 25,
+
+  
+
+  JXL_ENC_OPTION_MODULAR_GROUP_SIZE = 26,
+
+  
+
+
+
+
+  JXL_ENC_OPTION_MODULAR_PREDICTOR = 27,
+
+  
+
+
+
+  JXL_ENC_OPTION_MODULAR_MA_TREE_LEARNING_PERCENT = 28,
+
+  
+
+
+
+
+
+  JXL_ENC_OPTION_MODULAR_NB_PREV_CHANNELS = 29,
+
+  
+
+
+  JXL_ENC_OPTION_JPEG_RECON_CFL = 30,
+
+  
+
+
+  JXL_ENC_OPTION_FILL_ENUM = 65535,
+
+} JxlEncoderOptionId;
 
 
 
@@ -318,29 +316,12 @@ JXL_EXPORT void JxlEncoderDestroy(JxlEncoder* enc);
 
 
 
-JXL_EXPORT void JxlEncoderSetCms(JxlEncoder* enc, JxlCmsInterface cms);
-
-
-
-
-
-
-
-
-
-
 
 
 
 JXL_EXPORT JxlEncoderStatus
 JxlEncoderSetParallelRunner(JxlEncoder* enc, JxlParallelRunner parallel_runner,
                             void* parallel_runner_opaque);
-
-
-
-
-
-
 
 
 
@@ -386,93 +367,8 @@ JXL_EXPORT JxlEncoderStatus JxlEncoderProcessOutput(JxlEncoder* enc,
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-JXL_EXPORT JxlEncoderStatus
-JxlEncoderSetFrameHeader(JxlEncoderFrameSettings* frame_settings,
-                         const JxlFrameHeader* frame_header);
-
-
-
-
-
-
-
-
-
-
-
-
-JXL_EXPORT JxlEncoderStatus JxlEncoderSetExtraChannelBlendInfo(
-    JxlEncoderFrameSettings* frame_settings, size_t index,
-    const JxlBlendInfo* blend_info);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-JXL_EXPORT JxlEncoderStatus JxlEncoderSetFrameName(
-    JxlEncoderFrameSettings* frame_settings, const char* frame_name);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-JXL_EXPORT JxlEncoderStatus
-JxlEncoderAddJPEGFrame(const JxlEncoderFrameSettings* frame_settings,
-                       const uint8_t* buffer, size_t size);
-
-
-
-
-
+JXL_EXPORT JxlEncoderStatus JxlEncoderAddJPEGFrame(
+    const JxlEncoderOptions* options, const uint8_t* buffer, size_t size);
 
 
 
@@ -524,9 +420,8 @@ JxlEncoderAddJPEGFrame(const JxlEncoderFrameSettings* frame_settings,
 
 
 JXL_EXPORT JxlEncoderStatus JxlEncoderAddImageFrame(
-    const JxlEncoderFrameSettings* frame_settings,
-    const JxlPixelFormat* pixel_format, const void* buffer, size_t size);
-
+    const JxlEncoderOptions* options, const JxlPixelFormat* pixel_format,
+    const void* buffer, size_t size);
 
 
 
@@ -550,9 +445,8 @@ JXL_EXPORT JxlEncoderStatus JxlEncoderAddImageFrame(
 
 
 JXL_EXPORT JxlEncoderStatus JxlEncoderSetExtraChannelBuffer(
-    const JxlEncoderFrameSettings* frame_settings,
-    const JxlPixelFormat* pixel_format, const void* buffer, size_t size,
-    uint32_t index);
+    const JxlEncoderOptions* options, const JxlPixelFormat* pixel_format,
+    const void* buffer, size_t size, uint32_t index);
 
 
 
@@ -708,12 +602,7 @@ JXL_EXPORT void JxlEncoderCloseBoxes(JxlEncoder* enc);
 
 
 
-
-
 JXL_EXPORT void JxlEncoderCloseFrames(JxlEncoder* enc);
-
-
-
 
 
 
@@ -780,29 +669,6 @@ JXL_EXPORT void JxlEncoderInitBasicInfo(JxlBasicInfo* info);
 
 
 
-JXL_EXPORT void JxlEncoderInitFrameHeader(JxlFrameHeader* frame_header);
-
-
-
-
-
-
-
-
-JXL_EXPORT void JxlEncoderInitBlendInfo(JxlBlendInfo* blend_info);
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -847,9 +713,6 @@ JXL_EXPORT JxlEncoderStatus JxlEncoderSetExtraChannelInfo(
 
 
 
-
-
-
 JXL_EXPORT JxlEncoderStatus JxlEncoderSetExtraChannelName(JxlEncoder* enc,
                                                           size_t index,
                                                           const char* name,
@@ -868,10 +731,8 @@ JXL_EXPORT JxlEncoderStatus JxlEncoderSetExtraChannelName(JxlEncoder* enc,
 
 
 
-
-JXL_EXPORT JxlEncoderStatus JxlEncoderFrameSettingsSetOption(
-    JxlEncoderFrameSettings* frame_settings, JxlEncoderFrameSettingId option,
-    int32_t value);
+JXL_EXPORT JxlEncoderStatus JxlEncoderOptionsSetInteger(
+    JxlEncoderOptions* options, JxlEncoderOptionId option, int32_t value);
 
 
 
@@ -936,12 +797,6 @@ JxlEncoderStoreJPEGMetadata(JxlEncoder* enc, JXL_BOOL store_jpeg_metadata);
 
 
 
-
-
-
-
-
-
 JXL_EXPORT JxlEncoderStatus JxlEncoderSetCodestreamLevel(JxlEncoder* enc,
                                                          int level);
 
@@ -962,35 +817,20 @@ JXL_EXPORT JxlEncoderStatus JxlEncoderSetCodestreamLevel(JxlEncoder* enc,
 
 
 
-
-
-JXL_EXPORT int JxlEncoderGetRequiredCodestreamLevel(const JxlEncoder* enc);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-JXL_EXPORT JxlEncoderStatus JxlEncoderSetFrameLossless(
-    JxlEncoderFrameSettings* frame_settings, JXL_BOOL lossless);
-
-
-
 JXL_EXPORT JxlEncoderStatus
-JxlEncoderOptionsSetLossless(JxlEncoderFrameSettings*, JXL_BOOL);
+JxlEncoderOptionsSetLossless(JxlEncoderOptions* options, JXL_BOOL lossless);
+
+
+
+
+
+
+
+
+
+
+JXL_EXPORT JXL_DEPRECATED JxlEncoderStatus
+JxlEncoderOptionsSetEffort(JxlEncoderOptions* options, int effort);
 
 
 
@@ -1003,7 +843,7 @@ JxlEncoderOptionsSetLossless(JxlEncoderFrameSettings*, JXL_BOOL);
 
 
 JXL_EXPORT JXL_DEPRECATED JxlEncoderStatus
-JxlEncoderOptionsSetEffort(JxlEncoderFrameSettings* frame_settings, int effort);
+JxlEncoderOptionsSetDecodingSpeed(JxlEncoderOptions* options, int tier);
 
 
 
@@ -1015,30 +855,11 @@ JxlEncoderOptionsSetEffort(JxlEncoderFrameSettings* frame_settings, int effort);
 
 
 
-JXL_EXPORT JXL_DEPRECATED JxlEncoderStatus JxlEncoderOptionsSetDecodingSpeed(
-    JxlEncoderFrameSettings* frame_settings, int tier);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-JXL_EXPORT JxlEncoderStatus JxlEncoderSetFrameDistance(
-    JxlEncoderFrameSettings* frame_settings, float distance);
 
 
 
 JXL_EXPORT JxlEncoderStatus
-JxlEncoderOptionsSetDistance(JxlEncoderFrameSettings*, float);
+JxlEncoderOptionsSetDistance(JxlEncoderOptions* options, float distance);
 
 
 
@@ -1055,13 +876,8 @@ JxlEncoderOptionsSetDistance(JxlEncoderFrameSettings*, float);
 
 
 
-JXL_EXPORT JxlEncoderFrameSettings* JxlEncoderFrameSettingsCreate(
-    JxlEncoder* enc, const JxlEncoderFrameSettings* source);
-
-
-
-JXL_EXPORT JxlEncoderFrameSettings* JxlEncoderOptionsCreate(
-    JxlEncoder*, const JxlEncoderFrameSettings*);
+JXL_EXPORT JxlEncoderOptions* JxlEncoderOptionsCreate(
+    JxlEncoder* enc, const JxlEncoderOptions* source);
 
 
 
