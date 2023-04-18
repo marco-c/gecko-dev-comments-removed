@@ -2,7 +2,6 @@
 
 
 
-import { has } from "lodash";
 import { clientCommands } from "../../../client/firefox";
 
 import { locColumn } from "./locColumn";
@@ -75,7 +74,7 @@ export function buildGeneratedBindingList(
   for (const generated of generatedGlobalScopes) {
     for (const name of Object.keys(generated.bindings)) {
       const { refs } = generated.bindings[name];
-      const bindings = clientGlobalScopes.find(b => has(b, name));
+      const bindings = clientGlobalScopes.find(b => name in b);
 
       for (const loc of refs) {
         if (bindings) {
