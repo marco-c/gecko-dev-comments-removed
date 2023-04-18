@@ -107,6 +107,7 @@ class MOZ_STACK_CLASS TryEmitter {
   
   
   
+  
   enum class ControlKind { Syntactic, NonSyntactic };
 
  private:
@@ -189,6 +190,10 @@ class MOZ_STACK_CLASS TryEmitter {
   BytecodeOffset offsetAfterTryOp() const {
     return tryOpOffset_ + BytecodeOffsetDiff(JSOpLength_Try);
   }
+
+  
+  
+  bool shouldUpdateRval() const;
 
   
   

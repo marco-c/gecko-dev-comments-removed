@@ -786,7 +786,12 @@ bool NonLocalExitControl::prepareForNonLocalJump(NestableControl* target) {
 
 
 
-          npops += 3;
+
+          if (bce_->sc->noScriptRval()) {
+            npops += 2;
+          } else {
+            npops += 3;
+          }
         } else {
           if (!flushPops(bce_)) {
             return false;
