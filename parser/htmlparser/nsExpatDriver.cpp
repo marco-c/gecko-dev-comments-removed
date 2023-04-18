@@ -34,10 +34,6 @@
 #include "mozilla/Telemetry.h"
 #include "mozilla/TelemetryComms.h"
 
-#include "nsThreadUtils.h"
-#include "mozilla/ClearOnShutdown.h"
-#include "mozilla/UniquePtr.h"
-
 #include "mozilla/Logging.h"
 
 using mozilla::fallible;
@@ -58,214 +54,100 @@ static const uint16_t sMaxXMLTreeDepth = 5000;
 
 
 
-#define RLBOX_EXPAT_SAFE_CALL(foo, verifier, ...)                          \
-  aSandbox.invoke_sandbox_function(foo, self->mExpatParser, ##__VA_ARGS__) \
-      .copy_and_verify(verifier)
-
-#define RLBOX_EXPAT_SAFE_MCALL(foo, verifier, ...)                \
-  Sandbox()                                                       \
-      ->invoke_sandbox_function(foo, mExpatParser, ##__VA_ARGS__) \
-      .copy_and_verify(verifier)
-
-#define RLBOX_EXPAT_MCALL(foo, ...) \
-  Sandbox()->invoke_sandbox_function(foo, mExpatParser, ##__VA_ARGS__)
-
-
-template <typename T>
-static T safe_unverified(T val) {
-  return val;
+static void Driver_HandleXMLDeclaration(void* aUserData,
+                                        const XML_Char* aVersion,
+                                        const XML_Char* aEncoding,
+                                        int aStandalone) {
+  NS_ASSERTION(aUserData, "expat driver should exist");
+  if (aUserData) {
+    nsExpatDriver* driver = static_cast<nsExpatDriver*>(aUserData);
+    driver->HandleXMLDeclaration(aVersion, aEncoding, aStandalone);
+  }
 }
 
-
-inline enum XML_Status status_verifier(enum XML_Status s) {
-  MOZ_RELEASE_ASSERT(s >= XML_STATUS_ERROR && s <= XML_STATUS_SUSPENDED,
-                     "unexpected status code");
-  return s;
+static void Driver_HandleCharacterData(void* aUserData, const XML_Char* aData,
+                                       int aLength) {
+  NS_ASSERTION(aUserData, "expat driver should exist");
+  if (aUserData) {
+    nsExpatDriver* driver = static_cast<nsExpatDriver*>(aUserData);
+    driver->HandleCharacterData(aData, uint32_t(aLength));
+  }
 }
 
-
-inline enum XML_Error error_verifier(enum XML_Error code) {
-  MOZ_RELEASE_ASSERT(
-      code >= XML_ERROR_NONE && code <= XML_ERROR_INVALID_ARGUMENT,
-      "unexpected XML error code");
-  return code;
+static void Driver_HandleComment(void* aUserData, const XML_Char* aName) {
+  NS_ASSERTION(aUserData, "expat driver should exist");
+  if (aUserData) {
+    static_cast<nsExpatDriver*>(aUserData)->HandleComment(aName);
+  }
 }
 
-
-
-
-
-
-
-
-
-
-
-static const XML_Char* unverified_xml_string(uintptr_t ptr) {
-  return reinterpret_cast<const XML_Char*>(ptr);
+static void Driver_HandleProcessingInstruction(void* aUserData,
+                                               const XML_Char* aTarget,
+                                               const XML_Char* aData) {
+  NS_ASSERTION(aUserData, "expat driver should exist");
+  if (aUserData) {
+    nsExpatDriver* driver = static_cast<nsExpatDriver*>(aUserData);
+    driver->HandleProcessingInstruction(aTarget, aData);
+  }
 }
 
-
-
-
-
-
-template <typename T>
-class MOZ_STACK_CLASS TransferBuffer {
- public:
-  TransferBuffer() = delete;
-  TransferBuffer(rlbox_sandbox_expat* aSandbox, const T* aBuf,
-                 const size_t aLen)
-      : mSandbox(aSandbox), mCopied(false), mBuf(nullptr) {
-    if (aBuf) {
-      mBuf = rlbox::copy_memory_or_grant_access(
-          *mSandbox, aBuf, aLen * sizeof(T), false, mCopied);
-    }
-  };
-  ~TransferBuffer() {
-    if (mCopied) {
-      mSandbox->free_in_sandbox(mBuf);
-    }
-  };
-  tainted_expat<const T*> operator*() const { return mBuf; };
-
- private:
-  rlbox_sandbox_expat* mSandbox;
-  bool mCopied;
-  tainted_expat<const T*> mBuf;
-};
-
-
-
-
-
-
-static void Driver_HandleXMLDeclaration(
-    rlbox_sandbox_expat& aSandbox, tainted_expat<void*> ,
-    tainted_expat<const XML_Char*> aVersion,
-    tainted_expat<const XML_Char*> aEncoding, tainted_expat<int> aStandalone) {
-  nsExpatDriver* driver = static_cast<nsExpatDriver*>(aSandbox.sandbox_storage);
-  MOZ_ASSERT(driver);
-
-  int standalone = aStandalone.copy_and_verify([&](auto a) {
-    
-    
-    MOZ_RELEASE_ASSERT(a >= -1 && a <= 1, "Unexpected standalone parameter");
-    return a;
-  });
-
-  const auto* version = aVersion.copy_and_verify_address(unverified_xml_string);
-  const auto* encoding =
-      aEncoding.copy_and_verify_address(unverified_xml_string);
-  driver->HandleXMLDeclaration(version, encoding, standalone);
+static void Driver_HandleDefault(void* aUserData, const XML_Char* aData,
+                                 int aLength) {
+  NS_ASSERTION(aUserData, "expat driver should exist");
+  if (aUserData) {
+    nsExpatDriver* driver = static_cast<nsExpatDriver*>(aUserData);
+    driver->HandleDefault(aData, uint32_t(aLength));
+  }
 }
 
-static void Driver_HandleCharacterData(rlbox_sandbox_expat& aSandbox,
-                                       tainted_expat<void*> ,
-                                       tainted_expat<const XML_Char*> aData,
-                                       tainted_expat<int> aLength) {
-  nsExpatDriver* driver = static_cast<nsExpatDriver*>(aSandbox.sandbox_storage);
-  MOZ_ASSERT(driver);
-  
-  
-  uint32_t length =
-      static_cast<uint32_t>(aLength.copy_and_verify(safe_unverified<int>));
-  const auto* data = aData.unverified_safe_pointer_because(
-      length, "Only care that the data is within sandbox boundary.");
-  driver->HandleCharacterData(data, length);
+static void Driver_HandleStartCdataSection(void* aUserData) {
+  NS_ASSERTION(aUserData, "expat driver should exist");
+  if (aUserData) {
+    static_cast<nsExpatDriver*>(aUserData)->HandleStartCdataSection();
+  }
 }
 
-static void Driver_HandleComment(rlbox_sandbox_expat& aSandbox,
-                                 tainted_expat<void*> ,
-                                 tainted_expat<const XML_Char*> aName) {
-  nsExpatDriver* driver = static_cast<nsExpatDriver*>(aSandbox.sandbox_storage);
-  MOZ_ASSERT(driver);
-  const auto* name = aName.copy_and_verify_address(unverified_xml_string);
-  driver->HandleComment(name);
+static void Driver_HandleEndCdataSection(void* aUserData) {
+  NS_ASSERTION(aUserData, "expat driver should exist");
+  if (aUserData) {
+    static_cast<nsExpatDriver*>(aUserData)->HandleEndCdataSection();
+  }
 }
 
-static void Driver_HandleProcessingInstruction(
-    rlbox_sandbox_expat& aSandbox, tainted_expat<void*> ,
-    tainted_expat<const XML_Char*> aTarget,
-    tainted_expat<const XML_Char*> aData) {
-  nsExpatDriver* driver = static_cast<nsExpatDriver*>(aSandbox.sandbox_storage);
-  MOZ_ASSERT(driver);
-  const auto* target = aTarget.copy_and_verify_address(unverified_xml_string);
-  const auto* data = aData.copy_and_verify_address(unverified_xml_string);
-  driver->HandleProcessingInstruction(target, data);
+static void Driver_HandleStartDoctypeDecl(void* aUserData,
+                                          const XML_Char* aDoctypeName,
+                                          const XML_Char* aSysid,
+                                          const XML_Char* aPubid,
+                                          int aHasInternalSubset) {
+  NS_ASSERTION(aUserData, "expat driver should exist");
+  if (aUserData) {
+    static_cast<nsExpatDriver*>(aUserData)->HandleStartDoctypeDecl(
+        aDoctypeName, aSysid, aPubid, !!aHasInternalSubset);
+  }
 }
 
-static void Driver_HandleDefault(rlbox_sandbox_expat& aSandbox,
-                                 tainted_expat<void*> ,
-                                 tainted_expat<const XML_Char*> aData,
-                                 tainted_expat<int> aLength) {
-  nsExpatDriver* driver = static_cast<nsExpatDriver*>(aSandbox.sandbox_storage);
-  MOZ_ASSERT(driver);
-  
-  
-  uint32_t length =
-      static_cast<uint32_t>(aLength.copy_and_verify(safe_unverified<int>));
-  const auto* data = aData.unverified_safe_pointer_because(
-      length, "Only care that the data is within sandbox boundary.");
-  driver->HandleDefault(data, length);
+static void Driver_HandleEndDoctypeDecl(void* aUserData) {
+  NS_ASSERTION(aUserData, "expat driver should exist");
+  if (aUserData) {
+    static_cast<nsExpatDriver*>(aUserData)->HandleEndDoctypeDecl();
+  }
 }
 
-static void Driver_HandleStartCdataSection(
-    rlbox_sandbox_expat& aSandbox, tainted_expat<void*> ) {
-  nsExpatDriver* driver = static_cast<nsExpatDriver*>(aSandbox.sandbox_storage);
-  MOZ_ASSERT(driver);
-  driver->HandleStartCdataSection();
-}
+static int Driver_HandleExternalEntityRef(void* aExternalEntityRefHandler,
+                                          const XML_Char* aOpenEntityNames,
+                                          const XML_Char* aBase,
+                                          const XML_Char* aSystemId,
+                                          const XML_Char* aPublicId) {
+  NS_ASSERTION(aExternalEntityRefHandler, "expat driver should exist");
+  if (!aExternalEntityRefHandler) {
+    return 1;
+  }
 
-static void Driver_HandleEndCdataSection(rlbox_sandbox_expat& aSandbox,
-                                         tainted_expat<void*> ) {
-  nsExpatDriver* driver = static_cast<nsExpatDriver*>(aSandbox.sandbox_storage);
-  MOZ_ASSERT(driver);
-  driver->HandleEndCdataSection();
-}
+  nsExpatDriver* driver =
+      static_cast<nsExpatDriver*>(aExternalEntityRefHandler);
 
-static void Driver_HandleStartDoctypeDecl(
-    rlbox_sandbox_expat& aSandbox, tainted_expat<void*> ,
-    tainted_expat<const XML_Char*> aDoctypeName,
-    tainted_expat<const XML_Char*> aSysid,
-    tainted_expat<const XML_Char*> aPubid,
-    tainted_expat<int> aHasInternalSubset) {
-  nsExpatDriver* driver = static_cast<nsExpatDriver*>(aSandbox.sandbox_storage);
-  MOZ_ASSERT(driver);
-  const auto* doctypeName =
-      aDoctypeName.copy_and_verify_address(unverified_xml_string);
-  const auto* sysid = aSysid.copy_and_verify_address(unverified_xml_string);
-  const auto* pubid = aPubid.copy_and_verify_address(unverified_xml_string);
-  bool hasInternalSubset =
-      !!(aHasInternalSubset.copy_and_verify(safe_unverified<int>));
-  driver->HandleStartDoctypeDecl(doctypeName, sysid, pubid, hasInternalSubset);
-}
-
-static void Driver_HandleEndDoctypeDecl(rlbox_sandbox_expat& aSandbox,
-                                        tainted_expat<void*> ) {
-  nsExpatDriver* driver = static_cast<nsExpatDriver*>(aSandbox.sandbox_storage);
-  MOZ_ASSERT(driver);
-  driver->HandleEndDoctypeDecl();
-}
-
-static tainted_expat<int> Driver_HandleExternalEntityRef(
-    rlbox_sandbox_expat& aSandbox, tainted_expat<XML_Parser> ,
-    tainted_expat<const XML_Char*> aOpenEntityNames,
-    tainted_expat<const XML_Char*> aBase,
-    tainted_expat<const XML_Char*> aSystemId,
-    tainted_expat<const XML_Char*> aPublicId) {
-  nsExpatDriver* driver = static_cast<nsExpatDriver*>(aSandbox.sandbox_storage);
-  MOZ_ASSERT(driver);
-
-  const auto* openEntityNames =
-      aOpenEntityNames.copy_and_verify_address(unverified_xml_string);
-  const auto* base = aBase.copy_and_verify_address(unverified_xml_string);
-  const auto* systemId =
-      aSystemId.copy_and_verify_address(unverified_xml_string);
-  const auto* publicId =
-      aPublicId.copy_and_verify_address(unverified_xml_string);
-  return driver->HandleExternalEntityRef(openEntityNames, base, systemId,
-                                         publicId);
+  return driver->HandleExternalEntityRef(aOpenEntityNames, aBase, aSystemId,
+                                         aPublicId);
 }
 
 
@@ -378,79 +260,28 @@ nsExpatDriver::nsExpatDriver()
       mCatalogData(nullptr),
       mInnerWindowID(0) {}
 
-nsExpatDriver::~nsExpatDriver() { Destroy(); }
-
-void nsExpatDriver::Destroy() {
-  if (mSandboxPoolData) {
-    SandboxData()->DetachDriver();
-    if (mExpatParser) {
-      RLBOX_EXPAT_MCALL(MOZ_XML_ParserFree);
-    }
+nsExpatDriver::~nsExpatDriver() {
+  if (mExpatParser) {
+    XML_ParserFree(mExpatParser);
   }
-  mSandboxPoolData.reset();
-  mExpatParser = nullptr;
 }
 
 
+void nsExpatDriver::HandleStartElement(void* aUserData, const char16_t* aName,
+                                       const char16_t** aAtts) {
+  nsExpatDriver* self = static_cast<nsExpatDriver*>(aUserData);
 
-
-class MOZ_STACK_CLASS AllocAttrs {
-#define NUM_STACK_SLOTS 16
- public:
-  const char16_t** Init(size_t size) {
-    if (size <= NUM_STACK_SLOTS) {
-      return mInlineArr;
-    }
-    mHeapPtr = mozilla::MakeUnique<const char16_t*[]>(size);
-    return mHeapPtr.get();
-  }
-
- private:
-  const char16_t* mInlineArr[NUM_STACK_SLOTS];
-  mozilla::UniquePtr<const char16_t*[]> mHeapPtr;
-#undef NUM_STACK_SLOTS
-};
-
-
-void nsExpatDriver::HandleStartElement(rlbox_sandbox_expat& aSandbox,
-                                       tainted_expat<void*> ,
-                                       tainted_expat<const char16_t*> aName,
-                                       tainted_expat<const char16_t**> aAttrs) {
-  nsExpatDriver* self = static_cast<nsExpatDriver*>(aSandbox.sandbox_storage);
-  MOZ_ASSERT(self && self->mSink);
-
-  const auto* name = aName.copy_and_verify_address(unverified_xml_string);
+  NS_ASSERTION(self->mSink, "content sink not found!");
 
   
   
   
   
-  int count = RLBOX_EXPAT_SAFE_CALL(MOZ_XML_GetSpecifiedAttributeCount,
-                                    safe_unverified<int>);
-  MOZ_RELEASE_ASSERT(count >= 0, "Unexpected attribute count");
   uint32_t attrArrayLength;
-  for (attrArrayLength = count;
-       (aAttrs[attrArrayLength] != nullptr)
-           .unverified_safe_because("Bad length is checked later");
-       attrArrayLength += 2) {
+  for (attrArrayLength = XML_GetSpecifiedAttributeCount(self->mExpatParser);
+       aAtts[attrArrayLength]; attrArrayLength += 2) {
     
   }
-  
-  
-  MOZ_RELEASE_ASSERT(attrArrayLength < UINT32_MAX, "Overflow attempt");
-
-  
-  AllocAttrs allocAttrs;
-  const char16_t** attrs = allocAttrs.Init(attrArrayLength + 1);
-  if (NS_WARN_IF(!aAttrs || !attrs)) {
-    self->MaybeStopParser(NS_ERROR_OUT_OF_MEMORY);
-    return;
-  }
-
-  for (uint32_t i = 0; i < attrArrayLength; i++) {
-    attrs[i] = aAttrs[i].copy_and_verify_address(unverified_xml_string);
-  }
-  attrs[attrArrayLength] = nullptr;
 
   if (self->mSink) {
     
@@ -465,41 +296,31 @@ void nsExpatDriver::HandleStartElement(rlbox_sandbox_expat& aSandbox,
     }
 
     nsresult rv = self->mSink->HandleStartElement(
-        name, attrs, attrArrayLength,
-        RLBOX_EXPAT_SAFE_CALL(MOZ_XML_GetCurrentLineNumber,
-                              safe_unverified<XML_Size>),
-        RLBOX_EXPAT_SAFE_CALL(MOZ_XML_GetCurrentColumnNumber,
-                              safe_unverified<XML_Size>));
+        aName, aAtts, attrArrayLength,
+        XML_GetCurrentLineNumber(self->mExpatParser),
+        XML_GetCurrentColumnNumber(self->mExpatParser));
     self->MaybeStopParser(rv);
   }
 }
 
 
 void nsExpatDriver::HandleStartElementForSystemPrincipal(
-    rlbox_sandbox_expat& aSandbox, tainted_expat<void*> aUserData,
-    tainted_expat<const char16_t*> aName,
-    tainted_expat<const char16_t**> aAttrs) {
-  nsExpatDriver* self = static_cast<nsExpatDriver*>(aSandbox.sandbox_storage);
-  MOZ_ASSERT(self);
-  if (!RLBOX_EXPAT_SAFE_CALL(MOZ_XML_ProcessingEntityValue,
-                             safe_unverified<XML_Bool>)) {
-    HandleStartElement(aSandbox, aUserData, aName, aAttrs);
+    void* aUserData, const char16_t* aName, const char16_t** aAtts) {
+  nsExpatDriver* self = static_cast<nsExpatDriver*>(aUserData);
+
+  if (!MOZ_XML_ProcessingEntityValue(self->mExpatParser)) {
+    HandleStartElement(aUserData, aName, aAtts);
   } else {
     nsCOMPtr<Document> doc =
         do_QueryInterface(self->mOriginalSink->GetTarget());
 
     
-    
-    uint32_t colNumber = RLBOX_EXPAT_SAFE_CALL(MOZ_XML_GetCurrentColumnNumber,
-                                               safe_unverified<XML_Size>) +
-                         1;
-    uint32_t lineNumber = RLBOX_EXPAT_SAFE_CALL(MOZ_XML_GetCurrentLineNumber,
-                                                safe_unverified<XML_Size>);
+    uint32_t colNumber = XML_GetCurrentColumnNumber(self->mExpatParser) + 1;
+    uint32_t lineNumber = XML_GetCurrentLineNumber(self->mExpatParser);
 
     int32_t nameSpaceID;
     RefPtr<nsAtom> prefix, localName;
-    const auto* name = aName.copy_and_verify_address(unverified_xml_string);
-    nsContentUtils::SplitExpatName(name, getter_AddRefs(prefix),
+    nsContentUtils::SplitExpatName(aName, getter_AddRefs(prefix),
                                    getter_AddRefs(localName), &nameSpaceID);
 
     nsAutoString error;
@@ -518,33 +339,27 @@ void nsExpatDriver::HandleStartElementForSystemPrincipal(
 }
 
 
-void nsExpatDriver::HandleEndElement(rlbox_sandbox_expat& aSandbox,
-                                     tainted_expat<void*> aUserData,
-                                     tainted_expat<const char16_t*> aName) {
-  nsExpatDriver* self = static_cast<nsExpatDriver*>(aSandbox.sandbox_storage);
-  MOZ_ASSERT(self);
-  const auto* name = aName.copy_and_verify_address(unverified_xml_string);
+void nsExpatDriver::HandleEndElement(void* aUserData, const char16_t* aName) {
+  nsExpatDriver* self = static_cast<nsExpatDriver*>(aUserData);
 
   NS_ASSERTION(self->mSink, "content sink not found!");
   NS_ASSERTION(self->mInternalState != NS_ERROR_HTMLPARSER_BLOCK,
                "Shouldn't block from HandleStartElement.");
 
   if (self->mSink && self->mInternalState != NS_ERROR_HTMLPARSER_STOPPARSING) {
-    nsresult rv = self->mSink->HandleEndElement(name);
+    nsresult rv = self->mSink->HandleEndElement(aName);
     --self->mTagDepth;
     self->MaybeStopParser(rv);
   }
 }
 
 
-void nsExpatDriver::HandleEndElementForSystemPrincipal(
-    rlbox_sandbox_expat& aSandbox, tainted_expat<void*> aUserData,
-    tainted_expat<const char16_t*> aName) {
-  nsExpatDriver* self = static_cast<nsExpatDriver*>(aSandbox.sandbox_storage);
-  MOZ_ASSERT(self);
-  if (!RLBOX_EXPAT_SAFE_CALL(MOZ_XML_ProcessingEntityValue,
-                             safe_unverified<XML_Bool>)) {
-    HandleEndElement(aSandbox, aUserData, aName);
+void nsExpatDriver::HandleEndElementForSystemPrincipal(void* aUserData,
+                                                       const char16_t* aName) {
+  nsExpatDriver* self = static_cast<nsExpatDriver*>(aUserData);
+
+  if (!MOZ_XML_ProcessingEntityValue(self->mExpatParser)) {
+    HandleEndElement(aUserData, aName);
   }
 }
 
@@ -718,49 +533,20 @@ nsresult nsExpatDriver::HandleEndDoctypeDecl() {
   return NS_OK;
 }
 
-
-
-class RLBoxExpatClosure {
- public:
-  RLBoxExpatClosure(RLBoxExpatSandboxData* aSbxData,
-                    tainted_expat<XML_Parser> aExpatParser)
-      : mSbxData(aSbxData), mExpatParser(aExpatParser){};
-  inline rlbox_sandbox_expat* Sandbox() const { return mSbxData->Sandbox(); };
-  inline tainted_expat<XML_Parser> Parser() const { return mExpatParser; };
-
- private:
-  RLBoxExpatSandboxData* mSbxData;
-  tainted_expat<XML_Parser> mExpatParser;
-};
-
 static nsresult ExternalDTDStreamReaderFunc(nsIUnicharInputStream* aIn,
                                             void* aClosure,
                                             const char16_t* aFromSegment,
                                             uint32_t aToOffset, uint32_t aCount,
                                             uint32_t* aWriteCount) {
-  MOZ_ASSERT(aClosure && aFromSegment && aWriteCount);
-
-  *aWriteCount = 0;
-
   
-  auto* closure = reinterpret_cast<RLBoxExpatClosure*>(aClosure);
-  MOZ_ASSERT(closure);
-
-  
-  auto fromSegment =
-      TransferBuffer<char16_t>(closure->Sandbox(), aFromSegment, aCount);
-  NS_ENSURE_TRUE(*fromSegment, NS_ERROR_OUT_OF_MEMORY);
-
-  
-  if (closure->Sandbox()
-          ->invoke_sandbox_function(
-              MOZ_XML_Parse, closure->Parser(),
-              rlbox::sandbox_reinterpret_cast<const char*>(*fromSegment),
-              aCount * sizeof(char16_t), 0)
-          .copy_and_verify(status_verifier) == XML_STATUS_OK) {
+  if (XML_Parse((XML_Parser)aClosure, (const char*)aFromSegment,
+                aCount * sizeof(char16_t), 0) == XML_STATUS_OK) {
     *aWriteCount = aCount;
+
     return NS_OK;
   }
+
+  *aWriteCount = 0;
 
   return NS_ERROR_FAILURE;
 }
@@ -802,33 +588,24 @@ int nsExpatDriver::HandleExternalEntityRef(const char16_t* openEntityNames,
 
   int result = 1;
   if (uniIn) {
-    auto utf16 = TransferBuffer<char16_t>(
-        Sandbox(), kUTF16, nsCharTraits<char16_t>::length(kUTF16) + 1);
-    tainted_expat<XML_Parser> entParser;
-    entParser =
-        RLBOX_EXPAT_MCALL(MOZ_XML_ExternalEntityParserCreate, nullptr, *utf16);
+    XML_Parser entParser =
+        XML_ExternalEntityParserCreate(mExpatParser, 0, kUTF16);
     if (entParser) {
-      auto url = TransferBuffer<XML_Char>(Sandbox(), (XML_Char*)absURL.get(),
-                                          absURL.Length() + 1);
-      Sandbox()->invoke_sandbox_function(MOZ_XML_SetBase, entParser, *url);
+      XML_SetBase(entParser, absURL.get());
 
       mInExternalDTD = true;
 
       uint32_t totalRead;
       do {
-        RLBoxExpatClosure closure(SandboxData(), entParser);
-        rv = uniIn->ReadSegments(ExternalDTDStreamReaderFunc, &closure,
+        rv = uniIn->ReadSegments(ExternalDTDStreamReaderFunc, entParser,
                                  uint32_t(-1), &totalRead);
       } while (NS_SUCCEEDED(rv) && totalRead > 0);
 
-      result =
-          Sandbox()
-              ->invoke_sandbox_function(MOZ_XML_Parse, entParser, nullptr, 0, 1)
-              .copy_and_verify(status_verifier);
+      result = XML_Parse(entParser, nullptr, 0, 1);
 
       mInExternalDTD = false;
 
-      Sandbox()->invoke_sandbox_function(MOZ_XML_ParserFree, entParser);
+      XML_ParserFree(entParser);
     }
   }
 
@@ -973,7 +750,8 @@ static nsresult AppendErrorPointer(const int32_t aColNumber,
 }
 
 nsresult nsExpatDriver::HandleError() {
-  int32_t code = RLBOX_EXPAT_SAFE_MCALL(MOZ_XML_GetErrorCode, error_verifier);
+  int32_t code = XML_GetErrorCode(mExpatParser);
+  NS_ASSERTION(code > XML_ERROR_NONE, "unexpected XML error code");
 
   
   
@@ -999,10 +777,7 @@ nsresult nsExpatDriver::HandleError() {
 
 
 
-
-    const char16_t* mismatch =
-        RLBOX_EXPAT_MCALL(MOZ_XML_GetMismatchedTag)
-            .copy_and_verify_address(unverified_xml_string);
+    const char16_t* mismatch = MOZ_XML_GetMismatchedTag(mExpatParser);
     const char16_t* uriEnd = nullptr;
     const char16_t* nameEnd = nullptr;
     const char16_t* pos;
@@ -1037,17 +812,12 @@ nsresult nsExpatDriver::HandleError() {
   }
 
   
-  uint32_t colNumber = RLBOX_EXPAT_SAFE_MCALL(MOZ_XML_GetCurrentColumnNumber,
-                                              safe_unverified<XML_Size>) +
-                       1;
-  uint32_t lineNumber = RLBOX_EXPAT_SAFE_MCALL(MOZ_XML_GetCurrentLineNumber,
-                                               safe_unverified<XML_Size>);
+  uint32_t colNumber = XML_GetCurrentColumnNumber(mExpatParser) + 1;
+  uint32_t lineNumber = XML_GetCurrentLineNumber(mExpatParser);
 
   nsAutoString errorText;
-  const auto* aBase = RLBOX_EXPAT_MCALL(MOZ_XML_GetBase)
-                          .copy_and_verify_address(unverified_xml_string);
-  CreateErrorText(description.get(), aBase, lineNumber, colNumber, errorText,
-                  spoofEnglish);
+  CreateErrorText(description.get(), XML_GetBase(mExpatParser), lineNumber,
+                  colNumber, errorText, spoofEnglish);
 
   nsAutoString sourceText(mLastLine);
   AppendErrorPointer(colNumber, mLastLine.get(), sourceText);
@@ -1131,41 +901,29 @@ void nsExpatDriver::ParseBuffer(const char16_t* aBuffer, uint32_t aLength,
                "Useless call, we won't call Expat");
   MOZ_ASSERT(!BlockedOrInterrupted() || !aBuffer,
              "Non-null buffer when resuming");
-  MOZ_ASSERT(mExpatParser);
+  MOZ_ASSERT(XML_GetCurrentByteIndex(mExpatParser) % sizeof(char16_t) == 0,
+             "Consumed part of a char16_t?");
 
-  auto parserBytesBefore_verifier = [&](auto parserBytesBefore) {
-    MOZ_RELEASE_ASSERT(parserBytesBefore >= 0, "Unexpected value");
-    MOZ_RELEASE_ASSERT(parserBytesBefore % sizeof(char16_t) == 0,
-                       "Consumed part of a char16_t?");
-    return parserBytesBefore;
-  };
-  int32_t parserBytesBefore = RLBOX_EXPAT_SAFE_MCALL(
-      XML_GetCurrentByteIndex, parserBytesBefore_verifier);
+  if (mExpatParser && (mInternalState == NS_OK || BlockedOrInterrupted())) {
+    int32_t parserBytesBefore = XML_GetCurrentByteIndex(mExpatParser);
+    NS_ASSERTION(parserBytesBefore >= 0, "Unexpected value");
 
-  if (mInternalState == NS_OK || BlockedOrInterrupted()) {
     XML_Status status;
     if (BlockedOrInterrupted()) {
       mInternalState = NS_OK;  
-      status = RLBOX_EXPAT_SAFE_MCALL(MOZ_XML_ResumeParser, status_verifier);
+      status = XML_ResumeParser(mExpatParser);
     } else {
-      auto buffer = TransferBuffer<char16_t>(Sandbox(), aBuffer, aLength);
-
-      status = RLBOX_EXPAT_SAFE_MCALL(
-          MOZ_XML_Parse, status_verifier,
-          rlbox::sandbox_reinterpret_cast<const char*>(*buffer),
-          aLength * sizeof(char16_t), aIsFinal);
+      status = XML_Parse(mExpatParser, reinterpret_cast<const char*>(aBuffer),
+                         aLength * sizeof(char16_t), aIsFinal);
     }
 
-    auto parserBytesConsumed_verifier = [&](auto parserBytesConsumed) {
-      MOZ_RELEASE_ASSERT(parserBytesConsumed >= 0, "Unexpected value");
-      MOZ_RELEASE_ASSERT(parserBytesConsumed >= parserBytesBefore,
-                         "How'd this happen?");
-      MOZ_RELEASE_ASSERT(parserBytesConsumed % sizeof(char16_t) == 0,
-                         "Consumed part of a char16_t?");
-      return parserBytesConsumed;
-    };
-    int32_t parserBytesConsumed = RLBOX_EXPAT_SAFE_MCALL(
-        XML_GetCurrentByteIndex, parserBytesConsumed_verifier);
+    int32_t parserBytesConsumed = XML_GetCurrentByteIndex(mExpatParser);
+
+    NS_ASSERTION(parserBytesConsumed >= 0, "Unexpected value");
+    NS_ASSERTION(parserBytesConsumed >= parserBytesBefore,
+                 "How'd this happen?");
+    NS_ASSERTION(parserBytesConsumed % sizeof(char16_t) == 0,
+                 "Consumed part of a char16_t?");
 
     
     *aConsumed = (parserBytesConsumed - parserBytesBefore) / sizeof(char16_t);
@@ -1260,8 +1018,7 @@ nsExpatDriver::ConsumeToken(nsScanner& aScanner, bool& aFlushTokens) {
       
 
       
-      XML_Size lastLineLength = RLBOX_EXPAT_SAFE_MCALL(
-          XML_GetCurrentColumnNumber, safe_unverified<XML_Size>);
+      XML_Size lastLineLength = XML_GetCurrentColumnNumber(mExpatParser);
 
       if (lastLineLength <= consumed) {
         
@@ -1300,8 +1057,7 @@ nsExpatDriver::ConsumeToken(nsScanner& aScanner, bool& aFlushTokens) {
     }
 
     if (NS_FAILED(mInternalState)) {
-      if (RLBOX_EXPAT_SAFE_MCALL(MOZ_XML_GetErrorCode, error_verifier) !=
-          XML_ERROR_NONE) {
+      if (XML_GetErrorCode(mExpatParser) != XML_ERROR_NONE) {
         NS_ASSERTION(mInternalState == NS_ERROR_HTMLPARSER_STOPPARSING,
                      "Unexpected error");
 
@@ -1354,107 +1110,6 @@ nsExpatDriver::ConsumeToken(nsScanner& aScanner, bool& aFlushTokens) {
   return NS_SUCCEEDED(mInternalState) ? NS_ERROR_HTMLPARSER_EOF : NS_OK;
 }
 
-mozilla::UniquePtr<mozilla::RLBoxSandboxDataBase>
-RLBoxExpatSandboxPool::CreateSandboxData() {
-  
-  auto sandbox = mozilla::MakeUnique<rlbox_sandbox_expat>();
-
-#ifdef MOZ_WASM_SANDBOXING_EXPAT
-  bool create_ok = sandbox->create_sandbox( false);
-#else
-  bool create_ok = sandbox->create_sandbox();
-#endif
-
-  NS_ENSURE_TRUE(create_ok, nullptr);
-
-  mozilla::UniquePtr<RLBoxExpatSandboxData> sbxData =
-      mozilla::MakeUnique<RLBoxExpatSandboxData>();
-
-  
-  sbxData->mHandleXMLDeclaration =
-      sandbox->register_callback(Driver_HandleXMLDeclaration);
-  sbxData->mHandleCharacterData =
-      sandbox->register_callback(Driver_HandleCharacterData);
-  sbxData->mHandleProcessingInstruction =
-      sandbox->register_callback(Driver_HandleProcessingInstruction);
-  sbxData->mHandleDefault = sandbox->register_callback(Driver_HandleDefault);
-  sbxData->mHandleExternalEntityRef =
-      sandbox->register_callback(Driver_HandleExternalEntityRef);
-  sbxData->mHandleComment = sandbox->register_callback(Driver_HandleComment);
-  sbxData->mHandleStartCdataSection =
-      sandbox->register_callback(Driver_HandleStartCdataSection);
-  sbxData->mHandleEndCdataSection =
-      sandbox->register_callback(Driver_HandleEndCdataSection);
-  sbxData->mHandleStartDoctypeDecl =
-      sandbox->register_callback(Driver_HandleStartDoctypeDecl);
-  sbxData->mHandleEndDoctypeDecl =
-      sandbox->register_callback(Driver_HandleEndDoctypeDecl);
-
-  sbxData->mSandbox = std::move(sandbox);
-
-  return sbxData;
-}
-
-mozilla::StaticRefPtr<RLBoxExpatSandboxPool> RLBoxExpatSandboxPool::sSingleton;
-
-void RLBoxExpatSandboxPool::Initialize(size_t aDelaySeconds) {
-  mozilla::AssertIsOnMainThread();
-  RLBoxExpatSandboxPool::sSingleton = new RLBoxExpatSandboxPool(aDelaySeconds);
-  ClearOnShutdown(&RLBoxExpatSandboxPool::sSingleton);
-}
-
-void RLBoxExpatSandboxData::AttachDriver(bool aIsSystemPrincipal,
-                                         void* aDriver) {
-  MOZ_ASSERT(!mSandbox->sandbox_storage);
-  MOZ_ASSERT(mHandleStartElement.is_unregistered());
-  MOZ_ASSERT(mHandleEndElement.is_unregistered());
-
-  if (aIsSystemPrincipal) {
-    mHandleStartElement = mSandbox->register_callback(
-        nsExpatDriver::HandleStartElementForSystemPrincipal);
-    mHandleEndElement = mSandbox->register_callback(
-        nsExpatDriver::HandleEndElementForSystemPrincipal);
-  } else {
-    mHandleStartElement =
-        mSandbox->register_callback(nsExpatDriver::HandleStartElement);
-    mHandleEndElement =
-        mSandbox->register_callback(nsExpatDriver::HandleEndElement);
-  }
-
-  mSandbox->sandbox_storage = aDriver;
-}
-
-void RLBoxExpatSandboxData::DetachDriver() {
-  mSandbox->sandbox_storage = nullptr;
-  mHandleStartElement.unregister();
-  mHandleEndElement.unregister();
-}
-
-RLBoxExpatSandboxData::~RLBoxExpatSandboxData() {
-  MOZ_ASSERT(mSandbox);
-
-  
-  
-  MOZ_ASSERT(!mSandbox->sandbox_storage);
-  MOZ_ASSERT(mHandleStartElement.is_unregistered());
-  MOZ_ASSERT(mHandleEndElement.is_unregistered());
-
-  
-  mHandleXMLDeclaration.unregister();
-  mHandleCharacterData.unregister();
-  mHandleProcessingInstruction.unregister();
-  mHandleDefault.unregister();
-  mHandleExternalEntityRef.unregister();
-  mHandleComment.unregister();
-  mHandleStartCdataSection.unregister();
-  mHandleEndCdataSection.unregister();
-  mHandleStartDoctypeDecl.unregister();
-  mHandleEndDoctypeDecl.unregister();
-  
-  mSandbox->destroy_sandbox();
-  MOZ_COUNT_DTOR(RLBoxExpatSandboxData);
-}
-
 NS_IMETHODIMP
 nsExpatDriver::WillBuildModel(const CParserContext& aParserContext,
                               nsITokenizer* aTokenizer, nsIContentSink* aSink) {
@@ -1468,9 +1123,23 @@ nsExpatDriver::WillBuildModel(const CParserContext& aParserContext,
 
   mOriginalSink = aSink;
 
+  static const XML_Memory_Handling_Suite memsuite = {malloc, realloc, free};
+
   static const char16_t kExpatSeparator[] = {kExpatSeparatorChar, '\0'};
 
-  
+  mExpatParser = XML_ParserCreate_MM(kUTF16, &memsuite, kExpatSeparator);
+  NS_ENSURE_TRUE(mExpatParser, NS_ERROR_FAILURE);
+
+  XML_SetReturnNSTriplet(mExpatParser, XML_TRUE);
+
+#ifdef XML_DTD
+  XML_SetParamEntityParsing(mExpatParser, XML_PARAM_ENTITY_PARSING_ALWAYS);
+#endif
+
+  mURISpec = aParserContext.mScanner->GetFilename();
+
+  XML_SetBase(mExpatParser, mURISpec.get());
+
   nsCOMPtr<Document> doc = do_QueryInterface(mOriginalSink->GetTarget());
   if (doc) {
     nsCOMPtr<nsPIDOMWindowOuter> win = doc->GetWindow();
@@ -1491,65 +1160,32 @@ nsExpatDriver::WillBuildModel(const CParserContext& aParserContext,
   }
 
   
-  MOZ_ASSERT(!mSandboxPoolData);
-  mSandboxPoolData = RLBoxExpatSandboxPool::sSingleton->PopOrCreate();
-  NS_ENSURE_TRUE(mSandboxPoolData, NS_ERROR_OUT_OF_MEMORY);
+  XML_SetXmlDeclHandler(mExpatParser, Driver_HandleXMLDeclaration);
+  if (doc && doc->NodePrincipal()->IsSystemPrincipal()) {
+    XML_SetElementHandler(mExpatParser, HandleStartElementForSystemPrincipal,
+                          HandleEndElementForSystemPrincipal);
+  } else {
+    XML_SetElementHandler(mExpatParser, HandleStartElement, HandleEndElement);
+  }
+  XML_SetCharacterDataHandler(mExpatParser, Driver_HandleCharacterData);
+  XML_SetProcessingInstructionHandler(mExpatParser,
+                                      Driver_HandleProcessingInstruction);
+  XML_SetDefaultHandlerExpand(mExpatParser, Driver_HandleDefault);
+  XML_SetExternalEntityRefHandler(
+      mExpatParser,
+      (XML_ExternalEntityRefHandler)Driver_HandleExternalEntityRef);
+  XML_SetExternalEntityRefHandlerArg(mExpatParser, this);
+  XML_SetCommentHandler(mExpatParser, Driver_HandleComment);
+  XML_SetCdataSectionHandler(mExpatParser, Driver_HandleStartCdataSection,
+                             Driver_HandleEndCdataSection);
 
-  MOZ_ASSERT(SandboxData());
-
-  SandboxData()->AttachDriver(doc && doc->NodePrincipal()->IsSystemPrincipal(),
-                              static_cast<void*>(this));
-
-  
-  
-  
-  
-  auto expatSeparator = TransferBuffer<char16_t>(
-      Sandbox(), kExpatSeparator,
-      nsCharTraits<char16_t>::length(kExpatSeparator) + 1);
-  auto utf16 = TransferBuffer<char16_t>(
-      Sandbox(), kUTF16, nsCharTraits<char16_t>::length(kUTF16) + 1);
-  mExpatParser = Sandbox()->invoke_sandbox_function(
-      MOZ_XML_ParserCreate_MM, *utf16, nullptr, *expatSeparator);
-  NS_ENSURE_TRUE(mExpatParser, NS_ERROR_FAILURE);
-
-  RLBOX_EXPAT_MCALL(MOZ_XML_SetReturnNSTriplet, XML_TRUE);
-
-#ifdef XML_DTD
-  RLBOX_EXPAT_MCALL(MOZ_XML_SetParamEntityParsing,
-                    XML_PARAM_ENTITY_PARSING_ALWAYS);
-#endif
-
-  mURISpec = aParserContext.mScanner->GetFilename();
-
-  const XML_Char* uriStr = mURISpec.get();
-  auto uri = TransferBuffer<XML_Char>(Sandbox(), uriStr, mURISpec.Length() + 1);
-  RLBOX_EXPAT_MCALL(MOZ_XML_SetBase, *uri);
+  XML_SetParamEntityParsing(mExpatParser,
+                            XML_PARAM_ENTITY_PARSING_UNLESS_STANDALONE);
+  XML_SetDoctypeDeclHandler(mExpatParser, Driver_HandleStartDoctypeDecl,
+                            Driver_HandleEndDoctypeDecl);
 
   
-  RLBOX_EXPAT_MCALL(MOZ_XML_SetXmlDeclHandler,
-                    SandboxData()->mHandleXMLDeclaration);
-  RLBOX_EXPAT_MCALL(MOZ_XML_SetElementHandler,
-                    SandboxData()->mHandleStartElement,
-                    SandboxData()->mHandleEndElement);
-  RLBOX_EXPAT_MCALL(MOZ_XML_SetCharacterDataHandler,
-                    SandboxData()->mHandleCharacterData);
-  RLBOX_EXPAT_MCALL(MOZ_XML_SetProcessingInstructionHandler,
-                    SandboxData()->mHandleProcessingInstruction);
-  RLBOX_EXPAT_MCALL(MOZ_XML_SetDefaultHandlerExpand,
-                    SandboxData()->mHandleDefault);
-  RLBOX_EXPAT_MCALL(MOZ_XML_SetExternalEntityRefHandler,
-                    SandboxData()->mHandleExternalEntityRef);
-  RLBOX_EXPAT_MCALL(MOZ_XML_SetCommentHandler, SandboxData()->mHandleComment);
-  RLBOX_EXPAT_MCALL(MOZ_XML_SetCdataSectionHandler,
-                    SandboxData()->mHandleStartCdataSection,
-                    SandboxData()->mHandleEndCdataSection);
-
-  RLBOX_EXPAT_MCALL(MOZ_XML_SetParamEntityParsing,
-                    XML_PARAM_ENTITY_PARSING_UNLESS_STANDALONE);
-  RLBOX_EXPAT_MCALL(MOZ_XML_SetDoctypeDeclHandler,
-                    SandboxData()->mHandleStartDoctypeDecl,
-                    SandboxData()->mHandleEndDoctypeDecl);
+  XML_SetUserData(mExpatParser, this);
 
   return mInternalState;
 }
@@ -1561,10 +1197,6 @@ nsExpatDriver::BuildModel(nsITokenizer* aTokenizer, nsIContentSink* aSink) {
 
 NS_IMETHODIMP
 nsExpatDriver::DidBuildModel(nsresult anErrorCode) {
-  
-  
-  
-  Destroy();
   mOriginalSink = nullptr;
   mSink = nullptr;
   return NS_OK;
@@ -1580,7 +1212,7 @@ NS_IMETHODIMP_(void)
 nsExpatDriver::Terminate() {
   
   if (mExpatParser) {
-    RLBOX_EXPAT_MCALL(MOZ_XML_StopParser, XML_FALSE);
+    XML_StopParser(mExpatParser, XML_FALSE);
   }
   mInternalState = NS_ERROR_HTMLPARSER_STOPPARSING;
 }
@@ -1620,19 +1252,10 @@ void nsExpatDriver::MaybeStopParser(nsresult aState) {
     
     
     
-    RLBOX_EXPAT_MCALL(MOZ_XML_StopParser, BlockedOrInterrupted());
+    XML_StopParser(mExpatParser, BlockedOrInterrupted());
   } else if (NS_SUCCEEDED(mInternalState)) {
     
     
     mInternalState = aState;
   }
-}
-
-inline RLBoxExpatSandboxData* nsExpatDriver::SandboxData() const {
-  return reinterpret_cast<RLBoxExpatSandboxData*>(
-      mSandboxPoolData->SandboxData());
-}
-
-inline rlbox_sandbox_expat* nsExpatDriver::Sandbox() const {
-  return SandboxData()->Sandbox();
 }
