@@ -67,12 +67,6 @@ class PrintTarget {
 
   virtual void Finish();
 
-  
-
-
-
-  virtual bool RotateNeededForLandscape() const { return false; }
-
   const IntSize& GetSize() const { return mSize; }
 
   
