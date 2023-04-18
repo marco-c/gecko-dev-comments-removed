@@ -2234,7 +2234,11 @@ pref("devtools.target-switching.server.enabled", true);
 
 
 
+#if defined(NIGHTLY_BUILD)
+pref("devtools.every-frame-target.enabled", true);
+#else
 pref("devtools.every-frame-target.enabled", false);
+#endif
 
 
 pref("devtools.command-button-pick.enabled", true);
