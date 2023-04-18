@@ -8,6 +8,70 @@
 
 var { ExtensionError } = ExtensionUtils;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const execute = (tab, context, details, kind, method) => {
+  let options = {
+    jsPaths: [],
+    extensionId: context.extension.id,
+  };
+
+  
+  options.hasActiveTabPermission = tab.hasActiveTabPermission;
+  options.matches = tab.extension.allowedOrigins.patterns.map(
+    host => host.pattern
+  );
+
+  if (details.code) {
+    options[`${kind}Code`] = details.code;
+  }
+
+  if (details.files) {
+    for (const file of details.files) {
+      let url = context.uri.resolve(file);
+      if (!tab.extension.isExtensionURL(url)) {
+        return Promise.reject({
+          message: "Files to be injected must be within the extension",
+        });
+      }
+      options[`${kind}Paths`].push(url);
+    }
+  }
+
+  
+  if (details.frameId) {
+    options.frameID = details.frameId;
+  }
+
+  options.runAt = "document_idle";
+  options.wantReturnValue = true;
+
+  
+  
+
+  
+  
+  return tab.queryContent("Execute", options);
+};
+
 this.scripting = class extends ExtensionAPI {
   getAPI(context) {
     const { extension } = context;
@@ -20,19 +84,11 @@ this.scripting = class extends ExtensionAPI {
 
           let tab = tabManager.get(tabId);
 
-          let executeScriptDetails = {
-            code: null,
-            file: null,
-            runAt: "document_idle",
+          let executeDetails = {
+            
+            code: details.codeToExecute,
+            files: details.files,
           };
-
-          if (details.files) {
-            
-            executeScriptDetails.file = details.files[0];
-          } else {
-            
-            executeScriptDetails.code = details.codeToExecute;
-          }
 
           const promises = [];
 
@@ -42,9 +98,9 @@ this.scripting = class extends ExtensionAPI {
           }
 
           for (const frameId of frameIds) {
+            const details = { ...executeDetails, frameId };
             promises.push(
-              tab
-                .executeScript(context, { ...executeScriptDetails, frameId })
+              execute(tab, context, details, "js", "executeScript")
                 
                 .then(results => ({ frameId, result: results[0] || null }))
                 .catch(error => ({ frameId, result: null, error }))

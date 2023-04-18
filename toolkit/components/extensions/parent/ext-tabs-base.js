@@ -808,6 +808,10 @@ class TabBase {
     }
 
     options.wantReturnValue = true;
+
+    
+    
+    
     return this.queryContent("Execute", options);
   }
 
