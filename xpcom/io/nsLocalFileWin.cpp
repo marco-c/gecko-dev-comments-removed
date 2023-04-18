@@ -3081,7 +3081,7 @@ nsLocalFile::Contains(nsIFile* aInFile, bool* aResult) {
   }
 
   
-  if (inFilePath.Length() >= myFilePathLen &&
+  if (inFilePath.Length() > myFilePathLen &&
       inFilePath[myFilePathLen] == L'\\') {
     if (_wcsnicmp(myFilePath.get(), inFilePath.get(), myFilePathLen) == 0) {
       *aResult = true;
