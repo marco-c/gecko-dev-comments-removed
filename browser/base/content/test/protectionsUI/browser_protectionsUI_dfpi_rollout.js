@@ -68,22 +68,18 @@ function testTelemetryState(optIn) {
 
 
 add_task(async function testdFPIRolloutPref() {
-  
-  
-  
-  let cookieBehaviorInitialDefault = defaultPrefs.getIntPref(
-    COOKIE_BEHAVIOR_PREF
+  defaultPrefs.setIntPref(
+    COOKIE_BEHAVIOR_PREF,
+    Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER
   );
 
   
   testTelemetryState(null);
 
   Services.prefs.setBoolPref(PREF_DFPI_ENABLED_BY_DEFAULT, false);
-  
-  
   is(
     defaultPrefs.getIntPref(COOKIE_BEHAVIOR_PREF),
-    cookieBehaviorInitialDefault
+    Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER
   );
   testSearchPrefState(false);
   testTelemetryState(false);
@@ -99,7 +95,7 @@ add_task(async function testdFPIRolloutPref() {
   Services.prefs.setBoolPref(PREF_DFPI_ENABLED_BY_DEFAULT, false);
   is(
     defaultPrefs.getIntPref(COOKIE_BEHAVIOR_PREF),
-    cookieBehaviorInitialDefault
+    Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER
   );
   testSearchPrefState(false);
   testTelemetryState(false);
