@@ -745,7 +745,9 @@ JS_PUBLIC_API bool JS::CollectGlobalStats(GlobalStats* gStats) {
 
   
   
-  HelperThreadState().addSizeOfIncludingThis(gStats, lock);
+  if (IsHelperThreadStateInitialized()) {
+    HelperThreadState().addSizeOfIncludingThis(gStats, lock);
+  }
 
 #ifdef JS_TRACE_LOGGING
   
