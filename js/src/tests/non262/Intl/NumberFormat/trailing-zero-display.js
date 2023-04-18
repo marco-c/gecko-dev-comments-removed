@@ -53,15 +53,18 @@
 
 {
   let nf1 = new Intl.NumberFormat("en", {
+    minimumFractionDigits: 2,
     maximumFractionDigits: 2,
     roundingIncrement: 5,
   });
   let nf2 = new Intl.NumberFormat("en", {
+    minimumFractionDigits: 2,
     maximumFractionDigits: 2,
     roundingIncrement: 5,
     trailingZeroDisplay: "auto",
   });
   let nf3 = new Intl.NumberFormat("en", {
+    minimumFractionDigits: 2,
     maximumFractionDigits: 2,
     roundingIncrement: 5,
     trailingZeroDisplay: "stripIfInteger",

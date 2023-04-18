@@ -229,6 +229,12 @@ function Intl_PluralRules_selectRange(start, end) {
     }
 
     
+    if (start === undefined || end === undefined) {
+        ThrowTypeError(JSMSG_UNDEFINED_NUMBER, start === undefined ? "start" : "end",
+                       "PluralRules", "selectRange");
+    }
+
+    
     var x = ToNumber(start);
 
     

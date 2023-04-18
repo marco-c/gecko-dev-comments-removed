@@ -59,26 +59,43 @@
 
 
 
+
+
 {
   let nf = new Intl.NumberFormat("en", {
     roundingIncrement: 10,
+    
+    maximumFractionDigits: 0,
   });
 
   let resolved = nf.resolvedOptions();
   assertEq(resolved.minimumFractionDigits, 0);
-  assertEq(resolved.maximumFractionDigits, 3);
+  assertEq(resolved.maximumFractionDigits, 0);
   assertEq(resolved.roundingIncrement, 10);
 
-  
-  
-  
-  assertEq(nf.format(123), "123.000");
-  assertEq(nf.format(123.456), "123.460");
+  assertEq(nf.format(123), "120");
+  assertEq(nf.format(123.456), "120");
+}
+
+
+
+{
+  let options = {
+    roundingIncrement: 10,
+    
+    
+  };
+  assertThrowsInstanceOf(() => new Intl.NumberFormat("en", options), RangeError);
 }
 
 
 for (let roundingIncrement of [-1, 0, Infinity, NaN]){
-  assertThrowsInstanceOf(() => new Intl.NumberFormat("en", {roundingIncrement}), RangeError);
+  let options = {
+    roundingIncrement,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  };
+  assertThrowsInstanceOf(() => new Intl.NumberFormat("en", options), RangeError);
 }
 
 if (typeof reportCompare === "function")

@@ -580,17 +580,23 @@ function InitializeNumberFormat(numberFormat, thisValue, locales, options) {
       case 5000:
         break;
       default:
-        ThrowRangeError(JSMSG_INVALID_DIGITS_VALUE, roundingIncrement);
+        ThrowRangeError(JSMSG_INVALID_OPTION_VALUE, "roundingIncrement", roundingIncrement);
     }
     lazyNumberFormatData.roundingIncrement = roundingIncrement;
 
     if (roundingIncrement !== 1) {
-      if (hasOwn("minimumSignificantDigits", lazyNumberFormatData)) {
-        ThrowRangeError(JSMSG_INVALID_DIGITS_VALUE, roundingIncrement);
-      } else {
-        assert(lazyNumberFormatData.roundingPriority === "auto",
-               "unexpected rounding priority with minimumSignificantDigits");
-      }
+        
+        if (lazyNumberFormatData.roundingPriority !== "auto") {
+            ThrowTypeError(JSMSG_INVALID_NUMBER_OPTION, "roundingIncrement", "roundingPriority");
+        }
+        if (hasOwn("minimumSignificantDigits", lazyNumberFormatData)) {
+            ThrowTypeError(JSMSG_INVALID_NUMBER_OPTION, "roundingIncrement", "minimumSignificantDigits");
+        }
+
+        
+        if (lazyNumberFormatData.minimumFractionDigits !== lazyNumberFormatData.maximumFractionDigits) {
+            ThrowRangeError(JSMSG_UNEQUAL_FRACTION_DIGITS);
+        }
     }
 #else
     lazyNumberFormatData.roundingIncrement = 1;
@@ -822,7 +828,7 @@ function Intl_NumberFormat_formatRange(start, end) {
     
     if (start === undefined || end === undefined) {
         ThrowTypeError(JSMSG_UNDEFINED_NUMBER, start === undefined ? "start" : "end",
-                       "formatRange");
+                       "NumberFormat", "formatRange");
     }
 
     
@@ -845,7 +851,7 @@ function Intl_NumberFormat_formatRangeToParts(start, end) {
     
     if (start === undefined || end === undefined) {
         ThrowTypeError(JSMSG_UNDEFINED_NUMBER, start === undefined ? "start" : "end",
-                       "formatRangeToParts");
+                       "NumberFormat", "formatRangeToParts");
     }
 
     
