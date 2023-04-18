@@ -1897,8 +1897,11 @@ PeerConnectionImpl::Close() {
   
   
   
+  
+  
+  
   if (!mPrivateWindow) {
-    RecordLongtermICEStatistics();
+    WebrtcGlobalInformation::StoreLongTermICEStatistics(*this);
   }
   RecordEndOfCallTelemetry();
 
@@ -3108,10 +3111,6 @@ RefPtr<dom::RTCStatsReportPromise> PeerConnectionImpl::GetStats(
           [](nsresult rv) {
             return dom::RTCStatsReportPromise::CreateAndReject(rv, __func__);
           });
-}
-
-void PeerConnectionImpl::RecordLongtermICEStatistics() {
-  WebrtcGlobalInformation::StoreLongTermICEStatistics(*this);
 }
 
 void PeerConnectionImpl::RecordIceRestartStatistics(JsepSdpType type) {

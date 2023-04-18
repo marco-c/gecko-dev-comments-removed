@@ -493,13 +493,6 @@ class PeerConnectionImpl final
       JsepTransceiver* aJsepTransceiver, dom::MediaStreamTrack* aSendTrack,
       ErrorResult& aRv);
 
-  
-  
-  
-  
-  
-  void RecordLongtermICEStatistics();
-
   void RecordIceRestartStatistics(JsepSdpType type);
 
   void StoreConfigurationForAboutWebrtc(const RTCConfiguration& aConfig);
