@@ -90,6 +90,11 @@ extern JS_PUBLIC_API bool JS_ExecuteScript(JSContext* cx,
                                            JS::HandleObjectVector envChain,
                                            JS::Handle<JSScript*> script);
 
+
+
+
+using JSSourceElementCallback = JSObject* (*)(JSContext*, JS::HandleValue);
+
 namespace JS {
 
 
@@ -245,6 +250,14 @@ extern JS_PUBLIC_API bool UpdateDebugMetadata(
     JSContext* cx, Handle<JSScript*> script, const InstantiateOptions& options,
     HandleValue privateValue, HandleString elementAttributeName,
     HandleScript introScript, HandleScript scriptOrModule);
+
+
+
+
+
+
+extern JS_PUBLIC_API void SetSourceElementCallback(
+    JSContext* cx, JSSourceElementCallback callback);
 
 } 
 
