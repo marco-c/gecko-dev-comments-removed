@@ -1,33 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #![warn(rust_2018_idioms)]
 
 use std::env;
 
 include!("no_atomic.rs");
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 fn main() {
     let target = match env::var("TARGET") {
