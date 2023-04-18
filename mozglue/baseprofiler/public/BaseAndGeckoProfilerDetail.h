@@ -15,26 +15,9 @@
 
 #include "mozilla/BaseProfilerUtils.h"
 #include "mozilla/Span.h"
-#include "mozilla/TimeStamp.h"
 #include "mozilla/Types.h"
-#include "mozilla/UniquePtr.h"
 
-namespace mozilla {
-
-class ProfileBufferChunkManagerWithLocalLimit;
-
-namespace baseprofiler::detail {
-
-[[nodiscard]] MFBT_API UniquePtr<ProfileBufferChunkManagerWithLocalLimit>
-ExtractBaseProfilerChunkManager();
-
-
-
-[[nodiscard]] MFBT_API TimeStamp GetThreadRegistrationTime();
-
-}  
-
-namespace profiler::detail {
+namespace mozilla::profiler::detail {
 
 
 [[nodiscard]] MFBT_API bool FilterHasPid(
@@ -54,8 +37,6 @@ namespace profiler::detail {
     Span<const char* const> aFilters,
     baseprofiler::BaseProfilerProcessId aPid =
         baseprofiler::profiler_current_process_id());
-
-}  
 
 }  
 

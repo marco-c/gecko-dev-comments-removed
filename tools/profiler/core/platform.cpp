@@ -196,14 +196,6 @@ using ThreadRegistry = mozilla::profiler::ThreadRegistry;
 
 LazyLogModule gProfilerLog("prof");
 
-ProfileChunkedBuffer& profiler_get_core_buffer() {
-  
-  
-  static ProfileChunkedBuffer& sProfileChunkedBuffer =
-      baseprofiler::profiler_get_core_buffer();
-  return sProfileChunkedBuffer;
-}
-
 mozilla::Atomic<int, mozilla::MemoryOrdering::Relaxed> gSkipSampling;
 
 #if defined(GP_OS_android)
@@ -378,7 +370,12 @@ using JsFrameBuffer = mozilla::profiler::ThreadRegistrationData::JsFrameBuffer;
 class CorePS {
  private:
   CorePS()
-      : mProcessStartTime(TimeStamp::ProcessCreation())
+      : mProcessStartTime(TimeStamp::ProcessCreation()),
+        
+        
+        
+        
+        mCoreBuffer(ProfileChunkedBuffer::ThreadSafety::WithMutex)
 #ifdef USE_LUL_STACKWALK
         ,
         mLul(nullptr)
@@ -438,6 +435,9 @@ class CorePS {
 
   
   PS_GET_LOCKLESS(TimeStamp, ProcessStartTime)
+
+  
+  PS_GET_LOCKLESS(ProfileChunkedBuffer&, CoreBuffer)
 
   PS_GET(JsFrameBuffer&, JsFrames)
 
@@ -529,6 +529,17 @@ class CorePS {
 
   
   
+  
+  
+  
+  
+  
+  
+  
+  ProfileChunkedBuffer mCoreBuffer;
+
+  
+  
   Vector<RefPtr<PageInformation>> mRegisteredPages;
 
   
@@ -556,6 +567,11 @@ class CorePS {
 };
 
 CorePS* CorePS::sInstance = nullptr;
+
+ProfileChunkedBuffer& profiler_get_core_buffer() {
+  MOZ_ASSERT(CorePS::Exists());
+  return CorePS::CoreBuffer();
+}
 
 void locked_profiler_add_sampled_counter(PSLockRef aLock,
                                          BaseProfilerCount* aCounter) {
@@ -662,11 +678,9 @@ class ActivePS {
     return aFeatures;
   }
 
-  ActivePS(
-      PSLockRef aLock, PowerOfTwo32 aCapacity, double aInterval,
-      uint32_t aFeatures, const char** aFilters, uint32_t aFilterCount,
-      uint64_t aActiveTabID, const Maybe<double>& aDuration,
-      UniquePtr<ProfileBufferChunkManagerWithLocalLimit> aChunkManagerOrNull)
+  ActivePS(PSLockRef aLock, PowerOfTwo32 aCapacity, double aInterval,
+           uint32_t aFeatures, const char** aFilters, uint32_t aFilterCount,
+           uint64_t aActiveTabID, const Maybe<double>& aDuration)
       : mGeneration(sNextGeneration++),
         mCapacity(aCapacity),
         mDuration(aDuration),
@@ -674,16 +688,11 @@ class ActivePS {
         mFeatures(AdjustFeatures(aFeatures, aFilterCount)),
         mActiveTabID(aActiveTabID),
         mProfileBufferChunkManager(
-            aChunkManagerOrNull
-                ? std::move(aChunkManagerOrNull)
-                : MakeUnique<ProfileBufferChunkManagerWithLocalLimit>(
-                      size_t(ClampToAllowedEntries(aCapacity.Value())) *
-                          scBytesPerEntry,
-                      ChunkSizeForEntries(aCapacity.Value()))),
+            size_t(ClampToAllowedEntries(aCapacity.Value())) * scBytesPerEntry,
+            ChunkSizeForEntries(aCapacity.Value())),
         mProfileBuffer([this]() -> ProfileChunkedBuffer& {
-          ProfileChunkedBuffer& coreBuffer = profiler_get_core_buffer();
-          coreBuffer.SetChunkManagerIfDifferent(*mProfileBufferChunkManager);
-          return coreBuffer;
+          CorePS::CoreBuffer().SetChunkManager(mProfileBufferChunkManager);
+          return CorePS::CoreBuffer();
         }()),
         mMaybeProcessCPUCounter(ProfilerFeature::HasProcessCPU(aFeatures)
                                     ? new ProcessCPUCounter(aLock)
@@ -751,10 +760,7 @@ class ActivePS {
       }
     }
 #endif
-    if (mProfileBufferChunkManager) {
-      
-      profiler_get_core_buffer().ResetChunkManager();
-    }
+    CorePS::CoreBuffer().ResetChunkManager();
   }
 
   bool ThreadSelected(const char* aThreadName) {
@@ -785,15 +791,13 @@ class ActivePS {
   }
 
  public:
-  static void Create(
-      PSLockRef aLock, PowerOfTwo32 aCapacity, double aInterval,
-      uint32_t aFeatures, const char** aFilters, uint32_t aFilterCount,
-      uint64_t aActiveTabID, const Maybe<double>& aDuration,
-      UniquePtr<ProfileBufferChunkManagerWithLocalLimit> aChunkManagerOrNull) {
+  static void Create(PSLockRef aLock, PowerOfTwo32 aCapacity, double aInterval,
+                     uint32_t aFeatures, const char** aFilters,
+                     uint32_t aFilterCount, uint64_t aActiveTabID,
+                     const Maybe<double>& aDuration) {
     MOZ_ASSERT(!sInstance);
     sInstance = new ActivePS(aLock, aCapacity, aInterval, aFeatures, aFilters,
-                             aFilterCount, aActiveTabID, aDuration,
-                             std::move(aChunkManagerOrNull));
+                             aFilterCount, aActiveTabID, aDuration);
   }
 
   [[nodiscard]] static SamplerThread* Destroy(PSLockRef aLock) {
@@ -972,15 +976,12 @@ class ActivePS {
   static ProfileBufferChunkManagerWithLocalLimit& ControlledChunkManager(
       PSLockRef) {
     MOZ_ASSERT(sInstance);
-    MOZ_ASSERT(sInstance->mProfileBufferChunkManager);
-    return *sInstance->mProfileBufferChunkManager;
+    return sInstance->mProfileBufferChunkManager;
   }
 
   static void FulfillChunkRequests(PSLockRef) {
     MOZ_ASSERT(sInstance);
-    if (sInstance->mProfileBufferChunkManager) {
-      sInstance->mProfileBufferChunkManager->FulfillChunkRequests();
-    }
+    sInstance->mProfileBufferChunkManager.FulfillChunkRequests();
   }
 
   static ProfileBuffer& Buffer(PSLockRef) {
@@ -1197,7 +1198,7 @@ class ActivePS {
     if (sInstance->mBaseProfileThreads &&
         sInstance->mGeckoIndexWhenBaseProfileAdded
                 .ConvertToProfileBufferIndex() <
-            profiler_get_core_buffer().GetState().mRangeStart) {
+            CorePS::CoreBuffer().GetState().mRangeStart) {
       DEBUG_LOG("ClearExpiredExitProfiles() - Discarding base profile %p",
                 sInstance->mBaseProfileThreads.get());
       sInstance->mBaseProfileThreads.reset();
@@ -1215,7 +1216,7 @@ class ActivePS {
     sInstance->mBaseProfileThreads = std::move(aBaseProfileThreads);
     sInstance->mGeckoIndexWhenBaseProfileAdded =
         ProfileBufferBlockIndex::CreateFromProfileBufferIndex(
-            profiler_get_core_buffer().GetState().mRangeEnd);
+            CorePS::CoreBuffer().GetState().mRangeEnd);
   }
 
   static UniquePtr<char[]> MoveBaseProfileThreads(PSLockRef aLock) {
@@ -1312,8 +1313,7 @@ class ActivePS {
   const uint64_t mActiveTabID;
 
   
-  
-  UniquePtr<ProfileBufferChunkManagerWithLocalLimit> mProfileBufferChunkManager;
+  ProfileBufferChunkManagerWithLocalLimit mProfileBufferChunkManager;
 
   
   ProfileBuffer mProfileBuffer;
@@ -3955,7 +3955,7 @@ void SamplerThread::Run() {
             
             
             if (!runningTimesDiff.IsEmpty()) {
-              profiler_get_core_buffer().PutObjects(
+              CorePS::CoreBuffer().PutObjects(
                   ProfileBufferEntry::Kind::RunningTimes, runningTimesDiff);
             }
 
@@ -4171,7 +4171,7 @@ void SamplerThread::Run() {
               
               
               if (unresponsiveDuration_ms.isSome()) {
-                profiler_get_core_buffer().PutObjects(
+                CorePS::CoreBuffer().PutObjects(
                     ProfileBufferEntry::Kind::UnresponsiveDurationMs,
                     *unresponsiveDuration_ms);
               }
@@ -4192,20 +4192,20 @@ void SamplerThread::Run() {
                            previousState.mFailedPutBytes));
               
               
-              profiler_get_core_buffer().PutObjects(
+              CorePS::CoreBuffer().PutObjects(
                   ProfileBufferEntry::Kind::CompactStack,
                   UniquePtr<ProfileChunkedBuffer>(nullptr));
             } else if (state.mRangeEnd - previousState.mRangeEnd >=
-                       *profiler_get_core_buffer().BufferLength()) {
+                       *CorePS::CoreBuffer().BufferLength()) {
               LOG("Stack sample too big for profiler storage, needed %u bytes",
                   unsigned(state.mRangeEnd - previousState.mRangeEnd));
               
               
-              profiler_get_core_buffer().PutObjects(
+              CorePS::CoreBuffer().PutObjects(
                   ProfileBufferEntry::Kind::CompactStack,
                   UniquePtr<ProfileChunkedBuffer>(nullptr));
             } else {
-              profiler_get_core_buffer().PutObjects(
+              CorePS::CoreBuffer().PutObjects(
                   ProfileBufferEntry::Kind::CompactStack, localBuffer);
             }
 
@@ -5424,6 +5424,18 @@ static void TriggerPollJSSamplingOnMainThread() {
   }
 }
 
+static bool HasMinimumLength(const char* aString, size_t aMinimumLength) {
+  if (!aString) {
+    return false;
+  }
+  for (size_t i = 0; i < aMinimumLength; ++i) {
+    if (aString[i] == '\0') {
+      return false;
+    }
+  }
+  return true;
+}
+
 static void locked_profiler_start(PSLockRef aLock, PowerOfTwo32 aCapacity,
                                   double aInterval, uint32_t aFeatures,
                                   const char** aFilters, uint32_t aFilterCount,
@@ -5456,24 +5468,15 @@ static void locked_profiler_start(PSLockRef aLock, PowerOfTwo32 aCapacity,
   
   mozilla::base_profiler_markers_detail::EnsureBufferForMainThreadAddMarker();
 
-  UniquePtr<ProfileBufferChunkManagerWithLocalLimit> baseChunkManager;
-  bool profilersHandOver = false;
+  UniquePtr<char[]> baseprofile;
   if (baseprofiler::profiler_is_active()) {
     
     
     
-
     
-    
-    
-    baseChunkManager = baseprofiler::detail::ExtractBaseProfilerChunkManager();
-
-    if (baseChunkManager) {
-      profilersHandOver = true;
-      BASE_PROFILER_MARKER_TEXT(
-          "Profilers handover", PROFILER, MarkerTiming::IntervalStart(),
-          "Transition from Base to Gecko Profiler, some data may be missing");
-    }
+    baseprofile = baseprofiler::profiler_get_profile(
+         0,  false,
+         true);
 
     
     
@@ -5510,10 +5513,19 @@ static void locked_profiler_start(PSLockRef aLock, PowerOfTwo32 aCapacity,
   double interval = aInterval > 0 ? aInterval : PROFILER_DEFAULT_INTERVAL;
 
   ActivePS::Create(aLock, capacity, interval, aFeatures, aFilters, aFilterCount,
-                   aActiveTabID, duration, std::move(baseChunkManager));
+                   aActiveTabID, duration);
 
   
   MOZ_ASSERT(ActivePS::Exists(aLock));
+
+  
+  
+  if (HasMinimumLength(baseprofile.get(), 2)) {
+    
+    
+    
+    ActivePS::AddBaseProfileThreads(aLock, std::move(baseprofile));
+  }
 
   
 #if defined(MOZ_REPLACE_MALLOC) && defined(MOZ_PROFILER_MEMORY)
@@ -5598,11 +5610,6 @@ static void locked_profiler_start(PSLockRef aLock, PowerOfTwo32 aCapacity,
 
   
   RacyFeatures::SetActive(ActivePS::Features(aLock));
-
-  if (profilersHandOver) {
-    PROFILER_MARKER_UNTYPED("Profilers handover", PROFILER,
-                            MarkerTiming::IntervalEnd());
-  }
 }
 
 void profiler_start(PowerOfTwo32 aCapacity, double aInterval,
@@ -6296,7 +6303,7 @@ bool profiler_is_locked_on_current_thread() {
   return PSAutoLock::IsLockedOnCurrentThread() ||
          ThreadRegistry::IsRegistryMutexLockedOnCurrentThread() ||
          ThreadRegistration::IsDataMutexLockedOnCurrentThread() ||
-         profiler_get_core_buffer().IsThreadSafeAndLockedOnCurrentThread() ||
+         CorePS::CoreBuffer().IsThreadSafeAndLockedOnCurrentThread() ||
          ProfilerParent::IsLockedOnCurrentThread() ||
          ProfilerChild::IsLockedOnCurrentThread();
 }

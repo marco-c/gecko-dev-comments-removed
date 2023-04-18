@@ -183,16 +183,6 @@ void PrintToConsole(const char* aFmt, ...) {
   va_end(args);
 }
 
-ProfileChunkedBuffer& profiler_get_core_buffer() {
-  
-  
-  
-  
-  static ProfileChunkedBuffer sProfileChunkedBuffer{
-      ProfileChunkedBuffer::ThreadSafety::WithMutex};
-  return sProfileChunkedBuffer;
-}
-
 Atomic<int, MemoryOrdering::Relaxed> gSkipSampling;
 
 constexpr static bool ValidateFeatures() {
@@ -326,7 +316,12 @@ typedef const PSAutoLock& PSLockRef;
 class CorePS {
  private:
   CorePS()
-      : mProcessStartTime(TimeStamp::ProcessCreation())
+      : mProcessStartTime(TimeStamp::ProcessCreation()),
+        
+        
+        
+        
+        mCoreBuffer(ProfileChunkedBuffer::ThreadSafety::WithMutex)
 #ifdef USE_LUL_STACKWALK
         ,
         mLul(nullptr)
@@ -384,6 +379,9 @@ class CorePS {
 
   
   PS_GET_LOCKLESS(const TimeStamp&, ProcessStartTime)
+
+  
+  PS_GET_LOCKLESS(ProfileChunkedBuffer&, CoreBuffer)
 
   PS_GET(const Vector<UniquePtr<RegisteredThread>>&, RegisteredThreads)
 
@@ -492,6 +490,17 @@ class CorePS {
 
   
   
+  
+  
+  
+  
+  
+  
+  
+  ProfileChunkedBuffer mCoreBuffer;
+
+  
+  
   Vector<UniquePtr<RegisteredThread>> mRegisteredThreads;
 
   
@@ -514,6 +523,11 @@ class CorePS {
 };
 
 CorePS* CorePS::sInstance = nullptr;
+
+ProfileChunkedBuffer& profiler_get_core_buffer() {
+  MOZ_ASSERT(CorePS::Exists());
+  return CorePS::CoreBuffer();
+}
 
 class SamplerThread;
 
@@ -612,14 +626,11 @@ class ActivePS {
         mInterval(aInterval),
         mFeatures(AdjustFeatures(aFeatures, aFilterCount)),
         mProfileBufferChunkManager(
-            MakeUnique<ProfileBufferChunkManagerWithLocalLimit>(
-                size_t(ClampToAllowedEntries(aCapacity.Value())) *
-                    scBytesPerEntry,
-                ChunkSizeForEntries(aCapacity.Value()))),
+            size_t(ClampToAllowedEntries(aCapacity.Value())) * scBytesPerEntry,
+            ChunkSizeForEntries(aCapacity.Value())),
         mProfileBuffer([this]() -> ProfileChunkedBuffer& {
-          ProfileChunkedBuffer& buffer = profiler_get_core_buffer();
-          buffer.SetChunkManager(*mProfileBufferChunkManager);
-          return buffer;
+          CorePS::CoreBuffer().SetChunkManager(mProfileBufferChunkManager);
+          return CorePS::CoreBuffer();
         }()),
         
         
@@ -639,12 +650,7 @@ class ActivePS {
     }
   }
 
-  ~ActivePS() {
-    if (mProfileBufferChunkManager) {
-      
-      profiler_get_core_buffer().ResetChunkManager();
-    }
-  }
+  ~ActivePS() { CorePS::CoreBuffer().ResetChunkManager(); }
 
   bool ThreadSelected(const char* aThreadName) {
     if (mFiltersLowered.empty()) {
@@ -730,12 +736,6 @@ class ActivePS {
     return n;
   }
 
-  static UniquePtr<ProfileBufferChunkManagerWithLocalLimit>
-  ExtractBaseProfilerChunkManager(PSLockRef) {
-    MOZ_ASSERT(sInstance);
-    return std::move(sInstance->mProfileBufferChunkManager);
-  }
-
   static bool ShouldProfileThread(PSLockRef aLock, ThreadInfo* aInfo) {
     MOZ_ASSERT(sInstance);
     return sInstance->ThreadSelected(aInfo->Name());
@@ -766,9 +766,7 @@ class ActivePS {
 
   static void FulfillChunkRequests(PSLockRef) {
     MOZ_ASSERT(sInstance);
-    if (sInstance->mProfileBufferChunkManager) {
-      sInstance->mProfileBufferChunkManager->FulfillChunkRequests();
-    }
+    sInstance->mProfileBufferChunkManager.FulfillChunkRequests();
   }
 
   static ProfileBuffer& Buffer(PSLockRef) {
@@ -1018,8 +1016,7 @@ class ActivePS {
   Vector<std::string> mFiltersLowered;
 
   
-  
-  UniquePtr<ProfileBufferChunkManagerWithLocalLimit> mProfileBufferChunkManager;
+  ProfileBufferChunkManagerWithLocalLimit mProfileBufferChunkManager;
 
   
   ProfileBuffer mProfileBuffer;
@@ -1062,19 +1059,6 @@ uint32_t ActivePS::sNextGeneration = 0;
 #undef PS_GET
 #undef PS_GET_LOCKLESS
 #undef PS_GET_AND_SET
-
-namespace detail {
-
-[[nodiscard]] MFBT_API UniquePtr<ProfileBufferChunkManagerWithLocalLimit>
-ExtractBaseProfilerChunkManager() {
-  PSAutoLock lock;
-  if (MOZ_UNLIKELY(!ActivePS::Exists(lock))) {
-    return nullptr;
-  }
-  return ActivePS::ExtractBaseProfilerChunkManager(lock);
-}
-
-}  
 
 Atomic<uint32_t, MemoryOrdering::Relaxed> RacyFeatures::sActiveAndFeatures(0);
 
@@ -1190,26 +1174,6 @@ ProfilingStack* AutoProfilerLabel::GetProfilingStack() {
 
 
 MOZ_THREAD_LOCAL(ProfilingStack*) AutoProfilerLabel::sProfilingStack;
-
-namespace detail {
-
-[[nodiscard]] MFBT_API TimeStamp GetThreadRegistrationTime() {
-  if (!CorePS::Exists()) {
-    return {};
-  }
-
-  PSAutoLock lock;
-
-  RegisteredThread* registeredThread =
-      TLSRegisteredThread::RegisteredThread(lock);
-  if (!registeredThread) {
-    return {};
-  }
-
-  return registeredThread->Info()->RegisterTime();
-}
-
-}  
 
 
 static const char* const kMainThreadName = "GeckoMain";
@@ -2374,11 +2338,11 @@ void SamplerThread::Run() {
               LOG("Stack sample too big for local storage, needed %u bytes",
                   unsigned(state.mRangeEnd - previousState.mRangeEnd));
             } else if (state.mRangeEnd - previousState.mRangeEnd >=
-                       *profiler_get_core_buffer().BufferLength()) {
+                       *CorePS::CoreBuffer().BufferLength()) {
               LOG("Stack sample too big for profiler storage, needed %u bytes",
                   unsigned(state.mRangeEnd - previousState.mRangeEnd));
             } else {
-              profiler_get_core_buffer().AppendContents(localBuffer);
+              CorePS::CoreBuffer().AppendContents(localBuffer);
             }
 
             
@@ -3687,7 +3651,7 @@ bool profiler_is_locked_on_current_thread() {
   
   
   return PSAutoLock::IsLockedOnCurrentThread() ||
-         profiler_get_core_buffer().IsThreadSafeAndLockedOnCurrentThread();
+         CorePS::CoreBuffer().IsThreadSafeAndLockedOnCurrentThread();
 }
 
 
