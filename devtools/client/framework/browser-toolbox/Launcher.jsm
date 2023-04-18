@@ -305,7 +305,16 @@ BrowserToolboxLauncher.prototype = {
       "devtools.webconsole.input.context",
       false
     );
+    const env = Cc["@mozilla.org/process/environment;1"].getService(
+      Ci.nsIEnvironment
+    );
     const environment = {
+      
+      
+      MOZ_PROFILER_STARTUP: env.get("MOZ_BROWSER_TOOLBOX_PROFILER_STARTUP"),
+      
+      MOZ_BROWSER_TOOLBOX_PROFILER_STARTUP: "0",
+
       
       
       MOZ_BROWSER_TOOLBOX_FISSION_PREF: isBrowserToolboxFission ? "1" : "0",

@@ -21,6 +21,9 @@ const { LocalizationHelper } = require("devtools/shared/l10n");
 const L10N = new LocalizationHelper(
   "devtools/client/locales/toolbox.properties"
 );
+const env = Cc["@mozilla.org/process/environment;1"].getService(
+  Ci.nsIEnvironment
+);
 loader.lazyImporter(
   this,
   "BrowserToolboxLauncher",
@@ -64,9 +67,6 @@ function hideStatusMessage() {
 
 var connect = async function() {
   
-  const env = Cc["@mozilla.org/process/environment;1"].getService(
-    Ci.nsIEnvironment
-  );
 
   
   
@@ -218,6 +218,19 @@ async function openToolbox(descriptorFront) {
   ) {
     
     installTestingServer();
+  }
+
+  
+  if (env.get("MOZ_PROFILER_STARTUP") === "1") {
+    const notificationBox = gToolbox.getNotificationBox();
+    const text =
+      "The profiler started recording this toolbox, open another browser toolbox to open the profile via the performance panel";
+    notificationBox.appendNotification(
+      text,
+      null,
+      null,
+      notificationBox.PRIORITY_INFO_HIGH
+    );
   }
 }
 
