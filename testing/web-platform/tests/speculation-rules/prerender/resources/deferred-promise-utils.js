@@ -23,6 +23,9 @@
 class PrerenderEventCollector {
   constructor() {
     this.eventsSeen_ = [];
+    new PrerenderChannel('close').addEventListener('message', () => {
+      window.close();
+    });
   }
 
   
@@ -49,11 +52,9 @@ class PrerenderEventCollector {
             })
         .finally(() => {
           
-          const testChannel = new BroadcastChannel('test-channel');
+          const testChannel = new PrerenderChannel('test-channel');
           
           testChannel.postMessage(this.eventsSeen_);
-          testChannel.close();
-          window.close();
         });
     document.addEventListener('prerenderingchange', () => {
       this.addEvent('prerendering change');
@@ -63,10 +64,9 @@ class PrerenderEventCollector {
     
     setTimeout(() => {
       
-      const prerenderChannel = new BroadcastChannel('prerender-channel');
+      const prerenderChannel = new PrerenderChannel('prerender-channel');
       
       prerenderChannel.postMessage('readyToActivate');
-      prerenderChannel.close();
     }, 0);
   }
 }
