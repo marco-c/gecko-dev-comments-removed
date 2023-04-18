@@ -4479,9 +4479,6 @@ pref("devtools.jsonview.enabled", true);
 pref("devtools.theme", "auto", sticky);
 
 
-pref("devtools.theme.show-auto-theme-info", true);
-
-
 
 pref("devtools.policy.disabled", false);
 

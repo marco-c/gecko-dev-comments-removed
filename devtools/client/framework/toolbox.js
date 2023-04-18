@@ -13,8 +13,6 @@ const MAX_ORDINAL = 99;
 const SPLITCONSOLE_ENABLED_PREF = "devtools.toolbox.splitconsoleEnabled";
 const SPLITCONSOLE_HEIGHT_PREF = "devtools.toolbox.splitconsoleHeight";
 const DISABLE_AUTOHIDE_PREF = "ui.popup.disable_autohide";
-const FORCE_THEME_NOTIFICATION_PREF = "devtools.theme.force-auto-theme-info";
-const SHOW_THEME_NOTIFICATION_PREF = "devtools.theme.show-auto-theme-info";
 const PSEUDO_LOCALE_PREF = "intl.l10n.pseudo";
 const HOST_HISTOGRAM = "DEVTOOLS_TOOLBOX_HOST";
 const CURRENT_THEME_SCALAR = "devtools.current_theme";
@@ -808,58 +806,6 @@ Toolbox.prototype = {
     );
   },
 
-  _showAutoThemeNotification() {
-    
-    if (
-      
-      !Services.appinfo.chromeColorSchemeIsDark &&
-      
-      !Services.prefs.getBoolPref(FORCE_THEME_NOTIFICATION_PREF, false)
-    ) {
-      return;
-    }
-
-    
-    if (Services.prefs.getCharPref("devtools.theme") !== "auto") {
-      return;
-    }
-
-    
-    if (!Services.prefs.getBoolPref(SHOW_THEME_NOTIFICATION_PREF, false)) {
-      return;
-    }
-
-    
-    const box = this.getNotificationBox();
-    const brandShorterName = Services.strings
-      .createBundle("chrome://branding/locale/brand.properties")
-      .GetStringFromName("brandShorterName");
-
-    box.appendNotification(
-      L10N.getFormatStr("toolbox.autoThemeNotification", brandShorterName),
-      "auto-theme-notification",
-      "",
-      box.PRIORITY_NEW,
-      [
-        {
-          label: L10N.getStr("toolbox.autoThemeNotification.settingsButton"),
-          callback: async () => {
-            const { panelDoc } = await this.selectTool("options");
-            panelDoc.querySelector("#devtools-theme-box").scrollIntoView();
-            
-            this.emitForTests("test-theme-settings-opened");
-          },
-        },
-      ],
-      evt => {
-        if (evt === "removed") {
-          
-          Services.prefs.setBoolPref(SHOW_THEME_NOTIFICATION_PREF, false);
-        }
-      }
-    );
-  },
-
   
 
 
@@ -1090,8 +1036,6 @@ Toolbox.prototype = {
       }
 
       await this.initHarAutomation();
-
-      this._showAutoThemeNotification();
 
       this.emit("ready");
       this._resolveIsOpen();
