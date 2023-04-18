@@ -222,8 +222,8 @@ void FlushAllChildData(
   }
 
   {
-    RefPtr<gmp::GeckoMediaPluginServiceParent> gmps(
-        gmp::GeckoMediaPluginServiceParent::GetSingleton());
+    RefPtr<mozilla::gmp::GeckoMediaPluginServiceParent> gmps(
+        mozilla::gmp::GeckoMediaPluginServiceParent::GetSingleton());
     
     
     
@@ -286,7 +286,7 @@ void SendFOGData(ipc::ByteBuf&& buf) {
       mozilla::dom::ContentChild::GetSingleton()->SendFOGData(std::move(buf));
       break;
     case GeckoProcessType_GMPlugin: {
-      gmp::SendFOGData(std::move(buf));
+      mozilla::gmp::SendFOGData(std::move(buf));
     } break;
     case GeckoProcessType_GPU:
       Unused << mozilla::gfx::GPUParent::GetSingleton()->SendFOGData(
@@ -333,8 +333,8 @@ void TestTriggerMetrics(uint32_t aProcessType,
                         const RefPtr<dom::Promise>& promise) {
   switch (aProcessType) {
     case nsIXULRuntime::PROCESS_TYPE_GMPLUGIN: {
-      RefPtr<gmp::GeckoMediaPluginServiceParent> gmps(
-          gmp::GeckoMediaPluginServiceParent::GetSingleton());
+      RefPtr<mozilla::gmp::GeckoMediaPluginServiceParent> gmps(
+          mozilla::gmp::GeckoMediaPluginServiceParent::GetSingleton());
       gmps->TestTriggerMetrics()->Then(
           GetCurrentSerialEventTarget(), __func__,
           [promise]() { promise->MaybeResolveWithUndefined(); },
