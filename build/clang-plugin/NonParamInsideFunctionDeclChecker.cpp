@@ -4,6 +4,7 @@
 
 #include "NonParamInsideFunctionDeclChecker.h"
 #include "CustomMatchers.h"
+#include "clang/Basic/TargetInfo.h"
 
 class NonParamAnnotation : public CustomTypeAnnotation {
 public:
@@ -13,25 +14,60 @@ protected:
   
   
   
+  unsigned checkExplicitAlignment(const Decl *D) const {
+    ASTContext &Context = D->getASTContext();
+    unsigned PointerAlign = Context.getTargetInfo().getPointerAlign(0);
+
+    
+    
+    
+    unsigned MaxAlign = D->getMaxAlignment();
+    if (MaxAlign > PointerAlign) {
+      return Context.toCharUnitsFromBits(MaxAlign).getQuantity();
+    }
+    return 0;
+  }
+
+  
+  
+  
   
   std::string getImplicitReason(const TagDecl *D,
                                 VisitFlags &ToVisit) const override {
     
-    for (const Attr *A : D->attrs()) {
-      if (isa<AlignedAttr>(A)) {
-        return "it has an alignas(_) annotation";
+    
+    
+    if (!D->getASTContext().getTargetInfo().getCXXABI().isMicrosoft() &&
+        getDeclarationNamespace(D) == "std") {
+      StringRef Name = getNameChecked(D);
+      if (Name == "function") {
+        ToVisit = VISIT_NONE;
+        return "";
       }
+    }
+
+    
+    
+    
+    auto RD = dyn_cast<CXXRecordDecl>(D);
+    if (RD && RD->canPassInRegisters()) {
+      return "";
+    }
+
+    
+    if (unsigned ExplicitAlign = checkExplicitAlignment(D)) {
+      return "it has an explicit alignment of '" +
+             std::to_string(ExplicitAlign) + "'";
     }
 
     
     if (auto RD = dyn_cast<RecordDecl>(D)) {
       for (auto F : RD->fields()) {
-        for (auto A : F->attrs()) {
-          if (isa<AlignedAttr>(A)) {
-            return ("member '" + F->getName() +
-                    "' has an alignas(_) annotation")
-                .str();
-          }
+        if (unsigned ExplicitAlign = checkExplicitAlignment(F)) {
+          return ("member '" + F->getName() +
+                  "' has an explicit alignment of '" +
+                  std::to_string(ExplicitAlign) + "'")
+              .str();
         }
       }
     }
