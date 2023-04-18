@@ -37,6 +37,15 @@ const IMPLAUSIBILITY_PENALTY: i64 = -220;
 
 const ORDINAL_BONUS: i64 = 300;
 
+
+
+
+
+
+
+
+const COPYRIGHT_BONUS: i64 = 222;
+
 const IMPLAUSIBLE_LATIN_CASE_TRANSITION_PENALTY: i64 = -180;
 
 const NON_LATIN_CAPITALIZATION_BONUS: i64 = 40;
@@ -334,6 +343,7 @@ enum OrdinalState {
     FeminineAbbreviationStartLetter,
     Digit,
     Roman,
+    Copyright,
 }
 
 struct LatinCandidate {
@@ -439,6 +449,7 @@ impl LatinCandidate {
                 
                 
                 
+                
                 match self.ordinal_state {
                     OrdinalState::Other => {
                         if caseless_class == 0 {
@@ -464,6 +475,8 @@ impl LatinCandidate {
                         
                         {
                             self.ordinal_state = OrdinalState::Roman;
+                        } else if b == 0xA9 {
+                            self.ordinal_state = OrdinalState::Copyright;
                         } else {
                             self.ordinal_state = OrdinalState::Other;
                         }
@@ -574,6 +587,14 @@ impl LatinCandidate {
                         if b == 0xBA {
                             self.ordinal_state = OrdinalState::OrdinalExpectingSpaceOrDigit;
                         } else if caseless_class == 0 {
+                            self.ordinal_state = OrdinalState::Space;
+                        } else {
+                            self.ordinal_state = OrdinalState::Other;
+                        }
+                    }
+                    OrdinalState::Copyright => {
+                        if b == b' ' {
+                            score += COPYRIGHT_BONUS;
                             self.ordinal_state = OrdinalState::Space;
                         } else {
                             self.ordinal_state = OrdinalState::Other;
@@ -3445,6 +3466,11 @@ mod tests {
     fn test_a0a0() {
         
         check("\u{A0}\u{A0}", WINDOWS_1252);
+    }
+
+    #[test]
+    fn test_space_copyright_space() {
+        check(" © ", WINDOWS_1252);
     }
 
     #[test]
