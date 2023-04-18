@@ -21,6 +21,7 @@
 #include "vm/EqualityOperations.h"
 #include "vm/GlobalObject.h"
 #include "vm/JSContext.h"
+#include "vm/RecordTupleShared.h"
 #include "vm/RecordType.h"
 #include "vm/SelfHosting.h"
 #include "vm/ToSource.h"
@@ -223,6 +224,31 @@ bool js::tuple_value_of(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   args.rval().setExtendedPrimitive(*tuple);
+  return true;
+}
+
+bool TupleType::copy(JSContext* cx, Handle<TupleType*> in,
+                     MutableHandle<TupleType*> out) {
+  out.set(TupleType::createUninitialized(cx, in->length()));
+  if (!out) {
+    return false;
+  }
+  RootedValue v(cx), vCopy(cx);
+  for (uint32_t i = 0; i < in->length(); i++) {
+    
+    v.set(in->getDenseElement(i));
+
+    
+    if (!CopyRecordTupleElement(cx, v, &vCopy)) {
+      return false;
+    }
+
+    
+    if (!out->initializeNextElement(cx, vCopy)) {
+      return false;
+    }
+  }
+  out->finishInitialization(cx);
   return true;
 }
 

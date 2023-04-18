@@ -32,6 +32,9 @@ class TupleType final : public js::NativeObject {
   void finishInitialization(JSContext* cx);
   static js::Shape* getInitialShape(JSContext* cx);
 
+  static bool copy(JSContext* cx, Handle<TupleType*> in,
+                   MutableHandle<TupleType*> out);
+
   bool getOwnProperty(HandleId id, MutableHandleValue vp) const;
   inline uint32_t length() const { return getElementsHeader()->length; }
 
