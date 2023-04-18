@@ -220,6 +220,8 @@ var interfaceNamesInGlobalScope = [
   
   "NotificationEvent",
   
+  { name: "OffscreenCanvas", nightly: true },
+  
   "Performance",
   
   "PerformanceEntry",
@@ -279,6 +281,38 @@ var interfaceNamesInGlobalScope = [
   "URLSearchParams",
   
   "WebSocket",
+  
+  { name: "WebGL2RenderingContext", nightly: true },
+  
+  { name: "WebGLActiveInfo", nightly: true },
+  
+  { name: "WebGLBuffer", nightly: true },
+  
+  { name: "WebGLContextEvent", nightly: true },
+  
+  { name: "WebGLFramebuffer", nightly: true },
+  
+  { name: "WebGLProgram", nightly: true },
+  
+  { name: "WebGLRenderbuffer", nightly: true },
+  
+  { name: "WebGLRenderingContext", nightly: true },
+  
+  { name: "WebGLSampler", nightly: true },
+  
+  { name: "WebGLShader", nightly: true },
+  
+  { name: "WebGLShaderPrecisionFormat", nightly: true },
+  
+  { name: "WebGLSync", nightly: true },
+  
+  { name: "WebGLTexture", nightly: true },
+  
+  { name: "WebGLTransformFeedback", nightly: true },
+  
+  { name: "WebGLUniformLocation", nightly: true },
+  
+  { name: "WebGLVertexArrayObject", nightly: true },
   
   "WebGLQuery",
   
