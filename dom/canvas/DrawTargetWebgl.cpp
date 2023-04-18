@@ -10,6 +10,7 @@
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/gfx/Blur.h"
 #include "mozilla/gfx/DrawTargetSkia.h"
+#include "mozilla/gfx/Helpers.h"
 #include "mozilla/gfx/HelpersSkia.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/gfx/PathSkia.h"
@@ -1353,40 +1354,6 @@ bool DrawTargetWebgl::SharedContext::DrawRectAccel(
         
         
         
-        if ((aOptions.mCompositionOp == CompositionOp::OP_SOURCE ||
-             (aOptions.mCompositionOp == CompositionOp::OP_OVER &&
-              format == SurfaceFormat::B8G8R8X8)) &&
-            aOptions.mAlpha == 1.0f &&
-            (!aTransformed || currentTransform.HasOnlyIntegerTranslation()) &&
-            surfacePattern.mMatrix.HasOnlyIntegerTranslation() &&
-            !aStrokeOptions && !aMaskColor) {
-          auto intRect = RoundedToInt(aRect);
-          if (aRect.WithinEpsilonOf(Rect(intRect), 1.0e-3f)) {
-            if (aTransformed) {
-              intRect += RoundedToInt(currentTransform.GetTranslation());
-            }
-            intRect = intRect.Intersect(mClipRect);
-            auto destOffset =
-                RoundedToInt(surfacePattern.mMatrix.GetTranslation());
-            bounds = (IntRect(offset, texSize) + destOffset).Intersect(intRect);
-            if (bounds.IsEmpty()) {
-              success = true;
-              break;
-            }
-            if (mLastTexture != mCurrentTarget->mTex) {
-              mWebgl->BindTexture(LOCAL_GL_TEXTURE_2D, mCurrentTarget->mTex);
-              mLastTexture = mCurrentTarget->mTex;
-            }
-            if (UploadSurface(data, format, bounds - destOffset,
-                              bounds.TopLeft(), false)) {
-              success = true;
-            }
-            break;
-          }
-        }
-        
-        
-        
         size_t usedBytes = TextureHandle::UsedBytes(format, texSize);
         PruneTextureMemory(usedBytes, false);
         
@@ -1703,24 +1670,35 @@ static inline bool HasMatchingScale(const Matrix& aTransform1,
 bool PathCacheEntry::MatchesPath(const SkPath& aPath, const Pattern* aPattern,
                                  const StrokeOptions* aStrokeOptions,
                                  const Matrix& aTransform,
-                                 const IntRect& aBounds, HashNumber aHash) {
+                                 const IntRect& aBounds, const Point& aOrigin,
+                                 HashNumber aHash, float aSigma) {
   return aHash == mHash && HasMatchingScale(aTransform, mTransform) &&
-         aBounds.Size() == mBounds.Size() && aPath == mPath &&
+         
+         aBounds.x - aOrigin.x >= mBounds.x - mOrigin.x &&
+         (aBounds.x - aOrigin.x) + aBounds.width <=
+             (mBounds.x - mOrigin.x) + mBounds.width &&
+         aBounds.y - aOrigin.y >= mBounds.y - mOrigin.y &&
+         (aBounds.y - aOrigin.y) + aBounds.height <=
+             (mBounds.y - mOrigin.y) + mBounds.height &&
+         aPath == mPath &&
          (!aPattern ? !mPattern : mPattern && *aPattern == *mPattern) &&
          (!aStrokeOptions
               ? !mStrokeOptions
-              : mStrokeOptions && *aStrokeOptions == *mStrokeOptions);
+              : mStrokeOptions && *aStrokeOptions == *mStrokeOptions) &&
+         aSigma == mSigma;
 }
 
 PathCacheEntry::PathCacheEntry(const SkPath& aPath, Pattern* aPattern,
                                StoredStrokeOptions* aStrokeOptions,
                                const Matrix& aTransform, const IntRect& aBounds,
-                               const Point& aOrigin, HashNumber aHash)
+                               const Point& aOrigin, HashNumber aHash,
+                               float aSigma)
     : CacheEntryImpl<PathCacheEntry>(aTransform, aBounds, aHash),
       mPath(aPath),
       mOrigin(aOrigin),
       mPattern(aPattern),
-      mStrokeOptions(aStrokeOptions) {}
+      mStrokeOptions(aStrokeOptions),
+      mSigma(aSigma) {}
 
 
 
@@ -1729,12 +1707,12 @@ PathCacheEntry::PathCacheEntry(const SkPath& aPath, Pattern* aPattern,
 already_AddRefed<PathCacheEntry> PathCache::FindOrInsertEntry(
     const SkPath& aPath, const Pattern* aPattern,
     const StrokeOptions* aStrokeOptions, const Matrix& aTransform,
-    const IntRect& aBounds, const Point& aOrigin) {
+    const IntRect& aBounds, const Point& aOrigin, float aSigma) {
   HashNumber hash =
       PathCacheEntry::HashPath(aPath, aPattern, aTransform, aBounds);
   for (const RefPtr<PathCacheEntry>& entry : mEntries) {
     if (entry->MatchesPath(aPath, aPattern, aStrokeOptions, aTransform, aBounds,
-                           hash)) {
+                           aOrigin, hash, aSigma)) {
       return do_AddRef(entry);
     }
   }
@@ -1752,8 +1730,9 @@ already_AddRefed<PathCacheEntry> PathCache::FindOrInsertEntry(
       return nullptr;
     }
   }
-  RefPtr<PathCacheEntry> entry = new PathCacheEntry(
-      aPath, pattern, strokeOptions, aTransform, aBounds, aOrigin, hash);
+  RefPtr<PathCacheEntry> entry =
+      new PathCacheEntry(aPath, pattern, strokeOptions, aTransform, aBounds,
+                         aOrigin, hash, aSigma);
   mEntries.insertFront(entry);
   return entry.forget();
 }
@@ -1775,18 +1754,30 @@ void DrawTargetWebgl::Fill(const Path* aPath, const Pattern& aPattern,
 
 bool DrawTargetWebgl::SharedContext::DrawPathAccel(
     const Path* aPath, const Pattern& aPattern, const DrawOptions& aOptions,
-    const StrokeOptions* aStrokeOptions) {
+    const StrokeOptions* aStrokeOptions, const ShadowOptions* aShadow,
+    bool aCacheable) {
   
   
   const PathSkia* pathSkia = static_cast<const PathSkia*>(aPath);
   const Matrix& currentTransform = GetTransform();
-  Rect bounds = pathSkia->GetFastBounds(currentTransform, aStrokeOptions)
-                    .Intersect(Rect(IntRect(IntPoint(), mViewportSize)));
+  Rect bounds = pathSkia->GetFastBounds(currentTransform, aStrokeOptions);
   
   if (bounds.IsEmpty()) {
     return true;
   }
-  IntRect intBounds = RoundedOut(bounds);
+  IntRect viewport(IntPoint(), mViewportSize);
+  if (aShadow) {
+    
+    bounds += aShadow->mOffset;
+    int32_t blurRadius = aShadow->BlurRadius();
+    bounds.Inflate(blurRadius);
+    viewport.Inflate(blurRadius);
+  }
+  
+  IntRect intBounds = RoundedOut(bounds).Intersect(viewport);
+  if (intBounds.IsEmpty()) {
+    return true;
+  }
   
   
   
@@ -1794,19 +1785,33 @@ bool DrawTargetWebgl::SharedContext::DrawPathAccel(
       aPattern.GetType() == PatternType::COLOR
           ? Some(static_cast<const ColorPattern&>(aPattern).mColor)
           : Nothing();
-  if (!mPathCache) {
-    mPathCache = MakeUnique<PathCache>();
-  }
   
   
-  RefPtr<PathCacheEntry> entry = mPathCache->FindOrInsertEntry(
-      pathSkia->GetPath(), color ? nullptr : &aPattern, aStrokeOptions,
-      currentTransform, intBounds, bounds.TopLeft());
-  if (!entry) {
-    return false;
+  RefPtr<PathCacheEntry> entry;
+  RefPtr<TextureHandle> handle;
+  if (aCacheable) {
+    if (!mPathCache) {
+      mPathCache = MakeUnique<PathCache>();
+    }
+    entry = mPathCache->FindOrInsertEntry(
+        pathSkia->GetPath(), color ? nullptr : &aPattern, aStrokeOptions,
+        currentTransform, intBounds, bounds.TopLeft(),
+        aShadow ? aShadow->mSigma : -1.0f);
+    if (!entry) {
+      return false;
+    }
+    handle = entry->GetHandle();
   }
 
-  RefPtr<TextureHandle> handle = entry->GetHandle();
+  
+  
+  Maybe<DeviceColor> shadowColor = color;
+  if (aShadow) {
+    shadowColor = Some(aShadow->mColor);
+    if (color) {
+      shadowColor->a *= color->a;
+    }
+  }
   if (handle && handle->IsValid()) {
     
     
@@ -1814,14 +1819,12 @@ bool DrawTargetWebgl::SharedContext::DrawPathAccel(
     
     
     
-    
-    Point oldOffset = entry->GetOrigin() - entry->GetBounds().TopLeft();
-    Point newOffset = bounds.TopLeft() - intBounds.TopLeft();
-    Rect offsetRect = Rect(intBounds) + (newOffset - oldOffset);
+    Point offset =
+        (bounds.TopLeft() - entry->GetOrigin()) + entry->GetBounds().TopLeft();
     SurfacePattern pathPattern(nullptr, ExtendMode::CLAMP,
-                               Matrix::Translation(offsetRect.TopLeft()));
-    if (DrawRectAccel(offsetRect, pathPattern, aOptions, color, &handle, false,
-                      true, true)) {
+                               Matrix::Translation(offset));
+    if (DrawRectAccel(Rect(intBounds), pathPattern, aOptions, shadowColor,
+                      &handle, false, true, true)) {
       return true;
     }
   } else {
@@ -1832,10 +1835,15 @@ bool DrawTargetWebgl::SharedContext::DrawPathAccel(
     
     handle = nullptr;
     RefPtr<DrawTargetSkia> pathDT = new DrawTargetSkia;
-    if (pathDT->Init(intBounds.Size(),
-                     color ? SurfaceFormat::A8 : SurfaceFormat::B8G8R8A8)) {
-      pathDT->SetTransform(currentTransform *
-                           Matrix::Translation(-intBounds.TopLeft()));
+    if (pathDT->Init(intBounds.Size(), color || aShadow
+                                           ? SurfaceFormat::A8
+                                           : SurfaceFormat::B8G8R8A8)) {
+      Point offset = -intBounds.TopLeft();
+      if (aShadow) {
+        
+        offset += aShadow->mOffset;
+      }
+      pathDT->SetTransform(currentTransform * Matrix::Translation(offset));
       DrawOptions drawOptions(1.0f, CompositionOp::OP_OVER,
                               aOptions.mAntialiasMode);
       static const ColorPattern maskPattern(
@@ -1846,6 +1854,19 @@ bool DrawTargetWebgl::SharedContext::DrawPathAccel(
       } else {
         pathDT->Fill(aPath, cachePattern, drawOptions);
       }
+      if (aShadow && aShadow->mSigma > 0.0f) {
+        
+        uint8_t* data = nullptr;
+        IntSize size;
+        int32_t stride = 0;
+        SurfaceFormat format = SurfaceFormat::UNKNOWN;
+        if (pathDT->LockBits(&data, &size, &stride, &format)) {
+          AlphaBoxBlur blur(Rect(pathDT->GetRect()), stride, aShadow->mSigma,
+                            aShadow->mSigma);
+          blur.Blur(data);
+          pathDT->ReleaseBits(data);
+        }
+      }
       RefPtr<SourceSurface> pathSurface = pathDT->Snapshot();
       if (pathSurface) {
         SurfacePattern pathPattern(pathSurface, ExtendMode::CLAMP,
@@ -1854,11 +1875,13 @@ bool DrawTargetWebgl::SharedContext::DrawPathAccel(
         
         
         
-        if (DrawRectAccel(Rect(intBounds), pathPattern, aOptions, color,
+        if (DrawRectAccel(Rect(intBounds), pathPattern, aOptions, shadowColor,
                           &handle, false, true) &&
             handle) {
-          entry->Link(handle);
-        } else {
+          if (entry) {
+            entry->Link(handle);
+          }
+        } else if (entry) {
           entry->Unlink();
         }
         return true;
@@ -1898,7 +1921,8 @@ void DrawTargetWebgl::DrawSurface(SourceSurface* aSurface, const Rect& aDest,
                                   aDest.height / aSource.height);
   matrix.PreTranslate(-aSource.x, -aSource.y);
   matrix.PostTranslate(aDest.x, aDest.y);
-  SurfacePattern pattern(aSurface, ExtendMode::CLAMP, matrix);
+  SurfacePattern pattern(aSurface, ExtendMode::CLAMP, matrix,
+                         aSurfOptions.mSamplingFilter);
   DrawRect(aDest, pattern, aOptions);
 }
 
@@ -1958,95 +1982,46 @@ static already_AddRefed<DataSourceSurface> ExtractAlpha(
   return alpha.forget();
 }
 
-bool DrawTargetWebgl::SharedContext::DrawSurfaceWithShadowAccel(
-    SourceSurface* aSurface, const Point& aDest, const DeviceColor& aColor,
-    const Point& aOffset, Float aSigma, CompositionOp aOperator) {
+void DrawTargetWebgl::DrawShadow(const Path* aPath, const Pattern& aPattern,
+                                 const ShadowOptions& aShadow,
+                                 const DrawOptions& aOptions,
+                                 const StrokeOptions* aStrokeOptions) {
   
   
-  
-  
-  IntSize size = aSurface->GetSize();
-  RefPtr<TextureHandle> handle =
-      static_cast<TextureHandle*>(aSurface->GetUserData(&mShadowTextureKey));
-  if (!handle || !handle->IsValid() || handle->GetSigma() != aSigma) {
-    
-    
-    RefPtr<DataSourceSurface> alpha;
-    if (RefPtr<DataSourceSurface> alphaData = ExtractAlpha(aSurface)) {
-      DataSourceSurface::ScopedMap dstMap(alphaData,
-                                          DataSourceSurface::READ_WRITE);
-      if (dstMap.IsMapped()) {
-        AlphaBoxBlur blur(Rect(0, 0, size.width, size.height),
-                          dstMap.GetStride(), aSigma, aSigma);
-        blur.Blur(dstMap.GetData());
-        alpha = alphaData;
-      }
-    }
-    if (alpha) {
-      
-      
-      IntPoint shadowOffset = IntPoint::Round(aDest + aOffset);
-      SurfacePattern shadowMask(alpha, ExtendMode::CLAMP,
-                                Matrix::Translation(Point(shadowOffset)));
-      handle = nullptr;
-      if (DrawRectAccel(Rect(IntRect(shadowOffset, size)), shadowMask,
-                        DrawOptions(1.0f, aOperator), Some(aColor), &handle,
-                        false, true) &&
-          handle) {
-        
-        
-        handle->SetSurface(aSurface);
-        handle->SetSigma(aSigma);
-        aSurface->AddUserData(&mShadowTextureKey, handle.get(),
-                              ReleaseTextureHandle);
-      }
-
-      
-      IntPoint surfaceOffset = IntPoint::Round(aDest);
-      SurfacePattern surfacePattern(aSurface, ExtendMode::CLAMP,
-                                    Matrix::Translation(Point(surfaceOffset)));
-      DrawRectAccel(Rect(IntRect(surfaceOffset, size)), surfacePattern,
-                    DrawOptions(1.0f, aOperator), Nothing(), nullptr, false,
-                    true);
-      return true;
-    }
-  } else {
-    
-    IntPoint shadowOffset = IntPoint::Round(aDest + aOffset);
-    SurfacePattern shadowMask(nullptr, ExtendMode::CLAMP,
-                              Matrix::Translation(Point(shadowOffset)));
-    if (DrawRectAccel(Rect(IntRect(shadowOffset, size)), shadowMask,
-                      DrawOptions(1.0f, aOperator), Some(aColor), &handle,
-                      false, true, true)) {
-      
-      
-      IntPoint surfaceOffset = IntPoint::Round(aDest);
-      SurfacePattern surfacePattern(aSurface, ExtendMode::CLAMP,
-                                    Matrix::Translation(Point(surfaceOffset)));
-      DrawRectAccel(Rect(IntRect(surfaceOffset, size)), surfacePattern,
-                    DrawOptions(1.0f, aOperator), Nothing(), nullptr, false,
-                    true);
-      return true;
-    }
+  if (mWebglValid && SupportsDrawOptions(aOptions) && PrepareContext() &&
+      mSharedContext->DrawPathAccel(aPath, aPattern, aOptions, aStrokeOptions,
+                                    &aShadow)) {
+    return;
   }
-  return false;
+
+  
+  
+  MarkSkiaChanged(aOptions);
+  mSkia->DrawShadow(aPath, aPattern, aShadow, aOptions, aStrokeOptions);
 }
 
 void DrawTargetWebgl::DrawSurfaceWithShadow(SourceSurface* aSurface,
                                             const Point& aDest,
-                                            const DeviceColor& aColor,
-                                            const Point& aOffset, Float aSigma,
+                                            const ShadowOptions& aShadow,
                                             CompositionOp aOperator) {
-  if (mWebglValid && PrepareContext() &&
-      mSharedContext->DrawSurfaceWithShadowAccel(aSurface, aDest, aColor,
-                                                 aOffset, aSigma, aOperator)) {
-    return;
+  DrawOptions options(1.0f, aOperator);
+  if (mWebglValid && SupportsDrawOptions(options) && PrepareContext()) {
+    SurfacePattern pattern(aSurface, ExtendMode::CLAMP,
+                           Matrix::Translation(aDest));
+    SkPath skiaPath;
+    skiaPath.addRect(RectToSkRect(Rect(aSurface->GetRect()) + aDest));
+    RefPtr<PathSkia> path = new PathSkia(skiaPath, FillRule::FILL_WINDING);
+    AutoRestoreTransform restore(this);
+    SetTransform(Matrix());
+    if (mSharedContext->DrawPathAccel(path, pattern, options, nullptr, &aShadow,
+                                      false)) {
+      DrawRect(Rect(aSurface->GetRect()) + aDest, pattern, options);
+      return;
+    }
   }
-  
-  
-  MarkSkiaChanged();
-  mSkia->DrawSurfaceWithShadow(aSurface, aDest, aColor, aOffset, aSigma,
-                               aOperator);
+
+  MarkSkiaChanged(options);
+  mSkia->DrawSurfaceWithShadow(aSurface, aDest, aShadow, aOperator);
 }
 
 already_AddRefed<PathBuilder> DrawTargetWebgl::CreatePathBuilder(

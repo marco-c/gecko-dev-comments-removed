@@ -867,15 +867,6 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
     return NeedToDrawShadow() || NeedToApplyFilter();
   }
 
-  mozilla::gfx::CompositionOp UsedOperation() {
-    if (NeedToDrawShadow() || NeedToApplyFilter()) {
-      
-      return mozilla::gfx::CompositionOp::OP_OVER;
-    }
-
-    return CurrentState().op;
-  }
-
   
 
  protected:

@@ -233,6 +233,23 @@ struct DrawSurfaceOptions {
 
 
 
+struct ShadowOptions {
+  explicit ShadowOptions(const DeviceColor& aColor = DeviceColor(0.0f, 0.0f,
+                                                                 0.0f),
+                         const Point& aOffset = Point(), Float aSigma = 0.0f)
+      : mColor(aColor), mOffset(aOffset), mSigma(aSigma) {}
+
+  DeviceColor mColor; 
+  Point mOffset;      
+  Float mSigma;       
+
+  int32_t BlurRadius() const;
+};
+
+
+
+
+
 
 class GradientStops : public external::AtomicRefCounted<GradientStops> {
  public:
@@ -875,6 +892,14 @@ class Path : public external::AtomicRefCounted<Path> {
   
 
 
+
+  virtual Rect GetFastBounds(
+      const Matrix& aTransform = Matrix(),
+      const StrokeOptions* aStrokeOptions = nullptr) const;
+
+  
+
+
   virtual void StreamToSink(PathSink* aSink) const = 0;
 
   
@@ -1285,13 +1310,25 @@ class DrawTarget : public external::AtomicRefCounted<DrawTarget> {
 
 
 
-
-
   virtual void DrawSurfaceWithShadow(SourceSurface* aSurface,
                                      const Point& aDest,
-                                     const DeviceColor& aColor,
-                                     const Point& aOffset, Float aSigma,
+                                     const ShadowOptions& aShadow,
                                      CompositionOp aOperator) = 0;
+
+  
+
+
+
+
+
+
+
+
+
+  virtual void DrawShadow(const Path* aPath, const Pattern& aPattern,
+                          const ShadowOptions& aShadow,
+                          const DrawOptions& aOptions = DrawOptions(),
+                          const StrokeOptions* aStrokeOptions = nullptr);
 
   
 
