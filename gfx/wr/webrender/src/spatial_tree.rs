@@ -10,7 +10,7 @@ use crate::gpu_types::TransformPalette;
 use crate::internal_types::{FastHashMap, FastHashSet, PipelineInstanceId};
 use crate::print_tree::{PrintableTree, PrintTree, PrintTreePrinter};
 use crate::scene::SceneProperties;
-use crate::spatial_node::{SpatialNode, SpatialNodeType, StickyFrameInfo, SpatialNodeDescriptor};
+use crate::spatial_node::{ReferenceFrameInfo, SpatialNode, SpatialNodeType, StickyFrameInfo, SpatialNodeDescriptor};
 use crate::spatial_node::{SpatialNodeUid, ScrollFrameKind, SceneSpatialNode, SpatialNodeInfo, SpatialNodeUidKind};
 use std::{ops, u32};
 use crate::util::{FastTransform, LayoutToWorldFastTransform, MatrixHelpers, ScaleOffset, scale_factors};
@@ -1218,7 +1218,27 @@ impl SpatialTree {
     pub fn get_local_visible_face(&self, node_index: SpatialNodeIndex) -> VisibleFace {
         let node = self.get_spatial_node(node_index);
         let mut face = VisibleFace::Front;
-        if let Some(parent_index) = node.parent {
+        if let Some(mut parent_index) = node.parent {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            let parent = self.get_spatial_node(parent_index);
+            if let SpatialNode {
+                parent: Some(index),
+                node_type: SpatialNodeType::ReferenceFrame(ReferenceFrameInfo {
+                    kind: ReferenceFrameKind::Perspective { .. },
+                    ..
+                }),
+                ..
+            } = *parent  {
+                parent_index = index;
+            }
             self.get_relative_transform_with_face(node_index, parent_index, Some(&mut face));
         }
         face
