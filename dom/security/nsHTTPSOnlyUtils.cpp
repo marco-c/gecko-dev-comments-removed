@@ -472,7 +472,7 @@ nsHTTPSOnlyUtils::PotentiallyDowngradeHttpsFirstRequest(nsIChannel* aChannel,
     
     
     
-    if (responseStatus >= 400 && responseStatus < 512) {
+    if (responseStatus >= 400 && responseStatus < 600) {
       
       
       
