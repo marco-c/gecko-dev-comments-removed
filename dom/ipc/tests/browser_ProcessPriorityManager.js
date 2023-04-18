@@ -293,7 +293,7 @@ add_task(async function test_normal_background_tab() {
   let originalTab = gBrowser.selectedTab;
 
   await BrowserTestUtils.withNewTab(
-    "https://example.com/browser/dom/ipc/tests/file_cross_frame.html",
+    "http://example.com/browser/dom/ipc/tests/file_cross_frame.html",
     async browser => {
       let tab = gBrowser.getTabForBrowser(browser);
       await assertPriorityChangeOnBackground({
@@ -321,7 +321,7 @@ add_task(async function test_normal_background_tab() {
 add_task(async function test_iframe_navigate() {
   
   let iframeURI2 =
-    "https://test1.example.com/browser/dom/ipc/tests/file_dummy.html";
+    "http://mochi.test:8888/browser/dom/ipc/tests/file_dummy.html";
 
   
   
@@ -341,7 +341,7 @@ add_task(async function test_iframe_navigate() {
   );
 
   await BrowserTestUtils.withNewTab(
-    "https://example.com/browser/dom/ipc/tests/file_cross_frame.html",
+    "http://example.com/browser/dom/ipc/tests/file_cross_frame.html",
     async browser => {
       Assert.equal(
         gTabPriorityWatcher.currentPriority(newIFrameTabChildID),
@@ -429,7 +429,7 @@ add_task(async function test_cross_group_navigate() {
   );
 
   await BrowserTestUtils.withNewTab(
-    "https://example.org/browser/dom/ipc/tests/file_cross_frame.html",
+    "http://example.org/browser/dom/ipc/tests/file_cross_frame.html",
     async browser => {
       Assert.equal(
         gTabPriorityWatcher.currentPriority(backgroundTabChildID),
@@ -483,12 +483,12 @@ add_task(async function test_cross_group_navigate() {
 add_task(async function test_video_background_tab() {
   let originalTab = gBrowser.selectedTab;
 
-  await BrowserTestUtils.withNewTab("https://example.com", async browser => {
+  await BrowserTestUtils.withNewTab("http://example.com", async browser => {
     
     
     await SpecialPowers.spawn(browser, [], async () => {
       let video = content.document.createElement("video");
-      video.src = "https://test1.example.com/browser/dom/ipc/tests/short.mp4";
+      video.src = "http://mochi.test:8888/browser/dom/ipc/tests/short.mp4";
       video.muted = true;
       content.document.body.appendChild(video);
       
@@ -547,12 +547,12 @@ add_task(async function test_video_background_tab() {
 add_task(async function test_audio_background_tab() {
   let originalTab = gBrowser.selectedTab;
 
-  await BrowserTestUtils.withNewTab("https://example.com", async browser => {
+  await BrowserTestUtils.withNewTab("http://example.com", async browser => {
     
     
     await SpecialPowers.spawn(browser, [], async () => {
       let audio = content.document.createElement("audio");
-      audio.src = "https://test1.example.com/browser/dom/ipc/tests/owl.mp3";
+      audio.src = "http://mochi.test:8888/browser/dom/ipc/tests/owl.mp3";
       audio.muted = true;
       content.document.body.appendChild(audio);
       
@@ -622,7 +622,7 @@ add_task(async function test_audio_background_tab() {
 add_task(async function test_web_audio_background_tab() {
   let originalTab = gBrowser.selectedTab;
 
-  await BrowserTestUtils.withNewTab("https://example.com", async browser => {
+  await BrowserTestUtils.withNewTab("http://example.com", async browser => {
     
     await SpecialPowers.spawn(browser, [], async () => {
       let audioCtx = new content.AudioContext();
@@ -687,7 +687,7 @@ add_task(async function test_web_audio_background_tab() {
 
 
 add_task(async function test_audio_background_tab() {
-  let page1 = "https://example.com";
+  let page1 = "http://example.com";
   let page2 = page1 + "/?2";
 
   await BrowserTestUtils.withNewTab(page1, async browser => {
