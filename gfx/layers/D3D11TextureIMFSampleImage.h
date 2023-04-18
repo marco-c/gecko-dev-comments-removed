@@ -12,6 +12,7 @@
 #include "mozilla/gfx/Types.h"
 #include "mozilla/layers/TextureClient.h"
 #include "mozilla/layers/TextureD3D11.h"
+#include "mozilla/ThreadSafeWeakPtr.h"
 
 struct ID3D11Texture2D;
 struct IMFSample;
@@ -21,6 +22,20 @@ namespace gl {
 class GLBlitHelper;
 }
 namespace layers {
+
+class IMFSampleWrapper : public SupportsThreadSafeWeakPtr<IMFSampleWrapper> {
+ public:
+  MOZ_DECLARE_REFCOUNTED_TYPENAME(IMFSampleWrapper)
+
+  static RefPtr<IMFSampleWrapper> Create(IMFSample* aVideoSample);
+  virtual ~IMFSampleWrapper();
+  void ClearVideoSample();
+
+ protected:
+  explicit IMFSampleWrapper(IMFSample* aVideoSample);
+
+  RefPtr<IMFSample> mVideoSample;
+};
 
 
 
@@ -41,6 +56,7 @@ class D3D11TextureIMFSampleImage final : public Image {
   gfx::IntRect GetPictureRect() const override { return mPictureRect; }
 
   ID3D11Texture2D* GetTexture() const;
+  RefPtr<IMFSampleWrapper> GetIMFSampleWrapper();
 
   gfx::YUVColorSpace GetYUVColorSpace() const { return mYUVColorSpace; }
   gfx::ColorRange GetColorRange() const { return mColorRange; }
@@ -56,7 +72,8 @@ class D3D11TextureIMFSampleImage final : public Image {
 
   
   
-  RefPtr<IMFSample> mVideoSample;
+  
+  RefPtr<IMFSampleWrapper> mVideoSample;
   RefPtr<ID3D11Texture2D> mTexture;
   const uint32_t mArrayIndex;
   const gfx::IntSize mSize;

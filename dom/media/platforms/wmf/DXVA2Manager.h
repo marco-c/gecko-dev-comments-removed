@@ -71,6 +71,9 @@ class DXVA2Manager {
   virtual bool SupportsConfig(const VideoInfo& aInfo, IMFMediaType* aInputType,
                               IMFMediaType* aOutputType) = 0;
 
+  
+  virtual void BeforeShutdownVideoMFTDecoder() {}
+
   static bool IsNV12Supported(uint32_t aVendorID, uint32_t aDeviceID,
                               const nsAString& aDriverVersionString);
 
