@@ -20,7 +20,10 @@ class nsAHtml5TreeOpSink {
 
 
 
-  virtual void MoveOpsFrom(nsTArray<nsHtml5TreeOperation>& aOpQueue) = 0;
+
+
+  [[nodiscard]] virtual bool MoveOpsFrom(
+      nsTArray<nsHtml5TreeOperation>& aOpQueue) = 0;
 };
 
 #endif 
