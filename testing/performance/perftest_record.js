@@ -11,6 +11,8 @@ const URL = "/secrets/v1/secret/project/perftest/gecko/level-";
 const SECRET = "/perftest-login";
 const DEFAULT_SERVER = "https://firefox-ci-tc.services.mozilla.com";
 
+const SCM_1_LOGIN_SITES = ["facebook", "netflix"];
+
 
 
 
@@ -293,11 +295,68 @@ async function login(context, commands, final_button) {
   }
 }
 
+
+
+
+
+
+
+
+
+function get_base_URL(fullUrl) {
+  let pathAsArray = fullUrl.split("/");
+  return pathAsArray[0] + "//" + pathAsArray[2];
+}
+
+
+
+
+async function perform_live_login(context, commands) {
+  let testUrl = context.options.browsertime.url;
+
+  let logins = await get_logins(context);
+  const baseUrl = get_base_URL(testUrl);
+
+  await commands.navigate("about:blank");
+
+  let login_info = logins.secret[baseUrl];
+  try {
+    await commands.navigate(login_info.login_url);
+  } catch (err) {
+    context.log.info("Unable to acquire login information");
+    throw err;
+  }
+  await commands.wait.byTime(5000);
+
+  let final_button = await setup_login(login_info, context, commands);
+  await login(context, commands, final_button);
+}
+
 async function pageload_test(context, commands) {
   let testUrl = context.options.browsertime.url;
   let secondaryUrl = context.options.browsertime.secondary_url;
   let testName = context.options.browsertime.testName;
   let input_cmds = context.options.browsertime.commands || "";
+
+  
+  
+  
+  if (context.options.browsertime.login) {
+    if (
+      process.env.RAPTOR_LOGINS ||
+      process.env.MOZ_SCM_LEVEL == 3 ||
+      SCM_1_LOGIN_SITES.includes(testName)
+    ) {
+      try {
+        await perform_live_login(context, commands);
+      } catch (err) {
+        context.log.info(
+          "Unable to login. Acquiring a recording without logging in"
+        );
+        context.log.info("Error:" + err);
+      }
+    }
+  }
 
   
   await commands.wait.byTime(1000);

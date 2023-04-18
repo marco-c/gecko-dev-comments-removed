@@ -10,7 +10,7 @@ import re
 import shutil
 from pathlib import Path
 
-from mozperftest.utils import install_package, get_output_dir
+from mozperftest.utils import install_package, get_output_dir, ON_TRY
 from mozperftest.test.noderunner import NodeRunner
 from mozperftest.test.browsertime.visualtools import get_dependencies, xvfb
 
@@ -152,7 +152,17 @@ class BrowsertimeRunner(NodeRunner):
             old_pkg = json.load(old)
             new_pkg = json.load(new)
 
-        return not old_pkg["_from"].endswith(new_pkg["devDependencies"]["browsertime"])
+        
+        
+        
+        
+        
+        if "_from" in old_pkg.keys():
+            return not old_pkg["_from"].endswith(
+                new_pkg["devDependencies"]["browsertime"]
+            )
+        else:
+            return True
 
     def setup(self):
         """Install browsertime and visualmetrics.py prerequisites and the Node.js package."""
@@ -226,9 +236,8 @@ class BrowsertimeRunner(NodeRunner):
         
         
         
-        automation = "MOZ_AUTOMATION" in os.environ
 
-        if automation:
+        if ON_TRY:
             os.environ["CHROMEDRIVER_SKIP_DOWNLOAD"] = "true"
             os.environ["GECKODRIVER_SKIP_DOWNLOAD"] = "true"
 
@@ -243,7 +252,7 @@ class BrowsertimeRunner(NodeRunner):
             "browsertime",
             should_update=install_url is not None,
             should_clobber=should_clobber,
-            no_optional=install_url or automation,
+            no_optional=install_url or ON_TRY,
         )
 
     def extra_default_args(self, args=[]):
@@ -351,6 +360,7 @@ class BrowsertimeRunner(NodeRunner):
 
     def _one_cycle(self, metadata, result_dir):
         profile = self.get_arg("profile-directory")
+        is_login_site = False
 
         args = [
             "--resultDir",
@@ -397,10 +407,27 @@ class BrowsertimeRunner(NodeRunner):
                     )
                     continue
                 name, value = option
+
+                
+                if name == "browsertime.login" and value:
+                    is_login_site = True
+
                 args += ["--" + name, value]
 
         if self.get_arg("android"):
             args.extend(self._android_args(metadata))
+
+        
+        if is_login_site and ON_TRY:
+            self.info("Turning off verbose mode for login-logic")
+            self.info(
+                "Please contact the perftest team if you need verbose mode enabled."
+            )
+            for verbose_level in ("-v", "-vv", "-vvv", "-vvvv"):
+                try:
+                    args.remove(verbose_level)
+                except ValueError:
+                    pass
 
         extra = self.extra_default_args(args=args)
         command = [str(self.browsertime_js)] + extra + args
