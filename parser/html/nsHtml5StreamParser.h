@@ -268,13 +268,6 @@ class nsHtml5StreamParser final : public nsISupports {
 
 
 
-  void SetEncodingFromExpat(const char16_t* aEncoding);
-
-  
-
-
-
-
   void SetViewSourceTitle(nsIURI* aURL);
 
  private:

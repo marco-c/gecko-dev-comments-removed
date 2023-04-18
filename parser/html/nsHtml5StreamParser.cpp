@@ -79,11 +79,6 @@
 #include "nsThreadUtils.h"
 #include "nsXULAppAPI.h"
 
-
-
-#include "expat_config.h"
-#include "expat.h"
-
 extern "C" {
 
 const mozilla::Encoding* xmldecl_parse(const uint8_t* buf, size_t buf_len);
@@ -503,71 +498,6 @@ void nsHtml5StreamParser::SetupDecodingFromUtf16BogoXml(
   mLastBuffer->AdvanceEnd(3);
 }
 
-void nsHtml5StreamParser::SetEncodingFromExpat(const char16_t* aEncoding) {
-  if (aEncoding) {
-    nsDependentString utf16(aEncoding);
-    nsAutoCString utf8;
-    CopyUTF16toUTF8(utf16, utf8);
-    auto encoding = PreferredForInternalEncodingDecl(utf8);
-    if (encoding) {
-      mEncoding = WrapNotNull(encoding);
-      mCharsetSource = kCharsetFromMetaTag;  
-      mTreeBuilder->SetDocumentCharset(mEncoding, mCharsetSource);
-      return;
-    }
-    
-    
-    
-    
-  }
-  mEncoding = UTF_8_ENCODING;            
-  mCharsetSource = kCharsetFromMetaTag;  
-  mTreeBuilder->SetDocumentCharset(mEncoding, mCharsetSource);
-}
-
-
-
-
-
-
-struct UserData {
-  XML_Parser mExpat;
-  nsHtml5StreamParser* mStreamParser;
-};
-
-
-
-static void HandleXMLDeclaration(void* aUserData, const XML_Char* aVersion,
-                                 const XML_Char* aEncoding, int aStandalone) {
-  UserData* ud = static_cast<UserData*>(aUserData);
-  ud->mStreamParser->SetEncodingFromExpat(
-      reinterpret_cast<const char16_t*>(aEncoding));
-  XML_StopParser(ud->mExpat, false);
-}
-
-static void HandleStartElement(void* aUserData, const XML_Char* aName,
-                               const XML_Char** aAtts) {
-  UserData* ud = static_cast<UserData*>(aUserData);
-  XML_StopParser(ud->mExpat, false);
-}
-
-static void HandleEndElement(void* aUserData, const XML_Char* aName) {
-  UserData* ud = static_cast<UserData*>(aUserData);
-  XML_StopParser(ud->mExpat, false);
-}
-
-static void HandleComment(void* aUserData, const XML_Char* aName) {
-  UserData* ud = static_cast<UserData*>(aUserData);
-  XML_StopParser(ud->mExpat, false);
-}
-
-static void HandleProcessingInstruction(void* aUserData,
-                                        const XML_Char* aTarget,
-                                        const XML_Char* aData) {
-  UserData* ud = static_cast<UserData*>(aUserData);
-  XML_StopParser(ud->mExpat, false);
-}
-
 void nsHtml5StreamParser::FinalizeSniffingWithDetector(
     Span<const uint8_t> aFromSegment, uint32_t aCountToSniffingLimit,
     bool aEof) {
@@ -602,63 +532,39 @@ nsresult nsHtml5StreamParser::FinalizeSniffing(Span<const uint8_t> aFromSegment,
   MOZ_ASSERT(mCharsetSource < kCharsetFromXmlDeclarationUtf16,
              "Should not finalize sniffing with strong decision already made.");
   if (mMode == VIEW_SOURCE_XML) {
-    static const XML_Memory_Handling_Suite memsuite = {
-        (void* (*)(size_t))moz_xmalloc, (void* (*)(void*, size_t))moz_xrealloc,
-        free};
-
-    static const char16_t kExpatSeparator[] = {0xFFFF, '\0'};
-
-    static const char16_t kISO88591[] = {'I', 'S', 'O', '-', '8', '8',
-                                         '5', '9', '-', '1', '\0'};
-
-    UserData ud;
-    ud.mStreamParser = this;
-
     
     
     
     
-    
-    
-    
-    
-    ud.mExpat = XML_ParserCreate_MM(kISO88591, &memsuite, kExpatSeparator);
-    XML_SetXmlDeclHandler(ud.mExpat, HandleXMLDeclaration);
-    XML_SetElementHandler(ud.mExpat, HandleStartElement, HandleEndElement);
-    XML_SetCommentHandler(ud.mExpat, HandleComment);
-    XML_SetProcessingInstructionHandler(ud.mExpat, HandleProcessingInstruction);
-    XML_SetUserData(ud.mExpat, static_cast<void*>(&ud));
-
-    XML_Status status = XML_STATUS_OK;
-
-    
-    
-    
-    
-    
-    
-    
-    if (mSniffingBuffer) {
-      status = XML_Parse(ud.mExpat,
-                         reinterpret_cast<const char*>(mSniffingBuffer.get()),
-                         mSniffingLength, false);
+    MOZ_ASSERT(mCharsetSource < kCharsetFromMetaTag);
+    const uint8_t* buf;
+    size_t bufLen;
+    MOZ_ASSERT(aFromSegment.Length() >= aCountToSniffingLimit);
+    if (mSniffingLength) {
+      
+      
+      MOZ_ASSERT(mSniffingLength + aCountToSniffingLimit <=
+                 SNIFFING_BUFFER_SIZE);
+      memcpy(mSniffingBuffer.get() + mSniffingLength, aFromSegment.Elements(),
+             aCountToSniffingLimit);
+      mSniffingLength += aCountToSniffingLimit;
+      aFromSegment = aFromSegment.From(aCountToSniffingLimit);
+      buf = mSniffingBuffer.get();
+      bufLen = mSniffingLength;
+    } else {
+      buf = aFromSegment.Elements();
+      bufLen = aCountToSniffingLimit;
     }
-    if (status == XML_STATUS_OK && mCharsetSource < kCharsetFromMetaTag) {
-      mozilla::Unused << XML_Parse(
-          ud.mExpat, reinterpret_cast<const char*>(aFromSegment.Elements()),
-          aCountToSniffingLimit, false);
-    }
-    XML_ParserFree(ud.mExpat);
-
-    if (mCharsetSource < kCharsetFromMetaTag) {
-      
-      
-      
+    const Encoding* encoding = xmldecl_parse(buf, bufLen);
+    if (encoding) {
+      mEncoding = WrapNotNull(encoding);
+    } else {
       
       mEncoding = UTF_8_ENCODING;
-      mCharsetSource = kCharsetFromMetaTag;  
-      mTreeBuilder->SetDocumentCharset(mEncoding, mCharsetSource);
     }
+
+    mCharsetSource = kCharsetFromMetaTag;  
+    mTreeBuilder->SetDocumentCharset(mEncoding, mCharsetSource);
 
     return SetupDecodingAndWriteSniffingBufferAndCurrentSegment(aFromSegment);
   }
