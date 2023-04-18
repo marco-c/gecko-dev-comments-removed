@@ -244,10 +244,11 @@ bool ValueNumberer::handleUseReleased(MDefinition* def,
 }
 
 
-bool ValueNumberer::discardDefsRecursively(MDefinition* def) {
+bool ValueNumberer::discardDefsRecursively(MDefinition* def,
+                                           AllowEffectful allowEffectful) {
   MOZ_ASSERT(deadDefs_.empty(), "deadDefs_ not cleared");
 
-  return discardDef(def) && processDeadDefs();
+  return discardDef(def, allowEffectful) && processDeadDefs();
 }
 
 
@@ -300,7 +301,8 @@ bool ValueNumberer::releaseOperands(MDefinition* def) {
 }
 
 
-bool ValueNumberer::discardDef(MDefinition* def) {
+bool ValueNumberer::discardDef(MDefinition* def,
+                               AllowEffectful allowEffectful) {
 #ifdef JS_JITSPEW
   JitSpew(JitSpew_GVN, "      Discarding %s %s%u",
           def->block()->isMarked() ? "unreachable" : "dead", def->opName(),
@@ -311,7 +313,10 @@ bool ValueNumberer::discardDef(MDefinition* def) {
   if (def->block()->isMarked()) {
     MOZ_ASSERT(!def->hasUses(), "Discarding def that still has uses");
   } else {
-    MOZ_ASSERT(IsDiscardable(def), "Discarding non-discardable definition");
+    MOZ_ASSERT(allowEffectful == AllowEffectful::Yes
+                   ? IsDiscardableAllowEffectful(def)
+                   : IsDiscardable(def),
+               "Discarding non-discardable definition");
     MOZ_ASSERT(!values_.has(def), "Discarding a definition still in the set");
   }
 #endif
@@ -750,6 +755,16 @@ bool ValueNumberer::visitDefinition(MDefinition* def) {
 
     
     if (isNewInstruction) {
+      
+      MOZ_ASSERT((def->isEffectful() && sim->isEffectful()) ||
+                 !sim->isEffectful());
+
+      
+      
+      MOZ_ASSERT_IF(def->isEffectful() && sim->isEffectful(),
+                    !def->toInstruction()->resumePoint() &&
+                        sim->toInstruction()->resumePoint());
+
       def->block()->insertAfter(def->toInstruction(), sim->toInstruction());
     }
 
@@ -773,8 +788,11 @@ bool ValueNumberer::visitDefinition(MDefinition* def) {
       sim->setBailoutKind(def->bailoutKind());
     }
 
-    if (DeadIfUnused(def)) {
-      if (!discardDefsRecursively(def)) {
+    
+    
+    
+    if (DeadIfUnusedAllowEffectful(def)) {
+      if (!discardDefsRecursively(def, AllowEffectful::Yes)) {
         return false;
       }
 

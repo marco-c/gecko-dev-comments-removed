@@ -1099,9 +1099,47 @@ bool js::jit::DeadIfUnused(const MDefinition* def) {
 }
 
 
+bool js::jit::DeadIfUnusedAllowEffectful(const MDefinition* def) {
+  
+  if (def->isGuard()) {
+    return false;
+  }
+
+  
+  
+  if (def->isGuardRangeBailouts()) {
+    return false;
+  }
+
+  
+  if (def->isControlInstruction()) {
+    return false;
+  }
+
+  
+  
+  if (def->isInstruction() && def->toInstruction()->resumePoint()) {
+    
+    
+    
+    if (!def->isEffectful()) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+
 
 bool js::jit::IsDiscardable(const MDefinition* def) {
   return !def->hasUses() && (DeadIfUnused(def) || def->block()->isMarked());
+}
+
+
+bool js::jit::IsDiscardableAllowEffectful(const MDefinition* def) {
+  return !def->hasUses() &&
+         (DeadIfUnusedAllowEffectful(def) || def->block()->isMarked());
 }
 
 
