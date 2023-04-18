@@ -91,7 +91,7 @@ class ProvidersManager {
     
     this.providers = [];
     for (let [symbol, module] of Object.entries(localProviderModules)) {
-      let { [symbol]: provider } = ChromeUtils.import(module, {});
+      let { [symbol]: provider } = ChromeUtils.import(module);
       this.registerProvider(provider);
     }
     
@@ -105,7 +105,7 @@ class ProvidersManager {
     
     this.muxers = new Map();
     for (let [symbol, module] of Object.entries(localMuxerModules)) {
-      let { [symbol]: muxer } = ChromeUtils.import(module, {});
+      let { [symbol]: muxer } = ChromeUtils.import(module);
       this.registerMuxer(muxer);
     }
   }
