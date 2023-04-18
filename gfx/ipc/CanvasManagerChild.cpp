@@ -144,15 +144,13 @@ RefPtr<webgpu::WebGPUChild> CanvasManagerChild::GetWebGPUChild() {
 }
 
 already_AddRefed<DataSourceSurface> CanvasManagerChild::GetSnapshot(
-    uint32_t aManagerId, int32_t aProtocolId,
-    const layers::CompositableHandle& aHandle, SurfaceFormat aFormat,
-    bool aPremultiply, bool aYFlip) {
+    uint32_t aManagerId, int32_t aProtocolId, bool aHasAlpha) {
   if (!CanSend()) {
     return nullptr;
   }
 
   webgl::FrontBufferSnapshotIpc res;
-  if (!SendGetSnapshot(aManagerId, aProtocolId, aHandle, &res)) {
+  if (!SendGetSnapshot(aManagerId, aProtocolId, &res)) {
     return nullptr;
   }
 
@@ -180,7 +178,7 @@ already_AddRefed<DataSourceSurface> CanvasManagerChild::GetSnapshot(
   }
 
   SurfaceFormat format =
-      IsOpaque(aFormat) ? SurfaceFormat::B8G8R8X8 : SurfaceFormat::B8G8R8A8;
+      aHasAlpha ? SurfaceFormat::B8G8R8A8 : SurfaceFormat::B8G8R8X8;
   RefPtr<DataSourceSurface> surface =
       Factory::CreateDataSourceSurfaceWithStride(size, format, stride.value(),
                                                   false);
@@ -199,27 +197,16 @@ already_AddRefed<DataSourceSurface> CanvasManagerChild::GetSnapshot(
   
   
   
-  if (aYFlip) {
-    if (aPremultiply) {
-      if (!PremultiplyYFlipData(res.shmem->get<uint8_t>(), stride.value(),
-                                aFormat, map.GetData(), map.GetStride(), format,
-                                size)) {
-        return nullptr;
-      }
-    } else {
-      if (!SwizzleYFlipData(res.shmem->get<uint8_t>(), stride.value(), aFormat,
-                            map.GetData(), map.GetStride(), format, size)) {
-        return nullptr;
-      }
-    }
-  } else if (aPremultiply) {
-    if (!PremultiplyData(res.shmem->get<uint8_t>(), stride.value(), aFormat,
-                         map.GetData(), map.GetStride(), format, size)) {
+  if (aHasAlpha) {
+    if (!PremultiplyYFlipData(res.shmem->get<uint8_t>(), stride.value(),
+                              SurfaceFormat::R8G8B8A8, map.GetData(),
+                              map.GetStride(), format, size)) {
       return nullptr;
     }
   } else {
-    if (!SwizzleData(res.shmem->get<uint8_t>(), stride.value(), aFormat,
-                     map.GetData(), map.GetStride(), format, size)) {
+    if (!SwizzleYFlipData(res.shmem->get<uint8_t>(), stride.value(),
+                          SurfaceFormat::R8G8B8X8, map.GetData(),
+                          map.GetStride(), format, size)) {
       return nullptr;
     }
   }
