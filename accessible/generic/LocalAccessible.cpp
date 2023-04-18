@@ -3207,31 +3207,6 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
     }
   }
 
-  nsIFrame* frame = GetFrame();
-  if ((aCacheDomain & CacheDomain::TextBounds) && IsTextLeaf()) {
-    if (frame && frame->IsTextFrame()) {
-      nsTArray<int32_t> charData;
-      nsIFrame* currTextFrame = frame;
-      while (currTextFrame) {
-        nsTArray<nsRect> charBounds;
-        currTextFrame->GetCharacterRectsInRange(
-            0, static_cast<nsTextFrame*>(currTextFrame)->GetContentLength(),
-            charBounds);
-        for (const nsRect& rect : charBounds) {
-          charData.AppendElement(rect.x);
-          charData.AppendElement(rect.y);
-          charData.AppendElement(rect.width);
-          charData.AppendElement(rect.height);
-        }
-        currTextFrame = currTextFrame->GetNextContinuation();
-      }
-
-      if (charData.Length()) {
-        fields->SetAttribute(nsGkAtoms::characterData, std::move(charData));
-      }
-    }
-  }
-
   bool boundsChanged = false;
   if (aCacheDomain & CacheDomain::Bounds) {
     nsRect newBoundsRect = ParentRelativeBounds();
@@ -3281,6 +3256,7 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
     }
   }
 
+  nsIFrame* frame = GetFrame();
   if (aCacheDomain & (CacheDomain::Text | CacheDomain::Bounds) &&
       !HasChildren()) {
     
@@ -3315,6 +3291,28 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
         fields->SetAttribute(nsGkAtoms::line, std::move(lineStarts));
       } else if (aUpdateType == CacheUpdateType::Update) {
         fields->SetAttribute(nsGkAtoms::line, DeleteEntry());
+      }
+
+      if (frame && frame->IsTextFrame()) {
+        nsTArray<int32_t> charData;
+        nsIFrame* currTextFrame = frame;
+        while (currTextFrame) {
+          nsTArray<nsRect> charBounds;
+          currTextFrame->GetCharacterRectsInRange(
+              0, static_cast<nsTextFrame*>(currTextFrame)->GetContentLength(),
+              charBounds);
+          for (const nsRect& rect : charBounds) {
+            charData.AppendElement(rect.x);
+            charData.AppendElement(rect.y);
+            charData.AppendElement(rect.width);
+            charData.AppendElement(rect.height);
+          }
+          currTextFrame = currTextFrame->GetNextContinuation();
+        }
+
+        if (charData.Length()) {
+          fields->SetAttribute(nsGkAtoms::characterData, std::move(charData));
+        }
       }
     }
   }
@@ -3483,7 +3481,7 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
       }
     }
 
-    if (nsIFrame* frame = GetFrame()) {
+    if (frame) {
       
       
       mOldComputedStyle = frame->Style();
