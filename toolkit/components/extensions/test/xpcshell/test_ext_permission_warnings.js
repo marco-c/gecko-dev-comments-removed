@@ -10,11 +10,16 @@ if (AppConstants.MOZ_APP_NAME == "thunderbird") {
     "chrome://messenger/locale/addons.properties"
   );
 } else {
+  
+  
   bundle = Services.strings.createBundle(
     "chrome://browser/locale/browser.properties"
   );
 }
 const DUMMY_APP_NAME = "Dummy brandName";
+
+
+const IS_NATIVE_MESSAGING_PRIVILEGED = AppConstants.platform == "android";
 
 const { createAppInfo } = AddonTestUtils;
 
@@ -384,6 +389,7 @@ add_task(async function host_permissions() {
 
 add_task(async function api_permissions() {
   let manifestPermissions = await getManifestPermissions({
+    isPrivileged: IS_NATIVE_MESSAGING_PRIVILEGED,
     manifest: {
       permissions: [
         "activeTab",
@@ -396,6 +402,7 @@ add_task(async function api_permissions() {
       ],
     },
   });
+
   deepEqual(
     manifestPermissions,
     {
@@ -427,6 +434,32 @@ add_task(async function api_permissions() {
     ],
     "Expected warnings"
   );
+});
+
+add_task(async function nativeMessaging_permission() {
+  let manifestPermissions = await getManifestPermissions({
+    
+    manifest: {
+      permissions: ["nativeMessaging"],
+    },
+  });
+
+  if (IS_NATIVE_MESSAGING_PRIVILEGED) {
+    
+    
+    
+    deepEqual(
+      manifestPermissions,
+      { origins: [], permissions: [] },
+      "nativeMessaging perm ignored for unprivileged extensions on Android"
+    );
+  } else {
+    deepEqual(
+      manifestPermissions,
+      { origins: [], permissions: ["nativeMessaging"] },
+      "nativeMessaging permission recognized for unprivileged extensions"
+    );
+  }
 });
 
 
