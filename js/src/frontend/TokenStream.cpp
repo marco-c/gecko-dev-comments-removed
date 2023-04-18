@@ -2511,9 +2511,6 @@ template <typename Unit, class AnyCharsAccess>
 
     ungetCodeUnit(unit);
 
-    
-    
-    
     if (!GetDecimalNonInteger(anyCharsAccess().cx, numStart,
                               this->sourceUnits.addressOfNextCodeUnit(),
                               &dval)) {
@@ -2987,11 +2984,9 @@ template <typename Unit, class AnyCharsAccess>
         return badToken();
       } else {
         
-        numStart = this->sourceUnits.addressOfNextCodeUnit() - 1;
-
-        
-        
-        return decimalNumber(unit, start, numStart, modifier, ttp);
+        ungetCodeUnit(unit);
+        numStart = this->sourceUnits.addressOfNextCodeUnit() - 1;  
+        return decimalNumber('0', start, numStart, modifier, ttp);
       }
 
       if (unit == 'n') {

@@ -2627,14 +2627,6 @@ class MOZ_STACK_CLASS TokenStreamSpecific
 
 
 
-
-
-
-
-
-
-
-
   [[nodiscard]] bool decimalNumber(int32_t unit, TokenStart start,
                                    const Unit* numStart, Modifier modifier,
                                    TokenKind* out);
