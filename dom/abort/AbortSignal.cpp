@@ -140,6 +140,17 @@ already_AddRefed<AbortSignal> AbortSignal::Abort(GlobalObject& aGlobal,
 }
 
 
+void AbortSignal::ThrowIfAborted(JSContext* aCx, ErrorResult& aRv) {
+  aRv.MightThrowJSException();
+
+  if (Aborted()) {
+    JS::Rooted<JS::Value> reason(aCx);
+    GetReason(aCx, &reason);
+    aRv.ThrowJSException(aCx, reason);
+  }
+}
+
+
 void AbortSignal::SignalAbort(JS::Handle<JS::Value> aReason) {
   
   AbortSignalImpl::SignalAbort(aReason);

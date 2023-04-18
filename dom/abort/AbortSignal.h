@@ -45,6 +45,8 @@ class AbortSignal final : public DOMEventTargetHelper,
                                              JS::Handle<JS::Value> aReason,
                                              ErrorResult& aRv);
 
+  void ThrowIfAborted(JSContext* aCx, ErrorResult& aRv);
+
   
   void SignalAbort(JS::Handle<JS::Value> aReason) override;
 
