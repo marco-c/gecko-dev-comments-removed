@@ -657,8 +657,8 @@ void AudioInputProcessing::NotifyOutputData(MediaTrackGraphImpl* aGraph,
       mPacketizerOutput->mChannels != aChannels) {
     
     
-    mPacketizerOutput = MakeUnique<AudioPacketizer<AudioDataValue, float>>(
-        aRate / 100, aChannels);
+    mPacketizerOutput = Nothing();
+    mPacketizerOutput.emplace(aRate / 100, aChannels);
   }
 
   mPacketizerOutput->Input(aBuffer, aFrames);
@@ -747,8 +747,8 @@ void AudioInputProcessing::PacketizeAndProcess(MediaTrackGraphImpl* aGraph,
   if (!mPacketizerInput || mPacketizerInput->mPacketSize != aRate / 100u ||
       mPacketizerInput->mChannels != aChannels) {
     
-    mPacketizerInput = MakeUnique<AudioPacketizer<AudioDataValue, float>>(
-        aRate / 100, aChannels);
+    mPacketizerInput = Nothing();
+    mPacketizerInput.emplace(aRate / 100, aChannels);
   }
 
   LOG_FRAME("AudioInputProcessing %p Appending %zu frames to packetizer", this,
