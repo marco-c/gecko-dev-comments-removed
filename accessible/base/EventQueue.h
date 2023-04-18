@@ -68,9 +68,6 @@ class EventQueue {
 
 
   nsTArray<RefPtr<AccEvent>> mEvents;
-
-  
-  RefPtr<AccEvent> mFocusEvent;
 };
 
 }  
