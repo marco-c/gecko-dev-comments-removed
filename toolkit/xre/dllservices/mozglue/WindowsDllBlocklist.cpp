@@ -595,12 +595,44 @@ MFBT_API void DllBlocklist_Initialize(uint32_t aInitFlags) {
 
 #ifdef _M_AMD64
   if (!IsWin8OrLater()) {
-    Kernel32Intercept.Init("kernel32.dll");
-
+    Kernel32Intercept.Init(L"kernel32.dll");
     
     stub_RtlInstallFunctionTableCallback.Set(
         Kernel32Intercept, "RtlInstallFunctionTableCallback",
         &patched_RtlInstallFunctionTableCallback);
+  }
+#endif
+
+  
+  
+  if (!GetModuleHandleW(L"WRusr.dll")) {
+    Kernel32Intercept.Init(L"kernel32.dll");
+    if (!stub_BaseThreadInitThunk.SetDetour(Kernel32Intercept,
+                                            "BaseThreadInitThunk",
+                                            &patched_BaseThreadInitThunk)) {
+#ifdef DEBUG
+      printf_stderr("BaseThreadInitThunk hook failed\n");
+#endif
+    }
+  }
+
+#if defined(NIGHTLY_BUILD)
+  
+  HMODULE hKernel = GetModuleHandleW(L"kernel32.dll");
+  if (hKernel) {
+    void* pProc;
+
+    pProc = (void*)GetProcAddress(hKernel, "LoadLibraryA");
+    gStartAddressesToBlock[0] = pProc;
+
+    pProc = (void*)GetProcAddress(hKernel, "LoadLibraryW");
+    gStartAddressesToBlock[1] = pProc;
+
+    pProc = (void*)GetProcAddress(hKernel, "LoadLibraryExA");
+    gStartAddressesToBlock[2] = pProc;
+
+    pProc = (void*)GetProcAddress(hKernel, "LoadLibraryExW");
+    gStartAddressesToBlock[3] = pProc;
   }
 #endif
 
@@ -655,40 +687,6 @@ MFBT_API void DllBlocklist_Initialize(uint32_t aInitFlags) {
   if (!sUser32BeforeBlocklist && !IsWin32kLockedDown()) {
     ::LoadLibraryW(L"user32.dll");
   }
-
-  Kernel32Intercept.Init("kernel32.dll");
-
-  
-  
-  if (!GetModuleHandleW(L"WRusr.dll")) {
-    if (!stub_BaseThreadInitThunk.SetDetour(Kernel32Intercept,
-                                            "BaseThreadInitThunk",
-                                            &patched_BaseThreadInitThunk)) {
-#ifdef DEBUG
-      printf_stderr("BaseThreadInitThunk hook failed\n");
-#endif
-    }
-  }
-
-#if defined(NIGHTLY_BUILD)
-  
-  HMODULE hKernel = GetModuleHandleW(L"kernel32.dll");
-  if (hKernel) {
-    void* pProc;
-
-    pProc = (void*)GetProcAddress(hKernel, "LoadLibraryA");
-    gStartAddressesToBlock[0] = pProc;
-
-    pProc = (void*)GetProcAddress(hKernel, "LoadLibraryW");
-    gStartAddressesToBlock[1] = pProc;
-
-    pProc = (void*)GetProcAddress(hKernel, "LoadLibraryExA");
-    gStartAddressesToBlock[2] = pProc;
-
-    pProc = (void*)GetProcAddress(hKernel, "LoadLibraryExW");
-    gStartAddressesToBlock[3] = pProc;
-  }
-#endif
 }
 
 #ifdef DEBUG
