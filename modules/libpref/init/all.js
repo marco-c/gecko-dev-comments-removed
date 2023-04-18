@@ -702,11 +702,14 @@ pref("accessibility.browsewithcaret_shortcut.enabled", true);
 
 
 #if !defined(XP_MACOSX)
-pref("ui.textSelectBackgroundDisabled", "#b0b0b0");
+pref("ui.textSelectDisabledBackground", "#b0b0b0");
 #endif
 
 
-pref("ui.textSelectBackgroundAttention", "#38d878");
+
+pref("ui.textSelectAttentionBackground", "#38d878");
+pref("ui.textSelectAttentionForeground", "#ffffff");
+
 
 
 pref("ui.textHighlightBackground", "#ef0fff");

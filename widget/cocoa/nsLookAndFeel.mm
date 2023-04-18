@@ -124,7 +124,7 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aScheme, nscolor
       break;
     
     
-    case ColorID::TextSelectBackgroundDisabled:
+    case ColorID::TextSelectDisabledBackground:
       color = ProcessSelectionBackground(GetColorFromNSColor(NSColor.secondarySelectedControlColor),
                                          aScheme);
       break;
