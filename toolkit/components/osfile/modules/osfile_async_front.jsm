@@ -51,9 +51,11 @@ var Type = SysAll.Type;
 
 var Path = ChromeUtils.import("resource://gre/modules/osfile/ospath.jsm");
 
+const lazy = {};
+
 
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "PromiseUtils",
   "resource://gre/modules/PromiseUtils.jsm"
 );
@@ -293,7 +295,7 @@ var Scheduler = {
     
     
     
-    let deferred = PromiseUtils.defer();
+    let deferred = lazy.PromiseUtils.defer();
     let savedQueue = this.queue;
     this.queue = deferred.promise;
 
