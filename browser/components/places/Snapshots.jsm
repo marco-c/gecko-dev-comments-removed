@@ -216,7 +216,7 @@ const Snapshots = new (class Snapshots {
       } else {
         
         
-        PageDataService.queueFetch(url).catch(console.error);
+        PageDataService.queueFetch(url);
       }
 
       this.#downloadPageImage(url, pageData?.image);
