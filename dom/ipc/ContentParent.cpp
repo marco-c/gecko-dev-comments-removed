@@ -33,6 +33,8 @@
 #if defined(XP_WIN) && defined(ACCESSIBILITY)
 #  include "mozilla/a11y/AccessibleWrap.h"
 #  include "mozilla/a11y/Compatibility.h"
+#  include "mozilla/mscom/ActCtxResource.h"
+#  include "mozilla/StaticPrefs_accessibility.h"
 #endif
 #include <map>
 #include <utility>
@@ -2525,6 +2527,17 @@ bool ContentParent::BeginSubprocessLaunch(ProcessPriority aPriority) {
   
   
   ::mozilla::ipc::ExportSharedJSInit(*mSubprocess, extraArgs);
+
+#if defined(XP_WIN) && defined(ACCESSIBILITY)
+  
+  
+  
+  if (!StaticPrefs::accessibility_cache_enabled_AtStartup()) {
+    MOZ_ASSERT(mscom::ActCtxResource::GetAccessibilityResourceId());
+    geckoargs::sA11yResourceId.Put(
+        mscom::ActCtxResource::GetAccessibilityResourceId(), extraArgs);
+  }
+#endif
 
   
   

@@ -27,6 +27,10 @@
 #  include "mozilla/ScopeExit.h"
 #  include "mozilla/WinDllServices.h"
 #  include "WinUtils.h"
+#  ifdef ACCESSIBILITY
+#    include "mozilla/GeckoArgs.h"
+#    include "mozilla/mscom/ActCtxResource.h"
+#  endif
 #endif
 
 #include "nsAppRunner.h"
@@ -619,6 +623,16 @@ nsresult XRE_InitChildProcess(int aArgc, char* aArgv[],
     
     MessageLoop uiMessageLoop(uiLoopType);
     {
+#if defined(XP_WIN) && defined(ACCESSIBILITY)
+      
+      
+      
+      auto a11yResourceId = geckoargs::sA11yResourceId.Get(aArgc, aArgv);
+      if (a11yResourceId.isSome()) {
+        mscom::ActCtxResource::SetAccessibilityResourceId(*a11yResourceId);
+      }
+#endif
+
       UniquePtr<ProcessChild> process;
       switch (XRE_GetProcessType()) {
         case GeckoProcessType_Default:
