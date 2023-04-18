@@ -13,6 +13,8 @@
 namespace mozilla {
 namespace a11y {
 
+class LocalAccessible;
+class HyperTextAccessible;
 class DocAccessible;
 class Accessible;
 
@@ -54,12 +56,12 @@ class Pivot final {
   Accessible* Last(PivotRule& aRule);
 
   
-  Accessible* NextText(Accessible* aAnchor, int32_t* aStartOffset,
-                       int32_t* aEndOffset, int32_t aBoundaryType);
+  LocalAccessible* NextText(LocalAccessible* aAnchor, int32_t* aStartOffset,
+                            int32_t* aEndOffset, int32_t aBoundaryType);
 
   
-  Accessible* PrevText(Accessible* aAnchor, int32_t* aStartOffset,
-                       int32_t* aEndOffset, int32_t aBoundaryType);
+  LocalAccessible* PrevText(LocalAccessible* aAnchor, int32_t* aStartOffset,
+                            int32_t* aEndOffset, int32_t aBoundaryType);
 
   
   
@@ -78,7 +80,7 @@ class Pivot final {
                              bool aSearchCurrent);
 
   
-  Accessible* SearchForText(Accessible* aAnchor, bool aBackward);
+  HyperTextAccessible* SearchForText(LocalAccessible* aAnchor, bool aBackward);
 
   Accessible* mRoot;
 };
