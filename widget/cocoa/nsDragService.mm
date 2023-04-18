@@ -42,7 +42,7 @@ extern bool gUserCancelledDrag;
 
 
 
-nsIArray* gDraggedTransferables = nullptr;
+mozilla::StaticRefPtr<nsIArray> gDraggedTransferables;
 
 NSString* const kPublicUrlPboardType = @"public.url";
 NSString* const kPublicUrlNamePboardType = @"public.url-name";
