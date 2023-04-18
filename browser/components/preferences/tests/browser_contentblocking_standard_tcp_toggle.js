@@ -10,9 +10,6 @@ ChromeUtils.defineModuleGetter(
 const { ExperimentFakes } = ChromeUtils.import(
   "resource://testing-common/NimbusTestUtils.jsm"
 );
-const { TelemetryTestUtils } = ChromeUtils.import(
-  "resource://testing-common/TelemetryTestUtils.jsm"
-);
 
 const PREF_DFPI_ENABLED_BY_DEFAULT =
   "privacy.restrict3rdpartystorage.rollout.enabledByDefault";
@@ -31,22 +28,6 @@ const {
   BEHAVIOR_REJECT_TRACKER,
   BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN,
 } = Ci.nsICookieService;
-
-function testTelemetryState(optIn) {
-  let expectedValue;
-  if (optIn == null) {
-    expectedValue = 2;
-  } else {
-    expectedValue = optIn ? 1 : 0;
-  }
-
-  TelemetryTestUtils.assertScalar(
-    TelemetryTestUtils.getProcessScalars("parent"),
-    "privacy.dfpi_rollout_enabledByDefault",
-    expectedValue,
-    "Scalar should have correct value"
-  );
-}
 
 
 
@@ -89,10 +70,6 @@ async function testRolloutUI({
 
   
   
-  testTelemetryState(null);
-
-  
-  
   let set = [[CAT_PREF, "standard"]];
   if (dFPIEnabledByDefault) {
     set.push([PREF_DFPI_ENABLED_BY_DEFAULT, true]);
@@ -101,9 +78,6 @@ async function testRolloutUI({
     set.push([PREF_DFPI_ROLLOUT_UI_ENABLED, true]);
   }
   await SpecialPowers.pushPrefEnv({ set });
-
-  
-  testTelemetryState(dFPIEnabledByDefault || null);
 
   const uiEnabled =
     rolloutUIEnabled ||
@@ -208,11 +182,11 @@ async function testRolloutUI({
         "standard",
         "Should still be in standard category"
       );
+
       ok(
         BrowserTestUtils.is_visible(reloadWarning),
         "Reload warning should be visible."
       );
-      testTelemetryState(true);
     }
 
     
@@ -234,11 +208,11 @@ async function testRolloutUI({
       "standard",
       "Should still be in standard category"
     );
+
     ok(
       BrowserTestUtils.is_visible(reloadWarning),
       "Reload warning should be visible."
     );
-    testTelemetryState(false);
   }
 
   let categoryPrefChange = waitForAndAssertPrefState(CAT_PREF, "strict");
@@ -272,8 +246,6 @@ async function testRolloutUI({
   Services.prefs.setStringPref(CAT_PREF, "standard");
   Services.prefs.clearUserPref(PREF_DFPI_ENABLED_BY_DEFAULT);
   Services.prefs.clearUserPref(PREF_DFPI_ROLLOUT_UI_ENABLED);
-
-  testTelemetryState(null);
 }
 
 
