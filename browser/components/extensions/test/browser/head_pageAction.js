@@ -119,6 +119,34 @@ async function runTests(options) {
   let currentWindow = window;
   let windows = [];
 
+  async function waitForDetails(details, windowId) {
+    function check() {
+      let { document } = Services.wm.getOuterWindowWithId(windowId);
+      let image = document.getElementById(pageActionId);
+      if (details == null) {
+        return image == null || image.getAttribute("disabled") == "true";
+      }
+      let title = details.title || options.manifest.name;
+      return (
+        !!image &&
+        getListStyleImage(image) == details.icon &&
+        image.getAttribute("tooltiptext") == title &&
+        image.getAttribute("aria-label") == title
+      );
+      
+    }
+
+    
+    return new Promise(async resolve => {
+      let maxCounter = 10;
+      while (!check() && --maxCounter > 0) {
+        info("checks left: " + maxCounter);
+        await promiseAnimationFrame(currentWindow);
+      }
+      resolve();
+    });
+  }
+
   function checkDetails(details, windowId) {
     let { document } = Services.wm.getOuterWindowWithId(windowId);
     let image = document.getElementById(pageActionId);
@@ -155,7 +183,7 @@ async function runTests(options) {
           );
         }
 
-        await promiseAnimationFrame(currentWindow);
+        await waitForDetails(expecting, windowId);
 
         checkDetails(expecting, windowId);
 
