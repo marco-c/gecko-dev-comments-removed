@@ -677,22 +677,6 @@ bool WebrtcAudioConduit::SendReceiverRtcp(const uint8_t* aData,
 
 
 
-
-bool WebrtcAudioConduit::CodecConfigToWebRTCCodec(
-    const AudioCodecConfig& codecInfo,
-    webrtc::AudioSendStream::Config& config) {
-  config.encoder_factory = webrtc::CreateBuiltinAudioEncoderFactory();
-
-  webrtc::AudioSendStream::Config::SendCodecSpec spec(
-      codecInfo.mType, CodecConfigToLibwebrtcFormat(codecInfo));
-  config.send_codec_spec = spec;
-
-  return true;
-}
-
-
-
-
 bool WebrtcAudioConduit::IsSamplingFreqSupported(int freq) const {
   return GetNum10msSamplesForFrequency(freq) != 0;
 }

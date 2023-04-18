@@ -182,10 +182,6 @@ class WebrtcAudioConduit : public AudioSessionConduit,
   void operator=(const WebrtcAudioConduit& other) = delete;
 
   
-  bool CodecConfigToWebRTCCodec(const AudioCodecConfig& codecInfo,
-                                webrtc::AudioSendStream::Config& config);
-
-  
   unsigned int GetNum10msSamplesForFrequency(int samplingFreqHz) const;
 
   
