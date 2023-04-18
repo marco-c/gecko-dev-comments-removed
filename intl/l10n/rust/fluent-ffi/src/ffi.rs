@@ -2,7 +2,7 @@
 
 
 
-use crate::builtins::FluentDateTimeOptionsRaw;
+use crate::builtins::FluentDateTimeOptions;
 use fluent::types::FluentNumberCurrencyDisplayStyle;
 use fluent::types::FluentNumberOptions;
 use fluent::types::FluentNumberStyle;
@@ -143,7 +143,7 @@ extern "C" {
 
     pub fn FluentBuiltInDateTimeFormatterCreate(
         locale: &nsCString,
-        options: &FluentDateTimeOptionsRaw,
+        options: FluentDateTimeOptions,
     ) -> *mut RawDateTimeFormatter;
     pub fn FluentBuiltInDateTimeFormatterFormat(
         formatter: *const RawDateTimeFormatter,
