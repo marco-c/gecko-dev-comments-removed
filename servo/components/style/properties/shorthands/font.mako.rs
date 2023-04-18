@@ -31,6 +31,7 @@
     derive_value_info="False"
     spec="https://drafts.csswg.org/css-fonts-3/#propdef-font"
 >
+    use crate::computed_values::font_variant_caps::T::SmallCaps;
     use crate::parser::Parse;
     use crate::properties::longhands::{font_family, font_style, font_weight, font_stretch};
     use crate::properties::longhands::font_variant_caps;
@@ -100,8 +101,11 @@
                 }
             }
             if variant_caps.is_none() {
-                if let Ok(value) = input.try_parse(|input| font_variant_caps::parse(context, input)) {
-                    variant_caps = Some(value);
+                
+                
+                
+                if input.try_parse(|input| input.expect_ident_matching("small-caps")).is_ok() {
+                    variant_caps = Some(font_variant_caps::SpecifiedValue::Keyword(SmallCaps));
                     continue
                 }
             }
@@ -204,6 +208,14 @@
                 }
                 FontStretch::System(..) => return Ok(()),
             };
+
+            
+            
+            
+            if self.font_variant_caps != &font_variant_caps::get_initial_specified_value() &&
+                *self.font_variant_caps != font_variant_caps::SpecifiedValue::Keyword(SmallCaps) {
+                return Ok(());
+            }
 
             % for name in "style variant_caps weight".split():
                 if self.font_${name} != &font_${name}::get_initial_specified_value() {
