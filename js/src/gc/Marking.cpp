@@ -554,11 +554,15 @@ void js::TraceSameZoneCrossCompartmentEdge(JSTracer* trc,
     MOZ_ASSERT_IF(gcMarker->tracingZone,
                   (*dst)->zone() == gcMarker->tracingZone);
   }
+
+  
+  if (trc->kind() == JS::TracerKind::CompartmentCheck) {
+    return;
+  }
 #endif
 
   
   AutoClearTracingSource acts(trc);
-  AutoDisableCompartmentCheckTracer adcct;
   TraceEdgeInternal(trc, ConvertToBase(dst->unbarrieredAddress()), name);
 }
 template void js::TraceSameZoneCrossCompartmentEdge(
