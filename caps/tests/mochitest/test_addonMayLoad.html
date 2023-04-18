@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1180921
+-->
 <head>
   <meta charset="utf-8">
   <title>Test for Bug 1180921</title>
@@ -12,7 +12,8 @@
   <script type="application/javascript">
 
   /** Test for Bug 1180921 **/
-  let module = Cu.getGlobalForObject(ChromeUtils.import("resource://gre/modules/Services.jsm", window));
+  let { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+  let module = Cu.getGlobalForObject(Services);
   let ssm = Services.scriptSecurityManager;
 
   function StubPolicy(id, subdomain) {
