@@ -401,9 +401,6 @@ class nsDocShell final : public nsDocLoader,
       nsDocShellLoadState* aLoadState,
       mozilla::Maybe<uint32_t> aCacheKey = mozilla::Nothing());
 
-  
-  void MaybeClearStorageAccessFlag();
-
   void MaybeRestoreWindowName();
 
   void StoreWindowNameToSHEntries();
