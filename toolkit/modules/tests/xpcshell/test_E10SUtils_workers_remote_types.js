@@ -44,7 +44,6 @@ const {
   NOT_REMOTE,
   PRIVILEGEDABOUT_REMOTE_TYPE,
   PRIVILEGEDMOZILLA_REMOTE_TYPE,
-  SERVICEWORKER_REMOTE_TYPE,
   WEB_REMOTE_COOP_COEP_TYPE_PREFIX,
   WEB_REMOTE_TYPE,
 } = E10SUtils;
@@ -130,7 +129,7 @@ add_task(function test_get_remote_type_for_service_worker() {
   
   for (const testCase of getTestCase(true)) {
     const [msg, principal, ...args] = testCase;
-    let expected = `${SERVICEWORKER_REMOTE_TYPE}=${principal.siteOrigin}`;
+    let expected = `${FISSION_WEB_REMOTE_TYPE}=${principal.siteOrigin}`;
 
     if (principal == principalExtension) {
       expected = WebExtensionPolicy.useRemoteWebExtensions
