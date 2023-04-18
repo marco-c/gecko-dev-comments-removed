@@ -1748,8 +1748,9 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  HandleInsertParagraphInHeadingElement(Element& aHeader,
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
+  HandleInsertParagraphInHeadingElement(Element& aHeadingElement,
                                         const EditorDOMPoint& aPointToSplit);
 
   
