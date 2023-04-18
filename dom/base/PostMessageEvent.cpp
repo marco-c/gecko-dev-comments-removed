@@ -50,8 +50,8 @@ PostMessageEvent::PostMessageEvent(BrowsingContext* aSource,
 
 PostMessageEvent::~PostMessageEvent() = default;
 
-NS_IMETHODIMP
-PostMessageEvent::Run() {
+
+MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP PostMessageEvent::Run() {
   
   
   
@@ -249,8 +249,9 @@ void PostMessageEvent::Dispatch(nsGlobalWindowInner* aTargetWindow,
   WidgetEvent* internalEvent = aEvent->WidgetEventPtr();
 
   nsEventStatus status = nsEventStatus_eIgnore;
-  EventDispatcher::Dispatch(ToSupports(aTargetWindow), presContext,
-                            internalEvent, aEvent, &status);
+  
+  EventDispatcher::Dispatch(MOZ_KnownLive(ToSupports(aTargetWindow)),
+                            presContext, internalEvent, aEvent, &status);
 }
 
 void PostMessageEvent::DispatchToTargetThread(ErrorResult& aError) {
