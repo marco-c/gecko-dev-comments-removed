@@ -238,7 +238,7 @@ NS_IMETHODIMP ParentProcessDocumentChannel::AsyncOpen(
         
         
         
-        if (!aRejectValue.mSwitchedProcess) {
+        if (!aRejectValue.mContinueNavigating) {
           self->DisconnectChildListeners(aRejectValue.mStatus,
                                          aRejectValue.mLoadGroupStatus);
         }

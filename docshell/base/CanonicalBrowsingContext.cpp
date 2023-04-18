@@ -2175,10 +2175,10 @@ bool CanonicalBrowsingContext::StartDocumentLoad(
   return true;
 }
 
-void CanonicalBrowsingContext::EndDocumentLoad(bool aForProcessSwitch) {
+void CanonicalBrowsingContext::EndDocumentLoad(bool aContinueNavigating) {
   mCurrentLoad = nullptr;
 
-  if (!aForProcessSwitch) {
+  if (!aContinueNavigating) {
     
     
     Unused << SetCurrentLoadIdentifier(Nothing());

@@ -988,7 +988,7 @@ static void SetNavigating(CanonicalBrowsingContext* aBrowsingContext,
         MOZ_ASSERT(aValue.IsReject());
         DocumentLoadListener::OpenPromiseFailedType& rejectValue =
             aValue.RejectValue();
-        if (!rejectValue.mSwitchedProcess) {
+        if (!rejectValue.mContinueNavigating) {
           
           
           
@@ -1093,8 +1093,9 @@ void DocumentLoadListener::NotifyDocumentChannelFailed() {
   Cancel(NS_BINDING_ABORTED);
 }
 
-void DocumentLoadListener::Disconnect() {
-  LOG(("DocumentLoadListener Disconnect [this=%p]", this));
+void DocumentLoadListener::Disconnect(bool aContinueNavigating) {
+  LOG(("DocumentLoadListener Disconnect [this=%p, aContinueNavigating=%d]",
+       this, aContinueNavigating));
   
   
   RefPtr<nsHttpChannel> httpChannelImpl = do_QueryObject(mChannel);
@@ -1106,7 +1107,7 @@ void DocumentLoadListener::Disconnect() {
   mEarlyHintsService.Cancel();
 
   if (auto* ctx = GetDocumentBrowsingContext()) {
-    ctx->EndDocumentLoad(mDoingProcessSwitch);
+    ctx->EndDocumentLoad(aContinueNavigating);
   }
 }
 
@@ -1127,27 +1128,26 @@ void DocumentLoadListener::Cancel(const nsresult& aStatusCode) {
 
 void DocumentLoadListener::DisconnectListeners(nsresult aStatus,
                                                nsresult aLoadGroupStatus,
-                                               bool aSwitchedProcess) {
+                                               bool aContinueNavigating) {
   LOG(
       ("DocumentLoadListener DisconnectListener [this=%p, "
-       "aStatus=%" PRIx32 " aLoadGroupStatus=%" PRIx32 " ]",
+       "aStatus=%" PRIx32 ", aLoadGroupStatus=%" PRIx32
+       ", aContinueNavigating=%d]",
        this, static_cast<uint32_t>(aStatus),
-       static_cast<uint32_t>(aLoadGroupStatus)));
+       static_cast<uint32_t>(aLoadGroupStatus), aContinueNavigating));
 
-  RejectOpenPromise(aStatus, aLoadGroupStatus, aSwitchedProcess, __func__);
+  RejectOpenPromise(aStatus, aLoadGroupStatus, aContinueNavigating, __func__);
 
-  Disconnect();
+  Disconnect(aContinueNavigating);
 
-  if (!aSwitchedProcess) {
-    
-    
-    
-    
-    
-    
-    
-    mStreamFilterRequests.Clear();
-  }
+  
+  
+  
+  
+  
+  
+  
+  mStreamFilterRequests.Clear();
 }
 
 void DocumentLoadListener::RedirectToRealChannelFinished(nsresult aRv) {
@@ -1380,9 +1380,7 @@ bool DocumentLoadListener::ResumeSuspendedChannel(
 
   mChannel->Resume();
 
-  if (auto* ctx = GetDocumentBrowsingContext()) {
-    ctx->EndDocumentLoad(mDoingProcessSwitch);
-  }
+  
 
   return !mIsFinished;
 }
@@ -1686,14 +1684,12 @@ static RefPtr<dom::BrowsingContextCallbackReceivedPromise> SwitchToNewTab(
 bool DocumentLoadListener::MaybeTriggerProcessSwitch(
     bool* aWillSwitchToRemote) {
   MOZ_ASSERT(XRE_IsParentProcess());
-  MOZ_DIAGNOSTIC_ASSERT(!mDoingProcessSwitch,
-                        "Already in the middle of switching?");
   MOZ_DIAGNOSTIC_ASSERT(mChannel);
   MOZ_DIAGNOSTIC_ASSERT(mParentChannelListener);
   MOZ_DIAGNOSTIC_ASSERT(aWillSwitchToRemote);
 
   MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
-          ("DocumentLoadListener MaybeTriggerProcessSwitch [this=%p, uri=%s"
+          ("DocumentLoadListener MaybeTriggerProcessSwitch [this=%p, uri=%s, "
            "browserid=%" PRIx64 "]",
            this, GetChannelCreationURI()->GetSpecOrDefault().get(),
            GetLoadingBrowsingContext()->Top()->BrowserId()));
@@ -1910,8 +1906,14 @@ void DocumentLoadListener::TriggerProcessSwitch(
 
   
   
-  mDoingProcessSwitch = !aIsNewTab;
+  nsTArray<StreamFilterRequest> streamFilterRequests =
+      std::move(mStreamFilterRequests);
 
+  
+  
+  
+  
+  
   DisconnectListeners(NS_BINDING_ABORTED, NS_BINDING_ABORTED, !aIsNewTab);
 
   MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
@@ -1919,11 +1921,13 @@ void DocumentLoadListener::TriggerProcessSwitch(
   aContext->ChangeRemoteness(aOptions, mLoadIdentifier)
       ->Then(
           GetMainThreadSerialEventTarget(), __func__,
-          [self = RefPtr{this}](BrowserParent* aBrowserParent) {
+          [self = RefPtr{this}, requests = std::move(streamFilterRequests)](
+              BrowserParent* aBrowserParent) mutable {
             MOZ_ASSERT(self->mChannel,
                        "Something went wrong, channel got cancelled");
             self->TriggerRedirectToRealChannel(
-                Some(aBrowserParent ? aBrowserParent->Manager() : nullptr));
+                Some(aBrowserParent ? aBrowserParent->Manager() : nullptr),
+                std::move(requests));
           },
           [self = RefPtr{this}](nsresult aStatusCode) {
             MOZ_ASSERT(NS_FAILED(aStatusCode), "Status should be error");
@@ -2066,7 +2070,8 @@ DocumentLoadListener::RedirectToRealChannel(
 }
 
 void DocumentLoadListener::TriggerRedirectToRealChannel(
-    const Maybe<ContentParent*>& aDestinationProcess) {
+    const Maybe<ContentParent*>& aDestinationProcess,
+    nsTArray<StreamFilterRequest> aStreamFilterRequests) {
   LOG((
       "DocumentLoadListener::TriggerRedirectToRealChannel [this=%p] "
       "aDestinationProcess=%" PRId64,
@@ -2082,12 +2087,12 @@ void DocumentLoadListener::TriggerRedirectToRealChannel(
   
   
 
-  nsTArray<ParentEndpoint> parentEndpoints(mStreamFilterRequests.Length());
-  if (!mStreamFilterRequests.IsEmpty()) {
+  nsTArray<ParentEndpoint> parentEndpoints(aStreamFilterRequests.Length());
+  if (!aStreamFilterRequests.IsEmpty()) {
     ContentParent* cp = aDestinationProcess.valueOr(mContentParent);
     base::ProcessId pid = cp ? cp->OtherPid() : base::ProcessId{0};
 
-    for (StreamFilterRequest& request : mStreamFilterRequests) {
+    for (StreamFilterRequest& request : aStreamFilterRequests) {
       if (!pid) {
         request.mPromise->Reject(false, __func__);
         request.mPromise = nullptr;
@@ -2143,7 +2148,7 @@ void DocumentLoadListener::TriggerRedirectToRealChannel(
                         std::move(parentEndpoints))
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
-          [self, requests = std::move(mStreamFilterRequests)](
+          [self, requests = std::move(aStreamFilterRequests)](
               const nsresult& aResponse) mutable {
             for (StreamFilterRequest& request : requests) {
               if (request.mPromise) {
@@ -2426,6 +2431,10 @@ DocumentLoadListener::OnStartRequest(nsIRequest* aRequest) {
   bool willBeRemote = false;
   if (!DocShellWillDisplayContent(status) ||
       !MaybeTriggerProcessSwitch(&willBeRemote)) {
+    
+    
+    nsTArray<StreamFilterRequest> streamFilterRequests =
+        std::move(mStreamFilterRequests);
     if (!mSupportsRedirectToRealChannel) {
       RefPtr<BrowserParent> browserParent = loadingContext->GetBrowserParent();
       if (browserParent->Manager() != mContentParent) {
@@ -2442,9 +2451,8 @@ DocumentLoadListener::OnStartRequest(nsIRequest* aRequest) {
       
       
       
-      mDoingProcessSwitch = true;
-
-      DisconnectListeners(NS_BINDING_ABORTED, NS_BINDING_ABORTED, true);
+      DisconnectListeners(NS_BINDING_ABORTED, NS_BINDING_ABORTED,
+                           true);
 
       
       
@@ -2452,9 +2460,10 @@ DocumentLoadListener::OnStartRequest(nsIRequest* aRequest) {
 
       
       
-      TriggerRedirectToRealChannel(Some(mContentParent));
+      TriggerRedirectToRealChannel(Some(mContentParent),
+                                   std::move(streamFilterRequests));
     } else {
-      TriggerRedirectToRealChannel(Nothing());
+      TriggerRedirectToRealChannel(Nothing(), std::move(streamFilterRequests));
     }
 
     

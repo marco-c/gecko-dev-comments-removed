@@ -118,7 +118,8 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
     nsresult mLoadGroupStatus;
     
     
-    bool mSwitchedProcess = false;
+    
+    bool mContinueNavigating = false;
   };
 
   using OpenPromise =
@@ -320,9 +321,14 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
                                    bool aSupportsRedirectToRealChannel);
 
   friend class ParentProcessDocumentOpenInfo;
+
+  
+  
+  
+  
   
   void DisconnectListeners(nsresult aStatus, nsresult aLoadGroupStatus,
-                           bool aSwitchedProcess = false);
+                           bool aContinueNavigating = false);
 
   
   
@@ -332,7 +338,8 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   
   void TriggerRedirectToRealChannel(
-      const Maybe<dom::ContentParent*>& aDestinationProcess);
+      const Maybe<dom::ContentParent*>& aDestinationProcess,
+      nsTArray<StreamFilterRequest> aStreamFilterRequests);
 
   
   
@@ -399,7 +406,7 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   bool HasCrossOriginOpenerPolicyMismatch() const;
   void ApplyPendingFunctions(nsIParentChannel* aChannel) const;
 
-  void Disconnect();
+  void Disconnect(bool aContinueNavigating);
 
   void MaybeReportBlockedByURLClassifier(nsresult aStatus);
 
@@ -536,6 +543,9 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   bool mHaveVisibleRedirect = false;
 
+  
+  
+  
   nsTArray<StreamFilterRequest> mStreamFilterRequests;
 
   nsString mSrcdocData;
@@ -568,9 +578,6 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   bool mInitiatedRedirectToRealChannel = false;
   
   
-  bool mDoingProcessSwitch = false;
-  
-  
   
   
   bool mOldApplyConversion = false;
@@ -598,13 +605,13 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   RefPtr<dom::ContentParent> mContentParent;
 
   void RejectOpenPromise(nsresult aStatus, nsresult aLoadGroupStatus,
-                         bool aSwitchedProcess, const char* aLocation) {
+                         bool aContinueNavigating, const char* aLocation) {
     
     
     if (!mOpenPromiseResolved && mOpenPromise) {
-      mOpenPromise->Reject(
-          OpenPromiseFailedType({aStatus, aLoadGroupStatus, aSwitchedProcess}),
-          aLocation);
+      mOpenPromise->Reject(OpenPromiseFailedType({aStatus, aLoadGroupStatus,
+                                                  aContinueNavigating}),
+                           aLocation);
       mOpenPromiseResolved = true;
     }
   }

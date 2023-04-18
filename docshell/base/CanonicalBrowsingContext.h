@@ -441,7 +441,10 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   
   
   
-  void EndDocumentLoad(bool aForProcessSwitch);
+  
+  
+  
+  void EndDocumentLoad(bool aContinueNavigating);
 
   bool SupportsLoadingInParent(nsDocShellLoadState* aLoadState,
                                uint64_t* aOuterWindowId);
