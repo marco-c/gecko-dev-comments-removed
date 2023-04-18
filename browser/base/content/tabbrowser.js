@@ -2987,7 +2987,9 @@
             restoreTabsLazily && !select && !tabData.pinned;
 
           let url = "about:blank";
-          if (tabData.entries?.length) {
+          if (createLazyBrowser && tabData.entries && tabData.entries.length) {
+            
+            
             let activeIndex = (tabData.index || tabData.entries.length) - 1;
             
             activeIndex = Math.min(activeIndex, tabData.entries.length - 1);
@@ -2995,23 +2997,10 @@
             url = tabData.entries[activeIndex].url;
           }
 
-          let preferredRemoteType = E10SUtils.getRemoteTypeForURI(
-            url,
-            gMultiProcessBrowser,
-            gFissionBrowser,
-            E10SUtils.DEFAULT_REMOTE_TYPE,
-            null,
-            E10SUtils.predictOriginAttributes({ window, userContextId })
-          );
-
           
           
           
-          
-          
-          
-          
-          tab = this.addTrustedTab(createLazyBrowser ? url : "about:blank", {
+          tab = this.addTrustedTab(url, {
             createLazyBrowser,
             skipAnimation: true,
             allowInheritPrincipal: true,
@@ -3020,8 +3009,6 @@
             skipBackgroundNotify: true,
             bulkOrderedOpen: true,
             batchInsertingTabs: true,
-            skipLoad: !createLazyBrowser,
-            preferredRemoteType,
           });
 
           if (select) {
