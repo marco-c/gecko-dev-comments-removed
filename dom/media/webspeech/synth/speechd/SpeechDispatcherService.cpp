@@ -373,28 +373,10 @@ void SpeechDispatcherService::Setup() {
       NS_EscapeURL(list[i]->name, -1,
                    esc_OnlyNonASCII | esc_Spaces | esc_AlwaysCopy, name);
       uri.Append(NS_ConvertUTF8toUTF16(name));
-      ;
+
       uri.AppendLiteral("?");
 
       nsAutoCString lang(list[i]->language);
-
-      if (strcmp(list[i]->variant, "none") != 0) {
-        
-        
-        
-        const char* v = list[i]->variant;
-        const char* hyphen = strchr(v, '-');
-        nsDependentCSubstring variant(v, hyphen ? hyphen - v : strlen(v));
-        ToUpperCase(variant);
-
-        
-        if (variant.EqualsLiteral("UK")) {
-          variant.AssignLiteral("GB");
-        }
-
-        lang.AppendLiteral("-");
-        lang.Append(variant);
-      }
 
       uri.Append(NS_ConvertUTF8toUTF16(lang));
 
