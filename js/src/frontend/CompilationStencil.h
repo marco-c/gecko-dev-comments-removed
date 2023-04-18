@@ -983,6 +983,8 @@ struct ExtensibleCompilationStencil;
 
 
 struct CompilationStencil {
+  friend struct ExtensibleCompilationStencil;
+
   static constexpr ScriptIndex TopLevelIndex = ScriptIndex(0);
 
   static constexpr size_t LifoAllocChunkSize = 512;
@@ -1003,9 +1005,18 @@ struct CompilationStencil {
   UniquePtr<ExtensibleCompilationStencil> ownedBorrowStencil;
 
  public:
-  
-  
-  bool hasExternalDependency = false;
+  enum class StorageType {
+    
+    Owned,
+
+    
+    
+    Borrowed,
+
+    
+    OwnedExtensible,
+  };
+  StorageType storageType = StorageType::Owned;
 
   
   
