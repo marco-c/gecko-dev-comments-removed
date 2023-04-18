@@ -16,13 +16,8 @@
 #include "nsIParser.h"
 #include "nsCycleCollectionParticipant.h"
 
-#include "rlbox_expat.h"
-#include "nsRLBoxExpatDriver.h"
-#include "mozilla/UniquePtr.h"
-
 class nsIExpatSink;
 struct nsCatalogData;
-class RLBoxExpatSandboxData;
 
 class nsExpatDriver : public nsIDTD, public nsITokenizer {
   virtual ~nsExpatDriver();
@@ -38,20 +33,14 @@ class nsExpatDriver : public nsIDTD, public nsITokenizer {
   int HandleExternalEntityRef(const char16_t* aOpenEntityNames,
                               const char16_t* aBase, const char16_t* aSystemId,
                               const char16_t* aPublicId);
-  static void HandleStartElement(rlbox_sandbox_expat& aSandbox,
-                                 tainted_expat<void*> aUserData,
-                                 tainted_expat<const char16_t*> aName,
-                                 tainted_expat<const char16_t**> aAtts);
-  static void HandleStartElementForSystemPrincipal(
-      rlbox_sandbox_expat& aSandbox, tainted_expat<void*> aUserData,
-      tainted_expat<const char16_t*> aName,
-      tainted_expat<const char16_t**> aAtts);
-  static void HandleEndElement(rlbox_sandbox_expat& aSandbox,
-                               tainted_expat<void*> aUserData,
-                               tainted_expat<const char16_t*> aName);
-  static void HandleEndElementForSystemPrincipal(
-      rlbox_sandbox_expat& aSandbox, tainted_expat<void*> aUserData,
-      tainted_expat<const char16_t*> aName);
+  static void HandleStartElement(void* aUserData, const char16_t* aName,
+                                 const char16_t** aAtts);
+  static void HandleStartElementForSystemPrincipal(void* aUserData,
+                                                   const char16_t* aName,
+                                                   const char16_t** aAtts);
+  static void HandleEndElement(void* aUserData, const char16_t* aName);
+  static void HandleEndElementForSystemPrincipal(void* aUserData,
+                                                 const char16_t* aName);
   nsresult HandleCharacterData(const char16_t* aCData, const uint32_t aLength);
   nsresult HandleComment(const char16_t* aName);
   nsresult HandleProcessingInstruction(const char16_t* aTarget,
@@ -102,15 +91,7 @@ class nsExpatDriver : public nsIDTD, public nsITokenizer {
            mInternalState == NS_ERROR_HTMLPARSER_INTERRUPTED;
   }
 
-  RLBoxExpatSandboxData* SandboxData() const;
-  rlbox_sandbox_expat* Sandbox() const;
-
-  
-  void Destroy();
-
-  mozilla::UniquePtr<mozilla::RLBoxSandboxPoolData> mSandboxPoolData;
-  tainted_expat<XML_Parser> mExpatParser;
-
+  XML_Parser mExpatParser;
   nsString mLastLine;
   nsString mCDataText;
   
@@ -145,41 +126,6 @@ class nsExpatDriver : public nsIDTD, public nsITokenizer {
 
   
   uint64_t mInnerWindowID;
-};
-
-class RLBoxExpatSandboxData : public mozilla::RLBoxSandboxDataBase {
-  friend class RLBoxExpatSandboxPool;
-  friend class nsExpatDriver;
-
- public:
-  MOZ_COUNTED_DEFAULT_CTOR(RLBoxExpatSandboxData);
-  ~RLBoxExpatSandboxData();
-  rlbox_sandbox_expat* Sandbox() const { return mSandbox.get(); }
-  
-  
-  
-  void AttachDriver(bool IsSystemPrincipal, void* aDriver);
-  void DetachDriver();
-
- private:
-  mozilla::UniquePtr<rlbox_sandbox_expat> mSandbox;
-  
-  
-  sandbox_callback_expat<XML_XmlDeclHandler> mHandleXMLDeclaration;
-  sandbox_callback_expat<XML_CharacterDataHandler> mHandleCharacterData;
-  sandbox_callback_expat<XML_ProcessingInstructionHandler>
-      mHandleProcessingInstruction;
-  sandbox_callback_expat<XML_DefaultHandler> mHandleDefault;
-  sandbox_callback_expat<XML_ExternalEntityRefHandler> mHandleExternalEntityRef;
-  sandbox_callback_expat<XML_CommentHandler> mHandleComment;
-  sandbox_callback_expat<XML_StartCdataSectionHandler> mHandleStartCdataSection;
-  sandbox_callback_expat<XML_EndCdataSectionHandler> mHandleEndCdataSection;
-  sandbox_callback_expat<XML_StartDoctypeDeclHandler> mHandleStartDoctypeDecl;
-  sandbox_callback_expat<XML_EndDoctypeDeclHandler> mHandleEndDoctypeDecl;
-  
-  
-  sandbox_callback_expat<XML_StartElementHandler> mHandleStartElement;
-  sandbox_callback_expat<XML_EndElementHandler> mHandleEndElement;
 };
 
 #endif
