@@ -825,6 +825,41 @@ class MOZ_STACK_CLASS SplitRangeOffFromNodeResult final {
     return dom::Element::FromNodeOrNull(mRightContent);
   }
 
+  
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult SuggestCaretPointTo(
+      const HTMLEditor& aHTMLEditor, const SuggestCaretOptions& aOptions) const;
+
+  
+
+
+
+  void IgnoreCaretPointSuggestion() const { mHandledCaretPoint = true; }
+
+  bool HasCaretPointSuggestion() const { return mCaretPoint.IsSet(); }
+  constexpr EditorDOMPoint&& UnwrapCaretPoint() {
+    mHandledCaretPoint = true;
+    return std::move(mCaretPoint);
+  }
+  bool MoveCaretPointTo(EditorDOMPoint& aPointToPutCaret,
+                        const SuggestCaretOptions& aOptions) {
+    MOZ_ASSERT(!aOptions.contains(SuggestCaret::AndIgnoreTrivialError));
+    MOZ_ASSERT(
+        !aOptions.contains(SuggestCaret::OnlyIfTransactionsAllowedToDoIt));
+    if (aOptions.contains(SuggestCaret::OnlyIfHasSuggestion) &&
+        !mCaretPoint.IsSet()) {
+      return false;
+    }
+    aPointToPutCaret = UnwrapCaretPoint();
+    return true;
+  }
+  bool MoveCaretPointTo(EditorDOMPoint& aPointToPutCaret,
+                        const HTMLEditor& aHTMLEditor,
+                        const SuggestCaretOptions& aOptions);
+
+  SplitRangeOffFromNodeResult() = delete;
+
   SplitRangeOffFromNodeResult(nsIContent* aLeftContent,
                               nsIContent* aMiddleContent,
                               nsIContent* aRightContent)
@@ -855,6 +890,15 @@ class MOZ_STACK_CLASS SplitRangeOffFromNodeResult final {
     if (!mMiddleContent && splitResultAtLeftOfMiddleNode.isOk()) {
       mMiddleContent = splitResultAtLeftOfMiddleNode.GetNextContent();
     }
+    
+    if (splitResultARightOfMiddleNode.HasCaretPointSuggestion()) {
+      splitResultAtLeftOfMiddleNode.IgnoreCaretPointSuggestion();
+      mCaretPoint = splitResultARightOfMiddleNode.UnwrapCaretPoint();
+    }
+    
+    else if (splitResultAtLeftOfMiddleNode.HasCaretPointSuggestion()) {
+      mCaretPoint = splitResultAtLeftOfMiddleNode.UnwrapCaretPoint();
+    }
   }
 
   explicit SplitRangeOffFromNodeResult(nsresult aRv) : mRv(aRv) {
@@ -869,14 +913,24 @@ class MOZ_STACK_CLASS SplitRangeOffFromNodeResult final {
   SplitRangeOffFromNodeResult& operator=(SplitRangeOffFromNodeResult&& aOther) =
       default;
 
+#ifdef DEBUG
+  ~SplitRangeOffFromNodeResult() {
+    MOZ_ASSERT_IF(isOk(), !mCaretPoint.IsSet() || mHandledCaretPoint);
+  }
+#endif
+
  private:
   nsCOMPtr<nsIContent> mLeftContent;
   nsCOMPtr<nsIContent> mMiddleContent;
   nsCOMPtr<nsIContent> mRightContent;
 
+  
+  
+  EditorDOMPoint mCaretPoint;
+
   nsresult mRv;
 
-  SplitRangeOffFromNodeResult() = delete;
+  bool mutable mHandledCaretPoint = false;
 };
 
 

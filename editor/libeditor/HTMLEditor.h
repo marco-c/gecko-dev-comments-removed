@@ -4661,11 +4661,12 @@ class HTMLEditor final : public EditorBase,
                                   
                                   
                                   
-  friend class SlurpBlobEventListener;  
-  friend class SplitNodeResult;         
-  friend class SplitNodeTransaction;    
-  friend class TransactionManager;      
-                                        
+  friend class SlurpBlobEventListener;       
+  friend class SplitNodeResult;              
+  friend class SplitNodeTransaction;         
+  friend class SplitRangeOffFromNodeResult;  
+  friend class TransactionManager;  
+                                    
   friend class
       WhiteSpaceVisibilityKeeper;  
                                    
