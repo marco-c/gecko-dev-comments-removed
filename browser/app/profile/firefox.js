@@ -2058,6 +2058,11 @@ pref("extensions.pocket.showHome", true);
 
 pref("extensions.pocket.loggedOutVariant", "control");
 
+
+pref("extensions.pocket.refresh.layout.enabled", false);
+
+pref("extensions.pocket.refresh.emailButton.enabled", false);
+
 pref("signon.management.page.fileImport.enabled", false);
 
 #ifdef NIGHTLY_BUILD
