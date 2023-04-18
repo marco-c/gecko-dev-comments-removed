@@ -2204,18 +2204,33 @@ void MediaManager::DeviceListChanged() {
   
   
 
+  
+  
   if (mDeviceChangeTimer) {
     mDeviceChangeTimer->Cancel();
   } else {
     mDeviceChangeTimer = MakeRefPtr<MediaTimer>();
   }
+  
+  
+  
+  auto now = TimeStamp::NowLoRes();
+  auto enumerateDelay = TimeDuration::FromMilliseconds(200);
+  auto coalescenceLimit = TimeDuration::FromMilliseconds(1000) - enumerateDelay;
+  if (!mUnhandledDeviceChangeTime) {
+    mUnhandledDeviceChangeTime = now;
+  } else if (now - mUnhandledDeviceChangeTime > coalescenceLimit) {
+    HandleDeviceListChanged();
+    mUnhandledDeviceChangeTime = now;
+  }
   RefPtr<MediaManager> self = this;
-  mDeviceChangeTimer->WaitFor(TimeDuration::FromMilliseconds(200), __func__)
+  mDeviceChangeTimer->WaitFor(enumerateDelay, __func__)
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
           [self, this] {
             MOZ_ASSERT(MediaManager::GetIfExists(),
                        "Timer is cancelled on Shutdown()");
+            mUnhandledDeviceChangeTime = TimeStamp();
             HandleDeviceListChanged();
           },
           [] {  });
