@@ -617,6 +617,30 @@ JSObject* mozJSComponentLoader::GetSharedGlobal(JSContext* aCx) {
 }
 
 
+nsresult mozJSComponentLoader::GetSourceFile(nsIURI* aResolvedURI,
+                                             nsIFile** aSourceFileOut) {
+  
+  nsCOMPtr<nsIJARURI> jarURI;
+  nsresult rv = NS_OK;
+  jarURI = do_QueryInterface(aResolvedURI, &rv);
+  nsCOMPtr<nsIFileURL> baseFileURL;
+  if (NS_SUCCEEDED(rv)) {
+    nsCOMPtr<nsIURI> baseURI;
+    while (jarURI) {
+      jarURI->GetJARFile(getter_AddRefs(baseURI));
+      jarURI = do_QueryInterface(baseURI, &rv);
+    }
+    baseFileURL = do_QueryInterface(baseURI, &rv);
+    NS_ENSURE_SUCCESS(rv, rv);
+  } else {
+    baseFileURL = do_QueryInterface(aResolvedURI, &rv);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  return baseFileURL->GetFile(aSourceFileOut);
+}
+
+
 bool mozJSComponentLoader::LocationIsRealFile(nsIURI* aURI) {
   
   
@@ -1262,25 +1286,8 @@ nsresult mozJSComponentLoader::Import(JSContext* aCx,
       return NS_ERROR_DOM_SECURITY_ERR;
     }
 
-    
-    nsCOMPtr<nsIJARURI> jarURI;
-    jarURI = do_QueryInterface(info.ResolvedURI(), &rv);
-    nsCOMPtr<nsIFileURL> baseFileURL;
-    if (NS_SUCCEEDED(rv)) {
-      nsCOMPtr<nsIURI> baseURI;
-      while (jarURI) {
-        jarURI->GetJARFile(getter_AddRefs(baseURI));
-        jarURI = do_QueryInterface(baseURI, &rv);
-      }
-      baseFileURL = do_QueryInterface(baseURI, &rv);
-      NS_ENSURE_SUCCESS(rv, rv);
-    } else {
-      baseFileURL = do_QueryInterface(info.ResolvedURI(), &rv);
-      NS_ENSURE_SUCCESS(rv, rv);
-    }
-
     nsCOMPtr<nsIFile> sourceFile;
-    rv = baseFileURL->GetFile(getter_AddRefs(sourceFile));
+    rv = GetSourceFile(info.ResolvedURI(), getter_AddRefs(sourceFile));
     NS_ENSURE_SUCCESS(rv, rv);
 
     rv = info.ResolvedURI()->GetSpec(newEntry->resolvedURL);
