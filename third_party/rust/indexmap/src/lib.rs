@@ -77,18 +77,13 @@
 
 
 
-#[cfg(not(has_std))]
 extern crate alloc;
 
 #[cfg(has_std)]
 #[macro_use]
 extern crate std;
 
-#[cfg(not(has_std))]
 use alloc::vec::{self, Vec};
-
-#[cfg(has_std)]
-use std::vec::{self, Vec};
 
 #[macro_use]
 mod macros;
@@ -107,6 +102,9 @@ pub mod set;
 
 #[cfg(feature = "rayon")]
 mod rayon;
+
+#[cfg(feature = "rustc-rayon")]
+mod rustc;
 
 pub use crate::equivalent::Equivalent;
 pub use crate::map::IndexMap;
@@ -166,6 +164,9 @@ impl<K, V> Bucket<K, V> {
     }
     fn key(self) -> K {
         self.key
+    }
+    fn value(self) -> V {
+        self.value
     }
     fn key_value(self) -> (K, V) {
         (self.key, self.value)
