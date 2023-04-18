@@ -1373,20 +1373,6 @@ async function enableTargetSwitching() {
 
 
 
-function waitForTitleChange(toolbox) {
-  return new Promise(resolve => {
-    toolbox.topWindow.addEventListener("message", function onmessage(event) {
-      if (event.data.name == "set-host-title") {
-        toolbox.topWindow.removeEventListener("message", onmessage);
-        resolve();
-      }
-    });
-  });
-}
-
-
-
-
 
 
 
