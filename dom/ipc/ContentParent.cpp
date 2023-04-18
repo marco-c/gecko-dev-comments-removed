@@ -76,7 +76,6 @@
 #include "mozilla/Components.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/StaticPrefs_dom.h"
-#include "mozilla/StaticPrefs_fission.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/StaticPrefs_widget.h"
 #include "mozilla/StyleSheet.h"
@@ -652,23 +651,6 @@ static const char* sObserverTopics[] = {
     "network:socket-process-crashed",
 };
 
-static const char kFissionEnforceBlockList[] =
-    "fission.enforceBlocklistedPrefsInSubprocesses";
-static const char kFissionOmitBlockListValues[] =
-    "fission.omitBlocklistedPrefsInSubprocesses";
-
-static void OnFissionBlocklistPrefChange(const char* aPref, void* aData) {
-  if (strcmp(aPref, kFissionEnforceBlockList) == 0) {
-    sCrashOnBlocklistedPref =
-        StaticPrefs::fission_enforceBlocklistedPrefsInSubprocesses();
-  } else if (strcmp(aPref, kFissionOmitBlockListValues) == 0) {
-    sOmitBlocklistedPrefValues =
-        StaticPrefs::fission_omitBlocklistedPrefsInSubprocesses();
-  } else {
-    MOZ_CRASH("Unknown pref passed to callback");
-  }
-}
-
 
 
  already_AddRefed<ContentParent>
@@ -697,11 +679,6 @@ void ContentParent::StartUp() {
 
   BackgroundChild::Startup();
   ClientManager::Startup();
-
-  Preferences::RegisterCallbackAndCall(&OnFissionBlocklistPrefChange,
-                                       kFissionEnforceBlockList);
-  Preferences::RegisterCallbackAndCall(&OnFissionBlocklistPrefChange,
-                                       kFissionOmitBlockListValues);
 
 #if defined(XP_LINUX) && defined(MOZ_SANDBOX)
   sSandboxBrokerPolicyFactory = MakeUnique<SandboxBrokerPolicyFactory>();
@@ -2535,7 +2512,7 @@ bool ContentParent::BeginSubprocessLaunch(ProcessPriority aPriority) {
   
   
   mPrefSerializer = MakeUnique<mozilla::ipc::SharedPreferenceSerializer>(
-      ShouldSanitizePreference);
+      ShouldSyncPreference);
   if (!mPrefSerializer->SerializeToSharedMemory()) {
     NS_WARNING("SharedPreferenceSerializer::SerializeToSharedMemory failed");
     MarkAsDead();
@@ -3553,9 +3530,12 @@ ContentParent::Observe(nsISupports* aSubject, const char* aTopic,
     
     NS_LossyConvertUTF16toASCII strData(aData);
 
-    Pref pref(strData,  false,
-              ShouldSanitizePreference(strData.Data()), Nothing(), Nothing());
+    
+    if (!ShouldSyncPreference(strData.Data())) {
+      return NS_OK;
+    }
 
+    Pref pref(strData,  false, Nothing(), Nothing());
     Preferences::GetPreference(&pref);
     if (IsInitialized()) {
       MOZ_ASSERT(mQueuedPrefs.IsEmpty());
@@ -3701,6 +3681,37 @@ ContentParent::Observe(nsISupports* aSubject, const char* aTopic,
   }
 
   return NS_OK;
+}
+
+
+bool ContentParent::ShouldSyncPreference(const char* aPref) {
+#define PARENT_ONLY_PREF_LIST_ENTRY(s) \
+  { s, (sizeof(s) / sizeof(char)) - 1 }
+  struct ParentOnlyPrefListEntry {
+    const char* mPrefBranch;
+    size_t mLen;
+  };
+  
+  static const ParentOnlyPrefListEntry sParentOnlyPrefBranchList[] = {
+      PARENT_ONLY_PREF_LIST_ENTRY("app.update.lastUpdateTime."),
+      PARENT_ONLY_PREF_LIST_ENTRY("datareporting.policy."),
+      PARENT_ONLY_PREF_LIST_ENTRY("browser.safebrowsing.provider."),
+      PARENT_ONLY_PREF_LIST_ENTRY("browser.shell."),
+      PARENT_ONLY_PREF_LIST_ENTRY("browser.slowStartup."),
+      PARENT_ONLY_PREF_LIST_ENTRY("browser.startup."),
+      PARENT_ONLY_PREF_LIST_ENTRY("extensions.getAddons.cache."),
+      PARENT_ONLY_PREF_LIST_ENTRY("media.gmp-manager."),
+      PARENT_ONLY_PREF_LIST_ENTRY("media.gmp-gmpopenh264."),
+      PARENT_ONLY_PREF_LIST_ENTRY("privacy.sanitize."),
+  };
+#undef PARENT_ONLY_PREF_LIST_ENTRY
+
+  for (const auto& entry : sParentOnlyPrefBranchList) {
+    if (strncmp(entry.mPrefBranch, aPref, entry.mLen) == 0) {
+      return false;
+    }
+  }
+  return true;
 }
 
 void ContentParent::UpdateNetworkLinkType() {

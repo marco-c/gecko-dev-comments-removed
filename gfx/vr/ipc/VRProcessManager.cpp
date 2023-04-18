@@ -216,10 +216,12 @@ void VRProcessManager::OnPreferenceChange(const char16_t* aData) {
   
   NS_LossyConvertUTF16toASCII strData(aData);
 
-  mozilla::dom::Pref pref(strData,  false,
-                          ShouldSanitizePreference(strData.Data(), false),
-                          Nothing(), Nothing());
+  
+  if (!dom::ContentParent::ShouldSyncPreference(strData.Data())) {
+    return;
+  }
 
+  mozilla::dom::Pref pref(strData,  false, Nothing(), Nothing());
   Preferences::GetPreference(&pref);
   if (!!mVRChild) {
     MOZ_ASSERT(mQueuedPrefs.IsEmpty());
