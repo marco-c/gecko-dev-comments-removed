@@ -439,6 +439,25 @@ mozilla::LazyLogModule gUseCountersLog("UseCounters");
 namespace mozilla {
 namespace dom {
 
+class Document::HeaderData {
+ public:
+  HeaderData(nsAtom* aField, const nsAString& aData)
+      : mField(aField), mData(aData) {}
+
+  ~HeaderData() {
+    
+    
+    UniquePtr<HeaderData> next = std::move(mNext);
+    while (next) {
+      next = std::move(next->mNext);
+    }
+  }
+
+  RefPtr<nsAtom> mField;
+  nsString mData;
+  UniquePtr<HeaderData> mNext;
+};
+
 using LinkArray = nsTArray<Link*>;
 
 AutoTArray<Document*, 8>* Document::sLoadingForegroundTopLevelContentDocument =
@@ -2275,7 +2294,7 @@ Document::~Document() {
     mPermissionDelegateHandler->DropDocumentReference();
   }
 
-  delete mHeaderData;
+  mHeaderData = nullptr;
 
   mPendingTitleChangeEvent.Revoke();
 
@@ -6685,14 +6704,13 @@ void Document::GetSandboxFlagsAsString(nsAString& aFlags) {
 
 void Document::GetHeaderData(nsAtom* aHeaderField, nsAString& aData) const {
   aData.Truncate();
-  const DocHeaderData* data = mHeaderData;
+  const HeaderData* data = mHeaderData.get();
   while (data) {
     if (data->mField == aHeaderField) {
       aData = data->mData;
-
       break;
     }
-    data = data->mNext;
+    data = data->mNext.get();
   }
 }
 
@@ -6704,32 +6722,32 @@ void Document::SetHeaderData(nsAtom* aHeaderField, const nsAString& aData) {
 
   if (!mHeaderData) {
     if (!aData.IsEmpty()) {  
-      mHeaderData = new DocHeaderData(aHeaderField, aData);
+      mHeaderData = MakeUnique<HeaderData>(aHeaderField, aData);
     }
   } else {
-    DocHeaderData* data = mHeaderData;
-    DocHeaderData** lastPtr = &mHeaderData;
+    HeaderData* data = mHeaderData.get();
+    UniquePtr<HeaderData>* lastPtr = &mHeaderData;
     bool found = false;
     do {  
       if (data->mField == aHeaderField) {
         if (!aData.IsEmpty()) {
           data->mData.Assign(aData);
         } else {  
-          *lastPtr = data->mNext;
-          data->mNext = nullptr;
-          delete data;
+          
+          
+          *lastPtr = std::move(data->mNext);
         }
         found = true;
 
         break;
       }
-      lastPtr = &(data->mNext);
-      data = *lastPtr;
+      lastPtr = &data->mNext;
+      data = lastPtr->get();
     } while (data);
 
     if (!aData.IsEmpty() && !found) {
       
-      *lastPtr = new DocHeaderData(aHeaderField, aData);
+      *lastPtr = MakeUnique<HeaderData>(aHeaderField, aData);
     }
   }
 
