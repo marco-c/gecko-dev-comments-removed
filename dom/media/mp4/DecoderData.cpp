@@ -176,6 +176,15 @@ MediaResult MP4AudioInfo::Update(const Mp4parseTrackInfo* track,
     }
   } else if (codecType == MP4PARSE_CODEC_AAC) {
     mMimeType = "audio/mp4a-latm"_ns;
+    AacCodecSpecificData aacCodecSpecificData{};
+    
+    aacCodecSpecificData.mDecoderConfigDescriptorBinaryBlob->AppendElements(
+        mp4ParseSampleCodecSpecific.data, mp4ParseSampleCodecSpecific.length);
+    
+    aacCodecSpecificData.mEsDescriptorBinaryBlob->AppendElements(
+        extraData.data, extraData.length);
+    mCodecSpecificConfig =
+        AudioCodecSpecificVariant{std::move(aacCodecSpecificData)};
   } else if (codecType == MP4PARSE_CODEC_FLAC) {
     MOZ_ASSERT(extraData.length == 0,
                "FLAC doesn't expect extra data so doesn't handle it!");
