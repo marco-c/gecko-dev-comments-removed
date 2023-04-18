@@ -55,6 +55,16 @@ const MULTI_FIELD_NAMES = [
 
 
 
+
+const MULTI_N_FIELD_NAMES = {
+  "cc-number": 4,
+};
+
+
+
+
+
+
 class FieldScanner {
   
 
@@ -143,58 +153,42 @@ class FieldScanner {
       fieldDetails: [fieldDetail],
     });
   }
+  
 
-  _classifyMultipleCCNumberFields() {
-    if (this._sections.length != 4) {
-      return;
-    }
-    let firstDetails = this._sections[0].fieldDetails;
-    
-    if (
-      firstDetails.findIndex(detail => detail.fieldName == "cc-number") !=
-      firstDetails.length - 1
-    ) {
-      return;
-    }
-    let secondDetails = this._sections[1].fieldDetails;
-    
-    if (
-      !(secondDetails.length == 1 && secondDetails[0].fieldName == "cc-number")
-    ) {
-      return;
-    }
 
-    let thirdDetails = this._sections[2].fieldDetails;
-    
-    if (
-      !(thirdDetails.length == 1 && thirdDetails[0].fieldName == "cc-number")
-    ) {
-      return;
-    }
 
-    let fourthDetails = this._sections[3].fieldDetails;
-    
-    let foundCCNumber = false;
-    for (let [index, detail] of fourthDetails.entries()) {
-      if (detail.fieldName == "cc-number") {
-        if (index == 0) {
-          foundCCNumber = true;
-        } else {
-          return;
-        }
+
+
+
+
+
+
+
+  _mergeNextNFields(
+    mergeNextNFields,
+    currentType,
+    fieldDetails,
+    i,
+    createNewSection
+  ) {
+    if (mergeNextNFields) {
+      mergeNextNFields--;
+    } else {
+      
+      
+      
+      let nextN = MULTI_N_FIELD_NAMES[currentType] - 2;
+      let array = fieldDetails.slice(i + 1, i + 1 + nextN);
+      if (
+        array.length == nextN &&
+        array.every(detail => detail.fieldName == currentType)
+      ) {
+        mergeNextNFields = nextN;
+      } else {
+        createNewSection = true;
       }
     }
-    if (!foundCCNumber) {
-      return;
-    }
-    
-    
-    this._sections[0].fieldDetails = firstDetails.concat(
-      secondDetails,
-      thirdDetails,
-      fourthDetails
-    );
-    this._sections.splice(1);
+    return { mergeNextNFields, createNewSection };
   }
   _classifySections() {
     let fieldDetails = this._sections[0].fieldDetails;
@@ -202,27 +196,54 @@ class FieldScanner {
     let seenTypes = new Set();
     let previousType;
     let sectionCount = 0;
-    for (let fieldDetail of fieldDetails) {
-      if (!fieldDetail.fieldName) {
+    let mergeNextNFields = 0;
+
+    for (let i = 0; i < fieldDetails.length; i++) {
+      let currentType = fieldDetails[i].fieldName;
+      if (!currentType) {
         continue;
       }
 
-      if (
-        seenTypes.has(fieldDetail.fieldName) &&
-        (previousType != fieldDetail.fieldName ||
-          !MULTI_FIELD_NAMES.includes(fieldDetail.fieldName))
-      ) {
+      let createNewSection = false;
+      if (seenTypes.has(currentType)) {
+        if (previousType != currentType) {
+          
+          
+          createNewSection = true;
+        } else if (MULTI_FIELD_NAMES.includes(currentType)) {
+          
+          
+        } else if (currentType in MULTI_N_FIELD_NAMES) {
+          
+          
+          
+          
+          ({ mergeNextNFields, createNewSection } = this._mergeNextNFields(
+            mergeNextNFields,
+            currentType,
+            fieldDetails,
+            i,
+            createNewSection
+          ));
+        } else {
+          
+          createNewSection = true;
+        }
+      }
+
+      if (createNewSection) {
+        mergeNextNFields = 0;
         seenTypes.clear();
         sectionCount++;
       }
-      previousType = fieldDetail.fieldName;
-      seenTypes.add(fieldDetail.fieldName);
+
+      previousType = currentType;
+      seenTypes.add(currentType);
       this._pushToSection(
         DEFAULT_SECTION_NAME + "-" + sectionCount,
-        fieldDetail
+        fieldDetails[i]
       );
     }
-    this._classifyMultipleCCNumberFields();
   }
 
   
