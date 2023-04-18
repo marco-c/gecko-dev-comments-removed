@@ -1610,8 +1610,8 @@ public class Tokenizer implements Locator, Locator2 {
                                 flushChars(buf, pos);
 
                                 state = transition(state, Tokenizer.TAG_OPEN, reconsume, pos);
-                                break dataloop; 
-                            
+                                
+                                break dataloop;
                             case '\u0000':
                                 maybeEmitReplacementCharacter(buf, pos);
                                 continue;
@@ -1667,8 +1667,8 @@ public class Tokenizer implements Locator, Locator2 {
 
 
 
-                            break tagopenloop;
                             
+                            break tagopenloop;
                         } else if (c >= 'a' && c <= 'z') {
                             
 
@@ -1688,8 +1688,8 @@ public class Tokenizer implements Locator, Locator2 {
 
 
 
-                            break tagopenloop;
                             
+                            break tagopenloop;
                         }
                         switch (c) {
                             case '!':
@@ -1788,8 +1788,8 @@ public class Tokenizer implements Locator, Locator2 {
 
                                 strBufToElementNameString();
                                 state = transition(state, Tokenizer.BEFORE_ATTRIBUTE_NAME, reconsume, pos);
+                                
                                 break tagnameloop;
-                            
                             case '/':
                                 
 
@@ -1939,8 +1939,8 @@ public class Tokenizer implements Locator, Locator2 {
 
 
                                 state = transition(state, Tokenizer.ATTRIBUTE_NAME, reconsume, pos);
+                                
                                 break beforeattributenameloop;
-                            
                         }
                     }
                     
@@ -1989,8 +1989,8 @@ public class Tokenizer implements Locator, Locator2 {
 
                                 attributeNameComplete();
                                 state = transition(state, Tokenizer.BEFORE_ATTRIBUTE_VALUE, reconsume, pos);
+                                
                                 break attributenameloop;
-                            
                             case '>':
                                 
 
@@ -2079,8 +2079,8 @@ public class Tokenizer implements Locator, Locator2 {
                                 
                                 clearStrBufBeforeUse();
                                 state = transition(state, Tokenizer.ATTRIBUTE_VALUE_DOUBLE_QUOTED, reconsume, pos);
+                                
                                 break beforeattributevalueloop;
-                            
                             case '&':
                                 
 
@@ -2176,8 +2176,8 @@ public class Tokenizer implements Locator, Locator2 {
                                 addAttributeWithValue();
 
                                 state = transition(state, Tokenizer.AFTER_ATTRIBUTE_VALUE_QUOTED, reconsume, pos);
+                                
                                 break attributevaluedoublequotedloop;
-                            
                             case '&':
                                 
 
@@ -2247,8 +2247,8 @@ public class Tokenizer implements Locator, Locator2 {
 
 
                                 state = transition(state, Tokenizer.SELF_CLOSING_START_TAG, reconsume, pos);
+                                
                                 break afterattributevaluequotedloop;
-                            
                             case '>':
                                 
 
@@ -2311,6 +2311,7 @@ public class Tokenizer implements Locator, Locator2 {
                             state = transition(state, Tokenizer.BEFORE_ATTRIBUTE_NAME, reconsume, pos);
                             continue stateloop;
                     }
+                    
                 case ATTRIBUTE_VALUE_UNQUOTED:
                     for (;;) {
                         if (reconsume) {
@@ -2402,7 +2403,8 @@ public class Tokenizer implements Locator, Locator2 {
                                 continue;
                         }
                     }
-                case AFTER_ATTRIBUTE_NAME:
+                    
+               case AFTER_ATTRIBUTE_NAME:
                     for (;;) {
                         if (++pos == endPos) {
                             break stateloop;
@@ -2501,6 +2503,7 @@ public class Tokenizer implements Locator, Locator2 {
                                 continue stateloop;
                         }
                     }
+                    
                 case MARKUP_DECLARATION_OPEN:
                     markupdeclarationopenloop: for (;;) {
                         if (++pos == endPos) {
@@ -2537,8 +2540,8 @@ public class Tokenizer implements Locator, Locator2 {
                                 clearStrBufBeforeUse();
                                 appendStrBuf(c);
                                 state = transition(state, Tokenizer.MARKUP_DECLARATION_HYPHEN, reconsume, pos);
+                                
                                 break markupdeclarationopenloop;
-                            
                             case 'd':
                             case 'D':
                                 clearStrBufBeforeUse();
@@ -2574,8 +2577,8 @@ public class Tokenizer implements Locator, Locator2 {
                             case '-':
                                 clearStrBufAfterOneHyphen();
                                 state = transition(state, Tokenizer.COMMENT_START, reconsume, pos);
+                                
                                 break markupdeclarationhyphenloop;
-                            
                             default:
                                 errBogusComment();
                                 reconsume = true;
@@ -2646,8 +2649,8 @@ public class Tokenizer implements Locator, Locator2 {
 
 
                                 state = transition(state, Tokenizer.COMMENT, reconsume, pos);
+                                
                                 break commentstartloop;
-                            
                         }
                     }
                     
@@ -2668,8 +2671,8 @@ public class Tokenizer implements Locator, Locator2 {
 
                                 appendStrBuf(c);
                                 state = transition(state, Tokenizer.COMMENT_END_DASH, reconsume, pos);
+                                
                                 break commentloop;
-                            
                             case '<':
                                 appendStrBuf(c);
                                 state = transition(state, Tokenizer.COMMENT_LESSTHAN, reconsume, pos);
@@ -2714,8 +2717,8 @@ public class Tokenizer implements Locator, Locator2 {
 
                                 appendStrBuf(c);
                                 state = transition(state, Tokenizer.COMMENT_END, reconsume, pos);
+                                
                                 break commentenddashloop;
-                            
                             case '<':
                                 appendStrBuf(c);
                                 state = transition(state, Tokenizer.COMMENT_LESSTHAN, reconsume, pos);
@@ -2798,7 +2801,8 @@ public class Tokenizer implements Locator, Locator2 {
                             case '!':
                                 appendStrBuf(c);
                                 state = transition(state, Tokenizer.COMMENT_END_BANG, reconsume, pos);
-                                continue stateloop;
+                                
+                                break commentendloop;
                             case '\u0000':
                                 c = '\uFFFD';
                                 
@@ -2817,6 +2821,7 @@ public class Tokenizer implements Locator, Locator2 {
                                 continue stateloop;
                         }
                     }
+                    
                 case COMMENT_END_BANG:
                     for (;;) {
                         if (++pos == endPos) {
@@ -2882,8 +2887,9 @@ public class Tokenizer implements Locator, Locator2 {
                                 continue stateloop;
                         }
                     }
+                    
                 case COMMENT_LESSTHAN:
-                    for (;;) {
+                    commentlessthanloop: for (;;) {
                         if (++pos == endPos) {
                             break stateloop;
                         }
@@ -2892,7 +2898,8 @@ public class Tokenizer implements Locator, Locator2 {
                             case '!':
                                 appendStrBuf(c);
                                 state = transition(state, Tokenizer.COMMENT_LESSTHAN_BANG, reconsume, pos);
-                                continue stateloop;
+                                
+                                break commentlessthanloop;
                             case '<':
                                 appendStrBuf(c);
                                 continue;
@@ -2902,10 +2909,12 @@ public class Tokenizer implements Locator, Locator2 {
                                 continue stateloop;
                             case '\r':
                                 appendStrBufCarriageReturn();
+                                state = transition(state, Tokenizer.COMMENT, reconsume, pos);
                                 break stateloop;
                             case '\n':
                                 appendStrBufLineFeed();
-                                continue;
+                                state = transition(state, Tokenizer.COMMENT, reconsume, pos);
+                                continue stateloop;
                             case '\u0000':
                                 c = '\uFFFD';
                                 
@@ -2917,7 +2926,7 @@ public class Tokenizer implements Locator, Locator2 {
                     }
                     
                 case COMMENT_LESSTHAN_BANG:
-                    for (;;) {
+                    commentlessthanbangloop: for (;;) {
                         if (++pos == endPos) {
                             break stateloop;
                         }
@@ -2926,17 +2935,20 @@ public class Tokenizer implements Locator, Locator2 {
                             case '-':
                                 appendStrBuf(c);
                                 state = transition(state, Tokenizer.COMMENT_LESSTHAN_BANG_DASH, reconsume, pos);
-                                continue stateloop;
+                                
+                                break commentlessthanbangloop;
                             case '<':
                                 appendStrBuf(c);
                                 state = transition(state, Tokenizer.COMMENT_LESSTHAN, reconsume, pos);
                                 continue stateloop;
                             case '\r':
                                 appendStrBufCarriageReturn();
+                                state = transition(state, Tokenizer.COMMENT, reconsume, pos);
                                 break stateloop;
                             case '\n':
                                 appendStrBufLineFeed();
-                                continue;
+                                state = transition(state, Tokenizer.COMMENT, reconsume, pos);
+                                continue stateloop;
                             case '\u0000':
                                 c = '\uFFFD';
                                 
@@ -2948,87 +2960,105 @@ public class Tokenizer implements Locator, Locator2 {
                     }
                     
                 case COMMENT_LESSTHAN_BANG_DASH:
-                    for (;;) {
-                        if (++pos == endPos) {
+                    if (++pos == endPos) {
+                        break stateloop;
+                    }
+                    c = checkChar(buf, pos);
+                    switch (c) {
+                        case '-':
+                            appendStrBuf(c);
+                            state = transition(state,
+                                    Tokenizer.COMMENT_LESSTHAN_BANG_DASH_DASH,
+                                    reconsume, pos);
+                            
+                            break;
+                        case '<':
+                            appendStrBuf(c);
+                            state = transition(state,
+                                    Tokenizer.COMMENT_LESSTHAN, reconsume, pos);
+                            continue stateloop;
+                        case '\r':
+                            appendStrBufCarriageReturn();
+                            state = transition(state, Tokenizer.COMMENT,
+                                    reconsume, pos);
                             break stateloop;
-                        }
-                        c = checkChar(buf, pos);
-                        switch (c) {
-                            case '-':
-                                appendStrBuf(c);
-                                state = transition(state, Tokenizer.COMMENT_LESSTHAN_BANG_DASH_DASH, reconsume, pos);
-                                continue stateloop;
-                            case '<':
-                                appendStrBuf(c);
-                                state = transition(state, Tokenizer.COMMENT_LESSTHAN, reconsume, pos);
-                                continue stateloop;
-                            case '\r':
-                                appendStrBufCarriageReturn();
-                                break stateloop;
-                            case '\n':
-                                appendStrBufLineFeed();
-                                continue;
-                            case '\u0000':
-                                c = '\uFFFD';
-                                
-                            default:
-                                appendStrBuf(c);
-                                state = transition(state, Tokenizer.COMMENT, reconsume, pos);
-                                continue stateloop;
-                        }
+                        case '\n':
+                            appendStrBufLineFeed();
+                            state = transition(state, Tokenizer.COMMENT,
+                                    reconsume, pos);
+                            continue stateloop;
+                        case '\u0000':
+                            c = '\uFFFD';
+                            
+                        default:
+                            appendStrBuf(c);
+                            state = transition(state, Tokenizer.COMMENT,
+                                    reconsume, pos);
+                            continue stateloop;
                     }
                     
                 case COMMENT_LESSTHAN_BANG_DASH_DASH:
-                    for (;;) {
-                        if (++pos == endPos) {
-                            break stateloop;
-                        }
-                        c = checkChar(buf, pos);
-                        switch (c) {
-                            case '>':
-                                appendStrBuf(c);
-                                emitComment(3, pos);
-                                state = transition(state, Tokenizer.DATA, reconsume, pos);
-                                if (shouldSuspend) {
-                                    break stateloop;
-                                }
-                                continue stateloop;
-                            case '-':
-                                errNestedComment();
-                                adjustDoubleHyphenAndAppendToStrBufAndErr(c, reportedConsecutiveHyphens);
-                                reportedConsecutiveHyphens = true;
-                                state = transition(state, Tokenizer.COMMENT_END, reconsume, pos);
-                                continue stateloop;
-                            case '\r':
-                                errNestedComment();
-                                adjustDoubleHyphenAndAppendToStrBufAndErr(c, reportedConsecutiveHyphens);
-                                reportedConsecutiveHyphens = true;
-                                state = transition(state, Tokenizer.COMMENT, reconsume, pos);
-                                break stateloop;
-                            case '\n':
-                                errNestedComment();
-                                adjustDoubleHyphenAndAppendToStrBufAndErr(c, reportedConsecutiveHyphens);
-                                reportedConsecutiveHyphens = true;
-                                state = transition(state, Tokenizer.COMMENT, reconsume, pos);
-                                continue;
-                            case '\u0000':
-                                c = '\uFFFD';
-                                
-                            case '!':
-                                errNestedComment();
-                                adjustDoubleHyphenAndAppendToStrBufAndErr(c, reportedConsecutiveHyphens);
-                                reportedConsecutiveHyphens = true;
-                                state = transition(state, Tokenizer.COMMENT_END_BANG, reconsume, pos);
-                                continue stateloop;
-                            default:
-                                errNestedComment();
-                                adjustDoubleHyphenAndAppendToStrBufAndErr(c, reportedConsecutiveHyphens);
-                                reportedConsecutiveHyphens = true;
-                                state = transition(state, Tokenizer.COMMENT_END, reconsume, pos);
-                                continue stateloop;
-                        }
+                    if (++pos == endPos) {
+                        break stateloop;
                     }
-                    
+                    c = checkChar(buf, pos);
+                    switch (c) {
+                        case '>':
+                            appendStrBuf(c);
+                            emitComment(3, pos);
+                            state = transition(state, Tokenizer.DATA, reconsume,
+                                    pos);
+                            if (shouldSuspend) {
+                                break stateloop;
+                            }
+                            continue stateloop;
+                        case '-':
+                            errNestedComment();
+                            adjustDoubleHyphenAndAppendToStrBufAndErr(c,
+                                    reportedConsecutiveHyphens);
+                            reportedConsecutiveHyphens = true;
+                            state = transition(state, Tokenizer.COMMENT_END,
+                                    reconsume, pos);
+                            continue stateloop;
+                        case '\r':
+                            c = '\n';
+                            silentCarriageReturn();
+                            errNestedComment();
+                            adjustDoubleHyphenAndAppendToStrBufAndErr(c,
+                                    reportedConsecutiveHyphens);
+                            reportedConsecutiveHyphens = true;
+                            state = transition(state, Tokenizer.COMMENT,
+                                    reconsume, pos);
+                            break stateloop;
+                        case '\n':
+                            silentLineFeed();
+                            errNestedComment();
+                            adjustDoubleHyphenAndAppendToStrBufAndErr(c,
+                                    reportedConsecutiveHyphens);
+                            reportedConsecutiveHyphens = true;
+                            state = transition(state, Tokenizer.COMMENT,
+                                    reconsume, pos);
+                            continue stateloop;
+                        case '!':
+                            errNestedComment();
+                            adjustDoubleHyphenAndAppendToStrBufAndErr(c,
+                                    reportedConsecutiveHyphens);
+                            reportedConsecutiveHyphens = true;
+                            state = transition(state,
+                                    Tokenizer.COMMENT_END_BANG, reconsume, pos);
+                            continue stateloop;
+                        case '\u0000':
+                            c = '\uFFFD';
+                            
+                        default:
+                            errNestedComment();
+                            adjustDoubleHyphenAndAppendToStrBufAndErr(c,
+                                    reportedConsecutiveHyphens);
+                            reportedConsecutiveHyphens = true;
+                            state = transition(state, Tokenizer.COMMENT,
+                                    reconsume, pos);
+                            continue stateloop;
+                    }
                     
                 case COMMENT_START_DASH:
                     if (++pos == endPos) {
@@ -3089,6 +3119,7 @@ public class Tokenizer implements Locator, Locator2 {
                             state = transition(state, Tokenizer.COMMENT, reconsume, pos);
                             continue stateloop;
                     }
+                    
                 case CDATA_START:
                     for (;;) {
                         if (++pos == endPos) {
@@ -3111,7 +3142,8 @@ public class Tokenizer implements Locator, Locator2 {
                             cstart = pos; 
                             reconsume = true;
                             state = transition(state, Tokenizer.CDATA_SECTION, reconsume, pos);
-                            break; 
+                            
+                            break;
                         }
                     }
                     
@@ -3129,7 +3161,8 @@ public class Tokenizer implements Locator, Locator2 {
                             case ']':
                                 flushChars(buf, pos);
                                 state = transition(state, Tokenizer.CDATA_RSQB, reconsume, pos);
-                                break cdatasectionloop; 
+                                
+                                break cdatasectionloop;
                             case '\u0000':
                                 maybeEmitReplacementCharacter(buf, pos);
                                 continue;
@@ -3145,23 +3178,23 @@ public class Tokenizer implements Locator, Locator2 {
                     }
                     
                 case CDATA_RSQB:
-                    cdatarsqb: for (;;) {
-                        if (++pos == endPos) {
-                            break stateloop;
-                        }
-                        c = checkChar(buf, pos);
-                        switch (c) {
-                            case ']':
-                                state = transition(state, Tokenizer.CDATA_RSQB_RSQB, reconsume, pos);
-                                break cdatarsqb;
-                            default:
-                                tokenHandler.characters(Tokenizer.RSQB_RSQB, 0,
-                                        1);
-                                cstart = pos;
-                                reconsume = true;
-                                state = transition(state, Tokenizer.CDATA_SECTION, reconsume, pos);
-                                continue stateloop;
-                        }
+                    if (++pos == endPos) {
+                        break stateloop;
+                    }
+                    c = checkChar(buf, pos);
+                    switch (c) {
+                        case ']':
+                            state = transition(state, Tokenizer.CDATA_RSQB_RSQB,
+                                    reconsume, pos);
+                            
+                            break;
+                        default:
+                            tokenHandler.characters(Tokenizer.RSQB_RSQB, 0, 1);
+                            cstart = pos;
+                            reconsume = true;
+                            state = transition(state, Tokenizer.CDATA_SECTION,
+                                    reconsume, pos);
+                            continue stateloop;
                     }
                     
                 case CDATA_RSQB_RSQB:
@@ -3200,6 +3233,7 @@ public class Tokenizer implements Locator, Locator2 {
                                 continue stateloop;
                         }
                     }
+                    
                 case ATTRIBUTE_VALUE_SINGLE_QUOTED:
                     attributevaluesinglequotedloop: for (;;) {
                         if (reconsume) {
@@ -3235,8 +3269,8 @@ public class Tokenizer implements Locator, Locator2 {
                                 setAdditionalAndRememberAmpersandLocation('\'');
                                 returnState = state;
                                 state = transition(state, Tokenizer.CONSUME_CHARACTER_REFERENCE, reconsume, pos);
+                                
                                 break attributevaluesinglequotedloop;
-                            
                             case '\r':
                                 appendStrBufCarriageReturn();
                                 break stateloop;
@@ -3335,6 +3369,7 @@ public class Tokenizer implements Locator, Locator2 {
                             appendCharRefBuf(c);
                             state = transition(state, Tokenizer.CHARACTER_REFERENCE_HILO_LOOKUP, reconsume, pos);
                             
+                            break;
                     }
                     
                 case CHARACTER_REFERENCE_HILO_LOOKUP:
@@ -3639,6 +3674,7 @@ public class Tokenizer implements Locator, Locator2 {
                             reconsume = true;
                             state = transition(state, Tokenizer.DECIMAL_NRC_LOOP, reconsume, pos);
                             
+                            break;
                     }
                     
                 case DECIMAL_NRC_LOOP:
@@ -3724,6 +3760,7 @@ public class Tokenizer implements Locator, Locator2 {
                     handleNcrValue(returnState);
                     state = transition(state, returnState, reconsume, pos);
                     continue stateloop;
+                    
                 case HEX_NCR_LOOP:
                     for (;;) {
                         if (++pos == endPos) {
@@ -3808,6 +3845,7 @@ public class Tokenizer implements Locator, Locator2 {
                             }
                         }
                     }
+                    
                 case PLAINTEXT:
                     plaintextloop: for (;;) {
                         if (reconsume) {
@@ -3837,6 +3875,7 @@ public class Tokenizer implements Locator, Locator2 {
                                 continue;
                         }
                     }
+                    
                 case CLOSE_TAG_OPEN:
                     if (++pos == endPos) {
                         break stateloop;
@@ -3918,6 +3957,7 @@ public class Tokenizer implements Locator, Locator2 {
                                 continue stateloop;
                             }
                     }
+                    
                 case RCDATA:
                     rcdataloop: for (;;) {
                         if (reconsume) {
@@ -3968,6 +4008,7 @@ public class Tokenizer implements Locator, Locator2 {
                                 continue;
                         }
                     }
+                    
                 case RAWTEXT:
                     rawtextloop: for (;;) {
                         if (reconsume) {
@@ -3988,8 +4029,8 @@ public class Tokenizer implements Locator, Locator2 {
 
                                 returnState = state;
                                 state = transition(state, Tokenizer.RAWTEXT_RCDATA_LESS_THAN_SIGN, reconsume, pos);
+                                
                                 break rawtextloop;
-                            
                             case '\u0000':
                                 emitReplacementCharacter(buf, pos);
                                 continue;
@@ -4024,8 +4065,8 @@ public class Tokenizer implements Locator, Locator2 {
                                 index = 0;
                                 clearStrBufBeforeUse();
                                 state = transition(state, Tokenizer.NON_DATA_END_TAG_NAME, reconsume, pos);
+                                
                                 break rawtextrcdatalessthansignloop;
-                            
                             default:
                                 
 
@@ -4157,6 +4198,7 @@ public class Tokenizer implements Locator, Locator2 {
                         }
                     }
                     
+                    
                 case BOGUS_COMMENT:
                     boguscommentloop: for (;;) {
                         if (reconsume) {
@@ -4196,6 +4238,7 @@ public class Tokenizer implements Locator, Locator2 {
                             case '-':
                                 appendStrBuf(c);
                                 state = transition(state, Tokenizer.BOGUS_COMMENT_HYPHEN, reconsume, pos);
+                                
                                 break boguscommentloop;
                             case '\r':
                                 appendStrBufCarriageReturn();
@@ -4249,6 +4292,7 @@ public class Tokenizer implements Locator, Locator2 {
                                 continue stateloop;
                         }
                     }
+                    
                 case SCRIPT_DATA:
                     scriptdataloop: for (;;) {
                         if (reconsume) {
@@ -4268,8 +4312,8 @@ public class Tokenizer implements Locator, Locator2 {
                                 flushChars(buf, pos);
                                 returnState = state;
                                 state = transition(state, Tokenizer.SCRIPT_DATA_LESS_THAN_SIGN, reconsume, pos);
-                                break scriptdataloop; 
-                            
+                                
+                                break scriptdataloop;
                             case '\u0000':
                                 emitReplacementCharacter(buf, pos);
                                 continue;
@@ -4310,9 +4354,8 @@ public class Tokenizer implements Locator, Locator2 {
                                 tokenHandler.characters(Tokenizer.LT_GT, 0, 1);
                                 cstart = pos;
                                 state = transition(state, Tokenizer.SCRIPT_DATA_ESCAPE_START, reconsume, pos);
-                                break scriptdatalessthansignloop; 
-                            
-                            
+                                
+                                break scriptdatalessthansignloop;
                             default:
                                 
 
@@ -4347,9 +4390,8 @@ public class Tokenizer implements Locator, Locator2 {
 
 
                                 state = transition(state, Tokenizer.SCRIPT_DATA_ESCAPE_START_DASH, reconsume, pos);
-                                break scriptdataescapestartloop; 
-                            
-                            
+                                
+                                break scriptdataescapestartloop;
                             default:
                                 
 
@@ -4378,8 +4420,8 @@ public class Tokenizer implements Locator, Locator2 {
 
 
                                 state = transition(state, Tokenizer.SCRIPT_DATA_ESCAPED_DASH_DASH, reconsume, pos);
+                                
                                 break scriptdataescapestartdashloop;
-                            
                             default:
                                 
 
@@ -4442,8 +4484,8 @@ public class Tokenizer implements Locator, Locator2 {
 
 
                                 state = transition(state, Tokenizer.SCRIPT_DATA_ESCAPED, reconsume, pos);
+                                
                                 break scriptdataescapeddashdashloop;
-                            
                         }
                     }
                     
@@ -4468,9 +4510,8 @@ public class Tokenizer implements Locator, Locator2 {
 
 
                                 state = transition(state, Tokenizer.SCRIPT_DATA_ESCAPED_DASH, reconsume, pos);
-                                break scriptdataescapedloop; 
-                            
-                            
+                                
+                                break scriptdataescapedloop;
                             case '<':
                                 
 
@@ -4523,8 +4564,8 @@ public class Tokenizer implements Locator, Locator2 {
 
                                 flushChars(buf, pos);
                                 state = transition(state, Tokenizer.SCRIPT_DATA_ESCAPED_LESS_THAN_SIGN, reconsume, pos);
+                                
                                 break scriptdataescapeddashloop;
-                            
                             case '\u0000':
                                 emitReplacementCharacter(buf, pos);
                                 state = transition(state, Tokenizer.SCRIPT_DATA_ESCAPED, reconsume, pos);
@@ -4588,8 +4629,8 @@ public class Tokenizer implements Locator, Locator2 {
 
 
                                 state = transition(state, Tokenizer.SCRIPT_DATA_DOUBLE_ESCAPE_START, reconsume, pos);
+                                
                                 break scriptdataescapedlessthanloop;
-                            
                             default:
                                 
 
@@ -4648,8 +4689,8 @@ public class Tokenizer implements Locator, Locator2 {
 
 
                                 state = transition(state, Tokenizer.SCRIPT_DATA_DOUBLE_ESCAPED, reconsume, pos);
+                                
                                 break scriptdatadoubleescapestartloop;
-                            
                             default:
                                 
 
@@ -4682,9 +4723,8 @@ public class Tokenizer implements Locator, Locator2 {
 
 
                                 state = transition(state, Tokenizer.SCRIPT_DATA_DOUBLE_ESCAPED_DASH, reconsume, pos);
-                                break scriptdatadoubleescapedloop; 
-                            
-                            
+                                
+                                break scriptdatadoubleescapedloop;
                             case '<':
                                 
 
@@ -4730,8 +4770,8 @@ public class Tokenizer implements Locator, Locator2 {
 
 
                                 state = transition(state, Tokenizer.SCRIPT_DATA_DOUBLE_ESCAPED_DASH_DASH, reconsume, pos);
+                                
                                 break scriptdatadoubleescapeddashloop;
-                            
                             case '<':
                                 
 
@@ -4788,6 +4828,7 @@ public class Tokenizer implements Locator, Locator2 {
 
 
                                 state = transition(state, Tokenizer.SCRIPT_DATA_DOUBLE_ESCAPED_LESS_THAN_SIGN, reconsume, pos);
+                                
                                 break scriptdatadoubleescapeddashdashloop;
                             case '>':
                                 
@@ -4838,6 +4879,7 @@ public class Tokenizer implements Locator, Locator2 {
 
                                 index = 0;
                                 state = transition(state, Tokenizer.SCRIPT_DATA_DOUBLE_ESCAPE_END, reconsume, pos);
+                                
                                 break scriptdatadoubleescapedlessthanloop;
                             default:
                                 
@@ -4904,6 +4946,7 @@ public class Tokenizer implements Locator, Locator2 {
                                 continue stateloop;
                         }
                     }
+                    
                 case MARKUP_DECLARATION_OCTYPE:
                     markupdeclarationdoctypeloop: for (;;) {
                         if (++pos == endPos) {
@@ -4928,8 +4971,8 @@ public class Tokenizer implements Locator, Locator2 {
                         } else {
                             reconsume = true;
                             state = transition(state, Tokenizer.DOCTYPE, reconsume, pos);
-                            break markupdeclarationdoctypeloop;
                             
+                            break markupdeclarationdoctypeloop;
                         }
                     }
                     
@@ -4964,8 +5007,8 @@ public class Tokenizer implements Locator, Locator2 {
 
 
                                 state = transition(state, Tokenizer.BEFORE_DOCTYPE_NAME, reconsume, pos);
+                                
                                 break doctypeloop;
-                            
                             default:
                                 
 
@@ -4977,8 +5020,8 @@ public class Tokenizer implements Locator, Locator2 {
 
                                 reconsume = true;
                                 state = transition(state, Tokenizer.BEFORE_DOCTYPE_NAME, reconsume, pos);
+                                
                                 break doctypeloop;
-                            
                         }
                     }
                     
@@ -5059,8 +5102,8 @@ public class Tokenizer implements Locator, Locator2 {
 
 
                                 state = transition(state, Tokenizer.DOCTYPE_NAME, reconsume, pos);
+                                
                                 break beforedoctypenameloop;
-                            
                         }
                     }
                     
@@ -5092,8 +5135,8 @@ public class Tokenizer implements Locator, Locator2 {
 
                                 strBufToDoctypeName();
                                 state = transition(state, Tokenizer.AFTER_DOCTYPE_NAME, reconsume, pos);
+                                
                                 break doctypenameloop;
-                            
                             case '>':
                                 
 
@@ -5179,8 +5222,8 @@ public class Tokenizer implements Locator, Locator2 {
                             case 'P':
                                 index = 0;
                                 state = transition(state, Tokenizer.DOCTYPE_UBLIC, reconsume, pos);
+                                
                                 break afterdoctypenameloop;
-                            
                             case 's':
                             case 'S':
                                 index = 0;
@@ -5234,8 +5277,8 @@ public class Tokenizer implements Locator, Locator2 {
                         } else {
                             reconsume = true;
                             state = transition(state, Tokenizer.AFTER_DOCTYPE_PUBLIC_KEYWORD, reconsume, pos);
-                            break doctypeublicloop;
                             
+                            break doctypeublicloop;
                         }
                     }
                     
@@ -5270,8 +5313,8 @@ public class Tokenizer implements Locator, Locator2 {
 
 
                                 state = transition(state, Tokenizer.BEFORE_DOCTYPE_PUBLIC_IDENTIFIER, reconsume, pos);
+                                
                                 break afterdoctypepublickeywordloop;
-                            
                             case '"':
                                 
 
@@ -5377,8 +5420,8 @@ public class Tokenizer implements Locator, Locator2 {
 
 
                                 state = transition(state, Tokenizer.DOCTYPE_PUBLIC_IDENTIFIER_DOUBLE_QUOTED, reconsume, pos);
+                                
                                 break beforedoctypepublicidentifierloop;
-                            
                             case '\'':
                                 
 
@@ -5444,8 +5487,8 @@ public class Tokenizer implements Locator, Locator2 {
 
                                 publicIdentifier = strBufToString();
                                 state = transition(state, Tokenizer.AFTER_DOCTYPE_PUBLIC_IDENTIFIER, reconsume, pos);
+                                
                                 break doctypepublicidentifierdoublequotedloop;
-                            
                             case '>':
                                 
 
@@ -5520,8 +5563,8 @@ public class Tokenizer implements Locator, Locator2 {
 
 
                                 state = transition(state, Tokenizer.BETWEEN_DOCTYPE_PUBLIC_AND_SYSTEM_IDENTIFIERS, reconsume, pos);
+                                
                                 break afterdoctypepublicidentifierloop;
-                            
                             case '>':
                                 
 
@@ -5635,8 +5678,8 @@ public class Tokenizer implements Locator, Locator2 {
 
 
                                 state = transition(state, Tokenizer.DOCTYPE_SYSTEM_IDENTIFIER_DOUBLE_QUOTED, reconsume, pos);
+                                
                                 break betweendoctypepublicandsystemidentifiersloop;
-                            
                             case '\'':
                                 
 
@@ -5682,7 +5725,8 @@ public class Tokenizer implements Locator, Locator2 {
 
                                 systemIdentifier = strBufToString();
                                 state = transition(state, Tokenizer.AFTER_DOCTYPE_SYSTEM_IDENTIFIER, reconsume, pos);
-                                continue stateloop;
+                                
+                                break doctypesystemidentifierdoublequotedloop;
                             case '>':
                                 
 
@@ -5729,6 +5773,7 @@ public class Tokenizer implements Locator, Locator2 {
                                 continue;
                         }
                     }
+                    
                 case AFTER_DOCTYPE_SYSTEM_IDENTIFIER:
                     afterdoctypesystemidentifierloop: for (;;) {
                         if (++pos == endPos) {
@@ -5776,8 +5821,8 @@ public class Tokenizer implements Locator, Locator2 {
 
                                 bogusDoctypeWithoutQuirks();
                                 state = transition(state, Tokenizer.BOGUS_DOCTYPE, reconsume, pos);
+                                
                                 break afterdoctypesystemidentifierloop;
-                            
                         }
                     }
                     
@@ -5823,6 +5868,7 @@ public class Tokenizer implements Locator, Locator2 {
                                 continue;
                         }
                     }
+                    
                 case DOCTYPE_YSTEM:
                     doctypeystemloop: for (;;) {
                         if (++pos == endPos) {
@@ -5852,8 +5898,8 @@ public class Tokenizer implements Locator, Locator2 {
                         } else {
                             reconsume = true;
                             state = transition(state, Tokenizer.AFTER_DOCTYPE_SYSTEM_KEYWORD, reconsume, pos);
-                            break doctypeystemloop;
                             
+                            break doctypeystemloop;
                         }
                     }
                     
@@ -5888,8 +5934,8 @@ public class Tokenizer implements Locator, Locator2 {
 
 
                                 state = transition(state, Tokenizer.BEFORE_DOCTYPE_SYSTEM_IDENTIFIER, reconsume, pos);
+                                
                                 break afterdoctypesystemkeywordloop;
-                            
                             case '"':
                                 
 
@@ -6008,8 +6054,8 @@ public class Tokenizer implements Locator, Locator2 {
 
 
                                 state = transition(state, Tokenizer.DOCTYPE_SYSTEM_IDENTIFIER_SINGLE_QUOTED, reconsume, pos);
+                                
                                 break beforedoctypesystemidentifierloop;
-                            
                             case '>':
                                 
                                 errExpectedSystemId();
@@ -6106,6 +6152,7 @@ public class Tokenizer implements Locator, Locator2 {
                                 continue;
                         }
                     }
+                    
                 case DOCTYPE_PUBLIC_IDENTIFIER_SINGLE_QUOTED:
                     for (;;) {
                         if (++pos == endPos) {
@@ -6167,6 +6214,7 @@ public class Tokenizer implements Locator, Locator2 {
                                 continue;
                         }
                     }
+                    
                 case PROCESSING_INSTRUCTION:
                     processinginstructionloop: for (;;) {
                         if (++pos == endPos) {
@@ -6179,8 +6227,8 @@ public class Tokenizer implements Locator, Locator2 {
                                         state,
                                         Tokenizer.PROCESSING_INSTRUCTION_QUESTION_MARK,
                                         reconsume, pos);
+                                
                                 break processinginstructionloop;
-                            
                             default:
                                 continue;
                         }
