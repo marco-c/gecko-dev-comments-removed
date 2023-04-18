@@ -675,7 +675,8 @@ static bool IsMouseVanishKey(WPARAM aVirtKey) {
       return false;
     default:
       
-      return (GetKeyState(VK_CONTROL) & 0x8000) != 0x8000;
+      return (GetKeyState(VK_CONTROL) & 0x8000) != 0x8000 &&
+             (GetKeyState(VK_MENU) & 0x8000) != 0x8000;
   }
 }
 
