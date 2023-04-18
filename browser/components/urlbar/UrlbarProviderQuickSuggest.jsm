@@ -294,6 +294,11 @@ class ProviderQuickSuggest extends UrlbarProvider {
 
 
   blockResult(result) {
+    if (!UrlbarPrefs.get("bestMatch.blockingEnabled")) {
+      this.logger.info("Blocking disabled, ignoring key shortcut");
+      return false;
+    }
+
     this.logger.info("Blocking result: " + JSON.stringify(result));
     this.blockSuggestion(result.payload.originalUrl);
     return true;
