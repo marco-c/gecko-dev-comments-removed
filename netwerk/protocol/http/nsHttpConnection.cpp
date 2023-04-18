@@ -13,10 +13,6 @@
 #undef LOG_ENABLED
 #define LOG_ENABLED() LOG5_ENABLED()
 
-#define TLS_EARLY_DATA_NOT_AVAILABLE 0
-#define TLS_EARLY_DATA_AVAILABLE_BUT_NOT_USED 1
-#define TLS_EARLY_DATA_AVAILABLE_AND_USED 2
-
 #include "ASpdySession.h"
 #include "mozilla/ChaosMode.h"
 #include "mozilla/Telemetry.h"
@@ -159,6 +155,7 @@ nsresult nsHttpConnection::Init(
     mSocketTransport->SetSecurityCallbacks(this);
   }
 
+  mTlsHandshaker = new TlsHandshaker(mConnInfo, this);
   return NS_OK;
 }
 
@@ -371,144 +368,9 @@ void nsHttpConnection::StartSpdy(nsISSLSocketControl* sslControl,
   }
 }
 
-void nsHttpConnection::Check0RttEnabled(nsISSLSocketControl* ssl) {
-  if (m0RTTChecked) {
-    return;
-  }
-
-  m0RTTChecked = true;
-
-  if (mConnInfo->UsingProxy()) {
-    return;
-  }
-
-  
-  
-  
-  
-  if (NS_FAILED(ssl->GetAlpnEarlySelection(mEarlyNegotiatedALPN))) {
-    LOG1(
-        ("nsHttpConnection::Check0RttEnabled %p - "
-         "early selected alpn not available",
-         this));
-  } else {
-    LOG1(
-        ("nsHttpConnection::Check0RttEnabled %p -"
-         "early selected alpn: %s",
-         this, mEarlyNegotiatedALPN.get()));
-    const SpdyInformation* info = gHttpHandler->SpdyInfo();
-    if (!mEarlyNegotiatedALPN.Equals(info->VersionString)) {
-      
-      
-      if (mTransaction->Do0RTT()) {
-        LOG(
-            ("nsHttpConnection::Check0RttEnabled [this=%p] - We "
-             "can do 0RTT (http/1)!",
-             this));
-        mEarlyDataState = EarlyData::USED;
-      } else {
-        mEarlyDataState = EarlyData::CANNOT_BE_USED;
-        
-        
-        Unused << ResumeRecv();
-      }
-    } else {
-      
-      
-      LOG(
-          ("nsHttpConnection::Check0RttEnabled [this=%p] - Starting "
-           "0RTT for h2!",
-           this));
-      mEarlyDataState = EarlyData::USED;
-      Start0RTTSpdy(info->Version);
-    }
-  }
-}
-
-void nsHttpConnection::EarlyDataTelemetry(int16_t tlsVersion,
-                                          bool earlyDataAccepted) {
-  
-  if (tlsVersion > nsISSLSocketControl::TLS_VERSION_1_2) {
-    Telemetry::Accumulate(Telemetry::TLS_EARLY_DATA_NEGOTIATED,
-                          (mEarlyDataState == EarlyData::NOT_AVAILABLE)
-                              ? TLS_EARLY_DATA_NOT_AVAILABLE
-                              : ((mEarlyDataState == EarlyData::USED)
-                                     ? TLS_EARLY_DATA_AVAILABLE_AND_USED
-                                     : TLS_EARLY_DATA_AVAILABLE_BUT_NOT_USED));
-    if (EarlyDataUsed()) {
-      Telemetry::Accumulate(Telemetry::TLS_EARLY_DATA_ACCEPTED,
-                            earlyDataAccepted);
-    }
-    if (earlyDataAccepted) {
-      Telemetry::Accumulate(Telemetry::TLS_EARLY_DATA_BYTES_WRITTEN,
-                            mContentBytesWritten0RTT);
-    }
-  }
-}
-
-
-bool nsHttpConnection::EnsureNPNComplete() {
-  MOZ_ASSERT(mSocketTransport);
-  if (!mSocketTransport) {
-    
-    mNPNComplete = true;
-    return true;
-  }
-
-  if (mNPNComplete) {
-    return true;
-  }
-
-  if (mTlsHandshakeComplitionPending) {
-    return false;
-  }
-
-  nsresult rv = NS_OK;
-  nsCOMPtr<nsISupports> securityInfo;
-  GetSecurityInfo(getter_AddRefs(securityInfo));
-  if (!securityInfo) {
-    FinishNPNSetup(false, false);
-    return true;
-  }
-
-  nsCOMPtr<nsISSLSocketControl> ssl = do_QueryInterface(securityInfo, &rv);
-  if (NS_FAILED(rv)) {
-    FinishNPNSetup(false, false);
-    return true;
-  }
-
-  if (!m0RTTChecked) {
-    
-    mTransaction->OnTransportStatus(mSocketTransport,
-                                    NS_NET_STATUS_TLS_HANDSHAKE_STARTING, 0);
-  }
-
-  LOG(("nsHttpConnection::EnsureNPNComplete [this=%p] drive TLS handshake",
-       this));
-  rv = ssl->DriveHandshake();
-  if (NS_FAILED(rv) && rv != NS_BASE_STREAM_WOULD_BLOCK) {
-    FinishNPNSetup(false, true);
-    return true;
-  }
-
-  Check0RttEnabled(ssl);
-  return false;
-}
-
-void nsHttpConnection::EarlyDataDone() {
-  if (mEarlyDataState == EarlyData::USED) {
-    mEarlyDataState = EarlyData::DONE_USED;
-  } else if (mEarlyDataState == EarlyData::CANNOT_BE_USED) {
-    mEarlyDataState = EarlyData::DONE_CANNOT_BE_USED;
-  } else if (mEarlyDataState == EarlyData::NOT_AVAILABLE) {
-    mEarlyDataState = EarlyData::DONE_NOT_AVAILABLE;
-  }
-}
-
-void nsHttpConnection::FinishNPNSetup(bool handshakeSucceeded,
-                                      bool hasSecurityInfo) {
-  mNPNComplete = true;
-
+void nsHttpConnection::PostProcessNPNSetup(bool handshakeSucceeded,
+                                           bool hasSecurityInfo,
+                                           bool earlyDataUsed) {
   if (mTransaction) {
     mTransaction->OnTransportStatus(mSocketTransport,
                                     NS_NET_STATUS_TLS_HANDSHAKE_ENDED, 0);
@@ -529,9 +391,9 @@ void nsHttpConnection::FinishNPNSetup(bool handshakeSucceeded,
     mBootstrappedTimings.connectEnd = TimeStamp::Now();
   }
 
-  if (EarlyDataUsed()) {
+  if (earlyDataUsed) {
     
-    LOG(("nsHttpConnection::FinishNPNSetup [this=%p] 0rtt failed", this));
+    LOG(("nsHttpConnection::PostProcessNPNSetup [this=%p] 0rtt failed", this));
     if (mTransaction && NS_FAILED(mTransaction->Finish0RTT(true, true))) {
       mTransaction->Close(NS_ERROR_NET_RESET);
     }
@@ -540,8 +402,6 @@ void nsHttpConnection::FinishNPNSetup(bool handshakeSucceeded,
       Reset0RttForSpdy();
     }
   }
-
-  EarlyDataDone();
 
   if (hasSecurityInfo) {
     
@@ -585,7 +445,7 @@ nsresult nsHttpConnection::Activate(nsAHttpTransaction* trans, uint32_t caps,
         caps));
 
   if (!mExperienced && !trans->IsNullTransaction()) {
-    if (mNPNComplete) {
+    if (mTlsHandshaker->NPNComplete()) {
       mExperienced = true;
     }
     if (mBootstrappedTimingsSet) {
@@ -647,7 +507,7 @@ nsresult nsHttpConnection::Activate(nsAHttpTransaction* trans, uint32_t caps,
   nsCOMPtr<nsIInterfaceRequestor> callbacks;
   trans->GetSecurityCallbacks(getter_AddRefs(callbacks));
   SetSecurityCallbacks(callbacks);
-  SetupSSL();
+  mTlsHandshaker->SetupSSL(mInSpdyTunnel, mForcePlainText);
 
   
   mTransaction = trans;
@@ -714,76 +574,6 @@ failed_activation:
   return rv;
 }
 
-void nsHttpConnection::SetupSSL() {
-  LOG1(("nsHttpConnection::SetupSSL %p caps=0x%X %s\n", this, mTransactionCaps,
-        mConnInfo->HashKey().get()));
-
-  if (mSetupSSLCalled) {  
-    return;
-  }
-  mSetupSSLCalled = true;
-
-  if (mNPNComplete) return;
-
-  
-  
-  mNPNComplete = true;
-
-  if (!mConnInfo->FirstHopSSL() || mForcePlainText) {
-    return;
-  }
-
-  
-  
-  DebugOnly<nsresult> rv{};
-  if (mInSpdyTunnel) {
-    rv = InitSSLParams(false, true);
-  } else {
-    bool usingHttpsProxy = mConnInfo->UsingHttpsProxy();
-    rv = InitSSLParams(usingHttpsProxy, usingHttpsProxy);
-  }
-  MOZ_ASSERT(NS_SUCCEEDED(rv));
-}
-
-
-
-
-
-nsresult nsHttpConnection::SetupNPNList(nsISSLSocketControl* ssl,
-                                        uint32_t caps) {
-  nsTArray<nsCString> protocolArray;
-
-  nsCString npnToken = mConnInfo->GetNPNToken();
-  if (npnToken.IsEmpty()) {
-    
-    
-    
-    
-    
-    
-    
-    protocolArray.AppendElement("http/1.1"_ns);
-
-    if (StaticPrefs::network_http_http2_enabled() &&
-        !(caps & NS_HTTP_DISALLOW_SPDY)) {
-      LOG(("nsHttpConnection::SetupSSL Allow SPDY NPN selection"));
-      const SpdyInformation* info = gHttpHandler->SpdyInfo();
-      if (info->ALPNCallbacks(ssl)) {
-        protocolArray.AppendElement(info->VersionString);
-      }
-    }
-  } else {
-    LOG(("nsHttpConnection::SetupSSL limiting NPN selection to %s",
-         npnToken.get()));
-    protocolArray.AppendElement(npnToken);
-  }
-
-  nsresult rv = ssl->SetNPNList(protocolArray);
-  LOG(("nsHttpConnection::SetupNPNList %p %" PRIx32 "\n", this,
-       static_cast<uint32_t>(rv)));
-  return rv;
-}
-
 nsresult nsHttpConnection::AddTransaction(nsAHttpTransaction* httpTransaction,
                                           int32_t priority) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
@@ -835,10 +625,8 @@ void nsHttpConnection::Close(nsresult reason, bool aIsShutdown) {
   LOG(("nsHttpConnection::Close [this=%p reason=%" PRIx32 "]\n", this,
        static_cast<uint32_t>(reason)));
 
-  mClosed = true;
-
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
-  mTlsHandshakeComplitionPending = false;
+  mTlsHandshaker->NotifyClose();
   mContinueHandshakeDone = nullptr;
   
   if (mTCPKeepaliveTransitionTimer) {
@@ -880,7 +668,7 @@ void nsHttpConnection::Close(nsresult reason, bool aIsShutdown) {
         mConnInfo && !(mTransactionCaps & NS_HTTP_ERROR_SOFTLY)) {
       gHttpHandler->ClearHostMapping(mConnInfo);
     }
-    if (EarlyDataWasAvailable() &&
+    if (mTlsHandshaker->EarlyDataWasAvailable() &&
         (reason ==
          psm::GetXPCOMFromNSSError(SSL_ERROR_PROTOCOL_VERSION_ALERT))) {
       gHttpHandler->Exclude0RttTcp(mConnInfo);
@@ -912,46 +700,6 @@ void nsHttpConnection::Close(nsresult reason, bool aIsShutdown) {
     }
     mKeepAlive = false;
   }
-}
-
-
-nsresult nsHttpConnection::InitSSLParams(bool connectingToProxy,
-                                         bool proxyStartSSL) {
-  LOG(("nsHttpConnection::InitSSLParams [this=%p] connectingToProxy=%d\n", this,
-       connectingToProxy));
-  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
-
-  nsresult rv;
-  nsCOMPtr<nsISupports> securityInfo;
-  GetSecurityInfo(getter_AddRefs(securityInfo));
-  if (!securityInfo) {
-    return NS_ERROR_FAILURE;
-  }
-
-  nsCOMPtr<nsISSLSocketControl> ssl = do_QueryInterface(securityInfo, &rv);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  
-  if (mConnInfo->UsingProxy() || gHttpHandler->Is0RttTcpExcluded(mConnInfo)) {
-    ssl->DisableEarlyData();
-  }
-
-  if (proxyStartSSL) {
-    rv = ssl->ProxyStartSSL();
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-  }
-
-  if (NS_SUCCEEDED(SetupNPNList(ssl, mTransactionCaps)) &&
-      NS_SUCCEEDED(ssl->SetHandshakeCallbackListener(this))) {
-    LOG(("InitSSLParams Setting up SPDY Negotiation OK"));
-    mNPNComplete = false;
-  }
-
-  return NS_OK;
 }
 
 void nsHttpConnection::DontReuse() {
@@ -1060,7 +808,7 @@ bool nsHttpConnection::IsAlive() {
 
   
   
-  SetupSSL();
+  mTlsHandshaker->SetupSSL(mInSpdyTunnel, mForcePlainText);
 
   bool alive;
   nsresult rv = mSocketTransport->IsAlive(&alive);
@@ -1244,7 +992,7 @@ void nsHttpConnection::HandleTunnelResponse(uint16_t responseStatus,
           SetupSecondaryTLS();
         }
 
-        rv = InitSSLParams(false, true);
+        rv = mTlsHandshaker->InitSSLParams(false, true);
         LOG(("InitSSLParams [rv=%" PRIx32 "]\n", static_cast<uint32_t>(rv)));
       } else {
         
@@ -1252,7 +1000,7 @@ void nsHttpConnection::HandleTunnelResponse(uint16_t responseStatus,
         
         
         
-        mNPNComplete = true;
+        mTlsHandshaker->SetNPNComplete();
       }
     }
     rv = mSocketOut->AsyncWait(this, 0, 0, nullptr);
@@ -1401,7 +1149,7 @@ uint32_t nsHttpConnection::ReadTimeoutTick(PRIntervalTime now) {
     nextTickAfter = std::max(nextTickAfter, 1U);
   }
 
-  if (!mNPNComplete) {
+  if (!mTlsHandshaker->NPNComplete()) {
     
     
     
@@ -1701,7 +1449,7 @@ void nsHttpConnection::CloseTransaction(nsAHttpTransaction* trans,
 }
 
 bool nsHttpConnection::CheckCanWrite0RTTData() {
-  MOZ_ASSERT(EarlyDataAvailable());
+  MOZ_ASSERT(mTlsHandshaker->EarlyDataAvailable());
   nsCOMPtr<nsISupports> securityInfo;
   GetSecurityInfo(getter_AddRefs(securityInfo));
   if (!securityInfo) {
@@ -1746,8 +1494,8 @@ nsresult nsHttpConnection::OnReadSegment(const char* buf, uint32_t count,
   
   
   
-  if (EarlyDataAvailable() && !CheckCanWrite0RTTData()) {
-    MOZ_DIAGNOSTIC_ASSERT(mTlsHandshakeComplitionPending);
+  if (mTlsHandshaker->EarlyDataAvailable() && !CheckCanWrite0RTTData()) {
+    MOZ_DIAGNOSTIC_ASSERT(mTlsHandshaker->TlsHandshakeComplitionPending());
     LOG(
         ("nsHttpConnection::OnReadSegment Do not write any data, wait"
          " for EnsureNPNComplete to be called [this=%p]",
@@ -1810,8 +1558,9 @@ nsresult nsHttpConnection::OnSocketWritable() {
 
     switch (mState) {
       case HttpConnectionState::SETTING_UP_TUNNEL:
-        if (mConnInfo->UsingHttpsProxy() && !EnsureNPNComplete()) {
-          MOZ_DIAGNOSTIC_ASSERT(!EarlyDataAvailable());
+        if (mConnInfo->UsingHttpsProxy() &&
+            !mTlsHandshaker->EnsureNPNComplete()) {
+          MOZ_DIAGNOSTIC_ASSERT(!mTlsHandshaker->EarlyDataAvailable());
           mSocketOutCondition = NS_BASE_STREAM_WOULD_BLOCK;
         } else {
           rv = SendConnectRequest(this, &transactionBytes);
@@ -1822,8 +1571,9 @@ nsresult nsHttpConnection::OnSocketWritable() {
         
         
         
-        if (!EnsureNPNComplete() &&
-            (!EarlyDataUsed() || mTlsHandshakeComplitionPending)) {
+        if (!mTlsHandshaker->EnsureNPNComplete() &&
+            (!mTlsHandshaker->EarlyDataUsed() ||
+             mTlsHandshaker->TlsHandshakeComplitionPending())) {
           
           
           mSocketOutCondition = NS_BASE_STREAM_WOULD_BLOCK;
@@ -1832,7 +1582,7 @@ nsresult nsHttpConnection::OnSocketWritable() {
           LOG(("  No Transaction In OnSocketWritable\n"));
         } else if (NS_SUCCEEDED(rv)) {
           
-          if (!mReportedSpdy && mNPNComplete) {
+          if (!mReportedSpdy && mTlsHandshaker->NPNComplete()) {
             mReportedSpdy = true;
             MOZ_ASSERT(!mEverUsedSpdy);
             gHttpHandler->ConnMgr()->ReportSpdyConnection(this, false);
@@ -1842,12 +1592,12 @@ nsresult nsHttpConnection::OnSocketWritable() {
           rv = mTransaction->ReadSegmentsAgain(this,
                                                nsIOService::gDefaultSegmentSize,
                                                &transactionBytes, &again);
-          if (EarlyDataUsed()) {
+          if (mTlsHandshaker->EarlyDataUsed()) {
             mContentBytesWritten0RTT += transactionBytes;
             if (NS_FAILED(rv) && rv != NS_BASE_STREAM_WOULD_BLOCK) {
               
               
-              FinishNPNSetup(false, true);
+              mTlsHandshaker->FinishNPNSetup(false, true);
             }
           } else {
             mContentBytesWritten += transactionBytes;
@@ -1881,7 +1631,7 @@ nsresult nsHttpConnection::OnSocketWritable() {
         if (mTLSFilter) {
           LOG(("  blocked tunnel (handshake?)\n"));
           rv = mTLSFilter->NudgeTunnel(this);
-        } else if (mEarlyDataState != EarlyData::CANNOT_BE_USED) {
+        } else if (!mTlsHandshaker->EarlyDataCanNotBeUsed()) {
           
           
           
@@ -1981,7 +1731,7 @@ nsresult nsHttpConnection::OnSocketReadable() {
   bool again = true;
 
   do {
-    if (!TunnelSetupInProgress() && !EnsureNPNComplete()) {
+    if (!TunnelSetupInProgress() && !mTlsHandshaker->EnsureNPNComplete()) {
       
       
       
@@ -1993,7 +1743,7 @@ nsresult nsHttpConnection::OnSocketReadable() {
           ("nsHttpConnection::OnSocketReadable %p return due to inactive "
            "tunnel setup but incomplete NPN state\n",
            this));
-      if (EarlyDataAvailable()) {
+      if (mTlsHandshaker->EarlyDataAvailable()) {
         rv = ResumeRecv();
       }
       break;
@@ -2299,7 +2049,6 @@ NS_INTERFACE_MAP_BEGIN(nsHttpConnection)
   NS_INTERFACE_MAP_ENTRY(nsIOutputStreamCallback)
   NS_INTERFACE_MAP_ENTRY(nsITransportEventSink)
   NS_INTERFACE_MAP_ENTRY(nsIInterfaceRequestor)
-  NS_INTERFACE_MAP_ENTRY(nsITlsHandshakeCallbackListener)
   NS_INTERFACE_MAP_ENTRY(HttpConnectionBase)
   NS_INTERFACE_MAP_ENTRY_CONCRETE(nsHttpConnection)
 NS_INTERFACE_MAP_END
@@ -2529,27 +2278,9 @@ bool nsHttpConnection::GetEchConfigUsed() {
   return val;
 }
 
-NS_IMETHODIMP
-nsHttpConnection::HandshakeDone() {
-  if (!mClosed) {
-    mTlsHandshakeComplitionPending = true;
-
-    
-    
-    RefPtr<nsHttpConnection> self(this);
-    NS_DispatchToCurrentThread(NS_NewRunnableFunction(
-        "nsHttpConnection::HandshakeDoneInternal", [self{std::move(self)}]() {
-          if (self->mTlsHandshakeComplitionPending && !self->mClosed) {
-            self->HandshakeDoneInternal();
-            self->mTlsHandshakeComplitionPending = false;
-          }
-        }));
-  }
-  return NS_OK;
-}
-
 void nsHttpConnection::HandshakeDoneInternal() {
-  if (mNPNComplete) {
+  LOG(("nsHttpConnection::HandshakeDoneInternal [this=%p]\n", this));
+  if (mTlsHandshaker->NPNComplete()) {
     return;
   }
   nsresult rv = NS_OK;
@@ -2560,19 +2291,19 @@ void nsHttpConnection::HandshakeDoneInternal() {
 
   GetSecurityInfo(getter_AddRefs(securityInfo));
   if (!securityInfo) {
-    FinishNPNSetup(false, false);
+    mTlsHandshaker->FinishNPNSetup(false, false);
     return;
   }
 
   ssl = do_QueryInterface(securityInfo, &rv);
   if (NS_FAILED(rv)) {
-    FinishNPNSetup(false, false);
+    mTlsHandshaker->FinishNPNSetup(false, false);
     return;
   }
 
   info = do_QueryInterface(securityInfo, &rv);
   if (NS_FAILED(rv)) {
-    FinishNPNSetup(false, false);
+    mTlsHandshaker->FinishNPNSetup(false, false);
     return;
   }
 
@@ -2580,7 +2311,7 @@ void nsHttpConnection::HandshakeDoneInternal() {
   MOZ_ASSERT(NS_SUCCEEDED(rvDebug));
 
   bool earlyDataAccepted = false;
-  if (EarlyDataUsed()) {
+  if (mTlsHandshaker->EarlyDataUsed()) {
     
     nsresult rvEarlyData = ssl->GetEarlyDataAccepted(&earlyDataAccepted);
     LOG(
@@ -2592,7 +2323,8 @@ void nsHttpConnection::HandshakeDoneInternal() {
     if (NS_FAILED(rvEarlyData) ||
         (mTransaction &&
          NS_FAILED(mTransaction->Finish0RTT(
-             !earlyDataAccepted, negotiatedNPN != mEarlyNegotiatedALPN)))) {
+             !earlyDataAccepted,
+             negotiatedNPN != mTlsHandshaker->EarlyNegotiatedALPN())))) {
       LOG(
           ("nsHttpConection::HandshakeDone [this=%p] closing transaction "
            "%p",
@@ -2600,15 +2332,16 @@ void nsHttpConnection::HandshakeDoneInternal() {
       if (mTransaction) {
         mTransaction->Close(NS_ERROR_NET_RESET);
       }
-      FinishNPNSetup(false, true);
+      mTlsHandshaker->FinishNPNSetup(false, true);
       return;
     }
-    if (mDid0RTTSpdy && (negotiatedNPN != mEarlyNegotiatedALPN)) {
+    if (mDid0RTTSpdy &&
+        (negotiatedNPN != mTlsHandshaker->EarlyNegotiatedALPN())) {
       Reset0RttForSpdy();
     }
   }
 
-  if (EarlyDataAvailable() && !earlyDataAccepted) {
+  if (mTlsHandshaker->EarlyDataAvailable() && !earlyDataAccepted) {
     
     
     
@@ -2624,8 +2357,9 @@ void nsHttpConnection::HandshakeDoneInternal() {
       (tlsVersion < nsISSLSocketControl::TLS_VERSION_1_3) &&
       (tlsVersion != nsISSLSocketControl::SSL_VERSION_UNKNOWN));
 
-  EarlyDataTelemetry(tlsVersion, earlyDataAccepted);
-  EarlyDataDone();
+  mTlsHandshaker->EarlyDataTelemetry(tlsVersion, earlyDataAccepted,
+                                     mContentBytesWritten0RTT);
+  mTlsHandshaker->EarlyDataDone();
 
   if (!earlyDataAccepted) {
     LOG(
@@ -2648,7 +2382,7 @@ void nsHttpConnection::HandshakeDoneInternal() {
           LOG(("nsHttpConnection do mContinueHandshakeDone [this=%p]",
                self.get()));
           self->StartSpdy(ssl, info);
-          self->FinishNPNSetup(true, true);
+          self->mTlsHandshaker->FinishNPNSetup(true, true);
         };
         return;
       }
@@ -2672,7 +2406,7 @@ void nsHttpConnection::HandshakeDoneInternal() {
 
   Telemetry::Accumulate(Telemetry::SPDY_NPN_CONNECT, UsingSpdy());
 
-  FinishNPNSetup(true, true);
+  mTlsHandshaker->FinishNPNSetup(true, true);
   return;
 }
 
