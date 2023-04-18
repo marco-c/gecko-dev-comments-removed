@@ -298,8 +298,7 @@ nsGeolocationRequest::Allow(JS::HandleValue aChoices) {
   }
 
   
-  nsCOMPtr<nsIPrincipal> principal = GetPrincipal();
-  nsresult rv = gs->StartDevice(principal);
+  nsresult rv = gs->StartDevice();
 
   if (NS_FAILED(rv)) {
     
@@ -601,7 +600,7 @@ CachedPositionAndAccuracy nsGeolocationService::GetCachedPosition() {
   return mLastPosition;
 }
 
-nsresult nsGeolocationService::StartDevice(nsIPrincipal* aPrincipal) {
+nsresult nsGeolocationService::StartDevice() {
   if (!StaticPrefs::geo_enabled()) {
     return NS_ERROR_NOT_AVAILABLE;
   }

@@ -63,7 +63,7 @@ class nsGeolocationService final : public nsIGeolocationUpdate,
   NS_DECL_NSIGEOLOCATIONUPDATE
   NS_DECL_NSIOBSERVER
 
-  nsGeolocationService() { mHigherAccuracy = false; }
+  nsGeolocationService() = default;
 
   nsresult Init();
 
@@ -75,8 +75,7 @@ class nsGeolocationService final : public nsIGeolocationUpdate,
   CachedPositionAndAccuracy GetCachedPosition();
 
   
-  MOZ_CAN_RUN_SCRIPT
-  nsresult StartDevice(nsIPrincipal* aPrincipal);
+  MOZ_CAN_RUN_SCRIPT nsresult StartDevice();
 
   
   void StopDevice();
@@ -108,7 +107,7 @@ class nsGeolocationService final : public nsIGeolocationUpdate,
   CachedPositionAndAccuracy mLastPosition;
 
   
-  bool mHigherAccuracy;
+  bool mHigherAccuracy = false;
 };
 
 namespace mozilla {
