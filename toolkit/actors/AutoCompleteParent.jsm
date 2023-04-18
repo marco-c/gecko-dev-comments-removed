@@ -318,7 +318,7 @@ class AutoCompleteParent extends JSWindowActorParent {
     
     
     
-    let rawExtraData = JSON.parse(lastResult.comment).telemetryEventData;
+    let rawExtraData = JSON.parse(lastResult.comment);
     if (!rawExtraData.searchStartTimeMS) {
       throw new Error("Invalid autocomplete search start time");
     }
@@ -331,6 +331,8 @@ class AutoCompleteParent extends JSWindowActorParent {
     let duration =
       Services.telemetry.msSystemNow() - rawExtraData.searchStartTimeMS;
     delete rawExtraData.searchStartTimeMS;
+
+    delete rawExtraData.formHostname;
 
     
     results.reduce((accumulated, r) => {
