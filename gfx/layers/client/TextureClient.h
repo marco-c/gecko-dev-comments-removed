@@ -99,26 +99,6 @@ enum TextureAllocationFlags {
   ALLOC_UPDATE_FROM_SURFACE = 1 << 7,
 };
 
-
-
-
-
-
-class TextureReadbackSink {
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(TextureReadbackSink)
- public:
-  
-
-
-
-
-
-  virtual void ProcessReadback(gfx::DataSourceSurface* aSourceSurface) = 0;
-
- protected:
-  virtual ~TextureReadbackSink() = default;
-};
-
 enum class BackendSelector { Content, Canvas };
 
 
@@ -297,8 +277,6 @@ class TextureData {
   virtual bool UpdateFromSurface(gfx::SourceSurface* aSurface) {
     return false;
   };
-
-  virtual bool ReadBack(TextureReadbackSink* aReadbackSink) { return false; }
 
   virtual void SyncWithObject(RefPtr<SyncObjectClient> aSyncObject){};
 
@@ -603,15 +581,6 @@ class TextureClient : public AtomicRefCountedWithFinalize<TextureClient> {
     mWasteTracker.Update(aWasteArea, BytesPerPixel(GetFormat()));
   }
 
-  
-
-
-
-
-  virtual void SetReadbackSink(TextureReadbackSink* aReadbackSink) {
-    mReadbackSink = aReadbackSink;
-  }
-
   void SyncWithObject(RefPtr<SyncObjectClient> aSyncObject) {
     mData->SyncWithObject(aSyncObject);
   }
@@ -749,8 +718,6 @@ class TextureClient : public AtomicRefCountedWithFinalize<TextureClient> {
 
   
   bool mAddedToCompositableClient;
-
-  RefPtr<TextureReadbackSink> mReadbackSink;
 
   uint64_t mFwdTransactionId;
 
