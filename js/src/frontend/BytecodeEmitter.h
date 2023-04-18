@@ -573,7 +573,12 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   [[nodiscard]] bool emitSetThis(BinaryNode* setThisNode);
   [[nodiscard]] bool emitCheckDerivedClassConstructorReturn();
 
+ private:
+  [[nodiscard]] bool emitNewTarget();
+
+ public:
   [[nodiscard]] bool emitNewTarget(NewTargetNode* pn);
+  [[nodiscard]] bool emitNewTarget(CallNode* pn);
 
   
   [[nodiscard]] bool emitJumpTargetOp(JSOp op, BytecodeOffset* off);
