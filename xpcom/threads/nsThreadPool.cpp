@@ -11,6 +11,7 @@
 #include "nsThreadManager.h"
 #include "nsThread.h"
 #include "nsMemory.h"
+#include "nsThreadUtils.h"
 #include "prinrval.h"
 #include "mozilla/Logging.h"
 #include "mozilla/ProfilerLabels.h"
@@ -381,61 +382,10 @@ nsThreadPool::IsOnCurrentThread(bool* aResult) {
 }
 
 NS_IMETHODIMP
-nsThreadPool::Shutdown() {
-  nsCOMArray<nsIThread> threads;
-  nsCOMPtr<nsIThreadPoolListener> listener;
-  {
-    MutexAutoLock lock(mMutex);
-    if (mShutdown) {
-      return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
-    }
-    mShutdown = true;
-    mEventsAvailable.NotifyAll();
-
-    threads.AppendObjects(mThreads);
-    mThreads.Clear();
-
-    
-    
-    
-    mListener.swap(listener);
-  }
-
-  
-  
-
-  for (int32_t i = 0; i < threads.Count(); ++i) {
-    threads[i]->Shutdown();
-  }
-
-  return NS_OK;
-}
-
-template <typename Pred>
-static void SpinMTEventLoopUntil(Pred&& aPredicate, nsIThread* aThread,
-                                 TimeDuration aTimeout) {
-  MOZ_ASSERT(NS_IsMainThread(), "Must be run on the main thread");
-
-  
-  
-  
-  mozilla::Maybe<xpc::AutoScriptActivity> asa;
-  asa.emplace(false);
-
-  TimeStamp deadline = TimeStamp::Now() + aTimeout;
-  while (!aPredicate() && TimeStamp::Now() < deadline) {
-    if (!NS_ProcessNextEvent(aThread, false)) {
-      PR_Sleep(PR_MillisecondsToInterval(1));
-    }
-  }
-}
+nsThreadPool::Shutdown() { return ShutdownWithTimeout(-1); }
 
 NS_IMETHODIMP
 nsThreadPool::ShutdownWithTimeout(int32_t aTimeoutMs) {
-  if (!NS_IsMainThread()) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-
   nsCOMArray<nsIThread> threads;
   nsCOMPtr<nsIThreadPoolListener> listener;
   {
@@ -455,55 +405,46 @@ nsThreadPool::ShutdownWithTimeout(int32_t aTimeoutMs) {
     mListener.swap(listener);
   }
 
-  
-  
-  
-  nsTArray<nsThreadShutdownContext*> contexts;
-
-  
-  
+  nsTArray<nsCOMPtr<nsIThreadShutdown>> contexts;
   for (int32_t i = 0; i < threads.Count(); ++i) {
-    
-    nsThreadShutdownContext* maybeContext =
-        static_cast<nsThread*>(threads[i])->ShutdownInternal(false);
-    contexts.AppendElement(maybeContext);
-  }
-
-  NotNull<nsThread*> currentThread =
-      WrapNotNull(nsThreadManager::get().GetCurrentThread());
-
-  
-  
-  SpinMTEventLoopUntil(
-      [&]() {
-        for (nsIThread* thread : threads) {
-          if (static_cast<nsThread*>(thread)->mThread) {
-            return false;
-          }
-        }
-        return true;
-      },
-      currentThread, TimeDuration::FromMilliseconds(aTimeoutMs));
-
-  
-  
-  
-  static const nsThread::ShutdownContextsComp comparator{};
-  for (int32_t i = 0; i < threads.Count(); ++i) {
-    nsThread* thread = static_cast<nsThread*>(threads[i]);
-    
-    
-    if (thread->mThread && contexts[i]) {
-      auto index = currentThread->mRequestedShutdownContexts.IndexOf(
-          contexts[i], 0, comparator);
-      if (index != nsThread::ShutdownContexts::NoIndex) {
-        
-        
-        Unused << currentThread->mRequestedShutdownContexts[index].release();
-        currentThread->mRequestedShutdownContexts.RemoveElementAt(index);
-      }
+    nsCOMPtr<nsIThreadShutdown> context;
+    if (NS_SUCCEEDED(threads[i]->BeginShutdown(getter_AddRefs(context)))) {
+      contexts.AppendElement(std::move(context));
     }
   }
+
+  
+  
+  nsCOMPtr<nsITimer> timer;
+  if (aTimeoutMs >= 0) {
+    NS_NewTimerWithCallback(
+        getter_AddRefs(timer),
+        [&](nsITimer*) {
+          for (auto& context : contexts) {
+            context->StopWaitingAndLeakThread();
+          }
+        },
+        aTimeoutMs, nsITimer::TYPE_ONE_SHOT,
+        "nsThreadPool::ShutdownWithTimeout");
+  }
+
+  
+  
+  
+  uint32_t outstandingThreads = contexts.Length();
+  RefPtr onCompletion = NS_NewCancelableRunnableFunction(
+      "nsThreadPool thread completion", [&] { --outstandingThreads; });
+  for (auto& context : contexts) {
+    context->OnCompletion(onCompletion);
+  }
+
+  mozilla::SpinEventLoopUntil("nsThreadPool::ShutdownWithTimeout"_ns,
+                              [&] { return outstandingThreads == 0; });
+
+  if (timer) {
+    timer->Cancel();
+  }
+  onCompletion->Cancel();
 
   return NS_OK;
 }

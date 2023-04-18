@@ -47,6 +47,7 @@ using mozilla::NotNull;
 class nsIRunnable;
 class nsLocalExecutionRecord;
 class nsThreadEnumerator;
+class nsThreadShutdownContext;
 
 
 #define LONGTASK_BUSY_WINDOW_MS 50
@@ -219,7 +220,7 @@ class nsThread : public nsIThreadInternal,
 
   uint32_t RecursionDepth() const;
 
-  void ShutdownComplete(NotNull<struct nsThreadShutdownContext*> aContext);
+  void ShutdownComplete(NotNull<nsThreadShutdownContext*> aContext);
 
   void WaitForAllAsynchronousShutdowns();
 
@@ -292,7 +293,7 @@ class nsThread : public nsIThreadInternal,
     return already_AddRefed<nsIThreadObserver>(obs);
   }
 
-  struct nsThreadShutdownContext* ShutdownInternal(bool aSync);
+  already_AddRefed<nsThreadShutdownContext> ShutdownInternal(bool aSync);
 
   friend class nsThreadManager;
   friend class nsThreadPool;
@@ -314,18 +315,10 @@ class nsThread : public nsIThreadInternal,
   RefPtr<mozilla::ThreadEventTarget> mEventTarget;
 
   
-  using ShutdownContexts =
-      nsTArray<mozilla::UniquePtr<struct nsThreadShutdownContext>>;
-
   
-  struct ShutdownContextsComp {
-    bool Equals(const ShutdownContexts::elem_type& a,
-                const ShutdownContexts::elem_type::Pointer b) const;
-  };
-
-  ShutdownContexts mRequestedShutdownContexts;
+  uint32_t mOutstandingShutdownContexts;
   
-  struct nsThreadShutdownContext* mShutdownContext;
+  RefPtr<nsThreadShutdownContext> mShutdownContext;
 
   mozilla::CycleCollectedJSContext* mScriptObserver;
 
@@ -370,26 +363,40 @@ class nsThread : public nsIThreadInternal,
   mozilla::SimpleTaskQueue mDirectTasks;
 };
 
-struct nsThreadShutdownContext {
+class nsThreadShutdownContext final : public nsIThreadShutdown {
+ public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSITHREADSHUTDOWN
+
+ private:
+  friend class nsThread;
+  friend class nsThreadShutdownEvent;
+  friend class nsThreadShutdownAckEvent;
+
   nsThreadShutdownContext(NotNull<nsThread*> aTerminatingThread,
-                          NotNull<nsThread*> aJoiningThread,
-                          bool aAwaitingShutdownAck)
+                          nsThread* aJoiningThread)
       : mTerminatingThread(aTerminatingThread),
         mTerminatingPRThread(aTerminatingThread->GetPRThread()),
-        mJoiningThread(aJoiningThread),
-        mAwaitingShutdownAck(aAwaitingShutdownAck),
-        mIsMainThreadJoining(NS_IsMainThread()) {
-    MOZ_COUNT_CTOR(nsThreadShutdownContext);
-  }
-  MOZ_COUNTED_DTOR(nsThreadShutdownContext)
+        mJoiningThread(aJoiningThread,
+                       "nsThreadShutdownContext::mJoiningThread") {}
+
+  ~nsThreadShutdownContext() = default;
 
   
-  NotNull<RefPtr<nsThread>> mTerminatingThread;
+  void MarkCompleted();
+
+  
+  NotNull<RefPtr<nsThread>> const mTerminatingThread;
   PRThread* const mTerminatingPRThread;
-  NotNull<nsThread*> MOZ_UNSAFE_REF(
-      "Thread manager is holding reference to joining thread") mJoiningThread;
-  bool mAwaitingShutdownAck;
-  bool mIsMainThreadJoining;
+
+  
+  bool mCompleted = false;
+  nsTArray<nsCOMPtr<nsIRunnable>> mCompletionCallbacks;
+
+  
+  
+  
+  mozilla::DataMutex<RefPtr<nsThread>> mJoiningThread;
 };
 
 

@@ -196,12 +196,6 @@ NS_IMPL_CI_INTERFACE_GETTER(nsThread, nsIThread, nsIThreadInternal,
 
 
 
-bool nsThread::ShutdownContextsComp::Equals(
-    const ShutdownContexts::elem_type& a,
-    const ShutdownContexts::elem_type::Pointer b) const {
-  return a.get() == b;
-}
-
 
 
 
@@ -220,7 +214,7 @@ class nsThreadShutdownAckEvent : public CancelableRunnable {
  private:
   virtual ~nsThreadShutdownAckEvent() = default;
 
-  NotNull<nsThreadShutdownContext*> mShutdownContext;
+  NotNull<RefPtr<nsThreadShutdownContext>> mShutdownContext;
 };
 
 
@@ -232,6 +226,8 @@ class nsThreadShutdownEvent : public Runnable {
         mThread(aThr),
         mShutdownContext(aCtx) {}
   NS_IMETHOD Run() override {
+    
+    
     mThread->mShutdownContext = mShutdownContext;
     if (mThread->mEventTarget) {
       mThread->mEventTarget->NotifyShutdown();
@@ -242,7 +238,7 @@ class nsThreadShutdownEvent : public Runnable {
 
  private:
   NotNull<RefPtr<nsThread>> mThread;
-  NotNull<nsThreadShutdownContext*> mShutdownContext;
+  NotNull<RefPtr<nsThreadShutdownContext>> mShutdownContext;
 };
 
 
@@ -422,36 +418,34 @@ void nsThread::ThreadFunc(void* aArg) {
     PROFILER_UNREGISTER_THREAD();
   }
 
-  
-  NotNull<nsThreadShutdownContext*> context =
+  NotNull<RefPtr<nsThreadShutdownContext>> context =
       WrapNotNull(self->mShutdownContext);
+  self->mShutdownContext = nullptr;
   MOZ_ASSERT(context->mTerminatingThread == self);
-  nsCOMPtr<nsIRunnable> event =
-      do_QueryObject(new nsThreadShutdownAckEvent(context));
-  if (context->mIsMainThreadJoining) {
-    DebugOnly<nsresult> dispatch_ack_rv =
-        SchedulerGroup::Dispatch(TaskCategory::Other, event.forget());
-#ifdef DEBUG
+
+  
+  
+  
+  RefPtr<nsThread> joiningThread;
+  {
+    auto lock = context->mJoiningThread.Lock();
+    joiningThread = lock->forget();
+  }
+  if (joiningThread) {
     
-    
-    
-    
-    
-    
-    if (NS_FAILED(dispatch_ack_rv)) {
-      NS_WARNING(
-          "Thread shudown ack dispatch failed, the main thread may no longer "
-          "be waiting.");
-    }
-#endif
-  } else {
+    nsCOMPtr<nsIRunnable> event = new nsThreadShutdownAckEvent(context);
     nsresult dispatch_ack_rv =
-        context->mJoiningThread->Dispatch(event, NS_DISPATCH_NORMAL);
+        joiningThread->Dispatch(event, NS_DISPATCH_NORMAL);
+
     
     
     
     
     MOZ_RELEASE_ASSERT(NS_SUCCEEDED(dispatch_ack_rv));
+  } else {
+    NS_WARNING(
+        "nsThread exiting after StopWaitingAndLeakThread was called, thread "
+        "resources will be leaked!");
   }
 
   
@@ -548,6 +542,7 @@ nsThread::nsThread(NotNull<SynchronizedEventQueue*> aQueue,
     : mEvents(aQueue.get()),
       mEventTarget(
           new ThreadEventTarget(mEvents.get(), aMainThread == MAIN_THREAD)),
+      mOutstandingShutdownContexts(0),
       mShutdownContext(nullptr),
       mScriptObserver(nullptr),
       mThreadName("<uninitialized>"),
@@ -572,6 +567,7 @@ nsThread::nsThread(NotNull<SynchronizedEventQueue*> aQueue,
 nsThread::nsThread()
     : mEvents(nullptr),
       mEventTarget(nullptr),
+      mOutstandingShutdownContexts(0),
       mShutdownContext(nullptr),
       mScriptObserver(nullptr),
       mThreadName("<uninitialized>"),
@@ -590,22 +586,10 @@ nsThread::nsThread()
 }
 
 nsThread::~nsThread() {
-  NS_ASSERTION(mRequestedShutdownContexts.IsEmpty(),
+  NS_ASSERTION(mOutstandingShutdownContexts == 0,
                "shouldn't be waiting on other threads to shutdown");
 
   MaybeRemoveFromThreadList();
-
-#ifdef DEBUG
-  
-  
-  
-  
-  
-  
-  for (size_t i = 0; i < mRequestedShutdownContexts.Length(); ++i) {
-    Unused << mRequestedShutdownContexts[i].release();
-  }
-#endif
 }
 
 nsresult nsThread::Init(const nsACString& aName) {
@@ -778,36 +762,44 @@ NS_IMETHODIMP
 nsThread::AsyncShutdown() {
   LOG(("THRD(%p) async shutdown\n", this));
 
-  ShutdownInternal( false);
+  nsCOMPtr<nsIThreadShutdown> shutdown;
+  BeginShutdown(getter_AddRefs(shutdown));
   return NS_OK;
 }
 
-nsThreadShutdownContext* nsThread::ShutdownInternal(bool aSync) {
+NS_IMETHODIMP
+nsThread::BeginShutdown(nsIThreadShutdown** aShutdown) {
+  LOG(("THRD(%p) begin shutdown\n", this));
+
   MOZ_ASSERT(mEvents);
   MOZ_ASSERT(mEventTarget);
   MOZ_ASSERT(mThread != PR_GetCurrentThread());
   if (NS_WARN_IF(mThread == PR_GetCurrentThread())) {
-    return nullptr;
+    return NS_ERROR_UNEXPECTED;
   }
 
   
   if (!mShutdownRequired.compareExchange(true, false)) {
-    return nullptr;
+    return NS_ERROR_UNEXPECTED;
   }
   MOZ_ASSERT(mThread);
 
   MaybeRemoveFromThreadList();
 
-  NotNull<nsThread*> currentThread =
-      WrapNotNull(nsThreadManager::get().GetCurrentThread());
+  RefPtr<nsThread> currentThread = nsThreadManager::get().GetCurrentThread();
 
   MOZ_DIAGNOSTIC_ASSERT(currentThread->EventQueue(),
                         "Shutdown() may only be called from an XPCOM thread");
 
   
-  auto context =
-      new nsThreadShutdownContext(WrapNotNull(this), currentThread, aSync);
-  Unused << *currentThread->mRequestedShutdownContexts.EmplaceBack(context);
+  RefPtr<nsThreadShutdownContext> context =
+      new nsThreadShutdownContext(WrapNotNull(this), currentThread);
+
+  ++currentThread->mOutstandingShutdownContexts;
+  nsCOMPtr<nsIRunnable> clearOutstanding = NS_NewRunnableFunction(
+      "nsThread::ClearOutstandingShutdownContext",
+      [currentThread] { --currentThread->mOutstandingShutdownContexts; });
+  context->OnCompletion(clearOutstanding);
 
   
   
@@ -816,7 +808,7 @@ nsThreadShutdownContext* nsThread::ShutdownInternal(bool aSync) {
   if (!mEvents->PutEvent(event.forget(), EventQueuePriority::Normal)) {
     
     nsAutoCString threadName;
-    currentThread->GetThreadName(threadName);
+    GetThreadName(threadName);
     MOZ_CRASH_UNSAFE_PRINTF("Attempt to shutdown an already dead thread: %s",
                             threadName.get());
   }
@@ -824,7 +816,8 @@ nsThreadShutdownContext* nsThread::ShutdownInternal(bool aSync) {
   
   
   
-  return context;
+  context.forget(aShutdown);
+  return NS_OK;
 }
 
 void nsThread::ShutdownComplete(NotNull<nsThreadShutdownContext*> aContext) {
@@ -833,13 +826,6 @@ void nsThread::ShutdownComplete(NotNull<nsThreadShutdownContext*> aContext) {
   MOZ_ASSERT(aContext->mTerminatingThread == this);
 
   MaybeRemoveFromThreadList();
-
-  if (aContext->mAwaitingShutdownAck) {
-    
-    
-    aContext->mAwaitingShutdownAck = false;
-    return;
-  }
 
   
   PR_JoinThread(aContext->mTerminatingPRThread);
@@ -850,11 +836,7 @@ void nsThread::ShutdownComplete(NotNull<nsThreadShutdownContext*> aContext) {
   MOZ_ASSERT(!obs, "Should have been cleared at shutdown!");
 #endif
 
-  
-  
-  
-  aContext->mJoiningThread->mRequestedShutdownContexts.RemoveElement(
-      aContext, ShutdownContextsComp{});
+  aContext->MarkCompleted();
 }
 
 void nsThread::WaitForAllAsynchronousShutdowns() {
@@ -862,19 +844,18 @@ void nsThread::WaitForAllAsynchronousShutdowns() {
   
   SpinEventLoopUntil<ProcessFailureBehavior::IgnoreAndContinue>(
       "nsThread::WaitForAllAsynchronousShutdowns"_ns,
-      [&]() { return mRequestedShutdownContexts.IsEmpty(); }, this);
+      [&]() { return mOutstandingShutdownContexts == 0; }, this);
 }
 
 NS_IMETHODIMP
 nsThread::Shutdown() {
   LOG(("THRD(%p) sync shutdown\n", this));
 
-  nsThreadShutdownContext* maybeContext = ShutdownInternal( true);
-  if (!maybeContext) {
+  nsCOMPtr<nsIThreadShutdown> context;
+  nsresult rv = BeginShutdown(getter_AddRefs(context));
+  if (NS_FAILED(rv)) {
     return NS_OK;  
   }
-
-  NotNull<nsThreadShutdownContext*> context = WrapNotNull(maybeContext);
 
   
   nsAutoCString threadName;
@@ -882,12 +863,8 @@ nsThread::Shutdown() {
 
   
   
-  SpinEventLoopUntil(
-      "nsThread::Shutdown: "_ns + threadName,
-      [&, context]() { return !context->mAwaitingShutdownAck; },
-      context->mJoiningThread);
-
-  ShutdownComplete(context);
+  SpinEventLoopUntil("nsThread::Shutdown: "_ns + threadName,
+                     [&]() { return context->GetCompleted(); });
 
   return NS_OK;
 }
@@ -1025,7 +1002,6 @@ size_t nsThread::ShallowSizeOfIncludingThis(
   if (mShutdownContext) {
     n += aMallocSizeOf(mShutdownContext);
   }
-  n += mRequestedShutdownContexts.ShallowSizeOfExcludingThis(aMallocSizeOf);
   return aMallocSizeOf(this) + aMallocSizeOf(mThread) + n;
 }
 
@@ -1446,6 +1422,52 @@ nsLocalExecutionGuard::~nsLocalExecutionGuard() {
   MOZ_ASSERT(mLocalExecutionFlag);
   mLocalExecutionFlag = false;
   mEventQueueStack.PopEventQueue(mLocalEventTarget);
+}
+
+NS_IMPL_ISUPPORTS(nsThreadShutdownContext, nsIThreadShutdown)
+
+NS_IMETHODIMP
+nsThreadShutdownContext::OnCompletion(nsIRunnable* aEvent) {
+  if (mCompleted) {
+    aEvent->Run();
+  } else {
+    mCompletionCallbacks.AppendElement(aEvent);
+  }
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsThreadShutdownContext::GetCompleted(bool* aCompleted) {
+  *aCompleted = mCompleted;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsThreadShutdownContext::StopWaitingAndLeakThread() {
+  
+  
+  RefPtr<nsThread> joiningThread;
+  {
+    auto lock = mJoiningThread.Lock();
+    joiningThread = lock->forget();
+  }
+  if (!joiningThread) {
+    
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  MOZ_DIAGNOSTIC_ASSERT(joiningThread->IsOnCurrentThread());
+  MarkCompleted();
+  return NS_OK;
+}
+
+void nsThreadShutdownContext::MarkCompleted() {
+  MOZ_ASSERT(!mCompleted);
+  mCompleted = true;
+  nsTArray<nsCOMPtr<nsIRunnable>> callbacks(std::move(mCompletionCallbacks));
+  for (auto& callback : callbacks) {
+    callback->Run();
+  }
 }
 
 namespace mozilla {
