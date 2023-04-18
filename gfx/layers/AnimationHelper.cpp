@@ -19,9 +19,8 @@
 #include "mozilla/dom/Nullable.h"             
 #include "mozilla/layers/APZSampler.h"        
 #include "mozilla/layers/CompositorThread.h"  
-#include "mozilla/layers/LayerAnimationUtils.h"  
-#include "mozilla/LayerAnimationInfo.h"  
-#include "mozilla/MotionPathUtils.h"     
+#include "mozilla/LayerAnimationInfo.h"       
+#include "mozilla/MotionPathUtils.h"          
 #include "mozilla/ServoBindings.h"  
 #include "mozilla/StyleAnimationValue.h"  
 #include "nsDeviceContext.h"              
@@ -478,7 +477,7 @@ AnimationStorageData AnimationHelper::ExtractAnimations(
                      animation.iterationStart(),
                      static_cast<dom::PlaybackDirection>(animation.direction()),
                      GetAdjustedFillMode(animation),
-                     AnimationUtils::TimingFunctionToComputedTimingFunction(
+                     ComputedTimingFunction::FromLayersTimingFunction(
                          animation.easingFunction())};
     propertyAnimation->mScrollTimelineOptions =
         animation.scrollTimelineOptions();
@@ -491,8 +490,7 @@ AnimationStorageData AnimationHelper::ExtractAnimations(
                                          segment.startState()),
           AnimationValue::FromAnimatable(animation.property(),
                                          segment.endState()),
-          AnimationUtils::TimingFunctionToComputedTimingFunction(
-              segment.sampleFn()),
+          ComputedTimingFunction::FromLayersTimingFunction(segment.sampleFn()),
           segment.startPortion(), segment.endPortion(),
           static_cast<dom::CompositeOperation>(segment.startComposite()),
           static_cast<dom::CompositeOperation>(segment.endComposite())});
