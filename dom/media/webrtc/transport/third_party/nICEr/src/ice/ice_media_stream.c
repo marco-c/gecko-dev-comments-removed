@@ -1064,8 +1064,6 @@ void nr_ice_media_stream_role_change(nr_ice_media_stream *stream)
 
     nr_ice_cand_pair_head old_checklist;
 
-    assert(stream->ice_state != NR_ICE_MEDIA_STREAM_UNPAIRED);
-
     
     TAILQ_INIT(&old_checklist);
     TAILQ_FOREACH_SAFE(pair,&stream->check_list,check_queue_entry,temp_pair) {
