@@ -154,7 +154,7 @@ class BodyStream final : public nsIInputStreamCallback,
  private:
   
   void WriteIntoReadRequestBuffer(JSContext* aCx, ReadableStream* aStream,
-                                  void* aBuffer, size_t aLength,
+                                  JS::Handle<JSObject*> aBuffer, size_t aLength,
                                   size_t* aByteWritten);
 
   
@@ -175,7 +175,7 @@ class BodyStream final : public nsIInputStreamCallback,
                    size_t aDesiredSize) override;
 
   void writeIntoReadRequestBuffer(JSContext* aCx, JS::HandleObject aStream,
-                                  void* aBuffer, size_t aLength,
+                                  JS::Handle<JSObject*> aChunk, size_t aLength,
                                   size_t* aBytesWritten) override;
 
   JS::Value cancel(JSContext* aCx, JS::HandleObject aStream,

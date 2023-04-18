@@ -104,10 +104,9 @@ class JS_PUBLIC_API ReadableStreamUnderlyingSource {
 
 
 
-
-
   virtual void writeIntoReadRequestBuffer(JSContext* cx, HandleObject stream,
-                                          void* buffer, size_t length,
+                                          JS::Handle<JSObject*> aChunk,
+                                          size_t length,
                                           size_t* bytesWritten) = 0;
 
   

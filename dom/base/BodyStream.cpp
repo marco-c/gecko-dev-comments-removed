@@ -5,6 +5,7 @@
 
 
 #include "BodyStream.h"
+#include "js/GCAPI.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/dom/AutoEntryScript.h"
 #include "mozilla/dom/DOMException.h"
@@ -311,15 +312,19 @@ void BodyStream::requestData(JSContext* aCx, JS::HandleObject aStream,
 #ifdef MOZ_DOM_STREAMS
 void BodyStream::WriteIntoReadRequestBuffer(JSContext* aCx,
                                             ReadableStream* aStream,
-                                            void* aBuffer, size_t aLength,
+                                            JS::Handle<JSObject*> aChunk,
+                                            size_t aLength,
                                             size_t* aByteWritten) {
 #else
+
+
 void BodyStream::writeIntoReadRequestBuffer(JSContext* aCx,
                                             JS::HandleObject aStream,
-                                            void* aBuffer, size_t aLength,
+                                            JS::Handle<JSObject*> aChunk,
+                                            size_t aLength,
                                             size_t* aByteWritten) {
 #endif
-  MOZ_DIAGNOSTIC_ASSERT(aBuffer);
+  MOZ_DIAGNOSTIC_ASSERT(aChunk);
   MOZ_DIAGNOSTIC_ASSERT(aByteWritten);
 
   AssertIsOnOwningThread();
@@ -331,11 +336,27 @@ void BodyStream::writeIntoReadRequestBuffer(JSContext* aCx,
   mState = eChecking;
 
   uint32_t written;
-  nsresult rv =
-      mInputStream->Read(static_cast<char*>(aBuffer), aLength, &written);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    ErrorPropagation(aCx, lock, aStream, rv);
-    return;
+  nsresult rv;
+  void* buffer;
+  {
+    
+    
+    
+    
+    
+    
+    JS::AutoSuppressGCAnalysis suppress;
+    JS::AutoCheckCannotGC noGC;
+    bool isSharedMemory;
+
+    buffer = JS_GetArrayBufferViewData(aChunk, &isSharedMemory, noGC);
+    MOZ_ASSERT(!isSharedMemory);
+
+    rv = mInputStream->Read(static_cast<char*>(buffer), aLength, &written);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      ErrorPropagation(aCx, lock, aStream, rv);
+      return;
+    }
   }
 
   *aByteWritten = written;
@@ -539,11 +560,7 @@ void BodyStream::EnqueueChunkWithSizeIntoStream(JSContext* aCx,
   size_t bytesWritten = 0;
   size_t unusedData = 0;
   {
-    
-    JS::AutoCheckCannotGC noGC;
-    bool dummy;
-    void* buffer = JS_GetArrayBufferViewData(chunk, &dummy, noGC);
-    WriteIntoReadRequestBuffer(aCx, aStream, buffer, aAvailableData,
+    WriteIntoReadRequestBuffer(aCx, aStream, chunk, aAvailableData,
                                &bytesWritten);
 
     unusedData = aAvailableData - bytesWritten;
