@@ -120,16 +120,13 @@ size_t CreatePlaneDictionary(CFTypeRefPtr<CFMutableDictionaryRef>& aDict,
 }
 
 
-already_AddRefed<MacIOSurface> MacIOSurface::CreateNV12OrP010Surface(
+already_AddRefed<MacIOSurface> MacIOSurface::CreateNV12Surface(
     const IntSize& aYSize, const IntSize& aCbCrSize, YUVColorSpace aColorSpace,
-    ColorRange aColorRange, ColorDepth aColorDepth) {
+    ColorRange aColorRange) {
   MOZ_ASSERT(aColorSpace == YUVColorSpace::BT601 ||
-             aColorSpace == YUVColorSpace::BT709 ||
-             aColorSpace == YUVColorSpace::BT2020);
+             aColorSpace == YUVColorSpace::BT709);
   MOZ_ASSERT(aColorRange == ColorRange::LIMITED ||
              aColorRange == ColorRange::FULL);
-  MOZ_ASSERT(aColorDepth == ColorDepth::COLOR_8 ||
-             aColorDepth == ColorDepth::COLOR_10);
 
   auto props = CFTypeRefPtr<CFMutableDictionaryRef>::WrapUnderCreateRule(
       ::CFDictionaryCreateMutable(kCFAllocatorDefault, 4,
@@ -144,45 +141,20 @@ already_AddRefed<MacIOSurface> MacIOSurface::CreateNV12OrP010Surface(
   AddDictionaryInt(props, kIOSurfaceHeight, aYSize.height);
   ::CFDictionaryAddValue(props.get(), kIOSurfaceIsGlobal, kCFBooleanTrue);
 
-#if !defined(MAC_OS_VERSION_10_13) || \
-    MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_VERSION_10_13
-  enum : OSType {
-    kCVPixelFormatType_420YpCbCr10BiPlanarVideoRange = 'x420',
-    kCVPixelFormatType_420YpCbCr10BiPlanarFullRange = 'xf20',
-  };
-#endif
-
   if (aColorRange == ColorRange::LIMITED) {
-    if (aColorDepth == ColorDepth::COLOR_8) {
-      AddDictionaryInt(
-          props, kIOSurfacePixelFormat,
-          (uint32_t)kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange);
-    } else {
-      AddDictionaryInt(
-          props, kIOSurfacePixelFormat,
-          (uint32_t)kCVPixelFormatType_420YpCbCr10BiPlanarVideoRange);
-    }
+    AddDictionaryInt(props, kIOSurfacePixelFormat,
+                     (uint32_t)kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange);
   } else {
-    if (aColorDepth == ColorDepth::COLOR_8) {
-      AddDictionaryInt(
-          props, kIOSurfacePixelFormat,
-          (uint32_t)kCVPixelFormatType_420YpCbCr8BiPlanarFullRange);
-    } else {
-      AddDictionaryInt(
-          props, kIOSurfacePixelFormat,
-          (uint32_t)kCVPixelFormatType_420YpCbCr10BiPlanarFullRange);
-    }
+    AddDictionaryInt(props, kIOSurfacePixelFormat,
+                     (uint32_t)kCVPixelFormatType_420YpCbCr8BiPlanarFullRange);
   }
 
-  size_t bytesPerPixel = (aColorDepth == ColorDepth::COLOR_8) ? 1 : 2;
-
   CFTypeRefPtr<CFMutableDictionaryRef> planeProps[2];
-  size_t yPlaneBytes =
-      CreatePlaneDictionary(planeProps[0], aYSize, 0, bytesPerPixel);
+  size_t yPlaneBytes = CreatePlaneDictionary(planeProps[0], aYSize, 0, 1);
   size_t cbCrOffset =
       IOSurfaceAlignProperty(kIOSurfacePlaneOffset, yPlaneBytes);
-  size_t cbCrPlaneBytes = CreatePlaneDictionary(planeProps[1], aCbCrSize,
-                                                cbCrOffset, bytesPerPixel * 2);
+  size_t cbCrPlaneBytes =
+      CreatePlaneDictionary(planeProps[1], aCbCrSize, cbCrOffset, 2);
   size_t totalBytes =
       IOSurfaceAlignProperty(kIOSurfaceAllocSize, cbCrOffset + cbCrPlaneBytes);
 
@@ -203,43 +175,12 @@ already_AddRefed<MacIOSurface> MacIOSurface::CreateNV12OrP010Surface(
 
   
   
-  
-  
-  
-  
-  
-  
-
-  
-  
-  
-#if !defined(MAC_OS_VERSION_10_13) || \
-    MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_VERSION_10_13
-  CFStringRef kCVImageBufferTransferFunction_SMPTE_ST_2084_PQ =
-      CFSTR("SMPTE_ST_2084_PQ");
-#endif
-
   if (aColorSpace == YUVColorSpace::BT601) {
     IOSurfaceSetValue(surfaceRef.get(), CFSTR("IOSurfaceYCbCrMatrix"),
-                      kCVImageBufferYCbCrMatrix_ITU_R_601_4);
-  } else if (aColorSpace == YUVColorSpace::BT709) {
-    IOSurfaceSetValue(surfaceRef.get(), CFSTR("IOSurfaceYCbCrMatrix"),
-                      kCVImageBufferYCbCrMatrix_ITU_R_709_2);
-    IOSurfaceSetValue(surfaceRef.get(), CFSTR("IOSurfaceColorPrimaries"),
-                      kCVImageBufferColorPrimaries_ITU_R_709_2);
-    IOSurfaceSetValue(surfaceRef.get(), CFSTR("IOSurfaceTransferFunction"),
-                      kCVImageBufferTransferFunction_ITU_R_709_2);
+                      CFSTR("ITU_R_601_4"));
   } else {
-    
-    
     IOSurfaceSetValue(surfaceRef.get(), CFSTR("IOSurfaceYCbCrMatrix"),
-                      kCVImageBufferYCbCrMatrix_ITU_R_2020);
-    IOSurfaceSetValue(surfaceRef.get(), CFSTR("IOSurfaceColorPrimaries"),
-                      kCVImageBufferColorPrimaries_ITU_R_2020);
-    IOSurfaceSetValue(surfaceRef.get(), CFSTR("IOSurfaceTransferFunction"),
-                      kCVImageBufferTransferFunction_SMPTE_ST_2084_PQ);
-    NS_WARNING(
-        "Rec2020 transfer function is ambiguous, guessing PQ instead of HLG.");
+                      CFSTR("ITU_R_709_2"));
   }
   
   
