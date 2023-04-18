@@ -14,7 +14,6 @@
 
 #  define ALT_PATH_SEPARATOR_CHAR L'/'
 #else
-#  include <unistd.h>
 #  define NS_main main
 #  define PATH_SEPARATOR_CHAR '/'
 #endif
@@ -23,7 +22,6 @@
 #include <stdarg.h>
 #include <string.h>
 
-#include "updater/resource.h"
 #include "updater/progressui.h"
 #include "common/readstrings.h"
 #include "common/updatererrors.h"
