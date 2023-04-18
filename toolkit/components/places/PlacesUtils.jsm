@@ -173,6 +173,7 @@ function serializeNode(aNode) {
 const DB_URL_LENGTH_MAX = 65536;
 const DB_TITLE_LENGTH_MAX = 4096;
 const DB_DESCRIPTION_LENGTH_MAX = 256;
+const DB_SITENAME_LENGTH_MAX = 50;
 
 
 
@@ -349,6 +350,14 @@ const PAGEINFO_VALIDATORS = Object.freeze({
     }
     throw new TypeError(
       `description property of pageInfo object: ${v} must be either a string or null if provided`
+    );
+  },
+  siteName: v => {
+    if (typeof v === "string" || v === null) {
+      return v ? v.slice(0, DB_SITENAME_LENGTH_MAX) : null;
+    }
+    throw new TypeError(
+      `siteName property of pageInfo object: ${v} must be either a string or null if provided`
     );
   },
   annotations: v => {
@@ -606,26 +615,6 @@ var PlacesUtils = {
       Cu.reportError(`Invalid action url "${url}"`);
       return null;
     }
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  convertMatchBucketsStringToArray(str) {
-    return str.split(",").map(v => {
-      let bucket = v.split(":");
-      return [bucket[0].trim().toLowerCase(), Number(bucket[1])];
-    });
   },
 
   
