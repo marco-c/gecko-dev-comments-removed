@@ -32,7 +32,9 @@ class PrerenderChannel extends EventTarget {
     this.#url = `/speculation-rules/prerender/resources/deprecated-broadcast-channel.py?name=${name}&uid=${uid}`;
     (async() => {
       while (this.#active) {
-        const messages = await (await fetch(this.#url)).json();
+        
+        
+        const messages = await (await fetch(this.#url, {keepalive: true})).json();
         for (const {data, id} of messages) {
           if (!this.#ids.has(id))
             this.dispatchEvent(new MessageEvent('message', {data}));
@@ -53,7 +55,9 @@ class PrerenderChannel extends EventTarget {
   async postMessage(data) {
     const id = new Date().valueOf();
     this.#ids.add(id);
-    await fetch(this.#url, {method: 'POST', body: JSON.stringify({data, id})});
+    
+    
+    await fetch(this.#url, {method: 'POST', body: JSON.stringify({data, id}), keepalive: true});
   }
 }
 
