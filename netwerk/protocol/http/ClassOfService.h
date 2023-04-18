@@ -1,16 +1,18 @@
+
+
+
+
 #ifndef __ClassOfService_h__
 #define __ClassOfService_h__
 
 #include "ipc/IPCMessageUtils.h"
 
+namespace mozilla::net {
 
-namespace mozilla {
-namespace net {
-
-class ClassOfServiceStruct {
+class ClassOfService {
  public:
-  ClassOfServiceStruct() : mClassFlags(0), mIncremental(false) {}
-  ClassOfServiceStruct(unsigned long flags, bool incremental)
+  ClassOfService() : mClassFlags(0), mIncremental(false) {}
+  ClassOfService(unsigned long flags, bool incremental)
       : mClassFlags(flags), mIncremental(incremental) {}
 
   
@@ -24,31 +26,26 @@ class ClassOfServiceStruct {
  private:
   unsigned long mClassFlags;
   bool mIncremental;
-  friend IPC::ParamTraits<mozilla::net::ClassOfServiceStruct>;
-  friend bool operator==(const ClassOfServiceStruct& lhs,
-                         const ClassOfServiceStruct& rhs);
-  friend bool operator!=(const ClassOfServiceStruct& lhs,
-                         const ClassOfServiceStruct& rhs);
+  friend IPC::ParamTraits<mozilla::net::ClassOfService>;
+  friend bool operator==(const ClassOfService& lhs, const ClassOfService& rhs);
+  friend bool operator!=(const ClassOfService& lhs, const ClassOfService& rhs);
 };
 
-inline bool operator==(const ClassOfServiceStruct& lhs,
-                       const ClassOfServiceStruct& rhs) {
+inline bool operator==(const ClassOfService& lhs, const ClassOfService& rhs) {
   return lhs.mClassFlags == rhs.mClassFlags &&
          lhs.mIncremental == rhs.mIncremental;
 }
 
-inline bool operator!=(const ClassOfServiceStruct& lhs,
-                       const ClassOfServiceStruct& rhs) {
+inline bool operator!=(const ClassOfService& lhs, const ClassOfService& rhs) {
   return !(lhs == rhs);
 }
 
 }  
-}  
 
 namespace IPC {
 template <>
-struct ParamTraits<mozilla::net::ClassOfServiceStruct> {
-  typedef mozilla::net::ClassOfServiceStruct paramType;
+struct ParamTraits<mozilla::net::ClassOfService> {
+  typedef mozilla::net::ClassOfService paramType;
 
   static void Write(MessageWriter* aWriter, const paramType& aParam) {
     WriteParam(aWriter, aParam.mClassFlags);
