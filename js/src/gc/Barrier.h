@@ -1241,7 +1241,6 @@ namespace jit {
 class JitCode;
 }  
 
-using GCPtrObject = GCPtr<JSObject*>;
 using GCPtrValue = GCPtr<Value>;
 
 using ImmutablePropertyNamePtr = ImmutableTenuredPtr<PropertyName*>;

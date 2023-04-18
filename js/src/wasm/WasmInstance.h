@@ -93,9 +93,9 @@ class alignas(16) Instance {
   
   
   
-  GCPtrObject pendingException_;
+  GCPtr<JSObject*> pendingException_;
   
-  GCPtrObject pendingExceptionTag_;
+  GCPtr<JSObject*> pendingExceptionTag_;
 
   
   

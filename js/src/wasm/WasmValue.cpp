@@ -77,7 +77,7 @@ void Val::writeToHeapLocation(void* loc) const {
   if (type_.isRefRepr()) {
     
     
-    *((GCPtrObject*)loc) = cell_.ref_.asJSObject();
+    *((GCPtr<JSObject*>*)loc) = cell_.ref_.asJSObject();
     return;
   }
   memcpy(loc, &cell_, type_.size());

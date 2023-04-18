@@ -59,7 +59,7 @@ class GetterSetter : public gc::TenuredCellWithGCPointer<JSObject> {
   
   JSObject* getter() const { return headerPtr(); }
 
-  GCPtrObject setter_;
+  GCPtr<JSObject*> setter_;
 
 #ifndef JS_64BIT
   

@@ -27,10 +27,10 @@ struct NativeIterator {
  private:
   
   
-  GCPtrObject objectBeingIterated_ = {};
+  GCPtr<JSObject*> objectBeingIterated_ = {};
 
   
-  const GCPtrObject iterObj_ = {};
+  const GCPtr<JSObject*> iterObj_ = {};
 
   
   

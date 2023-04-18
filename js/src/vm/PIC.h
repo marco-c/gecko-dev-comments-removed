@@ -144,7 +144,7 @@ struct ForOfPIC {
   class Chain : public BaseChain {
    private:
     
-    const GCPtrObject picObject_;
+    const GCPtr<JSObject*> picObject_;
 
     
     GCPtr<NativeObject*> arrayProto_;
