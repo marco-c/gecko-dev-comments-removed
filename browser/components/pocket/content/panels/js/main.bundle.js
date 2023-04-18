@@ -2,7 +2,7 @@
  	"use strict";
  	var __webpack_modules__ = ({
 
- 861:
+ 503:
  ((__unused_webpack_module, __unused_webpack___webpack_exports__, __webpack_require__) => {
 
 
@@ -1198,6 +1198,70 @@ SavedOverlay.prototype = {
 
 
 
+function TagPicker(props) {
+  const [tags, setTags] = (0,react.useState)(props.tags);
+  const [duplicateTag, setDuplicateTag] = (0,react.useState)(null);
+
+  let handleKeyDown = e => {
+    
+    if (e.keyCode === 188 || e.keyCode === 13) {
+      let tag = e.target.value.trim();
+      e.preventDefault();
+      e.target.value = ``; 
+
+      addTag(tag);
+    }
+  };
+
+  let addTag = tag => {
+    let newDuplicateTag = tags.find(item => item === tag);
+
+    if (!tag.length) {
+      return;
+    }
+
+    if (!newDuplicateTag) {
+      setTags([...tags, tag]);
+    } else {
+      setDuplicateTag(newDuplicateTag);
+      setTimeout(() => {
+        setDuplicateTag(null);
+      }, 1000);
+    }
+  };
+
+  let removeTag = index => {
+    let updatedTags = tags.slice(0); 
+
+    updatedTags.splice(index, 1);
+    setTags(updatedTags);
+  };
+
+  return react.createElement("div", {
+    className: "stp_tag_picker"
+  }, react.createElement("p", null, "Add Tags:"), react.createElement("div", {
+    className: "stp_tag_picker_tags"
+  }, tags.map((tag, i) => react.createElement("div", {
+    className: `stp_tag_picker_tag${duplicateTag === tag ? ` stp_tag_picker_tag_duplicate` : ``}`
+  }, tag, react.createElement("button", {
+    onClick: () => removeTag(i),
+    className: `stp_tag_picker_tag_remove`
+  }, "X"))), react.createElement("input", {
+    className: "stp_tag_picker_input",
+    type: "text",
+    onKeyDown: e => handleKeyDown(e),
+    maxlength: "25"
+  })));
+}
+
+ const TagPicker_TagPicker = (TagPicker);
+;
+
+
+
+
+
+
 
 
 var StyleGuideOverlay = function (options) {};
@@ -1266,6 +1330,10 @@ StyleGuideOverlay.prototype = {
         url: "https://example.org",
         alt: "Alt Text"
       }]
+    }), react.createElement("h4", {
+      className: "stp_styleguide_h4"
+    }, "TagPicker"), react.createElement(TagPicker_TagPicker, {
+      tags: [`futurism`, `politics`, `mozilla`]
     }), react.createElement("h3", null, "Typography:"), react.createElement("h2", {
       className: "header_large"
     }, ".header_large"), react.createElement("h3", {
@@ -1524,7 +1592,7 @@ window.pktPanelMessaging = messages;
  	
  	
  	
- 	var __webpack_exports__ = __webpack_require__.O(undefined, [736], () => (__webpack_require__(861)))
+ 	var __webpack_exports__ = __webpack_require__.O(undefined, [736], () => (__webpack_require__(503)))
  	__webpack_exports__ = __webpack_require__.O(__webpack_exports__);
  	
  })()
