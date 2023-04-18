@@ -251,7 +251,7 @@ struct ShadowOptions {
 
 
 
-class GradientStops : public external::AtomicRefCounted<GradientStops> {
+class GradientStops : public SupportsThreadSafeWeakPtr<GradientStops> {
  public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(GradientStops)
   virtual ~GradientStops() = default;
@@ -276,7 +276,14 @@ class Pattern {
   virtual PatternType GetType() const = 0;
 
   
-  virtual Pattern* Clone() const { return nullptr; }
+
+  virtual Pattern* CloneWeak() const { return nullptr; }
+
+  
+  virtual bool IsWeak() const { return false; }
+
+  
+  virtual bool IsValid() const { return true; }
 
   
   virtual bool operator==(const Pattern& aOther) const = 0;
@@ -285,6 +292,19 @@ class Pattern {
 
  protected:
   Pattern() = default;
+
+  
+  template <typename T>
+  static inline bool IsRefValid(const RefPtr<T>& aPtr) {
+    
+    return true;
+  }
+
+  template <typename T>
+  static inline bool IsRefValid(const ThreadSafeWeakPtr<T>& aPtr) {
+    
+    return !aPtr.IsDead();
+  }
 };
 
 class ColorPattern : public Pattern {
@@ -295,7 +315,7 @@ class ColorPattern : public Pattern {
 
   PatternType GetType() const override { return PatternType::COLOR; }
 
-  Pattern* Clone() const override { return new ColorPattern(mColor); }
+  Pattern* CloneWeak() const override { return new ColorPattern(mColor); }
 
   bool operator==(const Pattern& aOther) const override {
     if (aOther.GetType() != PatternType::COLOR) {
@@ -313,150 +333,201 @@ class ColorPattern : public Pattern {
 
 
 
-class LinearGradientPattern : public Pattern {
+template <template <typename> typename REF = RefPtr>
+class LinearGradientPatternT : public Pattern {
+  typedef LinearGradientPatternT<ThreadSafeWeakPtr> Weak;
+
  public:
   
-  LinearGradientPattern(const Point& aBegin, const Point& aEnd,
-                        already_AddRefed<GradientStops> aStops,
-                        const Matrix& aMatrix = Matrix())
-      : mBegin(aBegin), mEnd(aEnd), mStops(aStops), mMatrix(aMatrix) {}
+  LinearGradientPatternT(const Point& aBegin, const Point& aEnd,
+                         RefPtr<GradientStops> aStops,
+                         const Matrix& aMatrix = Matrix())
+      : mBegin(aBegin),
+        mEnd(aEnd),
+        mStops(std::move(aStops)),
+        mMatrix(aMatrix) {}
 
   PatternType GetType() const override { return PatternType::LINEAR_GRADIENT; }
 
-  Pattern* Clone() const override {
-    return new LinearGradientPattern(mBegin, mEnd, do_AddRef(mStops), mMatrix);
+  Pattern* CloneWeak() const override {
+    return new Weak(mBegin, mEnd, do_AddRef(mStops), mMatrix);
+  }
+
+  bool IsWeak() const override {
+    return std::is_same<decltype(*this), Weak>::value;
+  }
+
+  bool IsValid() const override { return IsRefValid(mStops); }
+
+  template <template <typename> typename T>
+  bool operator==(const LinearGradientPatternT<T>& aOther) const {
+    return mBegin == aOther.mBegin && mEnd == aOther.mEnd &&
+           mStops == aOther.mStops && mMatrix.ExactlyEquals(aOther.mMatrix);
   }
 
   bool operator==(const Pattern& aOther) const override {
     if (aOther.GetType() != PatternType::LINEAR_GRADIENT) {
       return false;
     }
-    const LinearGradientPattern& other =
-        static_cast<const LinearGradientPattern&>(aOther);
-    return mBegin == other.mBegin && mEnd == other.mEnd &&
-           mStops == other.mStops && mMatrix.ExactlyEquals(other.mMatrix);
+    return aOther.IsWeak()
+               ? *this == static_cast<const Weak&>(aOther)
+               : *this == static_cast<const LinearGradientPatternT<>&>(aOther);
   }
 
-  Point mBegin;  
-  Point mEnd;    
+  Point mBegin;              
+  Point mEnd;                
 
 
-  RefPtr<GradientStops>
-      mStops;     
+  REF<GradientStops> mStops; 
 
 
-  Matrix mMatrix; 
+  Matrix mMatrix;            
 
 };
 
+typedef LinearGradientPatternT<> LinearGradientPattern;
 
 
 
 
 
-class RadialGradientPattern : public Pattern {
+
+template <template <typename> typename REF = RefPtr>
+class RadialGradientPatternT : public Pattern {
+  typedef RadialGradientPatternT<ThreadSafeWeakPtr> Weak;
+
  public:
   
-  RadialGradientPattern(const Point& aCenter1, const Point& aCenter2,
-                        Float aRadius1, Float aRadius2,
-                        already_AddRefed<GradientStops> aStops,
-                        const Matrix& aMatrix = Matrix())
+  RadialGradientPatternT(const Point& aCenter1, const Point& aCenter2,
+                         Float aRadius1, Float aRadius2,
+                         RefPtr<GradientStops> aStops,
+                         const Matrix& aMatrix = Matrix())
       : mCenter1(aCenter1),
         mCenter2(aCenter2),
         mRadius1(aRadius1),
         mRadius2(aRadius2),
-        mStops(aStops),
+        mStops(std::move(aStops)),
         mMatrix(aMatrix) {}
 
   PatternType GetType() const override { return PatternType::RADIAL_GRADIENT; }
 
-  Pattern* Clone() const override {
-    return new RadialGradientPattern(mCenter1, mCenter2, mRadius1, mRadius2,
-                                     do_AddRef(mStops), mMatrix);
+  Pattern* CloneWeak() const override {
+    return new Weak(mCenter1, mCenter2, mRadius1, mRadius2, do_AddRef(mStops),
+                    mMatrix);
+  }
+
+  bool IsWeak() const override {
+    return std::is_same<decltype(*this), Weak>::value;
+  }
+
+  bool IsValid() const override { return IsRefValid(mStops); }
+
+  template <template <typename> typename T>
+  bool operator==(const RadialGradientPatternT<T>& aOther) const {
+    return mCenter1 == aOther.mCenter1 && mCenter2 == aOther.mCenter2 &&
+           mRadius1 == aOther.mRadius1 && mRadius2 == aOther.mRadius2 &&
+           mStops == aOther.mStops && mMatrix.ExactlyEquals(aOther.mMatrix);
   }
 
   bool operator==(const Pattern& aOther) const override {
     if (aOther.GetType() != PatternType::RADIAL_GRADIENT) {
       return false;
     }
-    const RadialGradientPattern& other =
-        static_cast<const RadialGradientPattern&>(aOther);
-    return mCenter1 == other.mCenter1 && mCenter2 == other.mCenter2 &&
-           mRadius1 == other.mRadius1 && mRadius2 == other.mRadius2 &&
-           mStops == other.mStops && mMatrix.ExactlyEquals(other.mMatrix);
+    return aOther.IsWeak()
+               ? *this == static_cast<const Weak&>(aOther)
+               : *this == static_cast<const RadialGradientPatternT<>&>(aOther);
   }
 
-  Point mCenter1;  
-  Point mCenter2;  
-  Float mRadius1;  
-  Float mRadius2;  
-  RefPtr<GradientStops>
-      mStops;      
+  Point mCenter1;            
+  Point mCenter2;            
+  Float mRadius1;            
+  Float mRadius2;            
+  REF<GradientStops> mStops; 
 
 
   Matrix mMatrix;  
 };
 
+typedef RadialGradientPatternT<> RadialGradientPattern;
 
 
 
 
 
-class ConicGradientPattern : public Pattern {
+
+template <template <typename> typename REF = RefPtr>
+class ConicGradientPatternT : public Pattern {
+  typedef ConicGradientPatternT<ThreadSafeWeakPtr> Weak;
+
  public:
   
-  ConicGradientPattern(const Point& aCenter, Float aAngle, Float aStartOffset,
-                       Float aEndOffset, already_AddRefed<GradientStops> aStops,
-                       const Matrix& aMatrix = Matrix())
+  ConicGradientPatternT(const Point& aCenter, Float aAngle, Float aStartOffset,
+                        Float aEndOffset, RefPtr<GradientStops> aStops,
+                        const Matrix& aMatrix = Matrix())
       : mCenter(aCenter),
         mAngle(aAngle),
         mStartOffset(aStartOffset),
         mEndOffset(aEndOffset),
-        mStops(aStops),
+        mStops(std::move(aStops)),
         mMatrix(aMatrix) {}
 
   PatternType GetType() const override { return PatternType::CONIC_GRADIENT; }
 
-  Pattern* Clone() const override {
-    return new ConicGradientPattern(mCenter, mAngle, mStartOffset, mEndOffset,
-                                    do_AddRef(mStops), mMatrix);
+  Pattern* CloneWeak() const override {
+    return new Weak(mCenter, mAngle, mStartOffset, mEndOffset,
+                    do_AddRef(mStops), mMatrix);
+  }
+
+  bool IsWeak() const override {
+    return std::is_same<decltype(*this), Weak>::value;
+  }
+
+  bool IsValid() const override { return IsRefValid(mStops); }
+
+  template <template <typename> typename T>
+  bool operator==(const ConicGradientPatternT<T>& aOther) const {
+    return mCenter == aOther.mCenter && mAngle == aOther.mAngle &&
+           mStartOffset == aOther.mStartOffset &&
+           mEndOffset == aOther.mEndOffset && mStops == aOther.mStops &&
+           mMatrix.ExactlyEquals(aOther.mMatrix);
   }
 
   bool operator==(const Pattern& aOther) const override {
     if (aOther.GetType() != PatternType::CONIC_GRADIENT) {
       return false;
     }
-    const ConicGradientPattern& other =
-        static_cast<const ConicGradientPattern&>(aOther);
-    return mCenter == other.mCenter && mAngle == other.mAngle &&
-           mStartOffset == other.mStartOffset &&
-           mEndOffset == other.mEndOffset && mStops == other.mStops &&
-           mMatrix.ExactlyEquals(other.mMatrix);
+    return aOther.IsWeak()
+               ? *this == static_cast<const Weak&>(aOther)
+               : *this == static_cast<const ConicGradientPatternT<>&>(aOther);
   }
 
-  Point mCenter;       
-  Float mAngle;        
-  Float mStartOffset;  
-  Float mEndOffset;    
-  RefPtr<GradientStops>
-      mStops;      
+  Point mCenter;             
+  Float mAngle;              
+  Float mStartOffset;        
+  Float mEndOffset;          
+  REF<GradientStops> mStops; 
 
 
   Matrix mMatrix;  
 };
 
+typedef ConicGradientPatternT<> ConicGradientPattern;
 
 
 
 
-class SurfacePattern : public Pattern {
+
+template <template <typename> typename REF = RefPtr>
+class SurfacePatternT : public Pattern {
+  typedef SurfacePatternT<ThreadSafeWeakPtr> Weak;
+
  public:
   
-  SurfacePattern(SourceSurface* aSourceSurface, ExtendMode aExtendMode,
-                 const Matrix& aMatrix = Matrix(),
-                 SamplingFilter aSamplingFilter = SamplingFilter::GOOD,
-                 const IntRect& aSamplingRect = IntRect())
-      : mSurface(aSourceSurface),
+  SurfacePatternT(RefPtr<SourceSurface> aSourceSurface, ExtendMode aExtendMode,
+                  const Matrix& aMatrix = Matrix(),
+                  SamplingFilter aSamplingFilter = SamplingFilter::GOOD,
+                  const IntRect& aSamplingRect = IntRect())
+      : mSurface(std::move(aSourceSurface)),
         mExtendMode(aExtendMode),
         mSamplingFilter(aSamplingFilter),
         mMatrix(aMatrix),
@@ -464,24 +535,36 @@ class SurfacePattern : public Pattern {
 
   PatternType GetType() const override { return PatternType::SURFACE; }
 
-  Pattern* Clone() const override {
-    return new SurfacePattern(mSurface, mExtendMode, mMatrix, mSamplingFilter,
-                              mSamplingRect);
+  Pattern* CloneWeak() const override {
+    return new Weak(do_AddRef(mSurface), mExtendMode, mMatrix, mSamplingFilter,
+                    mSamplingRect);
+  }
+
+  bool IsWeak() const override {
+    return std::is_same<decltype(*this), Weak>::value;
+  }
+
+  bool IsValid() const override { return IsRefValid(mSurface); }
+
+  template <template <typename> typename T>
+  bool operator==(const SurfacePatternT<T>& aOther) const {
+    return mSurface == aOther.mSurface && mExtendMode == aOther.mExtendMode &&
+           mSamplingFilter == aOther.mSamplingFilter &&
+           mMatrix.ExactlyEquals(aOther.mMatrix) &&
+           mSamplingRect.IsEqualEdges(aOther.mSamplingRect);
   }
 
   bool operator==(const Pattern& aOther) const override {
     if (aOther.GetType() != PatternType::SURFACE) {
       return false;
     }
-    const SurfacePattern& other = static_cast<const SurfacePattern&>(aOther);
-    return mSurface == other.mSurface && mExtendMode == other.mExtendMode &&
-           mSamplingFilter == other.mSamplingFilter &&
-           mMatrix.ExactlyEquals(other.mMatrix) &&
-           mSamplingRect.IsEqualEdges(other.mSamplingRect);
+    return aOther.IsWeak()
+               ? *this == static_cast<const Weak&>(aOther)
+               : *this == static_cast<const SurfacePatternT<>&>(aOther);
   }
 
-  RefPtr<SourceSurface> mSurface;  
-  ExtendMode mExtendMode; 
+  REF<SourceSurface> mSurface;  
+  ExtendMode mExtendMode;       
 
   SamplingFilter
       mSamplingFilter;  
@@ -491,6 +574,8 @@ class SurfacePattern : public Pattern {
 
 
 };
+
+typedef SurfacePatternT<> SurfacePattern;
 
 class StoredPattern;
 
@@ -506,7 +591,7 @@ static const int32_t kReasonableSurfaceSize = 8192;
 
 
 
-class SourceSurface : public external::AtomicRefCounted<SourceSurface> {
+class SourceSurface : public SupportsThreadSafeWeakPtr<SourceSurface> {
  public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(SourceSurface)
   virtual ~SourceSurface() = default;
