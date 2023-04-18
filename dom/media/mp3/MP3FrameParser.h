@@ -148,22 +148,22 @@ class FrameParser {
     uint8_t RawChannelMode() const;
 
     
-    int32_t SampleRate() const;
+    uint32_t SampleRate() const;
 
     
-    int32_t Channels() const;
+    uint32_t Channels() const;
 
     
-    int32_t SamplesPerFrame() const;
+    uint32_t SamplesPerFrame() const;
 
     
-    int32_t SlotSize() const;
+    uint32_t SlotSize() const;
 
     
-    int32_t Bitrate() const;
+    uint32_t Bitrate() const;
 
     
-    int32_t Layer() const;
+    uint32_t Layer() const;
 
     
     
