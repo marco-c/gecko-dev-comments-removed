@@ -740,7 +740,7 @@ Status DecodeGroup(BitReader* JXL_RESTRICT* JXL_RESTRICT readers,
         
         dec_state->upsampler8x->ProcessRow(input_rows, output_rows,
                                            0, src_rect.xsize(), 0, 0,
-                                           nullptr);
+                                           thread);
       }
     }
     return true;

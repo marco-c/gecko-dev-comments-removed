@@ -21,8 +21,7 @@ namespace extras {
 
 
 Status DecodeImageEXR(Span<const uint8_t> bytes, const ColorHints& color_hints,
-                      const SizeConstraints& constraints, ThreadPool* pool,
-                      PackedPixelFile* ppf);
+                      const SizeConstraints& constraints, PackedPixelFile* ppf);
 
 }  
 }  

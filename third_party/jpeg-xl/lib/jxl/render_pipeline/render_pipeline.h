@@ -87,7 +87,7 @@ class RenderPipeline {
   
   
   
-  void PrepareForThreads(size_t num, bool use_group_ids);
+  Status PrepareForThreads(size_t num, bool use_group_ids);
 
   
   
@@ -114,9 +114,6 @@ class RenderPipeline {
   FrameDimensions frame_dimensions_;
 
   std::vector<uint8_t> group_completed_passes_;
-
-  
-  std::vector<CacheAlignedUniquePtr> temp_buffers_;
 
   friend class RenderPipelineInput;
 

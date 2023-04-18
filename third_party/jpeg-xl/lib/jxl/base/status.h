@@ -14,6 +14,11 @@
 #include <stdlib.h>
 
 #include "lib/jxl/base/compiler_specific.h"
+#include "lib/jxl/base/sanitizer_definitions.h"
+
+#if JXL_ADDRESS_SANITIZER || JXL_MEMORY_SANITIZER || JXL_THREAD_SANITIZER
+#include "sanitizer/common_interface_defs.h"  
+#endif                                        
 
 namespace jxl {
 
@@ -70,7 +75,13 @@ namespace jxl {
 
 
 JXL_FORMAT(1, 2)
-bool Debug(const char* format, ...);
+inline JXL_NOINLINE bool Debug(const char* format, ...) {
+  va_list args;
+  va_start(args, format);
+  vfprintf(stderr, format, args);
+  va_end(args);
+  return false;
+}
 
 
 
@@ -113,7 +124,21 @@ bool Debug(const char* format, ...);
   JXL_DEBUG(JXL_DEBUG_WARNING, format, ##__VA_ARGS__)
 
 
-JXL_NORETURN bool Abort();
+JXL_NORETURN inline JXL_NOINLINE bool Abort() {
+#if JXL_ADDRESS_SANITIZER || JXL_MEMORY_SANITIZER || JXL_THREAD_SANITIZER
+  
+  
+  
+  __sanitizer_print_stack_trace();
+#endif  
+
+#if JXL_COMPILER_MSVC
+  __debugbreak();
+  abort();
+#else
+  __builtin_trap();
+#endif
+}
 
 
 #define JXL_ABORT(format, ...)                                              \

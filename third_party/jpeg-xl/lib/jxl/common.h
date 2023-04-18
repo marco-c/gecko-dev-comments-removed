@@ -17,6 +17,7 @@
 #include <string>
 
 #include "lib/jxl/base/compiler_specific.h"
+#include "lib/jxl/base/padded_bytes.h"
 
 #ifndef JXL_HIGH_PRECISION
 #define JXL_HIGH_PRECISION 1
@@ -192,6 +193,46 @@ std::string ToString(T n) {
   }
   return data;
 }
+
+namespace {
+static inline uint64_t DecodeVarInt(const uint8_t* input, size_t inputSize,
+                                    size_t* pos) {
+  size_t i;
+  uint64_t ret = 0;
+  for (i = 0; *pos + i < inputSize && i < 10; ++i) {
+    ret |= uint64_t(input[*pos + i] & 127) << uint64_t(7 * i);
+    
+    if ((input[*pos + i] & 128) == 0) break;
+  }
+  
+  *pos += i + 1;
+  return ret;
+}
+
+static inline bool EncodeVarInt(uint64_t value, size_t output_size,
+                                size_t* output_pos, uint8_t* output) {
+  
+  
+  while (value > 127) {
+    if (*output_pos > output_size) return false;
+    
+    output[(*output_pos)++] = ((uint8_t)(value & 127)) | 128;
+    
+    value >>= 7;
+  }
+  if (*output_pos > output_size) return false;
+  output[(*output_pos)++] = ((uint8_t)value) & 127;
+  return true;
+}
+
+static inline void EncodeVarInt(uint64_t value, PaddedBytes* data) {
+  size_t pos = data->size();
+  data->resize(data->size() + 9);
+  JXL_CHECK(EncodeVarInt(value, data->size(), &pos, data->data()));
+  data->resize(pos);
+}
+}  
+
 }  
 
 #endif  

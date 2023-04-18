@@ -14,7 +14,7 @@ namespace jxl {
 static void BM_ToneMapping(benchmark::State& state) {
   CodecInOut image;
   const PaddedBytes image_bytes =
-      ReadTestData("imagecompression.info/flower_foveon.png");
+      ReadTestData("third_party/imagecompression.info/flower_foveon.png");
   JXL_CHECK(SetFromBytes(Span<const uint8_t>(image_bytes), &image));
 
   

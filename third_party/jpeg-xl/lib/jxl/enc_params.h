@@ -127,6 +127,7 @@ struct CompressParams {
   float max_error[3] = {0.0, 0.0, 0.0};
 
   SpeedTier speed_tier = SpeedTier::kSquirrel;
+  int brotli_effort = -1;
 
   
   
@@ -218,8 +219,6 @@ struct CompressParams {
   int responsive = -1;
   
   std::vector<SqueezeParams> squeezes;
-  
-  std::pair<float, float> quality_pair{100.f, 100.f};
   int colorspace = -1;
   
   float channel_colors_pre_transform_percent = 95.f;
@@ -230,16 +229,16 @@ struct CompressParams {
 
   
   bool IsLossless() const {
-    return modular_mode && quality_pair.first == 100 &&
-           quality_pair.second == 100 &&
-           color_transform == jxl::ColorTransform::kNone;
+    
+    
+    return modular_mode && butteraugli_distance == 0.0f &&
+           color_transform != jxl::ColorTransform::kXYB;
   }
 
   
   void SetLossless() {
     modular_mode = true;
-    quality_pair.first = 100;
-    quality_pair.second = 100;
+    butteraugli_distance = 0.0f;
     color_transform = jxl::ColorTransform::kNone;
   }
 
@@ -254,6 +253,10 @@ struct CompressParams {
   int ec_resampling = -1;
   
   bool already_downsampled = false;
+
+  
+  
+  int level = -1;
 
   std::vector<float> manual_noise;
   std::vector<float> manual_xyb_factors;

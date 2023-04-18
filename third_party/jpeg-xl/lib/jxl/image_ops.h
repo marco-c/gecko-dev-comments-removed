@@ -791,16 +791,7 @@ void ZeroFillPlane(Plane<T>* image, Rect rect) {
 
 
 
-ImageF PadImage(const ImageF& in, size_t xsize, size_t ysize);
-
-
-
 Image3F PadImageMirror(const Image3F& in, size_t xborder, size_t yborder);
-
-
-
-
-Image3F PadImageToMultiple(const Image3F& in, size_t N);
 
 
 

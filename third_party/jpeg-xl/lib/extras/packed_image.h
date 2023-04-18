@@ -65,6 +65,12 @@ class PackedImage {
   bool flipped_y = false;
 
   
+  
+  
+  
+  bool bitdepth_from_format = true;
+
+  
   size_t stride;
 
   
@@ -73,21 +79,17 @@ class PackedImage {
 
   static size_t BitsPerChannel(JxlDataType data_type) {
     switch (data_type) {
-      case JXL_TYPE_BOOLEAN:
-        return 1;
       case JXL_TYPE_UINT8:
         return 8;
       case JXL_TYPE_UINT16:
         return 16;
-      case JXL_TYPE_UINT32:
-        return 32;
       case JXL_TYPE_FLOAT:
         return 32;
       case JXL_TYPE_FLOAT16:
         return 16;
-        
+      default:
+        JXL_ABORT("Unhandled JxlDataType");
     }
-    return 0;  
   }
 
  private:
@@ -115,16 +117,6 @@ class PackedFrame {
   
   JxlFrameHeader frame_info = {};
   std::string name;
-
-  
-  
-  size_t x0 = 0;
-  size_t y0 = 0;
-
-  
-  
-  bool blend = false;
-  bool use_for_next_frame = false;
 
   
   PackedImage color;

@@ -56,10 +56,10 @@ using CodecIntervals = std::array<CodecInterval, 4>;
 
 
 struct Blobs {
-  PaddedBytes exif;
-  PaddedBytes iptc;
-  PaddedBytes jumbf;
-  PaddedBytes xmp;
+  std::vector<uint8_t> exif;
+  std::vector<uint8_t> iptc;
+  std::vector<uint8_t> jumbf;
+  std::vector<uint8_t> xmp;
 };
 
 

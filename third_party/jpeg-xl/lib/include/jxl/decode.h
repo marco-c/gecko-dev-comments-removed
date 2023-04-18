@@ -931,6 +931,56 @@ typedef void (*JxlImageOutCallback)(void* opaque, size_t x, size_t y,
 
 
 
+typedef void* (*JxlImageOutInitCallback)(void* init_opaque, size_t num_threads,
+                                         size_t num_pixels_per_thread);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef void (*JxlImageOutRunCallback)(void* run_opaque, size_t thread_id,
+                                       size_t x, size_t y, size_t num_pixels,
+                                       const void* pixels);
+
+
+
+
+
+
+
+
+
+
+typedef void (*JxlImageOutDestroyCallback)(void* run_opaque);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -962,6 +1012,30 @@ typedef void (*JxlImageOutCallback)(void* opaque, size_t x, size_t y,
 JXL_EXPORT JxlDecoderStatus
 JxlDecoderSetImageOutCallback(JxlDecoder* dec, const JxlPixelFormat* format,
                               JxlImageOutCallback callback, void* opaque);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+JXL_EXPORT JxlDecoderStatus JxlDecoderSetMultithreadedImageOutCallback(
+    JxlDecoder* dec, const JxlPixelFormat* format,
+    JxlImageOutInitCallback init_callback, JxlImageOutRunCallback run_callback,
+    JxlImageOutDestroyCallback destroy_callback, void* init_opaque);
 
 
 
@@ -1116,6 +1190,56 @@ JXL_EXPORT size_t JxlDecoderReleaseBoxBuffer(JxlDecoder* dec);
 
 JXL_EXPORT JxlDecoderStatus JxlDecoderSetDecompressBoxes(JxlDecoder* dec,
                                                          JXL_BOOL decompress);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

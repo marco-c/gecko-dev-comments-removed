@@ -15,6 +15,7 @@
 #include "jxl/types.h"
 #include "lib/jxl/base/status.h"
 #include "lib/jxl/color_encoding_internal.h"
+#include "lib/jxl/dec_cache.h"
 #include "lib/jxl/image.h"
 #include "lib/jxl/image_bundle.h"
 
@@ -32,19 +33,12 @@ namespace jxl {
 
 
 
-
 Status ConvertToExternal(const jxl::ImageBundle& ib, size_t bits_per_sample,
                          bool float_out, size_t num_channels,
                          JxlEndianness endianness, size_t stride_out,
                          jxl::ThreadPool* thread_pool, void* out_image,
-                         size_t out_size, JxlImageOutCallback out_callback,
-                         void* out_opaque, jxl::Orientation undo_orientation);
-
-
-
-
-
-
+                         size_t out_size, const PixelCallback& out_callback,
+                         jxl::Orientation undo_orientation);
 
 
 
@@ -54,7 +48,7 @@ Status ConvertToExternal(const jxl::ImageF& channel, size_t bits_per_sample,
                          bool float_out, JxlEndianness endianness,
                          size_t stride_out, jxl::ThreadPool* thread_pool,
                          void* out_image, size_t out_size,
-                         JxlImageOutCallback out_callback, void* out_opaque,
+                         const PixelCallback& out_callback,
                          jxl::Orientation undo_orientation);
 }  
 

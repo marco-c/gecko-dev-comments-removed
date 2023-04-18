@@ -49,8 +49,6 @@ class LowMemoryRenderPipeline final : public RenderPipeline {
   
   
   
-  
-  
   std::vector<ImageF> borders_horizontal_;
   std::vector<ImageF> borders_vertical_;
 

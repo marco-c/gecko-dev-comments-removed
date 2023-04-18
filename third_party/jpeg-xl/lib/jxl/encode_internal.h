@@ -117,12 +117,15 @@ struct JxlEncoderStruct {
   size_t num_queued_boxes;
   std::vector<jxl::JxlEncoderQueuedInput> input_queue;
   std::deque<uint8_t> output_byte_queue;
-  size_t output_bytes_flushed;
 
   
-  size_t BytePosition() const {
-    return output_bytes_flushed + output_byte_queue.size();
-  }
+  
+  
+  
+  
+  
+  size_t codestream_bytes_written_beginning_of_frame;
+  size_t codestream_bytes_written_end_of_frame;
 
   
   bool use_container;
@@ -153,6 +156,7 @@ struct JxlEncoderStruct {
   bool basic_info_set;
   bool color_encoding_set;
   bool intensity_target_set;
+  int brotli_effort = -1;
 
   
   

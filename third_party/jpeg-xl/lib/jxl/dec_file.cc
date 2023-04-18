@@ -66,7 +66,23 @@ Status DecodeFile(const DecompressParams& dparams,
   {
     BitReader reader(file);
     BitReaderScopedCloser reader_closer(&reader, &ret);
-    (void)reader.ReadFixedBits<16>();  
+    if (reader.ReadFixedBits<16>() != 0x0AFF) {
+      
+      
+      
+      const unsigned char* begin = file.data();
+      const unsigned char* end = file.data() + file.size() - 4;
+      while (begin < end) {
+        if (!memcmp(begin, "jxlc", 4)) break;
+        begin++;
+      }
+      if (begin >= end) return JXL_FAILURE("Couldn't find jxl codestream");
+      reader.SkipBits(8 * (begin - file.data() + 2));
+      unsigned int firstbytes = reader.ReadFixedBits<16>();
+      if (firstbytes != 0x0AFF)
+        return JXL_FAILURE("Codestream didn't start with FF0A but with %X",
+                           firstbytes);
+    }
 
     {
       JXL_RETURN_IF_ERROR(DecodeHeaders(&reader, io));

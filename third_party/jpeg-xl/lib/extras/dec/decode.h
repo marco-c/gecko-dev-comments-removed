@@ -33,8 +33,7 @@ enum class Codec : uint32_t {
   kPGX,
   kJPG,
   kGIF,
-  kEXR,
-  kPSD
+  kEXR
 };
 
 static inline constexpr uint64_t EnumBits(Codec ) {
@@ -49,12 +48,8 @@ static inline constexpr uint64_t EnumBits(Codec ) {
 #if JPEGXL_ENABLE_EXR
          | MakeBit(Codec::kEXR)
 #endif
-         | MakeBit(Codec::kPSD);
+      ;
 }
-
-
-std::string ExtensionFromCodec(Codec codec, bool is_gray,
-                               size_t bits_per_sample);
 
 
 
@@ -65,8 +60,7 @@ Codec CodecFromExtension(std::string extension,
 
 Status DecodeBytes(Span<const uint8_t> bytes, const ColorHints& color_hints,
                    const SizeConstraints& constraints,
-                   extras::PackedPixelFile* ppf, ThreadPool* pool = nullptr,
-                   Codec* orig_codec = nullptr);
+                   extras::PackedPixelFile* ppf, Codec* orig_codec = nullptr);
 
 }  
 }  

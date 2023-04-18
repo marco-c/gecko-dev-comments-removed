@@ -22,29 +22,6 @@
 namespace jxl {
 namespace {
 
-bool EncodeVarInt(uint64_t value, size_t output_size, size_t* output_pos,
-                  uint8_t* output) {
-  
-  
-  while (value > 127) {
-    if (*output_pos > output_size) return false;
-    
-    output[(*output_pos)++] = ((uint8_t)(value & 127)) | 128;
-    
-    value >>= 7;
-  }
-  if (*output_pos > output_size) return false;
-  output[(*output_pos)++] = ((uint8_t)value) & 127;
-  return true;
-}
-
-void EncodeVarInt(uint64_t value, PaddedBytes* data) {
-  size_t pos = data->size();
-  data->resize(data->size() + 9);
-  JXL_CHECK(EncodeVarInt(value, data->size(), &pos, data->data()));
-  data->resize(pos);
-}
-
 
 
 
@@ -159,9 +136,9 @@ Status PredictICC(const uint8_t* icc, size_t size, PaddedBytes* result) {
         ok &= DecodeKeyword(icc, size, pos + 0) == kGtrcTag;
         ok &= DecodeKeyword(icc, size, pos + 12) == kBtrcTag;
         if (ok) {
-          for (size_t i = 0; i < 8; i++) {
-            if (icc[pos - 8 + i] != icc[pos + 4 + i]) ok = false;
-            if (icc[pos - 8 + i] != icc[pos + 16 + i]) ok = false;
+          for (size_t kk = 0; kk < 8; kk++) {
+            if (icc[pos - 8 + kk] != icc[pos + 4 + kk]) ok = false;
+            if (icc[pos - 8 + kk] != icc[pos + 16 + kk]) ok = false;
           }
         }
         if (ok) {

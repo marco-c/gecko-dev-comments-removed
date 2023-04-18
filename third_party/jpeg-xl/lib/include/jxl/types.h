@@ -16,6 +16,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "jxl/jxl_export.h"
+
 #if defined(__cplusplus) || defined(c_plusplus)
 extern "C" {
 #endif
@@ -43,25 +45,23 @@ typedef enum {
 
   
 
-
-
-  JXL_TYPE_BOOLEAN,
+  JXL_TYPE_UINT8 = 2,
 
   
 
-  JXL_TYPE_UINT8,
+  JXL_TYPE_UINT16 = 3,
 
   
-
-  JXL_TYPE_UINT16,
-
-  
-
-  JXL_TYPE_UINT32,
-
-  
-  JXL_TYPE_FLOAT16,
+  JXL_TYPE_FLOAT16 = 5,
 } JxlDataType;
+
+
+
+static const int JXL_DEPRECATED JXL_TYPE_BOOLEAN = 1;
+
+
+
+static const int JXL_DEPRECATED JXL_TYPE_UINT32 = 4;
 
 
 
