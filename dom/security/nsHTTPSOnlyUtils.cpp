@@ -179,13 +179,10 @@ bool nsHTTPSOnlyUtils::ShouldUpgradeRequest(nsIURI* aURI,
   NS_ConvertUTF8toUTF16 reportSpec(aURI->GetSpecOrDefault());
   NS_ConvertUTF8toUTF16 reportScheme(scheme);
 
-  bool isSpeculative = aLoadInfo->GetExternalContentPolicyType() ==
-                       ExtContentPolicy::TYPE_SPECULATIVE;
   AutoTArray<nsString, 2> params = {reportSpec, reportScheme};
-  nsHTTPSOnlyUtils::LogLocalizedString(
-      isSpeculative ? "HTTPSOnlyUpgradeSpeculativeConnection"
-                    : "HTTPSOnlyUpgradeRequest",
-      params, nsIScriptError::warningFlag, aLoadInfo, aURI);
+  nsHTTPSOnlyUtils::LogLocalizedString("HTTPSOnlyUpgradeRequest", params,
+                                       nsIScriptError::warningFlag, aLoadInfo,
+                                       aURI);
 
   
   
@@ -364,9 +361,8 @@ bool nsHTTPSOnlyUtils::ShouldUpgradeHttpsFirstRequest(nsIURI* aURI,
   }
 
   
-  ExtContentPolicyType contentType = aLoadInfo->GetExternalContentPolicyType();
-  if (contentType != ExtContentPolicy::TYPE_DOCUMENT &&
-      contentType != ExtContentPolicy::TYPE_SPECULATIVE) {
+  if (aLoadInfo->GetExternalContentPolicyType() !=
+      ExtContentPolicy::TYPE_DOCUMENT) {
     return false;
   }
 
@@ -424,12 +420,10 @@ bool nsHTTPSOnlyUtils::ShouldUpgradeHttpsFirstRequest(nsIURI* aURI,
   NS_ConvertUTF8toUTF16 reportSpec(aURI->GetSpecOrDefault());
   NS_ConvertUTF8toUTF16 reportScheme(scheme);
 
-  bool isSpeculative = contentType == ExtContentPolicy::TYPE_SPECULATIVE;
   AutoTArray<nsString, 2> params = {reportSpec, reportScheme};
-  nsHTTPSOnlyUtils::LogLocalizedString(
-      isSpeculative ? "HTTPSOnlyUpgradeSpeculativeConnection"
-                    : "HTTPSOnlyUpgradeRequest",
-      params, nsIScriptError::warningFlag, aLoadInfo, aURI, true);
+  nsHTTPSOnlyUtils::LogLocalizedString("HTTPSOnlyUpgradeRequest", params,
+                                       nsIScriptError::warningFlag, aLoadInfo,
+                                       aURI, true);
 
   
   httpsOnlyStatus |= nsILoadInfo::HTTPS_ONLY_UPGRADED_HTTPS_FIRST;
