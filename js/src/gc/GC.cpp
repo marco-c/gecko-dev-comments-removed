@@ -1903,19 +1903,6 @@ void Compartment::sweepRealms(JSFreeOp* fop, bool keepAtleastOne,
   MOZ_ASSERT_IF(destroyingRuntime, realms().empty());
 }
 
-void GCRuntime::deleteEmptyZone(Zone* zone) {
-  MOZ_ASSERT(CurrentThreadCanAccessRuntime(rt));
-  MOZ_ASSERT(zone->compartments().empty());
-  for (auto& i : zones()) {
-    if (i == zone) {
-      zones().erase(&i);
-      zone->destroy(rt->defaultFreeOp());
-      return;
-    }
-  }
-  MOZ_CRASH("Zone not found");
-}
-
 void GCRuntime::sweepZones(JSFreeOp* fop, bool destroyingRuntime) {
   MOZ_ASSERT_IF(destroyingRuntime, numActiveZoneIters == 0);
 
@@ -4204,115 +4191,6 @@ Realm* js::NewRealm(JSContext* cx, JSPrincipals* principals,
   return realm.release();
 }
 
-void gc::MergeRealms(Realm* source, Realm* target) {
-  JSRuntime* rt = source->runtimeFromMainThread();
-  rt->gc.mergeRealms(source, target);
-  rt->gc.maybeTriggerGCAfterAlloc(target->zone());
-  rt->gc.maybeTriggerGCAfterMalloc(target->zone());
-}
-
-void GCRuntime::mergeRealms(Realm* source, Realm* target) {
-  
-  
-  
-  
-  MOZ_ASSERT(false);
-  MOZ_ASSERT(source->creationOptions().invisibleToDebugger());
-
-  MOZ_ASSERT(!source->hasBeenEnteredIgnoringJit());
-  MOZ_ASSERT(source->zone()->compartments().length() == 1);
-
-  JSContext* cx = rt->mainContextFromOwnThread();
-
-  MOZ_ASSERT(!source->zone()->wasGCStarted());
-  JS::AutoAssertNoGC nogc(cx);
-
-  AutoTraceSession session(rt);
-
-  
-  
-
-  source->clearTables();
-  source->zone()->clearTables();
-  source->unsetIsDebuggee();
-
-#ifdef DEBUG
-  
-  
-  releaseHeldRelocatedArenas();
-#endif
-
-  
-  
-
-  GlobalObject* global = target->maybeGlobal();
-  MOZ_ASSERT(global);
-  AssertTargetIsNotGray(global);
-
-  for (auto baseShape = source->zone()->cellIterUnsafe<BaseShape>();
-       !baseShape.done(); baseShape.next()) {
-    baseShape->setRealmForMergeRealms(target);
-  }
-
-  
-
-  bool targetZoneIsCollecting = target->zone()->gcState() > Zone::Prepare;
-  for (auto thingKind : AllAllocKinds()) {
-    for (ArenaIter aiter(source->zone(), thingKind); !aiter.done();
-         aiter.next()) {
-      Arena* arena = aiter.get();
-      arena->zone = target->zone();
-      if (MOZ_UNLIKELY(targetZoneIsCollecting)) {
-        
-        
-        
-        for (ArenaCellIter cell(arena); !cell.done(); cell.next()) {
-          MOZ_ASSERT(!cell->isMarkedAny());
-          cell->markBlack();
-        }
-      }
-    }
-  }
-
-  
-  for (RealmsInZoneIter r(source->zone()); !r.done(); r.next()) {
-    MOZ_ASSERT(r.get() == source);
-  }
-
-  
-  target->zone()->arenas.adoptArenas(&source->zone()->arenas,
-                                     targetZoneIsCollecting);
-  target->zone()->addTenuredAllocsSinceMinorGC(
-      source->zone()->getAndResetTenuredAllocsSinceMinorGC());
-  target->zone()->gcHeapSize.adopt(source->zone()->gcHeapSize);
-  target->zone()->adoptUniqueIds(source->zone());
-  target->zone()->adoptMallocBytes(source->zone());
-
-  
-  atomMarking.adoptMarkedAtoms(target->zone(), source->zone());
-
-  
-  
-  Zone* sourceZone = source->zone();
-  MOZ_ASSERT(!sourceZone->scriptLCovMap);
-  MOZ_ASSERT(!sourceZone->scriptCountsMap);
-  MOZ_ASSERT(!sourceZone->debugScriptMap);
-#ifdef MOZ_VTUNE
-  MOZ_ASSERT(!sourceZone->scriptVTuneIdMap);
-#endif
-#ifdef JS_CACHEIR_SPEW
-  MOZ_ASSERT(!sourceZone->scriptFinalWarmUpCountMap);
-#endif
-
-  
-  
-  
-  
-
-  sourceZone->deleteEmptyCompartment(source->compartment());
-  deleteEmptyZone(sourceZone);
-}
-
 void GCRuntime::runDebugGC() {
 #ifdef JS_GC_ZEAL
   if (rt->mainContextFromOwnThread()->suppressGC) {
@@ -4397,49 +4275,6 @@ void GCRuntime::setDeterministic(bool enabled) {
   deterministicOnly = enabled;
 }
 #endif
-
-void ArenaLists::adoptArenas(ArenaLists* fromArenaLists,
-                             bool targetZoneIsCollecting) {
-  
-  AutoLockGC lock(runtime());
-
-  fromArenaLists->clearFreeLists();
-
-  for (auto thingKind : AllAllocKinds()) {
-    MOZ_ASSERT(fromArenaLists->concurrentUse(thingKind) == ConcurrentUse::None);
-    ArenaList* fromList = &fromArenaLists->arenaList(thingKind);
-    ArenaList* toList = &arenaList(thingKind);
-    fromList->check();
-    toList->check();
-    Arena* next;
-    for (Arena* fromArena = fromList->head(); fromArena; fromArena = next) {
-      
-      next = fromArena->next;
-
-#ifdef DEBUG
-      MOZ_ASSERT(!fromArena->isEmpty());
-      if (targetZoneIsCollecting) {
-        fromArena->checkAllCellsMarkedBlack();
-      } else {
-        fromArena->checkNoMarkedCells();
-      }
-#endif
-
-      
-      
-      
-      
-      
-      if (targetZoneIsCollecting) {
-        toList->insertBeforeCursor(fromArena);
-      } else {
-        toList->insertAtCursor(fromArena);
-      }
-    }
-    fromList->clear();
-    toList->check();
-  }
-}
 
 #ifdef DEBUG
 

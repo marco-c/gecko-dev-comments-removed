@@ -399,20 +399,6 @@ void Realm::purge() {
   promiseLookup.purge();
 }
 
-void Realm::clearTables() {
-  global_.unbarrieredGet()->releaseData(runtime_->defaultFreeOp());
-  global_.set(nullptr);
-
-  
-  
-  compartment()->assertNoCrossCompartmentWrappers();
-  MOZ_ASSERT(!jitRealm_);
-  MOZ_ASSERT(!debugEnvs_);
-  MOZ_ASSERT(objects_.enumerators->next() == objects_.enumerators);
-
-  savedStacks_.clear();
-}
-
 
 
 

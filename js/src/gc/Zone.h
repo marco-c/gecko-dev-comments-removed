@@ -456,8 +456,6 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
 
   void notifyObservingDebuggers();
 
-  void clearTables();
-
   void addTenuredAllocsSinceMinorGC(uint32_t allocs) {
     tenuredAllocsSinceMinorGC_ += allocs;
   }
@@ -587,15 +585,8 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   
   void removeUniqueId(js::gc::Cell* cell);
 
-  
-  
-  void adoptUniqueIds(JS::Zone* source);
-
   bool keepPropMapTables() const { return keepPropMapTables_; }
   void setKeepPropMapTables(bool b) { keepPropMapTables_ = b; }
-
-  
-  void deleteEmptyCompartment(JS::Compartment* comp);
 
   void clearRootsForShutdownGC();
   void finishRoots();

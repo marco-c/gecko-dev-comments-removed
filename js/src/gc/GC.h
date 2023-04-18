@@ -110,12 +110,6 @@ void FinishGC(JSContext* cx, JS::GCReason = JS::GCReason::FINISH_GC);
 
 void WaitForBackgroundTasks(JSContext* cx);
 
-
-
-
-
-void MergeRealms(JS::Realm* source, JS::Realm* target);
-
 enum VerifierType { PreBarrierVerifier };
 
 #ifdef JS_GC_ZEAL

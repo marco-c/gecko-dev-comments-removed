@@ -610,8 +610,6 @@ class GCRuntime {
   void updateHelperThreadCount();
   size_t parallelWorkerCount() const;
 
-  void mergeRealms(JS::Realm* source, JS::Realm* target);
-
   
   bool registerWeakRef(HandleObject target, HandleObject weakRef);
   bool unregisterWeakRefWrapper(JSObject* wrapper);
@@ -627,9 +625,6 @@ class GCRuntime {
 
   void updateGCThresholdsAfterCollection(const AutoLockGC& lock);
   void updateAllGCStartThresholds(const AutoLockGC& lock);
-
-  
-  void deleteEmptyZone(Zone* zone);
 
   
   friend class ArenaLists;

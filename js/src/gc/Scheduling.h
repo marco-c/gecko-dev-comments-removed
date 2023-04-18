@@ -784,15 +784,6 @@ class HeapSize {
       parent_->removeBytes(nbytes, wasSwept);
     }
   }
-
-  
-  void adopt(HeapSize& source) {
-    
-    
-    bytes_ += source.bytes_;
-    source.retainedBytes_ = 0;
-    source.bytes_ = 0;
-  }
 };
 
 

@@ -70,9 +70,6 @@ class AtomMarkingRuntime {
   void markId(JSContext* cx, jsid id);
   void markAtomValue(JSContext* cx, const Value& value);
 
-  
-  void adoptMarkedAtoms(Zone* target, Zone* source);
-
 #ifdef DEBUG
   
   template <typename T>
