@@ -432,6 +432,15 @@ void nsStringInputStream::SerializeInternal(InputStreamParams& aParams,
   *aSizeUsed = 0;
 
   if (Length() >= aMaxSize) {
+    
+    
+    
+    if (!mArray && !(mData.GetDataFlags() & (nsCString::DataFlags::REFCOUNTED |
+                                             nsCString::DataFlags::OWNED |
+                                             nsCString::DataFlags::LITERAL))) {
+      mData.BeginWriting();
+    }
+
     InputStreamHelper::SerializeInputStreamAsPipe(this, aParams, aDelayedStart,
                                                   aManager);
     return;
