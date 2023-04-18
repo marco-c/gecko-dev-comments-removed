@@ -26,6 +26,8 @@ struct DecompressParams {
   bool keep_dct = false;
   
   bool render_spotcolors = true;
+  
+  bool coalescing = true;
 
   
   Override preview = Override::kDefault;

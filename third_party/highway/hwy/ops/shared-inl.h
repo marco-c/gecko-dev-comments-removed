@@ -16,6 +16,8 @@
 
 #include <cmath>
 
+#include "hwy/base.h"
+
 
 #include "hwy/ops/set_macros-inl.h"
 
@@ -23,9 +25,6 @@
 HWY_BEFORE_NAMESPACE();
 namespace hwy {
 namespace HWY_NAMESPACE {
-
-
-
 
 
 
@@ -58,6 +57,84 @@ struct Simd {
   
   using Twice = Simd<T, 2 * N>;
 };
+
+namespace detail {
+
+
+
+
+
+constexpr size_t ScaleByPower(size_t N, int pow2) {
+#if HWY_TARGET == HWY_RVV
+  
+  return pow2 >= 0 ? (N << pow2) : HWY_MAX(1, (N >> (-pow2)));
+#else
+  
+  return HWY_MAX(1, N >> HWY_MAX(-pow2, 0));
+#endif
+}
+
+
+template <typename T, int kPow2>
+struct ScalableTagChecker {
+  static_assert(-3 <= kPow2 && kPow2 <= 3, "Fraction must be 1/8 to 8");
+  using type = Simd<T, ScaleByPower(HWY_LANES(T), kPow2)>;
+};
+
+template <typename T, size_t kLimit>
+struct CappedTagChecker {
+  static_assert(kLimit != 0, "Does not make sense to have zero lanes");
+  using type = Simd<T, HWY_MIN(kLimit, HWY_LANES(T))>;
+};
+
+template <typename T, size_t kNumLanes>
+struct FixedTagChecker {
+  static_assert(kNumLanes != 0, "Does not make sense to have zero lanes");
+  static_assert(kNumLanes * sizeof(T) <= HWY_MAX_BYTES, "Too many lanes");
+#if HWY_TARGET == HWY_SCALAR
+  
+  static_assert(kNumLanes == 1, "Scalar only supports one lane");
+#endif
+  using type = Simd<T, kNumLanes>;
+};
+
+}  
+
+
+
+
+
+
+template <typename T, int kPow2 = 0>
+using ScalableTag = typename detail::ScalableTagChecker<T, kPow2>::type;
+
+
+
+
+
+
+
+
+
+template <typename T, size_t kLimit>
+using CappedTag = typename detail::CappedTagChecker<T, kLimit>::type;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename T, size_t kNumLanes>
+using FixedTag = typename detail::FixedTagChecker<T, kNumLanes>::type;
 
 template <class D>
 using TFromD = typename D::T;
@@ -99,6 +176,17 @@ using Twice = typename D::Twice;
 #define HWY_IF_NOT_LANE_SIZE_D(D, bytes) HWY_IF_NOT_LANE_SIZE(TFromD<D>, bytes)
 
 
+#define HWY_IF_UNSIGNED_V(V) HWY_IF_UNSIGNED(TFromV<V>)
+#define HWY_IF_SIGNED_V(V) HWY_IF_SIGNED(TFromV<V>)
+#define HWY_IF_FLOAT_V(V) HWY_IF_FLOAT(TFromV<V>)
+#define HWY_IF_LANE_SIZE_V(V, bytes) HWY_IF_LANE_SIZE(TFromV<V>, bytes)
+
+
+
+#define HWY_IF_LANES_ARE(T, V) \
+  EnableIf<IsSameT<T, TFromD<DFromV<V>>>::value>* = nullptr
+
+
 
 
 
@@ -117,6 +205,25 @@ HWY_INLINE HWY_MAYBE_UNUSED size_t Lanes(Simd<T, N>) {
   return N;
 }
 
+#endif
+
+
+
+
+
+
+
+
+
+
+
+#if HWY_COMPILER_GCC && !HWY_COMPILER_CLANG && \
+    ((defined(_WIN32) || defined(_WIN64)) || HWY_ARCH_ARM64)
+template <class V>
+using VecArg = const V&;
+#else
+template <class V>
+using VecArg = V;
 #endif
 
 

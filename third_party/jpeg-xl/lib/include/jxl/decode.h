@@ -213,6 +213,11 @@ typedef enum {
 
 
 
+
+
+
+
+
   JXL_DEC_FRAME = 0x400,
 
   
@@ -229,6 +234,7 @@ typedef enum {
   JXL_DEC_DC_IMAGE = 0x800,
 
   
+
 
 
 
@@ -417,6 +423,22 @@ JxlDecoderSetKeepOrientation(JxlDecoder* dec, JXL_BOOL keep_orientation);
 
 JXL_EXPORT JxlDecoderStatus
 JxlDecoderSetRenderSpotcolors(JxlDecoder* dec, JXL_BOOL render_spotcolors);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+JXL_EXPORT JxlDecoderStatus JxlDecoderSetCoalescing(JxlDecoder* dec,
+                                                    JXL_BOOL coalescing);
 
 
 
@@ -782,6 +804,21 @@ JXL_EXPORT JxlDecoderStatus JxlDecoderGetFrameName(const JxlDecoder* dec,
 
 
 
+JXL_EXPORT JxlDecoderStatus JxlDecoderGetExtraChannelBlendInfo(
+    const JxlDecoder* dec, size_t index, JxlBlendInfo* blend_info);
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 JXL_EXPORT JXL_DEPRECATED JxlDecoderStatus JxlDecoderDCOutBufferSize(
@@ -807,6 +844,10 @@ JXL_EXPORT JXL_DEPRECATED JxlDecoderStatus JxlDecoderDCOutBufferSize(
 
 JXL_EXPORT JXL_DEPRECATED JxlDecoderStatus JxlDecoderSetDCOutBuffer(
     JxlDecoder* dec, const JxlPixelFormat* format, void* buffer, size_t size);
+
+
+
+
 
 
 

@@ -25,18 +25,14 @@ typedef struct JxlEncoderOptionsValuesStruct {
   
   
   bool lossless;
-  jxl::CompressParams cparams;
+  CompressParams cparams;
 } JxlEncoderOptionsValues;
-
-typedef struct JxlEncoderQueuedFrame {
-  JxlEncoderOptionsValues option_values;
-  jxl::ImageBundle frame;
-} JxlEncoderQueuedFrame;
 
 typedef std::array<uint8_t, 4> BoxType;
 
 
-constexpr BoxType MakeBoxType(const char (&type)[5]) {
+
+constexpr BoxType MakeBoxType(const char* type) {
   return BoxType(
       {{static_cast<uint8_t>(type[0]), static_cast<uint8_t>(type[1]),
         static_cast<uint8_t>(type[2]), static_cast<uint8_t>(type[3])}});
@@ -48,6 +44,26 @@ constexpr unsigned char kContainerHeader[] = {
     'l', ' ', 0, 0,   0,    0,   'j', 'x', 'l', ' '};
 
 constexpr unsigned char kLevelBoxHeader[] = {0, 0, 0, 0x9, 'j', 'x', 'l', 'l'};
+
+struct JxlEncoderQueuedFrame {
+  JxlEncoderOptionsValues option_values;
+  ImageBundle frame;
+};
+
+struct JxlEncoderQueuedBox {
+  BoxType type;
+  std::vector<uint8_t> contents;
+  bool compress_box;
+};
+
+
+struct JxlEncoderQueuedInput {
+  JxlEncoderQueuedInput(const JxlMemoryManager& memory_manager)
+      : frame(nullptr, jxl::MemoryManagerDeleteHelper(&memory_manager)),
+        box(nullptr, jxl::MemoryManagerDeleteHelper(&memory_manager)) {}
+  MemoryManagerUniquePtr<JxlEncoderQueuedFrame> frame;
+  MemoryManagerUniquePtr<JxlEncoderQueuedBox> box;
+};
 
 namespace {
 template <typename T>
@@ -84,39 +100,55 @@ void AppendBoxHeader(const jxl::BoxType& type, size_t size, bool unbounded,
 
 }  
 
+
+
 struct JxlEncoderStruct {
   JxlMemoryManager memory_manager;
   jxl::MemoryManagerUniquePtr<jxl::ThreadPool> thread_pool{
       nullptr, jxl::MemoryManagerDeleteHelper(&memory_manager)};
   std::vector<jxl::MemoryManagerUniquePtr<JxlEncoderOptions>> encoder_options;
 
-  std::vector<jxl::MemoryManagerUniquePtr<jxl::JxlEncoderQueuedFrame>>
-      input_frame_queue;
+  size_t num_queued_frames;
+  size_t num_queued_boxes;
+  std::vector<jxl::JxlEncoderQueuedInput> input_queue;
   std::vector<uint8_t> output_byte_queue;
 
-  bool use_container = false;
+  
+  bool use_container;
+  
+  bool use_boxes;
 
   
   
   
-  uint32_t codestream_level = 5;
-  bool store_jpeg_metadata = false;
+  uint32_t codestream_level;
+  bool store_jpeg_metadata;
   jxl::CodecMetadata metadata;
   std::vector<uint8_t> jpeg_metadata;
 
-  bool wrote_bytes = false;
+  
+  
+  
+  bool wrote_bytes;
   jxl::CompressParams last_used_cparams;
 
-  bool input_closed = false;
-  bool basic_info_set = false;
-  bool color_encoding_set = false;
+  
+  
+  
+  size_t jxlp_counter;
+
+  bool frames_closed;
+  bool boxes_closed;
+  bool basic_info_set;
+  bool color_encoding_set;
 
   
   
   JxlEncoderStatus RefillOutputByteQueue();
 
   bool MustUseContainer() const {
-    return use_container || codestream_level != 5 || store_jpeg_metadata;
+    return use_container || codestream_level != 5 || store_jpeg_metadata ||
+           use_boxes;
   }
 
   

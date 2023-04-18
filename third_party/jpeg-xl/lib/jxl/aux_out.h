@@ -251,12 +251,6 @@ struct AuxOut {
     DumpImage(label, normalized);
   }
 
-  
-  
-  
-  
-  void DumpCoeffImage(const char* label, const Image3S& coeff_image) const;
-
   void SetInspectorImage3F(const jxl::InspectorImage3F& inspector) {
     inspector_image3f_ = inspector;
   }

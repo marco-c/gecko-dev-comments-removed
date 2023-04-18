@@ -27,11 +27,8 @@ namespace hwy {
 
 
 #define HWY_MAJOR 0
-#define HWY_MINOR 12
-#define HWY_PATCH 2
-
-
-
+#define HWY_MINOR 15
+#define HWY_PATCH 0
 
 
 
@@ -71,6 +68,8 @@ namespace hwy {
 #define HWY_STATIC_DISPATCH(FUNC_NAME) N_SCALAR::FUNC_NAME
 #elif HWY_STATIC_TARGET == HWY_RVV
 #define HWY_STATIC_DISPATCH(FUNC_NAME) N_RVV::FUNC_NAME
+#elif HWY_STATIC_TARGET == HWY_WASM2
+#define HWY_STATIC_DISPATCH(FUNC_NAME) N_WASM2::FUNC_NAME
 #elif HWY_STATIC_TARGET == HWY_WASM
 #define HWY_STATIC_DISPATCH(FUNC_NAME) N_WASM::FUNC_NAME
 #elif HWY_STATIC_TARGET == HWY_NEON
@@ -81,12 +80,16 @@ namespace hwy {
 #define HWY_STATIC_DISPATCH(FUNC_NAME) N_SVE2::FUNC_NAME
 #elif HWY_STATIC_TARGET == HWY_PPC8
 #define HWY_STATIC_DISPATCH(FUNC_NAME) N_PPC8::FUNC_NAME
+#elif HWY_STATIC_TARGET == HWY_SSSE3
+#define HWY_STATIC_DISPATCH(FUNC_NAME) N_SSSE3::FUNC_NAME
 #elif HWY_STATIC_TARGET == HWY_SSE4
 #define HWY_STATIC_DISPATCH(FUNC_NAME) N_SSE4::FUNC_NAME
 #elif HWY_STATIC_TARGET == HWY_AVX2
 #define HWY_STATIC_DISPATCH(FUNC_NAME) N_AVX2::FUNC_NAME
 #elif HWY_STATIC_TARGET == HWY_AVX3
 #define HWY_STATIC_DISPATCH(FUNC_NAME) N_AVX3::FUNC_NAME
+#elif HWY_STATIC_TARGET == HWY_AVX3_DL
+#define HWY_STATIC_DISPATCH(FUNC_NAME) N_AVX3_DL::FUNC_NAME
 #endif
 
 
@@ -129,6 +132,12 @@ FunctionCache<RetType, Args...> FunctionCacheFactory(RetType (*)(Args...)) {
 #define HWY_CHOOSE_SCALAR(FUNC_NAME) &HWY_STATIC_DISPATCH(FUNC_NAME)
 #endif
 
+#if HWY_TARGETS & HWY_WASM2
+#define HWY_CHOOSE_WASM2(FUNC_NAME) &N_WASM2::FUNC_NAME
+#else
+#define HWY_CHOOSE_WASM2(FUNC_NAME) nullptr
+#endif
+
 #if HWY_TARGETS & HWY_WASM
 #define HWY_CHOOSE_WASM(FUNC_NAME) &N_WASM::FUNC_NAME
 #else
@@ -165,6 +174,12 @@ FunctionCache<RetType, Args...> FunctionCacheFactory(RetType (*)(Args...)) {
 #define HWY_CHOOSE_PPC8(FUNC_NAME) nullptr
 #endif
 
+#if HWY_TARGETS & HWY_SSSE3
+#define HWY_CHOOSE_SSSE3(FUNC_NAME) &N_SSSE3::FUNC_NAME
+#else
+#define HWY_CHOOSE_SSSE3(FUNC_NAME) nullptr
+#endif
+
 #if HWY_TARGETS & HWY_SSE4
 #define HWY_CHOOSE_SSE4(FUNC_NAME) &N_SSE4::FUNC_NAME
 #else
@@ -181,6 +196,12 @@ FunctionCache<RetType, Args...> FunctionCacheFactory(RetType (*)(Args...)) {
 #define HWY_CHOOSE_AVX3(FUNC_NAME) &N_AVX3::FUNC_NAME
 #else
 #define HWY_CHOOSE_AVX3(FUNC_NAME) nullptr
+#endif
+
+#if HWY_TARGETS & HWY_AVX3_DL
+#define HWY_CHOOSE_AVX3_DL(FUNC_NAME) &N_AVX3_DL::FUNC_NAME
+#else
+#define HWY_CHOOSE_AVX3_DL(FUNC_NAME) nullptr
 #endif
 
 #define HWY_DISPATCH_TABLE(FUNC_NAME) \
@@ -270,11 +291,11 @@ FunctionCache<RetType, Args...> FunctionCacheFactory(RetType (*)(Args...)) {
 #endif
 
 
-#if HWY_TARGET == HWY_SSE4
+#if HWY_TARGET == HWY_SSSE3 || HWY_TARGET == HWY_SSE4
 #include "hwy/ops/x86_128-inl.h"
 #elif HWY_TARGET == HWY_AVX2
 #include "hwy/ops/x86_256-inl.h"
-#elif HWY_TARGET == HWY_AVX3
+#elif HWY_TARGET == HWY_AVX3 || HWY_TARGET == HWY_AVX3_DL
 #include "hwy/ops/x86_512-inl.h"
 #elif HWY_TARGET == HWY_PPC8
 #error "PPC is not yet supported"
@@ -282,6 +303,8 @@ FunctionCache<RetType, Args...> FunctionCacheFactory(RetType (*)(Args...)) {
 #include "hwy/ops/arm_neon-inl.h"
 #elif HWY_TARGET == HWY_SVE || HWY_TARGET == HWY_SVE2
 #include "hwy/ops/arm_sve-inl.h"
+#elif HWY_TARGET == HWY_WASM2
+#include "hwy/ops/wasm_256-inl.h"
 #elif HWY_TARGET == HWY_WASM
 #include "hwy/ops/wasm_128-inl.h"
 #elif HWY_TARGET == HWY_RVV
@@ -292,65 +315,6 @@ FunctionCache<RetType, Args...> FunctionCacheFactory(RetType (*)(Args...)) {
 #pragma message("HWY_TARGET does not match any known target")
 #endif  
 
-
-HWY_BEFORE_NAMESPACE();
-namespace hwy {
-namespace HWY_NAMESPACE {
-
-
-template <class V>
-using LaneType = decltype(GetLane(V()));
-
-
-
-
-
-template <class D>
-using Vec = decltype(Zero(D()));
-
-
-
-
-template <class D>
-using Mask = decltype(MaskFromVec(Zero(D())));
-
-
-template <class V>
-HWY_API V Clamp(const V v, const V lo, const V hi) {
-  return Min(Max(lo, v), hi);
-}
-
-
-
-#if HWY_TARGET != HWY_SCALAR && HWY_TARGET != HWY_RVV
-
-template <size_t kLanes, class V>
-HWY_API V CombineShiftRightLanes(const V hi, const V lo) {
-  return CombineShiftRightBytes<kLanes * sizeof(LaneType<V>)>(hi, lo);
-}
-
-#endif
-
-
-template <class D>
-HWY_API Vec<D> SignBit(D d) {
-  using Unsigned = MakeUnsigned<TFromD<D>>;
-  const Unsigned bit = Unsigned(1) << (sizeof(Unsigned) * 8 - 1);
-  return BitCast(d, Set(Rebind<Unsigned, D>(), bit));
-}
-
-
-template <class D>
-HWY_API Vec<D> NaN(D d) {
-  const RebindToSigned<D> di;
-  
-  
-  return BitCast(d, Set(di, LimitsMax<TFromD<decltype(di)>>()));
-}
-
-
-}  
-}  
-HWY_AFTER_NAMESPACE();
+#include "hwy/ops/generic_ops-inl.h"
 
 #endif  

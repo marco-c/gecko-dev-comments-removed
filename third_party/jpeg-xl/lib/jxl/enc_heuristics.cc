@@ -720,10 +720,7 @@ Status DefaultEncoderHeuristics::LossyFrameHeuristics(
   
   if (shared.frame_header.flags & FrameHeader::kNoise) {
     PROFILER_ZONE("enc GetNoiseParam");
-    if (cparams.photon_noise_iso > 0) {
-      shared.image_features.noise_params = SimulatePhotonNoise(
-          opsin->xsize(), opsin->ysize(), cparams.photon_noise_iso);
-    } else {
+    if (cparams.photon_noise_iso == 0) {
       
       
       

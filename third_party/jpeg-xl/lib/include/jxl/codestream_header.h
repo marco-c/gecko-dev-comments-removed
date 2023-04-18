@@ -290,6 +290,68 @@ typedef struct {
 } JxlHeaderExtensions;
 
 
+
+
+typedef enum {
+  JXL_BLEND_REPLACE = 0,
+  JXL_BLEND_ADD = 1,
+  JXL_BLEND_BLEND = 2,
+  JXL_BLEND_MULADD = 3,
+  JXL_BLEND_MUL = 4,
+} JxlBlendMode;
+
+
+
+
+typedef struct {
+  
+
+
+  JxlBlendMode blendmode;
+  
+
+  uint32_t source;
+  
+
+
+  uint32_t alpha;
+  
+
+  JXL_BOOL clamp;
+} JxlBlendInfo;
+
+
+
+
+typedef struct {
+  
+
+
+  int32_t crop_x0;
+  
+
+
+  int32_t crop_y0;
+  
+
+
+  uint32_t xsize;
+  
+
+
+  uint32_t ysize;
+  
+
+
+  JxlBlendInfo blend_info;
+  
+
+
+
+  uint32_t save_as_reference;
+} JxlLayerInfo;
+
+
 typedef struct {
   
 
@@ -314,6 +376,10 @@ typedef struct {
   
 
   JXL_BOOL is_last;
+
+  
+
+  JxlLayerInfo layer_info;
 } JxlFrameHeader;
 
 #if defined(__cplusplus) || defined(c_plusplus)

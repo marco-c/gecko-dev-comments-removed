@@ -14,7 +14,6 @@
 
 #include "hwy/examples/skeleton.h"
 
-#include <assert.h>
 #include <stdio.h>
 
 
@@ -36,20 +35,28 @@ namespace HWY_NAMESPACE {
 using namespace hwy::HWY_NAMESPACE;
 
 
+
+#if HWY_COMPILER_CLANG && defined(MEMORY_SANITIZER) && defined(__OPTIMIZE__)
+#define ATTR_MSAN __attribute__((optnone))
+#else
+#define ATTR_MSAN
+#endif
+
+
 template <class DF>
-HWY_NOINLINE void OneFloorLog2(const DF df, const uint8_t* HWY_RESTRICT values,
-                               uint8_t* HWY_RESTRICT log2) {
+ATTR_MSAN void OneFloorLog2(const DF df, const uint8_t* HWY_RESTRICT values,
+                            uint8_t* HWY_RESTRICT log2) {
   
   const Rebind<int32_t, DF> d32;
   const Rebind<uint8_t, DF> d8;
 
   const auto u8 = Load(d8, values);
   const auto bits = BitCast(d32, ConvertTo(df, PromoteTo(d32, u8)));
-  const auto exponent = ShiftRight<23>(bits) - Set(d32, 127);
+  const auto exponent = Sub(ShiftRight<23>(bits), Set(d32, 127));
   Store(DemoteTo(d8, exponent), d8, log2);
 }
 
-HWY_NOINLINE void CodepathDemo() {
+void CodepathDemo() {
   
   
 #if HWY_CAP_INTEGER64
@@ -60,12 +67,12 @@ HWY_NOINLINE void CodepathDemo() {
   printf("Target %s: %s\n", hwy::TargetName(HWY_TARGET), gather);
 }
 
-HWY_NOINLINE void FloorLog2(const uint8_t* HWY_RESTRICT values, size_t count,
-                            uint8_t* HWY_RESTRICT log2) {
+void FloorLog2(const uint8_t* HWY_RESTRICT values, size_t count,
+               uint8_t* HWY_RESTRICT log2) {
   CodepathDemo();
 
   
-  HWY_FULL(float, 4) df;
+  const ScalableTag<float, 2> df;
 
   const size_t N = Lanes(df);
   size_t i = 0;

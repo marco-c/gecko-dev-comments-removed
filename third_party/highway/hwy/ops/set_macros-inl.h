@@ -25,35 +25,84 @@
 
 #endif  
 
-#include "hwy/targets.h"
+#include "hwy/detect_targets.h"
 
 #undef HWY_NAMESPACE
 #undef HWY_ALIGN
+#undef HWY_MAX_BYTES
 #undef HWY_LANES
 
 #undef HWY_CAP_INTEGER64
+#undef HWY_CAP_FLOAT16
 #undef HWY_CAP_FLOAT64
 #undef HWY_CAP_GE256
 #undef HWY_CAP_GE512
 
 #undef HWY_TARGET_STR
 
+#if defined(HWY_DISABLE_PCLMUL_AES)
+#define HWY_TARGET_STR_PCLMUL_AES ""
+#else
+#define HWY_TARGET_STR_PCLMUL_AES ",pclmul,aes"
+#endif
+
+#if defined(HWY_DISABLE_BMI2_FMA)
+#define HWY_TARGET_STR_BMI2_FMA ""
+#else
+#define HWY_TARGET_STR_BMI2_FMA ",bmi,bmi2,fma"
+#endif
+
+#if defined(HWY_DISABLE_F16C)
+#define HWY_TARGET_STR_F16C ""
+#else
+#define HWY_TARGET_STR_F16C ",f16c"
+#endif
+
+#define HWY_TARGET_STR_SSSE3 "sse2,ssse3"
+
+#define HWY_TARGET_STR_SSE4 \
+  HWY_TARGET_STR_SSSE3 ",sse4.1,sse4.2" HWY_TARGET_STR_PCLMUL_AES
+
+#define HWY_TARGET_STR_AVX2 \
+  HWY_TARGET_STR_SSE4 ",avx,avx2" HWY_TARGET_STR_BMI2_FMA HWY_TARGET_STR_F16C
+#define HWY_TARGET_STR_AVX3 \
+  HWY_TARGET_STR_AVX2 ",avx512f,avx512vl,avx512dq,avx512bw"
 
 
 
 
-#if HWY_TARGET == HWY_SSE4
 
-#define HWY_NAMESPACE N_SSE4
+#if HWY_TARGET == HWY_SSSE3
+
+#define HWY_NAMESPACE N_SSSE3
 #define HWY_ALIGN alignas(16)
+#define HWY_MAX_BYTES 16
 #define HWY_LANES(T) (16 / sizeof(T))
 
 #define HWY_CAP_INTEGER64 1
+#define HWY_CAP_FLOAT16 1
+#define HWY_CAP_FLOAT64 1
+#define HWY_CAP_AES 0
+#define HWY_CAP_GE256 0
+#define HWY_CAP_GE512 0
+
+#define HWY_TARGET_STR HWY_TARGET_STR_SSSE3
+
+
+#elif HWY_TARGET == HWY_SSE4
+
+#define HWY_NAMESPACE N_SSE4
+#define HWY_ALIGN alignas(16)
+#define HWY_MAX_BYTES 16
+#define HWY_LANES(T) (16 / sizeof(T))
+
+#define HWY_CAP_INTEGER64 1
+#define HWY_CAP_FLOAT16 1
 #define HWY_CAP_FLOAT64 1
 #define HWY_CAP_GE256 0
 #define HWY_CAP_GE512 0
 
-#define HWY_TARGET_STR "sse2,ssse3,sse4.1"
+#define HWY_TARGET_STR HWY_TARGET_STR_SSE4
 
 
 
@@ -61,47 +110,57 @@
 
 #define HWY_NAMESPACE N_AVX2
 #define HWY_ALIGN alignas(32)
+#define HWY_MAX_BYTES 32
 #define HWY_LANES(T) (32 / sizeof(T))
 
 #define HWY_CAP_INTEGER64 1
+#define HWY_CAP_FLOAT16 1
 #define HWY_CAP_FLOAT64 1
 #define HWY_CAP_GE256 1
 #define HWY_CAP_GE512 0
 
-#if defined(HWY_DISABLE_BMI2_FMA)
-#define HWY_TARGET_STR "avx,avx2,f16c"
-#else
-#define HWY_TARGET_STR "avx,avx2,bmi,bmi2,fma,f16c"
-#endif
+#define HWY_TARGET_STR HWY_TARGET_STR_AVX2
 
 
 
-#elif HWY_TARGET == HWY_AVX3
+#elif HWY_TARGET == HWY_AVX3 || HWY_TARGET == HWY_AVX3_DL
 
 #define HWY_ALIGN alignas(64)
+#define HWY_MAX_BYTES 64
 #define HWY_LANES(T) (64 / sizeof(T))
 
 #define HWY_CAP_INTEGER64 1
+#define HWY_CAP_FLOAT16 1
 #define HWY_CAP_FLOAT64 1
 #define HWY_CAP_GE256 1
 #define HWY_CAP_GE512 1
 
+#if HWY_TARGET == HWY_AVX3
+
 #define HWY_NAMESPACE N_AVX3
+#define HWY_TARGET_STR HWY_TARGET_STR_AVX3
 
+#elif HWY_TARGET == HWY_AVX3_DL
 
-
-
+#define HWY_NAMESPACE N_AVX3_DL
 #define HWY_TARGET_STR \
-  "avx,avx2,bmi,bmi2,fma,f16c,avx512f,avx512vl,avx512dq,avx512bw"
+  HWY_TARGET_STR_AVX3  \
+      ",vpclmulqdq,avx512vbmi2,vaes,avxvnni,avx512bitalg,avx512vpopcntdq"
+
+#else
+#error "Logic error"
+#endif  
 
 
 
 #elif HWY_TARGET == HWY_PPC8
 
 #define HWY_ALIGN alignas(16)
+#define HWY_MAX_BYTES 16
 #define HWY_LANES(T) (16 / sizeof(T))
 
 #define HWY_CAP_INTEGER64 1
+#define HWY_CAP_FLOAT16 0
 #define HWY_CAP_FLOAT64 1
 #define HWY_CAP_GE256 0
 #define HWY_CAP_GE512 0
@@ -115,9 +174,11 @@
 #elif HWY_TARGET == HWY_NEON
 
 #define HWY_ALIGN alignas(16)
+#define HWY_MAX_BYTES 16
 #define HWY_LANES(T) (16 / sizeof(T))
 
 #define HWY_CAP_INTEGER64 1
+#define HWY_CAP_FLOAT16 1
 #define HWY_CAP_GE256 0
 #define HWY_CAP_GE512 0
 
@@ -135,12 +196,22 @@
 
 #elif HWY_TARGET == HWY_SVE2 || HWY_TARGET == HWY_SVE
 
+#if defined(HWY_EMULATE_SVE) && !defined(__F16C__)
+#error "Disable HWY_CAP_FLOAT16 or ensure farm_sve actually converts to f16"
+#endif
+
 
 #define HWY_ALIGN alignas(8)
 
-#define HWY_LANES(T) (256 / sizeof(T))
+#define HWY_MAX_BYTES 256
+
+
+
+
+#define HWY_LANES(T) (32768 / sizeof(T))
 
 #define HWY_CAP_INTEGER64 1
+#define HWY_CAP_FLOAT16 1
 #define HWY_CAP_FLOAT64 1
 #define HWY_CAP_GE256 0
 #define HWY_CAP_GE512 0
@@ -158,14 +229,34 @@
 #elif HWY_TARGET == HWY_WASM
 
 #define HWY_ALIGN alignas(16)
+#define HWY_MAX_BYTES 16
 #define HWY_LANES(T) (16 / sizeof(T))
 
 #define HWY_CAP_INTEGER64 0
+#define HWY_CAP_FLOAT16 1
 #define HWY_CAP_FLOAT64 0
 #define HWY_CAP_GE256 0
 #define HWY_CAP_GE512 0
 
 #define HWY_NAMESPACE N_WASM
+
+#define HWY_TARGET_STR "simd128"
+
+
+
+#elif HWY_TARGET == HWY_WASM2
+
+#define HWY_ALIGN alignas(32)
+#define HWY_MAX_BYTES 32
+#define HWY_LANES(T) (32 / sizeof(T))
+
+#define HWY_CAP_INTEGER64 0
+#define HWY_CAP_FLOAT16 1
+#define HWY_CAP_FLOAT64 0
+#define HWY_CAP_GE256 0
+#define HWY_CAP_GE512 0
+
+#define HWY_NAMESPACE N_WASM2
 
 #define HWY_TARGET_STR "simd128"
 
@@ -178,14 +269,23 @@
 #define HWY_ALIGN
 
 
+#define HWY_MAX_BYTES 65536
 
-#define HWY_LANES(T) (4096 / sizeof(T))
 
+
+
+#define HWY_LANES(T) (8388608 / sizeof(T))
 
 #define HWY_CAP_INTEGER64 1
 #define HWY_CAP_FLOAT64 1
 #define HWY_CAP_GE256 0
 #define HWY_CAP_GE512 0
+
+#if defined(__riscv_zfh)
+#define HWY_CAP_FLOAT16 1
+#else
+#define HWY_CAP_FLOAT16 0
+#endif
 
 #define HWY_NAMESPACE N_RVV
 
@@ -197,10 +297,11 @@
 #elif HWY_TARGET == HWY_SCALAR
 
 #define HWY_ALIGN
-
+#define HWY_MAX_BYTES 8
 #define HWY_LANES(T) 1
 
 #define HWY_CAP_INTEGER64 1
+#define HWY_CAP_FLOAT16 1
 #define HWY_CAP_FLOAT64 1
 #define HWY_CAP_GE256 0
 #define HWY_CAP_GE512 0

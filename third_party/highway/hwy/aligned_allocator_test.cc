@@ -120,13 +120,13 @@ TEST(AlignedAllocatorTest, AllocDefaultPointers) {
                                    nullptr);
   ASSERT_NE(nullptr, ptr);
   
-  EXPECT_EQ(0U, reinterpret_cast<uintptr_t>(ptr) % kMaxVectorSize);
+  EXPECT_EQ(0U, reinterpret_cast<uintptr_t>(ptr) % HWY_ALIGNMENT);
   char* p = static_cast<char*>(ptr);
   size_t ret = 0;
   for (size_t i = 0; i < kSize; i++) {
     
     p[i] = static_cast<char>(i & 0x7F);
-    if (i) ret += p[i] * p[i - 1];
+    if (i) ret += static_cast<size_t>(p[i] * p[i - 1]);
   }
   EXPECT_NE(0U, ret);
   FreeAlignedBytes(ptr, nullptr, nullptr);
@@ -152,7 +152,7 @@ TEST(AlignedAllocatorTest, CustomAlloc) {
   
   EXPECT_EQ(1U, fake_alloc.PendingAllocs());
   
-  EXPECT_EQ(0U, reinterpret_cast<uintptr_t>(ptr) % kMaxVectorSize);
+  EXPECT_EQ(0U, reinterpret_cast<uintptr_t>(ptr) % HWY_ALIGNMENT);
   FreeAlignedBytes(ptr, &FakeAllocator::StaticFree, &fake_alloc);
   EXPECT_EQ(0U, fake_alloc.PendingAllocs());
 }
@@ -197,7 +197,7 @@ TEST(AlignedAllocatorTest, MakeUniqueAlignedArray) {
 TEST(AlignedAllocatorTest, AllocSingleInt) {
   auto ptr = AllocateAligned<uint32_t>(1);
   ASSERT_NE(nullptr, ptr.get());
-  EXPECT_EQ(0U, reinterpret_cast<uintptr_t>(ptr.get()) % kMaxVectorSize);
+  EXPECT_EQ(0U, reinterpret_cast<uintptr_t>(ptr.get()) % HWY_ALIGNMENT);
   
   ptr.reset(nullptr);
   EXPECT_EQ(nullptr, ptr.get());
@@ -207,7 +207,7 @@ TEST(AlignedAllocatorTest, AllocMultipleInt) {
   const size_t kSize = 7777;
   auto ptr = AllocateAligned<uint32_t>(kSize);
   ASSERT_NE(nullptr, ptr.get());
-  EXPECT_EQ(0U, reinterpret_cast<uintptr_t>(ptr.get()) % kMaxVectorSize);
+  EXPECT_EQ(0U, reinterpret_cast<uintptr_t>(ptr.get()) % HWY_ALIGNMENT);
   
   
   EXPECT_EQ(&(ptr[0]) + 1, &(ptr[1]));
@@ -276,3 +276,9 @@ TEST(AlignedAllocatorTest, DefaultInit) {
 }
 
 }  
+
+
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}

@@ -55,6 +55,7 @@ namespace hwy {
 
 
 
+
 HWY_INLINE HWY_ATTR_CACHE void LoadFence() {
 #if HWY_ARCH_X86 && !defined(HWY_DISABLE_CACHE_CONTROL)
   _mm_lfence();
@@ -62,11 +63,18 @@ HWY_INLINE HWY_ATTR_CACHE void LoadFence() {
 }
 
 
-HWY_INLINE HWY_ATTR_CACHE void StoreFence() {
+
+
+
+HWY_INLINE HWY_ATTR_CACHE void FlushStream() {
 #if HWY_ARCH_X86 && !defined(HWY_DISABLE_CACHE_CONTROL)
   _mm_sfence();
 #endif
 }
+
+
+HWY_INLINE HWY_ATTR_CACHE void StoreFence() { FlushStream(); }
+
 
 
 template <typename T>

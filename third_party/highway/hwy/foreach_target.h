@@ -19,7 +19,7 @@
 
 
 
-#include "hwy/targets.h"
+#include "hwy/detect_targets.h"
 
 
 
@@ -74,6 +74,17 @@
 #endif
 #endif
 
+#if (HWY_TARGETS & HWY_SSSE3) && (HWY_STATIC_TARGET != HWY_SSSE3)
+#undef HWY_TARGET
+#define HWY_TARGET HWY_SSSE3
+#include HWY_TARGET_INCLUDE
+#ifdef HWY_TARGET_TOGGLE
+#undef HWY_TARGET_TOGGLE
+#else
+#define HWY_TARGET_TOGGLE
+#endif
+#endif
+
 #if (HWY_TARGETS & HWY_SSE4) && (HWY_STATIC_TARGET != HWY_SSE4)
 #undef HWY_TARGET
 #define HWY_TARGET HWY_SSE4
@@ -99,6 +110,28 @@
 #if (HWY_TARGETS & HWY_AVX3) && (HWY_STATIC_TARGET != HWY_AVX3)
 #undef HWY_TARGET
 #define HWY_TARGET HWY_AVX3
+#include HWY_TARGET_INCLUDE
+#ifdef HWY_TARGET_TOGGLE
+#undef HWY_TARGET_TOGGLE
+#else
+#define HWY_TARGET_TOGGLE
+#endif
+#endif
+
+#if (HWY_TARGETS & HWY_AVX3_DL) && (HWY_STATIC_TARGET != HWY_AVX3_DL)
+#undef HWY_TARGET
+#define HWY_TARGET HWY_AVX3_DL
+#include HWY_TARGET_INCLUDE
+#ifdef HWY_TARGET_TOGGLE
+#undef HWY_TARGET_TOGGLE
+#else
+#define HWY_TARGET_TOGGLE
+#endif
+#endif
+
+#if (HWY_TARGETS & HWY_WASM2) && (HWY_STATIC_TARGET != HWY_WASM2)
+#undef HWY_TARGET
+#define HWY_TARGET HWY_WASM2
 #include HWY_TARGET_INCLUDE
 #ifdef HWY_TARGET_TOGGLE
 #undef HWY_TARGET_TOGGLE

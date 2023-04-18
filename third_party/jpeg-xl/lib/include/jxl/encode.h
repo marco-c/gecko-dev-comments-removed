@@ -115,122 +115,160 @@ typedef enum {
 
 
 
-  JXL_ENC_OPTION_PHOTON_NOISE = 4,
+
+
+
+
+  JXL_ENC_OPTION_ALREADY_DOWNSAMPLED = 4,
 
   
 
 
 
-  JXL_ENC_OPTION_NOISE = 5,
 
-  
-
-
-  JXL_ENC_OPTION_DOTS = 6,
-
-  
-
-
-  JXL_ENC_OPTION_PATCHES = 7,
-
-  
-
-
-  JXL_ENC_OPTION_EPF = 8,
-
-  
-
-
-  JXL_ENC_OPTION_GABORISH = 9,
+  JXL_ENC_OPTION_PHOTON_NOISE = 5,
 
   
 
 
 
-  JXL_ENC_OPTION_MODULAR = 10,
+  JXL_ENC_OPTION_NOISE = 6,
 
   
 
 
-  JXL_ENC_OPTION_KEEP_INVISIBLE = 11,
+  JXL_ENC_OPTION_DOTS = 7,
 
   
 
 
-
-  JXL_ENC_OPTION_GROUP_ORDER = 12,
-
-  
-
-
-
-  JXL_ENC_OPTION_GROUP_ORDER_CENTER_X = 13,
+  JXL_ENC_OPTION_PATCHES = 8,
 
   
 
 
-  JXL_ENC_OPTION_GROUP_ORDER_CENTER_Y = 14,
+  JXL_ENC_OPTION_EPF = 9,
 
   
 
 
-  JXL_ENC_OPTION_RESPONSIVE = 15,
+  JXL_ENC_OPTION_GABORISH = 10,
 
   
 
 
 
-  JXL_ENC_OPTION_PROGRESSIVE_AC = 16,
+  JXL_ENC_OPTION_MODULAR = 11,
+
+  
+
+
+  JXL_ENC_OPTION_KEEP_INVISIBLE = 12,
 
   
 
 
 
-  JXL_ENC_OPTION_QPROGRESSIVE_AC = 17,
+  JXL_ENC_OPTION_GROUP_ORDER = 13,
 
   
 
 
 
-  JXL_ENC_OPTION_PROGRESSIVE_DC = 18,
+  JXL_ENC_OPTION_GROUP_ORDER_CENTER_X = 14,
+
+  
+
+
+  JXL_ENC_OPTION_GROUP_ORDER_CENTER_Y = 15,
+
+  
+
+
+  JXL_ENC_OPTION_RESPONSIVE = 16,
 
   
 
 
 
-  JXL_ENC_OPTION_CHANNEL_COLORS_PRE_TRANSFORM_PERCENT = 19,
+  JXL_ENC_OPTION_PROGRESSIVE_AC = 17,
 
   
 
 
 
-  JXL_ENC_OPTION_CHANNEL_COLORS_PERCENT = 20,
-
-  
-
-
-  JXL_ENC_OPTION_PALETTE_COLORS = 21,
-
-  
-
-
-  JXL_ENC_OPTION_LOSSY_PALETTE = 22,
-
-  
-
-
-  JXL_ENC_OPTION_MODULAR_COLOR_SPACE = 23,
-
-  
-
-  JXL_ENC_OPTION_MODULAR_GROUP_SIZE = 24,
+  JXL_ENC_OPTION_QPROGRESSIVE_AC = 18,
 
   
 
 
 
+  JXL_ENC_OPTION_PROGRESSIVE_DC = 19,
 
-  JXL_ENC_OPTION_MODULAR_PREDICTOR = 25,
+  
+
+
+
+  JXL_ENC_OPTION_CHANNEL_COLORS_GLOBAL_PERCENT = 20,
+
+  
+
+
+
+  JXL_ENC_OPTION_CHANNEL_COLORS_GROUP_PERCENT = 21,
+
+  
+
+
+  JXL_ENC_OPTION_PALETTE_COLORS = 22,
+
+  
+
+
+  JXL_ENC_OPTION_LOSSY_PALETTE = 23,
+
+  
+
+
+
+
+  JXL_ENC_OPTION_COLOR_TRANSFORM = 24,
+
+  
+
+
+
+  JXL_ENC_OPTION_MODULAR_COLOR_SPACE = 25,
+
+  
+
+  JXL_ENC_OPTION_MODULAR_GROUP_SIZE = 26,
+
+  
+
+
+
+
+  JXL_ENC_OPTION_MODULAR_PREDICTOR = 27,
+
+  
+
+
+
+  JXL_ENC_OPTION_MODULAR_MA_TREE_LEARNING_PERCENT = 28,
+
+  
+
+
+
+
+
+  JXL_ENC_OPTION_MODULAR_NB_PREV_CHANNELS = 29,
+
+  
+
+
+  JXL_ENC_OPTION_JPEG_RECON_CFL = 30,
 
   
 
@@ -331,6 +369,21 @@ JXL_EXPORT JxlEncoderStatus JxlEncoderProcessOutput(JxlEncoder* enc,
 
 JXL_EXPORT JxlEncoderStatus JxlEncoderAddJPEGFrame(
     const JxlEncoderOptions* options, const uint8_t* buffer, size_t size);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -503,16 +556,54 @@ JXL_EXPORT JxlEncoderStatus JxlEncoderSetExtraChannelBuffer(
 
 
 
-
-
-
-
-
-
-JXL_EXPORT JxlEncoderStatus JxlEncoderAddBox(JxlEncoder* enc, JxlBoxType type,
+JXL_EXPORT JxlEncoderStatus JxlEncoderAddBox(JxlEncoder* enc,
+                                             const JxlBoxType type,
                                              const uint8_t* contents,
                                              size_t size,
                                              JXL_BOOL compress_box);
+
+
+
+
+
+
+
+
+
+
+
+
+JXL_EXPORT JxlEncoderStatus JxlEncoderUseBoxes(JxlEncoder* enc);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+JXL_EXPORT void JxlEncoderCloseBoxes(JxlEncoder* enc);
+
+
+
+
+
+
+
+
+
+
+
+JXL_EXPORT void JxlEncoderCloseFrames(JxlEncoder* enc);
+
 
 
 
@@ -621,6 +712,7 @@ JXL_EXPORT JxlEncoderStatus JxlEncoderSetExtraChannelInfo(
 
 
 
+
 JXL_EXPORT JxlEncoderStatus JxlEncoderSetExtraChannelName(JxlEncoder* enc,
                                                           size_t index,
                                                           const char* name,
@@ -641,9 +733,6 @@ JXL_EXPORT JxlEncoderStatus JxlEncoderSetExtraChannelName(JxlEncoder* enc,
 
 JXL_EXPORT JxlEncoderStatus JxlEncoderOptionsSetInteger(
     JxlEncoderOptions* options, JxlEncoderOptionId option, int32_t value);
-
-
-
 
 
 

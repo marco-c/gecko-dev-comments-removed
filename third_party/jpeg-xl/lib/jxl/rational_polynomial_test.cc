@@ -50,7 +50,7 @@ struct EvalLog2 {
     const HWY_FULL(int32_t) di;
     const auto x_bits = BitCast(di, vx);
     
-    JXL_DASSERT(AllTrue(Abs(x_bits) == x_bits));
+    JXL_DASSERT(AllTrue(di, Abs(x_bits) == x_bits));
 
     
     const auto exp_bits = x_bits - Set(di, 0x3f2aaaab);  
