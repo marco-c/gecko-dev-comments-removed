@@ -61,23 +61,6 @@ let $0 = instantiate(`(module
     )
   )
 
-  (func (export "delegate-to-block") (result i32)
-    (try (result i32)
-      (do (block (try (do (throw $$e0)) (delegate 0)))
-          (i32.const 0))
-      (catch_all (i32.const 1)))
-  )
-
-  (func (export "delegate-to-catch") (result i32)
-    (try (result i32)
-      (do (try
-            (do (throw $$e0))
-            (catch $$e0
-              (try (do (rethrow 1)) (delegate 0))))
-          (i32.const 0))
-      (catch_all (i32.const 1)))
-  )
-
   (func (export "delegate-to-caller")
     (try (do (try (do (throw $$e0)) (delegate 1))) (catch_all))
   )
@@ -141,12 +124,6 @@ assert_return(() => invoke($0, `delegate-merge`, [0, 0]), [value("i32", 1)]);
 assert_return(() => invoke($0, `delegate-skip`, []), [value("i32", 3)]);
 
 
-assert_return(() => invoke($0, `delegate-to-block`, []), [value("i32", 1)]);
-
-
-assert_return(() => invoke($0, `delegate-to-catch`, []), [value("i32", 1)]);
-
-
 assert_exception(() => invoke($0, `delegate-to-caller`, []));
 
 
@@ -174,10 +151,4 @@ assert_malformed(
 assert_malformed(
   () => instantiate(`(module (func (try (do) (delegate) (delegate 0)))) `),
   `unexpected token`,
-);
-
-
-assert_invalid(
-  () => instantiate(`(module (func (try (do) (delegate 1))))`),
-  `unknown label`,
 );

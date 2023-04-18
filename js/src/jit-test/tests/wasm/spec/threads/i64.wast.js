@@ -35,9 +35,6 @@ let $0 = instantiate(`(module
   (func (export "clz") (param $$x i64) (result i64) (i64.clz (local.get $$x)))
   (func (export "ctz") (param $$x i64) (result i64) (i64.ctz (local.get $$x)))
   (func (export "popcnt") (param $$x i64) (result i64) (i64.popcnt (local.get $$x)))
-  (func (export "extend8_s") (param $$x i64) (result i64) (i64.extend8_s (local.get $$x)))
-  (func (export "extend16_s") (param $$x i64) (result i64) (i64.extend16_s (local.get $$x)))
-  (func (export "extend32_s") (param $$x i64) (result i64) (i64.extend32_s (local.get $$x)))
   (func (export "eqz") (param $$x i64) (result i32) (i64.eqz (local.get $$x)))
   (func (export "eq") (param $$x i64) (param $$y i64) (result i32) (i64.eq (local.get $$x) (local.get $$y)))
   (func (export "ne") (param $$x i64) (param $$y i64) (result i32) (i64.ne (local.get $$x) (local.get $$y)))
@@ -892,98 +889,6 @@ assert_return(() => invoke($0, `popcnt`, [-7378697629197489494n]), [
 assert_return(() => invoke($0, `popcnt`, [-2401053088876216593n]), [
   value("i64", 48n),
 ]);
-
-
-assert_return(() => invoke($0, `extend8_s`, [0n]), [value("i64", 0n)]);
-
-
-assert_return(() => invoke($0, `extend8_s`, [127n]), [value("i64", 127n)]);
-
-
-assert_return(() => invoke($0, `extend8_s`, [128n]), [value("i64", -128n)]);
-
-
-assert_return(() => invoke($0, `extend8_s`, [255n]), [value("i64", -1n)]);
-
-
-assert_return(() => invoke($0, `extend8_s`, [81985529216486656n]), [
-  value("i64", 0n),
-]);
-
-
-assert_return(() => invoke($0, `extend8_s`, [-81985529216486784n]), [
-  value("i64", -128n),
-]);
-
-
-assert_return(() => invoke($0, `extend8_s`, [-1n]), [value("i64", -1n)]);
-
-
-assert_return(() => invoke($0, `extend16_s`, [0n]), [value("i64", 0n)]);
-
-
-assert_return(() => invoke($0, `extend16_s`, [32767n]), [value("i64", 32767n)]);
-
-
-assert_return(() => invoke($0, `extend16_s`, [32768n]), [
-  value("i64", -32768n),
-]);
-
-
-assert_return(() => invoke($0, `extend16_s`, [65535n]), [value("i64", -1n)]);
-
-
-assert_return(() => invoke($0, `extend16_s`, [1311768467463733248n]), [
-  value("i64", 0n),
-]);
-
-
-assert_return(() => invoke($0, `extend16_s`, [-81985529216466944n]), [
-  value("i64", -32768n),
-]);
-
-
-assert_return(() => invoke($0, `extend16_s`, [-1n]), [value("i64", -1n)]);
-
-
-assert_return(() => invoke($0, `extend32_s`, [0n]), [value("i64", 0n)]);
-
-
-assert_return(() => invoke($0, `extend32_s`, [32767n]), [value("i64", 32767n)]);
-
-
-assert_return(() => invoke($0, `extend32_s`, [32768n]), [value("i64", 32768n)]);
-
-
-assert_return(() => invoke($0, `extend32_s`, [65535n]), [value("i64", 65535n)]);
-
-
-assert_return(() => invoke($0, `extend32_s`, [2147483647n]), [
-  value("i64", 2147483647n),
-]);
-
-
-assert_return(() => invoke($0, `extend32_s`, [2147483648n]), [
-  value("i64", -2147483648n),
-]);
-
-
-assert_return(() => invoke($0, `extend32_s`, [4294967295n]), [
-  value("i64", -1n),
-]);
-
-
-assert_return(() => invoke($0, `extend32_s`, [81985526906748928n]), [
-  value("i64", 0n),
-]);
-
-
-assert_return(() => invoke($0, `extend32_s`, [-81985529054232576n]), [
-  value("i64", -2147483648n),
-]);
-
-
-assert_return(() => invoke($0, `extend32_s`, [-1n]), [value("i64", -1n)]);
 
 
 assert_return(() => invoke($0, `eqz`, [0n]), [value("i32", 1)]);

@@ -59,7 +59,7 @@ let $0 = instantiate(`(module
 
 assert_malformed(
   () => instantiate(`(type (func (result i32) (param i32))) `),
-  `unexpected token`,
+  `result before parameter`,
 );
 
 

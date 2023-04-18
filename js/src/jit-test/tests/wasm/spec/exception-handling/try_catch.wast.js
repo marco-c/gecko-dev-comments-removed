@@ -177,16 +177,13 @@ assert_return(() => invoke($1, `simple-throw-catch`, [0]), [value("i32", 23)]);
 assert_return(() => invoke($1, `simple-throw-catch`, [1]), [value("i32", 42)]);
 
 
-assert_trap(() => invoke($1, `unreachable-not-caught`, []), `unreachable`);
+assert_exception(() => invoke($1, `unreachable-not-caught`, []));
 
 
 assert_return(() => invoke($1, `trap-in-callee`, [7, 2]), [value("i32", 3)]);
 
 
-assert_trap(
-  () => invoke($1, `trap-in-callee`, [1, 0]),
-  `integer divide by zero`,
-);
+assert_exception(() => invoke($1, `trap-in-callee`, [1, 0]));
 
 
 assert_return(() => invoke($1, `catch-complex-1`, [0]), [value("i32", 3)]);
@@ -269,30 +266,6 @@ assert_return(() => invoke($1, `catchless-try`, [0]), [value("i32", 0)]);
 assert_return(() => invoke($1, `catchless-try`, [1]), [value("i32", 1)]);
 
 
-let $2 = instantiate(`(module
-  (func $$imported-throw (import "test" "throw"))
-  (tag $$e0)
-
-  (func (export "imported-mismatch") (result i32)
-    (try (result i32)
-      (do
-        (try (result i32)
-          (do
-            (i32.const 1)
-            (call $$imported-throw)
-          )
-          (catch $$e0 (i32.const 2))
-        )
-      )
-      (catch_all (i32.const 3))
-    )
-  )
-)`);
-
-
-assert_return(() => invoke($2, `imported-mismatch`, []), [value("i32", 3)]);
-
-
 assert_malformed(
   () => instantiate(`(module (func (catch_all))) `),
   `unexpected token`,
@@ -308,42 +281,4 @@ assert_malformed(
 assert_malformed(
   () => instantiate(`(module (func (try (do) (catch_all) (catch_all)))) `),
   `unexpected token`,
-);
-
-
-assert_invalid(
-  () => instantiate(`(module (func (result i32) (try (result i32) (do))))`),
-  `type mismatch: instruction requires [i32] but stack has []`,
-);
-
-
-assert_invalid(
-  () =>
-    instantiate(
-      `(module (func (result i32) (try (result i32) (do (i64.const 42)))))`,
-    ),
-  `type mismatch: instruction requires [i32] but stack has [i64]`,
-);
-
-
-assert_invalid(
-  () =>
-    instantiate(`(module (tag) (func (try (do) (catch 0 (i32.const 42)))))`),
-  `type mismatch: block requires [] but stack has [i32]`,
-);
-
-
-assert_invalid(
-  () =>
-    instantiate(`(module
-                  (tag (param i64))
-                  (func (result i32)
-                    (try (result i32) (do (i32.const 42)) (catch 0))))`),
-  `type mismatch: instruction requires [i32] but stack has [i64]`,
-);
-
-
-assert_invalid(
-  () => instantiate(`(module (func (try (do) (catch_all (i32.const 42)))))`),
-  `type mismatch: block requires [] but stack has [i32]`,
 );

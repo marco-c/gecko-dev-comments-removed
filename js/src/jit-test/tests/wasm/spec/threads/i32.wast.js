@@ -35,8 +35,6 @@ let $0 = instantiate(`(module
   (func (export "clz") (param $$x i32) (result i32) (i32.clz (local.get $$x)))
   (func (export "ctz") (param $$x i32) (result i32) (i32.ctz (local.get $$x)))
   (func (export "popcnt") (param $$x i32) (result i32) (i32.popcnt (local.get $$x)))
-  (func (export "extend8_s") (param $$x i32) (result i32) (i32.extend8_s (local.get $$x)))
-  (func (export "extend16_s") (param $$x i32) (result i32) (i32.extend16_s (local.get $$x)))
   (func (export "eqz") (param $$x i32) (result i32) (i32.eqz (local.get $$x)))
   (func (export "eq") (param $$x i32) (param $$y i32) (result i32) (i32.eq (local.get $$x) (local.get $$y)))
   (func (export "ne") (param $$x i32) (param $$y i32) (result i32) (i32.ne (local.get $$x) (local.get $$y)))
@@ -797,50 +795,6 @@ assert_return(() => invoke($0, `popcnt`, [1431655765]), [value("i32", 16)]);
 
 
 assert_return(() => invoke($0, `popcnt`, [-559038737]), [value("i32", 24)]);
-
-
-assert_return(() => invoke($0, `extend8_s`, [0]), [value("i32", 0)]);
-
-
-assert_return(() => invoke($0, `extend8_s`, [127]), [value("i32", 127)]);
-
-
-assert_return(() => invoke($0, `extend8_s`, [128]), [value("i32", -128)]);
-
-
-assert_return(() => invoke($0, `extend8_s`, [255]), [value("i32", -1)]);
-
-
-assert_return(() => invoke($0, `extend8_s`, [19088640]), [value("i32", 0)]);
-
-
-assert_return(() => invoke($0, `extend8_s`, [-19088768]), [value("i32", -128)]);
-
-
-assert_return(() => invoke($0, `extend8_s`, [-1]), [value("i32", -1)]);
-
-
-assert_return(() => invoke($0, `extend16_s`, [0]), [value("i32", 0)]);
-
-
-assert_return(() => invoke($0, `extend16_s`, [32767]), [value("i32", 32767)]);
-
-
-assert_return(() => invoke($0, `extend16_s`, [32768]), [value("i32", -32768)]);
-
-
-assert_return(() => invoke($0, `extend16_s`, [65535]), [value("i32", -1)]);
-
-
-assert_return(() => invoke($0, `extend16_s`, [19070976]), [value("i32", 0)]);
-
-
-assert_return(() => invoke($0, `extend16_s`, [-19103744]), [
-  value("i32", -32768),
-]);
-
-
-assert_return(() => invoke($0, `extend16_s`, [-1]), [value("i32", -1)]);
 
 
 assert_return(() => invoke($0, `eqz`, [0]), [value("i32", 1)]);
