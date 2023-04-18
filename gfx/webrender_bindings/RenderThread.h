@@ -375,6 +375,9 @@ class RenderThread final {
   
   
   std::list<RefPtr<RenderTextureHost>> mRenderTexturesDeferred;
+
+  RefPtr<nsIRunnable> mRenderTextureOpsRunnable;
+
   bool mHasShutdown;
 
   bool mHandlingDeviceReset;
