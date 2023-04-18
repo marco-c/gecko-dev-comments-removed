@@ -1587,6 +1587,14 @@ pref("browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar", tru
 pref("browser.newtabpage.activity-stream.logowordmark.alwaysVisible", true);
 
 
+
+
+
+
+
+pref("browser.newtabpage.activity-stream.hideTopSitesWithSearchParam", "");
+
+
 pref("trailhead.firstrun.newtab.triplets", "");
 
 pref("browser.aboutwelcome.enabled", true);

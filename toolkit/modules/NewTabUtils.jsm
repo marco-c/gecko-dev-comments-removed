@@ -1188,6 +1188,15 @@ var ActivityStreamProvider = {
 
 
 
+
+
+
+
+
+
+
+
+
   async getTopFrecentSites(aOptions) {
     const options = Object.assign(
       {
@@ -1196,6 +1205,9 @@ var ActivityStreamProvider = {
         topsiteFrecency: ACTIVITY_STREAM_DEFAULT_FRECENCY,
         onePerDomain: true,
         includeFavicon: true,
+        hideWithSearchParam: Services.prefs.getCharPref(
+          "browser.newtabpage.activity-stream.hideTopSitesWithSearchParam"
+        ),
       },
       aOptions || {}
     );
@@ -1280,6 +1292,20 @@ var ActivityStreamProvider = {
         if (searchProvider) {
           link.url = searchProvider.url;
         }
+      });
+    }
+
+    
+    if (options.hideWithSearchParam) {
+      let [key, value] = options.hideWithSearchParam.split("=");
+      links = links.filter(link => {
+        try {
+          let { searchParams } = new URL(link.url);
+          return value === undefined
+            ? !searchParams.has(key)
+            : !searchParams.getAll(key).includes(value);
+        } catch (error) {}
+        return true;
       });
     }
 
