@@ -10,8 +10,7 @@
 #include "ObjectModel.h"
 #include "mozilla/webgpu/WebGPUTypes.h"
 
-namespace mozilla {
-namespace webgpu {
+namespace mozilla::webgpu {
 
 class Device;
 
@@ -30,7 +29,6 @@ class BindGroupLayout final : public ObjectBase, public ChildOf<Device> {
   void Cleanup();
 };
 
-}  
 }  
 
 #endif  

@@ -8,8 +8,7 @@
 
 #include "Device.h"
 
-namespace mozilla {
-namespace webgpu {
+namespace mozilla::webgpu {
 
 QuerySet::~QuerySet() = default;
 
@@ -20,5 +19,4 @@ void QuerySet::Destroy() {
   
 }
 
-}  
 }  
