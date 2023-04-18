@@ -78,8 +78,8 @@ class mozHunspellCallbacks {
 
 
   static void AllowFile(const nsCString& aFilename);
-  friend RLBoxHunspell::RLBoxHunspell(const nsAutoCString& affpath,
-                                      const nsAutoCString& dpath);
+  friend RLBoxHunspell* RLBoxHunspell::Create(const nsAutoCString& affpath,
+                                              const nsAutoCString& dpath);
   
 
 

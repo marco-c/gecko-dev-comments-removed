@@ -37,10 +37,13 @@ static tainted_hunspell<char*> allocStrInSandbox(
   return t_str;
 }
 
-RLBoxHunspell::RLBoxHunspell(const nsAutoCString& affpath,
-                             const nsAutoCString& dpath)
-    : mHandle(nullptr) {
+
+RLBoxHunspell* RLBoxHunspell::Create(const nsAutoCString& affpath,
+                                     const nsAutoCString& dpath) {
   MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
+
+  mozilla::UniquePtr<rlbox_sandbox_hunspell, RLBoxDeleter> sandbox(
+      new rlbox_sandbox_hunspell());
 
 #if defined(MOZ_WASM_SANDBOXING_HUNSPELL) && !defined(HAVE_64BIT_BUILD)
   
@@ -65,15 +68,19 @@ RLBoxHunspell::RLBoxHunspell(const nsAutoCString& affpath,
 
   
   
-  if (expectedMaxMemory > defaultMaxSizeForSandbox) {
-    mSandbox.create_sandbox(true ,
-                            expectedMaxMemory);
-  } else {
-    mSandbox.create_sandbox();
-  }
+  const uint64_t selectedMaxMemory =
+      std::max(expectedMaxMemory, defaultMaxSizeForSandbox);
+
+  bool success = sandbox->create_sandbox( false,
+                                         selectedMaxMemory);
+#elif defined(MOZ_WASM_SANDBOXING_HUNSPELL)
+  bool success = sandbox->create_sandbox( false);
 #else
-  mSandbox.create_sandbox();
+  sandbox->create_sandbox();
+  const bool success = true;
 #endif
+
+  NS_ENSURE_TRUE(success, nullptr);
 
   
   if (!affpath.IsEmpty()) {
@@ -83,46 +90,53 @@ RLBoxHunspell::RLBoxHunspell(const nsAutoCString& affpath,
     mozHunspellCallbacks::AllowFile(dpath);
   }
 
+  return new RLBoxHunspell(std::move(sandbox), affpath, dpath);
+}
+
+RLBoxHunspell::RLBoxHunspell(
+    mozilla::UniquePtr<rlbox_sandbox_hunspell, RLBoxDeleter> aSandbox,
+    const nsAutoCString& affpath, const nsAutoCString& dpath)
+    : mSandbox(std::move(aSandbox)), mHandle(nullptr) {
   
   mCreateFilemgr =
-      mSandbox.register_callback(mozHunspellCallbacks::CreateFilemgr);
-  mGetLine = mSandbox.register_callback(mozHunspellCallbacks::GetLine);
-  mGetLineNum = mSandbox.register_callback(mozHunspellCallbacks::GetLineNum);
+      mSandbox->register_callback(mozHunspellCallbacks::CreateFilemgr);
+  mGetLine = mSandbox->register_callback(mozHunspellCallbacks::GetLine);
+  mGetLineNum = mSandbox->register_callback(mozHunspellCallbacks::GetLineNum);
   mDestructFilemgr =
-      mSandbox.register_callback(mozHunspellCallbacks::DestructFilemgr);
+      mSandbox->register_callback(mozHunspellCallbacks::DestructFilemgr);
   mHunspellToUpperCase =
-      mSandbox.register_callback(mozHunspellCallbacks::ToUpperCase);
+      mSandbox->register_callback(mozHunspellCallbacks::ToUpperCase);
   mHunspellToLowerCase =
-      mSandbox.register_callback(mozHunspellCallbacks::ToLowerCase);
+      mSandbox->register_callback(mozHunspellCallbacks::ToLowerCase);
   mHunspellGetCurrentCS =
-      mSandbox.register_callback(mozHunspellCallbacks::GetCurrentCS);
+      mSandbox->register_callback(mozHunspellCallbacks::GetCurrentCS);
 
-  mSandbox.invoke_sandbox_function(RegisterHunspellCallbacks, mCreateFilemgr,
-                                   mGetLine, mGetLineNum, mDestructFilemgr,
-                                   mHunspellToUpperCase, mHunspellToLowerCase,
-                                   mHunspellGetCurrentCS);
+  mSandbox->invoke_sandbox_function(RegisterHunspellCallbacks, mCreateFilemgr,
+                                    mGetLine, mGetLineNum, mDestructFilemgr,
+                                    mHunspellToUpperCase, mHunspellToLowerCase,
+                                    mHunspellGetCurrentCS);
 
   
   
   
-  tainted_hunspell<char*> t_affpath = allocStrInSandbox(mSandbox, affpath);
+  tainted_hunspell<char*> t_affpath = allocStrInSandbox(*mSandbox, affpath);
   MOZ_RELEASE_ASSERT(t_affpath);
 
-  tainted_hunspell<char*> t_dpath = allocStrInSandbox(mSandbox, dpath);
+  tainted_hunspell<char*> t_dpath = allocStrInSandbox(*mSandbox, dpath);
   MOZ_RELEASE_ASSERT(t_dpath);
 
   
-  mHandle = mSandbox.invoke_sandbox_function(
+  mHandle = mSandbox->invoke_sandbox_function(
       Hunspell_create, rlbox::sandbox_const_cast<const char*>(t_affpath),
       rlbox::sandbox_const_cast<const char*>(t_dpath));
   MOZ_RELEASE_ASSERT(mHandle);
 
-  mSandbox.free_in_sandbox(t_dpath);
-  mSandbox.free_in_sandbox(t_affpath);
+  mSandbox->free_in_sandbox(t_dpath);
+  mSandbox->free_in_sandbox(t_affpath);
 
   
   tainted_hunspell<char*> t_enc =
-      mSandbox.invoke_sandbox_function(Hunspell_get_dic_encoding, mHandle);
+      mSandbox->invoke_sandbox_function(Hunspell_get_dic_encoding, mHandle);
   t_enc.copy_and_verify_string([&](std::unique_ptr<char[]> enc) {
     size_t len = std::strlen(enc.get());
     mDicEncoding = std::string(enc.get(), len);
@@ -132,7 +146,7 @@ RLBoxHunspell::RLBoxHunspell(const nsAutoCString& affpath,
 RLBoxHunspell::~RLBoxHunspell() {
   MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
   
-  mSandbox.invoke_sandbox_function(Hunspell_destroy, mHandle);
+  mSandbox->invoke_sandbox_function(Hunspell_destroy, mHandle);
   mHandle = nullptr;
 
   
@@ -146,15 +160,12 @@ RLBoxHunspell::~RLBoxHunspell() {
 
   
   mozHunspellCallbacks::Clear();
-
-  
-  mSandbox.destroy_sandbox();
 }
 
 int RLBoxHunspell::spell(const std::string& stdWord) {
   MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
   
-  tainted_hunspell<char*> t_word = allocStrInSandbox(mSandbox, stdWord);
+  tainted_hunspell<char*> t_word = allocStrInSandbox(*mSandbox, stdWord);
   if (!t_word) {
     
     
@@ -164,11 +175,11 @@ int RLBoxHunspell::spell(const std::string& stdWord) {
 
   
   int good = mSandbox
-                 .invoke_sandbox_function(
+                 ->invoke_sandbox_function(
                      Hunspell_spell, mHandle,
                      rlbox::sandbox_const_cast<const char*>(t_word))
                  .copy_and_verify([](int good) { return good; });
-  mSandbox.free_in_sandbox(t_word);
+  mSandbox->free_in_sandbox(t_word);
   return good;
 }
 
@@ -181,16 +192,16 @@ const std::string& RLBoxHunspell::get_dict_encoding() const {
 std::vector<std::string> RLBoxHunspell::suggest(const std::string& stdWord) {
   MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
   
-  tainted_hunspell<char*> t_word = allocStrInSandbox(mSandbox, stdWord);
+  tainted_hunspell<char*> t_word = allocStrInSandbox(*mSandbox, stdWord);
   if (!t_word) {
     return {};
   }
 
   
-  tainted_hunspell<char***> t_slst = mSandbox.malloc_in_sandbox<char**>();
+  tainted_hunspell<char***> t_slst = mSandbox->malloc_in_sandbox<char**>();
   if (!t_slst) {
     
-    mSandbox.free_in_sandbox(t_word);
+    mSandbox->free_in_sandbox(t_word);
     return {};
   }
 
@@ -198,7 +209,7 @@ std::vector<std::string> RLBoxHunspell::suggest(const std::string& stdWord) {
 
   
   int nr = mSandbox
-               .invoke_sandbox_function(
+               ->invoke_sandbox_function(
                    Hunspell_suggest, mHandle, t_slst,
                    rlbox::sandbox_const_cast<const char*>(t_word))
                .copy_and_verify([](int nr) {
@@ -220,15 +231,15 @@ std::vector<std::string> RLBoxHunspell::suggest(const std::string& stdWord) {
         t_sug.copy_and_verify_string(
             [&](std::string sug) { suggestions.push_back(std::move(sug)); });
         
-        mSandbox.free_in_sandbox(t_sug);
+        mSandbox->free_in_sandbox(t_sug);
       }
     }
 
     
-    mSandbox.free_in_sandbox(t_slst_ref);
+    mSandbox->free_in_sandbox(t_slst_ref);
   }
 
-  mSandbox.free_in_sandbox(t_word);
-  mSandbox.free_in_sandbox(t_slst);
+  mSandbox->free_in_sandbox(t_word);
+  mSandbox->free_in_sandbox(t_slst);
   return suggestions;
 }
