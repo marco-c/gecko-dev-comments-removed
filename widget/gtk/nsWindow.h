@@ -694,10 +694,6 @@ class nsWindow final : public nsBaseWidget {
 
   
   
-  bool mUpdatedByMoveToRectCallback : 1;
-
-  
-  
   
   
   struct WaylandPopupMoveToRectParams {
