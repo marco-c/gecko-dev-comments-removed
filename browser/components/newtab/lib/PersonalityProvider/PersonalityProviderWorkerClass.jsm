@@ -9,23 +9,22 @@
 
 var EXPORTED_SYMBOLS = ["PersonalityProviderWorker"];
 
-const PERSONALITY_PROVIDER_DIR = OS.Path.join(
-  OS.Constants.Path.localProfileDir,
-  "personality-provider"
-);
-
 
 
 
 
 
 const PersonalityProviderWorker = class PersonalityProviderWorker {
-  
-  
-  _getFileStr(filepath) {
-    const binaryData = OS.File.read(filepath);
-    const gTextDecoder = new TextDecoder();
-    return gTextDecoder.decode(binaryData);
+  async getPersonalityProviderDir() {
+    const personalityProviderDir = PathUtils.join(
+      await PathUtils.getLocalProfileDir(),
+      "personality-provider"
+    );
+
+    
+    this.getPersonalityProviderDir = () =>
+      Promise.resolve(personalityProviderDir);
+    return personalityProviderDir;
   }
 
   setBaseAttachmentsURL(url) {
@@ -46,31 +45,35 @@ const PersonalityProviderWorker = class PersonalityProviderWorker {
     } = event;
     
     const toRemove = deleted.concat(updated.map(u => u.old));
-    toRemove.map(record => this.deleteAttachment(record));
+    toRemove.forEach(record => this.deleteAttachment(record));
 
     
     const toDownload = created.concat(updated.map(u => u.new));
-    toDownload.map(record => this.maybeDownloadAttachment(record));
+    
+    toDownload.forEach(record => this.maybeDownloadAttachment(record));
   }
 
   
 
 
-  maybeDownloadAttachment(record, retries = 3) {
+  async maybeDownloadAttachment(record, retries = 3) {
     const {
       attachment: { filename, size },
     } = record;
-    OS.File.makeDir(PERSONALITY_PROVIDER_DIR);
-    const localFilePath = OS.Path.join(PERSONALITY_PROVIDER_DIR, filename);
+    await IOUtils.makeDirectory(await this.getPersonalityProviderDir());
+    const localFilePath = PathUtils.join(
+      await this.getPersonalityProviderDir(),
+      filename
+    );
 
     let retry = 0;
     while (
       retry++ < retries &&
       
-      (!OS.File.exists(localFilePath) ||
-        OS.File.stat(localFilePath).size !== size)
+      (!(await IOUtils.exists(localFilePath)) ||
+        (await IOUtils.stat(localFilePath)).size !== size)
     ) {
-      this._downloadAttachment(record);
+      await this._downloadAttachment(record);
     }
   }
 
@@ -78,12 +81,15 @@ const PersonalityProviderWorker = class PersonalityProviderWorker {
 
 
 
-  _downloadAttachment(record) {
+  async _downloadAttachment(record) {
     const {
       attachment: { location, filename },
     } = record;
     const remoteFilePath = this.baseAttachmentsURL + location;
-    const localFilePath = OS.Path.join(PERSONALITY_PROVIDER_DIR, filename);
+    const localFilePath = PathUtils.join(
+      await this.getPersonalityProviderDir(),
+      filename
+    );
 
     const xhr = new XMLHttpRequest();
     
@@ -101,48 +107,61 @@ const PersonalityProviderWorker = class PersonalityProviderWorker {
     const buffer = xhr.response;
     const bytes = new Uint8Array(buffer);
 
-    OS.File.writeAtomic(localFilePath, bytes, {
+    await IOUtils.write(localFilePath, bytes, {
       tmpPath: `${localFilePath}.tmp`,
     });
   }
 
-  deleteAttachment(record) {
+  async deleteAttachment(record) {
     const {
       attachment: { filename },
     } = record;
-    OS.File.makeDir(PERSONALITY_PROVIDER_DIR);
-    const path = OS.Path.join(PERSONALITY_PROVIDER_DIR, filename);
+    await IOUtils.makeDirectory(await this.getPersonalityProviderDir());
+    const path = PathUtils.join(
+      await this.getPersonalityProviderDir(),
+      filename
+    );
 
-    OS.File.remove(path, { ignoreAbsent: true });
-    OS.File.removeEmptyDir(PERSONALITY_PROVIDER_DIR, {
-      ignoreAbsent: true,
-    });
+    await IOUtils.remove(path, { ignoreAbsent: true });
+    
+    try {
+      await IOUtils.remove(await this.getPersonalityProviderDir(), {
+        ignoreAbsent: true,
+      });
+    } catch (e) {
+      
+    }
   }
 
   
 
 
 
-  getAttachment(record) {
+  async getAttachment(record) {
     const {
       attachment: { filename },
     } = record;
-    const filepath = OS.Path.join(PERSONALITY_PROVIDER_DIR, filename);
+    const filepath = PathUtils.join(
+      await this.getPersonalityProviderDir(),
+      filename
+    );
 
     try {
-      this.maybeDownloadAttachment(record);
-      return JSON.parse(this._getFileStr(filepath));
+      await this.maybeDownloadAttachment(record);
+      return await IOUtils.readJSON(filepath);
     } catch (error) {
       console.error(`Failed to load ${filepath}: ${error.message}`);
     }
     return {};
   }
 
-  fetchModels(models) {
-    this.models = models.map(record => ({
-      ...this.getAttachment(record),
-      recordKey: record.key,
-    }));
+  async fetchModels(models) {
+    this.models = await Promise.all(
+      models.map(async record => ({
+        ...(await this.getAttachment(record)),
+        recordKey: record.key,
+      }))
+    );
     if (!this.models.length) {
       return {
         ok: false,
