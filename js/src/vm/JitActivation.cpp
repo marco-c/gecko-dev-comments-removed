@@ -23,8 +23,8 @@
 #include "wasm/WasmConstants.h"       
 #include "wasm/WasmFrameIter.h"  
 #include "wasm/WasmInstance.h"  
-#include "wasm/WasmProcess.h"   
-#include "wasm/WasmTlsData.h"   
+#include "wasm/WasmInstanceData.h"
+#include "wasm/WasmProcess.h"  
 
 #include "vm/Realm-inl.h"  
 
