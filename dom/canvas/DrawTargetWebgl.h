@@ -25,14 +25,15 @@ namespace gfx {
 class DataSourceSurface;
 class DrawTargetSkia;
 class DrawTargetWebgl;
+class PathSkia;
 class SourceSurfaceSkia;
 
 class TextureHandle;
 class SharedTexture;
 class SharedTextureHandle;
 class StandaloneTexture;
-class GlyphCacheEntry;
 class GlyphCache;
+class PathCache;
 
 
 
@@ -84,6 +85,8 @@ class DrawTargetWebgl : public DrawTarget {
   UserDataKey mGlyphCacheKey = {0};
   
   LinkedList<GlyphCache> mGlyphCaches;
+  
+  UniquePtr<PathCache> mPathCache;
   
   
   std::vector<RefPtr<SharedTexture>> mSharedTextures;

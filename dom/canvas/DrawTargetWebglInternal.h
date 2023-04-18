@@ -10,6 +10,7 @@
 #include "DrawTargetWebgl.h"
 
 #include "mozilla/HashFunctions.h"
+#include "mozilla/gfx/PathSkia.h"
 
 namespace mozilla::gfx {
 
@@ -52,7 +53,73 @@ class TexturePacker {
   int mAvailable = 0;
 };
 
-class GlyphCacheEntry;
+
+
+class CacheEntry : public RefCounted<CacheEntry> {
+ public:
+  MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(CacheEntry)
+
+  CacheEntry(const Matrix& aTransform, const IntRect& aBounds, HashNumber aHash)
+      : mTransform(aTransform), mBounds(aBounds), mHash(aHash) {}
+  virtual ~CacheEntry() = default;
+
+  void Link(const RefPtr<TextureHandle>& aHandle);
+  void Unlink();
+
+  const RefPtr<TextureHandle>& GetHandle() const { return mHandle; }
+
+  const Matrix& GetTransform() const { return mTransform; }
+  const IntRect& GetBounds() const { return mBounds; }
+  HashNumber GetHash() const { return mHash; }
+
+ protected:
+  virtual void RemoveFromList() = 0;
+
+  
+  RefPtr<TextureHandle> mHandle;
+  
+  
+  
+  
+  Matrix mTransform;
+  
+  IntRect mBounds;
+  
+  HashNumber mHash;
+};
+
+
+
+template <typename T>
+class CacheEntryImpl : public CacheEntry, public LinkedListElement<RefPtr<T>> {
+  typedef LinkedListElement<RefPtr<T>> ListType;
+
+ public:
+  CacheEntryImpl(const Matrix& aTransform, const IntRect& aBounds,
+                 HashNumber aHash)
+      : CacheEntry(aTransform, aBounds, aHash) {}
+
+ protected:
+  void RemoveFromList() override {
+    if (ListType::isInList()) {
+      ListType::remove();
+    }
+  }
+};
+
+
+template <typename T>
+class CacheImpl {
+ public:
+  ~CacheImpl() {
+    while (RefPtr<T> entry = mEntries.popLast()) {
+      entry->Unlink();
+    }
+  }
+
+ protected:
+  LinkedList<RefPtr<T>> mEntries;
+};
 
 
 
@@ -102,15 +169,11 @@ class TextureHandle : public RefCounted<TextureHandle>,
     return IntRect(GetSamplingOffset(), GetSize());
   }
 
-  const RefPtr<GlyphCacheEntry>& GetGlyphCacheEntry() const {
-    return mGlyphCacheEntry;
-  }
-  void SetGlyphCacheEntry(const RefPtr<GlyphCacheEntry>& aEntry) {
-    mGlyphCacheEntry = aEntry;
-  }
+  const RefPtr<CacheEntry>& GetCacheEntry() const { return mCacheEntry; }
+  void SetCacheEntry(const RefPtr<CacheEntry>& aEntry) { mCacheEntry = aEntry; }
 
   
-  bool IsUsed() const { return mSurface || mGlyphCacheEntry; }
+  bool IsUsed() const { return mSurface || mCacheEntry; }
 
  private:
   bool mValid = true;
@@ -124,7 +187,7 @@ class TextureHandle : public RefCounted<TextureHandle>,
   
   IntPoint mSamplingOffset;
   
-  RefPtr<GlyphCacheEntry> mGlyphCacheEntry;
+  RefPtr<CacheEntry> mCacheEntry;
 };
 
 class SharedTextureHandle;
@@ -232,14 +295,13 @@ class StandaloneTexture : public TextureHandle {
 
 
 
-class GlyphCacheEntry : public RefCounted<GlyphCacheEntry>,
-                        public LinkedListElement<RefPtr<GlyphCacheEntry>> {
+class GlyphCacheEntry : public CacheEntryImpl<GlyphCacheEntry> {
  public:
-  MOZ_DECLARE_REFCOUNTED_TYPENAME(GlyphCacheEntry)
+  MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(GlyphCacheEntry, override)
 
   GlyphCacheEntry(const GlyphBuffer& aBuffer, const DeviceColor& aColor,
                   const Matrix& aTransform, const IntRect& aBounds,
-                  HashNumber aHash = 0);
+                  HashNumber aHash);
 
   bool MatchesGlyphs(const GlyphBuffer& aBuffer, const DeviceColor& aColor,
                      const Matrix& aTransform, const IntRect& aBounds,
@@ -248,27 +310,11 @@ class GlyphCacheEntry : public RefCounted<GlyphCacheEntry>,
   static HashNumber HashGlyphs(const GlyphBuffer& aBuffer,
                                const Matrix& aTransform);
 
-  void Link(const RefPtr<TextureHandle>& aHandle);
-  void Unlink();
-
-  const RefPtr<TextureHandle>& GetHandle() const { return mHandle; }
-
  private:
-  
-  RefPtr<TextureHandle> mHandle;
   
   GlyphBuffer mBuffer = {nullptr, 0};
   
   DeviceColor mColor;
-  
-  
-  
-  
-  Matrix mTransform;
-  
-  IntRect mBounds;
-  
-  HashNumber mHash;
 };
 
 
@@ -276,21 +322,59 @@ class GlyphCacheEntry : public RefCounted<GlyphCacheEntry>,
 
 
 
-class GlyphCache : public LinkedListElement<GlyphCache> {
+class GlyphCache : public LinkedListElement<GlyphCache>,
+                   public CacheImpl<GlyphCacheEntry> {
  public:
   explicit GlyphCache(ScaledFont* aFont);
-  ~GlyphCache();
 
   ScaledFont* GetFont() const { return mFont; }
 
   already_AddRefed<GlyphCacheEntry> FindOrInsertEntry(
       const GlyphBuffer& aBuffer, const DeviceColor& aColor,
-      const Matrix& aTransform, const IntRect& aBounds, HashNumber aHash = 0);
+      const Matrix& aTransform, const IntRect& aBounds);
 
  private:
   
   ScaledFont* mFont;
-  LinkedList<RefPtr<GlyphCacheEntry>> mEntries;
+};
+
+
+
+class PathCacheEntry : public CacheEntryImpl<PathCacheEntry> {
+ public:
+  MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(PathCacheEntry, override)
+
+  PathCacheEntry(const SkPath& aPath, Pattern* aPattern,
+                 const Matrix& aTransform, const IntRect& aBounds,
+                 const Point& aOrigin, HashNumber aHash);
+
+  bool MatchesPath(const SkPath& aPath, const Pattern* aPattern,
+                   const Matrix& aTransform, const IntRect& aBounds,
+                   HashNumber aHash);
+
+  static HashNumber HashPath(const SkPath& aPath, const Pattern* aPattern,
+                             const Matrix& aTransform, const IntRect& aBounds);
+
+  const Point& GetOrigin() const { return mOrigin; }
+
+ private:
+  
+  SkPath mPath;
+  
+  Point mOrigin;
+  
+  UniquePtr<Pattern> mPattern;
+};
+
+class PathCache : public CacheImpl<PathCacheEntry> {
+ public:
+  PathCache() = default;
+
+  already_AddRefed<PathCacheEntry> FindOrInsertEntry(const SkPath& aPath,
+                                                     const Pattern* aPattern,
+                                                     const Matrix& aTransform,
+                                                     const IntRect& aBounds,
+                                                     const Point& aOrigin);
 };
 
 }  

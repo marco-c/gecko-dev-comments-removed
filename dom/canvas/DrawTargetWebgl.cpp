@@ -1159,7 +1159,7 @@ void DrawTargetWebgl::PruneTextureHandle(RefPtr<TextureHandle> aHandle) {
   
   UnlinkSurfaceTexture(aHandle);
   
-  if (RefPtr<GlyphCacheEntry> entry = aHandle->GetGlyphCacheEntry()) {
+  if (RefPtr<CacheEntry> entry = aHandle->GetCacheEntry()) {
     entry->Unlink();
   }
   
@@ -1188,7 +1188,110 @@ bool DrawTargetWebgl::PruneTextureMemory(size_t aMargin, bool aPruneUnused) {
 
 void DrawTargetWebgl::FillRect(const Rect& aRect, const Pattern& aPattern,
                                const DrawOptions& aOptions) {
-  DrawRect(aRect, aPattern, aOptions);
+  if (SupportsPattern(aPattern)) {
+    DrawRect(aRect, aPattern, aOptions);
+  } else {
+    
+    
+    SkPath skiaPath;
+    skiaPath.addRect(RectToSkRect(aRect));
+    RefPtr<PathSkia> path = new PathSkia(skiaPath, FillRule::FILL_WINDING);
+    Fill(path, aPattern, aOptions);
+  }
+}
+
+void CacheEntry::Link(const RefPtr<TextureHandle>& aHandle) {
+  mHandle = aHandle;
+  mHandle->SetCacheEntry(this);
+}
+
+
+
+
+void CacheEntry::Unlink() {
+  RemoveFromList();
+
+  
+  if (mHandle) {
+    mHandle->SetCacheEntry(nullptr);
+    mHandle = nullptr;
+  }
+}
+
+
+
+
+
+HashNumber PathCacheEntry::HashPath(const SkPath& aPath,
+                                    const Pattern* aPattern,
+                                    const Matrix& aTransform,
+                                    const IntRect& aBounds) {
+  HashNumber hash = 0;
+  hash = AddToHash(hash, aPath.countVerbs());
+  hash = AddToHash(hash, aPath.countPoints());
+  hash = AddToHash(hash, aBounds.width);
+  hash = AddToHash(hash, aBounds.height);
+  if (aPattern) {
+    hash = AddToHash(hash, (int)aPattern->GetType());
+  }
+  return hash;
+}
+
+
+
+static inline bool HasMatchingScale(const Matrix& aTransform1,
+                                    const Matrix& aTransform2) {
+  return FuzzyEqual(aTransform1._11, aTransform2._11) &&
+         FuzzyEqual(aTransform1._12, aTransform2._12) &&
+         FuzzyEqual(aTransform1._21, aTransform2._21) &&
+         FuzzyEqual(aTransform1._22, aTransform2._22);
+}
+
+
+
+bool PathCacheEntry::MatchesPath(const SkPath& aPath, const Pattern* aPattern,
+                                 const Matrix& aTransform,
+                                 const IntRect& aBounds, HashNumber aHash) {
+  if (aHash != mHash || !HasMatchingScale(aTransform, mTransform) ||
+      aBounds.Size() != mBounds.Size() || aPath == mPath) {
+    return false;
+  }
+  return !aPattern ? !mPattern : mPattern && *aPattern == *mPattern;
+}
+
+PathCacheEntry::PathCacheEntry(const SkPath& aPath, Pattern* aPattern,
+                               const Matrix& aTransform, const IntRect& aBounds,
+                               const Point& aOrigin, HashNumber aHash)
+    : CacheEntryImpl<PathCacheEntry>(aTransform, aBounds, aHash),
+      mPath(aPath),
+      mOrigin(aOrigin),
+      mPattern(aPattern) {}
+
+
+
+
+
+already_AddRefed<PathCacheEntry> PathCache::FindOrInsertEntry(
+    const SkPath& aPath, const Pattern* aPattern, const Matrix& aTransform,
+    const IntRect& aBounds, const Point& aOrigin) {
+  HashNumber hash =
+      PathCacheEntry::HashPath(aPath, aPattern, aTransform, aBounds);
+  for (const RefPtr<PathCacheEntry>& entry : mEntries) {
+    if (entry->MatchesPath(aPath, aPattern, aTransform, aBounds, hash)) {
+      return do_AddRef(entry);
+    }
+  }
+  Pattern* pattern = nullptr;
+  if (aPattern) {
+    pattern = aPattern->Clone();
+    if (!pattern) {
+      return nullptr;
+    }
+  }
+  RefPtr<PathCacheEntry> entry =
+      new PathCacheEntry(aPath, pattern, aTransform, aBounds, aOrigin, hash);
+  mEntries.insertFront(entry);
+  return entry.forget();
 }
 
 void DrawTargetWebgl::Fill(const Path* aPath, const Pattern& aPattern,
@@ -1196,14 +1299,104 @@ void DrawTargetWebgl::Fill(const Path* aPath, const Pattern& aPattern,
   if (!aPath || aPath->GetBackendType() != BackendType::SKIA) {
     return;
   }
-  const auto& skiaPath = static_cast<const PathSkia*>(aPath)->GetPath();
+  const SkPath& skiaPath = static_cast<const PathSkia*>(aPath)->GetPath();
   SkRect rect;
-  if (skiaPath.isRect(&rect)) {
+  
+  if (skiaPath.isRect(&rect) && SupportsPattern(aPattern)) {
     DrawRect(SkRectToRect(rect), aPattern, aOptions);
-  } else {
-    MarkSkiaChanged(aOptions);
-    mSkia->Fill(aPath, aPattern, aOptions);
+    return;
   }
+
+  
+  
+  if (mWebglValid && SupportsDrawOptions(aOptions)) {
+    
+    
+    Rect bounds =
+        aPath->GetBounds(mTransform).Intersect(Rect(mSkia->GetRect()));
+    if (bounds.IsEmpty()) {
+      return;
+    }
+    IntRect intBounds = RoundedOut(bounds);
+    
+    
+    
+    Maybe<DeviceColor> color =
+        aPattern.GetType() == PatternType::COLOR
+            ? Some(static_cast<const ColorPattern&>(aPattern).mColor)
+            : Nothing();
+    if (!mPathCache) {
+      mPathCache = MakeUnique<PathCache>();
+    }
+    
+    
+    RefPtr<PathCacheEntry> entry =
+        mPathCache->FindOrInsertEntry(skiaPath, color ? nullptr : &aPattern,
+                                      mTransform, intBounds, bounds.TopLeft());
+    if (entry) {
+      RefPtr<TextureHandle> handle = entry->GetHandle();
+      if (handle && handle->IsValid()) {
+        
+        
+        
+        
+        
+        
+        
+        Point oldOffset = entry->GetOrigin() - entry->GetBounds().TopLeft();
+        Point newOffset = bounds.TopLeft() - intBounds.TopLeft();
+        Rect offsetRect = Rect(intBounds) + (newOffset - oldOffset);
+        SurfacePattern pathPattern(nullptr, ExtendMode::CLAMP,
+                                   Matrix::Translation(offsetRect.TopLeft()));
+        if (DrawRect(offsetRect, pathPattern, aOptions, color, &handle, false,
+                     true, true)) {
+          return;
+        }
+      } else {
+        
+        
+        
+        
+        
+        handle = nullptr;
+        RefPtr<DrawTargetSkia> pathDT = new DrawTargetSkia;
+        if (pathDT->Init(intBounds.Size(),
+                         color ? SurfaceFormat::A8 : SurfaceFormat::B8G8R8A8)) {
+          pathDT->SetTransform(mTransform *
+                               Matrix::Translation(-intBounds.TopLeft()));
+          DrawOptions drawOptions(1.0f, CompositionOp::OP_OVER,
+                                  aOptions.mAntialiasMode);
+          static const ColorPattern maskPattern(
+              DeviceColor(1.0f, 1.0f, 1.0f, 1.0f));
+          const Pattern& cachePattern = color ? maskPattern : aPattern;
+          pathDT->Fill(aPath, cachePattern, drawOptions);
+          RefPtr<SourceSurface> pathSurface = pathDT->Snapshot();
+          if (pathSurface) {
+            SurfacePattern pathPattern(
+                pathSurface, ExtendMode::CLAMP,
+                Matrix::Translation(intBounds.TopLeft()));
+            
+            
+            
+            
+            if (DrawRect(Rect(intBounds), pathPattern, aOptions, color, &handle,
+                         false, true) &&
+                handle) {
+              entry->Link(handle);
+            } else {
+              entry->Unlink();
+            }
+            return;
+          }
+        }
+      }
+    }
+  }
+
+  
+  
+  MarkSkiaChanged(aOptions);
+  mSkia->Fill(aPath, aPattern, aOptions);
 }
 
 void DrawTargetWebgl::DrawSurface(SourceSurface* aSurface, const Rect& aDest,
@@ -1443,16 +1636,6 @@ HashNumber GlyphCacheEntry::HashGlyphs(const GlyphBuffer& aBuffer,
 }
 
 
-
-static inline bool HasMatchingScale(const Matrix& aTransform1,
-                                    const Matrix& aTransform2) {
-  return FuzzyEqual(aTransform1._11, aTransform2._11) &&
-         FuzzyEqual(aTransform1._12, aTransform2._12) &&
-         FuzzyEqual(aTransform1._21, aTransform2._21) &&
-         FuzzyEqual(aTransform1._22, aTransform2._22);
-}
-
-
 bool GlyphCacheEntry::MatchesGlyphs(const GlyphBuffer& aBuffer,
                                     const DeviceColor& aColor,
                                     const Matrix& aTransform,
@@ -1487,10 +1670,8 @@ GlyphCacheEntry::GlyphCacheEntry(const GlyphBuffer& aBuffer,
                                  const DeviceColor& aColor,
                                  const Matrix& aTransform,
                                  const IntRect& aBounds, HashNumber aHash)
-    : mColor(aColor),
-      mTransform(aTransform),
-      mBounds(aBounds),
-      mHash(aHash ? aHash : HashGlyphs(aBuffer, aTransform)) {
+    : CacheEntryImpl<GlyphCacheEntry>(aTransform, aBounds, aHash),
+      mColor(aColor) {
   
   
   Glyph* glyphs = new Glyph[aBuffer.mNumGlyphs];
@@ -1513,47 +1694,20 @@ GlyphCacheEntry::GlyphCacheEntry(const GlyphBuffer& aBuffer,
 
 already_AddRefed<GlyphCacheEntry> GlyphCache::FindOrInsertEntry(
     const GlyphBuffer& aBuffer, const DeviceColor& aColor,
-    const Matrix& aTransform, const IntRect& aBounds, HashNumber aHash) {
-  if (!aHash) {
-    aHash = GlyphCacheEntry::HashGlyphs(aBuffer, aTransform);
-  }
+    const Matrix& aTransform, const IntRect& aBounds) {
+  HashNumber hash = GlyphCacheEntry::HashGlyphs(aBuffer, aTransform);
   for (const RefPtr<GlyphCacheEntry>& entry : mEntries) {
-    if (entry->MatchesGlyphs(aBuffer, aColor, aTransform, aBounds, aHash)) {
+    if (entry->MatchesGlyphs(aBuffer, aColor, aTransform, aBounds, hash)) {
       return do_AddRef(entry);
     }
   }
   RefPtr<GlyphCacheEntry> entry =
-      new GlyphCacheEntry(aBuffer, aColor, aTransform, aBounds, aHash);
+      new GlyphCacheEntry(aBuffer, aColor, aTransform, aBounds, hash);
   mEntries.insertFront(entry);
   return entry.forget();
 }
 
 GlyphCache::GlyphCache(ScaledFont* aFont) : mFont(aFont) {}
-
-void GlyphCacheEntry::Link(const RefPtr<TextureHandle>& aHandle) {
-  mHandle = aHandle;
-  mHandle->SetGlyphCacheEntry(this);
-}
-
-
-
-
-void GlyphCacheEntry::Unlink() {
-  if (isInList()) {
-    remove();
-  }
-  
-  if (mHandle) {
-    mHandle->SetGlyphCacheEntry(nullptr);
-    mHandle = nullptr;
-  }
-}
-
-GlyphCache::~GlyphCache() {
-  while (RefPtr<GlyphCacheEntry> entry = mEntries.popLast()) {
-    entry->Unlink();
-  }
-}
 
 static void ReleaseGlyphCache(void* aPtr) {
   delete static_cast<GlyphCache*>(aPtr);
@@ -1646,13 +1800,11 @@ void DrawTargetWebgl::FillGlyphs(ScaledFont* aFont, const GlyphBuffer& aBuffer,
         mGlyphCaches.insertFront(cache);
       }
       
-      HashNumber hash = GlyphCacheEntry::HashGlyphs(aBuffer, mTransform);
       DeviceColor color = static_cast<const ColorPattern&>(aPattern).mColor;
-      color.a *= aOptions.mAlpha;
       DeviceColor aaColor =
           useColor ? color : DeviceColor(1.0f, 1.0f, 1.0f, 1.0f);
-      RefPtr<GlyphCacheEntry> entry = cache->FindOrInsertEntry(
-          aBuffer, aaColor, mTransform, intBounds, hash);
+      RefPtr<GlyphCacheEntry> entry =
+          cache->FindOrInsertEntry(aBuffer, aaColor, mTransform, intBounds);
       if (entry) {
         RefPtr<TextureHandle> handle = entry->GetHandle();
         if (handle && handle->IsValid()) {
@@ -1663,57 +1815,60 @@ void DrawTargetWebgl::FillGlyphs(ScaledFont* aFont, const GlyphBuffer& aBuffer,
           
           SurfacePattern pattern(nullptr, ExtendMode::CLAMP,
                                  Matrix::Translation(intBounds.TopLeft()));
-          if (!DrawRect(Rect(intBounds), pattern, aOptions,
-                        handle->GetFormat() == SurfaceFormat::A8 ? Some(color)
-                                                                 : Nothing(),
-                        &handle, false, true, true)) {
-            MarkSkiaChanged(aOptions);
-            mSkia->FillGlyphs(aFont, aBuffer, aPattern, aOptions);
+          if (DrawRect(Rect(intBounds), pattern, aOptions,
+                       handle->GetFormat() == SurfaceFormat::A8 ? Some(color)
+                                                                : Nothing(),
+                       &handle, false, true, true)) {
+            return;
           }
-          return;
-        }
-        handle = nullptr;
+        } else {
+          handle = nullptr;
 
-        
-        
-        RefPtr<DrawTargetSkia> textDT = new DrawTargetSkia;
-        if (textDT->Init(intBounds.Size(), SurfaceFormat::B8G8R8A8)) {
-          textDT->SetTransform(mTransform *
-                               Matrix::Translation(-intBounds.TopLeft()));
-          textDT->FillGlyphs(aFont, aBuffer, ColorPattern(aaColor));
-          RefPtr<SourceSurface> textSurface = textDT->Snapshot();
-          if (textSurface) {
-            if (!useColor) {
-              
-              
-              
-              
-              if (CheckForColorGlyphs(textSurface)) {
-                useColor = true;
-              } else {
-                textSurface = ExtractAlpha(textSurface);
-                if (!textSurface) {
-                  
-                  return;
+          
+          
+          RefPtr<DrawTargetSkia> textDT = new DrawTargetSkia;
+          if (textDT->Init(intBounds.Size(), SurfaceFormat::B8G8R8A8)) {
+            textDT->SetTransform(mTransform *
+                                 Matrix::Translation(-intBounds.TopLeft()));
+            textDT->SetPermitSubpixelAA(useSubpixelAA);
+            DrawOptions drawOptions(1.0f, CompositionOp::OP_OVER,
+                                    aOptions.mAntialiasMode);
+            textDT->FillGlyphs(aFont, aBuffer, ColorPattern(aaColor),
+                               drawOptions);
+            RefPtr<SourceSurface> textSurface = textDT->Snapshot();
+            if (textSurface) {
+              if (!useColor) {
+                
+                
+                
+                
+                if (CheckForColorGlyphs(textSurface)) {
+                  useColor = true;
+                } else {
+                  textSurface = ExtractAlpha(textSurface);
+                  if (!textSurface) {
+                    
+                    return;
+                  }
                 }
               }
+              
+              
+              SurfacePattern pattern(textSurface, ExtendMode::CLAMP,
+                                     Matrix::Translation(intBounds.TopLeft()));
+              if (DrawRect(Rect(intBounds), pattern, aOptions,
+                           useColor ? Nothing() : Some(color), &handle, false,
+                           true) &&
+                  handle) {
+                
+                
+                entry->Link(handle);
+              } else {
+                
+                entry->Unlink();
+              }
+              return;
             }
-            
-            
-            SurfacePattern pattern(textSurface, ExtendMode::CLAMP,
-                                   Matrix::Translation(intBounds.TopLeft()));
-            if (DrawRect(Rect(intBounds), pattern, aOptions,
-                         useColor ? Nothing() : Some(color), &handle, false,
-                         true) &&
-                handle) {
-              
-              
-              entry->Link(handle);
-            } else {
-              
-              entry->Unlink();
-            }
-            return;
           }
         }
       }
