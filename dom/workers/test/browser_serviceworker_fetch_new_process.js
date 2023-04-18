@@ -235,11 +235,19 @@ async function do_test_sw(host, remoteType, swMode, fileBlob) {
             .filter(swURL => swURL == url);
         }
       );
-      Assert.deepEqual(
-        workerDebuggerURLs,
-        [sw],
-        "The worker should be running in the correct child process"
-      );
+      if (remoteType.startsWith("webServiceWorker=")) {
+        Assert.notDeepEqual(
+          workerDebuggerURLs,
+          [sw],
+          "Isolated workers should not be running in the content child process"
+        );
+      } else {
+        Assert.deepEqual(
+          workerDebuggerURLs,
+          [sw],
+          "The worker should be running in the correct child process"
+        );
+      }
 
       
       
@@ -319,5 +327,24 @@ add_task(async function test() {
 
     await do_test_sw(fissionUrl, fissionRemoteType, "synthetic", null);
     await do_test_sw(fissionUrl, fissionRemoteType, "synthetic", fileBlob);
+
+    
+    const isolateUrl = "example.com";
+    const isolateRemoteType = `webServiceWorker=https://` + isolateUrl;
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        [
+          "browser.tabs.remote.serviceWorkerIsolationList",
+          "https://" + isolateUrl,
+        ],
+        [
+          "browser.tabs.remote.separatePrivilegedMozillaWebContentProcess",
+          false,
+        ],
+        ["browser.tabs.remote.separatedMozillaDomains", ""],
+      ],
+    });
+    await do_test_sw(isolateUrl, isolateRemoteType, "synthetic", null);
+    await do_test_sw(isolateUrl, isolateRemoteType, "synthetic", fileBlob);
   }
 });

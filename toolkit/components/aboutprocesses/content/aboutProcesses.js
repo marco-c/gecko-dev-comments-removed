@@ -463,6 +463,10 @@ var View = {
           fluentName = "about-processes-web-isolated-process";
           fluentArgs.origin = data.origin;
           break;
+        case "webServiceWorker":
+          fluentName = "about-processes-web-serviceworker";
+          fluentArgs.origin = data.origin;
+          break;
         case "webLargeAllocation":
           fluentName = "about-processes-web-large-allocation-process";
           fluentArgs.origin = data.origin;
@@ -647,7 +651,7 @@ var View = {
     let killButton = cpuCell.nextSibling;
     killButton.className = "action-icon";
 
-    if (["web", "webIsolated", "webLargeAllocation"].includes(data.type)) {
+    if (data.type.startsWith("web")) {
       
       if (this._killedRecently.some(kill => kill.pid && kill.pid == data.pid)) {
         
@@ -1336,6 +1340,7 @@ var Control = {
         return RANK_BROWSER;
       
       case "webIsolated":
+      case "webServiceWorker":
       case "webLargeAllocation":
       case "withCoopCoep": {
         if (windows.some(w => w.tab)) {

@@ -40,6 +40,7 @@ enum class ProcType {
   PrivilegedMozilla,
   WebLargeAllocation,
   WebCOOPCOEP,
+  WebServiceWorker,
   
   Browser,  
   IPDLUnitTest,

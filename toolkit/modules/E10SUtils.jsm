@@ -44,6 +44,16 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "browser.tabs.remote.useCrossOriginOpenerPolicy",
   false
 );
+
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "serviceWorkerIsolationList",
+  "browser.tabs.remote.serviceWorkerIsolationList",
+  "",
+  false,
+  val => val.split(",")
+);
 XPCOMUtils.defineLazyServiceGetter(
   this,
   "serializationHelper",
@@ -77,6 +87,7 @@ const FILE_REMOTE_TYPE = "file";
 const EXTENSION_REMOTE_TYPE = "extension";
 const PRIVILEGEDABOUT_REMOTE_TYPE = "privilegedabout";
 const PRIVILEGEDMOZILLA_REMOTE_TYPE = "privilegedmozilla";
+const SERVICEWORKER_REMOTE_TYPE = "webServiceWorker";
 
 
 const LARGE_ALLOCATION_REMOTE_TYPE = "webLargeAllocation";
@@ -130,7 +141,8 @@ function validatedWebRemoteType(
   aResultPrincipal,
   aRemoteSubframes,
   aIsWorker = false,
-  aOriginAttributes = {}
+  aOriginAttributes = {},
+  aWorkerType = Ci.nsIE10SUtils.REMOTE_WORKER_TYPE_SHARED
 ) {
   
   
@@ -233,7 +245,17 @@ function validatedWebRemoteType(
       return aPreferredRemoteType;
     }
 
+    if (
+      aIsWorker &&
+      aWorkerType === Ci.nsIE10SUtils.REMOTE_WORKER_TYPE_SERVICE &&
+      serviceWorkerIsolationList.some(function(val) {
+        return targetPrincipal.siteOriginNoSuffix == val;
+      })
+    ) {
+      return `${SERVICEWORKER_REMOTE_TYPE}=${targetPrincipal.siteOrigin}`;
+    }
     return `${FISSION_WEB_REMOTE_TYPE}=${targetPrincipal.siteOrigin}`;
+    
   }
 
   if (!aPreferredRemoteType) {
@@ -418,7 +440,8 @@ var E10SUtils = {
     aResultPrincipal = null,
     aIsSubframe = false,
     aIsWorker = false,
-    aOriginAttributes = {}
+    aOriginAttributes = {},
+    aWorkerType = Ci.nsIE10SUtils.REMOTE_WORKER_TYPE_SHARED
   ) {
     if (!aMultiProcess) {
       return NOT_REMOTE;
@@ -613,7 +636,8 @@ var E10SUtils = {
           aResultPrincipal,
           aRemoteSubframes,
           aIsWorker,
-          aOriginAttributes
+          aOriginAttributes,
+          aWorkerType
         );
         log.debug(`  validatedWebRemoteType() returning: ${remoteType}`);
         return remoteType;
@@ -695,7 +719,8 @@ var E10SUtils = {
         aPrincipal,
         false, 
         true, 
-        aPrincipal.originAttributes
+        aPrincipal.originAttributes,
+        aWorkerType
       );
     }
 

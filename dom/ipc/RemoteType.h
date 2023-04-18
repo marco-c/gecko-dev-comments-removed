@@ -28,6 +28,7 @@
 #define WITH_COOP_COEP_REMOTE_TYPE "webCOOP+COEP"_ns
 #define WITH_COOP_COEP_REMOTE_TYPE_PREFIX "webCOOP+COEP="_ns
 #define LARGE_ALLOCATION_REMOTE_TYPE "webLargeAllocation"_ns
+#define SERVICEWORKER_REMOTE_TYPE "webServiceWorker"_ns
 
 
 #define NOT_REMOTE_TYPE VoidCString()
