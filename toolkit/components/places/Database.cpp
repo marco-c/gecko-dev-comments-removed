@@ -1246,6 +1246,13 @@ nsresult Database::InitSchema(bool* aDatabaseMigrated) {
 
       
 
+      if (currentSchemaVersion < 64) {
+        rv = MigrateV64Up();
+        NS_ENSURE_SUCCESS(rv, rv);
+      }
+
+      
+
       
       
       
@@ -2433,6 +2440,22 @@ nsresult Database::MigrateV63Up() {
     rv = mMainConn->ExecuteSimpleSQL(
         "ALTER TABLE moz_places_metadata_snapshots "
         "ADD COLUMN title TEXT "_ns);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  return NS_OK;
+}
+
+nsresult Database::MigrateV64Up() {
+  
+  nsCOMPtr<mozIStorageStatement> stmt;
+  nsresult rv = mMainConn->CreateStatement(
+      "SELECT hidden FROM moz_places_metadata_snapshots_groups"_ns,
+      getter_AddRefs(stmt));
+  if (NS_FAILED(rv)) {
+    rv = mMainConn->ExecuteSimpleSQL(
+        "ALTER TABLE moz_places_metadata_snapshots_groups "
+        "ADD COLUMN hidden INTEGER DEFAULT 0 NOT NULL "_ns);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
