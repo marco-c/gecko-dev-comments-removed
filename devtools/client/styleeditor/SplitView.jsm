@@ -120,10 +120,6 @@ class SplitView {
     if (this._activeSummary) {
       const binding = bindings.get(this._activeSummary);
 
-      if (binding.onHide) {
-        binding.onHide(this._activeSummary, binding._details, binding.data);
-      }
-
       this._activeSummary.classList.remove("splitview-active");
       binding._details.classList.remove("splitview-active");
     }
@@ -156,10 +152,6 @@ class SplitView {
   }
 
   
-
-
-
-
 
 
 
@@ -248,10 +240,6 @@ class SplitView {
     const binding = bindings.get(summary);
     summary.remove();
     binding._details.remove();
-
-    if (binding.onDestroy) {
-      binding.onDestroy(summary, binding._details, binding.data);
-    }
   }
 
   
