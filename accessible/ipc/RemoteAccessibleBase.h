@@ -280,6 +280,9 @@ class RemoteAccessibleBase : public Accessible, public HyperTextAccessibleBase {
                          : nullptr;
   }
 
+  virtual TableAccessibleBase* AsTableBase() override;
+  virtual TableCellAccessibleBase* AsTableCellBase() override;
+
   
 
 
