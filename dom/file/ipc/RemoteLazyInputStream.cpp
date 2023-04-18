@@ -422,8 +422,7 @@ RemoteLazyInputStream::AsyncWait(nsIInputStreamCallback* aCallback,
 
       
       case ePending: {
-        if (NS_WARN_IF(mInputStreamCallback && aCallback &&
-                       mInputStreamCallback != aCallback)) {
+        if (mInputStreamCallback && aCallback) {
           return NS_ERROR_FAILURE;
         }
 
@@ -435,8 +434,7 @@ RemoteLazyInputStream::AsyncWait(nsIInputStreamCallback* aCallback,
       
       
       case eRunning: {
-        if (NS_WARN_IF(mInputStreamCallback && aCallback &&
-                       mInputStreamCallback != aCallback)) {
+        if (mInputStreamCallback && aCallback) {
           return NS_ERROR_FAILURE;
         }
 
@@ -456,8 +454,7 @@ RemoteLazyInputStream::AsyncWait(nsIInputStreamCallback* aCallback,
         [[fallthrough]];
       default:
         MOZ_ASSERT(mState == eClosed);
-        if (NS_WARN_IF(mInputStreamCallback && aCallback &&
-                       mInputStreamCallback != aCallback)) {
+        if (mInputStreamCallback && aCallback) {
           return NS_ERROR_FAILURE;
         }
         break;
@@ -597,13 +594,6 @@ RemoteLazyInputStream::OnInputStreamReady(nsIAsyncInputStream* aStream) {
 }
 
 
-
-void RemoteLazyInputStream::SerializedComplexity(uint32_t aMaxSize,
-                                                 uint32_t* aSizeUsed,
-                                                 uint32_t* aNewPipes,
-                                                 uint32_t* aTransferables) {
-  *aTransferables = 1;
-}
 
 void RemoteLazyInputStream::Serialize(
     mozilla::ipc::InputStreamParams& aParams,
