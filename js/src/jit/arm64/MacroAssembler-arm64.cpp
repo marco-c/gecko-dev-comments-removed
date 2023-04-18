@@ -204,7 +204,8 @@ void MacroAssemblerCompat::handleFailureWithHandlerTail(
   Label entryFrame;
   Label catch_;
   Label finally;
-  Label return_;
+  Label returnBaseline;
+  Label returnIon;
   Label bailout;
   Label wasm;
   Label wasmCatch;
@@ -212,7 +213,7 @@ void MacroAssemblerCompat::handleFailureWithHandlerTail(
   
   MOZ_ASSERT(GetStackPointer64().Is(PseudoStackPointer64));
 
-  loadPtr(Address(PseudoStackPointer, offsetof(ResumeFromException, kind)), r0);
+  loadPtr(Address(PseudoStackPointer, ResumeFromException::offsetOfKind()), r0);
   asMasm().branch32(Assembler::Equal, r0,
                     Imm32(ExceptionResumeKind::EntryFrame), &entryFrame);
   asMasm().branch32(Assembler::Equal, r0, Imm32(ExceptionResumeKind::Catch),
@@ -220,7 +221,10 @@ void MacroAssemblerCompat::handleFailureWithHandlerTail(
   asMasm().branch32(Assembler::Equal, r0, Imm32(ExceptionResumeKind::Finally),
                     &finally);
   asMasm().branch32(Assembler::Equal, r0,
-                    Imm32(ExceptionResumeKind::ForcedReturn), &return_);
+                    Imm32(ExceptionResumeKind::ForcedReturnBaseline),
+                    &returnBaseline);
+  asMasm().branch32(Assembler::Equal, r0,
+                    Imm32(ExceptionResumeKind::ForcedReturnIon), &returnIon);
   asMasm().branch32(Assembler::Equal, r0, Imm32(ExceptionResumeKind::Bailout),
                     &bailout);
   asMasm().branch32(Assembler::Equal, r0, Imm32(ExceptionResumeKind::Wasm),
@@ -285,7 +289,9 @@ void MacroAssemblerCompat::handleFailureWithHandlerTail(
   Br(x0);
 
   
-  bind(&return_);
+  
+  Label profilingInstrumentation;
+  bind(&returnBaseline);
   loadPtr(
       Address(PseudoStackPointer, ResumeFromException::offsetOfFramePointer()),
       BaselineFrameReg);
@@ -301,9 +307,22 @@ void MacroAssemblerCompat::handleFailureWithHandlerTail(
   movePtr(BaselineFrameReg, PseudoStackPointer);
   syncStackPtr();
   vixl::MacroAssembler::Pop(ARMRegister(BaselineFrameReg, 64));
+  jump(&profilingInstrumentation);
+
+  
+  bind(&returnIon);
+  loadValue(
+      Address(PseudoStackPointer, ResumeFromException::offsetOfException()),
+      JSReturnOperand);
+  loadPtr(
+      Address(PseudoStackPointer, offsetof(ResumeFromException, framePointer)),
+      PseudoStackPointer);
+  syncStackPtr();
 
   
   
+  
+  bind(&profilingInstrumentation);
   {
     Label skipProfilingInstrumentation;
     AbsoluteAddress addressOfEnabled(

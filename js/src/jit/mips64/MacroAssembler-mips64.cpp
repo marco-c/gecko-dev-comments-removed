@@ -1797,7 +1797,8 @@ void MacroAssemblerMIPS64Compat::handleFailureWithHandlerTail(
   Label entryFrame;
   Label catch_;
   Label finally;
-  Label return_;
+  Label returnBaseline;
+  Label returnIon;
   Label bailout;
   Label wasm;
   Label wasmCatch;
@@ -1811,7 +1812,10 @@ void MacroAssemblerMIPS64Compat::handleFailureWithHandlerTail(
   asMasm().branch32(Assembler::Equal, a0, Imm32(ExceptionResumeKind::Finally),
                     &finally);
   asMasm().branch32(Assembler::Equal, a0,
-                    Imm32(ExceptionResumeKind::ForcedReturn), &return_);
+                    Imm32(ExceptionResumeKind::ForcedReturnBaseline),
+                    &returnBaseline);
+  asMasm().branch32(Assembler::Equal, a0,
+                    Imm32(ExceptionResumeKind::ForcedReturnIon), &returnIon);
   asMasm().branch32(Assembler::Equal, a0, Imm32(ExceptionResumeKind::Bailout),
                     &bailout);
   asMasm().branch32(Assembler::Equal, a0, Imm32(ExceptionResumeKind::Wasm),
@@ -1860,7 +1864,8 @@ void MacroAssemblerMIPS64Compat::handleFailureWithHandlerTail(
 
   
   
-  bind(&return_);
+  Label profilingInstrumentation;
+  bind(&returnBaseline);
   loadPtr(Address(StackPointer, ResumeFromException::offsetOfFramePointer()),
           BaselineFrameReg);
   loadPtr(Address(StackPointer, ResumeFromException::offsetOfStackPointer()),
@@ -1870,9 +1875,19 @@ void MacroAssemblerMIPS64Compat::handleFailureWithHandlerTail(
       JSReturnOperand);
   ma_move(StackPointer, BaselineFrameReg);
   pop(BaselineFrameReg);
+  jump(&profilingInstrumentation);
+
+  
+  bind(&returnIon);
+  loadValue(Address(StackPointer, ResumeFromException::offsetOfException()),
+            JSReturnOperand);
+  loadPtr(Address(StackPointer, ResumeFromException::offsetOfFramePointer()),
+          StackPointer);
 
   
   
+  
+  bind(&profilingInstrumentation);
   {
     Label skipProfilingInstrumentation;
     

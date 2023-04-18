@@ -487,7 +487,8 @@ void MacroAssemblerX64::handleFailureWithHandlerTail(Label* profilerExitTail) {
   Label entryFrame;
   Label catch_;
   Label finally;
-  Label return_;
+  Label returnBaseline;
+  Label returnIon;
   Label bailout;
   Label wasm;
   Label wasmCatch;
@@ -500,7 +501,10 @@ void MacroAssemblerX64::handleFailureWithHandlerTail(Label* profilerExitTail) {
   asMasm().branch32(Assembler::Equal, rax, Imm32(ExceptionResumeKind::Finally),
                     &finally);
   asMasm().branch32(Assembler::Equal, rax,
-                    Imm32(ExceptionResumeKind::ForcedReturn), &return_);
+                    Imm32(ExceptionResumeKind::ForcedReturnBaseline),
+                    &returnBaseline);
+  asMasm().branch32(Assembler::Equal, rax,
+                    Imm32(ExceptionResumeKind::ForcedReturnIon), &returnIon);
   asMasm().branch32(Assembler::Equal, rax, Imm32(ExceptionResumeKind::Bailout),
                     &bailout);
   asMasm().branch32(Assembler::Equal, rax, Imm32(ExceptionResumeKind::Wasm),
@@ -540,16 +544,27 @@ void MacroAssemblerX64::handleFailureWithHandlerTail(Label* profilerExitTail) {
   jmp(Operand(rax));
 
   
-  bind(&return_);
+  
+  Label profilingInstrumentation;
+  bind(&returnBaseline);
   loadPtr(Address(rsp, ResumeFromException::offsetOfFramePointer()), rbp);
   loadPtr(Address(rsp, ResumeFromException::offsetOfStackPointer()), rsp);
   loadValue(Address(rbp, BaselineFrame::reverseOffsetOfReturnValue()),
             JSReturnOperand);
   movq(rbp, rsp);
   pop(rbp);
+  jmp(&profilingInstrumentation);
+
+  
+  bind(&returnIon);
+  loadValue(Address(rsp, ResumeFromException::offsetOfException()),
+            JSReturnOperand);
+  loadPtr(Address(rsp, ResumeFromException::offsetOfFramePointer()), rsp);
 
   
   
+  
+  bind(&profilingInstrumentation);
   {
     Label skipProfilingInstrumentation;
     AbsoluteAddress addressOfEnabled(

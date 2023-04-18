@@ -3334,7 +3334,8 @@ void MacroAssemblerARMCompat::handleFailureWithHandlerTail(
   Label entryFrame;
   Label catch_;
   Label finally;
-  Label return_;
+  Label returnBaseline;
+  Label returnIon;
   Label bailout;
   Label wasm;
   Label wasmCatch;
@@ -3351,7 +3352,10 @@ void MacroAssemblerARMCompat::handleFailureWithHandlerTail(
   asMasm().branch32(Assembler::Equal, r0, Imm32(ExceptionResumeKind::Finally),
                     &finally);
   asMasm().branch32(Assembler::Equal, r0,
-                    Imm32(ExceptionResumeKind::ForcedReturn), &return_);
+                    Imm32(ExceptionResumeKind::ForcedReturnBaseline),
+                    &returnBaseline);
+  asMasm().branch32(Assembler::Equal, r0,
+                    Imm32(ExceptionResumeKind::ForcedReturnIon), &returnIon);
   asMasm().branch32(Assembler::Equal, r0, Imm32(ExceptionResumeKind::Bailout),
                     &bailout);
   asMasm().branch32(Assembler::Equal, r0, Imm32(ExceptionResumeKind::Wasm),
@@ -3408,7 +3412,8 @@ void MacroAssemblerARMCompat::handleFailureWithHandlerTail(
 
   
   
-  bind(&return_);
+  Label profilingInstrumentation;
+  bind(&returnBaseline);
   {
     ScratchRegisterScope scratch(asMasm());
     ma_ldr(Address(sp, ResumeFromException::offsetOfFramePointer()), r11,
@@ -3420,9 +3425,22 @@ void MacroAssemblerARMCompat::handleFailureWithHandlerTail(
             JSReturnOperand);
   ma_mov(r11, sp);
   pop(r11);
+  jump(&profilingInstrumentation);
+
+  
+  bind(&returnIon);
+  loadValue(Address(sp, ResumeFromException::offsetOfException()),
+            JSReturnOperand);
+  {
+    ScratchRegisterScope scratch(asMasm());
+    ma_ldr(Address(sp, ResumeFromException::offsetOfFramePointer()), sp,
+           scratch);
+  }
 
   
   
+  
+  bind(&profilingInstrumentation);
   {
     Label skipProfilingInstrumentation;
     

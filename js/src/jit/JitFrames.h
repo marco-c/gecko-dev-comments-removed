@@ -169,7 +169,8 @@ enum class ExceptionResumeKind : int32_t {
   
   
   
-  ForcedReturn,
+  ForcedReturnBaseline,
+  ForcedReturnIon,
 
   
   

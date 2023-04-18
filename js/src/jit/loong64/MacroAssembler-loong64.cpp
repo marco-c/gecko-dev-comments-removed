@@ -5238,7 +5238,8 @@ void MacroAssemblerLOONG64Compat::handleFailureWithHandlerTail(
   Label entryFrame;
   Label catch_;
   Label finally;
-  Label return_;
+  Label returnBaseline;
+  Label returnIon;
   Label bailout;
   Label wasm;
   Label wasmCatch;
@@ -5251,8 +5252,11 @@ void MacroAssemblerLOONG64Compat::handleFailureWithHandlerTail(
                     &catch_);
   asMasm().branch32(Assembler::Equal, a0, Imm32(ExceptionResumeKind::Finally),
                     &finally);
-  asMasm().branch32(Assembler::Equal, a0,
-                    Imm32(ExceptionResumeKind::ForcedReturn), &return_);
+  asMasm().branch32(Assembler::Equal, r0,
+                    Imm32(ExceptionResumeKind::ForcedReturnBaseline),
+                    &returnBaseline);
+  asMasm().branch32(Assembler::Equal, r0,
+                    Imm32(ExceptionResumeKind::ForcedReturnIon), &returnIon);
   asMasm().branch32(Assembler::Equal, a0, Imm32(ExceptionResumeKind::Bailout),
                     &bailout);
   asMasm().branch32(Assembler::Equal, a0, Imm32(ExceptionResumeKind::Wasm),
@@ -5300,7 +5304,8 @@ void MacroAssemblerLOONG64Compat::handleFailureWithHandlerTail(
 
   
   
-  bind(&return_);
+  Label profilingInstrumentation;
+  bind(&returnBaseline);
   loadPtr(Address(StackPointer, ResumeFromException::offsetOfFramePointer()),
           BaselineFrameReg);
   loadPtr(Address(StackPointer, ResumeFromException::offsetOfStackPointer()),
@@ -5310,9 +5315,19 @@ void MacroAssemblerLOONG64Compat::handleFailureWithHandlerTail(
       JSReturnOperand);
   as_or(StackPointer, BaselineFrameReg, zero);
   pop(BaselineFrameReg);
+  jump(&profilingInstrumentation);
+
+  
+  bind(&returnIon);
+  loadValue(Address(StackPointer, ResumeFromException::offsetOfException()),
+            JSReturnOperand);
+  loadPtr(Address(StackPointer, ResumeFromException::offsetOfFramePointer()),
+          StackPointer);
 
   
   
+  
+  bind(&profilingInstrumentation);
   {
     Label skipProfilingInstrumentation;
     
