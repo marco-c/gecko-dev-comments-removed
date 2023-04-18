@@ -472,11 +472,6 @@ var FullZoom = {
     aBrowser,
     aCallback
   ) {
-    if (gInPrintPreviewMode) {
-      this._executeSoon(aCallback);
-      return;
-    }
-
     
     
     
@@ -516,11 +511,7 @@ var FullZoom = {
 
 
   _applyZoomToPref: function FullZoom__applyZoomToPref(browser) {
-    if (
-      !this.siteSpecific ||
-      gInPrintPreviewMode ||
-      browser.isSyntheticDocument
-    ) {
+    if (!this.siteSpecific || browser.isSyntheticDocument) {
       
       
       

@@ -26,8 +26,6 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/DeferredTask.jsm"
 );
 
-let gPrintPreviewInitializingInfo = null;
-
 let gPendingPreviewsMap = new Map();
 
 class PrintingChild extends JSWindowActorChild {
@@ -46,13 +44,6 @@ class PrintingChild extends JSWindowActorChild {
     this.contentWindow?.removeEventListener("scroll", this);
   }
 
-  
-  
-  
-  
-  
-  
-
   handleEvent(event) {
     switch (event.type) {
       case "PrintingError": {
@@ -63,36 +54,6 @@ class PrintingChild extends JSWindowActorChild {
           isPrinting: wbp.doingPrint,
           nsresult,
         });
-        break;
-      }
-
-      case "printPreviewUpdate": {
-        let info = gPrintPreviewInitializingInfo;
-        if (!info) {
-          
-          
-          return;
-        }
-
-        
-        
-        if (!info.entered) {
-          gPendingPreviewsMap.delete(this.browsingContext.id);
-
-          info.entered = true;
-          this.sendAsyncMessage("Printing:Preview:Entered", {
-            failed: false,
-            changingBrowsers: info.changingBrowsers,
-          });
-
-          
-          if (info.nextRequest) {
-            Services.tm.dispatchToMainThread(info.nextRequest);
-          }
-        }
-
-        
-        this.updatePageCount();
         break;
       }
 
@@ -112,21 +73,6 @@ class PrintingChild extends JSWindowActorChild {
   receiveMessage(message) {
     let data = message.data;
     switch (message.name) {
-      case "Printing:Preview:Enter": {
-        this.enterPrintPreview(
-          BrowsingContext.get(data.browsingContextId),
-          data.simplifiedMode,
-          data.changingBrowsers,
-          data.lastUsedPrinterName
-        );
-        break;
-      }
-
-      case "Printing:Preview:Exit": {
-        this.exitPrintPreview();
-        break;
-      }
-
       case "Printing:Preview:Navigate": {
         this.navigate(data.navType, data.pageNum);
         break;
@@ -141,36 +87,6 @@ class PrintingChild extends JSWindowActorChild {
     }
 
     return undefined;
-  }
-
-  getPrintSettings(lastUsedPrinterName) {
-    try {
-      let PSSVC = Cc["@mozilla.org/gfx/printsettings-service;1"].getService(
-        Ci.nsIPrintSettingsService
-      );
-
-      let printSettings = PSSVC.newPrintSettings;
-      if (!printSettings.printerName) {
-        printSettings.printerName = lastUsedPrinterName;
-      }
-      
-      PSSVC.initPrintSettingsFromPrinter(
-        printSettings.printerName,
-        printSettings
-      );
-      
-      PSSVC.initPrintSettingsFromPrefs(
-        printSettings,
-        true,
-        printSettings.kInitSaveAll
-      );
-
-      return printSettings;
-    } catch (e) {
-      Cu.reportError(e);
-    }
-
-    return null;
   }
 
   async parseDocument(URL, contentWindow) {
@@ -348,96 +264,6 @@ class PrintingChild extends JSWindowActorChild {
     });
   }
 
-  enterPrintPreview(
-    browsingContext,
-    simplifiedMode,
-    changingBrowsers,
-    lastUsedPrinterName
-  ) {
-    const { docShell } = this;
-
-    try {
-      let contentWindow = browsingContext.window;
-      let printSettings = this.getPrintSettings(lastUsedPrinterName);
-
-      
-      
-      
-      if (printSettings && simplifiedMode) {
-        printSettings.docURL = contentWindow.document.baseURI;
-      }
-
-      
-      let browserContextId = this.browsingContext.id;
-
-      
-      
-      
-      let printPreviewInitialize = () => {
-        
-        
-        
-        if (docShell.isBeingDestroyed()) {
-          this.sendAsyncMessage("Printing:Preview:Entered", {
-            failed: true,
-          });
-          return;
-        }
-
-        try {
-          let listener = new PrintingListener(this);
-          gPendingPreviewsMap.set(browserContextId, listener);
-
-          gPrintPreviewInitializingInfo = { changingBrowsers };
-
-          contentWindow.printPreview(printSettings, listener, docShell);
-        } catch (error) {
-          
-          
-          Cu.reportError(error);
-          gPrintPreviewInitializingInfo = null;
-          this.sendAsyncMessage("Printing:Preview:Entered", {
-            failed: true,
-          });
-        }
-      };
-
-      
-      
-      
-      
-      if (
-        gPrintPreviewInitializingInfo &&
-        !gPrintPreviewInitializingInfo.entered
-      ) {
-        gPrintPreviewInitializingInfo.nextRequest = printPreviewInitialize;
-      } else {
-        Services.tm.dispatchToMainThread(printPreviewInitialize);
-      }
-    } catch (error) {
-      
-      
-      Cu.reportError(error);
-      this.sendAsyncMessage("Printing:Preview:Entered", {
-        failed: true,
-      });
-    }
-  }
-
-  exitPrintPreview() {
-    gPrintPreviewInitializingInfo = null;
-    this.docShell.exitPrintPreview();
-  }
-
-  updatePageCount() {
-    let cv = this.docShell.contentViewer;
-    cv.QueryInterface(Ci.nsIWebBrowserPrint);
-    this.sendAsyncMessage("Printing:Preview:UpdatePageCount", {
-      numPages: cv.printPreviewNumPages,
-      totalPages: cv.rawNumPages,
-    });
-  }
-
   updateCurrentPage() {
     let cv = this.docShell.contentViewer;
     cv.QueryInterface(Ci.nsIWebBrowserPrint);
@@ -452,42 +278,3 @@ class PrintingChild extends JSWindowActorChild {
     cv.printPreviewScrollToPage(navType, pageNum);
   }
 }
-
-PrintingChild.prototype.QueryInterface = ChromeUtils.generateQI([
-  "nsIPrintingPromptService",
-]);
-
-function PrintingListener(actor) {
-  this.actor = actor;
-}
-PrintingListener.prototype = {
-  QueryInterface: ChromeUtils.generateQI(["nsIWebProgressListener"]),
-
-  onStateChange(aWebProgress, aRequest, aStateFlags, aStatus) {
-    this.actor.sendAsyncMessage("Printing:Preview:StateChange", {
-      stateFlags: aStateFlags,
-      status: aStatus,
-    });
-  },
-
-  onProgressChange(
-    aWebProgress,
-    aRequest,
-    aCurSelfProgress,
-    aMaxSelfProgress,
-    aCurTotalProgress,
-    aMaxTotalProgress
-  ) {
-    this.actor.sendAsyncMessage("Printing:Preview:ProgressChange", {
-      curSelfProgress: aCurSelfProgress,
-      maxSelfProgress: aMaxSelfProgress,
-      curTotalProgress: aCurTotalProgress,
-      maxTotalProgress: aMaxTotalProgress,
-    });
-  },
-
-  onLocationChange(aWebProgress, aRequest, aLocation, aFlags) {},
-  onStatusChange(aWebProgress, aRequest, aStatus, aMessage) {},
-  onSecurityChange(aWebProgress, aRequest, aState) {},
-  onContentBlockingEvent(aWebProgress, aRequest, aEvent) {},
-};

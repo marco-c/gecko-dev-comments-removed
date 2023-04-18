@@ -640,8 +640,8 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
     
     
     
-    if (!StaticPrefs::print_tab_modal_enabled() &&
-        (!printSilently || printingViaParent)) {
+    bool print_tab_modal_enabled = true;
+    if (!print_tab_modal_enabled && (!printSilently || printingViaParent)) {
       nsCOMPtr<nsIPrintingPromptService> printPromptService(
           do_GetService(kPrintingPromptService));
       if (printPromptService) {
@@ -746,7 +746,8 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
         [self](nsresult aResult) { self->PageDone(aResult); });
   }
 
-  if (!StaticPrefs::print_tab_modal_enabled() && mIsCreatingPrintPreview) {
+  bool print_tab_modal_enabled = true;
+  if (!print_tab_modal_enabled && mIsCreatingPrintPreview) {
     
     
     

@@ -37,13 +37,6 @@
 
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
-  "PRINT_TAB_MODAL",
-  "print.tab_modal.enabled",
-  false
-);
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  this,
   "SHOW_PAGE_SETUP_MENU",
   "print.show_page_setup_menu",
   false
@@ -61,16 +54,6 @@ ChromeUtils.defineModuleGetter(
   "PromptUtils",
   "resource://gre/modules/SharedPromptUtils.jsm"
 );
-
-ChromeUtils.defineModuleGetter(
-  this,
-  "PrintingParent",
-  "resource://gre/actors/PrintingParent.jsm"
-);
-
-var gFocusedElement = null;
-
-var gPendingPrintPreviews = new Map();
 
 var PrintUtils = {
   SAVE_TO_PDF_PRINTER: "Mozilla Save to PDF",
@@ -150,24 +133,10 @@ var PrintUtils = {
 
 
   updatePrintPreviewMenuHiddenState() {
-    let printPreviewMenuItem = document.getElementById("menu_printPreview");
-    if (printPreviewMenuItem) {
-      printPreviewMenuItem.hidden = PRINT_TAB_MODAL;
-    }
     let pageSetupMenuItem = document.getElementById("menu_printSetup");
     if (pageSetupMenuItem) {
-      pageSetupMenuItem.hidden = PRINT_TAB_MODAL && !SHOW_PAGE_SETUP_MENU;
+      pageSetupMenuItem.hidden = !SHOW_PAGE_SETUP_MENU;
     }
-  },
-
-  
-
-
-
-
-
-  createBrowser(params) {
-    return gBrowser.createBrowser(params);
   },
 
   
@@ -272,7 +241,6 @@ var PrintUtils = {
     
 
     if (
-      PRINT_TAB_MODAL &&
       !PRINT_ALWAYS_SILENT &&
       (!openWindowInfo || openWindowInfo.isForWindowDotPrint)
     ) {
@@ -345,181 +313,27 @@ var PrintUtils = {
 
     makePrintSettingsMaybeEnsuringToFileName().then(settings => {
       settings.printSelectionOnly = printSelectionOnly;
-      PrintUtils.printWindow(aBrowsingContext, settings);
+      
+      
+      aBrowsingContext.print(settings);
     });
     return null;
   },
 
-  
-
-
-
-
-
-
-
-  printWindow(aBrowsingContext, aPrintSettings) {
-    let wg = aBrowsingContext.currentWindowGlobal;
-
-    const printPreviewIsOpen = !!document.getElementById(
-      "print-preview-toolbar"
+  togglePrintPreview(aBrowsingContext) {
+    let dialogBox = this.getTabDialogBox(aBrowsingContext.top.embedderElement);
+    let dialogs = dialogBox.getTabDialogManager().dialogs;
+    let previewDialog = dialogs.find(d =>
+      d._box.querySelector(".printSettingsBrowser")
     );
-
-    if (printPreviewIsOpen) {
-      this._logKeyedTelemetry("PRINT_DIALOG_OPENED_COUNT", "FROM_PREVIEW");
-    } else {
-      this._logKeyedTelemetry("PRINT_DIALOG_OPENED_COUNT", "FROM_PAGE");
+    if (previewDialog) {
+      previewDialog.close();
+      return;
     }
-
-    
-    let printSettings = aPrintSettings || this.getPrintSettings();
-
-    
-    
-    printSettings.title = this._originalTitle || wg.documentTitle;
-
-    if (this._shouldSimplify) {
-      
-      
-      
-      printSettings.docURL = this._originalURL || wg.documentURI;
-    }
-
-    
-    
-    let promise = aBrowsingContext.print(printSettings);
-
-    if (printPreviewIsOpen) {
-      if (this._shouldSimplify) {
-        this._logKeyedTelemetry("PRINT_COUNT", "SIMPLIFIED");
-      } else {
-        this._logKeyedTelemetry("PRINT_COUNT", "WITH_PREVIEW");
-      }
-    } else {
-      this._logKeyedTelemetry("PRINT_COUNT", "WITHOUT_PREVIEW");
-    }
-
-    return promise;
+    this.startPrintWindow(aBrowsingContext);
   },
 
   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  printPreview(aListenerObj) {
-    if (PRINT_TAB_MODAL) {
-      let currentDialogBox = gBrowser.selectedBrowser.tabDialogBox;
-      if (currentDialogBox) {
-        let manager = currentDialogBox.getTabDialogManager();
-        let dialogs = manager.hasDialogs && manager.dialogs;
-        if (dialogs) {
-          for (let dialog of dialogs) {
-            if (dialog._openedURL.includes("print.html")) {
-              dialog.close();
-              return Promise.resolve();
-            }
-          }
-        }
-      }
-      let browsingContext = gBrowser.selectedBrowser.browsingContext;
-      let focusedBc = Services.focus.focusedContentBrowsingContext;
-      if (
-        focusedBc &&
-        focusedBc.top.embedderElement == browsingContext.top.embedderElement
-      ) {
-        browsingContext = focusedBc;
-      }
-      return this._openTabModalPrint(
-        browsingContext,
-         undefined,
-        Date.now()
-      ).promise;
-    }
-
-    
-    
-    let printPreviewTB = document.getElementById("print-preview-toolbar");
-    if (!printPreviewTB) {
-      this._listener = aListenerObj;
-      this._sourceBrowser = aListenerObj.getSourceBrowser();
-      this._originalTitle = this._sourceBrowser.contentTitle;
-      this._originalURL = this._sourceBrowser.currentURI.spec;
-
-      
-      this.logTelemetry("PRINT_PREVIEW_OPENED_COUNT");
-    } else {
-      
-      
-      printPreviewTB.disableUpdateTriggers(true);
-
-      
-      
-      
-      
-      
-      this._sourceBrowser = this._shouldSimplify
-        ? this._listener.getSimplifiedPrintPreviewBrowser()
-        : this._listener.getPrintPreviewBrowser();
-      this._sourceBrowser.collapsed = true;
-    }
-
-    let promise = new Promise((resolve, reject) => {
-      this._onEntered.push({ resolve, reject });
-    });
-
-    this._enterPrintPreview();
-
-    return promise;
-  },
-
-  
-
-  _listener: null,
-  _closeHandlerPP: null,
-  _sourceBrowser: null,
-  _originalTitle: "",
-  _originalURL: "",
-  _shouldSimplify: false,
 
   _getErrorCodeForNSResult(nsresult) {
     const MSG_CODES = [
@@ -657,211 +471,6 @@ var PrintUtils = {
     this._shouldSimplify = shouldSimplify;
   },
 
-  _onEntered: [],
-
-  
-
-
-
-
-
-
-
-
-
-
-  _ppBrowsers: new Set(),
-  _currentPPBrowser: null,
-
-  _enterPrintPreview() {
-    
-    
-    let ppBrowser = this._shouldSimplify
-      ? this._listener.getSimplifiedPrintPreviewBrowser()
-      : this._listener.getPrintPreviewBrowser();
-    this._ppBrowsers.add(ppBrowser);
-
-    
-    
-    
-    let oldPPBrowser = null;
-    let changingPrintPreviewBrowsers = false;
-    if (this._currentPPBrowser && ppBrowser != this._currentPPBrowser) {
-      changingPrintPreviewBrowsers = true;
-      oldPPBrowser = this._currentPPBrowser;
-    }
-    this._currentPPBrowser = ppBrowser;
-
-    gPendingPrintPreviews.set(ppBrowser, false);
-
-    
-    
-    
-    
-    
-    if (this._shouldSimplify) {
-      let simplifiedBrowser = this._listener.getSimplifiedSourceBrowser();
-      if (!simplifiedBrowser) {
-        simplifiedBrowser = this._listener.createSimplifiedBrowser();
-
-        
-        
-        
-        simplifiedBrowser.sendMessageToActor(
-          "Printing:Preview:ParseDocument",
-          {
-            URL: this._originalURL,
-            windowID: oldPPBrowser.outerWindowID,
-          },
-          "Printing"
-        );
-
-        
-        this.logTelemetry("PRINT_PREVIEW_SIMPLIFY_PAGE_OPENED_COUNT");
-
-        return;
-      }
-    }
-
-    this.sendEnterPrintPreviewToChild(
-      ppBrowser,
-      this._sourceBrowser,
-      this._shouldSimplify,
-      changingPrintPreviewBrowsers
-    );
-  },
-
-  sendEnterPrintPreviewToChild(
-    ppBrowser,
-    sourceBrowser,
-    simplifiedMode,
-    changingBrowsers
-  ) {
-    ppBrowser.sendMessageToActor(
-      "Printing:Preview:Enter",
-      {
-        browsingContextId: sourceBrowser.browsingContext.id,
-        simplifiedMode,
-        changingBrowsers,
-        lastUsedPrinterName: this.getLastUsedPrinterName(),
-      },
-      "Printing"
-    );
-  },
-
-  printPreviewEntered(ppBrowser, previewResult) {
-    let waitForPrintProgressToEnableToolbar = gPendingPrintPreviews.get(
-      ppBrowser
-    );
-    gPendingPrintPreviews.delete(ppBrowser);
-
-    for (let { resolve, reject } of this._onEntered) {
-      if (previewResult.failed) {
-        reject();
-      } else {
-        resolve();
-      }
-    }
-
-    this._onEntered = [];
-    if (previewResult.failed) {
-      
-      
-      this._ppBrowsers.clear();
-      this._listener.onEnter();
-      this._listener.onExit();
-      return;
-    }
-
-    
-    
-    gFocusedElement = document.commandDispatcher.focusedElement;
-
-    let printPreviewTB = document.getElementById("print-preview-toolbar");
-    if (printPreviewTB) {
-      if (previewResult.changingBrowsers) {
-        printPreviewTB.destroy();
-        printPreviewTB.initialize(ppBrowser);
-      } else {
-        
-        printPreviewTB.updateToolbar();
-      }
-
-      
-      if (!waitForPrintProgressToEnableToolbar) {
-        printPreviewTB.disableUpdateTriggers(false);
-      }
-
-      ppBrowser.collapsed = false;
-      ppBrowser.focus();
-      return;
-    }
-
-    
-    
-    if (this._listener.activateBrowser) {
-      this._listener.activateBrowser(this._sourceBrowser);
-    } else {
-      this._sourceBrowser.docShellIsActive = true;
-    }
-
-    
-    
-    printPreviewTB = document.createXULElement("toolbar", {
-      is: "printpreview-toolbar",
-    });
-    printPreviewTB.setAttribute("fullscreentoolbar", true);
-    printPreviewTB.setAttribute("flex", "1");
-    printPreviewTB.id = "print-preview-toolbar";
-
-    let navToolbox = this._listener.getNavToolbox();
-    navToolbox.parentNode.insertBefore(printPreviewTB, navToolbox);
-    printPreviewTB.initialize(ppBrowser);
-
-    
-    
-    
-    if (waitForPrintProgressToEnableToolbar) {
-      printPreviewTB.disableUpdateTriggers(true);
-    }
-
-    
-    if (this._sourceBrowser.isArticle) {
-      printPreviewTB.enableSimplifyPage();
-    } else {
-      this.logTelemetry("PRINT_PREVIEW_SIMPLIFY_PAGE_UNAVAILABLE_COUNT");
-      printPreviewTB.disableSimplifyPage();
-    }
-
-    
-    if (window.onclose) {
-      this._closeHandlerPP = window.onclose;
-    } else {
-      this._closeHandlerPP = null;
-    }
-    window.onclose = function() {
-      PrintUtils.exitPrintPreview();
-      return false;
-    };
-
-    
-    window.addEventListener("keydown", this.onKeyDownPP, true);
-    window.addEventListener("keypress", this.onKeyPressPP, true);
-
-    ppBrowser.collapsed = false;
-    ppBrowser.focus();
-    
-    this._listener.onEnter();
-  },
-
-  readerModeReady(sourceBrowser) {
-    if (PRINT_TAB_MODAL) {
-      return;
-    }
-    let ppBrowser = this._listener.getSimplifiedPrintPreviewBrowser();
-    this.sendEnterPrintPreviewToChild(ppBrowser, sourceBrowser, true, true);
-  },
-
   getLastUsedPrinterName() {
     let PSSVC = Cc["@mozilla.org/gfx/printsettings-service;1"].getService(
       Ci.nsIPrintSettingsService
@@ -892,91 +501,6 @@ var PrintUtils = {
     }
 
     return lastUsedPrinterName;
-  },
-
-  exitPrintPreview() {
-    for (let browser of this._ppBrowsers) {
-      browser.sendMessageToActor("Printing:Preview:Exit", {}, "Printing");
-    }
-    this._ppBrowsers.clear();
-    this._currentPPBrowser = null;
-    window.removeEventListener("keydown", this.onKeyDownPP, true);
-    window.removeEventListener("keypress", this.onKeyPressPP, true);
-
-    
-    if (this._closeHandlerPP) {
-      window.onclose = this._closeHandlerPP;
-    } else {
-      window.onclose = null;
-    }
-    this._closeHandlerPP = null;
-
-    
-    let printPreviewTB = document.getElementById("print-preview-toolbar");
-    printPreviewTB.destroy();
-    printPreviewTB.remove();
-
-    if (gFocusedElement) {
-      Services.focus.setFocus(gFocusedElement, Services.focus.FLAG_NOSCROLL);
-    } else {
-      this._sourceBrowser.focus();
-    }
-    gFocusedElement = null;
-
-    this.setSimplifiedMode(false);
-
-    this._listener.onExit();
-
-    this._originalTitle = "";
-    this._originalURL = "";
-  },
-
-  logTelemetry(ID) {
-    let histogram = Services.telemetry.getHistogramById(ID);
-    histogram.add(true);
-  },
-
-  _logKeyedTelemetry(id, key) {
-    let histogram = Services.telemetry.getKeyedHistogramById(id);
-    histogram.add(key);
-  },
-
-  onKeyDownPP(aEvent) {
-    
-    if (aEvent.keyCode == aEvent.DOM_VK_ESCAPE) {
-      PrintUtils.exitPrintPreview();
-    }
-  },
-
-  onKeyPressPP(aEvent) {
-    var closeKey;
-    try {
-      closeKey = document.getElementById("key_close").getAttribute("key");
-      closeKey = aEvent["DOM_VK_" + closeKey];
-    } catch (e) {}
-    var isModif = aEvent.ctrlKey || aEvent.metaKey;
-    
-    if (
-      isModif &&
-      (aEvent.charCode == closeKey || aEvent.charCode == closeKey + 32)
-    ) {
-      PrintUtils.exitPrintPreview();
-    } else if (isModif) {
-      var printPreviewTB = document.getElementById("print-preview-toolbar");
-      var printKey = document
-        .getElementById("printKb")
-        .getAttribute("key")
-        .toUpperCase();
-      var pressedKey = String.fromCharCode(aEvent.charCode).toUpperCase();
-      if (printKey == pressedKey) {
-        printPreviewTB.print();
-      }
-    }
-    
-    if (isModif) {
-      aEvent.preventDefault();
-      aEvent.stopPropagation();
-    }
   },
 };
 
