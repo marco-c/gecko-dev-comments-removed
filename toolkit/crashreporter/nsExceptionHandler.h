@@ -264,26 +264,11 @@ ThreadId CurrentThreadId();
 
 
 
-
-
-
-
-
 bool CreateMinidumpsAndPair(ProcessHandle aTargetPid,
                             ThreadId aTargetBlamedThread,
                             const nsACString& aIncomingPairName,
-                            nsIFile* aIncomingDumpToPair,
                             AnnotationTable& aTargetAnnotations,
                             nsIFile** aTargetDumpOut);
-
-
-
-
-
-bool CreateAdditionalChildMinidump(ProcessHandle childPid,
-                                   ThreadId childBlamedThread,
-                                   nsIFile* parentMinidump,
-                                   const nsACString& name);
 
 #if defined(XP_WIN) || defined(XP_MACOSX)
 

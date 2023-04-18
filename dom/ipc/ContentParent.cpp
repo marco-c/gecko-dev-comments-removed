@@ -4141,7 +4141,7 @@ void ContentParent::GeneratePairedMinidump(const char* aReason) {
                                   reason);
 
     
-    if (mCrashReporter->GenerateMinidumpAndPair(this, nullptr, "browser"_ns)) {
+    if (mCrashReporter->GenerateMinidumpAndPair(this, "browser"_ns)) {
       mCreatedPairedMinidumps = mCrashReporter->FinalizeCrashReport();
     }
   }
