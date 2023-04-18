@@ -2653,3 +2653,13 @@ pref("svg.context-properties.content.allowed-domains", "profile.accounts.firefox
 #ifdef NIGHTLY_BUILD
   pref("extensions.translations.disabled", true);
 #endif
+
+
+
+
+pref("browser.snapshots.score.Visit", 1);
+pref("browser.snapshots.score.CurrentSession", 1);
+pref("browser.snapshots.score.InNavigation", 3);
+pref("browser.snapshots.score.IsOverlappingVisit", 3);
+pref("browser.snapshots.score.IsUserPersisted", 1);
+pref("browser.snapshots.score.IsUsedRemoved", -10);
