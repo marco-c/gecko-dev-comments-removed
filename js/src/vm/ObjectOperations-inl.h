@@ -36,12 +36,6 @@
 
 namespace js {
 
-#ifdef ENABLE_RECORD_TUPLE
-
-
-extern bool IsExtendedPrimitiveWrapper(const JSObject& obj);
-#endif
-
 
 
 
@@ -115,6 +109,10 @@ inline bool HasProperty(JSContext* cx, JS::Handle<JSObject*> obj,
 inline bool GetProperty(JSContext* cx, JS::Handle<JSObject*> obj,
                         JS::Handle<JS::Value> receiver, JS::Handle<jsid> id,
                         JS::MutableHandle<JS::Value> vp) {
+#ifdef ENABLE_RECORD_TUPLE
+  MOZ_ASSERT(!IsExtendedPrimitive(*obj));
+#endif
+
   if (GetPropertyOp op = obj->getOpsGetProperty()) {
     return op(cx, obj, receiver, id, vp);
   }
@@ -181,6 +179,10 @@ inline bool GetElementLargeIndex(JSContext* cx, JS::Handle<JSObject*> obj,
 
 inline bool GetPropertyNoGC(JSContext* cx, JSObject* obj,
                             const JS::Value& receiver, jsid id, JS::Value* vp) {
+#ifdef ENABLE_RECORD_TUPLE
+  MOZ_ASSERT(!IsExtendedPrimitive(*obj));
+#endif
+
   if (obj->getOpsGetProperty()) {
     return false;
   }
@@ -362,6 +364,10 @@ inline bool PutProperty(JSContext* cx, JS::Handle<JSObject*> obj,
 
 inline bool DeleteProperty(JSContext* cx, JS::Handle<JSObject*> obj,
                            JS::Handle<jsid> id, JS::ObjectOpResult& result) {
+#ifdef ENABLE_RECORD_TUPLE
+  MOZ_ASSERT(!IsExtendedPrimitive(*obj));
+#endif
+
   if (DeletePropertyOp op = obj->getOpsDeleteProperty()) {
     return op(cx, obj, id, result);
   }

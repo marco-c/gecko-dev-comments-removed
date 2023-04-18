@@ -31,6 +31,12 @@
 #include "vm/JSObject-inl.h"
 #include "vm/Shape-inl.h"
 
+#ifdef ENABLE_RECORD_TUPLE
+
+
+extern bool js::IsExtendedPrimitive(const JSObject& obj);
+#endif
+
 namespace js {
 
 inline uint32_t NativeObject::numFixedSlotsMaybeForwarded() const {
@@ -681,6 +687,9 @@ static MOZ_ALWAYS_INLINE bool NativeLookupOwnPropertyInline(
   
   MOZ_ASSERT_IF(obj->getOpsLookupProperty(),
                 obj->template is<ModuleEnvironmentObject>());
+#ifdef ENABLE_RECORD_TUPLE
+  MOZ_ASSERT(!js::IsExtendedPrimitive(*obj));
+#endif
 
   
   if (JSID_IS_INT(id)) {
