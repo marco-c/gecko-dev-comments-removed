@@ -57,16 +57,6 @@ class PScriptCacheChild;
 namespace widget {
 enum class ThemeChangeKind : uint8_t;
 }
-
-#if !defined(XP_WIN)
-
-
-
-
-
-bool IsDevelopmentBuild();
-#endif 
-
 namespace dom {
 
 namespace ipc {

@@ -156,6 +156,16 @@ class Omnijar {
   static void CleanUpOne(Type aType);
 }; 
 
+
+
+
+
+
+
+inline bool IsDevelopmentBuild() {
+  return !Omnijar::HasOmnijar(mozilla::Omnijar::GRE);
+}
+
 } 
 
 #endif 
