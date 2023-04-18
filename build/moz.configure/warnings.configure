@@ -28,102 +28,102 @@ set_config("WARNINGS_AS_ERRORS", warnings_as_errors)
 
 
 
-add_gcc_warning("-Wall")
+add_warning("-Wall")
 
 
-check_and_add_gcc_warning("-Wbitfield-enum-conversion")
+check_and_add_warning("-Wbitfield-enum-conversion")
 
 
-check_and_add_gcc_warning("-Wdeprecated-this-capture", cxx_compiler)
+check_and_add_warning("-Wdeprecated-this-capture", cxx_compiler)
 
 
-add_gcc_warning("-Wempty-body")
+add_warning("-Wempty-body")
 
 
-check_and_add_gcc_warning("-Wformat-type-confusion")
+check_and_add_warning("-Wformat-type-confusion")
 
 
-add_gcc_warning("-Wignored-qualifiers")
+add_warning("-Wignored-qualifiers")
 
 
-add_gcc_warning("-Wpointer-arith")
+add_warning("-Wpointer-arith")
 
 
-check_and_add_gcc_warning("-Wshadow-field-in-constructor-modified")
+check_and_add_warning("-Wshadow-field-in-constructor-modified")
 
 
-add_gcc_warning("-Wsign-compare")
+add_warning("-Wsign-compare")
 
 
-add_gcc_warning("-Wtype-limits")
+add_warning("-Wtype-limits")
 
 
-check_and_add_gcc_warning("-Wno-error=tautological-type-limit-compare")
+check_and_add_warning("-Wno-error=tautological-type-limit-compare")
 
 
-add_gcc_warning("-Wunreachable-code")
-check_and_add_gcc_warning("-Wunreachable-code-return")
+add_warning("-Wunreachable-code")
+check_and_add_warning("-Wunreachable-code-return")
 
 
 
-check_and_add_gcc_warning(
+check_and_add_warning(
     "-Wunused-but-set-parameter",
     when=depends(c_compiler)(lambda c: c.type == "clang"),
 )
 
 
-add_gcc_warning("-Wno-invalid-offsetof", cxx_compiler)
+add_warning("-Wno-invalid-offsetof", cxx_compiler)
 
 
-check_and_add_gcc_warning("-Wclass-varargs")
+check_and_add_warning("-Wclass-varargs")
 
 
-check_and_add_gcc_warning("-Wempty-init-stmt", cxx_compiler)
+check_and_add_warning("-Wempty-init-stmt", cxx_compiler)
 
 
-check_and_add_gcc_warning("-Wfloat-overflow-conversion")
-check_and_add_gcc_warning("-Wfloat-zero-conversion")
+check_and_add_warning("-Wfloat-overflow-conversion")
+check_and_add_warning("-Wfloat-zero-conversion")
 
 
-check_and_add_gcc_warning("-Wloop-analysis")
+check_and_add_warning("-Wloop-analysis")
 
 
-check_and_add_gcc_warning("-Wno-range-loop-analysis")
+check_and_add_warning("-Wno-range-loop-analysis")
 
 
-check_and_add_gcc_warning("-Wc++2a-compat", cxx_compiler)
+check_and_add_warning("-Wc++2a-compat", cxx_compiler)
 
 
-check_and_add_gcc_warning("-Wcomma", cxx_compiler)
+check_and_add_warning("-Wcomma", cxx_compiler)
 
 
-check_and_add_gcc_warning("-Wduplicated-cond")
+check_and_add_warning("-Wduplicated-cond")
 
 
-check_and_add_gcc_warning("-Wenum-compare-conditional")
+check_and_add_warning("-Wenum-compare-conditional")
 
 
-check_and_add_gcc_warning("-Wimplicit-fallthrough", cxx_compiler)
+check_and_add_warning("-Wimplicit-fallthrough", cxx_compiler)
 
 
 with only_when(depends(target)(lambda t: t.kernel == "Darwin")):
     
-    check_and_add_gcc_warning("-Wduplicate-method-arg")
+    check_and_add_warning("-Wduplicate-method-arg")
 
     
-    check_and_add_gcc_warning("-Wduplicate-method-match")
+    check_and_add_warning("-Wduplicate-method-match")
 
     
-    check_and_add_gcc_warning("-Wmissing-method-return-type")
+    check_and_add_warning("-Wmissing-method-return-type")
 
     
-    check_and_add_gcc_warning("-Wobjc-signed-char-bool")
+    check_and_add_warning("-Wobjc-signed-char-bool")
 
     
-    check_and_add_gcc_warning("-Wsemicolon-before-method-body")
+    check_and_add_warning("-Wsemicolon-before-method-body")
 
     
-    check_and_add_gcc_warning("-Wsuper-class-method-mismatch")
+    check_and_add_warning("-Wsuper-class-method-mismatch")
 
 
 
@@ -133,116 +133,112 @@ with only_when(depends(target)(lambda t: t.kernel == "Darwin")):
 
 
 
-check_and_add_gcc_warning(
+check_and_add_warning(
     "-Werror=non-literal-null-conversion", when="--enable-warnings-as-errors"
 )
 
 
-check_and_add_gcc_warning("-Wstring-conversion")
+check_and_add_warning("-Wstring-conversion")
 
 
-check_and_add_gcc_warning("-Wno-inline-new-delete", cxx_compiler)
-
-
-
-check_and_add_gcc_warning("-Wno-error=maybe-uninitialized")
+check_and_add_warning("-Wno-inline-new-delete", cxx_compiler)
 
 
 
-check_and_add_gcc_warning("-Wno-error=deprecated-declarations")
-
-
-check_and_add_gcc_warning("-Wno-error=array-bounds")
-
-
-check_and_add_gcc_warning("-Wno-error=coverage-mismatch")
+check_and_add_warning("-Wno-error=maybe-uninitialized")
 
 
 
+check_and_add_warning("-Wno-error=deprecated-declarations")
 
 
-check_and_add_gcc_warning("-Wno-error=backend-plugin")
+check_and_add_warning("-Wno-error=array-bounds")
 
 
-check_and_add_gcc_warning("-Wno-error=free-nonheap-object")
-
-
-check_and_add_gcc_warning("-Wno-multistatement-macros")
-
-
-
-check_and_add_gcc_warning("-Wno-error=return-std-move")
+check_and_add_warning("-Wno-error=coverage-mismatch")
 
 
 
-check_and_add_gcc_warning("-Wno-error=class-memaccess")
+
+
+check_and_add_warning("-Wno-error=backend-plugin")
+
+
+check_and_add_warning("-Wno-error=free-nonheap-object")
+
+
+check_and_add_warning("-Wno-multistatement-macros")
 
 
 
-check_and_add_gcc_warning("-Wno-error=atomic-alignment")
+check_and_add_warning("-Wno-error=return-std-move")
 
 
 
-check_and_add_gcc_warning("-Wno-error=deprecated-copy")
+check_and_add_warning("-Wno-error=class-memaccess")
 
 
-c_format_warning, cxx_format_warning = check_and_add_gcc_warning(
+
+check_and_add_warning("-Wno-error=atomic-alignment")
+
+
+
+check_and_add_warning("-Wno-error=deprecated-copy")
+
+
+c_format_warning, cxx_format_warning = check_and_add_warning(
     "-Wformat", when=depends(target)(lambda t: t.kernel != "WINNT")
 )
 
 
 
 
-check_and_add_gcc_warning(
-    "-Wformat-security", when=c_format_warning & cxx_format_warning
-)
-check_and_add_gcc_warning(
-    "-Wformat-overflow=2", when=c_format_warning & cxx_format_warning
-)
+check_and_add_warning("-Wformat-security", when=c_format_warning & cxx_format_warning)
+check_and_add_warning("-Wformat-overflow=2", when=c_format_warning & cxx_format_warning)
 
 
 with only_when(depends(target)(lambda t: t.kernel == "WINNT")):
     
     
-    check_and_add_gcc_warning("-Wno-unknown-pragmas")
+    check_and_add_warning("-Wno-unknown-pragmas")
 
     
     
-    check_and_add_gcc_warning("-Wno-unused-function")
-
-    
-    
-    
-    check_and_add_gcc_warning("-Wno-conversion-null")
-
-    
-    
-    check_and_add_gcc_warning("-Wno-switch")
+    check_and_add_warning("-Wno-unused-function")
 
     
     
     
+    check_and_add_warning("-Wno-conversion-null")
+
     
-    check_and_add_gcc_warning("-Wno-enum-compare")
+    
+    check_and_add_warning("-Wno-switch")
+
+    
+    
+    
+    
+    check_and_add_warning("-Wno-enum-compare")
 
 
-check_and_add_gcc_warning("-Wno-gnu-zero-variadic-macro-arguments")
+check_and_add_warning("-Wno-gnu-zero-variadic-macro-arguments")
 
 
-check_and_add_gcc_warning("-Werror=implicit-function-declaration", c_compiler)
+check_and_add_warning("-Werror=implicit-function-declaration", c_compiler)
 
 
-check_and_add_gcc_warning("-Wno-psabi")
+check_and_add_warning("-Wno-psabi")
 
 
-check_and_add_gcc_warning(
+check_and_add_warning(
     "-Wno-missing-braces",
     when=depends(c_compiler)(lambda c: c.type == "clang" and c.version < "6.0"),
 )
 
 
 
-check_and_add_gcc_warning(
+check_and_add_warning(
     "-Wthread-safety",
     when=depends(c_compiler)(lambda c: c.type == "clang" and c.version >= "8.0"),
 )
