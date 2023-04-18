@@ -1628,18 +1628,6 @@ var gBrowserInit = {
         document.documentElement.setAttribute("sizemode", "maximized");
       }
     }
-    if (AppConstants.MENUBAR_CAN_AUTOHIDE) {
-      const toolbarMenubar = document.getElementById("toolbar-menubar");
-      
-      if (!toolbarMenubar.hasAttribute("autohide")) {
-        toolbarMenubar.setAttribute("autohide", true);
-      }
-      toolbarMenubar.setAttribute(
-        "data-l10n-id",
-        "toolbar-context-menu-menu-bar-cmd"
-      );
-      toolbarMenubar.setAttribute("data-l10n-attrs", "toolbarname");
-    }
 
     
     
