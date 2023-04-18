@@ -263,11 +263,15 @@ RefPtr<SessionAccessibility> SessionAccessibility::GetInstanceFor(
   MOZ_ASSERT(NS_IsMainThread());
   PresShell* presShell = nullptr;
   if (LocalAccessible* localAcc = aAccessible->AsLocal()) {
-    DocAccessible* doc = localAcc->Document();
-    if (doc && !doc->HasShutdown() &&
-        doc->DocumentNode()->IsContentDocument()) {
+    DocAccessible* docAcc = localAcc->Document();
+    
+    
+    
+    
+    dom::Document* doc = docAcc ? docAcc->DocumentNode() : nullptr;
+    if (doc && doc->IsContentDocument()) {
       
-      presShell = doc->PresShellPtr();
+      presShell = doc->GetPresShell();
     }
   } else {
     dom::CanonicalBrowsingContext* cbc =
