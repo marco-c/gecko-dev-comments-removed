@@ -298,13 +298,13 @@ class WebMBufferedState final {
   MOZ_COUNTED_DTOR(WebMBufferedState)
 
   
-  ReentrantMonitor mReentrantMonitor MOZ_UNANNOTATED;
+  ReentrantMonitor mReentrantMonitor;
 
   
   
-  nsTArray<WebMTimeDataOffset> mTimeMapping;
+  nsTArray<WebMTimeDataOffset> mTimeMapping GUARDED_BY(mReentrantMonitor);
   
-  int64_t mLastBlockOffset;
+  int64_t mLastBlockOffset GUARDED_BY(mReentrantMonitor);
 
   
   nsTArray<WebMBufferedParser> mRangeParsers;

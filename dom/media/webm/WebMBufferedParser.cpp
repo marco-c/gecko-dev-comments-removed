@@ -413,7 +413,10 @@ void WebMBufferedState::NotifyDataArrived(const unsigned char* aBuffer,
     }
   }
 
+  
+  PUSH_IGNORE_THREAD_SAFETY
   mRangeParsers[idx].Append(aBuffer, aLength, mTimeMapping, mReentrantMonitor);
+  POP_THREAD_SAFETY
 
   
   uint32_t i = 0;
