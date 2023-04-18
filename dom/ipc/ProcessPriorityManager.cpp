@@ -172,7 +172,6 @@ class ProcessPriorityManagerImpl final : public nsIObserver,
 
   static void StaticInit();
   static bool PrefsEnabled();
-  static void SetProcessPriorityIfEnabled(int aPid, ProcessPriority aPriority);
   static bool TestMode();
 
   NS_DECL_ISUPPORTS
@@ -367,17 +366,6 @@ bool ProcessPriorityManagerImpl::PrefsEnabled() {
 }
 
 
-void ProcessPriorityManagerImpl::SetProcessPriorityIfEnabled(
-    int aPid, ProcessPriority aPriority) {
-  
-  
-  
-  if (PrefsEnabled()) {
-    hal::SetProcessPriority(aPid, aPriority);
-  }
-}
-
-
 bool ProcessPriorityManagerImpl::TestMode() {
   return StaticPrefs::dom_ipc_processPriorityManager_testMode();
 }
@@ -395,12 +383,19 @@ void ProcessPriorityManagerImpl::StaticInit() {
   }
 
   
-  
-  if (!sPrefListenersRegistered) {
-    sPrefListenersRegistered = true;
-    Preferences::RegisterCallback(PrefChangedCallback,
-                                  "dom.ipc.processPriorityManager.enabled");
-    Preferences::RegisterCallback(PrefChangedCallback, "dom.ipc.tabs.disabled");
+  if (!PrefsEnabled()) {
+    LOG("InitProcessPriorityManager bailing due to prefs.");
+
+    
+    
+    if (!sPrefListenersRegistered) {
+      sPrefListenersRegistered = true;
+      Preferences::RegisterCallback(PrefChangedCallback,
+                                    "dom.ipc.processPriorityManager.enabled");
+      Preferences::RegisterCallback(PrefChangedCallback,
+                                    "dom.ipc.tabs.disabled");
+    }
+    return;
   }
 
   sInitialized = true;
@@ -431,7 +426,7 @@ void ProcessPriorityManagerImpl::Init() {
   
   
   
-  SetProcessPriorityIfEnabled(getpid(), PROCESS_PRIORITY_PARENT_PROCESS);
+  hal::SetProcessPriority(getpid(), PROCESS_PRIORITY_PARENT_PROCESS);
 
   nsCOMPtr<nsIObserverService> os = services::GetObserverService();
   if (os) {
@@ -767,7 +762,8 @@ void ParticularProcessPriorityManager::SetPriorityNow(
     return;
   }
 
-  if (!mContentParent || mPriority == aPriority) {
+  if (!ProcessPriorityManagerImpl::PrefsEnabled() || !mContentParent ||
+      mPriority == aPriority) {
     return;
   }
 
@@ -798,7 +794,7 @@ void ParticularProcessPriorityManager::SetPriorityNow(
         Telemetry::ScalarID::DOM_CONTENTPROCESS_OS_PRIORITY_LOWERED, 1);
   }
 
-  ProcessPriorityManagerImpl::SetProcessPriorityIfEnabled(Pid(), mPriority);
+  hal::SetProcessPriority(Pid(), mPriority);
 
   if (oldPriority != mPriority) {
     ProcessPriorityManagerImpl::GetSingleton()->NotifyProcessPriorityChanged(
