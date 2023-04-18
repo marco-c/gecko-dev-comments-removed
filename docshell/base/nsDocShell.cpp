@@ -6804,13 +6804,13 @@ bool nsDocShell::CanSavePresentation(uint32_t aLoadType,
 }
 
 
-void nsDocShell::ReportBFCacheComboTelemetry(uint16_t aCombo) {
+void nsDocShell::ReportBFCacheComboTelemetry(uint32_t aCombo) {
   
   
   
   
   
-  enum BFCacheStatusCombo : uint16_t {
+  enum BFCacheStatusCombo : uint32_t {
     BFCACHE_SUCCESS,
     NOT_ONLY_TOPLEVEL = mozilla::dom::BFCacheStatus::NOT_ONLY_TOPLEVEL_IN_BCG,
     
