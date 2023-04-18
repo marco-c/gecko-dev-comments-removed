@@ -575,24 +575,9 @@ impl<Fut> FuturesUnordered<Fut> {
 
 impl<Fut> Drop for FuturesUnordered<Fut> {
     fn drop(&mut self) {
-        
-        
-        
-        
         self.clear_head_all();
-
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        unsafe { self.ready_to_run_queue.clear() };
     }
 }
 

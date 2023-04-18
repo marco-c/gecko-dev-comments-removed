@@ -3,20 +3,23 @@
 
 
 
-cfg_target_has_atomic! {
-    #[cfg(feature = "std")]
-    mod mutex;
-    #[cfg(feature = "std")]
-    pub use self::mutex::{MappedMutexGuard, Mutex, MutexLockFuture, MutexGuard};
+#[cfg(not(futures_no_atomic_cas))]
+#[cfg(feature = "std")]
+mod mutex;
+#[cfg(not(futures_no_atomic_cas))]
+#[cfg(feature = "std")]
+pub use self::mutex::{MappedMutexGuard, Mutex, MutexGuard, MutexLockFuture};
 
-    #[cfg(any(feature = "bilock", feature = "sink", feature = "io"))]
-    #[cfg_attr(docsrs, doc(cfg(feature = "bilock")))]
-    #[cfg_attr(not(feature = "bilock"), allow(unreachable_pub))]
-    mod bilock;
-    #[cfg(feature = "bilock")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "bilock")))]
-    pub use self::bilock::{BiLock, BiLockAcquire, BiLockGuard, ReuniteError};
-    #[cfg(any(feature = "sink", feature = "io"))]
-    #[cfg(not(feature = "bilock"))]
-    pub(crate) use self::bilock::BiLock;
-}
+#[cfg(not(futures_no_atomic_cas))]
+#[cfg(any(feature = "bilock", feature = "sink", feature = "io"))]
+#[cfg_attr(docsrs, doc(cfg(feature = "bilock")))]
+#[cfg_attr(not(feature = "bilock"), allow(unreachable_pub))]
+mod bilock;
+#[cfg(not(futures_no_atomic_cas))]
+#[cfg(any(feature = "sink", feature = "io"))]
+#[cfg(not(feature = "bilock"))]
+pub(crate) use self::bilock::BiLock;
+#[cfg(not(futures_no_atomic_cas))]
+#[cfg(feature = "bilock")]
+#[cfg_attr(docsrs, doc(cfg(feature = "bilock")))]
+pub use self::bilock::{BiLock, BiLockAcquire, BiLockGuard, ReuniteError};

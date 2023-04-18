@@ -107,16 +107,3 @@ impl<Fut> ReadyToRunQueue<Fut> {
         }
     }
 }
-
-impl<Fut> Drop for ReadyToRunQueue<Fut> {
-    fn drop(&mut self) {
-        
-        
-
-        
-        
-        unsafe {
-            self.clear();
-        }
-    }
-}

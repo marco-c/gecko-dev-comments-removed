@@ -12,9 +12,9 @@ fn main() {
 
 
 fn gzencoder_read_hello_world() -> io::Result<Vec<u8>> {
-    let mut ret_vec = [0; 100];
+    let mut result = Vec::new();
     let c = b"hello world";
     let mut z = GzEncoder::new(&c[..], Compression::fast());
-    let count = z.read(&mut ret_vec)?;
-    Ok(ret_vec[0..count].to_vec())
+    z.read_to_end(&mut result)?;
+    Ok(result)
 }

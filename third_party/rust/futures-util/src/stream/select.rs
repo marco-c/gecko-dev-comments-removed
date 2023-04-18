@@ -1,5 +1,5 @@
 use super::assert_stream;
-use crate::stream::{Fuse, StreamExt};
+use crate::stream::{select_with_strategy, PollNext, SelectWithStrategy};
 use core::pin::Pin;
 use futures_core::stream::{FusedStream, Stream};
 use futures_core::task::{Context, Poll};
@@ -11,12 +11,28 @@ pin_project! {
     #[must_use = "streams do nothing unless polled"]
     pub struct Select<St1, St2> {
         #[pin]
-        stream1: Fuse<St1>,
-        #[pin]
-        stream2: Fuse<St2>,
-        flag: bool,
+        inner: SelectWithStrategy<St1, St2, fn(&mut PollNext)-> PollNext, PollNext>,
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -33,10 +49,12 @@ where
     St1: Stream,
     St2: Stream<Item = St1::Item>,
 {
+    fn round_robin(last: &mut PollNext) -> PollNext {
+        last.toggle()
+    }
+
     assert_stream::<St1::Item, _>(Select {
-        stream1: stream1.fuse(),
-        stream2: stream2.fuse(),
-        flag: false,
+        inner: select_with_strategy(stream1, stream2, round_robin),
     })
 }
 
@@ -44,7 +62,7 @@ impl<St1, St2> Select<St1, St2> {
     
     
     pub fn get_ref(&self) -> (&St1, &St2) {
-        (self.stream1.get_ref(), self.stream2.get_ref())
+        self.inner.get_ref()
     }
 
     
@@ -53,7 +71,7 @@ impl<St1, St2> Select<St1, St2> {
     
     
     pub fn get_mut(&mut self) -> (&mut St1, &mut St2) {
-        (self.stream1.get_mut(), self.stream2.get_mut())
+        self.inner.get_mut()
     }
 
     
@@ -63,7 +81,7 @@ impl<St1, St2> Select<St1, St2> {
     
     pub fn get_pin_mut(self: Pin<&mut Self>) -> (Pin<&mut St1>, Pin<&mut St2>) {
         let this = self.project();
-        (this.stream1.get_pin_mut(), this.stream2.get_pin_mut())
+        this.inner.get_pin_mut()
     }
 
     
@@ -71,7 +89,7 @@ impl<St1, St2> Select<St1, St2> {
     
     
     pub fn into_inner(self) -> (St1, St2) {
-        (self.stream1.into_inner(), self.stream2.into_inner())
+        self.inner.into_inner()
     }
 }
 
@@ -81,7 +99,7 @@ where
     St2: Stream<Item = St1::Item>,
 {
     fn is_terminated(&self) -> bool {
-        self.stream1.is_terminated() && self.stream2.is_terminated()
+        self.inner.is_terminated()
     }
 }
 
@@ -94,37 +112,6 @@ where
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<St1::Item>> {
         let this = self.project();
-        if !*this.flag {
-            poll_inner(this.flag, this.stream1, this.stream2, cx)
-        } else {
-            poll_inner(this.flag, this.stream2, this.stream1, cx)
-        }
-    }
-}
-
-fn poll_inner<St1, St2>(
-    flag: &mut bool,
-    a: Pin<&mut St1>,
-    b: Pin<&mut St2>,
-    cx: &mut Context<'_>,
-) -> Poll<Option<St1::Item>>
-where
-    St1: Stream,
-    St2: Stream<Item = St1::Item>,
-{
-    let a_done = match a.poll_next(cx) {
-        Poll::Ready(Some(item)) => {
-            
-            *flag = !*flag;
-            return Poll::Ready(Some(item));
-        }
-        Poll::Ready(None) => true,
-        Poll::Pending => false,
-    };
-
-    match b.poll_next(cx) {
-        Poll::Ready(Some(item)) => Poll::Ready(Some(item)),
-        Poll::Ready(None) if a_done => Poll::Ready(None),
-        Poll::Ready(None) | Poll::Pending => Poll::Pending,
+        this.inner.poll_next(cx)
     }
 }

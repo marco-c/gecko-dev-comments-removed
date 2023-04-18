@@ -70,6 +70,14 @@ mod fold;
 #[allow(unreachable_pub)] 
 pub use self::fold::Fold;
 
+mod any;
+#[allow(unreachable_pub)] 
+pub use self::any::Any;
+
+mod all;
+#[allow(unreachable_pub)] 
+pub use self::all::All;
+
 #[cfg(feature = "sink")]
 mod forward;
 
@@ -123,7 +131,7 @@ pub use self::select_next_some::SelectNextSome;
 
 mod peek;
 #[allow(unreachable_pub)] 
-pub use self::peek::{NextIf, NextIfEq, Peek, Peekable};
+pub use self::peek::{NextIf, NextIfEq, Peek, PeekMut, Peekable};
 
 mod skip;
 #[allow(unreachable_pub)] 
@@ -169,35 +177,41 @@ mod scan;
 #[allow(unreachable_pub)] 
 pub use self::scan::Scan;
 
-cfg_target_has_atomic! {
-    #[cfg(feature = "alloc")]
-    mod buffer_unordered;
-    #[cfg(feature = "alloc")]
-    #[allow(unreachable_pub)] // https://github.com/rust-lang/rust/issues/57411
-    pub use self::buffer_unordered::BufferUnordered;
+#[cfg(not(futures_no_atomic_cas))]
+#[cfg(feature = "alloc")]
+mod buffer_unordered;
+#[cfg(not(futures_no_atomic_cas))]
+#[cfg(feature = "alloc")]
+#[allow(unreachable_pub)] 
+pub use self::buffer_unordered::BufferUnordered;
 
-    #[cfg(feature = "alloc")]
-    mod buffered;
-    #[cfg(feature = "alloc")]
-    #[allow(unreachable_pub)] // https://github.com/rust-lang/rust/issues/57411
-    pub use self::buffered::Buffered;
+#[cfg(not(futures_no_atomic_cas))]
+#[cfg(feature = "alloc")]
+mod buffered;
+#[cfg(not(futures_no_atomic_cas))]
+#[cfg(feature = "alloc")]
+#[allow(unreachable_pub)] 
+pub use self::buffered::Buffered;
 
-    #[cfg(feature = "alloc")]
-    mod for_each_concurrent;
-    #[cfg(feature = "alloc")]
-    #[allow(unreachable_pub)] // https://github.com/rust-lang/rust/issues/57411
-    pub use self::for_each_concurrent::ForEachConcurrent;
+#[cfg(not(futures_no_atomic_cas))]
+#[cfg(feature = "alloc")]
+mod for_each_concurrent;
+#[cfg(not(futures_no_atomic_cas))]
+#[cfg(feature = "alloc")]
+#[allow(unreachable_pub)] 
+pub use self::for_each_concurrent::ForEachConcurrent;
 
-    #[cfg(feature = "sink")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "sink")))]
-    #[cfg(feature = "alloc")]
-    mod split;
-    #[cfg(feature = "sink")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "sink")))]
-    #[cfg(feature = "alloc")]
-    #[allow(unreachable_pub)] // https://github.com/rust-lang/rust/issues/57411
-    pub use self::split::{SplitStream, SplitSink, ReuniteError};
-}
+#[cfg(not(futures_no_atomic_cas))]
+#[cfg(feature = "sink")]
+#[cfg_attr(docsrs, doc(cfg(feature = "sink")))]
+#[cfg(feature = "alloc")]
+mod split;
+#[cfg(not(futures_no_atomic_cas))]
+#[cfg(feature = "sink")]
+#[cfg_attr(docsrs, doc(cfg(feature = "sink")))]
+#[cfg(feature = "alloc")]
+#[allow(unreachable_pub)] 
+pub use self::split::{ReuniteError, SplitSink, SplitStream};
 
 #[cfg(feature = "std")]
 mod catch_unwind;
@@ -619,6 +633,50 @@ pub trait StreamExt: Stream {
         Self: Sized,
     {
         assert_future::<T, _>(Fold::new(self, f, init))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn any<Fut, F>(self, f: F) -> Any<Self, Fut, F>
+    where
+        F: FnMut(Self::Item) -> Fut,
+        Fut: Future<Output = bool>,
+        Self: Sized,
+    {
+        assert_future::<bool, _>(Any::new(self, f))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn all<Fut, F>(self, f: F) -> All<Self, Fut, F>
+    where
+        F: FnMut(Self::Item) -> Fut,
+        Fut: Future<Output = bool>,
+        Self: Sized,
+    {
+        assert_future::<bool, _>(All::new(self, f))
     }
 
     

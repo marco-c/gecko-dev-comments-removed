@@ -6,6 +6,7 @@ use pin_project_lite::pin_project;
 use std::fmt;
 use std::io::{self, Write};
 use std::pin::Pin;
+use std::ptr;
 
 pin_project! {
     /// Wraps a writer and buffers its output.
@@ -49,7 +50,7 @@ impl<W: AsyncWrite> BufWriter<W> {
         Self { inner, buf: Vec::with_capacity(cap), written: 0 }
     }
 
-    fn flush_buf(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+    pub(super) fn flush_buf(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
         let mut this = self.project();
 
         let len = this.buf.len();
@@ -82,6 +83,68 @@ impl<W: AsyncWrite> BufWriter<W> {
     
     pub fn buffer(&self) -> &[u8] {
         &self.buf
+    }
+
+    
+    pub(super) fn capacity(&self) -> usize {
+        self.buf.capacity()
+    }
+
+    
+    #[inline]
+    pub(super) fn spare_capacity(&self) -> usize {
+        self.buf.capacity() - self.buf.len()
+    }
+
+    
+    
+    
+    
+    
+    
+    pub(super) fn write_to_buf(self: Pin<&mut Self>, buf: &[u8]) -> usize {
+        let available = self.spare_capacity();
+        let amt_to_buffer = available.min(buf.len());
+
+        
+        unsafe {
+            self.write_to_buffer_unchecked(&buf[..amt_to_buffer]);
+        }
+
+        amt_to_buffer
+    }
+
+    
+    
+    
+    #[inline]
+    unsafe fn write_to_buffer_unchecked(self: Pin<&mut Self>, buf: &[u8]) {
+        debug_assert!(buf.len() <= self.spare_capacity());
+        let this = self.project();
+        let old_len = this.buf.len();
+        let buf_len = buf.len();
+        let src = buf.as_ptr();
+        let dst = this.buf.as_mut_ptr().add(old_len);
+        ptr::copy_nonoverlapping(src, dst, buf_len);
+        this.buf.set_len(old_len + buf_len);
+    }
+
+    
+    pub(super) fn inner_poll_write(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &[u8],
+    ) -> Poll<io::Result<usize>> {
+        self.project().inner.poll_write(cx, buf)
+    }
+
+    
+    pub(super) fn inner_poll_write_vectored(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        bufs: &[IoSlice<'_>],
+    ) -> Poll<io::Result<usize>> {
+        self.project().inner.poll_write_vectored(cx, bufs)
     }
 }
 

@@ -510,7 +510,6 @@ impl<T> BoundedSenderInner<T> {
 
     
     
-    #[allow(clippy::debug_assert_with_mut_call)]
     fn do_send_b(&mut self, msg: T) -> Result<(), TrySendError<T>> {
         
         

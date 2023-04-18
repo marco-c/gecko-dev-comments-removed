@@ -1,4 +1,5 @@
 use super::DEFAULT_BUF_SIZE;
+use futures_core::future::Future;
 use futures_core::ready;
 use futures_core::task::{Context, Poll};
 #[cfg(feature = "read-initializer")]
@@ -70,6 +71,40 @@ impl<R: AsyncRead> BufReader<R> {
         let this = self.project();
         *this.pos = 0;
         *this.cap = 0;
+    }
+}
+
+impl<R: AsyncRead + AsyncSeek> BufReader<R> {
+    
+    
+    
+    
+    pub fn seek_relative(self: Pin<&mut Self>, offset: i64) -> SeeKRelative<'_, R> {
+        SeeKRelative { inner: self, offset, first: true }
+    }
+
+    
+    
+    
+    
+    pub fn poll_seek_relative(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        offset: i64,
+    ) -> Poll<io::Result<()>> {
+        let pos = self.pos as u64;
+        if offset < 0 {
+            if let Some(new_pos) = pos.checked_sub((-offset) as u64) {
+                *self.project().pos = new_pos as usize;
+                return Poll::Ready(Ok(()));
+            }
+        } else if let Some(new_pos) = pos.checked_add(offset as u64) {
+            if new_pos <= self.cap as u64 {
+                *self.project().pos = new_pos as usize;
+                return Poll::Ready(Ok(()));
+            }
+        }
+        self.poll_seek(cx, SeekFrom::Current(offset)).map(|res| res.map(|_| ()))
     }
 }
 
@@ -170,6 +205,10 @@ impl<R: AsyncRead + AsyncSeek> AsyncSeek for BufReader<R> {
     
     
     
+    
+    
+    
+    
     fn poll_seek(
         mut self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -198,5 +237,35 @@ impl<R: AsyncRead + AsyncSeek> AsyncSeek for BufReader<R> {
         }
         self.discard_buffer();
         Poll::Ready(Ok(result))
+    }
+}
+
+
+#[derive(Debug)]
+#[must_use = "futures do nothing unless polled"]
+pub struct SeeKRelative<'a, R> {
+    inner: Pin<&'a mut BufReader<R>>,
+    offset: i64,
+    first: bool,
+}
+
+impl<R> Future for SeeKRelative<'_, R>
+where
+    R: AsyncRead + AsyncSeek,
+{
+    type Output = io::Result<()>;
+
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        let offset = self.offset;
+        if self.first {
+            self.first = false;
+            self.inner.as_mut().poll_seek_relative(cx, offset)
+        } else {
+            self.inner
+                .as_mut()
+                .as_mut()
+                .poll_seek(cx, SeekFrom::Current(offset))
+                .map(|res| res.map(|_| ()))
+        }
     }
 }

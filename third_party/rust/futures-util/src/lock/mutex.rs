@@ -66,7 +66,6 @@ impl Waiter {
     }
 }
 
-#[allow(clippy::identity_op)] 
 const IS_LOCKED: usize = 1 << 0;
 const HAS_WAITERS: usize = 1 << 1;
 

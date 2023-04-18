@@ -33,7 +33,7 @@ fn test_extract_success_partial_multi() {
 
 #[test]
 fn test_extract_failure() {
-    let result = extract_file(Path::new("tests/corrupt-file.gz"));
+    let result = extract_file(Path::new("tests/corrupt-gz-file.bin"));
     assert_eq!(result.err().unwrap().kind(), io::ErrorKind::InvalidInput);
 }
 

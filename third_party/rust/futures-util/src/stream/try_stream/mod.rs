@@ -12,6 +12,8 @@ use crate::fns::{
 use crate::future::assert_future;
 use crate::stream::assert_stream;
 use crate::stream::{Inspect, Map};
+#[cfg(feature = "alloc")]
+use alloc::vec::Vec;
 use core::pin::Pin;
 use futures_core::{
     future::{Future, TryFuture},
@@ -94,6 +96,12 @@ mod try_concat;
 #[allow(unreachable_pub)] 
 pub use self::try_concat::TryConcat;
 
+#[cfg(feature = "alloc")]
+mod try_chunks;
+#[cfg(feature = "alloc")]
+#[allow(unreachable_pub)] 
+pub use self::try_chunks::{TryChunks, TryChunksError};
+
 mod try_fold;
 #[allow(unreachable_pub)] 
 pub use self::try_fold::TryFold;
@@ -110,25 +118,29 @@ mod try_take_while;
 #[allow(unreachable_pub)] 
 pub use self::try_take_while::TryTakeWhile;
 
-cfg_target_has_atomic! {
-    #[cfg(feature = "alloc")]
-    mod try_buffer_unordered;
-    #[cfg(feature = "alloc")]
-    #[allow(unreachable_pub)] // https://github.com/rust-lang/rust/issues/57411
-    pub use self::try_buffer_unordered::TryBufferUnordered;
+#[cfg(not(futures_no_atomic_cas))]
+#[cfg(feature = "alloc")]
+mod try_buffer_unordered;
+#[cfg(not(futures_no_atomic_cas))]
+#[cfg(feature = "alloc")]
+#[allow(unreachable_pub)] 
+pub use self::try_buffer_unordered::TryBufferUnordered;
 
-    #[cfg(feature = "alloc")]
-    mod try_buffered;
-    #[cfg(feature = "alloc")]
-    #[allow(unreachable_pub)] // https://github.com/rust-lang/rust/issues/57411
-    pub use self::try_buffered::TryBuffered;
+#[cfg(not(futures_no_atomic_cas))]
+#[cfg(feature = "alloc")]
+mod try_buffered;
+#[cfg(not(futures_no_atomic_cas))]
+#[cfg(feature = "alloc")]
+#[allow(unreachable_pub)] 
+pub use self::try_buffered::TryBuffered;
 
-    #[cfg(feature = "alloc")]
-    mod try_for_each_concurrent;
-    #[cfg(feature = "alloc")]
-    #[allow(unreachable_pub)] // https://github.com/rust-lang/rust/issues/57411
-    pub use self::try_for_each_concurrent::TryForEachConcurrent;
-}
+#[cfg(not(futures_no_atomic_cas))]
+#[cfg(feature = "alloc")]
+mod try_for_each_concurrent;
+#[cfg(not(futures_no_atomic_cas))]
+#[cfg(feature = "alloc")]
+#[allow(unreachable_pub)] 
+pub use self::try_for_each_concurrent::TryForEachConcurrent;
 
 #[cfg(feature = "io")]
 #[cfg(feature = "std")]
@@ -570,6 +582,53 @@ pub trait TryStreamExt: TryStream {
         Self: Sized,
     {
         assert_future::<Result<C, Self::Error>, _>(TryCollect::new(self))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "alloc")]
+    fn try_chunks(self, capacity: usize) -> TryChunks<Self>
+    where
+        Self: Sized,
+    {
+        assert_stream::<Result<Vec<Self::Ok>, TryChunksError<Self::Ok, Self::Error>>, _>(
+            TryChunks::new(self, capacity),
+        )
     }
 
     

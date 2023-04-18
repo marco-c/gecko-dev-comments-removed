@@ -10,7 +10,6 @@
 
 
 
-
 #ifndef cheddar_generated_encoding_rs_h
 #define cheddar_generated_encoding_rs_h
 
