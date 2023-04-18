@@ -6367,16 +6367,6 @@ nsBrowserAccess.prototype = {
   },
 };
 
-function showFullScreenViewContextMenuItems(popup) {
-  for (let node of popup.querySelectorAll('[contexttype="fullscreen"]')) {
-    node.hidden = !window.fullScreen;
-  }
-  let autoHide = popup.querySelector(".fullscreen-context-autohide");
-  if (autoHide) {
-    FullScreen.getAutohide(autoHide);
-  }
-}
-
 function onViewToolbarsPopupShowing(aEvent, aInsertPoint) {
   var popup = aEvent.target;
   if (popup != aEvent.currentTarget) {
@@ -6428,9 +6418,6 @@ function onViewToolbarsPopupShowing(aEvent, aInsertPoint) {
   let removeFromToolbar = popup.querySelector(
     ".customize-context-removeFromToolbar"
   );
-  
-  
-  showFullScreenViewContextMenuItems(popup);
   
   if (!moveToPanel || !removeFromToolbar) {
     return;

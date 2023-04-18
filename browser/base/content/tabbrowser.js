@@ -7027,10 +7027,6 @@ var TabContextMenu = {
       SessionStore.getClosedTabCount(window) == 0;
 
     
-    
-    showFullScreenViewContextMenuItems(aPopupMenu);
-
-    
     document.getElementById("context_reloadTab").hidden = multiselectionContext;
     document.getElementById(
       "context_reloadSelectedTabs"
