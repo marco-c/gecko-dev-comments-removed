@@ -3827,6 +3827,10 @@ pub struct CommandBufferBuilder {
 
     
     pub extra_dependencies: Vec<RenderTaskId>,
+
+    
+    
+    pub wraps_sub_graph: bool,
 }
 
 impl CommandBufferBuilder {
@@ -3836,6 +3840,7 @@ impl CommandBufferBuilder {
             establishes_sub_graph: false,
             resolve_source: None,
             extra_dependencies: Vec::new(),
+            wraps_sub_graph: false,
         }
     }
 
@@ -3850,6 +3855,7 @@ impl CommandBufferBuilder {
             establishes_sub_graph: false,
             resolve_source: None,
             extra_dependencies: Vec::new(),
+            wraps_sub_graph: false,
         }
     }
 
@@ -3858,6 +3864,7 @@ impl CommandBufferBuilder {
         render_task_id: RenderTaskId,
         establishes_sub_graph: bool,
         root_task_id: Option<RenderTaskId>,
+        wraps_sub_graph: bool,
     ) -> Self {
         CommandBufferBuilder {
             kind: CommandBufferBuilderKind::Simple {
@@ -3867,6 +3874,7 @@ impl CommandBufferBuilder {
             establishes_sub_graph,
             resolve_source: None,
             extra_dependencies: Vec::new(),
+            wraps_sub_graph,
         }
     }
 }
