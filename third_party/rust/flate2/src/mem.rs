@@ -313,7 +313,7 @@ impl Compress {
     
     #[cfg(feature = "any_zlib")]
     pub fn set_level(&mut self, level: Compression) -> Result<(), CompressError> {
-        use libc::c_int;
+        use std::os::raw::c_int;
         let stream = &mut *self.inner.inner.stream_wrapper;
         stream.msg = std::ptr::null_mut();
 
