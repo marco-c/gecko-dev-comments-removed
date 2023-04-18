@@ -17,6 +17,7 @@
 #include "WinIMEHandler.h"
 #include "mozilla/widget/AudioSession.h"
 #include "mozilla/BackgroundHangMonitor.h"
+#include "mozilla/BackgroundTasks.h"
 #include "mozilla/Hal.h"
 #include "nsIDOMWakeLockListener.h"
 #include "nsIPowerManagerService.h"
@@ -591,7 +592,15 @@ nsAppShell::Run(void) {
   
   
   if (XRE_IsParentProcess()) {
-    mozilla::widget::StartAudioSession();
+    bool wantAudio = true;
+#ifdef MOZ_BACKGROUNDTASKS
+    if (BackgroundTasks::IsBackgroundTaskMode()) {
+      wantAudio = false;
+    }
+#endif
+    if (MOZ_LIKELY(wantAudio)) {
+      mozilla::widget::StartAudioSession();
+    }
   }
 
   
