@@ -1136,14 +1136,48 @@ already_AddRefed<ImageBitmap> ImageBitmap::CreateInternal(
     return nullptr;
   }
 
-  RefPtr<layers::Image> data = aImageBitmap.mData;
-
-  RefPtr<SourceSurface> surface = data->GetAsSourceSurface();
+  IntRect cropRect = aImageBitmap.mPictureRect;
+  RefPtr<SourceSurface> surface;
 
   bool needToReportMemoryAllocation = false;
 
+  if (aImageBitmap.mSurface) {
+    
+    surface = aImageBitmap.mSurface;
+    cropRect = aCropRect.valueOr(cropRect);
+  } else {
+    RefPtr<layers::Image> data = aImageBitmap.mData;
+    surface = data->GetAsSourceSurface();
+
+    if (aCropRect.isSome()) {
+      
+      IntRect newCropRect = aCropRect.ref();
+      newCropRect = FixUpNegativeDimension(newCropRect, aRv);
+
+      newCropRect.MoveBy(cropRect.X(), cropRect.Y());
+
+      if (cropRect.Contains(newCropRect)) {
+        
+        
+        cropRect = newCropRect;
+      } else {
+        
+        
+        RefPtr<DataSourceSurface> dataSurface = surface->GetDataSurface();
+
+        surface = CropAndCopyDataSourceSurface(dataSurface, cropRect);
+        if (NS_WARN_IF(!surface)) {
+          aRv.Throw(NS_ERROR_NOT_AVAILABLE);
+          return nullptr;
+        }
+        needToReportMemoryAllocation = true;
+        cropRect = aCropRect.ref();
+      }
+    }
+  }
+
   return CreateImageBitmapInternal(
-      aGlobal, surface, aCropRect, aOptions, aImageBitmap.mWriteOnly,
+      aGlobal, surface, Some(cropRect), aOptions, aImageBitmap.mWriteOnly,
       needToReportMemoryAllocation, false, aImageBitmap.mAlphaType, aRv);
 }
 
