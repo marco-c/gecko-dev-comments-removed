@@ -386,10 +386,9 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
 
 
-  nsIFrame* DispatchMouseOrPointerEvent(WidgetMouseEvent* aMouseEvent,
-                                        EventMessage aMessage,
-                                        nsIContent* aTargetContent,
-                                        nsIContent* aRelatedContent);
+  MOZ_CAN_RUN_SCRIPT nsIFrame* DispatchMouseOrPointerEvent(
+      WidgetMouseEvent* aMouseEvent, EventMessage aMessage,
+      nsIContent* aTargetContent, nsIContent* aRelatedContent);
   
 
 
@@ -404,7 +403,8 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
 
 
-  void NotifyMouseOver(WidgetMouseEvent* aMouseEvent, nsIContent* aContent);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void NotifyMouseOver(
+      WidgetMouseEvent* aMouseEvent, nsIContent* aContent);
   
 
 
@@ -414,7 +414,10 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
 
 
-  void NotifyMouseOut(WidgetMouseEvent* aMouseEvent, nsIContent* aMovingInto);
+
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void NotifyMouseOut(WidgetMouseEvent* aMouseEvent,
+                                                  nsIContent* aMovingInto);
   MOZ_CAN_RUN_SCRIPT void GenerateDragDropEnterExit(
       nsPresContext* aPresContext, WidgetDragEvent* aDragEvent);
 
