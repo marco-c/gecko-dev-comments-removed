@@ -417,7 +417,7 @@ function handleRequest(req, res) {
       
       
       
-      return "<12bytes";
+      return "\x0F\x0F\x0F\x0F";
     }
 
     function responseData() {
