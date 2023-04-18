@@ -4,9 +4,7 @@
 
 use std::collections::HashMap;
 
-use serde_json::{json, Value as JsonValue};
-
-use crate::error_recording::{record_error, ErrorType};
+use crate::error_recording::{record_error, test_get_num_recorded_errors, ErrorType};
 use crate::event_database::RecordedEvent;
 use crate::metrics::MetricType;
 use crate::util::truncate_string_at_boundary_with_error;
@@ -30,10 +28,6 @@ impl MetricType for EventMetric {
     fn meta(&self) -> &CommonMetricData {
         &self.meta
     }
-
-    fn meta_mut(&mut self) -> &mut CommonMetricData {
-        &mut self.meta
-    }
 }
 
 
@@ -56,49 +50,68 @@ impl EventMetric {
     
     
     
+    pub fn record(&self, extra: HashMap<String, String>) {
+        let timestamp = crate::get_timestamp_ms();
+        self.record_with_time(timestamp, extra);
+    }
+
     
     
     
     
     
-    pub fn record<M: Into<Option<HashMap<i32, String>>>>(
+    
+    
+    
+    
+    
+    pub fn record_with_time(&self, timestamp: u64, extra: HashMap<String, String>) {
+        let metric = self.clone();
+        crate::launch_with_glean(move |glean| metric.record_sync(glean, timestamp, extra));
+    }
+
+    
+    
+    
+    fn validate_extra(
         &self,
         glean: &Glean,
-        timestamp: u64,
-        extra: M,
-    ) {
+        extra: HashMap<String, String>,
+    ) -> Result<Option<HashMap<String, String>>, ()> {
+        if extra.is_empty() {
+            return Ok(None);
+        }
+
+        let mut extra_strings = HashMap::new();
+        for (k, v) in extra.into_iter() {
+            if !self.allowed_extra_keys.contains(&k) {
+                let msg = format!("Invalid key index {}", k);
+                record_error(glean, &self.meta, ErrorType::InvalidValue, msg, None);
+                return Err(());
+            }
+
+            let value = truncate_string_at_boundary_with_error(
+                glean,
+                &self.meta,
+                v,
+                MAX_LENGTH_EXTRA_KEY_VALUE,
+            );
+            extra_strings.insert(k, value);
+        }
+
+        Ok(Some(extra_strings))
+    }
+
+    
+    #[doc(hidden)]
+    pub fn record_sync(&self, glean: &Glean, timestamp: u64, extra: HashMap<String, String>) {
         if !self.should_record(glean) {
             return;
         }
 
-        let extra = extra.into();
-        let extra_strings: Option<HashMap<String, String>> = if let Some(extra) = extra {
-            if extra.is_empty() {
-                None
-            } else {
-                let mut extra_strings = HashMap::new();
-                for (k, v) in extra.into_iter() {
-                    match self.allowed_extra_keys.get(k as usize) {
-                        Some(k) => extra_strings.insert(
-                            k.to_string(),
-                            truncate_string_at_boundary_with_error(
-                                glean,
-                                &self.meta,
-                                v,
-                                MAX_LENGTH_EXTRA_KEY_VALUE,
-                            ),
-                        ),
-                        None => {
-                            let msg = format!("Invalid key index {}", k);
-                            record_error(glean, &self.meta, ErrorType::InvalidValue, msg, None);
-                            return;
-                        }
-                    };
-                }
-                Some(extra_strings)
-            }
-        } else {
-            None
+        let extra_strings = match self.validate_extra(glean, extra) {
+            Ok(extra) => extra,
+            Err(()) => return,
         };
 
         glean
@@ -109,10 +122,19 @@ impl EventMetric {
     
     
     
-    
-    
-    pub fn test_has_value(&self, glean: &Glean, store_name: &str) -> bool {
-        glean.event_storage().test_has_value(&self.meta, store_name)
+    #[doc(hidden)]
+    pub fn get_value<'a, S: Into<Option<&'a str>>>(
+        &self,
+        glean: &Glean,
+        ping_name: S,
+    ) -> Option<Vec<RecordedEvent>> {
+        let queried_ping_name = ping_name
+            .into()
+            .unwrap_or_else(|| &self.meta().send_in_pings[0]);
+
+        glean
+            .event_storage()
+            .test_get_value(&self.meta, queried_ping_name)
     }
 
     
@@ -120,8 +142,9 @@ impl EventMetric {
     
     
     
-    pub fn test_get_value(&self, glean: &Glean, store_name: &str) -> Option<Vec<RecordedEvent>> {
-        glean.event_storage().test_get_value(&self.meta, store_name)
+    pub fn test_get_value(&self, ping_name: Option<String>) -> Option<Vec<RecordedEvent>> {
+        crate::block_on_dispatcher();
+        crate::core::with_glean(|glean| self.get_value(glean, ping_name.as_deref()))
     }
 
     
@@ -129,11 +152,20 @@ impl EventMetric {
     
     
     
-    pub fn test_get_value_as_json_string(&self, glean: &Glean, store_name: &str) -> String {
-        match self.test_get_value(glean, store_name) {
-            Some(value) => json!(value),
-            None => json!(JsonValue::Null),
-        }
-        .to_string()
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn test_get_num_recorded_errors(&self, error: ErrorType, ping_name: Option<String>) -> i32 {
+        crate::block_on_dispatcher();
+
+        crate::core::with_glean(|glean| {
+            test_get_num_recorded_errors(glean, self.meta(), error, ping_name.as_deref())
+                .unwrap_or(0)
+        })
     }
 }

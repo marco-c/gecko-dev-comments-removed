@@ -2,7 +2,9 @@
 
 
 
-use crate::error_recording::{record_error, ErrorType};
+use std::sync::Arc;
+
+use crate::error_recording::{record_error, test_get_num_recorded_errors, ErrorType};
 use crate::histogram::{Functional, Histogram};
 use crate::metrics::memory_unit::MemoryUnit;
 use crate::metrics::{DistributionData, Metric, MetricType};
@@ -23,9 +25,9 @@ const MAX_BYTES: u64 = 1 << 40;
 
 
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct MemoryDistributionMetric {
-    meta: CommonMetricData,
+    meta: Arc<CommonMetricData>,
     memory_unit: MemoryUnit,
 }
 
@@ -36,18 +38,18 @@ pub(crate) fn snapshot(hist: &Histogram<Functional>) -> DistributionData {
     DistributionData {
         
         
-        values: hist.snapshot(),
-        sum: hist.sum(),
+        values: hist
+            .snapshot()
+            .into_iter()
+            .map(|(k, v)| (k as i64, v as i64))
+            .collect(),
+        sum: hist.sum() as i64,
     }
 }
 
 impl MetricType for MemoryDistributionMetric {
     fn meta(&self) -> &CommonMetricData {
         &self.meta
-    }
-
-    fn meta_mut(&mut self) -> &mut CommonMetricData {
-        &mut self.meta
     }
 }
 
@@ -58,7 +60,10 @@ impl MetricType for MemoryDistributionMetric {
 impl MemoryDistributionMetric {
     
     pub fn new(meta: CommonMetricData, memory_unit: MemoryUnit) -> Self {
-        Self { meta, memory_unit }
+        Self {
+            meta: Arc::new(meta),
+            memory_unit,
+        }
     }
 
     
@@ -72,12 +77,32 @@ impl MemoryDistributionMetric {
     
     
     
-    pub fn accumulate(&self, glean: &Glean, sample: u64) {
+    pub fn accumulate(&self, sample: i64) {
+        let metric = self.clone();
+        crate::launch_with_glean(move |glean| metric.accumulate_sync(glean, sample))
+    }
+
+    
+    
+    
+    #[doc(hidden)]
+    pub fn accumulate_sync(&self, glean: &Glean, sample: i64) {
         if !self.should_record(glean) {
             return;
         }
 
-        let mut sample = self.memory_unit.as_bytes(sample);
+        if sample < 0 {
+            record_error(
+                glean,
+                &self.meta,
+                ErrorType::InvalidValue,
+                "Accumulated a negative sample",
+                None,
+            );
+            return;
+        }
+
+        let mut sample = self.memory_unit.as_bytes(sample as u64);
 
         if sample > MAX_BYTES {
             let msg = "Sample is bigger than 1 terabyte";
@@ -123,7 +148,16 @@ impl MemoryDistributionMetric {
     
     
     
-    pub fn accumulate_samples_signed(&self, glean: &Glean, samples: Vec<i64>) {
+    pub fn accumulate_samples(&self, samples: Vec<i64>) {
+        let metric = self.clone();
+        crate::launch_with_glean(move |glean| metric.accumulate_samples_sync(glean, samples))
+    }
+
+    
+    
+    
+    #[doc(hidden)]
+    pub fn accumulate_samples_sync(&self, glean: &Glean, samples: Vec<i64>) {
         if !self.should_record(glean) {
             return;
         }
@@ -181,14 +215,19 @@ impl MemoryDistributionMetric {
     }
 
     
-    
-    
-    
-    
-    pub fn test_get_value(&self, glean: &Glean, storage_name: &str) -> Option<DistributionData> {
+    #[doc(hidden)]
+    pub fn get_value<'a, S: Into<Option<&'a str>>>(
+        &self,
+        glean: &Glean,
+        ping_name: S,
+    ) -> Option<DistributionData> {
+        let queried_ping_name = ping_name
+            .into()
+            .unwrap_or_else(|| &self.meta().send_in_pings[0]);
+
         match StorageManager.snapshot_metric_for_test(
             glean.storage(),
-            storage_name,
+            queried_ping_name,
             &self.meta.identifier(glean),
             self.meta.lifetime,
         ) {
@@ -202,12 +241,30 @@ impl MemoryDistributionMetric {
     
     
     
-    pub fn test_get_value_as_json_string(
-        &self,
-        glean: &Glean,
-        storage_name: &str,
-    ) -> Option<String> {
-        self.test_get_value(glean, storage_name)
-            .map(|snapshot| serde_json::to_string(&snapshot).unwrap())
+    pub fn test_get_value(&self, ping_name: Option<String>) -> Option<DistributionData> {
+        crate::block_on_dispatcher();
+        crate::core::with_glean(|glean| self.get_value(glean, ping_name.as_deref()))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn test_get_num_recorded_errors(&self, error: ErrorType, ping_name: Option<String>) -> i32 {
+        crate::block_on_dispatcher();
+
+        crate::core::with_glean(|glean| {
+            test_get_num_recorded_errors(glean, self.meta(), error, ping_name.as_deref())
+                .unwrap_or(0)
+        })
     }
 }

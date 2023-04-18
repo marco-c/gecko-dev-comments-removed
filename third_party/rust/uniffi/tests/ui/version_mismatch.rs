@@ -1,0 +1,4 @@
+
+uniffi::assert_compatible_version!("0.0.1"); 
+
+fn main() {}

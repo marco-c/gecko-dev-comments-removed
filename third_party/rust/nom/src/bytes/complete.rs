@@ -29,7 +29,6 @@ use crate::traits::{
 
 
 
-
 pub fn tag<T, Input, Error: ParseError<Input>>(
   tag: T,
 ) -> impl Fn(Input) -> IResult<Input, Input, Error>
@@ -50,7 +49,6 @@ where
     res
   }
 }
-
 
 
 
@@ -116,7 +114,6 @@ where
 
 
 
-
 pub fn is_not<T, Input, Error: ParseError<Input>>(
   arr: T,
 ) -> impl Fn(Input) -> IResult<Input, Input, Error>
@@ -129,7 +126,6 @@ where
     i.split_at_position1_complete(|c| arr.find_token(c), e)
   }
 }
-
 
 
 
@@ -184,7 +180,6 @@ where
 
 
 
-
 pub fn take_while<F, Input, Error: ParseError<Input>>(
   cond: F,
 ) -> impl Fn(Input) -> IResult<Input, Input, Error>
@@ -194,7 +189,6 @@ where
 {
   move |i: Input| i.split_at_position_complete(|c| !cond(c))
 }
-
 
 
 
@@ -228,7 +222,6 @@ where
     i.split_at_position1_complete(|c| !cond(c), e)
   }
 }
-
 
 
 
@@ -334,7 +327,6 @@ where
 
 
 
-
 pub fn take_till<F, Input, Error: ParseError<Input>>(
   cond: F,
 ) -> impl Fn(Input) -> IResult<Input, Input, Error>
@@ -344,7 +336,6 @@ where
 {
   move |i: Input| i.split_at_position_complete(|c| cond(c))
 }
-
 
 
 
@@ -398,6 +389,17 @@ where
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 pub fn take<C, Input, Error: ParseError<Input>>(
   count: C,
 ) -> impl Fn(Input) -> IResult<Input, Input, Error>
@@ -411,7 +413,6 @@ where
     Ok(index) => Ok(i.take_split(index)),
   }
 }
-
 
 
 
@@ -467,6 +468,42 @@ where
 
 
 
+pub fn take_until1<T, Input, Error: ParseError<Input>>(
+  tag: T,
+) -> impl Fn(Input) -> IResult<Input, Input, Error>
+where
+  Input: InputTake + FindSubstring<T>,
+  T: InputLength + Clone,
+{
+  move |i: Input| {
+    let t = tag.clone();
+    let res: IResult<_, _, Error> = match i.find_substring(t) {
+      None => Err(Err::Error(Error::from_error_kind(i, ErrorKind::TakeUntil))),
+      Some(0) => Err(Err::Error(Error::from_error_kind(i, ErrorKind::TakeUntil))),
+      Some(index) => Ok(i.take_split(index)),
+    };
+    res
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 pub fn escaped<'a, Input: 'a, Error, F, G, O1, O2>(
@@ -493,10 +530,17 @@ where
     let mut i = input.clone();
 
     while i.input_len() > 0 {
+      let current_len = i.input_len();
+
       match normal.parse(i.clone()) {
         Ok((i2, _)) => {
+          
+          
           if i2.input_len() == 0 {
             return Ok((input.slice(input.input_len()..), input));
+          } else if i2.input_len() == current_len {
+            let index = input.offset(&i2);
+            return Ok(input.take_split(index));
           } else {
             i = i2;
           }
@@ -541,29 +585,6 @@ where
 
     Ok((input.slice(input.input_len()..), input))
   }
-}
-
-#[doc(hidden)]
-pub fn escapedc<Input, Error, F, G, O1, O2>(
-  i: Input,
-  normal: F,
-  control_char: char,
-  escapable: G,
-) -> IResult<Input, Input, Error>
-where
-  Input: Clone
-    + crate::traits::Offset
-    + InputLength
-    + InputTake
-    + InputTakeAtPosition
-    + Slice<RangeFrom<usize>>
-    + InputIter,
-  <Input as InputIter>::Item: crate::traits::AsChar,
-  F: Fn(Input) -> IResult<Input, O1, Error>,
-  G: Fn(Input) -> IResult<Input, O2, Error>,
-  Error: ParseError<Input>,
-{
-  escaped(normal, control_char, escapable)(i)
 }
 
 
@@ -629,12 +650,15 @@ where
     let i = input.clone();
 
     while index < i.input_len() {
+      let current_len = i.input_len();
       let remainder = i.slice(index..);
       match normal.parse(remainder.clone()) {
         Ok((i2, o)) => {
           o.extend_into(&mut res);
           if i2.input_len() == 0 {
             return Ok((i.slice(i.input_len()..), res));
+          } else if i2.input_len() == current_len {
+            return Ok((remainder, res));
           } else {
             index = input.offset(&i2);
           }
@@ -680,34 +704,6 @@ where
   }
 }
 
-#[doc(hidden)]
-#[cfg(feature = "alloc")]
-#[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-pub fn escaped_transformc<Input, Error, F, G, O1, O2, ExtendItem, Output>(
-  i: Input,
-  normal: F,
-  control_char: char,
-  transform: G,
-) -> IResult<Input, Output, Error>
-where
-  Input: Clone
-    + crate::traits::Offset
-    + InputLength
-    + InputTake
-    + InputTakeAtPosition
-    + Slice<RangeFrom<usize>>
-    + InputIter,
-  Input: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
-  O1: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
-  O2: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
-  <Input as InputIter>::Item: crate::traits::AsChar,
-  F: Fn(Input) -> IResult<Input, O1, Error>,
-  G: Fn(Input) -> IResult<Input, O2, Error>,
-  Error: ParseError<Input>,
-{
-  escaped_transform(normal, control_char, transform)(i)
-}
-
 #[cfg(test)]
 mod tests {
   use super::*;
@@ -724,5 +720,37 @@ mod tests {
     let result: IResult<&str, &str> =
       super::take_while_m_n(1, 1, |c: char| c.is_alphabetic())("øn");
     assert_eq!(result, Ok(("n", "ø")));
+  }
+
+  
+  fn escaped_string(input: &str) -> IResult<&str, &str> {
+    use crate::character::complete::{alpha0, one_of};
+    escaped(alpha0, '\\', one_of("n"))(input)
+  }
+
+  
+  #[test]
+  fn escaped_hang() {
+    escaped_string("7").unwrap();
+    escaped_string("a7").unwrap();
+  }
+
+  
+  fn unquote<'a>(input: &'a str) -> IResult<&'a str, &'a str> {
+    use crate::bytes::complete::*;
+    use crate::character::complete::*;
+    use crate::combinator::opt;
+    use crate::sequence::delimited;
+
+    delimited(
+      char('"'),
+      escaped(opt(none_of(r#"\""#)), '\\', one_of(r#"\"rnt"#)),
+      char('"'),
+    )(input)
+  }
+
+  #[test]
+  fn escaped_hang_1118() {
+    assert_eq!(unquote(r#""""#), Ok(("", "")));
   }
 }

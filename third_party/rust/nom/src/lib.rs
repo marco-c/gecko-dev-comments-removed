@@ -371,149 +371,93 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(feature = "cargo-clippy", allow(clippy::doc_markdown))]
-#![cfg_attr(nightly, feature(test))]
 #![cfg_attr(feature = "docsrs", feature(doc_cfg))]
-#![cfg_attr(feature = "docsrs", feature(external_doc))]
+#![cfg_attr(feature = "docsrs", feature(extended_key_value_attributes))]
 #![deny(missing_docs)]
-#![warn(missing_doc_code_examples)]
-
+#[cfg_attr(nightly, warn(rustdoc::missing_doc_code_examples))]
 #[cfg(feature = "alloc")]
 #[macro_use]
 extern crate alloc;
-#[cfg(feature = "bitvec")]
-pub extern crate bitvec;
 #[cfg(doctest)]
 extern crate doc_comment;
-#[cfg(feature = "lexical")]
-extern crate lexical_core;
-extern crate memchr;
-#[cfg(feature = "regexp")]
-pub extern crate regex;
-#[cfg(nightly)]
-extern crate test;
 
 #[cfg(doctest)]
 doc_comment::doctest!("../README.md");
 
 
 
-#[allow(missing_doc_code_examples)]
+#[cfg_attr(nightly, allow(rustdoc::missing_doc_code_examples))]
 pub mod lib {
   
   
   #[cfg(not(feature = "std"))]
-  #[allow(missing_doc_code_examples)]
+  #[cfg_attr(nightly, allow(rustdoc::missing_doc_code_examples))]
   
   pub mod std {
+    #[doc(hidden)]
     #[cfg(not(feature = "alloc"))]
     pub use core::borrow;
 
     #[cfg(feature = "alloc")]
+    #[doc(hidden)]
     pub use alloc::{borrow, boxed, string, vec};
 
+    #[doc(hidden)]
     pub use core::{cmp, convert, fmt, iter, mem, ops, option, result, slice, str};
 
     
+    #[doc(hidden)]
     pub mod prelude {
       pub use core::prelude as v1;
     }
   }
 
   #[cfg(feature = "std")]
-  #[allow(missing_doc_code_examples)]
+  #[cfg_attr(nightly, allow(rustdoc::missing_doc_code_examples))]
   
   pub mod std {
+    #[doc(hidden)]
     pub use std::{
       alloc, borrow, boxed, cmp, collections, convert, fmt, hash, iter, mem, ops, option, result,
       slice, str, string, vec,
     };
 
     
+    #[doc(hidden)]
     pub mod prelude {
       pub use std::prelude as v1;
     }
   }
-
-  #[cfg(feature = "regexp")]
-  pub use regex;
 }
 
 pub use self::bits::*;
 pub use self::internal::*;
 pub use self::traits::*;
-pub use self::util::*;
 
-#[cfg(feature = "regexp")]
-pub use self::regexp::*;
 pub use self::str::*;
-
-#[macro_use]
-mod util;
 
 #[macro_use]
 pub mod error;
 
-#[macro_use]
+pub mod combinator;
 mod internal;
 mod traits;
 #[macro_use]
-pub mod combinator;
-#[macro_use]
 pub mod branch;
-#[macro_use]
-pub mod sequence;
-#[macro_use]
 pub mod multi;
+pub mod sequence;
 
-#[macro_use]
-pub mod bytes;
-#[macro_use]
 pub mod bits;
+pub mod bytes;
 
-#[macro_use]
 pub mod character;
-
-#[cfg(feature = "regexp")]
-#[cfg_attr(feature = "docsrs", doc(cfg(feature = "regexp")))]
-#[macro_use]
-pub mod regexp;
 
 mod str;
 
-#[macro_use]
 pub mod number;
 
 #[cfg(feature = "docsrs")]
-#[cfg_attr(feature = "docsrs", doc(include = "../doc/nom_recipes.md"))]
+#[cfg_attr(feature = "docsrs", cfg_attr(feature = "docsrs", doc = include_str!("../doc/nom_recipes.md")))]
 pub mod recipes {}

@@ -40,18 +40,16 @@ impl UuidMetric {
     }
 }
 
-#[inherent(pub)]
+#[inherent]
 impl glean::traits::Uuid for UuidMetric {
     
     
     
     
     
-    fn set(&self, value: Uuid) {
+    pub fn set(&self, value: Uuid) {
         match self {
-            UuidMetric::Parent(p) => {
-                glean::traits::Uuid::set(&*p, value);
-            }
+            UuidMetric::Parent(p) => p.set(value.to_string()),
             UuidMetric::Child(_c) => {
                 log::error!("Unable to set the uuid metric in non-main process. Ignoring.");
                 
@@ -65,9 +63,9 @@ impl glean::traits::Uuid for UuidMetric {
     
     
     
-    fn generate_and_set(&self) -> Uuid {
+    pub fn generate_and_set(&self) -> Uuid {
         match self {
-            UuidMetric::Parent(p) => glean::traits::Uuid::generate_and_set(&*p),
+            UuidMetric::Parent(p) => Uuid::parse_str(&p.generate_and_set()).unwrap(),
             UuidMetric::Child(_c) => {
                 log::error!("Unable to set the uuid metric in non-main process. Ignoring.");
                 
@@ -88,9 +86,12 @@ impl glean::traits::Uuid for UuidMetric {
     
     
     
-    fn test_get_value<'a, S: Into<Option<&'a str>>>(&self, storage_name: S) -> Option<Uuid> {
+    pub fn test_get_value<'a, S: Into<Option<&'a str>>>(&self, storage_name: S) -> Option<Uuid> {
+        let storage_name = storage_name.into().map(|s| s.to_string());
         match self {
-            UuidMetric::Parent(p) => p.test_get_value(storage_name),
+            UuidMetric::Parent(p) => p
+                .test_get_value(storage_name)
+                .and_then(|s| Uuid::parse_str(&s).ok()),
             UuidMetric::Child(_c) => panic!("Cannot get test value for in non-parent process!"),
         }
     }
@@ -108,11 +109,12 @@ impl glean::traits::Uuid for UuidMetric {
     
     
     
-    fn test_get_num_recorded_errors<'a, S: Into<Option<&'a str>>>(
+    pub fn test_get_num_recorded_errors<'a, S: Into<Option<&'a str>>>(
         &self,
         error: glean::ErrorType,
         ping_name: S,
     ) -> i32 {
+        let ping_name = ping_name.into().map(|s| s.to_string());
         match self {
             UuidMetric::Parent(p) => p.test_get_num_recorded_errors(error, ping_name),
             UuidMetric::Child(_c) => {

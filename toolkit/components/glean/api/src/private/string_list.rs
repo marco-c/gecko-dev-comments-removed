@@ -49,7 +49,7 @@ impl StringListMetric {
     }
 }
 
-#[inherent(pub)]
+#[inherent]
 impl StringList for StringListMetric {
     
     
@@ -61,10 +61,10 @@ impl StringList for StringListMetric {
     
     
     
-    fn add<S: Into<String>>(&self, value: S) {
+    pub fn add<S: Into<String>>(&self, value: S) {
         match self {
             StringListMetric::Parent { inner, .. } => {
-                StringList::add(&*inner, value);
+                inner.add(value.into());
             }
             StringListMetric::Child(c) => {
                 with_ipc_payload(move |payload| {
@@ -90,10 +90,10 @@ impl StringList for StringListMetric {
     
     
     
-    fn set(&self, value: Vec<String>) {
+    pub fn set(&self, value: Vec<String>) {
         match self {
             StringListMetric::Parent { inner, .. } => {
-                StringList::set(&*inner, value);
+                inner.set(value);
             }
             StringListMetric::Child(c) => {
                 log::error!(
@@ -117,7 +117,11 @@ impl StringList for StringListMetric {
     
     
     
-    fn test_get_value<'a, S: Into<Option<&'a str>>>(&self, ping_name: S) -> Option<Vec<String>> {
+    pub fn test_get_value<'a, S: Into<Option<&'a str>>>(
+        &self,
+        ping_name: S,
+    ) -> Option<Vec<String>> {
+        let ping_name = ping_name.into().map(|s| s.to_string());
         match self {
             StringListMetric::Parent { inner, .. } => inner.test_get_value(ping_name),
             StringListMetric::Child(c) => {
@@ -139,11 +143,12 @@ impl StringList for StringListMetric {
     
     
     
-    fn test_get_num_recorded_errors<'a, S: Into<Option<&'a str>>>(
+    pub fn test_get_num_recorded_errors<'a, S: Into<Option<&'a str>>>(
         &self,
         error: glean::ErrorType,
         ping_name: S,
     ) -> i32 {
+        let ping_name = ping_name.into().map(|s| s.to_string());
         match self {
             StringListMetric::Parent { inner, .. } => {
                 inner.test_get_num_recorded_errors(error, ping_name)

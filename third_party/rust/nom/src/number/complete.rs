@@ -1,15 +1,37 @@
 
 
 use crate::branch::alt;
-use crate::character::complete::{char, digit1};
+use crate::bytes::complete::tag;
+use crate::character::complete::{char, digit1, sign};
 use crate::combinator::{cut, map, opt, recognize};
 use crate::error::ParseError;
 use crate::error::{make_error, ErrorKind};
 use crate::internal::*;
-use crate::lib::std::ops::{RangeFrom, RangeTo};
+use crate::lib::std::ops::{Range, RangeFrom, RangeTo};
 use crate::sequence::{pair, tuple};
-use crate::traits::{AsChar, InputIter, InputLength, InputTakeAtPosition};
-use crate::traits::{Offset, Slice};
+use crate::traits::{
+  AsBytes, AsChar, Compare, InputIter, InputLength, InputTake, InputTakeAtPosition, Offset, Slice,
+};
+
+#[doc(hidden)]
+macro_rules! map(
+  
+  (__impl $i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
+    $crate::combinator::map(move |i| {$submac!(i, $($args)*)}, $g).parse($i)
+  );
+  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
+    map!(__impl $i, $submac!($($args)*), $g)
+  );
+  ($i:expr, $f:expr, $g:expr) => (
+    map!(__impl $i, call!($f), $g)
+  );
+);
+
+#[doc(hidden)]
+macro_rules! call (
+  ($i:expr, $fun:expr) => ( $fun( $i ) );
+  ($i:expr, $fun:expr, $($args:expr),* ) => ( $fun( $i, $($args),* ) );
+);
 
 
 
@@ -189,7 +211,6 @@ where
 
 
 #[inline]
-#[cfg(stable_i128)]
 pub fn be_u128<I, E: ParseError<I>>(input: I) -> IResult<I, u128, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
@@ -343,7 +364,6 @@ where
 
 
 #[inline]
-#[cfg(stable_i128)]
 pub fn be_i128<I, E: ParseError<I>>(input: I) -> IResult<I, i128, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
@@ -529,7 +549,6 @@ where
 
 
 #[inline]
-#[cfg(stable_i128)]
 pub fn le_u128<I, E: ParseError<I>>(input: I) -> IResult<I, u128, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
@@ -683,7 +702,6 @@ where
 
 
 #[inline]
-#[cfg(stable_i128)]
 pub fn le_i128<I, E: ParseError<I>>(input: I) -> IResult<I, i128, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
@@ -904,7 +922,6 @@ where
 
 
 #[inline]
-#[cfg(stable_i128)]
 pub fn u128<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, u128, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
@@ -1124,7 +1141,6 @@ where
 
 
 #[inline]
-#[cfg(stable_i128)]
 pub fn i128<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, i128, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
@@ -1378,7 +1394,6 @@ pub fn hex_u32<'a, E: ParseError<&'a [u8]>>(input: &'a [u8]) -> IResult<&'a [u8]
 
 
 
-#[allow(unused_imports)]
 #[rustfmt::skip]
 pub fn recognize_float<T, E:ParseError<T>>(input: T) -> IResult<T, T, E>
 where
@@ -1406,39 +1421,37 @@ where
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[cfg(not(feature = "lexical"))]
-pub fn float<T, E: ParseError<T>>(input: T) -> IResult<T, f32, E>
+#[doc(hidden)]
+pub fn recognize_float_or_exceptions<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
   T: Clone + Offset,
-  T: InputIter + InputLength + crate::traits::ParseTo<f32>,
+  T: InputIter + InputTake + Compare<&'static str>,
   <T as InputIter>::Item: AsChar,
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar,
 {
-  match recognize_float(input) {
-    Err(e) => Err(e),
-    Ok((i, s)) => match s.parse_to() {
-      Some(n) => Ok((i, n)),
-      None => Err(Err::Error(E::from_error_kind(i, ErrorKind::Float))),
+  alt((
+    |i: T| {
+      recognize_float::<_, E>(i.clone()).map_err(|e| match e {
+        crate::Err::Error(_) => crate::Err::Error(E::from_error_kind(i, ErrorKind::Float)),
+        crate::Err::Failure(_) => crate::Err::Failure(E::from_error_kind(i, ErrorKind::Float)),
+        crate::Err::Incomplete(needed) => crate::Err::Incomplete(needed),
+      })
     },
-  }
+    |i: T| {
+      crate::bytes::complete::tag_no_case::<_, _, E>("nan")(i.clone())
+        .map_err(|_| crate::Err::Error(E::from_error_kind(i, ErrorKind::Float)))
+    },
+    |i: T| {
+      crate::bytes::complete::tag_no_case::<_, _, E>("inf")(i.clone())
+        .map_err(|_| crate::Err::Error(E::from_error_kind(i, ErrorKind::Float)))
+    },
+    |i: T| {
+      crate::bytes::complete::tag_no_case::<_, _, E>("infinity")(i.clone())
+        .map_err(|_| crate::Err::Error(E::from_error_kind(i, ErrorKind::Float)))
+    },
+  ))(input)
 }
 
 
@@ -1448,6 +1461,94 @@ where
 
 
 
+pub fn recognize_float_parts<T, E: ParseError<T>>(input: T) -> IResult<T, (bool, T, T, i32), E>
+where
+  T: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>> + Slice<Range<usize>>,
+  T: Clone + Offset,
+  T: InputIter + InputTake,
+  <T as InputIter>::Item: AsChar + Copy,
+  T: InputTakeAtPosition + InputLength,
+  <T as InputTakeAtPosition>::Item: AsChar,
+  T: for<'a> Compare<&'a [u8]>,
+  T: AsBytes,
+{
+  let (i, sign) = sign(input.clone())?;
+
+  
+  let (i, zeroes) = match i.as_bytes().iter().position(|c| *c != b'0') {
+    Some(index) => i.take_split(index),
+    None => i.take_split(i.input_len()),
+  };
+  
+  let (i, mut integer) = match i
+    .as_bytes()
+    .iter()
+    .position(|c| !(*c >= b'0' && *c <= b'9'))
+  {
+    Some(index) => i.take_split(index),
+    None => i.take_split(i.input_len()),
+  };
+
+  if integer.input_len() == 0 && zeroes.input_len() > 0 {
+    
+    integer = zeroes.slice(zeroes.input_len() - 1..);
+  }
+
+  let (i, opt_dot) = opt(tag(&b"."[..]))(i)?;
+  let (i, fraction) = if opt_dot.is_none() {
+    let i2 = i.clone();
+    (i2, i.slice(..0))
+  } else {
+    
+    let mut zero_count = 0usize;
+    let mut position = None;
+    for (pos, c) in i.as_bytes().iter().enumerate() {
+      if *c >= b'0' && *c <= b'9' {
+        if *c == b'0' {
+          zero_count += 1;
+        } else {
+          zero_count = 0;
+        }
+      } else {
+        position = Some(pos);
+        break;
+      }
+    }
+
+    let position = position.unwrap_or(i.input_len());
+
+    let index = if zero_count == 0 {
+      position
+    } else if zero_count == position {
+      position - zero_count + 1
+    } else {
+      position - zero_count
+    };
+
+    (i.slice(position..), i.slice(..index))
+  };
+
+  if integer.input_len() == 0 && fraction.input_len() == 0 {
+    return Err(Err::Error(E::from_error_kind(input, ErrorKind::Float)));
+  }
+
+  let i2 = i.clone();
+  let (i, e) = match i.as_bytes().iter().next() {
+    Some(b'e') => (i.slice(1..), true),
+    Some(b'E') => (i.slice(1..), true),
+    _ => (i, false),
+  };
+
+  let (i, exp) = if e {
+    cut(crate::character::complete::i32)(i)?
+  } else {
+    (i2, 0)
+  };
+
+  Ok((i, (sign, integer, fraction, exp)))
+}
+
+use crate::traits::ParseTo;
 
 
 
@@ -1461,50 +1562,44 @@ where
 
 
 
-#[cfg(feature = "lexical")]
+
+
+
+
+
 pub fn float<T, E: ParseError<T>>(input: T) -> IResult<T, f32, E>
 where
-  T: crate::traits::AsBytes + InputLength + Slice<RangeFrom<usize>>,
-{
-  match ::lexical_core::parse_partial(input.as_bytes()) {
-    Ok((value, processed)) => Ok((input.slice(processed..), value)),
-    Err(_) => Err(Err::Error(E::from_error_kind(input, ErrorKind::Float))),
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[cfg(not(feature = "lexical"))]
-pub fn double<T, E: ParseError<T>>(input: T) -> IResult<T, f64, E>
-where
-  T: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: Clone + Offset,
-  T: InputIter + InputLength + crate::traits::ParseTo<f64>,
-  <T as InputIter>::Item: AsChar,
+  T: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>> + Slice<Range<usize>>,
+  T: Clone + Offset + ParseTo<f32> + Compare<&'static str>,
+  T: InputIter + InputLength + InputTake,
+  <T as InputIter>::Item: AsChar + Copy,
+  <T as InputIter>::IterElem: Clone,
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar,
+  T: AsBytes,
+  T: for<'a> Compare<&'a [u8]>,
 {
-  match recognize_float(input) {
-    Err(e) => Err(e),
-    Ok((i, s)) => match s.parse_to() {
-      Some(n) => Ok((i, n)),
-      None => Err(Err::Error(E::from_error_kind(i, ErrorKind::Float))),
-    },
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  let (i, s) = recognize_float_or_exceptions(input)?;
+  match s.parse_to() {
+    Some(f) => (Ok((i, f))),
+    None => Err(crate::Err::Error(E::from_error_kind(
+      i,
+      crate::error::ErrorKind::Float,
+    ))),
   }
 }
 
@@ -1525,17 +1620,39 @@ where
 
 
 
-
-
-
-#[cfg(feature = "lexical")]
 pub fn double<T, E: ParseError<T>>(input: T) -> IResult<T, f64, E>
 where
-  T: crate::traits::AsBytes + InputLength + Slice<RangeFrom<usize>>,
+  T: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>> + Slice<Range<usize>>,
+  T: Clone + Offset + ParseTo<f64> + Compare<&'static str>,
+  T: InputIter + InputLength + InputTake,
+  <T as InputIter>::Item: AsChar + Copy,
+  <T as InputIter>::IterElem: Clone,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar,
+  T: AsBytes,
+  T: for<'a> Compare<&'a [u8]>,
 {
-  match ::lexical_core::parse_partial(input.as_bytes()) {
-    Ok((value, processed)) => Ok((input.slice(processed..), value)),
-    Err(_) => Err(Err::Error(E::from_error_kind(input, ErrorKind::Float))),
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  let (i, s) = recognize_float_or_exceptions(input)?;
+  match s.parse_to() {
+    Some(f) => (Ok((i, f))),
+    None => Err(crate::Err::Error(E::from_error_kind(
+      i,
+      crate::error::ErrorKind::Float,
+    ))),
   }
 }
 
@@ -1544,6 +1661,7 @@ mod tests {
   use super::*;
   use crate::error::ErrorKind;
   use crate::internal::Err;
+  use proptest::prelude::*;
 
   macro_rules! assert_parse(
     ($left: expr, $right: expr) => {
@@ -1631,7 +1749,6 @@ mod tests {
   }
 
   #[test]
-  #[cfg(stable_i128)]
   fn be_i128_tests() {
     assert_parse!(
       be_i128(
@@ -1748,7 +1865,6 @@ mod tests {
   }
 
   #[test]
-  #[cfg(stable_i128)]
   fn le_i128_tests() {
     assert_parse!(
       le_i128(
@@ -1876,6 +1992,7 @@ mod tests {
       "12.34",
       "-1.234E-12",
       "-1.234e-12",
+      "0.00000000000000000087",
     ];
 
     for test in test_cases.drain(..) {
@@ -1899,5 +2016,123 @@ mod tests {
       recognize_float(remaining_exponent),
       Err(Err::Failure(("", ErrorKind::Digit)))
     );
+
+    let (_i, nan) = float::<_, ()>("NaN").unwrap();
+    assert!(nan.is_nan());
+
+    let (_i, inf) = float::<_, ()>("inf").unwrap();
+    assert!(inf.is_infinite());
+    let (_i, inf) = float::<_, ()>("infinite").unwrap();
+    assert!(inf.is_infinite());
+  }
+
+  #[test]
+  fn configurable_endianness() {
+    use crate::number::Endianness;
+
+    fn be_tst16(i: &[u8]) -> IResult<&[u8], u16> {
+      u16(Endianness::Big)(i)
+    }
+    fn le_tst16(i: &[u8]) -> IResult<&[u8], u16> {
+      u16(Endianness::Little)(i)
+    }
+    assert_eq!(be_tst16(&[0x80, 0x00]), Ok((&b""[..], 32_768_u16)));
+    assert_eq!(le_tst16(&[0x80, 0x00]), Ok((&b""[..], 128_u16)));
+
+    fn be_tst32(i: &[u8]) -> IResult<&[u8], u32> {
+      u32(Endianness::Big)(i)
+    }
+    fn le_tst32(i: &[u8]) -> IResult<&[u8], u32> {
+      u32(Endianness::Little)(i)
+    }
+    assert_eq!(
+      be_tst32(&[0x12, 0x00, 0x60, 0x00]),
+      Ok((&b""[..], 302_014_464_u32))
+    );
+    assert_eq!(
+      le_tst32(&[0x12, 0x00, 0x60, 0x00]),
+      Ok((&b""[..], 6_291_474_u32))
+    );
+
+    fn be_tst64(i: &[u8]) -> IResult<&[u8], u64> {
+      u64(Endianness::Big)(i)
+    }
+    fn le_tst64(i: &[u8]) -> IResult<&[u8], u64> {
+      u64(Endianness::Little)(i)
+    }
+    assert_eq!(
+      be_tst64(&[0x12, 0x00, 0x60, 0x00, 0x12, 0x00, 0x80, 0x00]),
+      Ok((&b""[..], 1_297_142_246_100_992_000_u64))
+    );
+    assert_eq!(
+      le_tst64(&[0x12, 0x00, 0x60, 0x00, 0x12, 0x00, 0x80, 0x00]),
+      Ok((&b""[..], 36_028_874_334_666_770_u64))
+    );
+
+    fn be_tsti16(i: &[u8]) -> IResult<&[u8], i16> {
+      i16(Endianness::Big)(i)
+    }
+    fn le_tsti16(i: &[u8]) -> IResult<&[u8], i16> {
+      i16(Endianness::Little)(i)
+    }
+    assert_eq!(be_tsti16(&[0x00, 0x80]), Ok((&b""[..], 128_i16)));
+    assert_eq!(le_tsti16(&[0x00, 0x80]), Ok((&b""[..], -32_768_i16)));
+
+    fn be_tsti32(i: &[u8]) -> IResult<&[u8], i32> {
+      i32(Endianness::Big)(i)
+    }
+    fn le_tsti32(i: &[u8]) -> IResult<&[u8], i32> {
+      i32(Endianness::Little)(i)
+    }
+    assert_eq!(
+      be_tsti32(&[0x00, 0x12, 0x60, 0x00]),
+      Ok((&b""[..], 1_204_224_i32))
+    );
+    assert_eq!(
+      le_tsti32(&[0x00, 0x12, 0x60, 0x00]),
+      Ok((&b""[..], 6_296_064_i32))
+    );
+
+    fn be_tsti64(i: &[u8]) -> IResult<&[u8], i64> {
+      i64(Endianness::Big)(i)
+    }
+    fn le_tsti64(i: &[u8]) -> IResult<&[u8], i64> {
+      i64(Endianness::Little)(i)
+    }
+    assert_eq!(
+      be_tsti64(&[0x00, 0xFF, 0x60, 0x00, 0x12, 0x00, 0x80, 0x00]),
+      Ok((&b""[..], 71_881_672_479_506_432_i64))
+    );
+    assert_eq!(
+      le_tsti64(&[0x00, 0xFF, 0x60, 0x00, 0x12, 0x00, 0x80, 0x00]),
+      Ok((&b""[..], 36_028_874_334_732_032_i64))
+    );
+  }
+
+  #[cfg(feature = "std")]
+  fn parse_f64(i: &str) -> IResult<&str, f64, ()> {
+    match recognize_float(i) {
+      Err(e) => Err(e),
+      Ok((i, s)) => {
+        if s.is_empty() {
+          return Err(Err::Error(()));
+        }
+        match s.parse_to() {
+          Some(n) => Ok((i, n)),
+          None => Err(Err::Error(())),
+        }
+      }
+    }
+  }
+
+  proptest! {
+    #[test]
+    #[cfg(feature = "std")]
+    fn floats(s in "\\PC*") {
+        println!("testing {}", s);
+        let res1 = parse_f64(&s);
+        let res2 = double::<_, ()>(s.as_str());
+        assert_eq!(res1, res2);
+    }
   }
 }

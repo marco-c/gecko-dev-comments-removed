@@ -40,7 +40,7 @@ pub trait Rate {
     
     
     
-    fn test_get_value<'a, S: Into<Option<&'a str>>>(&self, ping_name: S) -> Option<(i32, i32)>;
+    fn test_get_value<'a, S: Into<Option<&'a str>>>(&self, ping_name: S) -> Option<crate::Rate>;
 
     
     

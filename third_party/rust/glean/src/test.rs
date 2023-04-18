@@ -3,7 +3,7 @@
 
 
 use crate::private::PingType;
-use crate::private::{BooleanMetric, CounterMetric, EventMetric};
+use crate::private::{BooleanMetric, CounterMetric, EventMetric, StringMetric};
 
 use super::*;
 use crate::common_test::{lock_test, new_glean, GLOBAL_APPLICATION_ID};
@@ -28,7 +28,7 @@ fn send_a_ping() {
             _headers: Vec<(String, String)>,
         ) -> net::UploadResult {
             self.sender.send(url).unwrap();
-            net::UploadResult::HttpStatus(200)
+            net::UploadResult::http_status(200)
         }
     }
 
@@ -42,14 +42,12 @@ fn send_a_ping() {
         upload_enabled: true,
         max_events: None,
         delay_ping_lifetime_io: false,
-        channel: Some("testing".into()),
         server_endpoint: Some("invalid-test-host".into()),
         uploader: Some(Box::new(FakeUploader { sender: s })),
         use_core_mps: false,
     };
 
     let _t = new_glean(Some(cfg), true);
-    crate::block_on_dispatcher();
 
     
     const PING_NAME: &str = "test-ping";
@@ -66,7 +64,6 @@ fn disabling_upload_disables_metrics_recording() {
     let _lock = lock_test();
 
     let _t = new_glean(None, true);
-    crate::block_on_dispatcher();
 
     let metric = BooleanMetric::new(CommonMetricData {
         name: "bool_metric".into(),
@@ -79,7 +76,7 @@ fn disabling_upload_disables_metrics_recording() {
 
     crate::set_upload_enabled(false);
 
-    assert!(metric.test_get_value("store1").is_none())
+    assert!(metric.test_get_value(Some("store1".into())).is_none())
 }
 
 #[test]
@@ -101,7 +98,7 @@ fn test_experiments_recording() {
     set_experiment_inactive("experiment_test".to_string());
     assert!(!test_is_experiment_active("experiment_test".to_string()));
     assert!(test_is_experiment_active("experiment_api".to_string()));
-    let stored_data = test_get_experiment_data("experiment_api".to_string());
+    let stored_data = test_get_experiment_data("experiment_api".to_string()).unwrap();
     assert_eq!("branch_b", stored_data.branch);
     assert_eq!("value", stored_data.extra.unwrap()["test_key"]);
 }
@@ -110,26 +107,7 @@ fn test_experiments_recording() {
 fn test_experiments_recording_before_glean_inits() {
     let _lock = lock_test();
 
-    
-    
-    
-    
-    if was_initialize_called() {
-        
-        
-        
-        
-        if global_glean().is_some() {
-            with_glean_mut(|glean| {
-                glean.test_clear_all_stores();
-                glean.destroy_db();
-            });
-        }
-        
-        INITIALIZE_CALLED.store(false, Ordering::SeqCst);
-        
-        dispatcher::reset_dispatcher();
-    }
+    destroy_glean(true);
 
     set_experiment_active(
         "experiment_set_preinit".to_string(),
@@ -153,7 +131,6 @@ fn test_experiments_recording_before_glean_inits() {
             upload_enabled: true,
             max_events: None,
             delay_ping_lifetime_io: false,
-            channel: Some("testing".into()),
             server_endpoint: Some("invalid-test-host".into()),
             uploader: None,
             use_core_mps: false,
@@ -161,7 +138,6 @@ fn test_experiments_recording_before_glean_inits() {
         ClientInfoMetrics::unknown(),
         false,
     );
-    crate::block_on_dispatcher();
 
     assert!(test_is_experiment_active(
         "experiment_set_preinit".to_string()
@@ -200,7 +176,7 @@ fn sending_of_foreground_background_pings() {
             _headers: Vec<(String, String)>,
         ) -> net::UploadResult {
             self.sender.send(url).unwrap();
-            net::UploadResult::HttpStatus(200)
+            net::UploadResult::http_status(200)
         }
     }
 
@@ -214,14 +190,12 @@ fn sending_of_foreground_background_pings() {
         upload_enabled: true,
         max_events: None,
         delay_ping_lifetime_io: false,
-        channel: Some("testing".into()),
         server_endpoint: Some("invalid-test-host".into()),
         uploader: Some(Box::new(FakeUploader { sender: s })),
         use_core_mps: false,
     };
 
     let _t = new_glean(Some(cfg), true);
-    crate::block_on_dispatcher();
 
     
     handle_client_active();
@@ -262,9 +236,7 @@ fn sending_of_startup_baseline_ping() {
     
     let data_dir = new_glean(None, true);
 
-    crate::block_on_dispatcher();
-
-    with_glean_mut(|glean| glean.set_dirty_flag(true));
+    glean_core::glean_set_dirty_flag(true);
 
     
     let (s, r) = crossbeam_channel::bounded::<String>(1);
@@ -283,7 +255,7 @@ fn sending_of_startup_baseline_ping() {
             _headers: Vec<(String, String)>,
         ) -> net::UploadResult {
             self.sender.send(url).unwrap();
-            net::UploadResult::HttpStatus(200)
+            net::UploadResult::http_status(200)
         }
     }
 
@@ -299,7 +271,6 @@ fn sending_of_startup_baseline_ping() {
             upload_enabled: true,
             max_events: None,
             delay_ping_lifetime_io: false,
-            channel: Some("testing".into()),
             server_endpoint: Some("invalid-test-host".into()),
             uploader: Some(Box::new(FakeUploader { sender: s })),
             use_core_mps: false,
@@ -321,9 +292,7 @@ fn no_dirty_baseline_on_clean_shutdowns() {
     
     let data_dir = new_glean(None, true);
 
-    crate::block_on_dispatcher();
-
-    with_glean_mut(|glean| glean.set_dirty_flag(true));
+    glean_core::glean_set_dirty_flag(true);
 
     crate::shutdown();
 
@@ -344,7 +313,7 @@ fn no_dirty_baseline_on_clean_shutdowns() {
             _headers: Vec<(String, String)>,
         ) -> net::UploadResult {
             self.sender.send(url).unwrap();
-            net::UploadResult::HttpStatus(200)
+            net::UploadResult::http_status(200)
         }
     }
 
@@ -360,7 +329,6 @@ fn no_dirty_baseline_on_clean_shutdowns() {
             upload_enabled: true,
             max_events: None,
             delay_ping_lifetime_io: false,
-            channel: Some("testing".into()),
             server_endpoint: Some("invalid-test-host".into()),
             uploader: Some(Box::new(FakeUploader { sender: s })),
             use_core_mps: false,
@@ -368,8 +336,6 @@ fn no_dirty_baseline_on_clean_shutdowns() {
         ClientInfoMetrics::unknown(),
         false,
     );
-
-    crate::block_on_dispatcher();
 
     
     assert_eq!(r.try_recv(), Err(crossbeam_channel::TryRecvError::Empty));
@@ -392,7 +358,6 @@ fn initialize_must_not_crash_if_data_dir_is_messed_up() {
         upload_enabled: true,
         max_events: None,
         delay_ping_lifetime_io: false,
-        channel: Some("testing".into()),
         server_endpoint: Some("invalid-test-host".into()),
         uploader: None,
         use_core_mps: false,
@@ -451,7 +416,6 @@ fn initializing_twice_is_a_noop() {
             upload_enabled: true,
             max_events: None,
             delay_ping_lifetime_io: false,
-            channel: Some("testing".into()),
             server_endpoint: Some("invalid-test-host".into()),
             uploader: None,
             use_core_mps: false,
@@ -471,7 +435,6 @@ fn initializing_twice_is_a_noop() {
             upload_enabled: true,
             max_events: None,
             delay_ping_lifetime_io: false,
-            channel: Some("testing".into()),
             server_endpoint: Some("invalid-test-host".into()),
             uploader: None,
             use_core_mps: false,
@@ -492,6 +455,7 @@ fn dont_handle_events_when_uninitialized() {
     todo!()
 }
 
+
 #[test]
 fn the_app_channel_must_be_correctly_set_if_requested() {
     let _lock = lock_test();
@@ -500,7 +464,41 @@ fn the_app_channel_must_be_correctly_set_if_requested() {
     let tmpname = dir.path().to_path_buf();
 
     
+    let app_channel = StringMetric::new(CommonMetricData {
+        name: "app_channel".into(),
+        category: "".into(),
+        send_in_pings: vec!["glean_client_info".into()],
+        lifetime: Lifetime::Application,
+        disabled: false,
+        ..Default::default()
+    });
+
     
+    let client_info = ClientInfoMetrics {
+        channel: None,
+        ..ClientInfoMetrics::unknown()
+    };
+    test_reset_glean(
+        Configuration {
+            data_path: tmpname.clone(),
+            application_id: GLOBAL_APPLICATION_ID.into(),
+            upload_enabled: true,
+            max_events: None,
+            delay_ping_lifetime_io: false,
+            server_endpoint: Some("invalid-test-host".into()),
+            uploader: None,
+            use_core_mps: false,
+        },
+        client_info,
+        true,
+    );
+    assert!(app_channel.test_get_value(None).is_none());
+
+    
+    let client_info = ClientInfoMetrics {
+        channel: Some("testing".into()),
+        ..ClientInfoMetrics::unknown()
+    };
     test_reset_glean(
         Configuration {
             data_path: tmpname,
@@ -508,27 +506,14 @@ fn the_app_channel_must_be_correctly_set_if_requested() {
             upload_enabled: true,
             max_events: None,
             delay_ping_lifetime_io: false,
-            channel: None,
             server_endpoint: Some("invalid-test-host".into()),
             uploader: None,
             use_core_mps: false,
         },
-        ClientInfoMetrics::unknown(),
+        client_info,
         true,
     );
-    assert!(core_metrics::internal_metrics::app_channel
-        .test_get_value(None)
-        .is_none());
-
-    
-    
-    let _t = new_glean(None, true);
-    assert_eq!(
-        "testing",
-        core_metrics::internal_metrics::app_channel
-            .test_get_value(None)
-            .unwrap()
-    );
+    assert_eq!("testing", app_channel.test_get_value(None).unwrap());
 }
 
 #[test]
@@ -554,39 +539,61 @@ fn basic_metrics_should_be_cleared_when_disabling_uploading() {
 
     assert!(metric.test_get_value(None).is_none());
 
-    metric.set("TEST VALUE");
+    metric.set("TEST VALUE".into());
     assert!(metric.test_get_value(None).is_some());
 
     set_upload_enabled(false);
     assert!(metric.test_get_value(None).is_none());
-    metric.set("TEST VALUE");
+    metric.set("TEST VALUE".into());
     assert!(metric.test_get_value(None).is_none());
 
     set_upload_enabled(true);
     assert!(metric.test_get_value(None).is_none());
-    metric.set("TEST VALUE");
+    metric.set("TEST VALUE".into());
     assert_eq!("TEST VALUE", metric.test_get_value(None).unwrap());
 }
+
 
 #[test]
 fn core_metrics_should_be_cleared_and_restored_when_disabling_and_enabling_uploading() {
     let _lock = lock_test();
 
-    let _t = new_glean(None, false);
+    let dir = tempfile::tempdir().unwrap();
+    let tmpname = dir.path().to_path_buf();
 
-    assert!(core_metrics::internal_metrics::os_version
-        .test_get_value(None)
-        .is_some());
+    
+    test_reset_glean(
+        Configuration {
+            data_path: tmpname,
+            application_id: GLOBAL_APPLICATION_ID.into(),
+            upload_enabled: true,
+            max_events: None,
+            delay_ping_lifetime_io: false,
+            server_endpoint: Some("invalid-test-host".into()),
+            uploader: None,
+            use_core_mps: false,
+        },
+        ClientInfoMetrics::unknown(),
+        true,
+    );
+
+    
+    let os_version = StringMetric::new(CommonMetricData {
+        name: "os_version".into(),
+        category: "".into(),
+        send_in_pings: vec!["glean_client_info".into()],
+        lifetime: Lifetime::Application,
+        disabled: false,
+        ..Default::default()
+    });
+
+    assert!(os_version.test_get_value(None).is_some());
 
     set_upload_enabled(false);
-    assert!(core_metrics::internal_metrics::os_version
-        .test_get_value(None)
-        .is_none());
+    assert!(os_version.test_get_value(None).is_none());
 
     set_upload_enabled(true);
-    assert!(core_metrics::internal_metrics::os_version
-        .test_get_value(None)
-        .is_some());
+    assert!(os_version.test_get_value(None).is_some());
 }
 
 #[test]
@@ -609,7 +616,7 @@ fn sending_deletion_ping_if_disabled_outside_of_run() {
             _headers: Vec<(String, String)>,
         ) -> net::UploadResult {
             self.sender.send(url).unwrap();
-            net::UploadResult::HttpStatus(200)
+            net::UploadResult::http_status(200)
         }
     }
 
@@ -623,15 +630,12 @@ fn sending_deletion_ping_if_disabled_outside_of_run() {
         upload_enabled: true,
         max_events: None,
         delay_ping_lifetime_io: false,
-        channel: Some("testing".into()),
         server_endpoint: Some("invalid-test-host".into()),
         uploader: None,
         use_core_mps: false,
     };
 
     let _t = new_glean(Some(cfg), true);
-
-    crate::block_on_dispatcher();
 
     
     
@@ -642,7 +646,6 @@ fn sending_deletion_ping_if_disabled_outside_of_run() {
             upload_enabled: false,
             max_events: None,
             delay_ping_lifetime_io: false,
-            channel: Some("testing".into()),
             server_endpoint: Some("invalid-test-host".into()),
             uploader: Some(Box::new(FakeUploader { sender: s })),
             use_core_mps: false,
@@ -676,7 +679,7 @@ fn no_sending_of_deletion_ping_if_unchanged_outside_of_run() {
             _headers: Vec<(String, String)>,
         ) -> net::UploadResult {
             self.sender.send(url).unwrap();
-            net::UploadResult::HttpStatus(200)
+            net::UploadResult::http_status(200)
         }
     }
 
@@ -690,15 +693,12 @@ fn no_sending_of_deletion_ping_if_unchanged_outside_of_run() {
         upload_enabled: true,
         max_events: None,
         delay_ping_lifetime_io: false,
-        channel: Some("testing".into()),
         server_endpoint: Some("invalid-test-host".into()),
         uploader: None,
         use_core_mps: false,
     };
 
     let _t = new_glean(Some(cfg), true);
-
-    crate::block_on_dispatcher();
 
     
     
@@ -709,7 +709,6 @@ fn no_sending_of_deletion_ping_if_unchanged_outside_of_run() {
             upload_enabled: true,
             max_events: None,
             delay_ping_lifetime_io: false,
-            channel: Some("testing".into()),
             server_endpoint: Some("invalid-test-host".into()),
             uploader: Some(Box::new(FakeUploader { sender: s })),
             use_core_mps: false,
@@ -717,8 +716,6 @@ fn no_sending_of_deletion_ping_if_unchanged_outside_of_run() {
         ClientInfoMetrics::unknown(),
         false,
     );
-
-    crate::block_on_dispatcher();
 
     assert_eq!(0, r.len());
 }
@@ -740,7 +737,6 @@ fn setting_debug_view_tag_before_initialization_should_not_crash() {
     let _lock = lock_test();
 
     destroy_glean(true);
-    assert!(!was_initialize_called());
 
     
     
@@ -758,7 +754,7 @@ fn setting_debug_view_tag_before_initialization_should_not_crash() {
             headers: Vec<(String, String)>,
         ) -> net::UploadResult {
             self.sender.send(headers).unwrap();
-            net::UploadResult::HttpStatus(200)
+            net::UploadResult::http_status(200)
         }
     }
 
@@ -775,17 +771,15 @@ fn setting_debug_view_tag_before_initialization_should_not_crash() {
         upload_enabled: true,
         max_events: None,
         delay_ping_lifetime_io: false,
-        channel: Some("testing".into()),
         server_endpoint: Some("invalid-test-host".into()),
         uploader: Some(Box::new(FakeUploader { sender: s })),
         use_core_mps: false,
     };
 
     let _t = new_glean(Some(cfg), true);
-    crate::block_on_dispatcher();
 
     
-    submit_ping_by_name("baseline", Some("background"));
+    submit_ping_by_name("baseline", Some("inactive"));
 
     
     let headers = r.recv().unwrap();
@@ -800,7 +794,7 @@ fn setting_source_tags_before_initialization_should_not_crash() {
     let _lock = lock_test();
 
     destroy_glean(true);
-    assert!(!was_initialize_called());
+    
 
     
     
@@ -818,7 +812,7 @@ fn setting_source_tags_before_initialization_should_not_crash() {
             headers: Vec<(String, String)>,
         ) -> net::UploadResult {
             self.sender.send(headers).unwrap();
-            net::UploadResult::HttpStatus(200)
+            net::UploadResult::http_status(200)
         }
     }
 
@@ -835,17 +829,15 @@ fn setting_source_tags_before_initialization_should_not_crash() {
         upload_enabled: true,
         max_events: None,
         delay_ping_lifetime_io: false,
-        channel: Some("testing".into()),
         server_endpoint: Some("invalid-test-host".into()),
         uploader: Some(Box::new(FakeUploader { sender: s })),
         use_core_mps: false,
     };
 
     let _t = new_glean(Some(cfg), true);
-    crate::block_on_dispatcher();
 
     
-    submit_ping_by_name("baseline", Some("background"));
+    submit_ping_by_name("baseline", Some("inactive"));
 
     
     let headers = r.recv().unwrap();
@@ -864,7 +856,7 @@ fn setting_source_tags_after_initialization_should_not_crash() {
     let _lock = lock_test();
 
     destroy_glean(true);
-    assert!(!was_initialize_called());
+    
 
     
     
@@ -882,7 +874,7 @@ fn setting_source_tags_after_initialization_should_not_crash() {
             headers: Vec<(String, String)>,
         ) -> net::UploadResult {
             self.sender.send(headers).unwrap();
-            net::UploadResult::HttpStatus(200)
+            net::UploadResult::http_status(200)
         }
     }
 
@@ -896,7 +888,6 @@ fn setting_source_tags_after_initialization_should_not_crash() {
         upload_enabled: true,
         max_events: None,
         delay_ping_lifetime_io: false,
-        channel: Some("testing".into()),
         server_endpoint: Some("invalid-test-host".into()),
         uploader: Some(Box::new(FakeUploader { sender: s })),
         use_core_mps: false,
@@ -906,13 +897,11 @@ fn setting_source_tags_after_initialization_should_not_crash() {
 
     
     
-    assert!(was_initialize_called());
+    
     set_source_tags(vec!["valid-tag1".to_string(), "valid-tag2".to_string()]);
 
-    crate::block_on_dispatcher();
-
     
-    submit_ping_by_name("baseline", Some("background"));
+    submit_ping_by_name("baseline", Some("inactive"));
 
     
     let headers = r.recv().unwrap();
@@ -955,7 +944,7 @@ fn flipping_upload_enabled_respects_order_of_events() {
             _headers: Vec<(String, String)>,
         ) -> net::UploadResult {
             self.sender.send(url).unwrap();
-            net::UploadResult::HttpStatus(200)
+            net::UploadResult::http_status(200)
         }
     }
 
@@ -969,7 +958,6 @@ fn flipping_upload_enabled_respects_order_of_events() {
         upload_enabled: true,
         max_events: None,
         delay_ping_lifetime_io: false,
-        channel: Some("testing".into()),
         server_endpoint: Some("invalid-test-host".into()),
         uploader: Some(Box::new(FakeUploader { sender: s })),
         use_core_mps: false,
@@ -992,7 +980,7 @@ fn flipping_upload_enabled_respects_order_of_events() {
     set_upload_enabled(false);
 
     
-    metric.set("some-test-value");
+    metric.set("some-test-value".into());
     sample_ping.submit(None);
 
     
@@ -1005,7 +993,7 @@ fn registering_pings_before_init_must_work() {
     let _lock = lock_test();
 
     destroy_glean(true);
-    assert!(!was_initialize_called());
+    
 
     
     
@@ -1023,7 +1011,7 @@ fn registering_pings_before_init_must_work() {
             _headers: Vec<(String, String)>,
         ) -> net::UploadResult {
             self.sender.send(url).unwrap();
-            net::UploadResult::HttpStatus(200)
+            net::UploadResult::http_status(200)
         }
     }
 
@@ -1040,14 +1028,12 @@ fn registering_pings_before_init_must_work() {
         upload_enabled: true,
         max_events: None,
         delay_ping_lifetime_io: false,
-        channel: Some("testing".into()),
         server_endpoint: Some("invalid-test-host".into()),
         uploader: Some(Box::new(FakeUploader { sender: s })),
         use_core_mps: false,
     };
 
     let _t = new_glean(Some(cfg), true);
-    crate::block_on_dispatcher();
 
     
     sample_ping.submit(None);
@@ -1077,7 +1063,7 @@ fn test_a_ping_before_submission() {
             _headers: Vec<(String, String)>,
         ) -> net::UploadResult {
             self.sender.send(url).unwrap();
-            net::UploadResult::HttpStatus(200)
+            net::UploadResult::http_status(200)
         }
     }
 
@@ -1091,7 +1077,6 @@ fn test_a_ping_before_submission() {
         upload_enabled: true,
         max_events: None,
         delay_ping_lifetime_io: false,
-        channel: Some("testing".into()),
         server_endpoint: Some("invalid-test-host".into()),
         uploader: Some(Box::new(FakeUploader { sender: s })),
         use_core_mps: false,
@@ -1111,8 +1096,6 @@ fn test_a_ping_before_submission() {
         dynamic_label: None,
     });
 
-    crate::block_on_dispatcher();
-
     metric.add(1);
 
     sample_ping.test_before_next_submit(move |reason| {
@@ -1126,4 +1109,25 @@ fn test_a_ping_before_submission() {
     
     let url = r.recv().unwrap();
     assert!(url.contains("custom1"));
+}
+
+#[test]
+fn test_boolean_get_num_errors() {
+    let _lock = lock_test();
+
+    let _t = new_glean(None, false);
+
+    let metric = BooleanMetric::new(CommonMetricData {
+        name: "counter_metric".into(),
+        category: "test".into(),
+        send_in_pings: vec!["custom1".into()],
+        lifetime: Lifetime::Application,
+        disabled: false,
+        dynamic_label: Some(str::to_string("asdf")),
+    });
+
+    
+    let result = metric.test_get_num_recorded_errors(ErrorType::InvalidLabel, None);
+
+    assert_eq!(result, 0);
 }

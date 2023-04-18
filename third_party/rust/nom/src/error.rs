@@ -411,12 +411,12 @@ pub enum ErrorKind {
   Verify,
   TakeTill1,
   TakeWhileMN,
-  ParseTo,
   TooLarge,
   Many0Count,
   Many1Count,
   Float,
   Satisfy,
+  Fail,
 }
 
 #[rustfmt::skip]
@@ -471,12 +471,12 @@ pub fn error_to_u32(e: &ErrorKind) -> u32 {
     ErrorKind::Verify                    => 66,
     ErrorKind::TakeTill1                 => 67,
     ErrorKind::TakeWhileMN               => 69,
-    ErrorKind::ParseTo                   => 70,
-    ErrorKind::TooLarge                  => 71,
-    ErrorKind::Many0Count                => 72,
-    ErrorKind::Many1Count                => 73,
-    ErrorKind::Float                     => 74,
-    ErrorKind::Satisfy                   => 75,
+    ErrorKind::TooLarge                  => 70,
+    ErrorKind::Many0Count                => 71,
+    ErrorKind::Many1Count                => 72,
+    ErrorKind::Float                     => 73,
+    ErrorKind::Satisfy                   => 74,
+    ErrorKind::Fail                      => 75,
   }
 }
 
@@ -533,12 +533,12 @@ impl ErrorKind {
       ErrorKind::Verify                    => "predicate verification",
       ErrorKind::TakeTill1                 => "TakeTill1",
       ErrorKind::TakeWhileMN               => "TakeWhileMN",
-      ErrorKind::ParseTo                   => "Parse string to the specified type",
       ErrorKind::TooLarge                  => "Needed data size is too large",
       ErrorKind::Many0Count                => "Count occurrence of >=0 patterns",
       ErrorKind::Many1Count                => "Count occurrence of >=1 patterns",
       ErrorKind::Float                     => "Float",
       ErrorKind::Satisfy                   => "Satisfy",
+      ErrorKind::Fail                      => "Fail",
     }
   }
 }
@@ -585,82 +585,24 @@ macro_rules! error_node_position(
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[macro_export(local_inner_macros)]
-macro_rules! fix_error (
-  ($i:expr, $t:ty, $submac:ident!( $($args:tt)* )) => (
-    {
-      use $crate::lib::std::result::Result::*;
-      use $crate::Err;
-
-      match $submac!($i, $($args)*) {
-        Ok((i,o)) => Ok((i,o)),
-        Err(e) => {
-          let e2 = match e {
-            Err::Error(err) => {
-              Err::Error(err.into())
-            },
-            Err::Failure(err) => {
-              Err::Failure(err.into())
-            },
-            Err::Incomplete(e) => Err::Incomplete(e),
-          };
-          Err(e2)
-        }
-      }
+#[cfg(feature = "std")]
+#[cfg_attr(feature = "docsrs", doc(cfg(feature = "std")))]
+pub fn dbg_dmp<'a, F, O, E: std::fmt::Debug>(
+  f: F,
+  context: &'static str,
+) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], O, E>
+where
+  F: Fn(&'a [u8]) -> IResult<&'a [u8], O, E>,
+{
+  use crate::HexDisplay;
+  move |i: &'a [u8]| match f(i) {
+    Err(e) => {
+      println!("{}: Error({:?}) at:\n{}", context, e, i.to_hex(8));
+      Err(e)
     }
-  );
-  ($i:expr, $t:ty, $f:expr) => (
-    fix_error!($i, $t, call!($f));
-  );
-);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[macro_export(local_inner_macros)]
-macro_rules! flat_map(
-  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
-    flat_map!(__impl $i, $submac!($($args)*), $submac2!($($args2)*));
-  );
-  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
-    flat_map!(__impl $i, $submac!($($args)*), call!($g));
-  );
-  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
-    flat_map!(__impl $i, call!($f), $submac!($($args)*));
-  );
-  ($i:expr, $f:expr, $g:expr) => (
-    flat_map!(__impl $i, call!($f), call!($g));
-  );
-  (__impl $i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
-    $crate::combinator::map_parserc($i, move |i| {$submac!(i, $($args)*)}, move |i| {$submac2!(i, $($args2)*)})
-  );
-);
+    a => a,
+  }
+}
 
 #[cfg(test)]
 #[cfg(feature = "alloc")]

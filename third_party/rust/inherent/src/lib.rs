@@ -72,52 +72,26 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#![allow(
+    clippy::default_trait_access,
+    clippy::needless_doctest_main,
+    clippy::needless_pass_by_value
+)]
 
 extern crate proc_macro;
 
-mod default_methods;
 mod expand;
 mod parse;
-mod visibility;
 
 use proc_macro::TokenStream;
+use syn::parse::Nothing;
 use syn::parse_macro_input;
 
 use crate::parse::TraitImpl;
-use crate::visibility::Visibility;
 
 #[proc_macro_attribute]
 pub fn inherent(args: TokenStream, input: TokenStream) -> TokenStream {
-    let vis = parse_macro_input!(args as Visibility);
+    parse_macro_input!(args as Nothing);
     let input = parse_macro_input!(input as TraitImpl);
-    expand::inherent(vis, input).into()
+    expand::inherent(input).into()
 }

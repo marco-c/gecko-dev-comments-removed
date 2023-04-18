@@ -149,7 +149,7 @@ impl TimingDistributionMetric {
     }
 }
 
-#[inherent(pub)]
+#[inherent]
 impl TimingDistribution for TimingDistributionMetric {
     
     
@@ -161,7 +161,7 @@ impl TimingDistribution for TimingDistributionMetric {
     
     
     
-    fn start(&self) -> TimerId {
+    pub fn start(&self) -> TimerId {
         match self {
             TimingDistributionMetric::Parent { id: _id, inner } => {
                 let timer_id = inner.start();
@@ -172,10 +172,10 @@ impl TimingDistribution for TimingDistributionMetric {
                     }
                     
                     unsafe {
-                        GIFFT_TimingDistributionStart(_id.0, timer_id);
+                        GIFFT_TimingDistributionStart(_id.0, timer_id.id);
                     }
                 }
-                timer_id
+                timer_id.into()
             }
             TimingDistributionMetric::Child(c) => {
                 
@@ -202,7 +202,7 @@ impl TimingDistribution for TimingDistributionMetric {
                         GIFFT_TimingDistributionStart(c.metric_id.0, id);
                     }
                 }
-                id
+                id.into()
             }
         }
     }
@@ -218,7 +218,7 @@ impl TimingDistribution for TimingDistributionMetric {
     
     
     
-    fn stop_and_accumulate(&self, id: TimerId) {
+    pub fn stop_and_accumulate(&self, id: TimerId) {
         match self {
             TimingDistributionMetric::Parent {
                 id: _metric_id,
@@ -231,7 +231,7 @@ impl TimingDistribution for TimingDistributionMetric {
                     }
                     
                     unsafe {
-                        GIFFT_TimingDistributionStopAndAccumulate(_metric_id.0, id);
+                        GIFFT_TimingDistributionStopAndAccumulate(_metric_id.0, id.id);
                     }
                 }
                 inner.stop_and_accumulate(id);
@@ -244,14 +244,14 @@ impl TimingDistribution for TimingDistributionMetric {
                     }
                     
                     unsafe {
-                        GIFFT_TimingDistributionStopAndAccumulate(c.metric_id.0, id);
+                        GIFFT_TimingDistributionStopAndAccumulate(c.metric_id.0, id.id);
                     }
                 }
                 let mut map = c
                     .instants
                     .write()
                     .expect("Write lock must've been poisoned.");
-                if let Some(start) = map.remove(&id) {
+                if let Some(start) = map.remove(&id.id) {
                     let now = Instant::now();
                     let sample = now
                         .checked_duration_since(start)
@@ -291,7 +291,7 @@ impl TimingDistribution for TimingDistributionMetric {
     
     
     
-    fn cancel(&self, id: TimerId) {
+    pub fn cancel(&self, id: TimerId) {
         match self {
             TimingDistributionMetric::Parent {
                 id: _metric_id,
@@ -304,7 +304,7 @@ impl TimingDistribution for TimingDistributionMetric {
                     }
                     
                     unsafe {
-                        GIFFT_TimingDistributionCancel(_metric_id.0, id);
+                        GIFFT_TimingDistributionCancel(_metric_id.0, id.id);
                     }
                 }
                 inner.cancel(id);
@@ -314,7 +314,7 @@ impl TimingDistribution for TimingDistributionMetric {
                     .instants
                     .write()
                     .expect("Write lock must've been poisoned.");
-                if map.remove(&id).is_none() {
+                if map.remove(&id.id).is_none() {
                     
                 }
                 #[cfg(feature = "with_gecko")]
@@ -324,7 +324,7 @@ impl TimingDistribution for TimingDistributionMetric {
                     }
                     
                     unsafe {
-                        GIFFT_TimingDistributionCancel(c.metric_id.0, id);
+                        GIFFT_TimingDistributionCancel(c.metric_id.0, id.id);
                     }
                 }
             }
@@ -341,10 +341,11 @@ impl TimingDistribution for TimingDistributionMetric {
     
     
     
-    fn test_get_value<'a, S: Into<Option<&'a str>>>(
+    pub fn test_get_value<'a, S: Into<Option<&'a str>>>(
         &self,
         ping_name: S,
     ) -> Option<DistributionData> {
+        let ping_name = ping_name.into().map(|s| s.to_string());
         match self {
             TimingDistributionMetric::Parent { inner, .. } => inner.test_get_value(ping_name),
             TimingDistributionMetric::Child(c) => {
@@ -366,11 +367,12 @@ impl TimingDistribution for TimingDistributionMetric {
     
     
     
-    fn test_get_num_recorded_errors<'a, S: Into<Option<&'a str>>>(
+    pub fn test_get_num_recorded_errors<'a, S: Into<Option<&'a str>>>(
         &self,
         error: ErrorType,
         ping_name: S,
     ) -> i32 {
+        let ping_name = ping_name.into().map(|s| s.to_string());
         match self {
             TimingDistributionMetric::Parent { inner, .. } => {
                 inner.test_get_num_recorded_errors(error, ping_name)

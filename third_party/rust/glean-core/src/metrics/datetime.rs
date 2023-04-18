@@ -2,9 +2,10 @@
 
 
 
-#![allow(clippy::too_many_arguments)]
+use std::fmt;
+use std::sync::Arc;
 
-use crate::error_recording::{record_error, ErrorType};
+use crate::error_recording::{record_error, test_get_num_recorded_errors, ErrorType};
 use crate::metrics::time_unit::TimeUnit;
 use crate::metrics::Metric;
 use crate::metrics::MetricType;
@@ -13,20 +14,76 @@ use crate::util::{get_iso_time_string, local_now_with_offset};
 use crate::CommonMetricData;
 use crate::Glean;
 
-use chrono::{DateTime, FixedOffset, TimeZone, Timelike};
+use chrono::{DateTime, Datelike, FixedOffset, TimeZone, Timelike};
 
 
 
 
-pub type Datetime = DateTime<FixedOffset>;
+pub type ChronoDatetime = DateTime<FixedOffset>;
+
+
+#[derive(Clone, PartialEq, Eq)]
+pub struct Datetime {
+    
+    pub year: i32,
+    
+    pub month: u32,
+    
+    pub day: u32,
+    
+    pub hour: u32,
+    
+    pub minute: u32,
+    
+    pub second: u32,
+    
+    pub nanosecond: u32,
+    
+    
+    pub offset_seconds: i32,
+}
+
+impl fmt::Debug for Datetime {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "Datetime({:04}-{:02}-{:02}T{:02}:{:02}:{:02}.{:03}{}{:02}{:02})",
+            self.year,
+            self.month,
+            self.day,
+            self.hour,
+            self.minute,
+            self.second,
+            self.nanosecond,
+            if self.offset_seconds < 0 { "-" } else { "+" },
+            self.offset_seconds / 3600,        // hour part
+            (self.offset_seconds % 3600) / 60, // minute part
+        )
+    }
+}
+
+impl Default for Datetime {
+    fn default() -> Self {
+        Datetime {
+            year: 1970,
+            month: 1,
+            day: 1,
+            hour: 0,
+            minute: 0,
+            second: 0,
+            nanosecond: 0,
+            offset_seconds: 0,
+        }
+    }
+}
 
 
 
 
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct DatetimeMetric {
-    meta: CommonMetricData,
+    meta: Arc<CommonMetricData>,
     time_unit: TimeUnit,
 }
 
@@ -34,9 +91,23 @@ impl MetricType for DatetimeMetric {
     fn meta(&self) -> &CommonMetricData {
         &self.meta
     }
+}
 
-    fn meta_mut(&mut self) -> &mut CommonMetricData {
-        &mut self.meta
+impl From<ChronoDatetime> for Datetime {
+    fn from(dt: ChronoDatetime) -> Self {
+        let date = dt.date();
+        let time = dt.time();
+        let tz = dt.timezone();
+        Self {
+            year: date.year(),
+            month: date.month(),
+            day: date.day(),
+            hour: time.hour(),
+            minute: time.minute(),
+            second: time.second(),
+            nanosecond: time.nanosecond(),
+            offset_seconds: tz.local_minus_utc(),
+        }
     }
 }
 
@@ -47,7 +118,10 @@ impl MetricType for DatetimeMetric {
 impl DatetimeMetric {
     
     pub fn new(meta: CommonMetricData, time_unit: TimeUnit) -> Self {
-        Self { meta, time_unit }
+        Self {
+            meta: Arc::new(meta),
+            time_unit,
+        }
     }
 
     
@@ -55,91 +129,126 @@ impl DatetimeMetric {
     
     
     
+    pub fn set(&self, dt: Option<Datetime>) {
+        let metric = self.clone();
+        crate::launch_with_glean(move |glean| {
+            metric.set_sync(glean, dt);
+        })
+    }
+
     
     
     
-    
-    
-    
-    
-    
-    
-    pub fn set_with_details(
-        &self,
-        glean: &Glean,
-        year: i32,
-        month: u32,
-        day: u32,
-        hour: u32,
-        minute: u32,
-        second: u32,
-        nano: u32,
-        offset_seconds: i32,
-    ) {
+    #[doc(hidden)]
+    pub fn set_sync(&self, glean: &Glean, value: Option<Datetime>) {
         if !self.should_record(glean) {
             return;
         }
 
-        let timezone_offset = FixedOffset::east_opt(offset_seconds);
-        if timezone_offset.is_none() {
-            let msg = format!("Invalid timezone offset {}. Not recording.", offset_seconds);
-            record_error(glean, &self.meta, ErrorType::InvalidValue, msg, None);
-            return;
+        let value = match value {
+            None => local_now_with_offset(),
+            Some(dt) => {
+                let timezone_offset = FixedOffset::east_opt(dt.offset_seconds);
+                if timezone_offset.is_none() {
+                    let msg = format!(
+                        "Invalid timezone offset {}. Not recording.",
+                        dt.offset_seconds
+                    );
+                    record_error(glean, &self.meta, ErrorType::InvalidValue, msg, None);
+                    return;
+                };
+
+                let datetime_obj = FixedOffset::east(dt.offset_seconds)
+                    .ymd_opt(dt.year, dt.month, dt.day)
+                    .and_hms_nano_opt(dt.hour, dt.minute, dt.second, dt.nanosecond);
+
+                if let Some(dt) = datetime_obj.single() {
+                    dt
+                } else {
+                    record_error(
+                        glean,
+                        &self.meta,
+                        ErrorType::InvalidValue,
+                        "Invalid input data. Not recording.",
+                        None,
+                    );
+                    return;
+                }
+            }
         };
 
-        let datetime_obj = FixedOffset::east(offset_seconds)
-            .ymd_opt(year, month, day)
-            .and_hms_nano_opt(hour, minute, second, nano);
-
-        match datetime_obj.single() {
-            Some(d) => self.set(glean, Some(d)),
-            _ => {
-                record_error(
-                    glean,
-                    &self.meta,
-                    ErrorType::InvalidValue,
-                    "Invalid input data. Not recording.",
-                    None,
-                );
-            }
-        }
+        self.set_sync_chrono(glean, value);
     }
 
-    
-    
-    
-    
-    
-    
-    
-    pub fn set(&self, glean: &Glean, value: Option<Datetime>) {
-        if !self.should_record(glean) {
-            return;
-        }
-
-        let value = value.unwrap_or_else(local_now_with_offset);
+    pub(crate) fn set_sync_chrono(&self, glean: &Glean, value: ChronoDatetime) {
         let value = Metric::Datetime(value, self.time_unit);
         glean.storage().record(glean, &self.meta, &value)
     }
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub(crate) fn get_value(&self, glean: &Glean, storage_name: &str) -> Option<Datetime> {
+    #[doc(hidden)]
+    pub fn get_value<'a, S: Into<Option<&'a str>>>(
+        &self,
+        glean: &Glean,
+        ping_name: S,
+    ) -> Option<ChronoDatetime> {
+        let (d, tu) = self.get_value_inner(glean, ping_name.into())?;
+
+        
+        
+        
+        
+        let time = d.time();
+        match tu {
+            TimeUnit::Nanosecond => d.date().and_hms_nano_opt(
+                time.hour(),
+                time.minute(),
+                time.second(),
+                time.nanosecond(),
+            ),
+            TimeUnit::Microsecond => {
+                eprintln!(
+                    "microseconds. nanoseconds={}, nanoseconds/1000={}",
+                    time.nanosecond(),
+                    time.nanosecond() / 1000
+                );
+                d.date().and_hms_nano_opt(
+                    time.hour(),
+                    time.minute(),
+                    time.second(),
+                    time.nanosecond() / 1000,
+                )
+            }
+            TimeUnit::Millisecond => d.date().and_hms_nano_opt(
+                time.hour(),
+                time.minute(),
+                time.second(),
+                time.nanosecond() / 1000000,
+            ),
+            TimeUnit::Second => {
+                d.date()
+                    .and_hms_nano_opt(time.hour(), time.minute(), time.second(), 0)
+            }
+            TimeUnit::Minute => d.date().and_hms_nano_opt(time.hour(), time.minute(), 0, 0),
+            TimeUnit::Hour => d.date().and_hms_nano_opt(time.hour(), 0, 0, 0),
+            TimeUnit::Day => d.date().and_hms_nano_opt(0, 0, 0, 0),
+        }
+    }
+
+    fn get_value_inner(
+        &self,
+        glean: &Glean,
+        ping_name: Option<&str>,
+    ) -> Option<(ChronoDatetime, TimeUnit)> {
+        let queried_ping_name = ping_name.unwrap_or_else(|| &self.meta().send_in_pings[0]);
+
         match StorageManager.snapshot_metric(
             glean.storage(),
-            storage_name,
+            queried_ping_name,
             &self.meta.identifier(glean),
             self.meta.lifetime,
         ) {
-            Some(Metric::Datetime(dt, _)) => Some(dt),
+            Some(Metric::Datetime(d, tu)) => Some((d, tu)),
             _ => None,
         }
     }
@@ -158,49 +267,12 @@ impl DatetimeMetric {
     
     
     
-    pub fn test_get_value(&self, glean: &Glean, storage_name: &str) -> Option<Datetime> {
-        match StorageManager.snapshot_metric_for_test(
-            glean.storage(),
-            storage_name,
-            &self.meta.identifier(glean),
-            self.meta.lifetime,
-        ) {
-            Some(Metric::Datetime(d, tu)) => {
-                
-                
-                
-                
-                let time = d.time();
-                match tu {
-                    TimeUnit::Nanosecond => d.date().and_hms_nano_opt(
-                        time.hour(),
-                        time.minute(),
-                        time.second(),
-                        time.nanosecond(),
-                    ),
-                    TimeUnit::Microsecond => d.date().and_hms_nano_opt(
-                        time.hour(),
-                        time.minute(),
-                        time.second(),
-                        time.nanosecond() / 1000,
-                    ),
-                    TimeUnit::Millisecond => d.date().and_hms_nano_opt(
-                        time.hour(),
-                        time.minute(),
-                        time.second(),
-                        time.nanosecond() / 1000000,
-                    ),
-                    TimeUnit::Second => {
-                        d.date()
-                            .and_hms_nano_opt(time.hour(), time.minute(), time.second(), 0)
-                    }
-                    TimeUnit::Minute => d.date().and_hms_nano_opt(time.hour(), time.minute(), 0, 0),
-                    TimeUnit::Hour => d.date().and_hms_nano_opt(time.hour(), 0, 0, 0),
-                    TimeUnit::Day => d.date().and_hms_nano_opt(0, 0, 0, 0),
-                }
-            }
-            _ => None,
-        }
+    pub fn test_get_value(&self, ping_name: Option<String>) -> Option<Datetime> {
+        crate::block_on_dispatcher();
+        crate::core::with_glean(|glean| {
+            let dt = self.get_value(glean, ping_name.as_deref());
+            dt.map(Datetime::from)
+        })
     }
 
     
@@ -210,15 +282,46 @@ impl DatetimeMetric {
     
     
     
-    pub fn test_get_value_as_string(&self, glean: &Glean, storage_name: &str) -> Option<String> {
-        match StorageManager.snapshot_metric_for_test(
-            glean.storage(),
-            storage_name,
-            &self.meta.identifier(glean),
-            self.meta.lifetime,
-        ) {
-            Some(Metric::Datetime(d, tu)) => Some(get_iso_time_string(d, tu)),
-            _ => None,
-        }
+    
+    
+    
+    
+    
+    
+    
+    pub fn test_get_value_as_string(&self, ping_name: Option<String>) -> Option<String> {
+        crate::block_on_dispatcher();
+        crate::core::with_glean(|glean| self.get_value_as_string(glean, ping_name))
+    }
+
+    
+    
+    
+    #[doc(hidden)]
+    pub fn get_value_as_string(&self, glean: &Glean, ping_name: Option<String>) -> Option<String> {
+        let value = self.get_value_inner(glean, ping_name.as_deref());
+        value.map(|(dt, tu)| get_iso_time_string(dt, tu))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn test_get_num_recorded_errors(&self, error: ErrorType, ping_name: Option<String>) -> i32 {
+        crate::block_on_dispatcher();
+
+        crate::core::with_glean(|glean| {
+            test_get_num_recorded_errors(glean, self.meta(), error, ping_name.as_deref())
+                .unwrap_or(0)
+        })
     }
 }

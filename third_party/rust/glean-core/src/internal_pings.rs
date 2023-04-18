@@ -2,7 +2,7 @@
 
 
 
-use super::metrics::PingType;
+use crate::metrics::PingType;
 
 
 
@@ -10,7 +10,7 @@ use super::metrics::PingType;
 
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct InternalPings {
     pub baseline: PingType,
     pub metrics: PingType,

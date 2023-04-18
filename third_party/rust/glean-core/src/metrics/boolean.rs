@@ -2,6 +2,9 @@
 
 
 
+use std::sync::Arc;
+
+use crate::error_recording::{test_get_num_recorded_errors, ErrorType};
 use crate::metrics::Metric;
 use crate::metrics::MetricType;
 use crate::storage::StorageManager;
@@ -13,7 +16,7 @@ use crate::Glean;
 
 #[derive(Clone, Debug)]
 pub struct BooleanMetric {
-    meta: CommonMetricData,
+    meta: Arc<CommonMetricData>,
 }
 
 impl MetricType for BooleanMetric {
@@ -21,8 +24,20 @@ impl MetricType for BooleanMetric {
         &self.meta
     }
 
-    fn meta_mut(&mut self) -> &mut CommonMetricData {
-        &mut self.meta
+    fn with_name(&self, name: String) -> Self {
+        let mut meta = (*self.meta).clone();
+        meta.name = name;
+        Self {
+            meta: Arc::new(meta),
+        }
+    }
+
+    fn with_dynamic_label(&self, label: String) -> Self {
+        let mut meta = (*self.meta).clone();
+        meta.dynamic_label = Some(label);
+        Self {
+            meta: Arc::new(meta),
+        }
     }
 }
 
@@ -33,7 +48,9 @@ impl MetricType for BooleanMetric {
 impl BooleanMetric {
     
     pub fn new(meta: CommonMetricData) -> Self {
-        Self { meta }
+        Self {
+            meta: Arc::new(meta),
+        }
     }
 
     
@@ -42,7 +59,8 @@ impl BooleanMetric {
     
     
     
-    pub fn set(&self, glean: &Glean, value: bool) {
+    #[doc(hidden)]
+    pub fn set_sync(&self, glean: &Glean, value: bool) {
         if !self.should_record(glean) {
             return;
         }
@@ -56,15 +74,61 @@ impl BooleanMetric {
     
     
     
-    pub fn test_get_value(&self, glean: &Glean, storage_name: &str) -> Option<bool> {
+    
+    pub fn set(&self, value: bool) {
+        let metric = self.clone();
+        crate::launch_with_glean(move |glean| metric.set_sync(glean, value))
+    }
+
+    
+    
+    
+    
+    
+    #[doc(hidden)]
+    pub fn get_value(&self, glean: &Glean, ping_name: Option<&str>) -> Option<bool> {
+        let queried_ping_name = ping_name.unwrap_or_else(|| &self.meta().send_in_pings[0]);
+
         match StorageManager.snapshot_metric_for_test(
             glean.storage(),
-            storage_name,
+            queried_ping_name,
             &self.meta.identifier(glean),
             self.meta.lifetime,
         ) {
             Some(Metric::Boolean(b)) => Some(b),
             _ => None,
         }
+    }
+
+    
+    
+    
+    
+    
+    pub fn test_get_value(&self, ping_name: Option<String>) -> Option<bool> {
+        crate::block_on_dispatcher();
+        crate::core::with_glean(|glean| self.get_value(glean, ping_name.as_deref()))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn test_get_num_recorded_errors(&self, error: ErrorType, ping_name: Option<String>) -> i32 {
+        crate::block_on_dispatcher();
+
+        crate::core::with_glean(|glean| {
+            test_get_num_recorded_errors(glean, self.meta(), error, ping_name.as_deref())
+                .unwrap_or(0)
+        })
     }
 }

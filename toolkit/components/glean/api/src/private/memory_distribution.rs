@@ -3,6 +3,7 @@
 
 
 use inherent::inherent;
+use std::convert::TryInto;
 
 use super::{CommonMetricData, DistributionData, MemoryUnit, MetricId};
 
@@ -51,7 +52,7 @@ impl MemoryDistributionMetric {
     }
 }
 
-#[inherent(pub)]
+#[inherent]
 impl MemoryDistribution for MemoryDistributionMetric {
     
     
@@ -64,10 +65,15 @@ impl MemoryDistribution for MemoryDistributionMetric {
     
     
     
-    fn accumulate(&self, sample: u64) {
+    pub fn accumulate(&self, sample: u64) {
         match self {
             MemoryDistributionMetric::Parent { inner, .. } => {
-                MemoryDistribution::accumulate(&*inner, sample);
+                
+                
+                
+                
+                let sample = sample.try_into().unwrap_or(i64::MAX);
+                inner.accumulate(sample);
             }
             MemoryDistributionMetric::Child(c) => {
                 with_ipc_payload(move |payload| {
@@ -93,10 +99,11 @@ impl MemoryDistribution for MemoryDistributionMetric {
     
     
     
-    fn test_get_value<'a, S: Into<Option<&'a str>>>(
+    pub fn test_get_value<'a, S: Into<Option<&'a str>>>(
         &self,
         ping_name: S,
     ) -> Option<DistributionData> {
+        let ping_name = ping_name.into().map(|s| s.to_string());
         match self {
             MemoryDistributionMetric::Parent { inner, .. } => inner.test_get_value(ping_name),
             MemoryDistributionMetric::Child(c) => {
@@ -118,11 +125,12 @@ impl MemoryDistribution for MemoryDistributionMetric {
     
     
     
-    fn test_get_num_recorded_errors<'a, S: Into<Option<&'a str>>>(
+    pub fn test_get_num_recorded_errors<'a, S: Into<Option<&'a str>>>(
         &self,
         error: glean::ErrorType,
         ping_name: S,
     ) -> i32 {
+        let ping_name = ping_name.into().map(|s| s.to_string());
         match self {
             MemoryDistributionMetric::Parent { inner, .. } => {
                 inner.test_get_num_recorded_errors(error, ping_name)

@@ -91,7 +91,7 @@ GleanEvent::Record(JS::HandleValue aExtra, JSContext* aCx) {
 
   
   
-  impl::fog_event_record_str(mEvent.mId, &extraKeys, &extraValues);
+  impl::fog_event_record(mEvent.mId, &extraKeys, &extraValues);
   return NS_OK;
 }
 

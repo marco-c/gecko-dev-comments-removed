@@ -46,7 +46,7 @@ impl<I, O, E> Finish<I, O, E> for IResult<I, O, E> {
 
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-#[allow(missing_doc_code_examples)]
+#[cfg_attr(nightly, warn(rustdoc::missing_doc_code_examples))]
 pub enum Needed {
   
   Unknown,
@@ -93,7 +93,7 @@ impl Needed {
 
 
 #[derive(Debug, Clone, PartialEq)]
-#[allow(missing_doc_code_examples)]
+#[cfg_attr(nightly, warn(rustdoc::missing_doc_code_examples))]
 pub enum Err<E> {
   
   Incomplete(Needed),
@@ -150,6 +150,26 @@ impl<T> Err<(T, ErrorKind)> {
   }
 }
 
+impl<T> Err<error::Error<T>> {
+  
+  pub fn map_input<U, F>(self, f: F) -> Err<error::Error<U>>
+  where
+    F: FnOnce(T) -> U,
+  {
+    match self {
+      Err::Incomplete(n) => Err::Incomplete(n),
+      Err::Failure(error::Error { input, code }) => Err::Failure(error::Error {
+        input: f(input),
+        code,
+      }),
+      Err::Error(error::Error { input, code }) => Err::Error(error::Error {
+        input: f(input),
+        code,
+      }),
+    }
+  }
+}
+
 #[cfg(feature = "alloc")]
 use crate::lib::std::{borrow::ToOwned, string::String, vec::Vec};
 #[cfg(feature = "alloc")]
@@ -170,13 +190,31 @@ impl Err<(&str, ErrorKind)> {
   }
 }
 
+#[cfg(feature = "alloc")]
+impl Err<error::Error<&[u8]>> {
+  
+  #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
+  pub fn to_owned(self) -> Err<error::Error<Vec<u8>>> {
+    self.map_input(ToOwned::to_owned)
+  }
+}
+
+#[cfg(feature = "alloc")]
+impl Err<error::Error<&str>> {
+  
+  #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
+  pub fn to_owned(self) -> Err<error::Error<String>> {
+    self.map_input(ToOwned::to_owned)
+  }
+}
+
 impl<E: Eq> Eq for Err<E> {}
 
 impl<E> fmt::Display for Err<E>
 where
   E: fmt::Debug,
 {
-  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self {
       Err::Incomplete(Needed::Size(u)) => write!(f, "Parsing requires {} bytes/chars", u),
       Err::Incomplete(Needed::Unknown) => write!(f, "Parsing requires more data"),
@@ -221,7 +259,7 @@ pub trait Parser<I, O, E> {
   
   fn flat_map<G, H, O2>(self, g: G) -> FlatMap<Self, G, O>
   where
-    G: Fn(O) -> H,
+    G: FnMut(O) -> H,
     H: Parser<I, O2, E>,
     Self: core::marker::Sized,
   {
@@ -299,7 +337,7 @@ impl<'a, I, O, E> Parser<I, O, E> for Box<dyn Parser<I, O, E> + 'a> {
 }
 
 
-#[allow(missing_doc_code_examples)]
+#[cfg_attr(nightly, warn(rustdoc::missing_doc_code_examples))]
 pub struct Map<F, G, O1> {
   f: F,
   g: G,
@@ -316,7 +354,7 @@ impl<'a, I, O1, O2, E, F: Parser<I, O1, E>, G: Fn(O1) -> O2> Parser<I, O2, E> fo
 }
 
 
-#[allow(missing_doc_code_examples)]
+#[cfg_attr(nightly, warn(rustdoc::missing_doc_code_examples))]
 pub struct FlatMap<F, G, O1> {
   f: F,
   g: G,
@@ -333,7 +371,7 @@ impl<'a, I, O1, O2, E, F: Parser<I, O1, E>, G: Fn(O1) -> H, H: Parser<I, O2, E>>
 }
 
 
-#[allow(missing_doc_code_examples)]
+#[cfg_attr(nightly, warn(rustdoc::missing_doc_code_examples))]
 pub struct AndThen<F, G, O1> {
   f: F,
   g: G,
@@ -351,7 +389,7 @@ impl<'a, I, O1, O2, E, F: Parser<I, O1, E>, G: Parser<O1, O2, E>> Parser<I, O2, 
 }
 
 
-#[allow(missing_doc_code_examples)]
+#[cfg_attr(nightly, warn(rustdoc::missing_doc_code_examples))]
 pub struct And<F, G> {
   f: F,
   g: G,
@@ -368,7 +406,7 @@ impl<'a, I, O1, O2, E, F: Parser<I, O1, E>, G: Parser<I, O2, E>> Parser<I, (O1, 
 }
 
 
-#[allow(missing_doc_code_examples)]
+#[cfg_attr(nightly, warn(rustdoc::missing_doc_code_examples))]
 pub struct Or<F, G> {
   f: F,
   g: G,
@@ -389,7 +427,7 @@ impl<'a, I: Clone, O, E: crate::error::ParseError<I>, F: Parser<I, O, E>, G: Par
 }
 
 
-#[allow(missing_doc_code_examples)]
+#[cfg_attr(nightly, warn(rustdoc::missing_doc_code_examples))]
 pub struct Into<F, O1, O2: From<O1>, E1, E2: From<E1>> {
   f: F,
   phantom_out1: core::marker::PhantomData<O1>,

@@ -1,10 +1,11 @@
 
 
-#[macro_use]
-mod macros;
+#[cfg(test)]
+mod tests;
 
 use crate::error::ParseError;
 use crate::internal::{IResult, Parser};
+
 
 
 
@@ -40,19 +41,6 @@ where
 }
 
 
-#[doc(hidden)]
-pub fn pairc<I, O1, O2, E: ParseError<I>, F, G>(
-  input: I,
-  first: F,
-  second: G,
-) -> IResult<I, (O1, O2), E>
-where
-  F: Fn(I) -> IResult<I, O1, E>,
-  G: Fn(I) -> IResult<I, O2, E>,
-{
-  pair(first, second)(input)
-}
-
 
 
 
@@ -87,19 +75,6 @@ where
 }
 
 
-#[doc(hidden)]
-pub fn precededc<I, O1, O2, E: ParseError<I>, F, G>(
-  input: I,
-  first: F,
-  second: G,
-) -> IResult<I, O2, E>
-where
-  F: Fn(I) -> IResult<I, O1, E>,
-  G: Fn(I) -> IResult<I, O2, E>,
-{
-  preceded(first, second)(input)
-}
-
 
 
 
@@ -133,19 +108,6 @@ where
   }
 }
 
-
-#[doc(hidden)]
-pub fn terminatedc<I, O1, O2, E: ParseError<I>, F, G>(
-  input: I,
-  first: F,
-  second: G,
-) -> IResult<I, O1, E>
-where
-  F: Fn(I) -> IResult<I, O1, E>,
-  G: Fn(I) -> IResult<I, O2, E>,
-{
-  terminated(first, second)(input)
-}
 
 
 
@@ -186,21 +148,6 @@ where
 }
 
 
-#[doc(hidden)]
-pub fn separated_pairc<I, O1, O2, O3, E: ParseError<I>, F, G, H>(
-  input: I,
-  first: F,
-  sep: G,
-  second: H,
-) -> IResult<I, (O1, O3), E>
-where
-  F: Fn(I) -> IResult<I, O1, E>,
-  G: Fn(I) -> IResult<I, O2, E>,
-  H: Fn(I) -> IResult<I, O3, E>,
-{
-  separated_pair(first, sep, second)(input)
-}
-
 
 
 
@@ -237,22 +184,6 @@ where
     let (input, o2) = second.parse(input)?;
     third.parse(input).map(|(i, _)| (i, o2))
   }
-}
-
-
-#[doc(hidden)]
-pub fn delimitedc<I, O1, O2, O3, E: ParseError<I>, F, G, H>(
-  input: I,
-  first: F,
-  second: G,
-  third: H,
-) -> IResult<I, O2, E>
-where
-  F: Fn(I) -> IResult<I, O1, E>,
-  G: Fn(I) -> IResult<I, O2, E>,
-  H: Fn(I) -> IResult<I, O3, E>,
-{
-  delimited(first, second, third)(input)
 }
 
 
@@ -336,22 +267,4 @@ pub fn tuple<I, O, E: ParseError<I>, List: Tuple<I, O, E>>(
   mut l: List,
 ) -> impl FnMut(I) -> IResult<I, O, E> {
   move |i: I| l.parse(i)
-}
-
-#[cfg(test)]
-mod tests {
-  use super::*;
-
-  #[test]
-  fn single_element_tuples() {
-    use crate::character::complete::alpha1;
-    use crate::{error::ErrorKind, Err};
-
-    let mut parser = tuple((alpha1,));
-    assert_eq!(parser("abc123def"), Ok(("123def", ("abc",))));
-    assert_eq!(
-      parser("123def"),
-      Err(Err::Error(("123def", ErrorKind::Alpha)))
-    );
-  }
 }

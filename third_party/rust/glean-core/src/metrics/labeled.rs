@@ -2,14 +2,26 @@
 
 
 
+use std::collections::{hash_map::Entry, HashMap};
+use std::sync::{Arc, Mutex};
+
 use crate::common_metric_data::CommonMetricData;
-use crate::error_recording::{record_error, ErrorType};
-use crate::metrics::{Metric, MetricType};
+use crate::error_recording::{record_error, test_get_num_recorded_errors, ErrorType};
+use crate::metrics::{BooleanMetric, CounterMetric, Metric, MetricType, StringMetric};
 use crate::Glean;
 
 const MAX_LABELS: usize = 16;
 const OTHER_LABEL: &str = "__other__";
 const MAX_LABEL_LENGTH: usize = 61;
+
+
+pub type LabeledCounter = LabeledMetric<CounterMetric>;
+
+
+pub type LabeledBoolean = LabeledMetric<BooleanMetric>;
+
+
+pub type LabeledString = LabeledMetric<StringMetric>;
 
 
 
@@ -74,32 +86,98 @@ fn matches_label_regex(value: &str) -> bool {
 
 
 
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct LabeledMetric<T> {
     labels: Option<Vec<String>>,
     
     
     submetric: T,
+
+    
+    
+    label_map: Mutex<HashMap<String, Arc<T>>>,
+}
+
+
+
+
+mod private {
+    use crate::{
+        metrics::BooleanMetric, metrics::CounterMetric, metrics::StringMetric, CommonMetricData,
+    };
+
+    
+    
+    
+    
+    
+    pub trait Sealed {
+        
+        fn new_inner(meta: crate::CommonMetricData) -> Self;
+    }
+
+    impl Sealed for CounterMetric {
+        fn new_inner(meta: CommonMetricData) -> Self {
+            Self::new(meta)
+        }
+    }
+
+    impl Sealed for BooleanMetric {
+        fn new_inner(meta: CommonMetricData) -> Self {
+            Self::new(meta)
+        }
+    }
+
+    impl Sealed for StringMetric {
+        fn new_inner(meta: CommonMetricData) -> Self {
+            Self::new(meta)
+        }
+    }
+}
+
+
+pub trait AllowLabeled: MetricType {
+    
+    fn new_labeled(meta: CommonMetricData) -> Self;
+}
+
+
+impl<T> AllowLabeled for T
+where
+    T: MetricType,
+    T: private::Sealed,
+{
+    fn new_labeled(meta: CommonMetricData) -> Self {
+        T::new_inner(meta)
+    }
 }
 
 impl<T> LabeledMetric<T>
 where
-    T: MetricType + Clone,
+    T: AllowLabeled + Clone,
 {
     
     
     
-    pub fn new(submetric: T, labels: Option<Vec<String>>) -> LabeledMetric<T> {
-        LabeledMetric { labels, submetric }
+    pub fn new(meta: CommonMetricData, labels: Option<Vec<String>>) -> LabeledMetric<T> {
+        let submetric = T::new_labeled(meta);
+        LabeledMetric::new_inner(submetric, labels)
+    }
+
+    fn new_inner(submetric: T, labels: Option<Vec<String>>) -> LabeledMetric<T> {
+        let label_map = Default::default();
+        LabeledMetric {
+            labels,
+            submetric,
+            label_map,
+        }
     }
 
     
     
     
     fn new_metric_with_name(&self, name: String) -> T {
-        let mut t = self.submetric.clone();
-        t.meta_mut().name = name;
-        t
+        self.submetric.with_name(name)
     }
 
     
@@ -107,9 +185,7 @@ where
     
     
     fn new_metric_with_dynamic_label(&self, label: String) -> T {
-        let mut t = self.submetric.clone();
-        t.meta_mut().dynamic_label = Some(label);
-        t
+        self.submetric.with_dynamic_label(label)
     }
 
     
@@ -147,22 +223,37 @@ where
     
     
     
-    pub fn get(&self, label: &str) -> T {
+    pub fn get<S: AsRef<str>>(&self, label: S) -> Arc<T> {
+        let label = label.as_ref();
+
         
         
-        
-        
-        
-        
-        match self.labels {
-            Some(_) => {
-                let label = self.static_label(label);
-                self.new_metric_with_name(combine_base_identifier_and_label(
-                    &self.submetric.meta().name,
-                    label,
-                ))
+        let id = format!("{}/{}", self.submetric.meta().base_identifier(), label);
+
+        let mut map = self.label_map.lock().unwrap();
+        match map.entry(id) {
+            Entry::Occupied(entry) => Arc::clone(entry.get()),
+            Entry::Vacant(entry) => {
+                
+                
+                
+                
+                
+                
+                let metric = match self.labels {
+                    Some(_) => {
+                        let label = self.static_label(label);
+                        self.new_metric_with_name(combine_base_identifier_and_label(
+                            &self.submetric.meta().name,
+                            label,
+                        ))
+                    }
+                    None => self.new_metric_with_dynamic_label(label.to_string()),
+                };
+                let metric = Arc::new(metric);
+                entry.insert(Arc::clone(&metric));
+                metric
             }
-            None => self.new_metric_with_dynamic_label(label.to_string()),
         }
     }
 
@@ -170,8 +261,21 @@ where
     
     
     
-    pub fn get_submetric(&self) -> &T {
-        &self.submetric
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn test_get_num_recorded_errors(&self, error: ErrorType, ping_name: Option<String>) -> i32 {
+        crate::block_on_dispatcher();
+        crate::core::with_glean(|glean| {
+            test_get_num_recorded_errors(glean, self.submetric.meta(), error, ping_name.as_deref())
+                .unwrap_or(0)
+        })
     }
 }
 

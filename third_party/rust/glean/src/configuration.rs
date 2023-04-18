@@ -25,8 +25,6 @@ pub struct Configuration {
     
     pub delay_ping_lifetime_io: bool,
     
-    pub channel: Option<String>,
-    
     pub server_endpoint: Option<String>,
     
     pub uploader: Option<Box<dyn PingUploader + 'static>>,

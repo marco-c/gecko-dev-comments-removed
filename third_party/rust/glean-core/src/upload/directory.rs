@@ -307,7 +307,7 @@ mod test {
         glean.register_ping_type(&ping_type);
 
         
-        glean.submit_ping(&ping_type, None);
+        ping_type.submit_sync(&glean, None);
 
         let directory_manager = PingDirectoryManager::new(dir.path());
 
@@ -333,7 +333,7 @@ mod test {
         glean.register_ping_type(&ping_type);
 
         
-        glean.submit_ping(&ping_type, None);
+        ping_type.submit_sync(&glean, None);
 
         let directory_manager = PingDirectoryManager::new(&dir.path());
 
@@ -368,7 +368,7 @@ mod test {
         glean.register_ping_type(&ping_type);
 
         
-        glean.submit_ping(&ping_type, None);
+        ping_type.submit_sync(&glean, None);
 
         let directory_manager = PingDirectoryManager::new(&dir.path());
 
@@ -399,7 +399,10 @@ mod test {
         let (glean, dir) = new_glean(None);
 
         
-        glean.internal_pings.deletion_request.submit(&glean, None);
+        glean
+            .internal_pings
+            .deletion_request
+            .submit_sync(&glean, None);
 
         let directory_manager = PingDirectoryManager::new(dir.path());
 

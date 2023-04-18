@@ -3,8 +3,10 @@
 
 
 use std::collections::HashMap;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::{Arc, Mutex};
 
-use crate::error_recording::{record_error, ErrorType};
+use crate::error_recording::{record_error, test_get_num_recorded_errors, ErrorType};
 use crate::histogram::{Functional, Histogram};
 use crate::metrics::time_unit::TimeUnit;
 use crate::metrics::{DistributionData, Metric, MetricType};
@@ -28,21 +30,72 @@ const BUCKETS_PER_MAGNITUDE: f64 = 8.0;
 const MAX_SAMPLE_TIME: u64 = 1000 * 1000 * 1000 * 60 * 10;
 
 
-pub type TimerId = u64;
 
-#[derive(Debug, Clone)]
-struct Timings {
-    next_id: TimerId,
-    start_times: HashMap<TimerId, u64>,
+
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
+pub struct TimerId {
+    
+    pub id: u64,
+}
+
+impl From<u64> for TimerId {
+    fn from(val: u64) -> TimerId {
+        TimerId { id: val }
+    }
+}
+
+impl From<usize> for TimerId {
+    fn from(val: usize) -> TimerId {
+        TimerId { id: val as u64 }
+    }
 }
 
 
-impl Timings {
+
+
+#[derive(Clone, Debug)]
+pub struct TimingDistributionMetric {
+    meta: Arc<CommonMetricData>,
+    time_unit: TimeUnit,
+    next_id: Arc<AtomicUsize>,
+    start_times: Arc<Mutex<HashMap<TimerId, u64>>>,
+}
+
+
+
+
+pub(crate) fn snapshot(hist: &Histogram<Functional>) -> DistributionData {
+    DistributionData {
+        
+        
+        values: hist
+            .snapshot()
+            .into_iter()
+            .map(|(k, v)| (k as i64, v as i64))
+            .collect(),
+        sum: hist.sum() as i64,
+    }
+}
+
+impl MetricType for TimingDistributionMetric {
+    fn meta(&self) -> &CommonMetricData {
+        &self.meta
+    }
+}
+
+
+
+
+
+impl TimingDistributionMetric {
     
-    fn new() -> Self {
+    pub fn new(meta: CommonMetricData, time_unit: TimeUnit) -> Self {
         Self {
-            next_id: 0,
-            start_times: HashMap::new(),
+            meta: Arc::new(meta),
+            time_unit,
+            next_id: Arc::new(AtomicUsize::new(0)),
+            start_times: Arc::new(Mutex::new(Default::default())),
         }
     }
 
@@ -50,10 +103,21 @@ impl Timings {
     
     
     
-    fn set_start(&mut self, start_time: u64) -> TimerId {
-        let id = self.next_id;
-        self.next_id += 1;
-        self.start_times.insert(id, start_time);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn start(&self) -> TimerId {
+        let start_time = time::precise_time_ns();
+        let id = self.next_id.fetch_add(1, Ordering::SeqCst).into();
+        let metric = self.clone();
+        crate::launch_with_glean(move |_glean| metric.set_start(id, start_time));
         id
     }
 
@@ -62,12 +126,33 @@ impl Timings {
     
     
     
+    #[doc(hidden)]
+    pub fn set_start(&self, id: TimerId, start_time: u64) {
+        let mut map = self.start_times.lock().expect("can't lock timings map");
+        map.insert(id, start_time);
+    }
+
     
     
     
     
-    fn set_stop(&mut self, id: TimerId, stop_time: u64) -> Result<u64, (ErrorType, &str)> {
-        let start_time = match self.start_times.remove(&id) {
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn stop_and_accumulate(&self, id: TimerId) {
+        let stop_time = time::precise_time_ns();
+        let metric = self.clone();
+        crate::launch_with_glean(move |glean| metric.set_stop_and_accumulate(glean, id, stop_time));
+    }
+
+    fn set_stop(&self, id: TimerId, stop_time: u64) -> Result<u64, (ErrorType, &str)> {
+        let mut start_times = self.start_times.lock().expect("can't lock timings map");
+        let start_time = match start_times.remove(&id) {
             Some(start_time) => start_time,
             None => return Err((ErrorType::InvalidState, "Timing not running")),
         };
@@ -86,90 +171,20 @@ impl Timings {
     }
 
     
-    fn cancel(&mut self, id: TimerId) {
-        self.start_times.remove(&id);
-    }
-}
-
-
-
-
-#[derive(Debug)]
-pub struct TimingDistributionMetric {
-    meta: CommonMetricData,
-    time_unit: TimeUnit,
-    timings: Timings,
-}
-
-
-
-
-pub(crate) fn snapshot(hist: &Histogram<Functional>) -> DistributionData {
-    DistributionData {
-        
-        
-        values: hist.snapshot(),
-        sum: hist.sum(),
-    }
-}
-
-impl MetricType for TimingDistributionMetric {
-    fn meta(&self) -> &CommonMetricData {
-        &self.meta
-    }
-
-    fn meta_mut(&mut self) -> &mut CommonMetricData {
-        &mut self.meta
-    }
-}
-
-
-
-
-
-impl TimingDistributionMetric {
     
-    pub fn new(meta: CommonMetricData, time_unit: TimeUnit) -> Self {
-        Self {
-            meta,
-            time_unit,
-            timings: Timings::new(),
+    
+    
+    
+    #[doc(hidden)]
+    pub fn set_stop_and_accumulate(&self, glean: &Glean, id: TimerId, stop_time: u64) {
+        if !self.should_record(glean) {
+            let mut start_times = self.start_times.lock().expect("can't lock timings map");
+            start_times.remove(&id);
+            return;
         }
-    }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn set_start(&mut self, start_time: u64) -> TimerId {
-        self.timings.set_start(start_time)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn set_stop_and_accumulate(&mut self, glean: &Glean, id: TimerId, stop_time: u64) {
         
-        let mut duration = match self.timings.set_stop(id, stop_time) {
+        let mut duration = match self.set_stop(id, stop_time) {
             Err((err_type, err_msg)) => {
                 record_error(glean, &self.meta, err_type, err_msg, None);
                 return;
@@ -223,8 +238,15 @@ impl TimingDistributionMetric {
     
     
     
-    pub fn cancel(&mut self, id: TimerId) {
-        self.timings.cancel(id);
+    pub fn cancel(&self, id: TimerId) {
+        let metric = self.clone();
+        crate::launch_with_glean(move |_glean| metric.cancel_sync(id));
+    }
+
+    
+    fn cancel_sync(&self, id: TimerId) {
+        let mut map = self.start_times.lock().expect("can't lock timings map");
+        map.remove(&id);
     }
 
     
@@ -248,7 +270,17 @@ impl TimingDistributionMetric {
     
     
     
-    pub fn accumulate_samples_signed(&mut self, glean: &Glean, samples: Vec<i64>) {
+    pub fn accumulate_samples(&self, samples: Vec<i64>) {
+        let metric = self.clone();
+        crate::launch_with_glean(move |glean| metric.accumulate_samples_sync(glean, samples))
+    }
+
+    
+    
+    
+    
+    #[doc(hidden)]
+    pub fn accumulate_samples_sync(&self, glean: &Glean, samples: Vec<i64>) {
         if !self.should_record(glean) {
             return;
         }
@@ -324,7 +356,20 @@ impl TimingDistributionMetric {
     
     
     
-    pub fn accumulate_raw_samples_nanos(&mut self, glean: &Glean, samples: &[u64]) {
+    pub fn accumulate_raw_samples_nanos(&self, samples: Vec<u64>) {
+        let metric = self.clone();
+        crate::launch_with_glean(move |glean| {
+            metric.accumulate_raw_samples_nanos_sync(glean, &samples)
+        })
+    }
+
+    
+    
+    
+    
+    
+    #[doc(hidden)]
+    pub fn accumulate_raw_samples_nanos_sync(&self, glean: &Glean, samples: &[u64]) {
         if !self.should_record(glean) {
             return;
         }
@@ -372,14 +417,19 @@ impl TimingDistributionMetric {
     }
 
     
-    
-    
-    
-    
-    pub fn test_get_value(&self, glean: &Glean, storage_name: &str) -> Option<DistributionData> {
+    #[doc(hidden)]
+    pub fn get_value<'a, S: Into<Option<&'a str>>>(
+        &self,
+        glean: &Glean,
+        ping_name: S,
+    ) -> Option<DistributionData> {
+        let queried_ping_name = ping_name
+            .into()
+            .unwrap_or_else(|| &self.meta().send_in_pings[0]);
+
         match StorageManager.snapshot_metric_for_test(
             glean.storage(),
-            storage_name,
+            queried_ping_name,
             &self.meta.identifier(glean),
             self.meta.lifetime,
         ) {
@@ -393,13 +443,31 @@ impl TimingDistributionMetric {
     
     
     
-    pub fn test_get_value_as_json_string(
-        &self,
-        glean: &Glean,
-        storage_name: &str,
-    ) -> Option<String> {
-        self.test_get_value(glean, storage_name)
-            .map(|snapshot| serde_json::to_string(&snapshot).unwrap())
+    pub fn test_get_value(&self, ping_name: Option<String>) -> Option<DistributionData> {
+        crate::block_on_dispatcher();
+        crate::core::with_glean(|glean| self.get_value(glean, ping_name.as_deref()))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn test_get_num_recorded_errors(&self, error: ErrorType, ping_name: Option<String>) -> i32 {
+        crate::block_on_dispatcher();
+
+        crate::core::with_glean(|glean| {
+            test_get_num_recorded_errors(glean, self.meta(), error, ping_name.as_deref())
+                .unwrap_or(0)
+        })
     }
 }
 

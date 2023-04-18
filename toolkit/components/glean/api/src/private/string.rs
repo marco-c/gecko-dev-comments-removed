@@ -64,7 +64,7 @@ impl StringMetric {
     }
 }
 
-#[inherent(pub)]
+#[inherent]
 impl glean::traits::String for StringMetric {
     
     
@@ -75,10 +75,10 @@ impl glean::traits::String for StringMetric {
     
     
     
-    fn set<S: Into<std::string::String>>(&self, value: S) {
+    pub fn set<S: Into<std::string::String>>(&self, value: S) {
         match self {
             StringMetric::Parent(p) => {
-                glean::traits::String::set(&*p, value);
+                p.set(value.into());
             }
             StringMetric::Child(_) => {
                 log::error!("Unable to set string metric in non-main process. Ignoring.");
@@ -97,10 +97,11 @@ impl glean::traits::String for StringMetric {
     
     
     
-    fn test_get_value<'a, S: Into<Option<&'a str>>>(
+    pub fn test_get_value<'a, S: Into<Option<&'a str>>>(
         &self,
         ping_name: S,
     ) -> Option<std::string::String> {
+        let ping_name = ping_name.into().map(|s| s.to_string());
         match self {
             StringMetric::Parent(p) => p.test_get_value(ping_name),
             StringMetric::Child(_) => {
@@ -122,11 +123,12 @@ impl glean::traits::String for StringMetric {
     
     
     
-    fn test_get_num_recorded_errors<'a, S: Into<Option<&'a str>>>(
+    pub fn test_get_num_recorded_errors<'a, S: Into<Option<&'a str>>>(
         &self,
         error: glean::ErrorType,
         ping_name: S,
     ) -> i32 {
+        let ping_name = ping_name.into().map(|s| s.to_string());
         match self {
             StringMetric::Parent(p) => p.test_get_num_recorded_errors(error, ping_name),
             StringMetric::Child(_) => panic!(

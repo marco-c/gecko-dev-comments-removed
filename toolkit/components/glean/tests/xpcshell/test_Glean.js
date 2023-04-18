@@ -128,20 +128,26 @@ add_task(async function test_fog_event_works() {
   Assert.deepEqual(expectedExtra, events[0].extra);
 
   
-  let extra3 = {
-    extra1_nonexistent_extra: "this does not crash",
-  };
-  Glean.testOnlyIpc.eventWithExtra.record(extra3);
-  events = Glean.testOnlyIpc.eventWithExtra.testGetValue();
-  Assert.equal(1, events.length, "Recorded one event too many.");
-
   
   let extra4 = {
     extra2: -1,
   };
   Glean.testOnlyIpc.eventWithExtra.record(extra4);
   events = Glean.testOnlyIpc.eventWithExtra.testGetValue();
+  
   Assert.equal(1, events.length, "Recorded one event too many.");
+
+  
+  
+  let extra3 = {
+    extra1_nonexistent_extra: "this does not crash",
+  };
+  Glean.testOnlyIpc.eventWithExtra.record(extra3);
+  Assert.throws(
+    () => Glean.testOnlyIpc.eventWithExtra.testGetValue(),
+    /NS_ERROR_LOSS_OF_SIGNIFICANT_DATA/,
+    "Should throw because of a recording error."
+  );
 });
 
 add_task(async function test_fog_memory_distribution_works() {

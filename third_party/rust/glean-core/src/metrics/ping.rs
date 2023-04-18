@@ -2,14 +2,22 @@
 
 
 
+use std::fmt;
+use std::sync::Arc;
+
+use crate::ping::PingMaker;
 use crate::Glean;
 
+use uuid::Uuid;
 
 
 
 
-#[derive(Clone, Debug)]
-pub struct PingType {
+
+#[derive(Clone)]
+pub struct PingType(Arc<InnerPing>);
+
+struct InnerPing {
     
     pub name: String,
     
@@ -18,6 +26,17 @@ pub struct PingType {
     pub send_if_empty: bool,
     
     pub reason_codes: Vec<String>,
+}
+
+impl fmt::Debug for PingType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("PingType")
+            .field("name", &self.0.name)
+            .field("include_client_id", &self.0.include_client_id)
+            .field("send_if_empty", &self.0.send_if_empty)
+            .field("reason_codes", &self.0.reason_codes)
+            .finish()
+    }
 }
 
 
@@ -40,12 +59,30 @@ impl PingType {
         send_if_empty: bool,
         reason_codes: Vec<String>,
     ) -> Self {
-        Self {
+        let this = Self(Arc::new(InnerPing {
             name: name.into(),
             include_client_id,
             send_if_empty,
             reason_codes,
-        }
+        }));
+
+        
+        
+        crate::register_ping_type(&this);
+
+        this
+    }
+
+    pub(crate) fn name(&self) -> &str {
+        &self.0.name
+    }
+
+    pub(crate) fn include_client_id(&self) -> bool {
+        self.0.include_client_id
+    }
+
+    pub(crate) fn send_if_empty(&self) -> bool {
+        self.0.send_if_empty
     }
 
     
@@ -59,19 +96,97 @@ impl PingType {
     
     
     
-    pub fn submit(&self, glean: &Glean, reason: Option<&str>) -> bool {
+    
+    pub fn submit(&self, reason: Option<String>) {
+        let ping = PingType(Arc::clone(&self.0));
+
+        
+        
+        crate::dispatcher::launch(|| {
+            let sent =
+                crate::core::with_glean(move |glean| ping.submit_sync(glean, reason.as_deref()));
+            if sent {
+                let state = crate::global_state().lock().unwrap();
+                state.callbacks.trigger_upload();
+            }
+        })
+    }
+
+    
+    
+    
+    
+    
+    #[doc(hidden)]
+    pub fn submit_sync(&self, glean: &Glean, reason: Option<&str>) -> bool {
+        if !glean.is_upload_enabled() {
+            log::info!("Glean disabled: not submitting any pings.");
+            return false;
+        }
+
+        let ping = &self.0;
         let corrected_reason = match reason {
             Some(reason) => {
-                if self.reason_codes.contains(&reason.to_string()) {
+                if ping.reason_codes.contains(&reason.to_string()) {
                     Some(reason)
                 } else {
-                    log::error!("Invalid reason code {} for ping {}", reason, self.name);
+                    log::error!("Invalid reason code {} for ping {}", reason, ping.name);
                     None
                 }
             }
             None => None,
         };
 
-        glean.submit_ping(self, corrected_reason)
+        let ping_maker = PingMaker::new();
+        let doc_id = Uuid::new_v4().to_string();
+        let url_path = glean.make_path(&ping.name, &doc_id);
+        match ping_maker.collect(glean, self, corrected_reason, &doc_id, &url_path) {
+            None => {
+                log::info!(
+                    "No content for ping '{}', therefore no ping queued.",
+                    ping.name
+                );
+                false
+            }
+            Some(ping) => {
+                
+                
+                
+                
+                glean
+                    .additional_metrics
+                    .pings_submitted
+                    .get(ping.name)
+                    .add_sync(glean, 1);
+
+                if let Err(e) = ping_maker.store_ping(glean.get_data_path(), &ping) {
+                    log::warn!("IO error while writing ping to file: {}. Enqueuing upload of what we have in memory.", e);
+                    glean.additional_metrics.io_errors.add_sync(glean, 1);
+                    
+                    
+                    
+                    
+                    let content =
+                        ::serde_json::to_string(&ping.content).expect("ping serialization failed");
+                    glean.upload_manager.enqueue_ping(
+                        glean,
+                        ping.doc_id,
+                        ping.url_path,
+                        &content,
+                        Some(ping.headers),
+                    );
+                    return true;
+                }
+
+                glean.upload_manager.enqueue_ping_from_file(glean, &doc_id);
+
+                log::info!(
+                    "The ping '{}' was submitted and will be sent as soon as possible",
+                    ping.name
+                );
+
+                true
+            }
+        }
     }
 }

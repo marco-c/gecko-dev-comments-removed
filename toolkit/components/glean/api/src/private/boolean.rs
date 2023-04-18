@@ -41,17 +41,17 @@ impl BooleanMetric {
     }
 }
 
-#[inherent(pub)]
+#[inherent]
 impl Boolean for BooleanMetric {
     
     
     
     
     
-    fn set(&self, value: bool) {
+    pub fn set(&self, value: bool) {
         match self {
             BooleanMetric::Parent(p) => {
-                Boolean::set(&*p, value);
+                p.set(value);
             }
             BooleanMetric::Child(_) => {
                 log::error!("Unable to set boolean metric in non-parent process. Ignoring.");
@@ -72,12 +72,40 @@ impl Boolean for BooleanMetric {
     
     
     
-    fn test_get_value<'a, S: Into<Option<&'a str>>>(&self, ping_name: S) -> Option<bool> {
+    pub fn test_get_value<'a, S: Into<Option<&'a str>>>(&self, ping_name: S) -> Option<bool> {
+        let ping_name = ping_name.into().map(|s| s.to_string());
         match self {
             BooleanMetric::Parent(p) => p.test_get_value(ping_name),
             BooleanMetric::Child(_) => {
                 panic!("Cannot get test value for boolean metric in non-parent process!",)
             }
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn test_get_num_recorded_errors<'a, S: Into<Option<&'a str>>>(
+        &self,
+        error: glean::ErrorType,
+        ping_name: S,
+    ) -> i32 {
+        let ping_name = ping_name.into().map(|s| s.to_string());
+        match self {
+            BooleanMetric::Parent(p) => p.test_get_num_recorded_errors(error, ping_name),
+            BooleanMetric::Child(_) => panic!(
+                "Cannot get the number of recorded errors for boolean metric in non-parent process!"
+            ),
         }
     }
 }

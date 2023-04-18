@@ -2,7 +2,9 @@
 
 
 
-use crate::error_recording::{record_error, ErrorType};
+use std::sync::Arc;
+
+use crate::error_recording::{record_error, test_get_num_recorded_errors, ErrorType};
 use crate::metrics::Metric;
 use crate::metrics::MetricType;
 use crate::storage::StorageManager;
@@ -20,16 +22,12 @@ const MAX_STRING_LENGTH: usize = 50;
 
 #[derive(Clone, Debug)]
 pub struct StringListMetric {
-    meta: CommonMetricData,
+    meta: Arc<CommonMetricData>,
 }
 
 impl MetricType for StringListMetric {
     fn meta(&self) -> &CommonMetricData {
         &self.meta
-    }
-
-    fn meta_mut(&mut self) -> &mut CommonMetricData {
-        &mut self.meta
     }
 }
 
@@ -40,7 +38,9 @@ impl MetricType for StringListMetric {
 impl StringListMetric {
     
     pub fn new(meta: CommonMetricData) -> Self {
-        Self { meta }
+        Self {
+            meta: Arc::new(meta),
+        }
     }
 
     
@@ -52,8 +52,14 @@ impl StringListMetric {
     
     
     
+    pub fn add(&self, value: String) {
+        let metric = self.clone();
+        crate::launch_with_glean(move |glean| metric.add_sync(glean, value))
+    }
+
     
-    pub fn add<S: Into<String>>(&self, glean: &Glean, value: S) {
+    #[doc(hidden)]
+    pub fn add_sync<S: Into<String>>(&self, glean: &Glean, value: S) {
         if !self.should_record(glean) {
             return;
         }
@@ -98,8 +104,14 @@ impl StringListMetric {
     
     
     
+    pub fn set(&self, values: Vec<String>) {
+        let metric = self.clone();
+        crate::launch_with_glean(move |glean| metric.set_sync(glean, values))
+    }
+
     
-    pub fn set(&self, glean: &Glean, value: Vec<String>) {
+    #[doc(hidden)]
+    pub fn set_sync(&self, glean: &Glean, value: Vec<String>) {
         if !self.should_record(glean) {
             return;
         }
@@ -132,10 +144,19 @@ impl StringListMetric {
     
     
     
-    pub fn test_get_value(&self, glean: &Glean, storage_name: &str) -> Option<Vec<String>> {
+    #[doc(hidden)]
+    pub fn get_value<'a, S: Into<Option<&'a str>>>(
+        &self,
+        glean: &Glean,
+        ping_name: S,
+    ) -> Option<Vec<String>> {
+        let queried_ping_name = ping_name
+            .into()
+            .unwrap_or_else(|| &self.meta().send_in_pings[0]);
+
         match StorageManager.snapshot_metric_for_test(
             glean.storage(),
-            storage_name,
+            queried_ping_name,
             &self.meta.identifier(glean),
             self.meta.lifetime,
         ) {
@@ -149,13 +170,30 @@ impl StringListMetric {
     
     
     
+    pub fn test_get_value(&self, ping_name: Option<String>) -> Option<Vec<String>> {
+        crate::block_on_dispatcher();
+        crate::core::with_glean(|glean| self.get_value(glean, ping_name.as_deref()))
+    }
+
     
-    pub fn test_get_value_as_json_string(
-        &self,
-        glean: &Glean,
-        storage_name: &str,
-    ) -> Option<String> {
-        self.test_get_value(glean, storage_name)
-            .map(|values| serde_json::to_string(&values).unwrap())
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn test_get_num_recorded_errors(&self, error: ErrorType, ping_name: Option<String>) -> i32 {
+        crate::block_on_dispatcher();
+
+        crate::core::with_glean(|glean| {
+            test_get_num_recorded_errors(glean, self.meta(), error, ping_name.as_deref())
+                .unwrap_or(0)
+        })
     }
 }

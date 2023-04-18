@@ -41,7 +41,7 @@ impl LabeledCounterMetric {
     }
 }
 
-#[inherent(pub)]
+#[inherent]
 impl Counter for LabeledCounterMetric {
     
     
@@ -52,7 +52,7 @@ impl Counter for LabeledCounterMetric {
     
     
     
-    fn add(&self, amount: i32) {
+    pub fn add(&self, amount: i32) {
         match self {
             LabeledCounterMetric::Parent(p) => p.add(amount),
             LabeledCounterMetric::Child { id, label } => {
@@ -85,7 +85,7 @@ impl Counter for LabeledCounterMetric {
     
     
     
-    fn test_get_value<'a, S: Into<Option<&'a str>>>(&self, ping_name: S) -> Option<i32> {
+    pub fn test_get_value<'a, S: Into<Option<&'a str>>>(&self, ping_name: S) -> Option<i32> {
         match self {
             LabeledCounterMetric::Parent(p) => p.test_get_value(ping_name),
             LabeledCounterMetric::Child { id, .. } => {
@@ -107,7 +107,7 @@ impl Counter for LabeledCounterMetric {
     
     
     
-    fn test_get_num_recorded_errors<'a, S: Into<Option<&'a str>>>(
+    pub fn test_get_num_recorded_errors<'a, S: Into<Option<&'a str>>>(
         &self,
         error: glean::ErrorType,
         ping_name: S,

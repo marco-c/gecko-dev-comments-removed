@@ -13,6 +13,21 @@ use std::sync::RwLock;
 use rkv::StoreOptions;
 
 
+
+
+
+macro_rules! unwrap_or {
+    ($expr:expr, $or:expr) => {
+        match $expr {
+            Ok(x) => x,
+            Err(_) => {
+                $or;
+            }
+        }
+    };
+}
+
+
 #[cfg(not(feature = "rkv-safe-mode"))]
 mod backend {
     use std::path::Path;

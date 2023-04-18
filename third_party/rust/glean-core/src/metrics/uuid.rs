@@ -2,9 +2,11 @@
 
 
 
+use std::sync::Arc;
+
 use uuid::Uuid;
 
-use crate::error_recording::{record_error, ErrorType};
+use crate::error_recording::{record_error, test_get_num_recorded_errors, ErrorType};
 use crate::metrics::Metric;
 use crate::metrics::MetricType;
 use crate::storage::StorageManager;
@@ -16,16 +18,12 @@ use crate::Glean;
 
 #[derive(Clone, Debug)]
 pub struct UuidMetric {
-    meta: CommonMetricData,
+    meta: Arc<CommonMetricData>,
 }
 
 impl MetricType for UuidMetric {
     fn meta(&self) -> &CommonMetricData {
         &self.meta
-    }
-
-    fn meta_mut(&mut self) -> &mut CommonMetricData {
-        &mut self.meta
     }
 }
 
@@ -36,7 +34,9 @@ impl MetricType for UuidMetric {
 impl UuidMetric {
     
     pub fn new(meta: CommonMetricData) -> Self {
-        Self { meta }
+        Self {
+            meta: Arc::new(meta),
+        }
     }
 
     
@@ -44,33 +44,23 @@ impl UuidMetric {
     
     
     
-    
-    pub fn set(&self, glean: &Glean, value: Uuid) {
-        if !self.should_record(glean) {
-            return;
-        }
-
-        let s = value.to_string();
-        let value = Metric::Uuid(s);
-        glean.storage().record(glean, &self.meta, &value)
+    pub fn set(&self, value: String) {
+        let metric = self.clone();
+        crate::launch_with_glean(move |glean| metric.set_sync(glean, &value))
     }
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn set_from_str(&self, glean: &Glean, value: &str) {
+    #[doc(hidden)]
+    pub fn set_sync<S: Into<String>>(&self, glean: &Glean, value: S) {
         if !self.should_record(glean) {
             return;
         }
 
-        if let Ok(uuid) = uuid::Uuid::parse_str(value) {
-            self.set(glean, uuid);
+        let value = value.into();
+
+        if uuid::Uuid::parse_str(&value).is_ok() {
+            let value = Metric::Uuid(value);
+            glean.storage().record(glean, &self.meta, &value)
         } else {
             let msg = format!("Unexpected UUID value '{}'", value);
             record_error(glean, &self.meta, ErrorType::InvalidValue, msg, None);
@@ -82,27 +72,49 @@ impl UuidMetric {
     
     
     
-    pub fn generate_and_set(&self, storage: &Glean) -> Uuid {
+    
+    
+    
+    
+    #[doc(hidden)]
+    pub fn set_from_uuid_sync(&self, glean: &Glean, value: Uuid) {
+        self.set_sync(glean, value.to_string())
+    }
+
+    
+    pub fn generate_and_set(&self) -> String {
         let uuid = Uuid::new_v4();
-        self.set(storage, uuid);
+
+        let value = uuid.to_string();
+        let metric = self.clone();
+        crate::launch_with_glean(move |glean| metric.set_sync(glean, value));
+
+        uuid.to_string()
+    }
+
+    
+    #[doc(hidden)]
+    pub fn generate_and_set_sync(&self, storage: &Glean) -> Uuid {
+        let uuid = Uuid::new_v4();
+        self.set_sync(storage, uuid.to_string());
         uuid
     }
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub(crate) fn get_value(&self, glean: &Glean, storage_name: &str) -> Option<Uuid> {
-        match StorageManager.snapshot_metric(
+    #[doc(hidden)]
+    pub fn get_value<'a, S: Into<Option<&'a str>>>(
+        &self,
+        glean: &Glean,
+        ping_name: S,
+    ) -> Option<Uuid> {
+        let queried_ping_name = ping_name
+            .into()
+            .unwrap_or_else(|| &self.meta().send_in_pings[0]);
+
+        match StorageManager.snapshot_metric_for_test(
             glean.storage(),
-            storage_name,
-            &self.meta().identifier(glean),
+            queried_ping_name,
+            &self.meta.identifier(glean),
             self.meta.lifetime,
         ) {
             Some(Metric::Uuid(uuid)) => Uuid::parse_str(&uuid).ok(),
@@ -115,7 +127,33 @@ impl UuidMetric {
     
     
     
-    pub fn test_get_value(&self, glean: &Glean, storage_name: &str) -> Option<Uuid> {
-        self.get_value(glean, storage_name)
+    pub fn test_get_value(&self, ping_name: Option<String>) -> Option<String> {
+        crate::block_on_dispatcher();
+        crate::core::with_glean(|glean| {
+            self.get_value(glean, ping_name.as_deref())
+                .map(|uuid| uuid.to_string())
+        })
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn test_get_num_recorded_errors(&self, error: ErrorType, ping_name: Option<String>) -> i32 {
+        crate::block_on_dispatcher();
+
+        crate::core::with_glean(|glean| {
+            test_get_num_recorded_errors(glean, self.meta(), error, ping_name.as_deref())
+                .unwrap_or(0)
+        })
     }
 }

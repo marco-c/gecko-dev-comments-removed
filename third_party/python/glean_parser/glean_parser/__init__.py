@@ -14,5 +14,5 @@ except DistributionNotFound:
     
     pass
 
-__author__ = """Michael Droettboom"""
-__email__ = "mdroettboom@mozilla.com"
+__author__ = """The Glean Team"""
+__email__ = "glean-team@mozilla.com"

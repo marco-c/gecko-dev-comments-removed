@@ -41,7 +41,7 @@ impl QuantityMetric {
     }
 }
 
-#[inherent(pub)]
+#[inherent]
 impl Quantity for QuantityMetric {
     
     
@@ -52,10 +52,10 @@ impl Quantity for QuantityMetric {
     
     
     
-    fn set(&self, value: i64) {
+    pub fn set(&self, value: i64) {
         match self {
             QuantityMetric::Parent(p) => {
-                Quantity::set(&*p, value);
+                p.set(value);
             }
             QuantityMetric::Child(_) => {
                 log::error!("Unable to set quantity metric in non-parent process. Ignoring.");
@@ -76,7 +76,8 @@ impl Quantity for QuantityMetric {
     
     
     
-    fn test_get_value<'a, S: Into<Option<&'a str>>>(&self, ping_name: S) -> Option<i64> {
+    pub fn test_get_value<'a, S: Into<Option<&'a str>>>(&self, ping_name: S) -> Option<i64> {
+        let ping_name = ping_name.into().map(|s| s.to_string());
         match self {
             QuantityMetric::Parent(p) => p.test_get_value(ping_name),
             QuantityMetric::Child(_) => {
@@ -98,11 +99,12 @@ impl Quantity for QuantityMetric {
     
     
     
-    fn test_get_num_recorded_errors<'a, S: Into<Option<&'a str>>>(
+    pub fn test_get_num_recorded_errors<'a, S: Into<Option<&'a str>>>(
         &self,
         error: glean::ErrorType,
         ping_name: S,
     ) -> i32 {
+        let ping_name = ping_name.into().map(|s| s.to_string());
         match self {
             QuantityMetric::Parent(p) => {
                 p.test_get_num_recorded_errors(error, ping_name)

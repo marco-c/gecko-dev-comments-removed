@@ -40,10 +40,10 @@ mod linear {
                 HistogramType::Linear,
             );
 
-            metric.accumulate_samples_signed(&glean, vec![50]);
+            metric.accumulate_samples_sync(&glean, vec![50]);
 
             let snapshot = metric
-                .test_get_value(&glean, "store1")
+                .get_value(&glean, "store1")
                 .expect("Value should be stored");
 
             assert_eq!(snapshot.sum, 50);
@@ -84,7 +84,7 @@ mod linear {
             HistogramType::Linear,
         );
 
-        metric.accumulate_samples_signed(&glean, vec![50]);
+        metric.accumulate_samples_sync(&glean, vec![50]);
 
         for store_name in store_names {
             let snapshot = StorageManager
@@ -126,10 +126,10 @@ mod linear {
 
         
         
-        metric.accumulate_samples_signed(&glean, [1, 2, 3].to_vec());
+        metric.accumulate_samples_sync(&glean, [1, 2, 3].to_vec());
 
         let snapshot = metric
-            .test_get_value(&glean, "store1")
+            .get_value(&glean, "store1")
             .expect("Value should be stored");
 
         
@@ -172,10 +172,10 @@ mod linear {
         );
 
         
-        metric.accumulate_samples_signed(&glean, [-1, 1, 2, 3].to_vec());
+        metric.accumulate_samples_sync(&glean, [-1, 1, 2, 3].to_vec());
 
         let snapshot = metric
-            .test_get_value(&glean, "store1")
+            .get_value(&glean, "store1")
             .expect("Value should be stored");
 
         
@@ -218,9 +218,9 @@ mod linear {
             HistogramType::Linear,
         );
 
-        metric.accumulate_samples_signed(&glean, vec![50]);
+        metric.accumulate_samples_sync(&glean, vec![50]);
 
-        let snapshot = metric.test_get_value_as_json_string(&glean, "store1");
+        let snapshot = metric.get_value(&glean, "store1");
         assert!(snapshot.is_some());
     }
 }
@@ -251,10 +251,10 @@ mod exponential {
                 HistogramType::Exponential,
             );
 
-            metric.accumulate_samples_signed(&glean, vec![50]);
+            metric.accumulate_samples_sync(&glean, vec![50]);
 
             let snapshot = metric
-                .test_get_value(&glean, "store1")
+                .get_value(&glean, "store1")
                 .expect("Value should be stored");
 
             assert_eq!(snapshot.sum, 50);
@@ -295,7 +295,7 @@ mod exponential {
             HistogramType::Exponential,
         );
 
-        metric.accumulate_samples_signed(&glean, vec![50]);
+        metric.accumulate_samples_sync(&glean, vec![50]);
 
         for store_name in store_names {
             let snapshot = StorageManager
@@ -337,10 +337,10 @@ mod exponential {
 
         
         
-        metric.accumulate_samples_signed(&glean, [1, 2, 3].to_vec());
+        metric.accumulate_samples_sync(&glean, [1, 2, 3].to_vec());
 
         let snapshot = metric
-            .test_get_value(&glean, "store1")
+            .get_value(&glean, "store1")
             .expect("Value should be stored");
 
         
@@ -383,10 +383,10 @@ mod exponential {
         );
 
         
-        metric.accumulate_samples_signed(&glean, [-1, 1, 2, 3].to_vec());
+        metric.accumulate_samples_sync(&glean, [-1, 1, 2, 3].to_vec());
 
         let snapshot = metric
-            .test_get_value(&glean, "store1")
+            .get_value(&glean, "store1")
             .expect("Value should be stored");
 
         
@@ -429,9 +429,9 @@ mod exponential {
             HistogramType::Exponential,
         );
 
-        metric.accumulate_samples_signed(&glean, vec![50]);
+        metric.accumulate_samples_sync(&glean, vec![50]);
 
-        let snapshot = metric.test_get_value_as_json_string(&glean, "store1");
+        let snapshot = metric.get_value(&glean, "store1");
         assert!(snapshot.is_some());
     }
 }

@@ -2,12 +2,30 @@
 
 
 
-use crate::error_recording::{record_error, ErrorType};
+use crate::error_recording::{record_error, test_get_num_recorded_errors, ErrorType};
 use crate::metrics::Metric;
 use crate::metrics::MetricType;
 use crate::storage::StorageManager;
 use crate::CommonMetricData;
 use crate::Glean;
+
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct Rate {
+    
+    pub numerator: i32,
+    
+    pub denominator: i32,
+}
+
+impl From<(i32, i32)> for Rate {
+    fn from((num, den): (i32, i32)) -> Self {
+        Self {
+            numerator: num,
+            denominator: den,
+        }
+    }
+}
 
 
 
@@ -24,10 +42,6 @@ pub struct RateMetric {
 impl MetricType for RateMetric {
     fn meta(&self) -> &CommonMetricData {
         &self.meta
-    }
-
-    fn meta_mut(&mut self) -> &mut CommonMetricData {
-        &mut self.meta
     }
 }
 
@@ -51,7 +65,13 @@ impl RateMetric {
     
     
     
-    pub fn add_to_numerator(&self, glean: &Glean, amount: i32) {
+    pub fn add_to_numerator(&self, amount: i32) {
+        let metric = self.clone();
+        crate::launch_with_glean(move |glean| metric.add_to_numerator_sync(glean, amount))
+    }
+
+    #[doc(hidden)]
+    pub fn add_to_numerator_sync(&self, glean: &Glean, amount: i32) {
         if !self.should_record(glean) {
             return;
         }
@@ -85,7 +105,13 @@ impl RateMetric {
     
     
     
-    pub fn add_to_denominator(&self, glean: &Glean, amount: i32) {
+    pub fn add_to_denominator(&self, amount: i32) {
+        let metric = self.clone();
+        crate::launch_with_glean(move |glean| metric.add_to_denominator_sync(glean, amount))
+    }
+
+    #[doc(hidden)]
+    pub fn add_to_denominator_sync(&self, glean: &Glean, amount: i32) {
         if !self.should_record(glean) {
             return;
         }
@@ -114,15 +140,52 @@ impl RateMetric {
     
     
     
-    pub fn test_get_value(&self, glean: &Glean, storage_name: &str) -> Option<(i32, i32)> {
+    pub fn test_get_value(&self, ping_name: Option<String>) -> Option<Rate> {
+        crate::block_on_dispatcher();
+        crate::core::with_glean(|glean| self.get_value(glean, ping_name.as_deref()))
+    }
+
+    
+    #[doc(hidden)]
+    pub fn get_value<'a, S: Into<Option<&'a str>>>(
+        &self,
+        glean: &Glean,
+        ping_name: S,
+    ) -> Option<Rate> {
+        let queried_ping_name = ping_name
+            .into()
+            .unwrap_or_else(|| &self.meta().send_in_pings[0]);
+
         match StorageManager.snapshot_metric_for_test(
             glean.storage(),
-            storage_name,
+            queried_ping_name,
             &self.meta.identifier(glean),
             self.meta.lifetime,
         ) {
-            Some(Metric::Rate(n, d)) => Some((n, d)),
+            Some(Metric::Rate(n, d)) => Some((n, d).into()),
             _ => None,
         }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn test_get_num_recorded_errors(&self, error: ErrorType, ping_name: Option<String>) -> i32 {
+        crate::block_on_dispatcher();
+
+        crate::core::with_glean(|glean| {
+            test_get_num_recorded_errors(glean, self.meta(), error, ping_name.as_deref())
+                .unwrap_or(0)
+        })
     }
 }

@@ -1,9 +1,6 @@
 
 
 
-#[macro_use]
-mod macros;
-
 pub mod complete;
 pub mod streaming;
 
@@ -34,17 +31,26 @@ use crate::traits::{ErrorConvert, Slice};
 
 
 
-pub fn bits<I, O, E1: ParseError<(I, usize)> + ErrorConvert<E2>, E2: ParseError<I>, P>(
-  mut parser: P,
-) -> impl FnMut(I) -> IResult<I, O, E2>
+
+
+
+
+
+
+pub fn bits<I, O, E1, E2, P>(mut parser: P) -> impl FnMut(I) -> IResult<I, O, E2>
 where
+  E1: ParseError<(I, usize)> + ErrorConvert<E2>,
+  E2: ParseError<I>,
   I: Slice<RangeFrom<usize>>,
   P: FnMut((I, usize)) -> IResult<(I, usize), O, E1>,
 {
   move |input: I| match parser((input, 0)) {
-    Ok(((rest, offset), res)) => {
-      let byte_index = offset / 8 + if offset % 8 == 0 { 0 } else { 1 };
-      Ok((rest.slice(byte_index..), res))
+    Ok(((rest, offset), result)) => {
+      
+      
+      
+      let remaining_bytes_index = offset / 8 + if offset % 8 == 0 { 0 } else { 1 };
+      Ok((rest.slice(remaining_bytes_index..), result))
     }
     Err(Err::Incomplete(n)) => Err(Err::Incomplete(n.map(|u| u.get() / 8 + 1))),
     Err(Err::Error(e)) => Err(Err::Error(e.convert())),
@@ -52,47 +58,35 @@ where
   }
 }
 
-#[doc(hidden)]
-pub fn bitsc<I, O, E1: ParseError<(I, usize)> + ErrorConvert<E2>, E2: ParseError<I>, P>(
-  input: I,
-  parser: P,
-) -> IResult<I, O, E2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub fn bytes<I, O, E1, E2, P>(mut parser: P) -> impl FnMut((I, usize)) -> IResult<(I, usize), O, E2>
 where
-  I: Slice<RangeFrom<usize>>,
-  P: FnMut((I, usize)) -> IResult<(I, usize), O, E1>,
-{
-  bits(parser)(input)
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-pub fn bytes<I, O, E1: ParseError<I> + ErrorConvert<E2>, E2: ParseError<(I, usize)>, P>(
-  mut parser: P,
-) -> impl FnMut((I, usize)) -> IResult<(I, usize), O, E2>
-where
+  E1: ParseError<I> + ErrorConvert<E2>,
+  E2: ParseError<(I, usize)>,
   I: Slice<RangeFrom<usize>> + Clone,
   P: FnMut(I) -> IResult<I, O, E1>,
 {
@@ -116,14 +110,70 @@ where
   }
 }
 
-#[doc(hidden)]
-pub fn bytesc<I, O, E1: ParseError<I> + ErrorConvert<E2>, E2: ParseError<(I, usize)>, P>(
-  input: (I, usize),
-  parser: P,
-) -> IResult<(I, usize), O, E2>
-where
-  I: Slice<RangeFrom<usize>> + Clone,
-  P: FnMut(I) -> IResult<I, O, E1>,
-{
-  bytes(parser)(input)
+#[cfg(test)]
+mod test {
+  use super::*;
+  use crate::bits::streaming::take;
+  use crate::error::Error;
+  use crate::sequence::tuple;
+
+  #[test]
+  
+  
+  fn test_complete_byte_consumption_bits() {
+    let input = &[0x12, 0x34, 0x56, 0x78];
+
+    
+    let result: IResult<&[u8], (u8, u8, u8)> =
+      bits::<_, _, Error<(&[u8], usize)>, _, _>(tuple((take(4usize), take(8usize), take(4usize))))(
+        input,
+      );
+
+    let output = result.expect("We take 2 bytes and the input is longer than 2 bytes");
+
+    let remaining = output.0;
+    assert_eq!(remaining, [0x56, 0x78]);
+
+    let parsed = output.1;
+    assert_eq!(parsed.0, 0x01);
+    assert_eq!(parsed.1, 0x23);
+    assert_eq!(parsed.2, 0x04);
+  }
+
+  #[test]
+  
+  
+  
+  
+  fn test_partial_byte_consumption_bits() {
+    let input = &[0x12, 0x34, 0x56, 0x78];
+
+    
+    let result: IResult<&[u8], (u8, u8)> =
+      bits::<_, _, Error<(&[u8], usize)>, _, _>(tuple((take(4usize), take(8usize))))(input);
+
+    let output = result.expect("We take 1.5 bytes and the input is longer than 2 bytes");
+
+    let remaining = output.0;
+    assert_eq!(remaining, [0x56, 0x78]);
+
+    let parsed = output.1;
+    assert_eq!(parsed.0, 0x01);
+    assert_eq!(parsed.1, 0x23);
+  }
+
+  #[test]
+  #[cfg(feature = "std")]
+  
+  fn test_incomplete_bits() {
+    let input = &[0x12];
+
+    
+    let result: IResult<&[u8], (u8, u8)> =
+      bits::<_, _, Error<(&[u8], usize)>, _, _>(tuple((take(4usize), take(8usize))))(input);
+
+    assert!(result.is_err());
+    let error = result.err().unwrap();
+    assert_eq!("Parsing requires 2 bytes/chars", error.to_string());
+  }
 }

@@ -14,7 +14,6 @@ use std::sync::{
 use std::thread;
 use std::time::Duration;
 
-use crate::with_glean;
 use glean_core::upload::PingUploadTask;
 pub use glean_core::upload::{PingRequest, UploadResult};
 
@@ -70,27 +69,6 @@ impl UploadManager {
     }
 
     
-    pub(crate) fn test_wait_for_upload(&self) {
-        
-        while self
-            .inner
-            .thread_running
-            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
-            .is_err()
-        {
-            thread::yield_now();
-        }
-    }
-
-    
-    
-    
-    
-    pub(crate) fn test_clear_upload_thread(&self) {
-        self.inner.thread_running.store(false, Ordering::SeqCst);
-    }
-
-    
     pub(crate) fn trigger_upload(&self) {
         
         
@@ -110,23 +88,23 @@ impl UploadManager {
             .name("glean.upload".into())
             .spawn(move || {
                 loop {
-                    let incoming_task = with_glean(|glean| glean.get_upload_task());
+                    let incoming_task = glean_core::glean_get_upload_task();
 
                     log::trace!("Received upload task: {:?}", incoming_task);
                     match incoming_task {
-                        PingUploadTask::Upload(request) => {
+                        PingUploadTask::Upload { request } => {
                             let doc_id = request.document_id.clone();
                             let upload_url = format!("{}{}", inner.server_endpoint, request.path);
                             let headers: Vec<(String, String)> =
                                 request.headers.into_iter().collect();
                             let result = inner.uploader.upload(upload_url, request.body, headers);
                             
-                            with_glean(|glean| glean.process_ping_upload_response(&doc_id, result));
+                            glean_core::glean_process_ping_upload_response(doc_id, result);
                         }
-                        PingUploadTask::Wait(time) => {
+                        PingUploadTask::Wait { time } => {
                             thread::sleep(Duration::from_millis(time));
                         }
-                        PingUploadTask::Done => {
+                        PingUploadTask::Done { .. } => {
                             
                             
                             inner.thread_running.store(false, Ordering::SeqCst);

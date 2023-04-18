@@ -2,7 +2,7 @@
 
 
 
-use crate::error_recording::{record_error, ErrorType};
+use crate::error_recording::{record_error, test_get_num_recorded_errors, ErrorType};
 use crate::metrics::Metric;
 use crate::metrics::MetricType;
 use crate::storage::StorageManager;
@@ -20,10 +20,6 @@ pub struct QuantityMetric {
 impl MetricType for QuantityMetric {
     fn meta(&self) -> &CommonMetricData {
         &self.meta
-    }
-
-    fn meta_mut(&mut self) -> &mut CommonMetricData {
-        &mut self.meta
     }
 }
 
@@ -46,8 +42,14 @@ impl QuantityMetric {
     
     
     
+    pub fn set(&self, value: i64) {
+        let metric = self.clone();
+        crate::launch_with_glean(move |glean| metric.set_sync(glean, value))
+    }
+
     
-    pub fn set(&self, glean: &Glean, value: i64) {
+    #[doc(hidden)]
+    pub fn set_sync(&self, glean: &Glean, value: i64) {
         if !self.should_record(glean) {
             return;
         }
@@ -69,19 +71,56 @@ impl QuantityMetric {
     }
 
     
-    
-    
-    
-    
-    pub fn test_get_value(&self, glean: &Glean, storage_name: &str) -> Option<i64> {
+    #[doc(hidden)]
+    pub fn get_value<'a, S: Into<Option<&'a str>>>(
+        &self,
+        glean: &Glean,
+        ping_name: S,
+    ) -> Option<i64> {
+        let queried_ping_name = ping_name
+            .into()
+            .unwrap_or_else(|| &self.meta().send_in_pings[0]);
+
         match StorageManager.snapshot_metric_for_test(
             glean.storage(),
-            storage_name,
+            queried_ping_name,
             &self.meta.identifier(glean),
             self.meta.lifetime,
         ) {
             Some(Metric::Quantity(i)) => Some(i),
             _ => None,
         }
+    }
+
+    
+    
+    
+    
+    
+    pub fn test_get_value(&self, ping_name: Option<String>) -> Option<i64> {
+        crate::block_on_dispatcher();
+        crate::core::with_glean(|glean| self.get_value(glean, ping_name.as_deref()))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn test_get_num_recorded_errors(&self, error: ErrorType, ping_name: Option<String>) -> i32 {
+        crate::block_on_dispatcher();
+
+        crate::core::with_glean(|glean| {
+            test_get_num_recorded_errors(glean, self.meta(), error, ping_name.as_deref())
+                .unwrap_or(0)
+        })
     }
 }
