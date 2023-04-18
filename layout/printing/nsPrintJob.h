@@ -176,16 +176,6 @@ class nsPrintJob final : public nsIWebProgressListener,
 
   nsresult StartPagePrintTimer(const mozilla::UniquePtr<nsPrintObject>& aPO);
 
-  bool IsWindowsInOurSubTree(nsPIDOMWindowOuter* aDOMWindow) const;
-
-  
-
-
-
-
-
-  Document* FindFocusedDocument(Document* aDoc) const;
-
   
   enum class DocTitleDefault : uint32_t { eDocURLElseFallback, eFallback };
 
@@ -242,13 +232,6 @@ class nsPrintJob final : public nsIWebProgressListener,
   void FirePrintPreviewUpdateEvent();
 
   void PageDone(nsresult aResult);
-
-  
-  
-  
-  
-  
-  RefPtr<Document> mOriginalDoc;
 
   
   nsCOMPtr<nsIDocumentViewerPrint> mDocViewerPrint;
