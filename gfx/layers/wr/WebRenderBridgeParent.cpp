@@ -2303,11 +2303,16 @@ void WebRenderBridgeParent::MaybeGenerateFrame(VsyncId aId,
     
     
     
-    mCompositorScheduler->ScheduleComposition(aReasons);
+    mCompositorScheduler->ScheduleComposition(
+        wr::RenderReasons::ASYNC_IMAGE_COMPOSITE_UNTIL);
   }
 
-  bool generateFrame = mAsyncImageManager->GetAndResetWillGenerateFrame() ||
-                       !fastTxn.IsEmpty() || aForceGenerateFrame;
+  bool generateFrame = !fastTxn.IsEmpty() || aForceGenerateFrame;
+
+  if (mAsyncImageManager->GetAndResetWillGenerateFrame()) {
+    aReasons |= wr::RenderReasons::ASYNC_IMAGE;
+    generateFrame = true;
+  }
 
   if (!generateFrame) {
     
