@@ -953,6 +953,7 @@ class GCRuntime {
   
   GCSchedulingTunables tunables;
   GCSchedulingState schedulingState;
+  MainThreadData<bool> fullGCRequested;
 
   
   MainThreadData<double> helperThreadRatio;

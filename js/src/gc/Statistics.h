@@ -91,8 +91,6 @@ struct ZoneGCStats {
   
   int sweptCompartmentCount = 0;
 
-  bool isFullCollection() const { return collectedZoneCount == zoneCount; }
-
   ZoneGCStats() = default;
 };
 

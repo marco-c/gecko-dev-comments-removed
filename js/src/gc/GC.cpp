@@ -391,6 +391,7 @@ GCRuntime::GCRuntime(JSRuntime* rt)
       barrierTracer(rt),
       sweepingTracer(rt),
       heapSize(nullptr),
+      fullGCRequested(false),
       helperThreadRatio(TuningDefaults::HelperThreadRatio),
       maxHelperThreads(TuningDefaults::MaxHelperThreads),
       helperThreadCount(1),
@@ -3656,6 +3657,8 @@ void GCRuntime::maybeCallGCCallback(JSGCStatus status, JS::GCReason reason) {
   
   JS::GCOptions options = gcOptions();
   maybeGcOptions = Nothing();
+  bool savedFullGCRequested = fullGCRequested;
+  fullGCRequested = false;
 
   gcCallbackDepth++;
 
@@ -3666,6 +3669,10 @@ void GCRuntime::maybeCallGCCallback(JSGCStatus status, JS::GCReason reason) {
 
   
   maybeGcOptions = Some(options);
+
+  
+  
+  fullGCRequested = (status == JSGC_END) ? false : savedFullGCRequested;
 
   if (gcCallbackDepth == 0) {
     
@@ -3905,7 +3912,7 @@ void GCRuntime::collect(bool nonincrementalByAPI, const SliceBudget& budget,
     return;
   }
 
-  stats().log("GC starting in state %s", StateName(incrementalState));
+  stats().log("GC slice starting in state %s", StateName(incrementalState));
 
   AutoTraceLog logGC(TraceLoggerForCurrentThread(), TraceLogger_GC);
   AutoStopVerifyingBarriers av(rt, isShutdownGC());
@@ -3962,7 +3969,7 @@ void GCRuntime::collect(bool nonincrementalByAPI, const SliceBudget& budget,
     MOZ_RELEASE_ASSERT(CheckGrayMarkingState(rt));
   }
 #endif
-  stats().log("GC ending in state %s", StateName(incrementalState));
+  stats().log("GC slice ending in state %s", StateName(incrementalState));
 
   UnscheduleZones(this);
 }
