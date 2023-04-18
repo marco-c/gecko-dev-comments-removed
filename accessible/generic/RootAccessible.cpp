@@ -140,7 +140,7 @@ const char* const kEventTypes[] = {
     
     "RadioStateChange", "popupshown", "popuphiding", "DOMMenuInactive",
     "DOMMenuItemActive", "DOMMenuItemInactive", "DOMMenuBarActive",
-    "DOMMenuBarInactive", "scroll"};
+    "DOMMenuBarInactive", "scroll", "DOMTitleChanged"};
 
 nsresult RootAccessible::AddEventListeners() {
   
@@ -277,6 +277,12 @@ void RootAccessible::ProcessDOMEvent(Event* aDOMEvent, nsINode* aTarget) {
   LocalAccessible* accessible =
       targetDocument->GetAccessibleOrContainer(aTarget);
   if (!accessible) return;
+
+  if (accessible->IsDoc() && eventType.EqualsLiteral("DOMTitleChanged")) {
+    targetDocument->FireDelayedEvent(nsIAccessibleEvent::EVENT_NAME_CHANGE,
+                                     accessible);
+    return;
+  }
 
   XULTreeAccessible* treeAcc = accessible->AsXULTree();
   if (treeAcc) {
