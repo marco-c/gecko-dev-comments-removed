@@ -1713,8 +1713,9 @@ struct NewLayerData {
   ScrollableLayerGuid::ViewID mDeferredId = ScrollableLayerGuid::NULL_SCROLL_ID;
   bool mTransformShouldGetOwnLayer = false;
 
-  void ComputeDeferredTransformInfo(const StackingContextHelper& aSc,
-                                    nsDisplayItem* aItem) {
+  void ComputeDeferredTransformInfo(
+      const StackingContextHelper& aSc, nsDisplayItem* aItem,
+      nsDisplayTransform* aLastDeferredTransform) {
     
     
     
@@ -1730,6 +1731,14 @@ struct NewLayerData {
     
     
     mDeferredItem = aSc.GetDeferredTransformItem();
+    
+    
+    
+    
+    
+    if (mDeferredItem == aLastDeferredTransform) {
+      mDeferredItem = nullptr;
+    }
     if (mDeferredItem) {
       
       
@@ -1890,7 +1899,10 @@ void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
         newLayerData->mLayerCountBeforeRecursing = mLayerScrollData.size();
         newLayerData->mStopAtAsr =
             mAsrStack.empty() ? nullptr : mAsrStack.back();
-        newLayerData->ComputeDeferredTransformInfo(aSc, item);
+        newLayerData->ComputeDeferredTransformInfo(
+            aSc, item,
+            mDeferredTransformStack.empty() ? nullptr
+                                            : mDeferredTransformStack.back());
 
         
         
@@ -1910,6 +1922,13 @@ void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
               newLayerData->mDeferredItem->GetActiveScrolledRoot());
         }
         mAsrStack.push_back(stopAtAsrForChildren);
+
+        
+        
+        
+        if (newLayerData->mDeferredItem) {
+          mDeferredTransformStack.push_back(newLayerData->mDeferredItem);
+        }
       }
     }
 
@@ -1950,6 +1969,11 @@ void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
         
         
         mAsrStack.pop_back();
+
+        if (newLayerData->mDeferredItem) {
+          MOZ_ASSERT(!mDeferredTransformStack.empty());
+          mDeferredTransformStack.pop_back();
+        }
 
         const ActiveScrolledRoot* stopAtAsr = newLayerData->mStopAtAsr;
 
