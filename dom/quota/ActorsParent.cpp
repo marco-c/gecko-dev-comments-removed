@@ -2002,9 +2002,6 @@ using NormalOriginOpArray =
     nsTArray<CheckedUnsafePtr<NormalOriginOperationBase>>;
 StaticAutoPtr<NormalOriginOpArray> gNormalOriginOps;
 
-
-static const uint32_t kDefaultChunkSizeKB = 10 * 1024;
-
 void RegisterNormalOriginOp(NormalOriginOperationBase& aNormalOriginOp) {
   AssertIsOnBackgroundThread();
 
@@ -2668,7 +2665,7 @@ Result<nsCOMPtr<nsIBinaryInputStream>, nsresult> GetBinaryInputStream(
 
 
 
-uint64_t GetTemporaryStorageLimit(uint64_t aAvailableSpaceBytes) {
+Result<uint64_t, nsresult> GetTemporaryStorageLimit(nsIFile& aStorageDir) {
   
   
   if (StaticPrefs::dom_quotaManager_temporaryStorage_fixedLimit() >= 0) {
@@ -2677,23 +2674,14 @@ uint64_t GetTemporaryStorageLimit(uint64_t aAvailableSpaceBytes) {
            1024;
   }
 
-  uint64_t availableSpaceKB = aAvailableSpaceBytes / 1024;
+  
+  QM_TRY_INSPECT(const int64_t& diskCapacity,
+                 MOZ_TO_RESULT_INVOKE_MEMBER(aStorageDir, GetDiskCapacity));
+
+  MOZ_ASSERT(diskCapacity >= 0);
 
   
-  uint32_t chunkSizeKB;
-  if (StaticPrefs::dom_quotaManager_temporaryStorage_chunkSize()) {
-    chunkSizeKB = StaticPrefs::dom_quotaManager_temporaryStorage_chunkSize();
-  } else {
-    chunkSizeKB = kDefaultChunkSizeKB;
-  }
-
-  
-  
-  
-  availableSpaceKB = (availableSpaceKB / chunkSizeKB) * chunkSizeKB;
-
-  
-  return availableSpaceKB * .50 * 1024;
+  return diskCapacity / 2u;
 }
 
 bool IsOriginUnaccessed(const FullOriginMetadata& aFullOriginMetadata,
@@ -6395,25 +6383,12 @@ nsresult QuotaManager::EnsureTemporaryStorageIsInitialized() {
 
     Unused << created;
 
-    
-    
-    QM_TRY_INSPECT(
-        const int64_t& diskSpaceAvailable,
-        MOZ_TO_RESULT_INVOKE_MEMBER(storageDir, GetDiskSpaceAvailable));
-
-    MOZ_ASSERT(diskSpaceAvailable >= 0);
+    QM_TRY_UNWRAP(mTemporaryStorageLimit,
+                  GetTemporaryStorageLimit(*storageDir));
 
     QM_TRY(MOZ_TO_RESULT(LoadQuota()));
 
     mTemporaryStorageInitialized = true;
-
-    
-    
-    
-    
-    
-    mTemporaryStorageLimit = GetTemporaryStorageLimit(
-         diskSpaceAvailable + mTemporaryStorageUsage);
 
     CleanupTemporaryStorage();
 
@@ -6539,7 +6514,7 @@ uint64_t QuotaManager::GetGroupLimit() const {
   
   
   
-  const uint64_t x = std::min<uint64_t>(mTemporaryStorageLimit / 5, 2 GB);
+  const auto x = std::min<uint64_t>(mTemporaryStorageLimit / 5, 10 GB);
 
   
   
