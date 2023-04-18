@@ -14,27 +14,24 @@ typedef WCHAR NS_tchar;
 typedef char NS_tchar;
 #endif
 
-bool GetInstallHash(const char16_t* installPath,
-                    mozilla::UniquePtr<NS_tchar[]>& result);
+bool GetInstallHash(const char16_t* installPath, const char* vendor,
+                    mozilla::UniquePtr<NS_tchar[]>& result,
+                    bool useCompatibilityMode = false);
 
 #ifdef XP_WIN
-
-
-
-
-
+enum class SetPermissionsOf {
+  BaseDirIfNotExists,
+  AllFilesAndDirs,
+  FilesAndDirsWithBadPerms,
+};
 
 
 HRESULT GetCommonUpdateDirectory(const wchar_t* installPath,
+                                 SetPermissionsOf dirPermsToSet,
                                  mozilla::UniquePtr<wchar_t[]>& result);
-
-
-
-
-
-
-HRESULT GetOldUpdateDirectory(const wchar_t* installPath,
-                              mozilla::UniquePtr<wchar_t[]>& result);
+HRESULT GetUserUpdateDirectory(const wchar_t* installPath, const char* vendor,
+                               const char* appName,
+                               mozilla::UniquePtr<wchar_t[]>& result);
 #endif
 
 #endif

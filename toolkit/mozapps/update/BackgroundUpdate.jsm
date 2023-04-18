@@ -55,7 +55,7 @@ Cu.importGlobalProperties(["Glean"]);
 
 
 
-const TASK_DEF_CURRENT_VERSION = 3;
+const TASK_DEF_CURRENT_VERSION = 2;
 const TASK_INSTALLED_VERSION_PREF =
   "app.update.background.lastInstalledTaskVersion";
 
@@ -507,41 +507,6 @@ var BackgroundUpdate = {
           await TaskScheduler.deleteTask(this.taskId);
         } catch (e) {
           log.error(`${SLUG}: Error removing old task: ${e}`);
-        }
-        try {
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          let oldUpdateDir = FileUtils.getDir("OldUpdRootD", [], false);
-          let oldLog = oldUpdateDir.clone();
-          oldLog.append("backgroundupdate.moz_log");
-
-          if (oldLog.exists()) {
-            oldLog.remove(false);
-            
-            
-            
-            
-            
-            
-            oldUpdateDir.remove(false);
-            
-            oldUpdateDir.parent.remove(false);
-            
-            oldUpdateDir.parent.parent.remove(false);
-          }
-        } catch (ex) {
-          log.warn(
-            `${SLUG}: Ignoring error encountered attempting to remove stale log file: ${ex}`
-          );
         }
       }
 
