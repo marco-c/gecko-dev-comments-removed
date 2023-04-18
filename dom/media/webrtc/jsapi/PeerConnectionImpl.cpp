@@ -47,6 +47,7 @@
 
 #include "transportbridge/MediaPipeline.h"
 #include "jsapi/RTCRtpReceiver.h"
+#include "jsapi/RTCRtpSender.h"
 
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Sprintf.h"
@@ -934,10 +935,6 @@ nsresult PeerConnectionImpl::AddRtpTransceiverToJsepSession(
 already_AddRefed<TransceiverImpl> PeerConnectionImpl::CreateTransceiverImpl(
     JsepTransceiver* aJsepTransceiver, dom::MediaStreamTrack* aSendTrack,
     ErrorResult& aRv) {
-  if (aSendTrack) {
-    aSendTrack->AddPrincipalChangeObserver(this);
-  }
-
   PeerConnectionCtx* ctx = PeerConnectionCtx::GetInstance();
   RefPtr<TransceiverImpl> transceiverImpl;
   aRv =
@@ -991,6 +988,10 @@ bool PeerConnectionImpl::CheckNegotiationNeeded() {
   MOZ_ASSERT(mSignalingState == RTCSignalingState::Stable);
   return !mLocalIceCredentialsToReplace.empty() ||
          mJsepSession->CheckNegotiationNeeded();
+}
+
+bool PeerConnectionImpl::CreatedSender(const dom::RTCRtpSender& aSender) const {
+  return aSender.GetPcHandle() == mHandle;
 }
 
 nsresult PeerConnectionImpl::InitializeDataChannel() {
@@ -1780,8 +1781,10 @@ PeerConnectionImpl::SetPeerIdentity(const nsAString& aPeerIdentity) {
       CSFLogInfo(LOGTAG, "Can't update principal on streams; document gone");
       return NS_ERROR_FAILURE;
     }
-    MediaStreamTrack* allTracks = nullptr;
-    UpdateSinkIdentity_m(allTracks, doc->NodePrincipal(), mPeerIdentity);
+    for (const auto& transceiver : mTransceivers) {
+      transceiver->Sender()->GetPipeline()->UpdateSinkIdentity(
+          doc->NodePrincipal(), mPeerIdentity);
+    }
   }
   return NS_OK;
 }
@@ -1795,15 +1798,6 @@ nsresult PeerConnectionImpl::OnAlpnNegotiated(bool aPrivacyRequested) {
 
   mPrivacyRequested = Some(aPrivacyRequested);
   return NS_OK;
-}
-
-void PeerConnectionImpl::PrincipalChanged(MediaStreamTrack* aTrack) {
-  Document* doc = mWindow->GetExtantDoc();
-  if (doc) {
-    UpdateSinkIdentity_m(aTrack, doc->NodePrincipal(), mPeerIdentity);
-  } else {
-    CSFLogInfo(LOGTAG, "Can't update sink principal; document gone");
-  }
 }
 
 void PeerConnectionImpl::OnMediaError(const std::string& aError) {
@@ -1921,56 +1915,6 @@ nsresult PeerConnectionImpl::DisablePacketDump(unsigned long level,
 void PeerConnectionImpl::StampTimecard(const char* aEvent) {
   MOZ_ASSERT(NS_IsMainThread());
   STAMP_TIMECARD(mTimeCard, aEvent);
-}
-
-NS_IMETHODIMP
-PeerConnectionImpl::ReplaceTrackNoRenegotiation(TransceiverImpl& aTransceiver,
-                                                MediaStreamTrack* aWithTrack) {
-  PC_AUTO_ENTER_API_CALL(true);
-
-  RefPtr<dom::MediaStreamTrack> oldSendTrack(aTransceiver.GetSendTrack());
-  if (oldSendTrack) {
-    oldSendTrack->RemovePrincipalChangeObserver(this);
-  }
-
-  nsresult rv = aTransceiver.UpdateSendTrack(aWithTrack);
-
-  if (NS_FAILED(rv)) {
-    CSFLogError(LOGTAG, "Failed to update transceiver: %d",
-                static_cast<int>(rv));
-    return rv;
-  }
-
-  if (aWithTrack) {
-    aWithTrack->AddPrincipalChangeObserver(this);
-    PrincipalChanged(aWithTrack);
-  }
-
-  if (aTransceiver.IsVideo()) {
-    
-    
-    Maybe<MediaSourceEnum> oldType;
-    Maybe<MediaSourceEnum> newType;
-    if (oldSendTrack) {
-      oldType = Some(oldSendTrack->GetSource().GetMediaSource());
-    }
-    if (aWithTrack) {
-      newType = Some(aWithTrack->GetSource().GetMediaSource());
-    }
-    if (oldType != newType) {
-      if (NS_WARN_IF(NS_FAILED(rv = aTransceiver.UpdateConduit()))) {
-        CSFLogError(LOGTAG, "Error Updating VideoConduit");
-        return rv;
-      }
-    }
-  } else if (!oldSendTrack != !aWithTrack) {
-    if (NS_WARN_IF(NS_FAILED(rv = aTransceiver.UpdateConduit()))) {
-      CSFLogError(LOGTAG, "Error Updating AudioConduit");
-      return rv;
-    }
-  }
-
-  return NS_OK;
 }
 
 nsresult PeerConnectionImpl::CalculateFingerprint(
@@ -2117,13 +2061,6 @@ PeerConnectionImpl::Close() {
     mDataConnection->Destroy();
     mDataConnection =
         nullptr;  
-  }
-  
-  for (RefPtr<TransceiverImpl>& transceiver : mTransceivers) {
-    RefPtr<dom::MediaStreamTrack> track = transceiver->GetSendTrack();
-    if (track) {
-      track->RemovePrincipalChangeObserver(this);
-    }
   }
 
   if (mStunAddrsRequest) {
@@ -2793,287 +2730,6 @@ void PeerConnectionImpl::UpdateDefaultCandidate(
       defaultAddr, defaultPort, defaultRtcpAddr, defaultRtcpPort, transportId);
 }
 
-
-nsTArray<RefPtr<dom::RTCStatsPromise>> PeerConnectionImpl::GetSenderStats(
-    const RefPtr<TransceiverImpl>& aTransceiver) {
-  MOZ_ASSERT(NS_IsMainThread());
-  RefPtr<MediaPipelineTransmit> pipeline = aTransceiver->GetSendPipeline();
-  nsTArray<RefPtr<RTCStatsPromise>> promises(2);
-
-  nsAutoString trackName;
-  if (auto track = pipeline->GetTrack()) {
-    track->GetId(trackName);
-  }
-
-  {
-    
-    promises.AppendElement(InvokeAsync(
-        pipeline->mCallThread, __func__,
-        [conduit = pipeline->mConduit, trackName]() mutable {
-          auto report = MakeUnique<dom::RTCStatsCollection>();
-          Maybe<webrtc::Call::Stats> stats = conduit->GetCallStats();
-          stats.apply([&](const auto aStats) {
-            dom::RTCBandwidthEstimationInternal bw;
-            bw.mTrackIdentifier = trackName;
-            bw.mSendBandwidthBps.Construct(aStats.send_bandwidth_bps / 8);
-            bw.mMaxPaddingBps.Construct(aStats.max_padding_bitrate_bps / 8);
-            bw.mReceiveBandwidthBps.Construct(aStats.recv_bandwidth_bps / 8);
-            bw.mPacerDelayMs.Construct(aStats.pacer_delay_ms);
-            if (aStats.rtt_ms >= 0) {
-              bw.mRttMs.Construct(aStats.rtt_ms);
-            }
-            if (!report->mBandwidthEstimations.AppendElement(std::move(bw),
-                                                             fallible)) {
-              mozalloc_handle_oom(0);
-            }
-          });
-          return RTCStatsPromise::CreateAndResolve(std::move(report), __func__);
-        }));
-  }
-
-  promises.AppendElement(
-      InvokeAsync(pipeline->mCallThread, __func__, [pipeline] {
-        auto report = MakeUnique<dom::RTCStatsCollection>();
-        auto asAudio = pipeline->mConduit->AsAudioSessionConduit();
-        auto asVideo = pipeline->mConduit->AsVideoSessionConduit();
-
-        nsString kind = asVideo.isNothing() ? u"audio"_ns : u"video"_ns;
-        nsString idstr = kind + u"_"_ns;
-        idstr.AppendInt(static_cast<uint32_t>(pipeline->Level()));
-
-        for (uint32_t ssrc : pipeline->mConduit->GetLocalSSRCs()) {
-          nsString localId = u"outbound_rtp_"_ns + idstr + u"_"_ns;
-          localId.AppendInt(ssrc);
-          nsString remoteId;
-          Maybe<uint16_t> base_seq =
-              pipeline->mConduit->RtpSendBaseSeqFor(ssrc);
-
-          auto constructCommonRemoteInboundRtpStats =
-              [&](RTCRemoteInboundRtpStreamStats& aRemote,
-                  const webrtc::ReportBlockData& aRtcpData) {
-                remoteId = u"outbound_rtcp_"_ns + idstr + u"_"_ns;
-                remoteId.AppendInt(ssrc);
-                aRemote.mTimestamp.Construct(
-                    pipeline->GetTimestampMaker().ConvertNtpToDomTime(
-                        webrtc::Timestamp::Micros(
-                            aRtcpData.report_block_timestamp_utc_us()) +
-                        webrtc::TimeDelta::Seconds(webrtc::kNtpJan1970)));
-                aRemote.mId.Construct(remoteId);
-                aRemote.mType.Construct(RTCStatsType::Remote_inbound_rtp);
-                aRemote.mSsrc.Construct(ssrc);
-                aRemote.mMediaType.Construct(
-                    kind);  
-                aRemote.mKind.Construct(kind);
-                aRemote.mLocalId.Construct(localId);
-                if (base_seq) {
-                  if (aRtcpData.report_block()
-                          .extended_highest_sequence_number < *base_seq) {
-                    aRemote.mPacketsReceived.Construct(0);
-                  } else {
-                    aRemote.mPacketsReceived.Construct(
-                        aRtcpData.report_block()
-                            .extended_highest_sequence_number -
-                        aRtcpData.report_block().packets_lost - *base_seq + 1);
-                  }
-                }
-              };
-
-          auto constructCommonOutboundRtpStats =
-              [&](RTCOutboundRtpStreamStats& aLocal) {
-                aLocal.mSsrc.Construct(ssrc);
-                aLocal.mTimestamp.Construct(
-                    pipeline->GetTimestampMaker().GetNow());
-                aLocal.mId.Construct(localId);
-                aLocal.mType.Construct(RTCStatsType::Outbound_rtp);
-                aLocal.mMediaType.Construct(
-                    kind);  
-                aLocal.mKind.Construct(kind);
-                if (remoteId.Length()) {
-                  aLocal.mRemoteId.Construct(remoteId);
-                }
-              };
-
-          asAudio.apply([&](auto& aConduit) {
-            Maybe<webrtc::AudioSendStream::Stats> audioStats =
-                aConduit->GetSenderStats();
-            if (audioStats.isNothing()) {
-              return;
-            }
-
-            if (audioStats->packets_sent == 0) {
-              
-              
-              
-              return;
-            }
-
-            
-            
-            
-            Maybe<webrtc::ReportBlockData> reportBlockData;
-            {
-              if (const auto remoteSsrc = aConduit->GetRemoteSSRC();
-                  remoteSsrc) {
-                for (auto& data : audioStats->report_block_datas) {
-                  if (data.report_block().source_ssrc == ssrc &&
-                      data.report_block().sender_ssrc == *remoteSsrc) {
-                    reportBlockData.emplace(data);
-                    break;
-                  }
-                }
-              }
-            }
-            reportBlockData.apply([&](auto& aReportBlockData) {
-              RTCRemoteInboundRtpStreamStats remote;
-              constructCommonRemoteInboundRtpStats(remote, aReportBlockData);
-              if (audioStats->jitter_ms >= 0) {
-                remote.mJitter.Construct(audioStats->jitter_ms / 1000.0);
-              }
-              if (audioStats->packets_lost >= 0) {
-                remote.mPacketsLost.Construct(audioStats->packets_lost);
-              }
-              if (audioStats->rtt_ms >= 0) {
-                remote.mRoundTripTime.Construct(
-                    static_cast<double>(audioStats->rtt_ms) / 1000.0);
-              }
-              
-
-
-
-
-
-
-
-              if (!report->mRemoteInboundRtpStreamStats.AppendElement(
-                      std::move(remote), fallible)) {
-                mozalloc_handle_oom(0);
-              }
-            });
-
-            
-            
-            RTCOutboundRtpStreamStats local;
-            constructCommonOutboundRtpStats(local);
-            local.mPacketsSent.Construct(audioStats->packets_sent);
-            local.mBytesSent.Construct(audioStats->payload_bytes_sent);
-            local.mNackCount.Construct(
-                audioStats->rtcp_packet_type_counts.nack_packets);
-            local.mHeaderBytesSent.Construct(
-                audioStats->header_and_padding_bytes_sent);
-            local.mRetransmittedPacketsSent.Construct(
-                audioStats->retransmitted_packets_sent);
-            local.mRetransmittedBytesSent.Construct(
-                audioStats->retransmitted_bytes_sent);
-            
-
-
-
-
-
-
-            if (!report->mOutboundRtpStreamStats.AppendElement(std::move(local),
-                                                               fallible)) {
-              mozalloc_handle_oom(0);
-            }
-          });
-
-          asVideo.apply([&](auto& aConduit) {
-            Maybe<webrtc::VideoSendStream::Stats> videoStats =
-                aConduit->GetSenderStats();
-            if (videoStats.isNothing()) {
-              return;
-            }
-
-            Maybe<webrtc::VideoSendStream::StreamStats> streamStats;
-            auto kv = videoStats->substreams.find(ssrc);
-            if (kv != videoStats->substreams.end()) {
-              streamStats = Some(kv->second);
-            }
-
-            if (!streamStats ||
-                streamStats->rtp_stats.first_packet_time_ms == -1) {
-              
-              
-              
-              return;
-            }
-
-            
-            
-            
-            if (streamStats->report_block_data) {
-              const webrtc::ReportBlockData& rtcpReportData =
-                  *streamStats->report_block_data;
-              RTCRemoteInboundRtpStreamStats remote;
-              remote.mJitter.Construct(
-                  static_cast<double>(streamStats->rtcp_stats.jitter) /
-                  webrtc::kVideoPayloadTypeFrequency);
-              remote.mPacketsLost.Construct(
-                  streamStats->rtcp_stats.packets_lost);
-              if (rtcpReportData.has_rtt()) {
-                remote.mRoundTripTime.Construct(
-                    static_cast<double>(rtcpReportData.last_rtt_ms()) / 1000.0);
-              }
-              constructCommonRemoteInboundRtpStats(remote, rtcpReportData);
-              
-
-
-
-
-
-
-
-
-
-              if (!report->mRemoteInboundRtpStreamStats.AppendElement(
-                      std::move(remote), fallible)) {
-                mozalloc_handle_oom(0);
-              }
-            }
-
-            
-            
-            RTCOutboundRtpStreamStats local;
-            constructCommonOutboundRtpStats(local);
-            local.mPacketsSent.Construct(
-                streamStats->rtp_stats.transmitted.packets);
-            local.mBytesSent.Construct(
-                streamStats->rtp_stats.transmitted.payload_bytes);
-            local.mNackCount.Construct(
-                streamStats->rtcp_packet_type_counts.nack_packets);
-            local.mFirCount.Construct(
-                streamStats->rtcp_packet_type_counts.fir_packets);
-            local.mPliCount.Construct(
-                streamStats->rtcp_packet_type_counts.pli_packets);
-            local.mFramesEncoded.Construct(streamStats->frames_encoded);
-            if (streamStats->qp_sum) {
-              local.mQpSum.Construct(*streamStats->qp_sum);
-            }
-            local.mHeaderBytesSent.Construct(
-                streamStats->rtp_stats.transmitted.header_bytes +
-                streamStats->rtp_stats.transmitted.padding_bytes);
-            local.mRetransmittedPacketsSent.Construct(
-                streamStats->rtp_stats.retransmitted.packets);
-            local.mRetransmittedBytesSent.Construct(
-                streamStats->rtp_stats.retransmitted.payload_bytes);
-            
-
-
-
-
-
-            if (!report->mOutboundRtpStreamStats.AppendElement(std::move(local),
-                                                               fallible)) {
-              mozalloc_handle_oom(0);
-            }
-          });
-        }
-        return RTCStatsPromise::CreateAndResolve(std::move(report), __func__);
-      }));
-
-  return promises;
-}
-
 static UniquePtr<dom::RTCStatsCollection> GetDataChannelStats_s(
     const RefPtr<DataChannelConnection>& aDataConnection,
     const DOMHighResTimeStamp aTimestamp) {
@@ -3240,7 +2896,7 @@ RefPtr<dom::RTCStatsReportPromise> PeerConnectionImpl::GetStats(
       std::tuple<TransceiverImpl*, RefPtr<RTCStatsPromise::AllPromiseType>>>
       transceiverStatsPromises;
   for (const auto& transceiver : mTransceivers) {
-    const bool sendSelected = transceiver->HasSendTrack(aSelector);
+    const bool sendSelected = transceiver->Sender()->HasTrack(aSelector);
     const bool recvSelected = transceiver->Receiver()->HasTrack(aSelector);
     if (!sendSelected && !recvSelected) {
       continue;
@@ -3250,8 +2906,8 @@ RefPtr<dom::RTCStatsReportPromise> PeerConnectionImpl::GetStats(
     
     
     if (sendSelected) {
-      
-      rtpStreamPromises.AppendElements(GetSenderStats(transceiver));
+      rtpStreamPromises.AppendElements(
+          transceiver->Sender()->GetStatsInternal());
     }
     if (recvSelected) {
       
@@ -4001,8 +3657,8 @@ nsresult PeerConnectionImpl::AddTransceiver(
     
     Document* doc = mWindow->GetExtantDoc();
     if (doc) {
-      transceiver->UpdateSinkIdentity(nullptr, doc->NodePrincipal(),
-                                      GetPeerIdentity());
+      transceiver->Sender()->GetPipeline()->UpdateSinkIdentity(
+          doc->NodePrincipal(), GetPeerIdentity());
     } else {
       MOZ_CRASH();
       return NS_ERROR_FAILURE;  
@@ -4018,7 +3674,7 @@ nsresult PeerConnectionImpl::AddTransceiver(
 std::string PeerConnectionImpl::GetTransportIdMatchingSendTrack(
     const dom::MediaStreamTrack& aTrack) const {
   for (const RefPtr<TransceiverImpl>& transceiver : mTransceivers) {
-    if (transceiver->HasSendTrack(&aTrack)) {
+    if (transceiver->Sender()->HasTrack(&aTrack)) {
       return transceiver->GetTransportId();
     }
   }
@@ -4104,22 +3760,12 @@ bool PeerConnectionImpl::AnyLocalTrackHasPeerIdentity() const {
   MOZ_ASSERT(NS_IsMainThread());
 
   for (const RefPtr<TransceiverImpl>& transceiver : mTransceivers) {
-    if (transceiver->GetSendTrack() &&
-        transceiver->GetSendTrack()->GetPeerIdentity()) {
+    if (transceiver->Sender()->GetTrack() &&
+        transceiver->Sender()->GetTrack()->GetPeerIdentity()) {
       return true;
     }
   }
   return false;
-}
-
-void PeerConnectionImpl::UpdateSinkIdentity_m(
-    const MediaStreamTrack* aTrack, nsIPrincipal* aPrincipal,
-    const PeerIdentity* aSinkIdentity) {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  for (RefPtr<TransceiverImpl>& transceiver : mTransceivers) {
-    transceiver->UpdateSinkIdentity(aTrack, aPrincipal, aSinkIdentity);
-  }
 }
 
 bool PeerConnectionImpl::AnyCodecHasPluginID(uint64_t aPluginID) {

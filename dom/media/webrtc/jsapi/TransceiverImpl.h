@@ -39,6 +39,7 @@ class RTCDTMFSender;
 class RTCRtpTransceiver;
 struct RTCRtpSourceEntry;
 class RTCRtpReceiver;
+class RTCRtpSender;
 }  
 
 
@@ -65,12 +66,6 @@ class TransceiverImpl : public nsISupports,
 
   bool IsValid() const { return !!mConduit; }
 
-  nsresult UpdateSendTrack(dom::MediaStreamTrack* aSendTrack);
-
-  nsresult UpdateSinkIdentity(const dom::MediaStreamTrack* aTrack,
-                              nsIPrincipal* aPrincipal,
-                              const PeerIdentity* aSinkIdentity);
-
   nsresult UpdateTransport();
 
   nsresult UpdateConduit();
@@ -84,26 +79,18 @@ class TransceiverImpl : public nsISupports,
 
   bool ConduitHasPluginID(uint64_t aPluginID);
 
-  bool HasSendTrack(const dom::MediaStreamTrack* aSendTrack) const;
-
-  
-  
-  
-  RefPtr<dom::MediaStreamTrack> GetSendTrack() { return mSendTrack; }
-
   
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
   nsPIDOMWindowInner* GetParentObject() const;
   void SyncWithJS(dom::RTCRtpTransceiver& aJsTransceiver, ErrorResult& aRv);
   dom::RTCRtpReceiver* Receiver() const { return mReceiver; }
-  dom::RTCDTMFSender* GetDtmf() const { return mDtmf; }
+  dom::RTCRtpSender* Sender() const { return mSender; }
   dom::RTCDtlsTransport* GetDtlsTransport() const { return mDtlsTransport; }
+  void GetKind(nsAString& aKind) const;
 
   bool CanSendDTMF() const;
-
-  
-  RefPtr<MediaPipelineTransmit> GetSendPipeline();
+  bool Stopped() const { return mStopped; }
 
   void UpdateDtlsTransportState(const std::string& aTransportId,
                                 TransportLayer::State aState);
@@ -155,6 +142,12 @@ class TransceiverImpl : public nsISupports,
 
   
 
+  void ChainToDomPromiseWithCodecStats(
+      nsTArray<RefPtr<dom::RTCStatsPromise>> aStats,
+      const RefPtr<dom::Promise>& aDomPromise);
+
+  
+
 
 
 
@@ -168,52 +161,26 @@ class TransceiverImpl : public nsISupports,
 
   AbstractCanonical<bool>* CanonicalReceiving() { return &mReceiving; }
   AbstractCanonical<bool>* CanonicalTransmitting() { return &mTransmitting; }
-  AbstractCanonical<Ssrcs>* CanonicalLocalSsrcs() { return &mLocalSsrcs; }
-  AbstractCanonical<std::string>* CanonicalLocalCname() { return &mLocalCname; }
-  AbstractCanonical<std::string>* CanonicalLocalMid() { return &mLocalMid; }
+  AbstractCanonical<std::string>* CanonicalMid() { return &mMid; }
   AbstractCanonical<std::string>* CanonicalSyncGroup() { return &mSyncGroup; }
-  AbstractCanonical<RtpExtList>* CanonicalLocalSendRtpExtensions() {
-    return &mLocalSendRtpExtensions;
-  }
-  AbstractCanonical<Maybe<AudioCodecConfig>>* CanonicalAudioSendCodec() {
-    return &mAudioSendCodec;
-  }
-  AbstractCanonical<Ssrcs>* CanonicalLocalVideoRtxSsrcs() {
-    return &mLocalVideoRtxSsrcs;
-  }
-  AbstractCanonical<Maybe<VideoCodecConfig>>* CanonicalVideoSendCodec() {
-    return &mVideoSendCodec;
-  }
-  AbstractCanonical<Maybe<RtpRtcpConfig>>* CanonicalVideoSendRtpRtcpConfig() {
-    return &mVideoSendRtpRtcpConfig;
-  }
-  AbstractCanonical<webrtc::VideoCodecMode>* CanonicalVideoCodecMode() {
-    return &mVideoCodecMode;
-  }
 
  private:
   virtual ~TransceiverImpl();
   void InitAudio();
   void InitVideo();
   void InitConduitControl();
-  nsresult UpdateAudioConduit();
-  nsresult UpdateVideoConduit();
-  nsresult ConfigureVideoCodecMode();
   void Stop();
 
   nsCOMPtr<nsPIDOMWindowInner> mWindow;
   const std::string mPCHandle;
   RefPtr<MediaTransportHandler> mTransportHandler;
   const RefPtr<JsepTransceiver> mJsepTransceiver;
-  bool mHaveSetupTransport;
   nsCOMPtr<nsISerialEventTarget> mMainThread;
   nsCOMPtr<nsISerialEventTarget> mStsThread;
-  RefPtr<dom::MediaStreamTrack> mSendTrack;
   
   RefPtr<WebrtcCallWrapper> mCallWrapper;
+  RefPtr<RTCStatsIdGenerator> mIdGenerator;
   RefPtr<MediaSessionConduit> mConduit;
-  
-  RefPtr<MediaPipelineTransmit> mTransmitPipeline;
   
   
   
@@ -223,23 +190,16 @@ class TransceiverImpl : public nsISupports,
   
   RefPtr<dom::RTCDtlsTransport> mLastStableDtlsTransport;
   RefPtr<dom::RTCRtpReceiver> mReceiver;
-  
-  RefPtr<dom::RTCDTMFSender> mDtmf;
+  RefPtr<dom::RTCRtpSender> mSender;
+  bool mStopped = false;
+  bool mShutdown = false;
+  bool mSyncing = false;
 
   Canonical<bool> mReceiving;
   Canonical<bool> mTransmitting;
-  Canonical<Ssrcs> mLocalSsrcs;
-  Canonical<Ssrcs> mLocalVideoRtxSsrcs;
-  Canonical<std::string> mLocalCname;
-  Canonical<std::string> mLocalMid;
+
+  Canonical<std::string> mMid;
   Canonical<std::string> mSyncGroup;
-  Canonical<RtpExtList> mLocalSendRtpExtensions;
-
-  Canonical<Maybe<AudioCodecConfig>> mAudioSendCodec;
-
-  Canonical<Maybe<VideoCodecConfig>> mVideoSendCodec;
-  Canonical<Maybe<RtpRtcpConfig>> mVideoSendRtpRtcpConfig;
-  Canonical<webrtc::VideoCodecMode> mVideoCodecMode;
 };
 
 }  

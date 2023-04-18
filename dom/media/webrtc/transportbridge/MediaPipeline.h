@@ -23,6 +23,7 @@
 #include "MediaEventSource.h"
 #include "MediaPipelineFilter.h"
 #include "MediaSegment.h"
+#include "PrincipalChangeObserver.h"
 #include "jsapi/PacketDumper.h"
 
 #include "test/rtp_header_parser.h"
@@ -253,7 +254,9 @@ class MediaPipeline : public sigslot::has_slots<> {
 
 
 
-class MediaPipelineTransmit : public MediaPipeline {
+class MediaPipelineTransmit
+    : public MediaPipeline,
+      public dom::PrincipalChangeObserver<dom::MediaStreamTrack> {
  public:
   
   MediaPipelineTransmit(const std::string& aPc,
@@ -273,9 +276,13 @@ class MediaPipelineTransmit : public MediaPipeline {
   
   
   
-  virtual void UpdateSinkIdentity_m(const dom::MediaStreamTrack* aTrack,
-                                    nsIPrincipal* aPrincipal,
-                                    const PeerIdentity* aSinkIdentity);
+  
+  
+  virtual void UpdateSinkIdentity(nsIPrincipal* aPrincipal,
+                                  const PeerIdentity* aSinkIdentity);
+
+  
+  void PrincipalChanged(dom::MediaStreamTrack* aTrack) override;
 
   
   void TransportReady_s() override;
