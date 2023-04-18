@@ -55,8 +55,8 @@ enum class PromiseHandler : uint32_t {
   
   
   
-  AsyncGeneratorResumeNextReturnFulfilled,
-  AsyncGeneratorResumeNextReturnRejected,
+  AsyncGeneratorAwaitReturnFulfilled,
+  AsyncGeneratorAwaitReturnRejected,
 
   
   
