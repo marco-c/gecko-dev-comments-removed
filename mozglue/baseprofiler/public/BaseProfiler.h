@@ -422,7 +422,9 @@ MFBT_API bool profiler_stream_json_for_this_process(
 
 
 
-MFBT_API void profiler_save_profile_to_file(const char* aFilename);
+
+
+MFBT_API void baseprofiler_save_profile_to_file(const char* aFilename);
 
 
 
