@@ -9,8 +9,7 @@
 
 #include "mozilla/dom/InputType.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 class HiddenInputType : public InputType {
@@ -24,7 +23,6 @@ class HiddenInputType : public InputType {
       : InputType(aInputElement) {}
 };
 
-}  
 }  
 
 #endif 

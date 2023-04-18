@@ -9,8 +9,7 @@
 
 #include "mozilla/dom/InputType.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 class FileInputType : public InputType {
@@ -28,7 +27,6 @@ class FileInputType : public InputType {
       : InputType(aInputElement) {}
 };
 
-}  
 }  
 
 #endif 

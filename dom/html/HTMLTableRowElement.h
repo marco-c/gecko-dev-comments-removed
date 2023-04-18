@@ -11,8 +11,7 @@
 
 class nsContentList;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class HTMLTableSectionElement;
 
@@ -89,7 +88,6 @@ class HTMLTableRowElement final : public nsGenericHTMLElement {
                                     MappedDeclarations&);
 };
 
-}  
 }  
 
 #endif 

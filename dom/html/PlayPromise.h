@@ -10,8 +10,7 @@
 #include "mozilla/dom/Promise.h"
 #include "mozilla/Telemetry.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -33,7 +32,6 @@ class PlayPromise : public Promise {
   bool mFulfilled = false;
 };
 
-}  
 }  
 
 #endif  

@@ -9,8 +9,7 @@
 #include "mozilla/Attributes.h"
 #include "nsGenericHTMLElement.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class HTMLTableColElement final : public nsGenericHTMLElement {
  public:
@@ -68,7 +67,6 @@ class HTMLTableColElement final : public nsGenericHTMLElement {
                                     MappedDeclarations&);
 };
 
-}  
 }  
 
 #endif 
