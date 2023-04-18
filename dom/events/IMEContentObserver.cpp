@@ -786,6 +786,15 @@ void IMEContentObserver::CharacterDataChanged(
              
   }
 
+  
+  
+  if (mWidget && !IsEditorHandlingEventForComposition()) {
+    if (RefPtr<TextComposition> composition =
+            IMEStateManager::GetTextCompositionFor(mWidget)) {
+      composition->OnCharacterDataChanged(*aContent->AsText(), aInfo);
+    }
+  }
+
   if (!NeedsTextChangeNotification() ||
       !nsContentUtils::IsInSameAnonymousTree(mRootContent, aContent)) {
     return;

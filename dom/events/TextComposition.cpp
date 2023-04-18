@@ -9,6 +9,7 @@
 #include "IMEStateManager.h"
 #include "nsContentUtils.h"
 #include "nsIContent.h"
+#include "nsIMutationObserver.h"
 #include "nsPresContext.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/EditorBase.h"
@@ -85,6 +86,63 @@ void TextComposition::Destroy() {
   mCompositionLengthInTextNode = UINT32_MAX;
   
   
+}
+
+void TextComposition::OnCharacterDataChanged(
+    Text& aText, const CharacterDataChangeInfo& aInfo) {
+  if (mContainerTextNode != &aText ||
+      mCompositionStartOffsetInTextNode == UINT32_MAX ||
+      mCompositionLengthInTextNode == UINT32_MAX) {
+    return;
+  }
+
+  
+  if (aInfo.mChangeStart >=
+      mCompositionStartOffsetInTextNode + mCompositionLengthInTextNode) {
+    return;
+  }
+
+  
+  
+  if (aInfo.mChangeEnd <= mCompositionStartOffsetInTextNode) {
+    mCompositionStartOffsetInTextNode -= aInfo.LengthOfRemovedText();
+    mCompositionStartOffsetInTextNode += aInfo.mReplaceLength;
+    return;
+  }
+
+  
+  
+  if (aInfo.mChangeStart >= mCompositionStartOffsetInTextNode) {
+    const uint32_t changeStartInCompositionString =
+        aInfo.mChangeStart - mCompositionStartOffsetInTextNode;
+    const uint32_t removedLengthInCompositionString =
+        aInfo.mChangeEnd <=
+                mCompositionStartOffsetInTextNode + mCompositionLengthInTextNode
+            ? aInfo.mChangeEnd - changeStartInCompositionString
+            : mCompositionLengthInTextNode - changeStartInCompositionString;
+    
+    
+    const uint32_t insertedLengthInCompositionString =
+        aInfo.mChangeEnd < mCompositionStartOffsetInTextNode
+            ? aInfo.mReplaceLength
+            : 0u;
+    mCompositionLengthInTextNode -= removedLengthInCompositionString;
+    mCompositionLengthInTextNode += insertedLengthInCompositionString;
+    return;
+  }
+
+  
+  
+  const uint32_t newPrecedingTextLength = mCompositionStartOffsetInTextNode -
+                                          aInfo.mChangeStart +
+                                          aInfo.mReplaceLength;
+  const uint32_t removedLengthInCompositionString =
+      aInfo.mChangeEnd <=
+              mCompositionStartOffsetInTextNode + mCompositionLengthInTextNode
+          ? aInfo.mChangeEnd - mCompositionStartOffsetInTextNode
+          : mCompositionLengthInTextNode;
+  mCompositionStartOffsetInTextNode = newPrecedingTextLength;
+  mCompositionLengthInTextNode -= removedLengthInCompositionString;
 }
 
 bool TextComposition::IsValidStateForComposition(nsIWidget* aWidget) const {
