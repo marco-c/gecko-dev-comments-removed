@@ -3728,6 +3728,16 @@ var AddonManagerPrivate = {
   get finalShutdown() {
     return gFinalShutdownBarrier.client;
   },
+
+  
+  overrideAddonRepository(mockRepo) {
+    AddonRepository = mockRepo;
+  },
+
+  
+  overrideAsyncShutdown(mockAsyncShutdown) {
+    AsyncShutdown = mockAsyncShutdown;
+  },
 };
 
 

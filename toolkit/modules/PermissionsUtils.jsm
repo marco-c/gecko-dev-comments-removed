@@ -2,7 +2,7 @@
 
 
 
-var EXPORTED_SYMBOLS = ["PermissionsUtils"];
+var EXPORTED_SYMBOLS = ["PermissionsUtils", "PermissionsTestUtils"];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
@@ -100,5 +100,12 @@ var PermissionsUtils = {
     );
 
     gImportedPrefBranches.add(aPrefBranch);
+  },
+};
+
+
+const PermissionsTestUtils = {
+  clearImportedPrefBranches() {
+    gImportedPrefBranches.clear();
   },
 };

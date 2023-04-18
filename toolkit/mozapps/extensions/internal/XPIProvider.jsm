@@ -3312,6 +3312,11 @@ var XPIInternal = {
   maybeResolveURI,
   migrateAddonLoader,
   resolveDBReady,
+
+  
+  overrideAsyncShutdown(mockAsyncShutdown) {
+    AsyncShutdown = mockAsyncShutdown;
+  },
 };
 
 AddonManagerPrivate.registerProvider(XPIProvider, Array.from(ALL_XPI_TYPES));
