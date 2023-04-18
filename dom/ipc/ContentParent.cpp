@@ -2765,6 +2765,9 @@ ContentParent::ContentParent(const nsACString& aRemoteType, int32_t aJSPluginID)
       mIsRemoteInputEventQueueEnabled(false),
       mIsInputPriorityEventEnabled(false),
       mIsInPool(false),
+#ifdef DEBUG
+      mBlockShutdownCalled(false),
+#endif
       mHangMonitorActor(nullptr) {
   MOZ_DIAGNOSTIC_ASSERT(!IsForJSPlugin(),
                         "XXX(nika): How are we creating a JSPlugin?");
@@ -3518,12 +3521,28 @@ NS_INTERFACE_MAP_END
 
 NS_IMETHODIMP
 ContentParent::BlockShutdown(nsIAsyncShutdownClient* aClient) {
+#ifdef DEBUG
   
-  ProcessPriorityManager::SetProcessPriority(this, PROCESS_PRIORITY_FOREGROUND);
+  
+  
+  
+  MOZ_ASSERT(!mBlockShutdownCalled);
+  mBlockShutdownCalled = true;
+#endif
 
-  
-  ShutDownProcess(SEND_SHUTDOWN_MESSAGE);
-  MarkAsDead();
+  if (CanSend()) {
+    
+    ProcessPriorityManager::SetProcessPriority(this,
+                                               PROCESS_PRIORITY_FOREGROUND);
+    
+    
+    
+    ShutDownProcess(SEND_SHUTDOWN_MESSAGE);
+  } else {
+    
+    
+    ShutDownProcess(CLOSE_CHANNEL);
+  }
 
   return NS_OK;
 }
