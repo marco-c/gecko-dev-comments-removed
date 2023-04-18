@@ -12857,20 +12857,6 @@ if (IsCSSPropertyPrefEnabled("layout.css.webkit-line-clamp.enabled")) {
   };
 }
 
-if (IsCSSPropertyPrefEnabled("layout.css.hyphenate-character.enabled")) {
-  gCSSProperties["hyphenate-character"] = {
-    domProp: "hyphenateCharacter",
-    inherited: true,
-    type: CSS_TYPE_LONGHAND,
-    applies_to_first_letter: true,
-    applies_to_first_line: true,
-    applies_to_placeholder: true,
-    initial_values: ["auto"],
-    other_values: ['"="', '"/-/"', '"\1400"', '""'],
-    invalid_values: ["none", "auto auto", "1400", "U+1400"],
-  };
-}
-
 if (false) {
   
   
