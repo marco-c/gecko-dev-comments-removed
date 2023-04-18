@@ -436,7 +436,7 @@ class HyperTextAccessible : public AccessibleWrap,
 
 
 
-  void GetSpellTextAttr(nsINode* aNode, int32_t aNodeOffset,
+  void GetSpellTextAttr(nsINode* aNode, uint32_t aNodeOffset,
                         uint32_t* aStartOffset, uint32_t* aEndOffset,
                         AccAttributes* aAttributes);
 

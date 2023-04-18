@@ -1216,8 +1216,13 @@ already_AddRefed<AccAttributes> HyperTextAccessible::TextAttributes(
     RenderedToContentOffset(offsetFrame, offsetInAcc, &nodeOffset);
 
     
-    GetSpellTextAttr(accAtOffset->GetNode(), nodeOffset, &startOffset,
-                     &endOffset, attributes);
+    
+    
+    
+    MOZ_DIAGNOSTIC_ASSERT(accAtOffset->GetNode()->IsText());
+    MOZ_DIAGNOSTIC_ASSERT(nodeOffset >= 0);
+    GetSpellTextAttr(accAtOffset->GetNode(), static_cast<uint32_t>(nodeOffset),
+                     &startOffset, &endOffset, attributes);
   }
 
   *aStartOffset = startOffset;
@@ -2310,7 +2315,7 @@ nsresult HyperTextAccessible::GetDOMPointByFrameOffset(
 }
 
 
-void HyperTextAccessible::GetSpellTextAttr(nsINode* aNode, int32_t aNodeOffset,
+void HyperTextAccessible::GetSpellTextAttr(nsINode* aNode, uint32_t aNodeOffset,
                                            uint32_t* aStartOffset,
                                            uint32_t* aEndOffset,
                                            AccAttributes* aAttributes) {
@@ -2336,8 +2341,7 @@ void HyperTextAccessible::GetSpellTextAttr(nsINode* aNode, int32_t aNodeOffset,
     
     nsINode* endNode = range->GetEndContainer();
     uint32_t endNodeOffset = range->EndOffset();
-    
-    Maybe<int32_t> order = nsContentUtils::ComparePoints_FixOffset1(
+    Maybe<int32_t> order = nsContentUtils::ComparePoints(
         aNode, aNodeOffset, endNode, endNodeOffset);
     if (NS_WARN_IF(!order)) {
       continue;
@@ -2353,9 +2357,8 @@ void HyperTextAccessible::GetSpellTextAttr(nsINode* aNode, int32_t aNodeOffset,
     
     nsINode* startNode = range->GetStartContainer();
     int32_t startNodeOffset = range->StartOffset();
-    
-    order = nsContentUtils::ComparePoints_FixOffset2(startNode, startNodeOffset,
-                                                     aNode, aNodeOffset);
+    order = nsContentUtils::ComparePoints(startNode, startNodeOffset, aNode,
+                                          aNodeOffset);
     if (!order) {
       
       
