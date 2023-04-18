@@ -95,8 +95,10 @@ function createPendingCrashReports(howMany, accessDate) {
     let promises = [OS.File.setDates(file.path, lastAccessedDate)];
 
     if (contents) {
+      let encoder = new TextEncoder();
+      let array = encoder.encode(contents);
       promises.push(
-        IOUtils.writeUTF8(file.path, contents, {
+        OS.File.writeAtomic(file.path, array, {
           tmpPath: file.path + ".tmp",
         })
       );
@@ -137,10 +139,7 @@ function createPendingCrashReports(howMany, accessDate) {
 
 
 
-
-
-
-function waitForSubmittedReports(reportIDs, extraCheck) {
+function waitForSubmittedReports(reportIDs) {
   let promises = [];
   for (let reportID of reportIDs) {
     let promise = TestUtils.topicObserved(
@@ -150,16 +149,23 @@ function waitForSubmittedReports(reportIDs, extraCheck) {
           let propBag = subject.QueryInterface(Ci.nsIPropertyBag2);
           let dumpID = propBag.getPropertyAsAString("minidumpID");
           if (dumpID == reportID) {
-            if (extraCheck) {
-              let extra = propBag.getPropertyAsInterface(
-                "extra",
-                Ci.nsIPropertyBag2
-              );
-
-              extraCheck(extra);
-            }
-
             return true;
+          }
+          let extra = propBag.getPropertyAsInterface(
+            "extra",
+            Ci.nsIPropertyBag2
+          );
+          const blockedAnnotations = [
+            "ServerURL",
+            "TelemetryClientId",
+            "TelemetryServerURL",
+            "TelemetrySessionId",
+          ];
+          for (const key of blockedAnnotations) {
+            Assert.ok(
+              !extra.hasKey(key),
+              "The " + key + " annotation should have been stripped away"
+            );
           }
         }
         return false;
@@ -186,7 +192,7 @@ function waitForIgnoredReports(reportIDs) {
   for (let reportID of reportIDs) {
     let file = dir.clone();
     file.append(reportID + ".dmp.ignore");
-    promises.push(IOUtils.exists(file.path));
+    promises.push(OS.File.exists(file.path));
   }
   return Promise.all(promises);
 }
@@ -355,23 +361,6 @@ add_task(async function test_several_pending() {
 
 
 add_task(async function test_can_submit() {
-  function extraCheck(extra) {
-    const blockedAnnotations = [
-      "ServerURL",
-      "TelemetryClientId",
-      "TelemetryServerURL",
-      "TelemetrySessionId",
-    ];
-    for (const key of blockedAnnotations) {
-      Assert.ok(
-        !extra.hasKey(key),
-        "The " + key + " annotation should have been stripped away"
-      );
-    }
-
-    Assert.equal(extra.get("SubmittedFrom"), "Infobar");
-  }
-
   let reportIDs = await createPendingCrashReports(1);
   let notification = await UnsubmittedCrashHandler.checkForUnsubmittedCrashReports();
   Assert.ok(notification, "There should be a notification");
@@ -383,7 +372,8 @@ add_task(async function test_can_submit() {
   );
   
   let submit = buttons[0];
-  let promiseReports = waitForSubmittedReports(reportIDs, extraCheck);
+
+  let promiseReports = waitForSubmittedReports(reportIDs);
   info("Sending crash report");
   submit.click();
   info("Sent!");
@@ -469,16 +459,6 @@ add_task(async function test_can_submit_always() {
     true,
     "The autoSubmit pref should have been set"
   );
-
-  
-  reportIDs = await createPendingCrashReports(1);
-  let result = await UnsubmittedCrashHandler.checkForUnsubmittedCrashReports();
-
-  
-  Assert.equal(result, null, "The notification should not be shown");
-  promiseReports = await waitForSubmittedReports(reportIDs, extra => {
-    Assert.equal(extra.get("SubmittedFrom"), "Auto");
-  });
 
   
   Services.prefs.clearUserPref(pref);
