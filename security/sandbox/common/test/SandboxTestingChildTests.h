@@ -467,7 +467,7 @@ void RunTestsSocket(SandboxTestingChild* child) {
   RunMacTestLaunchProcess(child);
   RunMacTestWindowServer(child);
 #else   
-  child->ReportNoTests();
+    child->ReportNoTests();
 #endif  
 }
 
@@ -524,7 +524,7 @@ void RunTestsRDD(SandboxTestingChild* child) {
   RunMacTestLaunchProcess(child);
   RunMacTestWindowServer(child);
 #  endif
-#else     
+#else  
   child->ReportNoTests();
 #endif
 }
@@ -575,7 +575,7 @@ void RunTestsGMPlugin(SandboxTestingChild* child) {
   
   RunMacTestWindowServer(child, true );
 #  endif           
-#else     
+#else              
   child->ReportNoTests();
 #endif
 }
@@ -609,7 +609,7 @@ void RunTestsUtility(SandboxTestingChild* child) {
     return -1;
   });
 #else              
-  child->ReportNoTests();
+    child->ReportNoTests();
 #endif             
 }
 
