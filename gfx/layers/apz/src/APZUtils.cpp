@@ -73,9 +73,7 @@ bool AboutToCheckerboard(const FrameMetrics& aPaintedMetrics,
   
   
   
-  CSSRect painted = (aPaintedMetrics.GetCriticalDisplayPort().IsEmpty()
-                         ? aPaintedMetrics.GetDisplayPort()
-                         : aPaintedMetrics.GetCriticalDisplayPort()) +
+  CSSRect painted = aPaintedMetrics.GetDisplayPort() +
                     aPaintedMetrics.GetLayoutScrollOffset();
   painted.Inflate(CSSMargin::FromAppUnits(nsMargin(1, 1, 1, 1)));
 
