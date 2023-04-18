@@ -9,7 +9,9 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
-XPCOMUtils.defineLazyGetter(this, "makeRange", () => {
+const lazy = {};
+
+XPCOMUtils.defineLazyGetter(lazy, "makeRange", () => {
   const { ExtensionParent } = ChromeUtils.import(
     "resource://gre/modules/ExtensionParent.jsm"
   );
@@ -17,7 +19,7 @@ XPCOMUtils.defineLazyGetter(this, "makeRange", () => {
   return ExtensionParent.apiManager.global.makeRange;
 });
 
-XPCOMUtils.defineLazyModuleGetters(this, {
+XPCOMUtils.defineLazyModuleGetters(lazy, {
   Preferences: "resource://gre/modules/Preferences.jsm",
   Sanitizer: "resource:///modules/Sanitizer.jsm",
 });
@@ -31,11 +33,11 @@ class BrowsingDataDelegate {
   handleRemoval(dataType, options) {
     switch (dataType) {
       case "downloads":
-        return Sanitizer.items.downloads.clear(makeRange(options));
+        return lazy.Sanitizer.items.downloads.clear(lazy.makeRange(options));
       case "formData":
-        return Sanitizer.items.formdata.clear(makeRange(options));
+        return lazy.Sanitizer.items.formdata.clear(lazy.makeRange(options));
       case "history":
-        return Sanitizer.items.history.clear(makeRange(options));
+        return lazy.Sanitizer.items.history.clear(lazy.makeRange(options));
 
       default:
         return undefined;
@@ -52,7 +54,7 @@ class BrowsingDataDelegate {
     
     
     
-    let clearRange = Sanitizer.getClearRange();
+    let clearRange = lazy.Sanitizer.getClearRange();
     let since = clearRange ? clearRange[0] / 1000 : 0;
     let options = { since };
 
@@ -63,7 +65,7 @@ class BrowsingDataDelegate {
       
       
       const name = item === "formdata" ? "formData" : item;
-      dataToRemove[name] = Preferences.get(`${PREF_DOMAIN}${item}`);
+      dataToRemove[name] = lazy.Preferences.get(`${PREF_DOMAIN}${item}`);
       
       
       dataRemovalPermitted[name] = true;
