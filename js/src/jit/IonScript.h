@@ -110,7 +110,8 @@ class alignas(8) IonScript final : public TrailingArray {
   bool hasProfilingInstrumentation_ = false;
 
   
-  uint32_t frameSlotsSize_ = 0;
+  
+  uint32_t localSlotsSize_ = 0;
 
   
   uint32_t argumentSlotsSize_ = 0;
@@ -264,12 +265,12 @@ class alignas(8) IonScript final : public TrailingArray {
   }
 
  private:
-  IonScript(IonCompilationId compilationId, uint32_t frameSlotsSize,
+  IonScript(IonCompilationId compilationId, uint32_t localSlotsSize,
             uint32_t argumentSlotsSize, uint32_t frameSize);
 
  public:
   static IonScript* New(JSContext* cx, IonCompilationId compilationId,
-                        uint32_t frameSlotsSize, uint32_t argumentSlotsSize,
+                        uint32_t localSlotsSize, uint32_t argumentSlotsSize,
                         uint32_t frameSize, size_t snapshotsListSize,
                         size_t snapshotsRVATableSize, size_t recoversSize,
                         size_t constants, size_t nurseryObjects,
@@ -365,7 +366,7 @@ class alignas(8) IonScript final : public TrailingArray {
     MOZ_ASSERT(index < numConstants());
     return constants()[index];
   }
-  uint32_t frameSlotsSize() const { return frameSlotsSize_; }
+  uint32_t localSlotsSize() const { return localSlotsSize_; }
   uint32_t argumentSlotsSize() const { return argumentSlotsSize_; }
   uint32_t frameSize() const { return frameSize_; }
   const SafepointIndex* getSafepointIndex(uint32_t disp) const;
