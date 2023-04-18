@@ -1,0 +1,11 @@
+
+
+
+
+
+bluetooth_test(async (t) => {
+  const { device } = await getConnectedHealthThermometerDevice();
+  await device.forget();
+
+  await promise_rejects_dom(t, 'SecurityError', device.gatt.connect());
+}, 'gatt.connect() rejects after forget().');
