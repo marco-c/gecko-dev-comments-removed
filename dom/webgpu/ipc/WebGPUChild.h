@@ -49,12 +49,12 @@ class WebGPUChild final : public PWebGPUChild, public SupportsWeakPtr {
   friend class layers::CompositorBridgeChild;
 
   NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(WebGPUChild)
-  NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(WebGPUChild)
+  NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING_INHERITED(WebGPUChild)
 
  public:
   explicit WebGPUChild();
 
-  bool IsOpen() const { return mIPCOpen; }
+  bool IsOpen() const { return CanSend(); }
 
   RefPtr<AdapterPromise> InstanceRequestAdapter(
       const dom::GPURequestAdapterOptions& aOptions);
@@ -124,24 +124,7 @@ class WebGPUChild final : public PWebGPUChild, public SupportsWeakPtr {
       const dom::GPURenderPipelineDescriptor& aDesc,
       ipc::ByteBuf* const aByteBuf);
 
-  
-  
-  
-  
-  
-  void AddIPDLReference() {
-    MOZ_ASSERT(!mIPCOpen);
-    mIPCOpen = true;
-    AddRef();
-  }
-  void ReleaseIPDLReference() {
-    MOZ_ASSERT(mIPCOpen);
-    mIPCOpen = false;
-    Release();
-  }
-
   ffi::WGPUClient* const mClient;
-  bool mIPCOpen;
   std::unordered_map<RawId, WeakPtr<Device>> mDeviceMap;
 
  public:

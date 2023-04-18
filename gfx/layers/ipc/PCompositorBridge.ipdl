@@ -17,7 +17,6 @@ include protocol PCompositorManager;
 include protocol PCompositorWidget;
 include protocol PTexture;
 include protocol PWebRenderBridge;
-include protocol PWebGPU;
 include "mozilla/GfxMessageUtils.h";
 include "mozilla/layers/LayersMessageUtils.h";
 include "mozilla/layers/WebRenderMessageUtils.h";
@@ -98,7 +97,6 @@ struct FrameStats {
   manages PTexture;
   manages PCompositorWidget;
   manages PWebRenderBridge;
-  manages PWebGPU;
 
 child:
   
@@ -138,10 +136,6 @@ parent:
   
   async PAPZ(LayersId layersId);
   async PAPZCTreeManager(LayersId layersId);
-
-  
-  
-  async PWebGPU();
 
   
   sync WillClose();
