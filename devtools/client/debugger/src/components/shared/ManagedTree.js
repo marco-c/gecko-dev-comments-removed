@@ -33,7 +33,8 @@ class ManagedTree extends Component {
     };
   }
 
-  componentWillReceiveProps(nextProps) {
+  
+  UNSAFE_componentWillReceiveProps(nextProps) {
     const { highlightItems } = this.props;
     if (
       nextProps.highlightItems &&

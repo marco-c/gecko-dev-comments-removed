@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
+
+
+
 
 import PropTypes from "prop-types";
 import React, { PureComponent } from "react";
@@ -43,7 +43,7 @@ import {
   getBlackBoxRanges,
 } from "../../selectors";
 
-// Redux actions
+
 import actions from "../../actions";
 
 import SearchBar from "./SearchBar";
@@ -151,7 +151,8 @@ class Editor extends PureComponent {
     };
   }
 
-  componentWillReceiveProps(nextProps) {
+  
+  UNSAFE_componentWillReceiveProps(nextProps) {
     let { editor } = this.state;
 
     if (!editor && nextProps.selectedSource) {
@@ -174,7 +175,7 @@ class Editor extends PureComponent {
   setupEditor() {
     const editor = getEditor();
 
-    // disables the default search shortcuts
+    
     editor._initShortcuts = () => {};
 
     const node = ReactDOM.findDOMNode(this);
@@ -192,7 +193,7 @@ class Editor extends PureComponent {
       document.addEventListener("keyup", this.commandKeyUp);
     }
 
-    // Set code editor wrapper to be focusable
+    
     codeMirrorWrapper.tabIndex = 0;
     codeMirrorWrapper.addEventListener("keydown", e => this.onKeyDown(e));
     codeMirrorWrapper.addEventListener("click", e => this.onClick(e));
@@ -301,7 +302,7 @@ class Editor extends PureComponent {
     const line = this.getCurrentLine();
 
     const { codeMirror } = this.state.editor;
-    // add one to column for correct position in editor.
+    
     const column = getCursorColumn(codeMirror) + 1;
 
     if (conditionalPanelLocation) {
@@ -356,17 +357,17 @@ class Editor extends PureComponent {
       codeWrapper.focus();
     } else if (key === "Enter" && target == codeWrapper) {
       e.preventDefault();
-      // Focus into editor's text area
+      
       textArea.focus();
     }
   }
 
-  /*
-   * The default Esc command is overridden in the CodeMirror keymap to allow
-   * the Esc keypress event to be catched by the toolbox and trigger the
-   * split console. Restore it here, but preventDefault if and only if there
-   * is a multiselection.
-   */
+  
+
+
+
+
+
   onEscape = e => {
     if (!this.state.editor) {
       return;
@@ -399,7 +400,7 @@ class Editor extends PureComponent {
       return;
     }
 
-    // only allow one conditionalPanel location.
+    
     if (conditionalPanelLocation) {
       closeConditionalPanel();
     }
@@ -460,12 +461,12 @@ class Editor extends PureComponent {
       breakableLines,
     } = this.props;
 
-    // ignore right clicks in the gutter
+    
     if (isSecondary(ev) || ev.button === 2 || !selectedSource) {
       return;
     }
 
-    // if user clicks gutter to set breakpoint on blackboxed source, un-blackbox the source.
+    
     if (selectedSource?.isBlackBoxed) {
       toggleBlackBox(cx, selectedSource);
     }
@@ -483,7 +484,7 @@ class Editor extends PureComponent {
       return;
     }
 
-    // ignore clicks on a non-breakable line
+    
     if (!breakableLines.has(sourceLine)) {
       return;
     }
@@ -587,7 +588,7 @@ class Editor extends PureComponent {
       return;
     }
 
-    // check if we previously had a selected source
+    
     if (!selectedSource) {
       return this.clearEditor();
     }

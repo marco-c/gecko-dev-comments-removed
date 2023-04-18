@@ -109,11 +109,13 @@ export class ConditionalPanel extends PureComponent {
     }
   };
 
-  componentWillMount() {
+  
+  UNSAFE_componentWillMount() {
     return this.renderToWidget(this.props);
   }
 
-  componentWillUpdate() {
+  
+  UNSAFE_componentWillUpdate() {
     return this.clearConditionalPanel();
   }
 

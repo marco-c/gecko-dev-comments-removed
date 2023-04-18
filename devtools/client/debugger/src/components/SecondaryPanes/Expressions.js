@@ -78,7 +78,8 @@ class Expressions extends Component {
     });
   };
 
-  componentWillReceiveProps(nextProps) {
+  
+  UNSAFE_componentWillReceiveProps(nextProps) {
     if (this.state.editing && !nextProps.expressionError) {
       this.clear();
     }

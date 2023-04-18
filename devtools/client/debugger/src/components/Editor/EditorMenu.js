@@ -28,7 +28,8 @@ class EditorMenu extends Component {
     };
   }
 
-  componentWillUpdate(nextProps) {
+  
+  UNSAFE_componentWillUpdate(nextProps) {
     this.props.clearContextMenu();
     if (nextProps.contextMenu) {
       this.showMenu(nextProps);

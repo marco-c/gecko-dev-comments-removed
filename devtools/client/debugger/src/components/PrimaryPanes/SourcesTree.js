@@ -78,7 +78,8 @@ class SourcesTree extends Component {
     };
   }
 
-  componentWillReceiveProps(nextProps) {
+  
+  UNSAFE_componentWillReceiveProps(nextProps) {
     const {
       projectRoot,
       mainThreadHost,

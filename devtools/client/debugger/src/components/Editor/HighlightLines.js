@@ -19,7 +19,8 @@ class HighlightLines extends Component {
     this.highlightLineRange();
   }
 
-  componentWillUpdate() {
+  
+  UNSAFE_componentWillUpdate() {
     this.clearHighlightRange();
   }
 
