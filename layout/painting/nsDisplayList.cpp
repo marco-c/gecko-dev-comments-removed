@@ -742,6 +742,28 @@ void nsDisplayListBuilder::BeginFrame() {
   }
 }
 
+void nsDisplayListBuilder::AddEffectUpdate(dom::RemoteBrowser* aBrowser,
+                                           const dom::EffectsInfo& aUpdate) {
+  dom::EffectsInfo update = aUpdate;
+  
+  
+  
+  nsPresContext* pc =
+      mReferenceFrame ? mReferenceFrame->PresContext() : nullptr;
+  if (pc && (pc->Type() != nsPresContext::eContext_Galley)) {
+    Maybe<dom::EffectsInfo> existing = mEffectsUpdates.MaybeGet(aBrowser);
+    if (existing.isSome()) {
+      
+      MOZ_ASSERT(existing->mScaleX == aUpdate.mScaleX &&
+                 existing->mScaleY == aUpdate.mScaleY &&
+                 existing->mTransformToAncestorScale ==
+                     aUpdate.mTransformToAncestorScale);
+      update.mVisibleRect = update.mVisibleRect.Union(existing->mVisibleRect);
+    }
+  }
+  mEffectsUpdates.InsertOrUpdate(aBrowser, update);
+}
+
 void nsDisplayListBuilder::EndFrame() {
   NS_ASSERTION(!mInInvalidSubtree,
                "Someone forgot to cleanup mInInvalidSubtree!");

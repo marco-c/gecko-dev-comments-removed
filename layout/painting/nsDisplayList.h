@@ -875,9 +875,8 @@ class nsDisplayListBuilder {
     return mEffectsUpdates;
   }
 
-  void AddEffectUpdate(dom::RemoteBrowser* aBrowser, dom::EffectsInfo aUpdate) {
-    mEffectsUpdates.InsertOrUpdate(aBrowser, aUpdate);
-  }
+  void AddEffectUpdate(dom::RemoteBrowser* aBrowser,
+                       const dom::EffectsInfo& aUpdate);
 
   
 
