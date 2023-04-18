@@ -7714,6 +7714,46 @@ nsBlockFrame::FloatAvoidingISizeToClear nsBlockFrame::ISizeToClearPastFloats(
                                    aState.mReflowInput.mRenderingContext, wm,
                                    aState.mContentArea.ISize(wm));
   const LogicalMargin computedMargin = sizingInput.ComputedLogicalMargin(wm);
+
+  nscoord marginISize = computedMargin.IStartEnd(wm);
+  const auto& iSize = reflowInput.mStylePosition->ISize(wm);
+  if (marginISize < 0 && (iSize.IsAuto() || iSize.IsMozAvailable())) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    result.borderBoxISize = std::max(result.borderBoxISize, -marginISize);
+  }
+
   result.marginIStart = computedMargin.IStart(wm);
   return result;
 }
