@@ -162,8 +162,10 @@ class ModuleLoaderBase : public nsISupports {
   
   nsresult OnFetchComplete(ModuleLoadRequest* aRequest, nsresult aRv);
 
-  bool InstantiateModuleTree(ModuleLoadRequest* aRequest);
+  
+  bool InstantiateModuleGraph(ModuleLoadRequest* aRequest);
 
+  
   
   nsresult EvaluateModule(ModuleLoadRequest* aRequest);
 
@@ -218,8 +220,8 @@ class ModuleLoaderBase : public nsISupports {
   ModuleScript* GetFetchedModule(nsIURI* aURL) const;
 
   JS::Value FindFirstParseError(ModuleLoadRequest* aRequest);
-  static nsresult InitDebuggerDataForModuleTree(JSContext* aCx,
-                                                ModuleLoadRequest* aRequest);
+  static nsresult InitDebuggerDataForModuleGraph(JSContext* aCx,
+                                                 ModuleLoadRequest* aRequest);
   static nsresult ResolveRequestedModules(ModuleLoadRequest* aRequest,
                                           nsCOMArray<nsIURI>* aUrlsOut);
 
