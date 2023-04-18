@@ -2006,36 +2006,31 @@ void nsWindow::WaylandPopupSetDirectPosition() {
   }
 }
 
-bool nsWindow::WaylandPopupFitsParentWindow(const GdkRectangle& aSize) {
-  GtkWindow* parentGtkWindow = gtk_window_get_transient_for(GTK_WINDOW(mShell));
-  nsWindow* parentWindow =
-      get_window_for_gtk_widget(GTK_WIDGET(parentGtkWindow));
+bool nsWindow::WaylandPopupFitsToplevelWindow() {
+  LOG("nsWindow::WaylandPopupFitsToplevelWindow()");
 
-  
-  
-  if (parentWindow->IsPopup()) {
+  GtkWindow* parent = gtk_window_get_transient_for(GTK_WINDOW(mShell));
+  GtkWindow* tmp = parent;
+  while (tmp = gtk_window_get_transient_for(GTK_WINDOW(parent))) {
+    parent = tmp;
+  }
+  GdkWindow* toplevelGdkWindow = gtk_widget_get_window(GTK_WIDGET(parent));
+
+  if (!toplevelGdkWindow) {
+    NS_WARNING("Toplevel widget without GdkWindow?");
     return false;
   }
 
-  
-  GdkWindow* parentGdkWindow =
-      gtk_widget_get_window(GTK_WIDGET(parentWindow->GetMozContainer()));
+  int parentWidth = gdk_window_get_width(toplevelGdkWindow);
+  int parentHeight = gdk_window_get_height(toplevelGdkWindow);
+  LOG("  parent size %d x %d", parentWidth, parentHeight);
 
-  
-  int x, y;
-  gdk_window_get_position(parentGdkWindow, &x, &y);
+  GdkRectangle rect = DevicePixelsToGdkRectRoundOut(mBounds);
+  int fits = rect.x >= 0 && rect.y >= 0 && rect.x + rect.width <= parentWidth &&
+             rect.y + rect.height <= parentHeight;
 
-  
-  
-  int parentWidth = gdk_window_get_width(parentGdkWindow) + x;
-  int parentHeight = gdk_window_get_height(parentGdkWindow) + y;
-  int popupWidth = aSize.width;
-  int popupHeight = aSize.height;
-
-  auto popupBounds = DevicePixelsToGdkRectRoundOut(mBounds);
-  return popupBounds.x >= 0 && popupBounds.y >= 0 &&
-         popupBounds.x + popupWidth <= parentWidth &&
-         popupBounds.y + popupHeight <= parentHeight;
+  LOG("  fits %d", fits);
+  return fits;
 }
 
 void nsWindow::NativeMoveResizeWaylandPopup(bool aMove, bool aResize) {
@@ -2089,7 +2084,7 @@ void nsWindow::NativeMoveResizeWaylandPopup(bool aMove, bool aResize) {
     gtk_window_resize(GTK_WINDOW(mShell), rect.width, rect.height);
   }
 
-  if (!aMove && WaylandPopupFitsParentWindow(rect)) {
+  if (!aMove && WaylandPopupFitsToplevelWindow()) {
     
     
     LOG("  fits parent window size, just resize\n");
@@ -2362,6 +2357,8 @@ void nsWindow::WaylandPopupMove() {
     return;
   }
 
+  
+  
   if (gtk_widget_is_visible(mShell)) {
     NS_WARNING(
         "Positioning visible popup under Wayland, position may be wrong!");
