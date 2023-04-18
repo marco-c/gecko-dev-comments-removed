@@ -8,8 +8,6 @@
 
 "use strict";
 
-const path = require("path");
-
 const privilegedGlobals = Object.keys(
   require("../environments/privileged.js").globals
 );
@@ -36,12 +34,7 @@ module.exports = {
   create(context) {
     return {
       CallExpression(node) {
-        if (
-          node.callee.type !== "MemberExpression" ||
-          
-          
-          path.extname(context.getFilename()) == ".sjs"
-        ) {
+        if (node.callee.type !== "MemberExpression") {
           return;
         }
         let memexp = node.callee;

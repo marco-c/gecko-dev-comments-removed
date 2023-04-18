@@ -110,7 +110,6 @@ module.exports = {
       excludedFiles: [
         
         "**/*.jsm",
-        "**/*.sjs",
         "**/test/**/head.js",
         "**/test/**/shared-head.js",
         "client/debugger/test/mochitest/code_frame-script.js",
