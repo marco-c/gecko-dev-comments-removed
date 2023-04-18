@@ -25,11 +25,18 @@ if (Services.appinfo.processType !== Services.appinfo.PROCESS_TYPE_DEFAULT) {
 
 
 
+
+
+
 async function negotiateLangPackForLanguageMismatch() {
   const localeInfo = getAppAndSystemLocaleInfo();
+  const nullResult = {
+    langPack: null,
+    langPackDisplayName: null,
+  };
   if (!localeInfo.systemLocale) {
     
-    return null;
+    return nullResult;
   }
 
   
@@ -39,14 +46,14 @@ async function negotiateLangPackForLanguageMismatch() {
 
   const availableLangpacks = await mockable.getAvailableLangpacks();
   if (!availableLangpacks) {
-    return null;
+    return nullResult;
   }
 
   
 
 
 
-  return (
+  const langPack =
     
     
     
@@ -65,8 +72,20 @@ async function negotiateLangPackForLanguageMismatch() {
     availableLangpacks.find(({ target_locale }) =>
       target_locale.startsWith(`${localeInfo.systemLocale.language}-`)
     ) ||
-    null
-  );
+    null;
+
+  if (!langPack) {
+    return nullResult;
+  }
+
+  return {
+    langPack,
+    langPackDisplayName: Services.intl.getLocaleDisplayNames(
+      undefined,
+      [langPack.target_locale],
+      { preferNative: true }
+    )[0],
+  };
 }
 
 
@@ -278,10 +297,6 @@ function getAppAndSystemLocaleInfo() {
     }
   }
 
-  const displayNames = new Services.intl.DisplayNames(appLocaleRaw, {
-    type: "language",
-  });
-
   
   let canLiveReload = null;
   if (systemLocale && appLocale) {
@@ -295,7 +310,6 @@ function getAppAndSystemLocaleInfo() {
     );
     canLiveReload = systemDirection === appDirection || supportsBidiSwitching;
   }
-
   return {
     
     systemLocaleRaw,
@@ -308,9 +322,17 @@ function getAppAndSystemLocaleInfo() {
     
     displayNames: {
       systemLanguage: systemLocale
-        ? displayNames.of(systemLocale.baseName)
+        ? Services.intl.getLocaleDisplayNames(
+            undefined,
+            [systemLocale.baseName],
+            { preferNative: true }
+          )[0]
         : null,
-      appLanguage: appLocale ? displayNames.of(appLocale.baseName) : null,
+      appLanguage: appLocale
+        ? Services.intl.getLocaleDisplayNames(undefined, [appLocale.baseName], {
+            preferNative: true,
+          })[0]
+        : null,
     },
   };
 }
