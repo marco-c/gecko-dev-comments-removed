@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=633602
+-->
   <head>
     <title>Test for Bug 633602</title>
     <script type="application/javascript"  src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -75,7 +75,10 @@
           if (gTestWindow) {
             gTestWindow.close();
           }
-          SimpleTest.waitForFocus(runNextTest);
+
+          // Try to stabilize the state before running the next test.
+          SimpleTest.waitForFocus(
+            () => requestAnimationFrame(() => setTimeout(runNextTest)));
         }
 
         function runNextTest() {

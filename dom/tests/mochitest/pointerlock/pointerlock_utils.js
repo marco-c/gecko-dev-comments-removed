@@ -44,7 +44,14 @@ SimpleTest.finish = function() {
 
 addLoadEvent(function() {
   if (typeof start !== "undefined") {
-    SimpleTest.waitForFocus(start);
+    
+    
+    SimpleTest.requestFlakyTimeout(
+      "Initial window opening animation takes some time."
+    );
+    SimpleTest.waitForFocus(() =>
+      setTimeout(() => requestAnimationFrame(() => setTimeout(start)), 100)
+    );
   }
 });
 
