@@ -557,7 +557,12 @@ nsresult nsDiscriminatedUnion::ConvertToBool(bool* aResult) const {
   if (NS_FAILED(rv)) {
     return rv;
   }
-  *aResult = 0.0 != val;
+  
+  if (mozilla::IsNaN(val)) {
+    *aResult = false;
+  } else {
+    *aResult = 0.0 != val;
+  }
   return rv;
 }
 
