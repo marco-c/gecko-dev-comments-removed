@@ -34,16 +34,9 @@ class DebianBootstrapper(LinuxBootstrapper, BaseBootstrapper):
         "build-essential",
         "libpython3-dev",
         "m4",
-        "nodejs",
         "unzip",
         "uuid",
         "zip",
-    ]
-
-    
-    DEBIAN_PACKAGES = [
-        
-        
     ]
 
     
@@ -76,8 +69,6 @@ class DebianBootstrapper(LinuxBootstrapper, BaseBootstrapper):
         self.codename = codename
 
         self.packages = list(self.COMMON_PACKAGES)
-        if self.distro == "debian":
-            self.packages += self.DEBIAN_PACKAGES
 
     def suggest_install_distutils(self):
         print(
