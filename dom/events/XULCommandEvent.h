@@ -13,8 +13,7 @@
 #include "mozilla/dom/UIEvent.h"
 #include "mozilla/dom/XULCommandEventBinding.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class XULCommandEvent : public UIEvent {
  public:
@@ -58,7 +57,6 @@ class XULCommandEvent : public UIEvent {
   int16_t mButton = 0;
 };
 
-}  
 }  
 
 already_AddRefed<mozilla::dom::XULCommandEvent> NS_NewDOMXULCommandEvent(

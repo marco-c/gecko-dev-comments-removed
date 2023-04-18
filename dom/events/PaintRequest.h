@@ -13,8 +13,7 @@
 #include "mozilla/dom/Event.h"
 #include "nsWrapperCache.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class DOMRect;
 
@@ -73,7 +72,6 @@ class PaintRequestList final : public nsISupports, public nsWrapperCache {
   RefPtr<Event> mParent;
 };
 
-}  
 }  
 
 #endif  

@@ -14,8 +14,7 @@
 class nsIFile;
 class nsIRunnable;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 #define FILESYSTEM_DOM_PATH_SEPARATOR_LITERAL "/"
 #define FILESYSTEM_DOM_PATH_SEPARATOR_CHAR '/'
@@ -47,7 +46,6 @@ class FileSystemUtils {
                                    already_AddRefed<nsIRunnable>&& aRunnable);
 };
 
-}  
 }  
 
 #endif  

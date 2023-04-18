@@ -9,8 +9,7 @@
 
 #include "mozilla/dom/FileSystemBase.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class OSFileSystem final : public FileSystemBase {
  public:
@@ -94,7 +93,6 @@ class OSFileSystemParent final : public FileSystemBase {
   virtual ~OSFileSystemParent() = default;
 };
 
-}  
 }  
 
 #endif  

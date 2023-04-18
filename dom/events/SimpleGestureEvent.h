@@ -13,8 +13,7 @@
 
 class nsPresContext;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class SimpleGestureEvent : public MouseEvent {
  public:
@@ -48,7 +47,6 @@ class SimpleGestureEvent : public MouseEvent {
   ~SimpleGestureEvent() = default;
 };
 
-}  
 }  
 
 already_AddRefed<mozilla::dom::SimpleGestureEvent> NS_NewDOMSimpleGestureEvent(

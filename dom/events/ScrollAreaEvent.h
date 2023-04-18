@@ -13,8 +13,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/EventForwards.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class ScrollAreaEvent : public UIEvent {
  public:
@@ -52,7 +51,6 @@ class ScrollAreaEvent : public UIEvent {
   RefPtr<DOMRect> mClientArea;
 };
 
-}  
 }  
 
 already_AddRefed<mozilla::dom::ScrollAreaEvent> NS_NewDOMScrollAreaEvent(

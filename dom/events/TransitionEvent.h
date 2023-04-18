@@ -11,8 +11,7 @@
 #include "mozilla/dom/TransitionEventBinding.h"
 #include "nsStringFwd.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class TransitionEvent : public Event {
  public:
@@ -39,7 +38,6 @@ class TransitionEvent : public Event {
   ~TransitionEvent() = default;
 };
 
-}  
 }  
 
 already_AddRefed<mozilla::dom::TransitionEvent> NS_NewDOMTransitionEvent(

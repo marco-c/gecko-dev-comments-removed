@@ -15,8 +15,7 @@
 #include "nsIAsyncOutputStream.h"
 #include "nsIGlobalObject.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class ReadableStream;
 class ReadableStreamDefaultReader;
@@ -78,7 +77,6 @@ class FetchStreamReader final : public nsIOutputStreamCallback {
   bool mStreamClosed;
 };
 
-}  
 }  
 
 #endif  

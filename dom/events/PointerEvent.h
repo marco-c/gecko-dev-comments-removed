@@ -15,8 +15,7 @@
 
 class nsPresContext;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 struct PointerEventInit;
 
@@ -70,7 +69,6 @@ class PointerEvent : public MouseEvent {
 void ConvertPointerTypeToString(uint16_t aPointerTypeSrc,
                                 nsAString& aPointerTypeDest);
 
-}  
 }  
 
 already_AddRefed<mozilla::dom::PointerEvent> NS_NewDOMPointerEvent(

@@ -19,8 +19,7 @@
 
 class nsINode;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class UIEvent : public Event {
  public:
@@ -116,7 +115,6 @@ class UIEvent : public Event {
   void InitModifiers(const EventModifierInit& aParam);
 };
 
-}  
 }  
 
 already_AddRefed<mozilla::dom::UIEvent> NS_NewDOMUIEvent(

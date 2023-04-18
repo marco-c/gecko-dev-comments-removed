@@ -10,8 +10,7 @@
 #include "nsString.h"
 #include "Directory.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class BlobImpl;
 
@@ -76,7 +75,6 @@ class FileSystemBase {
   bool mShutdown;
 };
 
-}  
 }  
 
 #endif  
