@@ -752,7 +752,11 @@ class ProviderAutofill extends UrlbarProvider {
     }
 
     
-    if (UrlbarPrefs.get("autoFillAdaptiveHistoryEnabled")) {
+    if (
+      UrlbarPrefs.get("autoFillAdaptiveHistoryEnabled") &&
+      UrlbarPrefs.get("autoFill.adaptiveHistory.minCharsThreshold") <=
+        queryContext.searchString.length
+    ) {
       const [query, params] = this._getAdaptiveHistoryQuery(queryContext);
       if (query) {
         const resultSet = await conn.executeCached(query, params);

@@ -51,6 +51,9 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["autoFill.adaptiveHistory.enabled", false],
 
   
+  ["autoFill.adaptiveHistory.minCharsThreshold", 0],
+
+  
   
   
   
