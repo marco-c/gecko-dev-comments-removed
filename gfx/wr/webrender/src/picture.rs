@@ -4248,7 +4248,7 @@ impl PicturePrimitive {
         }
     }
 
-    fn resolve_scene_properties(&mut self, properties: &SceneProperties) -> bool {
+    fn resolve_scene_properties(&mut self, properties: &SceneProperties) {
         match self.composite_mode {
             Some(PictureCompositeMode::Filter(ref mut filter)) => {
                 match *filter {
@@ -4257,20 +4257,35 @@ impl PicturePrimitive {
                     }
                     _ => {}
                 }
-
-                filter.is_visible()
             }
-            _ => true,
+            _ => {}
         }
     }
 
-    pub fn is_visible(&self) -> bool {
-        match self.composite_mode {
-            Some(PictureCompositeMode::Filter(ref filter)) => {
-                filter.is_visible()
+    pub fn is_visible(
+        &self,
+        spatial_tree: &SpatialTree,
+    ) -> bool {
+        if let Some(PictureCompositeMode::Filter(ref filter)) = self.composite_mode {
+            if !filter.is_visible() {
+                return false;
             }
-            _ => true,
         }
+
+        
+        
+        
+        
+        if !self.is_backface_visible {
+            if let Picture3DContext::Out = self.context_3d {
+                match spatial_tree.get_local_visible_face(self.spatial_node_index) {
+                    VisibleFace::Front => {}
+                    VisibleFace::Back => return false,
+                }
+            }
+        }
+
+        true
     }
 
     
@@ -4321,7 +4336,7 @@ impl PicturePrimitive {
         self.primary_render_task_id = None;
         self.secondary_render_task_id = None;
 
-        if !self.is_visible() {
+        if !self.is_visible(frame_context.spatial_tree) {
             return None;
         }
 
@@ -5661,30 +5676,12 @@ impl PicturePrimitive {
 
     
     
-    pub fn pre_update_visibility_check(
+    pub fn pre_update(
         &mut self,
         frame_context: &FrameBuildingContext,
-    ) -> bool {
+    ) {
         
-        
-        if !self.resolve_scene_properties(frame_context.scene_properties) {
-            return false;
-        }
-
-        
-        
-        
-        
-        if !self.is_backface_visible {
-            if let Picture3DContext::Out = self.context_3d {
-                match frame_context.spatial_tree.get_local_visible_face(self.spatial_node_index) {
-                    VisibleFace::Front => {}
-                    VisibleFace::Back => return false,
-                }
-            }
-        }
-
-        true
+        self.resolve_scene_properties(frame_context.scene_properties);
     }
 
     

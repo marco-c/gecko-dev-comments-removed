@@ -162,6 +162,9 @@ fn assign_update_pass(
 
     info.parent = parent_pic_index;
 
+    
+    pic.pre_update(frame_context);
+
     let can_be_drawn = match info.update_pass {
         Some(update_pass) => {
             
@@ -174,7 +177,7 @@ fn assign_update_pass(
         }
         None => {
             
-            pic.pre_update_visibility_check(frame_context)
+            pic.is_visible(frame_context.spatial_tree)
         }
     };
 
