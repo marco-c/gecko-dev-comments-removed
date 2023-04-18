@@ -12,6 +12,7 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  Deferred: "chrome://remote/content/shared/Sync.jsm",
   EnvironmentPrefs: "chrome://remote/content/marionette/prefs.js",
   Log: "chrome://remote/content/shared/Log.jsm",
   MarionettePrefs: "chrome://remote/content/marionette/prefs.js",
@@ -33,9 +34,6 @@ XPCOMUtils.defineLazyServiceGetter(
   "@mozilla.org/process/environment;1",
   "nsIEnvironment"
 );
-
-const XMLURI_PARSE_ERROR =
-  "http://www.mozilla.org/newlayout/xml/parsererror.xml";
 
 const NOTIFY_LISTENING = "marionette-listening";
 
@@ -68,6 +66,8 @@ const isRemote =
   Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_CONTENT;
 
 class MarionetteParentProcess {
+  #browserStartupFinished;
+
   constructor() {
     this.server = null;
     this._activePortPath;
@@ -76,13 +76,21 @@ class MarionetteParentProcess {
     this.helpInfo = "  --marionette       Enable remote control server.\n";
 
     
-    
-    this.finalUIStartup = false;
-
-    
     this.enabled = env.exists(ENV_ENABLED);
 
     Services.ppmm.addMessageListener("Marionette:IsRunning", this);
+
+    this.#browserStartupFinished = Deferred();
+  }
+
+  
+
+
+
+
+
+  get browserStartupFinished() {
+    return this.#browserStartupFinished.promise;
   }
 
   get enabled() {
@@ -145,8 +153,14 @@ class MarionetteParentProcess {
         this.enabled = subject.handleFlag("marionette", false);
 
         if (this.enabled) {
-          Services.obs.addObserver(this, "toplevel-window-ready");
-          Services.obs.addObserver(this, "marionette-startup-requested");
+          
+          Services.obs.addObserver(this, "final-ui-startup");
+
+          
+          
+          if (Services.appinfo.inSafeMode) {
+            Services.obs.addObserver(this, "domwindowopened");
+          }
 
           RecommendedPreferences.applyPreferences(RECOMMENDED_PREFS);
 
@@ -155,14 +169,7 @@ class MarionetteParentProcess {
           for (let [pref, value] of EnvironmentPrefs.from(ENV_PRESERVE_PREFS)) {
             Preferences.set(pref, value);
           }
-
-          
-          
-          if (Services.appinfo.inSafeMode) {
-            Services.obs.addObserver(this, "domwindowopened");
-          }
         }
-
         break;
 
       case "domwindowopened":
@@ -170,35 +177,29 @@ class MarionetteParentProcess {
         this.suppressSafeModeDialog(subject);
         break;
 
-      case "toplevel-window-ready":
-        subject.addEventListener(
-          "load",
-          async ev => {
-            if (ev.target.documentElement.namespaceURI == XMLURI_PARSE_ERROR) {
-              Services.obs.removeObserver(this, topic);
-
-              let parserError = ev.target.querySelector("parsererror");
-              logger.fatal(parserError.textContent);
-              await this.uninit();
-              Services.startup.quit(Ci.nsIAppStartup.eForceQuit);
-            }
-          },
-          { once: true }
-        );
-        break;
-
-      case "marionette-startup-requested":
+      case "final-ui-startup":
         Services.obs.removeObserver(this, topic);
-        Services.obs.removeObserver(this, "toplevel-window-ready");
+
+        Services.obs.addObserver(this, "browser-idle-startup-tasks-finished");
+        Services.obs.addObserver(this, "mail-idle-startup-tasks-finished");
         Services.obs.addObserver(this, "quit-application");
 
-        this.finalUIStartup = true;
         await this.init();
+        break;
 
+      
+      case "browser-idle-startup-tasks-finished":
+      case "mail-idle-startup-tasks-finished":
+        Services.obs.removeObserver(
+          this,
+          "browser-idle-startup-tasks-finished"
+        );
+        Services.obs.removeObserver(this, "mail-idle-startup-tasks-finished");
+        this.#browserStartupFinished.resolve();
         break;
 
       case "quit-application":
-        Services.obs.removeObserver(this, "quit-application");
+        Services.obs.removeObserver(this, topic);
         await this.uninit();
         break;
     }
@@ -221,56 +222,40 @@ class MarionetteParentProcess {
     );
   }
 
-  async init(quit = true) {
-    if (this.running || !this.enabled || !this.finalUIStartup) {
+  async init() {
+    if (!this.enabled || this.running) {
       logger.debug(
-        `Init aborted (running=${this.running}, ` +
-          `enabled=${this.enabled}, finalUIStartup=${this.finalUIStartup})`
+        `Init aborted (enabled=${this.enabled}, running=${this.running})`
       );
       return;
     }
 
-    logger.trace(
-      `Waiting until startup recorder finished recording startup scripts...`
+    try {
+      this.server = new TCPListener(MarionettePrefs.port);
+      this.server.start();
+    } catch (e) {
+      logger.fatal("Marionette server failed to start", e);
+      await this.uninit();
+      Services.startup.quit(Ci.nsIAppStartup.eForceQuit);
+      return;
+    }
+
+    env.set(ENV_ENABLED, "1");
+    Services.obs.notifyObservers(this, NOTIFY_LISTENING, true);
+    logger.debug("Marionette is listening");
+
+    
+    this._activePortPath = PathUtils.join(
+      PathUtils.profileDir,
+      "MarionetteActivePort"
     );
-    Services.tm.idleDispatchToMainThread(async () => {
-      let startupRecorder = Promise.resolve();
-      if ("@mozilla.org/test/startuprecorder;1" in Cc) {
-        startupRecorder = Cc["@mozilla.org/test/startuprecorder;1"].getService()
-          .wrappedJSObject.done;
-      }
-      await startupRecorder;
-      logger.trace(`All scripts recorded.`);
 
-      try {
-        this.server = new TCPListener(MarionettePrefs.port);
-        this.server.start();
-      } catch (e) {
-        logger.fatal("Remote protocol server failed to start", e);
-        await this.uninit();
-        if (quit) {
-          Services.startup.quit(Ci.nsIAppStartup.eForceQuit);
-        }
-        return;
-      }
-
-      env.set(ENV_ENABLED, "1");
-      Services.obs.notifyObservers(this, NOTIFY_LISTENING, true);
-      logger.debug("Marionette is listening");
-
-      
-      this._activePortPath = PathUtils.join(
-        PathUtils.profileDir,
-        "MarionetteActivePort"
-      );
-
-      const data = `${this.server.port}`;
-      try {
-        await IOUtils.write(this._activePortPath, textEncoder.encode(data));
-      } catch (e) {
-        logger.warn(`Failed to create ${this._activePortPath} (${e.message})`);
-      }
-    });
+    const data = `${this.server.port}`;
+    try {
+      await IOUtils.write(this._activePortPath, textEncoder.encode(data));
+    } catch (e) {
+      logger.warn(`Failed to create ${this._activePortPath} (${e.message})`);
+    }
   }
 
   async uninit() {
