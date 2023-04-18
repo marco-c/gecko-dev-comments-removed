@@ -1030,6 +1030,20 @@ class ExtensionData {
     );
   }
 
+  canUseThemeExperiment() {
+    return (
+      ["extension", "theme"].includes(this.type) &&
+      (this.isPrivileged ||
+        
+        
+        
+        
+        
+        
+        AddonSettings.EXPERIMENTS_ENABLED)
+    );
+  }
+
   get manifestVersion() {
     return this.manifest.manifest_version;
   }
