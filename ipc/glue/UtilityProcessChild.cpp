@@ -40,10 +40,12 @@ namespace mozilla::ipc {
 
 using namespace layers;
 
+static StaticMutex sUtilityProcessChildMutex;
 static StaticRefPtr<UtilityProcessChild> sUtilityProcessChild;
 
 UtilityProcessChild::UtilityProcessChild() {
   nsDebugImpl::SetMultiprocessMode("Utility");
+  StaticMutexAutoLock lock(sUtilityProcessChildMutex);
   sUtilityProcessChild = this;
 }
 
@@ -51,6 +53,7 @@ UtilityProcessChild::~UtilityProcessChild() = default;
 
 
 RefPtr<UtilityProcessChild> UtilityProcessChild::GetSingleton() {
+  StaticMutexAutoLock lock(sUtilityProcessChildMutex);
   if (!sUtilityProcessChild) {
     sUtilityProcessChild = new UtilityProcessChild();
   }
@@ -59,6 +62,7 @@ RefPtr<UtilityProcessChild> UtilityProcessChild::GetSingleton() {
 
 
 RefPtr<UtilityProcessChild> UtilityProcessChild::Get() {
+  StaticMutexAutoLock lock(sUtilityProcessChildMutex);
   return sUtilityProcessChild;
 }
 
@@ -222,8 +226,11 @@ void UtilityProcessChild::ActorDestroy(ActorDestroyReason aWhy) {
   }
 #  endif  
 
-  if (sUtilityProcessChild) {
-    sUtilityProcessChild = nullptr;
+  {
+    StaticMutexAutoLock lock(sUtilityProcessChildMutex);
+    if (sUtilityProcessChild) {
+      sUtilityProcessChild = nullptr;
+    }
   }
 
   ipc::CrashReporterClient::DestroySingleton();
