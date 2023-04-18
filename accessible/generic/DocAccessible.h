@@ -153,6 +153,9 @@ class DocAccessible : public HyperTextAccessibleWrap,
 
   bool IsHidden() const;
 
+  bool IsViewportCacheDirty() { return mViewportCacheDirty; }
+  void SetViewportCacheDirty(bool aDirty) { mViewportCacheDirty = aDirty; }
+
   
 
 
@@ -662,7 +665,15 @@ class DocAccessible : public HyperTextAccessibleWrap,
   
 
 
-  uint32_t mDocFlags : 28;
+  uint32_t mDocFlags : 27;
+
+  
+
+
+
+
+
+  bool mViewportCacheDirty : 1;
 
   
 

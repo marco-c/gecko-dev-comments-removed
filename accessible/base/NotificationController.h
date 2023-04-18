@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef mozilla_a11y_NotificationController_h_
 #define mozilla_a11y_NotificationController_h_
@@ -28,24 +28,24 @@ namespace a11y {
 
 class DocAccessible;
 
-
-
-
+/**
+ * Notification interface.
+ */
 class Notification {
  public:
   NS_INLINE_DECL_REFCOUNTING(mozilla::a11y::Notification)
 
-  
-
-
+  /**
+   * Process notification.
+   */
   virtual void Process() = 0;
 
  protected:
   Notification() {}
 
-  
-
-
+  /**
+   * Protected destructor, to discourage deletion outside of Release():
+   */
   virtual ~Notification() {}
 
  private:
@@ -53,13 +53,13 @@ class Notification {
   Notification& operator=(const Notification&);
 };
 
-
-
-
-
-
-
-
+/**
+ * Template class for generic notification.
+ *
+ * @note  Instance is kept as a weak ref, the caller must guarantee it exists
+ *        longer than the document accessible owning the notification controller
+ *        that this notification is processed by.
+ */
 template <class Class, class... Args>
 class TNotification : public Notification {
  public:
@@ -87,11 +87,12 @@ class TNotification : public Notification {
   std::tuple<RefPtr<Args>...> mArgs;
 };
 
-
-
-
+/**
+ * Used to process notifications from core for the document accessible.
+ */
 class NotificationController final : public EventQueue,
-                                     public nsARefreshObserver {
+                                     public nsARefreshObserver,
+                                     public nsAPostRefreshObserver {
  public:
   NotificationController(DocAccessible* aDocument, PresShell* aPresShell);
 
@@ -100,24 +101,24 @@ class NotificationController final : public EventQueue,
 
   NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(NotificationController)
 
-  
-
-
+  /**
+   * Shutdown the notification controller.
+   */
   void Shutdown();
 
-  
-
-
+  /**
+   * Add an accessible event into the queue to process it later.
+   */
   void QueueEvent(AccEvent* aEvent) {
     if (PushEvent(aEvent)) {
       ScheduleProcessing();
     }
   }
 
-  
-
-
-
+  /**
+   * Returns existing event tree for the given the accessible or creates one if
+   * it doesn't exists yet.
+   */
   EventTree* QueueMutation(LocalAccessible* aContainer);
 
   class MoveGuard final {
@@ -146,28 +147,28 @@ class NotificationController final : public EventQueue,
   const EventTree& RootEventTree() const { return mEventTree; };
 #endif
 
-  
-
-
-
+  /**
+   * Queue a mutation event to emit if not coalesced away.  Returns true if the
+   * event was queued and has not yet been coalesced.
+   */
   bool QueueMutationEvent(AccTreeMutationEvent* aEvent);
 
-  
-
-
+  /**
+   * Coalesce all queued mutation events.
+   */
   void CoalesceMutationEvents();
 
-  
-
-
+  /**
+   * Schedule binding the child document to the tree of this document.
+   */
   void ScheduleChildDocBinding(DocAccessible* aDocument);
 
-  
-
-
+  /**
+   * Schedule the accessible tree update because of rendered text changes.
+   */
   inline void ScheduleTextUpdate(nsIContent* aTextNode) {
-    
-    
+    // Make sure we are not called with a node that is not in the DOM tree or
+    // not visible.
     MOZ_ASSERT(aTextNode->GetParentNode(), "A text node is not in DOM");
     MOZ_ASSERT(aTextNode->GetPrimaryFrame(),
                "A text node doesn't have a frame");
@@ -179,38 +180,38 @@ class NotificationController final : public EventQueue,
     ScheduleProcessing();
   }
 
-  
-
-
+  /**
+   * Pend accessible tree update for content insertion.
+   */
   void ScheduleContentInsertion(LocalAccessible* aContainer,
                                 nsTArray<nsCOMPtr<nsIContent>>& aInsertions);
 
-  
-
-
+  /**
+   * Pend an accessible subtree relocation.
+   */
   void ScheduleRelocation(LocalAccessible* aOwner) {
     if (!mRelocations.Contains(aOwner)) {
-      
-      
+      // XXX(Bug 1631371) Check if this should use a fallible operation as it
+      // pretended earlier, or change the return type to void.
       mRelocations.AppendElement(aOwner);
       ScheduleProcessing();
     }
   }
 
-  
-
-
-
+  /**
+   * Start to observe refresh to make notifications and events processing after
+   * layout.
+   */
   void ScheduleProcessing();
 
-  
-
-
-
-
-
-
-
+  /**
+   * Process the generic notification synchronously if there are no pending
+   * layout changes and no notifications are pending or being processed right
+   * now. Otherwise, queue it up to process asynchronously.
+   *
+   * @note  The caller must guarantee that the given instance still exists when
+   *        the notification is processed.
+   */
   template <class Class, class... Args>
   inline void HandleNotification(
       Class* aInstance,
@@ -230,27 +231,27 @@ class NotificationController final : public EventQueue,
     RefPtr<Notification> notification =
         new TNotification<Class, Args...>(aInstance, aMethod, aArgs...);
     if (notification) {
-      
-      
+      // XXX(Bug 1631371) Check if this should use a fallible operation as it
+      // pretended earlier.
       mNotifications.AppendElement(notification);
       ScheduleProcessing();
     }
   }
 
-  
-
-
-
-
-
+  /**
+   * Schedule the generic notification to process asynchronously.
+   *
+   * @note  The caller must guarantee that the given instance still exists when
+   *        the notification is processed.
+   */
   template <class Class>
   inline void ScheduleNotification(
       Class* aInstance, typename TNotification<Class>::Callback aMethod) {
     RefPtr<Notification> notification =
         new TNotification<Class>(aInstance, aMethod);
     if (notification) {
-      
-      
+      // XXX(Bug 1631371) Check if this should use a fallible operation as it
+      // pretended earlier.
       mNotifications.AppendElement(notification);
       ScheduleProcessing();
     }
@@ -263,8 +264,8 @@ class NotificationController final : public EventQueue,
     RefPtr<Notification> notification =
         new TNotification<Class, Arg>(aInstance, aMethod, aArg);
     if (notification) {
-      
-      
+      // XXX(Bug 1631371) Check if this should use a fallible operation as it
+      // pretended earlier.
       mNotifications.AppendElement(notification);
       ScheduleProcessing();
     }
@@ -282,27 +283,28 @@ class NotificationController final : public EventQueue,
   nsCycleCollectingAutoRefCnt mRefCnt;
   NS_DECL_OWNINGTHREAD
 
-  
-
-
+  /**
+   * Return true if the accessible tree state update is pending.
+   */
   bool IsUpdatePending();
 
-  
-
-
-
+  /**
+   * Return true if we should wait for processing from the parent before we can
+   * process our own queue.
+   */
   bool WaitingForParent();
 
  private:
   NotificationController(const NotificationController&);
   NotificationController& operator=(const NotificationController&);
 
-  
+  // nsARefreshObserver
   virtual void WillRefresh(mozilla::TimeStamp aTime) override;
+  virtual void DidRefresh() override;
 
-  
-
-
+  /**
+   * Set and returns a hide event, paired with a show event, for the move.
+   */
   void WithdrawPrecedingEvents(nsTArray<RefPtr<AccHideEvent>>* aEvs) {
     if (mPrecedingEvents.Length() > 0) {
       aEvs->AppendElements(std::move(mPrecedingEvents));
@@ -318,25 +320,25 @@ class NotificationController final : public EventQueue,
   }
 
  private:
-  
-
-
+  /**
+   * Remove a specific hide event if it should not be propagated.
+   */
   void CoalesceHideEvent(AccHideEvent* aHideEvent);
 
-  
-
-
+  /**
+   * get rid of a mutation event that is no longer necessary.
+   */
   void DropMutationEvent(AccTreeMutationEvent* aEvent);
 
-  
-
-
+  /**
+   * Fire all necessary mutation events.
+   */
   void ProcessMutationEvents();
 
-  
-
-
-
+  /**
+   * Indicates whether we're waiting on an event queue processing from our
+   * notification controller to flush events.
+   */
   enum eObservingState {
     eNotObservingRefresh,
     eRefreshObserving,
@@ -345,19 +347,19 @@ class NotificationController final : public EventQueue,
   };
   eObservingState mObservingState;
 
-  
-
-
+  /**
+   * The presshell of the document accessible.
+   */
   PresShell* mPresShell;
 
-  
-
-
+  /**
+   * Child documents that needs to be bound to the tree.
+   */
   nsTArray<RefPtr<DocAccessible>> mHangingChildDocuments;
 
-  
-
-
+  /**
+   * Pending accessible tree update notifications for content insertions.
+   */
   nsClassHashtable<nsRefPtrHashKey<LocalAccessible>,
                    nsTArray<nsCOMPtr<nsIContent>>>
       mContentInsertions;
@@ -387,31 +389,31 @@ class NotificationController final : public EventQueue,
     nsCOMPtr<T> mKey;
   };
 
-  
-
-
+  /**
+   * Pending accessible tree update notifications for rendered text changes.
+   */
   nsTHashSet<nsCOMPtrHashKey<nsIContent>> mTextHash;
 
-  
-
-
-
+  /**
+   * Other notifications like DOM events. Don't make this an AutoTArray; we
+   * use SwapElements() on it.
+   */
   nsTArray<RefPtr<Notification>> mNotifications;
 
-  
-
-
+  /**
+   * Holds all scheduled relocations.
+   */
   nsTArray<RefPtr<LocalAccessible>> mRelocations;
 
-  
-
-
+  /**
+   * Holds all mutation events.
+   */
   EventTree mEventTree;
 
-  
-
-
-
+  /**
+   * A temporary collection of hide events that should be fired before related
+   * show event. Used by EventTree.
+   */
   nsTArray<RefPtr<AccHideEvent>> mPrecedingEvents;
 
 #ifdef DEBUG
@@ -421,16 +423,16 @@ class NotificationController final : public EventQueue,
   friend class MoveGuard;
   friend class EventTree;
 
-  
-
-
-
+  /**
+   * A list of all mutation events we may want to emit.  Ordered from the first
+   * event that should be emitted to the last one to emit.
+   */
   RefPtr<AccTreeMutationEvent> mFirstMutationEvent;
   RefPtr<AccTreeMutationEvent> mLastMutationEvent;
 
-  
-
-
+  /**
+   * A class to map an accessible and event type to an event.
+   */
   class EventMap {
    public:
     enum EventType {
@@ -454,7 +456,7 @@ class NotificationController final : public EventQueue,
   uint32_t mEventGeneration;
 };
 
-}  
-}  
+}  // namespace a11y
+}  // namespace mozilla
 
-#endif  
+#endif  // mozilla_a11y_NotificationController_h_

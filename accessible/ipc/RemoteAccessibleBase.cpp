@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ARIAMap.h"
 #include "CachedTableAccessible.h"
@@ -56,8 +56,8 @@ void RemoteAccessibleBase<Derived>::Shutdown() {
     CachedTableAccessible::Invalidate(this);
   }
 
-  
-  
+  // XXX Ideally  this wouldn't be necessary, but it seems OuterDoc accessibles
+  // can be destroyed before the doc they own.
   uint32_t childCount = mChildren.Length();
   if (!IsOuterDoc()) {
     for (uint32_t idx = 0; idx < childCount; idx++) mChildren[idx]->Shutdown();
@@ -86,10 +86,10 @@ template <class Derived>
 void RemoteAccessibleBase<Derived>::ClearChildDoc(
     DocAccessibleParent* aChildDoc) {
   MOZ_ASSERT(aChildDoc);
-  
-  
-  
-  
+  // This is possible if we're replacing one document with another: Doc 1
+  // has not had a chance to remove itself, but was already replaced by Doc 2
+  // in SetChildDoc(). This could result in two subsequent calls to
+  // ClearChildDoc() even though mChildren.Length() == 1.
   MOZ_ASSERT(mChildren.Length() <= 1);
   mChildren.RemoveElement(aChildDoc);
 }
@@ -170,20 +170,20 @@ Derived* RemoteAccessibleBase<Derived>::RemoteParent() const {
     return nullptr;
   }
 
-  
-  
-  
+  // if we are not a document then are parent is another proxy in the same
+  // document.  That means we can just ask our document for the proxy with our
+  // parent id.
   if (!IsDoc()) {
     return Document()->GetAccessible(mParent);
   }
 
-  
+  // If we are a top level document then our parent is not a proxy.
   if (AsDoc()->IsTopLevel()) {
     return nullptr;
   }
 
-  
-  
+  // Finally if we are a non top level document then our parent id is for a
+  // proxy in our parent document so get the proxy from there.
   DocAccessibleParent* parentDoc = AsDoc()->ParentDoc();
   MOZ_ASSERT(parentDoc);
   MOZ_ASSERT(mParent);
@@ -242,7 +242,7 @@ void RemoteAccessibleBase<Derived>::Value(nsString& aValue) const {
     }
 
     const nsRoleMapEntry* roleMapEntry = ARIARoleMap();
-    
+    // Value of textbox is a textified subtree.
     if (roleMapEntry && roleMapEntry->Is(nsGkAtoms::textbox)) {
       nsTextEquivUtils::GetTextEquivFromSubtree(this, aValue);
       return;
@@ -314,6 +314,81 @@ double RemoteAccessibleBase<Derived>::Step() const {
 }
 
 template <class Derived>
+Accessible* RemoteAccessibleBase<Derived>::ChildAtPoint(
+    int32_t aX, int32_t aY, LocalAccessible::EWhichChildAtPoint aWhichChild) {
+  RemoteAccessible* lastMatch = nullptr;
+  // If `this` is a document, use its viewport cache instead of
+  // the cache of its parent document.
+  if (DocAccessibleParent* doc = IsDoc() ? AsDoc() : mDoc) {
+    if (auto maybeViewportCache =
+            doc->mCachedFields->GetAttribute<nsTArray<uint64_t>>(
+                nsGkAtoms::viewport)) {
+      // The retrieved viewport cache contains acc IDs in hittesting order.
+      // That is, items earlier in the list have z-indexes that are larger than
+      // those later in the list. If you were to build a tree by z-index, where
+      // chilren have larger z indices than their parents, iterating this list
+      // is essentially a postorder tree traversal.
+      const nsTArray<uint64_t>& viewportCache = *maybeViewportCache;
+
+      for (auto id : viewportCache) {
+        RemoteAccessible* acc = doc->GetAccessible(id);
+        if (!acc) {
+          // This can happen if the acc died in between
+          // pushing the viewport cache and doing this hittest
+          continue;
+        }
+
+        if (acc == this) {
+          // Even though we're searching from the doc's cache
+          // this call shouldn't pass the boundary defined by
+          // the acc this call originated on. If we hit `this`,
+          // return our most recent match.
+          break;
+        }
+
+        if (acc == doc) {
+          // If we're already in `doc`s viewport cache, and the doc is
+          // not the acc this call originated on, skip it.
+          // We have to have `doc` in this list, because we need to support
+          // calling `doc->ChildAtPoint()`. Without this check, we end up
+          // calling `doc->ChildAtPoint(...)` below which changes the context of
+          // this call.
+          continue;
+        }
+
+        if (acc->Bounds().Contains(aX, aY)) {
+          if (acc->IsDoc()) {
+            // If we encounter a doc, search its viewport
+            // cache. Do this even if we're looking for the
+            // deepest child, since in that case we should return
+            // the deepest child in the subdoc.
+            return acc->ChildAtPoint(aX, aY, aWhichChild);
+          }
+
+          if (aWhichChild == EWhichChildAtPoint::DeepestChild) {
+            // Because our rects are in hittesting order, the
+            // first match we encounter is guaranteed to be the
+            // deepest match.
+            lastMatch = acc;
+            break;
+          }
+
+          // We're looking for a DirectChild match. Update our
+          // `lastMatch` marker as we ascend towards `this`.
+          lastMatch = acc;
+        }
+      }
+    }
+  }
+
+  if (!lastMatch && Bounds().Contains(aX, aY)) {
+    return this;
+  }
+
+  return lastMatch;
+}
+
+template <class Derived>
 Maybe<nsRect> RemoteAccessibleBase<Derived>::RetrieveCachedBounds() const {
   MOZ_ASSERT(mCachedFields);
   if (!mCachedFields) {
@@ -336,24 +411,24 @@ Maybe<nsRect> RemoteAccessibleBase<Derived>::RetrieveCachedBounds() const {
 
 template <class Derived>
 bool RemoteAccessibleBase<Derived>::ApplyTransform(nsRect& aBounds) const {
-  
+  // First, attempt to retrieve the transform from the cache.
   Maybe<const UniquePtr<gfx::Matrix4x4>&> maybeTransform =
       mCachedFields->GetAttribute<UniquePtr<gfx::Matrix4x4>>(
           nsGkAtoms::transform);
   if (!maybeTransform) {
     return false;
   }
-  
-  
-  
-  
-  
+  // The transform matrix we cache is meant to operate on rects
+  // within the coordinate space of the frame to which the
+  // transform is applied (self-relative rects). We cache bounds
+  // relative to some ancestor. Remove the relative offset before
+  // transforming. The transform matrix will add it back in.
   aBounds.MoveTo(0, 0);
   auto mtxInPixels = gfx::Matrix4x4Typed<CSSPixel, CSSPixel>::FromUnknownMatrix(
       *(*maybeTransform));
 
-  
-  
+  // Our matrix is in CSS Pixels, so we need our rect to be in CSS
+  // Pixels too. Convert before applying.
   auto boundsInPixels = CSSRect::FromAppUnits(aBounds);
   boundsInPixels = mtxInPixels.TransformBounds(boundsInPixels);
   aBounds = CSSRect::ToAppUnits(boundsInPixels);
@@ -369,13 +444,13 @@ void RemoteAccessibleBase<Derived>::ApplyScrollOffset(nsRect& aBounds) const {
   if (!maybeScrollPosition || maybeScrollPosition->Length() != 2) {
     return;
   }
-  
-  
+  // Our retrieved value is in app units, so we don't need to do any
+  // unit conversion here.
   const nsTArray<int32_t>& scrollPosition = *maybeScrollPosition;
 
-  
-  
-  
+  // Scroll position is an inverse representation of scroll offset (since the
+  // further the scroll bar moves down the page, the further the page content
+  // moves up/closer to the origin).
   nsPoint scrollOffset(-scrollPosition[0], -scrollPosition[1]);
 
   aBounds.MoveBy(scrollOffset.x, scrollOffset.y);
@@ -403,7 +478,7 @@ LayoutDeviceIntRect RemoteAccessibleBase<Derived>::BoundsWithOffset(
     const DocAccessibleParent* topDoc = IsDoc() ? AsDoc() : nullptr;
 
     if (aOffset.isSome()) {
-      
+      // The rect we've passed in is in app units, so no conversion needed.
       nsRect internalRect = *aOffset;
       bounds.SetRectX(bounds.x + internalRect.x, internalRect.width);
       bounds.SetRectY(bounds.y + internalRect.y, internalRect.height);
@@ -419,19 +494,19 @@ LayoutDeviceIntRect RemoteAccessibleBase<Derived>::BoundsWithOffset(
 
       if (Maybe<nsRect> maybeRemoteBounds = remoteAcc->RetrieveCachedBounds()) {
         nsRect remoteBounds = *maybeRemoteBounds;
-        
-        
-        
-        
+        // We need to take into account a non-1 resolution set on the
+        // presshell. This happens with async pinch zooming, among other
+        // things. We can't reliably query this value in the parent process,
+        // so we retrieve it from the document's cache.
         Maybe<float> res;
         if (remoteAcc->IsDoc()) {
-          
-          
-          
-          
-          
-          
-          
+          // Apply the document's resolution to the bounds we've gathered
+          // thus far. We do this before applying the document's offset
+          // because document accs should not have their bounds scaled by
+          // their own resolution. They should be scaled by the resolution
+          // of their containing document (if any). We also skip this in the
+          // case that remoteAcc == this, since that implies `bounds` should
+          // be scaled relative to its parent doc.
           res = remoteAcc->AsDoc()->mCachedFields->GetAttribute<float>(
               nsGkAtoms::resolution);
           MOZ_ASSERT(res, "No cached document resolution found.");
@@ -440,15 +515,15 @@ LayoutDeviceIntRect RemoteAccessibleBase<Derived>::BoundsWithOffset(
           topDoc = remoteAcc->AsDoc();
         }
 
-        
-        
-        
-        
+        // Apply scroll offset, if applicable. Only the contents of an
+        // element are affected by its scroll offset, which is why this call
+        // happens in this loop instead of both inside and outside of
+        // the loop (like ApplyTransform).
         remoteAcc->ApplyScrollOffset(remoteBounds);
 
-        
-        
-        
+        // Regardless of whether this is a doc, we should offset `bounds`
+        // by the bounds retrieved here. This is how we build screen
+        // coordinates from relative coordinates.
         bounds.MoveBy(remoteBounds.X(), remoteBounds.Y());
         Unused << remoteAcc->ApplyTransform(bounds);
       }
@@ -458,33 +533,33 @@ LayoutDeviceIntRect RemoteAccessibleBase<Derived>::BoundsWithOffset(
 
     MOZ_ASSERT(topDoc);
     if (topDoc) {
-      
-      
-      
-      
+      // We use the top documents app-unites-per-dev-pixel even though
+      // theoretically nested docs can have different values. Practically,
+      // that isn't likely since we only offer zoom controls for the top
+      // document and all subdocuments inherit from it.
       auto appUnitsPerDevPixel = topDoc->mCachedFields->GetAttribute<int32_t>(
           nsGkAtoms::_moz_device_pixel_ratio);
       MOZ_ASSERT(appUnitsPerDevPixel);
       if (appUnitsPerDevPixel) {
-        
+        // Convert our existing `bounds` rect from app units to dev pixels
         devPxBounds = LayoutDeviceIntRect::FromAppUnitsToNearest(
             bounds, *appUnitsPerDevPixel);
       }
     }
 
 #if !defined(ANDROID)
-    
-    
-    
+    // This block is not thread safe because it queries a LocalAccessible.
+    // It is also not needed in Android since the only local accessible is
+    // the outer doc browser that has an offset of 0.
     if (LocalAccessible* localAcc = const_cast<Accessible*>(acc)->AsLocal()) {
-      
-      
+      // LocalAccessible::Bounds returns screen-relative bounds in
+      // dev pixels.
       LayoutDeviceIntRect localBounds = localAcc->Bounds();
 
-      
-      
-      
-      
+      // The root document will always have an APZ resolution of 1,
+      // so we don't factor in its scale here. We also don't scale
+      // by GetFullZoom because LocalAccessible::Bounds already does
+      // that.
       devPxBounds.MoveBy(localBounds.X(), localBounds.Y());
     }
 #endif
@@ -521,9 +596,9 @@ void RemoteAccessibleBase<Derived>::AppendTextTo(nsAString& aText,
   if (IsHTMLBr()) {
     aText += kForcedNewLineChar;
   } else if (RemoteParent() && nsAccUtils::MustPrune(RemoteParent())) {
-    
-    
-    
+    // Expose the embedded object accessible as imaginary embedded object
+    // character if its parent hypertext accessible doesn't expose children to
+    // AT.
     aText += kImaginaryEmbeddedObjectChar;
   } else {
     aText += kEmbeddedObjectChar;
@@ -617,7 +692,7 @@ uint64_t RemoteAccessibleBase<Derived>::State() {
             mCachedFields->GetAttribute<uint64_t>(nsGkAtoms::state)) {
       VERIFY_CACHE(CacheDomain::State);
       state = *rawState;
-      
+      // Handle states that are derived from other states.
       if (!(state & states::UNAVAILABLE)) {
         state |= states::ENABLED | states::SENSITIVE;
       }
@@ -626,15 +701,15 @@ uint64_t RemoteAccessibleBase<Derived>::State() {
       }
     }
 
-    
+    // Fetch our current opacity value from the cache.
     auto opacity = Opacity();
     if (opacity && *opacity == 1.0f) {
       state |= states::OPAQUE1;
     } else {
-      
-      
-      
-      
+      // If we can't retrieve an opacity value, or if the value we retrieve
+      // is less than one, ensure the OPAQUE1 bit is cleared.
+      // It's possible this bit was set in the cached `rawState` vector, but
+      // we've since been notified of a style change invalidating that state.
       state &= ~states::OPAQUE1;
     }
   }
@@ -651,8 +726,8 @@ template <class Derived>
 already_AddRefed<AccAttributes> RemoteAccessibleBase<Derived>::Attributes() {
   RefPtr<AccAttributes> attributes = new AccAttributes();
   if (mCachedFields) {
-    
-    
+    // We use GetAttribute instead of GetAttributeRefPtr because we need
+    // nsAtom, not const nsAtom.
     if (auto tag =
             mCachedFields->GetAttribute<RefPtr<nsAtom>>(nsGkAtoms::tag)) {
       attributes->SetAttribute(nsGkAtoms::tag, *tag);
@@ -732,8 +807,8 @@ already_AddRefed<nsAtom> RemoteAccessibleBase<Derived>::DisplayStyle() const {
 template <class Derived>
 Maybe<float> RemoteAccessibleBase<Derived>::Opacity() const {
   if (mCachedFields) {
-    
-    
+    // GetAttribute already returns a Maybe<float>, so we don't
+    // need to do any additional manipulation.
     return mCachedFields->GetAttribute<float>(nsGkAtoms::opacity);
   }
 
@@ -898,8 +973,8 @@ void RemoteAccessibleBase<Derived>::ScrollTo(uint32_t aHow) const {
   Unused << mDoc->SendScrollTo(mID, aHow);
 }
 
-
-
+////////////////////////////////////////////////////////////////////////////////
+// SelectAccessible
 
 template <class Derived>
 void RemoteAccessibleBase<Derived>::SelectedItems(
@@ -1087,5 +1162,5 @@ void RemoteAccessibleBase<Derived>::SetCaretOffset(int32_t aOffset) {
 
 template class RemoteAccessibleBase<RemoteAccessible>;
 
-}  
-}  
+}  // namespace a11y
+}  // namespace mozilla
