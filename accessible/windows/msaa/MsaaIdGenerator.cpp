@@ -15,6 +15,7 @@
 #include "mozilla/StaticPrefs_accessibility.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/Unused.h"
+#include "nsAccessibilityService.h"
 #include "nsTHashMap.h"
 #include "sdnAccessible.h"
 
@@ -85,6 +86,15 @@ uint32_t MsaaIdGenerator::GetID() {
         MakeUnique<IDSet>(StaticPrefs::accessibility_cache_enabled_AtStartup()
                               ? kNumFullIDBits
                               : kNumUniqueIDBits);
+    if (StaticPrefs::accessibility_cache_enabled_AtStartup()) {
+      
+      RunOnShutdown([this] {
+        if (mReleaseIDTimer) {
+          mReleaseIDTimer->Cancel();
+          ReleasePendingIDs();
+        }
+      });
+    }
   }
   uint32_t id = mIDSet->GetID();
   if (StaticPrefs::accessibility_cache_enabled_AtStartup()) {
@@ -93,6 +103,14 @@ uint32_t MsaaIdGenerator::GetID() {
   }
   MOZ_ASSERT(id <= ((1UL << kNumUniqueIDBits) - 1UL));
   return detail::BuildMsaaID(id, ResolveContentProcessID());
+}
+
+void MsaaIdGenerator::ReleasePendingIDs() {
+  for (auto id : mIDsToRelease) {
+    mIDSet->ReleaseID(~id);
+  }
+  mIDsToRelease.Clear();
+  mReleaseIDTimer = nullptr;
 }
 
 bool MsaaIdGenerator::ReleaseID(uint32_t aID) {
@@ -109,6 +127,14 @@ bool MsaaIdGenerator::ReleaseID(uint32_t aID) {
     
     
     
+    if (nsAccessibilityService::IsShutdown()) {
+      
+      
+      
+      
+      mIDSet->ReleaseID(~aID);
+      return true;
+    }
     const uint32_t kReleaseDelay = 1000;
     mIDsToRelease.AppendElement(aID);
     if (mReleaseIDTimer) {
@@ -118,15 +144,8 @@ bool MsaaIdGenerator::ReleaseID(uint32_t aID) {
           getter_AddRefs(mReleaseIDTimer),
           
           
-          [this](nsITimer* aTimer) {
-            for (auto id : mIDsToRelease) {
-              mIDSet->ReleaseID(~id);
-            }
-            mIDsToRelease.Clear();
-            mReleaseIDTimer = nullptr;
-          },
-          kReleaseDelay, nsITimer::TYPE_ONE_SHOT,
-          "a11y::MsaaIdGenerator::ReleaseIDDelayed");
+          [this](nsITimer* aTimer) { ReleasePendingIDs(); }, kReleaseDelay,
+          nsITimer::TYPE_ONE_SHOT, "a11y::MsaaIdGenerator::ReleaseIDDelayed");
     }
     return true;
   }
