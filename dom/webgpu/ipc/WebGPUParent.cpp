@@ -611,6 +611,8 @@ ipc::IPCResult WebGPUParent::RecvSwapChainPresent(
     ffi::wgpu_server_device_create_buffer(mContext, data->mDeviceId, &desc,
                                           bufferId, error.ToFFI());
     if (ForwardError(data->mDeviceId, error)) {
+      
+      data->mBuffersLock.Unlock();
       return IPC_OK();
     }
   } else {
