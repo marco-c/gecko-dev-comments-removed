@@ -169,6 +169,9 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   GeneratePrologue(masm);
 
   
+  masm.movePtr(StackPointer, s4);
+
+  
   masm.movePtr(StackPointer, FramePointer);
 
   
@@ -222,12 +225,16 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   }
   masm.bind(&footer);
 
+  
+  masm.subPtr(StackPointer, s4);
+  masm.makeFrameDescriptor(s4, FrameType::CppToJSJit, JitFrameLayout::Size());
+
   masm.subPtr(Imm32(2 * sizeof(uintptr_t)), StackPointer);
   masm.storePtr(s3,
                 Address(StackPointer, sizeof(uintptr_t)));  
   masm.storePtr(reg_token, Address(StackPointer, 0));       
 
-  masm.pushFrameDescriptor(FrameType::CppToJSJit);
+  masm.push(s4);  
 
   CodeLabel returnLabel;
   Label oomReturnLabel;
@@ -265,11 +272,16 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
     masm.subPtr(scratch, StackPointer);
 
     
+    masm.addPtr(
+        Imm32(BaselineFrame::Size() + BaselineFrame::FramePointerOffset),
+        scratch);
+    masm.makeFrameDescriptor(scratch, FrameType::BaselineJS,
+                             ExitFrameLayout::Size());
+
     
     masm.reserveStack(2 * sizeof(uintptr_t));
     masm.storePtr(
-        ImmWord(MakeFrameDescriptor(FrameType::BaselineJS)),
-        Address(StackPointer, sizeof(uintptr_t)));  
+        scratch, Address(StackPointer, sizeof(uintptr_t)));  
     masm.storePtr(zero, Address(StackPointer, 0));  
 
     
@@ -556,14 +568,17 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
   
 
   
+  masm.subPtr(StackPointer, t2);
+  masm.makeFrameDescriptor(t2, FrameType::Rectifier, JitFrameLayout::Size());
+
+  
   masm.subPtr(Imm32(3 * sizeof(uintptr_t)), StackPointer);
   
   masm.storePtr(numActArgsReg, Address(StackPointer, 2 * sizeof(uintptr_t)));
   
   masm.storePtr(calleeTokenReg, Address(StackPointer, sizeof(uintptr_t)));
   
-  masm.storePtr(ImmWord(MakeFrameDescriptor(FrameType::Rectifier)),
-                Address(StackPointer, 0));
+  masm.storePtr(t2, Address(StackPointer, 0));
 
   
   masm.andPtr(Imm32(uint32_t(CalleeTokenMask)), calleeTokenReg);

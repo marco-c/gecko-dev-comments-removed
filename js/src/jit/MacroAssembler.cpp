@@ -2063,7 +2063,11 @@ void MacroAssembler::generateBailoutTail(Register scratch,
             FramePointer);
 
     
-    pushFrameDescriptor(FrameType::BaselineJS);
+    load32(Address(bailoutInfo,
+                   offsetof(BaselineBailoutInfo, frameSizeOfInnerMostFrame)),
+           temp);
+    makeFrameDescriptor(temp, FrameType::BaselineJS, ExitFrameLayout::Size());
+    push(temp);
     push(Address(bailoutInfo, offsetof(BaselineBailoutInfo, resumeAddr)));
     
     loadJSContext(scratch);

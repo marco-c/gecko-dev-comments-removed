@@ -109,6 +109,7 @@ class JSJitFrameIter {
   uint8_t* current_;
   FrameType type_;
   uint8_t* resumePCinCurrentFrame_;
+  size_t frameSize_;
 
   
   
@@ -168,7 +169,6 @@ class JSJitFrameIter {
   bool isBaselineStub() const { return type_ == FrameType::BaselineStub; }
   bool isRectifier() const { return type_ == FrameType::Rectifier; }
   bool isBareExit() const;
-  bool isUnwoundJitExit() const;
   template <typename T>
   bool isExitFrameLayout() const;
 
@@ -195,8 +195,16 @@ class JSJitFrameIter {
   uint8_t* resumePCinCurrentFrame() const { return resumePCinCurrentFrame_; }
 
   
+  inline size_t prevFrameLocalSize() const;
   inline FrameType prevType() const;
   uint8_t* prevFp() const;
+
+  
+  
+  size_t frameSize() const {
+    MOZ_ASSERT(!isExitFrame());
+    return frameSize_;
+  }
 
   
   

@@ -17,31 +17,47 @@ namespace jit {
 
 inline void EmitBaselineTailCallVM(TrampolinePtr target, MacroAssembler& masm,
                                    uint32_t argSize) {
-#ifdef DEBUG
   
+
   
   masm.movl(FramePointer, eax);
   masm.addl(Imm32(BaselineFrame::FramePointerOffset), eax);
   masm.subl(BaselineStackReg, eax);
-  masm.subl(Imm32(argSize), eax);
+
+#ifdef DEBUG
+  
+  masm.movl(eax, ebx);
+  masm.subl(Imm32(argSize), ebx);
   Address frameSizeAddr(FramePointer,
                         BaselineFrame::reverseOffsetOfDebugFrameSize());
-  masm.store32(eax, frameSizeAddr);
+  masm.store32(ebx, frameSizeAddr);
 #endif
 
   
-  masm.pushFrameDescriptor(FrameType::BaselineJS);
+  masm.makeFrameDescriptor(eax, FrameType::BaselineJS, ExitFrameLayout::Size());
+  masm.push(eax);
   masm.push(ICTailCallReg);
   masm.jump(target);
 }
 
+inline void EmitBaselineCreateStubFrameDescriptor(MacroAssembler& masm,
+                                                  Register reg,
+                                                  uint32_t headerSize) {
+  
+  masm.movl(FramePointer, reg);
+  masm.addl(Imm32(BaselineStubFrameLayout::FramePointerOffset), reg);
+  masm.subl(BaselineStackReg, reg);
+
+  masm.makeFrameDescriptor(reg, FrameType::BaselineStub, headerSize);
+}
+
 inline void EmitBaselineCallVM(TrampolinePtr target, MacroAssembler& masm) {
-  masm.pushFrameDescriptor(FrameType::BaselineStub);
+  EmitBaselineCreateStubFrameDescriptor(masm, eax, ExitFrameLayout::Size());
+  masm.push(eax);
   masm.call(target);
 }
 
 inline void EmitBaselineEnterStubFrame(MacroAssembler& masm, Register scratch) {
-#ifdef DEBUG
   
   
   
@@ -60,6 +76,7 @@ inline void EmitBaselineEnterStubFrame(MacroAssembler& masm, Register scratch) {
   masm.movl(FramePointer, scratch);
   masm.subl(BaselineStackReg, scratch);
 
+#ifdef DEBUG
   Address frameSizeAddr(FramePointer,
                         BaselineFrame::reverseOffsetOfDebugFrameSize());
   masm.store32(scratch, frameSizeAddr);
@@ -72,8 +89,9 @@ inline void EmitBaselineEnterStubFrame(MacroAssembler& masm, Register scratch) {
   masm.Push(Operand(BaselineStackReg, 0));
 
   
-  masm.storePtr(ImmWord(MakeFrameDescriptor(FrameType::BaselineJS)),
-                Address(BaselineStackReg, sizeof(uintptr_t)));
+  masm.makeFrameDescriptor(scratch, FrameType::BaselineJS,
+                           BaselineStubFrameLayout::Size());
+  masm.storePtr(scratch, Address(BaselineStackReg, sizeof(uintptr_t)));
 
   
   masm.Push(FramePointer);

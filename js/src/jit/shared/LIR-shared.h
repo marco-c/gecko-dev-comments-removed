@@ -600,7 +600,7 @@ class LApplyArgsGeneric
   static const size_t ThisIndex = 2;
 
   const LDefinition* getTempObject() { return getTemp(0); }
-  const LDefinition* getTempForArgCopy() { return getTemp(1); }
+  const LDefinition* getTempStackCounter() { return getTemp(1); }
 };
 
 class LApplyArgsObj
@@ -632,7 +632,7 @@ class LApplyArgsObj
   static const size_t ThisIndex = 2;
 
   const LDefinition* getTempObject() { return getTemp(0); }
-  const LDefinition* getTempForArgCopy() { return getTemp(1); }
+  const LDefinition* getTempStackCounter() { return getTemp(1); }
 };
 
 class LApplyArrayGeneric
@@ -664,7 +664,7 @@ class LApplyArrayGeneric
   static const size_t ThisIndex = 2;
 
   const LDefinition* getTempObject() { return getTemp(0); }
-  const LDefinition* getTempForArgCopy() { return getTemp(1); }
+  const LDefinition* getTempStackCounter() { return getTemp(1); }
 };
 
 class LConstructArgsGeneric
@@ -702,7 +702,7 @@ class LConstructArgsGeneric
   
   
   
-  const LAllocation* getTempForArgCopy() { return getOperand(2); }
+  const LAllocation* getTempStackCounter() { return getOperand(2); }
 };
 
 class LConstructArrayGeneric
@@ -742,7 +742,7 @@ class LConstructArrayGeneric
   
   
   
-  const LAllocation* getTempForArgCopy() { return getOperand(2); }
+  const LAllocation* getTempStackCounter() { return getOperand(2); }
 };
 
 

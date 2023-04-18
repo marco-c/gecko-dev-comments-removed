@@ -29,13 +29,7 @@ using mozilla::IsPowerOfTwo;
 
 
 
-
 struct EnterJITStackEntry {
-  
-  static constexpr int32_t offsetFromFP() {
-    return -int32_t(offsetof(EnterJITStackEntry, rbp));
-  }
-
   void* result;
 
 #if defined(_WIN64)
@@ -143,6 +137,9 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
 
   
   
+  
+  
+  masm.mov(rsp, r14);
 
   
   masm.mov(reg_argc, r13);
@@ -201,6 +198,10 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   }
 
   
+  masm.subq(rsp, r14);
+  masm.makeFrameDescriptor(r14, FrameType::CppToJSJit, JitFrameLayout::Size());
+
+  
   
   
   masm.movq(result, reg_argc);
@@ -211,7 +212,7 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   masm.push(token);
 
   
-  masm.pushFrameDescriptor(FrameType::CppToJSJit);
+  masm.push(r14);
 
   CodeLabel returnLabel;
   Label oomReturnLabel;
@@ -252,7 +253,12 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
     masm.subPtr(valuesSize, rsp);
 
     
-    masm.pushFrameDescriptor(FrameType::BaselineJS);
+    masm.addPtr(
+        Imm32(BaselineFrame::Size() + BaselineFrame::FramePointerOffset),
+        valuesSize);
+    masm.makeFrameDescriptor(valuesSize, FrameType::BaselineJS,
+                             ExitFrameLayout::Size());
+    masm.push(valuesSize);
     masm.push(Imm32(0));  
     
     masm.loadJSContext(scratch);
@@ -321,7 +327,7 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
 
   
   
-  masm.lea(Operand(rbp, EnterJITStackEntry::offsetFromFP()), rsp);
+  masm.lea(Operand(rbp, -int32_t(offsetof(EnterJITStackEntry, rbp))), rsp);
 
   
 
@@ -367,10 +373,12 @@ JitRuntime::getCppEntryRegisters(JitFrameLayout* frameStackAddress) {
   }
 
   
-  uint8_t* fp = frameStackAddress->callerFramePtr();
-  auto* enterJITStackEntry = reinterpret_cast<EnterJITStackEntry*>(
-      fp + EnterJITStackEntry::offsetFromFP());
-  MOZ_ASSERT(enterJITStackEntry->rbp == fp);
+  MOZ_ASSERT(frameStackAddress->headerSize() == JitFrameLayout::Size());
+  const size_t offsetToCppEntry =
+      JitFrameLayout::Size() + frameStackAddress->prevFrameLocalSize();
+  EnterJITStackEntry* enterJITStackEntry =
+      reinterpret_cast<EnterJITStackEntry*>(
+          reinterpret_cast<uint8_t*>(frameStackAddress) + offsetToCppEntry);
 
   
   ::JS::ProfilingFrameIterator::RegisterState registerState;
@@ -597,9 +605,14 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
   
 
   
+  masm.lea(Operand(FramePointer, sizeof(void*)), r9);
+  masm.subq(rsp, r9);
+  masm.makeFrameDescriptor(r9, FrameType::Rectifier, JitFrameLayout::Size());
+
+  
   masm.push(rdx);  
   masm.push(rax);  
-  masm.pushFrameDescriptor(FrameType::Rectifier);
+  masm.push(r9);   
 
   
   masm.andq(Imm32(uint32_t(CalleeTokenMask)), rax);

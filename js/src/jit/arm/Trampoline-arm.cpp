@@ -135,6 +135,9 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   masm.transferMultipleByRuns(NonVolatileFloatRegs, IsStore, sp, DB);
 
   
+  masm.movePtr(sp, r8);
+
+  
   masm.loadPtr(slot_token, r9);
 
   
@@ -200,7 +203,8 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   }
 
   
-  masm.move32(Imm32(MakeFrameDescriptor(FrameType::CppToJSJit)), r8);
+  masm.ma_sub(r8, sp, r8);
+  masm.makeFrameDescriptor(r8, FrameType::CppToJSJit, JitFrameLayout::Size());
 
   aasm->as_sub(sp, sp, Imm8(sizeof(JitFrameLayout)));
 
@@ -263,7 +267,12 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
     masm.ma_sub(sp, scratch, sp);
 
     
-    masm.pushFrameDescriptor(FrameType::BaselineJS);
+    masm.addPtr(
+        Imm32(BaselineFrame::Size() + BaselineFrame::FramePointerOffset),
+        scratch);
+    masm.makeFrameDescriptor(scratch, FrameType::BaselineJS,
+                             ExitFrameLayout::Size());
+    masm.push(scratch);
     masm.push(Imm32(0));  
     
     masm.loadJSContext(scratch);
@@ -479,6 +488,10 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
     masm.as_extdtr(IsStore, 64, true, PreIndex, r4,
                    EDtrAddr(sp, EDtrOffImm(-8)));
 
+    
+    
+    masm.add32(Imm32(1), r6);
+
     masm.bind(&notConstructing);
   }
 
@@ -508,9 +521,16 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
   }
 
   
+  masm.as_add(r6, r6, Imm8(2));  
+  masm.ma_lsl(Imm32(3), r6, r6);
+
+  
+  masm.makeFrameDescriptor(r6, FrameType::Rectifier, JitFrameLayout::Size());
+
+  
   masm.ma_push(r0);  
   masm.ma_push(r1);  
-  masm.pushFrameDescriptor(FrameType::Rectifier);
+  masm.ma_push(r6);  
 
   
   masm.andPtr(Imm32(CalleeTokenMask), r1);

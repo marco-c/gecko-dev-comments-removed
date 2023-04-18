@@ -190,7 +190,7 @@ class MOZ_STACK_CLASS BaselineStackBuilder {
   [[nodiscard]] bool finishLastFrame();
 
   [[nodiscard]] bool prepareForNextFrame(HandleValueVector savedCallerArgs);
-  [[nodiscard]] bool finishOuterFrame();
+  [[nodiscard]] bool finishOuterFrame(uint32_t frameSize);
   [[nodiscard]] bool buildStubFrame(uint32_t frameSize,
                                     HandleValueVector savedCallerArgs);
   [[nodiscard]] bool buildRectifierFrame(uint32_t actualArgc,
@@ -386,6 +386,10 @@ class MOZ_STACK_CLASS BaselineStackBuilder {
   }
 
   void setResumeAddr(void* resumeAddr) { header_->resumeAddr = resumeAddr; }
+
+  void setFrameSizeOfInnerMostFrame(uint32_t size) {
+    header_->frameSizeOfInnerMostFrame = size;
+  }
 
   template <typename T>
   BufferPointer<T> pointerAtStackOffset(size_t offset) {
@@ -835,14 +839,14 @@ bool BaselineStackBuilder::prepareForNextFrame(
 
   
   
-  if (!finishOuterFrame()) {
+  if (!finishOuterFrame(frameSize)) {
     return false;
   }
 
   return buildStubFrame(frameSize, savedCallerArgs);
 }
 
-bool BaselineStackBuilder::finishOuterFrame() {
+bool BaselineStackBuilder::finishOuterFrame(uint32_t frameSize) {
   
   
   
@@ -855,7 +859,8 @@ bool BaselineStackBuilder::finishOuterFrame() {
   blFrame()->setInterpreterFields(script_, pc_);
 
   
-  size_t baselineFrameDescr = MakeFrameDescriptor(FrameType::BaselineJS);
+  size_t baselineFrameDescr = MakeFrameDescriptor(
+      frameSize, FrameType::BaselineJS, BaselineStubFrameLayout::Size());
   if (!writeWord(baselineFrameDescr, "Descriptor")) {
     return false;
   }
@@ -892,6 +897,8 @@ bool BaselineStackBuilder::buildStubFrame(uint32_t frameSize,
   
 
   JitSpew(JitSpew_BaselineBailouts, "      [BASELINE-STUB FRAME]");
+
+  size_t startOfBaselineStubFrame = framePushed();
 
   
   if (!writePtr(prevFramePtr(), "PrevFramePtr")) {
@@ -994,6 +1001,13 @@ bool BaselineStackBuilder::buildStubFrame(uint32_t frameSize,
   size_t endOfBaselineStubArgs = framePushed();
 
   
+  size_t baselineStubFrameSize =
+      endOfBaselineStubArgs - startOfBaselineStubFrame;
+  size_t baselineStubFrameDescr =
+      MakeFrameDescriptor((uint32_t)baselineStubFrameSize,
+                          FrameType::BaselineStub, JitFrameLayout::Size());
+
+  
   if (!writeWord(actualArgc, "ActualArgc")) {
     return false;
   }
@@ -1009,7 +1023,6 @@ bool BaselineStackBuilder::buildStubFrame(uint32_t frameSize,
   setNextCallee(calleeFun);
 
   
-  size_t baselineStubFrameDescr = MakeFrameDescriptor(FrameType::BaselineStub);
   if (!writeWord(baselineStubFrameDescr, "Descriptor")) {
     return false;
   }
@@ -1063,6 +1076,8 @@ bool BaselineStackBuilder::buildRectifierFrame(uint32_t actualArgc,
   JitSpew(JitSpew_BaselineBailouts, "      [RECTIFIER FRAME]");
   bool pushedNewTarget = IsConstructPC(pc_);
 
+  size_t startOfRectifierFrame = framePushed();
+
   if (!writePtr(prevFramePtr(), "PrevFramePtr")) {
     return false;
   }
@@ -1112,6 +1127,12 @@ bool BaselineStackBuilder::buildRectifierFrame(uint32_t actualArgc,
          (actualArgc + 1) * sizeof(Value));
 
   
+  size_t rectifierFrameSize = framePushed() - startOfRectifierFrame;
+  size_t rectifierFrameDescr =
+      MakeFrameDescriptor((uint32_t)rectifierFrameSize, FrameType::Rectifier,
+                          JitFrameLayout::Size());
+
+  
   if (!writeWord(actualArgc, "ActualArgc")) {
     return false;
   }
@@ -1122,7 +1143,6 @@ bool BaselineStackBuilder::buildRectifierFrame(uint32_t actualArgc,
   }
 
   
-  size_t rectifierFrameDescr = MakeFrameDescriptor(FrameType::Rectifier);
   if (!writeWord(rectifierFrameDescr, "Descriptor")) {
     return false;
   }
@@ -1145,6 +1165,7 @@ bool BaselineStackBuilder::finishLastFrame() {
       cx_->runtime()->jitRuntime()->baselineInterpreter();
 
   setResumeFramePtr(prevFramePtr());
+  setFrameSizeOfInnerMostFrame(framePushed());
 
   
   

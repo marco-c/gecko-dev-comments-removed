@@ -73,6 +73,10 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   masm.push(edi);
 
   
+  
+  masm.movl(esp, esi);
+
+  
   masm.loadPtr(Address(ebp, ARG_ARGC), eax);
 
   
@@ -139,6 +143,10 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   }
 
   
+  masm.subl(esp, esi);
+  masm.makeFrameDescriptor(esi, FrameType::CppToJSJit, JitFrameLayout::Size());
+
+  
   
   
   masm.mov(Operand(ebp, ARG_RESULT), eax);
@@ -153,7 +161,7 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   masm.loadPtr(Address(ebp, ARG_STACKFRAME), OsrFrameReg);
 
   
-  masm.pushFrameDescriptor(FrameType::CppToJSJit);
+  masm.push(esi);
 
   CodeLabel returnLabel;
   Label oomReturnLabel;
@@ -196,8 +204,13 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
     masm.subPtr(scratch, esp);
 
     
-    masm.pushFrameDescriptor(FrameType::BaselineJS);
-    masm.push(Imm32(0));  
+    masm.addPtr(
+        Imm32(BaselineFrame::Size() + BaselineFrame::FramePointerOffset),
+        scratch);
+    masm.makeFrameDescriptor(scratch, FrameType::BaselineJS,
+                             ExitFrameLayout::Size());
+    masm.push(scratch);  
+    masm.push(Imm32(0));
     
     masm.loadJSContext(scratch);
     masm.enterFakeExitFrame(scratch, scratch, ExitFrameType::Bare);
@@ -507,9 +520,14 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
   }
 
   
+  masm.lea(Operand(FramePointer, sizeof(void*)), ebx);
+  masm.subl(esp, ebx);
+  masm.makeFrameDescriptor(ebx, FrameType::Rectifier, JitFrameLayout::Size());
+
+  
   masm.push(edx);  
   masm.push(eax);  
-  masm.pushFrameDescriptor(FrameType::Rectifier);
+  masm.push(ebx);  
 
   
   masm.andl(Imm32(CalleeTokenMask), eax);

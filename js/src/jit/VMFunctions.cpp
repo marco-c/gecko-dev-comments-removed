@@ -1027,7 +1027,7 @@ bool DebugEpilogue(JSContext* cx, BaselineFrame* frame, const jsbytecode* pc,
     
     
     JitFrameLayout* prefix = frame->framePrefix();
-    EnsureUnwoundJitExitFrame(cx->activation()->asJit(), prefix);
+    EnsureBareExitFrame(cx->activation()->asJit(), prefix);
     return false;
   }
 
