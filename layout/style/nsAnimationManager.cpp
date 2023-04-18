@@ -215,16 +215,18 @@ static already_AddRefed<dom::AnimationTimeline> GetTimeline(
         
         return nullptr;
       }
-      const auto* rule =
-          aPresContext->StyleSet()->ScrollTimelineRuleForName(name);
-      if (!rule) {
+      
+      if (const auto* rule =
+              aPresContext->StyleSet()->ScrollTimelineRuleForName(name)) {
         
-        return nullptr;
+        
+        
+        return ScrollTimeline::FromRule(*rule, aPresContext->Document(),
+                                        aTarget);
       }
       
-      
-      
-      return ScrollTimeline::FromRule(*rule, aPresContext->Document(), aTarget);
+      return ScrollTimeline::FromNamedScroll(aPresContext->Document(), aTarget,
+                                             name);
     }
     case StyleAnimationTimeline::Tag::Scroll: {
       const auto& scroll = aStyleTimeline.AsScroll();

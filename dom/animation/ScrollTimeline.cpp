@@ -149,6 +149,73 @@ already_AddRefed<ScrollTimeline> ScrollTimeline::FromAnonymousScroll(
   return timeline.forget();
 }
 
+ already_AddRefed<ScrollTimeline> ScrollTimeline::FromNamedScroll(
+    Document* aDocument, const NonOwningAnimationTarget& aTarget,
+    const nsAtom* aName) {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(aTarget);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  Element* result = nullptr;
+  StyleScrollAxis axis = StyleScrollAxis::Block;
+  for (Element* curr = aTarget.mElement; curr;
+       curr = curr->GetParentElement()) {
+    
+    
+    
+    
+    
+    for (Element* e = curr; e; e = e->GetPreviousElementSibling()) {
+      const ComputedStyle* style = Servo_Element_GetMaybeOutOfDateStyle(e);
+      
+      if (!style) {
+        continue;
+      }
+
+      const nsStyleUIReset* styleUIReset = style->StyleUIReset();
+      if (styleUIReset->mScrollTimelineName._0.AsAtom() == aName) {
+        result = e;
+        axis = styleUIReset->mScrollTimelineAxis;
+        break;
+      }
+    }
+
+    if (result) {
+      break;
+    }
+  }
+
+  
+  
+  
+  if (!result) {
+    return nullptr;
+  }
+  Scroller scroller = Scroller::Named(result);
+
+  RefPtr<ScrollTimeline> timeline;
+  auto* set =
+      ScrollTimelineSet::GetOrCreateScrollTimelineSet(scroller.mElement);
+  auto p = set->LookupForAdd(axis);
+  if (!p) {
+    timeline = new ScrollTimeline(aDocument, scroller, axis);
+    set->Add(p, axis, timeline);
+  } else {
+    timeline = p->value();
+  }
+  return timeline.forget();
+}
+
 Nullable<TimeDuration> ScrollTimeline::GetCurrentTimeAsDuration() const {
   
   if (!mSource || !mSource.mElement->GetPrimaryFrame()) {
@@ -244,13 +311,14 @@ const nsIScrollableFrame* ScrollTimeline::GetScrollFrame() const {
   }
 
   switch (mSource.mType) {
-    case StyleScroller::Root:
+    case Scroller::Type::Root:
       if (const PresShell* presShell =
               mSource.mElement->OwnerDoc()->GetPresShell()) {
         return presShell->GetRootScrollFrameAsScrollable();
       }
       return nullptr;
-    case StyleScroller::Nearest:
+    case Scroller::Type::Nearest:
+    case Scroller::Type::Name:
       return nsLayoutUtils::FindScrollableFrameFor(mSource.mElement);
   }
 
