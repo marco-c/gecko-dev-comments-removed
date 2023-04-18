@@ -15,6 +15,7 @@
 
 
 
+
 "use strict";
 
 const { OSKeyStore } = ChromeUtils.import(
@@ -191,6 +192,11 @@ const TEST_CREDIT_CARD_5 = {
 const MAIN_BUTTON = "button";
 const SECONDARY_BUTTON = "secondaryButton";
 const MENU_BUTTON = "menubutton";
+
+
+
+
+const TIMEOUT_ENSURE_PROFILE_NOT_SAVED = 1000;
 
 function getDisplayedPopupItems(
   browser,
