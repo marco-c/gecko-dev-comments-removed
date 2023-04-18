@@ -9,11 +9,13 @@
 #include "FOGIPC.h"
 #include "mozilla/AppShutdown.h"
 #include "mozilla/ClearOnShutdown.h"
+#include "mozilla/Unused.h"
 #include "nsThreadUtils.h"
 
 using mozilla::AppShutdown;
 using mozilla::RunOnShutdown;
 using mozilla::ShutdownPhase;
+using mozilla::Unused;
 using mozilla::glean::FlushFOGData;
 using mozilla::glean::SendFOGData;
 using mozilla::ipc::ByteBuf;
@@ -24,11 +26,28 @@ void FOG_RegisterContentChildShutdown() {
     return;
   }
 
-  RunOnShutdown(
-      [] {
-        FlushFOGData([](ByteBuf&& aBuf) { SendFOGData(std::move(aBuf)); });
-      },
-      ShutdownPhase::AppShutdownConfirmed);
+  
+  
+  bool failed =
+      NS_FAILED(NS_DispatchToMainThread(NS_NewRunnableFunction(__func__, [] {
+        
+        
+        if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
+          return;
+        }
+        RunOnShutdown(
+            [] {
+              FlushFOGData(
+                  [](ByteBuf&& aBuf) { SendFOGData(std::move(aBuf)); });
+            },
+            ShutdownPhase::AppShutdownConfirmed);
+      })));
+  if (failed) {
+    NS_WARNING(
+        "Failed to register FOG content child shutdown flush. "
+        "Will lose shutdown data and leak a runnable.");
+    mozilla::glean::fog_ipc::shutdown_registration_failures.Add(1);
+  }
 }
 
 int FOG_GetProcessType() { return XRE_GetProcessType(); }
@@ -39,9 +58,11 @@ int FOG_GetProcessType() { return XRE_GetProcessType(); }
 
 void FOG_IPCPayloadFull() {
   
-  NS_DispatchToMainThread(
+  
+  
+  Unused << NS_WARN_IF(NS_FAILED(NS_DispatchToMainThread(
       NS_NewRunnableFunction("FOG IPC Payload getting full", [] {
         FlushFOGData([](ByteBuf&& aBuf) { SendFOGData(std::move(aBuf)); });
-      }));
+      }))));
 }
 }
