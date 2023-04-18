@@ -39,7 +39,11 @@ async function createDownloadFile() {
   info("Setting path for download file");
   
   
-  let target = FileUtils.getFile("TmpD", ["downloaded.txt"]);
+  let targetPath = PathUtils.join(
+    await PathUtils.getTempDir(),
+    "downloaded.txt"
+  );
+  let target = new FileUtils.File(targetPath);
   target.createUnique(Ci.nsIFile.NORMAL_FILE_TYPE, FileUtils.PERMS_FILE);
   downloads.push({
     state: DownloadsCommon.DOWNLOAD_FINISHED,
