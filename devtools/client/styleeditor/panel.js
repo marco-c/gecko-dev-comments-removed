@@ -36,7 +36,7 @@ StyleEditorPanel.prototype = {
   
 
 
-  async open() {
+  async open(options) {
     
     const { cssProperties } = await this._toolbox.target.getFront(
       "cssProperties"
@@ -50,7 +50,7 @@ StyleEditorPanel.prototype = {
       cssProperties
     );
     this.UI.on("error", this._showError);
-    await this.UI.initialize();
+    await this.UI.initialize(options);
 
     return this;
   },

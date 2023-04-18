@@ -17,54 +17,68 @@
 
 
 
+
 exports.viewSourceInStyleEditor = async function(
   toolbox,
   stylesheetFrontOrGeneratedURL,
   generatedLine,
   generatedColumn
 ) {
-  const panel = await toolbox.loadTool("styleeditor");
-
-  let stylesheetFront;
-  if (typeof stylesheetFrontOrGeneratedURL === "string") {
-    stylesheetFront = panel.getStylesheetFrontForGeneratedURL(
-      stylesheetFrontOrGeneratedURL
-    );
-  } else {
-    stylesheetFront = stylesheetFrontOrGeneratedURL;
-  }
-
-  const originalLocation = stylesheetFront
-    ? await getOriginalLocation(
-        toolbox,
-        stylesheetFront.resourceId,
-        generatedLine,
-        generatedColumn
-      )
-    : null;
+  const originalPanelId = toolbox.currentToolId;
 
   try {
+    const panel = await toolbox.selectTool("styleeditor", "view-source", {
+      
+      
+      
+      stylesheetToSelect: {
+        stylesheet: stylesheetFrontOrGeneratedURL,
+        line: generatedLine,
+        column: generatedColumn,
+      },
+    });
+
+    let stylesheetFront;
+    if (typeof stylesheetFrontOrGeneratedURL === "string") {
+      stylesheetFront = panel.getStylesheetFrontForGeneratedURL(
+        stylesheetFrontOrGeneratedURL
+      );
+    } else {
+      stylesheetFront = stylesheetFrontOrGeneratedURL;
+    }
+
+    const originalLocation = stylesheetFront
+      ? await getOriginalLocation(
+          toolbox,
+          stylesheetFront.resourceId,
+          generatedLine,
+          generatedColumn
+        )
+      : null;
+
     if (originalLocation) {
       await panel.selectOriginalSheet(
         originalLocation.sourceId,
         originalLocation.line,
         originalLocation.column
       );
-      await toolbox.selectTool("styleeditor");
       return true;
-    } else if (stylesheetFront) {
+    }
+
+    if (stylesheetFront) {
       await panel.selectStyleSheet(
         stylesheetFront,
         generatedLine,
         generatedColumn
       );
-      await toolbox.selectTool("styleeditor");
       return true;
     }
   } catch (e) {
     console.error("Failed to view source in style editor", e);
   }
 
+  
+  
   exports.viewSource(
     toolbox,
     typeof stylesheetFrontOrGeneratedURL === "string"
@@ -73,6 +87,10 @@ exports.viewSourceInStyleEditor = async function(
           stylesheetFrontOrGeneratedURL.nodeHref,
     generatedLine
   );
+
+  
+  await toolbox.selectTool(originalPanelId);
+
   return false;
 };
 

@@ -2523,7 +2523,9 @@ Toolbox.prototype = {
 
 
 
-  loadTool: function(id) {
+
+
+  loadTool: function(id, options) {
     let iframe = this.doc.getElementById("toolbox-panel-iframe-" + id);
     if (iframe) {
       const panel = this._toolPanels.get(id);
@@ -2597,7 +2599,7 @@ Toolbox.prototype = {
           
           
           if (typeof panel.open == "function") {
-            built = panel.open();
+            built = panel.open(options);
           } else {
             built = new Promise(resolve => {
               resolve(panel);
@@ -2735,7 +2737,9 @@ Toolbox.prototype = {
 
 
 
-  selectTool: function(id, reason = "unknown") {
+
+
+  selectTool: function(id, reason = "unknown", options) {
     this.emit("panel-changed");
 
     if (this.currentToolId == id) {
@@ -2786,7 +2790,7 @@ Toolbox.prototype = {
       Services.prefs.setCharPref(this._prefs.LAST_TOOL, id);
     }
 
-    return this.loadTool(id).then(panel => {
+    return this.loadTool(id, options).then(panel => {
       
       this.focusTool(id);
 

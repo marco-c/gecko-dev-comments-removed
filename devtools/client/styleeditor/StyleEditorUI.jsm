@@ -180,8 +180,33 @@ class StyleEditorUI extends EventEmitter {
   
 
 
-  async initialize() {
+
+
+
+
+
+
+  async initialize(options = {}) {
     this.createUI();
+
+    if (options.stylesheetToSelect) {
+      const { stylesheet, line, column } = options.stylesheetToSelect;
+      
+      
+      
+      if (stylesheet.resourceId) {
+        try {
+          await this.#handleStyleSheetResource(stylesheet);
+          await this.selectStyleSheet(
+            stylesheet,
+            line - 1,
+            column ? column - 1 : 0
+          );
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
 
     await this.#toolbox.resourceCommand.watchResources(
       [this.#toolbox.resourceCommand.TYPES.DOCUMENT_EVENT],
