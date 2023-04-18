@@ -63,6 +63,16 @@ extern nsresult NS_NewByteInputStream(nsIInputStream** aStreamResult,
 
 
 
+
+
+
+extern nsresult NS_NewByteInputStream(nsIInputStream** aStreamResult,
+                                      mozilla::StreamBufferSource* aSource);
+
+
+
+
+
 extern nsresult NS_NewCStringInputStream(nsIInputStream** aStreamResult,
                                          const nsACString& aStringToRead);
 extern nsresult NS_NewCStringInputStream(nsIInputStream** aStreamResult,
