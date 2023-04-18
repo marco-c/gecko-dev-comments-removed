@@ -338,11 +338,11 @@ class CrashInfo(object):
             and os.access(self.stackwalk_binary, os.X_OK)
         ):
 
-            command = [self.stackwalk_binary, path, self.symbols_path]
+            command = [self.stackwalk_binary, "--human", path, self.symbols_path]
             
             
             if "MOZ_AUTOMATION" in os.environ:
-                command.append("https://symbols.mozilla.org/")
+                command.append("--symbols-url=https://symbols.mozilla.org/")
             self.logger.info(u"Copy/paste: {}".format(" ".join(command)))
             
             p = subprocess.Popen(
