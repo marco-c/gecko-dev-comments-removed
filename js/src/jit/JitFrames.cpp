@@ -797,6 +797,8 @@ void HandleException(ResumeFromException* rfe) {
 
   
   if (iter.isJSJit()) {
+    MOZ_ASSERT(rfe->kind == ExceptionResumeKind::EntryFrame);
+    rfe->framePointer = iter.asJSJit().current()->callerFramePtr();
     rfe->stackPointer = iter.asJSJit().fp();
   }
 }

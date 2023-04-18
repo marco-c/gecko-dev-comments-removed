@@ -345,24 +345,12 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   masm.bind(&returnLabel);
 
   
-  masm.pop(r5);
-
   
-  masm.addPtr(Imm32(2 * sizeof(uintptr_t)), sp);
-
-  
-  aasm->as_add(sp, sp, lsr(r5, FRAMESIZE_SHIFT));
+  masm.mov(r11, sp);
 
   
   masm.loadPtr(slot_vp, r5);
   masm.storeValue(JSReturnOperand, Address(r5, 0));
-
-  
-  
-  
-  
-  
-  
 
   
   GenerateReturn(masm, true);

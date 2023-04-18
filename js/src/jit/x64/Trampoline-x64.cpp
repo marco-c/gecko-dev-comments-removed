@@ -328,11 +328,8 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   }
 
   
-  masm.pop(r14);  
-  masm.shrq(Imm32(FRAMESIZE_SHIFT), r14);
-  masm.pop(r12);        
-  masm.pop(r12);        
-  masm.addq(r14, rsp);  
+  
+  masm.lea(Operand(rbp, -int32_t(offsetof(EnterJITStackEntry, rbp))), rsp);
 
   
 

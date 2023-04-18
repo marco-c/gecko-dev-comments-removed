@@ -3371,6 +3371,8 @@ void MacroAssemblerARMCompat::handleFailureWithHandlerTail(
   asMasm().moveValue(MagicValue(JS_ION_ERROR), JSReturnOperand);
   {
     ScratchRegisterScope scratch(asMasm());
+    ma_ldr(Address(sp, ResumeFromException::offsetOfFramePointer()), r11,
+           scratch);
     ma_ldr(Address(sp, ResumeFromException::offsetOfStackPointer()), sp,
            scratch);
   }

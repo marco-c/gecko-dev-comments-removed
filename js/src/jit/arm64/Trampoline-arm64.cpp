@@ -277,12 +277,16 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   
   masm.bind(&osrReturnPoint);
 
-  masm.Pop(r19);       
-  masm.pop(r24, r23);  
-
   
-  masm.Add(masm.GetStackPointer64(), masm.GetStackPointer64(),
-           Operand(x19, vixl::LSR, FRAMESIZE_SHIFT));
+  
+  
+#ifdef DEBUG
+  static constexpr size_t SavedRegSize = 22 * sizeof(void*);
+#else
+  static constexpr size_t SavedRegSize = 20 * sizeof(void*);
+#endif
+  masm.computeEffectiveAddress(Address(FramePointer, -int32_t(SavedRegSize)),
+                               masm.getStackPointer());
 
   masm.syncStackPtr();
   masm.SetStackPointer64(sp);

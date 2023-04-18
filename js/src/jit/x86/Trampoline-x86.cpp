@@ -281,21 +281,15 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
 
   
   
-  masm.pop(eax);
-  masm.shrl(Imm32(FRAMESIZE_SHIFT), eax);  
-  masm.pop(ebx);                           
-  masm.pop(ebx);                           
-  masm.addl(eax, esp);
+  
+  
+  
+  
+  
+  masm.lea(Operand(ebp, -int32_t(3 * sizeof(void*))), esp);
 
   
-  
-  
-  
-  
-  
-  
-  
-  masm.loadPtr(Address(esp, ARG_RESULT + 3 * sizeof(void*)), eax);
+  masm.loadPtr(Address(ebp, ARG_RESULT), eax);
   masm.storeValue(JSReturnOperand, Operand(eax, 0));
 
   
