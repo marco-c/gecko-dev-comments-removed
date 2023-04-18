@@ -56,4 +56,7 @@ add_task(async function() {
   });
 
   BrowserTestUtils.removeTab(tab);
+
+  
+  Services.obs.notifyObservers(null, "net:clear-active-logins");
 });
