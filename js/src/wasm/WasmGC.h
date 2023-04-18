@@ -73,21 +73,6 @@ struct StackMap final {
   
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
   static constexpr size_t MappedWordsBits = 30;
   uint32_t numMappedWords : MappedWordsBits;
 
