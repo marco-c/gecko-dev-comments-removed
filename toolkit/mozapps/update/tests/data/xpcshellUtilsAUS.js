@@ -2466,7 +2466,11 @@ function isBinarySigned(aBinPath) {
 
 
 
-function setupAppFiles() {
+
+
+
+
+function setupAppFiles({ requiresOmnijar = false } = {}) {
   debugDump(
     "start - copying or creating symlinks to application files " +
       "for the test"
@@ -2494,6 +2498,18 @@ function setupAppFiles() {
     { relPath: FILE_APPLICATION_INI, inGreDir: true },
     { relPath: "dependentlibs.list", inGreDir: true },
   ];
+
+  if (requiresOmnijar) {
+    appFiles.push({ relPath: AppConstants.OMNIJAR_NAME, inGreDir: true });
+
+    if (AppConstants.MOZ_BUILD_APP == "browser") {
+      
+      appFiles.push({
+        relPath: "browser/" + AppConstants.OMNIJAR_NAME,
+        inGreDir: true,
+      });
+    }
+  }
 
   
   
@@ -3081,11 +3097,17 @@ async function waitForHelperExit() {
 
 
 
+
+
+
+
+
 async function setupUpdaterTest(
   aMarFile,
   aPostUpdateAsync,
   aPostUpdateExeRelPathPrefix = "",
-  aSetupActiveUpdate = true
+  aSetupActiveUpdate = true,
+  { requiresOmnijar = false } = {}
 ) {
   debugDump("start - updater test setup");
   let updatesPatchDir = getUpdateDirFile(DIR_PATCH);
@@ -3200,7 +3222,7 @@ async function setupUpdaterTest(
 
   await TestUtils.waitForCondition(() => {
     try {
-      setupAppFiles();
+      setupAppFiles({ requiresOmnijar });
       return true;
     } catch (e) {
       logTestInfo("exception when calling setupAppFiles, Exception: " + e);
@@ -3568,8 +3590,8 @@ function checkFilesAfterUpdateSuccess(
       if (AppConstants.platform != "win" && aTestFile.comparePerms) {
         
         Assert.equal(
-          testFile.permissions & 0xfff,
-          aTestFile.comparePerms & 0xfff,
+          "0o" + (testFile.permissions & 0xfff).toString(8),
+          "0o" + (aTestFile.comparePerms & 0xfff).toString(8),
           "the file permissions" + MSG_SHOULD_EQUAL
         );
       }
