@@ -123,9 +123,9 @@ var interfaceNamesInGlobalScope = [
   
   { name: "BroadcastChannel", insecureContext: true },
   
-  "Cache",
+  { name: "Cache", insecureContext: true },
   
-  "CacheStorage",
+  { name: "CacheStorage", insecureContext: true },
   
   { name: "CloseEvent", insecureContext: true },
   
