@@ -672,22 +672,34 @@ nsRect LocalAccessible::ParentRelativeBounds() {
     }
 
     nsIFrame* boundingFrame = FindNearestAccessibleAncestorFrame();
-    nsRect unionRect =
-        nsLayoutUtils::GetAllInFlowRectsUnion(frame, boundingFrame);
+    nsRect result = nsLayoutUtils::GetAllInFlowRectsUnion(frame, boundingFrame);
 
-    if (unionRect.IsEmpty()) {
+    if (result.IsEmpty()) {
       
       
       
       
       
       
-      nsRect overflow = frame->InkOverflowRectRelativeToSelf();
-      nsLayoutUtils::TransformRect(frame, boundingFrame, overflow);
-      return overflow;
+      result = frame->InkOverflowRectRelativeToSelf();
+      nsLayoutUtils::TransformRect(frame, boundingFrame, result);
     }
 
-    return unionRect;
+    if (nsIScrollableFrame* sf =
+            mParent == mDoc
+                ? mDoc->PresShellPtr()->GetRootScrollFrameAsScrollable()
+                : boundingFrame->GetScrollTargetFrame()) {
+      
+      
+      
+      
+      
+      nsPoint scrollPos = sf->GetScrollPosition().ApplyResolution(
+          mDoc->PresShellPtr()->GetResolution());
+      result.MoveBy(scrollPos.x, scrollPos.y);
+    }
+
+    return result;
   }
 
   return nsRect();

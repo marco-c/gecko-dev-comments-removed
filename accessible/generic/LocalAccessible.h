@@ -425,6 +425,9 @@ class LocalAccessible : public nsISupports, public Accessible {
   
 
 
+
+
+
   virtual nsRect ParentRelativeBounds();
 
   
