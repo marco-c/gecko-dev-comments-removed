@@ -9,8 +9,7 @@
 #ifndef MacRunFromDmgUtils_h_
 #define MacRunFromDmgUtils_h_
 
-namespace mozilla {
-namespace MacRunFromDmgUtils {
+namespace mozilla::MacRunFromDmgUtils {
 
 
 
@@ -27,9 +26,8 @@ bool IsAppRunningFromDmg();
 
 
 
-bool MaybeInstallFromDmgAndRelaunch();
+bool MaybeInstallAndRelaunch();
 
-}  
 }  
 
 #endif

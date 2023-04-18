@@ -5617,7 +5617,7 @@ nsresult XREMain::XRE_mainRun() {
 #  ifdef MOZILLA_OFFICIAL
       
       
-      if (MacRunFromDmgUtils::MaybeInstallFromDmgAndRelaunch()) {
+      if (MacRunFromDmgUtils::MaybeInstallAndRelaunch()) {
         bool userAllowedQuit = true;
         appStartup->Quit(nsIAppStartup::eForceQuit, 0, &userAllowedQuit);
       }
