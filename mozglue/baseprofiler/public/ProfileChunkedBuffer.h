@@ -14,7 +14,6 @@
 #include "mozilla/ProfileBufferChunkManagerSingle.h"
 #include "mozilla/ProfileBufferEntrySerialization.h"
 #include "mozilla/ProfileChunkedBufferDetail.h"
-#include "mozilla/RefCounted.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/Unused.h"
@@ -1200,11 +1199,8 @@ class ProfileChunkedBuffer {
   
   
   
-  class RequestedChunkRefCountedHolder
-      : public external::AtomicRefCounted<RequestedChunkRefCountedHolder> {
+  class RequestedChunkRefCountedHolder {
    public:
-    MOZ_DECLARE_REFCOUNTED_TYPENAME(RequestedChunkRefCountedHolder)
-
     enum class State { Unused, Requested, Fulfilled };
 
     
@@ -1250,9 +1246,32 @@ class ProfileChunkedBuffer {
       return maybeChunk;
     }
 
+    
+    
+    
+    
+
+    void AddRef() {
+      baseprofiler::detail::BaseProfilerAutoLock lock(mRequestMutex);
+      ++mRefCount;
+    }
+
+    void Release() {
+      {
+        baseprofiler::detail::BaseProfilerAutoLock lock(mRequestMutex);
+        if (--mRefCount > 0) {
+          return;
+        }
+      }
+      delete this;
+    }
+
    private:
+    ~RequestedChunkRefCountedHolder() = default;
+
     
     mutable baseprofiler::detail::BaseProfilerMutex mRequestMutex;
+    int mRefCount = 0;
     State mState = State::Unused;
     UniquePtr<ProfileBufferChunk> mRequestedChunk;
   };
