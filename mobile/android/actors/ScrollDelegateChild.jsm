@@ -17,11 +17,6 @@ const EXPORTED_SYMBOLS = ["ScrollDelegateChild"];
 class ScrollDelegateChild extends GeckoViewActorChild {
   
   handleEvent(aEvent) {
-    if (!this.isContentWindow) {
-      
-      return;
-    }
-
     if (aEvent.originalTarget.ownerGlobal != this.contentWindow) {
       return;
     }
