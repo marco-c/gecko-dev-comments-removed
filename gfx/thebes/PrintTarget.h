@@ -28,8 +28,6 @@ class DrawEventRecorder;
 
 class PrintTarget {
  public:
-  typedef std::function<void(nsresult)> PageDoneCallback;
-
   NS_INLINE_DECL_REFCOUNTING(PrintTarget);
 
   
@@ -130,17 +128,6 @@ class PrintTarget {
 
   virtual already_AddRefed<DrawTarget> GetReferenceDrawTarget();
 
-  
-
-
-
-
-
-
-  virtual bool IsSyncPagePrinting() const { return true; }
-  void RegisterPageDoneCallback(PageDoneCallback&& aCallback);
-  void UnregisterPageDoneCallback();
-
   static void AdjustPrintJobNameForIPP(const nsAString& aJobName,
                                        nsCString& aAdjustedJobName);
   static void AdjustPrintJobNameForIPP(const nsAString& aJobName,
@@ -164,8 +151,6 @@ class PrintTarget {
 #ifdef DEBUG
   bool mHasActivePage;
 #endif
-
-  PageDoneCallback mPageDoneCallback;
 };
 
 }  
