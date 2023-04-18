@@ -142,6 +142,15 @@ void PendingAnimationTracker::MarkAnimationsThatMightNeedSynchronization() {
   mHasPlayPendingGeometricAnimations = CheckState::Absent;
   for (const auto& animation : mPlayPendingSet) {
     if (animation->GetEffect() && animation->GetEffect()->AffectsGeometry()) {
+      if (animation->UsingScrollTimeline()) {
+        
+        
+        
+        
+        
+        
+        continue;
+      }
       mHasPlayPendingGeometricAnimations &= ~CheckState::Absent;
       mHasPlayPendingGeometricAnimations |= IsTransition(*animation)
                                                 ? CheckState::TransitionsPresent

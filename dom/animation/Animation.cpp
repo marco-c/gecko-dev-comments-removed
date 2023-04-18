@@ -1035,6 +1035,8 @@ bool Animation::ShouldBeSynchronizedWithMainThread(
   
   
   
+  
+  
   if (StaticPrefs::
           dom_animations_mainthread_synchronization_with_geometric_animations() &&
       mSyncWithGeometricAnimations &&

@@ -1687,9 +1687,13 @@ bool KeyframeEffect::ShouldBlockAsyncTransformAnimations(
     return true;
   }
 
+  MOZ_ASSERT(mAnimation);
+  
+  
   const bool enableMainthreadSynchronizationWithGeometricAnimations =
       StaticPrefs::
-          dom_animations_mainthread_synchronization_with_geometric_animations();
+          dom_animations_mainthread_synchronization_with_geometric_animations() &&
+      !mAnimation->UsingScrollTimeline();
 
   for (const AnimationProperty& property : mProperties) {
     
@@ -2023,6 +2027,13 @@ KeyframeEffect::MatchForCompositor KeyframeEffect::IsMatchForCompositor(
     
     
     return KeyframeEffect::MatchForCompositor::NoAndBlockThisProperty;
+  }
+
+  
+  
+  
+  if (mAnimation->UsingScrollTimeline()) {
+    return KeyframeEffect::MatchForCompositor::No;
   }
 
   if (!HasEffectiveAnimationOfPropertySet(aPropertySet, aEffects)) {
