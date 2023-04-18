@@ -466,7 +466,8 @@ async function synthesizeNativePanGestureEvent(
 
 
 
-async function promiseNativeTouchpadPan(
+
+async function promiseNativeTouchpadPanEventAndWaitForObserver(
   aTarget,
   aX,
   aY,
@@ -476,7 +477,7 @@ async function promiseNativeTouchpadPan(
 ) {
   if (getPlatform() != "windows") {
     throw new Error(
-      `promiseNativeTouchpadPan doesn't work on ${getPlatform()}`
+      `promiseNativeTouchpadPanEventAndWaitForObserver doesn't work on ${getPlatform()}`
     );
   }
 
@@ -487,9 +488,26 @@ async function promiseNativeTouchpadPan(
   });
 
   const utils = utilsForTarget(aTarget);
-  utils.sendNativeTouchpadPan(aPhase, pt.x, pt.y, aDeltaX, aDeltaY, 0);
 
-  return promiseFrame();
+  return new Promise(resolve => {
+    var observer = {
+      observe(aSubject, aTopic, aData) {
+        if (aTopic == "touchpadpanevent") {
+          resolve();
+        }
+      },
+    };
+
+    utils.sendNativeTouchpadPan(
+      aPhase,
+      pt.x,
+      pt.y,
+      aDeltaX,
+      aDeltaY,
+      0,
+      observer
+    );
+  });
 }
 
 
