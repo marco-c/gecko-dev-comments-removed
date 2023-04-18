@@ -604,25 +604,9 @@ function appendSearchKeywords(aId, keywords) {
   element.setAttribute("searchkeywords", keywords.join(" "));
 }
 
-async function ensureScrollPadding() {
-  let stickyContainer = document.querySelector(".sticky-container");
-  let height = await window.browsingContext.topChromeWindow.promiseDocumentFlushed(
-    () => stickyContainer.clientHeight
-  );
-  
-  
-  
-  
-  height += 8;
-  stickyContainer
-    .closest(".main-content")
-    .style.setProperty("scroll-padding-top", height + "px");
-}
-
 function maybeDisplayPoliciesNotice() {
   if (Services.policies.status == Services.policies.ACTIVE) {
     document.getElementById("policies-container").removeAttribute("hidden");
-    ensureScrollPadding();
   }
 }
 
