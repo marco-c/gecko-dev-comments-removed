@@ -1397,6 +1397,24 @@
 
 
  \
+    MACRO(CloseIter, close_iter, NULL, 2, 1, 0, JOF_UINT8|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
     MACRO(CheckIsObj, check_is_obj, NULL, 2, 1, 1, JOF_UINT8) \
     
 
@@ -3499,14 +3517,13 @@
 
 
 #define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
-  IF_RECORD_TUPLE(, MACRO(223))     \
   IF_RECORD_TUPLE(, MACRO(224))     \
   IF_RECORD_TUPLE(, MACRO(225))     \
   IF_RECORD_TUPLE(, MACRO(226))     \
   IF_RECORD_TUPLE(, MACRO(227))     \
   IF_RECORD_TUPLE(, MACRO(228))     \
   IF_RECORD_TUPLE(, MACRO(229))     \
-  MACRO(230)                                   \
+  IF_RECORD_TUPLE(, MACRO(230))     \
   MACRO(231)                                   \
   MACRO(232)                                   \
   MACRO(233)                                   \

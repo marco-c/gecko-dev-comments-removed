@@ -1,0 +1,16 @@
+
+
+
+
+
+
+#ifndef vm_CompletionKind_h
+#define vm_CompletionKind_h
+
+namespace js {
+
+enum class CompletionKind : uint8_t { Normal, Return, Throw };
+
+}  
+
+#endif  
