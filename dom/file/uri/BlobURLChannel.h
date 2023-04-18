@@ -13,8 +13,7 @@
 
 class nsIURI;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class BlobImpl;
 
@@ -31,7 +30,6 @@ class BlobURLChannel final : public nsBaseChannel {
   bool mContentStreamOpened;
 };
 
-}  
 }  
 
 #endif 

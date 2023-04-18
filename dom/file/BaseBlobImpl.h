@@ -10,8 +10,7 @@
 #include "mozilla/dom/BlobImpl.h"
 #include "mozilla/ErrorResult.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class FileBlobImpl;
 
@@ -152,7 +151,6 @@ class BaseBlobImpl : public BlobImpl {
   int64_t mLastModificationDate;
 };
 
-}  
 }  
 
 #endif  

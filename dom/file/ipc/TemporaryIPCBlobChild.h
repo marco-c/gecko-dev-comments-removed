@@ -10,8 +10,7 @@
 #include "mozilla/dom/PTemporaryIPCBlob.h"
 #include "mozilla/dom/PTemporaryIPCBlobChild.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class BlobImpl;
 class MutableBlobStorage;
@@ -49,7 +48,6 @@ class TemporaryIPCBlobChild final : public PTemporaryIPCBlobChild {
   bool mActive;
 };
 
-}  
 }  
 
 #endif  

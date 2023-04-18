@@ -9,8 +9,7 @@
 
 #include "FileBlobImpl.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -43,7 +42,6 @@ class TemporaryFileBlobImpl final : public FileBlobImpl {
                                          ErrorResult& aRv) override;
 };
 
-}  
 }  
 
 #endif  

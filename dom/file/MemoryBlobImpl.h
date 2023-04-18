@@ -18,8 +18,7 @@
 #include "nsIIPCSerializableInputStream.h"
 #include "nsISeekableStream.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class MemoryBlobImpl final : public BaseBlobImpl {
  public:
@@ -155,7 +154,6 @@ class MemoryBlobImpl final : public BaseBlobImpl {
   RefPtr<DataOwner> mDataOwner;
 };
 
-}  
 }  
 
 #endif  
