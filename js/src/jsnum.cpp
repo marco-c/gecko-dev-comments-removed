@@ -44,6 +44,7 @@
 #include "vm/JSAtom.h"
 #include "vm/JSContext.h"
 #include "vm/JSObject.h"
+#include "vm/StaticStrings.h"
 #include "vm/WellKnownAtom.h"  
 
 #include "vm/Compartment-inl.h"  

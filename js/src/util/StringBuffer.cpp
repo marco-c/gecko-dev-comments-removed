@@ -13,6 +13,8 @@
 
 #include "frontend/ParserAtom.h"  
 #include "js/friend/ErrorMessages.h"  
+#include "vm/StaticStrings.h"
+
 #include "vm/JSObject-inl.h"
 #include "vm/StringType-inl.h"
 

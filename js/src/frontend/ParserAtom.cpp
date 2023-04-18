@@ -21,6 +21,7 @@
 #include "vm/Printer.h"  
 #include "vm/Runtime.h"
 #include "vm/SelfHosting.h"  
+#include "vm/StaticStrings.h"
 #include "vm/StringType.h"
 
 using namespace js;

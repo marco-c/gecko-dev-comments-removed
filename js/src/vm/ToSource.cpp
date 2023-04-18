@@ -33,6 +33,7 @@
 #include "vm/Printer.h"         
 #include "vm/SelfHosting.h"     
 #include "vm/Stack.h"           
+#include "vm/StaticStrings.h"   
 #include "vm/StringType.h"      
 #include "vm/SymbolType.h"      
 

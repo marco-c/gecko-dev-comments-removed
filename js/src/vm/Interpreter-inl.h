@@ -17,6 +17,7 @@
 #include "vm/BytecodeUtil.h"  
 #include "vm/Realm.h"
 #include "vm/SharedStencil.h"  
+#include "vm/StaticStrings.h"
 #include "vm/ThrowMsgKind.h"
 
 #include "vm/EnvironmentObject-inl.h"

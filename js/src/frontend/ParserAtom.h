@@ -16,6 +16,7 @@
 #include "js/HashTable.h"         
 #include "js/Vector.h"            
 #include "vm/CommonPropertyNames.h"
+#include "vm/StaticStrings.h"
 #include "vm/StringType.h"     
 #include "vm/WellKnownAtom.h"  
 

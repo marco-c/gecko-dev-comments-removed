@@ -54,6 +54,7 @@
 #include "vm/RegExpObject.h"
 #include "vm/RegExpStatics.h"
 #include "vm/SelfHosting.h"
+#include "vm/StaticStrings.h"
 #include "vm/ToSource.h"       
 #include "vm/WellKnownAtom.h"  
 
