@@ -104,9 +104,6 @@ class MessageChannel : HasResultCodes {
   friend class ProtocolFuzzerHelper;
 #endif
 
-  class CxxStackFrame;
-  class InterruptFrame;
-
   typedef mozilla::Monitor Monitor;
 
   
@@ -147,7 +144,6 @@ class MessageChannel : HasResultCodes {
   static constexpr int32_t kNoTimeout = INT32_MIN;
 
   typedef IPC::Message Message;
-  typedef IPC::MessageInfo MessageInfo;
   typedef mozilla::ipc::Transport Transport;
   using ScopedPort = mozilla::ipc::ScopedPort;
 
@@ -256,9 +252,6 @@ class MessageChannel : HasResultCodes {
   
   bool Send(UniquePtr<Message> aMsg, Message* aReply);
 
-  
-  bool Call(UniquePtr<Message> aMsg, Message* aReply);
-
   bool CanSend() const;
 
   
@@ -277,7 +270,7 @@ class MessageChannel : HasResultCodes {
 
   void SetReplyTimeoutMs(int32_t aTimeoutMs);
 
-  bool IsOnCxxStack() const { return !mCxxStackFrames.empty(); }
+  bool IsOnCxxStack() const { return mOnCxxStack; }
 
   void CancelCurrentTransaction();
 
@@ -323,10 +316,9 @@ class MessageChannel : HasResultCodes {
 
 #ifdef OS_WIN
   struct MOZ_STACK_CLASS SyncStackFrame {
-    SyncStackFrame(MessageChannel* channel, bool interrupt);
+    explicit SyncStackFrame(MessageChannel* channel);
     ~SyncStackFrame();
 
-    bool mInterrupt;
     bool mSpinNestedEvents;
     bool mListenerNotified;
     MessageChannel* mChannel;
@@ -377,13 +369,11 @@ class MessageChannel : HasResultCodes {
 
   void Clear();
 
-  bool InterruptEventOccurred();
   bool HasPendingEvents();
 
   void ProcessPendingRequests(AutoEnterTransaction& aTransaction);
   bool ProcessPendingRequest(Message&& aUrgent);
 
-  void MaybeUndeferIncall();
   void EnqueuePendingMessages();
 
   
@@ -394,8 +384,6 @@ class MessageChannel : HasResultCodes {
   void DispatchSyncMessage(ActorLifecycleProxy* aProxy, const Message& aMsg,
                            Message*& aReply);
   void DispatchAsyncMessage(ActorLifecycleProxy* aProxy, const Message& aMsg);
-  void DispatchInterruptMessage(ActorLifecycleProxy* aProxy, Message&& aMsg,
-                                size_t aStackDepth);
 
   
   
@@ -408,7 +396,6 @@ class MessageChannel : HasResultCodes {
   
   
   bool WaitForSyncNotify(bool aHandleWindowsMessages);
-  bool WaitForInterruptNotify();
 
   bool WaitResponse(bool aWaitTimedOut);
 
@@ -419,58 +406,18 @@ class MessageChannel : HasResultCodes {
 
   void RepostAllMessages();
 
-  
-  
-  
-  
-  
-  
-  
-  
-  size_t RemoteViewOfStackDepth(size_t stackDepth) const {
-    AssertWorkerThread();
-    return stackDepth - mOutOfTurnReplies.size();
-  }
-
   int32_t NextSeqno() {
     AssertWorkerThread();
     return (mSide == ChildSide) ? --mNextSeqno : ++mNextSeqno;
   }
 
-  
-  
-  
-  void EnteredCxxStack();
-  void ExitedCxxStack();
-
-  void EnteredCall();
-  void ExitedCall();
-
-  void EnteredSyncSend();
-  void ExitedSyncSend();
-
   void DebugAbort(const char* file, int line, const char* cond, const char* why,
                   bool reply = false);
-
-  
-  
-  void DumpInterruptStack(const char* const pfx = "") const;
 
   void AddProfilerMarker(const IPC::Message& aMessage,
                          MessageDirection aDirection);
 
  private:
-  
-  size_t InterruptStackDepth() const {
-    mMonitor->AssertCurrentThreadOwns();
-    return mInterruptStack.size();
-  }
-
-  bool AwaitingInterruptReply() const {
-    mMonitor->AssertCurrentThreadOwns();
-    return !mInterruptStack.empty();
-  }
-
   
   bool DispatchingAsyncMessage() const {
     AssertWorkerThread();
@@ -506,7 +453,6 @@ class MessageChannel : HasResultCodes {
 
   bool WasTransactionCanceled(int transaction);
   bool ShouldDeferMessage(const Message& aMsg);
-  bool ShouldDeferInterruptMessage(const Message& aMsg, size_t aStackDepth);
   void OnMessageReceivedFromLink(Message&& aMsg);
   void OnChannelErrorFromLink();
 
@@ -577,7 +523,6 @@ class MessageChannel : HasResultCodes {
   void RunMessage(MessageTask& aTask);
 
   typedef LinkedList<RefPtr<MessageTask>> MessageQueue;
-  typedef std::map<size_t, Message> MessageMap;
   typedef std::map<size_t, UniquePtr<UntypedCallbackHolder>> CallbackMap;
   typedef IPC::Message::msgid_t msgid_t;
 
@@ -706,33 +651,6 @@ class MessageChannel : HasResultCodes {
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   MessageQueue mPending;
 
   
@@ -743,60 +661,10 @@ class MessageChannel : HasResultCodes {
   
   
   
-  
-  std::stack<MessageInfo> mInterruptStack;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  size_t mRemoteStackDepthGuess = 0;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  mozilla::Vector<InterruptFrame> mCxxStackFrames;
-
-  
-  
-  bool mSawInterruptOutMsg = false;
-
-  
-  
-  
-  MessageMap mOutOfTurnReplies;
+  bool mOnCxxStack = false;
 
   
   CallbackMap mPendingResponses;
-
-  
-  
-  std::stack<Message> mDeferred;
 
 #ifdef OS_WIN
   HANDLE mEvent;

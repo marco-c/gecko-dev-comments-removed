@@ -101,21 +101,6 @@ static mozilla::LazyLogModule sLogModule("ipc");
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 using namespace mozilla;
 using namespace mozilla::ipc;
 
@@ -125,6 +110,8 @@ using mozilla::dom::AutoNoJSAPI;
 
 #define IPC_ASSERT(_cond, ...)                                           \
   do {                                                                   \
+    AssertWorkerThread();                                                \
+    mMonitor->AssertCurrentThreadOwns();                                 \
     if (!(_cond)) DebugAbort(__FILE__, __LINE__, #_cond, ##__VA_ARGS__); \
   } while (0)
 
@@ -143,135 +130,6 @@ static const uint32_t kMinTelemetrySyncIPCLatencyMs = 1;
 
 
 bool MessageChannel::sIsPumpingMessages = false;
-
-enum Direction { IN_MESSAGE, OUT_MESSAGE };
-
-class MessageChannel::InterruptFrame {
- private:
-  enum Semantics { INTR_SEMS, SYNC_SEMS, ASYNC_SEMS };
-
- public:
-  InterruptFrame(Direction direction, const Message* msg)
-      : mMessageName(msg->name()),
-        mMessageRoutingId(msg->routing_id()),
-        mMesageSemantics(msg->is_interrupt() ? INTR_SEMS
-                         : msg->is_sync()    ? SYNC_SEMS
-                                             : ASYNC_SEMS),
-        mDirection(direction),
-        mMoved(false) {
-    MOZ_RELEASE_ASSERT(mMessageName);
-  }
-
-  InterruptFrame(InterruptFrame&& aOther) {
-    MOZ_RELEASE_ASSERT(aOther.mMessageName);
-    mMessageName = aOther.mMessageName;
-    aOther.mMessageName = nullptr;
-    mMoved = aOther.mMoved;
-    aOther.mMoved = true;
-
-    mMessageRoutingId = aOther.mMessageRoutingId;
-    mMesageSemantics = aOther.mMesageSemantics;
-    mDirection = aOther.mDirection;
-  }
-
-  ~InterruptFrame() { MOZ_RELEASE_ASSERT(mMessageName || mMoved); }
-
-  InterruptFrame& operator=(InterruptFrame&& aOther) {
-    MOZ_RELEASE_ASSERT(&aOther != this);
-    this->~InterruptFrame();
-    new (this) InterruptFrame(std::move(aOther));
-    return *this;
-  }
-
-  bool IsInterruptIncall() const {
-    return INTR_SEMS == mMesageSemantics && IN_MESSAGE == mDirection;
-  }
-
-  bool IsInterruptOutcall() const {
-    return INTR_SEMS == mMesageSemantics && OUT_MESSAGE == mDirection;
-  }
-
-  bool IsOutgoingSync() const {
-    return (mMesageSemantics == INTR_SEMS || mMesageSemantics == SYNC_SEMS) &&
-           mDirection == OUT_MESSAGE;
-  }
-
-  void Describe(int32_t* id, const char** dir, const char** sems,
-                const char** name) const {
-    *id = mMessageRoutingId;
-    *dir = (IN_MESSAGE == mDirection) ? "in" : "out";
-    *sems = (INTR_SEMS == mMesageSemantics)   ? "intr"
-            : (SYNC_SEMS == mMesageSemantics) ? "sync"
-                                              : "async";
-    *name = mMessageName;
-  }
-
-  int32_t GetRoutingId() const { return mMessageRoutingId; }
-
- private:
-  const char* mMessageName;
-  int32_t mMessageRoutingId;
-  Semantics mMesageSemantics;
-  Direction mDirection;
-  bool mMoved;
-
-  
-  InterruptFrame(const InterruptFrame& aOther) = delete;
-  InterruptFrame& operator=(const InterruptFrame&) = delete;
-};
-
-class MOZ_STACK_CLASS MessageChannel::CxxStackFrame {
- public:
-  CxxStackFrame(MessageChannel& that, Direction direction, const Message* msg)
-      : mThat(that) {
-    mThat.AssertWorkerThread();
-
-    if (mThat.mCxxStackFrames.empty()) mThat.EnteredCxxStack();
-
-    if (!mThat.mCxxStackFrames.append(InterruptFrame(direction, msg)))
-      MOZ_CRASH();
-
-    const InterruptFrame& frame = mThat.mCxxStackFrames.back();
-
-    if (frame.IsInterruptIncall()) mThat.EnteredCall();
-
-    if (frame.IsOutgoingSync()) mThat.EnteredSyncSend();
-
-    mThat.mSawInterruptOutMsg |= frame.IsInterruptOutcall();
-  }
-
-  ~CxxStackFrame() {
-    mThat.AssertWorkerThread();
-
-    MOZ_RELEASE_ASSERT(!mThat.mCxxStackFrames.empty());
-
-    const InterruptFrame& frame = mThat.mCxxStackFrames.back();
-    bool exitingSync = frame.IsOutgoingSync();
-    bool exitingCall = frame.IsInterruptIncall();
-    mThat.mCxxStackFrames.shrinkBy(1);
-
-    bool exitingStack = mThat.mCxxStackFrames.empty();
-
-    
-    
-    
-    
-
-    if (exitingCall) mThat.ExitedCall();
-
-    if (exitingSync) mThat.ExitedSyncSend();
-
-    if (exitingStack) mThat.ExitedCxxStack();
-  }
-
- private:
-  MessageChannel& mThat;
-
-  
-  CxxStackFrame() = delete;
-  CxxStackFrame(const CxxStackFrame&) = delete;
-  CxxStackFrame& operator=(const CxxStackFrame&) = delete;
-};
 
 class AutoEnterTransaction {
  public:
@@ -582,7 +440,8 @@ MessageChannel::MessageChannel(const char* aName, IToplevelProtocol* aListener)
 MessageChannel::~MessageChannel() {
   MOZ_COUNT_DTOR(ipc::MessageChannel);
   MonitorAutoLock lock(*mMonitor);
-  IPC_ASSERT(mCxxStackFrames.empty(), "mismatched CxxStackFrame ctor/dtors");
+  MOZ_RELEASE_ASSERT(!mOnCxxStack,
+                     "MessageChannel destroyed while code on CxxStack");
 #ifdef OS_WIN
   if (mEvent) {
     BOOL ok = CloseHandle(mEvent);
@@ -638,8 +497,6 @@ MessageChannel::~MessageChannel() {
   MOZ_RELEASE_ASSERT(mPendingResponses.empty());
   MOZ_RELEASE_ASSERT(!mChannelErrorTask);
   MOZ_RELEASE_ASSERT(mPending.isEmpty());
-  MOZ_RELEASE_ASSERT(mOutOfTurnReplies.empty());
-  MOZ_RELEASE_ASSERT(mDeferred.empty());
 }
 
 #ifdef DEBUG
@@ -757,11 +614,6 @@ void MessageChannel::Clear() {
   mPending.clear();
 
   mMaybeDeferredPendingCount = 0;
-
-  mOutOfTurnReplies.clear();
-  while (!mDeferred.empty()) {
-    mDeferred.pop();
-  }
 }
 
 bool MessageChannel::Open(ScopedPort aPort, Side aSide,
@@ -852,7 +704,7 @@ bool MessageChannel::Send(UniquePtr<Message> aMsg) {
   MOZ_RELEASE_ASSERT(!aMsg->is_sync());
   MOZ_RELEASE_ASSERT(aMsg->nested_level() != IPC::Message::NESTED_INSIDE_SYNC);
 
-  CxxStackFrame frame(*this, OUT_MESSAGE, aMsg.get());
+  AutoSetValue<bool> setOnCxxStack(mOnCxxStack, true);
 
   AssertWorkerThread();
   mMonitor->AssertNotCurrentThreadOwns();
@@ -1165,15 +1017,7 @@ void MessageChannel::OnMessageReceivedFromLink(Message&& aMsg) {
 
   bool alwaysDeferred = IsAlwaysDeferred(aMsg);
 
-  bool wakeUpSyncSend = AwaitingSyncReply() && !ShouldDeferMessage(aMsg);
-
-  bool shouldWakeUp = AwaitingInterruptReply() || wakeUpSyncSend;
-
-  
-  
-  
-  
-  bool shouldPostTask = !shouldWakeUp || wakeUpSyncSend;
+  bool shouldWakeUp = AwaitingSyncReply() && !ShouldDeferMessage(aMsg);
 
   IPC_LOG("Receive from link; seqno=%d, xid=%d, shouldWakeUp=%d", aMsg.seqno(),
           aMsg.transaction_id(), shouldWakeUp);
@@ -1182,10 +1026,6 @@ void MessageChannel::OnMessageReceivedFromLink(Message&& aMsg) {
     return;
   }
 
-  
-  
-  
-  
   
   
   
@@ -1215,9 +1055,11 @@ void MessageChannel::OnMessageReceivedFromLink(Message&& aMsg) {
     NotifyWorkerThread();
   }
 
-  if (shouldPostTask) {
-    task->Post();
-  }
+  
+  
+  
+  
+  task->Post();
 }
 
 void MessageChannel::PeekMessages(
@@ -1312,12 +1154,12 @@ bool MessageChannel::Send(UniquePtr<Message> aMsg, Message* aReply) {
                      "sync send over same-thread channel will deadlock!");
 
 #ifdef OS_WIN
-  SyncStackFrame frame(this, false);
+  SyncStackFrame frame(this);
   NeuteredWindowRegion neuteredRgn(mFlags &
                                    REQUIRE_DEFERRED_MESSAGE_PROTECTION);
 #endif
 
-  CxxStackFrame f(*this, OUT_MESSAGE, aMsg.get());
+  AutoSetValue<bool> setOnCxxStack(mOnCxxStack, true);
 
   MonitorAutoLock lock(*mMonitor);
 
@@ -1515,205 +1357,10 @@ bool MessageChannel::Send(UniquePtr<Message> aMsg, Message* aReply) {
   return true;
 }
 
-bool MessageChannel::Call(UniquePtr<Message> aMsg, Message* aReply) {
-  AssertWorkerThread();
-  mMonitor->AssertNotCurrentThreadOwns();
-  MOZ_RELEASE_ASSERT(!mIsSameThreadChannel,
-                     "intr call send over same-thread channel will deadlock!");
-
-#ifdef OS_WIN
-  SyncStackFrame frame(this, true);
-#endif
-
-  
-  
-  CxxStackFrame cxxframe(*this, OUT_MESSAGE, aMsg.get());
-
-  MonitorAutoLock lock(*mMonitor);
-  if (!Connected()) {
-    ReportConnectionError("Call", aMsg->type());
-    return false;
-  }
-
-  
-  IPC_ASSERT(!AwaitingSyncReply(),
-             "cannot issue Interrupt call while blocked on sync request");
-  IPC_ASSERT(!DispatchingSyncMessage(), "violation of sync handler invariant");
-  IPC_ASSERT(aMsg->is_interrupt(), "can only Call() Interrupt messages here");
-  IPC_ASSERT(!mIsPostponingSends, "not postponing sends");
-
-  aMsg->set_seqno(NextSeqno());
-  aMsg->set_interrupt_remote_stack_depth_guess(mRemoteStackDepthGuess);
-  aMsg->set_interrupt_local_stack_depth(1 + InterruptStackDepth());
-  mInterruptStack.push(MessageInfo(*aMsg));
-
-  AddProfilerMarker(*aMsg, MessageDirection::eSending);
-
-  
-  msgid_t msgType = aMsg->type();
-
-  mLink->SendMessage(std::move(aMsg));
-
-  while (true) {
-    
-    
-    
-    
-    
-    if (!Connected()) {
-      ReportConnectionError("Call_Loop", msgType);
-      return false;
-    }
-
-#ifdef OS_WIN
-    
-    
-    
-    
-    {
-      NeuteredWindowRegion neuteredRgn(mFlags &
-                                       REQUIRE_DEFERRED_MESSAGE_PROTECTION);
-      
-
-
-      neuteredRgn.PumpOnce();
-    }
-#endif
-
-    
-    
-    MaybeUndeferIncall();
-
-    
-    while (!InterruptEventOccurred()) {
-      bool maybeTimedOut = !WaitForInterruptNotify();
-
-      
-      
-      if (InterruptEventOccurred() ||
-          (!maybeTimedOut &&
-           (!mDeferred.empty() || !mOutOfTurnReplies.empty()))) {
-        break;
-      }
-
-      if (maybeTimedOut && !ShouldContinueFromTimeout()) return false;
-    }
-
-    Message recvd;
-    MessageMap::iterator it;
-
-    if ((it = mOutOfTurnReplies.find(mInterruptStack.top().seqno())) !=
-        mOutOfTurnReplies.end()) {
-      recvd = std::move(it->second);
-      mOutOfTurnReplies.erase(it);
-    } else if (!mPending.isEmpty()) {
-      RefPtr<MessageTask> task = mPending.popFirst();
-      recvd = std::move(task->Msg());
-      if (!IsAlwaysDeferred(recvd)) {
-        mMaybeDeferredPendingCount--;
-      }
-    } else {
-      
-      
-      
-      
-      
-      continue;
-    }
-
-    
-    if (!recvd.is_interrupt()) {
-      
-      msgid_t msgType = recvd.type();
-
-      DispatchMessage(std::move(recvd));
-      if (!Connected()) {
-        ReportConnectionError("Call_DispatchMessage", msgType);
-        return false;
-      }
-      continue;
-    }
-
-    
-    
-    if (recvd.is_reply()) {
-      IPC_ASSERT(!mInterruptStack.empty(), "invalid Interrupt stack");
-
-      
-      
-      {
-        const MessageInfo& outcall = mInterruptStack.top();
-
-        
-        
-        if ((mSide == ChildSide && recvd.seqno() > outcall.seqno()) ||
-            (mSide != ChildSide && recvd.seqno() < outcall.seqno())) {
-          mOutOfTurnReplies[recvd.seqno()] = std::move(recvd);
-          continue;
-        }
-
-        IPC_ASSERT(
-            recvd.is_reply_error() || (recvd.type() == (outcall.type() + 1) &&
-                                       recvd.seqno() == outcall.seqno()),
-            "somebody's misbehavin'", true);
-      }
-
-      
-      
-      mInterruptStack.pop();
-
-      AddProfilerMarker(recvd, MessageDirection::eReceiving);
-
-      bool is_reply_error = recvd.is_reply_error();
-      if (!is_reply_error) {
-        *aReply = std::move(recvd);
-      }
-
-      
-      
-      IPC_ASSERT(!mInterruptStack.empty() || mOutOfTurnReplies.empty(),
-                 "still have pending replies with no pending out-calls", true);
-
-      return !is_reply_error;
-    }
-
-    
-    
-    size_t stackDepth = InterruptStackDepth();
-
-    
-    msgid_t recvdType = recvd.type();
-
-    {
-      MonitorAutoUnlock unlock(*mMonitor);
-
-      CxxStackFrame frame(*this, IN_MESSAGE, &recvd);
-      RefPtr<ActorLifecycleProxy> listenerProxy =
-          mListener->GetLifecycleProxy();
-      DispatchInterruptMessage(listenerProxy, std::move(recvd), stackDepth);
-    }
-    if (!Connected()) {
-      ReportConnectionError("Call_DispatchInterruptMessage", recvdType);
-      return false;
-    }
-  }
-}
-
 bool MessageChannel::HasPendingEvents() {
   AssertWorkerThread();
   mMonitor->AssertCurrentThreadOwns();
   return Connected() && !mPending.isEmpty();
-}
-
-bool MessageChannel::InterruptEventOccurred() {
-  AssertWorkerThread();
-  mMonitor->AssertCurrentThreadOwns();
-  IPC_ASSERT(InterruptStackDepth() > 0, "not in wait loop");
-
-  return (!Connected() || !mPending.isEmpty() ||
-          (!mOutOfTurnReplies.empty() &&
-           mOutOfTurnReplies.find(mInterruptStack.top().seqno()) !=
-               mOutOfTurnReplies.end()));
 }
 
 bool MessageChannel::ProcessPendingRequest(Message&& aUrgent) {
@@ -1791,10 +1438,6 @@ void MessageChannel::RunMessage(MessageTask& aTask) {
 #  endif
 #endif
 
-  if (!mDeferred.empty()) {
-    MaybeUndeferIncall();
-  }
-
   if (!ShouldRunMessage(msg)) {
     return;
   }
@@ -1804,13 +1447,6 @@ void MessageChannel::RunMessage(MessageTask& aTask) {
 
   if (!IsAlwaysDeferred(msg)) {
     mMaybeDeferredPendingCount--;
-  }
-
-  if (IsOnCxxStack() && msg.is_interrupt() && msg.is_reply()) {
-    
-    
-    mOutOfTurnReplies[msg.seqno()] = std::move(msg);
-    return;
   }
 
   DispatchMessage(std::move(msg));
@@ -1937,14 +1573,12 @@ void MessageChannel::DispatchMessage(Message&& aMsg) {
 
     {
       MonitorAutoUnlock unlock(*mMonitor);
-      CxxStackFrame frame(*this, IN_MESSAGE, &aMsg);
+      AutoSetValue<bool> setOnCxxStack(mOnCxxStack, true);
 
       mListener->ArtificialSleep();
 
       if (aMsg.is_sync()) {
         DispatchSyncMessage(listenerProxy, aMsg, *getter_Transfers(reply));
-      } else if (aMsg.is_interrupt()) {
-        DispatchInterruptMessage(listenerProxy, std::move(aMsg), 0);
       } else {
         DispatchAsyncMessage(listenerProxy, aMsg);
       }
@@ -2007,7 +1641,7 @@ void MessageChannel::DispatchSyncMessage(ActorLifecycleProxy* aProxy,
 void MessageChannel::DispatchAsyncMessage(ActorLifecycleProxy* aProxy,
                                           const Message& aMsg) {
   AssertWorkerThread();
-  MOZ_RELEASE_ASSERT(!aMsg.is_interrupt() && !aMsg.is_sync());
+  MOZ_RELEASE_ASSERT(!aMsg.is_sync());
 
   if (aMsg.routing_id() == MSG_ROUTING_NONE) {
     NS_WARNING("unhandled special message!");
@@ -2026,153 +1660,9 @@ void MessageChannel::DispatchAsyncMessage(ActorLifecycleProxy* aProxy,
   MaybeHandleError(rv, aMsg, "DispatchAsyncMessage");
 }
 
-void MessageChannel::DispatchInterruptMessage(ActorLifecycleProxy* aProxy,
-                                              Message&& aMsg,
-                                              size_t stackDepth) {
-  AssertWorkerThread();
-  mMonitor->AssertNotCurrentThreadOwns();
-
-  IPC_ASSERT(aMsg.is_interrupt() && !aMsg.is_reply(), "wrong message type");
-
-  if (ShouldDeferInterruptMessage(aMsg, stackDepth)) {
-    
-    
-    ++mRemoteStackDepthGuess;  
-    mDeferred.push(std::move(aMsg));
-    return;
-  }
-
-  
-  
-  
-
-#ifdef OS_WIN
-  SyncStackFrame frame(this, true);
-#endif
-
-  UniquePtr<Message> reply;
-
-  ++mRemoteStackDepthGuess;
-  Result rv = aProxy->Get()->OnCallReceived(aMsg, *getter_Transfers(reply));
-  --mRemoteStackDepthGuess;
-
-  if (!MaybeHandleError(rv, aMsg, "DispatchInterruptMessage")) {
-    reply = WrapUnique(Message::ForInterruptDispatchError());
-  }
-  reply->set_seqno(aMsg.seqno());
-
-  MonitorAutoLock lock(*mMonitor);
-  if (ChannelConnected == mChannelState) {
-    AddProfilerMarker(*reply, MessageDirection::eSending);
-    mLink->SendMessage(std::move(reply));
-  }
-}
-
-bool MessageChannel::ShouldDeferInterruptMessage(const Message& aMsg,
-                                                 size_t aStackDepth) {
-  AssertWorkerThread();
-
-  
-  
-
-  IPC_ASSERT(aMsg.is_interrupt() && !aMsg.is_reply(), "wrong message type");
-
-  
-  
-  
-  if (aMsg.interrupt_remote_stack_depth_guess() ==
-          RemoteViewOfStackDepth(aStackDepth) ||
-      mInterruptStack.empty()) {
-    return false;
-  }
-
-  
-  
-  bool defer;
-  const char* winner;
-  const MessageInfo parentMsgInfo =
-      (mSide == ChildSide) ? MessageInfo(aMsg) : mInterruptStack.top();
-  const MessageInfo childMsgInfo =
-      (mSide == ChildSide) ? mInterruptStack.top() : MessageInfo(aMsg);
-  switch (mListener->MediateInterruptRace(parentMsgInfo, childMsgInfo)) {
-    case RIPChildWins:
-      winner = "child";
-      defer = (mSide == ChildSide);
-      break;
-    case RIPParentWins:
-      winner = "parent";
-      defer = (mSide != ChildSide);
-      break;
-    case RIPError:
-      MOZ_CRASH("NYI: 'Error' Interrupt race policy");
-    default:
-      MOZ_CRASH("not reached");
-  }
-
-  IPC_LOG("race in %s: %s won", (mSide == ChildSide) ? "child" : "parent",
-          winner);
-
-  return defer;
-}
-
-void MessageChannel::MaybeUndeferIncall() {
-  AssertWorkerThread();
-  mMonitor->AssertCurrentThreadOwns();
-
-  if (mDeferred.empty()) return;
-
-  size_t stackDepth = InterruptStackDepth();
-
-  Message& deferred = mDeferred.top();
-
-  
-  IPC_ASSERT(deferred.interrupt_remote_stack_depth_guess() <= stackDepth,
-             "fatal logic error");
-
-  if (ShouldDeferInterruptMessage(deferred, stackDepth)) {
-    return;
-  }
-
-  
-  Message call(std::move(deferred));
-  mDeferred.pop();
-
-  
-  IPC_ASSERT(0 < mRemoteStackDepthGuess, "fatal logic error");
-  --mRemoteStackDepthGuess;
-
-  MOZ_RELEASE_ASSERT(call.nested_level() == IPC::Message::NOT_NESTED);
-  RefPtr<MessageTask> task = new MessageTask(this, std::move(call));
-  mPending.insertBack(task);
-  MOZ_ASSERT(IsAlwaysDeferred(task->Msg()));
-  task->Post();
-}
-
-void MessageChannel::EnteredCxxStack() { mListener->EnteredCxxStack(); }
-
-void MessageChannel::ExitedCxxStack() {
-  mListener->ExitedCxxStack();
-  if (mSawInterruptOutMsg) {
-    MonitorAutoLock lock(*mMonitor);
-    
-    EnqueuePendingMessages();
-    mSawInterruptOutMsg = false;
-  }
-}
-
-void MessageChannel::EnteredCall() { mListener->EnteredCall(); }
-
-void MessageChannel::ExitedCall() { mListener->ExitedCall(); }
-
-void MessageChannel::EnteredSyncSend() { mListener->OnEnteredSyncSend(); }
-
-void MessageChannel::ExitedSyncSend() { mListener->OnExitedSyncSend(); }
-
 void MessageChannel::EnqueuePendingMessages() {
   AssertWorkerThread();
   mMonitor->AssertCurrentThreadOwns();
-
-  MaybeUndeferIncall();
 
   
   
@@ -2216,10 +1706,6 @@ bool MessageChannel::WaitForSyncNotify(bool ) {
   
   
   return WaitResponse(status == CVStatus::Timeout);
-}
-
-bool MessageChannel::WaitForInterruptNotify() {
-  return WaitForSyncNotify(true);
 }
 
 void MessageChannel::NotifyWorkerThread() { mMonitor->Notify(); }
@@ -2360,10 +1846,6 @@ void MessageChannel::OnChannelErrorFromLink() {
   mMonitor->AssertCurrentThreadOwns();
 
   IPC_LOG("OnChannelErrorFromLink");
-
-  if (InterruptStackDepth() > 0) {
-    NotifyWorkerThread();
-  }
 
   if (AwaitingSyncReply()) {
     NotifyWorkerThread();
@@ -2579,50 +2061,24 @@ void MessageChannel::NotifyChannelClosed(Maybe<MonitorAutoLock>& aLock) {
 
 void MessageChannel::DebugAbort(const char* file, int line, const char* cond,
                                 const char* why, bool reply) {
+  AssertWorkerThread();
+  mMonitor->AssertCurrentThreadOwns();
+
   printf_stderr(
       "###!!! [MessageChannel][%s][%s:%d] "
       "Assertion (%s) failed.  %s %s\n",
       mSide == ChildSide ? "Child" : "Parent", file, line, cond, why,
       reply ? "(reply)" : "");
-  
-  DumpInterruptStack("  ");
-  printf_stderr("  remote Interrupt stack guess: %zu\n",
-                mRemoteStackDepthGuess);
-  printf_stderr("  deferred stack size: %zu\n", mDeferred.size());
-  printf_stderr("  out-of-turn Interrupt replies stack size: %zu\n",
-                mOutOfTurnReplies.size());
 
   MessageQueue pending = std::move(mPending);
   while (!pending.isEmpty()) {
-    printf_stderr(
-        "    [ %s%s ]\n",
-        pending.getFirst()->Msg().is_interrupt()
-            ? "intr"
-            : (pending.getFirst()->Msg().is_sync() ? "sync" : "async"),
-        pending.getFirst()->Msg().is_reply() ? "reply" : "");
+    printf_stderr("    [ %s%s ]\n",
+                  pending.getFirst()->Msg().is_sync() ? "sync" : "async",
+                  pending.getFirst()->Msg().is_reply() ? "reply" : "");
     pending.popFirst();
   }
 
   MOZ_CRASH_UNSAFE(why);
-}
-
-void MessageChannel::DumpInterruptStack(const char* const pfx) const {
-  NS_WARNING_ASSERTION(!mWorkerThread->IsOnCurrentThread(),
-                       "The worker thread had better be paused in a debugger!");
-
-  printf_stderr("%sMessageChannel 'backtrace':\n", pfx);
-
-  
-  for (uint32_t i = 0; i < mCxxStackFrames.length(); ++i) {
-    int32_t id;
-    const char* dir;
-    const char* sems;
-    const char* name;
-    mCxxStackFrames[i].Describe(&id, &dir, &sems, &name);
-
-    printf_stderr("%s[(%u) %s %s %s(actor=%d) ]\n", pfx, i, dir, sems, name,
-                  id);
-  }
 }
 
 void MessageChannel::AddProfilerMarker(const IPC::Message& aMessage,
