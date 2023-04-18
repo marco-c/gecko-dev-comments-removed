@@ -261,23 +261,42 @@ nsContentAreaDragDropDataProvider::GetFlavorData(nsITransferable* aTransferable,
       supportsString = do_QueryInterface(tmp);
       if (!supportsString) return NS_ERROR_FAILURE;
 
-      nsAutoString contentType;
-      supportsString->GetData(contentType);
+      nsAutoString imageRequestMime;
+      supportsString->GetData(imageRequestMime);
 
-      nsCOMPtr<nsIMIMEService> mimeService =
-          do_GetService("@mozilla.org/mime;1");
-      if (NS_WARN_IF(!mimeService)) {
-        return NS_ERROR_FAILURE;
-      }
-
-      mimeService->ValidateFileNameForSaving(
-          targetFilename, NS_ConvertUTF16toUTF8(contentType),
-          nsIMIMEService::VALIDATE_DEFAULT, targetFilename);
-    } else {
       
-      targetFilename.ReplaceChar(FILE_PATH_SEPARATOR FILE_ILLEGAL_CHARACTERS,
-                                 '-');
+      if (!imageRequestMime.IsEmpty()) {
+        
+        nsCOMPtr<nsIURL> imageURL = do_QueryInterface(sourceURI, &rv);
+        NS_ENSURE_SUCCESS(rv, rv);
+
+        nsAutoCString extension;
+        rv = imageURL->GetFileExtension(extension);
+        NS_ENSURE_SUCCESS(rv, rv);
+
+        NS_ConvertUTF16toUTF8 mimeCString(imageRequestMime);
+        bool isValidExtension;
+        nsAutoCString primaryExtension;
+        rv = CheckAndGetExtensionForMime(extension, mimeCString,
+                                         &isValidExtension, &primaryExtension);
+        NS_ENSURE_SUCCESS(rv, rv);
+
+        if (!isValidExtension && !primaryExtension.IsEmpty()) {
+          
+          
+          
+          nsAutoCString newFileName;
+          rv = imageURL->GetFileBaseName(newFileName);
+          NS_ENSURE_SUCCESS(rv, rv);
+          newFileName.Append(".");
+          newFileName.Append(primaryExtension);
+          CopyUTF8toUTF16(newFileName, targetFilename);
+        }
+      }
     }
+    
+    targetFilename.ReplaceChar(FILE_PATH_SEPARATOR FILE_ILLEGAL_CHARACTERS,
+                               '-');
 #endif 
 
     
@@ -417,27 +436,54 @@ nsresult DragDataProducer::GetImageData(imgIContainer* aImage,
     nsCString mimeType;
     aRequest->GetMimeType(getter_Copies(mimeType));
 
-    nsAutoCString fileName;
-    aRequest->GetFileName(fileName);
-
 #if defined(XP_MACOSX)
     
     
     
     
     CopyUTF8toUTF16(mimeType, mImageRequestMime);
-    CopyUTF8toUTF16(fileName, mImageDestFileName);
 #else
     nsCOMPtr<nsIMIMEService> mimeService = do_GetService("@mozilla.org/mime;1");
     if (NS_WARN_IF(!mimeService)) {
       return NS_ERROR_FAILURE;
     }
 
-    CopyUTF8toUTF16(fileName, mImageDestFileName);
-    mimeService->ValidateFileNameForSaving(mImageDestFileName, mimeType,
-                                           nsIMIMEService::VALIDATE_DEFAULT,
-                                           mImageDestFileName);
+    nsCOMPtr<nsIMIMEInfo> mimeInfo;
+    mimeService->GetFromTypeAndExtension(mimeType, ""_ns,
+                                         getter_AddRefs(mimeInfo));
+    if (mimeInfo) {
+      nsAutoCString extension;
+      imgUrl->GetFileExtension(extension);
+
+      bool validExtension;
+      if (extension.IsEmpty() ||
+          NS_FAILED(mimeInfo->ExtensionExists(extension, &validExtension)) ||
+          !validExtension) {
+        
+        nsAutoCString primaryExtension;
+        mimeInfo->GetPrimaryExtension(primaryExtension);
+        if (!primaryExtension.IsEmpty()) {
+          rv = NS_MutateURI(imgUrl)
+                   .Apply(&nsIURLMutator::SetFileExtension, primaryExtension,
+                          nullptr)
+                   .Finalize(imgUrl);
+          NS_ENSURE_SUCCESS(rv, rv);
+        }
+      }
+    }
+#endif 
+
+    nsAutoCString fileName;
+    imgUrl->GetFileName(fileName);
+
+    NS_UnescapeURL(fileName);
+
+#if !defined(XP_MACOSX)
+    
+    fileName.ReplaceChar(FILE_PATH_SEPARATOR FILE_ILLEGAL_CHARACTERS, '-');
 #endif
+
+    CopyUTF8toUTF16(fileName, mImageDestFileName);
 
     
     mImage = aImage;

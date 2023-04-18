@@ -44,7 +44,6 @@
 #include "imgIEncoder.h"
 #include "imgITools.h"
 #include "WinUtils.h"
-#include "nsLocalFile.h"
 
 #include "mozilla/LazyIdleThread.h"
 #include <algorithm>
@@ -1095,12 +1094,42 @@ nsDataObj ::GetFileContents(FORMATETC& aFE, STGMEDIUM& aSTG) {
 
 
 
+
+
+static void MangleTextToValidFilename(nsString& aText) {
+  static const char* forbiddenNames[] = {
+      "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7",  "COM8",
+      "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6",  "LPT7",
+      "LPT8", "LPT9", "CON",  "PRN",  "AUX",  "NUL",  "CLOCK$"};
+
+  aText.StripChars(FILE_PATH_SEPARATOR FILE_ILLEGAL_CHARACTERS);
+  aText.CompressWhitespace(true, true);
+  uint32_t nameLen;
+  for (size_t n = 0; n < ArrayLength(forbiddenNames); ++n) {
+    nameLen = (uint32_t)strlen(forbiddenNames[n]);
+    if (aText.EqualsIgnoreCase(forbiddenNames[n], nameLen)) {
+      
+      if (aText.Length() == nameLen || aText.CharAt(nameLen) == char16_t('.')) {
+        aText.Truncate();
+        break;
+      }
+    }
+  }
+}
+
+
+
+
+
+
+
+
 static bool CreateFilenameFromTextA(nsString& aText, const char* aExtension,
                                     char* aFilename, uint32_t aFilenameLen) {
   
   
   
-  nsLocalFile::CheckForReservedFileName(aText);
+  MangleTextToValidFilename(aText);
   if (aText.IsEmpty()) return false;
 
   
@@ -1132,7 +1161,7 @@ static bool CreateFilenameFromTextW(nsString& aText, const wchar_t* aExtension,
   
   
   
-  nsLocalFile::CheckForReservedFileName(aText);
+  MangleTextToValidFilename(aText);
   if (aText.IsEmpty()) return false;
 
   const int extensionLen = wcslen(aExtension);
@@ -2154,7 +2183,7 @@ HRESULT nsDataObj::GetDownloadDetails(nsIURI** aSourceURI,
   if (srcFileName.IsEmpty()) return E_FAIL;
 
   
-  nsLocalFile::CheckForReservedFileName(srcFileName);
+  MangleTextToValidFilename(srcFileName);
 
   sourceURI.swap(*aSourceURI);
   aFilename = srcFileName;
