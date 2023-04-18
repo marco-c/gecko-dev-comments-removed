@@ -72,62 +72,29 @@ function ensureCssLoaded(domWindow) {
   );
 }
 
-this.formautofill = class extends ExtensionAPI {
-  
-
-
-
-
-
-  adjustAndCheckFormAutofillPrefs(
-    addressAutofillAvailable,
-    creditCardAutofillAvailable
-  ) {
-    
-    
-    if (!creditCardAutofillAvailable) {
-      Services.prefs.clearUserPref(
-        "services.sync.engine.creditcards.available"
-      );
+function isAvailable() {
+  let availablePref = Services.prefs.getCharPref(
+    "extensions.formautofill.available"
+  );
+  if (availablePref == "on") {
+    return true;
+  } else if (availablePref == "detect") {
+    let region = Services.prefs.getCharPref("browser.search.region", "");
+    let supportedCountries = Services.prefs
+      .getCharPref("extensions.formautofill.supportedCountries")
+      .split(",");
+    if (
+      !Services.prefs.getBoolPref("extensions.formautofill.supportRTL") &&
+      Services.locale.isAppLocaleRTL
+    ) {
+      return false;
     }
-    if (!addressAutofillAvailable) {
-      Services.prefs.clearUserPref("services.sync.engine.addresses.available");
-    }
-
-    if (!addressAutofillAvailable && !creditCardAutofillAvailable) {
-      Services.prefs.clearUserPref("dom.forms.autocomplete.formautofill");
-      Services.telemetry.scalarSet("formautofill.availability", false);
-      return;
-    }
-
-    
-    
-    
-    Services.prefs.setBoolPref("dom.forms.autocomplete.formautofill", true);
-    Services.telemetry.scalarSet("formautofill.availability", true);
-
-    
-    
-    
-    if (FormAutofill.isAutofillAddressesAvailable) {
-      Services.prefs.setBoolPref(
-        "services.sync.engine.addresses.available",
-        true
-      );
-    } else {
-      Services.prefs.clearUserPref("services.sync.engine.addresses.available");
-    }
-    if (FormAutofill.isAutofillCreditCardsAvailable) {
-      Services.prefs.setBoolPref(
-        "services.sync.engine.creditcards.available",
-        true
-      );
-    } else {
-      Services.prefs.clearUserPref(
-        "services.sync.engine.creditcards.available"
-      );
-    }
+    return supportedCountries.includes(region);
   }
+  return false;
+}
+
+this.formautofill = class extends ExtensionAPI {
   onStartup() {
     
     
@@ -165,16 +132,43 @@ this.formautofill = class extends ExtensionAPI {
         "Cannot find formautofill chrome.manifest for registring translated strings"
       );
     }
-    let addressAutofillAvailable = FormAutofill.isAutofillAddressesAvailable;
-    let creditCardAutofillAvailable =
-      FormAutofill.isAutofillCreditCardsAvailable;
-    this.adjustAndCheckFormAutofillPrefs(
-      addressAutofillAvailable,
-      creditCardAutofillAvailable
-    );
-    if (!creditCardAutofillAvailable && !addressAutofillAvailable) {
+
+    if (!isAvailable()) {
+      Services.prefs.clearUserPref("dom.forms.autocomplete.formautofill");
+      
+      
+      Services.prefs.clearUserPref("services.sync.engine.addresses.available");
+      Services.prefs.clearUserPref(
+        "services.sync.engine.creditcards.available"
+      );
+      Services.telemetry.scalarSet("formautofill.availability", false);
       return;
     }
+
+    
+    
+    
+    Services.prefs.setBoolPref("dom.forms.autocomplete.formautofill", true);
+    Services.telemetry.scalarSet("formautofill.availability", true);
+
+    
+    
+    
+    Services.prefs.setBoolPref(
+      "services.sync.engine.addresses.available",
+      true
+    );
+    if (FormAutofill.isAutofillCreditCardsAvailable) {
+      Services.prefs.setBoolPref(
+        "services.sync.engine.creditcards.available",
+        true
+      );
+    } else {
+      Services.prefs.clearUserPref(
+        "services.sync.engine.creditcards.available"
+      );
+    }
+
     
     
     

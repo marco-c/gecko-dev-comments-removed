@@ -11,9 +11,6 @@
 
 
 
-
-
-
 "use strict";
 
 const { OSKeyStore } = ChromeUtils.import(
@@ -50,12 +47,8 @@ const ENABLED_AUTOFILL_ADDRESSES_PREF =
   "extensions.formautofill.addresses.enabled";
 const ENABLED_AUTOFILL_ADDRESSES_CAPTURE_PREF =
   "extensions.formautofill.addresses.capture.enabled";
-const AUTOFILL_ADDRESSES_AVAILABLE_PREF =
-  "extensions.formautofill.addresses.supported";
-const ENABLED_AUTOFILL_ADDRESSES_SUPPORTED_COUNTRIES_PREF =
-  "extensions.formautofill.addresses.supportedCountries";
 const AUTOFILL_CREDITCARDS_AVAILABLE_PREF =
-  "extensions.formautofill.creditCards.supported";
+  "extensions.formautofill.creditCards.available";
 const ENABLED_AUTOFILL_CREDITCARDS_PREF =
   "extensions.formautofill.creditCards.enabled";
 const SUPPORTED_COUNTRIES_PREF = "extensions.formautofill.supportedCountries";
@@ -527,9 +520,12 @@ async function removeAllRecords() {
   if (addresses.length) {
     await removeAddresses(addresses.map(address => address.guid));
   }
-  let creditCards = await getCreditCards();
-  if (creditCards.length) {
-    await removeCreditCards(creditCards.map(cc => cc.guid));
+
+  if (Services.prefs.getBoolPref(AUTOFILL_CREDITCARDS_AVAILABLE_PREF)) {
+    let creditCards = await getCreditCards();
+    if (creditCards.length) {
+      await removeCreditCards(creditCards.map(cc => cc.guid));
+    }
   }
 }
 
