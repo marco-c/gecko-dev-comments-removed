@@ -50,6 +50,7 @@ const LEARN_MORE_URL =
 const TELEMETRY_EVENT_CATEGORY = "contextservices.quicksuggest";
 
 const UPDATE_TOPIC = "firefox-suggest-update";
+const UPDATE_SKIPPED_TOPIC = "firefox-suggest-update-skipped";
 
 
 
@@ -84,6 +85,10 @@ class QSTestUtils {
 
   get UPDATE_TOPIC() {
     return UPDATE_TOPIC;
+  }
+
+  get UPDATE_SKIPPED_TOPIC() {
+    return UPDATE_SKIPPED_TOPIC;
   }
 
   get DEFAULT_CONFIG() {
@@ -692,9 +697,11 @@ class QSTestUtils {
     await this.waitForScenarioUpdated();
 
     
-    let updatePromise = TestUtils.topicObserved(
-      QuickSuggestTestUtils.UPDATE_TOPIC
-    );
+    
+    let updatePromise = Promise.race([
+      TestUtils.topicObserved(QuickSuggestTestUtils.UPDATE_TOPIC),
+      TestUtils.topicObserved(QuickSuggestTestUtils.UPDATE_SKIPPED_TOPIC),
+    ]);
 
     let doExperimentCleanup = await ExperimentFakes.enrollWithFeatureConfig({
       enabled: true,
@@ -709,9 +716,11 @@ class QSTestUtils {
     return async () => {
       
       
-      let unenrollUpdatePromise = TestUtils.topicObserved(
-        QuickSuggestTestUtils.UPDATE_TOPIC
-      );
+      let unenrollUpdatePromise = Promise.race([
+        TestUtils.topicObserved(QuickSuggestTestUtils.UPDATE_TOPIC),
+        TestUtils.topicObserved(QuickSuggestTestUtils.UPDATE_SKIPPED_TOPIC),
+      ]);
+
       this.info?.("Awaiting experiment cleanup");
       await doExperimentCleanup();
       this.info?.("Awaiting update after unenrolling in experiment");

@@ -26,6 +26,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 const PREF_URLBAR_BRANCH = "browser.urlbar.";
 
 const FIREFOX_SUGGEST_UPDATE_TOPIC = "firefox-suggest-update";
+const FIREFOX_SUGGEST_UPDATE_SKIPPED_TOPIC = "firefox-suggest-update-skipped";
 
 
 
@@ -746,37 +747,19 @@ class Preferences {
     
 
     
-    let scenario = testOverrides?.scenario || this._nimbus.quickSuggestScenario;
-    if (!scenario) {
-      if (
-        Region.home == "US" &&
-        Services.locale.appLocaleAsBCP47.substring(0, 2) == "en"
-      ) {
-        
-        scenario = "offline";
-      } else {
-        
-        scenario = "history";
-      }
-    }
-    let defaultPrefs =
-      testOverrides?.defaultPrefs || this.FIREFOX_SUGGEST_DEFAULT_PREFS;
-    if (!defaultPrefs.hasOwnProperty(scenario)) {
-      scenario = "history";
-      Cu.reportError(`Unrecognized Firefox Suggest scenario "${scenario}"`);
-    }
+    let scenario =
+      testOverrides?.scenario || this._getIntendedFirefoxSuggestScenario();
 
     
+    let defaultPrefs =
+      testOverrides?.defaultPrefs || this.FIREFOX_SUGGEST_DEFAULT_PREFS;
     let prefs = { ...defaultPrefs[scenario] };
 
     
     
-    let uiPrefNamesByVariable = {
-      quickSuggestNonSponsoredEnabled: "suggest.quicksuggest.nonsponsored",
-      quickSuggestSponsoredEnabled: "suggest.quicksuggest.sponsored",
-      quickSuggestDataCollectionEnabled: "quicksuggest.dataCollection.enabled",
-    };
-    for (let [variable, prefName] of Object.entries(uiPrefNamesByVariable)) {
+    for (let [variable, prefName] of Object.entries(
+      this.FIREFOX_SUGGEST_UI_PREFS_BY_VARIABLE
+    )) {
       if (this._nimbus.hasOwnProperty(variable)) {
         prefs[prefName] = this._nimbus[variable];
       }
@@ -808,6 +791,52 @@ class Preferences {
     
     
     Services.obs.notifyObservers(null, FIREFOX_SUGGEST_UPDATE_TOPIC);
+  }
+
+  
+
+
+
+
+
+
+  _getIntendedFirefoxSuggestScenario() {
+    
+    
+    
+    
+    let scenario = this._nimbus.quickSuggestScenario;
+    if (!scenario) {
+      if (
+        Region.home == "US" &&
+        Services.locale.appLocaleAsBCP47.substring(0, 2) == "en"
+      ) {
+        
+        scenario = "offline";
+      } else {
+        
+        scenario = "history";
+      }
+    }
+    if (!this.FIREFOX_SUGGEST_DEFAULT_PREFS.hasOwnProperty(scenario)) {
+      scenario = "history";
+      Cu.reportError(`Unrecognized Firefox Suggest scenario "${scenario}"`);
+    }
+    return scenario;
+  }
+
+  
+
+
+
+
+
+  get FIREFOX_SUGGEST_UI_PREFS_BY_VARIABLE() {
+    return {
+      quickSuggestNonSponsoredEnabled: "suggest.quicksuggest.nonsponsored",
+      quickSuggestSponsoredEnabled: "suggest.quicksuggest.sponsored",
+      quickSuggestDataCollectionEnabled: "quicksuggest.dataCollection.enabled",
+    };
   }
 
   
@@ -1169,17 +1198,57 @@ class Preferences {
 
 
   _onNimbusUpdate() {
-    this._clearNimbusCache();
-    this.updateFirefoxSuggestScenario();
+    let oldNimbus = this._clearNimbusCache();
+    let newNimbus = this._nimbus;
+
+    
+    
+    
+    let variables = [
+      "quickSuggestScenario",
+      ...Object.keys(this.FIREFOX_SUGGEST_UI_PREFS_BY_VARIABLE),
+    ];
+    for (let name of variables) {
+      if (oldNimbus[name] != newNimbus[name]) {
+        this.updateFirefoxSuggestScenario();
+        return;
+      }
+    }
+
+    
+    
+    let scenario = this._getIntendedFirefoxSuggestScenario();
+    let intendedDefaultPrefs = this.FIREFOX_SUGGEST_DEFAULT_PREFS[scenario];
+    let defaults = Services.prefs.getDefaultBranch("browser.urlbar.");
+    for (let [name, value] of Object.entries(intendedDefaultPrefs)) {
+      
+      if (defaults.getBoolPref(name) != value) {
+        this.updateFirefoxSuggestScenario();
+        return;
+      }
+    }
+
+    
+    Services.obs.notifyObservers(null, FIREFOX_SUGGEST_UPDATE_SKIPPED_TOPIC);
   }
 
+  
+
+
+
+
+
+
+
   _clearNimbusCache() {
-    if (this.__nimbus) {
-      for (let key of Object.keys(this.__nimbus)) {
+    let nimbus = this.__nimbus;
+    if (nimbus) {
+      for (let key of Object.keys(nimbus)) {
         this._map.delete(key);
       }
       this.__nimbus = null;
     }
+    return nimbus || {};
   }
 
   get _nimbus() {
