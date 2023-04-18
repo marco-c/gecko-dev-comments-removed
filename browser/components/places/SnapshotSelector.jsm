@@ -13,7 +13,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   FilterAdult: "resource://activity-stream/lib/FilterAdult.jsm",
   Services: "resource://gre/modules/Services.jsm",
   Snapshots: "resource:///modules/Snapshots.jsm",
-  SnapshotScorer: "resource:///modules/SnapshotScorer.jsm",
 });
 
 XPCOMUtils.defineLazyGetter(this, "logConsole", function() {
@@ -88,12 +87,6 @@ class SnapshotSelector extends EventEmitter {
 
 
     type: undefined,
-
-    
-
-
-
-    getCurrentSessionUrls: undefined,
   };
 
   
@@ -111,24 +104,12 @@ class SnapshotSelector extends EventEmitter {
 
 
 
-
-
-
-  constructor({
-    count = 5,
-    filterAdult = false,
-    selectOverlappingVisits = false,
-    getCurrentSessionUrls = () => new Set(),
-  }) {
+  constructor(count = 5, filterAdult = false, selectOverlappingVisits = false) {
     super();
-    this.#task = new DeferredTask(
-      () => this.#buildSnapshots().catch(console.error),
-      500
-    );
+    this.#task = new DeferredTask(() => this.#buildSnapshots(), 500);
     this.#context.count = count;
     this.#context.filterAdult = filterAdult;
     this.#context.selectOverlappingVisits = selectOverlappingVisits;
-    this.#context.getCurrentSessionUrls = getCurrentSessionUrls;
     SnapshotSelector.#selectors.add(this);
   }
 
@@ -231,20 +212,10 @@ class SnapshotSelector extends EventEmitter {
       return !context.filterAdult || !FilterAdult.isAdultUrl(snapshot.url);
     });
 
-    logConsole.debug(
-      "Found overlapping snapshots:",
-      snapshots.map(s => s.url)
-    );
-
-    snapshots = SnapshotScorer.combineAndScore(
-      this.#context.getCurrentSessionUrls(),
-      snapshots
-    );
-
     snapshots = snapshots.slice(0, context.count);
 
     logConsole.debug(
-      "Reduced final candidates:",
+      "Found overlapping snapshots: ",
       snapshots.map(s => s.url)
     );
 

@@ -126,7 +126,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 
 
-
 const Snapshots = new (class Snapshots {
   constructor() {
     
@@ -437,8 +436,7 @@ const Snapshots = new (class Snapshots {
       SELECT h.url AS url, h.title AS title, created_at, removed_at,
              document_type, first_interaction_at, last_interaction_at,
              user_persisted, description, site_name, preview_image_url,
-             group_concat('[' || e.type || ', ' || e.data || ']') AS page_data,
-             h.visit_count
+             group_concat('[' || e.type || ', ' || e.data || ']') AS page_data
              FROM moz_places_metadata_snapshots s
       JOIN moz_places h ON h.id = s.place_id
       LEFT JOIN moz_places_metadata_snapshots_extra e ON e.place_id = s.place_id
@@ -496,8 +494,7 @@ const Snapshots = new (class Snapshots {
       SELECT h.url AS url, h.title AS title, created_at, removed_at,
              document_type, first_interaction_at, last_interaction_at,
              user_persisted, description, site_name, preview_image_url,
-             group_concat('[' || e.type || ', ' || e.data || ']') AS page_data,
-             h.visit_count
+             group_concat('[' || e.type || ', ' || e.data || ']') AS page_data
       FROM moz_places_metadata_snapshots s
       JOIN moz_places h ON h.id = s.place_id
       LEFT JOIN moz_places_metadata_snapshots_extra e ON e.place_id = s.place_id
@@ -560,8 +557,7 @@ const Snapshots = new (class Snapshots {
     let rows = await db.executeCached(
       `SELECT h.url AS url, h.title AS title, o.overlappingVisitScore, created_at, removed_at,
       document_type, first_interaction_at, last_interaction_at,
-      user_persisted, description, site_name, preview_image_url, group_concat(e.data, ",") AS page_data,
-      h.visit_count
+      user_persisted, description, site_name, preview_image_url, group_concat(e.data, ",") AS page_data
       FROM moz_places_metadata_snapshots s JOIN moz_places h ON h.id = s.place_id JOIN (
         SELECT place_id, 1.0 AS overlappingVisitScore
         FROM
@@ -669,7 +665,6 @@ const Snapshots = new (class Snapshots {
       userPersisted: !!row.getResultByName("user_persisted"),
       overlappingVisitScore,
       pageData: pageData ?? new Map(),
-      visitCount: row.getResultByName("visit_count"),
     };
 
     snapshot.commonName = CommonNames.getName(snapshot);
