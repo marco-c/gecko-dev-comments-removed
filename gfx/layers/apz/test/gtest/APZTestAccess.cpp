@@ -23,11 +23,5 @@ ScrollMetadata& APZTestAccess::GetScrollMetadataMut(
   return aLayer.GetScrollMetadataMut(aOwner, aIndex);
 }
 
-
-void APZTestAccess::SetEventRegions(WebRenderLayerScrollData& aLayer,
-                                    const EventRegions& aRegions) {
-  aLayer.SetEventRegions(aRegions);
-}
-
 }  
 }  

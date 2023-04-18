@@ -30,21 +30,6 @@ class APZEventRegionsTester : public APZCTreeManagerTester {
     SetScrollHandoff(layers[1], root);
     SetScrollHandoff(layers[2], root);
 
-    
-    
-    
-    
-    
-    
-    EventRegions regions(nsIntRegion(IntRect(0, 0, 200, 200)));
-    APZTestAccess::SetEventRegions(*root, regions);
-    regions.mDispatchToContentHitRegion =
-        nsIntRegion(IntRect(0, 100, 100, 100));
-    regions.mHitRegion = nsIntRegion(IntRect(0, 0, 100, 200));
-    APZTestAccess::SetEventRegions(*layers[1], regions);
-    regions.mHitRegion = nsIntRegion(IntRect(0, 100, 200, 100));
-    APZTestAccess::SetEventRegions(*layers[2], regions);
-
     registration = MakeUnique<ScopedLayerTreeRegistration>(LayersId{0}, mcc);
     UpdateHitTestingTree();
     rootApzc = ApzcOf(root);
@@ -58,13 +43,6 @@ class APZEventRegionsTester : public APZCTreeManagerTester {
     };
     CreateScrollData(treeShape, layerVisibleRegions);
     SetScrollableFrameMetrics(root, ScrollableLayerGuid::START_SCROLL_ID);
-
-    
-    
-    EventRegions regions(nsIntRegion(IntRect(0, 0, 100, 100)));
-    APZTestAccess::SetEventRegions(*root, regions);
-    regions.mHitRegion = nsIntRegion(IntRect(0, 150, 100, 100));
-    APZTestAccess::SetEventRegions(*layers[1], regions);
 
     registration = MakeUnique<ScopedLayerTreeRegistration>(LayersId{0}, mcc);
     UpdateHitTestingTree();
@@ -100,12 +78,6 @@ class APZEventRegionsTester : public APZCTreeManagerTester {
                               ScrollableLayerGuid::START_SCROLL_ID + 1,
                               CSSRect(0, 0, 100, 100));
     SetScrollHandoff(layers[3], layers[2]);
-
-    EventRegions regions(nsIntRegion(IntRect(0, 0, 10, 10)));
-    APZTestAccess::SetEventRegions(*layers[2], regions);
-    regions.mHitRegion = nsIntRegion(IntRect(0, 0, 100, 100));
-    regions.mDispatchToContentHitRegion = nsIntRegion(IntRect(0, 0, 100, 100));
-    APZTestAccess::SetEventRegions(*layers[3], regions);
 
     registration = MakeUnique<ScopedLayerTreeRegistration>(LayersId{0}, mcc);
     UpdateHitTestingTree();
