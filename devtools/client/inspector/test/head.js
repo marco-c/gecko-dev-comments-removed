@@ -70,6 +70,16 @@ var startPicker = async function(toolbox, skipFocus) {
 
 
 
+var stopPickerWithEscapeKey = async function(toolbox) {
+  const onPickerStopped = toolbox.nodePicker.once("picker-node-canceled");
+  EventUtils.synthesizeKey("VK_ESCAPE", {}, toolbox.win);
+  await onPickerStopped;
+};
+
+
+
+
+
 var startEyeDropper = async function(toolbox) {
   info("Start the eye dropper tool");
   toolbox.win.focus();
