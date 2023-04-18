@@ -736,37 +736,7 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
       MOZ_ASSERT(aVsyncTimestamp <= tickStart);
 #endif
 
-      
-      
-      
-      
-      double rate = mVsyncRefreshDriverTimer->GetTimerRate().ToMilliseconds();
-      TimeDuration gracePeriod = TimeDuration::FromMilliseconds(rate / 100.0f);
-      TimeDuration timeForOutsideTick = gracePeriod;
-
       bool shouldGiveNonVSyncTasksMoreTime = ShouldGiveNonVsyncTasksMoreTime();
-      if (!mLastTickEnd.IsNull() && shouldGiveNonVSyncTasksMoreTime &&
-          XRE_IsContentProcess() &&
-          
-          
-          
-          !mVsyncRefreshDriverTimer->IsAnyToplevelContentPageLoading()) {
-        
-        
-        
-        timeForOutsideTick = tickStart - mLastTickEnd;
-        TimeDuration maxOutsideTick = TimeDuration::FromMilliseconds(4 * rate);
-        if (timeForOutsideTick > maxOutsideTick) {
-          timeForOutsideTick = maxOutsideTick;
-        }
-
-        if (timeForOutsideTick > gracePeriod) {
-          
-          
-          
-          timeForOutsideTick = timeForOutsideTick - gracePeriod;
-        }
-      }
 
       
       
@@ -789,10 +759,41 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
       
       
       
-      mSuspendVsyncPriorityTicksUntil = aVsyncTimestamp + timeForOutsideTick;
+      
+      
+      
+      
+      double rate = mVsyncRefreshDriverTimer->GetTimerRate().ToMilliseconds();
+      TimeDuration gracePeriod = TimeDuration::FromMilliseconds(rate / 100.0f);
+      TimeDuration timeForOutsideTick = gracePeriod;
+
       if (shouldGiveNonVSyncTasksMoreTime) {
-        TimeDuration tickDuration = tickEnd - mostRecentTickStart;
-        mSuspendVsyncPriorityTicksUntil += tickDuration;
+        if (!mLastTickEnd.IsNull() && XRE_IsContentProcess() &&
+            
+            
+            
+            !mVsyncRefreshDriverTimer->IsAnyToplevelContentPageLoading()) {
+          
+          
+          
+          timeForOutsideTick = tickStart - mLastTickEnd;
+          TimeDuration maxOutsideTick =
+              TimeDuration::FromMilliseconds(4 * rate);
+          if (timeForOutsideTick > maxOutsideTick) {
+            timeForOutsideTick = maxOutsideTick;
+          }
+
+          if (timeForOutsideTick > gracePeriod) {
+            
+            
+            
+            timeForOutsideTick = timeForOutsideTick - gracePeriod;
+          }
+        }
+        mSuspendVsyncPriorityTicksUntil = aVsyncTimestamp + timeForOutsideTick +
+                                          (tickEnd - mostRecentTickStart);
+      } else {
+        mSuspendVsyncPriorityTicksUntil = aVsyncTimestamp + timeForOutsideTick;
       }
 
       mLastIdleTaskCount =
