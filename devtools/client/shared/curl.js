@@ -447,12 +447,20 @@ const CurlUtils = {
 
 
 
+
+
+
+
+
+
+
     return (
       '"' +
       str
-        .replace(/\$/g, "`$")
-        .replace(/"/g, '""')
-        .replace(/%/g, '"%"')
+        .replaceAll("`", "``")
+        .replaceAll("$", "`$")
+        .replaceAll('"', '""')
+        .replaceAll("%", '"%"')
         .replace(/\\/g, "\\\\")
         .replace(/[\r\n]{1,2}/g, '"^$&$&"') +
       '"'
