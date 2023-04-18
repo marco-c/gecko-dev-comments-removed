@@ -11,6 +11,8 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  Services: "resource://gre/modules/Services.jsm",
+
   assert: "chrome://remote/content/shared/webdriver/Assert.jsm",
   BrowsingContextListener:
     "chrome://remote/content/shared/listeners/BrowsingContextListener.jsm",
@@ -19,14 +21,32 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   error: "chrome://remote/content/shared/webdriver/Errors.jsm",
   Log: "chrome://remote/content/shared/Log.jsm",
   Module: "chrome://remote/content/shared/messagehandler/Module.jsm",
+  ProgressListener: "chrome://remote/content/shared/Navigate.jsm",
   TabManager: "chrome://remote/content/shared/TabManager.jsm",
   waitForInitialNavigationCompleted:
     "chrome://remote/content/shared/Navigate.jsm",
+  WindowGlobalMessageHandler:
+    "chrome://remote/content/shared/messagehandler/WindowGlobalMessageHandler.jsm",
 });
 
 XPCOMUtils.defineLazyGetter(this, "logger", () =>
   Log.get(Log.TYPES.WEBDRIVER_BIDI)
 );
+
+
+
+
+
+
+
+
+
+
+const WaitCondition = {
+  None: "none",
+  Interactive: "interactive",
+  Complete: "complete",
+};
 
 class BrowsingContextModule extends Module {
   #contextListener;
@@ -170,6 +190,174 @@ class BrowsingContextModule extends Module {
     });
 
     return { contexts: contextsInfo };
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async navigate(options = {}) {
+    const { context: contextId, url, wait = WaitCondition.None } = options;
+
+    assert.string(
+      contextId,
+      `Expected "context" to be a string, got ${contextId}`
+    );
+
+    assert.string(url, `Expected "url" to be string, got ${url}`);
+
+    const waitConditions = Object.values(WaitCondition);
+    if (!waitConditions.includes(wait)) {
+      throw new error.InvalidArgumentError(
+        `Expected "wait" to be one of ${waitConditions}, got ${wait}`
+      );
+    }
+
+    const context = this.#getBrowsingContext(contextId);
+
+    
+    
+    const webProgress = context.webProgress;
+
+    const base = await this.messageHandler.handleCommand({
+      moduleName: "browsingContext",
+      commandName: "_getBaseURL",
+      destination: {
+        type: WindowGlobalMessageHandler.type,
+        id: context.id,
+      },
+    });
+
+    let targetURI;
+    try {
+      const baseURI = Services.io.newURI(base);
+      targetURI = Services.io.newURI(url, null, baseURI);
+    } catch (e) {
+      throw new error.InvalidArgumentError(
+        `Expected "url" to be a valid URL (${e.message})`
+      );
+    }
+
+    return this.#awaitNavigation(webProgress, targetURI, {
+      wait,
+    });
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  async #awaitNavigation(webProgress, targetURI, options) {
+    const { wait } = options;
+
+    const context = webProgress.browsingContext;
+    const browserId = context.browserId;
+
+    const resolveWhenStarted = wait === WaitCondition.None;
+    const listener = new ProgressListener(webProgress, {
+      resolveWhenStarted,
+      
+      
+      waitForExplicitStart: true,
+    });
+
+    const onDOMContentLoadedEvent = (evtName, wrappedEvt) => {
+      if (webProgress.browsingContext.id !== wrappedEvt.contextId) {
+        
+        return;
+      }
+
+      if (wrappedEvt.readyState === "interactive") {
+        listener.stop();
+      }
+    };
+
+    const contextDescriptor = {
+      type: ContextDescriptorType.TopBrowsingContext,
+      id: browserId,
+    };
+
+    
+    
+    if (wait === WaitCondition.Interactive) {
+      await this.messageHandler.eventsDispatcher.on(
+        "browsingContext.DOMContentLoaded",
+        contextDescriptor,
+        onDOMContentLoadedEvent
+      );
+    }
+
+    const navigated = listener.start();
+    navigated.finally(async () => {
+      if (listener.isStarted) {
+        listener.stop();
+      }
+
+      if (wait === WaitCondition.Interactive) {
+        await this.messageHandler.eventsDispatcher.off(
+          "browsingContext.DOMContentLoaded",
+          contextDescriptor,
+          onDOMContentLoadedEvent
+        );
+      }
+    });
+
+    context.loadURI(targetURI.spec, {
+      loadFlags: Ci.nsIWebNavigation.LOAD_FLAGS_IS_LINK,
+      triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+      hasValidUserGestureActivation: true,
+    });
+    await navigated;
+
+    let url;
+    if (wait === WaitCondition.None) {
+      
+      
+      url = listener.targetURI.spec;
+    } else {
+      url = listener.currentURI.spec;
+    }
+
+    return {
+      
+      
+      navigation: null,
+      url,
+    };
   }
 
   
