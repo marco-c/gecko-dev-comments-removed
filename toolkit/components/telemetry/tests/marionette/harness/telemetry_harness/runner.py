@@ -22,6 +22,10 @@ class TelemetryTestRunner(BaseMarionetteTestRunner):
 
         prefs = kwargs.pop("prefs", {})
 
+        prefs["fission.autostart"] = True
+        if kwargs["disable_fission"]:
+            prefs["fission.autostart"] = False
+
         
         prefs.update(
             {

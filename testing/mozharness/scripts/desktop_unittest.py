@@ -296,6 +296,15 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
                     "help": "treat harness level timeout as a pass",
                 },
             ],
+            [
+                ["--disable-fission"],
+                {
+                    "action": "store_true",
+                    "default": False,
+                    "dest": "disable_fission",
+                    "help": "do not run tests with fission enabled.",
+                },
+            ],
         ]
         + copy.deepcopy(testing_config_options)
         + copy.deepcopy(code_coverage_config_options)
@@ -579,6 +588,14 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
                         "--repeat not supported in {}".format(suite_category),
                         level=WARNING,
                     )
+
+            
+            if c["disable_fission"] and suite_category not in [
+                "gtest",
+                "cppunittest",
+                "jittest",
+            ]:
+                base_cmd.append("--disable-fission")
 
             
             if not (self.verify_enabled or self.per_test_coverage):

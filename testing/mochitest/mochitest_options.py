@@ -565,9 +565,9 @@ class MochitestArguments(ArgumentContainer):
         [
             ["--disable-fission"],
             {
-                "action": "store_false",
-                "default": True,
-                "dest": "fission",
+                "action": "store_true",
+                "default": False,
+                "dest": "disable_fission",
                 "help": "Run tests with fission (site isolation) disabled.",
             },
         ],
@@ -1157,13 +1157,8 @@ class MochitestArguments(ArgumentContainer):
             )
 
         
-        if (
-            (not options.e10s)
-            and options.fission
-            and ("fission.autostart=true" not in options.extraPrefs)
-            and ("fission.autostart=false" not in options.extraPrefs)
-        ):
-            options.fission = False
+        if (not options.e10s) and (not options.disable_fission):
+            options.disable_fission = True
 
         options.leakThresholds = {
             "default": options.defaultLeakThreshold,
