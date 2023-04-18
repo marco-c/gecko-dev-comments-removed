@@ -1172,6 +1172,26 @@ ProfilingStack* AutoProfilerLabel::GetProfilingStack() {
 
 MOZ_THREAD_LOCAL(ProfilingStack*) AutoProfilerLabel::sProfilingStack;
 
+namespace detail {
+
+[[nodiscard]] MFBT_API TimeStamp GetThreadRegistrationTime() {
+  if (!CorePS::Exists()) {
+    return {};
+  }
+
+  PSAutoLock lock;
+
+  RegisteredThread* registeredThread =
+      TLSRegisteredThread::RegisteredThread(lock);
+  if (!registeredThread) {
+    return {};
+  }
+
+  return registeredThread->Info()->RegisterTime();
+}
+
+}  
+
 
 static const char* const kMainThreadName = "GeckoMain";
 

@@ -15,9 +15,20 @@
 
 #include "mozilla/BaseProfilerUtils.h"
 #include "mozilla/Span.h"
+#include "mozilla/TimeStamp.h"
 #include "mozilla/Types.h"
 
-namespace mozilla::profiler::detail {
+namespace mozilla {
+
+namespace baseprofiler::detail {
+
+
+
+[[nodiscard]] MFBT_API TimeStamp GetThreadRegistrationTime();
+
+}  
+
+namespace profiler::detail {
 
 
 [[nodiscard]] MFBT_API bool FilterHasPid(
@@ -37,6 +48,8 @@ namespace mozilla::profiler::detail {
     Span<const char* const> aFilters,
     baseprofiler::BaseProfilerProcessId aPid =
         baseprofiler::profiler_current_process_id());
+
+}  
 
 }  
 
