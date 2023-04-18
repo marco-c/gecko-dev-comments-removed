@@ -17,7 +17,6 @@
 #include "mozilla/HalWakeLockInformation.h"
 #include "mozilla/HalTypes.h"
 #include "mozilla/Types.h"
-#include "mozilla/MozPromise.h"
 
 
 
@@ -235,8 +234,8 @@ void NotifyScreenConfigurationChange(
 
 
 
-[[nodiscard]] RefPtr<mozilla::MozPromise<bool, bool, false>>
-LockScreenOrientation(const hal::ScreenOrientation& aOrientation);
+[[nodiscard]] bool LockScreenOrientation(
+    const hal::ScreenOrientation& aOrientation);
 
 
 

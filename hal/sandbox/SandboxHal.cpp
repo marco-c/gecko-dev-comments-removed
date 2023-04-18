@@ -82,21 +82,10 @@ void GetCurrentScreenConfiguration(ScreenConfiguration* aScreenConfiguration) {
   fallback::GetCurrentScreenConfiguration(aScreenConfiguration);
 }
 
-RefPtr<mozilla::MozPromise<bool, bool, false>> LockScreenOrientation(
-    const hal::ScreenOrientation& aOrientation) {
-  return Hal()
-      ->SendLockScreenOrientation(aOrientation)
-      ->Then(
-          GetCurrentSerialEventTarget(), __func__,
-          [=](const mozilla::MozPromise<bool, ipc::ResponseRejectReason,
-                                        true>::ResolveOrRejectValue& aValue) {
-            if (aValue.IsResolve()) {
-              return mozilla::MozPromise<bool, bool, false>::CreateAndResolve(
-                  true, __func__);
-            }
-            return mozilla::MozPromise<bool, bool, false>::CreateAndReject(
-                false, __func__);
-          });
+bool LockScreenOrientation(const hal::ScreenOrientation& aOrientation) {
+  bool allowed;
+  Hal()->SendLockScreenOrientation(aOrientation, &allowed);
+  return allowed;
 }
 
 void UnlockScreenOrientation() { Hal()->SendUnlockScreenOrientation(); }
@@ -244,23 +233,12 @@ class HalParent : public PHalParent,
   }
 
   virtual mozilla::ipc::IPCResult RecvLockScreenOrientation(
-      const ScreenOrientation& aOrientation,
-      LockScreenOrientationResolver&& aResolve) override {
+      const ScreenOrientation& aOrientation, bool* aAllowed) override {
     
     
     
     
-
-    hal::LockScreenOrientation(aOrientation)
-        ->Then(GetMainThreadSerialEventTarget(), __func__,
-               [aResolve](const mozilla::MozPromise<
-                          bool, bool, false>::ResolveOrRejectValue& aValue) {
-                 if (aValue.IsResolve()) {
-                   aResolve(aValue.ResolveValue());
-                 } else {
-                   aResolve(false);
-                 }
-               });
+    *aAllowed = hal::LockScreenOrientation(aOrientation);
     return IPC_OK();
   }
 
