@@ -878,10 +878,8 @@ class EditorBase : public nsIEditor,
     void DidSplitContent(EditorBase& aEditorBase,
                          nsIContent& aExistingRightContent,
                          nsIContent& aNewLeftContent);
-    void WillJoinContents(EditorBase& aEditorBase, nsIContent& aLeftContent,
-                          nsIContent& aRightContent);
-    void DidJoinContents(EditorBase& aEditorBase, nsIContent& aLeftContent,
-                         nsIContent& aRightContent);
+    void DidJoinContents(EditorBase& aEditorBase,
+                         const EditorRawDOMPoint& aJoinedPoint);
     void DidInsertText(EditorBase& aEditorBase,
                        const EditorRawDOMPoint& aInsertionBegin,
                        const EditorRawDOMPoint& aInsertionEnd);
@@ -937,8 +935,6 @@ class EditorBase : public nsIEditor,
   };
 
   struct MOZ_STACK_CLASS EditSubActionData final {
-    uint32_t mJoinedLeftNodeLength;
-
     
     
     
@@ -946,10 +942,7 @@ class EditorBase : public nsIEditor,
     bool mAdjustChangedRangeFromListener;
 
    private:
-    void Clear() {
-      mJoinedLeftNodeLength = 0;
-      mAdjustChangedRangeFromListener = true;
-    }
+    void Clear() { mAdjustChangedRangeFromListener = true; }
 
     friend EditorBase;
   };
