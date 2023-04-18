@@ -8013,6 +8013,7 @@ void CodeGenerator::visitWasmRegisterResult(LWasmRegisterResult* lir) {
 
 void CodeGenerator::visitWasmCall(LWasmCall* lir) {
   MWasmCall* mir = lir->mir();
+  bool needsBoundsCheck = lir->needsBoundsCheck();
 
 #ifdef ENABLE_WASM_EXCEPTIONS
   
@@ -8060,11 +8061,8 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
       switchRealm = true;
       break;
     case wasm::CalleeDesc::AsmJSTable:
-      retOffset = masm.asmCallIndirect(desc, callee);
-      break;
     case wasm::CalleeDesc::WasmTable:
-      retOffset = masm.wasmCallIndirect(desc, callee, lir->needsBoundsCheck(),
-                                        lir->tableSize());
+      retOffset = masm.wasmCallIndirect(desc, callee, needsBoundsCheck);
       break;
     case wasm::CalleeDesc::Builtin:
       retOffset = masm.call(desc, callee.builtin());

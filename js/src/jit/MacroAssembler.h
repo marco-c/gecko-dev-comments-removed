@@ -3796,24 +3796,15 @@ class MacroAssembler : public MacroAssemblerSpecific {
                                     Label* rejoin)
       DEFINED_ON(arm, arm64, x86_shared, mips_shared);
 
-  void loadWasmGlobalPtr(uint32_t globalDataOffset, Register dest);
-
   
   
   CodeOffset wasmCallImport(const wasm::CallSiteDesc& desc,
                             const wasm::CalleeDesc& callee);
 
   
-  
   CodeOffset wasmCallIndirect(const wasm::CallSiteDesc& desc,
                               const wasm::CalleeDesc& callee,
-                              bool needsBoundsCheck,
-                              mozilla::Maybe<uint32_t> tableSize);
-
-  
-  
-  CodeOffset asmCallIndirect(const wasm::CallSiteDesc& desc,
-                             const wasm::CalleeDesc& callee);
+                              bool needsBoundsCheck);
 
   
   
