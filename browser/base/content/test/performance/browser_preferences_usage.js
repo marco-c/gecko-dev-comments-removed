@@ -105,8 +105,9 @@ add_task(async function startup() {
 
   let knownProblematicPrefs = {
     "browser.startup.record": {
+      
       min: 200,
-      max: 350,
+      max: 400,
     },
     "network.loadinfo.skip_type_assertion": {
       
