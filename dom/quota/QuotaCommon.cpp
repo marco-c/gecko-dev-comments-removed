@@ -528,12 +528,21 @@ void LogError(const nsACString& aExpr, const Maybe<nsresult> aMaybeRv,
       
       
       
+      static MOZ_THREAD_LOCAL(uint32_t) sSequenceNumber;
+
       
-      
-      static Atomic<int32_t> sSequenceNumber{0};
+      MOZ_ALWAYS_TRUE(sSequenceNumber.init());
+
+      const auto currSeqNum = sSequenceNumber.get();
+      const auto threadId =
+          mozilla::baseprofiler::profiler_current_thread_id().ToNumber();
+      const auto threadIdAndSequence =
+          (static_cast<uint64_t>(threadId) << 32) | (currSeqNum & 0xFFFFFFFF);
 
       res.AppendElement(
-          EventExtraEntry{"seq"_ns, IntToCString(++sSequenceNumber)});
+          EventExtraEntry{"seq"_ns, IntToCString(threadIdAndSequence)});
+
+      sSequenceNumber.set(currSeqNum + 1);
 
       res.AppendElement(EventExtraEntry{"severity"_ns, severityString});
 
