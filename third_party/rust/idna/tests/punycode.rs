@@ -6,11 +6,11 @@
 
 
 
-use crate::test::TestFn;
 use idna::punycode::{decode, encode_str};
-use serde_json::map::Map;
 use serde_json::Value;
+use serde_json::map::Map;
 use std::str::FromStr;
+use test::TestFn;
 
 fn one_test(decoded: &str, encoded: &str) {
     match decode(encoded) {
