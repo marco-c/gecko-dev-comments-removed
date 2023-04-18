@@ -107,9 +107,8 @@ struct Read_ReadIntoRequest final : public ReadIntoRequest {
       return;
     }
 
-    RootedDictionary<ReadableStreamBYOBReadResult> result(aCx);
-    result.mValue.Construct();
-    result.mValue.Value().Init(chunk);
+    RootedDictionary<ReadableStreamReadResult> result(aCx);
+    result.mValue = aChunk;
     result.mDone.Construct(false);
 
     mPromise->MaybeResolve(result);
@@ -122,7 +121,7 @@ struct Read_ReadIntoRequest final : public ReadIntoRequest {
     
     
     
-    RootedDictionary<ReadableStreamBYOBReadResult> result(aCx);
+    RootedDictionary<ReadableStreamReadResult> result(aCx);
     if (aChunk.isObject()) {
       
       
@@ -132,8 +131,7 @@ struct Read_ReadIntoRequest final : public ReadIntoRequest {
         return;
       }
 
-      result.mValue.Construct();
-      result.mValue.Value().Init(chunk);
+      result.mValue = aChunk;
     }
     result.mDone.Construct(true);
 

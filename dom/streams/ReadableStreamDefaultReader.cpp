@@ -146,7 +146,7 @@ void Read_ReadRequest::ChunkSteps(JSContext* aCx, JS::Handle<JS::Value> aChunk,
     return;
   }
 
-  RootedDictionary<ReadableStreamDefaultReadResult> result(aCx);
+  RootedDictionary<ReadableStreamReadResult> result(aCx);
   result.mValue = chunk;
   result.mDone.Construct(false);
 
@@ -164,7 +164,7 @@ void Read_ReadRequest::CloseSteps(JSContext* aCx, ErrorResult& aRv) {
   
   
   
-  RootedDictionary<ReadableStreamDefaultReadResult> result(aCx);
+  RootedDictionary<ReadableStreamReadResult> result(aCx);
   result.mValue.setUndefined();
   result.mDone.Construct(true);
 
