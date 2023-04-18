@@ -1090,7 +1090,7 @@ void LineBreaker::ComputeBreakPositions(
       if (aWordBreak == WordBreakRule::BreakAll) {
         
         
-        ClusterIterator ci(aChars + cur, end - cur);
+        GraphemeClusterBreakIteratorUtf16 ci(aChars + cur, end - cur);
         while (!ci.AtEnd()) {
           ci.Next();
           aBreakBefore[ci - aChars] = true;

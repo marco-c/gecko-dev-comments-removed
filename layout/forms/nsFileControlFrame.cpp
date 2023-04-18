@@ -21,6 +21,7 @@
 #include "mozilla/dom/HTMLButtonElement.h"
 #include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/dom/MutationEventBinding.h"
+#include "mozilla/intl/Segmenter.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/StaticPrefs_dom.h"
@@ -87,9 +88,9 @@ bool nsFileControlFrame::CropTextToWidth(gfxContext& aRenderingContext,
 
   
   nscoord totalWidth = textWidth;
-  using mozilla::unicode::ClusterIterator;
   using mozilla::unicode::ClusterReverseIterator;
-  ClusterIterator leftIter(aText.Data(), aText.Length());
+  intl::GraphemeClusterBreakIteratorUtf16 leftIter(aText.Data(),
+                                                   aText.Length());
   ClusterReverseIterator rightIter(aText.Data(), aText.Length());
   const char16_t* leftPos = leftIter;
   const char16_t* rightPos = rightIter;
