@@ -133,10 +133,7 @@ exports.CommandsFactory = {
 
 
 
-
-
-
-  async spawnClientToDebugSystemPrincipal() {
+  async forBrowserConsole() {
     
     
     
@@ -163,23 +160,6 @@ exports.CommandsFactory = {
 
     const client = new DevToolsClient(customDevToolsServer.connectPipe());
     await client.connect();
-
-    return client;
-  },
-
-  
-
-
-
-
-
-
-
-  async forBrowserConsole() {
-    
-    
-    
-    const client = await this.spawnClientToDebugSystemPrincipal();
 
     const descriptor = await client.mainRoot.getMainProcess();
 
