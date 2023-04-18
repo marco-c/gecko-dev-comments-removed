@@ -45,9 +45,14 @@ already_AddRefed<MediaDataDecoder> OmxDecoderModule::CreateAudioDecoder(
   return decoder.forget();
 }
 
-bool OmxDecoderModule::SupportsMimeType(
+media::DecodeSupportSet OmxDecoderModule::SupportsMimeType(
     const nsACString& aMimeType, DecoderDoctorDiagnostics* aDiagnostics) const {
-  return OmxPlatformLayer::SupportsMimeType(aMimeType);
+  if (OmxPlatformLayer::SupportsMimeType(aMimeType)) {
+    
+    
+    return media::DecodeSupport::SoftwareDecode;
+  }
+  return media::DecodeSupport::Unsupported;
 }
 
 }  

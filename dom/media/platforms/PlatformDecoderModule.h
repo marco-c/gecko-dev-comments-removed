@@ -11,6 +11,7 @@
 
 #  include "DecoderDoctorLogger.h"
 #  include "GMPCrashHelper.h"
+#  include "MediaCodecsSupport.h"
 #  include "MediaEventSource.h"
 #  include "MediaInfo.h"
 #  include "MediaResult.h"
@@ -316,19 +317,35 @@ class PlatformDecoderModule {
   
   
   
-  virtual bool SupportsMimeType(
+  
+  virtual media::DecodeSupportSet SupportsMimeType(
       const nsACString& aMimeType,
       DecoderDoctorDiagnostics* aDiagnostics) const = 0;
 
-  virtual bool Supports(const SupportDecoderParams& aParams,
-                        DecoderDoctorDiagnostics* aDiagnostics) const {
+  virtual media::DecodeSupportSet Supports(
+      const SupportDecoderParams& aParams,
+      DecoderDoctorDiagnostics* aDiagnostics) const {
     const TrackInfo& trackInfo = aParams.mConfig;
-    if (!SupportsMimeType(trackInfo.mMimeType, aDiagnostics)) {
-      return false;
+    const media::DecodeSupportSet support =
+        SupportsMimeType(trackInfo.mMimeType, aDiagnostics);
+
+    
+    if (support == media::DecodeSupport::Unsupported) {
+      return support;
     }
+
     const auto* videoInfo = trackInfo.GetAsVideoInfo();
-    return !videoInfo ||
-           SupportsColorDepth(videoInfo->mColorDepth, aDiagnostics);
+
+    if (!videoInfo) {
+      
+      return media::DecodeSupport::SoftwareDecode;
+    }
+
+    
+    if (!SupportsColorDepth(videoInfo->mColorDepth, aDiagnostics)) {
+      return media::DecodeSupport::Unsupported;
+    }
+    return support;
   }
 
   using CreateDecoderPromise = MozPromise<RefPtr<MediaDataDecoder>, MediaResult,
