@@ -387,6 +387,43 @@ function executeAndWaitForMessage(
 
 
 
+function executeAndWaitForMessageByType(
+  hud,
+  input,
+  matchingText,
+  typeSelector
+) {
+  const onMessage = waitForMessageByType(hud, matchingText, typeSelector);
+  execute(hud, input);
+  return onMessage;
+}
+
+
+
+
+
+
+
+
+
+function executeAndWaitForResultMessage(hud, input, matchingText) {
+  return executeAndWaitForMessageByType(hud, input, matchingText, ".result");
+}
+
+function executeAndWaitForErrorMessage(hud, input, matchingText) {
+  return executeAndWaitForMessageByType(hud, input, matchingText, ".error");
+}
+
+
+
+
+
+
+
+
+
+
+
 function keyboardExecuteAndWaitForMessage(
   hud,
   input,
