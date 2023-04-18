@@ -201,6 +201,9 @@ nsresult DataStorage::Init() {
   
   
   os->AddObserver(this, "xpcom-shutdown-threads", false);
+  
+  
+  os->AddObserver(this, "application-background", false);
 
   return NS_OK;
 }
@@ -634,13 +637,14 @@ DataStorage::Writer::Run() {
       return rv;
     }
   }
+
   nsCOMPtr<nsIOutputStream> outputStream;
-  rv = NS_NewLocalFileOutputStream(getter_AddRefs(outputStream), file,
-                                   PR_CREATE_FILE | PR_TRUNCATE | PR_WRONLY);
+  rv =
+      NS_NewSafeLocalFileOutputStream(getter_AddRefs(outputStream), file,
+                                      PR_CREATE_FILE | PR_TRUNCATE | PR_WRONLY);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
-
   
   if (!outputStream) {
     return NS_OK;
@@ -656,6 +660,16 @@ DataStorage::Writer::Run() {
     }
     remaining -= written;
     ptr += written;
+  }
+
+  nsCOMPtr<nsISafeOutputStream> safeOutputStream =
+      do_QueryInterface(outputStream);
+  if (!safeOutputStream) {
+    return NS_ERROR_FAILURE;
+  }
+  rv = safeOutputStream->Finish();
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
   }
 
   
@@ -779,6 +793,16 @@ DataStorage::Observe(nsISupports* , const char* aTopic,
       taskQueueToAwait->AwaitShutdownAndIdle();
     }
     ShutdownTimer();
+  }
+
+  
+  
+  if (strcmp(aTopic, "application-background") == 0) {
+    MutexAutoLock lock(mMutex);
+    if (!mShuttingDown) {
+      nsresult rv = AsyncWriteData(lock);
+      Unused << NS_WARN_IF(NS_FAILED(rv));
+    }
   }
 
   return NS_OK;
