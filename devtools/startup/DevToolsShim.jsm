@@ -27,7 +27,6 @@ XPCOMUtils.defineLazyGetter(this, "Telemetry", function() {
   return Telemetry;
 });
 
-const DEVTOOLS_ENABLED_PREF = "devtools.enabled";
 const DEVTOOLS_POLICY_DISABLED_PREF = "devtools.policy.disabled";
 
 const EXPORTED_SYMBOLS = ["DevToolsShim"];
@@ -63,10 +62,8 @@ const DevToolsShim = {
 
 
 
-
   isEnabled: function() {
-    const enabled = Services.prefs.getBoolPref(DEVTOOLS_ENABLED_PREF);
-    return enabled && !this.isDisabledByPolicy();
+    return !this.isDisabledByPolicy();
   },
 
   
