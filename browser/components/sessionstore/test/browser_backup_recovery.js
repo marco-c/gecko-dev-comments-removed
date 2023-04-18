@@ -33,11 +33,10 @@ add_task(async function test_creation() {
   
   SessionSaver.cancel();
 
-  let PROFILE_DIR = await PathUtils.getProfileDir();
   
-  let OLD_BACKUP = PathUtils.join(PROFILE_DIR, "sessionstore.baklz4");
+  let OLD_BACKUP = PathUtils.join(PathUtils.profileDir, "sessionstore.baklz4");
   let OLD_UPGRADE_BACKUP = PathUtils.join(
-    PROFILE_DIR,
+    PathUtils.profileDir,
     "sessionstore.baklz4-0000000"
   );
 
