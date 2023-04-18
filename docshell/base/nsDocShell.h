@@ -1356,6 +1356,12 @@ class nsDocShell final : public nsDocLoader,
   
   
   bool mForcedAutodetection : 1;
+
+  
+
+
+
+  bool mCheckingSessionHistory : 1;
 };
 
 inline nsISupports* ToSupports(nsDocShell* aDocShell) {
