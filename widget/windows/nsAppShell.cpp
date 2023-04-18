@@ -586,11 +586,6 @@ nsresult nsAppShell::Init() {
 
 NS_IMETHODIMP
 nsAppShell::Run(void) {
-  
-  
-  
-  
-  
   if (XRE_IsParentProcess()) {
     bool wantAudio = true;
 #ifdef MOZ_BACKGROUNDTASKS
