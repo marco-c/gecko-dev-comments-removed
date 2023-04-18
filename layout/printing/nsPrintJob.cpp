@@ -285,9 +285,6 @@ void nsPrintJob::Destroy() {
 
   mPrt = nullptr;
 
-#ifdef NS_PRINT_PREVIEW
-  mPrtPreview = nullptr;
-#endif
   mDocViewerPrint = nullptr;
 }
 
@@ -334,12 +331,11 @@ nsresult nsPrintJob::Initialize(nsIDocumentViewerPrint* aDocViewerPrint,
 
 std::tuple<nsPageSequenceFrame*, int32_t>
 nsPrintJob::GetSeqFrameAndCountSheets() const {
-  nsPrintData* printData = mPrtPreview ? mPrtPreview : mPrt;
-  if (NS_WARN_IF(!printData)) {
+  if (NS_WARN_IF(!mPrt)) {
     return {nullptr, 0};
   }
 
-  const nsPrintObject* po = printData->mPrintObject.get();
+  const nsPrintObject* po = mPrt->mPrintObject.get();
   if (NS_WARN_IF(!po)) {
     return {nullptr, 0};
   }
@@ -880,9 +876,7 @@ nsresult nsPrintJob::SetupToPrintContent() {
 
   
   
-  
-  bool ppIsShrinkToFit = mPrtPreview && mPrtPreview->mShrinkToFit;
-  if (printData->mShrinkToFit && !ppIsShrinkToFit) {
+  if (printData->mShrinkToFit) {
     printData->mShrinkRatio = printData->mPrintObject->mShrinkRatio;
 
     if (printData->mShrinkRatio < 0.998f) {
@@ -2081,12 +2075,6 @@ nsresult nsPrintJob::FinishPrintPreview() {
   
 
   printData->OnEndPrinting();
-  
-  
-
-  
-  
-  mPrtPreview = std::move(mPrt);
 
 #endif  
 

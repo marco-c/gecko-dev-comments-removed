@@ -244,12 +244,6 @@ class nsPrintJob final : public nsIWebProgressListener,
   
   RefPtr<nsPrintData> mPrt;
 
-  
-  
-  
-  
-  RefPtr<nsPrintData> mPrtPreview;
-
   RefPtr<nsPagePrintTimer> mPagePrintTimer;
 
   
