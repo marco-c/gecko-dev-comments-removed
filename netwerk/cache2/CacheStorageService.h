@@ -216,7 +216,7 @@ class CacheStorageService final : public nsICacheStorageService,
   
   void TelemetryPrune(TimeStamp& now);
   void TelemetryRecordEntryCreation(CacheEntry const* entry);
-  void TelemetryRecordEntryRemoval(CacheEntry* entry);
+  void TelemetryRecordEntryRemoval(CacheEntry const* entry);
 
  private:
   

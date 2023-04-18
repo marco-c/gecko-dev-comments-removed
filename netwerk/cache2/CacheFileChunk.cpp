@@ -412,7 +412,6 @@ nsresult CacheFileChunk::Write(CacheFileHandle* aHandle,
 
 void CacheFileChunk::WaitForUpdate(CacheFileChunkListener* aCallback) {
   AssertOwnsLock();
-  mFile->AssertOwnsLock();  
 
   LOG(("CacheFileChunk::WaitForUpdate() [this=%p, listener=%p]", this,
        aCallback));
@@ -508,7 +507,6 @@ uint32_t CacheFileChunk::DataSize() const { return mBuf->DataSize(); }
 
 void CacheFileChunk::UpdateDataSize(uint32_t aOffset, uint32_t aLen) {
   AssertOwnsLock();
-  mFile->AssertOwnsLock();  
 
   
   
