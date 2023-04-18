@@ -50,7 +50,7 @@ function promiseSave() {
 
 let mockHelperAppService;
 
-add_task(async function setup() {
+add_setup(async function() {
   
   mockHelperAppService = ComponentUtils._getFactory(HelperAppLauncherDialog);
   registrar.registerFactory(

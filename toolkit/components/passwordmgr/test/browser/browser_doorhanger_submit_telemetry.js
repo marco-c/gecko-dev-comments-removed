@@ -2,7 +2,7 @@
 
 
 
-add_task(function setup() {
+add_setup(function() {
   
   
   

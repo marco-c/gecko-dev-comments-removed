@@ -9,7 +9,7 @@
 
 const TEST_ENGINE_BASENAME = "searchSuggestionEngine.xml";
 
-add_task(async function setup() {
+add_setup(async function() {
   
   
   

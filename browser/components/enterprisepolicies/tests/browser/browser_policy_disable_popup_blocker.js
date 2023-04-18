@@ -7,7 +7,7 @@ function restore_prefs() {
 }
 
 let ORIGINAL_PREF_VALUE = undefined;
-add_task(async function setup() {
+add_setup(async function() {
   
   
   if (Services.prefs.prefHasUserValue("dom.disable_open_during_load")) {

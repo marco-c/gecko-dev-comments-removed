@@ -8,7 +8,7 @@ let { ResetProfile } = ChromeUtils.import(
 
 
 
-add_task(async function setup() {
+add_setup(async function() {
   let profileDirectory = Services.dirsvc.get("ProfD", Ci.nsIFile);
   let profileName = profileDirectory.leafName;
   let profileService = Cc["@mozilla.org/toolkit/profile-service;1"].getService(

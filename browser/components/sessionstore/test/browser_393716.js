@@ -5,7 +5,7 @@
 
 const URL = "about:config";
 
-add_task(async function setup() {
+add_setup(async function() {
   
   await SpecialPowers.pushPrefEnv({
     set: [["browser.aboutConfig.showWarning", false]],

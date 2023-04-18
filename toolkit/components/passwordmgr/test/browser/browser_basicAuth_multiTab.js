@@ -80,7 +80,7 @@ async function testTabAuthed(expectAuthed, { tab, loadPromise, authOptions }) {
   is(pass, expectAuthed ? authOptions.pass : "", "Sent correct password");
 }
 
-add_task(async function setup() {
+add_setup(async function() {
   await SpecialPowers.pushPrefEnv({
     
     set: [["prompts.modalType.httpAuth", Services.prompt.MODAL_TYPE_TAB]],

@@ -58,7 +58,7 @@ function waitForSnapshotCount(histogram, expectedCount) {
   }, `Collected value should become ${expectedCount}.`);
 }
 
-add_task(async function setup() {
+add_setup(async function() {
   
   gReduceMotionOverride = false;
 

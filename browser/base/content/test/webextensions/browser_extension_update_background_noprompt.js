@@ -20,7 +20,7 @@ function getBadgeStatus() {
 }
 
 
-add_task(async function setup() {
+add_setup(async function() {
   await SpecialPowers.pushPrefEnv({
     set: [
       

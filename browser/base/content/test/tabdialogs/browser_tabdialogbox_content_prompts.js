@@ -41,7 +41,7 @@ var commonDialogsBundle = Services.strings.createBundle(
 );
 
 
-add_task(async function setup() {
+add_setup(async function() {
   await SpecialPowers.pushPrefEnv({
     set: [[CONTENT_PROMPT_PREF, true]],
   });

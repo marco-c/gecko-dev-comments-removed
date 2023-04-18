@@ -36,7 +36,7 @@ function getTestDirectory() {
   return tmpDir.path;
 }
 
-add_task(async function setup() {
+add_setup(async function() {
   await SpecialPowers.pushPrefEnv({
     set: [
       

@@ -106,7 +106,7 @@ TestHangReport.prototype = {
 
 let buttonCount = AppConstants.MOZ_DEV_EDITION ? 2 : 1;
 
-add_task(async function setup() {
+add_setup(async function() {
   
   
   const uuidGen = Services.uuid;

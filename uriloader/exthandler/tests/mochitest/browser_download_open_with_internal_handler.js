@@ -95,7 +95,7 @@ function checkTelemetry(desc, expectedAction, expectedType, expectedReason) {
   is(event[5].reason, expectedReason, desc + " telemetry reason");
 }
 
-add_task(async function setup() {
+add_setup(async function() {
   
   await SpecialPowers.pushPrefEnv({
     set: [

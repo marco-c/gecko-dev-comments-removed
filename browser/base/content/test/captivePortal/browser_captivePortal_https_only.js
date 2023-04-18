@@ -12,7 +12,7 @@ const testPath = getRootDirectory(gTestPath).replace(
 const CANONICAL_URI = Services.io.newURI(testPath);
 const PERMISSION_NAME = "https-only-load-insecure";
 
-add_task(async function setup() {
+add_setup(async function() {
   await SpecialPowers.pushPrefEnv({
     
     

@@ -7,7 +7,7 @@
 
 
 
-add_task(async function setup() {
+add_setup(async function() {
   sandbox = sinon.createSandbox();
 
   registerCleanupFunction(async () => {

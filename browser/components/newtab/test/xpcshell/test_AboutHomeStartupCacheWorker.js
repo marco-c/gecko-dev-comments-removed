@@ -55,7 +55,7 @@ const NEWTAB_RENDER_URL =
 
 
 
-add_task(async function setup() {
+add_setup(async function() {
   do_get_profile();
   
   
