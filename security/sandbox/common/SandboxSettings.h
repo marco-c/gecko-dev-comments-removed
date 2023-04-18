@@ -7,6 +7,8 @@
 #define mozilla_SandboxSettings_h
 #include <cinttypes>
 
+#include "nsIXULRuntime.h"
+
 #ifdef __OpenBSD__
 #  include "nsXULAppAPI.h"
 #endif
@@ -23,35 +25,12 @@ int GetEffectiveSocketProcessSandboxLevel();
 
 bool IsContentSandboxEnabled();
 
-
-
-
-enum class ContentWin32kLockdownState : int32_t {
-  LockdownEnabled = 1,  
-  MissingWebRender = 2,
-  OperatingSystemNotSupported = 3,
-  PrefNotSet = 4,  
-  MissingRemoteWebGL = 5,
-  MissingNonNativeTheming = 6,
-  DisabledByEnvVar = 7,  
-  DisabledBySafeMode = 8,
-  DisabledByE10S = 9,       
-  DisabledByUserPref = 10,  
-                            
-  EnabledByUserPref = 11,   
-                            
-  DisabledByControlGroup =
-      12,  
-  EnabledByTreatmentGroup =
-      13,  
-  DisabledByDefault = 14,  
-  EnabledByDefault = 15    
-};
-
 const char* ContentWin32kLockdownStateToString(
-    ContentWin32kLockdownState aValue);
+    nsIXULRuntime::ContentWin32kLockdownState aValue);
 
-ContentWin32kLockdownState GetContentWin32kLockdownState();
+bool GetContentWin32kLockdownEnabled();
+
+nsIXULRuntime::ContentWin32kLockdownState GetContentWin32kLockdownState();
 
 #if defined(XP_MACOSX)
 int ClampFlashSandboxLevel(const int aLevel);

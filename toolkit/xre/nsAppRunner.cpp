@@ -25,10 +25,13 @@
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_fission.h"
+#include "mozilla/StaticPrefs_webgl.h"
+#include "mozilla/StaticPrefs_widget.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/Utf8.h"
 #include "mozilla/intl/LocaleService.h"
 #include "mozilla/JSONWriter.h"
+#include "mozilla/gfx/gfxVars.h"
 #include "BaseProfiler.h"
 
 #include "nsAppRunner.h"
@@ -589,6 +592,84 @@ bool BrowserTabsRemoteAutostart() {
 
   return gBrowserTabsRemoteAutostart;
 }
+
+
+
+namespace mozilla {
+nsIXULRuntime::ContentWin32kLockdownState GetWin32kLockdownState() {
+#ifdef XP_WIN
+
+  
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (gSafeMode) {
+    return nsIXULRuntime::ContentWin32kLockdownState::DisabledBySafeMode;
+  }
+
+  if (EnvHasValue("MOZ_ENABLE_WIN32K")) {
+    return nsIXULRuntime::ContentWin32kLockdownState::DisabledByEnvVar;
+  }
+
+  if (!mozilla::BrowserTabsRemoteAutostart()) {
+    return nsIXULRuntime::ContentWin32kLockdownState::DisabledByE10S;
+  }
+
+  if (!IsWin8OrLater()) {
+    return nsIXULRuntime::ContentWin32kLockdownState::
+        OperatingSystemNotSupported;
+  }
+
+  
+  
+  
+  
+  
+  
+  if (!gfx::gfxVars::UseWebRender()) {
+    return nsIXULRuntime::ContentWin32kLockdownState::MissingWebRender;
+  }
+
+  
+  if (!StaticPrefs::widget_non_native_theme_enabled()) {
+    return nsIXULRuntime::ContentWin32kLockdownState::MissingNonNativeTheming;
+  }
+
+  
+  
+  if (!gfx::gfxVars::AllowWebglOop() || !StaticPrefs::webgl_out_of_process()) {
+    return nsIXULRuntime::ContentWin32kLockdownState::MissingRemoteWebGL;
+  }
+
+  bool prefSetByUser =
+      Preferences::HasUserValue("security.sandbox.content.win32k-disable");
+  bool prefValue = Preferences::GetBool(
+      "security.sandbox.content.win32k-disable", false, PrefValueKind::User);
+  bool defaultValue = Preferences::GetBool(
+      "security.sandbox.content.win32k-disable", false, PrefValueKind::Default);
+
+  if (prefSetByUser) {
+    if (prefValue) {
+      return nsIXULRuntime::ContentWin32kLockdownState::EnabledByUserPref;
+    } else {
+      return nsIXULRuntime::ContentWin32kLockdownState::DisabledByUserPref;
+    }
+  }
+
+  if (defaultValue) {
+    return nsIXULRuntime::ContentWin32kLockdownState::EnabledByDefault;
+  } else {
+    return nsIXULRuntime::ContentWin32kLockdownState::DisabledByDefault;
+  }
+
+#else
+
+  return nsIXULRuntime::ContentWin32kLockdownState::OperatingSystemNotSupported;
+
+#endif
+}
+
+}  
+
 
 bool FissionExperimentEnrolled() {
   MOZ_ASSERT(XRE_IsParentProcess());
