@@ -456,7 +456,8 @@ class GlobalHelperThreadState {
   
   js::ConditionVariable consumerWakeup;
 
-  void dispatch(const AutoLockHelperThreadState& locked);
+  void dispatch(JS::DispatchReason reason,
+                const AutoLockHelperThreadState& locked);
 
   void runTask(HelperThreadTask* task, AutoLockHelperThreadState& lock);
 
