@@ -21,6 +21,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/TextEventDispatcherListener.h"
 #include "mozilla/WritingModes.h"
+#include "mozilla/GUniquePtr.h"
 #include "mozilla/widget/IMEData.h"
 
 class nsWindow;
@@ -243,9 +244,7 @@ class IMContextWrapper final : public TextEventDispatcherListener {
     ~GdkEventKeyQueue() { Clear(); }
 
     void Clear() {
-      if (!mEvents.IsEmpty()) {
-        RemoveEventsAt(0, mEvents.Length());
-      }
+      mEvents.Clear();
     }
 
     
@@ -267,7 +266,7 @@ class IMContextWrapper final : public TextEventDispatcherListener {
       if (NS_WARN_IF(index == GdkEventKeyQueue::NoIndex())) {
         return;
       }
-      RemoveEventsAt(0, index + 1);
+      mEvents.RemoveElementAt(index);
     }
 
     
@@ -277,7 +276,7 @@ class IMContextWrapper final : public TextEventDispatcherListener {
       if (mEvents.IsEmpty()) {
         return nullptr;
       }
-      return mEvents[0];
+      return mEvents[0].get();
     }
 
     bool IsEmpty() const { return mEvents.IsEmpty(); }
@@ -290,7 +289,7 @@ class IMContextWrapper final : public TextEventDispatcherListener {
       static_assert(!(GDK_MODIFIER_MASK & (1 << 25)),
                     "We assumes 26th bit is used by some IM, but used by GDK");
       for (size_t i = 0; i < mEvents.Length(); i++) {
-        GdkEventKey* event = mEvents[i];
+        GdkEventKey* event = mEvents[i].get();
         
         
         
@@ -307,14 +306,7 @@ class IMContextWrapper final : public TextEventDispatcherListener {
     }
 
    private:
-    nsTArray<GdkEventKey*> mEvents;
-
-    void RemoveEventsAt(size_t aStart, size_t aCount) {
-      for (size_t i = aStart; i < aStart + aCount; i++) {
-        gdk_event_free(reinterpret_cast<GdkEvent*>(mEvents[i]));
-      }
-      mEvents.RemoveElementsAt(aStart, aCount);
-    }
+    nsTArray<GUniquePtr<GdkEventKey>> mEvents;
   };
   
   

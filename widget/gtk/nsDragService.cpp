@@ -92,7 +92,18 @@ extern mozilla::LazyLogModule gWidgetDragLog;
 
 
 static guint sMotionEventTimerID;
+
 static GdkEvent* sMotionEvent;
+static GUniquePtr<GdkEvent> TakeMotionEvent() {
+  GUniquePtr<GdkEvent> event(sMotionEvent);
+  sMotionEvent = nullptr;
+  return event;
+}
+static void SetMotionEvent(GUniquePtr<GdkEvent> aEvent) {
+  TakeMotionEvent();
+  sMotionEvent = aEvent.release();
+}
+
 static GtkWidget* sGrabWidget;
 
 static const char gMimeListType[] = "application/x-moz-internal-item-list";
@@ -229,14 +240,12 @@ static gboolean DispatchMotionEventCopy(gpointer aData) {
   
   sMotionEventTimerID = 0;
 
-  GdkEvent* event = sMotionEvent;
-  sMotionEvent = nullptr;
+  GUniquePtr<GdkEvent> event = TakeMotionEvent();
   
   
   if (gtk_widget_has_grab(sGrabWidget)) {
-    gtk_propagate_event(sGrabWidget, event);
+    gtk_propagate_event(sGrabWidget, event.get());
   }
-  gdk_event_free(event);
 
   
   
@@ -250,10 +259,7 @@ static void OnSourceGrabEventAfter(GtkWidget* widget, GdkEvent* event,
   if (!gtk_widget_has_grab(sGrabWidget)) return;
 
   if (event->type == GDK_MOTION_NOTIFY) {
-    if (sMotionEvent) {
-      gdk_event_free(sMotionEvent);
-    }
-    sMotionEvent = gdk_event_copy(event);
+    SetMotionEvent(GUniquePtr<GdkEvent>(gdk_event_copy(event)));
 
     
     
@@ -504,8 +510,7 @@ nsDragService::EndDragSession(bool aDoneDrag, uint32_t aKeyModifiers) {
       sMotionEventTimerID = 0;
     }
     if (sMotionEvent) {
-      gdk_event_free(sMotionEvent);
-      sMotionEvent = nullptr;
+      TakeMotionEvent();
     }
   }
 
