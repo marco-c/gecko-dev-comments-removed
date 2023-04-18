@@ -43,11 +43,6 @@ add_task(async function test_override_wait_after_n_restarts() {
       quickSuggestShowOnboardingDialogAfterNRestarts: 1,
     },
     callback: async () => {
-      let dialogPromise = BrowserTestUtils.promiseAlertDialog(
-        "accept",
-        "chrome://browser/content/urlbar/quicksuggestOnboarding.xhtml",
-        { isSubDialog: true }
-      ).then(() => info("Saw dialog"));
       let prefPromise = TestUtils.waitForPrefChange(
         "browser.urlbar.quicksuggest.showedOnboardingDialog",
         value => value === true
@@ -56,13 +51,25 @@ add_task(async function test_override_wait_after_n_restarts() {
       
       
       
-      for (let i = 0; i < 2; i++) {
-        info(`Simulating restart ${i + 1}`);
-        await UrlbarQuickSuggest.maybeShowOnboardingDialog();
-      }
+      info("Simulating first restart");
+      await UrlbarQuickSuggest.maybeShowOnboardingDialog();
 
-      info("Waiting for dialog and pref change");
-      await Promise.all([dialogPromise, prefPromise]);
+      info("Simulating second restart");
+      const dialogPromise = BrowserTestUtils.promiseAlertDialogOpen(
+        null,
+        ONBOARDING_URI,
+        { isSubDialog: true }
+      );
+      const maybeShowPromise = UrlbarQuickSuggest.maybeShowOnboardingDialog();
+      const win = await dialogPromise;
+      if (win.document.readyState != "complete") {
+        await BrowserTestUtils.waitForEvent(win, "load");
+      }
+      
+      EventUtils.synthesizeKey("KEY_Escape");
+
+      info("Waiting for maybeShowPromise and pref change");
+      await Promise.all([maybeShowPromise, prefPromise]);
     },
   });
 

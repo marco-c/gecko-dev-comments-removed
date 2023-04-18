@@ -12,9 +12,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   UrlbarQuickSuggest: "resource:///modules/UrlbarQuickSuggest.jsm",
 });
 
-const ONBOARDING_URI =
-  "chrome://browser/content/urlbar/quicksuggestOnboarding.xhtml";
-
 const OTHER_DIALOG_URI = getRootDirectory(gTestPath) + "subdialog.xhtml";
 
 
@@ -51,17 +48,46 @@ add_task(async function onboardingShouldNotAppear() {
 });
 
 
+add_task(async function transition() {
+  await doTransitionTest({
+    trigger: win => {
+      info("Find next button");
+      const onboardingNext = win.document.getElementById("onboardingNext");
+      info("Click to transition");
+      onboardingNext.click();
+    },
+  });
+});
+
+
+add_task(async function transition_by_enter() {
+  await doTransitionTest({
+    trigger: () => {
+      info("Enter to transition");
+      EventUtils.synthesizeKey("KEY_Enter");
+    },
+  });
+});
+
+
 add_task(async function accept() {
   await doDialogTest({
     callback: async () => {
       let tabCount = gBrowser.tabs.length;
-      let dialogPromise = openDialog("accept");
 
-      info("Calling maybeShowOnboardingDialog");
-      await UrlbarQuickSuggest.maybeShowOnboardingDialog();
+      info("Calling showOnboardingDialog");
+      const { win, maybeShowPromise } = await showOnboardingDialog({
+        skipIntroduction: true,
+      });
 
-      info("Waiting for dialog");
-      await dialogPromise;
+      info("Select accept option");
+      win.document.getElementById("onboardingAccept").click();
+
+      info("Submit");
+      win.document.getElementById("onboardingSubmit").click();
+
+      info("Waiting for maybeShowOnboardingDialog to finish");
+      await maybeShowPromise;
 
       Assert.equal(
         gBrowser.currentURI.spec,
@@ -90,17 +116,67 @@ add_task(async function accept() {
 });
 
 
+add_task(async function reject() {
+  await doDialogTest({
+    callback: async () => {
+      let tabCount = gBrowser.tabs.length;
+
+      info("Calling showOnboardingDialog");
+      const { win, maybeShowPromise } = await showOnboardingDialog({
+        skipIntroduction: true,
+      });
+
+      info("Select reject option");
+      win.document.getElementById("onboardingReject").click();
+
+      info("Submit");
+      win.document.getElementById("onboardingSubmit").click();
+
+      info("Waiting for maybeShowOnboardingDialog to finish");
+      await maybeShowPromise;
+
+      Assert.equal(
+        gBrowser.currentURI.spec,
+        "about:blank",
+        "Nothing loaded in the current tab"
+      );
+      Assert.equal(gBrowser.tabs.length, tabCount, "No news tabs were opened");
+    },
+    onboardingDialogChoice: "reject",
+    expectedUserBranchPrefs: {
+      "quicksuggest.dataCollection.enabled": false,
+    },
+    telemetryEvents: [
+      {
+        category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
+        method: "data_collect_toggled",
+        object: "disabled",
+      },
+      {
+        category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
+        method: "opt_in_dialog",
+        object: "reject",
+      },
+    ],
+  });
+});
+
+
 add_task(async function notNow() {
   await doDialogTest({
     callback: async () => {
       let tabCount = gBrowser.tabs.length;
-      let dialogPromise = openDialog("onboardingNotNow");
 
-      info("Calling maybeShowOnboardingDialog");
-      await UrlbarQuickSuggest.maybeShowOnboardingDialog();
+      info("Calling showOnboardingDialog");
+      const { win, maybeShowPromise } = await showOnboardingDialog({
+        skipIntroduction: true,
+      });
 
-      info("Waiting for dialog");
-      await dialogPromise;
+      info("Click on not now link");
+      win.document.getElementById("onboardingNotNow").click();
+
+      info("Waiting for maybeShowOnboardingDialog to finish");
+      await maybeShowPromise;
 
       Assert.equal(
         gBrowser.currentURI.spec,
@@ -130,56 +206,9 @@ add_task(async function notNow() {
 
 
 
-add_task(async function settings() {
-  await doDialogTest({
-    callback: async () => {
-      let dialogPromise = openDialog("extra1");
-
-      
-      let loadPromise = BrowserTestUtils.browserLoaded(
-        gBrowser.selectedBrowser
-      ).then(() => info("Saw load"));
-
-      info("Calling maybeShowOnboardingDialog");
-      await UrlbarQuickSuggest.maybeShowOnboardingDialog();
-
-      info("Waiting for dialog");
-      await dialogPromise;
-
-      info("Waiting for load");
-      await loadPromise;
-
-      Assert.equal(
-        gBrowser.currentURI.spec,
-        "about:preferences#privacy",
-        "Current tab is about:preferences#privacy"
-      );
-    },
-    onboardingDialogChoice: "settings",
-    expectedUserBranchPrefs: {
-      "quicksuggest.dataCollection.enabled": false,
-    },
-    telemetryEvents: [
-      {
-        category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
-        method: "data_collect_toggled",
-        object: "disabled",
-      },
-      {
-        category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
-        method: "opt_in_dialog",
-        object: "settings",
-      },
-    ],
-  });
-});
-
-
-
 add_task(async function learnMore() {
   await doDialogTest({
     callback: async () => {
-      let dialogPromise = openDialog("onboardingLearnMore");
       let loadPromise = BrowserTestUtils.waitForNewTab(
         gBrowser,
         QuickSuggestTestUtils.LEARN_MORE_URL
@@ -188,11 +217,16 @@ add_task(async function learnMore() {
         return tab;
       });
 
-      info("Calling maybeShowOnboardingDialog");
-      await UrlbarQuickSuggest.maybeShowOnboardingDialog();
+      info("Calling showOnboardingDialog");
+      const { win, maybeShowPromise } = await showOnboardingDialog({
+        skipIntroduction: true,
+      });
 
-      info("Waiting for dialog");
-      await dialogPromise;
+      info("Click on learn more link");
+      win.document.getElementById("onboardingLearnMore").click();
+
+      info("Waiting for maybeShowOnboardingDialog to finish");
+      await maybeShowPromise;
 
       info("Waiting for new tab");
       let tab = await loadPromise;
@@ -229,7 +263,7 @@ add_task(async function learnMore() {
 add_task(async function escKey_focusInsideDialog() {
   await doFocusTest({
     tabKeyRepeat: 0,
-    expectedFocusID: "onboardingAcceptButton",
+    expectedFocusID: "onboardingNext",
     callback: async () => {
       let tabCount = gBrowser.tabs.length;
       Assert.ok(
@@ -268,7 +302,7 @@ add_task(async function escKey_focusInsideDialog() {
 add_task(async function escKey_focusOutsideDialog() {
   await doFocusTest({
     tabKeyRepeat: 0,
-    expectedFocusID: "onboardingAcceptButton",
+    expectedFocusID: "onboardingNext",
     callback: async () => {
       document.documentElement.focus();
       Assert.ok(
@@ -364,7 +398,7 @@ async function doQueuedEscKeyTest(otherDialogKey) {
 }
 
 
-add_task(async function dismissed_other() {
+add_task(async function dismissed_other_on_introduction() {
   await doDialogTest({
     callback: async () => {
       let dialogPromise = BrowserTestUtils.promiseAlertDialogOpen(
@@ -403,13 +437,109 @@ add_task(async function dismissed_other() {
 });
 
 
+add_task(async function focus_init_order() {
+  setDialogPrereqPrefs();
+
+  info("Calling showOnboardingDialog");
+  const { win, maybeShowPromise } = await showOnboardingDialog({
+    skipIntroduction: true,
+  });
+
+  const order = [
+    "onboardingAccept",
+    "onboardingLearnMore",
+    "onboardingReject",
+    "onboardingNotNow",
+    "onboardingAccept",
+  ];
+
+  for (const next of order) {
+    EventUtils.synthesizeKey("KEY_Tab");
+    Assert.equal(win.document.activeElement.id, next);
+  }
+
+  EventUtils.synthesizeKey("KEY_Escape");
+
+  info("Waiting for maybeShowOnboardingDialog to finish");
+  await maybeShowPromise;
+});
+
+
+add_task(async function focus_order_with_accept_option() {
+  setDialogPrereqPrefs();
+
+  info("Calling showOnboardingDialog");
+  const { win, maybeShowPromise } = await showOnboardingDialog({
+    skipIntroduction: true,
+  });
+
+  info("Select onboardingAccept");
+  EventUtils.synthesizeKey("KEY_Tab");
+  Assert.equal(win.document.activeElement.id, "onboardingAccept");
+  EventUtils.synthesizeKey(" ");
+
+  const order = [
+    "onboardingLearnMore",
+    "onboardingSubmit",
+    "onboardingNotNow",
+    "onboardingAccept",
+  ];
+
+  for (const next of order) {
+    EventUtils.synthesizeKey("KEY_Tab");
+    Assert.equal(win.document.activeElement.id, next);
+  }
+
+  EventUtils.synthesizeKey("KEY_Escape");
+
+  info("Waiting for maybeShowOnboardingDialog to finish");
+  await maybeShowPromise;
+});
+
+
+add_task(async function focus_order_with_reject_option() {
+  setDialogPrereqPrefs();
+
+  info("Calling showOnboardingDialog");
+  const { win, maybeShowPromise } = await showOnboardingDialog({
+    skipIntroduction: true,
+  });
+
+  info("Select onboardingReject");
+  EventUtils.synthesizeKey("KEY_Tab", { repeat: 3 });
+  Assert.equal(win.document.activeElement.id, "onboardingReject");
+  EventUtils.synthesizeKey(" ");
+
+  const order = [
+    "onboardingSubmit",
+    "onboardingNotNow",
+    "onboardingLearnMore",
+    "onboardingReject",
+  ];
+
+  for (const next of order) {
+    EventUtils.synthesizeKey("KEY_Tab");
+    Assert.equal(win.document.activeElement.id, next);
+  }
+
+  EventUtils.synthesizeKey("KEY_Escape");
+
+  info("Waiting for maybeShowOnboardingDialog to finish");
+  await maybeShowPromise;
+});
+
+
 
 
 add_task(async function focus_accept() {
   await doFocusTest({
-    tabKeyRepeat: 0,
-    expectedFocusID: "onboardingAcceptButton",
+    tabKeyRepeat: 1,
+    expectedFocusID: "onboardingAccept",
     callback: async () => {
+      info("Select accept option");
+      EventUtils.synthesizeKey(" ");
+
+      info("Enter to submit");
       EventUtils.synthesizeKey("KEY_Enter");
     },
     onboardingDialogChoice: "accept",
@@ -426,49 +556,6 @@ add_task(async function focus_accept() {
         category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
         method: "opt_in_dialog",
         object: "accept",
-      },
-    ],
-  });
-});
-
-
-
-
-add_task(async function focus_settings() {
-  await doFocusTest({
-    tabKeyRepeat: 1,
-    expectedFocusID: "onboardingSettingsButton",
-    callback: async () => {
-      
-      let loadPromise = BrowserTestUtils.browserLoaded(
-        gBrowser.selectedBrowser
-      ).then(() => info("Saw load"));
-
-      EventUtils.synthesizeKey("KEY_Enter");
-
-      info("Waiting for load");
-      await loadPromise;
-
-      Assert.equal(
-        gBrowser.currentURI.spec,
-        "about:preferences#privacy",
-        "Current tab is about:preferences#privacy"
-      );
-    },
-    onboardingDialogChoice: "settings",
-    expectedUserBranchPrefs: {
-      "quicksuggest.dataCollection.enabled": false,
-    },
-    telemetryEvents: [
-      {
-        category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
-        method: "data_collect_toggled",
-        object: "disabled",
-      },
-      {
-        category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
-        method: "opt_in_dialog",
-        object: "settings",
       },
     ],
   });
@@ -525,9 +612,42 @@ add_task(async function focus_learnMore() {
 
 
 
-add_task(async function focus_notNow() {
+add_task(async function focus_reject() {
   await doFocusTest({
     tabKeyRepeat: 3,
+    expectedFocusID: "onboardingReject",
+    callback: async () => {
+      info("Select reject option");
+      EventUtils.synthesizeKey(" ");
+
+      info("Enter to submit");
+      EventUtils.synthesizeKey("KEY_Enter");
+    },
+    onboardingDialogChoice: "reject",
+    expectedUserBranchPrefs: {
+      "quicksuggest.dataCollection.enabled": false,
+    },
+    telemetryEvents: [
+      {
+        category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
+        method: "data_collect_toggled",
+        object: "disabled",
+      },
+      {
+        category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
+        method: "opt_in_dialog",
+        object: "reject",
+      },
+    ],
+  });
+});
+
+
+
+
+add_task(async function focus_notNow() {
+  await doFocusTest({
+    tabKeyRepeat: 4,
     expectedFocusID: "onboardingNotNow",
     callback: async () => {
       let tabCount = gBrowser.tabs.length;
@@ -560,12 +680,13 @@ add_task(async function focus_notNow() {
 
 
 
-
 add_task(async function focus_accept_wraparound() {
   await doFocusTest({
-    tabKeyRepeat: 4,
-    expectedFocusID: "onboardingAcceptButton",
-    callback: async () => {
+    tabKeyRepeat: 5,
+    expectedFocusID: "onboardingAccept",
+    callback: async win => {
+      info("Select accept option");
+      EventUtils.synthesizeKey(" ");
       EventUtils.synthesizeKey("KEY_Enter");
     },
     onboardingDialogChoice: "accept",
@@ -704,27 +825,16 @@ async function doFocusTest({
     expectedUserBranchPrefs,
     telemetryEvents,
     callback: async () => {
-      let dialogPromise = BrowserTestUtils.promiseAlertDialogOpen(
-        null,
-        ONBOARDING_URI,
-        { isSubDialog: true }
-      );
-
-      let maybeShowPromise = UrlbarQuickSuggest.maybeShowOnboardingDialog();
-
-      let win = await dialogPromise;
-      if (win.document.readyState != "complete") {
-        await BrowserTestUtils.waitForEvent(win, "load");
-      }
+      const { win, maybeShowPromise } = await showOnboardingDialog({
+        skipIntroduction: true,
+      });
 
       let doc = win.document;
 
       Assert.equal(
         doc.activeElement.id,
-        gCanTabMoveFocus
-          ? "onboardingAcceptButton"
-          : "quicksuggestOnboardingDialogWindow",
-        "Accept button is focused initially"
+        "onboardingNext",
+        "onboardingNext is focused initially"
       );
 
       if (tabKeyRepeat) {
@@ -732,18 +842,93 @@ async function doFocusTest({
       }
 
       if (!gCanTabMoveFocus) {
-        expectedFocusID = "quicksuggestOnboardingDialogWindow";
+        expectedFocusID = "onboardingNext";
       }
+
       Assert.equal(
         doc.activeElement.id,
         expectedFocusID,
         "Expected element is focused: " + expectedFocusID
       );
 
-      await callback();
+      await callback(win);
       await maybeShowPromise;
     },
   });
+}
+
+async function doTransitionTest({ trigger }) {
+  setDialogPrereqPrefs();
+
+  info("Calling showOnboardingDialog");
+  const { win, maybeShowPromise } = await showOnboardingDialog();
+
+  info("Check initial status");
+  const introductionSection = win.document.getElementById(
+    "introduction-section"
+  );
+  const mainSection = win.document.getElementById("main-section");
+  Assert.ok(BrowserTestUtils.is_visible(introductionSection));
+  Assert.ok(BrowserTestUtils.is_hidden(mainSection));
+
+  
+  await trigger(win);
+
+  info("Wait for transition");
+  await BrowserTestUtils.waitForCondition(
+    () =>
+      BrowserTestUtils.is_hidden(introductionSection) &&
+      BrowserTestUtils.is_visible(mainSection)
+  );
+  Assert.ok(true, "The transition is finished successfully");
+
+  info("Close the dialog");
+  EventUtils.synthesizeKey("KEY_Escape");
+  await maybeShowPromise;
+}
+
+
+
+
+
+
+
+
+
+
+async function showOnboardingDialog({ skipIntroduction } = {}) {
+  const dialogPromise = BrowserTestUtils.promiseAlertDialogOpen(
+    null,
+    ONBOARDING_URI,
+    { isSubDialog: true }
+  );
+
+  const maybeShowPromise = UrlbarQuickSuggest.maybeShowOnboardingDialog();
+
+  const win = await dialogPromise;
+  if (win.document.readyState != "complete") {
+    await BrowserTestUtils.waitForEvent(win, "load");
+  }
+
+  if (!skipIntroduction) {
+    return { win, maybeShowPromise };
+  }
+
+  
+  EventUtils.synthesizeKey("KEY_Enter");
+
+  const introductionSection = win.document.getElementById(
+    "introduction-section"
+  );
+  const mainSection = win.document.getElementById("main-section");
+
+  await BrowserTestUtils.waitForCondition(
+    () =>
+      BrowserTestUtils.is_hidden(introductionSection) &&
+      BrowserTestUtils.is_visible(mainSection)
+  );
+
+  return { win, maybeShowPromise };
 }
 
 
@@ -753,13 +938,6 @@ async function doFocusTest({
 function setDialogPrereqPrefs() {
   UrlbarPrefs.set("quicksuggest.shouldShowOnboardingDialog", true);
   UrlbarPrefs.set("quicksuggest.showedOnboardingDialog", false);
-}
-
-async function openDialog(button = undefined) {
-  await BrowserTestUtils.promiseAlertDialog(button, ONBOARDING_URI, {
-    isSubDialog: true,
-  });
-  info("Saw dialog");
 }
 
 
@@ -790,18 +968,9 @@ async function canTabMoveFocus() {
   let canMove = false;
   await doDialogTest({
     callback: async () => {
-      let dialogPromise = BrowserTestUtils.promiseAlertDialogOpen(
-        null,
-        ONBOARDING_URI,
-        { isSubDialog: true }
-      );
-
-      let maybeShowPromise = UrlbarQuickSuggest.maybeShowOnboardingDialog();
-
-      let win = await dialogPromise;
-      if (win.document.readyState != "complete") {
-        await BrowserTestUtils.waitForEvent(win, "load");
-      }
+      const { win, maybeShowPromise } = await showOnboardingDialog({
+        skipIntroduction: true,
+      });
 
       let doc = win.document;
       let { activeElement } = doc;

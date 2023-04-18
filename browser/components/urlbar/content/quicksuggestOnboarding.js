@@ -8,56 +8,73 @@ const { ONBOARDING_CHOICE } = ChromeUtils.import(
   "resource:///modules/UrlbarQuickSuggest.jsm"
 );
 
-document.addEventListener("dialogaccept", event => {
-  
-  
-  
-  switch (document.activeElement?.id) {
-    case "onboardingSettingsButton":
-      window.arguments[0].choice = ONBOARDING_CHOICE.SETTINGS;
-      event.preventDefault();
-      window.close();
-      return;
-    case "onboardingNotNow":
-      window.arguments[0].choice = ONBOARDING_CHOICE.NOT_NOW;
-      event.preventDefault();
-      window.close();
-      return;
-    case "onboardingLearnMore":
-      window.arguments[0].choice = ONBOARDING_CHOICE.LEARN_MORE;
-      event.preventDefault();
-      window.close();
-      return;
-  }
-
-  window.arguments[0].choice = ONBOARDING_CHOICE.ACCEPT;
-});
-
-document.addEventListener("dialogextra1", () => {
-  window.arguments[0].choice = ONBOARDING_CHOICE.SETTINGS;
-  window.close();
-});
-
-document.getElementById("onboardingNotNow").addEventListener("click", () => {
-  window.arguments[0].choice = ONBOARDING_CHOICE.NOT_NOW;
-  window.close();
-});
-
-document.getElementById("onboardingLearnMore").addEventListener("click", () => {
-  window.arguments[0].choice = ONBOARDING_CHOICE.LEARN_MORE;
-  window.close();
-});
 
 
 
 
-window.addEventListener("load", () => {
-  const resizeObserver = new ResizeObserver(() => {
-    
-    
-    
-    window.resizeBy(0, -window.innerHeight);
-    window.opener.gDialogBox.dialog.resizeDialog();
+const COMPACT_MODE_HEIGHT = 587 + 32 * 2 + 44;
+
+document.addEventListener("DOMContentLoaded", () => {
+  addSubmitListener(document.getElementById("onboardingNext"), () => {
+    document.getElementById("introduction-section").classList.add("inactive");
+    document.getElementById("main-section").classList.add("active");
   });
-  resizeObserver.observe(document.getElementById("infoContainer"));
+  addSubmitListener(document.getElementById("onboardingLearnMore"), () => {
+    window.arguments[0].choice = ONBOARDING_CHOICE.LEARN_MORE;
+    window.close();
+  });
+  addSubmitListener(document.getElementById("onboardingNotNow"), () => {
+    window.arguments[0].choice = ONBOARDING_CHOICE.NOT_NOW;
+    window.close();
+  });
+
+  const onboardingSubmit = document.getElementById("onboardingSubmit");
+  const onboardingAccept = document.getElementById("onboardingAccept");
+  const onboardingReject = document.getElementById("onboardingReject");
+  function optionChangeListener() {
+    onboardingSubmit.removeAttribute("disabled");
+    onboardingAccept
+      .closest(".option")
+      .classList.toggle("selected", onboardingAccept.checked);
+    onboardingReject
+      .closest(".option")
+      .classList.toggle("selected", !onboardingAccept.checked);
+  }
+  onboardingAccept.addEventListener("change", optionChangeListener);
+  onboardingReject.addEventListener("change", optionChangeListener);
+
+  function submitListener() {
+    if (!onboardingAccept.checked && !onboardingReject.checked) {
+      return;
+    }
+
+    window.arguments[0].choice = onboardingAccept.checked
+      ? ONBOARDING_CHOICE.ACCEPT
+      : ONBOARDING_CHOICE.REJECT;
+    window.close();
+  }
+  addSubmitListener(onboardingSubmit, submitListener);
+  onboardingAccept.addEventListener("keydown", e => {
+    if (e.keyCode == e.DOM_VK_RETURN) {
+      submitListener();
+    }
+  });
+  onboardingReject.addEventListener("keydown", e => {
+    if (e.keyCode == e.DOM_VK_RETURN) {
+      submitListener();
+    }
+  });
+
+  if (window.outerHeight < COMPACT_MODE_HEIGHT) {
+    document.body.classList.add("compact");
+  }
 });
+
+function addSubmitListener(element, listener) {
+  element.addEventListener("click", listener);
+  element.addEventListener("keydown", e => {
+    if (e.keyCode == e.DOM_VK_RETURN) {
+      listener();
+    }
+  });
+}
