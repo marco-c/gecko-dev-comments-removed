@@ -2011,10 +2011,10 @@ class Snapshot final : public PBackgroundLSSnapshotParent {
 
   mozilla::ipc::IPCResult RecvDeleteMe() override;
 
-  mozilla::ipc::IPCResult RecvCheckpoint(
+  mozilla::ipc::IPCResult RecvAsyncCheckpoint(
       nsTArray<LSWriteInfo>&& aWriteInfos) override;
 
-  mozilla::ipc::IPCResult RecvCheckpointAndNotify(
+  mozilla::ipc::IPCResult RecvAsyncCheckpointAndNotify(
       nsTArray<LSWriteAndNotifyInfo>&& aWriteAndNotifyInfos) override;
 
   mozilla::ipc::IPCResult RecvFinish() override;
@@ -5640,7 +5640,7 @@ mozilla::ipc::IPCResult Snapshot::RecvDeleteMe() {
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult Snapshot::RecvCheckpoint(
+mozilla::ipc::IPCResult Snapshot::RecvAsyncCheckpoint(
     nsTArray<LSWriteInfo>&& aWriteInfos) {
   AssertIsOnBackgroundThread();
   
@@ -5695,7 +5695,7 @@ mozilla::ipc::IPCResult Snapshot::RecvCheckpoint(
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult Snapshot::RecvCheckpointAndNotify(
+mozilla::ipc::IPCResult Snapshot::RecvAsyncCheckpointAndNotify(
     nsTArray<LSWriteAndNotifyInfo>&& aWriteAndNotifyInfos) {
   AssertIsOnBackgroundThread();
   
