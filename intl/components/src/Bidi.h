@@ -4,6 +4,7 @@
 #ifndef intl_components_Bidi_h_
 #define intl_components_Bidi_h_
 
+#include "mozilla/intl/BidiEmbeddingLevel.h"
 #include "mozilla/intl/ICU4CGlue.h"
 
 struct UBiDi;
@@ -34,17 +35,6 @@ class Bidi final {
 
 
 
-  enum class Direction : uint8_t {
-    
-    LTR = 0,
-    
-    RTL = 1,
-  };
-
-  
-
-
-
 
 
   enum ParagraphDirection { LTR, RTL, Mixed };
@@ -57,98 +47,13 @@ class Bidi final {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-  class EmbeddingLevel {
-   public:
-    explicit EmbeddingLevel(uint8_t aValue) : mValue(aValue) {}
-    explicit EmbeddingLevel(int aValue)
-        : mValue(static_cast<uint8_t>(aValue)) {}
-
-    EmbeddingLevel() = default;
-
-    
-    EmbeddingLevel(const EmbeddingLevel& other) = default;
-    EmbeddingLevel& operator=(const EmbeddingLevel& other) = default;
-
-    
-
-
-
-    Bidi::Direction Direction();
-
-    
-
-
-    static EmbeddingLevel LTR();
-
-    
-
-
-    static EmbeddingLevel RTL();
-
-    
-
-
-
-
-
-
-    static EmbeddingLevel DefaultLTR();
-
-    
-
-
-
-
-
-
-    static EmbeddingLevel DefaultRTL();
-
-    bool IsDefaultLTR() const;
-    bool IsDefaultRTL() const;
-    bool IsLTR() const;
-    bool IsRTL() const;
-    bool IsSameDirection(EmbeddingLevel aOther) const;
-
-    
-
-
-    uint8_t Value() const;
-
-    
-
-
-    operator uint8_t() const { return mValue; }
-
-   private:
-    uint8_t mValue = 0;
-  };
-
-  
-
-
-
-
-
-
-
   ICUResult SetParagraph(Span<const char16_t> aParagraph,
-                         EmbeddingLevel aLevel);
+                         BidiEmbeddingLevel aLevel);
 
   
 
 
-  EmbeddingLevel GetParagraphEmbeddingLevel() const;
+  BidiEmbeddingLevel GetParagraphEmbeddingLevel() const;
 
   
 
@@ -178,7 +83,7 @@ class Bidi final {
 
 
   void GetLogicalRun(int32_t aLogicalStart, int32_t* aLogicalLimitOut,
-                     EmbeddingLevel* aLevelOut);
+                     BidiEmbeddingLevel* aLevelOut);
 
   
 
@@ -198,7 +103,7 @@ class Bidi final {
 
 
 
-  static void ReorderVisual(const EmbeddingLevel* aLevels, int32_t aLength,
+  static void ReorderVisual(const BidiEmbeddingLevel* aLevels, int32_t aLength,
                             int32_t* aIndexMap);
 
   
@@ -219,8 +124,8 @@ class Bidi final {
 
 
 
-  Direction GetVisualRun(int32_t aRunIndex, int32_t* aLogicalStart,
-                         int32_t* aLength);
+  BidiDirection GetVisualRun(int32_t aRunIndex, int32_t* aLogicalStart,
+                             int32_t* aLength);
 
  private:
   ICUPointer<UBiDi> mBidi = ICUPointer<UBiDi>(nullptr);
@@ -229,7 +134,7 @@ class Bidi final {
 
 
 
-  const EmbeddingLevel* mLevels = nullptr;
+  const BidiEmbeddingLevel* mLevels = nullptr;
 
   
 

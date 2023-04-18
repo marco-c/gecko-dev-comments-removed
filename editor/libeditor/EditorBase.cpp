@@ -26,7 +26,7 @@
 #include "JoinNodeTransaction.h"         
 #include "PlaceholderTransaction.h"      
 #include "SplitNodeTransaction.h"        
-#include "mozilla/intl/Bidi.h"
+#include "mozilla/intl/BidiEmbeddingLevel.h"
 #include "mozilla/BasePrincipal.h"            
 #include "mozilla/CheckedInt.h"               
 #include "mozilla/ComposerCommandsUpdater.h"  
@@ -5763,13 +5763,13 @@ EditorBase::AutoCaretBidiLevelManager::AutoCaretBidiLevelManager(
   nsPrevNextBidiLevels levels = frameSelection->GetPrevNextBidiLevels(
       aPointAtCaret.GetContainerAsContent(), aPointAtCaret.Offset(), true);
 
-  mozilla::intl::Bidi::EmbeddingLevel levelBefore = levels.mLevelBefore;
-  mozilla::intl::Bidi::EmbeddingLevel levelAfter = levels.mLevelAfter;
+  mozilla::intl::BidiEmbeddingLevel levelBefore = levels.mLevelBefore;
+  mozilla::intl::BidiEmbeddingLevel levelAfter = levels.mLevelAfter;
 
-  mozilla::intl::Bidi::EmbeddingLevel currentCaretLevel =
+  mozilla::intl::BidiEmbeddingLevel currentCaretLevel =
       frameSelection->GetCaretBidiLevel();
 
-  mozilla::intl::Bidi::EmbeddingLevel levelOfDeletion;
+  mozilla::intl::BidiEmbeddingLevel levelOfDeletion;
   levelOfDeletion = (nsIEditor::eNext == aDirectionAndAmount ||
                      nsIEditor::eNextWord == aDirectionAndAmount)
                         ? levelAfter

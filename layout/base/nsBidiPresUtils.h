@@ -8,7 +8,7 @@
 #define nsBidiPresUtils_h___
 
 #include "gfxContext.h"
-#include "mozilla/intl/Bidi.h"
+#include "mozilla/intl/BidiEmbeddingLevel.h"
 #include "nsBidiUtils.h"
 #include "nsHashKeys.h"
 #include "nsCoord.h"
@@ -30,6 +30,9 @@ struct nsSize;
 template <class T>
 class nsTHashtable;
 namespace mozilla {
+namespace intl {
+class Bidi;
+}
 class ComputedStyle;
 class LogicalMargin;
 class WritingMode;
@@ -164,7 +167,7 @@ class nsBidiPresUtils {
 
 
     virtual void SetText(const char16_t* aText, int32_t aLength,
-                         mozilla::intl::Bidi::Direction aDirection) = 0;
+                         mozilla::intl::BidiDirection aDirection) = 0;
 
     
 
@@ -240,7 +243,7 @@ class nsBidiPresUtils {
 
 
   static nsresult RenderText(const char16_t* aText, int32_t aLength,
-                             mozilla::intl::Bidi::EmbeddingLevel aBaseLevel,
+                             mozilla::intl::BidiEmbeddingLevel aBaseLevel,
                              nsPresContext* aPresContext,
                              gfxContext& aRenderingContext,
                              DrawTarget* aTextRunConstructionDrawTarget,
@@ -254,11 +257,11 @@ class nsBidiPresUtils {
         aPosResolve, aPosResolveCount, nullptr);
   }
 
-  static nscoord MeasureTextWidth(
-      const char16_t* aText, int32_t aLength,
-      mozilla::intl::Bidi::EmbeddingLevel aBaseLevel,
-      nsPresContext* aPresContext, gfxContext& aRenderingContext,
-      nsFontMetrics& aFontMetrics) {
+  static nscoord MeasureTextWidth(const char16_t* aText, int32_t aLength,
+                                  mozilla::intl::BidiEmbeddingLevel aBaseLevel,
+                                  nsPresContext* aPresContext,
+                                  gfxContext& aRenderingContext,
+                                  nsFontMetrics& aFontMetrics) {
     nscoord length;
     nsresult rv = ProcessTextForRenderingContext(
         aText, aLength, aBaseLevel, aPresContext, aRenderingContext,
@@ -311,13 +314,13 @@ class nsBidiPresUtils {
   
 
 
-  static mozilla::intl::Bidi::EmbeddingLevel GetFrameEmbeddingLevel(
+  static mozilla::intl::BidiEmbeddingLevel GetFrameEmbeddingLevel(
       nsIFrame* aFrame);
 
   
 
 
-  static mozilla::intl::Bidi::EmbeddingLevel GetFrameBaseLevel(
+  static mozilla::intl::BidiEmbeddingLevel GetFrameBaseLevel(
       const nsIFrame* aFrame);
 
   
@@ -325,7 +328,7 @@ class nsBidiPresUtils {
 
 
 
-  static mozilla::intl::Bidi::Direction ParagraphDirection(
+  static mozilla::intl::BidiDirection ParagraphDirection(
       const nsIFrame* aFrame) {
     return GetFrameBaseLevel(aFrame).Direction();
   }
@@ -335,7 +338,7 @@ class nsBidiPresUtils {
 
 
 
-  static mozilla::intl::Bidi::Direction FrameDirection(nsIFrame* aFrame) {
+  static mozilla::intl::BidiDirection FrameDirection(nsIFrame* aFrame) {
     return GetFrameEmbeddingLevel(aFrame).Direction();
   }
 
@@ -372,7 +375,7 @@ class nsBidiPresUtils {
 
 
   static nsresult ProcessText(const char16_t* aText, size_t aLength,
-                              mozilla::intl::Bidi::EmbeddingLevel aBaseLevel,
+                              mozilla::intl::BidiEmbeddingLevel aBaseLevel,
                               nsPresContext* aPresContext,
                               BidiProcessor& aprocessor, Mode aMode,
                               nsBidiPositionResolve* aPosResolve,
@@ -391,16 +394,15 @@ class nsBidiPresUtils {
 
 
 
-  static mozilla::intl::Bidi::EmbeddingLevel BidiLevelFromStyle(
+  static mozilla::intl::BidiEmbeddingLevel BidiLevelFromStyle(
       mozilla::ComputedStyle* aComputedStyle);
 
  private:
   static nsresult ProcessTextForRenderingContext(
       const char16_t* aText, int32_t aLength,
-      mozilla::intl::Bidi::EmbeddingLevel aBaseLevel,
-      nsPresContext* aPresContext, gfxContext& aRenderingContext,
-      DrawTarget* aTextRunConstructionDrawTarget, nsFontMetrics& aFontMetrics,
-      Mode aMode,
+      mozilla::intl::BidiEmbeddingLevel aBaseLevel, nsPresContext* aPresContext,
+      gfxContext& aRenderingContext, DrawTarget* aTextRunConstructionDrawTarget,
+      nsFontMetrics& aFontMetrics, Mode aMode,
       nscoord aX,                         
       nscoord aY,                         
       nsBidiPositionResolve* aPosResolve, 
