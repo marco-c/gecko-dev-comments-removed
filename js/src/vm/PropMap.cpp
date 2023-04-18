@@ -155,7 +155,7 @@ static MOZ_ALWAYS_INLINE SharedPropMap* PropMapChildReadBarrier(
   }
 
   if (MOZ_UNLIKELY(zone->isGCSweeping() &&
-                   IsAboutToBeFinalizedUnbarriered(&child))) {
+                   IsAboutToBeFinalizedUnbarriered(child))) {
     
     
     MOZ_ASSERT(parent->isMarkedAny());

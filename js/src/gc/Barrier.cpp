@@ -257,7 +257,7 @@ template <typename T>
   
   if (!zone->hasUniqueId(k)) {
     Key key = k;
-    MOZ_ASSERT(IsAboutToBeFinalizedUnbarriered(&key));
+    MOZ_ASSERT(IsAboutToBeFinalizedUnbarriered(key));
   }
   MOZ_ASSERT(zone->hasUniqueId(l));
 #endif

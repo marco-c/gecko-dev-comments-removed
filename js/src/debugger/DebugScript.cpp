@@ -350,7 +350,7 @@ void DebugScript::trace(JSTracer* trc) {
 
 void DebugAPI::removeDebugScript(JSFreeOp* fop, JSScript* script) {
   if (script->hasDebugScript()) {
-    if (IsAboutToBeFinalizedUnbarriered(&script)) {
+    if (IsAboutToBeFinalizedUnbarriered(script)) {
       
       return;
     }

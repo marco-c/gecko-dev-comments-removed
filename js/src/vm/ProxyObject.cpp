@@ -104,7 +104,7 @@ ProxyObject* ProxyObject::New(JSContext* cx, const BaseProxyHandler* handler,
   }
 
   MOZ_ASSERT(shape->realm() == realm);
-  MOZ_ASSERT(!IsAboutToBeFinalizedUnbarriered(shape.address()));
+  MOZ_ASSERT(!IsAboutToBeFinalizedUnbarriered(shape.get()));
 
   
   

@@ -3924,7 +3924,7 @@ void DebugAPI::sweepAll(JSFreeOp* fop) {
       for (Debugger::GeneratorWeakMap::Enum e(dbg->generatorFrames); !e.empty();
            e.popFront()) {
         DebuggerFrame* frameObj = e.front().value();
-        if (IsAboutToBeFinalizedUnbarriered(&frameObj)) {
+        if (IsAboutToBeFinalizedUnbarriered(frameObj)) {
           
           
           
@@ -3942,11 +3942,11 @@ void DebugAPI::sweepAll(JSFreeOp* fop) {
     
     
     
-    bool debuggerDying = IsAboutToBeFinalized(&dbg->object);
+    bool debuggerDying = IsAboutToBeFinalized(dbg->object);
     for (WeakGlobalObjectSet::Enum e(dbg->debuggees); !e.empty();
          e.popFront()) {
       GlobalObject* global = e.front().unbarrieredGet();
-      if (debuggerDying || IsAboutToBeFinalizedUnbarriered(&global)) {
+      if (debuggerDying || IsAboutToBeFinalizedUnbarriered(global)) {
         dbg->removeDebuggeeGlobal(fop, e.front().unbarrieredGet(), &e,
                                   Debugger::FromSweep::Yes);
       }
