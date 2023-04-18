@@ -2778,11 +2778,7 @@ TSFTextStore::GetSelection(ULONG ulIndex, ULONG ulCount,
   Maybe<Selection>& selectionForTSF = SelectionForTSF();
   if (selectionForTSF.isNothing()) {
     if (DoNotReturnErrorFromGetSelection()) {
-      TS_SELECTION_ACP acp;
-      acp.acpStart = acp.acpEnd = 0;
-      acp.style.ase = TS_AE_START;
-      acp.style.fInterimChar = FALSE;
-      *pSelection = acp;
+      *pSelection = Selection::EmptyACP();
       *pcFetched = 1;
       MOZ_LOG(
           gIMELog, LogLevel::Info,
@@ -2796,6 +2792,11 @@ TSFTextStore::GetSelection(ULONG ulIndex, ULONG ulCount,
              "SelectionForTSF() failure",
              this));
     return E_FAIL;
+  }
+  if (!selectionForTSF->HasRange()) {
+    *pSelection = Selection::EmptyACP();
+    *pcFetched = 0;
+    return TS_E_NOSELECTION;
   }
   *pSelection = selectionForTSF->ACPRef();
   *pcFetched = 1;
@@ -3466,7 +3467,9 @@ TSFTextStore::RecordCompositionUpdateAction() {
 
     
     uint32_t caretPosition = static_cast<uint32_t>(
-        selectionForTSF->MaxOffset() - mComposition->StartOffset());
+        selectionForTSF->HasRange()
+            ? selectionForTSF->MaxOffset() - mComposition->StartOffset()
+            : mComposition->StartOffset());
 
     
     
@@ -4481,7 +4484,8 @@ TSFTextStore::GetTextExt(TsViewCookie vcView, LONG acpStart, LONG acpEnd,
     
     options.mRelativeToInsertionPoint = true;
     startOffset -= mContentForTSF->LatestCompositionRange()->StartOffset();
-  } else if (!CanAccessActualContentDirectly()) {
+  } else if (!CanAccessActualContentDirectly() &&
+             mSelectionForTSF->HasRange()) {
     
     
     
@@ -4645,10 +4649,13 @@ bool TSFTextStore::MaybeHackNoErrorLayoutBugs(LONG& aACPStart, LONG& aACPEnd) {
       
       
       
+      
+      
       if (TSFPrefs::DoNotReturnNoLayoutErrorToMSJapaneseIMEAtCaret() &&
-          selectionForTSF.isSome() && aACPStart == aACPEnd &&
-          selectionForTSF->Collapsed() &&
-          selectionForTSF->EndOffset() == aACPEnd) {
+          aACPStart == aACPEnd && selectionForTSF.isSome() &&
+          (!selectionForTSF->HasRange() ||
+           (selectionForTSF->Collapsed() &&
+            selectionForTSF->EndOffset() == aACPEnd))) {
         int32_t minOffsetOfLayoutChanged =
             static_cast<int32_t>(mContentForTSF->MinModifiedOffset().value());
         aACPEnd = aACPStart = std::max(minOffsetOfLayoutChanged - 1, 0);
@@ -4676,9 +4683,12 @@ bool TSFTextStore::MaybeHackNoErrorLayoutBugs(LONG& aACPStart, LONG& aACPEnd) {
       
       
       
+      
+      
       else if (aACPStart == aACPEnd && selectionForTSF.isSome() &&
-               selectionForTSF->Collapsed() &&
-               selectionForTSF->EndOffset() == aACPEnd) {
+               (!selectionForTSF->HasRange() ||
+                (selectionForTSF->Collapsed() &&
+                 selectionForTSF->EndOffset() == aACPEnd))) {
         int32_t minOffsetOfLayoutChanged =
             static_cast<int32_t>(mContentForTSF->MinModifiedOffset().value());
         aACPEnd = aACPStart = std::max(minOffsetOfLayoutChanged - 1, 0);
@@ -5049,13 +5059,25 @@ TSFTextStore::InsertTextAtSelection(DWORD dwFlags, const WCHAR* pchText,
     }
 
     
-    *pacpStart = selectionForTSF->StartOffset();
-    *pacpEnd = selectionForTSF->EndOffset();
-    if (pChange) {
-      pChange->acpStart = selectionForTSF->StartOffset();
-      pChange->acpOldEnd = selectionForTSF->EndOffset();
-      pChange->acpNewEnd =
-          selectionForTSF->StartOffset() + static_cast<LONG>(cch);
+    if (selectionForTSF->HasRange()) {
+      *pacpStart = selectionForTSF->StartOffset();
+      *pacpEnd = selectionForTSF->EndOffset();
+      if (pChange) {
+        *pChange = TS_TEXTCHANGE{.acpStart = selectionForTSF->StartOffset(),
+                                 .acpOldEnd = selectionForTSF->EndOffset(),
+                                 .acpNewEnd = selectionForTSF->StartOffset() +
+                                              static_cast<LONG>(cch)};
+      }
+    } else {
+      
+      
+      
+      
+      
+      *pacpStart = *pacpEnd = 0;
+      if (pChange) {
+        *pChange = TS_TEXTCHANGE{.acpStart = 0, .acpOldEnd = 0, .acpNewEnd = 0};
+      }
     }
   } else {
     if (!IsReadWriteLocked()) {
@@ -5289,6 +5311,9 @@ HRESULT TSFTextStore::RecordCompositionStartAction(
              "due to SelectionForTSF() failure",
              this));
     action->mAdjustSelection = true;
+  } else if (!selectionForTSF->HasRange()) {
+    
+    action->mAdjustSelection = true;
   } else if (selectionForTSF->MinOffset() != aStart ||
              selectionForTSF->MaxOffset() != aStart + aLength) {
     
@@ -5518,7 +5543,7 @@ TSFTextStore::OnUpdateComposition(ITfCompositionView* pComposition,
               ("0x%p   TSFTextStore::OnUpdateComposition() FAILED due to "
                "SelectionForTSF() failure",
                this));
-      return E_FAIL;
+      return S_OK;  
     }
     MOZ_LOG(gIMELog, LogLevel::Info,
             ("0x%p   TSFTextStore::OnUpdateComposition() succeeded: "
@@ -6400,6 +6425,10 @@ void TSFTextStore::CreateNativeCaret() {
     
     options.mRelativeToInsertionPoint = true;
     caretOffset -= mComposition->StartOffset();
+  } else if (!selectionForTSF->HasRange()) {
+    
+    
+    return;
   } else if (!CanAccessActualContentDirectly()) {
     
     
