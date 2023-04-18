@@ -106,7 +106,7 @@ void MultipartBlobImpl::CreateInputStream(nsIInputStream** aStream,
 
 already_AddRefed<BlobImpl> MultipartBlobImpl::CreateSlice(
     uint64_t aStart, uint64_t aLength, const nsAString& aContentType,
-    ErrorResult& aRv) {
+    ErrorResult& aRv) const {
   
   nsTArray<RefPtr<BlobImpl>> blobImpls;
 
