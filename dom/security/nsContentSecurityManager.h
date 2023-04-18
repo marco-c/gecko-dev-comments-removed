@@ -7,11 +7,9 @@
 #ifndef nsContentSecurityManager_h___
 #define nsContentSecurityManager_h___
 
-#include "mozilla/CORSMode.h"
 #include "nsIContentSecurityManager.h"
 #include "nsIChannel.h"
 #include "nsIChannelEventSink.h"
-#include "nsILoadInfo.h"
 
 class nsILoadInfo;
 class nsIStreamListener;
@@ -43,33 +41,6 @@ class nsContentSecurityManager : public nsIContentSecurityManager,
   static void MeasureUnexpectedPrivilegedLoads(nsILoadInfo* aLoadInfo,
                                                nsIURI* aFinalURI,
                                                const nsACString& aRemoteType);
-
-  enum CORSSecurityMapping {
-    
-    
-    
-    
-    
-    
-    DISABLE_CORS_CHECKS,
-    
-    
-    
-    CORS_NONE_MAPS_TO_DISABLED_CORS_CHECKS,
-    
-    
-    
-    CORS_NONE_MAPS_TO_INHERITED_CONTEXT,
-    
-    
-    REQUIRE_CORS_CHECKS,
-  };
-
-  
-  
-  
-  static nsSecurityFlags ComputeSecurityFlags(
-      mozilla::CORSMode aCORSMode, CORSSecurityMapping aCORSSecurityMapping);
 
  private:
   static nsresult CheckChannel(nsIChannel* aChannel);
