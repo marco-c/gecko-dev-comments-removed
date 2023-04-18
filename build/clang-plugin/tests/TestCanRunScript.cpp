@@ -652,3 +652,7 @@ struct DisallowMozKnownLiveMemberNotFromKnownLive {
     foo(mMember->mWhatever); 
   }
 };
+
+void IncorrectlyUnmarkedEarlyDeclaration(); 
+
+MOZ_CAN_RUN_SCRIPT void IncorrectlyUnmarkedEarlyDeclaration() {}; 
