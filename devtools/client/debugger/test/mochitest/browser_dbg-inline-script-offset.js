@@ -4,6 +4,8 @@
 
 
 
+"use strict";
+
 add_task(async function() {
   const dbg = await initDebugger("doc-inline-script-offset.html");
   await selectSource(dbg, "doc-inline-script-offset.html");

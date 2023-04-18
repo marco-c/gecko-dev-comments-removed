@@ -4,6 +4,9 @@
 
 
 
+
+"use strict";
+
 add_task(async function() {
   info("Subtest #1");
   await pushPref("devtools.debugger.features.windowless-service-workers", true);

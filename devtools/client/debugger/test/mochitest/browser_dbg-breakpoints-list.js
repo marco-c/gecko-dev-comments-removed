@@ -5,6 +5,8 @@
 
 
 
+"use strict";
+
 add_task(async function testBreakpointsListForMultipleTargets() {
   const dbg = await initDebugger(
     "doc_dbg-fission-frame-sources.html",

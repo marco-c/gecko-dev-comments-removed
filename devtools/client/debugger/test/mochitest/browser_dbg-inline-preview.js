@@ -3,6 +3,9 @@
 
 
 
+
+"use strict";
+
 add_task(async function() {
   await pushPref("devtools.debugger.features.inline-preview", true);
 

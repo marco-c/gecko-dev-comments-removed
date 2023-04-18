@@ -3,6 +3,9 @@
 
 
 
+
+"use strict";
+
 add_task(async function() {
   const dbg = await initDebugger("doc-nested-worker.html");
 

@@ -6,6 +6,8 @@
 
 
 
+"use strict";
+
 
 
 PromiseTestUtils.allowMatchingRejectionsGlobally(/File closed/);

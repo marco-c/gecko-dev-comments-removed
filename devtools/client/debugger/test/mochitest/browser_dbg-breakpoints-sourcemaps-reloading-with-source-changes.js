@@ -7,6 +7,8 @@
 
 
 
+"use strict";
+
 const testServer = createVersionizedHttpTestServer("sourcemaps-reload");
 const TEST_URL = testServer.urlFor("index.html");
 

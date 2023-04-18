@@ -6,6 +6,9 @@
 
 
 
+
+"use strict";
+
 requestLongerTimeout(2);
 
 let gDefaultHostType = Services.prefs.getCharPref("devtools.toolbox.host");

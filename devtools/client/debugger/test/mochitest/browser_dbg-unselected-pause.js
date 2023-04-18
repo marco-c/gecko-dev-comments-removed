@@ -5,6 +5,8 @@
 
 
 
+"use strict";
+
 const IFRAME_TEST_COM_URI = `https://example.com/document-builder.sjs?html=${encodeURI(
   `<script>const a=2;\ndebugger;\nconsole.log(a);</script>`
 )}`;

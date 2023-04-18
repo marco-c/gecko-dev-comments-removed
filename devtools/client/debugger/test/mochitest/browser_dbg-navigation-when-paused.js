@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 add_task(async function() {
   const dbg = await initDebugger("doc-navigation-when-paused.html");
 

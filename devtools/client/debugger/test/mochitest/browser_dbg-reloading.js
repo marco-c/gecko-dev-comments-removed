@@ -8,6 +8,8 @@
 
 
 
+"use strict";
+
 add_task(async function() {
   const dbg = await initDebugger(
     "ember/quickstart/dist/",

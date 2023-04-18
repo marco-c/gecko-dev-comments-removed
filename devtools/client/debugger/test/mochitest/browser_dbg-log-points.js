@@ -6,6 +6,8 @@
 
 
 
+"use strict";
+
 add_task(async function() {
   Services.prefs.setBoolPref("devtools.toolbox.splitconsoleEnabled", true);
   const dbg = await initDebugger(

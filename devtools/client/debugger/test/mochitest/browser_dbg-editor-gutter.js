@@ -5,6 +5,8 @@
 
 
 
+"use strict";
+
 
 
 PromiseTestUtils.allowMatchingRejectionsGlobally(/NS_ERROR_NOT_INITIALIZED/);

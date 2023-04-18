@@ -6,6 +6,8 @@
 
 
 
+"use strict";
+
 const {
   gDevToolsBrowser,
 } = require("devtools/client/framework/devtools-browser");

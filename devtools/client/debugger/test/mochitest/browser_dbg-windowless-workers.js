@@ -4,6 +4,9 @@
 
 
 
+
+"use strict";
+
 add_task(async function() {
   await pushPref("devtools.debugger.features.windowless-workers", true);
   await pushPref("devtools.debugger.workers-visible", true);

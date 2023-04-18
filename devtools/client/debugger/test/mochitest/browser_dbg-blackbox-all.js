@@ -9,6 +9,8 @@
 
 
 
+"use strict";
+
 const SOURCE_FILES = {
   nestedSource: "nested-source.js",
   codeReload1: "code_reload_1.js",

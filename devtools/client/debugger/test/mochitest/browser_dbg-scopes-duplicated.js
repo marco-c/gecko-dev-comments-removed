@@ -4,6 +4,8 @@
 
 
 
+"use strict";
+
 const httpServer = createTestHTTPServer();
 httpServer.registerContentType("html", "text/html");
 httpServer.registerContentType("js", "application/javascript");

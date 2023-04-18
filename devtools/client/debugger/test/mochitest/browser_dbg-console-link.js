@@ -5,6 +5,8 @@
 
 
 
+"use strict";
+
 add_task(async function() {
   const toolbox = await initPane("doc-script-switching.html", "webconsole");
   const node = await waitForLink(toolbox, "hi");

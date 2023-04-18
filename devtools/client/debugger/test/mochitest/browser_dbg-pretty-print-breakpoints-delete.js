@@ -5,6 +5,8 @@
 
 
 
+"use strict";
+
 add_task(async function() {
   info(
     "Test removing the breakpoint from the minified file (generated source) works"

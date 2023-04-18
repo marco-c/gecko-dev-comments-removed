@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 add_task(async function() {
   await pushPref(
     "devtools.debugger.features.event-listeners-breakpoints",

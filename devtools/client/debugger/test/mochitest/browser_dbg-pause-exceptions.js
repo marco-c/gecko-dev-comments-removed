@@ -9,6 +9,9 @@
 
 
 
+
+"use strict";
+
 add_task(async function() {
   const dbg = await initDebugger("doc-exceptions.html", "exceptions.js");
   const source = findSource(dbg, "exceptions.js");

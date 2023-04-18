@@ -4,6 +4,9 @@
 
 
 
+
+"use strict";
+
 add_task(async function() {
   const dbg = await initDebugger("doc-eval-throw.html");
   await togglePauseOnExceptions(dbg, true, true);

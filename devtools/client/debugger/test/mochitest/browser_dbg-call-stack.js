@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 
 PromiseTestUtils.allowMatchingRejectionsGlobally(/No such actor/);
 

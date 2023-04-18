@@ -4,6 +4,9 @@
 
 
 
+
+"use strict";
+
 add_task(async function() {
   const dbg = await initDebugger("doc-message-run-to-completion.html");
   invokeInTab("test", "doc-message-run-to-completion.html");

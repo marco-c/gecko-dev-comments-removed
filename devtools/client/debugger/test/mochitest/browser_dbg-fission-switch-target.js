@@ -4,6 +4,8 @@
 
 
 
+"use strict";
+
 const PARENT_PROCESS_URI = "about:robots";
 
 add_task(async function() {

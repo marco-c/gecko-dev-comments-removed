@@ -7,6 +7,8 @@
 
 
 
+"use strict";
+
 add_task(async function() {
   const toolbox = await initPane("doc-scripts.html", "webconsole", [
     ["devtools.debugger.skip-pausing", true],

@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 requestLongerTimeout(2);
 
 async function testCase(dbg, { name, steps }) {

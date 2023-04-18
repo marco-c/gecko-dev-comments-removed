@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 add_task(async function() {
   
   await SpecialPowers.pushPrefEnv({

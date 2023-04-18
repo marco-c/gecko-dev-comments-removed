@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 add_task(async function() {
   info("Test XHR requests done very early during page load");
 

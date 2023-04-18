@@ -9,6 +9,8 @@
 
 
 
+"use strict";
+
 
 PromiseTestUtils.allowMatchingRejectionsGlobally(/Resource .*? does not exist/);
 

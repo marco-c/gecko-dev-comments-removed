@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 add_task(async function() {
   const dbg = await initDebugger("doc-pause-points.html", "pause-points.js");
   await selectSource(dbg, "pause-points.js");

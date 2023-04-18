@@ -6,6 +6,8 @@
 
 
 
+"use strict";
+
 const TEST_COM_URI = `${URL_ROOT_COM}examples/doc_dbg-fission-frame-sources.html`;
 
 add_task(async function() {

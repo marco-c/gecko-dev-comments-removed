@@ -6,6 +6,9 @@
 
 
 
+
+"use strict";
+
 add_task(async function() {
   const dbg = await initDebugger(
     "doc-reload-link.html",

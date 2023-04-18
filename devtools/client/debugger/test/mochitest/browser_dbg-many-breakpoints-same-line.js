@@ -5,6 +5,8 @@
 
 
 
+"use strict";
+
 
 const BREAKPOINT_LINE = 5;
 

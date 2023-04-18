@@ -1,10 +1,14 @@
 
 
 
+
+
+
+
+
+"use strict";
+
 requestLongerTimeout(2);
-
-
-
 
 add_task(async function() {
   const dbg = await initDebugger("doc-wasm-sourcemaps.html");

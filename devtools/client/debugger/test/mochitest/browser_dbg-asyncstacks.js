@@ -4,6 +4,8 @@
 
 
 
+"use strict";
+
 add_task(async function() {
   pushPref("devtools.debugger.features.async-captured-stacks", true);
   const dbg = await initDebugger("doc-frames-async.html");

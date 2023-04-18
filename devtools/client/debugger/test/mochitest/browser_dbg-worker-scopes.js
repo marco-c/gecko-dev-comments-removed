@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 PromiseTestUtils.allowMatchingRejectionsGlobally(/Current state is running/);
 PromiseTestUtils.allowMatchingRejectionsGlobally(/Connection closed/);
 

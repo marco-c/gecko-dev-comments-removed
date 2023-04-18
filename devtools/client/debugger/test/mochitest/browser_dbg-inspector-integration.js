@@ -5,6 +5,8 @@
 
 
 
+"use strict";
+
 add_task(async function() {
   
   await pushPref("devtools.debugger.end-panel-size", 600);

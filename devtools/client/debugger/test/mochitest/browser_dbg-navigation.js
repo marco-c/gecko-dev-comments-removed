@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 const SOURCES = [
   "simple1.js",
   "simple2.js",

@@ -7,6 +7,9 @@
 
 
 
+
+"use strict";
+
 const EVALED_SOURCE_TEXT = `setTimeout(function() {
   debugger;
   console.log("SECOND LINE");
