@@ -1854,8 +1854,7 @@ nsresult AutoScroller::DoAutoScroll(nsIFrame* aFrame, nsPoint aPoint) {
   
   
   
-  if (didScroll &&
-      mFurtherScrollingAllowed == FurtherScrollingAllowed::kYes) {
+  if (didScroll && mFurtherScrollingAllowed == FurtherScrollingAllowed::kYes) {
     nsPoint presContextPoint =
         globalPoint -
         presShell->GetRootFrame()->GetOffsetToCrossDoc(rootmostFrame);
