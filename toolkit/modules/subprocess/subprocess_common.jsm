@@ -20,11 +20,13 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/Timer.jsm"
 );
 
+var obj = {};
 Services.scriptloader.loadSubScript(
   "resource://gre/modules/subprocess/subprocess_shared.js",
-  this
+  obj
 );
 
+const { SubprocessConstants, ArrayBuffer_transfer } = obj;
 
 var EXPORTED_SYMBOLS = ["BaseProcess", "PromiseWorker", "SubprocessConstants"];
 
@@ -396,9 +398,9 @@ class InputPipe extends Pipe {
         let buffer = this.buffers[0];
 
         this.buffers[0] = buffer.slice(length);
-        result = ArrayBuffer.transfer(buffer, length);
+        result = ArrayBuffer_transfer(buffer, length);
       } else {
-        result = ArrayBuffer.transfer(this.buffers.shift(), length);
+        result = ArrayBuffer_transfer(this.buffers.shift(), length);
         let u8result = new Uint8Array(result);
 
         while (byteLength < length) {

@@ -10,7 +10,8 @@
 
 
 
-const LIBC = OS.Constants.libc;
+
+var LIBC = OS.Constants.libc;
 
 const LIBC_CHOICES = ["libc.so", "libSystem.B.dylib", "a.out"];
 

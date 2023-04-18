@@ -31,16 +31,17 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsIEnvironment"
 );
 
-
-
+var obj = {};
 Services.scriptloader.loadSubScript(
   "resource://gre/modules/subprocess/subprocess_shared.js",
-  this
+  obj
 );
 Services.scriptloader.loadSubScript(
   "resource://gre/modules/subprocess/subprocess_shared_win.js",
-  this
+  obj
 );
+
+const { SubprocessConstants, libc, win32 } = obj;
 
 class WinPromiseWorker extends PromiseWorker {
   constructor(...args) {

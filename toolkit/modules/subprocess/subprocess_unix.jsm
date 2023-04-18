@@ -18,16 +18,17 @@ const { BaseProcess, PromiseWorker } = ChromeUtils.import(
   "resource://gre/modules/subprocess/subprocess_common.jsm"
 );
 
-
-
+var obj = {};
 Services.scriptloader.loadSubScript(
   "resource://gre/modules/subprocess/subprocess_shared.js",
-  this
+  obj
 );
 Services.scriptloader.loadSubScript(
   "resource://gre/modules/subprocess/subprocess_shared_unix.js",
-  this
+  obj
 );
+
+const { SubprocessConstants, libc, LIBC } = obj;
 
 class UnixPromiseWorker extends PromiseWorker {
   constructor(...args) {

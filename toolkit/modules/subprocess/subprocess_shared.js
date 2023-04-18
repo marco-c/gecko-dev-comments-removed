@@ -7,27 +7,26 @@
 
 
 
-if (!ArrayBuffer.transfer) {
-  
 
 
 
 
 
 
-  ArrayBuffer.transfer = function(buffer, size = buffer.byteLength) {
-    let u8out = new Uint8Array(size);
-    let u8buffer = new Uint8Array(buffer, 0, Math.min(size, buffer.byteLength));
 
-    u8out.set(u8buffer);
 
-    return u8out.buffer;
-  };
-}
+
+
+var ArrayBuffer_transfer = function(buffer, size = buffer.byteLength) {
+  let u8out = new Uint8Array(size);
+  let u8buffer = new Uint8Array(buffer, 0, Math.min(size, buffer.byteLength));
+  u8out.set(u8buffer);
+  return u8out.buffer;
+};
 
 var libraries = {};
 
-class Library {
+var Library = class Library {
   constructor(name, names, definitions) {
     if (name in libraries) {
       return libraries[name];
@@ -66,14 +65,14 @@ class Library {
       },
     });
   }
-}
+};
 
 
 
 
 
 
-const SubprocessConstants = {
+var SubprocessConstants = {
   
 
 
