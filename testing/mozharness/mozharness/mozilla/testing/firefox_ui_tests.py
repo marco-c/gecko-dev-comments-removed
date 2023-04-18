@@ -328,11 +328,6 @@ class FirefoxUITests(TestingMixin, VCSToolsScript, CodeCoverageMixin):
         if self.config["allow_software_gl_layers"]:
             env["MOZ_LAYERS_ALLOW_SOFTWARE_GL"] = "1"
 
-        
-        if self.config.get("tag") and self.config["tag"] != "remote":
-            
-            env["MOZ_DISABLE_NONLOCAL_CONNECTIONS"] = "1"
-
         return_code = self.run_command(
             cmd,
             cwd=dirs["abs_fxui_dir"],
