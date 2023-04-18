@@ -258,6 +258,10 @@ async function bindToolboxHandlers() {
   gToolbox.once("destroyed", quitApp);
   window.addEventListener("unload", onUnload);
 
+  
+  
+  gClient.once("closed", quitApp);
+
   if (Services.appinfo.OS == "Darwin") {
     
     

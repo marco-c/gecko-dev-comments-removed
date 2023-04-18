@@ -971,7 +971,11 @@ const windowGlobalTargetPrototype = {
       
       
       const rootDocShells = this.docShells.filter(d => {
-        return d != this.docShell && this._isRootDocShell(d);
+        
+        
+        
+        
+        return d != this.docShell && this._isRootDocShell(d) && d.DOMWindow;
       });
       if (rootDocShells.length > 0) {
         const newRoot = rootDocShells[0];
