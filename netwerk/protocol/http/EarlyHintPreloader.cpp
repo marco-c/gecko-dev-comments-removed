@@ -165,10 +165,7 @@ void EarlyHintPreloader::MaybeCreateAndInsertPreload(
   NS_ENSURE_SUCCESS_VOID(aHeader.NewResolveHref(getter_AddRefs(uri), aBaseURI));
 
   
-  
-  if (NS_FAILED(nsContentUtils::GetSecurityManager()->CheckSameOriginURI(
-          aBaseURI, uri,  false,
-           false))) {
+  if (!uri->SchemeIs("https")) {
     return;
   }
 
@@ -325,11 +322,7 @@ EarlyHintPreloader::AsyncOnChannelRedirect(
   }
 
   
-  
-  
-  if (NS_FAILED(nsContentUtils::GetSecurityManager()->CheckSameOriginURI(
-          mURI, newURI,  false,
-           false))) {
+  if (!newURI->SchemeIs("https")) {
     callback->OnRedirectVerifyCallback(NS_ERROR_ABORT);
     return NS_OK;
   }
