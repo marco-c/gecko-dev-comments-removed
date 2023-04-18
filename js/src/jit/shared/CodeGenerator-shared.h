@@ -54,7 +54,6 @@ class CodeGeneratorShared : public LElementVisitor {
   LBlock* current;
   SnapshotWriter snapshots_;
   RecoverWriter recovers_;
-  mozilla::Maybe<TrampolinePtr> deoptTable_;
 #ifdef DEBUG
   uint32_t pushedArgs_;
 #endif
@@ -68,9 +67,6 @@ class CodeGeneratorShared : public LElementVisitor {
 
   js::Vector<CodegenSafepointIndex, 0, SystemAllocPolicy> safepointIndices_;
   js::Vector<OsiIndex, 0, SystemAllocPolicy> osiIndices_;
-
-  
-  js::Vector<SnapshotOffset, 0, SystemAllocPolicy> bailouts_;
 
   
   js::Vector<uint8_t, 0, SystemAllocPolicy> runtimeData_;
@@ -144,9 +140,6 @@ class CodeGeneratorShared : public LElementVisitor {
   int32_t frameDepth_;
 
   
-  FrameSizeClass frameClass_;
-
-  
   inline int32_t ArgToStackOffset(int32_t slot) const;
 
   inline int32_t SlotToStackOffset(int32_t slot) const;
@@ -170,10 +163,7 @@ class CodeGeneratorShared : public LElementVisitor {
   inline int32_t ToFramePointerOffset(LAllocation a) const;
   inline int32_t ToFramePointerOffset(const LAllocation* a) const;
 
-  uint32_t frameSize() const {
-    return frameClass_ == FrameSizeClass::None() ? frameDepth_
-                                                 : frameClass_.frameSize();
-  }
+  uint32_t frameSize() const { return frameDepth_; }
 
  protected:
   bool addNativeToBytecodeEntry(const BytecodeSite* site);
@@ -236,11 +226,6 @@ class CodeGeneratorShared : public LElementVisitor {
   void encode(LSnapshot* snapshot);
   void encodeAllocation(LSnapshot* snapshot, MDefinition* def,
                         uint32_t* startIndex);
-
-  
-  
-  
-  bool assignBailoutId(LSnapshot* snapshot);
 
   
   

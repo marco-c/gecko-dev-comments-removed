@@ -579,27 +579,6 @@ void CodeGeneratorX86Shared::bailout(const T& binder, LSnapshot* snapshot) {
 
   
   
-  
-  MOZ_ASSERT_IF(frameClass_ != FrameSizeClass::None() && deoptTable_,
-                frameClass_.frameSize() == masm.framePushed());
-
-#ifdef JS_CODEGEN_X86
-  
-  
-  
-  if (assignBailoutId(snapshot)) {
-    binder(masm, deoptTable_->value +
-                     snapshot->bailoutId() * BAILOUT_TABLE_ENTRY_SIZE);
-    return;
-  }
-#endif
-
-  
-  
-  
-  
-  
-  
   InlineScriptTree* tree = snapshot->mir()->block()->trackedTree();
   OutOfLineBailout* ool = new (alloc()) OutOfLineBailout(snapshot);
   addOutOfLineCode(ool,

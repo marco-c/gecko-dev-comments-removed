@@ -596,8 +596,6 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
 
 
 
-
-
 static void PushBailoutFrame(MacroAssembler& masm, Register spArg) {
   
   
@@ -610,8 +608,7 @@ static void PushBailoutFrame(MacroAssembler& masm, Register spArg) {
   masm.movePtr(StackPointer, spArg);
 }
 
-static void GenerateBailoutThunk(MacroAssembler& masm, uint32_t frameClass,
-                                 Label* bailoutTail) {
+static void GenerateBailoutThunk(MacroAssembler& masm, Label* bailoutTail) {
   PushBailoutFrame(masm, a0);
 
   
@@ -650,19 +647,13 @@ static void GenerateBailoutThunk(MacroAssembler& masm, uint32_t frameClass,
   masm.jump(bailoutTail);
 }
 
-JitRuntime::BailoutTable JitRuntime::generateBailoutTable(MacroAssembler& masm,
-                                                          Label* bailoutTail,
-                                                          uint32_t frameClass) {
-  MOZ_CRASH("loong64 does not use bailout tables");
-}
-
 void JitRuntime::generateBailoutHandler(MacroAssembler& masm,
                                         Label* bailoutTail) {
   AutoCreatedBy acb(masm, "JitRuntime::generateBailoutHandler");
 
   bailoutHandlerOffset_ = startTrampolineCode(masm);
 
-  GenerateBailoutThunk(masm, NO_FRAME_SIZE_CLASS_ID, bailoutTail);
+  GenerateBailoutThunk(masm, bailoutTail);
 }
 
 bool JitRuntime::generateVMWrapper(JSContext* cx, MacroAssembler& masm,

@@ -78,16 +78,6 @@ void CodeGeneratorLOONG64::branchToBlock(Assembler::FloatFormat fmt,
   }
 }
 
-FrameSizeClass FrameSizeClass::FromDepth(uint32_t frameDepth) {
-  return FrameSizeClass::None();
-}
-
-FrameSizeClass FrameSizeClass::ClassLimit() { return FrameSizeClass(0); }
-
-uint32_t FrameSizeClass::frameSize() const {
-  MOZ_CRASH("LA does not use frame size classes");
-}
-
 void OutOfLineBailout::accept(CodeGeneratorLOONG64* codegen) {
   codegen->visitOutOfLineBailout(this);
 }
@@ -113,13 +103,6 @@ void CodeGeneratorLOONG64::bailoutFrom(Label* label, LSnapshot* snapshot) {
 
   encode(snapshot);
 
-  
-  
-  
-  MOZ_ASSERT_IF(frameClass_ != FrameSizeClass::None(),
-                frameClass_.frameSize() == masm.framePushed());
-
-  
   InlineScriptTree* tree = snapshot->mir()->block()->trackedTree();
   OutOfLineBailout* ool = new (alloc()) OutOfLineBailout(snapshot);
   addOutOfLineCode(ool,

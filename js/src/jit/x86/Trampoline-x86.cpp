@@ -572,21 +572,16 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
   masm.ret();
 }
 
-static void PushBailoutFrame(MacroAssembler& masm, uint32_t frameClass,
-                             Register spArg) {
+static void PushBailoutFrame(MacroAssembler& masm, Register spArg) {
   
   DumpAllRegs(masm);
-
-  
-  masm.push(Imm32(frameClass));
 
   
   masm.movl(esp, spArg);
 }
 
-static void GenerateBailoutThunk(MacroAssembler& masm, uint32_t frameClass,
-                                 Label* bailoutTail) {
-  PushBailoutFrame(masm, frameClass, eax);
+static void GenerateBailoutThunk(MacroAssembler& masm, Label* bailoutTail) {
+  PushBailoutFrame(masm, eax);
 
   
   masm.reserveStack(sizeof(void*));
@@ -603,49 +598,19 @@ static void GenerateBailoutThunk(MacroAssembler& masm, uint32_t frameClass,
   masm.pop(ecx);  
 
   
-  static const uint32_t BailoutDataSize = 0 + sizeof(void*)  
-                                          + sizeof(RegisterDump);
-
   
-  if (frameClass == NO_FRAME_SIZE_CLASS_ID) {
-    
-    
-    
-    
-    
-    masm.addl(Imm32(BailoutDataSize), esp);
-    masm.pop(ebx);
-    masm.addl(Imm32(sizeof(uint32_t)), esp);
-    masm.addl(ebx, esp);
-  } else {
-    
-    
-    
-    
-    uint32_t frameSize = FrameSizeClass::FromClass(frameClass).frameSize();
-    masm.addl(Imm32(BailoutDataSize + sizeof(void*) + frameSize), esp);
-  }
+  
+  
+  
+  
+  
+  static constexpr uint32_t BailoutDataSize = sizeof(RegisterDump);
+  masm.addl(Imm32(BailoutDataSize), esp);
+  masm.pop(ebx);  
+  masm.lea(Operand(esp, ebx, TimesOne, sizeof(void*)), esp);
 
   
   masm.jmp(bailoutTail);
-}
-
-JitRuntime::BailoutTable JitRuntime::generateBailoutTable(MacroAssembler& masm,
-                                                          Label* bailoutTail,
-                                                          uint32_t frameClass) {
-  AutoCreatedBy acb(masm, "JitRuntime::generateBailoutTable");
-
-  uint32_t offset = startTrampolineCode(masm);
-
-  Label bailout;
-  for (size_t i = 0; i < BAILOUT_TABLE_SIZE; i++) {
-    masm.call(&bailout);
-  }
-  masm.bind(&bailout);
-
-  GenerateBailoutThunk(masm, frameClass, bailoutTail);
-
-  return BailoutTable(offset, masm.currentOffset() - offset);
 }
 
 void JitRuntime::generateBailoutHandler(MacroAssembler& masm,
@@ -654,7 +619,7 @@ void JitRuntime::generateBailoutHandler(MacroAssembler& masm,
 
   bailoutHandlerOffset_ = startTrampolineCode(masm);
 
-  GenerateBailoutThunk(masm, NO_FRAME_SIZE_CLASS_ID, bailoutTail);
+  GenerateBailoutThunk(masm, bailoutTail);
 }
 
 bool JitRuntime::generateVMWrapper(JSContext* cx, MacroAssembler& masm,

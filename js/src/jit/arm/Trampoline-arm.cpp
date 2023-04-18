@@ -597,18 +597,10 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
   masm.ret();
 }
 
-static void PushBailoutFrame(MacroAssembler& masm, uint32_t frameClass,
-                             Register spArg) {
+static void PushBailoutFrame(MacroAssembler& masm, Register spArg) {
 #ifdef ENABLE_WASM_SIMD
 #  error "Needs more careful logic if SIMD is enabled"
 #endif
-
-  
-  
-  
-  
-  
-  
 
   
   
@@ -639,112 +631,40 @@ static void PushBailoutFrame(MacroAssembler& masm, uint32_t frameClass,
   masm.finishFloatTransfer();
 
   
-  
-  
-  
-  
-  
-
-  
-  masm.ma_mov(Imm32(frameClass), r4);
-  
-  
-  
-  
-  masm.startDataTransferM(IsStore, sp, DB, WriteBack);
-  
-  masm.transferReg(r4);
-  
-  
-  masm.transferReg(lr);
-  masm.finishDataTransfer();
-
   masm.ma_mov(sp, spArg);
 }
 
-static void GenerateBailoutThunk(MacroAssembler& masm, uint32_t frameClass,
-                                 Label* bailoutTail) {
-  PushBailoutFrame(masm, frameClass, r0);
+static void GenerateBailoutThunk(MacroAssembler& masm, Label* bailoutTail) {
+  PushBailoutFrame(masm, r0);
 
   
-  
-  
-  const int sizeOfBailoutInfo = sizeof(void*) * 2;
-  masm.reserveStack(sizeOfBailoutInfo);
+  masm.reserveStack(sizeof(void*));
   masm.mov(sp, r1);
   using Fn = bool (*)(BailoutStack * sp, BaselineBailoutInfo * *info);
   masm.setupAlignedABICall();
 
-  
-  
-
-  
   masm.passABIArg(r0);
   masm.passABIArg(r1);
 
-  
   masm.callWithABI<Fn, Bailout>(MoveOp::GENERAL,
                                 CheckUnsafeCallWithABI::DontCheckOther);
-  masm.ma_ldr(DTRAddr(sp, DtrOffImm(0)), r2);
-  {
-    ScratchRegisterScope scratch(masm);
-    masm.ma_add(sp, Imm32(sizeOfBailoutInfo), sp, scratch);
-  }
+  masm.pop(r2);  
 
   
-  uint32_t bailoutFrameSize = 0 + sizeof(void*)  
-                              + sizeof(RegisterDump);
-
-  if (frameClass == NO_FRAME_SIZE_CLASS_ID) {
-    
-    masm.as_dtr(IsLoad, 32, Offset, r4, DTRAddr(sp, DtrOffImm(4)));
-    
-    
-    
-    
-    
-    
-    ScratchRegisterScope scratch(masm);
-    masm.ma_add(sp, Imm32(bailoutFrameSize + 12), sp, scratch);
-    masm.as_add(sp, sp, O2Reg(r4));
-  } else {
-    ScratchRegisterScope scratch(masm);
-    uint32_t frameSize = FrameSizeClass::FromClass(frameClass).frameSize();
-    masm.ma_add(Imm32(  
-                        
-                    frameSize
-                    
-                    
-                    + sizeof(void*)
-                    
-                    + bailoutFrameSize),
-                sp, scratch);
-  }
+  
+  
+  
+  
+  
+  
+  static constexpr uint32_t BailoutDataSize = sizeof(RegisterDump);
+  masm.addPtr(Imm32(BailoutDataSize), StackPointer);
+  masm.pop(r4);                                     
+  masm.addPtr(Imm32(sizeof(void*)), StackPointer);  
+  masm.addPtr(r4, StackPointer);
 
   
   masm.jump(bailoutTail);
-}
-
-JitRuntime::BailoutTable JitRuntime::generateBailoutTable(MacroAssembler& masm,
-                                                          Label* bailoutTail,
-                                                          uint32_t frameClass) {
-  AutoCreatedBy acb(masm, "JitRuntime::generateBailoutTable");
-
-  uint32_t offset = startTrampolineCode(masm);
-
-  {
-    
-    Label bailout;
-    AutoForbidPoolsAndNops afp(&masm, BAILOUT_TABLE_SIZE);
-    for (size_t i = 0; i < BAILOUT_TABLE_SIZE; i++) {
-      masm.ma_bl(&bailout);
-    }
-    masm.bind(&bailout);
-  }
-
-  GenerateBailoutThunk(masm, frameClass, bailoutTail);
-
-  return BailoutTable(offset, masm.currentOffset() - offset);
 }
 
 void JitRuntime::generateBailoutHandler(MacroAssembler& masm,
@@ -753,7 +673,7 @@ void JitRuntime::generateBailoutHandler(MacroAssembler& masm,
 
   bailoutHandlerOffset_ = startTrampolineCode(masm);
 
-  GenerateBailoutThunk(masm, NO_FRAME_SIZE_CLASS_ID, bailoutTail);
+  GenerateBailoutThunk(masm, bailoutTail);
 }
 
 bool JitRuntime::generateVMWrapper(JSContext* cx, MacroAssembler& masm,

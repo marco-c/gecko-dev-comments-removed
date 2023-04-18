@@ -35,10 +35,6 @@ static const int32_t NUNBOX32_PAYLOAD_OFFSET = 4;
 
 
 
-static const uint32_t BAILOUT_TABLE_ENTRY_SIZE = 2 * sizeof(void*);
-
-
-
 
 
 

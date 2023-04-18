@@ -44,7 +44,6 @@ namespace jit {
 
 using RecoverOffset = uint32_t;
 using SnapshotOffset = uint32_t;
-using BailoutId = uint32_t;
 
 
 

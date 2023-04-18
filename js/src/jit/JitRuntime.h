@@ -139,16 +139,6 @@ class JitRuntime {
   WriteOnceData<uint32_t> enterJITOffset_{0};
 
   
-  struct BailoutTable {
-    uint32_t startOffset;
-    uint32_t size;
-    BailoutTable(uint32_t startOffset, uint32_t size)
-        : startOffset(startOffset), size(size) {}
-  };
-  typedef Vector<BailoutTable, 4, SystemAllocPolicy> BailoutTableVector;
-  WriteOnceData<BailoutTableVector> bailoutTables_;
-
-  
   WriteOnceData<uint32_t> bailoutHandlerOffset_{0};
 
   
@@ -247,8 +237,6 @@ class JitRuntime {
   void generateEnterJIT(JSContext* cx, MacroAssembler& masm);
   void generateArgumentsRectifier(MacroAssembler& masm,
                                   ArgumentsRectifierKind kind);
-  BailoutTable generateBailoutTable(MacroAssembler& masm, Label* bailoutTail,
-                                    uint32_t frameClass);
   void generateBailoutHandler(MacroAssembler& masm, Label* bailoutTail);
   void generateInvalidator(MacroAssembler& masm, Label* bailoutTail);
   uint32_t generatePreBarrier(JSContext* cx, MacroAssembler& masm,
@@ -339,9 +327,6 @@ class JitRuntime {
   TrampolinePtr getProfilerExitFrameTail() const {
     return trampolineCode(profilerExitFrameTailOffset_);
   }
-
-  TrampolinePtr getBailoutTable(const FrameSizeClass& frameClass) const;
-  uint32_t getBailoutTableSize(const FrameSizeClass& frameClass) const;
 
   TrampolinePtr getArgumentsRectifier(
       ArgumentsRectifierKind kind = ArgumentsRectifierKind::Normal) const {

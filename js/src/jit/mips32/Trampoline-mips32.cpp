@@ -606,10 +606,7 @@ static const uint32_t bailoutInfoOutParamSize = 2 * sizeof(uintptr_t);
 
 
 
-
-
-static void PushBailoutFrame(MacroAssembler& masm, uint32_t frameClass,
-                             Register spArg) {
+static void PushBailoutFrame(MacroAssembler& masm, Register spArg) {
   
   masm.checkStackAlignment();
 
@@ -640,17 +637,14 @@ static void PushBailoutFrame(MacroAssembler& masm, uint32_t frameClass,
   
   masm.storePtr(ra, Address(StackPointer, BailoutStack::offsetOfFrameSize()));
 
-  
-  masm.storePtr(ImmWord(frameClass),
-                Address(StackPointer, BailoutStack::offsetOfFrameClass()));
+#error "Code needs to be updated"
 
   
   masm.movePtr(StackPointer, spArg);
 }
 
-static void GenerateBailoutThunk(MacroAssembler& masm, uint32_t frameClass,
-                                 Label* bailoutTail) {
-  PushBailoutFrame(masm, frameClass, a0);
+static void GenerateBailoutThunk(MacroAssembler& masm, Label* bailoutTail) {
+  PushBailoutFrame(masm, a0);
 
   
   masm.subPtr(Imm32(bailoutInfoOutParamSize), StackPointer);
@@ -668,23 +662,17 @@ static void GenerateBailoutThunk(MacroAssembler& masm, uint32_t frameClass,
   masm.loadPtr(Address(StackPointer, 0), a2);
 
   
-  if (frameClass == NO_FRAME_SIZE_CLASS_ID) {
-    
-    masm.loadPtr(Address(StackPointer, bailoutInfoOutParamSize +
-                                           BailoutStack::offsetOfFrameSize()),
-                 a1);
 
-    
-    masm.addPtr(Imm32(sizeof(BailoutStack) + bailoutInfoOutParamSize),
-                StackPointer);
-    
-    masm.addPtr(a1, StackPointer);
-  } else {
-    uint32_t frameSize = FrameSizeClass::FromClass(frameClass).frameSize();
-    
-    masm.addPtr(Imm32(bailoutDataSize + bailoutInfoOutParamSize + frameSize),
-                StackPointer);
-  }
+  
+  masm.loadPtr(Address(StackPointer, bailoutInfoOutParamSize +
+                                         BailoutStack::offsetOfFrameSize()),
+               a1);
+
+  
+  masm.addPtr(Imm32(sizeof(BailoutStack) + bailoutInfoOutParamSize),
+              StackPointer);
+  
+  masm.addPtr(a1, StackPointer);
 
   
   masm.jump(bailoutTail);
