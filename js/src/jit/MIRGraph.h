@@ -801,13 +801,14 @@ class MDefinitionIterator {
 
 
 
-
 class MNodeIterator {
  private:
   
   
   
-  MInstruction* last_;
+  MResumePoint* resumePoint_;
+
+  mozilla::DebugOnly<MInstruction*> lastInstruction_ = nullptr;
 
   
   
@@ -816,35 +817,29 @@ class MNodeIterator {
 
   MBasicBlock* block() const { return defIter_.block_; }
 
-  bool atResumePoint() const { return last_ && !last_->isDiscarded(); }
+  bool atResumePoint() const {
+    MOZ_ASSERT_IF(lastInstruction_ && !lastInstruction_->isDiscarded(),
+                  lastInstruction_->resumePoint() == resumePoint_);
+    return resumePoint_ && !resumePoint_->isDiscarded();
+  }
 
   MNode* getNode() {
-    if (!atResumePoint()) {
-      return *defIter_;
+    if (atResumePoint()) {
+      return resumePoint_;
     }
-
-    
-    
-    
-    
-    if (last_ != block()->lastIns()) {
-      return last_->resumePoint();
-    }
-    return block()->entryResumePoint();
+    return *defIter_;
   }
 
   void next() {
     if (!atResumePoint()) {
-      if (defIter_->isInstruction() &&
-          defIter_->toInstruction()->resumePoint()) {
-        
-        MOZ_ASSERT(*defIter_ != block()->lastIns());
-        last_ = defIter_->toInstruction();
+      if (defIter_->isInstruction()) {
+        resumePoint_ = defIter_->toInstruction()->resumePoint();
+        lastInstruction_ = defIter_->toInstruction();
       }
-
       defIter_++;
     } else {
-      last_ = nullptr;
+      resumePoint_ = nullptr;
+      lastInstruction_ = nullptr;
     }
   }
 
@@ -852,14 +847,8 @@ class MNodeIterator {
 
  public:
   explicit MNodeIterator(MBasicBlock* block)
-      : last_(block->entryResumePoint() ? block->lastIns() : nullptr),
-        defIter_(block) {
+      : resumePoint_(block->entryResumePoint()), defIter_(block) {
     MOZ_ASSERT(bool(block->entryResumePoint()) == atResumePoint());
-
-    
-    
-    
-    MOZ_ASSERT(!block->lastIns()->resumePoint());
   }
 
   MNodeIterator operator++(int) {
