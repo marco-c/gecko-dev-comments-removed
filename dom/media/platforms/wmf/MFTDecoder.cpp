@@ -19,7 +19,23 @@ MFTDecoder::MFTDecoder() {
   memset(&mOutputStreamInfo, 0, sizeof(MFT_OUTPUT_STREAM_INFO));
 }
 
-MFTDecoder::~MFTDecoder() {}
+MFTDecoder::~MFTDecoder() {
+  if (mActivate) {
+    
+    
+    mActivate->ShutdownObject();
+  }
+}
+
+HRESULT MFTDecoder::Create(const GUID& aCLSID) {
+  MOZ_ASSERT(mscom::IsCurrentThreadMTA());
+
+  HRESULT hr = CoCreateInstance(
+      aCLSID, nullptr, CLSCTX_INPROC_SERVER,
+      IID_PPV_ARGS(static_cast<IMFTransform**>(getter_AddRefs(mDecoder))));
+  NS_WARNING_ASSERTION(FAILED(hr), "Failed to create MFT by CLSID");
+  return hr;
+}
 
 HRESULT
 MFTDecoder::Create(const GUID& aCategory, const GUID& aInSubtype,
@@ -56,22 +72,34 @@ MFTDecoder::Create(const GUID& aCategory, const GUID& aInSubtype,
                       &acts, &actsNum);
   delete inInfo;
   delete outInfo;
-  NS_ENSURE_TRUE(actsNum > 0, WINCODEC_ERR_COMPONENTNOTFOUND);
-
+  if (FAILED(hr)) {
+    NS_WARNING(nsPrintfCString("MFTEnumEx failed with code %x", hr).get());
+    return hr;
+  }
+  if (actsNum == 0) {
+    NS_WARNING("MFTEnumEx returned no IMFActivate instances");
+    return WINCODEC_ERR_COMPONENTNOTFOUND;
+  }
   auto guard = MakeScopeExit([&] {
-    for (int i = 0; i < actsNum; i++) {
+    
+    for (int i = 1; i < actsNum; i++) {
       acts[i]->Release();
     }
+    CoTaskMemFree(acts);
   });
 
-  NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
-
   
-  hr = acts[0]->ActivateObject(
+  
+  
+  
+  mActivate = RefPtr<IMFActivate>(acts[0]);
+  hr = mActivate->ActivateObject(
       IID_PPV_ARGS(static_cast<IMFTransform**>(getter_AddRefs(mDecoder))));
-  NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
-
-  return S_OK;
+  NS_WARNING_ASSERTION(
+      SUCCEEDED(hr),
+      nsPrintfCString("IMFActivate::ActivateObject failed with code %x", hr)
+          .get());
+  return hr;
 }
 
 HRESULT

@@ -312,7 +312,7 @@ static nsTArray<KeySystemConfig> GetSupportedKeySystems() {
       }
 #if defined(XP_WIN)
       
-      if (WMFDecoderModule::HasH264()) {
+      if (WMFDecoderModule::CanCreateMFTDecoder(WMFStreamType::H264)) {
         clearkey.mMP4.SetCanDecryptAndDecode(EME_CODEC_H264);
       } else {
         clearkey.mMP4.SetCanDecrypt(EME_CODEC_H264);
@@ -413,7 +413,7 @@ static nsTArray<KeySystemConfig> GetSupportedKeySystems() {
       
       
       
-      if (WMFDecoderModule::HasAAC()) {
+      if (WMFDecoderModule::CanCreateMFTDecoder(WMFStreamType::AAC)) {
         widevine.mMP4.SetCanDecrypt(EME_CODEC_AAC);
       }
 #  else
@@ -490,7 +490,7 @@ static bool CanDecryptAndDecode(
     
     
     if (codec == EME_CODEC_AAC && IsWidevineKeySystem(aKeySystem) &&
-        !WMFDecoderModule::HasAAC()) {
+        !WMFDecoderModule::CanCreateMFTDecoder(WMFStreamType::AAC)) {
       if (aDiagnostics) {
         aDiagnostics->SetKeySystemIssue(
             DecoderDoctorDiagnostics::eWidevineWithNoWMF);
@@ -1170,7 +1170,7 @@ static bool GetSupportedConfig(
   if (IsWidevineKeySystem(aKeySystem.mKeySystem) &&
       (aCandidate.mAudioCapabilities.IsEmpty() ||
        aCandidate.mVideoCapabilities.IsEmpty()) &&
-      !WMFDecoderModule::HasAAC()) {
+      !WMFDecoderModule::CanCreateMFTDecoder(WMFStreamType::AAC)) {
     if (aDiagnostics) {
       aDiagnostics->SetKeySystemIssue(
           DecoderDoctorDiagnostics::eWidevineWithNoWMF);
