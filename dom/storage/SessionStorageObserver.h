@@ -9,8 +9,7 @@
 
 #include "nsISupportsImpl.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class SessionStorageObserverChild;
 
@@ -59,7 +58,6 @@ class SessionStorageObserver final {
   ~SessionStorageObserver();
 };
 
-}  
 }  
 
 #endif  

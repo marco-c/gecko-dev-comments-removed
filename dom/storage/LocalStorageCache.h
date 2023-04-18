@@ -16,8 +16,7 @@
 #include "mozilla/Telemetry.h"
 #include "mozilla/Atomics.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class LocalStorage;
 class LocalStorageCacheChild;
@@ -303,6 +302,5 @@ class StorageUsage : public StorageUsageBridge {
 };
 
 }  
-}  
 
-#endif
+#endif  

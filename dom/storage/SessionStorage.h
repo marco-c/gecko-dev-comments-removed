@@ -11,8 +11,7 @@
 
 class nsIPrincipal;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class SessionStorageCache;
 class SessionStorageManager;
@@ -82,7 +81,6 @@ class SessionStorage final : public Storage {
   bool mHasPendingStableStateCallback;
 };
 
-}  
 }  
 
 #endif  
