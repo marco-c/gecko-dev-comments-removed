@@ -23,22 +23,6 @@ export function setupCreate(dependencies) {
   store = dependencies.store;
 }
 
-export function prepareSourcePayload(threadFront, source) {
-  source = { ...source };
-
-  
-  
-  if (
-    typeof source.sourceMapBaseURL === "undefined" &&
-    typeof source.introductionUrl !== "undefined"
-  ) {
-    source.sourceMapBaseURL = source.url || source.introductionUrl || null;
-    delete source.introductionUrl;
-  }
-
-  return { thread: threadFront.actor, source };
-}
-
 export async function createFrame(thread, frame, index = 0) {
   if (!frame) {
     return null;

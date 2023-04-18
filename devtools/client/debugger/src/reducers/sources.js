@@ -261,6 +261,8 @@ function insertSourceActors(state, action) {
     actors: { ...state.actors },
   };
 
+  
+  
   for (const sourceActor of items) {
     state.actors[sourceActor.source] = [
       ...(state.actors[sourceActor.source] || []),
