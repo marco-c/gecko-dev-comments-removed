@@ -5,7 +5,9 @@
 
 
 #include "mozilla/dom/quota/StorageHelpers.h"
+
 #include "mozilla/dom/quota/QuotaCommon.h"
+#include "mozilla/dom/quota/ResultExtensions.h"
 
 namespace mozilla::dom::quota {
 

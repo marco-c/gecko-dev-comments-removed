@@ -5,13 +5,16 @@
 
 
 UNIFIED_SOURCES = [
+    "Common.cpp",
     "TestCheckedUnsafePtr.cpp",
     "TestEncryptedStream.cpp",
     "TestFlatten.cpp",
+    "TestForwardDecls.cpp",
     "TestPersistenceType.cpp",
     "TestQMResult.cpp",
     "TestQuotaCommon.cpp",
     "TestQuotaManager.cpp",
+    "TestResultExtensions.cpp",
     "TestScopedLogExtraInfo.cpp",
     "TestUsageInfo.cpp",
 ]
