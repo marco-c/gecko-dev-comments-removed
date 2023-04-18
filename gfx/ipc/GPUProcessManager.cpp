@@ -746,6 +746,14 @@ void GPUProcessManager::HandleProcessLost() {
   for (const auto& listener : mListeners) {
     listener->OnCompositorUnexpectedShutdown();
   }
+
+  
+  
+  nsCOMPtr<nsIObserverService> observerService = services::GetObserverService();
+  if (observerService) {
+    observerService->NotifyObservers(nullptr, "compositor-reinitialized",
+                                     nullptr);
+  }
 }
 
 void GPUProcessManager::RebuildRemoteSessions() {

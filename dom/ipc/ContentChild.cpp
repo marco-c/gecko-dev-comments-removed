@@ -1648,6 +1648,16 @@ mozilla::ipc::IPCResult ContentChild::RecvReinitRendering(
     }
   }
 
+  
+  
+  
+  
+  nsCOMPtr<nsIObserverService> observerService = services::GetObserverService();
+  if (observerService) {
+    observerService->NotifyObservers(nullptr, "compositor-reinitialized",
+                                     nullptr);
+  }
+
   RemoteDecoderManagerChild::InitForGPUProcess(std::move(aVideoManager));
   return IPC_OK();
 }
