@@ -23,6 +23,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPrefs_media.h"
+#include "mozilla/SyncRunnable.h"
 #include "mozilla/WindowsVersion.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/mscom/EnsureMTA.h"
@@ -89,6 +90,7 @@ static bool IsRemoteAcceleratedCompositor(
          ident.mParentProcessType == GeckoProcessType_GPU;
 }
 
+static Atomic<bool> sSupportedTypesInitialized(false);
 static EnumSet<WMFStreamType> sSupportedTypes;
 
 
@@ -116,12 +118,12 @@ void WMFDecoderModule::Init() {
   
   
   
+  bool hwVideo = gfx::gfxVars::GetCanUseHardwareVideoDecodingOrDefault();
   WmfDecoderModuleMarkerAndLog(
       "WMFInit DXVA Status",
       "sDXVAEnabled: %s, CanUseHardwareVideoDecoding: %s",
-      sDXVAEnabled ? "true" : "false",
-      gfx::gfxVars::CanUseHardwareVideoDecoding() ? "true" : "false");
-  sDXVAEnabled = sDXVAEnabled && gfx::gfxVars::CanUseHardwareVideoDecoding();
+      sDXVAEnabled ? "true" : "false", hwVideo ? "true" : "false");
+  sDXVAEnabled = sDXVAEnabled && hwVideo;
 
   mozilla::mscom::EnsureMTA([&]() {
     
@@ -145,6 +147,8 @@ void WMFDecoderModule::Init() {
       }
     }
   });
+
+  sSupportedTypesInitialized = true;
 
   WmfDecoderModuleMarkerAndLog("WMFInit Result",
                                "WMFDecoderModule::Init finishing");
@@ -225,6 +229,15 @@ HRESULT WMFDecoderModule::CreateMFTDecoder(const WMFStreamType& aType,
 
 bool WMFDecoderModule::CanCreateMFTDecoder(const WMFStreamType& aType) {
   MOZ_ASSERT(WMFStreamType::Unknown < aType && aType < WMFStreamType::SENTINEL);
+  if (!sSupportedTypesInitialized) {
+    if (NS_IsMainThread()) {
+      Init();
+    } else {
+      nsCOMPtr<nsIRunnable> runnable =
+          NS_NewRunnableFunction("WMFDecoderModule::Init", [&]() { Init(); });
+      SyncRunnable::DispatchToThread(GetMainThreadEventTarget(), runnable);
+    }
+  }
 
   
   
