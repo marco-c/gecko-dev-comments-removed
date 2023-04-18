@@ -5,7 +5,6 @@
 
 
 #include "nsIObserverService.h"
-#include "nsServiceManagerUtils.h"
 #include "nsNetworkLinkService.h"
 #include "nsString.h"
 #include "mozilla/Logging.h"
