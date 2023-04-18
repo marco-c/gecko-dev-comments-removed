@@ -6,53 +6,14 @@
 
 
 #include "EarlyHintsService.h"
-#include "EarlyHintPreloader.h"
-#include "mozilla/PreloadHashKey.h"
 #include "mozilla/Telemetry.h"
-#include "nsICookieJarSettings.h"
-#include "nsNetUtil.h"
-#include "nsString.h"
-#include "mozilla/StaticPrefs_network.h"
-#include "nsIPrincipal.h"
-#include "nsILoadInfo.h"
 
 namespace mozilla::net {
 
-EarlyHintsService::EarlyHintsService()
-    : mOngoingEarlyHints(new OngoingEarlyHints()) {}
-
-
-
-
-EarlyHintsService::~EarlyHintsService() = default;
-
-void EarlyHintsService::EarlyHint(const nsACString& aLinkHeader,
-                                  nsIURI* aBaseURI, nsILoadInfo* aLoadInfo) {
+void EarlyHintsService::EarlyHint(const nsACString& linkHeader) {
   mEarlyHintsCount++;
   if (!mFirstEarlyHint) {
     mFirstEarlyHint.emplace(TimeStamp::NowLoRes());
-  }
-
-  if (!StaticPrefs::network_early_hints_enabled()) {
-    return;
-  }
-
-  nsCOMPtr<nsIPrincipal> triggeringPrincipal = aLoadInfo->TriggeringPrincipal();
-
-  nsCOMPtr<nsICookieJarSettings> cookieJarSettings;
-  if (NS_FAILED(
-          aLoadInfo->GetCookieJarSettings(getter_AddRefs(cookieJarSettings)))) {
-    return;
-  }
-
-  
-  
-  auto linkHeaders = ParseLinkHeader(NS_ConvertUTF8toUTF16(aLinkHeader));
-
-  for (auto& linkHeader : linkHeaders) {
-    EarlyHintPreloader::MaybeCreateAndInsertPreload(
-        mOngoingEarlyHints, linkHeader, aBaseURI, triggeringPrincipal,
-        cookieJarSettings);
   }
 }
 
@@ -60,16 +21,11 @@ void EarlyHintsService::FinalResponse(uint32_t aResponseStatus) {
   
   
   CollectTelemetry(Some(aResponseStatus));
-  if (aResponseStatus >= 300) {
-    mOngoingEarlyHints->CancelAllOngoingPreloads();
-    mCanceled = true;
-  }
 }
 
 void EarlyHintsService::Cancel() {
   if (!mCanceled) {
     CollectTelemetry(Nothing());
-    mOngoingEarlyHints->CancelAllOngoingPreloads();
     mCanceled = true;
   }
 }
