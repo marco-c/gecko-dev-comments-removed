@@ -201,13 +201,6 @@ class AboutReaderParent extends JSWindowActorParent {
         break;
       }
 
-      case "RedirectTo": {
-        gCachedArticles.set(message.data.newURL, message.data.article);
-        
-        
-        return true;
-      }
-
       default:
         this.callListeners(message);
         break;
