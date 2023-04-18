@@ -23,13 +23,12 @@ var EXPORTED_SYMBOLS = [
   "Windows",
 ];
 
-var module = this;
-
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  Authentication: "resource://tps/auth/fxaccounts.jsm",
   AppConstants: "resource://gre/modules/AppConstants.jsm",
   Async: "resource://services-common/async.js",
   BrowserTabs: "resource://tps/modules/tabs.jsm",
@@ -171,9 +170,6 @@ var TPS = {
     OBSERVER_TOPICS.forEach(function(aTopic) {
       Services.obs.addObserver(this, aTopic, true);
     }, this);
-
-    
-    ChromeUtils.import("resource://tps/auth/fxaccounts.jsm", module);
 
     
     

@@ -352,8 +352,6 @@ for (let entry of ignorableWhitelist) {
 
 if (!isDevtools) {
   
-  whitelist.add("resource://services-sync/service.js");
-  
   for (let module of [
     "addons.js",
     "bookmarks.js",
