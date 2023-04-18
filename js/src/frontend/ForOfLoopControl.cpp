@@ -47,39 +47,9 @@ bool ForOfLoopControl::emitEndCodeNeedingIteratorClose(BytecodeEmitter* bce) {
     
     return false;
   }
-
-  
-  
-  
-  if (!bce->emit1(JSOp::Undefined)) {
-    
-    return false;
-  }
-  if (!bce->emit1(JSOp::StrictNe)) {
-    
-    return false;
-  }
-
-  InternalIfEmitter ifIteratorIsNotClosed(bce);
-  if (!ifIteratorIsNotClosed.emitThen()) {
-    
-    return false;
-  }
-
-  MOZ_ASSERT(slotFromTop ==
-             unsigned(bce->bytecodeSection().stackDepth() - iterDepth_));
-  if (!bce->emitDupAt(slotFromTop)) {
-    
-    return false;
-  }
   if (!emitIteratorCloseInInnermostScopeWithTryNote(bce,
                                                     CompletionKind::Throw)) {
     return false;  
-  }
-
-  if (!ifIteratorIsNotClosed.emitEnd()) {
-    
-    return false;
   }
 
   if (!bce->emit1(JSOp::Throw)) {
@@ -191,13 +161,7 @@ bool ForOfLoopControl::emitPrepareForNonLocalJumpFromScope(
     return false;
   }
 
-  
-  
-  if (!bce->emit1(JSOp::Undefined)) {
-    
-    return false;
-  }
-  if (!bce->emit1(JSOp::Swap)) {
+  if (!bce->emit1(JSOp::Dup)) {
     
     return false;
   }
