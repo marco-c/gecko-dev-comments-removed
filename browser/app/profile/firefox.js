@@ -2472,9 +2472,6 @@ pref("devtools.webconsole.input.autocomplete",true);
 #endif
 
 
-pref("devtools.contenttoolbox.webconsole.input.context", false);
-
-
 
 pref("devtools.webconsole.input.eagerEvaluation", true);
 
