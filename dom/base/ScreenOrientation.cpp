@@ -191,21 +191,38 @@ ScreenOrientation::LockOrientationTask::Run() {
           GetCurrentSerialEventTarget(), __func__,
           [self = RefPtr{this}](
               const GenericNonExclusivePromise::ResolveOrRejectValue& aValue) {
+            if (self->mPromise->State() != Promise::PromiseState::Pending) {
+              
+              
+              
+              return;
+            }
+
+            if (self->mDocument->GetOrientationPendingPromise() !=
+                self->mPromise) {
+              
+              
+              
+              return;
+            }
             if (aValue.IsResolve()) {
+              if (BrowsingContext* bc = self->mDocument->GetBrowsingContext()) {
+                if (self->OrientationLockContains(
+                        bc->GetCurrentOrientationType()) ||
+                    (self->mOrientationLock ==
+                         hal::ScreenOrientation::Default &&
+                     bc->GetCurrentOrientationAngle() == 0)) {
+                  
+                  
+                  self->mPromise->MaybeResolveWithUndefined();
+                  self->mDocument->ClearOrientationPendingPromise();
+                }
+              }
               return;
             }
             self->mPromise->MaybeReject(aValue.RejectValue());
             self->mDocument->ClearOrientationPendingPromise();
           });
-
-  BrowsingContext* bc = mDocument->GetBrowsingContext();
-  if (OrientationLockContains(bc->GetCurrentOrientationType()) ||
-      (mOrientationLock == hal::ScreenOrientation::Default &&
-       bc->GetCurrentOrientationAngle() == 0)) {
-    
-    mPromise->MaybeResolveWithUndefined();
-    mDocument->ClearOrientationPendingPromise();
-  }
 
   return NS_OK;
 }
