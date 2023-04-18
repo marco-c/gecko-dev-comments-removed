@@ -418,7 +418,8 @@ class _RemoteSettingsExperimentLoader {
       description: manifest.description,
       type: "object",
       properties: {},
-      additionalProperties: true,
+      additionalProperties: false,
+      required: [],
     };
 
     for (const [varName, desc] of Object.entries(manifest.variables)) {
@@ -430,14 +431,12 @@ class _RemoteSettingsExperimentLoader {
           break;
 
         case "int":
-          
-          prop.type = "number";
+          prop.type = "integer";
           break;
 
         case "json":
           
-          
-          continue;
+          break;
 
         default:
           
@@ -452,6 +451,7 @@ class _RemoteSettingsExperimentLoader {
       }
 
       schema.properties[varName] = prop;
+      schema.required.push(varName);
     }
 
     return schema;
