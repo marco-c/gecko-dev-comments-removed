@@ -40,11 +40,12 @@ class nsHttpRequestHead {
   
   
   const nsHttpHeaderArray& Headers() const;
-
-  PUSH_IGNORE_THREAD_SAFETY
-  void Enter() const { mRecursiveMutex.Lock(); }
-  void Exit() const { mRecursiveMutex.Unlock(); }
-  POP_THREAD_SAFETY
+  void Enter() const CAPABILITY_ACQUIRE(mRecursiveMutex) {
+    mRecursiveMutex.Lock();
+  }
+  void Exit() const CAPABILITY_RELEASE(mRecursiveMutex) {
+    mRecursiveMutex.Unlock();
+  }
 
   void SetHeaders(const nsHttpHeaderArray& aHeaders);
 
@@ -122,18 +123,18 @@ class nsHttpRequestHead {
 
  private:
   
-  nsHttpHeaderArray mHeaders;
-  nsCString mMethod{"GET"_ns};
-  HttpVersion mVersion{HttpVersion::v1_1};
+  nsHttpHeaderArray mHeaders GUARDED_BY(mRecursiveMutex);
+  nsCString mMethod GUARDED_BY(mRecursiveMutex){"GET"_ns};
+  HttpVersion mVersion GUARDED_BY(mRecursiveMutex){HttpVersion::v1_1};
 
   
   
-  nsCString mRequestURI;
-  nsCString mPath;
+  nsCString mRequestURI GUARDED_BY(mRecursiveMutex);
+  nsCString mPath GUARDED_BY(mRecursiveMutex);
 
-  nsCString mOrigin;
-  ParsedMethodType mParsedMethod{kMethod_Get};
-  bool mHTTPS{false};
+  nsCString mOrigin GUARDED_BY(mRecursiveMutex);
+  ParsedMethodType mParsedMethod GUARDED_BY(mRecursiveMutex){kMethod_Get};
+  bool mHTTPS GUARDED_BY(mRecursiveMutex){false};
 
   
   
@@ -141,7 +142,7 @@ class nsHttpRequestHead {
       "nsHttpRequestHead.mRecursiveMutex"};
 
   
-  bool mInVisitHeaders{false};
+  bool mInVisitHeaders GUARDED_BY(mRecursiveMutex){false};
 
   friend struct IPC::ParamTraits<nsHttpRequestHead>;
 };
