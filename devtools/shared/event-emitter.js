@@ -207,55 +207,56 @@ class EventEmitter {
 
 
   static _emit(target, type, async, args) {
-    logEvent(type, args);
+    if (loggingEnabled) {
+      logEvent(type, args);
+    }
 
-    if (!(eventListeners in target)) {
+    const targetEventListeners = target[eventListeners];
+    if (!targetEventListeners) {
+      return undefined;
+    }
+
+    const listeners = targetEventListeners.get(type);
+    if (!listeners?.size) {
       return undefined;
     }
 
     const promises = async ? [] : null;
 
-    if (target[eventListeners].has(type)) {
+    
+    
+    for (const listener of new Set(listeners)) {
+      
+      if (!(eventListeners in target)) {
+        break;
+      }
+
       
       
-      const listenersForType = new Set(target[eventListeners].get(type));
-
-      const events = target[eventListeners];
-      const listeners = events.get(type);
-
-      for (const listener of listenersForType) {
-        
-        if (!(eventListeners in target)) {
-          break;
-        }
-
-        
-        
-        if (listeners && listeners.has(listener)) {
-          try {
-            let promise;
-            if (isEventHandler(listener)) {
-              promise = listener[handler](type, ...args);
-            } else {
-              promise = listener.apply(target, args);
-            }
-            if (async) {
-              
-              
-              if (!promise || promise.constructor.name != "Promise") {
-                console.warn(
-                  `Listener for event '${type}' did not return a promise.`
-                );
-              } else {
-                promises.push(promise);
-              }
-            }
-          } catch (ex) {
-            
-            console.error(ex);
-            const msg = ex + ": " + ex.stack;
-            dump(msg + "\n");
+      if (listeners && listeners.has(listener)) {
+        try {
+          let promise;
+          if (isEventHandler(listener)) {
+            promise = listener[handler](type, ...args);
+          } else {
+            promise = listener.apply(target, args);
           }
+          if (async) {
+            
+            
+            if (!promise || promise.constructor.name != "Promise") {
+              console.warn(
+                `Listener for event '${type}' did not return a promise.`
+              );
+            } else {
+              promises.push(promise);
+            }
+          }
+        } catch (ex) {
+          
+          console.error(ex);
+          const msg = ex + ": " + ex.stack;
+          dump(msg + "\n");
         }
       }
     }
@@ -448,10 +449,6 @@ function truncate(value, maxLen) {
 }
 
 function logEvent(type, args) {
-  if (!loggingEnabled) {
-    return;
-  }
-
   let argsOut = "";
 
   
