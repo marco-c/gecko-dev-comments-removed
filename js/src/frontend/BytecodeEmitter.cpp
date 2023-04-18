@@ -1342,6 +1342,7 @@ restart:
       return true;
 
     case ParseNodeKind::CallImportExpr:
+    case ParseNodeKind::CallImportSpec:
       MOZ_ASSERT(pn->is<BinaryNode>());
       *answer = true;
       return true;
@@ -1543,6 +1544,9 @@ restart:
     case ParseNodeKind::ImportSpecList:       
     case ParseNodeKind::ImportSpec:           
     case ParseNodeKind::ImportNamespaceSpec:  
+    case ParseNodeKind::ImportAssertion:      
+    case ParseNodeKind::ImportAssertionList:  
+    case ParseNodeKind::ImportModuleRequest:  
     case ParseNodeKind::ExportBatchSpecStmt:  
     case ParseNodeKind::ExportSpecList:       
     case ParseNodeKind::ExportSpec:           
@@ -11635,12 +11639,32 @@ bool BytecodeEmitter::emitTree(
       }
       break;
 
-    case ParseNodeKind::CallImportExpr:
-      if (!emitTree(pn->as<BinaryNode>().right()) ||
-          !emit1(JSOp::DynamicImport)) {
+    case ParseNodeKind::CallImportExpr: {
+      BinaryNode* spec = &pn->as<BinaryNode>().right()->as<BinaryNode>();
+
+      if (!emitTree(spec->left())) {
+        
         return false;
       }
+
+      if (!spec->right()->isKind(ParseNodeKind::PosHolder)) {
+        
+        if (!emitTree(spec->right())) {
+          return false;
+        }
+      } else {
+        
+        if (!emit1(JSOp::Undefined)) {
+          return false;
+        }
+      }
+
+      if (!emit1(JSOp::DynamicImport)) {
+        return false;
+      }
+
       break;
+    }
 
     case ParseNodeKind::SetThis:
       if (!emitSetThis(&pn->as<BinaryNode>())) {
