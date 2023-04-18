@@ -4783,8 +4783,6 @@ AttachDecision InstanceOfIRGenerator::tryAttachStub() {
     return AttachDecision::NoAction;
   }
 
-  JSObject* prototypeObject = &fun->getSlot(slot).toObject();
-
   
   ValOperandId lhs(writer.setInputOperandId(0));
   ValOperandId rhs(writer.setInputOperandId(1));
@@ -4802,10 +4800,9 @@ AttachDecision InstanceOfIRGenerator::tryAttachStub() {
   }
 
   
-  ObjOperandId protoId = writer.loadObject(prototypeObject);
-  
-  writer.guardDynamicSlotIsSpecificObject(rhsId, protoId,
-                                          slot - fun->numFixedSlots());
+  ValOperandId protoValId =
+      writer.loadDynamicSlot(rhsId, slot - fun->numFixedSlots());
+  ObjOperandId protoId = writer.guardToObject(protoValId);
 
   
   
