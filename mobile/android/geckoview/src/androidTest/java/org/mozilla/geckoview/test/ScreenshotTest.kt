@@ -230,26 +230,19 @@ class ScreenshotTest : BaseSessionTest() {
     }
 
     @WithDisplay(height = SCREEN_HEIGHT, width = SCREEN_WIDTH)
-    @Test
-    fun capturePixelsBeforeGpuProcessCrash() {
+    @Test(expected = IllegalStateException::class)
+    fun capturePixelsAfterGpuProcessCrash() {
         
         assumeTrue(sessionRule.usingGpuProcess())
 
-        val screenshotFile = getComparisonScreenshot(SCREEN_WIDTH, SCREEN_HEIGHT)
-
-        mainSession.loadTestPath(COLORS_HTML_PATH)
-        sessionRule.waitUntilCalled(object : ContentDelegate {
-            @AssertCalled(count = 1)
-            override fun onFirstContentfulPaint(session: GeckoSession) {
-            }
-        })
-
         sessionRule.display?.let {
             
-            val result = it.capturePixels()
+            
+            
             sessionRule.killGpuProcess()
+            val result = it.capturePixels()
 
-            assertScreenshotResult(result, screenshotFile)
+            sessionRule.waitForResult(result)
         }
     }
 
