@@ -51,6 +51,7 @@ module.exports = {
       files: ["**/*.sys.mjs", "**/*.jsm", "**/*.jsm.js"],
       rules: {
         "mozilla/reject-global-this": "error",
+        "mozilla/reject-globalThis-modification": "error",
         "mozilla/reject-top-level-await": "error",
         
         

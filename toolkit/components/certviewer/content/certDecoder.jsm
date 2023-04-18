@@ -1297,6 +1297,8 @@ function certDecoderInitializer(
   return { parse, pemToDER };
 }
 
+
+
 globalThis.certDecoderInitializer = certDecoderInitializer;
 
 var EXPORTED_SYMBOLS = ["certDecoderInitializer"];
