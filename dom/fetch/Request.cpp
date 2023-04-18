@@ -675,4 +675,9 @@ AbortSignal* Request::GetOrCreateSignal() {
 
 AbortSignalImpl* Request::GetSignalImpl() const { return mSignal; }
 
+AbortSignalImpl* Request::GetSignalImplToConsumeBody() const {
+  
+  return nullptr;
+}
+
 }  

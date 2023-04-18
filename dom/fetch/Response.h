@@ -121,6 +121,18 @@ class Response final : public FetchBody<Response>, public nsWrapperCache {
   SafeRefPtr<InternalResponse> GetInternalResponse() const;
 
   AbortSignalImpl* GetSignalImpl() const override { return mSignalImpl; }
+  AbortSignalImpl* GetSignalImplToConsumeBody() const final {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    return mSignalImpl;
+  }
 
  private:
   ~Response();

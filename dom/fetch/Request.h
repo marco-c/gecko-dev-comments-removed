@@ -126,6 +126,7 @@ class Request final : public FetchBody<Request>, public nsWrapperCache {
 
   
   AbortSignalImpl* GetSignalImpl() const override;
+  AbortSignalImpl* GetSignalImplToConsumeBody() const final;
 
  private:
   ~Request();
