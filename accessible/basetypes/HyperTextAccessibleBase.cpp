@@ -182,17 +182,16 @@ TextLeafPoint HyperTextAccessibleBase::ToTextLeafPoint(int32_t aOffset,
   return TextLeafPoint(child, offset);
 }
 
-uint32_t HyperTextAccessibleBase::TransformOffset(Accessible* aDescendant,
-                                                  uint32_t aOffset,
-                                                  bool aIsEndOffset) const {
+std::pair<bool, int32_t> HyperTextAccessibleBase::TransformOffset(
+    Accessible* aDescendant, int32_t aOffset, bool aIsEndOffset) const {
   const Accessible* thisAcc = Acc();
   
-  uint32_t offset = aOffset;
+  int32_t offset = aOffset;
   Accessible* descendant = aDescendant;
   while (descendant) {
     Accessible* parent = descendant->Parent();
     if (parent == thisAcc) {
-      return GetChildOffset(descendant) + offset;
+      return {true, GetChildOffset(descendant) + offset};
     }
 
     
@@ -213,7 +212,8 @@ uint32_t HyperTextAccessibleBase::TransformOffset(Accessible* aDescendant,
 
   
   
-  return CharacterCount();
+  
+  return {false, aIsEndOffset ? static_cast<int32_t>(CharacterCount()) : 0};
 }
 
 void HyperTextAccessibleBase::TextAtOffset(int32_t aOffset,
@@ -257,21 +257,12 @@ void HyperTextAccessibleBase::TextAtOffset(int32_t aOffset,
       }
       TextLeafPoint start = origStart.FindBoundary(aBoundaryType, eDirPrevious,
                                                     true);
-      *aStartOffset =
-          static_cast<int32_t>(TransformOffset(start.mAcc, start.mOffset,
-                                                false));
-      if (*aStartOffset == static_cast<int32_t>(CharacterCount()) &&
-          (*aStartOffset > static_cast<int32_t>(adjustedOffset) ||
-           start != origStart)) {
-        
-        
-        
-        *aStartOffset = 0;
-      }
+      bool ok;
+      std::tie(ok, *aStartOffset) = TransformOffset(start.mAcc, start.mOffset,
+                                                     false);
       end = end.FindBoundary(aBoundaryType, eDirNext);
-      *aEndOffset =
-          static_cast<int32_t>(TransformOffset(end.mAcc, end.mOffset,
-                                                true));
+      std::tie(ok, *aEndOffset) = TransformOffset(end.mAcc, end.mOffset,
+                                                   true);
       TextSubstring(*aStartOffset, *aEndOffset, aText);
       return;
   }
@@ -355,20 +346,13 @@ already_AddRefed<AccAttributes> HyperTextAccessibleBase::TextAttributes(
   RefPtr<AccAttributes> attributes = origin.GetTextAttributes(aIncludeDefAttrs);
   TextLeafPoint start = origin.FindTextAttrsStart(
       eDirPrevious,  true, attributes, aIncludeDefAttrs);
-  *aStartOffset =
-      static_cast<int32_t>(TransformOffset(start.mAcc, start.mOffset,
-                                            false));
-  if (*aStartOffset == static_cast<int32_t>(CharacterCount()) &&
-      (*aStartOffset > static_cast<int32_t>(offset) || start != origin)) {
-    
-    
-    
-    *aStartOffset = 0;
-  }
+  bool ok;
+  std::tie(ok, *aStartOffset) = TransformOffset(start.mAcc, start.mOffset,
+                                                 false);
   TextLeafPoint end = origin.FindTextAttrsStart(
       eDirNext,  false, attributes, aIncludeDefAttrs);
-  *aEndOffset = static_cast<int32_t>(TransformOffset(end.mAcc, end.mOffset,
-                                                      true));
+  std::tie(ok, *aEndOffset) = TransformOffset(end.mAcc, end.mOffset,
+                                               true);
   return attributes.forget();
 }
 

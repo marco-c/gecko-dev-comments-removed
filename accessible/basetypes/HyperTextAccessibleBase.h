@@ -150,8 +150,13 @@ class HyperTextAccessibleBase {
   
 
 
-  uint32_t TransformOffset(Accessible* aDescendant, uint32_t aOffset,
-                           bool aIsEndOffset) const;
+
+
+
+
+  std::pair<bool, int32_t> TransformOffset(Accessible* aDescendant,
+                                           int32_t aOffset,
+                                           bool aIsEndOffset) const;
 };
 
 }  
