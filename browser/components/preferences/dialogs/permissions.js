@@ -182,7 +182,12 @@ var gPermissionManager = {
       capability == Ci.nsIPermissionManager.ALLOW_ACTION ||
       capability == Ci.nsIPermissionManager.DENY_ACTION ||
       capability == Ci.nsICookiePermission.ACCESS_SESSION ||
-      capability == Ci.nsIHttpsOnlyModePermission.LOAD_INSECURE_ALLOW_SESSION
+      
+      
+      
+      (capability ==
+        Ci.nsIHttpsOnlyModePermission.LOAD_INSECURE_ALLOW_SESSION &&
+        this._type == "https-only-load-insecure")
     );
   },
 
