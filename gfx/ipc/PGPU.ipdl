@@ -120,7 +120,8 @@ parent:
 
   
   
-  async TestTriggerMetrics();
+  
+  async TestTriggerMetrics() returns (bool unused);
 
   
   async CrashProcess();

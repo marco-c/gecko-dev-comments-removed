@@ -64,17 +64,12 @@ RefPtr<GenericPromise> FlushAndUseFOGData();
 
 
 
-void TestTriggerGPUMetrics();
 
 
 
 
-
-
-
-
-
-void TestTriggerRDDMetrics(const RefPtr<dom::Promise>& promise);
+void TestTriggerMetrics(uint32_t processType,
+                        const RefPtr<dom::Promise>& promise);
 
 }  
 }  
