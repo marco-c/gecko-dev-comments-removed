@@ -108,29 +108,6 @@ registerCleanupFunction(async () => {
 
 
 
-var openRDM = async function(tab) {
-  info("Opening responsive design mode");
-  const manager = ResponsiveUIManager;
-  const ui = await manager.openIfNeeded(tab.ownerGlobal, tab, {
-    trigger: "test",
-  });
-  info("Responsive design mode opened");
-  return { ui, manager };
-};
-
-
-
-
-var closeRDM = async function(tab, options) {
-  info("Closing responsive design mode");
-  const manager = ResponsiveUIManager;
-  await manager.closeIfNeeded(tab.ownerGlobal, tab, options);
-  info("Responsive design mode closed");
-};
-
-
-
-
 
 
 
@@ -224,9 +201,6 @@ function addRDMTaskWithPreAndPost(url, preTask, task, postTask, options) {
 
 
 async function waitForRDMLoaded(ui, { waitForDeviceList }) {
-  
-  await message.wait(ui.toolWindow, "post-init");
-
   
   const { store } = ui.toolWindow;
   await waitUntilState(store, state => state.viewports.length == 1);
