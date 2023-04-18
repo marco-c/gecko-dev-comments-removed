@@ -163,11 +163,13 @@ void GPUProcessManager::OnPreferenceChange(const char16_t* aData) {
   
   NS_LossyConvertUTF16toASCII strData(aData);
 
-  mozilla::dom::Pref pref(strData,  false,
-                           false, Nothing(), Nothing());
+  
+  if (!dom::ContentParent::ShouldSyncPreference(strData.Data())) {
+    return;
+  }
 
-  Preferences::GetPreference(&pref, GeckoProcessType_GPU,
-                              ""_ns);
+  mozilla::dom::Pref pref(strData,  false, Nothing(), Nothing());
+  Preferences::GetPreference(&pref);
   if (!!mGPUChild) {
     MOZ_ASSERT(mQueuedPrefs.IsEmpty());
     mGPUChild->SendPreferenceUpdate(pref);
