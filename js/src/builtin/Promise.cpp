@@ -5289,16 +5289,6 @@ template <typename T>
 
 
 
-[[nodiscard]] bool js::AsyncGeneratorAwait(
-    JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
-    HandleValue value) {
-  return InternalAsyncGeneratorAwait(
-      cx, asyncGenObj, value, PromiseHandler::AsyncGeneratorAwaitedFulfilled,
-      PromiseHandler::AsyncGeneratorAwaitedRejected);
-}
-
-
-
 
 
 bool js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args,

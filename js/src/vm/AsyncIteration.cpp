@@ -470,6 +470,16 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
 
 
 
+[[nodiscard]] static bool AsyncGeneratorAwait(
+    JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
+    HandleValue value) {
+  return InternalAsyncGeneratorAwait(
+      cx, asyncGenObj, value, PromiseHandler::AsyncGeneratorAwaitedFulfilled,
+      PromiseHandler::AsyncGeneratorAwaitedRejected);
+}
+
+
+
 
 
 
