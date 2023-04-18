@@ -82,6 +82,7 @@
 #  include "skia/include/ports/SkTypeface_cairo.h"
 #endif
 #ifdef ANDROID
+#  include "mozilla/layers/AndroidHardwareBuffer.h"
 #  include "skia/include/ports/SkTypeface_cairo.h"
 #endif
 #include "ChildProfilerController.h"
@@ -334,6 +335,13 @@ mozilla::ipc::IPCResult GPUParent::RecvInit(
   
   
   SkInitCairoFT(false);
+
+  if (gfxVars::UseAHardwareBufferContent() ||
+      gfxVars::UseAHardwareBufferSharedSurface()) {
+    layers::AndroidHardwareBufferApi::Init();
+    layers::AndroidHardwareBufferManager::Init();
+  }
+
 #endif
 
   
