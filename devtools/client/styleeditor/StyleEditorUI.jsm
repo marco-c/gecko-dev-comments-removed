@@ -92,61 +92,63 @@ const HTML_NS = "http://www.w3.org/1999/xhtml";
 
 
 
+class StyleEditorUI extends EventEmitter {
+  
 
 
 
 
 
-function StyleEditorUI(toolbox, commands, panelDoc, cssProperties) {
-  EventEmitter.decorate(this);
 
-  this._toolbox = toolbox;
-  this._commands = commands;
-  this._panelDoc = panelDoc;
-  this._cssProperties = cssProperties;
-  this._window = this._panelDoc.defaultView;
-  this._root = this._panelDoc.getElementById("style-editor-chrome");
+  constructor(toolbox, commands, panelDoc, cssProperties) {
+    super();
 
-  this.editors = [];
-  this.selectedEditor = null;
-  this.savedLocations = {};
-  this._seenSheets = new Map();
+    this._toolbox = toolbox;
+    this._commands = commands;
+    this._panelDoc = panelDoc;
+    this._cssProperties = cssProperties;
+    this._window = this._panelDoc.defaultView;
+    this._root = this._panelDoc.getElementById("style-editor-chrome");
 
-  this._onOptionsButtonClick = this._onOptionsButtonClick.bind(this);
-  this._onOrigSourcesPrefChanged = this._onOrigSourcesPrefChanged.bind(this);
-  this._onMediaPrefChanged = this._onMediaPrefChanged.bind(this);
-  this._updateMediaList = this._updateMediaList.bind(this);
-  this._clear = this._clear.bind(this);
-  this._onError = this._onError.bind(this);
-  this._updateContextMenuItems = this._updateContextMenuItems.bind(this);
-  this._openLinkNewTab = this._openLinkNewTab.bind(this);
-  this._copyUrl = this._copyUrl.bind(this);
-  this._onResourceAvailable = this._onResourceAvailable.bind(this);
-  this._onResourceUpdated = this._onResourceUpdated.bind(this);
-  this._onFilterInputChange = this._onFilterInputChange.bind(this);
-  this._onFocusFilterInputKeyboardShortcut = this._onFocusFilterInputKeyboardShortcut.bind(
-    this
-  );
+    this.editors = [];
+    this.selectedEditor = null;
+    this.savedLocations = {};
+    this._seenSheets = new Map();
 
-  this._prefObserver = new PrefObserver("devtools.styleeditor.");
-  this._prefObserver.on(PREF_MEDIA_SIDEBAR, this._onMediaPrefChanged);
-  this._sourceMapPrefObserver = new PrefObserver(
-    "devtools.source-map.client-service."
-  );
-  this._sourceMapPrefObserver.on(
-    PREF_ORIG_SOURCES,
-    this._onOrigSourcesPrefChanged
-  );
-}
+    this._onOptionsButtonClick = this._onOptionsButtonClick.bind(this);
+    this._onOrigSourcesPrefChanged = this._onOrigSourcesPrefChanged.bind(this);
+    this._onMediaPrefChanged = this._onMediaPrefChanged.bind(this);
+    this._updateMediaList = this._updateMediaList.bind(this);
+    this._clear = this._clear.bind(this);
+    this._onError = this._onError.bind(this);
+    this._updateContextMenuItems = this._updateContextMenuItems.bind(this);
+    this._openLinkNewTab = this._openLinkNewTab.bind(this);
+    this._copyUrl = this._copyUrl.bind(this);
+    this._onResourceAvailable = this._onResourceAvailable.bind(this);
+    this._onResourceUpdated = this._onResourceUpdated.bind(this);
+    this._onFilterInputChange = this._onFilterInputChange.bind(this);
+    this._onFocusFilterInputKeyboardShortcut = this._onFocusFilterInputKeyboardShortcut.bind(
+      this
+    );
 
-StyleEditorUI.prototype = {
+    this._prefObserver = new PrefObserver("devtools.styleeditor.");
+    this._prefObserver.on(PREF_MEDIA_SIDEBAR, this._onMediaPrefChanged);
+    this._sourceMapPrefObserver = new PrefObserver(
+      "devtools.source-map.client-service."
+    );
+    this._sourceMapPrefObserver.on(
+      PREF_ORIG_SOURCES,
+      this._onOrigSourcesPrefChanged
+    );
+  }
+
   get cssProperties() {
     return this._cssProperties;
-  },
+  }
 
   get currentTarget() {
     return this._commands.targetCommand.targetFront;
-  },
+  }
 
   
 
@@ -155,7 +157,7 @@ StyleEditorUI.prototype = {
     return this.selectedEditor
       ? this.selectedEditor.styleSheet.styleSheetIndex
       : -1;
-  },
+  }
 
   
 
@@ -177,12 +179,12 @@ StyleEditorUI.prototype = {
       }
     );
     await this._waitForLoadingStyleSheets();
-  },
+  }
 
   
 
 
-  createUI: function() {
+  createUI() {
     this._filterInput = this._root.querySelector(".devtools-filterinput");
     this._filterInputClearButton = this._root.querySelector(
       ".devtools-searchinput-clear"
@@ -293,18 +295,18 @@ StyleEditorUI.prototype = {
 
     const nav = this._panelDoc.querySelector(".splitview-controller");
     nav.setAttribute("width", Services.prefs.getIntPref(PREF_NAV_WIDTH));
-  },
+  }
 
   _clearFilterInput() {
     this._filterInput.value = "";
     this._onFilterInputChange();
-  },
+  }
 
   _onFilterInputChange() {
     const filterInputValue = this._filterInput.value;
     this._filterInputClearButton.toggleAttribute("hidden", !filterInputValue);
     this._view.setFilter(filterInputValue);
-  },
+  }
 
   _onFocusFilterInputKeyboardShortcut(e) {
     
@@ -313,7 +315,7 @@ StyleEditorUI.prototype = {
       e.preventDefault();
     }
     this._filterInput.select();
-  },
+  }
 
   
 
@@ -336,7 +338,7 @@ StyleEditorUI.prototype = {
     });
 
     this._optionsMenu.popup(screenX, screenY, this._toolbox.doc);
-  },
+  }
 
   
 
@@ -355,12 +357,12 @@ StyleEditorUI.prototype = {
     this._root.classList.remove("loading");
 
     this.emit("stylesheets-refreshed");
-  },
+  }
 
   
 
 
-  _clear: function() {
+  _clear() {
     
     if (this.selectedEditor && this.selectedEditor.sourceEditor) {
       const href = this.selectedEditor.styleSheet.href;
@@ -390,7 +392,7 @@ StyleEditorUI.prototype = {
     this._seenSheets = new Map();
 
     this.emit("stylesheets-clear");
-  },
+  }
 
   
 
@@ -403,7 +405,7 @@ StyleEditorUI.prototype = {
 
 
 
-  _addStyleSheet: function(resource) {
+  _addStyleSheet(resource) {
     if (!this._seenSheets.has(resource)) {
       const promise = (async () => {
         let editor = await this._addStyleSheetEditor(resource);
@@ -460,15 +462,15 @@ StyleEditorUI.prototype = {
       this._seenSheets.set(resource, promise);
     }
     return this._seenSheets.get(resource);
-  },
+  }
 
   _getInlineStyleSheetsCount() {
     return this.editors.filter(editor => !editor.styleSheet.href).length;
-  },
+  }
 
   _getNewStyleSheetsCount() {
     return this.editors.filter(editor => editor.isNew).length;
-  },
+  }
 
   
 
@@ -480,7 +482,7 @@ StyleEditorUI.prototype = {
 
 
 
-  _getNextFriendlyIndex: function(styleSheet) {
+  _getNextFriendlyIndex(styleSheet) {
     if (styleSheet.href) {
       return undefined;
     }
@@ -488,7 +490,7 @@ StyleEditorUI.prototype = {
     return styleSheet.isNew
       ? this._getNewStyleSheetsCount()
       : this._getInlineStyleSheetsCount();
-  },
+  }
 
   
 
@@ -538,7 +540,7 @@ StyleEditorUI.prototype = {
     }
 
     return editor;
-  },
+  }
 
   
 
@@ -550,7 +552,7 @@ StyleEditorUI.prototype = {
 
 
 
-  _importFromFile: function(file, parentWindow) {
+  _importFromFile(file, parentWindow) {
     const onFileSelected = selectedFile => {
       if (!selectedFile) {
         
@@ -584,7 +586,7 @@ StyleEditorUI.prototype = {
     };
 
     showFilePicker(file, false, parentWindow, onFileSelected);
-  },
+  }
 
   
 
@@ -592,32 +594,32 @@ StyleEditorUI.prototype = {
 
 
 
-  _onError: function(data) {
+  _onError(data) {
     this.emit("error", data);
-  },
+  }
 
   
 
 
-  _toggleOrigSources: function() {
+  _toggleOrigSources() {
     const isEnabled = Services.prefs.getBoolPref(PREF_ORIG_SOURCES);
     Services.prefs.setBoolPref(PREF_ORIG_SOURCES, !isEnabled);
-  },
+  }
 
   
 
 
-  _toggleMediaSidebar: function() {
+  _toggleMediaSidebar() {
     const isEnabled = Services.prefs.getBoolPref(PREF_MEDIA_SIDEBAR);
     Services.prefs.setBoolPref(PREF_MEDIA_SIDEBAR, !isEnabled);
-  },
+  }
 
   
 
 
-  _onMediaPrefChanged: function() {
+  _onMediaPrefChanged() {
     this.editors.forEach(this._updateMediaList);
-  },
+  }
 
   
 
@@ -630,7 +632,7 @@ StyleEditorUI.prototype = {
 
 
 
-  _updateContextMenuItems: function() {
+  _updateContextMenuItems() {
     this._openLinkNewTabItem.hidden = !this._contextMenuStyleSheet;
     this._copyUrlItem.hidden = !this._contextMenuStyleSheet;
 
@@ -644,25 +646,25 @@ StyleEditorUI.prototype = {
         !this._contextMenuStyleSheet.href
       );
     }
-  },
+  }
 
   
 
 
-  _openLinkNewTab: function() {
+  _openLinkNewTab() {
     if (this._contextMenuStyleSheet) {
       openContentLink(this._contextMenuStyleSheet.href);
     }
-  },
+  }
 
   
 
 
-  _copyUrl: function() {
+  _copyUrl() {
     if (this._contextMenuStyleSheet) {
       copyString(this._contextMenuStyleSheet.href);
     }
-  },
+  }
 
   
 
@@ -670,7 +672,7 @@ StyleEditorUI.prototype = {
 
 
 
-  _removeStyleSheetEditor: function(editor) {
+  _removeStyleSheetEditor(editor) {
     if (editor.summary) {
       this._view.removeItem(editor.summary);
     } else {
@@ -685,17 +687,17 @@ StyleEditorUI.prototype = {
 
     editor.destroy();
     this.editors.splice(this.editors.indexOf(editor), 1);
-  },
+  }
 
   
 
 
-  _clearStyleSheetEditors: function() {
+  _clearStyleSheetEditors() {
     for (const editor of this.editors) {
       editor.destroy();
     }
     this.editors = [];
-  },
+  }
 
   
 
@@ -704,7 +706,7 @@ StyleEditorUI.prototype = {
 
 
 
-  _sourceLoaded: function(editor) {
+  _sourceLoaded(editor) {
     let ordinal = editor.styleSheet.styleSheetIndex;
     ordinal = ordinal == -1 ? Number.MAX_SAFE_INTEGER : ordinal;
     
@@ -814,7 +816,7 @@ StyleEditorUI.prototype = {
       this._selectEditor(createdEditor);
     }
     this.emit("editor-added", createdEditor);
-  },
+  }
 
   
 
@@ -822,7 +824,7 @@ StyleEditorUI.prototype = {
 
 
 
-  switchToSelectedSheet: function() {
+  switchToSelectedSheet() {
     const toSelect = this._styleSheetToSelect;
 
     for (const editor of this.editors) {
@@ -838,7 +840,7 @@ StyleEditorUI.prototype = {
     }
 
     return Promise.resolve();
-  },
+  }
 
   
 
@@ -847,7 +849,7 @@ StyleEditorUI.prototype = {
 
 
 
-  _isEditorToSelect: function(editor) {
+  _isEditorToSelect(editor) {
     const toSelect = this._styleSheetToSelect;
     if (!toSelect) {
       return false;
@@ -859,7 +861,7 @@ StyleEditorUI.prototype = {
       (isHref && editor.styleSheet.href == toSelect.stylesheet) ||
       toSelect.stylesheet == editor.styleSheet
     );
-  },
+  }
 
   
 
@@ -874,7 +876,7 @@ StyleEditorUI.prototype = {
 
 
 
-  _selectEditor: function(editor, line = null, col = null) {
+  _selectEditor(editor, line = null, col = null) {
     
     if (!this.editors.includes(editor)) {
       return null;
@@ -906,9 +908,9 @@ StyleEditorUI.prototype = {
     });
 
     return Promise.all([editorPromise, summaryPromise]);
-  },
+  }
 
-  getEditorSummary: function(editor) {
+  getEditorSummary(editor) {
     const self = this;
 
     if (editor.summary) {
@@ -923,9 +925,9 @@ StyleEditorUI.prototype = {
         }
       });
     });
-  },
+  }
 
-  getEditorDetails: function(editor) {
+  getEditorDetails(editor) {
     const self = this;
 
     if (editor.details) {
@@ -940,7 +942,7 @@ StyleEditorUI.prototype = {
         }
       });
     });
-  },
+  }
 
   
 
@@ -948,13 +950,13 @@ StyleEditorUI.prototype = {
 
 
 
-  getStyleSheetIdentifier: function(styleSheet) {
+  getStyleSheetIdentifier(styleSheet) {
     
     
     return styleSheet.href
       ? styleSheet.href
       : "inline-" + styleSheet.styleSheetIndex + "-at-" + styleSheet.nodeHref;
-  },
+  }
 
   
 
@@ -965,7 +967,7 @@ StyleEditorUI.prototype = {
 
 
 
-  getOriginalSourceSheet: function(sourceId) {
+  getOriginalSourceSheet(sourceId) {
     for (const editor of this.editors) {
       const { styleSheet } = editor;
       if (styleSheet.isOriginalSource && styleSheet.sourceId === sourceId) {
@@ -973,7 +975,7 @@ StyleEditorUI.prototype = {
       }
     }
     return null;
-  },
+  }
 
   
 
@@ -988,7 +990,7 @@ StyleEditorUI.prototype = {
 
 
 
-  getStylesheetFrontForGeneratedURL: function(url) {
+  getStylesheetFrontForGeneratedURL(url) {
     for (const styleSheet of this._seenSheets.keys()) {
       const sheetURL = styleSheet.href || styleSheet.nodeHref;
       if (!styleSheet.isOriginalSource && sheetURL === url) {
@@ -996,7 +998,7 @@ StyleEditorUI.prototype = {
       }
     }
     return null;
-  },
+  }
 
   
 
@@ -1011,7 +1013,7 @@ StyleEditorUI.prototype = {
 
 
 
-  selectStyleSheet: function(stylesheet, line, col) {
+  selectStyleSheet(stylesheet, line, col) {
     this._styleSheetToSelect = {
       stylesheet: stylesheet,
       line: line,
@@ -1021,7 +1023,7 @@ StyleEditorUI.prototype = {
     
 
     return this.switchToSelectedSheet();
-  },
+  }
 
   
 
@@ -1030,9 +1032,9 @@ StyleEditorUI.prototype = {
 
 
 
-  _summaryChange: function(editor) {
+  _summaryChange(editor) {
     this._updateSummaryForEditor(editor);
-  },
+  }
 
   
 
@@ -1042,7 +1044,7 @@ StyleEditorUI.prototype = {
 
 
 
-  _updateSummaryForEditor: function(editor, summary) {
+  _updateSummaryForEditor(editor, summary) {
     summary = summary || editor.summary;
     if (!summary) {
       return;
@@ -1085,7 +1087,7 @@ StyleEditorUI.prototype = {
 
     
     this._view.handleSummaryVisibility(summary);
-  },
+  }
 
   
 
@@ -1095,7 +1097,7 @@ StyleEditorUI.prototype = {
 
 
 
-  _updateMediaList: function(editor) {
+  _updateMediaList(editor) {
     (async function() {
       const details = await this.getEditorDetails(editor);
       const list = details.querySelector(".stylesheet-media-list");
@@ -1169,7 +1171,7 @@ StyleEditorUI.prototype = {
     }
       .bind(this)()
       .catch(console.error));
-  },
+  }
 
   
 
@@ -1206,7 +1208,7 @@ StyleEditorUI.prototype = {
       rawText.substring(lastParsed, rawText.length)
     );
     element.appendChild(node);
-  },
+  }
 
   
 
@@ -1215,7 +1217,7 @@ StyleEditorUI.prototype = {
 
 
 
-  _onMediaConditionClick: function(e) {
+  _onMediaConditionClick(e) {
     const conditionText = e.target.textContent;
     const isWidthCond = conditionText.toLowerCase().indexOf("width") > -1;
     const mediaVal = parseInt(/\d+/.exec(conditionText), 10);
@@ -1224,7 +1226,7 @@ StyleEditorUI.prototype = {
     this._launchResponsiveMode(options);
     e.preventDefault();
     e.stopPropagation();
-  },
+  }
 
   
 
@@ -1242,7 +1244,7 @@ StyleEditorUI.prototype = {
     this.emit("responsive-mode-opened");
 
     ResponsiveUIManager.getResponsiveUIForTab(tab).setViewportSize(options);
-  },
+  }
 
   
 
@@ -1250,15 +1252,15 @@ StyleEditorUI.prototype = {
 
 
 
-  _jumpToLocation: function(location) {
+  _jumpToLocation(location) {
     const source = location.styleSheet || location.source;
     this.selectStyleSheet(source, location.line - 1, location.column - 1);
-  },
+  }
 
   _startLoadingStyleSheets() {
     this._root.classList.add("loading");
     this._loadingStyleSheets = [];
-  },
+  }
 
   async _waitForLoadingStyleSheets() {
     while (this._loadingStyleSheets?.length > 0) {
@@ -1269,7 +1271,7 @@ StyleEditorUI.prototype = {
 
     this._loadingStyleSheets = null;
     this._root.classList.remove("loading");
-  },
+  }
 
   async _handleStyleSheetResource(resource) {
     try {
@@ -1292,7 +1294,7 @@ StyleEditorUI.prototype = {
       console.error(e);
       this.emit("error", { key: LOAD_ERROR, level: "warning" });
     }
-  },
+  }
 
   async _onResourceAvailable(resources) {
     const promises = [];
@@ -1322,7 +1324,7 @@ StyleEditorUI.prototype = {
       }
     }
     await Promise.all(promises);
-  },
+  }
 
   async _onResourceUpdated(updates) {
     for (const { resource, update } of updates) {
@@ -1355,9 +1357,9 @@ StyleEditorUI.prototype = {
         }
       }
     }
-  },
+  }
 
-  destroy: function() {
+  destroy() {
     this._toolbox.resourceCommand.unwatchResources(
       [
         this._toolbox.resourceCommand.TYPES.DOCUMENT_EVENT,
@@ -1396,5 +1398,5 @@ StyleEditorUI.prototype = {
       this._shortcuts.destroy();
       this._shortcuts = null;
     }
-  },
-};
+  }
+}
