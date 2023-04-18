@@ -951,6 +951,12 @@ void nsWindow::ResizeInt(int aX, int aY, int aWidth, int aHeight, bool aMove) {
   
   
   mBounds.SizeTo(aWidth, aHeight);
+  
+  if (mCompositorSession &&
+      !wr::WindowSizeSanityCheck(mBounds.width, mBounds.height)) {
+    gfxCriticalNoteOnce << "Invalid mBounds in ResizeInt " << mBounds
+                        << " size state " << mSizeState;
+  }
 
   
   
@@ -1875,6 +1881,13 @@ void nsWindow::NativeMoveResizeWaylandPopupCallback(
     if (resizedByLayout) {
       mBounds.width = mNewBoundsAfterMoveToRect.width;
       mBounds.height = mNewBoundsAfterMoveToRect.height;
+      
+      if (mCompositorSession &&
+          !wr::WindowSizeSanityCheck(mBounds.width, mBounds.height)) {
+        gfxCriticalNoteOnce
+            << "Invalid mNewBoundsAfterMoveToRect in PopupCallback " << mBounds
+            << " size state " << mSizeState;
+      }
     }
     mNewBoundsAfterMoveToRect = LayoutDeviceIntRect(0, 0, 0, 0);
 
@@ -1934,6 +1947,12 @@ void nsWindow::NativeMoveResizeWaylandPopupCallback(
         mMoveToRectPopupSize.height);
   }
   mBounds = newBounds;
+  
+  if (mCompositorSession &&
+      !wr::WindowSizeSanityCheck(mBounds.width, mBounds.height)) {
+    gfxCriticalNoteOnce << "Invalid mBounds in PopupCallback " << mBounds
+                        << " size state " << mSizeState;
+  }
   WaylandPopupPropagateChangesToLayout(needsPositionUpdate, needsSizeUpdate);
 }
 
@@ -3925,6 +3944,12 @@ void nsWindow::OnSizeAllocate(GtkAllocation* aAllocation) {
   }
 
   mBounds.SizeTo(size);
+  
+  if (mCompositorSession &&
+      !wr::WindowSizeSanityCheck(mBounds.width, mBounds.height)) {
+    gfxCriticalNoteOnce << "Invalid mBounds in OnSizeAllocate " << mBounds
+                        << " size state " << mSizeState;
+  }
 
   
   if (mCompositorWidgetDelegate) {
@@ -4888,6 +4913,11 @@ void nsWindow::OnScaleChanged() {
   LayoutDeviceIntSize size = GdkRectToDevicePixels(allocation).Size();
   mBoundsAreValid = true;
   mBounds.SizeTo(size);
+  
+  if (mCompositorSession &&
+      !wr::WindowSizeSanityCheck(mBounds.width, mBounds.height)) {
+    gfxCriticalNoteOnce << "Invalid mBounds in OnScaleChanged " << mBounds;
+  }
 
   if (mWidgetListener) {
     if (PresShell* presShell = mWidgetListener->GetPresShell()) {
