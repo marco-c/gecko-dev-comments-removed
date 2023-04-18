@@ -182,7 +182,7 @@
 
 
 
-#![cfg_attr(nightly, allow(clippy::match_like_matches_macro))]
+
 #![recursion_limit = "128"]
 
 extern crate proc_macro;
@@ -229,6 +229,8 @@ mod index_mut;
 mod into;
 #[cfg(feature = "into_iterator")]
 mod into_iterator;
+#[cfg(feature = "is_variant")]
+mod is_variant;
 #[cfg(feature = "mul_assign")]
 mod mul_assign_like;
 #[cfg(any(feature = "mul", feature = "mul_assign"))]
@@ -245,6 +247,8 @@ mod parsing;
 mod sum_like;
 #[cfg(feature = "try_into")]
 mod try_into;
+#[cfg(feature = "unwrap")]
+mod unwrap;
 
 
 
@@ -406,3 +410,13 @@ create_derive!(
 
 create_derive!("as_ref", as_ref, AsRef, as_ref_derive, as_ref);
 create_derive!("as_mut", as_mut, AsMut, as_mut_derive, as_mut);
+
+create_derive!(
+    "is_variant",
+    is_variant,
+    IsVariant,
+    is_variant_derive,
+    is_variant
+);
+
+create_derive!("unwrap", unwrap, Unwrap, unwrap_derive, unwrap);
