@@ -1228,14 +1228,17 @@ bool ChromeTooltipListener::WebProgressShowedTooltip(
 
 void ChromeTooltipListener::sTooltipCallback(nsITimer* aTimer,
                                              void* aChromeTooltipListener) {
-  auto self = static_cast<ChromeTooltipListener*>(aChromeTooltipListener);
-  if (self && self->mPossibleTooltipNode) {
-    
-    auto cleanup = MakeScopeExit([&] { self->mPossibleTooltipNode = nullptr; });
-    if (!self->mPossibleTooltipNode->IsInComposedDoc()) {
-      return;
-    }
-    
+  auto* self = static_cast<ChromeTooltipListener*>(aChromeTooltipListener);
+  if (!self || !self->mPossibleTooltipNode) {
+    return;
+  }
+  
+  auto cleanup = MakeScopeExit([&] { self->mPossibleTooltipNode = nullptr; });
+  if (!self->mPossibleTooltipNode->IsInComposedDoc()) {
+    return;
+  }
+  
+  {
     Document* doc = self->mPossibleTooltipNode->OwnerDoc();
     while (doc) {
       if (!doc->IsCurrentActiveDocument()) {
@@ -1243,53 +1246,34 @@ void ChromeTooltipListener::sTooltipCallback(nsITimer* aTimer,
       }
       doc = doc->GetInProcessParentDocument();
     }
+  }
 
-    
-    
-    
-    
-    
-    
-    nsCOMPtr<nsIDocShell> docShell =
-        do_GetInterface(static_cast<nsIWebBrowser*>(self->mWebBrowser));
-    RefPtr<PresShell> presShell = docShell ? docShell->GetPresShell() : nullptr;
+  nsCOMPtr<nsIDocShell> docShell =
+      do_GetInterface(static_cast<nsIWebBrowser*>(self->mWebBrowser));
+  if (!docShell || !docShell->GetBrowsingContext()->IsActive()) {
+    return;
+  }
 
-    nsIWidget* widget = nullptr;
-    if (presShell) {
-      nsViewManager* vm = presShell->GetViewManager();
-      if (vm) {
-        nsView* view = vm->GetRootView();
-        if (view) {
-          nsPoint offset;
-          widget = view->GetNearestWidget(&offset);
-        }
-      }
-    }
+  
+  
+  nsITooltipTextProvider* tooltipProvider = self->GetTooltipTextProvider();
+  if (!tooltipProvider) {
+    return;
+  }
+  nsString tooltipText;
+  nsString directionText;
+  bool textFound = false;
+  tooltipProvider->GetNodeText(self->mPossibleTooltipNode,
+                               getter_Copies(tooltipText),
+                               getter_Copies(directionText), &textFound);
 
-    if (!widget || !docShell || !docShell->GetBrowsingContext()->IsActive()) {
-      return;
-    }
-
+  if (textFound && (!self->mTooltipShownOnce ||
+                    tooltipText != self->mLastShownTooltipText)) {
     
-    
-    nsITooltipTextProvider* tooltipProvider = self->GetTooltipTextProvider();
-    if (tooltipProvider) {
-      nsString tooltipText;
-      nsString directionText;
-      bool textFound = false;
-      tooltipProvider->GetNodeText(self->mPossibleTooltipNode,
-                                   getter_Copies(tooltipText),
-                                   getter_Copies(directionText), &textFound);
-
-      if (textFound && (!self->mTooltipShownOnce ||
-                        tooltipText != self->mLastShownTooltipText)) {
-        
-        self->ShowTooltip(self->mMouseScreenX, self->mMouseScreenY, tooltipText,
-                          directionText);
-        self->mLastShownTooltipText = std::move(tooltipText);
-        self->mLastDocshell = do_GetWeakReference(
-            self->mPossibleTooltipNode->OwnerDoc()->GetDocShell());
-      }
-    }
+    self->ShowTooltip(self->mMouseScreenX, self->mMouseScreenY, tooltipText,
+                      directionText);
+    self->mLastShownTooltipText = std::move(tooltipText);
+    self->mLastDocshell = do_GetWeakReference(
+        self->mPossibleTooltipNode->OwnerDoc()->GetDocShell());
   }
 }
