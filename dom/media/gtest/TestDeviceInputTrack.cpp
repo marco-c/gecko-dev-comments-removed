@@ -435,7 +435,7 @@ TEST_F(TestDeviceInputTrack, NonNativeInputTrackData) {
   mGraph->RemoveTrackGraphThread(track);
 }
 
-TEST_F(TestDeviceInputTrack, DeviceChangedCallback) {
+TEST_F(TestDeviceInputTrack, NonNativeDeviceChangedCallback) {
   MockCubeb* cubeb = new MockCubeb();
   CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
 
@@ -493,7 +493,7 @@ TEST_F(TestDeviceInputTrack, DeviceChangedCallback) {
   mGraph->RemoveTrackGraphThread(track);
 }
 
-TEST_F(TestDeviceInputTrack, ErrorCallback) {
+TEST_F(TestDeviceInputTrack, NonNativeErrorCallback) {
   MockCubeb* cubeb = new MockCubeb();
   CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
 
