@@ -14,8 +14,7 @@ template <typename T>
 struct ParamTraits;
 }  
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 class BrowsingContext;
 class ContentParent;
 class BrowserParent;
@@ -43,7 +42,6 @@ class IdType {
 
 using TabId = IdType<BrowserParent>;
 using ContentParentId = IdType<ContentParent>;
-}  
 }  
 
 namespace IPC {

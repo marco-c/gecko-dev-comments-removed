@@ -14,8 +14,7 @@
 #include "mozilla/StaticPtr.h"
 #include "nsIDOMProcessParent.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 class PWindowGlobalParent;
 class PWindowGlobalChild;
 class InProcessChild;
@@ -70,7 +69,6 @@ class InProcessParent final : public nsIDOMProcessParent,
   nsRefPtrHashtable<nsCStringHashKey, JSProcessActorParent> mProcessActors;
 };
 
-}  
 }  
 
 #endif  

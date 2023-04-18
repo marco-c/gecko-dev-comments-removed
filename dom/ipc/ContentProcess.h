@@ -15,8 +15,7 @@
 #  include "mozilla/mscom/ProcessRuntime.h"
 #endif
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -47,7 +46,6 @@ class ContentProcess : public mozilla::ipc::ProcessChild {
   const ContentProcess& operator=(const ContentProcess&) = delete;
 };
 
-}  
 }  
 
 #endif  

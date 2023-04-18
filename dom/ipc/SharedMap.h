@@ -20,8 +20,7 @@
 
 class nsIGlobalObject;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class ContentParent;
 
@@ -353,7 +352,6 @@ class WritableSharedMap final : public SharedMap {
   nsresult KeyChanged(const nsACString& aName);
 };
 
-}  
 }  
 }  
 

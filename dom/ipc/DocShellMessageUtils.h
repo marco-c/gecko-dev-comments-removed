@@ -13,8 +13,7 @@
 #include "nsIContentViewer.h"
 #include "mozilla/ScrollbarPreferences.h"
 
-namespace mozilla {
-namespace ipc {
+namespace mozilla::ipc {
 
 template <>
 struct IPDLParamTraits<nsDocShellLoadState*> {
@@ -24,7 +23,6 @@ struct IPDLParamTraits<nsDocShellLoadState*> {
                    RefPtr<nsDocShellLoadState>* aResult);
 };
 
-}  
 }  
 
 namespace IPC {

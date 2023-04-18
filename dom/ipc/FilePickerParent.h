@@ -16,8 +16,7 @@
 
 class nsIFile;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class FilePickerParent : public PFilePickerParent {
  public:
@@ -91,7 +90,6 @@ class FilePickerParent : public PFilePickerParent {
   int16_t mResult;
 };
 
-}  
 }  
 
 #endif  

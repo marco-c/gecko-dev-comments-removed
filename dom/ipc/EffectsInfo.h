@@ -9,8 +9,7 @@
 
 #include "nsRect.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -67,7 +66,6 @@ class EffectsInfo {
         mTransformToAncestorScale(aTransformToAncestorScale) {}
 };
 
-}  
 }  
 
 #endif  

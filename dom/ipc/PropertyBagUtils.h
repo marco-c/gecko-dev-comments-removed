@@ -11,8 +11,7 @@
 #include "nsIPropertyBag2.h"
 #include "nsIVariant.h"
 
-namespace mozilla {
-namespace ipc {
+namespace mozilla::ipc {
 
 
 
@@ -34,7 +33,6 @@ struct IPDLParamTraits<nsIPropertyBag2*> {
                    RefPtr<nsIPropertyBag2>* aResult);
 };
 
-}  
 }  
 
 #endif  

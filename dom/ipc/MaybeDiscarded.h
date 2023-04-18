@@ -9,8 +9,7 @@
 
 #include "mozilla/RefPtr.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -129,7 +128,6 @@ class MaybeDiscarded {
   RefPtr<T> mPtr;
 };
 
-}  
 }  
 
 #endif  

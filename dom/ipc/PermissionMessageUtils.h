@@ -35,8 +35,7 @@ class Principal {
 
 }  
 
-namespace mozilla {
-namespace ipc {
+namespace mozilla::ipc {
 
 template <>
 struct IPDLParamTraits<nsIPrincipal*> {
@@ -70,7 +69,6 @@ struct IPDLParamTraits<IPC::Principal> {
   }
 };
 
-}  
 }  
 
 #endif  

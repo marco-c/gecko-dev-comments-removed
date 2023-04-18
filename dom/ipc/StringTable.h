@@ -19,9 +19,7 @@
 
 
 
-namespace mozilla {
-namespace dom {
-namespace ipc {
+namespace mozilla::dom::ipc {
 
 
 
@@ -113,8 +111,6 @@ class StringTableBuilder {
   uint32_t mSize = 0;
 };
 
-}  
-}  
 }  
 
 #endif
