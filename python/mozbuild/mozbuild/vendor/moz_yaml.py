@@ -115,10 +115,6 @@ updatebot:
   # Bugzilla email address for a maintainer of the library, used for needinfos
   maintainer-bz: tom@mozilla.com
 
-  # Type of git reference (commit, tag) to track updates from.
-  # If omitted, will default to tracking commits.
-  tracking: commit
-
   # The tasks that Updatebot can run. Only one of each task is currently permitted
   # optional
   tasks:
@@ -148,6 +144,10 @@ vendoring:
   # Type of hosting for the upstream repository
   # Valid values are 'gitlab', 'github', googlesource
   source-hosting: gitlab
+
+  # Type of git reference (commit, tag) to track updates from.
+  # If omitted, will default to tracking commits.
+  tracking: commit
 
   # Base directory of the location where the source files will live in-tree.
   # If omitted, will default to the location the moz.yaml file is in.
@@ -372,7 +372,6 @@ def _schema_1():
             "updatebot": {
                 Required("maintainer-phab"): All(str, Length(min=1)),
                 Required("maintainer-bz"): All(str, Length(min=1)),
-                "tracking": All(str, Length(min=1)),
                 "tasks": All(
                     UpdatebotTasks(),
                     [
@@ -403,6 +402,7 @@ def _schema_1():
                     Length(min=1),
                     In(VALID_SOURCE_HOSTS, msg="Unsupported Source Hosting"),
                 ),
+                "tracking": All(str, Length(min=1)),
                 "skip-vendoring-steps": Unique([str]),
                 "vendor-directory": All(str, Length(min=1)),
                 "patches": Unique([str]),
@@ -469,18 +469,21 @@ def _schema_1_additional(filename, manifest, require_license_file=True):
         raise ValueError('"vendoring" requires an "origin"')
 
     
-    
-    if "updatebot" in manifest and "tasks" in manifest["updatebot"]:
-        if "tracking" not in manifest["updatebot"]:
-            manifest["updatebot"]["tracking"] = "commit"
+    if "vendoring" in manifest:
+        if "tracking" not in manifest["vendoring"]:
+            manifest["vendoring"]["tracking"] = "commit"
         if (
-            manifest["updatebot"]["tracking"] != "commit"
-            and manifest["updatebot"]["tracking"] != "tag"
+            manifest["vendoring"]["tracking"] != "commit"
+            and manifest["vendoring"]["tracking"] != "tag"
         ):
             raise ValueError(
                 "Only commit or tag is supported for git references to track, %s was given."
-                % manifest["updatebot"]["tracking"]
+                % manifest["vendoring"]["tracking"]
             )
+
+    
+    
+    if "updatebot" in manifest and "tasks" in manifest["updatebot"]:
         if "vendoring" not in manifest or "url" not in manifest["vendoring"]:
             raise ValueError(
                 "If Updatebot tasks are specified, a vendoring url must be included."

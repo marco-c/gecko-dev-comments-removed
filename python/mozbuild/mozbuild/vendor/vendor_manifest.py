@@ -36,8 +36,8 @@ class VendorManifest(MozbuildObject):
 
         
         
-        if "updatebot" in self.manifest:
-            ref_type = self.manifest["updatebot"]["tracking"]
+        if "vendoring" in self.manifest:
+            ref_type = self.manifest["vendoring"]["tracking"]
             if ref_type == "tag":
                 ref, timestamp = self.source_host.upstream_tag(revision)
             else:
