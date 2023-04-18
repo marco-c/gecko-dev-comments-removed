@@ -13,8 +13,6 @@
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/File.h"
-#include "mozilla/ipc/FileDescriptorSetChild.h"
-#include "mozilla/ipc/FileDescriptorSetParent.h"
 #include "mozilla/ipc/InputStreamUtils.h"
 #include "mozilla/net/SocketProcessChild.h"
 #include "mozilla/net/SocketProcessParent.h"
@@ -58,17 +56,7 @@ bool SerializeInputStreamWithFdsChild(nsIIPCSerializableInputStream* aStream,
     MOZ_CRASH("Serialize failed!");
   }
 
-  if (fds.IsEmpty()) {
-    aValue.optionalFds() = void_t();
-  } else {
-    PFileDescriptorSetChild* fdSet =
-        aManager->SendPFileDescriptorSetConstructor(fds[0]);
-    for (uint32_t i = 1; i < fds.Length(); ++i) {
-      Unused << fdSet->SendAddFileDescriptor(fds[i]);
-    }
-
-    aValue.optionalFds() = fdSet;
-  }
+  MOZ_ASSERT(fds.IsEmpty(), "argument is unused");
 
   return true;
 }
@@ -93,22 +81,7 @@ bool SerializeInputStreamWithFdsParent(nsIIPCSerializableInputStream* aStream,
     MOZ_CRASH("Serialize failed!");
   }
 
-  aValue.optionalFds() = void_t();
-  if (!fds.IsEmpty()) {
-    PFileDescriptorSetParent* fdSet =
-        aManager->SendPFileDescriptorSetConstructor(fds[0]);
-    for (uint32_t i = 1; i < fds.Length(); ++i) {
-      if (NS_WARN_IF(!fdSet->SendAddFileDescriptor(fds[i]))) {
-        Unused << PFileDescriptorSetParent::Send__delete__(fdSet);
-        fdSet = nullptr;
-        break;
-      }
-    }
-
-    if (fdSet) {
-      aValue.optionalFds() = fdSet;
-    }
-  }
+  MOZ_ASSERT(fds.IsEmpty(), "argument is unused");
 
   return true;
 }
@@ -128,7 +101,6 @@ bool SerializeInputStream(nsIInputStream* aStream, IPCStream& aValue,
   }
 
   aValue.stream() = params;
-  aValue.optionalFds() = void_t();
 
   return true;
 }
@@ -177,7 +149,6 @@ bool SerializeLazyInputStream(nsIInputStream* aStream, IPCStream& aValue,
   }
 
   aValue.stream() = RemoteLazyInputStreamParams(actor);
-  aValue.optionalFds() = void_t();
 
   return true;
 }
@@ -252,54 +223,6 @@ bool SerializeInputStreamParent(nsIInputStream* aStream, M* aManager,
                               aDelayedStart);
 }
 
-void ActivateAndCleanupIPCStream(IPCStream& aValue, bool aConsumedByIPC,
-                                 bool aDelayedStart) {
-  
-  if (aValue.optionalFds().type() ==
-      OptionalFileDescriptorSet::TPFileDescriptorSetChild) {
-    AutoTArray<FileDescriptor, 4> fds;
-
-    auto fdSetActor = static_cast<FileDescriptorSetChild*>(
-        aValue.optionalFds().get_PFileDescriptorSetChild());
-    MOZ_ASSERT(fdSetActor);
-
-    
-    
-    
-    fdSetActor->ForgetFileDescriptors(fds);
-
-    if (!aConsumedByIPC) {
-      Unused << FileDescriptorSetChild::Send__delete__(fdSetActor);
-    }
-
-  } else if (aValue.optionalFds().type() ==
-             OptionalFileDescriptorSet::TPFileDescriptorSetParent) {
-    AutoTArray<FileDescriptor, 4> fds;
-
-    auto fdSetActor = static_cast<FileDescriptorSetParent*>(
-        aValue.optionalFds().get_PFileDescriptorSetParent());
-    MOZ_ASSERT(fdSetActor);
-
-    
-    
-    
-    fdSetActor->ForgetFileDescriptors(fds);
-
-    if (!aConsumedByIPC) {
-      Unused << FileDescriptorSetParent::Send__delete__(fdSetActor);
-    }
-  }
-}
-
-void ActivateAndCleanupIPCStream(Maybe<IPCStream>& aValue, bool aConsumedByIPC,
-                                 bool aDelayedStart) {
-  if (aValue.isNothing()) {
-    return;
-  }
-
-  ActivateAndCleanupIPCStream(aValue.ref(), aConsumedByIPC, aDelayedStart);
-}
-
 
 
 bool NormalizeOptionalValue(nsIInputStream* aStream, IPCStream* aValue,
@@ -321,32 +244,7 @@ bool NormalizeOptionalValue(nsIInputStream* aStream, IPCStream* aValue,
 }  
 
 already_AddRefed<nsIInputStream> DeserializeIPCStream(const IPCStream& aValue) {
-  AutoTArray<FileDescriptor, 4> fds;
-  if (aValue.optionalFds().type() ==
-      OptionalFileDescriptorSet::TPFileDescriptorSetParent) {
-    auto fdSetActor = static_cast<FileDescriptorSetParent*>(
-        aValue.optionalFds().get_PFileDescriptorSetParent());
-    MOZ_ASSERT(fdSetActor);
-
-    fdSetActor->ForgetFileDescriptors(fds);
-    MOZ_ASSERT(!fds.IsEmpty());
-
-    if (!FileDescriptorSetParent::Send__delete__(fdSetActor)) {
-      
-      NS_WARNING("Failed to delete fd set actor.");
-    }
-  } else if (aValue.optionalFds().type() ==
-             OptionalFileDescriptorSet::TPFileDescriptorSetChild) {
-    auto fdSetActor = static_cast<FileDescriptorSetChild*>(
-        aValue.optionalFds().get_PFileDescriptorSetChild());
-    MOZ_ASSERT(fdSetActor);
-
-    fdSetActor->ForgetFileDescriptors(fds);
-    MOZ_ASSERT(!fds.IsEmpty());
-
-    Unused << FileDescriptorSetChild::Send__delete__(fdSetActor);
-  }
-
+  nsTArray<FileDescriptor> fds;  
   return InputStreamHelper::DeserializeInputStream(aValue.stream(), fds);
 }
 
@@ -370,14 +268,7 @@ AutoIPCStream::AutoIPCStream(Maybe<IPCStream>& aTarget, bool aDelayedStart)
   mOptionalValue->reset();
 }
 
-AutoIPCStream::~AutoIPCStream() {
-  MOZ_ASSERT(mValue || mOptionalValue);
-  if (mValue && IsSet()) {
-    ActivateAndCleanupIPCStream(*mValue, mTaken, mDelayedStart);
-  } else {
-    ActivateAndCleanupIPCStream(*mOptionalValue, mTaken, mDelayedStart);
-  }
-}
+AutoIPCStream::~AutoIPCStream() { MOZ_ASSERT(mValue || mOptionalValue); }
 
 bool AutoIPCStream::Serialize(nsIInputStream* aStream,
                               dom::ContentChild* aManager) {
