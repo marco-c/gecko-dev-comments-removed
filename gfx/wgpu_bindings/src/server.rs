@@ -12,6 +12,19 @@ use wgc::{gfx_select, id};
 use std::{error::Error, os::raw::c_char, ptr, slice};
 use std::sync::atomic::{AtomicU32, Ordering};
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[repr(C)]
 pub struct ErrorBuffer {
     string: *mut c_char,
@@ -19,6 +32,16 @@ pub struct ErrorBuffer {
 }
 
 impl ErrorBuffer {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn init(&mut self, error: impl Error) {
         use std::fmt::Write;
 
