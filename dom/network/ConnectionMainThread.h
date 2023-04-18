@@ -18,8 +18,7 @@ namespace network {
 class ConnectionMainThread final : public Connection,
                                    public hal::NetworkObserver {
  public:
-  explicit ConnectionMainThread(nsPIDOMWindowInner* aWindow,
-                                bool aShouldResistFingerprinting);
+  explicit ConnectionMainThread(nsPIDOMWindowInner* aWindow);
 
   
   void Notify(const hal::NetworkInformation& aNetworkInfo) override;
