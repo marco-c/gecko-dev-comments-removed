@@ -583,6 +583,11 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
       
       MOZ_ASSERT(NS_IsMainThread());
 
+      if (!mVsyncRefreshDriverTimer) {
+        
+        return;
+      }
+
       
       InputTaskManager::Get()->SetInputHandlingStartTime(TimeStamp());
 
@@ -611,7 +616,7 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
       }
 
       if (StaticPrefs::layout_lower_priority_refresh_driver_during_load() &&
-          ShouldGiveNonVsyncTasksMoreTime() && mVsyncRefreshDriverTimer) {
+          ShouldGiveNonVsyncTasksMoreTime()) {
         nsPresContext* pctx =
             mVsyncRefreshDriverTimer->GetPresContextForOnlyRefreshDriver();
         if (pctx && pctx->HadContentfulPaint() && pctx->Document() &&
@@ -663,6 +668,11 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
     }
 
     void IdlePriorityNotify() {
+      if (!mVsyncRefreshDriverTimer) {
+        
+        return;
+      }
+
       if (mLastProcessedTick.IsNull() || mRecentVsync > mLastProcessedTick) {
         
         
@@ -712,6 +722,8 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
 
     void TickRefreshDriver(VsyncId aId, TimeStamp aVsyncTimestamp) {
       MOZ_ASSERT(NS_IsMainThread());
+      MOZ_RELEASE_ASSERT(mVsyncRefreshDriverTimer,
+                         "Do not call after a call to Shutdown()");
 
       RecordTelemetryProbes(aVsyncTimestamp);
       mLastTickStart = TimeStamp::Now();
@@ -731,51 +743,43 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
       bool shouldGiveNonVSyncTasksMoreTime = ShouldGiveNonVsyncTasksMoreTime();
 
       
+
+      double rate = mVsyncRefreshDriverTimer->GetTimerRate().ToMilliseconds();
+      TimeDuration gracePeriod = TimeDuration::FromMilliseconds(rate / 100.0f);
       
       
-      if (mVsyncRefreshDriverTimer) {
-        
+      timeForOutsideTick = gracePeriod;
 
-        double rate = mVsyncRefreshDriverTimer->GetTimerRate().ToMilliseconds();
-        TimeDuration gracePeriod =
-            TimeDuration::FromMilliseconds(rate / 100.0f);
-        
-        
-        timeForOutsideTick = gracePeriod;
-
-        if (!mLastTickEnd.IsNull() && shouldGiveNonVSyncTasksMoreTime &&
-            XRE_IsContentProcess() &&
-            
-            
-            
-            !mVsyncRefreshDriverTimer->IsAnyToplevelContentPageLoading()) {
+      if (!mLastTickEnd.IsNull() && shouldGiveNonVSyncTasksMoreTime &&
+          XRE_IsContentProcess() &&
           
           
           
-          timeForOutsideTick = TimeStamp::Now() - mLastTickEnd;
-          TimeDuration maxOutsideTick =
-              TimeDuration::FromMilliseconds(4 * rate);
-          if (timeForOutsideTick > maxOutsideTick) {
-            timeForOutsideTick = maxOutsideTick;
-          }
-
-          if (timeForOutsideTick > gracePeriod) {
-            
-            
-            
-            timeForOutsideTick = timeForOutsideTick - gracePeriod;
-          }
+          !mVsyncRefreshDriverTimer->IsAnyToplevelContentPageLoading()) {
+        
+        
+        
+        timeForOutsideTick = TimeStamp::Now() - mLastTickEnd;
+        TimeDuration maxOutsideTick = TimeDuration::FromMilliseconds(4 * rate);
+        if (timeForOutsideTick > maxOutsideTick) {
+          timeForOutsideTick = maxOutsideTick;
         }
 
-        RefPtr<VsyncRefreshDriverTimer> timer = mVsyncRefreshDriverTimer;
-        timer->RunRefreshDrivers(aId, aVsyncTimestamp);
-        
-
-        mLastIdleTaskCount =
-            TaskController::Get()->GetIdleTaskManager()->ProcessedTaskCount();
-        mLastRunOutOfMTTasksCount =
-            TaskController::Get()->RunOutOfMTTasksCount();
+        if (timeForOutsideTick > gracePeriod) {
+          
+          
+          
+          timeForOutsideTick = timeForOutsideTick - gracePeriod;
+        }
       }
+
+      RefPtr<VsyncRefreshDriverTimer> timer = mVsyncRefreshDriverTimer;
+      timer->RunRefreshDrivers(aId, aVsyncTimestamp);
+      
+
+      mLastIdleTaskCount =
+          TaskController::Get()->GetIdleTaskManager()->ProcessedTaskCount();
+      mLastRunOutOfMTTasksCount = TaskController::Get()->RunOutOfMTTasksCount();
 
       mLastTickEnd = TimeStamp::Now();
 
