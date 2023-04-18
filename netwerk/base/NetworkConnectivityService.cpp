@@ -2,12 +2,9 @@
 
 
 
-#include "DNSUtils.h"
 #include "NetworkConnectivityService.h"
-#include "mozilla/net/SocketProcessParent.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Services.h"
-#include "nsIOService.h"
 #include "xpcpublic.h"
 #include "nsSocketTransport2.h"
 #include "nsIHttpChannelInternal.h"
@@ -37,6 +34,10 @@ NetworkConnectivityService::NetworkConnectivityService()
 
 already_AddRefed<NetworkConnectivityService>
 NetworkConnectivityService::GetSingleton() {
+  if (!XRE_IsParentProcess()) {
+    return nullptr;
+  }
+
   if (gConnService) {
     return do_AddRef(gConnService);
   }
@@ -296,13 +297,6 @@ NetworkConnectivityService::RecheckDNS() {
     return NS_OK;
   }
 
-  if (nsIOService::UseSocketProcess()) {
-    SocketProcessParent* parent = SocketProcessParent::GetSingleton();
-    if (parent) {
-      Unused << parent->SendRecheckDNS();
-    }
-  }
-
   nsresult rv;
   nsCOMPtr<nsIDNSService> dns = do_GetService(NS_DNSSERVICE_CONTRACTID);
   OriginAttributes attrs;
@@ -371,8 +365,7 @@ NetworkConnectivityService::Observe(nsISupports* aSubject, const char* aTopic,
   return NS_OK;
 }
 
-already_AddRefed<nsIChannel> NetworkConnectivityService::SetupIPCheckChannel(
-    bool ipv4) {
+static inline already_AddRefed<nsIChannel> SetupIPCheckChannel(bool ipv4) {
   nsresult rv;
   nsAutoCString url;
 
@@ -388,43 +381,32 @@ already_AddRefed<nsIChannel> NetworkConnectivityService::SetupIPCheckChannel(
   NS_ENSURE_SUCCESS(rv, nullptr);
 
   nsCOMPtr<nsIChannel> channel;
-  if (XRE_IsSocketProcess()) {
-    rv = DNSUtils::CreateChannelHelper(uri, getter_AddRefs(channel));
-    if (NS_FAILED(rv)) {
-      return nullptr;
-    }
-    channel->SetLoadFlags(
-        nsIRequest::LOAD_BYPASS_CACHE |  
-        nsIRequest::INHIBIT_CACHING |    
-        nsIRequest::LOAD_ANONYMOUS);
-  } else {
-    rv = NS_NewChannel(
-        getter_AddRefs(channel), uri, nsContentUtils::GetSystemPrincipal(),
-        nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
-        nsIContentPolicy::TYPE_OTHER,
-        nullptr,  
-        nullptr,  
-        nullptr,  
-        nullptr,
-        nsIRequest::LOAD_BYPASS_CACHE |    
-            nsIRequest::INHIBIT_CACHING |  
-            nsIRequest::LOAD_ANONYMOUS);   
-    NS_ENSURE_SUCCESS(rv, nullptr);
-
-    {
-      
-      nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
-      uint32_t httpsOnlyStatus = loadInfo->GetHttpsOnlyStatus();
-      httpsOnlyStatus |= nsILoadInfo::HTTPS_ONLY_EXEMPT;
-      loadInfo->SetHttpsOnlyStatus(httpsOnlyStatus);
-
-      
-      loadInfo->SetAllowDeprecatedSystemRequests(true);
-    }
-  }
+  rv = NS_NewChannel(
+      getter_AddRefs(channel), uri, nsContentUtils::GetSystemPrincipal(),
+      nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
+      nsIContentPolicy::TYPE_OTHER,
+      nullptr,  
+      nullptr,  
+      nullptr,  
+      nullptr,
+      nsIRequest::LOAD_BYPASS_CACHE |    
+          nsIRequest::INHIBIT_CACHING |  
+          nsIRequest::LOAD_ANONYMOUS);   
+  NS_ENSURE_SUCCESS(rv, nullptr);
 
   rv = channel->SetTRRMode(nsIRequest::TRR_DISABLED_MODE);
   NS_ENSURE_SUCCESS(rv, nullptr);
+
+  {
+    
+    nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
+    uint32_t httpsOnlyStatus = loadInfo->GetHttpsOnlyStatus();
+    httpsOnlyStatus |= nsILoadInfo::HTTPS_ONLY_EXEMPT;
+    loadInfo->SetHttpsOnlyStatus(httpsOnlyStatus);
+
+    
+    loadInfo->SetAllowDeprecatedSystemRequests(true);
+  }
 
   nsCOMPtr<nsIHttpChannelInternal> internalChan = do_QueryInterface(channel);
   NS_ENSURE_TRUE(internalChan, nullptr);
@@ -444,13 +426,6 @@ NetworkConnectivityService::RecheckIPConnectivity() {
       Preferences::GetBool("network.connectivity-service.enabled", false);
   if (!enabled) {
     return NS_OK;
-  }
-
-  if (nsIOService::UseSocketProcess()) {
-    SocketProcessParent* parent = SocketProcessParent::GetSingleton();
-    if (parent) {
-      Unused << parent->SendRecheckIPConnectivity();
-    }
   }
 
   if (xpc::AreNonLocalConnectionsDisabled() &&
