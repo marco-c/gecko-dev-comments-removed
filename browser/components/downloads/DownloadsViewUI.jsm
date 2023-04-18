@@ -256,12 +256,24 @@ var DownloadsViewUI = {
     );
 
     
-    
-    
+
+
+
+
+
+
+
+
+
+
+
+
+
     let shouldNotRememberChoice =
-      download.contentType === "application/octet-stream" ||
-      download.contentType === "application/x-msdownload" ||
-      (download.contentType === "text/plain" &&
+      !mimeInfo?.type ||
+      mimeInfo.type === "application/octet-stream" ||
+      mimeInfo.type === "application/x-msdownload" ||
+      (mimeInfo.type === "text/plain" &&
         gReputationService.isBinary(download.target.path));
 
     if (improvementsOn && !canViewInternally) {
