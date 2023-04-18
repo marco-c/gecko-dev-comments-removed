@@ -41,6 +41,48 @@ JSObject* TransformStream::WrapObject(JSContext* aCx,
 }
 
 
+void TransformStreamErrorWritableAndUnblockWrite(JSContext* aCx,
+                                                 TransformStream* aStream,
+                                                 JS::HandleValue aError,
+                                                 ErrorResult& aRv) {
+  
+  
+  aStream->Controller()->SetAlgorithms(nullptr);
+
+  
+  
+  
+  
+  WritableStreamDefaultControllerErrorIfNeeded(
+      aCx, MOZ_KnownLive(aStream->Writable()->Controller()), aError, aRv);
+  if (aRv.Failed()) {
+    return;
+  }
+
+  
+  
+  if (aStream->Backpressure()) {
+    TransformStreamSetBackpressure(aStream, false, aRv);
+  }
+}
+
+
+void TransformStreamError(JSContext* aCx, TransformStream* aStream,
+                          JS::HandleValue aError, ErrorResult& aRv) {
+  
+  
+  
+  ReadableStreamDefaultControllerError(
+      aCx, aStream->Readable()->Controller()->AsDefault(), aError, aRv);
+  if (aRv.Failed()) {
+    return;
+  }
+
+  
+  TransformStreamErrorWritableAndUnblockWrite(aCx, aStream, aError, aRv);
+}
+
+
 class TransformStreamUnderlyingSinkAlgorithms final
     : public UnderlyingSinkAlgorithmsBase {
  public:
@@ -178,9 +220,8 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(
 NS_INTERFACE_MAP_END_INHERITING(TransformStreamUnderlyingSourceAlgorithms)
 
 
-static void TransformStreamSetBackpressure(TransformStream* aStream,
-                                           bool aBackpressure,
-                                           ErrorResult& aRv) {
+void TransformStreamSetBackpressure(TransformStream* aStream,
+                                    bool aBackpressure, ErrorResult& aRv) {
   
   MOZ_ASSERT(aStream->Backpressure() != aBackpressure);
 
@@ -238,6 +279,11 @@ void TransformStream::Initialize(JSContext* aCx, Promise* aStartPromise,
 
   
   
+  
+  
+  
+  
+  mBackpressure = false;
   mBackpressureChangePromise = nullptr;
 
   

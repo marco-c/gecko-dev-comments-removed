@@ -106,13 +106,11 @@ static bool ReadableStreamDefaultControllerCanCloseOrEnqueue(
          state == ReadableStream::ReaderState::Readable;
 }
 
-enum class CloseOrEnqueue { Close, Enqueue };
 
 
 
 
-
-static bool ReadableStreamDefaultControllerCanCloseOrEnqueueAndThrow(
+bool ReadableStreamDefaultControllerCanCloseOrEnqueueAndThrow(
     ReadableStreamDefaultController* aController,
     CloseOrEnqueue aCloseOrEnqueue, ErrorResult& aRv) {
   
@@ -120,9 +118,9 @@ static bool ReadableStreamDefaultControllerCanCloseOrEnqueueAndThrow(
 
   nsCString prefix;
   if (aCloseOrEnqueue == CloseOrEnqueue::Close) {
-    prefix = "Cannot close a readable stream that "_ns;
+    prefix = "Cannot close a stream that "_ns;
   } else {
-    prefix = "Cannot enqueue into a readable stream that "_ns;
+    prefix = "Cannot enqueue into a stream that "_ns;
   }
 
   switch (state) {
@@ -348,7 +346,7 @@ void ReadableStreamDefaultController::Error(JSContext* aCx,
 }
 
 
-static bool ReadableStreamDefaultControllerShouldCallPull(
+bool ReadableStreamDefaultControllerShouldCallPull(
     ReadableStreamDefaultController* aController) {
   
   ReadableStream* stream = aController->GetStream();

@@ -138,7 +138,7 @@ void SetUpWritableStreamDefaultController(
   MOZ_ASSERT(aController->Stream() == aStream);
 
   
-  aStream->SetController(aController);
+  aStream->SetController(*aController);
 
   
   ResetQueue(aController);

@@ -26,8 +26,9 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(TransformStreamDefaultController)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
-void TransformStreamDefaultController::SetStream(TransformStream* aStream) {
-  mStream = aStream;
+void TransformStreamDefaultController::SetStream(TransformStream& aStream) {
+  MOZ_ASSERT(!mStream);
+  mStream = &aStream;
 }
 
 void TransformStreamDefaultController::SetAlgorithms(
@@ -62,20 +63,123 @@ Nullable<double> TransformStreamDefaultController::GetDesiredSize() const {
   return ReadableStreamDefaultControllerGetDesiredSize(readableController);
 }
 
+
+
+
+static bool ReadableStreamDefaultControllerHasBackpressure(
+    ReadableStreamDefaultController* aController) {
+  
+  
+  
+  return !ReadableStreamDefaultControllerShouldCallPull(aController);
+}
+
 void TransformStreamDefaultController::Enqueue(JSContext* aCx,
                                                JS::Handle<JS::Value> aChunk,
                                                ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+  
+
+  
+  
+
+  
+  RefPtr<TransformStream> stream = mStream;
+
+  
+  RefPtr<ReadableStreamDefaultController> readableController =
+      stream->Readable()->Controller()->AsDefault();
+
+  
+  
+  
+  if (!ReadableStreamDefaultControllerCanCloseOrEnqueueAndThrow(
+          readableController, CloseOrEnqueue::Enqueue, aRv)) {
+    return;
+  }
+
+  
+  
+  ErrorResult rv;
+  ReadableStreamDefaultControllerEnqueue(aCx, readableController, aChunk, rv);
+
+  
+  if (rv.MaybeSetPendingException(aCx)) {
+    JS::Rooted<JS::Value> error(aCx);
+    if (!JS_GetPendingException(aCx, &error)) {
+      
+      aRv.StealExceptionFromJSContext(aCx);
+      return;
+    }
+    JS_ClearPendingException(aCx);
+
+    
+    
+    TransformStreamErrorWritableAndUnblockWrite(aCx, stream, error, aRv);
+
+    
+    JS::RootedValue storedError(aCx, stream->Readable()->StoredError());
+    aRv.MightThrowJSException();
+    aRv.ThrowJSException(aCx, storedError);
+    return;
+  }
+
+  
+  
+  bool backpressure =
+      ReadableStreamDefaultControllerHasBackpressure(readableController);
+
+  
+  if (backpressure != stream->Backpressure()) {
+    
+    MOZ_ASSERT(backpressure);
+
+    
+    TransformStreamSetBackpressure(stream, true, aRv);
+  }
 }
+
 
 void TransformStreamDefaultController::Error(JSContext* aCx,
                                              JS::Handle<JS::Value> aError,
                                              ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+  
+
+  
+  
+
+  
+  TransformStreamError(aCx, mStream, aError, aRv);
 }
 
-void TransformStreamDefaultController::Terminate(ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+
+
+void TransformStreamDefaultController::Terminate(JSContext* aCx,
+                                                 ErrorResult& aRv) {
+  
+
+  
+  
+
+  
+  RefPtr<TransformStream> stream = mStream;
+
+  
+  RefPtr<ReadableStreamDefaultController> readableController =
+      stream->Readable()->Controller()->AsDefault();
+
+  
+  ReadableStreamDefaultControllerClose(aCx, readableController, aRv);
+
+  
+  
+  ErrorResult rv;
+  rv.ThrowTypeError("Terminating the stream");
+  JS::Rooted<JS::Value> error(aCx);
+  MOZ_ALWAYS_TRUE(ToJSValue(aCx, std::move(rv), &error));
+
+  
+  
+  TransformStreamErrorWritableAndUnblockWrite(aCx, stream, error, aRv);
 }
 
 
@@ -88,10 +192,10 @@ void SetUpTransformStreamDefaultController(
   MOZ_ASSERT(!aStream.Controller());
 
   
-  aController.SetStream(&aStream);
+  aController.SetStream(aStream);
 
   
-  aStream.SetController(&aController);
+  aStream.SetController(aController);
 
   
   
