@@ -18,6 +18,12 @@ add_task(async function checkCaptivePortalCertErrorUI() {
     "Checking that the alternate cert error UI is shown when we are behind a captive portal"
   );
 
+  
+  
+  
+  let secondWindow = await openWindowAndWaitForFocus();
+  await SimpleTest.promiseFocus(window);
+
   await portalDetected();
   let tab = await openCaptivePortalErrorTab();
   let browser = tab.linkedBrowser;
@@ -51,6 +57,9 @@ add_task(async function checkCaptivePortalCertErrorUI() {
   );
 
   
+  ensureNoPortalTab(secondWindow);
+
+  
   await BrowserTestUtils.switchTab(gBrowser, tab);
   
   
@@ -66,6 +75,9 @@ add_task(async function checkCaptivePortalCertErrorUI() {
   info("Opening captive portal login page");
   let portalTab2 = await portalTabPromise;
   is(portalTab2, portalTab, "The existing portal tab should be focused.");
+
+  
+  ensureNoPortalTab(secondWindow);
 
   let portalTabClosing = BrowserTestUtils.waitForTabClosing(portalTab);
   let errorTabReloaded = BrowserTestUtils.waitForErrorPage(browser);
@@ -86,6 +98,7 @@ add_task(async function checkCaptivePortalCertErrorUI() {
   });
 
   await BrowserTestUtils.removeTab(tab);
+  await BrowserTestUtils.closeWindow(secondWindow);
 });
 
 add_task(async function testCaptivePortalAdvancedPanel() {
