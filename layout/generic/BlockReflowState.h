@@ -109,6 +109,14 @@ class BlockReflowState {
 
 
 
+
+
+
+
+
+
+
+
   nsFlowAreaRect GetFloatAvailableSpace() const {
     return GetFloatAvailableSpace(mBCoord);
   }

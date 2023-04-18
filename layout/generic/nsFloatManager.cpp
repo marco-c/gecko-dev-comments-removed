@@ -250,6 +250,14 @@ nsFlowAreaRect nsFloatManager::GetFlowArea(
       (haveFloats ? nsFlowAreaRectFlags::HasFloats
                   : nsFlowAreaRectFlags::NoFlags) |
       (mayWiden ? nsFlowAreaRectFlags::MayWiden : nsFlowAreaRectFlags::NoFlags);
+  
+  
+  
+  
+  
+  if (lineRight - lineLeft < 0) {
+    flags |= nsFlowAreaRectFlags::ISizeIsActuallyNegative;
+  }
 
   return nsFlowAreaRect(aWM, inlineStart, blockStart - mBlockStart,
                         lineRight - lineLeft, blockSize, flags);

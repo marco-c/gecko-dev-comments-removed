@@ -274,6 +274,15 @@ bool BlockReflowState::FloatAvoidingBlockFitsInAvailSpace(
     
     return true;
   }
+
+  
+  
+  
+  
+  if (aFloatAvailableSpace.ISizeIsActuallyNegative()) {
+    return false;
+  }
+
   WritingMode wm = mReflowInput.GetWritingMode();
   nsBlockFrame::FloatAvoidingISizeToClear replacedISize =
       nsBlockFrame::ISizeToClearPastFloats(*this, aFloatAvailableSpace.mRect,
