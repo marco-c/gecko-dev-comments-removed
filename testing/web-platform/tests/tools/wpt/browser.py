@@ -531,39 +531,42 @@ class ChromeChromiumBase(Browser):
         "Darwin": "Mac",
     }.get(uname[0])
 
-    def _get_latest_chromium_revision(self, architecture):
+    def _build_snapshots_url(self, revision, filename):
+        return ("https://storage.googleapis.com/chromium-browser-snapshots/"
+                f"{self._chromium_platform_string}/{revision}/{filename}")
+
+    def _get_latest_chromium_revision(self):
         """Queries Chromium Snapshots and returns the latest Chromium revision number
         for the current platform.
         """
         revision_url = ("https://storage.googleapis.com/chromium-browser-snapshots/"
-                        f"{architecture}/LAST_CHANGE")
+                        f"{self._chromium_platform_string}/LAST_CHANGE")
         return get(revision_url).text.strip()
 
-    def _get_chromium_download_url(self, version=None):
+    def _get_chromium_revision(self, filename, version=None):
         """Format a Chromium Snapshots URL to download a browser component."""
-        url_path = "https://storage.googleapis.com/chromium-browser-snapshots/"
-        architecture = self._chromium_platform_string
 
         
         if version is not None:
             
             revision = self._get_base_revision_from_version(version)
             if revision is not None:
-                url = f"{url_path}{architecture}/{revision}/"
+                
+                url = self._build_snapshots_url(revision, filename)
                 try:
                     
                     get(url)
-                    return url
+                    return revision
                 except requests.RequestException:
                     self.logger.warning("404: Unsuccessful attempt to download file "
                                         f"based on version. {url}")
         
         
-        revision = self._get_latest_chromium_revision(architecture)
+        revision = self._get_latest_chromium_revision()
 
         
         
-        return f"{url_path}{architecture}/{revision}/"
+        return revision
 
     def _get_base_revision_from_version(self, version):
         """Get a Chromium revision number that is associated with a given version."""
@@ -644,7 +647,9 @@ class ChromeChromiumBase(Browser):
             
             
             if self.platform == "Linux":
-                url = self._get_chromium_download_url(chrome_version) + "mojojs.zip"
+                filename = "mojojs.zip"
+                revision = self._get_chromium_revision(filename, chrome_version)
+                url = self._build_snapshots_url(revision, filename)
             else:
                 self.logger.error("A valid MojoJS version cannot be found "
                                   f"for browser binary version {chrome_version}.")
@@ -789,25 +794,26 @@ class Chromium(ChromeChromiumBase):
         
         
         
-        if hasattr(self, "last_url_used") and self.last_url_used is not None:
-            return f"{self.last_url_used}{filename}"
-
-        return f"{self._get_chromium_download_url(version)}{filename}"
+        if hasattr(self, "last_revision_used") and self.last_revision_used is not None:
+            return self._build_snapshots_url(self.last_revision_used, filename)
+        revision = self._get_chromium_revision(filename, version)
+        return self._build_snapshots_url(revision, filename)
 
     def download(self, dest=None, channel=None, rename=None, version=None):
         if dest is None:
             dest = self._get_browser_binary_dir(None, channel)
 
         filename = f"{self._chromium_package_name}.zip"
-        url = self._get_chromium_download_url(version)
-        self.logger.info(f"Downloading Chromium from {url}{filename}")
-        resp = get(f"{url}{filename}")
+        revision = self._get_chromium_revision(filename, version)
+        url = self._build_snapshots_url(revision, filename)
+        self.logger.info(f"Downloading Chromium from {url}")
+        resp = get(url)
         installer_path = os.path.join(dest, filename)
         with open(installer_path, "wb") as f:
             f.write(resp.content)
 
         
-        self.last_url_used = url
+        self.last_revision_used = revision
         return installer_path
 
     def find_binary(self, venv_path=None, channel=None):
@@ -880,7 +886,8 @@ class Chrome(ChromeChromiumBase):
                 
                 
                 
-                return f"{self._get_chromium_download_url(version)}{filename}"
+                revision = self._get_chromium_revision(filename, version)
+                return self._build_snapshots_url(revision, filename)
         return f"https://chromedriver.storage.googleapis.com/{latest}/{filename}"
 
     def download(self, dest=None, channel=None, rename=None):
