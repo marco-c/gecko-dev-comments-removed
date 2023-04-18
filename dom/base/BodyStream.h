@@ -93,7 +93,8 @@ class BodyStreamHolder : public nsISupports {
 
 class BodyStream final : public nsIInputStreamCallback,
                          public nsIObserver,
-                         public nsSupportsWeakReference
+                         public nsSupportsWeakReference,
+                         public SingleWriterLockOwner
 #ifndef MOZ_DOM_STREAMS
     ,
                          private JS::ReadableStreamUnderlyingSource
@@ -115,6 +116,14 @@ class BodyStream final : public nsIInputStreamCallback,
 
   void Close();
 
+  bool OnWritingThread() const override {
+#ifdef MOZ_THREAD_SAFETY_OWNERSHIP_CHECKS_SUPPORTED
+    return _mOwningThread.IsCurrentThread();
+#else
+    return true;
+#endif
+  }
+
 #ifdef MOZ_DOM_STREAMS
   static nsresult RetrieveInputStream(BodyStreamHolder* aStream,
                                       nsIInputStream** aInputStream);
@@ -130,9 +139,9 @@ class BodyStream final : public nsIInputStreamCallback,
   ~BodyStream() = default;
 
 #ifdef DEBUG
-  void AssertIsOnOwningThread();
+  void AssertIsOnOwningThread() const;
 #else
-  void AssertIsOnOwningThread() {}
+  void AssertIsOnOwningThread() const {}
 #endif
 
 #ifdef MOZ_DOM_STREAMS
@@ -161,13 +170,14 @@ class BodyStream final : public nsIInputStreamCallback,
       JSContext* aCx, ReadableStream* aStream, uint64_t bytes,
       ErrorResult& aRv);
 
-  void ErrorPropagation(JSContext* aCx, const MutexAutoLock& aProofOfLock,
-                        ReadableStream* aStream, nsresult aRv);
+  void ErrorPropagation(JSContext* aCx,
+                        const MutexSingleWriterAutoLock& aProofOfLock,
+                        ReadableStream* aStream, nsresult aRv) REQUIRES(mMutex);
 
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void CloseAndReleaseObjects(
-      JSContext* aCx, const MutexAutoLock& aProofOfLock,
-      ReadableStream* aStream);
+      JSContext* aCx, const MutexSingleWriterAutoLock& aProofOfLock,
+      ReadableStream* aStream) REQUIRES(mMutex);
 #else
   void requestData(JSContext* aCx, JS::HandleObject aStream,
                    size_t aDesiredSize) override;
@@ -177,25 +187,29 @@ class BodyStream final : public nsIInputStreamCallback,
                                   size_t* aBytesWritten) override;
 
   JS::Value cancel(JSContext* aCx, JS::HandleObject aStream,
-                   JS::HandleValue aReason) override;
+                   JS::HandleValue aReason) override REQUIRES(mMutex);
 
   void onClosed(JSContext* aCx, JS::HandleObject aStream) override;
 
   void onErrored(JSContext* aCx, JS::HandleObject aStream,
-                 JS::HandleValue aReason) override;
+                 JS::HandleValue aReason) override REQUIRES(mMutex);
 
   void finalize() override;
 
-  void ErrorPropagation(JSContext* aCx, const MutexAutoLock& aProofOfLock,
-                        JS::HandleObject aStream, nsresult aRv);
+  void ErrorPropagation(JSContext* aCx,
+                        const MutexSingleWriterAutoLock& aProofOfLock,
+                        JS::HandleObject aStream, nsresult aRv)
+      REQUIRES(mMutex);
 
-  void CloseAndReleaseObjects(JSContext* aCx, const MutexAutoLock& aProofOfLock,
-                              JS::HandleObject aStream);
+  void CloseAndReleaseObjects(JSContext* aCx,
+                              const MutexSingleWriterAutoLock& aProofOfLock,
+                              JS::HandleObject aStream) REQUIRES(mMutex);
 #endif
 
   class WorkerShutdown;
 
-  void ReleaseObjects(const MutexAutoLock& aProofOfLock);
+  void ReleaseObjects(const MutexSingleWriterAutoLock& aProofOfLock)
+      REQUIRES(mMutex);
 
   void ReleaseObjects();
 
@@ -227,13 +241,15 @@ class BodyStream final : public nsIInputStreamCallback,
   
   
   
-  Mutex mMutex MOZ_UNANNOTATED;
+  MutexSingleWriter mMutex;
 
   
-  State mState;
+  State mState GUARDED_BY(mMutex);  
 
+  
+  
   nsCOMPtr<nsIGlobalObject> mGlobal;
-  RefPtr<BodyStreamHolder> mStreamHolder;
+  RefPtr<BodyStreamHolder> mStreamHolder GUARDED_BY(mMutex);
   nsCOMPtr<nsIEventTarget> mOwningEventTarget;
 
   
