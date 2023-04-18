@@ -3040,21 +3040,19 @@ void gfxPlatform::ReInitFrameRate() {
     } else {
       gPlatform->mVsyncSource = gPlatform->CreateGlobalHardwareVsyncSource();
     }
-    
-    if (oldSource) {
-      oldSource->MoveListenersToNewSource(gPlatform->mVsyncSource);
-      oldSource->Shutdown();
-    }
 
     if (gPlatform->mVsyncDispatcher) {
       
-      
-      MOZ_RELEASE_ASSERT(gPlatform->mVsyncDispatcher ==
-                         gPlatform->mVsyncSource->GetVsyncDispatcher());
+      gPlatform->mVsyncDispatcher->SetVsyncSource(gPlatform->mVsyncSource);
     } else {
       
       gPlatform->mVsyncDispatcher =
-          gPlatform->mVsyncSource->GetVsyncDispatcher();
+          new VsyncDispatcher(gPlatform->mVsyncSource);
+    }
+
+    
+    if (oldSource) {
+      oldSource->Shutdown();
     }
   }
 }

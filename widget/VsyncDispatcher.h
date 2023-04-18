@@ -83,7 +83,6 @@ class CompositorVsyncDispatcher final : public VsyncObserver {
 
 
 
-
 class VsyncDispatcher final {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(VsyncDispatcher)
 
@@ -93,9 +92,14 @@ class VsyncDispatcher final {
   
   void NotifyVsync(const VsyncEvent& aVsync);
 
-  void MoveToSource(gfx::VsyncSource* aVsyncSource);
+  
+  
+  void SetVsyncSource(gfx::VsyncSource* aVsyncSource);
 
-  TimeDuration GetVsyncRate() { return mVsyncSource->GetVsyncRate(); }
+  
+  RefPtr<gfx::VsyncSource> GetCurrentVsyncSource();
+
+  TimeDuration GetVsyncRate();
 
   
   
@@ -116,22 +120,28 @@ class VsyncDispatcher final {
 
  private:
   virtual ~VsyncDispatcher();
+
+  
   void UpdateVsyncStatus();
-  bool NeedsVsync();
 
   
   void NotifyMainThreadObservers(VsyncEvent aEvent);
 
-  
-  
-  
-  gfx::VsyncSource* mVsyncSource;
-
   struct State {
+    explicit State(gfx::VsyncSource* aVsyncSource)
+        : mCurrentVsyncSource(aVsyncSource) {}
+    State(State&&) = default;
+    ~State() = default;
+
     nsTArray<RefPtr<VsyncObserver>> mObservers;
     nsTArray<RefPtr<VsyncObserver>> mMainThreadObservers;
     VsyncId mLastVsyncIdSentToMainThread;
     VsyncId mLastMainThreadProcessedVsyncId;
+
+    
+    RefPtr<gfx::VsyncSource> mCurrentVsyncSource;
+
+    bool mIsObservingVsync = false;
   };
 
   DataMutex<State> mState;
