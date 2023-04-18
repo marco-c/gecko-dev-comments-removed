@@ -417,7 +417,11 @@ RefPtr<GenericNonExclusivePromise> ScreenOrientation::LockDeviceOrientation(
 }
 
 void ScreenOrientation::Unlock(ErrorResult& aRv) {
-  RefPtr<Promise> p = LockInternal(hal::ScreenOrientation::None, aRv);
+  if (RefPtr<Promise> p = LockInternal(hal::ScreenOrientation::None, aRv)) {
+    
+    
+    MOZ_ALWAYS_TRUE(p->SetAnyPromiseIsHandled());
+  }
 }
 
 void ScreenOrientation::UnlockDeviceOrientation() {
