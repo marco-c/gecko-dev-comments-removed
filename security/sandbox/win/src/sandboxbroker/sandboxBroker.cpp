@@ -1331,7 +1331,8 @@ bool SandboxBroker::SetSecurityLevelForUtilityProcess(
                 sandbox::MITIGATION_DLL_SEARCH_ORDER
 
 
-#if defined(_M_X64)
+
+#if defined(_M_X64) && !defined(__MINGW64__)
                 | sandbox::MITIGATION_DYNAMIC_CODE_DISABLE
 #endif  
       ;
