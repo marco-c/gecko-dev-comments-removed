@@ -1234,13 +1234,10 @@ struct DefaultHasher<js::UnsafeBarePtr<T>> : js::UnsafeBarePtrHasher<T> {};
 
 namespace js {
 
-class DebugEnvironmentProxy;
-
 namespace jit {
 class JitCode;
 }  
 
-using WeakHeapPtrDebugEnvironmentProxy = WeakHeapPtr<DebugEnvironmentProxy*>;
 using WeakHeapPtrJitCode = WeakHeapPtr<jit::JitCode*>;
 using WeakHeapPtrSymbol = WeakHeapPtr<JS::Symbol*>;
 

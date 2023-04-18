@@ -1059,7 +1059,7 @@ class DebugEnvironments {
 
 
 
-  typedef HashMap<MissingEnvironmentKey, WeakHeapPtrDebugEnvironmentProxy,
+  typedef HashMap<MissingEnvironmentKey, WeakHeapPtr<DebugEnvironmentProxy*>,
                   MissingEnvironmentKey, ZoneAllocPolicy>
       MissingEnvironmentMap;
   MissingEnvironmentMap missingEnvs;
