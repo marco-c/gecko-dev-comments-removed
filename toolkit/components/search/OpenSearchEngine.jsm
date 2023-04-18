@@ -69,12 +69,23 @@ class OpenSearchEngine extends SearchEngine {
   
   _data = null;
 
-  constructor() {
+  
+
+
+
+
+
+
+  constructor(options = {}) {
     super({
       isAppProvided: false,
       
-      loadPath: "[opensearch]loading",
+      loadPath: options.json?._loadPath ?? "[opensearch]loading",
     });
+
+    if (options.json) {
+      this._initWithJSON(options.json);
+    }
   }
 
   
@@ -86,7 +97,7 @@ class OpenSearchEngine extends SearchEngine {
 
 
 
-  _install(uri, callback) {
+  install(uri, callback) {
     let loadURI =
       uri instanceof Ci.nsIURI ? uri : lazy.SearchUtils.makeURI(uri);
     if (!loadURI) {
