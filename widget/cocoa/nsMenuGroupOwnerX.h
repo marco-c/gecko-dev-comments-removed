@@ -12,6 +12,7 @@
 
 #include "nsIMutationObserver.h"
 #include "nsHashKeys.h"
+#include "nsIObserver.h"
 #include "nsTHashMap.h"
 #include "nsString.h"
 
@@ -40,7 +41,7 @@ enum {
 
 
 
-class nsMenuGroupOwnerX : public nsIMutationObserver {
+class nsMenuGroupOwnerX : public nsIMutationObserver, public nsIObserver {
  public:
   
   nsMenuGroupOwnerX(mozilla::dom::Element* aElement, nsMenuBarX* aMenuBarIfMenuBar);
@@ -51,6 +52,9 @@ class nsMenuGroupOwnerX : public nsIMutationObserver {
   void UnregisterCommand(uint32_t aCommandID);
   nsMenuItemX* GetMenuItemForCommandID(uint32_t aCommandID);
 
+  void RegisterForLocaleChanges();
+  void UnregisterForLocaleChanges();
+
   
   MOZMenuItemRepresentedObject* GetRepresentedObject() { return mRepresentedObject; }
 
@@ -58,6 +62,7 @@ class nsMenuGroupOwnerX : public nsIMutationObserver {
   nsMenuBarX* GetMenuBar() { return mMenuBar.get(); }
 
   NS_DECL_ISUPPORTS
+  NS_DECL_NSIOBSERVER
   NS_DECL_NSIMUTATIONOBSERVER
 
  protected:
