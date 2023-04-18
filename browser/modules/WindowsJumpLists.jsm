@@ -141,34 +141,52 @@ let privateWindowTask = {
 
 
 
-var Builder = class {
-  constructor(builder) {
-    this._builder = builder;
-    this._tasks = null;
-    this._pendingStatements = {};
-    this._shuttingDown = false;
+var WinTaskbarJumpList = {
+  _builder: null,
+  _tasks: null,
+  _shuttingDown: false,
+
+  
+
+
+
+  startup: function WTBJL_startup() {
     
+    if (!this._initTaskbar()) {
+      return;
+    }
+
     
-    this._showTasks = false;
-    this._showFrequent = false;
-    this._showRecent = false;
-    this._maxItemCount = 0;
-  }
+    this._tasks = tasksCfg;
 
-  refreshPrefs(showTasks, showFrequent, showRecent, maxItemCount) {
-    this._showTasks = showTasks;
-    this._showFrequent = showFrequent;
-    this._showRecent = showRecent;
-    this._maxItemCount = maxItemCount;
-  }
+    if (PrivateBrowsingUtils.enabled) {
+      tasksCfg.push(privateWindowTask);
+    }
 
-  updateShutdownState(shuttingDown) {
-    this._shuttingDown = shuttingDown;
-  }
+    
+    this._refreshPrefs();
 
-  delete() {
-    delete this._builder;
-  }
+    
+    this._initObs();
+
+    
+    this._updateTimer();
+  },
+
+  update: function WTBJL_update() {
+    
+    if (!this._enabled) {
+      return;
+    }
+
+    
+    this._buildList();
+  },
+
+  _shutdown: function WTBJL__shutdown() {
+    this._shuttingDown = true;
+    this._free();
+  },
 
   
 
@@ -180,15 +198,13 @@ var Builder = class {
 
 
 
-  _hasPendingStatements() {
+  _pendingStatements: {},
+  _hasPendingStatements: function WTBJL__hasPendingStatements() {
     return !!Object.keys(this._pendingStatements).length;
-  }
+  },
 
-  async buildList() {
-    if (
-      (this._showFrequent || this._showRecent) &&
-      this._hasPendingStatements()
-    ) {
+  async _buildList() {
+    if (this._hasPendingStatements()) {
       
       
       
@@ -222,7 +238,7 @@ var Builder = class {
     }
 
     this._commitBuild();
-  }
+  },
 
   
 
@@ -235,13 +251,10 @@ var Builder = class {
       
       this._clearHistory(URIsToRemove);
     }
-  }
+  },
 
-  _commitBuild() {
-    if (
-      (this._showFrequent || this._showRecent) &&
-      this._hasPendingStatements()
-    ) {
+  _commitBuild: function WTBJL__commitBuild() {
+    if (this._hasPendingStatements()) {
       return;
     }
 
@@ -250,9 +263,9 @@ var Builder = class {
         this._builder.abortListBuild();
       }
     });
-  }
+  },
 
-  _buildTasks() {
+  _buildTasks: function WTBJL__buildTasks() {
     var items = Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray);
     this._tasks.forEach(function(task) {
       if (
@@ -277,9 +290,9 @@ var Builder = class {
         items
       );
     }
-  }
+  },
 
-  _buildCustom(title, items) {
+  _buildCustom: function WTBJL__buildCustom(title, items) {
     if (items.length) {
       this._builder.addListToBuild(
         this._builder.JUMPLIST_CATEGORY_CUSTOMLIST,
@@ -287,9 +300,9 @@ var Builder = class {
         title
       );
     }
-  }
+  },
 
-  _buildFrequent() {
+  _buildFrequent: function WTBJL__buildFrequent() {
     
     
     
@@ -326,9 +339,9 @@ var Builder = class {
       },
       this
     );
-  }
+  },
 
-  _buildRecent() {
+  _buildRecent: function WTBJL__buildRecent() {
     var items = Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray);
     
     
@@ -372,17 +385,23 @@ var Builder = class {
       },
       this
     );
-  }
+  },
 
-  _deleteActiveJumpList() {
+  _deleteActiveJumpList: function WTBJL__deleteAJL() {
     this._builder.deleteActiveList();
-  }
+  },
 
   
 
 
 
-  _getHandlerAppItem(name, description, args, iconIndex, faviconPageUri) {
+  _getHandlerAppItem: function WTBJL__getHandlerAppItem(
+    name,
+    description,
+    args,
+    iconIndex,
+    faviconPageUri
+  ) {
     var file = Services.dirsvc.get("XREExeF", Ci.nsIFile);
 
     var handlerApp = Cc[
@@ -403,13 +422,25 @@ var Builder = class {
     item.iconIndex = iconIndex;
     item.faviconPageUri = faviconPageUri;
     return item;
-  }
+  },
+
+  _getSeparatorItem: function WTBJL__getSeparatorItem() {
+    var item = Cc["@mozilla.org/windows-jumplistseparator;1"].createInstance(
+      Ci.nsIJumpListSeparator
+    );
+    return item;
+  },
 
   
 
 
 
-  _getHistoryResults(aSortingMode, aLimit, aCallback, aScope) {
+  _getHistoryResults: function WTBLJL__getHistoryResults(
+    aSortingMode,
+    aLimit,
+    aCallback,
+    aScope
+  ) {
     var options = PlacesUtils.history.getNewQueryOptions();
     options.maxResults = aLimit;
     options.sortingMode = aSortingMode;
@@ -433,12 +464,12 @@ var Builder = class {
         );
       },
       handleCompletion(aReason) {
-        aCallback.call(aScope, null);
+        aCallback.call(WinTaskbarJumpList, null);
       },
     });
-  }
+  },
 
-  _clearHistory(uriSpecsToRemove) {
+  _clearHistory: function WTBJL__clearHistory(uriSpecsToRemove) {
     let URIsToRemove = uriSpecsToRemove
       .map(spec => {
         try {
@@ -453,61 +484,6 @@ var Builder = class {
     if (URIsToRemove.length) {
       PlacesUtils.history.remove(URIsToRemove).catch(Cu.reportError);
     }
-  }
-};
-
-var WinTaskbarJumpList = {
-  
-  
-  _builder: null,
-  _pbBuilder: null,
-  _shuttingDown: false,
-
-  
-
-
-
-  startup: function WTBJL_startup() {
-    
-    if (!this._initTaskbar()) {
-      return;
-    }
-
-    if (PrivateBrowsingUtils.enabled) {
-      tasksCfg.push(privateWindowTask);
-    }
-    
-    this._builder._tasks = tasksCfg;
-    this._pbBuilder._tasks = tasksCfg;
-
-    
-    this._refreshPrefs();
-
-    
-    this._initObs();
-
-    
-    this._updateTimer();
-
-    
-    this._pbBuilder.buildList();
-  },
-
-  update: function WTBJL_update() {
-    
-    if (!this._enabled) {
-      return;
-    }
-
-    
-    this._builder.buildList();
-  },
-
-  _shutdown: function WTBJL__shutdown() {
-    this._builder.updateShutdownState(true);
-    this._pbBuilder.updateShutdownState(true);
-    this._shuttingDown = true;
-    this._free();
   },
 
   
@@ -516,17 +492,10 @@ var WinTaskbarJumpList = {
 
   _refreshPrefs: function WTBJL__refreshPrefs() {
     this._enabled = _prefs.getBoolPref(PREF_TASKBAR_ENABLED);
-    var showTasks = _prefs.getBoolPref(PREF_TASKBAR_TASKS);
-    this._builder.refreshPrefs(
-      showTasks,
-      _prefs.getBoolPref(PREF_TASKBAR_FREQUENT),
-      _prefs.getBoolPref(PREF_TASKBAR_RECENT),
-      _prefs.getIntPref(PREF_TASKBAR_ITEMCOUNT)
-    );
-    
-    
-    
-    this._pbBuilder.refreshPrefs(showTasks, false, false, 0);
+    this._showFrequent = _prefs.getBoolPref(PREF_TASKBAR_FREQUENT);
+    this._showRecent = _prefs.getBoolPref(PREF_TASKBAR_RECENT);
+    this._showTasks = _prefs.getBoolPref(PREF_TASKBAR_TASKS);
+    this._maxItemCount = _prefs.getIntPref(PREF_TASKBAR_ITEMCOUNT);
   },
 
   
@@ -534,14 +503,10 @@ var WinTaskbarJumpList = {
 
 
   _initTaskbar: function WTBJL__initTaskbar() {
-    var builder = _taskbarService.createJumpListBuilder(false);
-    var pbBuilder = _taskbarService.createJumpListBuilder(true);
-    if (!builder || !builder.available || !pbBuilder || !pbBuilder.available) {
+    this._builder = _taskbarService.createJumpListBuilder();
+    if (!this._builder || !this._builder.available) {
       return false;
     }
-
-    this._builder = new Builder(builder, true, true, true);
-    this._pbBuilder = new Builder(pbBuilder, true, false, false);
 
     return true;
   },
@@ -606,8 +571,7 @@ var WinTaskbarJumpList = {
     this._freeObs();
     this._updateTimer();
     this._updateIdleObserver();
-    this._builder.delete();
-    this._pbBuilder.delete();
+    delete this._builder;
   },
 
   notify: function WTBJL_notify(aTimer) {
