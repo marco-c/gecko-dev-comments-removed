@@ -69,6 +69,11 @@ enum class ProcType {
   Max = Unknown,
 };
 
+
+
+
+int GetCycleTimeFrequencyMHz();
+
 struct ThreadInfo {
   
   base::ProcessId tid = 0;
@@ -76,6 +81,7 @@ struct ThreadInfo {
   nsString name;
   
   uint64_t cpuTime = 0;
+  
   uint64_t cpuCycleCount = 0;
 };
 

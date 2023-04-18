@@ -27,44 +27,38 @@ static uint64_t ToNanoSeconds(const FILETIME& aFileTime) {
   return usec.QuadPart * 100;
 }
 
-
-
-
-static int GetCycleTimeFrequency() {
-  static int result = -1;
-  if (result != -1) {
-    return result;
-  }
-
-  result = 0;
-
-  
-  if (!mozilla::has_constant_tsc()) {
-    return result;
-  }
-
-  
-  HKEY key;
-  static const WCHAR keyName[] =
-      L"HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0";
-
-  if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, keyName, 0, KEY_QUERY_VALUE, &key) ==
-      ERROR_SUCCESS) {
-    DWORD data, len;
-    len = sizeof(data);
-
-    if (RegQueryValueEx(key, L"~Mhz", 0, 0, reinterpret_cast<LPBYTE>(&data),
-                        &len) == ERROR_SUCCESS) {
-      result = static_cast<int>(data);
+int GetCycleTimeFrequencyMHz() {
+  static const int frequency = []() {
+    
+    if (!mozilla::has_constant_tsc()) {
+      return 0;
     }
-  }
 
-  return result;
+    
+    HKEY key;
+    static const WCHAR keyName[] =
+        L"HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0";
+
+    if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, keyName, 0, KEY_QUERY_VALUE, &key) ==
+        ERROR_SUCCESS) {
+      DWORD data, len;
+      len = sizeof(data);
+
+      if (RegQueryValueEx(key, L"~Mhz", 0, 0, reinterpret_cast<LPBYTE>(&data),
+                          &len) == ERROR_SUCCESS) {
+        return static_cast<int>(data);
+      }
+    }
+
+    return 0;
+  }();
+
+  return frequency;
 }
 
 nsresult GetCpuTimeSinceProcessStartInMs(uint64_t* aResult) {
   FILETIME createTime, exitTime, kernelTime, userTime;
-  int frequencyInMHz = GetCycleTimeFrequency();
+  int frequencyInMHz = GetCycleTimeFrequencyMHz();
   if (frequencyInMHz) {
     uint64_t cpuCycleCount;
     if (!QueryProcessCycleTime(::GetCurrentProcess(), &cpuCycleCount)) {
@@ -99,7 +93,7 @@ ProcInfoPromise::ResolveOrRejectValue GetProcInfoSync(
     return result;
   }
 
-  int frequencyInMHz = GetCycleTimeFrequency();
+  int frequencyInMHz = GetCycleTimeFrequencyMHz();
 
   
 

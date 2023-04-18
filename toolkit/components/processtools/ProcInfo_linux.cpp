@@ -21,6 +21,8 @@
 
 namespace mozilla {
 
+int GetCycleTimeFrequencyMHz() { return 0; }
+
 
 
 
