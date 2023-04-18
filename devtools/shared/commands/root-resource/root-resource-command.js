@@ -161,6 +161,25 @@ class RootResourceCommand {
     }
   }
 
+  clearResources(resourceTypes) {
+    if (!Array.isArray(resourceTypes)) {
+      throw new Error("clearResources expects an array of resource types");
+    }
+    
+    this._cache = this._cache.filter(
+      cachedResource => !resourceTypes.includes(cachedResource.resourceType)
+    );
+
+    if (
+      resourceTypes.length &&
+      
+      
+      this.rootFront.traits.supportsClearResources
+    ) {
+      this.rootFront.clearResources(resourceTypes);
+    }
+  }
+
   async waitForNextResource(
     resourceType,
     { ignoreExistingResources = false, predicate } = {}

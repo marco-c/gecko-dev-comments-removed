@@ -131,7 +131,8 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
     this.traits = {
       networkMonitor: true,
       resources: supportedResources,
-
+      
+      supportsClearResources: true,
       
       
       workerConsoleApiMessagesDispatchedToMainThread: Services.prefs
@@ -560,11 +561,18 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
 
 
   unwatchResources(resourceTypes) {
-    Resources.unwatchResources(
-      this,
-      Resources.getParentProcessResourceTypes(resourceTypes)
-    );
+    Resources.unwatchResources(this, resourceTypes);
   },
+
+  
+
+
+
+
+  clearResources(resourceTypes) {
+    Resources.clearResources(this, resourceTypes);
+  },
+
   
 
 
