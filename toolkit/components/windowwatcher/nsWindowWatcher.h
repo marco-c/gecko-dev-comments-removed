@@ -54,7 +54,8 @@ class nsWindowWatcher : public nsIWindowWatcher,
 
   static int32_t GetWindowOpenLocation(nsPIDOMWindowOuter* aParent,
                                        uint32_t aChromeFlags,
-                                       bool aCalledFromJS, bool aIsForPrinting);
+                                       bool aCalledFromJS, bool aWidthSpecified,
+                                       bool aIsForPrinting);
 
   
   
@@ -87,14 +88,15 @@ class nsWindowWatcher : public nsIWindowWatcher,
   static nsresult URIfromURL(const nsACString& aURL,
                              mozIDOMWindowProxy* aParent, nsIURI** aURI);
 
-  static bool ShouldOpenPopup(const mozilla::dom::WindowFeatures& aFeatures);
+  static bool ShouldOpenPopup(const mozilla::dom::WindowFeatures& aFeatures,
+                              const SizeSpec& aSizeSpec);
 
   static uint32_t CalculateChromeFlagsForContent(
-      const mozilla::dom::WindowFeatures& aFeatures, bool* aIsPopupRequested);
+      const mozilla::dom::WindowFeatures& aFeatures, const SizeSpec& aSizeSpec);
 
   static uint32_t CalculateChromeFlagsForSystem(
-      const mozilla::dom::WindowFeatures& aFeatures, bool aDialog,
-      bool aChromeURL);
+      const mozilla::dom::WindowFeatures& aFeatures, const SizeSpec& aSizeSpec,
+      bool aDialog, bool aChromeURL, bool aHasChromeParent);
 
   
   static void CalcSizeSpec(const mozilla::dom::WindowFeatures& aFeatures,
@@ -115,7 +117,10 @@ class nsWindowWatcher : public nsIWindowWatcher,
 
   static uint32_t CalculateChromeFlagsHelper(
       uint32_t aInitialFlags, const mozilla::dom::WindowFeatures& aFeatures,
-      bool* presenceFlag = nullptr);
+      const SizeSpec& aSizeSpec, bool* presenceFlag = nullptr,
+      bool aHasChromeParent = false);
+  static uint32_t EnsureFlagsSafeForContent(uint32_t aChromeFlags,
+                                            bool aChromeURL = false);
 
  protected:
   nsTArray<nsWatcherWindowEnumerator*> mEnumeratorList;

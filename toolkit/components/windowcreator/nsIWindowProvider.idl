@@ -93,17 +93,16 @@ interface nsIWindowProvider : nsISupports
 
 
 
-
   [noscript]
   BrowsingContext provideWindow(in nsIOpenWindowInfo aOpenWindowInfo,
                                 in unsigned long aChromeFlags,
                                 in boolean aCalledFromJS,
+                                in boolean aWidthSpecified,
                                 in nsIURI aURI,
                                 in AString aName,
                                 in AUTF8String aFeatures,
                                 in boolean aForceNoOpener,
                                 in boolean aForceNoReferrer,
-                                in boolean aIsPopupRequested,
                                 in nsDocShellLoadStatePtr aLoadState,
                                 out boolean aWindowIsNew);
 };

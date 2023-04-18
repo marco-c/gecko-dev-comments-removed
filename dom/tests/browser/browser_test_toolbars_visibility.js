@@ -18,51 +18,13 @@ const TARGET_PAGE = ROOT + "dummy.html";
 
 function getToolbarsFromBrowserContent(aBrowser) {
   return SpecialPowers.spawn(aBrowser, [], async function() {
-    
-    
-
-    let script = content.document.createElement("script");
-    script.textContent = `
-let bars = [
-  "toolbar",
-  "menubar",
-  "personalbar",
-  "statusbar",
-  "scrollbars",
-  "locationbar",
-];
-
-for (let bar of bars) {
-  let node = document.createElement("span");
-  node.id = bar;
-  node.textContent = window[bar].visible;
-  document.body.appendChild(node);
-}
-`;
-    content.document.body.appendChild(script);
-
-    let result = {};
-
-    let bars = [
-      "toolbar",
-      "menubar",
-      "personalbar",
-      "statusbar",
-      "scrollbars",
-      "locationbar",
-    ];
-
-    for (let bar of bars) {
-      let node = content.document.getElementById(bar);
-      let value = node.textContent;
-      if (value !== "true" && value !== "false") {
-        throw new Error("bar visibility isn't set");
-      }
-      result[bar] = value === "true";
-      node.remove();
-    }
-
-    return result;
+    return {
+      toolbar: content.toolbar.visible,
+      menubar: content.menubar.visible,
+      personalbar: content.personalbar.visible,
+      statusbar: content.statusbar.visible,
+      locationbar: content.locationbar.visible,
+    };
   });
 }
 
@@ -81,7 +43,6 @@ function getToolbarsFromWindowChrome(win) {
     menubar: win.menubar.visible,
     personalbar: win.personalbar.visible,
     statusbar: win.statusbar.visible,
-    scrollbars: win.scrollbars.visible,
     locationbar: win.locationbar.visible,
   };
 }
@@ -106,10 +67,6 @@ function testDefaultToolbars(toolbars) {
     toolbars.statusbar,
     "statusbar should be visible on default window.open()"
   );
-  ok(
-    toolbars.scrollbars,
-    "scrollbars should be visible on default window.open()"
-  );
   ok(toolbars.toolbar, "toolbar should be visible on default window.open()");
 }
 
@@ -120,28 +77,9 @@ function testDefaultToolbars(toolbars) {
 
 
 
-function testNonDefaultContentToolbarsFromContent(toolbars) {
-  
-  
-  ok(!toolbars.locationbar, "locationbar.visible should be false for popup");
-  ok(!toolbars.menubar, "menubar.visible should be false for popup");
-  ok(!toolbars.personalbar, "personalbar.visible should be false for popup");
-  ok(!toolbars.statusbar, "statusbar.visible should be false for popup");
-  ok(!toolbars.scrollbars, "scrollbars.visible should be false for popup");
-  ok(!toolbars.toolbar, "toolbar.visible should be false for popup");
-}
 
 
-
-
-
-
-
-
-function testNonDefaultContentToolbarsFromChrome(toolbars) {
-  
-  
-
+function testNonDefaultContentToolbars(toolbars) {
   
   ok(
     toolbars.locationbar,
@@ -154,10 +92,6 @@ function testNonDefaultContentToolbarsFromChrome(toolbars) {
   );
   
   todo(!toolbars.statusbar, "statusbar shouldn't be visible when status=no");
-  ok(
-    toolbars.scrollbars,
-    "scrollbars should be visible even with scrollbars=no"
-  );
   ok(!toolbars.toolbar, "toolbar shouldn't be visible when toolbar=no");
 }
 
@@ -180,10 +114,6 @@ function testNonDefaultChromeToolbars(toolbars) {
     "personalbar should not be visible with personalbar=no"
   );
   ok(!toolbars.statusbar, "statusbar should not be visible with status=no");
-  ok(
-    toolbars.scrollbars,
-    "scrollbars should be visible even with scrollbars=no"
-  );
   ok(!toolbars.toolbar, "toolbar should not be visible with toolbar=no");
 }
 
@@ -234,11 +164,11 @@ add_task(async function() {
 
       
       let popupToolbars = await getToolbarsFromBrowserContent(popupBrowser);
-      testNonDefaultContentToolbarsFromContent(popupToolbars);
+      testNonDefaultContentToolbars(popupToolbars);
 
       
       let chromeToolbars = getToolbarsFromWindowChrome(popupWindow);
-      testNonDefaultContentToolbarsFromChrome(chromeToolbars);
+      testNonDefaultContentToolbars(chromeToolbars);
 
       
       await BrowserTestUtils.closeWindow(popupWindow);
@@ -272,10 +202,11 @@ add_task(async function() {
       
       let popupBrowser = popupWindow.gBrowser.selectedBrowser;
       let popupToolbars = await getToolbarsFromBrowserContent(popupBrowser);
-      testNonDefaultContentToolbarsFromContent(popupToolbars);
+      testNonDefaultContentToolbars(popupToolbars);
 
+      
       let chromeToolbars = getToolbarsFromWindowChrome(popupWindow);
-      testNonDefaultContentToolbarsFromChrome(chromeToolbars);
+      testNonDefaultContentToolbars(chromeToolbars);
 
       
       await BrowserTestUtils.closeWindow(popupWindow);

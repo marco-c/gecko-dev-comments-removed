@@ -15,6 +15,11 @@ add_task(async function test_popup_conditions() {
     
     
     
+    
+    
+    
+    
+    
     { features: "location,menubar,resizable,scrollbars,status", popup: false },
     { features: "toolbar,menubar,resizable,scrollbars,status", popup: false },
     {
@@ -72,10 +77,10 @@ add_task(async function test_popup_conditions() {
     { features: "location,menubar,resizable,scrollbars,status=0", popup: true },
 
     
-    { features: "location,menubar,scrollbars,status,width=100", popup: false },
+    { features: "location,menubar,scrollbars,status,width=100", popup: true },
     {
       features: "location,menubar,scrollbars,status,innerWidth=100",
-      popup: false,
+      popup: true,
     },
 
     
