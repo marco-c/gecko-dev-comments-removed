@@ -259,20 +259,47 @@ mozilla::ipc::IPCResult ProfilerChild::RecvDestroyReleasedChunksAtOrBefore(
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult ProfilerChild::RecvGatherProfile(
-    GatherProfileResolver&& aResolve) {
+struct GatherProfileThreadParameters
+    : public external::AtomicRefCounted<GatherProfileThreadParameters> {
+  MOZ_DECLARE_REFCOUNTED_TYPENAME(GatherProfileThreadParameters)
+
+  GatherProfileThreadParameters(
+      RefPtr<ProfilerChild> aProfilerChild,
+      RefPtr<ProgressLogger::SharedProgress> aProgress,
+      ProfilerChild::GatherProfileResolver&& aResolver)
+      : profilerChild(std::move(aProfilerChild)),
+        progress(std::move(aProgress)),
+        resolver(std::move(aResolver)) {}
+
+  RefPtr<ProfilerChild> profilerChild;
+
   
-  mozilla::ProgressLogger progressLogger{};
-  mozilla::ipc::Shmem shmem;
+  
+  
+  RefPtr<ProgressLogger::SharedProgress> progress;
+
+  
+  
+  ProfilerChild::GatherProfileResolver resolver;
+};
+
+
+void ProfilerChild::GatherProfileThreadFunction(
+    void* already_AddRefedParameters) {
+  PR_SetCurrentThreadName("GatherProfileThread");
+
+  RefPtr<GatherProfileThreadParameters> parameters =
+      already_AddRefed<GatherProfileThreadParameters>{
+          static_cast<GatherProfileThreadParameters*>(
+              already_AddRefedParameters)};
+
+  ProgressLogger progressLogger(
+      parameters->progress, "Gather-profile thread started", "Profile sent");
   using namespace mozilla::literals::ProportionValue_literals;  
-  profiler_get_profile_json_into_lazily_allocated_buffer(
-      [&](size_t allocationSize) -> char* {
-        if (AllocShmem(allocationSize,
-                       mozilla::ipc::Shmem::SharedMemory::TYPE_BASIC, &shmem)) {
-          return shmem.get<char>();
-        }
-        return nullptr;
-      },
+
+  auto writer = MakeUnique<SpliceableChunkedJSONWriter>();
+  profiler_get_profile_json(
+      *writer,
        0,
        false,
       progressLogger.CreateSubLoggerFromTo(
@@ -280,7 +307,78 @@ mozilla::ipc::IPCResult ProfilerChild::RecvGatherProfile(
           "profiler_get_profile_json_into_lazily_allocated_buffer started",
           99_pc,
           "profiler_get_profile_json_into_lazily_allocated_buffer done"));
-  aResolve(std::move(shmem));
+
+  if (NS_WARN_IF(NS_FAILED(
+          parameters->profilerChild->mThread->Dispatch(NS_NewRunnableFunction(
+              "ProfilerChild::ProcessPendingUpdate",
+              [parameters,
+               
+               
+               
+               progressLogger = std::move(progressLogger),
+               writer = std::move(writer)]() mutable {
+                
+                
+                
+                
+                if (parameters->profilerChild->mGatherProfileProgress ==
+                    parameters->progress) {
+                  
+                  parameters->profilerChild->mGatherProfileProgress = nullptr;
+                }
+
+                
+                
+                mozilla::ipc::Shmem shmem;
+                writer->ChunkedWriteFunc().CopyDataIntoLazilyAllocatedBuffer(
+                    [&](size_t allocationSize) -> char* {
+                      if (parameters->profilerChild->AllocShmem(
+                              allocationSize,
+                              mozilla::ipc::Shmem::SharedMemory::TYPE_BASIC,
+                              &shmem)) {
+                        return shmem.get<char>();
+                      }
+                      return nullptr;
+                    });
+                writer = nullptr;
+
+                parameters->resolver(std::move(shmem));
+              }))))) {
+    
+    
+    
+    
+  }
+}
+
+mozilla::ipc::IPCResult ProfilerChild::RecvGatherProfile(
+    GatherProfileResolver&& aResolve) {
+  mGatherProfileProgress = MakeRefPtr<ProgressLogger::SharedProgress>();
+  mGatherProfileProgress->SetProgress(ProportionValue{0.0},
+                                      "Received gather-profile request");
+
+  auto parameters = MakeRefPtr<GatherProfileThreadParameters>(
+      this, mGatherProfileProgress, std::move(aResolve));
+
+  
+  
+  parameters.get()->AddRef();
+  PRThread* gatherProfileThread = PR_CreateThread(
+      PR_SYSTEM_THREAD, GatherProfileThreadFunction, parameters.get(),
+      PR_PRIORITY_NORMAL, PR_GLOBAL_THREAD, PR_UNJOINABLE_THREAD, 0);
+
+  if (!gatherProfileThread) {
+    
+    mozilla::ipc::Shmem shmem;
+    if (AllocShmem(1, mozilla::ipc::Shmem::SharedMemory::TYPE_BASIC, &shmem)) {
+      shmem.get<char>()[0] = '\0';
+    }
+    parameters->resolver(std::move(shmem));
+    
+    parameters.get()->Release();
+    mGatherProfileProgress = nullptr;
+  }
+
   return IPC_OK();
 }
 
