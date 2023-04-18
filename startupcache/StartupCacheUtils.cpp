@@ -166,7 +166,32 @@ nsresult ResolveURI(nsIURI* in, nsIURI** out) {
   return NS_OK;
 }
 
-static nsresult PathifyURIImpl(nsIURI* in, nsACString& out) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+nsresult PathifyURI(nsIURI* in, nsACString& out) {
   nsCOMPtr<nsIURI> uri;
   nsresult rv = ResolveURI(in, getter_AddRefs(uri));
   NS_ENSURE_SUCCESS(rv, rv);
@@ -194,7 +219,7 @@ static nsresult PathifyURIImpl(nsIURI* in, nsACString& out) {
       rv = jarURI->GetJARFile(getter_AddRefs(jarFileURI));
       NS_ENSURE_SUCCESS(rv, rv);
 
-      rv = PathifyURIImpl(jarFileURI, out);
+      rv = PathifyURI(jarFileURI, out);
       NS_ENSURE_SUCCESS(rv, rv);
 
       nsAutoCString path;
@@ -211,13 +236,6 @@ static nsresult PathifyURIImpl(nsIURI* in, nsACString& out) {
     }
   }
   return NS_OK;
-}
-
-nsresult PathifyURI(const char* loaderType, size_t loaderTypeLength, nsIURI* in,
-                    nsACString& out) {
-  out.AssignASCII(loaderType, loaderTypeLength);
-
-  return PathifyURIImpl(in, out);
 }
 
 }  
