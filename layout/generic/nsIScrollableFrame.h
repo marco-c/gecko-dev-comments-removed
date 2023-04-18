@@ -418,7 +418,19 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
 
 
 
-  enum class IncludeApzAnimation : bool { No, Yes };
+
+
+
+
+
+
+
+
+
+
+
+
+  enum class IncludeApzAnimation : uint8_t { No, PendingAndRequestedOnly, Yes };
   virtual bool IsScrollAnimating(
       IncludeApzAnimation = IncludeApzAnimation::Yes) = 0;
 

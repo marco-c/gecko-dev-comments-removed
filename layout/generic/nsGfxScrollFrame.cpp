@@ -2448,7 +2448,7 @@ void ScrollFrameHelper::ScrollToCSSPixels(const CSSIntPoint& aScrollPosition,
   
   if (mCurrentAPZScrollAnimationType ==
           APZScrollAnimationType::TriggeredByUserInput &&
-      !IsScrollAnimating(IncludeApzAnimation::No)) {
+      !IsScrollAnimating(IncludeApzAnimation::PendingAndRequestedOnly)) {
     CSSIntPoint delta = aScrollPosition - currentCSSPixels;
     ScrollByCSSPixels(delta, aMode);
     return;
@@ -7330,10 +7330,11 @@ bool ScrollFrameHelper::IsScrollAnimating(
   if (aIncludeApz == IncludeApzAnimation::Yes && IsApzAnimationInProgress()) {
     return true;
   }
-  if (IsLastScrollUpdateAnimating()) {
+  if (aIncludeApz != IncludeApzAnimation::No && IsLastScrollUpdateAnimating()) {
     return true;
   }
-  return mApzAnimationRequested || mAsyncScroll || mAsyncSmoothMSDScroll;
+  return (aIncludeApz != IncludeApzAnimation::No && mApzAnimationRequested) ||
+         mAsyncScroll || mAsyncSmoothMSDScroll;
 }
 
 void ScrollFrameHelper::ResetScrollInfoIfNeeded(
@@ -7360,7 +7361,8 @@ UniquePtr<PresState> ScrollFrameHelper::SaveState() const {
 
   
   
-  bool isScrollAnimating = IsScrollAnimating(IncludeApzAnimation::No);
+  bool isScrollAnimating =
+      IsScrollAnimating(IncludeApzAnimation::PendingAndRequestedOnly);
   if (!mHasBeenScrolled && !mDidHistoryRestore && !isScrollAnimating) {
     return nullptr;
   }
