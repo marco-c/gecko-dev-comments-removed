@@ -1331,15 +1331,24 @@ WorkerPrivate::SyncLoopInfo::SyncLoopInfo(EventTarget* aEventTarget)
 
 Document* WorkerPrivate::GetDocument() const {
   AssertIsOnMainThread();
+  if (nsPIDOMWindowInner* window = GetAncestorWindow()) {
+    return window->GetExtantDoc();
+  }
+  
+  return nullptr;
+}
+
+nsPIDOMWindowInner* WorkerPrivate::GetAncestorWindow() const {
+  AssertIsOnMainThread();
   if (mLoadInfo.mWindow) {
-    return mLoadInfo.mWindow->GetExtantDoc();
+    return mLoadInfo.mWindow;
   }
   
   
   WorkerPrivate* parent = mParent;
   while (parent) {
     if (parent->mLoadInfo.mWindow) {
-      return parent->mLoadInfo.mWindow->GetExtantDoc();
+      return parent->mLoadInfo.mWindow;
     }
     parent = parent->GetParent();
   }
