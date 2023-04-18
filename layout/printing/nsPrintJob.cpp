@@ -434,7 +434,7 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
       !printData->mPrintObject->mDocument->GetRootElement())
     return NS_ERROR_GFX_PRINTER_STARTDOC;
 
-  mPrintSettings->GetShrinkToFit(&printData->mShrinkToFit);
+  mPrintSettings->GetShrinkToFit(&mShrinkToFit);
 
   bool printingViaParent =
       XRE_IsContentProcess() && StaticPrefs::print_print_via_parent();
@@ -831,7 +831,7 @@ nsresult nsPrintJob::SetupToPrintContent() {
 
   
   
-  if (printData->mShrinkToFit) {
+  if (mShrinkToFit) {
     printData->mShrinkRatio = printData->mPrintObject->mShrinkRatio;
 
     if (printData->mShrinkRatio < 0.998f) {
@@ -1136,7 +1136,7 @@ nsPrintJob::OnContentBlockingEvent(nsIWebProgress* aWebProgress,
 
 void nsPrintJob::UpdateZoomRatio(nsPrintObject* aPO) {
   if (!aPO->mParent) {
-    if (mPrt->mShrinkToFit) {
+    if (mShrinkToFit) {
       aPO->mZoomRatio = mPrt->mShrinkRatio;
       
       
@@ -1183,7 +1183,7 @@ nsresult nsPrintJob::UpdateSelectionAndShrinkPrintObject(
   
   
   
-  if (mPrt->mShrinkToFit && aDocumentIsTopLevel) {
+  if (mShrinkToFit && aDocumentIsTopLevel) {
     nsPageSequenceFrame* pageSeqFrame = aPO->mPresShell->GetPageSequenceFrame();
     NS_ENSURE_STATE(pageSeqFrame);
     aPO->mShrinkRatio = pageSeqFrame->GetSTFPercent();

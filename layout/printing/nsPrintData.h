@@ -63,7 +63,6 @@ class nsPrintData {
   bool mOnStartSent;
   bool mIsAborted;          
   bool mPreparingForPrint;  
-  bool mShrinkToFit;
   int32_t mNumPrintablePages;
   float mShrinkRatio;
 
