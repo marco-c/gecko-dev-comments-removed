@@ -92,7 +92,7 @@ void InterceptedHttpChannel::AsyncOpenInternal() {
   
   
   mLastStatusReported = TimeStamp::Now();
-  if (profiler_thread_is_being_profiled()) {
+  if (profiler_thread_is_being_profiled_for_markers()) {
     nsAutoCString requestMethod;
     GetRequestMethod(requestMethod);
 
@@ -505,7 +505,7 @@ InterceptedHttpChannel::Cancel(nsresult aStatus) {
 
   mCanceled = true;
 
-  if (mLastStatusReported && profiler_thread_is_being_profiled()) {
+  if (mLastStatusReported && profiler_thread_is_being_profiled_for_markers()) {
     
     
     
@@ -675,7 +675,7 @@ InterceptedHttpChannel::ResetInterception(bool aBypass) {
                             mLoadFlags);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  if (profiler_thread_is_being_profiled()) {
+  if (profiler_thread_is_being_profiled_for_markers()) {
     nsAutoCString requestMethod;
     GetRequestMethod(requestMethod);
 
@@ -1043,7 +1043,7 @@ InterceptedHttpChannel::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
   
   MaybeReportTimingData();
 
-  if (profiler_thread_is_being_profiled()) {
+  if (profiler_thread_is_being_profiled_for_markers()) {
     
     nsAutoCString requestMethod;
     GetRequestMethod(requestMethod);
