@@ -153,11 +153,3 @@ if (hasDisassembler() && isX64) {
   
   assertEq(/pmullw|psllw|psraw/.test(output), false);
 }
-
-
-function assertSame(got, expected) {
-  assertEq(got.length, expected.length);
-  for ( let i=0; i < got.length; i++ ) {
-      assertEq(got[i], expected[i]);
-  }
-}
