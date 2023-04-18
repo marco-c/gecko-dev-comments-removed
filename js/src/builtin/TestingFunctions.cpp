@@ -5717,7 +5717,7 @@ static bool ShortestPaths(JSContext* cx, unsigned argc, Value* vp) {
     JS::ubi::RootList rootList(cx, true);
     if (start.isNull()) {
       auto [ok, nogc] = rootList.init();
-      (void) nogc; 
+      (void)nogc;  
       if (!ok) {
         ReportOutOfMemory(cx);
         return false;

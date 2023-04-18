@@ -402,11 +402,11 @@ Cell* refptr_test3() {
 Cell* refptr_test4() {
   static Cell cell;
   RefPtr<int> r;
-  return &cell; 
+  return &cell;  
 }
 
 Cell* refptr_test5() {
   static Cell cell;
   RefPtr<int> r;
-  return nullptr; 
+  return nullptr;  
 }
