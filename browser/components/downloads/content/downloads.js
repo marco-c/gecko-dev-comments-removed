@@ -467,10 +467,6 @@ var DownloadsPanel = {
 
 
   _onKeyDown(aEvent) {
-    if (DownloadsView.richListBox.hasAttribute("disabled")) {
-      this._handlePotentiallySpammyDownloadActivation(aEvent);
-      return;
-    }
     
     
     
@@ -586,47 +582,20 @@ var DownloadsPanel = {
   },
 
   _delayPopupItems() {
-    DownloadsView.richListBox.setAttribute("disabled", true);
-    this._startWatchingForSpammyDownloadActivation();
+    let delay = Services.prefs.getIntPref("security.dialog_enable_delay");
+    let richListBox = DownloadsView.richListBox;
+    richListBox.setAttribute("disabled", true);
 
-    this._refreshDelayTimer();
-  },
-
-  _refreshDelayTimer() {
     
     if (this._delayTimeout) {
       clearTimeout(this._delayTimeout);
     }
 
-    let delay = Services.prefs.getIntPref("security.dialog_enable_delay");
     this._delayTimeout = setTimeout(() => {
-      DownloadsView.richListBox.removeAttribute("disabled");
-      this._stopWatchingForSpammyDownloadActivation();
+      richListBox.removeAttribute("disabled");
       this._focusPanel();
       this._delayTimeout = null;
     }, delay);
-  },
-
-  _startWatchingForSpammyDownloadActivation() {
-    Services.els.addSystemEventListener(window, "keydown", this, true);
-  },
-
-  _lastBeepTime: 0,
-  _handlePotentiallySpammyDownloadActivation(aEvent) {
-    if (aEvent.key == "Enter" || aEvent.key == " ") {
-      
-      
-      if (Date.now() - this._lastBeepTime > 1000) {
-        Cc["@mozilla.org/sound;1"].getService(Ci.nsISound).beep();
-        this._lastBeepTime = Date.now();
-      }
-
-      this._refreshDelayTimer();
-    }
-  },
-
-  _stopWatchingForSpammyDownloadActivation() {
-    Services.els.removeSystemEventListener(window, "keydown", this, true);
   },
 
   

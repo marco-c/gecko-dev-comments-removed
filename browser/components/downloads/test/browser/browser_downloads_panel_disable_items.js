@@ -90,39 +90,16 @@ add_task(async function test_downloads_panel_new_download() {
 
   let newTab = await newTabPromise;
 
-  
   EventUtils.synthesizeKey("KEY_Enter", {}, window);
-  for (let i = 0; i < 5; i++) {
-    
-    
-    
-    
-    await new Promise(r => setTimeout(r, 100));
-    EventUtils.synthesizeKey("KEY_Enter", {}, window);
-  }
-  
-  let keyTime = Date.now();
+  DownloadsCommon.openDownload = async () => {
+    ok(true, "openDownload should have been called");
+  };
 
-  await BrowserTestUtils.waitForMutationCondition(
-    downloadsListBox,
-    { attributeFilter: ["disabled"] },
-    () => !downloadsListBox.hasAttribute("disabled")
+  await BrowserTestUtils.waitForCondition(
+    () => !downloadsListBox.getAttribute("disabled")
   );
-  Assert.greater(
-    Date.now(),
-    keyTime + 750,
-    "Should have waited at least another 750ms after this keypress."
-  );
-  let openedDownload = new Promise(resolve => {
-    DownloadsCommon.openDownload = async () => {
-      ok(true, "openDownload should have been called");
-      resolve();
-    };
-  });
-
   info("All download items in the download panel should now be enabled");
   EventUtils.synthesizeKey("KEY_Enter", {}, window);
-  await openedDownload;
 
   await task_resetState();
   DownloadsCommon.openDownload = originalOpenDownload;
