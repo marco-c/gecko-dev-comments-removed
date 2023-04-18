@@ -496,6 +496,15 @@ class GetCredentialsTest extends TestCase {
 
 
 
+
+function base64urlEncode(array) {
+  let string = String.fromCharCode.apply(null, array);
+  let result = btoa(string);
+  return result.replace(/=+$/g, '').replace(/\+/g, "-").replace(/\//g, "_");
+}
+
+
+
 function validatePublicKeyCredential(cred) {
     
     assert_class_string(cred, "PublicKeyCredential", "Expected return to be instance of 'PublicKeyCredential' class");
@@ -505,6 +514,8 @@ function validatePublicKeyCredential(cred) {
     
     assert_idl_attribute(cred, "rawId", "should return PublicKeyCredential with rawId attribute");
     assert_readonly(cred, "rawId", "should return PublicKeyCredential with readonly rawId attribute");
+    assert_equals(cred.id, base64urlEncode(new Uint8Array(cred.rawId)), "should return PublicKeyCredential with id attribute set to base64 encoding of rawId attribute");
+
     
     assert_idl_attribute(cred, "type", "should return PublicKeyCredential with type attribute");
     assert_equals(cred.type, "public-key", "should return PublicKeyCredential with type 'public-key'");
