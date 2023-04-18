@@ -26,7 +26,7 @@ add_task(
       Assert.equal(e.error, "unrecognizedPacketType");
     }
 
-    threadFront.resume();
+    await threadFront.resume();
 
     
     

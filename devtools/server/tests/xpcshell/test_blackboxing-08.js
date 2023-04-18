@@ -37,16 +37,14 @@ function run_test() {
     
     const range = { start: { line: 6, column: 0 }, end: { line: 8, colum: 1 } };
     blackBox(sourceFront, range);
-    await threadFront.resume();
-    const paused = await waitForPause(threadFront);
+    const paused = await resumeAndWaitForPause(threadFront);
     equal(paused.frame.where.line, 11, "paused inside of b");
     await threadFront.resume();
 
     
     unBlackBox(sourceFront, range);
     await invokeAndPause(dbg, `chaining()`);
-    await threadFront.resume();
-    const paused2 = await waitForPause(threadFront);
+    const paused2 = await resumeAndWaitForPause(threadFront);
     equal(paused2.frame.where.line, 7, "paused inside of a");
 
     await testFinish(dbg);

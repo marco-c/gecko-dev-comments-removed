@@ -616,9 +616,10 @@ function interrupt(threadFront) {
 
 
 
-function resumeAndWaitForPause(threadFront) {
+async function resumeAndWaitForPause(threadFront) {
   const paused = waitForPause(threadFront);
-  return resume(threadFront).then(() => paused);
+  await resume(threadFront);
+  return paused;
 }
 
 

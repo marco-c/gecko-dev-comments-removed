@@ -57,8 +57,7 @@ add_task(
 
     
     info("Resume and pause on the breakpoint");
-    threadFront.resume();
-    const pausedPacket = await waitForEvent(threadFront, "paused");
+    const pausedPacket = await resumeAndWaitForPause(threadFront);
     Assert.equal(pausedPacket.frame.where.line, 2);
     
     Assert.equal(pausedPacket.why.type, "breakpoint");

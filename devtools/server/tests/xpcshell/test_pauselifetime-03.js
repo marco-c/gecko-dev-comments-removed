@@ -34,7 +34,7 @@ add_task(
     }
     Assert.ok(objectFront.valid);
 
-    threadFront.resume();
+    await threadFront.resume();
 
     
     
