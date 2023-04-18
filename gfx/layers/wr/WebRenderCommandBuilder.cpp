@@ -1588,12 +1588,6 @@ void WebRenderCommandBuilder::DoGroupingForDisplayList(
   auto snappedTrans = LayerIntPoint::Floor(trans);
   LayerPoint residualOffset = trans - snappedTrans;
 
-  
-  
-  
-  
-  
-  
   auto layerBounds =
       ScaleToOutsidePixelsOffset(groupBounds, scale.width, scale.height,
                                  appUnitsPerDevPixel, residualOffset);
