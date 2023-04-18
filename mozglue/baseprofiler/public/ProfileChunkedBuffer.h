@@ -139,12 +139,6 @@ class ProfileChunkedBuffer {
   }
 
   
-  [[nodiscard]] UniquePtr<ProfileBufferChunkManager> ExtractChunkManager() {
-    baseprofiler::detail::BaseProfilerMaybeAutoLock lock(mMutex);
-    return ResetChunkManager(lock);
-  }
-
-  
   
   
   
