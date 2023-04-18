@@ -2127,7 +2127,7 @@ nsresult ScriptLoader::CompileOrDecodeClassicScript(
 
 
 nsCString& ScriptLoader::BytecodeMimeTypeFor(ScriptLoadRequest* aRequest) {
-  return nsContentUtils::JSBytecodeMimeType();
+  return nsContentUtils::JSScriptBytecodeMimeType();
 }
 
 nsresult ScriptLoader::MaybePrepareForBytecodeEncoding(
