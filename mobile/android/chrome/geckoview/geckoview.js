@@ -493,7 +493,10 @@ class ModuleInfo {
 function createBrowser() {
   const browser = (window.browser = document.createXULElement("browser"));
   
-  browser.permanentKey = {};
+  
+  
+  
+  browser.permanentKey = new (Cu.getGlobalForObject(Services).Object)();
 
   browser.setAttribute("nodefaultsrc", "true");
   browser.setAttribute("type", "content");
