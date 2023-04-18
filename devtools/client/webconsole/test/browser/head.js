@@ -334,40 +334,6 @@ function keyboardExecuteAndWaitForMessage(
 
 
 
-function findMessage(hud, text, selector = ".message") {
-  const elements = findMessages(hud, text, selector);
-  return elements.pop();
-}
-
-
-
-
-
-
-
-
-
-
-
-function findMessages(hud, text, selector = ".message") {
-  const messages = hud.ui.outputNode.querySelectorAll(selector);
-  const elements = Array.prototype.filter.call(messages, el =>
-    el.textContent.includes(text)
-  );
-  return elements;
-}
-
-
-
-
-
-
-
-
-
-
-
-
 async function checkUniqueMessageExists(hud, msg, selector) {
   info(`Checking "${msg}" was logged`);
   let messages;
