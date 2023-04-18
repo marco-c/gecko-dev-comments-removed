@@ -11878,7 +11878,7 @@ void Document::OnPageHide(bool aPersisted, EventTarget* aDispatchStartTarget,
   NotifyActivityChanged();
 
   ClearPendingFullscreenRequests(this);
-  if (GetUnretargetedFullscreenElement()) {
+  if (Fullscreen()) {
     
     
     
@@ -14276,7 +14276,7 @@ static uint32_t CountFullscreenSubDocuments(Document& aDoc) {
   uint32_t count = 0;
   
   auto subDoc = [&count](Document& aSubDoc) {
-    if (aSubDoc.GetUnretargetedFullscreenElement()) {
+    if (aSubDoc.Fullscreen()) {
       count++;
     }
     return CallState::Continue;
@@ -14288,17 +14288,17 @@ static uint32_t CountFullscreenSubDocuments(Document& aDoc) {
 bool Document::IsFullscreenLeaf() {
   
   
-  if (!GetUnretargetedFullscreenElement()) {
-    return false;
-  }
-  return CountFullscreenSubDocuments(*this) == 0;
+  
+  
+  
+  return Fullscreen() && CountFullscreenSubDocuments(*this) == 0;
 }
 
 static Document* GetFullscreenLeaf(Document& aDoc) {
   if (aDoc.IsFullscreenLeaf()) {
     return &aDoc;
   }
-  if (!aDoc.GetUnretargetedFullscreenElement()) {
+  if (!aDoc.Fullscreen()) {
     return nullptr;
   }
   Document* leaf = nullptr;
@@ -14325,8 +14325,7 @@ static CallState ResetFullscreen(Document& aDocument) {
     NS_ASSERTION(CountFullscreenSubDocuments(aDocument) <= 1,
                  "Should have at most 1 fullscreen subdocument.");
     aDocument.CleanupFullscreenState();
-    NS_ASSERTION(!aDocument.GetUnretargetedFullscreenElement(),
-                 "Should reset fullscreen");
+    NS_ASSERTION(!aDocument.Fullscreen(), "Should reset fullscreen");
     DispatchFullscreenChange(aDocument, fsElement);
     aDocument.EnumerateSubDocuments(ResetFullscreen);
   }
@@ -14379,7 +14378,7 @@ void Document::ExitFullscreenInDocTree(Document* aMaybeNotARootDoc) {
   }
 
   nsCOMPtr<Document> root = aMaybeNotARootDoc->GetFullscreenRoot();
-  if (!root || !root->GetUnretargetedFullscreenElement()) {
+  if (!root || !root->Fullscreen()) {
     
     
     
@@ -14400,7 +14399,7 @@ void Document::ExitFullscreenInDocTree(Document* aMaybeNotARootDoc) {
   
   ResetFullscreen(*root);
 
-  NS_ASSERTION(!root->GetUnretargetedFullscreenElement(),
+  NS_ASSERTION(!root->Fullscreen(),
                "Fullscreen root should no longer be a fullscreen doc...");
 
   
@@ -14418,15 +14417,14 @@ static void DispatchFullscreenNewOriginEvent(Document* aDoc) {
 }
 
 void Document::RestorePreviousFullscreenState(UniquePtr<FullscreenExit> aExit) {
-  NS_ASSERTION(
-      !GetUnretargetedFullscreenElement() || !FullscreenRoots::IsEmpty(),
-      "Should have at least 1 fullscreen root when fullscreen!");
+  NS_ASSERTION(!Fullscreen() || !FullscreenRoots::IsEmpty(),
+               "Should have at least 1 fullscreen root when fullscreen!");
 
   if (!GetWindow()) {
     aExit->MayRejectPromise("No active window");
     return;
   }
-  if (!GetUnretargetedFullscreenElement() || FullscreenRoots::IsEmpty()) {
+  if (!Fullscreen() || FullscreenRoots::IsEmpty()) {
     aExit->MayRejectPromise("Not in fullscreen mode");
     return;
   }
@@ -15069,26 +15067,25 @@ static bool CheckFullscreenAllowedElementType(const Element* elem) {
 }
 
 void Document::RequestFullscreen(UniquePtr<FullscreenRequest> aRequest,
-                                 bool applyFullScreenDirectly) {
+                                 bool aApplyFullscreenDirectly) {
   if (XRE_IsContentProcess()) {
     RequestFullscreenInContentProcess(std::move(aRequest),
-                                      applyFullScreenDirectly);
+                                      aApplyFullscreenDirectly);
   } else {
     RequestFullscreenInParentProcess(std::move(aRequest),
-                                     applyFullScreenDirectly);
+                                     aApplyFullscreenDirectly);
   }
 }
 
 void Document::RequestFullscreenInContentProcess(
-    UniquePtr<FullscreenRequest> aRequest, bool applyFullScreenDirectly) {
+    UniquePtr<FullscreenRequest> aRequest, bool aApplyFullscreenDirectly) {
   MOZ_ASSERT(XRE_IsContentProcess());
 
   
   
   
-  if (applyFullScreenDirectly ||
-      !!nsContentUtils::GetInProcessSubtreeRootDocument(this)
-            ->GetUnretargetedFullscreenElement()) {
+  if (aApplyFullscreenDirectly ||
+      nsContentUtils::GetInProcessSubtreeRootDocument(this)->Fullscreen()) {
     ApplyFullscreen(std::move(aRequest));
     return;
   }
@@ -15113,7 +15110,7 @@ void Document::RequestFullscreenInContentProcess(
 }
 
 void Document::RequestFullscreenInParentProcess(
-    UniquePtr<FullscreenRequest> aRequest, bool applyFullScreenDirectly) {
+    UniquePtr<FullscreenRequest> aRequest, bool aApplyFullscreenDirectly) {
   MOZ_ASSERT(XRE_IsParentProcess());
   nsCOMPtr<nsPIDOMWindowOuter> rootWin = GetRootWindow(this);
   if (!rootWin) {
@@ -15121,7 +15118,8 @@ void Document::RequestFullscreenInParentProcess(
     return;
   }
 
-  if (applyFullScreenDirectly || ShouldApplyFullscreenDirectly(this, rootWin)) {
+  if (aApplyFullscreenDirectly ||
+      ShouldApplyFullscreenDirectly(this, rootWin)) {
     ApplyFullscreen(std::move(aRequest));
     return;
   }

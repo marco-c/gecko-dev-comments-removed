@@ -1891,13 +1891,13 @@ class Document : public nsINode,
   
   
   void RequestFullscreen(UniquePtr<FullscreenRequest> aRequest,
-                         bool applyFullScreenDirectly = false);
+                         bool aApplyFullscreenDirectly = false);
 
  private:
   void RequestFullscreenInContentProcess(UniquePtr<FullscreenRequest> aRequest,
-                                         bool applyFullScreenDirectly);
+                                         bool aApplyFullscreenDirectly);
   void RequestFullscreenInParentProcess(UniquePtr<FullscreenRequest> aRequest,
-                                        bool applyFullScreenDirectly);
+                                        bool aApplyFullscreenDirectly);
 
   
   void TopLayerPush(Element&);
