@@ -450,6 +450,10 @@ impl ConnectionIdManager {
         }
     }
 
+    pub fn generator(&self) -> Rc<RefCell<dyn ConnectionIdGenerator>> {
+        Rc::clone(&self.generator)
+    }
+
     pub fn decoder(&self) -> ConnectionIdDecoderRef {
         ConnectionIdDecoderRef {
             generator: self.generator.deref().borrow(),
@@ -486,6 +490,8 @@ impl ConnectionIdManager {
         self.lost_new_connection_id.retain(|cid| cid.seqno != seqno);
     }
 
+    
+    
     
     
     pub fn add_odcid(&mut self, cid: ConnectionId) {

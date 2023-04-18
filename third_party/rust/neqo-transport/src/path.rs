@@ -539,6 +539,9 @@ pub struct Path {
     received_bytes: usize,
     
     sent_bytes: usize,
+
+    
+    qlog: NeqoQlog,
 }
 
 impl Path {
@@ -552,7 +555,7 @@ impl Path {
         now: Instant,
     ) -> Self {
         let mut sender = PacketSender::new(cc, Self::mtu_by_addr(remote.ip()), now);
-        sender.set_qlog(qlog);
+        sender.set_qlog(qlog.clone());
         Self {
             local,
             remote,
@@ -566,6 +569,7 @@ impl Path {
             sender,
             received_bytes: 0,
             sent_bytes: 0,
+            qlog,
         }
     }
 
@@ -928,7 +932,27 @@ impl Path {
     }
 
     
-    pub fn discard_packet(&mut self, sent: &SentPacket) {
+    pub fn discard_packet(&mut self, sent: &SentPacket, now: Instant) {
+        if self.rtt.first_sample_time().is_none() {
+            
+            
+            
+            
+            
+            qinfo!(
+                [self],
+                "discarding a packet without an RTT estimate; guessing RTT={:?}",
+                now - sent.time_sent
+            );
+            self.rtt.update(
+                &mut self.qlog,
+                now - sent.time_sent,
+                Duration::new(0, 0),
+                false,
+                now,
+            );
+        }
+
         self.sender.discard(sent);
     }
 

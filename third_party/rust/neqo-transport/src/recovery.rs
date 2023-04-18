@@ -590,7 +590,7 @@ impl LossRecovery {
         self.qlog = qlog;
     }
 
-    pub fn drop_0rtt(&mut self, primary_path: &PathRef) -> Vec<SentPacket> {
+    pub fn drop_0rtt(&mut self, primary_path: &PathRef, now: Instant) -> Vec<SentPacket> {
         
         
         assert!(self
@@ -607,7 +607,7 @@ impl LossRecovery {
             .collect::<Vec<_>>();
         let mut path = primary_path.borrow_mut();
         for p in &mut dropped {
-            path.discard_packet(p);
+            path.discard_packet(p, now);
         }
         dropped
     }
@@ -737,7 +737,7 @@ impl LossRecovery {
 
     
     
-    pub fn retry(&mut self, primary_path: &PathRef) -> Vec<SentPacket> {
+    pub fn retry(&mut self, primary_path: &PathRef, now: Instant) -> Vec<SentPacket> {
         self.pto_state = None;
         let mut dropped = self
             .spaces
@@ -746,7 +746,7 @@ impl LossRecovery {
             .collect::<Vec<_>>();
         let mut path = primary_path.borrow_mut();
         for p in &mut dropped {
-            path.discard_packet(p);
+            path.discard_packet(p, now);
         }
         dropped
     }
@@ -779,7 +779,7 @@ impl LossRecovery {
         qdebug!([self], "Reset loss recovery state for {}", space);
         let mut path = primary_path.borrow_mut();
         for p in self.spaces.drop_space(space) {
-            path.discard_packet(&p);
+            path.discard_packet(&p, now);
         }
 
         
@@ -1494,6 +1494,25 @@ mod tests {
     #[test]
     fn rearm_pto_after_confirmed() {
         let mut lr = Fixture::default();
+        lr.on_packet_sent(SentPacket::new(
+            PacketType::Initial,
+            0,
+            now(),
+            true,
+            Vec::new(),
+            ON_SENT_SIZE,
+        ));
+        
+        
+        let rtt = lr.path.borrow().rtt().estimate();
+        lr.on_ack_received(
+            PacketNumberSpace::Initial,
+            0,
+            vec![0..=0],
+            Duration::new(0, 0),
+            now() + rtt,
+        );
+
         lr.on_packet_sent(SentPacket::new(
             PacketType::Handshake,
             0,
