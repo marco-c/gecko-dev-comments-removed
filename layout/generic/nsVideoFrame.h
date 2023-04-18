@@ -71,6 +71,12 @@ class nsVideoFrame final : public nsContainerFrame,
 #endif
 
   bool IsFrameOfType(uint32_t aFlags) const override {
+    
+    
+    if ((aFlags & nsIFrame::eSupportsAspectRatio) && !HasVideoElement()) {
+      return false;
+    }
+
     return nsSplittableFrame::IsFrameOfType(
         aFlags & ~(nsIFrame::eReplaced | nsIFrame::eReplacedSizing));
   }
