@@ -5252,13 +5252,22 @@ void nsWindow::ConfigureGdkWindow() {
   }
 #endif
 
-  if (mIsDragPopup && GdkIsWaylandDisplay()) {
-    GtkWidget* parent = gtk_widget_get_parent(mShell);
-    if (parent) {
-      GtkWidgetDisableUpdates(parent);
+  if (mIsDragPopup) {
+    if (GdkIsWaylandDisplay()) {
+      
+      
+      
+      if (GtkWidget* parent = gtk_widget_get_parent(mShell)) {
+        GtkWidgetDisableUpdates(parent);
+      }
+      GtkWidgetDisableUpdates(mShell);
+      GtkWidgetDisableUpdates(GTK_WIDGET(mContainer));
+    } else {
+      
+      if (GtkWidget* parent = gtk_widget_get_parent(mShell)) {
+        gtk_window_set_opacity(GTK_WINDOW(parent), 0.0);
+      }
     }
-    GtkWidgetDisableUpdates(mShell);
-    GtkWidgetDisableUpdates(GTK_WIDGET(mContainer));
   }
 
   if (mWindowType == eWindowType_popup) {
