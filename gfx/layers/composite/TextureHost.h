@@ -454,17 +454,6 @@ class TextureHost : public AtomicRefCountedWithFinalize<TextureHost> {
 
 
 
-
-
-
-
-
-  void Updated(const nsIntRegion* aRegion = nullptr);
-
-  
-
-
-
   virtual void DeallocateDeviceData() {}
 
   
@@ -702,8 +691,6 @@ class TextureHost : public AtomicRefCountedWithFinalize<TextureHost> {
 
   void RecycleTexture(TextureFlags aFlags);
 
-  virtual void UpdatedInternal(const nsIntRegion* Region) {}
-
   
 
 
@@ -806,20 +793,12 @@ class BufferTextureHost : public TextureHost {
 
  protected:
   bool UseExternalTextures() const { return mUseExternalTextures; }
-  bool Upload(nsIntRegion* aRegion = nullptr);
-  bool UploadIfNeeded();
-  bool MaybeUpload(nsIntRegion* aRegion);
-
-  void UpdatedInternal(const nsIntRegion* aRegion = nullptr) override;
 
   BufferDescriptor mDescriptor;
   RefPtr<Compositor> mCompositor;
-  nsIntRegion mMaybeUpdatedRegion;
   gfx::IntSize mSize;
   gfx::SurfaceFormat mFormat;
-  uint32_t mUpdateSerial;
   bool mLocked;
-  bool mNeedsFullUpdate;
   bool mUseExternalTextures;
 
   class DataTextureSourceYCbCrBasic;

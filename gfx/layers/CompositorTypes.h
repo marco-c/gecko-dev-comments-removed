@@ -97,7 +97,7 @@ static inline bool TextureRequiresLocking(TextureFlags aFlags) {
   
   
   
-  return !(aFlags & (TextureFlags::IMMEDIATE_UPLOAD | TextureFlags::IMMUTABLE));
+  return !(aFlags & TextureFlags::IMMUTABLE);
 }
 
 
