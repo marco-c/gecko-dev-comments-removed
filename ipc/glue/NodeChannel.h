@@ -9,6 +9,7 @@
 
 #include "mojo/core/ports/node.h"
 #include "mojo/core/ports/node_delegate.h"
+#include "base/process.h"
 #include "chrome/common/ipc_message.h"
 #include "chrome/common/ipc_channel.h"
 #include "mozilla/ipc/ProtocolUtils.h"
@@ -37,8 +38,8 @@ class NodeChannel final : public IPC::Channel::Listener {
     NodeName mName;
     IPC::Channel::ChannelHandle mHandle;
     IPC::Channel::Mode mMode;
-    int32_t mMyPid = -1;
-    int32_t mOtherPid = -1;
+    base::ProcessId mMyPid = base::kInvalidProcessId;
+    base::ProcessId mOtherPid = base::kInvalidProcessId;
   };
 
   class Listener {
@@ -62,7 +63,7 @@ class NodeChannel final : public IPC::Channel::Listener {
   };
 
   NodeChannel(const NodeName& aName, UniquePtr<IPC::Channel> aChannel,
-              Listener* aListener, int32_t aPid = -1);
+              Listener* aListener, base::ProcessId aPid = base::kInvalidProcessId);
 
   
   
@@ -82,7 +83,7 @@ class NodeChannel final : public IPC::Channel::Listener {
   void AcceptInvite(const NodeName& aRealName, const PortName& aInitialPort);
 
   
-  int32_t OtherPid() const { return mOtherPid; }
+  base::ProcessId OtherPid() const { return mOtherPid; }
 
   
   
@@ -109,14 +110,14 @@ class NodeChannel final : public IPC::Channel::Listener {
   void FinalDestroy();
 
   
-  void SetOtherPid(int32_t aNewPid);
+  void SetOtherPid(base::ProcessId aNewPid);
 
   void SendMessage(UniquePtr<IPC::Message> aMessage);
   void DoSendMessage(UniquePtr<IPC::Message> aMessage);
 
   
   void OnMessageReceived(IPC::Message&& aMessage) override;
-  void OnChannelConnected(int32_t aPeerPid) override;
+  void OnChannelConnected(base::ProcessId aPeerPid) override;
   void OnChannelError() override;
 
   
@@ -133,7 +134,7 @@ class NodeChannel final : public IPC::Channel::Listener {
   
   
   
-  std::atomic<int32_t> mOtherPid;
+  std::atomic<base::ProcessId> mOtherPid;
 
   
   mozilla::UniquePtr<IPC::Channel> mChannel;

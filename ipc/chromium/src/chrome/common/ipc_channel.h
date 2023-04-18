@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <queue>
 #include "base/basictypes.h"
+#include "base/process.h"
 #include "build/build_config.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/UniquePtrExtensions.h"
@@ -60,7 +61,7 @@ class Channel {
 
     
     
-    virtual void OnChannelConnected(int32_t peer_pid) {}
+    virtual void OnChannelConnected(base::ProcessId peer_pid) {}
 
     
     

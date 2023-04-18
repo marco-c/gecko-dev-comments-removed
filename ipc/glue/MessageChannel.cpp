@@ -2137,7 +2137,7 @@ void MessageChannel::AddProfilerMarker(const IPC::Message& aMessage,
   mMonitor->AssertCurrentThreadOwns();
 
   if (profiler_feature_active(ProfilerFeature::IPCMessages)) {
-    int32_t pid = mListener->OtherPidMaybeInvalid();
+    base::ProcessId pid = mListener->OtherPidMaybeInvalid();
     
     
     
