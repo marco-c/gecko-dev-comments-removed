@@ -41,26 +41,16 @@ async function runTest() {
 }
 
 add_task(async function test_in_container() {
-  
-  
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["print.tab_modal.enabled", true],
-      ["privacy.firstparty.isolate", false],
-    ],
+    set: [["privacy.firstparty.isolate", false]],
   });
 
   await runTest();
 });
 
 add_task(async function test_with_fpi() {
-  
-  
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["print.tab_modal.enabled", true],
-      ["privacy.firstparty.isolate", true],
-    ],
+    set: [["privacy.firstparty.isolate", true]],
   });
   await runTest();
 });
