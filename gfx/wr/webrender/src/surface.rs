@@ -461,6 +461,14 @@ impl SurfaceBuilder {
                                         );
 
                                         
+                                        
+                                        
+                                        rg_builder.add_dependency(
+                                            new_task_id,
+                                            parent_task_id,
+                                        );
+
+                                        
                                         tiles.insert(
                                             key,
                                             SurfaceTileDescriptor {
@@ -516,6 +524,14 @@ impl SurfaceBuilder {
                                     location,          
                                     RenderTaskKind::Picture(pic_task),
                                 ),
+                            );
+
+                            
+                            
+                            
+                            rg_builder.add_dependency(
+                                new_task_id,
+                                *parent_task_id,
                             );
 
                             
