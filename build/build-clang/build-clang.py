@@ -706,10 +706,17 @@ def main():
         
         
         
-        extra_cflags2 = []
-        extra_cxxflags2 = [
-            "-fms-compatibility-version=19.15.26726",
-        ]
+        
+        
+        with open(os.path.join(llvm_source_dir, "cmake/platforms/WinMsvc.cmake")) as f:
+            compat = [
+                item
+                for line in f
+                for item in line.split()
+                if "-fms-compatibility-version=" in item
+            ][0]
+        extra_cflags2 = [compat]
+        extra_cxxflags2 = [compat]
         extra_asmflags = []
         extra_ldflags = []
 
