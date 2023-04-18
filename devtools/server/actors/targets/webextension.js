@@ -235,7 +235,7 @@ webExtensionTargetPrototype._onDocShellDestroy = function(docShell) {
 
   
   
-  if (this.attached && docShell == this.docShell) {
+  if (!this.isDestroyed() && docShell == this.docShell) {
     this._changeTopLevelDocument(this._searchForExtensionWindow());
   }
 };

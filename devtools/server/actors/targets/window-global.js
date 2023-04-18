@@ -338,8 +338,6 @@ const windowGlobalTargetPrototype = {
     
     this._docShellsObserved = false;
     DevToolsUtils.executeSoon(() => this._watchDocshells());
-
-    this._attached = true;
   },
 
   
@@ -350,10 +348,6 @@ const windowGlobalTargetPrototype = {
   
   _allowSource() {
     return true;
-  },
-
-  get attached() {
-    return !!this._attached;
   },
 
   
@@ -663,10 +657,8 @@ const windowGlobalTargetPrototype = {
     }
     
     
-    if (this._attached) {
-      
-      this.threadActor._parentClosed = true;
-    }
+    
+    this.threadActor._parentClosed = true;
 
     if (this._touchSimulator) {
       this._touchSimulator.stop();
@@ -806,12 +798,6 @@ const windowGlobalTargetPrototype = {
   },
 
   listWorkers(request) {
-    if (!this.attached) {
-      throw {
-        error: "wrongState",
-      };
-    }
-
     return this.ensureWorkerDescriptorActorList()
       .getList()
       .then(actors => {
@@ -882,7 +868,7 @@ const windowGlobalTargetPrototype = {
   observe(subject, topic, data) {
     
     
-    if (!this.attached) {
+    if (this.isDestroyed()) {
       return;
     }
 
@@ -1090,7 +1076,7 @@ const windowGlobalTargetPrototype = {
 
 
   _detach({ isTargetSwitching } = {}) {
-    if (!this.attached) {
+    if (this.isDestroyed()) {
       return false;
     }
 
@@ -1132,8 +1118,6 @@ const windowGlobalTargetPrototype = {
       this._dbg.disable();
       this._dbg = null;
     }
-
-    this._attached = false;
 
     
     
@@ -1430,7 +1414,7 @@ const windowGlobalTargetPrototype = {
     DevToolsUtils.executeSoon(() => {
       
       
-      if (!this.attached) {
+      if (this.isDestroyed()) {
         return;
       }
 
@@ -1822,7 +1806,7 @@ DebuggerProgressListener.prototype = {
   },
 
   onWindowCreated: DevToolsUtils.makeInfallible(function(evt) {
-    if (!this._targetActor.attached) {
+    if (this._targetActor.isDestroyed()) {
       return;
     }
 
@@ -1860,7 +1844,7 @@ DebuggerProgressListener.prototype = {
   }, "DebuggerProgressListener.prototype.onWindowCreated"),
 
   onWindowHidden: DevToolsUtils.makeInfallible(function(evt) {
-    if (!this._targetActor.attached) {
+    if (this._targetActor.isDestroyed()) {
       return;
     }
 
@@ -1890,7 +1874,7 @@ DebuggerProgressListener.prototype = {
   }, "DebuggerProgressListener.prototype.onWindowHidden"),
 
   observe: DevToolsUtils.makeInfallible(function(subject, topic) {
-    if (!this._targetActor.attached) {
+    if (this._targetActor.isDestroyed()) {
       return;
     }
 
@@ -1927,7 +1911,7 @@ DebuggerProgressListener.prototype = {
     flag,
     status
   ) {
-    if (!this._targetActor.attached) {
+    if (this._targetActor.isDestroyed()) {
       return;
     }
     progress.QueryInterface(Ci.nsIDocShell);

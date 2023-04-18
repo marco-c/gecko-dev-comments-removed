@@ -144,7 +144,7 @@ Observable.prototype = {
     }
     this.isObserving = false;
 
-    if (this.targetActor.attached && this.targetActor.docShell) {
+    if (!this.targetActor.isDestroyed() && this.targetActor.docShell) {
       
       this._stopListeners(this.targetActor.windows);
     }
