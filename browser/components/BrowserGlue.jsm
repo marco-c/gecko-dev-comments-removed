@@ -4165,7 +4165,6 @@ BrowserGlue.prototype = {
   },
 
   async _showUpgradeDialog() {
-    
     const msg = await OnboardingMessageProvider.getUpgradeMessage();
     const win = BrowserWindowTracker.getTopWindow();
     const browser = win.gBrowser.selectedBrowser;
