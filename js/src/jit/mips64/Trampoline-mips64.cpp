@@ -173,7 +173,7 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   masm.movePtr(StackPointer, s4);
 
   
-  masm.movePtr(StackPointer, BaselineFrameReg);
+  masm.movePtr(StackPointer, FramePointer);
 
   
   masm.unboxInt32(Address(reg_vp, 0), s3);
@@ -242,7 +242,7 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   {
     
     AllocatableGeneralRegisterSet regs(GeneralRegisterSet::All());
-    MOZ_ASSERT(!regs.has(BaselineFrameReg));
+    MOZ_ASSERT(!regs.has(FramePointer));
     regs.take(OsrFrameReg);
     regs.take(reg_code);
     regs.take(ReturnReg);
@@ -262,10 +262,10 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
 
     
     masm.subPtr(Imm32(sizeof(uintptr_t)), StackPointer);
-    masm.storePtr(BaselineFrameReg, Address(StackPointer, 0));
+    masm.storePtr(FramePointer, Address(StackPointer, 0));
 
     
-    Register framePtr = BaselineFrameReg;
+    Register framePtr = FramePointer;
     masm.subPtr(Imm32(BaselineFrame::Size()), StackPointer);
     masm.movePtr(StackPointer, framePtr);
 
@@ -298,8 +298,8 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
     using Fn = bool (*)(BaselineFrame * frame, InterpreterFrame * interpFrame,
                         uint32_t numStackValues);
     masm.setupUnalignedABICall(scratch);
-    masm.passABIArg(BaselineFrameReg);  
-    masm.passABIArg(OsrFrameReg);       
+    masm.passABIArg(FramePointer);  
+    masm.passABIArg(OsrFrameReg);   
     masm.passABIArg(numStackValues);
     masm.callWithABI<Fn, jit::InitBaselineFrameForOsr>(
         MoveOp::GENERAL, CheckUnsafeCallWithABI::DontCheckHasExitFrame);

@@ -20,14 +20,14 @@ inline void EmitBaselineTailCallVM(TrampolinePtr target, MacroAssembler& masm,
   Register scratch = R2.scratchReg();
 
   
-  masm.movePtr(BaselineFrameReg, scratch);
+  masm.movePtr(FramePointer, scratch);
   masm.addPtr(Imm32(BaselineFrame::FramePointerOffset), scratch);
   masm.subPtr(BaselineStackReg, scratch);
 
 #ifdef DEBUG
   
   masm.subPtr(Imm32(argSize), scratch);
-  Address frameSizeAddr(BaselineFrameReg,
+  Address frameSizeAddr(FramePointer,
                         BaselineFrame::reverseOffsetOfDebugFrameSize());
   masm.store32(scratch, frameSizeAddr);
   masm.addPtr(Imm32(argSize), scratch);
@@ -54,7 +54,7 @@ inline void EmitBaselineCreateStubFrameDescriptor(MacroAssembler& masm,
                                                   uint32_t headerSize) {
   
   
-  masm.movePtr(BaselineFrameReg, reg);
+  masm.movePtr(FramePointer, reg);
   masm.addPtr(Imm32(sizeof(intptr_t) * 2), reg);
   masm.subPtr(BaselineStackReg, reg);
 
@@ -72,12 +72,12 @@ inline void EmitBaselineEnterStubFrame(MacroAssembler& masm, Register scratch) {
   MOZ_ASSERT(scratch != ICTailCallReg);
 
   
-  masm.movePtr(BaselineFrameReg, scratch);
+  masm.movePtr(FramePointer, scratch);
   masm.addPtr(Imm32(BaselineFrame::FramePointerOffset), scratch);
   masm.subPtr(BaselineStackReg, scratch);
 
 #ifdef DEBUG
-  Address frameSizeAddr(BaselineFrameReg,
+  Address frameSizeAddr(FramePointer,
                         BaselineFrame::reverseOffsetOfDebugFrameSize());
   masm.store32(scratch, frameSizeAddr);
 #endif
@@ -97,9 +97,9 @@ inline void EmitBaselineEnterStubFrame(MacroAssembler& masm, Register scratch) {
   
   masm.storePtr(ICStubReg,
                 Address(StackPointer, offsetof(BaselineStubFrame, savedStub)));
-  masm.storePtr(BaselineFrameReg,
+  masm.storePtr(FramePointer,
                 Address(StackPointer, offsetof(BaselineStubFrame, savedFrame)));
-  masm.movePtr(BaselineStackReg, BaselineFrameReg);
+  masm.movePtr(BaselineStackReg, FramePointer);
 
   
   masm.assertStackAlignment(sizeof(Value), 0);

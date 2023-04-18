@@ -1778,7 +1778,7 @@ void MacroAssembler::switchToObjectRealm(Register obj, Register scratch) {
 }
 
 void MacroAssembler::switchToBaselineFrameRealm(Register scratch) {
-  Address envChain(BaselineFrameReg,
+  Address envChain(FramePointer,
                    BaselineFrame::reverseOffsetOfEnvironmentChain());
   loadPtr(envChain, scratch);
   switchToObjectRealm(scratch, scratch);
@@ -2084,11 +2084,11 @@ void MacroAssembler::generateBailoutTail(Register scratch,
 
     
     AllocatableGeneralRegisterSet enterRegs(GeneralRegisterSet::All());
-    MOZ_ASSERT(!enterRegs.has(BaselineFrameReg));
+    MOZ_ASSERT(!enterRegs.has(FramePointer));
     Register jitcodeReg = enterRegs.takeAny();
 
     pop(jitcodeReg);
-    pop(BaselineFrameReg);
+    pop(FramePointer);
 
     
     addToStackPtr(Imm32(ExitFrameLayout::SizeWithFooter()));

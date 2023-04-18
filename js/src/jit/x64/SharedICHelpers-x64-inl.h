@@ -20,7 +20,7 @@ inline void EmitBaselineTailCallVM(TrampolinePtr target, MacroAssembler& masm,
   ScratchRegisterScope scratch(masm);
 
   
-  masm.movq(BaselineFrameReg, scratch);
+  masm.movq(FramePointer, scratch);
   masm.addq(Imm32(BaselineFrame::FramePointerOffset), scratch);
   masm.subq(BaselineStackReg, scratch);
 
@@ -28,7 +28,7 @@ inline void EmitBaselineTailCallVM(TrampolinePtr target, MacroAssembler& masm,
   
   masm.movq(scratch, rdx);
   masm.subq(Imm32(argSize), rdx);
-  Address frameSizeAddr(BaselineFrameReg,
+  Address frameSizeAddr(FramePointer,
                         BaselineFrame::reverseOffsetOfDebugFrameSize());
   masm.store32(rdx, frameSizeAddr);
 #endif
@@ -46,7 +46,7 @@ inline void EmitBaselineCreateStubFrameDescriptor(MacroAssembler& masm,
                                                   uint32_t headerSize) {
   
   
-  masm.movq(BaselineFrameReg, reg);
+  masm.movq(FramePointer, reg);
   masm.addq(Imm32(sizeof(void*) * 2), reg);
   masm.subq(BaselineStackReg, reg);
 
@@ -82,11 +82,11 @@ inline void EmitBaselineEnterStubFrame(MacroAssembler& masm, Register) {
       BaselineFrame::FramePointerOffset == sizeof(void*),
       "FramePointerOffset must be the same as the return address size");
 
-  masm.movq(BaselineFrameReg, scratch);
+  masm.movq(FramePointer, scratch);
   masm.subq(BaselineStackReg, scratch);
 
 #ifdef DEBUG
-  Address frameSizeAddr(BaselineFrameReg,
+  Address frameSizeAddr(FramePointer,
                         BaselineFrame::reverseOffsetOfDebugFrameSize());
   masm.store32(scratch, frameSizeAddr);
 #endif
@@ -104,8 +104,8 @@ inline void EmitBaselineEnterStubFrame(MacroAssembler& masm, Register) {
 
   
   masm.Push(ICStubReg);
-  masm.Push(BaselineFrameReg);
-  masm.mov(BaselineStackReg, BaselineFrameReg);
+  masm.Push(FramePointer);
+  masm.mov(BaselineStackReg, FramePointer);
 }
 
 }  

@@ -15,10 +15,6 @@ namespace js {
 namespace jit {
 
 
-static constexpr Register BaselineFrameReg = FramePointer;
-static constexpr ARMRegister BaselineFrameReg64 = {BaselineFrameReg, 64};
-
-
 
 
 

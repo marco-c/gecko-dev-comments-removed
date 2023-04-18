@@ -110,7 +110,7 @@ class MOZ_RAII FallbackICCodeCompiler final {
 
 AllocatableGeneralRegisterSet BaselineICAvailableGeneralRegs(size_t numInputs) {
   AllocatableGeneralRegisterSet regs(GeneralRegisterSet::All());
-  MOZ_ASSERT(!regs.has(BaselineFrameReg));
+  MOZ_ASSERT(!regs.has(FramePointer));
 #if defined(JS_CODEGEN_ARM)
   MOZ_ASSERT(!regs.has(BaselineStackReg));
   MOZ_ASSERT(!regs.has(ICTailCallReg));
@@ -579,10 +579,10 @@ void FallbackICCodeCompiler::leaveStubFrame(MacroAssembler& masm,
 void FallbackICCodeCompiler::pushStubPayload(MacroAssembler& masm,
                                              Register scratch) {
   if (inStubFrame_) {
-    masm.loadPtr(Address(BaselineFrameReg, 0), scratch);
+    masm.loadPtr(Address(FramePointer, 0), scratch);
     masm.pushBaselineFramePtr(scratch, scratch);
   } else {
-    masm.pushBaselineFramePtr(BaselineFrameReg, scratch);
+    masm.pushBaselineFramePtr(FramePointer, scratch);
   }
 }
 
@@ -703,7 +703,7 @@ bool FallbackICCodeCompiler::emitGetElem(bool hasReceiver) {
     masm.pushValue(R1);  
     masm.pushValue(Address(masm.getStackPointer(), sizeof(Value) * 5));  
     masm.push(ICStubReg);
-    masm.pushBaselineFramePtr(BaselineFrameReg, R0.scratchReg());
+    masm.pushBaselineFramePtr(FramePointer, R0.scratchReg());
 
     using Fn =
         bool (*)(JSContext*, BaselineFrame*, ICFallbackStub*, HandleValue,
@@ -720,7 +720,7 @@ bool FallbackICCodeCompiler::emitGetElem(bool hasReceiver) {
     masm.pushValue(R1);
     masm.pushValue(R0);
     masm.push(ICStubReg);
-    masm.pushBaselineFramePtr(BaselineFrameReg, R0.scratchReg());
+    masm.pushBaselineFramePtr(FramePointer, R0.scratchReg());
 
     using Fn = bool (*)(JSContext*, BaselineFrame*, ICFallbackStub*,
                         HandleValue, HandleValue, MutableHandleValue);
@@ -1262,7 +1262,7 @@ bool FallbackICCodeCompiler::emitGetProp(bool hasReceiver) {
     masm.pushValue(R0);
     masm.pushValue(R1);
     masm.push(ICStubReg);
-    masm.pushBaselineFramePtr(BaselineFrameReg, R0.scratchReg());
+    masm.pushBaselineFramePtr(FramePointer, R0.scratchReg());
 
     using Fn = bool (*)(JSContext*, BaselineFrame*, ICFallbackStub*,
                         HandleValue, MutableHandleValue, MutableHandleValue);
@@ -1276,7 +1276,7 @@ bool FallbackICCodeCompiler::emitGetProp(bool hasReceiver) {
     
     masm.pushValue(R0);
     masm.push(ICStubReg);
-    masm.pushBaselineFramePtr(BaselineFrameReg, R0.scratchReg());
+    masm.pushBaselineFramePtr(FramePointer, R0.scratchReg());
 
     using Fn = bool (*)(JSContext*, BaselineFrame*, ICFallbackStub*,
                         MutableHandleValue, MutableHandleValue);
@@ -1714,23 +1714,23 @@ bool FallbackICCodeCompiler::emitCall(bool isSpread, bool isConstructing) {
     
     uint32_t valueOffset = 0;
     if (isConstructing) {
-      masm.pushValue(Address(BaselineFrameReg, STUB_FRAME_SIZE));
+      masm.pushValue(Address(FramePointer, STUB_FRAME_SIZE));
       valueOffset++;
     }
 
     
-    masm.pushValue(Address(BaselineFrameReg,
-                           valueOffset * sizeof(Value) + STUB_FRAME_SIZE));
+    masm.pushValue(
+        Address(FramePointer, valueOffset * sizeof(Value) + STUB_FRAME_SIZE));
     valueOffset++;
 
     
-    masm.pushValue(Address(BaselineFrameReg,
-                           valueOffset * sizeof(Value) + STUB_FRAME_SIZE));
+    masm.pushValue(
+        Address(FramePointer, valueOffset * sizeof(Value) + STUB_FRAME_SIZE));
     valueOffset++;
 
     
-    masm.pushValue(Address(BaselineFrameReg,
-                           valueOffset * sizeof(Value) + STUB_FRAME_SIZE));
+    masm.pushValue(
+        Address(FramePointer, valueOffset * sizeof(Value) + STUB_FRAME_SIZE));
     valueOffset++;
 
     masm.push(masm.getStackPointer());
@@ -2372,7 +2372,7 @@ bool FallbackICCodeCompiler::emit_NewArray() {
   EmitRestoreTailCallReg(masm);
 
   masm.push(ICStubReg);  
-  masm.pushBaselineFramePtr(BaselineFrameReg, R0.scratchReg());
+  masm.pushBaselineFramePtr(FramePointer, R0.scratchReg());
 
   using Fn =
       bool (*)(JSContext*, BaselineFrame*, ICFallbackStub*, MutableHandleValue);
