@@ -37,7 +37,8 @@ class PauseResumeButton extends PureComponent {
     };
   }
 
-  componentWillMount() {
+  
+  UNSAFE_componentWillMount() {
     this.updateState(this.props);
   }
 

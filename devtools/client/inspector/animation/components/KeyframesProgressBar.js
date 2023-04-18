@@ -38,7 +38,8 @@ class KeyframesProgressBar extends PureComponent {
     addAnimationsCurrentTimeListener(this.onCurrentTimeUpdated);
   }
 
-  componentWillReceiveProps(nextProps) {
+  
+  UNSAFE_componentWillReceiveProps(nextProps) {
     const { animation, getAnimationsCurrentTime, timeScale } = nextProps;
 
     this.setupAnimation(nextProps);

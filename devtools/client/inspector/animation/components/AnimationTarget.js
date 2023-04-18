@@ -45,11 +45,13 @@ class AnimationTarget extends Component {
     };
   }
 
-  componentWillMount() {
+  
+  UNSAFE_componentWillMount() {
     this.updateNodeFront(this.props.animation);
   }
 
-  componentWillReceiveProps(nextProps) {
+  
+  UNSAFE_componentWillReceiveProps(nextProps) {
     if (this.props.animation.actorID !== nextProps.animation.actorID) {
       this.updateNodeFront(nextProps.animation);
     }

@@ -44,7 +44,8 @@ class AnimatedPropertyList extends Component {
     this.updateState(this.props.animation);
   }
 
-  componentWillReceiveProps(nextProps) {
+  
+  UNSAFE_componentWillReceiveProps(nextProps) {
     this.setState({ isStateUpdating: true });
     this.updateState(nextProps.animation);
   }
