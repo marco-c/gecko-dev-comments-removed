@@ -15,7 +15,8 @@ const { XPCOMUtils } = ChromeUtils.import(
 
 
 const PREF_LOG_LEVEL = "extensions.mozscreenshots@mozilla.org.loglevel";
-XPCOMUtils.defineLazyGetter(this, "log", () => {
+const lazy = {};
+XPCOMUtils.defineLazyGetter(lazy, "log", () => {
   let { ConsoleAPI } = ChromeUtils.import("resource://gre/modules/Console.jsm");
   let consoleOptions = {
     maxLogLevel: "info",
@@ -69,7 +70,7 @@ var Screenshot = {
   async captureExternal(filename) {
     let imagePath = this._buildImagePath(filename);
     await this._screenshotFunction(imagePath);
-    log.debug("saved screenshot: " + filename);
+    lazy.log.debug("saved screenshot: " + filename);
     return imagePath;
   },
 
