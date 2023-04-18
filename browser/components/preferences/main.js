@@ -2616,6 +2616,9 @@ var gMainPane = {
 
 
   sort(event) {
+    if (event.button != 0) {
+      return;
+    }
     var column = event.target;
 
     
