@@ -75,12 +75,11 @@ this.LoginBreaches = {
     
     
     for (const login of logins) {
-      const loginURI = Services.io.newURI(login.origin);
       let loginHost;
       try {
         
-        loginHost = loginURI.host;
-      } catch (ex) {
+        loginHost = Services.io.newURI(login.origin).host;
+      } catch {
         continue;
       }
       for (const breach of breaches) {
