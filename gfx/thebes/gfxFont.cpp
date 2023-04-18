@@ -179,7 +179,8 @@ void gfxFontCache::Shutdown() {
 }
 
 gfxFontCache::gfxFontCache(nsIEventTarget* aEventTarget)
-    : gfxFontCacheExpirationTracker(aEventTarget) {
+    : ExpirationTrackerImpl<gfxFont, 3, Lock, AutoLock>(
+          FONT_TIMEOUT_SECONDS * 1000, "gfxFontCache", aEventTarget) {
   nsCOMPtr<nsIObserverService> obs = GetObserverService();
   if (obs) {
     obs->AddObserver(new Observer, "memory-pressure", false);
@@ -232,25 +233,34 @@ bool gfxFontCache::HashEntry::KeyEquals(const KeyTypePointer aKey) const {
 gfxFont* gfxFontCache::Lookup(const gfxFontEntry* aFontEntry,
                               const gfxFontStyle* aStyle,
                               const gfxCharacterMap* aUnicodeRangeMap) {
+  AutoReadLock lock(mCacheLock);
+
   Key key(aFontEntry, aStyle, aUnicodeRangeMap);
   HashEntry* entry = mFonts.GetEntry(key);
 
   Telemetry::Accumulate(Telemetry::FONT_CACHE_HIT, entry != nullptr);
-  if (!entry) return nullptr;
 
-  return entry->mFont;
+  return entry ? entry->mFont : nullptr;
 }
 
 void gfxFontCache::AddNew(gfxFont* aFont) {
-  Key key(aFont->GetFontEntry(), aFont->GetStyle(),
-          aFont->GetUnicodeRangeMap());
-  HashEntry* entry = mFonts.PutEntry(key);
-  if (!entry) return;
-  gfxFont* oldFont = entry->mFont;
-  entry->mFont = aFont;
-  
-  
-  MOZ_ASSERT(entry == mFonts.GetEntry(key));
+  gfxFont* oldFont;
+  {
+    AutoWriteLock lock(mCacheLock);
+
+    Key key(aFont->GetFontEntry(), aFont->GetStyle(),
+            aFont->GetUnicodeRangeMap());
+    HashEntry* entry = mFonts.PutEntry(key);
+    if (!entry) {
+      return;
+    }
+    oldFont = entry->mFont;
+    entry->mFont = aFont;
+    
+    
+    MOZ_ASSERT(entry == mFonts.GetEntry(key));
+  }
+
   
   
   if (oldFont && oldFont->GetExpirationState()->IsTracked()) {
@@ -262,8 +272,7 @@ void gfxFontCache::AddNew(gfxFont* aFont) {
 }
 
 void gfxFontCache::NotifyReleased(gfxFont* aFont) {
-  nsresult rv = AddObject(aFont);
-  if (NS_FAILED(rv)) {
+  if (NS_FAILED(AddObject(aFont))) {
     
     DestroyFont(aFont);
   }
@@ -274,6 +283,12 @@ void gfxFontCache::NotifyReleased(gfxFont* aFont) {
   
 }
 
+void gfxFontCache::NotifyExpiredLocked(gfxFont* aFont, const AutoLock& aLock) {
+  aFont->ClearCachedWords();
+  RemoveObjectLocked(aFont, aLock);
+  DestroyFont(aFont);
+}
+
 void gfxFontCache::NotifyExpired(gfxFont* aFont) {
   aFont->ClearCachedWords();
   RemoveObject(aFont);
@@ -281,6 +296,7 @@ void gfxFontCache::NotifyExpired(gfxFont* aFont) {
 }
 
 void gfxFontCache::DestroyFont(gfxFont* aFont) {
+  AutoWriteLock lock(mCacheLock);
   Key key(aFont->GetFontEntry(), aFont->GetStyle(),
           aFont->GetUnicodeRangeMap());
   HashEntry* entry = mFonts.GetEntry(key);
@@ -295,24 +311,35 @@ void gfxFontCache::DestroyFont(gfxFont* aFont) {
 
 void gfxFontCache::WordCacheExpirationTimerCallback(nsITimer* aTimer,
                                                     void* aCache) {
-  bool allEmpty = true;
   gfxFontCache* cache = static_cast<gfxFontCache*>(aCache);
-  for (const auto& entry : cache->mFonts) {
-    allEmpty = entry.mFont->AgeCachedWords() && allEmpty;
+  cache->AgeCachedWords();
+}
+
+void gfxFontCache::AgeCachedWords() {
+  bool allEmpty = true;
+  {
+    AutoReadLock lock(mCacheLock);
+    for (const auto& entry : mFonts) {
+      allEmpty = entry.mFont->AgeCachedWords() && allEmpty;
+    }
   }
   if (allEmpty) {
-    cache->PauseWordCacheExpirationTimer();
+    PauseWordCacheExpirationTimer();
   }
 }
 
 void gfxFontCache::FlushShapedWordCaches() {
-  for (const auto& entry : mFonts) {
-    entry.mFont->ClearCachedWords();
+  {
+    AutoReadLock lock(mCacheLock);
+    for (const auto& entry : mFonts) {
+      entry.mFont->ClearCachedWords();
+    }
   }
   PauseWordCacheExpirationTimer();
 }
 
 void gfxFontCache::NotifyGlyphsChanged() {
+  AutoReadLock lock(mCacheLock);
   for (const auto& entry : mFonts) {
     entry.mFont->NotifyGlyphsChanged();
   }
@@ -322,6 +349,7 @@ void gfxFontCache::AddSizeOfExcludingThis(MallocSizeOf aMallocSizeOf,
                                           FontCacheSizes* aSizes) const {
   
 
+  AutoReadLock lock(mCacheLock);
   aSizes->mFontInstances += mFonts.ShallowSizeOfExcludingThis(aMallocSizeOf);
   for (const auto& entry : mFonts) {
     entry.mFont->AddSizeOfExcludingThis(aMallocSizeOf, aSizes);
