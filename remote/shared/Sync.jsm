@@ -18,9 +18,15 @@ var { XPCOMUtils } = ChromeUtils.import(
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   Services: "resource://gre/modules/Services.jsm",
+
+  Log: "chrome://remote/content/shared/Log.jsm",
 });
 
 const { TYPE_REPEATING_SLACK } = Ci.nsITimer;
+
+XPCOMUtils.defineLazyGetter(this, "logger", () =>
+  Log.get(Log.TYPES.REMOTE_AGENT)
+);
 
 
 
@@ -96,40 +102,52 @@ function Deferred() {
 
 
 
-function EventPromise(
-  listener,
-  type,
-  options = {
-    capture: false,
-    wantsUntrusted: false,
-    mozSystemGroup: false,
-  }
-) {
-  if (!listener || !("addEventListener" in listener)) {
-    throw new TypeError();
-  }
-  if (typeof type != "string") {
-    throw new TypeError();
-  }
+
+
+
+
+
+function EventPromise(subject, eventName, options = {}) {
+  const {
+    capture = false,
+    checkFn = null,
+    mozSystemGroup = false,
+    wantUntrusted = false,
+  } = options;
+
   if (
-    ("capture" in options && typeof options.capture != "boolean") ||
-    ("wantsUntrusted" in options &&
-      typeof options.wantsUntrusted != "boolean") ||
-    ("mozSystemGroup" in options && typeof options.mozSystemGroup != "boolean")
+    !subject ||
+    !("addEventListener" in subject) ||
+    typeof eventName != "string" ||
+    typeof capture != "boolean" ||
+    (checkFn && typeof checkFn != "function") ||
+    typeof mozSystemGroup != "boolean" ||
+    typeof wantUntrusted != "boolean"
   ) {
     throw new TypeError();
   }
 
-  options.once = true;
+  return new Promise((resolve, reject) => {
+    function listener(event) {
+      logger.trace(`Received DOM event ${event.type} for ${event.target}`);
+      try {
+        if (checkFn && !checkFn(event)) {
+          return;
+        }
+      } catch (e) {
+        
+        logger.warn(`Event check failed: ${e.message}`);
+      }
 
-  return new Promise(resolve => {
-    listener.addEventListener(
-      type,
-      event => {
-        executeSoon(() => resolve(event));
-      },
-      options
-    );
+      subject.removeEventListener(eventName, listener, capture);
+      executeSoon(() => resolve(event));
+    }
+
+    subject.addEventListener(eventName, listener, {
+      capture,
+      mozSystemGroup,
+      wantUntrusted,
+    });
   });
 }
 
