@@ -3,60 +3,60 @@
 
 #include "gtest/gtest.h"
 
-#include "mozilla/intl/Script.h"
-#include "nsUnicodeScriptCodes.h"
+#include "mozilla/intl/UnicodeProperties.h"
+#include "mozilla/intl/UnicodeScriptCodes.h"
 
 namespace mozilla::intl {
 TEST(IntlScript, GetExtensions)
 {
-  ScriptExtensionVector extensions;
+  UnicodeProperties::ScriptExtensionVector extensions;
 
   
   for (char32_t ch = 0; ch < 0x0041; ch++) {
-    ASSERT_TRUE(Script::GetExtensions(ch, extensions).isOk());
+    ASSERT_TRUE(UnicodeProperties::GetExtensions(ch, extensions).isOk());
     ASSERT_EQ(extensions.length(), 1u);
-    ASSERT_EQ(unicode::Script(extensions[0]), unicode::Script::COMMON);
+    ASSERT_EQ(Script(extensions[0]), Script::COMMON);
   }
 
   
   for (char32_t ch = 0x300; ch < 0x0341; ch++) {
-    ASSERT_TRUE(Script::GetExtensions(ch, extensions).isOk());
+    ASSERT_TRUE(UnicodeProperties::GetExtensions(ch, extensions).isOk());
     ASSERT_EQ(extensions.length(), 1u);
-    ASSERT_EQ(unicode::Script(extensions[0]), unicode::Script::INHERITED);
+    ASSERT_EQ(Script(extensions[0]), Script::INHERITED);
   }
 
   
-  ASSERT_TRUE(Script::GetExtensions(0x1cf7, extensions).isOk());
+  ASSERT_TRUE(UnicodeProperties::GetExtensions(0x1cf7, extensions).isOk());
   ASSERT_EQ(extensions.length(), 1u);
-  ASSERT_EQ(unicode::Script(extensions[0]), unicode::Script::BENGALI);
+  ASSERT_EQ(Script(extensions[0]), Script::BENGALI);
 
   
   
   
   
-  ASSERT_TRUE(Script::GetExtensions(0x063f, extensions).isOk());
+  ASSERT_TRUE(UnicodeProperties::GetExtensions(0x063f, extensions).isOk());
   ASSERT_EQ(extensions.length(), 1u);
-  ASSERT_EQ(unicode::Script(extensions[0]), unicode::Script::ARABIC);
+  ASSERT_EQ(Script(extensions[0]), Script::ARABIC);
 
   
   
-  ASSERT_TRUE(Script::GetExtensions(0xff65, extensions).isOk());
+  ASSERT_TRUE(UnicodeProperties::GetExtensions(0xff65, extensions).isOk());
 
   
   
   ASSERT_EQ(extensions.length(), 6u);
 
-  ASSERT_EQ(unicode::Script(extensions[0]), unicode::Script::BOPOMOFO);
-  ASSERT_EQ(unicode::Script(extensions[1]), unicode::Script::HAN);
-  ASSERT_EQ(unicode::Script(extensions[2]), unicode::Script::HANGUL);
-  ASSERT_EQ(unicode::Script(extensions[3]), unicode::Script::HIRAGANA);
-  ASSERT_EQ(unicode::Script(extensions[4]), unicode::Script::KATAKANA);
-  ASSERT_EQ(unicode::Script(extensions[5]), unicode::Script::YI);
+  ASSERT_EQ(Script(extensions[0]), Script::BOPOMOFO);
+  ASSERT_EQ(Script(extensions[1]), Script::HAN);
+  ASSERT_EQ(Script(extensions[2]), Script::HANGUL);
+  ASSERT_EQ(Script(extensions[3]), Script::HIRAGANA);
+  ASSERT_EQ(Script(extensions[4]), Script::KATAKANA);
+  ASSERT_EQ(Script(extensions[5]), Script::YI);
 
   
   
-  ASSERT_TRUE(Script::GetExtensions(0x110000, extensions).isOk());
+  ASSERT_TRUE(UnicodeProperties::GetExtensions(0x110000, extensions).isOk());
   ASSERT_EQ(extensions.length(), 1u);
-  ASSERT_EQ(unicode::Script(extensions[0]), unicode::Script::UNKNOWN);
+  ASSERT_EQ(Script(extensions[0]), Script::UNKNOWN);
 }
 }  
