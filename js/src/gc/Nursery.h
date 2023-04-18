@@ -320,7 +320,7 @@ class Nursery {
   void renderProfileJSON(JSONPrinter& json) const;
 
   
-  static void printProfileHeader();
+  void printProfileHeader();
 
   
   void printTotalProfileTimes();
@@ -691,7 +691,7 @@ class Nursery {
   void maybeClearProfileDurations();
   void startProfile(ProfileKey key);
   void endProfile(ProfileKey key);
-  static void printProfileDurations(const ProfileDurations& times);
+  static void printProfileDurations(FILE* file, const ProfileDurations& times);
 
   mozilla::TimeStamp collectionStartTime() const;
   mozilla::TimeStamp lastCollectionEndTime() const;

@@ -292,6 +292,10 @@ struct Statistics {
   TimeStamp creationTime() const { return creationTime_; }
 
   
+  
+  FILE* profileFile() const { return gcProfileFile; }
+
+  
   void maybePrintProfileHeaders();
 
   
@@ -327,6 +331,9 @@ struct Statistics {
 
   
   FILE* gcDebugFile;
+
+  
+  FILE* gcProfileFile;
 
   ZoneGCStats zoneStats;
 
@@ -478,7 +485,7 @@ struct Statistics {
   double computeMMU(TimeDuration resolution) const;
 
   void printSliceProfile();
-  static void printProfileTimes(const ProfileDurations& times);
+  void printProfileTimes(const ProfileDurations& times);
 };
 
 struct MOZ_RAII AutoGCSlice {
