@@ -242,6 +242,11 @@ class HyperTextAccessible : public AccessibleWrap,
   
 
 
+  bool IsCaretAtEndOfLine() const;
+
+  
+
+
   int32_t SelectionCount();
 
   
@@ -348,11 +353,6 @@ class HyperTextAccessible : public AccessibleWrap,
 
 
   uint32_t AdjustCaretOffset(uint32_t aOffset) const;
-
-  
-
-
-  bool IsCaretAtEndOfLine() const;
 
   
 

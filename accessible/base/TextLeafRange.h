@@ -35,6 +35,16 @@ class TextLeafPoint final {
 
   TextLeafPoint() : mAcc(nullptr), mOffset(0) {}
 
+  
+
+
+
+
+
+  static TextLeafPoint GetCaret(Accessible* aAcc) {
+    return TextLeafPoint(aAcc, nsIAccessibleText::TEXT_OFFSET_CARET);
+  }
+
   Accessible* mAcc;
   int32_t mOffset;
 
@@ -53,6 +63,21 @@ class TextLeafPoint final {
 
 
   explicit operator bool() const { return !!mAcc; }
+
+  bool IsCaret() const {
+    return mOffset == nsIAccessibleText::TEXT_OFFSET_CARET;
+  }
+
+  bool IsCaretAtEndOfLine() const;
+
+  
+
+
+
+
+
+
+  TextLeafPoint ActualizeCaret(bool aAdjustAtEndOfLine = true) const;
 
   
 
