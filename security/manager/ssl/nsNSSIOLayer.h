@@ -34,6 +34,13 @@ using mozilla::OriginAttributes;
 
 class nsIObserver;
 
+
+enum class EchExtensionStatus {
+  kNotPresent,  
+  kGREASE,      
+  kReal         
+};
+
 class nsNSSSocketInfo final : public CommonSocketControl {
  public:
   nsNSSSocketInfo(mozilla::psm::SharedSSLState& aState, uint32_t providerFlags,
@@ -95,10 +102,12 @@ class nsNSSSocketInfo final : public CommonSocketControl {
   void SetFullHandshake() { mIsFullHandshake = true; }
   bool IsFullHandshake() const { return mIsFullHandshake; }
 
-  void SetEchGreaseUsed() { mEchGreaseUsed = true; }
-
-  bool WasEchUsed() const { return mEchConfig.Length() > 0; }
-  bool WasEchGreaseUsed() const { return mEchGreaseUsed; }
+  void UpdateEchExtensionStatus(EchExtensionStatus aEchExtensionStatus) {
+    mEchExtensionStatus = std::max(aEchExtensionStatus, mEchExtensionStatus);
+  }
+  EchExtensionStatus GetEchExtensionStatus() const {
+    return mEchExtensionStatus;
+  }
 
   bool GetJoined() { return mJoined; }
   void SetSentClientCert() { mSentClientCert = true; }
@@ -201,7 +210,7 @@ class nsNSSSocketInfo final : public CommonSocketControl {
   bool mFalseStarted;
   bool mIsFullHandshake;
   bool mNotedTimeUntilReady;
-  bool mEchGreaseUsed;
+  EchExtensionStatus mEchExtensionStatus;  
 
   
   
