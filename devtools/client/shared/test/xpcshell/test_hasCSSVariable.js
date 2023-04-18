@@ -7,9 +7,6 @@
 
 
 
-const { require } = ChromeUtils.import(
-  "resource://devtools/shared/loader/Loader.jsm"
-);
 const {
   hasCSSVariable,
 } = require("devtools/client/inspector/rules/utils/utils");

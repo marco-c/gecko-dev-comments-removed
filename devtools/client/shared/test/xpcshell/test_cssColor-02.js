@@ -9,9 +9,6 @@
 
 
 
-const { require } = ChromeUtils.import(
-  "resource://devtools/shared/loader/Loader.jsm"
-);
 const { colorUtils } = require("devtools/shared/css/color");
 const getFixtureColorData = require("resource://test/helper_color_data.js");
 

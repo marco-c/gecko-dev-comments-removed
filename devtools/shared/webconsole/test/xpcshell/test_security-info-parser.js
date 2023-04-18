@@ -4,10 +4,6 @@
 
 
 
-const { require } = ChromeUtils.import(
-  "resource://devtools/shared/loader/Loader.jsm"
-);
-
 Object.defineProperty(this, "NetworkHelper", {
   get: function() {
     return require("devtools/shared/webconsole/network-helper");

@@ -5,9 +5,6 @@
 
 
 
-const { require } = ChromeUtils.import(
-  "resource://devtools/shared/loader/Loader.jsm"
-);
 const { advanceValidate } = require("devtools/client/inspector/shared/utils");
 const { KeyCodes } = require("devtools/client/shared/keycodes");
 

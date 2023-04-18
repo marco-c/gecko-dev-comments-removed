@@ -2,9 +2,6 @@
 
 
 "use strict";
-const { require } = ChromeUtils.import(
-  "resource://devtools/shared/loader/Loader.jsm"
-);
 const Services = require("Services");
 const {
   FallibleJSPropertyProvider: JSPropertyProvider,

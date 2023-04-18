@@ -2,9 +2,6 @@
 
 
 "use strict";
-const { require } = ChromeUtils.import(
-  "resource://devtools/shared/loader/Loader.jsm"
-);
 const {
   analyzeInputString,
 } = require("devtools/shared/webconsole/analyze-input-string");
