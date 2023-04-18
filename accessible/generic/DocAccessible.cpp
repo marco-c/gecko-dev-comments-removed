@@ -449,6 +449,10 @@ void DocAccessible::Shutdown() {
   }
 
   mChildDocuments.Clear();
+  
+  
+  
+  mQueuedCacheUpdates.Clear();
 
   
   if (mIPCDoc) {
@@ -616,6 +620,13 @@ void DocAccessible::ScrollTimerCallback(nsITimer* aTimer, void* aClosure) {
 }
 
 void DocAccessible::HandleScroll(nsINode* aTarget) {
+  
+  
+  
+  if (LocalAccessible* scrollTarget = GetAccessible(aTarget)) {
+    QueueCacheUpdate(scrollTarget, CacheDomain::ScrollPosition);
+  }
+
   const uint32_t kScrollEventInterval = 100;
   
   
@@ -646,6 +657,28 @@ void DocAccessible::HandleScroll(nsINode* aTarget) {
       NS_ADDREF_THIS();  
     }
   }
+}
+
+std::pair<nsPoint, nsRect> DocAccessible::ComputeScrollData(
+    LocalAccessible* aAcc) {
+  nsPoint scrollPoint;
+  nsRect scrollRange;
+  nsIFrame* frame = aAcc->GetFrame();
+  nsIScrollableFrame* sf = aAcc == this
+                               ? mPresShell->GetRootScrollFrameAsScrollable()
+                               : frame->GetScrollTargetFrame();
+
+  
+  
+  
+  
+  if (sf) {
+    scrollPoint = sf->GetScrollPosition() * mPresShell->GetResolution();
+    scrollRange = sf->GetScrollRange();
+    scrollRange.ScaleRoundOut(mPresShell->GetResolution());
+  }
+
+  return {scrollPoint, scrollRange};
 }
 
 
@@ -2541,31 +2574,19 @@ void DocAccessible::DispatchScrollingEvent(nsINode* aTarget,
     return;
   }
 
-  LayoutDevicePoint scrollPoint;
-  LayoutDeviceRect scrollRange;
-  nsIScrollableFrame* sf = acc == this
-                               ? mPresShell->GetRootScrollFrameAsScrollable()
-                               : frame->GetScrollTargetFrame();
+  auto [scrollPoint, scrollRange] = ComputeScrollData(acc);
 
-  
-  
-  
-  
-  if (sf) {
-    int32_t appUnitsPerDevPixel =
-        mPresShell->GetPresContext()->AppUnitsPerDevPixel();
-    scrollPoint = LayoutDevicePoint::FromAppUnits(sf->GetScrollPosition(),
-                                                  appUnitsPerDevPixel) *
-                  mPresShell->GetResolution();
+  int32_t appUnitsPerDevPixel =
+      mPresShell->GetPresContext()->AppUnitsPerDevPixel();
 
-    scrollRange = LayoutDeviceRect::FromAppUnits(sf->GetScrollRange(),
-                                                 appUnitsPerDevPixel);
-    scrollRange.ScaleRoundOut(mPresShell->GetResolution());
-  }
+  LayoutDeviceIntPoint scrollPointDP = LayoutDevicePoint::FromAppUnitsToNearest(
+      scrollPoint, appUnitsPerDevPixel);
+  LayoutDeviceIntRect scrollRangeDP =
+      LayoutDeviceRect::FromAppUnitsToNearest(scrollRange, appUnitsPerDevPixel);
 
   RefPtr<AccEvent> event =
-      new AccScrollingEvent(aEventType, acc, scrollPoint.x, scrollPoint.y,
-                            scrollRange.width, scrollRange.height);
+      new AccScrollingEvent(aEventType, acc, scrollPointDP.x, scrollPointDP.y,
+                            scrollRangeDP.width, scrollRangeDP.height);
   nsEventShell::FireEvent(event);
 }
 
