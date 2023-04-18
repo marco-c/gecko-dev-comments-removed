@@ -7477,108 +7477,108 @@ HTMLEditor::HandleInsertParagraphInListItemElement(
     return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
   }
 
-  
-  
-  
   nsCOMPtr<nsIContent> prevItem = HTMLEditUtils::GetPreviousSibling(
       aListItemElement, {WalkTreeOption::IgnoreNonEditableNode});
-  if (prevItem && HTMLEditUtils::IsListItem(prevItem)) {
-    if (HTMLEditUtils::IsEmptyNode(
-            *prevItem, {EmptyCheckOption::TreatSingleBRElementAsVisible})) {
-      CreateElementResult createPaddingBRResult =
-          InsertPaddingBRElementForEmptyLastLineWithTransaction(
-              EditorDOMPoint(prevItem, 0));
-      if (MOZ_UNLIKELY(createPaddingBRResult.Failed())) {
-        NS_WARNING(
-            "HTMLEditor::InsertPaddingBRElementForEmptyLastLineWithTransaction("
-            ") failed");
-        return Err(createPaddingBRResult.Rv());
-      }
-      return EditorDOMPoint(&aListItemElement, 0u);
-    }
 
-    if (HTMLEditUtils::IsEmptyNode(aListItemElement)) {
-      
-      
-      
-      if (aListItemElement.IsAnyOfHTMLElements(nsGkAtoms::dd, nsGkAtoms::dt)) {
-        nsStaticAtom& nextDefinitionListItemTagName =
-            aListItemElement.IsHTMLElement(nsGkAtoms::dt) ? *nsGkAtoms::dd
-                                                          : *nsGkAtoms::dt;
-        
-        
-        Result<RefPtr<Element>, nsresult> maybeNewListItemElement =
-            CreateAndInsertElement(WithTransaction::Yes,
-                                   MOZ_KnownLive(nextDefinitionListItemTagName),
-                                   EditorDOMPoint::After(aListItemElement));
-        if (MOZ_UNLIKELY(maybeNewListItemElement.isErr())) {
-          NS_WARNING(
-              "HTMLEditor::CreateAndInsertElement(WithTransaction::Yes) "
-              "failed");
-          return Err(maybeNewListItemElement.unwrapErr());
-        }
-        MOZ_ASSERT(maybeNewListItemElement.inspect());
-        nsresult rv = DeleteNodeWithTransaction(aListItemElement);
-        if (MOZ_UNLIKELY(NS_WARN_IF(Destroyed()))) {
-          return Err(NS_ERROR_EDITOR_DESTROYED);
-        }
-        if (MOZ_UNLIKELY(NS_FAILED(rv))) {
-          NS_WARNING("HTMLEditor::DeleteNodeWithTransaction() failed");
-          return Err(rv);
-        }
-        return EditorDOMPoint(maybeNewListItemElement.unwrap(), 0u);
-      }
-
-      
-      
-      
-      RefPtr<Element> brElement;
-      nsresult rv = CopyLastEditableChildStylesWithTransaction(
-          MOZ_KnownLive(*prevItem->AsElement()), aListItemElement,
-          address_of(brElement));
-      if (MOZ_UNLIKELY(NS_WARN_IF(Destroyed()))) {
-        return Err(NS_ERROR_EDITOR_DESTROYED);
-      }
-      if (MOZ_UNLIKELY(NS_FAILED(rv))) {
-        NS_WARNING(
-            "HTMLEditor::CopyLastEditableChildStylesWithTransaction() "
-            "failed");
-        return Err(NS_ERROR_FAILURE);
-      }
-      return brElement ? EditorDOMPoint(brElement)
-                       : EditorDOMPoint(&aListItemElement, 0u);
-    }
-
-    
-    
-    
-    WSScanResult forwardScanFromStartOfListItemResult =
-        WSRunScanner::ScanNextVisibleNodeOrBlockBoundary(
-            &aEditingHost, EditorRawDOMPoint(&aListItemElement, 0u));
-    if (MOZ_UNLIKELY(forwardScanFromStartOfListItemResult.Failed())) {
-      NS_WARNING("WSRunScanner::ScanNextVisibleNodeOrBlockBoundary() failed");
-      return Err(NS_ERROR_FAILURE);
-    }
-    if (forwardScanFromStartOfListItemResult.ReachedSpecialContent() ||
-        forwardScanFromStartOfListItemResult.ReachedBRElement() ||
-        forwardScanFromStartOfListItemResult.ReachedHRElement()) {
-      EditorDOMPoint atFoundElement =
-          forwardScanFromStartOfListItemResult.PointAtContent();
-      if (MOZ_UNLIKELY(NS_WARN_IF(!atFoundElement.IsSetAndValid()))) {
-        return Err(NS_ERROR_FAILURE);
-      }
-      return atFoundElement;
-    }
-
-    
-    
-    
-    return forwardScanFromStartOfListItemResult.Point();
+  
+  if (!prevItem || !HTMLEditUtils::IsListItem(prevItem)) {
+    return EditorDOMPoint(&aListItemElement);
   }
 
   
   
-  return EditorDOMPoint(&aListItemElement);
+  
+  if (HTMLEditUtils::IsEmptyNode(
+          *prevItem, {EmptyCheckOption::TreatSingleBRElementAsVisible})) {
+    CreateElementResult createPaddingBRResult =
+        InsertPaddingBRElementForEmptyLastLineWithTransaction(
+            EditorDOMPoint(prevItem, 0));
+    if (MOZ_UNLIKELY(createPaddingBRResult.Failed())) {
+      NS_WARNING(
+          "HTMLEditor::InsertPaddingBRElementForEmptyLastLineWithTransaction("
+          ") failed");
+      return Err(createPaddingBRResult.Rv());
+    }
+    return EditorDOMPoint(&aListItemElement, 0u);
+  }
+
+  if (HTMLEditUtils::IsEmptyNode(aListItemElement)) {
+    
+    
+    
+    if (aListItemElement.IsAnyOfHTMLElements(nsGkAtoms::dd, nsGkAtoms::dt)) {
+      nsStaticAtom& nextDefinitionListItemTagName =
+          aListItemElement.IsHTMLElement(nsGkAtoms::dt) ? *nsGkAtoms::dd
+                                                        : *nsGkAtoms::dt;
+      
+      
+      Result<RefPtr<Element>, nsresult> maybeNewListItemElement =
+          CreateAndInsertElement(WithTransaction::Yes,
+                                 MOZ_KnownLive(nextDefinitionListItemTagName),
+                                 EditorDOMPoint::After(aListItemElement));
+      if (MOZ_UNLIKELY(maybeNewListItemElement.isErr())) {
+        NS_WARNING(
+            "HTMLEditor::CreateAndInsertElement(WithTransaction::Yes) "
+            "failed");
+        return Err(maybeNewListItemElement.unwrapErr());
+      }
+      MOZ_ASSERT(maybeNewListItemElement.inspect());
+      nsresult rv = DeleteNodeWithTransaction(aListItemElement);
+      if (MOZ_UNLIKELY(NS_WARN_IF(Destroyed()))) {
+        return Err(NS_ERROR_EDITOR_DESTROYED);
+      }
+      if (MOZ_UNLIKELY(NS_FAILED(rv))) {
+        NS_WARNING("HTMLEditor::DeleteNodeWithTransaction() failed");
+        return Err(rv);
+      }
+      return EditorDOMPoint(maybeNewListItemElement.unwrap(), 0u);
+    }
+
+    
+    
+    
+    RefPtr<Element> brElement;
+    nsresult rv = CopyLastEditableChildStylesWithTransaction(
+        MOZ_KnownLive(*prevItem->AsElement()), aListItemElement,
+        address_of(brElement));
+    if (MOZ_UNLIKELY(NS_WARN_IF(Destroyed()))) {
+      return Err(NS_ERROR_EDITOR_DESTROYED);
+    }
+    if (MOZ_UNLIKELY(NS_FAILED(rv))) {
+      NS_WARNING(
+          "HTMLEditor::CopyLastEditableChildStylesWithTransaction() "
+          "failed");
+      return Err(NS_ERROR_FAILURE);
+    }
+    return brElement ? EditorDOMPoint(brElement)
+                     : EditorDOMPoint(&aListItemElement, 0u);
+  }
+
+  
+  
+  
+  WSScanResult forwardScanFromStartOfListItemResult =
+      WSRunScanner::ScanNextVisibleNodeOrBlockBoundary(
+          &aEditingHost, EditorRawDOMPoint(&aListItemElement, 0u));
+  if (MOZ_UNLIKELY(forwardScanFromStartOfListItemResult.Failed())) {
+    NS_WARNING("WSRunScanner::ScanNextVisibleNodeOrBlockBoundary() failed");
+    return Err(NS_ERROR_FAILURE);
+  }
+  if (forwardScanFromStartOfListItemResult.ReachedSpecialContent() ||
+      forwardScanFromStartOfListItemResult.ReachedBRElement() ||
+      forwardScanFromStartOfListItemResult.ReachedHRElement()) {
+    EditorDOMPoint atFoundElement =
+        forwardScanFromStartOfListItemResult.PointAtContent();
+    if (MOZ_UNLIKELY(NS_WARN_IF(!atFoundElement.IsSetAndValid()))) {
+      return Err(NS_ERROR_FAILURE);
+    }
+    return atFoundElement;
+  }
+
+  
+  
+  
+  return forwardScanFromStartOfListItemResult.Point();
 }
 
 nsresult HTMLEditor::MoveNodesIntoNewBlockquoteElement(
