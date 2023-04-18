@@ -28,7 +28,7 @@ fn workers_stop() {
             
             join_a_lot(22);
 
-            thread_pool.registry.clone()
+            Arc::clone(&thread_pool.registry)
         });
         assert_eq!(registry.num_threads(), 22);
     }
@@ -53,7 +53,7 @@ fn sleeper_stop() {
     {
         
         let thread_pool = ThreadPoolBuilder::new().num_threads(22).build().unwrap();
-        registry = thread_pool.registry.clone();
+        registry = Arc::clone(&thread_pool.registry);
 
         
         thread::sleep(time::Duration::from_secs(1));
@@ -67,7 +67,7 @@ fn sleeper_stop() {
 
 fn count_handler() -> (Arc<AtomicUsize>, impl Fn(usize)) {
     let count = Arc::new(AtomicUsize::new(0));
-    (count.clone(), move |_| {
+    (Arc::clone(&count), move |_| {
         count.fetch_add(1, Ordering::SeqCst);
     })
 }

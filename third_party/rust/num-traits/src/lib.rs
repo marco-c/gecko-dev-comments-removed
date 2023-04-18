@@ -40,6 +40,7 @@ pub use int::PrimInt;
 pub use ops::checked::{
     CheckedAdd, CheckedDiv, CheckedMul, CheckedNeg, CheckedRem, CheckedShl, CheckedShr, CheckedSub,
 };
+pub use ops::euclid::{CheckedEuclid, Euclid};
 pub use ops::inv::Inv;
 pub use ops::mul_add::{MulAdd, MulAddAssign};
 pub use ops::saturating::{Saturating, SaturatingAdd, SaturatingMul, SaturatingSub};
@@ -127,6 +128,8 @@ impl<T> NumRef for T where T: Num + for<'r> NumOps<&'r T> {}
 
 
 
+
+
 pub trait RefNum<Base>: NumOps<Base, Base> + for<'r> NumOps<&'r Base, Base> {}
 impl<T, Base> RefNum<Base> for T where T: NumOps<Base, Base> + for<'r> NumOps<&'r Base, Base> {}
 
@@ -175,11 +178,7 @@ int_trait_impl!(Num for u128 i128);
 
 impl<T: Num> Num for Wrapping<T>
 where
-    Wrapping<T>: Add<Output = Wrapping<T>>
-        + Sub<Output = Wrapping<T>>
-        + Mul<Output = Wrapping<T>>
-        + Div<Output = Wrapping<T>>
-        + Rem<Output = Wrapping<T>>,
+    Wrapping<T>: NumOps,
 {
     type FromStrRadixErr = T::FromStrRadixErr;
     fn from_str_radix(str: &str, radix: u32) -> Result<Self, Self::FromStrRadixErr> {
@@ -210,6 +209,14 @@ impl fmt::Display for ParseFloatError {
     }
 }
 
+fn str_to_ascii_lower_eq_str(a: &str, b: &str) -> bool {
+    a.len() == b.len()
+        && a.bytes().zip(b.bytes()).all(|(a, b)| {
+            let a_to_ascii_lower = a | (((b'A' <= a && a <= b'Z') as u8) << 5);
+            a_to_ascii_lower == b
+        })
+}
+
 
 
 
@@ -224,12 +231,26 @@ macro_rules! float_trait_impl {
                 use self::FloatErrorKind::*;
                 use self::ParseFloatError as PFE;
 
+                // Special case radix 10 to use more accurate standard library implementation
+                if radix == 10 {
+                    return src.parse().map_err(|_| PFE {
+                        kind: if src.is_empty() { Empty } else { Invalid },
+                    });
+                }
+
                 // Special values
-                match src {
-                    "inf"   => return Ok(core::$t::INFINITY),
-                    "-inf"  => return Ok(core::$t::NEG_INFINITY),
-                    "NaN"   => return Ok(core::$t::NAN),
-                    _       => {},
+                if str_to_ascii_lower_eq_str(src, "inf")
+                    || str_to_ascii_lower_eq_str(src, "infinity")
+                {
+                    return Ok(core::$t::INFINITY);
+                } else if str_to_ascii_lower_eq_str(src, "-inf")
+                    || str_to_ascii_lower_eq_str(src, "-infinity")
+                {
+                    return Ok(core::$t::NEG_INFINITY);
+                } else if str_to_ascii_lower_eq_str(src, "nan") {
+                    return Ok(core::$t::NAN);
+                } else if str_to_ascii_lower_eq_str(src, "-nan") {
+                    return Ok(-core::$t::NAN);
                 }
 
                 fn slice_shift_char(src: &str) -> Option<(char, &str)> {
@@ -509,6 +530,28 @@ fn from_str_radix_multi_byte_fail() {
 }
 
 #[test]
+fn from_str_radix_ignore_case() {
+    assert_eq!(
+        f32::from_str_radix("InF", 16).unwrap(),
+        ::core::f32::INFINITY
+    );
+    assert_eq!(
+        f32::from_str_radix("InfinitY", 16).unwrap(),
+        ::core::f32::INFINITY
+    );
+    assert_eq!(
+        f32::from_str_radix("-InF", 8).unwrap(),
+        ::core::f32::NEG_INFINITY
+    );
+    assert_eq!(
+        f32::from_str_radix("-InfinitY", 8).unwrap(),
+        ::core::f32::NEG_INFINITY
+    );
+    assert!(f32::from_str_radix("nAn", 4).unwrap().is_nan());
+    assert!(f32::from_str_radix("-nAn", 4).unwrap().is_nan());
+}
+
+#[test]
 fn wrapping_is_num() {
     fn require_num<T: Num>(_: &T) {}
     require_num(&Wrapping(42_u32));
@@ -582,5 +625,16 @@ fn check_numassign_ops() {
     assert_eq!(compute(1, 2), 1)
 }
 
-
-
+#[cfg(has_int_assignop_ref)]
+#[test]
+fn check_numassignref_ops() {
+    fn compute<T: NumAssignRef + Copy>(mut x: T, y: &T) -> T {
+        x *= y;
+        x /= y;
+        x %= y;
+        x += y;
+        x -= y;
+        x
+    }
+    assert_eq!(compute(1, &2), 1)
+}

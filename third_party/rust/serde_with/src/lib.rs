@@ -1,6 +1,6 @@
 #![deny(
-    missing_debug_implementations,
     missing_copy_implementations,
+    missing_debug_implementations,
     missing_docs,
     trivial_casts,
     trivial_numeric_casts,
@@ -9,11 +9,25 @@
     unused_qualifications,
     variant_size_differences
 )]
-#![cfg_attr(feature = "cargo-clippy", allow(renamed_and_removed_lints))]
-#![doc(html_root_url = "https://docs.rs/serde_with/1.4.0")]
+#![warn(rust_2018_idioms)]
+#![doc(test(attr(deny(
+    missing_copy_implementations,
+    missing_debug_implementations,
+    trivial_casts,
+    trivial_numeric_casts,
+    unused_extern_crates,
+    unused_import_braces,
+    unused_qualifications,
+    variant_size_differences,
+))))]
+#![doc(test(attr(warn(rust_2018_idioms))))]
 
+#![doc(test(no_crate_inject))]
+#![doc(html_root_url = "https://docs.rs/serde_with/1.6.4")]
 
+#![allow(renamed_and_removed_lints)]
 
+#![allow(clippy::unknown_clippy_lints)]
 
 
 
@@ -87,29 +101,177 @@
 
 
 
-#[cfg(feature = "chrono")]
-extern crate chrono as chrono_crate;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[doc(hidden)]
 pub extern crate serde;
-#[cfg(feature = "json")]
-extern crate serde_json;
-#[cfg(feature = "macros")]
-extern crate serde_with_macros;
 
 #[cfg(feature = "chrono")]
 pub mod chrono;
+pub mod de;
 mod duplicate_key_impls;
 mod flatten_maybe;
+pub mod formats;
+#[cfg(feature = "hex")]
+pub mod hex;
 #[cfg(feature = "json")]
 pub mod json;
 pub mod rust;
+pub mod ser;
+mod utils;
 #[doc(hidden)]
 pub mod with_prefix;
 
 
+
+
+#[cfg(feature = "guide")]
+macro_rules! generate_guide {
+    (pub mod $name:ident; $($rest:tt)*) => {
+        generate_guide!(@gen ".", pub mod $name { } $($rest)*);
+    };
+    (pub mod $name:ident { $($children:tt)* } $($rest:tt)*) => {
+        generate_guide!(@gen ".", pub mod $name { $($children)* } $($rest)*);
+    };
+    (@gen $prefix:expr, ) => {};
+    (@gen $prefix:expr, pub mod $name:ident; $($rest:tt)*) => {
+        generate_guide!(@gen $prefix, pub mod $name { } $($rest)*);
+    };
+    (@gen $prefix:expr, @code pub mod $name:ident; $($rest:tt)*) => {
+        pub mod $name;
+        generate_guide!(@gen $prefix, $($rest)*);
+    };
+    (@gen $prefix:expr, pub mod $name:ident { $($children:tt)* } $($rest:tt)*) => {
+        doc_comment::doc_comment! {
+            include_str!(concat!($prefix, "/", stringify!($name), ".md")),
+            pub mod $name {
+                generate_guide!(@gen concat!($prefix, "/", stringify!($name)), $($children)*);
+            }
+        }
+        generate_guide!(@gen $prefix, $($rest)*);
+    };
+}
+
+#[cfg(feature = "guide")]
+generate_guide! {
+    pub mod guide {
+        pub mod feature_flags;
+        pub mod serde_as;
+    }
+}
+
+#[doc(inline)]
+pub use crate::{de::DeserializeAs, rust::StringWithSeparator, ser::SerializeAs};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+
 #[cfg(feature = "macros")]
 #[doc(inline)]
 pub use serde_with_macros::*;
+use std::marker::PhantomData;
 
 
 pub trait Separator {
@@ -138,3 +300,1022 @@ impl Separator for CommaSeparator {
         ","
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Copy, Clone, Debug, Default)]
+pub struct As<T: ?Sized>(PhantomData<T>);
+
+impl<T: ?Sized> As<T> {
+    
+    
+    
+    
+    
+    pub fn serialize<S, I>(value: &I, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+        T: SerializeAs<I>,
+        I: ?Sized,
+    {
+        T::serialize_as(value, serializer)
+    }
+
+    
+    
+    
+    
+    
+    pub fn deserialize<'de, D, I>(deserializer: D) -> Result<I, D::Error>
+    where
+        T: DeserializeAs<'de, I>,
+        D: Deserializer<'de>,
+    {
+        T::deserialize_as(deserializer)
+    }
+}
+
+
+
+
+
+
+#[derive(Copy, Clone, Debug, Default)]
+pub struct Same;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Copy, Clone, Debug, Default)]
+pub struct DisplayFromStr;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Copy, Clone, Debug, Default)]
+pub struct NoneAsEmptyString;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Copy, Clone, Debug, Default)]
+pub struct DefaultOnError<T = Same>(PhantomData<T>);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Copy, Clone, Debug, Default)]
+pub struct DefaultOnNull<T = Same>(PhantomData<T>);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Copy, Clone, Debug, Default)]
+pub struct BytesOrString;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Copy, Clone, Debug, Default)]
+pub struct DurationSeconds<
+    FORMAT: formats::Format = u64,
+    STRICTNESS: formats::Strictness = formats::Strict,
+>(PhantomData<(FORMAT, STRICTNESS)>);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Copy, Clone, Debug, Default)]
+pub struct DurationSecondsWithFrac<
+    FORMAT: formats::Format = f64,
+    STRICTNESS: formats::Strictness = formats::Strict,
+>(PhantomData<(FORMAT, STRICTNESS)>);
+
+
+
+
+#[derive(Copy, Clone, Debug, Default)]
+pub struct DurationMilliSeconds<
+    FORMAT: formats::Format = u64,
+    STRICTNESS: formats::Strictness = formats::Strict,
+>(PhantomData<(FORMAT, STRICTNESS)>);
+
+
+
+
+#[derive(Copy, Clone, Debug, Default)]
+pub struct DurationMilliSecondsWithFrac<
+    FORMAT: formats::Format = f64,
+    STRICTNESS: formats::Strictness = formats::Strict,
+>(PhantomData<(FORMAT, STRICTNESS)>);
+
+
+
+
+#[derive(Copy, Clone, Debug, Default)]
+pub struct DurationMicroSeconds<
+    FORMAT: formats::Format = u64,
+    STRICTNESS: formats::Strictness = formats::Strict,
+>(PhantomData<(FORMAT, STRICTNESS)>);
+
+
+
+
+#[derive(Copy, Clone, Debug, Default)]
+pub struct DurationMicroSecondsWithFrac<
+    FORMAT: formats::Format = f64,
+    STRICTNESS: formats::Strictness = formats::Strict,
+>(PhantomData<(FORMAT, STRICTNESS)>);
+
+
+
+
+#[derive(Copy, Clone, Debug, Default)]
+pub struct DurationNanoSeconds<
+    FORMAT: formats::Format = u64,
+    STRICTNESS: formats::Strictness = formats::Strict,
+>(PhantomData<(FORMAT, STRICTNESS)>);
+
+
+
+
+#[derive(Copy, Clone, Debug, Default)]
+pub struct DurationNanoSecondsWithFrac<
+    FORMAT: formats::Format = f64,
+    STRICTNESS: formats::Strictness = formats::Strict,
+>(PhantomData<(FORMAT, STRICTNESS)>);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Copy, Clone, Debug, Default)]
+pub struct TimestampSeconds<
+    FORMAT: formats::Format = i64,
+    STRICTNESS: formats::Strictness = formats::Strict,
+>(PhantomData<(FORMAT, STRICTNESS)>);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Copy, Clone, Debug, Default)]
+pub struct TimestampSecondsWithFrac<
+    FORMAT: formats::Format = f64,
+    STRICTNESS: formats::Strictness = formats::Strict,
+>(PhantomData<(FORMAT, STRICTNESS)>);
+
+
+
+
+#[derive(Copy, Clone, Debug, Default)]
+pub struct TimestampMilliSeconds<
+    FORMAT: formats::Format = i64,
+    STRICTNESS: formats::Strictness = formats::Strict,
+>(PhantomData<(FORMAT, STRICTNESS)>);
+
+
+
+
+#[derive(Copy, Clone, Debug, Default)]
+pub struct TimestampMilliSecondsWithFrac<
+    FORMAT: formats::Format = f64,
+    STRICTNESS: formats::Strictness = formats::Strict,
+>(PhantomData<(FORMAT, STRICTNESS)>);
+
+
+
+
+#[derive(Copy, Clone, Debug, Default)]
+pub struct TimestampMicroSeconds<
+    FORMAT: formats::Format = i64,
+    STRICTNESS: formats::Strictness = formats::Strict,
+>(PhantomData<(FORMAT, STRICTNESS)>);
+
+
+
+
+#[derive(Copy, Clone, Debug, Default)]
+pub struct TimestampMicroSecondsWithFrac<
+    FORMAT: formats::Format = f64,
+    STRICTNESS: formats::Strictness = formats::Strict,
+>(PhantomData<(FORMAT, STRICTNESS)>);
+
+
+
+
+#[derive(Copy, Clone, Debug, Default)]
+pub struct TimestampNanoSeconds<
+    FORMAT: formats::Format = i64,
+    STRICTNESS: formats::Strictness = formats::Strict,
+>(PhantomData<(FORMAT, STRICTNESS)>);
+
+
+
+
+#[derive(Copy, Clone, Debug, Default)]
+pub struct TimestampNanoSecondsWithFrac<
+    FORMAT: formats::Format = f64,
+    STRICTNESS: formats::Strictness = formats::Strict,
+>(PhantomData<(FORMAT, STRICTNESS)>);

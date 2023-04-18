@@ -14,6 +14,32 @@ pub trait Bounded {
     fn max_value() -> Self;
 }
 
+
+pub trait LowerBounded {
+    
+    fn min_value() -> Self;
+}
+
+
+impl<T: Bounded> LowerBounded for T {
+    fn min_value() -> T {
+        Bounded::min_value()
+    }
+}
+
+
+pub trait UpperBounded {
+    
+    fn max_value() -> Self;
+}
+
+
+impl<T: Bounded> UpperBounded for T {
+    fn max_value() -> T {
+        Bounded::max_value()
+    }
+}
+
 macro_rules! bounded_impl {
     ($t:ty, $min:expr, $max:expr) => {
         impl Bounded for $t {

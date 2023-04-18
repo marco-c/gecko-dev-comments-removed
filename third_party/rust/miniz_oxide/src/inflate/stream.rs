@@ -164,6 +164,20 @@ impl InflateState {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 pub fn inflate(
     state: &mut InflateState,
     input: &[u8],
@@ -179,8 +193,15 @@ pub fn inflate(
         return StreamResult::error(MZError::Stream);
     }
 
-    let mut decomp_flags = inflate_flags::TINFL_FLAG_COMPUTE_ADLER32;
-    if state.data_format == DataFormat::Zlib {
+    let mut decomp_flags = if state.data_format == DataFormat::Zlib {
+        inflate_flags::TINFL_FLAG_COMPUTE_ADLER32
+    } else {
+        inflate_flags::TINFL_FLAG_IGNORE_ADLER32
+    };
+
+    if (state.data_format == DataFormat::Zlib)
+        | (state.data_format == DataFormat::ZLibIgnoreChecksum)
+    {
         decomp_flags |= inflate_flags::TINFL_FLAG_PARSE_ZLIB_HEADER;
     }
 
@@ -344,7 +365,7 @@ fn push_dict_out(state: &mut InflateState, next_out: &mut &mut [u8]) -> usize {
 mod test {
     use super::{inflate, InflateState};
     use crate::{DataFormat, MZFlush, MZStatus};
-    use std::vec;
+    use alloc::vec;
 
     #[test]
     fn test_state() {
@@ -375,5 +396,19 @@ mod test {
         assert_eq!(status, MZStatus::StreamEnd);
         assert_eq!(out[..res.bytes_written as usize], b"Hello, zlib!"[..]);
         assert_eq!(res.bytes_consumed, encoded.len());
+        assert_eq!(state.decompressor().adler32(), Some(459605011));
+
+        
+        state = InflateState::new_boxed(DataFormat::ZLibIgnoreChecksum);
+        out.iter_mut().map(|x| *x = 0).count();
+        let res = inflate(&mut state, &encoded, &mut out, MZFlush::Finish);
+        let status = res.status.expect("Failed to decompress!");
+        assert_eq!(status, MZStatus::StreamEnd);
+        assert_eq!(out[..res.bytes_written as usize], b"Hello, zlib!"[..]);
+        assert_eq!(res.bytes_consumed, encoded.len());
+        
+        assert_eq!(state.decompressor().adler32(), Some(1));
+        
+        assert_eq!(state.decompressor().adler32_header(), Some(459605011))
     }
 }

@@ -65,11 +65,12 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/serde_yaml/0.8.23")]
+#![doc(html_root_url = "https://docs.rs/serde_yaml/0.8.24")]
 #![deny(missing_docs)]
 
 #![allow(
     
+    clippy::iter_not_returning_iterator, 
     clippy::question_mark, 
     
     clippy::should_implement_trait,
@@ -89,6 +90,7 @@
     clippy::cast_precision_loss,
     clippy::doc_markdown,
     clippy::items_after_statements,
+    clippy::return_self_not_must_use,
     
     clippy::missing_errors_doc,
     clippy::must_use_candidate,

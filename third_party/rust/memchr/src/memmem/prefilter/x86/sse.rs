@@ -21,25 +21,12 @@ pub(crate) unsafe fn find(
     haystack: &[u8],
     needle: &[u8],
 ) -> Option<usize> {
-    
-    
-    
-    
-    fn simple_memchr_fallback(
-        _prestate: &mut PrefilterState,
-        ninfo: &NeedleInfo,
-        haystack: &[u8],
-        needle: &[u8],
-    ) -> Option<usize> {
-        let (rare, _) = ninfo.rarebytes.as_rare_ordered_usize();
-        crate::memchr(needle[rare], haystack).map(|i| i.saturating_sub(rare))
-    }
     super::super::genericsimd::find::<__m128i>(
         prestate,
         ninfo,
         haystack,
         needle,
-        simple_memchr_fallback,
+        super::super::simple_memchr_fallback,
     )
 }
 

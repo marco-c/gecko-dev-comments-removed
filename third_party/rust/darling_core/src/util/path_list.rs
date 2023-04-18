@@ -1,9 +1,10 @@
 use std::ops::Deref;
-use std::string::ToString;
 
 use syn::{Meta, NestedMeta, Path};
 
 use crate::{Error, FromMeta, Result};
+
+use super::path_to_string;
 
 
 
@@ -27,16 +28,7 @@ impl PathList {
 
     
     pub fn to_strings(&self) -> Vec<String> {
-        self.0
-            .iter()
-            .map(|p| {
-                p.segments
-                    .iter()
-                    .map(|s| s.ident.to_string())
-                    .collect::<Vec<String>>()
-                    .join("::")
-            })
-            .collect()
+        self.0.iter().map(path_to_string).collect()
     }
 }
 

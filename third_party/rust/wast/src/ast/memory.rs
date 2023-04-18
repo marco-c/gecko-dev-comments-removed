@@ -133,14 +133,7 @@ impl<'a> Parse<'a> for Data<'a> {
         let id = parser.parse()?;
         let name = parser.parse()?;
 
-        
-        
-        let kind = if parser.peek::<kw::passive>() {
-            parser.parse::<kw::passive>()?;
-            DataKind::Passive
-
-        
-        } else if parser.peek::<&[u8]>() {
+        let kind = if parser.peek::<&[u8]>() {
             DataKind::Passive
 
         

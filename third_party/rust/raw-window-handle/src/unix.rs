@@ -18,6 +18,8 @@ pub struct XlibHandle {
     pub window: c_ulong,
     
     pub display: *mut c_void,
+    
+    pub visual_id: c_ulong,
 }
 
 
@@ -35,6 +37,8 @@ pub struct XcbHandle {
     pub window: u32, 
     
     pub connection: *mut c_void,
+    
+    pub visual_id: u32,
 }
 
 
@@ -59,6 +63,7 @@ impl XlibHandle {
         Self {
             window: 0,
             display: ptr::null_mut(),
+            visual_id: 0,
         }
     }
 }
@@ -68,6 +73,7 @@ impl XcbHandle {
         Self {
             window: 0,
             connection: ptr::null_mut(),
+            visual_id: 0,
         }
     }
 }

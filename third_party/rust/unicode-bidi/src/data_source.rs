@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+use crate::BidiClass;
+
+
+
+pub trait BidiDataSource {
+    fn bidi_class(&self, c: char) -> BidiClass;
+}

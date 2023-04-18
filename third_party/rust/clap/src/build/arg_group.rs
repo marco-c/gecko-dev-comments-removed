@@ -109,7 +109,7 @@ impl<'help> ArgGroup<'help> {
     
     
     pub fn new<S: Into<&'help str>>(n: S) -> Self {
-        ArgGroup::default().name(n)
+        ArgGroup::default().id(n)
     }
 
     
@@ -122,10 +122,16 @@ impl<'help> ArgGroup<'help> {
     
     
     #[must_use]
-    pub fn name<S: Into<&'help str>>(mut self, n: S) -> Self {
+    pub fn id<S: Into<&'help str>>(mut self, n: S) -> Self {
         self.name = n.into();
-        self.id = Id::from(&self.name);
+        self.id = Id::from(self.name);
         self
+    }
+
+    
+    #[deprecated(since = "3.1.0", note = "Replaced with `ArgGroup::id`")]
+    pub fn name<S: Into<&'help str>>(self, n: S) -> Self {
+        self.id(n)
     }
 
     
@@ -266,9 +272,6 @@ impl<'help> ArgGroup<'help> {
     
     
     
-    
-    
-    
     #[inline]
     #[must_use]
     pub fn required(mut self, yes: bool) -> Self {
@@ -276,9 +279,6 @@ impl<'help> ArgGroup<'help> {
         self
     }
 
-    
-    
-    
     
     
     
@@ -349,9 +349,6 @@ impl<'help> ArgGroup<'help> {
     
     
     
-    
-    
-    
     #[must_use]
     pub fn requires_all(mut self, ns: &[&'help str]) -> Self {
         for n in ns {
@@ -360,9 +357,6 @@ impl<'help> ArgGroup<'help> {
         self
     }
 
-    
-    
-    
     
     
     
@@ -430,9 +424,6 @@ impl<'help> ArgGroup<'help> {
     
     
     
-    
-    
-    
     #[must_use]
     pub fn conflicts_with_all(mut self, ns: &[&'help str]) -> Self {
         for n in ns {
@@ -443,6 +434,7 @@ impl<'help> ArgGroup<'help> {
 
     
     #[deprecated(since = "3.0.0", note = "Replaced with `ArgGroup::new`")]
+    #[doc(hidden)]
     pub fn with_name<S: Into<&'help str>>(n: S) -> Self {
         Self::new(n)
     }
@@ -453,6 +445,7 @@ impl<'help> ArgGroup<'help> {
         since = "3.0.0",
         note = "Maybe clap::Parser would fit your use case? (Issue #3087)"
     )]
+    #[doc(hidden)]
     pub fn from_yaml(yaml: &'help Yaml) -> Self {
         Self::from(yaml)
     }
@@ -510,7 +503,7 @@ impl<'help> From<&'help Yaml> for ArgGroup<'help> {
                 "conflicts_with" => yaml_vec_or_str!(a, v, conflicts_with),
                 "name" => {
                     if let Some(ys) = v.as_str() {
-                        a = a.name(ys);
+                        a = a.id(ys);
                     }
                     a
                 }

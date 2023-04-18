@@ -288,6 +288,7 @@ fn mpsc_blocking_start_send() {
 
 
 
+#[cfg_attr(miri, ignore)] 
 #[test]
 fn with_flush() {
     let (tx, rx) = oneshot::channel();

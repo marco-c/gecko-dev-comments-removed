@@ -147,6 +147,7 @@ fn single_receiver_drop_closes_channel_and_drains() {
 
 
 
+#[cfg_attr(miri, ignore)] 
 #[test]
 fn stress_try_send_as_receiver_closes() {
     const AMT: usize = 10000;

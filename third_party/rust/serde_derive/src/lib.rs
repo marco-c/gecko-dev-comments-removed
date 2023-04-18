@@ -13,7 +13,7 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/serde_derive/1.0.133")]
+#![doc(html_root_url = "https://docs.rs/serde_derive/1.0.136")]
 #![allow(unknown_lints, bare_trait_objects)]
 
 #![allow(

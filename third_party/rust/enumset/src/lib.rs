@@ -1,6 +1,148 @@
 #![no_std]
 #![forbid(missing_docs)]
 
+#![allow(clippy::missing_safety_doc)]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+use core::cmp::Ordering;
+use core::fmt;
+use core::fmt::{Debug, Formatter};
+use core::hash::{Hash, Hasher};
+use core::iter::{FromIterator, Sum};
+use core::ops::*;
+
+#[doc(hidden)]
+
+pub mod __internal {
+    use super::*;
+
+    
+    pub use ::core as core_export;
+
+    
+    #[cfg(feature = "serde")]
+    pub use serde2 as serde;
+
+    
+    pub unsafe trait EnumSetTypePrivate {
+        
+        type Repr: EnumSetTypeRepr;
+        
+        const ALL_BITS: Self::Repr;
+
+        
+        fn enum_into_u32(self) -> u32;
+        
+        unsafe fn enum_from_u32(val: u32) -> Self;
+
+        
+        
+        
+        
+        #[cfg(feature = "serde")]
+        fn serialize<S: serde::Serializer>(set: EnumSet<Self>, ser: S) -> Result<S::Ok, S::Error>
+        where Self: EnumSetType;
+        
+        #[cfg(feature = "serde")]
+        fn deserialize<'de, D: serde::Deserializer<'de>>(de: D) -> Result<EnumSet<Self>, D::Error>
+        where Self: EnumSetType;
+    }
+}
+#[cfg(feature = "serde")]
+use crate::__internal::serde;
+use crate::__internal::EnumSetTypePrivate;
+#[cfg(feature = "serde")]
+use crate::serde::{Deserialize, Serialize};
+
+mod repr;
+use crate::repr::EnumSetTypeRepr;
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -77,55 +219,30 @@
 
 pub use enumset_derive::EnumSetType;
 
-use core::cmp::Ordering;
-use core::fmt;
-use core::fmt::{Debug, Formatter};
-use core::hash::{Hash, Hasher};
-use core::iter::{FromIterator, Sum};
-use core::ops::*;
 
-#[doc(hidden)]
 
-pub mod __internal {
-    use super::*;
 
+
+
+
+
+pub unsafe trait EnumSetType: Copy + Eq + EnumSetTypePrivate {}
+
+
+
+
+
+
+
+
+
+
+pub unsafe trait EnumSetTypeWithRepr:
+    EnumSetType + EnumSetTypePrivate<Repr = <Self as EnumSetTypeWithRepr>::Repr>
+{
     
-    pub use ::core as core_export;
-
-    
-    #[cfg(feature = "serde")] pub use serde2 as serde;
-
-    
-    pub unsafe trait EnumSetTypePrivate {
-        
-        type Repr: EnumSetTypeRepr;
-        
-        const ALL_BITS: Self::Repr;
-
-        
-        fn enum_into_u32(self) -> u32;
-        
-        unsafe fn enum_from_u32(val: u32) -> Self;
-
-        
-        
-        
-        
-        #[cfg(feature = "serde")]
-        fn serialize<S: serde::Serializer>(set: EnumSet<Self>, ser: S) -> Result<S::Ok, S::Error>
-            where Self: EnumSetType;
-        
-        #[cfg(feature = "serde")]
-        fn deserialize<'de, D: serde::Deserializer<'de>>(de: D) -> Result<EnumSet<Self>, D::Error>
-            where Self: EnumSetType;
-    }
+    type Repr: EnumSetTypeRepr;
 }
-use crate::__internal::EnumSetTypePrivate;
-#[cfg(feature = "serde")] use crate::__internal::serde;
-#[cfg(feature = "serde")] use crate::serde::{Serialize, Deserialize};
-
-mod repr;
-use crate::repr::EnumSetTypeRepr;
 
 
 
@@ -183,8 +300,6 @@ use crate::repr::EnumSetTypeRepr;
 
 
 
-
-pub unsafe trait EnumSetType: Copy + Eq + EnumSetTypePrivate { }
 
 
 
@@ -218,9 +333,9 @@ pub struct EnumSet<T: EnumSetType> {
     #[doc(hidden)]
     
     
-    pub __priv_repr: T::Repr
+    pub __priv_repr: T::Repr,
 }
-impl <T: EnumSetType> EnumSet<T> {
+impl<T: EnumSetType> EnumSet<T> {
     
     #[inline(always)]
     fn all_bits() -> T::Repr {
@@ -376,8 +491,83 @@ impl <T: EnumSetType> EnumSet<T> {
     
     
     
+    
     pub fn iter(&self) -> EnumSetIter<T> {
         EnumSetIter::new(*self)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    #[inline(always)]
+    pub fn as_repr(&self) -> <T as EnumSetTypeWithRepr>::Repr
+    where T: EnumSetTypeWithRepr {
+        self.__priv_repr
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline(always)]
+    pub unsafe fn from_repr_unchecked(bits: <T as EnumSetTypeWithRepr>::Repr) -> Self
+    where T: EnumSetTypeWithRepr {
+        Self { __priv_repr: bits }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    #[inline(always)]
+    pub fn from_repr(bits: <T as EnumSetTypeWithRepr>::Repr) -> Self
+    where T: EnumSetTypeWithRepr {
+        Self::try_from_repr(bits).expect("Bitset contains invalid variants.")
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    #[inline(always)]
+    pub fn try_from_repr(bits: <T as EnumSetTypeWithRepr>::Repr) -> Option<Self>
+    where T: EnumSetTypeWithRepr {
+        let mask = Self::all().__priv_repr;
+        if bits.and_not(mask).is_empty() {
+            Some(EnumSet { __priv_repr: bits })
+        } else {
+            None
+        }
+    }
+
+    
+    
+    
+    
+    #[inline(always)]
+    pub fn from_repr_truncated(bits: <T as EnumSetTypeWithRepr>::Repr) -> Self
+    where T: EnumSetTypeWithRepr {
+        let mask = Self::all().as_repr();
+        let bits = bits & mask;
+        EnumSet { __priv_repr: bits }
     }
 }
 
@@ -387,7 +577,7 @@ macro_rules! conversion_impls {
         $(for_num!(
             $underlying:ty, $underlying_str:expr,
             $from_fn:ident $to_fn:ident $from_fn_opt:ident $to_fn_opt:ident,
-            $from:ident $try_from:ident $from_truncated:ident
+            $from:ident $try_from:ident $from_truncated:ident $from_unchecked:ident,
             $to:ident $try_to:ident $to_truncated:ident
         );)*
     ) => {
@@ -397,7 +587,8 @@ macro_rules! conversion_impls {
             #[doc = "` representing the elements of this set.\n\nIf the underlying bitset will \
                      not fit in a `"]
             #[doc = $underlying_str]
-            #[doc = "`, this method will panic."]
+            #[doc = "` or contains bits that do not correspond to an enum variant, this method \
+                     will panic."]
             #[inline(always)]
             pub fn $to(&self) -> $underlying {
                 self.$try_to().expect("Bitset will not fit into this type.")
@@ -408,7 +599,8 @@ macro_rules! conversion_impls {
             #[doc = "` representing the elements of this set.\n\nIf the underlying bitset will \
                      not fit in a `"]
             #[doc = $underlying_str]
-            #[doc = "`, this method will instead return `None`."]
+            #[doc = "` or contains bits that do not correspond to an enum variant, this method \
+                     will instead return `None`."]
             #[inline(always)]
             pub fn $try_to(&self) -> Option<$underlying> {
                 EnumSetTypeRepr::$to_fn_opt(&self.__priv_repr)
@@ -419,7 +611,8 @@ macro_rules! conversion_impls {
             #[doc = "` representing the elements of this set.\n\nIf the underlying bitset will \
                      not fit in a `"]
             #[doc = $underlying_str]
-            #[doc = "`, this method will truncate any bits that don't fit."]
+            #[doc = "`, this method will truncate any bits that don't fit or do not correspond \
+                     to an enum variant."]
             #[inline(always)]
             pub fn $to_truncated(&self) -> $underlying {
                 EnumSetTypeRepr::$to_fn(&self.__priv_repr)
@@ -458,33 +651,58 @@ macro_rules! conversion_impls {
                 let bits = <T::Repr as EnumSetTypeRepr>::$from_fn(bits & mask);
                 EnumSet { __priv_repr: bits }
             }
+
+            #[doc = "Constructs a bitset from a `"]
+            #[doc = $underlying_str]
+            #[doc = "`, without checking for invalid bits."]
+            ///
+            /// # Safety
+            ///
+            /// All bits in the provided parameter `bits` that don't correspond to an enum variant
+            /// of `T` must be set to `0`. Behavior is **undefined** if any of these bits are set
+            /// to `1`.
+            #[inline(always)]
+            pub unsafe fn $from_unchecked(bits: $underlying) -> Self {
+                EnumSet { __priv_repr: <T::Repr as EnumSetTypeRepr>::$from_fn(bits) }
+            }
         )*}
     }
 }
 conversion_impls! {
-    for_num!(u8, "u8", from_u8 to_u8 from_u8_opt to_u8_opt,
-             from_u8 try_from_u8 from_u8_truncated as_u8 try_as_u8 as_u8_truncated);
-    for_num!(u16, "u16", from_u16 to_u16 from_u16_opt to_u16_opt,
-             from_u16 try_from_u16 from_u16_truncated as_u16 try_as_u16 as_u16_truncated);
-    for_num!(u32, "u32", from_u32 to_u32 from_u32_opt to_u32_opt,
-             from_u32 try_from_u32 from_u32_truncated as_u32 try_as_u32 as_u32_truncated);
-    for_num!(u64, "u64", from_u64 to_u64 from_u64_opt to_u64_opt,
-             from_u64 try_from_u64 from_u64_truncated as_u64 try_as_u64 as_u64_truncated);
-    for_num!(u128, "u128", from_u128 to_u128 from_u128_opt to_u128_opt,
-             from_u128 try_from_u128 from_u128_truncated as_u128 try_as_u128 as_u128_truncated);
-    for_num!(usize, "usize", from_usize to_usize from_usize_opt to_usize_opt,
-             from_usize try_from_usize from_usize_truncated
+    for_num!(u8, "u8",
+             from_u8 to_u8 from_u8_opt to_u8_opt,
+             from_u8 try_from_u8 from_u8_truncated from_u8_unchecked,
+             as_u8 try_as_u8 as_u8_truncated);
+    for_num!(u16, "u16",
+             from_u16 to_u16 from_u16_opt to_u16_opt,
+             from_u16 try_from_u16 from_u16_truncated from_u16_unchecked,
+             as_u16 try_as_u16 as_u16_truncated);
+    for_num!(u32, "u32",
+             from_u32 to_u32 from_u32_opt to_u32_opt,
+             from_u32 try_from_u32 from_u32_truncated from_u32_unchecked,
+             as_u32 try_as_u32 as_u32_truncated);
+    for_num!(u64, "u64",
+             from_u64 to_u64 from_u64_opt to_u64_opt,
+             from_u64 try_from_u64 from_u64_truncated from_u64_unchecked,
+             as_u64 try_as_u64 as_u64_truncated);
+    for_num!(u128, "u128",
+             from_u128 to_u128 from_u128_opt to_u128_opt,
+             from_u128 try_from_u128 from_u128_truncated from_u128_unchecked,
+             as_u128 try_as_u128 as_u128_truncated);
+    for_num!(usize, "usize",
+             from_usize to_usize from_usize_opt to_usize_opt,
+             from_usize try_from_usize from_usize_truncated from_usize_unchecked,
              as_usize try_as_usize as_usize_truncated);
 }
 
-impl <T: EnumSetType> Default for EnumSet<T> {
+impl<T: EnumSetType> Default for EnumSet<T> {
     
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl <T: EnumSetType> IntoIterator for EnumSet<T> {
+impl<T: EnumSetType> IntoIterator for EnumSet<T> {
     type Item = T;
     type IntoIter = EnumSetIter<T>;
 
@@ -492,49 +710,49 @@ impl <T: EnumSetType> IntoIterator for EnumSet<T> {
         self.iter()
     }
 }
-impl <T: EnumSetType> Sum for EnumSet<T> {
-    fn sum<I: Iterator<Item=Self>>(iter: I) -> Self {
+impl<T: EnumSetType> Sum for EnumSet<T> {
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
         iter.fold(EnumSet::empty(), |a, v| a | v)
     }
 }
-impl <'a, T: EnumSetType> Sum<&'a EnumSet<T>> for EnumSet<T> {
-    fn sum<I: Iterator<Item=&'a Self>>(iter: I) -> Self {
+impl<'a, T: EnumSetType> Sum<&'a EnumSet<T>> for EnumSet<T> {
+    fn sum<I: Iterator<Item = &'a Self>>(iter: I) -> Self {
         iter.fold(EnumSet::empty(), |a, v| a | *v)
     }
 }
-impl <T: EnumSetType> Sum<T> for EnumSet<T> {
-    fn sum<I: Iterator<Item=T>>(iter: I) -> Self {
+impl<T: EnumSetType> Sum<T> for EnumSet<T> {
+    fn sum<I: Iterator<Item = T>>(iter: I) -> Self {
         iter.fold(EnumSet::empty(), |a, v| a | v)
     }
 }
-impl <'a, T: EnumSetType> Sum<&'a T> for EnumSet<T> {
-    fn sum<I: Iterator<Item=&'a T>>(iter: I) -> Self {
+impl<'a, T: EnumSetType> Sum<&'a T> for EnumSet<T> {
+    fn sum<I: Iterator<Item = &'a T>>(iter: I) -> Self {
         iter.fold(EnumSet::empty(), |a, v| a | *v)
     }
 }
 
-impl <T: EnumSetType, O: Into<EnumSet<T>>> Sub<O> for EnumSet<T> {
+impl<T: EnumSetType, O: Into<EnumSet<T>>> Sub<O> for EnumSet<T> {
     type Output = Self;
     #[inline(always)]
     fn sub(self, other: O) -> Self::Output {
         self.difference(other.into())
     }
 }
-impl <T: EnumSetType, O: Into<EnumSet<T>>> BitAnd<O> for EnumSet<T> {
+impl<T: EnumSetType, O: Into<EnumSet<T>>> BitAnd<O> for EnumSet<T> {
     type Output = Self;
     #[inline(always)]
     fn bitand(self, other: O) -> Self::Output {
         self.intersection(other.into())
     }
 }
-impl <T: EnumSetType, O: Into<EnumSet<T>>> BitOr<O> for EnumSet<T> {
+impl<T: EnumSetType, O: Into<EnumSet<T>>> BitOr<O> for EnumSet<T> {
     type Output = Self;
     #[inline(always)]
     fn bitor(self, other: O) -> Self::Output {
         self.union(other.into())
     }
 }
-impl <T: EnumSetType, O: Into<EnumSet<T>>> BitXor<O> for EnumSet<T> {
+impl<T: EnumSetType, O: Into<EnumSet<T>>> BitXor<O> for EnumSet<T> {
     type Output = Self;
     #[inline(always)]
     fn bitxor(self, other: O) -> Self::Output {
@@ -542,32 +760,32 @@ impl <T: EnumSetType, O: Into<EnumSet<T>>> BitXor<O> for EnumSet<T> {
     }
 }
 
-impl <T: EnumSetType, O: Into<EnumSet<T>>> SubAssign<O> for EnumSet<T> {
+impl<T: EnumSetType, O: Into<EnumSet<T>>> SubAssign<O> for EnumSet<T> {
     #[inline(always)]
     fn sub_assign(&mut self, rhs: O) {
         *self = *self - rhs;
     }
 }
-impl <T: EnumSetType, O: Into<EnumSet<T>>> BitAndAssign<O> for EnumSet<T> {
+impl<T: EnumSetType, O: Into<EnumSet<T>>> BitAndAssign<O> for EnumSet<T> {
     #[inline(always)]
     fn bitand_assign(&mut self, rhs: O) {
         *self = *self & rhs;
     }
 }
-impl <T: EnumSetType, O: Into<EnumSet<T>>> BitOrAssign<O> for EnumSet<T> {
+impl<T: EnumSetType, O: Into<EnumSet<T>>> BitOrAssign<O> for EnumSet<T> {
     #[inline(always)]
     fn bitor_assign(&mut self, rhs: O) {
         *self = *self | rhs;
     }
 }
-impl <T: EnumSetType, O: Into<EnumSet<T>>> BitXorAssign<O> for EnumSet<T> {
+impl<T: EnumSetType, O: Into<EnumSet<T>>> BitXorAssign<O> for EnumSet<T> {
     #[inline(always)]
     fn bitxor_assign(&mut self, rhs: O) {
         *self = *self ^ rhs;
     }
 }
 
-impl <T: EnumSetType> Not for EnumSet<T> {
+impl<T: EnumSetType> Not for EnumSet<T> {
     type Output = Self;
     #[inline(always)]
     fn not(self) -> Self::Output {
@@ -575,23 +793,25 @@ impl <T: EnumSetType> Not for EnumSet<T> {
     }
 }
 
-impl <T: EnumSetType> From<T> for EnumSet<T> {
+impl<T: EnumSetType> From<T> for EnumSet<T> {
     fn from(t: T) -> Self {
         EnumSet::only(t)
     }
 }
 
-impl <T: EnumSetType> PartialEq<T> for EnumSet<T> {
+impl<T: EnumSetType> PartialEq<T> for EnumSet<T> {
     fn eq(&self, other: &T) -> bool {
         self.__priv_repr == EnumSet::only(*other).__priv_repr
     }
 }
-impl <T: EnumSetType + Debug> Debug for EnumSet<T> {
+impl<T: EnumSetType + Debug> Debug for EnumSet<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let mut is_first = true;
         f.write_str("EnumSet(")?;
         for v in self.iter() {
-            if !is_first { f.write_str(" | ")?; }
+            if !is_first {
+                f.write_str(" | ")?;
+            }
             is_first = false;
             v.fmt(f)?;
         }
@@ -601,31 +821,31 @@ impl <T: EnumSetType + Debug> Debug for EnumSet<T> {
 }
 
 #[allow(clippy::derive_hash_xor_eq)] 
-impl <T: EnumSetType> Hash for EnumSet<T> {
+impl<T: EnumSetType> Hash for EnumSet<T> {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.__priv_repr.hash(state)
     }
 }
-impl <T: EnumSetType> PartialOrd for EnumSet<T> {
+impl<T: EnumSetType> PartialOrd for EnumSet<T> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         self.__priv_repr.partial_cmp(&other.__priv_repr)
     }
 }
-impl <T: EnumSetType> Ord for EnumSet<T> {
+impl<T: EnumSetType> Ord for EnumSet<T> {
     fn cmp(&self, other: &Self) -> Ordering {
         self.__priv_repr.cmp(&other.__priv_repr)
     }
 }
 
 #[cfg(feature = "serde")]
-impl <T: EnumSetType> Serialize for EnumSet<T> {
+impl<T: EnumSetType> Serialize for EnumSet<T> {
     fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         T::serialize(*self, serializer)
     }
 }
 
 #[cfg(feature = "serde")]
-impl <'de, T: EnumSetType> Deserialize<'de> for EnumSet<T> {
+impl<'de, T: EnumSetType> Deserialize<'de> for EnumSet<T> {
     fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         T::deserialize(deserializer)
     }
@@ -636,12 +856,13 @@ impl <'de, T: EnumSetType> Deserialize<'de> for EnumSet<T> {
 pub struct EnumSetIter<T: EnumSetType> {
     set: EnumSet<T>,
 }
-impl <T: EnumSetType> EnumSetIter<T> {
+impl<T: EnumSetType> EnumSetIter<T> {
     fn new(set: EnumSet<T>) -> EnumSetIter<T> {
         EnumSetIter { set }
     }
 }
-impl <T: EnumSetType> Iterator for EnumSetIter<T> {
+
+impl<T: EnumSetType> Iterator for EnumSetIter<T> {
     type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -659,11 +880,25 @@ impl <T: EnumSetType> Iterator for EnumSetIter<T> {
     }
 }
 
+impl<T: EnumSetType> DoubleEndedIterator for EnumSetIter<T> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        if self.set.is_empty() {
+            None
+        } else {
+            let bit = T::Repr::WIDTH - 1 - self.set.__priv_repr.leading_zeros();
+            self.set.__priv_repr.remove_bit(bit);
+            unsafe { Some(T::enum_from_u32(bit)) }
+        }
+    }
+}
+
 impl<T: EnumSetType> ExactSizeIterator for EnumSetIter<T> {}
 
 impl<T: EnumSetType> Extend<T> for EnumSet<T> {
     fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
-        iter.into_iter().for_each(|v| { self.insert(v); });
+        iter.into_iter().for_each(|v| {
+            self.insert(v);
+        });
     }
 }
 
@@ -677,7 +912,9 @@ impl<T: EnumSetType> FromIterator<T> for EnumSet<T> {
 
 impl<T: EnumSetType> Extend<EnumSet<T>> for EnumSet<T> {
     fn extend<I: IntoIterator<Item = EnumSet<T>>>(&mut self, iter: I) {
-        iter.into_iter().for_each(|v| { self.insert_all(v); });
+        iter.into_iter().for_each(|v| {
+            self.insert_all(v);
+        });
     }
 }
 

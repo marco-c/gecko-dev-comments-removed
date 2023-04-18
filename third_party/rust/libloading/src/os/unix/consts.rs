@@ -43,7 +43,7 @@ pub const RTLD_GLOBAL: c_int = posix::RTLD_GLOBAL;
 
 pub const RTLD_LOCAL: c_int = posix::RTLD_LOCAL;
 
-#[cfg(all(docsrs, not(unix)))]
+#[cfg(all(libloading_docs, not(unix)))]
 mod posix {
     use super::c_int;
     pub(super) const RTLD_LAZY: c_int = !0;
@@ -52,7 +52,7 @@ mod posix {
     pub(super) const RTLD_LOCAL: c_int = !0;
 }
 
-#[cfg(any(not(docsrs), unix))]
+#[cfg(any(not(libloading_docs), unix))]
 mod posix {
     extern crate cfg_if;
     use self::cfg_if::cfg_if;

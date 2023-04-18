@@ -17,11 +17,11 @@
 
 
 
-#[cfg(any(unix, docsrs))]
-#[cfg_attr(docsrs, doc(cfg(unix)))]
+#[cfg(any(unix, libloading_docs))]
+#[cfg_attr(libloading_docs, doc(cfg(unix)))]
 pub mod unix;
 
 
-#[cfg(any(windows, docsrs))]
-#[cfg_attr(docsrs, doc(cfg(windows)))]
+#[cfg(any(windows, libloading_docs))]
+#[cfg_attr(libloading_docs, doc(cfg(windows)))]
 pub mod windows;
