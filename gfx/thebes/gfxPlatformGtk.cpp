@@ -325,7 +325,6 @@ already_AddRefed<gfxASurface> gfxPlatformGtk::CreateOffscreenSurface(
 
   RefPtr<gfxASurface> newSurface;
   bool needsClear = true;
-#ifdef MOZ_X11
   
   
   
@@ -336,7 +335,6 @@ already_AddRefed<gfxASurface> gfxPlatformGtk::CreateOffscreenSurface(
     
     needsClear = false;
   }
-#endif
 
   if (!newSurface) {
     
@@ -951,8 +949,10 @@ class XrandrSoftwareVsyncSource final : public SoftwareVsyncSource {
     return rate;
   }
 };
+#endif
 
 already_AddRefed<gfx::VsyncSource> gfxPlatformGtk::CreateHardwareVsyncSource() {
+#ifdef MOZ_X11
   if (IsHeadless() || IsWaylandDisplay()) {
     
     
@@ -988,8 +988,10 @@ already_AddRefed<gfx::VsyncSource> gfxPlatformGtk::CreateHardwareVsyncSource() {
 
   RefPtr<VsyncSource> softwareVsync = new XrandrSoftwareVsyncSource();
   return softwareVsync.forget();
-}
+#else
+  return gfxPlatform::CreateHardwareVsyncSource();
 #endif
+}
 
 void gfxPlatformGtk::BuildContentDeviceData(ContentDeviceData* aOut) {
   gfxPlatform::BuildContentDeviceData(aOut);
