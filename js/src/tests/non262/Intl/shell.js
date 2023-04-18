@@ -313,6 +313,10 @@ const numberingSystems = {
     "algorithmic": false,
     "digits": "𑓐𑓑𑓒𑓓𑓔𑓕𑓖𑓗𑓘𑓙"
   },
+  "tnsa": {
+    "algorithmic": false,
+    "digits": "𖫀𖫁𖫂𖫃𖫄𖫅𖫆𖫇𖫈𖫉"
+  },
   "vaii": {
     "algorithmic": false,
     "digits": "꘠꘡꘢꘣꘤꘥꘦꘧꘨꘩"
