@@ -734,7 +734,7 @@ vec4 textureLinearR16(S sampler, vec2 P) {
 
 template <typename S>
 static inline V8<int16_t> textureLinearUnpackedRG16(S sampler, ivec2 i) {
-  assert(sampler->format == TextureFormat::R16);
+  assert(sampler->format == TextureFormat::RG16);
 
   ivec2 frac = i;
   i >>= 7;
