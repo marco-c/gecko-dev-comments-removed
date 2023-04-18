@@ -15,9 +15,9 @@
 #include "jstypes.h"
 
 #include "jit/IonTypes.h"  
-#include "jit/Registers.h"  
-#include "js/TypeDecls.h"   
-#include "vm/JSContext.h"   
+#include "jit/MachineState.h"  
+#include "js/TypeDecls.h"      
+#include "vm/JSContext.h"      
 
 namespace js {
 
