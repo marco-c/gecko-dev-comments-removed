@@ -143,22 +143,13 @@ enum class RhsDestOp { True = true };
 
 
 
-
-
-
 #ifdef JS_CODEGEN_X64
-#  define RABALDR_HAS_HEAPREG
 #  define RABALDR_ZERO_EXTENDS
 #endif
 
 #ifdef JS_CODEGEN_ARM64
 #  define RABALDR_CHUNKY_STACK
-#  define RABALDR_HAS_HEAPREG
 #  define RABALDR_ZERO_EXTENDS
-#endif
-
-#ifdef JS_CODEGEN_MIPS64
-#  define RABALDR_HAS_HEAPREG
 #endif
 
 #ifdef JS_CODEGEN_X86
@@ -166,19 +157,9 @@ enum class RhsDestOp { True = true };
 #endif
 
 #ifdef JS_CODEGEN_ARM
-#  define RABALDR_HAS_HEAPREG
 #  define RABALDR_INT_DIV_I64_CALLOUT
 #  define RABALDR_I64_TO_FLOAT_CALLOUT
 #  define RABALDR_FLOAT_TO_I64_CALLOUT
-#endif
-
-#ifdef JS_CODEGEN_LOONG64
-#  define RABALDR_HAS_HEAPREG
-#endif
-
-#ifdef JS_CODEGEN_NONE
-
-#  define RABALDR_HAS_HEAPREG
 #endif
 
 
