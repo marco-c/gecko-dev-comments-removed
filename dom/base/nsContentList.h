@@ -344,16 +344,12 @@ class nsContentList : public nsBaseContentList,
 
   void SetDirty() {
     mState = State::Dirty;
-    mNamedItemsCache = nullptr;
-    mNamedItemsCacheValid = false;
     Reset();
   }
 
   void LastRelease() override;
 
  protected:
-  void EnsureNamedItemsCacheValid(bool aDoFlush);
-
   
 
 
@@ -433,12 +429,6 @@ class nsContentList : public nsBaseContentList,
   void* mData = nullptr;
 
   
-  
-  
-  using NamedItemsCache = nsTHashMap<RefPtr<nsAtom>, Element*>;
-  mozilla::UniquePtr<NamedItemsCache> mNamedItemsCache;
-
-  
   State mState;
 
   
@@ -465,11 +455,6 @@ class nsContentList : public nsBaseContentList,
 
 
   bool mIsHTMLDocument : 1;
-  
-
-
-
-  bool mNamedItemsCacheValid : 1;
   
 
 
