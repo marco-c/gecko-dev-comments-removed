@@ -141,10 +141,9 @@ bool JitRuntime::generateTrampolines(JSContext* cx) {
   JitSpew(JitSpew_Codegen, "# Emitting bailout tail stub");
   generateBailoutTailStub(masm, &bailoutTail);
 
-  if (JitOptions.supportsFloatingPoint) {
+  {
     JitSpew(JitSpew_Codegen, "# Emitting bailout tables");
 
-    
     BailoutTableVector& bailoutTables = bailoutTables_.writeRef();
     if (!bailoutTables.reserve(FrameSizeClass::ClassLimit().classId())) {
       return false;
@@ -159,13 +158,13 @@ bool JitRuntime::generateTrampolines(JSContext* cx) {
       bailoutTables.infallibleAppend(
           generateBailoutTable(masm, &bailoutTail, id));
     }
-
-    JitSpew(JitSpew_Codegen, "# Emitting bailout handler");
-    generateBailoutHandler(masm, &bailoutTail);
-
-    JitSpew(JitSpew_Codegen, "# Emitting invalidator");
-    generateInvalidator(masm, &bailoutTail);
   }
+
+  JitSpew(JitSpew_Codegen, "# Emitting bailout handler");
+  generateBailoutHandler(masm, &bailoutTail);
+
+  JitSpew(JitSpew_Codegen, "# Emitting invalidator");
+  generateInvalidator(masm, &bailoutTail);
 
   
   

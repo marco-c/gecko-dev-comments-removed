@@ -121,7 +121,11 @@ bool jit::InitializeJit() {
 #endif
 
   
-  JitOptions.supportsFloatingPoint = MacroAssembler::SupportsFloatingPoint();
+  
+  
+  if (!MacroAssembler::SupportsFloatingPoint()) {
+    JitOptions.disableJitBackend = true;
+  }
   JitOptions.supportsUnalignedAccesses =
       MacroAssembler::SupportsUnalignedAccesses();
 
