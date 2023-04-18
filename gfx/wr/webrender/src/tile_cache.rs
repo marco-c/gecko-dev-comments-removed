@@ -6,7 +6,7 @@ use api::{ColorF, PrimitiveFlags, QualitySettings, RasterSpace};
 use api::units::*;
 use crate::clip::{ClipChainId, ClipNodeKind, ClipStore, ClipInstance};
 use crate::frame_builder::FrameBuilderConfig;
-use crate::internal_types::{FastHashMap, FastHashSet};
+use crate::internal_types::{FastHashMap};
 use crate::picture::{PrimitiveList, PictureCompositeMode, PicturePrimitive, SliceId};
 use crate::picture::{Picture3DContext, TileCacheParams, TileOffset};
 use crate::prim_store::{PrimitiveInstance, PrimitiveStore, PictureIndex};
@@ -64,13 +64,6 @@ pub struct TileCacheConfig {
     
     pub tile_caches: FastHashMap<SliceId, TileCacheParams>,
     
-    
-    
-    
-    
-    
-    pub picture_cache_spatial_nodes: FastHashSet<SpatialNodeIndex>,
-    
     pub picture_cache_slice_count: usize,
 }
 
@@ -78,7 +71,6 @@ impl TileCacheConfig {
     pub fn new(picture_cache_slice_count: usize) -> Self {
         TileCacheConfig {
             tile_caches: FastHashMap::default(),
-            picture_cache_spatial_nodes: FastHashSet::default(),
             picture_cache_slice_count,
         }
     }
@@ -486,9 +478,7 @@ impl TileCacheBuilder {
                 pending_tile_cache.params.shared_clips,
                 prim_store,
                 clip_store,
-                &mut result.picture_cache_spatial_nodes,
                 config,
-                interners,
                 &mut result.tile_caches,
             );
 
@@ -577,15 +567,9 @@ fn create_tile_cache(
     shared_clips: Vec<ClipInstance>,
     prim_store: &mut PrimitiveStore,
     clip_store: &mut ClipStore,
-    picture_cache_spatial_nodes: &mut FastHashSet<SpatialNodeIndex>,
     frame_builder_config: &FrameBuilderConfig,
-    interners: &Interners,
     tile_caches: &mut FastHashMap<SliceId, TileCacheParams>,
 ) -> PictureIndex {
-    
-    
-    picture_cache_spatial_nodes.insert(scroll_root);
-
     
     
     
@@ -595,12 +579,6 @@ fn create_tile_cache(
 
     let mut parent_clip_chain_id = ClipChainId::NONE;
     for clip_instance in &shared_clips {
-        let clip_node_data = &interners.clip[clip_instance.handle];
-
-        
-        
-        picture_cache_spatial_nodes.insert(clip_node_data.spatial_node_index);
-
         parent_clip_chain_id = clip_store.add_clip_chain_node(
             clip_instance.handle,
             parent_clip_chain_id,
