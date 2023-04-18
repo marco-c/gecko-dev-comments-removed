@@ -23,6 +23,7 @@ class IdleTaskRunnerTask;
 
 class IdleTaskRunner {
  public:
+  friend class IdleTaskRunnerTask;
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(IdleTaskRunner)
 
   
@@ -32,6 +33,12 @@ class IdleTaskRunner {
   
   
   using MayStopProcessingCallbackType = std::function<bool()>;
+
+  
+  
+  
+  
+  using RequestInterruptCallbackType = std::function<void(uint32_t)>;
 
  public:
   
@@ -53,7 +60,8 @@ class IdleTaskRunner {
       const CallbackType& aCallback, const char* aRunnableName,
       TimeDuration aStartDelay, TimeDuration aMaxDelay,
       TimeDuration aMinimumUsefulBudget, bool aRepeating,
-      const MayStopProcessingCallbackType& aMayStopProcessing);
+      const MayStopProcessingCallbackType& aMayStopProcessing,
+      const RequestInterruptCallbackType& aRequestInterrupt = nullptr);
 
   void Run();
 
@@ -77,7 +85,8 @@ class IdleTaskRunner {
       const CallbackType& aCallback, const char* aRunnableName,
       TimeDuration aStartDelay, TimeDuration aMaxDelay,
       TimeDuration aMinimumUsefulBudget, bool aRepeating,
-      const MayStopProcessingCallbackType& aMayStopProcessing);
+      const MayStopProcessingCallbackType& aMayStopProcessing,
+      const RequestInterruptCallbackType& aRequestInterrupt);
   ~IdleTaskRunner();
   void CancelTimer();
   void SetTimerInternal(TimeDuration aDelay);
@@ -103,6 +112,7 @@ class IdleTaskRunner {
   bool mRepeating;
   bool mTimerActive;
   MayStopProcessingCallbackType mMayStopProcessing;
+  RequestInterruptCallbackType mRequestInterrupt;
   const char* mName;
   RefPtr<IdleTaskRunnerTask> mTask;
 };
