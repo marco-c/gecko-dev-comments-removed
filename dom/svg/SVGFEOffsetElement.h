@@ -14,8 +14,7 @@
 nsresult NS_NewSVGFEOffsetElement(
     nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 using SVGFEOffsetElementBase = SVGFE;
 
@@ -65,7 +64,6 @@ class SVGFEOffsetElement : public SVGFEOffsetElementBase {
   static StringInfo sStringInfo[2];
 };
 
-}  
 }  
 
 #endif  

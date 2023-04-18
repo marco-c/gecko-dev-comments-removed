@@ -15,8 +15,7 @@
 nsresult NS_NewSVGFEMorphologyElement(
     nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 using SVGFEMorphologyElementBase = SVGFE;
 
@@ -78,7 +77,6 @@ class SVGFEMorphologyElement : public SVGFEMorphologyElementBase {
   static StringInfo sStringInfo[2];
 };
 
-}  
 }  
 
 #endif  
