@@ -6748,20 +6748,22 @@ void nsWindow::OnWindowPosChanged(WINDOWPOS* wp) {
   MaybeLogPosChanged(mWnd, wp);
 
   
-  if (wp->flags & SWP_FRAMECHANGED &&
-      mFrameState.GetSizeMode() != nsSizeMode_Fullscreen) {
+  if (wp->flags & SWP_FRAMECHANGED) {
     
     
     
     
     if (mFrameState.GetSizeMode() == nsSizeMode_Minimized &&
-        (wp->flags & SWP_NOACTIVATE))
+        (wp->flags & SWP_NOACTIVATE)) {
       return;
+    }
 
     mFrameState.OnFrameChanged();
 
-    
-    if (mFrameState.GetSizeMode() == nsSizeMode_Minimized) return;
+    if (mFrameState.GetSizeMode() == nsSizeMode_Minimized) {
+      
+      return;
+    }
   }
 
   
@@ -6878,8 +6880,7 @@ void nsWindow::OnWindowPosChanging(LPWINDOWPOS& info) {
   
   
   
-  if ((info->flags & SWP_FRAMECHANGED && !(info->flags & SWP_NOSIZE)) &&
-      mFrameState.GetSizeMode() != nsSizeMode_Fullscreen) {
+  if (info->flags & SWP_FRAMECHANGED && !(info->flags & SWP_NOSIZE)) {
     mFrameState.OnFrameChanging();
   }
 
@@ -9019,6 +9020,49 @@ bool nsWindow::HandleAppCommandMsg(const MSG& aAppCommandMsg,
   return consumed;
 }
 
+static nsSizeMode GetSizeModeForWindowFrame(HWND aWnd, bool aFullscreenMode) {
+  WINDOWPLACEMENT pl;
+  pl.length = sizeof(pl);
+  ::GetWindowPlacement(aWnd, &pl);
+
+  if (pl.showCmd == SW_SHOWMINIMIZED) {
+    return nsSizeMode_Minimized;
+  } else if (aFullscreenMode) {
+    return nsSizeMode_Fullscreen;
+  } else if (pl.showCmd == SW_SHOWMAXIMIZED) {
+    return nsSizeMode_Maximized;
+  } else {
+    return nsSizeMode_Normal;
+  }
+}
+
+static void ShowWindowWithMode(HWND aWnd, nsSizeMode aMode) {
+  
+  
+  switch (aMode) {
+    case nsSizeMode_Fullscreen:
+      ::ShowWindow(aWnd, SW_SHOW);
+      break;
+
+    case nsSizeMode_Maximized:
+      ::ShowWindow(aWnd, SW_MAXIMIZE);
+      break;
+
+    case nsSizeMode_Minimized:
+      ::ShowWindow(aWnd, SW_MINIMIZE);
+      break;
+
+    default:
+      
+      
+      
+      
+      if (GetCurrentShowCmd(aWnd) != SW_SHOWNORMAL) {
+        ::ShowWindow(aWnd, SW_RESTORE);
+      }
+  }
+}
+
 nsWindow::FrameState::FrameState(nsWindow* aWindow) : mWindow(aWindow) {}
 
 nsSizeMode nsWindow::FrameState::GetSizeMode() const { return mSizeMode; }
@@ -9028,10 +9072,7 @@ void nsWindow::FrameState::ConsumePreXULSkeletonState(bool aWasMaximized) {
 }
 
 void nsWindow::FrameState::EnsureSizeMode(nsSizeMode aMode) {
-  
-  
-  
-  if (aMode == mSizeMode) {
+  if (mSizeMode == aMode) {
     return;
   }
 
@@ -9061,59 +9102,44 @@ void nsWindow::FrameState::EnsureFullscreenMode(bool aFullScreen) {
     mOldSizeMode = mSizeMode;
     SetSizeModeInternal(nsSizeMode_Fullscreen);
   } else {
-    if (mSizeMode != mOldSizeMode) {
-      SetSizeModeInternal(mOldSizeMode);
-    }
-
-    MOZ_ASSERT(mSizeMode == mOldSizeMode);
+    SetSizeModeInternal(mOldSizeMode);
   }
 
   mWindow->OnFullscreenChanged(aFullScreen);
 }
 
 void nsWindow::FrameState::OnFrameChanging() {
+  if (mSizeMode == nsSizeMode_Fullscreen) {
+    return;
+  }
+
   WINDOWPLACEMENT pl;
   pl.length = sizeof(pl);
   ::GetWindowPlacement(mWindow->mWnd, &pl);
 
-  nsSizeMode sizeMode;
-  if (pl.showCmd == SW_SHOWMAXIMIZED)
-    sizeMode = (mFullscreenMode ? nsSizeMode_Fullscreen : nsSizeMode_Maximized);
-  else if (pl.showCmd == SW_SHOWMINIMIZED)
-    sizeMode = nsSizeMode_Minimized;
-  else if (mFullscreenMode)
-    sizeMode = nsSizeMode_Fullscreen;
-  else
-    sizeMode = nsSizeMode_Normal;
+  const nsSizeMode newSizeMode =
+      GetSizeModeForWindowFrame(mWindow->mWnd, mFullscreenMode);
 
-  mWindow->OnSizeModeChange(sizeMode);
+  mWindow->OnSizeModeChange(newSizeMode);
 
-  mWindow->UpdateNonClientMargins(sizeMode, false);
+  mWindow->UpdateNonClientMargins(newSizeMode, false);
 }
 
 void nsWindow::FrameState::OnFrameChanged() {
-  WINDOWPLACEMENT pl;
-  pl.length = sizeof(pl);
-  ::GetWindowPlacement(mWindow->mWnd, &pl);
-
-  nsSizeMode previousSizeMode = mSizeMode;
-
-  
-  
-  
-  
-  
-  
-  
-  if (pl.showCmd == SW_SHOWMAXIMIZED) {
-    mSizeMode = mFullscreenMode ? nsSizeMode_Fullscreen : nsSizeMode_Maximized;
-  } else if (pl.showCmd == SW_SHOWMINIMIZED) {
-    mSizeMode = nsSizeMode_Minimized;
-  } else if (mFullscreenMode) {
-    mSizeMode = nsSizeMode_Fullscreen;
-  } else {
-    mSizeMode = nsSizeMode_Normal;
+  if (mSizeMode == nsSizeMode_Fullscreen) {
+    return;
   }
+
+  const nsSizeMode previousSizeMode = mSizeMode;
+
+  
+  
+  
+  
+  
+  
+  
+  mSizeMode = GetSizeModeForWindowFrame(mWindow->mWnd, mFullscreenMode);
 
   MaybeLogSizeMode(mSizeMode);
 
@@ -9124,40 +9150,24 @@ void nsWindow::FrameState::OnFrameChanged() {
   
   
   
-  if (mLastSizeMode != nsSizeMode_Normal && mSizeMode == nsSizeMode_Normal) {
-    mWindow->DispatchFocusToTopLevelWindow(true);
+  if (mLastSizeMode != mSizeMode) {
+    if (mSizeMode == nsSizeMode_Normal) {
+      mWindow->DispatchFocusToTopLevelWindow(true);
+    }
+    mLastSizeMode = mSizeMode;
   }
-
-  mLastSizeMode = mSizeMode;
 }
 
 void nsWindow::FrameState::SetSizeModeInternal(nsSizeMode aMode) {
-  
+  if (mSizeMode == aMode) {
+    return;
+  }
+
   mLastSizeMode = mSizeMode;
   mSizeMode = aMode;
+
   if (mWindow->mIsVisible) {
-    switch (aMode) {
-      case nsSizeMode_Fullscreen:
-        ::ShowWindow(mWindow->mWnd, SW_SHOW);
-        break;
-
-      case nsSizeMode_Maximized:
-        ::ShowWindow(mWindow->mWnd, SW_MAXIMIZE);
-        break;
-
-      case nsSizeMode_Minimized:
-        ::ShowWindow(mWindow->mWnd, SW_MINIMIZE);
-        break;
-
-      default:
-        
-        
-        
-        
-        if (GetCurrentShowCmd(mWindow->mWnd) != SW_SHOWNORMAL) {
-          ::ShowWindow(mWindow->mWnd, SW_RESTORE);
-        }
-    }
+    ShowWindowWithMode(mWindow->mWnd, aMode);
   }
 
   
