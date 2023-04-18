@@ -13,8 +13,7 @@
 #include "GMPVideoHost.h"
 #include "mozilla/gmp/GMPTypes.h"
 
-namespace mozilla {
-namespace gmp {
+namespace mozilla::gmp {
 
 class GMPContentChild;
 
@@ -72,7 +71,6 @@ class GMPVideoDecoderChild : public PGMPVideoDecoderChild,
   bool mPendingDecodeComplete;
 };
 
-}  
 }  
 
 #endif  

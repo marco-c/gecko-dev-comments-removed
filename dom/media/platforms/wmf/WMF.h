@@ -37,8 +37,7 @@
 #  undef max
 #endif
 
-namespace mozilla {
-namespace wmf {
+namespace mozilla::wmf {
 
 
 
@@ -65,6 +64,7 @@ class MediaFoundationInitializer final {
     }
     return Get()->mHasInitialized;
   }
+
  private:
   static MediaFoundationInitializer* Get() {
     {
@@ -74,18 +74,19 @@ class MediaFoundationInitializer final {
         GetMainThreadSerialEventTarget()->Dispatch(
             NS_NewRunnableFunction("MediaFoundationInitializer::Get", [&] {
               
-              RunOnShutdown([&] {
-                sInitializer.reset();
-                sIsShutdown = true;
-              }, ShutdownPhase::XPCOMShutdown);
+              RunOnShutdown(
+                  [&] {
+                    sInitializer.reset();
+                    sIsShutdown = true;
+                  },
+                  ShutdownPhase::XPCOMShutdown);
             }));
       }
     }
     return sInitializer.get();
   }
 
-  MediaFoundationInitializer()
-    : mHasInitialized(SUCCEEDED(MFStartup())) {
+  MediaFoundationInitializer() : mHasInitialized(SUCCEEDED(MFStartup())) {
     if (!mHasInitialized) {
       NS_WARNING("MFStartup failed");
     }
@@ -166,7 +167,6 @@ HRESULT MFCreatePresentationDescriptor(
 
 HRESULT MFCreateMemoryBuffer(DWORD cbMaxLength, IMFMediaBuffer** ppBuffer);
 
-}  
 }  
 
 #endif

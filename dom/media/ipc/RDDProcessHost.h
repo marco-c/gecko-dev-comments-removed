@@ -11,10 +11,8 @@
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/media/MediaUtils.h"
 
-namespace mozilla {
-namespace ipc {
+namespace mozilla::ipc {
 class SharedPreferenceSerializer;
-}
 }  
 class nsITimer;
 

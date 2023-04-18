@@ -9,8 +9,7 @@
 #include "nsTArray.h"
 #include "VideoUtils.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class IMediaController;
 class MediaControlService;
@@ -50,7 +49,6 @@ class AudioFocusManager {
   RefPtr<SimpleTimer> mTelemetryTimer;
 };
 
-}  
 }  
 
 #endif  

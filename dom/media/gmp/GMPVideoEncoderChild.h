@@ -12,8 +12,7 @@
 #include "GMPSharedMemManager.h"
 #include "GMPVideoHost.h"
 
-namespace mozilla {
-namespace gmp {
+namespace mozilla::gmp {
 
 class GMPContentChild;
 
@@ -72,7 +71,6 @@ class GMPVideoEncoderChild : public PGMPVideoEncoderChild,
   bool mPendingEncodeComplete;
 };
 
-}  
 }  
 
 #endif  

@@ -10,8 +10,7 @@
 #include "mozilla/dom/MediaSessionBinding.h"
 #include "mozilla/MozPromise.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -78,7 +77,6 @@ class FetchImageHelper final {
   RefPtr<ImageFetchListener> mListener;
 };
 
-}  
 }  
 
 #endif  

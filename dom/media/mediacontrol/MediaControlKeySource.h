@@ -12,8 +12,7 @@
 #include "nsISupportsImpl.h"
 #include "nsTArray.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -118,7 +117,6 @@ class MediaControlKeySource {
   MediaSessionPlaybackState mPlaybackState;
 };
 
-}  
 }  
 
 #endif

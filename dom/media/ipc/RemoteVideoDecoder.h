@@ -9,10 +9,8 @@
 #include "RemoteDecoderManagerChild.h"
 #include "RemoteDecoderParent.h"
 
-namespace mozilla {
-namespace layers {
+namespace mozilla::layers {
 class BufferRecycleBin;
-}  
 }  
 
 namespace mozilla {

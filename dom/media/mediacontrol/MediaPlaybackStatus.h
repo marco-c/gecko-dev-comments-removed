@@ -11,8 +11,7 @@
 #include "nsTArray.h"
 #include "nsTHashMap.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -135,7 +134,6 @@ class MediaPlaybackStatus final {
   Maybe<uint64_t> mOwningAudioFocusContextId;
 };
 
-}  
 }  
 
 #endif  

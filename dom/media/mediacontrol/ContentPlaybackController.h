@@ -9,8 +9,7 @@
 #include "nsPIDOMWindow.h"
 #include "mozilla/dom/BrowsingContext.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class MediaSession;
 
@@ -68,7 +67,6 @@ class ContentMediaControlKeyHandler {
                                        const MediaControlAction& aAction);
 };
 
-}  
 }  
 
 #endif

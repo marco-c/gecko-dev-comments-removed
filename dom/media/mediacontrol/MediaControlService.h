@@ -14,8 +14,7 @@
 #include "nsIObserver.h"
 #include "nsTArray.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -177,7 +176,6 @@ class MediaControlService final : public nsIObserver {
   bool mHasEverEnabledMediaControl = false;
 };
 
-}  
 }  
 
 #endif
