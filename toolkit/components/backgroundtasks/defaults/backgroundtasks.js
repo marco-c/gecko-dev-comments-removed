@@ -21,3 +21,7 @@ pref("test.backgroundtask_specific_pref.exitCode", 79);
 pref("devtools.chrome.enabled", true);
 pref("devtools.debugger.remote-enabled", true);
 pref("devtools.debugger.prompt-connection", false);
+
+
+
+pref("network.cookie.noPersistentStorage", true);

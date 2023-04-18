@@ -91,8 +91,6 @@ const expected = [
   
   { relPath: "cert9.db" },
   { relPath: "compatibility.ini" },
-  
-  { relPath: "cookies.sqlite" },
   { relPath: "crashes", isDirectory: true },
   { relPath: "data", isDirectory: true },
   
