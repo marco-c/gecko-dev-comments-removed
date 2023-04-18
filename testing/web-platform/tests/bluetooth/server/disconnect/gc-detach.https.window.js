@@ -1,0 +1,37 @@
+
+
+
+
+
+
+'use strict';
+const test_desc = 'Garbage collect then detach frame. We shouldn\'t crash.';
+let iframe = document.createElement('iframe');
+
+bluetooth_test(async () => {
+  await setUpConnectableHealthThermometerDevice();
+  
+  await new Promise(resolve => {
+    iframe.src = '/bluetooth/resources/health-thermometer-iframe.html';
+    document.body.appendChild(iframe);
+    iframe.addEventListener('load', resolve);
+  });
+  
+  await new Promise(resolve => {
+    callWithTrustedClick(() => {
+      iframe.contentWindow.postMessage(
+          {
+            type: 'RequestAndConnect',
+            options: {filters: [{services: ['health_thermometer']}]}
+          },
+          '*');
+    });
+    window.onmessage = messageEvent => {
+      assert_equals(messageEvent.data, 'Connected');
+      runGarbageCollection().then(() => {
+        iframe.remove();
+        resolve();
+      });
+    }
+  })
+}, test_desc)
