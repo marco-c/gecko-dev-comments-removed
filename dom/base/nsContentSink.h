@@ -96,7 +96,7 @@ class nsContentSink : public nsICSSLoaderObserver,
   
   nsresult WillParseImpl(void);
   nsresult WillInterruptImpl(void);
-  nsresult WillResumeImpl(void);
+  void WillResumeImpl();
   nsresult DidProcessATokenImpl(void);
   void WillBuildModelImpl(void);
   void DidBuildModelImpl(bool aTerminated);

@@ -202,10 +202,8 @@ XULContentSinkImpl::WillInterrupt(void) {
   return NS_OK;
 }
 
-NS_IMETHODIMP
-XULContentSinkImpl::WillResume(void) {
+void XULContentSinkImpl::WillResume() {
   
-  return NS_OK;
 }
 
 NS_IMETHODIMP

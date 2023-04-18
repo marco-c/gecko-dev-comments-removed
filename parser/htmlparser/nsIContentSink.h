@@ -87,9 +87,7 @@ class nsIContentSink : public nsISupports {
 
 
 
-
-
-  NS_IMETHOD WillResume(void) = 0;
+  virtual void WillResume() = 0;
 
   
 

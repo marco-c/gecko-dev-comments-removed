@@ -129,7 +129,7 @@ class nsHtml5TreeOpExecutor final
   
 
 
-  NS_IMETHOD WillResume() override;
+  void WillResume() override;
 
   virtual void InitialTranslationCompleted() override;
 
