@@ -17,10 +17,6 @@ const AUDIO_TOGGLE_ENABLED_PREF =
   "media.videocontrols.picture-in-picture.audio-toggle.enabled";
 const KEYBOARD_CONTROLS_ENABLED_PREF =
   "media.videocontrols.picture-in-picture.keyboard-controls.enabled";
-const CAPTIONS_TOGGLE_ENABLED_PREF =
-  "media.videocontrols.picture-in-picture.display-text-tracks.toggle.enabled";
-const TEXT_TRACK_FONT_SIZE_PREF =
-  "media.videocontrols.picture-in-picture.display-text-tracks.size";
 
 
 const CONTROLS_FADE_TIMEOUT_MS = 3000;
@@ -72,10 +68,6 @@ function setIsPlayingState(isPlaying) {
 
 function setIsMutedState(isMuted) {
   Player.isMuted = isMuted;
-}
-
-function showSubtitlesButton() {
-  Player.showSubtitlesButton();
 }
 
 
@@ -179,26 +171,9 @@ let Player = {
     this.controls.addEventListener("mouseleave", () => {
       this.onMouseLeave();
     });
-    this.controls.addEventListener("mouseout", event => {
-      this.onMouseOut(event);
-    });
     this.controls.addEventListener("mouseenter", () => {
       this.onMouseEnter();
     });
-
-    for (let radio of document.querySelectorAll(
-      'input[type=radio][name="cc-size"]'
-    )) {
-      radio.addEventListener("change", event => {
-        this.onSubtitleChange(event.target.id);
-      });
-    }
-
-    document
-      .querySelector("#subtitles-toggle")
-      .addEventListener("change", () => {
-        this.onToggleChange();
-      });
 
     
     
@@ -230,18 +205,6 @@ let Player = {
     window.requestAnimationFrame(() => {
       window.focus();
     });
-
-    let fontSize = Services.prefs.getCharPref(
-      TEXT_TRACK_FONT_SIZE_PREF,
-      "medium"
-    );
-
-    
-    if (fontSize === "small" || fontSize === "large") {
-      document.querySelector(`#${fontSize}`).checked = "true";
-    } else {
-      document.querySelector("#medium").checked = "true";
-    }
   },
 
   uninit() {
@@ -366,19 +329,6 @@ let Player = {
   },
 
   closePipWindow(closeData) {
-    
-    Services.prefs.setBoolPref(
-      CAPTIONS_TOGGLE_ENABLED_PREF,
-      document.querySelector("#subtitles-toggle").checked
-    );
-    for (let radio of document.querySelectorAll(
-      'input[type=radio][name="cc-size"]'
-    )) {
-      if (radio.checked) {
-        Services.prefs.setCharPref(TEXT_TRACK_FONT_SIZE_PREF, radio.id);
-        break;
-      }
-    }
     const { reason } = closeData;
     PictureInPicture.closeSinglePipWindow({ reason, actorRef: this.actor });
   },
@@ -426,11 +376,6 @@ let Player = {
         PictureInPicture.focusTabAndClosePip(window, this.actor);
         break;
       }
-
-      case "closed-caption": {
-        document.querySelector("#settings").classList.toggle("hide");
-        break;
-      }
     }
   },
 
@@ -442,15 +387,6 @@ let Player = {
   },
 
   onKeyDown(event) {
-    
-    
-    if (
-      event.target.parentElement?.parentElement?.classList?.contains(
-        "font-size-selection"
-      )
-    ) {
-      return;
-    }
     this.actor.sendAsyncMessage("PictureInPicture:KeyDown", {
       altKey: event.altKey,
       shiftKey: event.shiftKey,
@@ -458,28 +394,6 @@ let Player = {
       ctrlKey: event.ctrlKey,
       keyCode: event.keyCode,
     });
-  },
-
-  onSubtitleChange(size) {
-    Services.prefs.setCharPref(TEXT_TRACK_FONT_SIZE_PREF, size);
-
-    this.actor.sendAsyncMessage("PictureInPicture:ChangeFontSizeTextTracks");
-  },
-
-  onToggleChange() {
-    
-    
-    
-    document
-      .querySelector(".font-size-selection")
-      .classList.toggle("font-size-overlay");
-    this.actor.sendAsyncMessage("PictureInPicture:ToggleTextTracks");
-
-    this.captionsToggleEnabled = !this.captionsToggleEnabled;
-    Services.prefs.setBoolPref(
-      CAPTIONS_TOGGLE_ENABLED_PREF,
-      this.captionsToggleEnabled
-    );
   },
 
   
@@ -692,33 +606,6 @@ let Player = {
           playerBottomControlsDOMRect: null,
         });
       }
-    }
-  },
-
-  
-
-
-
-  onMouseOut(event) {
-    if (
-      (event.target.id === "controls" || event.target.id === "close") &&
-      !event.relatedTarget
-    ) {
-      document.querySelector("#settings").classList.add("hide");
-    }
-  },
-
-  showSubtitlesButton() {
-    let subtitlesContent = document.querySelectorAll(".subtitles");
-    for (let ele of subtitlesContent) {
-      ele.hidden = false;
-    }
-    this.captionsToggleEnabled = true;
-    
-    
-    
-    if (!Services.prefs.getBoolPref(CAPTIONS_TOGGLE_ENABLED_PREF, true)) {
-      document.querySelector("#subtitles-toggle").click();
     }
   },
 
