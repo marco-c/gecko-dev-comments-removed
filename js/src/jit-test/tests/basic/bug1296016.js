@@ -1,3 +1,6 @@
 
-offThreadCompileScript(``);
-evalInWorker(`runOffThreadScript()`);
+offThreadCompileToStencil(``);
+evalInWorker(`
+var stencil = finishOffThreadCompileToStencil();
+evalStencil(stencil);
+`);

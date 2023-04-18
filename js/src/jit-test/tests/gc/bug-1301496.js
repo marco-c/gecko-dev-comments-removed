@@ -1,7 +1,7 @@
 
 gczeal(0);
 startgc(1, 'shrinking');
-offThreadCompileScript("");
+offThreadCompileToStencil("");
 
 gczeal(9);
 newGlobal();

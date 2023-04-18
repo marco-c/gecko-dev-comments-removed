@@ -21,12 +21,13 @@ function encodeScript(source)
 }
 
 let a, b, c;
+let stencil, stencilA, stencilB, stencilC;
 
 
 
 
 
-assertFails(() => runOffThreadScript());
+assertFails(() => finishOffThreadCompileToStencil());
 
 assertFails(() => finishOffThreadModule());
 
@@ -34,11 +35,13 @@ assertFails(() => runOffThreadDecodedScript());
 
 
 
-a = offThreadCompileScript("");
-b = offThreadCompileScript("");
-assertFails(() => runOffThreadScript());
-runOffThreadScript(a);
-runOffThreadScript(b);
+a = offThreadCompileToStencil("");
+b = offThreadCompileToStencil("");
+assertFails(() => finishOffThreadCompileToStencil());
+stencilA = finishOffThreadCompileToStencil(a);
+stencilB = finishOffThreadCompileToStencil(b);
+evalStencil(stencilA);
+evalStencil(stencilB);
 
 a = offThreadCompileModule("");
 b = offThreadCompileModule("");
@@ -48,14 +51,15 @@ finishOffThreadModule(b);
 
 a = offThreadDecodeScript(encodeScript(""));
 b = offThreadDecodeScript(encodeScript(""));
-assertFails(() => runOffThreadScript());
+assertFails(() => finishOffThreadCompileToStencil());
 runOffThreadDecodedScript(a);
 runOffThreadDecodedScript(b);
 
 
 
-offThreadCompileScript("42");
-assertEq(runOffThreadScript(), 42);
+offThreadCompileToStencil("42");
+stencil = finishOffThreadCompileToStencil();
+assertEq(evalStencil(stencil), 42);
 
 offThreadCompileModule("");
 assertEq(typeof finishOffThreadModule(), "object");
@@ -67,10 +71,11 @@ assertEq(runOffThreadDecodedScript(), 23);
 
 
 
-offThreadCompileScript("");
-assertFails(() => runOffThreadScript("foo"));
-assertFails(() => runOffThreadScript(42));
-runOffThreadScript();
+offThreadCompileToStencil("");
+assertFails(() => finishOffThreadCompileToStencil("foo"));
+assertFails(() => finishOffThreadCompileToStencil(42));
+stencil = finishOffThreadCompileToStencil();
+evalStencil(stencil);
 
 offThreadCompileModule("");
 assertFails(() => finishOffThreadModule("foo"));
@@ -84,9 +89,10 @@ runOffThreadDecodedScript();
 
 
 
-a = offThreadCompileScript("");
-runOffThreadScript(a);
-assertFails(() => runOffThreadScript(a));
+a = offThreadCompileToStencil("");
+stencilA = finishOffThreadCompileToStencil(a);
+evalStencil(stencilA);
+assertFails(() => finishOffThreadCompileToStencil(a));
 
 a = offThreadCompileModule("");
 finishOffThreadModule(a);
@@ -98,25 +104,28 @@ assertFails(() => runOffThreadDecodedScript(a));
 
 
 
-a = offThreadCompileScript("");
+a = offThreadCompileToStencil("");
 b = offThreadCompileModule("");
 c = offThreadDecodeScript(encodeScript(""));
-assertFails(() => runOffThreadScript(b));
-assertFails(() => runOffThreadScript(c));
+assertFails(() => finishOffThreadCompileToStencil(b));
+assertFails(() => finishOffThreadCompileToStencil(c));
 assertFails(() => finishOffThreadModule(a));
 assertFails(() => finishOffThreadModule(c));
 assertFails(() => runOffThreadDecodedScript(a));
 assertFails(() => runOffThreadDecodedScript(b));
-runOffThreadScript(a);
+stencilA = finishOffThreadCompileToStencil(a);
+evalStencil(stencilA);
 finishOffThreadModule(b);
 runOffThreadDecodedScript(c);
 
 
 
-a = offThreadCompileScript("1");
-b = offThreadCompileScript("2");
-assertEq(runOffThreadScript(a), 1);
-assertEq(runOffThreadScript(b), 2);
+a = offThreadCompileToStencil("1");
+b = offThreadCompileToStencil("2");
+stencilA = finishOffThreadCompileToStencil(a);
+stencilB = finishOffThreadCompileToStencil(b);
+assertEq(evalStencil(stencilA), 1);
+assertEq(evalStencil(stencilB), 2);
 
 a = offThreadCompileModule("");
 b = offThreadCompileModule("");
@@ -135,9 +144,11 @@ let jobs;
 
 jobs = new Array(count);
 for (let i = 0; i < jobs.length; i++)
-    jobs[i] = offThreadCompileScript(`${i} * ${i}`);
-for (let i = 0; i < jobs.length; i++)
-    assertEq(runOffThreadScript(jobs[i]), i * i);
+    jobs[i] = offThreadCompileToStencil(`${i} * ${i}`);
+for (let i = 0; i < jobs.length; i++) {
+    stencil = finishOffThreadCompileToStencil(jobs[i]);
+    assertEq(evalStencil(stencil), i * i);
+}
 
 jobs = new Array(count);
 for (let i = 0; i < jobs.length; i++)

@@ -1,2 +1,2 @@
 
-offThreadCompileScript('import("")', {});
+offThreadCompileToStencil('import("")', {});

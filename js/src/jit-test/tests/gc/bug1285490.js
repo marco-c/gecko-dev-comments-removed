@@ -1,3 +1,3 @@
 
 gczeal(4);
-offThreadCompileScript("let x = 1;");
+offThreadCompileToStencil("let x = 1;");

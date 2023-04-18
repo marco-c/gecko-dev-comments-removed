@@ -2,12 +2,17 @@
 
 
 
-evaluate('offThreadCompileScript("var x = -1"); runOffThreadScript()',
+evaluate(`
+offThreadCompileToStencil("var x = -1");
+var stencil = finishOffThreadCompileToStencil();
+evalStencil(stencil);
+`,
          { global: newGlobal() });
 
 
 
 for (var i = 0; i < 1000; ++i) {
-  offThreadCompileScript('var x = ' + i);
-  runOffThreadScript();
+  offThreadCompileToStencil('var x = ' + i);
+  var stencil = finishOffThreadCompileToStencil();
+  evalStencil(stencil);
 }
