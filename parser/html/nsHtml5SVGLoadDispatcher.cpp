@@ -18,8 +18,8 @@ nsHtml5SVGLoadDispatcher::nsHtml5SVGLoadDispatcher(nsIContent* aElement)
   mDocument->BlockOnload();
 }
 
-NS_IMETHODIMP
-nsHtml5SVGLoadDispatcher::Run() {
+
+MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP nsHtml5SVGLoadDispatcher::Run() {
   WidgetEvent event(true, eSVGLoad);
   event.mFlags.mBubbles = false;
   
