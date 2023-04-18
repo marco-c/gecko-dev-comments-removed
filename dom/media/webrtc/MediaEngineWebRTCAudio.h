@@ -90,6 +90,7 @@ class MediaEngineWebRTCMicrophoneSource : public MediaEngineSource {
   MediaEngineSourceState mState;
 
   
+  
   MediaEnginePrefs mCurrentPrefs;
 
   
