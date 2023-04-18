@@ -226,6 +226,9 @@ class GeckoMediaPluginServiceParent final
   
   
   nsTArray<GMPServiceParent*> mServiceParents;
+
+  uint32_t mDirectoriesAdded = 0;
+  uint32_t mDirectoriesInProgress = 0;
 };
 
 nsresult WriteToFile(nsIFile* aPath, const nsCString& aFileName,
