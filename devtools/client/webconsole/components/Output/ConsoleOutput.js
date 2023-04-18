@@ -146,9 +146,11 @@ class ConsoleOutput extends Component {
     const visibleMessagesDelta =
       nextProps.visibleMessages.length - this.props.visibleMessages.length;
     const messagesDelta = nextProps.messages.size - this.props.messages.size;
+    
+    
     const isNewMessageEvaluationResult =
       messagesDelta > 0 &&
-      [...nextProps.messages.values()][nextProps.messages.size - 1].type ===
+      nextProps.messages.get(nextProps.visibleMessages.at(-1))?.type ===
         MESSAGE_TYPE.RESULT;
 
     const messagesUiDelta =
