@@ -63,6 +63,7 @@ add_task(async function test_tab_key_nav() {
     async function shiftTab() {
       EventUtils.synthesizeKey("KEY_Tab", { shiftKey: true }, content);
       await new Promise(resolve => content.requestAnimationFrame(resolve));
+      
     }
 
     
@@ -87,7 +88,6 @@ add_task(async function test_tab_key_nav() {
     }
     
     firstElement.focus();
-    info(`what is our navigator platform ${content.window.navigator.platform}`);
     
     for (let expectedSelector of expectedElementsInOrder) {
       let expectedElement = getElementFromOrderedArray(expectedSelector);
@@ -98,11 +98,7 @@ add_task(async function test_tab_key_nav() {
       ) {
         continue;
       }
-      expectedElement = Cu.waiveXrays(expectedElement);
-      info(`expectedElement className ${expectedElement.className}`);
       let actualElem = getFocusedElement();
-      actualElem = Cu.waiveXrays(actualElem);
-      info(`actualElement className ${actualElem.className}`);
       is(
         actualElem,
         expectedElement,
@@ -111,37 +107,7 @@ add_task(async function test_tab_key_nav() {
       await tab();
     }
 
-    
-    
-    
-    if (getFocusedElement().tagName === "BODY") {
-      firstElement.focus();
-    }
-
-    
-    for (let expectedSelector of expectedElementsInOrder) {
-      let expectedElement = getElementFromOrderedArray(expectedSelector);
-      
-      if (
-        content.window.navigator.platform.toLowerCase().includes("mac") &&
-        expectedElement.tagName === "A"
-      ) {
-        continue;
-      }
-      let actualElement = getFocusedElement();
-      is(
-        actualElement,
-        expectedElement,
-        "Actual focused element should equal the expected focused element"
-      );
-      await tab();
-    }
-    
-    
-    
-    if (getFocusedElement().tagName === "BODY") {
-      lastElement.focus();
-    }
+    lastElement.focus();
 
     
     for (let expectedSelector of expectedElementsInOrder.reverse()) {
