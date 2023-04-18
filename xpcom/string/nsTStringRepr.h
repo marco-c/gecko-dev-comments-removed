@@ -450,37 +450,6 @@ class nsTStringRepr {
 
   int32_t RFindCharInSet(const char_type* aString, int32_t aOffset = -1) const;
 
-  
-
-
-
-
-
-  double ToDouble(nsresult* aErrorCode) const {
-    return ToDouble( false, aErrorCode);
-  }
-
-  
-
-
-
-
-
-  float ToFloat(nsresult* aErrorCode) const {
-    return float(ToDouble(aErrorCode));
-  }
-
-  
-
-
-
-  double ToDoubleAllowTrailingChars(nsresult* aErrorCode) const {
-    return ToDouble( true, aErrorCode);
-  }
-  float ToFloatAllowTrailingChars(nsresult* aErrorCode) const {
-    return float(ToDoubleAllowTrailingChars(aErrorCode));
-  }
-
  protected:
   nsTStringRepr() = delete;  
 
@@ -492,8 +461,6 @@ class nsTStringRepr {
         mClassFlags(aClassFlags) {}
 
   static constexpr size_type kMaxCapacity = LengthStorage::kMax;
-
-  double ToDouble(bool aAllowTrailingChars, nsresult* aErrorCode) const;
 
   
 
@@ -507,13 +474,6 @@ class nsTStringRepr {
   DataFlags mDataFlags;
   ClassFlags const mClassFlags;
 };
-
-template <>
-double nsTStringRepr<char>::ToDouble(bool aAllowTrailingChars,
-                                     nsresult* aErrorCode) const;
-template <>
-double nsTStringRepr<char16_t>::ToDouble(bool aAllowTrailingChars,
-                                         nsresult* aErrorCode) const;
 
 extern template class nsTStringRepr<char>;
 extern template class nsTStringRepr<char16_t>;
