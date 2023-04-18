@@ -3239,8 +3239,8 @@ void AsyncPanZoomController::HandlePanningUpdate(
     ParentLayerPoint vector =
         ToParentLayerCoordinates(aPanDistance, mStartTouch);
 
-    double angle = atan2(vector.y, vector.x);  
-    angle = fabs(angle);                       
+    float angle = atan2f(vector.y, vector.x);  
+    angle = fabsf(angle);                      
 
     float breakThreshold =
         StaticPrefs::apz_axis_lock_breakout_threshold() * GetDPI();
@@ -3253,8 +3253,8 @@ void AsyncPanZoomController::HandlePanningUpdate(
           mY.SetAxisLocked(false);
           
           
-          if (apz::IsCloseToVertical(
-                  angle, StaticPrefs::apz_axis_lock_breakout_angle())) {
+          if (apz::IsCloseToVertical(angle,
+                                     StaticPrefs::apz_axis_lock_lock_angle())) {
             mX.SetAxisLocked(true);
             SetState(PANNING_LOCKED_Y);
           } else {
@@ -3268,7 +3268,7 @@ void AsyncPanZoomController::HandlePanningUpdate(
           
           
           if (apz::IsCloseToHorizontal(
-                  angle, StaticPrefs::apz_axis_lock_breakout_angle())) {
+                  angle, StaticPrefs::apz_axis_lock_lock_angle())) {
             mY.SetAxisLocked(true);
             SetState(PANNING_LOCKED_X);
           } else {
