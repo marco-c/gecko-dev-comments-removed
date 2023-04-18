@@ -3639,12 +3639,6 @@ ContentParent::Observe(nsISupports* aSubject, const char* aTopic,
     
     NS_LossyConvertUTF16toASCII strData(aData);
 
-    
-    if (ShouldSanitizePreference(strData.Data(),
-                                  false)) {
-      return NS_OK;
-    }
-
     Pref pref(strData,  false,
                false, Nothing(), Nothing());
 
