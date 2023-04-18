@@ -2679,9 +2679,13 @@ UniqueCERTCertList FindClientCertificatesWithPrivateKeys() {
               ("    slot '%s'", PK11_GetSlotName(slot)));
       
       
-      if (internalSlot.get() == slot) {
+      
+      
+      
+      
+      if (internalSlot.get() == slot || PK11_HasRootCerts(slot)) {
         MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-                ("    (looking at internal slot)"));
+                ("    (looking at internal/builtin slot)"));
         if (PK11_Authenticate(slot, true, nullptr) != SECSuccess) {
           MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("    (couldn't authenticate)"));
           continue;
