@@ -9,7 +9,6 @@
 #include "nsDebug.h"
 #include "nsDocShell.h"
 #include "nsReadableUtils.h"
-#include "nsCRT.h"
 #include "nsQueryObject.h"
 
 #include "mozilla/AsyncEventDispatcher.h"
@@ -47,19 +46,11 @@
 #include "nsIPrintSettings.h"
 #include "nsIPrintSettingsService.h"
 #include "nsIPrintSession.h"
-#include "nsGfxCIID.h"
 #include "nsGkAtoms.h"
 #include "nsXPCOM.h"
 
 static const char sPrintSettingsServiceContractID[] =
     "@mozilla.org/gfx/printsettings-service;1";
-
-#include "nsThreadUtils.h"
-
-
-#include "nsIPrintingPromptService.h"
-static const char kPrintingPromptService[] =
-    "@mozilla.org/embedcomp/printingprompt-service;1";
 
 
 #include "nsPagePrintTimer.h"
@@ -69,24 +60,16 @@ static const char kPrintingPromptService[] =
 #include "mozilla/dom/DocumentInlines.h"
 
 
-
-
 #include "gfxContext.h"
 #include "mozilla/gfx/DrawEventRecorder.h"
 #include "mozilla/layout/RemotePrintJobChild.h"
 #include "nsISupportsUtils.h"
 #include "nsIScriptContext.h"
-#include "nsIDocumentObserver.h"
 #include "nsComponentManagerUtils.h"
-#include "nsContentCID.h"
-#include "nsLayoutCID.h"
-#include "nsContentUtils.h"
-#include "nsLayoutUtils.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
 #include "Text.h"
 
-#include "nsWidgetsCID.h"
 #include "nsIDeviceContextSpec.h"
 #include "nsDeviceContextSpecProxy.h"
 #include "nsViewManager.h"
@@ -95,7 +78,6 @@ static const char kPrintingPromptService[] =
 #include "nsIInterfaceRequestor.h"
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsIWebBrowserChrome.h"
-#include "nsFrameManager.h"
 #include "mozilla/ReflowInput.h"
 #include "nsIContentViewer.h"
 #include "nsIDocumentViewerPrint.h"
@@ -105,9 +87,6 @@ static const char kPrintingPromptService[] =
 #include "mozilla/Components.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/HTMLFrameElement.h"
-#include "nsContentList.h"
-#include "xpcpublic.h"
-#include "nsVariant.h"
 #include "mozilla/ServoStyleSet.h"
 
 using namespace mozilla;
