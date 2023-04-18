@@ -147,6 +147,7 @@
 
 
 
+
     appendNotification(aType, aNotification, aButtons) {
       if (
         aNotification.priority < this.PRIORITY_SYSTEM ||
@@ -196,6 +197,18 @@
             aNotification.label.DOCUMENT_FRAGMENT_NODE
         ) {
           newitem.messageText.appendChild(aNotification.label);
+        } else if (
+          aNotification.label &&
+          typeof aNotification.label == "object" &&
+          "l10n-id" in aNotification.label
+        ) {
+          let message = document.createElement("span");
+          document.l10n.setAttributes(
+            message,
+            aNotification.label["l10n-id"],
+            aNotification.label["l10n-args"]
+          );
+          newitem.messageText.appendChild(message);
         } else {
           newitem.messageText.textContent = aNotification.label;
         }
