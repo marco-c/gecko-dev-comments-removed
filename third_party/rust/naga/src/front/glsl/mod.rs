@@ -213,13 +213,9 @@ impl Parser {
         }
 
         if self.errors.is_empty() {
-            let mut module = Module::default();
-            std::mem::swap(&mut self.module, &mut module);
-            Ok(module)
+            Ok(std::mem::take(&mut self.module))
         } else {
-            let mut errors = Vec::new();
-            std::mem::swap(&mut self.errors, &mut errors);
-            Err(errors)
+            Err(std::mem::take(&mut self.errors))
         }
     }
 

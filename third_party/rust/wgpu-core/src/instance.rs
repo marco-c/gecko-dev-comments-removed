@@ -494,6 +494,9 @@ impl<G: GlobalIdentityHandlerFactory> Global<G> {
     }
 
     #[cfg(dx12)]
+    
+    
+    
     pub unsafe fn instance_create_surface_from_visual(
         &self,
         visual: *mut std::ffi::c_void,

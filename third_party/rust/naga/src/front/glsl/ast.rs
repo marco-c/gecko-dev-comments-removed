@@ -133,9 +133,17 @@ pub enum HirExprKind {
     },
     Variable(VariableReference),
     Call(FunctionCall),
+    
     Conditional {
+        
         condition: Handle<HirExpr>,
+        
+        
+        
         accept: Handle<HirExpr>,
+        
+        
+        
         reject: Handle<HirExpr>,
     },
     Assign {

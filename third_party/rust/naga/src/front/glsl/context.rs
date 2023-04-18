@@ -101,7 +101,7 @@ impl Context {
         }: GlobalLookup,
         body: &mut Block,
     ) {
-        self.emit_flush(body);
+        self.emit_end(body);
         let (expr, load, constant) = match kind {
             GlobalLookupKind::Variable(v) => {
                 let span = parser.module.global_variables.get_span(v);
@@ -170,12 +170,37 @@ impl Context {
         self.lookup_global_var_exps.insert(name.into(), var);
     }
 
+    
+    
+    
+    
+    
+    #[inline]
     pub fn emit_start(&mut self) {
         self.emitter.start(&self.expressions)
     }
 
-    pub fn emit_flush(&mut self, body: &mut Block) {
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn emit_end(&mut self, body: &mut Block) {
         body.extend(self.emitter.finish(&self.expressions))
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn emit_restart(&mut self, body: &mut Block) {
+        self.emit_end(body);
+        self.emit_start()
     }
 
     pub fn add_expression(
@@ -186,7 +211,7 @@ impl Context {
     ) -> Handle<Expression> {
         let needs_pre_emit = expr.needs_pre_emit();
         if needs_pre_emit {
-            self.emit_flush(body);
+            self.emit_end(body);
         }
         let handle = self.expressions.append(expr, meta);
         if needs_pre_emit {
@@ -292,8 +317,7 @@ impl Context {
                 );
                 let local_expr = self.add_expression(Expression::LocalVariable(handle), meta, body);
 
-                self.emit_flush(body);
-                self.emit_start();
+                self.emit_restart(body);
 
                 body.push(
                     Statement::Store {
@@ -462,8 +486,7 @@ impl Context {
                     body,
                 );
 
-                self.emit_flush(body);
-                self.emit_start();
+                self.emit_restart(body);
 
                 body.push(
                     Statement::Store {
@@ -474,8 +497,7 @@ impl Context {
                 );
             }
         } else {
-            self.emit_flush(body);
-            self.emit_start();
+            self.emit_restart(body);
 
             body.push(Statement::Store { pointer, value }, meta);
         }
@@ -1069,35 +1091,149 @@ impl Context {
                 )?;
                 return Ok((maybe_expr, meta));
             }
+            
+            
+            
+            
+            
             HirExprKind::Conditional {
                 condition,
                 accept,
                 reject,
             } if ExprPos::Lhs != pos => {
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+
+                
                 let condition = self
                     .lower_expect_inner(stmt, parser, condition, ExprPos::Rhs, body)?
                     .0;
+
+                
+                
+                self.emit_restart(body);
+
+                
+                let mut accept_body = Block::new();
+                let mut reject_body = Block::new();
+
+                
                 let (mut accept, accept_meta) =
-                    self.lower_expect_inner(stmt, parser, accept, pos, body)?;
+                    self.lower_expect_inner(stmt, parser, accept, pos, &mut accept_body)?;
+
+                
+                
+                self.emit_restart(&mut accept_body);
+
+                
                 let (mut reject, reject_meta) =
-                    self.lower_expect_inner(stmt, parser, reject, pos, body)?;
+                    self.lower_expect_inner(stmt, parser, reject, pos, &mut reject_body)?;
 
-                self.binary_implicit_conversion(
-                    parser,
-                    &mut accept,
-                    accept_meta,
-                    &mut reject,
-                    reject_meta,
-                )?;
+                
+                self.emit_restart(&mut reject_body);
 
-                self.add_expression(
-                    Expression::Select {
-                        condition,
-                        accept,
-                        reject,
+                
+                
+                if let (
+                    Some((accept_power, accept_width, accept_kind)),
+                    Some((reject_power, reject_width, reject_kind)),
+                ) = (
+                    
+                    self.expr_scalar_components(parser, accept, accept_meta)?
+                        .and_then(|(kind, width)| Some((type_power(kind, width)?, width, kind))),
+                    self.expr_scalar_components(parser, reject, reject_meta)?
+                        .and_then(|(kind, width)| Some((type_power(kind, width)?, width, kind))),
+                ) {
+                    match accept_power.cmp(&reject_power) {
+                        std::cmp::Ordering::Less => {
+                            self.conversion(&mut accept, accept_meta, reject_kind, reject_width)?;
+                            
+                            
+                            self.emit_end(&mut accept_body);
+                        }
+                        
+                        
+                        
+                        
+                        std::cmp::Ordering::Equal => self.emit_end(body),
+                        std::cmp::Ordering::Greater => {
+                            self.conversion(&mut reject, reject_meta, accept_kind, accept_width)?;
+                            
+                            
+                            self.emit_end(&mut reject_body);
+                        }
+                    }
+                }
+
+                
+                
+                
+                let ty = parser.resolve_type_handle(self, accept, accept_meta)?;
+
+                
+                let local = self.locals.append(
+                    LocalVariable {
+                        name: None,
+                        ty,
+                        init: None,
                     },
                     meta,
-                    body,
+                );
+
+                
+                
+                let local_expr = self
+                    .expressions
+                    .append(Expression::LocalVariable(local), meta);
+
+                
+                accept_body.push(
+                    Statement::Store {
+                        pointer: local_expr,
+                        value: accept,
+                    },
+                    accept_meta,
+                );
+                reject_body.push(
+                    Statement::Store {
+                        pointer: local_expr,
+                        value: reject,
+                    },
+                    reject_meta,
+                );
+
+                
+                
+                body.push(
+                    Statement::If {
+                        condition,
+                        accept: accept_body,
+                        reject: reject_body,
+                    },
+                    meta,
+                );
+
+                
+                self.emit_start();
+
+                
+                
+                self.expressions.append(
+                    Expression::Load {
+                        pointer: local_expr,
+                    },
+                    meta,
                 )
             }
             HirExprKind::Assign { tgt, value } if ExprPos::Lhs != pos => {

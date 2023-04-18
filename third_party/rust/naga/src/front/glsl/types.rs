@@ -225,10 +225,23 @@ pub const fn type_power(kind: ScalarKind, width: Bytes) -> Option<u32> {
 }
 
 impl Parser {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub(crate) fn typifier_grow(
         &self,
         ctx: &mut Context,
-        handle: Handle<Expression>,
+        expr: Handle<Expression>,
         meta: Span,
     ) -> Result<()> {
         let resolve_ctx = ResolveContext {
@@ -241,28 +254,73 @@ impl Parser {
         };
 
         ctx.typifier
-            .grow(handle, &ctx.expressions, &resolve_ctx)
+            .grow(expr, &ctx.expressions, &resolve_ctx)
             .map_err(|error| Error {
                 kind: ErrorKind::SemanticError(format!("Can't resolve type: {:?}", error).into()),
                 meta,
             })
     }
 
+    
+    
+    
+    
+    
+    
+    
     pub(crate) fn resolve_type<'b>(
         &'b self,
         ctx: &'b mut Context,
-        handle: Handle<Expression>,
+        expr: Handle<Expression>,
         meta: Span,
     ) -> Result<&'b TypeInner> {
-        self.typifier_grow(ctx, handle, meta)?;
-        Ok(ctx.typifier.get(handle, &self.module.types))
+        self.typifier_grow(ctx, expr, meta)?;
+        Ok(ctx.typifier.get(expr, &self.module.types))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub(crate) fn resolve_type_handle(
+        &mut self,
+        ctx: &mut Context,
+        expr: Handle<Expression>,
+        meta: Span,
+    ) -> Result<Handle<Type>> {
+        self.typifier_grow(ctx, expr, meta)?;
+        let resolution = &ctx.typifier[expr];
+        Ok(match *resolution {
+            
+            crate::proc::TypeResolution::Handle(ty) => ty,
+            
+            crate::proc::TypeResolution::Value(_) => match resolution.clone() {
+                
+                crate::proc::TypeResolution::Handle(ty) => ty,
+                
+                crate::proc::TypeResolution::Value(inner) => {
+                    self.module.types.insert(Type { name: None, inner }, meta)
+                }
+            },
+        })
     }
 
     
     pub(crate) fn invalidate_expression<'b>(
         &'b self,
         ctx: &'b mut Context,
-        handle: Handle<Expression>,
+        expr: Handle<Expression>,
         meta: Span,
     ) -> Result<()> {
         let resolve_ctx = ResolveContext {
@@ -275,7 +333,7 @@ impl Parser {
         };
 
         ctx.typifier
-            .invalidate(handle, &ctx.expressions, &resolve_ctx)
+            .invalidate(expr, &ctx.expressions, &resolve_ctx)
             .map_err(|error| Error {
                 kind: ErrorKind::SemanticError(format!("Can't resolve type: {:?}", error).into()),
                 meta,

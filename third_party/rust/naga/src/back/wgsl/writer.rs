@@ -659,6 +659,11 @@ impl<W: Write> Writer<W> {
                         
                         
                         Some(self.namer.call(name))
+                    } else if info.ref_count == 0 {
+                        write!(self.out, "{}_ = ", level)?;
+                        self.write_expr(module, handle, func_ctx)?;
+                        writeln!(self.out, ";")?;
+                        continue;
                     } else {
                         let expr = &func_ctx.expressions[handle];
                         let min_ref_count = expr.bake_ref_count();

@@ -698,6 +698,47 @@ pub enum TypeInner {
     },
     
     Sampler { comparison: bool },
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     BindingArray { base: Handle<Type>, size: ArraySize },
 }
@@ -1109,12 +1150,13 @@ pub enum Expression {
         index: Handle<Expression>,
     },
     
+    
+    
+    
     AccessIndex {
         base: Handle<Expression>,
         index: u32,
     },
-    
-    
     
     Constant(Handle<Constant>),
     

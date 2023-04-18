@@ -172,25 +172,23 @@ impl<'source> ParsingContext<'source> {
             self.parse_external_declaration(parser, &mut ctx, &mut body)?;
         }
 
-        match parser.lookup_function.get("main").and_then(|declaration| {
-            declaration
-                .overloads
-                .iter()
-                .find_map(|decl| match decl.kind {
-                    FunctionKind::Call(handle) if decl.defined && decl.parameters.is_empty() => {
-                        Some(handle)
+        
+        
+        if let Some(declaration) = parser.lookup_function.get("main") {
+            for decl in declaration.overloads.iter() {
+                if let FunctionKind::Call(handle) = decl.kind {
+                    if decl.defined && decl.parameters.is_empty() {
+                        parser.add_entry_point(handle, body, ctx.expressions);
+                        return Ok(());
                     }
-                    _ => None,
-                })
-        }) {
-            Some(handle) => parser.add_entry_point(handle, body, ctx.expressions),
-            None => parser.errors.push(Error {
-                kind: ErrorKind::SemanticError("Missing entry point".into()),
-                meta: Span::default(),
-            }),
+                }
+            }
         }
 
-        Ok(())
+        Err(Error {
+            kind: ErrorKind::SemanticError("Missing entry point".into()),
+            meta: Span::default(),
+        })
     }
 
     fn parse_uint_constant(&mut self, parser: &mut Parser) -> Result<(u32, Span)> {
@@ -438,8 +436,13 @@ impl<'ctx, 'qualifiers> DeclarationContext<'ctx, 'qualifiers> {
         }
     }
 
+    
+    
+    
+    
+    
+    #[inline]
     fn flush_expressions(&mut self) {
-        self.ctx.emit_flush(self.body);
-        self.ctx.emit_start()
+        self.ctx.emit_restart(self.body);
     }
 }

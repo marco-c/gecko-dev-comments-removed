@@ -131,7 +131,7 @@ impl crate::Expression {
     const fn bake_ref_count(&self) -> usize {
         match *self {
             
-            crate::Expression::Access { .. } | crate::Expression::AccessIndex { .. } => !0,
+            crate::Expression::Access { .. } | crate::Expression::AccessIndex { .. } => usize::MAX,
             
             crate::Expression::ImageSample { .. } | crate::Expression::ImageLoad { .. } => 1,
             
