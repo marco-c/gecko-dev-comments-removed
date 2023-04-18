@@ -5850,8 +5850,13 @@ ProfilingStack* profiler_register_thread(const char* aName,
 void ThreadRegistry::Register(ThreadRegistration::OnThreadRef aOnThreadRef) {
   
   
-  (void)NS_GetCurrentThread();
-  NS_SetCurrentThreadName(aOnThreadRef.UnlockedConstReaderCRef().Info().Name());
+  if (!aOnThreadRef.UnlockedConstReaderCRef().Info().IsMainThread()) {
+    
+    
+    (void)NS_GetCurrentThread();
+    NS_SetCurrentThreadName(
+        aOnThreadRef.UnlockedConstReaderCRef().Info().Name());
+  }
 
   PSAutoLock lock;
 
