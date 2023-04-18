@@ -6,6 +6,12 @@
 
 Services.prefs.setBoolPref("extensions.manifestV3.enabled", true);
 
+
+Services.prefs.setBoolPref(
+  "extensions.webextensions.background-delayed-startup",
+  false
+);
+
 async function testPermission(options) {
   function background(bgOptions) {
     browser.test.sendMessage("typeof-namespace", {

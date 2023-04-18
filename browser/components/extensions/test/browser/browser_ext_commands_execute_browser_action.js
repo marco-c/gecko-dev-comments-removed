@@ -4,7 +4,12 @@
 
 add_task(async function testTabSwitchActionContext() {
   await SpecialPowers.pushPrefEnv({
-    set: [["extensions.manifestV3.enabled", true]],
+    set: [
+      ["extensions.manifestV3.enabled", true],
+      
+      
+      ["extensions.webextensions.background-delayed-startup", false],
+    ],
   });
 });
 
