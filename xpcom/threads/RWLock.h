@@ -13,6 +13,7 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/BlockingResourceBase.h"
 #include "mozilla/PlatformRWLock.h"
+#include "mozilla/ThreadSafety.h"
 
 namespace mozilla {
 
@@ -38,27 +39,30 @@ namespace mozilla {
 
 
 
-class RWLock : public detail::RWLockImpl, public BlockingResourceBase {
+class CAPABILITY RWLock : public detail::RWLockImpl,
+                          public BlockingResourceBase {
  public:
   explicit RWLock(const char* aName);
 
 #ifdef DEBUG
   bool LockedForWritingByCurrentThread();
-  [[nodiscard]] bool TryReadLock();
-  void ReadLock();
-  void ReadUnlock();
-  [[nodiscard]] bool TryWriteLock();
-  void WriteLock();
-  void WriteUnlock();
+  [[nodiscard]] bool TryReadLock() SHARED_TRYLOCK_FUNCTION(true);
+  void ReadLock() ACQUIRE_SHARED();
+  void ReadUnlock() RELEASE_SHARED();
+  [[nodiscard]] bool TryWriteLock() TRY_ACQUIRE(true);
+  void WriteLock() CAPABILITY_ACQUIRE();
+  void WriteUnlock() EXCLUSIVE_RELEASE();
 #else
-  [[nodiscard]] bool TryReadLock() { return detail::RWLockImpl::tryReadLock(); }
-  void ReadLock() { detail::RWLockImpl::readLock(); }
-  void ReadUnlock() { detail::RWLockImpl::readUnlock(); }
-  [[nodiscard]] bool TryWriteLock() {
+  [[nodiscard]] bool TryReadLock() SHARED_TRYLOCK_FUNCTION(true) {
+    return detail::RWLockImpl::tryReadLock();
+  }
+  void ReadLock() ACQUIRE_SHARED() { detail::RWLockImpl::readLock(); }
+  void ReadUnlock() RELEASE_SHARED() { detail::RWLockImpl::readUnlock(); }
+  [[nodiscard]] bool TryWriteLock() TRY_ACQUIRE(true) {
     return detail::RWLockImpl::tryWriteLock();
   }
-  void WriteLock() { detail::RWLockImpl::writeLock(); }
-  void WriteUnlock() { detail::RWLockImpl::writeUnlock(); }
+  void WriteLock() CAPABILITY_ACQUIRE() { detail::RWLockImpl::writeLock(); }
+  void WriteUnlock() EXCLUSIVE_RELEASE() { detail::RWLockImpl::writeUnlock(); }
 #endif
 
  private:
@@ -71,6 +75,7 @@ class RWLock : public detail::RWLockImpl, public BlockingResourceBase {
   PRThread* mOwningThread;
 #endif
 };
+
 
 template <typename T>
 class MOZ_RAII BaseAutoTryReadLock {
@@ -95,14 +100,17 @@ class MOZ_RAII BaseAutoTryReadLock {
 };
 
 template <typename T>
-class MOZ_RAII BaseAutoReadLock {
+class SCOPED_CAPABILITY MOZ_RAII BaseAutoReadLock {
  public:
-  explicit BaseAutoReadLock(T& aLock) : mLock(&aLock) {
+  explicit BaseAutoReadLock(T& aLock) ACQUIRE_SHARED(aLock) : mLock(&aLock) {
     MOZ_ASSERT(mLock, "null lock");
     mLock->ReadLock();
   }
 
-  ~BaseAutoReadLock() { mLock->ReadUnlock(); }
+  
+  
+  
+  ~BaseAutoReadLock() RELEASE_GENERIC() { mLock->ReadUnlock(); }
 
  private:
   BaseAutoReadLock() = delete;
@@ -111,6 +119,7 @@ class MOZ_RAII BaseAutoReadLock {
 
   T* mLock;
 };
+
 
 template <typename T>
 class MOZ_RAII BaseAutoTryWriteLock {
@@ -135,14 +144,14 @@ class MOZ_RAII BaseAutoTryWriteLock {
 };
 
 template <typename T>
-class MOZ_RAII BaseAutoWriteLock final {
+class SCOPED_CAPABILITY MOZ_RAII BaseAutoWriteLock final {
  public:
-  explicit BaseAutoWriteLock(T& aLock) : mLock(&aLock) {
+  explicit BaseAutoWriteLock(T& aLock) CAPABILITY_ACQUIRE(aLock) : mLock(&aLock) {
     MOZ_ASSERT(mLock, "null lock");
     mLock->WriteLock();
   }
 
-  ~BaseAutoWriteLock() { mLock->WriteUnlock(); }
+  ~BaseAutoWriteLock() CAPABILITY_RELEASE() { mLock->WriteUnlock(); }
 
  private:
   BaseAutoWriteLock() = delete;
@@ -177,7 +186,7 @@ typedef BaseAutoWriteLock<RWLock> AutoWriteLock;
 
 namespace detail {
 
-class StaticRWLock {
+class CAPABILITY StaticRWLock {
  public:
   
   
@@ -186,15 +195,19 @@ class StaticRWLock {
   StaticRWLock() { MOZ_ASSERT(!mLock); }
 #endif
 
-  [[nodiscard]] bool TryReadLock() { return Lock()->TryReadLock(); }
-  void ReadLock() { Lock()->ReadLock(); }
-  void ReadUnlock() { Lock()->ReadUnlock(); }
-  [[nodiscard]] bool TryWriteLock() { return Lock()->TryWriteLock(); }
-  void WriteLock() { Lock()->WriteLock(); }
-  void WriteUnlock() { Lock()->WriteUnlock(); }
+  [[nodiscard]] bool TryReadLock() SHARED_TRYLOCK_FUNCTION(true) {
+    return Lock()->TryReadLock();
+  }
+  void ReadLock() ACQUIRE_SHARED() { Lock()->ReadLock(); }
+  void ReadUnlock() RELEASE_SHARED() { Lock()->ReadUnlock(); }
+  [[nodiscard]] bool TryWriteLock() TRY_ACQUIRE(true) {
+    return Lock()->TryWriteLock();
+  }
+  void WriteLock() CAPABILITY_ACQUIRE() { Lock()->WriteLock(); }
+  void WriteUnlock() EXCLUSIVE_RELEASE() { Lock()->WriteUnlock(); }
 
  private:
-  [[nodiscard]] RWLock* Lock() {
+  [[nodiscard]] RWLock* Lock() RETURN_CAPABILITY(*mLock) {
     if (mLock) {
       return mLock;
     }
