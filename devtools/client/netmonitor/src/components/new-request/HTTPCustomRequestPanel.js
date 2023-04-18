@@ -67,13 +67,13 @@ const FIREFOX_DEFAULT_HEADERS = [
   "Via",
 ];
 
+
 const HTTP_METHODS = [
   "GET",
   "HEAD",
   "POST",
   "DELETE",
   "PUT",
-  "CONNECT",
   "OPTIONS",
   "TRACE",
   "PATH",
