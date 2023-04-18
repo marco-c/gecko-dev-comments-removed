@@ -135,24 +135,20 @@ class _RemoteImages {
 
 
   async patchMessage(message, replaceWith = "imageURL") {
-    try {
-      if (!!message && !!message.imageId) {
-        const { imageId } = message;
-        const blobURL = await this.load(imageId);
+    if (!!message && !!message.imageId) {
+      const { imageId } = message;
+      const urls = await this.load(imageId);
+
+      if (urls.size) {
+        const blobURL = urls.get(imageId);
 
         delete message.imageId;
-
         message[replaceWith] = blobURL;
 
-        return () => this.unload(blobURL);
+        return () => this.unload(urls);
       }
-      return null;
-    } catch (e) {
-      Cu.reportError(
-        `RemoteImages Could not patch message with imageId "${message.imageId}": ${e}`
-      );
-      return null;
     }
+    return null;
   }
 
   
@@ -170,45 +166,64 @@ class _RemoteImages {
 
 
 
-
-  load(imageId) {
+  load(...imageIds) {
     return this.withDb(async db => {
-      const recordId = this.#getRecordId(imageId);
+      
+      const urls = new Map(imageIds.map(key => [key, undefined]));
 
-      let blob;
-      if (db.data.images[recordId]) {
-        
-        try {
-          blob = await this.#readFromDisk(db, recordId);
-        } catch (e) {
-          if (
-            !(
-              e instanceof Components.Exception &&
-              e.name === "NS_ERROR_FILE_NOT_FOUND"
-            )
-          ) {
-            throw e;
+      await Promise.all(
+        Array.from(urls.keys()).map(async imageId => {
+          try {
+            urls.set(imageId, await this.#loadImpl(db, imageId));
+          } catch (e) {
+            Cu.reportError(`Could not load image ID ${imageId}: ${e}`);
+            urls.delete(imageId);
           }
-        }
+        })
+      );
 
-        
-      }
-
-      if (typeof blob === "undefined") {
-        blob = await this.#download(db, recordId);
-      }
-
-      return URL.createObjectURL(blob);
+      return urls;
     });
   }
 
+  async #loadImpl(db, imageId) {
+    const recordId = this.#getRecordId(imageId);
+
+    let blob;
+    if (db.data.images[recordId]) {
+      
+      try {
+        blob = await this.#readFromDisk(db, recordId);
+      } catch (e) {
+        if (
+          !(
+            e instanceof Components.Exception &&
+            e.name === "NS_ERROR_FILE_NOT_FOUND"
+          )
+        ) {
+          throw e;
+        }
+      }
+
+      
+    }
+
+    if (typeof blob === "undefined") {
+      blob = await this.#download(db, recordId);
+    }
+
+    return URL.createObjectURL(blob);
+  }
+
   
 
 
 
 
-  unload(url) {
-    URL.revokeObjectURL(url);
+  unload(urls) {
+    for (const url of urls.keys()) {
+      URL.revokeObjectURL(url);
+    }
   }
 
   
