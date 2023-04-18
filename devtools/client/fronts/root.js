@@ -219,16 +219,14 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
 
 
 
-
   async getTab(filter) {
     const packet = {};
     if (filter) {
       if (typeof filter.browserId == "number") {
         packet.browserId = filter.browserId;
       } else if (typeof filter.outerWindowID == "number") {
+        
         packet.outerWindowID = filter.outerWindowID;
-      } else if (typeof filter.tabId == "number") {
-        packet.tabId = filter.tabId;
       } else if ("tab" in filter) {
         const browser = filter.tab.linkedBrowser;
         packet.browserId = browser.browserId;

@@ -41,10 +41,8 @@ add_task(async function() {
   }
 
   info("Test tab");
-  let windowId = window.docShell.outerWindowID;
-  windowId = browser.outerWindowID;
   descriptor = await descriptorFromURL(
-    new URL("http://foo?type=tab&id=" + windowId)
+    new URL("http://foo?type=tab&id=" + browser.browserId)
   );
   const commands = await createCommandsDictionary(descriptor);
   
@@ -60,7 +58,7 @@ add_task(async function() {
   } catch (e) {
     is(
       e.message,
-      "descriptorFromURL, tab with outerWindowID '10000' doesn't exist"
+      "descriptorFromURL, tab with browserId '10000' doesn't exist"
     );
   }
 
