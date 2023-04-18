@@ -1593,6 +1593,17 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
+  bool IsBeingRemoved() const {
+    return mParent && !mNextSibling && !mPreviousOrLastSibling;
+  }
+
+  
+
+
+
+
+
+
   nsIContent* GetNextNode(const nsINode* aRoot = nullptr) const {
     return GetNextNodeImpl(aRoot, false);
   }

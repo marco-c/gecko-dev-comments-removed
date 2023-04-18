@@ -239,7 +239,10 @@ class RangeBoundaryBase {
     }
 
     if (Ref()) {
-      return Ref()->GetParentNode() == Container();
+      
+      
+      
+      return Ref()->GetParentNode() == Container() && !Ref()->IsBeingRemoved();
     }
 
     MOZ_ASSERT(mOffset.isSome());
