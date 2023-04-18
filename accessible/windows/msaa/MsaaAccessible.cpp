@@ -1457,11 +1457,8 @@ MsaaAccessible::accSelect(
   if (accessible) {
     return accessible->accSelect(flagsSelect, kVarChildIdSelf);
   }
-  if (mAcc->IsRemote()) {
-    return E_NOTIMPL;  
-  }
 
-  LocalAccessible* localAcc = LocalAcc();
+  LocalAccessible* localAcc = mAcc->AsLocal();
   if (flagsSelect & SELFLAG_TAKEFOCUS) {
     if (XRE_IsContentProcess()) {
       
@@ -1473,8 +1470,12 @@ MsaaAccessible::accSelect(
       NS_DispatchToMainThread(runnable, NS_DISPATCH_NORMAL);
       return S_OK;
     }
-    localAcc->TakeFocus();
+    mAcc->TakeFocus();
     return S_OK;
+  }
+
+  if (!localAcc) {
+    return E_NOTIMPL;  
   }
 
   if (flagsSelect & SELFLAG_TAKESELECTION) {

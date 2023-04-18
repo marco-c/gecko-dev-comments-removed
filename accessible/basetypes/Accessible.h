@@ -154,6 +154,10 @@ class Accessible {
 
   
 
+  virtual void TakeFocus() const = 0;
+
+  
+
   bool IsDoc() const { return HasGenericType(eDocument); }
 
   bool IsTableRow() const { return HasGenericType(eTableRow); }

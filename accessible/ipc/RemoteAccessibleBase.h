@@ -182,6 +182,10 @@ class RemoteAccessibleBase : public Accessible, public HyperTextAccessibleBase {
 
   
 
+  virtual void TakeFocus() const override;
+
+  
+
 
   uintptr_t GetWrapper() const { return mWrapper; }
   void SetWrapper(uintptr_t aWrapper) { mWrapper = aWrapper; }
