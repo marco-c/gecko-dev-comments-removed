@@ -187,6 +187,7 @@
 #include "nsHashPropertyBag.h"
 #include "nsHyphenationManager.h"
 #include "nsIAlertsService.h"
+#include "nsIAppShell.h"
 #include "nsIAppStartup.h"
 #include "nsIAppWindow.h"
 #include "nsIAsyncInputStream.h"
@@ -641,6 +642,7 @@ static const char* sObserverTopics[] = {
     "private-cookie-changed",
     NS_NETWORK_LINK_TYPE_TOPIC,
     "network:socket-process-crashed",
+    DEFAULT_TIMEZONE_CHANGED_OBSERVER_TOPIC,
 };
 
 static const char kFissionEnforceBlockList[] =
@@ -3860,6 +3862,8 @@ ContentParent::Observe(nsISupports* aSubject, const char* aTopic,
     UpdateNetworkLinkType();
   } else if (!strcmp(aTopic, "network:socket-process-crashed")) {
     Unused << SendSocketProcessCrashed();
+  } else if (!strcmp(aTopic, DEFAULT_TIMEZONE_CHANGED_OBSERVER_TOPIC)) {
+    Unused << SendSystemTimezoneChanged();
   }
 
   return NS_OK;

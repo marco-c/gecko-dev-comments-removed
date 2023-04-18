@@ -334,6 +334,8 @@ class ContentChild final : public PContentChild,
   mozilla::ipc::IPCResult RecvUpdateRequestedLocales(
       nsTArray<nsCString>&& aRequestedLocales);
 
+  mozilla::ipc::IPCResult RecvSystemTimezoneChanged();
+
   mozilla::ipc::IPCResult RecvAddPermission(const IPC::Permission& permission);
 
   mozilla::ipc::IPCResult RecvRemoveAllPermissions();

@@ -8,6 +8,7 @@
 
 
 
+
 #import <Cocoa/Cocoa.h>
 
 #include "mozilla/AvailableMemoryWatcher.h"
@@ -980,6 +981,10 @@ void nsAppShell::OnMemoryPressureChanged(dispatch_source_memorypressure_flags_t 
                                              selector:@selector(applicationDidBecomeActive:)
                                                  name:NSApplicationDidBecomeActiveNotification
                                                object:NSApp];
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(timezoneChanged:)
+                                                 name:NSSystemTimeZoneDidChangeNotification
+                                               object:nil];
   }
 
   return self;
@@ -1028,6 +1033,14 @@ void nsAppShell::OnMemoryPressureChanged(dispatch_source_memorypressure_flags_t 
   if (observerService) {
     observerService->NotifyObservers(nullptr, NS_WIDGET_MAC_APP_ACTIVATE_OBSERVER_TOPIC, nullptr);
   }
+
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
+}
+
+- (void)timezoneChanged:(NSNotification*)aNotification {
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
+
+  nsBaseAppShell::OnSystemTimezoneChange();
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
 }

@@ -581,6 +581,10 @@ nsresult nsAppShell::Init() {
 #endif  
   }
 
+  if (!WinUtils::GetTimezoneName(mTimezoneName)) {
+    NS_WARNING("Unable to get system timezone name, timezone may be invalid\n");
+  }
+
   return nsBaseAppShell::Init();
 }
 
@@ -733,6 +737,24 @@ bool nsAppShell::ProcessNextNativeEvent(bool mayWait) {
           continue;
         }
 #endif
+
+        
+        
+        
+        
+        
+        if (msg.message == WM_TIMECHANGE) {
+          
+          
+          wchar_t systemTimezone[128];
+          bool getSystemTimeSucceeded =
+              WinUtils::GetTimezoneName(systemTimezone);
+          if (getSystemTimeSucceeded && wcscmp(systemTimezone, mTimezoneName)) {
+            nsBaseAppShell::OnSystemTimezoneChange();
+
+            wcscpy_s(mTimezoneName, 128, systemTimezone);
+          }
+        }
 
         ::TranslateMessage(&msg);
         ::DispatchMessageW(&msg);

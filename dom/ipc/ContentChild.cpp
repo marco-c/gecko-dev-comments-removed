@@ -189,6 +189,7 @@
 #include "nsIScriptError.h"
 #include "nsIScriptSecurityManager.h"
 #include "nsJSEnvironment.h"
+#include "nsJSUtils.h"
 #include "nsMemoryInfoDumper.h"
 #include "nsPluginHost.h"
 #include "nsServiceManagerUtils.h"
@@ -2467,6 +2468,11 @@ mozilla::ipc::IPCResult ContentChild::RecvUpdateAppLocales(
 mozilla::ipc::IPCResult ContentChild::RecvUpdateRequestedLocales(
     nsTArray<nsCString>&& aRequestedLocales) {
   LocaleService::GetInstance()->AssignRequestedLocales(aRequestedLocales);
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult ContentChild::RecvSystemTimezoneChanged() {
+  nsJSUtils::ResetTimeZone();
   return IPC_OK();
 }
 

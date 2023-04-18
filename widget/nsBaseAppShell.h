@@ -31,6 +31,12 @@ class nsBaseAppShell : public nsIAppShell,
 
   nsBaseAppShell();
 
+  
+
+
+
+  static void OnSystemTimezoneChange();
+
  protected:
   virtual ~nsBaseAppShell();
 
