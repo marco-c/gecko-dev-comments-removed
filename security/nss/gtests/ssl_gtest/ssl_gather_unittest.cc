@@ -26,21 +26,6 @@ class GatherV2ClientHelloTest : public TlsConnectTestBase {
 };
 
 
-
-TEST_F(TlsConnectTest, GatherEmptyV3Record) {
-  DataBuffer buffer;
-
-  size_t idx = 0;
-  idx = buffer.Write(idx, 0x16, 1);    
-  idx = buffer.Write(idx, 0x0301, 2);  
-  (void)buffer.Write(idx, 0U, 2);      
-
-  EnsureTlsSetup();
-  client_->SendDirect(buffer);
-  Connect();
-}
-
-
 TEST_F(TlsConnectTest, GatherExcessiveV3Record) {
   DataBuffer buffer;
 

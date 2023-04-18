@@ -5804,6 +5804,7 @@ tls13_UnprotectRecord(sslSocket *ss,
     const ssl3BulkCipherDef *cipher_def = spec->cipherDef;
     const int ivLen = cipher_def->iv_size + cipher_def->explicit_nonce_size;
     const int tagLen = cipher_def->tag_size;
+    const int innerTypeLen = 1;
 
     PRUint8 aad[21];
     unsigned int aadLen;
@@ -5837,6 +5838,17 @@ tls13_UnprotectRecord(sslSocket *ss,
                 ("%d: TLS13[%d]: record too short to contain valid AEAD data",
                  SSL_GETPID(), ss->fd));
         PORT_SetError(SSL_ERROR_BAD_MAC_READ);
+        return SECFailure;
+    }
+
+    
+
+
+
+
+    if (cText->buf->len > (spec->recordSizeLimit + innerTypeLen + tagLen)) {
+        *alert = record_overflow;
+        PORT_SetError(SSL_ERROR_RX_RECORD_TOO_LONG);
         return SECFailure;
     }
 
@@ -5888,10 +5900,8 @@ tls13_UnprotectRecord(sslSocket *ss,
 
     
 
-
-
-    if (plaintext->len > spec->recordSizeLimit + 1) {
-        SSL3_SendAlert(ss, alert_fatal, record_overflow);
+    if (plaintext->len > spec->recordSizeLimit + innerTypeLen) {
+        *alert = record_overflow;
         PORT_SetError(SSL_ERROR_RX_RECORD_TOO_LONG);
         return SECFailure;
     }
@@ -5916,6 +5926,29 @@ tls13_UnprotectRecord(sslSocket *ss,
     
     *innerType = (SSLContentType)plaintext->buf[plaintext->len - 1];
     --plaintext->len;
+
+    
+
+
+
+
+
+
+    if (!plaintext->len && ((!IS_DTLS(ss) && cText->hdr[0] == ssl_ct_application_data) ||
+                            (IS_DTLS(ss) && dtls_IsDtls13Ciphertext(spec->version, cText->hdr[0])))) {
+        switch (*innerType) {
+            case ssl_ct_alert:
+                *alert = unexpected_message;
+                PORT_SetError(SSL_ERROR_RX_MALFORMED_ALERT);
+                return SECFailure;
+            case ssl_ct_handshake:
+                *alert = unexpected_message;
+                PORT_SetError(SSL_ERROR_RX_MALFORMED_HANDSHAKE);
+                return SECFailure;
+            default:
+                break;
+        }
+    }
 
     
     if (spec->epoch == TrafficKeyEarlyApplicationData &&

@@ -12912,6 +12912,12 @@ ssl_CBCExtractMAC(sslBuffer *plaintext,
 
 
 
+#define MAX_EXPANSION (256 + 48 + 16)
+
+
+
+
+
 
 
 
@@ -12994,14 +13000,18 @@ ssl3_UnprotectRecord(sslSocket *ss,
     PRINT_BUF(80, (ss, "ciphertext:", cText->buf->buf + ivLen,
                    cText->buf->len - ivLen));
 
-    isTLS = (PRBool)(spec->version > SSL_LIBRARY_VERSION_3_0);
+    
 
-    if (isTLS && cText->buf->len - ivLen > (MAX_FRAGMENT_LENGTH + 2048)) {
+
+
+
+    if (cText->buf->len > (spec->recordSizeLimit + MAX_EXPANSION)) {
         *alert = record_overflow;
         PORT_SetError(SSL_ERROR_RX_RECORD_TOO_LONG);
         return SECFailure;
     }
 
+    isTLS = (PRBool)(spec->version > SSL_LIBRARY_VERSION_3_0);
     rType = (SSLContentType)cText->hdr[0];
     rVersion = ((SSL3ProtocolVersion)cText->hdr[1] << 8) |
                (SSL3ProtocolVersion)cText->hdr[2];
@@ -13230,12 +13240,6 @@ ssl3_GetCipherSpec(sslSocket *ss, SSL3Ciphertext *cText)
 
 
 
-#define MAX_EXPANSION (256 + 48 + 16)
-
-
-
-
-
 
 
 
@@ -13258,10 +13262,10 @@ SECStatus
 ssl3_HandleRecord(sslSocket *ss, SSL3Ciphertext *cText)
 {
     SECStatus rv;
-    PRBool isTLS;
+    PRBool isTLS, isTLS13;
     DTLSEpoch epoch;
     ssl3CipherSpec *spec = NULL;
-    PRUint16 recordSizeLimit;
+    PRUint16 recordSizeLimit, cTextSizeLimit;
     PRBool outOfOrderSpec = PR_FALSE;
     SSLContentType rType;
     sslBuffer *plaintext = &ss->gs.buf;
@@ -13322,20 +13326,37 @@ ssl3_HandleRecord(sslSocket *ss, SSL3Ciphertext *cText)
         return SECFailure;
     }
 
+    isTLS13 = (PRBool)(ss->version >= SSL_LIBRARY_VERSION_TLS_1_3);
     recordSizeLimit = spec->recordSizeLimit;
-    if (cText->buf->len > recordSizeLimit + MAX_EXPANSION) {
+    cTextSizeLimit = recordSizeLimit;
+    cTextSizeLimit += (isTLS13) ? TLS_1_3_MAX_EXPANSION : TLS_1_2_MAX_EXPANSION;
+
+    
+
+
+
+
+
+
+
+
+    if (cText->buf->len > cTextSizeLimit) {
         ssl_ReleaseSpecReadLock(ss); 
+        
+        if (IS_DTLS(ss)) {
+            return SECSuccess;
+        }
         SSL3_SendAlert(ss, alert_fatal, record_overflow);
         PORT_SetError(SSL_ERROR_RX_RECORD_TOO_LONG);
         return SECFailure;
     }
 
-    if (plaintext->space < recordSizeLimit + MAX_EXPANSION) {
-        rv = sslBuffer_Grow(plaintext, recordSizeLimit + MAX_EXPANSION);
+    if (plaintext->space < cTextSizeLimit) {
+        rv = sslBuffer_Grow(plaintext, cTextSizeLimit);
         if (rv != SECSuccess) {
             ssl_ReleaseSpecReadLock(ss); 
             SSL_DBG(("%d: SSL3[%d]: HandleRecord, tried to get %d bytes",
-                     SSL_GETPID(), ss->fd, recordSizeLimit + MAX_EXPANSION));
+                     SSL_GETPID(), ss->fd, cTextSizeLimit));
             
             
             return SECFailure;
@@ -13363,6 +13384,10 @@ ssl3_HandleRecord(sslSocket *ss, SSL3Ciphertext *cText)
         
 
 
+
+
+
+
         if (spec->version < SSL_LIBRARY_VERSION_TLS_1_3 ||
             spec->epoch == 0) {
             rv = ssl3_UnprotectRecord(ss, spec, cText, plaintext, &alert);
@@ -13373,6 +13398,7 @@ ssl3_HandleRecord(sslSocket *ss, SSL3Ciphertext *cText)
 #endif
     }
 
+    
     if (rv != SECSuccess) {
         ssl_ReleaseSpecReadLock(ss); 
 
@@ -13400,10 +13426,19 @@ ssl3_HandleRecord(sslSocket *ss, SSL3Ciphertext *cText)
             }
         }
 
+        
+
+
+
+
         if ((IS_DTLS(ss) && !dtls13_AeadLimitReached(spec)) ||
             (!IS_DTLS(ss) && ss->sec.isServer &&
              ss->ssl3.hs.zeroRttIgnore == ssl_0rtt_ignore_trial)) {
             
+
+
+
+
             if (ss->ssl3.fatalAlertSent) {
                 return SECFailure;
             }
@@ -13444,6 +13479,10 @@ ssl3_HandleRecord(sslSocket *ss, SSL3Ciphertext *cText)
     
     if (isTLS && plaintext->len > recordSizeLimit) {
         plaintext->len = 0;
+        
+        if (IS_DTLS(ss)) {
+            return SECSuccess;
+        }
         SSL3_SendAlert(ss, alert_fatal, record_overflow);
         PORT_SetError(SSL_ERROR_RX_RECORD_TOO_LONG);
         return SECFailure;

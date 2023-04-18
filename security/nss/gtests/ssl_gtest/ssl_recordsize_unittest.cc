@@ -223,7 +223,7 @@ class TlsRecordExpander : public TlsRecordFilter {
 };
 
 
-TEST_P(TlsConnectTls13, RecordSizePlaintextExceed) {
+TEST_F(TlsConnectStreamTls13, RecordSizePlaintextExceed) {
   EnsureTlsSetup();
   auto server_expand = MakeTlsFilter<TlsRecordExpander>(server_, 1);
   server_expand->EnableDecryption();
@@ -247,7 +247,7 @@ TEST_P(TlsConnectTls13, RecordSizePlaintextExceed) {
 
 
 
-TEST_P(TlsConnectTls13, RecordSizeCiphertextExceed) {
+TEST_F(TlsConnectStreamTls13, RecordSizeCiphertextExceed) {
   EnsureTlsSetup();
 
   client_->SetOption(SSL_RECORD_SIZE_LIMIT, 64);
@@ -329,7 +329,7 @@ class TlsRecordPadder : public TlsRecordFilter {
   size_t padding_;
 };
 
-TEST_P(TlsConnectTls13, RecordSizeExceedPad) {
+TEST_F(TlsConnectStreamTls13, RecordSizeExceedPad) {
   EnsureTlsSetup();
   auto server_max = std::make_shared<TlsRecordMaximum>(server_);
   auto server_expand = std::make_shared<TlsRecordPadder>(server_, 1);
@@ -492,6 +492,235 @@ TEST_F(RecordSizeDefaultsTest, RecordSizeGetValue) {
   EXPECT_EQ(SECSuccess, SSL_OptionSetDefault(SSL_RECORD_SIZE_LIMIT, 3000));
   EXPECT_EQ(SECSuccess, SSL_OptionGetDefault(SSL_RECORD_SIZE_LIMIT, &v));
   EXPECT_EQ(3000, v);
+}
+
+class TlsCtextResizer : public TlsRecordFilter {
+ public:
+  TlsCtextResizer(const std::shared_ptr<TlsAgent>& a, size_t size)
+      : TlsRecordFilter(a), size_(size) {}
+
+ protected:
+  virtual PacketFilter::Action FilterRecord(const TlsRecordHeader& header,
+                                            const DataBuffer& data,
+                                            DataBuffer* changed) {
+    
+    changed->Allocate(size_);
+
+    
+    changed->Write(0, data.data(),
+                   ((data.len() >= size_) ? size_ : data.len()));
+
+    return CHANGE;
+  }
+
+ private:
+  size_t size_;
+};
+
+
+
+
+
+
+TEST_P(TlsConnectGeneric, RecordGatherOverlong) {
+  EnsureTlsSetup();
+
+  size_t max_ctext = MAX_FRAGMENT_LENGTH;
+  if (version_ >= SSL_LIBRARY_VERSION_TLS_1_3) {
+    max_ctext += TLS_1_3_MAX_EXPANSION;
+  } else {
+    max_ctext += TLS_1_2_MAX_EXPANSION;
+  }
+
+  Connect();
+
+  MakeTlsFilter<TlsCtextResizer>(server_, max_ctext + 1);
+  
+  server_->SendData(0xf0);
+
+  
+  if (variant_ == ssl_variant_datagram) {
+    size_t received = client_->received_bytes();
+    client_->ReadBytes(max_ctext + 1);
+    ASSERT_EQ(received, client_->received_bytes());
+  } else {
+    client_->ExpectSendAlert(kTlsAlertRecordOverflow);
+    client_->ReadBytes(max_ctext + 1);
+    server_->ExpectReceiveAlert(kTlsAlertRecordOverflow);
+    server_->Handshake();
+  }
+}
+
+
+
+
+
+TEST_P(TlsConnectGeneric, RecordSizeExtensionOverlong) {
+  EnsureTlsSetup();
+
+  
+  size_t max_ctext = 1000;
+
+  client_->SetOption(SSL_RECORD_SIZE_LIMIT, max_ctext);
+
+  if (version_ >= SSL_LIBRARY_VERSION_TLS_1_3) {
+    
+    max_ctext += TLS_1_3_MAX_EXPANSION - 1;
+  } else {
+    max_ctext += TLS_1_2_MAX_EXPANSION;
+  }
+
+  Connect();
+
+  MakeTlsFilter<TlsCtextResizer>(server_, max_ctext + 1);
+  
+  server_->SendData(0xf);
+
+  
+
+
+
+  if (variant_ == ssl_variant_datagram) {
+    size_t received = client_->received_bytes();
+    client_->ReadBytes(max_ctext + 1);
+    ASSERT_EQ(received, client_->received_bytes());
+  } else {
+    client_->ExpectSendAlert(kTlsAlertRecordOverflow);
+    client_->ReadBytes(max_ctext + 1);
+    server_->ExpectReceiveAlert(kTlsAlertRecordOverflow);
+    server_->Handshake();
+  }
+}
+
+
+
+
+
+
+#define MAX_EXPANSION (256 + 48 + 16)
+
+
+
+
+
+
+
+TEST_P(TlsConnectGeneric, RecordExpansionOverlong) {
+  EnsureTlsSetup();
+
+  
+  size_t max_ctext = 1000;
+
+  client_->SetOption(SSL_RECORD_SIZE_LIMIT, max_ctext);
+
+  if (version_ >= SSL_LIBRARY_VERSION_TLS_1_3) {
+    
+    
+    max_ctext += 16;
+  } else {
+    
+    max_ctext += MAX_EXPANSION;
+  }
+
+  Connect();
+
+  MakeTlsFilter<TlsCtextResizer>(server_, max_ctext + 1);
+  
+  server_->SendData(0xf);
+
+  
+
+
+
+  if (variant_ == ssl_variant_datagram) {
+    size_t received = client_->received_bytes();
+    client_->ReadBytes(max_ctext + 1);
+    ASSERT_EQ(received, client_->received_bytes());
+  } else {
+    client_->ExpectSendAlert(kTlsAlertRecordOverflow);
+    client_->ReadBytes(max_ctext + 1);
+    server_->ExpectReceiveAlert(kTlsAlertRecordOverflow);
+    server_->Handshake();
+  }
+}
+
+
+TEST_P(TlsConnectGeneric, RecordSizeDefaultLong) {
+  EnsureTlsSetup();
+  Connect();
+
+  
+  size_t max = MAX_FRAGMENT_LENGTH;
+
+  
+
+
+
+  if (version_ == SSL_LIBRARY_VERSION_TLS_1_0 &&
+      variant_ == ssl_variant_stream) {
+    
+    MakeTlsFilter<TlsCtextResizer>(server_, max + MAX_EXPANSION);
+    
+    server_->SendData(0xF);
+    
+    client_->ExpectSendAlert(kTlsAlertBadRecordMac);
+    
+    client_->ReadBytes(max);
+    
+    server_->ExpectReceiveAlert(kTlsAlertBadRecordMac);
+    server_->Handshake();
+  } else {  
+    
+    
+    server_->SendData(max, max);
+    
+    client_->ReadBytes(max);
+    
+    ASSERT_EQ(client_->received_bytes(), max);
+  }
+}
+
+
+TEST_P(TlsConnectGeneric, RecordSizeLimitLong) {
+  EnsureTlsSetup();
+
+  
+  size_t max = 1000;
+  client_->SetOption(SSL_RECORD_SIZE_LIMIT, max);
+
+  Connect();
+
+  
+  if (version_ == SSL_LIBRARY_VERSION_TLS_1_3) {
+    max--;
+  }
+
+  
+
+
+
+  if (version_ == SSL_LIBRARY_VERSION_TLS_1_0 &&
+      variant_ == ssl_variant_stream) {
+    
+    MakeTlsFilter<TlsCtextResizer>(server_, max + MAX_EXPANSION);
+    
+    server_->SendData(0xF);
+    
+    client_->ExpectSendAlert(kTlsAlertBadRecordMac);
+    
+    client_->ReadBytes(max);
+    
+    server_->ExpectReceiveAlert(kTlsAlertBadRecordMac);
+    server_->Handshake();
+  } else {  
+    
+    
+    server_->SendData(max, max);
+    
+    client_->ReadBytes(max);
+    
+    ASSERT_EQ(client_->received_bytes(), max);
+  }
 }
 
 }  

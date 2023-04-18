@@ -149,7 +149,7 @@ local void send_all_trees OF((deflate_state *s, int lcodes, int dcodes,
 local void compress_block OF((deflate_state *s, const ct_data *ltree,
                               const ct_data *dtree));
 local int  detect_data_type OF((deflate_state *s));
-local unsigned bi_reverse OF((unsigned value, int length));
+local unsigned bi_reverse OF((unsigned code, int len));
 local void bi_windup      OF((deflate_state *s));
 local void bi_flush       OF((deflate_state *s));
 
@@ -416,7 +416,7 @@ local void init_block(s)
 
     s->dyn_ltree[END_BLOCK].Freq = 1;
     s->opt_len = s->static_len = 0L;
-    s->last_lit = s->matches = 0;
+    s->sym_next = s->matches = 0;
 }
 
 #define SMALLEST 1
@@ -870,7 +870,8 @@ void ZLIB_INTERNAL _tr_stored_block(s, buf, stored_len, last)
     bi_windup(s);        
     put_short(s, (ush)stored_len);
     put_short(s, (ush)~stored_len);
-    zmemcpy(s->pending_buf + s->pending, (Bytef *)buf, stored_len);
+    if (stored_len)
+        zmemcpy(s->pending_buf + s->pending, (Bytef *)buf, stored_len);
     s->pending += stored_len;
 #ifdef ZLIB_DEBUG
     s->compressed_len = (s->compressed_len + 3 + 7) & (ulg)~7L;
@@ -947,7 +948,7 @@ void ZLIB_INTERNAL _tr_flush_block(s, buf, stored_len, last)
 
         Tracev((stderr, "\nopt %lu(%lu) stat %lu(%lu) stored %lu lit %u ",
                 opt_lenb, s->opt_len, static_lenb, s->static_len, stored_len,
-                s->last_lit));
+                s->sym_next / 3));
 
         if (static_lenb <= opt_lenb) opt_lenb = static_lenb;
 
@@ -1016,8 +1017,9 @@ int ZLIB_INTERNAL _tr_tally (s, dist, lc)
     unsigned dist;  
     unsigned lc;    
 {
-    s->d_buf[s->last_lit] = (ush)dist;
-    s->l_buf[s->last_lit++] = (uch)lc;
+    s->sym_buf[s->sym_next++] = dist;
+    s->sym_buf[s->sym_next++] = dist >> 8;
+    s->sym_buf[s->sym_next++] = lc;
     if (dist == 0) {
         
         s->dyn_ltree[lc].Freq++;
@@ -1032,30 +1034,7 @@ int ZLIB_INTERNAL _tr_tally (s, dist, lc)
         s->dyn_ltree[_length_code[lc]+LITERALS+1].Freq++;
         s->dyn_dtree[d_code(dist)].Freq++;
     }
-
-#ifdef TRUNCATE_BLOCK
-    
-    if ((s->last_lit & 0x1fff) == 0 && s->level > 2) {
-        
-        ulg out_length = (ulg)s->last_lit*8L;
-        ulg in_length = (ulg)((long)s->strstart - s->block_start);
-        int dcode;
-        for (dcode = 0; dcode < D_CODES; dcode++) {
-            out_length += (ulg)s->dyn_dtree[dcode].Freq *
-                (5L+extra_dbits[dcode]);
-        }
-        out_length >>= 3;
-        Tracev((stderr,"\nlast_lit %u, in %ld, out ~%ld(%ld%%) ",
-               s->last_lit, in_length, out_length,
-               100L - out_length*100L/in_length));
-        if (s->matches < s->last_lit/2 && out_length < in_length/2) return 1;
-    }
-#endif
-    return (s->last_lit == s->lit_bufsize-1);
-    
-
-
-
+    return (s->sym_next == s->sym_end);
 }
 
 
@@ -1068,13 +1047,14 @@ local void compress_block(s, ltree, dtree)
 {
     unsigned dist;      
     int lc;             
-    unsigned lx = 0;    
+    unsigned sx = 0;    
     unsigned code;      
     int extra;          
 
-    if (s->last_lit != 0) do {
-        dist = s->d_buf[lx];
-        lc = s->l_buf[lx++];
+    if (s->sym_next != 0) do {
+        dist = s->sym_buf[sx++] & 0xff;
+        dist += (unsigned)(s->sym_buf[sx++] & 0xff) << 8;
+        lc = s->sym_buf[sx++];
         if (dist == 0) {
             send_code(s, lc, ltree); 
             Tracecv(isgraph(lc), (stderr," '%c' ", lc));
@@ -1100,10 +1080,9 @@ local void compress_block(s, ltree, dtree)
         } 
 
         
-        Assert((uInt)(s->pending) < s->lit_bufsize + 2*lx,
-               "pendingBuf overflow");
+        Assert(s->pending < s->lit_bufsize + sx, "pendingBuf overflow");
 
-    } while (lx < s->last_lit);
+    } while (sx < s->sym_next);
 
     send_code(s, END_BLOCK, ltree);
 }
@@ -1128,12 +1107,12 @@ local int detect_data_type(s)
 
 
 
-    unsigned long black_mask = 0xf3ffc07fUL;
+    unsigned long block_mask = 0xf3ffc07fUL;
     int n;
 
     
-    for (n = 0; n <= 31; n++, black_mask >>= 1)
-        if ((black_mask & 1) && (s->dyn_ltree[n].Freq != 0))
+    for (n = 0; n <= 31; n++, block_mask >>= 1)
+        if ((block_mask & 1) && (s->dyn_ltree[n].Freq != 0))
             return Z_BINARY;
 
     

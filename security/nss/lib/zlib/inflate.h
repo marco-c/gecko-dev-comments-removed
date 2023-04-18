@@ -87,6 +87,7 @@ struct inflate_state {
 
     int havedict;               
     int flags;                  
+
     unsigned dmax;              
     unsigned long check;        
     unsigned long total;        

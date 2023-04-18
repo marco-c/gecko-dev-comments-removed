@@ -457,10 +457,10 @@ TEST_P(TlsConnectGeneric, ServerSNICertTypeSwitch) {
   EXPECT_TRUE(SECITEM_ItemsAreEqual(&cert1->derCert, &cert2->derCert));
 }
 
-
 TEST_P(TlsConnectGenericPre13, ConnectEcdheTwiceReuseKey) {
   auto filter = MakeTlsFilter<TlsHandshakeRecorder>(
       server_, kTlsHandshakeServerKeyExchange);
+  EnableECDHEServerKeyReuse();
   Connect();
   CheckKeys();
   TlsServerKeyExchangeEcdhe dhe1;
@@ -468,6 +468,7 @@ TEST_P(TlsConnectGenericPre13, ConnectEcdheTwiceReuseKey) {
 
   
   Reset();
+  EnableECDHEServerKeyReuse();
   auto filter2 = MakeTlsFilter<TlsHandshakeRecorder>(
       server_, kTlsHandshakeServerKeyExchange);
   ConfigureSessionCache(RESUME_NONE, RESUME_NONE);
@@ -485,7 +486,6 @@ TEST_P(TlsConnectGenericPre13, ConnectEcdheTwiceReuseKey) {
 
 
 TEST_P(TlsConnectGenericPre13, ConnectEcdheTwiceNewKey) {
-  server_->SetOption(SSL_REUSE_SERVER_ECDHE_KEY, PR_FALSE);
   auto filter = MakeTlsFilter<TlsHandshakeRecorder>(
       server_, kTlsHandshakeServerKeyExchange);
   Connect();
@@ -495,7 +495,6 @@ TEST_P(TlsConnectGenericPre13, ConnectEcdheTwiceNewKey) {
 
   
   Reset();
-  server_->SetOption(SSL_REUSE_SERVER_ECDHE_KEY, PR_FALSE);
   auto filter2 = MakeTlsFilter<TlsHandshakeRecorder>(
       server_, kTlsHandshakeServerKeyExchange);
   ConfigureSessionCache(RESUME_NONE, RESUME_NONE);

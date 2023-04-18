@@ -175,12 +175,25 @@ ssl3_GatherData(sslSocket *ss, sslGather *gs, int flags, ssl2Gather *ssl2gs)
                 }
 
                 
-                if (!v2HdrLength &&
-                    gs->remainder > (MAX_FRAGMENT_LENGTH + 2048)) {
-                    SSL3_SendAlert(ss, alert_fatal, record_overflow);
-                    gs->state = GS_INIT;
-                    PORT_SetError(SSL_ERROR_RX_RECORD_TOO_LONG);
-                    return SECFailure;
+                if (!v2HdrLength) {
+                    
+
+
+
+
+
+
+
+
+
+                    if (gs->remainder > TLS_1_2_MAX_CTEXT_LENGTH ||
+                        (gs->remainder > TLS_1_3_MAX_CTEXT_LENGTH &&
+                         ss->version >= SSL_LIBRARY_VERSION_TLS_1_3)) {
+                        SSL3_SendAlert(ss, alert_fatal, record_overflow);
+                        gs->state = GS_INIT;
+                        PORT_SetError(SSL_ERROR_RX_RECORD_TOO_LONG);
+                        return SECFailure;
+                    }
                 }
 
                 gs->state = GS_DATA;
@@ -267,7 +280,7 @@ dtls_GatherData(sslSocket *ss, sslGather *gs, int flags)
     int nb;
     PRUint8 contentType;
     unsigned int headerLen;
-    SECStatus rv;
+    SECStatus rv = SECSuccess;
     PRBool dtlsLengthPresent = PR_TRUE;
 
     SSL_TRC(30, ("dtls_GatherData"));
@@ -282,17 +295,32 @@ dtls_GatherData(sslSocket *ss, sslGather *gs, int flags)
         gs->dtlsPacket.len = 0;
 
         
-        
 
 
 
 
-        if (gs->dtlsPacket.space < MAX_FRAGMENT_LENGTH + 2048 + 13) {
-            rv = sslBuffer_Grow(&gs->dtlsPacket,
-                                MAX_FRAGMENT_LENGTH + 2048 + 13);
-            if (rv != SECSuccess) {
-                return -1; 
+
+
+
+
+
+
+        if (ss->version <= SSL_LIBRARY_VERSION_TLS_1_2) {
+            if (gs->dtlsPacket.space < DTLS_1_2_MAX_PACKET_LENGTH) {
+                rv = sslBuffer_Grow(&gs->dtlsPacket, DTLS_1_2_MAX_PACKET_LENGTH);
             }
+        } else { 
+            if (gs->dtlsPacket.space != DTLS_1_3_MAX_PACKET_LENGTH) {
+                
+
+
+                sslBuffer_Clear(&gs->dtlsPacket);
+                rv = sslBuffer_Grow(&gs->dtlsPacket, DTLS_1_3_MAX_PACKET_LENGTH);
+            }
+        }
+
+        if (rv != SECSuccess) {
+            return -1; 
         }
 
         
@@ -306,6 +334,8 @@ dtls_GatherData(sslSocket *ss, sslGather *gs, int flags)
         } else  {
             SSL_DBG(("%d: SSL3[%d]: recv error %d", SSL_GETPID(), ss->fd,
                      PR_GetError()));
+            
+
             return -1;
         }
 

@@ -70,7 +70,7 @@ unsigned start;
     code const FAR *dcode;      
     unsigned lmask;             
     unsigned dmask;             
-    code here;                  
+    code const *here;           
     unsigned op;                
                                 
     unsigned len;               
@@ -107,20 +107,20 @@ unsigned start;
             hold += (unsigned long)(*in++) << bits;
             bits += 8;
         }
-        here = lcode[hold & lmask];
+        here = lcode + (hold & lmask);
       dolen:
-        op = (unsigned)(here.bits);
+        op = (unsigned)(here->bits);
         hold >>= op;
         bits -= op;
-        op = (unsigned)(here.op);
+        op = (unsigned)(here->op);
         if (op == 0) {                          
-            Tracevv((stderr, here.val >= 0x20 && here.val < 0x7f ?
+            Tracevv((stderr, here->val >= 0x20 && here->val < 0x7f ?
                     "inflate:         literal '%c'\n" :
-                    "inflate:         literal 0x%02x\n", here.val));
-            *out++ = (unsigned char)(here.val);
+                    "inflate:         literal 0x%02x\n", here->val));
+            *out++ = (unsigned char)(here->val);
         }
         else if (op & 16) {                     
-            len = (unsigned)(here.val);
+            len = (unsigned)(here->val);
             op &= 15;                           
             if (op) {
                 if (bits < op) {
@@ -138,14 +138,14 @@ unsigned start;
                 hold += (unsigned long)(*in++) << bits;
                 bits += 8;
             }
-            here = dcode[hold & dmask];
+            here = dcode + (hold & dmask);
           dodist:
-            op = (unsigned)(here.bits);
+            op = (unsigned)(here->bits);
             hold >>= op;
             bits -= op;
-            op = (unsigned)(here.op);
+            op = (unsigned)(here->op);
             if (op & 16) {                      
-                dist = (unsigned)(here.val);
+                dist = (unsigned)(here->val);
                 op &= 15;                       
                 if (bits < op) {
                     hold += (unsigned long)(*in++) << bits;
@@ -264,7 +264,7 @@ unsigned start;
                 }
             }
             else if ((op & 64) == 0) {          
-                here = dcode[here.val + (hold & ((1U << op) - 1))];
+                here = dcode + here->val + (hold & ((1U << op) - 1));
                 goto dodist;
             }
             else {
@@ -274,7 +274,7 @@ unsigned start;
             }
         }
         else if ((op & 64) == 0) {              
-            here = lcode[here.val + (hold & ((1U << op) - 1))];
+            here = lcode + here->val + (hold & ((1U << op) - 1));
             goto dolen;
         }
         else if (op & 32) {                     

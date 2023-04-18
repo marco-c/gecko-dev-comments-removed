@@ -281,6 +281,23 @@ CheckCertHostname(Input endEntityCertDER, Input hostname,
 }
 
 
+
+Result StrictNameMatchingPolicy::FallBackToCommonName(
+    Time notBefore,
+     FallBackToSearchWithinSubject& fallBackToCommonName) {
+  fallBackToCommonName = FallBackToSearchWithinSubject::No;
+  return Success;
+}
+
+Result
+CheckCertHostname(Input endEntityCertDER, Input hostname)
+{
+  StrictNameMatchingPolicy policy{};
+  return CheckCertHostname(endEntityCertDER, hostname, policy);
+}
+
+
+
 Result
 CheckNameConstraints(Input encodedNameConstraints,
                      const BackCert& firstChild,
