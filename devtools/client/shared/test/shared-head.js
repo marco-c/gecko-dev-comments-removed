@@ -158,129 +158,6 @@ try {
 require("devtools/client/framework/devtools-browser");
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function highlighterTestActorBootstrap() {
-  const HIGHLIGHTER_TEST_ACTOR_URL =
-    "chrome://mochitests/content/browser/devtools/client/shared/test/highlighter-test-actor.js";
-
-  const { require: _require } = ChromeUtils.import(
-    "resource://devtools/shared/loader/Loader.jsm"
-  );
-  _require(HIGHLIGHTER_TEST_ACTOR_URL);
-
-  
-  const Services = _require("Services");
-
-  const actorRegistryObserver = subject => {
-    const actorRegistry = subject.wrappedJSObject;
-    actorRegistry.registerModule(HIGHLIGHTER_TEST_ACTOR_URL, {
-      prefix: "highlighterTest",
-      constructor: "HighlighterTestActor",
-      type: { target: true },
-    });
-  };
-  Services.obs.addObserver(
-    actorRegistryObserver,
-    "devtools-server-initialized"
-  );
-
-  const unloadListener = () => {
-    Services.cpmm.removeMessageListener(
-      "remove-devtools-testactor-observer",
-      unloadListener
-    );
-    Services.obs.removeObserver(
-      actorRegistryObserver,
-      "devtools-server-initialized"
-    );
-  };
-  Services.cpmm.addMessageListener(
-    "remove-devtools-testactor-observer",
-    unloadListener
-  );
-}
-
-if (isMochitest) {
-  const highlighterTestActorBootstrapScript =
-    "data:,(" + highlighterTestActorBootstrap + ")()";
-  Services.ppmm.loadProcessScript(
-    highlighterTestActorBootstrapScript,
-    
-    true
-  );
-
-  registerCleanupFunction(() => {
-    Services.ppmm.broadcastAsyncMessage("remove-devtools-testactor-observer");
-    Services.ppmm.removeDelayedProcessScript(
-      highlighterTestActorBootstrapScript
-    );
-  });
-}
-
-
-
-
-
-
-
-
-
-
-async function getHighlighterTestFront(toolbox, { target } = {}) {
-  
-  
-  
-  const inspector = await toolbox.loadTool("inspector");
-
-  const highlighterTestFront = await (target || toolbox.target).getFront(
-    "highlighterTest"
-  );
-  
-  
-  
-  highlighterTestFront.highlighter = () => {
-    return inspector.highlighters.getActiveHighlighter(
-      inspector.highlighters.TYPES.BOXMODEL
-    );
-  };
-  return highlighterTestFront;
-}
-
-
-
-
-
-
-
-
-async function getHighlighterTestFrontWithoutToolbox(tab) {
-  const commands = await CommandsFactory.forTab(tab);
-  
-  
-  await commands.targetCommand.startListening();
-
-  const targetFront = commands.targetCommand.targetFront;
-  return targetFront.getFront("highlighterTest");
-}
-
-
 if (isMochitest) {
   waitForExplicitFinish();
 }
@@ -427,6 +304,129 @@ async function safeCloseBrowserConsole({ clearOutput = false } = {}) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function highlighterTestActorBootstrap() {
+  const HIGHLIGHTER_TEST_ACTOR_URL =
+    "chrome://mochitests/content/browser/devtools/client/shared/test/highlighter-test-actor.js";
+
+  const { require: _require } = ChromeUtils.import(
+    "resource://devtools/shared/loader/Loader.jsm"
+  );
+  _require(HIGHLIGHTER_TEST_ACTOR_URL);
+
+  
+  const Services = _require("Services");
+
+  const actorRegistryObserver = subject => {
+    const actorRegistry = subject.wrappedJSObject;
+    actorRegistry.registerModule(HIGHLIGHTER_TEST_ACTOR_URL, {
+      prefix: "highlighterTest",
+      constructor: "HighlighterTestActor",
+      type: { target: true },
+    });
+  };
+  Services.obs.addObserver(
+    actorRegistryObserver,
+    "devtools-server-initialized"
+  );
+
+  const unloadListener = () => {
+    Services.cpmm.removeMessageListener(
+      "remove-devtools-testactor-observer",
+      unloadListener
+    );
+    Services.obs.removeObserver(
+      actorRegistryObserver,
+      "devtools-server-initialized"
+    );
+  };
+  Services.cpmm.addMessageListener(
+    "remove-devtools-testactor-observer",
+    unloadListener
+  );
+}
+
+if (isMochitest) {
+  const highlighterTestActorBootstrapScript =
+    "data:,(" + highlighterTestActorBootstrap + ")()";
+  Services.ppmm.loadProcessScript(
+    highlighterTestActorBootstrapScript,
+    
+    true
+  );
+
+  registerCleanupFunction(() => {
+    Services.ppmm.broadcastAsyncMessage("remove-devtools-testactor-observer");
+    Services.ppmm.removeDelayedProcessScript(
+      highlighterTestActorBootstrapScript
+    );
+  });
+}
+
+
+
+
+
+
+
+
+
+
+async function getHighlighterTestFront(toolbox, { target } = {}) {
+  
+  
+  
+  const inspector = await toolbox.loadTool("inspector");
+
+  const highlighterTestFront = await (target || toolbox.target).getFront(
+    "highlighterTest"
+  );
+  
+  
+  
+  highlighterTestFront.highlighter = () => {
+    return inspector.highlighters.getActiveHighlighter(
+      inspector.highlighters.TYPES.BOXMODEL
+    );
+  };
+  return highlighterTestFront;
+}
+
+
+
+
+
+
+
+
+async function getHighlighterTestFrontWithoutToolbox(tab) {
+  const commands = await CommandsFactory.forTab(tab);
+  
+  
+  await commands.targetCommand.startListening();
+
+  const targetFront = commands.targetCommand.targetFront;
+  return targetFront.getFront("highlighterTest");
+}
+
+
+
+
+
+
 function waitForAllTargetsToBeAttached(targetCommand) {
   return Promise.allSettled(
     targetCommand
@@ -446,7 +446,7 @@ function waitForAllTargetsToBeAttached(targetCommand) {
 
 
 
-var addTab = async function(url, options = {}) {
+async function addTab(url, options = {}) {
   info("Adding a new tab with URL: " + url);
 
   const {
@@ -476,14 +476,14 @@ var addTab = async function(url, options = {}) {
   }
 
   return tab;
-};
+}
 
 
 
 
 
 
-var removeTab = async function(tab) {
+async function removeTab(tab) {
   info("Removing tab.");
 
   const { gBrowser } = tab.ownerDocument.defaultView;
@@ -492,7 +492,7 @@ var removeTab = async function(tab) {
   await onClose;
 
   info("Tab removed and finished closing");
-};
+}
 
 
 
@@ -926,6 +926,13 @@ function isServerTargetSwitchingEnabled() {
   return Services.prefs.getBoolPref(TARGET_SWITCHING_PREF);
 }
 
+
+
+
+async function enableTargetSwitching() {
+  await pushPref(TARGET_SWITCHING_PREF, true);
+}
+
 function isEveryFrameTargetEnabled() {
   return Services.prefs.getBoolPref(
     "devtools.every-frame-target.enabled",
@@ -940,13 +947,13 @@ function isEveryFrameTargetEnabled() {
 
 
 
-var openInspectorForURL = async function(url, hostType) {
+async function openInspectorForURL(url, hostType) {
   const tab = await addTab(url);
   const { inspector, toolbox, highlighterTestFront } = await openInspector(
     hostType
   );
   return { tab, inspector, toolbox, highlighterTestFront };
-};
+}
 
 async function getActiveInspector() {
   const toolbox = await gDevTools.getToolboxForTab(gBrowser.selectedTab);
@@ -1165,7 +1172,7 @@ function loadHelperScript(filePath) {
 
 
 
-var openToolboxForTab = async function(tab, toolId, hostType) {
+async function openToolboxForTab(tab, toolId, hostType) {
   info("Opening the toolbox");
 
   let toolbox;
@@ -1188,7 +1195,7 @@ var openToolboxForTab = async function(tab, toolId, hostType) {
   info("Toolbox opened and focused");
 
   return toolbox;
-};
+}
 
 
 
@@ -1198,10 +1205,10 @@ var openToolboxForTab = async function(tab, toolId, hostType) {
 
 
 
-var openNewTabAndToolbox = async function(url, toolId, hostType) {
+async function openNewTabAndToolbox(url, toolId, hostType) {
   const tab = await addTab(url);
   return openToolboxForTab(tab, toolId, hostType);
-};
+}
 
 
 
@@ -1209,7 +1216,7 @@ var openNewTabAndToolbox = async function(url, toolId, hostType) {
 
 
 
-var closeTabAndToolbox = async function(tab = gBrowser.selectedTab) {
+async function closeTabAndToolbox(tab = gBrowser.selectedTab) {
   if (TabDescriptorFactory.isKnownTab(tab)) {
     await gDevTools.closeToolboxForTab(tab);
   }
@@ -1217,7 +1224,7 @@ var closeTabAndToolbox = async function(tab = gBrowser.selectedTab) {
   await removeTab(tab);
 
   await new Promise(resolve => setTimeout(resolve, 0));
-};
+}
 
 
 
@@ -1225,10 +1232,10 @@ var closeTabAndToolbox = async function(tab = gBrowser.selectedTab) {
 
 
 
-var closeToolboxAndTab = async function(toolbox) {
+async function closeToolboxAndTab(toolbox) {
   await toolbox.destroy();
   await removeTab(gBrowser.selectedTab);
-};
+}
 
 
 
@@ -1343,9 +1350,9 @@ function pushPref(preferenceName, value) {
   return SpecialPowers.pushPrefEnv(options);
 }
 
-var closeToolbox = async function() {
+async function closeToolbox() {
   await gDevTools.closeToolboxForTab(gBrowser.selectedTab);
-};
+}
 
 
 
@@ -1361,13 +1368,6 @@ function emptyClipboard() {
 
 function isWindows() {
   return Services.appinfo.OS === "WINNT";
-}
-
-
-
-
-async function enableTargetSwitching() {
-  await pushPref(TARGET_SWITCHING_PREF, true);
 }
 
 
@@ -1482,7 +1482,6 @@ async function unregisterAllServiceWorkers(client) {
   }
   await Promise.all(promises);
 }
-
 
 
 
@@ -1874,7 +1873,7 @@ async function waitForNextTopLevelDomCompleteResource(commands) {
 
 
 
-const waitForPresShell = function(context) {
+function waitForPresShell(context) {
   return SpecialPowers.spawn(context, [], async () => {
     const winUtils = SpecialPowers.getDOMWindowUtils(content);
     await ContentTaskUtils.waitForCondition(() => {
@@ -1885,7 +1884,7 @@ const waitForPresShell = function(context) {
       }
     }, "Waiting for a valid presShell");
   });
-};
+}
 
 
 
