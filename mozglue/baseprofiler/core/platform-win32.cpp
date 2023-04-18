@@ -205,15 +205,14 @@ static unsigned int __stdcall ThreadEntry(void* aArg) {
 }
 
 SamplerThread::SamplerThread(PSLockRef aLock, uint32_t aActivityGeneration,
-                             double aIntervalMilliseconds,
-                             bool aStackWalkEnabled,
-                             bool aNoTimerResolutionChange)
+                             double aIntervalMilliseconds, uint32_t aFeatures)
     : mSampler(aLock),
       mActivityGeneration(aActivityGeneration),
       mIntervalMicroseconds(
           std::max(1, int(floor(aIntervalMilliseconds * 1000 + 0.5)))),
-      mNoTimerResolutionChange(aNoTimerResolutionChange) {
-  if ((!aNoTimerResolutionChange) && (mIntervalMicroseconds < 10 * 1000)) {
+      mNoTimerResolutionChange(
+          ProfilerFeature::HasNoTimerResolutionChange(aFeatures)) {
+  if ((!mNoTimerResolutionChange) && (mIntervalMicroseconds < 10 * 1000)) {
     
     
     

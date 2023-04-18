@@ -570,8 +570,7 @@ ProfileChunkedBuffer& profiler_get_core_buffer() {
 class SamplerThread;
 
 static SamplerThread* NewSamplerThread(PSLockRef aLock, uint32_t aGeneration,
-                                       double aInterval, bool aStackWalkEnabled,
-                                       bool aNoTimerResolutionChange);
+                                       double aInterval, uint32_t aFeatures);
 
 struct LiveProfiledThreadData {
   UniquePtr<ProfiledThreadData> mProfiledThreadData;
@@ -687,10 +686,8 @@ class ActivePS {
         
         
         
-        mSamplerThread(NewSamplerThread(
-            aLock, mGeneration, aInterval,
-            ProfilerFeature::HasStackWalk(aFeatures),
-            ProfilerFeature::HasNoTimerResolutionChange(aFeatures))),
+        mSamplerThread(
+            NewSamplerThread(aLock, mGeneration, aInterval, aFeatures)),
         mInterposeObserver((ProfilerFeature::HasMainThreadIO(aFeatures) ||
                             ProfilerFeature::HasFileIO(aFeatures) ||
                             ProfilerFeature::HasFileIOAll(aFeatures))
@@ -3417,8 +3414,7 @@ class SamplerThread {
  public:
   
   SamplerThread(PSLockRef aLock, uint32_t aActivityGeneration,
-                double aIntervalMilliseconds, bool aStackWalkEnabled,
-                bool aNoTimerResolutionChange);
+                double aIntervalMilliseconds, uint32_t aFeatures);
   ~SamplerThread();
 
   
@@ -3525,10 +3521,8 @@ bool ActivePS::AppendPostSamplingCallback(PSLockRef aLock,
 
 
 static SamplerThread* NewSamplerThread(PSLockRef aLock, uint32_t aGeneration,
-                                       double aInterval, bool aStackWalkEnabled,
-                                       bool aNoTimerResolutionChange) {
-  return new SamplerThread(aLock, aGeneration, aInterval, aStackWalkEnabled,
-                           aNoTimerResolutionChange);
+                                       double aInterval, uint32_t aFeatures) {
+  return new SamplerThread(aLock, aGeneration, aInterval, aFeatures);
 }
 
 
