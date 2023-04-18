@@ -24,8 +24,6 @@ use smallbitvec::{InternalStorage, SmallBitVec};
 use smallvec::{Array, SmallVec};
 use std::alloc::Layout;
 #[cfg(debug_assertions)]
-use std::any::TypeId;
-#[cfg(debug_assertions)]
 use std::collections::HashSet;
 use std::ffi::CString;
 use std::isize;
@@ -65,10 +63,6 @@ pub struct SharedMemoryBuilder {
     
     #[cfg(debug_assertions)]
     shared_values: HashSet<*const c_void>,
-    
-    
-    #[cfg(debug_assertions)]
-    allowed_duplication_types: HashSet<TypeId>,
 }
 
 
@@ -91,17 +85,7 @@ impl SharedMemoryBuilder {
             index: 0,
             #[cfg(debug_assertions)]
             shared_values: HashSet::new(),
-            #[cfg(debug_assertions)]
-            allowed_duplication_types: HashSet::new(),
         }
-    }
-
-    
-    
-    #[inline]
-    pub fn add_allowed_duplication_type<T: 'static>(&mut self) {
-        #[cfg(debug_assertions)]
-        self.allowed_duplication_types.insert(TypeId::of::<T>());
     }
 
     
@@ -432,23 +416,16 @@ impl<T: ToShmem> ToShmem for Option<T> {
     }
 }
 
-impl<T: 'static + ToShmem> ToShmem for Arc<T> {
+impl<T: ToShmem> ToShmem for Arc<T> {
     fn to_shmem(&self, builder: &mut SharedMemoryBuilder) -> Result<Self> {
-        
-        
-        
-        
-        
         
         
         #[cfg(debug_assertions)]
         assert!(
-            !builder.shared_values.contains(&self.heap_ptr()) ||
-                builder
-                    .allowed_duplication_types
-                    .contains(&TypeId::of::<T>()),
-            "ToShmem failed for Arc<T>: encountered a value of type T with multiple references \
-             and which has not been explicitly allowed with an add_allowed_duplication_type call",
+            !builder.shared_values.contains(&self.heap_ptr()),
+            "ToShmem failed for Arc<{}>: encountered a value with multiple \
+            references.",
+            std::any::type_name::<T>()
         );
 
         
@@ -471,7 +448,7 @@ impl<T: 'static + ToShmem> ToShmem for Arc<T> {
     }
 }
 
-impl<H: 'static + ToShmem, T: 'static + ToShmem> ToShmem for ThinArc<H, T> {
+impl<H: ToShmem, T: ToShmem> ToShmem for ThinArc<H, T> {
     fn to_shmem(&self, builder: &mut SharedMemoryBuilder) -> Result<Self> {
         
         
