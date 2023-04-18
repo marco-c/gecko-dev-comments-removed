@@ -283,21 +283,8 @@ class RegisterAllocator {
   LMoveGroup* getFixReuseMoveGroup(LInstruction* ins);
   LMoveGroup* getMoveGroupAfter(LInstruction* ins);
 
-  CodePosition minimalDefEnd(LNode* ins) {
-    
-    
-    
-    
-    while (true) {
-      LNode* next = insData[ins->id() + 1];
-      if (!next->isOsiPoint()) {
-        break;
-      }
-      ins = next;
-    }
-
-    return outputOf(ins);
-  }
+  
+  CodePosition minimalDefEnd(LNode* ins) const;
 
   void dumpInstructions(const char* who);
 

@@ -613,41 +613,10 @@ class BacktrackingAllocator : protected RegisterAllocator {
 
   Vector<LiveBundle*, 4, SystemAllocPolicy> spilledBundles;
 
- public:
-  BacktrackingAllocator(MIRGenerator* mir, LIRGenerator* lir, LIRGraph& graph,
-                        bool testbed)
-      : RegisterAllocator(mir, lir, graph),
-        testbed(testbed),
-        liveIn(nullptr),
-        callRanges(nullptr) {}
-
-  [[nodiscard]] bool go();
-
-  static size_t SpillWeightFromUsePolicy(LUse::Policy policy) {
-    switch (policy) {
-      case LUse::ANY:
-        return 1000;
-
-      case LUse::REGISTER:
-      case LUse::FIXED:
-        return 2000;
-
-      default:
-        return 0;
-    }
-  }
-
- private:
-  using LiveRangeVector = Vector<LiveRange*, 4, SystemAllocPolicy>;
   using LiveBundleVector = Vector<LiveBundle*, 4, SystemAllocPolicy>;
 
   
-  [[nodiscard]] bool init();
-  [[nodiscard]] bool buildLivenessInfo();
-
-  [[nodiscard]] bool addInitialFixedRange(AnyRegister reg, CodePosition from,
-                                          CodePosition to);
-
+  bool compilingWasm() { return mir->outerInfo().compilingWasm(); }
   VirtualRegister& vreg(const LDefinition* def) {
     return vregs[def->virtualRegister()];
   }
@@ -657,55 +626,6 @@ class BacktrackingAllocator : protected RegisterAllocator {
   }
 
   
-  [[nodiscard]] bool tryMergeBundles(LiveBundle* bundle0, LiveBundle* bundle1);
-  [[nodiscard]] bool tryMergeReusedRegister(VirtualRegister& def,
-                                            VirtualRegister& input);
-  void allocateStackDefinition(VirtualRegister& reg);
-  [[nodiscard]] bool mergeAndQueueRegisters();
-  [[nodiscard]] bool tryAllocateFixed(LiveBundle* bundle,
-                                      Requirement requirement, bool* success,
-                                      bool* pfixed,
-                                      LiveBundleVector& conflicting);
-  [[nodiscard]] bool tryAllocateNonFixed(LiveBundle* bundle,
-                                         Requirement requirement,
-                                         Requirement hint, bool* success,
-                                         bool* pfixed,
-                                         LiveBundleVector& conflicting);
-  [[nodiscard]] bool processBundle(MIRGenerator* mir, LiveBundle* bundle);
-  [[nodiscard]] bool computeRequirement(LiveBundle* bundle,
-                                        Requirement* prequirement,
-                                        Requirement* phint);
-  [[nodiscard]] bool tryAllocateRegister(PhysicalRegister& r,
-                                         LiveBundle* bundle, bool* success,
-                                         bool* pfixed,
-                                         LiveBundleVector& conflicting);
-  [[nodiscard]] bool tryAllocateAnyRegister(LiveBundle* bundle, bool* success,
-                                            bool* pfixed,
-                                            LiveBundleVector& conflicting);
-  [[nodiscard]] bool evictBundle(LiveBundle* bundle);
-  [[nodiscard]] bool splitAndRequeueBundles(LiveBundle* bundle,
-                                            const LiveBundleVector& newBundles);
-  [[nodiscard]] bool spill(LiveBundle* bundle);
-  [[nodiscard]] AVOID_INLINE_FOR_DEBUGGING bool
-  tryAllocatingRegistersForSpillBundles();
-
-  bool isReusedInput(LUse* use, LNode* ins, bool considerCopy);
-  bool isRegisterUse(UsePosition* use, LNode* ins, bool considerCopy = false);
-  bool isRegisterDefinition(LiveRange* range);
-  [[nodiscard]] bool pickStackSlot(SpillSet* spill);
-  [[nodiscard]] bool insertAllRanges(LiveRangeSet& set, LiveBundle* bundle);
-
-  
-  [[nodiscard]] AVOID_INLINE_FOR_DEBUGGING bool pickStackSlots();
-  [[nodiscard]] AVOID_INLINE_FOR_DEBUGGING bool resolveControlFlow();
-  [[nodiscard]] AVOID_INLINE_FOR_DEBUGGING bool reifyAllocations();
-  [[nodiscard]] AVOID_INLINE_FOR_DEBUGGING bool populateSafepoints();
-  [[nodiscard]] AVOID_INLINE_FOR_DEBUGGING bool annotateMoveGroups();
-  [[nodiscard]] AVOID_INLINE_FOR_DEBUGGING bool deadRange(LiveRange* range);
-  size_t findFirstNonCallSafepoint(CodePosition from);
-  size_t findFirstSafepoint(CodePosition pos, size_t startFrom);
-  void addLiveRegistersForRange(VirtualRegister& reg, LiveRange* range);
-
   [[nodiscard]] bool addMove(LMoveGroup* moves, LiveRange* from, LiveRange* to,
                              LDefinition::Type type) {
     LAllocation fromAlloc = from->bundle()->allocation();
@@ -750,31 +670,51 @@ class BacktrackingAllocator : protected RegisterAllocator {
     return addMove(moves, from, to, type);
   }
 
-  [[nodiscard]] bool moveAtEdge(LBlock* predecessor, LBlock* successor,
-                                LiveRange* from, LiveRange* to,
-                                LDefinition::Type type);
+  
 
   
-  void dumpAllocations();
+  bool isReusedInput(LUse* use, LNode* ins, bool considerCopy);
+  bool isRegisterUse(UsePosition* use, LNode* ins, bool considerCopy = false);
+  bool isRegisterDefinition(LiveRange* range);
 
-  struct PrintLiveRange;
+  
+  
 
+  
+  size_t computePriority(LiveBundle* bundle);
   bool minimalDef(LiveRange* range, LNode* ins);
   bool minimalUse(LiveRange* range, UsePosition* use);
   bool minimalBundle(LiveBundle* bundle, bool* pfixed = nullptr);
-
-  
-
-  size_t computePriority(LiveBundle* bundle);
   size_t computeSpillWeight(LiveBundle* bundle);
-
   size_t maximumSpillWeight(const LiveBundleVector& bundles);
 
-  [[nodiscard]] bool chooseBundleSplit(LiveBundle* bundle, bool fixed,
-                                       LiveBundle* conflict);
+  
+  [[nodiscard]] bool init();
 
+  
+  [[nodiscard]] bool addInitialFixedRange(AnyRegister reg, CodePosition from,
+                                          CodePosition to);
+  [[nodiscard]] bool buildLivenessInfo();
+
+  
+  [[nodiscard]] bool tryMergeBundles(LiveBundle* bundle0, LiveBundle* bundle1);
+  void allocateStackDefinition(VirtualRegister& reg);
+  [[nodiscard]] bool tryMergeReusedRegister(VirtualRegister& def,
+                                            VirtualRegister& input);
+  [[nodiscard]] bool mergeAndQueueRegisters();
+
+  
+  
+  [[nodiscard]] bool splitAndRequeueBundles(LiveBundle* bundle,
+                                            const LiveBundleVector& newBundles);
+
+  
+  
   [[nodiscard]] bool splitAt(LiveBundle* bundle,
                              const SplitPositionVector& splitPositions);
+
+  
+  [[nodiscard]] bool splitAcrossCalls(LiveBundle* bundle);
   [[nodiscard]] bool trySplitAcrossHotcode(LiveBundle* bundle, bool* success);
   [[nodiscard]] bool trySplitAfterLastRegisterUse(LiveBundle* bundle,
                                                   LiveBundle* conflict,
@@ -782,12 +722,72 @@ class BacktrackingAllocator : protected RegisterAllocator {
   [[nodiscard]] bool trySplitBeforeFirstRegisterUse(LiveBundle* bundle,
                                                     LiveBundle* conflict,
                                                     bool* success);
-  [[nodiscard]] bool splitAcrossCalls(LiveBundle* bundle);
 
-  bool compilingWasm() { return mir->outerInfo().compilingWasm(); }
+  
+  [[nodiscard]] bool chooseBundleSplit(LiveBundle* bundle, bool fixed,
+                                       LiveBundle* conflict);
 
+  
+  [[nodiscard]] bool computeRequirement(LiveBundle* bundle,
+                                        Requirement* prequirement,
+                                        Requirement* phint);
+  [[nodiscard]] bool tryAllocateRegister(PhysicalRegister& r,
+                                         LiveBundle* bundle, bool* success,
+                                         bool* pfixed,
+                                         LiveBundleVector& conflicting);
+  [[nodiscard]] bool tryAllocateAnyRegister(LiveBundle* bundle, bool* success,
+                                            bool* pfixed,
+                                            LiveBundleVector& conflicting);
+  [[nodiscard]] bool evictBundle(LiveBundle* bundle);
+  [[nodiscard]] bool tryAllocateFixed(LiveBundle* bundle,
+                                      Requirement requirement, bool* success,
+                                      bool* pfixed,
+                                      LiveBundleVector& conflicting);
+  [[nodiscard]] bool tryAllocateNonFixed(LiveBundle* bundle,
+                                         Requirement requirement,
+                                         Requirement hint, bool* success,
+                                         bool* pfixed,
+                                         LiveBundleVector& conflicting);
+  [[nodiscard]] bool processBundle(MIRGenerator* mir, LiveBundle* bundle);
+  [[nodiscard]] bool spill(LiveBundle* bundle);
+  [[nodiscard]] AVOID_INLINE_FOR_DEBUGGING bool
+  tryAllocatingRegistersForSpillBundles();
+
+  
+  [[nodiscard]] bool insertAllRanges(LiveRangeSet& set, LiveBundle* bundle);
+  [[nodiscard]] bool pickStackSlot(SpillSet* spill);
+  [[nodiscard]] AVOID_INLINE_FOR_DEBUGGING bool pickStackSlots();
+  [[nodiscard]] bool moveAtEdge(LBlock* predecessor, LBlock* successor,
+                                LiveRange* from, LiveRange* to,
+                                LDefinition::Type type);
+  [[nodiscard]] AVOID_INLINE_FOR_DEBUGGING bool deadRange(LiveRange* range);
+  [[nodiscard]] AVOID_INLINE_FOR_DEBUGGING bool resolveControlFlow();
+  size_t findFirstNonCallSafepoint(CodePosition from);
+  void addLiveRegistersForRange(VirtualRegister& reg, LiveRange* range);
+  [[nodiscard]] AVOID_INLINE_FOR_DEBUGGING bool reifyAllocations();
+  size_t findFirstSafepoint(CodePosition pos, size_t startFrom);
+  [[nodiscard]] AVOID_INLINE_FOR_DEBUGGING bool populateSafepoints();
+  [[nodiscard]] AVOID_INLINE_FOR_DEBUGGING bool annotateMoveGroups();
+
+  
+#ifdef JS_JITSPEW
   void dumpLiveRangesByVReg(const char* who);
   void dumpLiveRangesByBundle(const char* who);
+  struct PrintLiveRange;
+  void dumpAllocations();
+#endif
+
+  
+  
+ public:
+  BacktrackingAllocator(MIRGenerator* mir, LIRGenerator* lir, LIRGraph& graph,
+                        bool testbed)
+      : RegisterAllocator(mir, lir, graph),
+        testbed(testbed),
+        liveIn(nullptr),
+        callRanges(nullptr) {}
+
+  [[nodiscard]] bool go();
 };
 
 }  
