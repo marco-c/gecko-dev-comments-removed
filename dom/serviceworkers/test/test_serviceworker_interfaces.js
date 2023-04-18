@@ -40,6 +40,16 @@ var wasmGlobalInterfaces = [
     insecureContext: true,
     nightly: true,
   },
+  {
+    name: "Exception",
+    insecureContext: true,
+    nightly: true,
+  },
+  {
+    name: "Tag",
+    insecureContext: true,
+    nightly: true,
+  },
 ];
 
 
