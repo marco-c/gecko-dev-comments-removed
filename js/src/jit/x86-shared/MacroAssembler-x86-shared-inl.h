@@ -1514,6 +1514,13 @@ void MacroAssembler::reverseInt64x2(FloatRegister src, FloatRegister dest) {
 
 
 
+void MacroAssembler::anyTrueSimd128(FloatRegister src, Register dest) {
+  vptest(src, src);
+  emitSetRegisterIf(Condition::NonZero, dest);
+}
+
+
+
 void MacroAssembler::allTrueInt8x16(FloatRegister src, Register dest) {
   ScratchSimd128Scope xtmp(*this);
   
@@ -1522,10 +1529,8 @@ void MacroAssembler::allTrueInt8x16(FloatRegister src, Register dest) {
   
   vpcmpeqb(Operand(src), xtmp, xtmp);
   
-  vpmovmskb(xtmp, dest);
-  
-  testl(dest, dest);
-  emitSetRegisterIfZero(dest);
+  vptest(xtmp, xtmp);
+  emitSetRegisterIf(Condition::Zero, dest);
 }
 
 void MacroAssembler::allTrueInt16x8(FloatRegister src, Register dest) {
@@ -1536,10 +1541,8 @@ void MacroAssembler::allTrueInt16x8(FloatRegister src, Register dest) {
   
   vpcmpeqw(Operand(src), xtmp, xtmp);
   
-  vpmovmskb(xtmp, dest);
-  
-  testl(dest, dest);
-  emitSetRegisterIfZero(dest);
+  vptest(xtmp, xtmp);
+  emitSetRegisterIf(Condition::Zero, dest);
 }
 
 void MacroAssembler::allTrueInt32x4(FloatRegister src, Register dest) {
@@ -1550,10 +1553,8 @@ void MacroAssembler::allTrueInt32x4(FloatRegister src, Register dest) {
   
   vpcmpeqd(Operand(src), xtmp, xtmp);
   
-  vpmovmskb(xtmp, dest);
-  
-  testl(dest, dest);
-  emitSetRegisterIfZero(dest);
+  vptest(xtmp, xtmp);
+  emitSetRegisterIf(Condition::Zero, dest);
 }
 
 void MacroAssembler::allTrueInt64x2(FloatRegister src, Register dest) {
@@ -1564,10 +1565,8 @@ void MacroAssembler::allTrueInt64x2(FloatRegister src, Register dest) {
   
   vpcmpeqq(Operand(src), xtmp, xtmp);
   
-  vpmovmskb(xtmp, dest);
-  
-  testl(dest, dest);
-  emitSetRegisterIfZero(dest);
+  vptest(xtmp, xtmp);
+  emitSetRegisterIf(Condition::Zero, dest);
 }
 
 

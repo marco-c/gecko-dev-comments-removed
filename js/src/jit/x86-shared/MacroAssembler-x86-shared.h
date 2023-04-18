@@ -893,16 +893,16 @@ class MacroAssemblerX86Shared : public Assembler {
     }
   }
 
-  void emitSetRegisterIfZero(Register dest) {
+  void emitSetRegisterIf(AssemblerX86Shared::Condition cond, Register dest) {
     if (AllocatableGeneralRegisterSet(Registers::SingleByteRegs).has(dest)) {
       
       
-      setCC(AssemblerX86Shared::Zero, dest);
+      setCC(cond, dest);
       movzbl(dest, dest);
     } else {
       Label end;
       movl(Imm32(1), dest);
-      j(AssemblerX86Shared::Zero, &end);
+      j(cond, &end);
       mov(ImmWord(0), dest);
       bind(&end);
     }

@@ -889,19 +889,6 @@ void MacroAssembler::spectreBoundsCheckPtr(Register index,
 
 
 
-
-
-
-void MacroAssembler::anyTrueSimd128(FloatRegister src, Register dest) {
-  ScratchRegisterScope one(*this);
-  movl(Imm32(1), one);
-  movl(Imm32(0), dest);
-  vptest(src, src);
-  cmovCCl(NonZero, one, dest);
-}
-
-
-
 void MacroAssembler::extractLaneInt64x2(uint32_t lane, FloatRegister src,
                                         Register64 dest) {
   if (lane == 0) {
