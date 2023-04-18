@@ -72,6 +72,10 @@ class Clipboard : public DOMEventTargetHelper {
       nsIPrincipal& aSubjectPrincipal);
 
   
+  already_AddRefed<nsIRunnable> CheckReadTextPermissionAndHandleRequest(
+      Promise& aPromise, nsIPrincipal& aSubjectPrincipal);
+
+  
   already_AddRefed<nsIRunnable> HandleReadTextRequestWhichRequiresPasteButton(
       Promise& aPromise, nsIPrincipal& aSubjectPrincipal);
 
