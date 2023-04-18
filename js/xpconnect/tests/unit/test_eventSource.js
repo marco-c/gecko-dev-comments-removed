@@ -1,0 +1,6 @@
+
+
+
+Assert.throws(() => new EventSource('a'),
+              /NS_ERROR_FAILURE/,
+              "This should fail, but not crash, in xpcshell");
