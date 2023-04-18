@@ -5,9 +5,12 @@
 
 
 
+
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");
-
     
-    let _ = nss_build_common::link_nss();
+    if nss_build_common::env_str("DEP_SQLITE3_LINK_TARGET") == Some("sqlcipher".into()) {
+        
+        let _ = nss_build_common::link_nss();
+    }
 }

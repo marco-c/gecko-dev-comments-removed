@@ -290,19 +290,19 @@ pub mod status_codes {
     
     #[inline]
     pub fn is_success_code(c: u16) -> bool {
-        (200..300).contains(&c)
+        200 <= c && c < 300
     }
 
     
     #[inline]
     pub fn is_client_error_code(c: u16) -> bool {
-        (400..500).contains(&c)
+        400 <= c && c < 500
     }
 
     
     #[inline]
     pub fn is_server_error_code(c: u16) -> bool {
-        (500..600).contains(&c)
+        500 <= c && c < 600
     }
 
     macro_rules! define_status_codes {

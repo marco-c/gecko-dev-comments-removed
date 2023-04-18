@@ -43,7 +43,8 @@ impl<T> IntoIter<T> {
     
     
     
-    pub(crate) fn new(inner: T) -> IntoIter<T> {
+    
+    pub fn new(inner: T) -> IntoIter<T> {
         IntoIter { inner }
     }
 
@@ -117,7 +118,7 @@ impl<T: Buf> Iterator for IntoIter<T> {
             return None;
         }
 
-        let b = self.inner.chunk()[0];
+        let b = self.inner.bytes()[0];
         self.inner.advance(1);
 
         Some(b)

@@ -10,13 +10,6 @@ use super::{Guid, Payload, ServerTimestamp};
 
 
 
-
-
-
-
-
-
-
 pub trait BridgedEngine {
     
     type Error;
@@ -112,11 +105,6 @@ impl From<Vec<OutgoingEnvelope>> for ApplyResults {
         }
     }
 }
-
-
-
-
-
 
 
 

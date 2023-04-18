@@ -129,7 +129,7 @@ impl Payload {
         
         
         
-        Payload::from_json(serde_json::to_value(v)?)
+        Ok(Payload::from_json(serde_json::to_value(v)?)?)
     }
 
     pub fn into_json_string(self) -> String {

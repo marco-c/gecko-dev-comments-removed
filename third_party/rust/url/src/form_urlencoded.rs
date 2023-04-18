@@ -13,10 +13,8 @@
 
 
 
-#[macro_use]
-extern crate matches;
-
 use percent_encoding::{percent_decode, percent_encode_byte};
+use query_encoding::{self, decode_utf8_lossy, EncodingOverride};
 use std::borrow::{Borrow, Cow};
 use std::str;
 
@@ -28,7 +26,7 @@ use std::str;
 
 
 #[inline]
-pub fn parse(input: &[u8]) -> Parse<'_> {
+pub fn parse(input: &[u8]) -> Parse {
     Parse { input }
 }
 
@@ -59,7 +57,7 @@ impl<'a> Iterator for Parse<'a> {
     }
 }
 
-fn decode(input: &[u8]) -> Cow<'_, str> {
+fn decode(input: &[u8]) -> Cow<str> {
     let replaced = replace_plus(input);
     decode_utf8_lossy(match percent_decode(&replaced).into() {
         Cow::Owned(vec) => Cow::Owned(vec),
@@ -68,7 +66,7 @@ fn decode(input: &[u8]) -> Cow<'_, str> {
 }
 
 
-fn replace_plus(input: &[u8]) -> Cow<'_, [u8]> {
+fn replace_plus(input: &[u8]) -> Cow<[u8]> {
     match input.iter().position(|&b| b == b'+') {
         None => Cow::Borrowed(input),
         Some(first_position) => {
@@ -110,7 +108,7 @@ impl<'a> Iterator for ParseIntoOwned<'a> {
 
 
 
-pub fn byte_serialize(input: &[u8]) -> ByteSerialize<'_> {
+pub fn byte_serialize(input: &[u8]) -> ByteSerialize {
     ByteSerialize { bytes: input }
 }
 
@@ -144,10 +142,6 @@ impl<'a> Iterator for ByteSerialize<'a> {
                 None => (self.bytes, &[][..]),
             };
             self.bytes = remaining;
-            
-            
-            
-            
             Some(unsafe { str::from_utf8_unchecked(unchanged_slice) })
         } else {
             None
@@ -197,6 +191,30 @@ impl<'a> Target for &'a mut String {
     type Finished = Self;
 }
 
+
+
+
+
+
+
+
+
+
+
+impl<'a> Target for ::UrlQuery<'a> {
+    fn as_mut_string(&mut self) -> &mut String {
+        &mut self.url.as_mut().unwrap().serialization
+    }
+
+    fn finish(mut self) -> &'a mut ::Url {
+        let url = self.url.take().unwrap();
+        url.restore_already_parsed_fragment(self.fragment.take());
+        url
+    }
+
+    type Finished = &'a mut ::Url;
+}
+
 impl<'a, T: Target> Serializer<'a, T> {
     
     
@@ -212,14 +230,7 @@ impl<'a, T: Target> Serializer<'a, T> {
     
     
     pub fn for_suffix(mut target: T, start_position: usize) -> Self {
-        if target.as_mut_string().len() < start_position {
-            panic!(
-                "invalid length {} for target of length {}",
-                start_position,
-                target.as_mut_string().len()
-            );
-        }
-
+        &target.as_mut_string()[start_position..]; 
         Serializer {
             target: Some(target),
             start_position,
@@ -251,19 +262,6 @@ impl<'a, T: Target> Serializer<'a, T> {
             self.encoding,
             name,
             value,
-        );
-        self
-    }
-
-    
-    
-    
-    pub fn append_key_only(&mut self, name: &str) -> &mut Self {
-        append_key_only(
-            string(&mut self.target),
-            self.start_position,
-            self.encoding,
-            name,
         );
         self
     }
@@ -305,29 +303,6 @@ impl<'a, T: Target> Serializer<'a, T> {
     
     
     
-    pub fn extend_keys_only<I, K>(&mut self, iter: I) -> &mut Self
-    where
-        I: IntoIterator,
-        I::Item: Borrow<K>,
-        K: AsRef<str>,
-    {
-        {
-            let string = string(&mut self.target);
-            for key in iter {
-                let k = key.borrow().as_ref();
-                append_key_only(string, self.start_position, self.encoding, k);
-            }
-        }
-        self
-    }
-
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -357,7 +332,7 @@ fn string<T: Target>(target: &mut Option<T>) -> &mut String {
 fn append_pair(
     string: &mut String,
     start_position: usize,
-    encoding: EncodingOverride<'_>,
+    encoding: EncodingOverride,
     name: &str,
     value: &str,
 ) {
@@ -367,54 +342,6 @@ fn append_pair(
     append_encoded(value, string, encoding);
 }
 
-fn append_key_only(
-    string: &mut String,
-    start_position: usize,
-    encoding: EncodingOverride,
-    name: &str,
-) {
-    append_separator_if_needed(string, start_position);
-    append_encoded(name, string, encoding);
+fn append_encoded(s: &str, string: &mut String, encoding: EncodingOverride) {
+    string.extend(byte_serialize(&query_encoding::encode(encoding, s.into())))
 }
-
-fn append_encoded(s: &str, string: &mut String, encoding: EncodingOverride<'_>) {
-    string.extend(byte_serialize(&encode(encoding, s)))
-}
-
-pub(crate) fn encode<'a>(encoding_override: EncodingOverride<'_>, input: &'a str) -> Cow<'a, [u8]> {
-    if let Some(o) = encoding_override {
-        return o(input);
-    }
-    input.as_bytes().into()
-}
-
-pub(crate) fn decode_utf8_lossy(input: Cow<'_, [u8]>) -> Cow<'_, str> {
-    
-    match input {
-        Cow::Borrowed(bytes) => String::from_utf8_lossy(bytes),
-        Cow::Owned(bytes) => {
-            match String::from_utf8_lossy(&bytes) {
-                Cow::Borrowed(utf8) => {
-                    
-                    
-                    
-                    
-                    
-
-                    
-                    let raw_utf8: *const [u8];
-                    raw_utf8 = utf8.as_bytes();
-                    debug_assert!(raw_utf8 == &*bytes as *const [u8]);
-
-                    
-                    
-                    
-                    Cow::Owned(unsafe { String::from_utf8_unchecked(bytes) })
-                }
-                Cow::Owned(s) => Cow::Owned(s),
-            }
-        }
-    }
-}
-
-pub type EncodingOverride<'a> = Option<&'a dyn Fn(&str) -> Cow<'_, [u8]>>;

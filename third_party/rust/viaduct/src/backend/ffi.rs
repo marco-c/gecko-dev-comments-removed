@@ -11,7 +11,7 @@ ffi_support::implement_into_ffi_by_protobuf!(msg_types::Request);
 impl From<crate::Request> for msg_types::Request {
     fn from(request: crate::Request) -> Self {
         msg_types::Request {
-            url: request.url.to_string(),
+            url: request.url.into_string(),
             body: request.body,
             
             
@@ -45,7 +45,7 @@ impl Backend for FfiBackend {
         super::note_backend("FFI (trusted)");
 
         let method = request.method;
-        let fetch = callback_holder::get_callback().ok_or(Error::BackendNotInitialized)?;
+        let fetch = callback_holder::get_callback().ok_or_else(|| Error::BackendNotInitialized)?;
         let proto_req: msg_types::Request = request.into();
         let buf = proto_req.into_ffi_value();
         let response = unsafe { fetch(buf) };
@@ -154,17 +154,15 @@ mod callback_holder {
     
     pub(super) fn set_callback(h: FetchCallback) -> bool {
         let as_usize = h as usize;
-        match CALLBACK_PTR.compare_exchange(0, as_usize, Ordering::SeqCst, Ordering::SeqCst) {
-            Ok(_) => true,
-            Err(_) => {
-                
-                
-                
-                
-                log::error!("Bug: Initialized CALLBACK_PTR multiple times");
-                false
-            }
+        let old_ptr = CALLBACK_PTR.compare_and_swap(0, as_usize, Ordering::SeqCst);
+        if old_ptr != 0 {
+            
+            
+            
+            
+            log::error!("Bug: Initialized CALLBACK_PTR multiple times");
         }
+        old_ptr == 0
     }
 }
 

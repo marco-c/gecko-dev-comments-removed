@@ -1,8 +1,11 @@
-use crate::buf::{limit, Chain, Limit, UninitSlice};
-#[cfg(feature = "std")]
-use crate::buf::{writer, Writer};
+use core::{
+    cmp,
+    mem::{self, MaybeUninit},
+    ptr, usize,
+};
 
-use core::{cmp, mem, ptr, usize};
+#[cfg(feature = "std")]
+use std::fmt;
 
 use alloc::{boxed::Box, vec::Vec};
 
@@ -26,11 +29,7 @@ use alloc::{boxed::Box, vec::Vec};
 
 
 
-pub unsafe trait BufMut {
-    
-    
-    
-    
+pub trait BufMut {
     
     
     
@@ -58,6 +57,11 @@ pub unsafe trait BufMut {
     
     fn remaining_mut(&self) -> usize;
 
+    
+    
+    
+    
+    
     
     
     
@@ -162,13 +166,49 @@ pub unsafe trait BufMut {
     
     
     
+    fn bytes_mut(&mut self) -> &mut [MaybeUninit<u8>];
+
     
     
     
     
     
-    #[cfg_attr(docsrs, doc(alias = "bytes_mut"))]
-    fn chunk_mut(&mut self) -> &mut UninitSlice;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "std")]
+    fn bytes_vectored_mut<'a>(&'a mut self, dst: &mut [IoSliceMut<'a>]) -> usize {
+        if dst.is_empty() {
+            return 0;
+        }
+
+        if self.has_remaining_mut() {
+            dst[0] = IoSliceMut::from(self.bytes_mut());
+            1
+        } else {
+            0
+        }
+    }
 
     
     
@@ -200,8 +240,8 @@ pub unsafe trait BufMut {
             let l;
 
             unsafe {
-                let s = src.chunk();
-                let d = self.chunk_mut();
+                let s = src.bytes();
+                let d = self.bytes_mut();
                 l = cmp::min(s.len(), d.len());
 
                 ptr::copy_nonoverlapping(s.as_ptr(), d.as_mut_ptr() as *mut u8, l);
@@ -247,7 +287,7 @@ pub unsafe trait BufMut {
             let cnt;
 
             unsafe {
-                let dst = self.chunk_mut();
+                let dst = self.bytes_mut();
                 cnt = cmp::min(dst.len(), src.len() - off);
 
                 ptr::copy_nonoverlapping(src[off..].as_ptr(), dst.as_mut_ptr() as *mut u8, cnt);
@@ -258,37 +298,6 @@ pub unsafe trait BufMut {
             unsafe {
                 self.advance_mut(cnt);
             }
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn put_bytes(&mut self, val: u8, cnt: usize) {
-        for _ in 0..cnt {
-            self.put_u8(val);
         }
     }
 
@@ -869,83 +878,6 @@ pub unsafe trait BufMut {
     fn put_f64_le(&mut self, n: f64) {
         self.put_u64_le(n.to_bits());
     }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn limit(self, limit: usize) -> Limit<Self>
-    where
-        Self: Sized,
-    {
-        limit::new(self, limit)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg(feature = "std")]
-    fn writer(self) -> Writer<Self>
-    where
-        Self: Sized,
-    {
-        writer::new(self)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn chain_mut<U: BufMut>(self, next: U) -> Chain<Self, U>
-    where
-        Self: Sized,
-    {
-        Chain::new(self, next)
-    }
 }
 
 macro_rules! deref_forward_bufmut {
@@ -954,8 +886,13 @@ macro_rules! deref_forward_bufmut {
             (**self).remaining_mut()
         }
 
-        fn chunk_mut(&mut self) -> &mut UninitSlice {
-            (**self).chunk_mut()
+        fn bytes_mut(&mut self) -> &mut [MaybeUninit<u8>] {
+            (**self).bytes_mut()
+        }
+
+        #[cfg(feature = "std")]
+        fn bytes_vectored_mut<'b>(&'b mut self, dst: &mut [IoSliceMut<'b>]) -> usize {
+            (**self).bytes_vectored_mut(dst)
         }
 
         unsafe fn advance_mut(&mut self, cnt: usize) {
@@ -1024,24 +961,24 @@ macro_rules! deref_forward_bufmut {
     };
 }
 
-unsafe impl<T: BufMut + ?Sized> BufMut for &mut T {
+impl<T: BufMut + ?Sized> BufMut for &mut T {
     deref_forward_bufmut!();
 }
 
-unsafe impl<T: BufMut + ?Sized> BufMut for Box<T> {
+impl<T: BufMut + ?Sized> BufMut for Box<T> {
     deref_forward_bufmut!();
 }
 
-unsafe impl BufMut for &mut [u8] {
+impl BufMut for &mut [u8] {
     #[inline]
     fn remaining_mut(&self) -> usize {
         self.len()
     }
 
     #[inline]
-    fn chunk_mut(&mut self) -> &mut UninitSlice {
+    fn bytes_mut(&mut self) -> &mut [MaybeUninit<u8>] {
         
-        unsafe { &mut *(*self as *mut [u8] as *mut _) }
+        unsafe { mem::transmute(&mut **self) }
     }
 
     #[inline]
@@ -1050,29 +987,12 @@ unsafe impl BufMut for &mut [u8] {
         let (_, b) = core::mem::replace(self, &mut []).split_at_mut(cnt);
         *self = b;
     }
-
-    #[inline]
-    fn put_slice(&mut self, src: &[u8]) {
-        self[..src.len()].copy_from_slice(src);
-        unsafe {
-            self.advance_mut(src.len());
-        }
-    }
-
-    fn put_bytes(&mut self, val: u8, cnt: usize) {
-        assert!(self.remaining_mut() >= cnt);
-        unsafe {
-            ptr::write_bytes(self.as_mut_ptr(), val, cnt);
-            self.advance_mut(cnt);
-        }
-    }
 }
 
-unsafe impl BufMut for Vec<u8> {
+impl BufMut for Vec<u8> {
     #[inline]
     fn remaining_mut(&self) -> usize {
-        
-        core::isize::MAX as usize - self.len()
+        usize::MAX - self.len()
     }
 
     #[inline]
@@ -1091,7 +1011,9 @@ unsafe impl BufMut for Vec<u8> {
     }
 
     #[inline]
-    fn chunk_mut(&mut self) -> &mut UninitSlice {
+    fn bytes_mut(&mut self) -> &mut [MaybeUninit<u8>] {
+        use core::slice;
+
         if self.capacity() == self.len() {
             self.reserve(64); 
         }
@@ -1099,12 +1021,13 @@ unsafe impl BufMut for Vec<u8> {
         let cap = self.capacity();
         let len = self.len();
 
-        let ptr = self.as_mut_ptr();
-        unsafe { &mut UninitSlice::from_raw_parts_mut(ptr, cap)[len..] }
+        let ptr = self.as_mut_ptr() as *mut MaybeUninit<u8>;
+        unsafe { &mut slice::from_raw_parts_mut(ptr, cap)[len..] }
     }
 
     
     
+
     fn put<T: super::Buf>(&mut self, mut src: T)
     where
         Self: Sized,
@@ -1117,7 +1040,7 @@ unsafe impl BufMut for Vec<u8> {
 
             
             {
-                let s = src.chunk();
+                let s = src.bytes();
                 l = s.len();
                 self.extend_from_slice(s);
             }
@@ -1126,17 +1049,52 @@ unsafe impl BufMut for Vec<u8> {
         }
     }
 
-    #[inline]
     fn put_slice(&mut self, src: &[u8]) {
         self.extend_from_slice(src);
-    }
-
-    fn put_bytes(&mut self, val: u8, cnt: usize) {
-        let new_len = self.len().checked_add(cnt).unwrap();
-        self.resize(new_len, val);
     }
 }
 
 
 
 fn _assert_trait_object(_b: &dyn BufMut) {}
+
+
+
+
+
+
+
+
+
+
+
+#[repr(transparent)]
+#[cfg(feature = "std")]
+pub struct IoSliceMut<'a>(std::io::IoSliceMut<'a>);
+
+#[cfg(feature = "std")]
+impl fmt::Debug for IoSliceMut<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("IoSliceMut")
+            .field("len", &self.0.len())
+            .finish()
+    }
+}
+
+#[cfg(feature = "std")]
+impl<'a> From<&'a mut [u8]> for IoSliceMut<'a> {
+    fn from(buf: &'a mut [u8]) -> IoSliceMut<'a> {
+        IoSliceMut(std::io::IoSliceMut::new(buf))
+    }
+}
+
+#[cfg(feature = "std")]
+impl<'a> From<&'a mut [MaybeUninit<u8>]> for IoSliceMut<'a> {
+    fn from(buf: &'a mut [MaybeUninit<u8>]) -> IoSliceMut<'a> {
+        IoSliceMut(std::io::IoSliceMut::new(unsafe {
+            
+            
+            mem::transmute::<&'a mut [MaybeUninit<u8>], &'a mut [u8]>(buf)
+        }))
+    }
+}

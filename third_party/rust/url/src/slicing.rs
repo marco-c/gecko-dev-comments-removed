@@ -6,8 +6,8 @@
 
 
 
-use crate::Url;
 use std::ops::{Index, Range, RangeFrom, RangeFull, RangeTo};
+use Url;
 
 impl Index<RangeFull> for Url {
     type Output = str;

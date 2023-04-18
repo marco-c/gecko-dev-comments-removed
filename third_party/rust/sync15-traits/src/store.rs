@@ -15,13 +15,8 @@ pub struct CollSyncIds {
 }
 
 
-
-
-
-
-
 #[derive(Debug, Clone, PartialEq)]
-pub enum EngineSyncAssociation {
+pub enum StoreSyncAssociation {
     
     Disconnected,
     
@@ -33,11 +28,7 @@ pub enum EngineSyncAssociation {
 
 
 
-
-
-
-
-pub trait SyncEngine {
+pub trait Store {
     fn collection_name(&self) -> std::borrow::Cow<'static, str>;
 
     
@@ -55,32 +46,6 @@ pub trait SyncEngine {
     
     fn prepare_for_sync(&self, _get_client_data: &dyn Fn() -> ClientData) -> Result<()> {
         Ok(())
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn set_local_encryption_key(&mut self, _key: &str) -> Result<()> {
-        unimplemented!("This engine does not support local encryption");
     }
 
     
@@ -115,10 +80,6 @@ pub trait SyncEngine {
     
     
     
-    
-    
-    
-    
     fn get_collection_requests(
         &self,
         server_timestamp: ServerTimestamp,
@@ -126,12 +87,11 @@ pub trait SyncEngine {
 
     
     
-    fn get_sync_assoc(&self) -> Result<EngineSyncAssociation>;
+    fn get_sync_assoc(&self) -> Result<StoreSyncAssociation>;
 
     
     
-    
-    fn reset(&self, assoc: &EngineSyncAssociation) -> Result<()>;
+    fn reset(&self, assoc: &StoreSyncAssociation) -> Result<()>;
 
     fn wipe(&self) -> Result<()>;
 }

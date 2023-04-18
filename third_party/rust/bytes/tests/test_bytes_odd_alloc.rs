@@ -1,8 +1,6 @@
 
 
 
-#![cfg(not(miri))] 
-
 use std::alloc::{GlobalAlloc, Layout, System};
 use std::ptr;
 

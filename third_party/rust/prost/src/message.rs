@@ -1,6 +1,5 @@
-use alloc::boxed::Box;
-use core::fmt::Debug;
-use core::usize;
+use std::fmt::Debug;
+use std::usize;
 
 use bytes::{Buf, BufMut};
 
@@ -59,18 +58,6 @@ pub trait Message: Debug + Send + Sync {
         Ok(())
     }
 
-    #[cfg(feature = "std")]
-    
-    fn encode_to_vec(&self) -> Vec<u8>
-    where
-        Self: Sized,
-    {
-        let mut buf = Vec::with_capacity(self.encoded_len());
-
-        self.encode_raw(&mut buf);
-        buf
-    }
-
     
     
     
@@ -88,20 +75,6 @@ pub trait Message: Debug + Send + Sync {
         encode_varint(len as u64, buf);
         self.encode_raw(buf);
         Ok(())
-    }
-
-    #[cfg(feature = "std")]
-    
-    fn encode_length_delimited_to_vec(&self) -> Vec<u8>
-    where
-        Self: Sized,
-    {
-        let len = self.encoded_len();
-        let mut buf = Vec::with_capacity(len + encoded_len_varint(len as u64));
-
-        encode_varint(len as u64, &mut buf);
-        self.encode_raw(&mut buf);
-        buf
     }
 
     
@@ -190,11 +163,4 @@ where
     fn clear(&mut self) {
         (**self).clear()
     }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    const _MESSAGE_IS_OBJECT_SAFE: Option<&dyn Message> = None;
 }
