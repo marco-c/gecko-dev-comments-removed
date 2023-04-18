@@ -15,6 +15,8 @@ extern "C" {
 
 
 
+unsigned long RLBoxComputeWOFF2FinalSize(const char* aData,
+                                         unsigned long aLength);
 bool RLBoxConvertWOFF2ToTTF(const char* aData, unsigned long aLength,
                             unsigned long aDecompressedSize,
                             unsigned long* aResultSize, void** aResultOwningStr,

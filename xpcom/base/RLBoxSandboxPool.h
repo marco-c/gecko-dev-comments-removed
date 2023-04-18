@@ -47,12 +47,10 @@ class RLBoxSandboxPool : public nsITimerCallback, public nsINamed {
   
   
   
-  
-  UniquePtr<RLBoxSandboxPoolData> PopOrCreate(uint64_t aMinSize = 0);
+  UniquePtr<RLBoxSandboxPoolData> PopOrCreate();
 
  protected:
-  
-  virtual UniquePtr<RLBoxSandboxDataBase> CreateSandboxData(uint64_t aSize) = 0;
+  virtual UniquePtr<RLBoxSandboxDataBase> CreateSandboxData() = 0;
   virtual ~RLBoxSandboxPool() = default;
 
  private:
@@ -70,8 +68,6 @@ class RLBoxSandboxPool : public nsITimerCallback, public nsINamed {
 
 class RLBoxSandboxDataBase {
  public:
-  const uint64_t mSize;
-  explicit RLBoxSandboxDataBase(uint64_t aSize) : mSize(aSize) {}
   virtual ~RLBoxSandboxDataBase() = default;
 };
 

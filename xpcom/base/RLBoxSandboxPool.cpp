@@ -8,8 +8,6 @@
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/RLBoxSandboxPool.h"
-#include "mozilla/rlbox/rlbox_config.h"
-#include "mozilla/rlbox/rlbox_wasm2c_sandbox.hpp"
 
 using namespace mozilla;
 
@@ -65,44 +63,18 @@ void RLBoxSandboxPool::Push(UniquePtr<RLBoxSandboxDataBase> sbxData) {
   }
 }
 
-UniquePtr<RLBoxSandboxPoolData> RLBoxSandboxPool::PopOrCreate(
-    uint64_t aMinSize) {
+UniquePtr<RLBoxSandboxPoolData> RLBoxSandboxPool::PopOrCreate() {
   MutexAutoLock lock(mMutex);
 
   UniquePtr<RLBoxSandboxDataBase> sbxData;
-
   if (!mPool.IsEmpty()) {
-    const int64_t lastIndex = ReleaseAssertedCast<int64_t>(mPool.Length()) - 1;
-    for (int64_t i = lastIndex; i >= 0; i--) {
-      if (mPool[i]->mSize >= aMinSize) {
-        sbxData = std::move(mPool[i]);
-        mPool.RemoveElementAt(i);
-
-        
-        
-        CancelTimer();
-        if (!mPool.IsEmpty()) {
-          StartTimer();
-        }
-        break;
-      }
+    sbxData = mPool.PopLastElement();
+    CancelTimer();
+    if (!mPool.IsEmpty()) {
+      StartTimer();
     }
-  }
-
-  if (!sbxData) {
-    
-    
-    
-    
-    const uint64_t defaultCapacityForSandbox =
-        wasm_rt_get_default_max_linear_memory_size();
-    const uint64_t minSandboxCapacity =
-        std::max(aMinSize, defaultCapacityForSandbox);
-    const uint64_t rlboxAdjustedCapacity =
-        rlbox::rlbox_wasm2c_sandbox::rlbox_wasm2c_get_adjusted_heap_size(
-            minSandboxCapacity);
-
-    sbxData = CreateSandboxData(rlboxAdjustedCapacity);
+  } else {
+    sbxData = CreateSandboxData();
     NS_ENSURE_TRUE(sbxData, nullptr);
   }
 
