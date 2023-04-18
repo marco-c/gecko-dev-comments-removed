@@ -2207,6 +2207,14 @@ DocumentLoadListener::OnStartRequest(nsIRequest* aRequest) {
   
   
   
+  if (status == NS_ERROR_CSP_FRAME_ANCESTOR_VIOLATION && !httpChannel) {
+    DisconnectListeners(status, status);
+    return NS_OK;
+  }
+
+  
+  
+  
   if (MaybeHandleLoadErrorWithURIFixup(status)) {
     return NS_OK;
   }

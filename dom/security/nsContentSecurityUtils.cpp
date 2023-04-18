@@ -893,19 +893,6 @@ nsresult ParseCSPAndEnforceFrameAncestorCheck(
     nsIChannel* aChannel, nsIContentSecurityPolicy** aOutCSP) {
   MOZ_ASSERT(aChannel);
 
-  
-  
-  nsCOMPtr<nsIHttpChannel> httpChannel;
-  nsresult rv = nsContentSecurityUtils::GetHttpChannelFromPotentialMultiPart(
-      aChannel, getter_AddRefs(httpChannel));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  if (!httpChannel) {
-    return NS_OK;
-  }
-
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
   ExtContentPolicyType contentType = loadInfo->GetExternalContentPolicyType();
   
@@ -915,35 +902,60 @@ nsresult ParseCSPAndEnforceFrameAncestorCheck(
     return NS_OK;
   }
 
-  nsAutoCString tCspHeaderValue, tCspROHeaderValue;
-
-  Unused << httpChannel->GetResponseHeader("content-security-policy"_ns,
-                                           tCspHeaderValue);
-
-  Unused << httpChannel->GetResponseHeader(
-      "content-security-policy-report-only"_ns, tCspROHeaderValue);
-
   
-  if (tCspHeaderValue.IsEmpty() && tCspROHeaderValue.IsEmpty()) {
-    return NS_OK;
+  
+  
+  nsCOMPtr<nsIHttpChannel> httpChannel;
+  nsresult rv = nsContentSecurityUtils::GetHttpChannelFromPotentialMultiPart(
+      aChannel, getter_AddRefs(httpChannel));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
   }
 
-  NS_ConvertASCIItoUTF16 cspHeaderValue(tCspHeaderValue);
-  NS_ConvertASCIItoUTF16 cspROHeaderValue(tCspROHeaderValue);
+  nsAutoCString tCspHeaderValue, tCspROHeaderValue;
+  if (httpChannel) {
+    Unused << httpChannel->GetResponseHeader("content-security-policy"_ns,
+                                             tCspHeaderValue);
 
-  RefPtr<nsCSPContext> csp = new nsCSPContext();
+    Unused << httpChannel->GetResponseHeader(
+        "content-security-policy-report-only"_ns, tCspROHeaderValue);
+
+    
+    if (tCspHeaderValue.IsEmpty() && tCspROHeaderValue.IsEmpty()) {
+      return NS_OK;
+    }
+  }
+
   nsCOMPtr<nsIPrincipal> resultPrincipal;
   rv = nsContentUtils::GetSecurityManager()->GetChannelResultPrincipal(
       aChannel, getter_AddRefs(resultPrincipal));
   NS_ENSURE_SUCCESS(rv, rv);
-  nsCOMPtr<nsIURI> selfURI;
-  aChannel->GetURI(getter_AddRefs(selfURI));
 
-  nsCOMPtr<nsIReferrerInfo> referrerInfo = httpChannel->GetReferrerInfo();
-  nsAutoString referrerSpec;
-  if (referrerInfo) {
-    referrerInfo->GetComputedReferrerSpec(referrerSpec);
+  RefPtr<extensions::WebExtensionPolicy> addonPolicy;
+  if (!httpChannel) {
+    addonPolicy = BasePrincipal::Cast(resultPrincipal)->AddonPolicy();
+    if (!addonPolicy) {
+      
+      
+      return NS_OK;
+    }
   }
+
+  RefPtr<nsCSPContext> csp = new nsCSPContext();
+  nsCOMPtr<nsIURI> selfURI;
+  nsAutoString referrerSpec;
+  if (httpChannel) {
+    aChannel->GetURI(getter_AddRefs(selfURI));
+    nsCOMPtr<nsIReferrerInfo> referrerInfo = httpChannel->GetReferrerInfo();
+    if (referrerInfo) {
+      referrerInfo->GetComputedReferrerSpec(referrerSpec);
+    }
+  } else {
+    
+    
+    NS_GetFinalChannelURI(aChannel, getter_AddRefs(selfURI));
+  }
+
   uint64_t innerWindowID = loadInfo->GetInnerWindowID();
 
   rv = csp->SetRequestContextWithPrincipal(resultPrincipal, selfURI,
@@ -952,16 +964,24 @@ nsresult ParseCSPAndEnforceFrameAncestorCheck(
     return rv;
   }
 
-  
-  if (!cspHeaderValue.IsEmpty()) {
-    rv = CSP_AppendCSPFromHeader(csp, cspHeaderValue, false);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
+  if (addonPolicy) {
+    csp->AppendPolicy(addonPolicy->BaseCSP(), false, false);
+    csp->AppendPolicy(addonPolicy->ExtensionPageCSP(), false, false);
+  } else {
+    NS_ConvertASCIItoUTF16 cspHeaderValue(tCspHeaderValue);
+    NS_ConvertASCIItoUTF16 cspROHeaderValue(tCspROHeaderValue);
 
-  
-  if (!cspROHeaderValue.IsEmpty()) {
-    rv = CSP_AppendCSPFromHeader(csp, cspROHeaderValue, true);
-    NS_ENSURE_SUCCESS(rv, rv);
+    
+    if (!cspHeaderValue.IsEmpty()) {
+      rv = CSP_AppendCSPFromHeader(csp, cspHeaderValue, false);
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
+
+    
+    if (!cspROHeaderValue.IsEmpty()) {
+      rv = CSP_AppendCSPFromHeader(csp, cspROHeaderValue, true);
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
   }
 
   
