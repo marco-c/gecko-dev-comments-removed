@@ -136,9 +136,18 @@ add_task(async function test_getPreferredDownloadsDirectory() {
   registerCleanupFunction(cleanupPrefs);
 
   
-  Services.prefs.setIntPref(folderListPrefName, 1);
+  
+  
+  Services.prefs.setIntPref(folderListPrefName, 3);
   let systemDir = await DownloadIntegration.getSystemDownloadsDirectory();
   let downloadDir = await DownloadIntegration.getPreferredDownloadsDirectory();
+  Assert.notEqual(downloadDir, "");
+  Assert.equal(downloadDir, systemDir);
+
+  
+  Services.prefs.setIntPref(folderListPrefName, 1);
+  systemDir = await DownloadIntegration.getSystemDownloadsDirectory();
+  downloadDir = await DownloadIntegration.getPreferredDownloadsDirectory();
   Assert.notEqual(downloadDir, "");
   Assert.equal(downloadDir, systemDir);
 

@@ -68,11 +68,6 @@ ChromeUtils.defineModuleGetter(
   "NetUtil",
   "resource://gre/modules/NetUtil.jsm"
 );
-ChromeUtils.defineModuleGetter(
-  this,
-  "CloudStorage",
-  "resource://gre/modules/CloudStorage.jsm"
-);
 
 XPCOMUtils.defineLazyServiceGetter(
   this,
@@ -378,14 +373,6 @@ var DownloadIntegration = {
         } catch (ex) {
           Cu.reportError(ex);
           
-          directoryPath = await this.getSystemDownloadsDirectory();
-        }
-        break;
-      case 3: 
-        try {
-          directoryPath = await CloudStorage.getDownloadFolder();
-        } catch (ex) {}
-        if (!directoryPath) {
           directoryPath = await this.getSystemDownloadsDirectory();
         }
         break;
