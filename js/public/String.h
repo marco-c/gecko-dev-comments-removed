@@ -75,9 +75,13 @@ extern JS_PUBLIC_API JSString* JS_AtomizeStringN(JSContext* cx, const char* s,
 
 extern JS_PUBLIC_API JSString* JS_AtomizeString(JSContext* cx, const char* s);
 
+
+
 extern JS_PUBLIC_API JSString* JS_AtomizeAndPinStringN(JSContext* cx,
                                                        const char* s,
                                                        size_t length);
+
+
 
 extern JS_PUBLIC_API JSString* JS_AtomizeAndPinString(JSContext* cx,
                                                       const char* s);
