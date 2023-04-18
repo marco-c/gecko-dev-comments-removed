@@ -83,7 +83,8 @@ class TRRQuery : public AHostResolver {
   RefPtr<nsHostResolver> mHostResolver;
   RefPtr<nsHostRecord> mRecord;
 
-  Mutex mTrrLock;  
+  Mutex mTrrLock
+      MOZ_UNANNOTATED;  
   RefPtr<mozilla::net::TRR> mTrrA;
   RefPtr<mozilla::net::TRR> mTrrAAAA;
   RefPtr<mozilla::net::TRR> mTrrByType;

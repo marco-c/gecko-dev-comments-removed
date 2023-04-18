@@ -104,7 +104,7 @@ class OCSPRequest final : public nsIStreamLoaderObserver, public nsIRunnable {
   
   
   
-  Monitor mMonitor;
+  Monitor mMonitor MOZ_UNANNOTATED;
   bool mNotifiedDone;
   nsCOMPtr<nsIStreamLoader> mLoader;
   const nsCString mAIALocation;

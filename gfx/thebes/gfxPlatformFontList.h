@@ -867,7 +867,7 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
                                                nsAtom* aLanguage = nullptr) = 0;
 
   
-  mozilla::Mutex mFontFamiliesMutex;
+  mozilla::Mutex mFontFamiliesMutex MOZ_UNANNOTATED;
 
   
   FontFamilyTable mFontFamilies;

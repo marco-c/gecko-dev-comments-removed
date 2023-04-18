@@ -141,7 +141,7 @@ class GamepadPlatformService final {
 
   
   
-  Mutex mMutex;
+  Mutex mMutex MOZ_UNANNOTATED;
 
   std::map<GamepadHandle, GamepadAdded> mGamepadAdded;
 };

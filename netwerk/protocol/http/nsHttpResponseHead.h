@@ -207,7 +207,8 @@ class nsHttpResponseHead {
 
   
   
-  mutable RecursiveMutex mRecursiveMutex{"nsHttpResponseHead.mRecursiveMutex"};
+  mutable RecursiveMutex mRecursiveMutex MOZ_UNANNOTATED{
+      "nsHttpResponseHead.mRecursiveMutex"};
   
   bool mInVisitHeaders{false};
 

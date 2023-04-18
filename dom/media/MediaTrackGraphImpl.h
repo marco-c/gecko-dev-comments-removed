@@ -767,7 +767,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   
   
   
-  Monitor mMonitor;
+  Monitor mMonitor MOZ_UNANNOTATED;
 
   
   

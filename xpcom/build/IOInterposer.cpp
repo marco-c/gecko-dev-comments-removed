@@ -304,7 +304,7 @@ class MasterList {
   
   
   
-  mozilla::IOInterposer::Mutex mLock;
+  mozilla::IOInterposer::Mutex mLock MOZ_UNANNOTATED;
   
   mozilla::Atomic<mozilla::IOInterposeObserver::Operation,
                   mozilla::MemoryOrdering::Relaxed>

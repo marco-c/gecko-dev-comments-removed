@@ -120,7 +120,7 @@ class nsInputStreamPump final : public nsIInputStreamPump,
   bool mOffMainThread;
   
   
-  mozilla::RecursiveMutex mMutex{"nsInputStreamPump"};
+  mozilla::RecursiveMutex mMutex MOZ_UNANNOTATED{"nsInputStreamPump"};
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsInputStreamPump, NS_INPUT_STREAM_PUMP_IID)

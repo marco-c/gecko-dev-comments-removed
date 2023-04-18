@@ -139,7 +139,7 @@ class nsMultiplexInputStream final : public nsIMultiplexInputStream,
   bool IsInputStreamLength() const;
   bool IsAsyncInputStreamLength() const;
 
-  Mutex mLock;  
+  Mutex mLock MOZ_UNANNOTATED;  
 
   nsTArray<StreamData> mStreams;
 

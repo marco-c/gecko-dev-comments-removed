@@ -1475,7 +1475,7 @@ class CreateImageBitmapFromBlob final : public DiscardableRunnable,
   
   nsresult GetMimeTypeAsync();
 
-  Mutex mMutex;
+  Mutex mMutex MOZ_UNANNOTATED;
 
   
   

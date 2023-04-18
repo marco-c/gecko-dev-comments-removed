@@ -64,7 +64,7 @@ class ProcessCodeSegmentMap {
   
   
 
-  Mutex mutatorsMutex_;
+  Mutex mutatorsMutex_ MOZ_UNANNOTATED;
 
   CodeSegmentVector segments1_;
   CodeSegmentVector segments2_;

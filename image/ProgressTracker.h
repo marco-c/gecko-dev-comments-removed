@@ -226,7 +226,7 @@ class ProgressTracker : public mozilla::SupportsWeakPtr {
   RefPtr<RenderBlockingRunnable> mRunnable;
 
   
-  mutable Mutex mMutex;
+  mutable Mutex mMutex MOZ_UNANNOTATED;
 
   
   

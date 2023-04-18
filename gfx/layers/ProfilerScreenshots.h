@@ -101,7 +101,7 @@ class ProfilerScreenshots final {
   
   nsTArray<RefPtr<gfx::DataSourceSurface>> mAvailableSurfaces;
   
-  Mutex mMutex;
+  Mutex mMutex MOZ_UNANNOTATED;
   
   
   

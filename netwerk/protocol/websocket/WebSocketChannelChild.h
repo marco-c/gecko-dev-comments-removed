@@ -98,7 +98,7 @@ class WebSocketChannelChild final : public BaseWebSocketChannel,
   
   enum { Opened, Closing, Closed } mIPCState;
 
-  mozilla::Mutex mMutex;
+  mozilla::Mutex mMutex MOZ_UNANNOTATED;
 
   friend class StartEvent;
   friend class StopEvent;

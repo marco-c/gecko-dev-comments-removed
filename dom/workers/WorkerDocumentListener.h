@@ -31,7 +31,7 @@ class WorkerDocumentListener final {
  private:
   ~WorkerDocumentListener();
 
-  Mutex mMutex;  
+  Mutex mMutex MOZ_UNANNOTATED;  
   RefPtr<ThreadSafeWorkerRef> mWorkerRef;
 };
 

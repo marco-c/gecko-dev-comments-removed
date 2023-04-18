@@ -186,7 +186,7 @@ class ChannelMediaResource
     void Revoke();
 
    private:
-    Mutex mMutex;
+    Mutex mMutex MOZ_UNANNOTATED;
     
     
     

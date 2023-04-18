@@ -733,7 +733,7 @@ class SourceMediaTrack : public MediaTrack {
 
   
   
-  Mutex mMutex;
+  Mutex mMutex MOZ_UNANNOTATED;
   
   float mVolume = 1.0;
   UniquePtr<TrackData> mUpdateTrack;

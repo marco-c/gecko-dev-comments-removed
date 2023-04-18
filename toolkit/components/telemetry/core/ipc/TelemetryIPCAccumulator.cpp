@@ -72,7 +72,7 @@ StaticAutoPtr<nsTArray<ChildEventData>> gChildEvents;
 
 
 
-static StaticMutex gTelemetryIPCAccumulatorMutex;
+static StaticMutex gTelemetryIPCAccumulatorMutex MOZ_UNANNOTATED;
 
 namespace {
 

@@ -251,7 +251,7 @@ static bool sIncludeContextHeap = false;
 
 
 static CrashGenerationServer* crashServer;  
-static StaticMutex processMapLock;
+static StaticMutex processMapLock MOZ_UNANNOTATED;
 static std::map<ProcessId, PRFileDesc*> processToCrashFd;
 
 static std::terminate_handler oldTerminateHandler = nullptr;

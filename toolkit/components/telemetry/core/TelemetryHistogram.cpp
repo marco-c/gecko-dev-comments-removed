@@ -117,7 +117,7 @@ namespace TelemetryIPCAccumulator = mozilla::TelemetryIPCAccumulator;
 
 
 
-static StaticMutex gTelemetryHistogramMutex;
+static StaticMutex gTelemetryHistogramMutex MOZ_UNANNOTATED;
 
 
 

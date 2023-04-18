@@ -44,7 +44,7 @@ class MOZ_RAII AutoProfilerLabelData {
   };
 
   
-  static Mutex sAPLMutex;
+  static Mutex sAPLMutex MOZ_UNANNOTATED;
 
   static ProfilerLabelEnter sEnter;
   static ProfilerLabelExit sExit;

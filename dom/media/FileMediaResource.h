@@ -109,7 +109,7 @@ class FileMediaResource : public BaseMediaResource {
   
   
   
-  Mutex mLock;
+  Mutex mLock MOZ_UNANNOTATED;
 
   
   

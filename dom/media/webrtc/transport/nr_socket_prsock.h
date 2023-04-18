@@ -283,7 +283,7 @@ class NrUdpSocketIpc : public NrSocketIpc {
   
   void recv_callback_s(RefPtr<nr_udp_message> msg);
 
-  ReentrantMonitor monitor_;  
+  ReentrantMonitor monitor_ MOZ_UNANNOTATED;  
   bool err_;
   NrSocketIpcState state_;
 

@@ -57,7 +57,7 @@ class WebrtcMediaDataEncoder : public RefCountedWebrtcVideoEncoder {
   const RefPtr<PEMFactory> mFactory;
   RefPtr<MediaDataEncoder> mEncoder;
 
-  Mutex mCallbackMutex;  
+  Mutex mCallbackMutex MOZ_UNANNOTATED;  
   webrtc::EncodedImageCallback* mCallback = nullptr;
   MediaResult mError = NS_OK;
 

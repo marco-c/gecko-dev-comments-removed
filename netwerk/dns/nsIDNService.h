@@ -170,7 +170,7 @@ class nsIDNService final : public nsIIDNService,
   
   
   
-  mozilla::Mutex mLock{"IDNService"};
+  mozilla::Mutex mLock MOZ_UNANNOTATED{"IDNService"};
 
   
   nsTArray<mozilla::net::BlocklistRange> mIDNBlocklist;

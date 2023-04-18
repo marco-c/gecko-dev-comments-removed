@@ -227,7 +227,7 @@ class BodyStream final : public nsIInputStreamCallback,
   
   
   
-  Mutex mMutex;
+  Mutex mMutex MOZ_UNANNOTATED;
 
   
   State mState;

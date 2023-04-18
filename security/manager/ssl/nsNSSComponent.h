@@ -116,12 +116,12 @@ class nsNSSComponent final : public nsINSSComponent, public nsIObserver {
   nsresult MaybeEnableIntermediatePreloadingHealer();
 
   
-  mozilla::Monitor mLoadableCertsLoadedMonitor;
+  mozilla::Monitor mLoadableCertsLoadedMonitor MOZ_UNANNOTATED;
   bool mLoadableCertsLoaded;
   nsresult mLoadableCertsLoadedResult;
 
   
-  mozilla::Mutex mMutex;
+  mozilla::Mutex mMutex MOZ_UNANNOTATED;
 
   
 

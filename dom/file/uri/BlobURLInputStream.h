@@ -60,7 +60,7 @@ class BlobURLInputStream final : public nsIAsyncInputStream,
 
   
   
-  Mutex mStateMachineMutex;
+  Mutex mStateMachineMutex MOZ_UNANNOTATED;
   State mState;
   
   nsresult mError;

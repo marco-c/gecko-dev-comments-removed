@@ -298,7 +298,7 @@ class WebMBufferedState final {
   MOZ_COUNTED_DTOR(WebMBufferedState)
 
   
-  ReentrantMonitor mReentrantMonitor;
+  ReentrantMonitor mReentrantMonitor MOZ_UNANNOTATED;
 
   
   

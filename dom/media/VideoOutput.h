@@ -213,7 +213,7 @@ class VideoOutput : public DirectMediaTrackListener {
     }
   }
 
-  Mutex mMutex;
+  Mutex mMutex MOZ_UNANNOTATED;
   TimeStamp mLastFrameTime;
   
   

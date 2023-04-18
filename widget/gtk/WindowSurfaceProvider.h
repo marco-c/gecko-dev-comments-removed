@@ -75,7 +75,7 @@ class WindowSurfaceProvider final {
 
 
 
-  mozilla::Mutex mMutex;
+  mozilla::Mutex mMutex MOZ_UNANNOTATED;
   
   mozilla::Atomic<bool> mWindowSurfaceValid;
 #ifdef MOZ_WAYLAND

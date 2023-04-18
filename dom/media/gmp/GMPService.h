@@ -106,8 +106,9 @@ class GeckoMediaPluginService : public mozIGeckoMediaPluginService,
 
   static nsCOMPtr<nsIAsyncShutdownClient> GetShutdownBarrier();
 
-  Mutex mMutex;  
-                 
+  Mutex mMutex MOZ_UNANNOTATED;  
+                                 
+                                 
 
   const nsCOMPtr<nsISerialEventTarget> mMainThread;
 

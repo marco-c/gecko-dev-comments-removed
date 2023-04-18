@@ -56,7 +56,7 @@ class nsEffectiveTLDService final : public nsIEffectiveTLDService,
   mozilla::loader::AutoMemMap mDafsaMap;
 
   
-  mozilla::RWLock mGraphLock;
+  mozilla::RWLock mGraphLock MOZ_UNANNOTATED;
 
   
   

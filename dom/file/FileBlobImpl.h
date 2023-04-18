@@ -131,7 +131,7 @@ class FileBlobImpl : public BlobImpl {
 
   
   
-  Mutex mMutex;
+  Mutex mMutex MOZ_UNANNOTATED;
 
   nsCOMPtr<nsIFile> mFile;
 

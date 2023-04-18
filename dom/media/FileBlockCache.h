@@ -140,7 +140,7 @@ class FileBlockCache : public MediaBlockCacheBase {
   
   
   
-  Mutex mFileMutex;
+  Mutex mFileMutex MOZ_UNANNOTATED;
   
   nsresult MoveBlockInFile(int32_t aSourceBlockIndex, int32_t aDestBlockIndex);
   
@@ -159,7 +159,7 @@ class FileBlockCache : public MediaBlockCacheBase {
   
   
   
-  Mutex mDataMutex;
+  Mutex mDataMutex MOZ_UNANNOTATED;
   
   
   

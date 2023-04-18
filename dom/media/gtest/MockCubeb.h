@@ -182,7 +182,7 @@ class MockCubebStream {
 
  private:
   
-  Monitor mFrozenStartMonitor;
+  Monitor mFrozenStartMonitor MOZ_UNANNOTATED;
   
   
   bool mFrozenStart;
