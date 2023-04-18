@@ -87,11 +87,19 @@ const webExtensionTargetPrototype = extend({}, parentProcessTargetPrototype);
 
 
 
+
 webExtensionTargetPrototype.initialize = function(
   conn,
-  { addonId, chromeGlobal, isTopLevelTarget, prefix }
+  {
+    addonId,
+    addonBrowsingContextGroupId,
+    chromeGlobal,
+    isTopLevelTarget,
+    prefix,
+  }
 ) {
   this.addonId = addonId;
+  this.addonBrowsingContextGroupId = addonBrowsingContextGroupId;
   this.chromeGlobal = chromeGlobal;
 
   

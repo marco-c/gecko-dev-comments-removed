@@ -38,7 +38,12 @@ loader.lazyRequireGetter(this, "EventEmitter", "devtools/shared/event-emitter");
 
 
 
-function connectToFrame(connection, frame, onDestroy, { addonId } = {}) {
+function connectToFrame(
+  connection,
+  frame,
+  onDestroy,
+  { addonId, addonBrowsingContextGroupId } = {}
+) {
   return new Promise(resolve => {
     
     
@@ -271,7 +276,11 @@ function connectToFrame(connection, frame, onDestroy, { addonId } = {}) {
     
     EventEmitter.on(connection, "closed", destroy);
 
-    mm.sendAsyncMessage("debug:connect", { prefix, addonId });
+    mm.sendAsyncMessage("debug:connect", {
+      prefix,
+      addonId,
+      addonBrowsingContextGroupId,
+    });
   });
 }
 

@@ -56,6 +56,7 @@ try {
       const mm = msg.target;
       const prefix = msg.data.prefix;
       const addonId = msg.data.addonId;
+      const addonBrowsingContextGroupId = msg.data.addonBrowsingContextGroupId;
 
       
       
@@ -80,6 +81,7 @@ try {
         } = require("devtools/server/actors/targets/webextension");
         actor = new WebExtensionTargetActor(conn, {
           addonId,
+          addonBrowsingContextGroupId,
           chromeGlobal,
           isTopLevelTarget: true,
           prefix,
