@@ -1199,12 +1199,13 @@ var creditCardRulesets = {
 
   get types() {
     return [
-      "cc-name",
+      
       "cc-number",
-      "cc-exp-month",
-      "cc-exp-year",
-      "cc-exp",
-      "cc-type",
+      
+      
+      
+      
+      
     ];
   },
 };
