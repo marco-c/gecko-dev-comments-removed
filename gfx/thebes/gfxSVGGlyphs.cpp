@@ -212,6 +212,15 @@ void gfxSVGGlyphs::RenderGlyph(gfxContext* aContext, uint32_t aGlyphId,
       *aContextPaint, *glyph->OwnerDoc()->AsSVGDocument());
 
   SVGUtils::PaintSVGGlyph(glyph, aContext);
+
+#if DEBUG
+  
+  
+  
+  
+  
+  aContext->SetOp(gfx::CompositionOp::OP_OVER);
+#endif
 }
 
 bool gfxSVGGlyphs::GetGlyphExtents(uint32_t aGlyphId,
