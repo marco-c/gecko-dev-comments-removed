@@ -19,40 +19,7 @@
 
 
 
-pref("security.tls.version.min", 3);
-pref("security.tls.version.max", 4);
-pref("security.tls.version.enable-deprecated", false);
-pref("security.tls.version.fallback-limit", 4);
 pref("security.tls.insecure_fallback_hosts", "");
-
-
-
-pref("security.tls.enable_post_handshake_auth", false);
-pref("security.tls.hello_downgrade_check", true);
-pref("security.tls.enable_delegated_credentials", true);
-
-pref("security.ssl.treat_unsafe_negotiation_as_broken", false);
-pref("security.ssl.require_safe_negotiation",  false);
-pref("security.ssl.enable_false_start", true);
-pref("security.ssl.enable_alpn", true);
-
-pref("security.ssl3.ecdhe_rsa_aes_128_gcm_sha256", true);
-pref("security.ssl3.ecdhe_ecdsa_aes_128_gcm_sha256", true);
-pref("security.ssl3.ecdhe_ecdsa_chacha20_poly1305_sha256", true);
-pref("security.ssl3.ecdhe_rsa_chacha20_poly1305_sha256", true);
-pref("security.ssl3.ecdhe_ecdsa_aes_256_gcm_sha384", true);
-pref("security.ssl3.ecdhe_rsa_aes_256_gcm_sha384", true);
-pref("security.ssl3.ecdhe_rsa_aes_128_sha", true);
-pref("security.ssl3.ecdhe_ecdsa_aes_128_sha", true);
-pref("security.ssl3.ecdhe_rsa_aes_256_sha", true);
-pref("security.ssl3.ecdhe_ecdsa_aes_256_sha", true);
-pref("security.ssl3.dhe_rsa_aes_128_sha", false);
-pref("security.ssl3.dhe_rsa_aes_256_sha", false);
-pref("security.ssl3.rsa_aes_128_sha", true);
-pref("security.ssl3.rsa_aes_256_sha", true);
-pref("security.ssl3.rsa_aes_128_gcm_sha256", true);
-pref("security.ssl3.rsa_aes_256_gcm_sha384", true);
-pref("security.ssl3.deprecated.rsa_des_ede3_sha", true);
 
 pref("security.content.signature.root_hash",
      "97:E8:BA:9C:F1:2F:B3:DE:53:CC:42:A4:E6:57:7E:D6:4D:F4:93:C2:47:B4:14:FE:A0:36:81:8D:38:23:56:0E");
@@ -1374,9 +1341,6 @@ pref("network.http.http3.alt-svc-mapping-for-testing", "");
 
 pref("network.http.altsvc.enabled", true);
 pref("network.http.altsvc.oe", false);
-
-
-pref("security.tls.enable_0rtt_data", true);
 
 
 pref("network.http.originextension", true);
