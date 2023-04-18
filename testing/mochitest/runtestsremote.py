@@ -150,7 +150,7 @@ class MochiRemote(MochitestDesktop):
     
     
     def switchToLocalPaths(self, options):
-        """ Set local paths in the options, return a function that will restore remote values """
+        """Set local paths in the options, return a function that will restore remote values"""
         remoteXrePath = options.xrePath
         remoteProfilePath = options.profilePath
         remoteUtilityPath = options.utilityPath
@@ -207,7 +207,7 @@ class MochiRemote(MochitestDesktop):
         return fixup
 
     def startServers(self, options, debuggerInfo, public=None):
-        """ Create the servers on the host and start them up """
+        """Create the servers on the host and start them up"""
         restoreRemotePaths = self.switchToLocalPaths(options)
         MochitestDesktop.startServers(self, options, debuggerInfo, public=True)
         restoreRemotePaths()
