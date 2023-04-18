@@ -72,25 +72,6 @@ class nsJSUtils {
 
   static bool IsScriptable(JS::Handle<JSObject*> aEvaluationGlobal);
 
-  static nsresult ModuleInstantiate(JSContext* aCx,
-                                    JS::Handle<JSObject*> aModule);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  static nsresult ModuleEvaluate(JSContext* aCx, JS::Handle<JSObject*> aModule,
-                                 JS::MutableHandle<JS::Value> aResult);
-
   
   
   static bool GetScopeChainForElement(
