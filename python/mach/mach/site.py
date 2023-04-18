@@ -662,6 +662,25 @@ class CommandSiteManager:
             
             stdlib_paths = self._metadata.original_python.stdlib_paths()
             system_sys_path = [p for p in sys.path if p not in stdlib_paths]
+
+            
+            
+            
+            
+            
+            
+            
+            prefix_normalized = os.path.normcase(
+                os.path.normpath(self._virtualenv.prefix)
+            )
+            system_sys_path = [
+                p
+                for p in system_sys_path
+                if not os.path.normcase(os.path.normpath(p)).startswith(
+                    prefix_normalized
+                )
+            ]
+
             lines.extend(system_sys_path)
         elif mach_site_packages_source == SitePackagesSource.VENV:
             
@@ -686,28 +705,11 @@ class CommandSiteManager:
         elif self._site_packages_source == SitePackagesSource.VENV:
             
             
-            
-            
-            
-            prefix_normalized = os.path.normcase(
-                os.path.normpath(self._virtualenv.prefix)
-            )
-            lines = [
-                line
-                for line in lines
-                if not os.path.normcase(os.path.normpath(line)).startswith(
-                    prefix_normalized
-                )
-            ]
             lines.extend(_deprioritize_venv_packages(self._virtualenv))
 
         
         lines = list(OrderedDict.fromkeys(lines))
 
-        
-        
-        
-        
         
         
         
