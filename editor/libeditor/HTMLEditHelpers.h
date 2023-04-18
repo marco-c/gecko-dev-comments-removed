@@ -16,6 +16,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/ContentIterator.h"
 #include "mozilla/EditorDOMPoint.h"
+#include "mozilla/EditorUtils.h"  
 #include "mozilla/IntegerRange.h"
 #include "mozilla/RangeBoundary.h"
 #include "mozilla/dom/Element.h"
@@ -250,13 +251,22 @@ inline MoveNodeResult MoveNodeHandled(
 
 
 
+
+
+
+
 class MOZ_STACK_CLASS SplitNodeResult final {
  public:
-  bool Succeeded() const { return NS_SUCCEEDED(mRv); }
-  bool Failed() const { return NS_FAILED(mRv); }
-  nsresult Rv() const { return mRv; }
+  
+  
+  bool isOk() const { return NS_SUCCEEDED(mRv); }
+  bool isErr() const { return NS_FAILED(mRv); }
+  constexpr nsresult inspectErr() const { return mRv; }
+  constexpr nsresult unwrapErr() const { return inspectErr(); }
   bool Handled() const { return mPreviousNode || mNextNode; }
-  bool EditorDestroyed() const { return mRv == NS_ERROR_EDITOR_DESTROYED; }
+  constexpr bool EditorDestroyed() const {
+    return MOZ_UNLIKELY(mRv == NS_ERROR_EDITOR_DESTROYED);
+  }
 
   
 
@@ -267,7 +277,7 @@ class MOZ_STACK_CLASS SplitNodeResult final {
 
 
   MOZ_KNOWN_LIVE nsIContent* GetPreviousContent() const {
-    MOZ_ASSERT(Succeeded());
+    MOZ_ASSERT(isOk());
     if (mGivenSplitPoint.IsSet()) {
       return mGivenSplitPoint.IsEndOfContainer() ? mGivenSplitPoint.GetChild()
                                                  : nullptr;
@@ -286,7 +296,7 @@ class MOZ_STACK_CLASS SplitNodeResult final {
 
 
   MOZ_KNOWN_LIVE nsIContent* GetNextContent() const {
-    MOZ_ASSERT(Succeeded());
+    MOZ_ASSERT(isOk());
     if (mGivenSplitPoint.IsSet()) {
       return !mGivenSplitPoint.IsEndOfContainer() ? mGivenSplitPoint.GetChild()
                                                   : nullptr;
@@ -306,7 +316,7 @@ class MOZ_STACK_CLASS SplitNodeResult final {
 
 
   MOZ_KNOWN_LIVE nsIContent* GetNewContent() const {
-    MOZ_ASSERT(Succeeded());
+    MOZ_ASSERT(isOk());
     if (!DidSplit()) {
       return nullptr;
     }
@@ -325,7 +335,7 @@ class MOZ_STACK_CLASS SplitNodeResult final {
 
 
   MOZ_KNOWN_LIVE nsIContent* GetOriginalContent() const {
-    MOZ_ASSERT(Succeeded());
+    MOZ_ASSERT(isOk());
     if (mGivenSplitPoint.IsSet()) {
       return mGivenSplitPoint.GetChild();
     }
@@ -348,7 +358,7 @@ class MOZ_STACK_CLASS SplitNodeResult final {
 
   template <typename EditorDOMPointType>
   EditorDOMPointType AtSplitPoint() const {
-    if (Failed()) {
+    if (isErr()) {
       return EditorDOMPointType();
     }
     if (mGivenSplitPoint.IsSet()) {
@@ -360,9 +370,50 @@ class MOZ_STACK_CLASS SplitNodeResult final {
     return EditorDOMPointType::After(mPreviousNode);
   }
 
-  SplitNodeResult() = delete;
+  
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult SuggestCaretPointTo(
+      const HTMLEditor& aHTMLEditor, const SuggestCaretOptions& aOptions) const;
 
   
+
+
+
+  void IgnoreCaretPointSuggestion() const { mHandledCaretPoint = true; }
+
+  bool HasCaretPointSuggestion() const { return mCaretPoint.IsSet(); }
+  constexpr EditorDOMPoint&& UnwrapCaretPoint() {
+    mHandledCaretPoint = true;
+    return std::move(mCaretPoint);
+  }
+  bool MoveCaretPointTo(EditorDOMPoint& aPointToPutCaret,
+                        const SuggestCaretOptions& aOptions) {
+    MOZ_ASSERT(!aOptions.contains(SuggestCaret::AndIgnoreTrivialError));
+    MOZ_ASSERT(
+        !aOptions.contains(SuggestCaret::OnlyIfTransactionsAllowedToDoIt));
+    if (aOptions.contains(SuggestCaret::OnlyIfHasSuggestion) &&
+        !mCaretPoint.IsSet()) {
+      return false;
+    }
+    aPointToPutCaret = UnwrapCaretPoint();
+    return true;
+  }
+  bool MoveCaretPointTo(EditorDOMPoint& aPointToPutCaret,
+                        const HTMLEditor& aHTMLEditor,
+                        const SuggestCaretOptions& aOptions);
+
+  SplitNodeResult() = delete;
+  SplitNodeResult(const SplitNodeResult&) = delete;
+  SplitNodeResult& operator=(const SplitNodeResult&) = delete;
+  SplitNodeResult(SplitNodeResult&&) = default;
+  SplitNodeResult& operator=(SplitNodeResult&&) = default;
+
+  
+
+
+
+
 
 
 
@@ -379,6 +430,7 @@ class MOZ_STACK_CLASS SplitNodeResult final {
         mNextNode(aDirection == SplitNodeDirection::LeftNodeIsNewOne
                       ? &aSplitNode
                       : &aNewNode),
+        mCaretPoint(EditorDOMPoint::AtEndOf(mPreviousNode)),
         mRv(NS_OK),
         mDirection(aDirection) {}
   SplitNodeResult(nsCOMPtr<nsIContent>&& aNewNode,
@@ -390,9 +442,13 @@ class MOZ_STACK_CLASS SplitNodeResult final {
         mNextNode(aDirection == SplitNodeDirection::LeftNodeIsNewOne
                       ? std::move(aSplitNode)
                       : std::move(aNewNode)),
+        mCaretPoint(MOZ_LIKELY(mPreviousNode)
+                        ? EditorDOMPoint::AtEndOf(mPreviousNode)
+                        : EditorDOMPoint()),
         mRv(NS_OK),
         mDirection(aDirection) {
-    MOZ_DIAGNOSTIC_ASSERT(mPreviousNode || mNextNode);
+    MOZ_DIAGNOSTIC_ASSERT(mPreviousNode);
+    MOZ_DIAGNOSTIC_ASSERT(mNextNode);
   }
 
   
@@ -405,35 +461,85 @@ class MOZ_STACK_CLASS SplitNodeResult final {
   }
 
   SplitNodeResult ToHandledResult() const {
+    mHandledCaretPoint = true;
     SplitNodeResult result(NS_OK, mDirection);
     result.mPreviousNode = GetPreviousContent();
     result.mNextNode = GetNextContent();
     MOZ_DIAGNOSTIC_ASSERT(result.Handled());
+    
+    
+    
+    result.mCaretPoint = mCaretPoint;
     return result;
   }
 
   static inline SplitNodeResult HandledButDidNotSplitDueToEndOfContainer(
-      nsIContent& aNotSplitNode, SplitNodeDirection aDirection) {
+      nsIContent& aNotSplitNode, SplitNodeDirection aDirection,
+      const SplitNodeResult* aDeeperSplitNodeResult = nullptr) {
     SplitNodeResult result(NS_OK, aDirection);
     result.mPreviousNode = &aNotSplitNode;
+    
+    if (aDeeperSplitNodeResult) {
+      result.mCaretPoint = aDeeperSplitNodeResult->mCaretPoint;
+      aDeeperSplitNodeResult->mHandledCaretPoint = true;
+    }
     return result;
   }
 
   static inline SplitNodeResult HandledButDidNotSplitDueToStartOfContainer(
-      nsIContent& aNotSplitNode, SplitNodeDirection aDirection) {
+      nsIContent& aNotSplitNode, SplitNodeDirection aDirection,
+      const SplitNodeResult* aDeeperSplitNodeResult = nullptr) {
     SplitNodeResult result(NS_OK, aDirection);
     result.mNextNode = &aNotSplitNode;
+    
+    if (aDeeperSplitNodeResult) {
+      result.mCaretPoint = aDeeperSplitNodeResult->mCaretPoint;
+      aDeeperSplitNodeResult->mHandledCaretPoint = true;
+    }
     return result;
   }
 
   template <typename PT, typename CT>
   static inline SplitNodeResult NotHandled(
       const EditorDOMPointBase<PT, CT>& aGivenSplitPoint,
-      SplitNodeDirection aDirection) {
+      SplitNodeDirection aDirection,
+      const SplitNodeResult* aDeeperSplitNodeResult = nullptr) {
     SplitNodeResult result(NS_OK, aDirection);
     result.mGivenSplitPoint = aGivenSplitPoint;
+    
+    if (aDeeperSplitNodeResult) {
+      result.mCaretPoint = aDeeperSplitNodeResult->mCaretPoint;
+      aDeeperSplitNodeResult->mHandledCaretPoint = true;
+    }
     return result;
   }
+
+  
+
+
+
+
+
+
+  static inline SplitNodeResult MergeWithDeeperSplitNodeResult(
+      SplitNodeResult&& aSplitNodeResult,
+      const SplitNodeResult& aDeeperSplitNodeResult) {
+    aSplitNodeResult.mHandledCaretPoint = false;
+    aDeeperSplitNodeResult.mHandledCaretPoint = true;
+    if (aSplitNodeResult.DidSplit() ||
+        !aDeeperSplitNodeResult.mCaretPoint.IsSet()) {
+      return std::move(aSplitNodeResult);
+    }
+    SplitNodeResult result(std::move(aSplitNodeResult));
+    result.mCaretPoint = aDeeperSplitNodeResult.mCaretPoint;
+    return result;
+  }
+
+#ifdef DEBUG
+  ~SplitNodeResult() {
+    MOZ_ASSERT_IF(isOk(), !mCaretPoint.IsSet() || mHandledCaretPoint);
+  }
+#endif
 
  private:
   SplitNodeResult(nsresult aRv, SplitNodeDirection aDirection)
@@ -455,8 +561,13 @@ class MOZ_STACK_CLASS SplitNodeResult final {
   
   EditorDOMPoint mGivenSplitPoint;
 
+  
+  
+  EditorDOMPoint mCaretPoint;
+
   nsresult mRv;
   SplitNodeDirection mDirection;
+  bool mutable mHandledCaretPoint = false;
 };
 
 
@@ -538,12 +649,21 @@ class MOZ_STACK_CLASS JoinNodesResult final {
 
 
 
+
+
+
+
 class MOZ_STACK_CLASS SplitRangeOffFromNodeResult final {
  public:
-  bool Succeeded() const { return NS_SUCCEEDED(mRv); }
-  bool Failed() const { return NS_FAILED(mRv); }
-  nsresult Rv() const { return mRv; }
-  bool EditorDestroyed() const { return mRv == NS_ERROR_EDITOR_DESTROYED; }
+  
+  
+  bool isOk() const { return NS_SUCCEEDED(mRv); }
+  bool isErr() const { return NS_FAILED(mRv); }
+  constexpr nsresult inspectErr() const { return mRv; }
+  constexpr nsresult unwrapErr() const { return inspectErr(); }
+  constexpr bool EditorDestroyed() const {
+    return MOZ_UNLIKELY(mRv == NS_ERROR_EDITOR_DESTROYED);
+  }
 
   
 
@@ -583,18 +703,27 @@ class MOZ_STACK_CLASS SplitRangeOffFromNodeResult final {
         mRightContent(aRightContent),
         mRv(NS_OK) {}
 
-  SplitRangeOffFromNodeResult(SplitNodeResult& aSplitResultAtLeftOfMiddleNode,
-                              SplitNodeResult& aSplitResultAtRightOfMiddleNode)
+  SplitRangeOffFromNodeResult(SplitNodeResult&& aSplitResultAtLeftOfMiddleNode,
+                              SplitNodeResult&& aSplitResultAtRightOfMiddleNode)
       : mRv(NS_OK) {
-    if (aSplitResultAtLeftOfMiddleNode.Succeeded()) {
-      mLeftContent = aSplitResultAtLeftOfMiddleNode.GetPreviousContent();
+    
+    
+    
+    SplitNodeResult splitResultAtLeftOfMiddleNode(
+        std::move(aSplitResultAtLeftOfMiddleNode));
+    SplitNodeResult splitResultARightOfMiddleNode(
+        std::move(aSplitResultAtRightOfMiddleNode));
+    splitResultAtLeftOfMiddleNode.IgnoreCaretPointSuggestion();
+    splitResultARightOfMiddleNode.IgnoreCaretPointSuggestion();
+    if (splitResultAtLeftOfMiddleNode.isOk()) {
+      mLeftContent = splitResultAtLeftOfMiddleNode.GetPreviousContent();
     }
-    if (aSplitResultAtRightOfMiddleNode.Succeeded()) {
-      mRightContent = aSplitResultAtRightOfMiddleNode.GetNextContent();
-      mMiddleContent = aSplitResultAtRightOfMiddleNode.GetPreviousContent();
+    if (splitResultARightOfMiddleNode.isOk()) {
+      mRightContent = splitResultARightOfMiddleNode.GetNextContent();
+      mMiddleContent = splitResultARightOfMiddleNode.GetPreviousContent();
     }
-    if (!mMiddleContent && aSplitResultAtLeftOfMiddleNode.Succeeded()) {
-      mMiddleContent = aSplitResultAtLeftOfMiddleNode.GetNextContent();
+    if (!mMiddleContent && splitResultAtLeftOfMiddleNode.isOk()) {
+      mMiddleContent = splitResultAtLeftOfMiddleNode.GetNextContent();
     }
   }
 
@@ -624,23 +753,36 @@ class MOZ_STACK_CLASS SplitRangeOffFromNodeResult final {
 
 
 
+
+
+
+
 class MOZ_STACK_CLASS SplitRangeOffResult final {
  public:
-  bool Succeeded() const { return NS_SUCCEEDED(mRv); }
-  bool Failed() const { return NS_FAILED(mRv); }
-  nsresult Rv() const { return mRv; }
-  bool Handled() const { return mHandled; }
-  bool EditorDestroyed() const { return mRv == NS_ERROR_EDITOR_DESTROYED; }
+  
+  
+  bool isOk() const { return NS_SUCCEEDED(mRv); }
+  bool isErr() const { return NS_FAILED(mRv); }
+  constexpr nsresult inspectErr() const { return mRv; }
+  constexpr nsresult unwrapErr() const { return inspectErr(); }
+  constexpr bool Handled() const { return mHandled; }
+  constexpr bool EditorDestroyed() const {
+    return MOZ_UNLIKELY(mRv == NS_ERROR_EDITOR_DESTROYED);
+  }
 
   
 
 
-  const EditorDOMPoint& SplitPointAtStart() const { return mSplitPointAtStart; }
+  constexpr const EditorDOMPoint& SplitPointAtStart() const {
+    return mSplitPointAtStart;
+  }
   
 
 
 
-  const EditorDOMPoint& SplitPointAtEnd() const { return mSplitPointAtEnd; }
+  constexpr const EditorDOMPoint& SplitPointAtEnd() const {
+    return mSplitPointAtEnd;
+  }
 
   SplitRangeOffResult() = delete;
 
@@ -663,10 +805,10 @@ class MOZ_STACK_CLASS SplitRangeOffResult final {
 
 
 
-  SplitRangeOffResult(const EditorDOMPoint& aTrackedRangeStart,
-                      const SplitNodeResult& aSplitNodeResultAtStart,
-                      const EditorDOMPoint& aTrackedRangeEnd,
-                      const SplitNodeResult& aSplitNodeResultAtEnd)
+  SplitRangeOffResult(EditorDOMPoint&& aTrackedRangeStart,
+                      SplitNodeResult&& aSplitNodeResultAtStart,
+                      EditorDOMPoint&& aTrackedRangeEnd,
+                      SplitNodeResult&& aSplitNodeResultAtEnd)
       : mSplitPointAtStart(aTrackedRangeStart),
         mSplitPointAtEnd(aTrackedRangeEnd),
         mRv(NS_OK),
@@ -674,8 +816,15 @@ class MOZ_STACK_CLASS SplitRangeOffResult final {
                  aSplitNodeResultAtEnd.Handled()) {
     MOZ_ASSERT(mSplitPointAtStart.IsSet());
     MOZ_ASSERT(mSplitPointAtEnd.IsSet());
-    MOZ_ASSERT(aSplitNodeResultAtStart.Succeeded());
-    MOZ_ASSERT(aSplitNodeResultAtEnd.Succeeded());
+    MOZ_ASSERT(aSplitNodeResultAtStart.isOk());
+    MOZ_ASSERT(aSplitNodeResultAtEnd.isOk());
+    
+    
+    
+    SplitNodeResult splitNodeResultAtStart(std::move(aSplitNodeResultAtStart));
+    SplitNodeResult splitNodeResultAtEnd(std::move(aSplitNodeResultAtEnd));
+    splitNodeResultAtStart.IgnoreCaretPointSuggestion();
+    splitNodeResultAtEnd.IgnoreCaretPointSuggestion();
   }
 
   explicit SplitRangeOffResult(nsresult aRv) : mRv(aRv), mHandled(false) {

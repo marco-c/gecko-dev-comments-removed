@@ -4631,21 +4631,53 @@ class HTMLEditor final : public EditorBase,
 
   ParagraphSeparator mDefaultParagraphSeparator;
 
-  friend class AlignStateAtSelection;
-  friend class AutoSelectionSetterAfterTableEdit;
-  friend class AutoSetTemporaryAncestorLimiter;
-  friend class CSSEditUtils;
-  friend class EditorBase;
-  friend class EmptyEditableFunctor;
-  friend class JoinNodesTransaction;
-  friend class ListElementSelectionState;
-  friend class ListItemElementSelectionState;
-  friend class ParagraphStateAtSelection;
-  friend class SlurpBlobEventListener;
-  friend class SplitNodeTransaction;
-  friend class WhiteSpaceVisibilityKeeper;
-  friend class WSRunScanner;
-  friend class WSScanResult;
+  friend class
+      AlignStateAtSelection;  
+                              
+                              
+  friend class AutoSelectionSetterAfterTableEdit;  
+  friend class
+      AutoSetTemporaryAncestorLimiter;  
+  friend class CSSEditUtils;            
+                                        
+  friend class EditorBase;              
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+  friend class JoinNodesTransaction;  
+                                      
+  friend class
+      ListElementSelectionState;  
+                                  
+  friend class
+      ListItemElementSelectionState;  
+                                      
+  friend class
+      ParagraphStateAtSelection;  
+                                  
+                                  
+                                  
+                                  
+  friend class SlurpBlobEventListener;  
+  friend class SplitNodeResult;         
+  friend class SplitNodeTransaction;    
+  friend class
+      WhiteSpaceVisibilityKeeper;  
+                                   
+                                   
+                                   
+                                   
+                                   
+                                   
+                                   
+                                   
+                                   
+                                   
 };
 
 

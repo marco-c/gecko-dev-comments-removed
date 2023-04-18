@@ -113,12 +113,14 @@ NS_IMETHODIMP SplitNodeTransaction::DoTransaction() {
   const OwningNonNull<HTMLEditor> htmlEditor = *mHTMLEditor;
   const OwningNonNull<nsIContent> splittingContent = *mSplitContent;
   
-  SplitNodeResult splitNodeResult = DoTransactionInternal(
+  const SplitNodeResult splitNodeResult = DoTransactionInternal(
       htmlEditor, splittingContent, MOZ_KnownLive(*mNewContent), mSplitOffset);
-  if (MOZ_UNLIKELY(splitNodeResult.Failed())) {
+  if (splitNodeResult.isErr()) {
     NS_WARNING("SplitNodeTransaction::DoTransactionInternal() failed");
-    return EditorBase::ToGenericNSResult(splitNodeResult.Rv());
+    return EditorBase::ToGenericNSResult(splitNodeResult.unwrapErr());
   }
+  
+  splitNodeResult.IgnoreCaretPointSuggestion();
   return NS_OK;
 }
 
@@ -141,8 +143,11 @@ SplitNodeResult SplitNodeTransaction::DoTransactionInternal(
       EditorDOMPoint(&aSplittingContent,
                      std::min(aSplitOffset, aSplittingContent.Length())),
       aNewContent);
-  NS_WARNING_ASSERTION(splitNodeResult.Succeeded(),
+  NS_WARNING_ASSERTION(splitNodeResult.isOk(),
                        "HTMLEditor::DoSplitNode() failed");
+  
+  
+  splitNodeResult.IgnoreCaretPointSuggestion();
   return splitNodeResult;
 }
 
@@ -194,11 +199,14 @@ NS_IMETHODIMP SplitNodeTransaction::RedoTransaction() {
   const OwningNonNull<HTMLEditor> htmlEditor = *mHTMLEditor;
   const OwningNonNull<nsIContent> newContent = *mNewContent;
   const OwningNonNull<nsIContent> splittingContent = *mSplitContent;
-  SplitNodeResult splitNodeResult = DoTransactionInternal(
+  const SplitNodeResult splitNodeResult = DoTransactionInternal(
       htmlEditor, splittingContent, newContent, mSplitOffset);
-  NS_WARNING_ASSERTION(splitNodeResult.Succeeded(),
+  NS_WARNING_ASSERTION(splitNodeResult.isOk(),
                        "SplitNodeTransaction::DoTransactionInternal() failed");
-  return EditorBase::ToGenericNSResult(splitNodeResult.Rv());
+  
+  
+  splitNodeResult.IgnoreCaretPointSuggestion();
+  return EditorBase::ToGenericNSResult(splitNodeResult.unwrapErr());
 }
 
 }  

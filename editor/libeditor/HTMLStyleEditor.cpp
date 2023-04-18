@@ -466,26 +466,33 @@ nsresult HTMLEditor::SetInlinePropertyOnTextNode(
   EditorDOMPoint atEnd(textNodeForTheRange, aEndOffset);
   if (!atEnd.IsEndOfContainer()) {
     
-    SplitNodeResult splitAtEndResult = SplitNodeWithTransaction(atEnd);
-    if (MOZ_UNLIKELY(splitAtEndResult.Failed())) {
+    const SplitNodeResult splitAtEndResult = SplitNodeWithTransaction(atEnd);
+    if (splitAtEndResult.isErr()) {
       NS_WARNING("HTMLEditor::SplitNodeWithTransaction() failed");
-      return splitAtEndResult.Rv();
+      return splitAtEndResult.unwrapErr();
     }
     textNodeForTheRange =
         Text::FromNodeOrNull(splitAtEndResult.GetPreviousContent());
+    
+    
+    splitAtEndResult.IgnoreCaretPointSuggestion();
   }
 
   
   EditorDOMPoint atStart(textNodeForTheRange, aStartOffset);
   if (!atStart.IsStartOfContainer()) {
     
-    SplitNodeResult splitAtStartResult = SplitNodeWithTransaction(atStart);
-    if (MOZ_UNLIKELY(splitAtStartResult.Failed())) {
+    const SplitNodeResult splitAtStartResult =
+        SplitNodeWithTransaction(atStart);
+    if (splitAtStartResult.isErr()) {
       NS_WARNING("HTMLEditor::SplitNodeWithTransaction() failed");
-      return splitAtStartResult.Rv();
+      return splitAtStartResult.unwrapErr();
     }
     textNodeForTheRange =
         Text::FromNodeOrNull(splitAtStartResult.GetNextContent());
+    
+    
+    splitAtStartResult.IgnoreCaretPointSuggestion();
   }
 
   if (aAttribute) {
@@ -801,49 +808,57 @@ SplitRangeOffResult HTMLEditor::SplitAncestorStyledInlineElementsAtRangeEdges(
   EditorDOMPoint endOfRange(aEndOfRange);
 
   
-  SplitNodeResult resultAtStart(NS_ERROR_NOT_INITIALIZED);
-  {
+  SplitNodeResult resultAtStart = [&]() MOZ_CAN_RUN_SCRIPT {
     AutoTrackDOMPoint tracker(RangeUpdaterRef(), &endOfRange);
-    resultAtStart = SplitAncestorStyledInlineElementsAt(startOfRange, aProperty,
-                                                        aAttribute);
-    if (resultAtStart.Failed()) {
+    SplitNodeResult result = SplitAncestorStyledInlineElementsAt(
+        startOfRange, aProperty, aAttribute);
+    if (result.isErr()) {
       NS_WARNING("HTMLEditor::SplitAncestorStyledInlineElementsAt() failed");
-      return SplitRangeOffResult(resultAtStart.Rv());
+      return SplitNodeResult(result.unwrapErr());
     }
-    if (resultAtStart.Handled()) {
-      startOfRange = resultAtStart.AtSplitPoint<EditorDOMPoint>();
+    if (result.Handled()) {
+      startOfRange = result.AtSplitPoint<EditorDOMPoint>();
       if (!startOfRange.IsSet()) {
+        result.IgnoreCaretPointSuggestion();
         NS_WARNING(
             "HTMLEditor::SplitAncestorStyledInlineElementsAt() didn't return "
             "split point");
-        return SplitRangeOffResult(NS_ERROR_FAILURE);
+        return SplitNodeResult(NS_ERROR_FAILURE);
       }
     }
+    return result;
+  }();
+  if (resultAtStart.isErr()) {
+    return SplitRangeOffResult(resultAtStart.unwrapErr());
   }
 
   
-  SplitNodeResult resultAtEnd(NS_ERROR_NOT_INITIALIZED);
-  {
+  SplitNodeResult resultAtEnd = [&]() MOZ_CAN_RUN_SCRIPT {
     AutoTrackDOMPoint tracker(RangeUpdaterRef(), &startOfRange);
-    resultAtEnd =
+    SplitNodeResult result =
         SplitAncestorStyledInlineElementsAt(endOfRange, aProperty, aAttribute);
-    if (resultAtEnd.Failed()) {
+    if (result.isErr()) {
       NS_WARNING("HTMLEditor::SplitAncestorStyledInlineElementsAt() failed");
-      return SplitRangeOffResult(resultAtEnd.Rv());
+      return SplitNodeResult(result.unwrapErr());
     }
-    if (resultAtEnd.Handled()) {
-      endOfRange = resultAtEnd.AtSplitPoint<EditorDOMPoint>();
+    if (result.Handled()) {
+      endOfRange = result.AtSplitPoint<EditorDOMPoint>();
       if (!endOfRange.IsSet()) {
+        result.IgnoreCaretPointSuggestion();
         NS_WARNING(
             "HTMLEditor::SplitAncestorStyledInlineElementsAt() didn't return "
             "split point");
-        return SplitRangeOffResult(NS_ERROR_FAILURE);
+        return SplitNodeResult(NS_ERROR_FAILURE);
       }
     }
+    return result;
+  }();
+  if (resultAtEnd.isErr()) {
+    return SplitRangeOffResult(resultAtEnd.unwrapErr());
   }
 
-  return SplitRangeOffResult(startOfRange, resultAtStart, endOfRange,
-                             resultAtEnd);
+  return SplitRangeOffResult(std::move(startOfRange), std::move(resultAtStart),
+                             std::move(endOfRange), std::move(resultAtEnd));
 }
 
 SplitNodeResult HTMLEditor::SplitAncestorStyledInlineElementsAt(
@@ -924,10 +939,13 @@ SplitNodeResult HTMLEditor::SplitAncestorStyledInlineElementsAt(
     SplitNodeResult splitNodeResult = SplitNodeDeepWithTransaction(
         MOZ_KnownLive(content), result.AtSplitPoint<EditorDOMPoint>(),
         SplitAtEdges::eAllowToCreateEmptyContainer);
-    if (MOZ_UNLIKELY(splitNodeResult.Failed())) {
+    if (splitNodeResult.isErr()) {
       NS_WARNING("HTMLEditor::SplitNodeDeepWithTransaction() failed");
       return splitNodeResult;
     }
+    
+    
+    splitNodeResult.IgnoreCaretPointSuggestion();
     
     
     
@@ -954,12 +972,15 @@ EditResult HTMLEditor::ClearStyleAt(const EditorDOMPoint& aPoint,
   
   
   
-  SplitNodeResult splitResult =
+  const SplitNodeResult splitResult =
       SplitAncestorStyledInlineElementsAt(aPoint, aProperty, aAttribute);
-  if (splitResult.Failed()) {
+  if (splitResult.isErr()) {
     NS_WARNING("HTMLEditor::SplitAncestorStyledInlineElementsAt() failed");
-    return EditResult(splitResult.Rv());
+    return EditResult(splitResult.unwrapErr());
   }
+  
+  
+  splitResult.IgnoreCaretPointSuggestion();
 
   
   
@@ -1026,13 +1047,16 @@ EditResult HTMLEditor::ClearStyleAt(const EditorDOMPoint& aPoint,
     }
     atStartOfNextNode.Set(atStartOfNextNode.GetContainerParent(), 0);
   }
-  SplitNodeResult splitResultAtStartOfNextNode =
+  const SplitNodeResult splitResultAtStartOfNextNode =
       SplitAncestorStyledInlineElementsAt(atStartOfNextNode, aProperty,
                                           aAttribute);
-  if (splitResultAtStartOfNextNode.Failed()) {
+  if (splitResultAtStartOfNextNode.isErr()) {
     NS_WARNING("HTMLEditor::SplitAncestorStyledInlineElementsAt() failed");
-    return EditResult(splitResultAtStartOfNextNode.Rv());
+    return EditResult(splitResultAtStartOfNextNode.unwrapErr());
   }
+  
+  
+  splitResultAtStartOfNextNode.IgnoreCaretPointSuggestion();
 
   
   
@@ -1950,11 +1974,11 @@ nsresult HTMLEditor::RemoveInlinePropertyInternal(
                 EditorDOMPoint(range->StartRef()),
                 EditorDOMPoint(range->EndRef()), MOZ_KnownLive(style.mProperty),
                 MOZ_KnownLive(style.mAttribute));
-        if (splitRangeOffResult.Failed()) {
+        if (splitRangeOffResult.isErr()) {
           NS_WARNING(
               "HTMLEditor::SplitAncestorStyledInlineElementsAtRangeEdges() "
               "failed");
-          return splitRangeOffResult.Rv();
+          return splitRangeOffResult.unwrapErr();
         }
 
         
@@ -2391,28 +2415,35 @@ nsresult HTMLEditor::RelativeFontChangeOnTextNode(FontSize aDir,
   EditorDOMPoint atEnd(textNodeForTheRange, aEndOffset);
   if (!atEnd.IsEndOfContainer()) {
     
-    SplitNodeResult splitAtEndResult = SplitNodeWithTransaction(atEnd);
-    if (MOZ_UNLIKELY(splitAtEndResult.Failed())) {
+    const SplitNodeResult splitAtEndResult = SplitNodeWithTransaction(atEnd);
+    if (splitAtEndResult.isErr()) {
       NS_WARNING("HTMLEditor::SplitNodeWithTransaction() failed");
-      return splitAtEndResult.Rv();
+      return splitAtEndResult.unwrapErr();
     }
     textNodeForTheRange =
         Text::FromNodeOrNull(splitAtEndResult.GetPreviousContent());
     MOZ_DIAGNOSTIC_ASSERT(textNodeForTheRange);
+    
+    
+    splitAtEndResult.IgnoreCaretPointSuggestion();
   }
 
   
   EditorDOMPoint atStart(textNodeForTheRange, aStartOffset);
   if (!atStart.IsStartOfContainer()) {
     
-    SplitNodeResult splitAtStartResult = SplitNodeWithTransaction(atStart);
-    if (MOZ_UNLIKELY(splitAtStartResult.Failed())) {
+    const SplitNodeResult splitAtStartResult =
+        SplitNodeWithTransaction(atStart);
+    if (splitAtStartResult.isErr()) {
       NS_WARNING("HTMLEditor::SplitNodeWithTransaction() failed");
-      return splitAtStartResult.Rv();
+      return splitAtStartResult.unwrapErr();
     }
     textNodeForTheRange =
         Text::FromNodeOrNull(splitAtStartResult.GetNextContent());
     MOZ_DIAGNOSTIC_ASSERT(textNodeForTheRange);
+    
+    
+    splitAtStartResult.IgnoreCaretPointSuggestion();
   }
 
   
