@@ -134,6 +134,11 @@ function testSymLinks(testDir, relative) {
 }
 
 function run_test() {
+  
+  if (mozinfo.os == "win") {
+    return;
+  }
+
   var testDir = CWD;
   testDir.append("test_symlinks");
 

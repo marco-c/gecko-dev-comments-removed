@@ -8,7 +8,6 @@
 #include "nsIFile.h"
 #include "nsImportModule.h"
 #include "nsPrintfCString.h"
-#include "nsProfileLock.h"
 #include "nsXULAppAPI.h"
 #include "SpecialSystemDirectory.h"
 
@@ -171,21 +170,10 @@ nsresult BackgroundTasks::CreateTemporaryProfileDirectoryImpl(
     rv = GetSpecialSystemDirectory(OS_TemporaryDirectory, getter_AddRefs(file));
     NS_ENSURE_SUCCESS(rv, rv);
 
-    nsCString profilePrefix =
-        nsPrintfCString("%sBackgroundTask-%s-%s", MOZ_APP_VENDOR,
-                        aInstallHash.get(), mBackgroundTask.ref().get());
-
     
-    
-    
-    rv = RemoveStaleTemporaryProfileDirectories(file, profilePrefix);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      MOZ_LOG(sBackgroundTasksLog, mozilla::LogLevel::Warning,
-              ("Error cleaning up stale temporary profile directories."));
-    }
-
-    
-    rv = file->AppendNative(profilePrefix);
+    rv = file->AppendNative(nsPrintfCString("%sBackgroundTask-%s-%s",
+                                            MOZ_APP_VENDOR, aInstallHash.get(),
+                                            mBackgroundTask.ref().get()));
     NS_ENSURE_SUCCESS(rv, rv);
 
     
@@ -198,73 +186,6 @@ nsresult BackgroundTasks::CreateTemporaryProfileDirectoryImpl(
   }
 
   file.forget(aFile);
-  return NS_OK;
-}
-
-nsresult BackgroundTasks::RemoveStaleTemporaryProfileDirectories(
-    nsIFile* const aRoot, const nsCString& aPrefix) {
-  nsCOMPtr<nsIDirectoryEnumerator> entries;
-  nsresult rv = aRoot->GetDirectoryEntries(getter_AddRefs(entries));
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  nsCOMPtr<nsIFile> entry;
-  int removedProfiles = 0;
-  
-  
-  const int kMaxRemovedProfiles = 5;
-
-  
-  
-  
-  while (removedProfiles < kMaxRemovedProfiles &&
-         NS_SUCCEEDED(rv = entries->GetNextFile(getter_AddRefs(entry))) &&
-         entry) {
-    nsCString entryName;
-    rv = entry->GetNativeLeafName(entryName);
-    if (NS_FAILED(rv)) {
-      continue;
-    }
-
-    
-    if (aPrefix.Compare(entryName.get(), false, aPrefix.Length()) != 0) {
-      continue;
-    }
-
-    
-    
-    
-    
-    nsProfileLock lock;
-    if (NS_FAILED(lock.Lock(entry, nullptr)) || NS_FAILED(lock.Unlock())) {
-      continue;
-    }
-
-    rv = entry->Remove(true);
-    if (NS_FAILED(rv)) {
-      if (MOZ_LOG_TEST(sBackgroundTasksLog, mozilla::LogLevel::Warning)) {
-        nsAutoString path;
-        if (NS_SUCCEEDED(entry->GetPath(path))) {
-          MOZ_LOG(sBackgroundTasksLog, mozilla::LogLevel::Warning,
-                  ("Error removing stale temporary profile directory: %s",
-                   NS_LossyConvertUTF16toASCII(path).get()));
-        }
-      }
-
-      continue;
-    }
-
-    if (MOZ_LOG_TEST(sBackgroundTasksLog, mozilla::LogLevel::Info)) {
-      nsAutoString path;
-      if (NS_SUCCEEDED(entry->GetPath(path))) {
-        MOZ_LOG(sBackgroundTasksLog, mozilla::LogLevel::Info,
-                ("Removed stale temporary profile directory: %s",
-                 NS_LossyConvertUTF16toASCII(path).get()));
-      }
-    }
-
-    removedProfiles++;
-  }
-
   return NS_OK;
 }
 
