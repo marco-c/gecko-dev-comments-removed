@@ -1274,8 +1274,8 @@ bool DataTextureSourceD3D11::Update(DataSourceSurface* aSurface,
       mTexture->GetDesc(&currentDesc);
 
       
-      if (currentDesc.Width != mSize.width ||
-          currentDesc.Height != mSize.height ||
+      if (static_cast<int32_t>(currentDesc.Width) != mSize.width ||
+          static_cast<int32_t>(currentDesc.Height) != mSize.height ||
           currentDesc.Format != dxgiFormat) {
         mTexture = nullptr;
         
