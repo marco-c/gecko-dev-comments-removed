@@ -27,7 +27,7 @@ namespace HWY_NAMESPACE {
 
 
 template <typename T>
-using Sisd = Simd<T, 1, 0>;
+using Sisd = Simd<T, 1>;
 
 
 template <typename T>
@@ -190,20 +190,6 @@ HWY_API Vec1<T> operator^(const Vec1<T> a, const Vec1<T> b) {
 
 
 template <typename T>
-HWY_API Vec1<T> OrAnd(const Vec1<T> o, const Vec1<T> a1, const Vec1<T> a2) {
-  return Or(o, And(a1, a2));
-}
-
-
-
-template <typename T>
-HWY_API Vec1<T> IfVecThenElse(Vec1<T> mask, Vec1<T> yes, Vec1<T> no) {
-  return IfThenElse(MaskFromVec(mask), yes, no);
-}
-
-
-
-template <typename T>
 HWY_API Vec1<T> CopySign(const Vec1<T> magn, const Vec1<T> sign) {
   static_assert(IsFloat<T>(), "Only makes sense for floating-point");
   const auto msb = SignBit(Sisd<T>());
@@ -287,11 +273,6 @@ HWY_API Vec1<T> IfThenElseZero(const Mask1<T> mask, const Vec1<T> yes) {
 template <typename T>
 HWY_API Vec1<T> IfThenZeroElse(const Mask1<T> mask, const Vec1<T> no) {
   return mask.bits ? Vec1<T>(0) : no;
-}
-
-template <typename T>
-HWY_API Vec1<T> IfNegativeThenElse(Vec1<T> v, Vec1<T> yes, Vec1<T> no) {
-  return v.raw < 0 ? yes : no;
 }
 
 template <typename T>
@@ -440,12 +421,6 @@ HWY_API Vec1<float> operator-(const Vec1<float> a, const Vec1<float> b) {
 }
 HWY_API Vec1<double> operator-(const Vec1<double> a, const Vec1<double> b) {
   return Vec1<double>(a.raw - b.raw);
-}
-
-
-
-HWY_API Vec1<uint64_t> SumsOf8(const Vec1<uint8_t> v) {
-  return Vec1<uint64_t>(v.raw);
 }
 
 
@@ -956,30 +931,21 @@ HWY_API Vec1<ToT> PromoteTo(Sisd<ToT> , Vec1<FromT> from) {
   return Vec1<ToT>(static_cast<ToT>(from.raw));
 }
 
-
-
-HWY_API Vec1<float> DemoteTo(Sisd<float> , Vec1<double> from) {
-  
-  if (std::isinf(from.raw) ||
-      std::fabs(from.raw) > static_cast<double>(HighestValue<float>())) {
-    return Vec1<float>(std::signbit(from.raw) ? LowestValue<float>()
-                                              : HighestValue<float>());
-  }
-  return Vec1<float>(static_cast<float>(from.raw));
-}
-HWY_API Vec1<int32_t> DemoteTo(Sisd<int32_t> , Vec1<double> from) {
-  
-  if (std::isinf(from.raw) ||
-      std::fabs(from.raw) > static_cast<double>(HighestValue<int32_t>())) {
-    return Vec1<int32_t>(std::signbit(from.raw) ? LowestValue<int32_t>()
-                                                : HighestValue<int32_t>());
-  }
-  return Vec1<int32_t>(static_cast<int32_t>(from.raw));
-}
-
-template <typename FromT, typename ToT>
+template <typename FromT, typename ToT, HWY_IF_FLOAT(FromT)>
 HWY_API Vec1<ToT> DemoteTo(Sisd<ToT> , Vec1<FromT> from) {
-  static_assert(!IsFloat<FromT>(), "FromT=double are handled above");
+  static_assert(sizeof(ToT) < sizeof(FromT), "Not demoting");
+
+  
+  if (std::isinf(from.raw) ||
+      std::fabs(from.raw) > static_cast<FromT>(HighestValue<ToT>())) {
+    return Vec1<ToT>(std::signbit(from.raw) ? LowestValue<ToT>()
+                                            : HighestValue<ToT>());
+  }
+  return Vec1<ToT>(static_cast<ToT>(from.raw));
+}
+
+template <typename FromT, typename ToT, HWY_IF_NOT_FLOAT(FromT)>
+HWY_API Vec1<ToT> DemoteTo(Sisd<ToT> , Vec1<FromT> from) {
   static_assert(sizeof(ToT) < sizeof(FromT), "Not demoting");
 
   
@@ -1118,12 +1084,6 @@ HWY_API T GetLane(const Vec1<T> v) {
 }
 
 template <typename T>
-HWY_API Vec1<T> DupEven(Vec1<T> v) {
-  return v;
-}
-
-
-template <typename T>
 HWY_API Vec1<T> OddEven(Vec1<T> , Vec1<T> even) {
   return even;
 }
@@ -1167,31 +1127,8 @@ HWY_API Vec1<T> TableLookupLanes(const Vec1<T> v, const Indices1<T> ) {
 
 
 
-
-template <typename T>
-HWY_API Vec1<T> ReverseBlocks(Sisd<T> , const Vec1<T> v) {
-  return v;
-}
-
-
-
 template <typename T>
 HWY_API Vec1<T> Reverse(Sisd<T> , const Vec1<T> v) {
-  return v;
-}
-
-template <typename T>
-HWY_API Vec1<T> Reverse2(Sisd<T> , const Vec1<T> v) {
-  return v;
-}
-
-template <typename T>
-HWY_API Vec1<T> Reverse4(Sisd<T> , const Vec1<T> v) {
-  return v;
-}
-
-template <typename T>
-HWY_API Vec1<T> Reverse8(Sisd<T> , const Vec1<T> v) {
   return v;
 }
 
@@ -1369,6 +1306,41 @@ HWY_API Vec1<T> MinOfLanes(Sisd<T> , const Vec1<T> v) {
 template <typename T>
 HWY_API Vec1<T> MaxOfLanes(Sisd<T> , const Vec1<T> v) {
   return v;
+}
+
+
+
+template <typename T>
+HWY_API size_t StoreMaskBits(const Mask1<T> mask, uint8_t* bits) {
+  return StoreMaskBits(Sisd<T>(), mask, bits);
+}
+
+template <typename T>
+HWY_API bool AllTrue(const Mask1<T> mask) {
+  return AllTrue(Sisd<T>(), mask);
+}
+
+template <typename T>
+HWY_API bool AllFalse(const Mask1<T> mask) {
+  return AllFalse(Sisd<T>(), mask);
+}
+
+template <typename T>
+HWY_API size_t CountTrue(const Mask1<T> mask) {
+  return CountTrue(Sisd<T>(), mask);
+}
+
+template <typename T>
+HWY_API Vec1<T> SumOfLanes(const Vec1<T> v) {
+  return SumOfLanes(Sisd<T>(), v);
+}
+template <typename T>
+HWY_API Vec1<T> MinOfLanes(const Vec1<T> v) {
+  return MinOfLanes(Sisd<T>(), v);
+}
+template <typename T>
+HWY_API Vec1<T> MaxOfLanes(const Vec1<T> v) {
+  return MaxOfLanes(Sisd<T>(), v);
 }
 
 

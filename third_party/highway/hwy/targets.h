@@ -22,7 +22,6 @@
 
 #include "hwy/base.h"
 #include "hwy/detect_targets.h"
-#include "hwy/highway_export.h"
 
 namespace hwy {
 
@@ -30,7 +29,7 @@ namespace hwy {
 
 
 
-HWY_DLLEXPORT uint32_t SupportedTargets();
+uint32_t SupportedTargets();
 
 
 #if (HWY_TARGETS & (HWY_TARGETS - 1)) == 0
@@ -45,7 +44,7 @@ HWY_DLLEXPORT uint32_t SupportedTargets();
 
 
 
-HWY_DLLEXPORT void DisableTargets(uint32_t disabled_targets);
+void DisableTargets(uint32_t disabled_targets);
 
 
 
@@ -53,11 +52,11 @@ HWY_DLLEXPORT void DisableTargets(uint32_t disabled_targets);
 
 
 
-HWY_DLLEXPORT void SetSupportedTargetsForTest(uint32_t targets);
+void SetSupportedTargetsForTest(uint32_t targets);
 
 
 
-HWY_DLLEXPORT bool SupportedTargetsCalledForTest();
+bool SupportedTargetsCalledForTest();
 
 
 
@@ -226,7 +225,7 @@ struct ChosenTarget {
  public:
   
   
-  HWY_DLLEXPORT void Update();
+  void Update();
 
   
   void DeInit() { mask_.store(1); }
@@ -250,8 +249,7 @@ struct ChosenTarget {
   std::atomic<uint32_t> mask_{1};
 };
 
-
-HWY_DLLEXPORT ChosenTarget& GetChosenTarget();
+extern ChosenTarget chosen_target;
 
 }  
 

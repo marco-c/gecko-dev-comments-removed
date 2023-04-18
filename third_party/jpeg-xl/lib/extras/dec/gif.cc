@@ -8,7 +8,6 @@
 #include <gif_lib.h>
 #include <string.h>
 
-#include <memory>
 #include <utility>
 #include <vector>
 
@@ -33,10 +32,6 @@ struct PackedRgba {
   uint8_t r, g, b, a;
 };
 
-struct PackedRgb {
-  uint8_t r, g, b;
-};
-
 
 
 bool AllOpaque(const PackedImage& color) {
@@ -50,21 +45,6 @@ bool AllOpaque(const PackedImage& color) {
     }
   }
   return true;
-}
-
-void ensure_have_alpha(PackedFrame* frame) {
-  if (!frame->extra_channels.empty()) return;
-  const JxlPixelFormat alpha_format{
-      1u,
-      JXL_TYPE_UINT8,
-      JXL_NATIVE_ENDIAN,
-      0,
-  };
-  frame->extra_channels.emplace_back(frame->color.xsize, frame->color.ysize,
-                                     alpha_format);
-  
-  std::fill_n(static_cast<uint8_t*>(frame->extra_channels[0].pixels()),
-              frame->color.xsize * frame->color.ysize, 255u);
 }
 
 }  
@@ -158,21 +138,8 @@ Status DecodeImageGIF(Span<const uint8_t> bytes, const ColorHints& color_hints,
 
   ppf->info.num_color_channels = 3;
 
-  
-  
-  
-  const JxlPixelFormat canvas_format{
+  const JxlPixelFormat format{
       4u,
-      JXL_TYPE_UINT8,
-      JXL_NATIVE_ENDIAN,
-      0,
-  };
-
-  
-  
-  
-  const JxlPixelFormat packed_frame_format{
-      3u,
       JXL_TYPE_UINT8,
       JXL_NATIVE_ENDIAN,
       0,
@@ -187,13 +154,14 @@ Status DecodeImageGIF(Span<const uint8_t> bytes, const ColorHints& color_hints,
   }
   const PackedRgba background_rgba{background_color.Red, background_color.Green,
                                    background_color.Blue, 0};
-  PackedFrame canvas(gif->SWidth, gif->SHeight, canvas_format);
+  PackedFrame canvas(gif->SWidth, gif->SHeight, format);
   std::fill_n(static_cast<PackedRgba*>(canvas.color.pixels()),
               canvas.color.xsize * canvas.color.ysize, background_rgba);
   Rect canvas_rect{0, 0, canvas.color.xsize, canvas.color.ysize};
 
   Rect previous_rect_if_restore_to_background;
 
+  bool has_alpha = false;
   bool replace = true;
   bool last_base_was_none = true;
   for (int i = 0; i < gif->ImageCount; ++i) {
@@ -231,22 +199,8 @@ Status DecodeImageGIF(Span<const uint8_t> bytes, const ColorHints& color_hints,
     }
 
     
-    ppf->frames.emplace_back(total_rect.xsize(), total_rect.ysize(),
-                             packed_frame_format);
-    PackedFrame* frame = &ppf->frames.back();
-
-    
-    
-    
-    auto set_pixel_alpha = [&frame](size_t x, size_t y, uint8_t a) {
-      
-      
-      
-      if (a == 255 && !frame->extra_channels.empty()) return;
-      ensure_have_alpha(frame);
-      static_cast<uint8_t*>(
-          frame->extra_channels[0].pixels())[y * frame->color.xsize + x] = a;
-    };
+    ppf->frames.emplace_back(total_rect.xsize(), total_rect.ysize(), format);
+    auto* frame = &ppf->frames.back();
 
     const ColorMapObject* const color_map =
         image.ImageDesc.ColorMap ? image.ImageDesc.ColorMap : gif->SColorMap;
@@ -316,26 +270,23 @@ Status DecodeImageGIF(Span<const uint8_t> bytes, const ColorHints& color_hints,
       }
     }
     const PackedImage& sub_frame_image = frame->color;
+    bool blend_alpha = false;
     if (replace) {
       
       for (size_t y = 0; y < total_rect.ysize(); ++y) {
         const PackedRgba* row_in =
             static_cast<const PackedRgba*>(new_canvas_image.pixels()) +
             (y + total_rect.y0()) * new_canvas_image.xsize + total_rect.x0();
-        PackedRgb* row_out = static_cast<PackedRgb*>(sub_frame_image.pixels()) +
-                             y * sub_frame_image.xsize;
-        for (size_t x = 0; x < sub_frame_image.xsize; ++x) {
-          row_out[x].r = row_in[x].r;
-          row_out[x].g = row_in[x].g;
-          row_out[x].b = row_in[x].b;
-          set_pixel_alpha(x, y, row_in[x].a);
-        }
+        PackedRgba* row_out =
+            static_cast<PackedRgba*>(sub_frame_image.pixels()) +
+            y * sub_frame_image.xsize;
+        memcpy(row_out, row_in, sub_frame_image.xsize * sizeof(PackedRgba));
       }
     } else {
       for (size_t y = 0, byte_index = 0; y < image_rect.ysize(); ++y) {
         
-        PackedRgb* row = static_cast<PackedRgb*>(sub_frame_image.pixels()) +
-                         y * sub_frame_image.xsize;
+        PackedRgba* row = static_cast<PackedRgba*>(sub_frame_image.pixels()) +
+                          y * sub_frame_image.xsize;
         for (size_t x = 0; x < image_rect.xsize(); ++x, ++byte_index) {
           const GifByteType byte = image.RasterBits[byte_index];
           if (byte > color_map->ColorCount) {
@@ -345,19 +296,22 @@ Status DecodeImageGIF(Span<const uint8_t> bytes, const ColorHints& color_hints,
             row[x].r = 0;
             row[x].g = 0;
             row[x].b = 0;
-            set_pixel_alpha(x, y, 0);
+            row[x].a = 0;
+            blend_alpha =
+                true;  
             continue;
           }
           GifColorType color = color_map->Colors[byte];
           row[x].r = color.Red;
           row[x].g = color.Green;
           row[x].b = color.Blue;
-          set_pixel_alpha(x, y, 255);
+          row[x].a = 255;
         }
       }
     }
 
-    if (!frame->extra_channels.empty()) {
+    if (!has_alpha && (!AllOpaque(sub_frame_image) || blend_alpha)) {
+      has_alpha = true;
       ppf->info.alpha_bits = 8;
     }
 
@@ -381,20 +335,7 @@ Status DecodeImageGIF(Span<const uint8_t> bytes, const ColorHints& color_hints,
                     canvas.color.xsize * canvas.color.ysize, background_rgba);
     }
   }
-  
-  
-  bool seen_alpha = false;
-  for (const PackedFrame& frame : ppf->frames) {
-    if (!frame.extra_channels.empty()) {
-      seen_alpha = true;
-      break;
-    }
-  }
-  if (seen_alpha) {
-    for (PackedFrame& frame : ppf->frames) {
-      ensure_have_alpha(&frame);
-    }
-  }
+
   return true;
 }
 

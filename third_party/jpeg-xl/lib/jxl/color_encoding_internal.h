@@ -290,7 +290,6 @@ struct ColorEncoding : public Fields {
   void DecideIfWantICC();
 
   bool IsGray() const { return color_space_ == ColorSpace::kGray; }
-  bool IsCMYK() const { return cmyk_; }
   size_t Channels() const { return IsGray() ? 1 : 3; }
 
   
@@ -415,7 +414,6 @@ struct ColorEncoding : public Fields {
   PaddedBytes icc_;  
 
   ColorSpace color_space_;  
-  bool cmyk_ = false;
 
   
   Customxy white_;

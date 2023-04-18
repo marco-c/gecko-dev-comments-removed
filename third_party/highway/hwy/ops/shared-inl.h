@@ -31,11 +31,7 @@ namespace HWY_NAMESPACE {
 
 
 
-
-
-
-
-template <typename Lane, size_t N, int kPow2>
+template <typename Lane, size_t N>
 struct Simd {
   constexpr Simd() = default;
   using T = Lane;
@@ -43,100 +39,52 @@ struct Simd {
 
   
   
+
   
-  static constexpr size_t kPrivateN = N;
-  static constexpr int kPrivatePow2 = kPow2;
-
-  template <typename NewT>
-  static constexpr size_t NewN() {
-    
-    return (N * sizeof(T) + sizeof(NewT) - 1) / sizeof(NewT);
-  }
-
-#if HWY_HAVE_SCALABLE
-  template <typename NewT>
-  static constexpr int Pow2Ratio() {
-    return (sizeof(NewT) > sizeof(T))
-               ? static_cast<int>(CeilLog2(sizeof(NewT) / sizeof(T)))
-               : -static_cast<int>(CeilLog2(sizeof(T) / sizeof(NewT)));
-  }
-#endif
+  template <typename NewLane>
+  using Rebind = Simd<NewLane, N>;
 
   
   
-
-
-#if HWY_HAVE_SCALABLE
-  template <typename NewT>
-  using Rebind = Simd<NewT, N, kPow2 + Pow2Ratio<NewT>()>;
-#else
-  template <typename NewT>
-  using Rebind = Simd<NewT, N, kPow2>;
-#endif
+  template <typename NewLane>
+  using Repartition =
+      Simd<NewLane, (N * sizeof(Lane) + sizeof(NewLane) - 1) / sizeof(NewLane)>;
 
   
-  template <typename NewT>
-  using Repartition = Simd<NewT, NewN<NewT>(), kPow2>;
-
-
-
-#if HWY_HAVE_SCALABLE
   
+  using Half = Simd<T, (N + 1) / 2>;
+
   
-  using Half = Simd<T, (N + 1) / 2, kPow2 - 1>;
-#else
-  using Half = Simd<T, (N + 1) / 2, kPow2>;
-#endif
-
-
-#if HWY_HAVE_SCALABLE
-  using Twice = Simd<T, 2 * N, kPow2 + 1>;
-#else
-  using Twice = Simd<T, 2 * N, kPow2>;
-#endif
+  using Twice = Simd<T, 2 * N>;
 };
 
 namespace detail {
-
-#if HWY_HAVE_SCALABLE
-
-template <typename T, size_t N, int kPow2>
-constexpr bool IsFull(Simd<T, N, kPow2> ) {
-  return N == HWY_LANES(T) && kPow2 == 0;
-}
-
-#endif
 
 
 
 
 
 constexpr size_t ScaleByPower(size_t N, int pow2) {
-  return pow2 >= 0 ? (N << pow2) : (N >> (-pow2));
+#if HWY_TARGET == HWY_RVV
+  
+  return pow2 >= 0 ? (N << pow2) : HWY_MAX(1, (N >> (-pow2)));
+#else
+  
+  return HWY_MAX(1, N >> HWY_MAX(-pow2, 0));
+#endif
 }
 
 
 template <typename T, int kPow2>
 struct ScalableTagChecker {
   static_assert(-3 <= kPow2 && kPow2 <= 3, "Fraction must be 1/8 to 8");
-#if HWY_TARGET == HWY_RVV
-  
-  using type = Simd<T, HWY_LANES(T), kPow2>;
-#elif HWY_HAVE_SCALABLE
-  
-  using type = Simd<T, HWY_LANES(T), HWY_MIN(kPow2, 0)>;
-#elif HWY_TARGET == HWY_SCALAR
-  using type = Simd<T, 1, 0>;
-#else
-  
-  using type = Simd<T, ScaleByPower(HWY_LANES(T), HWY_MIN(kPow2, 0)), 0>;
-#endif
+  using type = Simd<T, ScaleByPower(HWY_LANES(T), kPow2)>;
 };
 
 template <typename T, size_t kLimit>
 struct CappedTagChecker {
   static_assert(kLimit != 0, "Does not make sense to have zero lanes");
-  using type = Simd<T, HWY_MIN(kLimit, HWY_MAX_BYTES / sizeof(T)), 0>;
+  using type = Simd<T, HWY_MIN(kLimit, HWY_LANES(T))>;
 };
 
 template <typename T, size_t kNumLanes>
@@ -147,7 +95,7 @@ struct FixedTagChecker {
   
   static_assert(kNumLanes == 1, "Scalar only supports one lane");
 #endif
-  using type = Simd<T, kNumLanes, 0>;
+  using type = Simd<T, kNumLanes>;
 };
 
 }  
@@ -170,6 +118,7 @@ using ScalableTag = typename detail::ScalableTagChecker<T, kPow2>::type;
 
 template <typename T, size_t kLimit>
 using CappedTag = typename detail::CappedTagChecker<T, kLimit>::type;
+
 
 
 
@@ -227,12 +176,6 @@ using Twice = typename D::Twice;
 #define HWY_IF_NOT_LANE_SIZE_D(D, bytes) HWY_IF_NOT_LANE_SIZE(TFromD<D>, bytes)
 
 
-#define HWY_IF_LT128_D(D) \
-  hwy::EnableIf<D::kPrivateN * sizeof(TFromD<D>) < 16>* = nullptr
-#define HWY_IF_GE128_D(D) \
-  hwy::EnableIf<D::kPrivateN * sizeof(TFromD<D>) >= 16>* = nullptr
-
-
 #define HWY_IF_UNSIGNED_V(V) HWY_IF_UNSIGNED(TFromV<V>)
 #define HWY_IF_SIGNED_V(V) HWY_IF_SIGNED(TFromV<V>)
 #define HWY_IF_FLOAT_V(V) HWY_IF_FLOAT(TFromV<V>)
@@ -240,46 +183,29 @@ using Twice = typename D::Twice;
 
 
 
-#define HWY_IF_LANES_ARE(T, V) EnableIf<IsSameT<T, TFromV<V>>::value>* = nullptr
-
-template <class D>
-HWY_INLINE HWY_MAYBE_UNUSED constexpr int Pow2(D ) {
-  return D::kPrivatePow2;
-}
-
-
-#define HWY_IF_POW2_GE(D, MIN) hwy::EnableIf<Pow2<D>(D()) >= (MIN)>* = nullptr
-
-#if HWY_HAVE_SCALABLE
+#define HWY_IF_LANES_ARE(T, V) \
+  EnableIf<IsSameT<T, TFromD<DFromV<V>>>::value>* = nullptr
 
 
 
 
 
-
-template <class D>
-HWY_INLINE HWY_MAYBE_UNUSED constexpr size_t MaxLanes(D) {
-  return detail::ScaleByPower(HWY_MIN(D::kPrivateN, HWY_LANES(TFromD<D>)),
-                              D::kPrivatePow2);
-}
-
-#else
-
-
-template <class D>
-HWY_INLINE HWY_MAYBE_UNUSED constexpr size_t MaxLanes(D) {
-  return D::kPrivateN;
-}
-
-
-
-
-template <typename T, size_t N, int kPow2>
-HWY_INLINE HWY_MAYBE_UNUSED size_t Lanes(Simd<T, N, kPow2>) {
+template <typename T, size_t N>
+HWY_INLINE HWY_MAYBE_UNUSED constexpr size_t MaxLanes(Simd<T, N>) {
   return N;
 }
 
-#endif  
+
+#if HWY_TARGET != HWY_RVV && HWY_TARGET != HWY_SVE2 && HWY_TARGET != HWY_SVE
+
+
+
+template <typename T, size_t N>
+HWY_INLINE HWY_MAYBE_UNUSED size_t Lanes(Simd<T, N>) {
+  return N;
+}
+
+#endif
 
 
 
@@ -292,7 +218,7 @@ HWY_INLINE HWY_MAYBE_UNUSED size_t Lanes(Simd<T, N, kPow2>) {
 
 
 #if HWY_COMPILER_GCC && !HWY_COMPILER_CLANG && \
-    ((defined(_WIN32) || defined(_WIN64)) || HWY_ARCH_ARM_A64)
+    ((defined(_WIN32) || defined(_WIN64)) || HWY_ARCH_ARM64)
 template <class V>
 using VecArg = const V&;
 #else

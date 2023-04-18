@@ -27,7 +27,7 @@ namespace hwy {
 
 
 #define HWY_MAJOR 0
-#define HWY_MINOR 16
+#define HWY_MINOR 15
 #define HWY_PATCH 0
 
 
@@ -37,9 +37,7 @@ namespace hwy {
 
 
 
-#define HWY_FULL1(T) hwy::HWY_NAMESPACE::ScalableTag<T>
-#define HWY_FULL2(T, LMUL) \
-  hwy::HWY_NAMESPACE::ScalableTag<T, CeilLog2(HWY_MAX(0, LMUL))>
+#define HWY_FULL1(T) hwy::HWY_NAMESPACE::Simd<T, HWY_LANES(T)>
 #define HWY_3TH_ARG(arg1, arg2, arg3, ...) arg3
 
 #define HWY_FULL_RECOMPOSER(args_with_paren) HWY_3TH_ARG args_with_paren
@@ -50,7 +48,7 @@ namespace hwy {
 
 
 #define HWY_CAPPED(T, MAX_N) \
-  hwy::HWY_NAMESPACE::CappedTag<T, HWY_MIN(MAX_N, HWY_LANES(T))>
+  hwy::HWY_NAMESPACE::Simd<T, HWY_MIN(MAX_N, HWY_LANES(T))>
 
 
 
@@ -111,7 +109,6 @@ struct FunctionCache {
   template <FunctionType* const table[]>
   static RetType ChooseAndCall(Args... args) {
     
-    ChosenTarget& chosen_target = GetChosenTarget();
     chosen_target.Update();
     return (table[chosen_target.GetIndex()])(args...);
   }
@@ -266,14 +263,9 @@ FunctionCache<RetType, Args...> FunctionCacheFactory(RetType (*)(Args...)) {
           HWY_CHOOSE_SCALAR(FUNC_NAME),                                    \
   }
 #define HWY_DYNAMIC_DISPATCH(FUNC_NAME) \
-  (*(HWY_DISPATCH_TABLE(FUNC_NAME)[hwy::GetChosenTarget().GetIndex()]))
+  (*(HWY_DISPATCH_TABLE(FUNC_NAME)[hwy::chosen_target.GetIndex()]))
 
 #endif  
-
-
-#define HWY_CAP_INTEGER64 HWY_HAVE_INTEGER64
-#define HWY_CAP_FLOAT16 HWY_HAVE_FLOAT16
-#define HWY_CAP_FLOAT64 HWY_HAVE_FLOAT64
 
 }  
 
@@ -289,6 +281,13 @@ FunctionCache<RetType, Args...> FunctionCacheFactory(RetType (*)(Args...)) {
 #undef HWY_HIGHWAY_PER_TARGET
 #else
 #define HWY_HIGHWAY_PER_TARGET
+#endif
+
+#undef HWY_FULL2
+#if HWY_TARGET == HWY_RVV
+#define HWY_FULL2(T, LMUL) hwy::HWY_NAMESPACE::Simd<T, HWY_LANES(T) * (LMUL)>
+#else
+#define HWY_FULL2(T, LMUL) hwy::HWY_NAMESPACE::Simd<T, HWY_LANES(T)>
 #endif
 
 

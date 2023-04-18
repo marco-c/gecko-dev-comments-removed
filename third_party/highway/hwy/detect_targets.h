@@ -161,6 +161,11 @@
 
 #ifndef HWY_BASELINE_TARGETS
 
+#if defined(HWY_EMULATE_SVE)
+#define HWY_BASELINE_TARGETS HWY_SVE  // does not support SVE2
+#define HWY_BASELINE_AVX3_DL 0
+#else
+
 
 
 
@@ -301,6 +306,8 @@
    HWY_BASELINE_SVE | HWY_BASELINE_NEON | HWY_BASELINE_SSSE3 |              \
    HWY_BASELINE_SSE4 | HWY_BASELINE_AVX2 | HWY_BASELINE_AVX3 |              \
    HWY_BASELINE_AVX3_DL | HWY_BASELINE_RVV)
+
+#endif  
 
 #else
 
