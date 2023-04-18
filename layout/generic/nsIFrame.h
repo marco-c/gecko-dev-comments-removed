@@ -1461,8 +1461,8 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  static void InsetBorderRadii(nscoord aRadii[8], const nsMargin& aOffsets);
-  static void OutsetBorderRadii(nscoord aRadii[8], const nsMargin& aOffsets);
+
+  static void AdjustBorderRadii(nscoord aRadii[8], const nsMargin& aOffsets);
 
   
 
@@ -1481,8 +1481,7 @@ class nsIFrame : public nsQueryFrame {
   bool GetMarginBoxBorderRadii(nscoord aRadii[8]) const;
   bool GetPaddingBoxBorderRadii(nscoord aRadii[8]) const;
   bool GetContentBoxBorderRadii(nscoord aRadii[8]) const;
-  bool GetBoxBorderRadii(nscoord aRadii[8], nsMargin aOffset,
-                         bool aIsOutset) const;
+  bool GetBoxBorderRadii(nscoord aRadii[8], const nsMargin& aOffset) const;
   bool GetShapeBoxBorderRadii(nscoord aRadii[8]) const;
 
   
