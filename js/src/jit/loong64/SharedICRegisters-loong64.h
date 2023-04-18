@@ -34,13 +34,6 @@ static constexpr Register ICStubReg = t0;
 
 
 
-static constexpr Register ExtractTemp0 = s7;
-static constexpr Register ExtractTemp1 = s8;
-
-
-
-
-
 
 static constexpr FloatRegister FloatReg0 = f0;
 static constexpr FloatRegister FloatReg1 = f1;

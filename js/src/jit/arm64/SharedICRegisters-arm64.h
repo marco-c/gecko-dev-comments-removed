@@ -43,15 +43,6 @@ static constexpr Register ICStubReg = r9;
 
 
 
-static constexpr Register ExtractTemp0 = r24;
-static constexpr Register ExtractTemp1 = r25;
-
-
-
-
-
-
-
 static constexpr FloatRegister FloatReg0 = {FloatRegisters::d0,
                                             FloatRegisters::Double};
 static constexpr FloatRegister FloatReg1 = {FloatRegisters::d1,
