@@ -1868,6 +1868,13 @@ pref("browser.contentblocking.report.proxy.enabled", false);
 pref("browser.contentblocking.report.show_mobile_app", true);
 
 
+
+pref("browser.vpn_promo.disallowed_regions", "ae,by,cn,cu,iq,ir,kp,om,ru,sd,sy,tm,tr,ua");
+
+
+pref("browser.vpn_promo.enabled", true);
+
+
 pref("browser.contentblocking.report.vpn.enabled", true);
 
 pref("browser.contentblocking.report.vpn_regions", "us,ca,nz,sg,my,gb,de,fr");
