@@ -282,6 +282,15 @@ class RaptorRunner(MozbuildObject):
                         "Run `./mach browsertime --setup --clobber` to set it up."
                     )
 
+                
+                
+                
+                print(
+                    "Setting --clean to True to rebuild Python "
+                    "environment for Browsertime upgrade..."
+                )
+                self.config["clean"] = True
+
             print("Using browsertime version %s from %s" % _get_browsertime_version())
 
         finally:
