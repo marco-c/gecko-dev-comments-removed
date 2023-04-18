@@ -701,6 +701,14 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
     switch (aCall) {
       case SYS_RECVMSG:
       case SYS_SENDMSG:
+        
+        
+        
+        
+      case SYS_RECVFROM:
+      case SYS_SENDTO:
+      case SYS_RECV:
+      case SYS_SEND:
         return Some(Allow());
 
       case SYS_SOCKETPAIR: {
@@ -1255,8 +1263,6 @@ class ContentSandboxPolicy : public SandboxPolicyCommon {
   Maybe<ResultExpr> EvaluateSocketCall(int aCall,
                                        bool aHasArgs) const override {
     switch (aCall) {
-      case SYS_RECVFROM:
-      case SYS_SENDTO:
       case SYS_SENDMMSG:  
         return Some(Allow());
 
@@ -1270,14 +1276,17 @@ class ContentSandboxPolicy : public SandboxPolicyCommon {
           return Some(Allow());
         }
         return SandboxPolicyCommon::EvaluateSocketCall(aCall, aHasArgs);
-      case SYS_RECV:
-      case SYS_SEND:
+
+        
       case SYS_GETSOCKOPT:
       case SYS_SETSOCKOPT:
+        
+        
       case SYS_GETSOCKNAME:
       case SYS_GETPEERNAME:
       case SYS_SHUTDOWN:
         return Some(Allow());
+
       case SYS_ACCEPT:
       case SYS_ACCEPT4:
         if (mUsingRenderDoc) {
@@ -1910,22 +1919,15 @@ class SocketProcessSandboxPolicy final : public SandboxPolicyCommon {
   Maybe<ResultExpr> EvaluateSocketCall(int aCall,
                                        bool aHasArgs) const override {
     switch (aCall) {
+      case SYS_SOCKET:
+      case SYS_CONNECT:
       case SYS_BIND:
         return Some(Allow());
 
-      case SYS_SOCKET:
-        return Some(Allow());
-
-      case SYS_CONNECT:
-        return Some(Allow());
-
-      case SYS_RECVFROM:
-      case SYS_SENDTO:
+        
       case SYS_SENDMMSG:
         return Some(Allow());
 
-      case SYS_RECV:
-      case SYS_SEND:
       case SYS_GETSOCKOPT:
       case SYS_SETSOCKOPT:
       case SYS_GETSOCKNAME:
