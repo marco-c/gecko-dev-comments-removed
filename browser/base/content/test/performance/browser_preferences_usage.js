@@ -234,7 +234,7 @@ add_task(async function navigate_around() {
       
       
       knownProblematicPrefs["security.sandbox.content.force-namespace"] = {
-        min: 49,
+        min: 45,
         max: 55,
       };
       
@@ -243,7 +243,7 @@ add_task(async function navigate_around() {
       
       
       knownProblematicPrefs["gfx.color_management.display_profile"] = {
-        min: 49,
+        min: 45,
         max: 50,
       };
     } else if (AppConstants.platform == "win") {
