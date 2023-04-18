@@ -239,8 +239,12 @@ static inline bool WasmDebuggerActive(JSContext* cx) {
 
 
 bool wasm::BaselineAvailable(JSContext* cx) {
-  
-  return cx->options().wasmBaseline() && BaselinePlatformSupport();
+  if (!cx->options().wasmBaseline() || !BaselinePlatformSupport()) {
+    return false;
+  }
+  bool isDisabled = false;
+  MOZ_ALWAYS_TRUE(BaselineDisabledByFeatures(cx, &isDisabled));
+  return !isDisabled;
 }
 
 bool wasm::IonAvailable(JSContext* cx) {
@@ -264,6 +268,20 @@ static inline bool Append(JSStringBuilder* reason, const char (&s)[ArrayLength],
     return false;
   }
   *sep = ',';
+  return true;
+}
+
+bool wasm::BaselineDisabledByFeatures(JSContext* cx, bool* isDisabled,
+                                      JSStringBuilder* reason) {
+  
+  bool testSerialization = WasmTestSerializationFlag(cx);
+  if (reason) {
+    char sep = 0;
+    if (testSerialization && !Append(reason, "testSerialization", &sep)) {
+      return false;
+    }
+  }
+  *isDisabled = testSerialization;
   return true;
 }
 
@@ -303,6 +321,7 @@ bool wasm::CraneliftDisabledByFeatures(JSContext* cx, bool* isDisabled,
   
   
   bool debug = WasmDebuggerActive(cx);
+  bool testSerialization = WasmTestSerializationFlag(cx);
   bool functionReferences = WasmFunctionReferencesFlag(cx);
   bool gc = WasmGcFlag(cx);
 #ifdef JS_CODEGEN_ARM64
@@ -315,6 +334,9 @@ bool wasm::CraneliftDisabledByFeatures(JSContext* cx, bool* isDisabled,
   if (reason) {
     char sep = 0;
     if (debug && !Append(reason, "debug", &sep)) {
+      return false;
+    }
+    if (testSerialization && !Append(reason, "testSerialization", &sep)) {
       return false;
     }
     if (functionReferences && !Append(reason, "function-references", &sep)) {
@@ -330,7 +352,8 @@ bool wasm::CraneliftDisabledByFeatures(JSContext* cx, bool* isDisabled,
       return false;
     }
   }
-  *isDisabled = debug || functionReferences || gc || simdOnNonAarch64 || exn;
+  *isDisabled = debug || testSerialization || functionReferences || gc ||
+                simdOnNonAarch64 || exn;
   return true;
 }
 
