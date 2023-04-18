@@ -1839,6 +1839,8 @@ nsresult nsObjectLoadingContent::OpenChannel() {
     if (cspToInherit) {
       loadState->SetCsp(cspToInherit);
     }
+    loadState->SetTriggeringSandboxFlags(sandboxFlags);
+
     
     
     auto referrerInfo = MakeRefPtr<ReferrerInfo>(*doc);
