@@ -197,18 +197,9 @@ exports.isNodeValid = isNodeValid;
 
 
 
-
-
-
-
-function CanvasFrameAnonymousContentHelper(
-  highlighterEnv,
-  nodeBuilder,
-  { waitForDocumentToLoad = true } = {}
-) {
+function CanvasFrameAnonymousContentHelper(highlighterEnv, nodeBuilder) {
   this.highlighterEnv = highlighterEnv;
   this.nodeBuilder = nodeBuilder;
-  this.waitForDocumentToLoad = !!waitForDocumentToLoad;
 
   this._onWindowReady = this._onWindowReady.bind(this);
   this.highlighterEnv.on("window-ready", this._onWindowReady);
@@ -228,9 +219,7 @@ CanvasFrameAnonymousContentHelper.prototype = {
     const doc = this.highlighterEnv.document;
     if (
       doc.documentElement &&
-      (!this.waitForDocumentToLoad ||
-        isDocumentReady(doc) ||
-        doc.readyState !== "uninitialized")
+      (isDocumentReady(doc) || doc.readyState !== "uninitialized")
     ) {
       this._insert();
     }
@@ -266,9 +255,7 @@ CanvasFrameAnonymousContentHelper.prototype = {
   },
 
   async _insert() {
-    if (this.waitForDocumentToLoad) {
-      await waitForContentLoaded(this.highlighterEnv.window);
-    }
+    await waitForContentLoaded(this.highlighterEnv.window);
     if (!this.highlighterEnv) {
       
       return;
@@ -306,9 +293,7 @@ CanvasFrameAnonymousContentHelper.prototype = {
         }
       }
 
-      if (this.waitForDocumentToLoad) {
-        await waitForContentLoaded(this._iframe);
-      }
+      await waitForContentLoaded(this._iframe);
       if (!this.highlighterEnv) {
         
         return;
@@ -341,12 +326,8 @@ CanvasFrameAnonymousContentHelper.prototype = {
     
     
     try {
-      
-      
-      const forceSynchronousLayoutUpdate = !this.waitForDocumentToLoad;
       this._content = this.anonymousContentDocument.insertAnonymousContent(
-        node,
-        forceSynchronousLayoutUpdate
+        node
       );
     } catch (e) {
       
