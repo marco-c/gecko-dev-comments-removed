@@ -720,7 +720,7 @@ nsresult XRE_InitChildProcess(int aArgc, char* aArgv[],
       if (XRE_GetProcessType() != GeckoProcessType_RemoteSandboxBroker) {
         
         
-        mozilla::FilePreferences::InitDirectoriesAllowlist();
+        mozilla::FilePreferences::InitDirectoriesWhitelist();
         mozilla::FilePreferences::InitPrefs();
         OverrideDefaultLocaleIfNeeded();
       }

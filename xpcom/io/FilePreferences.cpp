@@ -26,7 +26,7 @@ static StaticMutex sMutex MOZ_UNANNOTATED;
 static bool sBlockUNCPaths = false;
 typedef nsTArray<nsString> WinPaths;
 
-static WinPaths& PathAllowlist() {
+static WinPaths& PathWhitelist() {
   sMutex.AssertCurrentThreadOwns();
 
   static WinPaths sPaths;
@@ -80,8 +80,8 @@ static void AllowUNCDirectory(char const* directory) {
 
   StaticMutexAutoLock lock(sMutex);
 
-  if (!PathAllowlist().Contains(path)) {
-    PathAllowlist().AppendElement(path);
+  if (!PathWhitelist().Contains(path)) {
+    PathWhitelist().AppendElement(path);
   }
 }
 
@@ -119,7 +119,7 @@ void InitPrefs() {
       (sForbiddenPathsEmpty = ForbiddenPaths().Length() == 0);
 }
 
-void InitDirectoriesAllowlist() {
+void InitDirectoriesWhitelist() {
   
   AllowUNCDirectory(NS_GRE_DIR);
   
@@ -278,7 +278,7 @@ bool IsBlockedUNCPath(const nsAString& aFilePath) {
 
   StaticMutexAutoLock lock(sMutex);
 
-  for (const auto& allowedPrefix : PathAllowlist()) {
+  for (const auto& allowedPrefix : PathWhitelist()) {
     if (StringBeginsWith(normalized, allowedPrefix)) {
       if (normalized.Length() == allowedPrefix.Length()) {
         return false;
@@ -358,9 +358,9 @@ bool StartsWithDiskDesignatorAndBackslash(const nsAString& aAbsolutePath) {
 
 void testing::SetBlockUNCPaths(bool aBlock) { sBlockUNCPaths = aBlock; }
 
-void testing::AddDirectoryToAllowlist(nsAString const& aPath) {
+void testing::AddDirectoryToWhitelist(nsAString const& aPath) {
   StaticMutexAutoLock lock(sMutex);
-  PathAllowlist().AppendElement(aPath);
+  PathWhitelist().AppendElement(aPath);
 }
 
 bool testing::NormalizePath(nsAString const& aPath, nsAString& aNormalized) {
