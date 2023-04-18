@@ -61,16 +61,6 @@ enum class KeySizeStatus {
   AlreadyBad = 3,
 };
 
-
-enum class SHA1ModeResult {
-  NeverChecked = 0,
-  SucceededWithoutSHA1 = 1,
-  SucceededWithImportedRoot = 2,
-  SucceededWithImportedRootOrSHA1Before2016 = 3,
-  SucceededWithSHA1 = 4,
-  Failed = 5,
-};
-
 enum class CRLiteMode {
   Disabled = 0,
   TelemetryOnly = 1,
@@ -170,7 +160,6 @@ class CertVerifier {
        EVStatus* evStatus = nullptr,
        OCSPStaplingStatus* ocspStaplingStatus = nullptr,
        KeySizeStatus* keySizeStatus = nullptr,
-       SHA1ModeResult* sha1ModeResult = nullptr,
        PinningTelemetryInfo* pinningTelemetryInfo = nullptr,
        CertificateTransparencyInfo* ctInfo = nullptr,
        bool* isBuiltChainRootBuiltInRoot = nullptr);
@@ -191,21 +180,9 @@ class CertVerifier {
        EVStatus* evStatus = nullptr,
        OCSPStaplingStatus* ocspStaplingStatus = nullptr,
        KeySizeStatus* keySizeStatus = nullptr,
-       SHA1ModeResult* sha1ModeResult = nullptr,
        PinningTelemetryInfo* pinningTelemetryInfo = nullptr,
        CertificateTransparencyInfo* ctInfo = nullptr,
        bool* isBuiltChainRootBuiltInRoot = nullptr);
-
-  enum class SHA1Mode {
-    Allowed = 0,
-    Forbidden = 1,
-    
-    
-    
-    UsedToBeBefore2016ButNowIsForbidden = 2,
-    ImportedRoot = 3,
-    ImportedRootOrBefore2016 = 4,
-  };
 
   enum OcspDownloadConfig { ocspOff = 0, ocspOn = 1, ocspEVOnly = 2 };
   enum OcspStrictConfig { ocspRelaxed = 0, ocspStrict };
@@ -218,7 +195,7 @@ class CertVerifier {
   CertVerifier(OcspDownloadConfig odc, OcspStrictConfig osc,
                mozilla::TimeDuration ocspTimeoutSoft,
                mozilla::TimeDuration ocspTimeoutHard,
-               uint32_t certShortLifetimeInDays, SHA1Mode sha1Mode,
+               uint32_t certShortLifetimeInDays,
                NetscapeStepUpPolicy netscapeStepUpPolicy,
                CertificateTransparencyMode ctMode, CRLiteMode crliteMode,
                const Vector<EnterpriseCert>& thirdPartyCerts);
@@ -231,7 +208,6 @@ class CertVerifier {
   const mozilla::TimeDuration mOCSPTimeoutSoft;
   const mozilla::TimeDuration mOCSPTimeoutHard;
   const uint32_t mCertShortLifetimeInDays;
-  const SHA1Mode mSHA1Mode;
   const NetscapeStepUpPolicy mNetscapeStepUpPolicy;
   const CertificateTransparencyMode mCTMode;
   const CRLiteMode mCRLiteMode;
@@ -257,12 +233,6 @@ class CertVerifier {
       const nsTArray<nsTArray<uint8_t>>& builtChain,
       mozilla::pkix::Input sctsFromTLS, mozilla::pkix::Time time,
        CertificateTransparencyInfo* ctInfo);
-
-  
-  
-  
-  
-  bool SHA1ModeMoreRestrictiveThanGivenMode(SHA1Mode mode);
 };
 
 mozilla::pkix::Result IsCertBuiltInRoot(pkix::Input certInput, bool& result);
