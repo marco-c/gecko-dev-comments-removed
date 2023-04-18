@@ -177,7 +177,7 @@ class Log extends Module {
     
     
 
-    this.messageHandler.emitMessageHandlerEvent("log.entryAdded", entry);
+    this.emitProtocolEvent("log.entryAdded", entry);
   };
 
   #onJavaScriptError = (eventName, data = {}) => {
@@ -192,7 +192,7 @@ class Log extends Module {
       stackTrace: this.#buildStackTrace(stacktrace),
     };
 
-    this.messageHandler.emitMessageHandlerEvent("log.entryAdded", entry);
+    this.emitProtocolEvent("log.entryAdded", entry);
   };
 
   _getLogEntryLevelFromConsoleMethod(method) {

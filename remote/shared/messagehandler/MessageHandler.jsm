@@ -123,10 +123,18 @@ class MessageHandler extends EventEmitter {
 
 
 
-  emitMessageHandlerEvent(method, params) {
+
+
+
+
+
+  emitEvent(name, data, options = {}) {
+    const { isProtocolEvent = false } = options;
+
     this.emit("message-handler-event", {
-      method,
-      params,
+      name,
+      data,
+      isProtocolEvent,
       sessionId: this.sessionId,
     });
   }

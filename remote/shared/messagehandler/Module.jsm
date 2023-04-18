@@ -7,6 +7,8 @@
 const EXPORTED_SYMBOLS = ["Module"];
 
 class Module {
+  #messageHandler;
+
   
 
 
@@ -14,7 +16,7 @@ class Module {
 
 
   constructor(messageHandler) {
-    this._messageHandler = messageHandler;
+    this.#messageHandler = messageHandler;
   }
 
   
@@ -30,12 +32,44 @@ class Module {
 
 
 
+
+
+
+
+
+
+
+  emitEvent(name, data) {
+    this.messageHandler.emitEvent(name, data, { isProtocolEvent: false });
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  emitProtocolEvent(name, data) {
+    this.messageHandler.emitEvent(name, data, {
+      isProtocolEvent: true,
+    });
+  }
+
+  
+
+
+
   supportsMethod(methodName) {
     return this.constructor.supportsMethod(methodName);
   }
 
   get messageHandler() {
-    return this._messageHandler;
+    return this.#messageHandler;
   }
 
   static get supportedEvents() {
