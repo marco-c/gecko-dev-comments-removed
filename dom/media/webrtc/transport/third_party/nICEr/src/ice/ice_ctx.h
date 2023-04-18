@@ -68,7 +68,8 @@ typedef struct nr_ice_foundation_ {
 
   nr_transport_addr addr;
   int type;
-  nr_ice_stun_server *stun_server;
+  
+  nr_transport_addr stun_server_addr;
 
   STAILQ_ENTRY(nr_ice_foundation_) entry;
 } nr_ice_foundation;
