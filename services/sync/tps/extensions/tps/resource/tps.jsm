@@ -984,15 +984,21 @@ var TPS = {
     return root;
   },
 
+  _pingValidator: null,
+
   
   
-  pingValidator(ping) {
-    return {
-      validate() {
-        Logger.logInfo("Not validating ping -- disabled by pref");
-        return { valid: true, errors: [] };
-      },
-    };
+  get pingValidator() {
+    return this._pingValidator
+      ? this._pingValidator
+      : {
+          validate() {
+            Logger.logInfo(
+              "Not validating ping -- disabled by pref or failure to load schema"
+            );
+            return { valid: true, errors: [] };
+          },
+        };
   },
 
   
@@ -1018,7 +1024,7 @@ var TPS = {
       let schema = JSON.parse(gTextDecoder.decode(bytes));
       Logger.logInfo("Successfully loaded schema");
 
-      this.pingValidator = new JsonSchema.Validator(schema);
+      this._pingValidator = new JsonSchema.Validator(schema);
     } catch (e) {
       this.DumpError(
         `Failed to load ping schema relative to "${testFile}".`,
