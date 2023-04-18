@@ -38,7 +38,6 @@ class Document;
 class InternalRequest;
 class InternalResponse;
 class PerformanceStorage;
-class PerformanceTimingData;
 
 
 
@@ -124,9 +123,6 @@ class FetchDriver final : public nsIStreamListener,
   void SetOriginStack(UniquePtr<SerializedStackHolder>&& aOriginStack) {
     mOriginStack = std::move(aOriginStack);
   }
-
-  PerformanceTimingData* GetPerformanceTimingData(nsAString& aInitiatorType,
-                                                  nsAString& aEntryName);
 
   
   void RunAbortAlgorithm() override;

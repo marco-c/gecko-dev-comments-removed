@@ -30,14 +30,10 @@ using FetchEventRespondWithResult =
 using FetchEventRespondWithPromise =
     MozPromise<FetchEventRespondWithResult, CancelInterceptionArgs, true>;
 
-using FetchEventPreloadResponseArgs =
-    Tuple<SafeRefPtr<InternalResponse>, IPCPerformanceTimingData, nsString,
-          nsString>;
-
 
 
 using FetchEventPreloadResponsePromise =
-    MozPromise<FetchEventPreloadResponseArgs, int, true>;
+    MozPromise<SafeRefPtr<InternalResponse>, int, true>;
 
 using ServiceWorkerOpPromise =
     MozPromise<ServiceWorkerOpResult, nsresult, true>;
