@@ -63,7 +63,7 @@ class WalkerEventListener {
     const inspectorFront = await targetFront.getFront("inspector");
     
     
-    if (inspectorFront.isDestroyed()) {
+    if (inspectorFront.isDestroyed() || !this._listenerMap) {
       return;
     }
     const { walker } = inspectorFront;
