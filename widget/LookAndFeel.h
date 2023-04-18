@@ -536,7 +536,14 @@ class LookAndFeel {
 
   static void SetData(widget::FullLookAndFeel&& aTables);
   static void NotifyChangedAllWindows(widget::ThemeChangeKind);
-
+  static bool HasPendingGlobalThemeChange() {
+    return sGlobalThemeChanged;
+  }
+  static void HandleGlobalThemeChange() {
+    if (MOZ_UNLIKELY(HasPendingGlobalThemeChange())) {
+      DoHandleGlobalThemeChange();
+    }
+  }
   static void EnsureColorSchemesInitialized() {
     if (!sColorSchemeInitialized) {
       RecomputeColorSchemes();
@@ -550,6 +557,12 @@ class LookAndFeel {
  protected:
   static void RecomputeColorSchemes();
   static bool sColorSchemeInitialized;
+
+  static void DoHandleGlobalThemeChange();
+  
+  
+  
+  static bool sGlobalThemeChanged;
 };
 
 }  

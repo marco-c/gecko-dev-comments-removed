@@ -9950,7 +9950,7 @@ PresShell::Observe(nsISupports* aSubject, const char* aTopic,
   if (!nsCRT::strcmp(aTopic, "internal-look-and-feel-changed")) {
     
     auto kind = widget::ThemeChangeKind(aData[0]);
-    ThemeChanged(kind);
+    mPresContext->ThemeChanged(kind);
     return NS_OK;
   }
 

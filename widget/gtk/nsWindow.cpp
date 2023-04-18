@@ -4812,15 +4812,15 @@ void nsWindow::OnWindowStateEvent(GtkWidget* aWidget,
 }
 
 void nsWindow::OnDPIChanged() {
+  
+  
   if (mWidgetListener) {
     if (PresShell* presShell = mWidgetListener->GetPresShell()) {
       presShell->BackingScaleFactorChanged();
-      
-      
-      presShell->ThemeChanged(ThemeChangeKind::StyleAndLayout);
     }
     mWidgetListener->UIResolutionChanged();
   }
+  NotifyThemeChanged(ThemeChangeKind::StyleAndLayout);
 }
 
 void nsWindow::OnCheckResize() { mPendingConfigures++; }
@@ -4862,11 +4862,11 @@ void nsWindow::OnScaleChanged() {
   if (mWidgetListener) {
     if (PresShell* presShell = mWidgetListener->GetPresShell()) {
       presShell->BackingScaleFactorChanged();
-      
-      
-      presShell->ThemeChanged(ThemeChangeKind::StyleAndLayout);
     }
   }
+  
+  
+  NotifyThemeChanged(ThemeChangeKind::StyleAndLayout);
 
   DispatchResized();
 

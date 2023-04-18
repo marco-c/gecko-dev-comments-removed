@@ -17,6 +17,8 @@
 #include "nsIFrame.h"
 #include "nsIXULRuntime.h"
 #include "Theme.h"
+#include "SurfaceCacheUtils.h"
+#include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Services.h"
@@ -1037,12 +1039,60 @@ void nsXPLookAndFeel::RecordTelemetry() {
 
 namespace mozilla {
 
+static widget::ThemeChangeKind sGlobalThemeChangeKind{0};
 
 void LookAndFeel::NotifyChangedAllWindows(widget::ThemeChangeKind aKind) {
+  sGlobalThemeChanged = true;
+  sGlobalThemeChangeKind |= aKind;
+
   if (nsCOMPtr<nsIObserverService> obs = services::GetObserverService()) {
     const char16_t kind[] = {char16_t(aKind), 0};
     obs->NotifyObservers(nullptr, "internal-look-and-feel-changed", kind);
   }
+}
+
+void LookAndFeel::DoHandleGlobalThemeChange() {
+  MOZ_ASSERT(sGlobalThemeChanged);
+  sGlobalThemeChanged = false;
+  auto kind = std::exchange(sGlobalThemeChangeKind, widget::ThemeChangeKind(0));
+
+  
+  
+  
+  
+  
+  if (XRE_IsParentProcess() ||
+      !StaticPrefs::widget_non_native_theme_enabled()) {
+    if (nsCOMPtr<nsITheme> theme = do_GetNativeThemeDoNotUseDirectly()) {
+      theme->ThemeChanged();
+    }
+  }
+  if (nsCOMPtr<nsITheme> theme = do_GetBasicNativeThemeDoNotUseDirectly()) {
+    theme->ThemeChanged();
+  }
+
+  
+  LookAndFeel::Refresh();
+
+  
+  
+  PreferenceSheet::Refresh();
+
+  
+  
+  
+  image::SurfaceCacheUtils::DiscardAll();
+
+  if (XRE_IsParentProcess()) {
+    dom::ContentParent::BroadcastThemeUpdate(kind);
+  }
+
+  nsContentUtils::AddScriptRunner(
+      NS_NewRunnableFunction("HandleGlobalThemeChange", [] {
+        if (nsCOMPtr<nsIObserverService> obs = services::GetObserverService()) {
+          obs->NotifyObservers(nullptr, "look-and-feel-changed", nullptr);
+        }
+      }));
 }
 
 static bool ShouldUseStandinsForNativeColorForNonNativeTheme(
@@ -1090,6 +1140,7 @@ static bool ShouldUseStandinsForNativeColorForNonNativeTheme(
 ColorScheme LookAndFeel::sChromeColorScheme;
 ColorScheme LookAndFeel::sContentColorScheme;
 bool LookAndFeel::sColorSchemeInitialized;
+bool LookAndFeel::sGlobalThemeChanged;
 
 auto LookAndFeel::ColorSchemeSettingForChrome() -> ChromeColorSchemeSetting {
   switch (StaticPrefs::browser_theme_toolbar_theme()) {
