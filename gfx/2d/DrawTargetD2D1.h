@@ -200,7 +200,7 @@ class DrawTargetD2D1 : public DrawTarget {
 
   
   already_AddRefed<ID2D1Image> GetImageForLayerContent(
-      bool aShouldPreserveContent = true);
+      const IntRect* aBounds = nullptr, bool aShouldPreserveContent = true);
 
   ID2D1Image* CurrentTarget() {
     if (CurrentLayer().mCurrentList) {
