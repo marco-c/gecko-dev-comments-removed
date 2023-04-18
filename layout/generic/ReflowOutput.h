@@ -79,23 +79,6 @@ struct OverflowAreas {
   
   void SetAllTo(const nsRect& aRect);
 
-  
-  
-  void ApplyClipping(const nsRect& aBounds, PhysicalAxes aClipAxes,
-                     const nsSize& aOverflowMargin) {
-    ApplyOverflowClippingOnRect(InkOverflow(), aBounds, aClipAxes,
-                                aOverflowMargin);
-    ApplyOverflowClippingOnRect(ScrollableOverflow(), aBounds, aClipAxes,
-                                aOverflowMargin);
-  }
-
-  
-  
-  static void ApplyOverflowClippingOnRect(nsRect& aOverflowRect,
-                                          const nsRect& aBounds,
-                                          PhysicalAxes aClipAxes,
-                                          const nsSize& aOverflowMargin);
-
  private:
   nsRect mInk;
   nsRect mScrollable;
