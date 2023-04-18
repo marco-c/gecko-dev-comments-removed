@@ -12,7 +12,7 @@ const IMG_BYTES = atob(
 
 
 function setGlobalState(data, key) {
-  x = {
+  let x = {
     data,
     QueryInterface: ChromeUtils.generateQI([]),
   };
