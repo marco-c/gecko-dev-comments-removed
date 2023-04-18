@@ -1,7 +1,11 @@
 extern crate libc;
 
+use std::mem::MaybeUninit;
 use std::os::unix::io::RawFd;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::{io, ptr};
+
+use crate::advice::Advice;
 
 #[cfg(any(
     all(target_os = "linux", not(target_arch = "mips")),
@@ -42,13 +46,38 @@ impl MmapInner {
         let alignment = offset % page_size() as u64;
         let aligned_offset = offset - alignment;
         let aligned_len = len + alignment as usize;
-        if aligned_len == 0 {
-            
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidInput,
-                "memory map must have a non-zero length",
-            ));
-        }
+
+        
+        
+        
+        
+        
+        
+        let aligned_len = aligned_len.max(1);
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
 
         unsafe {
             let ptr = libc::mmap(
@@ -174,6 +203,7 @@ impl MmapInner {
             let alignment = self.ptr as usize % page_size();
             let ptr = self.ptr.offset(-(alignment as isize));
             let len = self.len + alignment;
+            let len = len.max(1);
             if libc::mprotect(ptr, len, prot) == 0 {
                 Ok(())
             } else {
@@ -208,20 +238,29 @@ impl MmapInner {
     pub fn len(&self) -> usize {
         self.len
     }
+
+    pub fn advise(&self, advice: Advice) -> io::Result<()> {
+        unsafe {
+            if libc::madvise(self.ptr, self.len, advice as i32) != 0 {
+                Err(io::Error::last_os_error())
+            } else {
+                Ok(())
+            }
+        }
+    }
 }
 
 impl Drop for MmapInner {
     fn drop(&mut self) {
         let alignment = self.ptr as usize % page_size();
+        let len = self.len + alignment;
+        let len = len.max(1);
+        
+        
+        
         unsafe {
-            assert!(
-                libc::munmap(
-                    self.ptr.offset(-(alignment as isize)),
-                    (self.len + alignment) as libc::size_t
-                ) == 0,
-                "unable to unmap mmap: {}",
-                io::Error::last_os_error()
-            );
+            let ptr = self.ptr.offset(-(alignment as isize));
+            libc::munmap(ptr, len as libc::size_t);
         }
     }
 }
@@ -230,16 +269,32 @@ unsafe impl Sync for MmapInner {}
 unsafe impl Send for MmapInner {}
 
 fn page_size() -> usize {
-    unsafe { libc::sysconf(libc::_SC_PAGESIZE) as usize }
+    static PAGE_SIZE: AtomicUsize = AtomicUsize::new(0);
+
+    match PAGE_SIZE.load(Ordering::Relaxed) {
+        0 => {
+            let page_size = unsafe { libc::sysconf(libc::_SC_PAGESIZE) as usize };
+
+            PAGE_SIZE.store(page_size, Ordering::Relaxed);
+
+            page_size
+        }
+        page_size => page_size,
+    }
 }
 
 pub fn file_len(file: RawFd) -> io::Result<u64> {
-    unsafe {
-        let mut stat: libc::stat = std::mem::zeroed();
+    #[cfg(not(any(target_os = "linux", target_os = "emscripten", target_os = "l4re")))]
+    use libc::{fstat, stat};
+    #[cfg(any(target_os = "linux", target_os = "emscripten", target_os = "l4re"))]
+    use libc::{fstat64 as fstat, stat64 as stat};
 
-        let result = libc::fstat(file, &mut stat);
+    unsafe {
+        let mut stat = MaybeUninit::<stat>::uninit();
+
+        let result = fstat(file, stat.as_mut_ptr());
         if result == 0 {
-            Ok(stat.st_size as u64)
+            Ok(stat.assume_init().st_size as u64)
         } else {
             Err(io::Error::last_os_error())
         }
