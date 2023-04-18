@@ -44,7 +44,6 @@ const execute = (context, details, kind, method) => {
   const { tabId, frameIds, allFrames } = details.target;
   const tab = tabManager.get(tabId);
 
-  
   options.hasActiveTabPermission = tab.hasActiveTabPermission;
   options.matches = tab.extension.allowedOrigins.patterns.map(
     host => host.pattern
