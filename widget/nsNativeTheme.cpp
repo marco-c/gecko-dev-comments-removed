@@ -31,6 +31,7 @@
 #include "mozilla/PresShell.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/dom/DocumentInlines.h"
+#include "mozilla/RelativeLuminanceUtils.h"
 #include <algorithm>
 
 using namespace mozilla;
@@ -555,6 +556,28 @@ static nsIFrame* GetBodyFrame(nsIFrame* aCanvasFrame) {
   return body->GetPrimaryFrame();
 }
 
+bool nsNativeTheme::IsDarkColor(nscolor aColor) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  constexpr float kThreshold = 0.179129;
+  return NS_GET_A(aColor) > 127 &&
+         RelativeLuminanceUtils::Compute(aColor) < kThreshold;
+}
+
 
 bool nsNativeTheme::IsDarkBackground(nsIFrame* aFrame) {
   
@@ -596,7 +619,7 @@ bool nsNativeTheme::IsDarkBackground(nsIFrame* aFrame) {
     }
   }
 
-  return LookAndFeel::IsDarkColor(color);
+  return IsDarkColor(color);
 }
 
 
