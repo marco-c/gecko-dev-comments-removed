@@ -12,9 +12,16 @@
   <meta name="assert" content="In this test, the ic unit is the advance width measure of the 水 (CJK water ideograph, U+6C34) glyph.">
 
   <style>
+  @font-face
+    {
+      font-family: IcTestFullWidth;
+      src: url(resources/IcTestFullWidth.woff2);
+    }
+
   div
     {
       float: left;
+      font-family: IcTestFullWidth;
       font-size: 80px; /* arbitrary font size */
       text-orientation: sideways;
       writing-mode: vertical-rl;
@@ -41,9 +48,10 @@
 
   <div id="reference-orange">&#27700;&#27700;&#27700;&#27700;&#27700;</div>
 
-  
+  <!--
 
+  水 (CJK water ideograph, U+6C34) glyph == &#27700;
 
+  水 (CJK water ideograph, U+6C34) glyph == &#x6C34;
 
-
-
+  -->
