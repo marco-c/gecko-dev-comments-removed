@@ -2,11 +2,6 @@
 
 
 
-
-const page = document.querySelector(":root[dialogroot=true]")
-  ? "spotlight"
-  : "about:welcome";
-
 export const AboutWelcomeUtils = {
   handleUserAction(action) {
     window.AWSendToParent("SPECIAL_ACTION", action);
@@ -14,10 +9,7 @@ export const AboutWelcomeUtils = {
   sendImpressionTelemetry(messageId, context) {
     window.AWSendEventTelemetry({
       event: "IMPRESSION",
-      event_context: {
-        ...context,
-        page,
-      },
+      event_context: context,
       message_id: messageId,
     });
   },
@@ -26,7 +18,7 @@ export const AboutWelcomeUtils = {
       event: eventName,
       event_context: {
         source: elementId,
-        page,
+        page: "about:welcome",
       },
       message_id: messageId,
     };
