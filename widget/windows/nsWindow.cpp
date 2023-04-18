@@ -2362,7 +2362,7 @@ void nsWindow::SetSizeModeInternal(nsSizeMode aMode, nsIScreen* aFullscreenTarge
     
     
     nsBaseWidget::InfallibleMakeFullScreen(requestedFullscreen, aFullscreenTarget);
-  
+
     if (mIsVisible && aMode != nsSizeMode_Minimized) {
       DispatchFocusToTopLevelWindow(true);
     }
