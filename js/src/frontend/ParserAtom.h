@@ -11,17 +11,39 @@
 #include "mozilla/MemoryReporting.h"  
 #include "mozilla/Range.h"            
 #include "mozilla/Span.h"             
+#include "mozilla/TextUtils.h"
+
+#include <stddef.h>
+#include <stdint.h>
+
+#include "jstypes.h"
+#include "NamespaceImports.h"
 
 #include "frontend/TypedIndex.h"  
 #include "js/HashTable.h"         
+#include "js/ProtoKey.h"          
+#include "js/Symbol.h"            
+#include "js/TypeDecls.h"         
+#include "js/Utility.h"           
 #include "js/Vector.h"            
+#include "util/Text.h"            
 #include "vm/CommonPropertyNames.h"
 #include "vm/StaticStrings.h"
-#include "vm/StringType.h"     
 #include "vm/WellKnownAtom.h"  
+
+struct JS_PUBLIC_API JSContext;
+struct JSRuntime;
+
+class JSAtom;
+class JSString;
+
+namespace mozilla {
+union Utf8Unit;
+}
 
 namespace js {
 
+class GenericPrinter;
 class LifoAlloc;
 class StringBuffer;
 
@@ -378,8 +400,6 @@ class alignas(alignof(uint32_t)) ParserAtom {
   uint32_t flags_ = 0;
 
   
-
-  static const uint32_t MAX_LENGTH = JSString::MAX_LENGTH;
 
   ParserAtom(uint32_t length, HashNumber hash, bool hasTwoByteChars)
       : hash_(hash),
