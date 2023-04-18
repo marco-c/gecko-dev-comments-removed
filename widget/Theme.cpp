@@ -107,30 +107,39 @@ struct MOZ_RAII AutoClipRect {
   DrawTarget& mDt;
 };
 
-static StaticRefPtr<nsITheme> gInstance;
-static StaticRefPtr<nsITheme> gRDMInstance;
+static StaticRefPtr<Theme> gNativeInstance;
+static StaticRefPtr<Theme> gNonNativeInstance;
+static StaticRefPtr<Theme> gRDMInstance;
 
 }  
 
+#ifdef ANDROID
+already_AddRefed<Theme> do_CreateNativeThemeDoNotUseDirectly() {
+  
+  return do_AddRef(new Theme(Theme::ScrollbarStyle()));
+}
+#endif
+
 already_AddRefed<nsITheme> do_GetBasicNativeThemeDoNotUseDirectly() {
-  if (MOZ_UNLIKELY(!gInstance)) {
+  if (MOZ_UNLIKELY(!gNonNativeInstance)) {
     UniquePtr<ScrollbarDrawing> scrollbarDrawing = Theme::ScrollbarStyle();
 #ifdef MOZ_WIDGET_COCOA
-    gInstance = new ThemeCocoa(std::move(scrollbarDrawing));
+    gNonNativeInstance = new ThemeCocoa(std::move(scrollbarDrawing));
 #else
-    gInstance = new Theme(std::move(scrollbarDrawing));
+    gNonNativeInstance = new Theme(std::move(scrollbarDrawing));
 #endif
-    ClearOnShutdown(&gInstance);
+    ClearOnShutdown(&gNonNativeInstance);
   }
-  return do_AddRef(gInstance);
+  return do_AddRef(gNonNativeInstance);
 }
 
-#ifdef ANDROID
 already_AddRefed<nsITheme> do_GetNativeThemeDoNotUseDirectly() {
-  
-  return do_GetBasicNativeThemeDoNotUseDirectly();
+  if (MOZ_UNLIKELY(!gNativeInstance)) {
+    gNativeInstance = do_CreateNativeThemeDoNotUseDirectly();
+    ClearOnShutdown(&gNativeInstance);
+  }
+  return do_AddRef(gNativeInstance);
 }
-#endif
 
 already_AddRefed<nsITheme> do_GetRDMThemeDoNotUseDirectly() {
   if (MOZ_UNLIKELY(!gRDMInstance)) {
@@ -167,10 +176,9 @@ void Theme::Shutdown() {
 
 void Theme::LookAndFeelChanged() {
   ThemeColors::RecomputeAccentColors();
-  auto* basicTheme = static_cast<Theme*>(gInstance.get());
-  if (basicTheme) {
-    basicTheme->SetScrollbarDrawing(Theme::ScrollbarStyle());
-    basicTheme->GetScrollbarDrawing().RecomputeScrollbarParams();
+  if (gNonNativeInstance) {
+    gNonNativeInstance->SetScrollbarDrawing(Theme::ScrollbarStyle());
+    gNonNativeInstance->GetScrollbarDrawing().RecomputeScrollbarParams();
   }
 }
 

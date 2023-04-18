@@ -32,6 +32,9 @@ namespace layers {
 class StackingContextHelper;
 class RenderRootStateManager;
 }  
+namespace widget {
+class Theme;
+}  
 namespace wr {
 class DisplayListBuilder;
 class IpcResourceUpdateQueue;
@@ -267,5 +270,9 @@ NS_DEFINE_STATIC_IID_ACCESSOR(nsITheme, NS_ITHEME_IID)
 extern already_AddRefed<nsITheme> do_GetNativeThemeDoNotUseDirectly();
 extern already_AddRefed<nsITheme> do_GetBasicNativeThemeDoNotUseDirectly();
 extern already_AddRefed<nsITheme> do_GetRDMThemeDoNotUseDirectly();
+
+
+extern already_AddRefed<mozilla::widget::Theme>
+do_CreateNativeThemeDoNotUseDirectly();
 
 #endif
