@@ -16,8 +16,10 @@ const { AppConstants } = devtoolsRequire(
   "resource://gre/modules/AppConstants.jsm"
 );
 
+const lazy = {};
+
 loader.lazyRequireGetter(
-  this,
+  lazy,
   "getMockedModule",
   "devtools/shared/loader/browser-loader-mocks",
   {}
@@ -165,8 +167,8 @@ function BrowserLoaderBuilder({
       
       
       
-      if (flags.testing && getMockedModule(uri)) {
-        return getMockedModule(uri);
+      if (flags.testing && lazy.getMockedModule(uri)) {
+        return lazy.getMockedModule(uri);
       }
 
       if (
