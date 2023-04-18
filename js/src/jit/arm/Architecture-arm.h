@@ -717,7 +717,8 @@ void InitARMFlags();
 
 
 
-bool ParseARMHwCapFlags(const char* armHwCap);
+
+void SetARMHwCapFlagsString(const char* armHwCap);
 
 
 uint32_t GetARMFlags();
