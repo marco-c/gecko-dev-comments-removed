@@ -14,14 +14,6 @@ namespace mozilla {
 
 
 class NativeInputTrack : public ProcessedMediaTrack {
-  ~NativeInputTrack() = default;
-  NativeInputTrack(TrackRate aSampleRate,
-                   const PrincipalHandle& aPrincipalHandle)
-      : ProcessedMediaTrack(aSampleRate, MediaSegment::AUDIO,
-                            new AudioSegment()),
-        mPrincipalHandle(aPrincipalHandle),
-        mIsBufferingAppended(false) {}
-
  public:
   
   static NativeInputTrack* Create(MediaTrackGraphImpl* aGraph,
@@ -55,6 +47,10 @@ class NativeInputTrack : public ProcessedMediaTrack {
   nsTArray<RefPtr<AudioDataListener>> mDataUsers;
 
  private:
+  NativeInputTrack(TrackRate aSampleRate,
+                   const PrincipalHandle& aPrincipalHandle);
+  ~NativeInputTrack() = default;
+
   
   
   bool mIsBufferingAppended;
