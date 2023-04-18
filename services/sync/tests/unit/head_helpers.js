@@ -92,9 +92,10 @@ XPCOMUtils.defineLazyGetter(this, "SyncPingSchema", function() {
 });
 
 XPCOMUtils.defineLazyGetter(this, "SyncPingValidator", function() {
-  let { Ajv } = ChromeUtils.import("resource://testing-common/ajv-6.12.6.js");
-  let ajv = new Ajv({ async: "co*" });
-  return ajv.compile(SyncPingSchema);
+  const { JsonSchema } = ChromeUtils.import(
+    "resource://gre/modules/JsonSchema.jsm"
+  );
+  return new JsonSchema.Validator(SyncPingSchema);
 });
 
 
@@ -285,11 +286,16 @@ function get_sync_test_telemetry() {
 function assert_valid_ping(record) {
   
   
+  record = JSON.parse(JSON.stringify(record));
+
+  
+  
   
   
   if (record && (record.why != "shutdown" || record.syncs.length != 0)) {
-    if (!SyncPingValidator(record)) {
-      if (SyncPingValidator.errors.length) {
+    const result = SyncPingValidator.validate(record);
+    if (!result.valid) {
+      if (result.errors.length) {
         
         
         
@@ -297,7 +303,7 @@ function assert_valid_ping(record) {
         info("the ping data is: " + JSON.stringify(record, undefined, 2));
         info(
           "the validation failures: " +
-            JSON.stringify(SyncPingValidator.errors, undefined, 2)
+            JSON.stringify(result.errors, undefined, 2)
         );
         ok(
           false,
