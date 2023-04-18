@@ -16425,7 +16425,7 @@ void Document::MaybeAllowStorageForOpenerAfterUserInteraction() {
   }
 
   
-  Unused << ContentBlocking::AllowAccessFor(
+  Unused << StorageAccessAPIHelper::AllowAccessFor(
       NodePrincipal(), openerBC,
       ContentBlockingNotifier::eOpenerAfterUserInteraction);
 }
@@ -16834,7 +16834,7 @@ nsresult Document::HasStorageAccessSync(bool& aHasStorageAccess) {
     return NS_OK;
   }
   Maybe<bool> resultBecauseCookiesApproved =
-      ContentBlocking::CheckCookiesPermittedDecidesStorageAccessAPI(
+      StorageAccessAPIHelper::CheckCookiesPermittedDecidesStorageAccessAPI(
           CookieJarSettings(), NodePrincipal());
   if (resultBecauseCookiesApproved.isSome()) {
     if (resultBecauseCookiesApproved.value()) {
@@ -16859,7 +16859,7 @@ nsresult Document::HasStorageAccessSync(bool& aHasStorageAccess) {
   bool isThirdPartyTracker =
       nsContentUtils::IsThirdPartyTrackingResourceWindow(inner);
   Maybe<bool> resultBecauseBrowserSettings =
-      ContentBlocking::CheckBrowserSettingsDecidesStorageAccessAPI(
+      StorageAccessAPIHelper::CheckBrowserSettingsDecidesStorageAccessAPI(
           CookieJarSettings(), isThirdPartyDocument, isOnRejectForeignAllowList,
           isOnThirdPartySkipList, isThirdPartyTracker);
   if (resultBecauseBrowserSettings.isSome()) {
@@ -16875,7 +16875,8 @@ nsresult Document::HasStorageAccessSync(bool& aHasStorageAccess) {
   
   
   Maybe<bool> resultBecauseCallContext =
-      ContentBlocking::CheckCallingContextDecidesStorageAccessAPI(this, false);
+      StorageAccessAPIHelper::CheckCallingContextDecidesStorageAccessAPI(this,
+                                                                         false);
   if (resultBecauseCallContext.isSome()) {
     if (resultBecauseCallContext.value()) {
       aHasStorageAccess = true;
@@ -16889,7 +16890,8 @@ nsresult Document::HasStorageAccessSync(bool& aHasStorageAccess) {
   
   
   Maybe<bool> resultBecausePreviousPermission =
-      ContentBlocking::CheckExistingPermissionDecidesStorageAccessAPI(this);
+      StorageAccessAPIHelper::CheckExistingPermissionDecidesStorageAccessAPI(
+          this);
   if (resultBecausePreviousPermission.isSome()) {
     if (resultBecausePreviousPermission.value()) {
       aHasStorageAccess = true;
@@ -16967,8 +16969,9 @@ RefPtr<MozPromise<int, bool, true>> Document::RequestStorageAccessAsyncHelper(
   
   auto performFinalChecks = [inner, self, principal, aHasUserInteraction]() {
     
-    RefPtr<ContentBlocking::StorageAccessFinalCheckPromise::Private> p =
-        new ContentBlocking::StorageAccessFinalCheckPromise::Private(__func__);
+    RefPtr<StorageAccessAPIHelper::StorageAccessFinalCheckPromise::Private> p =
+        new StorageAccessAPIHelper::StorageAccessFinalCheckPromise::Private(
+            __func__);
     RefPtr<StorageAccessPermissionRequest> sapr =
         StorageAccessPermissionRequest::Create(
             inner, principal,
@@ -16976,7 +16979,7 @@ RefPtr<MozPromise<int, bool, true>> Document::RequestStorageAccessAsyncHelper(
             [p] {
               Telemetry::AccumulateCategorical(
                   Telemetry::LABELS_STORAGE_ACCESS_API_UI::Allow);
-              p->Resolve(ContentBlocking::eAllow, __func__);
+              p->Resolve(StorageAccessAPIHelper::eAllow, __func__);
             },
             
             [p] {
@@ -17026,10 +17029,10 @@ RefPtr<MozPromise<int, bool, true>> Document::RequestStorageAccessAsyncHelper(
                 MOZ_ASSERT_IF(pr2 != PromptResult::Granted,
                               pr2 == PromptResult::Denied);
                 if (pr2 == PromptResult::Granted) {
-                  ContentBlocking::StorageAccessPromptChoices choice =
-                      ContentBlocking::eAllow;
+                  StorageAccessAPIHelper::StorageAccessPromptChoices choice =
+                      StorageAccessAPIHelper::eAllow;
                   if (autoGrant) {
-                    choice = ContentBlocking::eAllowAutoGrant;
+                    choice = StorageAccessAPIHelper::eAllowAutoGrant;
                   }
                   if (!autoGrant) {
                     p->Resolve(choice, __func__);
@@ -17056,8 +17059,8 @@ RefPtr<MozPromise<int, bool, true>> Document::RequestStorageAccessAsyncHelper(
   };
 
   
-  return ContentBlocking::AllowAccessFor(principal, aBrowsingContext, aNotifier,
-                                         performFinalChecks);
+  return StorageAccessAPIHelper::AllowAccessFor(principal, aBrowsingContext,
+                                                aNotifier, performFinalChecks);
 }
 
 already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
@@ -17099,7 +17102,7 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
   
   
   Maybe<bool> resultBecauseCookiesApproved =
-      ContentBlocking::CheckCookiesPermittedDecidesStorageAccessAPI(
+      StorageAccessAPIHelper::CheckCookiesPermittedDecidesStorageAccessAPI(
           CookieJarSettings(), NodePrincipal());
   if (resultBecauseCookiesApproved.isSome()) {
     if (resultBecauseCookiesApproved.value()) {
@@ -17127,7 +17130,7 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
   bool isThirdPartyTracker =
       nsContentUtils::IsThirdPartyTrackingResourceWindow(inner);
   Maybe<bool> resultBecauseBrowserSettings =
-      ContentBlocking::CheckBrowserSettingsDecidesStorageAccessAPI(
+      StorageAccessAPIHelper::CheckBrowserSettingsDecidesStorageAccessAPI(
           CookieJarSettings(), isThirdPartyDocument, isOnRejectForeignAllowList,
           isOnThirdPartySkipList, isThirdPartyTracker);
   if (resultBecauseBrowserSettings.isSome()) {
@@ -17144,7 +17147,8 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
   
   
   Maybe<bool> resultBecauseCallContext =
-      ContentBlocking::CheckCallingContextDecidesStorageAccessAPI(this, true);
+      StorageAccessAPIHelper::CheckCallingContextDecidesStorageAccessAPI(this,
+                                                                         true);
   if (resultBecauseCallContext.isSome()) {
     if (resultBecauseCallContext.value()) {
       promise->MaybeResolveWithUndefined();
@@ -17159,7 +17163,8 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
   
   
   Maybe<bool> resultBecausePreviousPermission =
-      ContentBlocking::CheckExistingPermissionDecidesStorageAccessAPI(this);
+      StorageAccessAPIHelper::CheckExistingPermissionDecidesStorageAccessAPI(
+          this);
   if (resultBecausePreviousPermission.isSome()) {
     if (resultBecausePreviousPermission.value()) {
       promise->MaybeResolveWithUndefined();
@@ -17246,7 +17251,7 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccessForOrigin(
   bool isOnRejectForeignAllowList =
       RejectForeignAllowList::Check(thirdPartyURI);
   Maybe<bool> resultBecauseBrowserSettings =
-      ContentBlocking::CheckBrowserSettingsDecidesStorageAccessAPI(
+      StorageAccessAPIHelper::CheckBrowserSettingsDecidesStorageAccessAPI(
           CookieJarSettings(), isThirdPartyDocument, isOnRejectForeignAllowList,
           false, true);
   if (resultBecauseBrowserSettings.isSome()) {
@@ -17261,8 +17266,8 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccessForOrigin(
 
   
   
-  Maybe<bool> resultBecauseCallContext =
-      ContentBlocking::CheckSameSiteCallingContextDecidesStorageAccessAPI(
+  Maybe<bool> resultBecauseCallContext = StorageAccessAPIHelper::
+      CheckSameSiteCallingContextDecidesStorageAccessAPI(
           this, aRequireUserActivation);
   if (resultBecauseCallContext.isSome()) {
     if (resultBecauseCallContext.value()) {
@@ -17309,7 +17314,7 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccessForOrigin(
   
   
   
-  ContentBlocking::AsyncCheckCookiesPermittedDecidesStorageAccessAPI(
+  StorageAccessAPIHelper::AsyncCheckCookiesPermittedDecidesStorageAccessAPI(
       GetBrowsingContext(), principal)
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
