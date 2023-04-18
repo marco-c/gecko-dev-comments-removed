@@ -14,6 +14,7 @@
 
 
 
+
 "use strict";
 
 const { OSKeyStore } = ChromeUtils.import(
@@ -204,6 +205,31 @@ function getDisplayedPopupItems(
 
 async function sleep(ms = 500) {
   await new Promise(resolve => setTimeout(resolve, ms));
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function waitForAutofill(target, selector, value) {
+  await SpecialPowers.spawn(target, [selector, value], async function(
+    selector,
+    val
+  ) {
+    await ContentTaskUtils.waitForCondition(() => {
+      let form = content.document.getElementById("form");
+      let element = form.querySelector(selector);
+      return element.value == val;
+    }, "Credit card detail never fills");
+  });
 }
 
 
