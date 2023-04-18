@@ -2,13 +2,9 @@
 
 
 
-const { XPCOMUtils } = ChromeUtils.import(
-  "resource://gre/modules/XPCOMUtils.jsm"
+const { SessionStore } = ChromeUtils.import(
+  "resource:///modules/sessionstore/SessionStore.jsm"
 );
-
-XPCOMUtils.defineLazyModuleGetters(this, {
-  SessionStore: "resource:///modules/sessionstore/SessionStore.jsm",
-});
 
 function UpdateSessionStore(
   aBrowser,
