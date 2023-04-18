@@ -343,8 +343,7 @@ class Chrome(BrowserSetup):
         if kwargs["mojojs_path"]:
             kwargs["enable_mojojs"] = True
             logger.info("--mojojs-path is provided, enabling MojoJS")
-        
-        elif browser_channel in self.experimental_channels:
+        else:
             try:
                 path = self.browser.install_mojojs(
                     dest=self.venv.path,
