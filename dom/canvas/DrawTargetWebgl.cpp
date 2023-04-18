@@ -190,7 +190,7 @@ inline void DrawTargetWebgl::SharedContext::ClearLastTexture() {
 
 
 
-void DrawTargetWebgl::ClearSnapshot(bool aCopyOnWrite) {
+void DrawTargetWebgl::ClearSnapshot(bool aCopyOnWrite, bool aNeedHandle) {
   if (!mSnapshot) {
     return;
   }
@@ -204,7 +204,7 @@ void DrawTargetWebgl::ClearSnapshot(bool aCopyOnWrite) {
   if (aCopyOnWrite) {
     
     
-    snapshot->DrawTargetWillChange();
+    snapshot->DrawTargetWillChange(aNeedHandle);
   } else {
     
     snapshot->GiveTexture(
@@ -769,7 +769,8 @@ void DrawTargetWebgl::DetachAllSnapshots() {
 
 bool DrawTargetWebgl::MarkChanged() {
   if (mSnapshot) {
-    ClearSnapshot();
+    
+    ClearSnapshot(true, true);
   }
   if (!mWebglValid && !FlushFromSkia()) {
     return false;

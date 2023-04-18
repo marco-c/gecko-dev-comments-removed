@@ -78,9 +78,14 @@ void SourceSurfaceWebgl::Unmap() {
 
 
 
-void SourceSurfaceWebgl::DrawTargetWillChange() {
+void SourceSurfaceWebgl::DrawTargetWillChange(bool aNeedHandle) {
   MOZ_ASSERT(mDT);
-  if (!mData && !mHandle) {
+  
+  
+  
+  
+  
+  if ((!mData || aNeedHandle) && !mHandle) {
     
     mHandle = mDT->CopySnapshot();
     if (mHandle) {
@@ -113,7 +118,12 @@ void SourceSurfaceWebgl::OnUnlinkTexture(
   
   
   MOZ_ASSERT(!mDT);
-  MOZ_ASSERT(mHandle);
+  
+  
+  
+  
+  
+  MOZ_ASSERT(mHandle || mData);
   if (!mData) {
     mData = aContext->ReadSnapshot(mHandle);
   }
