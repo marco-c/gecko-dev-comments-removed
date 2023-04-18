@@ -215,16 +215,22 @@ this.scripting = class extends ExtensionAPI {
             scriptsToRegister.set(script.id, makeInternalContentScript(script));
           }
 
-          for (const [id, { scriptId, options }] of scriptsToRegister) {
+          for (const [id, { scriptId }] of scriptsToRegister.entries()) {
             scriptIdsMap.set(id, scriptId);
-            extension.registeredContentScripts.set(scriptId, options);
           }
-          extension.updateContentScripts();
 
           await extension.broadcast("Extension:RegisterContentScripts", {
             id: extension.id,
             scripts: Array.from(scriptsToRegister.values()),
           });
+
+          for (const { scriptId, options } of scriptsToRegister.values()) {
+            extension.registeredContentScripts.set(scriptId, options);
+          }
+
+          
+          
+          extension.updateContentScripts();
         },
 
         getRegisteredContentScripts: async details => {
@@ -238,6 +244,14 @@ this.scripting = class extends ExtensionAPI {
             .map(([id, scriptId]) => {
               const options = extension.registeredContentScripts.get(scriptId);
 
+              if (!options) {
+                
+                
+                
+                
+                return;
+              }
+
               return {
                 id,
                 allFrames: options.allFrames,
@@ -248,7 +262,8 @@ this.scripting = class extends ExtensionAPI {
                 matches: options.matches,
                 runAt: options.runAt,
               };
-            });
+            })
+            .filter(script => script);
         },
       },
     };
