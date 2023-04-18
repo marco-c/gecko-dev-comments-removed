@@ -501,14 +501,20 @@ function openLinkIn(url, where, params) {
   if (where == "current") {
     targetBrowser = params.targetBrowser || w.gBrowser.selectedBrowser;
     loadInBackground = false;
-
     try {
       uriObj = Services.io.newURI(url);
     } catch (e) {}
 
-    if (
+    
+    
+    
+    let tab = w.gBrowser.getTabForBrowser(targetBrowser);
+    if (tab == w.gFirefoxViewTab) {
+      where = "tab";
+      targetBrowser = null;
+    } else if (
       !aAllowPinnedTabHostChange &&
-      w.gBrowser.getTabForBrowser(targetBrowser).pinned &&
+      tab.pinned &&
       url != "about:crashcontent"
     ) {
       try {
@@ -519,11 +525,11 @@ function openLinkIn(url, where, params) {
             targetBrowser.currentURI.host != uriObj.host)
         ) {
           where = "tab";
-          loadInBackground = false;
+          targetBrowser = null;
         }
       } catch (err) {
         where = "tab";
-        loadInBackground = false;
+        targetBrowser = null;
       }
     }
   } else {

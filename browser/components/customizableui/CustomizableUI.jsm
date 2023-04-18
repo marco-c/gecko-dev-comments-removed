@@ -1797,8 +1797,11 @@ var CustomizableUIInternal = {
         );
       }
     } else {
-      if (aWidget.onBeforeCreated) {
-        aWidget.onBeforeCreated(aDocument);
+      if (
+        aWidget.onBeforeCreated &&
+        aWidget.onBeforeCreated(aDocument) === false
+      ) {
+        return null;
       }
 
       let button = aDocument.createXULElement("toolbarbutton");
@@ -3886,6 +3889,7 @@ var CustomizableUI = {
     CustomizableUIInternal.endBatchUpdate(aForceDirty);
   },
   
+
 
 
 
