@@ -52,13 +52,50 @@ static double MillisecondsSinceStartup() {
 
 enum ResolutionMode { ResolveMode, RejectMode };
 
+
+
+
+
+
+
 enum ResolveFunctionSlots {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
   ResolveFunctionSlot_Promise = 0,
+
+  
   ResolveFunctionSlot_RejectFunction,
 };
 
+
+
+
+
+
+
 enum RejectFunctionSlots {
+  
+  
   RejectFunctionSlot_Promise = 0,
+
+  
   RejectFunctionSlot_ResolveFunction,
 };
 
@@ -892,6 +929,8 @@ static bool RejectPromiseFunction(JSContext* cx, unsigned argc, Value* vp);
     MutableHandleObject rejectFn) {
   
   
+
+  
   
   
   
@@ -924,22 +963,22 @@ static bool RejectPromiseFunction(JSContext* cx, unsigned argc, Value* vp);
   JSFunction* rejectFun = &rejectFn->as<JSFunction>();
 
   
+  
+  
+  
+  
   resolveFun->initExtendedSlot(ResolveFunctionSlot_Promise,
                                ObjectValue(*promise));
-
-  
-  
-  
   resolveFun->initExtendedSlot(ResolveFunctionSlot_RejectFunction,
                                ObjectValue(*rejectFun));
 
   
+  
+  
+  
+  
   rejectFun->initExtendedSlot(RejectFunctionSlot_Promise,
                               ObjectValue(*promise));
-
-  
-  
-  
   rejectFun->initExtendedSlot(RejectFunctionSlot_ResolveFunction,
                               ObjectValue(*resolveFun));
 
