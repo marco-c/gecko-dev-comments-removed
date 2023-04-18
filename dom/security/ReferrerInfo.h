@@ -445,6 +445,12 @@ class ReferrerInfo : public nsIReferrerInfo {
 
   
   
+  
+  
+  ReferrerPolicyEnum mOriginalPolicy;
+
+  
+  
   bool mSendReferrer;
 
   
