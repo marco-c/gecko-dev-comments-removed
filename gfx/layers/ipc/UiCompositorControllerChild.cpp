@@ -164,6 +164,10 @@ void UiCompositorControllerChild::Destroy() {
     return;
   }
 
+  
+  
+  mProcessToken = 0;
+
   if (mWidget) {
     
     
