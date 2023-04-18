@@ -595,43 +595,49 @@ function assertAllHandlerInfosMatchDefaultHandlers() {
 
 
 
-add_task(async function test_default_protocol_handlers() {
-  if (
-    !Services.prefs.getPrefType("gecko.handlerService.defaultHandlersVersion")
-  ) {
-    info("This platform or locale does not have default handlers.");
-    return;
+add_task(
+  { skip_if: () => AppConstants.MOZ_APP_NAME == "thunderbird" },
+  async function test_default_protocol_handlers() {
+    if (
+      !Services.prefs.getPrefType("gecko.handlerService.defaultHandlersVersion")
+    ) {
+      info("This platform or locale does not have default handlers.");
+      return;
+    }
+
+    
+    await deleteHandlerStore();
+
+    await assertAllHandlerInfosMatchDefaultHandlers();
   }
-
-  
-  await deleteHandlerStore();
-
-  await assertAllHandlerInfosMatchDefaultHandlers();
-});
+);
 
 
 
 
 
-add_task(async function test_default_protocol_handlers_no_duplicates() {
-  if (
-    !Services.prefs.getPrefType("gecko.handlerService.defaultHandlersVersion")
-  ) {
-    info("This platform or locale does not have default handlers.");
-    return;
+add_task(
+  { skip_if: () => AppConstants.MOZ_APP_NAME == "thunderbird" },
+  async function test_default_protocol_handlers_no_duplicates() {
+    if (
+      !Services.prefs.getPrefType("gecko.handlerService.defaultHandlersVersion")
+    ) {
+      info("This platform or locale does not have default handlers.");
+      return;
+    }
+
+    
+    await deleteHandlerStore();
+
+    
+    Services.prefs.clearUserPref("gecko.handlerService.defaultHandlersVersion");
+
+    await unloadHandlerStore();
+
+    
+    assertAllHandlerInfosMatchDefaultHandlers();
   }
-
-  
-  await deleteHandlerStore();
-
-  
-  Services.prefs.clearUserPref("gecko.handlerService.defaultHandlersVersion");
-
-  await unloadHandlerStore();
-
-  
-  assertAllHandlerInfosMatchDefaultHandlers();
-});
+);
 
 
 

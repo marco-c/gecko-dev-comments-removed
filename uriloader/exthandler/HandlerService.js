@@ -158,6 +158,11 @@ HandlerService.prototype = {
     
     
     for (let scheme of Object.keys(localeHandlers.schemes)) {
+      if (scheme == "mailto" && AppConstants.MOZ_APP_NAME == "thunderbird") {
+        
+        continue;
+      }
+
       let existingSchemeInfo = this._store.data.schemes[scheme];
       if (!existingSchemeInfo) {
         

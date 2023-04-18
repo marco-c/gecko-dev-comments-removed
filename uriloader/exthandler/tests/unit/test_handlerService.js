@@ -155,7 +155,11 @@ function run_test() {
   
   prefSvc.setBoolPref(kExternalWarningPrefPrefix + "mailto", false);
   protoInfo = protoSvc.getProtocolHandlerInfo("mailto");
-  Assert.equal(1, protoInfo.possibleApplicationHandlers.length);
+  if (AppConstants.MOZ_APP_NAME == "thunderbird") {
+    Assert.equal(0, protoInfo.possibleApplicationHandlers.length);
+  } else {
+    Assert.equal(1, protoInfo.possibleApplicationHandlers.length);
+  }
 
   
   if (noMailto) {
@@ -167,16 +171,19 @@ function run_test() {
   
   prefSvc.setBoolPref(kExternalWarningPrefPrefix + "mailto", true);
   protoInfo = protoSvc.getProtocolHandlerInfo("mailto");
-  Assert.equal(1, protoInfo.possibleApplicationHandlers.length);
-  
-  
-  
-  
-  
-  Assert.ok(protoInfo.alwaysAskBeforeHandling);
-  
-  
-
+  if (AppConstants.MOZ_APP_NAME == "thunderbird") {
+    Assert.equal(0, protoInfo.possibleApplicationHandlers.length);
+  } else {
+    Assert.equal(1, protoInfo.possibleApplicationHandlers.length);
+    
+    
+    
+    
+    
+    Assert.ok(protoInfo.alwaysAskBeforeHandling);
+    
+    
+  }
   
   
   
@@ -184,8 +191,12 @@ function run_test() {
   protoInfo.alwaysAskBeforeHandling = true;
   handlerSvc.store(protoInfo);
   protoInfo = protoSvc.getProtocolHandlerInfo("mailto");
-  Assert.equal(1, protoInfo.possibleApplicationHandlers.length);
-  Assert.ok(protoInfo.alwaysAskBeforeHandling);
+  if (AppConstants.MOZ_APP_NAME == "thunderbird") {
+    Assert.equal(0, protoInfo.possibleApplicationHandlers.length);
+  } else {
+    Assert.equal(1, protoInfo.possibleApplicationHandlers.length);
+    Assert.ok(protoInfo.alwaysAskBeforeHandling);
+  }
 
   
   
