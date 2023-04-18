@@ -376,10 +376,12 @@ class RemoteSettingsClient extends EventEmitter {
               : -1;
             if (importedFromDump < 0) {
               
+              
+              
               console.debug(
                 `${this.identifier} Local DB is empty, pull data from server`
               );
-              await this.sync({ loadDump: false });
+              await this.sync({ loadDump: false, sendEvents: false });
             }
             
             
@@ -480,7 +482,9 @@ class RemoteSettingsClient extends EventEmitter {
       let metadata = await this.db.getMetadata();
       if (syncIfEmpty && ObjectUtils.isEmpty(metadata)) {
         
-        await this.sync({ loadDump: false });
+        
+        
+        await this.sync({ loadDump: false, sendEvents: false });
         metadata = await this.db.getMetadata();
       }
       
@@ -534,9 +538,14 @@ class RemoteSettingsClient extends EventEmitter {
 
 
 
+
   async maybeSync(expectedTimestamp, options = {}) {
     
-    const { loadDump = gLoadDump, trigger = "manual" } = options;
+    const {
+      loadDump = gLoadDump,
+      trigger = "manual",
+      sendEvents = true,
+    } = options;
 
     
     
@@ -654,7 +663,7 @@ class RemoteSettingsClient extends EventEmitter {
               "duration"
             );
           }
-          if (this.hasListeners("sync")) {
+          if (sendEvents && this.hasListeners("sync")) {
             
             
             
@@ -712,20 +721,22 @@ class RemoteSettingsClient extends EventEmitter {
           throw e;
         }
       }
-      
-      const filteredSyncResult = await this._filterSyncResult(syncResult);
-      
-      if (filteredSyncResult) {
-        try {
-          await this.emit("sync", { data: filteredSyncResult });
-        } catch (e) {
-          reportStatus = UptakeTelemetry.STATUS.APPLY_ERROR;
-          throw e;
+      if (sendEvents) {
+        
+        const filteredSyncResult = await this._filterSyncResult(syncResult);
+        
+        if (filteredSyncResult) {
+          try {
+            await this.emit("sync", { data: filteredSyncResult });
+          } catch (e) {
+            reportStatus = UptakeTelemetry.STATUS.APPLY_ERROR;
+            throw e;
+          }
+        } else {
+          console.info(
+            `All changes are filtered by JEXL expressions for ${this.identifier}`
+          );
         }
-      } else {
-        console.info(
-          `All changes are filtered by JEXL expressions for ${this.identifier}`
-        );
       }
     } catch (e) {
       thrownError = e;
