@@ -1177,9 +1177,15 @@ class AsyncPanZoomController {
 
 
 
+
+
+
+
+
   AsyncTransform GetCurrentAsyncTransform(
       AsyncTransformConsumer aMode,
-      AsyncTransformComponents aComponents = LayoutAndVisual) const;
+      AsyncTransformComponents aComponents = LayoutAndVisual,
+      std::size_t aSampleIndex = 0) const;
 
   
 
@@ -1187,7 +1193,8 @@ class AsyncPanZoomController {
 
   AsyncTransformComponentMatrix GetCurrentAsyncTransformWithOverscroll(
       AsyncTransformConsumer aMode,
-      AsyncTransformComponents aComponents = LayoutAndVisual) const;
+      AsyncTransformComponents aComponents = LayoutAndVisual,
+      std::size_t aSampleIndex = 0) const;
 
   LayoutDevicePoint GetAsyncScrollDeltaForSampling() const;
 
@@ -1249,15 +1256,15 @@ class AsyncPanZoomController {
 
 
 
-  CSSRect GetEffectiveLayoutViewport(
-      AsyncTransformConsumer aMode,
-      const RecursiveMutexAutoLock& aProofOfLock) const;
-  CSSPoint GetEffectiveScrollOffset(
-      AsyncTransformConsumer aMode,
-      const RecursiveMutexAutoLock& aProofOfLock) const;
+  CSSRect GetEffectiveLayoutViewport(AsyncTransformConsumer aMode,
+                                     const RecursiveMutexAutoLock& aProofOfLock,
+                                     std::size_t aSampleIndex = 0) const;
+  CSSPoint GetEffectiveScrollOffset(AsyncTransformConsumer aMode,
+                                    const RecursiveMutexAutoLock& aProofOfLock,
+                                    std::size_t aSampleIndex = 0) const;
   CSSToParentLayerScale GetEffectiveZoom(
-      AsyncTransformConsumer aMode,
-      const RecursiveMutexAutoLock& aProofOfLock) const;
+      AsyncTransformConsumer aMode, const RecursiveMutexAutoLock& aProofOfLock,
+      std::size_t aSampleIndex = 0) const;
 
   
 
