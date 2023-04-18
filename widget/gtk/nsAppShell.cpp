@@ -55,13 +55,47 @@ LazyLogModule gClipboardLog("WidgetClipboard");
 static GPollFunc sPollFunc;
 
 
-static gint PollWrapper(GPollFD* ufds, guint nfsd, gint timeout_) {
+static gint PollWrapper(GPollFD* aUfds, guint aNfsd, gint aTimeout) {
+  if (aTimeout == 0) {
+    
+    
+    return (*sPollFunc)(aUfds, aNfsd, aTimeout);
+  }
+
   mozilla::BackgroundHangMonitor().NotifyWait();
   gint result;
   {
+    gint timeout = aTimeout;
+    gint64 begin = 0;
+    if (aTimeout != -1) {
+      begin = g_get_monotonic_time();
+    }
+
     AUTO_PROFILER_LABEL("PollWrapper", IDLE);
     AUTO_PROFILER_THREAD_SLEEP;
-    result = (*sPollFunc)(ufds, nfsd, timeout_);
+    do {
+      result = (*sPollFunc)(aUfds, aNfsd, timeout);
+
+      
+      
+      
+      if (result != -1 || errno != EINTR) {
+        break;
+      }
+
+      if (aTimeout != -1) {
+        
+        gint elapsedSinceBegin = (g_get_monotonic_time() - begin) / 1000;
+        if (elapsedSinceBegin < aTimeout) {
+          timeout = aTimeout - elapsedSinceBegin;
+        } else {
+          
+          
+          result = 0;
+          break;
+        }
+      }
+    } while (true);
   }
   mozilla::BackgroundHangMonitor().NotifyActivity();
   return result;
@@ -347,18 +381,7 @@ void nsAppShell::ScheduleNativeEventCallback() {
 }
 
 bool nsAppShell::ProcessNextNativeEvent(bool mayWait) {
-  bool didProcessEvent = false;
-  if (mayWait) {
-    
-    
-    
-    
-    while (!didProcessEvent) {
-      didProcessEvent = g_main_context_iteration(nullptr, true);
-    }
-  } else {
-    didProcessEvent = g_main_context_iteration(nullptr, false);
-  }
+  bool didProcessEvent = g_main_context_iteration(nullptr, mayWait);
 #ifdef MOZ_WAYLAND
   mozilla::widget::WaylandDispatchDisplays();
 #endif
