@@ -1696,20 +1696,39 @@ bool nsWindow::WaylandPopupNeedsTrackInHierarchy() {
     return false;
   }
 
-  if (mPopupTrackInHierarchyConfigured) {
-    return mPopupTrackInHierarchy;
-  }
-
+  
   nsMenuPopupFrame* popupFrame = GetMenuPopupFrame(GetFrame());
   if (!popupFrame) {
     return false;
   }
-  mPopupTrackInHierarchyConfigured = true;
 
   
-  mPopupTrackInHierarchy = !WaylandPopupIsPermanent();
+  bool permanentStateMatches =
+      mPopupTrackInHierarchy == !WaylandPopupIsPermanent();
+
+  
+  if (mPopupTrackInHierarchyConfigured && permanentStateMatches) {
+    return mPopupTrackInHierarchy;
+  }
+
   mPopupAnchored = WaylandPopupIsAnchored();
   mPopupContextMenu = WaylandPopupIsContextMenu();
+
+  LOG("nsWindow::WaylandPopupNeedsTrackInHierarchy tracked %d anchored %d\n",
+      mPopupTrackInHierarchy, mPopupAnchored);
+
+  
+  
+  
+  
+  if (!permanentStateMatches && mIsMapped) {
+    LOG("  permanent state change from %d to %d, unmapping",
+        mPopupTrackInHierarchy, !WaylandPopupIsPermanent());
+    gtk_widget_unmap(mShell);
+  }
+
+  mPopupTrackInHierarchy = !WaylandPopupIsPermanent();
+  LOG("  tracked in hierarchy %d\n", mPopupTrackInHierarchy);
 
   
   
@@ -1719,24 +1738,27 @@ bool nsWindow::WaylandPopupNeedsTrackInHierarchy() {
       
       
       gtkTypeHint = GDK_WINDOW_TYPE_HINT_POPUP_MENU;
+      LOG("  popup type Menu");
       break;
     case ePopupTypeTooltip:
       gtkTypeHint = GDK_WINDOW_TYPE_HINT_TOOLTIP;
+      LOG("  popup type Tooltip");
       break;
     default:  
       
       
       
       gtkTypeHint = GDK_WINDOW_TYPE_HINT_UTILITY;
+      LOG("  popup type Utility");
       break;
   }
 
   if (!mPopupTrackInHierarchy) {
     gtkTypeHint = GDK_WINDOW_TYPE_HINT_UTILITY;
   }
-  LOG("nsWindow::WaylandPopupNeedsTrackInHierarchy tracked %d anchored %d\n",
-      mPopupTrackInHierarchy, mPopupAnchored);
   gtk_window_set_type_hint(GTK_WINDOW(mShell), gtkTypeHint);
+
+  mPopupTrackInHierarchyConfigured = true;
   return mPopupTrackInHierarchy;
 }
 
@@ -5399,6 +5421,10 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
 
   mAlwaysOnTop = aInitData && aInitData->mAlwaysOnTop;
   mIsPIPWindow = aInitData && aInitData->mPIPWindow;
+  
+  
+  
+  
   mNoAutoHide = aInitData && aInitData->mNoAutoHide;
   mMouseTransparent = aInitData && aInitData->mMouseTransparent;
 
