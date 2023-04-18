@@ -1,0 +1,13 @@
+
+
+
+"use strict";
+
+var EXPORTED_SYMBOLS = ["GeckoViewAutoFillParent"];
+
+const { GeckoViewActorParent } = ChromeUtils.import(
+  "resource://gre/modules/GeckoViewActorParent.jsm"
+);
+
+
+class GeckoViewAutoFillParent extends GeckoViewActorParent {}
