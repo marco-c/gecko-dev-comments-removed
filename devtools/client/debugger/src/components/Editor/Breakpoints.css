@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
 .theme-light {
   --gutter-hover-background-color: #dde1e4;
@@ -25,7 +25,7 @@
   --breakpoint-disabled-opacity: 0.6;
 }
 
-
+/* Standard gutter breakpoints */
 .editor-wrapper .breakpoints {
   position: absolute;
   top: 0;
@@ -41,7 +41,7 @@
   > .CodeMirror-linenumber:hover::after {
   content: "";
   position: absolute;
-  
+  /* paint below the number */
   z-index: -1;
   top: 0;
   left: 0;
@@ -84,7 +84,8 @@
   stroke: var(--logpoint-stroke);
 }
 
-.editor.new-breakpoint.breakpoint-disabled svg {
+.editor.new-breakpoint.breakpoint-disabled svg,
+.blackboxed-line .editor.new-breakpoint svg {
   fill-opacity: var(--breakpoint-disabled-opacity);
   stroke-opacity: var(--breakpoint-disabled-opacity);
 }
@@ -93,7 +94,7 @@
   fill-opacity: var(--breakpoint-skipped-opacity);
 }
 
-
+/* Columnn breakpoints */
 .column-breakpoint {
   display: inline;
   padding-inline-start: 1px;
