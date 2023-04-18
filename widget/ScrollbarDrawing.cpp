@@ -19,7 +19,6 @@ using namespace mozilla::gfx;
 
 namespace mozilla::widget {
 
-using ScrollbarParams = ScrollbarDrawing::ScrollbarParams;
 using mozilla::RelativeLuminanceUtils;
 
 
@@ -178,34 +177,6 @@ sRGBColor ScrollbarDrawing::ComputeScrollbarThumbColor(
     return sRGBColor::FromABGR(ThemeColors::AdjustUnthemedScrollbarThumbColor(
         unthemedColor, aElementState));
   });
-}
-
-
-ScrollbarParams ScrollbarDrawing::ComputeScrollbarParams(
-    nsIFrame* aFrame, const ComputedStyle& aStyle, bool aIsHorizontal) {
-  ScrollbarParams params;
-  params.isOverlay =
-      nsLookAndFeel::GetInt(LookAndFeel::IntID::UseOverlayScrollbars) != 0;
-  params.isRolledOver = IsParentScrollbarRolledOver(aFrame);
-  params.isSmall =
-      aStyle.StyleUIReset()->ScrollbarWidth() == StyleScrollbarWidth::Thin;
-  params.isRtl = nsNativeTheme::IsFrameRTL(aFrame);
-  params.isHorizontal = aIsHorizontal;
-  params.isOnDarkBackground = !StaticPrefs::widget_disable_dark_scrollbar() &&
-                              nsNativeTheme::IsDarkBackground(aFrame);
-  
-  
-  if (!params.isOverlay) {
-    const nsStyleUI* ui = aStyle.StyleUI();
-    if (ui->HasCustomScrollbars()) {
-      const auto& colors = ui->mScrollbarColor.AsColors();
-      params.isCustom = true;
-      params.trackColor = colors.track.CalcColor(aStyle);
-      params.faceColor = colors.thumb.CalcColor(aStyle);
-    }
-  }
-
-  return params;
 }
 
 template <typename PaintBackendData>
