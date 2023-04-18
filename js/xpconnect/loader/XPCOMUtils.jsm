@@ -21,10 +21,7 @@ let global = Cu.getGlobalForObject({});
 
 
 const EXTRA_GLOBAL_NAME_TO_IMPORT_NAME = {
-  Headers: "fetch",
   MessagePort: "MessageChannel",
-  Request: "fetch",
-  Response: "fetch",
 };
 
 
