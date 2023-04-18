@@ -347,6 +347,8 @@ class WorkerPrivate final : public RelativeTimeline {
   }
 
   JSContext* GetJSContext() const {
+    
+    
     AssertIsOnWorkerThread();
     return mJSContext;
   }
@@ -1191,9 +1193,14 @@ class WorkerPrivate final : public RelativeTimeline {
   workerinternals::Queue<WorkerControlRunnable*, 4> mControlQueue;
   workerinternals::Queue<WorkerRunnable*, 4> mDebuggerQueue;
 
-  
   JSContext* mJSContext;
   RefPtr<WorkerThread> mThread;
+  
+  
+  
+  
+  
+  
   PRThread* mPRThread;
 
   
