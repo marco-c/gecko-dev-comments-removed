@@ -441,43 +441,55 @@ static GtkWidget* CreateNotebookWidget() {
 }
 
 static void CreateHeaderBarWidget(WidgetNodeType aAppearance) {
-  sWidgetStorage[aAppearance] = gtk_header_bar_new();
-
   GtkWidget* window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-  GtkStyleContext* style = gtk_widget_get_style_context(window);
-
-  if (aAppearance == MOZ_GTK_HEADER_BAR_MAXIMIZED) {
-    gtk_style_context_add_class(style, "maximized");
-    MOZ_ASSERT(sWidgetStorage[MOZ_GTK_HEADERBAR_WINDOW_MAXIMIZED] == nullptr,
-               "Window widget is already created!");
-    sWidgetStorage[MOZ_GTK_HEADERBAR_WINDOW_MAXIMIZED] = window;
-  } else {
-    MOZ_ASSERT(sWidgetStorage[MOZ_GTK_HEADERBAR_WINDOW] == nullptr,
-               "Window widget is already created!");
-    sWidgetStorage[MOZ_GTK_HEADERBAR_WINDOW] = window;
-  }
+  GtkStyleContext* windowStyle = gtk_widget_get_style_context(window);
 
   
   
-  gtk_style_context_add_class(style,
+  gtk_style_context_add_class(windowStyle,
                               IsSolidCSDStyleUsed() ? "solid-csd" : "csd");
 
   GtkWidget* fixed = gtk_fixed_new();
+  GtkStyleContext* fixedStyle = gtk_widget_get_style_context(fixed);
+  gtk_style_context_add_class(fixedStyle, "titlebar");
+
+  GtkWidget* headerBar = gtk_header_bar_new();
+
+  
+  GtkStyleContext* headerBarStyle = gtk_widget_get_style_context(headerBar);
+  gtk_style_context_add_class(headerBarStyle, "titlebar");
+
+  
+  
+  
+  
+  
+  
+  
+  gtk_style_context_add_class(headerBarStyle, "default-decoration");
+
+  sWidgetStorage[aAppearance] = headerBar;
+  if (aAppearance == MOZ_GTK_HEADER_BAR_MAXIMIZED) {
+    MOZ_ASSERT(!sWidgetStorage[MOZ_GTK_HEADERBAR_WINDOW_MAXIMIZED],
+               "Window widget is already created!");
+    MOZ_ASSERT(!sWidgetStorage[MOZ_GTK_HEADERBAR_FIXED_MAXIMIZED],
+               "Fixed widget is already created!");
+
+    gtk_style_context_add_class(windowStyle, "maximized");
+
+    sWidgetStorage[MOZ_GTK_HEADERBAR_WINDOW_MAXIMIZED] = window;
+    sWidgetStorage[MOZ_GTK_HEADERBAR_FIXED_MAXIMIZED] = fixed;
+  } else {
+    MOZ_ASSERT(!sWidgetStorage[MOZ_GTK_HEADERBAR_WINDOW],
+               "Window widget is already created!");
+    MOZ_ASSERT(!sWidgetStorage[MOZ_GTK_HEADERBAR_FIXED],
+               "Fixed widget is already created!");
+    sWidgetStorage[MOZ_GTK_HEADERBAR_WINDOW] = window;
+    sWidgetStorage[MOZ_GTK_HEADERBAR_FIXED] = fixed;
+  }
+
   gtk_container_add(GTK_CONTAINER(window), fixed);
   gtk_container_add(GTK_CONTAINER(fixed), sWidgetStorage[aAppearance]);
-
-  
-  style = gtk_widget_get_style_context(sWidgetStorage[aAppearance]);
-  gtk_style_context_add_class(style, "titlebar");
-
-  
-  
-  
-  
-  
-  
-  
-  gtk_style_context_add_class(style, "default-decoration");
 }
 
 #define ICON_SCALE_VARIANTS 2
