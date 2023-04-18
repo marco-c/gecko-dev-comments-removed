@@ -145,16 +145,6 @@ Timeline.prototype = {
               );
             }
           }
-
-          
-          if (this._withDocLoadingEvents) {
-            if (
-              marker.name == "document::DOMContentLoaded" ||
-              marker.name == "document::Load"
-            ) {
-              this.emit("doc-loading", marker, endTime);
-            }
-          }
         }
       }
     }
