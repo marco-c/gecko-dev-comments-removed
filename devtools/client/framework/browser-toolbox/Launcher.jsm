@@ -60,6 +60,12 @@ var processes = new Set();
 
 
 
+
+
+
+
+
+
 function BrowserToolboxLauncher(
   onClose,
   onRun,
@@ -100,12 +106,13 @@ EventEmitter.decorate(BrowserToolboxLauncher);
 
 
 
-BrowserToolboxLauncher.init = function(
+
+BrowserToolboxLauncher.init = function({
   onClose,
   onRun,
   overwritePreferences,
-  binaryPath
-) {
+  binaryPath,
+} = {}) {
   if (
     !Services.prefs.getBoolPref("devtools.chrome.enabled") ||
     !Services.prefs.getBoolPref("devtools.debugger.remote-enabled")
