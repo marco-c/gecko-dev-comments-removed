@@ -1572,7 +1572,12 @@ bool TypeAnalyzer::propagateSpecialization(MPhi* phi) {
       
       
       
-      if (!respecialize(use, phi->type())) {
+      
+      MIRType type = phi->type();
+      if (type == MIRType::Float32 && !use->canProduceFloat32()) {
+        type = MIRType::Double;
+      }
+      if (!respecialize(use, type)) {
         return false;
       }
       continue;
