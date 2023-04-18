@@ -4,6 +4,14 @@
 
 add_task(async function() {
   
+  
+  
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["extensions.pocket.refresh.hideRecentSaves.enabled", true]],
+  });
+  
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
     "about:robots"
