@@ -167,21 +167,6 @@ void ThreadRegistration::UnregisterThread() {
     
     
     
-    if (NS_WARN_IF(rootRegistration->mData.mProfilingStack.stackPointer !=
-                   0u)) {
-      
-      
-      
-      
-      
-      
-      
-      PROFILER_MARKER_UNTYPED(
-          "ThreadRegistration::UnregisterThread(), last heap-allocated "
-          "registration not deleted because of non-empty profiling stack",
-          OTHER_Profiling, MarkerStack::Capture());
-      return;
-    }
     delete rootRegistration;
     return;
   }
