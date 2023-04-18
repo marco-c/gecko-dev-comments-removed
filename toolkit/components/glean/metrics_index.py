@@ -13,6 +13,7 @@ metrics_yamls = [
     "browser/base/content/metrics.yaml",
     "gfx/metrics.yaml",
     "toolkit/components/processtools/metrics.yaml",
+    "browser/components/metrics.yaml",
 ]
 
 
