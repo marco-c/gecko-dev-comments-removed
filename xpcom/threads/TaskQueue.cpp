@@ -11,14 +11,56 @@
 #include "nsIEventTarget.h"
 #include "nsITargetShutdownTask.h"
 #include "nsThreadUtils.h"
+#include "nsQueryObject.h"
 
 namespace mozilla {
+
+
+
+
+class TaskQueueTrackerEntry final
+    : private LinkedListElement<TaskQueueTrackerEntry> {
+ public:
+  TaskQueueTrackerEntry(TaskQueueTracker* aTracker,
+                        const RefPtr<TaskQueue>& aQueue)
+      : mTracker(aTracker), mQueue(aQueue) {
+    MutexAutoLock lock(mTracker->mMutex);
+    mTracker->mEntries.insertFront(this);
+  }
+  ~TaskQueueTrackerEntry() {
+    MutexAutoLock lock(mTracker->mMutex);
+    removeFrom(mTracker->mEntries);
+  }
+
+  TaskQueueTrackerEntry(const TaskQueueTrackerEntry&) = delete;
+  TaskQueueTrackerEntry(TaskQueueTrackerEntry&&) = delete;
+  TaskQueueTrackerEntry& operator=(const TaskQueueTrackerEntry&) = delete;
+  TaskQueueTrackerEntry& operator=(TaskQueueTrackerEntry&&) = delete;
+
+  RefPtr<TaskQueue> GetQueue() const { return RefPtr<TaskQueue>(mQueue); }
+
+ private:
+  friend class LinkedList<TaskQueueTrackerEntry>;
+  friend class LinkedListElement<TaskQueueTrackerEntry>;
+
+  const RefPtr<TaskQueueTracker> mTracker;
+  const ThreadSafeWeakPtr<TaskQueue> mQueue;
+};
 
 RefPtr<TaskQueue> TaskQueue::Create(already_AddRefed<nsIEventTarget> aTarget,
                                     const char* aName,
                                     bool aSupportsTailDispatch) {
+  nsCOMPtr<nsIEventTarget> target(std::move(aTarget));
   RefPtr<TaskQueue> queue =
-      new TaskQueue(std::move(aTarget), aName, aSupportsTailDispatch);
+      new TaskQueue(do_AddRef(target), aName, aSupportsTailDispatch);
+
+  
+  
+  if (RefPtr<TaskQueueTracker> tracker = do_QueryObject(target)) {
+    MonitorAutoLock lock(queue->mQueueMonitor);
+    queue->mTrackerEntry = MakeUnique<TaskQueueTrackerEntry>(tracker, queue);
+  }
+
   return queue;
 }
 
@@ -166,6 +208,16 @@ RefPtr<ShutdownPromise> TaskQueue::BeginShutdown() {
   return p;
 }
 
+void TaskQueue::MaybeResolveShutdown() {
+  mQueueMonitor.AssertCurrentThreadOwns();
+  if (mIsShutdown && !mIsRunning) {
+    mShutdownPromise.ResolveIfExists(true, __func__);
+    
+    mTrackerEntry = nullptr;
+    mTarget = nullptr;
+  }
+}
+
 bool TaskQueue::IsEmpty() {
   MonitorAutoLock mon(mQueueMonitor);
   return mTasks.IsEmpty();
@@ -278,5 +330,18 @@ NS_IMETHODIMP TaskQueue::HaveDirectTasks(bool* aValue) {
   *aValue = mDirectTasks.HaveTasks();
   return NS_OK;
 }
+
+nsTArray<RefPtr<TaskQueue>> TaskQueueTracker::GetAllTrackedTaskQueues() {
+  MutexAutoLock lock(mMutex);
+  nsTArray<RefPtr<TaskQueue>> queues;
+  for (auto* entry : mEntries) {
+    if (auto queue = entry->GetQueue()) {
+      queues.AppendElement(queue);
+    }
+  }
+  return queues;
+}
+
+TaskQueueTracker::~TaskQueueTracker() = default;
 
 }  
