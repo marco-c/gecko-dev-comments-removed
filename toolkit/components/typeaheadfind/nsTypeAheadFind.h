@@ -13,7 +13,6 @@
 #include "nsIWebBrowserFind.h"
 #include "nsWeakReference.h"
 #include "nsITypeAheadFind.h"
-#include "nsISound.h"
 
 class nsPIDOMWindowInner;
 class nsPresContext;
@@ -99,11 +98,6 @@ class nsTypeAheadFind : public nsITypeAheadFind,
   
   
   uint32_t mLastFindLength;
-
-  
-  
-  nsCOMPtr<nsISound> mSoundInterface;
-  bool mIsSoundInitialized;
 
   
   RefPtr<nsRange> mStartFindRange;

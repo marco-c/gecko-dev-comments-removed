@@ -190,8 +190,7 @@ nsMenuFrame* nsMenuBarFrame::FindMenuWithShortcut(KeyboardEvent* aKeyEvent,
     
     
     if (mIsActive) {
-      nsCOMPtr<nsISound> soundInterface =
-          do_CreateInstance("@mozilla.org/sound;1");
+      nsCOMPtr<nsISound> soundInterface = do_GetService("@mozilla.org/sound;1");
       if (soundInterface) soundInterface->Beep();
     }
 
