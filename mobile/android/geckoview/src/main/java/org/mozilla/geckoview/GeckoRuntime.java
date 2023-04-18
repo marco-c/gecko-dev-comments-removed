@@ -102,19 +102,6 @@ public final class GeckoRuntime implements Parcelable {
 
 
 
-
-
-  @Deprecated
-  @DeprecationSchedule(id = "crashreporter-fatal", version = 100)
-  public static final String EXTRA_CRASH_FATAL = "fatal";
-
-  
-
-
-
-
-
-
   public static final String EXTRA_CRASH_PROCESS_TYPE = "processType";
 
   
@@ -323,7 +310,6 @@ public final class GeckoRuntime implements Parcelable {
             final Intent i = new Intent(ACTION_CRASHED, null, context, crashHandler);
             i.putExtra(EXTRA_MINIDUMP_PATH, message.getString(EXTRA_MINIDUMP_PATH));
             i.putExtra(EXTRA_EXTRAS_PATH, message.getString(EXTRA_EXTRAS_PATH));
-            i.putExtra(EXTRA_CRASH_FATAL, message.getBoolean(EXTRA_CRASH_FATAL, true));
             i.putExtra(EXTRA_CRASH_PROCESS_TYPE, message.getString(EXTRA_CRASH_PROCESS_TYPE));
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
