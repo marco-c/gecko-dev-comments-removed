@@ -35,7 +35,7 @@
 #include "frontend/CompilationStencil.h"  
 #include "frontend/ParseContext.h"
 #include "frontend/SourceNotes.h"  
-#include "gc/AllocKind.h"  
+#include "gc/AllocKind.h"          
 #include "gc/FreeOp.h"
 #include "jit/BaselineJIT.h"
 #include "jit/CacheIRHealth.h"
@@ -721,7 +721,6 @@ void JSScript::resetScriptCounts() {
 void ScriptSourceObject::finalize(JSFreeOp* fop, JSObject* obj) {
   MOZ_ASSERT(fop->onMainThread());
   ScriptSourceObject* sso = &obj->as<ScriptSourceObject>();
-  sso->source()->finalizeGCData();
   sso->source()->Release();
 
   
@@ -1541,30 +1540,6 @@ template bool ScriptSource::assignSource(JSContext* cx,
 template bool ScriptSource::assignSource(JSContext* cx,
                                          const ReadOnlyCompileOptions& options,
                                          SourceText<Utf8Unit>& srcBuf);
-
-void ScriptSource::finalizeGCData() {
-  
-
-  
-  
-  
-  
-  
-  
-  MOZ_ASSERT(TlsContext.get() && TlsContext.get()->isMainThreadContext());
-
-  if (xdrEncoder_) {
-    xdrEncoder_.reset();
-  }
-}
-
-ScriptSource::~ScriptSource() {
-  MOZ_ASSERT(refs == 0);
-
-  
-  
-  MOZ_ASSERT(!xdrEncoder_);
-}
 
 [[nodiscard]] static bool reallocUniquePtr(UniqueChars& unique, size_t size) {
   auto newPtr = static_cast<char*>(js_realloc(unique.get(), size));
