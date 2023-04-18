@@ -99,9 +99,7 @@ def parse_with_options(input_files, options):
     
     counters = {}
     numerators_by_denominator: Dict[str, Any] = {}
-    for (category_name, category_val) in objects.items():
-        if category_name == "tags":
-            continue
+    for category_val in objects.values():
         for metric in category_val.values():
             fqmn = metric.identifier()
             if getattr(metric, "type", None) == "counter":

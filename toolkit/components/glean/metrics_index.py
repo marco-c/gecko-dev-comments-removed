@@ -30,10 +30,3 @@ pings_yamls = [
     "toolkit/components/glean/tests/test_pings.yaml",
     "toolkit/mozapps/update/pings.yaml",
 ]
-
-
-
-
-tags_yamls = [
-    "toolkit/components/glean/tags.yaml",
-]
