@@ -22,6 +22,11 @@ const endsWithNullRx = /\0$/;
 const whitespaceRx = /\s+/g;
 const startsWithZeroRx = /^0/;
 
+loader.lazyGetter(this, "standardSessionString", () => {
+  const l10n = new Localization(["devtools/client/storage.ftl"], true);
+  return l10n.formatValueSync("storage-expires-session");
+});
+
 
 
 
@@ -40,6 +45,8 @@ const startsWithZeroRx = /^0/;
 
 
 function naturalSort(a = "", b = "", insensitive = false) {
+  let sessionString = standardSessionString;
+
   
   a = (a + "").trim();
   b = (b + "").trim();
@@ -47,6 +54,7 @@ function naturalSort(a = "", b = "", insensitive = false) {
   if (insensitive) {
     a = a.toLowerCase();
     b = b.toLowerCase();
+    sessionString = standardSessionString.toLowerCase();
   }
 
   
@@ -69,6 +77,19 @@ function naturalSort(a = "", b = "", insensitive = false) {
     parseInt(b.match(hexRx), 16) ||
     (aHexOrDate && b.match(dateRx) && Date.parse(b)) ||
     null;
+
+  if (
+    (aHexOrDate || bHexOrDate) &&
+    (a === sessionString || b === sessionString)
+  ) {
+    
+    
+    if (a === sessionString) {
+      return -1;
+    } else if (b === sessionString) {
+      return 1;
+    }
+  }
 
   
   if (bHexOrDate) {
