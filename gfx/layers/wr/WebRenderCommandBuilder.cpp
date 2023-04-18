@@ -1666,6 +1666,7 @@ void WebRenderCommandBuilder::CreateWebRenderCommands(
 
 struct NewLayerData {
   size_t mLayerCountBeforeRecursing = 0;
+  const ActiveScrolledRoot* mStopAtAsr = nullptr;
 };
 
 void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
@@ -1795,6 +1796,9 @@ void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
       
       if (newLayerData) {
         newLayerData->mLayerCountBeforeRecursing = mLayerScrollData.size();
+        newLayerData->mStopAtAsr =
+            mAsrStack.empty() ? nullptr : mAsrStack.back();
+
         mAsrStack.push_back(asr);
       }
     }
@@ -1836,8 +1840,8 @@ void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
         
         
         mAsrStack.pop_back();
-        const ActiveScrolledRoot* stopAtAsr =
-            mAsrStack.empty() ? nullptr : mAsrStack.back();
+
+        const ActiveScrolledRoot* stopAtAsr = newLayerData->mStopAtAsr;
 
         int32_t descendants =
             mLayerScrollData.size() - newLayerData->mLayerCountBeforeRecursing;
