@@ -1312,32 +1312,40 @@ static inline void TryToDealWithScrollbarChange(nsChangeHint& aHint,
 
   MOZ_ASSERT(aFrame, "If we're not reframing, we ought to have a frame");
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (aContent->IsAnyOfHTMLElements(nsGkAtoms::body, nsGkAtoms::html)) {
-    
-    
-    
-    
-    
-    
-    nsIContent* prevOverrideNode =
-        aPc->GetViewportScrollStylesOverrideElement();
-    nsIContent* newOverrideNode = aPc->UpdateViewportScrollStylesOverride();
+  const bool isRoot = aContent->IsInUncomposedDoc() && !aContent->GetParent();
 
-    if (aContent == prevOverrideNode || aContent == newOverrideNode) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (isRoot || aContent->IsHTMLElement(nsGkAtoms::body)) {
+    
+    
+    
+    
+    
+    
+    Element* prevOverride = aPc->GetViewportScrollStylesOverrideElement();
+    Element* newOverride = aPc->UpdateViewportScrollStylesOverride();
+
+    const auto ProvidesScrollbarStyles = [&](nsIContent* aOverride) {
+      if (aOverride) {
+        return aOverride == aContent;
+      }
+      return isRoot;
+    };
+
+    if (ProvidesScrollbarStyles(prevOverride) ||
+        ProvidesScrollbarStyles(newOverride)) {
       
       
-      if (!prevOverrideNode || !newOverrideNode ||
-          prevOverrideNode == newOverrideNode) {
+      if (!prevOverride || !newOverride || prevOverride == newOverride) {
         
         
         
@@ -1354,20 +1362,28 @@ static inline void TryToDealWithScrollbarChange(nsChangeHint& aHint,
           sf->MarkScrollbarsDirtyForReflow();
         }
         aHint |= nsChangeHint_ReflowHintsForScrollbarChange;
-        return;
+      } else {
+        
+        
+        aHint |= nsChangeHint_ReconstructFrame;
       }
+      return;
     }
   }
 
+  const bool scrollable = aFrame->StyleDisplay()->IsScrollableOverflow();
   if (nsIScrollableFrame* sf = do_QueryFrame(aFrame)) {
-    if (aFrame->StyleDisplay()->IsScrollableOverflow() &&
-        sf->HasAllNeededScrollbars()) {
+    if (scrollable && sf->HasAllNeededScrollbars()) {
       sf->MarkScrollbarsDirtyForReflow();
       
       
       aHint |= nsChangeHint_ReflowHintsForScrollbarChange;
       return;
     }
+  } else if (!scrollable) {
+    
+    
+    return;
   }
 
   
