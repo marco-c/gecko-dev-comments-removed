@@ -22,6 +22,7 @@ const { TelemetryTestUtils } = ChromeUtils.import(
 
 const MESSAGE_CONTENT = {
   id: "xman_test_message",
+  groups: [],
   content: {
     text: "This is a test CFR",
     addon: {
@@ -41,7 +42,7 @@ const MESSAGE_CONTENT = {
         },
         action: {
           data: {
-            url: null,
+            url: "about:blank",
           },
           type: "INSTALL_ADDON_FROM_URL",
         },
@@ -75,6 +76,7 @@ const MESSAGE_CONTENT = {
       ],
     },
     category: "cfrAddons",
+    layout: "short_message",
     bucket_id: "CFR_M1",
     info_icon: {
       label: {
@@ -331,22 +333,5 @@ add_task(async function test_exposure_ping_legacy() {
   );
 
   exposureSpy.restore();
-  await cleanup();
-});
-
-add_task(async function test_featureless_experiment() {
-  let experiment = await getCFRExperiment();
-  
-  experiment.branches.forEach(branch => delete branch.features);
-  Assert.ok(ExperimentAPI._store.getAllActive().length === 0, "Empty store");
-  await setup(experiment);
-  
-  await RemoteSettingsExperimentLoader.updateRecipes();
-  
-  await BrowserTestUtils.waitForCondition(
-    () => ExperimentAPI._store.getAllActive().length === 1,
-    "ExperimentAPI should return an experiment"
-  );
-
   await cleanup();
 });
