@@ -3510,7 +3510,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   
-  void loadWasmPinnedRegsFromTls(
+  void loadWasmPinnedRegsFromInstance(
       mozilla::Maybe<wasm::BytecodeOffset> trapOffset = mozilla::Nothing());
 
   
@@ -4469,7 +4469,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
   void switchToRealm(const void* realm, Register scratch);
   void switchToObjectRealm(Register obj, Register scratch);
   void switchToBaselineFrameRealm(Register scratch);
-  void switchToWasmTlsRealm(Register scratch1, Register scratch2);
+  void switchToWasmInstanceRealm(Register scratch1, Register scratch2);
   void debugAssertContextRealm(const void* realm, Register scratch);
 
   void loadJitActivation(Register dest);

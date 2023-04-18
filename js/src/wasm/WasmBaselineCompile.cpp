@@ -1313,15 +1313,15 @@ void BaseCompiler::endCall(FunctionCall& call, size_t stackSpace) {
   if (call.restoreRegisterStateAndRealm) {
     
     fr.loadTlsPtr(InstanceReg);
-    masm.loadWasmPinnedRegsFromTls();
-    masm.switchToWasmTlsRealm(ABINonArgReturnReg0, ABINonArgReturnReg1);
+    masm.loadWasmPinnedRegsFromInstance();
+    masm.switchToWasmInstanceRealm(ABINonArgReturnReg0, ABINonArgReturnReg1);
   } else if (call.usesSystemAbi) {
     
     
 #ifndef JS_CODEGEN_X86
     
     fr.loadTlsPtr(InstanceReg);
-    masm.loadWasmPinnedRegsFromTls();
+    masm.loadWasmPinnedRegsFromInstance();
 #endif
   }
 }
