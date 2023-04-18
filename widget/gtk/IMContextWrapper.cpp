@@ -1100,7 +1100,7 @@ void IMContextWrapper::OnFocusChangeInGecko(bool aFocus) {
 
   
   mSelectedStringRemovedByComposition.Truncate();
-  mSelection.Clear();
+  mSelection.reset();
 
   
   
@@ -1216,7 +1216,7 @@ void IMContextWrapper::OnUpdateComposition() {
   if (!IsComposing()) {
     
     
-    mSelection.Clear();
+    mSelection.reset();
     EnsureToCacheSelection();
     mSetCursorPositionOnKeyEvent = true;
   }
@@ -1445,10 +1445,11 @@ void IMContextWrapper::Blur() {
 void IMContextWrapper::OnSelectionChange(
     nsWindow* aCaller, const IMENotification& aIMENotification) {
   const bool isSelectionRangeChanged =
-      mSelection.StartOffset() !=
+      mSelection.isNothing() ||
+      mSelection->StartOffset() !=
           aIMENotification.mSelectionChangeData.mOffset ||
-      mSelection.DataRef() != *aIMENotification.mSelectionChangeData.mString;
-  mSelection.Assign(aIMENotification);
+      mSelection->DataRef() != *aIMENotification.mSelectionChangeData.mString;
+  mSelection = Some(Selection(aIMENotification.mSelectionChangeData));
   const bool retrievedSurroundingSignalReceived =
       mRetrieveSurroundingSignalReceived;
   mRetrieveSurroundingSignalReceived = false;
@@ -1490,14 +1491,15 @@ void IMContextWrapper::OnSelectionChange(
   
   
   if (mCompositionState == eCompositionState_CompositionStartDispatched) {
-    if (NS_WARN_IF(!mSelection.IsValid())) {
+    if (NS_WARN_IF(mSelection.isNothing()) ||
+        NS_WARN_IF(!mSelection->IsValid())) {
       MOZ_LOG(gIMELog, LogLevel::Error,
               ("0x%p   OnSelectionChange(), FAILED, "
                "new offset is too large, cannot keep composing",
                this));
     } else {
       
-      mCompositionStart = mSelection.StartOffset();
+      mCompositionStart = mSelection->StartOffset();
       
       
       MOZ_LOG(gIMELog, LogLevel::Debug,
@@ -2138,7 +2140,7 @@ bool IMContextWrapper::DispatchCompositionStart(GtkIMContext* aContext) {
   
   
   
-  mCompositionStart = mSelection.StartOffset();
+  mCompositionStart = mSelection->StartOffset();
   mDispatchedCompositionString.Truncate();
 
   
@@ -2252,7 +2254,7 @@ bool IMContextWrapper::DispatchCompositionChangeEvent(
     } else {
       
       
-      mCompositionStart = mSelection.StartOffset();
+      mCompositionStart = mSelection->StartOffset();
     }
   }
 
@@ -2356,8 +2358,9 @@ bool IMContextWrapper::DispatchCompositionCommitEvent(
     
     
     
-    if (mSelection.IsValid()) {
-      mSelection.CollapseTo(mSelection.StartOffset() + aCommitString->Length());
+    if (mSelection.isSome() && mSelection->IsValid()) {
+      mSelection->CollapseTo(mSelection->StartOffset() +
+                             aCommitString->Length());
       MOZ_LOG(gIMELog, LogLevel::Info,
               ("0x%p   DispatchCompositionCommitEvent(), mSelection=%s", this,
                ToString(mSelection).c_str()));
@@ -2404,10 +2407,17 @@ bool IMContextWrapper::DispatchCompositionCommitEvent(
     }
 
     
-    mSelection.CollapseTo(mCompositionStart +
-                          (aCommitString
-                               ? aCommitString->Length()
-                               : mDispatchedCompositionString.Length()));
+    const uint32_t offsetToPutCaret =
+        mCompositionStart + (aCommitString
+                                 ? aCommitString->Length()
+                                 : mDispatchedCompositionString.Length());
+    if (mSelection.isSome()) {
+      mSelection->CollapseTo(offsetToPutCaret);
+    } else {
+      
+      
+      mSelection.emplace(offsetToPutCaret, WritingMode());
+    }
   }
 
   mCompositionState = eCompositionState_NotComposing;
@@ -2806,7 +2816,7 @@ void IMContextWrapper::SetCursorPosition(GtkIMContext* aContext) {
 
   bool useCaret = false;
   if (!mCompositionTargetRange.IsValid()) {
-    if (!mSelection.IsValid()) {
+    if (mSelection.isNothing() || !mSelection->IsValid()) {
       MOZ_LOG(gIMELog, LogLevel::Error,
               ("0x%p   SetCursorPosition(), FAILED, "
                "mCompositionTargetRange and mSelection are invalid",
@@ -2833,9 +2843,9 @@ void IMContextWrapper::SetCursorPosition(GtkIMContext* aContext) {
   WidgetQueryContentEvent queryCaretOrTextRectEvent(
       true, useCaret ? eQueryCaretRect : eQueryTextRect, mLastFocusedWindow);
   if (useCaret) {
-    queryCaretOrTextRectEvent.InitForQueryCaretRect(mSelection.StartOffset());
+    queryCaretOrTextRectEvent.InitForQueryCaretRect(mSelection->StartOffset());
   } else {
-    if (mSelection.WritingModeRef().IsVertical()) {
+    if (mSelection->WritingModeRef().IsVertical()) {
       
       
       uint32_t length =
@@ -2906,8 +2916,8 @@ nsresult IMContextWrapper::GetCurrentParagraph(nsAString& aText,
       return NS_ERROR_FAILURE;
     }
 
-    selOffset = mSelection.StartOffset();
-    selLength = mSelection.Length();
+    selOffset = mSelection->StartOffset();
+    selLength = mSelection->Length();
   }
 
   MOZ_LOG(gIMELog, LogLevel::Debug,
@@ -3019,7 +3029,7 @@ nsresult IMContextWrapper::DeleteText(GtkIMContext* aContext, int32_t aOffset,
                this));
       return NS_ERROR_FAILURE;
     }
-    selOffset = mSelection.StartOffset();
+    selOffset = mSelection->StartOffset();
   }
 
   
@@ -3153,9 +3163,9 @@ bool IMContextWrapper::EnsureToCacheSelection(nsAString* aSelectedString) {
     aSelectedString->Truncate();
   }
 
-  if (mSelection.IsValid()) {
+  if (mSelection.isSome() && mSelection->IsValid()) {
     if (aSelectedString) {
-      aSelectedString->Assign(mSelection.DataRef());
+      aSelectedString->Assign(mSelection->DataRef());
     }
     return true;
   }
@@ -3181,16 +3191,17 @@ bool IMContextWrapper::EnsureToCacheSelection(nsAString* aSelectedString) {
     return false;
   }
 
-  mSelection.Assign(querySelectedTextEvent);
-  if (!mSelection.IsValid()) {
+  mSelection = Some(Selection(querySelectedTextEvent));
+  if (!mSelection->IsValid()) {
     MOZ_LOG(gIMELog, LogLevel::Error,
             ("0x%p EnsureToCacheSelection(), FAILED, due to "
              "failure of query selection event (invalid result)",
              this));
+    mSelection.reset();
     return false;
   }
 
-  if (!mSelection.Collapsed() && aSelectedString) {
+  if (!mSelection->Collapsed() && aSelectedString) {
     aSelectedString->Assign(querySelectedTextEvent.mReply->DataRef());
   }
 
@@ -3198,28 +3209,6 @@ bool IMContextWrapper::EnsureToCacheSelection(nsAString* aSelectedString) {
           ("0x%p EnsureToCacheSelection(), Succeeded, mSelection=%s", this,
            ToString(mSelection).c_str()));
   return true;
-}
-
-
-
-
-
-void IMContextWrapper::Selection::Assign(
-    const IMENotification& aIMENotification) {
-  MOZ_ASSERT(aIMENotification.mMessage == NOTIFY_IME_OF_SELECTION_CHANGE);
-  mString = aIMENotification.mSelectionChangeData.String();
-  mOffset = aIMENotification.mSelectionChangeData.mOffset;
-  mWritingMode = aIMENotification.mSelectionChangeData.GetWritingMode();
-}
-
-void IMContextWrapper::Selection::Assign(
-    const WidgetQueryContentEvent& aEvent) {
-  MOZ_ASSERT(aEvent.mMessage == eQuerySelectedText);
-  MOZ_ASSERT(aEvent.Succeeded());
-  MOZ_ASSERT(aEvent.mReply->mOffsetAndData.isSome());
-  mString = aEvent.mReply->DataRef();
-  mOffset = aEvent.mReply->StartOffset();
-  mWritingMode = aEvent.mReply->WritingModeRef();
 }
 
 }  
