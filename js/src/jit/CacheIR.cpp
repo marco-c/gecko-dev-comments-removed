@@ -4558,14 +4558,6 @@ bool SetPropIRGenerator::canAttachAddSlotStub(HandleObject obj, HandleId id) {
 
   
   
-  DebugOnly<uint32_t> index;
-  MOZ_ASSERT_IF(obj->is<ArrayObject>(), !IdIsIndex(id, &index));
-  if (!obj->is<ArrayObject>() && obj->getClass()->getAddProperty()) {
-    return false;
-  }
-
-  
-  
   for (JSObject* proto = obj->staticPrototype(); proto;
        proto = proto->staticPrototype()) {
     if (!proto->is<NativeObject>()) {
@@ -4668,7 +4660,18 @@ AttachDecision SetPropIRGenerator::tryAttachAddSlotStub(HandleShape oldShape) {
 
   ShapeGuardProtoChain(writer, nobj, objId);
 
-  if (holder->isFixedSlot(propInfo.slot())) {
+  
+  
+  
+  DebugOnly<uint32_t> index;
+  MOZ_ASSERT_IF(obj->is<ArrayObject>(), !IdIsIndex(id, &index));
+  bool mustCallAddPropertyHook =
+      obj->getClass()->getAddProperty() && !obj->is<ArrayObject>();
+
+  if (mustCallAddPropertyHook) {
+    writer.addSlotAndCallAddPropHook(objId, rhsValId, newShape);
+    trackAttached("AddSlotWithAddPropertyHook");
+  } else if (holder->isFixedSlot(propInfo.slot())) {
     size_t offset = NativeObject::getFixedSlotOffset(propInfo.slot());
     writer.addAndStoreFixedSlot(objId, offset, rhsValId, newShape);
     trackAttached("AddSlot");
