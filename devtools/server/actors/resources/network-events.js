@@ -49,10 +49,7 @@ class NetworkEventWatcher {
     
     this.persist = false;
     this.listener = new NetworkObserver(
-      {
-        browserId: this.browserId,
-        addonId: watcherActor.sessionContext.addonId,
-      },
+      { sessionContext: watcherActor.sessionContext },
       { onNetworkEvent: this.onNetworkEvent.bind(this) }
     );
 
@@ -322,10 +319,7 @@ class NetworkEventWatcher {
   
 
 
-
-
-
-  destroy(watcherActor) {
+  destroy() {
     if (this.listener) {
       this.listener.destroy();
       Services.obs.removeObserver(this, "window-global-destroyed");

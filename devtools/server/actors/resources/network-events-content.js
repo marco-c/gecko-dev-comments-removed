@@ -76,11 +76,9 @@ class NetworkEventContentWatcher {
       return;
     }
 
-    
     if (
       !NetworkUtils.matchRequest(channel, {
-        window: this.targetActor.window,
-        matchExactWindow: this.targetActor.ignoreSubFrames,
+        targetActor: this.targetActor,
       })
     ) {
       return;
@@ -123,11 +121,9 @@ class NetworkEventContentWatcher {
 
     const channel = subject.QueryInterface(Ci.nsIHttpChannel);
 
-    
     if (
       !NetworkUtils.matchRequest(channel, {
-        window: this.targetActor.window,
-        matchExactWindow: this.targetActor.ignoreSubFrames,
+        targetActor: this.targetActor,
       })
     ) {
       return;
