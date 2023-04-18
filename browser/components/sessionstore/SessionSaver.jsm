@@ -186,15 +186,7 @@ var SessionSaverInternal = {
     this._wasIdle = this._isIdle;
     this._timeoutID = setTimeout(() => {
       
-      
-      let saveStateAsyncWhenIdle = deadline => {
-        
-        
-        
-        if (deadline.timeRemaining() < 5) {
-          this._idleCallbackID = requestIdleCallback(saveStateAsyncWhenIdle);
-          return;
-        }
+      let saveStateAsyncWhenIdle = () => {
         this._saveStateAsync();
       };
 
