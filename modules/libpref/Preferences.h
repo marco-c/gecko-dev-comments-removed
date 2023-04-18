@@ -445,6 +445,8 @@ class Preferences final : public nsIPrefService,
   nsresult SavePrefFileInternal(nsIFile* aFile, SaveMethod aSaveMethod);
   nsresult WritePrefFile(nsIFile* aFile, SaveMethod aSaveMethod);
 
+  nsresult ResetUserPrefs();
+
   
   
  public:
