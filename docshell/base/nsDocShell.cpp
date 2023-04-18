@@ -2743,7 +2743,27 @@ nsresult nsDocShell::SetDocLoaderParent(nsDocLoader* aParent) {
     mContentListener->SetParentContentListener(parentURIListener);
   }
 
+  
+  if (!aParent) {
+    MaybeClearStorageAccessFlag();
+  }
+
   return NS_OK;
+}
+
+void nsDocShell::MaybeClearStorageAccessFlag() {
+  if (mScriptGlobal) {
+    
+    mScriptGlobal->ParentWindowChanged();
+
+    
+    for (auto* childDocLoader : mChildList.ForwardRange()) {
+      nsCOMPtr<nsIDocShell> child = do_QueryObject(childDocLoader);
+      if (child) {
+        static_cast<nsDocShell*>(child.get())->MaybeClearStorageAccessFlag();
+      }
+    }
+  }
 }
 
 void nsDocShell::MaybeRestoreWindowName() {

@@ -33,8 +33,44 @@ class ContentParent;
 class Document;
 }  
 
-class StorageAccessAPIHelper final {
+class ContentBlocking final {
  public:
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static bool ShouldAllowAccessFor(nsPIDOMWindowInner* a3rdPartyTrackingWindow,
+                                   nsIURI* aURI, uint32_t* aRejectedReason);
+
+  
+  
+  
+  
+  
+  
+  static bool ApproximateAllowAccessForWithoutChannel(
+      nsPIDOMWindowInner* aFirstPartyWindow, nsIURI* aURI);
+
+  
+  
+  
+  
+  static bool ShouldAllowAccessFor(nsIChannel* aChannel, nsIURI* aURI,
+                                   uint32_t* aRejectedReason);
+
+  
+  
+  static bool ShouldAllowAccessFor(nsIPrincipal* aPrincipal,
+                                   nsICookieJarSettings* aCookieJarSettings);
+
   enum StorageAccessPromptChoices { eAllow, eAllowAutoGrant };
 
   
@@ -111,9 +147,7 @@ class StorageAccessAPIHelper final {
   
   
   static Maybe<bool> CheckBrowserSettingsDecidesStorageAccessAPI(
-      nsICookieJarSettings* aCookieJarSettings, bool aThirdParty,
-      bool aOnRejectForeignAllowlist, bool aIsOnThirdPartySkipList,
-      bool aIsThirdPartyTracker);
+      nsICookieJarSettings* aCookieJarSettings, bool aThirdParty);
 
   
   
@@ -175,6 +209,32 @@ class StorageAccessAPIHelper final {
 
   static void UpdateAllowAccessOnParentProcess(
       dom::BrowsingContext* aParentContext, const nsACString& aTrackingOrigin);
+
+  typedef MozPromise<uint32_t, nsresult, true> CheckTrackerForPrincipalPromise;
+  class TrackerClassifierFeatureCallback final
+      : public nsIUrlClassifierFeatureCallback {
+   public:
+    NS_DECL_ISUPPORTS
+    NS_DECL_NSIURLCLASSIFIERFEATURECALLBACK
+
+    RefPtr<CheckTrackerForPrincipalPromise> Promise() {
+      return mHolder.Ensure(__func__);
+    }
+
+    void Reject(nsresult rv) { mHolder.Reject(rv, __func__); }
+
+    TrackerClassifierFeatureCallback() = default;
+
+   private:
+    ~TrackerClassifierFeatureCallback() = default;
+
+    MozPromiseHolder<CheckTrackerForPrincipalPromise> mHolder;
+  };
+
+  
+  
+  [[nodiscard]] static RefPtr<CheckTrackerForPrincipalPromise>
+  CheckTrackerForPrincipal(nsIPrincipal* aPrincipal);
 };
 
 }  

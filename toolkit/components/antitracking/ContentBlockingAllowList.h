@@ -30,10 +30,6 @@ class ContentBlockingAllowList final {
                         bool aIsPrivateBrowsing, bool& aIsAllowListed);
 
   static bool Check(nsIHttpChannel* aChannel);
-  
-  static bool Check(nsPIDOMWindowInner* aWindow);
-  static bool Check(nsIPrincipal* aTopWinPrincipal, bool aIsPrivateBrowsing);
-  static bool Check(nsICookieJarSettings* aCookieJarSettings);
 
   
   
@@ -44,6 +40,14 @@ class ContentBlockingAllowList final {
   static void RecomputePrincipal(nsIURI* aURIBeingLoaded,
                                  const OriginAttributes& aAttrs,
                                  nsIPrincipal** aPrincipal);
+
+ private:
+  
+  static bool Check(nsIPrincipal* aTopWinPrincipal, bool aIsPrivateBrowsing);
+  static bool Check(nsPIDOMWindowInner* aWindow);
+  static bool Check(nsICookieJarSettings* aCookieJarSettings);
+
+  friend class ContentBlocking;
 };
 
 }  

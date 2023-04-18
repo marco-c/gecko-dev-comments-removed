@@ -10,7 +10,7 @@
 #include "ipc/EnumSerializer.h"
 
 #include "mozilla/ContentBlockingNotifier.h"
-#include "mozilla/StorageAccessAPIHelper.h"
+#include "mozilla/ContentBlocking.h"
 
 #include "nsILoadInfo.h"
 
@@ -40,11 +40,11 @@ struct ParamTraits<mozilla::ContentBlockingNotifier::BlockingDecision>
 
 
 template <>
-struct ParamTraits<mozilla::StorageAccessAPIHelper::StorageAccessPromptChoices>
+struct ParamTraits<mozilla::ContentBlocking::StorageAccessPromptChoices>
     : public ContiguousEnumSerializerInclusive<
-          mozilla::StorageAccessAPIHelper::StorageAccessPromptChoices,
-          mozilla::StorageAccessAPIHelper::StorageAccessPromptChoices::eAllow,
-          mozilla::StorageAccessAPIHelper::StorageAccessPromptChoices::
+          mozilla::ContentBlocking::StorageAccessPromptChoices,
+          mozilla::ContentBlocking::StorageAccessPromptChoices::eAllow,
+          mozilla::ContentBlocking::StorageAccessPromptChoices::
               eAllowAutoGrant> {};
 
 

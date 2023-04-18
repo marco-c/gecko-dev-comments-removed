@@ -120,42 +120,6 @@ bool StoragePartitioningEnabled(StorageAccess aAccess,
 bool StoragePartitioningEnabled(uint32_t aRejectedReason,
                                 nsICookieJarSettings* aCookieJarSettings);
 
-
-
-
-
-
-
-
-
-
-
-
-
-bool ShouldAllowAccessFor(nsPIDOMWindowInner* a3rdPartyTrackingWindow,
-                          nsIURI* aURI, uint32_t* aRejectedReason);
-
-
-
-
-
-
-
-bool ApproximateAllowAccessForWithoutChannel(
-    nsPIDOMWindowInner* aFirstPartyWindow, nsIURI* aURI);
-
-
-
-
-
-bool ShouldAllowAccessFor(nsIChannel* aChannel, nsIURI* aURI,
-                          uint32_t* aRejectedReason);
-
-
-
-bool ShouldAllowAccessFor(nsIPrincipal* aPrincipal,
-                          nsICookieJarSettings* aCookieJarSettings);
-
 }  
 
 #endif  
