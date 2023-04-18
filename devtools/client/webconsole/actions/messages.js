@@ -24,7 +24,7 @@ const {
   MESSAGE_CLOSE,
   MESSAGE_TYPE,
   MESSAGE_REMOVE,
-  MESSAGE_UPDATE_PAYLOAD,
+  CSS_MESSAGE_ADD_MATCHING_ELEMENTS,
   PRIVATE_MESSAGES_CLEAR,
 } = require("devtools/client/webconsole/constants");
 
@@ -90,44 +90,28 @@ function messageClose(id) {
 
 
 
-
-
-
-function messageGetMatchingElements(id, cssSelectors) {
-  return async ({ dispatch, commands, getState }) => {
+function messageGetMatchingElements(message) {
+  return async ({ dispatch, commands }) => {
     try {
       
       
-      const message = getState().messages.messagesById.get(id);
       const selectedTargetFront = message?.targetFront;
 
       const response = await commands.scriptCommand.execute(
-        `document.querySelectorAll('${cssSelectors}')`,
+        `document.querySelectorAll('${message.cssSelectors}')`,
         {
           selectedTargetFront,
           innerWindowID: message.innerWindowID,
         }
       );
-      dispatch(messageUpdatePayload(id, response.result));
+      dispatch({
+        type: CSS_MESSAGE_ADD_MATCHING_ELEMENTS,
+        id: message.id,
+        elements: response.result,
+      });
     } catch (err) {
       console.error(err);
     }
-  };
-}
-
-
-
-
-
-
-
-
-
-function messageUpdatePayload(id, data) {
-  return {
-    type: MESSAGE_UPDATE_PAYLOAD,
-    id,
-    data,
   };
 }
 
@@ -165,7 +149,6 @@ module.exports = {
   messageClose,
   messageRemove,
   messageGetMatchingElements,
-  messageUpdatePayload,
   networkMessageUpdates,
   networkUpdateRequests,
   privateMessagesClear,

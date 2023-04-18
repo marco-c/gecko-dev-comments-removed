@@ -100,7 +100,8 @@ describe("CSSWarning component:", () => {
         CSSWarning({
           message,
           open: false,
-          payload: {}, 
+          
+          cssMatchingElements: {},
           dispatch: store.dispatch,
           serviceContainer,
         })

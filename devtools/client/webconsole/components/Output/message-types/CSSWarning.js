@@ -41,7 +41,7 @@ class CSSWarning extends Component {
       inWarningGroup: PropTypes.bool.isRequired,
       message: PropTypes.object.isRequired,
       open: PropTypes.bool,
-      payload: PropTypes.object,
+      cssMatchingElements: PropTypes.object,
       repeat: PropTypes.any,
       serviceContainer: PropTypes.object,
       timestampsVisible: PropTypes.bool.isRequired,
@@ -64,13 +64,11 @@ class CSSWarning extends Component {
   }
 
   onToggle(messageId) {
-    const { dispatch, message, payload, open } = this.props;
-
-    const { cssSelectors } = message;
+    const { dispatch, message, cssMatchingElements, open } = this.props;
 
     if (open) {
       dispatch(actions.messageClose(messageId));
-    } else if (payload) {
+    } else if (cssMatchingElements) {
       
       
       dispatch(actions.messageOpen(messageId));
@@ -79,7 +77,7 @@ class CSSWarning extends Component {
       
       
       
-      dispatch(actions.messageGetMatchingElements(messageId, cssSelectors));
+      dispatch(actions.messageGetMatchingElements(message));
       dispatch(actions.messageOpen(messageId));
     }
   }
@@ -89,7 +87,7 @@ class CSSWarning extends Component {
       dispatch,
       message,
       open,
-      payload,
+      cssMatchingElements,
       repeat,
       serviceContainer,
       timestampsVisible,
@@ -124,7 +122,7 @@ class CSSWarning extends Component {
     
     const attachment =
       open &&
-      payload !== undefined &&
+      cssMatchingElements !== undefined &&
       dom.div(
         { className: "devtools-monospace" },
         dom.div(
@@ -136,7 +134,7 @@ class CSSWarning extends Component {
         GripMessageBody({
           dispatch,
           escapeWhitespace: false,
-          grip: payload,
+          grip: cssMatchingElements,
           serviceContainer,
         })
       );
