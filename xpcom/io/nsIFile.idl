@@ -126,6 +126,18 @@ interface nsIFile : nsISupports
 
 
 
+    readonly attribute AString displayName;
+
+    
+
+
+
+
+
+
+
+
+
 
 
 
