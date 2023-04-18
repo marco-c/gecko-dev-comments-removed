@@ -54,9 +54,12 @@ static nsSize GetContentRectSize(const nsIFrame& aFrame) {
     nsMargin padding =
         aFrame.GetUsedPadding().ApplySkipSides(aFrame.GetSkipSides());
     scrollPort.Deflate(padding);
-    MOZ_ASSERT(!aFrame.PresContext()->UseOverlayScrollbars() ||
-               scrollPort.Size() ==
-                   aFrame.GetContentRectRelativeToSelf().Size());
+    
+    
+    NS_ASSERTION(
+        !aFrame.PresContext()->UseOverlayScrollbars() ||
+            scrollPort.Size() == aFrame.GetContentRectRelativeToSelf().Size(),
+        "Wrong scrollport?");
     return scrollPort.Size();
   }
   return aFrame.GetContentRectRelativeToSelf().Size();
