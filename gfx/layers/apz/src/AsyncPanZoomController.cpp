@@ -2148,8 +2148,8 @@ bool AsyncPanZoomController::CanScroll(const InputData& aEvent) const {
     
     
     
+    RecursiveMutexAutoLock lock(mRecursiveMutex);
     if (scrollWheelInput.IsAutoDir(mScrollMetadata.ForceMousewheelAutodir())) {
-      RecursiveMutexAutoLock lock(mRecursiveMutex);
       auto deltaX = scrollWheelInput.mDeltaX;
       auto deltaY = scrollWheelInput.mDeltaY;
       bool isRTL =
@@ -2309,16 +2309,18 @@ nsEventStatus AsyncPanZoomController::OnScrollWheel(
   auto deltaX = aEvent.mDeltaX;
   auto deltaY = aEvent.mDeltaY;
   ParentLayerPoint delta;
-  if (aEvent.IsAutoDir(mScrollMetadata.ForceMousewheelAutodir())) {
-    
-    
+  {
     RecursiveMutexAutoLock lock(mRecursiveMutex);
-    bool isRTL = IsContentOfHonouredTargetRightToLeft(
-        aEvent.HonoursRoot(mScrollMetadata.ForceMousewheelAutodirHonourRoot()));
-    APZAutoDirWheelDeltaAdjuster adjuster(deltaX, deltaY, mX, mY, isRTL);
-    if (adjuster.ShouldBeAdjusted()) {
-      adjuster.Adjust();
-      adjustedByAutoDir = true;
+    if (aEvent.IsAutoDir(mScrollMetadata.ForceMousewheelAutodir())) {
+      
+      
+      bool isRTL = IsContentOfHonouredTargetRightToLeft(aEvent.HonoursRoot(
+          mScrollMetadata.ForceMousewheelAutodirHonourRoot()));
+      APZAutoDirWheelDeltaAdjuster adjuster(deltaX, deltaY, mX, mY, isRTL);
+      if (adjuster.ShouldBeAdjusted()) {
+        adjuster.Adjust();
+        adjustedByAutoDir = true;
+      }
     }
   }
   
