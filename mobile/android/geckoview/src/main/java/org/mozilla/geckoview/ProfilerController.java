@@ -154,4 +154,29 @@ public class ProfilerController {
   public void addMarker(@NonNull final String aMarkerName) {
     addMarker(aMarkerName, null, null, null);
   }
+
+  
+
+
+
+
+
+
+
+
+
+  public void startProfiler(
+      @NonNull final String[] aFilters, @NonNull final String[] aFeaturesArr) {
+    GeckoJavaSampler.startProfiler(aFilters, aFeaturesArr);
+  }
+
+  
+
+
+
+
+
+  public @NonNull GeckoResult<byte[]> stopProfiler() {
+    return GeckoJavaSampler.stopProfiler();
+  }
 }
