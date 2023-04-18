@@ -814,7 +814,10 @@ let BrowserUsageTelemetry = {
 
     
     let node = sourceEvent.target;
-    while (!UI_TARGET_ELEMENTS.includes(node.localName)) {
+    while (
+      !UI_TARGET_ELEMENTS.includes(node.localName) &&
+      !node.classList?.contains("wants-telemetry")
+    ) {
       node = node.parentNode;
       if (!node) {
         
