@@ -775,18 +775,11 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
           
           
           
-          TimeDuration timeForOutsideTick = tickStart - mLastTickEnd;
-          TimeDuration maxOutsideTick = rate * 4;
-          if (timeForOutsideTick > maxOutsideTick) {
-            timeForOutsideTick = maxOutsideTick;
-          }
-
-          if (timeForOutsideTick > gracePeriod) {
-            
-            
-            
-            timeForOutsideTick = timeForOutsideTick - gracePeriod;
-          }
+          
+          
+          
+          TimeDuration timeForOutsideTick = clamped(
+              tickStart - mLastTickEnd - gracePeriod, TimeDuration(), rate * 4);
           mSuspendVsyncPriorityTicksUntil = aVsyncTimestamp +
                                             timeForOutsideTick +
                                             (tickEnd - mostRecentTickStart);
