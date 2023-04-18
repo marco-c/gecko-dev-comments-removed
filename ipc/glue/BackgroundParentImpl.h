@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef mozilla_ipc_backgroundparentimpl_h__
 #define mozilla_ipc_backgroundparentimpl_h__
@@ -13,8 +13,8 @@
 
 namespace mozilla::ipc {
 
-// Instances of this class should never be created directly. This class is meant
-// to be inherited in BackgroundImpl.
+
+
 class BackgroundParentImpl : public PBackgroundParent,
                              public ParentToChildStreamActorManager {
  protected:
@@ -136,10 +136,6 @@ class BackgroundParentImpl : public PBackgroundParent,
   AllocPBackgroundSessionStorageServiceParent() override;
 
   already_AddRefed<PIdleSchedulerParent> AllocPIdleSchedulerParent() override;
-
-  already_AddRefed<PRemoteLazyInputStreamParent>
-  AllocPRemoteLazyInputStreamParent(const nsID& aID,
-                                    const uint64_t& aSize) override;
 
   PTemporaryIPCBlobParent* AllocPTemporaryIPCBlobParent() override;
 
@@ -311,7 +307,7 @@ class BackgroundParentImpl : public PBackgroundParent,
   mozilla::ipc::IPCResult RecvPFileSystemRequestConstructor(
       PFileSystemRequestParent* actor, const FileSystemParams& params) override;
 
-  // Gamepad API Background IPC
+  
   already_AddRefed<PGamepadEventChannelParent> AllocPGamepadEventChannelParent()
       override;
 
@@ -406,6 +402,6 @@ class BackgroundParentImpl : public PBackgroundParent,
       const ContentPrincipalInfo& aPrincipalInfo, const nsID& aClientId) final;
 };
 
-}  // namespace mozilla::ipc
+}  
 
-#endif  // mozilla_ipc_backgroundparentimpl_h__
+#endif  

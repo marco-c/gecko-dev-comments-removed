@@ -171,6 +171,8 @@ class AutoIPCStream {
   [[nodiscard]] bool Serialize(nsIInputStream* aStream,
                                net::SocketProcessParent* aManager);
 
+  bool Serialize(nsIInputStream* aStream);
+
   
   
   

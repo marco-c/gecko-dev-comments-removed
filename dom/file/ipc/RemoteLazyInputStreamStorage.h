@@ -16,7 +16,15 @@ struct nsID;
 
 namespace mozilla {
 
-class RemoteLazyInputStreamParentCallback;
+class NS_NO_VTABLE RemoteLazyInputStreamParentCallback {
+ public:
+  virtual void ActorDestroyed(const nsID& aID) = 0;
+
+  NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
+
+ protected:
+  virtual ~RemoteLazyInputStreamParentCallback() = default;
+};
 
 class RemoteLazyInputStreamStorage final : public nsIObserver {
  public:
@@ -28,8 +36,9 @@ class RemoteLazyInputStreamStorage final : public nsIObserver {
 
   static Result<RefPtr<RemoteLazyInputStreamStorage>, nsresult> Get();
 
-  void AddStream(nsIInputStream* aInputStream, const nsID& aID, uint64_t aSize,
-                 uint64_t aChildID);
+  nsISerialEventTarget* TaskQueue() { return mTaskQueue; }
+
+  void AddStream(nsIInputStream* aInputStream, const nsID& aID);
 
   
   
@@ -46,19 +55,19 @@ class RemoteLazyInputStreamStorage final : public nsIObserver {
   already_AddRefed<RemoteLazyInputStreamParentCallback> TakeCallback(
       const nsID& aID);
 
+  void ActorCreated(const nsID& aID);
+  void ActorDestroyed(const nsID& aID);
+
  private:
   RemoteLazyInputStreamStorage() = default;
   ~RemoteLazyInputStreamStorage() = default;
 
+  nsCOMPtr<nsISerialEventTarget> mTaskQueue;
+
   struct StreamData {
     nsCOMPtr<nsIInputStream> mInputStream;
     RefPtr<RemoteLazyInputStreamParentCallback> mCallback;
-
-    
-    
-    uint64_t mChildID;
-
-    uint64_t mSize;
+    size_t mActorCount = 0;
   };
 
   nsClassHashtable<nsIDHashKey, StreamData> mStorage;
