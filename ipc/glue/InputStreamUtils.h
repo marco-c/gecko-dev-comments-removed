@@ -42,6 +42,10 @@ class ChildToParentStreamActorManager {
 
 class InputStreamHelper {
  public:
+  static void SerializedComplexity(nsIInputStream* aInputStream,
+                                   uint32_t aMaxSize, uint32_t* aSizeUsed,
+                                   uint32_t* aPipes, uint32_t* aTransferables);
+
   
   
   
