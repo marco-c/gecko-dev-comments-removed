@@ -8,6 +8,7 @@
 #include "mozilla/ErrorNames.h"
 #include "nsString.h"
 #include "prerror.h"
+#include "MainThreadUtils.h"
 
 
 #include "ErrorNamesInternal.h"
@@ -47,7 +48,7 @@ void GetErrorName(nsresult rv, nsACString& name) {
   name.AppendLiteral(", ");
 
   const char* nsprName = nullptr;
-  if (isSecurityError) {
+  if (isSecurityError && NS_IsMainThread()) {
     
     PRErrorCode nsprCode = -1 * static_cast<PRErrorCode>(NS_ERROR_GET_CODE(rv));
     nsprName = PR_ErrorToName(nsprCode);
