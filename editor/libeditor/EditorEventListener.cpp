@@ -1089,68 +1089,82 @@ nsresult EditorEventListener::Focus(InternalFocusEvent* aFocusEvent) {
     return NS_OK;
   }
 
-  RefPtr<EditorBase> editorBase(mEditorBase);
-
-  
-  SpellCheckIfNeeded();
-  if (DetachedFromEditor()) {
-    return NS_OK;
-  }
-
-  nsCOMPtr<nsINode> eventTargetNode =
+  nsCOMPtr<nsINode> originalEventTargetNode =
       nsINode::FromEventTargetOrNull(aFocusEvent->GetOriginalDOMEventTarget());
-  if (NS_WARN_IF(!eventTargetNode)) {
+  if (MOZ_UNLIKELY(NS_WARN_IF(!originalEventTargetNode))) {
     return NS_ERROR_UNEXPECTED;
   }
 
   
   
-  if (eventTargetNode->IsDocument() && !eventTargetNode->IsInDesignMode()) {
+  if (originalEventTargetNode->IsDocument()) {
+    if (!originalEventTargetNode->IsInDesignMode()) {
+      return NS_OK;
+    }
+  }
+  
+  
+  else if (MOZ_UNLIKELY(NS_WARN_IF(!originalEventTargetNode->IsContent()))) {
     return NS_OK;
   }
 
-  if (eventTargetNode->IsContent()) {
-    nsIContent* content =
-        eventTargetNode->AsContent()->FindFirstNonChromeOnlyAccessContent();
-    
-    
-    
-    
-    
-    
-    nsCOMPtr<nsIContent> editableRoot = editorBase->FindSelectionRoot(content);
-
-    
-    
-    if (editableRoot) {
-      nsFocusManager* focusManager = nsFocusManager::GetFocusManager();
-      if (NS_WARN_IF(!focusManager)) {
-        return NS_OK;
-      }
-
-      nsIContent* focusedContent = focusManager->GetFocusedElement();
-      if (!focusedContent) {
-        return NS_OK;
-      }
-
-      nsCOMPtr<nsIContent> originalTargetAsContent =
-          do_QueryInterface(aFocusEvent->GetOriginalDOMEventTarget());
-
-      if (!SameCOMIdentity(
-              focusedContent->FindFirstNonChromeOnlyAccessContent(),
-              originalTargetAsContent->FindFirstNonChromeOnlyAccessContent())) {
-        return NS_OK;
-      }
-    }
+  RefPtr<nsFocusManager> focusManager = nsFocusManager::GetFocusManager();
+  if (MOZ_UNLIKELY(NS_WARN_IF(!focusManager))) {
+    return NS_OK;
   }
 
-  editorBase->OnFocus(*eventTargetNode);
+  auto CanKeepHandlingFocusEvent = [&]() -> bool {
+    if (this->DetachedFromEditor()) {
+      return false;
+    }
+    
+    
+    
+    if (originalEventTargetNode->IsDocument()) {
+      return originalEventTargetNode->IsInDesignMode();
+    }
+    MOZ_ASSERT(originalEventTargetNode->IsContent());
+    
+    
+    
+    if (!focusManager->GetFocusedElement()) {
+      return false;
+    }
+    const nsIContent* const exposedTargetContent =
+        originalEventTargetNode->AsContent()
+            ->FindFirstNonChromeOnlyAccessContent();
+    const nsIContent* const exposedFocusedContent =
+        focusManager->GetFocusedElement()
+            ->FindFirstNonChromeOnlyAccessContent();
+    return exposedTargetContent && exposedFocusedContent &&
+           exposedTargetContent == exposedFocusedContent;
+  };
+
+  RefPtr<PresShell> presShell = GetPresShell();
+  if (MOZ_UNLIKELY(NS_WARN_IF(!presShell))) {
+    return NS_OK;
+  }
+  
+  
+  presShell->FlushPendingNotifications(FlushType::Layout);
+  if (MOZ_UNLIKELY(!CanKeepHandlingFocusEvent())) {
+    return NS_OK;
+  }
+
+  
+  SpellCheckIfNeeded();
+  if (MOZ_UNLIKELY(!CanKeepHandlingFocusEvent())) {
+    return NS_OK;
+  }
+
+  RefPtr<EditorBase> editorBase(mEditorBase);
+  editorBase->OnFocus(*originalEventTargetNode);
   if (DetachedFromEditorOrDefaultPrevented(aFocusEvent)) {
     return NS_OK;
   }
 
   RefPtr<nsPresContext> presContext = GetPresContext();
-  if (NS_WARN_IF(!presContext)) {
+  if (MOZ_UNLIKELY(NS_WARN_IF(!presContext))) {
     return NS_OK;
   }
   nsCOMPtr<nsIContent> focusedContent = editorBase->GetFocusedContent();
