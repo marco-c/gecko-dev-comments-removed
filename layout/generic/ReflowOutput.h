@@ -91,6 +91,13 @@ struct OverflowAreas {
 
   
   
+  static nsRect GetOverflowClipRect(const nsRect& aRectToClip,
+                                    const nsRect& aBounds,
+                                    PhysicalAxes aClipAxes,
+                                    const nsSize& aOverflowMargin);
+
+  
+  
   static void ApplyOverflowClippingOnRect(nsRect& aOverflowRect,
                                           const nsRect& aBounds,
                                           PhysicalAxes aClipAxes,
