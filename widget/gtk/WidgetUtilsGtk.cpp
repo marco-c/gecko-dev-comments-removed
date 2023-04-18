@@ -134,11 +134,6 @@ bool ShouldUsePortal(PortalKind aPortalKind) {
         
         autoBehavior = IsRunningUnderFlatpakOrSnap();
         return StaticPrefs::widget_use_xdg_desktop_portal_mime_handler();
-      case PortalKind::Print:
-        
-        
-        autoBehavior = IsRunningUnderFlatpak();
-        return StaticPrefs::widget_use_xdg_desktop_portal_print();
       case PortalKind::Settings:
         autoBehavior = true;
         return StaticPrefs::widget_use_xdg_desktop_portal_settings();
