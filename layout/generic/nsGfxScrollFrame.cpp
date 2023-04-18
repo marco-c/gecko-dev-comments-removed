@@ -3690,6 +3690,41 @@ class MOZ_RAII AutoContainsBlendModeCapturer {
 
 
 
+class MOZ_RAII AutoContainsBackdropFilterCapturer {
+  nsDisplayListBuilder& mBuilder;
+  bool mSavedContainsBackdropFilter;
+
+ public:
+  explicit AutoContainsBackdropFilterCapturer(nsDisplayListBuilder& aBuilder)
+      : mBuilder(aBuilder),
+        mSavedContainsBackdropFilter(aBuilder.ContainsBackdropFilter()) {
+    mBuilder.SetContainsBackdropFilter(false);
+  }
+
+  bool CaptureContainsBackdropFilter() {
+    
+    
+    bool capturedBackdropFilter = mBuilder.ContainsBackdropFilter();
+    mBuilder.SetContainsBackdropFilter(false);
+    return capturedBackdropFilter;
+  }
+
+  ~AutoContainsBackdropFilterCapturer() {
+    
+    
+    
+    
+    
+    
+    
+    bool uncapturedContainsBackdropFilter = mBuilder.ContainsBackdropFilter();
+    mBuilder.SetContainsBackdropFilter(mSavedContainsBackdropFilter ||
+                                       uncapturedContainsBackdropFilter);
+  }
+};
+
+
+
 
 
 
@@ -3907,6 +3942,7 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
   nsDisplayListCollection set(aBuilder);
   AutoContainsBlendModeCapturer blendCapture(*aBuilder);
+  AutoContainsBackdropFilterCapturer backdropFilterCapture(*aBuilder);
 
   bool willBuildAsyncZoomContainer =
       mWillBuildScrollableLayer && aBuilder->ShouldBuildAsyncZoomContainer() &&
@@ -4156,6 +4192,30 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
               aBuilder->CurrentActiveScrolledRoot());
       resultList.AppendToTop(blendContainer);
 
+      
+      
+      
+      
+      
+      if (aBuilder->IsRetainingDisplayList()) {
+        if (aBuilder->IsPartialUpdate()) {
+          aBuilder->SetPartialBuildFailed(true);
+        } else {
+          aBuilder->SetDisablePartialUpdates(true);
+        }
+      }
+    }
+
+    if (backdropFilterCapture.CaptureContainsBackdropFilter()) {
+      
+      
+      
+      
+      
+      resultList.AppendNewToTop<nsDisplayBackdropRootContainer>(
+          aBuilder, mOuter, &resultList, aBuilder->CurrentActiveScrolledRoot());
+
+      
       
       
       
