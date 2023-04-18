@@ -7151,8 +7151,30 @@ EditActionResult HTMLEditor::HandleInsertParagraphInParagraph(
       }
     } else {
       if (doesCRCreateNewP) {
+        
+        
+        
+        
+        
+        
+        Result<EditorDOMPoint, nsresult> pointToSplitOrError =
+            WhiteSpaceVisibilityKeeper::PrepareToSplitBlockElement(
+                *this, pointToSplitParentDivOrP, aParentDivOrP);
+        if (MOZ_UNLIKELY(NS_WARN_IF(Destroyed()))) {
+          return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
+        }
+        if (MOZ_UNLIKELY(pointToSplitOrError.isErr())) {
+          NS_WARNING(
+              "WhiteSpaceVisibilityKeeper::PrepareToSplitBlockElement() "
+              "failed");
+          return EditActionResult(pointToSplitOrError.unwrapErr());
+        }
+        MOZ_ASSERT(pointToSplitOrError.inspect().IsSetAndValid());
+        if (pointToSplitOrError.inspect().IsSet()) {
+          pointToSplitParentDivOrP = pointToSplitOrError.unwrap();
+        }
         ErrorResult error;
-        nsCOMPtr<nsIContent> newLeftDivOrP =
+        nsCOMPtr<nsIContent> newLeftTextNode =
             SplitNodeWithTransaction(pointToSplitParentDivOrP, error);
         if (NS_WARN_IF(Destroyed())) {
           error = NS_ERROR_EDITOR_DESTROYED;
@@ -7162,16 +7184,12 @@ EditActionResult HTMLEditor::HandleInsertParagraphInParagraph(
                                "HTMLEditor::SplitNodeWithTransaction() failed");
           return EditActionResult(error.StealNSResult());
         }
-        pointToSplitParentDivOrP.SetToEndOf(newLeftDivOrP);
+        pointToSplitParentDivOrP.SetToEndOf(newLeftTextNode);
       }
 
       
       
-      pointToInsertBR.Set(pointToSplitParentDivOrP.GetContainer());
-      DebugOnly<bool> advanced = pointToInsertBR.AdvanceOffset();
-      NS_WARNING_ASSERTION(advanced,
-                           "Failed to advance offset to after the container "
-                           "of selection start");
+      pointToInsertBR.SetAfter(pointToSplitParentDivOrP.GetContainer());
     }
   } else {
     
