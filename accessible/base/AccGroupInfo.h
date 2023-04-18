@@ -11,7 +11,7 @@
 namespace mozilla {
 namespace a11y {
 
-class LocalAccessible;
+class Accessible;
 
 
 
@@ -38,7 +38,7 @@ class AccGroupInfo {
 
 
 
-  LocalAccessible* ConceptualParent() const { return mParent; }
+  Accessible* ConceptualParent() const { return mParent; }
 
   
 
@@ -48,27 +48,26 @@ class AccGroupInfo {
   
 
 
-  static AccGroupInfo* CreateGroupInfo(const LocalAccessible* aAccessible);
+  static AccGroupInfo* CreateGroupInfo(const Accessible* aAccessible);
 
   
 
 
-  static LocalAccessible* FirstItemOf(const LocalAccessible* aContainer);
+  static Accessible* FirstItemOf(const Accessible* aContainer);
 
   
 
 
 
-  static uint32_t TotalItemCount(LocalAccessible* aContainer,
-                                 bool* aIsHierarchical);
+  static uint32_t TotalItemCount(Accessible* aContainer, bool* aIsHierarchical);
 
   
 
 
-  static LocalAccessible* NextItemTo(LocalAccessible* aItem);
+  static Accessible* NextItemTo(Accessible* aItem);
 
  protected:
-  AccGroupInfo(const LocalAccessible* aItem, a11y::role aRole);
+  AccGroupInfo(const Accessible* aItem, a11y::role aRole);
 
  private:
   AccGroupInfo(const AccGroupInfo&) = delete;
@@ -98,12 +97,12 @@ class AccGroupInfo {
 
 
 
-  static int32_t GetARIAOrDefaultLevel(const LocalAccessible* aAccessible);
+  static int32_t GetARIAOrDefaultLevel(const Accessible* aAccessible);
 
   uint32_t mPosInSet;
   uint32_t mSetSize;
-  LocalAccessible* mParent;
-  const LocalAccessible* mItem;
+  Accessible* mParent;
+  const Accessible* mItem;
   a11y::role mRole;
 };
 
