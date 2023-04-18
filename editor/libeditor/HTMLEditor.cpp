@@ -5,6 +5,7 @@
 
 #include "HTMLEditor.h"
 
+#include "CreateElementTransaction.h"  
 #include "EditAction.h"
 #include "EditorBase.h"
 #include "EditorDOMPoint.h"
@@ -466,12 +467,12 @@ NS_IMETHODIMP HTMLEditor::SetDocumentCharacterSet(
 
   
   Result<RefPtr<Element>, nsresult> maybeNewMetaElement =
-      CreateNodeWithTransaction(*nsGkAtoms::meta,
-                                EditorDOMPoint(primaryHeadElement, 0));
+      CreateAndInsertElementWithTransaction(
+          *nsGkAtoms::meta, EditorDOMPoint(primaryHeadElement, 0));
   if (maybeNewMetaElement.isErr()) {
     NS_WARNING(
-        "EditorBase::CreateNodeWithTransaction(nsGkAtoms::meta) failed, but "
-        "ignored");
+        "HTMLEditor::CreateAndInsertElementWithTransaction(nsGkAtoms::meta) "
+        "failed, but ignored");
     return NS_OK;
   }
   MOZ_ASSERT(maybeNewMetaElement.inspect());
@@ -2937,6 +2938,84 @@ already_AddRefed<Element> HTMLEditor::GetSelectedElement(const nsAtom* aTagName,
   return lastElementInRange.forget();
 }
 
+Result<RefPtr<Element>, nsresult>
+HTMLEditor::CreateAndInsertElementWithTransaction(
+    nsAtom& aTagName, const EditorDOMPoint& aPointToInsert) {
+  MOZ_ASSERT(IsEditActionDataAvailable());
+  MOZ_ASSERT(aPointToInsert.IsSetAndValid());
+
+  
+  
+  
+  Unused << aPointToInsert.Offset();
+
+  IgnoredErrorResult ignoredError;
+  AutoEditSubActionNotifier startToHandleEditSubAction(
+      *this, EditSubAction::eCreateNode, nsIEditor::eNext, ignoredError);
+  if (NS_WARN_IF(ignoredError.ErrorCodeIs(NS_ERROR_EDITOR_DESTROYED))) {
+    return Err(NS_ERROR_EDITOR_DESTROYED);
+  }
+  NS_WARNING_ASSERTION(
+      !ignoredError.Failed(),
+      "HTMLEditor::OnStartToHandleTopLevelEditSubAction() failed, but ignored");
+
+  
+  
+  
+  
+  
+  
+  
+
+  RefPtr<CreateElementTransaction> transaction =
+      CreateElementTransaction::Create(*this, aTagName, aPointToInsert);
+  nsresult rv = DoTransactionInternal(transaction);
+  if (NS_WARN_IF(Destroyed())) {
+    rv = NS_ERROR_EDITOR_DESTROYED;
+  } else if (transaction->GetNewElement() &&
+             transaction->GetNewElement()->GetParentNode() !=
+                 aPointToInsert.GetContainer()) {
+    NS_WARNING("The new element was not inserted into the expected node");
+    rv = NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
+  }
+
+  RefPtr<Element> newElement;
+  if (NS_FAILED(rv)) {
+    NS_WARNING("EditorBase::DoTransactionInternal() failed");
+    
+    DebugOnly<nsresult> rvIgnored =
+        RangeUpdaterRef().SelAdjCreateNode(aPointToInsert);
+    NS_WARNING_ASSERTION(
+        NS_SUCCEEDED(rvIgnored),
+        "Rangeupdater::SelAdjCreateNode() failed, but ignored");
+  } else {
+    newElement = transaction->GetNewElement();
+    MOZ_ASSERT(newElement);
+
+    
+    
+    
+    
+    
+    
+    DebugOnly<nsresult> rvIgnored =
+        RangeUpdaterRef().SelAdjCreateNode(EditorRawDOMPoint(
+            aPointToInsert.GetContainer(), aPointToInsert.Offset()));
+    NS_WARNING_ASSERTION(
+        NS_SUCCEEDED(rvIgnored),
+        "Rangeupdater::SelAdjCreateNode() failed, but ignored");
+    if (newElement) {
+      TopLevelEditSubActionDataRef().DidCreateElement(*this, *newElement);
+    }
+  }
+
+  if (NS_FAILED(rv)) {
+    return Err(rv);
+  }
+
+  return newElement;
+}
+
 already_AddRefed<Element> HTMLEditor::CreateElementWithDefaults(
     const nsAtom& aTagName) {
   
@@ -3529,9 +3608,10 @@ Result<RefPtr<Element>, nsresult> HTMLEditor::InsertBRElementWithTransaction(
   MOZ_ASSERT(maybePointToInsert.inspect().IsSetAndValid());
 
   Result<RefPtr<Element>, nsresult> maybeNewBRElement =
-      CreateNodeWithTransaction(*nsGkAtoms::br, maybePointToInsert.inspect());
+      CreateAndInsertElementWithTransaction(*nsGkAtoms::br,
+                                            maybePointToInsert.inspect());
   if (maybeNewBRElement.isErr()) {
-    NS_WARNING("EditorBase::CreateNodeWithTransaction() failed");
+    NS_WARNING("HTMLEditor::CreateAndInsertElementWithTransaction() failed");
     return maybeNewBRElement;
   }
   MOZ_ASSERT(maybeNewBRElement.inspect());
@@ -4906,9 +4986,9 @@ already_AddRefed<Element> HTMLEditor::DeleteSelectionAndCreateElement(
     return nullptr;
   }
   Result<RefPtr<Element>, nsresult> maybeNewElement =
-      CreateNodeWithTransaction(aTag, pointToInsert);
+      CreateAndInsertElementWithTransaction(aTag, pointToInsert);
   if (maybeNewElement.isErr()) {
-    NS_WARNING("EditorBase::CreateNodeWithTransaction() failed");
+    NS_WARNING("HTMLEditor::CreateAndInsertElementWithTransaction() failed");
     return nullptr;
   }
   MOZ_ASSERT(maybeNewElement.inspect());
@@ -5589,10 +5669,11 @@ nsresult HTMLEditor::CopyLastEditableChildStylesWithTransaction(
     
     if (!firstClonedElement) {
       Result<RefPtr<Element>, nsresult> maybeNewElement =
-          CreateNodeWithTransaction(MOZ_KnownLive(*tagName),
-                                    EditorDOMPoint(newBlock, 0));
+          CreateAndInsertElementWithTransaction(MOZ_KnownLive(*tagName),
+                                                EditorDOMPoint(newBlock, 0));
       if (maybeNewElement.isErr()) {
-        NS_WARNING("EditorBase::CreateNodeWithTransaction() failed");
+        NS_WARNING(
+            "HTMLEditor::CreateAndInsertElementWithTransaction() failed");
         return maybeNewElement.unwrapErr();
       }
       firstClonedElement = lastClonedElement = maybeNewElement.unwrap();

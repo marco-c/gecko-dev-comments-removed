@@ -12,7 +12,6 @@
 
 #include "ChangeAttributeTransaction.h"  
 #include "CompositionTransaction.h"      
-#include "CreateElementTransaction.h"    
 #include "DeleteNodeTransaction.h"       
 #include "DeleteRangeTransaction.h"      
 #include "DeleteTextTransaction.h"       
@@ -1992,76 +1991,6 @@ NS_IMETHODIMP EditorBase::SetSpellcheckUserOverride(bool enable) {
   mSpellcheckCheckboxState = enable ? eTriTrue : eTriFalse;
   SyncRealTimeSpell();
   return NS_OK;
-}
-
-Result<RefPtr<Element>, nsresult> EditorBase::CreateNodeWithTransaction(
-    nsAtom& aTagName, const EditorDOMPoint& aPointToInsert) {
-  MOZ_ASSERT(IsEditActionDataAvailable());
-  MOZ_ASSERT(aPointToInsert.IsSetAndValid());
-
-  
-  
-  
-  Unused << aPointToInsert.Offset();
-
-  IgnoredErrorResult ignoredError;
-  AutoEditSubActionNotifier startToHandleEditSubAction(
-      *this, EditSubAction::eCreateNode, nsIEditor::eNext, ignoredError);
-  if (NS_WARN_IF(ignoredError.ErrorCodeIs(NS_ERROR_EDITOR_DESTROYED))) {
-    return Err(NS_ERROR_EDITOR_DESTROYED);
-  }
-  NS_WARNING_ASSERTION(
-      !ignoredError.Failed(),
-      "TextEditor::OnStartToHandleTopLevelEditSubAction() failed, but ignored");
-
-  RefPtr<Element> newElement;
-
-  RefPtr<CreateElementTransaction> transaction =
-      CreateElementTransaction::Create(*this, aTagName, aPointToInsert);
-  nsresult rv = DoTransactionInternal(transaction);
-  if (NS_WARN_IF(Destroyed())) {
-    rv = NS_ERROR_EDITOR_DESTROYED;
-  } else if (transaction->GetNewElement() &&
-             transaction->GetNewElement()->GetParentNode() !=
-                 aPointToInsert.GetContainer()) {
-    NS_WARNING("The new element was not inserted into the expected node");
-    rv = NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
-  }
-  if (NS_FAILED(rv)) {
-    NS_WARNING("EditorBase::DoTransactionInternal() failed");
-    
-    DebugOnly<nsresult> rvIgnored =
-        RangeUpdaterRef().SelAdjCreateNode(aPointToInsert);
-    NS_WARNING_ASSERTION(
-        NS_SUCCEEDED(rvIgnored),
-        "Rangeupdater::SelAdjCreateNode() failed, but ignored");
-  } else {
-    newElement = transaction->GetNewElement();
-    MOZ_ASSERT(newElement);
-
-    
-    
-    
-    
-    
-    
-    DebugOnly<nsresult> rvIgnored =
-        RangeUpdaterRef().SelAdjCreateNode(EditorRawDOMPoint(
-            aPointToInsert.GetContainer(), aPointToInsert.Offset()));
-    NS_WARNING_ASSERTION(
-        NS_SUCCEEDED(rvIgnored),
-        "Rangeupdater::SelAdjCreateNode() failed, but ignored");
-  }
-
-  if (IsHTMLEditor() && newElement) {
-    TopLevelEditSubActionDataRef().DidCreateElement(*this, *newElement);
-  }
-
-  if (NS_FAILED(rv)) {
-    return Err(rv);
-  }
-
-  return newElement;
 }
 
 NS_IMETHODIMP EditorBase::InsertNode(nsINode* aNodeToInsert,

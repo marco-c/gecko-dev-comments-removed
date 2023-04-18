@@ -311,6 +311,7 @@ class MOZ_STACK_CLASS SplitNodeResult final {
 
 
 
+
   EditorDOMPoint SplitPoint() const {
     if (Failed()) {
       return EditorDOMPoint();

@@ -6,8 +6,9 @@
 #ifndef CreateElementTransaction_h
 #define CreateElementTransaction_h
 
-#include "mozilla/EditorDOMPoint.h"
-#include "mozilla/EditTransactionBase.h"
+#include "EditorDOMPoint.h"
+#include "EditTransactionBase.h"
+
 #include "mozilla/RefPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsISupportsImpl.h"
@@ -22,12 +23,12 @@ namespace dom {
 class Element;
 }
 
-class EditorBase;
+class HTMLEditor;
 
 class CreateElementTransaction final : public EditTransactionBase {
  protected:
   template <typename PT, typename CT>
-  CreateElementTransaction(EditorBase& aEditorBase, nsAtom& aTag,
+  CreateElementTransaction(HTMLEditor& aHTMLEditor, nsAtom& aTagName,
                            const EditorDOMPointBase<PT, CT>& aPointToInsert);
 
  public:
@@ -44,7 +45,7 @@ class CreateElementTransaction final : public EditTransactionBase {
 
   template <typename PT, typename CT>
   static already_AddRefed<CreateElementTransaction> Create(
-      EditorBase& aEditorBase, nsAtom& aTag,
+      HTMLEditor& aHTMLEditor, nsAtom& aTagName,
       const EditorDOMPointBase<PT, CT>& aPointToInsert);
 
   NS_DECL_ISUPPORTS_INHERITED
@@ -70,7 +71,7 @@ class CreateElementTransaction final : public EditTransactionBase {
   MOZ_CAN_RUN_SCRIPT void InsertNewNode(ErrorResult& aError);
 
   
-  RefPtr<EditorBase> mEditorBase;
+  RefPtr<HTMLEditor> mHTMLEditor;
 
   
   RefPtr<nsAtom> mTag;
