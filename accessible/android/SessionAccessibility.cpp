@@ -263,11 +263,15 @@ RefPtr<SessionAccessibility> SessionAccessibility::GetInstanceFor(
   MOZ_ASSERT(NS_IsMainThread());
   PresShell* presShell = nullptr;
   if (LocalAccessible* localAcc = aAccessible->AsLocal()) {
-    DocAccessible* doc = localAcc->Document();
-    if (doc && !doc->HasShutdown() &&
-        doc->DocumentNode()->IsContentDocument()) {
+    DocAccessible* docAcc = localAcc->Document();
+    
+    
+    
+    
+    dom::Document* doc = docAcc ? docAcc->DocumentNode() : nullptr;
+    if (doc && doc->IsContentDocument()) {
       
-      presShell = doc->PresShellPtr();
+      presShell = doc->GetPresShell();
     }
   } else {
     dom::CanonicalBrowsingContext* cbc =
@@ -1036,9 +1040,6 @@ void SessionAccessibility::UnregisterAccessible(Accessible* aAccessible) {
   if (sessionAcc) {
     MOZ_ASSERT(sessionAcc->mIDToAccessibleMap.Contains(virtualViewID),
                "Unregistering unregistered accessible");
-    MOZ_ASSERT(
-        virtualViewID == kNoID || sessionAcc->mIDToAccessibleMap.Count() > 1,
-        "Root accessible should be the last one removed");
     sessionAcc->mIDToAccessibleMap.Remove(virtualViewID);
   }
 
