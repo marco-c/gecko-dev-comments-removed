@@ -28,7 +28,7 @@ XPCOMUtils.defineLazyGlobalGetters(this, ["DOMParser"]);
 
 
 
-const PREFS_WHITELIST = [
+const PREFS_FOR_DISPLAY = [
   "accessibility.",
   "apz.",
   "browser.cache.",
@@ -109,8 +109,10 @@ const PREFS_WHITELIST = [
 ];
 
 
-const PREFS_BLACKLIST = [
+
+const PREF_REGEXES_NOT_TO_DISPLAY = [
   /^browser[.]fixup[.]domainwhitelist[.]/,
+  /^dom[.]push[.]userAgentID/,
   /^media[.]webrtc[.]debug[.]aec_log_dir/,
   /^media[.]webrtc[.]debug[.]log_file/,
   /^print[.].*print_to_filename$/,
@@ -144,10 +146,13 @@ function getPref(name) {
 
 
 
-function getPrefList(filter, whitelist = PREFS_WHITELIST) {
-  return whitelist.reduce(function(prefs, branch) {
+function getPrefList(filter, allowlist = PREFS_FOR_DISPLAY) {
+  return allowlist.reduce(function(prefs, branch) {
     Services.prefs.getChildList(branch).forEach(function(name) {
-      if (filter(name) && !PREFS_BLACKLIST.some(re => re.test(name))) {
+      if (
+        filter(name) &&
+        !PREF_REGEXES_NOT_TO_DISPLAY.some(re => re.test(name))
+      ) {
         prefs[name] = getPref(name);
       }
     });
