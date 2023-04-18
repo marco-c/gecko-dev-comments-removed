@@ -56,8 +56,7 @@ JSObject* ReadableStreamDefaultReader::WrapObject(
 }
 
 
-bool ReadableStreamReaderGenericInitialize(JSContext* aCx,
-                                           ReadableStreamGenericReader* aReader,
+bool ReadableStreamReaderGenericInitialize(ReadableStreamGenericReader* aReader,
                                            ReadableStream* aStream,
                                            ErrorResult& aRv) {
   
@@ -87,7 +86,8 @@ bool ReadableStreamReaderGenericInitialize(JSContext* aCx,
     case ReadableStream::ReaderState::Errored: {
       
       
-      JS::RootedValue rootedError(aCx, aStream->StoredError());
+      JS::RootingContext* rcx = RootingCx();
+      JS::RootedValue rootedError(rcx, aStream->StoredError());
       aReader->ClosedPromise()->MaybeReject(rootedError);
 
       
@@ -121,8 +121,7 @@ ReadableStreamDefaultReader::Constructor(const GlobalObject& aGlobal,
 
   
   RefPtr<ReadableStream> streamPtr = &aStream;
-  if (!ReadableStreamReaderGenericInitialize(aGlobal.Context(), reader,
-                                             streamPtr, aRv)) {
+  if (!ReadableStreamReaderGenericInitialize(reader, streamPtr, aRv)) {
     return nullptr;
   }
 
@@ -415,7 +414,7 @@ void SetUpReadableStreamDefaultReader(JSContext* aCx,
   }
 
   
-  if (!ReadableStreamReaderGenericInitialize(aCx, aReader, aStream, aRv)) {
+  if (!ReadableStreamReaderGenericInitialize(aReader, aStream, aRv)) {
     return;
   }
 
