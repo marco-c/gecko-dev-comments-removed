@@ -55,6 +55,10 @@ use std::{cmp, usize};
 use crate::util::{extract_inner_rect_safe};
 use smallvec::SmallVec;
 
+
+
+const MAX_SEGMENTS: usize = 64;
+
 bitflags! {
     /// Each bit of the edge AA mask is:
     /// 0, when the edge of the primitive needs to be considered for AA
@@ -574,7 +578,7 @@ impl SegmentBuilder {
 
         let mut prev_y = clamp(p0.y, y_events[0].value, p1.y);
         let mut region_y = 0;
-        let mut segments : SmallVec<[_; 4]> = SmallVec::new();
+        let mut segments : SmallVec<[_; 16]> = SmallVec::new();
         let mut x_count = 0;
         let mut y_count = 0;
 
@@ -621,6 +625,21 @@ impl SegmentBuilder {
                 &mut self.items,
                 &mut region_y,
             );
+        }
+
+        
+        
+        
+        
+        if segments.len() > MAX_SEGMENTS {
+            f(&Segment {
+                edge_flags: EdgeAaSegmentMask::all(),
+                region_x: 0,
+                region_y: 0,
+                has_mask: true,
+                rect: bounding_rect,
+            });
+            return
         }
 
         
