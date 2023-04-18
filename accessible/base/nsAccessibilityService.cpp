@@ -308,12 +308,17 @@ nsAccessibilityService::ListenersChanged(nsIArray* aEventChanges) {
           
           
           document->ContentInserted(content, content->GetNextSibling());
-        } else if (acc && acc->IsHTMLLink() && !acc->AsHTMLLink()->IsLinked()) {
+        } else if (acc) {
+          if (acc->IsHTMLLink() && !acc->AsHTMLLink()->IsLinked()) {
+            
+            
+            RefPtr<AccEvent> linkedChangeEvent =
+                new AccStateChangeEvent(acc, states::LINKED);
+            document->FireDelayedEvent(linkedChangeEvent);
+          }
+
           
-          
-          RefPtr<AccEvent> linkedChangeEvent =
-              new AccStateChangeEvent(acc, states::LINKED);
-          document->FireDelayedEvent(linkedChangeEvent);
+          acc->SendCache(CacheDomain::Actions, CacheUpdateType::Update);
         }
       }
     }
