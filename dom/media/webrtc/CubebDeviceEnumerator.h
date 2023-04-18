@@ -67,7 +67,7 @@ class CubebDeviceEnumerator final {
   
   
   void AudioDeviceListChanged(Side aSide);
-  void EnumerateAudioDevices(Side aSide);
+  RefPtr<const AudioDeviceSet> EnumerateAudioDevices(Side aSide);
   
   Mutex mMutex;
   RefPtr<AudioDeviceSet> mInputDevices;
