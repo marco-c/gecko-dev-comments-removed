@@ -246,7 +246,7 @@ add_task(async function test_aboutwelcome_with_text_color_override() {
     browser,
     "renders screen with dark text",
     
-    [`main.screen.dark-text`],
+    [`main.screen.dark-text`, `.indicator.current`, `.indicator:not(.current)`],
     
     [`main.screen.light-text`]
   );
