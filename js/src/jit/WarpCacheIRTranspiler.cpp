@@ -5041,9 +5041,8 @@ bool WarpCacheIRTranspiler::emitCallNativeSetter(ObjOperandId receiverId,
                         sameRealm, nargsAndFlagsOffset);
 }
 
-
-bool WarpCacheIRTranspiler::emitMetaTwoByte(uint32_t functionObjectOffset,
-                                            uint32_t thisShapeOffset) {
+bool WarpCacheIRTranspiler::emitMetaScriptedThisShape(
+    uint32_t thisShapeOffset) {
   Shape* shape = shapeStubField(thisShapeOffset);
   MOZ_ASSERT(shape->getObjectClass() == &PlainObject::class_);
 

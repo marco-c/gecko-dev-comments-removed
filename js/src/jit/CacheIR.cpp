@@ -9525,7 +9525,7 @@ AttachDecision CallIRGenerator::tryAttachCallScripted(
 
       
       
-      writer.metaScriptedTemplateObject(calleeFunc, thisShape);
+      writer.metaScriptedThisShape(thisShape);
     }
   } else {
     
