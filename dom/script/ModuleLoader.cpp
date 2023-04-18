@@ -48,7 +48,8 @@ namespace mozilla::dom {
 
 
 
-ModuleLoader::ModuleLoader(ScriptLoader* aLoader) : ModuleLoaderBase(aLoader) {}
+ModuleLoader::ModuleLoader(ScriptLoader* aLoader, Kind aKind)
+    : ModuleLoaderBase(aLoader), mKind(aKind) {}
 
 ScriptLoader* ModuleLoader::GetScriptLoader() {
   return static_cast<ScriptLoader*>(mLoader.get());

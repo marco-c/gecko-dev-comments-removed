@@ -202,6 +202,8 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
   ModuleLoader* GetModuleLoader() { return mModuleLoader; }
 
+  void RegisterContentScriptModuleLoader(ModuleLoader* aLoader);
+
   
 
 
@@ -321,6 +323,11 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
 
   bool HasPendingRequests();
+
+  
+
+
+  bool HasPendingDynamicImports() const;
 
   
 
@@ -725,6 +732,7 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   RefPtr<AsyncCompileShutdownObserver> mShutdownObserver;
 
   RefPtr<ModuleLoader> mModuleLoader;
+  nsTArray<RefPtr<ModuleLoader>> mWebExtModuleLoaders;
 
   
  public:
