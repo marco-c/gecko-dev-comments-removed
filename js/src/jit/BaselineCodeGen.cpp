@@ -1446,7 +1446,8 @@ bool BaselineCompilerCodeGen::emitWarmUpCounterIncrement() {
 
     
     
-    masm.addToStackPtr(Imm32(frame.frameSize()));
+    masm.moveToStackPtr(FramePointer);
+    masm.pop(FramePointer);
 
 #ifdef DEBUG
     

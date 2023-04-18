@@ -3738,9 +3738,14 @@ void CodeGenerator::visitOsrEntry(LOsrEntry* lir) {
   masm.setFramePushed(0);
 
   
-  masm.assertStackAlignment(JitStackAlignment, 0);
+  masm.Push(FramePointer);
+  masm.moveStackPtrTo(FramePointer);
 
-  masm.reserveStack(frameSize());
+  masm.reserveStack(frameSize() - sizeof(uintptr_t));
+  MOZ_ASSERT(masm.framePushed() == frameSize());
+
+  
+  masm.assertStackAlignment(JitStackAlignment, 0);
 }
 
 void CodeGenerator::visitOsrEnvironmentChain(LOsrEnvironmentChain* lir) {
