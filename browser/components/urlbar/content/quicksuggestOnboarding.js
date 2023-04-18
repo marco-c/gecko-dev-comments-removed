@@ -47,3 +47,17 @@ document.getElementById("onboardingLearnMore").addEventListener("click", () => {
   window.arguments[0].choice = ONBOARDING_CHOICE.LEARN_MORE;
   window.close();
 });
+
+
+
+
+window.addEventListener("load", () => {
+  const resizeObserver = new ResizeObserver(() => {
+    
+    
+    
+    window.resizeBy(0, -window.innerHeight);
+    window.opener.gDialogBox.dialog.resizeDialog();
+  });
+  resizeObserver.observe(document.getElementById("infoContainer"));
+});
