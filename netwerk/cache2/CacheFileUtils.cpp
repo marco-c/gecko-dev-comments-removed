@@ -601,6 +601,7 @@ bool CachePerfStats::IsCacheSlow() {
 
 
 void CachePerfStats::GetSlowStats(uint32_t* aSlow, uint32_t* aNotSlow) {
+  StaticMutexAutoLock lock(sLock);
   *aSlow = sCacheSlowCnt;
   *aNotSlow = sCacheNotSlowCnt;
 }
