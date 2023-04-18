@@ -6,6 +6,8 @@
 
 #include "mozilla/Mutex.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/InputStreamLengthWrapper.h"
+#include "nsIInputStreamLength.h"
 #include "nsStreamUtils.h"
 #include "nsCOMPtr.h"
 #include "nsICloneableInputStream.h"
@@ -868,6 +870,16 @@ nsresult NS_CloneInputStream(nsIInputStream* aSource,
                            true, true);  
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
+  }
+
+  
+  
+  
+  int64_t length = -1;
+  if (nsCOMPtr<nsIInputStreamLength> streamLength = do_QueryInterface(aSource);
+      streamLength && NS_SUCCEEDED(streamLength->Length(&length)) &&
+      length != -1) {
+    reader = new mozilla::InputStreamLengthWrapper(reader.forget(), length);
   }
 
   cloneable = do_QueryInterface(reader);
