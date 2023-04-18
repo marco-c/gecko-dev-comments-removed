@@ -1067,10 +1067,8 @@ bool Theme::DoDrawWidgetBackground(PaintBackendData& aPaintData,
 
   
   
-  if (aDrawOverflow == DrawOverflow::Yes &&
-      aFrame->StyleOutline()->mOutlineStyle.IsAuto()) {
-    eventState |= NS_EVENT_STATE_FOCUSRING;
-  } else {
+  if (aDrawOverflow == DrawOverflow::No ||
+      !aFrame->StyleOutline()->mOutlineStyle.IsAuto()) {
     eventState &= ~NS_EVENT_STATE_FOCUSRING;
   }
 
