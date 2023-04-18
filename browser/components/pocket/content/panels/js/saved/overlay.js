@@ -668,8 +668,16 @@ SavedOverlay.prototype = {
 
     if (layoutRefresh) {
       
+      
+      document
+        .querySelector(`.pkt_ext_containersaved`)
+        ?.classList.add(`stp_saved_body`);
+      document
+        .querySelector(`.pkt_ext_containersaved`)
+        ?.classList.remove(`pkt_ext_containersaved`);
+      
       ReactDOM.render(
-        <Saved pockethost={pockethost} savedStory={{}} />,
+        <Saved pockethost={pockethost} locale={locale} />,
         document.querySelector(`body`)
       );
     } else {
@@ -748,10 +756,10 @@ SavedOverlay.prototype = {
         const { data } = resp;
         myself.renderItemRecs(data);
       });
-    }
 
-    
-    pktPanelMessaging.sendMessage("PKT_show_saved");
+      
+      pktPanelMessaging.sendMessage("PKT_show_saved");
+    }
   },
 };
 
