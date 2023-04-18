@@ -23,6 +23,7 @@ import subprocess
 
 RE_BUG = re.compile("Bug (\d+)")
 RE_COMMITMSG = re.compile("Update (.+) to ([^\s]+)(.*)")
+RE_PATCHMSG = re.compile("Apply mozilla patches for")
 
 
 class Revision:
@@ -46,6 +47,56 @@ class Revision:
     def __str__(self):
         bug_str = " (No Bug)" if not self.bug else " (Bug %s)" % self.bug
         return self.node + " by " + self.author + bug_str
+
+
+def find_moz_yaml_from_commit(rev):
+    files_changed = subprocess.check_output(["hg", "status", "--change", rev.node])
+    files_changed = files_changed.decode("utf-8").split("\n")
+
+    moz_yaml_file = None
+    for f in files_changed:
+        if "moz.yaml" in f:
+            if moz_yaml_file:
+                msg = (
+                    "Already had a moz.yaml file (%s) and then we found another? (%s)"
+                    % (moz_yaml_file, f)
+                )
+                raise Exception(msg)
+            moz_yaml_file = f[2:]
+    return moz_yaml_file
+
+
+def get_patch_diff(rev):
+    commitdiff = (
+        subprocess.check_output(["hg", "export", rev.node]).decode("utf-8").split("\n")
+    )
+    start_index = 0
+    for i in range(len(commitdiff)):
+        if "diff --git" in commitdiff[i]:
+            start_index = i
+            break
+    patch_diff = commitdiff[start_index:]
+    return patch_diff
+
+
+def compare_diffs(patch_diff, recreated_diff):
+    this_failure = False
+    if len(recreated_diff) != len(patch_diff):
+        print(
+            "  The recreated diff is %i lines long and the original diff is %i lines long."
+            % (len(recreated_diff), len(patch_diff))
+        )
+        this_failure = True
+
+    for i in range(min(len(recreated_diff), len(patch_diff))):
+        if recreated_diff[i] != patch_diff[i]:
+            if not this_failure:
+                print(
+                    "  Identified a difference between patches, starting on line %i."
+                    % i
+                )
+            this_failure = True
+    return this_failure
 
 
 
@@ -143,62 +194,76 @@ for r in revisions:
         else:
             updatebot_revisions.append(revision)
 
+print("There are %i updatebot revisions to be evaluated." % len(updatebot_revisions))
 
 
 overall_failure = False
-for u in updatebot_revisions:
+
+
+unique_updatebot_bugs = set([u.bug for u in updatebot_revisions])
+print("Unique Updatebot Bugs found: ", unique_updatebot_bugs)
+
+
+for bug in unique_updatebot_bugs:
+    
+    
+    all_commits_for_this_bug = [r for r in all_revisions if r.bug == bug]
+    all_updatebot_commits_for_this_bug = [
+        r for r in updatebot_revisions if r.bug == bug
+    ]
+    assert (
+        len(all_updatebot_commits_for_this_bug) <= 2
+    ), "Saw more than two Updatebot commits for a single bug"
+    assert (
+        all_commits_for_this_bug[0] == all_updatebot_commits_for_this_bug[0]
+    ), "The first commit for this bug is not by Updatebot"
+    assert (
+        len(all_updatebot_commits_for_this_bug) == 1
+        or all_commits_for_this_bug[1] == all_updatebot_commits_for_this_bug[1]
+    ), "The second commit for this bug is not by Updatebot"
+
+    print("All commits for Bug %s: " % bug, [r.node for r in all_commits_for_this_bug])
+    print(
+        "All Updatebot commits for Bug %s: " % bug,
+        [r.node for r in all_updatebot_commits_for_this_bug],
+    )
+
     try:
+        first_commit = all_commits_for_this_bug[0]
         print("=" * 80)
-        print("Processing the Updatebot revision %s for Bug %s" % (u.node, u.bug))
+        print(
+            "Processing revision %s for Bug %s:" % (first_commit.node, first_commit.bug)
+        )
 
         try:
-            target_revision = RE_COMMITMSG.search(u.desc).groups(0)[1]
+            target_revision = RE_COMMITMSG.search(first_commit.desc).groups(0)[1]
         except Exception:
-            print("Could not parse the bug description for the revision: %s" % u.desc)
+            print(
+                "Could not parse the bug description with RE_COMMITMSG for the revision: %s"
+                % first_commit.desc
+            )
             overall_failure = True
             continue
 
-        
-        files_changed = subprocess.check_output(["hg", "status", "--change", u.node])
-        files_changed = files_changed.decode("utf-8").split("\n")
+        moz_yaml_file = find_moz_yaml_from_commit(first_commit)
+        first_patch_diff = get_patch_diff(first_commit)
 
-        moz_yaml_file = None
-        for f in files_changed:
-            if "moz.yaml" in f:
-                if moz_yaml_file:
-                    msg = (
-                        "Already had a moz.yaml file (%s) and then we found another? (%s)"
-                        % (moz_yaml_file, f)
-                    )
-                    raise Exception(msg)
-                moz_yaml_file = f[2:]
-
-        
-        
-        all_commits_for_this_update = [r for r in all_revisions if r.bug == u.bug]
-
-        print(
-            "  Found %i commits associated with this bug."
-            % len(all_commits_for_this_update)
-        )
+        second_patch_diff = ""
+        if len(all_updatebot_commits_for_this_bug) > 1:
+            second_commit = all_commits_for_this_bug[1]
+            if not RE_PATCHMSG.search(second_commit.desc):
+                print(
+                    "Could not parse the bug description with RE_PATCHMSG for the revision: %s"
+                    % second_commit.desc
+                )
+                overall_failure = True
+                continue
+            second_patch_diff = get_patch_diff(second_commit)
 
         
-        commitdiff = (
-            subprocess.check_output(["hg", "export", u.node])
-            .decode("utf-8")
-            .split("\n")
-        )
-        start_index = 0
-        for i in range(len(commitdiff)):
-            if "diff --git" in commitdiff[i]:
-                start_index = i
-                break
-        patch_diff = commitdiff[start_index:]
-
-        
-        all_commits_reversed = all_commits_for_this_update
-        all_commits_reversed.reverse()
-        for c in all_commits_reversed:
+        all_commits_for_this_bug_reversed = all_commits_for_this_bug
+        all_commits_for_this_bug_reversed.reverse()
+        for c in all_commits_for_this_bug_reversed:
             print("  Backing out", c.node)
             
             
@@ -216,62 +281,115 @@ for u in updatebot_revisions:
 
         
         print("  Vendoring", moz_yaml_file)
-        ret = subprocess.call(
-            ["./mach", "vendor", "--revision", target_revision, moz_yaml_file]
-        )
+
+        cmd = ["./mach", "vendor", "--revision", target_revision, moz_yaml_file]
+        if len(all_updatebot_commits_for_this_bug) > 1:
+            cmd += ["--patch-mode", "none"]
+
+        ret = subprocess.call(cmd)
         if ret:
             print("  Vendoring returned code %i, but we're going to continue..." % ret)
 
         
-        recreated_diff = (
+        first_recreated_diff = (
             subprocess.check_output(["hg", "diff"]).decode("utf-8").split("\n")
         )
 
         
-        this_failure = False
-        if len(recreated_diff) != len(patch_diff):
-            print(
-                "  The recreated diff is %i lines long and the original diff is %i lines long."
-                % (len(recreated_diff), len(patch_diff))
-            )
-            this_failure = True
+        first_patch_failure = compare_diffs(first_patch_diff, first_recreated_diff)
+        second_patch_failure = False
 
-        for i in range(min(len(recreated_diff), len(patch_diff))):
-            if recreated_diff[i] != patch_diff[i]:
-                if not this_failure:
-                    print(
-                        "  Identified a difference between patches, starting on line %i."
-                        % i
-                    )
-                this_failure = True
+        if len(all_updatebot_commits_for_this_bug) > 1:
+            
+            subprocess.check_output(
+                [
+                    "hg",
+                    "--config",
+                    "ui.username=Updatebot Verifier <updatebot@mozilla.com>",
+                    "commit",
+                    "-m",
+                    "Commiting a vendoring of %s" % moz_yaml_file,
+                ]
+            )
+            
+            print("  Patching", moz_yaml_file)
+
+            cmd = [
+                "./mach",
+                "vendor",
+                "--revision",
+                target_revision,
+                moz_yaml_file,
+                "--patch-mode",
+                "only",
+            ]
+            ret = subprocess.call(cmd)
+            if ret:
+                print(
+                    "  Patching returned code %i, but we're going to continue..." % ret
+                )
+
+            
+            second_recreated_diff = (
+                subprocess.check_output(["hg", "diff"]).decode("utf-8").split("\n")
+            )
+
+            
+            second_patch_failure = compare_diffs(
+                second_patch_diff, second_recreated_diff
+            )
+
+            
+            subprocess.check_output(["hg", "revert", "."])
+            
+            subprocess.check_output(
+                ["hg", "--config", "extensions.strip=", "strip", "tip"]
+            )
+        else:
+            
+            subprocess.check_output(["hg", "revert", "."])
 
         
-        subprocess.check_output(["hg", "revert", "."])
         subprocess.check_output(
             [
                 "hg",
                 "--config",
                 "extensions.strip=",
                 "strip",
-                "tip~" + str(len(all_commits_for_this_update) - 1),
+                "tip~" + str(len(all_commits_for_this_bug) - 1),
             ]
         )
 
         
-        if not this_failure:
+        if not first_patch_failure and not second_patch_failure:
             print("  This revision was recreated successfully.")
             continue
 
+        print("Vendoring:")
         print("Original Diff:")
         print("-" * 80)
-        for l in patch_diff:
+        for l in first_patch_diff:
             print(l)
         print("-" * 80)
         print("Recreated Diff:")
         print("-" * 80)
-        for l in recreated_diff:
+        for l in first_recreated_diff:
             print(l)
         print("-" * 80)
+
+        if len(all_updatebot_commits_for_this_bug) > 1:
+            print("Patching:")
+            print("Original Diff:")
+            print("-" * 80)
+            for l in second_patch_diff:
+                print(l)
+            print("-" * 80)
+            print("Recreated Diff:")
+            print("-" * 80)
+            for l in second_recreated_diff:
+                print(l)
+            print("-" * 80)
+
         overall_failure = True
     except subprocess.CalledProcessError as e:
         print("Caught an exception when running:", e.cmd)
