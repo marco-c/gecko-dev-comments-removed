@@ -12,33 +12,6 @@
 
 namespace mozilla::dom::cache {
 
-namespace {
-
-
-
-template <class T>
-class FakeCopyable {
- public:
-  explicit FakeCopyable(T&& aTarget) : mTarget(std::forward<T>(aTarget)) {}
-
-  FakeCopyable(FakeCopyable&&) = default;
-
-  FakeCopyable(const FakeCopyable& aOther)
-      : mTarget(std::move(const_cast<FakeCopyable&>(aOther).mTarget)) {
-    MOZ_CRASH("Do not copy.");
-  }
-
-  template <typename... Args>
-  auto operator()(Args&&... aArgs) {
-    return mTarget(std::forward<Args>(aArgs)...);
-  }
-
- private:
-  T mTarget;
-};
-
-}  
-
 
 SafeRefPtr<CacheWorkerRef> CacheWorkerRef::Create(WorkerPrivate* aWorkerPrivate,
                                                   Behavior aBehavior) {
@@ -48,8 +21,7 @@ SafeRefPtr<CacheWorkerRef> CacheWorkerRef::Create(WorkerPrivate* aWorkerPrivate,
   
   auto workerRef =
       MakeSafeRefPtr<CacheWorkerRef>(aBehavior, ConstructorGuard{});
-  auto notify =
-      FakeCopyable([workerRef = workerRef.clonePtr()] { workerRef->Notify(); });
+  auto notify = [workerRef = workerRef.clonePtr()] { workerRef->Notify(); };
   if (aBehavior == eStrongWorkerRef) {
     workerRef->mStrongWorkerRef = StrongWorkerRef::Create(
         aWorkerPrivate, "CacheWorkerRef-Strong", std::move(notify));
