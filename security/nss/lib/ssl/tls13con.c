@@ -1829,8 +1829,8 @@ tls13_HandleClientHelloPart2(sslSocket *ss,
     TLS13KeyShareEntry *clientShare = NULL;
     ssl3CipherSuite previousCipherSuite = 0;
     const sslNamedGroupDef *previousGroup = NULL;
-    PRBool previousEchOffered = PR_FALSE;
     PRBool hrr = PR_FALSE;
+    PRBool previousOfferedEch;
 
     
 
@@ -1882,8 +1882,8 @@ tls13_HandleClientHelloPart2(sslSocket *ss,
                                    ss->xtnData.cookie.len,
                                    &previousCipherSuite,
                                    &previousGroup,
-                                   &previousEchOffered,
-                                   NULL, NULL, NULL, NULL, PR_TRUE);
+                                   &previousOfferedEch, NULL, PR_TRUE);
+
         if (rv != SECSuccess) {
             FATAL_ERROR(ss, SSL_ERROR_BAD_2ND_CLIENT_HELLO, illegal_parameter);
             goto loser;
@@ -1944,9 +1944,9 @@ tls13_HandleClientHelloPart2(sslSocket *ss,
         }
 
         
-        if (previousEchOffered != (ss->xtnData.ech != NULL)) {
+        if (previousOfferedEch != (ss->xtnData.ech != NULL)) {
             FATAL_ERROR(ss, SSL_ERROR_BAD_2ND_CLIENT_HELLO,
-                        previousEchOffered ? missing_extension : illegal_parameter);
+                        previousOfferedEch ? missing_extension : illegal_parameter);
             goto loser;
         }
 
@@ -2220,6 +2220,24 @@ tls13_SendHelloRetryRequest(sslSocket *ss,
                 SSL_GETPID(), ss->fd));
 
     PORT_Assert(ss->opt.noLocks || ssl_HaveSSL3HandshakeLock(ss));
+
+    if (ss->xtnData.ech) {
+        PRUint8 echGreaseRaw[TLS13_ECH_SIGNAL_LEN] = { 0 };
+        if (!ss->ssl3.hs.echAccepted) {
+            rv = PK11_GenerateRandom(echGreaseRaw, TLS13_ECH_SIGNAL_LEN);
+            if (rv != SECSuccess) {
+                return SECFailure;
+            }
+        }
+        sslBuffer echGreaseBuffer = SSL_BUFFER_EMPTY;
+        rv = sslBuffer_Append(&echGreaseBuffer, echGreaseRaw, sizeof(echGreaseRaw));
+        if (rv != SECSuccess) {
+            return SECFailure;
+        }
+        
+        SSL_TRC(100, ("Generating and storing a random value for ECH HRR Grease value."));
+        ss->ssl3.hs.greaseEchBuf = echGreaseBuffer;
+    }
 
     
     rv = tls13_MakeHrrCookie(ss, requestedGroup,
@@ -2514,6 +2532,18 @@ ssl_ListCount(PRCList *list)
     return c;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
 SECStatus
 tls13_HandleHelloRetryRequest(sslSocket *ss, const PRUint8 *savedMsg,
                               PRUint32 savedLength)
@@ -2553,8 +2583,12 @@ tls13_HandleHelloRetryRequest(sslSocket *ss, const PRUint8 *savedMsg,
 
 
 
-
-    if (ssl_ListCount(&ss->ssl3.hs.remoteExtensions) <= 1) {
+    unsigned int requiredExtensions = 1;
+    
+    if (ss->xtnData.ech) {
+        requiredExtensions++;
+    }
+    if (ssl_ListCount(&ss->ssl3.hs.remoteExtensions) <= requiredExtensions) {
         FATAL_ERROR(ss, SSL_ERROR_RX_MALFORMED_HELLO_RETRY_REQUEST,
                     decode_error);
         return SECFailure;
@@ -2565,7 +2599,10 @@ tls13_HandleHelloRetryRequest(sslSocket *ss, const PRUint8 *savedMsg,
     if (rv != SECSuccess) {
         return SECFailure; 
     }
-
+    rv = tls13_MaybeHandleEchSignal(ss, savedMsg, savedLength, PR_TRUE);
+    if (rv != SECSuccess) {
+        return SECFailure;
+    }
     ss->ssl3.hs.helloRetry = PR_TRUE;
     rv = tls13_ReinjectHandshakeTranscript(ss);
     if (rv != SECSuccess) {
@@ -3016,7 +3053,7 @@ tls13_HandleServerHelloPart2(sslSocket *ss, const PRUint8 *savedMsg, PRUint32 sa
         return SECFailure; 
     }
 
-    rv = tls13_MaybeHandleEchSignal(ss, savedMsg, savedLength);
+    rv = tls13_MaybeHandleEchSignal(ss, savedMsg, savedLength, PR_FALSE);
     if (rv != SECSuccess) {
         return SECFailure; 
     }
@@ -5550,8 +5587,7 @@ static const struct {
     { ssl_tls13_supported_versions_xtn, _M3(client_hello, server_hello,
                                             hello_retry_request) },
     { ssl_record_size_limit_xtn, _M2(client_hello, encrypted_extensions) },
-    { ssl_tls13_encrypted_client_hello_xtn, _M2(client_hello, encrypted_extensions) },
-    { ssl_tls13_ech_is_inner_xtn, _M1(client_hello) },
+    { ssl_tls13_encrypted_client_hello_xtn, _M3(client_hello, encrypted_extensions, hello_retry_request) },
     { ssl_tls13_outer_extensions_xtn, _M_NONE  },
     { ssl_tls13_post_handshake_auth_xtn, _M1(client_hello) }
 };
@@ -6252,8 +6288,11 @@ tls13_NegotiateVersion(sslSocket *ss, const TLSExtension *supportedVersions)
         if (version < SSL_LIBRARY_VERSION_TLS_1_3 &&
             (ss->ssl3.hs.helloRetry || ss->ssl3.hs.echAccepted)) {
             
+
+
+            SSL3AlertDescription alert = ss->ssl3.hs.echAccepted ? illegal_parameter : protocol_version;
             PORT_SetError(SSL_ERROR_UNSUPPORTED_VERSION);
-            FATAL_ERROR(ss, SSL_ERROR_UNSUPPORTED_VERSION, protocol_version);
+            FATAL_ERROR(ss, SSL_ERROR_UNSUPPORTED_VERSION, alert);
             return SECFailure;
         }
 
