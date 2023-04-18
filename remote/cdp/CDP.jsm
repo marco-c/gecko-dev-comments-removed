@@ -78,16 +78,6 @@ class CDP {
     
     
     
-    
-    
-    logger.debug(
-      `Awaiting all initial windows to be restored before enabling the protocol`
-    );
-    await this.agent.browserStartupFinished;
-
-    
-    
-    
     this._running = true;
 
     RecommendedPreferences.applyPreferences(RECOMMENDED_PREFS);
@@ -103,6 +93,16 @@ class CDP {
     });
 
     await this.targetList.watchForTargets();
+
+    
+    
+    
+    
+    
+    logger.debug(
+      `Awaiting all initial windows to be restored before enabling the protocol`
+    );
+    await this.agent.browserStartupFinished;
 
     Cu.printStderr(`DevTools listening on ${this.address}\n`);
 
