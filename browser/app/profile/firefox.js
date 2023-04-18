@@ -1012,9 +1012,6 @@ pref("plugins.show_infobar", false);
 #endif
 
 
-pref("plugins.flashBlock.enabled", true);
-
-
 
 
 
