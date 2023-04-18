@@ -17,7 +17,7 @@ from mozbuild.backend.base import BuildBackend
 import mozpack.path as mozpath
 from mozbuild.frontend.sandbox import alphabetical_sorted
 from mozbuild.frontend.data import GnProjectData
-from mozbuild.util import expand_variables, mkdir
+from mozbuild.util import mkdir
 
 
 license_header = """# This Source Code Form is subject to the terms of the Mozilla Public
@@ -325,12 +325,6 @@ def process_gn_config(
             variables = (suffix_map[e] for e in extensions if e in suffix_map)
             for var in variables:
                 for f in flags:
-                    
-                    
-                    
-                    f = expand_variables(f, config.substs).split()
-                    if not f:
-                        continue
                     
                     if isinstance(f, six.string_types):
                         context_attrs.setdefault(var, []).append(f)
