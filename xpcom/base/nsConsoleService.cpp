@@ -263,12 +263,12 @@ LogMessageRunnable::Run() {
 
 NS_IMETHODIMP
 nsConsoleService::LogMessage(nsIConsoleMessage* aMessage) {
-  return LogMessageWithMode(aMessage, OutputToLog);
+  return LogMessageWithMode(aMessage, nsIConsoleService::OutputToLog);
 }
 
 
 nsresult nsConsoleService::LogMessageWithMode(
-    nsIConsoleMessage* aMessage, nsConsoleService::OutputMode aOutputMode) {
+    nsIConsoleMessage* aMessage, nsIConsoleService::OutputMode aOutputMode) {
   if (!aMessage) {
     return NS_ERROR_INVALID_ARG;
   }

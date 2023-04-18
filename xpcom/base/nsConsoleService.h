@@ -53,14 +53,6 @@ class nsConsoleService final : public nsIConsoleService, public nsIObserver {
     mDeliveringMessage = false;
   }
 
-  
-  
-  
-
-  enum OutputMode { SuppressLog, OutputToLog };
-  virtual nsresult LogMessageWithMode(nsIConsoleMessage* aMessage,
-                                      OutputMode aOutputMode);
-
   typedef nsInterfaceHashtable<nsISupportsHashKey, nsIConsoleListener>
       ListenerHash;
   void CollectCurrentListeners(nsCOMArray<nsIConsoleListener>& aListeners);
