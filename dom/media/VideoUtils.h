@@ -244,6 +244,9 @@ struct VideoColorSpace {
     return mPrimaries == aOther.mPrimaries && mTransfer == aOther.mTransfer &&
            mMatrix == aOther.mMatrix && mRange == aOther.mRange;
   }
+  bool operator!=(const VideoColorSpace& aOther) const {
+    return !(*this == aOther);
+  }
 };
 
 
@@ -255,6 +258,15 @@ bool ExtractVPXCodecDetails(const nsAString& aCodec, uint8_t& aProfile,
 bool ExtractVPXCodecDetails(const nsAString& aCodec, uint8_t& aProfile,
                             uint8_t& aLevel, uint8_t& aBitDepth,
                             uint8_t& aChromaSubsampling,
+                            VideoColorSpace& aColorSpace);
+
+
+
+
+bool ExtractAV1CodecDetails(const nsAString& aCodec, uint8_t& aProfile,
+                            uint8_t& aLevel, uint8_t& aTier, uint8_t& aBitDepth,
+                            bool& aMonochrome, bool& aSubsamplingX,
+                            bool& aSubsamplingY, uint8_t& aChromaSamplePosition,
                             VideoColorSpace& aColorSpace);
 
 
