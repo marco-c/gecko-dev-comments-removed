@@ -304,6 +304,9 @@ EditActionResult WhiteSpaceVisibilityKeeper::
                    "Failed to consider whether moving or not something");
     }
 #endif  
+    
+    
+    moveNodeResult.IgnoreCaretPointSuggestion();
     ret |= moveNodeResult;
     
     
@@ -457,6 +460,9 @@ EditActionResult WhiteSpaceVisibilityKeeper::
         moveNodeResult.isOk(),
         "HTMLEditor::MoveChildrenWithTransaction() failed, but ignored");
     if (moveNodeResult.isOk()) {
+      
+      
+      moveNodeResult.IgnoreCaretPointSuggestion();
       ret |= moveNodeResult;
 #ifdef DEBUG
       MOZ_ASSERT(!rightBlockHasContent.isErr());
@@ -562,7 +568,9 @@ EditActionResult WhiteSpaceVisibilityKeeper::
                    "Failed to consider whether moving or not something");
     }
 #endif  
-
+    
+    
+    moveNodeResult.IgnoreCaretPointSuggestion();
     ret |= moveNodeResult;
   }
 
@@ -676,6 +684,9 @@ EditActionResult WhiteSpaceVisibilityKeeper::
                    "Failed to consider whether moving or not something");
     }
 #endif  
+    
+    
+    moveNodeResult.IgnoreCaretPointSuggestion();
     ret |= moveNodeResult;
   }
 
