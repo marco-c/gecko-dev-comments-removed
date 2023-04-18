@@ -315,11 +315,11 @@ class alignas(uintptr_t) JitScript final : public TrailingArray {
 
   
   
-  BaselineScript* baselineScript_ = nullptr;
+  GCStructPtr<BaselineScript*> baselineScript_;
 
   
   
-  IonScript* ionScript_ = nullptr;
+  GCStructPtr<IonScript*> ionScript_;
 
   
   Offset endOffset_ = 0;
@@ -411,15 +411,7 @@ class alignas(uintptr_t) JitScript final : public TrailingArray {
   void incWarmUpCount(uint32_t amount) { icScript_.warmUpCount_ += amount; }
   void resetWarmUpCount(uint32_t count);
 
-  void prepareForDestruction(Zone* zone) {
-    
-    
-    
-    
-    
-    
-    jitScriptStubSpace_.freeAllAfterMinorGC(zone);
-  }
+  void prepareForDestruction(Zone* zone);
 
   JitScriptICStubSpace* jitScriptStubSpace() { return &jitScriptStubSpace_; }
 

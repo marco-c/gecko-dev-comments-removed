@@ -334,6 +334,8 @@ struct InternalBarrierMethods {};
 
 template <typename T>
 struct InternalBarrierMethods<T*> {
+  static_assert(std::is_base_of_v<gc::Cell, T>, "Expected a GC thing type");
+
   static bool isMarkable(const T* v) { return v != nullptr; }
 
   static void preBarrier(T* v) { gc::PreWriteBarrier(v); }
@@ -746,6 +748,64 @@ class HeapPtr : public WriteBarriered<T> {
     T tmp = this->value;
     postBarrieredSet(JS::SafelyInitialized<T>::create());
     return tmp;
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <class T>
+class GCStructPtr : public BarrieredBase<T> {
+ public:
+  
+  static constexpr uintptr_t MaxTaggedPointer = 0x2;
+
+  GCStructPtr() : BarrieredBase<T>(JS::SafelyInitialized<T>::create()) {}
+
+  
+  MOZ_IMPLICIT GCStructPtr(const T& v) : BarrieredBase<T>(v) {}
+
+  GCStructPtr(const GCStructPtr<T>& other) : BarrieredBase<T>(other) {}
+
+  GCStructPtr(GCStructPtr<T>&& other) : BarrieredBase<T>(other.release()) {}
+
+  ~GCStructPtr() {
+    
+    MOZ_ASSERT_IF(isTraceable(),
+                  CurrentThreadIsGCSweeping() || CurrentThreadIsGCFinalizing());
+  }
+
+  void init(const T& v) {
+    MOZ_ASSERT(this->get() == JS::SafelyInitialized<T>());
+    AssertTargetIsNotGray(v);
+    this->value = v;
+  }
+
+  void set(JS::Zone* zone, const T& v) {
+    pre(zone);
+    this->value = v;
+  }
+
+  T get() const { return this->value; }
+  operator T() const { return get(); }
+  T operator->() const { return get(); }
+
+ protected:
+  bool isTraceable() const { return uintptr_t(get()) > MaxTaggedPointer; }
+
+  void pre(JS::Zone* zone) {
+    if (isTraceable()) {
+      PreWriteBarrier(zone, get());
+    }
   }
 };
 

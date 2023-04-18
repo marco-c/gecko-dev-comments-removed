@@ -182,25 +182,18 @@ js::Scope* js::BaseScript::releaseEnclosingScope() {
 }
 
 void js::BaseScript::swapData(UniquePtr<PrivateScriptData>& other) {
-  PrivateScriptData* tmp = other.release();
-
   if (data_) {
-    
-    
-    
-    PreWriteBarrier(zone(), data_);
-
     RemoveCellMemory(this, data_->allocationSize(),
                      MemoryUse::ScriptPrivateData);
   }
 
-  std::swap(tmp, data_);
+  PrivateScriptData* old = data_;
+  data_.set(zone(), other.release());
+  other.reset(old);
 
   if (data_) {
     AddCellMemory(this, data_->allocationSize(), MemoryUse::ScriptPrivateData);
   }
-
-  other.reset(tmp);
 }
 
 js::Scope* js::BaseScript::enclosingScope() const {
