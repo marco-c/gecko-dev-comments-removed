@@ -67,7 +67,14 @@ typedef struct Dav1dSettings {
     unsigned frame_size_limit; 
     Dav1dPicAllocator allocator; 
     Dav1dLogger logger; 
-    uint8_t reserved[32]; 
+    int strict_std_compliance; 
+                               
+                               
+    int output_invisible_frames; 
+                                 
+                                 
+                                 
+    uint8_t reserved[24]; 
 } Dav1dSettings;
 
 
@@ -185,6 +192,27 @@ DAV1D_API int dav1d_send_data(Dav1dContext *c, Dav1dData *in);
 
 
 DAV1D_API int dav1d_get_picture(Dav1dContext *c, Dav1dPicture *out);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+DAV1D_API int dav1d_apply_grain(Dav1dContext *c, Dav1dPicture *out,
+                                const Dav1dPicture *in);
 
 
 
