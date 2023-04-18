@@ -364,14 +364,6 @@ static const char kVerisign_Class_2_Public_Primary_Certification_Authority___G3F
   "cAajgxHlj7GTSEIzIYIQxmEloOSoJq7VOaxWHfv72QM=";
 
 
-static const char kYahooBackup1Fingerprint[] =
-  "2fRAUXyxl4A1/XHrKNBmc8bTkzA7y4FB/GLJuNAzCqY=";
-
-
-static const char kYahooBackup2Fingerprint[] =
-  "dolnbtzEBnELx/9lOEQ22e6OZO/QNb6VSSX2XHA3E7A=";
-
-
 struct StaticFingerprints {
   
   size_t size;
@@ -591,13 +583,11 @@ static const StaticFingerprints kPinset_spideroak = {
 };
 
 static const char* const kPinset_yahoo_Data[] = {
-  kYahooBackup1Fingerprint,
   kDigiCert_Assured_ID_Root_CAFingerprint,
   kGlobalSign_Root_CAFingerprint,
   kDigiCert_Trusted_Root_G4Fingerprint,
   kDigiCert_High_Assurance_EV_Root_CAFingerprint,
   kGlobalSign_Root_CA___R3Fingerprint,
-  kYahooBackup2Fingerprint,
   kDigiCert_Global_Root_G2Fingerprint,
   kDigiCert_Global_Root_CAFingerprint,
   kDigiCert_Global_Root_G3Fingerprint,
@@ -1135,4 +1125,4 @@ static const TransportSecurityPreload kPublicKeyPinningPreloadList[] = {
 
 static const int32_t kUnknownId = -1;
 
-static const PRTime kPreloadPKPinsExpirationTime = INT64_C(1659005973458000);
+static const PRTime kPreloadPKPinsExpirationTime = INT64_C(1659351601654000);
