@@ -41,12 +41,12 @@ TEST_F(ImageContainers, RasterImageContainer) {
   ASSERT_TRUE(NS_SUCCEEDED(rv));
 
   
-  rv = image->OnImageDataAvailable(nullptr, nullptr, inputStream, 0,
+  rv = image->OnImageDataAvailable(nullptr, inputStream, 0,
                                    static_cast<uint32_t>(length));
   ASSERT_TRUE(NS_SUCCEEDED(rv));
 
   
-  rv = image->OnImageDataComplete(nullptr, nullptr, NS_OK, true);
+  rv = image->OnImageDataComplete(nullptr, NS_OK, true);
   ASSERT_TRUE(NS_SUCCEEDED(rv));
 
   RefPtr<ProgressTracker> tracker = image->GetProgressTracker();

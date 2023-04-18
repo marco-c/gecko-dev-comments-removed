@@ -379,7 +379,6 @@ void VectorImage::CollectSizeOfSurfaces(
 }
 
 nsresult VectorImage::OnImageDataComplete(nsIRequest* aRequest,
-                                          nsISupports* aContext,
                                           nsresult aStatus, bool aLastPart) {
   
   
@@ -405,7 +404,6 @@ nsresult VectorImage::OnImageDataComplete(nsIRequest* aRequest,
 }
 
 nsresult VectorImage::OnImageDataAvailable(nsIRequest* aRequest,
-                                           nsISupports* aContext,
                                            nsIInputStream* aInStr,
                                            uint64_t aSourceOffset,
                                            uint32_t aCount) {

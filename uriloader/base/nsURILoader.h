@@ -83,7 +83,7 @@ class nsDocumentOpenInfo : public nsIStreamListener,
 
   
   
-  nsresult DispatchContent(nsIRequest* request, nsISupports* aCtxt);
+  nsresult DispatchContent(nsIRequest* request);
 
   
   

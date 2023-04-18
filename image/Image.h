@@ -245,7 +245,6 @@ class Image : public imgIContainer {
 
 
   virtual nsresult OnImageDataAvailable(nsIRequest* aRequest,
-                                        nsISupports* aContext,
                                         nsIInputStream* aInStr,
                                         uint64_t aSourceOffset,
                                         uint32_t aCount) = 0;
@@ -257,9 +256,7 @@ class Image : public imgIContainer {
 
 
 
-
-  virtual nsresult OnImageDataComplete(nsIRequest* aRequest,
-                                       nsISupports* aContext, nsresult aStatus,
+  virtual nsresult OnImageDataComplete(nsIRequest* aRequest, nsresult aStatus,
                                        bool aLastPart) = 0;
 
   

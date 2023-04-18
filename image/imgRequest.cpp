@@ -728,8 +728,7 @@ imgRequest::OnStopRequest(nsIRequest* aRequest, nsresult status) {
   
   
   if (image) {
-    nsresult rv =
-        image->OnImageDataComplete(aRequest, nullptr, status, lastPart);
+    nsresult rv = image->OnImageDataComplete(aRequest, status, lastPart);
 
     
     
@@ -1016,7 +1015,7 @@ imgRequest::OnDataAvailable(nsIRequest* aRequest, nsIInputStream* aInStr,
   
   if (aInStr) {
     nsresult rv =
-        image->OnImageDataAvailable(aRequest, nullptr, aInStr, aOffset, aCount);
+        image->OnImageDataAvailable(aRequest, aInStr, aOffset, aCount);
 
     if (NS_FAILED(rv)) {
       MOZ_LOG(gImgLog, LogLevel::Warning,
