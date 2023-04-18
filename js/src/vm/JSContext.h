@@ -205,6 +205,10 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   
   js::ContextData<bool> measuringExecutionTime_;
 
+  
+  
+  mozilla::Atomic<bool, mozilla::ReleaseAcquire> isExecuting_;
+
  public:
   
   
@@ -228,6 +232,15 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   void setIsMeasuringExecutionTime(bool value) {
     measuringExecutionTime_ = value;
   }
+
+  
+  
+  
+  
+  const mozilla::Atomic<bool, mozilla::ReleaseAcquire>& isExecutingRef() const {
+    return isExecuting_;
+  }
+  void setIsExecuting(bool value) { isExecuting_ = value; }
 
 #ifdef DEBUG
   bool isInitialized() const { return kind_ != js::ContextKind::Uninitialized; }
