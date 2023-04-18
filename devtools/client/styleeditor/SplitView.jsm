@@ -163,15 +163,6 @@ class SplitView {
 
 
 
-  get activeDetails() {
-    const summary = this.activeSummary;
-    return summary ? bindings.get(summary)._details : null;
-  }
-
-  
-
-
-
 
 
 
