@@ -176,6 +176,12 @@ class IMContextWrapper final : public TextEventDispatcherListener {
   ~IMContextWrapper();
 
   
+
+
+
+  void SetInputPurposeAndInputHints();
+
+  
   
   
   
@@ -452,6 +458,9 @@ class IMContextWrapper final : public TextEventDispatcherListener {
   
   
   bool mIsKeySnooped;
+  
+  
+  bool mSetInputPurposeAndInputHints;
 
   
   
