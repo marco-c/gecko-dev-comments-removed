@@ -5,8 +5,6 @@
 #ifndef mozilla_ScrollTypes_h
 #define mozilla_ScrollTypes_h
 
-#include "mozilla/TypedEnumBits.h"
-
 
 
 namespace mozilla {
@@ -57,16 +55,6 @@ enum class APZScrollAnimationType {
   TriggeredByScript,    
   TriggeredByUserInput  
 };
-
-enum class ScrollSnapFlags : uint8_t {
-  Disabled = 0,
-  
-  IntendedEndPosition = 1 << 0,
-  
-  IntendedDirection = 1 << 1
-};
-
-MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(ScrollSnapFlags);
 
 }  
 

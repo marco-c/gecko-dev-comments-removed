@@ -23,8 +23,8 @@ using layers::ScrollSnapInfo;
 
 class CalcSnapPoints final {
  public:
-  CalcSnapPoints(ScrollUnit aUnit, ScrollSnapFlags aSnapFlags,
-                 const nsPoint& aDestination, const nsPoint& aStartPos);
+  CalcSnapPoints(ScrollUnit aUnit, const nsPoint& aDestination,
+                 const nsPoint& aStartPos);
   void AddHorizontalEdge(nscoord aEdge);
   void AddVerticalEdge(nscoord aEdge);
   void AddEdge(nscoord aEdge, nscoord aDestination, nscoord aStartPos,
@@ -43,7 +43,6 @@ class CalcSnapPoints final {
 
  protected:
   ScrollUnit mUnit;
-  ScrollSnapFlags mSnapFlags;
   nsPoint mDestination;  
                          
   nsPoint mStartPos;     
@@ -58,13 +57,9 @@ class CalcSnapPoints final {
                               
 };
 
-CalcSnapPoints::CalcSnapPoints(ScrollUnit aUnit, ScrollSnapFlags aSnapFlags,
-                               const nsPoint& aDestination,
+CalcSnapPoints::CalcSnapPoints(ScrollUnit aUnit, const nsPoint& aDestination,
                                const nsPoint& aStartPos) {
-  MOZ_ASSERT(aSnapFlags != ScrollSnapFlags::Disabled);
-
   mUnit = aUnit;
-  mSnapFlags = aSnapFlags;
   mDestination = aDestination;
   mStartPos = aStartPos;
 
@@ -111,17 +106,33 @@ void CalcSnapPoints::AddEdge(nscoord aEdge, nscoord aDestination,
                              nscoord aStartPos, nscoord aScrollingDirection,
                              nscoord* aBestEdge, nscoord* aSecondBestEdge,
                              bool* aEdgeFound) {
-  if (mSnapFlags & ScrollSnapFlags::IntendedDirection) {
+  
+  
+  
+  
+  
+  if (mUnit != ScrollUnit::DEVICE_PIXELS) {
     
     
-    if (aScrollingDirection == 0 ||
-        (aEdge - aStartPos) * aScrollingDirection <= 0) {
-      
+    if (aScrollingDirection == 0) {
       
       return;
     }
+    
+    
+    
+    
+    
+    if (mUnit != ScrollUnit::WHOLE) {
+      
+      
+      nscoord direction = (aEdge - aStartPos) * aScrollingDirection;
+      if (direction <= 0) {
+        
+        return;
+      }
+    }
   }
-
   if (!*aEdgeFound) {
     *aBestEdge = aEdge;
     *aEdgeFound = true;
@@ -151,8 +162,7 @@ void CalcSnapPoints::AddEdge(nscoord aEdge, nscoord aDestination,
     }
   };
 
-  if (mUnit == ScrollUnit::DEVICE_PIXELS || mUnit == ScrollUnit::LINES ||
-      mUnit == ScrollUnit::WHOLE) {
+  if (mUnit == ScrollUnit::DEVICE_PIXELS || mUnit == ScrollUnit::LINES) {
     nscoord distance = std::abs(aEdge - aDestination);
     updateBestEdges(
         distance < std::abs(*aBestEdge - aDestination),
@@ -180,6 +190,14 @@ void CalcSnapPoints::AddEdge(nscoord aEdge, nscoord aDestination,
     
     if (overshoot > 0) {
       updateBestEdges(overshoot < curOvershoot, overshoot < secondOvershoot);
+    }
+  } else if (mUnit == ScrollUnit::WHOLE) {
+    
+    
+    if (aScrollingDirection > 0) {
+      updateBestEdges(aEdge > *aBestEdge, aEdge > *aSecondBestEdge);
+    } else if (aScrollingDirection < 0) {
+      updateBestEdges(aEdge < *aBestEdge, aEdge < *aSecondBestEdge);
     }
   } else {
     NS_ERROR("Invalid scroll mode");
@@ -213,8 +231,8 @@ static void ProcessSnapPositions(CalcSnapPoints& aCalcSnapPoints,
 
 Maybe<nsPoint> ScrollSnapUtils::GetSnapPointForDestination(
     const ScrollSnapInfo& aSnapInfo, ScrollUnit aUnit,
-    ScrollSnapFlags aSnapFlags, const nsRect& aScrollRange,
-    const nsPoint& aStartPos, const nsPoint& aDestination) {
+    const nsRect& aScrollRange, const nsPoint& aStartPos,
+    const nsPoint& aDestination) {
   if (aSnapInfo.mScrollSnapStrictnessY == StyleScrollSnapStrictness::None &&
       aSnapInfo.mScrollSnapStrictnessX == StyleScrollSnapStrictness::None) {
     return Nothing();
@@ -224,7 +242,7 @@ Maybe<nsPoint> ScrollSnapUtils::GetSnapPointForDestination(
     return Nothing();
   }
 
-  CalcSnapPoints calcSnapPoints(aUnit, aSnapFlags, aDestination, aStartPos);
+  CalcSnapPoints calcSnapPoints(aUnit, aDestination, aStartPos);
 
   ProcessSnapPositions(calcSnapPoints, aSnapInfo);
 

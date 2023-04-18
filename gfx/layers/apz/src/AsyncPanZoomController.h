@@ -690,11 +690,6 @@ class AsyncPanZoomController {
   CSSPoint GetKeyboardDestination(const KeyboardScrollAction& aAction) const;
 
   
-  
-  ScrollSnapFlags GetScrollSnapFlagsForKeyboardAction(
-      const KeyboardScrollAction& aAction) const;
-
-  
 
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
@@ -1790,7 +1785,6 @@ class AsyncPanZoomController {
   
   
   bool MaybeAdjustDeltaForScrollSnapping(ScrollUnit aUnit,
-                                         ScrollSnapFlags aFlags,
                                          ParentLayerPoint& aDelta,
                                          CSSPoint& aStartPosition);
 
@@ -1801,18 +1795,17 @@ class AsyncPanZoomController {
       CSSPoint& aStartPosition);
 
   bool MaybeAdjustDestinationForScrollSnapping(const KeyboardInput& aEvent,
-                                               CSSPoint& aDestination,
-                                               ScrollSnapFlags aSnapFlags);
+                                               CSSPoint& aDestination);
 
   
-  void ScrollSnap(ScrollSnapFlags aSnapFlags);
+  void ScrollSnap();
 
   
   
   void ScrollSnapToDestination();
 
   
-  void ScrollSnapNear(const CSSPoint& aDestination, ScrollSnapFlags aSnapFlags);
+  void ScrollSnapNear(const CSSPoint& aDestination);
 
   
   
@@ -1820,8 +1813,7 @@ class AsyncPanZoomController {
   
   
   Maybe<CSSPoint> FindSnapPointNear(const CSSPoint& aDestination,
-                                    ScrollUnit aUnit,
-                                    ScrollSnapFlags aSnapFlags);
+                                    ScrollUnit aUnit);
 
   friend std::ostream& operator<<(
       std::ostream& aOut, const AsyncPanZoomController::PanZoomState& aState);
