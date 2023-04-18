@@ -29,7 +29,6 @@
 #include "mozilla/Components.h"
 #include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/Unused.h"
-#include "nsProxyRelease.h"
 #include "nsIObserverService.h"
 #include "nsIOutputStream.h"
 #include "nscore.h"
@@ -539,12 +538,6 @@ STDMETHODIMP nsDataObj::QueryInterface(REFIID riid, void** ppv) {
 STDMETHODIMP_(ULONG) nsDataObj::AddRef() {
   ++m_cRef;
   NS_LOG_ADDREF(this, m_cRef, "nsDataObj", sizeof(*this));
-
-  
-  if (m_cRef == 1) {
-    mKeepAlive = this;
-  }
-
   return m_cRef;
 }
 
@@ -632,12 +625,6 @@ STDMETHODIMP_(ULONG) nsDataObj::Release() {
   --m_cRef;
 
   NS_LOG_RELEASE(this, m_cRef, "nsDataObj");
-
-  
-  if (m_cRef == 1 && mKeepAlive) {
-    NS_ReleaseOnMainThread("nsDataObj release", mKeepAlive.forget(), true);
-  }
-
   if (0 != m_cRef) return m_cRef;
 
   
@@ -650,10 +637,6 @@ STDMETHODIMP_(ULONG) nsDataObj::Release() {
     mCachedTempFile = nullptr;
     helper->Attach();
   }
-
-  
-  
-  m_cRef = 1;
 
   delete this;
 
@@ -676,9 +659,6 @@ BOOL nsDataObj::FormatsMatch(const FORMATETC& source,
 
 STDMETHODIMP nsDataObj::GetData(LPFORMATETC aFormat, LPSTGMEDIUM pSTM) {
   if (!mTransferable) return DV_E_FORMATETC;
-
-  
-  RefPtr<nsDataObj> keepAliveDuringGetData(this);
 
   uint32_t dfInx = 0;
 
