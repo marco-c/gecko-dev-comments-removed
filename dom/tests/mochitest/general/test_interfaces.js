@@ -283,9 +283,9 @@ var interfaceNamesInGlobalScope = [
   
   { name: "CSSKeyframesRule", insecureContext: true },
   
-  { name: "CSSLayerBlockRule", insecureContext: true, nightly: true },
+  { name: "CSSLayerBlockRule", insecureContext: true },
   
-  { name: "CSSLayerStatementRule", insecureContext: true, nightly: true },
+  { name: "CSSLayerStatementRule", insecureContext: true },
   
   { name: "CSSMediaRule", insecureContext: true },
   
