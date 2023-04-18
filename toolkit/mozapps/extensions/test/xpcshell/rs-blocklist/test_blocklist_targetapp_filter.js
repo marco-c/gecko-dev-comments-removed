@@ -20,8 +20,7 @@ async function createRecords(records) {
     id: `record-${i}`,
     ...record,
   }));
-  
-  return client.db.importChanges({}, 9999999999999, withId);
+  return client.db.importChanges({}, 42, withId);
 }
 
 function run_test() {
