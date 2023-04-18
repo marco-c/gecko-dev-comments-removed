@@ -226,8 +226,6 @@ class MOZ_STACK_CLASS LSNotifyInfo {
   nsString& oldValue() { return mOldValue; }
 };
 
-void MaybeEnableNextGenLocalStorage();
-
 
 
 
