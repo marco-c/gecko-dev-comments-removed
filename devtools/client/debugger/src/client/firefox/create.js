@@ -126,6 +126,7 @@ export function createGeneratedSource(sourceResource) {
   return createSourceObject({
     id: makeSourceId(sourceResource),
     url: sourceResource.url,
+    thread: sourceResource.targetFront.getCachedFront("thread").actorID,
     extensionName: sourceResource.extensionName,
     isWasm: !!features.wasm && sourceResource.introductionType === "wasm",
     isExtension:
@@ -142,6 +143,7 @@ export function createGeneratedSource(sourceResource) {
 function createSourceObject({
   id,
   url,
+  thread = null,
   extensionName = null,
   isWasm = false,
   isExtension = false,
@@ -156,6 +158,9 @@ function createSourceObject({
 
     
     url,
+
+    
+    thread,
 
     
     
@@ -200,10 +205,13 @@ function createSourceObject({
 
 
 
-export function createSourceMapOriginalSource(id, url) {
+
+
+export function createSourceMapOriginalSource(id, url, thread) {
   return createSourceObject({
     id,
     url,
+    thread,
     isOriginal: true,
   });
 }
@@ -221,10 +229,13 @@ export function createSourceMapOriginalSource(id, url) {
 
 
 
-export function createPrettyPrintOriginalSource(id, url) {
+
+
+export function createPrettyPrintOriginalSource(id, url, thread) {
   return createSourceObject({
     id,
     url,
+    thread,
     isOriginal: true,
     isPrettyPrinted: true,
   });
