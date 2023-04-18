@@ -129,7 +129,13 @@ function waitForSomeTabToLoad() {
 
 add_task(async function test_initialize() {
   await SpecialPowers.pushPrefEnv({
-    set: [["security.mixed_content.block_active_content", true]],
+    set: [
+      ["security.mixed_content.block_active_content", true],
+      
+      
+      
+      ["privacy.restrict3rdpartystorage.heuristic.recently_visited", false],
+    ],
   });
 });
 
