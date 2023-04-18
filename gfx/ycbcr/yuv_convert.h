@@ -44,6 +44,8 @@ enum ScaleFilter {
   FILTER_BILINEAR = 3     
 };
 
+YUVType TypeFromSize(int ywidth, int yheight, int cbcrwidth, int cbcrheight);
+
 
 
 void ConvertYCbCrToRGB32(const uint8* yplane,
