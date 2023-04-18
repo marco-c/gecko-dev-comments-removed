@@ -272,9 +272,12 @@ class BrowserParent final : public PBrowserParent,
 
   mozilla::ipc::IPCResult RecvEvent(const RemoteDOMEvent& aEvent);
 
-  mozilla::ipc::IPCResult RecvReplyKeyEvent(const WidgetKeyboardEvent& aEvent);
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY mozilla::ipc::IPCResult RecvReplyKeyEvent(
+      const WidgetKeyboardEvent& aEvent);
 
-  mozilla::ipc::IPCResult RecvAccessKeyNotHandled(
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY mozilla::ipc::IPCResult RecvAccessKeyNotHandled(
       const WidgetKeyboardEvent& aEvent);
 
   mozilla::ipc::IPCResult RecvRegisterProtocolHandler(const nsString& aScheme,
