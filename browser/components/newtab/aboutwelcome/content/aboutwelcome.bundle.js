@@ -355,7 +355,10 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-const MS_STRING_PROP = "string_id";
+const CONFIGURABLE_STYLES = ["color", "fontSize"];
+const ZAP_SIZE_THRESHOLD = 160;
+
+
 
 
 
@@ -381,29 +384,55 @@ const Localized = ({
   text,
   children
 }) => {
+  
+  const zapRef = react__WEBPACK_IMPORTED_MODULE_0___default().createRef();
+  (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
+    const {
+      current
+    } = zapRef;
+    if (current) requestAnimationFrame(() => current === null || current === void 0 ? void 0 : current.classList.replace("short", current.getBoundingClientRect().width > ZAP_SIZE_THRESHOLD ? "long" : "short"));
+  }); 
+
   if (!text) {
     return null;
-  }
+  } 
 
-  let props = children ? children.props : {};
-  let textNode;
 
-  if (typeof text === "object" && text[MS_STRING_PROP]) {
-    props = { ...props
-    };
-    props["data-l10n-id"] = text[MS_STRING_PROP];
+  const props = {
+    children: [],
+    className: "",
+    style: {},
+    ...(children === null || children === void 0 ? void 0 : children.props)
+  }; 
+
+  const textNodes = props.children; 
+
+  if (text.string_id) {
+    props["data-l10n-id"] = text.string_id;
     if (text.args) props["data-l10n-args"] = JSON.stringify(text.args);
+  } else if (text.raw) {
+    textNodes.push(text.raw);
   } else if (typeof text === "string") {
-    textNode = text;
-  }
+    textNodes.push(text);
+  } 
 
-  if (!children) {
-    return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("span", props, textNode);
-  } else if (textNode) {
-    return react__WEBPACK_IMPORTED_MODULE_0___default().cloneElement(children, props, textNode);
-  }
 
-  return react__WEBPACK_IMPORTED_MODULE_0___default().cloneElement(children, props);
+  if (text.zap) {
+    props.className += " welcomeZap";
+    textNodes.push( react__WEBPACK_IMPORTED_MODULE_0___default().createElement("span", {
+      className: "short zap",
+      "data-l10n-name": "zap",
+      ref: zapRef
+    }, text.zap));
+  } 
+
+
+  CONFIGURABLE_STYLES.forEach(style => {
+    if (text[style]) props.style[style] = text[style];
+  });
+  return react__WEBPACK_IMPORTED_MODULE_0___default().cloneElement( 
+  children ?? react__WEBPACK_IMPORTED_MODULE_0___default().createElement("span", null), props, 
+  textNodes.length ? textNodes : null);
 };
 
  }),
@@ -679,7 +708,7 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
   }
 
   render() {
-    var _this$props$appAndSys, _content$primary_butt;
+    var _this$props$appAndSys, _content$primary_butt, _content$primary_butt2;
 
     const {
       autoAdvance,
@@ -716,11 +745,11 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
       text: content.hero_text
     }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("h1", null)), react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
       className: "spacer-bottom"
-    })), content.help_text && content.help_text.text ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
-      text: content.help_text.text
+    })), react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
+      text: content.help_text
     }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("span", {
       className: "attrib-text"
-    })) : null) : null, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+    }))) : null, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
       className: "section-main"
     }, content.secondary_button_top ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_5__.SecondaryCTA, {
       content: content,
@@ -749,19 +778,19 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
       text: content.title
     }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("h1", {
       id: "mainContentHeader"
-    })), content.subtitle ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
+    })), react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
       text: content.subtitle
     }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("h2", {
       "data-l10n-args": JSON.stringify({
         "addon-name": this.props.addonName,
         ...((_this$props$appAndSys = this.props.appAndSystemLocaleInfo) === null || _this$props$appAndSys === void 0 ? void 0 : _this$props$appAndSys.displayNames)
       })
-    })) : null), this.renderContentTiles(), this.renderLanguageSwitcher(), react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", null, react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
-      text: content.primary_button ? content.primary_button.label : null
+    }))), this.renderContentTiles(), this.renderLanguageSwitcher(), react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", null, react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
+      text: (_content$primary_butt = content.primary_button) === null || _content$primary_butt === void 0 ? void 0 : _content$primary_butt.label
     }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("button", {
       className: "primary",
       value: "primary_button",
-      disabled: ((_content$primary_butt = content.primary_button) === null || _content$primary_butt === void 0 ? void 0 : _content$primary_butt.disabled) === true,
+      disabled: ((_content$primary_butt2 = content.primary_button) === null || _content$primary_butt2 === void 0 ? void 0 : _content$primary_butt2.disabled) === true,
       onClick: this.props.handleAction
     })), content.secondary_button ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_5__.SecondaryCTA, {
       content: content,
@@ -1077,7 +1106,7 @@ const Themes = props => {
     onClick: props.handleAction
   })), react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
     className: `icon ${theme === props.activeTheme ? " selected" : ""} ${theme}`
-  }), label && react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
+  }), react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
     text: label
   }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
     className: "text"
