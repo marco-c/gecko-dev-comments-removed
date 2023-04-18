@@ -923,7 +923,7 @@ class WorkerScriptLoader final : public nsINamed {
 
   nsresult LoadScript(ScriptLoadInfo& aLoadInfo) {
     AssertIsOnMainThread();
-    MOZ_ASSERT_IF(IsMainWorkerScript(), mWorkerScriptType != DebuggerScript);
+    MOZ_ASSERT_IF(IsMainWorkerScript(), !IsDebuggerScript());
 
     WorkerPrivate* parentWorker = mWorkerPrivate->GetParent();
 
@@ -932,7 +932,7 @@ class WorkerScriptLoader final : public nsINamed {
     
     
     
-    nsIPrincipal* principal = (mWorkerScriptType == DebuggerScript)
+    nsIPrincipal* principal = (IsDebuggerScript())
                                   ? nsContentUtils::GetSystemPrincipal()
                                   : mWorkerPrivate->GetPrincipal();
 
@@ -2299,7 +2299,7 @@ bool ScriptExecutorRunnable::IsDebuggerRunnable() const {
   
   
   
-  return mScriptLoader.mWorkerScriptType == DebuggerScript;
+  return mScriptLoader.IsDebuggerScript();
 }
 
 bool ScriptExecutorRunnable::PreRun(WorkerPrivate* aWorkerPrivate) {
