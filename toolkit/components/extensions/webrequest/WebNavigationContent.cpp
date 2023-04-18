@@ -101,15 +101,25 @@ void WebNavigationContent::AttachListeners(dom::EventTarget* aEventTarget) {
 
 NS_IMETHODIMP
 WebNavigationContent::HandleEvent(dom::Event* aEvent) {
-  nsString type;
-  aEvent->GetType(type);
+  if (aEvent->ShouldIgnoreChromeEventTargetListener()) {
+    return NS_OK;
+  }
 
-  if (type.EqualsLiteral(u"DOMContentLoaded")) {
-    if (RefPtr<dom::Document> doc = do_QueryObject(aEvent->GetTarget())) {
-      ExtensionsChild::Get().SendDOMContentLoaded(doc->GetBrowsingContext(),
-                                                  doc->GetDocumentURI());
+#ifdef DEBUG
+  {
+    nsAutoString type;
+    aEvent->GetType(type);
+    MOZ_ASSERT(type.EqualsLiteral("DOMContentLoaded"));
+  }
+#endif
+
+  if (RefPtr<dom::Document> doc = do_QueryObject(aEvent->GetTarget())) {
+    dom::BrowsingContext* bc = doc->GetBrowsingContext();
+    if (bc && bc->IsContent()) {
+      ExtensionsChild::Get().SendDOMContentLoaded(bc, doc->GetDocumentURI());
     }
   }
+
   return NS_OK;
 }
 

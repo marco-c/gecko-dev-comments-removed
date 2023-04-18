@@ -148,6 +148,12 @@ class Event : public nsISupports, public nsWrapperCache {
   void StopCrossProcessForwarding();
   void SetTrusted(bool aTrusted);
 
+  
+  
+  
+  
+  bool ShouldIgnoreChromeEventTargetListener() const;
+
   void InitPresContextData(nsPresContext* aPresContext);
 
   
