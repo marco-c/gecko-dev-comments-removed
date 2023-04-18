@@ -377,7 +377,12 @@ async function testNestedResourceUpdateFeature() {
 
   info("Apply new media query");
   
-  tab.ownerGlobal.resizeTo(originalWindowWidth, 300);
+  if (originalWindowHeight !== 300) {
+    await new Promise(resolve => {
+      tab.ownerGlobal.addEventListener("resize", resolve, { once: true });
+      tab.ownerGlobal.resizeTo(originalWindowWidth, 300);
+    });
+  }
 
   
   const resource = availableResources.find(
