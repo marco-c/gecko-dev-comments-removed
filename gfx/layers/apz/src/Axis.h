@@ -98,8 +98,13 @@ class Axis {
   
 
 
+  enum class ClearAxisLock { Yes, No };
 
-  void EndTouch(TimeStamp aTimestamp);
+  
+
+
+
+  void EndTouch(TimeStamp aTimestamp, ClearAxisLock aClearAxisLock);
 
   
 

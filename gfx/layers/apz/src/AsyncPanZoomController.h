@@ -885,7 +885,7 @@ class AsyncPanZoomController {
   
 
 
-  void EndTouch(TimeStamp aTimestamp);
+  void EndTouch(TimeStamp aTimestamp, Axis::ClearAxisLock aClearAxisLock);
 
   
 
@@ -1049,9 +1049,6 @@ class AsyncPanZoomController {
   
   
   UniquePtr<PlatformSpecificStateBase> mPlatformSpecificState;
-
-  AxisX mX;
-  AxisY mY;
 
   
   
@@ -1353,6 +1350,9 @@ class AsyncPanZoomController {
   
   
   PanZoomState mState;
+
+  AxisX mX;
+  AxisY mY;
 
   static bool IsPanningState(PanZoomState aState);
 

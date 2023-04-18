@@ -795,6 +795,22 @@ TEST_F(APZCOverscrollTester,
   
   EXPECT_EQ(scrollOffset.y, 0);
 
+  
+  
+  PanGesture(PanGestureInput::PANGESTURE_START, apzc, ScreenIntPoint(50, 80),
+             ScreenPoint(0, -2), mcc->Time());
+  mcc->AdvanceByMillis(5);
+  apzc->AdvanceAnimations(mcc->GetSampleTime());
+  PanGesture(PanGestureInput::PANGESTURE_PAN, apzc, ScreenIntPoint(50, 80),
+             ScreenPoint(0, 2), mcc->Time());
+  mcc->AdvanceByMillis(5);
+  apzc->AdvanceAnimations(mcc->GetSampleTime());
+  PanGesture(PanGestureInput::PANGESTURE_END, apzc, ScreenIntPoint(50, 80),
+             ScreenPoint(0, 0), mcc->Time());
+
+  ParentLayerPoint offsetAfterPan =
+      apzc->GetCurrentAsyncScrollOffset(AsyncPanZoomController::eForHitTesting);
+
   PanGesture(PanGestureInput::PANGESTURE_MOMENTUMSTART, apzc,
              ScreenIntPoint(50, 80), ScreenPoint(0, 0), mcc->Time());
   EXPECT_TRUE(apzc->IsOverscrolled());
@@ -817,11 +833,12 @@ TEST_F(APZCOverscrollTester,
   scrollOffset =
       apzc->GetCurrentAsyncScrollOffset(AsyncPanZoomController::eForHitTesting);
   
-  EXPECT_EQ(scrollOffset.y, 0);
+  EXPECT_EQ(scrollOffset.y, offsetAfterPan.y);
   EXPECT_EQ(scrollOffset.x, 0);
 
   currentOverscrolledTransform =
       apzc->GetOverscrollTransform(AsyncPanZoomController::eForHitTesting);
+
   
   PanGesture(PanGestureInput::PANGESTURE_MOMENTUMPAN, apzc,
              ScreenIntPoint(50, 80), ScreenPoint(0, 200), mcc->Time());
@@ -1148,6 +1165,22 @@ TEST_F(
   
   EXPECT_EQ(scrollOffset.y, 50);
 
+  
+  
+  PanGesture(PanGestureInput::PANGESTURE_START, apzc, ScreenIntPoint(50, 80),
+             ScreenPoint(0, -2), mcc->Time());
+  mcc->AdvanceByMillis(5);
+  apzc->AdvanceAnimations(mcc->GetSampleTime());
+  PanGesture(PanGestureInput::PANGESTURE_PAN, apzc, ScreenIntPoint(50, 80),
+             ScreenPoint(0, 2), mcc->Time());
+  mcc->AdvanceByMillis(5);
+  apzc->AdvanceAnimations(mcc->GetSampleTime());
+  PanGesture(PanGestureInput::PANGESTURE_END, apzc, ScreenIntPoint(50, 80),
+             ScreenPoint(0, 0), mcc->Time());
+
+  ParentLayerPoint offsetAfterPan =
+      apzc->GetCurrentAsyncScrollOffset(AsyncPanZoomController::eForHitTesting);
+
   PanGesture(PanGestureInput::PANGESTURE_MOMENTUMSTART, apzc,
              ScreenIntPoint(50, 80), ScreenPoint(0, 0), mcc->Time());
   EXPECT_TRUE(apzc->IsOverscrolled());
@@ -1170,11 +1203,12 @@ TEST_F(
   scrollOffset =
       apzc->GetCurrentAsyncScrollOffset(AsyncPanZoomController::eForHitTesting);
   
-  EXPECT_EQ(scrollOffset.y, 50);
+  EXPECT_EQ(scrollOffset.y, offsetAfterPan.y);
   EXPECT_EQ(scrollOffset.x, 0);
 
   currentOverscrolledTransform =
       apzc->GetOverscrollTransform(AsyncPanZoomController::eForHitTesting);
+
   
   PanGesture(PanGestureInput::PANGESTURE_MOMENTUMPAN, apzc,
              ScreenIntPoint(50, 80), ScreenPoint(0, -200), mcc->Time());
