@@ -807,6 +807,13 @@
         this.handleSearchCommand(event, engine);
       };
 
+      this.textbox.onbeforeinput = event => {
+        if (event.data && this._needBrowserFocusAtEnterKeyUp) {
+          
+          event.preventDefault();
+        }
+      };
+
       this.textbox.onkeyup = event => {
         if (
           event.keyCode === KeyEvent.DOM_VK_RETURN &&
