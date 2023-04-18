@@ -1574,12 +1574,6 @@ bool GCRuntime::triggerZoneGC(Zone* zone, JS::GCReason reason, size_t used,
 #endif
 
   if (zone->isAtomsZone()) {
-    
-    if (rt->hasHelperThreadZones()) {
-      
-      fullGCForAtomsRequested_ = true;
-      return false;
-    }
     stats().recordTrigger(used, threshold);
     MOZ_RELEASE_ASSERT(triggerGC(reason));
     return true;
@@ -1642,7 +1636,6 @@ void GCRuntime::triggerFullGCForAtoms(JSContext* cx) {
   MOZ_ASSERT(fullGCForAtomsRequested_);
   MOZ_ASSERT(CurrentThreadCanAccessRuntime(rt));
   MOZ_ASSERT(!JS::RuntimeHeapIsCollecting());
-  MOZ_ASSERT(cx->canCollectAtoms());
   fullGCForAtomsRequested_ = false;
   MOZ_RELEASE_ASSERT(triggerGC(JS::GCReason::DELAYED_ATOMS_GC));
 }
@@ -2170,22 +2163,8 @@ static bool ShouldCollectZone(Zone* zone, JS::GCReason reason) {
     return false;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   if (zone->isAtomsZone()) {
-    return TlsContext.get()->canCollectAtoms();
+    return true;
   }
 
   return zone->canCollect();
@@ -4127,14 +4106,6 @@ bool GCRuntime::gcIfRequested() {
   }
 
   if (majorGCRequested()) {
-    if (majorGCTriggerReason == JS::GCReason::DELAYED_ATOMS_GC &&
-        !rt->mainContextFromOwnThread()->canCollectAtoms()) {
-      
-      
-      majorGCTriggerReason = JS::GCReason::NO_REASON;
-      return false;
-    }
-
     if (!isIncrementalGCInProgress()) {
       startGC(JS::GCOptions::Normal, majorGCTriggerReason);
     } else {

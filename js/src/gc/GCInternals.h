@@ -83,9 +83,6 @@ class MOZ_RAII AutoCheckCanAccessAtomsDuringGC {
     MOZ_ASSERT(JS::RuntimeHeapIsMajorCollecting());
 
     
-    MOZ_ASSERT(!rt->hasHelperThreadZones());
-
-    
     runtime->setOffThreadParsingBlocked(true);
   }
   ~AutoCheckCanAccessAtomsDuringGC() {

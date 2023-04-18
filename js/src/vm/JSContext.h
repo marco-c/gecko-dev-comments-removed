@@ -634,12 +634,6 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   
   js::ContextData<unsigned> compactingDisabledCount;
 
-  bool canCollectAtoms() const {
-    
-    
-    return !runtime()->hasHelperThreadZones();
-  }
-
  private:
   
   
