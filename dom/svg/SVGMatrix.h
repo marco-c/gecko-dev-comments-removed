@@ -43,8 +43,7 @@
 #include "nsWrapperCache.h"
 #include "mozilla/Attributes.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -125,7 +124,6 @@ class SVGMatrix final : public nsWrapperCache {
   gfxMatrix mMatrix;
 };
 
-}  
 }  
 
 #endif  

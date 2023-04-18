@@ -11,8 +11,7 @@
 
 #include "nsIContentInlines.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -79,5 +78,4 @@ nsresult SVGGraphicsElement::BindToTree(BindContext& aContext,
   return NS_OK;
 }
 
-}  
 }  

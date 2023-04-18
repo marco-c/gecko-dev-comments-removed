@@ -16,8 +16,7 @@
 nsresult NS_NewSVGFETurbulenceElement(
     nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 using SVGFETurbulenceElementBase = SVGFE;
 
@@ -88,7 +87,6 @@ class SVGFETurbulenceElement : public SVGFETurbulenceElementBase {
   static StringInfo sStringInfo[1];
 };
 
-}  
 }  
 
 #endif  

@@ -16,10 +16,7 @@
 #include "nsIFrame.h"
 #include <type_traits>
 
-namespace mozilla {
-namespace dom {
-
-namespace SVGGeometryProperty {
+namespace mozilla::dom::SVGGeometryProperty {
 namespace ResolverTypes {
 struct LengthPercentNoAuto {};
 struct LengthPercentRXY {};
@@ -277,8 +274,6 @@ nsCSSPropertyID AttrEnumToCSSPropId(const SVGElement* aElement,
 bool IsNonNegativeGeometryProperty(nsCSSPropertyID aProp);
 bool ElementMapsLengthsToStyle(SVGElement const* aElement);
 
-}  
-}  
 }  
 
 #endif  
