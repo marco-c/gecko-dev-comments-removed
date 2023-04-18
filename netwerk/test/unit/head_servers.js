@@ -450,21 +450,3 @@ async function with_node_servers(arrayOfClasses, asyncClosure) {
     await server.stop();
   }
 }
-
-
-
-
-
-function getTestServerCertificate() {
-  const certDB = Cc["@mozilla.org/security/x509certdb;1"].getService(
-    Ci.nsIX509CertDB
-  );
-  const certFile = do_get_file("client-cert.p12");
-  certDB.importPKCS12File(certFile, "password");
-  for (const cert of certDB.getCerts()) {
-    if (cert.commonName == "Test End-entity") {
-      return cert;
-    }
-  }
-  return null;
-}

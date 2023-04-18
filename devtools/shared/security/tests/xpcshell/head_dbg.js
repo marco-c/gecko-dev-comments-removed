@@ -30,6 +30,8 @@ loader.lazyRequireGetter(
 
 Services.prefs.setBoolPref("devtools.debugger.remote-enabled", true);
 
+Services.prefs.setIntPref("devtools.remote.tls-handshake-timeout", 1000);
+
 
 function scriptErrorLogLevel(message) {
   switch (message.logLevel) {
