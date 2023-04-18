@@ -173,10 +173,6 @@ async function check_homepage({
 }
 
 add_setup(async function policies_headjs_startWithCleanSlate() {
-  if (Services.prefs.getPrefType("browser.policies.alternatePath")) {
-    
-    return;
-  }
   if (Services.policies.status != Ci.nsIEnterprisePolicies.INACTIVE) {
     await setupPolicyEngineWithJson("");
   }

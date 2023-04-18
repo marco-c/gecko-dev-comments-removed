@@ -1,9 +1,11 @@
 
 
 
-
-
 "use strict";
+
+const { EnterprisePolicyTesting } = ChromeUtils.import(
+  "resource://testing-common/EnterprisePolicyTesting.jsm"
+);
 var updateService = Cc["@mozilla.org/updates/update-service;1"].getService(
   Ci.nsIApplicationUpdateService
 );
@@ -58,3 +60,28 @@ add_task(async function test_updates_post_policy() {
 
   BrowserTestUtils.removeTab(tab);
 });
+
+
+
+
+async function testPageBlockedByPolicy(page, policyJSON) {
+  if (policyJSON) {
+    await EnterprisePolicyTesting.setupPolicyEngineWithJson(policyJSON);
+  }
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: "about:blank" },
+    async browser => {
+      BrowserTestUtils.loadURI(browser, page);
+      await BrowserTestUtils.browserLoaded(browser, false, page, true);
+      await SpecialPowers.spawn(browser, [page], async function(innerPage) {
+        ok(
+          content.document.documentURI.startsWith(
+            "about:neterror?e=blockedByPolicy"
+          ),
+          content.document.documentURI +
+            " should start with about:neterror?e=blockedByPolicy"
+        );
+      });
+    }
+  );
+}
