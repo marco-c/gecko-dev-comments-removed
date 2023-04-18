@@ -188,7 +188,10 @@ void IdleTaskRunner::Schedule(bool aAllowIdleDispatch) {
   if (now >= mStartTime) {
     
     
-    useRefreshDriver = (nsRefreshDriver::GetIdleDeadlineHint(now) != now);
+    useRefreshDriver =
+        (nsRefreshDriver::GetIdleDeadlineHint(
+             now, nsRefreshDriver::IdleCheck::OnlyThisProcessRefreshDriver) !=
+         now);
   } else {
     NS_WARNING_ASSERTION(!aAllowIdleDispatch,
                          "early callback, or time went backwards");
