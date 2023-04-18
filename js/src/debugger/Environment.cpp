@@ -187,7 +187,7 @@ bool DebuggerEnvironment::CallData::typeGetter() {
       break;
   }
 
-  JSAtom* str = Atomize(cx, s, strlen(s), PinAtom);
+  JSAtom* str = Atomize(cx, s, strlen(s), DoNotPinAtom);
   if (!str) {
     return false;
   }
@@ -204,7 +204,7 @@ bool DebuggerEnvironment::CallData::scopeKindGetter() {
   Maybe<ScopeKind> kind = environment->scopeKind();
   if (kind.isSome()) {
     const char* s = ScopeKindString(*kind);
-    JSAtom* str = Atomize(cx, s, strlen(s), PinAtom);
+    JSAtom* str = Atomize(cx, s, strlen(s), DoNotPinAtom);
     if (!str) {
       return false;
     }
