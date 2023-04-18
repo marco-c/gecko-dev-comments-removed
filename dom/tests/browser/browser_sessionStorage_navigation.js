@@ -22,6 +22,10 @@ add_task(async function() {
         `cross-origin site and then navigating back`
     );
 
+    await SpecialPowers.pushPrefEnv({
+      set: [["privacy.partition.always_partition_non_cookie_storage", false]],
+    });
+
     BrowserTestUtils.loadURI(browser, URL1);
     await BrowserTestUtils.browserLoaded(browser);
 
@@ -114,10 +118,10 @@ add_task(async function() {
               `Navigate to ${ORIGIN} as expected`
             );
 
-            // Bug 1746646: Make mochitests work with TCP enabled (cookieBehavior = 5)
-            // Acquire storage access permission here so that the iframe has
-            // first-party access to the sessionStorage. Without this, it is
-            // isolated and this test will always fail
+            
+            
+            
+            
             SpecialPowers.wrap(content.document).notifyUserGestureActivation();
             await SpecialPowers.addPermission(
               "storageAccessAPI",
@@ -172,9 +176,9 @@ add_task(async function() {
                 `preserved.`
             );
 
-            // When we are here, it means we didn't hit the assertion for
-            // ensuring a SSCache can only be loaded on the content process
-            // once.
+            
+            
+            
           }
         );
       }
@@ -258,5 +262,7 @@ add_task(async function() {
         );
       }
     );
+
+    await SpecialPowers.popPrefEnv();
   });
 });
