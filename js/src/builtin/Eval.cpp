@@ -238,7 +238,7 @@ static bool EvalKernel(JSContext* cx, HandleValue v, EvalType evalType,
 
   
   RootedString str(cx, v.toString());
-  if (!cx->isRuntimeCodeGenEnabled(str)) {
+  if (!cx->isRuntimeCodeGenEnabled(JS::RuntimeCode::JS, str)) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_CSP_BLOCKED_EVAL);
     return false;
