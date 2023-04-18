@@ -7,14 +7,6 @@
 
 var EXPORTED_SYMBOLS = ["ScreenshotsComponentChild"];
 
-const { XPCOMUtils } = ChromeUtils.import(
-  "resource://gre/modules/XPCOMUtils.jsm"
-);
-
-XPCOMUtils.defineLazyModuleGetters(this, {
-  ScreenshotsOverlayChild: "resource:///modules/ScreenshotsOverlayChild.jsm",
-});
-
 class ScreenshotsComponentChild extends JSWindowActorChild {
   receiveMessage(message) {
     switch (message.name) {
@@ -28,13 +20,6 @@ class ScreenshotsComponentChild extends JSWindowActorChild {
         return this.getVisibleBounds();
     }
     return null;
-  }
-
-  
-
-
-  requestCancelScreenshot() {
-    this.sendAsyncMessage("Screenshots:CancelScreenshot", null);
   }
 
   
@@ -79,34 +64,15 @@ class ScreenshotsComponentChild extends JSWindowActorChild {
 
 
 
-  async startScreenshotsOverlay() {
+  async startScreenshotsOverlay(details = {}) {
     try {
       await this.documentIsReady();
     } catch (ex) {
       console.warn(`ScreenshotsComponentChild: ${ex.message}`);
       return false;
     }
-    await this.documentIsReady();
-    let overlay =
-      this._overlay ||
-      (this._overlay = new ScreenshotsOverlayChild.AnonymousContentOverlay(
-        this.document,
-        this
-      ));
-    this.document.addEventListener("keydown", this.handler);
-    overlay.initialize();
     return true;
   }
-
-  
-
-
-
-  handler = event => {
-    if (event.key === "Escape") {
-      this.requestCancelScreenshot();
-    }
-  };
 
   
 
@@ -115,8 +81,7 @@ class ScreenshotsComponentChild extends JSWindowActorChild {
 
 
   endScreenshotsOverlay() {
-    this.document.removeEventListener("keydown", this.handler);
-    this._overlay?.tearDown();
+    
     return true;
   }
 

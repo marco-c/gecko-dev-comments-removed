@@ -273,6 +273,10 @@ var whitelist = [
   
   
   { file: "chrome://browser/content/screenshots/copied-notification.svg" },
+  {
+    file:
+      "chrome://browser/content/screenshots/icon-welcome-face-without-eyes.svg",
+  },
 
   { file: "resource://app/modules/SnapshotSelector.jsm" },
 
