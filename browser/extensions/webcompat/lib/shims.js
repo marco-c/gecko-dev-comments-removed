@@ -986,6 +986,10 @@ class Shims {
         }
       } catch (_) {}
 
+      if (!redirect.indexOf("http://") || !redirect.indexOf("https://")) {
+        return { redirectUrl: redirect };
+      }
+
       
       
       return { redirectUrl: browser.runtime.getURL(`shims/${redirect}`) };
