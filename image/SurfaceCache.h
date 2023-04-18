@@ -449,6 +449,16 @@ struct SurfaceCache {
 
 
 
+  static void ResetAnimation(const ImageKey aImageKey,
+                             const SurfaceKey& aSurfaceKey);
+
+  
+
+
+
+
+
+
 
 
 

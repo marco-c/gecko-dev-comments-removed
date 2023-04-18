@@ -135,6 +135,10 @@ class CachedSurface {
     return mProvider->Surface();
   }
 
+  DrawableSurface GetDrawableSurfaceEvenIfPlaceholder() const {
+    return mProvider->Surface();
+  }
+
   void SetLocked(bool aLocked) {
     if (IsPlaceholder()) {
       return;  
@@ -1224,6 +1228,21 @@ class SurfaceCacheImpl final : public nsIMemoryReporter {
     aDiscard = std::move(mCachedSurfacesDiscard);
   }
 
+  already_AddRefed<CachedSurface> GetSurfaceForResetAnimation(
+      const ImageKey aImageKey, const SurfaceKey& aSurfaceKey,
+      const StaticMutexAutoLock& aAutoLock) {
+    RefPtr<CachedSurface> surface;
+
+    RefPtr<ImageSurfaceCache> cache = GetImageCache(aImageKey);
+    if (!cache) {
+      
+      return surface.forget();
+    }
+
+    surface = cache->Lookup(aSurfaceKey,  false);
+    return surface.forget();
+  }
+
   void LockSurface(NotNull<CachedSurface*> aSurface,
                    const StaticMutexAutoLock& aAutoLock) {
     if (aSurface->IsPlaceholder() || aSurface->IsLocked()) {
@@ -1789,6 +1808,39 @@ void SurfaceCache::DiscardAll() {
     if (sInstance) {
       sInstance->DiscardAll(lock);
       sInstance->TakeDiscard(discard, lock);
+    }
+  }
+}
+
+
+void SurfaceCache::ResetAnimation(const ImageKey aImageKey,
+                                  const SurfaceKey& aSurfaceKey) {
+  RefPtr<CachedSurface> surface;
+  nsTArray<RefPtr<CachedSurface>> discard;
+  {
+    StaticMutexAutoLock lock(sInstanceMutex);
+    if (!sInstance) {
+      return;
+    }
+
+    surface =
+        sInstance->GetSurfaceForResetAnimation(aImageKey, aSurfaceKey, lock);
+    sInstance->TakeDiscard(discard, lock);
+  }
+
+  
+  
+  
+  
+  
+  if (surface) {
+    DrawableSurface drawableSurface =
+        surface->GetDrawableSurfaceEvenIfPlaceholder();
+    if (drawableSurface) {
+      MOZ_ASSERT(surface->GetSurfaceKey() == aSurfaceKey,
+                 "ResetAnimation() not returning an exact match?");
+
+      drawableSurface.Reset();
     }
   }
 }

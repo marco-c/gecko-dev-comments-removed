@@ -332,19 +332,13 @@ void FrameAnimator::ResetAnimation(AnimationState& aState) {
 
   
   
-  LookupResult result = SurfaceCache::Lookup(
+  SurfaceCache::ResetAnimation(
       ImageKey(mImage),
-      RasterSurfaceKey(mSize, DefaultSurfaceFlags(), PlaybackType::eAnimated),
-       false);
-  if (!result) {
-    return;
-  }
-
-  result.Surface().Reset();
+      RasterSurfaceKey(mSize, DefaultSurfaceFlags(), PlaybackType::eAnimated));
 
   
   
-  aState.UpdateStateInternal(result, mSize);
+  aState.UpdateState(mImage, mSize);
 }
 
 RefreshResult FrameAnimator::RequestRefresh(AnimationState& aState,
