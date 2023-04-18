@@ -3636,7 +3636,8 @@ public class GeckoSession {
 
 
     @UiThread
-    @DeprecationSchedule(id = "location-permissions", version = 92)
+    @Deprecated
+    @DeprecationSchedule(id = "location-permissions", version = 104)
     default void onLocationChange(
         @NonNull final GeckoSession session, @Nullable final String url) {}
 
