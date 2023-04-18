@@ -61,7 +61,7 @@ def run(path, server_config, session_config, timeout=0, environ=None):
 
             try:
                 basetemp = os.path.join(cache, "pytest")
-                pytest.main(["--strict",  
+                pytest.main(["--strict-markers",  
                              "-vv",  
                              "--capture", "no",  
                              "--basetemp", basetemp,  
