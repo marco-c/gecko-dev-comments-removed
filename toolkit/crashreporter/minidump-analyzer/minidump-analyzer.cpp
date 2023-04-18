@@ -3,8 +3,6 @@
 
 
 
-#include "minidump-analyzer.h"
-
 #include <cstdio>
 #include <cstring>
 #include <string>
@@ -503,7 +501,7 @@ static bool UpdateExtraDataFile(const string& aDumpPath,
   return res;
 }
 
-bool GenerateStacks(const string& aDumpPath, const bool aFullStacks) {
+static bool GenerateStacks(const string& aDumpPath, const bool aFullStacks) {
   Json::Value stackTraces;
   Json::Value certSubjects;
 

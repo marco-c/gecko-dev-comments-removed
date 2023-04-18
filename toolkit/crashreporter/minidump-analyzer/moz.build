@@ -4,32 +4,24 @@
 
 
 
-if CONFIG["OS_TARGET"] != "Android":
-    GeckoProgram("minidump-analyzer", linkage=None)
+GeckoProgram("minidump-analyzer", linkage=None)
 
-    if CONFIG["OS_TARGET"] == "WINNT":
-        DEFINES["UNICODE"] = True
-        DEFINES["_UNICODE"] = True
+if CONFIG["OS_TARGET"] == "WINNT":
+    DEFINES["UNICODE"] = True
+    DEFINES["_UNICODE"] = True
 
-        if CONFIG["CPU_ARCH"] == "x86_64":
-            UNIFIED_SOURCES += [
-                "MozStackFrameSymbolizer.cpp",
-                "Win64ModuleUnwindMetadata.cpp",
-            ]
-
-            OS_LIBS += ["dbghelp", "imagehlp"]
-
-    if CONFIG["OS_TARGET"] == "WINNT" and CONFIG["CC_TYPE"] in ("gcc", "clang"):
-        
-        LDFLAGS += [
-            "-municode",
+    if CONFIG["CPU_ARCH"] == "x86_64":
+        UNIFIED_SOURCES += [
+            "MozStackFrameSymbolizer.cpp",
+            "Win64ModuleUnwindMetadata.cpp",
         ]
 
-else:
-    Library("minidump-analyzer")
+        OS_LIBS += ["dbghelp", "imagehlp"]
 
-    EXPORTS += [
-        "minidump-analyzer.h",
+if CONFIG["OS_TARGET"] == "WINNT" and CONFIG["CC_TYPE"] in ("gcc", "clang"):
+    
+    LDFLAGS += [
+        "-municode",
     ]
 
 UNIFIED_SOURCES += [
