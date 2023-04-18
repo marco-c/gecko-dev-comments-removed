@@ -2,7 +2,8 @@
 
 
 
-use std::io::{stdout, Stdout, Write};
+use std::io::Write;
+use std::fmt::Write as FmtWrite;
 
 
 
@@ -18,6 +19,10 @@ where
     queued_item: Option<String>,
 
     
+    
+    line_buffer: String,
+
+    
     sink: W,
 }
 
@@ -30,9 +35,10 @@ pub trait PrintTreePrinter {
     fn add_item(&mut self, text: String);
 }
 
-impl PrintTree<Stdout> {
+
+impl PrintTree<std::io::Sink> {
     pub fn new(title: &str) -> Self {
-        PrintTree::new_with_sink(title, stdout())
+        PrintTree::new_with_sink(title, std::io::sink())
     }
 }
 
@@ -40,29 +46,39 @@ impl<W> PrintTree<W>
 where
     W: Write
 {
-    pub fn new_with_sink(title: &str, mut sink: W) -> Self {
-        writeln!(sink, "\u{250c} {}", title).unwrap();
-        PrintTree {
+    pub fn new_with_sink(title: &str, sink: W) -> Self {
+        let mut result = PrintTree {
             level: 1,
             queued_item: None,
+            line_buffer: String::new(),
             sink,
-        }
+        };
+
+        writeln!(result.line_buffer, "\u{250c} {}", title).unwrap();
+        result.flush_line();
+        result
     }
 
     fn print_level_prefix(&mut self) {
         for _ in 0 .. self.level {
-            write!(self.sink, "\u{2502}  ").unwrap();
+            write!(self.line_buffer, "\u{2502}  ").unwrap();
         }
     }
 
     fn flush_queued_item(&mut self, prefix: &str) {
         if let Some(queued_item) = self.queued_item.take() {
             self.print_level_prefix();
-            writeln!(self.sink, "{} {}", prefix, queued_item).unwrap();
+            writeln!(self.line_buffer, "{} {}", prefix, queued_item).unwrap();
+            self.flush_line();
         }
     }
-}
 
+    fn flush_line(&mut self) {
+        debug!("{}", self.line_buffer);
+        self.sink.write_all(self.line_buffer.as_bytes()).unwrap();
+        self.line_buffer.clear();
+    }
+}
 
 impl<W> PrintTreePrinter for PrintTree<W>
 where
@@ -73,7 +89,8 @@ where
         self.flush_queued_item("\u{251C}\u{2500}");
 
         self.print_level_prefix();
-        writeln!(self.sink, "\u{251C}\u{2500} {}", title).unwrap();
+        writeln!(self.line_buffer, "\u{251C}\u{2500} {}", title).unwrap();
+        self.flush_line();
 
         self.level = self.level + 1;
     }
