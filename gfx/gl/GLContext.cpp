@@ -1152,7 +1152,7 @@ void GLContext::LoadMoreSymbols(const SymbolLoader& loader) {
             { (PRFuncPtr*) &mSymbols.fResumeTransformFeedback, {{ "glResumeTransformFeedbackNV" }} },
             END_SYMBOLS
         };
-        if (!fnLoadFeatureByCore(coreSymbols, extSymbols, GLFeature::texture_storage)) {
+        if (!fnLoadFeatureByCore(coreSymbols, extSymbols, GLFeature::transform_feedback2)) {
             
             MarkUnsupported(GLFeature::bind_buffer_offset);
         }
