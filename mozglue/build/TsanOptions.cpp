@@ -264,10 +264,6 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:VRShMem::PushBrowserState\n"
 
          
-         "race:nssToken_Destroy\n"
-         "race:nssSlot_GetToken\n"
-
-         
          "race:storage::Connection::Release\n"
 
          
