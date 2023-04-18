@@ -16,12 +16,47 @@ namespace mozilla {
 class NativeInputTrack : public ProcessedMediaTrack {
  public:
   
-  static NativeInputTrack* Create(MediaTrackGraphImpl* aGraph,
-                                  CubebUtils::AudioDeviceID aDeviceId,
-                                  const PrincipalHandle& aPrincipalHandle);
-
-  size_t AddUser();
-  size_t RemoveUser();
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static Result<RefPtr<NativeInputTrack>, nsresult> OpenAudio(
+      MediaTrackGraphImpl* aGraph, CubebUtils::AudioDeviceID aDeviceId,
+      const PrincipalHandle& aPrincipalHandle, AudioDataListener* aListener);
+  
+  
+  static void CloseAudio(RefPtr<NativeInputTrack>&& aTrack,
+                         AudioDataListener* aListener);
 
   
   void DestroyImpl() override;
@@ -49,13 +84,15 @@ class NativeInputTrack : public ProcessedMediaTrack {
   const CubebUtils::AudioDeviceID mDeviceId;
   const PrincipalHandle mPrincipalHandle;
 
-  
-  nsTArray<RefPtr<AudioDataListener>> mDataUsers;
-
  private:
   NativeInputTrack(TrackRate aSampleRate, CubebUtils::AudioDeviceID aDeviceId,
                    const PrincipalHandle& aPrincipalHandle);
   ~NativeInputTrack() = default;
+
+  
+  void ReevaluateInputDevice();
+  void AddDataListener(AudioDataListener* aListener);
+  void RemoveDataListener(AudioDataListener* aListener);
 
   
   
@@ -71,6 +108,9 @@ class NativeInputTrack : public ProcessedMediaTrack {
   
   
   int32_t mUserCount = 0;
+
+  
+  nsTArray<RefPtr<AudioDataListener>> mDataUsers;
 };
 
 }  

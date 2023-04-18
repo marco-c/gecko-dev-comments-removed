@@ -394,31 +394,26 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
   
 
-  NativeInputTrack* GetOrCreateDeviceTrack(
-      CubebUtils::AudioDeviceID aID, const PrincipalHandle& aPrincipalHandle);
+
+
+  NativeInputTrack* GetNativeInputTrack();
 
   
 
 
-  void OpenAudioInputImpl(CubebUtils::AudioDeviceID aID,
-                          AudioDataListener* aListener,
-                          NativeInputTrack* aInputTrack);
+  void OpenAudioInputImpl(NativeInputTrack* aTrack);
   
 
-  virtual nsresult OpenAudioInput(CubebUtils::AudioDeviceID aID,
-                                  AudioDataListener* aListener) override;
+  virtual void OpenAudioInput(NativeInputTrack* aTrack) override;
 
   
 
 
-  void CloseAudioInputImpl(CubebUtils::AudioDeviceID aID,
-                           AudioDataListener* aListener,
-                           NativeInputTrack* aInputTrack);
+  void CloseAudioInputImpl(CubebUtils::AudioDeviceID aID);
   
 
 
-  virtual void CloseAudioInput(CubebUtils::AudioDeviceID aID,
-                               AudioDataListener* aListener) override;
+  virtual void CloseAudioInput(NativeInputTrack* aTrack) override;
 
   
 
@@ -732,6 +727,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
+
   std::atomic<CubebUtils::AudioDeviceID> mInputDeviceID;
   CubebUtils::AudioDeviceID mOutputDeviceID;
 
@@ -739,7 +735,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   
   
   
-  RefPtr<NativeInputTrack> mNativeInputTrack;
+  RefPtr<NativeInputTrack> mNativeInputTrackOnGraph;
 
   
 
@@ -1015,7 +1011,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   
 
 
-  nsTHashMap<CubebUtils::AudioDeviceID, RefPtr<NativeInputTrack>> mDeviceTracks;
+  RefPtr<NativeInputTrack> mNativeInputTrackOnMain;
 };
 
 }  
