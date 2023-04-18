@@ -991,6 +991,40 @@ constexpr T SplatByteToUInt(uint8_t val, uint8_t x) {
   return splatted;
 }
 
+
+enum class ResumeMode : uint8_t {
+  
+  ResumeAfter,
+
+  
+  ResumeAt,
+
+  
+  InlinedStandardCall,
+
+  
+  InlinedFunCall,
+
+  
+  InlinedAccessor,
+};
+
+inline const char* ResumeModeToString(ResumeMode mode) {
+  switch (mode) {
+    case ResumeMode::ResumeAfter:
+      return "ResumeAfter";
+    case ResumeMode::ResumeAt:
+      return "ResumeAt";
+    case ResumeMode::InlinedStandardCall:
+      return "InlinedStandardCall";
+    case ResumeMode::InlinedFunCall:
+      return "InlinedFunCall";
+    case ResumeMode::InlinedAccessor:
+      return "InlinedAccessor";
+  }
+  MOZ_CRASH("Invalid mode");
+}
+
 }  
 }  
 

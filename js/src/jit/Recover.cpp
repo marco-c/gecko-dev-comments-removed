@@ -73,7 +73,7 @@ bool MResumePoint::writeRecoverData(CompactBufferWriter& writer) const {
     bool reachablePC;
     jsbytecode* bailPC = pc();
 
-    if (mode() == MResumePoint::ResumeAfter) {
+    if (mode() == ResumeMode::ResumeAfter) {
       bailPC = GetNextPc(pc());
     }
 
@@ -83,8 +83,7 @@ bool MResumePoint::writeRecoverData(CompactBufferWriter& writer) const {
     }
 
     if (reachablePC) {
-      JSOp bailOp = JSOp(*bailPC);
-      if (bailOp == JSOp::FunCall) {
+      if (mode() == ResumeMode::InlinedFunCall) {
         
         
         
@@ -95,7 +94,7 @@ bool MResumePoint::writeRecoverData(CompactBufferWriter& writer) const {
         
         
         
-        MOZ_ASSERT_IF(!IsIonInlinableGetterOrSetterOp(bailOp),
+        MOZ_ASSERT_IF(mode() != ResumeMode::InlinedAccessor,
                       exprStack == stackDepth);
       }
     }
