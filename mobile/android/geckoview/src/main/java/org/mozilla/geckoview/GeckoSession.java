@@ -4520,19 +4520,35 @@ public class GeckoSession {
       
       public final @Nullable String maxValue;
 
-      protected DateTimePrompt(
+      
+      public final @Nullable String stepValue;
+
+      
+      private DateTimePrompt() {
+        
+        super("", null, null);
+        this.type = Type.DATE;
+        this.defaultValue = null;
+        this.minValue = null;
+        this.maxValue = null;
+        this.stepValue = null;
+      }
+
+       DateTimePrompt(
           @NonNull final String id,
           @Nullable final String title,
           @DatetimeType final int type,
           @Nullable final String defaultValue,
           @Nullable final String minValue,
           @Nullable final String maxValue,
+          @Nullable final String stepValue,
           @NonNull final Observer observer) {
         super(id, title, observer);
         this.type = type;
         this.defaultValue = defaultValue;
         this.minValue = minValue;
         this.maxValue = maxValue;
+        this.stepValue = stepValue;
       }
 
       
