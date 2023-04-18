@@ -556,5 +556,15 @@ module.exports = {
         "mozilla/reject-chromeutils-import-params": "warn",
       },
     },
+    {
+      
+      
+      extends: ["plugin:react-hooks/recommended"],
+      files: [
+        "browser/components/newtab/**",
+        "browser/components/pocket/**",
+        "devtools/**",
+      ],
+    },
   ],
 };
