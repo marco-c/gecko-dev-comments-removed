@@ -1822,8 +1822,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleUIReset {
   mozilla::StyleWindowDragging mWindowDragging;
   mozilla::StyleWindowShadow mWindowShadow;
   float mWindowOpacity;
-  
-  mozilla::StyleLength mMozWindowInputRegionMargin;
   mozilla::StyleTransform mMozWindowTransform;
   mozilla::StyleTransformOrigin mWindowTransformOrigin;
 
