@@ -649,8 +649,9 @@ bool SVGImageFrame::CreateWebRenderCommands(
     
     
     if (provider) {
-      aManager->CommandBuilder().PushImageProvider(
-          aItem, provider, aBuilder, aResources, destRect, clipRect);
+      aManager->CommandBuilder().PushImageProvider(aItem, provider, drawResult,
+                                                   aBuilder, aResources,
+                                                   destRect, clipRect);
     }
 
     nsDisplayItemGenericImageGeometry::UpdateDrawResult(aItem, drawResult);

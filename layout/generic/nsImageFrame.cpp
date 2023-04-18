@@ -1867,7 +1867,7 @@ ImgDrawResult nsImageFrame::DisplayAltFeedbackWithoutLayer(
                                         getter_AddRefs(provider));
       if (provider) {
         bool wrResult = aManager->CommandBuilder().PushImageProvider(
-            aItem, provider, aBuilder, aResources, destRect, bounds);
+            aItem, provider, result, aBuilder, aResources, destRect, bounds);
         result &= wrResult ? ImgDrawResult::SUCCESS : ImgDrawResult::NOT_READY;
       } else {
         
@@ -2142,11 +2142,16 @@ bool nsDisplayImage::CreateWebRenderCommands(
         }
 
         RefPtr<image::WebRenderImageProvider> prevProvider;
-        ImgDrawResult newDrawResult = mPrevImage->GetImageProvider(
+        ImgDrawResult prevDrawResult = mPrevImage->GetImageProvider(
             aManager->LayerManager(), decodeSize, svgContext, region, prevFlags,
             getter_AddRefs(prevProvider));
-        if (prevProvider && newDrawResult == ImgDrawResult::SUCCESS) {
-          drawResult = newDrawResult;
+        if (prevProvider && (prevDrawResult == ImgDrawResult::SUCCESS ||
+                             prevDrawResult == ImgDrawResult::WRONG_SIZE)) {
+          
+          
+          
+          
+          drawResult = ImgDrawResult::WRONG_SIZE;
           provider = std::move(prevProvider);
           flags = prevFlags;
           break;
@@ -2176,7 +2181,7 @@ bool nsDisplayImage::CreateWebRenderCommands(
   
   if (provider) {
     aManager->CommandBuilder().PushImageProvider(
-        this, provider, aBuilder, aResources, destRect, destRect);
+        this, provider, drawResult, aBuilder, aResources, destRect, destRect);
   }
 
   nsDisplayItemGenericImageGeometry::UpdateDrawResult(this, drawResult);
