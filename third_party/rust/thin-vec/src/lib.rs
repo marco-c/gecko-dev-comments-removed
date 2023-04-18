@@ -250,6 +250,19 @@ mod impl_details {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg_attr(all(feature = "gecko-ffi", any(test, miri)), repr(align(8)))]
 #[repr(C)]
 struct Header {
     _len: SizeType,
@@ -263,23 +276,6 @@ impl Header {
 
     fn set_len(&mut self, len: usize) {
         self._len = assert_size(len);
-    }
-
-    fn data<T>(&self) -> *mut T {
-        let header_size = mem::size_of::<Header>();
-        let padding = padding::<T>();
-
-        let ptr = self as *const Header as *mut Header as *mut u8;
-
-        unsafe {
-            if padding > 0 && self.cap() == 0 {
-                
-                NonNull::dangling().as_ptr()
-            } else {
-                
-                ptr.add(header_size + padding) as *mut T
-            }
-        }
     }
 }
 
@@ -321,10 +317,10 @@ impl Header {
 
 
 
-#[cfg(any(not(feature = "gecko-ffi"), test))]
+#[cfg(any(not(feature = "gecko-ffi"), test, miri))]
 static EMPTY_HEADER: Header = Header { _len: 0, _cap: 0 };
 
-#[cfg(all(feature = "gecko-ffi", not(test)))]
+#[cfg(all(feature = "gecko-ffi", not(test), not(miri)))]
 extern "C" {
     #[link_name = "sEmptyTArrayHeader"]
     static EMPTY_HEADER: Header;
@@ -442,17 +438,26 @@ macro_rules! thin_vec {
 
 impl<T> ThinVec<T> {
     pub fn new() -> ThinVec<T> {
-        unsafe {
-            ThinVec {
-                ptr: NonNull::new_unchecked(&EMPTY_HEADER as *const Header as *mut Header),
-                boo: PhantomData,
-            }
-        }
+        ThinVec::with_capacity(0)
     }
 
     pub fn with_capacity(cap: usize) -> ThinVec<T> {
+        
+        
+        
+        
+        
+        
+        
+        let _ = padding::<T>();
+
         if cap == 0 {
-            ThinVec::new()
+            unsafe {
+                ThinVec {
+                    ptr: NonNull::new_unchecked(&EMPTY_HEADER as *const Header as *mut Header),
+                    boo: PhantomData,
+                }
+            }
         } else {
             ThinVec {
                 ptr: header_with_capacity::<T>(cap),
@@ -470,7 +475,47 @@ impl<T> ThinVec<T> {
         unsafe { self.ptr.as_ref() }
     }
     fn data_raw(&self) -> *mut T {
-        self.header().data()
+        
+        
+        
+        
+        let padding = padding::<T>();
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let empty_header_is_aligned = if cfg!(feature = "gecko-ffi") {
+            
+            
+            
+            true
+        } else {
+            
+            
+            
+            
+            
+            
+            mem::align_of::<Header>() >= mem::align_of::<T>() && padding == 0
+        };
+
+        unsafe {
+            if !empty_header_is_aligned && self.header().cap() == 0 {
+                NonNull::dangling().as_ptr()
+            } else {
+                
+                
+                let header_size = mem::size_of::<Header>();
+                let ptr = self.ptr.as_ptr() as *mut u8;
+                ptr.add(header_size + padding) as *mut T
+            }
+        }
     }
 
     
@@ -565,7 +610,7 @@ impl<T> ThinVec<T> {
                 
                 let new_len = self.len() - 1;
                 self.set_len(new_len);
-                ptr::drop_in_place(self.get_unchecked_mut(new_len));
+                ptr::drop_in_place(self.data_raw().add(new_len));
             }
         }
     }
@@ -915,7 +960,7 @@ impl<T> ThinVec<T> {
             (*ptr).set_cap(new_cap);
             self.ptr = NonNull::new_unchecked(ptr);
         } else {
-            let mut new_header = header_with_capacity::<T>(new_cap);
+            let new_header = header_with_capacity::<T>(new_cap);
 
             
             
@@ -931,8 +976,9 @@ impl<T> ThinVec<T> {
             let len = self.len();
             if cfg!(feature = "gecko-ffi") && len > 0 {
                 new_header
-                    .as_mut()
-                    .data::<T>()
+                    .as_ptr()
+                    .add(1)
+                    .cast::<T>()
                     .copy_from_nonoverlapping(self.data_raw(), len);
                 self.set_len(0);
             }
@@ -1371,6 +1417,28 @@ mod tests {
     #[test]
     fn test_drop_empty() {
         ThinVec::<u8>::new();
+    }
+
+    #[test]
+    fn test_data_ptr_alignment() {
+        let v = ThinVec::<u16>::new();
+        assert!(v.data_raw() as usize % 2 == 0);
+
+        let v = ThinVec::<u32>::new();
+        assert!(v.data_raw() as usize % 4 == 0);
+
+        let v = ThinVec::<u64>::new();
+        assert!(v.data_raw() as usize % 8 == 0);
+    }
+
+    #[test]
+    #[cfg_attr(feature = "gecko-ffi", should_panic)]
+    fn test_overaligned_type_is_rejected_for_gecko_ffi_mode() {
+        #[repr(align(16))]
+        struct Align16(u8);
+
+        let v = ThinVec::<Align16>::new();
+        assert!(v.data_raw() as usize % 16 == 0);
     }
 
     #[test]
@@ -2654,9 +2722,9 @@ mod std_tests {
         macro_rules! assert_aligned_head_ptr {
             ($typename:ty) => {{
                 let v: ThinVec<$typename> = ThinVec::with_capacity(1 /* ensure allocation */);
-                let head_ptr: *mut $typename = v.header().data::<$typename>();
+                let head_ptr: *mut $typename = v.data_raw();
                 assert_eq!(
-                    head_ptr.align_offset(std::mem::align_of::<$typename>()),
+                    head_ptr as usize % std::mem::align_of::<$typename>(),
                     0,
                     "expected Header::data<{}> to be aligned",
                     stringify!($typename)
