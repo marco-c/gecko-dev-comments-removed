@@ -104,8 +104,13 @@ class nsJSContext : public nsIScriptContext {
                                          JS::GCReason aReason);
 
   
+  
   static void PokeGC(JS::GCReason aReason, JSObject* aObj,
                      mozilla::TimeDuration aDelay = 0);
+
+  
+  
+  static void MaybePokeGC();
 
   
   static void DoLowMemoryGC();
