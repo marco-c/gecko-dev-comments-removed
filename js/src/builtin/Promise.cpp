@@ -1025,6 +1025,39 @@ static bool IsPromiseWithDefaultResolvingFunction(PromiseObject* promise) {
 
 
 
+static bool IsAlreadyResolvedPromiseWithDefaultResolvingFunction(
+    PromiseObject* promise) {
+  MOZ_ASSERT(IsPromiseWithDefaultResolvingFunction(promise));
+
+  if (promise->as<PromiseObject>().state() != JS::PromiseState::Pending) {
+    MOZ_ASSERT(PromiseHasAnyFlag(
+        *promise, PROMISE_FLAG_DEFAULT_RESOLVING_FUNCTIONS_ALREADY_RESOLVED));
+    return true;
+  }
+
+  return PromiseHasAnyFlag(
+      *promise, PROMISE_FLAG_DEFAULT_RESOLVING_FUNCTIONS_ALREADY_RESOLVED);
+}
+
+
+
+
+
+static void SetAlreadyResolvedPromiseWithDefaultResolvingFunction(
+    PromiseObject* promise) {
+  MOZ_ASSERT(IsPromiseWithDefaultResolvingFunction(promise));
+
+  promise->setFixedSlot(
+      PromiseSlot_Flags,
+      JS::Int32Value(
+          promise->flags() |
+          PROMISE_FLAG_DEFAULT_RESOLVING_FUNCTIONS_ALREADY_RESOLVED));
+}
+
+
+
+
+
 
 
 [[nodiscard]] static MOZ_ALWAYS_INLINE bool CreateResolvingFunctions(
@@ -6168,6 +6201,34 @@ bool PromiseObject::forEachReactionRecord(
 }
 
 
+
+
+
+
+
+static bool CallDefaultPromiseResolveFunction(JSContext* cx,
+                                              Handle<PromiseObject*> promise,
+                                              HandleValue resolutionValue) {
+  MOZ_ASSERT(IsPromiseWithDefaultResolvingFunction(promise));
+
+  
+  
+
+  
+  
+  if (IsAlreadyResolvedPromiseWithDefaultResolvingFunction(promise)) {
+    return true;
+  }
+
+  
+  SetAlreadyResolvedPromiseWithDefaultResolvingFunction(promise);
+
+  
+  
+  return ResolvePromiseInternal(cx, promise, resolutionValue);
+}
+
+
 bool PromiseObject::resolve(JSContext* cx, Handle<PromiseObject*> promise,
                             HandleValue resolutionValue) {
   MOZ_ASSERT(!PromiseHasAnyFlag(*promise, PROMISE_FLAG_ASYNC));
@@ -6176,7 +6237,7 @@ bool PromiseObject::resolve(JSContext* cx, Handle<PromiseObject*> promise,
   }
 
   if (IsPromiseWithDefaultResolvingFunction(promise)) {
-    return ResolvePromiseInternal(cx, promise, resolutionValue);
+    return CallDefaultPromiseResolveFunction(cx, promise, resolutionValue);
   }
 
   JSFunction* resolveFun = GetResolveFunctionFromPromise(promise);
@@ -6198,6 +6259,32 @@ bool PromiseObject::resolve(JSContext* cx, Handle<PromiseObject*> promise,
 }
 
 
+
+
+
+
+
+static bool CallDefaultPromiseRejectFunction(JSContext* cx,
+                                             Handle<PromiseObject*> promise,
+                                             HandleValue rejectionValue) {
+  MOZ_ASSERT(IsPromiseWithDefaultResolvingFunction(promise));
+
+  
+  
+
+  
+  
+  if (IsAlreadyResolvedPromiseWithDefaultResolvingFunction(promise)) {
+    return true;
+  }
+
+  
+  SetAlreadyResolvedPromiseWithDefaultResolvingFunction(promise);
+
+  return RejectPromiseInternal(cx, promise, rejectionValue);
+}
+
+
 bool PromiseObject::reject(JSContext* cx, Handle<PromiseObject*> promise,
                            HandleValue rejectionValue) {
   MOZ_ASSERT(!PromiseHasAnyFlag(*promise, PROMISE_FLAG_ASYNC));
@@ -6206,8 +6293,7 @@ bool PromiseObject::reject(JSContext* cx, Handle<PromiseObject*> promise,
   }
 
   if (IsPromiseWithDefaultResolvingFunction(promise)) {
-    return ResolvePromise(cx, promise, rejectionValue,
-                          JS::PromiseState::Rejected);
+    return CallDefaultPromiseRejectFunction(cx, promise, rejectionValue);
   }
 
   RootedValue funVal(cx, promise->getFixedSlot(PromiseSlot_RejectFunction));
