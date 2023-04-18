@@ -1,5 +1,4 @@
 use crate::prelude::*;
-use rand;
 
 impl Uuid {
     
@@ -22,15 +21,17 @@ impl Uuid {
     
     
     
-    pub fn new_v4() -> Self {
-        use rand::RngCore;
+    
+    
+    
+    pub fn new_v4() -> Uuid {
+        let mut bytes = [0u8; 16];
+        getrandom::getrandom(&mut bytes).unwrap_or_else(|err| {
+            
+            panic!("could not retreive random bytes for uuid: {}", err)
+        });
 
-        let mut rng = rand::thread_rng();
-        let mut bytes = [0; 16];
-
-        rng.fill_bytes(&mut bytes);
-
-        Builder::from_bytes(bytes)
+        crate::Builder::from_bytes(bytes)
             .set_variant(Variant::RFC4122)
             .set_version(Version::Random)
             .build()

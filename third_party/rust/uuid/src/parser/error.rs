@@ -4,6 +4,7 @@ use crate::std::fmt;
 
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[allow(clippy::enum_variant_names)]
 pub(crate) enum Error {
     
     

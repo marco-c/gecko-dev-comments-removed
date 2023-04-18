@@ -138,6 +138,7 @@ const HYPHEN_POSITIONS: [usize; 4] = [8, 13, 18, 23];
 
 
 
+#[allow(clippy::needless_range_loop)]
 fn encode<'a>(
     full_buffer: &'a mut [u8],
     start: usize,
@@ -233,10 +234,18 @@ impl Hyphenated {
     
     
     
+    
+    
+    
+    
     pub fn encode_lower<'buf>(&self, buffer: &'buf mut [u8]) -> &'buf mut str {
         encode(buffer, 0, &self.0, true, false)
     }
 
+    
+    
+    
+    
     
     
     
@@ -344,10 +353,18 @@ impl<'a> HyphenatedRef<'a> {
     
     
     
+    
+    
+    
+    
     pub fn encode_lower<'buf>(&self, buffer: &'buf mut [u8]) -> &'buf mut str {
         encode(buffer, 0, self.0, true, false)
     }
 
+    
+    
+    
+    
     
     
     
@@ -455,10 +472,18 @@ impl Simple {
     
     
     
+    
+    
+    
+    
     pub fn encode_lower<'buf>(&self, buffer: &'buf mut [u8]) -> &'buf mut str {
         encode(buffer, 0, &self.0, false, false)
     }
 
+    
+    
+    
+    
     
     
     
@@ -560,10 +585,18 @@ impl<'a> SimpleRef<'a> {
     
     
     
+    
+    
+    
+    
     pub fn encode_lower<'buf>(&self, buffer: &'buf mut [u8]) -> &'buf mut str {
         encode(buffer, 0, self.0, false, false)
     }
 
+    
+    
+    
+    
     
     
     
@@ -667,11 +700,19 @@ impl Urn {
     
     
     
+    
+    
+    
+    
     pub fn encode_lower<'buf>(&self, buffer: &'buf mut [u8]) -> &'buf mut str {
         buffer[..9].copy_from_slice(b"urn:uuid:");
         encode(buffer, 9, &self.0, true, false)
     }
 
+    
+    
+    
+    
     
     
     
@@ -781,11 +822,19 @@ impl<'a> UrnRef<'a> {
     
     
     
+    
+    
+    
+    
     pub fn encode_lower<'buf>(&self, buffer: &'buf mut [u8]) -> &'buf mut str {
         buffer[..9].copy_from_slice(b"urn:uuid:");
         encode(buffer, 9, self.0, true, false)
     }
 
+    
+    
+    
+    
     
     
     

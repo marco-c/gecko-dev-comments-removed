@@ -130,7 +130,7 @@
 #![doc(
     html_logo_url = "https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
     html_favicon_url = "https://www.rust-lang.org/favicon.ico",
-    html_root_url = "https://docs.rs/uuid/0.8.1"
+    html_root_url = "https://docs.rs/uuid/0.8.2"
 )]
 
 #[cfg(any(feature = "std", test))]
@@ -160,6 +160,7 @@ mod test_util;
     feature = "v3",
     any(
         not(target_arch = "wasm32"),
+        target_os = "wasi",
         all(
             target_arch = "wasm32",
             any(feature = "stdweb", feature = "wasm-bindgen")
@@ -171,6 +172,7 @@ mod v3;
     feature = "v4",
     any(
         not(target_arch = "wasm32"),
+        target_os = "wasi",
         all(
             target_arch = "wasm32",
             any(feature = "stdweb", feature = "wasm-bindgen")
@@ -182,6 +184,7 @@ mod v4;
     feature = "v5",
     any(
         not(target_arch = "wasm32"),
+        target_os = "wasi",
         all(
             target_arch = "wasm32",
             any(feature = "stdweb", feature = "wasm-bindgen")
@@ -194,7 +197,30 @@ mod winapi_support;
 
 use crate::std::{fmt, str};
 
-pub use crate::{builder::Builder, error::Error};
+pub use crate::error::Error;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[allow(missing_copy_implementations)]
+#[derive(Debug)]
+pub struct Builder(Bytes);
 
 
 pub type Bytes = [u8; 16];
@@ -231,6 +257,7 @@ pub enum Variant {
 
 
 #[derive(Clone, Copy, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[repr(transparent)]
 pub struct Uuid(Bytes);
 
 impl Uuid {
@@ -344,6 +371,10 @@ impl Uuid {
     
     
     
+    
+    
+    
+    
     pub fn as_fields(&self) -> (u32, u16, u16, &[u8; 8]) {
         let d1 = u32::from(self.as_bytes()[0]) << 24
             | u32::from(self.as_bytes()[1]) << 16
@@ -361,6 +392,9 @@ impl Uuid {
         (d1, d2, d3, d4)
     }
 
+    
+    
+    
     
     
     
@@ -415,6 +449,9 @@ impl Uuid {
     
     
     
+    
+    
+    
     pub fn as_u128(&self) -> u128 {
         u128::from(self.as_bytes()[0]) << 120
             | u128::from(self.as_bytes()[1]) << 112
@@ -434,6 +471,9 @@ impl Uuid {
             | u128::from(self.as_bytes()[15])
     }
 
+    
+    
+    
     
     
     
