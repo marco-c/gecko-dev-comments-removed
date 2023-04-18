@@ -183,8 +183,19 @@ add_task(async function test_temporary_privileged_signature() {
 add_task(async function test_temporary_experiments_enabled() {
   AddonTestUtils.usePrivilegedSignatures = false;
   Services.prefs.setBoolPref("extensions.experiments.enabled", true);
+
+  
+  
+  
+  
+  
+  const areTemporaryExperimentsAllowed =
+    !AppConstants.MOZ_REQUIRE_SIGNING ||
+    AppConstants.NIGHTLY_BUILD ||
+    AppConstants.MOZ_DEV_EDITION;
+
   await testLoadManifest({
-    expectPrivileged: true,
+    expectPrivileged: areTemporaryExperimentsAllowed,
     location: getInstallLocation({ isTemporary: true }),
   });
 });
