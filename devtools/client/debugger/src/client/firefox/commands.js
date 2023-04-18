@@ -319,17 +319,7 @@ async function pauseOnExceptions(
 }
 
 async function blackBox(sourceActor, shouldBlackBox, ranges) {
-  
-  
-  
-  
-  
-  
-  
-  
-  const hasWatcherSupport = commands.targetCommand.hasTargetWatcherSupport(
-    "blackboxing"
-  );
+  const hasWatcherSupport = commands.targetCommand.hasTargetWatcherSupport();
   if (hasWatcherSupport) {
     const blackboxingFront = await commands.targetCommand.watcherFront.getBlackboxingActor();
     if (shouldBlackBox) {
