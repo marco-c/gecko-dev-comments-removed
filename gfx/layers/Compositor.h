@@ -109,9 +109,6 @@
 
 
 
-
-
-
 class nsIWidget;
 
 namespace mozilla {
