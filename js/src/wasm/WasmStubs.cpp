@@ -927,6 +927,12 @@ static void GenerateJitEntryThrow(MacroAssembler& masm, unsigned frameSize) {
 
   GenerateJitEntryLoadInstance(masm, frameSize);
 
+  
+  
+  MOZ_ASSERT(frameSize >= JitFrameLayout::FramePointerOffset);
+  uint32_t offset = frameSize - JitFrameLayout::FramePointerOffset;
+  masm.loadPtr(Address(masm.getStackPointer(), offset), FramePointer);
+
   masm.freeStack(frameSize);
   MoveSPForJitABI(masm);
 
@@ -1449,10 +1455,6 @@ void wasm::GenerateDirectCallFromJit(MacroAssembler& masm, const FuncExport& fe,
 
   
   
-  masm.Push(FramePointer);
-
-  
-  
   
   
 
@@ -1461,8 +1463,13 @@ void wasm::GenerateDirectCallFromJit(MacroAssembler& masm, const FuncExport& fe,
   *callOffset = masm.buildFakeExitFrame(scratch);
   masm.loadJSContext(scratch);
 
-  masm.moveStackPtrTo(FramePointer);
+  
+  
+  
   masm.enterFakeExitFrame(scratch, scratch, ExitFrameType::DirectWasmJitCall);
+  
+  masm.moveStackPtrTo(FramePointer);
+  masm.addPtr(Imm32(ExitFooterFrame::Size()), FramePointer);
   masm.orPtr(Imm32(ExitOrJitEntryFPTag), FramePointer);
 
   
@@ -1663,10 +1670,12 @@ void wasm::GenerateDirectCallFromJit(MacroAssembler& masm, const FuncExport& fe,
   GenPrintf(DebugChannel::Function, masm, "\n");
 
   
-  masm.leaveExitFrame(bytesNeeded + ExitFrameLayout::Size());
+  masm.loadPtr(Address(masm.getStackPointer(),
+                       bytesNeeded + ExitFooterFrame::offsetOfCallerFP()),
+               FramePointer);
 
   
-  masm.Pop(FramePointer);
+  masm.leaveExitFrame(bytesNeeded + ExitFrameLayout::Size());
 
   MOZ_ASSERT(framePushedAtStart == masm.framePushed());
 }
