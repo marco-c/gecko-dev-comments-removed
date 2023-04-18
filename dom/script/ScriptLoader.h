@@ -14,6 +14,7 @@
 #include "nsCOMArray.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsTArray.h"
+#include "nsILoadInfo.h"  
 #include "nsINode.h"
 #include "nsIObserver.h"
 #include "nsIScriptLoaderObserver.h"
@@ -519,7 +520,29 @@ class ScriptLoader final : public nsISupports {
   
 
 
-  nsresult StartLoad(ScriptLoadRequest* aRequest);
+  nsresult StartLoad(ScriptLoadRequest* aRequest) {
+    return aRequest->IsModuleRequest() ? StartModuleLoad(aRequest)
+                                       : StartClassicLoad(aRequest);
+  }
+
+  
+
+
+
+  nsresult StartClassicLoad(ScriptLoadRequest* aRequest);
+
+  
+
+
+
+
+  nsresult StartModuleLoad(ScriptLoadRequest* aRequest);
+
+  
+
+
+  nsresult StartLoadInternal(ScriptLoadRequest* aRequest,
+                             nsSecurityFlags securityFlags);
 
   
 
