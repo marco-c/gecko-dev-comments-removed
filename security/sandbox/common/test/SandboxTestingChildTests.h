@@ -195,6 +195,14 @@ void RunTestsContent(SandboxTestingChild* child) {
   
   
   
+  int c;
+  child->ErrnoTest("getcpu"_ns, true,
+                   [&] { return syscall(SYS_getcpu, &c, NULL, NULL); });
+
+  
+  
+  
+  
   child->ErrnoValueTest("connect_abstract_blocked"_ns, ENETUNREACH, [&] {
     int sockfd;
     struct sockaddr_un addr;
@@ -368,6 +376,14 @@ void RunTestsSocket(SandboxTestingChild* child) {
                        return fd;
                      });
   }
+
+  
+  
+  
+  
+  int c;
+  child->ErrnoTest("getcpu"_ns, true,
+                   [&] { return syscall(SYS_getcpu, &c, NULL, NULL); });
 #  endif  
 
 #else   
@@ -417,6 +433,13 @@ void RunTestsRDD(SandboxTestingChild* child) {
     return ioctl(0, _IOW('b', 0, uint64_t), nullptr);
   });
 
+  
+  
+  
+  
+  int c;
+  child->ErrnoTest("getcpu"_ns, true,
+                   [&] { return syscall(SYS_getcpu, &c, NULL, NULL); });
 #  endif  
 #else     
   child->ReportNoTests();

@@ -949,6 +949,11 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
         return Error(ENOSYS);
 
         
+        
+      case __NR_getcpu:
+        return Allow();
+
+        
       case __NR_getpid:
       case __NR_gettid:
         return Allow();
