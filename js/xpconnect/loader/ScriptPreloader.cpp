@@ -281,7 +281,7 @@ void ScriptPreloader::InvalidateCache() {
     
     
     
-    if (mSaveComplete && mChildCache) {
+    if (mSaveComplete && !mSaveThread && mChildCache) {
       mSaveComplete = false;
 
       StartCacheWrite();
