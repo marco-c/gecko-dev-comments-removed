@@ -12,9 +12,6 @@
 #include "nsWeakReference.h"
 #include "nsWrapperCache.h"
 #include "nsWeakReference.h"
-#include "nsIScriptError.h"
-#include "nsContentUtils.h"
-#include "nsPIDOMWindow.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/BindingDeclarations.h"
@@ -24,49 +21,6 @@
 
 namespace mozilla {
 namespace intl {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-[[maybe_unused]] static bool MaybeReportErrorsToGecko(
-    const nsTArray<nsCString>& aErrors, ErrorResult& aRv,
-    nsIGlobalObject* aGlobal) {
-  if (!aErrors.IsEmpty()) {
-    if (xpc::IsInAutomation()) {
-      aRv.ThrowInvalidStateError(aErrors.ElementAt(0));
-      return true;
-    }
-
-#if defined(NIGHTLY_BUILD) || defined(MOZ_DEV_EDITION) || defined(DEBUG)
-    dom::Document* doc = nullptr;
-    if (aGlobal) {
-      nsPIDOMWindowInner* innerWindow = aGlobal->AsInnerWindow();
-      if (innerWindow) {
-        doc = innerWindow->GetExtantDoc();
-      }
-    }
-
-    for (const auto& error : aErrors) {
-      nsContentUtils::ReportToConsoleNonLocalized(NS_ConvertUTF8toUTF16(error),
-                                                  nsIScriptError::warningFlag,
-                                                  "l10n"_ns, doc);
-      printf_stderr("%s\n", error.get());
-    }
-#endif
-  }
-
-  return false;
-}
 
 class Localization : public nsIObserver,
                      public nsWrapperCache,
