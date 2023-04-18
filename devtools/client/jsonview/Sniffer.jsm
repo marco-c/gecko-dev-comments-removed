@@ -9,8 +9,10 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
+const gPrefs = {};
+
 XPCOMUtils.defineLazyPreferenceGetter(
-  this,
+  gPrefs,
   "gEnabled",
   "devtools.jsonview.enabled"
 );
@@ -42,7 +44,7 @@ class Sniffer {
     if (request instanceof Ci.nsIChannel) {
       
       if (
-        gEnabled &&
+        gPrefs.gEnabled &&
         request.loadInfo?.isTopLevelLoad &&
         request.loadFlags & Ci.nsIChannel.LOAD_DOCUMENT_URI &&
         getContentDisposition(request) != Ci.nsIChannel.DISPOSITION_ATTACHMENT
