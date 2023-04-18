@@ -798,7 +798,7 @@ NS_IMETHODIMP AppWindow::GetPositionAndSize(int32_t* x, int32_t* y, int32_t* cx,
 
 NS_IMETHODIMP AppWindow::Center(nsIAppWindow* aRelative, bool aScreen,
                                 bool aAlert) {
-  int32_t left, top, width, height, ourWidth, ourHeight;
+  DesktopIntRect rect;
   bool screenCoordinates = false, windowCoordinates = false;
   nsresult result;
 
@@ -812,34 +812,22 @@ NS_IMETHODIMP AppWindow::Center(nsIAppWindow* aRelative, bool aScreen,
 
   nsCOMPtr<nsIScreenManager> screenmgr =
       do_GetService("@mozilla.org/gfx/screenmanager;1", &result);
-  if (NS_FAILED(result)) return result;
+  if (NS_FAILED(result)) {
+    return result;
+  }
 
   nsCOMPtr<nsIScreen> screen;
 
   if (aRelative) {
-    nsCOMPtr<nsIBaseWindow> base(do_QueryInterface(aRelative, &result));
+    nsCOMPtr<nsIBaseWindow> base(do_QueryInterface(aRelative));
     if (base) {
+      rect = RoundedToInt(base->GetPositionAndSize() /
+                          base->DevicePixelsPerDesktopPixel());
       
-      result = base->GetPositionAndSize(&left, &top, &width, &height);
-      if (NS_SUCCEEDED(result)) {
-        double scale;
-        if (NS_SUCCEEDED(base->GetDevicePixelsPerDesktopPixel(&scale))) {
-          left = NSToIntRound(left / scale);
-          top = NSToIntRound(top / scale);
-          width = NSToIntRound(width / scale);
-          height = NSToIntRound(height / scale);
-        }
-        
-        if (aScreen)
-          screenmgr->ScreenForRect(left, top, width, height,
-                                   getter_AddRefs(screen));
-        else
-          windowCoordinates = true;
+      if (aScreen) {
+        screen = screenmgr->ScreenForRect(rect);
       } else {
-        
-        
-        aRelative = 0;
-        aScreen = true;
+        windowCoordinates = true;
       }
     }
   }
@@ -852,35 +840,31 @@ NS_IMETHODIMP AppWindow::Center(nsIAppWindow* aRelative, bool aScreen,
   }
 
   if (aScreen && screen) {
-    screen->GetAvailRectDisplayPix(&left, &top, &width, &height);
+    rect = screen->GetAvailRectDisplayPix();
     screenCoordinates = true;
   }
 
-  if (screenCoordinates || windowCoordinates) {
-    NS_ASSERTION(mWindow, "what, no window?");
-    double scale = mWindow->GetDesktopToDeviceScale().scale;
-    GetSize(&ourWidth, &ourHeight);
-    int32_t scaledWidth, scaledHeight;
-    scaledWidth = NSToIntRound(ourWidth / scale);
-    scaledHeight = NSToIntRound(ourHeight / scale);
-    left += (width - scaledWidth) / 2;
-    top += (height - scaledHeight) / (aAlert ? 3 : 2);
-    if (windowCoordinates) {
-      mWindow->ConstrainPosition(false, &left, &top);
-    }
-    SetPosition(left * scale, top * scale);
-
-    
-    
-    int32_t newWidth, newHeight;
-    GetSize(&newWidth, &newHeight);
-    if (newWidth != ourWidth || newHeight != ourHeight) {
-      return Center(aRelative, aScreen, aAlert);
-    }
-    return NS_OK;
+  if (!screenCoordinates && !windowCoordinates) {
+    return NS_ERROR_FAILURE;
   }
 
-  return NS_ERROR_FAILURE;
+  NS_ASSERTION(mWindow, "what, no window?");
+  const LayoutDeviceIntSize ourDevSize = GetSize();
+  const DesktopIntSize ourSize =
+      RoundedToInt(ourDevSize / DevicePixelsPerDesktopPixel());
+  rect.x += (rect.width - ourSize.width) / 2;
+  rect.y += (rect.height - ourSize.height) / (aAlert ? 3 : 2);
+  if (windowCoordinates) {
+    mWindow->ConstrainPosition(false, &rect.x, &rect.y);
+  }
+
+  SetPositionDesktopPix(rect.x, rect.y);
+
+  
+  if (GetSize() != ourDevSize) {
+    return Center(aRelative, aScreen, aAlert);
+  }
+  return NS_OK;
 }
 
 NS_IMETHODIMP AppWindow::Repaint(bool aForce) {
@@ -1244,43 +1228,40 @@ bool AppWindow::LoadPositionFromXUL(int32_t aSpecWidth, int32_t aSpecHeight) {
   nsCOMPtr<dom::Element> windowElement = GetWindowDOMElement();
   NS_ENSURE_TRUE(windowElement, false);
 
-  int32_t currX = 0;
-  int32_t currY = 0;
-  int32_t currWidth = 0;
-  int32_t currHeight = 0;
-  nsresult errorCode;
-  int32_t temp;
-
-  GetPositionAndSize(&currX, &currY, &currWidth, &currHeight);
+  const LayoutDeviceIntRect devRect = GetPositionAndSize();
 
   
   
-  double devToDesktopScale = 1.0 / DevicePixelsPerDesktopPixel().scale;
-  currX = NSToIntRound(currX * devToDesktopScale);
-  currY = NSToIntRound(currY * devToDesktopScale);
+  const DesktopIntPoint curPoint =
+      RoundedToInt(devRect.TopLeft() / DevicePixelsPerDesktopPixel());
 
   
-  double devToCSSScale = 1.0 / UnscaledDevicePixelsPerCSSPixel().scale;
-  int32_t cssWidth =
-      aSpecWidth > 0 ? aSpecWidth : NSToIntRound(currWidth * devToCSSScale);
-  int32_t cssHeight =
-      aSpecHeight > 0 ? aSpecHeight : NSToIntRound(currHeight * devToCSSScale);
+  CSSIntSize cssSize(aSpecWidth, aSpecHeight);
+  {
+    CSSIntSize currentSize =
+        RoundedToInt(devRect.Size() / UnscaledDevicePixelsPerCSSPixel());
+    if (aSpecHeight <= 0) {
+      cssSize.height = currentSize.height;
+    }
+    if (aSpecWidth <= 0) {
+      cssSize.width = currentSize.width;
+    }
+  }
 
   
-  int32_t specX = currX;
-  int32_t specY = currY;
   nsAutoString posString;
-
+  DesktopIntPoint specPoint = curPoint;
+  nsresult errorCode;
   windowElement->GetAttribute(SCREENX_ATTRIBUTE, posString);
-  temp = posString.ToInteger(&errorCode);
+  int32_t temp = posString.ToInteger(&errorCode);
   if (NS_SUCCEEDED(errorCode)) {
-    specX = temp;
+    specPoint.x = temp;
     gotPosition = true;
   }
   windowElement->GetAttribute(SCREENY_ATTRIBUTE, posString);
   temp = posString.ToInteger(&errorCode);
   if (NS_SUCCEEDED(errorCode)) {
-    specY = temp;
+    specPoint.y = temp;
     gotPosition = true;
   }
 
@@ -1288,23 +1269,16 @@ bool AppWindow::LoadPositionFromXUL(int32_t aSpecWidth, int32_t aSpecHeight) {
     
     nsCOMPtr<nsIBaseWindow> parent(do_QueryReferent(mParentWindow));
     if (parent) {
-      int32_t parentX, parentY;
-      if (NS_SUCCEEDED(parent->GetPosition(&parentX, &parentY))) {
-        double scale;
-        if (NS_SUCCEEDED(parent->GetDevicePixelsPerDesktopPixel(&scale))) {
-          parentX = NSToIntRound(parentX / scale);
-          parentY = NSToIntRound(parentY / scale);
-        }
-        specX += parentX;
-        specY += parentY;
-      }
+      const DesktopIntPoint parentPos = RoundedToInt(
+          parent->GetPosition() / parent->DevicePixelsPerDesktopPixel());
+      specPoint += parentPos;
     } else {
-      StaggerPosition(specX, specY, cssWidth, cssHeight);
+      StaggerPosition(specPoint.x, specPoint.y, cssSize.width, cssSize.height);
     }
   }
-  mWindow->ConstrainPosition(false, &specX, &specY);
-  if (specX != currX || specY != currY) {
-    SetPositionDesktopPix(specX, specY);
+  mWindow->ConstrainPosition(false, &specPoint.x, &specPoint.y);
+  if (specPoint != curPoint) {
+    SetPositionDesktopPix(specPoint.x, specPoint.y);
   }
 
   return gotPosition;
@@ -1392,7 +1366,7 @@ void AppWindow::SetSpecifiedSize(int32_t aSpecWidth, int32_t aSpecHeight) {
   
   auto newSize = RoundedToInt(CSSIntSize(aSpecWidth, aSpecHeight) *
                               UnscaledDevicePixelsPerCSSPixel());
-  if (newSize != nsIBaseWindow::GetSize()) {
+  if (newSize != GetSize()) {
     SetSize(newSize.width, newSize.height, false);
   }
 }
