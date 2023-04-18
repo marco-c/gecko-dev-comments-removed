@@ -69,6 +69,7 @@
 #include "mozilla/layers/APZUtils.h"        
 #include "mozilla/layers/CompositorController.h"  
 #include "mozilla/layers/DirectionUtils.h"  
+#include "mozilla/layers/APZPublicUtils.h"  
 #include "mozilla/mozalloc.h"               
 #include "mozilla/Unused.h"                 
 #include "mozilla/FloatingPoint.h"          
@@ -1948,12 +1949,15 @@ nsEventStatus AsyncPanZoomController::OnKeyboard(const KeyboardInput& aEvent) {
 
   
   CSSPoint destination = GetKeyboardDestination(aEvent.mAction);
+  ScrollOrigin scrollOrigin =
+      SmoothScrollAnimation::GetScrollOriginForAction(aEvent.mAction.mType);
   bool scrollSnapped =
       MaybeAdjustDestinationForScrollSnapping(aEvent, destination);
+  ScrollMode scrollMode = apz::GetScrollModeForOrigin(scrollOrigin);
 
   RecordScrollPayload(aEvent.mTimeStamp);
   
-  if (!StaticPrefs::general_smoothScroll()) {
+  if (scrollMode == ScrollMode::Instant) {
     CancelAnimation();
 
     ParentLayerPoint startPoint, endPoint;
@@ -2006,9 +2010,8 @@ nsEventStatus AsyncPanZoomController::OnKeyboard(const KeyboardInput& aEvent) {
 
     nsPoint initialPosition =
         CSSPoint::ToAppUnits(Metrics().GetVisualScrollOffset());
-    StartAnimation(new SmoothScrollAnimation(
-        *this, initialPosition,
-        SmoothScrollAnimation::GetScrollOriginForAction(aEvent.mAction.mType)));
+    StartAnimation(
+        new SmoothScrollAnimation(*this, initialPosition, scrollOrigin));
   }
 
   
