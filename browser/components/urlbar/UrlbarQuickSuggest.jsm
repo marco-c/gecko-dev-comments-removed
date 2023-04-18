@@ -137,14 +137,25 @@ class QuickSuggest extends EventEmitter {
 
 
 
+
   async query(phrase) {
     log.info("Handling query for", phrase);
     phrase = phrase.toLowerCase();
-    let result = this._resultsByKeyword.get(phrase);
-    if (!result) {
-      return null;
+    let object = this._resultsByKeyword.get(phrase);
+    if (!object) {
+      return [];
     }
-    return {
+
+    
+    
+    let results = [object].flat();
+
+    
+    let icons = await Promise.all(
+      results.map(({ icon }) => this._fetchIcon(icon))
+    );
+
+    return results.map(result => ({
       full_keyword: this.getFullKeyword(phrase, result.keywords),
       title: result.title,
       url: result.url,
@@ -156,10 +167,10 @@ class QuickSuggest extends EventEmitter {
       is_sponsored: !NONSPONSORED_IAB_CATEGORIES.has(result.iab_category),
       score: SUGGESTION_SCORE,
       source: QUICK_SUGGEST_SOURCE.REMOTE_SETTINGS,
-      icon: await this._fetchIcon(result.icon),
+      icon: icons.shift(),
       position: result.position,
       _test_is_best_match: result._test_is_best_match,
-    };
+    }));
   }
 
   
@@ -371,6 +382,11 @@ class QuickSuggest extends EventEmitter {
 
   
   
+  
+  
+  
+  
+  
   _resultsByKeyword = new Map();
 
   
@@ -468,7 +484,17 @@ class QuickSuggest extends EventEmitter {
   _addResults(results) {
     for (let result of results) {
       for (let keyword of result.keywords) {
-        this._resultsByKeyword.set(keyword, result);
+        
+        
+        
+        let object = this._resultsByKeyword.get(keyword);
+        if (!object) {
+          this._resultsByKeyword.set(keyword, result);
+        } else if (!Array.isArray(object)) {
+          this._resultsByKeyword.set(keyword, [object, result]);
+        } else {
+          object.push(result);
+        }
       }
     }
   }
