@@ -716,6 +716,28 @@ function removeXSSIString(payloadUnclean) {
   };
 }
 
+
+
+
+
+
+
+
+
+
+
+function getRequestHeadersRawText(
+  method,
+  httpVersion,
+  requestHeaders,
+  urlDetails
+) {
+  const url = new URL(urlDetails.url);
+  const path = url ? `${url.pathname}${url.search}` : "<unknown>";
+  const preHeaderText = `${method} ${path} ${httpVersion}`;
+  return writeHeaderText(requestHeaders.headers, preHeaderText).trim();
+}
+
 module.exports = {
   decodeUnicodeBase64,
   getFormDataSections,
@@ -746,4 +768,5 @@ module.exports = {
   propertiesEqual,
   ipToLong,
   parseJSON,
+  getRequestHeadersRawText,
 };
