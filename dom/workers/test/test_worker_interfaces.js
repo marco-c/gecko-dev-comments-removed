@@ -333,6 +333,12 @@ var interfaceNamesInGlobalScope = [
   
   { name: "WorkerNavigator", insecureContext: true },
   
+  { name: "WritableStream", insecureContext: true },
+  
+  { name: "WritableStreamDefaultController", insecureContext: true },
+  
+  { name: "WritableStreamDefaultWriter", insecureContext: true },
+  
 ];
 
 

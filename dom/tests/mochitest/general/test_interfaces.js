@@ -1364,6 +1364,12 @@ var interfaceNamesInGlobalScope = [
   
   { name: "Worklet", insecureContext: false },
   
+  { name: "WritableStream", insecureContext: true },
+  
+  { name: "WritableStreamDefaultController", insecureContext: true },
+  
+  { name: "WritableStreamDefaultWriter", insecureContext: true },
+  
   { name: "XMLDocument", insecureContext: true },
   
   { name: "XMLHttpRequest", insecureContext: true },
