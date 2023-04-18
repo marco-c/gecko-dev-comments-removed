@@ -79,7 +79,7 @@ add_task(async function test_process_ping() {
   Assert.ok(!m.isPingAllowed("remotesandboxbroker"));
   Assert.ok(!m.isPingAllowed("forkserver"));
 
-  Assert.ok(m.isPingAllowed("tab"));
+  Assert.ok(m.isPingAllowed("content"));
   Assert.ok(m.isPingAllowed("gpu"));
 });
 
@@ -893,6 +893,23 @@ add_task(async function test_setRemoteCrashID() {
   Assert.equal((await m.getCrashes())[0].remoteID, "bp-1");
 });
 
+add_task(async function test_addCrashWrong() {
+  let m = await getManager();
+
+  let crashes = await m.getCrashes();
+  Assert.equal(crashes.length, 0);
+
+  await m.addCrash(
+    m.processTypes[-1], 
+    m.CRASH_TYPE_CRASH, 
+    "wrong-content-crash",
+    DUMMY_DATE
+  );
+
+  crashes = await m.getCrashes();
+  Assert.equal(crashes.length, 0);
+});
+
 add_task(async function test_telemetryHistogram() {
   let Telemetry = Services.telemetry;
   let h = Telemetry.getKeyedHistogramById("PROCESS_CRASH_SUBMIT_ATTEMPT");
@@ -904,10 +921,15 @@ add_task(async function test_telemetryHistogram() {
   let crashTypes = [];
 
   
+  for (let field in m.processTypes) {
+    if (m.isPingAllowed(m.processTypes[field])) {
+      processTypes.push(m.processTypes[field]);
+    }
+  }
+
+  
   for (let field in m) {
-    if (field.startsWith("PROCESS_TYPE_")) {
-      processTypes.push(m[field]);
-    } else if (field.startsWith("CRASH_TYPE_")) {
+    if (field.startsWith("CRASH_TYPE_")) {
       crashTypes.push(m[field]);
     }
   }
@@ -924,6 +946,10 @@ add_task(async function test_telemetryHistogram() {
       keysCount++;
     }
   }
+
+  
+  
+  Assert.greater(keysCount, 2);
 
   
   let snap = h.snapshot();
