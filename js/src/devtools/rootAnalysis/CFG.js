@@ -685,9 +685,33 @@ function edgeEndsValueLiveRange(edge, variable, body)
         
         
         
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
         const lhs = edge.Exp[1].Variable;
-        if (bodyEatsVariable(lhs, body, edge.Index[1]))
-            return true;
+        if (basicBlockEatsVariable(lhs, body, edge.Index[1]))
+          return true;
     }
 
     if (edge.Type.Kind == 'Function' &&
@@ -762,26 +786,33 @@ function edgeMovesVariable(edge, variable)
 
 
 
-function bodyEatsVariable(variable, body, startpoint)
+function basicBlockEatsVariable(variable, body, startpoint)
 {
     const successors = getSuccessors(body);
-    const work = [startpoint];
-    while (work.length > 0) {
-        const point = work.shift();
-        if (!(point in successors))
-            continue;
-        for (const edge of successors[point]) {
-            if (edgeMovesVariable(edge, variable))
-                return true;
-            
-            
-            
-            
-            
-            if (!edgeStartsValueLiveRange(edge, variable))
-                work.push(edge.Index[1]);
+    let point = startpoint;
+    while (point in successors) {
+        
+        const edges = successors[point];
+        if (edges.length != 1) {
+            return false;
         }
+        const edge = edges[0];
+
+        if (edgeMovesVariable(edge, variable)) {
+            return true;
+        }
+
+        
+        
+        
+        
+        if (edgeStartsValueLiveRange(edge, variable)) {
+            return false;
+        }
+
+        point = edge.Index[1];
     }
+
     return false;
 }
 
