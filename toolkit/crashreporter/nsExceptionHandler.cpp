@@ -242,6 +242,14 @@ static bool isGarbageCollecting;
 static uint32_t eventloopNestingLevel = 0;
 static time_t inactiveStateStart = 0;
 
+static
+#if defined(XP_UNIX)
+    pthread_t
+#elif defined(XP_WIN)  
+    DWORD
+#endif                 
+        gMainThreadId = 0;
+
 
 static Mutex* dumpSafetyLock;
 static bool isSafeToDump = false;
@@ -332,6 +340,32 @@ class ReportInjectedCrash : public Runnable {
   uint32_t mPID;
 };
 #endif  
+
+void RecordMainThreadId() {
+  gMainThreadId =
+#if defined(XP_UNIX)
+      pthread_self()
+#elif defined(XP_WIN)  
+      GetCurrentThreadId()
+#endif                 
+      ;
+}
+
+bool SignalSafeIsMainThread() {
+  
+  
+  
+  
+  
+
+#if defined(XP_UNIX)
+  pthread_t th = pthread_self();
+  return pthread_equal(th, gMainThreadId);
+#elif defined(XP_WIN)  
+  DWORD th = GetCurrentThreadId();
+  return th == gMainThreadId;
+#endif                 
+}
 
 #if defined(XP_WIN)
 
@@ -1275,7 +1309,7 @@ static bool LaunchCrashHandlerService(const XP_CHAR* aProgramPath,
 static void WriteMainThreadRunnableName(AnnotationWriter& aWriter) {
 #ifdef MOZ_COLLECTING_RUNNABLE_TELEMETRY
   
-  if (!NS_IsMainThread()) {
+  if (!SignalSafeIsMainThread()) {
     return;
   }
 
@@ -2108,6 +2142,8 @@ nsresult SetExceptionHandler(nsIFile* aXREDirectory, bool force ) {
   
   SetJitExceptionHandler();
 #  endif
+
+  RecordMainThreadId();
 
   
   gBlockUnhandledExceptionFilter = true;
@@ -3557,6 +3593,8 @@ bool SetRemoteExceptionHandler(const char* aCrashPipe,
       true,     
       aCrashPipe);
 #endif
+
+  RecordMainThreadId();
 
   oldTerminateHandler = std::set_terminate(&TerminateHandler);
 
