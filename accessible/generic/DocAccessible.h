@@ -391,6 +391,15 @@ class DocAccessible : public HyperTextAccessibleWrap,
 
   void HandleScroll(nsINode* aTarget);
 
+  
+
+
+
+
+
+
+  std::pair<nsPoint, nsRect> ComputeScrollData(LocalAccessible* aAcc);
+
  protected:
   virtual ~DocAccessible();
 
