@@ -586,7 +586,7 @@ void SandboxBrokerPolicyFactory::InitContentPolicy() {
     
     
     
-    policy->AddFutureDir(rdonly, snap);
+    policy->AddDir(rdonly, snap);
   }
 
   
