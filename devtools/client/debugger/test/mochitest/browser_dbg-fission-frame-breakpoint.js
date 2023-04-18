@@ -32,12 +32,11 @@ add_task(async function() {
     getSelectedSource().url.includes("simple2.js"),
     "Selected source is simple2.js"
   );
-  assertPausedLocation(dbg);
-  assertDebugLine(dbg, 7);
+  await waitForPaused(dbg);
+  assertPausedAtSourceAndLine(dbg, findSource(dbg, "simple2.js").id, 7);
 
   await stepIn(dbg);
-  assertDebugLine(dbg, 7);
-  assertPausedLocation(dbg);
+  assertPausedAtSourceAndLine(dbg, findSource(dbg, "simple2.js").id, 7);
 
   
   

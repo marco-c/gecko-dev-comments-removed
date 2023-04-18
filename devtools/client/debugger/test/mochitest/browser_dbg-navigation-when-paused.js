@@ -13,8 +13,11 @@ add_task(async function() {
 
   await waitForPaused(dbg, "doc-navigation-when-paused.html");
 
-  assertPausedLocation(dbg);
-  assertDebugLine(dbg, 12);
+  assertPausedAtSourceAndLine(
+    dbg,
+    findSource(dbg, "doc-navigation-when-paused.html").id,
+    12
+  );
 
   await navigate(
     dbg,
@@ -31,5 +34,9 @@ add_task(async function() {
   
   
   
-  assertDebugLine(dbg, 12);
+  assertPausedAtSourceAndLine(
+    dbg,
+    findSource(dbg, "doc-navigation-when-paused.html").id,
+    12
+  );
 });
