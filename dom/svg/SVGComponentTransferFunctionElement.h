@@ -19,9 +19,7 @@
     }                                                     \
   }
 
-namespace mozilla {
-
-namespace dom {
+namespace mozilla::dom {
 
 class DOMSVGAnimatedNumberList;
 
@@ -87,13 +85,11 @@ NS_DEFINE_STATIC_IID_ACCESSOR(SVGComponentTransferFunctionElement,
                               NS_SVG_FE_COMPONENT_TRANSFER_FUNCTION_ELEMENT_CID)
 
 }  
-}  
 
 nsresult NS_NewSVGFEFuncRElement(
     nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class SVGFEFuncRElement : public SVGComponentTransferFunctionElement {
   friend nsresult(::NS_NewSVGFEFuncRElement(
@@ -115,13 +111,11 @@ class SVGFEFuncRElement : public SVGComponentTransferFunctionElement {
 };
 
 }  
-}  
 
 nsresult NS_NewSVGFEFuncGElement(
     nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class SVGFEFuncGElement : public SVGComponentTransferFunctionElement {
   friend nsresult(::NS_NewSVGFEFuncGElement(
@@ -143,13 +137,11 @@ class SVGFEFuncGElement : public SVGComponentTransferFunctionElement {
 };
 
 }  
-}  
 
 nsresult NS_NewSVGFEFuncBElement(
     nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class SVGFEFuncBElement : public SVGComponentTransferFunctionElement {
   friend nsresult(::NS_NewSVGFEFuncBElement(
@@ -171,13 +163,11 @@ class SVGFEFuncBElement : public SVGComponentTransferFunctionElement {
 };
 
 }  
-}  
 
 nsresult NS_NewSVGFEFuncAElement(
     nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class SVGFEFuncAElement : public SVGComponentTransferFunctionElement {
   friend nsresult(::NS_NewSVGFEFuncAElement(
@@ -198,7 +188,6 @@ class SVGFEFuncAElement : public SVGComponentTransferFunctionElement {
                              JS::Handle<JSObject*> aGivenProto) override;
 };
 
-}  
 }  
 
 #endif  

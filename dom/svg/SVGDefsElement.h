@@ -12,8 +12,7 @@
 nsresult NS_NewSVGDefsElement(
     nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class SVGDefsElement final : public SVGGraphicsElement {
  protected:
@@ -36,7 +35,6 @@ class SVGDefsElement final : public SVGGraphicsElement {
   virtual nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
 };
 
-}  
 }  
 
 #endif  
