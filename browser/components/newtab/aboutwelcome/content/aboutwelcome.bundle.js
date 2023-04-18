@@ -355,7 +355,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-const CONFIGURABLE_STYLES = ["color", "fontSize"];
+const CONFIGURABLE_STYLES = ["color", "fontSize", "fontWeight", "letterSpacing", "lineHeight", "marginBlock", "marginInline", "paddingBlock", "paddingInline"];
 const ZAP_SIZE_THRESHOLD = 160;
 
 
@@ -428,7 +428,7 @@ const Localized = ({
 
 
   CONFIGURABLE_STYLES.forEach(style => {
-    if (text[style]) props.style[style] = text[style];
+    if (text[style] !== undefined) props.style[style] = text[style];
   });
   return react__WEBPACK_IMPORTED_MODULE_0___default().cloneElement( 
   children ?? react__WEBPACK_IMPORTED_MODULE_0___default().createElement("span", null), props, 
