@@ -21,6 +21,7 @@
 #include "mozilla/layers/CompositorTypes.h"  
 #include "mozilla/layers/LayersTypes.h"      
 #include "mozilla/layers/LayersSurfaces.h"
+#include "mozilla/layers/TextureSourceProvider.h"
 #include "mozilla/mozalloc.h"  
 #include "mozilla/Range.h"
 #include "mozilla/UniquePtr.h"  
@@ -69,7 +70,6 @@ class TextureReadLock;
 class TextureSourceOGL;
 class TextureSourceD3D11;
 class TextureSourceBasic;
-class TextureSourceProvider;
 class DataTextureSource;
 class PTextureParent;
 class TextureParent;
