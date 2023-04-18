@@ -9,6 +9,8 @@
 #include "nsISelectionListener.h"
 #include "mozilla/WeakPtr.h"
 
+class nsRange;
+
 namespace mozilla {
 
 class PresShell;
@@ -105,6 +107,18 @@ class SelectionManager : public nsISelectionListener {
     mCaretOffset = -1;
     mAccWithCaret = nullptr;
   }
+
+  
+
+
+
+
+
+
+
+
+
+  void SpellCheckRangeAdded(const nsRange& aRange);
 
   ~SelectionManager();
 
