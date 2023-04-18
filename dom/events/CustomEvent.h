@@ -10,8 +10,7 @@
 #include "js/Value.h"
 #include "mozilla/dom/Event.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 struct CustomEventInit;
 
@@ -44,7 +43,6 @@ class CustomEvent final : public Event {
                        bool aCancelable, JS::Handle<JS::Value> aDetail);
 };
 
-}  
 }  
 
 already_AddRefed<mozilla::dom::CustomEvent> NS_NewDOMCustomEvent(

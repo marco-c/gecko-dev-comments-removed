@@ -12,8 +12,7 @@
 #include "nsString.h"
 #include "nsWrapperCache.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -52,7 +51,6 @@ class ImageCaptureError final : public nsISupports, public nsWrapperCache {
   uint16_t mCode;
 };
 
-}  
 }  
 
 #endif  

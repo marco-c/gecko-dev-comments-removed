@@ -13,8 +13,7 @@
 #include "nsISupports.h"
 #include "nsTObserverArray.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class DebuggerNotification;
 class DebuggerNotificationObserver;
@@ -60,7 +59,6 @@ class DebuggerNotificationManager final : public nsISupports {
   nsTObserverArray<RefPtr<DebuggerNotificationObserver>> mNotificationObservers;
 };
 
-}  
 }  
 
 #endif  

@@ -15,8 +15,7 @@
 
 class nsIGlobalObject;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class DebuggerNotification;
 
@@ -56,7 +55,6 @@ class DebuggerNotificationObserver final : public nsISupports,
   nsCOMPtr<nsIGlobalObject> mOwnerGlobal;
 };
 
-}  
 }  
 
 #endif  
