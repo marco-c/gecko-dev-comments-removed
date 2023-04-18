@@ -12459,6 +12459,17 @@ int main(int argc, char** argv) {
   enableCodeCoverage = op.getBoolOption("code-coverage");
   if (enableCodeCoverage) {
     js::EnableCodeCoverage();
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (coverage::IsLCovEnabled()) {
     defaultDelazificationMode =
         JS::DelazificationOption::ParseEverythingEagerly;
   }
