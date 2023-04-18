@@ -7,189 +7,40 @@
 #ifndef TABLE_ACCESSIBLE_H
 #define TABLE_ACCESSIBLE_H
 
-#include "TableCellAccessible.h"
+#include "LocalAccessible.h"
+#include "mozilla/a11y/TableAccessibleBase.h"
+#include "mozilla/a11y/TableCellAccessibleBase.h"
 #include "nsPointerHashKeys.h"
 #include "nsRefPtrHashtable.h"
-#include "nsString.h"
-#include "nsTArray.h"
 
 namespace mozilla {
 namespace a11y {
 
-class LocalAccessible;
 
 
 
-
-class TableAccessible {
+class TableAccessible : public TableAccessibleBase {
  public:
-  
+  virtual LocalAccessible* Caption() const override { return nullptr; }
 
-
-  virtual LocalAccessible* Caption() const { return nullptr; }
-
-  
-
-
-  virtual void Summary(nsString& aSummary) { aSummary.Truncate(); }
-
-  
-
-
-  virtual uint32_t ColCount() const { return 0; }
-
-  
-
-
-  virtual uint32_t RowCount() { return 0; }
-
-  
-
-
-  virtual LocalAccessible* CellAt(uint32_t aRowIdx, uint32_t aColIdx) {
+  virtual LocalAccessible* CellAt(uint32_t aRowIdx, uint32_t aColIdx) override {
     return nullptr;
   }
 
-  
-
-
-  virtual int32_t CellIndexAt(uint32_t aRowIdx, uint32_t aColIdx) {
+  virtual int32_t CellIndexAt(uint32_t aRowIdx, uint32_t aColIdx) override {
     return ColCount() * aRowIdx + aColIdx;
   }
 
-  
-
-
-
-
-  virtual int32_t ColIndexAt(uint32_t aCellIdx);
-
-  
-
-
-
-
-  virtual int32_t RowIndexAt(uint32_t aCellIdx);
-
-  
-
-
-
-
+  virtual int32_t ColIndexAt(uint32_t aCellIdx) override;
+  virtual int32_t RowIndexAt(uint32_t aCellIdx) override;
   virtual void RowAndColIndicesAt(uint32_t aCellIdx, int32_t* aRowIdx,
-                                  int32_t* aColIdx);
+                                  int32_t* aColIdx) override;
+  virtual bool IsProbablyLayoutTable() override;
+  virtual LocalAccessible* AsAccessible() override = 0;
 
-  
-
-
-
-  virtual uint32_t ColExtentAt(uint32_t aRowIdx, uint32_t aColIdx) { return 1; }
-
-  
-
-
-
-  virtual uint32_t RowExtentAt(uint32_t aRowIdx, uint32_t aColIdx) { return 1; }
-
-  
-
-
-  virtual void ColDescription(uint32_t aColIdx, nsString& aDescription) {
-    aDescription.Truncate();
-  }
-
-  
-
-
-  virtual void RowDescription(uint32_t aRowIdx, nsString& aDescription) {
-    aDescription.Truncate();
-  }
-
-  
-
-
-  virtual bool IsColSelected(uint32_t aColIdx) { return false; }
-
-  
-
-
-  virtual bool IsRowSelected(uint32_t aRowIdx) { return false; }
-
-  
-
-
-  virtual bool IsCellSelected(uint32_t aRowIdx, uint32_t aColIdx) {
-    return false;
-  }
-
-  
-
-
-  virtual uint32_t SelectedCellCount() { return 0; }
-
-  
-
-
-  virtual uint32_t SelectedColCount() { return 0; }
-
-  
-
-
-  virtual uint32_t SelectedRowCount() { return 0; }
-
-  
-
-
-  virtual void SelectedCells(nsTArray<LocalAccessible*>* aCells) = 0;
-
-  
-
-
-  virtual void SelectedCellIndices(nsTArray<uint32_t>* aCells) = 0;
-
-  
-
-
-  virtual void SelectedColIndices(nsTArray<uint32_t>* aCols) = 0;
-
-  
-
-
-  virtual void SelectedRowIndices(nsTArray<uint32_t>* aRows) = 0;
-
-  
-
-
-  virtual void SelectCol(uint32_t aColIdx) {}
-
-  
-
-
-  virtual void SelectRow(uint32_t aRowIdx) {}
-
-  
-
-
-  virtual void UnselectCol(uint32_t aColIdx) {}
-
-  
-
-
-  virtual void UnselectRow(uint32_t aRowIdx) {}
-
-  
-
-
-  virtual bool IsProbablyLayoutTable();
-
-  
-
-
-  virtual LocalAccessible* AsAccessible() = 0;
-
-  typedef nsRefPtrHashtable<nsPtrHashKey<const TableCellAccessible>,
-                            LocalAccessible>
-      HeaderCache;
+  using HeaderCache =
+      nsRefPtrHashtable<nsPtrHashKey<const TableCellAccessibleBase>,
+                        LocalAccessible>;
 
   
 
