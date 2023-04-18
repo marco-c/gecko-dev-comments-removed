@@ -1464,8 +1464,7 @@ void nsHTMLScrollFrame::Reflow(nsPresContext* aPresContext,
       
       
       manager->UpdateVisualViewportSizeForPotentialScrollbarChange();
-    } else if ((oldScrollPort.Size() != newScrollPort.Size()) &&
-               !HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
+    } else if (oldScrollPort.Size() != newScrollPort.Size()) {
       
       
       
