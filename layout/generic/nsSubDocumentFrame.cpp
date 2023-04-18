@@ -498,11 +498,9 @@ void nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
         
         
         
-        AddCanvasBackgroundColorFlags flags =
-            AddCanvasBackgroundColorFlags::ForceDraw |
-            AddCanvasBackgroundColorFlags::AddForSubDocument;
         presShell->AddCanvasBackgroundColorItem(
-            aBuilder, &childItems, frame, bounds, NS_RGBA(0, 0, 0, 0), flags);
+            aBuilder, &childItems, frame, bounds, NS_RGBA(0, 0, 0, 0),
+            AddCanvasBackgroundColorFlags::ForceDraw);
       }
     }
   }
