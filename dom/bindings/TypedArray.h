@@ -22,8 +22,7 @@
 #include "nsWrapperCache.h"
 #include "nsWrapperCacheInlines.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -286,7 +285,6 @@ class TypedArrayCreator {
   const ArrayType& mArray;
 };
 
-}  
 }  
 
 #endif 

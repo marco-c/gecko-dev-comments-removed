@@ -13,8 +13,7 @@
 class nsIAsyncInputStream;
 class nsIGlobalObject;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class Promise;
 
@@ -81,7 +80,6 @@ class CacheChild final : public PCacheChild, public ActorChild {
   NS_DECL_OWNINGTHREAD
 };
 
-}  
 }  
 }  
 

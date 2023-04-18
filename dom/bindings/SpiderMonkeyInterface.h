@@ -11,8 +11,7 @@
 #include "js/RootingAPI.h"
 #include "js/TracingAPI.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -110,7 +109,6 @@ class MOZ_RAII RootedSpiderMonkeyInterface final
         SpiderMonkeyInterfaceRooter<InterfaceType>(cx, this) {}
 };
 
-}  
 }  
 
 #endif 

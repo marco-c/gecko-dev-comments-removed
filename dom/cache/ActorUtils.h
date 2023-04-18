@@ -16,8 +16,7 @@ class PBackgroundParent;
 class PrincipalInfo;
 }  
 
-namespace dom {
-namespace cache {
+namespace dom::cache {
 
 class PCacheChild;
 class PCacheParent;
@@ -47,7 +46,6 @@ void DeallocPCacheStorageChild(PCacheStorageChild* aActor);
 
 void DeallocPCacheStorageParent(PCacheStorageParent* aActor);
 
-}  
 }  
 }  
 

@@ -16,9 +16,7 @@
 class mozIStorageConnection;
 struct nsID;
 
-namespace mozilla {
-namespace dom {
-namespace cache {
+namespace mozilla::dom::cache {
 
 class CacheQueryParams;
 class CacheRequest;
@@ -93,8 +91,6 @@ nsresult IncrementalVacuum(mozIStorageConnection& aConn);
 
 extern const int32_t kFirstShippedSchemaVersion;
 
-}  
-}  
 }  
 }  
 

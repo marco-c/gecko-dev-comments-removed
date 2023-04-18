@@ -16,8 +16,7 @@ namespace mozilla {
 namespace ipc {
 class AutoIPCStream;
 }  
-namespace dom {
-namespace cache {
+namespace dom::cache {
 
 class ReadStream;
 class StreamList;
@@ -74,7 +73,6 @@ class CacheStreamControlParent final : public PCacheStreamControlParent,
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CacheStreamControlParent, override)
 };
 
-}  
 }  
 }  
 

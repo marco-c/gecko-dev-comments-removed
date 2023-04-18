@@ -13,15 +13,12 @@
 
 class JSLinearString;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 enum class BindingNamesOffset : uint16_t;
 
-namespace constructors {
-namespace id {
+namespace constructors::id {
 enum ID : uint16_t;
-}  
 }  
 
 struct WebIDLNameTableEntry {
@@ -90,7 +87,6 @@ class WebIDLGlobalNameHash {
   static const WebIDLNameTableEntry sEntries[];
 };
 
-}  
 }  
 
 #endif  

@@ -13,8 +13,7 @@
 
 class nsIGlobalObject;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class Promise;
 
@@ -71,7 +70,6 @@ class CacheStorageChild final : public PCacheStorageChild, public ActorChild {
   NS_DECL_OWNINGTHREAD
 };
 
-}  
 }  
 }  
 

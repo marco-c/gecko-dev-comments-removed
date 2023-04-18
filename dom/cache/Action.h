@@ -14,9 +14,7 @@
 
 class mozIStorageConnection;
 
-namespace mozilla {
-namespace dom {
-namespace cache {
+namespace mozilla::dom::cache {
 
 class Action : public SafeRefCounted<Action> {
  public:
@@ -100,7 +98,5 @@ class Action : public SafeRefCounted<Action> {
 };
 
 }  
-}  
-}  
 
-#endif
+#endif  

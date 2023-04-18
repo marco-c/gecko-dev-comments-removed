@@ -14,8 +14,7 @@
 
 class nsIGlobalObject;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class Promise;
 
@@ -69,7 +68,6 @@ class CacheOpChild final : public PCacheOpChild,
   NS_DECL_OWNINGTHREAD
 };
 
-}  
 }  
 }  
 

@@ -12,8 +12,7 @@
 #include "mozilla/Alignment.h"
 #include "mozilla/Attributes.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -48,7 +47,6 @@ class UnionMember {
   void Destroy() { mStorage.addr()->~T(); }
 } MOZ_INHERIT_TYPE_ANNOTATIONS_FROM_TEMPLATE_ARGS;
 
-}  
 }  
 
 #endif  

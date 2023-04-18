@@ -11,8 +11,7 @@
 #include "nsISupportsImpl.h"
 #include "nsTArray.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class IPCWorkerRef;
 class StrongWorkerRef;
@@ -62,7 +61,6 @@ class CacheWorkerRef final : public SafeRefCounted<CacheWorkerRef> {
   MOZ_DECLARE_REFCOUNTED_TYPENAME(mozilla::dom::cache::CacheWorkerRef)
 };
 
-}  
 }  
 }  
 
