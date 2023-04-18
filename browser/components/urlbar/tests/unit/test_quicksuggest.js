@@ -4,6 +4,7 @@
 
 
 
+
 "use strict";
 
 XPCOMUtils.defineLazyModuleGetters(this, {
@@ -11,6 +12,9 @@ XPCOMUtils.defineLazyModuleGetters(this, {
     "resource:///modules/UrlbarProviderQuickSuggest.jsm",
   UrlbarQuickSuggest: "resource:///modules/UrlbarQuickSuggest.jsm",
 });
+
+const TELEMETRY_REMOTE_SETTINGS_LATENCY =
+  "FX_URLBAR_QUICK_SUGGEST_REMOTE_SETTINGS_LATENCY_MS";
 
 const SPONSORED_SEARCH_STRING = "frab";
 const NONSPONSORED_SEARCH_STRING = "nonspon";
@@ -660,28 +664,51 @@ async function doDedupeAgainstURLTest({
 }
 
 
+add_task(async function latencyTelemetry() {
+  UrlbarPrefs.set("suggest.quicksuggest", true);
+  UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
+
+  let histogram = Services.telemetry.getHistogramById(
+    TELEMETRY_REMOTE_SETTINGS_LATENCY
+  );
+  histogram.clear();
+
+  let context = createContext(SPONSORED_SEARCH_STRING, {
+    providers: [UrlbarProviderQuickSuggest.name],
+    isPrivate: false,
+  });
+  await check_results({
+    context,
+    matches: [EXPECTED_SPONSORED_RESULT],
+  });
+
+  
+  
+  Assert.deepEqual(
+    Object.values(histogram.snapshot().values).filter(v => v > 0),
+    [1],
+    "Latency histogram updated after search"
+  );
+  Assert.ok(
+    !TelemetryStopwatch.running(TELEMETRY_REMOTE_SETTINGS_LATENCY, context),
+    "Stopwatch not running after search"
+  );
+});
+
+
 
 add_task(async function setupAndTeardown() {
   
-  
-  
-  let initialPrefs = {
-    "quicksuggest.enabled": true,
-    "suggest.quicksuggest": false,
-    "suggest.quicksuggest.sponsored": false,
-  };
-  for (let [name, expectedValue] of Object.entries(initialPrefs)) {
-    Assert.equal(
-      UrlbarPrefs.get(name),
-      expectedValue,
-      `Initial value of ${name} is ${expectedValue}`
-    );
-  }
+  UrlbarPrefs.set("suggest.quicksuggest", false);
+  UrlbarPrefs.set("suggest.quicksuggest.sponsored", false);
+  Assert.ok(
+    !UrlbarQuickSuggest._rs,
+    "Settings client is null after disabling suggest prefs"
+  );
 
   
   
-  Assert.ok(!UrlbarQuickSuggest._rs, "Settings client is null initially");
-
+  
   UrlbarPrefs.set("suggest.quicksuggest", true);
   await UrlbarQuickSuggest.readyPromise;
   Assert.ok(
