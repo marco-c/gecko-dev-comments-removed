@@ -245,10 +245,10 @@ class AudioInputTrack : public ProcessedMediaTrack {
   
   
   
-  nsresult OpenAudioInput(CubebUtils::AudioDeviceID aId,
-                          AudioDataListener* aListener,
-                          const PrincipalHandle& aPrincipal);
-  void CloseAudioInput();
+  nsresult ConnectDeviceInput(CubebUtils::AudioDeviceID aId,
+                              AudioDataListener* aListener,
+                              const PrincipalHandle& aPrincipal);
+  void DisconnectDeviceInput();
   Maybe<CubebUtils::AudioDeviceID> DeviceId() const;
   void Destroy() override;
   void SetInputProcessing(RefPtr<AudioInputProcessing> aInputProcessing);
