@@ -315,7 +315,7 @@ var AddonTestUtils = {
       
       this.info(`Force a GC`);
       Cu.forceGC();
-      
+
       this.cleanupTempXPIs();
 
       let ignoreEntries = new Set();
