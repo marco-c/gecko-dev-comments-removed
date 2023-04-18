@@ -2116,6 +2116,11 @@ ParentLayerPoint AsyncPanZoomController::GetDeltaForEvent(
   return delta;
 }
 
+CSSRect AsyncPanZoomController::GetCurrentScrollRangeInCssPixels() const {
+  RecursiveMutexAutoLock lock(mRecursiveMutex);
+  return Metrics().CalculateScrollRange();
+}
+
 
 bool AsyncPanZoomController::CanScroll(const InputData& aEvent) const {
   ParentLayerPoint delta = GetDeltaForEvent(aEvent);

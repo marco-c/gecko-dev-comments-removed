@@ -17,8 +17,8 @@
 #include "mozilla/dom/KeyframeEffectBinding.h"   
 #include "mozilla/dom/KeyframeEffect.h"       
 #include "mozilla/dom/Nullable.h"             
+#include "mozilla/layers/APZSampler.h"        
 #include "mozilla/layers/CompositorThread.h"  
-#include "mozilla/layers/CompositorAnimationStorage.h"  
 #include "mozilla/layers/LayerAnimationUtils.h"  
 #include "mozilla/LayerAnimationInfo.h"  
 #include "mozilla/MotionPathUtils.h"     
@@ -30,9 +30,67 @@
 namespace mozilla {
 namespace layers {
 
+static dom::Nullable<TimeDuration> CalculateElapsedTimeForScrollTimeline(
+    const Maybe<APZSampler::ScrollOffsetAndRange> aScrollMeta,
+    const ScrollTimelineOptions& aOptions,
+    const Maybe<TimeDuration>& aDuration) {
+  MOZ_ASSERT(aDuration);
+
+  
+  
+  if (!aScrollMeta) {
+    
+    
+    
+    return nullptr;
+  }
+
+  const bool isHorizontal =
+      aOptions.axis() == layers::ScrollDirection::eHorizontal;
+  double range =
+      isHorizontal ? aScrollMeta->mRange.width : aScrollMeta->mRange.height;
+  MOZ_ASSERT(
+      range > 0,
+      "We don't expect to get a zero or negative range on the compositor");
+
+  
+  
+  double position =
+      std::abs(isHorizontal ? aScrollMeta->mOffset.x : aScrollMeta->mOffset.y);
+  double progress = position / range;
+  
+  progress = std::min(progress, 1.0);
+
+  
+  
+  
+  return TimeDuration::FromMilliseconds(progress * aDuration->ToMilliseconds());
+}
+
 static dom::Nullable<TimeDuration> CalculateElapsedTime(
-    const PropertyAnimation& aAnimation, const TimeStamp aPreviousFrameTime,
-    const TimeStamp aCurrentFrameTime, const AnimatedValue* aPreviousValue) {
+    const APZSampler* aAPZSampler, const LayersId& aLayersId,
+    const MutexAutoLock& aProofOfMapLock, const PropertyAnimation& aAnimation,
+    const TimeStamp aPreviousFrameTime, const TimeStamp aCurrentFrameTime,
+    const AnimatedValue* aPreviousValue) {
+  
+  
+  
+  if (aAnimation.mScrollTimelineOptions) {
+    MOZ_ASSERT(
+        aAPZSampler,
+        "We don't send scroll animations to the compositor if APZ is disabled");
+
+    return CalculateElapsedTimeForScrollTimeline(
+        aAPZSampler->GetCurrentScrollOffsetAndRange(
+            aLayersId, aAnimation.mScrollTimelineOptions.value().source(),
+            aProofOfMapLock),
+        aAnimation.mScrollTimelineOptions.value(),
+        aAnimation.mTiming.Duration());
+  }
+
+  
+  
+  
   MOZ_ASSERT(
       (!aAnimation.mOriginTime.IsNull() && aAnimation.mStartTime.isSome()) ||
           aAnimation.mIsNotPlaying,
@@ -94,8 +152,10 @@ enum class CanSkipCompose {
   No,
 };
 static AnimationHelper::SampleResult SampleAnimationForProperty(
-    TimeStamp aPreviousFrameTime, TimeStamp aCurrentFrameTime,
-    const AnimatedValue* aPreviousValue, CanSkipCompose aCanSkipCompose,
+    const APZSampler* aAPZSampler, const LayersId& aLayersId,
+    const MutexAutoLock& aProofOfMapLock, TimeStamp aPreviousFrameTime,
+    TimeStamp aCurrentFrameTime, const AnimatedValue* aPreviousValue,
+    CanSkipCompose aCanSkipCompose,
     nsTArray<PropertyAnimation>& aPropertyAnimations,
     RefPtr<RawServoAnimationValue>& aAnimationValue) {
   MOZ_ASSERT(!aPropertyAnimations.IsEmpty(), "Should have animations");
@@ -111,7 +171,8 @@ static AnimationHelper::SampleResult SampleAnimationForProperty(
   
   for (PropertyAnimation& animation : aPropertyAnimations) {
     dom::Nullable<TimeDuration> elapsedDuration = CalculateElapsedTime(
-        animation, aPreviousFrameTime, aCurrentFrameTime, aPreviousValue);
+        aAPZSampler, aLayersId, aProofOfMapLock, animation, aPreviousFrameTime,
+        aCurrentFrameTime, aPreviousValue);
 
     ComputedTiming computedTiming = dom::AnimationEffect::GetComputedTimingAt(
         elapsedDuration, animation.mTiming, animation.mPlaybackRate);
@@ -212,8 +273,9 @@ static AnimationHelper::SampleResult SampleAnimationForProperty(
 }
 
 AnimationHelper::SampleResult AnimationHelper::SampleAnimationForEachNode(
-    TimeStamp aPreviousFrameTime, TimeStamp aCurrentFrameTime,
-    const AnimatedValue* aPreviousValue,
+    const APZSampler* aAPZSampler, const LayersId& aLayersId,
+    const MutexAutoLock& aProofOfMapLock, TimeStamp aPreviousFrameTime,
+    TimeStamp aCurrentFrameTime, const AnimatedValue* aPreviousValue,
     nsTArray<PropertyAnimationGroup>& aPropertyAnimationGroups,
     nsTArray<RefPtr<RawServoAnimationValue>>& aAnimationValues ) {
   MOZ_ASSERT(!aPropertyAnimationGroups.IsEmpty(),
@@ -249,8 +311,9 @@ AnimationHelper::SampleResult AnimationHelper::SampleAnimationForEachNode(
     }
 
     SampleResult result = SampleAnimationForProperty(
-        aPreviousFrameTime, aCurrentFrameTime, aPreviousValue, canSkipCompose,
-        group.mAnimations, currValue);
+        aAPZSampler, aLayersId, aProofOfMapLock, aPreviousFrameTime,
+        aCurrentFrameTime, aPreviousValue, canSkipCompose, group.mAnimations,
+        currValue);
 
     
     

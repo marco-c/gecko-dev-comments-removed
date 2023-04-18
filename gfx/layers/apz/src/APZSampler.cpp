@@ -6,7 +6,6 @@
 
 #include "mozilla/layers/APZSampler.h"
 
-#include "APZCTreeManager.h"
 #include "AsyncPanZoomController.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/layers/APZThreadUtils.h"
@@ -103,12 +102,13 @@ void APZSampler::SampleForWebRender(const Maybe<VsyncId>& aVsyncId,
 
 AsyncTransform APZSampler::GetCurrentAsyncTransform(
     const LayersId& aLayersId, const ScrollableLayerGuid::ViewID& aScrollId,
-    AsyncTransformComponents aComponents) const {
+    AsyncTransformComponents aComponents,
+    const MutexAutoLock& aProofOfMapLock) const {
   MOZ_ASSERT(!CompositorThreadHolder::IsInCompositorThread());
   AssertOnSamplerThread();
 
   RefPtr<AsyncPanZoomController> apzc =
-      mApz->GetTargetAPZC(aLayersId, aScrollId);
+      mApz->GetTargetAPZC(aLayersId, aScrollId, aProofOfMapLock);
   if (!apzc) {
     
     
@@ -123,14 +123,14 @@ AsyncTransform APZSampler::GetCurrentAsyncTransform(
 }
 
 ParentLayerRect APZSampler::GetCompositionBounds(
-    const LayersId& aLayersId,
-    const ScrollableLayerGuid::ViewID& aScrollId) const {
+    const LayersId& aLayersId, const ScrollableLayerGuid::ViewID& aScrollId,
+    const MutexAutoLock& aProofOfMapLock) const {
   
   
   AssertOnSamplerThread();
 
   RefPtr<AsyncPanZoomController> apzc =
-      mApz->GetTargetAPZC(aLayersId, aScrollId);
+      mApz->GetTargetAPZC(aLayersId, aScrollId, aProofOfMapLock);
   if (!apzc) {
     
     
@@ -142,6 +142,28 @@ ParentLayerRect APZSampler::GetCompositionBounds(
   }
 
   return apzc->GetCompositionBounds();
+}
+
+Maybe<APZSampler::ScrollOffsetAndRange>
+APZSampler::GetCurrentScrollOffsetAndRange(
+    const LayersId& aLayersId, const ScrollableLayerGuid::ViewID& aScrollId,
+    const MutexAutoLock& aProofOfMapLock) const {
+  
+  
+
+  RefPtr<AsyncPanZoomController> apzc =
+      mApz->GetTargetAPZC(aLayersId, aScrollId, aProofOfMapLock);
+  if (!apzc) {
+    return Nothing();
+  }
+
+  return Some(ScrollOffsetAndRange{
+      
+      
+      
+      apzc->GetCurrentAsyncScrollOffsetInCssPixels(
+          AsyncPanZoomController::AsyncTransformConsumer::eForCompositing),
+      apzc->GetCurrentScrollRangeInCssPixels()});
 }
 
 void APZSampler::AssertOnSamplerThread() const {

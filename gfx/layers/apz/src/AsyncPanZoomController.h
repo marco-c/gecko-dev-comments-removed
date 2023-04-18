@@ -1223,6 +1223,12 @@ class AsyncPanZoomController {
   
   ParentLayerPoint GetDeltaForEvent(const InputData& aEvent) const;
 
+  
+
+
+
+  CSSRect GetCurrentScrollRangeInCssPixels() const;
+
  private:
   
 

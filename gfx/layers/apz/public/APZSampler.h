@@ -9,6 +9,7 @@
 
 #include <unordered_map>
 
+#include "apz/src/APZCTreeManager.h"
 #include "base/platform_thread.h"  
 #include "mozilla/layers/APZUtils.h"
 #include "mozilla/layers/SampleTime.h"
@@ -30,7 +31,6 @@ struct WrWindowId;
 
 namespace layers {
 
-class APZCTreeManager;
 struct ScrollbarData;
 
 
@@ -72,15 +72,31 @@ class APZSampler {
 
   AsyncTransform GetCurrentAsyncTransform(
       const LayersId& aLayersId, const ScrollableLayerGuid::ViewID& aScrollId,
-      AsyncTransformComponents aComponents) const;
+      AsyncTransformComponents aComponents,
+      const MutexAutoLock& aProofOfMapLock) const;
 
   
 
 
 
   ParentLayerRect GetCompositionBounds(
-      const LayersId& aLayersId,
-      const ScrollableLayerGuid::ViewID& aScrollId) const;
+      const LayersId& aLayersId, const ScrollableLayerGuid::ViewID& aScrollId,
+      const MutexAutoLock& aProofOfMapLock) const;
+
+  struct ScrollOffsetAndRange {
+    CSSPoint mOffset;
+    CSSRect mRange;
+  };
+  
+
+
+
+
+
+
+  Maybe<ScrollOffsetAndRange> GetCurrentScrollOffsetAndRange(
+      const LayersId& aLayersId, const ScrollableLayerGuid::ViewID& aScrollId,
+      const MutexAutoLock& aProofOfMapLock) const;
 
   
 
@@ -93,6 +109,11 @@ class APZSampler {
 
 
   bool IsSamplerThread() const;
+
+  template <typename Callback>
+  void CallWithMapLock(Callback& aCallback) {
+    mApz->CallWithMapLock(aCallback);
+  }
 
  protected:
   virtual ~APZSampler();
