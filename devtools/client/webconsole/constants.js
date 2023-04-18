@@ -85,10 +85,7 @@ const prefs = {
       
       EDITOR_ONBOARDING: "devtools.webconsole.input.editorOnboarding",
       
-      CONTEXT_SELECTOR_BROWSER_TOOLBOX: "devtools.webconsole.input.context",
-      
-      CONTEXT_SELECTOR_CONTENT_TOOLBOX:
-        "devtools.contenttoolbox.webconsole.input.context",
+      CONTEXT_SELECTOR: "devtools.webconsole.input.context",
     },
     FEATURES: {
       

@@ -17,7 +17,7 @@ const TEST_URI = `https://example.com/document-builder.sjs?html=${encodeURICompo
 
 add_task(async function() {
   
-  await pushPref("devtools.contenttoolbox.webconsole.input.context", true);
+  await pushPref("devtools.webconsole.input.context", true);
   await pushPref("devtools.command-button-frames.enabled", true);
 
   const hud = await openNewTabAndConsole(TEST_URI);
