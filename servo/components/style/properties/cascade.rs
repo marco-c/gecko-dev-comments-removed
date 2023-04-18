@@ -439,13 +439,14 @@ fn tweak_when_ignoring_colors(
             
             
             
+            
+            
+            
             let alpha = alpha_channel(color, context);
-            if alpha != 0 {
-                let mut color = context.builder.device.default_background_color();
-                color.alpha = alpha;
-                declarations_to_apply_unless_overriden
-                    .push(PropertyDeclaration::BackgroundColor(color.into()))
-            }
+            let mut color = context.builder.device.default_background_color();
+            color.alpha = alpha;
+            declarations_to_apply_unless_overriden
+                .push(PropertyDeclaration::BackgroundColor(color.into()))
         },
         PropertyDeclaration::Color(ref color) => {
             
