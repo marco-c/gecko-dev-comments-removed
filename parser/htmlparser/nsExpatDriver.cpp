@@ -46,6 +46,18 @@ using mozilla::LogLevel;
 using mozilla::MakeStringSpan;
 using mozilla::dom::Document;
 
+
+
+
+
+#ifdef DEBUG
+
+
+static const uint32_t sMaxChunkLength = 1024 / sizeof(char16_t);
+#else
+static const uint32_t sMaxChunkLength = (128 * 1024) / sizeof(char16_t);
+#endif
+
 #define kExpatSeparatorChar 0xFFFF
 
 static const char16_t kUTF16[] = {'U', 'T', 'F', '-', '1', '6', '\0'};
@@ -1108,6 +1120,39 @@ nsresult nsExpatDriver::HandleError() {
   return NS_ERROR_HTMLPARSER_STOPPARSING;
 }
 
+
+
+
+
+
+
+void nsExpatDriver::ChunkAndParseBuffer(const char16_t* aBuffer,
+                                        uint32_t aLength, bool aIsFinal,
+                                        uint32_t* aPassedToExpat,
+                                        uint32_t* aConsumed) {
+  *aConsumed = 0;
+
+  uint32_t remainder = aLength;
+  while (remainder > sMaxChunkLength) {
+    uint32_t consumed = 0;
+    ParseBuffer(aBuffer, sMaxChunkLength,  false, &consumed);
+    aBuffer += sMaxChunkLength;
+    remainder -= sMaxChunkLength;
+    *aConsumed += consumed;
+    if (NS_FAILED(mInternalState)) {
+      
+      
+      *aPassedToExpat = aLength - remainder;
+      return;
+    }
+  }
+
+  uint32_t consumed = 0;
+  ParseBuffer(aBuffer, remainder, aIsFinal, &consumed);
+  *aConsumed += consumed;
+  *aPassedToExpat = aLength;
+}
+
 void nsExpatDriver::ParseBuffer(const char16_t* aBuffer, uint32_t aLength,
                                 bool aIsFinal, uint32_t* aConsumed) {
   NS_ASSERTION((aBuffer && aLength != 0) || (!aBuffer && aLength == 0), "?");
@@ -1156,8 +1201,6 @@ void nsExpatDriver::ParseBuffer(const char16_t* aBuffer, uint32_t aLength,
 
     
     *aConsumed = (parserBytesConsumed - parserBytesBefore) / sizeof(char16_t);
-    NS_ASSERTION(*aConsumed <= aLength + mExpatBuffered,
-                 "Too many bytes consumed?");
 
     NS_ASSERTION(status != XML_STATUS_SUSPENDED || BlockedOrInterrupted(),
                  "Inconsistent expat suspension state.");
@@ -1236,8 +1279,12 @@ nsExpatDriver::ConsumeToken(nsScanner& aScanner, bool& aFlushTokens) {
                NS_ConvertUTF16toUTF8(start.get(), length).get()));
     }
 
+    uint32_t passedToExpat;
     uint32_t consumed;
-    ParseBuffer(buffer, length, noMoreBuffers, &consumed);
+    ChunkAndParseBuffer(buffer, length, noMoreBuffers, &passedToExpat,
+                        &consumed);
+    MOZ_ASSERT_IF(passedToExpat != length, NS_FAILED(mInternalState));
+    MOZ_ASSERT(consumed <= passedToExpat + mExpatBuffered);
     if (consumed > 0) {
       nsScannerIterator oldExpatPosition = currentExpatPosition;
       currentExpatPosition.advance(consumed);
@@ -1269,7 +1316,7 @@ nsExpatDriver::ConsumeToken(nsScanner& aScanner, bool& aFlushTokens) {
       }
     }
 
-    mExpatBuffered += length - consumed;
+    mExpatBuffered += passedToExpat - consumed;
 
     if (BlockedOrInterrupted()) {
       MOZ_LOG(gExpatDriverLog, LogLevel::Debug,

@@ -93,6 +93,16 @@ class nsExpatDriver : public nsIDTD, public nsITokenizer {
 
   void ParseBuffer(const char16_t* aBuffer, uint32_t aLength, bool aIsFinal,
                    uint32_t* aConsumed);
+
+  
+
+
+
+
+  void ChunkAndParseBuffer(const char16_t* aBuffer, uint32_t aLength,
+                           bool aIsFinal, uint32_t* aPassedToExpat,
+                           uint32_t* aConsumed);
+
   nsresult HandleError();
 
   void MaybeStopParser(nsresult aState);
