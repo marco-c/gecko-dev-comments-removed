@@ -19,8 +19,7 @@
 
 class nsInputStreamPump;
 
-namespace mozilla {
-namespace net {
+namespace mozilla::net {
 
 class BackgroundDataBridgeParent;
 class InputChannelThrottleQueueChild;
@@ -56,7 +55,7 @@ class HttpTransactionChild final : public PHttpTransactionChild,
       const bool& aReqBodyIncludesHeaders,
       const uint64_t& aTopLevelOuterContentWindowId,
       const uint8_t& aHttpTrafficCategory, const uint64_t& aRequestContextID,
-      const ClassOfServiceStruct& aClassOfService, const uint32_t& aInitialRwin,
+      const ClassOfService& aClassOfService, const uint32_t& aInitialRwin,
       const bool& aResponseTimeoutEnabled, const uint64_t& aChannelId,
       const bool& aHasTransactionObserver,
       const Maybe<H2PushedStreamArg>& aPushedStreamArg,
@@ -88,7 +87,7 @@ class HttpTransactionChild final : public PHttpTransactionChild,
       nsIInputStream* requestBody,  
       uint64_t requestContentLength, bool requestBodyHasHeaders,
       uint64_t topLevelOuterContentWindowId, uint8_t httpTrafficCategory,
-      uint64_t requestContextID, ClassOfServiceStruct classOfService,
+      uint64_t requestContextID, ClassOfService classOfService,
       uint32_t initialRwin, bool responseTimeoutEnabled, uint64_t channelId,
       bool aHasTransactionObserver,
       const Maybe<H2PushedStreamArg>& aPushedStreamArg);
@@ -120,7 +119,6 @@ class HttpTransactionChild final : public PHttpTransactionChild,
   RefPtr<BackgroundDataBridgeParent> mDataBridgeParent;
 };
 
-}  
 }  
 
 inline nsISupports* ToSupports(mozilla::net::HttpTransactionChild* p) {

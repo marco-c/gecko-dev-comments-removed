@@ -15,8 +15,7 @@
 #include "nsIThreadRetargetableRequest.h"
 #include "nsIThreadRetargetableStreamListener.h"
 
-namespace mozilla {
-namespace net {
+namespace mozilla::net {
 
 
 
@@ -269,7 +268,7 @@ class InterceptedHttpChannel final
   AddClassFlags(uint32_t flags) override;
 
   NS_IMETHOD
-  SetClassOfService(ClassOfServiceStruct cos) override;
+  SetClassOfService(ClassOfService cos) override;
 
   NS_IMETHOD
   SetIncremental(bool incremental) override;
@@ -287,7 +286,6 @@ class InterceptedHttpChannel final
   void DoAsyncAbort(nsresult aStatus) override;
 };
 
-}  
 }  
 
 #endif  
