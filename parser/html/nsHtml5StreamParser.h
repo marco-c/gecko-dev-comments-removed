@@ -643,7 +643,7 @@ class nsHtml5StreamParser final : public nsISupports {
   
 
 
-  uint32_t mSpeculationFailureCount;
+  mozilla::Atomic<uint32_t> mSpeculationFailureCount;
 
   
 
