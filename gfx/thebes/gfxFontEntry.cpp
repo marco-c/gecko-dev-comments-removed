@@ -2016,7 +2016,9 @@ static bool LookForLegacyFamilyName(const nsACString& aCanonicalName,
           uint32_t(nameRecord->platformID), uint32_t(nameRecord->encodingID),
           uint32_t(nameRecord->languageID), aLegacyName);
       
-      if (ok && aLegacyName != aCanonicalName) {
+      
+      if (ok && !aLegacyName.Equals(aCanonicalName,
+                                    nsCaseInsensitiveCStringComparator)) {
         return true;
       }
     }
@@ -2025,19 +2027,16 @@ static bool LookForLegacyFamilyName(const nsACString& aCanonicalName,
 }
 
 bool gfxFontFamily::CheckForLegacyFamilyNames(gfxPlatformFontList* aFontList) {
+  aFontList->mLock.AssertCurrentThreadIn();
   if (mCheckedForLegacyFamilyNames) {
     
     return false;
   }
-  aFontList->mLock.AssertCurrentThreadIn();
-  AutoWriteLock lock(mLock);
   mCheckedForLegacyFamilyNames = true;
   bool added = false;
   const uint32_t kNAME = TRUETYPE_TAG('n', 'a', 'm', 'e');
-  
-  
-  for (auto& fe :
-       CopyableAutoTArray<RefPtr<gfxFontEntry>, 8>(mAvailableFonts)) {
+  AutoReadLock lock(mLock);
+  for (const auto& fe : mAvailableFonts) {
     if (!fe) {
       continue;
     }

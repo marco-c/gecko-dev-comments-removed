@@ -880,6 +880,10 @@ class gfxFontFamily {
 
   void AddFontEntryLocked(RefPtr<gfxFontEntry> aFontEntry) REQUIRES(mLock) {
     
+    if (mAvailableFonts.Contains(aFontEntry)) {
+      return;
+    }
+    
     
     if (aFontEntry->IsItalic() && !aFontEntry->IsUserFont() &&
         Name().EqualsLiteral("Times New Roman")) {
@@ -903,8 +907,12 @@ class gfxFontFamily {
   }
 
   
-  bool HasStyles() { return mHasStyles; }
+  bool HasStyles() const { return mHasStyles; }
   void SetHasStyles(bool aHasStyles) { mHasStyles = aHasStyles; }
+
+  void SetCheckedForLegacyFamilyNames(bool aChecked) {
+    mCheckedForLegacyFamilyNames = aChecked;
+  }
 
   
   

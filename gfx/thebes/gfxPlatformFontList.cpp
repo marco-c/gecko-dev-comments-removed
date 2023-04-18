@@ -441,17 +441,20 @@ bool gfxPlatformFontList::AddWithLegacyFamilyName(const nsACString& aLegacyName,
   nsAutoCString key;
   ToLowerCase(aLegacyName, key);
   mOtherFamilyNames
-      .LookupOrInsertWith(
-          key,
-          [&] {
-            RefPtr<gfxFontFamily> family =
-                CreateFontFamily(aLegacyName, aVisibility);
-            family->SetHasStyles(
-                true);  
-                        
-            added = true;
-            return family;
-          })
+      .LookupOrInsertWith(key,
+                          [&] {
+                            RefPtr<gfxFontFamily> family =
+                                CreateFontFamily(aLegacyName, aVisibility);
+                            
+                            
+                            family->SetHasStyles(true);
+                            
+                            
+                            
+                            family->SetCheckedForLegacyFamilyNames(true);
+                            added = true;
+                            return family;
+                          })
       ->AddFontEntry(aFontEntry->Clone());
   return added;
 }
