@@ -550,12 +550,18 @@ void HyperTextAccessibleBase::CroppedSelectionRanges(
     nsTArray<TextRange>& aRanges) const {
   SelectionRanges(&aRanges);
   const Accessible* acc = Acc();
-  if (!acc->IsDoc()) {
-    aRanges.RemoveElementsBy([acc](auto& range) {
-      return range.StartPoint() == range.EndPoint() ||
-             !range.Crop(const_cast<Accessible*>(acc));
-    });
-  }
+  aRanges.RemoveElementsBy([acc](auto& range) {
+    if (range.StartPoint() == range.EndPoint()) {
+      return true;  
+    }
+    
+    
+    if (!acc->IsDoc()) {
+      
+      return !range.Crop(const_cast<Accessible*>(acc));
+    }
+    return false;
+  });
 }
 
 int32_t HyperTextAccessibleBase::SelectionCount() {
