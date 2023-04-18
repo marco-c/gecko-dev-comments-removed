@@ -589,22 +589,6 @@ static bool BlockIsSingleTest(MBasicBlock* phiBlock, MBasicBlock* testBlock,
 
       testOrNot = notIns;
       hasOddNumberOfNots = !hasOddNumberOfNots;
-    } else if (iter->isUnbox()) {
-      
-      auto* unbox = iter->toUnbox();
-      if (testOrNot->getOperand(0) != unbox) {
-        return false;
-      }
-      if (!unbox->hasOneUse()) {
-        return false;
-      }
-
-      
-      if (unbox != *testBlock->begin()) {
-        return false;
-      }
-
-      testOrNot = unbox;
     } else {
       
       return false;
@@ -616,7 +600,7 @@ static bool BlockIsSingleTest(MBasicBlock* phiBlock, MBasicBlock* testBlock,
     return false;
   }
 
-  MOZ_ASSERT(testOrNot->isTest() || testOrNot->isNot() || testOrNot->isUnbox());
+  MOZ_ASSERT(testOrNot->isTest() || testOrNot->isNot());
 
   MDefinition* testInput = testOrNot->getOperand(0);
   if (!testInput->isPhi()) {
@@ -675,12 +659,6 @@ static bool IsTestInputMaybeToBool(MTest* test, MDefinition* value) {
       continue;
     }
 
-    
-    if (input->isUnbox()) {
-      input = input->toUnbox()->input();
-      continue;
-    }
-
     return false;
   }
 }
@@ -710,8 +688,6 @@ static bool IsTestInputMaybeToBool(MTest* test, MDefinition* value) {
 [[nodiscard]] static bool UpdateTestSuccessors(
     TempAllocator& alloc, MBasicBlock* block, MDefinition* value,
     MBasicBlock* ifTrue, MBasicBlock* ifFalse, MBasicBlock* existingPred) {
-  MOZ_ASSERT(existingPred->lastIns()->isTest());
-
   MInstruction* ins = block->lastIns();
   if (ins->isTest()) {
     MTest* test = ins->toTest();
@@ -741,19 +717,6 @@ static bool IsTestInputMaybeToBool(MTest* test, MDefinition* value) {
   MOZ_ASSERT(ins->isGoto());
   ins->toGoto()->target()->removePredecessor(block);
   block->discardLastIns();
-
-  
-  
-  
-  if (existingPred->begin()->isUnbox() && value->type() == MIRType::Value) {
-    auto* existingUnbox = existingPred->begin()->toUnbox();
-    auto* unbox =
-        MUnbox::New(alloc, value, existingUnbox->type(), existingUnbox->mode());
-    unbox->setBailoutKind(existingUnbox->bailoutKind());
-    block->add(unbox);
-
-    value = unbox;
-  }
 
   MTest* test = MTest::New(alloc, value, ifTrue, ifFalse);
   block->end(test);
