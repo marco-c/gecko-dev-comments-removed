@@ -172,7 +172,10 @@ class JS_PUBLIC_API TransitiveCompileOptions {
   bool allowHTMLComments = true;
   bool nonSyntacticScope = false;
 
+  
+  
   bool topLevelAwait = true;
+
   bool useFdlibmForSinCosTan = false;
 
   bool importAssertions = false;
