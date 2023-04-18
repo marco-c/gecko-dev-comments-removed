@@ -1202,8 +1202,13 @@ class LayerViewSupport final
     MOZ_ASSERT(AndroidBridge::IsJavaUiThread());
 
     mSurface = java::sdk::Surface::GlobalRef::From(aSurface);
-    mSurfaceControl =
-        java::sdk::SurfaceControl::GlobalRef::From(aSurfaceControl);
+    
+    
+    
+    
+    
+    mSurfaceControl = nullptr;
+
     if (mSurfaceControl) {
       
       
