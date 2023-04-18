@@ -569,13 +569,6 @@ class ScriptLoader final : public nsISupports {
                           ScriptLoadRequest* aRequest);
 
   
-  nsresult EvaluateModule(ScriptLoadRequest* aRequest);
-
-  
-  nsresult EvaluateModule(nsIGlobalObject* aGlobalObject,
-                          ScriptLoadRequest* aRequest);
-
-  
 
 
 
@@ -744,6 +737,13 @@ class ModuleLoader : public nsISupports {
 
   using MaybeSourceText =
       mozilla::MaybeOneOf<JS::SourceText<char16_t>, JS::SourceText<Utf8Unit>>;
+
+  
+  nsresult EvaluateModule(ScriptLoadRequest* aRequest);
+
+  
+  nsresult EvaluateModule(nsIGlobalObject* aGlobalObject,
+                          ScriptLoadRequest* aRequest);
 
   void SetModuleFetchStarted(ModuleLoadRequest* aRequest);
   void SetModuleFetchFinishedAndResumeWaitingRequests(
