@@ -19,8 +19,7 @@ class nsIContent;
 nsresult NS_NewSVGTextPathElement(
     nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 static const uint16_t TEXTPATH_SIDETYPE_LEFT = 1;
@@ -88,7 +87,6 @@ class SVGTextPathElement final : public SVGTextPathElementBase {
   SVGAnimatedPathSegList mPath;
 };
 
-}  
 }  
 
 #endif  

@@ -14,8 +14,7 @@
 #include "mozilla/gfx/Matrix.h"
 #include "mozilla/UniquePtr.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class DOMSVGAnimatedTransformList;
 class SVGGraphicsElement;
@@ -83,7 +82,6 @@ class SVGTransformableElement : public SVGElement {
   UniquePtr<gfx::Matrix> mAnimateMotionTransform;
 };
 
-}  
 }  
 
 #endif  

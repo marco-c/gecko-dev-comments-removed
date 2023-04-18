@@ -13,8 +13,7 @@
 
 nsresult NS_NewSVGTitleElement(
     nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 using SVGTitleElementBase = SVGElement;
 
@@ -54,7 +53,6 @@ class SVGTitleElement final : public SVGTitleElementBase,
   void SendTitleChangeEvent(bool aBound);
 };
 
-}  
 }  
 
 #endif  

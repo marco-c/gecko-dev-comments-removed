@@ -17,11 +17,9 @@
 
 class nsIDOMWindow;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 class Document;
 class EventTarget;
-}  
 }  
 
 class nsDeviceSensors : public nsIDeviceSensors,

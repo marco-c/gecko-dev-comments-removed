@@ -9,8 +9,7 @@
 
 #include "URL.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class URLMainThread final {
  public:
@@ -27,7 +26,6 @@ class URLMainThread final {
                          ErrorResult& aRv);
 };
 
-}  
 }  
 
 #endif  

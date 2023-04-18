@@ -14,8 +14,7 @@
 #include "nsNetUtil.h"
 #include "nsThreadUtils.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 void URLMainThread::CreateObjectURL(const GlobalObject& aGlobal, Blob& aBlob,
@@ -100,5 +99,4 @@ bool URLMainThread::IsValidURL(const GlobalObject& aGlobal,
   return BlobURLProtocolHandler::HasDataEntry(asciiurl);
 }
 
-}  
 }  
