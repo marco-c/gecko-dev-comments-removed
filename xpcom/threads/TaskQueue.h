@@ -140,11 +140,11 @@ class TaskQueue : public AbstractThread, public nsIDirectTaskDispatcher {
     }
   }
 
-  nsCOMPtr<nsIEventTarget> mTarget;
+  nsCOMPtr<nsIEventTarget> mTarget GUARDED_BY(mQueueMonitor);
 
   
   
-  Monitor mQueueMonitor MOZ_UNANNOTATED;
+  Monitor mQueueMonitor;
 
   typedef struct TaskStruct {
     nsCOMPtr<nsIRunnable> event;
@@ -152,10 +152,11 @@ class TaskQueue : public AbstractThread, public nsIDirectTaskDispatcher {
   } TaskStruct;
 
   
-  Queue<TaskStruct> mTasks;
+  Queue<TaskStruct> mTasks GUARDED_BY(mQueueMonitor);
 
   
-  nsTArray<nsCOMPtr<nsITargetShutdownTask>> mShutdownTasks;
+  nsTArray<nsCOMPtr<nsITargetShutdownTask>> mShutdownTasks
+      GUARDED_BY(mQueueMonitor);
 
   
   
@@ -207,11 +208,11 @@ class TaskQueue : public AbstractThread, public nsIDirectTaskDispatcher {
 
   
   
-  bool mIsRunning;
+  bool mIsRunning GUARDED_BY(mQueueMonitor);
 
   
-  bool mIsShutdown;
-  MozPromiseHolder<ShutdownPromise> mShutdownPromise;
+  bool mIsShutdown GUARDED_BY(mQueueMonitor);
+  MozPromiseHolder<ShutdownPromise> mShutdownPromise GUARDED_BY(mQueueMonitor);
 
   
   const char* const mName;
