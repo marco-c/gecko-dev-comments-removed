@@ -89,7 +89,7 @@ class FormatBuffer {
                   std::is_same_v<CharT, unsigned char> ||
                   std::is_same_v<CharT, char>) {
       
-      return NewStringCopyUTF8N<CanGC>(
+      return NewStringCopyUTF8N(
           cx, JS::UTF8Chars(buffer_.begin(), buffer_.length()));
     } else {
       

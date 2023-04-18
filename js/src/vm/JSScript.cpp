@@ -1258,7 +1258,7 @@ JSLinearString* ScriptSource::substring(JSContext* cx, size_t start,
     }
 
     const char* str = units.asChars();
-    return NewStringCopyUTF8N<CanGC>(cx, JS::UTF8Chars(str, len));
+    return NewStringCopyUTF8N(cx, JS::UTF8Chars(str, len));
   }
 
   
@@ -1292,7 +1292,7 @@ JSLinearString* ScriptSource::substringDontDeflate(JSContext* cx, size_t start,
     
     
     
-    return NewStringCopyUTF8N<CanGC>(cx, JS::UTF8Chars(str, len));
+    return NewStringCopyUTF8N(cx, JS::UTF8Chars(str, len));
   }
 
   
