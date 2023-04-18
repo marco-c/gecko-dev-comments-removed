@@ -23,6 +23,9 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 ExtensionTestUtils.init(this);
 
 
+const { assertPersistentListeners } = ExtensionTestUtils.testAssertions;
+
+
 
 
 

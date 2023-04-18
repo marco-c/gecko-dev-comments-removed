@@ -42,6 +42,9 @@ PromiseTestUtils.allowMatchingRejectionsGlobally(
 );
 
 
+const { assertPersistentListeners } = ExtensionTestUtils.testAssertions;
+
+
 
 
 Services.prefs.setBoolPref("dom.security.https_first", false);
@@ -311,53 +314,3 @@ const optionalPermissionsPromptHandler = {
     }
   },
 };
-
-
-
-function getPersistentListeners(extWrapper, apiNs, apiEvent) {
-  const { persistentListeners } = extWrapper.extension;
-  if (
-    !persistentListeners?.size > 0 ||
-    !persistentListeners.get(apiNs)?.has(apiEvent)
-  ) {
-    return [];
-  }
-
-  return Array.from(
-    persistentListeners
-      .get(apiNs)
-      .get(apiEvent)
-      .values()
-  );
-}
-
-function assertPersistentListeners(
-  extWrapper,
-  apiNs,
-  apiEvent,
-  { primed, persisted = true }
-) {
-  if (primed && !persisted) {
-    throw new Error(
-      "Inconsistent assertion, can't assert a primed listener if it is not persisted"
-    );
-  }
-
-  let listenersInfo = getPersistentListeners(extWrapper, apiNs, apiEvent);
-  equal(
-    persisted,
-    !!listenersInfo?.length,
-    `Got a persistent listener for ${apiNs}.${apiEvent}`
-  );
-  for (const info of listenersInfo) {
-    if (primed) {
-      ok(info.primed, `${apiNs}.${apiEvent} listener expected to be primed`);
-    } else {
-      equal(
-        info.primed,
-        undefined,
-        `${apiNs}.${apiEvent} listener expected to not be primed`
-      );
-    }
-  }
-}

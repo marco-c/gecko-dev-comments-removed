@@ -106,6 +106,9 @@ Services.prefs
 }
 
 
+const { assertPersistentListeners } = ExtensionTestUtils.testAssertions;
+
+
 
 
 
