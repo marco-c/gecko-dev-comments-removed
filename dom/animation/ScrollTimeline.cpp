@@ -43,14 +43,15 @@ NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(ScrollTimeline,
 
 TimingParams ScrollTimeline::sTiming;
 
-ScrollTimeline::ScrollTimeline(Document* aDocument, const Scroller& aScroller)
+ScrollTimeline::ScrollTimeline(Document* aDocument, const Scroller& aScroller,
+                               StyleScrollDirection aDirection)
     : AnimationTimeline(aDocument->GetParentObject()),
       mDocument(aDocument),
       
       
       
       mSource(aScroller),
-      mDirection(StyleScrollDirection::Auto) {
+      mDirection(aDirection) {
   MOZ_ASSERT(aDocument);
 
   
@@ -59,24 +60,34 @@ ScrollTimeline::ScrollTimeline(Document* aDocument, const Scroller& aScroller)
   sTiming = TimingParams(SCROLL_TIMELINE_DURATION_MILLISEC, 0.0,
                          std::numeric_limits<float>::infinity(),
                          PlaybackDirection::Alternate, FillMode::Both);
-
-  RegisterWithScrollSource();
 }
 
 already_AddRefed<ScrollTimeline> ScrollTimeline::FromRule(
     const RawServoScrollTimelineRule& aRule, Document* aDocument,
     const NonOwningAnimationTarget& aTarget) {
   
-  RefPtr<ScrollTimeline> timeline = new ScrollTimeline(
-      aDocument, Scroller::Auto(aTarget.mElement->OwnerDoc()));
+  
+  
+  
+  
+  
+
+  StyleScrollDirection direction =
+      Servo_ScrollTimelineRule_GetOrientation(&aRule);
 
   
   
-  
-  
-  
-  
-  timeline->mDirection = Servo_ScrollTimelineRule_GetOrientation(&aRule);
+  RefPtr<ScrollTimeline> timeline;
+  auto autoScroller = Scroller::Auto(aTarget.mElement->OwnerDoc());
+  auto* set =
+      ScrollTimelineSet::GetOrCreateScrollTimelineSet(autoScroller.mElement);
+  auto p = set->LookupForAdd(direction);
+  if (!p) {
+    timeline = new ScrollTimeline(aDocument, autoScroller, direction);
+    set->Add(p, direction, timeline);
+  } else {
+    timeline = p->value();
+  }
   return timeline.forget();
 }
 
@@ -113,17 +124,6 @@ Nullable<TimeDuration> ScrollTimeline::GetCurrentTimeAsDuration() const {
                                         SCROLL_TIMELINE_DURATION_MILLISEC);
 }
 
-void ScrollTimeline::RegisterWithScrollSource() {
-  if (!mSource) {
-    return;
-  }
-
-  if (ScrollTimelineSet* scrollTimelineSet =
-          ScrollTimelineSet::GetOrCreateScrollTimelineSet(mSource.mElement)) {
-    scrollTimelineSet->AddScrollTimeline(*this);
-  }
-}
-
 void ScrollTimeline::UnregisterFromScrollSource() {
   if (!mSource) {
     return;
@@ -131,7 +131,7 @@ void ScrollTimeline::UnregisterFromScrollSource() {
 
   if (ScrollTimelineSet* scrollTimelineSet =
           ScrollTimelineSet::GetScrollTimelineSet(mSource.mElement)) {
-    scrollTimelineSet->RemoveScrollTimeline(*this);
+    scrollTimelineSet->Remove(mDirection);
     if (scrollTimelineSet->IsEmpty()) {
       ScrollTimelineSet::DestroyScrollTimelineSet(mSource.mElement);
     }

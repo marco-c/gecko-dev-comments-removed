@@ -92,9 +92,6 @@ class ScrollTimeline final : public AnimationTimeline {
     }
   };
 
-  ScrollTimeline() = delete;
-  ScrollTimeline(Document* aDocument, const Scroller& aScroller);
-
   
   static already_AddRefed<ScrollTimeline> FromRule(
       const RawServoScrollTimelineRule& aRule, Document* aDocument,
@@ -148,13 +145,16 @@ class ScrollTimeline final : public AnimationTimeline {
   virtual ~ScrollTimeline() { Teardown(); }
 
  private:
+  ScrollTimeline() = delete;
+  ScrollTimeline(Document* aDocument, const Scroller& aScroller,
+                 StyleScrollDirection aDirection);
+
   
   
   
   void Teardown() { UnregisterFromScrollSource(); }
 
   
-  void RegisterWithScrollSource();
   void UnregisterFromScrollSource();
 
   const nsIScrollableFrame* GetScrollFrame() const;
@@ -209,7 +209,16 @@ class ScrollTimeline final : public AnimationTimeline {
 
 class ScrollTimelineSet {
  public:
-  using NonOwningScrollTimelineSet = HashSet<ScrollTimeline*>;
+  
+  
+  
+  
+  
+  
+  
+  
+  using NonOwningScrollTimelineMap =
+      HashMap<StyleScrollDirection, ScrollTimeline*>;
 
   ~ScrollTimelineSet() = default;
 
@@ -217,18 +226,20 @@ class ScrollTimelineSet {
   static ScrollTimelineSet* GetOrCreateScrollTimelineSet(Element* aElement);
   static void DestroyScrollTimelineSet(Element* aElement);
 
-  void AddScrollTimeline(ScrollTimeline& aScrollTimeline) {
-    Unused << mScrollTimelines.put(&aScrollTimeline);
+  NonOwningScrollTimelineMap::AddPtr LookupForAdd(StyleScrollDirection aKey) {
+    return mScrollTimelines.lookupForAdd(aKey);
   }
-  void RemoveScrollTimeline(ScrollTimeline& aScrollTimeline) {
-    mScrollTimelines.remove(&aScrollTimeline);
+  void Add(NonOwningScrollTimelineMap::AddPtr& aPtr, StyleScrollDirection aKey,
+           ScrollTimeline* aScrollTimeline) {
+    Unused << mScrollTimelines.add(aPtr, aKey, aScrollTimeline);
   }
+  void Remove(StyleScrollDirection aKey) { mScrollTimelines.remove(aKey); }
 
   bool IsEmpty() const { return mScrollTimelines.empty(); }
 
   void ScheduleAnimations() const {
     for (auto iter = mScrollTimelines.iter(); !iter.done(); iter.next()) {
-      iter.get()->ScheduleAnimations();
+      iter.get().value()->ScheduleAnimations();
     }
   }
 
@@ -243,7 +254,9 @@ class ScrollTimelineSet {
   
   
   
-  NonOwningScrollTimelineSet mScrollTimelines;
+  
+  
+  NonOwningScrollTimelineMap mScrollTimelines;
 };
 
 }  
