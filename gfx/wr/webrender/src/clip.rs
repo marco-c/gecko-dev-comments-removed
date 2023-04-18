@@ -2178,8 +2178,6 @@ fn add_clip_node_to_current_chain(
                 };
             }
             ClipSpaceConversion::Transform(..) => {
-                assert!(spatial_tree.is_ancestor(node.spatial_node_index, prim_spatial_node_index));
-
                 
                 
                 
