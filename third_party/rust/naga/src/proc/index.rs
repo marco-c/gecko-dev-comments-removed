@@ -141,8 +141,9 @@ impl BoundsCheckPolicies {
         info: &valid::FunctionInfo,
     ) -> BoundsCheckPolicy {
         match info[access].ty.inner_with(types).pointer_space() {
-            Some(crate::AddressSpace::Storage { access: _ })
-            | Some(crate::AddressSpace::Uniform) => self.buffer,
+            Some(crate::AddressSpace::Storage { access: _ } | crate::AddressSpace::Uniform) => {
+                self.buffer
+            }
             
             
             _ => self.index,

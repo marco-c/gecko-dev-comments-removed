@@ -14,7 +14,7 @@ impl Span {
     
     
     
-    pub fn new(start: u32, end: u32) -> Self {
+    pub const fn new(start: u32, end: u32) -> Self {
         Span { start, end }
     }
 
@@ -111,7 +111,7 @@ where
 
 impl<E> WithSpan<E> {
     
-    pub fn new(inner: E) -> Self {
+    pub const fn new(inner: E) -> Self {
         Self {
             inner,
             #[cfg(feature = "span")]
@@ -120,12 +120,17 @@ impl<E> WithSpan<E> {
     }
 
     
+    #[allow(clippy::missing_const_for_fn)] 
     pub fn into_inner(self) -> E {
         self.inner
     }
 
+    pub const fn as_inner(&self) -> &E {
+        &self.inner
+    }
+
     
-    pub fn spans(&self) -> impl Iterator<Item = &SpanContext> {
+    pub fn spans(&self) -> impl Iterator<Item = &SpanContext> + ExactSizeIterator {
         #[cfg(feature = "span")]
         return self.spans.iter();
         #[cfg(not(feature = "span"))]

@@ -21,6 +21,87 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 mod conv;
 mod help;
 mod keywords;
@@ -55,7 +136,7 @@ pub enum ShaderModel {
 }
 
 impl ShaderModel {
-    pub fn to_str(self) -> &'static str {
+    pub const fn to_str(self) -> &'static str {
         match self {
             Self::V5_0 => "5_0",
             Self::V5_1 => "5_1",
@@ -65,7 +146,7 @@ impl ShaderModel {
 }
 
 impl crate::ShaderStage {
-    pub fn to_hlsl_str(self) -> &'static str {
+    pub const fn to_hlsl_str(self) -> &'static str {
         match self {
             Self::Vertex => "vs",
             Self::Fragment => "ps",
@@ -75,7 +156,7 @@ impl crate::ShaderStage {
 }
 
 impl crate::ImageDimension {
-    fn to_hlsl_str(self) -> &'static str {
+    const fn to_hlsl_str(self) -> &'static str {
         match self {
             Self::D1 => "1D",
             Self::D2 => "2D",
@@ -168,6 +249,7 @@ struct Wrapped {
     array_lengths: crate::FastHashSet<help::WrappedArrayLength>,
     image_queries: crate::FastHashSet<help::WrappedImageQuery>,
     constructors: crate::FastHashSet<help::WrappedConstructor>,
+    struct_matrix_access: crate::FastHashSet<help::WrappedStructMatrixAccess>,
 }
 
 impl Wrapped {
@@ -175,6 +257,7 @@ impl Wrapped {
         self.array_lengths.clear();
         self.image_queries.clear();
         self.constructors.clear();
+        self.struct_matrix_access.clear();
     }
 }
 

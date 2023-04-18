@@ -113,7 +113,7 @@ impl Parser {
 
         Ok(match self.module.types[ty].inner {
             TypeInner::Vector { size, kind, width } if vector_size.is_none() => {
-                ctx.implicit_conversion(self, &mut value, meta, kind, width)?;
+                ctx.forced_conversion(self, &mut value, expr_meta, kind, width)?;
 
                 if let TypeInner::Scalar { .. } = *self.resolve_type(ctx, value, expr_meta)? {
                     ctx.add_expression(Expression::Splat { size, value }, meta, body)
@@ -256,7 +256,7 @@ impl Parser {
         
         
 
-        ctx.implicit_conversion(self, &mut value, expr_meta, ScalarKind::Float, width)?;
+        ctx.forced_conversion(self, &mut value, expr_meta, ScalarKind::Float, width)?;
         match *self.resolve_type(ctx, value, expr_meta)? {
             TypeInner::Scalar { .. } => {
                 
@@ -446,7 +446,7 @@ impl Parser {
         let mut components = Vec::with_capacity(size as usize);
 
         for (mut arg, expr_meta) in args.iter().copied() {
-            ctx.implicit_conversion(self, &mut arg, expr_meta, kind, width)?;
+            ctx.forced_conversion(self, &mut arg, expr_meta, kind, width)?;
 
             if components.len() >= size as usize {
                 break;
@@ -512,10 +512,7 @@ impl Parser {
                 let mut flattened = Vec::with_capacity(columns as usize * rows as usize);
 
                 for (mut arg, meta) in args.iter().copied() {
-                    let scalar_components = scalar_components(&self.module.types[ty].inner);
-                    if let Some((kind, width)) = scalar_components {
-                        ctx.implicit_conversion(self, &mut arg, meta, kind, width)?;
-                    }
+                    ctx.forced_conversion(self, &mut arg, meta, ScalarKind::Float, width)?;
 
                     match *self.resolve_type(ctx, arg, meta)? {
                         TypeInner::Vector { size, .. } => {
@@ -1524,9 +1521,9 @@ fn conversion(target: &TypeInner, source: &TypeInner) -> Option<Conversion> {
             
             ((Float, 8), (Float, 4)) => Conversion::FloatToDouble,
             
-            ((Float, 4), (Sint, _)) | ((Float, 4), (Uint, _)) => Conversion::IntToFloat,
+            ((Float, 4), (Sint | Uint, _)) => Conversion::IntToFloat,
             
-            ((Float, 8), (Sint, _)) | ((Float, 8), (Uint, _)) => Conversion::IntToDouble,
+            ((Float, 8), (Sint | Uint, _)) => Conversion::IntToDouble,
             _ => Conversion::Other,
         },
     )

@@ -401,6 +401,7 @@ impl Parser {
 
 pub struct DeclarationContext<'ctx, 'qualifiers> {
     qualifiers: TypeQualifiers<'qualifiers>,
+    
     external: bool,
 
     ctx: &'ctx mut Context,

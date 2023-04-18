@@ -26,7 +26,7 @@ type NeedBakeExpressions = crate::FastHashSet<crate::Handle<crate::Expression>>;
 struct Level(usize);
 
 impl Level {
-    fn next(&self) -> Self {
+    const fn next(&self) -> Self {
         Level(self.0 + 1)
     }
 }
@@ -61,7 +61,7 @@ struct FunctionCtx<'a> {
 
 impl<'a> FunctionCtx<'_> {
     
-    fn name_key(&self, local: crate::Handle<crate::LocalVariable>) -> crate::proc::NameKey {
+    const fn name_key(&self, local: crate::Handle<crate::LocalVariable>) -> crate::proc::NameKey {
         match self.ty {
             FunctionType::Function(handle) => crate::proc::NameKey::FunctionLocal(handle, local),
             FunctionType::EntryPoint(idx) => crate::proc::NameKey::EntryPointLocal(idx, local),
@@ -72,7 +72,7 @@ impl<'a> FunctionCtx<'_> {
     
     
     
-    fn argument_key(&self, arg: u32) -> crate::proc::NameKey {
+    const fn argument_key(&self, arg: u32) -> crate::proc::NameKey {
         match self.ty {
             FunctionType::Function(handle) => crate::proc::NameKey::FunctionArgument(handle, arg),
             FunctionType::EntryPoint(ep_index) => {
@@ -128,7 +128,7 @@ impl crate::Expression {
     
     
     
-    fn bake_ref_count(&self) -> usize {
+    const fn bake_ref_count(&self) -> usize {
         match *self {
             
             crate::Expression::Access { .. } | crate::Expression::AccessIndex { .. } => !0,
@@ -149,7 +149,7 @@ impl crate::Expression {
 
 
 
-fn binary_operation_str(op: crate::BinaryOperator) -> &'static str {
+const fn binary_operation_str(op: crate::BinaryOperator) -> &'static str {
     use crate::BinaryOperator as Bo;
     match op {
         Bo::Add => "+",
@@ -176,7 +176,7 @@ fn binary_operation_str(op: crate::BinaryOperator) -> &'static str {
 
 
 
-fn vector_size_str(size: crate::VectorSize) -> &'static str {
+const fn vector_size_str(size: crate::VectorSize) -> &'static str {
     match size {
         crate::VectorSize::Bi => "2",
         crate::VectorSize::Tri => "3",
@@ -185,7 +185,7 @@ fn vector_size_str(size: crate::VectorSize) -> &'static str {
 }
 
 impl crate::TypeInner {
-    fn is_handle(&self) -> bool {
+    const fn is_handle(&self) -> bool {
         match *self {
             crate::TypeInner::Image { .. } | crate::TypeInner::Sampler { .. } => true,
             _ => false,
@@ -197,7 +197,7 @@ impl crate::Statement {
     
     
     
-    pub fn is_terminator(&self) -> bool {
+    pub const fn is_terminator(&self) -> bool {
         match *self {
             crate::Statement::Break
             | crate::Statement::Continue

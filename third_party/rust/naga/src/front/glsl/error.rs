@@ -95,6 +95,12 @@ pub enum ErrorKind {
     #[error("Unknown layout qualifier: {0}")]
     UnknownLayoutQualifier(String),
     
+    
+    
+    
+    #[error("unsupported matrix of the form matCx2 in std140 block layout")]
+    UnsupportedMatrixTypeInStd140,
+    
     #[cfg(feature = "glsl-validate")]
     #[error("Variable already declared: {0}")]
     VariableAlreadyDeclared(String),

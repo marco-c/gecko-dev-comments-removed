@@ -233,7 +233,7 @@ impl Parser {
     
     
     
-    pub fn metadata(&self) -> &ShaderMetadata {
+    pub const fn metadata(&self) -> &ShaderMetadata {
         &self.meta
     }
 }

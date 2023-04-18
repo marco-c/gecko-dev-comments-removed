@@ -65,7 +65,7 @@ pub struct Overload {
 bitflags::bitflags! {
     /// Tracks the variations of the builtin already generated, this is needed because some
     /// builtins overloads can't be generated unless explicitly used, since they might cause
-    /// uneeded capabilities to be requested
+    /// unneeded capabilities to be requested
     #[derive(Default)]
     pub struct BuiltinVariations: u32 {
         /// Request the standard overloads
@@ -97,7 +97,9 @@ pub struct EntryArg {
 #[derive(Debug, Clone)]
 pub struct VariableReference {
     pub expr: Handle<Expression>,
+    
     pub load: bool,
+    
     pub mutable: bool,
     pub constant: Option<(Handle<Constant>, Handle<Type>)>,
     pub entry_arg: Option<usize>,
@@ -172,16 +174,28 @@ pub enum QualifierValue {
 pub struct TypeQualifiers<'a> {
     pub span: Span,
     pub storage: (StorageQualifier, Span),
+    pub invariant: Option<Span>,
     pub interpolation: Option<(Interpolation, Span)>,
     pub precision: Option<(Precision, Span)>,
     pub sampling: Option<(Sampling, Span)>,
-    pub storage_acess: Option<(StorageAccess, Span)>,
+    
+    
+    pub storage_access: Option<(StorageAccess, Span)>,
     pub layout_qualifiers: crate::FastHashMap<QualifierKey<'a>, (QualifierValue, Span)>,
 }
 
 impl<'a> TypeQualifiers<'a> {
     
     pub fn unused_errors(&self, errors: &mut Vec<super::Error>) {
+        if let Some(meta) = self.invariant {
+            errors.push(super::Error {
+                kind: super::ErrorKind::SemanticError(
+                    "Invariant qualifier can only be used in in/out variables".into(),
+                ),
+                meta,
+            });
+        }
+
         if let Some((_, meta)) = self.interpolation {
             errors.push(super::Error {
                 kind: super::ErrorKind::SemanticError(
@@ -200,7 +214,7 @@ impl<'a> TypeQualifiers<'a> {
             });
         }
 
-        if let Some((_, meta)) = self.storage_acess {
+        if let Some((_, meta)) = self.storage_access {
             errors.push(super::Error {
                 kind: super::ErrorKind::SemanticError(
                     "Memory qualifiers can only be used in storage variables".into(),
@@ -338,7 +352,7 @@ pub enum ParameterQualifier {
 
 impl ParameterQualifier {
     
-    pub fn is_lhs(&self) -> bool {
+    pub const fn is_lhs(&self) -> bool {
         match *self {
             ParameterQualifier::Out | ParameterQualifier::InOut => true,
             _ => false,
@@ -346,7 +360,7 @@ impl ParameterQualifier {
     }
 
     
-    pub fn as_pos(&self) -> ExprPos {
+    pub const fn as_pos(&self) -> ExprPos {
         match *self {
             ParameterQualifier::Out | ParameterQualifier::InOut => ExprPos::Lhs,
             _ => ExprPos::Rhs,

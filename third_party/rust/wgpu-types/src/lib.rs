@@ -26,6 +26,7 @@ pub type DynamicOffset = u32;
 
 
 
+
 pub const COPY_BYTES_PER_ROW_ALIGNMENT: u32 = 256;
 
 pub const QUERY_RESOLVE_BUFFER_ALIGNMENT: BufferAddress = 256;
@@ -586,6 +587,8 @@ impl Features {
         Self::from_bits_truncate(0xFFFF_FFFF_FFFF_0000)
     }
 }
+
+
 
 
 
@@ -1316,6 +1319,8 @@ impl BlendState {
 pub struct ColorTargetState {
     
     
+    
+    
     pub format: TextureFormat,
     
     #[cfg_attr(feature = "serde", serde(default))]
@@ -1965,6 +1970,10 @@ pub enum TextureFormat {
     
     
     
+    
+    
+    
+    
     Astc {
         
         block: AstcBlock,
@@ -2254,6 +2263,8 @@ impl DepthBiasState {
 pub struct DepthStencilState {
     
     
+    
+    
     pub format: TextureFormat,
     
     pub depth_write_enabled: bool,
@@ -2307,6 +2318,9 @@ pub enum StencilOperation {
     Keep = 0,
     
     Zero = 1,
+    
+    
+    
     
     Replace = 2,
     
@@ -2423,6 +2437,9 @@ impl Default for VertexStepMode {
         VertexStepMode::Vertex
     }
 }
+
+
+
 
 
 
@@ -2694,6 +2711,8 @@ bitflags::bitflags! {
 
 #[cfg(feature = "bitflags_serde_shim")]
 bitflags_serde_shim::impl_serde_for_bitflags!(TextureUsages);
+
+
 
 
 #[repr(C)]
@@ -3286,6 +3305,11 @@ pub struct ImageDataLayout {
     
     
     
+    
+    
+    
+    
+    
     pub bytes_per_row: Option<NonZeroU32>,
     
     
@@ -3465,6 +3489,10 @@ pub enum BindingType {
         ty: BufferBindingType,
         
         
+        
+        
+        
+        
         #[cfg_attr(any(feature = "trace", feature = "replay"), serde(default))]
         has_dynamic_offset: bool,
         
@@ -3587,6 +3615,8 @@ pub struct ImageCopyTexture<T> {
 #[cfg_attr(feature = "replay", derive(serde::Deserialize))]
 pub struct ImageSubresourceRange {
     
+    
+    
     pub aspect: TextureAspect,
     
     pub base_mip_level: u32,
@@ -3686,6 +3716,8 @@ pub enum QueryType {
     
     
     PipelineStatistics(PipelineStatisticsTypes),
+    
+    
     
     
     

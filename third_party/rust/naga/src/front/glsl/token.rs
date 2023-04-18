@@ -38,8 +38,13 @@ pub enum TokenValue {
     Shared,
 
     Restrict,
-    StorageAccess(crate::StorageAccess),
+    
+    
+    
+    
+    MemoryQualifier(crate::StorageAccess),
 
+    Invariant,
     Interpolation(Interpolation),
     Sampling(Sampling),
     Precision,
