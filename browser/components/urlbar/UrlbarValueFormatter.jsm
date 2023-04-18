@@ -46,7 +46,8 @@ class UrlbarValueFormatter {
   }
 
   async update() {
-    
+    let instance = (this._updateInstance = {});
+
     
     
     
@@ -54,15 +55,16 @@ class UrlbarValueFormatter {
     
     
     if (!this.window.gBrowserInit.delayedStartupFinished) {
-      return;
+      await this.window.delayedStartupPromise;
+      if (this._updateInstance != instance) {
+        return;
+      }
     }
     if (!Services.search.isInitialized) {
-      let instance = (this._updateInstance = {});
       await Services.search.init();
       if (this._updateInstance != instance) {
         return;
       }
-      delete this._updateInstance;
     }
 
     
