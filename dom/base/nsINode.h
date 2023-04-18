@@ -642,6 +642,22 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
+
+
+  mozilla::Maybe<uint32_t> ComputeIndexInParentNode() const;
+  mozilla::Maybe<uint32_t> ComputeIndexInParentContent() const;
+
+  
+
+
+
+
+
+
+
+
+
+
   int32_t ComputeIndexOf_Deprecated(const nsINode* aPossibleChild) const;
 
   
