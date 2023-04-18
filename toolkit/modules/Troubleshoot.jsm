@@ -14,15 +14,10 @@ const { AppConstants } = ChromeUtils.import(
 const { E10SUtils } = ChromeUtils.import(
   "resource://gre/modules/E10SUtils.jsm"
 );
-const { XPCOMUtils } = ChromeUtils.import(
-  "resource://gre/modules/XPCOMUtils.jsm"
-);
 
 const { FeatureGate } = ChromeUtils.import(
   "resource://featuregates/FeatureGate.jsm"
 );
-
-XPCOMUtils.defineLazyGlobalGetters(this, ["DOMParser"]);
 
 
 
