@@ -1399,6 +1399,10 @@ SVGObserverUtils::ReferenceState SVGObserverUtils::GetAndObserveMasks(
 
 SVGGeometryElement* SVGObserverUtils::GetAndObserveTextPathsPath(
     nsIFrame* aTextPathFrame) {
+  
+  
+  aTextPathFrame = aTextPathFrame->FirstContinuation();
+
   SVGTextPathObserver* property =
       aTextPathFrame->GetProperty(HrefAsTextPathProperty());
 
