@@ -69,7 +69,7 @@ pub const WORK_UNIT_MAX: usize = 16;
 
 
 
-type WorkUnit<N> = ArrayVec<[SendNode<N>; WORK_UNIT_MAX]>;
+type WorkUnit<N> = ArrayVec<SendNode<N>, WORK_UNIT_MAX>;
 
 
 

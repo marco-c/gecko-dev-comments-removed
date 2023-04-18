@@ -2586,11 +2586,11 @@ impl PropertyDeclaration {
     }
 }
 
-type SubpropertiesArray<T> =
-    [T; ${max(len(s.sub_properties) for s in data.shorthands_except_all()) \
-          if data.shorthands_except_all() else 0}];
+const SUB_PROPERTIES_ARRAY_CAP: usize =
+    ${max(len(s.sub_properties) for s in data.shorthands_except_all()) \
+          if data.shorthands_except_all() else 0};
 
-type SubpropertiesVec<T> = ArrayVec<SubpropertiesArray<T>>;
+type SubpropertiesVec<T> = ArrayVec<T, SUB_PROPERTIES_ARRAY_CAP>;
 
 
 
@@ -2650,7 +2650,7 @@ impl SourcePropertyDeclaration {
 
 
 pub struct SourcePropertyDeclarationDrain<'a> {
-    declarations: ArrayVecDrain<'a, SubpropertiesArray<PropertyDeclaration>>,
+    declarations: ArrayVecDrain<'a, PropertyDeclaration, SUB_PROPERTIES_ARRAY_CAP>,
     all_shorthand: AllShorthand,
 }
 
