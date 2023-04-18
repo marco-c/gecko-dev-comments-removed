@@ -532,8 +532,17 @@ pub enum TextAlign {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[cfg(feature = "gecko")]
-    #[css(skip)]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozCenterOrInherit,
 }
 
