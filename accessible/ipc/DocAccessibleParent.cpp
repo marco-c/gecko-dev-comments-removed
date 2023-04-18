@@ -4,7 +4,6 @@
 
 
 
-#include "CachedTableAccessible.h"
 #include "DocAccessibleParent.h"
 #include "mozilla/a11y/Platform.h"
 #include "mozilla/dom/BrowserBridgeParent.h"
@@ -163,10 +162,6 @@ uint32_t DocAccessibleParent::AddSubtree(
     });
   }
 
-  if (newProxy->IsTableCell()) {
-    CachedTableAccessible::Invalidate(newProxy);
-  }
-
   DebugOnly<bool> isOuterDoc = newProxy->ChildCount() == 1;
 
   uint32_t accessibles = 1;
@@ -193,9 +188,6 @@ void DocAccessibleParent::ShutdownOrPrepareForMove(RemoteAccessible* aAcc) {
   
   
   aAcc->SetParent(nullptr);
-  if (aAcc->IsTable() || aAcc->IsTableCell()) {
-    CachedTableAccessible::Invalidate(aAcc);
-  }
   mMovingIDs.EnsureRemoved(id);
   if (aAcc->IsOuterDoc()) {
     

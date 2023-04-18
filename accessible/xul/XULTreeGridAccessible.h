@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef mozilla_a11y_XULTreeGridAccessible_h__
 #define mozilla_a11y_XULTreeGridAccessible_h__
 
@@ -40,7 +39,7 @@ class XULTreeGridAccessible : public XULTreeAccessible, public TableAccessible {
   virtual uint32_t SelectedCellCount() override;
   virtual uint32_t SelectedColCount() override;
   virtual uint32_t SelectedRowCount() override;
-  virtual void SelectedCells(nsTArray<Accessible*>* aCells) override;
+  virtual void SelectedCells(nsTArray<LocalAccessible*>* aCells) override;
   virtual void SelectedCellIndices(nsTArray<uint32_t>* aCells) override;
   virtual void SelectedColIndices(nsTArray<uint32_t>* aCols) override;
   virtual void SelectedRowIndices(nsTArray<uint32_t>* aRows) override;
@@ -141,8 +140,9 @@ class XULTreeGridCellAccessible : public LeafAccessible,
   virtual TableAccessible* Table() const override;
   virtual uint32_t ColIdx() const override;
   virtual uint32_t RowIdx() const override;
-  virtual void ColHeaderCells(nsTArray<Accessible*>* aHeaderCells) override;
-  virtual void RowHeaderCells(nsTArray<Accessible*>* aCells) override {}
+  virtual void ColHeaderCells(
+      nsTArray<LocalAccessible*>* aHeaderCells) override;
+  virtual void RowHeaderCells(nsTArray<LocalAccessible*>* aCells) override {}
   virtual bool Selected() override;
 
   

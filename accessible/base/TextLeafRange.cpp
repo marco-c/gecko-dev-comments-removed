@@ -90,6 +90,19 @@ class LeafRule : public PivotRule {
   }
 };
 
+
+
+
+
+
+
+static Accessible* DocumentFor(Accessible* aAcc) {
+  if (LocalAccessible* localAcc = aAcc->AsLocal()) {
+    return localAcc->Document();
+  }
+  return aAcc->AsRemote()->Document();
+}
+
 static HyperTextAccessible* HyperTextFor(LocalAccessible* aAcc) {
   for (LocalAccessible* acc = aAcc; acc; acc = acc->LocalParent()) {
     if (HyperTextAccessible* ht = acc->AsHyperText()) {
@@ -100,16 +113,14 @@ static HyperTextAccessible* HyperTextFor(LocalAccessible* aAcc) {
 }
 
 static Accessible* NextLeaf(Accessible* aOrigin) {
-  MOZ_ASSERT(aOrigin);
-  Accessible* doc = nsAccUtils::DocumentFor(aOrigin);
+  Accessible* doc = DocumentFor(aOrigin);
   Pivot pivot(doc);
   auto rule = LeafRule();
   return pivot.Next(aOrigin, rule);
 }
 
 static Accessible* PrevLeaf(Accessible* aOrigin) {
-  MOZ_ASSERT(aOrigin);
-  Accessible* doc = nsAccUtils::DocumentFor(aOrigin);
+  Accessible* doc = DocumentFor(aOrigin);
   Pivot pivot(doc);
   auto rule = LeafRule();
   return pivot.Prev(aOrigin, rule);
@@ -946,7 +957,7 @@ TextLeafPoint TextLeafPoint::FindParagraphSameAcc(nsDirection aDirection,
   }
   Accessible* prevLeaf = PrevLeaf(mAcc);
   BlockRule blockRule;
-  Pivot pivot(nsAccUtils::DocumentFor(mAcc));
+  Pivot pivot(DocumentFor(mAcc));
   Accessible* prevBlock = pivot.Prev(mAcc, blockRule);
   
   if (prevBlock &&

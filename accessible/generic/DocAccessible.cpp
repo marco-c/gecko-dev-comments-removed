@@ -7,7 +7,6 @@
 #include "LocalAccessible-inl.h"
 #include "AccIterator.h"
 #include "AccAttributes.h"
-#include "CachedTableAccessible.h"
 #include "DocAccessible-inl.h"
 #include "DocAccessibleChild.h"
 #include "HTMLImageMapAccessible.h"
@@ -1324,19 +1323,6 @@ bool DocAccessible::PruneOrInsertSubtree(nsIContent* aRoot) {
     
     if (acc->IsTable() || acc->IsTableRow() || acc->IsTableCell()) {
       FireDelayedEvent(nsIAccessibleEvent::EVENT_TABLE_STYLING_CHANGED, acc);
-      LocalAccessible* table;
-      if (acc->IsTable()) {
-        table = acc;
-      } else {
-        for (table = acc->LocalParent(); table; table = table->LocalParent()) {
-          if (table->IsTable()) {
-            break;
-          }
-        }
-      }
-      if (table && table->IsTable()) {
-        QueueCacheUpdate(acc, CacheDomain::Table);
-      }
     }
 
     
@@ -2097,8 +2083,8 @@ void DocAccessible::ContentRemoved(LocalAccessible* aChild) {
     }
   }
   MOZ_DIAGNOSTIC_ASSERT(aChild->LocalParent(), "Unparented #2");
-  UncacheChildrenInSubtree(aChild);
   parent->RemoveChild(aChild);
+  UncacheChildrenInSubtree(aChild);
 
   mt.Done();
 }
@@ -2494,14 +2480,6 @@ void DocAccessible::CacheChildrenInSubtree(LocalAccessible* aRoot,
 void DocAccessible::UncacheChildrenInSubtree(LocalAccessible* aRoot) {
   aRoot->mStateFlags |= eIsNotInDocument;
   RemoveDependentIDsFor(aRoot);
-
-  
-  
-  
-  if (StaticPrefs::accessibility_cache_enabled_AtStartup() &&
-      (aRoot->IsTable() || aRoot->IsTableCell())) {
-    CachedTableAccessible::Invalidate(aRoot);
-  }
 
   nsTArray<RefPtr<LocalAccessible>>* owned = mARIAOwnsHash.Get(aRoot);
   uint32_t count = aRoot->ContentChildCount();

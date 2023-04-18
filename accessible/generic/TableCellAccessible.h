@@ -7,22 +7,59 @@
 #ifndef mozilla_a11y_TableCellAccessible_h__
 #define mozilla_a11y_TableCellAccessible_h__
 
-#include "mozilla/a11y/TableCellAccessibleBase.h"
-#include "TableAccessible.h"
+#include "nsTArray.h"
+#include <stdint.h>
 
 namespace mozilla {
 namespace a11y {
 
 class LocalAccessible;
+class TableAccessible;
 
 
 
 
-class TableCellAccessible : public TableCellAccessibleBase {
+class TableCellAccessible {
  public:
-  virtual TableAccessible* Table() const override = 0;
-  virtual void ColHeaderCells(nsTArray<Accessible*>* aCells) override;
-  virtual void RowHeaderCells(nsTArray<Accessible*>* aCells) override;
+  
+
+
+  virtual TableAccessible* Table() const = 0;
+
+  
+
+
+  virtual uint32_t ColIdx() const = 0;
+
+  
+
+
+  virtual uint32_t RowIdx() const = 0;
+
+  
+
+
+  virtual uint32_t ColExtent() const { return 1; }
+
+  
+
+
+  virtual uint32_t RowExtent() const { return 1; }
+
+  
+
+
+  virtual void ColHeaderCells(nsTArray<LocalAccessible*>* aCells);
+
+  
+
+
+  virtual void RowHeaderCells(nsTArray<LocalAccessible*>* aCells);
+
+  
+
+
+  virtual bool Selected() = 0;
 
  private:
   LocalAccessible* PrevColHeader();
