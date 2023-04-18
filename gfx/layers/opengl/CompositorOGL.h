@@ -186,10 +186,6 @@ class CompositorOGL final : public Compositor {
   const char* Name() const override { return "OGL"; }
 #endif  
 
-  LayersBackend GetBackendType() const override {
-    return LayersBackend::LAYERS_OPENGL;
-  }
-
   void Pause() override;
   bool Resume() override;
 
