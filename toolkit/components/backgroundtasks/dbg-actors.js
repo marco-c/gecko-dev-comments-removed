@@ -23,17 +23,12 @@ const {
 
 
 
-
 function createRootActor(connection) {
   let parameters = {
-    tabList: new XPCSTTabList(connection),
+    tabList: new BackgroundTaskTabList(connection),
     processList: new ProcessActorList(),
     globalActorFactories: ActorRegistry.globalActorFactories,
-    onShutdown() {
-      
-      
-      Services.obs.notifyObservers(null, "xpcshell-test-devtools-shutdown");
-    },
+    onShutdown() {},
   };
   return new RootActor(connection, parameters);
 }
@@ -42,7 +37,7 @@ exports.createRootActor = createRootActor;
 
 
 
-class XPCSTTabList extends BrowserTabList {
+class BackgroundTaskTabList extends BrowserTabList {
   getList() {
     return Promise.resolve([]);
   }

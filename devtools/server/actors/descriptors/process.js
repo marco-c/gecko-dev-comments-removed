@@ -61,7 +61,7 @@ const ProcessDescriptorActor = ActorClassWithSpec(processDescriptorSpec, {
   },
 
   get isWindowlessParent() {
-    return this.isParent && this.isXpcshell;
+    return this.isParent && (this.isXpcshell || this.isBackgroundTaskMode);
   },
 
   get isXpcshell() {
@@ -71,9 +71,16 @@ const ProcessDescriptorActor = ActorClassWithSpec(processDescriptorSpec, {
     return env.exists("XPCSHELL_TEST_PROFILE_DIR");
   },
 
+  get isBackgroundTaskMode() {
+    const bts = Cc["@mozilla.org/backgroundtasks;1"]?.getService(
+      Ci.nsIBackgroundTasks
+    );
+    return bts && bts.isBackgroundTaskMode;
+  },
+
   _parentProcessConnect() {
     let targetActor;
-    if (this.isXpcshell) {
+    if (this.isWindowlessParent) {
       
       
       

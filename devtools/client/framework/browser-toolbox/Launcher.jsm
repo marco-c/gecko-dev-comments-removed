@@ -27,6 +27,11 @@ ChromeUtils.defineModuleGetter(
 );
 ChromeUtils.defineModuleGetter(
   this,
+  "BackgroundTasksUtils",
+  "resource://gre/modules/BackgroundTasksUtils.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
   "FileUtils",
   "resource://gre/modules/FileUtils.jsm"
 );
@@ -161,6 +166,18 @@ BrowserToolboxLauncher.prototype = {
     this.devToolsServer.allowChromeProcess = true;
     dumpn("initialized and added the browser actors for the DevToolsServer.");
 
+    const bts = Cc["@mozilla.org/backgroundtasks;1"]?.getService(
+      Ci.nsIBackgroundTasks
+    );
+    if (bts?.isBackgroundTaskMode) {
+      
+      
+      const { createRootActor } = this.loader.require(
+        "resource://gre/modules/backgroundtasks/dbg-actors.js"
+      );
+      this.devToolsServer.setRootActor(createRootActor);
+    }
+
     const chromeDebuggingWebSocket = Services.prefs.getBoolPref(
       "devtools.debugger.chrome-debugging-websocket"
     );
@@ -213,14 +230,41 @@ BrowserToolboxLauncher.prototype = {
     
     const prefsFile = debuggingProfileDir.clone();
     prefsFile.append("prefs.js");
-    
-    
-    
-    
-    
-    
-    
-    Services.prefs.savePrefFile(prefsFile);
+
+    const bts = Cc["@mozilla.org/backgroundtasks;1"]?.getService(
+      Ci.nsIBackgroundTasks
+    );
+    if (bts?.isBackgroundTaskMode) {
+      
+      
+      
+      
+      
+      const defaultProfile = BackgroundTasksUtils.getDefaultProfile();
+      if (!defaultProfile) {
+        throw new Error(
+          "Cannot start Browser Toolbox from background task with no default profile"
+        );
+      }
+
+      const defaultPrefsFile = defaultProfile.rootDir.clone();
+      defaultPrefsFile.append("prefs.js");
+      defaultPrefsFile.copyTo(prefsFile.parent, prefsFile.leafName);
+
+      dumpn(
+        `Copied browser toolbox prefs at '${prefsFile.path}'` +
+          ` from default profiles prefs at '${defaultPrefsFile.path}'`
+      );
+    } else {
+      
+      
+      
+      
+      
+      
+      
+      Services.prefs.savePrefFile(prefsFile);
+    }
 
     dumpn(
       "Finished creating the chrome toolbox user profile at: " +
@@ -274,6 +318,16 @@ BrowserToolboxLauncher.prototype = {
       MOZ_HEADLESS: null,
       
       MOZ_MARIONETTE: null,
+      
+      
+      MOZ_LOG: null,
+      MOZ_LOG_FILE: null,
+      XPCOM_MEM_BLOAT_LOG: null,
+      XPCOM_MEM_LEAK_LOG: null,
+      XPCOM_MEM_LOG_CLASSES: null,
+      XPCOM_MEM_REFCNT_LOG: null,
+      XRE_PROFILE_PATH: null,
+      XRE_PROFILE_LOCAL_PATH: null,
     };
 
     
@@ -353,13 +407,8 @@ BrowserToolboxLauncher.prototype = {
 
     Services.obs.removeObserver(this.close, "quit-application");
 
-    this._dbgProcess.stdout.close();
-    await this._dbgProcess.kill();
-
     
     
-    this._telemetry.toolClosed("jsbrowserdebugger", -1, this);
-
     if (this.listener) {
       this.listener.close();
     }
@@ -368,6 +417,13 @@ BrowserToolboxLauncher.prototype = {
       this.devToolsServer.destroy();
       this.devToolsServer = null;
     }
+
+    this._dbgProcess.stdout.close();
+    await this._dbgProcess.kill();
+
+    
+    
+    this._telemetry.toolClosed("jsbrowserdebugger", -1, this);
 
     dumpn("Chrome toolbox is now closed...");
     this.emit("close", this);

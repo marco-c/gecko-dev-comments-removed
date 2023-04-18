@@ -1243,6 +1243,7 @@ DevToolsStartup.prototype = {
   },
 
   
+  
   helpInfo:
     "  --jsconsole        Open the Browser Console.\n" +
     "  --jsdebugger [<path>] Open the Browser Toolbox. Defaults to the local build\n" +
