@@ -294,6 +294,21 @@ let ShellServiceInternal = {
 
 
 
+
+  isDefaultHandlerFor(aFileExtensionOrProtocol) {
+    if (AppConstants.platform == "win") {
+      return this.shellService
+        .QueryInterface(Ci.nsIWindowsShellService)
+        .isDefaultHandlerFor(aFileExtensionOrProtocol);
+    }
+    return false;
+  },
+
+  
+
+
+
+
   async doesAppNeedPin() {
     if (
       Services.appinfo.processType !== Services.appinfo.PROCESS_TYPE_DEFAULT
