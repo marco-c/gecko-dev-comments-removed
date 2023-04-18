@@ -189,6 +189,8 @@ var TabManager = {
 
 
 
+
+
   getIdForBrowser(browserElement) {
     if (browserElement === null) {
       return null;
@@ -200,19 +202,6 @@ var TabManager = {
       browserUniqueIds.set(key, uuid.substring(1, uuid.length - 1));
     }
     return browserUniqueIds.get(key);
-  },
-
-  
-
-
-
-
-
-
-
-  getBrowserIdForBrowsingContext(browsingContext) {
-    const contentBrowser = browsingContext.top.embedderElement;
-    return this.getIdForBrowser(contentBrowser);
   },
 
   
