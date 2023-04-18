@@ -9,7 +9,6 @@
 #include "MediaUtils.h"
 #include "VideoFrameUtils.h"
 
-#include "mozilla/AppShutdown.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/Unused.h"
@@ -228,12 +227,14 @@ void CamerasParent::StopVideoCapture() {
             thread->Stop();
             delete thread;
           }
-          
-          (void)MustGetShutdownBarrier()->RemoveBlocker(self);
+          nsresult rv = MustGetShutdownBarrier()->RemoveBlocker(self);
+          MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
+          Unused << rv;
           return NS_OK;
         }));
-        MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv),
-                              "dispatch for video thread shutdown");
+        if (NS_FAILED(rv)) {
+          LOG("Could not dispatch VideoCaptureThread destruction");
+        }
         return rv;
       }));
 #ifdef DEBUG
@@ -1082,7 +1083,7 @@ CamerasParent::CamerasParent()
       mPBackgroundEventTarget(GetCurrentSerialEventTarget()),
       mChildIsAlive(true),
       mDestroyed(false),
-      mWebRTCAlive(false) {
+      mWebRTCAlive(true) {
   MOZ_ASSERT(mPBackgroundEventTarget != nullptr,
              "GetCurrentThreadEventTarget failed");
   LOG("CamerasParent: %p", this);
@@ -1093,16 +1094,9 @@ CamerasParent::CamerasParent()
   }
 }
 
-
-
 ipc::IPCResult CamerasParent::RecvPCamerasConstructor() {
   ipc::AssertIsOnBackgroundThread();
 
-  
-  
-  
-  
-  
   
   
   
@@ -1110,50 +1104,8 @@ ipc::IPCResult CamerasParent::RecvPCamerasConstructor() {
       NS_NewRunnableFunction(__func__, [self = RefPtr(this)]() {
         nsresult rv = MustGetShutdownBarrier()->AddBlocker(
             self, NS_LITERAL_STRING_FROM_CSTRING(__FILE__), __LINE__, u""_ns);
-        LOG("AddBlocker returned 0x%" PRIx32, rv);
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        MOZ_ASSERT(NS_SUCCEEDED(rv) || !self->mWebRTCAlive);
+        MOZ_RELEASE_ASSERT(NS_SUCCEEDED(rv));
       }));
-
-  
-  
-  
-  
-  
-  
-  
-  if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdown)) {
-    
-    
-    NS_DispatchToMainThread(
-        NS_NewRunnableFunction(__func__, [self = RefPtr(this)]() {
-          
-          (void)MustGetShutdownBarrier()->RemoveBlocker(self);
-        }));
-    return Send__delete__(this) ? IPC_OK() : IPC_FAIL(this, "Failed to send");
-  }
 
   LOG("Spinning up WebRTC Cameras Thread");
   MonitorAutoLock lock(*sThreadMonitor);
@@ -1170,7 +1122,6 @@ ipc::IPCResult CamerasParent::RecvPCamerasConstructor() {
       MOZ_CRASH();
     }
   }
-  mWebRTCAlive = true;
   sNumOfOpenCamerasParentEngines++;
   return IPC_OK();
 }

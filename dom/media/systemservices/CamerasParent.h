@@ -146,7 +146,6 @@ class CamerasParent final : public PCamerasParent,
   
   
   static StaticRefPtr<VideoEngine> sEngines[CaptureEngine::MaxEngine];
-  
   static int32_t sNumOfOpenCamerasParentEngines;
   static int32_t sNumOfCamerasParents;
   static StaticMutex sMutex;
