@@ -2362,12 +2362,14 @@ void DrawTargetWebgl::StrokeGlyphs(ScaledFont* aFont,
 
 
 
+
+
+
+
 static inline IntPoint QuantizePosition(const Matrix& aTransform,
                                         const IntPoint& aOffset,
                                         const Point& aPosition) {
-  IntPoint pos =
-      RoundedToInt(aTransform.TransformPoint(aPosition) * 4.0f) - aOffset * 4;
-  return IntPoint(pos.x & 3, pos.y & 3);
+  return RoundedToInt(aTransform.TransformPoint(aPosition)) - aOffset;
 }
 
 
@@ -2540,6 +2542,34 @@ bool DrawTargetWebgl::SharedContext::FillGlyphsAccel(
   bool useBitmaps = aFont->MayUseBitmaps();
 
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  Matrix quantizeTransform = currentTransform;
+  if (aFont->UseSubpixelPosition()) {
+    if (currentTransform._12 == 0) {
+      
+      quantizeTransform.PostScale(4, 1);
+    } else if (currentTransform._11 == 0) {
+      
+      quantizeTransform.PostScale(1, 4);
+    } else {
+      
+      quantizeTransform.PostScale(4, 4);
+    }
+  }
+
+  
   GlyphCache* cache =
       static_cast<GlyphCache*>(aFont->GetUserData(&mGlyphCacheKey));
   if (!cache) {
@@ -2555,7 +2585,7 @@ bool DrawTargetWebgl::SharedContext::FillGlyphsAccel(
   RefPtr<GlyphCacheEntry> entry = cache->FindOrInsertEntry(
       aBuffer,
       useBitmaps ? color : DeviceColor::Mask(aUseSubpixelAA ? 1 : 0, 1),
-      currentTransform, intBounds);
+      quantizeTransform, intBounds);
   if (!entry) {
     return false;
   }
