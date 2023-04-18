@@ -128,6 +128,9 @@ const char* const XPCJSRuntime::mStrings[] = {
     "interfaceId",      
     "initializer",      
     "print",            
+    "fetch",            
+    "crypto",           
+    "indexedDB",        
 };
 
 
