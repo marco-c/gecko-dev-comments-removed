@@ -130,14 +130,5 @@ void WidgetUtils::GetBrandShortName(nsAString& aBrandName) {
   }
 }
 
-const char* WidgetUtils::GetSnapInstanceName() {
-  char* instanceName = PR_GetEnv("SNAP_INSTANCE_NAME");
-  if (instanceName != nullptr) {
-    return instanceName;
-  }
-  
-  return PR_GetEnv("SNAP_NAME");
-}
-
 }  
 }  
