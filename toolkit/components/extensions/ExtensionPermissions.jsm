@@ -44,7 +44,7 @@ XPCOMUtils.defineLazyGetter(
   () => lazy.ExtensionParent.apiManager
 );
 
-var EXPORTED_SYMBOLS = ["ExtensionPermissions"];
+var EXPORTED_SYMBOLS = ["ExtensionPermissions", "OriginControls"];
 
 
 const FILE_NAME = "extension-preferences.json";
@@ -425,5 +425,62 @@ var ExtensionPermissions = {
 
   removeListener(listener) {
     lazy.Management.off("change-permissions", listener);
+  },
+};
+
+var OriginControls = {
+  
+
+
+
+
+
+
+
+
+
+
+  getState(policy, uri) {
+    let allDomains = new MatchPattern("*://*/*");
+    let activeTab = policy.permissions.includes("activeTab");
+    let couldRequest = policy.extension.optionalOrigins.matches(uri);
+    let hasAccess = policy.canAccessURI(uri);
+
+    if (
+      !allDomains.matches(uri) ||
+      WebExtensionPolicy.isRestrictedURI(uri) ||
+      (!couldRequest && !hasAccess && !activeTab)
+    ) {
+      return { noAccess: true };
+    }
+    if (!couldRequest && !hasAccess && activeTab) {
+      return { whenClicked: true };
+    }
+    if (policy.allowedOrigins.subsumes(allDomains)) {
+      return { allDomains: true, hasAccess };
+    }
+    return {
+      whenClicked: true,
+      alwaysOn: true,
+      hasAccess,
+    };
+  },
+
+  
+  setAlwaysOn(policy, uri) {
+    if (!policy.active) {
+      return;
+    }
+    let perms = { permissions: [], origins: ["*://" + uri.host] };
+    ExtensionPermissions.add(policy.id, perms, policy.extension);
+  },
+
+  
+  setWhenClicked(policy, uri) {
+    if (!policy.active) {
+      return;
+    }
+    let perms = { permissions: [], origins: ["*://" + uri.host] };
+    ExtensionPermissions.remove(policy.id, perms, policy.extension);
   },
 };
