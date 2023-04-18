@@ -177,6 +177,12 @@ var highlighterTestSpec = protocol.generateActorSpec({
         value: RetVal("string"),
       },
     },
+    getTabbingOrderHighlighterData: {
+      request: {},
+      response: {
+        value: RetVal("json"),
+      },
+    },
     setInspectorActorID: {
       request: {
         inspectorActorID: Arg(0, "string"),
@@ -423,6 +429,60 @@ var HighlighterTestActor = protocol.ActorClassWithSpec(highlighterTestSpec, {
     }, "Couldn't get a non-empty text content for the color-value element");
 
     return color;
+  },
+
+  
+
+
+
+
+  _getTabbingOrderHighlighter() {
+    const form = this.targetActor.form();
+    const accessibilityActor = this.conn._getOrCreateActor(
+      form.accessibilityActor
+    );
+
+    if (!accessibilityActor) {
+      return null;
+    }
+    
+    
+    return accessibilityActor.walker?._tabbingOrderHighlighter;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  getTabbingOrderHighlighterData() {
+    const highlighter = this._getTabbingOrderHighlighter();
+    if (!highlighter) {
+      return [];
+    }
+
+    const nodeTabbingOrderHighlighters = [
+      ...highlighter._highlighter._highlighters.values(),
+    ].filter(h => h.getElement("root").getAttribute("hidden") !== "true");
+
+    return nodeTabbingOrderHighlighters.map(h => {
+      let nodeStr = h.currentNode.nodeName.toLowerCase();
+      if (h.currentNode.id) {
+        nodeStr = `${nodeStr}#${h.currentNode.id}`;
+      }
+      return `${nodeStr} : ${h.getElement("root").getTextContent()}`;
+    });
   },
 
   
