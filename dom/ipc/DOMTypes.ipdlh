@@ -118,9 +118,9 @@ struct IPCDataTransferImage
 struct IPCDataTransferItem
 {
   nsCString flavor;
-  
-  IPCDataTransferImage imageDetails;
   IPCDataTransferData data;
+  
+  IPCDataTransferImage? imageDetails;
 };
 
 struct IPCDataTransfer
