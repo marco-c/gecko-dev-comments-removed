@@ -56,6 +56,7 @@
 
 
 
+
 #include <limits.h>
 
 #define FT_CHAR_BIT    CHAR_BIT
@@ -66,6 +67,15 @@
 #define FT_LONG_MIN    LONG_MIN
 #define FT_LONG_MAX    LONG_MAX
 #define FT_ULONG_MAX   ULONG_MAX
+#ifdef LLONG_MAX
+#define FT_LLONG_MAX   LLONG_MAX
+#endif
+#ifdef LLONG_MIN
+#define FT_LLONG_MIN   LLONG_MIN
+#endif
+#ifdef ULLONG_MAX
+#define FT_ULLONG_MAX  ULLONG_MAX
+#endif
 
 
   

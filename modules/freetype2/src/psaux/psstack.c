@@ -54,8 +54,7 @@
                   FT_Error*  e,
                   FT_UInt    stackSize )
   {
-    FT_Error  error = FT_Err_Ok;     
-
+    FT_Error   error;        
     CF2_Stack  stack = NULL;
 
 

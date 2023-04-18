@@ -673,7 +673,7 @@ FT_BEGIN_HEADER
 
 
   
-  FT_BASE( void )
+  FT_BASE( FT_Error )
   FT_Request_Metrics( FT_Face          face,
                       FT_Size_Request  req );
 

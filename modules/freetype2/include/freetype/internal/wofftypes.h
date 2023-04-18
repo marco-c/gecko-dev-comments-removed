@@ -92,7 +92,7 @@ FT_BEGIN_HEADER
 
   typedef struct  WOFF_TableRec_
   {
-    FT_ULong  Tag;           
+    FT_Tag    Tag;           
     FT_ULong  Offset;        
     FT_ULong  CompLength;    
     FT_ULong  OrigLength;    
@@ -191,7 +191,7 @@ FT_BEGIN_HEADER
   typedef struct  WOFF2_TableRec_
   {
     FT_Byte   FlagByte;           
-    FT_ULong  Tag;                
+    FT_Tag    Tag;                
     FT_ULong  dst_length;         
     FT_ULong  TransformLength;    
 

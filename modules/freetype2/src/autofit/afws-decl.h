@@ -1,0 +1,33 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef AFWS_DECL_H_
+#define AFWS_DECL_H_
+
+
+
+
+#include "afdummy.h"
+#include "aflatin.h"
+#include "afcjk.h"
+#include "afindic.h"
+
+#endif 
+
+
+

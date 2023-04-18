@@ -17,6 +17,9 @@
 
 
 #include <freetype/tttags.h>
+
+#ifdef FT_CONFIG_OPTION_USE_BROTLI
+
 #include "woff2tags.h"
 
   
@@ -28,10 +31,10 @@
 
 
 
-  FT_LOCAL_DEF( FT_ULong )
+  FT_LOCAL_DEF( FT_Tag )
   woff2_known_tags( FT_Byte  index )
   {
-    const FT_ULong  known_tags[63] =
+    static const FT_Tag  known_tags[63] =
     {
       FT_MAKE_TAG('c', 'm', 'a', 'p'),  
       FT_MAKE_TAG('h', 'e', 'a', 'd'),  
@@ -104,6 +107,13 @@
 
     return known_tags[index];
   }
+
+#else 
+
+  
+  typedef int  _woff2tags_dummy;
+
+#endif 
 
 
 

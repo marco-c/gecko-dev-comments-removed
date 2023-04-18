@@ -53,7 +53,7 @@
   };
 
 
-#ifdef FT_LONG64
+#ifdef FT_INT64
 
   
   static FT_Fixed

@@ -103,6 +103,7 @@ FT_BEGIN_HEADER
 
 #define FT_EXPORT( x )  FT_PUBLIC_FUNCTION_ATTRIBUTE extern x
 
+
   
 
 
@@ -112,6 +113,23 @@ FT_BEGIN_HEADER
 
 #ifndef FT_UNUSED
 #define FT_UNUSED( arg )  ( (arg) = (arg) )
+#endif
+
+
+  
+
+
+#ifdef __cplusplus
+#define FT_STATIC_CAST( type, var )       static_cast<type>(var)
+#define FT_REINTERPRET_CAST( type, var )  reinterpret_cast<type>(var)
+
+#define FT_STATIC_BYTE_CAST( type, var )                         \
+          static_cast<type>( static_cast<unsigned char>( var ) )
+#else
+#define FT_STATIC_CAST( type, var )       (type)(var)
+#define FT_REINTERPRET_CAST( type, var )  (type)(var)
+
+#define FT_STATIC_BYTE_CAST( type, var )  (type)(unsigned char)(var)
 #endif
 
 

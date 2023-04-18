@@ -73,7 +73,11 @@
 
     
     if ( FT_FRAME_ENTER( 31 ) )
+    {
+      FT_TRACE2(( "  not a CID-keyed font\n" ));
+      error = FT_THROW( Unknown_File_Format );
       goto Exit;
+    }
 
     if ( ft_strncmp( (char *)stream->cursor,
                      "%!PS-Adobe-3.0 Resource-CIDFont", 31 ) )
@@ -181,7 +185,7 @@
     parser->root.base      = parser->postscript;
     parser->root.cursor    = parser->postscript;
     parser->root.limit     = parser->root.cursor + ps_len;
-    parser->num_dict       = -1;
+    parser->num_dict       = FT_UINT_MAX;
 
     
     

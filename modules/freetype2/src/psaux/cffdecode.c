@@ -1871,7 +1871,7 @@
         case cff_op_put:
           {
             FT_Fixed  val = args[0];
-            FT_Int    idx = (FT_Int)( args[1] >> 16 );
+            FT_UInt   idx = (FT_UInt)( args[1] >> 16 );
 
 
             FT_TRACE4(( " put\n" ));
@@ -1880,20 +1880,20 @@
             
             
             
-            if ( idx >= 0 && idx < CFF_MAX_TRANS_ELEMENTS )
+            if ( idx < CFF_MAX_TRANS_ELEMENTS )
               decoder->buildchar[idx] = val;
           }
           break;
 
         case cff_op_get:
           {
-            FT_Int    idx = (FT_Int)( args[0] >> 16 );
+            FT_UInt   idx = (FT_UInt)( args[0] >> 16 );
             FT_Fixed  val = 0;
 
 
             FT_TRACE4(( " get\n" ));
 
-            if ( idx >= 0 && idx < CFF_MAX_TRANS_ELEMENTS )
+            if ( idx < CFF_MAX_TRANS_ELEMENTS )
               val = decoder->buildchar[idx];
 
             args[0] = val;
@@ -1914,9 +1914,9 @@
           
           
           {
-            FT_Int  reg_idx = (FT_Int)args[0];
-            FT_Int  idx     = (FT_Int)args[1];
-            FT_Int  count   = (FT_Int)args[2];
+            FT_UInt  reg_idx = (FT_UInt)args[0];
+            FT_UInt  idx     = (FT_UInt)args[1];
+            FT_UInt  count   = (FT_UInt)args[2];
 
 
             FT_TRACE4(( " load\n" ));
@@ -1924,11 +1924,11 @@
             
             
             
-            if ( reg_idx >= 0 && reg_idx <= 2             &&
-                 idx >= 0 && idx < CFF_MAX_TRANS_ELEMENTS &&
-                 count >= 0 && count <= num_axes          )
+            if ( reg_idx <= 2                 &&
+                 idx < CFF_MAX_TRANS_ELEMENTS &&
+                 count <= num_axes            )
             {
-              FT_Int  end, i;
+              FT_UInt  end, i;
 
 
               end = FT_MIN( idx + count, CFF_MAX_TRANS_ELEMENTS );

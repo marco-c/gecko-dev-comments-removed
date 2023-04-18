@@ -60,6 +60,18 @@
 
 #endif 
 
+#ifndef FT_SIZEOF_LONG_LONG
+
+  
+#if defined( FT_ULLONG_MAX ) && FT_ULLONG_MAX >= 0xFFFFFFFFFFFFFFFFULL
+#define FT_SIZEOF_LONG_LONG  ( 64 / FT_CHAR_BIT )
+#else
+#define FT_SIZEOF_LONG_LONG  0
+#endif
+
+#endif 
+
+
   
 
 
@@ -175,13 +187,15 @@
 
 
   
-  
 #if FT_SIZEOF_LONG == ( 64 / FT_CHAR_BIT )
 
-  
-#define FT_LONG64
 #define FT_INT64   long
 #define FT_UINT64  unsigned long
+
+#elif FT_SIZEOF_LONG_LONG >= ( 64 / FT_CHAR_BIT )
+
+#define FT_INT64   long long int
+#define FT_UINT64  unsigned long long int
 
   
 
@@ -192,16 +206,9 @@
 
 #elif !defined( __STDC__ ) || defined( FT_CONFIG_OPTION_FORCE_INT64 )
 
-#if defined( __STDC_VERSION__ ) && __STDC_VERSION__ >= 199901L
-
-#define FT_LONG64
-#define FT_INT64   long long int
-#define FT_UINT64  unsigned long long int
-
-#elif defined( _MSC_VER ) && _MSC_VER >= 900 
+#if defined( _MSC_VER ) && _MSC_VER >= 900 
 
   
-#define FT_LONG64
 #define FT_INT64   __int64
 #define FT_UINT64  unsigned __int64
 
@@ -211,7 +218,6 @@
   
 
   
-#define FT_LONG64
 #define FT_INT64   __int64
 #define FT_UINT64  unsigned __int64
 
@@ -221,14 +227,12 @@
 
 #elif defined( __MWERKS__ )    
 
-#define FT_LONG64
 #define FT_INT64   long long int
 #define FT_UINT64  unsigned long long int
 
 #elif defined( __GNUC__ )
 
   
-#define FT_LONG64
 #define FT_INT64   long long int
 #define FT_UINT64  unsigned long long int
 
@@ -236,7 +240,7 @@
 
 #endif 
 
-#ifdef FT_LONG64
+#ifdef FT_INT64
   typedef FT_INT64   FT_Int64;
   typedef FT_UINT64  FT_UInt64;
 #endif

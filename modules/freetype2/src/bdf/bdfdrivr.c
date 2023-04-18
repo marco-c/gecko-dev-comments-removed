@@ -487,7 +487,7 @@
         else
         {
           
-          bsize->width = (FT_Short)FT_MulDiv( bsize->height, 2, 3 );
+          bsize->width = ( bsize->height * 2 + 1 ) / 3;
         }
 
         prop = bdf_get_font_property( font, "POINT_SIZE" );
@@ -606,7 +606,7 @@
         unsigned long  n;
 
 
-        if ( FT_NEW_ARRAY( face->en_table, font->glyphs_size ) )
+        if ( FT_QNEW_ARRAY( face->en_table, font->glyphs_size ) )
           goto Exit;
 
         face->default_glyph = 0;

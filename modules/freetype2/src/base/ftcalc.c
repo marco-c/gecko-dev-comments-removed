@@ -45,7 +45,7 @@
 
 
 
-#ifndef FT_LONG64
+#ifndef FT_INT64
 
   typedef struct  FT_Int64_
   {
@@ -164,7 +164,7 @@
   }
 
 
-#ifdef FT_LONG64
+#ifdef FT_INT64
 
 
   
@@ -985,7 +985,7 @@
     
     
 
-#ifdef FT_LONG64
+#ifdef FT_INT64
 
     FT_Int64  delta = SUB_INT64( MUL_INT64( in_x, out_y ),
                                  MUL_INT64( in_y, out_x ) );

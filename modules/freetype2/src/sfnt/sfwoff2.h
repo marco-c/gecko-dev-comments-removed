@@ -26,6 +26,7 @@
 
 FT_BEGIN_HEADER
 
+#ifdef FT_CONFIG_OPTION_USE_BROTLI
 
   
 #define WOFF2_FLAGS_TRANSFORM   1 << 8
@@ -66,6 +67,7 @@ FT_BEGIN_HEADER
                    FT_Int*    face_index,
                    FT_Long*   num_faces );
 
+#endif 
 
 FT_END_HEADER
 

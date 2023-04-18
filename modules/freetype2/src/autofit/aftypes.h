@@ -198,7 +198,6 @@ extern void*  _af_debug_hints;
 
 
 
-#define AFWRTSYS_H_
 #undef  WRITING_SYSTEM
 #define WRITING_SYSTEM( ws, WS )    \
           AF_WRITING_SYSTEM_ ## WS,
@@ -207,13 +206,11 @@ extern void*  _af_debug_hints;
   typedef enum  AF_WritingSystem_
   {
 
-#include "afwrtsys.h"
+#include "afws-iter.h"
 
     AF_WRITING_SYSTEM_MAX   
 
   } AF_WritingSystem;
-
-#undef  AFWRTSYS_H_
 
 
   typedef struct  AF_WritingSystemClassRec_

@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+
+
+  
+  
+
+  WRITING_SYSTEM( dummy, DUMMY )
+  WRITING_SYSTEM( latin, LATIN )
+  WRITING_SYSTEM( cjk,   CJK   )
+  WRITING_SYSTEM( indic, INDIC )
+
+
+

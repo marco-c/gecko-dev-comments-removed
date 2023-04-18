@@ -79,7 +79,7 @@
     
     {
       char_string->pointer = type1->charstrings[glyph_index];
-      char_string->length  = (FT_Int)type1->charstrings_len[glyph_index];
+      char_string->length  = type1->charstrings_len[glyph_index];
     }
 
     if ( !error )

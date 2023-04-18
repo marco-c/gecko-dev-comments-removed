@@ -145,10 +145,13 @@ FT_BEGIN_HEADER
 
 
 
+
+
+
   typedef struct  TT_ExecContextRec_
   {
-    TT_Face            face;
-    TT_Size            size;
+    TT_Face            face;       
+    TT_Size            size;       
     FT_Memory          memory;
 
     
@@ -164,13 +167,13 @@ FT_BEGIN_HEADER
     FT_Long            new_top;    
 
     TT_GlyphZoneRec    zp0,        
-                       zp1,
-                       zp2,
-                       pts,
-                       twilight;
+                       zp1,        
+                       zp2,        
+                       pts,        
+                       twilight;   
 
     FT_Long            pointSize;  
-    FT_Size_Metrics    metrics;
+    FT_Size_Metrics    metrics;    
     TT_Size_Metrics    tt_metrics; 
 
     TT_GraphicsState   GS;         
@@ -186,8 +189,8 @@ FT_BEGIN_HEADER
 
     FT_Bool            step_ins;  
                                   
-    FT_ULong           cvtSize;
-    FT_Long*           cvt;
+    FT_ULong           cvtSize;   
+    FT_Long*           cvt;       
     FT_ULong           glyfCvtSize;
     FT_Long*           glyfCvt;   
     FT_Long*           origCvt;

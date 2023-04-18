@@ -140,7 +140,31 @@
 
     return error;
   }
-#endif 
+
+
+  
+
+
+
+
+
+
+  static const FT_String*
+  tt_skip_pdffont_random_tag( const FT_String*  name )
+  {
+    unsigned int  i;
+
+
+    if ( ft_strlen( name ) < 8 || name[6] != '+' )
+      return name;
+
+    for ( i = 0; i < 6; i++ )
+      if ( !ft_isupper( name[i] ) )
+        return name;
+
+    FT_TRACE7(( "name without randomization tag: %s\n", name + 7 ));
+    return name + 7;
+  }
 
 
   
@@ -151,7 +175,7 @@
   {
 
 #define TRICK_NAMES_MAX_CHARACTERS  19
-#define TRICK_NAMES_COUNT           26
+#define TRICK_NAMES_COUNT           20
 
     static const char trick_names[TRICK_NAMES_COUNT]
                                  [TRICK_NAMES_MAX_CHARACTERS + 1] =
@@ -171,22 +195,28 @@
       "DFGirl-W6-WIN-BF",   
       "DFGothic-EB",        
       "DFGyoSho-Lt",        
-      "DFHei-Md-HK-BF",     
+      "DFHei",              
+                            
+
       "DFHSGothic-W5",      
       "DFHSMincho-W3",      
       "DFHSMincho-W7",      
       "DFKaiSho-SB",        
-      "DFKaiShu",
-      "DFKaiShu-Md-HK-BF",  
+      "DFKaiShu",           
       "DFKai-SB",           
-      "DFMing-Bd-HK-BF",    
+
+      "DFMing",             
+                            
+
       "DLC",                
                             
-      "DLCHayMedium",       
-      "DLCHayBold",         
-      "DLCKaiMedium",       
-      "DLCLiShu",           
-      "DLCRoundBold",       
+                            
+                            
+                            
+                            
+                            
+                            
+
       "HuaTianKaiTi?",      
       "HuaTianSongTi?",     
       "Ming(for ISO10646)", 
@@ -199,10 +229,12 @@
     };
 
     int  nn;
+    const FT_String*  name_without_tag;
 
 
+    name_without_tag = tt_skip_pdffont_random_tag( name );
     for ( nn = 0; nn < TRICK_NAMES_COUNT; nn++ )
-      if ( ft_strstr( name, trick_names[nn] ) )
+      if ( ft_strstr( name_without_tag, trick_names[nn] ) )
         return TRUE;
 
     return FALSE;
@@ -277,7 +309,7 @@
   tt_check_trickyness_sfnt_ids( TT_Face  face )
   {
 #define TRICK_SFNT_IDS_PER_FACE   3
-#define TRICK_SFNT_IDS_NUM_FACES  29
+#define TRICK_SFNT_IDS_NUM_FACES  31
 
     static const tt_sfnt_id_rec sfnt_id[TRICK_SFNT_IDS_NUM_FACES]
                                        [TRICK_SFNT_IDS_PER_FACE] = {
@@ -430,6 +462,16 @@
         { 0x00170003UL, 0x00000060UL }, 
         { 0xDBB4306EUL, 0x000058AAUL }, 
         { 0xD643482AUL, 0x00000035UL }  
+      },
+        { 
+        { 0x1269EB58UL, 0x00000350UL }, 
+        { 0x5CD5957AUL, 0x00006A4EUL }, 
+        { 0xF758323AUL, 0x00000380UL }  
+      },
+        { 
+        { 0x122FEB0BUL, 0x00000350UL }, 
+        { 0x7F10919AUL, 0x000070A9UL }, 
+        { 0x7CD7E7B7UL, 0x0000025CUL }  
       }
     };
 
@@ -510,16 +552,26 @@
     
     if ( face->family_name                               &&
          tt_check_trickyness_family( face->family_name ) )
+    {
+      FT_TRACE3(( "found as a tricky font"
+                  " by its family name: %s\n", face->family_name ));
       return TRUE;
+    }
 
     
     
     
     if ( tt_check_trickyness_sfnt_ids( (TT_Face)face ) )
+    {
+      FT_TRACE3(( "found as a tricky font"
+                  " by its cvt/fpgm/prep table checksum\n" ));
       return TRUE;
+    }
 
     return FALSE;
   }
+
+#endif 
 
 
   
@@ -666,8 +718,10 @@
     if ( error )
       goto Exit;
 
+#ifdef TT_USE_BYTECODE_INTERPRETER
     if ( tt_check_trickyness( ttface ) )
       ttface->face_flags |= FT_FACE_FLAG_TRICKY;
+#endif
 
     error = tt_face_load_hdmx( face, stream );
     if ( error )
@@ -1190,11 +1244,11 @@
     
     if ( size->cvt_ready < 0 )
     {
-      FT_UInt  i;
+      FT_UShort  i;
 
 
       
-      for ( i = 0; i < (FT_UInt)size->twilight.n_points; i++ )
+      for ( i = 0; i < size->twilight.n_points; i++ )
       {
         size->twilight.org[i].x = 0;
         size->twilight.org[i].y = 0;
@@ -1203,7 +1257,7 @@
       }
 
       
-      for ( i = 0; i < (FT_UInt)size->storage_size; i++ )
+      for ( i = 0; i < size->storage_size; i++ )
         size->storage[i] = 0;
 
       size->GS = tt_default_graphics_state;

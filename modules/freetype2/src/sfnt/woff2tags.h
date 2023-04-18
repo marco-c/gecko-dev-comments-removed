@@ -26,10 +26,12 @@
 
 FT_BEGIN_HEADER
 
+#ifdef FT_CONFIG_OPTION_USE_BROTLI
 
-  FT_LOCAL( FT_ULong )
+  FT_LOCAL( FT_Tag )
   woff2_known_tags( FT_Byte  index );
 
+#endif
 
 FT_END_HEADER
 

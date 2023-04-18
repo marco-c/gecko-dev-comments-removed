@@ -294,64 +294,6 @@
 
 
 
-  static FT_Error
-  Init_Context( TT_ExecContext  exec,
-                FT_Memory       memory )
-  {
-    FT_Error  error;
-
-
-    FT_TRACE1(( "Init_Context: new object at %p\n", (void *)exec ));
-
-    exec->memory   = memory;
-    exec->callSize = 32;
-
-    if ( FT_QNEW_ARRAY( exec->callStack, exec->callSize ) )
-      goto Fail_Memory;
-
-    
-    
-    exec->maxPoints   = 0;
-    exec->maxContours = 0;
-
-    exec->stackSize = 0;
-    exec->glyphSize = 0;
-
-    exec->stack    = NULL;
-    exec->glyphIns = NULL;
-
-    exec->face = NULL;
-    exec->size = NULL;
-
-    return FT_Err_Ok;
-
-  Fail_Memory:
-    FT_ERROR(( "Init_Context: not enough memory for %p\n", (void *)exec ));
-    TT_Done_Context( exec );
-
-    return error;
- }
-
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -375,7 +317,7 @@
 
     if ( *size < new_max )
     {
-      if ( FT_REALLOC( *pbuff, *size * multiplier, new_max * multiplier ) )
+      if ( FT_QREALLOC( *pbuff, *size * multiplier, new_max * multiplier ) )
         return error;
       *size = new_max;
     }
@@ -385,6 +327,8 @@
 
 
   
+
+
 
 
 
@@ -622,14 +566,14 @@
       goto Fail;
 
     
-    error = Init_Context( exec, memory );
-    if ( error )
-      goto Fail;
+    exec->memory   = memory;
+    exec->callSize = 32;
 
-    return exec;
+    if ( FT_QNEW_ARRAY( exec->callStack, exec->callSize ) )
+      FT_FREE( exec );
 
   Fail:
-    return NULL;
+    return exec;
   }
 
 
@@ -5059,9 +5003,9 @@
 
 #ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
     
-    if ( SUBPIXEL_HINTING_INFINALITY &&
-         exc->ignore_x_mode          &&
-         FT_ABS( D ) == 64           )
+    if ( SUBPIXEL_HINTING_INFINALITY         &&
+         exc->ignore_x_mode                  &&
+         ( D < 0 ? NEG_LONG( D ) : D ) == 64 )
       D += 1;
 #endif 
 

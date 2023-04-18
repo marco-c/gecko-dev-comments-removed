@@ -188,7 +188,7 @@
 
 
     
-    GXV_TRACE(( "(version=0x%08x)\n", version ));
+    GXV_TRACE(( "(version=0x%08lx)\n", version ));
     if ( 0x00010000UL != version )
       FT_INVALID_FORMAT;
 

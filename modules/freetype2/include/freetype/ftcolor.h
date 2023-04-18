@@ -740,22 +740,23 @@ FT_BEGIN_HEADER
     FT_COLR_COMPOSITE_SRC_ATOP       = 9,
     FT_COLR_COMPOSITE_DEST_ATOP      = 10,
     FT_COLR_COMPOSITE_XOR            = 11,
-    FT_COLR_COMPOSITE_SCREEN         = 12,
-    FT_COLR_COMPOSITE_OVERLAY        = 13,
-    FT_COLR_COMPOSITE_DARKEN         = 14,
-    FT_COLR_COMPOSITE_LIGHTEN        = 15,
-    FT_COLR_COMPOSITE_COLOR_DODGE    = 16,
-    FT_COLR_COMPOSITE_COLOR_BURN     = 17,
-    FT_COLR_COMPOSITE_HARD_LIGHT     = 18,
-    FT_COLR_COMPOSITE_SOFT_LIGHT     = 19,
-    FT_COLR_COMPOSITE_DIFFERENCE     = 20,
-    FT_COLR_COMPOSITE_EXCLUSION      = 21,
-    FT_COLR_COMPOSITE_MULTIPLY       = 22,
-    FT_COLR_COMPOSITE_HSL_HUE        = 23,
-    FT_COLR_COMPOSITE_HSL_SATURATION = 24,
-    FT_COLR_COMPOSITE_HSL_COLOR      = 25,
-    FT_COLR_COMPOSITE_HSL_LUMINOSITY = 26,
-    FT_COLR_COMPOSITE_MAX            = 27
+    FT_COLR_COMPOSITE_PLUS           = 12,
+    FT_COLR_COMPOSITE_SCREEN         = 13,
+    FT_COLR_COMPOSITE_OVERLAY        = 14,
+    FT_COLR_COMPOSITE_DARKEN         = 15,
+    FT_COLR_COMPOSITE_LIGHTEN        = 16,
+    FT_COLR_COMPOSITE_COLOR_DODGE    = 17,
+    FT_COLR_COMPOSITE_COLOR_BURN     = 18,
+    FT_COLR_COMPOSITE_HARD_LIGHT     = 19,
+    FT_COLR_COMPOSITE_SOFT_LIGHT     = 20,
+    FT_COLR_COMPOSITE_DIFFERENCE     = 21,
+    FT_COLR_COMPOSITE_EXCLUSION      = 22,
+    FT_COLR_COMPOSITE_MULTIPLY       = 23,
+    FT_COLR_COMPOSITE_HSL_HUE        = 24,
+    FT_COLR_COMPOSITE_HSL_SATURATION = 25,
+    FT_COLR_COMPOSITE_HSL_COLOR      = 26,
+    FT_COLR_COMPOSITE_HSL_LUMINOSITY = 27,
+    FT_COLR_COMPOSITE_MAX            = 28
 
   } FT_Composite_Mode;
 
@@ -883,6 +884,9 @@ FT_BEGIN_HEADER
 
 
 
+
+
+
   typedef struct  FT_PaintLinearGradient_
   {
     FT_ColorLine  colorline;
@@ -932,19 +936,23 @@ FT_BEGIN_HEADER
 
 
 
+
   typedef struct  FT_PaintRadialGradient_
   {
     FT_ColorLine  colorline;
 
     FT_Vector  c0;
-    FT_UShort  r0;
+    FT_Pos     r0;
     FT_Vector  c1;
-    FT_UShort  r1;
+    FT_Pos     r1;
 
   } FT_PaintRadialGradient;
 
 
   
+
+
+
 
 
 
@@ -1065,6 +1073,7 @@ FT_BEGIN_HEADER
 
 
 
+
   typedef struct  FT_PaintTransform_
   {
     FT_OpaquePaint  paint;
@@ -1074,6 +1083,8 @@ FT_BEGIN_HEADER
 
 
   
+
+
 
 
 
@@ -1109,6 +1120,10 @@ FT_BEGIN_HEADER
 
 
   
+
+
+
+
 
 
 
@@ -1189,6 +1204,8 @@ FT_BEGIN_HEADER
 
 
 
+
+
   typedef struct  FT_PaintRotate_
   {
     FT_OpaquePaint  paint;
@@ -1202,6 +1219,12 @@ FT_BEGIN_HEADER
 
 
   
+
+
+
+
+
+
 
 
 
@@ -1410,6 +1433,49 @@ FT_BEGIN_HEADER
 
 
 
+  typedef struct  FT_ClipBox_
+  {
+    FT_Vector  bottom_left;
+    FT_Vector  top_left;
+    FT_Vector  top_right;
+    FT_Vector  bottom_right;
+
+  } FT_ClipBox;
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1467,6 +1533,49 @@ FT_BEGIN_HEADER
                             FT_UInt                  base_glyph,
                             FT_Color_Root_Transform  root_transform,
                             FT_OpaquePaint*          paint );
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  FT_EXPORT( FT_Bool )
+  FT_Get_Color_Glyph_ClipBox( FT_Face      face,
+                              FT_UInt      base_glyph,
+                              FT_ClipBox*  clip_box );
 
 
   

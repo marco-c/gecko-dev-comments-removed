@@ -23,6 +23,9 @@
 #include <freetype/ftgzip.h>
 
 
+#ifdef FT_CONFIG_OPTION_USE_ZLIB
+
+
   
 
 
@@ -109,7 +112,7 @@
     FT_ULong        sfnt_offset;
 
     FT_Int          nn;
-    FT_ULong        old_tag = 0;
+    FT_Tag          old_tag = 0;
 
     static const FT_Frame_Field  woff_header_fields[] =
     {
@@ -360,8 +363,6 @@
       }
       else
       {
-#ifdef FT_CONFIG_OPTION_USE_ZLIB
-
         
         FT_ULong  output_len = table->OrigLength;
 
@@ -377,13 +378,6 @@
           error = FT_THROW( Invalid_Table );
           goto Exit1;
         }
-
-#else 
-
-        error = FT_THROW( Unimplemented_Feature );
-        goto Exit1;
-
-#endif 
       }
 
       FT_FRAME_EXIT();
@@ -432,6 +426,13 @@
 
 #undef WRITE_USHORT
 #undef WRITE_ULONG
+
+#else 
+
+  
+  typedef int  _sfwoff_dummy;
+
+#endif 
 
 
 

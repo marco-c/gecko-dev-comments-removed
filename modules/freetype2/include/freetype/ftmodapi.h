@@ -347,8 +347,9 @@ FT_BEGIN_HEADER
 
 
 
-#define FT_FACE_DRIVER_NAME( face ) \
-          ( ( *(FT_Module_Class**)( ( face )->driver ) )->module_name )
+#define FT_FACE_DRIVER_NAME( face )                                     \
+          ( ( *FT_REINTERPRET_CAST( FT_Module_Class**,                  \
+                                    ( face )->driver ) )->module_name )
 
 
   

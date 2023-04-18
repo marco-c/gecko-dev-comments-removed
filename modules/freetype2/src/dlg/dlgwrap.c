@@ -16,15 +16,12 @@
 
 
 
-  
-  
-#define _XOPEN_SOURCE
-#define _POSIX_C_SOURCE 200809L
-
-#include <freetype/freetype.h>
+#include <ft2build.h>
+#include FT_CONFIG_OPTIONS_H
 
 
 #ifdef FT_DEBUG_LOGGING
+#define DLG_STATIC
 #include "dlg.c"
 #else
   
