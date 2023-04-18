@@ -106,7 +106,7 @@ class Channel::ChannelImpl : public MessageLoopForIO::IOHandler {
 
   
   
-  mozilla::Maybe<Message> incoming_message_;
+  mozilla::UniquePtr<Message> incoming_message_;
 
   
   

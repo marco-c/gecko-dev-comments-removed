@@ -672,8 +672,6 @@ class ContentChild final : public PContentChild,
 
   virtual void ProcessingError(Result aCode, const char* aReason) override;
 
-  virtual void OnChannelReceivedMessage(const Message& aMsg) override;
-
   mozilla::ipc::IPCResult RecvCreateBrowsingContext(
       uint64_t aGroupId, BrowsingContext::IPCInitializer&& aInit);
 
@@ -835,13 +833,10 @@ class ContentChild final : public PContentChild,
       const PDMFactory::MediaCodecsSupported& aSupported);
 
 #ifdef NIGHTLY_BUILD
-  virtual PContentChild::Result OnMessageReceived(const Message& aMsg) override;
-#else
-  using PContentChild::OnMessageReceived;
-#endif
+  virtual void OnChannelReceivedMessage(const Message& aMsg) override;
 
-  virtual PContentChild::Result OnMessageReceived(const Message& aMsg,
-                                                  Message*& aReply) override;
+  virtual PContentChild::Result OnMessageReceived(const Message& aMsg) override;
+#endif
 
   nsTArray<mozilla::UniquePtr<AlertObserver>> mAlertObservers;
   RefPtr<ConsoleListener> mConsoleListener;

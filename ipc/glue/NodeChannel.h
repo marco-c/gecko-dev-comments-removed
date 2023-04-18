@@ -72,7 +72,8 @@ class NodeChannel final : public IPC::Channel::Listener {
   };
 
   NodeChannel(const NodeName& aName, UniquePtr<IPC::Channel> aChannel,
-              Listener* aListener, base::ProcessId aPid = base::kInvalidProcessId);
+              Listener* aListener,
+              base::ProcessId aPid = base::kInvalidProcessId);
 
   
   
@@ -129,7 +130,7 @@ class NodeChannel final : public IPC::Channel::Listener {
   void DoSendMessage(UniquePtr<IPC::Message> aMessage);
 
   
-  void OnMessageReceived(IPC::Message&& aMessage) override;
+  void OnMessageReceived(UniquePtr<IPC::Message> aMessage) override;
   void OnChannelConnected(base::ProcessId aPeerPid) override;
   void OnChannelError() override;
 

@@ -50,8 +50,9 @@ class MiniTransceiver {
 
 
 
-  bool Recv(IPC::Message& aMsg);
-  inline bool RecvInfallible(IPC::Message& aMsg, const char* aCrashMessage) {
+  bool Recv(UniquePtr<IPC::Message>& aMsg);
+  inline bool RecvInfallible(UniquePtr<IPC::Message>& aMsg,
+                             const char* aCrashMessage) {
     bool Ok = Recv(aMsg);
     if (!Ok) {
       MOZ_CRASH_UNSAFE(aCrashMessage);
