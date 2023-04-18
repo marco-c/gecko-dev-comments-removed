@@ -883,31 +883,21 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
 
     
     
-    
-    
-    
-    
     #[inline]
     #[cfg(feature = "gecko")]
-    fn recompute_default_font_family_type_if_needed(&mut self) {
+    fn recompute_initial_font_family_if_needed(&mut self) {
         use crate::gecko_bindings::bindings;
-        use crate::values::computed::font::GenericFontFamily;
+        use crate::values::computed::font::FontFamily;
 
-        if !self.seen.contains(LonghandId::XLang) && !self.seen.contains(LonghandId::FontFamily) {
+        if !self.seen.contains(LonghandId::XLang) {
             return;
         }
 
         let builder = &mut self.context.builder;
-        let (default_font_type, prioritize_user_fonts) = {
+        let default_font_type = {
             let font = builder.get_font().gecko();
 
-            
-            
-            if font.mFont.family.is_system_font {
-                debug_assert_eq!(
-                    font.mFont.family.families.fallback,
-                    GenericFontFamily::None
-                );
+            if !font.mFont.family.is_initial {
                 return;
             }
 
@@ -918,29 +908,52 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
                 )
             };
 
-            let use_document_fonts = static_prefs::pref!("browser.display.use_document_fonts") != 0;
-
-            
-            
-            
-            
-            let prioritize_user_fonts =
-                !use_document_fonts &&
-                default_font_type != GenericFontFamily::None &&
-                font.mFont.family.families.needs_user_font_prioritization();
-
-            if !prioritize_user_fonts && default_font_type == font.mFont.family.families.fallback {
-                
+            let initial_generic = font.mFont.family.families.single_generic();
+            debug_assert!(initial_generic.is_some(), "Initial font should be just one generic font");
+            if initial_generic == Some(default_font_type) {
                 return;
             }
-            (default_font_type, prioritize_user_fonts)
+
+            default_font_type
         };
 
         let font = builder.mutate_font().gecko_mut();
-        font.mFont.family.families.fallback = default_font_type;
-        if prioritize_user_fonts {
-            font.mFont.family.families.prioritize_first_generic_or_prepend(default_font_type);
+        
+        font.mFont.family.families = FontFamily::generic(default_font_type).families.clone();
+    }
+
+    
+    #[inline]
+    #[cfg(feature = "gecko")]
+    fn prioritize_user_fonts_if_needed(&mut self) {
+        use crate::gecko_bindings::bindings;
+
+        if !self.seen.contains(LonghandId::FontFamily) {
+            return;
         }
+
+        if static_prefs::pref!("browser.display.use_document_fonts") != 0 {
+            return;
+        }
+
+        let builder = &mut self.context.builder;
+        let default_font_type = {
+            let font = builder.get_font().gecko();
+
+            if !font.mFont.family.families.needs_user_font_prioritization() {
+                return;
+            }
+
+            unsafe {
+                bindings::Gecko_nsStyleFont_ComputeFallbackFontTypeForLanguage(
+                    builder.device.document(),
+                    font.mLanguage.mRawPtr,
+                )
+            }
+        };
+
+        let font = builder.mutate_font().gecko_mut();
+        font.mFont.family.families.prioritize_first_generic_or_prepend(default_font_type);
     }
 
     
@@ -1114,7 +1127,8 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
         #[cfg(feature = "gecko")]
         {
             self.unzoom_fonts_if_needed();
-            self.recompute_default_font_family_type_if_needed();
+            self.recompute_initial_font_family_if_needed();
+            self.prioritize_user_fonts_if_needed();
             self.recompute_keyword_font_size_if_needed();
             self.handle_mathml_scriptlevel_if_needed();
             self.constrain_font_size_if_needed()
