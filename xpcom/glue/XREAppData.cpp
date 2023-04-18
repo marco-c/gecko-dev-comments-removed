@@ -31,4 +31,25 @@ XREAppData& XREAppData::operator=(const StaticXREAppData& aOther) {
 
 XREAppData& XREAppData::operator=(const XREAppData& aOther) = default;
 
+void XREAppData::SanitizeNameForDBus(nsACString& aName) {
+  auto IsValidDBusNameChar = [](char aChar) {
+    return IsAsciiAlpha(aChar) || IsAsciiDigit(aChar) || aChar == '_';
+  };
+
+  
+  
+  char* cur = aName.BeginWriting();
+  char* end = aName.EndWriting();
+  for (; cur != end; cur++) {
+    if (!IsValidDBusNameChar(*cur)) {
+      *cur = '_';
+    }
+  }
+}
+
+void XREAppData::GetDBusAppName(nsACString& aName) const {
+  aName.Assign(remotingName);
+  SanitizeNameForDBus(aName);
+}
+
 }  
