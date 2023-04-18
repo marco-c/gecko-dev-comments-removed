@@ -14,10 +14,12 @@
 #include "nsISupportsImpl.h"
 #include "VsyncSource.h"
 
+namespace mozilla::gfx {
 
 
 
-class SoftwareVsyncSource : public mozilla::gfx::VsyncSource {
+
+class SoftwareVsyncSource : public VsyncSource {
  public:
   explicit SoftwareVsyncSource();
   virtual ~SoftwareVsyncSource();
@@ -26,19 +28,20 @@ class SoftwareVsyncSource : public mozilla::gfx::VsyncSource {
   void DisableVsync() override;
   bool IsVsyncEnabled() override;
   bool IsInSoftwareVsyncThread();
-  void NotifyVsync(const mozilla::TimeStamp& aVsyncTimestamp,
-                   const mozilla::TimeStamp& aOutputTimestamp) override;
-  mozilla::TimeDuration GetVsyncRate() override;
-  void ScheduleNextVsync(mozilla::TimeStamp aVsyncTimestamp);
+  void NotifyVsync(const TimeStamp& aVsyncTimestamp,
+                   const TimeStamp& aOutputTimestamp) override;
+  TimeDuration GetVsyncRate() override;
+  void ScheduleNextVsync(TimeStamp aVsyncTimestamp);
   void Shutdown() override;
 
  protected:
-  mozilla::TimeDuration mVsyncRate;
+  TimeDuration mVsyncRate;
   
   base::Thread* mVsyncThread;
-  RefPtr<mozilla::CancelableRunnable>
-      mCurrentVsyncTask;  
-  bool mVsyncEnabled;     
+  RefPtr<CancelableRunnable> mCurrentVsyncTask;  
+  bool mVsyncEnabled;                            
 };
+
+}  
 
 #endif 
