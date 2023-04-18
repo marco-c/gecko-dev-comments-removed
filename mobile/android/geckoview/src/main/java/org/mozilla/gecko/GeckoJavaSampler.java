@@ -23,11 +23,24 @@ import org.mozilla.gecko.mozglue.JNIObject;
 
 
 
+
+
+
+
+
+
 public class GeckoJavaSampler {
   private static final String LOGTAG = "GeckoJavaSampler";
+
+  @GuardedBy("GeckoJavaSampler.class")
   private static SamplingRunnable sSamplingRunnable;
+
+  @GuardedBy("GeckoJavaSampler.class")
   private static ScheduledExecutorService sSamplingScheduler;
+
+  @GuardedBy("GeckoJavaSampler.class")
   private static ScheduledFuture<?> sSamplingFuture;
+
   private static final MarkerStorage sMarkerStorage = new MarkerStorage();
 
   
