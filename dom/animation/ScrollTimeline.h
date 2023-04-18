@@ -10,6 +10,7 @@
 #include "mozilla/dom/AnimationTimeline.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/HashTable.h"
+#include "mozilla/PairHash.h"
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/TimingParams.h"
 #include "mozilla/WritingModes.h"
@@ -68,7 +69,7 @@ class ScrollTimeline final : public AnimationTimeline {
     
     
     
-    enum class Type {
+    enum class Type : uint8_t {
       Root,
       Nearest,
       Name,
@@ -227,18 +228,14 @@ class ScrollTimeline final : public AnimationTimeline {
 
 
 
-
 class ScrollTimelineSet {
  public:
   
   
-  
-  
-  
-  
-  
-  
-  using NonOwningScrollTimelineMap = HashMap<StyleScrollAxis, ScrollTimeline*>;
+  using Key = std::pair<ScrollTimeline::Scroller::Type, StyleScrollAxis>;
+  using NonOwningScrollTimelineMap =
+      HashMap<Key, ScrollTimeline*,
+              PairHasher<ScrollTimeline::Scroller::Type, StyleScrollAxis>>;
 
   ~ScrollTimelineSet() = default;
 
@@ -246,14 +243,14 @@ class ScrollTimelineSet {
   static ScrollTimelineSet* GetOrCreateScrollTimelineSet(Element* aElement);
   static void DestroyScrollTimelineSet(Element* aElement);
 
-  NonOwningScrollTimelineMap::AddPtr LookupForAdd(StyleScrollAxis aKey) {
+  NonOwningScrollTimelineMap::AddPtr LookupForAdd(Key aKey) {
     return mScrollTimelines.lookupForAdd(aKey);
   }
-  void Add(NonOwningScrollTimelineMap::AddPtr& aPtr, StyleScrollAxis aKey,
+  void Add(NonOwningScrollTimelineMap::AddPtr& aPtr, Key aKey,
            ScrollTimeline* aScrollTimeline) {
     Unused << mScrollTimelines.add(aPtr, aKey, aScrollTimeline);
   }
-  void Remove(StyleScrollAxis aKey) { mScrollTimelines.remove(aKey); }
+  void Remove(const Key aKey) { mScrollTimelines.remove(aKey); }
 
   bool IsEmpty() const { return mScrollTimelines.empty(); }
 
