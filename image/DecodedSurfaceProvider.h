@@ -55,6 +55,15 @@ class DecodedSurfaceProvider final : public ISurfaceProvider,
   
   TaskPriority Priority() const override { return TaskPriority::eLow; }
 
+  
+  
+  
+
+ public:
+  nsresult UpdateKey(layers::RenderRootStateManager* aManager,
+                     wr::IpcResourceUpdateQueue& aResources,
+                     wr::ImageKey& aKey) override;
+
  private:
   virtual ~DecodedSurfaceProvider();
 
