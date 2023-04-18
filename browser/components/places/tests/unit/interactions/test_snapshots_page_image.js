@@ -15,6 +15,10 @@ const TEST_IMAGE_URL = "https://example.com/dummy.png";
 
 add_task(async function pageImage() {
   
+  PageDataService.lockEntry(Interactions, TEST_URL1);
+  PageDataService.lockEntry(Interactions, TEST_URL2);
+
+  
   PageDataService.pageDataDiscovered({
     url: TEST_URL1,
     image: TEST_IMAGE_URL,

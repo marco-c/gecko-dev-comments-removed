@@ -328,6 +328,13 @@ add_task(
     await reset_interactions_snapshots();
 
     
+    PageDataService.lockEntry(Interactions, "https://example.com/product_a");
+
+    
+    let actor = {};
+    PageDataService.lockEntry(actor, "https://example.com/product_a");
+
+    
     PageDataService.pageDataDiscovered({
       url: "https://example.com/product_a",
       date: Date.now(),
@@ -372,6 +379,7 @@ add_task(
     await create_interaction_and_snapshot({
       url: "https://example.com/product_a",
     });
+    PageDataService.unlockEntry(actor, "https://example.com/product_a");
 
     
     await addInteractions([

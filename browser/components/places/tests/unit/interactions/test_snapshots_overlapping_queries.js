@@ -495,6 +495,10 @@ add_task(async function test_query_pagedata() {
   await reset_interactions_snapshots();
 
   
+  let actor = {};
+  PageDataService.lockEntry(actor, "https://example.com/1/");
+
+  
   PageDataService.pageDataDiscovered({
     url: "https://example.com/1/",
     date: Date.now(),
@@ -523,6 +527,8 @@ add_task(async function test_query_pagedata() {
     ]);
     await Snapshots.add({ url: "https://example.com/1/" });
   }
+
+  PageDataService.unlockEntry(actor, "https://example.com/1/");
 
   let snapshot = await Snapshots.queryOverlapping(context_url);
   Assert.equal(snapshot.length, 1, "One shapshot should be found");

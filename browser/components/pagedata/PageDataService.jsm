@@ -160,6 +160,110 @@ class HiddenBrowserManager {
 
 
 
+class PageDataCache {
+  
+
+
+
+
+  #cache = new Map();
+
+  
+
+
+
+
+
+
+
+
+  set(url, pageData) {
+    let entry = this.#cache.get(url);
+
+    if (entry) {
+      entry.pageData = pageData;
+    }
+  }
+
+  
+
+
+
+
+
+
+
+  get(url) {
+    let entry = this.#cache.get(url);
+    return entry?.pageData ?? null;
+  }
+
+  
+
+
+
+
+
+
+
+
+  lockData(actor, url) {
+    let entry = this.#cache.get(url);
+    if (entry) {
+      entry.actors.add(actor);
+    } else {
+      this.#cache.set(url, {
+        pageData: undefined,
+        actors: new Set([actor]),
+      });
+    }
+  }
+
+  
+
+
+
+
+
+
+
+  unlockData(actor, url) {
+    let entries = [];
+    if (url) {
+      let entry = this.#cache.get(url);
+      if (!entry) {
+        return;
+      }
+
+      entries.push([url, entry]);
+    } else {
+      entries = [...this.#cache];
+    }
+
+    for (let [entryUrl, entry] of entries) {
+      if (entry.actors.delete(actor)) {
+        if (entry.actors.size == 0) {
+          this.#cache.delete(entryUrl);
+        }
+      }
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -170,9 +274,7 @@ const PageDataService = new (class PageDataService extends EventEmitter {
 
 
 
-
-
-  #pageDataCache = new Map();
+  #pageDataCache = new PageDataCache();
 
   
 
@@ -205,6 +307,13 @@ const PageDataService = new (class PageDataService extends EventEmitter {
 
 
   #backgroundBrowsers = new WeakMap();
+
+  
+
+
+
+
+  #trackedWindows = new Map();
 
   
 
@@ -276,6 +385,68 @@ const PageDataService = new (class PageDataService extends EventEmitter {
 
 
 
+  #trackBrowser(browser) {
+    let window = browser.ownerGlobal;
+
+    let browsers = this.#trackedWindows.get(window);
+    if (browsers) {
+      browsers.add(browser);
+
+      
+      return;
+    }
+
+    browsers = new Set([browser]);
+    this.#trackedWindows.set(window, browsers);
+
+    window.addEventListener("unload", () => {
+      for (let closedBrowser of browsers) {
+        this.unlockEntry(closedBrowser);
+      }
+
+      this.#trackedWindows.delete(window);
+    });
+
+    window.addEventListener("TabClose", ({ target: tab }) => {
+      
+      let closedBrowser = tab.linkedBrowser;
+      this.unlockEntry(closedBrowser);
+      browsers.delete(closedBrowser);
+    });
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  lockEntry(actor, url) {
+    this.#pageDataCache.lockData(actor, url);
+  }
+
+  
+
+
+
+
+
+
+
+  unlockEntry(actor, url) {
+    this.#pageDataCache.unlockData(actor, url);
+  }
+
+  
+
+
+
+
+
 
 
 
@@ -308,6 +479,10 @@ const PageDataService = new (class PageDataService extends EventEmitter {
     try {
       let data = await actor.collectPageData();
       if (data) {
+        
+        this.#trackBrowser(browser);
+        this.lockEntry(browser, data.url);
+
         this.pageDataDiscovered(data);
       }
     } catch (e) {
@@ -346,7 +521,7 @@ const PageDataService = new (class PageDataService extends EventEmitter {
 
 
   getCached(url) {
-    return this.#pageDataCache.get(url) ?? null;
+    return this.#pageDataCache.get(url);
   }
 
   

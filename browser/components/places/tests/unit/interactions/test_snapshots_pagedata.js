@@ -15,6 +15,16 @@ const TEST_URL3 = "https://example.com/14235";
 
 add_task(async function pagedata() {
   
+  PageDataService.lockEntry(Interactions, TEST_URL1);
+  PageDataService.lockEntry(Interactions, TEST_URL2);
+  PageDataService.lockEntry(Interactions, TEST_URL3);
+
+  let actor = {};
+  
+  PageDataService.lockEntry(actor, TEST_URL2);
+  PageDataService.lockEntry(actor, TEST_URL3);
+
+  
   PageDataService.pageDataDiscovered({
     url: TEST_URL1,
     date: Date.now(),
@@ -93,6 +103,13 @@ add_task(async function pagedata() {
     },
   ]);
 
+  
+  Assert.equal(
+    PageDataService.getCached(TEST_URL1),
+    null,
+    "The entry should no longer be cached"
+  );
+
   let snap = await Snapshots.get(TEST_URL1);
   Assert.equal(snap.siteName, "Mozilla", "Should have the site name.");
   Assert.equal(snap.description, "We build the Firefox web browser");
@@ -149,23 +166,34 @@ add_task(async function pagedata() {
 
   info("Ensure adding back the snapshot adds pagedata for it");
   await Snapshots.add({
-    url: TEST_URL1,
+    url: TEST_URL2,
     userPersisted: Snapshots.USER_PERSISTED.MANUAL,
   });
-  snap = await Snapshots.get(TEST_URL1);
-  Assert.equal(snap.siteName, "Mozilla", "Should have the site name.");
-  Assert.equal(snap.description, "We build the Firefox web browser");
-  Assert.equal(snap.pageData.size, 2, "Should have some page data.");
+  snap = await Snapshots.get(TEST_URL2);
+  Assert.equal(snap.description, null);
+  Assert.equal(snap.pageData.size, 1, "Should have some page data.");
   Assert.deepEqual(
     snap.pageData.get(PageDataSchema.DATA_TYPE.PRODUCT),
-    { price: { value: 276, currency: "USD" } },
+    { price: { value: 384 } },
     "Should have the right price."
+  );
+
+  PageDataService.unlockEntry(actor, TEST_URL2);
+  PageDataService.unlockEntry(actor, TEST_URL3);
+
+  Assert.equal(
+    PageDataService.getCached(TEST_URL2),
+    null,
+    "The entry should no longer be cached"
   );
 
   await reset();
 });
 
 add_task(async function pagedata_validation() {
+  let actor = {};
+  PageDataService.lockEntry(actor, TEST_URL1);
+
   
   PageDataService.pageDataDiscovered({
     url: TEST_URL1,
@@ -185,6 +213,8 @@ add_task(async function pagedata_validation() {
   ]);
 
   await Snapshots.add({ url: TEST_URL1 });
+  PageDataService.unlockEntry(actor, TEST_URL1);
+
   let snap = await Snapshots.get(TEST_URL1);
   Assert.equal(
     snap.siteName,

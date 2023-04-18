@@ -88,10 +88,6 @@ add_task(async function test_queueOrder() {
   
   Assert.deepEqual(results, pageDataResults);
 
-  for (let pageData of pageDataResults) {
-    Assert.deepEqual(PageDataService.getCached(pageData.url), pageData);
-  }
-
   delete PageDataService.fetchPageData;
 });
 
