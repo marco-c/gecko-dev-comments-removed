@@ -24,7 +24,6 @@
 #include "gc/Allocator.h"          
 #include "gc/Barrier.h"            
 #include "gc/Cell.h"               
-#include "gc/MaybeRooted.h"        
 #include "gc/Rooting.h"      
 #include "js/GCPolicyAPI.h"  
 #include "js/HeapAPI.h"      
@@ -447,12 +446,6 @@ inline size_t SizeOfScopeData(uint32_t length) {
 
 template <typename ScopeT, typename AtomT>
 using AbstractScopeData = typename ScopeT::template AbstractData<AtomT>;
-
-template <typename ScopeT, typename AtomT>
-using MaybeRootedScopeData = std::conditional_t<
-    std::is_same_v<AtomT, JSAtom>,
-    MaybeRooted<UniquePtr<typename ScopeT::RuntimeData>, AllowGC::CanGC>,
-    MaybeRooted<AbstractScopeData<ScopeT, AtomT>*, AllowGC::NoGC>>;
 
 
 
