@@ -1185,7 +1185,7 @@ bool BuildImmutableProperty(JSContext* cx, HandleValue value, HandleId name,
 
     
     if (value.toObject().is<ArrayObject>()) {
-      RootedArrayObject arr(cx, &value.toObject().as<ArrayObject>());
+      Rooted<ArrayObject*> arr(cx, &value.toObject().as<ArrayObject>());
 
       
       uint32_t len = arr->length();

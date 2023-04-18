@@ -1361,7 +1361,7 @@ template <typename T>
   
   if (optimized) {
     
-    HandleArrayObject array = other.as<ArrayObject>();
+    Handle<ArrayObject*> array = other.as<ArrayObject>();
 
     
     size_t len = array->getDenseInitializedLength();

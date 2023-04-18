@@ -56,6 +56,7 @@ struct CompilationAtomCache;
 
 }  
 
+class ArrayObject;
 class PropertyName;
 
 
@@ -565,7 +566,7 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   
   
   static bool fillWithRepresentatives(JSContext* cx,
-                                      js::HandleArrayObject array);
+                                      JS::Handle<js::ArrayObject*> array);
 
   
 

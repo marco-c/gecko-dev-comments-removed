@@ -18,7 +18,6 @@ class JSLinearString;
 namespace js {
 
 class PropertyName;
-class ArrayObject;
 class GlobalObject;
 
 
@@ -26,15 +25,12 @@ class GlobalObject;
 using HandleAtom = JS::Handle<JSAtom*>;
 using HandleLinearString = JS::Handle<JSLinearString*>;
 using HandlePropertyName = JS::Handle<PropertyName*>;
-using HandleArrayObject = JS::Handle<ArrayObject*>;
 
 using MutableHandleAtom = JS::MutableHandle<JSAtom*>;
-using MutableHandleArrayObject = JS::MutableHandle<ArrayObject*>;
 
 using RootedAtom = JS::Rooted<JSAtom*>;
 using RootedLinearString = JS::Rooted<JSLinearString*>;
 using RootedPropertyName = JS::Rooted<PropertyName*>;
-using RootedArrayObject = JS::Rooted<ArrayObject*>;
 using RootedGlobalObject = JS::Rooted<GlobalObject*>;
 
 using FunctionVector = JS::GCVector<JSFunction*>;

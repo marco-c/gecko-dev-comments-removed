@@ -881,7 +881,7 @@ ArrayObject* RegExpRealm::createMatchResultTemplateObject(
   MOZ_ASSERT(!matchResultTemplateObjects_[kind]);
 
   
-  RootedArrayObject templateObject(
+  Rooted<ArrayObject*> templateObject(
       cx,
       NewDenseUnallocatedArray(cx, RegExpObject::MaxPairCount, TenuredObject));
   if (!templateObject) {

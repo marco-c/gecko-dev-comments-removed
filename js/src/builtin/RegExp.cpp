@@ -98,8 +98,8 @@ bool js::CreateRegExpMatchResult(JSContext* cx, HandleRegExpShared re,
   MOZ_ASSERT(numPairs > 0);
 
   
-  RootedArrayObject arr(cx, NewDenseFullyAllocatedArrayWithTemplate(
-                                cx, numPairs, templateObject));
+  Rooted<ArrayObject*> arr(cx, NewDenseFullyAllocatedArrayWithTemplate(
+                                   cx, numPairs, templateObject));
   if (!arr) {
     return false;
   }
@@ -127,7 +127,7 @@ bool js::CreateRegExpMatchResult(JSContext* cx, HandleRegExpShared re,
   
   
   
-  RootedArrayObject indices(cx);
+  Rooted<ArrayObject*> indices(cx);
   Rooted<PlainObject*> indicesGroups(cx);
   if (hasIndices) {
     
@@ -163,7 +163,7 @@ bool js::CreateRegExpMatchResult(JSContext* cx, HandleRegExpShared re,
         indices->setDenseInitializedLength(i + 1);
         indices->initDenseElement(i, UndefinedValue());
       } else {
-        RootedArrayObject indexPair(cx, NewDenseFullyAllocatedArray(cx, 2));
+        Rooted<ArrayObject*> indexPair(cx, NewDenseFullyAllocatedArray(cx, 2));
         if (!indexPair) {
           return false;
         }
@@ -1714,7 +1714,7 @@ static bool NeedTwoBytes(HandleLinearString string,
 
 
 
-bool js::RegExpGetSubstitution(JSContext* cx, HandleArrayObject matchResult,
+bool js::RegExpGetSubstitution(JSContext* cx, Handle<ArrayObject*> matchResult,
                                HandleLinearString string, size_t position,
                                HandleLinearString replacement,
                                size_t firstDollarIndex, HandleValue groups,

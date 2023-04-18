@@ -189,7 +189,7 @@ struct ForOfPIC {
     bool initialize(JSContext* cx);
 
     
-    bool tryOptimizeArray(JSContext* cx, HandleArrayObject array,
+    bool tryOptimizeArray(JSContext* cx, Handle<ArrayObject*> array,
                           bool* optimized);
 
     
