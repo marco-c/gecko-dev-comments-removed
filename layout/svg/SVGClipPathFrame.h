@@ -81,12 +81,9 @@ class SVGClipPathFrame final : public SVGContainerFrame {
 
 
 
-
-
   already_AddRefed<SourceSurface> GetClipMask(
       gfxContext& aReferenceContext, nsIFrame* aClippedFrame,
-      const gfxMatrix& aMatrix, SourceSurface* aExtraMask = nullptr,
-      const Matrix& aExtraMasksTransform = Matrix());
+      const gfxMatrix& aMatrix, SourceSurface* aExtraMask = nullptr);
 
   
 
@@ -99,11 +96,8 @@ class SVGClipPathFrame final : public SVGContainerFrame {
 
 
 
-
-
   void PaintClipMask(gfxContext& aMaskContext, nsIFrame* aClippedFrame,
-                     const gfxMatrix& aMatrix, SourceSurface* aExtraMask,
-                     const Matrix& aExtraMasksTransform);
+                     const gfxMatrix& aMatrix, SourceSurface* aExtraMask);
 
   
 

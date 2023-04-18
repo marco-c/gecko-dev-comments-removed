@@ -650,7 +650,6 @@ void SVGUtils::PaintFrameWithEffects(nsIFrame* aFrame, gfxContext& aContext,
   bool shouldPushMask = false;
 
   if (shouldGenerateMask) {
-    Matrix maskTransform;
     RefPtr<SourceSurface> maskSurface;
 
     
@@ -665,10 +664,6 @@ void SVGUtils::PaintFrameWithEffects(nsIFrame* aFrame, gfxContext& aContext,
       SVGMaskFrame::MaskParams params(aContext.GetDrawTarget(), aFrame,
                                       aTransform, maskUsage.opacity, maskMode,
                                       aImgParams);
-      
-      
-      maskTransform = aContext.CurrentMatrix();
-      maskTransform.Invert();
 
       maskSurface = maskFrame->GetMaskForMaskedFrame(params);
 
@@ -681,13 +676,9 @@ void SVGUtils::PaintFrameWithEffects(nsIFrame* aFrame, gfxContext& aContext,
     }
 
     if (maskUsage.shouldGenerateClipMaskLayer) {
-      RefPtr<SourceSurface> clipMaskSurface = clipPathFrame->GetClipMask(
-          aContext, aFrame, aTransform, maskSurface, maskTransform);
+      RefPtr<SourceSurface> clipMaskSurface =
+          clipPathFrame->GetClipMask(aContext, aFrame, aTransform, maskSurface);
       if (clipMaskSurface) {
-        
-        
-        maskTransform = aContext.CurrentMatrix();
-        maskTransform.Invert();
         maskSurface = clipMaskSurface;
       } else {
         
@@ -705,6 +696,10 @@ void SVGUtils::PaintFrameWithEffects(nsIFrame* aFrame, gfxContext& aContext,
     
     
     if (shouldPushMask) {
+      
+      
+      Matrix maskTransform = aContext.CurrentMatrix();
+      maskTransform.Invert();
       target->PushGroupForBlendBack(gfxContentType::COLOR_ALPHA,
                                     maskFrame ? 1.0 : maskUsage.opacity,
                                     maskSurface, maskTransform);
