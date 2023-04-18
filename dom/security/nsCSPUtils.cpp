@@ -882,9 +882,10 @@ bool nsCSPKeywordSrc::allows(enum CSPKeyword aKeyword,
   
   
   
+  
   return ((mKeyword == aKeyword) ||
           ((mKeyword == CSP_STRICT_DYNAMIC) && !aParserCreated &&
-           aKeyword != CSP_UNSAFE_EVAL));
+           aKeyword != CSP_UNSAFE_EVAL && aKeyword != CSP_WASM_UNSAFE_EVAL));
 }
 
 bool nsCSPKeywordSrc::visit(nsCSPSrcVisitor* aVisitor) const {
