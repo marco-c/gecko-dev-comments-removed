@@ -10,6 +10,17 @@
 var EXPORTED_SYMBOLS = ["PersonalityProviderWorker"];
 
 
+async function _getFileHash(filepath) {
+  const data = await IOUtils.read(filepath);
+  
+  const digest = await crypto.subtle.digest("SHA-256", data);
+  const uint8 = new Uint8Array(digest);
+  
+  const toHex = b => b.toString(16).padStart(2, "0");
+  return Array.from(uint8, toHex).join("");
+}
+
+
 
 
 
@@ -58,7 +69,7 @@ const PersonalityProviderWorker = class PersonalityProviderWorker {
 
   async maybeDownloadAttachment(record, retries = 3) {
     const {
-      attachment: { filename, size },
+      attachment: { filename, hash, size },
     } = record;
     await IOUtils.makeDirectory(await this.getPersonalityProviderDir());
     const localFilePath = PathUtils.join(
@@ -71,7 +82,8 @@ const PersonalityProviderWorker = class PersonalityProviderWorker {
       retry++ < retries &&
       
       (!(await IOUtils.exists(localFilePath)) ||
-        (await IOUtils.stat(localFilePath)).size !== size)
+        (await IOUtils.stat(localFilePath)).size !== size ||
+        (await _getFileHash(localFilePath)) !== hash)
     ) {
       await this._downloadAttachment(record);
     }
