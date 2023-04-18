@@ -418,7 +418,7 @@ var BookmarkPropertiesPanel = {
 
   onDialogAccept() {
     
-    document.commandDispatcher.focusedElement.blur();
+    document.commandDispatcher.focusedElement?.blur();
     
     
     gEditItemOverlay.uninitPanel(true);
