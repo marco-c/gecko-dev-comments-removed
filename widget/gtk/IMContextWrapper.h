@@ -16,9 +16,9 @@
 #include "nsTArray.h"
 #include "nsIWidget.h"
 #include "mozilla/CheckedInt.h"
+#include "mozilla/ContentData.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/TextEvents.h"  
 #include "mozilla/TextEventDispatcherListener.h"
 #include "mozilla/WritingModes.h"
 #include "mozilla/widget/IMEData.h"
@@ -384,69 +384,15 @@ class IMContextWrapper final : public TextEventDispatcherListener {
   
   IMContextID mIMContextID;
 
-  class Selection final {
-   public:
-    Selection() = default;
-    explicit Selection(
-        const IMENotification::SelectionChangeDataBase& aSelectionChangeData)
-        : mOffsetAndData(Some(aSelectionChangeData.ToUint32OffsetAndData())),
-          mWritingMode(aSelectionChangeData.GetWritingMode()) {}
-    explicit Selection(const WidgetQueryContentEvent& aSelectedTextEvent)
-        : mOffsetAndData(Some(
-              OffsetAndData<uint32_t>(aSelectedTextEvent.mReply->StartOffset(),
-                                      aSelectedTextEvent.mReply->DataRef(),
-                                      OffsetAndDataFor::SelectedString))),
-          mWritingMode(aSelectedTextEvent.mReply->WritingModeRef()) {
-      MOZ_ASSERT(aSelectedTextEvent.mMessage == eQuerySelectedText);
-      MOZ_ASSERT(aSelectedTextEvent.mReply->mOffsetAndData.isSome());
-    }
-    Selection(uint32_t aOffset, const WritingMode& aWritingMode)
-        : mOffsetAndData(Some(OffsetAndData<uint32_t>(
-              aOffset, EmptyString(), OffsetAndDataFor::SelectedString))),
-          mWritingMode(aWritingMode) {}
-
-    const OffsetAndData<uint32_t>& OffsetAndDataRef() const {
-      return mOffsetAndData.ref();
-    }
-
-    void Collapse(uint32_t aOffset) {
-      if (mOffsetAndData.isSome()) {
-        mOffsetAndData->Collapse(aOffset);
-      } else {
-        mOffsetAndData.emplace(aOffset, EmptyString(),
-                               OffsetAndDataFor::SelectedString);
-      }
-    }
-    void Clear() {
-      mOffsetAndData.reset();
-      mWritingMode = WritingMode();
-    }
-
-    bool HasRange() const { return mOffsetAndData.isSome(); }
-    const WritingMode& WritingModeRef() const { return mWritingMode; }
-
-    friend std::ostream& operator<<(std::ostream& aStream,
-                                    const Selection& aSelection) {
-      if (aSelection.HasRange()) {
-        return aStream << "{ HasRange()=false }";
-      }
-      aStream << "{ mOffsetAndData=" << aSelection.mOffsetAndData
-              << ", mWritingMode=" << aSelection.mWritingMode << " }";
-      return aStream;
-    }
-
-   private:
-    Maybe<OffsetAndData<uint32_t>> mOffsetAndData;
-    WritingMode mWritingMode;
-  };
   
   
-  Maybe<Selection> mSelection;
+  
+  Maybe<ContentSelection> mContentSelection;
 
   
 
 
-  bool EnsureToCacheSelection(nsAString* aSelectedString = nullptr);
+  bool EnsureToCacheContentSelection(nsAString* aSelectedString = nullptr);
 
   
   

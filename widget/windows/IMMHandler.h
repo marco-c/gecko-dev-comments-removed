@@ -6,6 +6,7 @@
 #ifndef IMMHandler_h_
 #define IMMHandler_h_
 
+#include "mozilla/ContentData.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/TextEventDispatcher.h"
 #include "mozilla/WritingModes.h"
@@ -377,56 +378,35 @@ class IMMHandler final {
   int32_t mCursorPosition;
   uint32_t mCompositionStart;
 
-  class Selection {
-   public:
-    Selection() = default;
-
-    void ClearRange() {
-      mOffsetAndData.reset();
-      
-      
-      
-    }
-
-    const OffsetAndData<uint32_t>& OffsetAndDataRef() const {
-      return mOffsetAndData.ref();
-    }
-
-    const WritingMode& WritingModeRef() const { return mWritingMode; }
-
-    bool HasRange() const { return mOffsetAndData.isSome(); }
-    void Update(
-        const IMENotification::SelectionChangeDataBase& aSelectionChangeData);
-
-    static Maybe<Selection> QuerySelection(nsWindow* aWindow);
-
-   private:
-    Maybe<OffsetAndData<uint32_t>> mOffsetAndData;
-    WritingMode mWritingMode;
-  };
   
   
   
-  Maybe<Selection> mSelection;
+  Maybe<ContentSelection> mContentSelection;
 
-  const Maybe<Selection>& GetSelectionWithQueryIfNothing(nsWindow* aWindow) {
+  const Maybe<ContentSelection>& GetContentSelectionWithQueryIfNothing(
+      nsWindow* aWindow) {
     
     
     if (sHasFocus) {
-      if (mSelection.isNothing()) {
+      if (mContentSelection.isNothing()) {
         
         
-        mSelection = Selection::QuerySelection(aWindow);
+        mContentSelection = QueryContentSelection(aWindow);
       }
-      return mSelection;
+      return mContentSelection;
     }
     
     
     
-    static Maybe<Selection> sTempSelection;
-    sTempSelection = Selection::QuerySelection(aWindow);
-    return sTempSelection;
+    static Maybe<ContentSelection> sTempContentSelection;
+    sTempContentSelection = QueryContentSelection(aWindow);
+    return sTempContentSelection;
   }
+
+  
+
+
+  static Maybe<ContentSelection> QueryContentSelection(nsWindow* aWindow);
 
   bool mIsComposing;
 
