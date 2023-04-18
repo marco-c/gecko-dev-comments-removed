@@ -127,7 +127,15 @@ already_AddRefed<SharedWorker> SharedWorker::Constructor(
   
   
   
-  if (ShouldPartitionStorage(storageAllowed)) {
+  
+  
+  
+  
+  
+  
+  
+  if (ShouldPartitionStorage(storageAllowed) &&
+      BasePrincipal::Cast(loadInfo.mPrincipal)->IsContentPrincipal()) {
     nsCOMPtr<nsIScriptObjectPrincipal> sop = do_QueryInterface(window);
     if (!sop) {
       aRv.Throw(NS_ERROR_FAILURE);
