@@ -206,24 +206,13 @@ struct ComputedStyleMap {
 
   struct Entry {
     
-    using ComputeMethod = already_AddRefed<CSSValue> (nsComputedDOMStyle::*)();
+    typedef already_AddRefed<CSSValue> (nsComputedDOMStyle::*ComputeMethod)();
 
     nsCSSPropertyID mProperty;
-
-    
-    
-    
-    bool mCanBeExposed = false;
-
-    ComputeMethod mGetter = nullptr;
-
-    bool IsEnumerable() const {
-      return IsEnabled() && !nsCSSProps::IsShorthand(mProperty);
-    }
+    ComputeMethod mGetter;
 
     bool IsEnabled() const {
-      if (!mCanBeExposed ||
-          !nsCSSProps::IsEnabled(mProperty, CSSEnabledState::ForAllContent)) {
+      if (!nsCSSProps::IsEnabled(mProperty, CSSEnabledState::ForAllContent)) {
         return false;
       }
       if (nsCSSProps::IsShorthand(mProperty) &&
@@ -245,7 +234,7 @@ struct ComputedStyleMap {
 
   uint32_t Length() {
     Update();
-    return mEnumerablePropertyCount;
+    return mExposedPropertyCount;
   }
 
   
@@ -264,23 +253,21 @@ struct ComputedStyleMap {
 
 
   const Entry* FindEntryForProperty(nsCSSPropertyID aPropID) {
-    if (size_t(aPropID) >= ArrayLength(kEntryIndices)) {
-      MOZ_ASSERT(aPropID == eCSSProperty_UNKNOWN);
-      return nullptr;
+    Update();
+    for (uint32_t i = 0; i < mExposedPropertyCount; i++) {
+      const Entry* entry = &kEntries[EntryIndex(i)];
+      if (entry->mProperty == aPropID) {
+        return entry;
+      }
     }
-    MOZ_ASSERT(kEntryIndices[aPropID] < ArrayLength(kEntries));
-    const auto& entry = kEntries[kEntryIndices[aPropID]];
-    if (!entry.IsEnabled()) {
-      return nullptr;
-    }
-    return &entry;
+    return nullptr;
   }
 
   
 
 
 
-  void MarkDirty() { mEnumerablePropertyCount = 0; }
+  void MarkDirty() { mExposedPropertyCount = 0; }
 
   
   
@@ -292,7 +279,7 @@ struct ComputedStyleMap {
 
 
 
-  uint32_t mEnumerablePropertyCount = 0;
+  uint32_t mExposedPropertyCount;
 
   
 
@@ -303,7 +290,7 @@ struct ComputedStyleMap {
   
 
 
-  bool IsDirty() { return mEnumerablePropertyCount == 0; }
+  bool IsDirty() { return mExposedPropertyCount == 0; }
 
   
 
@@ -315,15 +302,13 @@ struct ComputedStyleMap {
 
 
   uint32_t EntryIndex(uint32_t aIndex) const {
-    MOZ_ASSERT(aIndex < mEnumerablePropertyCount);
+    MOZ_ASSERT(aIndex < mExposedPropertyCount);
     return mIndexMap[aIndex];
   }
 };
 
 constexpr ComputedStyleMap::Entry
     ComputedStyleMap::kEntries[ArrayLength(kEntries)];
-
-constexpr size_t ComputedStyleMap::kEntryIndices[ArrayLength(kEntries)];
 
 void ComputedStyleMap::Update() {
   if (!IsDirty()) {
@@ -332,11 +317,11 @@ void ComputedStyleMap::Update() {
 
   uint32_t index = 0;
   for (uint32_t i = 0; i < ArrayLength(kEntries); i++) {
-    if (kEntries[i].IsEnumerable()) {
+    if (kEntries[i].IsEnabled()) {
       mIndexMap[index++] = i;
     }
   }
-  mEnumerablePropertyCount = index;
+  mExposedPropertyCount = index;
 }
 
 nsComputedDOMStyle::nsComputedDOMStyle(dom::Element* aElement,
