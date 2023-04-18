@@ -357,6 +357,9 @@ class nsBlockFrame : public nsContainerFrame {
 
 
 
+
+
+
   static bool BlockCanIntersectFloats(nsIFrame* aFrame);
 
   
@@ -365,14 +368,15 @@ class nsBlockFrame : public nsContainerFrame {
 
 
 
-  struct ReplacedElementISizeToClear {
+  struct FloatAvoidingISizeToClear {
     
     
     nscoord marginIStart, borderBoxISize;
   };
-  static ReplacedElementISizeToClear ISizeToClearPastFloats(
+  static FloatAvoidingISizeToClear ISizeToClearPastFloats(
       const BlockReflowState& aState,
-      const mozilla::LogicalRect& aFloatAvailableSpace, nsIFrame* aFrame);
+      const mozilla::LogicalRect& aFloatAvailableSpace,
+      nsIFrame* aFloatAvoidingBlock);
 
   
 

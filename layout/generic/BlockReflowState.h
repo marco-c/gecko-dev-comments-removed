@@ -151,7 +151,7 @@ class BlockReflowState {
   };
   std::tuple<nscoord, ClearFloatsResult> ClearFloats(
       nscoord aBCoord, mozilla::StyleClear aBreakType,
-      nsIFrame* aReplacedBlock = nullptr);
+      nsIFrame* aFloatAvoidingBlock = nullptr);
 
   nsFloatManager* FloatManager() const {
     MOZ_ASSERT(mReflowInput.mFloatManager,
@@ -183,8 +183,8 @@ class BlockReflowState {
     return true;
   }
 
-  bool ReplacedBlockFitsInAvailSpace(
-      nsIFrame* aReplacedBlock,
+  bool FloatAvoidingBlockFitsInAvailSpace(
+      nsIFrame* aFloatAvoidingBlock,
       const nsFlowAreaRect& aFloatAvailableSpace) const;
 
   bool IsAdjacentWithTop() const {
@@ -201,9 +201,10 @@ class BlockReflowState {
 
   
   
-  void ComputeReplacedBlockOffsetsForFloats(
-      nsIFrame* aFrame, const mozilla::LogicalRect& aFloatAvailableSpace,
-      nscoord& aIStartResult, nscoord& aIEndResult) const;
+  void ComputeFloatAvoidingOffsets(
+      nsIFrame* aFloatAvoidingBlock,
+      const mozilla::LogicalRect& aFloatAvailableSpace, nscoord& aIStartResult,
+      nscoord& aIEndResult) const;
 
   
   
