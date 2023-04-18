@@ -9338,13 +9338,15 @@ bool nsIFrame::SetOverflowAreas(const OverflowAreas& aOverflowAreas) {
   }
 }
 
+enum class ApplyTransform : bool { No, Yes };
 
 
 
 
 
-static nsRect UnionBorderBoxes(
-    nsIFrame* aFrame, bool aApplyTransform, bool& aOutValid,
+
+static nsRect ComputeOutlineInnerRect(
+    nsIFrame* aFrame, ApplyTransform aApplyTransform, bool& aOutValid,
     const nsSize* aSizeOverride = nullptr,
     const OverflowAreas* aOverflowOverride = nullptr) {
   const nsRect bounds(nsPoint(0, 0),
@@ -9367,12 +9369,17 @@ static nsRect UnionBorderBoxes(
 
   
   
-  bool doTransform = aApplyTransform && aFrame->IsTransformed();
+  bool doTransform =
+      aApplyTransform == ApplyTransform::Yes && aFrame->IsTransformed();
   TransformReferenceBox boundsRefBox(nullptr, bounds);
   if (doTransform) {
     u = nsDisplayTransform::TransformRect(bounds, aFrame, boundsRefBox);
   } else {
     u = bounds;
+  }
+
+  if (aOutValid && !StaticPrefs::layout_outline_include_overflow()) {
+    return u;
   }
 
   
@@ -9427,10 +9434,10 @@ static nsRect UnionBorderBoxes(
       
       
       
-      
       bool validRect = true;
       nsRect childRect =
-          UnionBorderBoxes(child, true, validRect) + child->GetPosition();
+          ComputeOutlineInnerRect(child, ApplyTransform::Yes, validRect) +
+          child->GetPosition();
 
       if (!validRect) {
         continue;
@@ -9505,13 +9512,14 @@ static void ComputeAndIncludeOutlineArea(nsIFrame* aFrame,
   
   
   nsRect innerRect;
-  bool validRect;
+  bool validRect = false;
   if (frameForArea == aFrame) {
-    innerRect =
-        UnionBorderBoxes(aFrame, false, validRect, &aNewSize, &aOverflowAreas);
+    innerRect = ComputeOutlineInnerRect(aFrame, ApplyTransform::No, validRect,
+                                        &aNewSize, &aOverflowAreas);
   } else {
     for (; frameForArea; frameForArea = frameForArea->GetNextSibling()) {
-      nsRect r(UnionBorderBoxes(frameForArea, true, validRect));
+      nsRect r =
+          ComputeOutlineInnerRect(frameForArea, ApplyTransform::Yes, validRect);
 
       
       
