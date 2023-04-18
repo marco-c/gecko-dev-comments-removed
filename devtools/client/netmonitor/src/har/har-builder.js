@@ -61,7 +61,10 @@ HarBuilder.prototype = {
 
     
     for (const file of this._options.items) {
-      log.log.entries.push(await this.buildEntry(log.log, file));
+      const entry = await this.buildEntry(log.log, file);
+      if (entry) {
+        log.log.entries.push(entry);
+      }
     }
 
     
@@ -106,13 +109,22 @@ HarBuilder.prototype = {
     entry.startedDateTime = dateToJSON(new Date(file.startedMs));
 
     let { eventTimings } = file;
-    if (!eventTimings && this._options.requestData) {
-      eventTimings = await this._options.requestData(file.id, "eventTimings");
-    }
+    try {
+      if (!eventTimings && this._options.requestData) {
+        eventTimings = await this._options.requestData(file.id, "eventTimings");
+      }
 
-    entry.request = await this.buildRequest(file);
-    entry.response = await this.buildResponse(file);
-    entry.cache = await this.buildCache(file);
+      entry.request = await this.buildRequest(file);
+      entry.response = await this.buildResponse(file);
+      entry.cache = await this.buildCache(file);
+    } catch (e) {
+      
+      
+      
+      
+      console.warn("HAR builder failed on", file.url, e, e.stack);
+      return null;
+    }
     entry.timings = eventTimings ? eventTimings.timings : {};
 
     
