@@ -1,8 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
+/* eslint-env mozilla/frame-script */
 
 const HOW_IT_WORKS_URL_PREF = RPMGetFormatURLPref(
   "browser.contentblocking.report.lockwise.how_it_works.url"
@@ -13,9 +13,9 @@ export default class LockwiseCard {
     this.doc = document;
   }
 
-  
-
-
+  /**
+   * Initializes message listeners/senders.
+   */
   init() {
     const savePasswordsButton = this.doc.getElementById(
       "save-passwords-button"
@@ -33,7 +33,7 @@ export default class LockwiseCard {
       this.openAboutLogins.bind(this)
     );
 
-    
+    // Attack link to Firefox Lockwise "How it works" page.
     const lockwiseReportLink = this.doc.getElementById("lockwise-how-it-works");
     lockwiseReportLink.addEventListener("click", () => {
       this.doc.sendTelemetryEvent("click", "lw_about_link");
@@ -91,14 +91,14 @@ export default class LockwiseCard {
     lockwiseUI.classList.remove("loading");
   }
 
-  
-
-
-
-
-
-
-
+  /**
+   * Displays strings indicating stored logins for a user.
+   *
+   * @param {Number}  storedLogins
+   *        The number of browser-stored logins.
+   * @param {Number}  potentiallyBreachedLogins
+   *        The number of potentially breached logins.
+   */
   renderContentForLoggedInUser(storedLogins, potentiallyBreachedLogins) {
     const lockwiseScannedText = this.doc.getElementById(
       "lockwise-scanned-text"
