@@ -183,11 +183,11 @@ class EventEmitter {
   }
 
   static emit(target, type, ...rest) {
-    EventEmitter._emit(target, type, false, ...rest);
+    EventEmitter._emit(target, type, false, rest);
   }
 
   static emitAsync(target, type, ...rest) {
-    return EventEmitter._emit(target, type, true, ...rest);
+    return EventEmitter._emit(target, type, true, rest);
   }
 
   
@@ -206,8 +206,8 @@ class EventEmitter {
 
 
 
-  static _emit(target, type, async, ...rest) {
-    logEvent(type, rest);
+  static _emit(target, type, async, args) {
+    logEvent(type, args);
 
     if (!(eventListeners in target)) {
       return undefined;
@@ -235,9 +235,9 @@ class EventEmitter {
           try {
             let promise;
             if (isEventHandler(listener)) {
-              promise = listener[handler](type, ...rest);
+              promise = listener[handler](type, ...args);
             } else {
-              promise = listener.call(target, ...rest);
+              promise = listener.apply(target, args);
             }
             if (async) {
               
