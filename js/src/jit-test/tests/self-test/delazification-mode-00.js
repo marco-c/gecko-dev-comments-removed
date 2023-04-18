@@ -1,0 +1,9 @@
+
+
+function foo() {
+    return "foo";
+}
+
+
+waitForStencilCache(foo);
+assertEq(isInStencilCache(foo), false);
