@@ -162,11 +162,17 @@ static ThumbRect GetThumbRect(const LayoutDeviceRect& aRect,
   }
   thickness *= aScale;
 
-  
-  const float outerSpacing =
-      ((aParams.isOverlay || aParams.isSmall) ? 1.0f : 2.0f) * aScale;
   LayoutDeviceRect thumbRect = aRect;
   thumbRect.Deflate(1.0f * aScale);
+  
+  
+  const float outerSpacing = [&] {
+    if (aParams.isOverlay) {
+      return 1.0f * aScale;
+    }
+    float size = aParams.isHorizontal ? thumbRect.Height() : thumbRect.Width();
+    return (size - thickness) / 2.0f;
+  }();
   if (aParams.isHorizontal) {
     float bottomEdge = thumbRect.YMost() - outerSpacing;
     thumbRect.SetBoxY(bottomEdge - thickness, bottomEdge);
