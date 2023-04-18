@@ -2238,6 +2238,34 @@ void DrawTargetWebgl::StrokeLine(const Point& aStart, const Point& aEnd,
                                  const Pattern& aPattern,
                                  const StrokeOptions& aStrokeOptions,
                                  const DrawOptions& aOptions) {
+  if (mWebglValid && SupportsPattern(aPattern) &&
+      (aStrokeOptions.mLineCap == CapStyle::BUTT ||
+       aStrokeOptions.mLineCap == CapStyle::SQUARE) &&
+      aStrokeOptions.mDashPattern == nullptr && aStrokeOptions.mLineWidth > 0) {
+    
+    
+    
+    
+    
+    Point start = aStart;
+    Point dirX = aEnd - aStart;
+    float scale = aStrokeOptions.mLineWidth / dirX.Length();
+    Point dirY = Point(-dirX.y, dirX.x) * scale;
+    if (aStrokeOptions.mLineCap == CapStyle::SQUARE) {
+      start -= (dirX * scale) * 0.5f;
+      dirX += dirX * scale;
+    }
+    Matrix lineXform(dirX.x, dirX.y, dirY.x, dirY.y, start.x - 0.5f * dirY.x,
+                     start.y - 0.5f * dirY.y);
+    AutoRestoreTransform restore(this);
+    ConcatTransform(lineXform);
+    if (DrawRect(Rect(0, 0, 1, 1), aPattern, aOptions, Nothing(), nullptr, true,
+                 true, true)) {
+      return;
+    }
+    
+    
+  }
   MarkSkiaChanged(aOptions);
   mSkia->StrokeLine(aStart, aEnd, aPattern, aStrokeOptions, aOptions);
 }
@@ -2250,16 +2278,30 @@ void DrawTargetWebgl::Stroke(const Path* aPath, const Pattern& aPattern,
   }
   const auto& skiaPath = static_cast<const PathSkia*>(aPath)->GetPath();
   SkRect rect;
-  SkPoint line[2];
   if (!mWebglValid) {
     MarkSkiaChanged(aOptions);
     mSkia->Stroke(aPath, aPattern, aStrokeOptions, aOptions);
   } else if (skiaPath.isRect(&rect)) {
     StrokeRect(SkRectToRect(rect), aPattern, aStrokeOptions, aOptions);
-  } else if (skiaPath.isLine(line)) {
-    StrokeLine(SkPointToPoint(line[0]), SkPointToPoint(line[1]), aPattern,
-               aStrokeOptions, aOptions);
   } else {
+    
+    
+    
+    int numVerbs = skiaPath.countVerbs();
+    if (numVerbs >= 2 && numVerbs <= 3) {
+      uint8_t verbs[3];
+      skiaPath.getVerbs(verbs, numVerbs);
+      if (verbs[0] == SkPath::kMove_Verb && verbs[1] == SkPath::kLine_Verb &&
+          (numVerbs < 3 || verbs[2] == SkPath::kClose_Verb)) {
+        Point start = SkPointToPoint(skiaPath.getPoint(0));
+        Point end = SkPointToPoint(skiaPath.getPoint(1));
+        StrokeLine(start, end, aPattern, aStrokeOptions, aOptions);
+        if (numVerbs >= 3) {
+          StrokeLine(end, start, aPattern, aStrokeOptions, aOptions);
+        }
+        return;
+      }
+    }
     DrawPath(aPath, aPattern, aOptions, &aStrokeOptions);
   }
 }
