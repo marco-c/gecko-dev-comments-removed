@@ -55,6 +55,7 @@ class SourceSurface;
 class DataSourceSurface;
 class ScaledFont;
 class VsyncSource;
+class SoftwareVsyncSource;
 class ContentDeviceData;
 class GPUDeviceData;
 class FeatureState;
@@ -685,7 +686,7 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   
 
 
-  static void ReInitFrameRate();
+  static void ReInitFrameRate(const char* aPrefIgnored, void* aDataIgnored);
 
   
 
@@ -820,9 +821,12 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   virtual void WillShutdown();
 
   
+  already_AddRefed<mozilla::gfx::VsyncSource> GetGlobalHardwareVsyncSource();
+
   
   
-  already_AddRefed<mozilla::gfx::VsyncSource> CreateSoftwareVsyncSource();
+  
+  already_AddRefed<mozilla::gfx::VsyncSource> GetSoftwareVsyncSource();
 
   
   
@@ -929,11 +933,19 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   int32_t mWordCacheMaxEntries;
 
   
-  RefPtr<mozilla::gfx::VsyncSource> mVsyncSource;
-
   
   
   RefPtr<mozilla::VsyncDispatcher> mVsyncDispatcher;
+
+  
+  
+  RefPtr<mozilla::gfx::VsyncSource> mGlobalHardwareVsyncSource;
+
+  
+  
+  
+  
+  RefPtr<mozilla::gfx::SoftwareVsyncSource> mSoftwareVsyncSource;
 
   RefPtr<mozilla::gfx::DrawTarget> mScreenReferenceDrawTarget;
 
