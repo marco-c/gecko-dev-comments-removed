@@ -829,6 +829,11 @@ void nsHtml5TreeOpExecutor::CommitToInternalEncoding() {
   }
   mPendingEncodingCommitment = false;
   RunFlushLoop();
+  if (MOZ_UNLIKELY(!mParser || !mStreamParser)) {
+    
+    ClearOpQueue();  
+    return;
+  }
   
   
   
