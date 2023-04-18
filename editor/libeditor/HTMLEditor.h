@@ -1981,8 +1981,9 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  MOZ_CAN_RUN_SCRIPT nsresult MoveNodeWithTransaction(
-      nsIContent& aContent, const EditorDOMPoint& aPointToInsert);
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT MoveNodeResult MoveNodeWithTransaction(
+      nsIContent& aContentToMove, const EditorDOMPoint& aPointToInsert);
 
   
 
@@ -1991,11 +1992,11 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  MOZ_CAN_RUN_SCRIPT nsresult
-  MoveNodeToEndWithTransaction(nsIContent& aContent, nsINode& aNewContainer) {
-    EditorDOMPoint pointToInsert;
-    pointToInsert.SetToEndOf(&aNewContainer);
-    return MoveNodeWithTransaction(aContent, pointToInsert);
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT MoveNodeResult MoveNodeToEndWithTransaction(
+      nsIContent& aContentToMove, nsINode& aNewContainer) {
+    return MoveNodeWithTransaction(aContentToMove,
+                                   EditorDOMPoint::AtEndOf(aNewContainer));
   }
 
   
