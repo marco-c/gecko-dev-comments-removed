@@ -640,10 +640,16 @@ class Document : public nsINode,
     return DocumentOrShadowRoot::SetValueMissingState(aName, aValue);
   }
 
+  nsIPrincipal* EffectiveCookiePrincipal() const;
+
   nsIPrincipal* EffectiveStoragePrincipal() const;
 
   
   nsIPrincipal* GetPrincipal() final { return NodePrincipal(); }
+
+  nsIPrincipal* GetEffectiveCookiePrincipal() final {
+    return EffectiveCookiePrincipal();
+  }
 
   nsIPrincipal* GetEffectiveStoragePrincipal() final {
     return EffectiveStoragePrincipal();
@@ -659,7 +665,7 @@ class Document : public nsINode,
   
   nsIPrincipal* GetPrincipalForPrefBasedHacks() const;
 
-  void ClearActiveStoragePrincipal() { mActiveStoragePrincipal = nullptr; }
+  void ClearActiveCookiePrincipal() { mActiveCookiePrincipal = nullptr; }
 
   
   void GetEventTargetParent(EventChainPreVisitor& aVisitor) override;
@@ -5277,7 +5283,7 @@ class Document : public nsINode,
   
   
   
-  mutable nsCOMPtr<nsIPrincipal> mActiveStoragePrincipal;
+  mutable nsCOMPtr<nsIPrincipal> mActiveCookiePrincipal;
 
   
   int32_t mNextFormNumber;
