@@ -479,14 +479,6 @@ class XPCShellRemote(xpcshell.XPCShellTests, object):
         self.initDir(self.remoteMinidumpRootDir)
         self.initDir(self.remoteLogFolder)
 
-        eprefs = options.get("extraPrefs") or []
-        if options.get("disableFission"):
-            eprefs.append("fission.autostart=false")
-        else:
-            
-            eprefs.append("fission.autostart=true")
-        options["extraPrefs"] = eprefs
-
         
         self.mobileArgs = {
             "device": self.device,

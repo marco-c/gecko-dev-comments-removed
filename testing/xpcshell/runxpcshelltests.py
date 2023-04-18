@@ -1647,16 +1647,7 @@ class XPCShellTests(object):
         self.todoCount = 0
 
         self.setAbsPath()
-
-        eprefs = options.get("extraPrefs") or []
-        
-        if options.get("disableFission"):
-            eprefs.append("fission.autostart=false")
-        else:
-            
-            eprefs.append("fission.autostart=true")
-
-        prefs = self.buildPrefsFile(eprefs)
+        prefs = self.buildPrefsFile(options.get("extraPrefs") or [])
         self.buildXpcsRunArgs()
 
         self.event = Event()

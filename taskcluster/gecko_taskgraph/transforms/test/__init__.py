@@ -385,6 +385,7 @@ def run_sibling_transforms(config, tasks):
         ("raptor", lambda t: t["suite"] == "raptor"),
         ("other", None),
         ("worker", None),
+        ("fission", None),
         
         
         

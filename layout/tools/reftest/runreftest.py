@@ -476,13 +476,14 @@ class RefTest(object):
             prefs["reftest.manifests"] = json.dumps(manifests)
 
         
-        prefs["browser.tabs.remote.autostart"] = True
-        if not options.e10s:
+        if options.e10s:
+            prefs["browser.tabs.remote.autostart"] = True
+        else:
             prefs["browser.tabs.remote.autostart"] = False
 
-        
-        prefs["fission.autostart"] = True
-        if options.disableFission:
+        if options.fission:
+            prefs["fission.autostart"] = True
+        else:
             prefs["fission.autostart"] = False
 
         if not self.run_by_manifest:
