@@ -85,8 +85,8 @@ JS_PUBLIC_API void AssertObjectBelongsToCurrentThread(JSObject* obj);
 
 
 
-using FilenameValidationCallback = bool (*)(JSContext* cx,
-                                            const char* filename);
+using FilenameValidationCallback = bool (*)(const char* filename,
+                                            bool isSystemRealm);
 JS_PUBLIC_API void SetFilenameValidationCallback(FilenameValidationCallback cb);
 
 } 

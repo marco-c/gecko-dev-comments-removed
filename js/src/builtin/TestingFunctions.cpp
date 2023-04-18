@@ -2852,11 +2852,11 @@ static bool SetTestFilenameValidationCallback(JSContext* cx, unsigned argc,
 
   
   
-  auto testCb = [](JSContext* cx, const char* filename) -> bool {
+  auto testCb = [](const char* filename, bool isSystemRealm) -> bool {
     if (strstr(filename, "safe") == filename) {
       return true;
     }
-    if (cx->realm()->isSystem() && strstr(filename, "system") == filename) {
+    if (isSystemRealm && strstr(filename, "system") == filename) {
       return true;
     }
     return false;
