@@ -315,7 +315,8 @@ inline SECItem* CreateECParamsForCurve(const nsAString& aNamedCurve,
 
 
 UniqueSECKEYPublicKey CreateECPublicKey(const SECItem* aKeyData,
-                                        const nsAString& aNamedCurve);
+                                        const nsAString& aNamedCurve,
+                                        bool aVerifyValid = true);
 
 }  
 
