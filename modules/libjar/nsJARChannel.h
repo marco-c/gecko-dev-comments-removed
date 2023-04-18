@@ -66,10 +66,15 @@ class nsJARChannel final : public nsIJARChannel,
   void NotifyError(nsresult aError);
   void FireOnProgress(uint64_t aProgress);
 
+  
+  
+  bool GetContentTypeGuess(nsACString&) const;
+  void SetOpened();
+
   nsCString mSpec;
 
   bool mOpened;
-  Atomic<bool, ReleaseAcquire> mCanceled;
+  mozilla::Atomic<bool, mozilla::ReleaseAcquire> mCanceled;
   bool mOnDataCalled = false;
 
   RefPtr<nsJARProtocolHandler> mJarHandler;
@@ -86,14 +91,14 @@ class nsJARChannel final : public nsIJARChannel,
   nsCString mContentCharset;
   int64_t mContentLength;
   uint32_t mLoadFlags;
-  Atomic<nsresult, ReleaseAcquire> mStatus;
+  mozilla::Atomic<nsresult, mozilla::ReleaseAcquire> mStatus;
   bool mIsPending;  
 
   bool mEnableOMT;
   
   struct {
     bool isCanceled;
-    Atomic<uint32_t> suspendCount;
+    mozilla::Atomic<uint32_t> suspendCount;
   } mPendingEvent;
 
   nsCOMPtr<nsIInputStreamPump> mPump;
