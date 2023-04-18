@@ -263,6 +263,11 @@ enum class Script : int16_t {
 
   INVALID = -1
 };
+
+
+
+
+static_assert(sizeof(Script) == sizeof(int16_t));
 } 
 } 
 
