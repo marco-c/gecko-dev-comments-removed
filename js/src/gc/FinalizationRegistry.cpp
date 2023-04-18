@@ -10,6 +10,8 @@
 
 #include "gc/FinalizationRegistry.h"
 
+#include "mozilla/ScopeExit.h"
+
 #include "builtin/FinalizationRegistryObject.h"
 #include "gc/GCRuntime.h"
 #include "gc/Zone.h"
@@ -22,7 +24,13 @@ using namespace js;
 using namespace js::gc;
 
 FinalizationRegistryZone::FinalizationRegistryZone(Zone* zone)
-    : zone(zone), registries(zone), recordMap(zone) {}
+    : zone(zone), registries(zone), recordMap(zone), crossZoneCount(zone) {}
+
+FinalizationRegistryZone::~FinalizationRegistryZone() {
+  MOZ_ASSERT(registries.empty());
+  MOZ_ASSERT(recordMap.empty());
+  MOZ_ASSERT(crossZoneCount.empty());
+}
 
 bool GCRuntime::addFinalizationRegistry(
     JSContext* cx, Handle<FinalizationRegistryObject*> registry) {
@@ -62,11 +70,58 @@ bool FinalizationRegistryZone::addRecord(HandleObject target,
                                          HandleObject record) {
   MOZ_ASSERT(target->zone() == zone);
 
+  FinalizationRecordObject* unwrappedRecord =
+      &UncheckedUnwrapWithoutExpose(record)->as<FinalizationRecordObject>();
+
+  Zone* registryZone = unwrappedRecord->zone();
+  bool crossZone = registryZone != zone;
+  if (crossZone && !incCrossZoneCount(registryZone)) {
+    return false;
+  }
+  auto countGuard = mozilla::MakeScopeExit([&] {
+    if (crossZone) {
+      decCrossZoneCount(registryZone);
+    }
+  });
+
   auto ptr = recordMap.lookupForAdd(target);
   if (!ptr && !recordMap.add(ptr, target, RecordVector(zone))) {
     return false;
   }
-  return ptr->value().append(record);
+
+  if (!ptr->value().append(record)) {
+    return false;
+  }
+
+  unwrappedRecord->setInRecordMap(true);
+
+  countGuard.release();
+  return true;
+}
+
+bool FinalizationRegistryZone::incCrossZoneCount(Zone* otherZone) {
+  MOZ_ASSERT(otherZone != zone);
+
+  auto ptr = crossZoneCount.lookupForAdd(otherZone);
+  if (!ptr && !crossZoneCount.add(ptr, otherZone, 0)) {
+    return false;
+  }
+
+  ptr->value()++;
+  return true;
+}
+
+void FinalizationRegistryZone::decCrossZoneCount(Zone* otherZone) {
+  MOZ_ASSERT(otherZone != zone);
+
+  auto ptr = crossZoneCount.lookup(otherZone);
+  MOZ_ASSERT(ptr);
+  MOZ_ASSERT(ptr->value() != 0);
+  ptr->value()--;
+
+  if (ptr->value() == 0) {
+    crossZoneCount.remove(ptr);
+  }
 }
 
 void FinalizationRegistryZone::clearRecords() { recordMap.clear(); }
@@ -129,15 +184,24 @@ void FinalizationRegistryZone::traceWeakEdges(JSTracer* trc) {
     RecordVector& records = e.front().value();
 
     
+    
     records.traceWeak(trc);
 
     
-    records.eraseIf([](JSObject* obj) {
+    records.eraseIf([this](JSObject* obj) {
       FinalizationRecordObject* record = UnwrapFinalizationRecord(obj);
-      return !record ||                        
-             !record->isActive() ||            
-             !record->queue()->hasRegistry();  
+
+      bool shouldRemove = shouldRemoveRecord(record);
+      if (shouldRemove && record && record->isInRecordMap()) {
+        updateForRemovedRecord(record);
+      }
+
+      return shouldRemove;
     });
+
+    for (JSObject* obj : records) {
+      MOZ_ASSERT(UnwrapFinalizationRecord(obj)->isInRecordMap());
+    }
 
     
     if (!TraceWeakEdge(trc, &e.front().mutableKey(),
@@ -145,11 +209,44 @@ void FinalizationRegistryZone::traceWeakEdges(JSTracer* trc) {
       for (JSObject* obj : records) {
         FinalizationRecordObject* record = UnwrapFinalizationRecord(obj);
         FinalizationQueueObject* queue = record->queue();
+        updateForRemovedRecord(record);
         queue->queueRecordToBeCleanedUp(record);
         gc->queueFinalizationRegistryForCleanup(queue);
       }
       e.removeFront();
     }
+  }
+}
+
+
+bool FinalizationRegistryZone::shouldRemoveRecord(
+    FinalizationRecordObject* record) {
+  
+  return !record ||                        
+         !record->isRegistered() ||        
+         !record->queue()->hasRegistry();  
+}
+
+void FinalizationRegistryZone::updateForRemovedRecord(
+    FinalizationRecordObject* record) {
+  MOZ_ASSERT(record->isInRecordMap());
+
+  Zone* registryZone = record->zone();
+  if (registryZone != zone) {
+    decCrossZoneCount(registryZone);
+  }
+
+  
+  AutoTouchingGrayThings atgt;
+
+  record->setInRecordMap(false);
+}
+
+void GCRuntime::nukeFinalizationRecordWrapper(
+    JSObject* wrapper, FinalizationRecordObject* record) {
+  if (record->isInRecordMap()) {
+    FinalizationRegistryObject::unregisterRecord(record);
+    wrapper->zone()->finalizationRegistryZone()->updateForRemovedRecord(record);
   }
 }
 
@@ -172,4 +269,19 @@ void GCRuntime::queueFinalizationRegistryForCleanup(
                                               incumbentGlobal);
 
   queue->setQueuedForCleanup(true);
+}
+
+bool FinalizationRegistryZone::findSweepGroupEdges() {
+  
+  
+
+  for (ZoneCountMap::Enum e(crossZoneCount); !e.empty(); e.popFront()) {
+    Zone* registryZone = e.front().key();
+    if (!zone->addSweepGroupEdgeTo(registryZone) ||
+        !registryZone->addSweepGroupEdgeTo(zone)) {
+      return false;
+    }
+  }
+
+  return true;
 }

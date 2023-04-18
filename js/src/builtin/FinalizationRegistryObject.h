@@ -113,8 +113,14 @@ using RootedFinalizationQueueObject = Rooted<FinalizationQueueObject*>;
 
 
 
+
+
+
+
+
+
 class FinalizationRecordObject : public NativeObject {
-  enum { QueueSlot = 0, HeldValueSlot, SlotCount };
+  enum { QueueSlot = 0, HeldValueSlot, InMapSlot, SlotCount };
 
  public:
   static const JSClass class_;
@@ -125,8 +131,10 @@ class FinalizationRecordObject : public NativeObject {
 
   FinalizationQueueObject* queue() const;
   Value heldValue() const;
-  bool isActive() const;
+  bool isRegistered() const;
+  bool isInRecordMap() const;
 
+  void setInRecordMap(bool newValue);
   void clear();
 };
 
