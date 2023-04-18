@@ -317,8 +317,7 @@ static const uint64_t kCacheInitialized = ((uint64_t)0x1) << 63;
   }
 
   id nativeParent = GetNativeFromGeckoAccessible(parent);
-  if (parent->Role() == roles::DOCUMENT &&
-      [nativeParent respondsToSelector:@selector(rootGroup)]) {
+  if ([nativeParent respondsToSelector:@selector(rootGroup)]) {
     
     
     if (id<mozAccessible> rootGroup = [nativeParent rootGroup]) {
