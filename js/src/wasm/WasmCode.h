@@ -576,6 +576,8 @@ class LazyStubTier {
   
   void* lookupInterpEntry(uint32_t funcIndex) const;
 
+  const CodeRange* lookupRange(const void* pc) const;
+
   
   
   
@@ -820,6 +822,7 @@ class Code : public ShareableBase<Code> {
 
   const CallSite* lookupCallSite(void* returnAddress) const;
   const CodeRange* lookupFuncRange(void* pc) const;
+  const CodeRange* lookupIndirectStubRange(void* pc) const;
   const StackMap* lookupStackMap(uint8_t* nextPC) const;
 #ifdef ENABLE_WASM_EXCEPTIONS
   const WasmTryNote* lookupWasmTryNote(void* pc, Tier* tier) const;

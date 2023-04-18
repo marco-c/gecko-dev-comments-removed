@@ -245,7 +245,9 @@ class CodeRange {
     TrapExit,          
     DebugTrap,         
     FarJumpIsland,     
-    Throw              
+    Throw,             
+    IndirectStub,  
+                   
   };
 
  private:
@@ -327,8 +329,9 @@ class CodeRange {
   bool isJitEntry() const { return kind() == JitEntry; }
   bool isInterpEntry() const { return kind() == InterpEntry; }
   bool isEntry() const { return isInterpEntry() || isJitEntry(); }
+  bool isIndirectStub() const { return kind() == IndirectStub; }
   bool hasFuncIndex() const {
-    return isFunction() || isImportExit() || isEntry();
+    return isFunction() || isImportExit() || isEntry() || isIndirectStub();
   }
   uint32_t funcIndex() const {
     MOZ_ASSERT(hasFuncIndex());
