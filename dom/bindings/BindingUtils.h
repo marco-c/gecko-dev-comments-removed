@@ -3127,7 +3127,7 @@ bool GetSetlikeBackingObject(JSContext* aCx, JS::Handle<JSObject*> aObj,
 bool GetObservableArrayBackingObject(
     JSContext* aCx, JS::Handle<JSObject*> aObj, size_t aSlotIndex,
     JS::MutableHandle<JSObject*> aBackingObj, bool* aBackingObjCreated,
-    const ObservableArrayProxyHandler* aHandler);
+    const ObservableArrayProxyHandler* aHandler, void* aOwner);
 
 
 
