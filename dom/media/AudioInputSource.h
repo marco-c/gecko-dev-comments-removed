@@ -7,8 +7,14 @@
 #ifndef DOM_MEDIA_AudioInputSource_H_
 #define DOM_MEDIA_AudioInputSource_H_
 
+#include "AudioDriftCorrection.h"
 #include "AudioSegment.h"
+#include "CubebInputStream.h"
 #include "CubebUtils.h"
+#include "mozilla/ProfilerUtils.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/SPSCQueue.h"
+#include "mozilla/SharedThreadPool.h"
 
 namespace mozilla {
 
@@ -17,19 +23,51 @@ namespace mozilla {
 
 
 
-class AudioInputSource {
+
+
+class AudioInputSource : public CubebInputStream::Listener {
  public:
-  NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING;
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(AudioInputSource, override);
 
   using Id = uint32_t;
 
+  class EventListener {
+   public:
+    NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING;
+
+    
+    virtual void AudioDeviceChanged(Id aId) = 0;
+    enum class State { Started, Stopped, Drained, Error };
+    virtual void AudioStateCallback(Id aId, State aState) = 0;
+
+   protected:
+    EventListener() = default;
+    virtual ~EventListener() = default;
+  };
+
+  AudioInputSource(RefPtr<EventListener>&& aListener, Id aSourceId,
+                   CubebUtils::AudioDeviceID aDeviceId, uint32_t aChannelCount,
+                   bool aIsVoice, const PrincipalHandle& aPrincipalHandle,
+                   TrackRate aSourceRate, TrackRate aTargetRate,
+                   uint32_t aBufferMs);
+
   
   
-  virtual void Start() = 0;
   
-  virtual void Stop() = 0;
+  virtual void Start();
   
-  virtual AudioSegment GetAudioSegment(TrackTime aDuration) = 0;
+  virtual void Stop();
+  
+  virtual AudioSegment GetAudioSegment(TrackTime aDuration);
+
+  
+  
+  
+  long DataCallback(const void* aBuffer, long aFrames) override;
+  
+  void StateCallback(cubeb_state aState) override;
+  
+  void DeviceChangedCallback() override;
 
   
   
@@ -46,16 +84,38 @@ class AudioInputSource {
   const PrincipalHandle mPrincipalHandle;
 
  protected:
-  AudioInputSource(Id aId, CubebUtils::AudioDeviceID aDeviceId,
-                   uint32_t aChannelCount, TrackRate aRate, bool aIsVoice,
-                   const PrincipalHandle& aPrincipalHandle)
-      : mId(aId),
-        mDeviceId(aDeviceId),
-        mChannelCount(aChannelCount),
-        mRate(aRate),
-        mIsVoice(aIsVoice),
-        mPrincipalHandle(aPrincipalHandle) {}
-  virtual ~AudioInputSource() = default;
+  ~AudioInputSource() = default;
+
+ private:
+  
+  bool CheckThreadIdChanged();
+
+  
+  const bool mSandboxed;
+
+  
+  std::atomic<ProfilerThreadId> mAudioThreadId;
+
+  
+  const RefPtr<EventListener> mEventListener;
+
+  
+  
+  
+  
+  
+  
+  const RefPtr<SharedThreadPool> mTaskThread;
+
+  
+  AudioDriftCorrection mDriftCorrector;
+
+  
+  UniquePtr<CubebInputStream> mStream;
+
+  
+  
+  SPSCQueue<AudioChunk> mSPSCQueue{30};
 };
 
 }  

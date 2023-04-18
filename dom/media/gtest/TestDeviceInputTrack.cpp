@@ -150,6 +150,7 @@ TEST_F(TestDeviceInputTrack, OpenTwiceWithoutCloseFirst) {
   NativeInputTrack::CloseAudio(std::move(track1), nullptr);
 }
 
+
 TEST_F(TestDeviceInputTrack, NonNativeInputTrackData) {
   
   const uint32_t flags = 0;
@@ -191,17 +192,29 @@ TEST_F(TestDeviceInputTrack, NonNativeInputTrackData) {
   next = MediaTrackGraphImpl::RoundUpToEndOfAudioBlock(2 * frames);
   ASSERT_NE(current, next);  
 
+  class MockEventListener : public AudioInputSource::EventListener {
+   public:
+    NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MockEventListener, override);
+    MOCK_METHOD1(AudioDeviceChanged, void(AudioInputSource::Id));
+    MOCK_METHOD2(AudioStateCallback,
+                 void(AudioInputSource::Id,
+                      AudioInputSource::EventListener::State));
+
+   private:
+    ~MockEventListener() = default;
+  };
+
   class TestAudioSource final : public AudioInputSource {
    public:
-    NS_INLINE_DECL_THREADSAFE_REFCOUNTING(TestAudioSource, override);
-
-    TestAudioSource(uint32_t aSourceId, CubebUtils::AudioDeviceID aDeviceId,
-                    uint32_t aChannelCount, TrackRate aRate, bool aIsVoice,
-                    const PrincipalHandle& aPrincipalHandle,
-                    AudioSegment& aCurrentData)
-        : AudioInputSource(aSourceId, aDeviceId, aChannelCount, aRate, aIsVoice,
-                           aPrincipalHandle),
-          mGenerator(mChannelCount, mRate),
+    TestAudioSource(RefPtr<EventListener>&& aListener, Id aSourceId,
+                    CubebUtils::AudioDeviceID aDeviceId, uint32_t aChannelCount,
+                    bool aIsVoice, const PrincipalHandle& aPrincipalHandle,
+                    TrackRate aSourceRate, TrackRate aTargetRate,
+                    uint32_t aBufferMs, AudioSegment& aCurrentData)
+        : AudioInputSource(std::move(aListener), aSourceId, aDeviceId,
+                           aChannelCount, aIsVoice, aPrincipalHandle,
+                           aSourceRate, aTargetRate, aBufferMs),
+          mGenerator(mChannelCount, aTargetRate),
           mCurrentData(aCurrentData) {}
 
     void Start() override {}
@@ -224,9 +237,10 @@ TEST_F(TestDeviceInputTrack, NonNativeInputTrackData) {
 
   
   
-  track->StartAudio(
-      MakeRefPtr<TestAudioSource>(1 , deviceId, channelCount, rate,
-                                  true , testPrincipal, buffer));
+  track->StartAudio(MakeRefPtr<TestAudioSource>(
+      MakeRefPtr<MockEventListener>(), 1 , deviceId, channelCount,
+      true , testPrincipal, rate, mGraph->GraphRate(),
+      50 , buffer));
   track->ProcessInput(current, next, flags);
   {
     AudioSegment data;
