@@ -876,20 +876,6 @@ static void DoFramePointerStackWalk(MozWalkStackCallback aCallback,
   FrameSkipper skipper(aFirstFramePC);
   uint32_t numFrames = 0;
 
-  
-  
-  
-  
-  
-  
-  
-  
-  static const uintptr_t kMaxStackSize = 8 * 1024 * 1024;
-  if (uintptr_t(aBp) < uintptr_t(aStackEnd) - kMaxStackSize ||
-      aBp >= aStackEnd || (uintptr_t(aBp) & 3)) {
-    return;
-  }
-
   while (aBp) {
     void** next = (void**)*aBp;
     
