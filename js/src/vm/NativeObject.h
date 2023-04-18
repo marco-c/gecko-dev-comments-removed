@@ -194,7 +194,12 @@ class ObjectElements {
     
     NONWRITABLE_ARRAY_LENGTH = 0x2,
 
+#ifdef ENABLE_RECORD_TUPLE
     
+    
+    
+    TUPLE_IS_ATOMIZED = 0x4,
+#endif
 
     
     
@@ -283,6 +288,12 @@ class ObjectElements {
     MOZ_ASSERT(numShiftedElements() == 0);
     flags |= NONWRITABLE_ARRAY_LENGTH;
   }
+
+#ifdef ENABLE_RECORD_TUPLE
+  void setTupleIsAtomized() { flags |= TUPLE_IS_ATOMIZED; }
+
+  bool tupleIsAtomized() const { return flags & TUPLE_IS_ATOMIZED; }
+#endif
 
   void addShiftedElements(uint32_t count) {
     MOZ_ASSERT(count < capacity);

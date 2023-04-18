@@ -45,10 +45,7 @@ class TupleType final : public js::NativeObject {
   js::HashNumber hash(const ElementHasher& hasher) const;
 
   bool ensureAtomized(JSContext* cx);
-  bool isAtomized() const {
-    
-    return false;
-  }
+  bool isAtomized() const { return getElementsHeader()->tupleIsAtomized(); }
 
   
   static bool sameValueZero(TupleType* lhs, TupleType* rhs);
