@@ -411,7 +411,6 @@ class nsWindow final : public nsBaseWidget {
   };
   void MoveToRectPopupRectClear() override {
     mMoveToRectPopupRect = LayoutDeviceIntRect();
-    mMoveToRectPopupRectCleared = true;
   };
 #endif
 
@@ -684,10 +683,6 @@ class nsWindow final : public nsBaseWidget {
 
   
   bool mPopupUseMoveToRect : 1;
-
-  
-  
-  bool mMoveToRectPopupRectCleared : 1;
 
   
 

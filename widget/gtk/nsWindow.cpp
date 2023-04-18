@@ -400,7 +400,6 @@ nsWindow::nsWindow()
       mPopupTemporaryHidden(false),
       mPopupClosed(false),
       mPopupUseMoveToRect(false),
-      mMoveToRectPopupRectCleared(false),
       mWaitingForMoveToRectCallback(false),
       mUpdatedByMoveToRectCallback(false),
       mConfiguredClearColor(false),
@@ -942,11 +941,6 @@ void nsWindow::ResizeInt(int aX, int aY, int aWidth, int aHeight, bool aMove) {
   if (aMove) {
     mBounds.x = aX;
     mBounds.y = aY;
-  }
-
-  
-  if (mMoveToRectPopupRectCleared) {
-    aMove = true;
   }
 
   
@@ -1871,7 +1865,6 @@ void nsWindow::NativeMoveResizeWaylandPopupCallback(
   
   
   mMoveToRectPopupRect = newBounds;
-  mMoveToRectPopupRectCleared = false;
 
   const bool needsPositionUpdate = newBounds.TopLeft() != mBounds.TopLeft();
   const bool needsSizeUpdate = newBounds.Size() != mBounds.Size();
@@ -6188,7 +6181,6 @@ void nsWindow::NativeShow(bool aAction) {
     
     
     mMoveToRectPopupRect = LayoutDeviceIntRect();
-    mMoveToRectPopupRectCleared = false;
     LOG("nsWindow::NativeShow hide\n");
     if (GdkIsWaylandDisplay()) {
       if (IsWaylandPopup()) {
