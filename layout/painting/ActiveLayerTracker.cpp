@@ -47,11 +47,6 @@ class LayerActivity {
   enum ActivityIndex {
     ACTIVITY_OPACITY,
     ACTIVITY_TRANSFORM,
-    ACTIVITY_LEFT,
-    ACTIVITY_TOP,
-    ACTIVITY_RIGHT,
-    ACTIVITY_BOTTOM,
-    ACTIVITY_BACKGROUND_POSITION,
 
     ACTIVITY_SCALE,
     ACTIVITY_TRIGGERED_REPAINT,
@@ -84,20 +79,6 @@ class LayerActivity {
       case eCSSProperty_offset_anchor:
         
         return ACTIVITY_TRANSFORM;
-      case eCSSProperty_left:
-        return ACTIVITY_LEFT;
-      case eCSSProperty_top:
-        return ACTIVITY_TOP;
-      case eCSSProperty_right:
-        return ACTIVITY_RIGHT;
-      case eCSSProperty_bottom:
-        return ACTIVITY_BOTTOM;
-      case eCSSProperty_background_position:
-        return ACTIVITY_BACKGROUND_POSITION;
-      case eCSSProperty_background_position_x:
-        return ACTIVITY_BACKGROUND_POSITION;
-      case eCSSProperty_background_position_y:
-        return ACTIVITY_BACKGROUND_POSITION;
       default:
         MOZ_ASSERT(false);
         return ACTIVITY_OPACITY;
@@ -290,19 +271,6 @@ void ActiveLayerTracker::NotifyRestyle(nsIFrame* aFrame,
 }
 
 
-void ActiveLayerTracker::NotifyOffsetRestyle(nsIFrame* aFrame) {
-  LayerActivity* layerActivity = GetLayerActivityForUpdate(aFrame);
-  IncrementMutationCount(
-      &layerActivity->mRestyleCounts[LayerActivity::ACTIVITY_LEFT]);
-  IncrementMutationCount(
-      &layerActivity->mRestyleCounts[LayerActivity::ACTIVITY_TOP]);
-  IncrementMutationCount(
-      &layerActivity->mRestyleCounts[LayerActivity::ACTIVITY_RIGHT]);
-  IncrementMutationCount(
-      &layerActivity->mRestyleCounts[LayerActivity::ACTIVITY_BOTTOM]);
-}
-
-
 void ActiveLayerTracker::NotifyAnimated(nsIFrame* aFrame,
                                         nsCSSPropertyID aProperty,
                                         const nsACString& aNewValue,
@@ -352,30 +320,6 @@ void ActiveLayerTracker::NotifyNeedsRepaint(nsIFrame* aFrame) {
         &layerActivity
              ->mRestyleCounts[LayerActivity::ACTIVITY_TRIGGERED_REPAINT]);
   }
-}
-
-
-bool ActiveLayerTracker::IsBackgroundPositionAnimated(
-    nsDisplayListBuilder* aBuilder, nsIFrame* aFrame) {
-  LayerActivity* layerActivity = GetLayerActivity(aFrame);
-  if (layerActivity) {
-    LayerActivity::ActivityIndex activityIndex =
-        LayerActivity::ActivityIndex::ACTIVITY_BACKGROUND_POSITION;
-    if (layerActivity->mRestyleCounts[activityIndex] >= 2) {
-      
-      
-      
-      
-      
-      if (layerActivity
-              ->mRestyleCounts[LayerActivity::ACTIVITY_TRIGGERED_REPAINT] < 2) {
-        return true;
-      }
-    }
-  }
-  return nsLayoutUtils::HasEffectiveAnimation(
-      aFrame, nsCSSPropertyIDSet({eCSSProperty_background_position_x,
-                                  eCSSProperty_background_position_y}));
 }
 
 static bool IsMotionPathAnimated(nsDisplayListBuilder* aBuilder,
@@ -470,25 +414,6 @@ bool ActiveLayerTracker::IsStyleAnimated(
   
   
   return IsStyleAnimated(aBuilder, aFrame->GetParent(), aPropertySet);
-}
-
-
-bool ActiveLayerTracker::IsOffsetStyleAnimated(nsIFrame* aFrame) {
-  LayerActivity* layerActivity = GetLayerActivity(aFrame);
-  if (layerActivity) {
-    if (layerActivity->mRestyleCounts[LayerActivity::ACTIVITY_LEFT] >= 2 ||
-        layerActivity->mRestyleCounts[LayerActivity::ACTIVITY_TOP] >= 2 ||
-        layerActivity->mRestyleCounts[LayerActivity::ACTIVITY_RIGHT] >= 2 ||
-        layerActivity->mRestyleCounts[LayerActivity::ACTIVITY_BOTTOM] >= 2) {
-      return true;
-    }
-  }
-  
-  
-  
-  
-  
-  return false;
 }
 
 

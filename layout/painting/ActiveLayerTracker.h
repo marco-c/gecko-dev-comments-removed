@@ -38,8 +38,6 @@ class ActiveLayerTracker {
 
 
 
-
-
   
 
 
@@ -47,12 +45,6 @@ class ActiveLayerTracker {
 
 
   static void NotifyRestyle(nsIFrame* aFrame, nsCSSPropertyID aProperty);
-  
-
-
-
-
-  static void NotifyOffsetRestyle(nsIFrame* aFrame);
   
 
 
@@ -87,17 +79,6 @@ class ActiveLayerTracker {
 
   static bool IsStyleAnimated(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
                               const nsCSSPropertyIDSet& aPropertySet);
-  
-
-
-
-  static bool IsOffsetStyleAnimated(nsIFrame* aFrame);
-  
-
-
-
-  static bool IsBackgroundPositionAnimated(nsDisplayListBuilder* aBuilder,
-                                           nsIFrame* aFrame);
   
 
 
