@@ -559,11 +559,9 @@ class JSONPoliciesProvider {
       
       return;
     }
-    log.debug(`policies.json path = ${configFile.path}`);
     try {
       let data = Cu.readUTF8File(configFile);
       if (data) {
-        log.debug(`policies.json content = ${data}`);
         this._policies = JSON.parse(data).policies;
 
         if (!this._policies) {
