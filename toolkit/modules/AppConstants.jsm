@@ -439,4 +439,12 @@ this.AppConstants = Object.freeze({
     false,
 #endif
 
+  
+  isChinaRepack() {
+    return (
+      Services.prefs
+      .getDefaultBranch("")
+      .getCharPref("distribution.id", "default") === "MozillaOnline"
+    );
+  },
 });
