@@ -164,22 +164,23 @@ class PictureInPictureLauncherChild extends JSWindowActorChild {
 
 
 
+
   keyToggle() {
-    let focusedWindow = Services.focus.focusedWindow;
-    if (focusedWindow) {
-      let doc = focusedWindow.document;
-      if (doc) {
+    let doc = this.document;
+    if (doc) {
+      let video = doc.activeElement;
+      if (!(video instanceof HTMLVideoElement)) {
         let listOfVideos = [...doc.querySelectorAll("video")].filter(
           video => !isNaN(video.duration)
         );
         
         
-        let video =
+        video =
           listOfVideos.filter(v => !v.paused)[0] ||
           listOfVideos.sort((a, b) => b.duration - a.duration)[0];
-        if (video) {
-          this.togglePictureInPicture(video);
-        }
+      }
+      if (video) {
+        this.togglePictureInPicture(video);
       }
     }
   }

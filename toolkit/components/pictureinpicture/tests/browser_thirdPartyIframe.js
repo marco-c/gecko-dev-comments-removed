@@ -56,6 +56,14 @@ add_task(async () => {
         ok(pipWin, "Got Picture-in-Picture window.");
 
         await ensureMessageAndClosePiP(iframeBc, videoID, pipWin, true);
+
+        await SimpleTest.promiseFocus(window);
+
+        
+        pipWin = await triggerPictureInPicture(iframeBc, videoID, true);
+        ok(pipWin, "Got Picture-in-Picture window using command.");
+
+        await ensureMessageAndClosePiP(iframeBc, videoID, pipWin, true);
       }
     );
   }
