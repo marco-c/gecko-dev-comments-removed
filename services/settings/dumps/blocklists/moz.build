@@ -10,7 +10,7 @@ with Files("**"):
 
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "android":
     
-    FINAL_TARGET_FILES.defaults.settings.blocklists += ["addons.json", "gfx.json"]
+    FINAL_TARGET_FILES.defaults.settings.blocklists += ["addons.json"]
 else:
     FINAL_TARGET_FILES.defaults.settings.blocklists += [
         "addons-bloomfilters.json",
