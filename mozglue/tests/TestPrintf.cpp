@@ -65,7 +65,12 @@ static void TestPrintfTargetPrint() {
   checker.print("test string");
 }
 
-static bool MOZ_FORMAT_PRINTF(5, 6)
+
+
+static bool
+#ifndef __ANDROID__
+MOZ_FORMAT_PRINTF(5, 6)
+#endif
     check_print(const char* file, int line,
                 bool (*cmp)(const char* a, const char* b), const char* expect,
                 const char* fmt, ...) {
