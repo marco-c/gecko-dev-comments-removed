@@ -71,12 +71,10 @@ var wasmGlobalInterfaces = [
   {
     name: "Exception",
     insecureContext: true,
-    nightly: true,
   },
   {
     name: "Tag",
     insecureContext: true,
-    nightly: true,
   },
 ];
 
