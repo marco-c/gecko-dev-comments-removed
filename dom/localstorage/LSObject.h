@@ -107,6 +107,29 @@ class LSObject final : public Storage {
                                      const nsAString& aDocumentURI,
                                      bool aPrivate, LSObject** aObject);
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static void OnSyncMessageReceived();
+
+  
+
+
+
+
+  static void OnSyncMessageHandled();
+
   void AssertIsOnOwningThread() const { NS_ASSERT_OWNINGTHREAD(LSObject); }
 
   const RefPtr<LSDatabase>& DatabaseStrongRef() const { return mDatabase; }
