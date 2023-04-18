@@ -634,9 +634,10 @@ FinderHighlighter.prototype = {
         
         if (window.scrollMaxY > 0) {
           
-          let scrollElement =
-            window.document.body || window.document.documentElement;
-          let yAdj = window.scrollMaxY / scrollElement.scrollHeight;
+          let scrollHeight =
+            window.document.body?.scrollHeight ||
+            window.document.documentElement.scrollHeight;
+          let yAdj = window.scrollMaxY / scrollHeight;
 
           for (let r = 0; r < rangeCount; r++) {
             let rect = findSelection.getRangeAt(r).getBoundingClientRect();
