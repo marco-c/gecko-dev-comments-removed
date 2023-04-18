@@ -5,6 +5,7 @@
 
 
 #include "ServiceWorkerManager.h"
+#include "ServiceWorkerPrivateImpl.h"
 
 #include <algorithm>
 
@@ -96,12 +97,24 @@
 #  undef PostMessage
 #endif
 
+mozilla::LazyLogModule sWorkerTelemetryLog("WorkerTelemetry");
+
+#ifdef LOG
+#  undef LOG
+#endif
+#define LOG(_args) MOZ_LOG(sWorkerTelemetryLog, LogLevel::Debug, _args);
+
 using namespace mozilla;
 using namespace mozilla::dom;
 using namespace mozilla::ipc;
 
 namespace mozilla {
 namespace dom {
+
+
+
+uint32_t gServiceWorkersRegistered = 0;
+uint32_t gServiceWorkersRegisteredFetch = 0;
 
 static_assert(
     nsIHttpChannelInternal::CORS_MODE_SAME_ORIGIN ==
@@ -419,6 +432,8 @@ NS_IMPL_RELEASE(ServiceWorkerManager)
 NS_INTERFACE_MAP_BEGIN(ServiceWorkerManager)
   NS_INTERFACE_MAP_ENTRY(nsIServiceWorkerManager)
   NS_INTERFACE_MAP_ENTRY(nsIObserver)
+  NS_INTERFACE_MAP_ENTRY(nsITimerCallback)
+  NS_INTERFACE_MAP_ENTRY(nsINamed)
   NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIServiceWorkerManager)
 NS_INTERFACE_MAP_END
 
@@ -428,6 +443,9 @@ ServiceWorkerManager::ServiceWorkerManager()
 ServiceWorkerManager::~ServiceWorkerManager() {
   
   mRegistrationInfos.Clear();
+  if (mTelemetryTimer) {
+    mTelemetryTimer->Cancel();
+  }
 
   
   
@@ -492,6 +510,22 @@ void ServiceWorkerManager::Init(ServiceWorkerRegistrar* aRegistrar) {
   }
 
   mActor = static_cast<ServiceWorkerManagerChild*>(actor);
+  constexpr uint32_t period_ms = 10 * 1000;
+
+  NS_NewTimerWithCallback(getter_AddRefs(mTelemetryTimer), this, period_ms,
+                          nsITimer::TYPE_REPEATING_SLACK);
+}
+
+NS_IMETHODIMP
+ServiceWorkerManager::Notify(nsITimer* aTimer) {
+  ServiceWorkerPrivateImpl::ReportRunning();
+  return NS_OK;
+}
+
+
+NS_IMETHODIMP ServiceWorkerManager::GetName(nsACString& aNameOut) {
+  aNameOut.AssignLiteral("ServiceWorkerManager");
+  return NS_OK;
 }
 
 RefPtr<GenericErrorResultPromise> ServiceWorkerManager::StartControllingClient(
@@ -851,7 +885,6 @@ RefPtr<ServiceWorkerRegistrationPromise> ServiceWorkerManager::Register(
   queue->ScheduleJob(job);
 
   MOZ_ASSERT(NS_IsMainThread());
-  Telemetry::Accumulate(Telemetry::SERVICE_WORKER_REGISTRATIONS, 1);
 
   return cb->Promise();
 }
@@ -1534,10 +1567,21 @@ void ServiceWorkerManager::LoadRegistration(
 void ServiceWorkerManager::LoadRegistrations(
     const nsTArray<ServiceWorkerRegistrationData>& aRegistrations) {
   MOZ_ASSERT(NS_IsMainThread());
-
+  uint32_t fetch = 0;
   for (uint32_t i = 0, len = aRegistrations.Length(); i < len; ++i) {
     LoadRegistration(aRegistrations[i]);
+    if (aRegistrations[i].currentWorkerHandlesFetch()) {
+      fetch++;
+    }
   }
+  gServiceWorkersRegistered = aRegistrations.Length();
+  gServiceWorkersRegisteredFetch = fetch;
+  Telemetry::ScalarSet(Telemetry::ScalarID::SERVICEWORKER_REGISTRATIONS,
+                       u"All"_ns, gServiceWorkersRegistered);
+  Telemetry::ScalarSet(Telemetry::ScalarID::SERVICEWORKER_REGISTRATIONS,
+                       u"Fetch"_ns, gServiceWorkersRegisteredFetch);
+  LOG(("LoadRegistrations: %u, fetch %u\n", gServiceWorkersRegistered,
+       gServiceWorkersRegisteredFetch));
 }
 
 void ServiceWorkerManager::StoreRegistration(
