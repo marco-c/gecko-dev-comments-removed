@@ -12,6 +12,7 @@ const { XPCOMUtils } = ChromeUtils.import(
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   assert: "chrome://remote/content/shared/webdriver/Assert.jsm",
+  error: "chrome://remote/content/shared/webdriver/Errors.jsm",
   Module: "chrome://remote/content/shared/messagehandler/Module.jsm",
   RootMessageHandler:
     "chrome://remote/content/shared/messagehandler/RootMessageHandler.jsm",
@@ -54,11 +55,13 @@ class Session extends Module {
     
     
     const allEvents = events
-      .map(event => Array.from(obtainEvents(event)))
+      .map(event => Array.from(this.#obtainEvents(event)))
       .flat();
     await Promise.allSettled(
       allEvents.map(event => {
         const [moduleName] = event.split(".");
+        this.#assertModuleSupportsEvent(moduleName, event);
+
         return this.messageHandler.handleCommand({
           moduleName,
           commandName: "_subscribeEvent",
@@ -103,11 +106,13 @@ class Session extends Module {
     
     
     const allEvents = events
-      .map(event => Array.from(obtainEvents(event)))
+      .map(event => Array.from(this.#obtainEvents(event)))
       .flat();
     await Promise.allSettled(
       allEvents.map(event => {
         const [moduleName] = event.split(".");
+        this.#assertModuleSupportsEvent(moduleName, event);
+
         return this.messageHandler.handleCommand({
           moduleName,
           commandName: "_unsubscribeEvent",
@@ -121,39 +126,71 @@ class Session extends Module {
       })
     );
   }
-}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function obtainEvents(event) {
-  const events = new Set();
-
-  
-  
-  const index = event.indexOf(".");
-  if (index >= 0) {
-    
-    events.add(event);
-  } else {
-    
-    
-    
+  #assertModuleSupportsEventSubscription(moduleName) {
+    const rootModuleClass = this.#getRootModuleClass(moduleName);
+    const supportsEvents = rootModuleClass?.supportsCommand("_subscribeEvent");
+    if (!supportsEvents) {
+      throw new error.InvalidArgumentError(
+        `Module ${moduleName} does not support event subscriptions`
+      );
+    }
   }
 
-  return events;
+  #assertModuleSupportsEvent(moduleName, event) {
+    const rootModuleClass = this.#getRootModuleClass(moduleName);
+    const supportsEvent = rootModuleClass?.supportsEvent(event);
+    if (!supportsEvent) {
+      throw new error.InvalidArgumentError(
+        `Module ${moduleName} does not support event ${event}`
+      );
+    }
+  }
+
+  #getRootModuleClass(moduleName) {
+    
+    
+    const rootDestination = { type: RootMessageHandler.type };
+    const moduleClasses = this.messageHandler.getAllModuleClasses(
+      moduleName,
+      rootDestination
+    );
+
+    return moduleClasses[0];
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  #obtainEvents(event) {
+    const events = new Set();
+
+    
+    
+    const index = event.indexOf(".");
+    if (index >= 0) {
+      
+      events.add(event);
+    } else {
+      
+      this.#assertModuleSupportsEventSubscription(event);
+      
+    }
+
+    return events;
+  }
 }
 
 

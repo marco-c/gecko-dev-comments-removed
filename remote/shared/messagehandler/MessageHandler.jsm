@@ -102,32 +102,6 @@ class MessageHandler extends EventEmitter {
     return this._sessionId;
   }
 
-  
-
-
-
-
-
-
-
-
-  checkCommand(command) {
-    const { commandName, destination, moduleName } = command;
-
-    
-    
-    const moduleClasses = this._moduleCache.getAllModuleClasses(
-      moduleName,
-      destination
-    );
-
-    if (!moduleClasses.some(cls => cls.supportsMethod(commandName))) {
-      throw new error.UnsupportedCommandError(
-        `${moduleName}.${commandName} not supported for destination ${destination?.type}`
-      );
-    }
-  }
-
   destroy() {
     logger.trace(
       `MessageHandler ${this.constructor.type} for session ${this.sessionId} is being destroyed`
@@ -193,13 +167,37 @@ class MessageHandler extends EventEmitter {
 
 
 
+
+  getAllModuleClasses(moduleName, destination) {
+    return this._moduleCache.getAllModuleClasses(moduleName, destination);
+  }
+
+  
+
+
+
+
+
+
+
+
+
   handleCommand(command) {
     const { moduleName, commandName, params, destination } = command;
     logger.trace(
       `Received command ${moduleName}.${commandName} for destination ${destination.type}`
     );
 
-    this.checkCommand(command);
+    const supportsCommand = this.getAllModuleClasses(
+      moduleName,
+      destination
+    ).some(cls => cls.supportsMethod(commandName));
+
+    if (!supportsCommand) {
+      throw new error.UnsupportedCommandError(
+        `${moduleName}.${commandName} not supported for destination ${destination?.type}`
+      );
+    }
 
     const module = this._moduleCache.getModuleInstance(moduleName, destination);
     if (module && module.supportsMethod(commandName)) {
