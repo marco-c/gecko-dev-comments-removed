@@ -1001,7 +1001,8 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   ScreenMargin mGeckoFixedLayerMargins;
   
 
-  gfx::TreeLog<gfx::LOG_DEFAULT> mApzcTreeLog;
+
+  gfx::TreeLog<gfx::LOG_CRITICAL> mApzcTreeLog;
 
   class CheckerboardFlushObserver;
   friend class CheckerboardFlushObserver;
