@@ -728,6 +728,22 @@ EngineStore.prototype = {
         added++;
       }
     }
+
+    
+    
+    let policyRemovedEngineNames =
+      Services.policies.getActivePolicies()?.SearchEngines?.Remove || [];
+    for (let engineName of policyRemovedEngineNames) {
+      let engine = Services.search.getEngineByName(engineName);
+      if (engine) {
+        try {
+          await Services.search.removeEngine(engine);
+        } catch (ex) {
+          
+        }
+      }
+    }
+
     Services.search.resetToOriginalDefaultEngine();
     gSearchPane.showRestoreDefaults(false);
     gSearchPane.buildDefaultEngineDropDowns();
