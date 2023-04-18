@@ -119,7 +119,12 @@ extern "C" {
 #define WEBP_USE_NEON
 #endif
 
-#if defined(_MSC_VER) && _MSC_VER >= 1700 && defined(_M_ARM)
+
+
+
+#if defined(_MSC_VER) && \
+  ((_MSC_VER >= 1700 && defined(_M_ARM)) || \
+   (_MSC_VER >= 1920 && defined(_M_ARM64)))
 #define WEBP_USE_NEON
 #define WEBP_USE_INTRINSICS
 #endif
