@@ -331,6 +331,28 @@ var UUIDMap = {
   },
 };
 
+function clearCacheForExtensionPrincipal(principal, clearAll = false) {
+  if (!principal.schemeIs("moz-extension")) {
+    return Promise.reject(new Error("Unexpected non extension principal"));
+  }
+
+  
+  
+  const clearDataFlags = clearAll
+    ? Ci.nsIClearDataService.CLEAR_ALL_CACHES
+    : Ci.nsIClearDataService.CLEAR_IMAGE_CACHE |
+      Ci.nsIClearDataService.CLEAR_CSS_CACHE;
+
+  return new Promise(resolve =>
+    Services.clearData.deleteDataFromPrincipal(
+      principal,
+      false,
+      clearDataFlags,
+      () => resolve()
+    )
+  );
+}
+
 
 
 
@@ -397,6 +419,12 @@ var ExtensionAddonObserver = {
     let principal = Services.scriptSecurityManager.createContentPrincipal(
       baseURI,
       {}
+    );
+
+    
+    AsyncShutdown.profileChangeTeardown.addBlocker(
+      `Clear cache for ${addon.id}`,
+      clearCacheForExtensionPrincipal(principal,  true)
     );
 
     
@@ -2551,6 +2579,30 @@ class Extension extends ExtensionData {
 
 
 
+
+
+
+
+
+
+
+
+  async clearCache(reason) {
+    switch (reason) {
+      case "ADDON_INSTALL":
+      case "ADDON_UPGRADE":
+      case "ADDON_DOWNGRADE":
+        return clearCacheForExtensionPrincipal(this.principal);
+    }
+  }
+
+  
+
+
+
+
+
+
   updatePermissions(reason) {
     const { principal } = this;
 
@@ -2679,6 +2731,8 @@ class Extension extends ExtensionData {
         
         return;
       }
+
+      await this.clearCache(this.startupReason);
 
       
       
