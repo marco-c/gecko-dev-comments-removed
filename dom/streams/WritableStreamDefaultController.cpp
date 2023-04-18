@@ -139,11 +139,12 @@ class WritableStartPromiseNativeHandler final : public PromiseNativeHandler {
 
   void ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue) override {
     
-    RefPtr<WritableStream> stream = mController->Stream();
     
     
-    MOZ_ASSERT(stream->State() == WritableStream::WriterState::Writable ||
-               stream->State() == WritableStream::WriterState::Erroring);
+    MOZ_ASSERT(mController->Stream()->State() ==
+                   WritableStream::WriterState::Writable ||
+               mController->Stream()->State() ==
+                   WritableStream::WriterState::Erroring);
     
     mController->SetStarted(true);
     
