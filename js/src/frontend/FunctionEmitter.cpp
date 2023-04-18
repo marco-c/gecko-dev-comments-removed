@@ -485,6 +485,26 @@ bool FunctionScriptEmitter::emitEndBody() {
 
   if (funbox_->needsFinalYield()) {
     
+    
+    
+    
+    
+    if (!bce_->emit1(JSOp::Undefined)) {
+      
+      return false;
+    }
+    if (!bce_->emit1(JSOp::SetRval)) {
+      
+      return false;
+    }
+
+    
+    
+    if (!bce_->emitJumpTargetAndPatch(bce_->finalYields)) {
+      
+      return false;
+    }
+
     if (funbox_->needsIteratorResult()) {
       MOZ_ASSERT(!funbox_->needsPromiseResult());
       
@@ -494,7 +514,7 @@ bool FunctionScriptEmitter::emitEndBody() {
         return false;
       }
 
-      if (!bce_->emit1(JSOp::Undefined)) {
+      if (!bce_->emit1(JSOp::GetRval)) {
         
         return false;
       }
@@ -509,26 +529,21 @@ bool FunctionScriptEmitter::emitEndBody() {
         return false;
       }
 
+    } else if (funbox_->needsPromiseResult()) {
+      
+      
+      if (!bce_->emit1(JSOp::GetRval)) {
+        
+        return false;
+      }
+
       if (!bce_->emitGetDotGeneratorInInnermostScope()) {
         
         return false;
       }
 
-      
-      if (!bce_->emitYieldOp(JSOp::FinalYieldRval)) {
-        
-        return false;
-      }
-    } else if (funbox_->needsPromiseResult()) {
-      
-      
-      if (!asyncEmitter_->emitEnd()) {
-        return false;
-      }
-    } else {
-      
-      
-      if (!bce_->emit1(JSOp::Undefined)) {
+      if (!bce_->emit2(JSOp::AsyncResolve,
+                       uint8_t(AsyncFunctionResolveKind::Fulfill))) {
         
         return false;
       }
@@ -537,18 +552,25 @@ bool FunctionScriptEmitter::emitEndBody() {
         
         return false;
       }
+    }
 
-      if (!bce_->emitGetDotGeneratorInInnermostScope()) {
-        
-        return false;
-      }
-
+    
+    if (!bce_->emitGetDotGeneratorInInnermostScope()) {
       
-      if (!bce_->emitYieldOp(JSOp::FinalYieldRval)) {
-        
+      return false;
+    }
+
+    if (!bce_->emitYieldOp(JSOp::FinalYieldRval)) {
+      return false;
+    }
+
+    if (funbox_->needsPromiseResult()) {
+      
+      if (!asyncEmitter_->emitEndFunction()) {
         return false;
       }
     }
+
   } else {
     
     

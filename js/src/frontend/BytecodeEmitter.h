@@ -301,6 +301,9 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   JumpList endOfDerivedClassConstructorBody = {};
 
   
+  JumpList finalYields = {};
+
+  
 
 
 

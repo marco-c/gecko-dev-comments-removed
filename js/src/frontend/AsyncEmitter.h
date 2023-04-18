@@ -77,6 +77,9 @@ struct BytecodeEmitter;
 
 
 
+
+
+
 class MOZ_STACK_CLASS AsyncEmitter {
  private:
   BytecodeEmitter* bce_;
@@ -85,6 +88,12 @@ class MOZ_STACK_CLASS AsyncEmitter {
   mozilla::Maybe<TryEmitter> rejectTryCatch_;
 
 #ifdef DEBUG
+  
+  
+  
+  
+  
+  
   
   
   
@@ -154,7 +163,8 @@ class MOZ_STACK_CLASS AsyncEmitter {
   [[nodiscard]] bool prepareForModule();
   [[nodiscard]] bool emitParamsEpilogue();
   [[nodiscard]] bool prepareForBody();
-  [[nodiscard]] bool emitEnd();
+  [[nodiscard]] bool emitEndFunction();
+  [[nodiscard]] bool emitEndModule();
 };
 
 } 
