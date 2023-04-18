@@ -29,8 +29,7 @@ namespace ipc {
 
 
 
-class BackgroundChildImpl : public PBackgroundChild,
-                            public ChildToParentStreamActorManager {
+class BackgroundChildImpl : public PBackgroundChild {
  public:
   class ThreadLocal;
 
