@@ -39,6 +39,13 @@ exports.TYPES = TYPES;
 
 
 
+
+
+
+
+
+
+
 const FrameTargetResources = augmentResourceDictionary({
   [TYPES.CACHE_STORAGE]: {
     path: "devtools/server/actors/resources/storage-cache",
@@ -92,6 +99,11 @@ const FrameTargetResources = augmentResourceDictionary({
     path: "devtools/server/actors/resources/websockets",
   },
 });
+
+
+
+
+
 const ProcessTargetResources = augmentResourceDictionary({
   [TYPES.CONSOLE_MESSAGE]: {
     path: "devtools/server/actors/resources/console-messages",
@@ -114,6 +126,11 @@ const ProcessTargetResources = augmentResourceDictionary({
 
 
 
+
+
+
+
+
 const WorkerTargetResources = augmentResourceDictionary({
   [TYPES.CONSOLE_MESSAGE]: {
     path: "devtools/server/actors/resources/console-messages",
@@ -125,6 +142,11 @@ const WorkerTargetResources = augmentResourceDictionary({
     path: "devtools/server/actors/resources/thread-states",
   },
 });
+
+
+
+
+
 
 const ParentProcessResources = augmentResourceDictionary({
   [TYPES.NETWORK_EVENT]: {
@@ -140,6 +162,15 @@ const ParentProcessResources = augmentResourceDictionary({
     path: "devtools/server/actors/resources/parent-process-document-event",
   },
 });
+
+
+
+
+
+
+
+const RootResources = augmentResourceDictionary({});
+exports.RootResources = RootResources;
 
 function augmentResourceDictionary(dict) {
   for (const resource of Object.values(dict)) {
@@ -157,12 +188,15 @@ function augmentResourceDictionary(dict) {
 
 
 
-function getResourceTypeDictionary(watcherOrTargetActor) {
-  const { typeName } = watcherOrTargetActor;
+function getResourceTypeDictionary(rootOrWatcherOrTargetActor) {
+  const { typeName } = rootOrWatcherOrTargetActor;
+  if (typeName == "root") {
+    return RootResources;
+  }
   if (typeName == "watcher") {
     return ParentProcessResources;
   }
-  const { targetType } = watcherOrTargetActor;
+  const { targetType } = rootOrWatcherOrTargetActor;
   return getResourceTypeDictionaryForTargetType(targetType);
 }
 
@@ -194,11 +228,11 @@ function getResourceTypeDictionaryForTargetType(targetType) {
 
 
 
-function getResourceTypeEntry(watcherOrTargetActor, resourceType) {
-  const dict = getResourceTypeDictionary(watcherOrTargetActor);
+function getResourceTypeEntry(rootOrWatcherOrTargetActor, resourceType) {
+  const dict = getResourceTypeDictionary(rootOrWatcherOrTargetActor);
   if (!(resourceType in dict)) {
     throw new Error(
-      `Unsupported resource type '${resourceType}' for ${watcherOrTargetActor.typeName}`
+      `Unsupported resource type '${resourceType}' for ${rootOrWatcherOrTargetActor.typeName}`
     );
   }
   return dict[resourceType];
@@ -220,31 +254,37 @@ function getResourceTypeEntry(watcherOrTargetActor, resourceType) {
 
 
 
-async function watchResources(watcherOrTargetActor, resourceTypes) {
+
+
+
+
+async function watchResources(rootOrWatcherOrTargetActor, resourceTypes) {
   
   
-  const { targetType } = watcherOrTargetActor;
+  const { targetType } = rootOrWatcherOrTargetActor;
+  
+  
   if (targetType) {
     resourceTypes = getResourceTypesForTargetType(resourceTypes, targetType);
   }
   for (const resourceType of resourceTypes) {
     const { watchers, WatcherClass } = getResourceTypeEntry(
-      watcherOrTargetActor,
+      rootOrWatcherOrTargetActor,
       resourceType
     );
 
     
-    if (watchers.has(watcherOrTargetActor)) {
+    if (watchers.has(rootOrWatcherOrTargetActor)) {
       continue;
     }
 
     const watcher = new WatcherClass();
-    await watcher.watch(watcherOrTargetActor, {
-      onAvailable: watcherOrTargetActor.notifyResourceAvailable,
-      onDestroyed: watcherOrTargetActor.notifyResourceDestroyed,
-      onUpdated: watcherOrTargetActor.notifyResourceUpdated,
+    await watcher.watch(rootOrWatcherOrTargetActor, {
+      onAvailable: rootOrWatcherOrTargetActor.notifyResourceAvailable,
+      onDestroyed: rootOrWatcherOrTargetActor.notifyResourceDestroyed,
+      onUpdated: rootOrWatcherOrTargetActor.notifyResourceUpdated,
     });
-    watchers.set(watcherOrTargetActor, watcher);
+    watchers.set(rootOrWatcherOrTargetActor, watcher);
   }
 }
 exports.watchResources = watchResources;
@@ -281,18 +321,18 @@ exports.hasResourceTypesForTargets = hasResourceTypesForTargets;
 
 
 
-function unwatchResources(watcherOrTargetActor, resourceTypes) {
+function unwatchResources(rootOrWatcherOrTargetActor, resourceTypes) {
   for (const resourceType of resourceTypes) {
     
     const { watchers } = getResourceTypeEntry(
-      watcherOrTargetActor,
+      rootOrWatcherOrTargetActor,
       resourceType
     );
 
-    const watcher = watchers.get(watcherOrTargetActor);
+    const watcher = watchers.get(rootOrWatcherOrTargetActor);
     if (watcher) {
       watcher.destroy();
-      watchers.delete(watcherOrTargetActor);
+      watchers.delete(rootOrWatcherOrTargetActor);
     }
   }
 }
@@ -304,18 +344,18 @@ exports.unwatchResources = unwatchResources;
 
 
 
-function unwatchAllTargetResources(watcherOrTargetActor) {
+function unwatchAllResources(rootOrWatcherOrTargetActor) {
   for (const { watchers } of Object.values(
-    getResourceTypeDictionary(watcherOrTargetActor)
+    getResourceTypeDictionary(rootOrWatcherOrTargetActor)
   )) {
-    const watcher = watchers.get(watcherOrTargetActor);
+    const watcher = watchers.get(rootOrWatcherOrTargetActor);
     if (watcher) {
       watcher.destroy();
-      watchers.delete(watcherOrTargetActor);
+      watchers.delete(rootOrWatcherOrTargetActor);
     }
   }
 }
-exports.unwatchAllTargetResources = unwatchAllTargetResources;
+exports.unwatchAllResources = unwatchAllResources;
 
 
 

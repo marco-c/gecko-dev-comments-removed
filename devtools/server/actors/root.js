@@ -18,6 +18,7 @@ const {
 const { DevToolsServer } = require("devtools/server/devtools-server");
 const protocol = require("devtools/shared/protocol");
 const { rootSpec } = require("devtools/shared/specs/root");
+const Resources = require("devtools/server/actors/resources/index");
 
 loader.lazyRequireGetter(
   this,
@@ -112,14 +113,28 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
       this
     );
     this._onProcessListChanged = this.onProcessListChanged.bind(this);
+    this.notifyResourceAvailable = this.notifyResourceAvailable.bind(this);
+    this.notifyResourceDestroyed = this.notifyResourceDestroyed.bind(this);
+
     this._extraActors = {};
 
     this._globalActorPool = new LazyPool(this.conn);
 
     this.applicationType = "browser";
 
+    
+    const supportedResources = {};
+    for (const resourceType in Resources.RootResources) {
+      supportedResources[resourceType] = true;
+    }
+
     this.traits = {
       networkMonitor: true,
+
+      
+      
+      resources: supportedResources,
+
       
       
       workerConsoleApiMessagesDispatchedToMainThread: Services.prefs
@@ -163,6 +178,8 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
 
 
   destroy: function() {
+    Resources.unwatchAllResources(this);
+
     protocol.Actor.prototype.destroy.call(this);
 
     
@@ -539,6 +556,52 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
       }
       delete this._extraActors[name];
     }
+  },
+
+  
+
+
+
+
+  async watchResources(resourceTypes) {
+    await Resources.watchResources(this, resourceTypes);
+  },
+
+  
+
+
+
+
+  unwatchResources(resourceTypes) {
+    Resources.unwatchResources(
+      this,
+      Resources.getParentProcessResourceTypes(resourceTypes)
+    );
+  },
+  
+
+
+
+
+
+
+  notifyResourceAvailable(resources) {
+    this._emitResourcesForm("resource-available-form", resources);
+  },
+
+  notifyResourceDestroyed(resources) {
+    this._emitResourcesForm("resource-destroyed-form", resources);
+  },
+
+  
+
+
+  _emitResourcesForm(name, resources) {
+    if (resources.length === 0) {
+      
+      return;
+    }
+    this.emit(name, resources);
   },
 });
 
