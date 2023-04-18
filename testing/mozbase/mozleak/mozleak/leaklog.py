@@ -7,6 +7,8 @@ from __future__ import absolute_import
 import os
 import re
 
+from geckoprocesstypes import process_types
+
 
 def _get_default_logger():
     from mozlog import get_default_logger
@@ -183,16 +185,9 @@ def process_leak_log(
 
     
     
+
     knownProcessTypes = [
-        "default",
-        "forkserver",
-        "gmplugin",
-        "gpu",
-        "plugin",
-        "rdd",
-        "socket",
-        "tab",
-        "vr",
+        p.string_name for p in process_types if p.string_name != "ipdlunittest"
     ]
 
     for processType in knownProcessTypes:
