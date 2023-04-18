@@ -14,7 +14,6 @@
 
 #include "frontend/TokenStream.h"
 #include "irregexp/RegExpAPI.h"
-#include "jit/InlinableNatives.h"
 #include "js/friend/ErrorMessages.h"  
 #include "js/PropertySpec.h"
 #include "js/RegExpFlags.h"  
@@ -27,7 +26,6 @@
 
 #include "vm/EnvironmentObject-inl.h"
 #include "vm/JSObject-inl.h"
-#include "vm/NativeObject-inl.h"
 #include "vm/ObjectOperations-inl.h"
 #include "vm/PlainObject-inl.h"
 
