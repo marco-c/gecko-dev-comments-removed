@@ -65,7 +65,6 @@ nsConsoleService::nsConsoleService()
       mMaximumSize(250),
       mDeliveringMessage(false),
       mLock("nsConsoleService.mLock") {
-
 #ifdef XP_WIN
   
   
