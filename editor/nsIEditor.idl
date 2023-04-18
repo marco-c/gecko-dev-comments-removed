@@ -379,6 +379,10 @@ interface nsIEditor  : nsISupports
   void beginningOfDocument();
 
   
+
+
+
+  [can_run_script]
   void endOfDocument();
 
   

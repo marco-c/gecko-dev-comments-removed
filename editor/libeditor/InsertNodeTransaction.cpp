@@ -129,7 +129,7 @@ NS_IMETHODIMP InsertNodeTransaction::DoTransaction() {
                          "EditorBase::MarkElementDirty() failed, but ignored");
   }
 
-  ErrorResult error;
+  IgnoredErrorResult error;
   container->InsertBefore(contentToInsert, refChild, error);
   
   
@@ -149,14 +149,10 @@ NS_IMETHODIMP InsertNodeTransaction::DoTransaction() {
   }
 
   
-  EditorRawDOMPoint afterInsertedNode(
-      EditorRawDOMPoint::After(contentToInsert));
-  NS_WARNING_ASSERTION(afterInsertedNode.IsSet(),
-                       "Failed to set after the inserted node");
-  IgnoredErrorResult ignoredError;
-  selection->CollapseInLimiter(afterInsertedNode, ignoredError);
-  NS_WARNING_ASSERTION(!ignoredError.Failed(),
-                       "Selection::CollapseInLimiter() failed, but ignored");
+  editorBase->CollapseSelectionTo(EditorRawDOMPoint::After(contentToInsert),
+                                  error);
+  NS_WARNING_ASSERTION(!error.Failed(),
+                       "EditorBase::CollapseSelectionTo() failed, but ignored");
   return NS_OK;
 }
 
