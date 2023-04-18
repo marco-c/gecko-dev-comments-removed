@@ -45,8 +45,8 @@ var TargetActorRegistry = {
 
 
 
-  getTopLevelTargetActorForContext(context, connectionPrefix) {
-    if (context.type == "all") {
+  getTopLevelTargetActorForContext(sessionContext, connectionPrefix) {
+    if (sessionContext.type == "all") {
       if (
         Services.appinfo.processType === Services.appinfo.PROCESS_TYPE_DEFAULT
       ) {
@@ -56,21 +56,21 @@ var TargetActorRegistry = {
           return xpcShellTargetActor;
         }
 
-        const actors = this.getTargetActors(context, connectionPrefix);
+        const actors = this.getTargetActors(sessionContext, connectionPrefix);
         
         return actors[0];
       }
       return null;
     } else if (
-      context.type == "browser-element" ||
-      context.type == "webextension"
+      sessionContext.type == "browser-element" ||
+      sessionContext.type == "webextension"
     ) {
-      const actors = this.getTargetActors(context, connectionPrefix);
+      const actors = this.getTargetActors(sessionContext, connectionPrefix);
       return actors.find(actor => {
         return actor.isTopLevelTarget;
       });
     }
-    throw new Error("Unsupported context type: " + context.type);
+    throw new Error("Unsupported session context type: " + sessionContext.type);
   },
 
   
@@ -85,15 +85,17 @@ var TargetActorRegistry = {
 
 
 
-  getTargetActors(context, connectionPrefix) {
+  getTargetActors(sessionContext, connectionPrefix) {
     const actors = [];
     for (const actor of windowGlobalTargetActors) {
       const isMatchingPrefix = actor.actorID.startsWith(connectionPrefix);
       const isMatchingContext =
-        (context.type == "all" && actor.typeName === "parentProcessTarget") ||
-        (context.type == "browser-element" &&
-          actor.browserId == context.browserId) ||
-        (context.type == "webextension" && actor.addonId == context.addonId);
+        (sessionContext.type == "all" &&
+          actor.typeName === "parentProcessTarget") ||
+        (sessionContext.type == "browser-element" &&
+          actor.browserId == sessionContext.browserId) ||
+        (sessionContext.type == "webextension" &&
+          actor.addonId == sessionContext.addonId);
       if (isMatchingPrefix && isMatchingContext) {
         actors.push(actor);
       }

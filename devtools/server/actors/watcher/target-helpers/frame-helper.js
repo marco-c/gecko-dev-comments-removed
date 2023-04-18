@@ -39,7 +39,7 @@ async function createTargets(watcher) {
   
   
   
-  if (watcher.context.type == "browser-element") {
+  if (watcher.sessionContext.type == "browser-element") {
     
     
     
@@ -49,7 +49,7 @@ async function createTargets(watcher) {
   if (!browsingContextAttachedObserverByWatcher.has(watcher)) {
     
     
-    const browserId = watcher.context.browserId;
+    const browserId = watcher.sessionContext.browserId;
     const onBrowsingContextAttached = browsingContext => {
       
       
@@ -59,7 +59,7 @@ async function createTargets(watcher) {
       
       if (
         !browsingContext.parent &&
-        (watcher.context.type != "browser-element" ||
+        (watcher.sessionContext.type != "browser-element" ||
           browserId === browsingContext.browserId)
       ) {
         browsingContext.watchedByDevTools = true;
@@ -134,7 +134,7 @@ async function createTargetForBrowsingContext({
       .instantiateTarget({
         watcherActorID: watcher.actorID,
         connectionPrefix: watcher.conn.prefix,
-        context: watcher.context,
+        sessionContext: watcher.sessionContext,
         sessionData: watcher.sessionData,
       });
   } catch (e) {
@@ -170,7 +170,7 @@ function destroyTargets(watcher) {
   );
   if (
     watcher.isServerTargetSwitchingEnabled &&
-    watcher.context.type == "browser-element"
+    watcher.sessionContext.type == "browser-element"
   ) {
     
     
@@ -191,11 +191,11 @@ function destroyTargets(watcher) {
       .getActor("DevToolsFrame")
       .destroyTarget({
         watcherActorID: watcher.actorID,
-        context: watcher.context,
+        sessionContext: watcher.sessionContext,
       });
   }
 
-  if (watcher.context.type == "browser-element") {
+  if (watcher.sessionContext.type == "browser-element") {
     watcher.browserElement.browsingContext.watchedByDevTools = false;
   }
 
@@ -231,7 +231,7 @@ async function addSessionDataEntry({ watcher, type, entries }) {
       .getActor("DevToolsFrame")
       .addSessionDataEntry({
         watcherActorID: watcher.actorID,
-        context: watcher.context,
+        sessionContext: watcher.sessionContext,
         type,
         entries,
       });
@@ -258,7 +258,7 @@ function removeSessionDataEntry({ watcher, type, entries }) {
       .getActor("DevToolsFrame")
       .removeSessionDataEntry({
         watcherActorID: watcher.actorID,
-        context: watcher.context,
+        sessionContext: watcher.sessionContext,
         type,
         entries,
       });
@@ -294,15 +294,15 @@ function getWatchingBrowsingContexts(watcher) {
   
   
   if (
-    watcher.context.type == "browser-element" ||
-    watcher.context.type == "webextension"
+    watcher.sessionContext.type == "browser-element" ||
+    watcher.sessionContext.type == "webextension"
   ) {
     let topBrowsingContext;
-    if (watcher.context.type == "browser-element") {
+    if (watcher.sessionContext.type == "browser-element") {
       topBrowsingContext = watcher.browserElement.browsingContext;
-    } else if (watcher.context.type == "webextension") {
+    } else if (watcher.sessionContext.type == "webextension") {
       topBrowsingContext = BrowsingContext.get(
-        watcher.context.addonBrowsingContextID
+        watcher.sessionContext.addonBrowsingContextID
       );
     }
 

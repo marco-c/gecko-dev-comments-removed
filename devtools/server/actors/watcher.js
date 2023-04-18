@@ -88,18 +88,18 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
 
 
-  initialize: function(conn, context, config = {}) {
+  initialize: function(conn, sessionContext, config = {}) {
     protocol.Actor.prototype.initialize.call(this, conn);
-    this._context = context;
-    if (context.type == "browser-element") {
+    this._sessionContext = sessionContext;
+    if (sessionContext.type == "browser-element") {
       
       const browsingContext = BrowsingContext.getCurrentTopByBrowserId(
-        context.browserId
+        sessionContext.browserId
       );
       if (!browsingContext) {
         throw new Error(
           "Unable to retrieve the <browser> element for browserId=" +
-            context.browserId
+            sessionContext.browserId
         );
       }
       this._browserElement = browsingContext.embedderElement;
@@ -129,8 +129,8 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
     this.notifyResourceUpdated = this.notifyResourceUpdated.bind(this);
   },
 
-  get context() {
-    return this._context;
+  get sessionContext() {
+    return this._sessionContext;
   },
 
   
@@ -149,14 +149,16 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
 
   isContextDestroyed() {
-    if (this.context.type == "browser-element") {
+    if (this.sessionContext.type == "browser-element") {
       return !this.browserElement.browsingContext;
-    } else if (this.context.type == "webextension") {
-      return !BrowsingContext.get(this.context.addonBrowsingContextID);
-    } else if (this.context.type == "all") {
+    } else if (this.sessionContext.type == "webextension") {
+      return !BrowsingContext.get(this.sessionContext.addonBrowsingContextID);
+    } else if (this.sessionContext.type == "all") {
       return false;
     }
-    throw new Error("Unsupported context type: " + this.context.type);
+    throw new Error(
+      "Unsupported session context type: " + this.sessionContext.type
+    );
   },
 
   get isServerTargetSwitchingEnabled() {
@@ -195,8 +197,8 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
     
     
     const shouldEnableAllWatchers =
-      this.context.type == "browser-element" ||
-      this.context.type == "webextension";
+      this.sessionContext.type == "browser-element" ||
+      this.sessionContext.type == "webextension";
 
     return {
       actor: this.actorID,
@@ -310,7 +312,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
     this._currentWindowGlobalTargets.set(actor.innerWindowId, actor);
 
     
-    if (this.context.type == "all") {
+    if (this.sessionContext.type == "all") {
       this.emit("target-available-form", actor);
       return;
     }
@@ -424,21 +426,21 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
 
   notifyResourceAvailable(resources) {
-    if (this.context.type == "webextension") {
+    if (this.sessionContext.type == "webextension") {
       this._overrideResourceBrowsingContextForWebExtension(resources);
     }
     this._emitResourcesForm("resource-available-form", resources);
   },
 
   notifyResourceDestroyed(resources) {
-    if (this.context.type == "webextension") {
+    if (this.sessionContext.type == "webextension") {
       this._overrideResourceBrowsingContextForWebExtension(resources);
     }
     this._emitResourcesForm("resource-destroyed-form", resources);
   },
 
   notifyResourceUpdated(resources) {
-    if (this.context.type == "webextension") {
+    if (this.sessionContext.type == "webextension") {
       this._overrideResourceBrowsingContextForWebExtension(resources);
     }
     this._emitResourcesForm("resource-updated-form", resources);
@@ -466,7 +468,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
   _overrideResourceBrowsingContextForWebExtension(resources) {
     resources.forEach(resource => {
-      resource.browsingContextID = this.context.addonBrowsingContextID;
+      resource.browsingContextID = this.sessionContext.addonBrowsingContextID;
     });
   },
 
@@ -482,7 +484,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
     
     
     return TargetActorRegistry.getTopLevelTargetActorForContext(
-      this.context,
+      this.sessionContext,
       this.conn.prefix
     );
   },

@@ -111,7 +111,7 @@ const WatcherRegistry = {
       sessionData = {
         
         
-        context: watcher.context,
+        sessionContext: watcher.sessionContext,
         
         connectionPrefix: watcher.conn.prefix,
         
@@ -152,8 +152,8 @@ const WatcherRegistry = {
     const watchers = [];
     for (const watcherActor of watcherActors.values()) {
       if (
-        watcherActor.context.type == "browser-element" &&
-        watcherActor.context.browserId === browserId
+        watcherActor.sessionContext.type == "browser-element" &&
+        watcherActor.sessionContext.browserId === browserId
       ) {
         watchers.push(watcherActor);
       }

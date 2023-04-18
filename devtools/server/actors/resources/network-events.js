@@ -49,7 +49,10 @@ class NetworkEventWatcher {
     
     this.persist = false;
     this.listener = new NetworkObserver(
-      { browserId: this.browserId, addonId: watcherActor.context.addonId },
+      {
+        browserId: this.browserId,
+        addonId: watcherActor.sessionContext.addonId,
+      },
       { onNetworkEvent: this.onNetworkEvent.bind(this) }
     );
 
@@ -62,7 +65,7 @@ class NetworkEventWatcher {
   }
 
   get browserId() {
-    return this.watcherActor.context.browserId;
+    return this.watcherActor.sessionContext.browserId;
   }
 
   
@@ -155,13 +158,13 @@ class NetworkEventWatcher {
     }
     
     
-    if (this.persist || this.watcherActor.context.type == "all") {
+    if (this.persist || this.watcherActor.sessionContext.type == "all") {
       return;
     }
     
     
     if (
-      this.watcherActor.context.type == "browser-element" &&
+      this.watcherActor.sessionContext.type == "browser-element" &&
       windowGlobal.browsingContext.browserId != this.browserId
     ) {
       return;
