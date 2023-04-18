@@ -8800,19 +8800,6 @@ bool nsDocShell::IsSameDocumentNavigation(nsDocShellLoadState* aLoadState,
     }
   }
 
-#ifdef DEBUG
-  if (aState.mHistoryNavBetweenSameDoc) {
-    nsCOMPtr<nsIInputStream> currentPostData;
-    if (mozilla::SessionHistoryInParent()) {
-      currentPostData = mActiveEntry->GetPostData();
-    } else {
-      currentPostData = mOSHE->GetPostData();
-    }
-    NS_ASSERTION(currentPostData == aLoadState->PostDataStream(),
-                 "Different POST data for entries for the same page?");
-  }
-#endif
-
   
   
   
@@ -10041,6 +10028,10 @@ nsIPrincipal* nsDocShell::GetInheritedPrincipal(
 
       
       postChannel->SetUploadStream(aLoadState->PostDataStream(), ""_ns, -1);
+
+      
+      
+      aLoadState->SetPostDataStream(nullptr);
     }
 
     
