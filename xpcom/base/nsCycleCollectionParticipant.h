@@ -686,11 +686,8 @@ T* DowncastCCParticipant(void* aPtr) {
 
 
 #ifdef DEBUG
-
-
-
-#define NOT_INHERITED_CANT_OVERRIDE virtual void BaseCycleCollectable() final {}
-
+#  define NOT_INHERITED_CANT_OVERRIDE \
+    virtual void BaseCycleCollectable() final {}
 #else
 #  define NOT_INHERITED_CANT_OVERRIDE
 #endif
