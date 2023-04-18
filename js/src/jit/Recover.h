@@ -207,13 +207,22 @@ class MOZ_NON_PARAM RInstruction {
 
 class RResumePoint final : public RInstruction {
  private:
-  uint32_t pcOffset_;     
-  uint32_t numOperands_;  
+  uint32_t pcOffsetAndMode_;  
+  uint32_t numOperands_;      
 
  public:
   RINSTRUCTION_HEADER_(ResumePoint)
 
-  uint32_t pcOffset() const { return pcOffset_; }
+  
+  static constexpr uint32_t PCOffsetShift = 4;
+  static constexpr uint32_t ResumeModeMask = 0b1111;
+  static_assert(uint32_t(ResumeMode::Last) <= ResumeModeMask);
+
+  uint32_t pcOffset() const { return pcOffsetAndMode_ >> PCOffsetShift; }
+  ResumeMode mode() const {
+    return ResumeMode(pcOffsetAndMode_ & ResumeModeMask);
+  }
+
   uint32_t numOperands() const override { return numOperands_; }
   [[nodiscard]] bool recover(JSContext* cx,
                              SnapshotIterator& iter) const override;

@@ -1007,6 +1007,8 @@ enum class ResumeMode : uint8_t {
 
   
   InlinedAccessor,
+
+  Last = InlinedAccessor
 };
 
 inline const char* ResumeModeToString(ResumeMode mode) {
