@@ -752,28 +752,40 @@ class PictureInPictureToggleChild extends JSWindowActorChild {
     }
 
     let state = this.docState;
-    let { clientX, clientY } = event;
-    let winUtils = this.contentWindow.windowUtils;
-    
-    
-    
-    
-    
-    
-    
-    let elements = winUtils.nodesFromRect(
-      clientX,
-      clientY,
-      1,
-      1,
-      1,
-      1,
-      true,
-      false,
-      true ,
-      state.toggleVisibilityThreshold
-    );
-    if (!Array.from(elements).includes(video)) {
+
+    let overVideo = (() => {
+      let { clientX, clientY } = event;
+      let winUtils = this.contentWindow.windowUtils;
+      
+      
+      
+      
+      
+      
+      
+      let elements = winUtils.nodesFromRect(
+        clientX,
+        clientY,
+        1,
+        1,
+        1,
+        1,
+        true,
+        false,
+         true,
+        state.toggleVisibilityThreshold
+      );
+
+      for (let element of elements) {
+        if (element == video || element.containingShadowRoot == shadowRoot) {
+          return true;
+        }
+      }
+
+      return false;
+    })();
+
+    if (!overVideo) {
       return;
     }
 
@@ -923,7 +935,7 @@ class PictureInPictureToggleChild extends JSWindowActorChild {
       1,
       true,
       false,
-      true
+       true
     );
 
     for (let element of elements) {
@@ -938,13 +950,14 @@ class PictureInPictureToggleChild extends JSWindowActorChild {
       );
       logConsole.debug("PiP window is open:", element.isCloningElementVisually);
 
-      if (
-        state.weakVisibleVideos.has(element) &&
-        !element.isCloningElementVisually
-      ) {
-        logConsole.debug("Found supported element");
-        this.onMouseOverVideo(element, event);
-        return;
+      
+      
+      for (let el = element; el; el = el.containingShadowRoot?.host) {
+        if (state.weakVisibleVideos.has(el) && !el.isCloningElementVisually) {
+          logConsole.debug("Found supported element");
+          this.onMouseOverVideo(el, event);
+          return;
+        }
       }
     }
 
