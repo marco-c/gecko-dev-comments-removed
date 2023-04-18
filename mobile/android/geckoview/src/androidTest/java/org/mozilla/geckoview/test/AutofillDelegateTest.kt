@@ -219,7 +219,7 @@ class AutofillDelegateTest : BaseSessionTest() {
         val nodes = mainSession.autofillSession.root
         checkAutofillChild(nodes, "")
 
-        mainSession.autofill(autofillValues)
+        mainSession.autofillSession.autofill(autofillValues)
 
         
         for (values in promises.map { it.value.asJsonArray() }) {
@@ -252,7 +252,7 @@ class AutofillDelegateTest : BaseSessionTest() {
 
         val autofillValues = SparseArray<CharSequence>()
         autofillValues.append(-1, "lobster")
-        mainSession.autofill(autofillValues)
+        mainSession.autofillSession.autofill(autofillValues)
     }
 
     private fun countAutofillNodes(cond: (Autofill.Node) -> Boolean =

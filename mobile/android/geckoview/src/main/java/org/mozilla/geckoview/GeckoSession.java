@@ -6483,9 +6483,12 @@ public class GeckoSession {
 
 
 
+
   @UiThread
+  @Deprecated
+  @DeprecationSchedule(id = "autofill-node", version = 104)
   public void autofill(final @NonNull SparseArray<CharSequence> values) {
-    getAutofillSupport().autofill(values);
+    getAutofillSession().autofill(values);
   }
 
   
