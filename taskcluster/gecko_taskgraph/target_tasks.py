@@ -566,6 +566,12 @@ def target_tasks_promote_desktop(full_task_graph, parameters, graph_config):
     mozilla_{beta,release} tasks, plus l10n, beetmover, balrog, etc."""
 
     def filter(task):
+        
+        if "mozilla-esr" not in parameters["project"] and is_geckoview(
+            task, parameters
+        ):
+            return True
+
         if task.attributes.get("shipping_product") != parameters["release_product"]:
             return False
 
@@ -607,12 +613,6 @@ def target_tasks_push_desktop(full_task_graph, parameters, graph_config):
         
         if task.label in filtered_for_candidates:
             return True
-        
-        
-        if "mozilla-esr" not in parameters["project"] and is_geckoview(
-            task, parameters
-        ):
-            return True
 
         if (
             task.attributes.get("shipping_product") == parameters["release_product"]
@@ -649,10 +649,6 @@ def target_tasks_ship_desktop(full_task_graph, parameters, graph_config):
             return False
         
         if task.label in filtered_for_candidates:
-            return True
-
-        
-        if is_geckoview(task, parameters) and is_rc:
             return True
 
         if (
