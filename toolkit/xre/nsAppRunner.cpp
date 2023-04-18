@@ -4164,6 +4164,7 @@ bool IsWaylandEnabled() {
 #if defined(MOZ_UPDATER) && !defined(MOZ_WIDGET_ANDROID)
 enum struct ShouldNotProcessUpdatesReason {
   DevToolsLaunching,
+  NotAnUpdatingTask,
   OtherInstanceRunning,
 };
 
@@ -4172,6 +4173,8 @@ const char* ShouldNotProcessUpdatesReasonAsString(
   switch (aReason) {
     case ShouldNotProcessUpdatesReason::DevToolsLaunching:
       return "DevToolsLaunching";
+    case ShouldNotProcessUpdatesReason::NotAnUpdatingTask:
+      return "NotAnUpdatingTask";
     case ShouldNotProcessUpdatesReason::OtherInstanceRunning:
       return "OtherInstanceRunning";
   }
@@ -4202,7 +4205,25 @@ Maybe<ShouldNotProcessUpdatesReason> ShouldNotProcessUpdates(
   
   
   
-  if (BackgroundTasks::IsBackgroundTaskMode()) {
+  Maybe<nsCString> backgroundTasks = BackgroundTasks::GetBackgroundTasks();
+  if (backgroundTasks.isSome()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!BackgroundTasks::IsUpdatingTaskName(backgroundTasks.ref())) {
+      NS_WARNING("ShouldNotProcessUpdates(): NotAnUpdatingTask");
+      return Some(ShouldNotProcessUpdatesReason::NotAnUpdatingTask);
+    }
+
     
     
     

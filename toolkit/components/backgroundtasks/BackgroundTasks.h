@@ -133,6 +133,18 @@ class BackgroundTasks final : public nsIBackgroundTasks {
     return NS_OK;
   }
 
+  
+
+
+
+
+
+
+  static bool IsUpdatingTaskName(const nsCString& aName) {
+    return aName.EqualsLiteral("backgroundupdate") ||
+           aName.EqualsLiteral("shouldprocessupdates");
+  }
+
  protected:
   static StaticRefPtr<BackgroundTasks> sSingleton;
 
