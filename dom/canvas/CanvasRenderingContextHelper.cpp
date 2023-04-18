@@ -262,7 +262,8 @@ nsresult CanvasRenderingContextHelper::ParseParams(
     JSContext* aCx, const nsAString& aType, const JS::Value& aEncoderOptions,
     nsAString& outParams, bool* const outUsingCustomParseOptions) {
   
-  if (aType.EqualsLiteral("image/jpeg")) {
+  
+  if (aType.EqualsLiteral("image/jpeg") || aType.EqualsLiteral("image/webp")) {
     if (aEncoderOptions.isNumber()) {
       double quality = aEncoderOptions.toNumber();
       

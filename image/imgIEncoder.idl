@@ -64,6 +64,13 @@ interface imgIEncoder : nsIAsyncInputStream
   
   
   
+  
+  
+  
+  
+  
+  
+  
 
 
   
