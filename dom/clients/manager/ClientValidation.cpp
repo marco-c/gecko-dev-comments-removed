@@ -55,7 +55,19 @@ bool ClientIsValidPrincipalInfo(const PrincipalInfo& aPrincipalInfo) {
       
       
       
+      if (originURL->Scheme().Equals("moz-safe-about")) {
+        return specOrigin == originOrigin ||
+               specOrigin == Substring(originOrigin, 9 ,
+                                       specOrigin.Length());
+      }
+
       
+      
+      
+      
+      
+      
+
       return specOrigin == originOrigin;
     }
     default: {
@@ -107,6 +119,16 @@ bool ClientIsValidCreationURL(const PrincipalInfo& aPrincipalInfo,
       
       if (scheme.LowerCaseEqualsLiteral("javascript")) {
         return true;
+      }
+
+      
+      
+      
+      
+      if (principalURL->Scheme().Equals("moz-safe-about")) {
+        return origin == principalOrigin ||
+               origin ==
+                   Substring(principalOrigin, 9 , origin.Length());
       }
 
       
