@@ -41,6 +41,11 @@ RefPtr<UtilityProcessManager> UtilityProcessManager::GetSingleton() {
   return sSingleton;
 }
 
+RefPtr<UtilityProcessManager> UtilityProcessManager::GetIfExists() {
+  MOZ_ASSERT(NS_IsMainThread());
+  return sSingleton;
+}
+
 UtilityProcessManager::UtilityProcessManager() : mObserver(new Observer(this)) {
   
   

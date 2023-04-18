@@ -26,7 +26,10 @@ class UtilityProcessManager final : public UtilityProcessHost::Listener {
  public:
   static void Initialize();
   static void Shutdown();
+
   static RefPtr<UtilityProcessManager> GetSingleton();
+
+  static RefPtr<UtilityProcessManager> GetIfExists();
 
   
   RefPtr<GenericNonExclusivePromise> LaunchProcess(SandboxingKind aSandbox);
