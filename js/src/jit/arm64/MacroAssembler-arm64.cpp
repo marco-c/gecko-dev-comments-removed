@@ -1507,6 +1507,8 @@ void MacroAssembler::callWithABIPre(uint32_t* stackAdjust, bool callFromWasm) {
   
   
   syncStackPtr();
+
+  assertStackAlignment(ABIStackAlignment);
 }
 
 void MacroAssembler::callWithABIPost(uint32_t stackAdjust, MoveOp::Type result,

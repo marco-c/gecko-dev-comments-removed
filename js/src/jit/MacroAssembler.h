@@ -724,12 +724,15 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   
-  void setupAlignedABICall();  
+  
+  
+  
+  void setupAlignedABICall();
 
   
   
   
-  void setupWasmABICall();  
+  void setupWasmABICall();
 
   
   
