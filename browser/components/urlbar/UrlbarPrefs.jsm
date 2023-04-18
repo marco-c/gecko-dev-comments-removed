@@ -55,6 +55,9 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["autoFill.stddevMultiplier", [0.0, "float"]],
 
   
+  ["bestMatch.enabled", true],
+
+  
   
   
   

@@ -490,6 +490,9 @@ pref("browser.urlbar.merino.providers", "");
 
 pref("browser.urlbar.merino.clientVariants", "");
 
+
+pref("browser.urlbar.bestMatch.enabled", true);
+
 pref("browser.altClickSave", false);
 
 

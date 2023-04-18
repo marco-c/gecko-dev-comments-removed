@@ -171,8 +171,6 @@ class ProviderQuickSuggest extends UrlbarProvider {
     this._replaceSuggestionTemplates(suggestion);
 
     let payload = {
-      qsSuggestion: [suggestion.full_keyword, UrlbarUtils.HIGHLIGHT.SUGGESTED],
-      title: suggestion.title,
       url: suggestion.url,
       urlTimestampIndex: suggestion.urlTimestampIndex,
       icon: suggestion.icon,
@@ -187,13 +185,32 @@ class ProviderQuickSuggest extends UrlbarProvider {
       requestId: suggestion.request_id,
     };
 
+    let isBestMatch =
+      suggestion.is_best_match && UrlbarPrefs.get("bestMatchEnabled");
+    if (isBestMatch) {
+      
+      
+      payload.title = [suggestion.title, UrlbarUtils.HIGHLIGHT.TYPED];
+    } else {
+      
+      
+      payload.title = suggestion.title;
+      payload.qsSuggestion = [
+        suggestion.full_keyword,
+        UrlbarUtils.HIGHLIGHT.SUGGESTED,
+      ];
+    }
+
     let result = new UrlbarResult(
       UrlbarUtils.RESULT_TYPE.URL,
       UrlbarUtils.RESULT_SOURCE.SEARCH,
       ...UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, payload)
     );
 
-    if (
+    if (isBestMatch) {
+      result.isBestMatch = true;
+      result.suggestedIndex = 1;
+    } else if (
       !isNaN(suggestion.position) &&
       UrlbarPrefs.get("quickSuggestAllowPositionInSuggestions")
     ) {
