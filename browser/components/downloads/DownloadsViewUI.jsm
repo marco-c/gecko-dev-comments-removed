@@ -172,6 +172,8 @@ var DownloadsViewUI = {
     
     let state = parseInt(element.getAttribute("state"), 10);
 
+    const document = contextMenu.ownerDocument;
+
     const {
       DOWNLOAD_NOTSTARTED,
       DOWNLOAD_DOWNLOADING,
@@ -223,7 +225,9 @@ var DownloadsViewUI = {
 
     let download = element._shell.download;
     let mimeInfo = DownloadsCommon.getMimeInfo(download);
-    let { preferredAction, useSystemDefault } = mimeInfo ? mimeInfo : {};
+    let { preferredAction, useSystemDefault, defaultDescription } = mimeInfo
+      ? mimeInfo
+      : {};
 
     
     contextMenu.querySelector(".downloadDeleteFileMenuItem").hidden = !(
@@ -254,6 +258,45 @@ var DownloadsViewUI = {
     alwaysUseSystemViewerItem.hidden =
       !DownloadsCommon.alwaysOpenInSystemViewerItemEnabled ||
       !canViewInternally;
+
+    
+    
+    
+    
+    try {
+      document.l10n.pauseObserving();
+      
+      
+      if (defaultDescription && defaultDescription.length < 40) {
+        document.l10n.setAttributes(
+          useSystemViewerItem,
+          "downloads-cmd-use-system-default-named",
+          { handler: defaultDescription }
+        );
+        document.l10n.setAttributes(
+          alwaysUseSystemViewerItem,
+          "downloads-cmd-always-use-system-default-named",
+          { handler: defaultDescription }
+        );
+      } else {
+        
+        
+        document.l10n.setAttributes(
+          useSystemViewerItem,
+          "downloads-cmd-use-system-default"
+        );
+        document.l10n.setAttributes(
+          alwaysUseSystemViewerItem,
+          "downloads-cmd-always-use-system-default"
+        );
+      }
+    } finally {
+      document.l10n.resumeObserving();
+    }
+    document.l10n.translateElements([
+      useSystemViewerItem,
+      alwaysUseSystemViewerItem,
+    ]);
 
     
     
