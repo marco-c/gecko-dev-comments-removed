@@ -423,42 +423,40 @@ class ProviderQuickSuggest extends UrlbarProvider {
 
     
     if (!isPrivate) {
-      let isQuickSuggestLinkClicked =
+      let is_clicked =
         details.selIndex == resultIndex && details.selType !== "help";
-      let {
-        sponsoredAdvertiser,
-        sponsoredImpressionUrl,
-        sponsoredClickUrl,
-        sponsoredBlockId,
-        requestId,
-      } = result.payload;
-      
-      let advertiser = sponsoredAdvertiser.toLocaleLowerCase();
-
       let scenario = UrlbarPrefs.get("quicksuggest.scenario");
+      let match_type = result.isBestMatch ? "best-match" : "firefox-suggest";
+
+      
+      let advertiser = result.payload.sponsoredAdvertiser.toLocaleLowerCase();
+
       
       PartnerLinkAttribution.sendContextualServicesPing(
         {
-          scenario,
           advertiser,
-          block_id: sponsoredBlockId,
+          is_clicked,
+          match_type,
+          scenario,
+          block_id: result.payload.sponsoredBlockId,
           position: telemetryResultIndex,
-          reporting_url: sponsoredImpressionUrl,
-          is_clicked: isQuickSuggestLinkClicked,
-          request_id: requestId,
+          reporting_url: result.payload.sponsoredImpressionUrl,
+          request_id: result.payload.requestId,
         },
         CONTEXTUAL_SERVICES_PING_TYPES.QS_IMPRESSION
       );
+
       
-      if (isQuickSuggestLinkClicked) {
+      if (is_clicked) {
         PartnerLinkAttribution.sendContextualServicesPing(
           {
-            scenario,
             advertiser,
-            block_id: sponsoredBlockId,
+            match_type,
+            scenario,
+            block_id: result.payload.sponsoredBlockId,
             position: telemetryResultIndex,
-            reporting_url: sponsoredClickUrl,
-            request_id: requestId,
+            reporting_url: result.payload.sponsoredClickUrl,
+            request_id: result.payload.requestId,
           },
           CONTEXTUAL_SERVICES_PING_TYPES.QS_SELECTION
         );
