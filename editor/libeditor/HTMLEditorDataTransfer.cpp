@@ -3147,7 +3147,23 @@ nsresult HTMLEditor::InsertAsCitedQuotationInternal(
   Result<RefPtr<Element>, nsresult> blockquoteElementOrError =
       DeleteSelectionAndCreateElement(
           *nsGkAtoms::blockquote,
-          [](Element& aBlockquoteElement) -> nsresult { return NS_OK; });
+          
+          [&](Element& aBlockquoteElement) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
+            
+            DebugOnly<nsresult> rvIgnored = aBlockquoteElement.SetAttr(
+                kNameSpaceID_None, nsGkAtoms::type, u"cite"_ns, false);
+            NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
+                                 "Element::SetAttr(nsGkAtoms::type, "
+                                 "\"cite\", false) failed, but ignored");
+            if (!aCitation.IsEmpty()) {
+              DebugOnly<nsresult> rvIgnored = aBlockquoteElement.SetAttr(
+                  kNameSpaceID_None, nsGkAtoms::cite, aCitation, false);
+              NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
+                                   "Element::SetAttr(nsGkAtoms::cite, "
+                                   "\"...\", false) failed, but ignored");
+            }
+            return NS_OK;
+          });
   if (MOZ_UNLIKELY(blockquoteElementOrError.isErr() ||
                    NS_WARN_IF(Destroyed()))) {
     NS_WARNING(
@@ -3159,27 +3175,6 @@ nsresult HTMLEditor::InsertAsCitedQuotationInternal(
   MOZ_ASSERT(blockquoteElementOrError.inspect());
 
   
-  DebugOnly<nsresult> rvIgnored = blockquoteElementOrError.inspect()->SetAttr(
-      kNameSpaceID_None, nsGkAtoms::type, u"cite"_ns, true);
-  if (NS_WARN_IF(Destroyed())) {
-    return NS_ERROR_EDITOR_DESTROYED;
-  }
-  NS_WARNING_ASSERTION(
-      NS_SUCCEEDED(rvIgnored),
-      "Element::SetAttr(nsGkAtoms::type, cite) failed, but ignored");
-
-  if (!aCitation.IsEmpty()) {
-    DebugOnly<nsresult> rvIgnored = blockquoteElementOrError.inspect()->SetAttr(
-        kNameSpaceID_None, nsGkAtoms::cite, aCitation, true);
-    if (NS_WARN_IF(Destroyed())) {
-      return NS_ERROR_EDITOR_DESTROYED;
-    }
-    NS_WARNING_ASSERTION(
-        NS_SUCCEEDED(rvIgnored),
-        "Element::SetAttr(nsGkAtoms::cite) failed, but ignored");
-  }
-
-  
   rv = CollapseSelectionTo(
       EditorRawDOMPoint(blockquoteElementOrError.inspect(), 0u));
   if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
@@ -3188,6 +3183,8 @@ nsresult HTMLEditor::InsertAsCitedQuotationInternal(
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "HTMLEditor::CollapseSelectionTo() failed, but ignored");
 
+  
+  
   if (aInsertHTML) {
     rv = LoadHTML(aQuotedText);
     if (NS_WARN_IF(Destroyed())) {
