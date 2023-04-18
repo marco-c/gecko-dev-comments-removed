@@ -577,7 +577,6 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
   
   
   nsCOMPtr<nsIPrintSession> printSession;
-  bool remotePrintJobListening = false;
   if (!mIsCreatingPrintPreview) {
     rv = printData->mPrintSettings->GetPrintSession(
         getter_AddRefs(printSession));
@@ -592,7 +591,6 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
         
         
         printData->mPrintProgressListeners.AppendElement(remotePrintJob);
-        remotePrintJobListening = true;
       }
     }
   }
@@ -621,112 +619,6 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
     Telemetry::ScalarAdd(Telemetry::ScalarID::PRINTING_SILENT_PRINT, 1);
   }
 
-  
-  
-  
-  
-  if (!mIsCreatingPrintPreview || printingViaParent) {
-    
-    
-    
-    
-    
-    
-    
-    bool print_tab_modal_enabled = true;
-    if (!print_tab_modal_enabled && (!printSilently || printingViaParent)) {
-      nsCOMPtr<nsIPrintingPromptService> printPromptService(
-          do_GetService(kPrintingPromptService));
-      if (printPromptService) {
-        nsPIDOMWindowOuter* domWin = nullptr;
-        
-        if (!mIsCreatingPrintPreview) {
-          domWin = aDoc->GetOriginalDocument()->GetWindow();
-          NS_ENSURE_TRUE(domWin, NS_ERROR_FAILURE);
-
-          if (!printSilently) {
-            if (mCreatedForPrintPreview) {
-              Telemetry::ScalarAdd(
-                  Telemetry::ScalarID::PRINTING_DIALOG_OPENED_VIA_PREVIEW, 1);
-            } else {
-              Telemetry::ScalarAdd(
-                  Telemetry::ScalarID::PRINTING_DIALOG_OPENED_WITHOUT_PREVIEW,
-                  1);
-            }
-          }
-        }
-
-        
-        
-        
-        
-        
-        
-        rv = printPromptService->ShowPrintDialog(domWin,
-                                                 printData->mPrintSettings);
-
-        if (!mIsCreatingPrintPreview) {
-          if (rv == NS_ERROR_ABORT) {
-            
-            
-            if (mCreatedForPrintPreview) {
-              Telemetry::ScalarAdd(
-                  Telemetry::ScalarID::PRINTING_DIALOG_VIA_PREVIEW_CANCELLED,
-                  1);
-            } else {
-              Telemetry::ScalarAdd(
-                  Telemetry::ScalarID::
-                      PRINTING_DIALOG_WITHOUT_PREVIEW_CANCELLED,
-                  1);
-            }
-          }
-        }
-
-        
-        
-        
-        
-        if (NS_WARN_IF(mPrt != printData)) {
-          return NS_ERROR_FAILURE;
-        }
-
-        if (NS_SUCCEEDED(rv)) {
-          
-          
-          printSilently = true;
-
-          if (printData->mPrintSettings && !mIsCreatingPrintPreview) {
-            
-            
-            printData->mPrintSettings->GetShrinkToFit(&printData->mShrinkToFit);
-
-            
-            
-            if (!remotePrintJobListening) {
-              RefPtr<layout::RemotePrintJobChild> remotePrintJob =
-                  printSession->GetRemotePrintJob();
-              if (remotePrintJob) {
-                printData->mPrintProgressListeners.AppendElement(
-                    remotePrintJob);
-              }
-            }
-          }
-        } else if (rv == NS_ERROR_NOT_IMPLEMENTED) {
-          
-          
-          
-          rv = NS_OK;
-        }
-      } else {
-        
-        rv = NS_ERROR_NOT_IMPLEMENTED;
-      }
-    }
-    
-    if (rv == NS_ERROR_ABORT) return rv;
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
-
   MOZ_TRY(devspec->Init(nullptr, printData->mPrintSettings,
                         mIsCreatingPrintPreview));
 
@@ -737,14 +629,6 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
     RefPtr<nsPrintJob> self(this);
     printData->mPrintDC->RegisterPageDoneCallback(
         [self](nsresult aResult) { self->PageDone(aResult); });
-  }
-
-  bool print_tab_modal_enabled = true;
-  if (!print_tab_modal_enabled && mIsCreatingPrintPreview) {
-    
-    
-    
-    printData->mPrintSettings->SetPageRanges({});
   }
 
   MOZ_TRY(EnablePOsForPrinting());
