@@ -208,8 +208,11 @@ let Player = {
   handleEvent(event) {
     switch (event.type) {
       case "click": {
-        this.onClick(event);
-        this.controls.removeAttribute("keying");
+        
+        if (event.button !== 1 && event.button !== 2) {
+          this.onClick(event);
+          this.controls.removeAttribute("keying");
+        }
         break;
       }
 

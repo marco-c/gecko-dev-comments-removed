@@ -835,3 +835,16 @@ async function isVideoPaused(browser, videoID) {
     return content.document.getElementById(videoID).paused;
   });
 }
+
+
+
+
+
+
+
+
+async function isVideoMuted(browser, videoID) {
+  return SpecialPowers.spawn(browser, [videoID], async videoID => {
+    return content.document.getElementById(videoID).muted;
+  });
+}
