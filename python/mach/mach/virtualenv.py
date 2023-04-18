@@ -361,8 +361,13 @@ class VirtualenvManager(VirtualenvHelper):
     def _run_pip(self, args, **kwargs):
         kwargs.setdefault("check", True)
 
+        
+        
+        
+        
+        
         env = os.environ.copy()
-        env.setdefault("ARCHFLAGS", get_archflags())
+        env.setdefault("ARCHFLAGS", "-arch {}".format(platform.machine()))
 
         
         
@@ -398,12 +403,3 @@ class VirtualenvManager(VirtualenvHelper):
         if path.startswith(local_folder):
             path = os.path.join(normalized_venv_root, path[len(local_folder) + 1 :])
         return path
-
-
-def get_archflags():
-    
-    
-    
-    
-    
-    return "-arch {}".format(platform.machine())
