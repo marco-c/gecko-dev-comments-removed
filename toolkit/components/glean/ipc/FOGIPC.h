@@ -71,6 +71,29 @@ RefPtr<GenericPromise> FlushAndUseFOGData();
 void TestTriggerMetrics(uint32_t processType,
                         const RefPtr<dom::Promise>& promise);
 
+#ifdef NIGHTLY_BUILD
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void RecordThreadCpuUse(const nsACString& aThreadName, uint64_t aCpuTimeMs,
+                        uint64_t aWakeCount);
+#endif
+
 void RecordPowerMetrics();
 
 }  

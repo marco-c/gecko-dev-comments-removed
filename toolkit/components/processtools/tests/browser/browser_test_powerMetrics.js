@@ -287,4 +287,45 @@ add_task(async () => {
     undefined,
     "no GPU time should be recorded in the __other__ label"
   );
+
+  
+  
+  let processTypes = [
+    "parentInactive",
+    "contentBackground",
+    "contentForeground",
+  ];
+  if (beforeProcInfo.children.some(p => p.type == "gpu")) {
+    processTypes.push("gpuProcess");
+  }
+  
+  const kThreadName = "geckomain";
+  if (AppConstants.NIGHTLY_BUILD) {
+    for (let processType of processTypes) {
+      Assert.greater(
+        Glean.powerCpuMsPerThread[processType][kThreadName].testGetValue(),
+        0,
+        `some CPU time should have been recorded for the ${processType} main thread`
+      );
+      Assert.greater(
+        Glean.powerWakeupsPerThread[processType][kThreadName].testGetValue(),
+        0,
+        `some thread wake ups should have been recorded for the ${processType} main thread`
+      );
+    }
+  } else {
+    
+    for (let processType of processTypes) {
+      Assert.equal(
+        Glean.powerCpuMsPerThread[processType][kThreadName].testGetValue(),
+        undefined,
+        `no CPU time should have been recorded for the ${processType} main thread`
+      );
+      Assert.equal(
+        Glean.powerWakeupsPerThread[processType][kThreadName].testGetValue(),
+        undefined,
+        `no thread wake ups should have been recorded for the ${processType} main thread`
+      );
+    }
+  }
 });
