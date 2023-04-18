@@ -52,7 +52,6 @@ static const JSClassOps sLibraryClassOps = {
     nullptr,            
     nullptr,            
     nullptr,            
-    nullptr,            
 };
 
 static const JSClass sLibraryClass = {

@@ -602,7 +602,6 @@ static const JSClassOps FileObjectClassOps = {
     nullptr,               
     nullptr,               
     nullptr,               
-    nullptr,               
 };
 
 const JSClass FileObject::class_ = {

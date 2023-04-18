@@ -185,7 +185,6 @@ static const JSClassOps ErrorObjectClassOps = {
     nullptr,       
     nullptr,       
     nullptr,       
-    nullptr,       
 };
 
 const JSClass ErrorObject::classes[JSEXN_ERROR_LIMIT] = {

@@ -357,7 +357,6 @@ static const JSClassOps SavedFrameClassOps = {
     nullptr,               
     nullptr,               
     nullptr,               
-    nullptr,               
 };
 
 const ClassSpec SavedFrame::classSpec_ = {

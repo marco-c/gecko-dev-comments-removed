@@ -34,7 +34,6 @@ using namespace js;
     nullptr,                  
     nullptr,                  
     nullptr,                  
-    nullptr,                  
 };
 
  const JSClass StencilObject::class_ = {
@@ -81,7 +80,6 @@ JS::Stencil* StencilObject::stencil() const {
     nullptr,                           
     nullptr,                           
     StencilXDRBufferObject::finalize,  
-    nullptr,                           
     nullptr,                           
     nullptr,                           
     nullptr,                           

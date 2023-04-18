@@ -655,7 +655,6 @@ static const JSClassOps XPC_WN_NoHelper_JSClassOps = {
     XPC_WN_NoHelper_Finalize,           
     nullptr,                            
     nullptr,                            
-    nullptr,                            
     XPCWrappedNative::Trace,            
 };
 
@@ -1132,7 +1131,6 @@ static const JSClassOps XPC_WN_Proto_JSClassOps = {
     nullptr,                                  
     nullptr,                                  
     nullptr,                                  
-    nullptr,                                  
 };
 
 static const js::ClassExtension XPC_WN_Proto_ClassExtension = {
@@ -1218,7 +1216,6 @@ static const JSClassOps XPC_WN_Tearoff_JSClassOps = {
     XPC_WN_TearOff_Resolve,             
     nullptr,                            
     XPC_WN_TearOff_Finalize,            
-    nullptr,                            
     nullptr,                            
     nullptr,                            
     nullptr,                            

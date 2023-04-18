@@ -1797,7 +1797,6 @@ const JSClassOps JS::DefaultGlobalClassOps = {
     nullptr,                         
     nullptr,                         
     nullptr,                         
-    nullptr,                         
     JS_GlobalObjectTraceHook,        
 };
 

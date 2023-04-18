@@ -1194,7 +1194,6 @@ const JSClassOps XrayExpandoObjectClassOps = {
     nullptr,                
     nullptr,                
     nullptr,                
-    nullptr,                
 };
 
 bool XrayTraits::expandoObjectMatchesConsumer(JSContext* cx,

@@ -195,7 +195,6 @@ static const JSClassOps MapIteratorObjectClassOps = {
     nullptr,                      
     nullptr,                      
     nullptr,                      
-    nullptr,                      
 };
 
 static const ClassExtension MapIteratorObjectClassExtension = {
@@ -432,7 +431,6 @@ const JSClassOps MapObject::classOps_ = {
     nullptr,   
     nullptr,   
     finalize,  
-    nullptr,   
     nullptr,   
     nullptr,   
     trace,     
@@ -1009,7 +1007,6 @@ static const JSClassOps SetIteratorObjectClassOps = {
     nullptr,                      
     nullptr,                      
     nullptr,                      
-    nullptr,                      
 };
 
 static const ClassExtension SetIteratorObjectClassExtension = {
@@ -1214,7 +1211,6 @@ const JSClassOps SetObject::classOps_ = {
     nullptr,   
     nullptr,   
     finalize,  
-    nullptr,   
     nullptr,   
     nullptr,   
     trace,     

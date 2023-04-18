@@ -334,7 +334,6 @@ static const JSClassOps ForOfPICClassOps = {
     ForOfPIC_finalize,     
     nullptr,               
     nullptr,               
-    nullptr,               
     ForOfPIC_traceObject,  
 };
 

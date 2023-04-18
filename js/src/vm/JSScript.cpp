@@ -712,7 +712,6 @@ static const JSClassOps ScriptSourceObjectClassOps = {
     nullptr,                       
     nullptr,                       
     nullptr,                       
-    nullptr,                       
 };
 
 const JSClass ScriptSourceObject::class_ = {

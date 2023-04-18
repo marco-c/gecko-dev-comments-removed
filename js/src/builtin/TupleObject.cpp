@@ -93,7 +93,6 @@ const JSClassOps TupleObjectClassOps = {
     nullptr,         
     nullptr,         
     nullptr,         
-    nullptr,         
 };
 
 const JSClass TupleObject::class_ = {

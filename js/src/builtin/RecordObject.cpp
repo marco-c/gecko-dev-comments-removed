@@ -70,7 +70,6 @@ static const JSClassOps RecordObjectClassOps = {
     nullptr,      
     nullptr,      
     nullptr,      
-    nullptr,      
 };
 
 const JSClass RecordObject::class_ = {"RecordObject",

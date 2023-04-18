@@ -275,7 +275,6 @@ const JSClassOps WeakCollectionObject::classOps_ = {
     WeakCollection_finalize,  
     nullptr,                  
     nullptr,                  
-    nullptr,                  
     WeakCollection_trace,     
 };
 

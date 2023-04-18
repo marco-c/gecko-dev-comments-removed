@@ -193,7 +193,6 @@ const JSClassOps DebuggerFrame::classOps_ = {
     finalize,                        
     nullptr,                         
     nullptr,                         
-    nullptr,                         
     CallTraceMethod<DebuggerFrame>,  
 };
 

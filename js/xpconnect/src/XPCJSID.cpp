@@ -70,7 +70,6 @@ static const JSClassOps sIID_ClassOps = {
     nullptr,           
     nullptr,           
     nullptr,           
-    nullptr,           
 };
 
 

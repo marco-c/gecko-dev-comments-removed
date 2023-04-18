@@ -141,7 +141,6 @@ const JSClassOps WeakRefObject::classOps_ = {
     finalize,  
     nullptr,   
     nullptr,   
-    nullptr,   
     trace,     
 };
 

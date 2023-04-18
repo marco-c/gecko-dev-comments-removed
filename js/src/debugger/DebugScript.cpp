@@ -56,7 +56,6 @@ const JSClassOps DebugScriptObject::classOps_ = {
     DebugScriptObject::finalize,  
     nullptr,                      
     nullptr,                      
-    nullptr,                      
     DebugScriptObject::trace,     
 };
 

@@ -69,7 +69,6 @@ const JSClassOps DebuggerScript::classOps_ = {
     nullptr,                          
     nullptr,                          
     nullptr,                          
-    nullptr,                          
     CallTraceMethod<DebuggerScript>,  
 };
 

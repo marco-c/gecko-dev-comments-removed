@@ -464,7 +464,6 @@ static const JSClassOps sCTypeProtoClassOps = {
     nullptr,            
     nullptr,            
     ConstructAbstract,  
-    nullptr,            
     ConstructAbstract,  
     nullptr,            
 };
@@ -485,7 +484,6 @@ static const JSClassOps sCTypeClassOps = {
     nullptr,               
     CType::Finalize,       
     CType::ConstructData,  
-    nullptr,               
     CType::ConstructData,  
     CType::Trace,          
 };
@@ -503,7 +501,6 @@ static const JSClassOps sCDataClassOps = {
     nullptr,             
     CData::Finalize,     
     FunctionType::Call,  
-    nullptr,             
     FunctionType::Call,  
     nullptr,             
 };
@@ -520,7 +517,6 @@ static const JSClassOps sCClosureClassOps = {
     nullptr,             
     nullptr,             
     CClosure::Finalize,  
-    nullptr,             
     nullptr,             
     nullptr,             
     CClosure::Trace,     
@@ -549,7 +545,6 @@ static const JSClassOps sCDataFinalizerClassOps = {
     nullptr,                   
     nullptr,                   
     CDataFinalizer::Finalize,  
-    nullptr,                   
     nullptr,                   
     nullptr,                   
     nullptr,                   
@@ -725,7 +720,6 @@ static const JSClassOps sInt64ClassOps = {
     nullptr,              
     nullptr,              
     Int64Base::Finalize,  
-    nullptr,              
     nullptr,              
     nullptr,              
     nullptr,              

@@ -36,7 +36,6 @@ static const JSClassOps sServices_ClassOps = {
     nullptr,                
     nullptr,                
     nullptr,                
-    nullptr,                
 };
 
 static const JSClass sServices_Class = {"JSServices", 0, &sServices_ClassOps};

@@ -344,7 +344,6 @@ const JSClassOps GeneratorObject::classOps_ = {
     nullptr,                                   
     nullptr,                                   
     nullptr,                                   
-    nullptr,                                   
     CallTraceMethod<AbstractGeneratorObject>,  
 };
 

@@ -84,7 +84,6 @@ static const JSClassOps document_classOps = {
     nullptr,           
     nullptr,           
     nullptr,           
-    nullptr,           
 };
 
 static const JSClass document_class = {"document", 0, &document_classOps};

@@ -30,7 +30,6 @@ BEGIN_TEST(testRedefineGlobalEval) {
       nullptr,                         
       nullptr,                         
       nullptr,                         
-      nullptr,                         
       JS_GlobalObjectTraceHook,        
   };
 

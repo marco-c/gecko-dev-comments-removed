@@ -74,7 +74,6 @@ const JSClassOps NumberFormatObject::classOps_ = {
     nullptr,                       
     nullptr,                       
     nullptr,                       
-    nullptr,                       
 };
 
 const JSClass NumberFormatObject::class_ = {

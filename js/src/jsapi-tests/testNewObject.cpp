@@ -1,20 +1,20 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "js/Array.h"               // JS::GetArrayLength, JS::IsArrayObject
-#include "js/CallAndConstruct.h"    // JS::Construct
-#include "js/Object.h"              // JS::GetClass
-#include "js/PropertyAndElement.h"  // JS_GetElement, JS_SetElement
+
+
+
+
+
+
+#include "js/Array.h"               
+#include "js/CallAndConstruct.h"    
+#include "js/Object.h"              
+#include "js/PropertyAndElement.h"  
 #include "jsapi-tests/tests.h"
 
 static bool constructHook(JSContext* cx, unsigned argc, JS::Value* vp) {
   JS::CallArgs args = CallArgsFromVp(argc, vp);
 
-  // Check that arguments were passed properly from JS_New.
+  
 
   JS::RootedObject obj(cx, JS_NewPlainObject(cx));
   if (!obj) {
@@ -38,7 +38,7 @@ static bool constructHook(JSContext* cx, unsigned argc, JS::Value* vp) {
     return false;
   }
 
-  // Perform a side-effect to indicate that this hook was actually called.
+  
   JS::RootedValue value(cx, args[0]);
   JS::RootedObject callee(cx, &args.callee());
   if (!JS_SetElement(cx, callee, 0, value)) {
@@ -47,7 +47,7 @@ static bool constructHook(JSContext* cx, unsigned argc, JS::Value* vp) {
 
   args.rval().setObject(*obj);
 
-  // trash the argv, perversely
+  
   args[0].setUndefined();
   args[1].setUndefined();
   args[2].setUndefined();
@@ -65,7 +65,7 @@ BEGIN_TEST(testNewObject_1) {
 
   bool isArray;
 
-  // With no arguments.
+  
   JS::RootedObject obj(cx);
   CHECK(JS::Construct(cx, Array, JS::HandleValueArray::empty(), &obj));
   CHECK(JS::IsArrayObject(cx, obj, &isArray));
@@ -74,7 +74,7 @@ BEGIN_TEST(testNewObject_1) {
   CHECK(JS::GetArrayLength(cx, obj, &len));
   CHECK_EQUAL(len, 0u);
 
-  // With one argument.
+  
   argv[0].setInt32(4);
   CHECK(JS::Construct(cx, Array, JS::HandleValueArray::subarray(argv, 0, 1),
                       &obj));
@@ -83,7 +83,7 @@ BEGIN_TEST(testNewObject_1) {
   CHECK(JS::GetArrayLength(cx, obj, &len));
   CHECK_EQUAL(len, 4u);
 
-  // With N arguments.
+  
   for (size_t i = 0; i < N; i++) {
     argv[i].setInt32(i);
   }
@@ -97,19 +97,18 @@ BEGIN_TEST(testNewObject_1) {
   CHECK(JS_GetElement(cx, obj, N - 1, &v));
   CHECK(v.isInt32(N - 1));
 
-  // With JSClass.construct.
+  
   static const JSClassOps clsOps = {
-      nullptr,        // addProperty
-      nullptr,        // delProperty
-      nullptr,        // enumerate
-      nullptr,        // newEnumerate
-      nullptr,        // resolve
-      nullptr,        // mayResolve
-      nullptr,        // finalize
-      nullptr,        // call
-      nullptr,        // hasInstance
-      constructHook,  // construct
-      nullptr,        // trace
+      nullptr,        
+      nullptr,        
+      nullptr,        
+      nullptr,        
+      nullptr,        
+      nullptr,        
+      nullptr,        
+      nullptr,        
+      constructHook,  
+      nullptr,        
   };
   static const JSClass cls = {"testNewObject_1", 0, &clsOps};
   JS::RootedObject ctor(cx, JS_NewObject(cx, &cls));
@@ -125,7 +124,7 @@ BEGIN_TEST(testNewObject_1) {
 END_TEST(testNewObject_1)
 
 BEGIN_TEST(testNewObject_IsMapObject) {
-  // Test IsMapObject and IsSetObject
+  
 
   JS::RootedValue vMap(cx);
   EVAL("Map", &vMap);
@@ -154,21 +153,20 @@ BEGIN_TEST(testNewObject_IsMapObject) {
 END_TEST(testNewObject_IsMapObject)
 
 static const JSClassOps Base_classOps = {
-    nullptr,  // addProperty
-    nullptr,  // delProperty
-    nullptr,  // enumerate
-    nullptr,  // newEnumerate
-    nullptr,  // resolve
-    nullptr,  // mayResolve
-    nullptr,  // finalize
-    nullptr,  // call
-    nullptr,  // hasInstance
-    nullptr,  // construct
-    nullptr,  // trace
+    nullptr,  
+    nullptr,  
+    nullptr,  
+    nullptr,  
+    nullptr,  
+    nullptr,  
+    nullptr,  
+    nullptr,  
+    nullptr,  
+    nullptr,  
 };
 
 static const JSClass Base_class = {"Base",
-                                   0,  // flags
+                                   0,  
                                    &Base_classOps};
 
 BEGIN_TEST(testNewObject_Subclassing) {
@@ -179,7 +177,7 @@ BEGIN_TEST(testNewObject_Subclassing) {
     return false;
   }
 
-  // Calling Base without `new` should fail with a TypeError.
+  
   JS::RootedValue expectedError(cx);
   EVAL("TypeError", &expectedError);
   JS::RootedValue actualError(cx);
@@ -192,8 +190,8 @@ BEGIN_TEST(testNewObject_Subclassing) {
       &actualError);
   CHECK_SAME(actualError, expectedError);
 
-  // Check prototype chains when a JS class extends a base class that's
-  // implemented in C++ using JS_NewObjectForConstructor.
+  
+  
   EXEC(
       "class MyClass extends Base {\n"
       "  ok() { return true; }\n"

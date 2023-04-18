@@ -28,7 +28,6 @@ static const JSClassOps AddPropertyClassOps = {
     nullptr,      
     nullptr,      
     nullptr,      
-    nullptr,      
 };
 
 static const JSClass AddPropertyClass = {"AddPropertyTester", 0,

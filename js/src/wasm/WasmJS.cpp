@@ -1279,7 +1279,6 @@ const JSClassOps WasmModuleObject::classOps_ = {
     nullptr,                     
     nullptr,                     
     nullptr,                     
-    nullptr,                     
 };
 
 const JSClass WasmModuleObject::class_ = {
@@ -1862,7 +1861,6 @@ const JSClassOps WasmInstanceObject::classOps_ = {
     nullptr,                       
     nullptr,                       
     WasmInstanceObject::finalize,  
-    nullptr,                       
     nullptr,                       
     nullptr,                       
     WasmInstanceObject::trace,     
@@ -2585,7 +2583,6 @@ const JSClassOps WasmMemoryObject::classOps_ = {
     nullptr,                     
     nullptr,                     
     nullptr,                     
-    nullptr,                     
 };
 
 const JSClass WasmMemoryObject::class_ = {
@@ -3007,7 +3004,6 @@ const JSClassOps WasmTableObject::classOps_ = {
     nullptr,                    
     nullptr,                    
     WasmTableObject::finalize,  
-    nullptr,                    
     nullptr,                    
     nullptr,                    
     WasmTableObject::trace,     
@@ -3447,7 +3443,6 @@ const JSClassOps WasmGlobalObject::classOps_ = {
     WasmGlobalObject::finalize,  
     nullptr,                     
     nullptr,                     
-    nullptr,                     
     WasmGlobalObject::trace,     
 };
 
@@ -3701,7 +3696,6 @@ const JSClassOps WasmTagObject::classOps_ = {
     nullptr,                  
     nullptr,                  
     nullptr,                  
-    nullptr,                  
 };
 
 const JSClass WasmTagObject::class_ = {
@@ -3853,7 +3847,6 @@ const JSClassOps WasmExceptionObject::classOps_ = {
     nullptr,                        
     nullptr,                        
     WasmExceptionObject::finalize,  
-    nullptr,                        
     nullptr,                        
     nullptr,                        
     WasmExceptionObject::trace,     
@@ -5221,7 +5214,6 @@ const JSClassOps ResolveResponseClosure::classOps_ = {
     nullptr,                           
     nullptr,                           
     ResolveResponseClosure::finalize,  
-    nullptr,                           
     nullptr,                           
     nullptr,                           
     nullptr,                           

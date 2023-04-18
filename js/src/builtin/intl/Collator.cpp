@@ -51,7 +51,6 @@ const JSClassOps CollatorObject::classOps_ = {
     nullptr,                   
     nullptr,                   
     nullptr,                   
-    nullptr,                   
 };
 
 const JSClass CollatorObject::class_ = {

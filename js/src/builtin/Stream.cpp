@@ -380,7 +380,6 @@ static const JSClassOps ReadableByteStreamControllerClassOps = {
     nullptr,                               
     nullptr,                               
     nullptr,                               
-    nullptr,                               
 };
 
 JS_STREAMS_CLASS_SPEC(ReadableByteStreamController, 0, SlotCount,

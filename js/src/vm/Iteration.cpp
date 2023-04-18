@@ -1231,7 +1231,6 @@ const JSClassOps PropertyIteratorObject::classOps_ = {
     finalize,  
     nullptr,   
     nullptr,   
-    nullptr,   
     trace,     
 };
 

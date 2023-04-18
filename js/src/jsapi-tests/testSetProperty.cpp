@@ -42,7 +42,6 @@ const JSClass* getGlobalClass(void) override {
       nullptr,                   
       nullptr,                   
       nullptr,                   
-      nullptr,                   
       JS_GlobalObjectTraceHook,  
   };
 

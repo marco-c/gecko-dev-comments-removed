@@ -922,7 +922,6 @@ const JSClassOps js::ProxyClassOps = {
     proxy_Finalize,      
     nullptr,             
     nullptr,             
-    nullptr,             
     ProxyObject::trace,  
 };
 

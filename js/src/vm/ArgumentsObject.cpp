@@ -1108,7 +1108,6 @@ const JSClassOps MappedArgumentsObject::classOps_ = {
     ArgumentsObject::finalize,             
     nullptr,                               
     nullptr,                               
-    nullptr,                               
     ArgumentsObject::trace,                
 };
 
@@ -1151,7 +1150,6 @@ const JSClassOps UnmappedArgumentsObject::classOps_ = {
     UnmappedArgumentsObject::obj_resolve,    
     ArgumentsObject::obj_mayResolve,         
     ArgumentsObject::finalize,               
-    nullptr,                                 
     nullptr,                                 
     nullptr,                                 
     ArgumentsObject::trace,                  

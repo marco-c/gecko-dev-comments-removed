@@ -60,7 +60,6 @@ const JSClassOps DebuggerEnvironment::classOps_ = {
     nullptr,                               
     nullptr,                               
     nullptr,                               
-    nullptr,                               
     CallTraceMethod<DebuggerEnvironment>,  
 };
 

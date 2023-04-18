@@ -451,7 +451,6 @@ static const JSClassOps StringObjectClassOps = {
     nullptr,         
     nullptr,         
     nullptr,         
-    nullptr,         
 };
 
 const JSClass StringObject::class_ = {

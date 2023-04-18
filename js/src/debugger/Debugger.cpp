@@ -4024,7 +4024,6 @@ const JSClassOps DebuggerInstanceObject::classOps_ = {
     nullptr,                
     nullptr,                
     nullptr,                
-    nullptr,                
     Debugger::traceObject,  
 };
 

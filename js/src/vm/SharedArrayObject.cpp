@@ -420,7 +420,6 @@ static const JSClassOps SharedArrayBufferObjectClassOps = {
     nullptr,                            
     nullptr,                            
     nullptr,                            
-    nullptr,                            
 };
 
 static const JSFunctionSpec sharedarrray_functions[] = {JS_FS_END};

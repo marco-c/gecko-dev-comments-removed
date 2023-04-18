@@ -99,7 +99,6 @@ const JSClassOps FinalizationRegistrationsObject::classOps_ = {
     FinalizationRegistrationsObject::finalize,  
     nullptr,                                    
     nullptr,                                    
-    nullptr,                                    
     FinalizationRegistrationsObject::trace,     
 };
 
@@ -210,7 +209,6 @@ const JSClassOps FinalizationRegistryObject::classOps_ = {
     nullptr,                               
     nullptr,                               
     FinalizationRegistryObject::finalize,  
-    nullptr,                               
     nullptr,                               
     nullptr,                               
     FinalizationRegistryObject::trace,     
@@ -650,7 +648,6 @@ const JSClassOps FinalizationQueueObject::classOps_ = {
     nullptr,                            
     nullptr,                            
     FinalizationQueueObject::finalize,  
-    nullptr,                            
     nullptr,                            
     nullptr,                            
     FinalizationQueueObject::trace,     

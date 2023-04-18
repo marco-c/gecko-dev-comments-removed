@@ -376,7 +376,6 @@ const JSClassOps ModuleEnvironmentObject::classOps_ = {
     nullptr,                                
     nullptr,                                
     nullptr,                                
-    nullptr,                                
 };
 
 const JSClass ModuleEnvironmentObject::class_ = {

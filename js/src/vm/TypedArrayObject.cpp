@@ -2252,7 +2252,6 @@ static const JSClassOps TypedArrayClassOps = {
     TypedArrayObject::finalize,    
     nullptr,                       
     nullptr,                       
-    nullptr,                       
     ArrayBufferViewObject::trace,  
 };
 

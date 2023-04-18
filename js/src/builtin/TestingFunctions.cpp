@@ -3006,7 +3006,6 @@ static bool NewObjectWithAddPropertyHook(JSContext* cx, unsigned argc,
       nullptr,      
       nullptr,      
       nullptr,      
-      nullptr,      
   };
   static const JSClass cls = {
       "ObjectWithAddPropHook",
@@ -3910,7 +3909,6 @@ static const JSClassOps FinalizeCounterClassOps = {
     nullptr,                    
     nullptr,                    
     nullptr,                    
-    nullptr,                    
 };
 
 static const JSClass FinalizeCounterClass = {
@@ -4680,7 +4678,6 @@ static const JSClassOps CloneBufferObjectClassOps = {
     nullptr,                      
     nullptr,                      
     nullptr,                      
-    nullptr,                      
 };
 
 const JSClass CloneBufferObject::class_ = {
@@ -5047,7 +5044,6 @@ class ShapeSnapshotObject : public NativeObject {
     nullptr,                        
     nullptr,                        
     ShapeSnapshotObject::finalize,  
-    nullptr,                        
     nullptr,                        
     nullptr,                        
     ShapeSnapshotObject::trace,     

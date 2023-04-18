@@ -42,7 +42,6 @@ const JSClassOps PluralRulesObject::classOps_ = {
     nullptr,                      
     nullptr,                      
     nullptr,                      
-    nullptr,                      
 };
 
 const JSClass PluralRulesObject::class_ = {

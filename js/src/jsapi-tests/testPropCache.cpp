@@ -27,7 +27,6 @@ static const JSClassOps CounterClassOps = {
     nullptr,     
     nullptr,     
     nullptr,     
-    nullptr,     
 };
 
 static const JSClass CounterClass = {"Counter", 

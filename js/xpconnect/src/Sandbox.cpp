@@ -532,7 +532,6 @@ static const JSClassOps SandboxClassOps = {
     sandbox_finalize,                
     nullptr,                         
     nullptr,                         
-    nullptr,                         
     JS_GlobalObjectTraceHook,        
 };
 

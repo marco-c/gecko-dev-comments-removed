@@ -67,7 +67,6 @@ const JSClassOps DateTimeFormatObject::classOps_ = {
     nullptr,                         
     nullptr,                         
     nullptr,                         
-    nullptr,                         
 };
 
 const JSClass DateTimeFormatObject::class_ = {

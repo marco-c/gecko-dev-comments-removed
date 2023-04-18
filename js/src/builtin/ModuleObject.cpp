@@ -776,7 +776,6 @@ void ModuleNamespaceObject::ProxyHandler::finalize(JS::GCContext* gcx,
     ModuleObject::finalize,  
     nullptr,                 
     nullptr,                 
-    nullptr,                 
     ModuleObject::trace,     
 };
 

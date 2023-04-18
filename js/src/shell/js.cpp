@@ -4221,7 +4221,6 @@ static const JSClassOps sandbox_classOps = {
     nullptr,                   
     nullptr,                   
     nullptr,                   
-    nullptr,                   
     JS_GlobalObjectTraceHook,  
 };
 
@@ -5387,7 +5386,6 @@ class XDRBufferObject : public NativeObject {
     nullptr,                    
     nullptr,                    
     XDRBufferObject::finalize,  
-    nullptr,                    
     nullptr,                    
     nullptr,                    
     nullptr,                    
@@ -7212,7 +7210,6 @@ static bool CreateIsHTMLDDA(JSContext* cx, unsigned argc, Value* vp) {
       IsHTMLDDA_Call,  
       nullptr,         
       nullptr,         
-      nullptr,         
   };
 
   static const JSClass cls = {
@@ -7956,7 +7953,6 @@ const JSClassOps StreamCacheEntryObject::classOps_ = {
     nullptr,                           
     nullptr,                           
     StreamCacheEntryObject::finalize,  
-    nullptr,                           
     nullptr,                           
     nullptr,                           
     nullptr,                           
@@ -10285,7 +10281,6 @@ static const JSClassOps global_classOps = {
     global_enumerate,          
     global_resolve,            
     global_mayResolve,         
-    nullptr,                   
     nullptr,                   
     nullptr,                   
     nullptr,                   

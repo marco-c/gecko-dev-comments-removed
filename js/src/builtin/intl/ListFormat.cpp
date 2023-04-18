@@ -43,7 +43,6 @@ const JSClassOps ListFormatObject::classOps_ = {
     nullptr,                     
     nullptr,                     
     nullptr,                     
-    nullptr,                     
 };
 const JSClass ListFormatObject::class_ = {
     "Intl.ListFormat",

@@ -324,7 +324,6 @@ static const JSClassOps ArrayBufferObjectClassOps = {
     nullptr,                      
     nullptr,                      
     nullptr,                      
-    nullptr,                      
 };
 
 static const JSFunctionSpec arraybuffer_functions[] = {

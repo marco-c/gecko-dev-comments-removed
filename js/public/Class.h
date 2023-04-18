@@ -302,14 +302,6 @@ typedef void (*JSFinalizeOp)(JS::GCContext* gcx, JSObject* obj);
 
 
 
-typedef bool (*JSHasInstanceOp)(JSContext* cx, JS::HandleObject obj,
-                                JS::MutableHandleValue vp, bool* bp);
-
-
-
-
-
-
 
 
 
@@ -608,7 +600,6 @@ struct MOZ_STATIC_CLASS JSClassOps {
   JSMayResolveOp mayResolve;
   JSFinalizeOp finalize;
   JSNative call;
-  JSHasInstanceOp hasInstance;
   JSNative construct;
   JSTraceOp trace;
 };
@@ -643,9 +634,6 @@ struct alignas(js::gc::JSClassAlignBytes) JSClass {
     return cOps ? cOps->mayResolve : nullptr;
   }
   JSNative getCall() const { return cOps ? cOps->call : nullptr; }
-  JSHasInstanceOp getHasInstance() const {
-    return cOps ? cOps->hasInstance : nullptr;
-  }
   JSNative getConstruct() const { return cOps ? cOps->construct : nullptr; }
 
   bool hasFinalize() const { return cOps && cOps->finalize; }

@@ -1043,7 +1043,6 @@ static const JSClassOps JSFunctionClassOps = {
     nullptr,         
     nullptr,         
     nullptr,         
-    nullptr,         
     fun_trace,       
 };
 

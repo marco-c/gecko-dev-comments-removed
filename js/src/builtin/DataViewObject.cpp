@@ -946,7 +946,6 @@ static const JSClassOps DataViewObjectClassOps = {
     nullptr,                       
     nullptr,                       
     nullptr,                       
-    nullptr,                       
     ArrayBufferViewObject::trace,  
 };
 
