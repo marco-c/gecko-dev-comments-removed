@@ -11,9 +11,6 @@
 #ifndef js_OffThreadScriptCompilation_h
 #define js_OffThreadScriptCompilation_h
 
-#include "mozilla/Range.h"   
-#include "mozilla/Vector.h"  
-
 #include <stddef.h>  
 
 #include "jstypes.h"  
@@ -21,7 +18,6 @@
 #include "js/CompileOptions.h"  
 
 struct JS_PUBLIC_API JSContext;
-class JS_PUBLIC_API JSScript;
 
 namespace JS {
 
@@ -56,34 +52,6 @@ extern JS_PUBLIC_API bool CanCompileOffThread(
 extern JS_PUBLIC_API bool CanDecodeOffThread(JSContext* cx,
                                              const DecodeOptions& options,
                                              size_t length);
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API OffThreadToken* DecodeOffThreadScript(
-    JSContext* cx, const ReadOnlyCompileOptions& options,
-    mozilla::Vector<uint8_t>& buffer , size_t cursor,
-    OffThreadCompileCallback callback, void* callbackData);
-
-
-
-
-
-
-extern JS_PUBLIC_API OffThreadToken* DecodeOffThreadScript(
-    JSContext* cx, const ReadOnlyCompileOptions& options,
-    const mozilla::Range<uint8_t>& range ,
-    OffThreadCompileCallback callback, void* callbackData);
-
-extern JS_PUBLIC_API JSScript* FinishOffThreadScriptDecoder(
-    JSContext* cx, OffThreadToken* token);
-
-extern JS_PUBLIC_API void CancelOffThreadScriptDecoder(JSContext* cx,
-                                                       OffThreadToken* token);
 
 extern JS_PUBLIC_API void CancelMultiOffThreadScriptsDecoder(
     JSContext* cx, OffThreadToken* token);
