@@ -230,46 +230,15 @@ const checkSetCookiePermissions = (extension, uri, cookie) => {
 
 
 
-
-
-
-const oaFromDetails = (details, context, allowPattern) => {
+const oaFromDetails = (details, allowPattern) => {
   
   let originAttributes = {
-    userContextId: 0,
-    privateBrowsingId: 0,
+    userContextId: 0, 
+    privateBrowsingId: 0, 
     
     firstPartyDomain: details.firstPartyDomain ?? "",
     partitionKey: fromExtPartitionKey(details.partitionKey),
   };
-
-  let isPrivate = context.incognito;
-  let storeId = isPrivate ? PRIVATE_STORE : DEFAULT_STORE;
-  if (details.storeId) {
-    storeId = details.storeId;
-    if (isDefaultCookieStoreId(storeId)) {
-      isPrivate = false;
-    } else if (isPrivateCookieStoreId(storeId)) {
-      isPrivate = true;
-    } else {
-      isPrivate = false;
-      let userContextId = getContainerForCookieStoreId(storeId);
-      if (!userContextId) {
-        throw new ExtensionError(`Invalid cookie store id: "${storeId}"`);
-      }
-      originAttributes.userContextId = userContextId;
-    }
-  }
-
-  if (isPrivate) {
-    originAttributes.privateBrowsingId = 1;
-    if (!context.privateBrowsingAllowed) {
-      throw new ExtensionError(
-        "Extension disallowed access to the private cookies storeId."
-      );
-    }
-  }
-
   
   let isPattern = false;
   if (allowPattern) {
@@ -294,7 +263,7 @@ const oaFromDetails = (details, context, allowPattern) => {
       isPattern = true;
     }
   }
-  return { originAttributes, isPattern, isPrivate, storeId };
+  return { originAttributes, isPattern };
 };
 
 
@@ -316,22 +285,44 @@ const query = function*(detailsIn, props, context, allowPattern) {
     }
   });
 
-  let parsedOA;
-  try {
-    parsedOA = oaFromDetails(detailsIn, context, allowPattern);
-  } catch (e) {
-    if (e.message.startsWith("Invalid cookie store id")) {
-      
-      
-      return;
-    }
-    throw e;
-  }
-  let { originAttributes, isPattern, isPrivate, storeId } = parsedOA;
+  let { originAttributes, isPattern } = oaFromDetails(detailsIn, allowPattern);
 
   if ("domain" in details) {
     details.domain = details.domain.toLowerCase().replace(/^\./, "");
     details.domain = dropBracketIfIPv6(details.domain);
+  }
+
+  let isPrivate = context.incognito;
+  if (details.storeId) {
+    if (!isValidCookieStoreId(details.storeId)) {
+      return;
+    }
+
+    if (isDefaultCookieStoreId(details.storeId)) {
+      isPrivate = false;
+    } else if (isPrivateCookieStoreId(details.storeId)) {
+      isPrivate = true;
+    } else if (isContainerCookieStoreId(details.storeId)) {
+      isPrivate = false;
+      let userContextId = getContainerForCookieStoreId(details.storeId);
+      if (!userContextId) {
+        return;
+      }
+      originAttributes.userContextId = userContextId;
+    }
+  }
+
+  let storeId = DEFAULT_STORE;
+  if (isPrivate) {
+    storeId = PRIVATE_STORE;
+    originAttributes.privateBrowsingId = 1;
+  } else if ("storeId" in details) {
+    storeId = details.storeId;
+  }
+  if (storeId == PRIVATE_STORE && !context.privateBrowsingAllowed) {
+    throw new ExtensionError(
+      "Extension disallowed access to the private cookies storeId."
+    );
   }
 
   
@@ -459,7 +450,7 @@ this.cookies = class extends ExtensionAPI {
           validateFirstPartyDomain(details);
 
           
-          let allowed = ["url", "name"];
+          let allowed = ["url", "name", "storeId"];
           for (let cookie of query(details, allowed, context)) {
             return Promise.resolve(convertCookie(cookie));
           }
@@ -474,7 +465,16 @@ this.cookies = class extends ExtensionAPI {
             validateFirstPartyDomain(details);
           }
 
-          let allowed = ["url", "name", "domain", "path", "secure", "session"];
+          let allowed = [
+            "url",
+            "name",
+            "domain",
+            "path",
+            "secure",
+            "session",
+            "storeId",
+          ];
+
           let result = Array.from(
             query(details, allowed, context,  true),
             convertCookie
@@ -514,8 +514,30 @@ this.cookies = class extends ExtensionAPI {
           let expiry = isSession
             ? Number.MAX_SAFE_INTEGER
             : details.expirationDate;
-
-          let { originAttributes } = oaFromDetails(details, context);
+          let isPrivate = context.incognito;
+          let userContextId = 0;
+          if (isDefaultCookieStoreId(details.storeId)) {
+            isPrivate = false;
+          } else if (isPrivateCookieStoreId(details.storeId)) {
+            if (!context.privateBrowsingAllowed) {
+              return Promise.reject({
+                message:
+                  "Extension disallowed access to the private cookies storeId.",
+              });
+            }
+            isPrivate = true;
+          } else if (isContainerCookieStoreId(details.storeId)) {
+            let containerId = getContainerForCookieStoreId(details.storeId);
+            if (containerId === null) {
+              return Promise.reject({
+                message: `Illegal storeId: ${details.storeId}`,
+              });
+            }
+            isPrivate = false;
+            userContextId = containerId;
+          } else if (details.storeId !== null) {
+            return Promise.reject({ message: "Unknown storeId" });
+          }
 
           let cookieAttrs = {
             host: details.domain,
@@ -529,6 +551,13 @@ this.cookies = class extends ExtensionAPI {
               )}`,
             });
           }
+
+          let originAttributes = {
+            userContextId,
+            privateBrowsingId: isPrivate ? 1 : 0,
+            firstPartyDomain: details.firstPartyDomain ?? "",
+            partitionKey: fromExtPartitionKey(details.partitionKey),
+          };
 
           let sameSite = SAME_SITE_STATUSES.indexOf(details.sameSite);
 
@@ -563,8 +592,14 @@ this.cookies = class extends ExtensionAPI {
         remove: function(details) {
           validateFirstPartyDomain(details);
 
-          let allowed = ["url", "name"];
+          let allowed = ["url", "name", "storeId"];
           for (let { cookie, storeId } of query(details, allowed, context)) {
+            if (
+              isPrivateCookieStoreId(details.storeId) &&
+              !context.privateBrowsingAllowed
+            ) {
+              return Promise.reject({ message: "Unknown storeId" });
+            }
             Services.cookies.remove(
               cookie.host,
               cookie.name,
