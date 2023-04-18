@@ -31,7 +31,6 @@ class nsIScrollbarMediator : public nsQueryFrame {
 
 
 
-  enum ScrollSnapMode { DEFAULT, DISABLE_SNAP, ENABLE_SNAP };
 
   
 
@@ -39,17 +38,21 @@ class nsIScrollbarMediator : public nsQueryFrame {
 
 
   virtual void ScrollByPage(nsScrollbarFrame* aScrollbar, int32_t aDirection,
-                            ScrollSnapMode aSnap = DISABLE_SNAP) = 0;
+                            mozilla::ScrollSnapFlags aSnapFlags =
+                                mozilla::ScrollSnapFlags::Disabled) = 0;
   virtual void ScrollByWhole(nsScrollbarFrame* aScrollbar, int32_t aDirection,
-                             ScrollSnapMode aSnap = DISABLE_SNAP) = 0;
+                             mozilla::ScrollSnapFlags aSnapFlags =
+                                 mozilla::ScrollSnapFlags::Disabled) = 0;
   virtual void ScrollByLine(nsScrollbarFrame* aScrollbar, int32_t aDirection,
-                            ScrollSnapMode aSnap = DISABLE_SNAP) = 0;
+                            mozilla::ScrollSnapFlags aSnapFlags =
+                                mozilla::ScrollSnapFlags::Disabled) = 0;
 
   
   virtual void ScrollByUnit(nsScrollbarFrame* aScrollbar,
                             mozilla::ScrollMode aMode, int32_t aDirection,
                             mozilla::ScrollUnit aUnit,
-                            ScrollSnapMode aSnap = DISABLE_SNAP) = 0;
+                            mozilla::ScrollSnapFlags aSnapFlags =
+                                mozilla::ScrollSnapFlags::Disabled) = 0;
 
   
 

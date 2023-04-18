@@ -251,9 +251,12 @@ int32_t nsScrollbarFrame::MoveToNewPosition(
     MOZ_ASSERT(m);
     
     
-    m->ScrollByUnit(this,
-                    mSmoothScroll ? ScrollMode::Smooth : ScrollMode::Instant,
-                    mDirection, mScrollUnit, nsIScrollbarMediator::ENABLE_SNAP);
+    
+    
+    
+    m->ScrollByUnit(
+        this, mSmoothScroll ? ScrollMode::Smooth : ScrollMode::Instant,
+        mDirection, mScrollUnit, ScrollSnapFlags::IntendedDirection);
     return 0;
   }
 
