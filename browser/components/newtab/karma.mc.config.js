@@ -58,7 +58,7 @@ module.exports = function(config) {
       outputFile: path.join("logs", "karma-run-results.json"),
     },
     coverageIstanbulReporter: {
-      reports: ["html", "text-summary"],
+      reports: ["lcov", "text-summary"], 
       dir: PATHS.coverageReportingPath,
       
       thresholds: !isTDD && {
