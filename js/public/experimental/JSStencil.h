@@ -26,8 +26,8 @@
 #include "js/CompileOptions.h"  
 #include "js/OffThreadScriptCompilation.h"  
 #include "js/SourceText.h"                  
-#include "js/Transcoding.h"                 
-#include "js/UniquePtr.h"                   
+#include "js/Transcoding.h"  
+#include "js/UniquePtr.h"  
 
 struct JS_PUBLIC_API JSContext;
 class JS_PUBLIC_API JSTracer;
@@ -184,6 +184,26 @@ extern JS_PUBLIC_API OffThreadToken* CompileModuleToStencilOffThread(
 
 
 
+
+extern JS_PUBLIC_API OffThreadToken* DecodeStencilOffThread(
+    JSContext* cx, const DecodeOptions& options, const TranscodeBuffer& buffer,
+    size_t cursor, OffThreadCompileCallback callback, void* callbackData);
+
+
+
+
+
+
+extern JS_PUBLIC_API OffThreadToken* DecodeStencilOffThread(
+    JSContext* cx, const DecodeOptions& options, const TranscodeRange& range,
+    OffThreadCompileCallback callback, void* callbackData);
+
+
+
+
+
+
+
 extern JS_PUBLIC_API already_AddRefed<Stencil> FinishCompileToStencilOffThread(
     JSContext* cx, OffThreadToken* token,
     InstantiationStorage* storage = nullptr);
@@ -192,11 +212,18 @@ extern JS_PUBLIC_API already_AddRefed<Stencil>
 FinishCompileModuleToStencilOffThread(JSContext* cx, OffThreadToken* token,
                                       InstantiationStorage* storage = nullptr);
 
+extern JS_PUBLIC_API already_AddRefed<Stencil> FinishDecodeStencilOffThread(
+    JSContext* cx, OffThreadToken* token,
+    InstantiationStorage* storage = nullptr);
+
 extern JS_PUBLIC_API void CancelCompileToStencilOffThread(
     JSContext* cx, OffThreadToken* token);
 
 extern JS_PUBLIC_API void CancelCompileModuleToStencilOffThread(
     JSContext* cx, OffThreadToken* token);
+
+extern JS_PUBLIC_API void CancelDecodeStencilOffThread(JSContext* cx,
+                                                       OffThreadToken* token);
 
 
 
