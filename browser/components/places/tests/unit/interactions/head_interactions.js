@@ -199,6 +199,20 @@ function assertSnapshot(actual, expected) {
       "Should have the Snapshot URL's common name."
     );
   }
+  if (expected.overlappingVisitScoreIs) {
+    Assert.equal(
+      actual.overlappingVisitScore,
+      expected.overlappingVisitScoreIs,
+      "Should have an overlappingVisitScore equal to the expected score"
+    );
+  }
+  if (expected.overlappingVisitScoreGreaterThan) {
+    Assert.greater(
+      actual.overlappingVisitScore,
+      expected.overlappingVisitScoreGreaterThan,
+      "Should have an overlappingVisitScore greater than the expected score"
+    );
+  }
   if (expected.removedAt) {
     Assert.greaterOrEqual(
       actual.removedAt.getTime(),
@@ -248,6 +262,19 @@ async function assertSnapshots(expected, options) {
   await assertSnapshotList(snapshots, expected);
 }
 
+
+
+
+
+
+
+
+
+async function assertSnapshotsWithContext(expected, context) {
+  let snapshots = await Snapshots.queryOverlapping(context.url);
+
+  await assertSnapshotList(snapshots, expected);
+}
 
 
 

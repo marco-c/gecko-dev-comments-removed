@@ -76,6 +76,11 @@ class SnapshotSelector extends EventEmitter {
 
 
 
+    selectOverlappingVisits: false,
+    
+
+
+
     url: undefined,
     
 
@@ -97,11 +102,14 @@ class SnapshotSelector extends EventEmitter {
 
 
 
-  constructor(count = 5, filterAdult = false) {
+
+
+  constructor(count = 5, filterAdult = false, selectOverlappingVisits = false) {
     super();
     this.#task = new DeferredTask(() => this.#buildSnapshots(), 500);
     this.#context.count = count;
     this.#context.filterAdult = filterAdult;
+    this.#context.selectOverlappingVisits = selectOverlappingVisits;
     SnapshotSelector.#selectors.add(this);
   }
 
@@ -146,6 +154,11 @@ class SnapshotSelector extends EventEmitter {
 
 
   async #buildSnapshots() {
+    if (this.#context.selectOverlappingVisits) {
+      await this.#buildOverlappingSnapshots();
+      return;
+    }
+
     
     if (!this.#task) {
       return;
@@ -173,6 +186,38 @@ class SnapshotSelector extends EventEmitter {
         return !context.filterAdult || !FilterAdult.isAdultUrl(snapshot.url);
       })
       .slice(0, context.count);
+
+    this.#snapshotsGenerated(snapshots);
+  }
+
+  
+
+
+
+
+
+  async #buildOverlappingSnapshots() {
+    
+    if (!this.#task) {
+      return;
+    }
+
+    
+    
+    let context = { ...this.#context };
+    logConsole.debug("Building overlapping snapshots", context);
+
+    let snapshots = await Snapshots.queryOverlapping(context.url);
+    snapshots = snapshots.filter(snapshot => {
+      return !context.filterAdult || !FilterAdult.isAdultUrl(snapshot.url);
+    });
+
+    snapshots = snapshots.slice(0, context.count);
+
+    logConsole.debug(
+      "Found overlapping snapshots: ",
+      snapshots.map(s => s.url)
+    );
 
     this.#snapshotsGenerated(snapshots);
   }
