@@ -14,10 +14,21 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   EventEmitter: "resource://gre/modules/EventEmitter.jsm",
   Services: "resource://gre/modules/Services.jsm",
 
+  getFramesFromStack: "chrome://remote/content/shared/Stack.jsm",
   Log: "chrome://remote/content/shared/Log.jsm",
 });
 
 XPCOMUtils.defineLazyGetter(this, "logger", () => Log.get());
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -139,7 +150,7 @@ class ConsoleListener {
     this.emit(level, {
       level,
       message: message.errorMessage,
-      rawMessage: message,
+      stacktrace: getFramesFromStack(message.stack),
       timeStamp: message.timeStamp,
     });
   };

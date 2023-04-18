@@ -15,6 +15,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
     "chrome://remote/content/shared/listeners/ConsoleAPIListener.jsm",
   ConsoleListener:
     "chrome://remote/content/shared/listeners/ConsoleListener.jsm",
+  isChromeFrame: "chrome://remote/content/shared/Stack.jsm",
   Module: "chrome://remote/content/shared/messagehandler/Module.jsm",
   serialize: "chrome://remote/content/webdriver-bidi/RemoteValue.jsm",
 });
@@ -78,10 +79,47 @@ class Log extends Module {
     }
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+  #buildStackTrace(stackTrace) {
+    if (stackTrace == undefined) {
+      return undefined;
+    }
+
+    const callFrames = stackTrace
+      .filter(frame => !isChromeFrame(frame))
+      .map(frame => {
+        return {
+          columnNumber: frame.columnNumber,
+          functionName: frame.functionName,
+          
+          lineNumber: frame.lineNumber - 1,
+          url: frame.filename,
+        };
+      });
+
+    return { callFrames };
+  }
+
   #onConsoleAPIMessage = (eventName, data = {}) => {
-    
-    
-    const { arguments: messageArguments, level: method, timeStamp } = data;
+    const {
+      
+      arguments: messageArguments,
+      
+      level: method,
+      stacktrace,
+      timeStamp,
+    } = data;
 
     
     
@@ -114,16 +152,21 @@ class Log extends Module {
     
 
     
+    let stackTrace;
+    if (["assert", "error", "trace", "warn"].includes(method)) {
+      stackTrace = this.#buildStackTrace(stacktrace);
+    }
 
     
     const entry = {
       type: "console",
-      level: logEntrylevel,
-      text,
-      timestamp,
       method,
       realm: null,
       args: serializedArgs,
+      level: logEntrylevel,
+      text,
+      timestamp,
+      stackTrace,
     };
 
     
@@ -138,15 +181,15 @@ class Log extends Module {
   };
 
   #onJavaScriptError = (eventName, data = {}) => {
-    const { level, message, timeStamp } = data;
+    const { level, message, stacktrace, timeStamp } = data;
 
+    
     const entry = {
       type: "javascript",
       level,
       text: message,
       timestamp: timeStamp || Date.now(),
-      
-      stackTrace: undefined,
+      stackTrace: this.#buildStackTrace(stacktrace),
     };
 
     this.messageHandler.emitMessageHandlerEvent("log.entryAdded", entry);

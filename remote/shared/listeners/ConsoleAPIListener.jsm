@@ -37,6 +37,8 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 
 
+
+
 class ConsoleAPIListener {
   #emittedMessages;
   #innerWindowId;
@@ -121,7 +123,7 @@ class ConsoleAPIListener {
     this.emit("message", {
       arguments: messageObject.arguments,
       level: messageObject.level,
-      rawMessage: message,
+      stacktrace: messageObject.stacktrace,
       timeStamp: messageObject.timeStamp,
     });
   };
