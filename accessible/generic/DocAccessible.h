@@ -507,9 +507,6 @@ class DocAccessible : public HyperTextAccessibleWrap,
 
   void ProcessBoundsChanged();
 
-  
-
-
   bool IsAccessibleBeingMoved(LocalAccessible* aAcc) {
     return mMovedAccessibles.Contains(aAcc);
   }

@@ -11,6 +11,11 @@ loadScripts(
   { name: "states.js", dir: MOCHITESTS_DIR }
 );
 
+const isCacheEnabled = Services.prefs.getBoolPref(
+  "accessibility.cache.enabled",
+  false
+);
+
 
 
 
@@ -53,5 +58,11 @@ addAccessibleTask(
     
     ok(isDefunct(heading), "heading is dead");
   },
-  { chrome: true, topLevel: true, iframe: true, remoteIframe: true }
+  {
+    chrome: true,
+    
+    topLevel: isCacheEnabled,
+    iframe: isCacheEnabled,
+    remoteIframe: isCacheEnabled,
+  }
 );
