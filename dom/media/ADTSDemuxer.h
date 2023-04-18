@@ -99,14 +99,14 @@ class ADTSTrackDemuxer : public MediaTrackDemuxer,
   void UpdateState(const adts::Frame& aFrame);
 
   
-  int64_t FrameIndexFromOffset(int64_t aOffset) const;
+  int64_t FrameIndexFromOffset(uint64_t aOffset) const;
 
   
   int64_t FrameIndexFromTime(const media::TimeUnit& aTime) const;
 
   
   
-  int32_t Read(uint8_t* aBuffer, int64_t aOffset, int32_t aSize);
+  uint32_t Read(uint8_t* aBuffer, int64_t aOffset, int32_t aSize);
 
   
   double AverageFrameLength() const;
@@ -118,7 +118,7 @@ class ADTSTrackDemuxer : public MediaTrackDemuxer,
   adts::FrameParser* mParser;
 
   
-  int64_t mOffset;
+  uint64_t mOffset;
 
   
   uint64_t mNumParsedFrames;
