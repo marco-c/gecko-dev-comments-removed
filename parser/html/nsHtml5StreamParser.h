@@ -711,8 +711,6 @@ class nsHtml5StreamParser final : public nsISupports {
 
   bool mDetectorHasSeenNonAscii;
 
-  bool mDetectorHadOnlySeenAsciiWhenFirstGuessing;
-
   
 
 
