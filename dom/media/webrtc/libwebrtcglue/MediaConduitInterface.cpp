@@ -94,8 +94,12 @@ void MediaSessionConduit::UpdateRtpSources(
       domEntry.mAudioLevel.Construct(rtpToDomAudioLevel(*source.audio_level()));
     }
 
+    
+    
+    
     domEntry.mTimestamp = GetTimestampMaker().ReduceRealtimePrecision(
-        webrtc::Timestamp::Millis(source.timestamp_ms()));
+        webrtc::Timestamp::Millis(source.timestamp_ms()) -
+        webrtc::TimeDelta::Micros(500));
     domEntry.mRtpTimestamp = source.rtp_timestamp();
     mSourcesCache[key] = domEntry;
   }
