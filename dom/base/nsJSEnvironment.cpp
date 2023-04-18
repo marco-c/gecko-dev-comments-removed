@@ -1546,6 +1546,11 @@ bool CCGCScheduler::CCRunnerFired(TimeStamp aDeadline) {
       case CCRunnerAction::None:
         break;
 
+      case CCRunnerAction::MinorGC:
+        JS::RunIdleTimeGCTask(CycleCollectedJSRuntime::Get()->Runtime());
+        sScheduler.NoteMinorGCEnd();
+        break;
+
       case CCRunnerAction::ForgetSkippable:
         
         FireForgetSkippable(bool(step.mRemoveChildless), aDeadline);
