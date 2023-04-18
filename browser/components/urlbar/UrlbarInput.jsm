@@ -2467,8 +2467,7 @@ class UrlbarInput {
     
     
     this._setValue(value, false);
-    this.selectionStart = selectionStart;
-    this.selectionEnd = selectionEnd;
+    this.inputField.setSelectionRange(selectionStart, selectionEnd);
     this._autofillPlaceholder = { value, type, adaptiveHistoryInput };
   }
 
@@ -2582,7 +2581,7 @@ class UrlbarInput {
     if (!params.avoidBrowserFocus) {
       browser.focus();
       
-      this.selectionStart = this.selectionEnd = 0;
+      this.inputField.setSelectionRange(0, 0);
     }
 
     if (openUILinkWhere != "current") {
@@ -3063,7 +3062,7 @@ class UrlbarInput {
         
         
         if (this.focusedViaMousedown) {
-          this.selectionStart = this.selectionEnd = 0;
+          this.inputField.setSelectionRange(0, 0);
         }
 
         if (event.target.id == SEARCH_BUTTON_ID) {
@@ -3289,8 +3288,7 @@ class UrlbarInput {
 
       
       let newCursorPos = oldStart.length + pasteData.length;
-      this.selectionStart = newCursorPos;
-      this.selectionEnd = newCursorPos;
+      this.inputField.setSelectionRange(newCursorPos, newCursorPos);
 
       this.startQuery({
         searchString: this.inputField.value,
@@ -3363,7 +3361,7 @@ class UrlbarInput {
           if (this.window.gBrowser.selectedBrowser === loadingBrowser) {
             loadingBrowser.focus();
             
-            this.selectionStart = this.selectionEnd = 0;
+            this.inputField.setSelectionRange(0, 0);
           }
         } catch (ex) {
           
@@ -3685,7 +3683,7 @@ class CopyCutController {
       urlbar.inputField.value =
         urlbar.inputField.value.substring(0, start) +
         urlbar.inputField.value.substring(end);
-      urlbar.selectionStart = urlbar.selectionEnd = start;
+      urlbar.inputField.setSelectionRange(start, start);
 
       let event = new UIEvent("input", {
         bubbles: true,
