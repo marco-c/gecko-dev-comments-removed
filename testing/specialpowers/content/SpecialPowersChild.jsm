@@ -2245,14 +2245,12 @@ class SpecialPowersChild extends JSWindowActorChild {
 
 
   contentTransformsReceived(win) {
-    for (; win; win = win.parent) {
-      try {
-        return win.docShell.browserChild.contentTransformsReceived();
-      } catch (ex) {
-        
-      }
+    try {
+      
+      return win.docShell.browserChild.contentTransformsReceived();
+    } catch (e) {
+      return Promise.resolve();
     }
-    return Promise.resolve();
   }
 }
 
