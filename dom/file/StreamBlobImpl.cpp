@@ -126,7 +126,7 @@ StreamBlobImpl::~StreamBlobImpl() {
 }
 
 void StreamBlobImpl::CreateInputStream(nsIInputStream** aStream,
-                                       ErrorResult& aRv) {
+                                       ErrorResult& aRv) const {
   if (!mInputStream) {
     
     *aStream = nullptr;
