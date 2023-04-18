@@ -257,7 +257,8 @@ class HTMLFormElement final : public nsGenericHTMLElement,
 
 
 
-  nsresult ConstructEntryList(FormData* aFormData);
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult ConstructEntryList(FormData* aFormData);
 
   
 
