@@ -147,6 +147,12 @@ class nsTimerImpl {
 
   
   
+  
+  
+  
+  
+  
+  
   nsTimerImplHolder* mHolder;
 
   
@@ -160,6 +166,9 @@ class nsTimerImpl {
   int32_t mGeneration;
 
   mozilla::TimeDuration mDelay;
+  
+  
+  
   
   mozilla::TimeStamp mTimeout;
 
@@ -220,12 +229,14 @@ class nsTimerImplHolder {
  public:
   explicit nsTimerImplHolder(nsTimerImpl* aTimerImpl) : mTimerImpl(aTimerImpl) {
     if (mTimerImpl) {
+      mTimerImpl->mMutex.AssertCurrentThreadOwns();
       mTimerImpl->SetHolder(this);
     }
   }
 
   ~nsTimerImplHolder() {
     if (mTimerImpl) {
+      mTimerImpl->mMutex.AssertCurrentThreadOwns();
       mTimerImpl->SetHolder(nullptr);
     }
   }
@@ -235,6 +246,7 @@ class nsTimerImplHolder {
       return;
     }
     MOZ_ASSERT(aTimerImpl == mTimerImpl);
+    mTimerImpl->mMutex.AssertCurrentThreadOwns();
     mTimerImpl->SetHolder(nullptr);
     mTimerImpl = nullptr;
   }

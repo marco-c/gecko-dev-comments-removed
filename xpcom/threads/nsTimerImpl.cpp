@@ -608,8 +608,15 @@ void nsTimerImpl::Fire(int32_t aGeneration) {
     
     MutexAutoLock lock(mMutex);
     if (aGeneration != mGeneration) {
+      
+      
       return;
     }
+
+    
+    
+    
+    MOZ_ASSERT(!mHolder);
 
     ++mFiring;
     callbackDuringFire = mCallback;
