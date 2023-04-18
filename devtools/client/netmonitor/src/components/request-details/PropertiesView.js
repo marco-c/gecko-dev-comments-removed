@@ -55,6 +55,7 @@ class PropertiesView extends Component {
       enableInput: PropTypes.bool,
       expandableStrings: PropTypes.bool,
       expandedNodes: PropTypes.object,
+      useBaseTreeViewExpand: PropTypes.bool,
       filterText: PropTypes.string,
       cropLimit: PropTypes.number,
       targetSearchResult: PropTypes.object,
@@ -76,6 +77,7 @@ class PropertiesView extends Component {
       cropLimit: 1024,
       useQuotes: true,
       contextMenuFormatters: {},
+      useBaseTreeViewExpand: false,
     };
   }
 
@@ -194,6 +196,7 @@ class PropertiesView extends Component {
 
   render() {
     const {
+      useBaseTreeViewExpand,
       expandedNodes,
       object,
       renderValue,
@@ -201,6 +204,21 @@ class PropertiesView extends Component {
       selectPath,
     } = this.props;
 
+    let currentExpandedNodes;
+    
+    
+    
+    
+    
+    
+    if (!useBaseTreeViewExpand) {
+      currentExpandedNodes =
+        expandedNodes ||
+        TreeViewClass.getExpandedNodes(object, {
+          maxLevel: AUTO_EXPAND_MAX_LEVEL,
+          maxNodes: AUTO_EXPAND_MAX_NODES,
+        });
+    }
     return div(
       { className: "properties-view" },
       div(
@@ -209,12 +227,9 @@ class PropertiesView extends Component {
           ...this.props,
           ref: () => this.scrollSelectedIntoView(),
           columns: [{ id: "value", width: "100%" }],
-          expandedNodes:
-            expandedNodes ||
-            TreeViewClass.getExpandedNodes(object, {
-              maxLevel: AUTO_EXPAND_MAX_LEVEL,
-              maxNodes: AUTO_EXPAND_MAX_NODES,
-            }),
+
+          expandedNodes: currentExpandedNodes,
+
           onFilter: props => this.onFilter(props),
           renderValue: renderValue || this.renderValueWithRep,
           onContextMenuRow: this.onContextMenuRow,
