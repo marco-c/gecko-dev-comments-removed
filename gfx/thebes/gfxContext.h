@@ -309,7 +309,11 @@ class gfxContext final {
 
 
 
-  void SetDash(const Float* dashes, int ndash, Float offset);
+  
+  
+  
+  void SetDash(const Float* dashes, int ndash, Float offset, Float devPxScale);
+
   
   
   
