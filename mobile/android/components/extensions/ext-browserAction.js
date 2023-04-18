@@ -79,7 +79,7 @@ class BrowserAction extends BrowserActionBase {
   }
 }
 
-this.browserAction = class extends ExtensionAPI {
+this.browserAction = class extends ExtensionAPIPersistent {
   async onManifestEntry(entryName) {
     const { extension } = this;
     this.action = new BrowserAction(extension, this);
@@ -101,9 +101,33 @@ this.browserAction = class extends ExtensionAPI {
     this.emit("click", tabTracker.activeTab);
   }
 
+  PERSISTENT_EVENTS = {
+    onClicked({ context, fire }) {
+      const { extension } = this;
+      const { tabManager } = extension;
+      async function listener(_event, tab) {
+        if (fire.wakeup) {
+          await fire.wakeup();
+        }
+        
+        
+        fire.sync(tabManager.convert(tab));
+      }
+      this.on("click", listener);
+      return {
+        unregister: () => {
+          this.off("click", listener);
+        },
+        convert(newFire, extContext) {
+          fire = newFire;
+          context = extContext;
+        },
+      };
+    },
+  };
+
   getAPI(context) {
     const { extension } = context;
-    const { tabManager } = extension;
     const { action } = this;
     const namespace =
       extension.manifestVersion < 3 ? "browserAction" : "action";
@@ -114,16 +138,13 @@ this.browserAction = class extends ExtensionAPI {
 
         onClicked: new EventManager({
           context,
-          name: `${namespace}.onClicked`,
-          register: fire => {
-            const listener = (event, tab) => {
-              fire.async(tabManager.convert(tab));
-            };
-            this.on("click", listener);
-            return () => {
-              this.off("click", listener);
-            };
-          },
+          
+          
+          module: "browserAction",
+          event: "onClicked",
+          
+          
+          extensionApi: this,
         }).api(),
 
         openPopup: function() {
