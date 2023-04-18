@@ -679,22 +679,12 @@ var gHistorySwipeAnimation = {
   startAnimation: function HSA_startAnimation() {
     
     
-    if (this.isAnimationRunning() && !this._isStoppingAnimation) {
-      return;
-    }
-
-    let createBoxes = true;
-    if (this._isStoppingAnimation) {
-      
-      this._prevBox.style.transition = "";
-      this._nextBox.style.transition = "";
-      createBoxes = false;
-    }
-
+    
+    this._removeBoxes();
     this._isStoppingAnimation = false;
     this._canGoBack = this.canGoBack();
     this._canGoForward = this.canGoForward();
-    if (createBoxes && this.active) {
+    if (this.active) {
       this._addBoxes();
     }
     this.updateAnimation(0);
@@ -704,7 +694,7 @@ var gHistorySwipeAnimation = {
 
 
   stopAnimation: function HSA_stopAnimation() {
-    if (!this.isAnimationRunning()) {
+    if (!this.isAnimationRunning() || this._isStoppingAnimation) {
       return;
     }
 
