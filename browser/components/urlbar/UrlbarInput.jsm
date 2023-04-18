@@ -227,6 +227,7 @@ class UrlbarInput {
       "focus",
       "blur",
       "input",
+      "beforeinput",
       "keydown",
       "keyup",
       "mouseover",
@@ -2463,11 +2464,21 @@ class UrlbarInput {
       params.initiatingDoc = this.window.document;
     }
 
-    if (event?.keyCode === KeyEvent.DOM_VK_RETURN) {
-      if (openUILinkWhere === "current") {
-        params.avoidBrowserFocus = true;
-        this._keyDownEnterDeferred?.resolve(browser);
-      }
+    if (
+      this._keyDownEnterDeferred &&
+      event?.keyCode === KeyEvent.DOM_VK_RETURN &&
+      openUILinkWhere === "current"
+    ) {
+      
+      
+      
+      
+      
+      
+      
+      params.avoidBrowserFocus = true;
+      this._keyDownEnterDeferred.loadedContent = true;
+      this._keyDownEnterDeferred.resolve(browser);
     }
 
     
@@ -3204,6 +3215,13 @@ class UrlbarInput {
     this._afterTabSelectAndFocusChange();
   }
 
+  _on_beforeinput(event) {
+    if (event.data && this._keyDownEnterDeferred) {
+      
+      event.preventDefault();
+    }
+  }
+
   _on_keydown(event) {
     if (event.keyCode === KeyEvent.DOM_VK_RETURN) {
       if (this._keyDownEnterDeferred) {
@@ -3236,22 +3254,28 @@ class UrlbarInput {
       event.keyCode === KeyEvent.DOM_VK_RETURN &&
       this._keyDownEnterDeferred
     ) {
-      try {
-        const loadingBrowser = await this._keyDownEnterDeferred.promise;
-        
-        if (this.window.gBrowser.selectedBrowser === loadingBrowser) {
-          loadingBrowser.focus();
+      if (this._keyDownEnterDeferred.loadedContent) {
+        try {
+          const loadingBrowser = await this._keyDownEnterDeferred.promise;
           
-          this.selectionStart = this.selectionEnd = 0;
+          if (this.window.gBrowser.selectedBrowser === loadingBrowser) {
+            loadingBrowser.focus();
+            
+            this.selectionStart = this.selectionEnd = 0;
+          }
+          this._keyDownEnterDeferred = null;
+        } catch (ex) {
+          
+          
+          
+          
         }
-        this._keyDownEnterDeferred = null;
-      } catch (ex) {
-        
-        
-        
-        
+        return;
       }
-      return;
+
+      
+      this._keyDownEnterDeferred.resolve();
+      this._keyDownEnterDeferred = null;
     } else if (event.keyCode === KeyEvent.DOM_VK_CONTROL) {
       this._isKeyDownWithCtrl = false;
     }

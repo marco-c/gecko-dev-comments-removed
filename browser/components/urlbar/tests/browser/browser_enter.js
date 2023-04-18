@@ -139,17 +139,13 @@ add_task(async function searchOnEnterSoon() {
   );
 
   const onLoad = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
-  const onBeforeUnload = SpecialPowers.spawn(
-    gBrowser.selectedBrowser,
-    [],
-    () => {
-      return new Promise(resolve => {
-        content.window.addEventListener("beforeunload", () => {
-          resolve();
-        });
+  const onPageHide = SpecialPowers.spawn(gBrowser.selectedBrowser, [], () => {
+    return new Promise(resolve => {
+      content.window.addEventListener("pagehide", () => {
+        resolve();
       });
-    }
-  );
+    });
+  });
   const onResult = SpecialPowers.spawn(gBrowser.selectedBrowser, [], () => {
     return new Promise(resolve => {
       content.window.addEventListener("keyup", () => {
@@ -175,7 +171,7 @@ add_task(async function searchOnEnterSoon() {
   EventUtils.synthesizeKey("KEY_Enter", { type: "keydown" });
 
   
-  await onBeforeUnload;
+  await onPageHide;
   is(
     ownerDocument.activeElement,
     gURLBar.inputField,
@@ -262,6 +258,47 @@ add_task(async function searchByMultipleEnters() {
     gBrowser.selectedBrowser,
     "The focus is moved to the browser"
   );
+
+  
+  BrowserTestUtils.removeTab(tab);
+});
+
+add_task(async function typeCharWhileProcessingEnter() {
+  info("Typing a char while processing enter key");
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    START_VALUE
+  );
+
+  const onLoad = BrowserTestUtils.browserLoaded(
+    gBrowser.selectedBrowser,
+    false,
+    `http://${START_VALUE}`
+  );
+  gURLBar.focus();
+
+  info("Keydown Enter");
+  EventUtils.synthesizeKey("KEY_Enter", { type: "keydown" });
+  await TestUtils.waitForCondition(
+    () => gURLBar._keyDownEnterDeferred,
+    "Wait for starting process for the enter key"
+  );
+
+  info("Keydown a char");
+  EventUtils.synthesizeKey("x", { type: "keydown" });
+
+  info("Keyup both");
+  EventUtils.synthesizeKey("x", { type: "keyup" });
+  EventUtils.synthesizeKey("KEY_Enter", { type: "keyup" });
+
+  Assert.equal(
+    gURLBar.inputField.value,
+    TEST_VALUE,
+    "The value of urlbar is correct"
+  );
+
+  await onLoad;
+  Assert.ok("Browser loaded the correct url");
 
   
   BrowserTestUtils.removeTab(tab);
