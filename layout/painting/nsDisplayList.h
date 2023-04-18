@@ -2123,7 +2123,7 @@ class nsDisplayItem {
 
 
   inline nsIFrame* Frame() const {
-    MOZ_ASSERT(mFrame, "Trying to use display item after deletion!");
+    MOZ_ASSERT(mFrame, "Trying to use display item after frame deletion!");
     return mFrame;
   }
 
