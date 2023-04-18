@@ -101,8 +101,8 @@ class L10NRepackFormatterMixin(object):
         self._dictionaries = {}
 
     def add(self, path, file):
+        base, relpath = self._get_base(path)
         if path.endswith(".dic"):
-            base, relpath = self._get_base(path)
             if relpath.startswith("dictionaries/"):
                 root, ext = mozpath.splitext(mozpath.basename(path))
                 self._dictionaries[root] = path
@@ -112,6 +112,14 @@ class L10NRepackFormatterMixin(object):
             
             
             file = GeneratedFile(lambda: json.dumps(data))
+        elif relpath.startswith("META-INF/"):
+            
+            
+            
+            
+            
+            
+            return
         super(L10NRepackFormatterMixin, self).add(path, file)
 
 
