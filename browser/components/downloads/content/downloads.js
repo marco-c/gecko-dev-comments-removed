@@ -369,7 +369,8 @@ var DownloadsPanel = {
     this._state = this.kStateShown;
 
     
-    DownloadsCommon.getIndicatorData(window).attentionSuppressed = true;
+    DownloadsCommon.getIndicatorData(window).attentionSuppressed |=
+      DownloadsCommon.SUPPRESS_PANEL_OPEN;
 
     
     if (DownloadsView.richListBox.itemCount > 0) {
@@ -399,7 +400,9 @@ var DownloadsPanel = {
     this.keyFocusing = false;
 
     
-    DownloadsCommon.getIndicatorData(window).attentionSuppressed = false;
+    DownloadsCommon.getIndicatorData(
+      window
+    ).attentionSuppressed &= ~DownloadsCommon.SUPPRESS_PANEL_OPEN;
 
     
     DownloadsButton.releaseAnchor();

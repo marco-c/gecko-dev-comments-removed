@@ -208,7 +208,11 @@ var DownloadsView = {
 
 
 
-function DownloadsPlacesView(aRichListBox, aActive = true) {
+function DownloadsPlacesView(
+  aRichListBox,
+  aActive = true,
+  aSuppressionFlag = DownloadsCommon.SUPPRESS_ALL_DOWNLOADS_OPEN
+) {
   this._richlistbox = aRichListBox;
   this._richlistbox._placesView = this;
   window.controllers.insertControllerAt(0, this);
@@ -229,14 +233,21 @@ function DownloadsPlacesView(aRichListBox, aActive = true) {
 
   
   
-  DownloadsCommon.getIndicatorData(window).attention =
-    DownloadsCommon.ATTENTION_NONE;
+  if (aSuppressionFlag === DownloadsCommon.SUPPRESS_ALL_DOWNLOADS_OPEN) {
+    DownloadsCommon.getIndicatorData(
+      window
+    ).attentionSuppressed |= aSuppressionFlag;
+  }
 
   
   window.addEventListener(
     "unload",
     () => {
       window.controllers.removeController(this);
+      
+      DownloadsCommon.getIndicatorData(
+        window
+      ).attentionSuppressed &= ~aSuppressionFlag;
       this._downloadsData.removeView(this);
       this.result = null;
     },
