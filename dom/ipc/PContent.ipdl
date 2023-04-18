@@ -580,6 +580,13 @@ child:
 
 
     async GetUntrustedModulesData() returns (UntrustedModulesData? data);
+
+    
+
+
+
+
+    async UnblockUntrustedModulesThread();
 #endif  
 
     
@@ -750,7 +757,8 @@ child:
                                     SystemFontList systemFontList,
                                     SharedMemoryHandle? sharedUASheetHandle,
                                     uintptr_t sharedUASheetAddress,
-                                    SharedMemoryHandle[] sharedFontListBlocks);
+                                    SharedMemoryHandle[] sharedFontListBlocks,
+                                    bool aIsStartingUp);
 
     
     async LastPrivateDocShellDestroyed();

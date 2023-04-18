@@ -2766,6 +2766,16 @@ BrowserGlue.prototype = {
         },
       },
 
+      {
+        condition: AppConstants.platform == "win",
+        task: () => {
+          Services.obs.notifyObservers(
+            null,
+            "unblock-untrusted-modules-thread"
+          );
+        },
+      },
+
       
       
       {
