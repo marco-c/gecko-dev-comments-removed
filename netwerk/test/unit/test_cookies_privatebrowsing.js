@@ -49,12 +49,12 @@ add_task(async () => {
   let uri2 = NetUtil.newURI("http://bar.com/bar.html");
 
   
-  Services.cookies.setCookieStringFromHttp(
+  Services.cookiesvc.setCookieStringFromHttp(
     uri1,
     "oh=hai; max-age=1000",
     make_channel(uri1.spec)
   );
-  Assert.equal(Services.cookies.countCookiesFromHost(uri1.host), 1);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost(uri1.host), 1);
 
   
   var chan1 = make_channel(uri1.spec);
@@ -65,7 +65,11 @@ add_task(async () => {
   chan2.QueryInterface(Ci.nsIPrivateBrowsingChannel);
   chan2.setPrivate(true);
 
-  Services.cookies.setCookieStringFromHttp(uri2, "oh=hai; max-age=1000", chan2);
+  Services.cookiesvc.setCookieStringFromHttp(
+    uri2,
+    "oh=hai; max-age=1000",
+    chan2
+  );
   Assert.equal(await getCookieStringFromPrivateDocument(uri1.spec), "");
   Assert.equal(await getCookieStringFromPrivateDocument(uri2.spec), "oh=hai");
 
@@ -74,26 +78,34 @@ add_task(async () => {
   Assert.equal(await getCookieStringFromPrivateDocument(uri1.spec), "");
   Assert.equal(await getCookieStringFromPrivateDocument(uri2.spec), "");
 
-  Services.cookies.setCookieStringFromHttp(uri2, "oh=hai; max-age=1000", chan2);
+  Services.cookiesvc.setCookieStringFromHttp(
+    uri2,
+    "oh=hai; max-age=1000",
+    chan2
+  );
   Assert.equal(await getCookieStringFromPrivateDocument(uri2.spec), "oh=hai");
 
   
   Services.obs.notifyObservers(null, "last-pb-context-exited");
-  Assert.equal(Services.cookies.countCookiesFromHost(uri1.host), 1);
-  Assert.equal(Services.cookies.countCookiesFromHost(uri2.host), 0);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost(uri1.host), 1);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost(uri2.host), 0);
 
   
   await promise_close_profile();
   do_load_profile();
 
   
-  Assert.equal(Services.cookies.countCookiesFromHost(uri1.host), 1);
-  Assert.equal(Services.cookies.countCookiesFromHost(uri2.host), 0);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost(uri1.host), 1);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost(uri2.host), 0);
 
   
   Assert.equal(await getCookieStringFromPrivateDocument(uri1.spec), "");
   Assert.equal(await getCookieStringFromPrivateDocument(uri2.spec), "");
-  Services.cookies.setCookieStringFromHttp(uri2, "oh=hai; max-age=1000", chan2);
+  Services.cookiesvc.setCookieStringFromHttp(
+    uri2,
+    "oh=hai; max-age=1000",
+    chan2
+  );
   Assert.equal(await getCookieStringFromPrivateDocument(uri2.spec), "oh=hai");
 
   
@@ -107,8 +119,8 @@ add_task(async () => {
 
   
   Services.obs.notifyObservers(null, "last-pb-context-exited");
-  Assert.equal(Services.cookies.countCookiesFromHost(uri1.host), 1);
-  Assert.equal(Services.cookies.countCookiesFromHost(uri2.host), 0);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost(uri1.host), 1);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost(uri2.host), 0);
 
   
 
@@ -123,8 +135,8 @@ add_task(async () => {
 
   
   Services.obs.notifyObservers(null, "last-pb-context-exited");
-  Assert.equal(Services.cookies.countCookiesFromHost(uri1.host), 1);
-  Assert.equal(Services.cookies.countCookiesFromHost(uri2.host), 0);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost(uri1.host), 1);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost(uri2.host), 0);
 
   
   privateBrowsingHolder.close();
