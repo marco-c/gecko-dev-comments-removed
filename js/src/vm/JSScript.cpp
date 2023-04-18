@@ -2112,11 +2112,9 @@ void JSScript::relazify(JSRuntime* rt) {
   js::Scope* scope = enclosingScope();
   UniquePtr<PrivateScriptData> scriptData;
 
-#ifndef JS_CODEGEN_NONE
   
   
-  MOZ_ASSERT(isUsingInterpreterTrampoline(rt));
-#endif
+  MOZ_ASSERT_IF(jit::HasJitBackend(), isUsingInterpreterTrampoline(rt));
 
   
   
@@ -2363,11 +2361,10 @@ bool JSScript::fullyInitFromStencil(
   
   Rooted<UniquePtr<PrivateScriptData>> lazyData(cx);
 
-#ifndef JS_CODEGEN_NONE
   
   
-  MOZ_ASSERT(script->isUsingInterpreterTrampoline(cx->runtime()));
-#endif
+  MOZ_ASSERT_IF(jit::HasJitBackend(),
+                script->isUsingInterpreterTrampoline(cx->runtime()));
 
   
   
@@ -3131,11 +3128,10 @@ BaseScript* BaseScript::New(JSContext* cx, JS::Handle<JSFunction*> function,
     return nullptr;
   }
 
-#ifndef JS_CODEGEN_NONE
-  uint8_t* stubEntry = cx->runtime()->jitRuntime()->interpreterStub().value;
-#else
   uint8_t* stubEntry = nullptr;
-#endif
+  if (jit::HasJitBackend()) {
+    stubEntry = cx->runtime()->jitRuntime()->interpreterStub().value;
+  }
 
   MOZ_ASSERT_IF(function,
                 function->compartment() == sourceObject->compartment());

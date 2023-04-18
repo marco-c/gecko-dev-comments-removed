@@ -144,6 +144,15 @@ JS_PUBLIC_API bool InitSelfHostedCode(JSContext* cx,
                                       SelfHostedCache cache = nullptr,
                                       SelfHostedWriter writer = nullptr);
 
+
+
+
+
+
+
+
+JS_PUBLIC_API void DisableJitBackend();
+
 }  
 
 
