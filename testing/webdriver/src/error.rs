@@ -18,6 +18,12 @@ pub enum ErrorStatus {
     
     
     
+    DetachedShadowRoot,
+
+    
+    
+    
+    
     
     
     
@@ -90,6 +96,12 @@ pub enum ErrorStatus {
     
     
     NoSuchFrame,
+
+    
+    
+    
+    
+    NoSuchShadowRoot,
 
     
     
@@ -168,6 +180,7 @@ impl ErrorStatus {
     pub fn error_code(&self) -> &'static str {
         use self::ErrorStatus::*;
         match *self {
+            DetachedShadowRoot => "detached shadow root",
             ElementClickIntercepted => "element click intercepted",
             ElementNotInteractable => "element not interactable",
             ElementNotSelectable => "element not selectable",
@@ -184,6 +197,7 @@ impl ErrorStatus {
             NoSuchCookie => "no such cookie",
             NoSuchElement => "no such element",
             NoSuchFrame => "no such frame",
+            NoSuchShadowRoot => "no such shadow root",
             NoSuchWindow => "no such window",
             ScriptTimeout => "script timeout",
             SessionNotCreated => "session not created",
@@ -203,6 +217,7 @@ impl ErrorStatus {
     pub fn http_status(&self) -> StatusCode {
         use self::ErrorStatus::*;
         match *self {
+            DetachedShadowRoot => StatusCode::NOT_FOUND,
             ElementClickIntercepted => StatusCode::BAD_REQUEST,
             ElementNotInteractable => StatusCode::BAD_REQUEST,
             ElementNotSelectable => StatusCode::BAD_REQUEST,
@@ -219,6 +234,7 @@ impl ErrorStatus {
             NoSuchCookie => StatusCode::NOT_FOUND,
             NoSuchElement => StatusCode::NOT_FOUND,
             NoSuchFrame => StatusCode::NOT_FOUND,
+            NoSuchShadowRoot => StatusCode::NOT_FOUND,
             NoSuchWindow => StatusCode::NOT_FOUND,
             ScriptTimeout => StatusCode::INTERNAL_SERVER_ERROR,
             SessionNotCreated => StatusCode::INTERNAL_SERVER_ERROR,
@@ -241,6 +257,7 @@ impl From<String> for ErrorStatus {
     fn from(s: String) -> ErrorStatus {
         use self::ErrorStatus::*;
         match &*s {
+            "detached shadow root" => DetachedShadowRoot,
             "element click intercepted" => ElementClickIntercepted,
             "element not interactable" | "element not visible" => ElementNotInteractable,
             "element not selectable" => ElementNotSelectable,
@@ -256,6 +273,7 @@ impl From<String> for ErrorStatus {
             "no such alert" => NoSuchAlert,
             "no such element" => NoSuchElement,
             "no such frame" => NoSuchFrame,
+            "no such shadow root" => NoSuchShadowRoot,
             "no such window" => NoSuchWindow,
             "script timeout" => ScriptTimeout,
             "session not created" => SessionNotCreated,
