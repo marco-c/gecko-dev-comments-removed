@@ -693,12 +693,6 @@ class GCSchedulingState {
   mozilla::Atomic<bool, mozilla::ReleaseAcquire> inHighFrequencyGCMode_;
 
  public:
-  
-
-
-
-  MainThreadOrGCTaskData<bool> inPageLoad;
-
   GCSchedulingState() : inHighFrequencyGCMode_(false) {}
 
   bool inHighFrequencyGCMode() const { return inHighFrequencyGCMode_; }
