@@ -38,6 +38,12 @@ Cu.exportFunction(
 );
 
 
+Cu.evalInSandbox(
+  `this.initialBaseURI = initialBaseURI = new URL("http://mozilla.org");`,
+  sandbox
+);
+
+
 
 
 class Validator {
