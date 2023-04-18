@@ -434,12 +434,15 @@ def show_taskgraph(options):
             
             
             
-            
-            if not os.path.isfile(base_path):
+            base_missing = not os.path.isfile(base_path)
+            cur_missing = not os.path.isfile(cur_path)
+            if base_missing != cur_missing:  
                 non_fatal_failures.append(os.path.basename(base_path))
                 continue
 
             try:
+                
+                
                 proc = subprocess.run(
                     diffcmd + [base_path, cur_path],
                     stdout=subprocess.PIPE,
