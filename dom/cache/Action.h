@@ -55,9 +55,10 @@ class Action : public SafeRefCounted<Action> {
   
   
   
-  virtual void RunOnTarget(SafeRefPtr<Resolver> aResolver,
-                           const Maybe<ClientMetadata>& aClientMetadata,
-                           Data* aOptionalData) = 0;
+  virtual void RunOnTarget(
+      SafeRefPtr<Resolver> aResolver,
+      const Maybe<CacheDirectoryMetadata>& aDirectoryMetadata,
+      Data* aOptionalData) = 0;
 
   
   
