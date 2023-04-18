@@ -4089,6 +4089,9 @@ TEST(GeckoProfiler, CPUUsage)
 
   std::thread idle([&]() {
     AUTO_PROFILER_REGISTER_THREAD("Idle test");
+    
+    
+    AUTO_PROFILER_LABEL("Idle test", PROFILER);
     idleThreadState = IdleThreadState::RUNNING;
 
     while (idleThreadState == IdleThreadState::RUNNING) {
@@ -4404,6 +4407,9 @@ TEST(GeckoProfiler, AllThreads)
     Atomic<int> selectedThreadSpins{0};
     std::thread selectedThread([&]() {
       AUTO_PROFILER_REGISTER_THREAD("Selected test thread");
+      
+      
+      AUTO_PROFILER_LABEL("Selected test thread", PROFILER);
       EXPECT_TRUE(profiler_thread_is_being_profiled(
           ThreadProfilingFeatures::CPUUtilization));
       EXPECT_TRUE(
@@ -4421,6 +4427,9 @@ TEST(GeckoProfiler, AllThreads)
     Atomic<int> unselectedThreadSpins{0};
     std::thread unselectedThread([&]() {
       AUTO_PROFILER_REGISTER_THREAD("Registered test thread");
+      
+      
+      AUTO_PROFILER_LABEL("Registered test thread", PROFILER);
       
       
       EXPECT_EQ(profiler_thread_is_being_profiled(
