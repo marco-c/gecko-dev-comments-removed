@@ -44,6 +44,11 @@ add_task(async function testContentBlockingMessage() {
 
   const hud = await openNewTabAndConsole(TEST_URI);
 
+  
+  
+  
+  await setFilterState(hud, { text: "-has been rejected" });
+
   info(
     "Log a tracking protection message to check a single message isn't grouped"
   );
