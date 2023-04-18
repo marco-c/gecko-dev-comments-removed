@@ -51,35 +51,26 @@ nsDataHandler::GetProtocolFlags(uint32_t* result) {
                                                   const char* aCharset,
                                                   nsIURI* aBaseURI,
                                                   nsIURI** result) {
-  nsresult rv;
   nsCOMPtr<nsIURI> uri;
+  nsAutoCString contentType;
+  bool base64;
+  MOZ_TRY(ParseURI(aSpec, contentType,  nullptr, base64,
+                    nullptr));
 
-  if (aBaseURI && !aSpec.IsEmpty() && aSpec[0] == '#') {
+  
+  
+  nsresult rv;
+  if (base64 || (strncmp(contentType.get(), "text/", 5) != 0 &&
+                 contentType.Find("xml") == kNotFound)) {
     
-    
-    rv = NS_MutateURI(aBaseURI).SetRef(aSpec).Finalize(uri);
+    rv = NS_MutateURI(new mozilla::net::nsSimpleURI::Mutator())
+             .Apply(&nsISimpleURIMutator::SetSpecAndFilterWhitespace, aSpec,
+                    nullptr)
+             .Finalize(uri);
   } else {
-    
-    nsAutoCString contentType;
-    bool base64;
-    rv = ParseURI(aSpec, contentType,  nullptr, base64,
-                   nullptr);
-    if (NS_FAILED(rv)) return rv;
-
-    
-    
-    if (base64 || (strncmp(contentType.get(), "text/", 5) != 0 &&
-                   contentType.Find("xml") == kNotFound)) {
-      
-      rv = NS_MutateURI(new mozilla::net::nsSimpleURI::Mutator())
-               .Apply(&nsISimpleURIMutator::SetSpecAndFilterWhitespace, aSpec,
-                      nullptr)
-               .Finalize(uri);
-    } else {
-      rv = NS_MutateURI(new mozilla::net::nsSimpleURI::Mutator())
-               .SetSpec(aSpec)
-               .Finalize(uri);
-    }
+    rv = NS_MutateURI(new mozilla::net::nsSimpleURI::Mutator())
+             .SetSpec(aSpec)
+             .Finalize(uri);
   }
 
   if (NS_FAILED(rv)) return rv;
