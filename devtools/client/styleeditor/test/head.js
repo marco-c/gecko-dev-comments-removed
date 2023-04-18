@@ -89,10 +89,6 @@ var openStyleEditor = async function(tab) {
   const panel = toolbox.getPanel("styleeditor");
   const ui = panel.UI;
 
-  
-  const animations = ui._root.getAnimations({ subtree: true });
-  await Promise.all(animations.map(a => a.finished));
-
   return { toolbox, panel, ui };
 };
 
