@@ -190,8 +190,7 @@ class WindowContext : public nsISupports, public nsWrapperCache {
   bool HasValidTransientUserGestureActivation();
 
   
-  
-  DOMHighResTimeStamp LastUserGestureTimeStamp();
+  const TimeStamp& GetUserGestureStart() const;
 
   
   
