@@ -14,7 +14,13 @@ namespace mozilla {
 
 class NimbusFeatures {
  private:
-  static void GetPrefName(const nsACString& aFeatureId,
+  
+  static constexpr auto kSyncDataPrefBranch = "nimbus.syncdatastore."_ns;
+  
+  static constexpr auto kSyncRolloutsPrefBranch =
+      "nimbus.syncdefaultsstore."_ns;
+  static void GetPrefName(const nsACString& branchPrefix,
+                          const nsACString& aFeatureId,
                           const nsACString& aVariable, nsACString& aPref);
 
   static nsresult GetExperimentSlug(const nsACString& aFeatureId,
