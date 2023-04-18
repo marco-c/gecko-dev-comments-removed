@@ -200,7 +200,8 @@ BackgroundFileSaver::EnableSha256() {
   nsresult rv;
   nsCOMPtr<nsISupports> nssDummy = do_GetService("@mozilla.org/psm;1", &rv);
   NS_ENSURE_SUCCESS(rv, rv);
-  mSha256Enabled = true;
+  MutexAutoLock lock(mLock);
+  mSha256Enabled = true;  
   return NS_OK;
 }
 
@@ -224,6 +225,7 @@ BackgroundFileSaver::EnableSignatureInfo() {
   nsresult rv;
   nsCOMPtr<nsISupports> nssDummy = do_GetService("@mozilla.org/psm;1", &rv);
   NS_ENSURE_SUCCESS(rv, rv);
+  MutexAutoLock lock(mLock);
   mSignatureInfoEnabled = true;
   return NS_OK;
 }
@@ -338,9 +340,17 @@ nsresult BackgroundFileSaver::ProcessAttention() {
   
   
   
-  if (mAsyncCopyContext) {
-    NS_CancelAsyncCopy(mAsyncCopyContext, NS_ERROR_ABORT);
-    return NS_OK;
+
+  
+  MOZ_ASSERT(!NS_IsMainThread());
+  {
+    
+    
+    MutexAutoLock lock(mLock);
+    if (mAsyncCopyContext) {
+      NS_CancelAsyncCopy(mAsyncCopyContext, NS_ERROR_ABORT);
+      return NS_OK;
+    }
   }
   
   rv = ProcessStateChange();
@@ -615,12 +625,11 @@ nsresult BackgroundFileSaver::ProcessStateChange() {
 bool BackgroundFileSaver::CheckCompletion() {
   nsresult rv;
 
-  MOZ_ASSERT(!mAsyncCopyContext,
-             "Should not be copying when checking completion conditions.");
-
   bool failed = true;
   {
     MutexAutoLock lock(mLock);
+    MOZ_ASSERT(!mAsyncCopyContext,
+               "Should not be copying when checking completion conditions.");
 
     if (mComplete) {
       return true;
