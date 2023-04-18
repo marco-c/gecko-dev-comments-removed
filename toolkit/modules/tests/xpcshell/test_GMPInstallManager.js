@@ -15,7 +15,6 @@ const { setTimeout } = ChromeUtils.import("resource://gre/modules/Timer.jsm");
 const { FileUtils } = ChromeUtils.import(
   "resource://gre/modules/FileUtils.jsm"
 );
-const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 const { HttpServer } = ChromeUtils.import("resource://testing-common/httpd.js");
 const { Preferences } = ChromeUtils.import(
   "resource://gre/modules/Preferences.jsm"
@@ -784,6 +783,7 @@ async function test_checkForAddons_installAddon(
     let extractedFile = Cc["@mozilla.org/file/local;1"].createInstance(
       Ci.nsIFile
     );
+
     extractedFile.initWithPath(extractedPath);
     Assert.ok(extractedFile.exists());
     let readData = readStringFromFile(extractedFile);
@@ -946,27 +946,32 @@ add_test(function test_installAddon_noServer() {
 
 add_task(async function test_GMPExtractor_paths() {
   let GMPExtractor = GMPScope.GMPExtractor;
-  registerCleanupFunction(function() {
+  registerCleanupFunction(async function() {
     
     let zipFile = new FileUtils.File(
-      OS.Path.join(tempDir.path, "dummy_gmp.zip")
+      PathUtils.join(tempDir.path, "dummy_gmp.zip")
     );
     Services.obs.notifyObservers(zipFile, "flush-cache-entry");
-    extractedDir.remove( true);
-    tempDir.remove( true);
+    await IOUtils.remove(extractedDir, { recursive: true });
+    await IOUtils.remove(tempDir.path, { recursive: true });
   });
   
   
   
   
+  const srcPath = PathUtils.join(
+    Services.dirsvc.get("CurWorkD", Ci.nsIFile).path,
+    "zips",
+    "dummy_gmp.zip"
+  );
   let tempDirName = "TmpDir#猫";
   let tempDir = FileUtils.getDir("TmpD", [tempDirName], true);
-  let zipPath = OS.Path.join(tempDir.path, "dummy_gmp.zip");
-  await OS.File.copy("zips/dummy_gmp.zip", zipPath, { noOverwrite: false });
+  let zipPath = PathUtils.join(tempDir.path, "dummy_gmp.zip");
+  await IOUtils.copy(srcPath, zipPath);
   
   
   let relativeExtractPath = "extracted#猫";
-  let extractor = new GMPExtractor(zipPath, relativeExtractPath);
+  let extractor = new GMPExtractor(zipPath, [relativeExtractPath]);
   let extractedPaths = await extractor.install();
   
   
@@ -980,27 +985,30 @@ add_task(async function test_GMPExtractor_paths() {
     !extractedPaths[0].includes("verified_contents.json"),
     "verified_contents.json should not be on extracted path"
   );
-  let extractedDir = FileUtils.getDir("ProfD", [relativeExtractPath], false);
+  let extractedDir = PathUtils.join(
+    await PathUtils.getProfileDir(),
+    relativeExtractPath
+  );
   Assert.ok(
-    extractedDir.exists(),
+    await IOUtils.exists(extractedDir),
     "Extraction should have created a directory"
   );
-  let extractedFile = FileUtils.getDir(
-    "ProfD",
-    [relativeExtractPath, "dummy_file.txt"],
-    false
+  let extractedFile = PathUtils.join(
+    await PathUtils.getProfileDir(),
+    relativeExtractPath,
+    "dummy_file.txt"
   );
   Assert.ok(
-    extractedFile.exists(),
+    await IOUtils.exists(extractedFile),
     "Extraction should have created dummy_file.txt"
   );
-  let unextractedFile = FileUtils.getDir(
-    "ProfD",
-    [relativeExtractPath, "verified_contents.json"],
-    false
+  let unextractedFile = PathUtils.join(
+    await PathUtils.getProfileDir(),
+    relativeExtractPath,
+    "verified_contents.json"
   );
   Assert.ok(
-    !unextractedFile.exists(),
+    !(await IOUtils.exists(unextractedFile)),
     "Extraction should not have created verified_contents.json"
   );
 });
