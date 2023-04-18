@@ -123,33 +123,18 @@ class UptakeTelemetry {
 
 
 
-
-
-
   static get STATUS() {
-    return {
-      ...UptakeTelemetry.HISTOGRAM_LABELS,
-      
-      SHUTDOWN_ERROR: "shutdown_error",
-      CORRUPTION_ERROR: "corruption_error",
-    };
-  }
-
-  
-
-
-
-  static get HISTOGRAM_LABELS() {
     return {
       UP_TO_DATE: "up_to_date",
       SUCCESS: "success",
       BACKOFF: "backoff",
-      PREF_DISABLED: "pref_disabled",
       PARSE_ERROR: "parse_error",
       CONTENT_ERROR: "content_error",
+      PREF_DISABLED: "pref_disabled",
       SIGNATURE_ERROR: "sign_error",
       SIGNATURE_RETRY_ERROR: "sign_retry_error",
       CONFLICT_ERROR: "conflict_error",
+      CORRUPTION_ERROR: "corruption_error",
       SYNC_ERROR: "sync_error",
       APPLY_ERROR: "apply_error",
       SERVER_ERROR: "server_error",
@@ -158,8 +143,9 @@ class UptakeTelemetry {
       TIMEOUT_ERROR: "timeout_error",
       NETWORK_ERROR: "network_error",
       NETWORK_OFFLINE_ERROR: "offline_error",
-      CLEANUP_ERROR: "cleanup_error",
+      SHUTDOWN_ERROR: "shutdown_error",
       UNKNOWN_ERROR: "unknown_error",
+      CLEANUP_ERROR: "cleanup_error",
       CUSTOM_1_ERROR: "custom_1_error",
       CUSTOM_2_ERROR: "custom_2_error",
       CUSTOM_3_ERROR: "custom_3_error",
@@ -189,6 +175,10 @@ class UptakeTelemetry {
       throw new Error("`source` value is mandatory.");
     }
 
+    if (!Object.values(UptakeTelemetry.STATUS).includes(status)) {
+      throw new Error(`Unknown status '${status}'`);
+    }
+
     
     
     
@@ -214,15 +204,6 @@ class UptakeTelemetry {
         status,
         extraStr
       );
-    }
-
-    
-    if (Object.values(UptakeTelemetry.HISTOGRAM_LABELS).includes(status)) {
-      
-      
-      Services.telemetry
-        .getKeyedHistogramById(TELEMETRY_HISTOGRAM_ID)
-        .add(source, status);
     }
   }
 }
