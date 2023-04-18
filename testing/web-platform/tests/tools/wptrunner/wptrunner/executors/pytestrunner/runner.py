@@ -60,10 +60,11 @@ def run(path, server_config, session_config, timeout=0, environ=None):
             subtests = SubtestResultRecorder()
 
             try:
+                basetemp = os.path.join(cache, "pytest")
                 pytest.main(["--strict",  
                              "-vv",  
                              "--capture", "no",  
-                             "--basetemp", cache,  
+                             "--basetemp", basetemp,  
                              "--showlocals",  
                              "-p", "no:mozlog",  
                              "-p", "no:cacheprovider",  
@@ -147,7 +148,7 @@ class SubtestResultRecorder(object):
 
 class TemporaryDirectory(object):
     def __enter__(self):
-        self.path = tempfile.mkdtemp(prefix="pytest-")
+        self.path = tempfile.mkdtemp(prefix="wdspec-")
         return self.path
 
     def __exit__(self, *args):
