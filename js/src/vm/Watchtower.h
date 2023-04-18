@@ -31,6 +31,9 @@ namespace js {
 
 
 
+
+
+
 class Watchtower {
   static bool watchPropertyAddSlow(JSContext* cx, HandleNativeObject obj,
                                    HandleId id);
@@ -49,10 +52,12 @@ class Watchtower {
                             ObjectFlag::UseWatchtowerTestingCallback});
   }
   static bool watchesPropertyRemove(NativeObject* obj) {
-    return obj->hasAnyFlag({ObjectFlag::UseWatchtowerTestingCallback});
+    return obj->hasAnyFlag({ObjectFlag::IsUsedAsPrototype,
+                            ObjectFlag::UseWatchtowerTestingCallback});
   }
   static bool watchesPropertyChange(NativeObject* obj) {
-    return obj->hasAnyFlag({ObjectFlag::UseWatchtowerTestingCallback});
+    return obj->hasAnyFlag({ObjectFlag::IsUsedAsPrototype,
+                            ObjectFlag::UseWatchtowerTestingCallback});
   }
   static bool watchesFreezeOrSeal(NativeObject* obj) {
     return obj->hasAnyFlag({ObjectFlag::UseWatchtowerTestingCallback});
@@ -63,7 +68,8 @@ class Watchtower {
   }
   static bool watchesObjectSwap(JSObject* a, JSObject* b) {
     auto watches = [](JSObject* obj) {
-      return obj->hasAnyFlag({ObjectFlag::UseWatchtowerTestingCallback});
+      return obj->hasAnyFlag({ObjectFlag::IsUsedAsPrototype,
+                              ObjectFlag::UseWatchtowerTestingCallback});
     };
     return watches(a) || watches(b);
   }
