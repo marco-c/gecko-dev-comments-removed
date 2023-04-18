@@ -32,6 +32,8 @@ function promiseBrowserStateRestored() {
 add_task(async function test_privateMode() {
   
   Services.telemetry.clearScalars();
+  let FOG = Cc["@mozilla.org/toolkit/glean;1"].createInstance(Ci.nsIFOG);
+  FOG.testResetFOG();
 
   
   let privateWin = await BrowserTestUtils.openNewBrowserWindow({
@@ -83,7 +85,11 @@ add_task(async function test_privateMode() {
     1,
     "We should include URIs in private mode as part of the actual total URI count."
   );
-  is(Glean.browserEngagement.uriCount.testGetValue(), 1);
+  is(
+    Glean.browserEngagement.uriCount.testGetValue(),
+    1,
+    "We should record the URI count in Glean as well."
+  );
 
   
   await BrowserTestUtils.closeWindow(privateWin);

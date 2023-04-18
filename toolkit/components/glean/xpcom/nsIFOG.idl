@@ -111,4 +111,11 @@ interface nsIFOG : nsISupports
 
   [implicit_jscontext]
   Promise testFlushAllChildren();
+
+  
+
+
+
+
+  void testResetFOG([optional] in AUTF8String aDataPathOverride, [optional] in AUTF8String aAppIdOverride);
 };
