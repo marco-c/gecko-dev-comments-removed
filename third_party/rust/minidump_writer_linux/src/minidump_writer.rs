@@ -395,7 +395,7 @@ impl MinidumpWriter {
         
         dir_section.write_to_file(buffer, Some(dirent))?;
 
-        let dirent = dso_debug::write_dso_debug_stream(buffer, self.blamed_thread, &dumper.auxv)
+        let dirent = dso_debug::write_dso_debug_stream(buffer, self.process_id, &dumper.auxv)
             .unwrap_or_default();
         
         dir_section.write_to_file(buffer, Some(dirent))?;

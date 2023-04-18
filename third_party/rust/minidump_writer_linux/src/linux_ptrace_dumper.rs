@@ -154,6 +154,7 @@ impl LinuxPtraceDumper {
     }
 
     pub fn suspend_threads(&mut self) -> Result<(), DumperError> {
+        let threads_count = self.threads.len();
         
         
         
@@ -161,7 +162,7 @@ impl LinuxPtraceDumper {
         self.threads.retain(|x| Self::suspend_thread(x.tid).is_ok());
 
         if self.threads.is_empty() {
-            Err(DumperError::SuspendNoThreadsLeft)
+            Err(DumperError::SuspendNoThreadsLeft(threads_count))
         } else {
             self.threads_suspended = true;
             Ok(())
