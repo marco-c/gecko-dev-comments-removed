@@ -158,11 +158,9 @@ function addRDMTaskWithPreAndPost(url, preTask, task, postTask, options) {
         preTaskValue = await preTask({ message, browser });
       }
 
-      const rdmValues = await openRDM(tab);
+      const rdmValues = await openRDM(tab, { waitForDeviceList });
       ui = rdmValues.ui;
       manager = rdmValues.manager;
-
-      await waitForRDMLoaded(ui, { waitForDeviceList });
     }
 
     try {
@@ -195,23 +193,6 @@ function addRDMTaskWithPreAndPost(url, preTask, task, postTask, options) {
     
     await SpecialPowers.flushPrefEnv();
   });
-}
-
-
-
-
-async function waitForRDMLoaded(ui, { waitForDeviceList }) {
-  
-  const { store } = ui.toolWindow;
-  await waitUntilState(store, state => state.viewports.length == 1);
-
-  if (waitForDeviceList) {
-    
-    await waitUntilState(
-      store,
-      state => state.devices.listState == localTypes.loadableState.LOADED
-    );
-  }
 }
 
 

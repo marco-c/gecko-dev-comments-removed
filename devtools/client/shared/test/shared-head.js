@@ -65,6 +65,11 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
+  "localTypes",
+  "devtools/client/responsive/types"
+);
+loader.lazyRequireGetter(
+  this,
   "ResponsiveMessageHelper",
   "devtools/client/responsive/utils/message"
 );
@@ -1694,6 +1699,34 @@ function checkPoolChildrenSize(parentPool, typeName, expected) {
 
 
 
+function waitUntilState(store, predicate) {
+  return new Promise(resolve => {
+    const unsubscribe = store.subscribe(check);
+
+    info(`Waiting for state predicate "${predicate}"`);
+    function check() {
+      if (predicate(store.getState())) {
+        info(`Found state predicate "${predicate}"`);
+        unsubscribe();
+        resolve();
+      }
+    }
+
+    
+    check();
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1973,7 +2006,7 @@ async function getFluentStringHelper(resourceIds) {
 
 
 
-async function openRDM(tab) {
+async function openRDM(tab, { waitForDeviceList = true } = {}) {
   info("Opening responsive design mode");
   const manager = ResponsiveUIManager;
   const ui = await manager.openIfNeeded(tab.ownerGlobal, tab, {
@@ -1984,7 +2017,23 @@ async function openRDM(tab) {
   await ResponsiveMessageHelper.wait(ui.toolWindow, "post-init");
   info("Responsive design initialized");
 
+  await waitForRDMLoaded(ui, { waitForDeviceList });
+
   return { ui, manager };
+}
+
+async function waitForRDMLoaded(ui, { waitForDeviceList = true } = {}) {
+  
+  const { store } = ui.toolWindow;
+  await waitUntilState(store, state => state.viewports.length == 1);
+
+  if (waitForDeviceList) {
+    
+    await waitUntilState(
+      store,
+      state => state.devices.listState == localTypes.loadableState.LOADED
+    );
+  }
 }
 
 
