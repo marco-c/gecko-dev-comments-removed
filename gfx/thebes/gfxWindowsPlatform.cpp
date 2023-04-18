@@ -888,6 +888,14 @@ void gfxWindowsPlatform::GetCommonFallbackFonts(
   
   
   aFontList.AppendElement(kFontArialUnicodeMS);
+
+  
+  
+  
+  if (!PrefersColor(aPresentation)) {
+    aFontList.AppendElement(kFontSegoeUIEmoji);
+    aFontList.AppendElement(kFontTwemojiMozilla);
+  }
 }
 
 bool gfxWindowsPlatform::DidRenderingDeviceReset(
