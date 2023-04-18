@@ -13,7 +13,10 @@ const { XPCOMUtils } = ChromeUtils.import(
 XPCOMUtils.defineLazyModuleGetters(this, {
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
   Services: "resource://gre/modules/Services.jsm",
+  E10SUtils: "resource://gre/modules/E10SUtils.jsm",
   EventEmitter: "resource://gre/modules/EventEmitter.jsm",
+  HiddenFrame: "resource://gre/modules/HiddenFrame.jsm",
+  PromiseUtils: "resource://gre/modules/PromiseUtils.jsm",
 });
 
 XPCOMUtils.defineLazyGetter(this, "logConsole", function() {
@@ -25,7 +28,41 @@ XPCOMUtils.defineLazyGetter(this, "logConsole", function() {
   });
 });
 
+XPCOMUtils.defineLazyServiceGetters(this, {
+  idleService: ["@mozilla.org/widget/useridleservice;1", "nsIUserIdleService"],
+});
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "fetchIdleTime",
+  "browser.pagedata.fetchIdleTime",
+  300
+);
+
 const ALLOWED_SCHEMES = ["http", "https", "data", "blob"];
+
+const BACKGROUND_WIDTH = 1024;
+const BACKGROUND_HEIGHT = 768;
+
+
+
+
+
+
+
+
+
+function shift(set) {
+  let iter = set.values();
+  let { value, done } = iter.next();
+
+  if (done) {
+    return undefined;
+  }
+
+  set.delete(value);
+  return value;
+}
 
 
 
@@ -54,6 +91,55 @@ const PageDataService = new (class PageDataService extends EventEmitter {
 
 
   #pageDataCache = new Map();
+
+  
+
+
+
+  #backgroundFetches = 0;
+
+  
+
+
+
+  #backgroundQueue = new Set();
+
+  
+
+
+
+  #userIsIdle = false;
+
+  
+
+
+
+  #hiddenFrame = null;
+
+  
+
+
+
+
+
+  #backgroundBrowsers = new WeakMap();
+
+  
+
+
+  constructor() {
+    super();
+
+    
+    
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "MAX_BACKGROUND_FETCHES",
+      "browser.pagedata.maxBackgroundFetches",
+      5,
+      () => this.#startBackgroundWorkers()
+    );
+  }
 
   
 
@@ -90,6 +176,8 @@ const PageDataService = new (class PageDataService extends EventEmitter {
         }
       }
     }
+
+    idleService.addIdleObserver(this, fetchIdleTime);
   }
 
   
@@ -116,9 +204,22 @@ const PageDataService = new (class PageDataService extends EventEmitter {
     }
 
     let browser = actor.browsingContext?.embedderElement;
+
     
     
-    if (!browser || !this.#isATabBrowser(browser)) {
+    if (!browser) {
+      return;
+    }
+
+    
+    let backgroundResolve = this.#backgroundBrowsers.get(browser);
+    if (backgroundResolve) {
+      backgroundResolve(actor);
+      return;
+    }
+
+    
+    if (!this.#isATabBrowser(browser)) {
       return;
     }
 
@@ -175,19 +276,153 @@ const PageDataService = new (class PageDataService extends EventEmitter {
 
 
 
-  async queueFetch(url) {
-    
-    let pageData = {
-      url,
-      date: Date.now(),
-      data: {},
-    };
+  async fetchPageData(url) {
+    if (!this.#hiddenFrame) {
+      this.#hiddenFrame = new HiddenFrame();
+    }
 
-    this.#pageDataCache.set(url, pageData);
+    let windowlessBrowser = await this.#hiddenFrame.get();
 
-    
-    
-    this.emit("page-data", pageData);
+    let doc = windowlessBrowser.document;
+    let browser = doc.createXULElement("browser");
+    browser.setAttribute("remote", "true");
+    browser.setAttribute("type", "content");
+    browser.setAttribute(
+      "style",
+      `
+        width: ${BACKGROUND_WIDTH}px;
+        min-width: ${BACKGROUND_WIDTH}px;
+        height: ${BACKGROUND_HEIGHT}px;
+        min-height: ${BACKGROUND_HEIGHT}px;
+      `
+    );
+    browser.setAttribute("maychangeremoteness", "true");
+    doc.documentElement.appendChild(browser);
+
+    try {
+      let { promise, resolve } = PromiseUtils.defer();
+      this.#backgroundBrowsers.set(browser, resolve);
+
+      let principal = Services.scriptSecurityManager.getSystemPrincipal();
+      let oa = E10SUtils.predictOriginAttributes({
+        browser,
+      });
+      let loadURIOptions = {
+        triggeringPrincipal: principal,
+        remoteType: E10SUtils.getRemoteTypeForURI(
+          url,
+          true,
+          false,
+          E10SUtils.DEFAULT_REMOTE_TYPE,
+          null,
+          oa
+        ),
+      };
+      browser.loadURI(url, loadURIOptions);
+
+      let actor = await promise;
+      return await actor.collectPageData();
+    } finally {
+      this.#backgroundBrowsers.delete(browser);
+      browser.remove();
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  observe(subject, topic, data) {
+    switch (topic) {
+      case "idle":
+        logConsole.debug("User went idle");
+        this.#userIsIdle = true;
+        this.#startBackgroundWorkers();
+        break;
+      case "active":
+        logConsole.debug("User became active");
+        this.#userIsIdle = false;
+        break;
+    }
+  }
+
+  
+
+
+
+  #startBackgroundWorkers() {
+    if (!this.#userIsIdle) {
+      return;
+    }
+
+    let toStart;
+
+    if (this.MAX_BACKGROUND_FETCHES) {
+      toStart = this.MAX_BACKGROUND_FETCHES - this.#backgroundFetches;
+    } else {
+      toStart = this.#backgroundQueue.size;
+    }
+
+    for (let i = 0; i < toStart; i++) {
+      this.#backgroundFetch();
+    }
+  }
+
+  
+
+
+
+  async #backgroundFetch() {
+    this.#backgroundFetches++;
+
+    let url = shift(this.#backgroundQueue);
+    while (url) {
+      try {
+        let pageData = await this.fetchPageData(url);
+
+        if (pageData) {
+          this.#pageDataCache.set(url, pageData);
+          this.emit("page-data", pageData);
+        }
+      } catch (e) {
+        logConsole.error(e);
+      }
+
+      
+      
+      if (
+        !this.#userIsIdle ||
+        (this.MAX_BACKGROUND_FETCHES > 0 &&
+          this.#backgroundFetches > this.MAX_BACKGROUND_FETCHES)
+      ) {
+        break;
+      }
+
+      url = shift(this.#backgroundQueue);
+    }
+
+    this.#backgroundFetches--;
+  }
+
+  
+
+
+
+
+
+
+
+
+  queueFetch(url) {
+    this.#backgroundQueue.add(url);
+
+    this.#startBackgroundWorkers();
   }
 
   
