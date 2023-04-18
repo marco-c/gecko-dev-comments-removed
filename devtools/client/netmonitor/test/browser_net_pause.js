@@ -22,7 +22,7 @@ add_task(async function() {
   assertRequestCount(store, 0);
 
   
-  await performRequestAndWait(tab, monitor);
+  await performRequestAndWait(tab, monitor, SIMPLE_SJS + "?id=1");
   assertRequestCount(store, 1);
 
   let noRequest = true;
@@ -36,26 +36,68 @@ add_task(async function() {
 
   
   EventUtils.sendMouseEvent({ type: "click" }, pauseButton);
+  await waitForPauseButtonToChange(document, true);
+
   await performPausedRequest(tab, monitor, toolbox);
+
   ok(noRequest, "There should be no activity when paused.");
   assertRequestCount(store, 1);
 
   
   
   EventUtils.sendMouseEvent({ type: "click" }, pauseButton);
-  await performRequestAndWait(tab, monitor);
+  await waitForPauseButtonToChange(document, false);
+
+  await performRequestAndWait(tab, monitor, SIMPLE_SJS + "?id=2");
+
+  ok(!noRequest, "There should be activity when resumed.");
   assertRequestCount(store, 2);
 
   
   
   EventUtils.sendMouseEvent({ type: "click" }, pauseButton);
-  const networkEvents = waitForNetworkEvents(monitor, 1);
+  await waitForPauseButtonToChange(document, true);
+
+  
   await reloadBrowser();
-  await networkEvents;
-  assertRequestCount(store, 1);
+  await waitForPauseButtonToChange(document, false);
+  await performRequestAndWait(tab, monitor, SIMPLE_SJS + "?id=3");
+
+  ok(!noRequest, "There should be activity when resumed.");
 
   return teardown(monitor);
 });
+
+
+
+
+function waitForRequest(doc, url) {
+  return waitUntil(() =>
+    [
+      ...doc.querySelectorAll(".request-list-item .requests-list-file"),
+    ].some(columns => columns.title.includes(url))
+  );
+}
+
+
+
+
+async function waitForPauseButtonToChange(doc, isPaused) {
+  await waitUntil(
+    () =>
+      !!doc.querySelector(
+        `.requests-list-pause-button.devtools-${
+          isPaused ? "play" : "pause"
+        }-icon`
+      )
+  );
+  ok(
+    true,
+    `The pause button is correctly in the ${
+      isPaused ? "paused" : "resumed"
+    } state`
+  );
+}
 
 
 
@@ -71,15 +113,16 @@ function assertRequestCount(store, count) {
 
 
 
-async function performRequestAndWait(tab, monitor) {
-  const wait = waitForNetworkEvents(monitor, 1);
-  await SpecialPowers.spawn(tab.linkedBrowser, [SIMPLE_SJS], async function(
+async function performRequestAndWait(tab, monitor, requestURL) {
+  const wait = waitForRequest(monitor.panelWin.document, requestURL);
+  await SpecialPowers.spawn(tab.linkedBrowser, [requestURL], async function(
     url
   ) {
     await content.wrappedJSObject.performRequests(url);
   });
   await wait;
 }
+
 
 
 
