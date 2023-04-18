@@ -95,8 +95,6 @@ class nsMIMEInfoBase : public nsIMIMEInfo {
 
   bool HasExtensions() const { return mExtensions.Length() != 0; }
 
-  static already_AddRefed<nsIFile> GetCanonicalExecutable(nsIFile* aFile);
-
  protected:
   virtual ~nsMIMEInfoBase();  
                               
