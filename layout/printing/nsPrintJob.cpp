@@ -540,7 +540,6 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
 
   MOZ_TRY(EnsureSettingsHasPrinterNameSet(printData->mPrintSettings));
 
-  printData->mPrintSettings->SetIsCancelled(false);
   printData->mPrintSettings->GetShrinkToFit(&printData->mShrinkToFit);
 
   
@@ -1951,11 +1950,6 @@ bool nsPrintJob::PrePrintSheet() {
   RefPtr<nsPrintData> printData = mPrt;
 
   
-  bool isCancelled = false;
-  printData->mPrintSettings->GetIsCancelled(&isCancelled);
-  if (isCancelled) return true;
-
-  
   
   bool done = false;
   nsPageSequenceFrame* pageSeqFrame = do_QueryFrame(mPageSeqFrame.GetFrame());
@@ -2002,10 +1996,7 @@ bool nsPrintJob::PrintSheet(nsPrintObject* aPO, bool& aInRange) {
   PR_PL(("------ In DV::PrintSheet PO: %p (%s)\n", aPO,
          gFrameTypesStr[aPO->mFrameType]));
 
-  
-  bool isCancelled = false;
-  printData->mPrintSettings->GetIsCancelled(&isCancelled);
-  if (isCancelled || printData->mIsAborted) {
+  if (printData->mIsAborted) {
     return true;
   }
 
