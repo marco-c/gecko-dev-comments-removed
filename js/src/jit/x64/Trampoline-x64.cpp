@@ -29,7 +29,13 @@ using mozilla::IsPowerOfTwo;
 
 
 
+
 struct EnterJITStackEntry {
+  
+  static constexpr int32_t offsetFromFP() {
+    return -int32_t(offsetof(EnterJITStackEntry, rbp));
+  }
+
   void* result;
 
 #if defined(_WIN64)
@@ -327,7 +333,7 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
 
   
   
-  masm.lea(Operand(rbp, -int32_t(offsetof(EnterJITStackEntry, rbp))), rsp);
+  masm.lea(Operand(rbp, EnterJITStackEntry::offsetFromFP()), rsp);
 
   
 
@@ -373,12 +379,9 @@ JitRuntime::getCppEntryRegisters(JitFrameLayout* frameStackAddress) {
   }
 
   
-  MOZ_ASSERT(frameStackAddress->headerSize() == JitFrameLayout::Size());
-  const size_t offsetToCppEntry =
-      JitFrameLayout::Size() + frameStackAddress->prevFrameLocalSize();
-  EnterJITStackEntry* enterJITStackEntry =
-      reinterpret_cast<EnterJITStackEntry*>(
-          reinterpret_cast<uint8_t*>(frameStackAddress) + offsetToCppEntry);
+  uint8_t* fp = frameStackAddress->callerFramePtr();
+  auto* enterJITStackEntry = reinterpret_cast<EnterJITStackEntry*>(
+      fp + EnterJITStackEntry::offsetFromFP());
 
   
   ::JS::ProfilingFrameIterator::RegisterState registerState;
