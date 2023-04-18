@@ -245,7 +245,7 @@ var DownloadsPanel = {
 
 
 
-  showPanel(openedManually = false) {
+  showPanel(openedManually = false, isKeyPress = false) {
     Services.telemetry.scalarAdd("downloads.panel_shown", 1);
     DownloadsCommon.log("Opening the downloads panel.");
 
@@ -263,7 +263,7 @@ var DownloadsPanel = {
     
     
     
-    setTimeout(() => this._openPopupIfDataReady(openedManually), 0);
+    setTimeout(() => this._openPopupIfDataReady(openedManually, isKeyPress), 0);
 
     DownloadsCommon.log("Waiting for the downloads panel to appear.");
     this._state = this.kStateWaitingData;
@@ -636,7 +636,7 @@ var DownloadsPanel = {
   
 
 
-  _openPopupIfDataReady(openedManually) {
+  _openPopupIfDataReady(openedManually, isKeyPress) {
     
     
     if (this._state != this.kStateWaitingData || DownloadsView.loading) {
@@ -674,6 +674,11 @@ var DownloadsPanel = {
     }
 
     DownloadsCommon.log("Opening downloads panel popup.");
+
+    if (isKeyPress) {
+      
+      this.keyFocusing = true;
+    }
 
     
     
