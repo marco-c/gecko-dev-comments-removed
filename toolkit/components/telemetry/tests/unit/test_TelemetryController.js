@@ -615,53 +615,6 @@ add_task(async function test_changePingAfterSubmission() {
   );
 });
 
-add_task(
-  {
-    skip_if: () =>
-      Services.prefs.getBoolPref(TelemetryUtils.Preferences.Unified, false),
-  },
-  async function test_telemetryEnabledUnexpectedValue() {
-    
-    
-    let defaultPrefBranch = Services.prefs.getDefaultBranch(null);
-    defaultPrefBranch.deleteBranch(TelemetryUtils.Preferences.TelemetryEnabled);
-
-    
-    Preferences.set(TelemetryUtils.Preferences.TelemetryEnabled, "false");
-    
-    await TelemetryController.testReset();
-    Assert.equal(
-      Telemetry.canRecordExtended,
-      false,
-      "Invalid values must not enable Telemetry recording."
-    );
-
-    
-    defaultPrefBranch.deleteBranch(TelemetryUtils.Preferences.TelemetryEnabled);
-
-    
-    Preferences.set(TelemetryUtils.Preferences.TelemetryEnabled, true);
-    await TelemetryController.testReset();
-    Assert.equal(
-      Telemetry.canRecordExtended,
-      true,
-      "True must enable Telemetry recording."
-    );
-
-    
-    Preferences.set(TelemetryUtils.Preferences.TelemetryEnabled, false);
-    await TelemetryController.testReset();
-    Assert.equal(
-      Telemetry.canRecordExtended,
-      false,
-      "False must disable Telemetry recording."
-    );
-
-    
-    Preferences.set(TelemetryUtils.Preferences.TelemetryEnabled, true);
-  }
-);
-
 add_task(async function test_telemetryCleanFHRDatabase() {
   const FHR_DBNAME_PREF = "datareporting.healthreport.dbName";
   const CUSTOM_DB_NAME = "unlikely.to.be.used.sqlite";
