@@ -312,7 +312,7 @@ class nsHtml5StreamParser final : public nsISupports {
     mInterrupted = true;
   }
 
-  void Uninterrupt() {
+  void Uninterrupt() NO_THREAD_SAFETY_ANALYSIS {
     MOZ_ASSERT(IsParserThread(), "Wrong thread!");
     mTokenizerMutex.AssertCurrentThreadOwns();
     mInterrupted = false;
@@ -324,26 +324,31 @@ class nsHtml5StreamParser final : public nsISupports {
 
   void FlushTreeOpsAndDisarmTimer();
 
-  void SwitchDecoderIfAsciiSoFar(NotNull<const Encoding*> aEncoding);
+  void SwitchDecoderIfAsciiSoFar(NotNull<const Encoding*> aEncoding)
+      REQUIRES(mTokenizerMutex);
+  ;
 
   size_t CountGts();
 
   void DiscardMetaSpeculation();
 
-  bool ProcessLookingForMetaCharset(bool aEof);
+  bool ProcessLookingForMetaCharset(bool aEof) REQUIRES(mTokenizerMutex);
 
   void ParseAvailableData();
 
   void DoStopRequest();
 
-  void DoDataAvailableBuffer(mozilla::Buffer<uint8_t>&& aBuffer);
+  void DoDataAvailableBuffer(mozilla::Buffer<uint8_t>&& aBuffer)
+      REQUIRES(mTokenizerMutex);
 
-  void DoDataAvailable(mozilla::Span<const uint8_t> aBuffer);
+  void DoDataAvailable(mozilla::Span<const uint8_t> aBuffer)
+      REQUIRES(mTokenizerMutex);
 
   static nsresult CopySegmentsToParser(nsIInputStream* aInStream,
                                        void* aClosure, const char* aFromSegment,
                                        uint32_t aToOffset, uint32_t aCount,
-                                       uint32_t* aWriteCount);
+                                       uint32_t* aWriteCount)
+      REQUIRES(mTokenizerMutex);
 
   bool IsTerminatedOrInterrupted() { return mTerminated || mInterrupted; }
 
@@ -367,12 +372,13 @@ class nsHtml5StreamParser final : public nsISupports {
 
 
   nsresult SniffStreamBytes(mozilla::Span<const uint8_t> aFromSegment,
-                            bool aEof);
+                            bool aEof) REQUIRES(mTokenizerMutex);
 
   
 
 
-  nsresult WriteStreamBytes(mozilla::Span<const uint8_t> aFromSegment);
+  nsresult WriteStreamBytes(mozilla::Span<const uint8_t> aFromSegment)
+      REQUIRES(mTokenizerMutex);
 
   
 
@@ -387,7 +393,7 @@ class nsHtml5StreamParser final : public nsISupports {
 
   nsresult SetupDecodingAndWriteSniffingBufferAndCurrentSegment(
       mozilla::Span<const uint8_t> aPrefix,
-      mozilla::Span<const uint8_t> aFromSegment);
+      mozilla::Span<const uint8_t> aFromSegment) REQUIRES(mTokenizerMutex);
 
   
 
@@ -412,7 +418,7 @@ class nsHtml5StreamParser final : public nsISupports {
 
 
 
-  void ReDecodeLocalFile();
+  void ReDecodeLocalFile() REQUIRES(mTokenizerMutex);
 
   
 
@@ -606,7 +612,7 @@ class nsHtml5StreamParser final : public nsISupports {
 
 
 
-  mozilla::Mutex mTokenizerMutex MOZ_UNANNOTATED;
+  mozilla::Mutex mTokenizerMutex;
 
   
 
@@ -645,7 +651,7 @@ class nsHtml5StreamParser final : public nsISupports {
 
 
   nsTArray<mozilla::UniquePtr<nsHtml5Speculation>> mSpeculations;
-  mozilla::Mutex mSpeculationMutex MOZ_UNANNOTATED;
+  mozilla::Mutex mSpeculationMutex;
 
   
 
@@ -727,7 +733,7 @@ class nsHtml5StreamParser final : public nsISupports {
 
 
 
-  mozilla::Mutex mFlushTimerMutex MOZ_UNANNOTATED;
+  mozilla::Mutex mFlushTimerMutex;
 
   
 
