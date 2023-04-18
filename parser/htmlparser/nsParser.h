@@ -148,14 +148,6 @@ class nsParser final : public nsIParser,
   NS_IMETHOD ParseFragment(const nsAString& aSourceBuffer,
                            nsTArray<nsString>& aTagStack) override;
 
-  
-
-
-
-
-
-  NS_IMETHOD BuildModel(void) override;
-
   NS_IMETHOD ContinueInterruptedParsing() override;
   NS_IMETHOD_(void) BlockParser() override;
   NS_IMETHOD_(void) UnblockParser() override;

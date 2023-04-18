@@ -175,14 +175,6 @@ class nsIParser : public nsParserBase {
 
 
 
-  NS_IMETHOD BuildModel(void) = 0;
-
-  
-
-
-
-
-
 
 
 
