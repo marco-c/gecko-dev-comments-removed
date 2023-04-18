@@ -1443,6 +1443,13 @@ audiounit_destroy(cubeb * ctx)
     }
 
     
+    
+    assert(!ctx->input_collection_changed_callback &&
+           !ctx->input_collection_changed_user_ptr &&
+           !ctx->output_collection_changed_callback &&
+           !ctx->output_collection_changed_user_ptr);
+
+    
     if (ctx->input_collection_changed_callback) {
       audiounit_remove_device_listener(ctx, CUBEB_DEVICE_TYPE_INPUT);
     }
