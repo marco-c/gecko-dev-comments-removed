@@ -122,6 +122,9 @@ fn register_process_shutdown(process_type: u32) {
         nsIXULRuntime::PROCESS_TYPE_RDD => {
             
         }
+        nsIXULRuntime::PROCESS_TYPE_SOCKET => {
+            
+        }
         _ => {
             
             log::error!("Process type {} tried to use FOG, but isn't supported! (Process type constants are in nsIXULRuntime.rs)", process_type);
