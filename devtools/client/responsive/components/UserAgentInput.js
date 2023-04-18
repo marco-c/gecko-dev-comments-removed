@@ -32,7 +32,8 @@ class UserAgentInput extends PureComponent {
     this.onKeyUp = this.onKeyUp.bind(this);
   }
 
-  componentWillReceiveProps(nextProps) {
+  
+  UNSAFE_componentWillReceiveProps(nextProps) {
     if (this.props.userAgent !== nextProps.userAgent) {
       this.setState({ value: nextProps.userAgent });
     }
