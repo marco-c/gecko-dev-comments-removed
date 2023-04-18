@@ -47,7 +47,7 @@ class CanvasContext final : public nsICanvasRenderingContextInternal,
 
   wr::ImageDescriptor MakeImageDescriptor() const;
 
-  wr::ExternalImageId mExternalImageId;
+  Maybe<wr::ExternalImageId> mExternalImageId;
 
  public:  
   int32_t GetWidth() override { return mWidth; }

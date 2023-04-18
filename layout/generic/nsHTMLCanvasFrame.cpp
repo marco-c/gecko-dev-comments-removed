@@ -221,8 +221,8 @@ class nsDisplayCanvas final : public nsPaintedDisplayItem {
           imageKey = imageKeyMaybe.value();
         } else {
           imageKey = canvasContext->CreateImageKey(aManager);
-          aResources.AddPrivateExternalImage(canvasContext->mExternalImageId,
-                                             imageKey, imageDesc);
+          aResources.AddPrivateExternalImage(
+              canvasContext->mExternalImageId.ref(), imageKey, imageDesc);
         }
 
         {
@@ -244,6 +244,11 @@ class nsDisplayCanvas final : public nsPaintedDisplayItem {
 
         canvasData->mDescriptor = imageDesc;
         canvasData->mImageKey = imageKey;
+
+        
+        
+        
+        
         canvasData->RequestFrameReadback();
         break;
       }

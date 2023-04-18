@@ -173,9 +173,6 @@ class WebRenderCommandBuilder final {
       case WebRenderUserData::UserDataType::eCanvas:
         mLastCanvasDatas.Insert(data->AsCanvasData());
         break;
-      case WebRenderUserData::UserDataType::eLocalCanvas:
-        mLastLocalCanvasDatas.Insert(data->AsLocalCanvasData());
-        break;
       default:
         break;
     }
@@ -218,8 +215,6 @@ class WebRenderCommandBuilder final {
 
   
   CanvasDataSet mLastCanvasDatas;
-  
-  LocalCanvasDataSet mLastLocalCanvasDatas;
 
   wr::usize mBuilderDumpIndex;
   wr::usize mDumpIndent;

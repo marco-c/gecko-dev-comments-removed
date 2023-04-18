@@ -1210,8 +1210,8 @@ void HTMLCanvasElement::InvalidateCanvasContent(const gfx::Rect* damageRect) {
   }
 
   if (localData && wr::AsUint64(localData->mImageKey)) {
-    localData->mDirty = true;
-    frame->SchedulePaint(nsIFrame::PAINT_COMPOSITE_ONLY);
+    
+    localData->RequestFrameReadback();
   } else if (renderer) {
     renderer->SetDirty();
     frame->SchedulePaint(nsIFrame::PAINT_COMPOSITE_ONLY);
