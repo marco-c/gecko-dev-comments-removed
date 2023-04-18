@@ -2460,7 +2460,7 @@ bool BytecodeEmitter::emitSetThis(BinaryNode* setThisNode) {
     return false;
   }
 
-  if (!emitInitializeInstanceMembers()) {
+  if (!emitInitializeInstanceMembers(true)) {
     return false;
   }
 
@@ -9988,7 +9988,8 @@ const MemberInitializers& BytecodeEmitter::findMemberInitializersForCall() {
   return *compilationState.scopeContext.memberInitializers;
 }
 
-bool BytecodeEmitter::emitInitializeInstanceMembers() {
+bool BytecodeEmitter::emitInitializeInstanceMembers(
+    bool isDerivedClassConstructor) {
   const MemberInitializers& memberInitializers =
       findMemberInitializersForCall();
   MOZ_ASSERT(memberInitializers.valid);
@@ -10003,14 +10004,16 @@ bool BytecodeEmitter::emitInitializeInstanceMembers() {
       
       return false;
     }
-    if (!emitCheckPrivateField(ThrowCondition::ThrowHas,
-                               ThrowMsgKind::PrivateBrandDoubleInit)) {
-      
-      return false;
-    }
-    if (!emit1(JSOp::Pop)) {
-      
-      return false;
+    if (isDerivedClassConstructor) {
+      if (!emitCheckPrivateField(ThrowCondition::ThrowHas,
+                                 ThrowMsgKind::PrivateBrandDoubleInit)) {
+        
+        return false;
+      }
+      if (!emit1(JSOp::Pop)) {
+        
+        return false;
+      }
     }
     if (!emit1(JSOp::Null)) {
       
