@@ -2306,8 +2306,8 @@ class EventManager {
         EventManager._writePersistentListeners(extension);
         continue;
       }
-      for (let [event, eventEntry] of moduleEntry) {
-        for (let listener of eventEntry.values()) {
+      for (let [event, listeners] of moduleEntry) {
+        for (let [key, listener] of listeners) {
           let primed = { pendingEvents: [] };
 
           let fireEvent = (...args) =>
@@ -2326,16 +2326,32 @@ class EventManager {
             async: fireEvent,
           };
 
-          let handler = api.primeListener(
-            extension,
-            event,
-            fire,
-            listener.params,
-            isInStartup
-          );
-          if (handler) {
-            listener.primed = primed;
-            Object.assign(primed, handler);
+          try {
+            let handler = api.primeListener(
+              extension,
+              event,
+              fire,
+              listener.params,
+              isInStartup
+            );
+            if (handler) {
+              listener.primed = primed;
+              Object.assign(primed, handler);
+            }
+          } catch (e) {
+            Cu.reportError(
+              `Error priming listener ${module}.${event}: ${e} :: ${e.stack}`
+            );
+            
+            listener.error = true;
+          }
+          
+          
+          
+          
+          
+          if (listener.error || (!isInStartup && !listener.primed)) {
+            EventManager.clearPersistentListener(extension, module, event, key);
           }
         }
       }
@@ -2343,10 +2359,18 @@ class EventManager {
   }
 
   
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
   static clearPrimedListeners(extension, clearPersistent = true) {
     if (!extension.persistentListeners) {
       return;
@@ -2356,19 +2380,29 @@ class EventManager {
       for (let [event, listeners] of moduleEntry) {
         for (let [key, listener] of listeners) {
           let { primed } = listener;
+          
+          
+          
           if (!primed) {
             continue;
           }
+
+          
+          
+          
+          
           listener.primed = null;
 
           for (let evt of primed.pendingEvents) {
             evt.reject(new Error("listener not re-registered"));
           }
+          primed.unregister();
 
+          
+          
           if (clearPersistent) {
             EventManager.clearPersistentListener(extension, module, event, key);
           }
-          primed.unregister();
         }
       }
     }
