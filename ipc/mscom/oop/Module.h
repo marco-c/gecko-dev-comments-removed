@@ -39,19 +39,32 @@ class Module {
     InprocHandler,
   };
 
+  
+
+
+
+
+
+
+
+
   static HRESULT Register(REFCLSID aClsid, const ThreadingModel aThreadingModel,
                           const ClassType aClassType = ClassType::InprocServer,
-                          const GUID* const aAppId = nullptr) {
+                          const GUID* const aAppId = nullptr,
+                          const bool aMsixContainer = false) {
     const CLSID* clsidArray[] = {&aClsid};
-    return Register(clsidArray, aThreadingModel, aClassType, aAppId);
+    return Register(clsidArray, aThreadingModel, aClassType, aAppId,
+                    aMsixContainer);
   }
 
   template <size_t N>
   static HRESULT Register(const CLSID* (&aClsids)[N],
                           const ThreadingModel aThreadingModel,
                           const ClassType aClassType = ClassType::InprocServer,
-                          const GUID* const aAppId = nullptr) {
-    return Register(aClsids, N, aThreadingModel, aClassType, aAppId);
+                          const GUID* const aAppId = nullptr,
+                          const bool aMsixContainer = false) {
+    return Register(aClsids, N, aThreadingModel, aClassType, aAppId,
+                    aMsixContainer);
   }
 
   static HRESULT Deregister(REFCLSID aClsid,
@@ -69,7 +82,8 @@ class Module {
  private:
   static HRESULT Register(const CLSID* const* aClsids, const size_t aNumClsids,
                           const ThreadingModel aThreadingModel,
-                          const ClassType aClassType, const GUID* const aAppId);
+                          const ClassType aClassType, const GUID* const aAppId,
+                          const bool aMsixContainer);
 
   static HRESULT Deregister(const CLSID* const* aClsids,
                             const size_t aNumClsids, const GUID* const aAppId);
