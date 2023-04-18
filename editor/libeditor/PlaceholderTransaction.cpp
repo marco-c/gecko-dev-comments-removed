@@ -276,6 +276,25 @@ NS_IMETHODIMP PlaceholderTransaction::Merge(nsITransaction* aOtherTransaction,
 
   
   
+  
+  const bool isPreviousCaretPointInSameRootOfNewCaretPoint = [&]() {
+    nsINode* previousRootInCurrentDOMTree = mEndSel.GetCommonRootNode();
+    return previousRootInCurrentDOMTree &&
+           previousRootInCurrentDOMTree ==
+               otherPlaceholderTransaction->mStartSel.GetCommonRootNode();
+  }();
+  if (!isPreviousCaretPointInSameRootOfNewCaretPoint) {
+    MOZ_LOG(GetLogModule(), LogLevel::Debug,
+            ("%p PlaceholderTransaction::%s(aOtherTransaction=%p) this={ "
+             "mName=%s } returned false due to the caret points are in "
+             "different root nodes",
+             this, __FUNCTION__, aOtherTransaction,
+             nsAtomCString(mName ? mName.get() : nsGkAtoms::_empty).get()));
+    return NS_OK;
+  }
+
+  
+  
   if (!otherPlaceholderTransaction->mStartSel.Equals(mEndSel)) {
     MOZ_LOG(GetLogModule(), LogLevel::Debug,
             ("%p PlaceholderTransaction::%s(aOtherTransaction=%p) this={ "

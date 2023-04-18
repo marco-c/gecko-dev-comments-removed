@@ -551,8 +551,8 @@ nsresult HTMLEditor::OnEndHandlingTopLevelEditSubActionInternal() {
         
         
         
-        if (NS_WARN_IF(
-                !TopLevelEditSubActionDataRef().mSelectedRange->IsSet())) {
+        if (NS_WARN_IF(!TopLevelEditSubActionDataRef()
+                            .mSelectedRange->IsPositioned())) {
           return NS_ERROR_FAILURE;
         }
 
@@ -579,7 +579,7 @@ nsresult HTMLEditor::OnEndHandlingTopLevelEditSubActionInternal() {
         
         EditorDOMPoint atEnd =
             TopLevelEditSubActionDataRef().mSelectedRange->EndPoint();
-        if (!TopLevelEditSubActionDataRef().mSelectedRange->IsCollapsed() &&
+        if (!TopLevelEditSubActionDataRef().mSelectedRange->Collapsed() &&
             atEnd != pointToAdjust && atEnd != atStart &&
             atEnd.IsInContentNode() &&
             EditorUtils::IsEditableContent(*atEnd.ContainerAsContent(),
@@ -7018,7 +7018,7 @@ nsresult HTMLEditor::SplitParentInlineElementsAtRangeEdges(
     return NS_OK;
   }
 
-  if (!aRangeItem.IsCollapsed() && aRangeItem.mEndContainer &&
+  if (!aRangeItem.Collapsed() && aRangeItem.mEndContainer &&
       aRangeItem.mEndContainer->IsContent()) {
     nsCOMPtr<nsIContent> mostAncestorInlineContentAtEnd =
         HTMLEditUtils::GetMostDistantAncestorInlineElement(
