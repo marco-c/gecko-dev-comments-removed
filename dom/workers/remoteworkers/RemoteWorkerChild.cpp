@@ -181,6 +181,10 @@ class ReleaseWorkerRunnable final : public WorkerControlRunnable {
   }
 
   nsresult Cancel() override {
+    
+    nsresult rv = WorkerRunnable::Cancel();
+    NS_ENSURE_SUCCESS(rv, rv);
+
     ReleaseMembers();
     return NS_OK;
   }
@@ -226,9 +230,13 @@ class RemoteWorkerChild::InitializeWorkerRunnable final
   }
 
   nsresult Cancel() override {
+    
+    nsresult rv = WorkerRunnable::Cancel();
+    NS_ENSURE_SUCCESS(rv, rv);
+
     MaybeAbort();
 
-    return WorkerRunnable::Cancel();
+    return NS_OK;
   }
 
   

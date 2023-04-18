@@ -408,8 +408,10 @@ class LoadStartDetectionRunnable final : public Runnable,
     nsresult Cancel() override {
       
       nsresult rv = MainThreadProxyRunnable::Cancel();
-      nsresult rv2 = Run();
-      return NS_FAILED(rv) ? rv : rv2;
+      NS_ENSURE_SUCCESS(rv, rv);
+
+      
+      return Run();
     }
   };
 

@@ -78,12 +78,17 @@ class WorkerRunnable : public nsIRunnable, public nsICancelableRunnable {
   
   
   
+  
+  
+  
+  
   nsresult Cancel() override;
 
   
   
   bool Dispatch();
 
+  
   
   virtual bool IsCanceled() const { return mCanceled != 0; }
 

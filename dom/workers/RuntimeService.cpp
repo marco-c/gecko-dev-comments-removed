@@ -602,6 +602,10 @@ class JSDispatchableRunnable final : public WorkerRunnable {
   }
 
   nsresult Cancel() override {
+    
+    nsresult rv = WorkerRunnable::Cancel();
+    NS_ENSURE_SUCCESS(rv, rv);
+
     MOZ_ASSERT(mDispatchable);
 
     AutoJSAPI jsapi;
@@ -611,7 +615,7 @@ class JSDispatchableRunnable final : public WorkerRunnable {
                        JS::Dispatchable::ShuttingDown);
     mDispatchable = nullptr;  
 
-    return WorkerRunnable::Cancel();
+    return NS_OK;
   }
 };
 
@@ -1544,6 +1548,10 @@ class CrashIfHangingRunnable : public WorkerControlRunnable {
   }
 
   nsresult Cancel() override {
+    
+    nsresult rv = WorkerRunnable::Cancel();
+    NS_ENSURE_SUCCESS(rv, rv);
+
     MonitorAutoLock lock(mMonitor);
     if (!mHasMsg) {
       mMsg.Assign("Canceled");
