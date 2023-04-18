@@ -2445,6 +2445,15 @@ void gfxPlatform::InitGPUProcessPrefs() {
 
   FeatureState& gpuProc = gfxConfig::GetFeature(Feature::GPU_PROCESS);
 
+  nsCString message;
+  nsCString failureId;
+  if (!gfxPlatform::IsGfxInfoStatusOkay(nsIGfxInfo::FEATURE_GPU_PROCESS,
+                                        &message, failureId)) {
+    gpuProc.Disable(FeatureStatus::Blocklisted, message.get(), failureId);
+    
+    
+  }
+
   
   
   
