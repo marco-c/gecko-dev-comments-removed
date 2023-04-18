@@ -117,7 +117,7 @@ StreamLoader::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
   }  
 
   auto info = nsContentUtils::GetSubresourceCacheValidationInfo(
-      aRequest, mSheetLoadData->mURI, nsContentUtils::SubresourceKind::Style);
+      aRequest, mSheetLoadData->mURI);
 
   
   

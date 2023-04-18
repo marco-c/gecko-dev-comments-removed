@@ -556,8 +556,7 @@ void imgRequest::SetCacheValidation(imgCacheEntry* aCacheEntry,
   
   
   
-  auto info = nsContentUtils::GetSubresourceCacheValidationInfo(
-      aRequest, uri, nsContentUtils::SubresourceKind::Image);
+  auto info = nsContentUtils::GetSubresourceCacheValidationInfo(aRequest, uri);
 
   
   
