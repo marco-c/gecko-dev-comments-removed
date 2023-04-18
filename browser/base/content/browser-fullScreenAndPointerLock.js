@@ -122,8 +122,17 @@ var PointerlockFsWarning = {
     this._timeoutHide.start();
   },
 
-  close() {
-    if (!this._element) {
+  
+
+
+
+
+
+  close(elementId) {
+    if (!elementId) {
+      throw new Error("Must pass id of warning element to close");
+    }
+    if (!this._element || this._element.id != elementId) {
       return;
     }
     
@@ -245,7 +254,7 @@ var PointerLock = {
   },
 
   exited() {
-    PointerlockFsWarning.close();
+    PointerlockFsWarning.close("pointerlock-warning");
   },
 };
 
@@ -442,7 +451,7 @@ var FullScreen = {
 
     
     
-    PointerlockFsWarning.close();
+    PointerlockFsWarning.close("pointerlock-warning");
 
     
     
@@ -564,7 +573,7 @@ var FullScreen = {
       true
     );
 
-    PointerlockFsWarning.close();
+    PointerlockFsWarning.close("fullscreen-warning");
     gBrowser.tabContainer.removeEventListener(
       "TabSelect",
       this.exitDomFullScreen
