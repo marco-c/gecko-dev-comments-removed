@@ -8940,8 +8940,11 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
            this, mLoadingEntry->mInfo.GetURI()->GetSpecOrDefault().get()));
       bool hadActiveEntry = !!mActiveEntry;
       mActiveEntry = MakeUnique<SessionHistoryInfo>(mLoadingEntry->mInfo);
+      
+      
+      
       mBrowsingContext->SessionHistoryCommit(
-          *mLoadingEntry, mLoadType, hadActiveEntry, true, true,
+          *mLoadingEntry, mLoadType, mCurrentURI, hadActiveEntry, true, true,
           
           false);
       
@@ -13472,8 +13475,13 @@ void nsDocShell::MoveLoadingToActiveEntry(bool aPersist, bool aExpired) {
     MOZ_ASSERT(loadingEntry);
     uint32_t loadType =
         mLoadType == LOAD_ERROR_PAGE ? mFailedLoadType : mLoadType;
-    mBrowsingContext->SessionHistoryCommit(
-        *loadingEntry, loadType, hadActiveEntry, aPersist, false, aExpired);
+
+    
+    
+    
+    mBrowsingContext->SessionHistoryCommit(*loadingEntry, loadType, mCurrentURI,
+                                           hadActiveEntry, aPersist, false,
+                                           aExpired);
   }
 }
 
