@@ -445,6 +445,7 @@ class Pref {
         mType(static_cast<uint32_t>(PrefType::None)),
         mIsSticky(false),
         mIsLocked(false),
+        mIsSanitized(false),
         mHasDefaultValue(false),
         mHasUserValue(false),
         mIsSkippedByIteration(false),
@@ -481,6 +482,8 @@ class Pref {
   void SetIsSkippedByIteration(bool aValue) { mIsSkippedByIteration = aValue; }
 
   bool IsSticky() const { return mIsSticky; }
+
+  bool IsSanitized() const { return mIsSanitized; }
 
   bool HasDefaultValue() const { return mHasDefaultValue; }
   bool HasUserValue() const { return mHasUserValue; }
@@ -548,6 +551,8 @@ class Pref {
 
     aDomPref->isLocked() = mIsLocked;
 
+    aDomPref->isSanitized() = mIsSanitized;
+
     if (mHasDefaultValue) {
       aDomPref->defaultValue() = Some(dom::PrefValue());
       mDefaultValue.ToDomPrefValue(Type(), &aDomPref->defaultValue().ref());
@@ -555,7 +560,7 @@ class Pref {
       aDomPref->defaultValue() = Nothing();
     }
 
-    if (mHasUserValue) {
+    if (mHasUserValue && !mIsSanitized) {
       aDomPref->userValue() = Some(dom::PrefValue());
       mUserValue.ToDomPrefValue(Type(), &aDomPref->userValue().ref());
     } else {
@@ -563,7 +568,7 @@ class Pref {
     }
 
     MOZ_ASSERT(aDomPref->defaultValue().isNothing() ||
-               aDomPref->userValue().isNothing() ||
+               aDomPref->userValue().isNothing() || mIsSanitized ||
                (aDomPref->defaultValue().ref().type() ==
                 aDomPref->userValue().ref().type()));
   }
@@ -573,6 +578,7 @@ class Pref {
     MOZ_ASSERT(mName == aDomPref.name());
 
     mIsLocked = aDomPref.isLocked();
+    mIsSanitized = aDomPref.isSanitized();
 
     const Maybe<dom::PrefValue>& defaultValue = aDomPref.defaultValue();
     bool defaultValueChanged = false;
@@ -758,10 +764,8 @@ class Pref {
   
   
   
-  
-  
 
-  void SerializeAndAppend(nsCString& aStr) {
+  void SerializeAndAppend(nsCString& aStr, bool aSanitizeUserValue) {
     switch (Type()) {
       case PrefType::Bool:
         aStr.Append('B');
@@ -782,6 +786,7 @@ class Pref {
     }
 
     aStr.Append(mIsLocked ? 'L' : '-');
+    aStr.Append(aSanitizeUserValue ? 'S' : '-');
     aStr.Append(':');
 
     SerializeAndAppendString(mName, aStr);
@@ -792,7 +797,7 @@ class Pref {
     }
     aStr.Append(':');
 
-    if (mHasUserValue) {
+    if (mHasUserValue && !aSanitizeUserValue) {
       mUserValue.SerializeAndAppend(Type(), aStr);
     }
     aStr.Append('\n');
@@ -827,6 +832,18 @@ class Pref {
     }
     p++;  
 
+    
+    bool isSanitized;
+    if (*p == 'S') {
+      isSanitized = true;
+    } else if (*p == '-') {
+      isSanitized = false;
+    } else {
+      NS_ERROR("bad pref sanitized status");
+      isSanitized = false;
+    }
+    p++;  
+
     MOZ_ASSERT(*p == ':');
     p++;  
 
@@ -855,7 +872,8 @@ class Pref {
     MOZ_ASSERT(*p == '\n');
     p++;  
 
-    *aDomPref = dom::Pref(name, isLocked, maybeDefaultValue, maybeUserValue);
+    *aDomPref = dom::Pref(name, isLocked, isSanitized, maybeDefaultValue,
+                          maybeUserValue);
 
     return p;
   }
@@ -879,6 +897,7 @@ class Pref {
   uint32_t mType : 2;
   uint32_t mIsSticky : 1;
   uint32_t mIsLocked : 1;
+  uint32_t mIsSanitized : 1;
   uint32_t mHasDefaultValue : 1;
   uint32_t mHasUserValue : 1;
   uint32_t mIsSkippedByIteration : 1;
@@ -930,6 +949,7 @@ class MOZ_STACK_CLASS PrefWrapper : public PrefWrapperBase {
   }
 
   FORWARD(bool, IsLocked)
+  FORWARD(bool, IsSanitized)
   FORWARD(bool, IsSticky)
   FORWARD(bool, HasDefaultValue)
   FORWARD(bool, HasUserValue)
@@ -1084,6 +1104,7 @@ void Pref::FromWrapper(PrefWrapper& aWrapper) {
   mType = uint32_t(pref.Type());
 
   mIsLocked = pref.IsLocked();
+  mIsSanitized = pref.IsSanitized();
   mIsSticky = pref.IsSticky();
 
   mHasDefaultValue = pref.HasDefaultValue();
@@ -2522,6 +2543,16 @@ nsPrefBranch::PrefIsLocked(const char* aPrefName, bool* aRetVal) {
 }
 
 NS_IMETHODIMP
+nsPrefBranch::PrefIsSanitized(const char* aPrefName, bool* aRetVal) {
+  NS_ENSURE_ARG_POINTER(aRetVal);
+  NS_ENSURE_ARG(aPrefName);
+
+  const PrefName& pref = GetPrefName(aPrefName);
+  *aRetVal = Preferences::IsSanitized(pref.get());
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 nsPrefBranch::UnlockPref(const char* aPrefName) {
   NS_ENSURE_ARG(aPrefName);
 
@@ -3555,9 +3586,8 @@ void Preferences::SerializePreferences(
 
   for (auto iter = HashTable()->iter(); !iter.done(); iter.next()) {
     Pref* pref = iter.get().get();
-    if (!pref->IsTypeNone() && pref->HasAdvisablySizedValues() &&
-        aShouldSerializeFn(pref->Name())) {
-      pref->SerializeAndAppend(aStr);
+    if (!pref->IsTypeNone() && pref->HasAdvisablySizedValues()) {
+      pref->SerializeAndAppend(aStr, !aShouldSerializeFn(pref->Name()));
     }
   }
 
@@ -4979,6 +5009,14 @@ bool Preferences::IsLocked(const char* aPrefName) {
 
   Maybe<PrefWrapper> pref = pref_Lookup(aPrefName);
   return pref.isSome() && pref->IsLocked();
+}
+
+
+bool Preferences::IsSanitized(const char* aPrefName) {
+  NS_ENSURE_TRUE(InitStaticMembers(), false);
+
+  Maybe<PrefWrapper> pref = pref_Lookup(aPrefName);
+  return pref.isSome() && pref->IsSanitized();
 }
 
 

@@ -3535,7 +3535,7 @@ ContentParent::Observe(nsISupports* aSubject, const char* aTopic,
       return NS_OK;
     }
 
-    Pref pref(strData,  false, Nothing(), Nothing());
+    Pref pref(strData,  false, !ShouldSyncPreference(strData.Data()), Nothing(), Nothing());
     Preferences::GetPreference(&pref);
     if (IsInitialized()) {
       MOZ_ASSERT(mQueuedPrefs.IsEmpty());

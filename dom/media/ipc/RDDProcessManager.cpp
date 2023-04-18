@@ -101,7 +101,7 @@ void RDDProcessManager::OnPreferenceChange(const char16_t* aData) {
     return;
   }
 
-  mozilla::dom::Pref pref(strData,  false, Nothing(), Nothing());
+  mozilla::dom::Pref pref(strData,  false, !dom::ContentParent::ShouldSyncPreference(strData.Data()), Nothing(), Nothing());
   Preferences::GetPreference(&pref);
   if (!!mRDDChild) {
     MOZ_ASSERT(mQueuedPrefs.IsEmpty());
