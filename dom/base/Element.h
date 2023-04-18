@@ -1950,8 +1950,6 @@ class Element : public FragmentOrElement {
 
   void GetEventTargetParentForLinks(EventChainPreVisitor& aVisitor);
 
-  void DispatchChromeOnlyLinkClickEvent(EventChainPostVisitor& aVisitor);
-
   
 
 
