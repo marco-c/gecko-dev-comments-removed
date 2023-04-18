@@ -529,20 +529,6 @@ pref("browser.urlbar.autocomplete.enabled", true);
 pref("browser.urlbar.trimURLs", true);
 
 
-pref("browser.contentHandlers.types.0.title", "chrome://browser/locale/region.properties");
-pref("browser.contentHandlers.types.0.uri", "chrome://browser/locale/region.properties");
-pref("browser.contentHandlers.types.0.type", "application/vnd.mozilla.maybe.feed");
-pref("browser.contentHandlers.types.1.title", "chrome://browser/locale/region.properties");
-pref("browser.contentHandlers.types.1.uri", "chrome://browser/locale/region.properties");
-pref("browser.contentHandlers.types.1.type", "application/vnd.mozilla.maybe.feed");
-pref("browser.contentHandlers.types.2.title", "chrome://browser/locale/region.properties");
-pref("browser.contentHandlers.types.2.uri", "chrome://browser/locale/region.properties");
-pref("browser.contentHandlers.types.2.type", "application/vnd.mozilla.maybe.feed");
-pref("browser.contentHandlers.types.3.title", "chrome://browser/locale/region.properties");
-pref("browser.contentHandlers.types.3.uri", "chrome://browser/locale/region.properties");
-pref("browser.contentHandlers.types.3.type", "application/vnd.mozilla.maybe.feed");
-
-
 
 pref("dom.phonenumber.substringmatching.BR", 8);
 pref("dom.phonenumber.substringmatching.CO", 10);

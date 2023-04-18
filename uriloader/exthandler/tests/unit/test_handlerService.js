@@ -22,8 +22,6 @@ function run_test() {
     Ci.nsIEnvironment
   );
 
-  const rootPrefBranch = prefSvc.getBranch("");
-
   let noMailto = false;
   if (mozinfo.os == "win") {
     
@@ -119,18 +117,6 @@ function run_test() {
   Assert.equal(handlerInfo.hasDefaultHandler, false);
   Assert.equal(handlerInfo.defaultDescription, "");
 
-  
-  var haveDefaultHandlersVersion = false;
-  try {
-    
-    
-    
-    
-    
-    rootPrefBranch.getCharPref("gecko.handlerService.defaultHandlersVersion");
-    haveDefaultHandlersVersion = true;
-  } catch (ex) {}
-
   const kExternalWarningDefault =
     "network.protocol-handler.warn-external-default";
   prefSvc.setBoolPref(kExternalWarningDefault, true);
@@ -169,11 +155,7 @@ function run_test() {
   
   prefSvc.setBoolPref(kExternalWarningPrefPrefix + "mailto", false);
   protoInfo = protoSvc.getProtocolHandlerInfo("mailto");
-  if (haveDefaultHandlersVersion) {
-    Assert.equal(2, protoInfo.possibleApplicationHandlers.length);
-  } else {
-    Assert.equal(0, protoInfo.possibleApplicationHandlers.length);
-  }
+  Assert.equal(1, protoInfo.possibleApplicationHandlers.length);
 
   
   if (noMailto) {
@@ -185,32 +167,25 @@ function run_test() {
   
   prefSvc.setBoolPref(kExternalWarningPrefPrefix + "mailto", true);
   protoInfo = protoSvc.getProtocolHandlerInfo("mailto");
-  if (haveDefaultHandlersVersion) {
-    Assert.equal(2, protoInfo.possibleApplicationHandlers.length);
-    
-    
-    
-    
-    
-    Assert.ok(protoInfo.alwaysAskBeforeHandling);
-    
-    
-  } else {
-    Assert.equal(0, protoInfo.possibleApplicationHandlers.length);
-    Assert.ok(protoInfo.alwaysAskBeforeHandling);
-  }
+  Assert.equal(1, protoInfo.possibleApplicationHandlers.length);
+  
+  
+  
+  
+  
+  Assert.ok(protoInfo.alwaysAskBeforeHandling);
+  
+  
 
-  if (haveDefaultHandlersVersion) {
-    
-    
-    
-    prefSvc.setBoolPref(kExternalWarningPrefPrefix + "mailto", false);
-    protoInfo.alwaysAskBeforeHandling = true;
-    handlerSvc.store(protoInfo);
-    protoInfo = protoSvc.getProtocolHandlerInfo("mailto");
-    Assert.equal(2, protoInfo.possibleApplicationHandlers.length);
-    Assert.ok(protoInfo.alwaysAskBeforeHandling);
-  }
+  
+  
+  
+  prefSvc.setBoolPref(kExternalWarningPrefPrefix + "mailto", false);
+  protoInfo.alwaysAskBeforeHandling = true;
+  handlerSvc.store(protoInfo);
+  protoInfo = protoSvc.getProtocolHandlerInfo("mailto");
+  Assert.equal(1, protoInfo.possibleApplicationHandlers.length);
+  Assert.ok(protoInfo.alwaysAskBeforeHandling);
 
   
   
@@ -244,11 +219,7 @@ function run_test() {
   var handlerInfo2 = mimeSvc.getFromTypeAndExtension("nonexistent/type2", null);
   handlerSvc.store(handlerInfo2);
   var handlerTypes = ["nonexistent/type", "nonexistent/type2"];
-  if (haveDefaultHandlersVersion) {
-    handlerTypes.push("mailto");
-    handlerTypes.push("irc");
-    handlerTypes.push("ircs");
-  }
+  handlerTypes.push("mailto");
   for (let handler of handlerSvc.enumerate()) {
     Assert.notEqual(handlerTypes.indexOf(handler.type), -1);
     handlerTypes.splice(handlerTypes.indexOf(handler.type), 1);

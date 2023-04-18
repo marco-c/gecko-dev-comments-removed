@@ -48,6 +48,10 @@ XPCOMUtils.defineLazyServiceGetter(
   "@mozilla.org/mime;1",
   "nsIMIMEService"
 );
+XPCOMUtils.defineLazyModuleGetters(this, {
+  kHandlerList: "resource://gre/modules/handlers/HandlerList.jsm",
+  kHandlerListVersion: "resource://gre/modules/handlers/HandlerList.jsm",
+});
 
 function HandlerService() {
   
@@ -114,34 +118,17 @@ HandlerService.prototype = {
 
 
   _injectDefaultProtocolHandlersIfNeeded() {
-    let prefsDefaultHandlersVersion;
     try {
-      prefsDefaultHandlersVersion = Services.prefs.getComplexValue(
+      let defaultHandlersVersion = Services.prefs.getIntPref(
         "gecko.handlerService.defaultHandlersVersion",
-        Ci.nsIPrefLocalizedString
+        0
       );
-    } catch (ex) {
-      if (
-        ex instanceof Components.Exception &&
-        ex.result == Cr.NS_ERROR_UNEXPECTED
-      ) {
-        
-        return;
-      }
-      throw ex;
-    }
-
-    try {
-      prefsDefaultHandlersVersion = Number(prefsDefaultHandlersVersion.data);
-      let locale = Services.locale.appLocaleAsBCP47;
-
-      let defaultHandlersVersion =
-        this._store.data.defaultHandlersVersion[locale] || 0;
-      if (defaultHandlersVersion < prefsDefaultHandlersVersion) {
+      if (defaultHandlersVersion < kHandlerListVersion) {
         this._injectDefaultProtocolHandlers();
-        this._store.data.defaultHandlersVersion[
-          locale
-        ] = prefsDefaultHandlersVersion;
+        Services.prefs.setIntPref(
+          "gecko.handlerService.defaultHandlersVersion",
+          kHandlerListVersion
+        );
         
         this._store.saveSoon();
       }
@@ -151,53 +138,13 @@ HandlerService.prototype = {
   },
 
   _injectDefaultProtocolHandlers() {
-    let schemesPrefBranch = Services.prefs.getBranch(
-      "gecko.handlerService.schemes."
-    );
-    let schemePrefList = schemesPrefBranch.getChildList("");
-
-    let schemes = {};
+    let locale = Services.locale.appLocaleAsBCP47;
 
     
-    for (let schemePrefName of schemePrefList) {
-      let [scheme, handlerNumber, attribute] = schemePrefName.split(".");
-
-      try {
-        let attrData = schemesPrefBranch.getComplexValue(
-          schemePrefName,
-          Ci.nsIPrefLocalizedString
-        ).data;
-        if (!(scheme in schemes)) {
-          schemes[scheme] = {};
-        }
-
-        if (!(handlerNumber in schemes[scheme])) {
-          schemes[scheme][handlerNumber] = {};
-        }
-
-        schemes[scheme][handlerNumber][attribute] = attrData;
-      } catch (ex) {}
-    }
-
-    
-    
-    
-    for (let [scheme, handlerObject] of Array.from(Object.entries(schemes))) {
-      let handlers = Array.from(Object.entries(handlerObject));
-      let validHandlers = 0;
-      for (let [key, obj] of handlers) {
-        if (
-          !obj.uriTemplate ||
-          !obj.uriTemplate.startsWith("https://") ||
-          !obj.uriTemplate.toLowerCase().includes("%s")
-        ) {
-          delete handlerObject[key];
-        } else {
-          validHandlers++;
-        }
-      }
-      if (!validHandlers) {
-        delete schemes[scheme];
+    let localeHandlers = kHandlerList.default;
+    if (kHandlerList[locale]) {
+      for (let scheme in kHandlerList[locale].schemes) {
+        localeHandlers.schemes[scheme] = kHandlerList[locale].schemes[scheme];
       }
     }
 
@@ -210,7 +157,7 @@ HandlerService.prototype = {
     
     
     
-    for (let scheme of Object.keys(schemes)) {
+    for (let scheme of Object.keys(localeHandlers.schemes)) {
       let existingSchemeInfo = this._store.data.schemes[scheme];
       if (!existingSchemeInfo) {
         
@@ -226,8 +173,7 @@ HandlerService.prototype = {
         this._store.data.schemes[scheme] = existingSchemeInfo;
       }
       let { handlers } = existingSchemeInfo;
-      for (let handlerNumber of Object.keys(schemes[scheme])) {
-        let newHandler = schemes[scheme][handlerNumber];
+      for (let newHandler of localeHandlers.schemes[scheme].handlers) {
         
         
         let matchingTemplate = handler =>

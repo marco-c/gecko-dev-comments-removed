@@ -37,10 +37,6 @@ add_task(async function test_load_settings() {
     
     Assert.equal(this.getRow("font.language.group").value, "x-western");
     Assert.equal(this.getRow("intl.ellipsis").value, "\u2026");
-    Assert.equal(
-      this.getRow("gecko.handlerService.schemes.mailto.1.uriTemplate").value,
-      "https://mail.google.com/mail/?extsrc=mailto&url=%s"
-    );
 
     
     
@@ -48,9 +44,5 @@ add_task(async function test_load_settings() {
       this.getRow("test.aboutconfig.userValueLikeLocalized").value,
       "chrome://test/locale/testing.properties"
     );
-
-    
-    
-    Assert.equal(this.getRow(PREF_STRING_LOCALIZED_MISSING).value, "");
   });
 });
