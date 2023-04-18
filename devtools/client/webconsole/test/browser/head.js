@@ -228,10 +228,12 @@ function waitForMessages({ hud, messages, selector = ".message" }) {
 
 
 
-function waitForRepeatedMessage(hud, text, repeat) {
+
+
+function waitForRepeatedMessageByType(hud, text, typeSelector, repeat) {
   return waitFor(() => {
     
-    const node = findMessage(hud, text);
+    const node = findMessageByType(hud, text, typeSelector);
     if (!node) {
       return false;
     }
