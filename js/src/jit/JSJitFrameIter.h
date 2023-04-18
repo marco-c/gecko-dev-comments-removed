@@ -673,7 +673,6 @@ class InlineFrameIterator {
     
     
     
-    
     if (more()) {
       return numActualArgs_;
     }
