@@ -575,6 +575,8 @@ pub mod specified {
         NonNegative,
         
         AtLeastOne,
+        
+        ZeroToOne,
     }
 
     impl Default for AllowedNumericType {
@@ -595,6 +597,7 @@ pub mod specified {
                 AllowedNumericType::All => true,
                 AllowedNumericType::NonNegative => val >= 0.0,
                 AllowedNumericType::AtLeastOne => val >= 1.0,
+                AllowedNumericType::ZeroToOne => val >= 0.0 && val <= 1.0,
             }
         }
 
@@ -602,9 +605,10 @@ pub mod specified {
         #[inline]
         pub fn clamp(&self, val: f32) -> f32 {
             match *self {
-                AllowedNumericType::NonNegative if val < 0. => 0.,
-                AllowedNumericType::AtLeastOne if val < 1. => 1.,
-                _ => val,
+                AllowedNumericType::All => val,
+                AllowedNumericType::NonNegative => val.max(0.),
+                AllowedNumericType::AtLeastOne => val.max(1.),
+                AllowedNumericType::ZeroToOne => val.max(0.).min(1.),
             }
         }
     }

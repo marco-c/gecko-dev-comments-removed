@@ -23,7 +23,7 @@ use style_traits::{SpecifiedValueInfo, ToCss, ValueParseErrorKind};
 
 
 #[derive(Clone, Copy, Debug, Eq, MallocSizeOf, Parse, PartialEq, ToCss, ToShmem)]
-pub enum ColorSpaceKind {
+pub enum ColorSpace {
     
     Srgb,
     
@@ -34,11 +34,21 @@ pub enum ColorSpaceKind {
     Lch,
 }
 
+impl ColorSpace {
+    
+    pub fn is_polar(self) -> bool {
+        match self {
+            Self::Srgb | Self::Xyz | Self::Lab => false,
+            Self::Lch => true,
+        }
+    }
+}
+
 
 
 
 #[derive(Clone, Copy, Debug, Eq, MallocSizeOf, Parse, PartialEq, ToCss, ToShmem)]
-pub enum HueAdjuster {
+pub enum HueInterpolationMethod {
     
     Shorter,
     
@@ -52,23 +62,66 @@ pub enum HueAdjuster {
 }
 
 
+#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, ToShmem)]
+pub struct ColorInterpolationMethod {
+    
+    pub space: ColorSpace,
+    
+    pub hue: HueInterpolationMethod,
+}
+
+impl Parse for ColorInterpolationMethod {
+    fn parse<'i, 't>(
+        _: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        input.expect_ident_matching("in")?;
+        let space = ColorSpace::parse(input)?;
+        
+        
+        
+        let hue = if space.is_polar() {
+            input.try_parse(|input| -> Result<_, ParseError<'i>> {
+                let hue = HueInterpolationMethod::parse(input)?;
+                input.expect_ident_matching("hue")?;
+                Ok(hue)
+            }).unwrap_or(HueInterpolationMethod::Shorter)
+        } else {
+            HueInterpolationMethod::Shorter
+        };
+        Ok(Self { space, hue })
+    }
+}
+
+impl ToCss for ColorInterpolationMethod {
+    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
+    where
+        W: Write,
+    {
+        dest.write_str("in ")?;
+        self.space.to_css(dest)?;
+        if self.hue != HueInterpolationMethod::Shorter {
+            dest.write_char(' ')?;
+            self.hue.to_css(dest)?;
+            dest.write_str(" hue")?;
+        }
+        Ok(())
+    }
+}
+
+
 
 
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, ToShmem)]
 #[allow(missing_docs)]
 pub struct ColorMix {
-    pub color_space: ColorSpaceKind,
+    pub interpolation: ColorInterpolationMethod,
     pub left: Color,
     pub left_percentage: Percentage,
     pub right: Color,
     pub right_percentage: Percentage,
-    pub hue_adjuster: HueAdjuster,
 }
-
-
-
-
 
 impl Parse for ColorMix {
     fn parse<'i, 't>(
@@ -82,53 +135,51 @@ impl Parse for ColorMix {
             return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
         }
 
-        let color_spaces_enabled = context.chrome_rules_enabled() ||
-            static_prefs::pref!("layout.css.color-mix.color-spaces.enabled");
-
         input.expect_function_matching("color-mix")?;
 
-        
-        
-        
-        
         input.parse_nested_block(|input| {
-            input.expect_ident_matching("in")?;
-            let color_space = if color_spaces_enabled {
-                ColorSpaceKind::parse(input)?
-            } else {
-                input.expect_ident_matching("srgb")?;
-                ColorSpaceKind::Srgb
-            };
+            let interpolation = ColorInterpolationMethod::parse(context, input)?;
             input.expect_comma()?;
+
+            let try_parse_percentage = |input: &mut Parser| -> Option<Percentage> {
+                input.try_parse(|input| Percentage::parse_zero_to_a_hundred(context, input)).ok()
+            };
+
+            let mut left_percentage = try_parse_percentage(input);
 
             let left = Color::parse(context, input)?;
-            let left_percentage = input
-                .try_parse(|input| Percentage::parse(context, input))
-                .ok();
+            if left_percentage.is_none() {
+                left_percentage = try_parse_percentage(input);
+            }
 
             input.expect_comma()?;
 
+            let mut right_percentage = try_parse_percentage(input);
+
             let right = Color::parse(context, input)?;
-            let right_percentage = input
-                .try_parse(|input| Percentage::parse(context, input))
-                .unwrap_or_else(|_| {
-                    Percentage::new(1.0 - left_percentage.map_or(0.5, |p| p.get()))
-                });
+
+            if right_percentage.is_none() {
+                right_percentage = try_parse_percentage(input);
+            }
+
+            let right_percentage = right_percentage.unwrap_or_else(|| {
+                Percentage::new(1.0 - left_percentage.map_or(0.5, |p| p.get()))
+            });
 
             let left_percentage =
                 left_percentage.unwrap_or_else(|| Percentage::new(1.0 - right_percentage.get()));
 
-            let hue_adjuster = input
-                .try_parse(|input| HueAdjuster::parse(input))
-                .unwrap_or(HueAdjuster::Shorter);
+            if left_percentage.get() + right_percentage.get() <= 0.0 {
+                
+                return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
+            }
 
             Ok(ColorMix {
-                color_space,
+                interpolation,
                 left,
                 left_percentage,
                 right,
                 right_percentage,
-                hue_adjuster,
             })
         })
     }
@@ -152,8 +203,8 @@ impl ToCss for ColorMix {
             (1.0 - percent.get() - other.get()).abs() <= f32::EPSILON
         }
 
-        dest.write_str("color-mix(in ")?;
-        self.color_space.to_css(dest)?;
+        dest.write_str("color-mix(")?;
+        self.interpolation.to_css(dest)?;
         dest.write_str(", ")?;
         self.left.to_css(dest)?;
         if !can_omit(&self.left_percentage, &self.right_percentage, true) {
@@ -166,12 +217,6 @@ impl ToCss for ColorMix {
             dest.write_str(" ")?;
             self.right_percentage.to_css(dest)?;
         }
-
-        if self.hue_adjuster != HueAdjuster::Shorter {
-            dest.write_str(" ")?;
-            self.hue_adjuster.to_css(dest)?;
-        }
-
         dest.write_str(")")
     }
 }
@@ -731,12 +776,11 @@ impl Color {
                 let left = mix.left.to_computed_color(context)?.to_animated_value();
                 let right = mix.right.to_computed_color(context)?.to_animated_value();
                 ToAnimatedValue::from_animated_value(AnimatedColor::mix(
-                    mix.color_space,
+                    &mix.interpolation,
                     &left,
                     mix.left_percentage.get(),
                     &right,
                     mix.right_percentage.get(),
-                    mix.hue_adjuster,
                 ))
             },
             #[cfg(feature = "gecko")]

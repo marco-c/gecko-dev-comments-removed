@@ -139,6 +139,15 @@ impl Percentage {
     }
 
     
+    
+    pub fn parse_zero_to_a_hundred<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        Self::parse_with_clamping_mode(context, input, AllowedNumericType::ZeroToOne)
+    }
+
+    
     #[inline]
     pub fn clamp_to_hundred(self) -> Self {
         Percentage {
