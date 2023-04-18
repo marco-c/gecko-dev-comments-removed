@@ -1381,7 +1381,11 @@ bool nsContentSecurityUtils::ValidateScriptFilename(JSContext* cx,
       
       u"about:downloads"_ns,
       
-      u"about:preferences"_ns};
+      u"about:preferences"_ns,
+      
+      
+      
+      u"debugger"_ns};
 
   for (auto allowedFilenamePrefix : kAllowedFilenamesPrefix) {
     if (StringBeginsWith(filenameU, allowedFilenamePrefix)) {
