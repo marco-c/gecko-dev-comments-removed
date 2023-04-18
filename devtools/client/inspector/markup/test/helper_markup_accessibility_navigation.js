@@ -39,6 +39,20 @@ function testNavigationState(inspector, elms, focused, activedescendant) {
 
 
 
+function lookupPath(obj, path) {
+  const segments = path.split(".");
+  return segments.reduce((prev, current) => prev[current], obj);
+}
+
+
+
+
+
+
+
+
+
+
 
 
 

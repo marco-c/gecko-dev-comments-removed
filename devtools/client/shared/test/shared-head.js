@@ -1343,20 +1343,6 @@ function pushPref(preferenceName, value) {
   return SpecialPowers.pushPrefEnv(options);
 }
 
-
-
-
-
-
-
-
-
-
-function lookupPath(obj, path) {
-  const segments = path.split(".");
-  return segments.reduce((prev, current) => prev[current], obj);
-}
-
 var closeToolbox = async function() {
   await gDevTools.closeToolboxForTab(gBrowser.selectedTab);
 };
