@@ -338,8 +338,7 @@ var Utils = {
     serverTimeMillis += cacheAgeSeconds * 1000;
 
     
-    let lastModifiedMillis = Date.parse(response.headers.get("Last-Modified"));
-    const ageSeconds = (serverTimeMillis - lastModifiedMillis) / 1000;
+    const ageSeconds = (serverTimeMillis - timestamp) / 1000;
 
     
     let backoffSeconds;
