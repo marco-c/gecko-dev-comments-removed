@@ -10,7 +10,9 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
-XPCOMUtils.defineLazyModuleGetters(this, {
+const lazy = {};
+
+XPCOMUtils.defineLazyModuleGetters(lazy, {
   ConsoleAPIListener:
     "chrome://remote/content/shared/listeners/ConsoleAPIListener.jsm",
   ConsoleListener:
@@ -20,7 +22,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   serialize: "chrome://remote/content/webdriver-bidi/RemoteValue.jsm",
 });
 
-class LogModule extends Module {
+class LogModule extends lazy.Module {
   #consoleAPIListener;
   #consoleMessageListener;
 
@@ -28,13 +30,13 @@ class LogModule extends Module {
     super(messageHandler);
 
     
-    this.#consoleAPIListener = new ConsoleAPIListener(
+    this.#consoleAPIListener = new lazy.ConsoleAPIListener(
       this.messageHandler.innerWindowId
     );
     this.#consoleAPIListener.on("message", this.#onConsoleAPIMessage);
 
     
-    this.#consoleMessageListener = new ConsoleListener(
+    this.#consoleMessageListener = new lazy.ConsoleListener(
       this.messageHandler.innerWindowId
     );
     this.#consoleMessageListener.on("error", this.#onJavaScriptError);
@@ -65,7 +67,7 @@ class LogModule extends Module {
     }
 
     const callFrames = stackTrace
-      .filter(frame => !isChromeFrame(frame))
+      .filter(frame => !lazy.isChromeFrame(frame))
       .map(frame => {
         return {
           columnNumber: frame.columnNumber,
@@ -130,7 +132,7 @@ class LogModule extends Module {
     
     const serializedArgs = [];
     for (const arg of args) {
-      serializedArgs.push(serialize(arg ));
+      serializedArgs.push(lazy.serialize(arg ));
     }
 
     
