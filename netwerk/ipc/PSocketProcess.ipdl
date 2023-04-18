@@ -85,6 +85,9 @@ struct SocketPorcessInitAttributes {
   bool mOffline;
   bool mConnectivity;
   bool mInitSandbox;
+#if defined(XP_WIN)
+  bool mIsReadyForBackgroundProcessing;
+#endif
   FileDescriptor? mSandboxBroker;
 };
 
@@ -222,6 +225,13 @@ child:
 
 #if defined(XP_WIN)
   async GetUntrustedModulesData() returns (UntrustedModulesData? data);
+
+  
+
+
+
+
+  async UnblockUntrustedModulesThread();
 #endif  
 
 both:
