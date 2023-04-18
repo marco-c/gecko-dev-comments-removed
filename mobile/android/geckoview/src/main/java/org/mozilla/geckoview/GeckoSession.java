@@ -1580,17 +1580,6 @@ public class GeckoSession {
     return mMagnifier;
   }
 
-  
-  @Retention(RetentionPolicy.SOURCE)
-  @IntDef({PRIORITY_DEFAULT, PRIORITY_HIGH})
-  public @interface Priority {}
-
-  
-  public static final int PRIORITY_DEFAULT = 0;
-
-  
-  public static final int PRIORITY_HIGH = 1;
-
   @Retention(RetentionPolicy.SOURCE)
   @IntDef(
       flag = true,
@@ -2256,22 +2245,6 @@ public class GeckoSession {
     final GeckoBundle msg = new GeckoBundle(1);
     msg.putBoolean("focused", focused);
     mEventDispatcher.dispatch("GeckoView:SetFocused", msg);
-  }
-
-  
-
-
-
-
-
-
-
-
-  @AnyThread
-  public void setPriorityHint(final @Priority int priorityHint) {
-    final GeckoBundle msg = new GeckoBundle(1);
-    msg.putInt("priorityHint", priorityHint);
-    mEventDispatcher.dispatch("GeckoView:SetPriorityHint", msg);
   }
 
   
