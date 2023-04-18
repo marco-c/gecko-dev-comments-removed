@@ -4,9 +4,11 @@
 
 
 
-#include "AccessibleWrap.h"
+#include <glib.h>
+#include <cstdint>
+#include "mozilla/TypedEnumBits.h"
+#include "nsCharTraits.h"
 #include "nsString.h"
-#include "nsMai.h"
 
 
 

@@ -4,12 +4,13 @@
 
 
 
-#include "ApplicationAccessibleWrap.h"
+#include "ApplicationAccessible.h"
 #include "mozilla/Likely.h"
 #include "nsAccessibilityService.h"
 #include "nsMai.h"
 
-#include <atk/atk.h>
+#include <atk/atkobject.h>
+#include <atk/atkutil.h>
 #include <gtk/gtk.h>
 #include <string.h>
 

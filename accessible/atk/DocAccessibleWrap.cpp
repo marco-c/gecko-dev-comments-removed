@@ -4,9 +4,10 @@
 
 
 
-#include "nsMai.h"
 #include "DocAccessibleWrap.h"
 #include "mozilla/PresShell.h"
+#include "nsIWidgetListener.h"
+#include "nsTArray.h"
 #include "nsWindow.h"
 
 using namespace mozilla;
