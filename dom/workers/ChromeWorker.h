@@ -9,8 +9,7 @@
 
 #include "mozilla/dom/Worker.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class ChromeWorker final : public Worker {
  public:
@@ -29,7 +28,6 @@ class ChromeWorker final : public Worker {
   ~ChromeWorker();
 };
 
-}  
 }  
 
 #endif 

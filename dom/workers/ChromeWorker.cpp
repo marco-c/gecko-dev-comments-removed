@@ -11,8 +11,7 @@
 #include "nsContentUtils.h"
 #include "WorkerPrivate.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 already_AddRefed<ChromeWorker> ChromeWorker::Constructor(
@@ -70,5 +69,4 @@ JSObject* ChromeWorker::WrapObject(JSContext* aCx,
   return wrapper;
 }
 
-}  
 }  

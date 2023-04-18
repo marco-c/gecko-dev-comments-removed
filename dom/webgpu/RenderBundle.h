@@ -9,8 +9,7 @@
 #include "nsWrapperCache.h"
 #include "ObjectModel.h"
 
-namespace mozilla {
-namespace webgpu {
+namespace mozilla::webgpu {
 
 class Device;
 
@@ -28,7 +27,6 @@ class RenderBundle final : public ObjectBase, public ChildOf<Device> {
   void Cleanup();
 };
 
-}  
 }  
 
 #endif  

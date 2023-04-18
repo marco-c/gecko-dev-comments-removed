@@ -9,12 +9,10 @@
 
 #include "js/TypeDecls.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 bool DefineChromeWorkerFunctions(JSContext* aCx, JS::Handle<JSObject*> aGlobal);
 
-}  
 }  
 
 #endif  

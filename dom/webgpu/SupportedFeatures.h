@@ -9,8 +9,7 @@
 #include "nsWrapperCache.h"
 #include "ObjectModel.h"
 
-namespace mozilla {
-namespace webgpu {
+namespace mozilla::webgpu {
 class Adapter;
 
 class SupportedFeatures final : public nsWrapperCache, public ChildOf<Adapter> {
@@ -25,7 +24,6 @@ class SupportedFeatures final : public nsWrapperCache, public ChildOf<Adapter> {
   void Cleanup() {}
 };
 
-}  
 }  
 
 #endif  
