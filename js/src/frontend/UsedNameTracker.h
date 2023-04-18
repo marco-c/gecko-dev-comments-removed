@@ -166,6 +166,17 @@ class UsedNameTracker {
     bool empty() { return uses_.empty(); }
 
     mozilla::Maybe<TokenPos> pos() { return firstUsePos_; }
+
+    
+    
+    
+    void maybeUpdatePos(mozilla::Maybe<TokenPos> p) {
+      MOZ_ASSERT_IF(!isPublic(), p.isSome());
+
+      if (empty() && !isPublic()) {
+        firstUsePos_ = p;
+      }
+    }
   };
 
   using UsedNameMap =
