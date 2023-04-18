@@ -161,28 +161,36 @@ WindowSurfaceProvider::StartRemoteDrawingInRegion(
 
 void WindowSurfaceProvider::EndRemoteDrawingInRegion(
     gfx::DrawTarget* aDrawTarget, const LayoutDeviceIntRegion& aInvalidRegion) {
-#if defined(MOZ_WAYLAND)
-  if (GdkIsWaylandDisplay() && moz_container_wayland_is_commiting_to_parent(
-                                   mWidget->GetMozContainer())) {
-    
-    
-    NS_DispatchToMainThread(NS_NewRunnableFunction(
-        "WindowSurfaceProvider::EndRemoteDrawingInRegion",
-        [RefPtr{mWidget}, this, aInvalidRegion]() {
-          MutexAutoLock lock(mMutex);
-          
-          if (mWindowSurface && mWindowSurfaceValid) {
-            mWindowSurface->Commit(aInvalidRegion);
-          }
-        }));
-    return;
-  }
-#endif
   MutexAutoLock lock(mMutex);
   
-  if (mWindowSurface && mWindowSurfaceValid) {
-    mWindowSurface->Commit(aInvalidRegion);
+  if (!mWindowSurface || !mWindowSurfaceValid) {
+    return;
   }
+#if defined(MOZ_WAYLAND)
+  if (GdkIsWaylandDisplay()) {
+    
+    
+    if (!mWidget) {
+      return;
+    }
+    if (moz_container_wayland_is_commiting_to_parent(
+            mWidget->GetMozContainer())) {
+      
+      
+      NS_DispatchToMainThread(NS_NewRunnableFunction(
+          "WindowSurfaceProvider::EndRemoteDrawingInRegion",
+          [RefPtr{mWidget}, this, aInvalidRegion]() {
+            MutexAutoLock lock(mMutex);
+            
+            if (mWindowSurface && mWindowSurfaceValid) {
+              mWindowSurface->Commit(aInvalidRegion);
+            }
+          }));
+      return;
+    }
+  }
+#endif
+  mWindowSurface->Commit(aInvalidRegion);
 }
 
 }  
