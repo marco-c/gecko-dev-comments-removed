@@ -6,12 +6,12 @@
 
 #include "frontend/AbstractScopePtr.h"
 
-#include "mozilla/Maybe.h"
+#include "mozilla/Assertions.h"
 
 #include "frontend/CompilationStencil.h"  
 #include "frontend/Stencil.h"
-#include "js/GCPolicyAPI.h"
-#include "js/GCVariant.h"
+#include "js/Vector.h"
+#include "vm/Scope.h"  
 
 using namespace js;
 using namespace js::frontend;
