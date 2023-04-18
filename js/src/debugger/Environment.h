@@ -45,28 +45,28 @@ class DebuggerEnvironment : public NativeObject {
 
   DebuggerEnvironmentType type() const;
   mozilla::Maybe<ScopeKind> scopeKind() const;
-  [[nodiscard]] bool getParent(JSContext* cx,
-                               MutableHandleDebuggerEnvironment result) const;
+  [[nodiscard]] bool getParent(
+      JSContext* cx, MutableHandle<DebuggerEnvironment*> result) const;
   [[nodiscard]] bool getObject(JSContext* cx,
-                               MutableHandleDebuggerObject result) const;
-  [[nodiscard]] bool getCalleeScript(JSContext* cx,
-                                     MutableHandleDebuggerScript result) const;
+                               MutableHandle<DebuggerObject*> result) const;
+  [[nodiscard]] bool getCalleeScript(
+      JSContext* cx, MutableHandle<DebuggerScript*> result) const;
   bool isDebuggee() const;
   bool isOptimized() const;
 
   [[nodiscard]] static bool getNames(JSContext* cx,
-                                     HandleDebuggerEnvironment environment,
+                                     Handle<DebuggerEnvironment*> environment,
                                      MutableHandleIdVector result);
   [[nodiscard]] static bool find(JSContext* cx,
-                                 HandleDebuggerEnvironment environment,
+                                 Handle<DebuggerEnvironment*> environment,
                                  HandleId id,
-                                 MutableHandleDebuggerEnvironment result);
-  [[nodiscard]] static bool getVariable(JSContext* cx,
-                                        HandleDebuggerEnvironment environment,
-                                        HandleId id, MutableHandleValue result);
-  [[nodiscard]] static bool setVariable(JSContext* cx,
-                                        HandleDebuggerEnvironment environment,
-                                        HandleId id, HandleValue value);
+                                 MutableHandle<DebuggerEnvironment*> result);
+  [[nodiscard]] static bool getVariable(
+      JSContext* cx, Handle<DebuggerEnvironment*> environment, HandleId id,
+      MutableHandleValue result);
+  [[nodiscard]] static bool setVariable(
+      JSContext* cx, Handle<DebuggerEnvironment*> environment, HandleId id,
+      HandleValue value);
 
   bool isInstance() const;
   Debugger* owner() const;
