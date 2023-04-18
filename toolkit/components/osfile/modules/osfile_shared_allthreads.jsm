@@ -41,6 +41,7 @@ if (typeof Components != "undefined") {
   Meta = ChromeUtils.import("resource://gre/modules/PromiseWorker.jsm")
     .BasePromiseWorker.Meta;
 } else {
+  
   importScripts("resource://gre/modules/workers/require.js");
   Meta = require("resource://gre/modules/workers/PromiseWorker.js").Meta;
 }

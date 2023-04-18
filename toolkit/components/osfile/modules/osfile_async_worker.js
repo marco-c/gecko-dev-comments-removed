@@ -21,6 +21,9 @@ if (this.Components) {
     loaded: null,
   };
 
+  
+  
+  
   importScripts("resource://gre/modules/osfile.jsm");
 
   let PromiseWorker = require("resource://gre/modules/workers/PromiseWorker.js");
