@@ -251,6 +251,13 @@ class nsAccUtils {
 
 
   static Accessible* GetAccessibleByID(Accessible* aDoc, uint64_t aID);
+
+  
+
+
+
+
+  static void DocumentURL(Accessible* aDoc, nsAString& aURL);
 };
 
 }  
