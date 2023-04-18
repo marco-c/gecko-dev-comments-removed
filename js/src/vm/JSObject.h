@@ -170,6 +170,10 @@ class JSObject
     return shape()->hasObjectFlag(flag);
   }
 
+  bool hasAnyFlag(js::ObjectFlags flags) const {
+    return shape()->objectFlags().hasAnyFlag(flags);
+  }
+
   
   
   
