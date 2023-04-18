@@ -171,6 +171,23 @@ var TabManager = {
 
 
 
+  getBrowsingContextById(id) {
+    const browser = this.getBrowserById(id);
+    if (browser) {
+      return browser.browsingContext;
+    }
+
+    return BrowsingContext.get(id);
+  },
+
+  
+
+
+
+
+
+
+
 
   getIdForBrowser(browserElement) {
     if (browserElement === null) {

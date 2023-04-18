@@ -107,13 +107,7 @@ class BrowsingContextModule extends Module {
         `Expected "parent" to be a string, got ${parentId}`
       );
 
-      
-      
-      const browser = TabManager.getBrowserById(parentId);
-      contexts =
-        browser !== null
-          ? [browser.browsingContext]
-          : [this.#getBrowsingContext(parentId)];
+      contexts = [this.#getBrowsingContext(parentId)];
     } else {
       
       contexts = TabManager.browsers.map(browser => browser.browsingContext);
@@ -143,7 +137,7 @@ class BrowsingContextModule extends Module {
       return null;
     }
 
-    const context = BrowsingContext.get(contextId);
+    const context = TabManager.getBrowsingContextById(contextId);
     if (context === null) {
       throw new error.NoSuchFrameError(
         `Browsing Context with id ${contextId} not found`
