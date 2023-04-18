@@ -178,10 +178,18 @@ class ProfileBuffer final {
   
   
   
-  mutable mozilla::ProfileBufferChunkManagerSingle mWorkerChunkManager{
-      mozilla::ProfileBufferChunk::Create(
+  mutable mozilla::Maybe<mozilla::ProfileBufferChunkManagerSingle>
+      mMaybeWorkerChunkManager;
+  mozilla::ProfileBufferChunkManagerSingle& WorkerChunkManager() const {
+    if (mMaybeWorkerChunkManager.isNothing()) {
+      
+      
+      mMaybeWorkerChunkManager.emplace(
           mozilla::ProfileBufferChunk::SizeofChunkMetadata() +
-          mozilla::ProfileBufferChunkManager::scExpectedMaximumStackSize)};
+          mozilla::ProfileBufferChunkManager::scExpectedMaximumStackSize);
+    }
+    return *mMaybeWorkerChunkManager;
+  }
 
   
   
