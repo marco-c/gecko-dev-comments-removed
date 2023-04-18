@@ -1099,10 +1099,6 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   
   void UIResolutionChangedInternal();
 
-  
-  
-  void UIResolutionChangedInternalScale(double aScale);
-
   void SetImgAnimations(nsIContent* aParent, uint16_t aMode);
   void SetSMILAnimations(mozilla::dom::Document* aDoc, uint16_t aNewMode,
                          uint16_t aOldMode);

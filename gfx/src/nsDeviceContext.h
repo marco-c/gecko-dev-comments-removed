@@ -206,13 +206,7 @@ class nsDeviceContext final {
 
 
 
-
-
-
-
-
-
-  bool CheckDPIChange(double* aScale = nullptr);
+  bool CheckDPIChange();
 
   
 
@@ -244,7 +238,7 @@ class nsDeviceContext final {
   already_AddRefed<gfxContext> CreateRenderingContextCommon(
       bool aWantReferenceContext);
 
-  void SetDPI(double* aScale = nullptr);
+  void SetDPI();
   void ComputeClientRectUsingScreen(nsRect* outRect);
   void ComputeFullAreaUsingScreen(nsRect* outRect);
   void FindScreen(nsIScreen** outScreen);
