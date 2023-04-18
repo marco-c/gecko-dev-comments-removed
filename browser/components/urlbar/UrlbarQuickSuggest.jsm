@@ -40,6 +40,8 @@ const NONSPONSORED_IAB_CATEGORIES = new Set(["5 - Education"]);
 const FEATURE_AVAILABLE = "quickSuggestEnabled";
 const SEEN_DIALOG_PREF = "quicksuggest.showedOnboardingDialog";
 const RESTARTS_PREF = "quicksuggest.seenRestarts";
+const DIALOG_VERSION_PREF = "quicksuggest.onboardingDialogVersion";
+const DIALOG_VARIATION_PREF = "quickSuggestOnboardingDialogVariation";
 
 
 
@@ -256,12 +258,19 @@ class Suggestions {
     };
     win.addEventListener("keydown", keyListener, true);
 
-    let params = { choice: undefined };
+    let variationType;
+    try {
+      
+      variationType = UrlbarPrefs.get(DIALOG_VARIATION_PREF).toLowerCase();
+    } catch (e) {}
+
+    let params = { choice: undefined, variationType };
     await win.gDialogBox.open(ONBOARDING_URI, params);
 
     win.removeEventListener("keydown", keyListener, true);
 
     UrlbarPrefs.set(SEEN_DIALOG_PREF, true);
+    UrlbarPrefs.set(DIALOG_VERSION_PREF, 1);
 
     
     

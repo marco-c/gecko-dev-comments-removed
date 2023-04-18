@@ -252,6 +252,9 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["quicksuggest.dataCollection.enabled", false],
 
   
+  ["quicksuggest.onboardingDialogVersion", 0],
+
+  
   ["quicksuggest.shouldShowOnboardingDialog", true],
 
   
