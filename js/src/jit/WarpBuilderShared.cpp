@@ -65,11 +65,18 @@ MInstruction* WarpBuilderShared::makeSpreadCall(CallInfo& callInfo,
                                                 bool isSameRealm,
                                                 WrappedFunction* target) {
   
-  MOZ_ASSERT(!callInfo.constructing());
-
-  
   MElements* elements = MElements::New(alloc(), callInfo.arrayArg());
   current->add(elements);
+
+  if (callInfo.constructing()) {
+    auto* construct =
+        MConstructArray::New(alloc(), target, callInfo.callee(), elements,
+                             callInfo.thisArg(), callInfo.getNewTarget());
+    if (isSameRealm) {
+      construct->setNotCrossRealm();
+    }
+    return construct;
+  }
 
   auto* apply = MApplyArray::New(alloc(), target, callInfo.callee(), elements,
                                  callInfo.thisArg());
