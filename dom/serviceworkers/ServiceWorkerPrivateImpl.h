@@ -50,10 +50,17 @@ class ServiceWorkerPrivateImpl final : public ServiceWorkerPrivate::Inner,
 
   RefPtr<GenericPromise> SetSkipWaitingFlag();
 
+  static void ReportRunning();
+
  private:
   class RAIIActorPtrHolder;
 
   ~ServiceWorkerPrivateImpl();
+
+  
+
+
+  void UpdateRunning(int32_t aDelta, int32_t aFetchDelta);
 
   
 
@@ -243,6 +250,15 @@ class ServiceWorkerPrivateImpl final : public ServiceWorkerPrivate::Inner,
   RemoteWorkerData mRemoteWorkerData;
 
   TimeStamp mServiceWorkerLaunchTimeStart;
+
+  
+  
+  static uint32_t sRunningServiceWorkers;
+  static uint32_t sRunningServiceWorkersFetch;
+  static uint32_t sRunningServiceWorkersMax;
+  static uint32_t sRunningServiceWorkersFetchMax;
+
+  bool mHandlesFetch{false};
 };
 
 }  

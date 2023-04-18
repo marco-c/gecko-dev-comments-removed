@@ -5,6 +5,7 @@
 
 
 #include "ServiceWorkerRegistrar.h"
+#include "ServiceWorkerManager.h"
 #include "mozilla/dom/ServiceWorkerRegistrarTypes.h"
 #include "mozilla/dom/DOMException.h"
 #include "mozilla/net/MozURL.h"
@@ -44,6 +45,13 @@
 #include "ServiceWorkerUtils.h"
 
 using namespace mozilla::ipc;
+
+extern mozilla::LazyLogModule sWorkerTelemetryLog;
+
+#ifdef LOG
+#  undef LOG
+#endif
+#define LOG(_args) MOZ_LOG(sWorkerTelemetryLog, LogLevel::Debug, _args);
 
 namespace mozilla {
 namespace dom {
@@ -281,6 +289,18 @@ void ServiceWorkerRegistrar::UnregisterServiceWorker(
 
     for (uint32_t i = 0; i < mData.Length(); ++i) {
       if (Equivalent(tmp, mData[i])) {
+        gServiceWorkersRegistered--;
+        if (mData[i].currentWorkerHandlesFetch()) {
+          gServiceWorkersRegisteredFetch--;
+        }
+        
+        Telemetry::ScalarSet(Telemetry::ScalarID::SERVICEWORKER_REGISTRATIONS,
+                             u"All"_ns, gServiceWorkersRegistered);
+        Telemetry::ScalarSet(Telemetry::ScalarID::SERVICEWORKER_REGISTRATIONS,
+                             u"Fetch"_ns, gServiceWorkersRegisteredFetch);
+        LOG(("Unregister ServiceWorker: %u, fetch %u\n",
+             gServiceWorkersRegistered, gServiceWorkersRegisteredFetch));
+
         mData.RemoveElementAt(i);
         mDataGeneration = GetNextGeneration();
         deleted = true;
@@ -900,8 +920,14 @@ void ServiceWorkerRegistrar::RegisterServiceWorkerInternal(
   bool found = false;
   for (uint32_t i = 0, len = mData.Length(); i < len; ++i) {
     if (Equivalent(aData, mData[i])) {
-      mData[i] = aData;
       found = true;
+      if (mData[i].currentWorkerHandlesFetch()) {
+        
+        
+        
+        gServiceWorkersRegisteredFetch--;
+      }
+      mData[i] = aData;
       break;
     }
   }
@@ -909,7 +935,20 @@ void ServiceWorkerRegistrar::RegisterServiceWorkerInternal(
   if (!found) {
     MOZ_ASSERT(ServiceWorkerRegistrationDataIsValid(aData));
     mData.AppendElement(aData);
+    
+    gServiceWorkersRegistered++;
   }
+  
+  if (aData.currentWorkerHandlesFetch()) {
+    gServiceWorkersRegisteredFetch++;
+  }
+  
+  Telemetry::ScalarSet(Telemetry::ScalarID::SERVICEWORKER_REGISTRATIONS,
+                       u"All"_ns, gServiceWorkersRegistered);
+  Telemetry::ScalarSet(Telemetry::ScalarID::SERVICEWORKER_REGISTRATIONS,
+                       u"Fetch"_ns, gServiceWorkersRegisteredFetch);
+  LOG(("Register: %u, fetch %u\n", gServiceWorkersRegistered,
+       gServiceWorkersRegisteredFetch));
 
   mDataGeneration = GetNextGeneration();
 }
