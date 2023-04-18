@@ -27,12 +27,6 @@ pref("security.content.signature.root_hash",
 pref("security.default_personal_cert",   "Ask Every Time");
 pref("security.remember_cert_checkbox_default_setting", true);
 
-pref("security.pki.cert_short_lifetime_in_days", 10);
-
-
-
-pref("security.pki.sha1_enforcement_level", 1);
-
 
 
 
@@ -50,23 +44,6 @@ pref("security.signed_app_signatures.policy", 2);
 
 
 
-
-
-#ifdef RELEASE_OR_BETA
-  pref("security.pki.netscape_step_up_policy", 1);
-#else
-  pref("security.pki.netscape_step_up_policy", 2);
-#endif
-
-
-
-
-pref("security.pki.certificate_transparency.mode", 0);
-
-
-
-
-
 pref("security.webauth.webauthn_enable_softtoken", false);
 
 #ifdef MOZ_WIDGET_ANDROID
@@ -78,12 +55,6 @@ pref("security.webauth.webauthn_enable_softtoken", false);
 
 pref("security.xfocsp.errorReporting.enabled", true);
 pref("security.xfocsp.errorReporting.automatic", false);
-
-
-
-
-
-pref("security.pki.crlite_mode", 3);
 
 
 
