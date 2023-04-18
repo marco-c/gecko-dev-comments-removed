@@ -7,11 +7,11 @@
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/Monitor.h"
-#include "mozilla/MozPromise.h"
 #include "mozilla/SyncRunnable.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/WindowsProcessMitigations.h"
+#include "mozilla/dom/ContentChild.h"
 #include "mozilla/ipc/ByteBuf.h"
 
 #include "nsComponentManagerUtils.h"
@@ -522,6 +522,27 @@ static RefPtr<HIconPromise> GetIconHandleFromURLAsync(nsIMozIconURI* aUrl) {
   return promise;
 }
 
+static RefPtr<nsIconChannel::ByteBufPromise> GetIconBufferFromURLAsync(
+    nsIMozIconURI* aUrl) {
+  RefPtr<nsIconChannel::ByteBufPromise::Private> promise =
+      new nsIconChannel::ByteBufPromise::Private(__func__);
+
+  GetIconHandleFromURLAsync(aUrl)->Then(
+      GetCurrentSerialEventTarget(), __func__,
+      [promise](HICON aIcon) {
+        ByteBuf iconBuffer;
+        nsresult rv = MakeIconBuffer(aIcon, &iconBuffer);
+        if (NS_SUCCEEDED(rv)) {
+          promise->Resolve(std::move(iconBuffer), __func__);
+        } else {
+          promise->Reject(rv, __func__);
+        }
+      },
+      [promise](nsresult rv) { promise->Reject(rv, __func__); });
+
+  return promise;
+}
+
 static nsresult WriteByteBufToOutputStream(const ByteBuf& aBuffer,
                                            nsIAsyncOutputStream* aStream) {
   uint32_t written = 0;
@@ -644,6 +665,20 @@ nsIconChannel::GetURI(nsIURI** aURI) {
   return NS_OK;
 }
 
+
+RefPtr<nsIconChannel::ByteBufPromise> nsIconChannel::GetIconAsync(
+    nsIURI* aURI) {
+  MOZ_ASSERT(XRE_IsParentProcess());
+
+  nsresult rv = NS_OK;
+  nsCOMPtr<nsIMozIconURI> iconURI(do_QueryInterface(aURI, &rv));
+  if (NS_FAILED(rv)) {
+    return ByteBufPromise::CreateAndReject(rv, __func__);
+  }
+
+  return GetIconBufferFromURLAsync(iconURI);
+}
+
 NS_IMETHODIMP
 nsIconChannel::Open(nsIInputStream** aStream) {
   nsCOMPtr<nsIStreamListener> listener;
@@ -751,22 +786,47 @@ nsresult nsIconChannel::StartAsyncOpen() {
   
   
   
-  
-  
-  
-  RefPtr<HIconPromise> iconPromise = GetIconHandleFromURLAsync(iconURI);
-  iconPromise->Then(
-      GetCurrentSerialEventTarget(), __func__,
-      [outputStream](HICON aIcon) {
-        ByteBuf iconBuffer;
-        nsresult rv = MakeIconBuffer(aIcon, &iconBuffer);
-        if (NS_SUCCEEDED(rv)) {
-          rv = WriteByteBufToOutputStream(iconBuffer, outputStream);
-        }
+  using ContentChild = mozilla::dom::ContentChild;
+  if (auto* contentChild = ContentChild::GetSingleton()) {
+    RefPtr<ContentChild::GetSystemIconPromise> iconPromise =
+        contentChild->SendGetSystemIcon(mUrl);
+    if (!iconPromise) {
+      return NS_ERROR_UNEXPECTED;
+    }
 
-        outputStream->CloseWithStatus(rv);
-      },
-      [outputStream](nsresult rv) { outputStream->CloseWithStatus(rv); });
+    iconPromise->Then(
+        mozilla::GetCurrentSerialEventTarget(), __func__,
+        [outputStream](
+            mozilla::Tuple<nsresult, mozilla::Maybe<ByteBuf>>&& aArg) {
+          nsresult rv = mozilla::Get<0>(aArg);
+          mozilla::Maybe<ByteBuf> iconBuffer = std::move(mozilla::Get<1>(aArg));
+
+          if (NS_SUCCEEDED(rv)) {
+            MOZ_RELEASE_ASSERT(iconBuffer);
+            rv = WriteByteBufToOutputStream(*iconBuffer, outputStream);
+          }
+
+          outputStream->CloseWithStatus(rv);
+        },
+        [outputStream](mozilla::ipc::ResponseRejectReason) {
+          outputStream->CloseWithStatus(NS_ERROR_FAILURE);
+        });
+  } else {
+    
+    
+    
+    
+    
+    
+    GetIconBufferFromURLAsync(iconURI)->Then(
+        GetCurrentSerialEventTarget(), __func__,
+        [outputStream](ByteBuf aIconBuffer) {
+          nsresult rv =
+              WriteByteBufToOutputStream(std::move(aIconBuffer), outputStream);
+          outputStream->CloseWithStatus(rv);
+        },
+        [outputStream](nsresult rv) { outputStream->CloseWithStatus(rv); });
+  }
 
   
   
