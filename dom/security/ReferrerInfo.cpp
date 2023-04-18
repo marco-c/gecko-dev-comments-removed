@@ -21,6 +21,7 @@
 
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/ContentBlocking.h"
+#include "mozilla/ContentBlockingAllowList.h"
 #include "mozilla/net/CookieJarSettings.h"
 #include "mozilla/net/HttpBaseChannel.h"
 #include "mozilla/dom/Document.h"
@@ -715,6 +716,27 @@ bool ReferrerInfo::ShouldIgnoreLessRestrictedPolicies(
     if (!isEnabledForTopNavigation) {
       return false;
     }
+
+    
+    
+    
+    
+    if (XRE_IsParentProcess()) {
+      nsCOMPtr<nsICookieJarSettings> cookieJarSettings;
+      Unused << loadInfo->GetCookieJarSettings(
+          getter_AddRefs(cookieJarSettings));
+
+      net::CookieJarSettings::Cast(cookieJarSettings)
+          ->UpdateIsOnContentBlockingAllowList(aChannel);
+    }
+  }
+
+  
+  
+  
+  
+  if (ContentBlockingAllowList::Check(aChannel)) {
+    return false;
   }
 
   bool isCrossSite = IsCrossSiteRequest(aChannel);
@@ -1282,7 +1304,7 @@ nsresult ReferrerInfo::ComputeReferrer(nsIHttpChannel* aChannel) {
   }
 
   if (mPolicy == ReferrerPolicy::_empty ||
-      ShouldIgnoreLessRestrictedPolicies(aChannel, mPolicy)) {
+      ShouldIgnoreLessRestrictedPolicies(aChannel, mOriginalPolicy)) {
     nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
     OriginAttributes attrs = loadInfo->GetOriginAttributes();
     bool isPrivate = attrs.mPrivateBrowsingId > 0;
@@ -1295,6 +1317,16 @@ nsresult ReferrerInfo::ComputeReferrer(nsIHttpChannel* aChannel) {
 
     mPolicy = GetDefaultReferrerPolicy(aChannel, uri, isPrivate);
     mOverridePolicyByDefault = true;
+  }
+
+  
+  
+  
+  
+  if (!mOverridePolicyByDefault && mOriginalPolicy != ReferrerPolicy::_empty &&
+      mPolicy != mOriginalPolicy) {
+    referrer = nullptr;
+    mPolicy = mOriginalPolicy;
   }
 
   if (mPolicy == ReferrerPolicy::No_referrer) {
