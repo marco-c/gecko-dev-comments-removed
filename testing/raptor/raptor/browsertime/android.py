@@ -79,11 +79,6 @@ class BrowsertimeAndroid(PerftestAndroid, Browsertime):
                     "--browser",
                     "firefox",
                     "--android",
-                    
-                    
-                    
-                    "--firefox.binaryPath",
-                    self.browsertime_node,
                     "--firefox.android.package",
                     self.config["binary"],
                     "--firefox.android.activity",
