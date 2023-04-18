@@ -5017,7 +5017,13 @@ HttpBaseChannel::TimingAllowCheck(nsIPrincipal* aOrigin, bool* _retval) {
 
   bool sameOrigin = false;
   rv = resourcePrincipal->Equals(aOrigin, &sameOrigin);
-  if (NS_SUCCEEDED(rv) && sameOrigin) {
+
+  nsAutoCString serializedOrigin;
+  nsContentSecurityManager::GetSerializedOrigin(aOrigin, resourcePrincipal,
+                                                serializedOrigin, mLoadInfo);
+
+  
+  if (sameOrigin && !serializedOrigin.IsEmpty()) {
     *_retval = true;
     return NS_OK;
   }
@@ -5028,9 +5034,6 @@ HttpBaseChannel::TimingAllowCheck(nsIPrincipal* aOrigin, bool* _retval) {
     *_retval = false;
     return NS_OK;
   }
-
-  nsAutoCString origin;
-  aOrigin->GetAsciiOrigin(origin);
 
   Tokenizer p(headerValue);
   Tokenizer::Token t;
@@ -5044,7 +5047,7 @@ HttpBaseChannel::TimingAllowCheck(nsIPrincipal* aOrigin, bool* _retval) {
       nsHttp::TrimHTTPWhitespace(headerItem, headerItem);
       
       
-      if (headerItem == origin || headerItem == "*") {
+      if (headerItem == serializedOrigin || headerItem == "*") {
         *_retval = true;
         return NS_OK;
       }

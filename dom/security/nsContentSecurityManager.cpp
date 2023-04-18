@@ -1563,6 +1563,46 @@ nsresult nsContentSecurityManager::CheckChannel(nsIChannel* aChannel) {
 }
 
 
+void nsContentSecurityManager::GetSerializedOrigin(
+    nsIPrincipal* aOrigin, nsIPrincipal* aResourceOrigin,
+    nsACString& aSerializedOrigin, nsILoadInfo* aLoadInfo) {
+  
+  
+  nsCOMPtr<nsIPrincipal> lastOrigin;
+  for (nsIRedirectHistoryEntry* entry : aLoadInfo->RedirectChain()) {
+    if (!lastOrigin) {
+      entry->GetPrincipal(getter_AddRefs(lastOrigin));
+      continue;
+    }
+
+    nsCOMPtr<nsIPrincipal> currentOrigin;
+    entry->GetPrincipal(getter_AddRefs(currentOrigin));
+
+    if (!currentOrigin->Equals(lastOrigin) && !lastOrigin->Equals(aOrigin)) {
+      return;
+    }
+    lastOrigin = currentOrigin;
+  }
+
+  
+  
+  
+  
+  if (!lastOrigin) {
+    aOrigin->GetAsciiOrigin(aSerializedOrigin);
+    return;
+  }
+
+  
+  
+  if (lastOrigin->Equals(aResourceOrigin) && !lastOrigin->Equals(aOrigin)) {
+    return;
+  }
+
+  aOrigin->GetAsciiOrigin(aSerializedOrigin);
+}
+
+
 
 NS_IMETHODIMP
 nsContentSecurityManager::PerformSecurityCheck(
