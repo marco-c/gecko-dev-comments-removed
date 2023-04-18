@@ -774,18 +774,18 @@ RefPtr<IDBRequest> IDBObjectStore::AddOrPut(JSContext* aCx,
   StructuredCloneWriteInfo cloneWriteInfo(mTransaction->Database());
   nsTArray<IndexUpdateInfo> updateInfos;
 
-  {
-    const auto autoStateRestore =
-        mTransaction->TemporarilyTransitionToInactive();
-    GetAddInfo(aCx, aValueWrapper, aKey, cloneWriteInfo, key, updateInfos, aRv);
-  }
-
-  if (aRv.Failed()) {
+  
+  
+  mTransaction->TransitionToInactive();
+  GetAddInfo(aCx, aValueWrapper, aKey, cloneWriteInfo, key, updateInfos, aRv);
+  if (mTransaction
+          ->IsAborted()) {  
     return nullptr;
   }
+  MOZ_ASSERT(mTransaction->IsInactive());
+  mTransaction->TransitionToActive();
 
-  if (!mTransaction->IsActive()) {
-    aRv.Throw(NS_ERROR_DOM_INDEXEDDB_TRANSACTION_INACTIVE_ERR);
+  if (aRv.Failed()) {
     return nullptr;
   }
 
