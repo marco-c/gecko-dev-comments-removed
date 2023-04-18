@@ -4,42 +4,122 @@
 
 
 
+#include "nsILoadGroup.h"
+#include "nsILoadInfo.h"
+#include "nsIPrincipal.h"
+#include "nsICookieJarSettings.h"
+#include "nsNetUtil.h"
+#include "nsThreadUtils.h"
+#include "nsXULAppAPI.h"
 #include "mozilla/ClearOnShutdown.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/dom/FetchService.h"
 #include "mozilla/dom/InternalRequest.h"
 #include "mozilla/dom/InternalResponse.h"
-#include "nsXULAppAPI.h"
+#include "mozilla/dom/PerformanceStorage.h"
+#include "mozilla/ipc/BackgroundUtils.h"
 
 namespace mozilla::dom {
 
+
+
 FetchService::FetchInstance::FetchInstance(SafeRefPtr<InternalRequest> aRequest)
     : mRequest(std::move(aRequest)) {}
+
+FetchService::FetchInstance::~FetchInstance() = default;
 
 nsresult FetchService::FetchInstance::Initialize(nsIChannel* aChannel) {
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(NS_IsMainThread());
 
   
-  
-  
-  
-  
+  const mozilla::UniquePtr<mozilla::ipc::PrincipalInfo>& principalInfo =
+      mRequest->GetPrincipalInfo();
+  MOZ_ASSERT(principalInfo);
+  auto principalOrErr = PrincipalInfoToPrincipal(*principalInfo);
+  if (NS_WARN_IF(principalOrErr.isErr())) {
+    return principalOrErr.unwrapErr();
+  }
+  mPrincipal = principalOrErr.unwrap();
 
-  return NS_ERROR_NOT_IMPLEMENTED;
+  
+  if (aChannel) {
+    nsresult rv;
+    nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+    MOZ_ASSERT(loadInfo);
+
+    
+    
+    nsCOMPtr<nsIPrincipal> triggeringPrincipal;
+    rv = loadInfo->GetTriggeringPrincipal(getter_AddRefs(triggeringPrincipal));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+    if (!mPrincipal->Equals(triggeringPrincipal)) {
+      return NS_ERROR_UNEXPECTED;
+    }
+
+    
+    rv = aChannel->GetLoadGroup(getter_AddRefs(mLoadGroup));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+    if (!mLoadGroup) {
+      rv = NS_NewLoadGroup(getter_AddRefs(mLoadGroup), mPrincipal);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+    }
+
+    
+    rv = loadInfo->GetCookieJarSettings(getter_AddRefs(mCookieJarSettings));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    
+    mPerformanceStorage = loadInfo->GetPerformanceStorage();
+  } else {
+    
+    
+    
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
+
+  return NS_OK;
 }
-
-FetchService::FetchInstance::~FetchInstance() = default;
 
 RefPtr<FetchServiceResponsePromise> FetchService::FetchInstance::Fetch() {
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(NS_IsMainThread());
 
+  MOZ_ASSERT(mPrincipal);
+  MOZ_ASSERT(mLoadGroup);
+
+  nsresult rv;
+
+  
+  RefPtr<FetchDriver> fetch = MakeRefPtr<FetchDriver>(
+      mRequest.clonePtr(),         
+      mPrincipal,                  
+      mLoadGroup,                  
+      GetMainThreadEventTarget(),  
+      mCookieJarSettings,          
+      mPerformanceStorage,         
+      false                        
+  );
+
   
   
   
   
   
-  
+  rv = fetch->Fetch(nullptr, this);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return FetchServiceResponsePromise::CreateAndResolve(
+        InternalResponse::NetworkError(rv), __func__);
+  }
+
   return mResponsePromiseHolder.Ensure(__func__);
 }
 
@@ -56,7 +136,6 @@ void FetchService::FetchInstance::OnResponseAvailableInternal(
   
   RefPtr<FetchServiceResponsePromise> responsePromise =
       mResponsePromiseHolder.Ensure(__func__);
-
   RefPtr<FetchService> fetchService = FetchService::GetInstance();
   MOZ_ASSERT(fetchService);
   auto entry = fetchService->mFetchInstanceTable.Lookup(responsePromise);
@@ -73,6 +152,8 @@ void FetchService::FetchInstance::OnResponseAvailableInternal(
 bool FetchService::FetchInstance::NeedOnDataAvailable() { return false; }
 void FetchService::FetchInstance::OnDataAvailable() {}
 void FetchService::FetchInstance::FlushConsoleReport() {}
+
+
 
 StaticRefPtr<FetchService> gInstance;
 
