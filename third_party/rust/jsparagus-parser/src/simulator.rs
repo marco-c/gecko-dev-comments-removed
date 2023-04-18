@@ -26,19 +26,19 @@ pub struct Simulator<'alloc, 'parser> {
     
     
     
-    sim_state_stack: ArrayVec<[usize; 4]>,
+    sim_state_stack: ArrayVec<usize, 4>,
     
     
     
     
     
-    sim_node_stack: ArrayVec<[TermValue<()>; 4]>,
+    sim_node_stack: ArrayVec<TermValue<()>, 4>,
     
     
     
     
     
-    replay_stack: ArrayVec<[TermValue<()>; 4]>,
+    replay_stack: ArrayVec<TermValue<()>, 4>,
 }
 
 impl<'alloc, 'parser> ParserTrait<'alloc, ()> for Simulator<'alloc, 'parser> {
