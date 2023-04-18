@@ -75,7 +75,8 @@ add_task(async function test_create_and_remove_bookmarks() {
   );
 
   
-  PO._places.controller.doCommand("cmd_delete");
+  gLibrary.document.getElementById("placesList").focus();
+  EventUtils.synthesizeKey("VK_DELETE", {}, gLibrary);
 
   await promiseItemRemovedNotification;
 
