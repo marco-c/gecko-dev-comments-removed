@@ -10,7 +10,7 @@
 #include "nsILoadGroup.h"
 #include "nsIDocumentLoader.h"
 #include "nsIStreamListener.h"
-#include "nsIURI.h"
+#include "nsIURL.h"
 #include "nsIChannel.h"
 #include "nsIInterfaceRequestor.h"
 #include "nsIInterfaceRequestorUtils.h"
@@ -268,31 +268,53 @@ nsresult nsDocumentOpenInfo::DispatchContent(nsIRequest* request) {
 
   LOG(("  forceExternalHandling: %s", forceExternalHandling ? "yes" : "no"));
 
-  
-  
-  
-  
-  if (forceExternalHandling &&
-      mContentType.LowerCaseEqualsASCII(APPLICATION_PDF) &&
-      StaticPrefs::browser_download_improvements_to_download_panel()) {
-    nsCOMPtr<nsILoadInfo> loadInfo;
-    aChannel->GetLoadInfo(getter_AddRefs(loadInfo));
+  if (forceExternalHandling) {
+    
+    
+    bool isPDF = mContentType.LowerCaseEqualsASCII(APPLICATION_PDF);
+    if (!isPDF && mContentType.LowerCaseEqualsASCII(APPLICATION_OCTET_STREAM)) {
+      nsAutoString flname;
+      aChannel->GetContentDispositionFilename(flname);
+      isPDF = StringEndsWith(flname, u".pdf"_ns);
+      if (!isPDF) {
+        nsCOMPtr<nsIURI> uri;
+        aChannel->GetURI(getter_AddRefs(uri));
+        nsCOMPtr<nsIURL> url(do_QueryInterface(uri));
+        if (url) {
+          nsAutoCString ext;
+          url->GetFileExtension(ext);
+          isPDF = ext.EqualsLiteral("pdf");
+        }
+      }
+    }
 
-    nsCOMPtr<nsIMIMEInfo> mimeInfo;
+    
+    
+    
+    
+    
+    if (isPDF &&
+        StaticPrefs::browser_download_improvements_to_download_panel()) {
+      nsCOMPtr<nsILoadInfo> loadInfo;
+      aChannel->GetLoadInfo(getter_AddRefs(loadInfo));
 
-    nsCOMPtr<nsIMIMEService> mimeSvc(do_GetService(NS_MIMESERVICE_CONTRACTID));
-    NS_ENSURE_TRUE(mimeSvc, NS_ERROR_FAILURE);
-    mimeSvc->GetFromTypeAndExtension(nsLiteralCString(APPLICATION_PDF), ""_ns,
-                                     getter_AddRefs(mimeInfo));
+      nsCOMPtr<nsIMIMEInfo> mimeInfo;
 
-    if (mimeInfo) {
-      int32_t action = nsIMIMEInfo::saveToDisk;
-      mimeInfo->GetPreferredAction(&action);
+      nsCOMPtr<nsIMIMEService> mimeSvc(
+          do_GetService(NS_MIMESERVICE_CONTRACTID));
+      NS_ENSURE_TRUE(mimeSvc, NS_ERROR_FAILURE);
+      mimeSvc->GetFromTypeAndExtension(nsLiteralCString(APPLICATION_PDF), ""_ns,
+                                       getter_AddRefs(mimeInfo));
 
-      bool alwaysAsk = true;
-      mimeInfo->GetAlwaysAskBeforeHandling(&alwaysAsk);
-      forceExternalHandling =
-          alwaysAsk || action != nsIMIMEInfo::handleInternally;
+      if (mimeInfo) {
+        int32_t action = nsIMIMEInfo::saveToDisk;
+        mimeInfo->GetPreferredAction(&action);
+
+        bool alwaysAsk = true;
+        mimeInfo->GetAlwaysAskBeforeHandling(&alwaysAsk);
+        forceExternalHandling =
+            alwaysAsk || action != nsIMIMEInfo::handleInternally;
+      }
     }
   }
 

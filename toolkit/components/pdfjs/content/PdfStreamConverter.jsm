@@ -1001,8 +1001,17 @@ PdfStreamConverter.prototype = {
     
     
     if (aFromType != "application/pdf") {
-      let ext = channelURI?.QueryInterface(Ci.nsIURL).fileExtension;
-      let isPDF = ext.toLowerCase() == "pdf";
+      
+      let isPDF = false;
+      try {
+        isPDF = aChannel.contentDispositionFilename.endsWith(".pdf");
+      } catch (ex) {}
+      if (!isPDF) {
+        isPDF =
+          channelURI?.QueryInterface(Ci.nsIURL).fileExtension.toLowerCase() ==
+          "pdf";
+      }
+
       let browsingContext = aChannel?.loadInfo.targetBrowsingContext;
       let toplevelOctetStream =
         aFromType == "application/octet-stream" &&
