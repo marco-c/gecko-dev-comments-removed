@@ -1367,7 +1367,7 @@ bool nsContentSecurityUtils::ValidateScriptFilename(JSContext* cx,
 
   auto kAllowedFilenamesExact = {
       
-      u"data:,new function() {\n  Components.utils.import(\"chrome://aboutsync/content/AboutSyncRedirector.js\");\n  AboutSyncRedirector.register();\n}"_ns,
+      u"data:,new function() {\n  const { AboutSyncRedirector } = ChromeUtils.import(\"chrome://aboutsync/content/AboutSyncRedirector.js\");\n  AboutSyncRedirector.register();\n}"_ns,
   };
 
   for (auto allowedFilename : kAllowedFilenamesExact) {

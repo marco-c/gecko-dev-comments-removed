@@ -1,4 +1,3 @@
-
 var prefetch = Cc["@mozilla.org/prefetch-service;1"].getService(
   Ci.nsIPrefetchService
 );
