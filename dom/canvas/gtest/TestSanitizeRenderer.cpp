@@ -5,10 +5,8 @@
 
 #include "gtest/gtest.h"
 
-namespace mozilla {
-namespace webgl {
+namespace mozilla::webgl {
 std::string SanitizeRenderer(const std::string&);
-}  
 }  
 
 TEST(SanitizeRenderer, TestLinuxRadeon)

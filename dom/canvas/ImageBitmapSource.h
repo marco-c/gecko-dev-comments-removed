@@ -7,8 +7,7 @@
 #ifndef mozilla_dom_ImageBitmapSource_h
 #define mozilla_dom_ImageBitmapSource_h
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 class
@@ -16,7 +15,6 @@ class
 typedef HTMLImageElementOrSVGImageElementOrHTMLCanvasElementOrHTMLVideoElementOrOffscreenCanvasOrImageBitmapOrBlobOrCanvasRenderingContext2DOrImageData
     ImageBitmapSource;
 
-}  
 }  
 
 #endif

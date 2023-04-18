@@ -15,9 +15,7 @@
 #  undef PostMessage
 #endif
 
-namespace mozilla {
-
-namespace dom {
+namespace mozilla::dom {
 
 class ClientManager;
 class ClientHandleChild;
@@ -102,7 +100,6 @@ class ClientHandle final : public ClientThing<ClientHandleChild> {
   NS_INLINE_DECL_REFCOUNTING(ClientHandle);
 };
 
-}  
 }  
 
 #endif  

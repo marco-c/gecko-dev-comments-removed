@@ -14,8 +14,7 @@
 
 #define RANDOM_BYTES_TO_SAMPLE 32
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -93,7 +92,6 @@ inline void GeneratePlaceholderCanvasData(uint32_t size, uint8_t* buffer) {
   FillPlaceholderCanvas(randomData, size, buffer);
 }
 
-}  
 }  
 
 #endif  

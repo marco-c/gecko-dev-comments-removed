@@ -13,8 +13,7 @@
 
 class nsIGlobalObject;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -44,7 +43,6 @@ void StartClientManagerOp(Func aFunc, const Arg& aArg, nsIGlobalObject* aGlobal,
       ->Track(*holder);
 }
 
-}  
 }  
 
 #endif  

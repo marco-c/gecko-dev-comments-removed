@@ -15,9 +15,7 @@
 #include "nsCOMPtr.h"
 #include "nsID.h"
 
-namespace mozilla {
-namespace dom {
-namespace cache {
+namespace mozilla::dom::cache {
 
 struct SavedRequest {
   SavedRequest() : mHasBodyId(false), mCacheId(0) {
@@ -47,8 +45,6 @@ struct SavedResponse {
   CacheId mCacheId;
 };
 
-}  
-}  
 }  
 
 #endif  
