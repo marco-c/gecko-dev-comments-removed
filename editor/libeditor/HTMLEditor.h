@@ -2078,10 +2078,8 @@ class HTMLEditor final : public EditorBase,
 
 
 
-
-
-  MOZ_CAN_RUN_SCRIPT already_AddRefed<nsIContent> SplitNodeWithTransaction(
-      const EditorDOMPoint& aStartOfRightNode, ErrorResult& aResult);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<nsCOMPtr<nsIContent>, nsresult>
+  SplitNodeWithTransaction(const EditorDOMPoint& aStartOfRightNode);
 
   enum class SplitAtEdges {
     

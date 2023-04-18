@@ -458,39 +458,31 @@ nsresult HTMLEditor::SetInlinePropertyOnTextNode(
   }
 
   
-  nsCOMPtr<nsIContent> textNodeForTheRange = &aText;
+  RefPtr<Text> textNodeForTheRange = &aText;
 
   
   EditorDOMPoint atEnd(textNodeForTheRange, aEndOffset);
   if (!atEnd.IsEndOfContainer()) {
     
-    ErrorResult error;
-    textNodeForTheRange = SplitNodeWithTransaction(atEnd, error);
-    if (NS_WARN_IF(Destroyed())) {
-      error = NS_ERROR_EDITOR_DESTROYED;
+    Result<nsCOMPtr<nsIContent>, nsresult> newLeftTextNodeOrError =
+        SplitNodeWithTransaction(atEnd);
+    if (MOZ_UNLIKELY(newLeftTextNodeOrError.isErr())) {
+      NS_WARNING("HTMLEditor::SplitNodeWithTransaction() failed");
+      return newLeftTextNodeOrError.unwrapErr();
     }
-    if (error.Failed()) {
-      NS_WARNING_ASSERTION(error.ErrorCodeIs(NS_ERROR_EDITOR_DESTROYED),
-                           "HTMLEditor::SplitNodeWithTransaction() failed");
-      return error.StealNSResult();
-    }
+    textNodeForTheRange = Text::FromNodeOrNull(newLeftTextNodeOrError.unwrap());
   }
 
   
   EditorDOMPoint atStart(textNodeForTheRange, aStartOffset);
   if (!atStart.IsStartOfContainer()) {
     
-    ErrorResult error;
-    nsCOMPtr<nsIContent> newLeftNode = SplitNodeWithTransaction(atStart, error);
-    if (NS_WARN_IF(Destroyed())) {
-      error = NS_ERROR_EDITOR_DESTROYED;
+    Result<nsCOMPtr<nsIContent>, nsresult> newLeftTextNodeOrError =
+        SplitNodeWithTransaction(atStart);
+    if (MOZ_UNLIKELY(newLeftTextNodeOrError.isErr())) {
+      NS_WARNING("HTMLEditor::SplitNodeWithTransaction() failed");
+      return newLeftTextNodeOrError.unwrapErr();
     }
-    if (error.Failed()) {
-      NS_WARNING_ASSERTION(error.ErrorCodeIs(NS_ERROR_EDITOR_DESTROYED),
-                           "HTMLEditor::SplitNodeWithTransaction() failed");
-      return error.StealNSResult();
-    }
-    Unused << newLeftNode;
   }
 
   if (aAttribute) {
@@ -2381,18 +2373,19 @@ nsresult HTMLEditor::RelativeFontChangeOnTextNode(FontSize aDir,
   aEndOffset = std::min(aTextNode.Length(), aEndOffset);
 
   
-  nsCOMPtr<nsIContent> textNodeForTheRange = &aTextNode;
+  RefPtr<Text> textNodeForTheRange = &aTextNode;
 
   
   EditorDOMPoint atEnd(textNodeForTheRange, aEndOffset);
   if (!atEnd.IsEndOfContainer()) {
     
-    ErrorResult error;
-    textNodeForTheRange = SplitNodeWithTransaction(atEnd, error);
-    if (error.Failed()) {
+    Result<nsCOMPtr<nsIContent>, nsresult> newLeftTextNodeOrError =
+        SplitNodeWithTransaction(atEnd);
+    if (MOZ_UNLIKELY(newLeftTextNodeOrError.isErr())) {
       NS_WARNING("HTMLEditor::SplitNodeWithTransaction() failed");
-      return error.StealNSResult();
+      return newLeftTextNodeOrError.unwrapErr();
     }
+    textNodeForTheRange = Text::FromNodeOrNull(newLeftTextNodeOrError.unwrap());
     MOZ_DIAGNOSTIC_ASSERT(textNodeForTheRange);
   }
 
@@ -2400,13 +2393,12 @@ nsresult HTMLEditor::RelativeFontChangeOnTextNode(FontSize aDir,
   EditorDOMPoint atStart(textNodeForTheRange, aStartOffset);
   if (!atStart.IsStartOfContainer()) {
     
-    ErrorResult error;
-    nsCOMPtr<nsIContent> newLeftNode = SplitNodeWithTransaction(atStart, error);
-    if (error.Failed()) {
+    Result<nsCOMPtr<nsIContent>, nsresult> newLeftTextNodeOrError =
+        SplitNodeWithTransaction(atStart);
+    if (MOZ_UNLIKELY(newLeftTextNodeOrError.isErr())) {
       NS_WARNING("HTMLEditor::SplitNodeWithTransaction() failed");
-      return error.StealNSResult();
+      return newLeftTextNodeOrError.unwrapErr();
     }
-    Unused << newLeftNode;
   }
 
   
