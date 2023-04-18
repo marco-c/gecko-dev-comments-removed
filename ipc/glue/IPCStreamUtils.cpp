@@ -289,10 +289,6 @@ void ActivateAndCleanupIPCStream(IPCStream& aValue, bool aConsumedByIPC,
       Unused << FileDescriptorSetParent::Send__delete__(fdSetActor);
     }
   }
-
-  
-  InputStreamHelper::PostSerializationActivation(aValue.stream(),
-                                                 aConsumedByIPC, aDelayedStart);
 }
 
 void ActivateAndCleanupIPCStream(Maybe<IPCStream>& aValue, bool aConsumedByIPC,
@@ -325,10 +321,6 @@ bool NormalizeOptionalValue(nsIInputStream* aStream, IPCStream* aValue,
 }  
 
 already_AddRefed<nsIInputStream> DeserializeIPCStream(const IPCStream& aValue) {
-  
-  
-  
-
   AutoTArray<FileDescriptor, 4> fds;
   if (aValue.optionalFds().type() ==
       OptionalFileDescriptorSet::TPFileDescriptorSetParent) {
