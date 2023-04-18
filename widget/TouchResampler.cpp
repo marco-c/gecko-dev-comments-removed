@@ -112,13 +112,11 @@ void TouchResampler::NotifyFrame(const TimeStamp& aTimeStamp) {
   uint64_t eventId;
   while (true) {
     MOZ_RELEASE_ASSERT(!mDeferredTouchMoveEvents.empty());
-
     std::tie(input, eventId) = std::move(mDeferredTouchMoveEvents.front());
     mDeferredTouchMoveEvents.pop();
     if (mDeferredTouchMoveEvents.empty() || input.mTimeStamp >= sampleTime) {
       break;
     }
-
     
     
     
@@ -215,9 +213,7 @@ void TouchResampler::PrependLeftoverHistoricalData(MultiTouchInput* aInput) {
 
 void TouchResampler::FlushDeferredTouchMoveEventsUnresampled() {
   while (!mDeferredTouchMoveEvents.empty()) {
-    MultiTouchInput input;
-    uint64_t eventId;
-    std::tie(input, eventId) = std::move(mDeferredTouchMoveEvents.front());
+    auto [input, eventId] = std::move(mDeferredTouchMoveEvents.front());
     mDeferredTouchMoveEvents.pop();
     PrependLeftoverHistoricalData(&input);
     EmitEvent(std::move(input), eventId);

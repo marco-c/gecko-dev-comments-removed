@@ -5,34 +5,31 @@
 
 #include <algorithm>
 
+#include "GeckoViewStreamListener.h"
+#include "InetAddress.h"  
+#include "ReferrerInfo.h"
 #include "WebExecutorSupport.h"
 
 #include "nsIAsyncVerifyRedirectCallback.h"
 #include "nsIHttpChannel.h"
 #include "nsIHttpChannelInternal.h"
 #include "nsIHttpHeaderVisitor.h"
-#include "nsINSSErrorsService.h"
-#include "nsIUploadChannel2.h"
-#include "nsIX509Cert.h"
-
 #include "nsIDNSService.h"
 #include "nsIDNSListener.h"
 #include "nsIDNSRecord.h"
+#include "nsINSSErrorsService.h"
+#include "nsNetUtil.h"  
+#include "nsIPrivateBrowsingChannel.h"
+#include "nsIUploadChannel2.h"
+#include "nsIX509Cert.h"
 
+#include "mozilla/Preferences.h"
+#include "mozilla/net/CookieJarSettings.h"
+#include "mozilla/net/DNS.h"  
 #include "mozilla/java/GeckoWebExecutorWrappers.h"
 #include "mozilla/java/WebMessageWrappers.h"
 #include "mozilla/java/WebRequestErrorWrappers.h"
 #include "mozilla/java/WebResponseWrappers.h"
-#include "mozilla/net/DNS.h"  
-#include "mozilla/net/CookieJarSettings.h"
-#include "mozilla/Preferences.h"
-#include "GeckoViewStreamListener.h"
-#include "nsIPrivateBrowsingChannel.h"
-
-#include "nsNetUtil.h"  
-
-#include "InetAddress.h"  
-#include "ReferrerInfo.h"
 
 namespace mozilla {
 using namespace net;
