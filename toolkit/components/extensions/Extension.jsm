@@ -1238,7 +1238,7 @@ class ExtensionData {
         }
 
         
-        if (!type.origin || perm === "<all_urls>") {
+        if (!type.origin || (perm === "<all_urls>" && !result.originControls)) {
           permissions.add(perm);
         }
       }
@@ -1707,36 +1707,69 @@ class ExtensionData {
 
 
 
-  static classifyOriginPermissions(origins = []) {
+
+
+
+
+
+  static classifyOriginPermissions(origins = [], ignoreNonWebSchemes = false) {
     let allUrls = null,
       wildcards = new Set(),
-      sites = new Set();
+      sites = new Set(),
+      
+      
+      wildcardsMap = new Map(),
+      sitesMap = new Map();
+
+    
+    const wildcardSchemes = ["*", "http", "https", "ws", "wss"];
+
     for (let permission of origins) {
       if (permission == "<all_urls>") {
         allUrls = permission;
-        break;
+        continue;
       }
 
       
       
-      let match = /^[a-z*]+:\/\/([^/]*)\/|^about:/.exec(permission);
+      let match = /^([a-z*]+):\/\/([^/]*)\/|^about:/.exec(permission);
       if (!match) {
         throw new Error(`Unparseable host permission ${permission}`);
       }
+
       
       
-      if (!match[1] || match[1] == "*") {
-        allUrls = permission;
-      } else if (match[1].startsWith("*.")) {
-        wildcards.add(match[1].slice(2));
+      let [, scheme, host] = match;
+      if (ignoreNonWebSchemes && !wildcardSchemes.includes(scheme)) {
+        continue;
+      }
+
+      if (!host || host == "*") {
+        if (!allUrls) {
+          allUrls = permission;
+        }
+      } else if (host.startsWith("*.")) {
+        wildcards.add(host.slice(2));
+        
+        let pat = new MatchPattern(permission, { ignorePath: true });
+        wildcardsMap.set(pat.pattern, `${scheme}://${host.slice(2)}`);
       } else {
-        sites.add(match[1]);
+        sites.add(host);
+        let pat = new MatchPattern(permission, {
+          ignorePath: true,
+          
+          restrictSchemes: false,
+        });
+        sitesMap.set(pat.pattern, `${scheme}://${host}`);
       }
     }
-    return { allUrls, wildcards, sites };
+    return { allUrls, wildcards, sites, wildcardsMap, sitesMap };
   }
 
   
+
+
+
 
 
 
@@ -1792,6 +1825,7 @@ class ExtensionData {
     bundle,
     {
       collapseOrigins = false,
+      buildOptionalOrigins = false,
       getKeyForPermission = perm => `webextPerms.description.${perm}`,
     } = {}
   ) {
@@ -1955,13 +1989,29 @@ class ExtensionData {
         
       }
     }
-    allUrls = ExtensionData.classifyOriginPermissions(
-      optional_permissions.origins
-    ).allUrls;
-    if (allUrls) {
-      result.optionalOrigins[allUrls] = bundle.GetStringFromName(
+
+    let optionalInfo = ExtensionData.classifyOriginPermissions(
+      optional_permissions.origins,
+      true
+    );
+    if (optionalInfo.allUrls) {
+      result.optionalOrigins[optionalInfo.allUrls] = bundle.GetStringFromName(
         "webextPerms.hostDescription.allUrls"
       );
+    }
+
+    
+    if (buildOptionalOrigins) {
+      for (let [pattern, originLabel] of optionalInfo.wildcardsMap.entries()) {
+        let key = "webextPerms.hostDescription.wildcard";
+        let str = bundle.formatStringFromName(key, [originLabel]);
+        result.optionalOrigins[pattern] = str;
+      }
+      for (let [pattern, originLabel] of optionalInfo.sitesMap.entries()) {
+        let key = "webextPerms.hostDescription.oneSite";
+        let str = bundle.formatStringFromName(key, [originLabel]);
+        result.optionalOrigins[pattern] = str;
+      }
     }
 
     if (info.type == "sideload") {
