@@ -6,6 +6,7 @@
 
 #include "mozilla/ProcInfo.h"
 #include "mozilla/ipc/GeckoChildProcessHost.h"
+#include "mozilla/SSE.h"
 #include "nsMemoryReporterManager.h"
 #include "nsNetCID.h"
 #include "nsWindowsHelpers.h"
@@ -18,14 +19,61 @@ typedef HRESULT(WINAPI* GETTHREADDESCRIPTION)(HANDLE hThread,
 
 namespace mozilla {
 
-uint64_t ToNanoSeconds(const FILETIME& aFileTime) {
+static uint64_t ToNanoSeconds(const FILETIME& aFileTime) {
   
   ULARGE_INTEGER usec = {{aFileTime.dwLowDateTime, aFileTime.dwHighDateTime}};
   return usec.QuadPart * 100;
 }
 
+
+
+
+static int GetCycleTimeFrequency() {
+  static int result = -1;
+  if (result != -1) {
+    return result;
+  }
+
+  result = 0;
+
+  
+  if (!mozilla::has_constant_tsc()) {
+    return result;
+  }
+
+  
+  HKEY key;
+  static const WCHAR keyName[] =
+      L"HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0";
+
+  if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, keyName, 0, KEY_QUERY_VALUE, &key) ==
+      ERROR_SUCCESS) {
+    DWORD data, len;
+    len = sizeof(data);
+
+    if (RegQueryValueEx(key, L"~Mhz", 0, 0, reinterpret_cast<LPBYTE>(&data),
+                        &len) == ERROR_SUCCESS) {
+      result = static_cast<int>(data);
+    }
+  }
+
+  return result;
+}
+
 nsresult GetCpuTimeSinceProcessStartInMs(uint64_t* aResult) {
   FILETIME createTime, exitTime, kernelTime, userTime;
+  int frequencyInMHz = GetCycleTimeFrequency();
+  if (frequencyInMHz) {
+    uint64_t cpuCycleCount;
+    if (!QueryProcessCycleTime(::GetCurrentProcess(), &cpuCycleCount)) {
+      return NS_ERROR_FAILURE;
+    }
+    constexpr int HZ_PER_MHZ = 1000000;
+    *aResult =
+        cpuCycleCount / (frequencyInMHz * (HZ_PER_MHZ / PR_MSEC_PER_SEC));
+    return NS_OK;
+  }
+
   if (!GetProcessTimes(::GetCurrentProcess(), &createTime, &exitTime,
                        &kernelTime, &userTime)) {
     return NS_ERROR_FAILURE;

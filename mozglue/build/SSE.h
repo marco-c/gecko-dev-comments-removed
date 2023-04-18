@@ -91,6 +91,7 @@
 
 
 
+
 #if defined(__GNUC__) && (defined(__i386__) || defined(__x86_64__))
 
 #  ifdef __MMX__
@@ -223,6 +224,7 @@ extern bool MFBT_DATA avx2_enabled;
 #  if !defined(MOZILLA_PRESUME_AES)
 extern bool MFBT_DATA aes_enabled;
 #  endif
+extern bool MFBT_DATA has_constant_tsc;
 
 #endif
 }  
@@ -343,6 +345,12 @@ inline bool supports_aes() { return true; }
 inline bool supports_aes() { return sse_private::aes_enabled; }
 #else
 inline bool supports_aes() { return false; }
+#endif
+
+#ifdef MOZILLA_SSE_HAVE_CPUID_DETECTION
+inline bool has_constant_tsc() { return sse_private::has_constant_tsc; }
+#else
+inline bool has_constant_tsc() { return false; }
 #endif
 
 }  
