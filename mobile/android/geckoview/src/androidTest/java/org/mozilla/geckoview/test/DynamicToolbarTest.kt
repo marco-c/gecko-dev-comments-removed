@@ -8,7 +8,9 @@ import android.graphics.*
 import android.graphics.Bitmap
 import androidx.test.filters.MediumTest
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import android.os.SystemClock
 import android.util.Base64
+import android.view.MotionEvent
 import java.io.ByteArrayOutputStream
 import org.hamcrest.Matchers.*
 import org.junit.Test
@@ -371,5 +373,55 @@ class DynamicToolbarTest : BaseSessionTest() {
             override fun onShowDynamicToolbar(session: GeckoSession) {
             }
         })
+    }
+
+    
+    
+    
+    
+    
+    @WithDisplay(height = SCREEN_HEIGHT, width = SCREEN_WIDTH)
+    @Test
+    fun noGapAppearsBetweenBodyAndElementFullyCoveringBody() {
+        val dynamicToolbarMaxHeight = SCREEN_HEIGHT / 2
+        sessionRule.display?.run { setDynamicToolbarMaxHeight(dynamicToolbarMaxHeight) }
+
+        
+        mainSession.setActive(true)
+
+        val reference = getComparisonScreenshot(SCREEN_WIDTH, SCREEN_HEIGHT)
+
+        mainSession.loadTestPath(BaseSessionTest.BODY_FULLY_COVERED_BY_GREEN_ELEMENT)
+        mainSession.waitForPageStop()
+
+        
+        var downTime = SystemClock.uptimeMillis();
+        var down = MotionEvent.obtain(
+                downTime, SystemClock.uptimeMillis(), MotionEvent.ACTION_DOWN, 50f, 70f, 0)
+        mainSession.panZoomController.onTouchEvent(down)
+        var move = MotionEvent.obtain(
+                downTime, SystemClock.uptimeMillis(), MotionEvent.ACTION_MOVE, 50f, 30f, 0)
+        mainSession.panZoomController.onTouchEvent(move)
+        var up = MotionEvent.obtain(
+                downTime, SystemClock.uptimeMillis(), MotionEvent.ACTION_UP, 50f, 10f, 0)
+        mainSession.panZoomController.onTouchEvent(up)
+        mainSession.flushApzRepaints()
+
+        
+        downTime = SystemClock.uptimeMillis();
+        down = MotionEvent.obtain(
+                downTime, SystemClock.uptimeMillis(), MotionEvent.ACTION_DOWN, 50f, 10f, 0)
+        mainSession.panZoomController.onTouchEvent(down)
+        move = MotionEvent.obtain(
+                downTime, SystemClock.uptimeMillis(), MotionEvent.ACTION_MOVE, 50f, 30f, 0)
+        mainSession.panZoomController.onTouchEvent(move)
+        up = MotionEvent.obtain(
+                downTime, SystemClock.uptimeMillis(), MotionEvent.ACTION_UP, 50f, 70f, 0)
+        mainSession.panZoomController.onTouchEvent(up)
+        mainSession.flushApzRepaints()
+
+        sessionRule.display?.let {
+            assertScreenshotResult(it.capturePixels(), reference)
+        }
     }
 }
