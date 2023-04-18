@@ -27,11 +27,25 @@ bool IsContentSandboxEnabled();
 
 
 enum class ContentWin32kLockdownState : int32_t {
-  LockdownEnabled = 1,
-  MissingWebRender,
-  OperatingSystemNotSupported,
-  PrefNotSet,
-  MissingRemoteWebGL,
+  LockdownEnabled = 1,  
+  MissingWebRender = 2,
+  OperatingSystemNotSupported = 3,
+  PrefNotSet = 4,  
+  MissingRemoteWebGL = 5,
+  MissingNonNativeTheming = 6,
+  DisabledByEnvVar = 7,  
+  DisabledBySafeMode = 8,
+  DisabledByE10S = 9,       
+  DisabledByUserPref = 10,  
+                            
+  EnabledByUserPref = 11,   
+                            
+  DisabledByControlGroup =
+      12,  
+  EnabledByTreatmentGroup =
+      13,  
+  DisabledByDefault = 14,  
+  EnabledByDefault = 15    
 };
 
 const char* ContentWin32kLockdownStateToString(
