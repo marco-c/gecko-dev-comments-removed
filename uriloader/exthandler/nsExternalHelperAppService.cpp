@@ -2020,7 +2020,11 @@ NS_IMETHODIMP nsExternalAppHandler::OnStartRequest(nsIRequest* request) {
          action == nsIMIMEInfo::useSystemDefault ||
          shouldAutomaticallyHandleInternally) &&
         !alwaysAskWhereToSave) {
-      rv = LaunchWithApplication(shouldAutomaticallyHandleInternally, nullptr);
+      
+      
+      rv = mIsFileChannel ? LaunchLocalFile()
+                          : SetDownloadToLaunch(
+                                shouldAutomaticallyHandleInternally, nullptr);
     } else {
       rv = PromptForSaveDestination();
     }
@@ -2742,30 +2746,11 @@ nsresult nsExternalAppHandler::ContinueSave(nsIFile* aNewFileLocation) {
 
 
 
-NS_IMETHODIMP nsExternalAppHandler::LaunchWithApplication(
+NS_IMETHODIMP nsExternalAppHandler::SetDownloadToLaunch(
     bool aHandleInternally, nsIFile* aNewFileLocation) {
   if (mCanceled) return NS_OK;
 
   mHandleInternally = aHandleInternally;
-
-  
-  
-  nsCOMPtr<nsIFileURL> fileUrl(do_QueryInterface(mSourceUrl));
-  if (fileUrl && mIsFileChannel) {
-    Cancel(NS_BINDING_ABORTED);
-    nsCOMPtr<nsIFile> file;
-    nsresult rv = fileUrl->GetFile(getter_AddRefs(file));
-
-    if (NS_SUCCEEDED(rv)) {
-      rv = mMimeInfo->LaunchWithFile(file);
-      if (NS_SUCCEEDED(rv)) return NS_OK;
-    }
-    nsAutoString path;
-    if (file) file->GetPath(path);
-    
-    SendStatusChange(kLaunchError, rv, nullptr, path);
-    return rv;
-  }
 
   
   
@@ -2812,6 +2797,23 @@ NS_IMETHODIMP nsExternalAppHandler::LaunchWithApplication(
     SendStatusChange(kWriteError, rv, nullptr, path);
     Cancel(rv);
   }
+  return rv;
+}
+
+nsresult nsExternalAppHandler::LaunchLocalFile() {
+  nsCOMPtr<nsIFileURL> fileUrl(do_QueryInterface(mSourceUrl));
+  Cancel(NS_BINDING_ABORTED);
+  nsCOMPtr<nsIFile> file;
+  nsresult rv = fileUrl->GetFile(getter_AddRefs(file));
+
+  if (NS_SUCCEEDED(rv)) {
+    rv = mMimeInfo->LaunchWithFile(file);
+    if (NS_SUCCEEDED(rv)) return NS_OK;
+  }
+  nsAutoString path;
+  if (file) file->GetPath(path);
+  
+  SendStatusChange(kLaunchError, rv, nullptr, path);
   return rv;
 }
 

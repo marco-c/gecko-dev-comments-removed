@@ -499,6 +499,11 @@ class nsExternalAppHandler final : public nsIStreamListener,
   
 
 
+  nsresult LaunchLocalFile();
+
+  
+
+
 
   nsCOMPtr<nsIWebProgressListener2> mDialogProgressListener;
   
