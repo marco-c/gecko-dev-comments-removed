@@ -19,6 +19,8 @@
 #include "mozilla/Telemetry.h"
 #include "mozilla/TimeStamp.h"
 #include "nsGkAtoms.h"
+#include "nsString.h"
+#include "nsStringFwd.h"
 #include "nsUnicodeProperties.h"
 #include "nsDirectoryServiceUtils.h"
 #include "nsDirectoryServiceDefs.h"
@@ -32,6 +34,7 @@
 
 #include <cairo-ft.h>
 #include <fontconfig/fcfreetype.h>
+#include <fontconfig/fontconfig.h>
 #include <harfbuzz/hb.h>
 #include <dlfcn.h>
 #include <unistd.h>
@@ -2102,51 +2105,56 @@ bool gfxFcPlatformFontList::FindAndAddFamilies(
 
   
   
-  if (auto cachedFamilies = mFcSubstituteCache.Lookup(familyName)) {
-    if (cachedFamilies->IsEmpty()) {
-      return false;
+  
+  
+  nsAutoCString lang;
+  GetSampleLangForGroup(aLanguage, lang);
+  nsAutoCString cacheKey(lang);
+  ToLowerCase(cacheKey);
+  cacheKey.Append(':');
+  cacheKey.Append(familyName);
+  const auto& cached = mFcSubstituteCache.LookupOrInsertWith(cacheKey, [&] {
+    
+    const FcChar8* kSentinelName = ToFcChar8Ptr("-moz-sentinel");
+    FcChar8* sentinelFirstFamily = nullptr;
+    RefPtr<FcPattern> sentinelSubst = dont_AddRef(FcPatternCreate());
+    FcPatternAddString(sentinelSubst, FC_FAMILY, kSentinelName);
+    if (!lang.IsEmpty()) {
+      FcPatternAddString(sentinelSubst, FC_LANG, ToFcChar8Ptr(lang.get()));
     }
-    aOutput->AppendElements(*cachedFamilies);
-    return true;
-  }
+    FcConfigSubstitute(nullptr, sentinelSubst, FcMatchPattern);
+    FcPatternGetString(sentinelSubst, FC_FAMILY, 0, &sentinelFirstFamily);
 
-  
-  const FcChar8* kSentinelName = ToFcChar8Ptr("-moz-sentinel");
-  FcChar8* sentinelFirstFamily = nullptr;
-  RefPtr<FcPattern> sentinelSubst = dont_AddRef(FcPatternCreate());
-  FcPatternAddString(sentinelSubst, FC_FAMILY, kSentinelName);
-  FcConfigSubstitute(nullptr, sentinelSubst, FcMatchPattern);
-  FcPatternGetString(sentinelSubst, FC_FAMILY, 0, &sentinelFirstFamily);
-
-  
-  RefPtr<FcPattern> fontWithSentinel = dont_AddRef(FcPatternCreate());
-  FcPatternAddString(fontWithSentinel, FC_FAMILY,
-                     ToFcChar8Ptr(familyName.get()));
-  FcPatternAddString(fontWithSentinel, FC_FAMILY, kSentinelName);
-  FcConfigSubstitute(nullptr, fontWithSentinel, FcMatchPattern);
-
-  
-  AutoTArray<FamilyAndGeneric, 10> cachedFamilies;
-  FcChar8* substName = nullptr;
-  for (int i = 0; FcPatternGetString(fontWithSentinel, FC_FAMILY, i,
-                                     &substName) == FcResultMatch;
-       i++) {
-    if (sentinelFirstFamily && FcStrCmp(substName, sentinelFirstFamily) == 0) {
-      break;
+    
+    RefPtr<FcPattern> fontWithSentinel = dont_AddRef(FcPatternCreate());
+    FcPatternAddString(fontWithSentinel, FC_FAMILY,
+                       ToFcChar8Ptr(familyName.get()));
+    FcPatternAddString(fontWithSentinel, FC_FAMILY, kSentinelName);
+    if (!lang.IsEmpty()) {
+      FcPatternAddString(sentinelSubst, FC_LANG, ToFcChar8Ptr(lang.get()));
     }
-    gfxPlatformFontList::FindAndAddFamilies(
-        aPresContext, aGeneric, nsDependentCString(ToCharPtr(substName)),
-        &cachedFamilies, aFlags, aStyle, aLanguage);
-  }
+    FcConfigSubstitute(nullptr, fontWithSentinel, FcMatchPattern);
 
-  
-  const auto& insertedCachedFamilies =
-      mFcSubstituteCache.InsertOrUpdate(familyName, std::move(cachedFamilies));
-
-  if (insertedCachedFamilies.IsEmpty()) {
+    
+    AutoTArray<FamilyAndGeneric, 10> cachedFamilies;
+    FcChar8* substName = nullptr;
+    for (int i = 0; FcPatternGetString(fontWithSentinel, FC_FAMILY, i,
+                                       &substName) == FcResultMatch;
+         i++) {
+      if (sentinelFirstFamily &&
+          FcStrCmp(substName, sentinelFirstFamily) == 0) {
+        break;
+      }
+      gfxPlatformFontList::FindAndAddFamilies(
+          aPresContext, aGeneric, nsDependentCString(ToCharPtr(substName)),
+          &cachedFamilies, aFlags, aStyle, aLanguage);
+    }
+    return cachedFamilies;
+  });
+  if (cached.IsEmpty()) {
     return false;
   }
-  aOutput->AppendElements(insertedCachedFamilies);
+  aOutput->AppendElements(cached);
   return true;
 }
 
