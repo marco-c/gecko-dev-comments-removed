@@ -55,7 +55,15 @@ async function testBodyRuleView(view) {
   info("Testing tooltips in the rule view");
 
   
-  const { valueSpan } = getRuleViewProperty(view, "body", "background-image");
+  
+  
+  
+  const property = await waitFor(() =>
+    getRuleViewProperty(view, "body", "background-image")
+  );
+
+  
+  const { valueSpan } = property;
   const uriSpan = valueSpan.querySelector(".theme-link");
 
   const previewTooltip = await assertShowPreviewTooltip(view, uriSpan);
