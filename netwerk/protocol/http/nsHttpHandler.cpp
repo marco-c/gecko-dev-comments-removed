@@ -29,6 +29,7 @@
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Printf.h"
 #include "mozilla/Sprintf.h"
+#include "mozilla/StaticPrefs_general.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/StoragePrincipalHelper.h"
@@ -138,15 +139,32 @@ namespace mozilla::net {
 
 LazyLogModule gHttpLog("nsHttp");
 
-static void ExperimentUserAgentUpdated(const char* ,
-                                       void* aUserData) {
-  MOZ_ASSERT(aUserData != nullptr);
-  nsACString* aExperimentUserAgent = static_cast<nsACString*>(aUserData);
+static void HandleVersionExperimentEnrollment(const char* ,
+                                              void* ) {
+  MOZ_ASSERT(XRE_IsParentProcess());
+
+  int experimentBranch =
+      NimbusFeatures::GetInt(UA_EXPERIMENT_NAME, UA_EXPERIMENT_VAR, -1);
 
   
-  int firefoxVersion =
-      NimbusFeatures::GetInt(UA_EXPERIMENT_NAME, UA_EXPERIMENT_VAR, 0);
-  if (firefoxVersion <= 0) {
+  
+  
+  
+  
+  
+  
+
+  if (experimentBranch == 100 &&
+      !mozilla::StaticPrefs::general_useragent_forceVersion100()) {
+    Preferences::SetBool("general.useragent.forceVersion100", true);
+  }
+
+  Preferences::SetBool("general.useragent.handledVersionExperimentEnrollment",
+                       true);
+}
+
+static void GetExperimentUserAgent(nsACString* aExperimentUserAgent) {
+  if (!mozilla::StaticPrefs::general_useragent_forceVersion100()) {
     aExperimentUserAgent->SetIsVoid(true);
     return;
   }
@@ -378,16 +396,29 @@ nsresult nsHttpHandler::Init() {
   mHttp3QlogDir = initQLogDir();
 
   
+  if (XRE_IsParentProcess()) {
+    int experimentBranch =
+        NimbusFeatures::GetInt(UA_EXPERIMENT_NAME, UA_EXPERIMENT_VAR, -1);
+
+    if (experimentBranch == -1) {
+      
+      
+      NimbusFeatures::OnUpdate(UA_EXPERIMENT_NAME, UA_EXPERIMENT_VAR,
+                               HandleVersionExperimentEnrollment, nullptr);
+    } else if (!mozilla::StaticPrefs::
+                   general_useragent_handledVersionExperimentEnrollment()) {
+      
+      
+      
+      
+      HandleVersionExperimentEnrollment(nullptr, nullptr);
+    }
+  }
+
+  
   Preferences::RegisterPrefixCallbacks(nsHttpHandler::PrefsChanged,
                                        gCallbackPrefs, this);
   PrefsChanged(nullptr);
-
-  
-  NimbusFeatures::OnUpdate(UA_EXPERIMENT_NAME, UA_EXPERIMENT_VAR,
-                           ExperimentUserAgentUpdated, &mExperimentUserAgent);
-
-  
-  ExperimentUserAgentUpdated("", &mExperimentUserAgent);
 
   Telemetry::ScalarSet(Telemetry::ScalarID::NETWORKING_HTTP3_ENABLED,
                        mHttp3Enabled);
@@ -1034,6 +1065,14 @@ void nsHttpHandler::PrefsChanged(const char* pref) {
     rv = Preferences::GetBool(UA_PREF("compatMode.firefox"), &cVar);
     mCompatFirefoxEnabled = (NS_SUCCEEDED(rv) && cVar);
     mUserAgentIsDirty = true;
+  }
+
+  
+  if (PREF_CHANGED(UA_PREF("forceVersion100"))) {
+    
+    
+    
+    GetExperimentUserAgent(&mExperimentUserAgent);
   }
 
   
