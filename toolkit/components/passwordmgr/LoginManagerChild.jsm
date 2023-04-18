@@ -801,6 +801,32 @@ class LoginFormState {
     lazy.log("maybeOpenAutocompleteAfterFocus: Opening the autocomplete popup");
     lazy.gFormFillService.showPopup();
   }
+
+  
+
+  static #removeFillFieldHighlight(event) {
+    let winUtils = event.target.ownerGlobal.windowUtils;
+    winUtils.removeManuallyManagedState(event.target, AUTOFILL_STATE);
+  }
+
+  
+
+
+
+  static _highlightFilledField(element) {
+    let winUtils = element.ownerGlobal.windowUtils;
+
+    winUtils.addManuallyManagedState(element, AUTOFILL_STATE);
+    
+    element.addEventListener(
+      "input",
+      LoginFormState.#removeFillFieldHighlight,
+      {
+        mozSystemGroup: true,
+        once: true,
+      }
+    );
+  }
 }
 
 
@@ -1599,7 +1625,7 @@ class LoginManagerChild extends JSWindowActorChild {
       
       const docState = this.stateForDocument(acInputField.ownerDocument);
       docState._stopTreatingAsGeneratedPasswordField(acInputField);
-      this._highlightFilledField(acInputField);
+      LoginFormState._highlightFilledField(acInputField);
     }
   }
 
@@ -1656,7 +1682,7 @@ class LoginManagerChild extends JSWindowActorChild {
         
         
       } else if (loginGUID !== null) {
-        this._highlightFilledField(usernameField);
+        LoginFormState._highlightFilledField(usernameField);
       }
     } else {
       
@@ -2423,7 +2449,7 @@ class LoginManagerChild extends JSWindowActorChild {
 
 
   _filledWithGeneratedPassword(passwordField) {
-    this._highlightFilledField(passwordField);
+    LoginFormState._highlightFilledField(passwordField);
     this._passwordEditedOrGenerated(passwordField, {
       triggeredByFillingGenerated: true,
     });
@@ -2460,7 +2486,7 @@ class LoginManagerChild extends JSWindowActorChild {
     let loginForm = lazy.LoginFormFactory.createFromField(passwordField);
 
     if (triggeredByFillingGenerated) {
-      this._highlightFilledField(passwordField);
+      LoginFormState._highlightFilledField(passwordField);
       let docState = this.stateForDocument(passwordField.ownerDocument);
       docState._treatAsGeneratedPasswordField(passwordField);
 
@@ -2548,30 +2574,8 @@ class LoginManagerChild extends JSWindowActorChild {
     if (confirmPasswordInput && !confirmPasswordInput.value) {
       docState._treatAsGeneratedPasswordField(confirmPasswordInput);
       confirmPasswordInput.setUserInput(passwordField.value);
-      this._highlightFilledField(confirmPasswordInput);
+      LoginFormState._highlightFilledField(confirmPasswordInput);
     }
-  }
-
-  
-
-  _removeFillFieldHighlight(event) {
-    let winUtils = event.target.ownerGlobal.windowUtils;
-    winUtils.removeManuallyManagedState(event.target, AUTOFILL_STATE);
-  }
-
-  
-
-
-
-  _highlightFilledField(element) {
-    let winUtils = element.ownerGlobal.windowUtils;
-
-    winUtils.addManuallyManagedState(element, AUTOFILL_STATE);
-    
-    element.addEventListener("input", this._removeFillFieldHighlight, {
-      mozSystemGroup: true,
-      once: true,
-    });
   }
 
   
@@ -2974,7 +2978,7 @@ class LoginManagerChild extends JSWindowActorChild {
           if (!userEnteredDifferentCase && userNameDiffers) {
             usernameField.setUserInput(selectedLogin.username);
           }
-          this._highlightFilledField(usernameField);
+          LoginFormState._highlightFilledField(usernameField);
         }
       }
 
@@ -2987,7 +2991,7 @@ class LoginManagerChild extends JSWindowActorChild {
           passwordField.setUserInput(selectedLogin.password);
         }
 
-        this._highlightFilledField(passwordField);
+        LoginFormState._highlightFilledField(passwordField);
       }
 
       if (style === "generatedPassword") {
