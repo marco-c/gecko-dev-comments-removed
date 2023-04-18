@@ -70,7 +70,6 @@ class JS_PUBLIC_API SliceBudget {
 
   
   
-  
   bool interrupted = false;
 
   explicit SliceBudget(InterruptRequestFlag* irqPtr)
@@ -112,20 +111,6 @@ class JS_PUBLIC_API SliceBudget {
   }
 
   bool isOverBudget() { return counter <= 0 && checkOverBudget(); }
-
-  
-  
-  
-  void reset() {
-    if (isTimeBudget()) {
-      counter = timeBudget();
-    } else if (isWorkBudget()) {
-      counter = workBudget();
-    }
-    if (interruptRequested) {
-      *interruptRequested = false;
-    }
-  }
 
   bool isWorkBudget() const { return budget.is<WorkBudget>(); }
   bool isTimeBudget() const { return budget.is<TimeBudget>(); }
