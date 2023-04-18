@@ -106,8 +106,7 @@ class QuotaManager final : public BackgroundThreadObject {
 
   static Result<MovingNotNull<RefPtr<QuotaManager>>, nsresult> GetOrCreate();
 
-  
-  static void GetOrCreate(nsIRunnable* aCallback);
+  static Result<Ok, nsresult> EnsureCreated();
 
   
   static QuotaManager* Get();
