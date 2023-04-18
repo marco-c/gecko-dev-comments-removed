@@ -243,24 +243,8 @@ class FxAccountsDevice {
             log.info(
               `Got new device list: ${devices.map(d => d.id).join(", ")}`
             );
-            
-            
-            
-            
-            
-            
-            
-            const ourDevice = devices.find(device => device.isCurrentDevice);
-            if (
-              ourDevice &&
-              (ourDevice.pushCallback === null || ourDevice.pushEndpointExpired)
-            ) {
-              log.warn(`Our push endpoint needs resubscription`);
-              await this._fxai.fxaPushService.unsubscribe();
-              await this._registerOrUpdateDevice(currentState, accountData);
-              
-              await this._fxai.commands.pollDeviceCommands();
-            }
+
+            await this._refreshRemoteDevice(currentState, accountData, devices);
             return devices;
           }
         );
@@ -277,6 +261,33 @@ class FxAccountsDevice {
       }
     })();
     return this._fetchAndCacheDeviceListPromise;
+  }
+
+  async _refreshRemoteDevice(currentState, accountData, remoteDevices) {
+    
+    
+    
+    
+    
+    
+    
+    const ourDevice = remoteDevices.find(device => device.isCurrentDevice);
+    if (
+      ourDevice &&
+      (ourDevice.pushCallback === null || ourDevice.pushEndpointExpired)
+    ) {
+      log.warn(`Our push endpoint needs resubscription`);
+      await this._fxai.fxaPushService.unsubscribe();
+      await this._registerOrUpdateDevice(currentState, accountData);
+      
+      await this._fxai.commands.pollDeviceCommands();
+    } else if (
+      ourDevice &&
+      (await this._checkRemoteCommandsUpdateNeeded(ourDevice.availableCommands))
+    ) {
+      log.warn(`Our commands need to be updated on the server`);
+      await this._registerOrUpdateDevice(currentState, accountData);
+    }
   }
 
   async updateDeviceRegistration() {
@@ -353,6 +364,35 @@ class FxAccountsDevice {
         availableCommandsKeys
       )
     );
+  }
+
+  async _checkRemoteCommandsUpdateNeeded(remoteAvailableCommands) {
+    if (!remoteAvailableCommands) {
+      return true;
+    }
+    const remoteAvailableCommandsKeys = Object.keys(
+      remoteAvailableCommands
+    ).sort();
+    const localAvailableCommands = await this._fxai.commands.availableCommands();
+    const localAvailableCommandsKeys = Object.keys(
+      localAvailableCommands
+    ).sort();
+
+    if (
+      !CommonUtils.arrayEqual(
+        localAvailableCommandsKeys,
+        remoteAvailableCommandsKeys
+      )
+    ) {
+      return true;
+    }
+
+    for (const key of localAvailableCommandsKeys) {
+      if (remoteAvailableCommands[key] !== localAvailableCommands[key]) {
+        return true;
+      }
+    }
+    return false;
   }
 
   async _updateDeviceRegistrationIfNecessary(currentState) {
