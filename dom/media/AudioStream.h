@@ -297,6 +297,9 @@ class AudioStream final {
 
   bool IsPlaybackCompleted() const;
 
+  
+  bool CallbackStarted() const { return mCallbacksStarted; }
+
  protected:
   friend class AudioClock;
 
@@ -386,6 +389,7 @@ class AudioStream final {
   std::atomic<bool> mPreservesPitch;
   
   bool mAudioThreadChanged = false;
+  Atomic<bool> mCallbacksStarted;
 };
 
 }  
