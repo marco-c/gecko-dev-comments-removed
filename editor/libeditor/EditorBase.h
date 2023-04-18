@@ -7,9 +7,10 @@
 #define mozilla_EditorBase_h
 
 #include "mozilla/intl/BidiEmbeddingLevel.h"
-#include "mozilla/Assertions.h"          
-#include "mozilla/EditAction.h"          
-#include "mozilla/EditorDOMPoint.h"      
+#include "mozilla/Assertions.h"      
+#include "mozilla/EditAction.h"      
+#include "mozilla/EditorDOMPoint.h"  
+#include "mozilla/EditorForwards.h"
 #include "mozilla/EventForwards.h"       
 #include "mozilla/Likely.h"              
 #include "mozilla/Maybe.h"               
@@ -61,47 +62,17 @@ class nsRange;
 
 namespace mozilla {
 class AlignStateAtSelection;
-class AutoRangeArray;
-class AutoTopLevelEditSubActionNotifier;
 class AutoTransactionsConserveSelection;
 class AutoUpdateViewBatch;
-class ChangeAttributeTransaction;
-class CompositionTransaction;
-class CSSEditUtils;
-class DeleteNodeTransaction;
-class DeleteRangeTransaction;
-class DeleteTextTransaction;
-class EditActionResult;
-class EditAggregateTransaction;
-class EditorEventListener;
-class EditTransactionBase;
 class ErrorResult;
-class HTMLEditor;
-class HTMLEditUtils;
 class IMEContentObserver;
-class InsertNodeTransaction;
-class InsertTextTransaction;
-class JoinNodesTransaction;
 class ListElementSelectionState;
 class ListItemElementSelectionState;
 class ParagraphStateAtSelection;
-class PlaceholderTransaction;
 class PresShell;
-class ReplaceTextTransaction;
-class SplitNodeResult;
-class SplitNodeTransaction;
 class TextComposition;
-class TextEditor;
 class TextInputListener;
 class TextServicesDocument;
-class TypeInState;
-class WhiteSpaceVisibilityKeeper;
-
-enum class SplitNodeDirection;  
-
-template <typename NodeType>
-class CreateNodeResultBase;
-typedef CreateNodeResultBase<dom::Element> CreateElementResult;
 
 namespace dom {
 class AbstractRange;
@@ -1251,11 +1222,8 @@ class EditorBase : public nsIEditor,
         case EditSubAction::eComputeTextToOutput:
         case EditSubAction::eCreatePaddingBRElementForEmptyEditor:
         case EditSubAction::eNone:
-          MOZ_ASSERT(aDirection == eNone);
-          mDirectionOfTopLevelEditSubAction = eNone;
-          break;
         case EditSubAction::eReplaceHeadWithHTMLSource:
-          
+          MOZ_ASSERT(aDirection == eNone);
           mDirectionOfTopLevelEditSubAction = eNone;
           break;
         case EditSubAction::eDeleteNode:

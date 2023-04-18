@@ -9,6 +9,7 @@
 #include "EditTransactionBase.h"  
 
 #include "EditorDOMPoint.h"  
+#include "EditorForwards.h"
 
 #include "nsCOMPtr.h"  
 #include "nsCycleCollectionParticipant.h"
@@ -19,8 +20,6 @@ class nsIContent;
 class nsINode;
 
 namespace mozilla {
-
-class HTMLEditor;
 
 
 

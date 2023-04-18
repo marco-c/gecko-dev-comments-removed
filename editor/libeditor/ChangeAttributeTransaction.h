@@ -6,9 +6,10 @@
 #ifndef ChangeAttributeTransaction_h
 #define ChangeAttributeTransaction_h
 
-#include "mozilla/Attributes.h"           
-#include "mozilla/EditTransactionBase.h"  
-#include "nsCOMPtr.h"                     
+#include "EditTransactionBase.h"  
+
+#include "mozilla/Attributes.h"            
+#include "nsCOMPtr.h"                      
 #include "nsCycleCollectionParticipant.h"  
 #include "nsISupportsImpl.h"               
 #include "nsString.h"                      
@@ -16,7 +17,6 @@
 class nsAtom;
 
 namespace mozilla {
-
 namespace dom {
 class Element;
 }  

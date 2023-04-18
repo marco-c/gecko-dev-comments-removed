@@ -6,6 +6,7 @@
 #ifndef SplitNodeTransaction_h
 #define SplitNodeTransaction_h
 
+#include "EditorForwards.h"
 #include "EditTransactionBase.h"  
 
 #include "nsCOMPtr.h"  
@@ -15,12 +16,6 @@
 #include "nscore.h"           
 
 namespace mozilla {
-
-class HTMLEditor;
-class SplitNodeResult;
-
-template <typename PT, typename CT>
-class EditorDOMPointBase;
 
 
 

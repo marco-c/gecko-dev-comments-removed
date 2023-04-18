@@ -6,7 +6,8 @@
 #ifndef mozilla_ChangeStyleTransaction_h
 #define mozilla_ChangeStyleTransaction_h
 
-#include "mozilla/EditTransactionBase.h"   
+#include "mozilla/EditTransactionBase.h"  
+
 #include "nsCOMPtr.h"                      
 #include "nsCycleCollectionParticipant.h"  
 #include "nsString.h"                      

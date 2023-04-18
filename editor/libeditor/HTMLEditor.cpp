@@ -1397,7 +1397,6 @@ nsresult HTMLEditor::ReplaceHeadContentsWithSourceWithTransaction(
   
   
   
-  
   RefPtr<Document> document = GetDocument();
   if (NS_WARN_IF(!document)) {
     return NS_ERROR_NOT_INITIALIZED;

@@ -7,7 +7,8 @@
 #define mozilla_CSSEditUtils_h
 
 #include "mozilla/ChangeStyleTransaction.h"  
-#include "nsCOMPtr.h"                        
+#include "mozilla/EditorForwards.h"
+#include "nsCOMPtr.h"  
 #include "nsStringFwd.h"
 #include "nsTArray.h"  
 #include "nscore.h"    
@@ -21,8 +22,6 @@ class nsStaticAtom;
 class nsStyledElement;
 
 namespace mozilla {
-
-class HTMLEditor;
 namespace dom {
 class Element;
 }  

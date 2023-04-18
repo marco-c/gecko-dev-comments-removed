@@ -6,9 +6,10 @@
 #ifndef InsertTextTransaction_h
 #define InsertTextTransaction_h
 
-#include "mozilla/EditTransactionBase.h"  
+#include "EditTransactionBase.h"  
 
-#include "mozilla/EditorDOMPoint.h"        
+#include "EditorForwards.h"
+
 #include "nsCycleCollectionParticipant.h"  
 #include "nsID.h"                          
 #include "nsISupportsImpl.h"               
@@ -16,9 +17,6 @@
 #include "nscore.h"                        
 
 namespace mozilla {
-
-class EditorBase;
-
 namespace dom {
 class Text;
 }  

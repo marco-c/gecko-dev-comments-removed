@@ -6,16 +6,15 @@
 #ifndef CompositionTransaction_h
 #define CompositionTransaction_h
 
-#include "mozilla/EditTransactionBase.h"  
+#include "EditTransactionBase.h"  
 
-#include "mozilla/EditorDOMPoint.h"  
+#include "EditorForwards.h"
+
 #include "mozilla/WeakPtr.h"
 #include "nsCycleCollectionParticipant.h"  
 #include "nsString.h"                      
 
 namespace mozilla {
-
-class EditorBase;
 class TextComposition;
 class TextRangeArray;
 
