@@ -4,8 +4,8 @@
 
 
 
-#ifndef js_loader_ScriptLoadRequest_h
-#define js_loader_ScriptLoadRequest_h
+#ifndef mozilla_dom_ScriptLoadRequest_h
+#define mozilla_dom_ScriptLoadRequest_h
 
 #include "js/AllocPolicy.h"
 #include "js/RootingAPI.h"
@@ -14,51 +14,32 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/CORSMode.h"
-#include "mozilla/dom/ScriptLoadContext.h"
 #include "mozilla/dom/SRIMetadata.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MaybeOneOf.h"
 #include "mozilla/PreloaderBase.h"
-#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/Utf8.h"  
 #include "mozilla/Variant.h"
 #include "mozilla/Vector.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIGlobalObject.h"
+#include "nsIScriptElement.h"
 #include "ScriptKind.h"
 
 class nsICacheInfoChannel;
 
-namespace mozilla::dom {
-
-class ScriptLoadContext;
-
-}  
-
 namespace JS {
 class OffThreadToken;
+}
 
-namespace loader {
+namespace mozilla {
+namespace dom {
 
-using Utf8Unit = mozilla::Utf8Unit;
-
+class Element;
 class ModuleLoadRequest;
 class ScriptLoadRequestList;
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -76,59 +57,26 @@ class ScriptFetchOptions {
   NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(ScriptFetchOptions)
 
   ScriptFetchOptions(mozilla::CORSMode aCORSMode,
-                     enum mozilla::dom::ReferrerPolicy aReferrerPolicy,
-                     nsIPrincipal* aTriggeringPrincipal);
-
-  
-
-
-
+                     enum ReferrerPolicy aReferrerPolicy, Element* aElement,
+                     nsIPrincipal* aTriggeringPrincipal,
+                     nsIGlobalObject* aWebExtGlobal);
 
   const mozilla::CORSMode mCORSMode;
-
-  
-
-
-
-  const enum mozilla::dom::ReferrerPolicy mReferrerPolicy;
-
-  
-
-
+  const enum ReferrerPolicy mReferrerPolicy;
+  bool mIsPreload;
+  nsCOMPtr<Element> mElement;
   nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
+  
+  
+  nsCOMPtr<nsIGlobalObject> mWebExtGlobal;
 };
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class ScriptLoadRequest
-    : public nsISupports,
+    : public PreloaderBase,
       private mozilla::LinkedListElement<ScriptLoadRequest> {
   using super = LinkedListElement<ScriptLoadRequest>;
 
@@ -140,41 +88,59 @@ class ScriptLoadRequest
   virtual ~ScriptLoadRequest();
 
  public:
-  using SRIMetadata = mozilla::dom::SRIMetadata;
   ScriptLoadRequest(ScriptKind aKind, nsIURI* aURI,
                     ScriptFetchOptions* aFetchOptions,
-                    const SRIMetadata& aIntegrity, nsIURI* aReferrer,
-                    mozilla::dom::ScriptLoadContext* aContext);
+                    const SRIMetadata& aIntegrity, nsIURI* aReferrer);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(ScriptLoadRequest)
 
-  using super::getNext;
-  using super::isInList;
-
-  template <typename T>
-  using VariantType = mozilla::VariantType<T>;
-
-  template <typename... Ts>
-  using Variant = mozilla::Variant<Ts...>;
-
-  template <typename T, typename D = JS::DeletePolicy<T>>
-  using UniquePtr = mozilla::UniquePtr<T, D>;
-
-  using MaybeSourceText =
-      mozilla::MaybeOneOf<JS::SourceText<char16_t>, JS::SourceText<Utf8Unit>>;
+  
+  static void PrioritizeAsPreload(nsIChannel* aChannel);
+  virtual void PrioritizeAsPreload() override;
 
   bool IsModuleRequest() const { return mKind == ScriptKind::eModule; }
 
   ModuleLoadRequest* AsModuleRequest();
 
-  virtual bool IsTopLevel() const { return true; };
+  TimeStamp mOffThreadParseStartTime;
+  TimeStamp mOffThreadParseStopTime;
+
+  void FireScriptAvailable(nsresult aResult) {
+    bool isInlineClassicScript = mIsInline && !IsModuleRequest();
+    GetScriptElement()->ScriptAvailable(aResult, GetScriptElement(),
+                                        isInlineClassicScript, mURI, mLineNo);
+  }
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void FireScriptEvaluated(nsresult aResult) {
+    RefPtr<nsIScriptElement> scriptElement = GetScriptElement();
+    scriptElement->ScriptEvaluated(aResult, scriptElement, mIsInline);
+  }
+
+  bool IsPreload() const {
+    MOZ_ASSERT_IF(mFetchOptions->mIsPreload, !GetScriptElement());
+    return mFetchOptions->mIsPreload;
+  }
 
   virtual void Cancel();
 
   bool IsCanceled() const { return mIsCanceled; }
 
   virtual void SetReady();
+
+  JS::OffThreadToken** OffThreadTokenPtr() {
+    return mOffThreadToken ? &mOffThreadToken : nullptr;
+  }
+
+  bool IsTracking() const { return mIsTracking; }
+  void SetIsTracking() {
+    MOZ_ASSERT(!mIsTracking);
+    mIsTracking = true;
+  }
+
+  void BlockOnload(Document* aDocument);
+
+  void MaybeUnblockOnload();
 
   enum class Progress : uint8_t {
     eLoading,         
@@ -189,12 +155,13 @@ class ScriptLoadRequest
     return mProgress == Progress::eLoading ||
            mProgress == Progress::eLoading_Source;
   }
-
   bool IsLoadingSource() const {
     return mProgress == Progress::eLoading_Source;
   }
-
-  bool InCompilingStage() const { return mProgress == Progress::eCompiling; }
+  bool InCompilingStage() const {
+    return mProgress == Progress::eCompiling ||
+           (IsReadyToRun() && mWasCompiledOMT);
+  }
 
   
   enum class DataType : uint8_t { eUnknown, eTextSource, eBytecode };
@@ -202,27 +169,17 @@ class ScriptLoadRequest
   bool IsUnknownDataType() const { return mDataType == DataType::eUnknown; }
   bool IsTextSource() const { return mDataType == DataType::eTextSource; }
   bool IsSource() const { return IsTextSource(); }
+  bool IsBytecode() const { return mDataType == DataType::eBytecode; }
 
-  void SetUnknownDataType() {
-    mDataType = DataType::eUnknown;
-    mScriptData.reset();
-  }
-  void SetTextSource() {
-    MOZ_ASSERT(IsUnknownDataType());
-    mDataType = DataType::eTextSource;
-    if (mozilla::StaticPrefs::
-            dom_script_loader_external_scripts_utf8_parsing_enabled()) {
-      mScriptData.emplace(VariantType<ScriptTextBuffer<Utf8Unit>>());
-    } else {
-      mScriptData.emplace(VariantType<ScriptTextBuffer<char16_t>>());
-    }
-  }
+  void SetUnknownDataType();
+  void SetTextSource();
+  void SetBytecode();
 
   
   
   
   template <typename Unit>
-  using ScriptTextBuffer = mozilla::Vector<Unit, 0, js::MallocAllocPolicy>;
+  using ScriptTextBuffer = Vector<Unit, 0, js::MallocAllocPolicy>;
 
   bool IsUTF16Text() const {
     return mScriptData->is<ScriptTextBuffer<char16_t>>();
@@ -248,58 +205,127 @@ class ScriptLoadRequest
                          : ScriptText<Utf8Unit>().length();
   }
 
-  
-  
-  nsresult GetScriptSource(JSContext* aCx, MaybeSourceText* aMaybeSource);
-
   void ClearScriptText() {
     MOZ_ASSERT(IsTextSource());
     return IsUTF16Text() ? ScriptText<char16_t>().clearAndFree()
                          : ScriptText<Utf8Unit>().clearAndFree();
   }
 
-  enum mozilla::dom::ReferrerPolicy ReferrerPolicy() const {
-    return mFetchOptions->mReferrerPolicy;
+  enum class ScriptMode : uint8_t {
+    eBlocking,
+    eDeferred,
+    eAsync,
+    eLinkPreload  
+                  
+  };
+
+  void SetScriptMode(bool aDeferAttr, bool aAsyncAttr, bool aLinkPreload);
+
+  bool IsLinkPreloadScript() const {
+    return mScriptMode == ScriptMode::eLinkPreload;
   }
 
+  bool IsBlockingScript() const { return mScriptMode == ScriptMode::eBlocking; }
+
+  bool IsDeferredScript() const { return mScriptMode == ScriptMode::eDeferred; }
+
+  bool IsAsyncScript() const { return mScriptMode == ScriptMode::eAsync; }
+
+  virtual bool IsTopLevel() const {
+    
+    return true;
+  }
+
+  mozilla::CORSMode CORSMode() const { return mFetchOptions->mCORSMode; }
+  enum ReferrerPolicy ReferrerPolicy() const {
+    return mFetchOptions->mReferrerPolicy;
+  }
+  nsIScriptElement* GetScriptElement() const;
   nsIPrincipal* TriggeringPrincipal() const {
     return mFetchOptions->mTriggeringPrincipal;
+  }
+
+  
+  
+  
+  nsIGlobalObject* GetWebExtGlobal() const {
+    return mFetchOptions->mWebExtGlobal;
+  }
+
+  using MaybeSourceText =
+      mozilla::MaybeOneOf<JS::SourceText<char16_t>, JS::SourceText<Utf8Unit>>;
+
+  
+  
+  nsresult GetScriptSource(JSContext* aCx, MaybeSourceText* aMaybeSource);
+
+  
+  void GetProfilerLabel(nsACString& aOutString);
+
+  
+  void SetIsPreloadRequest() {
+    MOZ_ASSERT(!GetScriptElement());
+    MOZ_ASSERT(!IsPreload());
+    mFetchOptions->mIsPreload = true;
+  }
+
+  
+  void SetIsLoadRequest(nsIScriptElement* aElement);
+
+  FromParser GetParserCreated() const {
+    nsIScriptElement* element = GetScriptElement();
+    if (!element) {
+      return NOT_FROM_PARSER;
+    }
+    return element->GetParserCreated();
   }
 
   void ClearScriptSource();
 
   void SetScript(JSScript* aScript);
 
-  bool IsBytecode() const { return mDataType == DataType::eBytecode; }
-
-  void SetBytecode();
-
-  mozilla::CORSMode CORSMode() const { return mFetchOptions->mCORSMode; }
-
+  void MaybeCancelOffThreadScript();
   void DropBytecodeCacheReferences();
 
-  bool HasLoadContext() { return mLoadContext; }
-
-  mozilla::dom::ScriptLoadContext* GetLoadContext() {
-    MOZ_ASSERT(mLoadContext);
-    return mLoadContext;
-  }
+  using super::getNext;
+  using super::isInList;
 
   const ScriptKind mKind;  
                            
+  ScriptMode mScriptMode;  
+  Progress mProgress;      
+  DataType mDataType;      
+  bool mScriptFromHead;    
+                           
+  bool mIsInline;          
+  bool mInDeferList;       
+  bool mInAsyncList;       
+                           
+  bool mIsNonAsyncScriptInserted;  
+                                   
+  bool mIsXSLT;                    
+  bool mInCompilingList;  
+  bool mIsCanceled;       
+  bool mWasCompiledOMT;   
+                          
+  bool mIsTracking;       
+                          
 
-  bool mIsCanceled;    
-  Progress mProgress;  
-  DataType mDataType;  
   RefPtr<ScriptFetchOptions> mFetchOptions;
-  const SRIMetadata mIntegrity;
-  const nsCOMPtr<nsIURI> mReferrer;
-  mozilla::Maybe<nsString>
-      mSourceMapURL;  
+
+  JS::OffThreadToken* mOffThreadToken;  
+  Maybe<nsString> mSourceMapURL;  
+
+  Atomic<Runnable*> mRunnable;  
+                                
+                                
 
   
-  mozilla::Maybe<
-      Variant<ScriptTextBuffer<char16_t>, ScriptTextBuffer<Utf8Unit>>>
+  
+  JS::Heap<JSScript*> mScript;
+
+  
+  Maybe<Variant<ScriptTextBuffer<char16_t>, ScriptTextBuffer<Utf8Unit>>>
       mScriptData;
 
   
@@ -315,21 +341,23 @@ class ScriptLoadRequest
   nsCOMPtr<nsIPrincipal> mOriginPrincipal;
   nsAutoCString
       mURL;  
+  int32_t mLineNo;
+  const SRIMetadata mIntegrity;
+  const nsCOMPtr<nsIURI> mReferrer;
 
   
-  nsCOMPtr<nsIURI> mBaseURL;
-
-  
-  
-  JS::Heap<JSScript*> mScript;
+  RefPtr<Document> mLoadBlockedDocument;
 
   
   
   nsCOMPtr<nsICacheInfoChannel> mCacheInfo;
 
   
+  nsCOMPtr<nsIURI> mBaseURL;
+
   
-  RefPtr<mozilla::dom::ScriptLoadContext> mLoadContext;
+  
+  nsresult mUnreportedPreloadError;
 };
 
 class ScriptLoadRequestList : private mozilla::LinkedList<ScriptLoadRequest> {

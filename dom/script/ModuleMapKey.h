@@ -8,7 +8,7 @@
 #include "nsURIHashKey.h"
 #include "nsIGlobalObject.h"
 
-namespace JS::loader {
+namespace mozilla::dom {
 
 class ModuleMapKey : public nsURIHashKey {
  public:
