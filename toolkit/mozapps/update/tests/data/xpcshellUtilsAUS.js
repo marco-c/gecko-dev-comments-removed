@@ -3843,8 +3843,13 @@ function checkFilesAfterUpdateCommon(aStageDirExists, aToBeDeletedDirExists) {
 
 
 
-function checkCallbackLog() {
-  let appLaunchLog = getApplyDirFile(DIR_RESOURCES + gCallbackArgs[1]);
+
+
+
+
+function checkCallbackLog(
+  appLaunchLog = getApplyDirFile(DIR_RESOURCES + gCallbackArgs[1])
+) {
   if (!appLaunchLog.exists()) {
     
     do_timeout(FILE_IN_USE_TIMEOUT_MS, checkCallbackLog);
