@@ -12,17 +12,21 @@ var EXPORTED_SYMBOLS = [
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
+const { BridgedEngine } = ChromeUtils.import(
+  "resource://services-sync/bridged_engine.js"
+);
+const { SyncEngine } = ChromeUtils.import(
+  "resource://services-sync/engines.js"
+);
+const { Tracker } = ChromeUtils.import("resource://services-sync/engines.js");
 
 const lazy = {};
 
 XPCOMUtils.defineLazyModuleGetters(lazy, {
-  BridgedEngine: "resource://services-sync/bridged_engine.js",
   LogAdapter: "resource://services-sync/bridged_engine.js",
   extensionStorageSync: "resource://gre/modules/ExtensionStorageSync.jsm",
   Observers: "resource://services-common/observers.js",
   Svc: "resource://services-sync/util.js",
-  SyncEngine: "resource://services-sync/engines.js",
-  Tracker: "resource://services-sync/engines.js",
   SCORE_INCREMENT_MEDIUM: "resource://services-sync/constants.js",
   MULTI_DEVICE_THRESHOLD: "resource://services-sync/constants.js",
 });
@@ -75,7 +79,7 @@ function setEngineEnabled(enabled) {
 
 function ExtensionStorageEngineBridge(service) {
   let bridge = lazy.StorageSyncService.getInterface(Ci.mozIBridgedSyncEngine);
-  lazy.BridgedEngine.call(this, bridge, "Extension-Storage", service);
+  BridgedEngine.call(this, bridge, "Extension-Storage", service);
 
   let app_services_logger = Cc["@mozilla.org/appservices/logger;1"].getService(
     Ci.mozIAppServicesLogger
@@ -85,7 +89,7 @@ function ExtensionStorageEngineBridge(service) {
 }
 
 ExtensionStorageEngineBridge.prototype = {
-  __proto__: lazy.BridgedEngine.prototype,
+  __proto__: BridgedEngine.prototype,
   syncPriority: 10,
 
   
@@ -201,7 +205,7 @@ ExtensionStorageEngineBridge.prototype = {
 
 
 function ExtensionStorageEngineKinto(service) {
-  lazy.SyncEngine.call(this, "Extension-Storage", service);
+  SyncEngine.call(this, "Extension-Storage", service);
   XPCOMUtils.defineLazyPreferenceGetter(
     this,
     "_skipPercentageChance",
@@ -210,7 +214,7 @@ function ExtensionStorageEngineKinto(service) {
   );
 }
 ExtensionStorageEngineKinto.prototype = {
-  __proto__: lazy.SyncEngine.prototype,
+  __proto__: SyncEngine.prototype,
   _trackerObj: ExtensionStorageTracker,
   
   _storeObj: undefined,
@@ -266,11 +270,11 @@ ExtensionStorageEngineKinto.prototype = {
 };
 
 function ExtensionStorageTracker(name, engine) {
-  lazy.Tracker.call(this, name, engine);
+  Tracker.call(this, name, engine);
   this._ignoreAll = false;
 }
 ExtensionStorageTracker.prototype = {
-  __proto__: lazy.Tracker.prototype,
+  __proto__: Tracker.prototype,
 
   get ignoreAll() {
     return this._ignoreAll;
