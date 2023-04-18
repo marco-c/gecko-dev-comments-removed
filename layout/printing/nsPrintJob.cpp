@@ -155,25 +155,21 @@ static void DumpPrintObjectsTreeLayout(const UniquePtr<nsPrintObject>& aPO,
 
 
 
-
-
-
-static void BuildNestedPrintObjects(const UniquePtr<nsPrintObject>& aParentPO,
-                                    RefPtr<nsPrintData>& aPrintData) {
+void nsPrintJob::BuildNestedPrintObjects(
+    const UniquePtr<nsPrintObject>& aParentPO) {
   MOZ_ASSERT(aParentPO);
-  MOZ_ASSERT(aPrintData);
 
   
   
   if (aParentPO->mFrameType == eIFrame &&
       aParentPO->mDocument->GetProperty(nsGkAtoms::printisfocuseddoc)) {
-    aPrintData->mSelectionRoot = aParentPO.get();
-  } else if (!aPrintData->mSelectionRoot && aParentPO->HasSelection()) {
+    mPrt->mSelectionRoot = aParentPO.get();
+  } else if (!mPrt->mSelectionRoot && aParentPO->HasSelection()) {
     
     
     
     
-    aPrintData->mSelectionRoot = aPrintData->mPrintObject.get();
+    mPrt->mSelectionRoot = mPrt->mPrintObject.get();
   }
 
   for (auto& bc : aParentPO->mDocShell->GetBrowsingContext()->Children()) {
@@ -183,8 +179,7 @@ static void BuildNestedPrintObjects(const UniquePtr<nsPrintObject>& aParentPO,
         nsCOMPtr<nsIPrintSettingsService> printSettingsService =
             do_GetService(sPrintSettingsServiceContractID);
         embedding::PrintData printData;
-        printSettingsService->SerializeToPrintData(aPrintData->mPrintSettings,
-                                                   &printData);
+        printSettingsService->SerializeToPrintData(mPrintSettings, &printData);
         Unused << cc->SendUpdateRemotePrintSettings(bc, printData);
       }
       continue;
@@ -206,8 +201,8 @@ static void BuildNestedPrintObjects(const UniquePtr<nsPrintObject>& aParentPO,
       MOZ_ASSERT_UNREACHABLE("Init failed?");
     }
 
-    aPrintData->mPrintDocList.AppendElement(childPO.get());
-    BuildNestedPrintObjects(childPO, aPrintData);
+    mPrt->mPrintDocList.AppendElement(childPO.get());
+    BuildNestedPrintObjects(childPO);
     aParentPO->mKids.AppendElement(std::move(childPO));
   }
 }
@@ -407,9 +402,9 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  printData->mPrintSettings = aPrintSettings;
-  if (!printData->mPrintSettings) {
-    MOZ_TRY(GetDefaultPrintSettings(getter_AddRefs(printData->mPrintSettings)));
+  mPrintSettings = aPrintSettings;
+  if (!mPrintSettings) {
+    MOZ_TRY(GetDefaultPrintSettings(getter_AddRefs(mPrintSettings)));
   }
 
   {
@@ -423,7 +418,7 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
 
     printData->mPrintObject->mFrameType = eDoc;
 
-    BuildNestedPrintObjects(printData->mPrintObject, printData);
+    BuildNestedPrintObjects(printData->mPrintObject);
   }
 
   
@@ -439,7 +434,7 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
       !printData->mPrintObject->mDocument->GetRootElement())
     return NS_ERROR_GFX_PRINTER_STARTDOC;
 
-  printData->mPrintSettings->GetShrinkToFit(&printData->mShrinkToFit);
+  mPrintSettings->GetShrinkToFit(&printData->mShrinkToFit);
 
   bool printingViaParent =
       XRE_IsContentProcess() && StaticPrefs::print_print_via_parent();
@@ -452,7 +447,7 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
   }
 
   bool printSilently = false;
-  printData->mPrintSettings->GetPrintSilent(&printSilently);
+  mPrintSettings->GetPrintSilent(&printSilently);
   if (StaticPrefs::print_always_print_silent()) {
     printSilently = true;
   }
@@ -461,8 +456,7 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
     Telemetry::ScalarAdd(Telemetry::ScalarID::PRINTING_SILENT_PRINT, 1);
   }
 
-  MOZ_TRY(devspec->Init(nullptr, printData->mPrintSettings,
-                        mIsCreatingPrintPreview));
+  MOZ_TRY(devspec->Init(nullptr, mPrintSettings, mIsCreatingPrintPreview));
 
   printData->mPrintDC = new nsDeviceContext();
   MOZ_TRY(printData->mPrintDC->InitForPrinting(devspec));
@@ -899,23 +893,23 @@ nsresult nsPrintJob::SetupToPrintContent() {
 
   nsAutoString fileNameStr;
   
-  if (printData->mPrintSettings->GetOutputDestination() ==
+  if (mPrintSettings->GetOutputDestination() ==
       nsIPrintSettings::kOutputDestinationFile) {
     
-    printData->mPrintSettings->GetToFileName(fileNameStr);
+    mPrintSettings->GetToFileName(fileNameStr);
   }
 
   nsAutoString docTitleStr;
   nsAutoString docURLStr;
-  GetDisplayTitleAndURL(
-      *printData->mPrintObject->mDocument, printData->mPrintSettings,
-      DocTitleDefault::eDocURLElseFallback, docTitleStr, docURLStr);
+  GetDisplayTitleAndURL(*printData->mPrintObject->mDocument, mPrintSettings,
+                        DocTitleDefault::eDocURLElseFallback, docTitleStr,
+                        docURLStr);
 
   int32_t startPage = 1;
   int32_t endPage = printData->mNumPrintablePages;
 
   nsTArray<int32_t> ranges;
-  printData->mPrintSettings->GetPageRanges(ranges);
+  mPrintSettings->GetPageRanges(ranges);
   for (size_t i = 0; i < ranges.Length(); i += 2) {
     startPage = std::max(1, std::min(startPage, ranges[i]));
     endPage = std::min(printData->mNumPrintablePages,
@@ -939,7 +933,7 @@ nsresult nsPrintJob::SetupToPrintContent() {
         printData->mPrintObject->mPresShell->GetPageSequenceFrame();
     if (seqFrame) {
       seqFrame->StartPrint(printData->mPrintObject->mPresContext,
-                           printData->mPrintSettings, docTitleStr, docURLStr);
+                           mPrintSettings, docTitleStr, docURLStr);
     }
   }
 
@@ -1152,7 +1146,7 @@ void nsPrintJob::UpdateZoomRatio(nsPrintObject* aPO) {
       }
     } else {
       double scaling;
-      mPrt->mPrintSettings->GetScaling(&scaling);
+      mPrintSettings->GetScaling(&scaling);
       aPO->mZoomRatio = float(scaling);
     }
   }
@@ -1309,7 +1303,7 @@ nsresult nsPrintJob::ReflowPrintObject(const UniquePtr<nsPrintObject>& aPO) {
       !GetParentViewForRoot();
   aPO->mPresContext = shouldBeRoot ? new nsRootPresContext(aPO->mDocument, type)
                                    : new nsPresContext(aPO->mDocument, type);
-  aPO->mPresContext->SetPrintSettings(printData->mPrintSettings);
+  aPO->mPresContext->SetPrintSettings(mPrintSettings);
 
   
   MOZ_TRY(aPO->mPresContext->Init(printData->mPrintDC));
@@ -1326,7 +1320,7 @@ nsresult nsPrintJob::ReflowPrintObject(const UniquePtr<nsPrintObject>& aPO) {
 
   
   
-  if (printData->mPrintSettings->GetPrintSelectionOnly()) {
+  if (mPrintSettings->GetPrintSelectionOnly()) {
     
     
     
@@ -1356,7 +1350,7 @@ nsresult nsPrintJob::ReflowPrintObject(const UniquePtr<nsPrintObject>& aPO) {
   
   
   nsSize pageSize = adjSize;
-  if (printData->mPrintSettings->HasOrthogonalSheetsAndPages()) {
+  if (mPrintSettings->HasOrthogonalSheetsAndPages()) {
     std::swap(pageSize.width, pageSize.height);
   }
 
@@ -1688,7 +1682,7 @@ nsresult nsPrintJob::DoPrint(const UniquePtr<nsPrintObject>& aPO) {
     }
 #endif
 
-    if (!printData->mPrintSettings) {
+    if (!mPrintSettings) {
       
       SetIsPrinting(false);
       return NS_ERROR_FAILURE;
@@ -1696,7 +1690,7 @@ nsresult nsPrintJob::DoPrint(const UniquePtr<nsPrintObject>& aPO) {
 
     nsAutoString docTitleStr;
     nsAutoString docURLStr;
-    GetDisplayTitleAndURL(*aPO->mDocument, mPrt->mPrintSettings,
+    GetDisplayTitleAndURL(*aPO->mDocument, mPrintSettings,
                           DocTitleDefault::eFallback, docTitleStr, docURLStr);
 
     if (!seqFrame) {
@@ -1706,7 +1700,7 @@ nsresult nsPrintJob::DoPrint(const UniquePtr<nsPrintObject>& aPO) {
 
     
     
-    nsIPrintSettings* settings = printData->mPrintSettings;
+    nsIPrintSettings* settings = mPrintSettings;
     double paperWidth, paperHeight;
     settings->GetPaperWidth(&paperWidth);
     settings->GetPaperHeight(&paperHeight);
@@ -1942,14 +1936,14 @@ nsresult nsPrintJob::EnablePOsForPrinting() {
   
   
 
-  if (!printData || !printData->mPrintSettings) {
+  if (!printData || !mPrintSettings) {
     return NS_ERROR_FAILURE;
   }
 
   PR_PL(("\n"));
   PR_PL(("********* nsPrintJob::EnablePOsForPrinting *********\n"));
 
-  if (!printData->mPrintSettings->GetPrintSelectionOnly()) {
+  if (!mPrintSettings->GetPrintSelectionOnly()) {
     printData->mPrintObject->EnablePrinting(true);
     return NS_OK;
   }
@@ -2051,7 +2045,7 @@ nsresult nsPrintJob::StartPagePrintTimer(const UniquePtr<nsPrintObject>& aPO) {
   if (!mPagePrintTimer) {
     
     
-    int32_t printPageDelay = mPrt->mPrintSettings->GetPrintPageDelay();
+    int32_t printPageDelay = mPrintSettings->GetPrintPageDelay();
 
     nsCOMPtr<nsIContentViewer> cv = do_QueryInterface(mDocViewerPrint);
     NS_ENSURE_TRUE(cv, NS_ERROR_FAILURE);
