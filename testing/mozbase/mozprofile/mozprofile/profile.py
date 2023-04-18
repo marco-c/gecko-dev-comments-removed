@@ -152,7 +152,7 @@ class BaseProfile(object):
             tempdir = tempfile.mkdtemp()  
             mozfile.remove(tempdir)  
             path_to = tempdir
-        copytree(path_from, path_to, ignore=ignore)
+        copytree(path_from, path_to, ignore=ignore, ignore_dangling_symlinks=True)
 
         c = cls(path_to, **kwargs)
         c.create_new = True  
