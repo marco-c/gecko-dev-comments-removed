@@ -952,6 +952,7 @@ static const TransportSecurityPreload kPublicKeyPinningPreloadList[] = {
   { "google.tn", true, false, false, -1, &kPinset_google_root_pems },
   { "google.to", true, false, false, -1, &kPinset_google_root_pems },
   { "google.tt", true, false, false, -1, &kPinset_google_root_pems },
+  { "google.ua", true, false, false, -1, &kPinset_google_root_pems },
   { "google.us", true, false, false, -1, &kPinset_google_root_pems },
   { "google.uz", true, false, false, -1, &kPinset_google_root_pems },
   { "google.vg", true, false, false, -1, &kPinset_google_root_pems },
@@ -1134,4 +1135,4 @@ static const TransportSecurityPreload kPublicKeyPinningPreloadList[] = {
 
 static const int32_t kUnknownId = -1;
 
-static const PRTime kPreloadPKPinsExpirationTime = INT64_C(1658141463432000);
+static const PRTime kPreloadPKPinsExpirationTime = INT64_C(1658401159656000);
