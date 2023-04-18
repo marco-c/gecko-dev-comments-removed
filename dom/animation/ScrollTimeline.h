@@ -99,7 +99,7 @@ class ScrollTimeline final : public AnimationTimeline {
 
   bool operator==(const ScrollTimeline& aOther) const {
     return mDocument == aOther.mDocument && mSource == aOther.mSource &&
-           mDirection == aOther.mDirection;
+           mAxis == aOther.mAxis;
   }
 
   NS_DECL_ISUPPORTS_INHERITED
@@ -154,11 +154,6 @@ class ScrollTimeline final : public AnimationTimeline {
   }
 
   
-  
-  
-  
-  
-  
   layers::ScrollDirection Axis() const;
 
   StyleOverflow SourceScrollStyle() const;
@@ -175,7 +170,7 @@ class ScrollTimeline final : public AnimationTimeline {
  private:
   ScrollTimeline() = delete;
   ScrollTimeline(Document* aDocument, const Scroller& aScroller,
-                 StyleScrollDirection aDirection);
+                 StyleScrollAxis aAxis);
 
   
   
@@ -196,7 +191,7 @@ class ScrollTimeline final : public AnimationTimeline {
   
   
   Scroller mSource;
-  StyleScrollDirection mDirection;
+  StyleScrollAxis mAxis;
 
   
   
@@ -228,8 +223,7 @@ class ScrollTimelineSet {
   
   
   
-  using NonOwningScrollTimelineMap =
-      HashMap<StyleScrollDirection, ScrollTimeline*>;
+  using NonOwningScrollTimelineMap = HashMap<StyleScrollAxis, ScrollTimeline*>;
 
   ~ScrollTimelineSet() = default;
 
@@ -237,14 +231,14 @@ class ScrollTimelineSet {
   static ScrollTimelineSet* GetOrCreateScrollTimelineSet(Element* aElement);
   static void DestroyScrollTimelineSet(Element* aElement);
 
-  NonOwningScrollTimelineMap::AddPtr LookupForAdd(StyleScrollDirection aKey) {
+  NonOwningScrollTimelineMap::AddPtr LookupForAdd(StyleScrollAxis aKey) {
     return mScrollTimelines.lookupForAdd(aKey);
   }
-  void Add(NonOwningScrollTimelineMap::AddPtr& aPtr, StyleScrollDirection aKey,
+  void Add(NonOwningScrollTimelineMap::AddPtr& aPtr, StyleScrollAxis aKey,
            ScrollTimeline* aScrollTimeline) {
     Unused << mScrollTimelines.add(aPtr, aKey, aScrollTimeline);
   }
-  void Remove(StyleScrollDirection aKey) { mScrollTimelines.remove(aKey); }
+  void Remove(StyleScrollAxis aKey) { mScrollTimelines.remove(aKey); }
 
   bool IsEmpty() const { return mScrollTimelines.empty(); }
 
