@@ -247,53 +247,27 @@ class WindowManager {
 
   waitForInitialApplicationWindowLoaded() {
     return new TimedPromise(
-      resolve => {
-        const waitForWindow = () => {
-          let windowTypes;
-          if (AppInfo.isThunderbird) {
-            windowTypes = ["mail:3pane"];
-          } else {
-            
-            
-            windowTypes = ["navigator:browser", "navigator:geckoview"];
-          }
+      async resolve => {
+        const windowReadyTopic = AppInfo.isThunderbird
+          ? "mail-delayed-startup-finished"
+          : "browser-delayed-startup-finished";
 
-          let win;
-          for (const windowType of windowTypes) {
-            win = Services.wm.getMostRecentWindow(windowType);
-            if (win) {
-              break;
-            }
-          }
+        
+        const win = Services.wm.getMostRecentBrowserWindow();
 
-          if (!win) {
-            
-            let checkTimer = Cc["@mozilla.org/timer;1"].createInstance(
-              Ci.nsITimer
-            );
-            checkTimer.initWithCallback(
-              waitForWindow,
-              100,
-              Ci.nsITimer.TYPE_ONE_SHOT
-            );
-          } else if (win.document.readyState != "complete") {
-            
-            let listener = ev => {
-              
-              
-              if (ev.target != win.document) {
-                return;
-              }
-              win.removeEventListener("load", listener);
-              waitForWindow();
-            };
-            win.addEventListener("load", listener, true);
-          } else {
-            resolve(win);
-          }
-        };
+        const windowLoaded = waitForObserverTopic(windowReadyTopic, {
+          checkFn: subject => (win !== null ? subject == win : true),
+        });
 
-        waitForWindow();
+        
+        if (win && win.document.readyState == "complete") {
+          resolve(win);
+          return;
+        }
+
+        
+        const { subject } = await windowLoaded;
+        resolve(subject);
       },
       {
         errorMessage: "No applicable application windows found",
