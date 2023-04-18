@@ -412,9 +412,9 @@ let ShellServiceInternal = {
     
     try {
       
-      await this.shellService
+      this.shellService
         .QueryInterface(Ci.nsIWindowsShellService)
-        .checkPinCurrentAppToTaskbarAsync(privateBrowsing);
+        .checkPinCurrentAppToTaskbar(privateBrowsing);
       let winTaskbar = Cc["@mozilla.org/windows-taskbar;1"].getService(
         Ci.nsIWinTaskbar
       );
