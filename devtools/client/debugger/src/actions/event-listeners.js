@@ -2,8 +2,6 @@
 
 
 
-import { remove } from "lodash";
-
 import {
   getActiveEventListeners,
   getEventListenerExpanded,
@@ -37,8 +35,7 @@ export function removeEventListenerBreakpoints(eventsToRemove) {
   return async ({ dispatch, client, getState }) => {
     const activeListenerBreakpoints = await getActiveEventListeners(getState());
 
-    const newEvents = remove(
-      activeListenerBreakpoints,
+    const newEvents = activeListenerBreakpoints.filter(
       event => !eventsToRemove.includes(event)
     );
 
