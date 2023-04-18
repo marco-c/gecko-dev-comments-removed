@@ -25,11 +25,12 @@ add_task(async function() {
   
   
   const SPAM_COUNT = 2;
+  let prefValue = false;
   for (let i = 0; i < SPAM_COUNT; ++i) {
-    ui._onOrigSourcesPrefChanged();
+    pushPref("devtools.source-map.client-service.enabled", prefValue);
+    prefValue = !prefValue;
   }
 
-  
   
   await new Promise(resolve => {
     let loadCount = 0;
