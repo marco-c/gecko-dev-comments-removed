@@ -365,23 +365,6 @@ var GeckoViewUtils = {
     return null;
   },
 
-  getActiveDispatcherAndWindow() {
-    const bc = Services.focus.activeBrowsingContext;
-    const win = bc ? bc.window : null; 
-    let dispatcher = this.getDispatcherForWindow(win);
-    if (dispatcher) {
-      return [dispatcher, win];
-    }
-
-    for (const win of Services.wm.getEnumerator( null)) {
-      dispatcher = this.getDispatcherForWindow(win);
-      if (dispatcher) {
-        return [dispatcher, win];
-      }
-    }
-    return [null, null];
-  },
-
   
 
 
