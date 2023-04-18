@@ -1560,10 +1560,15 @@ const nsTArray<GfxDriverInfo>& GfxInfo::GetGfxDriverInfo() {
 
 
     APPEND_TO_DRIVER_BLOCKLIST2(
-        OperatingSystem::Windows8_1, DeviceFamily::Bug1760464,
+        OperatingSystem::Windows8_1, DeviceFamily::IntelHaswell,
         nsIGfxInfo::FEATURE_VP8_HW_DECODE, nsIGfxInfo::FEATURE_BLOCKED_DEVICE,
         DRIVER_LESS_THAN, GfxDriverInfo::allDriverVersions,
         "FEATURE_FAILURE_BUG_1760464");
+
+    APPEND_TO_DRIVER_BLOCKLIST2(
+        OperatingSystem::Windows8_1, DeviceFamily::IntelAll,
+        nsIGfxInfo::FEATURE_VP8_HW_DECODE, nsIGfxInfo::FEATURE_BLOCKED_DEVICE,
+        DRIVER_EQUAL, V(10, 18, 14, 4264), "FEATURE_FAILURE_BUG_1761332");
 
     
 
