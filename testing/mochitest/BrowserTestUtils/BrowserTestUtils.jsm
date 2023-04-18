@@ -460,7 +460,6 @@ var BrowserTestUtils = {
       
       if (
         BrowserTestUtils._httpsFirstEnabled &&
-        typeof wantLoad == "string" &&
         wantLoad.startsWith("http://")
       ) {
         let wantLoadHttps = wantLoad.replace("http://", "https://");
