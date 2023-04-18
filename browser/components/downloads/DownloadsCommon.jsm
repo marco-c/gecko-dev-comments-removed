@@ -1265,6 +1265,7 @@ DownloadsIndicatorDataCtor.prototype = {
           break;
         case Downloads.Error.BLOCK_VERDICT_POTENTIALLY_UNWANTED: 
         case Downloads.Error.BLOCK_VERDICT_INSECURE:
+        case Downloads.Error.BLOCK_VERDICT_DOWNLOAD_SPAM:
           
           if (this._attention != DownloadsCommon.ATTENTION_SEVERE) {
             this.attention = DownloadsCommon.ATTENTION_WARNING;
