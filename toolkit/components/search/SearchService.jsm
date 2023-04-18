@@ -557,6 +557,11 @@ SearchService.prototype = {
 
 
   async _loadEngines(settings) {
+    
+    
+    let prevMetaData = { ...settings?.metaData };
+    let prevCurrentEngine = prevMetaData.current;
+
     logConsole.debug("_loadEngines: start");
     let { engines, privateDefault } = await this._fetchEngineSelectorEngines();
     this._setDefaultAndOrdersFromSelector(engines, privateDefault);
@@ -585,6 +590,23 @@ SearchService.prototype = {
     this._loadEnginesMetadataFromSettings(settings.engines);
 
     logConsole.debug("_loadEngines: done");
+
+    
+    
+    let newCurrentEngine = this._getEngineDefault(false)?.name;
+
+    if (
+      prevCurrentEngine &&
+      newCurrentEngine !== prevCurrentEngine &&
+      prevMetaData &&
+      settings.metaData &&
+      !this._hasSettingsMetaDataChanged(prevMetaData, settings.metaData)
+    ) {
+      this._showRemovalOfSearchEngineNotificationBox(
+        prevCurrentEngine,
+        newCurrentEngine
+      );
+    }
   },
 
   
@@ -660,8 +682,9 @@ SearchService.prototype = {
 
   async _reloadEngines(settings) {
     
-    const prevCurrentEngine = this._currentEngine;
-    const prevPrivateEngine = this._currentPrivateEngine;
+    let prevCurrentEngine = this._currentEngine;
+    let prevPrivateEngine = this._currentPrivateEngine;
+    let prevMetaData = { ...settings?.metaData };
 
     
     
@@ -774,6 +797,21 @@ SearchService.prototype = {
     
     this._currentEngine = null;
     this._currentPrivateEngine = null;
+    
+    
+    
+    if (
+      prevCurrentEngine &&
+      enginesToRemove.some(e => e.name == prevCurrentEngine.name)
+    ) {
+      this._settings.setAttribute("current", "");
+    }
+    if (
+      prevPrivateEngine &&
+      enginesToRemove.some(e => e.name == prevPrivateEngine.name)
+    ) {
+      this._settings.setAttribute("private", "");
+    }
 
     this._setDefaultAndOrdersFromSelector(
       originalConfigEngines,
@@ -795,7 +833,19 @@ SearchService.prototype = {
           SearchUtils.MODIFIED_TYPE.DEFAULT_PRIVATE
         );
       }
+
+      if (
+        prevMetaData &&
+        settings.metaData &&
+        !this._hasSettingsMetaDataChanged(prevMetaData, settings.metaData)
+      ) {
+        this._showRemovalOfSearchEngineNotificationBox(
+          prevCurrentEngine.name,
+          this.defaultEngine.name
+        );
+      }
     }
+
     if (
       this._separatePrivateDefault &&
       prevPrivateEngine &&
@@ -2143,11 +2193,7 @@ SearchService.prototype = {
     
     
     
-    if (privateMode) {
-      this.defaultPrivateEngine = newDefault;
-    } else {
-      this.defaultEngine = newDefault;
-    }
+    this._setEngineDefault(privateMode, newDefault);
 
     return this[currentEngineProp];
   },
@@ -2163,7 +2209,6 @@ SearchService.prototype = {
 
 
   _getEngineDefault(privateMode) {
-    this._ensureInitialized();
     const currentEngineProp = privateMode
       ? "_currentPrivateEngine"
       : "_currentEngine";
@@ -2175,7 +2220,7 @@ SearchService.prototype = {
     
     const attributeName = privateMode ? "private" : "current";
     let name = this._settings.getAttribute(attributeName);
-    let engine = this.getEngineByName(name);
+    let engine = this._engines.get(name) || null;
     if (
       engine &&
       (engine.isAppProvided ||
@@ -2210,7 +2255,6 @@ SearchService.prototype = {
 
 
   _setEngineDefault(privateMode, newEngine) {
-    this._ensureInitialized();
     
     
     
@@ -2224,7 +2268,7 @@ SearchService.prototype = {
       );
     }
 
-    const newCurrentEngine = this.getEngineByName(newEngine.name);
+    const newCurrentEngine = this._engines.get(newEngine.name);
     if (!newCurrentEngine) {
       throw Components.Exception(
         "Can't find engine in store!",
@@ -2295,18 +2339,22 @@ SearchService.prototype = {
   },
 
   get defaultEngine() {
+    this._ensureInitialized();
     return this._getEngineDefault(false);
   },
 
   set defaultEngine(newEngine) {
+    this._ensureInitialized();
     this._setEngineDefault(false, newEngine);
   },
 
   get defaultPrivateEngine() {
+    this._ensureInitialized();
     return this._getEngineDefault(this._separatePrivateDefault);
   },
 
   set defaultPrivateEngine(newEngine) {
+    this._ensureInitialized();
     if (!this._separatePrivateDefaultPrefValue) {
       Services.prefs.setBoolPref(
         SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
@@ -2824,6 +2872,48 @@ SearchService.prototype = {
     "nsIObserver",
     "nsITimerCallback",
   ]),
+
+  
+
+
+
+
+
+
+
+  _hasSettingsMetaDataChanged(prevMetaDataObj, currentMetaDataObj) {
+    let metaDataProperties = [
+      "locale",
+      "region",
+      "channel",
+      "experiment",
+      "distroID",
+    ];
+
+    return metaDataProperties.some(
+      p => prevMetaDataObj?.[p] != currentMetaDataObj?.[p]
+    );
+  },
+
+  
+
+
+
+
+
+
+
+
+  _showRemovalOfSearchEngineNotificationBox(
+    prevCurrentEngine,
+    newCurrentEngine
+  ) {
+    let win = Services.wm.getMostRecentBrowserWindow();
+    win.BrowserSearch.removalOfSearchEngineNotificationBox(
+      prevCurrentEngine,
+      newCurrentEngine
+    );
+  },
 };
 
 var engineUpdateService = {
