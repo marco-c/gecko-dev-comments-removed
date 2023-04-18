@@ -33,19 +33,9 @@ NS_EVENT_MESSAGE(eVoidEvent)
 
 NS_EVENT_MESSAGE(eAllEvents)
 
-
-NS_EVENT_MESSAGE(eWindowClose)
-
 NS_EVENT_MESSAGE(eKeyPress)
 NS_EVENT_MESSAGE(eKeyUp)
 NS_EVENT_MESSAGE(eKeyDown)
-
-
-
-
-
-NS_EVENT_MESSAGE(eKeyDownOnPlugin)
-NS_EVENT_MESSAGE(eKeyUpOnPlugin)
 
 
 
@@ -57,17 +47,6 @@ NS_EVENT_MESSAGE(eResize)
 NS_EVENT_MESSAGE(eScroll)
 NS_EVENT_MESSAGE(eMozVisualResize)
 NS_EVENT_MESSAGE(eMozVisualScroll)
-
-
-NS_EVENT_MESSAGE(eInstall)
-NS_EVENT_MESSAGE(eAppInstalled)
-
-
-
-
-
-NS_EVENT_MESSAGE(ePluginActivate)
-NS_EVENT_MESSAGE(ePluginFocus)
 
 NS_EVENT_MESSAGE(eOffline)
 NS_EVENT_MESSAGE(eOnline)
@@ -152,7 +131,6 @@ NS_EVENT_MESSAGE_FIRST_LAST(eDragDropEvent, eDragEnter, eDragLeave)
 
 NS_EVENT_MESSAGE(eXULPopupShowing)
 NS_EVENT_MESSAGE(eXULPopupShown)
-NS_EVENT_MESSAGE(eXULPopupPositioned)
 NS_EVENT_MESSAGE(eXULPopupHiding)
 NS_EVENT_MESSAGE(eXULPopupHidden)
 NS_EVENT_MESSAGE(eXULBroadcast)
@@ -430,13 +408,6 @@ NS_EVENT_MESSAGE(eWheelOperationStart)
 
 
 NS_EVENT_MESSAGE(eWheelOperationEnd)
-
-
-NS_EVENT_MESSAGE(eTimeChange)
-
-
-NS_EVENT_MESSAGE(eNetworkUpload)
-NS_EVENT_MESSAGE(eNetworkDownload)
 
 
 NS_EVENT_MESSAGE(eMediaRecorderDataAvailable)

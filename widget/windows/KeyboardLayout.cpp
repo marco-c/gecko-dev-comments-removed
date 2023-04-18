@@ -2023,15 +2023,12 @@ nsEventStatus NativeKey::InitKeyEvent(
       if (mCharMessageHasGone) {
         aKeyEvent.PreventDefaultBeforeDispatch(CrossProcessForwarding::eAllow);
       }
-      [[fallthrough]];
-    case eKeyDownOnPlugin:
       aKeyEvent.mKeyCode = mDOMKeyCode;
       
       sUniqueKeyEventId++;
       aKeyEvent.mUniqueId = sUniqueKeyEventId;
       break;
     case eKeyUp:
-    case eKeyUpOnPlugin:
       aKeyEvent.mKeyCode = mDOMKeyCode;
       
       

@@ -790,10 +790,6 @@ class WidgetEvent : public WidgetEventTime {
 
 
   bool HasIMEEventMessage() const;
-  
-
-
-  bool HasPluginActivationEventMessage() const;
 
   
 
