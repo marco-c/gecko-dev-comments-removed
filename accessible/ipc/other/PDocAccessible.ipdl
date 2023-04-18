@@ -138,6 +138,11 @@ parent:
   
 
 
+  async SelectedAccessiblesChanged(uint64_t[] aSelectedIDs, uint64_t[] aUnselectedIDs);
+
+  
+
+
 
   async AccessiblesWillMove(uint64_t[] aIDs);
 
