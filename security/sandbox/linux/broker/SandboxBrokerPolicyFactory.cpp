@@ -61,7 +61,7 @@ static const int access = SandboxBroker::MAY_ACCESS;
 static const int deny = SandboxBroker::FORCE_DENY;
 }  
 
-static void AddMesaSysfsPaths(SandboxBroker::Policy* aPolicy) {
+static void AddMesaPaths(SandboxBroker::Policy* aPolicy) {
   
   if (auto dir = opendir("/dev/dri")) {
     while (auto entry = readdir(dir)) {
@@ -121,6 +121,26 @@ static void AddMesaSysfsPaths(SandboxBroker::Policy* aPolicy) {
       }
     }
     closedir(dir);
+  }
+
+  
+  aPolicy->AddPath(rdonly, "/usr/share/drirc.d");
+
+  
+  aPolicy->AddPath(rdonly, "/etc/drirc");
+
+  nsCOMPtr<nsIFile> drirc;
+  nsresult rv =
+      GetSpecialSystemDirectory(Unix_HomeDirectory, getter_AddRefs(drirc));
+  if (NS_SUCCEEDED(rv)) {
+    rv = drirc->AppendNative(".drirc"_ns);
+    if (NS_SUCCEEDED(rv)) {
+      nsAutoCString tmpPath;
+      rv = drirc->GetNativePath(tmpPath);
+      if (NS_SUCCEEDED(rv)) {
+        aPolicy->AddPath(rdonly, tmpPath.get());
+      }
+    }
   }
 }
 
@@ -359,7 +379,7 @@ void SandboxBrokerPolicyFactory::InitContentPolicy() {
   policy->AddDir(rdonly, "/var/cache/fontconfig");
 
   if (!headless) {
-    AddMesaSysfsPaths(policy);
+    AddMesaPaths(policy);
   }
   AddLdconfigPaths(policy);
   AddLdLibraryEnvPaths(policy);
@@ -824,7 +844,7 @@ SandboxBrokerPolicyFactory::GetRDDPolicy(int aPid) {
 
   
   policy->AddDir(rdwr, "/dev/dri");
-  AddMesaSysfsPaths(policy.get());
+  AddMesaPaths(policy.get());
 
   
   AddLdconfigPaths(policy.get());
