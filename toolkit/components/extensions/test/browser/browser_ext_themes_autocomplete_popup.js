@@ -2,7 +2,8 @@
 
 
 
-const POPUP_COLOR = "#85A400";
+const POPUP_COLOR_DARK = "#00A400";
+const POPUP_COLOR_BRIGHT = "#85A4FF";
 const POPUP_TEXT_COLOR_DARK = "#000000";
 const POPUP_TEXT_COLOR_BRIGHT = "#ffffff";
 const POPUP_SELECTED_COLOR = "#9400ff";
@@ -41,6 +42,7 @@ add_task(async function setup() {
 
 add_task(async function test_popup_url() {
   
+  
   let extension = ExtensionTestUtils.loadExtension({
     manifest: {
       theme: {
@@ -50,7 +52,7 @@ add_task(async function test_popup_url() {
         colors: {
           frame: ACCENT_COLOR,
           tab_background_text: TEXT_COLOR,
-          toolbar_field_focus: POPUP_COLOR,
+          toolbar_field_focus: POPUP_COLOR_BRIGHT,
           toolbar_field_text_focus: POPUP_TEXT_COLOR_DARK,
           popup_highlight: POPUP_SELECTED_COLOR,
           popup_highlight_text: POPUP_SELECTED_TEXT_COLOR,
@@ -131,6 +133,7 @@ add_task(async function test_popup_url() {
   await extension.unload();
 
   
+  
   extension = ExtensionTestUtils.loadExtension({
     manifest: {
       theme: {
@@ -140,7 +143,7 @@ add_task(async function test_popup_url() {
         colors: {
           frame: ACCENT_COLOR,
           tab_background_text: TEXT_COLOR,
-          toolbar_field_focus: POPUP_COLOR,
+          toolbar_field_focus: POPUP_COLOR_DARK,
           toolbar_field_text_focus: POPUP_TEXT_COLOR_BRIGHT,
           popup_highlight: POPUP_SELECTED_COLOR,
           popup_highlight_text: POPUP_SELECTED_TEXT_COLOR,

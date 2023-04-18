@@ -78,19 +78,12 @@ const toolkitVariableMap = [
         const descriptionColorVariable = "--panel-description-color";
 
         if (!rgbaChannels) {
-          element.removeAttribute("lwt-popup-brighttext");
           element.style.removeProperty(disabledColorVariable);
           element.style.removeProperty(descriptionColorVariable);
           return null;
         }
 
         let { r, g, b, a } = rgbaChannels;
-
-        if (_isColorDark(r, g, b)) {
-          element.removeAttribute("lwt-popup-brighttext");
-        } else {
-          element.setAttribute("lwt-popup-brighttext", "true");
-        }
 
         element.style.setProperty(
           disabledColorVariable,
@@ -120,19 +113,6 @@ const toolkitVariableMap = [
     "--toolbar-field-color",
     {
       lwtProperty: "toolbar_field_text",
-      processColor(rgbaChannels, element) {
-        if (!rgbaChannels) {
-          element.removeAttribute("lwt-toolbar-field-brighttext");
-          return null;
-        }
-        const { r, g, b, a } = rgbaChannels;
-        if (_isColorDark(r, g, b)) {
-          element.removeAttribute("lwt-toolbar-field-brighttext");
-        } else {
-          element.setAttribute("lwt-toolbar-field-brighttext", "true");
-        }
-        return `rgba(${r}, ${g}, ${b}, ${a})`;
-      },
     },
   ],
   [
@@ -169,19 +149,6 @@ const toolkitVariableMap = [
     {
       lwtProperty: "toolbar_field_text_focus",
       fallbackProperty: "toolbar_field_text",
-      processColor(rgbaChannels, element) {
-        if (!rgbaChannels) {
-          element.removeAttribute("lwt-toolbar-field-focus-brighttext");
-          return null;
-        }
-        const { r, g, b, a } = rgbaChannels;
-        if (_isColorDark(r, g, b)) {
-          element.removeAttribute("lwt-toolbar-field-focus-brighttext");
-        } else {
-          element.setAttribute("lwt-toolbar-field-focus-brighttext", "true");
-        }
-        return `rgba(${r}, ${g}, ${b}, ${a})`;
-      },
     },
   ],
   [
@@ -299,7 +266,7 @@ LightweightThemeConsumer.prototype = {
     _setProperties(root, active, theme);
 
     if (theme.id != DEFAULT_THEME_ID || useDarkTheme) {
-      _determineToolbarAndContentTheme(this._doc, theme);
+      _determineToolbarAndContentTheme(this._doc, theme._processedColors);
       root.setAttribute("lwtheme", "true");
     } else {
       _determineToolbarAndContentTheme(this._doc, null);
@@ -311,6 +278,8 @@ LightweightThemeConsumer.prototype = {
     } else {
       root.removeAttribute("lwt-default-theme-in-dark-mode");
     }
+
+    _setDarkModeAttributes(this._doc, root, theme._processedColors);
 
     let contentThemeData = _getContentProperties(this._doc, active, theme);
     Services.ppmm.sharedData.set(`theme/${this._winId}`, contentThemeData);
@@ -420,7 +389,7 @@ function _setProperty(elem, active, variableName, value) {
   }
 }
 
-function _determineToolbarAndContentTheme(aDoc, aTheme) {
+function _determineToolbarAndContentTheme(aDoc, aColors) {
   function prefValue(aColor, aIsForeground = false) {
     if (typeof aColor != "object") {
       aColor = _cssColorToRGBA(aDoc, aColor);
@@ -429,7 +398,7 @@ function _determineToolbarAndContentTheme(aDoc, aTheme) {
   }
 
   let toolbarTheme = (function() {
-    if (!aTheme) {
+    if (!aColors) {
       if (!DEFAULT_THEME_RESPECTS_SYSTEM_COLOR_SCHEME) {
         return 1;
       }
@@ -438,34 +407,34 @@ function _determineToolbarAndContentTheme(aDoc, aTheme) {
     
     
     
-    if (aTheme.toolbarColor) {
-      let color = _cssColorToRGBA(aDoc, aTheme.toolbarColor);
+    if (aColors.toolbarColor) {
+      let color = _cssColorToRGBA(aDoc, aColors.toolbarColor);
       if (color.a == 1) {
         return prefValue(color);
       }
     }
-    if (aTheme.toolbar_text) {
-      return prefValue(aTheme.toolbar_text,  true);
+    if (aColors.toolbar_text) {
+      return prefValue(aColors.toolbar_text,  true);
     }
     
     
     
     
     
-    return prefValue(aTheme.textcolor || "black",  true);
+    return prefValue(aColors.textcolor || "black",  true);
   })();
 
   let contentTheme = (function() {
-    if (!aTheme) {
+    if (!aColors) {
       return 2;
     }
-    if (aTheme.ntp_background) {
+    if (aColors.ntp_background) {
       
       
-      return prefValue(aTheme.ntp_background);
+      return prefValue(aColors.ntp_background);
     }
-    if (aTheme.ntp_text) {
-      return prefValue(aTheme.ntp_text,  true);
+    if (aColors.ntp_text) {
+      return prefValue(aColors.ntp_text,  true);
     }
     return 2;
   })();
@@ -474,10 +443,99 @@ function _determineToolbarAndContentTheme(aDoc, aTheme) {
   Services.prefs.setIntPref("browser.theme.content-theme", contentTheme);
 }
 
+
+
+
+
+
+
+
+
+
+function _setDarkModeAttributes(doc, root, colors) {
+  if (
+    _determineIfColorPairIsDark(
+      doc,
+      colors,
+      "toolbar_field_text",
+      "toolbar_field"
+    )
+  ) {
+    root.setAttribute("lwt-toolbar-field-brighttext", "true");
+  } else {
+    root.removeAttribute("lwt-toolbar-field-brighttext");
+  }
+
+  if (
+    _determineIfColorPairIsDark(
+      doc,
+      colors,
+      "toolbar_field_text_focus",
+      "toolbar_field_focus"
+    )
+  ) {
+    root.setAttribute("lwt-toolbar-field-focus-brighttext", "true");
+  } else {
+    root.removeAttribute("lwt-toolbar-field-focus-brighttext");
+  }
+
+  if (_determineIfColorPairIsDark(doc, colors, "popup_text", "popup")) {
+    root.setAttribute("lwt-popup-brighttext", "true");
+  } else {
+    root.removeAttribute("lwt-popup-brighttext");
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function _determineIfColorPairIsDark(
+  doc,
+  colors,
+  textPropertyName,
+  backgroundPropertyName
+) {
+  if (!colors[backgroundPropertyName] && !colors[textPropertyName]) {
+    
+    return false;
+  }
+
+  let color = _cssColorToRGBA(doc, colors[backgroundPropertyName]);
+  if (color && color.a == 1) {
+    return _isColorDark(color.r, color.g, color.b);
+  }
+
+  color = _cssColorToRGBA(doc, colors[textPropertyName]);
+  if (!color) {
+    
+    
+    return false;
+  }
+
+  return !_isColorDark(color.r, color.g, color.b);
+}
+
 function _setProperties(root, active, themeData) {
   let propertyOverrides = new Map();
   let doc = root.ownerDocument;
 
+  
+  
+  
+  
+  
+  themeData._processedColors = { ...themeData };
   for (let map of [toolkitVariableMap, ThemeVariableMap]) {
     for (let [cssVarName, definition] of map) {
       const {
@@ -502,6 +560,10 @@ function _setProperties(root, active, themeData) {
           val = _rgbaToString(val);
         }
       }
+
+      
+      themeData._processedColors[lwtProperty] = val;
+
       _setProperty(elem, active, cssVarName, val);
     }
   }
