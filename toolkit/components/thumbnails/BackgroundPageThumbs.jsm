@@ -374,6 +374,7 @@ const BackgroundPageThumbs = {
     this._parentWin.document.documentElement.appendChild(browser);
 
     browser.addProgressListener(this, Ci.nsIWebProgress.NOTIFY_STATE_WINDOW);
+    browser.mute();
 
     
     
