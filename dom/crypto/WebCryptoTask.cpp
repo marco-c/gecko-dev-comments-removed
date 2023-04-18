@@ -1504,6 +1504,9 @@ class ImportSymmetricKeyTask : public ImportKeyTask {
 
     
     
+    if (mKeyData.Length() > UINT32_MAX / 8) {
+      return NS_ERROR_DOM_DATA_ERR;
+    }
     uint32_t length = 8 * mKeyData.Length();  
     if (mAlgName.EqualsLiteral(WEBCRYPTO_ALG_AES_CBC) ||
         mAlgName.EqualsLiteral(WEBCRYPTO_ALG_AES_CTR) ||
