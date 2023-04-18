@@ -681,9 +681,49 @@ async function _watchForResponsiveReload(
 
 
 
+
+
+
+
+
+
 function watchForCurrentPanelReload(toolbox) {
-  const toolId = toolbox.currentToolId;
-  const panel = toolbox.getCurrentPanel();
+  return _watchForPanelReload(toolbox, toolbox.currentToolId);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+function watchForLoadedPanelsReload(toolbox) {
+  const waitForPanels = [];
+  for (const [id] of toolbox.getToolPanels()) {
+    
+    waitForPanels.push(_watchForPanelReload(toolbox, id));
+  }
+
+  return function() {
+    return Promise.all(
+      waitForPanels.map(async watchPanel => {
+        
+        if (watchPanel) {
+          await watchPanel();
+        }
+      })
+    );
+  };
+}
+
+function _watchForPanelReload(toolbox, toolId) {
+  const panel = toolbox.getPanel(toolId);
 
   if (toolId == "inspector") {
     const markuploaded = panel.once("markuploaded");
