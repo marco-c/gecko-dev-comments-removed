@@ -86,9 +86,20 @@ return  (function(modules) {
 
 
 function networkRequest(url, opts) {
-  const UNSUPPORTED_PROTOCOLS = ["chrome://", "resource://"];
+  const supportedProtocols = ["http:", "https:", "data:"]; 
+  
 
-  if (UNSUPPORTED_PROTOCOLS.some(protocol => url.startsWith(protocol))) {
+  const ADDITIONAL_PROTOCOLS = ["chrome:", "file:", "moz-extension:"];
+
+  for (const protocol of ADDITIONAL_PROTOCOLS) {
+    var _opts$sourceMapBaseUR;
+
+    if ((_opts$sourceMapBaseUR = opts.sourceMapBaseURL) === null || _opts$sourceMapBaseUR === void 0 ? void 0 : _opts$sourceMapBaseUR.startsWith(protocol)) {
+      supportedProtocols.push(protocol);
+    }
+  }
+
+  if (supportedProtocols.every(protocol => !url.startsWith(protocol))) {
     return Promise.reject(`unsupported protocol for sourcemap request ${url}`);
   }
 
@@ -2490,6 +2501,7 @@ async function getOriginalSourceText(originalSourceId) {
   if (!text) {
     try {
       const response = await networkRequest(url, {
+        sourceMapBaseURL: map.sourceMapBaseURL,
         loadFromCache: false
       });
       text = response.content;
@@ -4608,7 +4620,8 @@ async function _resolveAndFetch(generatedSource) {
   } = _resolveSourceMapURL(generatedSource);
 
   let fetched = await networkRequest(sourceMapURL, {
-    loadFromCache: false
+    loadFromCache: false,
+    sourceMapBaseURL: generatedSource.sourceMapBaseURL
   });
 
   if (fetched.isDwarf) {
@@ -4627,7 +4640,11 @@ async function _resolveAndFetch(generatedSource) {
       const parsedJSON = JSON.parse(fetched.content);
       map.xScopes = parsedJSON["x-scopes"];
     }
-  }
+  } 
+  
+
+
+  map.sourceMapBaseURL = generatedSource.sourceMapBaseURL;
 
   if (map && map.sources) {
     map.sources.forEach(url => originalURLs.add(url));
