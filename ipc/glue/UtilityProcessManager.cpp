@@ -99,7 +99,8 @@ void UtilityProcessManager::OnPreferenceChange(const char16_t* aData) {
     return;
   }
 
-  mozilla::dom::Pref pref(strData,  false, Nothing(), Nothing());
+  mozilla::dom::Pref pref(strData,  false,
+                           false, Nothing(), Nothing());
   Preferences::GetPreference(&pref);
 
   for (auto& p : mProcesses) {
