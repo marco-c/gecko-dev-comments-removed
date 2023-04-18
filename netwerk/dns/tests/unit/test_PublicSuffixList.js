@@ -67,21 +67,21 @@ registerCleanupFunction(() => {
 
 
 
-let downloadCalled = false;
-const downloadBackup = CLIENT.attachments.download;
+let downloadToDiskCalled = false;
+const downloadToDiskBackup = CLIENT.attachments.downloadToDisk;
 
 
-const mockDownload = () => {
-  downloadCalled = false;
-  CLIENT.attachments.download = async rec => {
-    downloadCalled = true;
+function mockDownloadToDisk() {
+  downloadToDiskCalled = false;
+  CLIENT.attachments.downloadToDisk = async rec => {
+    downloadToDiskCalled = true;
     return `file://${mockedFilePath}`; 
   };
-};
+}
 
 
-const resetMockDownload = () => {
-  CLIENT.attachments.download = downloadBackup;
+const resetMockDownloadToDisk = () => {
+  CLIENT.attachments.downloadToDisk = downloadToDiskBackup;
 };
 
 add_task(async () => {
@@ -94,7 +94,7 @@ add_task(async () => {
     attachment: {},
   });
 
-  mockDownload();
+  mockDownloadToDisk();
 
   const promiseSignal = TestUtils.topicObserved(SIGNAL);
   await PublicSuffixList.init();
@@ -106,13 +106,13 @@ add_task(async () => {
     "File path sent when record is in DB."
   );
   await CLIENT.db.clear(); 
-  resetMockDownload();
+  resetMockDownloadToDisk();
 });
 
 add_task(async () => {
   info("File path sent when record updated.");
 
-  mockDownload();
+  mockDownloadToDisk();
 
   const promiseSignal = TestUtils.topicObserved(SIGNAL);
   await PublicSuffixList.init();
@@ -124,53 +124,53 @@ add_task(async () => {
     mockedFilePath,
     "File path sent when record updated."
   );
-  resetMockDownload();
+  resetMockDownloadToDisk();
 });
 
 add_task(async () => {
   info("Attachment downloaded when record created.");
 
-  mockDownload();
+  mockDownloadToDisk();
 
   await PublicSuffixList.init();
   await CLIENT.emit("sync", { data: PAYLOAD_CREATED_RECORDS });
 
   Assert.equal(
-    downloadCalled,
+    downloadToDiskCalled,
     true,
     "Attachment downloaded when record created."
   );
-  resetMockDownload();
+  resetMockDownloadToDisk();
 });
 
 add_task(async () => {
   info("Attachment downloaded when record updated.");
 
-  mockDownload();
+  mockDownloadToDisk();
 
   await PublicSuffixList.init();
   await CLIENT.emit("sync", { data: PAYLOAD_UPDATED_RECORDS });
 
   Assert.equal(
-    downloadCalled,
+    downloadToDiskCalled,
     true,
     "Attachment downloaded when record updated."
   );
-  resetMockDownload();
+  resetMockDownloadToDisk();
 });
 
 add_task(async () => {
   info("No download when more than one record is changed.");
 
-  mockDownload();
+  mockDownloadToDisk();
 
   await PublicSuffixList.init();
   await CLIENT.emit("sync", { data: PAYLOAD_UPDATED_AND_CREATED_RECORDS });
 
   Assert.equal(
-    downloadCalled,
+    downloadToDiskCalled,
     false,
     "No download when more than one record is changed."
   );
-  resetMockDownload();
+  resetMockDownloadToDisk();
 });
