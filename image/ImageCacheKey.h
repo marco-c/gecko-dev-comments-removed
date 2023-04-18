@@ -14,6 +14,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 #include "PLDHashTable.h"
+#include "nsIDocShell.h"
 
 class nsIURI;
 
@@ -70,6 +71,10 @@ class ImageCacheKey final {
   
   static nsCString GetIsolationKey(dom::Document* aDocument, nsIURI* aURI);
 
+  
+  
+  static nsIDocShell::AppType GetAppType(dom::Document* aDocument);
+
   void EnsureHash() const;
 
   nsCOMPtr<nsIURI> mURI;
@@ -78,6 +83,7 @@ class ImageCacheKey final {
   nsCString mIsolationKey;
   mutable Maybe<PLDHashNumber> mHash;
   bool mIsChrome;
+  nsIDocShell::AppType mAppType;
 };
 
 }  
