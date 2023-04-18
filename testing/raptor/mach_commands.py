@@ -233,6 +233,14 @@ class RaptorRunner(MozbuildObject):
 
             def _should_install():
                 
+                
+                btime_cache = os.path.join(self.config["mozbuild_path"], "browsertime")
+                if not os.path.exists(btime_cache) or not any(
+                    ["ffmpeg" in cache_dir for cache_dir in os.listdir(btime_cache)]
+                ):
+                    return True
+
+                
                 if not os.path.exists(
                     self.config["browsertime_browsertimejs"]
                 ) or not os.path.exists(self.config["browsertime_vismet_script"]):
