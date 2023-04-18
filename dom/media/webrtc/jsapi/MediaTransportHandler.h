@@ -48,7 +48,6 @@ class MediaTransportHandler {
   explicit MediaTransportHandler(nsISerialEventTarget* aCallbackThread)
       : mCallbackThread(aCallbackThread) {}
 
-  
   static nsresult ConvertIceServers(
       const nsTArray<dom::RTCIceServer>& aIceServers,
       std::vector<NrIceStunServer>* aStunServers,
@@ -64,9 +63,8 @@ class MediaTransportHandler {
   virtual void EnterPrivateMode() = 0;
   virtual void ExitPrivateMode() = 0;
 
-  virtual void CreateIceCtx(const std::string& aName) = 0;
-
-  virtual nsresult SetIceConfig(const nsTArray<dom::RTCIceServer>& aIceServers,
+  virtual nsresult CreateIceCtx(const std::string& aName,
+                                const nsTArray<dom::RTCIceServer>& aIceServers,
                                 dom::RTCIceTransportPolicy aIcePolicy) = 0;
 
   

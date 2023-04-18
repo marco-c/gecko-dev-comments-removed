@@ -40,7 +40,6 @@
 
 
 int nr_socket_multi_tcp_create(struct nr_ice_ctx_ *ctx,
-  struct nr_ice_component_ *component,
   nr_transport_addr *addr,  nr_socket_tcp_type tcp_type,
   int precreated_so_count, int max_pending, nr_socket **sockp);
 

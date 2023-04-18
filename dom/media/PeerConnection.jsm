@@ -387,14 +387,26 @@ class RTCPeerConnection {
     this._win = win;
   }
 
-  
-  _applyPrefsToConfig(rtcConfig) {
+  __init(rtcConfig) {
+    this._winID = this._win.windowGlobalChild.innerWindowId;
+    
+    
     if (
       rtcConfig.iceTransportPolicy == "all" &&
       Services.prefs.getBoolPref("media.peerconnection.ice.relay_only")
     ) {
       rtcConfig.iceTransportPolicy = "relay";
     }
+    if ("sdpSemantics" in rtcConfig) {
+      if (rtcConfig.sdpSemantics == "plan-b") {
+        this.logWarning(
+          `Outdated and non-standard {sdpSemantics: "plan-b"} is not ` +
+            `supported! WebRTC may be unreliable. Please update code to ` +
+            `follow standard "unified-plan".`
+        );
+      }
+    }
+    this._config = Object.assign({}, rtcConfig);
 
     if (
       !rtcConfig.iceServers ||
@@ -415,97 +427,23 @@ class RTCPeerConnection {
         rtcConfig.iceServers = [];
       }
       try {
-        this._validateIceServers(
-          rtcConfig.iceServers,
+        this._mustValidateRTCConfiguration(
+          rtcConfig,
           "Ignoring invalid media.peerconnection.default_iceservers in about:config"
         );
       } catch (e) {
         this.logWarning(e.message);
         rtcConfig.iceServers = [];
       }
-    }
-  }
-
-  _validateConfig(rtcConfig) {
-    if ("sdpSemantics" in rtcConfig) {
-      if (rtcConfig.sdpSemantics == "plan-b") {
-        this.logWarning(
-          `Outdated and non-standard {sdpSemantics: "plan-b"} is not ` +
-            `supported! WebRTC may be unreliable. Please update code to ` +
-            `follow standard "unified-plan".`
-        );
-      }
+    } else {
       
-      delete rtcConfig.sdpSemantics;
+      
+      this._mustValidateRTCConfiguration(
+        rtcConfig,
+        "RTCPeerConnection constructor passed invalid RTCConfiguration"
+      );
     }
 
-    if (this._config) {
-      
-      if (rtcConfig.certificates.length != this._config.certificates.length) {
-        throw new this._win.DOMException(
-          "Cannot change certificates with setConfiguration (length differs)",
-          "InvalidModificationError"
-        );
-      }
-      for (let i = 0; i < rtcConfig.certificates.length; i++) {
-        if (rtcConfig.certificates[i] != this._config.certificates[i]) {
-          throw new this._win.DOMException(
-            `Cannot change certificates with setConfiguration ` +
-              `(cert at index ${i} differs)`,
-            "InvalidModificationError"
-          );
-        }
-      }
-
-      
-      if (rtcConfig.bundlePolicy != this._config.bundlePolicy) {
-        throw new this._win.DOMException(
-          "Cannot change bundlePolicy with setConfiguration",
-          "InvalidModificationError"
-        );
-      }
-
-      
-      if (
-        rtcConfig.peerIdentity &&
-        rtcConfig.peerIdentity != this._config.peerIdentity
-      ) {
-        throw new this._win.DOMException(
-          "Cannot change peerIdentity with setConfiguration",
-          "InvalidModificationError"
-        );
-      }
-
-      
-      
-      
-    }
-
-    
-    
-    this._validateIceServers(
-      rtcConfig.iceServers,
-      "RTCPeerConnection constructor passed invalid RTCConfiguration"
-    );
-  }
-
-  _checkIfIceRestartRequired(rtcConfig) {
-    if (this._config) {
-      if (rtcConfig.iceTransportPolicy != this._config.iceTransportPolicy) {
-        this._restartIceNoRenegotiationNeeded();
-        return;
-      }
-      if (
-        JSON.stringify(this._config.iceServers) !=
-        JSON.stringify(rtcConfig.iceServers)
-      ) {
-        this._restartIceNoRenegotiationNeeded();
-      }
-    }
-  }
-
-  __init(rtcConfig) {
-    this._winID = this._win.windowGlobalChild.innerWindowId;
     let certificates = rtcConfig.certificates || [];
 
     if (certificates.some(c => c.expires <= Date.now())) {
@@ -567,9 +505,12 @@ class RTCPeerConnection {
     
     _globalPCList.addPC(this);
 
-    this._impl.initialize(observer, this._win, Services.tm.currentThread);
-
-    this.setConfiguration(rtcConfig);
+    this._impl.initialize(
+      observer,
+      this._win,
+      rtcConfig,
+      Services.tm.currentThread
+    );
 
     this._certificateReady = this._initCertificate(certificate);
     this._initIdp();
@@ -590,20 +531,6 @@ class RTCPeerConnection {
     const config = Object.assign({}, this._config);
     delete config.sdpSemantics;
     return config;
-  }
-
-  setConfiguration(rtcConfig) {
-    this._checkClosed();
-    this._validateConfig(rtcConfig);
-    this._checkIfIceRestartRequired(rtcConfig);
-
-    
-    
-    const configWithPrefTweaks = Object.assign({}, rtcConfig);
-    this._applyPrefsToConfig(configWithPrefTweaks);
-    this._impl.setConfiguration(configWithPrefTweaks);
-
-    this._config = Object.assign({}, rtcConfig);
   }
 
   async _initCertificate(certificate) {
@@ -753,7 +680,7 @@ class RTCPeerConnection {
 
 
 
-  _validateIceServers(iceServers, msg) {
+  _mustValidateRTCConfiguration({ iceServers }, msg) {
     
     iceServers.forEach(server => {
       if (typeof server.urls === "string") {
@@ -1417,7 +1344,7 @@ class RTCPeerConnection {
     });
   }
 
-  _restartIceNoRenegotiationNeeded() {
+  restartIce() {
     if (this._closed) {
       return;
     }
@@ -1425,10 +1352,6 @@ class RTCPeerConnection {
       ...this._getUfragsWithPwds(this._impl.currentLocalDescription),
       ...this._getUfragsWithPwds(this._impl.pendingLocalDescription),
     ]);
-  }
-
-  restartIce() {
-    this._restartIceNoRenegotiationNeeded();
     this.updateNegotiationNeeded();
   }
 
