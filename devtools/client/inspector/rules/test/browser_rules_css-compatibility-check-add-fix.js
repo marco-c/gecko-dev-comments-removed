@@ -18,12 +18,12 @@ const TARGET_BROWSERS = [
   {
     
     id: "chrome",
-    status: "current",
+    version: "84",
   },
   {
     
     id: "safari_ios",
-    status: "current",
+    version: "13",
   },
 ];
 

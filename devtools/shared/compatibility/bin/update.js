@@ -14,10 +14,12 @@
 
 
 
+
 "use strict";
 
 const compatData = require("@mdn/browser-compat-data");
 exportData(compatData.css.properties, "css-properties.json");
+exportData(compatData.browsers, "browsers.json");
 
 function exportData(data, fileName) {
   const fs = require("fs");
