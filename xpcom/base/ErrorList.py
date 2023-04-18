@@ -935,6 +935,11 @@ with modules["URILOADER"]:
     
     errors["NS_ERROR_PARSED_DATA_CACHED"] = FAILURE(33)
 
+    
+    
+    
+    errors["NS_BINDING_CANCELLED_OLD_LOAD"] = FAILURE(39)
+
 
 
 
