@@ -239,7 +239,7 @@ NSS_CMSDigestContext_FinishSingle(NSSCMSDigestContext *cmsdigcx,
                                   SECItem *digest)
 {
     SECStatus rv = SECFailure;
-    SECItem **dp;
+    SECItem **dp = NULL;
     PLArenaPool *arena = NULL;
 
     if ((arena = PORT_NewArena(1024)) == NULL)
@@ -247,7 +247,7 @@ NSS_CMSDigestContext_FinishSingle(NSSCMSDigestContext *cmsdigcx,
 
     
     rv = NSS_CMSDigestContext_FinishMultiple(cmsdigcx, arena, &dp);
-    if (rv == SECSuccess) {
+    if (rv == SECSuccess && dp) {
         
         rv = SECITEM_CopyItem(poolp, digest, dp[0]);
     }
