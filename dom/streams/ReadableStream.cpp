@@ -326,7 +326,17 @@ void ReadableStreamClose(JSContext* aCx, ReadableStream* aStream,
   if (reader->IsDefault()) {
     
     ReadableStreamDefaultReader* defaultReader = reader->AsDefault();
-    for (ReadRequest* readRequest : defaultReader->ReadRequests()) {
+
+    
+    
+    
+    
+    
+    LinkedList<RefPtr<ReadRequest>> requestsToClose =
+        std::move(defaultReader->ReadRequests());
+
+    
+    while (RefPtr<ReadRequest> readRequest = requestsToClose.popFirst()) {
       
       readRequest->CloseSteps(aCx, aRv);
       if (aRv.Failed()) {
@@ -381,8 +391,10 @@ already_AddRefed<Promise> ReadableStreamCancel(JSContext* aCx,
   
   if (reader && reader->IsBYOB()) {
     
-    for (RefPtr<ReadIntoRequest> readIntoRequest :
-         reader->AsBYOB()->ReadIntoRequests()) {
+    LinkedList<RefPtr<ReadIntoRequest>> readIntoRequestsToClose =
+        std::move(reader->AsBYOB()->ReadIntoRequests());
+    while (RefPtr<ReadIntoRequest> readIntoRequest =
+               readIntoRequestsToClose.popFirst()) {
       readIntoRequest->CloseSteps(aCx, JS::UndefinedHandleValue, aRv);
       if (aRv.Failed()) {
         return nullptr;
@@ -525,12 +537,16 @@ void ReadableStreamError(JSContext* aCx, ReadableStream* aStream,
   if (reader->IsDefault()) {
     
     ReadableStreamDefaultReader* defaultReader = reader->AsDefault();
-    for (ReadRequest* readRequest : defaultReader->ReadRequests()) {
+
+    LinkedList<RefPtr<ReadRequest>> readRequestsToError =
+        std::move(defaultReader->ReadRequests());
+    while (RefPtr<ReadRequest> readRequest = readRequestsToError.popFirst()) {
       readRequest->ErrorSteps(aCx, aValue, aRv);
       if (aRv.Failed()) {
         return;
       }
     }
+
     
     defaultReader->ReadRequests().clear();
   } else {
@@ -539,12 +555,17 @@ void ReadableStreamError(JSContext* aCx, ReadableStream* aStream,
     MOZ_ASSERT(reader->IsBYOB());
     ReadableStreamBYOBReader* byobReader = reader->AsBYOB();
     
-    for (auto* readIntoRequest : byobReader->ReadIntoRequests()) {
+    LinkedList<RefPtr<ReadIntoRequest>> requestsToError =
+        std::move(byobReader->ReadIntoRequests());
+
+    while (RefPtr<ReadIntoRequest> readIntoRequest =
+               requestsToError.popFirst()) {
       readIntoRequest->ErrorSteps(aCx, aValue, aRv);
       if (aRv.Failed()) {
         return;
       }
     }
+
     
     byobReader->ReadIntoRequests().clear();
   }
