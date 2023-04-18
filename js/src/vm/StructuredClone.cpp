@@ -416,10 +416,16 @@ struct JSStructuredCloneReader {
         allowedScope(scope),
         cloneDataPolicy(cloneDataPolicy),
         objs(in.context()),
+        objState(in.context(), in.context()),
         allObjs(in.context()),
         numItemsRead(0),
         callbacks(cb),
-        closure(cbClosure) {}
+        closure(cbClosure) {
+    
+    
+    
+    MOZ_ALWAYS_TRUE(objState.append(std::make_pair(nullptr, true)));
+  }
 
   SCInput& input() { return in; }
   bool read(MutableHandleValue vp, size_t nbytes);
@@ -462,6 +468,18 @@ struct JSStructuredCloneReader {
 
   
   RootedValueVector objs;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  Rooted<GCVector<std::pair<HeapPtr<JSObject*>, bool>, 8>> objState;
 
   
   
@@ -2804,12 +2822,20 @@ bool JSStructuredCloneReader::startRead(MutableHandleValue vp,
 
     case SCTAG_SAVED_FRAME_OBJECT: {
       auto obj = readSavedFrame(data);
-      if (!obj || !objs.append(ObjectValue(*obj))) {
+      if (!obj || !objs.append(ObjectValue(*obj)) ||
+          !objState.append(std::make_pair(obj, false))) {
         return false;
       }
       vp.setObject(*obj);
       break;
     }
+
+    case SCTAG_END_OF_KEYS:
+      JS_ReportErrorNumberASCII(context(), GetErrorMessage, nullptr,
+                                JSMSG_SC_BAD_SERIALIZED_DATA,
+                                "truncated input");
+      return false;
+      break;
 
     default: {
       if (tag <= SCTAG_FLOAT_MAX) {
@@ -3170,78 +3196,6 @@ JSObject* JSStructuredCloneReader::readSavedFrame(uint32_t principalsTag) {
 }
 
 
-
-
-
-
-
-
-
-
-class ChildCounter {
-  JSContext* cx;
-  Vector<size_t> counts;
-  size_t objsLength;
-  size_t objCountsIndex;
-
- public:
-  explicit ChildCounter(JSContext* cx) : cx(cx), counts(cx), objsLength(0) {}
-
-  void noteObjIsOnTopOfStack() { objCountsIndex = counts.length() - 1; }
-
-  
-  
-  
-  bool postStartRead(HandleValueVector objs) {
-    if (objs.length() == objsLength) {
-      
-      return true;
-    }
-
-    
-    MOZ_ASSERT(objs.length() == objsLength + 1);
-    objsLength = objs.length();
-    if (objs.back().toObject().is<SavedFrame>()) {
-      return counts.append(0);
-    }
-
-    
-    return true;
-  }
-
-  
-  
-  bool handleEndOfChildren(HandleValueVector objs) {
-    MOZ_ASSERT(objsLength > 0);
-    objsLength--;
-
-    if (objs.back().toObject().is<SavedFrame>()) {
-      if (counts.back() != 1) {
-        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                  JSMSG_SC_BAD_SERIALIZED_DATA,
-                                  "must have single SavedFrame parent");
-        return false;
-      }
-
-      counts.popBack();
-    }
-    return true;
-  }
-
-  
-  
-  
-  bool checkSingleParentFrame() {
-    
-    
-    
-    
-    
-    return ++counts[objCountsIndex] == 1;
-  }
-};
-
-
 bool JSStructuredCloneReader::read(MutableHandleValue vp, size_t nbytes) {
   auto startTime = mozilla::TimeStamp::Now();
 
@@ -3253,12 +3207,13 @@ bool JSStructuredCloneReader::read(MutableHandleValue vp, size_t nbytes) {
     return false;
   }
 
-  ChildCounter childCounter(context());
+  MOZ_ASSERT(objs.length() == 0);
+  MOZ_ASSERT(objState.length() == 1);
 
   
   
   
-  if (!startRead(vp) || !childCounter.postStartRead(objs)) {
+  if (!startRead(vp)) {
     return false;
   }
 
@@ -3266,7 +3221,6 @@ bool JSStructuredCloneReader::read(MutableHandleValue vp, size_t nbytes) {
   while (objs.length() != 0) {
     
     RootedObject obj(context(), &objs.back().toObject());
-    childCounter.noteObjIsOnTopOfStack();
 
     uint32_t tag, data;
     if (!in.getPair(&tag, &data)) {
@@ -3274,16 +3228,21 @@ bool JSStructuredCloneReader::read(MutableHandleValue vp, size_t nbytes) {
     }
 
     if (tag == SCTAG_END_OF_KEYS) {
-      if (!childCounter.handleEndOfChildren(objs)) {
-        return false;
-      }
-
       
       
       MOZ_ALWAYS_TRUE(in.readPair(&tag, &data));
       objs.popBack();
+      if (objState.back().first == obj) {
+        objState.popBack();
+      }
       continue;
     }
+
+    
+    
+    
+    
+    size_t objStateIdx = objState.length() - 1;
 
     
     
@@ -3299,7 +3258,7 @@ bool JSStructuredCloneReader::read(MutableHandleValue vp, size_t nbytes) {
     
     
     RootedValue key(context());
-    if (!startRead(&key) || !childCounter.postStartRead(objs)) {
+    if (!startRead(&key)) {
       return false;
     }
 
@@ -3307,9 +3266,10 @@ bool JSStructuredCloneReader::read(MutableHandleValue vp, size_t nbytes) {
                           obj->is<SavedFrame>())) {
       
       
-      if (!childCounter.handleEndOfChildren(objs)) {
-        return false;
-      }
+
+      
+      MOZ_ASSERT(objState[objStateIdx].first() != obj);
+
       objs.popBack();
       continue;
     }
@@ -3338,21 +3298,24 @@ bool JSStructuredCloneReader::read(MutableHandleValue vp, size_t nbytes) {
         return false;
       }
 
-      if (!childCounter.checkSingleParentFrame()) {
-        
-        
-        
-      } else {
+      MOZ_ASSERT(objState[objStateIdx].first() == obj);
+      bool& state = objState[objStateIdx].second();
+      if (state == false) {
         obj->as<SavedFrame>().initParent(parentFrame);
+        state = true;
+      } else {
+        JS_ReportErrorNumberASCII(context(), GetErrorMessage, nullptr,
+                                  JSMSG_SC_BAD_SERIALIZED_DATA,
+                                  "multiple SavedFrame parents");
+        return false;
       }
-
       continue;
     }
 
     
     
     RootedValue val(context());
-    if (!startRead(&val) || !childCounter.postStartRead(objs)) {
+    if (!startRead(&val)) {
       return false;
     }
 
@@ -3418,8 +3381,6 @@ bool JSStructuredCloneReader::read(MutableHandleValue vp, size_t nbytes) {
 
   return true;
 }
-
-using namespace js;
 
 JS_PUBLIC_API bool JS_ReadStructuredClone(
     JSContext* cx, const JSStructuredCloneData& buf, uint32_t version,
