@@ -308,16 +308,22 @@ already_AddRefed<Promise> WebAuthnManager::MakeCredential(
   
   
   nsTArray<CoseAlg> coseAlgos;
-  for (size_t a = 0; a < aOptions.mPubKeyCredParams.Length(); ++a) {
-    
-    
-    
-    if (aOptions.mPubKeyCredParams[a].mType !=
-        PublicKeyCredentialType::Public_key) {
-      continue;
-    }
+  
+  if (aOptions.mPubKeyCredParams.IsEmpty()) {
+    coseAlgos.AppendElement(static_cast<long>(CoseAlgorithmIdentifier::ES256));
+    coseAlgos.AppendElement(static_cast<long>(CoseAlgorithmIdentifier::RS256));
+  } else {
+    for (size_t a = 0; a < aOptions.mPubKeyCredParams.Length(); ++a) {
+      
+      
+      
+      if (aOptions.mPubKeyCredParams[a].mType !=
+          PublicKeyCredentialType::Public_key) {
+        continue;
+      }
 
-    coseAlgos.AppendElement(aOptions.mPubKeyCredParams[a].mAlg);
+      coseAlgos.AppendElement(aOptions.mPubKeyCredParams[a].mAlg);
+    }
   }
 
   

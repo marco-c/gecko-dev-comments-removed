@@ -13,7 +13,10 @@ namespace mozilla {
 namespace dom {
 
 
-enum class CoseAlgorithmIdentifier : int32_t { ES256 = -7 };
+enum class CoseAlgorithmIdentifier : int32_t {
+  ES256 = -7,
+  RS256 = -257,
+};
 
 }  
 }  
