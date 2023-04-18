@@ -241,17 +241,6 @@ void AppShutdown::MaybeFastShutdown(ShutdownPhase aPhase) {
 
     profiler_shutdown(IsFastShutdown::Yes);
 
-#ifdef MOZ_BACKGROUNDTASKS
-    
-    
-    
-    
-    if (mozilla::BackgroundTasks::IsUsingTemporaryProfile()) {
-      UnlockProfile();
-    }
-    mozilla::BackgroundTasks::Shutdown();
-#endif
-
     DoImmediateExit(sExitCode);
   } else if (aPhase == sLateWriteChecksPhase) {
 #ifdef XP_MACOSX

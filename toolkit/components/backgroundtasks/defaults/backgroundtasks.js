@@ -25,3 +25,8 @@ pref("devtools.debugger.prompt-connection", false);
 
 
 pref("network.cookie.noPersistentStorage", true);
+
+
+
+
+pref("toolkit.shutdown.fastShutdownStage", 0);
