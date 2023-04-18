@@ -18,12 +18,12 @@ CNavDTD::~CNavDTD() {}
 
 NS_IMETHODIMP
 CNavDTD::WillBuildModel(const CParserContext& aParserContext,
-                        nsITokenizer* aTokenizer, nsIContentSink* aSink) {
+                        nsIContentSink* aSink) {
   return NS_OK;
 }
 
 NS_IMETHODIMP
-CNavDTD::BuildModel(nsITokenizer* aTokenizer, nsIContentSink* aSink) {
+CNavDTD::BuildModel(nsIContentSink* aSink) {
   
   
   nsCOMPtr<nsIHTMLContentSink> sink = do_QueryInterface(aSink);
