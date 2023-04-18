@@ -7,9 +7,9 @@ async function clickOnElementAndDelay(id, delay, callback) {
     mainThreadBusy(delay);
     if (callback)
       callback();
-    element.removeEventListener("mousedown", clickHandler);
+    element.removeEventListener("pointerdown", clickHandler);
   };
-  element.addEventListener("mousedown", clickHandler);
+  element.addEventListener("pointerdown", clickHandler);
   await test_driver.click(element);
 }
 
@@ -52,8 +52,8 @@ function verifyEvent(entry, eventType, targetId, isFirst=false, minDuration=104,
     assert_equals(entry.target, document.getElementById(targetId));
 }
 
-function verifyClickEvent(entry, targetId, isFirst=false, minDuration=104) {
-  verifyEvent(entry, 'mousedown', targetId, isFirst, minDuration);
+function verifyClickEvent(entry, targetId, isFirst=false, minDuration=104, event='pointerdown') {
+  verifyEvent(entry, event, targetId, isFirst, minDuration);
 }
 
 function wait() {
@@ -70,6 +70,13 @@ function clickAndBlockMain(id) {
   });
 }
 
+function waitForTick() {
+  return new Promise(resolve => {
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(resolve);
+    });
+  });
+}
   
   
   
@@ -92,13 +99,13 @@ async function testDuration(t, id, numEntries, dur, fastDur, slowDur) {
     minDuration = Math.max(minDuration, 16);
     let numEntriesReceived = 0;
     new PerformanceObserver(list => {
-      const mouseDowns = list.getEntriesByName('mousedown');
-      mouseDowns.forEach(e => {
+      const pointerDowns = list.getEntriesByName('pointerdown');
+      pointerDowns.forEach(e => {
         t.step(() => {
           verifyClickEvent(e, id, false , minDuration);
         });
       });
-      numEntriesReceived += mouseDowns.length;
+      numEntriesReceived += pointerDowns.length;
       
       
       if (numEntriesReceived >= numEntries)
@@ -150,11 +157,12 @@ function applyAction(eventType, target) {
     
     .pointerMove(0, 0)
     .pointerDown()
-    .pointerUp();
   } else if (eventType === 'mouseenter' || eventType === 'mouseover'
       || eventType === 'pointerenter' || eventType === 'pointerover') {
     
-    actions.pointerMove(0, 0)
+    
+    
+    actions.pointerMove(0, 1)
     .pointerMove(0, 0, {origin: target});
   } else if (eventType === 'mouseleave' || eventType === 'mouseout'
       || eventType === 'pointerleave' || eventType === 'pointerout') {
@@ -219,6 +227,7 @@ async function testEventType(t, eventType, looseCount=false) {
   
   await applyAction(eventType, target);
   await applyAction(eventType, target);
+  await waitForTick();
   await new Promise(t.step_func(resolve => {
     testCounts(t, resolve, looseCount, eventType, initialCount + 2);
   }));
@@ -260,6 +269,9 @@ async function testEventType(t, eventType, looseCount=false) {
     })).observe({type: 'event', durationThreshold: durationThreshold});
   });
   
-  let actionPromise = applyAction(eventType, target);
-  return Promise.all([actionPromise, observerPromise]);
+  await applyAction(eventType, target);
+
+  await waitForTick();
+
+  await observerPromise;
 }
