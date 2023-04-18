@@ -3,7 +3,7 @@
 
 
 import { getThreadPauseState } from "../reducers/pause";
-import { getSelectedSourceId, getSelectedLocation } from "../reducers/sources";
+import { getSelectedSourceId, getSelectedLocation } from "../selectors/sources";
 
 import { isGeneratedId } from "devtools-source-map";
 

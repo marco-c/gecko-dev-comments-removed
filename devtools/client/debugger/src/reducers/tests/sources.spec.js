@@ -2,7 +2,8 @@
 
 
 
-import update, { initialSourcesState, getDisplayedSources } from "../sources";
+import update, { initialSourcesState } from "../sources";
+import { getDisplayedSources } from "../../selectors/sources";
 import { initialThreadsState } from "../threads";
 import updateSourceActors from "../source-actors";
 import { prefs } from "../../utils/prefs";

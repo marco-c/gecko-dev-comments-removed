@@ -2,7 +2,6 @@
 
 
 
-import { getSymbols } from "../../../selectors/ast";
 import {
   actions,
   selectors,
@@ -13,13 +12,14 @@ import {
   waitForState,
   makeOriginalSource,
 } from "../../../utils/test-head";
-const {
+import {
   getSource,
   getSourceCount,
   getSelectedSource,
   getSourceTabs,
   getSelectedLocation,
-} = selectors;
+  getSymbols,
+} from "../../../selectors/";
 
 import { mockCommandClient } from "../../tests/helpers/mockCommandClient";
 
