@@ -441,10 +441,6 @@ struct NativePropertyHooks {
 
   
   
-  const NativePropertyHooks* mProtoHooks;
-
-  
-  
   const JSClass* mXrayExpandoClass;
 };
 
