@@ -233,27 +233,37 @@ void HyperTextAccessibleBase::TextAtOffset(int32_t aOffset,
 
   switch (aBoundaryType) {
     case nsIAccessibleText::BOUNDARY_CHAR:
-      
+      if (aOffset == nsIAccessibleText::TEXT_OFFSET_CARET) {
+        TextLeafPoint caret = TextLeafPoint::GetCaret(Acc());
+        if (caret.IsCaretAtEndOfLine()) {
+          
+          *aStartOffset = *aEndOffset = static_cast<int32_t>(adjustedOffset);
+          return;
+        }
+      }
       CharAt(adjustedOffset, aText, aStartOffset, aEndOffset);
       break;
     case nsIAccessibleText::BOUNDARY_WORD_START:
     case nsIAccessibleText::BOUNDARY_LINE_START:
-      TextLeafPoint origStart =
-          ToTextLeafPoint(static_cast<int32_t>(adjustedOffset));
-      TextLeafPoint end;
-      Accessible* childAcc = GetChildAtOffset(adjustedOffset);
-      if (childAcc && childAcc->IsHyperText()) {
-        
-        
-        
-        
-        
-        
-        
-        end = ToTextLeafPoint(static_cast<int32_t>(adjustedOffset),
-                               true);
+      TextLeafPoint origStart, end;
+      if (aOffset == nsIAccessibleText::TEXT_OFFSET_CARET) {
+        origStart = end = TextLeafPoint::GetCaret(Acc());
       } else {
-        end = origStart;
+        origStart = ToTextLeafPoint(static_cast<int32_t>(adjustedOffset));
+        Accessible* childAcc = GetChildAtOffset(adjustedOffset);
+        if (childAcc && childAcc->IsHyperText()) {
+          
+          
+          
+          
+          
+          
+          
+          end = ToTextLeafPoint(static_cast<int32_t>(adjustedOffset),
+                                 true);
+        } else {
+          end = origStart;
+        }
       }
       TextLeafPoint start = origStart.FindBoundary(aBoundaryType, eDirPrevious,
                                                     true);
