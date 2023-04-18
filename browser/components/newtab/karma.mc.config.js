@@ -60,6 +60,12 @@ module.exports = function(config) {
     },
     coverageIstanbulReporter: {
       reports: ["lcov", "text-summary"], 
+      "report-config": {
+        
+        lcov: {
+          projectRoot: "../../..",
+        },
+      },
       dir: PATHS.coverageReportingPath,
       
       thresholds: !isTDD && {
