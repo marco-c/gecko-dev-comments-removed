@@ -417,7 +417,7 @@ function handleRequest(req, res) {
       
       
       
-      return "\x0F\x0F\x0F\x0F";
+      return "\xFF\xFF\xFF\xFF";
     }
 
     function responseData() {
@@ -521,10 +521,11 @@ function handleRequest(req, res) {
           }
         });
       } else {
-        resp.setHeader("Content-Length", buffer.length);
+        const output = Buffer.from(buffer, "utf-8");
+        resp.setHeader("Content-Length", output.length);
         try {
           resp.writeHead(200);
-          resp.write(buffer);
+          resp.write(output);
           resp.end("");
         } catch (e) {
           
