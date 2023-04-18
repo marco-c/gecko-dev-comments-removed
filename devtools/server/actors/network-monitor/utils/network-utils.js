@@ -106,8 +106,8 @@ exports.getChannelBrowsingContextID = function(channel) {
 
 
 exports.getChannelInnerWindowId = function(channel) {
-  if (channel.loadInfo.innerWindowId) {
-    return channel.loadInfo.innerWindowId;
+  if (channel.loadInfo.innerWindowID) {
+    return channel.loadInfo.innerWindowID;
   }
   
   
