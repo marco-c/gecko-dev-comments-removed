@@ -8,21 +8,16 @@
 #define nsTextFrame_h__
 
 #include "mozilla/Attributes.h"
-#include "mozilla/EventForwards.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/Text.h"
-#include "nsDisplayList.h"
+
 #include "nsIFrame.h"
-#include "nsFrameSelection.h"
+#include "nsISelectionController.h"
 #include "nsSplittableFrame.h"
-#include "nsLineBox.h"
 #include "gfxSkipChars.h"
 #include "gfxTextRun.h"
-#include "nsDisplayList.h"
-#include "nsFontMetrics.h"
 #include "JustificationUtils.h"
-#include "RubyUtils.h"
 
 
 #if defined(XP_WIN) && defined(DrawText)
@@ -30,16 +25,18 @@
 #endif
 
 class nsTextPaintStyle;
+class nsLineList_iterator;
 struct SelectionDetails;
 class nsTextFragment;
 
 namespace mozilla {
 class SVGContextPaint;
 class SVGTextFrame;
+class nsDisplayTextGeometry;
+class nsDisplayText;
 }  
 
 class nsTextFrame : public nsIFrame {
-  using nsDisplayText = mozilla::nsDisplayText;
   typedef mozilla::LayoutDeviceRect LayoutDeviceRect;
   typedef mozilla::SelectionTypeMask SelectionTypeMask;
   typedef mozilla::SelectionType SelectionType;
@@ -289,16 +286,7 @@ class nsTextFrame : public nsIFrame {
         aFlags & ~(nsIFrame::eReplaced | nsIFrame::eLineParticipant));
   }
 
-  bool ShouldSuppressLineBreak() const {
-    
-    
-    
-    
-    if (mozilla::RubyUtils::IsRubyContentBox(GetParent()->Type())) {
-      return true;
-    }
-    return Style()->ShouldSuppressLineBreak();
-  }
+  bool ShouldSuppressLineBreak() const;
 
   void InvalidateFrame(uint32_t aDisplayItemKey = 0,
                        bool aRebuildDisplayItems = true) final;
@@ -565,7 +553,7 @@ class nsTextFrame : public nsIFrame {
 
   struct PaintTextParams {
     gfxContext* context;
-    mozilla::gfx::Point framePt;
+    Point framePt;
     LayoutDeviceRect dirtyRect;
     mozilla::SVGContextPaint* contextPaint = nullptr;
     DrawPathCallbacks* callbacks = nullptr;
@@ -583,39 +571,12 @@ class nsTextFrame : public nsIFrame {
     bool IsGenerateTextMask() const { return state == GenerateTextMask; }
   };
 
-  struct PaintTextSelectionParams : PaintTextParams {
-    mozilla::gfx::Point textBaselinePt;
-    PropertyProvider* provider = nullptr;
-    Range contentRange;
-    nsTextPaintStyle* textPaintStyle = nullptr;
-    Range glyphRange;
-    explicit PaintTextSelectionParams(const PaintTextParams& aParams)
-        : PaintTextParams(aParams) {}
-  };
-
-  struct DrawTextRunParams {
-    gfxContext* context;
-    PropertyProvider* provider = nullptr;
-    gfxFloat* advanceWidth = nullptr;
-    mozilla::SVGContextPaint* contextPaint = nullptr;
-    DrawPathCallbacks* callbacks = nullptr;
-    nscolor textColor = NS_RGBA(0, 0, 0, 0);
-    nscolor textStrokeColor = NS_RGBA(0, 0, 0, 0);
-    float textStrokeWidth = 0.0f;
-    bool drawSoftHyphen = false;
-    explicit DrawTextRunParams(gfxContext* aContext) : context(aContext) {}
-  };
-
-  struct DrawTextParams : DrawTextRunParams {
-    mozilla::gfx::Point framePt;
-    LayoutDeviceRect dirtyRect;
-    const nsTextPaintStyle* textStyle = nullptr;
-    const nsDisplayText::ClipEdges* clipEdges = nullptr;
-    const nscolor* decorationOverrideColor = nullptr;
-    Range glyphRange;
-    explicit DrawTextParams(gfxContext* aContext)
-        : DrawTextRunParams(aContext) {}
-  };
+  struct PaintTextSelectionParams;
+  struct DrawTextRunParams;
+  struct DrawTextParams;
+  struct ClipEdges;
+  struct PaintShadowParams;
+  struct PaintDecorationLineParams;
 
   
   
@@ -628,7 +589,7 @@ class nsTextFrame : public nsIFrame {
   
   
   bool PaintTextWithSelection(const PaintTextSelectionParams& aParams,
-                              const nsDisplayText::ClipEdges& aClipEdges);
+                              const ClipEdges& aClipEdges);
   
   
   
@@ -637,8 +598,7 @@ class nsTextFrame : public nsIFrame {
   bool PaintTextWithSelectionColors(
       const PaintTextSelectionParams& aParams,
       const mozilla::UniquePtr<SelectionDetails>& aDetails,
-      SelectionTypeMask* aAllSelectionTypeMask,
-      const nsDisplayText::ClipEdges& aClipEdges);
+      SelectionTypeMask* aAllSelectionTypeMask, const ClipEdges& aClipEdges);
   
   void PaintTextSelectionDecorations(
       const PaintTextSelectionParams& aParams,
@@ -688,11 +648,11 @@ class nsTextFrame : public nsIFrame {
 
 
 
-  gfxSkipCharsIterator EnsureTextRun(
-      TextRunType aWhichTextRun, DrawTarget* aRefDrawTarget = nullptr,
-      nsIFrame* aLineContainer = nullptr,
-      const nsLineList::iterator* aLine = nullptr,
-      uint32_t* aFlowEndInTextRun = nullptr);
+  gfxSkipCharsIterator EnsureTextRun(TextRunType aWhichTextRun,
+                                     DrawTarget* aRefDrawTarget = nullptr,
+                                     nsIFrame* aLineContainer = nullptr,
+                                     const nsLineList_iterator* aLine = nullptr,
+                                     uint32_t* aFlowEndInTextRun = nullptr);
 
   gfxTextRun* GetTextRun(TextRunType aWhichTextRun) const {
     if (aWhichTextRun == eInflated || !HasFontSizeInflation()) return mTextRun;
@@ -778,9 +738,7 @@ class nsTextFrame : public nsIFrame {
 
   void NotifyNativeAnonymousTextnodeChange(uint32_t aOldLength);
 
-  void SetInflatedFontMetrics(nsFontMetrics* aMetrics) {
-    mFontMetrics = aMetrics;
-  }
+  void SetInflatedFontMetrics(nsFontMetrics*);
   nsFontMetrics* InflatedFontMetrics() const { return mFontMetrics; }
 
   nsRect WebRenderBounds();
@@ -848,22 +806,6 @@ class nsTextFrame : public nsIFrame {
   
   nsRect UpdateTextEmphasis(mozilla::WritingMode aWM,
                             PropertyProvider& aProvider);
-
-  struct PaintShadowParams {
-    gfxTextRun::Range range;
-    LayoutDeviceRect dirtyRect;
-    mozilla::gfx::Point framePt;
-    mozilla::gfx::Point textBaselinePt;
-    gfxContext* context;
-    nscolor foregroundColor = NS_RGBA(0, 0, 0, 0);
-    const nsDisplayText::ClipEdges* clipEdges = nullptr;
-    PropertyProvider* provider = nullptr;
-    nscoord leftSideOffset = 0;
-    explicit PaintShadowParams(const PaintTextParams& aParams)
-        : dirtyRect(aParams.dirtyRect),
-          framePt(aParams.framePt),
-          context(aParams.context) {}
-  };
 
   void PaintOneShadow(const PaintShadowParams& aParams,
                       const mozilla::StyleSimpleShadow& aShadowDetails,
@@ -971,7 +913,6 @@ class nsTextFrame : public nsIFrame {
       const gfxFont::Metrics& aFontMetrics, DrawPathCallbacks* aCallbacks,
       bool aVertical, mozilla::StyleTextDecorationLine aDecoration);
 
-  struct PaintDecorationLineParams;
   void PaintDecorationLine(const PaintDecorationLineParams& aParams);
   
 
