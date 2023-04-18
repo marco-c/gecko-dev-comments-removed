@@ -4,8 +4,11 @@
 
 "use strict";
 
+
+
+
 const stubs = new Map();
-stubs.set("NaN", {
+stubs.set(`NaN`, {
   type: "NaN",
 });
 
