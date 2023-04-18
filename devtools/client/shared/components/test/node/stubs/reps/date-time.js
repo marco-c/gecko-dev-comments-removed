@@ -4,33 +4,44 @@
 
 "use strict";
 
+
+
+
 const stubs = new Map();
-stubs.set("DateTime", {
-  type: "object",
-  class: "Date",
-  actor: "server1.conn0.child1/obj32",
-  extensible: true,
-  frozen: false,
-  sealed: false,
-  ownPropertyLength: 0,
-  preview: {
-    timestamp: 1459372644859,
+stubs.set(`DateTime`, {
+  "_grip": {
+    "type": "object",
+    "actor": "server0.conn0.windowGlobal4294967299/obj28",
+    "class": "Date",
+    "ownPropertyLength": 0,
+    "extensible": true,
+    "frozen": false,
+    "sealed": false,
+    "isError": false,
+    "preview": {
+      "timestamp": 1459372644859
+    }
   },
+  "actorID": "server0.conn0.windowGlobal4294967299/obj28"
 });
 
-stubs.set("InvalidDateTime", {
-  type: "object",
-  actor: "server1.conn0.child1/obj32",
-  class: "Date",
-  extensible: true,
-  frozen: false,
-  sealed: false,
-  ownPropertyLength: 0,
-  preview: {
-    timestamp: {
-      type: "NaN",
-    },
+stubs.set(`InvalidDateTime`, {
+  "_grip": {
+    "type": "object",
+    "actor": "server0.conn0.windowGlobal4294967299/obj30",
+    "class": "Date",
+    "ownPropertyLength": 0,
+    "extensible": true,
+    "frozen": false,
+    "sealed": false,
+    "isError": false,
+    "preview": {
+      "timestamp": {
+        "type": "NaN"
+      }
+    }
   },
+  "actorID": "server0.conn0.windowGlobal4294967299/obj30"
 });
 
 module.exports = stubs;

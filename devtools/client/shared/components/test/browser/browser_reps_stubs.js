@@ -34,6 +34,10 @@ const EXPRESSIONS_BY_FILE = {
     }`,
     ],
   ]),
+  "date-time.js": new Map([
+    ["DateTime", `new Date(1459372644859)`],
+    ["InvalidDateTime", `new Date("invalid")`],
+  ]),
   "infinity.js": new Map([
     ["Infinity", `Infinity`],
     ["NegativeInfinity", `-Infinity`],
@@ -48,7 +52,6 @@ const EXPRESSIONS_BY_FILE = {
   ]),
   "undefined.js": new Map([["Undefined", `undefined`]]),
   "window.js": new Map([["Window", `window`]]),
-  
   
   
   
