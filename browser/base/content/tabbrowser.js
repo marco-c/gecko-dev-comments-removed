@@ -5458,20 +5458,15 @@
       ) {
         if (tab.linkedBrowser) {
           
-          
-          
           let [contentPid, ...framePids] = E10SUtils.getBrowserPids(
             tab.linkedBrowser,
             gFissionBrowser
           );
           if (contentPid) {
-            label += " (pid " + contentPid + ")";
-            if (gFissionBrowser) {
-              label += " [F";
-              if (framePids.length) {
-                label += " " + framePids.join(", ");
-              }
-              label += "]";
+            if (framePids && framePids.length) {
+              label += ` (pids ${contentPid}, ${framePids.sort().join(", ")})`;
+            } else {
+              label += ` (pid ${contentPid})`;
             }
           }
           if (tab.linkedBrowser.docShellIsActive) {
