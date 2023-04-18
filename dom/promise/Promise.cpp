@@ -51,8 +51,7 @@
 #include "xpcpublic.h"
 #include "xpcprivate.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -249,12 +248,20 @@ static void SettlePromise(Promise* aSettlingPromise, Promise* aCallbackPromise,
 
 void PromiseNativeThenHandlerBase::ResolvedCallback(
     JSContext* aCx, JS::Handle<JS::Value> aValue, ErrorResult& aRv) {
+  if (!HasResolvedCallback()) {
+    mPromise->MaybeResolve(aValue);
+    return;
+  }
   RefPtr<Promise> promise = CallResolveCallback(aCx, aValue, aRv);
   SettlePromise(mPromise, promise, aRv);
 }
 
 void PromiseNativeThenHandlerBase::RejectedCallback(
     JSContext* aCx, JS::Handle<JS::Value> aValue, ErrorResult& aRv) {
+  if (!HasRejectedCallback()) {
+    mPromise->MaybeReject(aValue);
+    return;
+  }
   RefPtr<Promise> promise = CallRejectCallback(aCx, aValue, aRv);
   SettlePromise(mPromise, promise, aRv);
 }
@@ -898,7 +905,6 @@ already_AddRefed<Promise> Promise::CreateResolvedWithUndefined(
   return returnPromise.forget();
 }
 
-}  
 }  
 
 extern "C" {

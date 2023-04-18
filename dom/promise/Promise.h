@@ -34,9 +34,7 @@ namespace JS {
 class Value;
 }
 
-namespace mozilla {
-
-namespace dom {
+namespace mozilla::dom {
 
 class AnyCallback;
 class MediaStreamError;
@@ -270,6 +268,12 @@ class Promise : public SupportsWeakPtr {
   ThenResult<Callback, Args...> ThenWithCycleCollectedArgs(
       Callback&& aOnResolve, Args&&... aArgs);
 
+  
+  
+  template <typename Callback, typename... Args>
+  ThenResult<Callback, Args...> CatchWithCycleCollectedArgs(
+      Callback&& aOnReject, Args&&... aArgs);
+
   Result<RefPtr<Promise>, nsresult> ThenWithoutCycleCollection(
       const std::function<already_AddRefed<Promise>(
           JSContext*, JS::HandleValue, ErrorResult& aRv)>& aCallback);
@@ -305,6 +309,11 @@ class Promise : public SupportsWeakPtr {
       nsIGlobalObject* aGlobal, ErrorResult& aRv);
 
  protected:
+  template <typename ResolveCallback, typename RejectCallback, typename... Args>
+  ThenResult<ResolveCallback, Args...> ThenCatchWithCycleCollectedArgsImpl(
+      Maybe<ResolveCallback>&& aOnResolve, Maybe<RejectCallback>&& aOnReject,
+      Args&&... aArgs);
+
   
   
   
@@ -362,7 +371,6 @@ class Promise : public SupportsWeakPtr {
   JS::Heap<JSObject*> mPromiseObj;
 };
 
-}  
 }  
 
 extern "C" {
