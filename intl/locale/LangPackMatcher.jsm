@@ -282,6 +282,20 @@ function getAppAndSystemLocaleInfo() {
     type: "language",
   });
 
+  
+  let canLiveReload = null;
+  if (systemLocale && appLocale) {
+    const systemDirection = Services.intl.getScriptDirection(
+      systemLocale.language
+    );
+    const appDirection = Services.intl.getScriptDirection(appLocale.language);
+    const supportsBidiSwitching = Services.prefs.getBoolPref(
+      "intl.multilingual.liveReloadBidirectional",
+      false
+    );
+    canLiveReload = systemDirection === appDirection || supportsBidiSwitching;
+  }
+
   return {
     
     systemLocaleRaw,
@@ -289,6 +303,7 @@ function getAppAndSystemLocaleInfo() {
     appLocaleRaw,
     appLocale,
     matchType,
+    canLiveReload,
 
     
     displayNames: {
