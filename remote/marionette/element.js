@@ -628,7 +628,21 @@ element.findClosest = function(startNode, selector) {
 
 
 
+
+
+
+
+
 element.getElementId = function(el) {
+  if (element.isStale(el)) {
+    throw new lazy.error.StaleElementReferenceError(
+      lazy.pprint`The element reference of ${el} ` +
+        "is stale; either the element is no longer attached to the DOM, " +
+        "it is not in the current frame context, " +
+        "or the document has been refreshed"
+    );
+  }
+
   const webEl = WebElement.from(el);
 
   const id = lazy.ContentDOMReference.get(el);
