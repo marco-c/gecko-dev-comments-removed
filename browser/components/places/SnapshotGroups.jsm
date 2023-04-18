@@ -80,18 +80,23 @@ const SnapshotGroups = new (class SnapshotGroups {
 
   async add(group, urls) {
     let id = -1;
+    if (group.title && !group.builderMetadata?.title) {
+      if (!group.builderMetadata) {
+        group.builderMetadata = {};
+      }
+      group.builderMetadata.title = group.title;
+    }
     await PlacesUtils.withConnectionWrapper(
       "SnapshotsGroups.jsm:add",
       async db => {
         
         let row = await db.executeCached(
           `
-        INSERT INTO moz_places_metadata_snapshots_groups (title, builder, builder_data)
-        VALUES (:title, :builder, :builder_data)
-        RETURNING id
-      `,
+          INSERT INTO moz_places_metadata_snapshots_groups (builder, builder_data)
+          VALUES (:builder, :builder_data)
+          RETURNING id
+          `,
           {
-            title: group.title,
             builder: group.builder,
             builder_data: JSON.stringify(group.builderMetadata),
           }
@@ -115,35 +120,35 @@ const SnapshotGroups = new (class SnapshotGroups {
 
 
 
+
+
+
+
+
+
   async updateMetadata(group) {
+    let params = { id: group.id };
+    let setters = [];
+    if (group.builderMetadata) {
+      params.builder_data = JSON.stringify(group.builderMetadata);
+      setters.push("builder_data = json_patch(builder_data, :builder_data)");
+    }
+    if ("title" in group) {
+      
+      params.title = group.title || null;
+      setters.push("title = :title");
+    }
+    if ("hidden" in group) {
+      params.hidden = group.hidden ? 1 : 0;
+      setters.push("hidden = :hidden");
+    }
+    if (!setters.length) {
+      return;
+    }
+
     await PlacesUtils.withConnectionWrapper(
       "SnapshotsGroups.jsm:updateMetadata",
       async db => {
-        let params = { id: group.id };
-        let updates = {
-          title: group.title,
-          builder_data:
-            "builderMetadata" in group
-              ? JSON.stringify(group.builderMetadata)
-              : undefined,
-        };
-
-        if ("hidden" in group) {
-          updates.hidden = group.hidden ? 1 : 0;
-        }
-
-        let setters = [];
-        for (let [key, value] of Object.entries(updates)) {
-          if (value !== undefined) {
-            setters.push(`${key} = :${key}`);
-            params[key] = value;
-          }
-        }
-
-        if (!setters.length) {
-          return;
-        }
-
         await db.executeCached(
           `
             UPDATE moz_places_metadata_snapshots_groups
@@ -341,8 +346,8 @@ const SnapshotGroups = new (class SnapshotGroups {
 
     let rows = await db.executeCached(
       `
-      SELECT g.id, g.title, g.hidden, g.builder, g.builder_data,
-            COUNT(s.group_id) AS snapshot_count,
+      SELECT g.id, IFNULL(g.title, g.builder_data->>'title') AS title, g.hidden, g.builder,
+            g.builder_data, COUNT(s.group_id) AS snapshot_count,
             MAX(sn.last_interaction_at) AS last_access,
             (SELECT group_concat(IFNULL(preview_image_url, ''), '|')
                     || '|' ||
@@ -524,7 +529,7 @@ const SnapshotGroups = new (class SnapshotGroups {
     let snapshotGroup = {
       id: row.getResultByName("id"),
       imageUrl,
-      title: row.getResultByName("title"),
+      title: row.getResultByName("title") || "",
       hidden: row.getResultByName("hidden") == 1,
       builder: row.getResultByName("builder"),
       builderMetadata: JSON.parse(row.getResultByName("builder_data")),
