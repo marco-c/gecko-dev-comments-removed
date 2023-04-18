@@ -202,6 +202,12 @@ already_AddRefed<Promise> MediaCapabilities::DecodingInfo(
     }
     MOZ_DIAGNOSTIC_ASSERT(videoTracks.ElementAt(0),
                           "must contain a valid trackinfo");
+    
+    if (videoTracks[0]->GetType() != TrackInfo::kVideoTrack) {
+      promise
+          ->MaybeRejectWithTypeError<MSG_INVALID_MEDIA_VIDEO_CONFIGURATION>();
+      return promise.forget();
+    }
     tracks.AppendElements(std::move(videoTracks));
   }
   if (aConfiguration.mAudio.WasPassed()) {
@@ -218,6 +224,12 @@ already_AddRefed<Promise> MediaCapabilities::DecodingInfo(
     }
     MOZ_DIAGNOSTIC_ASSERT(audioTracks.ElementAt(0),
                           "must contain a valid trackinfo");
+    
+    if (audioTracks[0]->GetType() != TrackInfo::kAudioTrack) {
+      promise
+          ->MaybeRejectWithTypeError<MSG_INVALID_MEDIA_AUDIO_CONFIGURATION>();
+      return promise.forget();
+    }
     tracks.AppendElements(std::move(audioTracks));
   }
 
