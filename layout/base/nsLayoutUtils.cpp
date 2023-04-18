@@ -1851,11 +1851,15 @@ void nsLayoutUtils::ConstrainToCoordValues(float& aStart, float& aSize) {
   
   
   
-  if (aSize > float(nscoord_MAX)) {
+  if (MOZ_UNLIKELY(std::isnan(aSize))) {
+    
+    aStart = 0.0f;
+    aSize = float(nscoord_MAX);
+  } else if (aSize > float(nscoord_MAX)) {
     float excess = aSize - float(nscoord_MAX);
     excess /= 2;
     aStart += excess;
-    aSize = (float)nscoord_MAX;
+    aSize = float(nscoord_MAX);
   }
 }
 
@@ -1882,7 +1886,11 @@ void nsLayoutUtils::ConstrainToCoordValues(gfxFloat& aStart, gfxFloat& aSize) {
   aSize = max - aStart;
   
   
-  if (aSize > nscoord_MAX) {
+  if (MOZ_UNLIKELY(std::isnan(aSize))) {
+    
+    aStart = 0.0f;
+    aSize = nscoord_MAX;
+  } else if (aSize > nscoord_MAX) {
     gfxFloat excess = aSize - nscoord_MAX;
     excess /= 2;
 
