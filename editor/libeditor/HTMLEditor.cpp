@@ -5740,17 +5740,23 @@ nsresult HTMLEditor::CopyLastEditableChildStylesWithTransaction(
       Result<RefPtr<Element>, nsresult> maybeNewElement =
           CreateAndInsertElementWithTransaction(
               MOZ_KnownLive(*tagName), EditorDOMPoint(newBlock, 0),
-              [](Element& aNewElement) -> nsresult { return NS_OK; });
+              
+              [&](Element& aNewElement) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
+                
+                
+                
+                
+                
+                CloneAttributesWithTransaction(aNewElement,
+                                               *elementInPreviousBlock);
+                return NS_OK;
+              });
       if (maybeNewElement.isErr()) {
         NS_WARNING(
             "HTMLEditor::CreateAndInsertElementWithTransaction() failed");
         return maybeNewElement.unwrapErr();
       }
       firstClonedElement = lastClonedElement = maybeNewElement.unwrap();
-      
-      
-      CloneAttributesWithTransaction(*lastClonedElement,
-                                     *elementInPreviousBlock);
       continue;
     }
     
