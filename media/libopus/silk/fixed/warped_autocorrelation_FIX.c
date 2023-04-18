@@ -37,6 +37,7 @@
 
 
 
+#ifndef OVERRIDE_silk_warped_autocorrelation_FIX_c
 void silk_warped_autocorrelation_FIX_c(
           opus_int32                *corr,                                  
           opus_int                  *scale,                                 
@@ -88,3 +89,4 @@ void silk_warped_autocorrelation_FIX_c(
     }
     silk_assert( corr_QC[ 0 ] >= 0 ); 
 }
+#endif 

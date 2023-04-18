@@ -137,7 +137,7 @@ static OPUS_INLINE float celt_log2(float x)
    } in;
    in.f = x;
    integer = (in.i>>23)-127;
-   in.i -= integer<<23;
+   in.i -= (opus_uint32)integer<<23;
    frac = in.f - 1.5f;
    frac = -0.41445418f + frac*(0.95909232f
           + frac*(-0.33951290f + frac*0.16541097f));
@@ -160,7 +160,7 @@ static OPUS_INLINE float celt_exp2(float x)
    
    res.f = 0.99992522f + frac * (0.69583354f
            + frac * (0.22606716f + 0.078024523f*frac));
-   res.i = (res.i + (integer<<23)) & 0x7fffffff;
+   res.i = (res.i + ((opus_uint32)integer<<23)) & 0x7fffffff;
    return res.f;
 }
 
