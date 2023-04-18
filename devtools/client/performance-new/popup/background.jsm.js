@@ -38,6 +38,11 @@ const AppConstants = ChromeUtils.import(
 
 
 
+
+
+
+
+
 const ENTRIES_PREF = "devtools.performance.recording.entries";
 
 const INTERVAL_PREF = "devtools.performance.recording.interval";
@@ -55,6 +60,13 @@ const PRESET_PREF = "devtools.performance.recording.preset";
 const POPUP_FEATURE_FLAG_PREF = "devtools.performance.popup.feature-flag";
 
 const PREF_PREFIX = "devtools.performance.recording.";
+
+
+
+
+
+
+const CURRENT_WEBCHANNEL_VERSION = 1;
 
 
 ChromeUtils.defineModuleGetter(
@@ -264,12 +276,16 @@ async function captureProfile(pageContext) {
   
   Services.profiler.Pause();
 
-  const profile = await Services.profiler
+  
+
+
+  const profileCaptureResult = await Services.profiler
     .getProfileDataAsGzippedArrayBuffer()
-    .catch(
-       e => {
-        console.error(e);
-        return {};
+    .then(
+      profile => ({ type: "SUCCESS", profile }),
+      error => {
+        console.error(error);
+        return { type: "ERROR", error };
       }
     );
 
@@ -283,10 +299,11 @@ async function captureProfile(pageContext) {
     objdirs
   );
 
-  const { openProfilerAndDisplayProfile } = lazy.BrowserModule();
-  openProfilerAndDisplayProfile(
-    profile,
-    profilerViewMode,
+  const { openProfilerTab } = lazy.BrowserModule();
+  const browser = openProfilerTab(profilerViewMode);
+  registerProfileCaptureForBrowser(
+    browser,
+    profileCaptureResult,
     symbolicationService
   );
 
@@ -616,33 +633,41 @@ function removePrefObserver(observer) {
 
 
 
-function handleWebChannelMessage(channel, id, message, target) {
-  if (typeof message !== "object" || typeof message.type !== "string") {
-    console.error(
-      "An malformed message was received by the profiler's WebChannel handler.",
-      message
-    );
-    return;
-  }
-  const messageFromFrontend =  (message);
-  const { requestId } = messageFromFrontend;
-  switch (messageFromFrontend.type) {
+
+
+
+
+
+
+
+
+
+
+
+
+const infoForBrowserMap = new WeakMap();
+
+
+
+
+
+
+
+
+
+async function getResponseForMessage(request, browser) {
+  switch (request.type) {
     case "STATUS_QUERY": {
       
       
       const { ProfilerMenuButton } = lazy.ProfilerMenuButton();
-      channel.send(
-        {
-          type: "STATUS_RESPONSE",
-          menuButtonIsEnabled: ProfilerMenuButton.isInNavbar(),
-          requestId,
-        },
-        target
-      );
-      break;
+      return {
+        version: CURRENT_WEBCHANNEL_VERSION,
+        menuButtonIsEnabled: ProfilerMenuButton.isInNavbar(),
+      };
     }
     case "ENABLE_MENU_BUTTON": {
-      const { ownerDocument } = target.browser;
+      const { ownerDocument } = browser;
       if (!ownerDocument) {
         throw new Error(
           "Could not find the owner document for the current browser while enabling " +
@@ -665,21 +690,121 @@ function handleWebChannelMessage(channel, id, message, target) {
       ProfilerMenuButton.openPopup(ownerDocument);
 
       
-      channel.send(
-        {
-          type: "ENABLE_MENU_BUTTON_DONE",
-          requestId,
-        },
-        target
+      return undefined;
+    }
+    case "GET_PROFILE": {
+      const infoForBrowser = infoForBrowserMap.get(browser);
+      if (infoForBrowser === undefined) {
+        throw new Error("Could not find a profile for this tab.");
+      }
+      const { profileCaptureResult } = infoForBrowser;
+      switch (profileCaptureResult.type) {
+        case "SUCCESS":
+          return profileCaptureResult.profile;
+        case "ERROR":
+          throw profileCaptureResult.error;
+        default:
+          const { UnhandledCaseError } = lazy.Utils();
+          throw new UnhandledCaseError(
+            profileCaptureResult,
+            "profileCaptureResult"
+          );
+      }
+    }
+    case "GET_SYMBOL_TABLE": {
+      const infoForBrowser = infoForBrowserMap.get(browser);
+      if (infoForBrowser === undefined) {
+        throw new Error("Could not find a symbolication service for this tab.");
+      }
+      const { debugName, breakpadId } = request;
+      return infoForBrowser.symbolicationService.getSymbolTable(
+        debugName,
+        breakpadId
       );
-      break;
+    }
+    case "QUERY_SYMBOLICATION_API": {
+      const infoForBrowser = infoForBrowserMap.get(browser);
+      if (infoForBrowser === undefined) {
+        throw new Error("Could not find a symbolication service for this tab.");
+      }
+      const { path, requestJson } = request;
+      return infoForBrowser.symbolicationService.querySymbolicationApi(
+        path,
+        requestJson
+      );
     }
     default:
       console.error(
         "An unknown message type was received by the profiler's WebChannel handler.",
-        message
+        request
       );
+      const { UnhandledCaseError } = lazy.Utils();
+      throw new UnhandledCaseError(request, "WebChannel request");
   }
+}
+
+
+
+
+
+
+
+
+
+async function handleWebChannelMessage(channel, id, message, target) {
+  if (typeof message !== "object" || typeof message.type !== "string") {
+    console.error(
+      "An malformed message was received by the profiler's WebChannel handler.",
+      message
+    );
+    return;
+  }
+  const messageFromFrontend =  (message);
+  const { requestId } = messageFromFrontend;
+
+  try {
+    const response = await getResponseForMessage(
+      messageFromFrontend,
+      target.browser
+    );
+    channel.send(
+      {
+        type: "SUCCESS_RESPONSE",
+        requestId,
+        response,
+      },
+      target
+    );
+  } catch (error) {
+    channel.send(
+      {
+        type: "ERROR_RESPONSE",
+        requestId,
+        error: `${error.name}: ${error.message}`,
+      },
+      target
+    );
+  }
+}
+
+
+
+
+
+
+
+
+
+
+function registerProfileCaptureForBrowser(
+  browser,
+  profileCaptureResult,
+  symbolicationService
+) {
+  infoForBrowserMap.set(browser, {
+    profileCaptureResult,
+    symbolicationService,
+  });
 }
 
 
@@ -698,6 +823,7 @@ module.exports = {
   revertRecordingSettings,
   changePreset,
   handleWebChannelMessage,
+  registerProfileCaptureForBrowser,
   addPrefObserver,
   removePrefObserver,
   getProfilerViewModeForCurrentPreset,

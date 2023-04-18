@@ -452,26 +452,85 @@ export interface Presets {
   [presetName: string]: PresetDefinition;
 }
 
-export type MessageFromFrontend =
-  | {
-      type: "STATUS_QUERY";
-      requestId: number;
-    }
-  | {
-      type: "ENABLE_MENU_BUTTON";
-      requestId: number;
-    };
 
-export type MessageToFrontend =
-  | {
-      type: "STATUS_RESPONSE";
-      menuButtonIsEnabled: boolean;
-      requestId: number;
-    }
-  | {
-      type: "ENABLE_MENU_BUTTON_DONE";
-      requestId: number;
-    };
+
+
+
+
+type MessageFromFrontend = {
+  requestId: number;
+} & RequestFromFrontend;
+
+export type RequestFromFrontend =
+  | StatusQueryRequest
+  | EnableMenuButtonRequest
+  | GetProfileRequest
+  | GetSymbolTableRequest
+  | QuerySymbolicationApiRequest;
+
+type StatusQueryRequest = { type: "STATUS_QUERY" };
+type EnableMenuButtonRequest = { type: "ENABLE_MENU_BUTTON" };
+type GetProfileRequest = { type: "GET_PROFILE" };
+type GetSymbolTableRequest = {
+  type: "GET_SYMBOL_TABLE";
+  debugName: string;
+  breakpadId: string;
+};
+type QuerySymbolicationApiRequest = {
+  type: "QUERY_SYMBOLICATION_API";
+  path: string;
+  requestJson: string;
+};
+
+export type MessageToFrontend<R> =
+  | OutOfBandErrorMessageToFrontend
+  | ErrorResponseMessageToFrontend
+  | SuccessResponseMessageToFrontend<R>;
+
+type OutOfBandErrorMessageToFrontend = {
+  errno: number;
+  error: string;
+};
+
+type ErrorResponseMessageToFrontend = {
+  type: "ERROR_RESPONSE";
+  requestId: number;
+  error: string;
+};
+
+type SuccessResponseMessageToFrontend<R> = {
+  type: "SUCCESS_RESPONSE";
+  requestId: number;
+  response: R;
+};
+
+export type ResponseToFrontend =
+  | StatusQueryResponse
+  | EnableMenuButtonResponse
+  | GetProfileResponse
+  | GetSymbolTableResponse
+  | QuerySymbolicationApiResponse;
+
+type StatusQueryResponse = {
+  menuButtonIsEnabled: boolean;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  version: number;
+};
+type EnableMenuButtonResponse = void;
+type GetProfileResponse = ArrayBuffer | MinimallyTypedGeckoProfile;
+type GetSymbolTableResponse = SymbolTableAsTuple;
+type QuerySymbolicationApiResponse = string;
 
 
 
@@ -484,7 +543,7 @@ export type MessageToFrontend =
 export class ProfilerWebChannel {
   constructor(id: string, url: MockedExports.nsIURI);
   send: (
-    message: MessageToFrontend,
+    message: MessageToFrontend<ResponseToFrontend>,
     target: MockedExports.WebChannelTarget
   ) => void;
   listen: (
@@ -495,6 +554,26 @@ export class ProfilerWebChannel {
     ) => void
   ) => void;
 }
+
+
+
+
+
+
+export type ProfilerBrowserInfo = {
+  profileCaptureResult: ProfileCaptureResult;
+  symbolicationService: SymbolicationService;
+};
+
+export type ProfileCaptureResult =
+  | {
+      type: "SUCCESS";
+      profile: MinimallyTypedGeckoProfile | ArrayBuffer;
+    }
+  | {
+      type: "ERROR";
+      error: Error;
+    };
 
 
 
