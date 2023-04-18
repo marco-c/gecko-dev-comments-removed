@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/Unused.h"
@@ -42,8 +42,8 @@ nsClipboardProxy::SetData(nsITransferable* aTransferable,
 }
 
 NS_IMETHODIMP
-nsClipboardProxy::GetData(nsITransferable* aTransferable,
-                          int32_t aWhichClipboard) {
+nsClipboardProxy::GetSomeData(nsITransferable* aTransferable,
+                              int32_t aWhichClipboard) {
   nsTArray<nsCString> types;
   aTransferable->FlavorsTransferableCanImport(types);
 
@@ -68,7 +68,7 @@ nsClipboardProxy::GetData(nsITransferable* aTransferable,
       rv = aTransferable->SetTransferData(item.flavor().get(), dataWrapper);
       NS_ENSURE_SUCCESS(rv, rv);
     } else if (item.data().type() == IPCDataTransferData::TShmem) {
-      // If this is an image, convert it into an nsIInputStream.
+      
       const nsCString& flavor = item.flavor();
       mozilla::ipc::Shmem data = item.data().get_Shmem();
       if (flavor.EqualsLiteral(kJPEGImageMime) ||

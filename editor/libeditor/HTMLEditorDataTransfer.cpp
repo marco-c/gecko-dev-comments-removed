@@ -2093,9 +2093,9 @@ nsresult HTMLEditor::PasteInternal(int32_t aClipboardType) {
     return NS_ERROR_FAILURE;
   }
   
-  rv = clipboard->GetData(transferable, aClipboardType);
+  rv = clipboard->GetSomeData(transferable, aClipboardType);
   if (NS_FAILED(rv)) {
-    NS_WARNING("nsIClipboard::GetData() failed");
+    NS_WARNING("nsIClipboard::GetSomeData() failed");
     return rv;
   }
 
@@ -2126,9 +2126,9 @@ nsresult HTMLEditor::PasteInternal(int32_t aClipboardType) {
     NS_WARNING_ASSERTION(
         NS_SUCCEEDED(rvIgnored),
         "nsITransferable::AddDataFlavor(kHTMLContext) failed, but ignored");
-    rvIgnored = clipboard->GetData(contextTransferable, aClipboardType);
+    rvIgnored = clipboard->GetSomeData(contextTransferable, aClipboardType);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
-                         "nsIClipboard::GetData() failed, but ignored");
+                         "nsIClipboard::GetSomeData() failed, but ignored");
     nsCOMPtr<nsISupports> contextDataObj;
     rv = contextTransferable->GetTransferData(kHTMLContext,
                                               getter_AddRefs(contextDataObj));
@@ -2156,9 +2156,9 @@ nsresult HTMLEditor::PasteInternal(int32_t aClipboardType) {
     NS_WARNING_ASSERTION(
         NS_SUCCEEDED(rvIgnored),
         "nsITransferable::AddDataFlavor(kHTMLInfo) failed, but ignored");
-    clipboard->GetData(infoTransferable, aClipboardType);
+    clipboard->GetSomeData(infoTransferable, aClipboardType);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
-                         "nsIClipboard::GetData() failed, but ignored");
+                         "nsIClipboard::GetSomeData() failed, but ignored");
     nsCOMPtr<nsISupports> infoDataObj;
     rv = infoTransferable->GetTransferData(kHTMLInfo,
                                            getter_AddRefs(infoDataObj));
@@ -2288,9 +2288,9 @@ nsresult HTMLEditor::PasteNoFormattingAsAction(int32_t aSelectionType,
   }
 
   
-  rv = clipboard->GetData(transferable, aSelectionType);
+  rv = clipboard->GetSomeData(transferable, aSelectionType);
   if (NS_FAILED(rv)) {
-    NS_WARNING("nsIClipboard::GetData() failed");
+    NS_WARNING("nsIClipboard::GetSomeData() failed");
     return rv;
   }
 
@@ -2543,9 +2543,9 @@ nsresult HTMLEditor::PasteAsPlaintextQuotation(int32_t aSelectionType) {
       "nsITransferable::AddDataFlavor(kUnicodeMime) failed, but ignored");
 
   
-  rvIgnored = clipboard->GetData(transferable, aSelectionType);
+  rvIgnored = clipboard->GetSomeData(transferable, aSelectionType);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
-                       "nsIClipboard::GetData() failed, but ignored");
+                       "nsIClipboard::GetSomeData() failed, but ignored");
 
   
   
