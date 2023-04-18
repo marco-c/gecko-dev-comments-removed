@@ -322,12 +322,6 @@ inline void TraceWeakMapKeyEdge(JSTracer* trc, Zone* weakMapZone,
 
 
 
-
-template <typename T>
-void TraceProcessGlobalRoot(JSTracer* trc, T* thing, const char* name);
-
-
-
 void TraceGenericPointerRoot(JSTracer* trc, gc::Cell** thingp,
                              const char* name);
 

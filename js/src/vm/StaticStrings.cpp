@@ -17,7 +17,6 @@
 
 #include "gc/Allocator.h"
 #include "gc/AllocKind.h"
-#include "gc/Tracer.h"
 #include "js/HashTable.h"
 #include "js/TypeDecls.h"
 
@@ -88,26 +87,4 @@ bool StaticStrings::init(JSContext* cx) {
   }
 
   return true;
-}
-
-inline void TraceStaticString(JSTracer* trc, JSAtom* atom, const char* name) {
-  MOZ_ASSERT(atom->isPermanentAtom());
-  TraceProcessGlobalRoot(trc, atom, name);
-}
-
-void StaticStrings::trace(JSTracer* trc) {
-  
-
-  for (auto& s : unitStaticTable) {
-    TraceStaticString(trc, s, "unit-static-string");
-  }
-
-  for (auto& s : length2StaticTable) {
-    TraceStaticString(trc, s, "length2-static-string");
-  }
-
-  
-  for (auto& s : intStaticTable) {
-    TraceStaticString(trc, s, "int-static-string");
-  }
 }
