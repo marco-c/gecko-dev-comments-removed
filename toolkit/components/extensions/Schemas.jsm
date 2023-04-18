@@ -5,8 +5,6 @@
 
 "use strict";
 
-const global = this;
-
 const { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
 );
@@ -2689,7 +2687,7 @@ class CallEntry extends Entry {
         
         
         if (parameter.optional && (arg === null || arg === undefined)) {
-          fixedArgs[parameterIndex] = Cu.cloneInto(parameter.default, global);
+          fixedArgs[parameterIndex] = Cu.cloneInto(parameter.default, {});
         } else {
           return false;
         }
