@@ -167,7 +167,8 @@ NS_IMETHODIMP SplitNodeTransaction::UndoTransaction() {
            ToString(*this).c_str()));
 
   if (MOZ_UNLIKELY(NS_WARN_IF(!mHTMLEditor) || NS_WARN_IF(!mNewContent) ||
-                   NS_WARN_IF(!mParentNode) || NS_WARN_IF(!mSplitContent))) {
+                   NS_WARN_IF(!mParentNode) || NS_WARN_IF(!mSplitContent) ||
+                   NS_WARN_IF(mNewContent->IsBeingRemoved()))) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
@@ -184,7 +185,7 @@ NS_IMETHODIMP SplitNodeTransaction::UndoTransaction() {
   }
   if (NS_SUCCEEDED(rv)) {
     
-    
+    mSplitOffset = joinedPoint.Offset();
   } else {
     NS_WARNING("HTMLEditor::DoJoinNodes() failed");
   }
