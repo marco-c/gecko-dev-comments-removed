@@ -582,13 +582,28 @@ class ProviderQuickSuggest extends UrlbarProvider {
     }
 
     
+    let match_type = result.isBestMatch ? "best-match" : "firefox-suggest";
+    Services.telemetry.recordEvent(
+      TELEMETRY_EVENT_CATEGORY,
+      "engagement",
+      selType == "quicksuggest" ? "click" : selType || "impression_only",
+      "",
+      {
+        match_type,
+        position: String(telemetryResultIndex),
+        suggestion_type: result.payload.isSponsored
+          ? "sponsored"
+          : "nonsponsored",
+      }
+    );
+
+    
     if (!isPrivate) {
       
       
       
       let is_clicked = selType == "quicksuggest";
       let scenario = UrlbarPrefs.get("quicksuggest.scenario");
-      let match_type = result.isBestMatch ? "best-match" : "firefox-suggest";
 
       
       let advertiser = result.payload.sponsoredAdvertiser.toLocaleLowerCase();

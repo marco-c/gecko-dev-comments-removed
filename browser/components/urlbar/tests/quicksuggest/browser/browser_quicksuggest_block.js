@@ -58,6 +58,7 @@ add_task(async function init() {
   await UrlbarProviderQuickSuggest.clearBlockedSuggestions();
 
   Services.telemetry.clearScalars();
+  Services.telemetry.clearEvents();
 
   await QuickSuggestTestUtils.ensureQuickSuggestInit(SUGGESTIONS);
 });
@@ -200,15 +201,28 @@ async function doBasicBlockTest({ suggestion, isBestMatch, block }) {
   QuickSuggestTestUtils.assertScalars(scalars);
 
   
+  let match_type = isBestMatch ? "best-match" : "firefox-suggest";
+  QuickSuggestTestUtils.assertEvents([
+    {
+      category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
+      method: "engagement",
+      object: "block",
+      extra: {
+        match_type,
+        position: String(index),
+        suggestion_type: isSponsored ? "sponsored" : "nonsponsored",
+      },
+    },
+  ]);
+
+  
   QuickSuggestTestUtils.assertImpressionPing({
     spy,
+    match_type,
     
     
     index: index - 1,
     block_id: suggestion.id,
-    advertiser: suggestion.advertiser.toLowerCase(),
-    reporting_url: suggestion.impression_url,
-    match_type: isBestMatch ? "best-match" : "firefox-suggest",
   });
   QuickSuggestTestUtils.assertNoClickPing(spy);
 

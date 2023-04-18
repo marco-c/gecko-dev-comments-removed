@@ -419,6 +419,31 @@ class QSTestUtils {
 
 
 
+
+  assertEvents(expectedEvents, filterOverrides = {}, options = undefined) {
+    TelemetryTestUtils.assertEvents(
+      expectedEvents,
+      {
+        category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
+        ...filterOverrides,
+      },
+      options
+    );
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
   createTelemetryPingSpy() {
     let sandbox = sinon.createSandbox();
     let spy = sandbox.spy(
@@ -456,11 +481,11 @@ class QSTestUtils {
   assertImpressionPing({
     index,
     spy,
-    advertiser = "test-advertiser",
+    advertiser = "testadvertiser",
     block_id = 1,
     is_clicked = false,
     match_type = "firefox-suggest",
-    reporting_url = "http://impression.reporting.test.com/",
+    reporting_url = "http://example.com/impression",
     request_id = null,
     scenario = "offline",
   }) {
@@ -524,10 +549,10 @@ class QSTestUtils {
   assertClickPing({
     index,
     spy,
-    advertiser = "test-advertiser",
+    advertiser = "testadvertiser",
     block_id = 1,
     match_type = "firefox-suggest",
-    reporting_url = "http://click.reporting.test.com/",
+    reporting_url = "http://example.com/click",
     request_id = null,
     scenario = "offline",
   }) {

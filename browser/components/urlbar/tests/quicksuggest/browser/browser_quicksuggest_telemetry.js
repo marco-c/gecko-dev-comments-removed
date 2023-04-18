@@ -13,84 +13,56 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   NimbusFeatures: "resource://nimbus/ExperimentAPI.jsm",
 });
 
-const TEST_URL = "http://example.com/quicksuggest?q=frabbits";
-const TEST_SEARCH_STRING = "fra";
-
-const BEST_MATCH_SPONSORED_URL = "http://example.com/sponsored-best-match";
-const BEST_MATCH_SPONSORED_SEARCH_STRING = "sponsoredbestmatch";
-
-const BEST_MATCH_NONSPONSORED_URL =
-  "http://example.com/nonsponsored-best-match";
-const BEST_MATCH_NONSPONSORED_SEARCH_STRING = "nonsponsoredbestmatch";
-
-const TEST_DATA = [
+const SUGGESTIONS = [
   {
     id: 1,
-    url: TEST_URL,
-    title: "frabbits",
-    keywords: [TEST_SEARCH_STRING],
-    click_url: "http://click.reporting.test.com/",
-    impression_url: "http://impression.reporting.test.com/",
-    advertiser: "Test-Advertiser",
+    url: "http://example.com/sponsored",
+    title: "Sponsored suggestion",
+    keywords: ["sponsored"],
+    click_url: "http://example.com/click",
+    impression_url: "http://example.com/impression",
+    advertiser: "TestAdvertiser",
   },
   {
     id: 2,
-    url: BEST_MATCH_SPONSORED_URL,
-    title: "Sponsored best match",
-    keywords: [BEST_MATCH_SPONSORED_SEARCH_STRING],
-    click_url: "http://click.reporting.test.com/",
-    impression_url: "http://impression.reporting.test.com/",
-    advertiser: "Test-Advertiser",
-    _test_is_best_match: true,
-  },
-  {
-    id: 3,
-    url: BEST_MATCH_NONSPONSORED_URL,
-    title: "Non-sponsored best match",
-    keywords: [BEST_MATCH_NONSPONSORED_SEARCH_STRING],
-    click_url: "http://click.reporting.test.com/",
-    impression_url: "http://impression.reporting.test.com/",
-    advertiser: "Test-Advertiser",
+    url: "http://example.com/nonsponsored",
+    title: "Non-sponsored suggestion",
+    keywords: ["nonsponsored"],
+    click_url: "http://example.com/click",
+    impression_url: "http://example.com/impression",
+    advertiser: "TestAdvertiser",
     iab_category: "5 - Education",
-    _test_is_best_match: true,
   },
 ];
 
-const EXPERIMENT_PREF = "browser.urlbar.quicksuggest.enabled";
-const SUGGEST_PREF = "suggest.quicksuggest.nonsponsored";
+const SPONSORED_SUGGESTION = SUGGESTIONS[0];
 
 
 let spy;
 
 
-if (AppConstants.platform == "macosx") {
-  requestLongerTimeout(3);
-}
+
+requestLongerTimeout(5);
 
 add_task(async function init() {
-  ({ sandbox, spy } = QuickSuggestTestUtils.createTelemetryPingSpy());
+  ({ spy } = QuickSuggestTestUtils.createTelemetryPingSpy());
 
   await PlacesUtils.history.clear();
   await PlacesUtils.bookmarks.eraseEverything();
   await UrlbarTestUtils.formHistory.clear();
+
+  Services.telemetry.clearScalars();
+  Services.telemetry.clearEvents();
 
   
   await SearchTestUtils.installSearchExtension();
   let oldDefaultEngine = await Services.search.getDefault();
   Services.search.setDefault(Services.search.getEngineByName("Example"));
 
-  
-  await QuickSuggestTestUtils.ensureQuickSuggestInit(TEST_DATA);
+  await QuickSuggestTestUtils.ensureQuickSuggestInit(SUGGESTIONS);
 
-  
-  let oldCanRecord = Services.telemetry.canRecordExtended;
-  Services.telemetry.canRecordExtended = true;
-
-  Services.telemetry.clearScalars();
-
-  registerCleanupFunction(async () => {
+  registerCleanupFunction(() => {
     Services.search.setDefault(oldDefaultEngine);
-    Services.telemetry.canRecordExtended = oldCanRecord;
   });
 });
 
@@ -98,10 +70,31 @@ add_task(async function init() {
 
 
 
-add_task(async function impression_offline_dataCollectionDisabled() {
+
+
+
+function add_suggestions_task(fn) {
+  let taskFn = async () => {
+    for (let suggestion of SUGGESTIONS) {
+      info(`Running ${fn.name} with suggestion ${JSON.stringify(suggestion)}`);
+      await fn(suggestion);
+    }
+  };
+  Object.defineProperty(taskFn, "name", { value: fn.name });
+  add_task(taskFn);
+}
+
+
+
+
+
+add_suggestions_task(async function impression_offline_dataCollectionDisabled(
+  suggestion
+) {
   await QuickSuggestTestUtils.setScenario("offline");
   UrlbarPrefs.set("quicksuggest.dataCollection.enabled", false);
   await doImpressionTest({
+    suggestion,
     scenario: "offline",
   });
 });
@@ -110,10 +103,13 @@ add_task(async function impression_offline_dataCollectionDisabled() {
 
 
 
-add_task(async function impression_offline_dataCollectionEnabled() {
+add_suggestions_task(async function impression_offline_dataCollectionEnabled(
+  suggestion
+) {
   await QuickSuggestTestUtils.setScenario("offline");
   UrlbarPrefs.set("quicksuggest.dataCollection.enabled", true);
   await doImpressionTest({
+    suggestion,
     scenario: "offline",
   });
 });
@@ -122,12 +118,15 @@ add_task(async function impression_offline_dataCollectionEnabled() {
 
 
 
-add_task(async function impression_online_dataCollectionDisabled() {
+add_suggestions_task(async function impression_online_dataCollectionDisabled(
+  suggestion
+) {
   await QuickSuggestTestUtils.setScenario("online");
   UrlbarPrefs.set("quicksuggest.dataCollection.enabled", false);
   UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
   await doImpressionTest({
+    suggestion,
     scenario: "online",
   });
 });
@@ -136,47 +135,98 @@ add_task(async function impression_online_dataCollectionDisabled() {
 
 
 
-add_task(async function impression_online_dataCollectionEnabled() {
+add_suggestions_task(async function impression_online_dataCollectionEnabled(
+  suggestion
+) {
   await QuickSuggestTestUtils.setScenario("online");
   UrlbarPrefs.set("quicksuggest.dataCollection.enabled", true);
   UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
   await doImpressionTest({
+    suggestion,
     scenario: "online",
   });
 });
 
-async function doImpressionTest({ scenario }) {
+
+
+
+add_suggestions_task(async function impression_bestMatch(suggestion) {
+  UrlbarPrefs.set("bestMatch.enabled", true);
+  await doImpressionTest({
+    suggestion,
+    scenario: "offline",
+    isBestMatch: true,
+  });
+  UrlbarPrefs.clear("bestMatch.enabled");
+});
+
+async function doImpressionTest({ scenario, suggestion, isBestMatch = false }) {
   await BrowserTestUtils.withNewTab("about:blank", async () => {
     spy.resetHistory();
+    Services.telemetry.clearEvents();
     await UrlbarTestUtils.promiseAutocompleteResultPopup({
       window,
-      value: TEST_SEARCH_STRING,
+      value: suggestion.keywords[0],
       fireInputEvent: true,
     });
     let index = 1;
+    let isSponsored = suggestion.keywords[0] == "sponsored";
     await QuickSuggestTestUtils.assertIsQuickSuggest({
       window,
       index,
-      url: TEST_URL,
+      isSponsored,
+      isBestMatch,
+      url: suggestion.url,
     });
     
     
     await UrlbarTestUtils.promisePopupClose(window, () => {
       EventUtils.synthesizeKey("KEY_Enter");
     });
-    QuickSuggestTestUtils.assertScalars({
+    let scalars = {
       [QuickSuggestTestUtils.SCALARS.IMPRESSION]: index + 1,
-    });
+    };
+    if (isBestMatch) {
+      if (isSponsored) {
+        scalars = {
+          ...scalars,
+          [QuickSuggestTestUtils.SCALARS.IMPRESSION_SPONSORED_BEST_MATCH]:
+            index + 1,
+        };
+      } else {
+        scalars = {
+          ...scalars,
+          [QuickSuggestTestUtils.SCALARS.IMPRESSION_NONSPONSORED_BEST_MATCH]:
+            index + 1,
+        };
+      }
+    }
+    QuickSuggestTestUtils.assertScalars(scalars);
+    QuickSuggestTestUtils.assertEvents([
+      {
+        category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
+        method: "engagement",
+        object: "impression_only",
+        extra: {
+          match_type: isBestMatch ? "best-match" : "firefox-suggest",
+          position: String(index + 1),
+          suggestion_type: isSponsored ? "sponsored" : "nonsponsored",
+        },
+      },
+    ]);
     QuickSuggestTestUtils.assertImpressionPing({
       index,
       spy,
       scenario,
+      block_id: suggestion.id,
+      match_type: isBestMatch ? "best-match" : "firefox-suggest",
     });
     QuickSuggestTestUtils.assertNoClickPing(spy);
   });
 
   await PlacesUtils.history.clear();
+  await UrlbarTestUtils.formHistory.clear();
 
   await QuickSuggestTestUtils.setScenario(null);
   UrlbarPrefs.clear("quicksuggest.dataCollection.enabled");
@@ -189,19 +239,21 @@ async function doImpressionTest({ scenario }) {
 add_task(async function noImpression_abandonment() {
   await BrowserTestUtils.withNewTab("about:blank", async () => {
     spy.resetHistory();
+    Services.telemetry.clearEvents();
     await UrlbarTestUtils.promiseAutocompleteResultPopup({
       window,
-      value: TEST_SEARCH_STRING,
+      value: "sponsored",
       fireInputEvent: true,
     });
     await QuickSuggestTestUtils.assertIsQuickSuggest({
       window,
-      url: TEST_URL,
+      url: SPONSORED_SUGGESTION.url,
     });
     await UrlbarTestUtils.promisePopupClose(window, () => {
       gURLBar.blur();
     });
     QuickSuggestTestUtils.assertScalars({});
+    QuickSuggestTestUtils.assertEvents([]);
     QuickSuggestTestUtils.assertNoImpressionPing(spy);
     QuickSuggestTestUtils.assertNoClickPing(spy);
   });
@@ -212,6 +264,7 @@ add_task(async function noImpression_abandonment() {
 add_task(async function noImpression_noQuickSuggestResult() {
   await BrowserTestUtils.withNewTab("about:blank", async () => {
     spy.resetHistory();
+    Services.telemetry.clearEvents();
     await UrlbarTestUtils.promiseAutocompleteResultPopup({
       window,
       value: "noImpression_noQuickSuggestResult",
@@ -222,6 +275,7 @@ add_task(async function noImpression_noQuickSuggestResult() {
       EventUtils.synthesizeKey("KEY_Enter");
     });
     QuickSuggestTestUtils.assertScalars({});
+    QuickSuggestTestUtils.assertEvents([]);
     QuickSuggestTestUtils.assertNoImpressionPing(spy);
     QuickSuggestTestUtils.assertNoClickPing(spy);
   });
@@ -232,38 +286,65 @@ add_task(async function noImpression_noQuickSuggestResult() {
 
 
 
-add_task(async function click_keyboard_offline_dataCollectionDisabled() {
-  await QuickSuggestTestUtils.setScenario("offline");
-  UrlbarPrefs.set("quicksuggest.dataCollection.enabled", false);
-  await doClickTest({
-    useKeyboard: true,
-    scenario: "offline",
-  });
-});
+add_suggestions_task(
+  async function click_keyboard_offline_dataCollectionDisabled(suggestion) {
+    await QuickSuggestTestUtils.setScenario("offline");
+    UrlbarPrefs.set("quicksuggest.dataCollection.enabled", false);
+    await doClickTest({
+      suggestion,
+      useKeyboard: true,
+      scenario: "offline",
+    });
+  }
+);
 
 
 
 
 
-add_task(async function click_keyboard_offline_dataCollectionEnabled() {
-  await QuickSuggestTestUtils.setScenario("offline");
-  UrlbarPrefs.set("quicksuggest.dataCollection.enabled", true);
-  await doClickTest({
-    useKeyboard: true,
-    scenario: "offline",
-  });
-});
+add_suggestions_task(
+  async function click_keyboard_offline_dataCollectionEnabled(suggestion) {
+    await QuickSuggestTestUtils.setScenario("offline");
+    UrlbarPrefs.set("quicksuggest.dataCollection.enabled", true);
+    await doClickTest({
+      suggestion,
+      useKeyboard: true,
+      scenario: "offline",
+    });
+  }
+);
 
 
 
 
 
-add_task(async function click_keyboard_online_dataCollectionDisabled() {
+add_suggestions_task(
+  async function click_keyboard_online_dataCollectionDisabled(suggestion) {
+    await QuickSuggestTestUtils.setScenario("online");
+    UrlbarPrefs.set("quicksuggest.dataCollection.enabled", false);
+    UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
+    UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
+    await doClickTest({
+      suggestion,
+      useKeyboard: true,
+      scenario: "online",
+    });
+  }
+);
+
+
+
+
+
+add_suggestions_task(async function click_keyboard_online_dataCollectionEnabled(
+  suggestion
+) {
   await QuickSuggestTestUtils.setScenario("online");
-  UrlbarPrefs.set("quicksuggest.dataCollection.enabled", false);
+  UrlbarPrefs.set("quicksuggest.dataCollection.enabled", true);
   UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
   await doClickTest({
+    suggestion,
     useKeyboard: true,
     scenario: "online",
   });
@@ -273,25 +354,13 @@ add_task(async function click_keyboard_online_dataCollectionDisabled() {
 
 
 
-add_task(async function click_keyboard_online_dataCollectionEnabled() {
-  await QuickSuggestTestUtils.setScenario("online");
-  UrlbarPrefs.set("quicksuggest.dataCollection.enabled", true);
-  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
-  UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
-  await doClickTest({
-    useKeyboard: true,
-    scenario: "online",
-  });
-});
-
-
-
-
-
-add_task(async function click_mouse_offline_dataCollectionDisabled() {
+add_suggestions_task(async function click_mouse_offline_dataCollectionDisabled(
+  suggestion
+) {
   await QuickSuggestTestUtils.setScenario("offline");
   UrlbarPrefs.set("quicksuggest.dataCollection.enabled", false);
   await doClickTest({
+    suggestion,
     useKeyboard: false,
     scenario: "offline",
   });
@@ -301,10 +370,13 @@ add_task(async function click_mouse_offline_dataCollectionDisabled() {
 
 
 
-add_task(async function click_mouse_offline_dataCollectionEnabled() {
+add_suggestions_task(async function click_mouse_offline_dataCollectionEnabled(
+  suggestion
+) {
   await QuickSuggestTestUtils.setScenario("offline");
   UrlbarPrefs.set("quicksuggest.dataCollection.enabled", true);
   await doClickTest({
+    suggestion,
     useKeyboard: false,
     scenario: "offline",
   });
@@ -314,12 +386,15 @@ add_task(async function click_mouse_offline_dataCollectionEnabled() {
 
 
 
-add_task(async function click_mouse_online_dataCollectionDisabled() {
+add_suggestions_task(async function click_mouse_online_dataCollectionDisabled(
+  suggestion
+) {
   await QuickSuggestTestUtils.setScenario("online");
   UrlbarPrefs.set("quicksuggest.dataCollection.enabled", false);
   UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
   await doClickTest({
+    suggestion,
     useKeyboard: false,
     scenario: "online",
   });
@@ -329,106 +404,70 @@ add_task(async function click_mouse_online_dataCollectionDisabled() {
 
 
 
-add_task(async function click_mouse_online_dataCollectionEnabled() {
+add_suggestions_task(async function click_mouse_online_dataCollectionEnabled(
+  suggestion
+) {
   await QuickSuggestTestUtils.setScenario("online");
   UrlbarPrefs.set("quicksuggest.dataCollection.enabled", true);
   UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
   await doClickTest({
+    suggestion,
     useKeyboard: false,
     scenario: "online",
   });
 });
 
 
-add_task(async function bestMatch_sponsored_keyboard() {
+
+
+add_suggestions_task(async function click_keyboard_bestMatch(suggestion) {
   UrlbarPrefs.set("bestMatch.enabled", true);
-  await QuickSuggestTestUtils.setScenario("offline");
   await doClickTest({
+    suggestion,
     useKeyboard: true,
     scenario: "offline",
-    searchString: BEST_MATCH_SPONSORED_SEARCH_STRING,
-    url: BEST_MATCH_SPONSORED_URL,
-    block_id: 2,
-    isSponsored: true,
     isBestMatch: true,
   });
   UrlbarPrefs.clear("bestMatch.enabled");
 });
 
 
-add_task(async function bestMatch_sponsored_mouse() {
+
+
+add_suggestions_task(async function click_mouse_bestMatch(suggestion) {
   UrlbarPrefs.set("bestMatch.enabled", true);
-  await QuickSuggestTestUtils.setScenario("offline");
   await doClickTest({
-    useKeyboard: false,
+    suggestion,
     scenario: "offline",
-    searchString: BEST_MATCH_SPONSORED_SEARCH_STRING,
-    url: BEST_MATCH_SPONSORED_URL,
-    block_id: 2,
-    isSponsored: true,
-    isBestMatch: true,
-  });
-  UrlbarPrefs.clear("bestMatch.enabled");
-});
-
-
-
-add_task(async function bestMatch_nonsponsored_keyboard() {
-  UrlbarPrefs.set("bestMatch.enabled", true);
-  await QuickSuggestTestUtils.setScenario("offline");
-  await doClickTest({
-    useKeyboard: true,
-    scenario: "offline",
-    searchString: BEST_MATCH_NONSPONSORED_SEARCH_STRING,
-    url: BEST_MATCH_NONSPONSORED_URL,
-    block_id: 3,
-    isSponsored: false,
-    isBestMatch: true,
-  });
-  UrlbarPrefs.clear("bestMatch.enabled");
-});
-
-
-add_task(async function bestMatch_nonsponsored_mouse() {
-  UrlbarPrefs.set("bestMatch.enabled", true);
-  await QuickSuggestTestUtils.setScenario("offline");
-  await doClickTest({
-    useKeyboard: false,
-    scenario: "offline",
-    searchString: BEST_MATCH_NONSPONSORED_SEARCH_STRING,
-    url: BEST_MATCH_NONSPONSORED_URL,
-    block_id: 3,
-    isSponsored: false,
     isBestMatch: true,
   });
   UrlbarPrefs.clear("bestMatch.enabled");
 });
 
 async function doClickTest({
+  suggestion,
   useKeyboard,
   scenario,
-  block_id = undefined,
-  isSponsored = true,
   isBestMatch = false,
-  searchString = TEST_SEARCH_STRING,
-  url = TEST_URL,
 }) {
   await BrowserTestUtils.withNewTab("about:blank", async () => {
     spy.resetHistory();
+    Services.telemetry.clearEvents();
     await UrlbarTestUtils.promiseAutocompleteResultPopup({
       window,
-      value: searchString,
+      value: suggestion.keywords[0],
       fireInputEvent: true,
     });
 
     let index = 1;
+    let isSponsored = suggestion.keywords[0] == "sponsored";
     let result = await QuickSuggestTestUtils.assertIsQuickSuggest({
       window,
       index,
-      url,
       isSponsored,
       isBestMatch,
+      url: suggestion.url,
     });
     await UrlbarTestUtils.promisePopupClose(window, () => {
       if (useKeyboard) {
@@ -464,20 +503,32 @@ async function doClickTest({
     QuickSuggestTestUtils.assertScalars(scalars);
 
     let match_type = isBestMatch ? "best-match" : "firefox-suggest";
+    QuickSuggestTestUtils.assertEvents([
+      {
+        category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
+        method: "engagement",
+        object: "click",
+        extra: {
+          match_type,
+          position: String(index + 1),
+          suggestion_type: isSponsored ? "sponsored" : "nonsponsored",
+        },
+      },
+    ]);
     QuickSuggestTestUtils.assertImpressionPing({
       index,
       spy,
       scenario,
-      block_id,
       match_type,
+      block_id: suggestion.id,
       is_clicked: true,
     });
     QuickSuggestTestUtils.assertClickPing({
       index,
       spy,
       scenario,
-      block_id,
       match_type,
+      block_id: suggestion.id,
     });
   });
 
@@ -498,22 +549,23 @@ add_task(async function click_beforeSearchSuggestions() {
   await BrowserTestUtils.withNewTab("about:blank", async () => {
     await withSuggestions(async () => {
       spy.resetHistory();
+      Services.telemetry.clearEvents();
       await UrlbarTestUtils.promiseAutocompleteResultPopup({
         window,
-        value: TEST_SEARCH_STRING,
+        value: "sponsored",
         fireInputEvent: true,
       });
       let resultCount = UrlbarTestUtils.getResultCount(window);
-      Assert.greaterOrEqual(
+      Assert.equal(
         resultCount,
         4,
-        "Result count >= 1 heuristic + 1 quick suggest + 2 suggestions"
+        "Result count == 1 heuristic + 1 quick suggest + 2 suggestions"
       );
       let index = resultCount - 3;
       await QuickSuggestTestUtils.assertIsQuickSuggest({
         window,
         index,
-        url: TEST_URL,
+        url: SPONSORED_SUGGESTION.url,
       });
       await UrlbarTestUtils.promisePopupClose(window, () => {
         EventUtils.synthesizeKey("KEY_ArrowDown", { repeat: index });
@@ -524,6 +576,18 @@ add_task(async function click_beforeSearchSuggestions() {
         [QuickSuggestTestUtils.SCALARS.IMPRESSION]: index + 1,
         [QuickSuggestTestUtils.SCALARS.CLICK]: index + 1,
       });
+      QuickSuggestTestUtils.assertEvents([
+        {
+          category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
+          method: "engagement",
+          object: "click",
+          extra: {
+            match_type: "firefox-suggest",
+            position: String(index + 1),
+            suggestion_type: "sponsored",
+          },
+        },
+      ]);
       QuickSuggestTestUtils.assertImpressionPing({
         index,
         spy,
@@ -538,151 +602,76 @@ add_task(async function click_beforeSearchSuggestions() {
 
 
 
-add_task(async function help_keyboard() {
-  spy.resetHistory();
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window,
-    value: TEST_SEARCH_STRING,
-    fireInputEvent: true,
+add_suggestions_task(async function help_keyboard(suggestion) {
+  await doHelpTest({
+    suggestion,
+    useKeyboard: true,
   });
-  let index = 1;
-  let result = await QuickSuggestTestUtils.assertIsQuickSuggest({
-    window,
-    index,
-    url: TEST_URL,
-  });
-  let helpButton = result.element.row._buttons.get("help");
-  Assert.ok(helpButton, "The result has a help button");
-  let helpLoadPromise = BrowserTestUtils.waitForNewTab(gBrowser);
-  await UrlbarTestUtils.promisePopupClose(window, () => {
-    EventUtils.synthesizeKey("KEY_ArrowDown", { repeat: 2 });
-    EventUtils.synthesizeKey("KEY_Enter");
-  });
-  await helpLoadPromise;
-  Assert.equal(
-    gBrowser.currentURI.spec,
-    QuickSuggestTestUtils.LEARN_MORE_URL,
-    "Help URL loaded"
-  );
-  QuickSuggestTestUtils.assertScalars({
-    [QuickSuggestTestUtils.SCALARS.IMPRESSION]: index + 1,
-    [QuickSuggestTestUtils.SCALARS.HELP]: index + 1,
-  });
-  QuickSuggestTestUtils.assertImpressionPing({ index, spy });
-  QuickSuggestTestUtils.assertNoClickPing(spy);
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
-  await PlacesUtils.history.clear();
 });
 
 
 
-add_task(async function help_mouse() {
-  spy.resetHistory();
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window,
-    value: TEST_SEARCH_STRING,
-    fireInputEvent: true,
+add_suggestions_task(async function help_mouse(suggestion) {
+  await doHelpTest({
+    suggestion,
+    useKeyboard: false,
   });
-  let index = 1;
-  let result = await QuickSuggestTestUtils.assertIsQuickSuggest({
-    window,
-    index,
-    url: TEST_URL,
-  });
-  let helpButton = result.element.row._buttons.get("help");
-  Assert.ok(helpButton, "The result has a help button");
-  let helpLoadPromise = BrowserTestUtils.waitForNewTab(gBrowser);
-  await UrlbarTestUtils.promisePopupClose(window, () => {
-    EventUtils.synthesizeMouseAtCenter(helpButton, {});
-  });
-  await helpLoadPromise;
-  Assert.equal(
-    gBrowser.currentURI.spec,
-    QuickSuggestTestUtils.LEARN_MORE_URL,
-    "Help URL loaded"
-  );
-  QuickSuggestTestUtils.assertScalars({
-    [QuickSuggestTestUtils.SCALARS.IMPRESSION]: index + 1,
-    [QuickSuggestTestUtils.SCALARS.HELP]: index + 1,
-  });
-  QuickSuggestTestUtils.assertImpressionPing({ index, spy });
-  QuickSuggestTestUtils.assertNoClickPing(spy);
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
-  await PlacesUtils.history.clear();
 });
 
 
 
-add_task(async function bestMatch_sponsored_help_keyboard() {
+
+add_suggestions_task(async function help_keyboard_bestMatch(suggestion) {
   UrlbarPrefs.set("bestMatch.enabled", true);
-  spy.resetHistory();
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window,
-    value: BEST_MATCH_SPONSORED_SEARCH_STRING,
-    fireInputEvent: true,
-  });
-  let index = 1;
-  let result = await QuickSuggestTestUtils.assertIsQuickSuggest({
-    window,
-    index,
-    url: BEST_MATCH_SPONSORED_URL,
-    isSponsored: true,
+  await doHelpTest({
+    suggestion,
+    useKeyboard: true,
     isBestMatch: true,
   });
-  let helpButton = result.element.row._buttons.get("help");
-  Assert.ok(helpButton, "The result has a help button");
-  let helpLoadPromise = BrowserTestUtils.waitForNewTab(gBrowser);
-  await UrlbarTestUtils.promisePopupClose(window, () => {
-    EventUtils.synthesizeKey("KEY_ArrowDown", { repeat: 2 });
-    EventUtils.synthesizeKey("KEY_Enter");
-  });
-  await helpLoadPromise;
-  Assert.equal(
-    gBrowser.currentURI.spec,
-    QuickSuggestTestUtils.LEARN_MORE_URL,
-    "Help URL loaded"
-  );
-  QuickSuggestTestUtils.assertScalars({
-    [QuickSuggestTestUtils.SCALARS.IMPRESSION]: index + 1,
-    [QuickSuggestTestUtils.SCALARS.IMPRESSION_SPONSORED_BEST_MATCH]: index + 1,
-    [QuickSuggestTestUtils.SCALARS.HELP]: index + 1,
-    [QuickSuggestTestUtils.SCALARS.HELP_SPONSORED_BEST_MATCH]: index + 1,
-  });
-  QuickSuggestTestUtils.assertImpressionPing({
-    index,
-    spy,
-    block_id: 2,
-    match_type: "best-match",
-  });
-  QuickSuggestTestUtils.assertNoClickPing(spy);
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
-  await PlacesUtils.history.clear();
   UrlbarPrefs.clear("bestMatch.enabled");
 });
 
 
 
-add_task(async function bestMatch_sponsored_help_mouse() {
+
+add_suggestions_task(async function help_mouse_bestMatch(suggestion) {
   UrlbarPrefs.set("bestMatch.enabled", true);
+  await doHelpTest({
+    suggestion,
+    useKeyboard: false,
+    isBestMatch: true,
+  });
+  UrlbarPrefs.clear("bestMatch.enabled");
+});
+
+async function doHelpTest({ suggestion, useKeyboard, isBestMatch = false }) {
   spy.resetHistory();
+  Services.telemetry.clearEvents();
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
-    value: BEST_MATCH_SPONSORED_SEARCH_STRING,
+    value: suggestion.keywords[0],
     fireInputEvent: true,
   });
   let index = 1;
+  let isSponsored = suggestion.keywords[0] == "sponsored";
   let result = await QuickSuggestTestUtils.assertIsQuickSuggest({
     window,
     index,
-    url: BEST_MATCH_SPONSORED_URL,
-    isSponsored: true,
-    isBestMatch: true,
+    isSponsored,
+    isBestMatch,
+    url: suggestion.url,
   });
+
   let helpButton = result.element.row._buttons.get("help");
   Assert.ok(helpButton, "The result has a help button");
   let helpLoadPromise = BrowserTestUtils.waitForNewTab(gBrowser);
   await UrlbarTestUtils.promisePopupClose(window, () => {
-    EventUtils.synthesizeMouseAtCenter(helpButton, {});
+    if (useKeyboard) {
+      EventUtils.synthesizeKey("KEY_ArrowDown", { repeat: 2 });
+      EventUtils.synthesizeKey("KEY_Enter");
+    } else {
+      EventUtils.synthesizeMouseAtCenter(helpButton, {});
+    }
   });
   await helpLoadPromise;
   Assert.equal(
@@ -690,122 +679,56 @@ add_task(async function bestMatch_sponsored_help_mouse() {
     QuickSuggestTestUtils.LEARN_MORE_URL,
     "Help URL loaded"
   );
-  QuickSuggestTestUtils.assertScalars({
+
+  let scalars = {
     [QuickSuggestTestUtils.SCALARS.IMPRESSION]: index + 1,
-    [QuickSuggestTestUtils.SCALARS.IMPRESSION_SPONSORED_BEST_MATCH]: index + 1,
     [QuickSuggestTestUtils.SCALARS.HELP]: index + 1,
-    [QuickSuggestTestUtils.SCALARS.HELP_SPONSORED_BEST_MATCH]: index + 1,
-  });
+  };
+  if (isBestMatch) {
+    if (isSponsored) {
+      scalars = {
+        ...scalars,
+        [QuickSuggestTestUtils.SCALARS.IMPRESSION_SPONSORED_BEST_MATCH]:
+          index + 1,
+        [QuickSuggestTestUtils.SCALARS.HELP_SPONSORED_BEST_MATCH]: index + 1,
+      };
+    } else {
+      scalars = {
+        ...scalars,
+        [QuickSuggestTestUtils.SCALARS.IMPRESSION_NONSPONSORED_BEST_MATCH]:
+          index + 1,
+        [QuickSuggestTestUtils.SCALARS.HELP_NONSPONSORED_BEST_MATCH]: index + 1,
+      };
+    }
+  }
+  QuickSuggestTestUtils.assertScalars(scalars);
+
+  let match_type = isBestMatch ? "best-match" : "firefox-suggest";
+  QuickSuggestTestUtils.assertEvents([
+    {
+      category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
+      method: "engagement",
+      object: "help",
+      extra: {
+        match_type,
+        position: String(index + 1),
+        suggestion_type: isSponsored ? "sponsored" : "nonsponsored",
+      },
+    },
+  ]);
   QuickSuggestTestUtils.assertImpressionPing({
     index,
     spy,
-    block_id: 2,
-    match_type: "best-match",
+    match_type,
+    block_id: suggestion.id,
+    is_clicked: false,
+    scenario: "offline",
   });
   QuickSuggestTestUtils.assertNoClickPing(spy);
+
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
   await PlacesUtils.history.clear();
-  UrlbarPrefs.clear("bestMatch.enabled");
-});
-
-
-
-add_task(async function bestMatch_nonsponsored_help_keyboard() {
-  UrlbarPrefs.set("bestMatch.enabled", true);
-  spy.resetHistory();
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window,
-    value: BEST_MATCH_NONSPONSORED_SEARCH_STRING,
-    fireInputEvent: true,
-  });
-  let index = 1;
-  let result = await QuickSuggestTestUtils.assertIsQuickSuggest({
-    window,
-    index,
-    url: BEST_MATCH_NONSPONSORED_URL,
-    isSponsored: false,
-    isBestMatch: true,
-  });
-  let helpButton = result.element.row._buttons.get("help");
-  Assert.ok(helpButton, "The result has a help button");
-  let helpLoadPromise = BrowserTestUtils.waitForNewTab(gBrowser);
-  await UrlbarTestUtils.promisePopupClose(window, () => {
-    EventUtils.synthesizeKey("KEY_ArrowDown", { repeat: 2 });
-    EventUtils.synthesizeKey("KEY_Enter");
-  });
-  await helpLoadPromise;
-  Assert.equal(
-    gBrowser.currentURI.spec,
-    QuickSuggestTestUtils.LEARN_MORE_URL,
-    "Help URL loaded"
-  );
-  QuickSuggestTestUtils.assertScalars({
-    [QuickSuggestTestUtils.SCALARS.IMPRESSION]: index + 1,
-    [QuickSuggestTestUtils.SCALARS.IMPRESSION_NONSPONSORED_BEST_MATCH]:
-      index + 1,
-    [QuickSuggestTestUtils.SCALARS.HELP]: index + 1,
-    [QuickSuggestTestUtils.SCALARS.HELP_NONSPONSORED_BEST_MATCH]: index + 1,
-  });
-  QuickSuggestTestUtils.assertImpressionPing({
-    index,
-    spy,
-    block_id: 3,
-    match_type: "best-match",
-  });
-  QuickSuggestTestUtils.assertNoClickPing(spy);
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
-  await PlacesUtils.history.clear();
-  UrlbarPrefs.clear("bestMatch.enabled");
-});
-
-
-
-add_task(async function bestMatch_nonsponsored_help_mouse() {
-  UrlbarPrefs.set("bestMatch.enabled", true);
-  spy.resetHistory();
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window,
-    value: BEST_MATCH_NONSPONSORED_SEARCH_STRING,
-    fireInputEvent: true,
-  });
-  let index = 1;
-  let result = await QuickSuggestTestUtils.assertIsQuickSuggest({
-    window,
-    index,
-    url: BEST_MATCH_NONSPONSORED_URL,
-    isSponsored: false,
-    isBestMatch: true,
-  });
-  let helpButton = result.element.row._buttons.get("help");
-  Assert.ok(helpButton, "The result has a help button");
-  let helpLoadPromise = BrowserTestUtils.waitForNewTab(gBrowser);
-  await UrlbarTestUtils.promisePopupClose(window, () => {
-    EventUtils.synthesizeMouseAtCenter(helpButton, {});
-  });
-  await helpLoadPromise;
-  Assert.equal(
-    gBrowser.currentURI.spec,
-    QuickSuggestTestUtils.LEARN_MORE_URL,
-    "Help URL loaded"
-  );
-  QuickSuggestTestUtils.assertScalars({
-    [QuickSuggestTestUtils.SCALARS.IMPRESSION]: index + 1,
-    [QuickSuggestTestUtils.SCALARS.IMPRESSION_NONSPONSORED_BEST_MATCH]:
-      index + 1,
-    [QuickSuggestTestUtils.SCALARS.HELP]: index + 1,
-    [QuickSuggestTestUtils.SCALARS.HELP_NONSPONSORED_BEST_MATCH]: index + 1,
-  });
-  QuickSuggestTestUtils.assertImpressionPing({
-    index,
-    spy,
-    block_id: 3,
-    match_type: "best-match",
-  });
-  QuickSuggestTestUtils.assertNoClickPing(spy);
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
-  await PlacesUtils.history.clear();
-  UrlbarPrefs.clear("bestMatch.enabled");
-});
+}
 
 
 
@@ -816,11 +739,11 @@ add_task(async function enableToggled() {
 
   
   
-  let enabled = UrlbarPrefs.get(SUGGEST_PREF);
+  let enabled = UrlbarPrefs.get("suggest.quicksuggest.nonsponsored");
   for (let i = 0; i < 2; i++) {
     enabled = !enabled;
-    UrlbarPrefs.set(SUGGEST_PREF, enabled);
-    TelemetryTestUtils.assertEvents([
+    UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", enabled);
+    QuickSuggestTestUtils.assertEvents([
       {
         category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
         method: "enable_toggled",
@@ -839,17 +762,15 @@ add_task(async function enableToggled() {
   
   
   await SpecialPowers.pushPrefEnv({
-    set: [[EXPERIMENT_PREF, false]],
+    set: [["browser.urlbar.quicksuggest.enabled", false]],
   });
   enabled = !enabled;
-  UrlbarPrefs.set(SUGGEST_PREF, enabled);
-  TelemetryTestUtils.assertEvents([], {
-    category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
-  });
+  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", enabled);
+  QuickSuggestTestUtils.assertEvents([]);
   await SpecialPowers.popPrefEnv();
 
   
-  UrlbarPrefs.set(SUGGEST_PREF, !enabled);
+  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", !enabled);
 });
 
 
@@ -865,7 +786,7 @@ add_task(async function sponsoredToggled() {
   for (let i = 0; i < 2; i++) {
     enabled = !enabled;
     UrlbarPrefs.set("suggest.quicksuggest.sponsored", enabled);
-    TelemetryTestUtils.assertEvents([
+    QuickSuggestTestUtils.assertEvents([
       {
         category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
         method: "sponsored_toggled",
@@ -884,13 +805,11 @@ add_task(async function sponsoredToggled() {
   
   
   await SpecialPowers.pushPrefEnv({
-    set: [[EXPERIMENT_PREF, false]],
+    set: [["browser.urlbar.quicksuggest.enabled", false]],
   });
   enabled = !enabled;
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", enabled);
-  TelemetryTestUtils.assertEvents([], {
-    category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
-  });
+  QuickSuggestTestUtils.assertEvents([]);
   await SpecialPowers.popPrefEnv();
 
   
@@ -910,7 +829,7 @@ add_task(async function dataCollectionToggled() {
   for (let i = 0; i < 2; i++) {
     enabled = !enabled;
     UrlbarPrefs.set("quicksuggest.dataCollection.enabled", enabled);
-    TelemetryTestUtils.assertEvents([
+    QuickSuggestTestUtils.assertEvents([
       {
         category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
         method: "data_collect_toggled",
@@ -929,13 +848,11 @@ add_task(async function dataCollectionToggled() {
   
   
   await SpecialPowers.pushPrefEnv({
-    set: [[EXPERIMENT_PREF, false]],
+    set: [["browser.urlbar.quicksuggest.enabled", false]],
   });
   enabled = !enabled;
   UrlbarPrefs.set("quicksuggest.dataCollection.enabled", enabled);
-  TelemetryTestUtils.assertEvents([], {
-    category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
-  });
+  QuickSuggestTestUtils.assertEvents([]);
   await SpecialPowers.popPrefEnv();
 
   
@@ -1082,13 +999,13 @@ add_task(async function nimbusExposure() {
       
       await UrlbarTestUtils.promiseAutocompleteResultPopup({
         window,
-        value: TEST_SEARCH_STRING,
+        value: "sponsored",
         fireInputEvent: true,
       });
       await QuickSuggestTestUtils.assertIsQuickSuggest({
         window,
         index: 1,
-        url: TEST_URL,
+        url: SPONSORED_SUGGESTION.url,
       });
       await QuickSuggestTestUtils.assertExposureEvent(true, "control");
 

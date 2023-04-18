@@ -1458,12 +1458,7 @@ async function doDialogTest({
     "onboardingDialogChoice is correct in TelemetryEnvironment"
   );
 
-  
-  
-  
-  TelemetryTestUtils.assertEvents(telemetryEvents, {
-    category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
-  });
+  QuickSuggestTestUtils.assertEvents(telemetryEvents);
 
   Assert.ok(
     UrlbarPrefs.get("quicksuggest.showedOnboardingDialog"),
