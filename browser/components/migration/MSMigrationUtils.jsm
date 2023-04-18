@@ -14,23 +14,25 @@ const { MigrationUtils } = ChromeUtils.import(
   "resource:///modules/MigrationUtils.jsm"
 );
 
+const lazy = {};
+
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "PlacesUtils",
   "resource://gre/modules/PlacesUtils.jsm"
 );
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "PlacesUIUtils",
   "resource:///modules/PlacesUIUtils.jsm"
 );
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "WindowsRegistry",
   "resource://gre/modules/WindowsRegistry.jsm"
 );
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "ctypes",
   "resource://gre/modules/ctypes.jsm"
 );
@@ -55,15 +57,15 @@ const WEB_CREDENTIALS_VAULT_ID = [
 ];
 
 const wintypes = {
-  BOOL: ctypes.int,
-  DWORD: ctypes.uint32_t,
-  DWORDLONG: ctypes.uint64_t,
-  CHAR: ctypes.char,
-  PCHAR: ctypes.char.ptr,
-  LPCWSTR: ctypes.char16_t.ptr,
-  PDWORD: ctypes.uint32_t.ptr,
-  VOIDP: ctypes.voidptr_t,
-  WORD: ctypes.uint16_t,
+  BOOL: lazy.ctypes.int,
+  DWORD: lazy.ctypes.uint32_t,
+  DWORDLONG: lazy.ctypes.uint64_t,
+  CHAR: lazy.ctypes.char,
+  PCHAR: lazy.ctypes.char.ptr,
+  LPCWSTR: lazy.ctypes.char16_t.ptr,
+  PDWORD: lazy.ctypes.uint32_t.ptr,
+  VOIDP: lazy.ctypes.voidptr_t,
+  WORD: lazy.ctypes.uint16_t,
 };
 
 
@@ -72,7 +74,7 @@ function CtypesKernelHelpers() {
   this._functions = {};
   this._libs = {};
 
-  this._structs.SYSTEMTIME = new ctypes.StructType("SYSTEMTIME", [
+  this._structs.SYSTEMTIME = new lazy.ctypes.StructType("SYSTEMTIME", [
     { wYear: wintypes.WORD },
     { wMonth: wintypes.WORD },
     { wDayOfWeek: wintypes.WORD },
@@ -83,17 +85,17 @@ function CtypesKernelHelpers() {
     { wMilliseconds: wintypes.WORD },
   ]);
 
-  this._structs.FILETIME = new ctypes.StructType("FILETIME", [
+  this._structs.FILETIME = new lazy.ctypes.StructType("FILETIME", [
     { dwLowDateTime: wintypes.DWORD },
     { dwHighDateTime: wintypes.DWORD },
   ]);
 
   try {
-    this._libs.kernel32 = ctypes.open("Kernel32");
+    this._libs.kernel32 = lazy.ctypes.open("Kernel32");
 
     this._functions.FileTimeToSystemTime = this._libs.kernel32.declare(
       "FileTimeToSystemTime",
-      ctypes.winapi_abi,
+      lazy.ctypes.winapi_abi,
       wintypes.BOOL,
       this._structs.FILETIME.ptr,
       this._structs.SYSTEMTIME.ptr
@@ -140,7 +142,7 @@ CtypesKernelHelpers.prototype = {
       systemTime.address()
     );
     if (result == 0) {
-      throw new Error(ctypes.winLastError);
+      throw new Error(lazy.ctypes.winLastError);
     }
 
     
@@ -163,11 +165,11 @@ function CtypesVaultHelpers() {
   this._structs = {};
   this._functions = {};
 
-  this._structs.GUID = new ctypes.StructType("GUID", [
+  this._structs.GUID = new lazy.ctypes.StructType("GUID", [
     { id: wintypes.DWORD.array(4) },
   ]);
 
-  this._structs.VAULT_ITEM_ELEMENT = new ctypes.StructType(
+  this._structs.VAULT_ITEM_ELEMENT = new lazy.ctypes.StructType(
     "VAULT_ITEM_ELEMENT",
     [
       
@@ -185,7 +187,7 @@ function CtypesVaultHelpers() {
     ]
   );
 
-  this._structs.VAULT_ELEMENT = new ctypes.StructType("VAULT_ELEMENT", [
+  this._structs.VAULT_ELEMENT = new lazy.ctypes.StructType("VAULT_ELEMENT", [
     
     { schemaId: this._structs.GUID },
     
@@ -210,11 +212,11 @@ function CtypesVaultHelpers() {
   ]);
 
   try {
-    this._vaultcliLib = ctypes.open("vaultcli.dll");
+    this._vaultcliLib = lazy.ctypes.open("vaultcli.dll");
 
     this._functions.VaultOpenVault = this._vaultcliLib.declare(
       "VaultOpenVault",
-      ctypes.winapi_abi,
+      lazy.ctypes.winapi_abi,
       wintypes.DWORD,
       
       this._structs.GUID.ptr,
@@ -225,7 +227,7 @@ function CtypesVaultHelpers() {
     );
     this._functions.VaultEnumerateItems = this._vaultcliLib.declare(
       "VaultEnumerateItems",
-      ctypes.winapi_abi,
+      lazy.ctypes.winapi_abi,
       wintypes.DWORD,
       
       wintypes.VOIDP,
@@ -234,18 +236,18 @@ function CtypesVaultHelpers() {
       
       wintypes.PDWORD,
       
-      ctypes.voidptr_t
+      lazy.ctypes.voidptr_t
     );
     this._functions.VaultCloseVault = this._vaultcliLib.declare(
       "VaultCloseVault",
-      ctypes.winapi_abi,
+      lazy.ctypes.winapi_abi,
       wintypes.DWORD,
       
       wintypes.VOIDP
     );
     this._functions.VaultGetItem = this._vaultcliLib.declare(
       "VaultGetItem",
-      ctypes.winapi_abi,
+      lazy.ctypes.winapi_abi,
       wintypes.DWORD,
       
       wintypes.VOIDP,
@@ -266,7 +268,7 @@ function CtypesVaultHelpers() {
     );
     this._functions.VaultFree = this._vaultcliLib.declare(
       "VaultFree",
-      ctypes.winapi_abi,
+      lazy.ctypes.winapi_abi,
       wintypes.DWORD,
       
       this._structs.VAULT_ELEMENT.ptr
@@ -391,7 +393,7 @@ Bookmarks.prototype = {
         
         
         
-        let folderName = WindowsRegistry.readRegKey(
+        let folderName = lazy.WindowsRegistry.readRegKey(
           Ci.nsIWindowsRegKey.ROOT_KEY_CURRENT_USER,
           "Software\\Microsoft\\Internet Explorer\\Toolbar",
           "LinksFolderName"
@@ -407,7 +409,7 @@ Bookmarks.prototype = {
   migrate: function B_migrate(aCallback) {
     return (async () => {
       
-      let folderGuid = PlacesUtils.bookmarks.menuGuid;
+      let folderGuid = lazy.PlacesUtils.bookmarks.menuGuid;
       await this._migrateFolder(this._favoritesFolder, folderGuid);
     })().then(
       () => aCallback(true),
@@ -447,13 +449,13 @@ Bookmarks.prototype = {
             entry.parent.equals(this._favoritesFolder);
           if (isBookmarksFolder && entry.isReadable()) {
             
-            let folderGuid = PlacesUtils.bookmarks.toolbarGuid;
+            let folderGuid = lazy.PlacesUtils.bookmarks.toolbarGuid;
             await this._migrateFolder(entry, folderGuid);
-            PlacesUIUtils.maybeToggleBookmarkToolbarVisibilityAfterMigration();
+            lazy.PlacesUIUtils.maybeToggleBookmarkToolbarVisibilityAfterMigration();
           } else if (entry.isReadable()) {
             let childBookmarks = await this._getBookmarksInFolder(entry);
             rv.push({
-              type: PlacesUtils.bookmarks.TYPE_FOLDER,
+              type: lazy.PlacesUtils.bookmarks.TYPE_FOLDER,
               title: entry.leafName,
               children: childBookmarks,
             });

@@ -19,18 +19,20 @@ const { MSMigrationUtils } = ChromeUtils.import(
   "resource:///modules/MSMigrationUtils.jsm"
 );
 
+const lazy = {};
+
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "ctypes",
   "resource://gre/modules/ctypes.jsm"
 );
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "PlacesUtils",
   "resource://gre/modules/PlacesUtils.jsm"
 );
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "OSCrypto",
   "resource://gre/modules/OSCrypto.jsm"
 );
@@ -70,8 +72,8 @@ History.prototype = {
 
       
       let transition = typedURLs.has(url.spec)
-        ? PlacesUtils.history.TRANSITIONS.LINK
-        : PlacesUtils.history.TRANSITIONS.TYPED;
+        ? lazy.PlacesUtils.history.TRANSITIONS.LINK
+        : lazy.PlacesUtils.history.TRANSITIONS.TYPED;
       
       let time = entry.get("time");
 
@@ -81,7 +83,9 @@ History.prototype = {
         visits: [
           {
             transition,
-            date: time ? PlacesUtils.toDate(entry.get("time")) : new Date(),
+            date: time
+              ? lazy.PlacesUtils.toDate(entry.get("time"))
+              : new Date(),
           },
         ],
       });
@@ -158,7 +162,7 @@ IE7FormPasswords.prototype = {
 
   async _migrateURIs(uris) {
     this.ctypesKernelHelpers = new MSMigrationUtils.CtypesKernelHelpers();
-    this._crypto = new OSCrypto();
+    this._crypto = new lazy.OSCrypto();
     let nsIWindowsRegKey = Ci.nsIWindowsRegKey;
     let key = Cc["@mozilla.org/windows-registry-key;1"].createInstance(
       nsIWindowsRegKey
@@ -261,52 +265,52 @@ IE7FormPasswords.prototype = {
 
   _extractDetails(data, uri) {
     
-    let loginData = new ctypes.StructType("loginData", [
+    let loginData = new lazy.ctypes.StructType("loginData", [
       
-      { unknown1: ctypes.uint32_t },
+      { unknown1: lazy.ctypes.uint32_t },
       
-      { headerSize: ctypes.uint32_t },
+      { headerSize: lazy.ctypes.uint32_t },
       
-      { dataSize: ctypes.uint32_t },
+      { dataSize: lazy.ctypes.uint32_t },
       
-      { unknown2: ctypes.uint32_t },
-      { unknown3: ctypes.uint32_t },
+      { unknown2: lazy.ctypes.uint32_t },
+      { unknown3: lazy.ctypes.uint32_t },
       
-      { dataMax: ctypes.uint32_t },
+      { dataMax: lazy.ctypes.uint32_t },
       
-      { unknown4: ctypes.uint32_t },
-      { unknown5: ctypes.uint32_t },
-      { unknown6: ctypes.uint32_t },
+      { unknown4: lazy.ctypes.uint32_t },
+      { unknown5: lazy.ctypes.uint32_t },
+      { unknown6: lazy.ctypes.uint32_t },
     ]);
 
     
-    let loginItem = new ctypes.StructType("loginItem", [
+    let loginItem = new lazy.ctypes.StructType("loginItem", [
       
-      { usernameOffset: ctypes.uint32_t },
+      { usernameOffset: lazy.ctypes.uint32_t },
       
-      { loDateTime: ctypes.uint32_t },
-      { hiDateTime: ctypes.uint32_t },
+      { loDateTime: lazy.ctypes.uint32_t },
+      { hiDateTime: lazy.ctypes.uint32_t },
       
-      { foo: ctypes.uint32_t },
+      { foo: lazy.ctypes.uint32_t },
       
-      { passwordOffset: ctypes.uint32_t },
+      { passwordOffset: lazy.ctypes.uint32_t },
       
-      { unknown1: ctypes.uint32_t },
-      { unknown2: ctypes.uint32_t },
-      { unknown3: ctypes.uint32_t },
+      { unknown1: lazy.ctypes.uint32_t },
+      { unknown2: lazy.ctypes.uint32_t },
+      { unknown3: lazy.ctypes.uint32_t },
     ]);
 
     let url = uri.prePath;
     let results = [];
     let arr = this._crypto.stringToArray(data);
     
-    let cdata = ctypes.unsigned_char.array(arr.length)(arr);
+    let cdata = lazy.ctypes.unsigned_char.array(arr.length)(arr);
     
-    let currentLoginData = ctypes.cast(cdata, loginData);
+    let currentLoginData = lazy.ctypes.cast(cdata, loginData);
     let headerSize = currentLoginData.headerSize;
     let currentInfoIndex = loginData.size;
     
-    let currentLoginItemPointer = ctypes.cast(
+    let currentLoginItemPointer = lazy.ctypes.cast(
       cdata.addressOfElement(currentInfoIndex),
       loginItem.ptr
     );
@@ -327,21 +331,21 @@ IE7FormPasswords.prototype = {
         url,
       };
       
-      currentResult.username = ctypes
+      currentResult.username = lazy.ctypes
         .cast(
           cdata.addressOfElement(
             headerSize + 12 + currentLoginItem.usernameOffset
           ),
-          ctypes.char16_t.ptr
+          lazy.ctypes.char16_t.ptr
         )
         .readString();
       
-      currentResult.password = ctypes
+      currentResult.password = lazy.ctypes
         .cast(
           cdata.addressOfElement(
             headerSize + 12 + currentLoginItem.passwordOffset
           ),
-          ctypes.char16_t.ptr
+          lazy.ctypes.char16_t.ptr
         )
         .readString();
       results.push(currentResult);
