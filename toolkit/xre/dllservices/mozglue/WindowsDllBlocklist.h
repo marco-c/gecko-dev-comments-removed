@@ -39,11 +39,31 @@ MFBT_API bool DllBlocklist_CheckStatus();
 MFBT_API void DllBlocklist_Shutdown();
 #  endif  
 
-
 namespace mozilla {
 namespace glue {
 namespace detail {
+
 class DllServicesBase;
+
+template <size_t N>
+class WritableBuffer {
+  char mBuffer[N];
+  size_t mLen;
+
+  size_t Available() const { return sizeof(mBuffer) - mLen; }
+
+ public:
+  WritableBuffer() : mBuffer{0}, mLen(0) {}
+
+  void Write(const char* aData, size_t aLen) {
+    size_t writable_len = std::min(aLen, Available());
+    memcpy(mBuffer + mLen, aData, writable_len);
+    mLen += writable_len;
+  }
+
+  size_t Length() const { return mLen; }
+  const char* Data() const { return mBuffer; }
+};
 }  
 }  
 }  
