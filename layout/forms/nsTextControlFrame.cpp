@@ -735,6 +735,11 @@ void nsTextControlFrame::ReflowTextControlChild(
   
   auto overridePadding =
       isButtonBox ? Nothing() : Some(aReflowInput.ComputedLogicalPadding(wm));
+  if (!isButtonBox && aButtonBoxISize) {
+    
+    overridePadding->IEnd(outerWM) = 0;
+  }
+
   
   
   
