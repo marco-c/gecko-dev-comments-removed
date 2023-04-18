@@ -24,6 +24,7 @@
 #include <cfloat>
 
 #include "hwy/detect_compiler_arch.h"
+#include "hwy/highway_export.h"
 
 
 
@@ -184,10 +185,6 @@
   } while (0)
 #endif
 
-#if defined(HWY_EMULATE_SVE)
-class FarmFloat16;
-#endif
-
 namespace hwy {
 
 
@@ -201,6 +198,8 @@ static constexpr HWY_MAYBE_UNUSED size_t kMaxVectorSize = 4096;
 #else
 static constexpr HWY_MAYBE_UNUSED size_t kMaxVectorSize = 16;
 #endif
+
+
 
 
 
@@ -228,9 +227,7 @@ static constexpr HWY_MAYBE_UNUSED size_t kMaxVectorSize = 16;
 
 #pragma pack(push, 1)
 
-#if defined(HWY_EMULATE_SVE)
-using float16_t = FarmFloat16;
-#elif HWY_NATIVE_FLOAT16
+#if HWY_NATIVE_FLOAT16
 using float16_t = __fp16;
 
 
@@ -253,15 +250,15 @@ using float64_t = double;
 
 
 
-template <bool Condition, class T>
+template <bool Condition>
 struct EnableIfT {};
-template <class T>
-struct EnableIfT<true, T> {
-  using type = T;
+template <>
+struct EnableIfT<true> {
+  using type = void;
 };
 
-template <bool Condition, class T = void>
-using EnableIf = typename EnableIfT<Condition, T>::type;
+template <bool Condition>
+using EnableIf = typename EnableIfT<Condition>::type;
 
 template <typename T, typename U>
 struct IsSameT {
@@ -318,102 +315,6 @@ struct RemoveConstT<const T> {
 
 template <class T>
 using RemoveConst = typename RemoveConstT<T>::type;
-
-
-
-
-template <typename T>
-HWY_API constexpr bool IsFloat() {
-  
-  
-  return IsSame<T, float>() || IsSame<T, double>();
-}
-
-template <typename T>
-HWY_API constexpr bool IsSigned() {
-  return T(0) > T(-1);
-}
-template <>
-constexpr bool IsSigned<float16_t>() {
-  return true;
-}
-template <>
-constexpr bool IsSigned<bfloat16_t>() {
-  return true;
-}
-
-
-template <typename T>
-HWY_API constexpr T LimitsMax() {
-  static_assert(!IsFloat<T>(), "Only for integer types");
-  return IsSigned<T>() ? T((1ULL << (sizeof(T) * 8 - 1)) - 1)
-                       : static_cast<T>(~0ull);
-}
-template <typename T>
-HWY_API constexpr T LimitsMin() {
-  static_assert(!IsFloat<T>(), "Only for integer types");
-  return IsSigned<T>() ? T(-1) - LimitsMax<T>() : T(0);
-}
-
-
-
-template <typename T>
-HWY_API constexpr T LowestValue() {
-  return LimitsMin<T>();
-}
-template <>
-constexpr float LowestValue<float>() {
-  return -FLT_MAX;
-}
-template <>
-constexpr double LowestValue<double>() {
-  return -DBL_MAX;
-}
-
-template <typename T>
-HWY_API constexpr T HighestValue() {
-  return LimitsMax<T>();
-}
-template <>
-constexpr float HighestValue<float>() {
-  return FLT_MAX;
-}
-template <>
-constexpr double HighestValue<double>() {
-  return DBL_MAX;
-}
-
-
-template <typename T>
-constexpr T ExponentMask() {
-  static_assert(sizeof(T) == 0, "Only instantiate the specializations");
-  return 0;
-}
-template <>
-constexpr uint32_t ExponentMask<uint32_t>() {
-  return 0x7F800000;
-}
-template <>
-constexpr uint64_t ExponentMask<uint64_t>() {
-  return 0x7FF0000000000000ULL;
-}
-
-
-
-template <typename T>
-constexpr T MantissaEnd() {
-  static_assert(sizeof(T) == 0, "Only instantiate the specializations");
-  return 0;
-}
-template <>
-constexpr float MantissaEnd<float>() {
-  return 8388608.0f;  
-}
-template <>
-constexpr double MantissaEnd<double>() {
-  
-  return 4503599627370496.0;  
-}
 
 
 
@@ -559,6 +460,118 @@ using FloatFromSize = typename detail::TypeFromSize<N>::Float;
 
 
 
+template <typename T>
+HWY_API constexpr bool IsFloat() {
+  
+  
+  return IsSame<T, float>() || IsSame<T, double>();
+}
+
+template <typename T>
+HWY_API constexpr bool IsSigned() {
+  return T(0) > T(-1);
+}
+template <>
+constexpr bool IsSigned<float16_t>() {
+  return true;
+}
+template <>
+constexpr bool IsSigned<bfloat16_t>() {
+  return true;
+}
+
+
+template <typename T>
+HWY_API constexpr T LimitsMax() {
+  static_assert(!IsFloat<T>(), "Only for integer types");
+  using TU = MakeUnsigned<T>;
+  return static_cast<T>(IsSigned<T>() ? (static_cast<TU>(~0ull) >> 1)
+                                      : static_cast<TU>(~0ull));
+}
+template <typename T>
+HWY_API constexpr T LimitsMin() {
+  static_assert(!IsFloat<T>(), "Only for integer types");
+  return IsSigned<T>() ? T(-1) - LimitsMax<T>() : T(0);
+}
+
+
+
+template <typename T>
+HWY_API constexpr T LowestValue() {
+  return LimitsMin<T>();
+}
+template <>
+constexpr float LowestValue<float>() {
+  return -FLT_MAX;
+}
+template <>
+constexpr double LowestValue<double>() {
+  return -DBL_MAX;
+}
+
+template <typename T>
+HWY_API constexpr T HighestValue() {
+  return LimitsMax<T>();
+}
+template <>
+constexpr float HighestValue<float>() {
+  return FLT_MAX;
+}
+template <>
+constexpr double HighestValue<double>() {
+  return DBL_MAX;
+}
+
+
+template <typename T>
+constexpr T ExponentMask() {
+  static_assert(sizeof(T) == 0, "Only instantiate the specializations");
+  return 0;
+}
+template <>
+constexpr uint32_t ExponentMask<uint32_t>() {
+  return 0x7F800000;
+}
+template <>
+constexpr uint64_t ExponentMask<uint64_t>() {
+  return 0x7FF0000000000000ULL;
+}
+
+
+template <typename T>
+constexpr T MantissaMask() {
+  static_assert(sizeof(T) == 0, "Only instantiate the specializations");
+  return 0;
+}
+template <>
+constexpr uint32_t MantissaMask<uint32_t>() {
+  return 0x007FFFFF;
+}
+template <>
+constexpr uint64_t MantissaMask<uint64_t>() {
+  return 0x000FFFFFFFFFFFFFULL;
+}
+
+
+
+template <typename T>
+constexpr T MantissaEnd() {
+  static_assert(sizeof(T) == 0, "Only instantiate the specializations");
+  return 0;
+}
+template <>
+constexpr float MantissaEnd<float>() {
+  return 8388608.0f;  
+}
+template <>
+constexpr double MantissaEnd<double>() {
+  
+  return 4503599627370496.0;  
+}
+
+
+
+
 template <typename T1, typename T2>
 constexpr inline T1 DivCeil(T1 a, T2 b) {
   return (a + b - 1) / b;
@@ -661,14 +674,21 @@ HWY_API size_t PopCount(uint64_t x) {
 #endif
 }
 
+
+
+
 template <typename TI>
-HWY_API constexpr size_t FloorLog2(TI x) {
-  return x == 1 ? 0 : FloorLog2(x >> 1) + 1;
+ constexpr size_t FloorLog2(TI x) {
+  return x == TI{1}
+             ? 0
+             : static_cast<size_t>(FloorLog2(static_cast<TI>(x >> 1)) + 1);
 }
 
 template <typename TI>
-HWY_API constexpr size_t CeilLog2(TI x) {
-  return x == 1 ? 0 : FloorLog2(x - 1) + 1;
+ constexpr size_t CeilLog2(TI x) {
+  return x == TI{1}
+             ? 0
+             : static_cast<size_t>(FloorLog2(static_cast<TI>(x - 1)) + 1);
 }
 
 #if HWY_COMPILER_MSVC && HWY_ARCH_X86_64
@@ -727,7 +747,7 @@ HWY_API bfloat16_t BF16FromF32(float f) {
   return bf;
 }
 
-HWY_NORETURN void HWY_FORMAT(3, 4)
+HWY_DLLEXPORT HWY_NORETURN void HWY_FORMAT(3, 4)
     Abort(const char* file, int line, const char* format, ...);
 
 }  

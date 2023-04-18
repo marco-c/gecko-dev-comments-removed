@@ -24,11 +24,14 @@
 
 #include "hwy/foreach_target.h"
 
+
 #include "hwy/highway.h"
 
 
 HWY_BEFORE_NAMESPACE();
 namespace skeleton {
+
+
 namespace HWY_NAMESPACE {
 
 
@@ -47,7 +50,7 @@ template <class DF>
 ATTR_MSAN void OneFloorLog2(const DF df, const uint8_t* HWY_RESTRICT values,
                             uint8_t* HWY_RESTRICT log2) {
   
-  const Rebind<int32_t, DF> d32;
+  const RebindToSigned<DF> d32;
   const Rebind<uint8_t, DF> d8;
 
   const auto u8 = Load(d8, values);
@@ -59,7 +62,7 @@ ATTR_MSAN void OneFloorLog2(const DF df, const uint8_t* HWY_RESTRICT values,
 void CodepathDemo() {
   
   
-#if HWY_CAP_INTEGER64
+#if HWY_HAVE_INTEGER64
   const char* gather = "Has int64";
 #else
   const char* gather = "No int64";
@@ -71,26 +74,25 @@ void FloorLog2(const uint8_t* HWY_RESTRICT values, size_t count,
                uint8_t* HWY_RESTRICT log2) {
   CodepathDemo();
 
-  
-  const ScalableTag<float, 2> df;
-
+  const ScalableTag<float> df;
   const size_t N = Lanes(df);
   size_t i = 0;
   for (; i + N <= count; i += N) {
     OneFloorLog2(df, values + i, log2 + i);
   }
-  
-#if HWY_TARGET != HWY_RVV
   for (; i < count; ++i) {
-    OneFloorLog2(HWY_CAPPED(float, 1)(), values + i, log2 + i);
+    CappedTag<float, 1> d1;
+    OneFloorLog2(d1, values + i, log2 + i);
   }
-#endif
 }
 
 
 }  
 }  
 HWY_AFTER_NAMESPACE();
+
+
+
 
 #if HWY_ONCE
 
@@ -105,6 +107,8 @@ HWY_EXPORT(FloorLog2);
 
 void CallFloorLog2(const uint8_t* HWY_RESTRICT in, const size_t count,
                    uint8_t* HWY_RESTRICT out) {
+  
+  
   return HWY_DYNAMIC_DISPATCH(FloorLog2)(in, count, out);
 }
 
