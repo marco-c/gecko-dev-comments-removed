@@ -187,8 +187,6 @@
 
 
 
-
-
 namespace mozilla {
 
 class LogModule;
