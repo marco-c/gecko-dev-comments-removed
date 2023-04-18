@@ -2,7 +2,9 @@
 
 
 
+import { isOriginalId, originalToGeneratedId } from "devtools-source-map";
 import { createSelector } from "reselect";
+import { getSourceActorsForSource } from "../selectors/sources";
 
 export const getThreads = createSelector(
   state => state.threads.threads,
@@ -37,6 +39,26 @@ export function getDebuggeeUrl(state) {
 
 export function getThread(state, threadActor) {
   return getAllThreads(state).find(thread => thread.actor === threadActor);
+}
+
+
+
+
+
+
+
+
+export function getThreadForSource(state, sourceId) {
+  const actors = getSourceActorsForSource(
+    state,
+    isOriginalId(sourceId) ? originalToGeneratedId(sourceId) : sourceId
+  );
+
+  if (!actors || !actors.length) {
+    console.error(`Error no source actors exist for source ${sourceId}`);
+    return null;
+  }
+  return getThread(state, actors[0].thread);
 }
 
 
