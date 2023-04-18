@@ -51,6 +51,19 @@ class DOMScriptLoadContext;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 class ScriptFetchOptions {
   ~ScriptFetchOptions();
 
@@ -60,15 +73,25 @@ class ScriptFetchOptions {
 
   ScriptFetchOptions(mozilla::CORSMode aCORSMode,
                      enum ReferrerPolicy aReferrerPolicy,
-                     nsIPrincipal* aTriggeringPrincipal,
-                     nsIGlobalObject* aWebExtGlobal);
+                     nsIPrincipal* aTriggeringPrincipal);
+
+  
+
+
+
 
   const mozilla::CORSMode mCORSMode;
+
+  
+
+
+
   const enum ReferrerPolicy mReferrerPolicy;
+
+  
+
+
   nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
-  
-  
-  nsCOMPtr<nsIGlobalObject> mWebExtGlobal;
 };
 
 
@@ -227,13 +250,6 @@ class ScriptLoadRequest
     return mFetchOptions->mTriggeringPrincipal;
   }
 
-  
-  
-  
-  nsIGlobalObject* GetWebExtGlobal() const {
-    return mFetchOptions->mWebExtGlobal;
-  }
-
   void ClearScriptSource();
 
   void SetScript(JSScript* aScript);
@@ -339,7 +355,8 @@ class DOMScriptLoadContext : public PreloaderBase {
   virtual ~DOMScriptLoadContext();
 
  public:
-  explicit DOMScriptLoadContext(Element* aElement, ScriptLoadRequest* aRequest);
+  explicit DOMScriptLoadContext(Element* aElement, ScriptLoadRequest* aRequest,
+                                nsIGlobalObject* aWebExtGlobal = nullptr);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(DOMScriptLoadContext)
@@ -362,6 +379,11 @@ class DOMScriptLoadContext : public PreloaderBase {
   }
 
   bool IsPreload() const;
+
+  
+  
+  
+  nsIGlobalObject* GetWebExtGlobal() const;
 
   bool CompileStarted() const {
     return mRequest->InCompilingStage() ||
@@ -455,6 +477,9 @@ class DOMScriptLoadContext : public PreloaderBase {
   
   bool mIsPreload;
   nsCOMPtr<Element> mElement;
+  
+  
+  nsCOMPtr<nsIGlobalObject> mWebExtGlobal;
 
   RefPtr<ScriptLoadRequest> mRequest;
 
