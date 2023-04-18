@@ -10083,6 +10083,10 @@ class MWasmTernarySimd128 : public MTernaryInstruction,
   
   
   bool specializeBitselectConstantMaskAsShuffle(int8_t shuffle[16]);
+  
+  
+  
+  bool canRelaxBitselect();
 #endif
 
   wasm::SimdOp simdOp() const { return simdOp_; }
