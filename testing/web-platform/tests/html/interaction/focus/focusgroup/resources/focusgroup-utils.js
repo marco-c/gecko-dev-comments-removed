@@ -1,0 +1,15 @@
+
+
+
+
+
+const kArrowLeft = '\uE012';
+const kArrowUp = '\uE013';
+const kArrowRight = '\uE014';
+const kArrowDown = '\uE015';
+
+
+function focusAndKeyPress(target, key) {
+  target.focus();
+  return test_driver.send_keys(target, key);
+}
