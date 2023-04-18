@@ -1706,20 +1706,19 @@ class MOZ_STACK_CLASS ModuleValidatorShared {
   }
   bool addExportField(const Func& func, TaggedParserAtomIndex maybeField) {
     
-    CacheableChars fieldChars;
+    CacheableName fieldName;
     if (maybeField) {
-      fieldChars = parserAtoms_.toNewUTF8CharsZ(cx_, maybeField);
-    } else {
-      fieldChars = DuplicateString("");
-    }
-    if (!fieldChars) {
-      return false;
+      UniqueChars fieldChars = parserAtoms_.toNewUTF8CharsZ(cx_, maybeField);
+      if (!fieldChars) {
+        return false;
+      }
+      fieldName = CacheableName::fromUTF8Chars(std::move(fieldChars));
     }
 
     
     
     uint32_t funcIndex = funcImportMap_.count() + func.funcDefIndex();
-    if (!moduleEnv_.exports.emplaceBack(std::move(fieldChars), funcIndex,
+    if (!moduleEnv_.exports.emplaceBack(std::move(fieldName), funcIndex,
                                         DefinitionKind::Function)) {
       return false;
     }
