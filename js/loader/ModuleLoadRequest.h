@@ -9,6 +9,7 @@
 
 #include "ScriptLoadRequest.h"
 #include "ModuleLoaderBase.h"
+#include "mozilla/Assertions.h"
 #include "mozilla/MozPromise.h"
 #include "js/RootingAPI.h"
 #include "js/Value.h"
@@ -77,6 +78,14 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
     return mRootModule;
   }
 
+  bool IsModuleMarkedForBytecodeEncoding() const {
+    return mIsMarkedForBytecodeEncoding;
+  }
+  void MarkModuleForBytecodeEncoding() {
+    MOZ_ASSERT(!IsModuleMarkedForBytecodeEncoding());
+    mIsMarkedForBytecodeEncoding = true;
+  }
+
  private:
   void LoadFinished();
   void CancelImports();
@@ -88,6 +97,11 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
 
   
   const bool mIsDynamicImport;
+
+  
+  
+  
+  bool mIsMarkedForBytecodeEncoding = false;
 
   
   
