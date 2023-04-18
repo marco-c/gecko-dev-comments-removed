@@ -180,7 +180,7 @@ class imgFrame {
  private:  
   ~imgFrame();
 
-  bool AreAllPixelsWritten() const;
+  bool AreAllPixelsWritten() const REQUIRES(mMonitor);
   nsresult ImageUpdatedInternal(const nsIntRect& aUpdateRect);
   void GetImageDataInternal(uint8_t** aData, uint32_t* length) const;
   uint32_t GetImageBytesPerRow() const;
@@ -219,25 +219,25 @@ class imgFrame {
   
   
 
-  mutable Monitor mMonitor MOZ_UNANNOTATED;
+  mutable Monitor mMonitor;
 
   
 
 
-  RefPtr<SourceSurfaceSharedData> mRawSurface;
-  RefPtr<SourceSurfaceSharedData> mBlankRawSurface;
+  RefPtr<SourceSurfaceSharedData> mRawSurface GUARDED_BY(mMonitor);
+  RefPtr<SourceSurfaceSharedData> mBlankRawSurface GUARDED_BY(mMonitor);
 
   
 
 
 
-  RefPtr<SourceSurface> mOptSurface;
+  RefPtr<SourceSurface> mOptSurface GUARDED_BY(mMonitor);
 
-  nsIntRect mDecoded;
+  nsIntRect mDecoded GUARDED_BY(mMonitor);
 
-  bool mAborted;
-  bool mFinished;
-  bool mShouldRecycle;
+  bool mAborted GUARDED_BY(mMonitor);
+  bool mFinished GUARDED_BY(mMonitor);
+  bool mShouldRecycle GUARDED_BY(mMonitor);
 
   
   

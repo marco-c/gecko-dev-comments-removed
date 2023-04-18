@@ -413,11 +413,11 @@ class imgLoader final : public imgILoader,
   
   
   
-  imgSet mUncachedImages;
+  imgSet mUncachedImages GUARDED_BY(mUncachedImagesMutex);
   
   
   
-  Mutex mUncachedImagesMutex MOZ_UNANNOTATED;
+  Mutex mUncachedImagesMutex;
 
   static double sCacheTimeWeight;
   static uint32_t sCacheMaxSize;

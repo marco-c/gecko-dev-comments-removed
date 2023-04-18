@@ -278,20 +278,20 @@ class imgRequest final : public nsIStreamListener,
   bool mIsDeniedCrossSiteCORSRequest;
   bool mIsCrossSiteNoCORSRequest;
 
-  mutable mozilla::Mutex mMutex MOZ_UNANNOTATED;
+  mutable mozilla::Mutex mMutex;
 
   
   
   
-  RefPtr<ProgressTracker> mProgressTracker;
-  RefPtr<Image> mImage;
+  RefPtr<ProgressTracker> mProgressTracker GUARDED_BY(mMutex);
+  RefPtr<Image> mImage GUARDED_BY(mMutex);
+  bool mIsMultiPartChannel : 1 GUARDED_BY(mMutex);
+  bool mIsInCache : 1 GUARDED_BY(mMutex);
+  bool mDecodeRequested : 1 GUARDED_BY(mMutex);
+  bool mNewPartPending : 1 GUARDED_BY(mMutex);
+  bool mHadInsecureRedirect : 1 GUARDED_BY(mMutex);
   
-  uint64_t mInnerWindowId;
-  bool mIsMultiPartChannel : 1;
-  bool mIsInCache : 1;
-  bool mDecodeRequested : 1;
-  bool mNewPartPending : 1;
-  bool mHadInsecureRedirect : 1;
+  uint64_t mInnerWindowId GUARDED_BY(mMutex);
 };
 
 #endif  
