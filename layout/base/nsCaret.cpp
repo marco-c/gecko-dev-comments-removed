@@ -858,7 +858,6 @@ size_t nsCaret::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
 }
 
 bool nsCaret::IsMenuPopupHidingCaret() {
-#ifdef MOZ_XUL
   
   nsXULPopupManager* popMgr = nsXULPopupManager::GetInstance();
   nsTArray<nsIFrame*> popups;
@@ -896,7 +895,6 @@ bool nsCaret::IsMenuPopupHidingCaret() {
       return true;
     }
   }
-#endif
 
   
   return false;

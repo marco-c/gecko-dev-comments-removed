@@ -179,9 +179,7 @@
 #include "nsViewManager.h"
 #include "nsWindowSizes.h"
 
-#ifdef MOZ_XUL
-#  include "nsXULElement.h"
-#endif 
+#include "nsXULElement.h"
 
 #ifdef DEBUG
 #  include "nsRange.h"

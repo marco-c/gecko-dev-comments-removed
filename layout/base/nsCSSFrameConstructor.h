@@ -664,11 +664,9 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   
 
 #define FCDATA_MAY_NEED_SCROLLFRAME 0x80
-#ifdef MOZ_XUL
   
 
-#  define FCDATA_IS_POPUP 0x100
-#endif 
+#define FCDATA_IS_POPUP 0x100
   
 
 #define FCDATA_SKIP_ABSPOS_PUSH 0x200
@@ -1462,18 +1460,16 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   static const FrameConstructionData* FindXULTagData(const Element&,
                                                      ComputedStyle&);
   
-#ifdef MOZ_XUL
   static const FrameConstructionData* FindPopupGroupData(const Element&,
                                                          ComputedStyle&);
   static const FrameConstructionData* FindXULButtonData(const Element&,
                                                         ComputedStyle&);
   static const FrameConstructionData* FindXULLabelOrDescriptionData(
       const Element&, ComputedStyle&);
-#  ifdef XP_MACOSX
+#ifdef XP_MACOSX
   static const FrameConstructionData* FindXULMenubarData(const Element&,
                                                          ComputedStyle&);
-#  endif 
-#endif   
+#endif 
 
   
 

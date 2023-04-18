@@ -196,7 +196,6 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel) {
   }
   mLastPaintBounds = mBounds;
 
-#ifdef MOZ_XUL
   if (!aDC && (renderer->GetBackendType() == LayersBackend::LAYERS_NONE) &&
       (eTransparencyTransparent == mTransparencyMode)) {
     
@@ -213,16 +212,11 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel) {
     
     aDC = mBasicLayersSurface->GetTransparentDC();
   }
-#endif
 
   HDC hDC = aDC ? aDC : (::BeginPaint(mWnd, &ps));
   mPaintDC = hDC;
 
-#ifdef MOZ_XUL
   bool forceRepaint = aDC || (eTransparencyTransparent == mTransparencyMode);
-#else
-  bool forceRepaint = nullptr != aDC;
-#endif
   LayoutDeviceIntRegion region = GetRegionToPaint(forceRepaint, ps, hDC);
 
   if (knowsCompositor && layerManager) {
@@ -263,7 +257,6 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel) {
       case LayersBackend::LAYERS_NONE: {
         RefPtr<gfxASurface> targetSurface;
 
-#if defined(MOZ_XUL)
         
         if (eTransparencyTransparent == mTransparencyMode) {
           
@@ -271,7 +264,6 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel) {
           MutexAutoLock lock(mBasicLayersSurface->GetTransparentSurfaceLock());
           targetSurface = mBasicLayersSurface->EnsureTransparentSurface();
         }
-#endif
 
         RefPtr<gfxWindowsSurface> targetSurfaceWin;
         if (!targetSurface) {
@@ -300,7 +292,6 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel) {
 
         
         BufferMode doubleBuffering = mozilla::layers::BufferMode::BUFFER_NONE;
-#ifdef MOZ_XUL
         switch (mTransparencyMode) {
           case eTransparencyGlass:
           case eTransparencyBorderlessGlass:
@@ -315,9 +306,6 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel) {
                 Rect(0.f, 0.f, dt->GetSize().width, dt->GetSize().height));
             break;
         }
-#else
-        doubleBuffering = mozilla::layers::BufferMode::BUFFERED;
-#endif
 
         RefPtr<gfxContext> thebesContext = gfxContext::CreateOrNull(dt);
         MOZ_ASSERT(thebesContext);  
@@ -328,14 +316,12 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel) {
           result = listener->PaintWindow(this, region);
         }
 
-#ifdef MOZ_XUL
         if (eTransparencyTransparent == mTransparencyMode) {
           
           
           
           mBasicLayersSurface->RedrawTransparentWindow();
         }
-#endif
       } break;
       case LayersBackend::LAYERS_WR: {
         result = listener->PaintWindow(this, region);

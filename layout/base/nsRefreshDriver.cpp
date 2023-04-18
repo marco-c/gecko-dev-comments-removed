@@ -93,9 +93,7 @@
 #  include "VRManagerChild.h"
 #endif  
 
-#ifdef MOZ_XUL
-#  include "nsXULPopupManager.h"
-#endif
+#include "nsXULPopupManager.h"
 
 #include <numeric>
 
@@ -2425,13 +2423,11 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
     presShell->ScheduleApproximateFrameVisibilityUpdateNow();
   }
 
-#ifdef MOZ_XUL
   
   
   if (nsXULPopupManager* pm = nsXULPopupManager::GetInstance()) {
     pm->UpdatePopupPositions(this);
   }
-#endif
 
   UpdateIntersectionObservations(aNowTime);
 

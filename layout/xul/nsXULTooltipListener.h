@@ -11,9 +11,7 @@
 #include "nsITimer.h"
 #include "nsCOMPtr.h"
 #include "nsString.h"
-#ifdef MOZ_XUL
-#  include "XULTreeElement.h"
-#endif
+#include "XULTreeElement.h"
 #include "nsIWeakReferenceUtils.h"
 #include "mozilla/Attributes.h"
 
@@ -51,10 +49,8 @@ class nsXULTooltipListener final : public nsIDOMEventListener {
 
   void KillTooltipTimer();
 
-#ifdef MOZ_XUL
   void CheckTreeBodyMove(mozilla::dom::MouseEvent* aMouseEvent);
   mozilla::dom::XULTreeElement* GetSourceTree();
-#endif
 
   nsresult ShowTooltip();
   void LaunchTooltip();
@@ -92,13 +88,11 @@ class nsXULTooltipListener final : public nsIDOMEventListener {
   
   bool mTooltipShownOnce;
 
-#ifdef MOZ_XUL
   
   bool mIsSourceTree;
   bool mNeedTitletip;
   int32_t mLastTreeRow;
   RefPtr<nsTreeColumn> mLastTreeCol;
-#endif
 };
 
 #endif  

@@ -14,12 +14,10 @@
 
 using namespace mozilla;
 
-#ifdef MOZ_XUL
 
 bool nsCSSAnonBoxes::IsTreePseudoElement(nsAtom* aPseudo) {
   return StringBeginsWith(nsDependentAtomString(aPseudo), u":-moz-tree-"_ns);
 }
-#endif
 
 #ifdef DEBUG
 

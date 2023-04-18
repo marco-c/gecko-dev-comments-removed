@@ -146,17 +146,15 @@
 
 #include "nsStyleChangeList.h"
 #include "nsCSSFrameConstructor.h"
-#ifdef MOZ_XUL
-#  include "nsMenuFrame.h"
-#  include "nsTreeBodyFrame.h"
-#  include "XULTreeElement.h"
-#  include "nsMenuPopupFrame.h"
-#  include "nsTreeColumns.h"
-#  include "nsIDOMXULMultSelectCntrlEl.h"
-#  include "nsIDOMXULSelectCntrlItemEl.h"
-#  include "nsIDOMXULMenuListElement.h"
-#  include "nsXULElement.h"
-#endif  
+#include "nsMenuFrame.h"
+#include "nsTreeBodyFrame.h"
+#include "XULTreeElement.h"
+#include "nsMenuPopupFrame.h"
+#include "nsTreeColumns.h"
+#include "nsIDOMXULMultSelectCntrlEl.h"
+#include "nsIDOMXULSelectCntrlItemEl.h"
+#include "nsIDOMXULMenuListElement.h"
+#include "nsXULElement.h"
 
 #include "mozilla/layers/CompositorBridgeChild.h"
 #include "gfxPlatform.h"
@@ -8847,7 +8845,6 @@ nsresult PresShell::HandleDOMEventWithTarget(nsIContent* aTargetContent,
 
 bool PresShell::EventHandler::AdjustContextMenuKeyEvent(
     WidgetMouseEvent* aMouseEvent) {
-#ifdef MOZ_XUL
   
   
   nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
@@ -8873,7 +8870,6 @@ bool PresShell::EventHandler::AdjustContextMenuKeyEvent(
       return true;
     }
   }
-#endif
 
   
   
@@ -9070,7 +9066,6 @@ void PresShell::EventHandler::GetCurrentItemAndPositionForElement(
   bool istree = false, checkLineHeight = true;
   nscoord extraTreeY = 0;
 
-#ifdef MOZ_XUL
   
   
   
@@ -9132,7 +9127,6 @@ void PresShell::EventHandler::GetCurrentItemAndPositionForElement(
   if (item) {
     focusedContent = item;
   }
-#endif
 
   nsIFrame* frame = focusedContent->GetPrimaryFrame();
   if (frame) {

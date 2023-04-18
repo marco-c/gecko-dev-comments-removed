@@ -1453,12 +1453,10 @@ void nsIFrame::ReparentFrameViewTo(nsViewManager* aViewManager,
                                    nsView* aNewParentView,
                                    nsView* aOldParentView) {
   if (HasView()) {
-#ifdef MOZ_XUL
     if (IsMenuPopupFrame()) {
       
       return;
     }
-#endif
     nsView* view = GetView();
     
     
@@ -12134,11 +12132,9 @@ void DR_State::InitFrameTypeTable() {
   AddFrameTypeInfo(LayoutFrameType::TextInput, "textCtl", "textInput");
   AddFrameTypeInfo(LayoutFrameType::Text, "text", "text");
   AddFrameTypeInfo(LayoutFrameType::Viewport, "VP", "viewport");
-#  ifdef MOZ_XUL
   AddFrameTypeInfo(LayoutFrameType::Box, "Box", "Box");
   AddFrameTypeInfo(LayoutFrameType::Slider, "Slider", "Slider");
   AddFrameTypeInfo(LayoutFrameType::PopupSet, "PopupSet", "PopupSet");
-#  endif
   AddFrameTypeInfo(LayoutFrameType::None, "unknown", "unknown");
 }
 
