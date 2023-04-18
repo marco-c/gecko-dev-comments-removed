@@ -189,25 +189,39 @@ NS_IMPL_CYCLE_COLLECTION_CLASS(WorkerGlobalScopeBase)
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(WorkerGlobalScopeBase,
                                                   DOMEventTargetHelper)
-  tmp->mWorkerPrivate->AssertIsOnWorkerThread();
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mConsole)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSerialEventTarget)
   tmp->TraverseObjectsInGlobal(cb);
-  tmp->mWorkerPrivate->TraverseTimeouts(cb);
+  
+  
+  
+  if (tmp->mWorkerPrivate) {
+    tmp->mWorkerPrivate->AssertIsOnWorkerThread();
+    tmp->mWorkerPrivate->TraverseTimeouts(cb);
+  }
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(WorkerGlobalScopeBase,
                                                 DOMEventTargetHelper)
-  tmp->mWorkerPrivate->AssertIsOnWorkerThread();
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mConsole)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mSerialEventTarget)
   tmp->UnlinkObjectsInGlobal();
-  tmp->mWorkerPrivate->UnlinkTimeouts();
+  
+  
+  
+  if (tmp->mWorkerPrivate) {
+    tmp->mWorkerPrivate->AssertIsOnWorkerThread();
+    tmp->mWorkerPrivate->UnlinkTimeouts();
+  }
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN_INHERITED(WorkerGlobalScopeBase,
                                                DOMEventTargetHelper)
-  tmp->mWorkerPrivate->AssertIsOnWorkerThread();
+  
+  
+  if (tmp->mWorkerPrivate) {
+    tmp->mWorkerPrivate->AssertIsOnWorkerThread();
+  }
 NS_IMPL_CYCLE_COLLECTION_TRACE_END
 
 NS_IMPL_ADDREF_INHERITED(WorkerGlobalScopeBase, DOMEventTargetHelper)

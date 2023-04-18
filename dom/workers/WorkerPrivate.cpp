@@ -3071,8 +3071,21 @@ void WorkerPrivate::DoRunLoop(JSContext* aCx) {
         }
 
         
-        data->mScope = nullptr;
-        data->mDebuggerScope = nullptr;
+        
+        UnlinkTimeouts();
+
+        
+        RefPtr<WorkerDebuggerGlobalScope> debugScope =
+            data->mDebuggerScope.forget();
+        RefPtr<WorkerGlobalScope> scope = data->mScope.forget();
+        if (debugScope) {
+          MOZ_ASSERT(debugScope->mWorkerPrivate == this);
+          debugScope->mWorkerPrivate = nullptr;
+        }
+        if (scope) {
+          MOZ_ASSERT(scope->mWorkerPrivate == this);
+          scope->mWorkerPrivate = nullptr;
+        }
 
         return;
       }
