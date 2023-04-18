@@ -177,7 +177,17 @@ class Database {
         this.identifier
       );
     }
-    return entry ? entry.value : null;
+    if (!entry) {
+      return null;
+    }
+    
+    
+    
+    if (isNaN(entry.value)) {
+      console.warn(`Local timestamp is NaN for ${this.identifier}`);
+      return 0;
+    }
+    return entry.value;
   }
 
   async getMetadata() {
