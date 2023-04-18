@@ -4,7 +4,7 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["CreditCard"];
+var EXPORTED_SYMBOLS = ["CreditCard", "NETWORK_NAMES"];
 
 
 
@@ -501,5 +501,8 @@ class CreditCard {
   static isValidNetwork(network) {
     return SUPPORTED_NETWORKS.includes(network);
   }
+
+  static getSupportedNetworks() {
+    return SUPPORTED_NETWORKS;
+  }
 }
-CreditCard.SUPPORTED_NETWORKS = SUPPORTED_NETWORKS;

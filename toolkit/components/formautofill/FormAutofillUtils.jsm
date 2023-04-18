@@ -286,7 +286,7 @@ this.FormAutofillUtils = {
 
 
   getCreditCardNetworks() {
-    return CreditCard.SUPPORTED_NETWORKS;
+    return CreditCard.getSupportedNetworks();
   },
 
   getCategoryFromFieldName(fieldName) {

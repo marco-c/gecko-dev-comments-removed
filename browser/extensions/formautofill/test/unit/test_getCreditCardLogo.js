@@ -10,7 +10,7 @@ add_task(async function test_getCreditCardLogo() {
   
   
   
-  for (let network of CreditCard.SUPPORTED_NETWORKS) {
+  for (let network of CreditCard.getSupportedNetworks()) {
     const PATH_PREFIX = "chrome://formautofill/content/third-party/cc-logo-";
     let actual = CreditCard.getCreditCardLogo(network);
     Assert.ok(
