@@ -9,9 +9,6 @@
 
 "use strict";
 
-
-const { OS } = require("resource://gre/modules/osfile.jsm");
-
 const UNITS = ["B", "kiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"];
 
 
@@ -288,37 +285,41 @@ function withCommonPathPrefixRemoved(pathArray) {
   if (pathArray.length === 0) {
     return [];
   }
-  const splitPaths = pathArray.map(path => OS.Path.split(path));
-  if (!splitPaths.every(sp => sp.absolute)) {
-    
-    
-    return pathArray;
-  }
-  const [firstSplitPath, ...otherSplitPaths] = splitPaths;
-  if ("winDrive" in firstSplitPath) {
-    const winDrive = firstSplitPath.winDrive;
-    if (!otherSplitPaths.every(sp => sp.winDrive === winDrive)) {
+
+  const firstPath = pathArray[0];
+  const isWin = /^[A-Za-z]:/.test(firstPath);
+  const firstWinDrive = getWinDrive(firstPath);
+  for (const path of pathArray) {
+    const winDrive = getWinDrive(path);
+
+    if (!PathUtils.isAbsolute(path) || winDrive !== firstWinDrive) {
+      
+      
+      
       return pathArray;
     }
-  } else if (otherSplitPaths.some(sp => "winDrive" in sp)) {
-    
-    return pathArray;
   }
+
   
   
   
   
-  const prefix = firstSplitPath.components.slice(0, -1);
+  const splitPaths = pathArray.map(path => PathUtils.split(path));
+  const [firstSplitPath, ...otherSplitPaths] = splitPaths;
+  const prefix = firstSplitPath.slice(0, -1);
   for (const sp of otherSplitPaths) {
-    prefix.length = Math.min(prefix.length, sp.components.length - 1);
+    prefix.length = Math.min(prefix.length, sp.length - 1);
     for (let i = 0; i < prefix.length; i++) {
-      if (prefix[i] !== sp.components[i]) {
+      if (prefix[i] !== sp[i]) {
         prefix.length = i;
         break;
       }
     }
   }
-  if (prefix.length === 0 || (prefix.length === 1 && prefix[0] === "")) {
+  if (
+    prefix.length === 0 ||
+    (prefix.length === 1 && (prefix[0] === firstWinDrive || prefix[0] === "/"))
+  ) {
     
     
     
@@ -327,9 +328,49 @@ function withCommonPathPrefixRemoved(pathArray) {
     
     return pathArray;
   }
-  return splitPaths.map(sp =>
-    OS.Path.join(...sp.components.slice(prefix.length))
-  );
+
+  
+  return splitPaths.map(sp => {
+    return sp.slice(prefix.length).join(isWin ? "\\" : "/");
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function getWinDrive(path) {
+  if (path == null) {
+    throw new TypeError("path is invalid");
+  }
+
+  if (path.startsWith("\\\\")) {
+    
+    if (path.length == 2) {
+      return null;
+    }
+    const index = path.indexOf("\\", 2);
+    if (index == -1) {
+      return path;
+    }
+    return path.slice(0, index);
+  }
+  
+  const index = path.indexOf(":");
+  if (index <= 0) {
+    return null;
+  }
+  return path.slice(0, index + 1);
 }
 
 class UnhandledCaseError extends Error {
