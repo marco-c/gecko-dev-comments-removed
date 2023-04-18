@@ -77,6 +77,12 @@ class AudioSink : private AudioStream::DataSource {
 
   const RefPtr<AudioDeviceInfo>& AudioDevice() { return mAudioDevice; }
 
+  
+  
+  bool AudioStreamCallbackStarted() {
+    return mAudioStream && mAudioStream->CallbackStarted();
+  }
+
  private:
   
   nsresult InitializeAudioStream(const PlaybackParams& aParams);
