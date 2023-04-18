@@ -1690,9 +1690,13 @@ var AddonTestUtils = {
 
 
 
-  checkInstallInfo(addonOrInstall, expectedInstallInfo) {
+
+
+  checkInstallInfo(addonOrInstall, expectedInstallInfo, msg = undefined) {
     const installInfo = addonOrInstall.installTelemetryInfo;
     const { Assert } = this.testScope;
+
+    msg = msg ? ` ${msg}` : "";
 
     for (const key of Object.keys(expectedInstallInfo)) {
       const actual = installInfo[key];
@@ -1702,10 +1706,14 @@ var AddonTestUtils = {
       if (expected && typeof expected.test == "function") {
         Assert.ok(
           expected.test(actual),
-          `${key} value "${actual}" has the value expected: "${expected}"`
+          `${key} value "${actual}" has the value expected "${expected}"${msg}`
         );
       } else {
-        Assert.deepEqual(actual, expected, `Got the expected value for ${key}`);
+        Assert.deepEqual(
+          actual,
+          expected,
+          `Got the expected value for ${key}${msg}`
+        );
       }
     }
   },

@@ -164,14 +164,55 @@ InstallTrigger.prototype = {
       }
     }
 
+    const getTriggeringSource = () => {
+      let url;
+      let host;
+      try {
+        if (this._url?.schemeIs("http") || this._url?.schemeIs("https")) {
+          url = this._url.spec;
+          host = this._url.host;
+        } else if (this._url?.schemeIs("blob")) {
+          
+          
+          
+          
+          url = this._url.spec;
+          host =
+            this._principal.isNullPrincipal &&
+            this._principal.precursorPrincipal
+              ? this._principal.precursorPrincipal.host
+              : this._principal.host;
+        } else if (!this._principal.isNullPrincipal) {
+          url = this._principal.exposableSpec;
+          host = this._principal.host;
+        } else if (this._principal.precursorPrincipal) {
+          url = this._principal.precursorPrincipal.exposableSpec;
+          host = this._principal.precursorPrincipal.host;
+        } else {
+          
+          url = this._url.spec;
+          host = this._url.host;
+        }
+      } catch (err) {
+        Cu.reportError(err);
+      }
+      
+      return {
+        sourceURL: url || "",
+        sourceHost: host || "",
+      };
+    };
+
+    const { sourceHost, sourceURL } = getTriggeringSource();
+
     let installData = {
       uri: url.spec,
       hash: item.Hash || null,
       name: item.name,
       icon: iconUrl ? iconUrl.spec : null,
       method: "installTrigger",
-      sourceHost: this._window.location?.host,
-      sourceURL: this._window.location?.href,
+      sourceHost,
+      sourceURL,
     };
 
     return this._mediator.install(
