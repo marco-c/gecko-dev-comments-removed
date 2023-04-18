@@ -5,6 +5,7 @@
 
 
 #include "mozilla/Assertions.h"
+#include "mozilla/Unused.h"
 #include "mozilla/Vector.h"
 #include "mozilla/fuzzing/Nyx.h"
 #include "prinrval.h"
@@ -97,7 +98,7 @@ void Nyx::start(void) {
 
       auto buffer = new Vector<uint8_t>();
 
-      buffer->initLengthUninitialized(pktsize);
+      mozilla::Unused << buffer->initLengthUninitialized(pktsize);
       is.read(reinterpret_cast<char*>(buffer->begin()), buffer->length());
 
       MOZ_FUZZING_NYX_PRINTF("[Replay Mode] Read data packet of size %zu\n",
@@ -174,8 +175,6 @@ void Nyx::release(uint32_t iterations) {
     
     PR_Sleep(PR_MillisecondsToInterval(5000));
     _exit(1);
-
-    return;
   }
 
   nyx_release(iterations);
