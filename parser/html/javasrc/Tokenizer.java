@@ -365,8 +365,6 @@ public class Tokenizer implements Locator, Locator2 {
 
     private boolean seenDigits;
 
-    private boolean suspendAfterCurrentNonTextToken;
-
     protected int cstart;
 
     
@@ -545,7 +543,6 @@ public class Tokenizer implements Locator, Locator2 {
         this.charRefBufMark = 0;
         this.value = 0;
         this.seenDigits = false;
-        this.suspendAfterCurrentNonTextToken = false;
         this.cstart = 0;
         this.strBufLen = 0;
         this.newAttributesEachTime = newAttributesEachTime;
@@ -604,7 +601,6 @@ public class Tokenizer implements Locator, Locator2 {
         this.charRefBufMark = 0;
         this.value = 0;
         this.seenDigits = false;
-        this.suspendAfterCurrentNonTextToken = false;
         this.cstart = 0;
         this.strBufLen = 0;
         
@@ -1095,19 +1091,8 @@ public class Tokenizer implements Locator, Locator2 {
 
 
 
-
-
-
-
-
-
-
-
-
-
     private void emitComment(int provisionalHyphens, int pos)
             throws SAXException {
-        
         
         if (wantsComments) {
             
@@ -1118,7 +1103,6 @@ public class Tokenizer implements Locator, Locator2 {
         
         clearStrBufAfterUse();
         cstart = pos + 1;
-        suspendIfRequestedAfterCurrentNonTextToken();
     }
 
     
@@ -1229,26 +1213,8 @@ public class Tokenizer implements Locator, Locator2 {
         clearStrBufAfterUse();
     }
 
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     private int emitCurrentTagToken(boolean selfClosing, int pos)
             throws SAXException {
-        
         cstart = pos + 1;
         maybeErrSlashInEndTag(selfClosing);
         stateSave = Tokenizer.DATA;
@@ -1286,7 +1252,6 @@ public class Tokenizer implements Locator, Locator2 {
 
 
 
-        suspendIfRequestedAfterCurrentNonTextToken();
         return stateSave;
     }
 
@@ -2617,9 +2582,6 @@ public class Tokenizer implements Locator, Locator2 {
 
 
                                 state = transition(state, Tokenizer.DATA, reconsume, pos);
-                                if (shouldSuspend) {
-                                    break stateloop;
-                                }
                                 continue stateloop;
                             case '<':
                                 appendStrBuf(c);
@@ -2767,9 +2729,6 @@ public class Tokenizer implements Locator, Locator2 {
 
 
                                 state = transition(state, Tokenizer.DATA, reconsume, pos);
-                                if (shouldSuspend) {
-                                    break stateloop;
-                                }
                                 continue stateloop;
                             case '-':
                                 
@@ -2839,9 +2798,6 @@ public class Tokenizer implements Locator, Locator2 {
 
 
                                 state = transition(state, Tokenizer.DATA, reconsume, pos);
-                                if (shouldSuspend) {
-                                    break stateloop;
-                                }
                                 continue stateloop;
                             case '-':
                                 
@@ -2989,9 +2945,6 @@ public class Tokenizer implements Locator, Locator2 {
                                 appendStrBuf(c);
                                 emitComment(3, pos);
                                 state = transition(state, Tokenizer.DATA, reconsume, pos);
-                                if (shouldSuspend) {
-                                    break stateloop;
-                                }
                                 continue stateloop;
                             case '-':
                                 errNestedComment();
@@ -3057,9 +3010,6 @@ public class Tokenizer implements Locator, Locator2 {
 
 
                             state = transition(state, Tokenizer.DATA, reconsume, pos);
-                            if (shouldSuspend) {
-                                break stateloop;
-                            }
                             continue stateloop;
                         case '<':
                             appendStrBuf(c);
@@ -3181,16 +3131,6 @@ public class Tokenizer implements Locator, Locator2 {
                             case '>':
                                 cstart = pos + 1;
                                 state = transition(state, Tokenizer.DATA, reconsume, pos);
-                                
-                                
-                                
-                                
-                                
-                                
-                                suspendIfRequestedAfterCurrentNonTextToken();
-                                if (shouldSuspend) {
-                                    break stateloop;
-                                }
                                 continue stateloop;
                             default:
                                 tokenHandler.characters(Tokenizer.RSQB_RSQB, 0, 2);
@@ -4189,9 +4129,6 @@ public class Tokenizer implements Locator, Locator2 {
                             case '>':
                                 emitComment(0, pos);
                                 state = transition(state, Tokenizer.DATA, reconsume, pos);
-                                if (shouldSuspend) {
-                                    break stateloop;
-                                }
                                 continue stateloop;
                             case '-':
                                 appendStrBuf(c);
@@ -4225,9 +4162,6 @@ public class Tokenizer implements Locator, Locator2 {
                                 
                                 emitComment(0, pos);
                                 state = transition(state, Tokenizer.DATA, reconsume, pos);
-                                if (shouldSuspend) {
-                                    break stateloop;
-                                }
                                 continue stateloop;
                             case '-':
                                 appendSecondHyphenToBogusComment();
@@ -5029,9 +4963,6 @@ public class Tokenizer implements Locator, Locator2 {
 
 
                                 state = transition(state, Tokenizer.DATA, reconsume, pos);
-                                if (shouldSuspend) {
-                                    break stateloop;
-                                }
                                 continue stateloop;
                             case '\u0000':
                                 c = '\uFFFD';
@@ -5105,9 +5036,6 @@ public class Tokenizer implements Locator, Locator2 {
 
 
                                 state = transition(state, Tokenizer.DATA, reconsume, pos);
-                                if (shouldSuspend) {
-                                    break stateloop;
-                                }
                                 continue stateloop;
                             case '\u0000':
                                 c = '\uFFFD';
@@ -5171,9 +5099,6 @@ public class Tokenizer implements Locator, Locator2 {
 
 
                                 state = transition(state, Tokenizer.DATA, reconsume, pos);
-                                if (shouldSuspend) {
-                                    break stateloop;
-                                }
                                 continue stateloop;
                             case 'p':
                             case 'P':
@@ -5320,9 +5245,6 @@ public class Tokenizer implements Locator, Locator2 {
 
 
                                 state = transition(state, Tokenizer.DATA, reconsume, pos);
-                                if (shouldSuspend) {
-                                    break stateloop;
-                                }
                                 continue stateloop;
                             default:
                                 bogusDoctype();
@@ -5408,9 +5330,6 @@ public class Tokenizer implements Locator, Locator2 {
 
 
                                 state = transition(state, Tokenizer.DATA, reconsume, pos);
-                                if (shouldSuspend) {
-                                    break stateloop;
-                                }
                                 continue stateloop;
                             default:
                                 bogusDoctype();
@@ -5465,9 +5384,6 @@ public class Tokenizer implements Locator, Locator2 {
 
 
                                 state = transition(state, Tokenizer.DATA, reconsume, pos);
-                                if (shouldSuspend) {
-                                    break stateloop;
-                                }
                                 continue stateloop;
                             case '\r':
                                 appendStrBufCarriageReturn();
@@ -5532,9 +5448,6 @@ public class Tokenizer implements Locator, Locator2 {
 
 
                                 state = transition(state, Tokenizer.DATA, reconsume, pos);
-                                if (shouldSuspend) {
-                                    break stateloop;
-                                }
                                 continue stateloop;
                             case '"':
                                 
@@ -5619,9 +5532,6 @@ public class Tokenizer implements Locator, Locator2 {
 
 
                                 state = transition(state, Tokenizer.DATA, reconsume, pos);
-                                if (shouldSuspend) {
-                                    break stateloop;
-                                }
                                 continue stateloop;
                             case '"':
                                 
@@ -5702,9 +5612,6 @@ public class Tokenizer implements Locator, Locator2 {
 
 
                                 state = transition(state, Tokenizer.DATA, reconsume, pos);
-                                if (shouldSuspend) {
-                                    break stateloop;
-                                }
                                 continue stateloop;
                             case '\r':
                                 appendStrBufCarriageReturn();
@@ -5764,9 +5671,6 @@ public class Tokenizer implements Locator, Locator2 {
 
 
                                 state = transition(state, Tokenizer.DATA, reconsume, pos);
-                                if (shouldSuspend) {
-                                    break stateloop;
-                                }
                                 continue stateloop;
                             default:
                                 
@@ -5805,9 +5709,6 @@ public class Tokenizer implements Locator, Locator2 {
 
 
                                 state = transition(state, Tokenizer.DATA, reconsume, pos);
-                                if (shouldSuspend) {
-                                    break stateloop;
-                                }
                                 continue stateloop;
                             case '\r':
                                 silentCarriageReturn();
@@ -5938,9 +5839,6 @@ public class Tokenizer implements Locator, Locator2 {
 
 
                                 state = transition(state, Tokenizer.DATA, reconsume, pos);
-                                if (shouldSuspend) {
-                                    break stateloop;
-                                }
                                 continue stateloop;
                             default:
                                 bogusDoctype();
@@ -6026,9 +5924,6 @@ public class Tokenizer implements Locator, Locator2 {
 
 
                                 state = transition(state, Tokenizer.DATA, reconsume, pos);
-                                if (shouldSuspend) {
-                                    break stateloop;
-                                }
                                 continue stateloop;
                             default:
                                 bogusDoctype();
@@ -6079,9 +5974,6 @@ public class Tokenizer implements Locator, Locator2 {
 
 
                                 state = transition(state, Tokenizer.DATA, reconsume, pos);
-                                if (shouldSuspend) {
-                                    break stateloop;
-                                }
                                 continue stateloop;
                             case '\r':
                                 appendStrBufCarriageReturn();
@@ -6140,9 +6032,6 @@ public class Tokenizer implements Locator, Locator2 {
 
 
                                 state = transition(state, Tokenizer.DATA, reconsume, pos);
-                                if (shouldSuspend) {
-                                    break stateloop;
-                                }
                                 continue stateloop;
                             case '\r':
                                 appendStrBufCarriageReturn();
@@ -6195,23 +6084,6 @@ public class Tokenizer implements Locator, Locator2 {
                         case '>':
                             state = transition(state, Tokenizer.DATA,
                                     reconsume, pos);
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            suspendIfRequestedAfterCurrentNonTextToken();
-                            if (shouldSuspend) {
-                                break stateloop;
-                            }
                             continue stateloop;
                         default:
                             state = transition(state,
@@ -6947,23 +6819,7 @@ public class Tokenizer implements Locator, Locator2 {
         return;
     }
 
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     private void emitDoctypeToken(int pos) throws SAXException {
-        
         cstart = pos + 1;
         tokenHandler.doctype(doctypeName, publicIdentifier, systemIdentifier,
                 forceQuirks);
@@ -6975,135 +6831,6 @@ public class Tokenizer implements Locator, Locator2 {
         publicIdentifier = null;
         Portability.releaseString(systemIdentifier);
         systemIdentifier = null;
-        suspendIfRequestedAfterCurrentNonTextToken();
-    }
-
-    
-
-
-
-
-    private void suspendIfRequestedAfterCurrentNonTextToken() {
-        if (suspendAfterCurrentNonTextToken) {
-            suspendAfterCurrentNonTextToken = false;
-            shouldSuspend = true;
-        }
-    }
-
-    
-    
-
-
-
-
-
-
-
-    @SuppressWarnings("unused") private void suspendAfterCurrentTokenIfNotInText() {
-        switch (stateSave) {
-            case DATA:
-            case RCDATA:
-            case SCRIPT_DATA:
-            case RAWTEXT:
-            case SCRIPT_DATA_ESCAPED:
-            case PLAINTEXT:
-            case NON_DATA_END_TAG_NAME: 
-                                        
-                                        
-            case SCRIPT_DATA_LESS_THAN_SIGN:
-            case SCRIPT_DATA_ESCAPE_START:
-            case SCRIPT_DATA_ESCAPE_START_DASH:
-            case SCRIPT_DATA_ESCAPED_DASH:
-            case SCRIPT_DATA_ESCAPED_DASH_DASH:
-            case RAWTEXT_RCDATA_LESS_THAN_SIGN:
-            case SCRIPT_DATA_ESCAPED_LESS_THAN_SIGN:
-            case SCRIPT_DATA_DOUBLE_ESCAPE_START:
-            case SCRIPT_DATA_DOUBLE_ESCAPED:
-            case SCRIPT_DATA_DOUBLE_ESCAPED_LESS_THAN_SIGN:
-            case SCRIPT_DATA_DOUBLE_ESCAPED_DASH:
-            case SCRIPT_DATA_DOUBLE_ESCAPED_DASH_DASH:
-            case SCRIPT_DATA_DOUBLE_ESCAPE_END:
-                return;
-            case TAG_NAME:
-            case BEFORE_ATTRIBUTE_NAME:
-            case ATTRIBUTE_NAME:
-            case AFTER_ATTRIBUTE_NAME:
-            case BEFORE_ATTRIBUTE_VALUE:
-            case AFTER_ATTRIBUTE_VALUE_QUOTED:
-            case BOGUS_COMMENT:
-            case MARKUP_DECLARATION_OPEN:
-            case DOCTYPE:
-            case BEFORE_DOCTYPE_NAME:
-            case DOCTYPE_NAME:
-            case AFTER_DOCTYPE_NAME:
-            case BEFORE_DOCTYPE_PUBLIC_IDENTIFIER:
-            case DOCTYPE_PUBLIC_IDENTIFIER_DOUBLE_QUOTED:
-            case DOCTYPE_PUBLIC_IDENTIFIER_SINGLE_QUOTED:
-            case AFTER_DOCTYPE_PUBLIC_IDENTIFIER:
-            case BEFORE_DOCTYPE_SYSTEM_IDENTIFIER:
-            case DOCTYPE_SYSTEM_IDENTIFIER_DOUBLE_QUOTED:
-            case DOCTYPE_SYSTEM_IDENTIFIER_SINGLE_QUOTED:
-            case AFTER_DOCTYPE_SYSTEM_IDENTIFIER:
-            case BOGUS_DOCTYPE:
-            case COMMENT_START:
-            case COMMENT_START_DASH:
-            case COMMENT:
-            case COMMENT_END_DASH:
-            case COMMENT_END:
-            case COMMENT_END_BANG:
-            case TAG_OPEN:
-            case CLOSE_TAG_OPEN:
-            case MARKUP_DECLARATION_HYPHEN:
-            case MARKUP_DECLARATION_OCTYPE:
-            case DOCTYPE_UBLIC:
-            case DOCTYPE_YSTEM:
-            case AFTER_DOCTYPE_PUBLIC_KEYWORD:
-            case BETWEEN_DOCTYPE_PUBLIC_AND_SYSTEM_IDENTIFIERS:
-            case AFTER_DOCTYPE_SYSTEM_KEYWORD:
-            case SELF_CLOSING_START_TAG:
-            case ATTRIBUTE_VALUE_DOUBLE_QUOTED:
-            case ATTRIBUTE_VALUE_SINGLE_QUOTED:
-            case ATTRIBUTE_VALUE_UNQUOTED:
-            case BOGUS_COMMENT_HYPHEN:
-            case COMMENT_LESSTHAN:
-            case COMMENT_LESSTHAN_BANG:
-            case COMMENT_LESSTHAN_BANG_DASH:
-            case COMMENT_LESSTHAN_BANG_DASH_DASH:
-            case CDATA_START:
-            case CDATA_SECTION:
-            case CDATA_RSQB:
-            case CDATA_RSQB_RSQB:
-            case PROCESSING_INSTRUCTION:
-            case PROCESSING_INSTRUCTION_QUESTION_MARK:
-                break;
-            case CONSUME_CHARACTER_REFERENCE:
-            case CONSUME_NCR:
-            case CHARACTER_REFERENCE_TAIL:
-            case HEX_NCR_LOOP:
-            case DECIMAL_NRC_LOOP:
-            case HANDLE_NCR_VALUE:
-            case HANDLE_NCR_VALUE_RECONSUME:
-            case CHARACTER_REFERENCE_HILO_LOOKUP:
-                if (returnStateSave == DATA || returnStateSave == RCDATA) {
-                    return;
-                }
-                break;
-            default:
-                assert false : "Incomplete switch";
-                return;
-        }
-        suspendAfterCurrentNonTextToken = true;
-    }
-
-    
-    
-
-
-
-
-
-    @SuppressWarnings("unused") private boolean suspensionAfterCurrentNonTextTokenPending() {
-        return suspendAfterCurrentNonTextToken;
     }
 
     @Inline protected char checkChar(@NoLength char[] buf, int pos)
@@ -7232,7 +6959,6 @@ public class Tokenizer implements Locator, Locator2 {
         charRefBufMark = 0;
         value = 0;
         seenDigits = false;
-        suspendAfterCurrentNonTextToken = false;
         endTag = false;
         shouldSuspend = false;
         initDoctypeFields();
@@ -7276,7 +7002,6 @@ public class Tokenizer implements Locator, Locator2 {
         seenDigits = other.seenDigits;
         endTag = other.endTag;
         shouldSuspend = false;
-        suspendAfterCurrentNonTextToken = false;
         doctypeName = other.doctypeName;
 
         Portability.releaseString(systemIdentifier);

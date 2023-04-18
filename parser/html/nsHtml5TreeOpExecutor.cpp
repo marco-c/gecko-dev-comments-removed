@@ -118,7 +118,6 @@ StaticRefPtr<IdleTaskRunner> gBackgroundFlushRunner;
 nsHtml5TreeOpExecutor::nsHtml5TreeOpExecutor()
     : nsHtml5DocumentBuilder(false),
       mSuppressEOF(false),
-      mPendingEncodingCommitment(false),
       mReadingFromStage(false),
       mStreamParser(nullptr),
       mPreloadedURLs(23),  
@@ -433,7 +432,7 @@ nsresult nsHtml5TreeOpExecutor::MarkAsBroken(nsresult aReason) {
 static bool BackgroundFlushCallback(TimeStamp ) {
   RefPtr<nsHtml5TreeOpExecutor> ex = gBackgroundFlushList->popFirst();
   if (ex) {
-    ex->RunFlushLoopOrCommitToInternalEncoding();
+    ex->RunFlushLoop();
   }
   if (gBackgroundFlushList && gBackgroundFlushList->isEmpty()) {
     delete gBackgroundFlushList;
@@ -446,23 +445,11 @@ static bool BackgroundFlushCallback(TimeStamp ) {
 }
 
 void nsHtml5TreeOpExecutor::ContinueInterruptedParsingAsync() {
-  if (mDocument && !mDocument->IsInBackgroundWindow()) {
-    if (mPendingEncodingCommitment) {
-      
-      
-      
-      
-      
-      
-      if (mStreamParser) {
-        mStreamParser->PostEncodingCommitter();
-      }
-    } else {
-      nsCOMPtr<nsIRunnable> flusher = new nsHtml5ExecutorReflusher(this);
-      if (NS_FAILED(
-              mDocument->Dispatch(TaskCategory::Network, flusher.forget()))) {
-        NS_WARNING("failed to dispatch executor flush event");
-      }
+  if (!mDocument || !mDocument->IsInBackgroundWindow()) {
+    nsCOMPtr<nsIRunnable> flusher = new nsHtml5ExecutorReflusher(this);
+    if (NS_FAILED(
+            mDocument->Dispatch(TaskCategory::Network, flusher.forget()))) {
+      NS_WARNING("failed to dispatch executor flush event");
     }
   } else {
     if (!gBackgroundFlushList) {
@@ -813,40 +800,6 @@ nsresult nsHtml5TreeOpExecutor::FlushDocumentWrite() {
   return rv;
 }
 
-void nsHtml5TreeOpExecutor::RunFlushLoopOrCommitToInternalEncoding() {
-  if (mPendingEncodingCommitment) {
-    CommitToInternalEncoding();
-  } else {
-    RunFlushLoop();
-  }
-}
-
-void nsHtml5TreeOpExecutor::CommitToInternalEncoding() {
-  if (MOZ_UNLIKELY(!mParser || !mStreamParser)) {
-    
-    ClearOpQueue();  
-    return;
-  }
-  mPendingEncodingCommitment = false;
-  RunFlushLoop();
-  
-  
-  
-  
-  if (!mParser->IsParserEnabled()) {
-    mPendingEncodingCommitment = true;
-    return;
-  }
-  if (!mOpQueue.IsEmpty()) {
-    mStreamParser->PostEncodingCommitter();
-    mPendingEncodingCommitment = true;
-    return;
-  }
-  mStreamParser->ContinueAfterScriptsOrEncodingCommitment(nullptr, nullptr,
-                                                          false);
-  RunFlushLoop();
-}
-
 
 bool nsHtml5TreeOpExecutor::IsScriptEnabled() {
   
@@ -973,8 +926,17 @@ void nsHtml5TreeOpExecutor::NeedsCharsetSwitchTo(
   }
   
   
+
   if (!mParser) {
+    
+    if (aSource == kCharsetFromMetaTag) {
+      MaybeComplainAboutCharset("EncLateMetaReload", false, aLineNumber);
+    }
     return;
+  }
+
+  if (aSource == kCharsetFromMetaTag) {
+    MaybeComplainAboutCharset("EncLateMetaTooLate", true, aLineNumber);
   }
 
   GetParser()->ContinueAfterFailedCharsetSwitch();
@@ -983,29 +945,38 @@ void nsHtml5TreeOpExecutor::NeedsCharsetSwitchTo(
 void nsHtml5TreeOpExecutor::MaybeComplainAboutCharset(const char* aMsgId,
                                                       bool aError,
                                                       uint32_t aLineNumber) {
+  if (mAlreadyComplainedAboutCharset) {
+    return;
+  }
   
-  if (!(!strcmp(aMsgId, "EncError") || !strcmp(aMsgId, "EncErrorFrame") ||
-        !strcmp(aMsgId, "EncErrorFramePlain"))) {
-    if (mAlreadyComplainedAboutCharset) {
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!strcmp(aMsgId, "EncNoDeclaration") && mDocShell) {
+    dom::BrowsingContext* const bc = mDocShell->GetBrowsingContext();
+    if (bc && bc->GetParent()) {
       return;
     }
-    mAlreadyComplainedAboutCharset = true;
   }
+  mAlreadyComplainedAboutCharset = true;
   nsContentUtils::ReportToConsole(
       aError ? nsIScriptError::errorFlag : nsIScriptError::warningFlag,
       "HTML parser"_ns, mDocument, nsContentUtils::eHTMLPARSER_PROPERTIES,
       aMsgId, nsTArray<nsString>(), nullptr, u""_ns, aLineNumber);
 }
 
-void nsHtml5TreeOpExecutor::ComplainAboutBogusProtocolCharset(
-    Document* aDoc, bool aUnrecognized) {
+void nsHtml5TreeOpExecutor::ComplainAboutBogusProtocolCharset(Document* aDoc) {
   NS_ASSERTION(!mAlreadyComplainedAboutCharset,
                "How come we already managed to complain?");
   mAlreadyComplainedAboutCharset = true;
-  nsContentUtils::ReportToConsole(
-      nsIScriptError::errorFlag, "HTML parser"_ns, aDoc,
-      nsContentUtils::eHTMLPARSER_PROPERTIES,
-      aUnrecognized ? "EncProtocolUnsupported" : "EncProtocolReplacement");
+  nsContentUtils::ReportToConsole(nsIScriptError::errorFlag, "HTML parser"_ns,
+                                  aDoc, nsContentUtils::eHTMLPARSER_PROPERTIES,
+                                  "EncProtocolUnsupported");
 }
 
 void nsHtml5TreeOpExecutor::MaybeComplainAboutDeepTree(uint32_t aLineNumber) {

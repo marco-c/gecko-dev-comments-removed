@@ -6,8 +6,6 @@
 #ifndef nsHtml5StreamParser_h
 #define nsHtml5StreamParser_h
 
-#include <tuple>
-
 #include "MainThreadUtils.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"
@@ -30,6 +28,7 @@
 #include "nscore.h"
 
 class nsCycleCollectionTraversalCallback;
+class nsHtml5MetaScanner;
 class nsHtml5OwningUTF16Buffer;
 class nsHtml5Parser;
 class nsHtml5Speculation;
@@ -183,7 +182,7 @@ class nsHtml5StreamParser final : public nsISupports {
   using NotNull = mozilla::NotNull<T>;
   using Encoding = mozilla::Encoding;
 
-  const uint32_t UNCONDITIONAL_META_SCAN_BOUNDARY = 1024;
+  const uint32_t SNIFFING_BUFFER_SIZE = 1024;
   const uint32_t READ_BUFFER_SIZE = 1024;
   const uint32_t LOCAL_FILE_UTF_8_BUFFER_SIZE = 1024 * 1024 * 4;  
 
@@ -215,23 +214,12 @@ class nsHtml5StreamParser final : public nsISupports {
 
   bool internalEncodingDeclaration(nsHtml5String aEncoding);
 
-  bool TemplatePushedOrHeadPopped();
-
-  void RememberGt(int32_t aPos);
-
-  void PostEncodingCommitter();
-
   
 
   
 
 
-  void FeedDetector(mozilla::Span<const uint8_t> aBuffer);
-
-  
-
-
-  void DetectorEof();
+  void FeedDetector(mozilla::Span<const uint8_t> aBuffer, bool aLast);
 
   
 
@@ -241,8 +229,7 @@ class nsHtml5StreamParser final : public nsISupports {
 
 
   inline void SetDocumentCharset(NotNull<const Encoding*> aEncoding,
-                                 nsCharsetSource aSource,
-                                 bool aForceAutoDetection) {
+                                 int32_t aSource, bool aForceAutoDetection) {
     MOZ_ASSERT(mStreamState == STREAM_NOT_STARTED,
                "SetDocumentCharset called too late.");
     MOZ_ASSERT(NS_IsMainThread(), "Wrong thread!");
@@ -261,13 +248,8 @@ class nsHtml5StreamParser final : public nsISupports {
 
 
 
-
-
-
-
-  void ContinueAfterScriptsOrEncodingCommitment(
-      nsHtml5Tokenizer* aTokenizer, nsHtml5TreeBuilder* aTreeBuilder,
-      bool aLastWasCR);
+  void ContinueAfterScripts(nsHtml5Tokenizer* aTokenizer,
+                            nsHtml5TreeBuilder* aTreeBuilder, bool aLastWasCR);
 
   
 
@@ -322,14 +304,6 @@ class nsHtml5StreamParser final : public nsISupports {
 
   void FlushTreeOpsAndDisarmTimer();
 
-  void SwitchDecoderIfAsciiSoFar(NotNull<const Encoding*> aEncoding);
-
-  size_t CountGts();
-
-  void DiscardMetaSpeculation();
-
-  bool ProcessLookingForMetaCharset(bool aEof);
-
   void ParseAvailableData();
 
   void DoStopRequest();
@@ -361,17 +335,7 @@ class nsHtml5StreamParser final : public nsISupports {
   
 
 
-
-
-
-
-  size_t LengthOfLtContainingPrefixInSecondBuffer();
-
-  
-
-
-  nsresult SniffStreamBytes(mozilla::Span<const uint8_t> aFromSegment,
-                            bool aEof);
+  nsresult SniffStreamBytes(mozilla::Span<const uint8_t> aFromSegment);
 
   
 
@@ -381,16 +345,28 @@ class nsHtml5StreamParser final : public nsISupports {
   
 
 
+  void FinalizeSniffingWithDetector(mozilla::Span<const uint8_t> aFromSegment,
+                                    uint32_t aCountToSniffingLimit, bool aEof);
+
+  
 
 
 
+
+
+
+
+
+  nsresult FinalizeSniffing(mozilla::Span<const uint8_t> aFromSegment,
+                            uint32_t aCountToSniffingLimit, bool aEof);
+
+  
 
 
 
 
 
   nsresult SetupDecodingAndWriteSniffingBufferAndCurrentSegment(
-      mozilla::Span<const uint8_t> aPrefix,
       mozilla::Span<const uint8_t> aFromSegment);
 
   
@@ -421,9 +397,20 @@ class nsHtml5StreamParser final : public nsISupports {
   
 
 
+  int32_t MaybeRollBackSource(int32_t aSource);
 
-  std::tuple<NotNull<const Encoding*>, nsCharsetSource> GuessEncoding(
-      bool aInitial);
+  
+
+
+  void GuessEncoding(bool aEof, bool aInitial);
+
+  inline void DontGuessEncoding() {
+    mFeedChardet = false;
+    mGuessEncoding = false;
+    if (mDecodingLocalFileWithoutTokenizing) {
+      CommitLocalFileToEncoding();
+    }
+  }
 
   
 
@@ -433,7 +420,7 @@ class nsHtml5StreamParser final : public nsISupports {
 
 
 
-  const Encoding* PreferredForInternalEncodingDecl(const nsAString& aEncoding);
+  const Encoding* PreferredForInternalEncodingDecl(const nsACString& aEncoding);
 
   
 
@@ -490,34 +477,43 @@ class nsHtml5StreamParser final : public nsISupports {
   
 
 
+  mozilla::UniquePtr<uint8_t[]> mSniffingBuffer;
+
+  
+
+
+  uint32_t mSniffingLength;
+
+  
+
+
   eBomState mBomState;
 
   
+
+
+  mozilla::UniquePtr<nsHtml5MetaScanner> mMetaScanner;
+
+  
   
 
 
-  nsCharsetSource mCharsetSource;
-
-  nsCharsetSource mEncodingSwitchSource;
+  int32_t mCharsetSource;
 
   
 
 
   NotNull<const Encoding*> mEncoding;
 
-  const Encoding* mNeedsEncodingSwitchTo;
+  
 
-  bool mSeenEligibleMetaCharset;
 
-  bool mChardetEof;
+  bool mFeedChardet;
 
-#ifdef DEBUG
+  
 
-  bool mStartedFeedingDetector;
 
-  bool mStartedFeedingDevTools;
-
-#endif
+  bool mGuessEncoding;
 
   
 
@@ -535,27 +531,6 @@ class nsHtml5StreamParser final : public nsISupports {
   bool mChannelHadCharset;
 
   
-
-
-  bool mLookingForMetaCharset;
-
-  
-
-
-  bool mStartsWithLtQuestion;
-
-  
-
-
-  bool mLookingForXmlDeclarationForXmlViewSource;
-
-  
-
-
-
-  bool mTemplatePushedOrHeadPopped;
-
-  
   
 
 
@@ -564,27 +539,10 @@ class nsHtml5StreamParser final : public nsISupports {
   
 
 
-
-
-
-
-  nsHtml5OwningUTF16Buffer* mGtBuffer;
-
-  int32_t mGtPos;
-
-  
-
-
   nsHtml5OwningUTF16Buffer*
       mLastBuffer;  
                     
                     
-
-  
-
-
-
-  RefPtr<nsHtml5OwningUTF16Buffer> mFirstBufferOfMetaScan;
 
   
 
@@ -659,9 +617,10 @@ class nsHtml5StreamParser final : public nsISupports {
   
 
 
-  uint32_t mNumBytesBuffered;
 
-  nsTArray<mozilla::Buffer<uint8_t>> mBufferedBytes;
+  uint32_t mLocalFileBytesBuffered;
+
+  nsTArray<mozilla::Buffer<uint8_t>> mBufferedLocalFileData;
 
   
 
@@ -678,14 +637,6 @@ class nsHtml5StreamParser final : public nsISupports {
   nsCOMPtr<nsIRunnable> mExecutorFlusher;
 
   nsCOMPtr<nsIRunnable> mLoadFlusher;
-
-  
-
-
-
-
-
-  nsCOMPtr<nsIRunnable> mEncodingCommitter;
 
   
 
@@ -713,11 +664,6 @@ class nsHtml5StreamParser final : public nsISupports {
 
 
   bool mDecodingLocalFileWithoutTokenizing;
-
-  
-
-
-  bool mBufferingBytes;
 
   
 

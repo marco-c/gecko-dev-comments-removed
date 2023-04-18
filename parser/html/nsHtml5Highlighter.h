@@ -33,17 +33,6 @@ class nsHtml5Highlighter {
   
 
 
-  void SetOpSink(nsAHtml5TreeOpSink* aOpSink);
-
-  
-
-
-
-  void Rewind();
-
-  
-
-
   void Start(const nsAutoString& aTitle);
 
   
@@ -157,11 +146,6 @@ class nsHtml5Highlighter {
 
   void AddBase(nsHtml5String aValue);
 
-  
-
-
-  void StartCharacters();
-
  private:
   
 
@@ -180,6 +164,11 @@ class nsHtml5Highlighter {
 
 
   void EndSpanOrA();
+
+  
+
+
+  void StartCharacters();
 
   
 
@@ -328,12 +317,6 @@ class nsHtml5Highlighter {
   nsTArray<nsHtml5TreeOperation> mOpQueue;
 
   
-
-
-
-
-
-
 
 
   nsAHtml5TreeOpSink* mOpSink;
