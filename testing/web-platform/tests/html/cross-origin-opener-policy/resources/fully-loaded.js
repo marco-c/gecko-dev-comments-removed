@@ -1,0 +1,10 @@
+r
+
+
+
+
+function fullyLoaded() {
+  return new Promise((resolve, reject) => {
+    addEventListener('load', () => setTimeout(resolve, 2000))
+  });
+}
