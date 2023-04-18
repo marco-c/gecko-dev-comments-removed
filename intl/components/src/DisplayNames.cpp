@@ -121,7 +121,8 @@ static bool IsStandaloneMonth(UDateFormatSymbolType symbolType) {
 #endif
 
 Result<Ok, DisplayNamesError> DisplayNames::ComputeDateTimeDisplayNames(
-    UDateFormatSymbolType symbolType, mozilla::Span<const int32_t> indices) {
+    UDateFormatSymbolType symbolType, mozilla::Span<const int32_t> indices,
+    Span<const char> aCalendar) {
   if (!mDateTimeDisplayNames.empty()) {
     
     return Ok();
@@ -135,13 +136,13 @@ Result<Ok, DisplayNamesError> DisplayNames::ComputeDateTimeDisplayNames(
     return Err(DisplayNamesError::InvalidLanguageTag);
   }
 
-  if (!mOptions.calendar.empty()) {
+  if (!aCalendar.empty()) {
     
     
     Vector<char, 32> extension;
     Span<const char> prefix = MakeStringSpan("u-ca-");
     if (!extension.append(prefix.data(), prefix.size()) ||
-        !extension.append(mOptions.calendar.data(), mOptions.calendar.size())) {
+        !extension.append(aCalendar.data(), aCalendar.size())) {
       return Err(DisplayNamesError::OutOfMemory);
     }
     
