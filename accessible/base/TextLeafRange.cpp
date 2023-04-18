@@ -203,47 +203,6 @@ static bool IsLocalAccAtLineStart(LocalAccessible* aAcc) {
 
 enum WordBreakClass { eWbcSpace = 0, eWbcPunct, eWbcOther };
 
-static WordBreakClass GetWordBreakClass(char16_t aChar) {
-  
-  
-  const char16_t kCharNbsp = 0xA0;
-  switch (aChar) {
-    case ' ':
-    case kCharNbsp:
-    case '\t':
-    case '\f':
-    case '\n':
-    case '\r':
-      return eWbcSpace;
-    default:
-      break;
-  }
-  
-  
-  uint8_t cat = unicode::GetGeneralCategory(aChar);
-  switch (cat) {
-    case HB_UNICODE_GENERAL_CATEGORY_CONNECT_PUNCTUATION: 
-      if (aChar == '_' &&
-          !StaticPrefs::layout_word_select_stop_at_underscore()) {
-        return eWbcOther;
-      }
-      [[fallthrough]];
-    case HB_UNICODE_GENERAL_CATEGORY_DASH_PUNCTUATION:    
-    case HB_UNICODE_GENERAL_CATEGORY_CLOSE_PUNCTUATION:   
-    case HB_UNICODE_GENERAL_CATEGORY_FINAL_PUNCTUATION:   
-    case HB_UNICODE_GENERAL_CATEGORY_INITIAL_PUNCTUATION: 
-    case HB_UNICODE_GENERAL_CATEGORY_OTHER_PUNCTUATION:   
-    case HB_UNICODE_GENERAL_CATEGORY_OPEN_PUNCTUATION:    
-    case HB_UNICODE_GENERAL_CATEGORY_CURRENCY_SYMBOL:     
-    case HB_UNICODE_GENERAL_CATEGORY_MATH_SYMBOL:         
-    case HB_UNICODE_GENERAL_CATEGORY_OTHER_SYMBOL:        
-      return eWbcPunct;
-    default:
-      break;
-  }
-  return eWbcOther;
-}
-
 
 
 
@@ -254,7 +213,7 @@ class PrevWordBreakClassWalker {
   PrevWordBreakClassWalker(Accessible* aAcc, const nsAString& aText,
                            int32_t aOffset)
       : mAcc(aAcc), mText(aText), mOffset(aOffset) {
-    mClass = GetWordBreakClass(mText.CharAt(mOffset));
+    mClass = GetClass(mText.CharAt(mOffset));
   }
 
   WordBreakClass CurClass() { return mClass; }
@@ -264,7 +223,7 @@ class PrevWordBreakClassWalker {
       if (!PrevChar()) {
         return Nothing();
       }
-      WordBreakClass curClass = GetWordBreakClass(mText.CharAt(mOffset));
+      WordBreakClass curClass = GetClass(mText.CharAt(mOffset));
       if (curClass != mClass) {
         mClass = curClass;
         return Some(curClass);
@@ -279,7 +238,7 @@ class PrevWordBreakClassWalker {
       
       return true;
     }
-    WordBreakClass curClass = GetWordBreakClass(mText.CharAt(mOffset));
+    WordBreakClass curClass = GetClass(mText.CharAt(mOffset));
     
     ++mOffset;
     return curClass != mClass;
@@ -303,6 +262,47 @@ class PrevWordBreakClassWalker {
     mAcc->AppendTextTo(mText);
     mOffset = static_cast<int32_t>(mText.Length()) - 1;
     return true;
+  }
+
+  WordBreakClass GetClass(char16_t aChar) {
+    
+    
+    const char16_t kCharNbsp = 0xA0;
+    switch (aChar) {
+      case ' ':
+      case kCharNbsp:
+      case '\t':
+      case '\f':
+      case '\n':
+      case '\r':
+        return eWbcSpace;
+      default:
+        break;
+    }
+    
+    
+    uint8_t cat = unicode::GetGeneralCategory(aChar);
+    switch (cat) {
+      case HB_UNICODE_GENERAL_CATEGORY_CONNECT_PUNCTUATION: 
+        if (aChar == '_' &&
+            !StaticPrefs::layout_word_select_stop_at_underscore()) {
+          return eWbcOther;
+        }
+        [[fallthrough]];
+      case HB_UNICODE_GENERAL_CATEGORY_DASH_PUNCTUATION:    
+      case HB_UNICODE_GENERAL_CATEGORY_CLOSE_PUNCTUATION:   
+      case HB_UNICODE_GENERAL_CATEGORY_FINAL_PUNCTUATION:   
+      case HB_UNICODE_GENERAL_CATEGORY_INITIAL_PUNCTUATION: 
+      case HB_UNICODE_GENERAL_CATEGORY_OTHER_PUNCTUATION:   
+      case HB_UNICODE_GENERAL_CATEGORY_OPEN_PUNCTUATION:    
+      case HB_UNICODE_GENERAL_CATEGORY_CURRENCY_SYMBOL:     
+      case HB_UNICODE_GENERAL_CATEGORY_MATH_SYMBOL:         
+      case HB_UNICODE_GENERAL_CATEGORY_OTHER_SYMBOL:        
+        return eWbcPunct;
+      default:
+        break;
+    }
+    return eWbcOther;
   }
 
   Accessible* mAcc;
@@ -422,12 +422,6 @@ bool TextLeafPoint::IsEmptyLastLine() const {
   nsAutoString text;
   mAcc->AppendTextTo(text, mOffset - 1, 1);
   return text.CharAt(0) == '\n';
-}
-
-char16_t TextLeafPoint::GetChar() const {
-  nsAutoString text;
-  mAcc->AppendTextTo(text, mOffset, 1);
-  return text.CharAt(0);
 }
 
 TextLeafPoint TextLeafPoint::FindPrevLineStartSameLocalAcc(
@@ -741,19 +735,11 @@ TextLeafPoint TextLeafPoint::FindBoundary(AccessibleTextBoundary aBoundaryType,
                                           bool aIncludeOrigin) const {
   if (IsCaret()) {
     if (aBoundaryType == nsIAccessibleText::BOUNDARY_CHAR) {
-      if (IsCaretAtEndOfLine()) {
-        
-        return ActualizeCaret( false);
-      }
+      
+      return ActualizeCaret( false);
     }
     return ActualizeCaret().FindBoundary(aBoundaryType, aDirection,
                                          aIncludeOrigin);
-  }
-  if (aBoundaryType == nsIAccessibleText::BOUNDARY_LINE_END) {
-    return FindLineEnd(aDirection, aIncludeOrigin);
-  }
-  if (aBoundaryType == nsIAccessibleText::BOUNDARY_WORD_END) {
-    return FindWordEnd(aDirection, aIncludeOrigin);
   }
   if (aBoundaryType == nsIAccessibleText::BOUNDARY_LINE_START &&
       aIncludeOrigin && aDirection == eDirPrevious && IsEmptyLastLine()) {
@@ -780,7 +766,7 @@ TextLeafPoint TextLeafPoint::FindBoundary(AccessibleTextBoundary aBoundaryType,
             
             
             boundary = searchFrom;
-          } else if (searchFrom.mOffset + 1 <
+          } else if (searchFrom.mOffset <
                      static_cast<int32_t>(
                          nsAccUtils::TextLength(searchFrom.mAcc))) {
             boundary.mAcc = searchFrom.mAcc;
@@ -828,108 +814,6 @@ TextLeafPoint TextLeafPoint::FindBoundary(AccessibleTextBoundary aBoundaryType,
   }
   MOZ_ASSERT_UNREACHABLE();
   return TextLeafPoint();
-}
-
-TextLeafPoint TextLeafPoint::FindLineEnd(nsDirection aDirection,
-                                         bool aIncludeOrigin) const {
-  if (aDirection == eDirPrevious && IsEmptyLastLine()) {
-    
-    
-    
-    
-    
-    return FindBoundary(nsIAccessibleText::BOUNDARY_CHAR, eDirPrevious);
-  }
-  if (aIncludeOrigin && IsLineFeedChar()) {
-    return *this;
-  }
-  if (aDirection == eDirPrevious && !aIncludeOrigin) {
-    
-    TextLeafPoint prevChar =
-        FindBoundary(nsIAccessibleText::BOUNDARY_CHAR, eDirPrevious);
-    if (prevChar.IsLineFeedChar()) {
-      return prevChar;
-    }
-  }
-  TextLeafPoint searchFrom = *this;
-  if (aDirection == eDirNext && (IsLineFeedChar() || IsEmptyLastLine())) {
-    
-    
-    
-    searchFrom = FindBoundary(nsIAccessibleText::BOUNDARY_CHAR, eDirNext);
-  }
-  TextLeafPoint lineStart = searchFrom.FindBoundary(
-      nsIAccessibleText::BOUNDARY_LINE_START, aDirection, aIncludeOrigin);
-  
-  
-  TextLeafPoint prevChar = lineStart.FindBoundary(
-      nsIAccessibleText::BOUNDARY_CHAR, eDirPrevious, false);
-  if (prevChar && prevChar.IsLineFeedChar()) {
-    return prevChar;
-  }
-  return lineStart;
-}
-
-bool TextLeafPoint::IsSpace() const {
-  return GetWordBreakClass(GetChar()) == eWbcSpace;
-}
-
-TextLeafPoint TextLeafPoint::FindWordEnd(nsDirection aDirection,
-                                         bool aIncludeOrigin) const {
-  char16_t origChar = GetChar();
-  const bool origIsSpace = GetWordBreakClass(origChar) == eWbcSpace;
-  bool prevIsSpace = false;
-  if (aDirection == eDirPrevious || (aIncludeOrigin && origIsSpace) ||
-      !origChar) {
-    TextLeafPoint prev =
-        FindBoundary(nsIAccessibleText::BOUNDARY_CHAR, eDirPrevious, false);
-    if (aDirection == eDirPrevious && prev == *this) {
-      return *this;  
-    }
-    prevIsSpace = prev.IsSpace();
-    if (aIncludeOrigin && origIsSpace && !prevIsSpace) {
-      
-      
-      return *this;
-    }
-  }
-  TextLeafPoint boundary = *this;
-  if (aDirection == eDirPrevious && !prevIsSpace) {
-    
-    
-    boundary = FindBoundary(nsIAccessibleText::BOUNDARY_WORD_START,
-                            eDirPrevious, aIncludeOrigin);
-  } else if (aDirection == eDirNext &&
-             (origIsSpace || (!origChar && prevIsSpace))) {
-    
-    
-    boundary =
-        FindBoundary(nsIAccessibleText::BOUNDARY_WORD_START, eDirNext, false);
-    if (boundary.IsSpace()) {
-      
-      
-      return boundary;
-    }
-  }
-  if (aDirection == eDirNext) {
-    boundary = boundary.FindBoundary(nsIAccessibleText::BOUNDARY_WORD_START,
-                                     eDirNext, aIncludeOrigin);
-  }
-  
-  
-  
-  TextLeafPoint prev = boundary;
-  for (;;) {
-    prev = prev.FindBoundary(nsIAccessibleText::BOUNDARY_CHAR, eDirPrevious);
-    if (prev == boundary) {
-      break;  
-    }
-    if (!prev.IsSpace()) {
-      break;
-    }
-    boundary = prev;
-  }
-  return boundary;
 }
 
 already_AddRefed<AccAttributes> TextLeafPoint::GetTextAttributesLocalAcc(
