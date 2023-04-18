@@ -128,7 +128,10 @@ class CookieCommons final {
   
   
   
-  static bool IsSameSiteForeign(nsIChannel* aChannel, nsIURI* aHostURI);
+  
+  
+  static bool IsSameSiteForeign(nsIChannel* aChannel, nsIURI* aHostURI,
+                                bool* aHadCrossSiteRedirects);
 };
 
 }  

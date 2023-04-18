@@ -518,7 +518,10 @@ bool IsSameSiteSchemeEqual(const nsACString& aFirstScheme,
   return aFirstScheme.Equals(aSecondScheme);
 }
 
-bool CookieCommons::IsSameSiteForeign(nsIChannel* aChannel, nsIURI* aHostURI) {
+bool CookieCommons::IsSameSiteForeign(nsIChannel* aChannel, nsIURI* aHostURI,
+                                      bool* aHadCrossSiteRedirects) {
+  *aHadCrossSiteRedirects = false;
+
   if (!aChannel) {
     return false;
   }
@@ -595,6 +598,7 @@ bool CookieCommons::IsSameSiteForeign(nsIChannel* aChannel, nsIURI* aHostURI) {
       rv = redirectPrincipal->IsThirdPartyChannel(aChannel, &isForeign);
       
       if (NS_FAILED(rv) || isForeign) {
+        *aHadCrossSiteRedirects = true;
         return true;
       }
 
@@ -603,6 +607,7 @@ bool CookieCommons::IsSameSiteForeign(nsIChannel* aChannel, nsIURI* aHostURI) {
       if (!IsSameSiteSchemeEqual(redirectScheme, hostScheme)) {
         
         
+        *aHadCrossSiteRedirects = true;
         return true;
       }
     }
