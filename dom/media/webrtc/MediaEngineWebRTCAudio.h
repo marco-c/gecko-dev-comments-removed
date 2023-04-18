@@ -141,6 +141,7 @@ class AudioInputProcessing : public AudioDataListener {
   void SetPassThrough(MediaTrackGraphImpl* aGraph, bool aPassThrough);
   uint32_t GetRequestedInputChannelCount();
   void SetRequestedInputChannelCount(MediaTrackGraphImpl* aGraph,
+                                     CubebUtils::AudioDeviceID aDeviceId,
                                      uint32_t aRequestedInputChannelCount);
   
   
@@ -218,43 +219,17 @@ class AudioInputProcessing : public AudioDataListener {
 };
 
 
-class AudioProcessingTrack : public ProcessedMediaTrack {
+class AudioProcessingTrack : public DeviceInputConsumerTrack {
   
   RefPtr<AudioInputProcessing> mInputProcessing;
 
-  
-  
-  RefPtr<MediaInputPort> mPort;
-
-  
-  
-  RefPtr<DeviceInputTrack> mDeviceInputTrack;
-
-  
-  
-  
-  
-  RefPtr<AudioDataListener> mInputListener;
-
-  
-  Maybe<CubebUtils::AudioDeviceID> mDeviceId;
-
   explicit AudioProcessingTrack(TrackRate aSampleRate)
-      : ProcessedMediaTrack(aSampleRate, MediaSegment::AUDIO,
-                            new AudioSegment()) {}
+      : DeviceInputConsumerTrack(aSampleRate) {}
 
   ~AudioProcessingTrack() = default;
 
  public:
   
-  
-  
-  
-  nsresult ConnectDeviceInput(CubebUtils::AudioDeviceID aId,
-                              AudioDataListener* aListener,
-                              const PrincipalHandle& aPrincipal);
-  void DisconnectDeviceInput();
-  Maybe<CubebUtils::AudioDeviceID> DeviceId() const;
   void Destroy() override;
   void SetInputProcessing(RefPtr<AudioInputProcessing> aInputProcessing);
   static AudioProcessingTrack* Create(MediaTrackGraph* aGraph);
@@ -268,10 +243,6 @@ class AudioProcessingTrack : public ProcessedMediaTrack {
         "Must set mInputProcessing before exposing to content");
     return mInputProcessing->GetRequestedInputChannelCount();
   }
-  
-  
-  void GetInputSourceData(AudioSegment& aOutput, const MediaInputPort* aPort,
-                          GraphTime aFrom, GraphTime aTo) const;
   
   
   void NotifyOutputData(MediaTrackGraphImpl* aGraph, AudioDataValue* aBuffer,

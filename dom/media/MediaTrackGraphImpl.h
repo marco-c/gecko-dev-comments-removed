@@ -403,12 +403,17 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-  NativeInputTrack* GetNativeInputTrack();
+  DeviceInputTrack* GetDeviceInputTrackMainThread(
+      CubebUtils::AudioDeviceID aID);
+
+  
+
+  NativeInputTrack* GetNativeInputTrackMainThread();
 
   
 
 
-  void OpenAudioInputImpl(NativeInputTrack* aTrack);
+  void OpenAudioInputImpl(DeviceInputTrack* aTrack);
   
 
   virtual void OpenAudioInput(DeviceInputTrack* aTrack) override;
@@ -416,7 +421,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   
 
 
-  void CloseAudioInputImpl(CubebUtils::AudioDeviceID aID);
+  void CloseAudioInputImpl(DeviceInputTrack* aTrack);
   
 
 
@@ -432,7 +437,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   
 
 
-  void ReevaluateInputDevice();
+  void ReevaluateInputDevice(CubebUtils::AudioDeviceID aID);
 
   
 
@@ -506,11 +511,9 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-  uint32_t AudioInputChannelCount();
+  uint32_t AudioInputChannelCount(CubebUtils::AudioDeviceID aID);
 
-  AudioInputType AudioInputDevicePreference();
-
-  CubebUtils::AudioDeviceID InputDeviceID() { return mInputDeviceID; }
+  AudioInputType AudioInputDevicePreference(CubebUtils::AudioDeviceID aID);
 
   double MediaTimeToSeconds(GraphTime aTime) const {
     NS_ASSERTION(aTime > -TRACK_TIME_MAX && aTime <= TRACK_TIME_MAX,
@@ -731,18 +734,13 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-
-
-
-
-  std::atomic<CubebUtils::AudioDeviceID> mInputDeviceID;
+  CubebUtils::AudioDeviceID mInputDeviceID;
   CubebUtils::AudioDeviceID mOutputDeviceID;
 
   
   
-  
-  
-  RefPtr<NativeInputTrack> mNativeInputTrackOnGraph;
+  RefPtr<NativeInputTrack> mNativeInputTrackGraphThread;
+  nsTArray<RefPtr<NonNativeInputTrack>> mNonNativeInputTracksGraphThread;
 
   
 
@@ -954,6 +952,15 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   MOZ_DEFINE_MALLOC_SIZE_OF(MallocSizeOf)
 
   
+  
+  DeviceInputTrack* GetDeviceInputTrackGraphThread(
+      CubebUtils::AudioDeviceID aID);
+
+  
+  
+  void SetNewNativeInput();
+
+  
 
 
 
@@ -1018,7 +1025,8 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   
 
 
-  RefPtr<NativeInputTrack> mNativeInputTrackOnMain;
+  RefPtr<NativeInputTrack> mNativeInputTrackMainThread;
+  nsTArray<RefPtr<NonNativeInputTrack>> mNonNativeInputTracksMainThread;
 };
 
 }  

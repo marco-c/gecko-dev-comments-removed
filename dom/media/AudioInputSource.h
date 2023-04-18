@@ -58,7 +58,11 @@ class AudioInputSource : public CubebInputStream::Listener {
   
   void Stop();
   
-  AudioSegment GetAudioSegment(TrackTime aDuration);
+  
+  
+  
+  enum class Consumer { Same, Changed };
+  AudioSegment GetAudioSegment(TrackTime aDuration, Consumer aConsumer);
 
   
   

@@ -70,6 +70,9 @@ void AudioInputSource::Start() {
   
   MOZ_ASSERT(mTaskThread);
 
+  
+  mSPSCQueue.ResetConsumerThreadId();
+
   LOG("AudioInputSource %p, start", this);
   MOZ_ALWAYS_SUCCEEDS(mTaskThread->Dispatch(
       NS_NewRunnableFunction(__func__, [self = RefPtr(this)]() mutable {
@@ -116,7 +119,14 @@ void AudioInputSource::Stop() {
       })));
 }
 
-AudioSegment AudioInputSource::GetAudioSegment(TrackTime aDuration) {
+AudioSegment AudioInputSource::GetAudioSegment(TrackTime aDuration,
+                                               Consumer aConsumer) {
+  if (aConsumer == Consumer::Changed) {
+    
+    
+    mSPSCQueue.ResetConsumerThreadId();
+  }
+
   AudioSegment raw;
   while (mSPSCQueue.AvailableRead()) {
     AudioChunk chunk;
