@@ -65,27 +65,12 @@ class TransactionManager final : public nsITransactionManager,
   
   
   
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
-  WillDoNotify(nsITransaction* aTransaction, bool* aInterrupt);
   MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult DidDoNotify(nsITransaction* aTransaction,
                                                    nsresult aExecuteResult);
   MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
-  WillUndoNotify(nsITransaction* aTransaction, bool* aInterrupt);
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
   DidUndoNotify(nsITransaction* aTransaction, nsresult aUndoResult);
   MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
-  WillRedoNotify(nsITransaction* aTransaction, bool* aInterrupt);
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
   DidRedoNotify(nsITransaction* aTransaction, nsresult aRedoResult);
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult WillBeginBatchNotify(bool* aInterrupt);
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult DidBeginBatchNotify(nsresult aResult);
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult WillEndBatchNotify(bool* aInterrupt);
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult DidEndBatchNotify(nsresult aResult);
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult WillMergeNotify(
-      nsITransaction* aTop, nsITransaction* aTransaction, bool* aInterrupt);
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
-  DidMergeNotify(nsITransaction* aTop, nsITransaction* aTransaction,
-                 bool aDidMerge, nsresult aMergeResult);
 
   
 
