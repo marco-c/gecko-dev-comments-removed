@@ -7,6 +7,16 @@
 var EXPORTED_SYMBOLS = ["SubDialog", "SubDialogManager"];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "gDragService",
+  "@mozilla.org/widget/dragservice;1",
+  "nsIDragService"
+);
 
 
 
@@ -169,6 +179,11 @@ SubDialog.prototype = {
       return;
     }
     this._addDialogEventListeners();
+
+    
+    if (gDragService.getCurrentSession()) {
+      gDragService.endDragSession(true);
+    }
 
     
     
