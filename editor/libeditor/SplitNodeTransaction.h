@@ -6,9 +6,9 @@
 #ifndef SplitNodeTransaction_h
 #define SplitNodeTransaction_h
 
-#include "mozilla/EditorDOMPoint.h"  
-#include "mozilla/EditTransactionBase.h"  
-#include "nsCOMPtr.h"                     
+#include "EditTransactionBase.h"  
+
+#include "nsCOMPtr.h"  
 #include "nsCycleCollectionParticipant.h"
 #include "nsIContent.h"
 #include "nsISupportsImpl.h"  
@@ -17,6 +17,9 @@
 namespace mozilla {
 
 class HTMLEditor;
+
+template <typename PT, typename CT>
+class EditorDOMPointBase;
 
 
 
@@ -30,7 +33,6 @@ class SplitNodeTransaction final : public EditTransactionBase {
 
  public:
   
-
 
 
 
@@ -54,7 +56,13 @@ class SplitNodeTransaction final : public EditTransactionBase {
 
   MOZ_CAN_RUN_SCRIPT NS_IMETHOD RedoTransaction() override;
 
-  nsIContent* GetNewLeftContent() const { return mNewLeftContent; }
+  nsIContent* GetSplitContent() const { return mSplitContent; }
+  nsIContent* GetNewContent() const { return mNewContent; }
+  nsINode* GetParentNode() const { return mParentNode; }
+
+  
+  
+  uint32_t SplitOffset() const { return mSplitOffset; }
 
   friend std::ostream& operator<<(std::ostream& aStream,
                                   const SplitNodeTransaction& aTransaction);
@@ -65,14 +73,17 @@ class SplitNodeTransaction final : public EditTransactionBase {
   RefPtr<HTMLEditor> mHTMLEditor;
 
   
-  
-  EditorDOMPoint mStartOfRightContent;
+  nsCOMPtr<nsINode> mParentNode;
 
   
-  nsCOMPtr<nsIContent> mNewLeftContent;
+  nsCOMPtr<nsIContent> mNewContent;
 
   
-  nsCOMPtr<nsINode> mContainerParentNode;
+  nsCOMPtr<nsIContent> mSplitContent;
+
+  
+  
+  uint32_t mSplitOffset;
 };
 
 }  
