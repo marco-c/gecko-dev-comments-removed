@@ -743,13 +743,6 @@ class Preferences {
     
     
     
-    
-    
-    
-    
-    
-    
-    
     if (
       scenario == "online" &&
       this.get("quicksuggest.dataCollection.enabled") &&
