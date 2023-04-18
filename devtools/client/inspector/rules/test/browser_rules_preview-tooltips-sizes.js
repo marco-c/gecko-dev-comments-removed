@@ -23,7 +23,7 @@ add_task(async function() {
           --test-var-wider-than-image: red;
         }
 
-        div {
+        #target {
           color: var(--test-var-wider-than-image);
           background: url(${BASE_64_URL});
         }
@@ -35,13 +35,21 @@ add_task(async function() {
   await selectNode("#target", inspector);
 
   
-  const colorPropertySpan = getRuleViewProperty(view, "div", "color").valueSpan;
+  
+  
+  info("Wait until the rule view property is rendered");
+  const colorPropertyElement = await waitFor(() =>
+    getRuleViewProperty(view, "#target", "color")
+  );
+
+  
+  const colorPropertySpan = colorPropertyElement.valueSpan;
   const colorVariableElement = colorPropertySpan.querySelector(
     ".ruleview-variable"
   );
 
   
-  const backgroundPropertySpan = getRuleViewProperty(view, "div", "background")
+  const backgroundPropertySpan = getRuleViewProperty(view, "#target", "background")
     .valueSpan;
   const backgroundUrlElement = backgroundPropertySpan.querySelector(
     ".theme-link"
