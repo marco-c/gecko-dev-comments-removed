@@ -29,6 +29,28 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import os
+import random
+
+from wptserve.utils import isomorphic_encode
+
 _ACAO = ("Access-Control-Allow-Origin", "*")
 _ACAPN = ("Access-Control-Allow-Private-Network", "true")
 
@@ -43,13 +65,28 @@ def _get_response_headers(method, mode):
 
   return []
 
-def _get_uuid(request):
+def _get_preflight_uuid(request):
   return request.GET.get(b"preflight-uuid")
 
-def _handle_preflight_request(request, response):
-  uuid = _get_uuid(request)
+def _should_treat_as_public_once(request):
+  uuid = request.GET.get(b"treat-as-public-once")
   if uuid is None:
-    raise Exception("missing `preflight-uuid` param from preflight URL")
+    
+    return False
+
+  
+  
+  result = request.server.stash.take(uuid) is None
+  request.server.stash.put(uuid, "")
+  return result
+
+def _handle_preflight_request(request, response):
+  if _should_treat_as_public_once(request):
+    return (400, [], "received preflight for first treat-as-public request")
+
+  uuid = _get_preflight_uuid(request)
+  if uuid is None:
+    return (400, [], "missing `preflight-uuid` param from preflight URL")
 
   request.server.stash.put(uuid, "")
 
@@ -59,20 +96,38 @@ def _handle_preflight_request(request, response):
 
   return (headers, "preflight")
 
-def _handle_final_request(request, response):
-  uuid = _get_uuid(request)
-  if uuid is not None and request.server.stash.take(uuid) is None:
-    return (405, [], "no preflight received for {}".format(uuid))
+def _final_response_body(request):
+  file_name = request.GET.get(b"file")
+  if file_name is None:
+    return request.GET.get(b"body") or "success"
 
-  mode = request.GET.get(b"final-headers")
-  headers = _get_response_headers(request.method, mode)
+  prefix = b""
+  if request.GET.get(b"random-js-prefix"):
+    value = random.randint(0, 1000000000)
+    prefix = isomorphic_encode("// Random value: {}\n\n".format(value))
+
+  path = os.path.join(os.path.dirname(isomorphic_encode(__file__)), file_name)
+  with open(path, 'rb') as f:
+    contents = f.read()
+
+  return prefix + contents
+
+def _handle_final_request(request, response):
+  if _should_treat_as_public_once(request):
+    headers = [("Content-Security-Policy", "treat-as-public-address"),]
+  else:
+    uuid = _get_preflight_uuid(request)
+    if uuid is not None and request.server.stash.take(uuid) is None:
+      return (405, [], "no preflight received for {}".format(uuid))
+
+    mode = request.GET.get(b"final-headers")
+    headers = _get_response_headers(request.method, mode)
 
   mime_type = request.GET.get(b"mime-type")
   if mime_type is not None:
     headers.append(("Content-Type", mime_type),)
 
-  body = request.GET.get(b"body") or "success"
-
+  body = _final_response_body(request)
   return (headers, body)
 
 def main(request, response):
@@ -83,4 +138,4 @@ def main(request, response):
       return _handle_final_request(request, response)
   except BaseException as e:
     
-    return ([("X-exception", str(e))], "")
+    return (500, [("X-exception", str(e))], "exception: {}".format(e))
