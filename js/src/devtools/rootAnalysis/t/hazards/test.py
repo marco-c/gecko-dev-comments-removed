@@ -29,7 +29,7 @@ assert "this" in hazmap
 
 assert hazmap["cell2"].function == "Cell* f()"
 print(len(set(haz.function for haz in hazards)))
-assert len(set(haz.function for haz in hazards)) == 4
+assert len(set(haz.function for haz in hazards)) == 6
 
 
 
@@ -39,8 +39,11 @@ assert hazmap["cell3"].GCFunction in (
     "void halfSuppressedFunction()",
     "void unsuppressedFunction()",
 )
-assert hazmap["<returnvalue>"].GCFunction.startswith(
-    "void GCInDestructor::~GCInDestructor()"
+returnval_hazards = set(
+    haz.function for haz in hazards if haz.variable == "<returnvalue>"
+)
+assert returnval_hazards == set(
+    ["Cell* f()", "Cell* refptr_test1()", "Cell* refptr_test3()"]
 )
 
 assert "container1" in hazmap
