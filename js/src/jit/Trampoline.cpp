@@ -97,6 +97,8 @@ void JitRuntime::generateProfilerExitFrameTailStub(MacroAssembler& masm,
   
   
   
+  
+  
 
   Register actReg = regs.takeAny();
   masm.loadJSContext(actReg);
