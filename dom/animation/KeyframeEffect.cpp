@@ -2029,13 +2029,20 @@ KeyframeEffect::MatchForCompositor KeyframeEffect::IsMatchForCompositor(
     return KeyframeEffect::MatchForCompositor::NoAndBlockThisProperty;
   }
 
-  
-  
-  
-  
-  
   if (mAnimation->UsingScrollTimeline()) {
-    return KeyframeEffect::MatchForCompositor::No;
+    const ScrollTimeline* scrollTimeline =
+        mAnimation->GetTimeline()->AsScrollTimeline();
+    
+    
+    
+    
+    
+    if (!scrollTimeline->APZIsActiveForSource() ||
+        !scrollTimeline->IsActive() ||
+        !scrollTimeline->ScrollingDirectionIsAvailable() ||
+        scrollTimeline->SourceScrollStyle() == StyleOverflow::Hidden) {
+      return KeyframeEffect::MatchForCompositor::No;
+    }
   }
 
   if (!HasEffectiveAnimationOfPropertySet(aPropertySet, aEffects)) {

@@ -161,6 +161,12 @@ class ScrollTimeline final : public AnimationTimeline {
   
   layers::ScrollDirection Axis() const;
 
+  StyleOverflow SourceScrollStyle() const;
+
+  bool APZIsActiveForSource() const;
+
+  bool ScrollingDirectionIsAvailable() const;
+
   static constexpr const TimingParams& GetTiming() { return sTiming; }
 
  protected:
