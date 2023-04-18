@@ -490,11 +490,15 @@ const Snapshots = new (class Snapshots {
 
 
 
+
+
+
   async query({
     limit = 100,
     includeTombstones = false,
     type = undefined,
     group = undefined,
+    includeHiddenInGroup = false,
     sortDescending = true,
     sortBy = "last_interaction_at",
   } = {}) {
@@ -517,9 +521,12 @@ const Snapshots = new (class Snapshots {
 
     if (group) {
       clauses.push("group_id = :group");
+      if (!includeHiddenInGroup) {
+        clauses.push("g.hidden = 0");
+      }
       bindings.group = group;
       joins.push(
-        "LEFT JOIN moz_places_metadata_groups_to_snapshots USING(place_id)"
+        "LEFT JOIN moz_places_metadata_groups_to_snapshots g USING(place_id)"
       );
     }
 

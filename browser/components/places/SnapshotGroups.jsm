@@ -168,19 +168,83 @@ const SnapshotGroups = new (class SnapshotGroups {
 
 
 
+
   async updateUrls(id, urls) {
     await PlacesUtils.withConnectionWrapper(
       "SnapshotsGroups.jsm:updateUrls",
       async db => {
-        
-        
-        
-        await db.executeCached(
-          `DELETE FROM moz_places_metadata_groups_to_snapshots WHERE group_id = :id`,
-          { id }
-        );
+        let params = { id };
+        let SQLInFragment = [...urls]
+          .map((url, i) => {
+            params[`url${i}`] = url;
+            return `hash(:url${i})`;
+          })
+          .join(",");
 
-        await this.#insertUrls(db, id, urls);
+        await db.executeTransaction(async () => {
+          
+          
+
+          
+          await db.execute(
+            `
+            CREATE TEMP TABLE __groups_to_snapshots__ AS
+            SELECT s.group_id, s.place_id, s.hidden FROM moz_places_metadata_groups_to_snapshots s
+            JOIN moz_places h
+            ON h.id = s.place_id
+            WHERE s.group_id = :id AND h.url_hash IN (${SQLInFragment})
+          `,
+            params
+          );
+
+          
+          await db.executeCached(
+            `DELETE FROM moz_places_metadata_groups_to_snapshots WHERE group_id = :id`,
+            { id }
+          );
+
+          await db.executeCached(
+            `
+            INSERT INTO moz_places_metadata_groups_to_snapshots(group_id, place_id, hidden)
+            SELECT group_id, place_id, hidden FROM __groups_to_snapshots__
+            `
+          );
+
+          
+          await this.#insertUrls(db, id, urls);
+
+          await db.executeCached(`DROP TABLE __groups_to_snapshots__`);
+        });
+      }
+    );
+
+    this.#prefetchScreenshotForGroup(id).catch(console.error);
+    Services.obs.notifyObservers(null, "places-snapshot-group-updated");
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  async setUrlHidden(id, url, hidden) {
+    await PlacesUtils.withConnectionWrapper(
+      "SnapshotsGroups.jsm:hideUrl",
+      async db => {
+        await db.executeCached(
+          `
+          UPDATE moz_places_metadata_groups_to_snapshots
+          SET hidden = :hidden
+          WHERE group_id = :id AND place_id = (
+            SELECT id FROM moz_places WHERE url_hash = hash(:url) AND url = :url
+          )`,
+          { id, url, hidden }
+        );
       }
     );
 
@@ -262,7 +326,7 @@ const SnapshotGroups = new (class SnapshotGroups {
     }
 
     if (!hidden) {
-      whereTerms.push("hidden = 0");
+      whereTerms.push("g.hidden = 0");
     }
 
     let where = whereTerms.length ? `WHERE ${whereTerms.join(" AND ")}` : "";
@@ -306,18 +370,28 @@ const SnapshotGroups = new (class SnapshotGroups {
 
 
 
-  async getUrls({ id }) {
-    let params = { group_id: id };
+
+
+
+
+  async getUrls({ id, hidden }) {
     let db = await PlacesUtils.promiseDBConnection();
+
+    let whereClause = "";
+    if (!hidden) {
+      whereClause = `AND s.hidden = 0`;
+    }
+
     let urlRows = await db.executeCached(
       `
       SELECT h.url
       FROM moz_places_metadata_groups_to_snapshots s
       JOIN moz_places h ON h.id = s.place_id
       WHERE s.group_id = :group_id
+      ${whereClause}
       ORDER BY h.last_visit_date DESC
     `,
-      params
+      { group_id: id }
     );
 
     return urlRows.map(row => row.getResultByName("url"));
@@ -343,10 +417,13 @@ const SnapshotGroups = new (class SnapshotGroups {
 
 
 
+
+
   async getSnapshots({
     id,
     startIndex = 0,
     count = 50,
+    hidden = false,
     sortDescending = true,
     sortBy = "last_interaction_at",
   } = {}) {
@@ -358,6 +435,7 @@ const SnapshotGroups = new (class SnapshotGroups {
     let snapshots = await Snapshots.query({
       limit: start + count,
       group: id,
+      includeHiddenInGroup: hidden,
       sortBy,
       sortDescending,
     });
@@ -390,7 +468,7 @@ const SnapshotGroups = new (class SnapshotGroups {
 
     await db.execute(
       `
-      INSERT INTO moz_places_metadata_groups_to_snapshots (group_id, place_id)
+      INSERT OR IGNORE INTO moz_places_metadata_groups_to_snapshots (group_id, place_id)
       SELECT :id, s.place_id
       FROM moz_places h
       JOIN moz_places_metadata_snapshots s

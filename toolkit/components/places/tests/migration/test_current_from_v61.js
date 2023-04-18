@@ -1,3 +1,8 @@
+
+
+
+"use strict";
+
 add_task(async function setup() {
   await setupPlacesDatabase("places_v61.sqlite");
   
@@ -30,6 +35,13 @@ add_task(async function title_field_in_snapshots() {
 add_task(async function hidden_field_in_snapshots_groups() {
   let db = await PlacesUtils.promiseDBConnection();
   await db.execute(`SELECT hidden FROM moz_places_metadata_snapshots_groups`);
+});
+
+add_task(async function hidden_field_in_snapshots_groups_to_snapshots() {
+  let db = await PlacesUtils.promiseDBConnection();
+  await db.execute(
+    `SELECT hidden FROM moz_places_metadata_groups_to_snapshots`
+  );
 });
 
 add_task(async function indexes_in_database() {
