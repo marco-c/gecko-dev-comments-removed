@@ -2,6 +2,10 @@
 
 
 
+"use strict";
+
+
+
 const sharedJestConfig = require(`${__dirname}/../shared/test-helpers/shared-jest.config`);
 
 const { resolve } = require("path");

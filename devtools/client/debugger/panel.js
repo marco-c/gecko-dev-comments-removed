@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 const { MultiLocalizationHelper } = require("devtools/shared/l10n");
 const {
   FluentL10n,
@@ -158,7 +160,7 @@ class DebuggerPanel {
 
   unHighlightDomElement() {
     if (!this._unhighlight) {
-      return;
+      return Promise.resolve();
     }
 
     return this._unhighlight();

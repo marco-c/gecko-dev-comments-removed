@@ -15,6 +15,11 @@
 
 
 
+
+
+
+
+
 function createDebuggerContext(toolbox) {
   const panel = toolbox.getPanel("jsdebugger");
   const win = panel.panelWin;
