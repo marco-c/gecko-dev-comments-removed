@@ -15,7 +15,6 @@
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/WindowGlobalParent.h"
-#include "mozilla/RandomNum.h"
 #include "mozilla/StaticPrefs_security.h"
 #include "mozilla/StaticPtr.h"
 #include "nsXULAppAPI.h"
@@ -458,39 +457,6 @@ static nsresult GetDownloadDirectory(nsIFile** _directory,
 
   NS_ASSERTION(dir, "Somehow we didn't get a download directory!");
   dir.forget(_directory);
-  return NS_OK;
-}
-
-
-
-
-nsresult GenerateRandomName(nsACString& result) {
-  
-  
-  
-  
-  
-
-  nsresult rv;
-  const uint32_t wantedFileNameLength = 8;
-  const uint32_t requiredBytesLength =
-      static_cast<uint32_t>((wantedFileNameLength + 1) / 4 * 3);
-
-  uint8_t buffer[requiredBytesLength];
-  if (!mozilla::GenerateRandomBytesFromOS(buffer, requiredBytesLength)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  nsAutoCString tempLeafName;
-  
-  
-  rv = Base64URLEncode(requiredBytesLength, buffer,
-                       Base64URLEncodePaddingPolicy::Omit, tempLeafName);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  tempLeafName.Truncate(wantedFileNameLength);
-
-  result.Assign(tempLeafName);
   return NS_OK;
 }
 
@@ -1590,9 +1556,36 @@ nsresult nsExternalAppHandler::SetUpTempFile(nsIChannel* aChannel) {
   
   
   
-  nsAutoCString tempLeafName;
-  rv = GenerateRandomName(tempLeafName);
+  
+  
+  
+  
+
+  const uint32_t wantedFileNameLength = 8;
+  const uint32_t requiredBytesLength =
+      static_cast<uint32_t>((wantedFileNameLength + 1) / 4 * 3);
+
+  nsCOMPtr<nsIRandomGenerator> rg =
+      do_GetService("@mozilla.org/security/random-generator;1", &rv);
   NS_ENSURE_SUCCESS(rv, rv);
+
+  uint8_t* buffer;
+  rv = rg->GenerateRandomBytes(requiredBytesLength, &buffer);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsAutoCString tempLeafName;
+  nsDependentCSubstring randomData(reinterpret_cast<const char*>(buffer),
+                                   requiredBytesLength);
+  rv = Base64Encode(randomData, tempLeafName);
+  free(buffer);
+  buffer = nullptr;
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  tempLeafName.Truncate(wantedFileNameLength);
+
+  
+  
+  tempLeafName.ReplaceChar(KNOWN_PATH_SEPARATORS FILE_ILLEGAL_CHARACTERS, '_');
 
   
   nsAutoCString ext;
@@ -2731,59 +2724,22 @@ nsresult nsExternalAppHandler::ContinueSave(nsIFile* aNewFileLocation) {
     nsCOMPtr<nsIFile> movedFile;
     mFinalFileDestination->Clone(getter_AddRefs(movedFile));
     if (movedFile) {
-      nsAutoCString randomChars;
-      rv = GenerateRandomName(randomChars);
-      if (NS_SUCCEEDED(rv)) {
-        
-        
-        nsAutoString leafName;
-        mFinalFileDestination->GetLeafName(leafName);
-        auto nameWithoutExtensionLength = leafName.FindChar('.');
-        nsAutoString extensions(u"");
-        if (nameWithoutExtensionLength == kNotFound) {
-          nameWithoutExtensionLength = leafName.Length();
-        } else {
-          extensions = Substring(leafName, nameWithoutExtensionLength);
-        }
-        leafName.Truncate(nameWithoutExtensionLength);
+      
+      nsAutoString name;
+      mFinalFileDestination->GetLeafName(name);
+      name.AppendLiteral(".part");
+      movedFile->SetLeafName(name);
 
-        nsAutoString suffix = u"."_ns + NS_ConvertASCIItoUTF16(randomChars) +
-                              extensions + u".part"_ns;
-#ifdef XP_WIN
-        
-        
-        
-        
-        
-        
-        
+      rv = mSaver->SetTarget(movedFile, true);
+      if (NS_FAILED(rv)) {
         nsAutoString path;
-        mFinalFileDestination->GetPath(path);
-        CheckedInt<uint16_t> fullPathLength = uint32_t(path.Length()) + 1 +
-                                              randomChars.Length() +
-                                              ArrayLength(".part");
-        if (!fullPathLength.isValid()) {
-          leafName.Truncate();
-        } else if (fullPathLength.value() > MAX_PATH) {
-          int32_t leafNameRemaining =
-              leafName.Length() - (fullPathLength.value() - MAX_PATH);
-          leafName.Truncate(std::max(leafNameRemaining, 0));
-        }
-#endif
-        leafName.Append(suffix);
-        movedFile->SetLeafName(leafName);
-
-        rv = mSaver->SetTarget(movedFile, true);
-        if (NS_FAILED(rv)) {
-          nsAutoString path;
-          mTempFile->GetPath(path);
-          SendStatusChange(kWriteError, rv, nullptr, path);
-          Cancel(rv);
-          return NS_OK;
-        }
-
-        mTempFile = movedFile;
+        mTempFile->GetPath(path);
+        SendStatusChange(kWriteError, rv, nullptr, path);
+        Cancel(rv);
+        return NS_OK;
       }
+
+      mTempFile = movedFile;
     }
   }
 
