@@ -49,7 +49,7 @@ MOZ_MTLOG_MODULE("transportbridge")
 static MtransportTestUtils* test_utils;
 
 namespace {
-class MainAsCurrent : public TaskQueueWrapper {
+class MainAsCurrent : public TaskQueueWrapper<DeletionPolicy::NonBlocking> {
  public:
   MainAsCurrent()
       : TaskQueueWrapper(
@@ -58,19 +58,6 @@ class MainAsCurrent : public TaskQueueWrapper {
             "MainAsCurrent"_ns),
         mSetter(this) {
     MOZ_RELEASE_ASSERT(NS_IsMainThread());
-  }
-
-  void Delete() override {
-    MOZ_RELEASE_ASSERT(NS_IsMainThread());
-    
-    
-    
-    
-    
-    NS_DispatchBackgroundTask(
-        NS_NewRunnableFunction("MainAsCurrent off-main deleter",
-                               [this] { TaskQueueWrapper::Delete(); }),
-        NS_DISPATCH_SYNC);
   }
 
   ~MainAsCurrent() = default;
@@ -469,7 +456,9 @@ webrtc::AudioState::Config CreateAudioStateConfig() {
 class MediaPipelineTest : public ::testing::Test {
  public:
   MediaPipelineTest()
-      : main_task_queue_(WrapUnique<TaskQueueWrapper>(new MainAsCurrent())),
+      : main_task_queue_(
+            WrapUnique<TaskQueueWrapper<DeletionPolicy::NonBlocking>>(
+                new MainAsCurrent())),
         shared_state_(MakeAndAddRef<SharedWebrtcState>(
             AbstractThread::MainThread(), CreateAudioStateConfig(),
             already_AddRefed(
@@ -591,7 +580,7 @@ class MediaPipelineTest : public ::testing::Test {
  protected:
   
   
-  UniquePtr<TaskQueueWrapper> main_task_queue_;
+  UniquePtr<TaskQueueWrapper<DeletionPolicy::NonBlocking>> main_task_queue_;
   const RefPtr<SharedWebrtcState> shared_state_;
   TestAgentSend p1_;
   TestAgentReceive p2_;
