@@ -309,7 +309,7 @@ let ShellServiceInternal = {
 
 
 
-  async doesAppNeedPin() {
+  async doesAppNeedPin(privateBrowsing = false) {
     if (
       Services.appinfo.processType !== Services.appinfo.PROCESS_TYPE_DEFAULT
     ) {
@@ -329,15 +329,26 @@ let ShellServiceInternal = {
       
       this.shellService
         .QueryInterface(Ci.nsIWindowsShellService)
-        .checkPinCurrentAppToTaskbar();
+        .checkPinCurrentAppToTaskbar(privateBrowsing);
+      let winTaskbar = Cc["@mozilla.org/windows-taskbar;1"].getService(
+        Ci.nsIWinTaskbar
+      );
 
       
-      return !(await this.shellService.isCurrentAppPinnedToTaskbarAsync());
+      return !(await this.shellService.isCurrentAppPinnedToTaskbarAsync(
+        privateBrowsing
+          ? winTaskbar.defaultPrivateGroupId
+          : winTaskbar.defaultGroupId
+      ));
     } catch (ex) {}
 
     
     try {
-      return !this.macDockSupport.isAppInDock;
+      
+      
+      const isInDock = this.macDockSupport.isAppInDock;
+      
+      return privateBrowsing ? false : !isInDock;
     } catch (ex) {}
     return false;
   },
@@ -345,12 +356,12 @@ let ShellServiceInternal = {
   
 
 
-  async pinToTaskbar() {
-    if (await this.doesAppNeedPin()) {
+  async pinToTaskbar(privateBrowsing = false) {
+    if (await this.doesAppNeedPin(privateBrowsing)) {
       try {
         if (AppConstants.platform == "win") {
-          this.shellService.pinCurrentAppToTaskbar();
-        } else {
+          this.shellService.pinCurrentAppToTaskbar(privateBrowsing);
+        } else if (AppConstants.platform == "macosx") {
           this.macDockSupport.ensureAppIsPinnedToDock();
         }
       } catch (ex) {
