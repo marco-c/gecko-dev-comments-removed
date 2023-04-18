@@ -367,11 +367,12 @@ bool RangeAnalysis::removeBetaNodes() {
     for (MDefinitionIterator iter(*i); iter;) {
       MDefinition* def = *iter++;
       if (def->isBeta()) {
-        MDefinition* op = def->getOperand(0);
-        JitSpew(JitSpew_Range, "  Removing beta node %u for %u", def->id(),
+        auto* beta = def->toBeta();
+        MDefinition* op = beta->input();
+        JitSpew(JitSpew_Range, "  Removing beta node %u for %u", beta->id(),
                 op->id());
-        def->justReplaceAllUsesWith(op);
-        block->discardDef(def);
+        beta->justReplaceAllUsesWith(op);
+        block->discard(beta);
       } else {
         
         
