@@ -1739,7 +1739,10 @@ BrowserGlue.prototype = {
     
     
     if (NimbusFeatures.tcpByDefault.isEnabled()) {
-      Services.telemetry.scalarSet("privacy.dfpi_rollout_enabledByDefault", 3);
+      Services.telemetry.scalarSet(
+        "privacy.dfpi_rollout_tcpByDefault_feature",
+        true
+      );
 
       
       
@@ -1750,6 +1753,10 @@ BrowserGlue.prototype = {
 
       return;
     }
+    Services.telemetry.scalarSet(
+      "privacy.dfpi_rollout_tcpByDefault_feature",
+      false
+    );
 
     
     
