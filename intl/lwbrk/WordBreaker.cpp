@@ -3,17 +3,17 @@
 
 
 
-#include "mozilla/intl/UnicodeProperties.h"
 #include "mozilla/intl/WordBreaker.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "nsComplexBreaker.h"
 #include "nsTArray.h"
+#include "nsUnicodeProperties.h"
 
-using mozilla::intl::Script;
-using mozilla::intl::UnicodeProperties;
 using mozilla::intl::WordBreaker;
 using mozilla::intl::WordRange;
 using mozilla::unicode::GetGenCategory;
+using mozilla::unicode::GetScriptCode;
+using mozilla::unicode::Script;
 
 #define IS_ASCII(c) (0 == (0xFF80 & (c)))
 #define ASCII_IS_ALPHA(c) \
@@ -40,7 +40,7 @@ using mozilla::unicode::GetGenCategory;
 
 
 static bool IsScriptioContinua(char16_t aChar) {
-  Script sc = UnicodeProperties::GetScriptCode(aChar);
+  Script sc = GetScriptCode(aChar);
   return sc == Script::THAI || sc == Script::MYANMAR || sc == Script::KHMER ||
          sc == Script::JAVANESE || sc == Script::BALINESE ||
          sc == Script::SUNDANESE || sc == Script::LAO;

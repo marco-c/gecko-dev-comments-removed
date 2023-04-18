@@ -43,10 +43,22 @@
 
 
 
-#ifndef intl_components_UnicodeScriptCodes_h_
-#define intl_components_UnicodeScriptCodes_h_
 
-namespace mozilla::intl {
+
+#ifndef NS_UNICODE_SCRIPT_CODES
+#define NS_UNICODE_SCRIPT_CODES
+
+
+struct nsCharProps2 {
+  
+  
+  
+  unsigned char mVertOrient:2;
+  unsigned char mIdType:2;
+};
+
+namespace mozilla {
+namespace unicode {
 enum class Script : int16_t {
   COMMON = 0,
   INHERITED = 1,
@@ -251,6 +263,12 @@ enum class Script : int16_t {
 
   INVALID = -1
 };
+
+
+
+
+static_assert(sizeof(Script) == sizeof(int16_t));
+} 
 } 
 
 #endif
