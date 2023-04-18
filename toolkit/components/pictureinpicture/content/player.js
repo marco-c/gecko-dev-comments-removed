@@ -141,6 +141,9 @@ let Player = {
 
     browser.setAttribute("nodefaultsrc", "true");
 
+    let playPauseBtn = document.getElementById("playpause");
+    playPauseBtn.focus({ preventFocusRing: true });
+
     
     
     
