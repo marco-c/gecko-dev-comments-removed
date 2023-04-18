@@ -8,6 +8,7 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/MIDIAccessManager.h"
 #include "mozilla/dom/MIDIOptionsBinding.h"
+#include "mozilla/BasePrincipal.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "nsIGlobalObject.h"
 #include "mozilla/Preferences.h"
@@ -106,7 +107,8 @@ MIDIPermissionRequest::Run() {
   }
 
   
-  if (!nsContentUtils::HasSitePerm(mPrincipal, kPermName)) {
+  if (!nsContentUtils::HasSitePerm(mPrincipal, kPermName) &&
+      !BasePrincipal::Cast(mPrincipal)->IsLoopbackHost()) {
     Cancel();
     return NS_OK;
   }
