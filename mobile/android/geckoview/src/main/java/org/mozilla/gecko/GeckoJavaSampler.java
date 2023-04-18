@@ -59,21 +59,24 @@ public class GeckoJavaSampler {
     return getProfilerTime();
   }
 
+  
+
+
+
+
   private static class Sample {
-    public Frame[] mFrames;
-    public double mTime;
-    public long mJavaTime; 
+    public final Frame[] mFrames;
+    public final double mTime;
+    public final long mJavaTime; 
 
     public Sample(final StackTraceElement[] aStack) {
       mFrames = new Frame[aStack.length];
-      if (GeckoThread.isStateAtLeast(GeckoThread.State.JNI_READY)) {
-        mTime = getProfilerTime();
-      }
-      if (mTime == 0.0d) {
-        
-        
-        mJavaTime = SystemClock.elapsedRealtime();
-      }
+      mTime = GeckoThread.isStateAtLeast(GeckoThread.State.JNI_READY) ? getProfilerTime() : 0;
+
+      
+      
+      mJavaTime = mTime == 0.0d ? SystemClock.elapsedRealtime() : 0;
+
       for (int i = 0; i < aStack.length; i++) {
         mFrames[aStack.length - 1 - i] =
             new Frame(aStack[i].getMethodName(), aStack[i].getClassName());
