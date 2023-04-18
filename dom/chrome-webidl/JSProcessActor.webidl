@@ -65,21 +65,7 @@ dictionary ProcessActorSidedOptions {
 
 
 
-
-
-
-  ByteString moduleURI;
-
-  
-
-
-
-
-
-
-
-
-  ByteString esModuleURI;
+  required ByteString moduleURI;
 };
 
 dictionary ProcessActorChildOptions : ProcessActorSidedOptions {
