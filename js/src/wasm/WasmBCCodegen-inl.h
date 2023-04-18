@@ -266,7 +266,8 @@ void BaseCompiler::branchTo(Assembler::Condition c, RegRef lhs, ImmWord rhs,
 
 
 void BaseCompiler::insertBreakablePoint(CallSiteDesc::Kind kind) {
-  fr.loadTlsPtr(WasmTlsReg);
+  
+  
   masm.nopPatchableToCall(CallSiteDesc(iter_.lastOpcodeOffset(), kind));
 }
 
