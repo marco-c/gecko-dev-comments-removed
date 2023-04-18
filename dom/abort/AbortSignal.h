@@ -25,9 +25,9 @@ namespace dom {
 
 
 
-class AbortSignal final : public DOMEventTargetHelper,
-                          public AbortSignalImpl,
-                          public AbortFollower {
+class AbortSignal : public DOMEventTargetHelper,
+                    public AbortSignalImpl,
+                    public AbortFollower {
  public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_INHERITED(AbortSignal,
@@ -57,7 +57,9 @@ class AbortSignal final : public DOMEventTargetHelper,
   
   void RunAbortAlgorithm() override;
 
- private:
+  virtual bool IsTaskSignal() const { return false; }
+
+ protected:
   ~AbortSignal();
 };
 
