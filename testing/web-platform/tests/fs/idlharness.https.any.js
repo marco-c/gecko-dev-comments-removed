@@ -1,0 +1,17 @@
+
+
+
+
+'use strict';
+
+idl_test(
+  ['fs'],
+  ['storage', 'streams'],
+  idl_array => {
+    idl_array.add_objects({
+      
+      
+      
+    });
+  }
+);

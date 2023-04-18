@@ -6,11 +6,13 @@
 
 idl_test(
   ['file-system-access'],
-  ['storage', 'permissions', 'streams', 'html', 'dom'],
+  ['fs', 'permissions', 'html', 'dom'],
   idl_array => {
-    idl_array.add_objects({
-      
-      
-    });
+    if (self.GLOBAL.isWindow()) {
+      idl_array.add_objects({
+        Window: ['window'],
+        
+      });
+    }
   }
 );
