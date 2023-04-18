@@ -11,6 +11,8 @@
 #include "nsAccUtils.h"
 #include "nsIAccessiblePivot.h"
 #include "Pivot.h"
+#include "RemoteAccessible.h"
+#include "TableCellAccessible.h"
 
 namespace mozilla::a11y {
 
@@ -257,12 +259,42 @@ TableAccessibleBase* CachedTableCellAccessible::Table() const {
 }
 
 uint32_t CachedTableCellAccessible::ColExtent() const {
-  
+  if (RemoteAccessible* remoteAcc = mAcc->AsRemote()) {
+    if (remoteAcc->mCachedFields) {
+      if (auto colSpan = remoteAcc->mCachedFields->GetAttribute<int32_t>(
+              nsGkAtoms::colspan)) {
+        return *colSpan;
+      }
+    }
+  } else if (LocalAccessible* localAcc = mAcc->AsLocal()) {
+    
+    
+    
+    
+    TableCellAccessible* cell = localAcc->AsTableCell();
+    MOZ_ASSERT(cell);
+    return cell->ColExtent();
+  }
   return 1;
 }
 
 uint32_t CachedTableCellAccessible::RowExtent() const {
-  
+  if (RemoteAccessible* remoteAcc = mAcc->AsRemote()) {
+    if (remoteAcc->mCachedFields) {
+      if (auto rowSpan = remoteAcc->mCachedFields->GetAttribute<int32_t>(
+              nsGkAtoms::rowspan)) {
+        return *rowSpan;
+      }
+    }
+  } else if (LocalAccessible* localAcc = mAcc->AsLocal()) {
+    
+    
+    
+    
+    TableCellAccessible* cell = localAcc->AsTableCell();
+    MOZ_ASSERT(cell);
+    return cell->RowExtent();
+  }
   return 1;
 }
 
