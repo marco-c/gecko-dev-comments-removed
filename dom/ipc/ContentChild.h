@@ -470,6 +470,8 @@ class ContentChild final : public PContentChild,
   mozilla::ipc::IPCResult RecvNetworkLinkTypeChange(const uint32_t& aType);
   uint32_t NetworkLinkType() const { return mNetworkLinkType; }
 
+  mozilla::ipc::IPCResult RecvSocketProcessCrashed();
+
   
   
   nsString& GetIndexedDBPath();
