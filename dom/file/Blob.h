@@ -81,7 +81,7 @@ class Blob : public nsSupportsWeakReference, public nsWrapperCache {
 
   void CreateInputStream(nsIInputStream** aStream, ErrorResult& aRv) const;
 
-  int64_t GetFileId();
+  int64_t GetFileId() const;
 
   
   
