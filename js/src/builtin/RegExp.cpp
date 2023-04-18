@@ -855,7 +855,9 @@ static bool regexp_source(JSContext* cx, unsigned argc, JS::Value* vp) {
         RootedAtom src(cx, unwrapped->getSource());
         MOZ_ASSERT(src);
         
-        cx->markAtom(src);
+        if (cx->zone() != unwrapped->zone()) {
+          cx->markAtom(src);
+        }
 
         
         JSString* escaped = EscapeRegExpPattern(cx, src);
