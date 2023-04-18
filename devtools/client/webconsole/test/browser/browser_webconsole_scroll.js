@@ -31,9 +31,7 @@ add_task(async function() {
   );
 
   info("Wait until all stacktraces are rendered");
-  await waitFor(() =>
-    findMessages(hud, "")?.every(m => m.textContent.length > 0)
-  );
+  await waitFor(() => allTraceMessagesAreExpanded(hud));
   ok(
     isScrolledToBottom(outputContainer),
     "The console is scrolled to the bottom"
@@ -50,9 +48,7 @@ add_task(async function() {
   );
 
   info("Wait until all stacktraces are rendered");
-  await waitFor(() =>
-    findMessages(hud, "")?.every(m => m.textContent.length > 0)
-  );
+  await waitFor(() => allTraceMessagesAreExpanded(hud));
 
   
   
@@ -353,5 +349,15 @@ function isScrolledToBottom(container) {
   return (
     container.scrollTop + container.clientHeight >=
     container.scrollHeight - lastNodeHeight / 2
+  );
+}
+
+
+
+
+function allTraceMessagesAreExpanded(hud) {
+  return (
+    findMessage(hud, "trace in C 100") &&
+    findMessages(hud, "trace in C").every(m => m.querySelector(".frames"))
   );
 }
