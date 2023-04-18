@@ -1235,31 +1235,6 @@ class HTMLEditor final : public EditorBase,
 
 
 
-
-
-
-  template <typename EditorDOMPointType>
-  EditorDOMPoint GetCurrentHardLineStartPoint(
-      const EditorDOMPointType& aPoint, EditSubAction aEditSubAction,
-      const Element& aEditingHost) const;
-
-  
-
-
-
-
-
-
-
-  template <typename EditorDOMPointType>
-  EditorDOMPoint GetCurrentHardLineEndPoint(const EditorDOMPointType& aPoint,
-                                            const Element& aEditingHost) const;
-
-  
-
-
-
-
   template <typename EditorDOMRangeType>
   already_AddRefed<nsRange> CreateRangeIncludingAdjuscentWhiteSpaces(
       const EditorDOMRangeType& aRange);

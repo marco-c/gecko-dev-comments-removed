@@ -579,6 +579,36 @@ class MOZ_STACK_CLASS AutoRangeArray final {
       EditorDOMPoint& aStartPoint, EditorDOMPoint& aEndPoint,
       const dom::Element& aEditingHost);
 
+  
+
+
+
+
+
+
+
+
+
+  static EditorDOMPoint
+  GetPointAtFirstContentOfLineOrParentBlockIfFirstContentOfBlock(
+      const EditorDOMPoint& aPointInLine, EditSubAction aEditSubAction,
+      const dom::Element& aEditingHost);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  static EditorDOMPoint GetPointAfterFollowingLineBreakOrAtFollowingBlock(
+      const EditorDOMPoint& aPoint, const dom::Element& aEditingHost);
+
  private:
   AutoTArray<mozilla::OwningNonNull<nsRange>, 8> mRanges;
   RefPtr<nsRange> mAnchorFocusRange;
