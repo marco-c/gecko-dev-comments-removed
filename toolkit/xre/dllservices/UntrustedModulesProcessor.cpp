@@ -12,6 +12,7 @@
 #include "mozilla/DebugOnly.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/Likely.h"
+#include "mozilla/net/SocketProcessChild.h"
 #include "mozilla/RDDParent.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/Services.h"
@@ -92,6 +93,7 @@ bool UntrustedModulesProcessor::IsSupportedProcessType() {
   switch (XRE_GetProcessType()) {
     case GeckoProcessType_Default:
     case GeckoProcessType_Content:
+    case GeckoProcessType_Socket:
       return Telemetry::CanRecordReleaseData();
     case GeckoProcessType_RDD:
       
@@ -538,6 +540,36 @@ void UntrustedModulesProcessor::BackgroundProcessModuleLoadQueueChildProcess() {
   MOZ_ASSERT(NS_SUCCEEDED(rv));
 }
 
+UntrustedModulesProcessor::LoadsVec
+UntrustedModulesProcessor::ExtractLoadingEventsToProcess(size_t aMaxLength) {
+  LoadsVec loadsToProcess;
+
+  MutexAutoLock lock(mUnprocessedMutex);
+  CancelScheduledProcessing(lock);
+
+  
+  
+  const size_t newDataLength =
+      mProcessedModuleLoads.mEvents.length() + mUnprocessedModuleLoads.length();
+  if (newDataLength <= aMaxLength) {
+    loadsToProcess.swap(mUnprocessedModuleLoads);
+  } else {
+    
+    
+    
+    const size_t capacity =
+        aMaxLength > mProcessedModuleLoads.mEvents.length()
+            ? (aMaxLength - mProcessedModuleLoads.mEvents.length())
+            : 0;
+    auto moveRangeBegin = mUnprocessedModuleLoads.begin();
+    auto moveRangeEnd = moveRangeBegin + capacity;
+    Unused << loadsToProcess.moveAppend(moveRangeBegin, moveRangeEnd);
+    mUnprocessedModuleLoads.erase(moveRangeBegin, moveRangeEnd);
+  }
+
+  return loadsToProcess;
+}
+
 
 
 
@@ -548,34 +580,8 @@ void UntrustedModulesProcessor::ProcessModuleLoadQueue() {
     return;
   }
 
-  Vector<glue::EnhancedModuleLoadInfo> loadsToProcess;
-
-  {  
-    MutexAutoLock lock(mUnprocessedMutex);
-    CancelScheduledProcessing(lock);
-
-    
-    
-    const size_t newDataLength = mProcessedModuleLoads.mEvents.length() +
-                                 mUnprocessedModuleLoads.length();
-    if (newDataLength <= UntrustedModulesData::kMaxEvents) {
-      loadsToProcess.swap(mUnprocessedModuleLoads);
-    } else {
-      
-      
-      
-      const size_t capacity = UntrustedModulesData::kMaxEvents >
-                                      mProcessedModuleLoads.mEvents.length()
-                                  ? (UntrustedModulesData::kMaxEvents -
-                                     mProcessedModuleLoads.mEvents.length())
-                                  : 0;
-      auto moveRangeBegin = mUnprocessedModuleLoads.begin();
-      auto moveRangeEnd = moveRangeBegin + capacity;
-      Unused << loadsToProcess.moveAppend(moveRangeBegin, moveRangeEnd);
-      mUnprocessedModuleLoads.erase(moveRangeBegin, moveRangeEnd);
-    }
-  }
-
+  LoadsVec loadsToProcess =
+      ExtractLoadingEventsToProcess(UntrustedModulesData::kMaxEvents);
   if (!mAllowProcessing || loadsToProcess.empty()) {
     return;
   }
@@ -695,6 +701,15 @@ UntrustedModulesProcessor::SendGetModulesTrust(ModulePaths&& aModules,
       return ::mozilla::SendGetModulesTrust(RDDParent::GetSingleton(),
                                             std::move(aModules), runNormal);
     }
+    case GeckoProcessType_Socket: {
+      printf_stderr(
+          "!!!! UntrustedModulesProcessor::SendGetModulesTrust for Socket - "
+          "%llu\n",
+          aModules.mModuleNtPaths.as<ModulePaths::SetType>().Count());
+      return ::mozilla::SendGetModulesTrust(
+          net::SocketProcessChild::GetSingleton(), std::move(aModules),
+          runNormal);
+    }
     default: {
       MOZ_ASSERT_UNREACHABLE("Unsupported process type");
       return GetModulesTrustIpcPromise::CreateAndReject(
@@ -723,14 +738,8 @@ UntrustedModulesProcessor::ProcessModuleLoadQueueChildProcess(
   AssertRunningOnLazyIdleThread();
   MOZ_ASSERT(!XRE_IsParentProcess());
 
-  Vector<glue::EnhancedModuleLoadInfo> loadsToProcess;
-
-  {  
-    MutexAutoLock lock(mUnprocessedMutex);
-    CancelScheduledProcessing(lock);
-    loadsToProcess.swap(mUnprocessedModuleLoads);
-  }
-
+  LoadsVec loadsToProcess =
+      ExtractLoadingEventsToProcess(UntrustedModulesData::kMaxEvents);
   if (loadsToProcess.empty()) {
     
     return GetModulesTrustPromise::CreateAndResolve(Nothing(), __func__);
