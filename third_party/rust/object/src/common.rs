@@ -1,5 +1,98 @@
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(missing_docs)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[non_exhaustive]
+pub enum Architecture {
+    Unknown,
+    Aarch64,
+    Arm,
+    Avr,
+    Bpf,
+    I386,
+    X86_64,
+    #[allow(non_camel_case_types)]
+    X86_64_X32,
+    Hexagon,
+    LoongArch64,
+    Mips,
+    Mips64,
+    Msp430,
+    PowerPc,
+    PowerPc64,
+    Riscv32,
+    Riscv64,
+    S390x,
+    Sparc64,
+    Wasm32,
+}
+
+impl Architecture {
+    
+    
+    
+    pub fn address_size(self) -> Option<AddressSize> {
+        match self {
+            Architecture::Unknown => None,
+            Architecture::Aarch64 => Some(AddressSize::U64),
+            Architecture::Arm => Some(AddressSize::U32),
+            Architecture::Avr => Some(AddressSize::U8),
+            Architecture::Bpf => Some(AddressSize::U64),
+            Architecture::I386 => Some(AddressSize::U32),
+            Architecture::X86_64 => Some(AddressSize::U64),
+            Architecture::X86_64_X32 => Some(AddressSize::U32),
+            Architecture::Hexagon => Some(AddressSize::U32),
+            Architecture::LoongArch64 => Some(AddressSize::U64),
+            Architecture::Mips => Some(AddressSize::U32),
+            Architecture::Mips64 => Some(AddressSize::U64),
+            Architecture::Msp430 => Some(AddressSize::U16),
+            Architecture::PowerPc => Some(AddressSize::U32),
+            Architecture::PowerPc64 => Some(AddressSize::U64),
+            Architecture::Riscv32 => Some(AddressSize::U32),
+            Architecture::Riscv64 => Some(AddressSize::U64),
+            Architecture::S390x => Some(AddressSize::U64),
+            Architecture::Sparc64 => Some(AddressSize::U64),
+            Architecture::Wasm32 => Some(AddressSize::U32),
+        }
+    }
+}
+
+
+
+
+#[allow(missing_docs)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[non_exhaustive]
+#[repr(u8)]
+pub enum AddressSize {
+    U8 = 1,
+    U16 = 2,
+    U32 = 4,
+    U64 = 8,
+}
+
+impl AddressSize {
+    
+    #[inline]
+    pub fn bytes(self) -> u8 {
+        self as u8
+    }
+}
+
+
+#[allow(missing_docs)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[non_exhaustive]
+pub enum BinaryFormat {
+    Coff,
+    Elf,
+    MachO,
+    Pe,
+    Wasm,
+}
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[non_exhaustive]
 pub enum SectionKind {
     
     Unknown,
@@ -36,6 +129,10 @@ pub enum SectionKind {
     
     
     
+    Common,
+    
+    
+    
     
     
     Tls,
@@ -68,13 +165,65 @@ pub enum SectionKind {
     
     Linker,
     
+    Note,
+    
     
     
     Metadata,
+    
+    
+    
+    
+    Elf(u32),
+}
+
+impl SectionKind {
+    
+    pub fn is_bss(self) -> bool {
+        self == SectionKind::UninitializedData
+            || self == SectionKind::UninitializedTls
+            || self == SectionKind::Common
+    }
 }
 
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[non_exhaustive]
+pub enum ComdatKind {
+    
+    Unknown,
+    
+    
+    
+    
+    
+    Any,
+    
+    
+    
+    NoDuplicates,
+    
+    
+    
+    SameSize,
+    
+    
+    
+    ExactMatch,
+    
+    
+    
+    Largest,
+    
+    Newest,
+}
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[non_exhaustive]
 pub enum SymbolKind {
     
     Unknown,
@@ -91,13 +240,11 @@ pub enum SymbolKind {
     
     Label,
     
-    Common,
-    
     Tls,
 }
 
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum SymbolScope {
     
     Unknown,
@@ -124,7 +271,8 @@ pub enum SymbolScope {
 
 
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[non_exhaustive]
 pub enum RelocationKind {
     
     Absolute,
@@ -163,7 +311,8 @@ pub enum RelocationKind {
 
 
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[non_exhaustive]
 pub enum RelocationEncoding {
     
     Generic,
@@ -184,4 +333,114 @@ pub enum RelocationEncoding {
     
     
     X86Branch,
+
+    
+    
+    
+    S390xDbl,
+
+    
+    
+    
+    AArch64Call,
+}
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[non_exhaustive]
+pub enum FileFlags {
+    
+    None,
+    
+    Elf {
+        
+        e_flags: u32,
+    },
+    
+    MachO {
+        
+        flags: u32,
+    },
+    
+    Coff {
+        
+        characteristics: u16,
+    },
+}
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[non_exhaustive]
+pub enum SegmentFlags {
+    
+    None,
+    
+    Elf {
+        
+        p_flags: u32,
+    },
+    
+    MachO {
+        
+        flags: u32,
+        
+        maxprot: u32,
+        
+        initprot: u32,
+    },
+    
+    Coff {
+        
+        characteristics: u32,
+    },
+}
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[non_exhaustive]
+pub enum SectionFlags {
+    
+    None,
+    
+    Elf {
+        
+        sh_flags: u64,
+    },
+    
+    MachO {
+        
+        flags: u32,
+    },
+    
+    Coff {
+        
+        characteristics: u32,
+    },
+}
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[non_exhaustive]
+pub enum SymbolFlags<Section> {
+    
+    None,
+    
+    Elf {
+        
+        st_info: u8,
+        
+        st_other: u8,
+    },
+    
+    MachO {
+        
+        n_desc: u16,
+    },
+    
+    CoffSection {
+        
+        selection: u8,
+        
+        associative_section: Option<Section>,
+    },
 }

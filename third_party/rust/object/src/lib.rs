@@ -5,41 +5,108 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #![deny(missing_docs)]
 #![deny(missing_debug_implementations)]
 #![no_std]
-#![cfg_attr(not(feature = "std"), feature(alloc))]
+
+#![allow(clippy::collapsible_if)]
+#![allow(clippy::comparison_chain)]
+#![allow(clippy::match_like_matches_macro)]
+#![allow(clippy::single_match)]
+#![allow(clippy::type_complexity)]
+
+#![allow(clippy::should_implement_trait)]
+
+#![allow(clippy::result_unit_err)]
+
+#![allow(clippy::transmute_ptr_to_ptr)]
+
+#![allow(clippy::collapsible_else_if)]
+
+#[cfg(feature = "cargo-all")]
+compile_error!("'--all-features' is not supported; use '--features all' instead");
+
+#[cfg(any(feature = "read_core", feature = "write_core"))]
+#[allow(unused_imports)]
+#[macro_use]
+extern crate alloc;
 
 #[cfg(feature = "std")]
+#[allow(unused_imports)]
 #[macro_use]
 extern crate std;
-
-#[cfg(all(not(feature = "std"), feature = "compression"))]
-#[macro_use]
-extern crate alloc;
-#[cfg(all(not(feature = "std"), not(feature = "compression")))]
-extern crate alloc;
-#[cfg(not(feature = "std"))]
-extern crate core as std;
-
-#[cfg(feature = "std")]
-mod alloc {
-    pub use std::borrow;
-    pub use std::fmt;
-    pub use std::vec;
-}
-
-
-pub use target_lexicon;
-pub use uuid;
 
 mod common;
 pub use common::*;
 
-#[cfg(feature = "read")]
+#[macro_use]
+pub mod endian;
+pub use endian::*;
+
+#[macro_use]
+pub mod pod;
+pub use pod::*;
+
+#[cfg(feature = "read_core")]
 pub mod read;
-#[cfg(feature = "read")]
+#[cfg(feature = "read_core")]
 pub use read::*;
 
-#[cfg(feature = "write")]
+#[cfg(feature = "write_core")]
 pub mod write;
+
+#[cfg(feature = "archive")]
+pub mod archive;
+#[cfg(feature = "elf")]
+pub mod elf;
+#[cfg(feature = "macho")]
+pub mod macho;
+#[cfg(any(feature = "coff", feature = "pe"))]
+pub mod pe;
