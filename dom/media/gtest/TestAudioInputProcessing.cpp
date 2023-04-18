@@ -201,8 +201,6 @@ TEST(TestAudioInputProcessing, InputDataCapture)
     EXPECT_EQ(aip->NumBufferedFrames(graph), bufferedFrames);
   }
 
-  
-
   graph->Destroy();
 }
 
