@@ -39,8 +39,10 @@ var EXPORTED_SYMBOLS = ["DownloadUtils"];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
+const lazy = {};
+
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "PluralForm",
   "resource://gre/modules/PluralForm.jsm"
 );
@@ -86,7 +88,7 @@ var gStr = {
 };
 
 
-Object.defineProperty(this, "gBundle", {
+Object.defineProperty(lazy, "gBundle", {
   configurable: true,
   enumerable: true,
   get() {
@@ -135,16 +137,16 @@ var DownloadUtils = {
       
       let params = [
         transfer,
-        gBundle.GetStringFromName(gStr.infiniteRate),
+        lazy.gBundle.GetStringFromName(gStr.infiniteRate),
         timeLeft,
       ];
-      status = gBundle.formatStringFromName(
+      status = lazy.gBundle.formatStringFromName(
         gStr.statusFormatInfiniteRate,
         params
       );
     } else {
       let params = [transfer, rate, unit, timeLeft];
-      status = gBundle.formatStringFromName(gStr.statusFormat, params);
+      status = lazy.gBundle.formatStringFromName(gStr.statusFormat, params);
     }
     return [status, newLast];
   },
@@ -179,7 +181,10 @@ var DownloadUtils = {
     );
 
     let params = [transfer, timeLeft];
-    let status = gBundle.formatStringFromName(gStr.statusFormatNoRate, params);
+    let status = lazy.gBundle.formatStringFromName(
+      gStr.statusFormatNoRate,
+      params
+    );
     return [status, newLast];
   },
 
@@ -254,7 +259,7 @@ var DownloadUtils = {
       values = [progress, progressUnits, total, totalUnits];
     }
 
-    return gBundle.formatStringFromName(name, values);
+    return lazy.gBundle.formatStringFromName(name, values);
   },
 
   
@@ -276,7 +281,7 @@ var DownloadUtils = {
     }
 
     if (aSeconds < 0) {
-      return [gBundle.GetStringFromName(gStr.timeUnknown), aLastSec];
+      return [lazy.gBundle.GetStringFromName(gStr.timeUnknown), aLastSec];
     }
 
     
@@ -312,18 +317,18 @@ var DownloadUtils = {
     let timeLeft;
     if (aSeconds < 4) {
       
-      timeLeft = gBundle.GetStringFromName(gStr.timeFewSeconds);
+      timeLeft = lazy.gBundle.GetStringFromName(gStr.timeFewSeconds);
     } else {
       
       let [time1, unit1, time2, unit2] = DownloadUtils.convertTimeUnits(
         aSeconds
       );
 
-      let pair1 = gBundle.formatStringFromName(gStr.timePair, [
+      let pair1 = lazy.gBundle.formatStringFromName(gStr.timePair, [
         nf.format(time1),
         unit1,
       ]);
-      let pair2 = gBundle.formatStringFromName(gStr.timePair, [
+      let pair2 = lazy.gBundle.formatStringFromName(gStr.timePair, [
         nf.format(time2),
         unit2,
       ]);
@@ -331,10 +336,12 @@ var DownloadUtils = {
       
       
       if ((aSeconds < 3600 && time1 >= 4) || time2 == 0) {
-        timeLeft = gBundle.formatStringFromName(gStr.timeLeftSingle, [pair1]);
+        timeLeft = lazy.gBundle.formatStringFromName(gStr.timeLeftSingle, [
+          pair1,
+        ]);
       } else {
         
-        timeLeft = gBundle.formatStringFromName(gStr.timeLeftDouble, [
+        timeLeft = lazy.gBundle.formatStringFromName(gStr.timeLeftDouble, [
           pair1,
           pair2,
         ]);
@@ -379,7 +386,7 @@ var DownloadUtils = {
       dateTimeCompact = dts.format(aDate);
     } else if (today - aDate < MS_PER_DAY) {
       
-      dateTimeCompact = gBundle.GetStringFromName(gStr.yesterday);
+      dateTimeCompact = lazy.gBundle.GetStringFromName(gStr.yesterday);
     } else if (today - aDate < 6 * MS_PER_DAY) {
       
       dateTimeCompact = aDate.toLocaleDateString(undefined, {
@@ -466,11 +473,13 @@ var DownloadUtils = {
     
     if (uri.scheme == "file") {
       
-      displayHost = gBundle.GetStringFromName(gStr.doneFileScheme);
+      displayHost = lazy.gBundle.GetStringFromName(gStr.doneFileScheme);
       fullHost = displayHost;
     } else if (!displayHost.length) {
       
-      displayHost = gBundle.formatStringFromName(gStr.doneScheme, [uri.scheme]);
+      displayHost = lazy.gBundle.formatStringFromName(gStr.doneScheme, [
+        uri.scheme,
+      ]);
       fullHost = displayHost;
     } else if (uri.port != -1) {
       
@@ -512,7 +521,7 @@ var DownloadUtils = {
       aBytes = getLocaleNumberFormat(fractionDigits).format(aBytes);
     }
 
-    return [aBytes, gBundle.GetStringFromName(gStr.units[unitIndex])];
+    return [aBytes, lazy.gBundle.GetStringFromName(gStr.units[unitIndex])];
   },
 
   
@@ -628,9 +637,9 @@ function convertTimeUnitsUnits(aTime, aIndex) {
     return "";
   }
 
-  return PluralForm.get(
+  return lazy.PluralForm.get(
     aTime,
-    gBundle.GetStringFromName(gStr.timeUnits[aIndex])
+    lazy.gBundle.GetStringFromName(gStr.timeUnits[aIndex])
   );
 }
 
