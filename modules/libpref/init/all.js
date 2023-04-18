@@ -4447,10 +4447,6 @@ pref("services.common.log.logger.tokenserverclient", "Debug");
 
   
   
-  pref("remote.force-local", true);
-
-  
-  
   
   
   
