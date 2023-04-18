@@ -595,6 +595,34 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
   getActiveEventBreakpoints() {
     return Array.from(this._activeEventBreakpoints);
   },
+
+  
+
+
+
+
+  addEventBreakpoints(ids) {
+    this.setActiveEventBreakpoints(
+      this.getActiveEventBreakpoints().concat(ids)
+    );
+  },
+
+  
+
+
+
+
+  removeEventBreakpoints(ids) {
+    this.setActiveEventBreakpoints(
+      this.getActiveEventBreakpoints().filter(eventBp => !ids.includes(eventBp))
+    );
+  },
+
+  
+
+
+
+
   setActiveEventBreakpoints(ids) {
     this._activeEventBreakpoints = new Set(ids);
 
