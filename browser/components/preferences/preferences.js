@@ -130,6 +130,7 @@ function init_all() {
   
   
   Preferences.queueUpdateOfAllElements();
+  Services.telemetry.setEventRecordingEnabled("aboutpreferences", true);
 
   register_module("paneGeneral", gMainPane);
   register_module("paneHome", gHomePane);
@@ -225,16 +226,19 @@ function telemetryBucketForCategory(category) {
 }
 
 function onHashChange() {
-  gotoPref();
+  gotoPref(null, "hash");
 }
 
-async function gotoPref(aCategory) {
+async function gotoPref(
+  aCategory,
+  aShowReason = aCategory ? "click" : "initial"
+) {
   let categories = document.getElementById("categories");
   const kDefaultCategoryInternalName = "paneGeneral";
   const kDefaultCategory = "general";
   let hash = document.location.hash;
-
   let category = aCategory || hash.substr(1) || kDefaultCategoryInternalName;
+
   let breakIndex = category.indexOf("-");
   
   
@@ -320,6 +324,14 @@ async function gotoPref(aCategory) {
   mainContent.scrollTop = 0;
 
   spotlight(subcategory, category);
+
+  
+  Services.telemetry.recordEvent(
+    "aboutpreferences",
+    "show",
+    aShowReason,
+    category
+  );
 }
 
 function search(aQuery, aAttribute) {
