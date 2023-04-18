@@ -283,6 +283,9 @@ class Promise : public SupportsWeakPtr {
 
   PromiseState State() const;
 
+  static already_AddRefed<Promise> CreateResolvedWithUndefined(
+      nsIGlobalObject* aGlobal, ErrorResult& aRv);
+
  protected:
   
   

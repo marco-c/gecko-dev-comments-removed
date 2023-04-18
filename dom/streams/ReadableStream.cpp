@@ -640,16 +640,6 @@ NS_IMPL_RELEASE_INHERITED(ReadableStreamDefaultTeeReadRequest, ReadRequest)
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(ReadableStreamDefaultTeeReadRequest)
 NS_INTERFACE_MAP_END_INHERITING(ReadRequest)
 
-static already_AddRefed<Promise> PromiseResolvedWithUndefined(
-    nsIGlobalObject* global, ErrorResult& aRv) {
-  RefPtr<Promise> returnPromise = Promise::Create(global, aRv);
-  if (aRv.Failed()) {
-    return nullptr;
-  }
-  returnPromise->MaybeResolveWithUndefined();
-  return returnPromise.forget();
-}
-
 
 
 
@@ -674,7 +664,8 @@ class ReadableStreamDefaultTeePullAlgorithm final
 
     
     if (mTeeState->Reading()) {
-      return PromiseResolvedWithUndefined(aController.GetParentObject(), aRv);
+      return Promise::CreateResolvedWithUndefined(aController.GetParentObject(),
+                                                  aRv);
     }
 
     
@@ -692,7 +683,8 @@ class ReadableStreamDefaultTeePullAlgorithm final
     }
 
     
-    return PromiseResolvedWithUndefined(aController.GetParentObject(), aRv);
+    return Promise::CreateResolvedWithUndefined(aController.GetParentObject(),
+                                                aRv);
   }
 
  protected:
