@@ -867,7 +867,9 @@ nsUnknownContentTypeDialog.prototype = {
       
       if (isSelected) {
         openHandler.selectedIndex = 1;
-        modeGroup.selectedItem = this.dialogElement("save");
+        if (this.dialogElement("open").selected) {
+          modeGroup.selectedItem = this.dialogElement("save");
+        }
       }
     }
 
