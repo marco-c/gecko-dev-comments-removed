@@ -1,9 +1,6 @@
 
 "use strict";
 
-const { AppConstants } = ChromeUtils.import(
-  "resource://gre/modules/AppConstants.jsm"
-);
 const { setTimeout } = ChromeUtils.import("resource://gre/modules/Timer.jsm");
 
 const env = Cc["@mozilla.org/process/environment;1"].getService(
