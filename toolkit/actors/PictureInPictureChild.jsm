@@ -101,6 +101,39 @@ XPCOMUtils.defineLazyGetter(this, "gSiteOverrides", () => {
   return PictureInPictureToggleChild.getSiteOverrides();
 });
 
+
+
+
+
+
+
+
+
+
+
+
+function applyWrapper(pipChild, originatingVideo) {
+  let originatingDoc = originatingVideo.ownerDocument;
+  let originatingDocumentURI = originatingDoc.documentURI;
+
+  let overrides = gSiteOverrides.find(([matcher]) => {
+    return matcher.matches(originatingDocumentURI);
+  });
+
+  
+  
+  
+  let wrapperPath =
+    AppConstants.NIGHTLY_BUILD && overrides
+      ? overrides[1].videoWrapperScriptPath
+      : null;
+  return new PictureInPictureChildVideoWrapper(
+    wrapperPath,
+    originatingVideo,
+    pipChild
+  );
+}
+
 class PictureInPictureLauncherChild extends JSWindowActorChild {
   handleEvent(event) {
     switch (event.type) {
@@ -931,13 +964,19 @@ class PictureInPictureToggleChild extends JSWindowActorChild {
         "1.0"
       );
 
+      if (!this.videoWrapper) {
+        this.videoWrapper = applyWrapper(this, video);
+      }
+
       
       for (let [override, { policy, visibilityThreshold }] of siteOverrides) {
         if (
           (policy || visibilityThreshold) &&
           override.matches(this.document.documentURI)
         ) {
-          state.togglePolicy = policy || TOGGLE_POLICIES.DEFAULT;
+          state.togglePolicy = this.videoWrapper?.shouldHideToggle(video)
+            ? TOGGLE_POLICIES.HIDDEN
+            : policy || TOGGLE_POLICIES.DEFAULT;
           state.toggleVisibilityThreshold =
             visibilityThreshold || visibilityThresholdPref;
           break;
@@ -1791,38 +1830,6 @@ class PictureInPictureChild extends JSWindowActorChild {
 
 
 
-  applyWrapper(originatingVideo) {
-    let originatingDoc = originatingVideo.ownerDocument;
-    let originatingDocumentURI = originatingDoc.documentURI;
-
-    let overrides = gSiteOverrides.find(([matcher]) => {
-      return matcher.matches(originatingDocumentURI);
-    });
-
-    
-    
-    
-    let wrapperPath =
-      AppConstants.NIGHTLY_BUILD && overrides
-        ? overrides[1].videoWrapperScriptPath
-        : null;
-    this.videoWrapper = new PictureInPictureChildVideoWrapper(
-      wrapperPath,
-      originatingVideo,
-      this
-    );
-  }
-
-  
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1841,7 +1848,7 @@ class PictureInPictureChild extends JSWindowActorChild {
       return;
     }
 
-    this.applyWrapper(originatingVideo);
+    this.videoWrapper = applyWrapper(this, originatingVideo);
 
     let loadPromise = new Promise(resolve => {
       this.contentWindow.addEventListener("load", resolve, {
@@ -2415,6 +2422,15 @@ class PictureInPictureChildVideoWrapper {
       ],
       fallback: () => {},
       validateRetVal: retVal => retVal == null,
+    });
+  }
+
+  shouldHideToggle(video) {
+    return this.#callWrapperMethod({
+      name: "shouldHideToggle",
+      args: [video],
+      fallback: () => false,
+      validateRetVal: retVal => this.#isBoolean(retVal),
     });
   }
 }
