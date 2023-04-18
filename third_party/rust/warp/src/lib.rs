@@ -1,6 +1,7 @@
-#![doc(html_root_url = "https://docs.rs/warp/0.2.3")]
+#![doc(html_root_url = "https://docs.rs/warp/0.3.2")]
 #![deny(missing_docs)]
 #![deny(missing_debug_implementations)]
+#![deny(rust_2018_idioms)]
 #![cfg_attr(test, deny(warnings))]
 
 
@@ -132,6 +133,7 @@ pub use self::filters::{
     header,
     
     header::header,
+    host,
     log,
     
     log::log,
@@ -143,8 +145,12 @@ pub use self::filters::{
     
     query::query,
     sse,
+    trace,
+    
+    trace::trace,
 };
 
+pub use self::filter::wrap_fn;
 #[cfg(feature = "websocket")]
 #[doc(hidden)]
 pub use self::filters::ws::ws;
@@ -167,7 +173,7 @@ pub use hyper;
 #[doc(hidden)]
 pub use bytes::Buf;
 #[doc(hidden)]
-pub use futures::{Future, Sink, Stream};
+pub use futures_util::{Future, Sink, Stream};
 #[doc(hidden)]
 
 pub(crate) type Request = http::Request<hyper::Body>;

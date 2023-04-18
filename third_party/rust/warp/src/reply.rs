@@ -105,7 +105,7 @@ where
 {
     Json {
         inner: serde_json::to_vec(val).map_err(|err| {
-            log::error!("reply::json error: {}", err);
+            tracing::error!("reply::json error: {}", err);
         }),
     }
 }
@@ -135,7 +135,7 @@ impl Reply for Json {
 pub(crate) struct ReplyJsonError;
 
 impl fmt::Display for ReplyJsonError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("warp::reply::json() failed")
     }
 }
@@ -165,7 +165,7 @@ impl StdError for ReplyJsonError {}
 
 
 
-pub fn html<T>(body: T) -> impl Reply
+pub fn html<T>(body: T) -> Html<T>
 where
     Body: From<T>,
     T: Send,
@@ -173,8 +173,9 @@ where
     Html { body }
 }
 
+
 #[allow(missing_debug_implementations)]
-struct Html<T> {
+pub struct Html<T> {
     body: T,
 }
 
@@ -357,12 +358,14 @@ where
         Ok(name) => match <HeaderValue as TryFrom<V>>::try_from(value) {
             Ok(value) => Some((name, value)),
             Err(err) => {
-                log::error!("with_header value error: {}", err.into());
+                let err = err.into();
+                tracing::error!("with_header value error: {}", err);
                 None
             }
         },
         Err(err) => {
-            log::error!("with_header name error: {}", err.into());
+            let err = err.into();
+            tracing::error!("with_header name error: {}", err);
             None
         }
     };
@@ -417,7 +420,7 @@ where
         match self {
             Ok(t) => t.into_response(),
             Err(e) => {
-                log::error!("reply error: {:?}", e);
+                tracing::error!("reply error: {:?}", e);
                 StatusCode::INTERNAL_SERVER_ERROR.into_response()
             }
         }

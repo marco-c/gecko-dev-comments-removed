@@ -107,7 +107,7 @@ impl PingPong {
                         &Ping::SHUTDOWN,
                         "pending_ping should be for shutdown",
                     );
-                    log::trace!("recv PING SHUTDOWN ack");
+                    tracing::trace!("recv PING SHUTDOWN ack");
                     return ReceivedPing::Shutdown;
                 }
 
@@ -117,7 +117,7 @@ impl PingPong {
 
             if let Some(ref users) = self.user_pings {
                 if ping.payload() == &Ping::USER && users.receive_pong() {
-                    log::trace!("recv PING USER ack");
+                    tracing::trace!("recv PING USER ack");
                     return ReceivedPing::Unknown;
                 }
             }
@@ -125,7 +125,7 @@ impl PingPong {
             
             
             
-            log::warn!("recv PING ack that we never sent: {:?}", ping);
+            tracing::warn!("recv PING ack that we never sent: {:?}", ping);
             ReceivedPing::Unknown
         } else {
             
@@ -211,11 +211,16 @@ impl ReceivedPing {
 
 impl UserPings {
     pub(crate) fn send_ping(&self) -> Result<(), Option<proto::Error>> {
-        let prev = self.0.state.compare_and_swap(
-            USER_STATE_EMPTY,        
-            USER_STATE_PENDING_PING, 
-            Ordering::AcqRel,
-        );
+        let prev = self
+            .0
+            .state
+            .compare_exchange(
+                USER_STATE_EMPTY,        
+                USER_STATE_PENDING_PING, 
+                Ordering::AcqRel,
+                Ordering::Acquire,
+            )
+            .unwrap_or_else(|v| v);
 
         match prev {
             USER_STATE_EMPTY => {
@@ -234,11 +239,16 @@ impl UserPings {
         
         
         self.0.pong_task.register(cx.waker());
-        let prev = self.0.state.compare_and_swap(
-            USER_STATE_RECEIVED_PONG, 
-            USER_STATE_EMPTY,         
-            Ordering::AcqRel,
-        );
+        let prev = self
+            .0
+            .state
+            .compare_exchange(
+                USER_STATE_RECEIVED_PONG, 
+                USER_STATE_EMPTY,         
+                Ordering::AcqRel,
+                Ordering::Acquire,
+            )
+            .unwrap_or_else(|v| v);
 
         match prev {
             USER_STATE_RECEIVED_PONG => Poll::Ready(Ok(())),
@@ -252,11 +262,16 @@ impl UserPings {
 
 impl UserPingsRx {
     fn receive_pong(&self) -> bool {
-        let prev = self.0.state.compare_and_swap(
-            USER_STATE_PENDING_PONG,  
-            USER_STATE_RECEIVED_PONG, 
-            Ordering::AcqRel,
-        );
+        let prev = self
+            .0
+            .state
+            .compare_exchange(
+                USER_STATE_PENDING_PONG,  
+                USER_STATE_RECEIVED_PONG, 
+                Ordering::AcqRel,
+                Ordering::Acquire,
+            )
+            .unwrap_or_else(|v| v);
 
         if prev == USER_STATE_PENDING_PONG {
             self.0.pong_task.wake();

@@ -1,10 +1,8 @@
 use pin_project::pin_project;
 
-
-
-
 #[pin_project]
-struct Struct {
+struct S {
+    
     #[cfg(any())]
     #[pin]
     f: u8,

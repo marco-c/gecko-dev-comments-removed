@@ -7,6 +7,43 @@ use super::HttpBody;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 pub async fn to_bytes<T>(body: T) -> Result<Bytes, T::Error>
 where
     T: HttpBody,
@@ -23,7 +60,7 @@ where
     let second = if let Some(buf) = body.data().await {
         buf?
     } else {
-        return Ok(first.to_bytes());
+        return Ok(first.copy_to_bytes(first.remaining()));
     };
 
     

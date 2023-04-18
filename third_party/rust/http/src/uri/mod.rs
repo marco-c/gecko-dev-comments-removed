@@ -202,6 +202,39 @@ impl Uri {
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn from_parts(src: Parts) -> Result<Uri, InvalidUriParts> {
         if src.scheme.is_some() {
             if src.authority.is_none() {
@@ -511,8 +544,6 @@ impl Uri {
     
     
     
-    
-    
     #[inline]
     pub fn authority(&self) -> Option<&Authority> {
         if self.authority.data.is_empty() {
@@ -739,37 +770,26 @@ impl<'a> TryFrom<&'a Uri> for Uri {
 }
 
 
+impl From<Authority> for Uri {
+    fn from(authority: Authority) -> Self {
+        Self {
+            scheme: Scheme::empty(),
+            authority,
+            path_and_query: PathAndQuery::empty(),
+        }
+    }
+}
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+impl From<PathAndQuery> for Uri {
+    fn from(path_and_query: PathAndQuery) -> Self {
+        Self {
+            scheme: Scheme::empty(),
+            authority: Authority::empty(),
+            path_and_query,
+        }
+    }
+}
 
 
 impl From<Uri> for Parts {

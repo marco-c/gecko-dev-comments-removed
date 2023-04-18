@@ -34,10 +34,36 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/socket2/0.3")]
-#![deny(missing_docs)]
 
-use crate::utils::NetInt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#![doc(html_root_url = "https://docs.rs/socket2/0.3")]
+#![deny(missing_docs, missing_debug_implementations, rust_2018_idioms)]
+
+#![cfg_attr(docsrs, feature(doc_cfg))]
+
+#![cfg_attr(test, deny(warnings))]
+
+#![doc(test(attr(deny(warnings))))]
+
+use std::fmt;
+use std::mem::MaybeUninit;
+use std::net::SocketAddr;
+use std::ops::{Deref, DerefMut};
+use std::time::Duration;
 
 
 
@@ -71,24 +97,49 @@ macro_rules! impl_debug {
     };
 }
 
+
+macro_rules! from {
+    ($from: ty, $for: ty) => {
+        impl From<$from> for $for {
+            fn from(socket: $from) -> $for {
+                #[cfg(unix)]
+                unsafe {
+                    <$for>::from_raw_fd(socket.into_raw_fd())
+                }
+                #[cfg(windows)]
+                unsafe {
+                    <$for>::from_raw_socket(socket.into_raw_socket())
+                }
+            }
+        }
+    };
+}
+
 mod sockaddr;
 mod socket;
-mod utils;
+mod sockref;
 
-#[cfg(test)]
-mod tests;
+#[cfg_attr(unix, path = "sys/unix.rs")]
+#[cfg_attr(windows, path = "sys/windows.rs")]
+mod sys;
 
-#[cfg(unix)]
-#[path = "sys/unix.rs"]
-mod sys;
-#[cfg(windows)]
-#[path = "sys/windows.rs"]
-mod sys;
+#[cfg(not(any(windows, unix)))]
+compile_error!("Socket2 doesn't support the compile target");
 
 use sys::c_int;
 
 pub use sockaddr::SockAddr;
 pub use socket::Socket;
+pub use sockref::SockRef;
+
+#[cfg(not(any(
+    target_os = "haiku",
+    target_os = "illumos",
+    target_os = "netbsd",
+    target_os = "redox",
+    target_os = "solaris",
+)))]
+pub use socket::InterfaceIndexOrAddress;
 
 
 
@@ -99,18 +150,22 @@ pub use socket::Socket;
 
 
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Eq, PartialEq)]
 pub struct Domain(c_int);
 
 impl Domain {
     
-    pub fn ipv4() -> Domain {
-        Domain(sys::AF_INET)
-    }
+    pub const IPV4: Domain = Domain(sys::AF_INET);
 
     
-    pub fn ipv6() -> Domain {
-        Domain(sys::AF_INET6)
+    pub const IPV6: Domain = Domain(sys::AF_INET6);
+
+    
+    pub const fn for_address(address: SocketAddr) -> Domain {
+        match address {
+            SocketAddr::V4(_) => Domain::IPV4,
+            SocketAddr::V6(_) => Domain::IPV6,
+        }
     }
 }
 
@@ -135,34 +190,29 @@ impl From<Domain> for c_int {
 
 
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Eq, PartialEq)]
 pub struct Type(c_int);
 
 impl Type {
     
     
     
-    pub fn stream() -> Type {
-        Type(sys::SOCK_STREAM)
-    }
+    pub const STREAM: Type = Type(sys::SOCK_STREAM);
 
     
     
     
-    pub fn dgram() -> Type {
-        Type(sys::SOCK_DGRAM)
-    }
+    pub const DGRAM: Type = Type(sys::SOCK_DGRAM);
 
     
-    pub fn seqpacket() -> Type {
-        Type(sys::SOCK_SEQPACKET)
-    }
+    #[cfg(feature = "all")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "all")))]
+    pub const SEQPACKET: Type = Type(sys::SOCK_SEQPACKET);
 
     
-    #[cfg(not(target_os = "redox"))]
-    pub fn raw() -> Type {
-        Type(sys::SOCK_RAW)
-    }
+    #[cfg(all(feature = "all", not(target_os = "redox")))]
+    #[cfg_attr(docsrs, doc(cfg(all(feature = "all", not(target_os = "redox")))))]
+    pub const RAW: Type = Type(sys::SOCK_RAW);
 }
 
 impl From<c_int> for Type {
@@ -184,29 +234,21 @@ impl From<Type> for c_int {
 
 
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Eq, PartialEq)]
 pub struct Protocol(c_int);
 
 impl Protocol {
     
-    pub fn icmpv4() -> Self {
-        Protocol(sys::IPPROTO_ICMP)
-    }
+    pub const ICMPV4: Protocol = Protocol(sys::IPPROTO_ICMP);
 
     
-    pub fn icmpv6() -> Self {
-        Protocol(sys::IPPROTO_ICMPV6)
-    }
+    pub const ICMPV6: Protocol = Protocol(sys::IPPROTO_ICMPV6);
 
     
-    pub fn tcp() -> Self {
-        Protocol(sys::IPPROTO_TCP)
-    }
+    pub const TCP: Protocol = Protocol(sys::IPPROTO_TCP);
 
     
-    pub fn udp() -> Self {
-        Protocol(sys::IPPROTO_UDP)
-    }
+    pub const UDP: Protocol = Protocol(sys::IPPROTO_UDP);
 }
 
 impl From<c_int> for Protocol {
@@ -221,10 +263,180 @@ impl From<Protocol> for c_int {
     }
 }
 
-fn hton<I: NetInt>(i: I) -> I {
-    i.to_be()
+
+
+
+#[cfg(not(target_os = "redox"))]
+#[cfg_attr(docsrs, doc(cfg(not(target_os = "redox"))))]
+#[derive(Copy, Clone, Eq, PartialEq)]
+pub struct RecvFlags(c_int);
+
+#[cfg(not(target_os = "redox"))]
+impl RecvFlags {
+    
+    
+    
+    
+    
+    
+    
+    pub const fn is_truncated(self) -> bool {
+        self.0 & sys::MSG_TRUNC != 0
+    }
 }
 
-fn ntoh<I: NetInt>(i: I) -> I {
-    I::from_be(i)
+
+
+
+#[repr(transparent)]
+pub struct MaybeUninitSlice<'a>(sys::MaybeUninitSlice<'a>);
+
+impl<'a> fmt::Debug for MaybeUninitSlice<'a> {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Debug::fmt(self.0.as_slice(), fmt)
+    }
+}
+
+impl<'a> MaybeUninitSlice<'a> {
+    
+    
+    
+    
+    
+    pub fn new(buf: &'a mut [MaybeUninit<u8>]) -> MaybeUninitSlice<'a> {
+        MaybeUninitSlice(sys::MaybeUninitSlice::new(buf))
+    }
+}
+
+impl<'a> Deref for MaybeUninitSlice<'a> {
+    type Target = [MaybeUninit<u8>];
+
+    fn deref(&self) -> &[MaybeUninit<u8>] {
+        self.0.as_slice()
+    }
+}
+
+impl<'a> DerefMut for MaybeUninitSlice<'a> {
+    fn deref_mut(&mut self) -> &mut [MaybeUninit<u8>] {
+        self.0.as_mut_slice()
+    }
+}
+
+
+
+
+#[derive(Debug, Clone)]
+pub struct TcpKeepalive {
+    time: Option<Duration>,
+    #[cfg(not(any(target_os = "redox", target_os = "solaris")))]
+    interval: Option<Duration>,
+    #[cfg(not(any(target_os = "redox", target_os = "solaris", target_os = "windows")))]
+    retries: Option<u32>,
+}
+
+impl TcpKeepalive {
+    
+    pub const fn new() -> TcpKeepalive {
+        TcpKeepalive {
+            time: None,
+            #[cfg(not(any(target_os = "redox", target_os = "solaris")))]
+            interval: None,
+            #[cfg(not(any(target_os = "redox", target_os = "solaris", target_os = "windows")))]
+            retries: None,
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub const fn with_time(self, time: Duration) -> Self {
+        Self {
+            time: Some(time),
+            ..self
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(all(
+        feature = "all",
+        any(
+            target_os = "dragonfly",
+            target_os = "freebsd",
+            target_os = "fuchsia",
+            target_os = "linux",
+            target_os = "netbsd",
+            target_vendor = "apple",
+            windows,
+        )
+    ))]
+    #[cfg_attr(
+        docsrs,
+        doc(cfg(all(
+            feature = "all",
+            any(
+                target_os = "freebsd",
+                target_os = "fuchsia",
+                target_os = "linux",
+                target_os = "netbsd",
+                target_vendor = "apple",
+                windows,
+            )
+        )))
+    )]
+    pub const fn with_interval(self, interval: Duration) -> Self {
+        Self {
+            interval: Some(interval),
+            ..self
+        }
+    }
+
+    
+    
+    
+    
+    #[cfg(all(
+        feature = "all",
+        any(
+            doc,
+            target_os = "dragonfly",
+            target_os = "freebsd",
+            target_os = "fuchsia",
+            target_os = "linux",
+            target_os = "netbsd",
+            target_vendor = "apple",
+        )
+    ))]
+    #[cfg_attr(
+        docsrs,
+        doc(cfg(all(
+            feature = "all",
+            any(
+                target_os = "freebsd",
+                target_os = "fuchsia",
+                target_os = "linux",
+                target_os = "netbsd",
+                target_vendor = "apple",
+            )
+        )))
+    )]
+    pub const fn with_retries(self, retries: u32) -> Self {
+        Self {
+            retries: Some(retries),
+            ..self
+        }
+    }
 }

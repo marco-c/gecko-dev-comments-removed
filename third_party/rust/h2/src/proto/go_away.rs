@@ -31,7 +31,7 @@ pub(super) struct GoAway {
 
 
 #[derive(Debug)]
-struct GoingAway {
+pub(crate) struct GoingAway {
     
     
     
@@ -99,8 +99,8 @@ impl GoAway {
     }
 
     
-    pub fn going_away_reason(&self) -> Option<Reason> {
-        self.going_away.as_ref().map(|g| g.reason)
+    pub fn going_away(&self) -> Option<&GoingAway> {
+        self.going_away.as_ref()
     }
 
     
@@ -141,12 +141,18 @@ impl GoAway {
 
             return Poll::Ready(Some(Ok(reason)));
         } else if self.should_close_now() {
-            return match self.going_away_reason() {
+            return match self.going_away().map(|going_away| going_away.reason) {
                 Some(reason) => Poll::Ready(Some(Ok(reason))),
                 None => Poll::Ready(None),
             };
         }
 
         Poll::Ready(None)
+    }
+}
+
+impl GoingAway {
+    pub(crate) fn reason(&self) -> Reason {
+        self.reason
     }
 }

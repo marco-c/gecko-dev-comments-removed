@@ -3,20 +3,20 @@
 #![allow(private_in_public)]
 
 pub enum PublicEnum {
-    Variant(PrivateEnum), 
+    V(PrivateEnum), 
 }
 
 enum PrivateEnum {
-    Variant(u8),
+    V(u8),
 }
 
 mod foo {
     pub(crate) enum CrateEnum {
-        Variant(PrivateEnum), 
+        V(PrivateEnum), 
     }
 
     enum PrivateEnum {
-        Variant(u8),
+        V(u8),
     }
 }
 

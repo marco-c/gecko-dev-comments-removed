@@ -1,18 +1,15 @@
 use auxiliary_macro::hidden_repr;
 use pin_project::pin_project;
 
-
-
-
 #[pin_project]
-#[hidden_repr(packed)]
-struct Foo {
+#[hidden_repr(packed)] 
+struct S {
     #[cfg(not(any()))]
     #[pin]
-    field: u32,
+    f: u32,
     #[cfg(any())]
     #[pin]
-    field: u8,
+    f: u8,
 }
 
 fn main() {}
