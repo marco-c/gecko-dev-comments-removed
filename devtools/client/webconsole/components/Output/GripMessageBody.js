@@ -11,6 +11,9 @@ const {
   JSTERM_COMMANDS,
 } = require("devtools/client/webconsole/constants");
 const {
+  cleanupStyle,
+} = require("devtools/client/shared/components/reps/reps/rep-utils");
+const {
   getObjectInspector,
 } = require("devtools/client/webconsole/utils/object-inspector");
 const actions = require("devtools/client/webconsole/actions/index");
@@ -99,47 +102,6 @@ function GripMessageBody(props) {
   }
 
   return getObjectInspector(grip, serviceContainer, objectInspectorProps);
-}
-
-
-const allowedStylesRegex = new RegExp(
-  "^(?:-moz-)?(?:background|border|box|clear|color|cursor|display|float|font|line|" +
-    "margin|padding|text|transition|outline|white-space|word|writing|" +
-    "(?:min-|max-)?width|(?:min-|max-)?height)"
-);
-
-
-const forbiddenValuesRegexs = [
-  
-  /\b((?:-moz-)?element)[\s('"]+/gi,
-
-  
-  /['"(]*(?:chrome|resource|about|app|https?|ftp|file):+\/*/gi,
-];
-
-function cleanupStyle(userProvidedStyle, createElement) {
-  
-  const dummy = createElement("div");
-  dummy.style = userProvidedStyle;
-
-  
-  
-  
-  return Array.from(dummy.style)
-    .filter(name => {
-      return (
-        allowedStylesRegex.test(name) &&
-        !forbiddenValuesRegexs.some(regex => regex.test(dummy.style[name]))
-      );
-    })
-    .reduce((object, name) => {
-      return Object.assign(
-        {
-          [name]: dummy.style[name],
-        },
-        object
-      );
-    }, {});
 }
 
 function shouldAutoExpandObjectInspector(props) {

@@ -756,6 +756,17 @@ const proto = {
   
 
 
+  customFormatterBody: function() {
+    
+    
+    return {
+      customFormatterBody: null,
+    };
+  },
+
+  
+
+
 
   release: function() {},
 };
