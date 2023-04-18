@@ -161,7 +161,9 @@ const SnapshotScorer = new (class SnapshotScorer {
       }
     }
 
-    return recommendations.sort((a, b) => b.score - a.score);
+    return this.dedupeSnapshots(recommendations).sort(
+      (a, b) => b.score - a.score
+    );
   }
 
   
@@ -204,6 +206,14 @@ const SnapshotScorer = new (class SnapshotScorer {
         
         
         if (!existing.hasSearch) {
+          continue;
+        }
+
+        
+        if ("score" in newRecommendation) {
+          if (newRecommendation.score > existing.score) {
+            matchingMap.set(key, newRecommendation);
+          }
           continue;
         }
 
