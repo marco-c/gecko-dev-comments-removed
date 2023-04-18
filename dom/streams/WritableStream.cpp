@@ -86,57 +86,6 @@ void WritableStream::DealWithRejection(JSContext* aCx,
   FinishErroring(aCx, aRv);
 }
 
-class AbortStepsNativePromiseHandler final : public PromiseNativeHandler {
-  ~AbortStepsNativePromiseHandler() override = default;
-
-  RefPtr<WritableStream> mStream;
-  RefPtr<Promise> mAbortRequestPromise;
-
- public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_CLASS(AbortStepsNativePromiseHandler)
-
-  explicit AbortStepsNativePromiseHandler(WritableStream* aStream,
-                                          Promise* aAbortRequestPromise)
-      : PromiseNativeHandler(),
-        mStream(aStream),
-        mAbortRequestPromise(aAbortRequestPromise) {}
-
-  void ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue,
-                        ErrorResult& aRv) override {
-    
-
-    
-    
-    mAbortRequestPromise->MaybeResolveWithUndefined();
-
-    
-    
-    mStream->RejectCloseAndClosedPromiseIfNeeded();
-  }
-
-  void RejectedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue,
-                        ErrorResult& aRv) override {
-    
-
-    
-    
-    mAbortRequestPromise->MaybeReject(aValue);
-
-    
-    
-    mStream->RejectCloseAndClosedPromiseIfNeeded();
-  }
-};
-
-NS_IMPL_CYCLE_COLLECTION(AbortStepsNativePromiseHandler, mStream,
-                         mAbortRequestPromise)
-NS_IMPL_CYCLE_COLLECTING_ADDREF(AbortStepsNativePromiseHandler)
-NS_IMPL_CYCLE_COLLECTING_RELEASE(AbortStepsNativePromiseHandler)
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(AbortStepsNativePromiseHandler)
-  NS_INTERFACE_MAP_ENTRY(nsISupports)
-NS_INTERFACE_MAP_END
-
 
 void WritableStream::FinishErroring(JSContext* aCx, ErrorResult& aRv) {
   
@@ -204,8 +153,28 @@ void WritableStream::FinishErroring(JSContext* aCx, ErrorResult& aRv) {
   }
 
   
-  promise->AppendNativeHandler(
-      new AbortStepsNativePromiseHandler(this, abortPromise));
+  promise->AddCallbacksWithCycleCollectedArgs(
+      [](JSContext* aCx, JS::Handle<JS::Value> aValue, ErrorResult& aRv,
+         Promise* aAbortRequestPromise, WritableStream* aStream) {
+        
+        
+        aAbortRequestPromise->MaybeResolveWithUndefined();
+
+        
+        
+        aStream->RejectCloseAndClosedPromiseIfNeeded();
+      },
+      [](JSContext* aCx, JS::Handle<JS::Value> aValue, ErrorResult& aRv,
+         Promise* aAbortRequestPromise, WritableStream* aStream) {
+        
+        
+        aAbortRequestPromise->MaybeReject(aValue);
+
+        
+        
+        aStream->RejectCloseAndClosedPromiseIfNeeded();
+      },
+      RefPtr(abortPromise), RefPtr(this));
 }
 
 

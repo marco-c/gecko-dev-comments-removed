@@ -18,6 +18,7 @@
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/dom/ByteStreamHelpers.h"
 #include "mozilla/dom/Promise.h"
+#include "mozilla/dom/Promise-inl.h"
 #include "mozilla/dom/PromiseNativeHandler.h"
 #include "mozilla/dom/ReadableByteStreamController.h"
 #include "mozilla/dom/ReadableByteStreamControllerBinding.h"
@@ -478,55 +479,6 @@ bool ReadableByteStreamControllerShouldCallPull(
 }
 
 
-
-class ByteStreamPullIfNeededPromiseHandler final : public PromiseNativeHandler {
-  ~ByteStreamPullIfNeededPromiseHandler() override = default;
-
-  
-  RefPtr<ReadableByteStreamController> mController;
-
- public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_CLASS(ByteStreamPullIfNeededPromiseHandler)
-
-  explicit ByteStreamPullIfNeededPromiseHandler(
-      ReadableByteStreamController* aController)
-      : PromiseNativeHandler(), mController(aController) {}
-
-  MOZ_CAN_RUN_SCRIPT
-  void ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue,
-                        ErrorResult& aRv) override {
-    
-    
-    mController->SetPulling(false);
-    
-    if (mController->PullAgain()) {
-      
-      mController->SetPullAgain(false);
-
-      
-      ReadableByteStreamControllerCallPullIfNeeded(
-          aCx, MOZ_KnownLive(mController), aRv);
-    }
-  }
-
-  void RejectedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue,
-                        ErrorResult& aRv) override {
-    
-    
-    ReadableByteStreamControllerError(mController, aValue, aRv);
-  }
-};
-
-
-NS_IMPL_CYCLE_COLLECTION(ByteStreamPullIfNeededPromiseHandler, mController)
-NS_IMPL_CYCLE_COLLECTING_ADDREF(ByteStreamPullIfNeededPromiseHandler)
-NS_IMPL_CYCLE_COLLECTING_RELEASE(ByteStreamPullIfNeededPromiseHandler)
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(ByteStreamPullIfNeededPromiseHandler)
-  NS_INTERFACE_MAP_ENTRY(nsISupports)
-NS_INTERFACE_MAP_END
-
-
 void ReadableByteStreamControllerCallPullIfNeeded(
     JSContext* aCx, ReadableByteStreamController* aController,
     ErrorResult& aRv) {
@@ -560,9 +512,28 @@ void ReadableByteStreamControllerCallPullIfNeeded(
   }
 
   
-  RefPtr<ByteStreamPullIfNeededPromiseHandler> promiseHandler =
-      new ByteStreamPullIfNeededPromiseHandler(aController);
-  pullPromise->AppendNativeHandler(promiseHandler);
+  pullPromise->AddCallbacksWithCycleCollectedArgs(
+      [](JSContext* aCx, JS::Handle<JS::Value> aValue, ErrorResult& aRv,
+         ReadableByteStreamController* aController)
+          MOZ_CAN_RUN_SCRIPT_BOUNDARY {
+            
+            aController->SetPulling(false);
+            
+            if (aController->PullAgain()) {
+              
+              aController->SetPullAgain(false);
+
+              
+              ReadableByteStreamControllerCallPullIfNeeded(
+                  aCx, MOZ_KnownLive(aController), aRv);
+            }
+          },
+      [](JSContext* aCx, JS::Handle<JS::Value> aValue, ErrorResult& aRv,
+         ReadableByteStreamController* aController) {
+        
+        ReadableByteStreamControllerError(aController, aValue, aRv);
+      },
+      RefPtr(aController));
 }
 
 bool ReadableByteStreamControllerFillPullIntoDescriptorFromQueue(
@@ -1861,57 +1832,6 @@ void ReadableByteStreamControllerPullInto(
   ReadableByteStreamControllerCallPullIfNeeded(aCx, aController, aRv);
 }
 
-class ByteStreamStartPromiseNativeHandler final : public PromiseNativeHandler {
-  ~ByteStreamStartPromiseNativeHandler() override = default;
-
-  RefPtr<ReadableByteStreamController> mController;
-
- public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_CLASS(ByteStreamStartPromiseNativeHandler)
-
-  explicit ByteStreamStartPromiseNativeHandler(
-      ReadableByteStreamController* aController)
-      : PromiseNativeHandler(), mController(aController) {}
-
-  MOZ_CAN_RUN_SCRIPT
-  void ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue,
-                        ErrorResult& aRv) override {
-    MOZ_ASSERT(mController);
-
-    
-    
-    
-    mController->SetStarted(true);
-
-    
-    mController->SetPulling(false);
-
-    
-    mController->SetPullAgain(false);
-
-    
-
-    RefPtr<ReadableByteStreamController> stackController = mController;
-    ReadableByteStreamControllerCallPullIfNeeded(aCx, stackController, aRv);
-  }
-
-  void RejectedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue,
-                        ErrorResult& aRv) override {
-    
-    
-    ReadableByteStreamControllerError(mController, aValue, aRv);
-  }
-};
-
-
-NS_IMPL_CYCLE_COLLECTION(ByteStreamStartPromiseNativeHandler, mController)
-NS_IMPL_CYCLE_COLLECTING_ADDREF(ByteStreamStartPromiseNativeHandler)
-NS_IMPL_CYCLE_COLLECTING_RELEASE(ByteStreamStartPromiseNativeHandler)
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(ByteStreamStartPromiseNativeHandler)
-  NS_INTERFACE_MAP_ENTRY(nsISupports)
-NS_INTERFACE_MAP_END
-
 
 void SetUpReadableByteStreamController(
     JSContext* aCx, ReadableStream* aStream,
@@ -1976,8 +1896,31 @@ void SetUpReadableByteStreamController(
   startPromise->MaybeResolve(startResult);
 
   
-  startPromise->AppendNativeHandler(
-      new ByteStreamStartPromiseNativeHandler(aController));
+  startPromise->AddCallbacksWithCycleCollectedArgs(
+      [](JSContext* aCx, JS::Handle<JS::Value> aValue, ErrorResult& aRv,
+         ReadableByteStreamController* aController)
+          MOZ_CAN_RUN_SCRIPT_BOUNDARY {
+            MOZ_ASSERT(aController);
+
+            
+            aController->SetStarted(true);
+
+            
+            aController->SetPulling(false);
+
+            
+            aController->SetPullAgain(false);
+
+            
+            ReadableByteStreamControllerCallPullIfNeeded(
+                aCx, MOZ_KnownLive(aController), aRv);
+          },
+      [](JSContext* aCx, JS::Handle<JS::Value> aValue, ErrorResult& aRv,
+         ReadableByteStreamController* aController) {
+        
+        ReadableByteStreamControllerError(aController, aValue, aRv);
+      },
+      RefPtr(aController));
 }
 
 

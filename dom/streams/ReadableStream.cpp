@@ -716,52 +716,6 @@ ReadableStreamDefaultTeeSourceAlgorithms::CancelCallback(
 }
 
 
-
-class ReadableStreamTeeClosePromiseHandler final : public PromiseNativeHandler {
-  ~ReadableStreamTeeClosePromiseHandler() override = default;
-  RefPtr<TeeState> mTeeState;
-
- public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_CLASS(ReadableStreamTeeClosePromiseHandler)
-
-  explicit ReadableStreamTeeClosePromiseHandler(TeeState* aTeeState)
-      : mTeeState(aTeeState) {}
-
-  void ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue,
-                        ErrorResult& aRv) override {}
-  void RejectedCallback(JSContext* aCx, JS::Handle<JS::Value> aReason,
-                        ErrorResult& aRv) override {
-    
-    ReadableStreamDefaultControllerError(
-        aCx, mTeeState->Branch1()->DefaultController(), aReason, aRv);
-    if (aRv.Failed()) {
-      return;
-    }
-
-    
-    ReadableStreamDefaultControllerError(
-        aCx, mTeeState->Branch2()->DefaultController(), aReason, aRv);
-    if (aRv.Failed()) {
-      return;
-    }
-
-    
-    if (!mTeeState->Canceled1() || !mTeeState->Canceled2()) {
-      mTeeState->CancelPromise()->MaybeResolveWithUndefined();
-    }
-  }
-};
-
-
-NS_IMPL_CYCLE_COLLECTION(ReadableStreamTeeClosePromiseHandler, mTeeState)
-NS_IMPL_CYCLE_COLLECTING_ADDREF(ReadableStreamTeeClosePromiseHandler)
-NS_IMPL_CYCLE_COLLECTING_RELEASE(ReadableStreamTeeClosePromiseHandler)
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(ReadableStreamTeeClosePromiseHandler)
-  NS_INTERFACE_MAP_ENTRY(nsISupports)
-NS_INTERFACE_MAP_END
-
-
 MOZ_CAN_RUN_SCRIPT
 static void ReadableStreamDefaultTee(JSContext* aCx, ReadableStream* aStream,
                                      bool aCloneForBranch2,
@@ -799,8 +753,31 @@ static void ReadableStreamDefaultTee(JSContext* aCx, ReadableStream* aStream,
   }
 
   
-  teeState->GetReader()->ClosedPromise()->AppendNativeHandler(
-      new ReadableStreamTeeClosePromiseHandler(teeState));
+  teeState->GetReader()->ClosedPromise()->AddCallbacksWithCycleCollectedArgs(
+      [](JSContext* aCx, JS::Handle<JS::Value> aValue, ErrorResult& aRv,
+         TeeState* aTeeState) {},
+      [](JSContext* aCx, JS::Handle<JS::Value> aReason, ErrorResult& aRv,
+         TeeState* aTeeState) {
+        
+        ReadableStreamDefaultControllerError(
+            aCx, aTeeState->Branch1()->DefaultController(), aReason, aRv);
+        if (aRv.Failed()) {
+          return;
+        }
+
+        
+        ReadableStreamDefaultControllerError(
+            aCx, aTeeState->Branch2()->DefaultController(), aReason, aRv);
+        if (aRv.Failed()) {
+          return;
+        }
+
+        
+        if (!aTeeState->Canceled1() || !aTeeState->Canceled2()) {
+          aTeeState->CancelPromise()->MaybeResolveWithUndefined();
+        }
+      },
+      RefPtr(teeState));
 
   
   aResult.AppendElement(teeState->Branch1());
