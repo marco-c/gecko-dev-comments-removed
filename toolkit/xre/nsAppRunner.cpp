@@ -5466,7 +5466,21 @@ nsresult XREMain::XRE_mainRun() {
     
     mDirProvider.FinishInitializingUserPrefs();
 
-    nsAppStartupNotifier::NotifyObservers(APPSTARTUP_CATEGORY);
+    nsCOMPtr<nsIFile> workingDir;
+    rv = NS_GetSpecialDirectory(NS_OS_CURRENT_WORKING_DIR,
+                                getter_AddRefs(workingDir));
+    if (NS_FAILED(rv)) {
+      
+      workingDir = nullptr;
+    }
+
+    cmdLine = new nsCommandLine();
+
+    rv = cmdLine->Init(gArgc, gArgv, workingDir,
+                       nsICommandLine::STATE_INITIAL_LAUNCH);
+    NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
+
+    nsAppStartupNotifier::NotifyObservers(APPSTARTUP_CATEGORY, cmdLine);
 
     appStartup = components::AppStartup::Service();
     NS_ENSURE_TRUE(appStartup, NS_ERROR_FAILURE);
@@ -5487,21 +5501,7 @@ nsresult XREMain::XRE_mainRun() {
 
     appStartup->GetShuttingDown(&mShuttingDown);
 
-    nsCOMPtr<nsIFile> workingDir;
-    rv = NS_GetSpecialDirectory(NS_OS_CURRENT_WORKING_DIR,
-                                getter_AddRefs(workingDir));
-    if (NS_FAILED(rv)) {
-      
-      workingDir = nullptr;
-    }
-
     if (!mShuttingDown) {
-      cmdLine = new nsCommandLine();
-
-      rv = cmdLine->Init(gArgc, gArgv, workingDir,
-                         nsICommandLine::STATE_INITIAL_LAUNCH);
-      NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
-
       
 
       nsCOMPtr<nsIObserverService> obsService =
