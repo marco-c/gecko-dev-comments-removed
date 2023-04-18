@@ -685,6 +685,7 @@ class TabBase {
 
 
 
+
   async queryContent(message, options) {
     let { frameIds } = options;
 
