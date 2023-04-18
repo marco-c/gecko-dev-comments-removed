@@ -7200,12 +7200,12 @@ nsRect ScrollFrameHelper::GetScrolledRect() const {
   nsRect result = GetUnsnappedScrolledRectInternal(
       mScrolledFrame->ScrollableOverflowRect(), mScrollPort.Size());
 
-  if (result.width < mScrollPort.width) {
+#if 0
+  
+  if (result.width < mScrollPort.width || result.height < mScrollPort.height) {
     NS_WARNING("Scrolled rect smaller than scrollport?");
   }
-  if (result.height < mScrollPort.height) {
-    NS_WARNING("Scrolled rect smaller than scrollport?");
-  }
+#endif
 
   
   
