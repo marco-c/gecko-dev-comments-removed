@@ -13,8 +13,7 @@
 
 
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class SVGSVGElement;
 
@@ -83,7 +82,6 @@ class SVGRect final : public nsWrapperCache {
   const RectType mType;
 };
 
-}  
 }  
 
 #endif  

@@ -11,8 +11,7 @@
 #include "SVGAnimatedPointList.h"
 #include "SVGGeometryElement.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class DOMSVGPointList;
 
@@ -59,7 +58,6 @@ class SVGPolyElement : public SVGPolyElementBase {
   SVGAnimatedPointList mPoints;
 };
 
-}  
 }  
 
 #endif  

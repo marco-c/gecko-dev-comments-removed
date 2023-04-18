@@ -13,8 +13,7 @@
 nsresult NS_NewSVGStopElement(
     nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 using SVGStopElementBase = SVGElement;
 
@@ -42,7 +41,6 @@ class SVGStopElement final : public SVGStopElementBase {
   static NumberInfo sNumberInfo;
 };
 
-}  
 }  
 
 #endif  
