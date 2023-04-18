@@ -287,6 +287,21 @@ DAV1D_API int dav1d_get_event_flags(Dav1dContext *c, enum Dav1dEventFlags *flags
 
 DAV1D_API int dav1d_get_decode_error_data_props(Dav1dContext *c, Dav1dDataProps *out);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+DAV1D_API int dav1d_get_frame_delay(const Dav1dSettings *s);
+
 # ifdef __cplusplus
 }
 # endif

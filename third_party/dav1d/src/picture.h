@@ -52,6 +52,10 @@ enum PictureFlags {
 typedef struct Dav1dThreadPicture {
     Dav1dPicture p;
     int visible;
+    
+    
+    
+    int showable;
     enum PictureFlags flags;
     
     
