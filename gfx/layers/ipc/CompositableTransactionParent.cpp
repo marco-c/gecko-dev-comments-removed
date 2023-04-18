@@ -7,6 +7,8 @@
 #include "CompositableTransactionParent.h"
 #include "CompositableHost.h"        
 #include "CompositorBridgeParent.h"  
+#include "GLContext.h"               
+#include "Layers.h"                  
 #include "mozilla/Assertions.h"      
 #include "mozilla/RefPtr.h"          
 #include "mozilla/layers/CompositorTypes.h"
@@ -14,6 +16,7 @@
 #include "mozilla/layers/LayersSurfaces.h"     
 #include "mozilla/layers/LayersTypes.h"        
 #include "mozilla/layers/TextureHost.h"        
+#include "mozilla/layers/TextureHostOGL.h"     
 #include "mozilla/mozalloc.h"                  
 #include "mozilla/Unused.h"
 #include "nsDebug.h"   
@@ -25,6 +28,33 @@
 
 namespace mozilla {
 namespace layers {
+
+class Compositor;
+
+
+
+
+
+
+
+
+
+
+
+
+static bool ScheduleComposition(CompositableHost* aCompositable) {
+  uint64_t id = aCompositable->GetCompositorBridgeID();
+  if (!id) {
+    return false;
+  }
+  CompositorBridgeParent* cp =
+      CompositorBridgeParent::GetCompositorBridgeParent(id);
+  if (!cp) {
+    return false;
+  }
+  cp->ScheduleComposition(wr::RenderReasons::ASYNC_IMAGE);
+  return true;
+}
 
 bool CompositableParentManager::ReceiveCompositableUpdate(
     const CompositableOperation& aEdit) {
@@ -41,6 +71,13 @@ bool CompositableParentManager::ReceiveCompositableUpdate(
 bool CompositableParentManager::ReceiveCompositableUpdate(
     const CompositableOperationDetail& aDetail,
     NotNull<CompositableHost*> aCompositable) {
+  if (TextureSourceProvider* provider =
+          aCompositable->GetTextureSourceProvider()) {
+    if (!provider->IsValid()) {
+      return false;
+    }
+  }
+
   switch (aDetail.type()) {
     case CompositableOperationDetail::TOpRemoveTexture: {
       const OpRemoveTexture& op = aDetail.get_OpRemoveTexture();
@@ -80,6 +117,10 @@ bool CompositableParentManager::ReceiveCompositableUpdate(
             MOZ_ASSERT(texture->NumCompositableRefs() > 0);
           }
         }
+      }
+
+      if (UsesImageBridge() && aCompositable->GetLayer()) {
+        ScheduleComposition(aCompositable);
       }
       break;
     }
@@ -155,7 +196,10 @@ void CompositableParentManager::ReleaseCompositable(
     return;
   }
 
+  RefPtr<CompositableHost> host = iter->second;
   mCompositables.erase(iter);
+
+  host->Detach(nullptr, CompositableHost::FORCE_DETACH);
 }
 
 }  

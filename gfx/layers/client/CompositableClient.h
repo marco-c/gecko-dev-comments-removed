@@ -67,6 +67,11 @@ class ContentClientRemoteBuffer;
 
 
 
+
+
+
+
+
 class CompositableClient {
  protected:
   virtual ~CompositableClient();
