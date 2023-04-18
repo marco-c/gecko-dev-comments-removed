@@ -245,7 +245,7 @@ class WindowManager {
 
 
 
-  waitForInitialApplicationWindow() {
+  waitForInitialApplicationWindowLoaded() {
     return new TimedPromise(
       resolve => {
         const waitForWindow = () => {
