@@ -199,27 +199,3 @@ impl Parse for Quotes {
         }
     }
 }
-
-
-#[derive(
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    MallocSizeOf,
-    Parse,
-    PartialEq,
-    SpecifiedValueInfo,
-    ToComputedValue,
-    ToCss,
-    ToResolvedValue,
-    ToShmem,
-)]
-#[repr(u8)]
-pub enum MozListReversed {
-    
-    False,
-    
-    True,
-}

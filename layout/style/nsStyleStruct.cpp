@@ -584,8 +584,7 @@ nsStyleList::nsStyleList(const Document& aDocument)
     : mListStylePosition(NS_STYLE_LIST_STYLE_POSITION_OUTSIDE),
       mQuotes(StyleQuotes::Auto()),
       mListStyleImage(StyleImage::None()),
-      mImageRegion(StyleClipRectOrAuto::Auto()),
-      mMozListReversed(StyleMozListReversed::False) {
+      mImageRegion(StyleClipRectOrAuto::Auto()) {
   MOZ_COUNT_CTOR(nsStyleList);
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -599,8 +598,7 @@ nsStyleList::nsStyleList(const nsStyleList& aSource)
       mCounterStyle(aSource.mCounterStyle),
       mQuotes(aSource.mQuotes),
       mListStyleImage(aSource.mListStyleImage),
-      mImageRegion(aSource.mImageRegion),
-      mMozListReversed(aSource.mMozListReversed) {
+      mImageRegion(aSource.mImageRegion) {
   MOZ_COUNT_CTOR(nsStyleList);
 }
 
@@ -634,11 +632,6 @@ nsChangeHint nsStyleList::CalcDifference(
   } else if (mListStylePosition != aNewData.mListStylePosition ||
              mCounterStyle != aNewData.mCounterStyle) {
     hint = nsChangeHint_NeutralChange;
-  }
-  
-  
-  if (mMozListReversed != aNewData.mMozListReversed) {
-    return NS_STYLE_HINT_REFLOW;
   }
   
   

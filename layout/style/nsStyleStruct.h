@@ -685,8 +685,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleList {
 
   
   mozilla::StyleClipRectOrAuto mImageRegion;
-  
-  mozilla::StyleMozListReversed mMozListReversed;
 };
 
 struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePage {
