@@ -432,7 +432,10 @@ nsTArray<RefPtr<RTCStatsPromise>> RTCRtpReceiver::GetStatsInternal() {
               local.mFrameWidth.Construct(videoStats->width);
               local.mFrameHeight.Construct(videoStats->height);
               
-              local.mFramesReceived.Construct(videoStats->frame_counts.key_frames + videoStats->frame_counts.delta_frames);
+              
+              local.mFramesReceived.Construct(
+                  videoStats->frame_counts.key_frames +
+                  videoStats->frame_counts.delta_frames);
 
               
 
