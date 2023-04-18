@@ -130,13 +130,6 @@ interface nsISSLSocketControl : nsISupports {
 
 
 
-
-    attribute nsIX509Cert clientCert;
-
-    
-
-
-
     [infallible] readonly attribute boolean clientCertSent;
 
     
