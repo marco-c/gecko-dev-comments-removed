@@ -68,9 +68,7 @@ struct ThreadInfo {
   
   nsString name;
   
-  uint64_t cpuUser = 0;
-  
-  uint64_t cpuKernel = 0;
+  uint64_t cpuTime = 0;
   uint64_t cpuCycleCount = 0;
 };
 
@@ -120,9 +118,7 @@ struct ProcInfo {
   
   uint64_t memory = 0;
   
-  uint64_t cpuUser = 0;
-  
-  uint64_t cpuKernel = 0;
+  uint64_t cpuTime = 0;
   uint64_t cpuCycleCount = 0;
   
   CopyableTArray<ThreadInfo> threads;
@@ -224,8 +220,7 @@ nsresult CopySysProcInfoToDOM(const ProcInfo& source, T* dest) {
   dest->mPid = source.pid;
   dest->mFilename.Assign(source.filename);
   dest->mMemory = source.memory;
-  dest->mCpuUser = source.cpuUser;
-  dest->mCpuKernel = source.cpuKernel;
+  dest->mCpuTime = source.cpuTime;
   dest->mCpuCycleCount = source.cpuCycleCount;
 
   
@@ -236,8 +231,7 @@ nsresult CopySysProcInfoToDOM(const ProcInfo& source, T* dest) {
     if (NS_WARN_IF(!thread)) {
       return NS_ERROR_OUT_OF_MEMORY;
     }
-    thread->mCpuUser = entry.cpuUser;
-    thread->mCpuKernel = entry.cpuKernel;
+    thread->mCpuTime = entry.cpuTime;
     thread->mCpuCycleCount = entry.cpuCycleCount;
     thread->mTid = entry.tid;
     thread->mName.Assign(entry.name);
