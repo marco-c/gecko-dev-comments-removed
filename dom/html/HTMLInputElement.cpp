@@ -24,7 +24,6 @@
 #include "mozilla/dom/UserActivation.h"
 #include "mozilla/dom/MutationEventBinding.h"
 #include "mozilla/dom/WheelEventBinding.h"
-#include "mozilla/dom/WindowGlobalChild.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/TextUtils.h"
@@ -5521,74 +5520,6 @@ void HTMLInputElement::SetSelectionDirection(const nsAString& aDirection,
   TextControlState* state = GetEditorState();
   MOZ_ASSERT(state, "SupportsTextSelection came back true!");
   state->SetSelectionDirection(aDirection, aRv);
-}
-
-
-void HTMLInputElement::ShowPicker(ErrorResult& aRv) {
-  
-  
-  if (!IsMutable()) {
-    return aRv.ThrowInvalidStateError(
-        "This input is either disabled or readonly.");
-  }
-
-  
-  
-  
-  
-  if (mType != FormControlType::InputFile &&
-      mType != FormControlType::InputColor) {
-    nsPIDOMWindowInner* window = OwnerDoc()->GetInnerWindow();
-    WindowGlobalChild* windowGlobalChild =
-        window ? window->GetWindowGlobalChild() : nullptr;
-    if (!windowGlobalChild || !windowGlobalChild->SameOriginWithTop()) {
-      return aRv.ThrowSecurityError(
-          "Call was blocked because the current origin isn't same-origin with "
-          "top.");
-    }
-  }
-
-  
-  
-  if (!OwnerDoc()->HasValidTransientUserGestureActivation()) {
-    return aRv.ThrowNotAllowedError(
-        "Call was blocked due to lack of user activation.");
-  }
-
-  
-  
-  
-  
-
-  
-  
-  
-
-  
-  
-  if (mType == FormControlType::InputFile) {
-    FilePickerType type = FILE_PICKER_FILE;
-    if (StaticPrefs::dom_webkitBlink_dirPicker_enabled() &&
-        HasAttr(nsGkAtoms::webkitdirectory)) {
-      type = FILE_PICKER_DIRECTORY;
-    }
-    InitFilePicker(type);
-    return;
-  }
-
-  
-  
-  
-  if (mType == FormControlType::InputColor) {
-    InitColorPicker();
-    return;
-  }
-
-  if (IsDateTimeInputType(mType) && IsInComposedDoc()) {
-    DateTimeValue value;
-    GetDateTimeInputBoxValue(value);
-    OpenDateTimePicker(value);
-  }
 }
 
 #ifdef ACCESSIBILITY
