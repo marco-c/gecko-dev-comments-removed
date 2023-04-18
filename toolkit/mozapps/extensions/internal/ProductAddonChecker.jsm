@@ -4,9 +4,7 @@
 
 "use strict";
 
-
-
-var EXPORTED_SYMBOLS = ["ProductAddonChecker"];
+var EXPORTED_SYMBOLS = ["ProductAddonChecker", "ProductAddonCheckerTestUtils"];
 
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
@@ -20,12 +18,6 @@ const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 XPCOMUtils.defineLazyModuleGetters(this, {
   ServiceRequest: "resource://gre/modules/ServiceRequest.jsm",
 });
-
-
-
-var CreateServiceRequest = function() {
-  return new ServiceRequest();
-};
 
 
 var logger = Log.repository.getLogger("addons.productaddons");
@@ -212,7 +204,7 @@ function downloadXMLWithRequest(
   allowedCerts = null
 ) {
   return new Promise((resolve, reject) => {
-    let request = CreateServiceRequest();
+    let request = new ServiceRequest();
     
     if (request.wrappedJSObject) {
       request = request.wrappedJSObject;
@@ -565,7 +557,27 @@ const ProductAddonChecker = {
       throw e;
     }
   },
+};
+
+
+const ProductAddonCheckerTestUtils = {
+  computeHash,
 
   
-  computeHash,
+
+
+
+
+
+  async overrideServiceRequest(mockRequest, callback) {
+    let originalServiceRequest = ServiceRequest;
+    ServiceRequest = function() {
+      return mockRequest;
+    };
+    try {
+      return await callback();
+    } finally {
+      ServiceRequest = originalServiceRequest;
+    }
+  },
 };
