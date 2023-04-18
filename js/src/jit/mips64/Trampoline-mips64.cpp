@@ -448,6 +448,8 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
   
   
 
+#error "Port changes from bug 1772506"
+
   
   masm.loadPtr(
       Address(StackPointer, RectifierFrameLayout::offsetOfNumActualArgs()), s3);

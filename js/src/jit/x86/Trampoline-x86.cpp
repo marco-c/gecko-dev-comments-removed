@@ -456,8 +456,6 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
   
   
   
-  
-  
   masm.push(FramePointer);
   masm.movl(esp, FramePointer);  
   masm.push(FramePointer );

@@ -456,52 +456,11 @@ class MOZ_STACK_CLASS BaselineStackBuilder {
       return virtualPointerAtStackOffset(offset);
     }
 
+    
     MOZ_ASSERT(type == FrameType::Rectifier);
-    
-    
-    
-    
-    
     size_t priorOffset =
-        JitFrameLayout::Size() + topFrame->prevFrameLocalSize();
-#if defined(JS_CODEGEN_X86)
-    
-    
-    priorOffset -= sizeof(void*);
+        JitFrameLayout::Size() + topFrame->prevFrameLocalSize() - sizeof(void*);
     return virtualPointerAtStackOffset(priorOffset);
-#elif defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64) ||   \
-    defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64) || \
-    defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_LOONG64)
-    
-    
-    BufferPointer<RectifierFrameLayout> priorFrame =
-        pointerAtStackOffset<RectifierFrameLayout>(priorOffset);
-    FrameType priorType = priorFrame->prevType();
-    MOZ_ASSERT(JSJitFrameIter::isEntry(priorType) ||
-               priorType == FrameType::IonJS ||
-               priorType == FrameType::BaselineStub);
-
-    
-    
-    if (priorType == FrameType::IonJS || JSJitFrameIter::isEntry(priorType)) {
-      return nullptr;
-    }
-
-    
-    
-    
-    
-    
-    size_t extraOffset =
-        RectifierFrameLayout::Size() + priorFrame->prevFrameLocalSize() +
-        BaselineStubFrameLayout::reverseOffsetOfSavedFramePtr();
-    return virtualPointerAtStackOffset(priorOffset + extraOffset);
-#elif defined(JS_CODEGEN_NONE)
-    (void)priorOffset;
-    MOZ_CRASH();
-#else
-#  error "Bad architecture!"
-#endif
   }
 };
 
@@ -1150,14 +1109,15 @@ bool BaselineStackBuilder::buildRectifierFrame(uint32_t actualArgc,
 
   size_t startOfRectifierFrame = framePushed();
 
-  
-#if defined(JS_CODEGEN_X86)
-  if (!writePtr(prevFramePtr(), "PrevFramePtr-X86Only")) {
+  if (!writePtr(prevFramePtr(), "PrevFramePtr")) {
     return false;
   }
-  
   prevFramePtr_ = virtualPointerAtStackOffset(0);
-  if (!writePtr(prevFramePtr(), "Padding-X86Only")) {
+
+#ifdef JS_NUNBOX32
+  
+  
+  if (!writePtr(prevFramePtr(), "Padding")) {
     return false;
   }
 #endif

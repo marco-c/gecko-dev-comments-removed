@@ -492,6 +492,15 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
     masm.ma_add(r3, Imm32(sizeof(RectifierFrameLayout)), r3, scratch);
   }
 
+  
+  
+  
+  static_assert(sizeof(Value) == 2 * sizeof(void*));
+  static_assert(JitStackAlignment == sizeof(Value));
+  masm.push(FramePointer);
+  masm.mov(StackPointer, FramePointer);
+  masm.push(FramePointer);  
+
   {
     Label notConstructing;
 
@@ -537,7 +546,7 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
   }
 
   
-  masm.as_add(r6, r6, Imm8(1));
+  masm.as_add(r6, r6, Imm8(2));  
   masm.ma_lsl(Imm32(3), r6, r6);
 
   
@@ -576,6 +585,8 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
   
   
   
+  
+  
 
   
   {
@@ -590,10 +601,15 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
   
   
   
+  
+  
 
   
-  masm.ma_alu(sp, lsr(r4, FRAMESIZE_SHIFT), sp, OpAdd);
+  masm.rshift32(Imm32(FRAMESIZE_SHIFT), r4);
+  masm.sub32(Imm32(sizeof(void*)), r4);
+  masm.addPtr(r4, sp);
 
+  masm.pop(FramePointer);
   masm.ret();
 }
 

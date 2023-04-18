@@ -447,6 +447,17 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
   
   
   
+  
+  
+  
+  static_assert(sizeof(Value) == sizeof(void*));
+  masm.push(FramePointer);
+  masm.moveStackPtrTo(FramePointer);
+  masm.Add(x7, x7, Operand(1));
+
+  
+  
+  
   Label noPadding;
   masm.Tbnz(x7, 0, &noPadding);
   masm.asVIXL().Push(xzr);
@@ -527,11 +538,12 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
   masm.Ldr(x4, MemOperand(masm.GetStackPointer64(), 24, vixl::PostIndex));
 
   
-  
-  masm.Add(masm.GetStackPointer64(), masm.GetStackPointer64(),
-           Operand(x4, vixl::LSR, FRAMESIZE_SHIFT));
+  masm.rshift32(Imm32(FRAMESIZE_SHIFT), r4);
+  masm.sub32(Imm32(sizeof(void*)), r4);
+  masm.addToStackPtr(r4);
 
   
+  masm.pop(FramePointer);
   masm.ret();
 }
 

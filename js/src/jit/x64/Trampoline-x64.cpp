@@ -506,21 +506,27 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
   static_assert(
       sizeof(JitFrameLayout) % JitStackAlignment == 0,
       "No need to consider the JitFrameLayout for aligning the stack");
+  static_assert((sizeof(Value) + sizeof(void*)) % JitStackAlignment == 0,
+                "No need to consider |this| and the frame pointer for "
+                "aligning the stack");
   static_assert(
       JitStackAlignment % sizeof(Value) == 0,
       "Ensure that we can pad the stack by pushing extra UndefinedValue");
   static_assert(IsPowerOfTwo(JitStackValueAlignment),
                 "must have power of two for masm.andl to do its job");
 
-  masm.addl(
-      Imm32(JitStackValueAlignment - 1  + 1 ),
-      rcx);
+  masm.addl(Imm32(JitStackValueAlignment - 1 ), rcx);
   masm.addl(rdx, rcx);
   masm.andl(Imm32(~(JitStackValueAlignment - 1)), rcx);
 
   
   masm.subq(r8, rcx);
-  masm.subq(Imm32(1), rcx);  
+
+  
+  
+  
+  masm.push(FramePointer);
+  masm.movq(rsp, FramePointer);
 
   
   
@@ -536,8 +542,6 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
 
   masm.moveValue(UndefinedValue(), ValueOperand(r10));
 
-  masm.movq(rsp, r9);  
-
   
   {
     Label undefLoopTop;
@@ -552,7 +556,9 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
   static_assert(sizeof(Value) == 8, "TimesEight is used to skip arguments");
 
   
-  BaseIndex b(r9, r8, TimesEight, sizeof(RectifierFrameLayout));
+  
+  BaseIndex b(FramePointer, r8, TimesEight,
+              sizeof(RectifierFrameLayout) + sizeof(void*));
   masm.lea(Operand(b), rcx);
 
   
@@ -579,8 +585,10 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
     ValueOperand newTarget(r10);
 
     
-    BaseIndex newTargetSrc(r9, rdx, TimesEight,
-                           sizeof(RectifierFrameLayout) + sizeof(Value));
+    
+    BaseIndex newTargetSrc(
+        FramePointer, rdx, TimesEight,
+        sizeof(RectifierFrameLayout) + sizeof(Value) + sizeof(void*));
     masm.loadValue(newTargetSrc, newTarget);
 
     
@@ -600,6 +608,7 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
   
 
   
+  masm.lea(Operand(FramePointer, sizeof(void*)), r9);
   masm.subq(rsp, r9);
   masm.makeFrameDescriptor(r9, FrameType::Rectifier, JitFrameLayout::Size());
 
@@ -632,10 +641,14 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
   
   masm.pop(r9);  
   masm.shrq(Imm32(FRAMESIZE_SHIFT), r9);
-  masm.pop(r11);       
-  masm.pop(r11);       
-  masm.addq(r9, rsp);  
+  masm.pop(r11);  
+  masm.pop(r11);  
 
+  
+  BaseIndex unwind(rsp, r9, TimesOne, -int32_t(sizeof(void*)));
+  masm.lea(Operand(unwind), rsp);
+
+  masm.pop(FramePointer);
   masm.ret();
 }
 
