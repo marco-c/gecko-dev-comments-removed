@@ -413,6 +413,18 @@ class nsBidiPresUtils {
 
 
 
+  static void ProcessOneChar(const char16_t* aText, size_t aLength,
+                             mozilla::intl::BidiEmbeddingLevel aBaseLevel,
+                             nsPresContext* aPresContext,
+                             BidiProcessor& aprocessor, Mode aMode,
+                             nsBidiPositionResolve* aPosResolve,
+                             int32_t aPosResolveCount, nscoord* aWidth,
+                             mozilla::intl::Bidi* aBidiEngine);
+
+  
+
+
+
 
 
 
