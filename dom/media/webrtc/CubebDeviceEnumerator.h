@@ -14,6 +14,12 @@
 
 namespace mozilla {
 
+namespace media {
+template <typename T>
+class Refcountable;
+}
+
+
 
 class CubebDeviceEnumerator final {
  public:
@@ -21,14 +27,13 @@ class CubebDeviceEnumerator final {
 
   static CubebDeviceEnumerator* GetInstance();
   static void Shutdown();
+  using AudioDeviceSet = media::Refcountable<nsTArray<RefPtr<AudioDeviceInfo>>>;
   
   
   
-  void EnumerateAudioInputDevices(
-      nsTArray<RefPtr<AudioDeviceInfo>>& aOutDevices);
+  RefPtr<const AudioDeviceSet> EnumerateAudioInputDevices();
   
-  void EnumerateAudioOutputDevices(
-      nsTArray<RefPtr<AudioDeviceInfo>>& aOutDevices);
+  RefPtr<const AudioDeviceSet> EnumerateAudioOutputDevices();
   
   
   
@@ -65,8 +70,8 @@ class CubebDeviceEnumerator final {
   void EnumerateAudioDevices(Side aSide);
   
   Mutex mMutex;
-  nsTArray<RefPtr<AudioDeviceInfo>> mInputDevices;
-  nsTArray<RefPtr<AudioDeviceInfo>> mOutputDevices;
+  RefPtr<AudioDeviceSet> mInputDevices;
+  RefPtr<AudioDeviceSet> mOutputDevices;
   
   
   
