@@ -78,7 +78,6 @@
 
 
 
-#ifndef U_FORCE_HIDE_DRAFT_API
 
 
 
@@ -132,7 +131,6 @@ typedef enum UNumberRoundingPriority {
 
     UNUM_ROUNDING_PRIORITY_STRICT,
 } UNumberRoundingPriority;
-#endif 
 
 
 
@@ -435,7 +433,6 @@ typedef enum UNumberSignDisplay {
 
     UNUM_SIGN_ACCOUNTING_EXCEPT_ZERO,
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -449,7 +446,6 @@ typedef enum UNumberSignDisplay {
 
 
     UNUM_SIGN_ACCOUNTING_NEGATIVE,
-#endif 
 
     
     
@@ -498,7 +494,6 @@ typedef enum UNumberDecimalSeparatorDisplay {
             UNUM_DECIMAL_SEPARATOR_COUNT
 } UNumberDecimalSeparatorDisplay;
 
-#ifndef U_FORCE_HIDE_DRAFT_API
 
 
 
@@ -522,7 +517,6 @@ typedef enum UNumberTrailingZeroDisplay {
 
     UNUM_TRAILING_ZERO_HIDE_IF_WHOLE,
 } UNumberTrailingZeroDisplay;
-#endif 
 
 struct UNumberFormatter;
 

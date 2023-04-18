@@ -252,7 +252,10 @@ ucnv_safeClone(const UConverter* cnv, void *stackBuffer, int32_t *pBufferSize, U
             UTRACE_EXIT_STATUS(*status);
             return NULL;
         }
-        *status = U_SAFECLONE_ALLOCATED_WARNING;
+        
+        if (pBufferSize != &stackBufferSize) {
+            *status = U_SAFECLONE_ALLOCATED_WARNING;
+        }
 
         
         *pBufferSize = bufferSizeNeeded;
@@ -317,7 +320,11 @@ ucnv_safeClone(const UConverter* cnv, void *stackBuffer, int32_t *pBufferSize, U
     return localConverter;
 }
 
-
+U_CAPI UConverter* U_EXPORT2
+ucnv_clone(const UConverter* cnv, UErrorCode *status)
+{
+    return ucnv_safeClone(cnv, nullptr, nullptr, status);
+}
 
 
 

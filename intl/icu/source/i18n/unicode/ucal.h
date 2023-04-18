@@ -1617,7 +1617,6 @@ U_CAPI int32_t U_EXPORT2
 ucal_getTimeZoneIDForWindowsID(const UChar* winid, int32_t len, const char* region,
                                 UChar* id, int32_t idCapacity, UErrorCode* status);
 
-#ifndef U_FORCE_HIDE_DRAFT_API
 
 
 
@@ -1625,7 +1624,6 @@ ucal_getTimeZoneIDForWindowsID(const UChar* winid, int32_t len, const char* regi
 
 
 enum UTimeZoneLocalOption {
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -1674,14 +1672,6 @@ enum UTimeZoneLocalOption {
 
 
     UCAL_TZ_LOCAL_DAYLIGHT_LATTER = UCAL_TZ_LOCAL_LATTER | 0x03,
-#else 
-    
-
-
-
-
-    UCAL_TZ_LOCAL_NONE = 0,
-#endif 
 };
 typedef enum UTimeZoneLocalOption UTimeZoneLocalOption; 
 
@@ -1718,7 +1708,6 @@ ucal_getTimeZoneOffsetFromLocal(
     UTimeZoneLocalOption nonExistingTimeOpt,
     UTimeZoneLocalOption duplicatedTimeOpt,
     int32_t* rawOffset, int32_t* dstOffset, UErrorCode* status);
-#endif 
 
 #endif 
 
