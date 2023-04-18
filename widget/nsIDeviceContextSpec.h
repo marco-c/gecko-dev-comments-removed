@@ -61,23 +61,17 @@ class nsIDeviceContextSpec : public nsISupports {
   
 
 
-
-
-  virtual float GetDPI() { return mozilla::StaticPrefs::print_default_dpi(); }
+  float GetDPI() { return mozilla::StaticPrefs::print_default_dpi(); }
 
   
 
 
-
-
-  virtual float GetPrintingScale();
+  float GetPrintingScale();
 
   
 
 
-
-
-  virtual gfxPoint GetPrintingTranslate();
+  gfxPoint GetPrintingTranslate();
 
   NS_IMETHOD BeginDocument(const nsAString& aTitle,
                            const nsAString& aPrintToFileName,
