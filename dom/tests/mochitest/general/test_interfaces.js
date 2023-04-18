@@ -800,7 +800,7 @@ var interfaceNamesInGlobalScope = [
   
   { name: "Notification", insecureContext: true },
   
-  { name: "OffscreenCanvas", insecureContext: true, nightly: true },
+  { name: "OffscreenCanvas", insecureContext: true, disabled: true },
   
   { name: "OfflineAudioCompletionEvent", insecureContext: true },
   

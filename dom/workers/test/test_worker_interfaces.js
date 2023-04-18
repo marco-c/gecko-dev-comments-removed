@@ -219,7 +219,7 @@ var interfaceNamesInGlobalScope = [
   
   { name: "Notification", insecureContext: true },
   
-  { name: "OffscreenCanvas", insecureContext: true, nightly: true },
+  { name: "OffscreenCanvas", insecureContext: true, disabled: true },
   
   { name: "Performance", insecureContext: true },
   
@@ -280,39 +280,29 @@ var interfaceNamesInGlobalScope = [
   
   { name: "URLSearchParams", insecureContext: true },
   
-  { name: "WebGL2RenderingContext", insecureContext: true, nightly: true },
+  { name: "WebGLActiveInfo", insecureContext: true, disabled: true },
   
-  { name: "WebGLActiveInfo", insecureContext: true, nightly: true },
+  { name: "WebGLBuffer", insecureContext: true, disabled: true },
   
-  { name: "WebGLBuffer", insecureContext: true, nightly: true },
+  { name: "WebGLContextEvent", insecureContext: true, disabled: true },
   
-  { name: "WebGLContextEvent", insecureContext: true, nightly: true },
+  { name: "WebGLFramebuffer", insecureContext: true, disabled: true },
   
-  { name: "WebGLFramebuffer", insecureContext: true, nightly: true },
-  
-  { name: "WebGLProgram", insecureContext: true, nightly: true },
+  { name: "WebGLProgram", insecureContext: true, disabled: true },
   
   { name: "WebGLQuery", insecureContext: true },
   
-  { name: "WebGLRenderbuffer", insecureContext: true, nightly: true },
+  { name: "WebGLRenderbuffer", insecureContext: true, disabled: true },
   
-  { name: "WebGLRenderingContext", insecureContext: true, nightly: true },
+  { name: "WebGLRenderingContext", insecureContext: true, disabled: true },
   
-  { name: "WebGLSampler", insecureContext: true, nightly: true },
+  { name: "WebGLShader", insecureContext: true, disabled: true },
   
-  { name: "WebGLShader", insecureContext: true, nightly: true },
+  { name: "WebGLShaderPrecisionFormat", insecureContext: true, disabled: true },
   
-  { name: "WebGLShaderPrecisionFormat", insecureContext: true, nightly: true },
+  { name: "WebGLTexture", insecureContext: true, disabled: true },
   
-  { name: "WebGLSync", insecureContext: true, nightly: true },
-  
-  { name: "WebGLTexture", insecureContext: true, nightly: true },
-  
-  { name: "WebGLTransformFeedback", insecureContext: true, nightly: true },
-  
-  { name: "WebGLUniformLocation", insecureContext: true, nightly: true },
-  
-  { name: "WebGLVertexArrayObject", insecureContext: true, nightly: true },
+  { name: "WebGLUniformLocation", insecureContext: true, disabled: true },
   
   { name: "WebSocket", insecureContext: true },
   
