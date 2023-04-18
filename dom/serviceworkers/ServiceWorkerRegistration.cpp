@@ -50,7 +50,7 @@ ServiceWorkerRegistration::ServiceWorkerRegistration(
       mDispatchedUpdateFoundId(kInvalidUpdateFoundId) {
   MOZ_DIAGNOSTIC_ASSERT(mInner);
 
-  KeepAliveIfHasListenersFor(u"updatefound"_ns);
+  KeepAliveIfHasListenersFor(nsGkAtoms::onupdatefound);
 
   mInner->SetServiceWorkerRegistration(this);
 }
@@ -125,7 +125,7 @@ void ServiceWorkerRegistration::RegistrationCleared() {
   
   
   
-  IgnoreKeepAliveIfHasListenersFor(u"updatefound"_ns);
+  IgnoreKeepAliveIfHasListenersFor(nsGkAtoms::onupdatefound);
 }
 
 already_AddRefed<ServiceWorker> ServiceWorkerRegistration::GetInstalling()

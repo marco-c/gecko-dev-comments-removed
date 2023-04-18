@@ -66,7 +66,7 @@ ServiceWorker::ServiceWorker(nsIGlobalObject* aGlobal,
   MOZ_DIAGNOSTIC_ASSERT(aGlobal);
   MOZ_DIAGNOSTIC_ASSERT(mInner);
 
-  KeepAliveIfHasListenersFor(u"statechange"_ns);
+  KeepAliveIfHasListenersFor(nsGkAtoms::onstatechange);
 
   
   
@@ -143,7 +143,7 @@ void ServiceWorker::MaybeDispatchStateChangeEvent() {
   
   
   if (mLastNotifiedState == ServiceWorkerState::Redundant) {
-    IgnoreKeepAliveIfHasListenersFor(u"statechange"_ns);
+    IgnoreKeepAliveIfHasListenersFor(nsGkAtoms::onstatechange);
   }
 }
 
