@@ -1360,7 +1360,6 @@ async function closeToolbox() {
 
 
 
-
 function emptyClipboard() {
   const clipboard = Services.clipboard;
   clipboard.emptyClipboard(clipboard.kGlobalClipboard);
