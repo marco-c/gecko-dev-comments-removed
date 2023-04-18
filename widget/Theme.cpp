@@ -1405,7 +1405,7 @@ UniquePtr<ScrollbarDrawing> Theme::ScrollbarStyle() {
     default:
       break;
   }
-  
+    
 #ifdef XP_WIN
   if (IsWin11OrLater()) {
     return MakeUnique<ScrollbarDrawingWin11>();

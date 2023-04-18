@@ -536,9 +536,7 @@ class LookAndFeel {
 
   static void SetData(widget::FullLookAndFeel&& aTables);
   static void NotifyChangedAllWindows(widget::ThemeChangeKind);
-  static bool HasPendingGlobalThemeChange() {
-    return sGlobalThemeChanged;
-  }
+  static bool HasPendingGlobalThemeChange() { return sGlobalThemeChanged; }
   static void HandleGlobalThemeChange() {
     if (MOZ_UNLIKELY(HasPendingGlobalThemeChange())) {
       DoHandleGlobalThemeChange();
