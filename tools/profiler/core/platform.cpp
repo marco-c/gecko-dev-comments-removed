@@ -2888,7 +2888,7 @@ static void CollectJavaThreadProfileData(ProfileBuffer& aProfileBuffer) {
 
   
   
-  constexpr ProfilerThreadId threadId;
+  constexpr ProfilerThreadId threadId = ProfilerThreadId::FromNumber(1);
   int sampleId = 0;
   while (true) {
     
@@ -3150,9 +3150,9 @@ static void locked_profiler_stream_json_for_this_process(
       
       
       
-      ProfiledThreadData profiledThreadData(
-          ThreadRegistrationInfo{"AndroidUI (JVM)", ProfilerThreadId{}, false,
-                                 CorePS::ProcessStartTime()});
+      ProfiledThreadData profiledThreadData(ThreadRegistrationInfo{
+          "AndroidUI (JVM)", ProfilerThreadId::FromNumber(1), false,
+          CorePS::ProcessStartTime()});
       profiledThreadData.StreamJSON(
           javaBuffer, nullptr, aWriter, CorePS::ProcessName(aLock),
           CorePS::ETLDplus1(aLock), CorePS::ProcessStartTime(), aSinceTime,
