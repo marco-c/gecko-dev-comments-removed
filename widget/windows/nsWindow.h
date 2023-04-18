@@ -829,13 +829,15 @@ class nsWindow final : public nsBaseWidget {
 
   
   nsWeakPtr mTaskbarPreview = nullptr;
-  
-  
-  bool mHasTaskbarIconBeenCreated = false;
 
   
   
-  bool mMouseTransparent = false;
+  
+  InputRegion mInputRegion;
+
+  
+  
+  bool mHasTaskbarIconBeenCreated = false;
 
   
   bool mSendingSetText = false;
