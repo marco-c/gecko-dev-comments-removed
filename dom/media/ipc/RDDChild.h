@@ -48,6 +48,7 @@ class RDDChild final : public PRDDChild,
 #endif  
   mozilla::ipc::IPCResult RecvUpdateMediaCodecsSupported(
       const PDMFactory::MediaCodecsSupported& aSupported);
+  mozilla::ipc::IPCResult RecvFOGData(ByteBuf&& aBuf);
 
   bool SendRequestMemoryReport(const uint32_t& aGeneration,
                                const bool& aAnonymize,

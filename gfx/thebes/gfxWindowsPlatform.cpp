@@ -315,13 +315,6 @@ void gfxWindowsPlatform::InitMemoryReportersForGPUProcess() {
 
 nsresult gfxWindowsPlatform::GetGpuTimeSinceProcessStartInMs(
     uint64_t* aResult) {
-  RefPtr<ID3D11Device> d3d11Device;
-  if (!(d3d11Device = mozilla::gfx::Factory::GetDirect3D11Device())) {
-    
-    *aResult = 0;
-    return NS_OK;
-  }
-
   nsModuleHandle module(LoadLibrary(L"gdi32.dll"));
   if (!module) {
     return NS_ERROR_NOT_AVAILABLE;
@@ -333,20 +326,20 @@ nsresult gfxWindowsPlatform::GetGpuTimeSinceProcessStartInMs(
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  RefPtr<IDXGIDevice> dxgiDevice;
-  if (d3d11Device->QueryInterface(__uuidof(IDXGIDevice),
-                                  getter_AddRefs(dxgiDevice)) != S_OK) {
-    return NS_ERROR_FAILURE;
+  gfx::DeviceManagerDx* dm = DeviceManagerDx::Get();
+  if (!dm) {
+    return NS_ERROR_NOT_AVAILABLE;
   }
 
-  IDXGIAdapter* DXGIAdapter;
-  if (dxgiDevice->GetAdapter(&DXGIAdapter) != S_OK) {
-    return NS_ERROR_FAILURE;
+  D3D11DeviceStatus status;
+  if (!dm->ExportDeviceInfo(&status)) {
+    
+    
+    *aResult = 0;
+    return NS_OK;
   }
 
-  DXGI_ADAPTER_DESC adapterDesc;
-  DXGIAdapter->GetDesc(&adapterDesc);
-  DXGIAdapter->Release();
+  const DxgiAdapterDesc& adapterDesc = status.adapter();
 
   D3DKMTQS queryStatistics;
   memset(&queryStatistics, 0, sizeof(D3DKMTQS));
