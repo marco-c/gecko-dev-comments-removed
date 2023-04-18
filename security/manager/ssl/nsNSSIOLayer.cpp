@@ -23,6 +23,8 @@
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/RandomNum.h"
+#include "mozilla/StaticPrefs_security.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/PBackgroundChild.h"
@@ -41,6 +43,7 @@
 #include "nsContentUtils.h"
 #include "nsIClientAuthDialogs.h"
 #include "nsISocketProvider.h"
+#include "nsISocketTransport.h"
 #include "nsIWebProgressListener.h"
 #include "nsNSSCertHelper.h"
 #include "nsNSSComponent.h"
@@ -2684,6 +2687,28 @@ static nsresult nsSSLIOLayerSetOptions(PRFileDesc* fd, bool forSTARTTLS,
     
     if (SECSuccess != SSL_SetDowngradeCheckVersion(fd, maxEnabledVersion)) {
       return NS_ERROR_FAILURE;
+    }
+  }
+
+  
+  if (range.max >= SSL_LIBRARY_VERSION_TLS_1_3 &&
+      !(infoObject->GetProviderFlags() & (nsISocketProvider::BE_CONSERVATIVE |
+                                          nsISocketTransport::DONT_TRY_ECH)) &&
+      StaticPrefs::security_tls_ech_grease_probability()) {
+    if ((RandomUint64().valueOr(0) % 100) >=
+        100 - StaticPrefs::security_tls_ech_grease_probability()) {
+      MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+              ("[%p] nsSSLIOLayerSetOptions: enabling TLS ECH Grease\n", fd));
+      if (SECSuccess != SSL_EnableTls13GreaseEch(fd, PR_TRUE)) {
+        return NS_ERROR_FAILURE;
+      }
+      
+      if (SECSuccess !=
+          SSL_SetTls13GreaseEchSize(
+              fd, std::clamp(StaticPrefs::security_tls_ech_grease_size(), 1U,
+                             255U))) {
+        return NS_ERROR_FAILURE;
+      }
     }
   }
 
