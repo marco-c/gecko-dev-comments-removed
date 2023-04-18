@@ -86,10 +86,10 @@ already_AddRefed<dom::Promise> Adapter::RequestDevice(
   }
 
   ffi::WGPULimits limits = {};
-  Maybe<RawId> id = mBridge->AdapterRequestDevice(mId, aDesc, &limits);
-  if (id.isSome()) {
+  auto request = mBridge->AdapterRequestDevice(mId, aDesc, &limits);
+  if (request) {
     RefPtr<Device> device =
-        new Device(this, id.value(), MakeUnique<ffi::WGPULimits>(limits));
+        new Device(this, request->mId, MakeUnique<ffi::WGPULimits>(limits));
     
     for (const auto& feature : aDesc.mRequiredFeatures) {
       NS_ConvertASCIItoUTF16 string(
@@ -97,9 +97,30 @@ already_AddRefed<dom::Promise> Adapter::RequestDevice(
       dom::GPUSupportedFeatures_Binding::SetlikeHelpers::Add(device->mFeatures,
                                                              string, aRv);
     }
-    promise->MaybeResolve(device);
+
+    request->mPromise->Then(
+        GetCurrentSerialEventTarget(), __func__,
+        [promise, device](bool aSuccess) {
+          if (aSuccess) {
+            promise->MaybeResolve(device);
+          } else {
+            
+            
+            
+            promise->MaybeRejectWithInvalidStateError(
+                "Unable to fulfill requested features and limits");
+          }
+        },
+        [promise, device](const ipc::ResponseRejectReason& aReason) {
+          
+          
+          
+          
+          device->CleanupUnregisteredInParent();
+          promise->MaybeRejectWithNotSupportedError("IPC error");
+        });
   } else {
-    promise->MaybeRejectWithNotSupportedError("Unable to instanciate a Device");
+    promise->MaybeRejectWithNotSupportedError("Unable to instantiate a Device");
   }
 
   return promise.forget();
