@@ -3,6 +3,8 @@
 
 
 
+
+
 class EditorTestUtils {
   kShift = "\uE008";
   kMeta = "\uE03d";
@@ -13,7 +15,7 @@ class EditorTestUtils {
 
   constructor(aEditingHost, aHarnessWindow = window) {
     this.editingHost = aEditingHost;
-    if (aHarnessWindow != this.window) {
+    if (aHarnessWindow != this.window && this.window.test_driver) {
       this.window.test_driver.set_test_context(aHarnessWindow);
     }
   }
