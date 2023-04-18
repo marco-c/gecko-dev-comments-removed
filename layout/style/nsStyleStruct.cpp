@@ -2436,7 +2436,8 @@ nsChangeHint nsStyleDisplay::CalcDifference(
     
     hint |= nsChangeHint_NeutralChange;
   }
-  if (mScrollSnapType != aNewData.mScrollSnapType) {
+  if (mScrollSnapType != aNewData.mScrollSnapType ||
+      mScrollSnapStop != aNewData.mScrollSnapStop) {
     
     hint |= nsChangeHint_RepaintFrame;
   }
