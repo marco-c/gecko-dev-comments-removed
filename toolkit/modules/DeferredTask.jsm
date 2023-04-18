@@ -8,6 +8,8 @@
 
 var EXPORTED_SYMBOLS = ["DeferredTask"];
 
+const lazy = {};
+
 
 
 
@@ -83,7 +85,7 @@ var EXPORTED_SYMBOLS = ["DeferredTask"];
 
 
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "PromiseUtils",
   "resource://gre/modules/PromiseUtils.jsm"
 );
@@ -298,7 +300,7 @@ DeferredTask.prototype = {
 
 
   _timerCallback() {
-    let runningDeferred = PromiseUtils.defer();
+    let runningDeferred = lazy.PromiseUtils.defer();
 
     
     
