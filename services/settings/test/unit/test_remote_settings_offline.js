@@ -65,30 +65,31 @@ add_task(async function test_load_from_dump_when_offline() {
 });
 add_task(clear_state);
 
-add_task(async function test_skip_dump_after_empty_import() {
+add_task(async function test_optional_skip_dump_after_empty_import() {
   
   const before = await client.get({ syncIfEmpty: false });
   equal(before.length, 0, "collection empty after clearing");
 
   
   
+  
   await importData([]); 
 
-  const after = await client.get();
+  const after = await client.get({ loadDumpIfNewer: false });
   equal(after.length, 0, "collection still empty due to import");
   equal(await client.getLastModified(), 0, "Empty dump has no timestamp");
 });
 add_task(clear_state);
 
-add_task(async function test_skip_dump_after_non_empty_import() {
+add_task(async function test_optional_skip_dump_after_non_empty_import() {
   await importData([{ last_modified: 1234, id: "dummy" }]);
 
-  const after = await client.get();
+  const after = await client.get({ loadDumpIfNewer: false });
   equal(after.length, 1, "Imported dummy data");
   equal(await client.getLastModified(), 1234, "Expected timestamp of import");
 
   await importData([]);
-  const after2 = await client.get();
+  const after2 = await client.get({ loadDumpIfNewer: false });
   equal(after2.length, 0, "Previous data wiped on duplicate import");
   equal(await client.getLastModified(), 0, "Timestamp of empty collection");
 });
@@ -97,7 +98,7 @@ add_task(clear_state);
 add_task(async function test_load_dump_after_empty_import() {
   await importData([]); 
 
-  const after = await client.get({ loadDumpIfNewer: true });
+  const after = await client.get();
   equal(after.length, DUMP_RECORDS.length, "Imported dump");
   equal(await client.getLastModified(), DUMP_LAST_MODIFIED, "dump's timestamp");
 });
@@ -110,7 +111,7 @@ add_task(async function test_load_dump_after_non_empty_import() {
 
   await importData([{ last_modified: 1234, id: "dummy" }]);
 
-  const after = await client.get({ loadDumpIfNewer: true });
+  const after = await client.get();
   equal(after.length, DUMP_RECORDS.length, "Imported dump");
   equal(await client.getLastModified(), DUMP_LAST_MODIFIED, "dump's timestamp");
 });
@@ -124,7 +125,7 @@ add_task(async function test_load_dump_after_import_from_broken_distro() {
   
   await importData([{ id: "dummy" }]);
 
-  const after = await client.get({ loadDumpIfNewer: true });
+  const after = await client.get();
   equal(after.length, DUMP_RECORDS.length, "Imported dump");
   equal(await client.getLastModified(), DUMP_LAST_MODIFIED, "dump's timestamp");
 });
@@ -133,7 +134,7 @@ add_task(clear_state);
 add_task(async function test_skip_dump_if_same_last_modified() {
   await importData([{ last_modified: DUMP_LAST_MODIFIED, id: "dummy" }]);
 
-  const after = await client.get({ loadDumpIfNewer: true });
+  const after = await client.get();
   equal(after.length, 1, "Not importing dump when time matches");
   equal(await client.getLastModified(), DUMP_LAST_MODIFIED, "Same timestamp");
 });
