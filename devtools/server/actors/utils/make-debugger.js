@@ -61,8 +61,14 @@ module.exports = function makeDebugger({
   const dbg = new Debugger();
   EventEmitter.decorate(dbg);
 
+  
+  
+  
   dbg.allowUnobservedAsmJS = true;
+  
+  
   dbg.allowUnobservedWasm = true;
+
   dbg.uncaughtExceptionHook = reportDebuggerHookException;
 
   const onNewGlobalObject = function(global) {

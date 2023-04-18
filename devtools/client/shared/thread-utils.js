@@ -43,7 +43,6 @@ exports.getThreadOptions = async function() {
     ),
     
     observeAsmJS: true,
-    observeWasm: true,
     breakpoints: sanitizeBreakpoints(await asyncStore.pendingBreakpoints),
     
     

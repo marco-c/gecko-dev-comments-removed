@@ -43,13 +43,21 @@ export async function onConnect(_commands, _resourceCommand, _actions, store) {
     }
     await targetCommand.startListening();
   }
-  
-  
-  
-  
-  
-  
-  const options = { pauseWorkersUntilAttach: true };
+
+  const options = {
+    
+    
+    
+    
+    
+    
+    pauseWorkersUntilAttach: true,
+
+    
+    
+    
+    observeWasm: true,
+  };
   await commands.threadConfigurationCommand.updateConfiguration(options);
 
   
