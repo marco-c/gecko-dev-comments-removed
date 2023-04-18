@@ -2113,63 +2113,73 @@ bool gfxFcPlatformFontList::FindAndAddFamilies(
   ToLowerCase(cacheKey);
   cacheKey.Append(':');
   cacheKey.Append(familyName);
-  const auto& cached = mFcSubstituteCache.LookupOrInsertWith(cacheKey, [&] {
-    
-    const FcChar8* kSentinelName = ToFcChar8Ptr("-moz-sentinel");
-    const FcChar8* terminator = nullptr;
-    RefPtr<FcPattern> sentinelSubst = dont_AddRef(FcPatternCreate());
-    FcPatternAddString(sentinelSubst, FC_FAMILY, kSentinelName);
-    if (!lang.IsEmpty()) {
-      FcPatternAddString(sentinelSubst, FC_LANG, ToFcChar8Ptr(lang.get()));
+  if (const auto& cached = mFcSubstituteCache.Lookup(cacheKey)) {
+    if (cached->IsEmpty()) {
+      return false;
     }
-    FcConfigSubstitute(nullptr, sentinelSubst, FcMatchPattern);
+    aOutput->AppendElements(*cached);
+    return true;
+  }
 
-    
-    
-    
-    
-    
-    
-    FcChar8* substName;
-    for (int i = 0; FcPatternGetString(sentinelSubst, FC_FAMILY, i,
-                                       &substName) == FcResultMatch;
-         i++) {
-      if (FcStrCmp(substName, kSentinelName) == 0) {
-        terminator = kSentinelName;
-        break;
-      } else if (!terminator) {
-        terminator = substName;
-      }
-    }
+  
+  const FcChar8* kSentinelName = ToFcChar8Ptr("-moz-sentinel");
+  const FcChar8* terminator = nullptr;
+  RefPtr<FcPattern> sentinelSubst = dont_AddRef(FcPatternCreate());
+  FcPatternAddString(sentinelSubst, FC_FAMILY, kSentinelName);
+  if (!lang.IsEmpty()) {
+    FcPatternAddString(sentinelSubst, FC_LANG, ToFcChar8Ptr(lang.get()));
+  }
+  FcConfigSubstitute(nullptr, sentinelSubst, FcMatchPattern);
 
-    
-    RefPtr<FcPattern> fontWithSentinel = dont_AddRef(FcPatternCreate());
-    FcPatternAddString(fontWithSentinel, FC_FAMILY,
-                       ToFcChar8Ptr(familyName.get()));
-    FcPatternAddString(fontWithSentinel, FC_FAMILY, kSentinelName);
-    if (!lang.IsEmpty()) {
-      FcPatternAddString(sentinelSubst, FC_LANG, ToFcChar8Ptr(lang.get()));
+  
+  
+  
+  
+  
+  
+  FcChar8* substName;
+  for (int i = 0; FcPatternGetString(sentinelSubst, FC_FAMILY, i, &substName) ==
+                  FcResultMatch;
+       i++) {
+    if (FcStrCmp(substName, kSentinelName) == 0) {
+      terminator = kSentinelName;
+      break;
     }
-    FcConfigSubstitute(nullptr, fontWithSentinel, FcMatchPattern);
+    if (!terminator) {
+      terminator = substName;
+    }
+  }
 
-    
-    AutoTArray<FamilyAndGeneric, 10> cachedFamilies;
-    for (int i = 0; FcPatternGetString(fontWithSentinel, FC_FAMILY, i,
-                                       &substName) == FcResultMatch;
-         i++) {
-      if (terminator && FcStrCmp(substName, terminator) == 0) {
-        break;
-      }
-      gfxPlatformFontList::FindAndAddFamilies(
-          aPresContext, aGeneric, nsDependentCString(ToCharPtr(substName)),
-          &cachedFamilies, aFlags, aStyle, aLanguage);
+  
+  RefPtr<FcPattern> fontWithSentinel = dont_AddRef(FcPatternCreate());
+  FcPatternAddString(fontWithSentinel, FC_FAMILY,
+                     ToFcChar8Ptr(familyName.get()));
+  FcPatternAddString(fontWithSentinel, FC_FAMILY, kSentinelName);
+  if (!lang.IsEmpty()) {
+    FcPatternAddString(sentinelSubst, FC_LANG, ToFcChar8Ptr(lang.get()));
+  }
+  FcConfigSubstitute(nullptr, fontWithSentinel, FcMatchPattern);
+
+  
+  AutoTArray<FamilyAndGeneric, 10> cachedFamilies;
+  for (int i = 0; FcPatternGetString(fontWithSentinel, FC_FAMILY, i,
+                                     &substName) == FcResultMatch;
+       i++) {
+    if (terminator && FcStrCmp(substName, terminator) == 0) {
+      break;
     }
-    return cachedFamilies;
-  });
-  if (cached.IsEmpty()) {
+    gfxPlatformFontList::FindAndAddFamilies(
+        aPresContext, aGeneric, nsDependentCString(ToCharPtr(substName)),
+        &cachedFamilies, aFlags, aStyle, aLanguage);
+  }
+
+  const auto& insertedCachedFamilies =
+      mFcSubstituteCache.InsertOrUpdate(cacheKey, std::move(cachedFamilies));
+
+  if (insertedCachedFamilies.IsEmpty()) {
     return false;
   }
-  aOutput->AppendElements(cached);
+  aOutput->AppendElements(insertedCachedFamilies);
   return true;
 }
 
