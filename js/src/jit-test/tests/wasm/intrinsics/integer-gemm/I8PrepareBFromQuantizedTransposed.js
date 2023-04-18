@@ -1,15 +1,7 @@
 
 
 
-
-
 const COMMON_TEST_SETUP_SCRIPT = "./CommonTestSetup.js"
-
-
-import(COMMON_TEST_SETUP_SCRIPT).then((importedModule) => {
-  if (!importedModule.nativeX86Shared())
-    quit(0);
-});
 
 
 const ALL_TESTS_AS_STRING =`

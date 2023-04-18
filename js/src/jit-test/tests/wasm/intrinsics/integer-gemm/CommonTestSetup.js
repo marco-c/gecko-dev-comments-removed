@@ -3,14 +3,6 @@
 
 
 
-export function nativeX86Shared() {
-  let conf = getBuildConfiguration();
-  if ((conf.x64 || conf.x86) && !conf.simulator)
-      return true;
-  return false;
-}
-
-
 export const COMMON_TEST_SETUP_AS_STRING = `
 const libdir=${JSON.stringify(libdir)}; load(libdir + "wasm.js");
 let memory = new WebAssembly.Memory({initial: 1, maximum: 1});
