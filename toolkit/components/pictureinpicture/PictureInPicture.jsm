@@ -817,6 +817,9 @@ var PictureInPicture = {
     
     
     
+    
+    
+    
     let screen = screenManager.screenForRect(left, top, width, height);
 
     return screen;
