@@ -28,6 +28,10 @@ class InProcessAndroidCompositorWidget final
   nsIWidget* RealWidget() override;
   CompositorWidgetDelegate* AsDelegate() override { return this; }
 
+  
+
+  void NotifyClientSizeChanged(const LayoutDeviceIntSize& aClientSize) override;
+
  private:
   
   void OnCompositorSurfaceChanged() override;
