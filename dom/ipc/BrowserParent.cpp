@@ -249,8 +249,6 @@ BrowserParent::BrowserParent(ContentParent* aManager, const TabId& aTabId,
   if (aBrowsingContext->Top()->IsPriorityActive()) {
     ProcessPriorityManager::ActivityChanged(this, true);
   }
-
-  mManager->AddKeepAlive(aBrowsingContext->BrowserId());
 }
 
 BrowserParent::~BrowserParent() = default;
@@ -640,17 +638,13 @@ void BrowserParent::Destroy() {
 
   mIsDestroyed = true;
 
-  if (CanSend()) {
-    Manager()->RemoveKeepAlive(mBrowsingContext->BrowserId());
-  }
-
   Manager()->NotifyTabDestroying();
 
   
   
   
   
-  if (CanSend()) {
+  if (CanRecv()) {
     mBrowsingContext->Group()->AddKeepAlive();
   }
 
@@ -678,10 +672,6 @@ mozilla::ipc::IPCResult BrowserParent::RecvEnsureLayersConnected(
 }
 
 void BrowserParent::ActorDestroy(ActorDestroyReason why) {
-  if (!mIsDestroyed) {
-    Manager()->RemoveKeepAlive(mBrowsingContext->BrowserId());
-  }
-
   Manager()->NotifyTabDestroyed(mTabId, mMarkedDestroying);
 
   ContentProcessManager::GetSingleton()->UnregisterRemoteFrame(mTabId);
