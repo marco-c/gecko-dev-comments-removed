@@ -887,8 +887,6 @@ class MemoryTracker {
   void fixupAfterMovingGC();
   void checkEmptyOnDestroy();
 
-  void adopt(MemoryTracker& other);
-
   
   void trackGCMemory(Cell* cell, size_t nbytes, MemoryUse use);
   void untrackGCMemory(Cell* cell, size_t nbytes, MemoryUse use);
