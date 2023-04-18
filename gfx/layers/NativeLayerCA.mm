@@ -787,8 +787,7 @@ bool NativeLayerCA::ShouldSpecializeVideo(const MutexAutoLock& aProofOfLock) {
     return false;
   }
 
-  if (!StaticPrefs::gfx_core_animation_specialize_video() ||
-      !nsCocoaFeatures::OnHighSierraOrLater()) {
+  if (!nsCocoaFeatures::OnHighSierraOrLater()) {
     
     return false;
   }
@@ -814,6 +813,11 @@ bool NativeLayerCA::ShouldSpecializeVideo(const MutexAutoLock& aProofOfLock) {
 
   
   
+
+  if (!StaticPrefs::gfx_core_animation_specialize_video()) {
+    
+    return false;
+  }
 
   if (pixelFormat != kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange &&
       pixelFormat != kCVPixelFormatType_420YpCbCr8BiPlanarFullRange) {
