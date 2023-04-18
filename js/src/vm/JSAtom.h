@@ -52,6 +52,10 @@ template <typename CharT>
 extern JSAtom* AtomizeChars(JSContext* cx, mozilla::HashNumber hash,
                             const CharT* chars, size_t length);
 
+template <typename CharT>
+extern JSAtom* PermanentlyAtomizeChars(JSContext* cx, mozilla::HashNumber hash,
+                                       const CharT* chars, size_t length);
+
 
 
 

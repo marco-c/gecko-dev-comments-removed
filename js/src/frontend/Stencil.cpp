@@ -2029,7 +2029,7 @@ bool CompilationStencil::instantiateSelfHostedAtoms(
 
   
   
-  return InstantiateAtoms(cx, atomCache, *this);
+  return InstantiateMarkedAtomsAsPermanent(cx, parserAtomData, atomCache);
 }
 
 JSScript* CompilationStencil::instantiateSelfHostedTopLevelForRealm(
