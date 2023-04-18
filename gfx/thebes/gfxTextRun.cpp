@@ -517,7 +517,7 @@ void gfxTextRun::DrawPartialLigature(gfxFont* aFont, Range aRange,
 
 
 static bool HasSyntheticBoldOrColor(gfxFont* aFont) {
-  if (aFont->ApplySyntheticBold()) {
+  if (aFont->IsSyntheticBold()) {
     return true;
   }
   gfxFontEntry* fe = aFont->GetFontEntry();

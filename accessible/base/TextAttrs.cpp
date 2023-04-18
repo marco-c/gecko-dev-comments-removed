@@ -558,7 +558,8 @@ FontWeight TextAttrsMgr::FontWeightTextAttr::GetFontWeight(nsIFrame* aFrame) {
   
   
   
-  if (font->ApplySyntheticBold()) {
+  
+  if (font->IsSyntheticBold()) {
     return FontWeight::Bold();
   }
 

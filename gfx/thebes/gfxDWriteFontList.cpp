@@ -651,25 +651,11 @@ void gfxDWriteFontEntry::GetVariationInstances(
 
 gfxFont* gfxDWriteFontEntry::CreateFontInstance(
     const gfxFontStyle* aFontStyle) {
-  
-  
-  bool useBoldSim = false;
-  if (aFontStyle->NeedsSyntheticBold(this)) {
-    switch (StaticPrefs::gfx_font_rendering_directwrite_bold_simulation()) {
-      case 0:  
-        break;
-      case 1:  
-        useBoldSim = !mIsDataUserFont;
-        break;
-      default:  
-        useBoldSim = true;
-        break;
-    }
-  }
+  bool needsBold = aFontStyle->NeedsSyntheticBold(this);
   DWRITE_FONT_SIMULATIONS sims =
-      useBoldSim ? DWRITE_FONT_SIMULATIONS_BOLD : DWRITE_FONT_SIMULATIONS_NONE;
+      needsBold ? DWRITE_FONT_SIMULATIONS_BOLD : DWRITE_FONT_SIMULATIONS_NONE;
   ThreadSafeWeakPtr<UnscaledFontDWrite>& unscaledFontPtr =
-      useBoldSim ? mUnscaledFontBold : mUnscaledFont;
+      needsBold ? mUnscaledFontBold : mUnscaledFont;
   RefPtr<UnscaledFontDWrite> unscaledFont(unscaledFontPtr);
   if (!unscaledFont) {
     RefPtr<IDWriteFontFace> fontFace;
