@@ -432,17 +432,17 @@ async function testCopyPaste(isXHTML) {
     var r = document.createRange();
     r.setStart(t1, 1);
     r.setEnd(e2, 0);
-    sel.addRange(r);
+    sel.addRange(r); 
 
     r = document.createRange();
     r.setStart(e2, 1);
     r.setEnd(t3, 0);
-    sel.addRange(r);
+    sel.addRange(r); 
     await copySelectionToClipboard(true);
     testPasteHTML(
       "contentEditable6",
-      '<span id="1127835crash1"></span><div id="1127835crash2"><div>\n</div></div><br>'
-    );
+      '<span id="1127835crash1"></span><div id="1127835crash2"><div>\n</div></div><a href="http://www.mozilla.org/" id="1127835crash3"><br></a>'
+    ); 
   }
 
   
