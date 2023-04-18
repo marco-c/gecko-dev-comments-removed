@@ -4124,6 +4124,9 @@ BrowserGlue.prototype = {
     }
 
     
+    
+
+    
     Services.prefs.setIntPref("browser.migration.version", UI_VERSION);
   },
 
