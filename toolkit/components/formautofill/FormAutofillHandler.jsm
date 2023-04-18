@@ -356,7 +356,8 @@ class FormAutofillSection {
       
 
       let element = fieldDetail.elementWeakRef.get();
-      if (!element) {
+      
+      if (!element || element.readOnly) {
         continue;
       }
 
@@ -433,7 +434,7 @@ class FormAutofillSection {
         "";
 
       
-      if (!element) {
+      if (!element || element.readOnly) {
         continue;
       }
 

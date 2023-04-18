@@ -52,6 +52,8 @@ const SECTION_TYPES = {
   CREDIT_CARD: "creditCard",
 };
 
+const ELIGIBLE_INPUT_TYPES = ["text", "email", "tel", "number", "month"];
+
 
 
 const MAX_FIELD_VALUE_LENGTH = 200;
@@ -456,19 +458,26 @@ this.FormAutofillUtils = {
     return true;
   },
 
-  ALLOWED_TYPES: ["text", "email", "tel", "number", "month"],
+  
+
+
+
+
+
   isFieldEligibleForAutofill(element) {
-    let tagName = element.tagName;
-    if (tagName == "INPUT") {
+    if (!element) {
+      return false;
+    }
+    if (element instanceof HTMLInputElement) {
       
-      if (!this.ALLOWED_TYPES.includes(element.type)) {
+      if (!ELIGIBLE_INPUT_TYPES.includes(element.type)) {
         return false;
       }
       
       if (!this.isFieldVisible(element)) {
         return false;
       }
-    } else if (tagName != "SELECT") {
+    } else if (!(element instanceof HTMLSelectElement)) {
       return false;
     }
 
