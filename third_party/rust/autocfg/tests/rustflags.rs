@@ -8,12 +8,26 @@ use std::env;
 fn test_with_sysroot() {
     
     let dir = env::current_exe().unwrap().parent().unwrap().to_path_buf();
-    env::set_var("RUSTFLAGS", &format!("-L {}", dir.display()));
     env::set_var("OUT_DIR", &format!("{}", dir.display()));
 
     
-    env::set_var("HOST", "lol");
+    env::set_var("CARGO_ENCODED_RUSTFLAGS", "");
+    env::set_var("RUSTFLAGS", &format!("-L {}", dir.display()));
+    let ac = autocfg::AutoCfg::new().unwrap();
+    assert!(ac.probe_sysroot_crate("std"));
+    assert!(!ac.probe_sysroot_crate("autocfg"));
 
+    
+    env::set_var(
+        "CARGO_ENCODED_RUSTFLAGS",
+        &format!("-L\x1f{}", dir.display()),
+    );
+    let ac = autocfg::AutoCfg::new().unwrap();
+    assert!(ac.probe_sysroot_crate("autocfg"));
+
+    
+    env::remove_var("CARGO_ENCODED_RUSTFLAGS");
+    env::set_var("HOST", "lol");
     let ac = autocfg::AutoCfg::new().unwrap();
     assert!(ac.probe_sysroot_crate("autocfg"));
 }

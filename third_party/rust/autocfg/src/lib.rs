@@ -63,7 +63,7 @@ use std::env;
 use std::ffi::OsString;
 use std::fs;
 use std::io::{stderr, Write};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 #[allow(deprecated)]
 use std::sync::atomic::ATOMIC_USIZE_INIT;
@@ -86,7 +86,7 @@ pub struct AutoCfg {
     rustc_version: Version,
     target: Option<OsString>,
     no_std: bool,
-    rustflags: Option<Vec<String>>,
+    rustflags: Vec<String>,
 }
 
 
@@ -166,37 +166,13 @@ impl AutoCfg {
             return Err(error::from_str("output path is not a writable directory"));
         }
 
-        
-        
-        
-        
-        
-        
-        let rustflags = if target != env::var_os("HOST")
-            || dir_contains_target(&target, &dir, env::var_os("CARGO_TARGET_DIR"))
-        {
-            env::var("RUSTFLAGS").ok().map(|rustflags| {
-                
-                
-                
-                rustflags
-                    .split(' ')
-                    .map(str::trim)
-                    .filter(|s| !s.is_empty())
-                    .map(str::to_string)
-                    .collect::<Vec<String>>()
-            })
-        } else {
-            None
-        };
-
         let mut ac = AutoCfg {
+            rustflags: rustflags(&target, &dir),
             out_dir: dir,
             rustc: rustc,
             rustc_version: rustc_version,
             target: target,
             no_std: false,
-            rustflags: rustflags,
         };
 
         
@@ -240,14 +216,23 @@ impl AutoCfg {
             .arg(&self.out_dir)
             .arg("--emit=llvm-ir");
 
-        if let &Some(ref rustflags) = &self.rustflags {
-            command.args(rustflags);
-        }
-
         if let Some(target) = self.target.as_ref() {
             command.arg("--target").arg(target);
         }
 
+        command.args(&self.rustflags);
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         command.arg("-").stdin(Stdio::piped()).stderr(Stdio::null());
         let mut child = try!(command.spawn().map_err(error::from_io));
         let mut stdin = child.stdin.take().expect("rustc stdin");
@@ -417,7 +402,7 @@ fn mangle(s: &str) -> String {
 
 fn dir_contains_target(
     target: &Option<OsString>,
-    dir: &PathBuf,
+    dir: &Path,
     cargo_target_dir: Option<OsString>,
 ) -> bool {
     target
@@ -435,4 +420,45 @@ fn dir_contains_target(
             })
         })
         .unwrap_or(false)
+}
+
+fn rustflags(target: &Option<OsString>, dir: &Path) -> Vec<String> {
+    
+    
+    
+    
+    
+    if let Ok(a) = env::var("CARGO_ENCODED_RUSTFLAGS") {
+        return if a.is_empty() {
+            Vec::new()
+        } else {
+            a.split('\x1f').map(str::to_string).collect()
+        };
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if *target != env::var_os("HOST")
+        || dir_contains_target(target, dir, env::var_os("CARGO_TARGET_DIR"))
+    {
+        if let Ok(rustflags) = env::var("RUSTFLAGS") {
+            
+            
+            return rustflags
+                .split(' ')
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+                .map(str::to_string)
+                .collect();
+        }
+    }
+
+    Vec::new()
 }
