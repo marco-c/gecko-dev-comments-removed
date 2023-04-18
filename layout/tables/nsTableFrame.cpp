@@ -3063,6 +3063,36 @@ void nsTableFrame::ReflowChildren(TableReflowInput& aReflowInput,
   
   mBits.mResizedColumns = false;
   ClearGeometryDirty();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  auto hasNextInFlowThatMustBePreserved = [this, isPaginated]() -> bool {
+    if (!isPaginated) {
+      return false;
+    }
+    auto* nextInFlow = static_cast<nsTableFrame*>(GetNextInFlow());
+    if (!nextInFlow) {
+      return false;
+    }
+    for (nsIFrame* kidFrame : nextInFlow->mFrames) {
+      if (!IsRepeatedFrame(kidFrame)) {
+        return true;
+      }
+    }
+    return false;
+  };
+  if (aStatus.IsComplete() && hasNextInFlowThatMustBePreserved()) {
+    aStatus.SetIncomplete();
+  }
 }
 
 void nsTableFrame::ReflowColGroups(gfxContext* aRenderingContext) {
