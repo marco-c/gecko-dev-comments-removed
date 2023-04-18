@@ -73,6 +73,7 @@ void SetThisProcessName(const char* aProcessName) {
   }
 
   
+  
   ProcessSerialNumber psn;
   if (::GetCurrentProcess(&psn) != noErr) {
     return;

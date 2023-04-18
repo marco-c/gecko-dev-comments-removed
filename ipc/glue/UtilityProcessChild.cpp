@@ -102,7 +102,6 @@ bool UtilityProcessChild::Init(base::ProcessId aParentPid,
 
   mSandbox = (SandboxingKind)aSandboxingKind;
 
-  mozilla::ipc::SetThisProcessName("Utility Process");
   profiler_set_process_name(nsCString("Utility Process"));
 
   
@@ -121,6 +120,10 @@ void CGSShutdownServerConnections();
 mozilla::ipc::IPCResult UtilityProcessChild::RecvInit(
     const Maybe<FileDescriptor>& aBrokerFd,
     const bool& aCanRecordReleaseTelemetry) {
+  
+  
+  mozilla::ipc::SetThisProcessName("Utility Process");
+
 #if defined(MOZ_SANDBOX)
 #  if defined(XP_MACOSX)
   
