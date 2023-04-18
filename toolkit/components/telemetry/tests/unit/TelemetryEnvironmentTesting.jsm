@@ -317,7 +317,7 @@ var TelemetryEnvironmentTesting = {
 
       let win32kLockdownState =
         data.settings.sandbox.contentWin32kLockdownState;
-      Assert.ok(win32kLockdownState >= 1 && win32kLockdownState <= 4);
+      Assert.ok(win32kLockdownState >= 1 && win32kLockdownState <= 5);
     }
 
     

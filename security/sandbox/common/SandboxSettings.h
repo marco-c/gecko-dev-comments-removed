@@ -23,11 +23,15 @@ int GetEffectiveSocketProcessSandboxLevel();
 
 bool IsContentSandboxEnabled();
 
+
+
+
 enum class ContentWin32kLockdownState : int32_t {
   LockdownEnabled = 1,
   MissingWebRender,
   OperatingSystemNotSupported,
   PrefNotSet,
+  MissingRemoteWebGL,
 };
 
 const char* ContentWin32kLockdownStateToString(

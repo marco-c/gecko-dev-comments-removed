@@ -1628,12 +1628,6 @@ EnvironmentCache.prototype = {
 
       
       
-      
-      
-      
-      
-      
-      
       contentWin32kLockdownState = sandboxSettings.contentWin32kLockdownState;
     } catch (e) {}
     return {
