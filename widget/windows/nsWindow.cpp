@@ -2891,13 +2891,11 @@ bool nsWindow::UpdateNonClientMargins(int32_t aSizeMode, bool aReflowWindow) {
   } else if (aSizeMode == nsSizeMode_Maximized) {
     
     
-    
-    
-    
-    
-    
-    
-    mNonClientOffset.top = mCaptionHeight;
+    auto verticalResize =
+        WinUtils::GetSystemMetricsForDpi(SM_CYFRAME, dpi) +
+        (hasCaption ? WinUtils::GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi)
+                    : 0);
+    mNonClientOffset.top = mCaptionHeight - verticalResize;
     mNonClientOffset.bottom = 0;
     mNonClientOffset.left = 0;
     mNonClientOffset.right = 0;
