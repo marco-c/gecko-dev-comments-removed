@@ -1853,8 +1853,8 @@ class EditorBase : public nsIEditor,
   
 
 
+
   bool IsDescendantOfRoot(const nsINode* inNode) const;
-  bool IsDescendantOfEditorRoot(const nsINode* aNode) const;
 
   
 

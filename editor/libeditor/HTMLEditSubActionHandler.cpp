@@ -6501,7 +6501,7 @@ EditorDOMPoint HTMLEditor::GetCurrentHardLineStartPoint(
   for (nsIContent* nearContent = HTMLEditUtils::GetPreviousContent(
            point, ignoreNonEditableNodeAndStopAtBlockBoundary, &aEditingHost);
        !nearContent && !point.IsContainerHTMLElement(nsGkAtoms::body) &&
-       point.GetContainer()->GetParentNode();
+       point.GetContainerParent();
        nearContent = HTMLEditUtils::GetPreviousContent(
            point, ignoreNonEditableNodeAndStopAtBlockBoundary, &aEditingHost)) {
     
@@ -6520,15 +6520,21 @@ EditorDOMPoint HTMLEditor::GetCurrentHardLineStartPoint(
     
     
     
-    
-    
     bool blockLevelAction =
         aEditSubAction == EditSubAction::eIndent ||
         aEditSubAction == EditSubAction::eOutdent ||
         aEditSubAction == EditSubAction::eSetOrClearAlignment ||
         aEditSubAction == EditSubAction::eCreateOrRemoveBlock;
-    if (!IsDescendantOfEditorRoot(point.GetContainer()->GetParentNode()) &&
-        (blockLevelAction || !IsDescendantOfEditorRoot(point.GetContainer()))) {
+    Element* const editorRoot = GetEditorRoot();
+    if (!editorRoot) {
+      break;
+    }
+    
+    
+    
+    if (!point.GetContainerParent()->IsInclusiveDescendantOf(editorRoot) &&
+        (blockLevelAction ||
+         !point.GetContainer()->IsInclusiveDescendantOf(editorRoot))) {
       break;
     }
 
@@ -6659,7 +6665,7 @@ EditorDOMPoint HTMLEditor::GetCurrentHardLineEndPoint(
   for (nsIContent* nearContent = HTMLEditUtils::GetNextContent(
            point, ignoreNonEditableNodeAndStopAtBlockBoundary, &aEditingHost);
        !nearContent && !point.IsContainerHTMLElement(nsGkAtoms::body) &&
-       point.GetContainer()->GetParentNode();
+       point.GetContainerParent();
        nearContent = HTMLEditUtils::GetNextContent(
            point, ignoreNonEditableNodeAndStopAtBlockBoundary, &aEditingHost)) {
     
@@ -6668,10 +6674,12 @@ EditorDOMPoint HTMLEditor::GetCurrentHardLineEndPoint(
     
     
     
-    
-    
-    if (!IsDescendantOfEditorRoot(point.GetContainer()) &&
-        !IsDescendantOfEditorRoot(point.GetContainer()->GetParentNode())) {
+    Element* const editorRoot = GetEditorRoot();
+    if (!editorRoot) {
+      break;
+    }
+    if (!point.GetContainer()->IsInclusiveDescendantOf(editorRoot) &&
+        !point.GetContainerParent()->IsInclusiveDescendantOf(editorRoot)) {
       break;
     }
 
@@ -6834,7 +6842,13 @@ already_AddRefed<nsRange> HTMLEditor::CreateRangeIncludingAdjuscentWhiteSpaces(
       MOZ_ALWAYS_TRUE(startPoint.RewindOffset());
     }
   }
-  if (!IsDescendantOfEditorRoot(startPoint.GetChildOrContainerIfDataNode())) {
+  const RefPtr<Element> editorRoot = GetEditorRoot();
+  if (!editorRoot) {
+    return nullptr;
+  }
+  if (!startPoint.GetChildOrContainerIfDataNode() ||
+      !startPoint.GetChildOrContainerIfDataNode()->IsInclusiveDescendantOf(
+          editorRoot)) {
     return nullptr;
   }
   if (endPoint.IsInTextNode()) {
@@ -6849,7 +6863,9 @@ already_AddRefed<nsRange> HTMLEditor::CreateRangeIncludingAdjuscentWhiteSpaces(
   if (!lastRawPoint.IsStartOfContainer()) {
     lastRawPoint.RewindOffset();
   }
-  if (!IsDescendantOfEditorRoot(lastRawPoint.GetChildOrContainerIfDataNode())) {
+  if (!lastRawPoint.GetChildOrContainerIfDataNode() ||
+      !lastRawPoint.GetChildOrContainerIfDataNode()->IsInclusiveDescendantOf(
+          editorRoot)) {
     return nullptr;
   }
 
@@ -6904,7 +6920,15 @@ already_AddRefed<nsRange> HTMLEditor::CreateRangeExtendedToHardLineStartAndEnd(
   
   
   
-  if (!IsDescendantOfEditorRoot(startPoint.GetChildOrContainerIfDataNode())) {
+  Element* const editorRoot = GetEditorRoot();
+  if (!editorRoot) {
+    return nullptr;
+  }
+  
+  
+  if (!startPoint.GetChildOrContainerIfDataNode() ||
+      !startPoint.GetChildOrContainerIfDataNode()->IsInclusiveDescendantOf(
+          editorRoot)) {
     return nullptr;
   }
   endPoint = GetCurrentHardLineEndPoint(endPoint, *editingHost);
@@ -6913,7 +6937,11 @@ already_AddRefed<nsRange> HTMLEditor::CreateRangeExtendedToHardLineStartAndEnd(
   
   
   
-  if (!IsDescendantOfEditorRoot(lastRawPoint.GetChildOrContainerIfDataNode())) {
+  
+  
+  if (!lastRawPoint.GetChildOrContainerIfDataNode() ||
+      !lastRawPoint.GetChildOrContainerIfDataNode()->IsInclusiveDescendantOf(
+          editorRoot)) {
     return nullptr;
   }
 

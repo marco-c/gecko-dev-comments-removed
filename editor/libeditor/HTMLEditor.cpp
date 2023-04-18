@@ -2080,7 +2080,9 @@ nsresult HTMLEditor::SelectContentInternal(nsIContent& aContentToSelect) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   
-  if (NS_WARN_IF(!IsDescendantOfEditorRoot(&aContentToSelect))) {
+  const RefPtr<Element> editorRoot = GetEditorRoot();
+  if (NS_WARN_IF(!editorRoot) ||
+      NS_WARN_IF(!aContentToSelect.IsInclusiveDescendantOf(editorRoot))) {
     return NS_ERROR_FAILURE;
   }
 
@@ -4288,8 +4290,11 @@ bool HTMLEditor::SetCaretInTableCell(Element* aElement) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   if (!aElement || !aElement->IsHTMLElement() ||
-      !HTMLEditUtils::IsAnyTableElement(aElement) ||
-      !IsDescendantOfEditorRoot(aElement)) {
+      !HTMLEditUtils::IsAnyTableElement(aElement)) {
+    return false;
+  }
+  const RefPtr<Element> editorRoot = GetEditorRoot();
+  if (!editorRoot || !aElement->IsInclusiveDescendantOf(editorRoot)) {
     return false;
   }
 
