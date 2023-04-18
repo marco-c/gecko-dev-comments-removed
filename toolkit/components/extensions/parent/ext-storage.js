@@ -14,6 +14,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 var { ExtensionError } = ExtensionUtils;
 
 XPCOMUtils.defineLazyGetter(this, "extensionStorageSync", () => {
+  
   let url = Services.prefs.getBoolPref("webextensions.storage.sync.kinto")
     ? "resource://gre/modules/ExtensionStorageSyncKinto.jsm"
     : "resource://gre/modules/ExtensionStorageSync.jsm";
@@ -53,7 +54,7 @@ const lookupManagedStorage = async (extensionId, context) => {
   return null;
 };
 
-this.storage = class extends ExtensionAPI {
+this.storage = class extends ExtensionAPIPersistent {
   constructor(extension) {
     super(extension);
 
@@ -61,6 +62,78 @@ this.storage = class extends ExtensionAPI {
     Services.ppmm.addMessageListener(messageName, this);
     this.clearStorageChangedListener = () => {
       Services.ppmm.removeMessageListener(messageName, this);
+    };
+  }
+
+  PERSISTENT_EVENTS = {
+    onChanged({ fire }) {
+      let unregisterLocal = this.registerLocalChangedListener(changes => {
+        
+        
+        fire.raw(changes, "local");
+      });
+      let unregisterSync = this.registerSyncChangedListener(changes => {
+        fire.async(changes, "sync");
+      });
+      return {
+        unregister() {
+          unregisterLocal();
+          unregisterSync();
+        },
+        convert(_fire) {
+          fire = _fire;
+        },
+      };
+    },
+  };
+
+  registerLocalChangedListener(onStorageLocalChanged) {
+    const extensionId = this.extension.id;
+    ExtensionStorage.addOnChangedListener(extensionId, onStorageLocalChanged);
+    ExtensionStorageIDB.addOnChangedListener(
+      extensionId,
+      onStorageLocalChanged
+    );
+    return () => {
+      ExtensionStorage.removeOnChangedListener(
+        extensionId,
+        onStorageLocalChanged
+      );
+      ExtensionStorageIDB.removeOnChangedListener(
+        extensionId,
+        onStorageLocalChanged
+      );
+    };
+  }
+
+  registerSyncChangedListener(onStorageSyncChanged) {
+    const { extension } = this;
+    let closeCallback;
+    
+    
+    
+    
+    
+    
+    
+    let dummyContextForKinto = {
+      callOnClose({ close }) {
+        closeCallback = close;
+      },
+    };
+    extensionStorageSync.addOnChangedListener(
+      extension,
+      onStorageSyncChanged,
+      dummyContextForKinto
+    );
+    return () => {
+      extensionStorageSync.removeOnChangedListener(
+        extension,
+        onStorageSyncChanged
+      );
+      
+      
+      closeCallback?.();
     };
   }
 
@@ -187,40 +260,9 @@ this.storage = class extends ExtensionAPI {
 
         onChanged: new EventManager({
           context,
-          name: "storage.onChanged",
-          register: fire => {
-            let listenerLocal = changes => {
-              fire.raw(changes, "local");
-            };
-            let listenerSync = changes => {
-              fire.async(changes, "sync");
-            };
-
-            ExtensionStorage.addOnChangedListener(extension.id, listenerLocal);
-            ExtensionStorageIDB.addOnChangedListener(
-              extension.id,
-              listenerLocal
-            );
-            extensionStorageSync.addOnChangedListener(
-              extension,
-              listenerSync,
-              context
-            );
-            return () => {
-              ExtensionStorage.removeOnChangedListener(
-                extension.id,
-                listenerLocal
-              );
-              ExtensionStorageIDB.removeOnChangedListener(
-                extension.id,
-                listenerLocal
-              );
-              extensionStorageSync.removeOnChangedListener(
-                extension,
-                listenerSync
-              );
-            };
-          },
+          module: "storage",
+          event: "onChanged",
+          extensionApi: this,
         }).api(),
       },
     };
