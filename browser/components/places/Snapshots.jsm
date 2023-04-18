@@ -295,7 +295,7 @@ const Snapshots = new (class Snapshots {
 
 
   stripFragments(url) {
-    return url.split("#")[0];
+    return url?.split("#")[0];
   }
 
   
