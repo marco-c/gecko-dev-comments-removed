@@ -518,6 +518,47 @@ void nsMenuPopupFrame::DidSetComputedStyle(ComputedStyle* aOldStyle) {
   }
 }
 
+void nsMenuPopupFrame::ConstrainSizeForWayland(nsSize& aSize) const {
+#ifdef MOZ_WAYLAND
+  if (!IS_WAYLAND_DISPLAY()) {
+    return;
+  }
+
+  
+  
+  
+  
+  int32_t appPerCSS = AppUnitsPerCSSPixel();
+  if (aSize.width % appPerCSS > 0) {
+    aSize.width += appPerCSS;
+  }
+  if (aSize.height % appPerCSS > 0) {
+    aSize.height += appPerCSS;
+  }
+
+  nsIWidget* widget = GetWidget();
+  if (!widget) {
+    return;
+  }
+
+  
+  
+  
+  const nsSize waylandSize = LayoutDeviceIntRect::ToAppUnits(
+      widget->GetMoveToRectPopupSize(), PresContext()->AppUnitsPerDevPixel());
+  if (waylandSize.width > 0 && aSize.width > waylandSize.width) {
+    LOG_WAYLAND("Wayland constraint width [%p]:  %d to %d", widget, aSize.width,
+                waylandSize.width);
+    aSize.width = waylandSize.width;
+  }
+  if (waylandSize.height > 0 && aSize.height > waylandSize.height) {
+    LOG_WAYLAND("Wayland constraint height [%p]:  %d to %d", widget,
+                aSize.height, waylandSize.height);
+    aSize.height = waylandSize.height;
+  }
+#endif
+}
+
 void nsMenuPopupFrame::LayoutPopup(nsBoxLayoutState& aState,
                                    nsIFrame* aParentMenu, bool aSizedToPopup) {
   if (IsNativeMenu()) {
@@ -579,42 +620,9 @@ void nsMenuPopupFrame::LayoutPopup(nsBoxLayoutState& aState,
 
   prefSize = XULBoundsCheck(minSize, prefSize, maxSize);
 
-#ifdef MOZ_WAYLAND
-  if (IS_WAYLAND_DISPLAY()) {
-    
-    
-    
-    
-    int32_t appPerCSS = AppUnitsPerCSSPixel();
-    if (prefSize.width % appPerCSS > 0) {
-      prefSize.width += appPerCSS;
-    }
-    if (prefSize.height % appPerCSS > 0) {
-      prefSize.height += appPerCSS;
-    }
+  ConstrainSizeForWayland(prefSize);
 
-    if (nsIWidget* widget = GetWidget()) {
-      
-      
-      
-      nsSize waylandSize =
-          LayoutDeviceIntRect::ToAppUnits(widget->GetMoveToRectPopupSize(),
-                                          PresContext()->AppUnitsPerDevPixel());
-      if (waylandSize.width > 0 && prefSize.width > waylandSize.width) {
-        LOG_WAYLAND("Wayland constraint width [%p]:  %d to %d", widget,
-                    prefSize.width, waylandSize.width);
-        prefSize.width = waylandSize.width;
-      }
-      if (waylandSize.height > 0 && prefSize.height > waylandSize.height) {
-        LOG_WAYLAND("Wayland constraint height [%p]:  %d to %d", widget,
-                    prefSize.height, waylandSize.height);
-        prefSize.height = waylandSize.height;
-      }
-    }
-  }
-#endif
-
-  bool sizeChanged = (mPrefSize != prefSize);
+  const bool sizeChanged = mPrefSize != prefSize;
   
   
   if (sizeChanged) {
@@ -1413,7 +1421,9 @@ nsRect nsMenuPopupFrame::ComputeAnchorRect(nsPresContext* aRootPresContext,
 
 nsresult nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame,
                                             bool aIsMove, bool aSizedToPopup) {
-  if (!mShouldAutoPosition) return NS_OK;
+  if (!mShouldAutoPosition) {
+    return NS_OK;
+  }
 
   
   
@@ -1475,16 +1485,21 @@ nsresult nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame,
   
   
   
-  NS_ASSERTION(mPrefSize.width >= 0 || mPrefSize.height >= 0,
-               "preferred size of popup not set");
-  mRect.width = aSizedToPopup ? parentWidth : mPrefSize.width;
-  mRect.height = mPrefSize.height;
-
-  
-  
-  if (mAnchorType == MenuPopupAnchorType_Rect &&
-      parentWidth < mPrefSize.width) {
-    mRect.width = mPrefSize.width;
+  {
+    NS_ASSERTION(mPrefSize.width >= 0 || mPrefSize.height >= 0,
+                 "preferred size of popup not set");
+    nsSize newSize = mPrefSize;
+    if (aSizedToPopup) {
+      newSize.width = parentWidth;
+      
+      
+      if (mAnchorType == MenuPopupAnchorType_Rect) {
+        newSize.width = std::max(parentWidth, mPrefSize.width);
+      }
+      
+      ConstrainSizeForWayland(newSize);
+    }
+    mRect.SizeTo(newSize);
   }
 
   
@@ -2264,10 +2279,8 @@ void nsMenuPopupFrame::LockMenuUntilClosed(bool aLock) {
   }
 }
 
-nsIWidget* nsMenuPopupFrame::GetWidget() {
-  if (!mView) return nullptr;
-
-  return mView->GetWidget();
+nsIWidget* nsMenuPopupFrame::GetWidget() const {
+  return mView ? mView->GetWidget() : nullptr;
 }
 
 

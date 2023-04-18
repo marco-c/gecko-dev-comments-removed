@@ -179,7 +179,7 @@ class nsMenuPopupFrame final : public nsBoxFrame,
   void LockMenuUntilClosed(bool aLock) override;
   bool IsMenuLocked() override { return mIsMenuLocked; }
 
-  nsIWidget* GetWidget();
+  nsIWidget* GetWidget() const;
 
   
   virtual void Init(nsIContent* aContent, nsContainerFrame* aParent,
@@ -416,6 +416,8 @@ class nsMenuPopupFrame final : public nsBoxFrame,
  protected:
   
   nsPopupLevel PopupLevel(bool aIsNoAutoHide) const;
+
+  void ConstrainSizeForWayland(nsSize&) const;
 
   
   ReflowChildFlags GetXULLayoutFlags() override;
