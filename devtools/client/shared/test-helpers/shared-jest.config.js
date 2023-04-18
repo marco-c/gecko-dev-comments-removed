@@ -15,6 +15,7 @@ module.exports = {
     "^devtools/shared/DevToolsUtils": `${fixturesDir}/devtools-utils`,
     
     "shared/DevToolsUtils$": `${fixturesDir}/devtools-utils`,
+    "^ChromeUtils": `${fixturesDir}/ChromeUtils`,
     "^Services": `${fixturesDir}/Services`,
     
     "devtools-services": `${fixturesDir}/Services`,

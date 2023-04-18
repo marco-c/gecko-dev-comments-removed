@@ -94,7 +94,11 @@ class CompatibilityView {
       )
     );
 
-    this.inspector.store.dispatch(initUserSettings());
+    await this.inspector.store.dispatch(initUserSettings());
+    
+    
+    
+    this._onPanelSelected();
 
     this.inspector.on("new-root", this._onTopLevelTargetChanged);
     this.inspector.on("markupmutation", this._onMarkupMutation);

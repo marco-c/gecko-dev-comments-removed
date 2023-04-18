@@ -6,10 +6,10 @@
 
 const Services = require("Services");
 
-loader.lazyRequireGetter(
-  this,
-  "browsersDataset",
-  "devtools/shared/compatibility/dataset/browsers.json"
+const ChromeUtils = require("ChromeUtils");
+const { RemoteSettings } = ChromeUtils.import(
+  "resource://services-settings/remote-settings.js",
+  {}
 );
 
 const TARGET_BROWSER_ID = [
@@ -26,48 +26,61 @@ const TARGET_BROWSER_STATUS = ["esr", "current", "beta", "nightly"];
 
 const TARGET_BROWSER_PREF = "devtools.inspector.compatibility.target-browsers";
 
-function getDefaultTargetBrowsers() {
-  
-  
-  
-  
-  const targets = [];
 
-  for (const id of TARGET_BROWSER_ID) {
-    const { name, releases } = browsersDataset[id];
 
-    for (const version in releases) {
-      const { status } = releases[version];
 
-      if (!TARGET_BROWSER_STATUS.includes(status)) {
-        continue;
+
+async function getDefaultTargetBrowsers() {
+  const records = await RemoteSettings("devtools-compatibility-browsers", {
+    filterFunc: record => {
+      if (
+        !TARGET_BROWSER_ID.includes(record.browserid) ||
+        !TARGET_BROWSER_STATUS.includes(record.status)
+      ) {
+        return null;
       }
+      return {
+        id: record.browserid,
+        name: record.name,
+        version: record.version,
+        status: record.status,
+      };
+    },
+  }).get();
 
-      
-      
-      
-      
-      const target = { id, name, version, status };
-      const index = targets.findIndex(
-        t => target.id === t.id && target.status === t.status
-      );
-
-      if (index < 0) {
-        targets.push(target);
-        continue;
-      }
-
-      const existingTarget = targets[index];
-      if (parseFloat(existingTarget.version) < parseFloat(target.version)) {
-        targets[index] = target;
-      }
+  const numericCollator = new Intl.Collator([], { numeric: true });
+  records.sort((a, b) => {
+    if (a.id == b.id) {
+      return numericCollator.compare(a.version, b.version);
     }
-  }
+    return a.id > b.id ? 1 : -1;
+  });
 
-  return targets;
+  
+  
+  
+  
+  return records.filter((record, index, arr) => {
+    const nextRecord = arr[index + 1];
+    
+    
+    if (
+      nextRecord &&
+      record.id === nextRecord.id &&
+      record.status === nextRecord.status
+    ) {
+      return false;
+    }
+
+    return true;
+  });
 }
 
-function getTargetBrowsers() {
+
+
+
+
+async function getTargetBrowsers() {
   const targetsString = Services.prefs.getCharPref(TARGET_BROWSER_PREF, "");
   return targetsString ? JSON.parse(targetsString) : getDefaultTargetBrowsers();
 }
