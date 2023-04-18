@@ -355,6 +355,8 @@ class NativeLayerCA : public NativeLayer {
     
     UpdateType HasUpdate(bool aIsVideo);
 
+    bool CanSpecializeSurface(IOSurfaceRef surface);
+
     
     
     

@@ -29,7 +29,6 @@
 #include "mozilla/webrender/RenderMacIOSurfaceTextureHost.h"
 #include "nsCocoaFeatures.h"
 #include "ScopedGLHelpers.h"
-#include "SDKDeclarations.h"
 
 @interface CALayer (PrivateSetContentsOpaque)
 - (void)setContentsOpaque:(BOOL)opaque;
@@ -782,47 +781,9 @@ bool NativeLayerCA::IsVideoAndLocked(const MutexAutoLock& aProofOfLock) {
 }
 
 bool NativeLayerCA::ShouldSpecializeVideo(const MutexAutoLock& aProofOfLock) {
-  if (!IsVideoAndLocked(aProofOfLock)) {
-    
-    return false;
-  }
-
-  if (!StaticPrefs::gfx_core_animation_specialize_video() ||
-      !nsCocoaFeatures::OnHighSierraOrLater()) {
-    
-    return false;
-  }
-
-  
-
-  MOZ_ASSERT(mTextureHost);
-  MacIOSurface* macIOSurface = mTextureHost->GetSurface();
-  if (macIOSurface->GetYUVColorSpace() == gfx::YUVColorSpace::BT2020) {
-    
-    
-    
-    return true;
-  }
-
-  CFTypeRefPtr<IOSurfaceRef> surface = macIOSurface->GetIOSurfaceRef();
-  OSType pixelFormat = IOSurfaceGetPixelFormat(surface.get());
-  if (pixelFormat == kCVPixelFormatType_420YpCbCr10BiPlanarVideoRange ||
-      pixelFormat == kCVPixelFormatType_420YpCbCr10BiPlanarFullRange) {
-    
-    return true;
-  }
-
-  
-  
-
-  if (pixelFormat != kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange &&
-      pixelFormat != kCVPixelFormatType_420YpCbCr8BiPlanarFullRange) {
-    
-    return false;
-  }
-
-  
-  return mRootWindowIsFullscreen;
+  return StaticPrefs::gfx_core_animation_specialize_video() &&
+         nsCocoaFeatures::OnHighSierraOrLater() && mRootWindowIsFullscreen &&
+         IsVideoAndLocked(aProofOfLock);
 }
 
 void NativeLayerCA::SetRootWindowIsFullscreen(bool aFullscreen) {
@@ -1283,10 +1244,6 @@ static NSString* NSStringForOSType(OSType type) {
   CGColorSpaceRef colorSpace = CVImageBufferGetColorSpace(aBuffer);
   NSLog(@"ColorSpace is %@.\n", colorSpace);
 
-  CFDictionaryRef bufferAttachments =
-      CVBufferGetAttachments(aBuffer, kCVAttachmentMode_ShouldPropagate);
-  NSLog(@"Buffer attachments are %@.\n", bufferAttachments);
-
   OSType codec = CMFormatDescriptionGetMediaSubType(aFormat);
   NSLog(@"Codec is %@.\n", NSStringForOSType(codec));
 
@@ -1423,10 +1380,13 @@ bool NativeLayerCA::Representation::ApplyChanges(
     bool updateSucceeded = false;
     if (aSpecializeVideo) {
       IOSurfaceRef surface = aFrontSurface.get();
-      updateSucceeded = EnqueueSurface(surface);
+      if (CanSpecializeSurface(surface)) {
+        IOSurfaceRef surface = aFrontSurface.get();
+        updateSucceeded = EnqueueSurface(surface);
 
-      if (updateSucceeded) {
-        mMutatedFrontSurface = false;
+        if (updateSucceeded) {
+          mMutatedFrontSurface = false;
+        }
       }
     }
 
@@ -1580,7 +1540,7 @@ bool NativeLayerCA::Representation::ApplyChanges(
   if (mMutatedFrontSurface) {
     bool isEnqueued = false;
     IOSurfaceRef surface = aFrontSurface.get();
-    if (aSpecializeVideo) {
+    if (aSpecializeVideo && CanSpecializeSurface(surface)) {
       
       isEnqueued = EnqueueSurface(surface);
     }
@@ -1640,6 +1600,15 @@ NativeLayerCA::UpdateType NativeLayerCA::Representation::HasUpdate(bool aIsVideo
 bool NativeLayerCA::WillUpdateAffectLayers(WhichRepresentation aRepresentation) {
   MutexAutoLock lock(mMutex);
   return GetRepresentation(aRepresentation).mMutatedSpecializeVideo;
+}
+
+bool NativeLayerCA::Representation::CanSpecializeSurface(IOSurfaceRef surface) {
+  
+  
+  
+  OSType pixelFormat = IOSurfaceGetPixelFormat(surface);
+  return (pixelFormat == kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange ||
+          pixelFormat == kCVPixelFormatType_420YpCbCr8BiPlanarFullRange);
 }
 
 
