@@ -585,9 +585,6 @@ size_t ParseTask::sizeOfExcludingThis(
       stencilInput_ ? stencilInput_->sizeOfIncludingThis(mallocSizeOf) : 0;
   size_t stencilSize =
       stencil_ ? stencil_->sizeOfIncludingThis(mallocSizeOf) : 0;
-  size_t extensibleStencilSize =
-      extensibleStencil_ ? extensibleStencil_->sizeOfIncludingThis(mallocSizeOf)
-                         : 0;
   size_t gcOutputSize =
       gcOutput_ ? gcOutput_->sizeOfExcludingThis(mallocSizeOf) : 0;
 
@@ -595,7 +592,7 @@ size_t ParseTask::sizeOfExcludingThis(
   
 
   return options.sizeOfExcludingThis(mallocSizeOf) + stencilInputSize +
-         stencilSize + extensibleStencilSize + gcOutputSize;
+         stencilSize + gcOutputSize;
 }
 
 void ParseTask::runHelperThreadTask(AutoLockHelperThreadState& locked) {
@@ -683,17 +680,16 @@ void CompileToStencilTask<Unit>::parse(JSContext* cx) {
     return;
   }
 
-  extensibleStencil_ = frontend::CompileGlobalScriptToExtensibleStencil(
-      cx, *stencilInput_, data, scopeKind);
-  if (!extensibleStencil_) {
+  stencil_ = frontend::CompileGlobalScriptToStencil(cx, *stencilInput_, data,
+                                                    scopeKind);
+  if (!stencil_) {
     return;
   }
 
   if (options.allocateInstantiationStorage) {
-    frontend::BorrowingCompilationStencil borrowingStencil(*extensibleStencil_);
-    if (!frontend::PrepareForInstantiate(cx, *stencilInput_, borrowingStencil,
+    if (!frontend::PrepareForInstantiate(cx, *stencilInput_, *stencil_,
                                          *gcOutput_)) {
-      extensibleStencil_.reset();
+      stencil_ = nullptr;
     }
   }
 }
@@ -714,17 +710,15 @@ void CompileModuleToStencilTask<Unit>::parse(JSContext* cx) {
     return;
   }
 
-  extensibleStencil_ =
-      frontend::ParseModuleToExtensibleStencil(cx, *stencilInput_, data);
-  if (!extensibleStencil_) {
+  stencil_ = frontend::ParseModuleToStencil(cx, *stencilInput_, data);
+  if (!stencil_) {
     return;
   }
 
   if (options.allocateInstantiationStorage) {
-    frontend::BorrowingCompilationStencil borrowingStencil(*extensibleStencil_);
-    if (!frontend::PrepareForInstantiate(cx, *stencilInput_, borrowingStencil,
+    if (!frontend::PrepareForInstantiate(cx, *stencilInput_, *stencil_,
                                          *gcOutput_)) {
-      extensibleStencil_.reset();
+      stencil_ = nullptr;
     }
   }
 }
@@ -1788,21 +1782,14 @@ GlobalHelperThreadState::finishCompileToStencilTask(
   }
 
   MOZ_ASSERT(parseTask->stencilInput_.get());
-  MOZ_ASSERT(parseTask->extensibleStencil_.get());
-
-  RefPtr<frontend::CompilationStencil> stencil =
-      cx->new_<frontend::CompilationStencil>(
-          std::move(parseTask->extensibleStencil_));
-  if (!stencil) {
-    return nullptr;
-  }
+  MOZ_ASSERT(parseTask->stencil_.get());
 
   if (storage) {
     MOZ_ASSERT(parseTask->options.allocateInstantiationStorage);
     parseTask->moveGCOutputInto(*storage);
   }
 
-  return stencil.forget();
+  return parseTask->stencil_.forget();
 }
 
 bool GlobalHelperThreadState::finishMultiParseTask(
