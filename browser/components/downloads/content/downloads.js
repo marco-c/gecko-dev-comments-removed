@@ -336,6 +336,10 @@ var DownloadsPanel = {
       case "keypress":
         this._onKeyPress(aEvent);
         break;
+      case "focus":
+      case "select":
+        this._onSelect(aEvent);
+        break;
     }
   },
 
@@ -368,10 +372,7 @@ var DownloadsPanel = {
     DownloadsCommon.getIndicatorData(window).attentionSuppressed = true;
 
     
-    if (
-      DownloadsView.richListBox.itemCount > 0 &&
-      DownloadsView.richListBox.selectedIndex == -1
-    ) {
+    if (DownloadsView.richListBox.itemCount > 0) {
       DownloadsView.richListBox.selectedIndex = 0;
     }
 
@@ -433,6 +434,8 @@ var DownloadsPanel = {
     
     
     this.panel.addEventListener("keypress", this);
+    DownloadsView.richListBox.addEventListener("focus", this);
+    DownloadsView.richListBox.addEventListener("select", this);
   },
 
   
@@ -442,6 +445,8 @@ var DownloadsPanel = {
   _unattachEventListeners() {
     this.panel.removeEventListener("keydown", this);
     this.panel.removeEventListener("keypress", this);
+    DownloadsView.richListBox.removeEventListener("focus", this);
+    DownloadsView.richListBox.removeEventListener("select", this);
   },
 
   _onKeyPress(aEvent) {
@@ -450,43 +455,8 @@ var DownloadsPanel = {
       return;
     }
 
-    let richListBox = DownloadsView.richListBox;
-
     
-    
-    
-    
-    if (
-      (aEvent.keyCode == aEvent.DOM_VK_TAB ||
-        aEvent.keyCode == aEvent.DOM_VK_UP ||
-        aEvent.keyCode == aEvent.DOM_VK_DOWN) &&
-      !this.keyFocusing
-    ) {
-      this.keyFocusing = true;
-      
-      
-      if (DownloadsView.richListBox.selectedIndex == -1) {
-        DownloadsView.richListBox.selectedIndex = 0;
-      }
-      aEvent.preventDefault();
-      return;
-    }
-
-    if (aEvent.keyCode == aEvent.DOM_VK_DOWN) {
-      
-      
-      if (
-        richListBox.selectedItem === richListBox.lastElementChild ||
-        document.activeElement.parentNode.id === "downloadsFooter"
-      ) {
-        DownloadsFooter.focus();
-        aEvent.preventDefault();
-        return;
-      }
-    }
-
-    
-    if (document.activeElement === richListBox) {
+    if (document.activeElement === DownloadsView.richListBox) {
       DownloadsView.onDownloadKeyPress(aEvent);
     }
   },
@@ -499,16 +469,47 @@ var DownloadsPanel = {
   _onKeyDown(aEvent) {
     
     
+    
+    
     if (
-      aEvent.keyCode == aEvent.DOM_VK_UP &&
-      document.activeElement.parentNode.id === "downloadsFooter" &&
-      DownloadsView.richListBox.firstElementChild
+      (aEvent.keyCode == aEvent.DOM_VK_TAB ||
+        aEvent.keyCode == aEvent.DOM_VK_UP ||
+        aEvent.keyCode == aEvent.DOM_VK_DOWN) &&
+      !this.keyFocusing
     ) {
-      DownloadsView.richListBox.focus();
-      DownloadsView.richListBox.selectedItem =
-        DownloadsView.richListBox.lastElementChild;
-      aEvent.preventDefault();
-      return;
+      this.keyFocusing = true;
+    }
+
+    let richListBox = DownloadsView.richListBox;
+    
+    
+    if (aEvent.keyCode == aEvent.DOM_VK_UP && richListBox.firstElementChild) {
+      if (
+        document
+          .getElementById("downloadsFooter")
+          .contains(document.activeElement)
+      ) {
+        richListBox.selectedItem = richListBox.lastElementChild;
+        richListBox.focus();
+        aEvent.preventDefault();
+        return;
+      }
+    }
+
+    if (aEvent.keyCode == aEvent.DOM_VK_DOWN) {
+      
+      
+      if (
+        richListBox.selectedItem === richListBox.lastElementChild ||
+        document
+          .getElementById("downloadsFooter")
+          .contains(document.activeElement)
+      ) {
+        richListBox.selectedIndex = -1;
+        DownloadsFooter.focus();
+        aEvent.preventDefault();
+        return;
+      }
     }
 
     let pasting =
@@ -542,6 +543,18 @@ var DownloadsPanel = {
       DownloadsCommon.log("Pasted URL seems valid. Starting download.");
       DownloadURL(uri.spec, name, document);
     } catch (ex) {}
+  },
+
+  _onSelect() {
+    let richlistbox = DownloadsView.richListBox;
+    richlistbox.itemChildren.forEach(item => {
+      let button = item.querySelector("button");
+      if (item.selected) {
+        button.removeAttribute("tabindex");
+      } else {
+        button.setAttribute("tabindex", -1);
+      }
+    });
   },
 
   
