@@ -272,6 +272,15 @@ class ThreadRegistrationData {
   Atomic<int> mSleep{AWAKE};
   Atomic<uint64_t> mThreadCpuTimeInNsAtLastSleep{0};
 
+#ifdef NIGHTLY_BUILD
+  
+  Atomic<uint64_t, MemoryOrdering::Relaxed> mWakeCount{1};
+  
+  
+  mutable uint64_t mAlreadyRecordedWakeCount = 0;
+  mutable uint64_t mAlreadyRecordedCpuTimeInMs = 0;
+#endif
+
   
   
   
@@ -339,6 +348,9 @@ class ThreadRegistrationUnlockedConstReaderAndAtomicRW
   void SetAwake() {
     MOZ_ASSERT(mSleep != AWAKE);
     mSleep = AWAKE;
+#ifdef NIGHTLY_BUILD
+    ++mWakeCount;
+#endif
   }
 
   
@@ -354,6 +366,10 @@ class ThreadRegistrationUnlockedConstReaderAndAtomicRW
     mThreadCpuTimeInNsAtLastSleep = newCpuTimeNs;
     return result;
   }
+
+#ifdef NIGHTLY_BUILD
+  void RecordWakeCount() const;
+#endif
 
   
   
