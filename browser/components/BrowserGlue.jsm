@@ -3353,7 +3353,7 @@ BrowserGlue.prototype = {
   _migrateUI: function BG__migrateUI() {
     
     
-    const UI_VERSION = 121;
+    const UI_VERSION = 122;
     const BROWSER_DOCURL = AppConstants.BROWSER_CHROME_URL;
 
     const PROFILE_DIR = Services.dirsvc.get("ProfD", Ci.nsIFile).path;
@@ -4053,6 +4053,24 @@ BrowserGlue.prototype = {
       this._migrateHashedKeysForXULStoreForDocument(
         "chrome://browser/content/places/historySidebar.xhtml"
       );
+    }
+
+    if (currentUIVersion < 122) {
+      
+      try {
+        const oldPref = "widget.use-xdg-desktop-portal";
+        if (Services.prefs.getBoolPref(oldPref)) {
+          Services.prefs.setIntPref(
+            "widget.use-xdg-desktop-portal.file-picker",
+            1
+          );
+          Services.prefs.setIntPref(
+            "widget.use-xdg-desktop-portal.mime-handler",
+            1
+          );
+        }
+        Services.prefs.clearUserPref(oldPref);
+      } catch (ex) {}
     }
 
     

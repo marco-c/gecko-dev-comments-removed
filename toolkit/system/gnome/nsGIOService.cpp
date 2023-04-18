@@ -402,7 +402,7 @@ nsGIOService::GetAppForURIScheme(const nsACString& aURIScheme,
   
   
   
-  if (widget::ShouldUsePortal()) {
+  if (widget::ShouldUsePortal(widget::PortalKind::MimeHandler)) {
     nsFlatpakHandlerApp* mozApp = new nsFlatpakHandlerApp();
     NS_ADDREF(*aApp = mozApp);
     return NS_OK;
@@ -460,7 +460,7 @@ nsGIOService::GetAppForMimeType(const nsACString& aMimeType,
 
   
   
-  if (widget::ShouldUsePortal()) {
+  if (widget::ShouldUsePortal(widget::PortalKind::MimeHandler)) {
     nsFlatpakHandlerApp* mozApp = new nsFlatpakHandlerApp();
     NS_ADDREF(*aApp = mozApp);
     return NS_OK;

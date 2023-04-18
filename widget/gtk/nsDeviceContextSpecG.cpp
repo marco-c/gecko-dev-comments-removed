@@ -275,7 +275,9 @@ gboolean nsDeviceContextSpecGTK::PrinterEnumerator(GtkPrinter* aPrinter,
 
 void nsDeviceContextSpecGTK::StartPrintJob() {
   
-  if (widget::ShouldUsePortal()) {
+  
+  
+  if (widget::ShouldUsePortal(widget::PortalKind::Print)) {
     GError* error = nullptr;
     GDBusProxy* dbusProxy = g_dbus_proxy_new_for_bus_sync(
         G_BUS_TYPE_SESSION, G_DBUS_PROXY_FLAGS_NONE, nullptr,
@@ -291,6 +293,7 @@ void nsDeviceContextSpecGTK::StartPrintJob() {
     int fd = open(mSpoolName.get(), O_RDONLY | O_CLOEXEC);
     if (fd == -1) {
       NS_WARNING("Failed to open spool file.");
+      g_object_unref(dbusProxy);
       return;
     }
     static auto s_g_unix_fd_list_new = reinterpret_cast<GUnixFDList* (*)(void)>(
@@ -305,7 +308,6 @@ void nsDeviceContextSpecGTK::StartPrintJob() {
     int idx = s_g_unix_fd_list_append(fd_list, fd, NULL);
     close(fd);
 
-    
     
     
     
@@ -411,7 +413,7 @@ NS_IMETHODIMP nsDeviceContextSpecGTK::EndDocument() {
     destFile->SetPermissions(0666 & ~(mask));
 
     
-    if (widget::ShouldUsePortal()) {
+    if (widget::ShouldUsePortal(widget::PortalKind::Print)) {
       
       
       nsCOMPtr<nsIObserverService> os =

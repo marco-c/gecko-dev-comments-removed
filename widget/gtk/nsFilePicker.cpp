@@ -171,14 +171,8 @@ nsFilePicker::nsFilePicker()
       mRunning(false),
       mAllowURLs(false),
       mFileChooserDelegate(nullptr) {
-  
-  
-  if (widget::GdkIsWaylandDisplay()) {
-    mUseNativeFileChooser =
-        Preferences::GetBool("widget.use-xdg-desktop-portal", true);
-  } else {
-    mUseNativeFileChooser = widget::ShouldUsePortal();
-  }
+  mUseNativeFileChooser =
+      widget::ShouldUsePortal(widget::PortalKind::FilePicker);
 }
 
 nsFilePicker::~nsFilePicker() = default;
