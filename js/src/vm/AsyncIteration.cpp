@@ -30,7 +30,9 @@ using namespace js;
 
 
 
-[[nodiscard]] bool js::AsyncGeneratorAwaitedFulfilled(
+
+
+[[nodiscard]] static bool AsyncGeneratorAwaitedFulfilled(
     JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
     HandleValue value) {
   return AsyncGeneratorResume(cx, asyncGenObj, CompletionKind::Normal, value);
@@ -38,7 +40,9 @@ using namespace js;
 
 
 
-[[nodiscard]] bool js::AsyncGeneratorAwaitedRejected(
+
+
+[[nodiscard]] static bool AsyncGeneratorAwaitedRejected(
     JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
     HandleValue reason) {
   return AsyncGeneratorResume(cx, asyncGenObj, CompletionKind::Throw, reason);
@@ -46,7 +50,12 @@ using namespace js;
 
 
 
-[[nodiscard]] bool js::AsyncGeneratorYieldReturnAwaitedFulfilled(
+
+
+
+
+
+[[nodiscard]] static bool AsyncGeneratorYieldReturnAwaitedFulfilled(
     JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
     HandleValue value) {
   return AsyncGeneratorResume(cx, asyncGenObj, CompletionKind::Return, value);
@@ -54,10 +63,103 @@ using namespace js;
 
 
 
-[[nodiscard]] bool js::AsyncGeneratorYieldReturnAwaitedRejected(
+[[nodiscard]] static bool AsyncGeneratorYieldReturnAwaitedRejected(
     JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
     HandleValue reason) {
   return AsyncGeneratorResume(cx, asyncGenObj, CompletionKind::Throw, reason);
+}
+
+[[nodiscard]] bool js::AsyncGeneratorPromiseReactionJob(
+    JSContext* cx, PromiseHandler handler,
+    Handle<AsyncGeneratorObject*> asyncGenObj, HandleValue argument) {
+  
+  
+  switch (handler) {
+    
+    
+    case PromiseHandler::AsyncGeneratorAwaitedFulfilled: {
+      MOZ_ASSERT(asyncGenObj->isExecuting(),
+                 "Await fulfilled when not in 'Executing' state");
+
+      return AsyncGeneratorAwaitedFulfilled(cx, asyncGenObj, argument);
+    }
+
+    
+    
+    case PromiseHandler::AsyncGeneratorAwaitedRejected: {
+      MOZ_ASSERT(asyncGenObj->isExecuting(),
+                 "Await rejected when not in 'Executing' state");
+
+      return AsyncGeneratorAwaitedRejected(cx, asyncGenObj, argument);
+    }
+
+    
+    
+    case PromiseHandler::AsyncGeneratorResumeNextReturnFulfilled: {
+      MOZ_ASSERT(asyncGenObj->isAwaitingReturn(),
+                 "AsyncGeneratorResumeNext-Return fulfilled when not in "
+                 "'AwaitingReturn' state");
+
+      
+      asyncGenObj->setCompleted();
+
+      
+      return AsyncGeneratorResolve(cx, asyncGenObj, argument, true);
+    }
+
+    
+    
+    case PromiseHandler::AsyncGeneratorResumeNextReturnRejected: {
+      MOZ_ASSERT(asyncGenObj->isAwaitingReturn(),
+                 "AsyncGeneratorResumeNext-Return rejected when not in "
+                 "'AwaitingReturn' state");
+
+      
+      asyncGenObj->setCompleted();
+
+      
+      return AsyncGeneratorReject(cx, asyncGenObj, argument);
+    }
+
+    
+    
+    case PromiseHandler::AsyncGeneratorYieldReturnAwaitedFulfilled: {
+      MOZ_ASSERT(asyncGenObj->isAwaitingYieldReturn(),
+                 "YieldReturn-Await fulfilled when not in "
+                 "'AwaitingYieldReturn' state");
+
+      
+      
+      
+      
+      asyncGenObj->setExecuting();
+
+      
+      return AsyncGeneratorYieldReturnAwaitedFulfilled(cx, asyncGenObj,
+                                                       argument);
+    }
+
+    
+    
+    case PromiseHandler::AsyncGeneratorYieldReturnAwaitedRejected: {
+      MOZ_ASSERT(
+          asyncGenObj->isAwaitingYieldReturn(),
+          "YieldReturn-Await rejected when not in 'AwaitingYieldReturn' state");
+
+      
+      
+      
+      
+      asyncGenObj->setExecuting();
+
+      
+      return AsyncGeneratorYieldReturnAwaitedRejected(cx, asyncGenObj,
+                                                      argument);
+    }
+
+    default:
+      MOZ_CRASH("Bad handler in AsyncGeneratorPromiseReactionJob");
+  }
 }
 
 const JSClass AsyncFromSyncIteratorObject::class_ = {

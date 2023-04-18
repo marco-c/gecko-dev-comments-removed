@@ -7,6 +7,7 @@
 #ifndef vm_AsyncIteration_h
 #define vm_AsyncIteration_h
 
+#include "builtin/Promise.h"  
 #include "builtin/SelfHostingDefines.h"
 #include "js/Class.h"
 #include "vm/GeneratorObject.h"
@@ -286,26 +287,9 @@ enum class CompletionKind;
 
 extern const JSClass AsyncGeneratorFunctionClass;
 
-
-[[nodiscard]] bool AsyncGeneratorAwaitedFulfilled(
-    JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
-    HandleValue value);
-
-
-[[nodiscard]] bool AsyncGeneratorAwaitedRejected(
-    JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
-    HandleValue reason);
-
-
-
-
-
-[[nodiscard]] bool AsyncGeneratorYieldReturnAwaitedFulfilled(
-    JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
-    HandleValue value);
-[[nodiscard]] bool AsyncGeneratorYieldReturnAwaitedRejected(
-    JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
-    HandleValue reason);
+[[nodiscard]] bool AsyncGeneratorPromiseReactionJob(
+    JSContext* cx, PromiseHandler handler,
+    Handle<AsyncGeneratorObject*> asyncGenObj, HandleValue argument);
 
 bool AsyncGeneratorNext(JSContext* cx, unsigned argc, Value* vp);
 bool AsyncGeneratorReturn(JSContext* cx, unsigned argc, Value* vp);
