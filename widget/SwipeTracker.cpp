@@ -214,4 +214,20 @@ bool SwipeTracker::SendSwipeEvent(EventMessage aMsg, uint32_t aDirection,
   return mWidget.DispatchWindowEvent(geckoEvent);
 }
 
+
+bool SwipeTracker::CanTriggerSwipe(const PanGestureInput& aPanInput) {
+  if (aPanInput.mType != PanGestureInput::PANGESTURE_START) {
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  
+  return std::abs(aPanInput.mPanDisplacement.x) >
+         std::abs(aPanInput.mPanDisplacement.y) * 8;
+}
+
 }  

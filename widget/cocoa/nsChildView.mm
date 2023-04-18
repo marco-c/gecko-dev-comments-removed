@@ -2751,20 +2751,8 @@ NSEvent* gLastDragMouseDownEvent = nil;
   
   
   NSEventPhase eventPhase = [anEvent phase];
-  if ([anEvent type] != NSEventTypeScrollWheel || eventPhase != NSEventPhaseBegan ||
-      ![anEvent hasPreciseScrollingDeltas]) {
-    return false;
-  }
-
-  
-  
-  
-  
-  
-  
-  CGFloat deltaX = [anEvent scrollingDeltaX];
-  CGFloat deltaY = [anEvent scrollingDeltaY];
-  return std::abs(deltaX) > std::abs(deltaY) * 8;
+  return [anEvent type] == NSEventTypeScrollWheel && eventPhase == NSEventPhaseBegan &&
+         [anEvent hasPreciseScrollingDeltas];
 }
 
 - (void)setUsingOMTCompositor:(BOOL)aUseOMTC {
@@ -3271,7 +3259,9 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
       }
     }
 
-    bool canTriggerSwipe = [self shouldConsiderStartingSwipeFromEvent:theEvent];
+    bool canTriggerSwipe = [self shouldConsiderStartingSwipeFromEvent:theEvent] &&
+                           SwipeTracker::CanTriggerSwipe(panEvent);
+    ;
     panEvent.mRequiresContentResponseIfCannotScrollHorizontallyInStartDirection = canTriggerSwipe;
     geckoChildDeathGrip->DispatchAPZWheelInputEvent(panEvent, canTriggerSwipe);
   } else if (usePreciseDeltas) {
