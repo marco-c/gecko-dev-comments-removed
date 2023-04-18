@@ -8,6 +8,7 @@
 
 #include "gfxUtils.h"
 #include "ImageContainer.h"
+#include "mozilla/StaticPrefs_media.h"
 #include "mozilla/TaskQueue.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "nsThreadUtils.h"
@@ -19,6 +20,43 @@
             ##__VA_ARGS__)
 
 namespace mozilla {
+
+static int GetDecodingThreadCount(uint32_t aCodedHeight) {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  int tileThreads = 2, frameThreads = 2;
+  if (aCodedHeight >= 2160) {
+    tileThreads = 32;
+  } else if (aCodedHeight >= 1080) {
+    tileThreads = 8;
+  } else if (aCodedHeight >= 720) {
+    tileThreads = 4;
+  }
+  return tileThreads * frameThreads;
+}
 
 DAV1DDecoder::DAV1DDecoder(const CreateDecoderParams& aParams)
     : mInfo(aParams.VideoConfig()),
@@ -37,6 +75,11 @@ RefPtr<MediaDataDecoder::InitPromise> DAV1DDecoder::Init() {
   } else if (mInfo.mDisplay.width >= 1024) {
     decoder_threads = 4;
   }
+  if (StaticPrefs::media_av1_new_thread_count_strategy()) {
+    decoder_threads = GetDecodingThreadCount(mInfo.mImage.Height());
+  }
+  
+  
   settings.n_threads =
       static_cast<int>(std::min(decoder_threads, GetNumberOfProcessors()));
 
