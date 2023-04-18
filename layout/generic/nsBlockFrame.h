@@ -43,7 +43,7 @@ enum class LineReflowStatus {
 
 class nsBlockInFlowLineIterator;
 namespace mozilla {
-class BlockReflowInput;
+class BlockReflowState;
 class PresShell;
 class ServoRestyleState;
 class ServoStyleSet;
@@ -79,7 +79,7 @@ class ServoStyleSet;
 
 
 class nsBlockFrame : public nsContainerFrame {
-  using BlockReflowInput = mozilla::BlockReflowInput;
+  using BlockReflowState = mozilla::BlockReflowState;
 
  public:
   NS_DECL_FRAMEARENA_HELPERS(nsBlockFrame)
@@ -309,7 +309,7 @@ class nsBlockFrame : public nsContainerFrame {
 
 
 
-  nscoord ComputeFinalBSize(BlockReflowInput& aBri,
+  nscoord ComputeFinalBSize(BlockReflowState& aBri,
                             nscoord aBEndEdgeOfChildren);
 
   void Reflow(nsPresContext* aPresContext, ReflowOutput& aDesiredSize,
@@ -342,7 +342,7 @@ class nsBlockFrame : public nsContainerFrame {
 
   bool CheckForCollapsedBEndMarginFromClearanceLine();
 
-  static nsresult GetCurrentLine(BlockReflowInput* aState,
+  static nsresult GetCurrentLine(BlockReflowState* aState,
                                  nsLineBox** aOutCurrentLine);
 
   
@@ -371,7 +371,7 @@ class nsBlockFrame : public nsContainerFrame {
     nscoord marginIStart, borderBoxISize;
   };
   static ReplacedElementISizeToClear ISizeToClearPastFloats(
-      const BlockReflowInput& aState,
+      const BlockReflowState& aState,
       const mozilla::LogicalRect& aFloatAvailableSpace, nsIFrame* aFrame);
 
   
@@ -380,7 +380,7 @@ class nsBlockFrame : public nsContainerFrame {
 
 
 
-  void SplitFloat(BlockReflowInput& aState, nsIFrame* aFloat,
+  void SplitFloat(BlockReflowState& aState, nsIFrame* aFloat,
                   const nsReflowStatus& aFloatStatus);
 
   
@@ -453,7 +453,7 @@ class nsBlockFrame : public nsContainerFrame {
   
 
 
-  void SlideLine(BlockReflowInput& aState, nsLineBox* aLine,
+  void SlideLine(BlockReflowState& aState, nsLineBox* aLine,
                  nscoord aDeltaBCoord);
 
   void UpdateLineContainerSize(nsLineBox* aLine,
@@ -463,7 +463,7 @@ class nsBlockFrame : public nsContainerFrame {
   void MoveChildFramesOfLine(nsLineBox* aLine, nscoord aDeltaBCoord);
 
   void ComputeFinalSize(const ReflowInput& aReflowInput,
-                        BlockReflowInput& aState, ReflowOutput& aMetrics,
+                        BlockReflowState& aState, ReflowOutput& aMetrics,
                         nscoord* aBEndEdgeOfChildren);
 
   
@@ -650,7 +650,7 @@ class nsBlockFrame : public nsContainerFrame {
 
   
 
-  void ReflowPushedFloats(BlockReflowInput& aState,
+  void ReflowPushedFloats(BlockReflowState& aState,
                           mozilla::OverflowAreas& aOverflowAreas);
 
   
@@ -681,10 +681,10 @@ class nsBlockFrame : public nsContainerFrame {
   
 
 
-  void PrepareResizeReflow(BlockReflowInput& aState);
+  void PrepareResizeReflow(BlockReflowState& aState);
 
   
-  void ReflowDirtyLines(BlockReflowInput& aState);
+  void ReflowDirtyLines(BlockReflowState& aState);
 
   
   void MarkLineDirtyForInterrupt(nsLineBox* aLine);
@@ -702,13 +702,13 @@ class nsBlockFrame : public nsContainerFrame {
 
 
 
-  void ReflowLine(BlockReflowInput& aState, LineIterator aLine,
+  void ReflowLine(BlockReflowState& aState, LineIterator aLine,
                   bool* aKeepReflowGoing);
 
   
   
   
-  bool PlaceLine(BlockReflowInput& aState, nsLineLayout& aLineLayout,
+  bool PlaceLine(BlockReflowState& aState, nsLineLayout& aLineLayout,
                  LineIterator aLine,
                  nsFloatManager::SavedState* aFloatStateBeforeLine,
                  nsFlowAreaRect& aFlowArea,      
@@ -732,45 +732,45 @@ class nsBlockFrame : public nsContainerFrame {
   void MarkLineDirty(LineIterator aLine, const nsLineList* aLineList);
 
   
-  bool IsLastLine(BlockReflowInput& aState, LineIterator aLine);
+  bool IsLastLine(BlockReflowState& aState, LineIterator aLine);
 
-  void DeleteLine(BlockReflowInput& aState, nsLineList::iterator aLine,
+  void DeleteLine(BlockReflowState& aState, nsLineList::iterator aLine,
                   nsLineList::iterator aLineEnd);
 
   
   
 
-  bool ShouldApplyBStartMargin(BlockReflowInput& aState, nsLineBox* aLine);
+  bool ShouldApplyBStartMargin(BlockReflowState& aState, nsLineBox* aLine);
 
-  void ReflowBlockFrame(BlockReflowInput& aState, LineIterator aLine,
+  void ReflowBlockFrame(BlockReflowState& aState, LineIterator aLine,
                         bool* aKeepGoing);
 
-  void ReflowInlineFrames(BlockReflowInput& aState, LineIterator aLine,
+  void ReflowInlineFrames(BlockReflowState& aState, LineIterator aLine,
                           bool* aKeepLineGoing);
 
   void DoReflowInlineFrames(
-      BlockReflowInput& aState, nsLineLayout& aLineLayout, LineIterator aLine,
+      BlockReflowState& aState, nsLineLayout& aLineLayout, LineIterator aLine,
       nsFlowAreaRect& aFloatAvailableSpace, nscoord& aAvailableSpaceBSize,
       nsFloatManager::SavedState* aFloatStateBeforeLine, bool* aKeepReflowGoing,
       LineReflowStatus* aLineReflowStatus, bool aAllowPullUp);
 
-  void ReflowInlineFrame(BlockReflowInput& aState, nsLineLayout& aLineLayout,
+  void ReflowInlineFrame(BlockReflowState& aState, nsLineLayout& aLineLayout,
                          LineIterator aLine, nsIFrame* aFrame,
                          LineReflowStatus* aLineReflowStatus);
 
   
   mozilla::LogicalRect AdjustFloatAvailableSpace(
-      BlockReflowInput& aState,
+      BlockReflowState& aState,
       const mozilla::LogicalRect& aFloatAvailableSpace);
   
-  nscoord ComputeFloatISize(BlockReflowInput& aState,
+  nscoord ComputeFloatISize(BlockReflowState& aState,
                             const mozilla::LogicalRect& aFloatAvailableSpace,
                             nsIFrame* aFloat);
   
   
   
   
-  void ReflowFloat(BlockReflowInput& aState,
+  void ReflowFloat(BlockReflowState& aState,
                    const mozilla::LogicalRect& aAdjustedAvailableSpace,
                    nsIFrame* aFloat, mozilla::LogicalMargin& aFloatMargin,
                    mozilla::LogicalMargin& aFloatOffsets,
@@ -790,7 +790,7 @@ class nsBlockFrame : public nsContainerFrame {
 
 
 
-  bool CreateContinuationFor(BlockReflowInput& aState, nsLineBox* aLine,
+  bool CreateContinuationFor(BlockReflowState& aState, nsLineBox* aLine,
                              nsIFrame* aFrame);
 
   
@@ -798,10 +798,10 @@ class nsBlockFrame : public nsContainerFrame {
 
 
 
-  void PushTruncatedLine(BlockReflowInput& aState, LineIterator aLine,
+  void PushTruncatedLine(BlockReflowState& aState, LineIterator aLine,
                          bool* aKeepReflowGoing);
 
-  void SplitLine(BlockReflowInput& aState, nsLineLayout& aLineLayout,
+  void SplitLine(BlockReflowState& aState, nsLineLayout& aLineLayout,
                  LineIterator aLine, nsIFrame* aFrame,
                  LineReflowStatus* aLineReflowStatus);
 
@@ -810,7 +810,7 @@ class nsBlockFrame : public nsContainerFrame {
 
 
 
-  nsIFrame* PullFrame(BlockReflowInput& aState, LineIterator aLine);
+  nsIFrame* PullFrame(BlockReflowState& aState, LineIterator aLine);
 
   
 
@@ -832,17 +832,17 @@ class nsBlockFrame : public nsContainerFrame {
 
 
 
-  void PushLines(BlockReflowInput& aState, nsLineList::iterator aLineBefore);
+  void PushLines(BlockReflowState& aState, nsLineList::iterator aLineBefore);
 
-  void PropagateFloatDamage(BlockReflowInput& aState, nsLineBox* aLine,
+  void PropagateFloatDamage(BlockReflowState& aState, nsLineBox* aLine,
                             nscoord aDeltaBCoord);
 
-  void CheckFloats(BlockReflowInput& aState);
+  void CheckFloats(BlockReflowState& aState);
 
   
   
 
-  void ReflowOutsideMarker(nsIFrame* aMarkerFrame, BlockReflowInput& aState,
+  void ReflowOutsideMarker(nsIFrame* aMarkerFrame, BlockReflowState& aState,
                            ReflowOutput& aMetrics, nscoord aLineTop);
 
   
@@ -934,7 +934,7 @@ class nsBlockFrame : public nsContainerFrame {
   
   nsFrameList mFloats;
 
-  friend class mozilla::BlockReflowInput;
+  friend class mozilla::BlockReflowState;
   friend class nsBlockInFlowLineIterator;
 
 #ifdef DEBUG

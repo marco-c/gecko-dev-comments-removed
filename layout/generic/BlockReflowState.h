@@ -6,8 +6,8 @@
 
 
 
-#ifndef BlockReflowInput_h
-#define BlockReflowInput_h
+#ifndef BlockReflowState_h
+#define BlockReflowState_h
 
 #include <tuple>
 
@@ -24,7 +24,7 @@ namespace mozilla {
 
 
 
-class BlockReflowInput {
+class BlockReflowState {
   using BandInfoType = nsFloatManager::BandInfoType;
   using ShapeType = nsFloatManager::ShapeType;
 
@@ -94,7 +94,7 @@ class BlockReflowInput {
   };
 
  public:
-  BlockReflowInput(const ReflowInput& aReflowInput, nsPresContext* aPresContext,
+  BlockReflowState(const ReflowInput& aReflowInput, nsPresContext* aPresContext,
                    nsBlockFrame* aFrame, bool aBStartMarginRoot,
                    bool aBEndMarginRoot, bool aBlockNeedsFloatManager,
                    const nscoord aConsumedBSize,
@@ -156,7 +156,7 @@ class BlockReflowInput {
   nsFloatManager* FloatManager() const {
     MOZ_ASSERT(mReflowInput.mFloatManager,
                "Float manager should be valid during the lifetime of "
-               "BlockReflowInput!");
+               "BlockReflowState!");
     return mReflowInput.mFloatManager;
   }
 

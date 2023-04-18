@@ -20,7 +20,7 @@ class nsFloatManager;
 struct nsStyleText;
 
 class nsLineLayout {
-  using BlockReflowInput = mozilla::BlockReflowInput;
+  using BlockReflowState = mozilla::BlockReflowState;
   using ReflowInput = mozilla::ReflowInput;
   using ReflowOutput = mozilla::ReflowOutput;
 
@@ -35,7 +35,7 @@ class nsLineLayout {
                nsLineLayout* aBaseLineLayout);
   ~nsLineLayout();
 
-  void Init(BlockReflowInput* aState, nscoord aMinLineBSize,
+  void Init(BlockReflowState* aState, nscoord aMinLineBSize,
             int32_t aLineNumber) {
     mBlockRI = aState;
     mMinLineBSize = aMinLineBSize;
@@ -364,7 +364,7 @@ class nsLineLayout {
   
   
   
-  BlockReflowInput* mBlockRI; 
+  BlockReflowState* mBlockRI; 
 
   nsLineList::iterator mLineBox;
 
