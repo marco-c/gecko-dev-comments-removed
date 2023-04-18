@@ -16,21 +16,11 @@ namespace mozilla {
 namespace ipc {
 
 class FileDescriptor;
-class PFileDescriptorSetChild;
-class PFileDescriptorSetParent;
 
 
-class ParentToChildStreamActorManager {
- public:
-  virtual PFileDescriptorSetParent* SendPFileDescriptorSetConstructor(
-      const FileDescriptor& aFD) = 0;
-};
+class ParentToChildStreamActorManager {};
 
-class ChildToParentStreamActorManager {
- public:
-  virtual PFileDescriptorSetChild* SendPFileDescriptorSetConstructor(
-      const FileDescriptor& aFD) = 0;
-};
+class ChildToParentStreamActorManager {};
 
 
 class InputStreamHelper {
@@ -39,6 +29,8 @@ class InputStreamHelper {
                                    uint32_t aMaxSize, uint32_t* aSizeUsed,
                                    uint32_t* aPipes, uint32_t* aTransferables);
 
+  
+  
   
   
   

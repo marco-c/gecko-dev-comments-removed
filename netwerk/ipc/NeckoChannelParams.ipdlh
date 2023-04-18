@@ -6,7 +6,6 @@
 
 
 include protocol PHttpChannel;
-include BlobTypes;
 include ClientIPCTypes;
 include URIParams;
 include IPCServiceWorkerDescriptor;
