@@ -51,6 +51,8 @@
 #include "nsOSHelperAppService.h"
 #include "nsOSHelperAppServiceChild.h"
 #include "nsContentSecurityUtils.h"
+#include "nsUTF8Utils.h"
+#include "nsUnicodeProperties.h"
 
 
 #include "nsIHandlerService.h"
@@ -3443,58 +3445,166 @@ void nsExternalHelperAppService::SanitizeFileName(nsAString& aFileName,
                                                   uint32_t aFlags) {
   nsAutoString fileName(aFileName);
 
+  
   fileName.ReplaceChar(KNOWN_PATH_SEPARATORS, '_');
   fileName.ReplaceChar(FILE_ILLEGAL_CHARACTERS, ' ');
   fileName.StripChar(char16_t(0));
 
-  
-  
-  const char16_t unsafeBidiCharacters[] = {
-      char16_t(0x061c),  
-      char16_t(0x200e),  
-      char16_t(0x200f),  
-      char16_t(0x202a),  
-      char16_t(0x202b),  
-      char16_t(0x202c),  
-      char16_t(0x202d),  
-      char16_t(0x202e),  
-      char16_t(0x2066),  
-      char16_t(0x2067),  
-      char16_t(0x2068),  
-      char16_t(0x2069),  
-      char16_t(0)};
-  fileName.ReplaceChar(unsafeBidiCharacters, '_');
+  const char16_t *startStr, *endStr;
+  fileName.BeginReading(startStr);
+  fileName.EndReading(endStr);
 
   
   
-  fileName.Trim(" .\f\n\r\t\v", true, true);
+  bool collapseWhitespace = !(aFlags & VALIDATE_DONT_COLLAPSE_WHITESPACE);
 
   
-  if (!(aFlags & VALIDATE_DONT_COLLAPSE_WHITESPACE)) {
-    fileName.CompressWhitespace();
+  
+  
+  
+  
+  uint32_t maxBytes = 0;  
+  if (!(aFlags & VALIDATE_DONT_TRUNCATE)) {
+    maxBytes = 255 - aExtension.Length() - 1;
+  }
+
+  
+  bool lastWasWhitespace = false;
+
+  
+  bool longFileName = false;
+
+  
+  
+  int32_t longFileNameEnd = -1;
+
+  
+  
+  
+  
+  
+  int32_t lastNonTrimmable = -1;
+
+  
+  uint32_t bytesLength = 0;
+
+  
+  
+  nsAutoString outFileName;
+  while (startStr < endStr) {
+    bool err = false;
+    char32_t nextChar = UTF16CharEnumerator::NextChar(&startStr, endStr, &err);
+    if (err) {
+      break;
+    }
+
+    if (nextChar == char16_t(0)) {
+      continue;
+    }
+
+    auto unicodeCategory = unicode::GetGeneralCategory(nextChar);
+    if (unicodeCategory == HB_UNICODE_GENERAL_CATEGORY_CONTROL ||
+        unicodeCategory == HB_UNICODE_GENERAL_CATEGORY_LINE_SEPARATOR ||
+        unicodeCategory == HB_UNICODE_GENERAL_CATEGORY_PARAGRAPH_SEPARATOR) {
+      
+      continue;
+    }
+
+    if (maxBytes) {
+      
+      
+      bytesLength += nextChar < 0x80      ? 1
+                     : nextChar < 0x800   ? 2
+                     : nextChar < 0x10000 ? 3
+                                          : 4;
+      if (bytesLength > maxBytes) {
+        if (longFileNameEnd == -1) {
+          longFileNameEnd = int32_t(outFileName.Length());
+        }
+        if (bytesLength > 255) {
+          longFileName = true;
+          break;
+        }
+      }
+    }
+
+    if (unicodeCategory == HB_UNICODE_GENERAL_CATEGORY_SPACE_SEPARATOR ||
+        nextChar == u'\ufeff') {
+      
+      
+      
+      if (!outFileName.IsEmpty() &&
+          (!lastWasWhitespace || !collapseWhitespace)) {
+        
+        
+        if (nextChar != u'\u3000') {
+          nextChar = ' ';
+        }
+        lastWasWhitespace = true;
+      } else {
+        lastWasWhitespace = true;
+        continue;
+      }
+    } else {
+      lastWasWhitespace = false;
+      if (nextChar == '.' || nextChar == u'\u180e') {
+        
+        
+        
+        
+        if (outFileName.IsEmpty()) {
+          continue;
+        }
+      } else {
+        if (unicodeCategory == HB_UNICODE_GENERAL_CATEGORY_FORMAT) {
+          
+          nextChar = '_';
+        }
+
+        lastNonTrimmable = int32_t(outFileName.Length()) + 1;
+      }
+    }
+
+    AppendUCS4ToUTF16(nextChar, outFileName);
   }
 
   
   
-  if (!(aFlags & VALIDATE_DONT_TRUNCATE) &&
-      fileName.Length() > kDefaultMaxFileNameLength) {
+  
+  
+  
+  
+  
+  
+  if (lastNonTrimmable >= 0) {
+    outFileName.Truncate(longFileName
+                             ? std::min(longFileNameEnd, lastNonTrimmable)
+                             : lastNonTrimmable);
+  }
+
+  
+  
+  if (!maxBytes && !(aFlags & VALIDATE_DONT_TRUNCATE) &&
+      outFileName.Length() > kDefaultMaxFileNameLength) {
     
     
     if (aExtension.Length() >= kDefaultMaxFileNameLength) {
-      fileName.Truncate(kDefaultMaxFileNameLength - 1);
+      outFileName.Truncate(kDefaultMaxFileNameLength - 1);
     } else {
-      fileName.Truncate(kDefaultMaxFileNameLength - aExtension.Length() - 1);
-      if (!fileName.IsEmpty()) {
-        if (fileName.Last() != '.') {
-          fileName.AppendLiteral(".");
-        }
-
-        fileName.Append(NS_ConvertUTF8toUTF16(aExtension));
-      }
+      outFileName.Truncate(kDefaultMaxFileNameLength - aExtension.Length() - 1);
+      longFileName = true;
     }
   }
 
-  aFileName = fileName;
+  if (longFileName && !outFileName.IsEmpty()) {
+    if (outFileName.Last() != '.') {
+      outFileName.AppendLiteral(".");
+    }
+
+    outFileName.Append(NS_ConvertUTF8toUTF16(aExtension));
+  }
+
+  aFileName = outFileName;
 }
 
 nsExternalHelperAppService::ModifyExtensionType
