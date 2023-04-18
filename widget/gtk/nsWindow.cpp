@@ -2001,58 +2001,24 @@ static GdkGravity PopupAlignmentToGdkGravity(int8_t aAlignment) {
   switch (aAlignment) {
     case POPUPALIGNMENT_NONE:
       return GDK_GRAVITY_NORTH_WEST;
-      break;
     case POPUPALIGNMENT_TOPLEFT:
       return GDK_GRAVITY_NORTH_WEST;
-      break;
     case POPUPALIGNMENT_TOPRIGHT:
       return GDK_GRAVITY_NORTH_EAST;
-      break;
     case POPUPALIGNMENT_BOTTOMLEFT:
       return GDK_GRAVITY_SOUTH_WEST;
-      break;
     case POPUPALIGNMENT_BOTTOMRIGHT:
       return GDK_GRAVITY_SOUTH_EAST;
-      break;
     case POPUPALIGNMENT_LEFTCENTER:
       return GDK_GRAVITY_WEST;
-      break;
     case POPUPALIGNMENT_RIGHTCENTER:
       return GDK_GRAVITY_EAST;
-      break;
     case POPUPALIGNMENT_TOPCENTER:
       return GDK_GRAVITY_NORTH;
-      break;
     case POPUPALIGNMENT_BOTTOMCENTER:
       return GDK_GRAVITY_SOUTH;
-      break;
   }
   return GDK_GRAVITY_STATIC;
-}
-
-static GdkGravity PopupGetHorizontallyFlippedAnchor(GdkGravity anchor) {
-  switch (anchor) {
-    case GDK_GRAVITY_STATIC:
-    case GDK_GRAVITY_NORTH_WEST:
-      return GDK_GRAVITY_NORTH_EAST;
-    case GDK_GRAVITY_NORTH:
-      return GDK_GRAVITY_NORTH;
-    case GDK_GRAVITY_NORTH_EAST:
-      return GDK_GRAVITY_NORTH_WEST;
-    case GDK_GRAVITY_WEST:
-      return GDK_GRAVITY_EAST;
-    case GDK_GRAVITY_CENTER:
-      return GDK_GRAVITY_CENTER;
-    case GDK_GRAVITY_EAST:
-      return GDK_GRAVITY_WEST;
-    case GDK_GRAVITY_SOUTH_WEST:
-      return GDK_GRAVITY_SOUTH_EAST;
-    case GDK_GRAVITY_SOUTH:
-      return GDK_GRAVITY_SOUTH;
-    case GDK_GRAVITY_SOUTH_EAST:
-      return GDK_GRAVITY_SOUTH_WEST;
-  }
-  return anchor;
 }
 
 bool nsWindow::IsPopupDirectionRTL() {
@@ -2222,6 +2188,80 @@ void nsWindow::NativeMoveResizeWaylandPopup(bool aMove, bool aResize) {
   UpdateWaylandPopupHierarchy();
 }
 
+struct PopupSides {
+  Maybe<Side> mVertical;
+  Maybe<Side> mHorizontal;
+};
+
+static PopupSides SidesForPopupAlignment(int8_t aAlignment) {
+  switch (aAlignment) {
+    case POPUPALIGNMENT_NONE:
+      break;
+    case POPUPALIGNMENT_TOPLEFT:
+      return {Some(eSideTop), Some(eSideLeft)};
+    case POPUPALIGNMENT_TOPRIGHT:
+      return {Some(eSideTop), Some(eSideRight)};
+    case POPUPALIGNMENT_BOTTOMLEFT:
+      return {Some(eSideBottom), Some(eSideLeft)};
+    case POPUPALIGNMENT_BOTTOMRIGHT:
+      return {Some(eSideBottom), Some(eSideRight)};
+    case POPUPALIGNMENT_LEFTCENTER:
+      return {Nothing(), Some(eSideLeft)};
+    case POPUPALIGNMENT_RIGHTCENTER:
+      return {Nothing(), Some(eSideRight)};
+    case POPUPALIGNMENT_TOPCENTER:
+      return {Some(eSideTop), Nothing()};
+    case POPUPALIGNMENT_BOTTOMCENTER:
+      return {Some(eSideBottom), Nothing()};
+  }
+  return {};
+}
+
+
+
+
+struct ResolvedPopupMargin {
+  
+  nsMargin mAnchorMargin;
+  
+  
+  
+  nsPoint mPopupOffset;
+};
+
+static ResolvedPopupMargin ResolveMargin(nsMenuPopupFrame* aFrame,
+                                         int8_t aPopupAlign,
+                                         int8_t aAnchorAlign) {
+  nsMargin margin;
+  nsPoint offset;
+
+  aFrame->StyleMargin()->GetMargin(margin);
+
+  auto popupSides = SidesForPopupAlignment(aPopupAlign);
+  auto anchorSides = SidesForPopupAlignment(aAnchorAlign);
+  if (popupSides.mHorizontal == anchorSides.mHorizontal) {
+    margin.left = -margin.left;
+    margin.right = -margin.right;
+  } else if (!anchorSides.mHorizontal) {
+    auto popupSide = *popupSides.mHorizontal;
+    offset.x += popupSide == eSideRight ? -margin.Side(popupSide)
+                                        : margin.Side(popupSide);
+    margin.left = margin.right = 0;
+  }
+
+  if (popupSides.mVertical == anchorSides.mVertical) {
+    margin.top = -margin.top;
+    margin.bottom = -margin.bottom;
+  } else if (!anchorSides.mVertical) {
+    auto popupSide = *popupSides.mVertical;
+    offset.y += popupSide == eSideBottom ? -margin.Side(popupSide)
+                                         : margin.Side(popupSide);
+    margin.top = margin.bottom = 0;
+  }
+
+  return {margin, offset};
+}
+
 void nsWindow::WaylandPopupMove() {
   LOG_POPUP("nsWindow::WaylandPopupMove\n");
 
@@ -2274,9 +2314,6 @@ void nsWindow::WaylandPopupMove() {
     return;
   }
 
-  
-  LayoutDeviceIntRect anchorRect(0, 0, 0, 0);
-
   int32_t p2a;
   double devPixelsPerCSSPixel = StaticPrefs::layout_css_devPixelsPerPx();
   if (devPixelsPerCSSPixel > 0.0) {
@@ -2285,68 +2322,89 @@ void nsWindow::WaylandPopupMove() {
     p2a = AppUnitsPerCSSPixel() / gfxPlatformGtk::GetFontScaleFactor();
   }
 
-  
-  
-  
-  
-  
-  
-  nsRect anchorRectAppUnits = popupFrame->GetAnchorRect();
-  anchorRect = LayoutDeviceIntRect::FromUnknownRect(
-      anchorRectAppUnits.ToNearestPixels(p2a));
+  const bool isTopContextMenu = mPopupContextMenu && !mPopupAnchored;
+  int8_t popupAlign(popupFrame->GetPopupAlignment());
+  int8_t anchorAlign(popupFrame->GetPopupAnchor());
+  if (isTopContextMenu) {
+    anchorAlign = POPUPALIGNMENT_BOTTOMRIGHT;
+    popupAlign = POPUPALIGNMENT_TOPLEFT;
+  }
+  if (IsPopupDirectionRTL()) {
+    popupAlign = -popupAlign;
+    anchorAlign = -anchorAlign;
+  }
 
   
   
   
-  LOG_POPUP("  layout popup anchor [%d, %d] -> [%d, %d]\n", anchorRect.x,
-            anchorRect.y, anchorRect.width, anchorRect.height);
+  
+  
+  
+  LayoutDeviceIntRect anchorRect;
+  ResolvedPopupMargin popupMargin;
+  bool hasAnchorRect;
+  {
+    nsRect anchorRectAppUnits = popupFrame->GetAnchorRect();
+    hasAnchorRect = anchorRectAppUnits.width != 0;
+    
+    
+    
+    
+    
+    
+    
+    
+    if (hasAnchorRect) {
+      popupMargin = ResolveMargin(popupFrame, popupAlign, anchorAlign);
+      LOG_POPUP("  layout popup CSS anchor (%d, %d) %s, margin %s offset %s\n",
+                popupAlign, anchorAlign, ToString(anchorRectAppUnits).c_str(),
+                ToString(popupMargin.mAnchorMargin).c_str(),
+                ToString(popupMargin.mPopupOffset).c_str());
+      anchorRectAppUnits.Inflate(popupMargin.mAnchorMargin);
+      LOG_POPUP("    after margins %s\n", ToString(anchorRectAppUnits).c_str());
+      if (anchorRect.width < 0) {
+        auto w = -anchorRect.width;
+        anchorRect.width += w + 1;
+        anchorRect.x += w;
+      }
+      anchorRect =
+          LayoutDeviceIntRect::FromAppUnitsToNearest(anchorRectAppUnits, p2a);
+      LOG_POPUP("    final %s\n", ToString(anchorRect).c_str());
+    }
+  }
 
-  bool hasAnchorRect = true;
+  
+  FlipType flipType = FlipType_Default;
+  int8_t position = -1;
+  GdkGravity rectAnchor = PopupAlignmentToGdkGravity(anchorAlign);
+  GdkGravity menuAnchor = PopupAlignmentToGdkGravity(popupAlign);
+  if (!isTopContextMenu) {
+    flipType = popupFrame->GetFlipType();
+    position = popupFrame->GetAlignmentPosition();
+  }
+
   if (mRelativePopupOffset.x || mRelativePopupOffset.y) {
-    hasAnchorRect = false;
+    MOZ_ASSERT(isTopContextMenu);
     anchorRect.SetRect(mRelativePopupPosition.x - mRelativePopupOffset.x,
                        mRelativePopupPosition.y - mRelativePopupOffset.y,
                        mRelativePopupOffset.x * 2, mRelativePopupOffset.y * 2);
     LOG_POPUP("  Set anchor rect with offset [%d, %d] -> [%d x %d]",
               anchorRect.x, anchorRect.y, anchorRect.width, anchorRect.height);
-  } else if (anchorRect.width == 0) {
+  } else if (!hasAnchorRect) {
     LOG_POPUP("  No anchor rect given, use position for anchor [%d, %d]",
               mRelativePopupPosition.x, mRelativePopupPosition.y);
-    hasAnchorRect = false;
     anchorRect.SetRect(mRelativePopupPosition.x, mRelativePopupPosition.y, 1,
                        1);
-  } else {
-    if (mWaylandPopupPrev->mWaylandToplevel != nullptr) {
-      int parentX, parentY;
-      GetParentPosition(&parentX, &parentY);
-      LOG_POPUP("  subtract parent position [%d, %d]\n", parentX, parentY);
-      anchorRect.x -= parentX;
-      anchorRect.y -= parentY;
-    }
+  } else if (mWaylandPopupPrev->mWaylandToplevel != nullptr) {
+    int parentX, parentY;
+    GetParentPosition(&parentX, &parentY);
+    LOG_POPUP("  subtract parent position [%d, %d]\n", parentX, parentY);
+    anchorRect.x -= parentX;
+    anchorRect.y -= parentY;
   }
 
   LOG_POPUP("  final popup rect position [%d, %d] -> [%d x %d]\n", anchorRect.x,
             anchorRect.y, anchorRect.width, anchorRect.height);
-
-  
-  GdkGravity rectAnchor = GDK_GRAVITY_NORTH_WEST;
-  GdkGravity menuAnchor = GDK_GRAVITY_NORTH_WEST;
-  FlipType flipType = FlipType_Default;
-  int8_t position = -1;
-  if (mPopupContextMenu && !mPopupAnchored) {
-    rectAnchor = GDK_GRAVITY_SOUTH_EAST;
-    menuAnchor = GDK_GRAVITY_NORTH_WEST;
-  } else {
-    rectAnchor = PopupAlignmentToGdkGravity(popupFrame->GetPopupAnchor());
-    menuAnchor = PopupAlignmentToGdkGravity(popupFrame->GetPopupAlignment());
-    flipType = popupFrame->GetFlipType();
-    position = popupFrame->GetAlignmentPosition();
-  }
-
-  if (IsPopupDirectionRTL()) {
-    rectAnchor = PopupGetHorizontallyFlippedAnchor(rectAnchor);
-    menuAnchor = PopupGetHorizontallyFlippedAnchor(menuAnchor);
-  }
 
   LOG_POPUP("  parentRect gravity: %d anchor gravity: %d\n", rectAnchor,
             menuAnchor);
@@ -2390,43 +2448,12 @@ void nsWindow::WaylandPopupMove() {
     
     hints = GdkAnchorHints(hints | GDK_ANCHOR_SLIDE);
   }
-  
-  nsPoint cursorOffset(0, 0);
-  
-  if (hasAnchorRect && mPopupType != ePopupTypeTooltip) {
-    nsMargin margin(0, 0, 0, 0);
-    popupFrame->StyleMargin()->GetMargin(margin);
-    int8_t popupAlign(popupFrame->GetPopupAlignment());
-    if (popupFrame->IsDirectionRTL()) {
-      popupAlign = -popupAlign;
-    }
-    switch (popupAlign) {
-      case POPUPALIGNMENT_TOPRIGHT:
-        cursorOffset.MoveBy(-margin.right, margin.top);
-        break;
-      case POPUPALIGNMENT_BOTTOMLEFT:
-        cursorOffset.MoveBy(margin.left, -margin.bottom);
-        break;
-      case POPUPALIGNMENT_BOTTOMRIGHT:
-        cursorOffset.MoveBy(-margin.right, -margin.bottom);
-        break;
-      case POPUPALIGNMENT_TOPLEFT:
-      default:
-        cursorOffset.MoveBy(margin.left, margin.top);
-        break;
-    }
-    cursorOffset.x /= p2a;
-    cursorOffset.y /= p2a;
-  }
-
   if (!g_signal_handler_find(gdkWindow, G_SIGNAL_MATCH_FUNC, 0, 0, nullptr,
                              FuncToGpointer(NativeMoveResizeCallback), this)) {
     g_signal_connect(gdkWindow, "moved-to-rect",
                      G_CALLBACK(NativeMoveResizeCallback), this);
   }
 
-  LOG_POPUP("  popup window cursor offset x: %d y: %d\n", cursorOffset.x,
-            cursorOffset.y);
   GdkRectangle rect = {anchorRect.x, anchorRect.y, anchorRect.width,
                        anchorRect.height};
 
@@ -2443,8 +2470,11 @@ void nsWindow::WaylandPopupMove() {
 
   LOG_POPUP("  move-to-rect call");
   mPopupLastAnchor = anchorRect;
+
+  auto offset =
+      LayoutDevicePoint::FromAppUnitsToNearest(popupMargin.mPopupOffset, p2a);
   sGdkWindowMoveToRect(gdkWindow, &rect, rectAnchor, menuAnchor, hints,
-                       cursorOffset.x, cursorOffset.y);
+                       offset.x, offset.y);
 }
 
 void nsWindow::SetZIndex(int32_t aZIndex) {
