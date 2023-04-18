@@ -26,17 +26,7 @@ async function promiseDownloadFinished(list) {
 
 
 add_task(async function test_check_blob_origin_representation() {
-  
-  const handlerSvc = Cc["@mozilla.org/uriloader/handler-service;1"].getService(
-    Ci.nsIHandlerService
-  );
-  const mimeSvc = Cc["@mozilla.org/mime;1"].getService(Ci.nsIMIMEService);
-
-  let txtHandlerInfo = mimeSvc.getFromTypeAndExtension("text/plain", "txt");
-  txtHandlerInfo.preferredAction = Ci.nsIHandlerInfo.alwaysAsk;
-  txtHandlerInfo.alwaysAskBeforeHandling = true;
-  handlerSvc.store(txtHandlerInfo);
-  registerCleanupFunction(() => handlerSvc.remove(txtHandlerInfo));
+  forcePromptForFiles("text/plain", "txt");
 
   await BrowserTestUtils.withNewTab("https://example.org/1", async browser => {
     
@@ -71,6 +61,9 @@ add_task(async function test_check_blob_origin_representation() {
 
     
     let closedPromise = BrowserTestUtils.windowClosed(dialogWin);
+    
+    
+    dialogWin.document.getElementById("save").click();
     let dialogNode = dialogWin.document.querySelector("dialog");
     dialogNode.getButton("accept").disabled = false;
     dialogNode.acceptDialog();
