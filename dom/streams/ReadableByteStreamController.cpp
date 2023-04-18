@@ -1523,6 +1523,12 @@ void ReadableByteStreamControllerPullInto(
       aRv.StealExceptionFromJSContext(aCx);
       return;
     }
+
+    
+    
+    
+    JS_ClearPendingException(aCx);
+
     
     
     aReadIntoRequest->ErrorSteps(aCx, pendingException, aRv);
