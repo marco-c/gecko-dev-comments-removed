@@ -113,7 +113,9 @@ impl<Request, Response> Drop for Proxy<Request, Response> {
         
         
         unsafe { ManuallyDrop::drop(&mut self.tx) }
-        self.wake_connection();
+        if self.handle.is_some() {
+            self.wake_connection()
+        }
     }
 }
 
@@ -178,12 +180,6 @@ pub(crate) fn make_client<C: Client>(
         in_flight: VecDeque::with_capacity(32),
     };
 
-    
-    
-    
-    
-    #[allow(clippy::redundant_clone)]
-    let tx = tx.clone();
     let proxy = Proxy {
         handle: None,
         tx: ManuallyDrop::new(tx),

@@ -45,12 +45,17 @@ pub fn encode_handle(cmsg: &mut BytesMut, handle: RawFd) {
 
 
 
-pub fn decode_handle(cmsg: &mut BytesMut) -> RawFd {
+
+
+
+
+pub fn decode_handles(cmsg: &mut BytesMut) -> arrayvec::ArrayVec<RawFd, 2> {
+    let mut fds = arrayvec::ArrayVec::<RawFd, 2>::new();
     let b = cmsg.split_to(space(size_of::<i32>())).freeze();
-    
     let fd = iterator(b).next().unwrap();
-    assert_eq!(fd.len(), 1);
-    fd[0]
+    assert!(fd.len() == 1 || fd.len() == 2);
+    fds.try_extend_from_slice(&fd).unwrap();
+    fds
 }
 
 fn iterator(c: Bytes) -> ControlMsgIter {
