@@ -17,7 +17,6 @@ import shutil
 import site
 import subprocess
 import sys
-from collections import OrderedDict
 import sysconfig
 from pathlib import Path
 import tempfile
@@ -320,12 +319,8 @@ class MachSiteManager:
         if self._site_packages_source == SitePackagesSource.NONE:
             return SiteUpToDateResult(True)
         elif self._site_packages_source == SitePackagesSource.SYSTEM:
-            pthfile_lines = [
-                *self._requirements.pths_as_absolute(self._topsrcdir),
-                *sys.path,
-            ]
             _assert_pip_check(
-                self._topsrcdir, pthfile_lines, "mach", self._requirements
+                self._topsrcdir, self._sys_path(), "mach", self._requirements
             )
             return SiteUpToDateResult(True)
         elif self._site_packages_source == SitePackagesSource.VENV:
@@ -367,35 +362,17 @@ class MachSiteManager:
             if self._site_packages_source == SitePackagesSource.VENV
             else sys.executable,
         ):
-            if self._site_packages_source == SitePackagesSource.SYSTEM:
+            
+            
+            
+            
+            sys.path = self._sys_path()
+            if self._site_packages_source == SitePackagesSource.VENV:
                 
                 
                 
                 
-                
-                sys.path[0:0] = self._requirements.pths_as_absolute(self._topsrcdir)
-
-                
-                
-                sys.path = list(OrderedDict.fromkeys(sys.path))
-            elif self._site_packages_source == SitePackagesSource.NONE:
-                
-                
-                sys.path = list(self._metadata.original_python.stdlib_paths())
-                sys.path[0:0] = self._requirements.pths_as_absolute(self._topsrcdir)
-            elif self._site_packages_source == SitePackagesSource.VENV:
-                
-                
-                if Path(sys.prefix) != Path(self._metadata.prefix):
-                    
-                    
-                    sys.path = list(self._metadata.original_python.stdlib_paths())
-
-                    
-                    
-                    
-                    
-                    activate_virtualenv(self._virtualenv())
+                activate_virtualenv(self._virtualenv())
 
     def _build(self):
         if self._site_packages_source != SitePackagesSource.VENV:
@@ -412,6 +389,27 @@ class MachSiteManager:
             self._requirements,
             self._metadata,
         )
+
+    def _sys_path(self):
+        if self._site_packages_source == SitePackagesSource.SYSTEM:
+            stdlib_paths, system_site_paths = self._metadata.original_python.sys_path()
+            return [
+                *stdlib_paths,
+                *self._requirements.pths_as_absolute(self._topsrcdir),
+                *system_site_paths,
+            ]
+        elif self._site_packages_source == SitePackagesSource.NONE:
+            stdlib_paths = self._metadata.original_python.sys_path_stdlib()
+            return [
+                *stdlib_paths,
+                *self._requirements.pths_as_absolute(self._topsrcdir),
+            ]
+        elif self._site_packages_source == SitePackagesSource.VENV:
+            stdlib_paths = self._metadata.original_python.sys_path_stdlib()
+            return [
+                *stdlib_paths,
+                
+            ]
 
     def _pthfile_lines(self, environment):
         return [
@@ -702,28 +700,8 @@ class CommandSiteManager:
         mach_site_packages_source = self._mach_site_packages_source
         if mach_site_packages_source == SitePackagesSource.SYSTEM:
             
-            stdlib_paths = self._metadata.original_python.stdlib_paths()
-            system_sys_path = [p for p in sys.path if p not in stdlib_paths]
-
-            
-            
-            
-            
-            
-            
-            
-            prefix_normalized = os.path.normcase(
-                os.path.normpath(self._virtualenv.prefix)
-            )
-            system_sys_path = [
-                p
-                for p in system_sys_path
-                if not os.path.normcase(os.path.normpath(p)).startswith(
-                    prefix_normalized
-                )
-            ]
-
-            lines.extend(system_sys_path)
+            _, system_site_paths = self._metadata.original_python.sys_path()
+            lines.extend(system_site_paths)
         elif mach_site_packages_source == SitePackagesSource.VENV:
             
             assert self._mach_virtualenv_root
@@ -737,9 +715,6 @@ class CommandSiteManager:
             
             
             lines.extend(_deprioritize_venv_packages(self._virtualenv))
-
-        
-        lines = list(OrderedDict.fromkeys(lines))
 
         
         
@@ -804,10 +779,13 @@ class PythonVirtualenv:
         return os.path.join(normalized_venv_root, relative_path)
 
     def site_packages_dirs(self):
-        return [
-            self.resolve_sysconfig_packages_path("purelib"),
-            self.resolve_sysconfig_packages_path("platlib"),
-        ]
+        
+        return list(
+            {
+                self.resolve_sysconfig_packages_path("purelib"),
+                self.resolve_sysconfig_packages_path("platlib"),
+            }
+        )
 
     def pip_install_with_constraints(self, pip_args):
         """Create a pip constraints file or existing packages
@@ -935,19 +913,64 @@ class ExternalPythonSite:
         self.python_path = python_executable
 
     @functools.lru_cache(maxsize=None)
-    def stdlib_paths(self):
-        stdlib_paths = subprocess.check_output(
+    def sys_path(self):
+        """Return lists of sys.path entries: one for standard library, one for the site
+
+        These two lists are calculated at the same time so that we can interpret them
+        in a single Python subprocess, as running a whole Python instance is
+        very expensive in the context of Mach initialization.
+        """
+        env = {
+            k: v
+            for k, v in os.environ.items()
+            
+            if k not in ("PYTHONPATH", "PYDEVD_LOAD_VALUES_ASYNC")
+        }
+        stdlib = subprocess.Popen(
             [
                 self.python_path,
                 
                 
                 "-S",
                 "-c",
-                "import sys; print(sys.path)",
+                "import sys; from collections import OrderedDict; "
+                
+                
+                
+                
+                "print(list(OrderedDict.fromkeys(sys.path[1:])))",
             ],
             universal_newlines=True,
+            env=env,
+            stdout=subprocess.PIPE,
         )
-        return ast.literal_eval(stdlib_paths)
+        system = subprocess.Popen(
+            [
+                self.python_path,
+                "-c",
+                "import sys; import site; " "packages = site.getsitepackages(); "
+                
+                
+                "packages.insert(0, site.getusersitepackages()) if "
+                "    sys.prefix == sys.base_prefix else None;"
+                "print(packages)",
+            ],
+            universal_newlines=True,
+            env=env,
+            stdout=subprocess.PIPE,
+        )
+        
+        
+        stdlib_out, _ = stdlib.communicate()
+        system_out, _ = system.communicate()
+        assert stdlib.returncode == 0
+        assert system.returncode == 0
+        return ast.literal_eval(stdlib_out), ast.literal_eval(system_out)
+
+    def sys_path_stdlib(self):
+        """Return list of default sys.path entries for the standard library"""
+        stdlib, _ = self.sys_path()
+        return stdlib
 
 
 @functools.lru_cache(maxsize=None)
