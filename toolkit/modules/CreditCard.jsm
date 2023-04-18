@@ -157,7 +157,7 @@ class CreditCard {
 
   set number(value) {
     if (value) {
-      let normalizedNumber = value.replace(/[-\s]/g, "");
+      let normalizedNumber = CreditCard.normalizeCardNumber(value);
       
       
       
@@ -217,6 +217,19 @@ class CreditCard {
       total += ch;
     }
     return total % 10 == 0;
+  }
+
+  
+
+
+
+
+
+  static normalizeCardNumber(number) {
+    if (!number) {
+      return null;
+    }
+    return number.replace(/[\-\s]/g, "");
   }
 
   

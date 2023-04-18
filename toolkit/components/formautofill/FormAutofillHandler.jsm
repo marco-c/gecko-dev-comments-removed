@@ -169,7 +169,7 @@ class FormAutofillSection {
 
 
 
-  normalizeCreatingRecord(data) {}
+  createNormalizedRecord(data) {}
 
   
 
@@ -649,7 +649,7 @@ class FormAutofillSection {
       }
     });
 
-    this.normalizeCreatingRecord(data);
+    this.createNormalizedRecord(data);
 
     if (!this.isRecordCreatable(data.record)) {
       return null;
@@ -920,7 +920,7 @@ class FormAutofillAddressSection extends FormAutofillSection {
     return value;
   }
 
-  normalizeCreatingRecord(address) {
+  createNormalizedRecord(address) {
     if (!address) {
       return;
     }
@@ -1317,6 +1317,16 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
       profile
     );
     return true;
+  }
+
+  createNormalizedRecord(creditCard) {
+    if (!creditCard) {
+      return;
+    }
+    
+    creditCard.record["cc-number"] = CreditCard.normalizeCardNumber(
+      creditCard.record["cc-number"]
+    );
   }
 }
 
