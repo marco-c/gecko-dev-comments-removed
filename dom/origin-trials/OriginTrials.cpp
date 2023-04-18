@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "OriginTrials.h"
 #include "mozilla/Base64.h"
@@ -30,24 +30,24 @@ namespace mozilla {
 LazyLogModule sOriginTrialsLog("OriginTrials");
 #define LOG(...) MOZ_LOG(sOriginTrialsLog, LogLevel::Debug, (__VA_ARGS__))
 
-// prod.pub is the EcdsaP256 public key from the production key managed in
-// Google Cloud. See:
-//
-//   https://github.com/mozilla/origin-trial-token/blob/main/tools/README.md#get-the-public-key
-//
-// for how to get the public key.
-//
-// See also:
-//
-//   https://github.com/mozilla/origin-trial-token/blob/main/tools/README.md#sign-a-token-using-gcloud
-//
-// for how to sign using this key.
-//
-// test.pub is the EcdsaP256 public key from this key pair:
-//
-//  * https://github.com/mozilla/origin-trial-token/blob/64f03749e2e8c58f811f67044cecc7d6955fd51a/tools/test-keys/test-ecdsa.pkcs8
-//  * https://github.com/mozilla/origin-trial-token/blob/64f03749e2e8c58f811f67044cecc7d6955fd51a/tools/test-keys/test-ecdsa.pub
-//
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #include "keys.inc"
 
 constexpr auto kEcAlgorithm =
@@ -70,13 +70,9 @@ SECKEYPublicKey* StaticCachedPublicKey::Get(const RawKeyRef aRawKey) {
     const SECItem item{siBuffer, const_cast<unsigned char*>(aRawKey.data()),
                        unsigned(aRawKey.Length())};
     MOZ_RELEASE_ASSERT(item.data[0] == EC_POINT_FORM_UNCOMPRESSED);
-
-    // Key verification takes a lot of time when verifying tokens, and it is
-    // unnecessary work since the keys are trusted.
-    const bool kVerifyValid = false;
-    mKey = dom::CreateECPublicKey(&item, kEcAlgorithm, kVerifyValid).release();
+    mKey = dom::CreateECPublicKey(&item, kEcAlgorithm);
     if (mKey) {
-      // It's fine to capture [this] by pointer because we are always static.
+      
       if (NS_IsMainThread()) {
         RunOnShutdown([this] { mKey = nullptr; });
       } else {
@@ -116,7 +112,7 @@ bool VerifySignature(const uint8_t* aSignature, uintptr_t aSignatureLen,
   const SECItem data{siBuffer, const_cast<unsigned char*>(aData),
                      unsigned(aDataLen)};
 
-  // SEC_OID_ANSIX962_ECDSA_SHA256_SIGNATURE
+  
   const SECStatus result = PK11_VerifyWithMechanism(
       pubKey, CKM_ECDSA_SHA256, nullptr, &signature, &data, nullptr);
   if (NS_WARN_IF(result != SECSuccess)) {
@@ -135,7 +131,7 @@ bool MatchesOrigin(const uint8_t* aOrigin, size_t aOriginLen, bool aIsSubdomain,
       aIsUsageSubset, nsCString(origin).get());
 
   if (aIsThirdParty || aIsUsageSubset) {
-    // TODO(emilio): Support third-party tokens and so on.
+    
     return false;
   }
 
@@ -186,13 +182,13 @@ void OriginTrials::UpdateFromToken(const nsAString& aBase64EncodedToken,
   const origin_trials_ffi::OriginTrialValidationParams params{
       VerifySignature,
       MatchesOrigin,
-      /* user_data = */ aPrincipal,
+       aPrincipal,
   };
   auto result = origin_trials_ffi::origin_trials_parse_and_validate_token(
       decodedTokenSpan.data(), decodedTokenSpan.size(), &params);
   if (NS_WARN_IF(!result.IsOk())) {
     LOG("  result = %d\n", int(result.tag));
-    return;  // TODO(emilio): Maybe report to console or what not?
+    return;  
   }
   OriginTrial trial = result.AsOk().trial;
   LOG("  result = Ok(%d)\n", int(trial));
@@ -246,4 +242,4 @@ bool OriginTrials::IsEnabled(JSContext* aCx, JSObject* aObject,
 
 #undef LOG
 
-}  // namespace mozilla
+}  

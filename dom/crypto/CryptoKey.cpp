@@ -862,8 +862,7 @@ nsresult CryptoKey::PrivateKeyToJwk(SECKEYPrivateKey* aPrivKey,
 }
 
 UniqueSECKEYPublicKey CreateECPublicKey(const SECItem* aKeyData,
-                                        const nsAString& aNamedCurve,
-                                        bool aVerifyValid) {
+                                        const nsAString& aNamedCurve) {
   UniquePLArenaPool arena(PORT_NewArena(DER_DEFAULT_CHUNKSIZE));
   if (!arena) {
     return nullptr;
@@ -878,28 +877,32 @@ UniqueSECKEYPublicKey CreateECPublicKey(const SECItem* aKeyData,
     return nullptr;
   }
 
-  key->arena = nullptr;  
+  
+  key->arena = arena.release();
   key->keyType = ecKey;
   key->pkcs11Slot = nullptr;
   key->pkcs11ID = CK_INVALID_HANDLE;
 
   
-  SECItem* params = CreateECParamsForCurve(aNamedCurve, arena.get());
+  SECItem* params = CreateECParamsForCurve(aNamedCurve, key->arena);
   if (!params) {
     return nullptr;
   }
   key->u.ec.DEREncodedParams = *params;
 
   
-  key->u.ec.publicValue = *aKeyData;
-
-  
-  if (aVerifyValid && !CryptoKey::PublicKeyValid(key.get())) {
+  SECStatus ret =
+      SECITEM_CopyItem(key->arena, &key->u.ec.publicValue, aKeyData);
+  if (NS_WARN_IF(ret != SECSuccess)) {
     return nullptr;
   }
-  MOZ_ASSERT(aVerifyValid || CryptoKey::PublicKeyValid(key.get()));
 
-  return UniqueSECKEYPublicKey(SECKEY_CopyPublicKey(key.get()));
+  
+  if (!CryptoKey::PublicKeyValid(key.get())) {
+    return nullptr;
+  }
+
+  return key;
 }
 
 UniqueSECKEYPublicKey CryptoKey::PublicKeyFromJwk(const JsonWebKey& aJwk) {
@@ -1058,12 +1061,7 @@ bool CryptoKey::PublicKeyValid(SECKEYPublicKey* aPubKey) {
   
   
   CK_OBJECT_HANDLE id = PK11_ImportPublicKey(slot.get(), aPubKey, PR_FALSE);
-  if (id == CK_INVALID_HANDLE) {
-    return false;
-  }
-
-  SECStatus rv = PK11_DestroyObject(slot.get(), id);
-  return (rv == SECSuccess);
+  return id != CK_INVALID_HANDLE;
 }
 
 bool CryptoKey::WriteStructuredClone(JSContext* aCX,
