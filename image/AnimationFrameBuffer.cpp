@@ -60,6 +60,7 @@ bool AnimationFrameRetainedBuffer::ResetInternal() {
 bool AnimationFrameRetainedBuffer::MarkComplete(
     const gfx::IntRect& aFirstFrameRefreshArea) {
   MOZ_ASSERT(!mSizeKnown);
+  mFirstFrameRefreshArea = aFirstFrameRefreshArea;
   mSizeKnown = true;
   mPending = 0;
   mFrames.Compact();
@@ -191,6 +192,11 @@ bool AnimationFrameDiscardingQueue::MarkComplete(
     mRedecodeError = true;
     mPending = 0;
   }
+
+  
+  
+  mFirstFrameRefreshArea =
+      mRedecodeError ? mFirstFrame->GetRect() : aFirstFrameRefreshArea;
 
   
   
@@ -459,18 +465,6 @@ RawAccessFrameRef AnimationFrameRecyclingQueue::RecycleFrame(
   }
 
   return recycledFrame;
-}
-
-bool AnimationFrameRecyclingQueue::MarkComplete(
-    const gfx::IntRect& aFirstFrameRefreshArea) {
-  bool continueDecoding =
-      AnimationFrameDiscardingQueue::MarkComplete(aFirstFrameRefreshArea);
-
-  
-  
-  mFirstFrameRefreshArea =
-      mRedecodeError ? mFirstFrame->GetRect() : aFirstFrameRefreshArea;
-  return continueDecoding;
 }
 
 }  

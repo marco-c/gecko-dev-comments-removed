@@ -318,7 +318,6 @@ RefreshResult FrameAnimator::AdvanceFrame(AnimationState& aState,
 
   
   aState.mCurrentAnimationFrameIndex = nextFrameIndex;
-  aState.mCompositedFrameRequested = false;
   aCurrentFrame = std::move(nextFrame);
   aFrames.Advance(nextFrameIndex);
 
@@ -395,7 +394,7 @@ RefreshResult FrameAnimator::RequestRefresh(AnimationState& aState,
   
   
   
-  if (!aState.mCompositedFrameRequested &&
+  if (!result.Surface().MayAdvance() &&
       aState.MaybeAdvanceAnimationFrameTime(aTime)) {
     return ret;
   }
@@ -443,12 +442,17 @@ RefreshResult FrameAnimator::RequestRefresh(AnimationState& aState,
 
 LookupResult FrameAnimator::GetCompositedFrame(AnimationState& aState,
                                                bool aMarkUsed) {
-  aState.mCompositedFrameRequested = true;
-
   LookupResult result = SurfaceCache::Lookup(
       ImageKey(mImage),
       RasterSurfaceKey(mSize, DefaultSurfaceFlags(), PlaybackType::eAnimated),
       aMarkUsed);
+
+  if (result) {
+    
+    
+    
+    result.Surface().MarkMayAdvance();
+  }
 
   if (aState.mCompositedFrameInvalid) {
     MOZ_ASSERT(StaticPrefs::image_mem_animated_discardable_AtStartup());
