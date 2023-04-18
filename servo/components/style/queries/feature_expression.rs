@@ -5,8 +5,8 @@
 
 
 
-use super::media_feature::{Evaluator, MediaFeatureDescription};
-use super::media_feature::{KeywordDiscriminant, ParsingRequirements};
+use super::feature::{Evaluator, QueryFeatureDescription};
+use super::feature::{KeywordDiscriminant, ParsingRequirements};
 #[cfg(feature = "gecko")]
 use crate::gecko::media_features::MEDIA_FEATURES;
 use crate::parser::{Parse, ParserContext};
@@ -60,7 +60,6 @@ impl ToCss for Operator {
         })
     }
 }
-
 
 
 
@@ -124,13 +123,13 @@ impl RangeOrOperator {
 
 
 #[derive(Clone, Debug, MallocSizeOf, ToShmem, PartialEq)]
-pub struct MediaFeatureExpression {
+pub struct QueryFeatureExpression {
     feature_index: usize,
-    value: Option<MediaExpressionValue>,
+    value: Option<QueryExpressionValue>,
     range_or_operator: Option<RangeOrOperator>,
 }
 
-impl ToCss for MediaFeatureExpression {
+impl ToCss for QueryFeatureExpression {
     fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
     where
         W: fmt::Write,
@@ -243,10 +242,10 @@ fn disabled_by_pref(feature: &Atom, context: &ParserContext) -> bool {
     false
 }
 
-impl MediaFeatureExpression {
+impl QueryFeatureExpression {
     fn new(
         feature_index: usize,
-        value: Option<MediaExpressionValue>,
+        value: Option<QueryExpressionValue>,
         range_or_operator: Option<RangeOrOperator>,
     ) -> Self {
         debug_assert!(feature_index < MEDIA_FEATURES.len());
@@ -257,7 +256,7 @@ impl MediaFeatureExpression {
         }
     }
 
-    fn feature(&self) -> &'static MediaFeatureDescription {
+    fn feature(&self) -> &'static QueryFeatureDescription {
         &MEDIA_FEATURES[self.feature_index]
     }
 
@@ -274,7 +273,6 @@ impl MediaFeatureExpression {
         input.parse_nested_block(|input| Self::parse_in_parenthesis_block(context, input))
     }
 
-    
     
     pub fn parse_in_parenthesis_block<'i, 't>(
         context: &ParserContext,
@@ -337,7 +335,6 @@ impl MediaFeatureExpression {
                 
                 
                 
-                
                 if range.is_some() {
                     return Err(
                         input.new_custom_error(StyleParseErrorKind::RangedExpressionWithNoValue)
@@ -370,7 +367,7 @@ impl MediaFeatureExpression {
             },
         };
 
-        let value = MediaExpressionValue::parse(feature, context, input).map_err(|err| {
+        let value = QueryExpressionValue::parse(feature, context, input).map_err(|err| {
             err.location
                 .new_custom_error(StyleParseErrorKind::MediaQueryExpectedFeatureValue)
         })?;
@@ -385,8 +382,8 @@ impl MediaFeatureExpression {
         macro_rules! expect {
             ($variant:ident) => {
                 value.map(|value| match *value {
-                    MediaExpressionValue::$variant(ref v) => v,
-                    _ => unreachable!("Unexpected MediaExpressionValue"),
+                    QueryExpressionValue::$variant(ref v) => v,
+                    _ => unreachable!("Unexpected QueryExpressionValue"),
                 })
             };
         }
@@ -451,7 +448,7 @@ impl MediaFeatureExpression {
 
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, ToShmem)]
-pub enum MediaExpressionValue {
+pub enum QueryExpressionValue {
     
     Length(Length),
     
@@ -470,19 +467,19 @@ pub enum MediaExpressionValue {
     Enumerated(KeywordDiscriminant),
 }
 
-impl MediaExpressionValue {
-    fn to_css<W>(&self, dest: &mut CssWriter<W>, for_expr: &MediaFeatureExpression) -> fmt::Result
+impl QueryExpressionValue {
+    fn to_css<W>(&self, dest: &mut CssWriter<W>, for_expr: &QueryFeatureExpression) -> fmt::Result
     where
         W: fmt::Write,
     {
         match *self {
-            MediaExpressionValue::Length(ref l) => l.to_css(dest),
-            MediaExpressionValue::Integer(v) => v.to_css(dest),
-            MediaExpressionValue::Float(v) => v.to_css(dest),
-            MediaExpressionValue::BoolInteger(v) => dest.write_str(if v { "1" } else { "0" }),
-            MediaExpressionValue::NumberRatio(ratio) => ratio.to_css(dest),
-            MediaExpressionValue::Resolution(ref r) => r.to_css(dest),
-            MediaExpressionValue::Enumerated(value) => match for_expr.feature().evaluator {
+            QueryExpressionValue::Length(ref l) => l.to_css(dest),
+            QueryExpressionValue::Integer(v) => v.to_css(dest),
+            QueryExpressionValue::Float(v) => v.to_css(dest),
+            QueryExpressionValue::BoolInteger(v) => dest.write_str(if v { "1" } else { "0" }),
+            QueryExpressionValue::NumberRatio(ratio) => ratio.to_css(dest),
+            QueryExpressionValue::Resolution(ref r) => r.to_css(dest),
+            QueryExpressionValue::Enumerated(value) => match for_expr.feature().evaluator {
                 Evaluator::Enumerated { serializer, .. } => dest.write_str(&*serializer(value)),
                 _ => unreachable!(),
             },
@@ -490,18 +487,18 @@ impl MediaExpressionValue {
     }
 
     fn parse<'i, 't>(
-        for_feature: &MediaFeatureDescription,
+        for_feature: &QueryFeatureDescription,
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
-    ) -> Result<MediaExpressionValue, ParseError<'i>> {
+    ) -> Result<QueryExpressionValue, ParseError<'i>> {
         Ok(match for_feature.evaluator {
             Evaluator::Length(..) => {
                 let length = Length::parse_non_negative(context, input)?;
-                MediaExpressionValue::Length(length)
+                QueryExpressionValue::Length(length)
             },
             Evaluator::Integer(..) => {
                 let integer = Integer::parse_non_negative(context, input)?;
-                MediaExpressionValue::Integer(integer.value() as u32)
+                QueryExpressionValue::Integer(integer.value() as u32)
             },
             Evaluator::BoolInteger(..) => {
                 let integer = Integer::parse_non_negative(context, input)?;
@@ -509,22 +506,22 @@ impl MediaExpressionValue {
                 if value > 1 {
                     return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
                 }
-                MediaExpressionValue::BoolInteger(value == 1)
+                QueryExpressionValue::BoolInteger(value == 1)
             },
             Evaluator::Float(..) => {
                 let number = Number::parse(context, input)?;
-                MediaExpressionValue::Float(number.get())
+                QueryExpressionValue::Float(number.get())
             },
             Evaluator::NumberRatio(..) => {
                 use crate::values::specified::Ratio as SpecifiedRatio;
                 let ratio = SpecifiedRatio::parse(context, input)?;
-                MediaExpressionValue::NumberRatio(Ratio::new(ratio.0.get(), ratio.1.get()))
+                QueryExpressionValue::NumberRatio(Ratio::new(ratio.0.get(), ratio.1.get()))
             },
             Evaluator::Resolution(..) => {
-                MediaExpressionValue::Resolution(Resolution::parse(context, input)?)
+                QueryExpressionValue::Resolution(Resolution::parse(context, input)?)
             },
             Evaluator::Enumerated { parser, .. } => {
-                MediaExpressionValue::Enumerated(parser(context, input)?)
+                QueryExpressionValue::Enumerated(parser(context, input)?)
             },
         })
     }

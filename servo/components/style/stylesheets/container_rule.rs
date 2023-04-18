@@ -6,7 +6,7 @@
 
 
 
-use crate::media_queries::MediaCondition;
+use crate::queries::QueryCondition;
 use crate::shared_lock::{
     DeepCloneParams, DeepCloneWithLock, Locked, SharedRwLock, SharedRwLockReadGuard, ToCssWithGuard,
 };
@@ -76,4 +76,4 @@ impl ToCssWithGuard for ContainerRule {
 }
 
 
-pub type ContainerCondition = MediaCondition;
+pub type ContainerCondition = QueryCondition;

@@ -6,7 +6,8 @@
 
 
 
-use super::MediaFeatureExpression;
+
+use super::QueryFeatureExpression;
 use crate::parser::ParserContext;
 use crate::values::computed;
 use cssparser::{Parser, Token};
@@ -30,18 +31,18 @@ enum AllowOr {
 
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, ToShmem)]
-pub enum MediaCondition {
+pub enum QueryCondition {
     
-    Feature(MediaFeatureExpression),
+    Feature(QueryFeatureExpression),
     
-    Not(Box<MediaCondition>),
+    Not(Box<QueryCondition>),
     
-    Operation(Box<[MediaCondition]>, Operator),
+    Operation(Box<[QueryCondition]>, Operator),
     
-    InParens(Box<MediaCondition>),
+    InParens(Box<QueryCondition>),
 }
 
-impl ToCss for MediaCondition {
+impl ToCss for QueryCondition {
     fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
     where
         W: fmt::Write,
@@ -49,17 +50,17 @@ impl ToCss for MediaCondition {
         match *self {
             
             
-            MediaCondition::Feature(ref f) => f.to_css(dest),
-            MediaCondition::Not(ref c) => {
+            QueryCondition::Feature(ref f) => f.to_css(dest),
+            QueryCondition::Not(ref c) => {
                 dest.write_str("not ")?;
                 c.to_css(dest)
             },
-            MediaCondition::InParens(ref c) => {
+            QueryCondition::InParens(ref c) => {
                 dest.write_char('(')?;
                 c.to_css(dest)?;
                 dest.write_char(')')
             },
-            MediaCondition::Operation(ref list, op) => {
+            QueryCondition::Operation(ref list, op) => {
                 let mut iter = list.iter();
                 iter.next().unwrap().to_css(dest)?;
                 for item in iter {
@@ -74,7 +75,7 @@ impl ToCss for MediaCondition {
     }
 }
 
-impl MediaCondition {
+impl QueryCondition {
     
     pub fn parse<'i, 't>(
         context: &ParserContext,
@@ -109,7 +110,7 @@ impl MediaCondition {
 
         if is_negation {
             let inner_condition = Self::parse_in_parens(context, input)?;
-            return Ok(MediaCondition::Not(Box::new(inner_condition)));
+            return Ok(QueryCondition::Not(Box::new(inner_condition)));
         }
 
         
@@ -134,7 +135,7 @@ impl MediaCondition {
 
         loop {
             if input.try_parse(|i| i.expect_ident_matching(delim)).is_err() {
-                return Ok(MediaCondition::Operation(
+                return Ok(QueryCondition::Operation(
                     conditions.into_boxed_slice(),
                     operator,
                 ));
@@ -160,20 +161,20 @@ impl MediaCondition {
         input.parse_nested_block(|input| {
             
             if let Ok(inner) = input.try_parse(|i| Self::parse(context, i)) {
-                return Ok(MediaCondition::InParens(Box::new(inner)));
+                return Ok(QueryCondition::InParens(Box::new(inner)));
             }
-            let expr = MediaFeatureExpression::parse_in_parenthesis_block(context, input)?;
-            Ok(MediaCondition::Feature(expr))
+            let expr = QueryFeatureExpression::parse_in_parenthesis_block(context, input)?;
+            Ok(QueryCondition::Feature(expr))
         })
     }
 
     
     pub fn matches(&self, context: &computed::Context) -> bool {
         match *self {
-            MediaCondition::Feature(ref f) => f.matches(context),
-            MediaCondition::InParens(ref c) => c.matches(context),
-            MediaCondition::Not(ref c) => !c.matches(context),
-            MediaCondition::Operation(ref conditions, op) => {
+            QueryCondition::Feature(ref f) => f.matches(context),
+            QueryCondition::InParens(ref c) => c.matches(context),
+            QueryCondition::Not(ref c) => !c.matches(context),
+            QueryCondition::Operation(ref conditions, op) => {
                 let mut iter = conditions.iter();
                 match op {
                     Operator::And => iter.all(|c| c.matches(context)),

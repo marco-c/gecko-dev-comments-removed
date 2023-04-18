@@ -14,7 +14,7 @@ use style_traits::ParseError;
 
 pub type KeywordDiscriminant = u8;
 
-type MediaFeatureGetter<T> = fn(device: &computed::Context) -> T;
+type QueryFeatureGetter<T> = fn(device: &computed::Context) -> T;
 
 
 
@@ -33,14 +33,14 @@ pub type KeywordParser = for<'a, 'i, 't> fn(
 
 #[allow(missing_docs)]
 pub enum Evaluator {
-    Length(MediaFeatureGetter<CSSPixelLength>),
-    Integer(MediaFeatureGetter<u32>),
-    Float(MediaFeatureGetter<f32>),
-    BoolInteger(MediaFeatureGetter<bool>),
+    Length(QueryFeatureGetter<CSSPixelLength>),
+    Integer(QueryFeatureGetter<u32>),
+    Float(QueryFeatureGetter<f32>),
+    BoolInteger(QueryFeatureGetter<bool>),
     
-    NumberRatio(MediaFeatureGetter<Ratio>),
+    NumberRatio(QueryFeatureGetter<Ratio>),
     
-    Resolution(MediaFeatureGetter<Resolution>),
+    Resolution(QueryFeatureGetter<Resolution>),
     
     Enumerated {
         
@@ -67,14 +67,14 @@ macro_rules! keyword_evaluator {
             context: &$crate::parser::ParserContext,
             input: &mut $crate::cssparser::Parser<'i, 't>,
         ) -> Result<
-            $crate::media_queries::media_feature::KeywordDiscriminant,
+            $crate::queries::feature::KeywordDiscriminant,
             ::style_traits::ParseError<'i>,
         > {
             let kw = <$keyword_type as $crate::parser::Parse>::parse(context, input)?;
-            Ok(kw as $crate::media_queries::media_feature::KeywordDiscriminant)
+            Ok(kw as $crate::queries::feature::KeywordDiscriminant)
         }
 
-        fn __serialize(kw: $crate::media_queries::media_feature::KeywordDiscriminant) -> String {
+        fn __serialize(kw: $crate::queries::feature::KeywordDiscriminant) -> String {
             // This unwrap is ok because the only discriminants that get
             // back to us is the ones that `parse` produces.
             let value: $keyword_type = ::num_traits::cast::FromPrimitive::from_u8(kw).unwrap();
@@ -83,7 +83,7 @@ macro_rules! keyword_evaluator {
 
         fn __evaluate(
             context: &$crate::values::computed::Context,
-            value: Option<$crate::media_queries::media_feature::KeywordDiscriminant>,
+            value: Option<$crate::queries::feature::KeywordDiscriminant>,
         ) -> bool {
             // This unwrap is ok because the only discriminants that get
             // back to us is the ones that `parse` produces.
@@ -92,7 +92,7 @@ macro_rules! keyword_evaluator {
             $actual_evaluator(context, value)
         }
 
-        $crate::media_queries::media_feature::Evaluator::Enumerated {
+        $crate::queries::feature::Evaluator::Enumerated {
             parser: __parse,
             serializer: __serialize,
             evaluator: __evaluate,
@@ -120,7 +120,7 @@ pub enum AllowsRanges {
 }
 
 
-pub struct MediaFeatureDescription {
+pub struct QueryFeatureDescription {
     
     pub name: Atom,
     
@@ -133,7 +133,7 @@ pub struct MediaFeatureDescription {
     pub requirements: ParsingRequirements,
 }
 
-impl MediaFeatureDescription {
+impl QueryFeatureDescription {
     
     #[inline]
     pub fn allows_ranges(&self) -> bool {
@@ -144,7 +144,7 @@ impl MediaFeatureDescription {
 
 macro_rules! feature {
     ($name:expr, $allows_ranges:expr, $evaluator:expr, $reqs:expr,) => {
-        $crate::media_queries::media_feature::MediaFeatureDescription {
+        $crate::queries::feature::QueryFeatureDescription {
             name: $name,
             allows_ranges: $allows_ranges,
             evaluator: $evaluator,
@@ -153,9 +153,9 @@ macro_rules! feature {
     };
 }
 
-impl fmt::Debug for MediaFeatureDescription {
+impl fmt::Debug for QueryFeatureDescription {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("MediaFeatureExpression")
+        f.debug_struct("QueryFeatureDescription")
             .field("name", &self.name)
             .field("allows_ranges", &self.allows_ranges)
             .field("requirements", &self.requirements)
