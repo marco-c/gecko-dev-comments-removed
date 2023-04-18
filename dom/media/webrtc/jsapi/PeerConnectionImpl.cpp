@@ -2560,20 +2560,21 @@ void PeerConnectionImpl::UpdateDefaultCandidate(
 
 
 nsTArray<RefPtr<dom::RTCStatsPromise>> PeerConnectionImpl::GetSenderStats(
-    const RefPtr<MediaPipelineTransmit>& aPipeline) {
+    const RefPtr<TransceiverImpl>& aTransceiver) {
   MOZ_ASSERT(NS_IsMainThread());
+  RefPtr<MediaPipelineTransmit> pipeline = aTransceiver->GetSendPipeline();
   nsTArray<RefPtr<RTCStatsPromise>> promises(2);
 
   nsAutoString trackName;
-  if (auto track = aPipeline->GetTrack()) {
+  if (auto track = pipeline->GetTrack()) {
     track->GetId(trackName);
   }
 
   {
     
     promises.AppendElement(InvokeAsync(
-        aPipeline->mCallThread, __func__,
-        [conduit = aPipeline->mConduit, trackName]() mutable {
+        pipeline->mCallThread, __func__,
+        [conduit = pipeline->mConduit, trackName]() mutable {
           auto report = MakeUnique<dom::RTCStatsCollection>();
           Maybe<webrtc::Call::Stats> stats = conduit->GetCallStats();
           stats.apply([&](const auto aStats) {
@@ -2596,21 +2597,21 @@ nsTArray<RefPtr<dom::RTCStatsPromise>> PeerConnectionImpl::GetSenderStats(
   }
 
   promises.AppendElement(
-      InvokeAsync(aPipeline->mCallThread, __func__, [aPipeline] {
+      InvokeAsync(pipeline->mCallThread, __func__, [pipeline] {
         auto report = MakeUnique<dom::RTCStatsCollection>();
-        auto asAudio = aPipeline->mConduit->AsAudioSessionConduit();
-        auto asVideo = aPipeline->mConduit->AsVideoSessionConduit();
+        auto asAudio = pipeline->mConduit->AsAudioSessionConduit();
+        auto asVideo = pipeline->mConduit->AsVideoSessionConduit();
 
         nsString kind = asVideo.isNothing() ? u"audio"_ns : u"video"_ns;
         nsString idstr = kind + u"_"_ns;
-        idstr.AppendInt(static_cast<uint32_t>(aPipeline->Level()));
+        idstr.AppendInt(static_cast<uint32_t>(pipeline->Level()));
 
-        for (uint32_t ssrc : aPipeline->mConduit->GetLocalSSRCs()) {
+        for (uint32_t ssrc : pipeline->mConduit->GetLocalSSRCs()) {
           nsString localId = u"outbound_rtp_"_ns + idstr + u"_"_ns;
           localId.AppendInt(ssrc);
           nsString remoteId;
           Maybe<uint16_t> base_seq =
-              aPipeline->mConduit->RtpSendBaseSeqFor(ssrc);
+              pipeline->mConduit->RtpSendBaseSeqFor(ssrc);
 
           auto constructCommonRemoteInboundRtpStats =
               [&](RTCRemoteInboundRtpStreamStats& aRemote,
@@ -2618,7 +2619,7 @@ nsTArray<RefPtr<dom::RTCStatsPromise>> PeerConnectionImpl::GetSenderStats(
                 remoteId = u"outbound_rtcp_"_ns + idstr + u"_"_ns;
                 remoteId.AppendInt(ssrc);
                 aRemote.mTimestamp.Construct(
-                    aPipeline->GetTimestampMaker().ConvertNtpToDomTime(
+                    pipeline->GetTimestampMaker().ConvertNtpToDomTime(
                         webrtc::Timestamp::Micros(
                             aRtcpData.report_block_timestamp_utc_us()) +
                         webrtc::TimeDelta::Seconds(webrtc::kNtpJan1970)));
@@ -2646,7 +2647,7 @@ nsTArray<RefPtr<dom::RTCStatsPromise>> PeerConnectionImpl::GetSenderStats(
               [&](RTCOutboundRtpStreamStats& aLocal) {
                 aLocal.mSsrc.Construct(ssrc);
                 aLocal.mTimestamp.Construct(
-                    aPipeline->GetTimestampMaker().GetNow());
+                    pipeline->GetTimestampMaker().GetNow());
                 aLocal.mId.Construct(localId);
                 aLocal.mType.Construct(RTCStatsType::Outbound_rtp);
                 aLocal.mMediaType.Construct(
@@ -2890,20 +2891,11 @@ RefPtr<dom::RTCStatsReportPromise> PeerConnectionImpl::GetStats(
   DOMHighResTimeStamp now = mTimestampMaker.GetNow();
 
   if (mMedia) {
-    nsTArray<RefPtr<MediaPipelineTransmit>> sendPipelines;
-    
-    
-    mMedia->GetTransmitPipelinesMatching(aSelector, &sendPipelines);
-    if (!sendPipelines.Length()) {
-      CSFLogError(LOGTAG, "%s: Found no pipelines matching selector.",
-                  __FUNCTION__);
-    }
-
-    for (const auto& pipeline : sendPipelines) {
-      promises.AppendElements(GetSenderStats(pipeline));
-    }
-
     for (const auto& transceiver : mMedia->GetTransceivers()) {
+      if (transceiver->HasSendTrack(aSelector)) {
+        
+        promises.AppendElements(GetSenderStats(transceiver));
+      }
       if (transceiver->Receiver()->HasTrack(aSelector)) {
         
         
