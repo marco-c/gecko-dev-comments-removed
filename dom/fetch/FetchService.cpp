@@ -99,7 +99,7 @@ RefPtr<FetchServiceResponsePromise> FetchService::FetchInstance::Fetch() {
   nsresult rv;
 
   
-  RefPtr<FetchDriver> fetch = MakeRefPtr<FetchDriver>(
+  mFetchDriver = MakeRefPtr<FetchDriver>(
       mRequest.clonePtr(),         
       mPrincipal,                  
       mLoadGroup,                  
@@ -114,13 +114,22 @@ RefPtr<FetchServiceResponsePromise> FetchService::FetchInstance::Fetch() {
   
   
   
-  rv = fetch->Fetch(nullptr, this);
+  rv = mFetchDriver->Fetch(nullptr, this);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return FetchServiceResponsePromise::CreateAndResolve(
         InternalResponse::NetworkError(rv), __func__);
   }
 
   return mResponsePromiseHolder.Ensure(__func__);
+}
+
+void FetchService::FetchInstance::Cancel() {
+  MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (mFetchDriver) {
+    mFetchDriver->RunAbortAlgorithm();
+  }
 }
 
 void FetchService::FetchInstance::OnResponseEnd(
@@ -226,7 +235,7 @@ void FetchService::CancelFetch(
 
   auto entry = mFetchInstanceTable.Lookup(aResponsePromise);
   if (entry) {
-    
+    entry.Data()->Cancel();
     entry.Remove();
   }
 }

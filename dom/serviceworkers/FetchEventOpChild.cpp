@@ -37,6 +37,7 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
 #include "mozilla/ipc/BackgroundChild.h"
+#include "mozilla/dom/FetchService.h"
 #include "mozilla/dom/InternalHeaders.h"
 #include "mozilla/dom/InternalResponse.h"
 #include "mozilla/dom/PRemoteWorkerControllerChild.h"
@@ -217,15 +218,16 @@ FetchEventOpChild::FetchEventOpChild(
     : mArgs(std::move(aArgs)),
       mInterceptedChannel(std::move(aInterceptedChannel)),
       mRegistration(std::move(aRegistration)),
-      mKeepAliveToken(std::move(aKeepAliveToken)) {
-  if (aPreloadResponseReadyPromise) {
+      mKeepAliveToken(std::move(aKeepAliveToken)),
+      mPreloadResponseReadyPromise(std::move(aPreloadResponseReadyPromise)) {
+  if (mPreloadResponseReadyPromise) {
     
     
     
     
     
     
-    aPreloadResponseReadyPromise
+    mPreloadResponseReadyPromise
         ->Then(
             GetCurrentSerialEventTarget(), __func__,
             [this](SafeRefPtr<InternalResponse> aInternalResponse) {
@@ -240,9 +242,11 @@ FetchEventOpChild::FetchEventOpChild(
                 
                 SendPreloadResponse(response);
               }
+              mPreloadResponseReadyPromise = nullptr;
               mPreloadResponseReadyPromiseRequestHolder.Complete();
             },
             [this](const CopyableErrorResult&) {
+              mPreloadResponseReadyPromise = nullptr;
               mPreloadResponseReadyPromiseRequestHolder.Complete();
             })
         ->Track(mPreloadResponseReadyPromiseRequestHolder);
@@ -269,6 +273,10 @@ mozilla::ipc::IPCResult FetchEventOpChild::RecvRespondWith(
   
   
   mPreloadResponseReadyPromiseRequestHolder.DisconnectIfExists();
+  if (mPreloadResponseReadyPromise) {
+    RefPtr<FetchService> fetchService = FetchService::GetInstance();
+    fetchService->CancelFetch(std::move(mPreloadResponseReadyPromise));
+  }
 
   switch (aResult.type()) {
     case ParentToParentFetchEventRespondWithResult::
@@ -328,6 +336,10 @@ mozilla::ipc::IPCResult FetchEventOpChild::Recv__delete__(
 
   mPromiseHolder.ResolveIfExists(true, __func__);
   mPreloadResponseReadyPromiseRequestHolder.DisconnectIfExists();
+  if (mPreloadResponseReadyPromise) {
+    RefPtr<FetchService> fetchService = FetchService::GetInstance();
+    fetchService->CancelFetch(std::move(mPreloadResponseReadyPromise));
+  }
 
   
 
