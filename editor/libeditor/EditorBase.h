@@ -73,7 +73,6 @@ class PresShell;
 class TextComposition;
 class TextInputListener;
 class TextServicesDocument;
-
 namespace dom {
 class AbstractRange;
 class DataTransfer;
@@ -1695,8 +1694,12 @@ class EditorBase : public nsIEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT nsresult InsertNodeWithTransaction(
-      nsIContent& aContentToInsert, const EditorDOMPoint& aPointToInsert);
+
+
+  template <typename ContentNodeType>
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT CreateNodeResultBase<ContentNodeType>
+  InsertNodeWithTransaction(ContentNodeType& aContentToInsert,
+                            const EditorDOMPoint& aPointToInsert);
 
   
 

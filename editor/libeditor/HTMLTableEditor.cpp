@@ -13,6 +13,7 @@
 #include "mozilla/EditorDOMPoint.h"
 #include "mozilla/EditorUtils.h"
 #include "mozilla/FlushType.h"
+#include "mozilla/IntegerRange.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/Element.h"
@@ -136,11 +137,20 @@ nsresult HTMLEditor::InsertCell(Element* aCell, int32_t aRowSpan,
   }
 
   
+  
+  
+  
   AutoTransactionsConserveSelection dontChangeSelection(*this);
-  nsresult rv = InsertNodeWithTransaction(*newCell, pointToInsert);
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                       "EditorBase::InsertNodeWithTransaction() failed");
-  return rv;
+  CreateElementResult insertNewCellResult =
+      InsertNodeWithTransaction<Element>(*newCell, pointToInsert);
+  if (insertNewCellResult.isErr()) {
+    NS_WARNING("EditorBase::InsertNodeWithTransaction() failed");
+    return insertNewCellResult.unwrapErr();
+  }
+  
+  
+  insertNewCellResult.IgnoreCaretPointSuggestion();
+  return NS_OK;
 }
 
 nsresult HTMLEditor::SetColSpan(Element* aCell, int32_t aColSpan) {
@@ -255,6 +265,9 @@ nsresult HTMLEditor::InsertTableCellsWithTransaction(
       *this, table, cellDataAtSelection.mCurrent.mRow, newCellIndex,
       ePreviousColumn, false);
   
+  
+  
+  
   AutoTransactionsConserveSelection dontChangeSelection(*this);
 
   EditorDOMPoint pointToInsert(cellParent, cellOffset);
@@ -266,18 +279,23 @@ nsresult HTMLEditor::InsertTableCellsWithTransaction(
     NS_WARNING_ASSERTION(advanced,
                          "Failed to move insertion point after the cell");
   }
-  for (int32_t i = 0; i < aNumberOfCellsToInsert; i++) {
+  for ([[maybe_unused]] const auto i :
+       IntegerRange<uint32_t>(aNumberOfCellsToInsert)) {
     RefPtr<Element> newCell = CreateElementWithDefaults(*nsGkAtoms::td);
-    if (!newCell) {
+    if (MOZ_UNLIKELY(!newCell)) {
       NS_WARNING("HTMLEditor::CreateElementWithDefaults(nsGkAtoms::td) failed");
       return NS_ERROR_FAILURE;
     }
     AutoEditorDOMPointChildInvalidator lockOffset(pointToInsert);
-    nsresult rv = InsertNodeWithTransaction(*newCell, pointToInsert);
-    if (NS_FAILED(rv)) {
+    CreateElementResult insertNewCellResult =
+        InsertNodeWithTransaction<Element>(*newCell, pointToInsert);
+    if (insertNewCellResult.isErr()) {
       NS_WARNING("EditorBase::InsertNodeWithTransaction() failed");
-      return rv;
+      return insertNewCellResult.unwrapErr();
     }
+    
+    
+    insertNewCellResult.IgnoreCaretPointSuggestion();
   }
   return NS_OK;
 }
@@ -763,6 +781,9 @@ nsresult HTMLEditor::InsertTableRowsWithTransaction(
       *this, table, startRowIndex, cellDataAtSelection.mCurrent.mColumn,
       ePreviousColumn, false);
   
+  
+  
+  
   AutoTransactionsConserveSelection dontChangeSelection(*this);
 
   RefPtr<Element> cellForRowParent;
@@ -890,11 +911,15 @@ nsresult HTMLEditor::InsertTableRowsWithTransaction(
     }
 
     AutoEditorDOMPointChildInvalidator lockOffset(pointToInsert);
-    nsresult rv = InsertNodeWithTransaction(*newRow, pointToInsert);
-    if (NS_FAILED(rv)) {
+    CreateElementResult insertNewRowResult =
+        InsertNodeWithTransaction<Element>(*newRow, pointToInsert);
+    if (insertNewRowResult.isErr()) {
       NS_WARNING("EditorBase::InsertNodeWithTransaction() failed");
-      return rv;
+      return insertNewRowResult.unwrapErr();
     }
+    
+    
+    insertNewRowResult.IgnoreCaretPointSuggestion();
   }
 
   
@@ -3110,6 +3135,7 @@ nsresult HTMLEditor::MergeCells(RefPtr<Element> aTargetCell,
     }
 
     
+    EditorDOMPoint pointToPutCaret;
     while (aCellToMerge->HasChildren()) {
       nsCOMPtr<nsIContent> cellChild = aCellToMerge->GetLastChild();
       if (NS_WARN_IF(!cellChild)) {
@@ -3120,12 +3146,27 @@ nsresult HTMLEditor::MergeCells(RefPtr<Element> aTargetCell,
         NS_WARNING("HTMLEditor::DeleteNodeWithTransaction() failed");
         return rv;
       }
-      rv = InsertNodeWithTransaction(*cellChild,
-                                     EditorDOMPoint(aTargetCell, insertIndex));
-      if (NS_FAILED(rv)) {
+      CreateContentResult insertChildContentResult = InsertNodeWithTransaction(
+          *cellChild, EditorDOMPoint(aTargetCell, insertIndex));
+      if (insertChildContentResult.isErr()) {
         NS_WARNING("EditorBase::InsertNodeWithTransaction() failed");
-        return rv;
+        return insertChildContentResult.unwrapErr();
       }
+      insertChildContentResult.MoveCaretPointTo(
+          pointToPutCaret, *this,
+          {SuggestCaret::OnlyIfHasSuggestion,
+           SuggestCaret::OnlyIfTransactionsAllowedToDoIt});
+    }
+    if (pointToPutCaret.IsSet()) {
+      nsresult rv = CollapseSelectionTo(pointToPutCaret);
+      if (MOZ_UNLIKELY(rv == NS_ERROR_EDITOR_DESTROYED)) {
+        NS_WARNING(
+            "EditorBase::CollapseSelectionTo() caused destroying the editor");
+        return NS_ERROR_EDITOR_DESTROYED;
+      }
+      NS_WARNING_ASSERTION(
+          NS_SUCCEEDED(rv),
+          "EditorBase::CollapseSelectionTo() failed, but ignored");
     }
   }
 

@@ -16,6 +16,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/ContentIterator.h"
 #include "mozilla/EditorDOMPoint.h"
+#include "mozilla/EditorForwards.h"
 #include "mozilla/EditorUtils.h"  
 #include "mozilla/IntegerRange.h"
 #include "mozilla/RangeBoundary.h"
@@ -31,8 +32,6 @@
 class nsISimpleEnumerator;
 
 namespace mozilla {
-template <class T>
-class OwningNonNull;
 
 
 
@@ -972,9 +971,6 @@ class MOZ_STACK_CLASS ReplaceRangeDataBase final {
   
   nsString mReplaceString;
 };
-
-using ReplaceRangeData = ReplaceRangeDataBase<EditorDOMPoint>;
-using ReplaceRangeInTextsData = ReplaceRangeDataBase<EditorDOMPointInText>;
 
 }  
 

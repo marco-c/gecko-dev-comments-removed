@@ -1462,12 +1462,15 @@ nsresult HTMLEditor::ReplaceHeadContentsWithSourceWithTransaction(
 
   
   while (nsCOMPtr<nsIContent> child = documentFragment->GetFirstChild()) {
-    nsresult rv = InsertNodeWithTransaction(
+    CreateContentResult insertChildContentResult = InsertNodeWithTransaction(
         *child, EditorDOMPoint(primaryHeadElement, offsetOfNewNode++));
-    if (NS_FAILED(rv)) {
+    if (insertChildContentResult.isErr()) {
       NS_WARNING("EditorBase::InsertNodeWithTransaction() failed");
-      return rv;
+      return insertChildContentResult.unwrapErr();
     }
+    
+    
+    insertChildContentResult.IgnoreCaretPointSuggestion();
   }
 
   return NS_OK;
@@ -1974,11 +1977,23 @@ EditorDOMPoint HTMLEditor::InsertNodeIntoProperAncestorWithTransaction(
     
     AutoEditorDOMPointChildInvalidator lockOffset(pointToInsert);
     
-    nsresult rv = InsertNodeWithTransaction(aNode, pointToInsert);
-    if (NS_FAILED(rv)) {
+    CreateContentResult insertContentNodeResult =
+        InsertNodeWithTransaction(aNode, pointToInsert);
+    if (insertContentNodeResult.isErr()) {
       NS_WARNING("EditorBase::InsertNodeWithTransaction() failed");
       return EditorDOMPoint();
     }
+    nsresult rv = insertContentNodeResult.SuggestCaretPointTo(
+        *this, {SuggestCaret::OnlyIfHasSuggestion,
+                SuggestCaret::OnlyIfTransactionsAllowedToDoIt,
+                SuggestCaret::AndIgnoreTrivialError});
+    if (NS_FAILED(rv)) {
+      NS_WARNING("CreateContentResult::SuggestCaretPointTo() failed");
+      return EditorDOMPoint();
+    }
+    NS_WARNING_ASSERTION(
+        rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
+        "CreateContentResult::SuggestCaretPointTo() failed, but ignored");
   }
   return pointToInsert;
 }
@@ -3773,21 +3788,39 @@ already_AddRefed<Element> HTMLEditor::InsertContainerWithTransactionInternal(
   }
 
   {
+    
+    
+    
+    
     AutoTransactionsConserveSelection conserveSelection(*this);
-    rv = InsertNodeWithTransaction(aContent, EditorDOMPoint(newContainer, 0));
-    if (NS_FAILED(rv)) {
+    CreateContentResult insertContentNodeResult =
+        InsertNodeWithTransaction(aContent, EditorDOMPoint(newContainer, 0u));
+    if (insertContentNodeResult.isErr()) {
       NS_WARNING("EditorBase::InsertNodeWithTransaction() failed");
       return nullptr;
     }
+    insertContentNodeResult.IgnoreCaretPointSuggestion();
   }
 
   
-  rv = InsertNodeWithTransaction(*newContainer, pointToInsertNewContainer);
-  if (NS_FAILED(rv)) {
+  CreateElementResult insertNewContainerElementResult =
+      InsertNodeWithTransaction<Element>(*newContainer,
+                                         pointToInsertNewContainer);
+  if (insertNewContainerElementResult.isErr()) {
     NS_WARNING("EditorBase::InsertNodeWithTransaction() failed");
     return nullptr;
   }
-
+  rv = insertNewContainerElementResult.SuggestCaretPointTo(
+      *this, {SuggestCaret::OnlyIfHasSuggestion,
+              SuggestCaret::OnlyIfTransactionsAllowedToDoIt,
+              SuggestCaret::AndIgnoreTrivialError});
+  if (NS_FAILED(rv)) {
+    NS_WARNING("CreateElementResult::SuggestCaretPointTo() failed");
+    return nullptr;
+  }
+  NS_WARNING_ASSERTION(
+      rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
+      "CreateElementResult::SuggestCaretPointTo() failed, but ignored");
   return newContainer.forget();
 }
 
@@ -3838,23 +3871,36 @@ already_AddRefed<Element> HTMLEditor::ReplaceContainerWithTransactionInternal(
         return nullptr;
       }
 
-      rv = InsertNodeWithTransaction(
-          *child, EditorDOMPoint(newContainer, newContainer->Length()));
-      if (NS_FAILED(rv)) {
+      CreateContentResult insertChildContentResult = InsertNodeWithTransaction(
+          *child, EditorDOMPoint::AtEndOf(newContainer));
+      if (insertChildContentResult.isErr()) {
         NS_WARNING("EditorBase::InsertNodeWithTransaction() failed");
         return nullptr;
       }
+      insertChildContentResult.IgnoreCaretPointSuggestion();
     }
   }
 
   
   NS_WARNING_ASSERTION(atOldContainer.IsSetAndValid(),
                        "The old container might be moved by mutation observer");
-  nsresult rv = InsertNodeWithTransaction(*newContainer, atOldContainer);
-  if (NS_FAILED(rv)) {
+  CreateElementResult insertNewContainerElementResult =
+      InsertNodeWithTransaction<Element>(*newContainer, atOldContainer);
+  if (insertNewContainerElementResult.isErr()) {
     NS_WARNING("EditorBase::InsertNodeWithTransaction() failed");
     return nullptr;
   }
+  nsresult rv = insertNewContainerElementResult.SuggestCaretPointTo(
+      *this, {SuggestCaret::OnlyIfHasSuggestion,
+              SuggestCaret::OnlyIfTransactionsAllowedToDoIt,
+              SuggestCaret::AndIgnoreTrivialError});
+  if (NS_FAILED(rv)) {
+    NS_WARNING("CreateElementResult::SuggestCaretPointTo() failed");
+    return nullptr;
+  }
+  NS_WARNING_ASSERTION(
+      rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
+      "CreateElementResult::SuggestCaretPointTo() failed, but ignored");
 
   
   rv = DeleteNodeWithTransaction(aOldContainer);
@@ -3879,6 +3925,7 @@ nsresult HTMLEditor::RemoveContainerWithTransaction(Element& aElement) {
                                          pointToInsertChildren);
 
   
+  EditorDOMPoint pointToPutCaret;
   while (aElement.HasChildren()) {
     nsCOMPtr<nsIContent> child = aElement.GetLastChild();
     if (NS_WARN_IF(!child)) {
@@ -3893,13 +3940,29 @@ nsresult HTMLEditor::RemoveContainerWithTransaction(Element& aElement) {
     
     
     
-    rv = InsertNodeWithTransaction(
+    CreateContentResult insertChildContentResult = InsertNodeWithTransaction(
         *child, EditorDOMPoint(pointToInsertChildren.GetContainer(),
                                pointToInsertChildren.Offset()));
-    if (NS_FAILED(rv)) {
+    if (insertChildContentResult.isErr()) {
       NS_WARNING("EditorBase::InsertNodeWithTransaction() failed");
-      return rv;
+      return insertChildContentResult.unwrapErr();
     }
+    insertChildContentResult.MoveCaretPointTo(
+        pointToPutCaret, *this,
+        {SuggestCaret::OnlyIfHasSuggestion,
+         SuggestCaret::OnlyIfTransactionsAllowedToDoIt});
+  }
+
+  if (pointToPutCaret.IsSet()) {
+    nsresult rv = CollapseSelectionTo(pointToPutCaret);
+    if (MOZ_UNLIKELY(rv == NS_ERROR_EDITOR_DESTROYED)) {
+      NS_WARNING(
+          "EditorBase::CollapseSelectionTo() caused destring the editor");
+      return NS_ERROR_EDITOR_DESTROYED;
+    }
+    NS_WARNING_ASSERTION(
+        NS_SUCCEEDED(rv),
+        "EditorBase::CollapseSelectionTo() failed, but ignored");
   }
 
   nsresult rv = DeleteNodeWithTransaction(aElement);
@@ -5089,10 +5152,24 @@ nsresult HTMLEditor::MoveNodeWithTransaction(
   if (NS_WARN_IF(!pointToInsert.IsSetAndValid())) {
     pointToInsert.SetToEndOf(pointToInsert.GetContainer());
   }
-  rv = InsertNodeWithTransaction(aContent, pointToInsert);
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                       "EditorBase::InsertNodeWithTransaction() failed");
-  return rv;
+  CreateContentResult insertContentNodeResult =
+      InsertNodeWithTransaction(aContent, pointToInsert);
+  if (insertContentNodeResult.isErr()) {
+    NS_WARNING("EditorBase::InsertNodeWithTransaction() failed");
+    return insertContentNodeResult.unwrapErr();
+  }
+  rv = insertContentNodeResult.SuggestCaretPointTo(
+      *this, {SuggestCaret::OnlyIfHasSuggestion,
+              SuggestCaret::OnlyIfTransactionsAllowedToDoIt,
+              SuggestCaret::AndIgnoreTrivialError});
+  if (NS_FAILED(rv)) {
+    NS_WARNING("CreateContentResult::SuggestCaretPointTo() failed");
+    return rv;
+  }
+  NS_WARNING_ASSERTION(
+      rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
+      "CreateContentResult::SuggestCaretPointTo() failed, but ignored");
+  return NS_OK;
 }
 
 Result<RefPtr<Element>, nsresult> HTMLEditor::DeleteSelectionAndCreateElement(

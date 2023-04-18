@@ -199,13 +199,19 @@ nsresult HTMLEditor::LoadHTML(const nsAString& aInputString) {
   
   
   Unused << pointToInsert.Offset();
+  EditorDOMPoint pointToPutCaret;
   for (nsCOMPtr<nsIContent> contentToInsert = documentFragment->GetFirstChild();
        contentToInsert; contentToInsert = documentFragment->GetFirstChild()) {
-    rv = InsertNodeWithTransaction(*contentToInsert, pointToInsert);
-    if (NS_FAILED(rv)) {
+    CreateContentResult insertChildContentNodeResult =
+        InsertNodeWithTransaction(*contentToInsert, pointToInsert);
+    if (insertChildContentNodeResult.isErr()) {
       NS_WARNING("EditorBase::InsertNodeWithTransaction() failed");
-      return rv;
+      return insertChildContentNodeResult.unwrapErr();
     }
+    insertChildContentNodeResult.MoveCaretPointTo(
+        pointToPutCaret, *this,
+        {SuggestCaret::OnlyIfHasSuggestion,
+         SuggestCaret::OnlyIfTransactionsAllowedToDoIt});
     
     
     
@@ -216,6 +222,17 @@ nsresult HTMLEditor::LoadHTML(const nsAString& aInputString) {
       
       pointToInsert.SetToEndOf(pointToInsert.GetContainer());
     }
+  }
+
+  if (pointToPutCaret.IsSet()) {
+    nsresult rv = CollapseSelectionTo(pointToPutCaret);
+    if (MOZ_UNLIKELY(rv == NS_ERROR_EDITOR_DESTROYED)) {
+      NS_WARNING("EditorBase::CollapseSelectionTo() failed, but ignored");
+      return NS_ERROR_EDITOR_DESTROYED;
+    }
+    NS_WARNING_ASSERTION(
+        NS_SUCCEEDED(rv),
+        "EditorBase::CollapseSelectionTo() failed, but ignored");
   }
 
   return NS_OK;
