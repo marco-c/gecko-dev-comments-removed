@@ -1826,6 +1826,8 @@ pref("dom.storage_access.enabled", true);
 pref("privacy.query_stripping.enabled", true);
 #endif
 
+pref("privacy.query_stripping.enabled.pbmode", true);
+
 pref("browser.contentblocking.cryptomining.preferences.ui.enabled", true);
 pref("browser.contentblocking.fingerprinting.preferences.ui.enabled", true);
 
