@@ -13,6 +13,7 @@ const { XPCOMUtils } = ChromeUtils.import(
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   RemoteAgent: "chrome://remote/content/components/RemoteAgent.jsm",
+  TabManager: "chrome://remote/content/shared/TabManager.jsm",
   TabSession: "chrome://remote/content/cdp/sessions/TabSession.jsm",
   Target: "chrome://remote/content/cdp/targets/Target.jsm",
 });
@@ -36,6 +37,10 @@ class TabTarget extends Target {
     super(targetList, TabSession);
 
     this.browser = browser;
+
+    
+    
+    this.id = TabManager.getIdForBrowser(browser);
 
     
     this.path = `/devtools/page/${this.id}`;
