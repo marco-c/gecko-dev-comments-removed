@@ -6933,7 +6933,21 @@ nsresult HTMLEditor::HandleInsertParagraphInHeadingElement(
               &paraAtom == nsGkAtoms::br ? *nsGkAtoms::p
                                          : MOZ_KnownLive(paraAtom),
               atHeader.NextPoint(),
-              [](Element& aDivOrParagraphElement) -> nsresult {
+              
+              [&](Element& aDivOrParagraphElement) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
+                
+                
+                
+                Result<RefPtr<Element>, nsresult> brElementOrError =
+                    InsertBRElement(
+                        WithTransaction::No,
+                        EditorDOMPoint(&aDivOrParagraphElement, 0u));
+                if (brElementOrError.isErr()) {
+                  NS_WARNING(
+                      "HTMLEditor::InsertBRElement(WithTransaction::No) "
+                      "failed");
+                  return brElementOrError.unwrapErr();
+                }
                 return NS_OK;
               });
       if (maybeNewParagraphElement.isErr()) {
@@ -6942,17 +6956,6 @@ nsresult HTMLEditor::HandleInsertParagraphInHeadingElement(
         return maybeNewParagraphElement.unwrapErr();
       }
       MOZ_ASSERT(maybeNewParagraphElement.inspect());
-
-      
-      Result<RefPtr<Element>, nsresult> resultOfInsertingBRElement =
-          InsertBRElement(
-              WithTransaction::Yes,
-              EditorDOMPoint(maybeNewParagraphElement.inspect(), 0u));
-      if (resultOfInsertingBRElement.isErr()) {
-        NS_WARNING("HTMLEditor::InsertBRElement(WithTransaction::Yes) failed");
-        return resultOfInsertingBRElement.unwrapErr();
-      }
-      MOZ_ASSERT(resultOfInsertingBRElement.inspect());
 
       
       nsresult rv = CollapseSelectionToStartOf(
