@@ -20,6 +20,7 @@ class nsIContent;
 class nsIPrincipal;
 class imgRequestProxy;
 class nsMenuParentX;
+class nsPresContext;
 
 namespace mozilla {
 class ComputedStyle;
@@ -58,10 +59,10 @@ class nsMenuItemIconX final : public mozilla::widget::IconLoader::Listener {
   
   already_AddRefed<nsIURI> GetIconURI(nsIContent* aContent);
 
-  nsCOMPtr<nsIContent> mContent;  
   Listener* mListener;            
   nsIntRect mImageRegionRect;
   RefPtr<mozilla::ComputedStyle> mComputedStyle;
+  RefPtr<nsPresContext> mPresContext;
   NSImage* mIconImage = nil;  
   RefPtr<mozilla::widget::IconLoader> mIconLoader;
 };

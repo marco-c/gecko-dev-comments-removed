@@ -592,6 +592,11 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
 
   void RecomputeBrowsingContextDependentData();
 
+  
+
+
+  void SetColorSchemeOverride(mozilla::dom::PrefersColorSchemeOverride);
+
   mozilla::CSSCoord GetAutoQualityMinFontSize() const {
     return DevPixelsToFloatCSSPixels(mAutoQualityMinFontSizePixelsPref);
   }

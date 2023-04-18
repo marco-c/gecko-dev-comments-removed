@@ -119,6 +119,7 @@ nsresult nsTouchBarInputIcon::OnComplete(imgIContainer* aImage) {
   
   NSImage* image = [MOZIconHelper iconImageFromImageContainer:aImage
                                                      withSize:NSMakeSize(kIconHeight, kIconHeight)
+                                                  presContext:nullptr
                                                 computedStyle:nullptr
                                                       subrect:mImageRegionRect
                                                   scaleFactor:kHiDPIScalingFactor];
