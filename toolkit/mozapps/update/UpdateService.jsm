@@ -2929,7 +2929,7 @@ UpdateService.prototype = {
             "but there isn't a ready update, removing update"
         );
         cleanupReadyUpdate();
-      } else if (Services.startup.wasSilentlyRestarted) {
+      } else if (Services.startup.wasSilentlyStarted) {
         
         
         
