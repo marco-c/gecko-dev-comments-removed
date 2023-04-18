@@ -7,10 +7,6 @@ self.onmessage = async function(ev) {
       try {
         xhr.open("POST", "FOOBAR", false);
         xhr.send();
-        
-        
-        
-        myself.postMessage("MissingError");
       } catch (err) {
         if (err instanceof DOMException) {
           
@@ -18,7 +14,13 @@ self.onmessage = async function(ev) {
         } else {
           myself.postMessage("OtherError");
         }
+        
+        throw err;
       }
+      
+      
+      
+      myself.postMessage("MissingError");
     },
     true
   );
