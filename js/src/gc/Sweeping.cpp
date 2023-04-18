@@ -1062,7 +1062,6 @@ IncrementalProgress GCRuntime::beginMarkingSweepGroup(JSFreeOp* fop,
   }
 
   AutoSetMarkColor setColorGray(marker, MarkColor::Gray);
-  marker.setMainStackColor(MarkColor::Gray);
 
   
   markIncomingGrayCrossCompartmentPointers();
@@ -1087,7 +1086,6 @@ IncrementalProgress GCRuntime::markGray(JSFreeOp* fop, SliceBudget& budget) {
     return NotFinished;
   }
 
-  marker.setMainStackColor(MarkColor::Black);
   return Finished;
 }
 
@@ -1106,7 +1104,6 @@ IncrementalProgress GCRuntime::endMarkingSweepGroup(JSFreeOp* fop,
   }
 
   AutoSetMarkColor setColorGray(marker, MarkColor::Gray);
-  marker.setMainStackColor(MarkColor::Gray);
 
   
   if (markWeakReferencesInCurrentGroup(budget) == NotFinished) {
@@ -1114,7 +1111,6 @@ IncrementalProgress GCRuntime::endMarkingSweepGroup(JSFreeOp* fop,
   }
 
   MOZ_ASSERT(marker.isDrained());
-  marker.setMainStackColor(MarkColor::Black);
 
   
   safeToYield = false;
