@@ -999,24 +999,22 @@ void CustomElementRegistry::Define(
     disableShadow = disabledFeatures.Contains(
         static_cast<nsStaticAtom*>(nsGkAtoms::shadow));
 
-    if (StaticPrefs::dom_webcomponents_formAssociatedCustomElement_enabled()) {
-      
-      
-      JS::Rooted<JS::Value> formAssociatedValue(aCx);
-      if (!JS_GetProperty(aCx, constructor, "formAssociated",
-                          &formAssociatedValue)) {
-        aRv.NoteJSContextException(aCx);
-        return;
-      }
+    
+    
+    JS::Rooted<JS::Value> formAssociatedValue(aCx);
+    if (!JS_GetProperty(aCx, constructor, "formAssociated",
+                        &formAssociatedValue)) {
+      aRv.NoteJSContextException(aCx);
+      return;
+    }
 
-      
-      
-      
-      if (!ValueToPrimitive<bool, eDefault>(
-              aCx, formAssociatedValue, "formAssociated", &formAssociated)) {
-        aRv.NoteJSContextException(aCx);
-        return;
-      }
+    
+    
+    
+    if (!ValueToPrimitive<bool, eDefault>(aCx, formAssociatedValue,
+                                          "formAssociated", &formAssociated)) {
+      aRv.NoteJSContextException(aCx);
+      return;
     }
   }  
 
