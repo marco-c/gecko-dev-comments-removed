@@ -230,8 +230,6 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   
   bool DisableWebRenderConfig(wr::WebRenderError aError, const nsCString& aMsg);
 
-  void NotifyDisablingWebRender();
-
   void FallbackToSoftware(const char* aMessage);
 
  private:

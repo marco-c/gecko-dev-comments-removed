@@ -80,8 +80,6 @@ class CompositorSession {
   RefPtr<UiCompositorControllerChild> GetUiCompositorControllerChild() {
     return mUiCompositorControllerChild;
   }
-
-  void NotifyDisablingWebRender();
 #endif  
  protected:
   CompositorSession(nsBaseWidget* aWidget, CompositorWidgetDelegate* aDelegate,

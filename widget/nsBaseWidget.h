@@ -219,7 +219,7 @@ class nsBaseWidget : public nsIWidget, public nsSupportsWeakReference {
   
   
   
-  void NotifyCompositorSessionLost(
+  virtual void NotifyCompositorSessionLost(
       mozilla::layers::CompositorSession* aSession);
 
   already_AddRefed<mozilla::CompositorVsyncDispatcher>
