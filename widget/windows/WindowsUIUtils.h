@@ -28,6 +28,7 @@ class WindowsUIUtils final : public nsIWindowsUIUtils {
 
   
   static bool ComputeOverlayScrollbars();
+  static double ComputeTextScaleFactor();
 
  protected:
   ~WindowsUIUtils();
