@@ -310,6 +310,16 @@ void MacroAssemblerX86::vmulpdSimd128(const SimdConstant& v, FloatRegister lhs,
   vpPatchOpSimd128(v, lhs, dest, &X86Encoding::BaseAssemblerX86::vmulpd_mr);
 }
 
+void MacroAssemblerX86::vandpdSimd128(const SimdConstant& v, FloatRegister lhs,
+                                      FloatRegister dest) {
+  vpPatchOpSimd128(v, lhs, dest, &X86Encoding::BaseAssemblerX86::vandpd_mr);
+}
+
+void MacroAssemblerX86::vminpdSimd128(const SimdConstant& v, FloatRegister lhs,
+                                      FloatRegister dest) {
+  vpPatchOpSimd128(v, lhs, dest, &X86Encoding::BaseAssemblerX86::vminpd_mr);
+}
+
 void MacroAssemblerX86::vpacksswbSimd128(const SimdConstant& v,
                                          FloatRegister lhs,
                                          FloatRegister dest) {
@@ -332,6 +342,18 @@ void MacroAssemblerX86::vpackusdwSimd128(const SimdConstant& v,
                                          FloatRegister lhs,
                                          FloatRegister dest) {
   vpPatchOpSimd128(v, lhs, dest, &X86Encoding::BaseAssemblerX86::vpackusdw_mr);
+}
+
+void MacroAssemblerX86::vpunpckldqSimd128(const SimdConstant& v,
+                                          FloatRegister lhs,
+                                          FloatRegister dest) {
+  vpPatchOpSimd128(v, lhs, dest, &X86Encoding::BaseAssemblerX86::vpunpckldq_mr);
+}
+
+void MacroAssemblerX86::vunpcklpsSimd128(const SimdConstant& v,
+                                         FloatRegister lhs,
+                                         FloatRegister dest) {
+  vpPatchOpSimd128(v, lhs, dest, &X86Encoding::BaseAssemblerX86::vunpcklps_mr);
 }
 
 void MacroAssemblerX86::vpshufbSimd128(const SimdConstant& v, FloatRegister lhs,
@@ -1632,8 +1654,6 @@ void MacroAssembler::convertUInt64ToDouble(Register64 src, FloatRegister dest,
     return;
   }
 
-  ScratchSimd128Scope scratch(*this);
-
   
   
   MOZ_ASSERT(dest.size() == 8);
@@ -1643,15 +1663,18 @@ void MacroAssembler::convertUInt64ToDouble(Register64 src, FloatRegister dest,
   
   
 
-  
-  
-  
-  vmovd(src.low, dest128);
-  vmovd(src.high, scratch);
+  {
+    
+    
+    
+    ScratchSimd128Scope scratch(*this);
+    vmovd(src.low, dest128);
+    vmovd(src.high, scratch);
 
-  
-  
-  vpunpckldq(scratch, dest128, dest128);
+    
+    
+    vpunpckldq(scratch, dest128, dest128);
+  }
 
   
   
@@ -1667,8 +1690,7 @@ void MacroAssembler::convertUInt64ToDouble(Register64 src, FloatRegister dest,
       0x0,
   };
 
-  loadConstantSimd128Int(SimdConstant::CreateX4(CST1), scratch);
-  vpunpckldq(scratch, dest128, dest128);
+  vpunpckldqSimd128(SimdConstant::CreateX4(CST1), dest128, dest128);
 
   
   
@@ -1685,8 +1707,7 @@ void MacroAssembler::convertUInt64ToDouble(Register64 src, FloatRegister dest,
       0x45300000,
   };
 
-  loadConstantSimd128Int(SimdConstant::CreateX4(CST2), scratch);
-  vsubpd(Operand(scratch), dest128, dest128);
+  vsubpdSimd128(SimdConstant::CreateX4(CST2), dest128, dest128);
 
   
   
