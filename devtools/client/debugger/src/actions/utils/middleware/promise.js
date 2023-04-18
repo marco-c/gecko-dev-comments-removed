@@ -2,7 +2,6 @@
 
 
 
-import { fromPairs, toPairs } from "lodash";
 import { executeSoon } from "../../../utils/DevToolsUtils";
 
 import { pending, rejected, fulfilled } from "../../../utils/async-value";
@@ -22,22 +21,18 @@ function seqIdGen() {
   return seqIdVal++;
 }
 
-function filterAction(action) {
-  return fromPairs(toPairs(action).filter(pair => pair[0] !== PROMISE));
-}
-
 function promiseMiddleware({ dispatch, getState }) {
   return next => action => {
     if (!(PROMISE in action)) {
       return next(action);
     }
 
-    const promiseInst = action[PROMISE];
     const seqId = seqIdGen().toString();
+    const { [PROMISE]: promiseInst, ...originalActionProperties } = action;
 
     
     
-    action = { ...filterAction(action), seqId };
+    action = { ...originalActionProperties, seqId };
 
     dispatch({ ...action, status: "start" });
 

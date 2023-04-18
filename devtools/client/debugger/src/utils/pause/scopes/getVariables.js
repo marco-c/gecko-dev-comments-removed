@@ -4,10 +4,6 @@
 
 
 
-import { toPairs } from "lodash";
-
-
-
 
 
 
@@ -17,17 +13,20 @@ export function getBindingVariables(bindings, parentName) {
     return [];
   }
 
-  const args = bindings.arguments.map(arg => toPairs(arg)[0]);
+  const nodes = [];
+  const addNode = (name, contents) =>
+    nodes.push({ name, contents, path: `${parentName}/${name}` });
 
-  const variables = toPairs(bindings.variables);
+  for (const arg of bindings.arguments) {
+    
+    
+    const [name, contents] = Object.entries(arg)[0];
+    addNode(name, contents);
+  }
 
-  return args.concat(variables).map(binding => {
-    const name = binding[0];
-    const contents = binding[1];
-    return {
-      name,
-      path: `${parentName}/${name}`,
-      contents,
-    };
-  });
+  for (const name in bindings.variables) {
+    addNode(name, bindings.variables[name]);
+  }
+
+  return nodes;
 }
