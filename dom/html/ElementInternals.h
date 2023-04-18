@@ -109,6 +109,9 @@ class ElementInternals final : public nsIFormControl,
 
   
   nsString mValidationMessage;
+
+  
+  RefPtr<nsGenericHTMLElement> mValidationAnchor;
 };
 
 }  

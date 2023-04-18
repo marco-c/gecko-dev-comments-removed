@@ -19,7 +19,7 @@
 namespace mozilla::dom {
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(ElementInternals, mSubmissionValue,
-                                      mState, mValidity)
+                                      mState, mValidity, mValidationAnchor)
 NS_IMPL_CYCLE_COLLECTING_ADDREF(ElementInternals)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(ElementInternals)
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(ElementInternals)
@@ -187,8 +187,18 @@ void ElementInternals::SetValidity(
 
 
 
+  nsGenericHTMLElement* anchor =
+      aAnchor.WasPassed() ? &aAnchor.Value() : nullptr;
   
   
+  if (anchor && (anchor == mTarget ||
+                 !anchor->IsShadowIncludingInclusiveDescendantOf(mTarget))) {
+    aRv.ThrowNotFoundError(
+        "Validation anchor is not a shadow-including descendant of target"
+        "element");
+    return;
+  }
+  mValidationAnchor = anchor;
 }
 
 
