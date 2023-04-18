@@ -9,16 +9,23 @@
 
 #include "mozilla/gfx/2D.h"
 #include "mozilla/LinkedList.h"
+#include "mozilla/WeakPtr.h"
 #include <vector>
 
 namespace mozilla {
 
 class ClientWebGLContext;
 class WebGLBufferJS;
+class WebGLFramebufferJS;
 class WebGLProgramJS;
+class WebGLRenderbufferJS;
 class WebGLTextureJS;
 class WebGLUniformLocationJS;
 class WebGLVertexArrayJS;
+
+namespace layers {
+class SurfaceDescriptor;
+}
 
 namespace gfx {
 
@@ -41,16 +48,21 @@ class PathCache;
 
 
 
-class DrawTargetWebgl : public DrawTarget {
+
+
+
+class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
   friend class SharedTextureHandle;
   friend class StandaloneTexture;
+  friend class TextureHandle;
 
  public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(DrawTargetWebgl, override)
 
  private:
   IntSize mSize;
-  RefPtr<ClientWebGLContext> mWebgl;
+  RefPtr<WebGLFramebufferJS> mFramebuffer;
+  RefPtr<WebGLTextureJS> mTex;
   RefPtr<DrawTargetSkia> mSkia;
   
   RefPtr<DataSourceSurface> mSnapshot;
@@ -60,44 +72,132 @@ class DrawTargetWebgl : public DrawTarget {
   bool mSkiaLayer = false;
   
   bool mWebglValid = false;
+  
+  bool mClipDirty = true;
+
+  RefPtr<TextureHandle> mSnapshotTexture;
 
   
-  RefPtr<WebGLBufferJS> mVertexBuffer;
-  RefPtr<WebGLVertexArrayJS> mVertexArray;
-  RefPtr<WebGLProgramJS> mSolidProgram;
-  RefPtr<WebGLUniformLocationJS> mSolidProgramTransform;
-  RefPtr<WebGLUniformLocationJS> mSolidProgramColor;
-  RefPtr<WebGLProgramJS> mImageProgram;
-  RefPtr<WebGLUniformLocationJS> mImageProgramTransform;
-  RefPtr<WebGLUniformLocationJS> mImageProgramTexMatrix;
-  RefPtr<WebGLUniformLocationJS> mImageProgramTexBounds;
-  RefPtr<WebGLUniformLocationJS> mImageProgramColor;
-  RefPtr<WebGLUniformLocationJS> mImageProgramSwizzle;
-  RefPtr<WebGLUniformLocationJS> mImageProgramSampler;
-  
-  LinkedList<RefPtr<TextureHandle>> mTextureHandles;
-  size_t mNumTextureHandles = 0;
-  
-  UserDataKey mTextureHandleKey = {0};
-  
-  UserDataKey mShadowTextureKey = {0};
-  
-  UserDataKey mGlyphCacheKey = {0};
-  
-  LinkedList<GlyphCache> mGlyphCaches;
-  
-  UniquePtr<PathCache> mPathCache;
   
   
-  std::vector<RefPtr<SharedTexture>> mSharedTextures;
   
   
-  std::vector<RefPtr<StandaloneTexture>> mStandaloneTextures;
-  size_t mUsedTextureMemory = 0;
-  size_t mTotalTextureMemory = 0;
-  RefPtr<TextureHandle> mSnapshotTexture;
-  CompositionOp mLastCompositionOp = CompositionOp::OP_SOURCE;
-  uint32_t mMaxTextureSize = 0;
+  
+  
+  
+  class SharedContext : public mozilla::RefCounted<SharedContext>,
+                        public mozilla::SupportsWeakPtr {
+   public:
+    MOZ_DECLARE_REFCOUNTED_TYPENAME(SharedContext)
+
+    SharedContext();
+    ~SharedContext();
+
+    WeakPtr<DrawTargetWebgl> mCurrentTarget;
+    IntSize mViewportSize;
+    IntRect mClipRect;
+
+    RefPtr<ClientWebGLContext> mWebgl;
+
+    
+    RefPtr<WebGLProgramJS> mLastProgram;
+    RefPtr<WebGLTextureJS> mLastTexture;
+
+    
+    RefPtr<WebGLBufferJS> mVertexBuffer;
+    RefPtr<WebGLVertexArrayJS> mVertexArray;
+    RefPtr<WebGLProgramJS> mSolidProgram;
+    RefPtr<WebGLUniformLocationJS> mSolidProgramTransform;
+    RefPtr<WebGLUniformLocationJS> mSolidProgramColor;
+    RefPtr<WebGLProgramJS> mImageProgram;
+    RefPtr<WebGLUniformLocationJS> mImageProgramTransform;
+    RefPtr<WebGLUniformLocationJS> mImageProgramTexMatrix;
+    RefPtr<WebGLUniformLocationJS> mImageProgramTexBounds;
+    RefPtr<WebGLUniformLocationJS> mImageProgramColor;
+    RefPtr<WebGLUniformLocationJS> mImageProgramSwizzle;
+    RefPtr<WebGLUniformLocationJS> mImageProgramSampler;
+
+    uint32_t mMaxTextureSize = 0;
+
+    CompositionOp mLastCompositionOp = CompositionOp::OP_SOURCE;
+
+    
+    LinkedList<RefPtr<TextureHandle>> mTextureHandles;
+    size_t mNumTextureHandles = 0;
+    
+    UserDataKey mTextureHandleKey = {0};
+    
+    UserDataKey mShadowTextureKey = {0};
+    
+    UserDataKey mGlyphCacheKey = {0};
+    
+    LinkedList<GlyphCache> mGlyphCaches;
+    
+    UniquePtr<PathCache> mPathCache;
+    
+    
+    std::vector<RefPtr<SharedTexture>> mSharedTextures;
+    
+    
+    std::vector<RefPtr<StandaloneTexture>> mStandaloneTextures;
+    size_t mUsedTextureMemory = 0;
+    size_t mTotalTextureMemory = 0;
+
+    const Matrix& GetTransform() const { return mCurrentTarget->mTransform; }
+
+    bool IsContextLost() const;
+
+    bool Initialize();
+    bool CreateShaders();
+
+    void SetBlendState(CompositionOp aOp);
+
+    void SetClipRect(const IntRect& aClipRect) { mClipRect = aClipRect; }
+
+    bool IsCurrentTarget(DrawTargetWebgl* aDT) const {
+      return aDT == mCurrentTarget;
+    }
+    bool SetTarget(DrawTargetWebgl* aDT);
+
+    void ClearTarget() { mCurrentTarget = nullptr; }
+    void ClearLastTexture() { mLastTexture = nullptr; }
+
+    bool SupportsPattern(const Pattern& aPattern);
+
+    bool DrawRectAccel(const Rect& aRect, const Pattern& aPattern,
+                       const DrawOptions& aOptions,
+                       Maybe<DeviceColor> aMaskColor = Nothing(),
+                       RefPtr<TextureHandle>* aHandle = nullptr,
+                       bool aTransformed = true, bool aClipped = true,
+                       bool aAccelOnly = false, bool aForceUpdate = false,
+                       const StrokeOptions* aStrokeOptions = nullptr);
+
+    bool DrawPathAccel(const Path* aPath, const Pattern& aPattern,
+                       const DrawOptions& aOptions,
+                       const StrokeOptions* aStrokeOptions = nullptr);
+
+    bool DrawSurfaceWithShadowAccel(SourceSurface* aSurface, const Point& aDest,
+                                    const DeviceColor& aColor,
+                                    const Point& aOffset, Float aSigma,
+                                    CompositionOp aOperator);
+
+    bool FillGlyphsAccel(ScaledFont* aFont, const GlyphBuffer& aBuffer,
+                         const Pattern& aPattern, const DrawOptions& aOptions);
+
+    void PruneTextureHandle(RefPtr<TextureHandle> aHandle);
+    bool PruneTextureMemory(size_t aMargin = 0, bool aPruneUnused = true);
+
+    bool RemoveSharedTexture(const RefPtr<SharedTexture>& aTexture);
+    bool RemoveStandaloneTexture(const RefPtr<StandaloneTexture>& aTexture);
+
+    void UnlinkSurfaceTextures();
+    void UnlinkSurfaceTexture(const RefPtr<TextureHandle>& aHandle);
+    void UnlinkGlyphCaches();
+  };
+
+  RefPtr<SharedContext> mSharedContext;
+
+  static WeakPtr<SharedContext> sSharedContext;
 
  public:
   DrawTargetWebgl();
@@ -218,8 +318,16 @@ class DrawTargetWebgl : public DrawTarget {
   }
 
  private:
-  bool SupportsPattern(const Pattern& aPattern);
+  bool SupportsPattern(const Pattern& aPattern) {
+    return mSharedContext->SupportsPattern(aPattern);
+  }
 
+  bool PrepareContext(bool aClipped = true);
+
+  void DrawRectFallback(const Rect& aRect, const Pattern& aPattern,
+                        const DrawOptions& aOptions,
+                        Maybe<DeviceColor> aMaskColor, bool aTransform,
+                        bool aClipped, const StrokeOptions* aStrokeOptions);
   bool DrawRect(const Rect& aRect, const Pattern& aPattern,
                 const DrawOptions& aOptions,
                 Maybe<DeviceColor> aMaskColor = Nothing(),
@@ -250,17 +358,7 @@ class DrawTargetWebgl : public DrawTarget {
 
   bool ReadInto(uint8_t* aDstData, int32_t aDstStride);
 
-  bool CreateShaders();
-
-  bool RemoveSharedTexture(const RefPtr<SharedTexture>& aTexture);
-  bool RemoveStandaloneTexture(const RefPtr<StandaloneTexture>& aTexture);
-
-  void PruneTextureHandle(RefPtr<TextureHandle> aHandle);
-  bool PruneTextureMemory(size_t aMargin = 0, bool aPruneUnused = true);
-
-  void UnlinkSurfaceTextures();
-  void UnlinkSurfaceTexture(const RefPtr<TextureHandle>& aHandle);
-  void UnlinkGlyphCaches();
+  bool CreateFramebuffer();
 };
 
 }  
