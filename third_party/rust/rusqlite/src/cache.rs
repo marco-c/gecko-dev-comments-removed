@@ -34,6 +34,7 @@ impl Connection {
     
     
     
+    #[inline]
     pub fn prepare_cached(&self, sql: &str) -> Result<CachedStatement<'_>> {
         self.cache.get(self, sql)
     }
@@ -43,19 +44,25 @@ impl Connection {
     
     
     
+    #[inline]
     pub fn set_prepared_statement_cache_capacity(&self, capacity: usize) {
-        self.cache.set_capacity(capacity)
+        self.cache.set_capacity(capacity);
     }
 
     
+    #[inline]
     pub fn flush_prepared_statement_cache(&self) {
-        self.cache.flush()
+        self.cache.flush();
     }
 }
 
 
 
 pub struct StatementCache(RefCell<LruCache<Arc<str>, RawStatement>>);
+
+#[allow(clippy::non_send_fields_in_send_ty)]
+unsafe impl Send for StatementCache {}
+
 
 
 
@@ -69,12 +76,14 @@ pub struct CachedStatement<'conn> {
 impl<'conn> Deref for CachedStatement<'conn> {
     type Target = Statement<'conn>;
 
+    #[inline]
     fn deref(&self) -> &Statement<'conn> {
         self.stmt.as_ref().unwrap()
     }
 }
 
 impl<'conn> DerefMut for CachedStatement<'conn> {
+    #[inline]
     fn deref_mut(&mut self) -> &mut Statement<'conn> {
         self.stmt.as_mut().unwrap()
     }
@@ -82,6 +91,7 @@ impl<'conn> DerefMut for CachedStatement<'conn> {
 
 impl Drop for CachedStatement<'_> {
     #[allow(unused_must_use)]
+    #[inline]
     fn drop(&mut self) {
         if let Some(stmt) = self.stmt.take() {
             self.cache.cache_stmt(unsafe { stmt.into_raw() });
@@ -90,6 +100,7 @@ impl Drop for CachedStatement<'_> {
 }
 
 impl CachedStatement<'_> {
+    #[inline]
     fn new<'conn>(stmt: Statement<'conn>, cache: &'conn StatementCache) -> CachedStatement<'conn> {
         CachedStatement {
             stmt: Some(stmt),
@@ -99,6 +110,7 @@ impl CachedStatement<'_> {
 
     
     
+    #[inline]
     pub fn discard(mut self) {
         self.stmt = None;
     }
@@ -106,12 +118,14 @@ impl CachedStatement<'_> {
 
 impl StatementCache {
     
+    #[inline]
     pub fn with_capacity(capacity: usize) -> StatementCache {
         StatementCache(RefCell::new(LruCache::new(capacity)))
     }
 
+    #[inline]
     fn set_capacity(&self, capacity: usize) {
-        self.0.borrow_mut().set_capacity(capacity)
+        self.0.borrow_mut().set_capacity(capacity);
     }
 
     
@@ -155,16 +169,17 @@ impl StatementCache {
         }
     }
 
+    #[inline]
     fn flush(&self) {
         let mut cache = self.0.borrow_mut();
-        cache.clear()
+        cache.clear();
     }
 }
 
 #[cfg(test)]
 mod test {
     use super::StatementCache;
-    use crate::{Connection, NO_PARAMS};
+    use crate::{Connection, Result};
     use fallible_iterator::FallibleIterator;
 
     impl StatementCache {
@@ -182,8 +197,8 @@ mod test {
     }
 
     #[test]
-    fn test_cache() {
-        let db = Connection::open_in_memory().unwrap();
+    fn test_cache() -> Result<()> {
+        let db = Connection::open_in_memory()?;
         let cache = &db.cache;
         let initial_capacity = cache.capacity();
         assert_eq!(0, cache.len());
@@ -191,43 +206,35 @@ mod test {
 
         let sql = "PRAGMA schema_version";
         {
-            let mut stmt = db.prepare_cached(sql).unwrap();
+            let mut stmt = db.prepare_cached(sql)?;
             assert_eq!(0, cache.len());
-            assert_eq!(
-                0,
-                stmt.query_row(NO_PARAMS, |r| r.get::<_, i64>(0)).unwrap()
-            );
+            assert_eq!(0, stmt.query_row([], |r| r.get::<_, i64>(0))?);
         }
         assert_eq!(1, cache.len());
 
         {
-            let mut stmt = db.prepare_cached(sql).unwrap();
+            let mut stmt = db.prepare_cached(sql)?;
             assert_eq!(0, cache.len());
-            assert_eq!(
-                0,
-                stmt.query_row(NO_PARAMS, |r| r.get::<_, i64>(0)).unwrap()
-            );
+            assert_eq!(0, stmt.query_row([], |r| r.get::<_, i64>(0))?);
         }
         assert_eq!(1, cache.len());
 
         cache.clear();
         assert_eq!(0, cache.len());
         assert_eq!(initial_capacity, cache.capacity());
+        Ok(())
     }
 
     #[test]
-    fn test_set_capacity() {
-        let db = Connection::open_in_memory().unwrap();
+    fn test_set_capacity() -> Result<()> {
+        let db = Connection::open_in_memory()?;
         let cache = &db.cache;
 
         let sql = "PRAGMA schema_version";
         {
-            let mut stmt = db.prepare_cached(sql).unwrap();
+            let mut stmt = db.prepare_cached(sql)?;
             assert_eq!(0, cache.len());
-            assert_eq!(
-                0,
-                stmt.query_row(NO_PARAMS, |r| r.get::<_, i64>(0)).unwrap()
-            );
+            assert_eq!(0, stmt.query_row([], |r| r.get::<_, i64>(0))?);
         }
         assert_eq!(1, cache.len());
 
@@ -235,64 +242,53 @@ mod test {
         assert_eq!(0, cache.len());
 
         {
-            let mut stmt = db.prepare_cached(sql).unwrap();
+            let mut stmt = db.prepare_cached(sql)?;
             assert_eq!(0, cache.len());
-            assert_eq!(
-                0,
-                stmt.query_row(NO_PARAMS, |r| r.get::<_, i64>(0)).unwrap()
-            );
+            assert_eq!(0, stmt.query_row([], |r| r.get::<_, i64>(0))?);
         }
         assert_eq!(0, cache.len());
 
         db.set_prepared_statement_cache_capacity(8);
         {
-            let mut stmt = db.prepare_cached(sql).unwrap();
+            let mut stmt = db.prepare_cached(sql)?;
             assert_eq!(0, cache.len());
-            assert_eq!(
-                0,
-                stmt.query_row(NO_PARAMS, |r| r.get::<_, i64>(0)).unwrap()
-            );
+            assert_eq!(0, stmt.query_row([], |r| r.get::<_, i64>(0))?);
         }
         assert_eq!(1, cache.len());
+        Ok(())
     }
 
     #[test]
-    fn test_discard() {
-        let db = Connection::open_in_memory().unwrap();
+    fn test_discard() -> Result<()> {
+        let db = Connection::open_in_memory()?;
         let cache = &db.cache;
 
         let sql = "PRAGMA schema_version";
         {
-            let mut stmt = db.prepare_cached(sql).unwrap();
+            let mut stmt = db.prepare_cached(sql)?;
             assert_eq!(0, cache.len());
-            assert_eq!(
-                0,
-                stmt.query_row(NO_PARAMS, |r| r.get::<_, i64>(0)).unwrap()
-            );
+            assert_eq!(0, stmt.query_row([], |r| r.get::<_, i64>(0))?);
             stmt.discard();
         }
         assert_eq!(0, cache.len());
+        Ok(())
     }
 
     #[test]
-    fn test_ddl() {
-        let db = Connection::open_in_memory().unwrap();
+    fn test_ddl() -> Result<()> {
+        let db = Connection::open_in_memory()?;
         db.execute_batch(
             r#"
             CREATE TABLE foo (x INT);
             INSERT INTO foo VALUES (1);
         "#,
-        )
-        .unwrap();
+        )?;
 
         let sql = "SELECT * FROM foo";
 
         {
-            let mut stmt = db.prepare_cached(sql).unwrap();
-            assert_eq!(
-                Ok(Some(1i32)),
-                stmt.query(NO_PARAMS).unwrap().map(|r| r.get(0)).next()
-            );
+            let mut stmt = db.prepare_cached(sql)?;
+            assert_eq!(Ok(Some(1i32)), stmt.query([])?.map(|r| r.get(0)).next());
         }
 
         db.execute_batch(
@@ -300,61 +296,55 @@ mod test {
             ALTER TABLE foo ADD COLUMN y INT;
             UPDATE foo SET y = 2;
         "#,
-        )
-        .unwrap();
+        )?;
 
         {
-            let mut stmt = db.prepare_cached(sql).unwrap();
+            let mut stmt = db.prepare_cached(sql)?;
             assert_eq!(
                 Ok(Some((1i32, 2i32))),
-                stmt.query(NO_PARAMS)
-                    .unwrap()
-                    .map(|r| Ok((r.get(0)?, r.get(1)?)))
-                    .next()
+                stmt.query([])?.map(|r| Ok((r.get(0)?, r.get(1)?))).next()
             );
         }
+        Ok(())
     }
 
     #[test]
-    fn test_connection_close() {
-        let conn = Connection::open_in_memory().unwrap();
-        conn.prepare_cached("SELECT * FROM sqlite_master;").unwrap();
+    fn test_connection_close() -> Result<()> {
+        let conn = Connection::open_in_memory()?;
+        conn.prepare_cached("SELECT * FROM sqlite_master;")?;
 
         conn.close().expect("connection not closed");
+        Ok(())
     }
 
     #[test]
-    fn test_cache_key() {
-        let db = Connection::open_in_memory().unwrap();
+    fn test_cache_key() -> Result<()> {
+        let db = Connection::open_in_memory()?;
         let cache = &db.cache;
         assert_eq!(0, cache.len());
 
         
         let sql = "PRAGMA schema_version; ";
         {
-            let mut stmt = db.prepare_cached(sql).unwrap();
+            let mut stmt = db.prepare_cached(sql)?;
             assert_eq!(0, cache.len());
-            assert_eq!(
-                0,
-                stmt.query_row(NO_PARAMS, |r| r.get::<_, i64>(0)).unwrap()
-            );
+            assert_eq!(0, stmt.query_row([], |r| r.get::<_, i64>(0))?);
         }
         assert_eq!(1, cache.len());
 
         {
-            let mut stmt = db.prepare_cached(sql).unwrap();
+            let mut stmt = db.prepare_cached(sql)?;
             assert_eq!(0, cache.len());
-            assert_eq!(
-                0,
-                stmt.query_row(NO_PARAMS, |r| r.get::<_, i64>(0)).unwrap()
-            );
+            assert_eq!(0, stmt.query_row([], |r| r.get::<_, i64>(0))?);
         }
         assert_eq!(1, cache.len());
+        Ok(())
     }
 
     #[test]
-    fn test_empty_stmt() {
-        let conn = Connection::open_in_memory().unwrap();
-        conn.prepare_cached("").unwrap();
+    fn test_empty_stmt() -> Result<()> {
+        let conn = Connection::open_in_memory()?;
+        conn.prepare_cached("")?;
+        Ok(())
     }
 }

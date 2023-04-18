@@ -14,6 +14,7 @@ use crate::{Connection, Result};
 
 
 
+#[cfg_attr(docsrs, doc(cfg(feature = "load_extension")))]
 pub struct LoadExtensionGuard<'conn> {
     conn: &'conn Connection,
 }
@@ -22,7 +23,15 @@ impl LoadExtensionGuard<'_> {
     
     
     
-    pub fn new(conn: &Connection) -> Result<LoadExtensionGuard<'_>> {
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub unsafe fn new(conn: &Connection) -> Result<LoadExtensionGuard<'_>> {
         conn.load_extension_enable()
             .map(|_| LoadExtensionGuard { conn })
     }
@@ -30,6 +39,7 @@ impl LoadExtensionGuard<'_> {
 
 #[allow(unused_must_use)]
 impl Drop for LoadExtensionGuard<'_> {
+    #[inline]
     fn drop(&mut self) {
         self.conn.load_extension_disable();
     }

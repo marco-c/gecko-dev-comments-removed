@@ -7,17 +7,13 @@
 
 mod conn_ext;
 mod each_chunk;
-mod interrupt;
 mod maybe_cached;
 pub mod open_database;
-mod query_plan;
 mod repeat;
 
 pub use crate::conn_ext::*;
 pub use crate::each_chunk::*;
-pub use crate::interrupt::*;
 pub use crate::maybe_cached::*;
-pub use crate::query_plan::*;
 pub use crate::repeat::*;
 
 
@@ -25,7 +21,7 @@ pub use crate::repeat::*;
 
 
 pub fn escape_string_for_pragma(s: &str) -> String {
-    s.replace("'", "''")
+    s.replace('\'', "''")
 }
 
 #[cfg(test)]

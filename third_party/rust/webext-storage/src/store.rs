@@ -9,9 +9,10 @@ use crate::migration::{migrate, MigrationInfo};
 use crate::sync;
 use std::path::Path;
 use std::result;
+use std::sync::Arc;
 
+use interrupt_support::SqlInterruptHandle;
 use serde_json::Value as JsonValue;
-use sql_support::SqlInterruptHandle;
 
 
 
@@ -46,7 +47,7 @@ impl Store {
     }
 
     
-    pub fn interrupt_handle(&self) -> SqlInterruptHandle {
+    pub fn interrupt_handle(&self) -> Arc<SqlInterruptHandle> {
         self.db.interrupt_handle()
     }
 

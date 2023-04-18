@@ -10,7 +10,7 @@ pub(crate) struct SmallCString(smallvec::SmallVec<[u8; 16]>);
 impl SmallCString {
     #[inline]
     pub fn new(s: &str) -> Result<Self, NulError> {
-        if s.as_bytes().contains(&0u8) {
+        if s.as_bytes().contains(&0_u8) {
             return Err(Self::fabricate_nul_error(s));
         }
         let mut buf = SmallVec::with_capacity(s.len() + 1);
@@ -100,6 +100,7 @@ impl std::fmt::Debug for SmallCString {
 
 impl std::ops::Deref for SmallCString {
     type Target = CStr;
+
     #[inline]
     fn deref(&self) -> &CStr {
         self.as_cstr()

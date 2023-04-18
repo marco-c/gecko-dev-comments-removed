@@ -5,6 +5,7 @@
 
 
 
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 
@@ -27,34 +28,74 @@ pub struct RemoteClient {
 
 
 
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum DeviceType {
+    #[serde(rename = "desktop")]
     Desktop,
+    #[serde(rename = "mobile")]
     Mobile,
+    #[serde(rename = "tablet")]
     Tablet,
+    #[serde(rename = "vr")]
     VR,
+    #[serde(rename = "tv")]
     TV,
+    
+    
+    #[serde(other)]
+    #[serde(skip_serializing)] 
+    Unknown,
 }
 
-impl DeviceType {
-    pub fn try_from_str(d: impl AsRef<str>) -> Option<DeviceType> {
-        match d.as_ref() {
-            "desktop" => Some(DeviceType::Desktop),
-            "mobile" => Some(DeviceType::Mobile),
-            "tablet" => Some(DeviceType::Tablet),
-            "vr" => Some(DeviceType::VR),
-            "tv" => Some(DeviceType::TV),
-            _ => None,
-        }
+#[cfg(test)]
+mod device_type_tests {
+    use super::*;
+
+    #[test]
+    fn test_serde_ser() {
+        assert_eq!(
+            serde_json::to_string(&DeviceType::Desktop).unwrap(),
+            "\"desktop\""
+        );
+        assert_eq!(
+            serde_json::to_string(&DeviceType::Mobile).unwrap(),
+            "\"mobile\""
+        );
+        assert_eq!(
+            serde_json::to_string(&DeviceType::Tablet).unwrap(),
+            "\"tablet\""
+        );
+        assert_eq!(serde_json::to_string(&DeviceType::VR).unwrap(), "\"vr\"");
+        assert_eq!(serde_json::to_string(&DeviceType::TV).unwrap(), "\"tv\"");
+        assert!(serde_json::to_string(&DeviceType::Unknown).is_err());
     }
 
-    pub fn as_str(self) -> &'static str {
-        match self {
-            DeviceType::Desktop => "desktop",
-            DeviceType::Mobile => "mobile",
-            DeviceType::Tablet => "tablet",
-            DeviceType::VR => "vr",
-            DeviceType::TV => "tv",
-        }
+    #[test]
+    fn test_serde_de() {
+        assert!(matches!(
+            serde_json::from_str::<DeviceType>("\"desktop\"").unwrap(),
+            DeviceType::Desktop
+        ));
+        assert!(matches!(
+            serde_json::from_str::<DeviceType>("\"mobile\"").unwrap(),
+            DeviceType::Mobile
+        ));
+        assert!(matches!(
+            serde_json::from_str::<DeviceType>("\"tablet\"").unwrap(),
+            DeviceType::Tablet
+        ));
+        assert!(matches!(
+            serde_json::from_str::<DeviceType>("\"vr\"").unwrap(),
+            DeviceType::VR
+        ));
+        assert!(matches!(
+            serde_json::from_str::<DeviceType>("\"tv\"").unwrap(),
+            DeviceType::TV
+        ));
+        assert!(matches!(
+            serde_json::from_str::<DeviceType>("\"something-else\"").unwrap(),
+            DeviceType::Unknown,
+        ));
     }
 }

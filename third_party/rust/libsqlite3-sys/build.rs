@@ -1,6 +1,31 @@
 use std::env;
 use std::path::Path;
 
+
+
+
+
+
+
+fn win_target() -> bool {
+    std::env::var("CARGO_CFG_WINDOWS").is_ok()
+}
+
+
+
+#[cfg(any(feature = "bundled", feature = "bundled-windows"))]
+fn android_target() -> bool {
+    std::env::var("CARGO_CFG_TARGET_OS").map_or(false, |v| v == "android")
+}
+
+
+
+
+
+fn is_compiler(compiler_name: &str) -> bool {
+    std::env::var("CARGO_CFG_TARGET_ENV").map_or(false, |v| v == compiler_name)
+}
+
 fn main() {
     let out_dir = env::var("OUT_DIR").unwrap();
     let out_path = Path::new(&out_dir).join("bindgen.rs");
@@ -11,57 +36,77 @@ fn main() {
             .expect("Could not copy bindings to output directory");
         return;
     }
-    if cfg!(feature = "sqlcipher") {
-        if cfg!(any(
-            feature = "bundled",
-            all(windows, feature = "bundled-windows")
-        )) {
+    if cfg!(all(
+        feature = "sqlcipher",
+        not(feature = "bundled-sqlcipher")
+    )) {
+        if cfg!(feature = "bundled") || (win_target() && cfg!(feature = "bundled-windows")) {
             println!(
-                "cargo:warning=Builds with bundled SQLCipher are not supported. Searching for SQLCipher to link against. \
-                 This can lead to issues if your version of SQLCipher is not up to date!");
+                "cargo:warning=For backwards compatibility, feature 'sqlcipher' overrides
+                features 'bundled' and 'bundled-windows'. If you want a bundled build of
+                SQLCipher (available for the moment only on Unix), use feature 'bundled-sqlcipher'
+                or 'bundled-sqlcipher-vendored-openssl' to also bundle OpenSSL crypto."
+            );
         }
-        build_linked::main(&out_dir, &out_path)
+        build_linked::main(&out_dir, &out_path);
+    } else if cfg!(feature = "bundled")
+        || (win_target() && cfg!(feature = "bundled-windows"))
+        || cfg!(feature = "bundled-sqlcipher")
+    {
+        #[cfg(any(
+            feature = "bundled",
+            feature = "bundled-windows",
+            feature = "bundled-sqlcipher"
+        ))]
+        build_bundled::main(&out_dir, &out_path);
+        #[cfg(not(any(
+            feature = "bundled",
+            feature = "bundled-windows",
+            feature = "bundled-sqlcipher"
+        )))]
+        panic!("The runtime test should not run this branch, which has not compiled any logic.")
     } else {
-        
-        
-        #[cfg(any(feature = "bundled", all(windows, feature = "bundled-windows")))]
-        {
-            build_bundled::main(&out_dir, &out_path)
-        }
-        #[cfg(not(any(feature = "bundled", all(windows, feature = "bundled-windows"))))]
-        {
-            build_linked::main(&out_dir, &out_path)
-        }
+        build_linked::main(&out_dir, &out_path);
     }
 }
 
-#[cfg(any(feature = "bundled", all(windows, feature = "bundled-windows")))]
+#[cfg(any(
+    feature = "bundled",
+    feature = "bundled-windows",
+    feature = "bundled-sqlcipher"
+))]
 mod build_bundled {
     use std::env;
-    use std::path::Path;
+    use std::ffi::OsString;
+    use std::path::{Path, PathBuf};
+
+    use super::{is_compiler, win_target};
 
     pub fn main(out_dir: &str, out_path: &Path) {
-        if cfg!(feature = "sqlcipher") {
-            
-            panic!("Builds with bundled SQLCipher are not supported");
-        }
+        let lib_name = super::lib_name();
+
+        
+        assert!(!(cfg!(feature = "bundled-windows") && !cfg!(feature = "bundled") && !win_target()),
+            "This module should not be used: we're not on Windows and the bundled feature has not been enabled");
 
         #[cfg(feature = "buildtime_bindgen")]
         {
             use super::{bindings, HeaderLocation};
-            let header = HeaderLocation::FromPath("sqlite3/sqlite3.h".to_owned());
+            let header = HeaderLocation::FromPath(format!("{}/sqlite3.h", lib_name));
             bindings::write_to_out_dir(header, out_path);
         }
         #[cfg(not(feature = "buildtime_bindgen"))]
         {
             use std::fs;
-            fs::copy("sqlite3/bindgen_bundled_version.rs", out_path)
+            fs::copy(format!("{}/bindgen_bundled_version.rs", lib_name), out_path)
                 .expect("Could not copy bindings to output directory");
         }
-        println!("cargo:rerun-if-changed=sqlite3/sqlite3.c");
+        
+        
+        println!("cargo:rerun-if-changed={}/sqlite3.c", lib_name);
         println!("cargo:rerun-if-changed=sqlite3/wasm32-wasi-vfs.c");
         let mut cfg = cc::Build::new();
-        cfg.file("sqlite3/sqlite3.c")
+        cfg.file(format!("{}/sqlite3.c", lib_name))
             .flag("-DSQLITE_CORE")
             .flag("-DSQLITE_DEFAULT_FOREIGN_KEYS=1")
             .flag("-DSQLITE_ENABLE_API_ARMOR")
@@ -83,8 +128,95 @@ mod build_bundled {
             .flag("-D_POSIX_THREAD_SAFE_FUNCTIONS") 
             .warnings(false);
 
+        if cfg!(feature = "bundled-sqlcipher") {
+            cfg.flag("-DSQLITE_HAS_CODEC").flag("-DSQLITE_TEMP_STORE=2");
+
+            let target = env::var("TARGET").unwrap();
+            let host = env::var("HOST").unwrap();
+
+            let is_windows = host.contains("windows") && target.contains("windows");
+            let is_apple = host.contains("apple") && target.contains("apple");
+
+            let lib_dir = env("OPENSSL_LIB_DIR").map(PathBuf::from);
+            let inc_dir = env("OPENSSL_INCLUDE_DIR").map(PathBuf::from);
+            let mut use_openssl = false;
+
+            let (lib_dir, inc_dir) = match (lib_dir, inc_dir) {
+                (Some(lib_dir), Some(inc_dir)) => {
+                    use_openssl = true;
+                    (lib_dir, inc_dir)
+                }
+                (lib_dir, inc_dir) => match find_openssl_dir(&host, &target) {
+                    None => {
+                        if is_windows && !cfg!(feature = "bundled-sqlcipher-vendored-openssl") {
+                            panic!("Missing environment variable OPENSSL_DIR or OPENSSL_DIR is not set")
+                        } else {
+                            (PathBuf::new(), PathBuf::new())
+                        }
+                    }
+                    Some(openssl_dir) => {
+                        let lib_dir = lib_dir.unwrap_or_else(|| openssl_dir.join("lib"));
+                        let inc_dir = inc_dir.unwrap_or_else(|| openssl_dir.join("include"));
+
+                        assert!(
+                            Path::new(&lib_dir).exists(),
+                            "OpenSSL library directory does not exist: {}",
+                            lib_dir.to_string_lossy()
+                        );
+
+                        if !Path::new(&inc_dir).exists() {
+                            panic!(
+                                "OpenSSL include directory does not exist: {}",
+                                inc_dir.to_string_lossy()
+                            );
+                        }
+
+                        use_openssl = true;
+                        (lib_dir, inc_dir)
+                    }
+                },
+            };
+
+            if cfg!(feature = "bundled-sqlcipher-vendored-openssl") {
+                cfg.include(std::env::var("DEP_OPENSSL_INCLUDE").unwrap());
+                
+                
+            } else if is_windows {
+                
+                
+                cfg.include(inc_dir.to_string_lossy().as_ref());
+                let lib = lib_dir.join("libcrypto.lib");
+                cfg.flag(lib.to_string_lossy().as_ref());
+            } else if use_openssl {
+                cfg.include(inc_dir.to_string_lossy().as_ref());
+                
+                println!("cargo:rustc-link-lib=dylib=crypto");
+                println!("cargo:rustc-link-search={}", lib_dir.to_string_lossy());
+            } else if is_apple {
+                cfg.flag("-DSQLCIPHER_CRYPTO_CC");
+                println!("cargo:rustc-link-lib=framework=Security");
+                println!("cargo:rustc-link-lib=framework=CoreFoundation");
+            } else {
+                
+                println!("cargo:rustc-link-lib=dylib=crypto");
+            }
+        }
+
+        
+        
+        
+        if super::android_target() {
+            cfg.flag("-DSQLITE_TEMP_STORE=3");
+        }
+
         if cfg!(feature = "with-asan") {
             cfg.flag("-fsanitize=address");
+        }
+
+        
+        
+        if cfg!(target_feature = "crt-static") && is_compiler("msvc") {
+            cfg.static_crt(true);
         }
 
         
@@ -94,7 +226,7 @@ mod build_bundled {
         
         
         
-        if cfg!(target_env = "msvc") {
+        if is_compiler("msvc") {
             use cc::windows_registry::{find_vs_version, VsVers};
             let vs_has_nan = match find_vs_version() {
                 Ok(ver) => ver != VsVers::Vs12,
@@ -106,11 +238,11 @@ mod build_bundled {
         } else {
             cfg.flag("-DHAVE_ISNAN");
         }
-        if cfg!(not(target_os = "windows")) {
+        if !win_target() {
             cfg.flag("-DHAVE_LOCALTIME_R");
         }
         
-        if env::var("TARGET") == Ok("wasm32-wasi".to_string()) {
+        if is_compiler("wasm32-wasi") {
             cfg.flag("-DSQLITE_OS_OTHER")
                 
                 .flag("-DLONGDOUBLE_TYPE=double");
@@ -151,17 +283,43 @@ mod build_bundled {
         }
         println!("cargo:rerun-if-env-changed=LIBSQLITE3_FLAGS");
 
-        cfg.compile("libsqlite3.a");
+        cfg.compile(lib_name);
 
         println!("cargo:lib_dir={}", out_dir);
+    }
+
+    fn env(name: &str) -> Option<OsString> {
+        let prefix = env::var("TARGET").unwrap().to_uppercase().replace('-', "_");
+        let prefixed = format!("{}_{}", prefix, name);
+        let var = env::var_os(&prefixed);
+
+        match var {
+            None => env::var_os(name),
+            _ => var,
+        }
+    }
+
+    fn find_openssl_dir(_host: &str, _target: &str) -> Option<PathBuf> {
+        let openssl_dir = env("OPENSSL_DIR");
+        openssl_dir.map(PathBuf::from)
     }
 }
 
 fn env_prefix() -> &'static str {
-    if cfg!(feature = "sqlcipher") {
+    if cfg!(any(feature = "sqlcipher", feature = "bundled-sqlcipher")) {
         "SQLCIPHER"
     } else {
         "SQLITE3"
+    }
+}
+
+fn lib_name() -> &'static str {
+    if cfg!(any(feature = "sqlcipher", feature = "bundled-sqlcipher")) {
+        "sqlcipher"
+    } else if cfg!(all(windows, feature = "winsqlite3")) {
+        "winsqlite3"
+    } else {
+        "sqlite3"
     }
 }
 
@@ -192,29 +350,32 @@ impl From<HeaderLocation> for String {
 }
 
 mod build_linked {
-    #[cfg(all(feature = "vcpkg", target_env = "msvc"))]
+    #[cfg(feature = "vcpkg")]
     extern crate vcpkg;
 
-    use super::{bindings, env_prefix, HeaderLocation};
+    use super::{bindings, env_prefix, is_compiler, lib_name, win_target, HeaderLocation};
     use std::env;
     use std::path::Path;
 
     pub fn main(_out_dir: &str, out_path: &Path) {
         let header = find_sqlite();
-        if cfg!(any(
+        if (cfg!(any(
             feature = "bundled_bindings",
             feature = "bundled",
-            all(windows, feature = "bundled-windows")
-        )) && !cfg!(feature = "buildtime_bindgen")
+            feature = "bundled-sqlcipher"
+        )) || (win_target() && cfg!(feature = "bundled-windows")))
+            && !cfg!(feature = "buildtime_bindgen")
         {
             
             
             
             
             
-            
-            std::fs::copy("sqlite3/bindgen_bundled_version.rs", out_path)
-                .expect("Could not copy bindings to output directory");
+            std::fs::copy(
+                format!("{}/bindgen_bundled_version.rs", lib_name()),
+                out_path,
+            )
+            .expect("Could not copy bindings to output directory");
         } else {
             bindings::write_to_out_dir(header, out_path);
         }
@@ -230,12 +391,12 @@ mod build_linked {
     }
     
     fn find_sqlite() -> HeaderLocation {
-        let link_lib = link_lib();
+        let link_lib = lib_name();
 
         println!("cargo:rerun-if-env-changed={}_INCLUDE_DIR", env_prefix());
         println!("cargo:rerun-if-env-changed={}_LIB_DIR", env_prefix());
         println!("cargo:rerun-if-env-changed={}_STATIC", env_prefix());
-        if cfg!(all(feature = "vcpkg", target_env = "msvc")) {
+        if cfg!(feature = "vcpkg") && is_compiler("msvc") {
             println!("cargo:rerun-if-env-changed=VCPKGRS_DYNAMIC");
         }
 
@@ -245,7 +406,7 @@ mod build_linked {
         
         println!("cargo:link-target={}", link_lib);
 
-        if cfg!(all(windows, feature = "winsqlite3")) {
+        if win_target() && cfg!(feature = "winsqlite3") {
             println!("cargo:rustc-link-lib=dylib={}", link_lib);
             return HeaderLocation::Wrapper;
         }
@@ -268,59 +429,45 @@ mod build_linked {
         }
 
         
-        match pkg_config::Config::new()
+        if let Ok(mut lib) = pkg_config::Config::new()
             .print_system_libs(false)
             .probe(link_lib)
         {
-            Ok(mut lib) => {
-                if let Some(mut header) = lib.include_paths.pop() {
-                    header.push("sqlite3.h");
-                    HeaderLocation::FromPath(header.to_string_lossy().into())
-                } else {
-                    HeaderLocation::Wrapper
-                }
-            }
-            Err(_) => {
-                
-                
-                
-                
-                println!("cargo:rustc-link-lib={}={}", find_link_mode(), link_lib);
-                HeaderLocation::Wrapper
-            }
-        }
-    }
-
-    #[cfg(all(feature = "vcpkg", target_env = "msvc"))]
-    fn try_vcpkg() -> Option<HeaderLocation> {
-        
-        if let Ok(mut lib) = vcpkg::Config::new().probe(link_lib()) {
             if let Some(mut header) = lib.include_paths.pop() {
                 header.push("sqlite3.h");
-                return Some(HeaderLocation::FromPath(header.to_string_lossy().into()));
+                HeaderLocation::FromPath(header.to_string_lossy().into())
+            } else {
+                HeaderLocation::Wrapper
             }
-        }
-        None
-    }
-
-    #[cfg(not(all(feature = "vcpkg", target_env = "msvc")))]
-    fn try_vcpkg() -> Option<HeaderLocation> {
-        None
-    }
-
-    fn link_lib() -> &'static str {
-        if cfg!(feature = "sqlcipher") {
-            "sqlcipher"
-        } else if cfg!(all(windows, feature = "winsqlite3")) {
-            "winsqlite3"
         } else {
-            "sqlite3"
+            
+            
+            
+            
+            println!("cargo:rustc-link-lib={}={}", find_link_mode(), link_lib);
+            HeaderLocation::Wrapper
+        }
+    }
+
+    fn try_vcpkg() -> Option<HeaderLocation> {
+        if cfg!(feature = "vcpkg") && is_compiler("msvc") {
+            
+            if let Ok(mut lib) = vcpkg::Config::new().probe(lib_name()) {
+                if let Some(mut header) = lib.include_paths.pop() {
+                    header.push("sqlite3.h");
+                    return Some(HeaderLocation::FromPath(header.to_string_lossy().into()));
+                }
+            }
+            None
+        } else {
+            None
         }
     }
 }
 
 #[cfg(not(feature = "buildtime_bindgen"))]
 mod bindings {
+    #![allow(dead_code)]
     use super::HeaderLocation;
 
     use std::fs;
@@ -351,6 +498,8 @@ mod bindings {
     use std::io::Write;
     use std::path::Path;
 
+    use super::win_target;
+
     #[derive(Debug)]
     struct SqliteTypeChooser;
 
@@ -371,8 +520,8 @@ mod bindings {
         
         println!("cargo:rerun-if-env-changed=LIBSQLITE3_SYS_BUNDLING");
         match std::env::var("LIBSQLITE3_SYS_BUNDLING") {
-            Ok(v) if v != "0" => true,
-            _ => false,
+            Ok(v) => v != "0",
+            Err(_) => false,
         }
     }
 
@@ -380,10 +529,14 @@ mod bindings {
         let header: String = header.into();
         let mut output = Vec::new();
         let mut bindings = bindgen::builder()
+            .trust_clang_mangling(false)
             .header(header.clone())
             .parse_callbacks(Box::new(SqliteTypeChooser))
             .rustfmt_bindings(true);
 
+        if cfg!(any(feature = "sqlcipher", feature = "bundled-sqlcipher")) {
+            bindings = bindings.clang_arg("-DSQLITE_HAS_CODEC");
+        }
         if cfg!(feature = "unlock_notify") {
             bindings = bindings.clang_arg("-DSQLITE_ENABLE_UNLOCK_NOTIFY");
         }
@@ -393,35 +546,35 @@ mod bindings {
         if cfg!(feature = "session") {
             bindings = bindings.clang_arg("-DSQLITE_ENABLE_SESSION");
         }
-        if cfg!(all(windows, feature = "winsqlite3")) {
+        if win_target() && cfg!(feature = "winsqlite3") {
             bindings = bindings
                 .clang_arg("-DBINDGEN_USE_WINSQLITE3")
-                .blacklist_item("NTDDI_.+")
-                .blacklist_item("WINAPI_FAMILY.*")
-                .blacklist_item("_WIN32_.+")
-                .blacklist_item("_VCRT_COMPILER_PREPROCESSOR")
-                .blacklist_item("_SAL_VERSION")
-                .blacklist_item("__SAL_H_VERSION")
-                .blacklist_item("_USE_DECLSPECS_FOR_SAL")
-                .blacklist_item("_USE_ATTRIBUTES_FOR_SAL")
-                .blacklist_item("_CRT_PACKING")
-                .blacklist_item("_HAS_EXCEPTIONS")
-                .blacklist_item("_STL_LANG")
-                .blacklist_item("_HAS_CXX17")
-                .blacklist_item("_HAS_CXX20")
-                .blacklist_item("_HAS_NODISCARD")
-                .blacklist_item("WDK_NTDDI_VERSION")
-                .blacklist_item("OSVERSION_MASK")
-                .blacklist_item("SPVERSION_MASK")
-                .blacklist_item("SUBVERSION_MASK")
-                .blacklist_item("WINVER")
-                .blacklist_item("__security_cookie")
-                .blacklist_type("size_t")
-                .blacklist_type("__vcrt_bool")
-                .blacklist_type("wchar_t")
-                .blacklist_function("__security_init_cookie")
-                .blacklist_function("__report_gsfailure")
-                .blacklist_function("__va_start");
+                .blocklist_item("NTDDI_.+")
+                .blocklist_item("WINAPI_FAMILY.*")
+                .blocklist_item("_WIN32_.+")
+                .blocklist_item("_VCRT_COMPILER_PREPROCESSOR")
+                .blocklist_item("_SAL_VERSION")
+                .blocklist_item("__SAL_H_VERSION")
+                .blocklist_item("_USE_DECLSPECS_FOR_SAL")
+                .blocklist_item("_USE_ATTRIBUTES_FOR_SAL")
+                .blocklist_item("_CRT_PACKING")
+                .blocklist_item("_HAS_EXCEPTIONS")
+                .blocklist_item("_STL_LANG")
+                .blocklist_item("_HAS_CXX17")
+                .blocklist_item("_HAS_CXX20")
+                .blocklist_item("_HAS_NODISCARD")
+                .blocklist_item("WDK_NTDDI_VERSION")
+                .blocklist_item("OSVERSION_MASK")
+                .blocklist_item("SPVERSION_MASK")
+                .blocklist_item("SUBVERSION_MASK")
+                .blocklist_item("WINVER")
+                .blocklist_item("__security_cookie")
+                .blocklist_type("size_t")
+                .blocklist_type("__vcrt_bool")
+                .blocklist_type("wchar_t")
+                .blocklist_function("__security_init_cookie")
+                .blocklist_function("__report_gsfailure")
+                .blocklist_function("__va_start");
         }
 
         
@@ -443,14 +596,14 @@ mod bindings {
         if generating_bundled_bindings() || is_cross_compiling {
             
             bindings = bindings
-                .blacklist_function("sqlite3_vmprintf")
-                .blacklist_function("sqlite3_vsnprintf")
-                .blacklist_function("sqlite3_str_vappendf")
-                .blacklist_type("va_list")
-                .blacklist_type("__builtin_va_list")
-                .blacklist_type("__gnuc_va_list")
-                .blacklist_type("__va_list_tag")
-                .blacklist_item("__GNUC_VA_LIST");
+                .blocklist_function("sqlite3_vmprintf")
+                .blocklist_function("sqlite3_vsnprintf")
+                .blocklist_function("sqlite3_str_vappendf")
+                .blocklist_type("va_list")
+                .blocklist_type("__builtin_va_list")
+                .blocklist_type("__gnuc_va_list")
+                .blocklist_type("__va_list_tag")
+                .blocklist_item("__GNUC_VA_LIST");
         }
 
         bindings

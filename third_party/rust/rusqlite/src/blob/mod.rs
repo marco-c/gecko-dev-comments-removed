@@ -214,6 +214,7 @@ impl Connection {
     
     
     
+    #[inline]
     pub fn blob_open<'a>(
         &'a self,
         db: DatabaseName<'_>,
@@ -222,9 +223,9 @@ impl Connection {
         row_id: i64,
         read_only: bool,
     ) -> Result<Blob<'a>> {
-        let mut c = self.db.borrow_mut();
+        let c = self.db.borrow_mut();
         let mut blob = ptr::null_mut();
-        let db = db.to_cstring()?;
+        let db = db.as_cstring()?;
         let table = super::str_to_cstring(table)?;
         let column = super::str_to_cstring(column)?;
         let rc = unsafe {
@@ -252,6 +253,7 @@ impl Blob<'_> {
     
     
     
+    #[inline]
     pub fn reopen(&mut self, row: i64) -> Result<()> {
         let rc = unsafe { ffi::sqlite3_blob_reopen(self.blob, row) };
         if rc != ffi::SQLITE_OK {
@@ -262,17 +264,23 @@ impl Blob<'_> {
     }
 
     
+    #[inline]
+    #[must_use]
     pub fn size(&self) -> i32 {
         unsafe { ffi::sqlite3_blob_bytes(self.blob) }
     }
 
     
+    #[inline]
+    #[must_use]
     pub fn len(&self) -> usize {
         use std::convert::TryInto;
         self.size().try_into().unwrap()
     }
 
     
+    #[inline]
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.size() == 0
     }
@@ -286,10 +294,12 @@ impl Blob<'_> {
     
     
     
+    #[inline]
     pub fn close(mut self) -> Result<()> {
         self.close_()
     }
 
+    #[inline]
     fn close_(&mut self) -> Result<()> {
         let rc = unsafe { ffi::sqlite3_blob_close(self.blob) };
         self.blob = ptr::null_mut();
@@ -304,14 +314,14 @@ impl io::Read for Blob<'_> {
     
     
     
+    #[inline]
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         let max_allowed_len = (self.size() - self.pos) as usize;
         let n = min(buf.len(), max_allowed_len) as i32;
         if n <= 0 {
             return Ok(0);
         }
-        let rc =
-            unsafe { ffi::sqlite3_blob_read(self.blob, buf.as_mut_ptr() as *mut _, n, self.pos) };
+        let rc = unsafe { ffi::sqlite3_blob_read(self.blob, buf.as_mut_ptr().cast(), n, self.pos) };
         self.conn
             .decode_result(rc)
             .map(|_| {
@@ -334,6 +344,7 @@ impl io::Write for Blob<'_> {
     
     
     
+    #[inline]
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         let max_allowed_len = (self.size() - self.pos) as usize;
         let n = min(buf.len(), max_allowed_len) as i32;
@@ -350,6 +361,7 @@ impl io::Write for Blob<'_> {
             .map_err(|err| io::Error::new(io::ErrorKind::Other, err))
     }
 
+    #[inline]
     fn flush(&mut self) -> io::Result<()> {
         Ok(())
     }
@@ -357,6 +369,7 @@ impl io::Write for Blob<'_> {
 
 impl io::Seek for Blob<'_> {
     
+    #[inline]
     fn seek(&mut self, pos: io::SeekFrom) -> io::Result<u64> {
         let pos = match pos {
             io::SeekFrom::Start(offset) => offset as i64,
@@ -383,6 +396,7 @@ impl io::Seek for Blob<'_> {
 
 #[allow(unused_must_use)]
 impl Drop for Blob<'_> {
+    #[inline]
     fn drop(&mut self) {
         self.close_();
     }
@@ -398,6 +412,7 @@ impl Drop for Blob<'_> {
 pub struct ZeroBlob(pub i32);
 
 impl ToSql for ZeroBlob {
+    #[inline]
     fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
         let ZeroBlob(length) = *self;
         Ok(ToSqlOutput::ZeroBlob(length))
@@ -421,22 +436,18 @@ mod test {
     }
 
     #[test]
-    fn test_blob() {
-        let (db, rowid) = db_with_test_blob().unwrap();
+    fn test_blob() -> Result<()> {
+        let (db, rowid) = db_with_test_blob()?;
 
-        let mut blob = db
-            .blob_open(DatabaseName::Main, "test", "content", rowid, false)
-            .unwrap();
+        let mut blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, false)?;
         assert_eq!(4, blob.write(b"Clob").unwrap());
         assert_eq!(6, blob.write(b"567890xxxxxx").unwrap()); 
         assert_eq!(0, blob.write(b"5678").unwrap()); 
 
-        blob.reopen(rowid).unwrap();
-        blob.close().unwrap();
+        blob.reopen(rowid)?;
+        blob.close()?;
 
-        blob = db
-            .blob_open(DatabaseName::Main, "test", "content", rowid, true)
-            .unwrap();
+        blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, true)?;
         let mut bytes = [0u8; 5];
         assert_eq!(5, blob.read(&mut bytes[..]).unwrap());
         assert_eq!(&bytes, b"Clob5");
@@ -457,7 +468,7 @@ mod test {
         assert_eq!(5, blob.read(&mut bytes[..]).unwrap());
         assert_eq!(&bytes, b"56789");
 
-        blob.reopen(rowid).unwrap();
+        blob.reopen(rowid)?;
         assert_eq!(5, blob.read(&mut bytes[..]).unwrap());
         assert_eq!(&bytes, b"Clob5");
 
@@ -468,20 +479,19 @@ mod test {
 
         
         
-        blob.reopen(rowid).unwrap();
+        blob.reopen(rowid)?;
         assert!(blob.write_all(b"0123456789x").is_err());
+        Ok(())
     }
 
     #[test]
-    fn test_blob_in_bufreader() {
-        let (db, rowid) = db_with_test_blob().unwrap();
+    fn test_blob_in_bufreader() -> Result<()> {
+        let (db, rowid) = db_with_test_blob()?;
 
-        let mut blob = db
-            .blob_open(DatabaseName::Main, "test", "content", rowid, false)
-            .unwrap();
+        let mut blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, false)?;
         assert_eq!(8, blob.write(b"one\ntwo\n").unwrap());
 
-        blob.reopen(rowid).unwrap();
+        blob.reopen(rowid)?;
         let mut reader = BufReader::new(blob);
 
         let mut line = String::new();
@@ -495,16 +505,15 @@ mod test {
         line.truncate(0);
         assert_eq!(2, reader.read_line(&mut line).unwrap());
         assert_eq!("\0\0", line);
+        Ok(())
     }
 
     #[test]
-    fn test_blob_in_bufwriter() {
-        let (db, rowid) = db_with_test_blob().unwrap();
+    fn test_blob_in_bufwriter() -> Result<()> {
+        let (db, rowid) = db_with_test_blob()?;
 
         {
-            let blob = db
-                .blob_open(DatabaseName::Main, "test", "content", rowid, false)
-                .unwrap();
+            let blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, false)?;
             let mut writer = BufWriter::new(blob);
 
             
@@ -515,18 +524,14 @@ mod test {
 
         {
             
-            let mut blob = db
-                .blob_open(DatabaseName::Main, "test", "content", rowid, false)
-                .unwrap();
+            let mut blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, false)?;
             let mut bytes = [0u8; 10];
             assert_eq!(10, blob.read(&mut bytes[..]).unwrap());
             assert_eq!(b"0123456701", &bytes);
         }
 
         {
-            let blob = db
-                .blob_open(DatabaseName::Main, "test", "content", rowid, false)
-                .unwrap();
+            let blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, false)?;
             let mut writer = BufWriter::new(blob);
 
             
@@ -536,12 +541,11 @@ mod test {
 
         {
             
-            let mut blob = db
-                .blob_open(DatabaseName::Main, "test", "content", rowid, false)
-                .unwrap();
+            let mut blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, false)?;
             let mut bytes = [0u8; 10];
             assert_eq!(10, blob.read(&mut bytes[..]).unwrap());
             assert_eq!(b"aaaaaaaaaa", &bytes);
+            Ok(())
         }
     }
 }

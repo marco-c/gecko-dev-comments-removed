@@ -1,4 +1,9 @@
 #![allow(non_snake_case, non_camel_case_types)]
+#![cfg_attr(test, allow(deref_nullptr))] 
+
+
+#[cfg(feature = "bundled-sqlcipher-vendored-openssl")]
+extern crate openssl_sys;
 
 pub use self::error::*;
 
@@ -7,47 +12,14 @@ use std::mem;
 
 mod error;
 
+#[must_use]
 pub fn SQLITE_STATIC() -> sqlite3_destructor_type {
     None
 }
 
+#[must_use]
 pub fn SQLITE_TRANSIENT() -> sqlite3_destructor_type {
-    Some(unsafe { mem::transmute(-1isize) })
-}
-
-
-#[repr(i32)]
-#[non_exhaustive]
-pub enum Limit {
-    
-    SQLITE_LIMIT_LENGTH = SQLITE_LIMIT_LENGTH,
-    
-    SQLITE_LIMIT_SQL_LENGTH = SQLITE_LIMIT_SQL_LENGTH,
-    
-    
-    
-    SQLITE_LIMIT_COLUMN = SQLITE_LIMIT_COLUMN,
-    
-    SQLITE_LIMIT_EXPR_DEPTH = SQLITE_LIMIT_EXPR_DEPTH,
-    
-    SQLITE_LIMIT_COMPOUND_SELECT = SQLITE_LIMIT_COMPOUND_SELECT,
-    
-    
-    SQLITE_LIMIT_VDBE_OP = SQLITE_LIMIT_VDBE_OP,
-    
-    SQLITE_LIMIT_FUNCTION_ARG = SQLITE_LIMIT_FUNCTION_ARG,
-    
-    SQLITE_LIMIT_ATTACHED = SQLITE_LIMIT_ATTACHED,
-    
-    
-    SQLITE_LIMIT_LIKE_PATTERN_LENGTH = SQLITE_LIMIT_LIKE_PATTERN_LENGTH,
-    
-    SQLITE_LIMIT_VARIABLE_NUMBER = SQLITE_LIMIT_VARIABLE_NUMBER,
-    
-    SQLITE_LIMIT_TRIGGER_DEPTH = 10,
-    
-    
-    SQLITE_LIMIT_WORKER_THREADS = 11,
+    Some(unsafe { mem::transmute(-1_isize) })
 }
 
 #[allow(clippy::all)]

@@ -21,6 +21,9 @@ impl Connection {
     
     
     
+    
+    
+    
     pub fn busy_timeout(&self, timeout: Duration) -> Result<()> {
         let ms: i32 = timeout
             .as_secs()
@@ -48,6 +51,10 @@ impl Connection {
     
     
     
+    
+    
+    
+    
     pub fn busy_handler(&self, callback: Option<fn(i32) -> bool>) -> Result<()> {
         unsafe extern "C" fn busy_handler_callback(p_arg: *mut c_void, count: c_int) -> c_int {
             let handler_fn: fn(i32) -> bool = mem::transmute(p_arg);
@@ -57,7 +64,7 @@ impl Connection {
                 0
             }
         }
-        let mut c = self.db.borrow_mut();
+        let c = self.db.borrow_mut();
         let r = match callback {
             Some(f) => unsafe {
                 ffi::sqlite3_busy_handler(c.db(), Some(busy_handler_callback), f as *mut c_void)
@@ -69,6 +76,7 @@ impl Connection {
 }
 
 impl InnerConnection {
+    #[inline]
     fn busy_timeout(&mut self, timeout: c_int) -> Result<()> {
         let r = unsafe { ffi::sqlite3_busy_timeout(self.db, timeout) };
         self.decode_result(r)
@@ -82,26 +90,24 @@ mod test {
     use std::thread;
     use std::time::Duration;
 
-    use crate::{Connection, Error, ErrorCode, Result, TransactionBehavior, NO_PARAMS};
+    use crate::{Connection, Error, ErrorCode, Result, TransactionBehavior};
 
     #[test]
-    fn test_default_busy() {
+    fn test_default_busy() -> Result<()> {
         let temp_dir = tempfile::tempdir().unwrap();
         let path = temp_dir.path().join("test.db3");
 
-        let mut db1 = Connection::open(&path).unwrap();
-        let tx1 = db1
-            .transaction_with_behavior(TransactionBehavior::Exclusive)
-            .unwrap();
-        let db2 = Connection::open(&path).unwrap();
-        let r: Result<()> = db2.query_row("PRAGMA schema_version", NO_PARAMS, |_| unreachable!());
+        let mut db1 = Connection::open(&path)?;
+        let tx1 = db1.transaction_with_behavior(TransactionBehavior::Exclusive)?;
+        let db2 = Connection::open(&path)?;
+        let r: Result<()> = db2.query_row("PRAGMA schema_version", [], |_| unreachable!());
         match r.unwrap_err() {
             Error::SqliteFailure(err, _) => {
                 assert_eq!(err.code, ErrorCode::DatabaseBusy);
             }
             err => panic!("Unexpected error {}", err),
         }
-        tx1.rollback().unwrap();
+        tx1.rollback()
     }
 
     #[test]
@@ -126,9 +132,7 @@ mod test {
 
         assert_eq!(tx.recv().unwrap(), 1);
         let _ = db2
-            .query_row("PRAGMA schema_version", NO_PARAMS, |row| {
-                row.get::<_, i32>(0)
-            })
+            .query_row("PRAGMA schema_version", [], |row| row.get::<_, i32>(0))
             .expect("unexpected error");
 
         child.join().unwrap();
@@ -137,9 +141,7 @@ mod test {
     #[test]
     #[ignore] 
     fn test_busy_handler() {
-        lazy_static::lazy_static! {
-            static ref CALLED: AtomicBool = AtomicBool::new(false);
-        }
+        static CALLED: AtomicBool = AtomicBool::new(false);
         fn busy_handler(_: i32) -> bool {
             CALLED.store(true, Ordering::Relaxed);
             thread::sleep(Duration::from_millis(100));
@@ -165,11 +167,9 @@ mod test {
 
         assert_eq!(tx.recv().unwrap(), 1);
         let _ = db2
-            .query_row("PRAGMA schema_version", NO_PARAMS, |row| {
-                row.get::<_, i32>(0)
-            })
+            .query_row("PRAGMA schema_version", [], |row| row.get::<_, i32>(0))
             .expect("unexpected error");
-        assert_eq!(CALLED.load(Ordering::Relaxed), true);
+        assert!(CALLED.load(Ordering::Relaxed));
 
         child.join().unwrap();
     }

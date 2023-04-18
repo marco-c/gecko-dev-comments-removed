@@ -1,6 +1,6 @@
 use crate::types::FromSqlError;
 use crate::types::Type;
-use crate::{errmsg_to_string, ffi};
+use crate::{errmsg_to_string, ffi, Result};
 use std::error;
 use std::fmt;
 use std::os::raw::c_int;
@@ -44,6 +44,7 @@ pub enum Error {
     InvalidPath(PathBuf),
 
     
+    
     ExecuteReturnedResults,
 
     
@@ -69,19 +70,24 @@ pub enum Error {
 
     
     
+    
     #[cfg(feature = "functions")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "functions")))]
     InvalidFunctionParameterType(usize, Type),
     
     
     #[cfg(feature = "vtab")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "vtab")))]
     InvalidFilterParameterType(usize, Type),
 
     
     
     #[cfg(feature = "functions")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "functions")))]
     #[allow(dead_code)]
     UserFunctionError(Box<dyn error::Error + Send + Sync + 'static>),
 
+    
     
     ToSqlConversionFailure(Box<dyn error::Error + Send + Sync + 'static>),
 
@@ -91,16 +97,21 @@ pub enum Error {
     
     
     #[cfg(feature = "vtab")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "vtab")))]
     #[allow(dead_code)]
     ModuleError(String),
 
     
     #[cfg(feature = "functions")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "functions")))]
     UnwindingPanic,
 
     
     
+    
+    
     #[cfg(feature = "functions")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "functions")))]
     GetAuxWrongType,
 
     
@@ -113,7 +124,9 @@ pub enum Error {
     
     
     
+    
     #[cfg(feature = "blob")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "blob")))]
     BlobSizeError,
 }
 
@@ -165,12 +178,14 @@ impl PartialEq for Error {
 }
 
 impl From<str::Utf8Error> for Error {
+    #[cold]
     fn from(err: str::Utf8Error) -> Error {
         Error::Utf8Error(err)
     }
 }
 
 impl From<::std::ffi::NulError> for Error {
+    #[cold]
     fn from(err: ::std::ffi::NulError) -> Error {
         Error::NulError(err)
     }
@@ -181,17 +196,13 @@ const UNKNOWN_COLUMN: usize = std::usize::MAX;
 
 
 impl From<FromSqlError> for Error {
+    #[cold]
     fn from(err: FromSqlError) -> Error {
         
         
         match err {
             FromSqlError::OutOfRange(val) => Error::IntegralValueOutOfRange(UNKNOWN_COLUMN, val),
-            #[cfg(feature = "i128_blob")]
-            FromSqlError::InvalidI128Size(_) => {
-                Error::FromSqlConversionFailure(UNKNOWN_COLUMN, Type::Blob, Box::new(err))
-            }
-            #[cfg(feature = "uuid")]
-            FromSqlError::InvalidUuidSize(_) => {
+            FromSqlError::InvalidBlobSize { .. } => {
                 Error::FromSqlConversionFailure(UNKNOWN_COLUMN, Type::Blob, Box::new(err))
             }
             FromSqlError::Other(source) => {
@@ -326,10 +337,12 @@ impl error::Error for Error {
 
 
 
+#[cold]
 pub fn error_from_sqlite_code(code: c_int, message: Option<String>) -> Error {
     Error::SqliteFailure(ffi::Error::new(code), message)
 }
 
+#[cold]
 pub unsafe fn error_from_handle(db: *mut ffi::sqlite3, code: c_int) -> Error {
     let message = if db.is_null() {
         None
@@ -339,11 +352,10 @@ pub unsafe fn error_from_handle(db: *mut ffi::sqlite3, code: c_int) -> Error {
     error_from_sqlite_code(code, message)
 }
 
-macro_rules! check {
-    ($funcall:expr) => {{
-        let rc = $funcall;
-        if rc != crate::ffi::SQLITE_OK {
-            return Err(crate::error::error_from_sqlite_code(rc, None).into());
-        }
-    }};
+pub fn check(code: c_int) -> Result<()> {
+    if code != crate::ffi::SQLITE_OK {
+        Err(crate::error::error_from_sqlite_code(code, None))
+    } else {
+        Ok(())
+    }
 }

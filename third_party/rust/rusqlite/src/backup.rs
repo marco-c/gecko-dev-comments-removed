@@ -29,6 +29,7 @@
 
 
 
+
 use std::marker::PhantomData;
 use std::path::Path;
 use std::ptr;
@@ -39,7 +40,7 @@ use std::time::Duration;
 
 use crate::ffi;
 
-use crate::error::{error_from_handle, error_from_sqlite_code};
+use crate::error::error_from_handle;
 use crate::{Connection, DatabaseName, Result};
 
 impl Connection {
@@ -106,7 +107,7 @@ impl Connection {
         let restore = Backup::new_with_names(&src, DatabaseName::Main, self, name)?;
 
         let mut r = More;
-        let mut busy_count = 0i32;
+        let mut busy_count = 0_i32;
         'restore_loop: while r == More || r == Busy {
             r = restore.step(100)?;
             if let Some(ref f) = progress {
@@ -129,6 +130,7 @@ impl Connection {
         }
     }
 }
+
 
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -155,6 +157,7 @@ pub enum StepResult {
 
 
 
+
 #[derive(Copy, Clone, Debug)]
 pub struct Progress {
     
@@ -166,7 +169,7 @@ pub struct Progress {
 
 pub struct Backup<'a, 'b> {
     phantom_from: PhantomData<&'a Connection>,
-    phantom_to: PhantomData<&'b Connection>,
+    to: &'b Connection,
     b: *mut ffi::sqlite3_backup,
 }
 
@@ -180,6 +183,7 @@ impl Backup<'_, '_> {
     
     
     
+    #[inline]
     pub fn new<'a, 'b>(from: &'a Connection, to: &'b mut Connection) -> Result<Backup<'a, 'b>> {
         Backup::new_with_names(from, DatabaseName::Main, to, DatabaseName::Main)
     }
@@ -199,8 +203,8 @@ impl Backup<'_, '_> {
         to: &'b mut Connection,
         to_name: DatabaseName<'_>,
     ) -> Result<Backup<'a, 'b>> {
-        let to_name = to_name.to_cstring()?;
-        let from_name = from_name.to_cstring()?;
+        let to_name = to_name.as_cstring()?;
+        let from_name = from_name.as_cstring()?;
 
         let to_db = to.db.borrow_mut().db;
 
@@ -219,12 +223,15 @@ impl Backup<'_, '_> {
 
         Ok(Backup {
             phantom_from: PhantomData,
-            phantom_to: PhantomData,
+            to,
             b,
         })
     }
 
     
+    
+    #[inline]
+    #[must_use]
     pub fn progress(&self) -> Progress {
         unsafe {
             Progress {
@@ -246,6 +253,8 @@ impl Backup<'_, '_> {
     
     
     
+    
+    #[inline]
     pub fn step(&self, num_pages: c_int) -> Result<StepResult> {
         use self::StepResult::{Busy, Done, Locked, More};
 
@@ -255,10 +264,11 @@ impl Backup<'_, '_> {
             ffi::SQLITE_OK => Ok(More),
             ffi::SQLITE_BUSY => Ok(Busy),
             ffi::SQLITE_LOCKED => Ok(Locked),
-            _ => Err(error_from_sqlite_code(rc, None)),
+            _ => self.to.decode_result(rc).map(|_| More),
         }
     }
 
+    
     
     
     
@@ -287,7 +297,7 @@ impl Backup<'_, '_> {
         loop {
             let r = self.step(pages_per_step)?;
             if let Some(progress) = progress {
-                progress(self.progress())
+                progress(self.progress());
             }
             match r {
                 More | Busy | Locked => thread::sleep(pause_between_pages),
@@ -298,6 +308,7 @@ impl Backup<'_, '_> {
 }
 
 impl Drop for Backup<'_, '_> {
+    #[inline]
     fn drop(&mut self) {
         unsafe { ffi::sqlite3_backup_finish(self.b) };
     }
@@ -306,96 +317,84 @@ impl Drop for Backup<'_, '_> {
 #[cfg(test)]
 mod test {
     use super::Backup;
-    use crate::{Connection, DatabaseName, NO_PARAMS};
+    use crate::{Connection, DatabaseName, Result};
     use std::time::Duration;
 
     #[test]
-    fn test_backup() {
-        let src = Connection::open_in_memory().unwrap();
+    fn test_backup() -> Result<()> {
+        let src = Connection::open_in_memory()?;
         let sql = "BEGIN;
                    CREATE TABLE foo(x INTEGER);
                    INSERT INTO foo VALUES(42);
                    END;";
-        src.execute_batch(sql).unwrap();
+        src.execute_batch(sql)?;
 
-        let mut dst = Connection::open_in_memory().unwrap();
+        let mut dst = Connection::open_in_memory()?;
 
         {
-            let backup = Backup::new(&src, &mut dst).unwrap();
-            backup.step(-1).unwrap();
+            let backup = Backup::new(&src, &mut dst)?;
+            backup.step(-1)?;
         }
 
-        let the_answer: i64 = dst
-            .query_row("SELECT x FROM foo", NO_PARAMS, |r| r.get(0))
-            .unwrap();
+        let the_answer: i64 = dst.query_row("SELECT x FROM foo", [], |r| r.get(0))?;
         assert_eq!(42, the_answer);
 
-        src.execute_batch("INSERT INTO foo VALUES(43)").unwrap();
+        src.execute_batch("INSERT INTO foo VALUES(43)")?;
 
         {
-            let backup = Backup::new(&src, &mut dst).unwrap();
-            backup
-                .run_to_completion(5, Duration::from_millis(250), None)
-                .unwrap();
+            let backup = Backup::new(&src, &mut dst)?;
+            backup.run_to_completion(5, Duration::from_millis(250), None)?;
         }
 
-        let the_answer: i64 = dst
-            .query_row("SELECT SUM(x) FROM foo", NO_PARAMS, |r| r.get(0))
-            .unwrap();
+        let the_answer: i64 = dst.query_row("SELECT SUM(x) FROM foo", [], |r| r.get(0))?;
         assert_eq!(42 + 43, the_answer);
+        Ok(())
     }
 
     #[test]
-    fn test_backup_temp() {
-        let src = Connection::open_in_memory().unwrap();
+    fn test_backup_temp() -> Result<()> {
+        let src = Connection::open_in_memory()?;
         let sql = "BEGIN;
                    CREATE TEMPORARY TABLE foo(x INTEGER);
                    INSERT INTO foo VALUES(42);
                    END;";
-        src.execute_batch(sql).unwrap();
+        src.execute_batch(sql)?;
 
-        let mut dst = Connection::open_in_memory().unwrap();
+        let mut dst = Connection::open_in_memory()?;
 
         {
             let backup =
-                Backup::new_with_names(&src, DatabaseName::Temp, &mut dst, DatabaseName::Main)
-                    .unwrap();
-            backup.step(-1).unwrap();
+                Backup::new_with_names(&src, DatabaseName::Temp, &mut dst, DatabaseName::Main)?;
+            backup.step(-1)?;
         }
 
-        let the_answer: i64 = dst
-            .query_row("SELECT x FROM foo", NO_PARAMS, |r| r.get(0))
-            .unwrap();
+        let the_answer: i64 = dst.query_row("SELECT x FROM foo", [], |r| r.get(0))?;
         assert_eq!(42, the_answer);
 
-        src.execute_batch("INSERT INTO foo VALUES(43)").unwrap();
+        src.execute_batch("INSERT INTO foo VALUES(43)")?;
 
         {
             let backup =
-                Backup::new_with_names(&src, DatabaseName::Temp, &mut dst, DatabaseName::Main)
-                    .unwrap();
-            backup
-                .run_to_completion(5, Duration::from_millis(250), None)
-                .unwrap();
+                Backup::new_with_names(&src, DatabaseName::Temp, &mut dst, DatabaseName::Main)?;
+            backup.run_to_completion(5, Duration::from_millis(250), None)?;
         }
 
-        let the_answer: i64 = dst
-            .query_row("SELECT SUM(x) FROM foo", NO_PARAMS, |r| r.get(0))
-            .unwrap();
+        let the_answer: i64 = dst.query_row("SELECT SUM(x) FROM foo", [], |r| r.get(0))?;
         assert_eq!(42 + 43, the_answer);
+        Ok(())
     }
 
     #[test]
-    fn test_backup_attached() {
-        let src = Connection::open_in_memory().unwrap();
+    fn test_backup_attached() -> Result<()> {
+        let src = Connection::open_in_memory()?;
         let sql = "ATTACH DATABASE ':memory:' AS my_attached;
                    BEGIN;
                    CREATE TABLE my_attached.foo(x INTEGER);
                    INSERT INTO my_attached.foo VALUES(42);
                    END;";
-        src.execute_batch(sql).unwrap();
+        src.execute_batch(sql)?;
 
-        let mut dst = Connection::open_in_memory().unwrap();
+        let mut dst = Connection::open_in_memory()?;
 
         {
             let backup = Backup::new_with_names(
@@ -403,17 +402,14 @@ mod test {
                 DatabaseName::Attached("my_attached"),
                 &mut dst,
                 DatabaseName::Main,
-            )
-            .unwrap();
-            backup.step(-1).unwrap();
+            )?;
+            backup.step(-1)?;
         }
 
-        let the_answer: i64 = dst
-            .query_row("SELECT x FROM foo", NO_PARAMS, |r| r.get(0))
-            .unwrap();
+        let the_answer: i64 = dst.query_row("SELECT x FROM foo", [], |r| r.get(0))?;
         assert_eq!(42, the_answer);
 
-        src.execute_batch("INSERT INTO foo VALUES(43)").unwrap();
+        src.execute_batch("INSERT INTO foo VALUES(43)")?;
 
         {
             let backup = Backup::new_with_names(
@@ -421,16 +417,12 @@ mod test {
                 DatabaseName::Attached("my_attached"),
                 &mut dst,
                 DatabaseName::Main,
-            )
-            .unwrap();
-            backup
-                .run_to_completion(5, Duration::from_millis(250), None)
-                .unwrap();
+            )?;
+            backup.run_to_completion(5, Duration::from_millis(250), None)?;
         }
 
-        let the_answer: i64 = dst
-            .query_row("SELECT SUM(x) FROM foo", NO_PARAMS, |r| r.get(0))
-            .unwrap();
+        let the_answer: i64 = dst.query_row("SELECT SUM(x) FROM foo", [], |r| r.get(0))?;
         assert_eq!(42 + 43, the_answer);
+        Ok(())
     }
 }

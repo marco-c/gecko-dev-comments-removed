@@ -4,15 +4,16 @@
 
 use crate::error::*;
 use crate::schema;
+use interrupt_support::{SqlInterruptHandle, SqlInterruptScope};
 use rusqlite::types::{FromSql, ToSql};
 use rusqlite::Connection;
 use rusqlite::OpenFlags;
 use sql_support::open_database::open_database_with_flags;
-use sql_support::{ConnExt, SqlInterruptHandle, SqlInterruptScope};
+use sql_support::ConnExt;
 use std::ops::{Deref, DerefMut};
 use std::path::{Path, PathBuf};
 use std::result;
-use std::sync::{atomic::AtomicUsize, Arc};
+use std::sync::Arc;
 use url::Url;
 
 
@@ -24,7 +25,7 @@ use url::Url;
 
 pub struct StorageDb {
     writer: Connection,
-    interrupt_counter: Arc<AtomicUsize>,
+    interrupt_handle: Arc<SqlInterruptHandle>,
 }
 impl StorageDb {
     
@@ -52,32 +53,18 @@ impl StorageDb {
 
         let conn = open_database_with_flags(db_path, flags, &schema::WebExtMigrationLogin)?;
         Ok(Self {
+            interrupt_handle: Arc::new(SqlInterruptHandle::new(&conn)),
             writer: conn,
-            interrupt_counter: Arc::new(AtomicUsize::new(0)),
         })
     }
 
-    
-    
-    
-    
-    
-    pub fn interrupt_handle(&self) -> SqlInterruptHandle {
-        SqlInterruptHandle::new(
-            self.writer.get_interrupt_handle(),
-            self.interrupt_counter.clone(),
-        )
+    pub fn interrupt_handle(&self) -> Arc<SqlInterruptHandle> {
+        Arc::clone(&self.interrupt_handle)
     }
 
-    
-    
-    
-    
-    
-    
     #[allow(dead_code)]
-    pub fn begin_interrupt_scope(&self) -> SqlInterruptScope {
-        SqlInterruptScope::new(self.interrupt_counter.clone())
+    pub fn begin_interrupt_scope(&self) -> Result<SqlInterruptScope> {
+        Ok(self.interrupt_handle.begin_interrupt_scope()?)
     }
 
     
@@ -90,13 +77,13 @@ impl StorageDb {
     pub fn close(self) -> result::Result<(), (StorageDb, Error)> {
         let StorageDb {
             writer,
-            interrupt_counter,
+            interrupt_handle,
         } = self;
         writer.close().map_err(|(writer, err)| {
             (
                 StorageDb {
                     writer,
-                    interrupt_counter,
+                    interrupt_handle,
                 },
                 err.into(),
             )
@@ -130,9 +117,9 @@ pub(crate) mod sql_fns {
 
 
 pub fn put_meta(db: &Connection, key: &str, value: &dyn ToSql) -> Result<()> {
-    db.conn().execute_named_cached(
+    db.conn().execute_cached(
         "REPLACE INTO meta (key, value) VALUES (:key, :value)",
-        &[(":key", &key), (":value", value)],
+        rusqlite::named_params! { ":key": key, ":value": value },
     )?;
     Ok(())
 }
@@ -148,7 +135,7 @@ pub fn get_meta<T: FromSql>(db: &Connection, key: &str) -> Result<Option<T>> {
 
 pub fn delete_meta(db: &Connection, key: &str) -> Result<()> {
     db.conn()
-        .execute_named_cached("DELETE FROM meta WHERE key = :key", &[(":key", &key)])?;
+        .execute_cached("DELETE FROM meta WHERE key = :key", &[(":key", &key)])?;
     Ok(())
 }
 

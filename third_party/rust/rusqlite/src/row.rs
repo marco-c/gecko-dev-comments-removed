@@ -13,6 +13,7 @@ pub struct Rows<'stmt> {
 }
 
 impl<'stmt> Rows<'stmt> {
+    #[inline]
     fn reset(&mut self) {
         if let Some(stmt) = self.stmt.take() {
             stmt.reset();
@@ -30,7 +31,9 @@ impl<'stmt> Rows<'stmt> {
     
     
     
+    
     #[allow(clippy::should_implement_trait)] 
+    #[inline]
     pub fn next(&mut self) -> Result<Option<&Row<'stmt>>> {
         self.advance()?;
         Ok((*self).get())
@@ -47,6 +50,7 @@ impl<'stmt> Rows<'stmt> {
     
     
     
+    #[inline]
     pub fn map<F, B>(self, f: F) -> Map<'stmt, F>
     where
         F: FnMut(&Row<'_>) -> Result<B>,
@@ -56,6 +60,7 @@ impl<'stmt> Rows<'stmt> {
 
     
     
+    #[inline]
     pub fn mapped<F, B>(self, f: F) -> MappedRows<'stmt, F>
     where
         F: FnMut(&Row<'_>) -> Result<B>,
@@ -66,15 +71,23 @@ impl<'stmt> Rows<'stmt> {
     
     
     
+    #[inline]
     pub fn and_then<F, T, E>(self, f: F) -> AndThenRows<'stmt, F>
     where
         F: FnMut(&Row<'_>) -> Result<T, E>,
     {
         AndThenRows { rows: self, map: f }
     }
+
+    
+    #[must_use]
+    pub fn as_ref(&self) -> Option<&Statement<'stmt>> {
+        self.stmt
+    }
 }
 
 impl<'stmt> Rows<'stmt> {
+    #[inline]
     pub(crate) fn new(stmt: &'stmt Statement<'stmt>) -> Rows<'stmt> {
         Rows {
             stmt: Some(stmt),
@@ -82,6 +95,7 @@ impl<'stmt> Rows<'stmt> {
         }
     }
 
+    #[inline]
     pub(crate) fn get_expected_row(&mut self) -> Result<&Row<'stmt>> {
         match self.next()? {
             Some(row) => Ok(row),
@@ -91,10 +105,12 @@ impl<'stmt> Rows<'stmt> {
 }
 
 impl Drop for Rows<'_> {
+    #[inline]
     fn drop(&mut self) {
         self.reset();
     }
 }
+
 
 
 #[must_use = "iterators are lazy and do nothing unless consumed"]
@@ -110,6 +126,7 @@ where
     type Error = Error;
     type Item = B;
 
+    #[inline]
     fn next(&mut self) -> Result<Option<B>> {
         match self.rows.next()? {
             Some(v) => Ok(Some((self.f)(v)?)),
@@ -121,19 +138,11 @@ where
 
 
 
+
 #[must_use = "iterators are lazy and do nothing unless consumed"]
 pub struct MappedRows<'stmt, F> {
     rows: Rows<'stmt>,
     map: F,
-}
-
-impl<'stmt, T, F> MappedRows<'stmt, F>
-where
-    F: FnMut(&Row<'_>) -> Result<T>,
-{
-    pub(crate) fn new(rows: Rows<'stmt>, f: F) -> MappedRows<'stmt, F> {
-        MappedRows { rows, map: f }
-    }
 }
 
 impl<T, F> Iterator for MappedRows<'_, F>
@@ -142,12 +151,13 @@ where
 {
     type Item = Result<T>;
 
+    #[inline]
     fn next(&mut self) -> Option<Result<T>> {
         let map = &mut self.map;
         self.rows
             .next()
             .transpose()
-            .map(|row_result| row_result.and_then(|row| (map)(&row)))
+            .map(|row_result| row_result.and_then(map))
     }
 }
 
@@ -159,15 +169,6 @@ pub struct AndThenRows<'stmt, F> {
     map: F,
 }
 
-impl<'stmt, T, E, F> AndThenRows<'stmt, F>
-where
-    F: FnMut(&Row<'_>) -> Result<T, E>,
-{
-    pub(crate) fn new(rows: Rows<'stmt>, f: F) -> AndThenRows<'stmt, F> {
-        AndThenRows { rows, map: f }
-    }
-}
-
 impl<T, E, F> Iterator for AndThenRows<'_, F>
 where
     E: convert::From<Error>,
@@ -175,12 +176,13 @@ where
 {
     type Item = Result<T, E>;
 
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         let map = &mut self.map;
         self.rows
             .next()
             .transpose()
-            .map(|row_result| row_result.map_err(E::from).and_then(|row| (map)(&row)))
+            .map(|row_result| row_result.map_err(E::from).and_then(map))
     }
 }
 
@@ -206,9 +208,10 @@ impl<'stmt> FallibleStreamingIterator for Rows<'stmt> {
     type Error = Error;
     type Item = Row<'stmt>;
 
+    #[inline]
     fn advance(&mut self) -> Result<()> {
-        match self.stmt {
-            Some(ref stmt) => match stmt.step() {
+        if let Some(stmt) = self.stmt {
+            match stmt.step() {
                 Ok(true) => {
                     self.row = Some(Row { stmt });
                     Ok(())
@@ -223,14 +226,14 @@ impl<'stmt> FallibleStreamingIterator for Rows<'stmt> {
                     self.row = None;
                     Err(e)
                 }
-            },
-            None => {
-                self.row = None;
-                Ok(())
             }
+        } else {
+            self.row = None;
+            Ok(())
         }
     }
 
+    #[inline]
     fn get(&self) -> Option<&Row<'stmt>> {
         self.row.as_ref()
     }
@@ -285,20 +288,11 @@ impl<'stmt> Row<'stmt> {
             ),
             FromSqlError::OutOfRange(i) => Error::IntegralValueOutOfRange(idx, i),
             FromSqlError::Other(err) => {
-                Error::FromSqlConversionFailure(idx as usize, value.data_type(), err)
+                Error::FromSqlConversionFailure(idx, value.data_type(), err)
             }
-            #[cfg(feature = "i128_blob")]
-            FromSqlError::InvalidI128Size(_) => Error::InvalidColumnType(
-                idx,
-                self.stmt.column_name_unwrap(idx).into(),
-                value.data_type(),
-            ),
-            #[cfg(feature = "uuid")]
-            FromSqlError::InvalidUuidSize(_) => Error::InvalidColumnType(
-                idx,
-                self.stmt.column_name_unwrap(idx).into(),
-                value.data_type(),
-            ),
+            FromSqlError::InvalidBlobSize { .. } => {
+                Error::FromSqlConversionFailure(idx, value.data_type(), Box::new(err))
+            }
         })
     }
 
@@ -317,7 +311,7 @@ impl<'stmt> Row<'stmt> {
     
     
     
-    pub fn get_raw_checked<I: RowIndex>(&self, idx: I) -> Result<ValueRef<'_>> {
+    pub fn get_ref<I: RowIndex>(&self, idx: I) -> Result<ValueRef<'_>> {
         let idx = idx.idx(self.stmt)?;
         
         
@@ -341,13 +335,43 @@ impl<'stmt> Row<'stmt> {
     
     
     
+    pub fn get_ref_unwrap<I: RowIndex>(&self, idx: I) -> ValueRef<'_> {
+        self.get_ref(idx).unwrap()
+    }
+
+    
+    #[deprecated = "Use [`get_ref`](Row::get_ref) instead."]
+    #[inline]
+    pub fn get_raw_checked<I: RowIndex>(&self, idx: I) -> Result<ValueRef<'_>> {
+        self.get_ref(idx)
+    }
+
+    
+    #[deprecated = "Use [`get_ref_unwrap`](Row::get_ref_unwrap) instead."]
+    #[inline]
     pub fn get_raw<I: RowIndex>(&self, idx: I) -> ValueRef<'_> {
-        self.get_raw_checked(idx).unwrap()
+        self.get_ref_unwrap(idx)
     }
 }
 
+impl<'stmt> AsRef<Statement<'stmt>> for Row<'stmt> {
+    fn as_ref(&self) -> &Statement<'stmt> {
+        self.stmt
+    }
+}
 
-pub trait RowIndex {
+mod sealed {
+    
+    
+    pub trait Sealed {}
+    impl Sealed for usize {}
+    impl Sealed for &str {}
+}
+
+
+
+
+pub trait RowIndex: sealed::Sealed {
     
     
     fn idx(&self, stmt: &Statement<'_>) -> Result<usize>;
@@ -408,74 +432,46 @@ tuples_try_from_row!(A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P);
 #[cfg(test)]
 mod tests {
     #![allow(clippy::redundant_closure)] 
+    use crate::{Connection, Result};
 
     #[test]
-    fn test_try_from_row_for_tuple_1() {
-        use crate::{Connection, ToSql};
+    fn test_try_from_row_for_tuple_1() -> Result<()> {
+        use crate::ToSql;
         use std::convert::TryFrom;
 
-        let conn = Connection::open_in_memory().expect("failed to create in-memoory database");
+        let conn = Connection::open_in_memory()?;
         conn.execute(
             "CREATE TABLE test (a INTEGER)",
-            std::iter::empty::<&dyn ToSql>(),
-        )
-        .expect("failed to create table");
-        conn.execute(
-            "INSERT INTO test VALUES (42)",
-            std::iter::empty::<&dyn ToSql>(),
-        )
-        .expect("failed to insert value");
-        let val = conn
-            .query_row(
-                "SELECT a FROM test",
-                std::iter::empty::<&dyn ToSql>(),
-                |row| <(u32,)>::try_from(row),
-            )
-            .expect("failed to query row");
+            crate::params_from_iter(std::iter::empty::<&dyn ToSql>()),
+        )?;
+        conn.execute("INSERT INTO test VALUES (42)", [])?;
+        let val = conn.query_row("SELECT a FROM test", [], |row| <(u32,)>::try_from(row))?;
         assert_eq!(val, (42,));
-        let fail = conn.query_row(
-            "SELECT a FROM test",
-            std::iter::empty::<&dyn ToSql>(),
-            |row| <(u32, u32)>::try_from(row),
-        );
+        let fail = conn.query_row("SELECT a FROM test", [], |row| <(u32, u32)>::try_from(row));
         assert!(fail.is_err());
+        Ok(())
     }
 
     #[test]
-    fn test_try_from_row_for_tuple_2() {
-        use crate::{Connection, ToSql};
+    fn test_try_from_row_for_tuple_2() -> Result<()> {
         use std::convert::TryFrom;
 
-        let conn = Connection::open_in_memory().expect("failed to create in-memoory database");
-        conn.execute(
-            "CREATE TABLE test (a INTEGER, b INTEGER)",
-            std::iter::empty::<&dyn ToSql>(),
-        )
-        .expect("failed to create table");
-        conn.execute(
-            "INSERT INTO test VALUES (42, 47)",
-            std::iter::empty::<&dyn ToSql>(),
-        )
-        .expect("failed to insert value");
-        let val = conn
-            .query_row(
-                "SELECT a, b FROM test",
-                std::iter::empty::<&dyn ToSql>(),
-                |row| <(u32, u32)>::try_from(row),
-            )
-            .expect("failed to query row");
+        let conn = Connection::open_in_memory()?;
+        conn.execute("CREATE TABLE test (a INTEGER, b INTEGER)", [])?;
+        conn.execute("INSERT INTO test VALUES (42, 47)", [])?;
+        let val = conn.query_row("SELECT a, b FROM test", [], |row| {
+            <(u32, u32)>::try_from(row)
+        })?;
         assert_eq!(val, (42, 47));
-        let fail = conn.query_row(
-            "SELECT a, b FROM test",
-            std::iter::empty::<&dyn ToSql>(),
-            |row| <(u32, u32, u32)>::try_from(row),
-        );
+        let fail = conn.query_row("SELECT a, b FROM test", [], |row| {
+            <(u32, u32, u32)>::try_from(row)
+        });
         assert!(fail.is_err());
+        Ok(())
     }
 
     #[test]
-    fn test_try_from_row_for_tuple_16() {
-        use crate::{Connection, ToSql};
+    fn test_try_from_row_for_tuple_16() -> Result<()> {
         use std::convert::TryFrom;
 
         let create_table = "CREATE TABLE test (
@@ -535,18 +531,10 @@ mod tests {
             u32,
         );
 
-        let conn = Connection::open_in_memory().expect("failed to create in-memoory database");
-        conn.execute(create_table, std::iter::empty::<&dyn ToSql>())
-            .expect("failed to create table");
-        conn.execute(insert_values, std::iter::empty::<&dyn ToSql>())
-            .expect("failed to insert value");
-        let val = conn
-            .query_row(
-                "SELECT * FROM test",
-                std::iter::empty::<&dyn ToSql>(),
-                |row| BigTuple::try_from(row),
-            )
-            .expect("failed to query row");
+        let conn = Connection::open_in_memory()?;
+        conn.execute(create_table, [])?;
+        conn.execute(insert_values, [])?;
+        let val = conn.query_row("SELECT * FROM test", [], |row| BigTuple::try_from(row))?;
         
         assert_eq!(val.0, 0);
         assert_eq!(val.1, 1);
@@ -566,5 +554,6 @@ mod tests {
         assert_eq!(val.15, 15);
 
         
+        Ok(())
     }
 }

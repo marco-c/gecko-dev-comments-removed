@@ -1,6 +1,6 @@
 use std::str;
 
-use crate::{Error, Result, Row, Rows, Statement};
+use crate::{Error, Result, Statement};
 
 
 #[derive(Debug)]
@@ -11,17 +11,25 @@ pub struct Column<'stmt> {
 
 impl Column<'_> {
     
+    #[inline]
+    #[must_use]
     pub fn name(&self) -> &str {
         self.name
     }
 
     
+    #[inline]
+    #[must_use]
     pub fn decl_type(&self) -> Option<&str> {
         self.decl_type
     }
 }
 
 impl Statement<'_> {
+    
+    
+    
+    
     
     pub fn column_names(&self) -> Vec<&str> {
         let n = self.column_count();
@@ -35,10 +43,35 @@ impl Statement<'_> {
 
     
     
+    
+    
+    
+    
+    #[inline]
     pub fn column_count(&self) -> usize {
         self.stmt.column_count()
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
     pub(super) fn column_name_unwrap(&self, col: usize) -> &str {
         
         
@@ -54,6 +87,11 @@ impl Statement<'_> {
     
     
     
+    
+    
+    
+    
+    #[inline]
     pub fn column_name(&self, col: usize) -> Result<&str> {
         self.stmt
             .column_name(col)
@@ -72,6 +110,11 @@ impl Statement<'_> {
     
     
     
+    
+    
+    
+    
+    #[inline]
     pub fn column_index(&self, name: &str) -> Result<usize> {
         let bytes = name.as_bytes();
         let n = self.column_count();
@@ -86,7 +129,12 @@ impl Statement<'_> {
     }
 
     
+    
+    
+    
+    
     #[cfg(feature = "column_decltype")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "column_decltype")))]
     pub fn columns(&self) -> Vec<Column> {
         let n = self.column_count();
         let mut cols = Vec::with_capacity(n as usize);
@@ -102,100 +150,51 @@ impl Statement<'_> {
     }
 }
 
-impl<'stmt> Rows<'stmt> {
-    
-    pub fn column_names(&self) -> Option<Vec<&str>> {
-        self.stmt.map(Statement::column_names)
-    }
-
-    
-    pub fn column_count(&self) -> Option<usize> {
-        self.stmt.map(Statement::column_count)
-    }
-
-    
-    pub fn column_name(&self, col: usize) -> Option<Result<&str>> {
-        self.stmt.map(|stmt| stmt.column_name(col))
-    }
-
-    
-    pub fn column_index(&self, name: &str) -> Option<Result<usize>> {
-        self.stmt.map(|stmt| stmt.column_index(name))
-    }
-
-    
-    #[cfg(feature = "column_decltype")]
-    pub fn columns(&self) -> Option<Vec<Column>> {
-        self.stmt.map(Statement::columns)
-    }
-}
-
-impl<'stmt> Row<'stmt> {
-    
-    pub fn column_names(&self) -> Vec<&str> {
-        self.stmt.column_names()
-    }
-
-    
-    pub fn column_count(&self) -> usize {
-        self.stmt.column_count()
-    }
-
-    
-    pub fn column_name(&self, col: usize) -> Result<&str> {
-        self.stmt.column_name(col)
-    }
-
-    
-    pub fn column_index(&self, name: &str) -> Result<usize> {
-        self.stmt.column_index(name)
-    }
-
-    
-    #[cfg(feature = "column_decltype")]
-    pub fn columns(&self) -> Vec<Column> {
-        self.stmt.columns()
-    }
-}
-
 #[cfg(test)]
 mod test {
-    use crate::Connection;
+    use crate::{Connection, Result};
 
     #[test]
     #[cfg(feature = "column_decltype")]
-    fn test_columns() {
+    fn test_columns() -> Result<()> {
         use super::Column;
 
-        let db = Connection::open_in_memory().unwrap();
-        let query = db.prepare("SELECT * FROM sqlite_master").unwrap();
+        let db = Connection::open_in_memory()?;
+        let query = db.prepare("SELECT * FROM sqlite_master")?;
         let columns = query.columns();
         let column_names: Vec<&str> = columns.iter().map(Column::name).collect();
         assert_eq!(
             column_names.as_slice(),
             &["type", "name", "tbl_name", "rootpage", "sql"]
         );
-        let column_types: Vec<Option<&str>> = columns.iter().map(Column::decl_type).collect();
+        let column_types: Vec<Option<String>> = columns
+            .iter()
+            .map(|col| col.decl_type().map(str::to_lowercase))
+            .collect();
         assert_eq!(
             &column_types[..3],
-            &[Some("text"), Some("text"), Some("text"),]
+            &[
+                Some("text".to_owned()),
+                Some("text".to_owned()),
+                Some("text".to_owned()),
+            ]
         );
+        Ok(())
     }
 
     #[test]
-    fn test_column_name_in_error() {
+    fn test_column_name_in_error() -> Result<()> {
         use crate::{types::Type, Error};
-        let db = Connection::open_in_memory().unwrap();
+        let db = Connection::open_in_memory()?;
         db.execute_batch(
             "BEGIN;
              CREATE TABLE foo(x INTEGER, y TEXT);
              INSERT INTO foo VALUES(4, NULL);
              END;",
-        )
-        .unwrap();
-        let mut stmt = db.prepare("SELECT x as renamed, y FROM foo").unwrap();
-        let mut rows = stmt.query(crate::NO_PARAMS).unwrap();
-        let row = rows.next().unwrap().unwrap();
+        )?;
+        let mut stmt = db.prepare("SELECT x as renamed, y FROM foo")?;
+        let mut rows = stmt.query([])?;
+        let row = rows.next()?.unwrap();
         match row.get::<_, String>(0).unwrap_err() {
             Error::InvalidColumnType(idx, name, ty) => {
                 assert_eq!(idx, 0);
@@ -216,5 +215,27 @@ mod test {
                 panic!("Unexpected error type: {:?}", e);
             }
         }
+        Ok(())
+    }
+
+    
+    
+    
+    
+    
+    
+    #[test]
+    #[cfg(feature = "modern_sqlite")]
+    fn test_column_name_reference() -> Result<()> {
+        let db = Connection::open_in_memory()?;
+        db.execute_batch("CREATE TABLE y (x);")?;
+        let stmt = db.prepare("SELECT x FROM y;")?;
+        let column_name = stmt.column_name(0)?;
+        assert_eq!("x", column_name);
+        db.execute_batch("ALTER TABLE y RENAME COLUMN x TO z;")?;
+        
+        let same_column_name = stmt.column_name(0)?;
+        assert_eq!(same_column_name, column_name);
+        Ok(())
     }
 }

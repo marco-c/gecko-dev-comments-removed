@@ -36,6 +36,7 @@ pub enum Method {
     Connect,
     Options,
     Trace,
+    Patch,
 }
 
 impl Method {
@@ -49,6 +50,7 @@ impl Method {
             Method::Connect => "CONNECT",
             Method::Options => "OPTIONS",
             Method::Trace => "TRACE",
+            Method::Patch => "PATCH",
         }
     }
 }
@@ -87,6 +89,11 @@ impl Request {
     
     pub fn get(url: Url) -> Self {
         Self::new(Method::Get, url)
+    }
+
+    
+    pub fn patch(url: Url) -> Self {
+        Self::new(Method::Patch, url)
     }
 
     

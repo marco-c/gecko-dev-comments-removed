@@ -102,6 +102,7 @@ impl Transaction<'_> {
     
     
     
+    #[inline]
     pub fn new(conn: &mut Connection, behavior: TransactionBehavior) -> Result<Transaction<'_>> {
         Self::new_unchecked(conn, behavior)
     }
@@ -111,6 +112,7 @@ impl Transaction<'_> {
     
     
     
+    #[inline]
     pub fn new_unchecked(
         conn: &Connection,
         behavior: TransactionBehavior,
@@ -153,42 +155,51 @@ impl Transaction<'_> {
     
     
     
+    #[inline]
     pub fn savepoint(&mut self) -> Result<Savepoint<'_>> {
         Savepoint::with_depth(self.conn, 1)
     }
 
     
+    #[inline]
     pub fn savepoint_with_name<T: Into<String>>(&mut self, name: T) -> Result<Savepoint<'_>> {
         Savepoint::with_depth_and_name(self.conn, 1, name)
     }
 
     
     
+    #[inline]
+    #[must_use]
     pub fn drop_behavior(&self) -> DropBehavior {
         self.drop_behavior
     }
 
     
     
+    #[inline]
     pub fn set_drop_behavior(&mut self, drop_behavior: DropBehavior) {
-        self.drop_behavior = drop_behavior
+        self.drop_behavior = drop_behavior;
     }
 
     
+    #[inline]
     pub fn commit(mut self) -> Result<()> {
         self.commit_()
     }
 
+    #[inline]
     fn commit_(&mut self) -> Result<()> {
         self.conn.execute_batch("COMMIT")?;
         Ok(())
     }
 
     
+    #[inline]
     pub fn rollback(mut self) -> Result<()> {
         self.rollback_()
     }
 
+    #[inline]
     fn rollback_(&mut self) -> Result<()> {
         self.conn.execute_batch("ROLLBACK")?;
         Ok(())
@@ -199,10 +210,12 @@ impl Transaction<'_> {
     
     
     
+    #[inline]
     pub fn finish(mut self) -> Result<()> {
         self.finish_()
     }
 
+    #[inline]
     fn finish_(&mut self) -> Result<()> {
         if self.conn.is_autocommit() {
             return Ok(());
@@ -219,6 +232,7 @@ impl Transaction<'_> {
 impl Deref for Transaction<'_> {
     type Target = Connection;
 
+    #[inline]
     fn deref(&self) -> &Connection {
         self.conn
     }
@@ -226,12 +240,14 @@ impl Deref for Transaction<'_> {
 
 #[allow(unused_must_use)]
 impl Drop for Transaction<'_> {
+    #[inline]
     fn drop(&mut self) {
         self.finish_();
     }
 }
 
 impl Savepoint<'_> {
+    #[inline]
     fn with_depth_and_name<T: Into<String>>(
         conn: &Connection,
         depth: u32,
@@ -248,48 +264,58 @@ impl Savepoint<'_> {
             })
     }
 
+    #[inline]
     fn with_depth(conn: &Connection, depth: u32) -> Result<Savepoint<'_>> {
         let name = format!("_rusqlite_sp_{}", depth);
         Savepoint::with_depth_and_name(conn, depth, name)
     }
 
     
+    #[inline]
     pub fn new(conn: &mut Connection) -> Result<Savepoint<'_>> {
         Savepoint::with_depth(conn, 0)
     }
 
     
+    #[inline]
     pub fn with_name<T: Into<String>>(conn: &mut Connection, name: T) -> Result<Savepoint<'_>> {
         Savepoint::with_depth_and_name(conn, 0, name)
     }
 
     
+    #[inline]
     pub fn savepoint(&mut self) -> Result<Savepoint<'_>> {
         Savepoint::with_depth(self.conn, self.depth + 1)
     }
 
     
+    #[inline]
     pub fn savepoint_with_name<T: Into<String>>(&mut self, name: T) -> Result<Savepoint<'_>> {
         Savepoint::with_depth_and_name(self.conn, self.depth + 1, name)
     }
 
     
     
+    #[inline]
+    #[must_use]
     pub fn drop_behavior(&self) -> DropBehavior {
         self.drop_behavior
     }
 
     
     
+    #[inline]
     pub fn set_drop_behavior(&mut self, drop_behavior: DropBehavior) {
-        self.drop_behavior = drop_behavior
+        self.drop_behavior = drop_behavior;
     }
 
     
+    #[inline]
     pub fn commit(mut self) -> Result<()> {
         self.commit_()
     }
 
+    #[inline]
     fn commit_(&mut self) -> Result<()> {
         self.conn.execute_batch(&format!("RELEASE {}", self.name))?;
         self.committed = true;
@@ -302,6 +328,7 @@ impl Savepoint<'_> {
     
     
     
+    #[inline]
     pub fn rollback(&mut self) -> Result<()> {
         self.conn
             .execute_batch(&format!("ROLLBACK TO {}", self.name))
@@ -312,10 +339,12 @@ impl Savepoint<'_> {
     
     
     
+    #[inline]
     pub fn finish(mut self) -> Result<()> {
         self.finish_()
     }
 
+    #[inline]
     fn finish_(&mut self) -> Result<()> {
         if self.committed {
             return Ok(());
@@ -332,6 +361,7 @@ impl Savepoint<'_> {
 impl Deref for Savepoint<'_> {
     type Target = Connection;
 
+    #[inline]
     fn deref(&self) -> &Connection {
         self.conn
     }
@@ -339,6 +369,7 @@ impl Deref for Savepoint<'_> {
 
 #[allow(unused_must_use)]
 impl Drop for Savepoint<'_> {
+    #[inline]
     fn drop(&mut self) {
         self.finish_();
     }
@@ -370,6 +401,8 @@ impl Connection {
     
     
     
+    
+    #[inline]
     pub fn transaction(&mut self) -> Result<Transaction<'_>> {
         Transaction::new(self, TransactionBehavior::Deferred)
     }
@@ -381,6 +414,7 @@ impl Connection {
     
     
     
+    #[inline]
     pub fn transaction_with_behavior(
         &mut self,
         behavior: TransactionBehavior,
@@ -448,6 +482,8 @@ impl Connection {
     
     
     
+    
+    #[inline]
     pub fn savepoint(&mut self) -> Result<Savepoint<'_>> {
         Savepoint::new(self)
     }
@@ -459,6 +495,7 @@ impl Connection {
     
     
     
+    #[inline]
     pub fn savepoint_with_name<T: Into<String>>(&mut self, name: T) -> Result<Savepoint<'_>> {
         Savepoint::with_name(self, name)
     }
@@ -467,35 +504,35 @@ impl Connection {
 #[cfg(test)]
 mod test {
     use super::DropBehavior;
-    use crate::{Connection, Error, NO_PARAMS};
+    use crate::{Connection, Error, Result};
 
-    fn checked_memory_handle() -> Connection {
-        let db = Connection::open_in_memory().unwrap();
-        db.execute_batch("CREATE TABLE foo (x INTEGER)").unwrap();
-        db
+    fn checked_memory_handle() -> Result<Connection> {
+        let db = Connection::open_in_memory()?;
+        db.execute_batch("CREATE TABLE foo (x INTEGER)")?;
+        Ok(db)
     }
 
     #[test]
-    fn test_drop() {
-        let mut db = checked_memory_handle();
+    fn test_drop() -> Result<()> {
+        let mut db = checked_memory_handle()?;
         {
-            let tx = db.transaction().unwrap();
-            tx.execute_batch("INSERT INTO foo VALUES(1)").unwrap();
+            let tx = db.transaction()?;
+            tx.execute_batch("INSERT INTO foo VALUES(1)")?;
             
         }
         {
-            let mut tx = db.transaction().unwrap();
-            tx.execute_batch("INSERT INTO foo VALUES(2)").unwrap();
+            let mut tx = db.transaction()?;
+            tx.execute_batch("INSERT INTO foo VALUES(2)")?;
             tx.set_drop_behavior(DropBehavior::Commit)
         }
         {
-            let tx = db.transaction().unwrap();
+            let tx = db.transaction()?;
             assert_eq!(
                 2i32,
-                tx.query_row::<i32, _, _>("SELECT SUM(x) FROM foo", NO_PARAMS, |r| r.get(0))
-                    .unwrap()
+                tx.query_row::<i32, _, _>("SELECT SUM(x) FROM foo", [], |r| r.get(0))?
             );
         }
+        Ok(())
     }
     fn assert_nested_tx_error(e: crate::Error) {
         if let Error::SqliteFailure(e, Some(m)) = &e {
@@ -509,165 +546,168 @@ mod test {
     }
 
     #[test]
-    fn test_unchecked_nesting() {
-        let db = checked_memory_handle();
+    fn test_unchecked_nesting() -> Result<()> {
+        let db = checked_memory_handle()?;
 
         {
-            let tx = db.unchecked_transaction().unwrap();
+            let tx = db.unchecked_transaction()?;
             let e = tx.unchecked_transaction().unwrap_err();
             assert_nested_tx_error(e);
             
         }
         {
-            let tx = db.unchecked_transaction().unwrap();
-            tx.execute_batch("INSERT INTO foo VALUES(1)").unwrap();
+            let tx = db.unchecked_transaction()?;
+            tx.execute_batch("INSERT INTO foo VALUES(1)")?;
             
             let e = tx.unchecked_transaction().unwrap_err();
             assert_nested_tx_error(e);
 
-            tx.execute_batch("INSERT INTO foo VALUES(1)").unwrap();
-            tx.commit().unwrap();
+            tx.execute_batch("INSERT INTO foo VALUES(1)")?;
+            tx.commit()?;
         }
 
         assert_eq!(
             2i32,
-            db.query_row::<i32, _, _>("SELECT SUM(x) FROM foo", NO_PARAMS, |r| r.get(0))
-                .unwrap()
+            db.query_row::<i32, _, _>("SELECT SUM(x) FROM foo", [], |r| r.get(0))?
         );
+        Ok(())
     }
 
     #[test]
-    fn test_explicit_rollback_commit() {
-        let mut db = checked_memory_handle();
+    fn test_explicit_rollback_commit() -> Result<()> {
+        let mut db = checked_memory_handle()?;
         {
-            let mut tx = db.transaction().unwrap();
+            let mut tx = db.transaction()?;
             {
-                let mut sp = tx.savepoint().unwrap();
-                sp.execute_batch("INSERT INTO foo VALUES(1)").unwrap();
-                sp.rollback().unwrap();
-                sp.execute_batch("INSERT INTO foo VALUES(2)").unwrap();
-                sp.commit().unwrap();
+                let mut sp = tx.savepoint()?;
+                sp.execute_batch("INSERT INTO foo VALUES(1)")?;
+                sp.rollback()?;
+                sp.execute_batch("INSERT INTO foo VALUES(2)")?;
+                sp.commit()?;
             }
-            tx.commit().unwrap();
+            tx.commit()?;
         }
         {
-            let tx = db.transaction().unwrap();
-            tx.execute_batch("INSERT INTO foo VALUES(4)").unwrap();
-            tx.commit().unwrap();
+            let tx = db.transaction()?;
+            tx.execute_batch("INSERT INTO foo VALUES(4)")?;
+            tx.commit()?;
         }
         {
-            let tx = db.transaction().unwrap();
+            let tx = db.transaction()?;
             assert_eq!(
                 6i32,
-                tx.query_row::<i32, _, _>("SELECT SUM(x) FROM foo", NO_PARAMS, |r| r.get(0))
-                    .unwrap()
+                tx.query_row::<i32, _, _>("SELECT SUM(x) FROM foo", [], |r| r.get(0))?
             );
         }
+        Ok(())
     }
 
     #[test]
-    fn test_savepoint() {
-        let mut db = checked_memory_handle();
+    fn test_savepoint() -> Result<()> {
+        let mut db = checked_memory_handle()?;
         {
-            let mut tx = db.transaction().unwrap();
-            tx.execute_batch("INSERT INTO foo VALUES(1)").unwrap();
-            assert_current_sum(1, &tx);
+            let mut tx = db.transaction()?;
+            tx.execute_batch("INSERT INTO foo VALUES(1)")?;
+            assert_current_sum(1, &tx)?;
             tx.set_drop_behavior(DropBehavior::Commit);
             {
-                let mut sp1 = tx.savepoint().unwrap();
-                sp1.execute_batch("INSERT INTO foo VALUES(2)").unwrap();
-                assert_current_sum(3, &sp1);
+                let mut sp1 = tx.savepoint()?;
+                sp1.execute_batch("INSERT INTO foo VALUES(2)")?;
+                assert_current_sum(3, &sp1)?;
                 
                 {
-                    let mut sp2 = sp1.savepoint().unwrap();
-                    sp2.execute_batch("INSERT INTO foo VALUES(4)").unwrap();
-                    assert_current_sum(7, &sp2);
+                    let mut sp2 = sp1.savepoint()?;
+                    sp2.execute_batch("INSERT INTO foo VALUES(4)")?;
+                    assert_current_sum(7, &sp2)?;
                     
                     {
-                        let sp3 = sp2.savepoint().unwrap();
-                        sp3.execute_batch("INSERT INTO foo VALUES(8)").unwrap();
-                        assert_current_sum(15, &sp3);
-                        sp3.commit().unwrap();
+                        let sp3 = sp2.savepoint()?;
+                        sp3.execute_batch("INSERT INTO foo VALUES(8)")?;
+                        assert_current_sum(15, &sp3)?;
+                        sp3.commit()?;
                         
                     }
-                    assert_current_sum(15, &sp2);
+                    assert_current_sum(15, &sp2)?;
                 }
-                assert_current_sum(3, &sp1);
+                assert_current_sum(3, &sp1)?;
             }
-            assert_current_sum(1, &tx);
+            assert_current_sum(1, &tx)?;
         }
-        assert_current_sum(1, &db);
+        assert_current_sum(1, &db)?;
+        Ok(())
     }
 
     #[test]
-    fn test_ignore_drop_behavior() {
-        let mut db = checked_memory_handle();
+    fn test_ignore_drop_behavior() -> Result<()> {
+        let mut db = checked_memory_handle()?;
 
-        let mut tx = db.transaction().unwrap();
+        let mut tx = db.transaction()?;
         {
-            let mut sp1 = tx.savepoint().unwrap();
-            insert(1, &sp1);
-            sp1.rollback().unwrap();
-            insert(2, &sp1);
+            let mut sp1 = tx.savepoint()?;
+            insert(1, &sp1)?;
+            sp1.rollback()?;
+            insert(2, &sp1)?;
             {
-                let mut sp2 = sp1.savepoint().unwrap();
+                let mut sp2 = sp1.savepoint()?;
                 sp2.set_drop_behavior(DropBehavior::Ignore);
-                insert(4, &sp2);
+                insert(4, &sp2)?;
             }
-            assert_current_sum(6, &sp1);
-            sp1.commit().unwrap();
+            assert_current_sum(6, &sp1)?;
+            sp1.commit()?;
         }
-        assert_current_sum(6, &tx);
+        assert_current_sum(6, &tx)?;
+        Ok(())
     }
 
     #[test]
-    fn test_savepoint_names() {
-        let mut db = checked_memory_handle();
+    fn test_savepoint_names() -> Result<()> {
+        let mut db = checked_memory_handle()?;
 
         {
-            let mut sp1 = db.savepoint_with_name("my_sp").unwrap();
-            insert(1, &sp1);
-            assert_current_sum(1, &sp1);
+            let mut sp1 = db.savepoint_with_name("my_sp")?;
+            insert(1, &sp1)?;
+            assert_current_sum(1, &sp1)?;
             {
-                let mut sp2 = sp1.savepoint_with_name("my_sp").unwrap();
+                let mut sp2 = sp1.savepoint_with_name("my_sp")?;
                 sp2.set_drop_behavior(DropBehavior::Commit);
-                insert(2, &sp2);
-                assert_current_sum(3, &sp2);
-                sp2.rollback().unwrap();
-                assert_current_sum(1, &sp2);
-                insert(4, &sp2);
+                insert(2, &sp2)?;
+                assert_current_sum(3, &sp2)?;
+                sp2.rollback()?;
+                assert_current_sum(1, &sp2)?;
+                insert(4, &sp2)?;
             }
-            assert_current_sum(5, &sp1);
-            sp1.rollback().unwrap();
+            assert_current_sum(5, &sp1)?;
+            sp1.rollback()?;
             {
-                let mut sp2 = sp1.savepoint_with_name("my_sp").unwrap();
+                let mut sp2 = sp1.savepoint_with_name("my_sp")?;
                 sp2.set_drop_behavior(DropBehavior::Ignore);
-                insert(8, &sp2);
+                insert(8, &sp2)?;
             }
-            assert_current_sum(8, &sp1);
-            sp1.commit().unwrap();
+            assert_current_sum(8, &sp1)?;
+            sp1.commit()?;
         }
-        assert_current_sum(8, &db);
+        assert_current_sum(8, &db)?;
+        Ok(())
     }
 
     #[test]
-    fn test_rc() {
+    fn test_rc() -> Result<()> {
         use std::rc::Rc;
-        let mut conn = Connection::open_in_memory().unwrap();
-        let rc_txn = Rc::new(conn.transaction().unwrap());
+        let mut conn = Connection::open_in_memory()?;
+        let rc_txn = Rc::new(conn.transaction()?);
 
         
         Rc::try_unwrap(rc_txn).unwrap();
+        Ok(())
     }
 
-    fn insert(x: i32, conn: &Connection) {
-        conn.execute("INSERT INTO foo VALUES(?)", &[x]).unwrap();
+    fn insert(x: i32, conn: &Connection) -> Result<usize> {
+        conn.execute("INSERT INTO foo VALUES(?)", [x])
     }
 
-    fn assert_current_sum(x: i32, conn: &Connection) {
-        let i = conn
-            .query_row::<i32, _, _>("SELECT SUM(x) FROM foo", NO_PARAMS, |r| r.get(0))
-            .unwrap();
+    fn assert_current_sum(x: i32, conn: &Connection) -> Result<()> {
+        let i = conn.query_row::<i32, _, _>("SELECT SUM(x) FROM foo", [], |r| r.get(0))?;
         assert_eq!(x, i);
+        Ok(())
     }
 }

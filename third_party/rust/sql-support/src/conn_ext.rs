@@ -5,7 +5,7 @@
 use rusqlite::{
     self,
     types::{FromSql, ToSql},
-    Connection, Result as SqlResult, Row, Savepoint, Transaction, TransactionBehavior, NO_PARAMS,
+    Connection, Params, Result as SqlResult, Row, Savepoint, Transaction, TransactionBehavior,
 };
 use std::iter::FromIterator;
 use std::ops::Deref;
@@ -46,7 +46,7 @@ pub trait ConnExt {
     fn execute_all(&self, stmts: &[&str]) -> SqlResult<()> {
         let conn = self.conn();
         for sql in stmts {
-            let r = conn.execute(sql, NO_PARAMS);
+            let r = conn.execute(sql, []);
             match r {
                 Ok(_) => {}
                 
@@ -60,50 +60,34 @@ pub trait ConnExt {
 
     
     
-    fn execute_cached<P>(&self, sql: &str, params: P) -> SqlResult<usize>
-    where
-        P: IntoIterator,
-        P::Item: ToSql,
-    {
+    fn execute_cached<P: Params>(&self, sql: &str, params: P) -> SqlResult<usize> {
         let mut stmt = self.conn().prepare_cached(sql)?;
         stmt.execute(params)
     }
 
     
-    
-    fn execute_named_cached(&self, sql: &str, params: &[(&str, &dyn ToSql)]) -> SqlResult<usize> {
-        crate::maybe_log_plan(self.conn(), sql, params);
-        let mut stmt = self.conn().prepare_cached(sql)?;
-        stmt.execute_named(params)
-    }
-
-    
     fn query_one<T: FromSql>(&self, sql: &str) -> SqlResult<T> {
-        crate::maybe_log_plan(self.conn(), sql, &[]);
-        let res: T = self
-            .conn()
-            .query_row_and_then(sql, NO_PARAMS, |row| row.get(0))?;
+        let res: T = self.conn().query_row_and_then(sql, [], |row| row.get(0))?;
         Ok(res)
     }
 
     
     
-    fn try_query_one<T: FromSql>(
+    fn try_query_one<T: FromSql, P: Params>(
         &self,
         sql: &str,
-        params: &[(&str, &dyn ToSql)],
+        params: P,
         cache: bool,
     ) -> SqlResult<Option<T>>
     where
         Self: Sized,
     {
-        crate::maybe_log_plan(self.conn(), sql, params);
         use rusqlite::OptionalExtension;
         
         
         let res: Option<Option<T>> = self
             .conn()
-            .query_row_and_then_named(sql, params, |row| row.get(0), cache)
+            .query_row_and_then_cachable(sql, params, |row| row.get(0), cache)
             .optional()?;
         
         Ok(res.unwrap_or_default())
@@ -111,19 +95,19 @@ pub trait ConnExt {
 
     
     
-    fn query_row_and_then_named<T, E, F>(
+    fn query_row_and_then_cachable<T, E, P, F>(
         &self,
         sql: &str,
-        params: &[(&str, &dyn ToSql)],
+        params: P,
         mapper: F,
         cache: bool,
     ) -> Result<T, E>
     where
         Self: Sized,
+        P: Params,
         E: From<rusqlite::Error>,
         F: FnOnce(&Row<'_>) -> Result<T, E>,
     {
-        crate::maybe_log_plan(self.conn(), sql, params);
         Ok(self
             .try_query_row(sql, params, mapper, cache)?
             .ok_or(rusqlite::Error::QueryReturnedNoRows)?)
@@ -132,36 +116,31 @@ pub trait ConnExt {
     
     
     
-    fn query_rows_and_then_named<T, E, F>(
-        &self,
-        sql: &str,
-        params: &[(&str, &dyn ToSql)],
-        mapper: F,
-    ) -> Result<Vec<T>, E>
+    fn query_rows_and_then<T, E, P, F>(&self, sql: &str, params: P, mapper: F) -> Result<Vec<T>, E>
     where
         Self: Sized,
+        P: Params,
         E: From<rusqlite::Error>,
         F: FnMut(&Row<'_>) -> Result<T, E>,
     {
-        crate::maybe_log_plan(self.conn(), sql, params);
-        query_rows_and_then_named(self.conn(), sql, params, mapper, false)
+        query_rows_and_then_cachable(self.conn(), sql, params, mapper, false)
     }
 
     
     
-    fn query_rows_and_then_named_cached<T, E, F>(
+    fn query_rows_and_then_cached<T, E, P, F>(
         &self,
         sql: &str,
-        params: &[(&str, &dyn ToSql)],
+        params: P,
         mapper: F,
     ) -> Result<Vec<T>, E>
     where
         Self: Sized,
+        P: Params,
         E: From<rusqlite::Error>,
         F: FnMut(&Row<'_>) -> Result<T, E>,
     {
-        crate::maybe_log_plan(self.conn(), sql, params);
-        query_rows_and_then_named(self.conn(), sql, params, mapper, true)
+        query_rows_and_then_cachable(self.conn(), sql, params, mapper, true)
     }
 
     
@@ -180,60 +159,60 @@ pub trait ConnExt {
     
     
     
-    fn query_rows_into<Coll, T, E, F>(
-        &self,
-        sql: &str,
-        params: &[(&str, &dyn ToSql)],
-        mapper: F,
-    ) -> Result<Coll, E>
+    fn query_rows_into<Coll, T, E, P, F>(&self, sql: &str, params: P, mapper: F) -> Result<Coll, E>
     where
         Self: Sized,
         E: From<rusqlite::Error>,
         F: FnMut(&Row<'_>) -> Result<T, E>,
         Coll: FromIterator<T>,
+        P: Params,
     {
-        crate::maybe_log_plan(self.conn(), sql, params);
-        query_rows_and_then_named(self.conn(), sql, params, mapper, false)
+        query_rows_and_then_cachable(self.conn(), sql, params, mapper, false)
     }
 
     
-    fn query_rows_into_cached<Coll, T, E, F>(
+    fn query_rows_into_cached<Coll, T, E, P, F>(
         &self,
         sql: &str,
-        params: &[(&str, &dyn ToSql)],
+        params: P,
         mapper: F,
     ) -> Result<Coll, E>
     where
         Self: Sized,
+        P: Params,
         E: From<rusqlite::Error>,
         F: FnMut(&Row<'_>) -> Result<T, E>,
         Coll: FromIterator<T>,
     {
-        crate::maybe_log_plan(self.conn(), sql, params);
-        query_rows_and_then_named(self.conn(), sql, params, mapper, true)
+        query_rows_and_then_cachable(self.conn(), sql, params, mapper, true)
     }
 
     
     
-    fn try_query_row<T, E, F>(
+    
+    fn try_query_row<T, E, P, F>(
         &self,
         sql: &str,
-        params: &[(&str, &dyn ToSql)],
+        params: P,
         mapper: F,
         cache: bool,
     ) -> Result<Option<T>, E>
     where
         Self: Sized,
+        P: Params,
         E: From<rusqlite::Error>,
         F: FnOnce(&Row<'_>) -> Result<T, E>,
     {
-        crate::maybe_log_plan(self.conn(), sql, params);
         let conn = self.conn();
         let mut stmt = MaybeCached::prepare(conn, sql, cache)?;
-        let mut rows = stmt.query_named(params)?;
+        let mut rows = stmt.query(params)?;
         rows.next()?.map(mapper).transpose()
     }
 
+    
+    
+    
+    
     fn unchecked_transaction(&self) -> SqlResult<UncheckedTransaction<'_>> {
         UncheckedTransaction::new(self.conn(), TransactionBehavior::Deferred)
     }
@@ -266,6 +245,34 @@ impl<'conn> ConnExt for Savepoint<'conn> {
         &*self
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -362,10 +369,10 @@ impl<'conn> ConnExt for UncheckedTransaction<'conn> {
     }
 }
 
-fn query_rows_and_then_named<Coll, T, E, F>(
+fn query_rows_and_then_cachable<Coll, T, E, P, F>(
     conn: &Connection,
     sql: &str,
-    params: &[(&str, &dyn ToSql)],
+    params: P,
     mapper: F,
     cache: bool,
 ) -> Result<Coll, E>
@@ -373,8 +380,9 @@ where
     E: From<rusqlite::Error>,
     F: FnMut(&Row<'_>) -> Result<T, E>,
     Coll: FromIterator<T>,
+    P: Params,
 {
     let mut stmt = conn.prepare_maybe_cached(sql, cache)?;
-    let iter = stmt.query_and_then_named(params, mapper)?;
+    let iter = stmt.query_and_then(params, mapper)?;
     iter.collect::<Result<Coll, E>>()
 }
