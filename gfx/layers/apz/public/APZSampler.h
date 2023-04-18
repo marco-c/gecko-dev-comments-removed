@@ -82,8 +82,6 @@ class APZSampler {
       const LayersId& aLayersId,
       const ScrollableLayerGuid::ViewID& aScrollId) const;
 
-  ScreenMargin GetGeckoFixedLayerMargins() const;
-
   
 
 
