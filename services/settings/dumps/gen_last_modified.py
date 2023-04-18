@@ -61,12 +61,23 @@ def main(output):
     
     
     
-    
     if buildconfig.substs["MOZ_BUILD_APP"] != "mobile/android":
         
         remotesettings_dumps["blocklists/addons-bloomfilters"] = mozpath.join(
             buildconfig.topsrcdir,
             "services/settings/dumps/blocklists/addons-bloomfilters.json",
+        )
+    if buildconfig.substs["MOZ_BUILD_APP"] == "browser":
+        
+        remotesettings_dumps["main/search-config"] = mozpath.join(
+            buildconfig.topsrcdir,
+            "services/settings/dumps/main/search-config.json",
+        )
+    if buildconfig.substs["MOZ_BUILD_APP"] == "comm/mail":
+        
+        remotesettings_dumps["main/search-config"] = mozpath.join(
+            buildconfig.topsrcdir,
+            "comm/mail/app/settings/dumps/thunderbird/search-config.json",
         )
 
     output_dict = {}
