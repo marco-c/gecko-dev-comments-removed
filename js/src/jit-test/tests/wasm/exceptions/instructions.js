@@ -1002,7 +1002,10 @@ assertErrorMessage(
           (if (param i32 i32) (result i32)
             (i32.eqz (local.get $denominator))
             (then
-              (throw $divexn))
+              (try (param i32 i32)
+                (do (throw $divexn))
+                (delegate 0))
+              (i32.const 9))
             (else
               i32.div_u)))
        (func $safediv (export "safediv") ${divFunctypeInline}
@@ -1234,12 +1237,9 @@ assertEq(
 
 
 
-
-if (wasmCompileMode() === "baseline") {
-  
-  assertEq(
-    wasmEvalText(
-      `(module
+assertEq(
+  wasmEvalText(
+    `(module
        (tag $exn (param))
        (func (export "f") (result i32)
          i32.const 1
@@ -1250,6 +1250,7 @@ if (wasmCompileMode() === "baseline") {
   ).exports.f(),
   1
 );
+
 
 assertEq(
   wasmEvalText(
@@ -1270,6 +1271,7 @@ assertEq(
   1
 );
 
+
 assertEq(
   wasmEvalText(
     `(module
@@ -1279,8 +1281,8 @@ assertEq(
            i32.const 1
            br 0
          delegate 0))`
-  ).exports.f(),
-  1
+    ).exports.f(),
+    1
 );
 
 assertEq(
@@ -1292,13 +1294,14 @@ assertEq(
            i32.const 1
            return
          delegate 0))`
-  ).exports.f(),
-  1
-);
+    ).exports.f(),
+    1
+  );
+
 
 assertEq(
-  wasmEvalText(
-    `(module
+    wasmEvalText(
+      `(module
        (type (func (param i32)))
        (tag $exn (type 0))
        (func (export "f") (result i32)
@@ -1394,6 +1397,8 @@ assertEq(
 );
 
 
+
+
 assertEq(
   wasmEvalText(
     `(module
@@ -1405,6 +1410,7 @@ assertEq(
   ).exports.f(),
   1
 );
+
 
 assertEq(
   wasmEvalText(
@@ -1424,6 +1430,7 @@ assertEq(
   ).exports.f(),
   1
 );
+
 
 assertEq(
   wasmEvalText(
@@ -1445,6 +1452,7 @@ assertEq(
   ).exports.f(),
   1
 );
+
 
 assertEq(
   wasmEvalText(
@@ -1470,4 +1478,51 @@ assertEq(
   ).exports.f(),
   42
 );
-}
+
+
+assertEq(
+  wasmEvalText(
+    `(module
+       (tag $exn)
+       ;; For the purpose of this test, the params below should be increasing.
+       (func (export "f") (param $depth_to_throw_exn i32)
+                          (param $maximum_loop_iterations i32)
+                          (result i32)
+                          (local $loop_countdown i32)
+                          ;; Counts how many times the loop was started.
+                          (local $loop_verifier i32)
+         ;; The loop is counting down.
+         (local.get $maximum_loop_iterations)
+         (local.set $loop_countdown)
+         (try $catch_exn (result i32)
+           (do
+             (try
+               (do
+                 (loop $loop
+                   ;; Counts how many times the loop was started.
+                   (local.set $loop_verifier
+                              (i32.add (i32.const 1)
+                                       (local.get $loop_verifier)))
+                   (if (i32.eqz (local.get $loop_countdown))
+                     (then (return (i32.const 440)))
+                     (else
+                       (try $rethrow_label
+                         (do
+                           (if (i32.eq (local.get $depth_to_throw_exn)
+                                       (local.get $loop_countdown))
+                               (then (throw $exn))
+                               (else
+                                 (local.set $loop_countdown
+                                            (i32.sub (local.get $loop_countdown)
+                                                     (i32.const 1))))))
+                         (catch $exn (try
+                                       (do (rethrow $rethrow_label))
+                                       (delegate $catch_exn))))))
+                   (br $loop)))
+               (catch_all unreachable))
+             (i32.const 2000))
+           (catch_all (i32.const 10000)))
+         (i32.add (local.get $loop_verifier))))`
+  ).exports.f(3, 5),
+  10003
+);

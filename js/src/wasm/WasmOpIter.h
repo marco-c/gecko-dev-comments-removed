@@ -723,14 +723,21 @@ class MOZ_STACK_CLASS OpIter : private Policy {
 
   
   
-  bool controlFindInnermost(LabelKind kind, uint32_t* relativeDepth) {
-    for (int32_t i = controlStack_.length() - 1; i >= 0; i--) {
+  
+  bool controlFindInnermostFrom(LabelKind kind, uint32_t fromRelativeDepth,
+                                uint32_t* foundRelativeDepth) {
+    int32_t fromAbsoluteDepth = controlStack_.length() - fromRelativeDepth - 1;
+    for (int32_t i = fromAbsoluteDepth; i >= 0; i--) {
       if (controlStack_[i].kind() == kind) {
-        *relativeDepth = controlStack_.length() - 1 - i;
+        *foundRelativeDepth = controlStack_.length() - 1 - i;
         return true;
       }
     }
     return false;
+  }
+
+  bool controlFindInnermost(LabelKind kind, uint32_t* foundRelativeDepth) {
+    return controlFindInnermostFrom(kind, 0, foundRelativeDepth);
   }
 };
 
