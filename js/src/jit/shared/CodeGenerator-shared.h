@@ -137,18 +137,18 @@ class CodeGeneratorShared : public LElementVisitor {
   
   
   
-  int32_t frameDepth_;
+  uint32_t frameDepth_;
 
   
-  inline int32_t ArgToStackOffset(int32_t slot) const;
+  inline uint32_t ArgToStackOffset(uint32_t slot) const;
 
-  inline int32_t SlotToStackOffset(int32_t slot) const;
+  inline uint32_t SlotToStackOffset(uint32_t slot) const;
 
   
-  inline int32_t StackOffsetOfPassedArg(int32_t slot) const;
+  inline uint32_t StackOffsetOfPassedArg(uint32_t slot) const;
 
-  inline int32_t ToStackOffset(LAllocation a) const;
-  inline int32_t ToStackOffset(const LAllocation* a) const;
+  inline uint32_t ToStackOffset(LAllocation a) const;
+  inline uint32_t ToStackOffset(const LAllocation* a) const;
 
   inline Address ToAddress(const LAllocation& a) const;
   inline Address ToAddress(const LAllocation* a) const;
@@ -159,8 +159,8 @@ class CodeGeneratorShared : public LElementVisitor {
 
   
   
-  inline int32_t ToFramePointerOffset(LAllocation a) const;
-  inline int32_t ToFramePointerOffset(const LAllocation* a) const;
+  inline uint32_t ToFramePointerOffset(LAllocation a) const;
+  inline uint32_t ToFramePointerOffset(const LAllocation* a) const;
 
   uint32_t frameSize() const { return frameDepth_; }
 
