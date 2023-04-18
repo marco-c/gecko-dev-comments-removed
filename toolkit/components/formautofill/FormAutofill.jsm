@@ -16,20 +16,27 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 });
 
 const ADDRESSES_FIRST_TIME_USE_PREF = "extensions.formautofill.firstTimeUse";
+const AUTOFILL_ADDRESSES_AVAILABLE_PREF =
+  "extensions.formautofill.addresses.available";
 const AUTOFILL_CREDITCARDS_AVAILABLE_PREF =
   "extensions.formautofill.creditCards.available";
+const BROWSER_SEARCH_REGION_PREF = "browser.search.region";
 const CREDITCARDS_USED_STATUS_PREF = "extensions.formautofill.creditCards.used";
+const CREDITCARDS_AUTOFILL_SUPPORTED_COUNTRIES_PREF =
+  "extensions.formautofill.creditCards.supportedCountries";
 const ENABLED_AUTOFILL_ADDRESSES_PREF =
   "extensions.formautofill.addresses.enabled";
 const ENABLED_AUTOFILL_ADDRESSES_CAPTURE_PREF =
   "extensions.formautofill.addresses.capture.enabled";
+const ENABLED_AUTOFILL_ADDRESSES_SUPPORTED_COUNTRIES_PREF =
+  "extensions.formautofill.addresses.supportedCountries";
 const ENABLED_AUTOFILL_CREDITCARDS_PREF =
   "extensions.formautofill.creditCards.enabled";
 const ENABLED_AUTOFILL_CREDITCARDS_REAUTH_PREF =
   "extensions.formautofill.reauth.enabled";
 const AUTOFILL_CREDITCARDS_HIDE_UI_PREF =
   "extensions.formautofill.creditCards.hideui";
-const SUPPORTED_COUNTRIES_PREF = "extensions.formautofill.supportedCountries";
+const FORM_AUTOFILL_SUPPORT_RTL_PREF = "extensions.formautofill.supportRTL";
 
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
@@ -66,16 +73,75 @@ var FormAutofill = {
   get DEFAULT_REGION() {
     return Region.home || "US";
   },
+  
+
+
+
+
+
+
+
+
+
+  _isSupportedRegion(available, supportedCountries) {
+    if (available == "on") {
+      return true;
+    } else if (available == "detect") {
+      if (!FormAutofill.supportRTL && Services.locale.isAppLocaleRTL) {
+        return false;
+      }
+      let region = Services.prefs.getCharPref(BROWSER_SEARCH_REGION_PREF, "");
+
+      return supportedCountries.includes(region);
+    }
+    return false;
+  },
+  isAutofillAddressesAvailableInCountry(country) {
+    return FormAutofill._addressAutofillSupportedCountries.includes(country);
+  },
   get isAutofillEnabled() {
-    return (
-      FormAutofill.isAutofillAddressesEnabled ||
-      this.isAutofillCreditCardsEnabled
+    return this.isAutofillAddressesEnabled || this.isAutofillCreditCardsEnabled;
+  },
+  
+
+
+
+
+  get isAutofillCreditCardsAvailable() {
+    return this._isSupportedRegion(
+      FormAutofill._isAutofillCreditCardsAvailable,
+      FormAutofill._creditCardAutofillSupportedCountries
     );
   },
+  
+
+
+
+
+  get isAutofillAddressesAvailable() {
+    return this._isSupportedRegion(
+      FormAutofill._isAutofillAddressesAvailable,
+      FormAutofill._addressAutofillSupportedCountries
+    );
+  },
+  
+
+
+
   get isAutofillCreditCardsEnabled() {
     return (
-      FormAutofill.isAutofillCreditCardsAvailable &&
+      this.isAutofillCreditCardsAvailable &&
       FormAutofill._isAutofillCreditCardsEnabled
+    );
+  },
+  
+
+
+
+  get isAutofillAddressesEnabled() {
+    return (
+      this.isAutofillAddressesAvailable &&
+      FormAutofill._isAutofillAddressesEnabled
     );
   },
 
@@ -97,7 +163,12 @@ var FormAutofill = {
 
 XPCOMUtils.defineLazyPreferenceGetter(
   FormAutofill,
-  "isAutofillAddressesEnabled",
+  "_isAutofillAddressesAvailable",
+  AUTOFILL_ADDRESSES_AVAILABLE_PREF
+);
+XPCOMUtils.defineLazyPreferenceGetter(
+  FormAutofill,
+  "_isAutofillAddressesEnabled",
   ENABLED_AUTOFILL_ADDRESSES_PREF
 );
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -107,7 +178,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
 );
 XPCOMUtils.defineLazyPreferenceGetter(
   FormAutofill,
-  "isAutofillCreditCardsAvailable",
+  "_isAutofillCreditCardsAvailable",
   AUTOFILL_CREDITCARDS_AVAILABLE_PREF
 );
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -132,11 +203,23 @@ XPCOMUtils.defineLazyPreferenceGetter(
 );
 XPCOMUtils.defineLazyPreferenceGetter(
   FormAutofill,
-  "supportedCountries",
-  SUPPORTED_COUNTRIES_PREF,
+  "_addressAutofillSupportedCountries",
+  ENABLED_AUTOFILL_ADDRESSES_SUPPORTED_COUNTRIES_PREF,
+  null,
+  val => val.split(",")
+);
+XPCOMUtils.defineLazyPreferenceGetter(
+  FormAutofill,
+  "_creditCardAutofillSupportedCountries",
+  CREDITCARDS_AUTOFILL_SUPPORTED_COUNTRIES_PREF,
   null,
   null,
   val => val.split(",")
+);
+XPCOMUtils.defineLazyPreferenceGetter(
+  FormAutofill,
+  "supportRTL",
+  FORM_AUTOFILL_SUPPORT_RTL_PREF
 );
 
 
