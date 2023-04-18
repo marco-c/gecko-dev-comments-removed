@@ -1399,9 +1399,11 @@ class CGHeaders(CGWrapper):
                     bindingHeaders.add("mozilla/dom/BindingCallContext.h")
                 if unrolled.nullable():
                     headerSet.add("mozilla/dom/Nullable.h")
-                elif unrolled.isSequence():
+                elif unrolled.isSequence() or unrolled.isObservableArray():
                     bindingHeaders.add("js/Array.h")
                     bindingHeaders.add("js/ForOfIterator.h")
+                    if unrolled.isObservableArray():
+                        bindingHeaders.add("mozilla/dom/ObservableArrayProxyHandler.h")
                 else:
                     break
                 unrolled = unrolled.inner
@@ -1468,8 +1470,6 @@ class CGHeaders(CGWrapper):
                 
                 
                 addHeadersForType((t.inner, dictionary))
-            elif unrolled.isObservableArray():
-                bindingHeaders.add("mozilla/dom/ObservableArrayProxyHandler.h")
 
         for t in getAllTypes(
             descriptors + callbackDescriptors, dictionaries, callbacks
