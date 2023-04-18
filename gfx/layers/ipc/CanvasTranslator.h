@@ -58,9 +58,9 @@ class CanvasTranslator final : public gfx::InlineTranslator,
 
   ipc::IPCResult RecvInitTranslator(
       const TextureType& aTextureType,
-      const ipc::SharedMemoryBasic::Handle& aReadHandle,
-      const CrossProcessSemaphoreHandle& aReaderSem,
-      const CrossProcessSemaphoreHandle& aWriterSem);
+      ipc::SharedMemoryBasic::Handle&& aReadHandle,
+      CrossProcessSemaphoreHandle&& aReaderSem,
+      CrossProcessSemaphoreHandle&& aWriterSem);
 
   
 

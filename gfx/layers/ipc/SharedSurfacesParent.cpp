@@ -199,7 +199,7 @@ void SharedSurfacesParent::DestroyProcess(base::ProcessId aPid) {
 
 
 void SharedSurfacesParent::Add(const wr::ExternalImageId& aId,
-                               const SurfaceDescriptorShared& aDesc,
+                               SurfaceDescriptorShared&& aDesc,
                                base::ProcessId aPid) {
   MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
   MOZ_ASSERT(aPid != base::GetCurrentProcId());
@@ -214,8 +214,8 @@ void SharedSurfacesParent::Add(const wr::ExternalImageId& aId,
   
   
   
-  surface->Init(aDesc.size(), aDesc.stride(), aDesc.format(), aDesc.handle(),
-                aPid);
+  surface->Init(aDesc.size(), aDesc.stride(), aDesc.format(),
+                std::move(aDesc.handle()), aPid);
 
   StaticMutexAutoLock lock(sMutex);
   if (!sInstance) {

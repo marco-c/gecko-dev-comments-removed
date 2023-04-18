@@ -109,8 +109,10 @@ SharedPreferenceDeserializer::~SharedPreferenceDeserializer() {
 bool SharedPreferenceDeserializer::DeserializeFromSharedMemory(
     uint64_t aPrefsHandle, uint64_t aPrefMapHandle, uint64_t aPrefsLen,
     uint64_t aPrefMapSize) {
+  Maybe<base::SharedMemoryHandle> prefsHandle;
+
 #ifdef XP_WIN
-  mPrefsHandle = Some(HANDLE((uintptr_t)(aPrefsHandle)));
+  prefsHandle = Some(HANDLE((uintptr_t)(aPrefsHandle)));
   if (!aPrefsHandle) {
     return false;
   }
@@ -137,17 +139,16 @@ bool SharedPreferenceDeserializer::DeserializeFromSharedMemory(
 #ifdef ANDROID
   
   MOZ_RELEASE_ASSERT(gPrefsFd != -1);
-  mPrefsHandle = Some(base::FileDescriptor(gPrefsFd,  true));
+  prefsHandle = Some(UniqueFileHandle(gPrefsFd));
 
   mPrefMapHandle.emplace(UniqueFileHandle(gPrefMapFd));
 #elif XP_UNIX
-  mPrefsHandle = Some(base::FileDescriptor(kPrefsFileDescriptor,
-                                            true));
+  prefsHandle = Some(UniqueFileHandle(kPrefsFileDescriptor));
 
   mPrefMapHandle.emplace(UniqueFileHandle(kPrefMapFileDescriptor));
 #endif
 
-  if (mPrefsHandle.isNothing() || mPrefsLen.isNothing() ||
+  if (prefsHandle.isNothing() || mPrefsLen.isNothing() ||
       mPrefMapHandle.isNothing() || mPrefMapSize.isNothing()) {
     return false;
   }
@@ -157,7 +158,7 @@ bool SharedPreferenceDeserializer::DeserializeFromSharedMemory(
   Preferences::InitSnapshot(mPrefMapHandle.ref(), *mPrefMapSize);
 
   
-  if (!mShmem.SetHandle(*mPrefsHandle,  true)) {
+  if (!mShmem.SetHandle(std::move(*prefsHandle),  true)) {
     NS_ERROR("failed to open shared memory in the child");
     return false;
   }
@@ -169,13 +170,6 @@ bool SharedPreferenceDeserializer::DeserializeFromSharedMemory(
                                       *mPrefsLen);
 
   return true;
-}
-
-const base::SharedMemoryHandle& SharedPreferenceDeserializer::GetPrefsHandle()
-    const {
-  MOZ_ASSERT(mPrefsHandle.isSome());
-
-  return mPrefsHandle.ref();
 }
 
 const FileDescriptor& SharedPreferenceDeserializer::GetPrefMapHandle() const {
@@ -254,14 +248,13 @@ bool ImportSharedJSInit(uint64_t aJsInitHandle, uint64_t aJsInitLen) {
   }
 
 #ifdef XP_UNIX
-  auto handle = base::FileDescriptor(kJSInitFileDescriptor,
-                                      true);
+  auto handle = UniqueFileHandle(kJSInitFileDescriptor);
 #endif
 
   
   
   auto& shmem = xpc::SelfHostedShmem::GetSingleton();
-  if (!shmem.InitFromChild(handle, len)) {
+  if (!shmem.InitFromChild(std::move(handle), len)) {
     NS_ERROR("failed to open shared memory in the child");
     return false;
   }

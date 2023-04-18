@@ -50,7 +50,7 @@ TEST(IPCSharedMemory, FreezeAndMapRW)
   ASSERT_TRUE(shm.GiveToProcess(base::GetCurrentProcId(), &handle));
   ASSERT_TRUE(shm.IsHandleValid(handle));
   ASSERT_FALSE(shm.IsValid());
-  ASSERT_TRUE(shm.SetHandle(handle,  false));
+  ASSERT_TRUE(shm.SetHandle(std::move(handle),  false));
   ASSERT_TRUE(shm.IsValid());
 
   
@@ -107,7 +107,7 @@ TEST(IPCSharedMemory, Reprotect)
   ASSERT_TRUE(shm.GiveToProcess(base::GetCurrentProcId(), &handle));
   ASSERT_TRUE(shm.IsHandleValid(handle));
   ASSERT_FALSE(shm.IsValid());
-  ASSERT_TRUE(shm.SetHandle(handle,  true));
+  ASSERT_TRUE(shm.SetHandle(std::move(handle),  true));
   ASSERT_TRUE(shm.IsValid());
 
   
@@ -239,7 +239,7 @@ TEST(IPCSharedMemory, ROCopyAndMapRW)
   ASSERT_TRUE(shmRO.GiveToProcess(base::GetCurrentProcId(), &handle));
   ASSERT_TRUE(shmRO.IsHandleValid(handle));
   ASSERT_FALSE(shmRO.IsValid());
-  ASSERT_TRUE(shmRO.SetHandle(handle,  false));
+  ASSERT_TRUE(shmRO.SetHandle(std::move(handle),  false));
   ASSERT_TRUE(shmRO.IsValid());
 
   
