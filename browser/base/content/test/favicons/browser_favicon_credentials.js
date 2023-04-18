@@ -21,8 +21,18 @@ registerCleanupFunction(() => {
   Services.prefs.clearUserPref("network.cookie.sameSite.laxByDefault");
 });
 
+
+
+
+
 function run_test(url, shouldHaveCookies, description) {
   add_task(async () => {
+    await SpecialPowers.addPermission(
+      "3rdPartyStorage^http://example.com",
+      true,
+      url
+    );
+
     await BrowserTestUtils.withNewTab(
       { gBrowser, url: "about:blank" },
       async browser => {
@@ -56,6 +66,10 @@ function run_test(url, shouldHaveCookies, description) {
           );
         }
       }
+    );
+    await SpecialPowers.removePermission(
+      "3rdPartyStorage^http://example.com",
+      url
     );
   });
 }
