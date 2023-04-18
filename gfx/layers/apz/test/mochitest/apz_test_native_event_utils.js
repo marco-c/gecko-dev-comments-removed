@@ -395,7 +395,11 @@ async function synthesizeNativeWheel(
     aDeltaY,
     0,
     0,
-    0,
+    
+    
+    SpecialPowers.getBoolPref("apz.test.mac.synth_wheel_input", false)
+      ? SpecialPowers.DOMWindowUtils.MOUSESCROLL_SCROLL_LINES
+      : 0,
     element,
     aObserver
   );
