@@ -3702,8 +3702,14 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   
+  
+  
+  
+  
   void wasmCallIndirect(const wasm::CallSiteDesc& desc,
-                        const wasm::CalleeDesc& callee, bool needsBoundsCheck,
+                        const wasm::CalleeDesc& callee,
+                        Label* boundsCheckFailedLabel,
+                        Label* nullCheckFailedLabel,
                         mozilla::Maybe<uint32_t> tableSize,
                         CodeOffset* fastCallOffset, CodeOffset* slowCallOffset);
 

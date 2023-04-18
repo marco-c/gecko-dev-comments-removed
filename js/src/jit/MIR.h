@@ -10097,8 +10097,8 @@ class MWasmCallBase {
 
   const ABIArg& instanceArg() const { return instanceArg_; }
 
-  bool inTry() { return inTry_; }
-  size_t tryNoteIndex() { return tryNoteIndex_; }
+  bool inTry() const { return inTry_; }
+  size_t tryNoteIndex() const { return tryNoteIndex_; }
 };
 
 
