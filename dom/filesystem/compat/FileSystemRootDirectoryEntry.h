@@ -9,8 +9,7 @@
 
 #include "mozilla/dom/FileSystemDirectoryEntry.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class FileSystemRootDirectoryEntry final : public FileSystemDirectoryEntry {
  public:
@@ -18,10 +17,9 @@ class FileSystemRootDirectoryEntry final : public FileSystemDirectoryEntry {
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(FileSystemRootDirectoryEntry,
                                            FileSystemDirectoryEntry)
 
-  FileSystemRootDirectoryEntry(
-      nsIGlobalObject* aGlobalObject,
-      const Sequence<RefPtr<FileSystemEntry>>& aEntries,
-      FileSystem* aFileSystem);
+  FileSystemRootDirectoryEntry(nsIGlobalObject* aGlobalObject,
+                               Sequence<RefPtr<FileSystemEntry>> aEntries,
+                               FileSystem* aFileSystem);
 
   virtual void GetName(nsAString& aName, ErrorResult& aRv) const override;
 
@@ -45,7 +43,6 @@ class FileSystemRootDirectoryEntry final : public FileSystemDirectoryEntry {
   Sequence<RefPtr<FileSystemEntry>> mEntries;
 };
 
-}  
 }  
 
 #endif  

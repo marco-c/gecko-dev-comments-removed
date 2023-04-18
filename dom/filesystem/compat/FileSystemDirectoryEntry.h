@@ -9,8 +9,7 @@
 
 #include "mozilla/dom/FileSystemEntry.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class Directory;
 class FileSystemDirectoryReader;
@@ -69,7 +68,6 @@ class FileSystemDirectoryEntry : public FileSystemEntry {
   RefPtr<Directory> mDirectory;
 };
 
-}  
 }  
 
 #endif  

@@ -12,8 +12,7 @@
 #include "mozilla/dom/GamepadPoseState.h"
 #include "mozilla/dom/GamepadTouchState.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 enum class GamepadId : uint32_t {
@@ -136,7 +135,6 @@ already_AddRefed<GamepadRemapper> GetGamepadRemapper(const uint16_t aVendorId,
                                                      const uint16_t aProductId,
                                                      bool& aUsingDefault);
 
-}  
 }  
 
 #endif  

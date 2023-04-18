@@ -15,8 +15,7 @@ struct ComputedFlexItemInfo;
 
 class nsINode;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class DOMRectReadOnly;
 
@@ -63,7 +62,6 @@ class FlexItemValues : public nsISupports, public nsWrapperCache {
   FlexItemClampState mClampState;
 };
 
-}  
 }  
 
 #endif 

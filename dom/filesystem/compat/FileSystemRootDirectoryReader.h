@@ -9,8 +9,7 @@
 
 #include "FileSystemDirectoryReader.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class FileSystemRootDirectoryReader final : public FileSystemDirectoryReader {
  public:
@@ -34,7 +33,6 @@ class FileSystemRootDirectoryReader final : public FileSystemDirectoryReader {
   bool mAlreadyRead;
 };
 
-}  
 }  
 
 #endif  
