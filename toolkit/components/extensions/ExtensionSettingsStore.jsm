@@ -42,6 +42,9 @@
 
 var EXPORTED_SYMBOLS = ["ExtensionSettingsStore"];
 
+const { ExtensionParent } = ChromeUtils.import(
+  "resource://gre/modules/ExtensionParent.jsm"
+);
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const lazy = {};
@@ -55,11 +58,6 @@ ChromeUtils.defineModuleGetter(
   lazy,
   "JSONFile",
   "resource://gre/modules/JSONFile.jsm"
-);
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "ExtensionParent",
-  "resource://gre/modules/ExtensionParent.jsm"
 );
 
 
@@ -326,7 +324,7 @@ function alterSetting(id, type, key, action) {
   }
 
   _store.saveSoon();
-  lazy.ExtensionParent.apiManager.emit("extension-setting-changed", {
+  ExtensionParent.apiManager.emit("extension-setting-changed", {
     action,
     id,
     type,
@@ -673,23 +671,20 @@ var ExtensionSettingsStore = {
 };
 
 
-lazy.ExtensionParent.apiManager.on(
-  "uninstall-complete",
-  async (type, { id }) => {
+ExtensionParent.apiManager.on("uninstall-complete", async (type, { id }) => {
+  
+  await ExtensionSettingsStore.initialize();
+  for (let type in _store.data) {
     
-    await ExtensionSettingsStore.initialize();
-    for (let type in _store.data) {
-      
-      if (type === "prefs") {
-        continue;
-      }
-      let items = ExtensionSettingsStore.getAllForExtension(id, type);
-      for (let key of items) {
-        ExtensionSettingsStore.removeSetting(id, type, key);
-        Services.console.logStringMessage(
-          `Post-Uninstall removal of addon settings for ${id}, type: ${type} key: ${key}`
-        );
-      }
+    if (type === "prefs") {
+      continue;
+    }
+    let items = ExtensionSettingsStore.getAllForExtension(id, type);
+    for (let key of items) {
+      ExtensionSettingsStore.removeSetting(id, type, key);
+      Services.console.logStringMessage(
+        `Post-Uninstall removal of addon settings for ${id}, type: ${type} key: ${key}`
+      );
     }
   }
-);
+});

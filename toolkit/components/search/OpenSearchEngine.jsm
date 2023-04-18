@@ -4,16 +4,18 @@
 
 
 
+const { SearchEngine } = ChromeUtils.import(
+  "resource://gre/modules/SearchEngine.jsm"
+);
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const lazy = {};
 
 XPCOMUtils.defineLazyModuleGetters(lazy, {
   EngineURL: "resource://gre/modules/SearchEngine.jsm",
-  SearchEngine: "resource://gre/modules/SearchEngine.jsm",
   SearchUtils: "resource://gre/modules/SearchUtils.jsm",
 });
 
@@ -63,7 +65,7 @@ function ENSURE_WARN(assertion, message, resultCode) {
 
 
 
-class OpenSearchEngine extends lazy.SearchEngine {
+class OpenSearchEngine extends SearchEngine {
   
   _data = null;
 
