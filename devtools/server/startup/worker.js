@@ -87,7 +87,6 @@ this.addEventListener("message", async function(event) {
           postMessage(JSON.stringify({ type: "worker-thread-attached" }));
         }
       );
-      workerTargetActor.attach();
 
       
       
