@@ -5694,15 +5694,35 @@ bool ShouldSanitizePreference(const char* aPref,
       PREF_LIST_ENTRY("privacy.sanitize."),
   };
 
+  static const PrefListEntry sDynamicPrefOverrideList[]{
+      PREF_LIST_ENTRY("print.printer_")};
+
 #undef PREF_LIST_ENTRY
 
-  for (const auto& entry : sParentOnlyPrefBranchList) {
-    if (strncmp(entry.mPrefBranch, aPref, entry.mLen) == 0) {
+  
+  
+  if (XRE_IsParentProcess()) {
+    if (Preferences::GetType(aPref) == nsIPrefBranch::PREF_STRING &&
+        !Preferences::HasDefaultValue(aPref)) {
+      for (const auto& entry : sDynamicPrefOverrideList) {
+        if (strncmp(entry.mPrefBranch, aPref, entry.mLen) == 0) {
+          return false;
+        }
+      }
       return true;
     }
+
+    for (const auto& entry : sParentOnlyPrefBranchList) {
+      if (strncmp(entry.mPrefBranch, aPref, entry.mLen) == 0) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
-  return false;
+  
+  return Preferences::IsSanitized(aPref);
 }
 
 }  
