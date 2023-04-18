@@ -10,6 +10,9 @@ const TAB_ENTRIES_LIMIT = 5;
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
+const { TabStateFlusher } = ChromeUtils.import(
+  "resource:///modules/sessionstore/TabStateFlusher.jsm"
+);
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { Log } = ChromeUtils.import("resource://gre/modules/Log.jsm");
 const { Store, SyncEngine, Tracker } = ChromeUtils.import(
@@ -156,7 +159,16 @@ TabStore.prototype = {
 
         
         if (!tabState || !tabState.entries.length) {
-          continue;
+          
+          
+          await TabStateFlusher.flushWindow(win);
+          tabState = this.getTabState(tab);
+
+          
+          
+          if (!tabState || !tabState.entries.length) {
+            continue;
+          }
         }
 
         let acceptable = !filter
