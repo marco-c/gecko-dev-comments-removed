@@ -295,7 +295,7 @@ const observer = {
           
           loginManagerChild._doesEventClearPrevFieldValue(aEvent)
         ) {
-          loginManagerChild._stopTreatingAsGeneratedPasswordField(field);
+          docState._stopTreatingAsGeneratedPasswordField(field);
         }
 
         if (!isPasswordType && !lazy.LoginHelper.isUsernameFieldType(field)) {
@@ -739,6 +739,23 @@ class LoginFormState {
       );
     }
     return fieldsModified;
+  }
+
+  _stopTreatingAsGeneratedPasswordField(passwordField) {
+    lazy.log("_stopTreatingAsGeneratedPasswordField");
+
+    this.generatedPasswordFields.delete(passwordField);
+
+    
+    for (let eventType of ["blur", "focus"]) {
+      passwordField.removeEventListener(eventType, observer, {
+        capture: true,
+        mozSystemGroup: true,
+      });
+    }
+
+    
+    this._togglePasswordFieldMasking(passwordField, false);
   }
 }
 
@@ -1580,7 +1597,8 @@ class LoginManagerChild extends JSWindowActorChild {
     } else if (acInputField.hasBeenTypePassword) {
       
       
-      this._stopTreatingAsGeneratedPasswordField(acInputField);
+      const docState = this.stateForDocument(acInputField.ownerDocument);
+      docState._stopTreatingAsGeneratedPasswordField(acInputField);
       this._highlightFilledField(acInputField);
     }
   }
@@ -2399,24 +2417,6 @@ class LoginManagerChild extends JSWindowActorChild {
     );
   }
 
-  _stopTreatingAsGeneratedPasswordField(passwordField) {
-    lazy.log("_stopTreatingAsGeneratedPasswordField");
-
-    const docState = this.stateForDocument(passwordField.ownerDocument);
-    docState.generatedPasswordFields.delete(passwordField);
-
-    
-    for (let eventType of ["blur", "focus"]) {
-      passwordField.removeEventListener(eventType, observer, {
-        capture: true,
-        mozSystemGroup: true,
-      });
-    }
-
-    
-    docState._togglePasswordFieldMasking(passwordField, false);
-  }
-
   
 
 
@@ -2928,7 +2928,7 @@ class LoginManagerChild extends JSWindowActorChild {
 
       
 
-      let doc = form.ownerDocument;
+      const docState = this.stateForDocument(form.ownerDocument);
       let willAutofill =
         usernameField || passwordField.value != selectedLogin.password;
       if (willAutofill) {
@@ -2950,7 +2950,7 @@ class LoginManagerChild extends JSWindowActorChild {
           "for",
           form.rootElement
         );
-        this.stateForDocument(doc).fillsByRootElement.set(form.rootElement, {
+        docState.fillsByRootElement.set(form.rootElement, {
           login: autoFilledLogin,
           userTriggered,
         });
@@ -2982,7 +2982,7 @@ class LoginManagerChild extends JSWindowActorChild {
         if (passwordField.value != selectedLogin.password) {
           
           
-          this._stopTreatingAsGeneratedPasswordField(passwordField);
+          docState._stopTreatingAsGeneratedPasswordField(passwordField);
 
           passwordField.setUserInput(selectedLogin.password);
         }
