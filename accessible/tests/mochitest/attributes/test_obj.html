@@ -1,10 +1,10 @@
 <html>
-
-
-
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=475006
+https://bugzilla.mozilla.org/show_bug.cgi?id=391829
+https://bugzilla.mozilla.org/show_bug.cgi?id=581952
+https://bugzilla.mozilla.org/show_bug.cgi?id=558036
+-->
 <head>
   <title>Group attributes tests</title>
   <link rel="stylesheet" type="text/css"
@@ -28,7 +28,7 @@
       testAttrs("autocomplete", {"autocomplete": "true"}, true);
       testAttrs("checkbox", {"checkable": "true"}, true);
       testAttrs("checkedCheckbox", {"checkable": "true"}, true);
-      testAbsentAttrs("checkedMenuitem", {"checkable": "true"}, true);
+      testAbsentAttrs("checkedMenuitem", {"checkable": "true"});
       testAttrs("checkedMenuitemCheckbox", {"checkable": "true"}, true);
       testAttrs("checkedMenuitemRadio", {"checkable": "true"}, true);
       testAttrs("checkedOption", {"checkable": "true"}, true);
@@ -148,7 +148,7 @@
       testAttrs("th2", { "axis": "social" }, true);
 
       // don't barf on an empty abbr element.
-      testAbsentAttrs("th3", { "abbr": "" }, true);
+      testAbsentAttrs("th3", { "abbr": "" });
 
       // application accessible
       if (WIN) {
@@ -187,10 +187,10 @@
   <pre id="test">
   </pre>
 
-  
+  <!-- container live -->
   <output id="containerLiveOutput"><div id="containerLiveOutput1"><div id="containerLiveOutput2">Test</div></div></output>
 
-  
+  <!-- aria -->
   <div id="atomic" aria-atomic="true">live region</div>
   <div id="atomic_false" aria-atomic="false">live region</div>
   <div id="autocomplete" role="textbox" aria-autocomplete="true"></div>
@@ -226,21 +226,21 @@
   <div id="currentOther" aria-current="other"></div>
   <div id="currentFalse" aria-current="false"></div>
 
-  
+  <!-- aria-current on a span which must create an accessible -->
   <ol>
     <li><a href="...">Page 1</a></li>
     <li><a href="...">Page 2</a></li>
     <li><span id="currentSpan" aria-current="page">This page</span></li>
   </ol>
 
-  
+  <!-- inherited from iframe -->
   <iframe id="iframe" src="data:text/html,<html><body></body></html>"
           aria-busy="true"></iframe>
 
-  
+  <!-- html -->
   <output id="output"></output>
 
-  
+  <!-- back to aria -->
   <div id="live" aria-live="polite">excuse <div id="liveChild">me</div></div>
   <div id="live2" role="marquee" aria-live="polite">excuse <div id="live2Child">me</div></div>
   <div id="live3" role="region">excuse</div>
@@ -252,16 +252,16 @@
   <div id="tablist" role="tablist">tablist <div id="tablistChild">tab</div></div>
   <div id="timer" role="timer">excuse <div id="timerChild">me</div></div>
 
-  
+  <!-- aria-label[ledby] should not be an object attribute -->
   <div id="label" role="checkbox" aria-label="foo"></div>
   <div id="labelledby" role="checkbox" aria-labelledby="label"></div>
 
-  
+  <!-- unusual live case -->
   <div id="liveGroup" role="group" aria-live="polite">
     excuse <div id="liveGroupChild">me</div>
   </div>
 
-  
+  <!-- text input type -->
   <input id="button" type="button"/>
   <input id="email" type="email"/>
   <input id="search" type="search"/>
@@ -270,7 +270,7 @@
   <input id="number" type="number"/>
   <div id="searchbox" role="searchbox"></div>
 
-  
+  <!-- html -->
   <input id="radio" type="radio"/>
   <input id="checkbox" type="checkbox"/>
   <div id="draggable" draggable="true">Draggable div</div>
@@ -286,15 +286,15 @@
     <li id="listitem">item
   </ul>
 
-  
+  <!-- experimental aria -->
   <div id="experimental" aria-blah="true">Fake beer</div>
 
-  
+  <!-- HTML5 aside elements -->
   <aside id="aside0" role="note">aside 0</aside>
   <aside id="aside1" role="group">aside 1</aside>
   <aside id="aside2">aside 2</aside>
 
-  
+  <!-- Shortcuts for web applications -->
   <div id="shortcuts" data-at-shortcutkeys='{"n":"New message","r":"Reply to message"}'></div>
 </body>
 </html>

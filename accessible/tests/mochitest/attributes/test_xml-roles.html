@@ -28,7 +28,7 @@
       testAbsentAttrs("main_footer", {"xml-roles": "contentinfo"});
       testAbsentAttrs("section_footer", {"xml-roles": "contentinfo"});
       testAttrs("aside", {"xml-roles": "complementary"}, true);
-      testAbsentAttrs("section", {"xml-roles": "region"}, true);
+      testAbsentAttrs("section", {"xml-roles": "region"});
       testAttrs("main", {"xml-roles": "main"}, true); // // ARIA override
       testAttrs("form", {"xml-roles": "form"}, true);
       testAttrs("feed", {"xml-roles": "feed"}, true);
@@ -182,7 +182,7 @@
 
   <div id="code" role="code"></div>
 
-  
+  <!-- open-fence, separator, close-fence -->
   <math><mo id="open-1">(</mo><mi>x</mi><mo id="sep-1">,</mo><mi>y</mi><mo id="close-1">)</mo></math>
   <math><mrow><mo id="open-2">(</mo><mi>x</mi><mo id="sep-2">,</mo><mi>y</mi><mo id="close-2">)</mo></mrow></math>
   <math><mstyle><mo id="open-3">(</mo><mi>x</mi><mo id="sep-3">,</mo><mi>y</mi><mo id="close-3">)</mo></mstyle></math>
@@ -191,7 +191,7 @@
   <math><merror><mo id="open-6">(</mo><mi>x</mi><mo id="sep-6">,</mo><mi>y</mi><mo id="close-6">)</mo></merror></math>
   <math><mtable><mtr><mtd><mo id="open-7">(</mo><mi>x</mi><mo id="sep-7">,</mo><mi>y</mi><mo id="close-7">)</mo></mtd></mtr></mtable></math>
 
-  
+  <!-- numerator, denominator -->
   <math>
     <mfrac>
       <mi id="num">a</mi>
@@ -199,7 +199,7 @@
     </mfrac>
   </math>
 
-  
+  <!-- subscript, superscript, presubscript, presuperscript -->
   <math>
     <msub>
       <mi id="base-1">a</mi>
@@ -234,7 +234,7 @@
     </mmultiscripts>
   </math>
 
-  
+  <!-- underscript, overscript -->
   <math>
     <munder>
       <mi id="base-5">a</mi>
@@ -255,7 +255,7 @@
     </munderover>
   </math>
 
-  
+  <!-- root-index -->
   <math>
     <mroot>
       <mi id="base-8">a</mi>

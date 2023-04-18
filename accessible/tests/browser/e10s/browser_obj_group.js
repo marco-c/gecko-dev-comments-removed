@@ -7,6 +7,11 @@
 
 loadScripts({ name: "attributes.js", dir: MOCHITESTS_DIR });
 
+const isCacheEnabled = Services.prefs.getBoolPref(
+  "accessibility.cache.enabled",
+  false
+);
+
 
 
 
@@ -398,7 +403,7 @@ addAccessibleTask(
     testGroupAttrs(getAcc("grid_row2"), 2, 2);
     testAbsentAttrs(getAcc("grid_cell3"), { posinset: "", setsize: "" });
     testAbsentAttrs(getAcc("grid_cell4"), { posinset: "", setsize: "" });
-    testGroupParentAttrs(getAcc("grid"), 2, false);
+    testGroupParentAttrs(getAcc("grid"), 2, false, isCacheEnabled);
   }
 );
 
@@ -436,7 +441,7 @@ addAccessibleTask(
 
     testGroupParentAttrs(getAcc("treegrid"), 2, true);
     
-    testGroupParentAttrs(getAcc("treegrid_row1"), 4, false);
+    testGroupParentAttrs(getAcc("treegrid_row1"), 4, false, isCacheEnabled);
   }
 );
 
@@ -498,13 +503,13 @@ addAccessibleTask(
 
     
     
-    testGroupAttrs(getAcc("table_cell"), 3, 4);
-    testGroupAttrs(getAcc("table_row"), 2, 2);
+    testGroupAttrs(getAcc("table_cell"), 3, 4, null, isCacheEnabled);
+    testGroupAttrs(getAcc("table_row"), 2, 2, null, isCacheEnabled);
 
     
-    testGroupParentAttrs(getAcc("table"), 2, false);
+    testGroupParentAttrs(getAcc("table"), 2, false, isCacheEnabled);
     
-    testGroupParentAttrs(getAcc("table_row"), 4, false);
+    testGroupParentAttrs(getAcc("table_row"), 4, false, isCacheEnabled);
   }
 );
 
@@ -525,8 +530,8 @@ addAccessibleTask(
     let getAcc = id => findAccessibleChildByID(accDoc, id);
 
     
-    testGroupAttrs(getAcc("wrapped_row_1"), 1, 2);
-    testGroupAttrs(getAcc("wrapped_row_2"), 2, 2);
+    testGroupAttrs(getAcc("wrapped_row_1"), 1, 2, null, isCacheEnabled);
+    testGroupAttrs(getAcc("wrapped_row_2"), 2, 2, null, isCacheEnabled);
   }
 );
 
