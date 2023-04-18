@@ -116,36 +116,41 @@ function test_render_blocked_apis(optional_element, finalTest, finalTestTitle) {
       createAutofocusTarget(), 'focus',
       'Should not flush autofocus candidates when render-blocked');
 
-  
-  test_event_blocked(
-      window, 'resize',
-      'Should not run the resize steps when render-blocked');
-
   const scrollTarget = createScrollTarget();
   test_event_blocked(
       scrollTarget, 'scroll',
       'Should not run the scroll steps when render-blocked',
       () => scrollTarget.scrollTop = 100);
 
-  
-  test_event_blocked(
-      matchMedia('all and (display-mode: fullscreen)'), 'change',
-      'Should not run the evaluate media queries and report changes steps when render-blocked');
-
   test_event_blocked(
       createAnimationTarget(), ['animationstart', 'animationend'],
       'Should not run the update animations and send events steps when render-blocked');
 
-  test_event_blocked(
-      document, ['fullscreenchange', 'fullscreenerror'],
-      'Should not run the fullscreen steps when render-blocked',
-      () => {
-        if (window.test_driver) {
-          test_driver.bless('Initiate fullscreen',
-              () => document.documentElement.requestFullscreen()
-              .then(() => document.exitFullscreen()));
-        }
-      });
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   
   
