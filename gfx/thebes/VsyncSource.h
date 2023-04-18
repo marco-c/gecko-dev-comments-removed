@@ -51,7 +51,6 @@ class VsyncSource {
   
   virtual void NotifyVsync(const TimeStamp& aVsyncTimestamp,
                            const TimeStamp& aOutputTimestamp);
-  void NotifyGenericObservers(VsyncEvent aEvent);
 
   void NotifyVsyncDispatcherVsyncStatus(bool aEnable);
   virtual TimeDuration GetVsyncRate();
@@ -61,14 +60,6 @@ class VsyncSource {
   virtual void DisableVsync() = 0;
   virtual bool IsVsyncEnabled() = 0;
   virtual void Shutdown() = 0;
-
-  
-  
-  
-  
-  
-  void AddGenericObserver(VsyncObserver* aObserver);
-  void RemoveGenericObserver(VsyncObserver* aObserver);
 
   void MoveListenersToNewSource(const RefPtr<VsyncSource>& aNewSource);
 
@@ -86,12 +77,7 @@ class VsyncSource {
   Mutex mDispatcherLock MOZ_UNANNOTATED;
   bool mVsyncDispatcherNeedsVsync;
   RefPtr<VsyncDispatcher> mVsyncDispatcher;
-  nsTArray<RefPtr<VsyncObserver>>
-      mGenericObservers;  
   VsyncId mVsyncId;
-  VsyncId mLastVsyncIdSentToMainThread;     
-  VsyncId mLastMainThreadProcessedVsyncId;  
-  bool mHasGenericObservers;                
 };
 
 }  
