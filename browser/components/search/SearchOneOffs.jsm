@@ -474,7 +474,7 @@ class SearchOneOffs {
       
       
       
-      let scale = this.window.windowUtils.screenPixelsPerCSSPixel;
+      let scale = this.window.devicePixelRatio;
       if (Math.floor(scale) != scale) {
         --buttonsWidth;
       }

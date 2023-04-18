@@ -432,8 +432,7 @@
       
       
       
-      let windowUtils = window.windowUtils;
-      let scale = windowUtils.screenPixelsPerCSSPixel / windowUtils.fullZoom;
+      let scale = window.devicePixelRatio;
       let canvas = this._dndCanvas;
       if (!canvas) {
         this._dndCanvas = canvas = document.createElementNS(
