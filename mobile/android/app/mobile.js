@@ -196,8 +196,6 @@ pref("extensions.installDistroAddons", false);
 
 pref("extensions.webextOptionalPermissionPrompts", true);
 
-pref("extensions.webextensions.background-delayed-startup", true);
-
 pref("extensions.experiments.enabled", false);
 
 

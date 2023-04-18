@@ -2482,8 +2482,6 @@ class EventManager {
       if (listener) {
         
         
-        
-        
         let { primed } = listener;
         if (primed) {
           listener.primed = null;

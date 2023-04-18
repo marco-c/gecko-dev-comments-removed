@@ -1,15 +1,11 @@
 "use strict";
 
+Services.prefs.setBoolPref("extensions.blocklist.enabled", false);
+
 ChromeUtils.defineModuleGetter(
   this,
   "AddonManager",
   "resource://gre/modules/AddonManager.jsm"
-);
-
-
-Services.prefs.setBoolPref(
-  "extensions.webextensions.background-delayed-startup",
-  false
 );
 
 AddonTestUtils.init(this);
@@ -38,6 +34,7 @@ add_task(async function setup_wrapper() {
 
   await AddonTestUtils.promiseStartupManager();
   await extension.startup();
+  await extension.awaitBackgroundStarted();
   await AddonTestUtils.promiseShutdownManager();
 
   
@@ -47,6 +44,7 @@ add_task(async function setup_wrapper() {
 
   
   await AddonTestUtils.promiseStartupManager();
+  await extension.awaitBackgroundStarted();
   await extension.unload();
   await AddonTestUtils.promiseShutdownManager();
 

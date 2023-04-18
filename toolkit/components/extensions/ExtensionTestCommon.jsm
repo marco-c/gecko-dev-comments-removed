@@ -237,6 +237,29 @@ function provide(obj, keys, value, override = false) {
 
 ExtensionTestCommon = class ExtensionTestCommon {
   
+  static resetStartupPromises() {
+    ExtensionParent._resetStartupPromises();
+  }
+
+  
+  
+  
+  static notifyEarlyStartup() {
+    Services.obs.notifyObservers(null, "browser-delayed-startup-finished");
+    return ExtensionParent.browserPaintedPromise;
+  }
+
+  
+  
+  
+  
+  
+  static notifyLateStartup() {
+    Services.obs.notifyObservers(null, "extensions-late-startup");
+    return ExtensionParent.browserStartupPromise;
+  }
+
+  
 
 
 
@@ -561,6 +584,8 @@ ExtensionTestCommon = class ExtensionTestCommon {
         incognitoOverride: data.incognitoOverride,
         temporarilyInstalled: !!data.temporarilyInstalled,
         TEST_NO_ADDON_MANAGER: true,
+        
+        TEST_NO_DELAYED_STARTUP: !data.delayedStartup,
       },
       data.startupReason
     );

@@ -4,12 +4,6 @@ const HOSTS = new Set(["example.com"]);
 
 Services.prefs.setBoolPref("extensions.manifestV3.enabled", true);
 
-
-Services.prefs.setBoolPref(
-  "extensions.webextensions.background-delayed-startup",
-  false
-);
-
 const server = createHttpServer({ hosts: HOSTS });
 
 const BASE_URL = `http://example.com`;

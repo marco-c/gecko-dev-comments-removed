@@ -27,13 +27,6 @@ AddonTestUtils.overrideCertDB();
 
 createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "42", "42");
 
-
-
-Services.prefs.setBoolPref(
-  "extensions.webextensions.background-delayed-startup",
-  false
-);
-
 function background() {
   let onInstalledDetails = null;
   let onStartupFired = false;
@@ -244,7 +237,7 @@ add_task(async function test_should_fire_on_browser_update() {
 
   
   await promiseRestartManager("1");
-  await extension.awaitStartup();
+  await extension.awaitBackgroundStarted();
 
   await expectEvents(extension, {
     onStartupFired: true,
@@ -253,7 +246,7 @@ add_task(async function test_should_fire_on_browser_update() {
 
   
   await promiseRestartManager("2");
-  await extension.awaitStartup();
+  await extension.awaitBackgroundStarted();
 
   await expectEvents(extension, {
     onStartupFired: true,
@@ -264,7 +257,7 @@ add_task(async function test_should_fire_on_browser_update() {
 
   
   await promiseRestartManager("2");
-  await extension.awaitStartup();
+  await extension.awaitBackgroundStarted();
 
   await expectEvents(extension, {
     onStartupFired: true,
@@ -273,7 +266,7 @@ add_task(async function test_should_fire_on_browser_update() {
 
   
   await promiseRestartManager("3");
-  await extension.awaitStartup();
+  await extension.awaitBackgroundStarted();
 
   await expectEvents(extension, {
     onStartupFired: true,

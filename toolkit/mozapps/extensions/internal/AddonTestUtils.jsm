@@ -842,19 +842,28 @@ var AddonTestUtils = {
 
 
 
-  async promiseStartupManager(newVersion, newPlatformVersion = newVersion) {
+
+
+
+  async promiseStartupManager(params) {
     if (this.addonIntegrationService) {
       throw new Error(
         "Attempting to startup manager that was already started."
       );
     }
+    
+    if (typeof params != "object") {
+      params = {
+        newVersion: arguments[0],
+      };
+    }
+    let { earlyStartup = true, lateStartup = true, newVersion } = params;
+
+    lateStartup = earlyStartup && lateStartup;
 
     if (newVersion) {
       this.appInfo.version = newVersion;
-    }
-
-    if (newPlatformVersion) {
-      this.appInfo.platformVersion = newPlatformVersion;
+      this.appInfo.platformVersion = newVersion;
     }
 
     
@@ -907,6 +916,12 @@ var AddonTestUtils = {
         addon => addon.startupPromise
       )
     );
+    if (earlyStartup) {
+      ExtensionTestCommon.notifyEarlyStartup();
+    }
+    if (lateStartup) {
+      ExtensionTestCommon.notifyLateStartup();
+    }
   },
 
   async promiseShutdownManager({
@@ -986,6 +1001,8 @@ var AddonTestUtils = {
       "resource://gre/modules/addons/XPIProvider.jsm"
     );
 
+    ExtensionTestCommon.resetStartupPromises();
+
     if (shutdownError) {
       throw shutdownError;
     }
@@ -1002,9 +1019,30 @@ var AddonTestUtils = {
 
 
 
-  async promiseRestartManager(newVersion) {
+  async promiseRestartManager(params) {
     await this.promiseShutdownManager({ clearOverrides: false });
-    await this.promiseStartupManager(newVersion);
+    await this.promiseStartupManager(params);
+  },
+
+  
+
+
+
+
+
+  notifyEarlyStartup() {
+    return ExtensionTestCommon.notifyEarlyStartup();
+  },
+
+  
+
+
+
+
+
+
+  notifyLateStartup() {
+    return ExtensionTestCommon.notifyLateStartup();
   },
 
   async loadAddonsList(flush = false) {

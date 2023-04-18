@@ -21,11 +21,6 @@ let {
   promiseStartupManager,
 } = AddonTestUtils;
 
-Services.prefs.setBoolPref(
-  "extensions.webextensions.background-delayed-startup",
-  true
-);
-
 const { Management } = ChromeUtils.import(
   "resource://gre/modules/Extension.jsm"
 );
@@ -67,8 +62,7 @@ add_task(async function test_unload_extension_before_background_page_startup() {
   
   
   info("Starting extension whose startup will be interrupted");
-  ExtensionParent._resetStartupPromises();
-  await promiseRestartManager();
+  await promiseRestartManager({ earlyStartup: false });
   await extension.awaitStartup();
 
   let extensionBrowserInsertions = 0;
@@ -85,14 +79,13 @@ add_task(async function test_unload_extension_before_background_page_startup() {
 
   
   info("Forcing pending delayed background page to load");
-  Services.obs.notifyObservers(null, "sessionstore-windows-restored");
+  AddonTestUtils.notifyLateStartup();
 
   
   await extension.awaitMessage("background_startup_observed");
   await extension.unload();
 
   await promiseShutdownManager();
-  ExtensionParent._resetStartupPromises();
 
   Management.off("extension-browser-inserted", onExtensionBrowserInserted);
   Assert.equal(
@@ -119,8 +112,7 @@ add_task(async function test_unload_extension_during_background_page_startup() {
   await extension.startup();
   await extension.awaitMessage("background_starting");
 
-  ExtensionParent._resetStartupPromises();
-  await promiseRestartManager();
+  await promiseRestartManager({ lateStartup: false });
   await extension.awaitStartup();
 
   let bgStartupPromise = new Promise(resolve => {
@@ -183,7 +175,7 @@ add_task(async function test_unload_extension_during_background_page_startup() {
   });
 
   
-  Services.obs.notifyObservers(null, "sessionstore-windows-restored");
+  AddonTestUtils.notifyLateStartup();
   await bgStartingPromise;
 
   await extension.unload();
@@ -195,6 +187,4 @@ add_task(async function test_unload_extension_during_background_page_startup() {
   info("Waiting for background builder to finish");
   let bgLoadState = await bgStartupPromise;
   Assert.equal(bgLoadState, "bg_aborted", "Startup should be interrupted");
-
-  ExtensionParent._resetStartupPromises();
 });

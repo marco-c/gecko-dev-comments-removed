@@ -19,11 +19,6 @@ AddonTestUtils.createAppInfo(
 
 AddonTestUtils.usePrivilegedSignatures = false;
 
-Services.prefs.setBoolPref(
-  "extensions.webextensions.background-delayed-startup",
-  false
-);
-
 
 async function getCachedPermissions(extensionId) {
   const NotFound = Symbol("extension ID not found in permissions cache");

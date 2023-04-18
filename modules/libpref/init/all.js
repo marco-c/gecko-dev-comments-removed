@@ -3784,8 +3784,6 @@ pref("extensions.webextensions.protocol.remote", true);
 
 pref("extensions.webextensions.userScripts.enabled", true);
 
-pref("extensions.webextensions.background-delayed-startup", false);
-
 
 pref("extensions.webextensions.ExtensionStorageIDB.enabled", true);
 

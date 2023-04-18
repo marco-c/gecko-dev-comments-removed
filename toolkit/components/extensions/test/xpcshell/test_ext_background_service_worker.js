@@ -33,24 +33,9 @@ add_task(async function setup() {
 
   await AddonTestUtils.promiseStartupManager();
 
-  
-  
-  
-  
-  
-  
-  
-  Services.prefs.setBoolPref(
-    "extensions.webextensions.background-delayed-startup",
-    true
-  );
-
   Services.prefs.setBoolPref("dom.serviceWorkers.testing.enabled", true);
 
   registerCleanupFunction(() => {
-    Services.prefs.clearUserPref(
-      "extensions.webextensions.background-delayed-startup"
-    );
     Services.prefs.clearUserPref("dom.serviceWorkers.testing.enabled");
     Services.prefs.clearUserPref("dom.serviceWorkers.idle_timeout");
   });
@@ -267,8 +252,18 @@ add_task(async function test_serviceworker_lifecycle_events() {
   );
 
   info("Restart AddonManager (mocking Browser instance restart)");
-  ExtensionParent._resetStartupPromises();
-  await AddonTestUtils.promiseStartupManager();
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  await AddonTestUtils.promiseStartupManager({ lateStartup: false });
   await extension.awaitStartup();
 
   info(
@@ -279,6 +274,8 @@ add_task(async function test_serviceworker_lifecycle_events() {
   info(
     "trigger delayed call to nsIServiceWorkerManager.registerForAddonPrincipal"
   );
+  
+  AddonTestUtils.notifyLateStartup();
   extension.extension.emit("start-background-script");
 
   info("Force activate the extension worker");

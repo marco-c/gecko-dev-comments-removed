@@ -31,11 +31,6 @@ AddonTestUtils.createAppInfo(
   "42"
 );
 
-Services.prefs.setBoolPref(
-  "extensions.webextensions.background-delayed-startup",
-  false
-);
-
 add_task(async function setup() {
   
   
@@ -315,7 +310,7 @@ async function test_permissions(manifest_version) {
 
   
   await AddonTestUtils.promiseRestartManager();
-  await extension.awaitStartup();
+  await extension.awaitBackgroundStarted();
 
   result = await call("getAll");
   deepEqual(
@@ -344,8 +339,12 @@ async function test_permissions(manifest_version) {
 
   await extension.unload();
 }
-add_task(() => test_permissions(2));
-add_task(() => test_permissions(3));
+add_task(async function test_permissions_mv2() {
+  return test_permissions(2);
+});
+add_task(async function test_permissions_mv3() {
+  return test_permissions(3);
+});
 
 add_task(async function test_startup() {
   async function background() {
@@ -547,8 +546,12 @@ async function test_alreadyGranted(manifest_version) {
 
   await extension.unload();
 }
-add_task(() => test_alreadyGranted(2));
-add_task(() => test_alreadyGranted(3));
+add_task(async function test_alreadyGranted_mv2() {
+  return test_alreadyGranted(2);
+});
+add_task(async function test_alreadyGranted_mv3() {
+  return test_alreadyGranted(3);
+});
 
 
 
@@ -738,8 +741,12 @@ async function test_permissions_prompt(manifest_version) {
 
   await extension.unload();
 }
-add_task(() => test_permissions_prompt(2));
-add_task(() => test_permissions_prompt(3));
+add_task(async function test_permissions_prompt_mv2() {
+  return test_permissions_prompt(2);
+});
+add_task(async function test_permissions_prompt_mv3() {
+  return test_permissions_prompt(3);
+});
 
 
 add_task(async function test_internal_permissions() {
