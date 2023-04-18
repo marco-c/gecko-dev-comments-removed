@@ -204,6 +204,11 @@ class ScrollFrameHelper : public nsIReflowCallback {
   nsRect GetVisualScrollRange() const;
   nsRect GetScrollRangeForUserInputEvents() const;
 
+  const nsRect& ScrollPort() const { return mScrollPort; }
+  void SetScrollPort(const nsRect& aNewScrollPort) {
+    mScrollPort = aNewScrollPort;
+  }
+
   
 
 
@@ -583,9 +588,6 @@ class ScrollFrameHelper : public nsIReflowCallback {
 
   nsTArray<ScrollPositionUpdate> mScrollUpdates;
 
-  
-  
-  nsRect mScrollPort;
   nsSize mMinimumScaleSize;
 
   
@@ -801,6 +803,11 @@ class ScrollFrameHelper : public nsIReflowCallback {
 
   
   void RemoveObservers();
+
+ private:
+  
+  
+  nsRect mScrollPort;
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(ScrollFrameHelper::OverflowState)
@@ -1734,7 +1741,7 @@ class nsXULScrollFrame final : public nsBoxFrame,
 
 
     if (!mHelper.IsPhysicalLTR()) {
-      aRect.x = mHelper.mScrollPort.XMost() - aScrollPosition.x - aRect.width;
+      aRect.x = mHelper.ScrollPort().XMost() - aScrollPosition.x - aRect.width;
     }
     mHelper.mScrolledFrame->SetXULBounds(aState, aRect, aRemoveOverflowAreas);
   }
