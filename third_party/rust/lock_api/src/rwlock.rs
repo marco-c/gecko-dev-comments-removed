@@ -11,6 +11,13 @@ use core::marker::PhantomData;
 use core::mem;
 use core::ops::{Deref, DerefMut};
 
+#[cfg(feature = "arc_lock")]
+use alloc::sync::Arc;
+#[cfg(feature = "arc_lock")]
+use core::mem::ManuallyDrop;
+#[cfg(feature = "arc_lock")]
+use core::ptr;
+
 #[cfg(feature = "owning_ref")]
 use owning_ref::StableAddress;
 
@@ -557,6 +564,84 @@ impl<R: RawRwLock, T: ?Sized> RwLock<R, T> {
     pub fn data_ptr(&self) -> *mut T {
         self.data.get()
     }
+
+    
+    
+    
+    #[cfg(feature = "arc_lock")]
+    #[inline]
+    unsafe fn read_guard_arc(self: &Arc<Self>) -> ArcRwLockReadGuard<R, T> {
+        ArcRwLockReadGuard {
+            rwlock: self.clone(),
+            marker: PhantomData,
+        }
+    }
+
+    
+    
+    
+    #[cfg(feature = "arc_lock")]
+    #[inline]
+    unsafe fn write_guard_arc(self: &Arc<Self>) -> ArcRwLockWriteGuard<R, T> {
+        ArcRwLockWriteGuard {
+            rwlock: self.clone(),
+            marker: PhantomData,
+        }
+    }
+
+    
+    
+    
+    
+    #[cfg(feature = "arc_lock")]
+    #[inline]
+    pub fn read_arc(self: &Arc<Self>) -> ArcRwLockReadGuard<R, T> {
+        self.raw.lock_shared();
+        
+        unsafe { self.read_guard_arc() }
+    }
+
+    
+    
+    
+    
+    #[cfg(feature = "arc_lock")]
+    #[inline]
+    pub fn try_read_arc(self: &Arc<Self>) -> Option<ArcRwLockReadGuard<R, T>> {
+        if self.raw.try_lock_shared() {
+            
+            Some(unsafe { self.read_guard_arc() })
+        } else {
+            None
+        }
+    }
+
+    
+    
+    
+    
+    #[cfg(feature = "arc_lock")]
+    #[inline]
+    pub fn write_arc(self: &Arc<Self>) -> ArcRwLockWriteGuard<R, T> {
+        self.raw.lock_exclusive();
+        
+        unsafe { self.write_guard_arc() }
+    }
+
+    
+    
+    
+    
+    #[cfg(feature = "arc_lock")]
+    #[inline]
+    pub fn try_write_arc(self: &Arc<Self>) -> Option<ArcRwLockWriteGuard<R, T>> {
+        if self.raw.try_lock_exclusive() {
+            
+            Some(unsafe { self.write_guard_arc() })
+        } else {
+            None
+        }
+    }
 }
 
 impl<R: RawRwLockFair, T: ?Sized> RwLock<R, T> {
@@ -657,6 +742,66 @@ impl<R: RawRwLockTimed, T: ?Sized> RwLock<R, T> {
             None
         }
     }
+
+    
+    
+    
+    
+    #[cfg(feature = "arc_lock")]
+    #[inline]
+    pub fn try_read_arc_for(self: &Arc<Self>, timeout: R::Duration) -> Option<ArcRwLockReadGuard<R, T>> {
+        if self.raw.try_lock_shared_for(timeout) {
+            
+            Some(unsafe { self.read_guard_arc() })
+        } else {
+            None
+        }
+    }
+
+    
+    
+    
+    
+    #[cfg(feature = "arc_lock")]
+    #[inline]
+    pub fn try_read_arc_until(self: &Arc<Self>, timeout: R::Instant) -> Option<ArcRwLockReadGuard<R, T>> {
+        if self.raw.try_lock_shared_until(timeout) {
+            
+            Some(unsafe { self.read_guard_arc() })
+        } else {
+            None
+        }
+    }
+
+    
+    
+    
+    
+    #[cfg(feature = "arc_lock")]
+    #[inline]
+    pub fn try_write_arc_for(self: &Arc<Self>, timeout: R::Duration) -> Option<ArcRwLockWriteGuard<R, T>> {
+        if self.raw.try_lock_exclusive_for(timeout) {
+            
+            Some(unsafe { self.write_guard_arc() })
+        } else {
+            None
+        }
+    }
+
+    
+    
+    
+    
+    #[cfg(feature = "arc_lock")]
+    #[inline]
+    pub fn try_write_arc_until(self: &Arc<Self>, timeout: R::Instant) -> Option<ArcRwLockWriteGuard<R, T>> {
+        if self.raw.try_lock_exclusive_until(timeout) {
+            
+            Some(unsafe { self.write_guard_arc() })
+        } else {
+            None
+        }
+    }
 }
 
 impl<R: RawRwLockRecursive, T: ?Sized> RwLock<R, T> {
@@ -701,6 +846,33 @@ impl<R: RawRwLockRecursive, T: ?Sized> RwLock<R, T> {
             None
         }
     }
+
+    
+    
+    
+    
+    #[cfg(feature = "arc_lock")]
+    #[inline]
+    pub fn read_arc_recursive(self: &Arc<Self>) -> ArcRwLockReadGuard<R, T> {
+        self.raw.lock_shared_recursive();
+        
+        unsafe { self.read_guard_arc() }
+    }
+
+    
+    
+    
+    
+    #[cfg(feature = "arc_lock")]
+    #[inline]
+    pub fn try_read_recursive_arc(self: &Arc<Self>) -> Option<ArcRwLockReadGuard<R, T>> {
+        if self.raw.try_lock_shared_recursive() {
+            
+            Some(unsafe { self.read_guard_arc() })
+        } else {
+            None
+        }
+    }
 }
 
 impl<R: RawRwLockRecursiveTimed, T: ?Sized> RwLock<R, T> {
@@ -741,6 +913,36 @@ impl<R: RawRwLockRecursiveTimed, T: ?Sized> RwLock<R, T> {
         if self.raw.try_lock_shared_recursive_until(timeout) {
             
             Some(unsafe { self.read_guard() })
+        } else {
+            None
+        }
+    }
+
+    
+    
+    
+    
+    #[cfg(feature = "arc_lock")]
+    #[inline]
+    pub fn try_read_arc_recursive_for(self: &Arc<Self>, timeout: R::Duration) -> Option<ArcRwLockReadGuard<R, T>> {
+        if self.raw.try_lock_shared_recursive_for(timeout) {
+            
+            Some(unsafe { self.read_guard_arc() })
+        } else {
+            None
+        }
+    }
+
+    
+    
+    
+    
+    #[cfg(feature = "arc_lock")]
+    #[inline]
+    pub fn try_read_arc_recursive_until(self: &Arc<Self>, timeout: R::Instant) -> Option<ArcRwLockReadGuard<R, T>> {
+        if self.raw.try_lock_shared_recursive_until(timeout) {
+            
+            Some(unsafe { self.read_guard_arc() })
         } else {
             None
         }
@@ -791,6 +993,45 @@ impl<R: RawRwLockUpgrade, T: ?Sized> RwLock<R, T> {
             None
         }
     }
+
+    
+    
+    
+    #[cfg(feature = "arc_lock")]
+    #[inline]
+    unsafe fn upgradable_guard_arc(self: &Arc<Self>) -> ArcRwLockUpgradableReadGuard<R, T> {
+        ArcRwLockUpgradableReadGuard {
+            rwlock: self.clone(),
+            marker: PhantomData 
+        }
+    }
+
+    
+    
+    
+    
+    #[cfg(feature = "arc_lock")]
+    #[inline]
+    pub fn upgradable_read_arc(self: &Arc<Self>) -> ArcRwLockUpgradableReadGuard<R, T> {
+        self.raw.lock_upgradable();
+        
+        unsafe { self.upgradable_guard_arc() }
+    }
+
+    
+    
+    
+    
+    #[cfg(feature = "arc_lock")]
+    #[inline]
+    pub fn try_upgradable_read_arc(self: &Arc<Self>) -> Option<ArcRwLockUpgradableReadGuard<R, T>> {
+        if self.raw.try_lock_upgradable() {
+            
+            Some(unsafe { self.upgradable_guard_arc() })
+        } else {
+            None
+        }
+    }
 }
 
 impl<R: RawRwLockUpgradeTimed, T: ?Sized> RwLock<R, T> {
@@ -827,6 +1068,42 @@ impl<R: RawRwLockUpgradeTimed, T: ?Sized> RwLock<R, T> {
         if self.raw.try_lock_upgradable_until(timeout) {
             
             Some(unsafe { self.upgradable_guard() })
+        } else {
+            None
+        }
+    }
+
+    
+    
+    
+    
+    #[cfg(feature = "arc_lock")]
+    #[inline]
+    pub fn try_upgradable_read_arc_for(
+        self: &Arc<Self>,
+        timeout: R::Duration,
+    ) -> Option<ArcRwLockUpgradableReadGuard<R, T>> {
+        if self.raw.try_lock_upgradable_for(timeout) {
+            
+            Some(unsafe { self.upgradable_guard_arc() })
+        } else {
+            None
+        }
+    }
+
+    
+    
+    
+    
+    #[cfg(feature = "arc_lock")]
+    #[inline]
+    pub fn try_upgradable_read_arc_until(
+        self: &Arc<Self>,
+        timeout: R::Instant,
+    ) -> Option<ArcRwLockUpgradableReadGuard<R, T>> {
+        if self.raw.try_lock_upgradable_until(timeout) {
+            
+            Some(unsafe { self.upgradable_guard_arc() })
         } else {
             None
         }
@@ -1040,6 +1317,122 @@ impl<'a, R: RawRwLock + 'a, T: fmt::Display + ?Sized + 'a> fmt::Display
 
 #[cfg(feature = "owning_ref")]
 unsafe impl<'a, R: RawRwLock + 'a, T: ?Sized + 'a> StableAddress for RwLockReadGuard<'a, R, T> {}
+
+
+
+
+
+#[cfg(feature = "arc_lock")]
+#[must_use = "if unused the RwLock will immediately unlock"]
+pub struct ArcRwLockReadGuard<R: RawRwLock, T: ?Sized> {
+    rwlock: Arc<RwLock<R, T>>,
+    marker: PhantomData<R::GuardMarker>,
+}
+
+#[cfg(feature = "arc_lock")]
+impl<R: RawRwLock, T: ?Sized> ArcRwLockReadGuard<R, T> {
+    
+    pub fn rwlock(s: &Self) -> &Arc<RwLock<R, T>> {
+        &s.rwlock
+    }
+
+    
+    
+    
+    #[inline]
+    pub fn unlocked<F, U>(s: &mut Self, f: F) -> U
+    where
+        F: FnOnce() -> U,
+    {
+        
+        unsafe {
+            s.rwlock.raw.unlock_shared();
+        }
+        defer!(s.rwlock.raw.lock_shared());
+        f()
+    }
+}
+
+#[cfg(feature = "arc_lock")]
+impl<R: RawRwLockFair, T: ?Sized> ArcRwLockReadGuard<R, T> {
+    
+    
+    
+    #[inline]
+    pub fn unlock_fair(s: Self) {
+        
+        unsafe {
+            s.rwlock.raw.unlock_shared_fair();
+        }
+
+        
+        let mut s = ManuallyDrop::new(s);
+        unsafe { ptr::drop_in_place(&mut s.rwlock) };
+    }
+
+    
+    
+    
+    #[inline]
+    pub fn unlocked_fair<F, U>(s: &mut Self, f: F) -> U
+    where
+        F: FnOnce() -> U,
+    {
+        
+        unsafe {
+            s.rwlock.raw.unlock_shared_fair();
+        }
+        defer!(s.rwlock.raw.lock_shared());
+        f()
+    }
+
+    
+    
+    
+    #[inline]
+    pub fn bump(s: &mut Self) {
+        
+        unsafe {
+            s.rwlock.raw.bump_shared();
+        }
+    }
+}
+
+#[cfg(feature = "arc_lock")]
+impl<R: RawRwLock, T: ?Sized> Deref for ArcRwLockReadGuard<R, T> {
+    type Target = T;
+    #[inline]
+    fn deref(&self) -> &T {
+        unsafe { &*self.rwlock.data.get() }
+    }
+}
+
+#[cfg(feature = "arc_lock")]
+impl<R: RawRwLock, T: ?Sized> Drop for ArcRwLockReadGuard<R, T> {
+    #[inline]
+    fn drop(&mut self) {
+        
+        unsafe {
+            self.rwlock.raw.unlock_shared();
+        }
+    }
+}
+
+#[cfg(feature = "arc_lock")]
+impl<R: RawRwLock, T: fmt::Debug + ?Sized> fmt::Debug for ArcRwLockReadGuard<R, T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Debug::fmt(&**self, f)
+    }
+}
+
+#[cfg(feature = "arc_lock")]
+impl<R: RawRwLock, T: fmt::Display + ?Sized> fmt::Display
+    for ArcRwLockReadGuard<R, T>
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        (**self).fmt(f)
+    }
+}
 
 
 
@@ -1261,6 +1654,175 @@ impl<'a, R: RawRwLock + 'a, T: fmt::Display + ?Sized + 'a> fmt::Display
 
 #[cfg(feature = "owning_ref")]
 unsafe impl<'a, R: RawRwLock + 'a, T: ?Sized + 'a> StableAddress for RwLockWriteGuard<'a, R, T> {}
+
+
+
+
+#[cfg(feature = "arc_lock")]
+#[must_use = "if unused the RwLock will immediately unlock"]
+pub struct ArcRwLockWriteGuard<R: RawRwLock, T: ?Sized> {
+    rwlock: Arc<RwLock<R, T>>,
+    marker: PhantomData<R::GuardMarker>,
+}
+
+#[cfg(feature = "arc_lock")]
+impl<R: RawRwLock, T: ?Sized> ArcRwLockWriteGuard<R, T> {
+    
+    pub fn rwlock(s: &Self) -> &Arc<RwLock<R, T>> {
+        &s.rwlock
+    }
+
+    
+    
+    
+    #[inline]
+    pub fn unlocked<F, U>(s: &mut Self, f: F) -> U
+    where
+        F: FnOnce() -> U,
+    {
+        
+        unsafe {
+            s.rwlock.raw.unlock_exclusive();
+        }
+        defer!(s.rwlock.raw.lock_exclusive());
+        f()
+    }
+}
+
+#[cfg(feature = "arc_lock")]
+impl<R: RawRwLockDowngrade, T: ?Sized> ArcRwLockWriteGuard<R, T> {
+    
+    
+    
+    
+    pub fn downgrade(s: Self) -> ArcRwLockReadGuard<R, T> {
+        
+        unsafe {
+            s.rwlock.raw.downgrade();
+        }
+
+        
+        let s = ManuallyDrop::new(s);
+        let rwlock = unsafe { ptr::read(&s.rwlock) };
+
+        ArcRwLockReadGuard {
+            rwlock,
+            marker: PhantomData,
+        }
+    }
+}
+
+#[cfg(feature = "arc_lock")]
+impl<R: RawRwLockUpgradeDowngrade, T: ?Sized> ArcRwLockWriteGuard<R, T> {
+    
+    
+    
+    
+    pub fn downgrade_to_upgradable(s: Self) -> ArcRwLockUpgradableReadGuard<R, T> {
+        
+        unsafe {
+            s.rwlock.raw.downgrade_to_upgradable();
+        }
+
+        
+        let s = ManuallyDrop::new(s);
+        let rwlock = unsafe { ptr::read(&s.rwlock) };
+
+        ArcRwLockUpgradableReadGuard {
+            rwlock,
+            marker: PhantomData,
+        }
+    }
+}
+
+#[cfg(feature = "arc_lock")]
+impl<R: RawRwLockFair, T: ?Sized> ArcRwLockWriteGuard<R, T> {
+    
+    
+    
+    #[inline]
+    pub fn unlock_fair(s: Self) {
+        
+        unsafe {
+            s.rwlock.raw.unlock_exclusive_fair();
+        }
+
+        
+        let mut s = ManuallyDrop::new(s);
+        unsafe { ptr::drop_in_place(&mut s.rwlock) };
+    }
+
+    
+    
+    
+    #[inline]
+    pub fn unlocked_fair<F, U>(s: &mut Self, f: F) -> U
+    where
+        F: FnOnce() -> U,
+    {
+        
+        unsafe {
+            s.rwlock.raw.unlock_exclusive_fair();
+        }
+        defer!(s.rwlock.raw.lock_exclusive());
+        f()
+    }
+
+    
+    
+    
+    #[inline]
+    pub fn bump(s: &mut Self) {
+        
+        unsafe {
+            s.rwlock.raw.bump_exclusive();
+        }
+    }
+}
+
+#[cfg(feature = "arc_lock")]
+impl<R: RawRwLock, T: ?Sized> Deref for ArcRwLockWriteGuard<R, T> {
+    type Target = T;
+    #[inline]
+    fn deref(&self) -> &T {
+        unsafe { &*self.rwlock.data.get() }
+    }
+}
+
+#[cfg(feature = "arc_lock")]
+impl<R: RawRwLock, T: ?Sized> DerefMut for ArcRwLockWriteGuard<R, T> {
+    #[inline]
+    fn deref_mut(&mut self) -> &mut T {
+        unsafe { &mut *self.rwlock.data.get() }
+    }
+}
+
+#[cfg(feature = "arc_lock")]
+impl<R: RawRwLock, T: ?Sized> Drop for ArcRwLockWriteGuard<R, T> {
+    #[inline]
+    fn drop(&mut self) {
+        
+        unsafe {
+            self.rwlock.raw.unlock_exclusive();
+        }
+    }
+}
+
+#[cfg(feature = "arc_lock")]
+impl<R: RawRwLock, T: fmt::Debug + ?Sized> fmt::Debug for ArcRwLockWriteGuard<R, T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Debug::fmt(&**self, f)
+    }
+}
+
+#[cfg(feature = "arc_lock")]
+impl<R: RawRwLock, T: fmt::Display + ?Sized> fmt::Display
+    for ArcRwLockWriteGuard<R, T>
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        (**self).fmt(f)
+    }
+}
 
 
 
@@ -1494,6 +2056,241 @@ unsafe impl<'a, R: RawRwLockUpgrade + 'a, T: ?Sized + 'a> StableAddress
     for RwLockUpgradableReadGuard<'a, R, T>
 {
 }
+
+
+
+
+
+#[cfg(feature = "arc_lock")]
+#[must_use = "if unused the RwLock will immediately unlock"]
+pub struct ArcRwLockUpgradableReadGuard<R: RawRwLockUpgrade, T: ?Sized> {
+    rwlock: Arc<RwLock<R, T>>,
+    marker: PhantomData<R::GuardMarker>,
+}
+
+#[cfg(feature = "arc_lock")]
+impl<R: RawRwLockUpgrade , T: ?Sized> ArcRwLockUpgradableReadGuard<R, T> {
+    
+    pub fn rwlock(s: &Self) -> &Arc<RwLock<R, T>> {
+        &s.rwlock
+    }
+
+    
+    
+    
+    #[inline]
+    pub fn unlocked<F, U>(s: &mut Self, f: F) -> U
+    where
+        F: FnOnce() -> U,
+    {
+        
+        unsafe {
+            s.rwlock.raw.unlock_upgradable();
+        }
+        defer!(s.rwlock.raw.lock_upgradable());
+        f()
+    }
+
+    
+    
+    pub fn upgrade(s: Self) -> ArcRwLockWriteGuard<R, T> {
+        
+        unsafe {
+            s.rwlock.raw.upgrade();
+        }
+
+        
+        
+        let s = ManuallyDrop::new(s);
+        let rwlock = unsafe { ptr::read(&s.rwlock) };
+
+        ArcRwLockWriteGuard {
+            rwlock,
+            marker: PhantomData,
+        }
+    }
+
+    
+    
+    
+    pub fn try_upgrade(s: Self) -> Result<ArcRwLockWriteGuard<R, T>, Self> {
+        
+        if unsafe { s.rwlock.raw.try_upgrade() } {
+            
+            let s = ManuallyDrop::new(s);
+            let rwlock = unsafe { ptr::read(&s.rwlock) };
+
+            Ok(ArcRwLockWriteGuard {
+                rwlock,
+                marker: PhantomData,
+            })
+        } else {
+            Err(s)
+        }
+    }
+}
+
+#[cfg(feature = "arc_lock")]
+impl<R: RawRwLockUpgradeFair, T: ?Sized> ArcRwLockUpgradableReadGuard<R, T> {
+    
+    
+    
+    #[inline]
+    pub fn unlock_fair(s: Self) {
+        
+        unsafe {
+            s.rwlock.raw.unlock_upgradable_fair();
+        }
+
+        
+        let mut s = ManuallyDrop::new(s);
+        unsafe { ptr::drop_in_place(&mut s.rwlock) }; 
+    }
+
+    
+    
+    
+    #[inline]
+    pub fn unlocked_fair<F, U>(s: &mut Self, f: F) -> U
+    where
+        F: FnOnce() -> U,
+    {
+        
+        unsafe {
+            s.rwlock.raw.unlock_upgradable_fair();
+        }
+        defer!(s.rwlock.raw.lock_upgradable());
+        f()
+    }
+
+    
+    
+    
+    #[inline]
+    pub fn bump(s: &mut Self) {
+        
+        unsafe {
+            s.rwlock.raw.bump_upgradable();
+        }
+    }
+}
+
+#[cfg(feature = "arc_lock")]
+impl<R: RawRwLockUpgradeDowngrade, T: ?Sized> ArcRwLockUpgradableReadGuard<R, T> {
+    
+    
+    
+    
+    
+    
+    
+    pub fn downgrade(s: Self) -> ArcRwLockReadGuard<R, T> {
+        
+        unsafe {
+            s.rwlock.raw.downgrade_upgradable();
+        }
+
+        
+        let s = ManuallyDrop::new(s);
+        let rwlock = unsafe { ptr::read(&s.rwlock) };
+
+        ArcRwLockReadGuard {
+            rwlock,
+            marker: PhantomData,
+        }
+    }
+}
+
+#[cfg(feature = "arc_lock")]
+impl<R: RawRwLockUpgradeTimed, T: ?Sized> ArcRwLockUpgradableReadGuard<R, T> {
+    
+    
+    
+    
+    
+    pub fn try_upgrade_for(
+        s: Self,
+        timeout: R::Duration,
+    ) -> Result<ArcRwLockWriteGuard<R, T>, Self> {
+        
+        if unsafe { s.rwlock.raw.try_upgrade_for(timeout) } {
+            
+            let s = ManuallyDrop::new(s);
+            let rwlock = unsafe { ptr::read(&s.rwlock) };
+
+            Ok(ArcRwLockWriteGuard {
+                rwlock,
+                marker: PhantomData,
+            })
+        } else {
+            Err(s)
+        }
+    }
+
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn try_upgrade_until(
+        s: Self,
+        timeout: R::Instant,
+    ) -> Result<ArcRwLockWriteGuard<R, T>, Self> {
+        
+        if unsafe { s.rwlock.raw.try_upgrade_until(timeout) } {
+            
+            let s = ManuallyDrop::new(s);
+            let rwlock = unsafe { ptr::read(&s.rwlock) };
+
+            Ok(ArcRwLockWriteGuard {
+                rwlock,
+                marker: PhantomData,
+            })
+        } else {
+            Err(s)
+        }
+    }
+}
+
+#[cfg(feature = "arc_lock")]
+impl<R: RawRwLockUpgrade, T: ?Sized> Deref for ArcRwLockUpgradableReadGuard<R, T> {
+    type Target = T;
+    #[inline]
+    fn deref(&self) -> &T {
+        unsafe { &*self.rwlock.data.get() }
+    }
+}
+
+#[cfg(feature = "arc_lock")]
+impl<R: RawRwLockUpgrade, T: ?Sized> Drop for ArcRwLockUpgradableReadGuard<R, T> {
+    #[inline]
+    fn drop(&mut self) {
+        
+        unsafe {
+            self.rwlock.raw.unlock_upgradable();
+        }
+    }
+}
+
+#[cfg(feature = "arc_lock")]
+impl<R: RawRwLockUpgrade, T: fmt::Debug + ?Sized> fmt::Debug
+    for ArcRwLockUpgradableReadGuard<R, T>
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Debug::fmt(&**self, f)
+    }
+}
+
+#[cfg(feature = "arc_lock")]
+impl<R: RawRwLockUpgrade, T: fmt::Display + ?Sized> fmt::Display
+    for ArcRwLockUpgradableReadGuard<R, T>
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        (**self).fmt(f)
+    }
+}
+
 
 
 

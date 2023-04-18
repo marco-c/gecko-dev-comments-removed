@@ -292,8 +292,13 @@ s_no_extra_traits! {
 }
 
 
+pub const ENAMETOOLONG: ::c_int = 36; 
+pub const ENOTEMPTY: ::c_int = 39; 
+pub const ELOOP: ::c_int = 40; 
 pub const EADDRINUSE: ::c_int = 98; 
 pub const EADDRNOTAVAIL: ::c_int = 99; 
+pub const ENETDOWN: ::c_int = 100; 
+pub const ENETUNREACH: ::c_int = 101; 
 pub const ECONNABORTED: ::c_int = 103; 
 pub const ECONNREFUSED: ::c_int = 111; 
 pub const ECONNRESET: ::c_int = 104; 
@@ -301,6 +306,9 @@ pub const EDEADLK: ::c_int = 35;
 pub const ENOSYS: ::c_int = 38; 
 pub const ENOTCONN: ::c_int = 107; 
 pub const ETIMEDOUT: ::c_int = 110; 
+pub const ESTALE: ::c_int = 116; 
+pub const EHOSTUNREACH: ::c_int = 113; 
+pub const EDQUOT: ::c_int = 122; 
 pub const EOPNOTSUPP: ::c_int = 0x5f;
 pub const ENODATA: ::c_int = 0x3d;
 pub const O_APPEND: ::c_int = 02000;

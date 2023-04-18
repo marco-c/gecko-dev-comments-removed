@@ -84,13 +84,18 @@ mod private {
         #[inline]
         fn size_hint(&self) -> (usize, Option<usize>) {
             let (_, hi) = self.iter.size_hint();
-            
-            
-            
             let hi = hi.map(|hi| {
-                let max_pending = std::cmp::min(self.meta.pending, hi);
-                let max_new = std::cmp::max(hi - self.meta.pending, 0) / 2;
-                max_pending + max_new
+                if hi <= self.meta.pending {
+                    
+                    
+                    hi
+                } else {
+                    
+                    
+                    
+                    
+                    self.meta.pending + (hi - self.meta.pending) / 2
+                }
             });
             
             (0, hi)
@@ -117,6 +122,7 @@ mod private {
     }
 
     
+    #[derive(Debug)]
     pub struct ById;
     impl<V> KeyMethod<V, V> for ById {
         type Container = JustValue<V>;
@@ -128,6 +134,9 @@ mod private {
 
     
     pub struct ByFn<F>(pub(crate) F);
+    impl<F> fmt::Debug for ByFn<F> {
+        debug_fmt_fields!(ByFn,);
+    }
     impl<K, V, F> KeyMethod<K, V> for ByFn<F>
     where
         F: FnMut(&V) -> K,
@@ -147,6 +156,7 @@ mod private {
         fn value(self) -> V;
     }
 
+    #[derive(Debug)]
     pub struct KeyValue<K, V>(K, V);
     impl<K, V> KeyXorValue<K, V> for KeyValue<K, V> {
         fn key_ref(&self) -> &K {
@@ -160,6 +170,7 @@ mod private {
         }
     }
 
+    #[derive(Debug)]
     pub struct JustValue<V>(V);
     impl<V> KeyXorValue<V, V> for JustValue<V> {
         fn key_ref(&self) -> &V {

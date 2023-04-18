@@ -1,19 +1,18 @@
 
 
 #[cfg(all(docsrs, not(unix)))]
-mod unix_imports {
-}
+mod unix_imports {}
 #[cfg(any(not(docsrs), unix))]
 mod unix_imports {
     pub(super) use std::os::unix::ffi::OsStrExt;
 }
 
-use self::unix_imports::*;
-use util::{ensure_compatible_types, cstr_cow_from_bytes};
-use std::ffi::{CStr, OsStr};
-use std::{fmt, marker, mem, ptr};
-use std::os::raw;
 pub use self::consts::*;
+use self::unix_imports::*;
+use std::ffi::{CStr, OsStr};
+use std::os::raw;
+use std::{fmt, marker, mem, ptr};
+use util::{cstr_cow_from_bytes, ensure_compatible_types};
 
 mod consts;
 
@@ -263,7 +262,6 @@ impl Library {
         }
     }
 
-    
     
     
     

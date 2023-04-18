@@ -14,8 +14,8 @@ use alloc::{
     string::String,
 };
 
-#[cfg(feature = "use_alloc")]
 use crate::Itertools;
+use crate::intersperse::{Intersperse, IntersperseWith};
 
 pub use crate::adaptors::{
     interleave,
@@ -34,6 +34,41 @@ pub use crate::zip_eq_impl::zip_eq;
 pub use crate::merge_join::merge_join_by;
 #[cfg(feature = "use_alloc")]
 pub use crate::rciter_impl::rciter;
+
+
+
+
+
+
+
+
+
+
+pub fn intersperse<I>(iterable: I, element: I::Item) -> Intersperse<I::IntoIter>
+    where I: IntoIterator,
+          <I as IntoIterator>::Item: Clone
+{
+    Itertools::intersperse(iterable.into_iter(), element)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub fn intersperse_with<I, F>(iterable: I, element: F) -> IntersperseWith<I::IntoIter, F>
+    where I: IntoIterator,
+          F: FnMut() -> I::Item
+{
+    Itertools::intersperse_with(iterable.into_iter(), element)
+}
 
 
 

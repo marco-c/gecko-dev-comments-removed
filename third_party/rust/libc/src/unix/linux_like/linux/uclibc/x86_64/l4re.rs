@@ -46,3 +46,8 @@ pub struct pthread_attr_t {
 
 
 pub const PTHREAD_STACK_MIN: usize = 65536;
+
+
+pub const SIGIO: ::c_int = 29;
+pub const B19200: ::speed_t = 0o000016;
+pub const B38400: ::speed_t = 0o000017;

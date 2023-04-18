@@ -217,7 +217,6 @@ impl Library {
     
     
     
-    
     pub unsafe fn get<T>(&self, symbol: &[u8]) -> Result<Symbol<T>, crate::Error> {
         ensure_compatible_types::<T, FARPROC>()?;
         let symbol = cstr_cow_from_bytes(symbol)?;
@@ -234,7 +233,6 @@ impl Library {
         }).map_err(|e| e.unwrap_or(crate::Error::GetProcAddressUnknown))
     }
 
-    
     
     
     

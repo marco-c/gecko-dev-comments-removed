@@ -19,6 +19,13 @@ use core::{
     sync::atomic::{AtomicUsize, Ordering},
 };
 
+#[cfg(feature = "arc_lock")]
+use alloc::sync::Arc;
+#[cfg(feature = "arc_lock")]
+use core::mem::ManuallyDrop;
+#[cfg(feature = "arc_lock")]
+use core::ptr;
+
 #[cfg(feature = "owning_ref")]
 use owning_ref::StableAddress;
 
@@ -392,6 +399,45 @@ impl<R: RawMutex, G: GetThreadId, T: ?Sized> ReentrantMutex<R, G, T> {
     pub fn data_ptr(&self) -> *mut T {
         self.data.get()
     }
+
+    
+    
+    
+    #[cfg(feature = "arc_lock")]
+    #[inline]
+    unsafe fn guard_arc(self: &Arc<Self>) -> ArcReentrantMutexGuard<R, G, T> {
+        ArcReentrantMutexGuard {
+            remutex: self.clone(),
+            marker: PhantomData,
+        }
+    }
+
+    
+    
+    
+    
+    #[cfg(feature = "arc_lock")]
+    #[inline]
+    pub fn lock_arc(self: &Arc<Self>) -> ArcReentrantMutexGuard<R, G, T> {
+        self.raw.lock();
+        
+        unsafe { self.guard_arc() }
+    }
+
+    
+    
+    
+    
+    #[cfg(feature = "arc_lock")]
+    #[inline]
+    pub fn try_lock_arc(self: &Arc<Self>) -> Option<ArcReentrantMutexGuard<R, G, T>> {
+        if self.raw.try_lock() {
+            
+            Some(unsafe { self.guard_arc() })
+        } else {
+            None
+        }
+    }
 }
 
 impl<R: RawMutexFair, G: GetThreadId, T: ?Sized> ReentrantMutex<R, G, T> {
@@ -438,6 +484,36 @@ impl<R: RawMutexTimed, G: GetThreadId, T: ?Sized> ReentrantMutex<R, G, T> {
         if self.raw.try_lock_until(timeout) {
             
             Some(unsafe { self.guard() })
+        } else {
+            None
+        }
+    }
+
+    
+    
+    
+    
+    #[cfg(feature = "arc_lock")]
+    #[inline]
+    pub fn try_lock_arc_for(self: &Arc<Self>, timeout: R::Duration) -> Option<ArcReentrantMutexGuard<R, G, T>> {
+        if self.raw.try_lock_for(timeout) {
+            
+            Some(unsafe { self.guard_arc() })
+        } else {
+            None
+        }
+    }
+
+    
+    
+    
+    
+    #[cfg(feature = "arc_lock")]
+    #[inline]
+    pub fn try_lock_arc_until(self: &Arc<Self>, timeout: R::Instant) -> Option<ArcReentrantMutexGuard<R, G, T>> {
+        if self.raw.try_lock_until(timeout) {
+            
+            Some(unsafe { self.guard_arc() })
         } else {
             None
         }
@@ -660,6 +736,7 @@ impl<'a, R: RawMutexFair + 'a, G: GetThreadId + 'a, T: ?Sized + 'a>
             s.remutex.raw.bump();
         }
     }
+
 }
 
 impl<'a, R: RawMutex + 'a, G: GetThreadId + 'a, T: ?Sized + 'a> Deref
@@ -704,6 +781,114 @@ impl<'a, R: RawMutex + 'a, G: GetThreadId + 'a, T: fmt::Display + ?Sized + 'a> f
 unsafe impl<'a, R: RawMutex + 'a, G: GetThreadId + 'a, T: ?Sized + 'a> StableAddress
     for ReentrantMutexGuard<'a, R, G, T>
 {
+}
+
+
+
+
+
+
+#[cfg(feature = "arc_lock")]
+#[must_use = "if unused the ReentrantMutex will immediately unlock"]
+pub struct ArcReentrantMutexGuard<R: RawMutex, G: GetThreadId, T: ?Sized> {
+    remutex: Arc<ReentrantMutex<R, G, T>>,
+    marker: PhantomData<GuardNoSend>,
+}
+
+#[cfg(feature = "arc_lock")]
+impl<R: RawMutex, G: GetThreadId, T: ?Sized> ArcReentrantMutexGuard<R, G, T> {
+    
+    pub fn remutex(s: &Self) -> &Arc<ReentrantMutex<R, G, T>> {
+        &s.remutex
+    }
+
+    
+    
+    
+    
+    #[inline]
+    pub fn unlocked<F, U>(s: &mut Self, f: F) -> U
+    where
+        F: FnOnce() -> U,
+    {
+        
+        unsafe {
+            s.remutex.raw.unlock();
+        }
+        defer!(s.remutex.raw.lock());
+        f()
+    }
+}
+
+#[cfg(feature = "arc_lock")]
+impl<R: RawMutexFair, G: GetThreadId, T: ?Sized>
+    ArcReentrantMutexGuard<R, G, T>
+{
+    
+    
+    
+    #[inline]
+    pub fn unlock_fair(s: Self) {
+        
+        unsafe {
+            s.remutex.raw.unlock_fair();
+        }
+
+        
+        let mut s = ManuallyDrop::new(s);
+        unsafe { ptr::drop_in_place(&mut s.remutex) };
+    }
+
+    
+    
+    
+    #[inline]
+    pub fn unlocked_fair<F, U>(s: &mut Self, f: F) -> U
+    where
+        F: FnOnce() -> U,
+    {
+        
+        unsafe {
+            s.remutex.raw.unlock_fair();
+        }
+        defer!(s.remutex.raw.lock());
+        f()
+    }
+
+    
+    
+    
+    #[inline]
+    pub fn bump(s: &mut Self) {
+        
+        unsafe {
+            s.remutex.raw.bump();
+        }
+    }
+}
+
+#[cfg(feature = "arc_lock")]
+impl<R: RawMutex, G: GetThreadId, T: ?Sized> Deref
+    for ArcReentrantMutexGuard<R, G, T>
+{
+    type Target = T;
+    #[inline]
+    fn deref(&self) -> &T {
+        unsafe { &*self.remutex.data.get() }
+    }
+}
+
+#[cfg(feature = "arc_lock")]
+impl<R: RawMutex, G: GetThreadId, T: ?Sized> Drop
+    for ArcReentrantMutexGuard<R, G, T>
+{
+    #[inline]
+    fn drop(&mut self) {
+        
+        unsafe {
+            self.remutex.raw.unlock();
+        }
+    }
 }
 
 

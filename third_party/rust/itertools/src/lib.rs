@@ -179,6 +179,7 @@ pub use crate::repeatn::repeat_n;
 #[allow(deprecated)]
 pub use crate::sources::{repeat_call, unfold, iterate};
 pub use crate::with_position::Position;
+pub use crate::unziptuple::{multiunzip, MultiUnzip};
 pub use crate::ziptuple::multizip;
 mod adaptors;
 mod either_or_both;
@@ -237,6 +238,7 @@ mod tuple_impl;
 mod duplicates_impl;
 #[cfg(feature = "use_std")]
 mod unique_impl;
+mod unziptuple;
 mod with_position;
 mod zip_eq_impl;
 mod zip_longest;
@@ -2241,6 +2243,7 @@ pub trait Itertools : Iterator {
     
     
     
+    #[deprecated(since = "0.10.2", note = "Use `Iterator::reduce` instead")]
     fn fold1<F>(mut self, f: F) -> Option<Self::Item>
         where F: FnMut(Self::Item, Self::Item) -> Self::Item,
               Self: Sized,
@@ -2690,6 +2693,43 @@ pub trait Itertools : Iterator {
     
     
     
+    #[cfg(feature = "use_alloc")]
+    fn sorted_by_cached_key<K, F>(self, f: F) -> VecIntoIter<Self::Item>
+    where
+        Self: Sized,
+        K: Ord,
+        F: FnMut(&Self::Item) -> K,
+    {
+        let mut v = Vec::from_iter(self);
+        v.sort_by_cached_key(f);
+        v.into_iter()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     #[cfg(feature = "use_alloc")]
@@ -2767,6 +2807,8 @@ pub trait Itertools : Iterator {
         })
     }
 
+    
+    
     
     
     
@@ -3400,6 +3442,33 @@ pub trait Itertools : Iterator {
         F: FnMut(Self::Item) -> K,
     {
         self.map(f).counts()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn multiunzip<FromI>(self) -> FromI
+    where
+        Self: Sized + MultiUnzip<FromI>,
+    {
+        MultiUnzip::multiunzip(self)
     }
 }
 

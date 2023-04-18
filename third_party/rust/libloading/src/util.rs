@@ -1,5 +1,5 @@
-use std::ffi::{CStr, CString};
 use std::borrow::Cow;
+use std::ffi::{CStr, CString};
 use std::os::raw;
 
 use crate::Error;
@@ -13,11 +13,14 @@ pub(crate) fn cstr_cow_from_bytes(slice: &[u8]) -> Result<Cow<'_, CStr>, Error> 
         
         None => unsafe { Cow::Borrowed(CStr::from_ptr(&ZERO)) },
         
-        Some(&0) => Cow::Borrowed(CStr::from_bytes_with_nul(slice)
-            .map_err(|source| Error::CreateCStringWithTrailing { source })?),
+        Some(&0) => Cow::Borrowed(
+            CStr::from_bytes_with_nul(slice)
+                .map_err(|source| Error::CreateCStringWithTrailing { source })?,
+        ),
         
-        Some(_) => Cow::Owned(CString::new(slice)
-            .map_err(|source| Error::CreateCString { source })?),
+        Some(_) => {
+            Cow::Owned(CString::new(slice).map_err(|source| Error::CreateCString { source })?)
+        }
     })
 }
 

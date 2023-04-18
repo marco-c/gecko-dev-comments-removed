@@ -85,6 +85,8 @@
 
 
 
+
+
 #![no_std]
 #![warn(missing_docs)]
 #![warn(rust_2018_idioms)]
@@ -92,6 +94,9 @@
 
 #[macro_use]
 extern crate scopeguard;
+
+#[cfg(feature = "arc_lock")]
+extern crate alloc;
 
 
 pub struct GuardSend(());

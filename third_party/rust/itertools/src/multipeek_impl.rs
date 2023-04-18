@@ -38,6 +38,7 @@ impl<I: Iterator> MultiPeek<I> {
     
     
     
+    
     pub fn peek(&mut self) -> Option<&I::Item> {
         let ret = if self.index < self.buf.len() {
             Some(&self.buf[self.index])

@@ -11,6 +11,13 @@ use core::marker::PhantomData;
 use core::mem;
 use core::ops::{Deref, DerefMut};
 
+#[cfg(feature = "arc_lock")]
+use alloc::sync::Arc;
+#[cfg(feature = "arc_lock")]
+use core::mem::ManuallyDrop;
+#[cfg(feature = "arc_lock")]
+use core::ptr;
+
 #[cfg(feature = "owning_ref")]
 use owning_ref::StableAddress;
 
@@ -286,6 +293,45 @@ impl<R: RawMutex, T: ?Sized> Mutex<R, T> {
     pub fn data_ptr(&self) -> *mut T {
         self.data.get()
     }
+
+    
+    
+    
+    #[cfg(feature = "arc_lock")]
+    #[inline]
+    unsafe fn guard_arc(self: &Arc<Self>) -> ArcMutexGuard<R, T> {
+        ArcMutexGuard {
+            mutex: self.clone(),
+            marker: PhantomData,
+        }
+    }
+
+    
+    
+    
+    
+    #[cfg(feature = "arc_lock")]
+    #[inline]
+    pub fn lock_arc(self: &Arc<Self>) -> ArcMutexGuard<R, T> {
+        self.raw.lock();
+        
+        unsafe { self.guard_arc() }
+    }
+
+    
+    
+    
+    
+    #[cfg(feature = "arc_lock")]
+    #[inline]
+    pub fn try_lock_arc(self: &Arc<Self>) -> Option<ArcMutexGuard<R, T>> {
+        if self.raw.try_lock() {
+            
+            Some(unsafe { self.guard_arc() })
+        } else {
+            None
+        }
+    }
 }
 
 impl<R: RawMutexFair, T: ?Sized> Mutex<R, T> {
@@ -332,6 +378,39 @@ impl<R: RawMutexTimed, T: ?Sized> Mutex<R, T> {
         if self.raw.try_lock_until(timeout) {
             
             Some(unsafe { self.guard() })
+        } else {
+            None
+        }
+    }
+
+    
+    
+    
+    
+    #[cfg(feature = "arc_lock")]
+    #[inline]
+    pub fn try_lock_arc_for(self: &Arc<Self>, timeout: R::Duration) -> Option<ArcMutexGuard<R, T>> {
+        if self.raw.try_lock_for(timeout) {
+            
+            Some(unsafe { self.guard_arc() })
+        } else {
+            None
+        }
+    }
+
+    
+    
+    
+    
+    #[cfg(feature = "arc_lock")]
+    #[inline]
+    pub fn try_lock_arc_until(
+        self: &Arc<Self>,
+        timeout: R::Instant,
+    ) -> Option<ArcMutexGuard<R, T>> {
+        if self.raw.try_lock_until(timeout) {
+            
+            Some(unsafe { self.guard_arc() })
         } else {
             None
         }
@@ -582,6 +661,116 @@ impl<'a, R: RawMutex + 'a, T: fmt::Display + ?Sized + 'a> fmt::Display for Mutex
 
 #[cfg(feature = "owning_ref")]
 unsafe impl<'a, R: RawMutex + 'a, T: ?Sized + 'a> StableAddress for MutexGuard<'a, R, T> {}
+
+
+
+
+
+#[cfg(feature = "arc_lock")]
+#[must_use = "if unused the Mutex will immediately unlock"]
+pub struct ArcMutexGuard<R: RawMutex, T: ?Sized> {
+    mutex: Arc<Mutex<R, T>>,
+    marker: PhantomData<R::GuardMarker>,
+}
+
+#[cfg(feature = "arc_lock")]
+impl<R: RawMutex, T: ?Sized> ArcMutexGuard<R, T> {
+    
+    #[inline]
+    pub fn mutex(&self) -> &Arc<Mutex<R, T>> {
+        &self.mutex
+    }
+
+    
+    
+    
+    
+    #[inline]
+    pub fn unlocked<F, U>(s: &mut Self, f: F) -> U
+    where
+        F: FnOnce() -> U,
+    {
+        
+        unsafe {
+            s.mutex.raw.unlock();
+        }
+        defer!(s.mutex.raw.lock());
+        f()
+    }
+}
+
+#[cfg(feature = "arc_lock")]
+impl<R: RawMutexFair, T: ?Sized> ArcMutexGuard<R, T> {
+    
+    
+    
+    #[inline]
+    pub fn unlock_fair(s: Self) {
+        
+        unsafe {
+            s.mutex.raw.unlock_fair();
+        }
+
+        
+        let mut s = ManuallyDrop::new(s);
+        unsafe { ptr::drop_in_place(&mut s.mutex) }; 
+    }
+
+    
+    
+    
+    #[inline]
+    pub fn unlocked_fair<F, U>(s: &mut Self, f: F) -> U
+    where
+        F: FnOnce() -> U,
+    {
+        
+        unsafe {
+            s.mutex.raw.unlock_fair();
+        }
+        defer!(s.mutex.raw.lock());
+        f()
+    }
+
+    
+    
+    
+    #[inline]
+    pub fn bump(s: &mut Self) {
+        
+        unsafe {
+            s.mutex.raw.bump();
+        }
+    }
+}
+
+#[cfg(feature = "arc_lock")]
+impl<R: RawMutex, T: ?Sized> Deref for ArcMutexGuard<R, T> {
+    type Target = T;
+    #[inline]
+    fn deref(&self) -> &T {
+        unsafe { &*self.mutex.data.get() }
+    }
+}
+
+#[cfg(feature = "arc_lock")]
+impl<R: RawMutex, T: ?Sized> DerefMut for ArcMutexGuard<R, T> {
+    #[inline]
+    fn deref_mut(&mut self) -> &mut T {
+        unsafe { &mut *self.mutex.data.get() }
+    }
+}
+
+#[cfg(feature = "arc_lock")]
+impl<R: RawMutex, T: ?Sized> Drop for ArcMutexGuard<R, T> {
+    #[inline]
+    fn drop(&mut self) {
+        
+        unsafe {
+            self.mutex.raw.unlock();
+        }
+    }
+}
 
 
 
