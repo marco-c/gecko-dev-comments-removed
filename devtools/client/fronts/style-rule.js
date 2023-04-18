@@ -30,12 +30,6 @@ class StyleRuleFront extends FrontClassWithSpec(styleRuleSpec) {
     this.actorID = form.actor;
     this._form = form;
     this.traits = form.traits || {};
-    
-    
-    
-    if (this._mediaText) {
-      this._mediaText = null;
-    }
   }
 
   
@@ -92,25 +86,6 @@ class StyleRuleFront extends FrontClassWithSpec(styleRuleSpec) {
   get selectors() {
     return this._form.selectors;
   }
-  
-  
-  
-  get media() {
-    return this._form.media;
-  }
-  
-  
-  
-  get mediaText() {
-    if (!this._form.media) {
-      return null;
-    }
-    if (this._mediaText) {
-      return this._mediaText;
-    }
-    this._mediaText = this.media.join(", ");
-    return this._mediaText;
-  }
 
   get parentStyleSheet() {
     const resourceCommand = this.targetFront.commands.resourceCommand;
@@ -159,14 +134,6 @@ class StyleRuleFront extends FrontClassWithSpec(styleRuleSpec) {
   }
 
   get ancestorData() {
-    
-    
-    
-    
-    if (typeof this._form.ancestorData === "undefined") {
-      return this.mediaText ? [{ type: "media", value: this.mediaText }] : [];
-    }
-
     return this._form.ancestorData;
   }
 
