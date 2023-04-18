@@ -1190,12 +1190,27 @@ DocAccessiblePlatformExtParent* DocAccessibleParent::GetPlatformExtension() {
 
 void DocAccessibleParent::SelectionRanges(nsTArray<TextRange>* aRanges) const {
   for (const auto& data : mTextSelections) {
-    aRanges->AppendElement(
-        TextRange(const_cast<DocAccessibleParent*>(this),
-                  const_cast<RemoteAccessible*>(GetAccessible(data.StartID())),
-                  data.StartOffset(),
-                  const_cast<RemoteAccessible*>(GetAccessible(data.EndID())),
-                  data.EndOffset()));
+    
+    
+    
+    
+    auto* startAcc =
+        const_cast<RemoteAccessible*>(GetAccessible(data.StartID()));
+    auto* endAcc = const_cast<RemoteAccessible*>(GetAccessible(data.EndID()));
+    if (!startAcc || !endAcc) {
+      continue;
+    }
+    uint32_t startCount = startAcc->CharacterCount();
+    if (data.StartOffset() > static_cast<int32_t>(startCount)) {
+      continue;
+    }
+    uint32_t endCount = endAcc->CharacterCount();
+    if (data.EndOffset() > static_cast<int32_t>(endCount)) {
+      continue;
+    }
+    aRanges->AppendElement(TextRange(const_cast<DocAccessibleParent*>(this),
+                                     startAcc, data.StartOffset(), endAcc,
+                                     data.EndOffset()));
   }
 }
 
