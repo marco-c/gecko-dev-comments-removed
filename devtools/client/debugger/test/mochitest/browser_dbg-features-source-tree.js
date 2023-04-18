@@ -14,6 +14,14 @@
 
 "use strict";
 
+requestLongerTimeout(5);
+
+
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/devtools/client/framework/browser-toolbox/test/helpers-browser-toolbox.js",
+  this
+);
+
 const testServer = createVersionizedHttpTestServer(
   "examples/sourcemaps-reload-uncompressed"
 );
@@ -131,6 +139,7 @@ add_task(async function testSimpleSourcesWithManualClickExpand() {
 
   info("Assert that nested-source.js is still the selected source");
   await assertNodeIsFocused(dbg, 5);
+  dbg.toolbox.closeToolbox();
 });
 
 
@@ -237,6 +246,7 @@ add_task(async function testSimpleSourcesWithManualKeyShortcutsExpand() {
   
   await pressKey(dbg, "Up");
   await assertNodeIsFocused(dbg, 2);
+  dbg.toolbox.closeToolbox();
 });
 
 
@@ -367,6 +377,7 @@ add_task(async function testSourceTreeOnTheIntegrationTestPage() {
     }
     return resultItem.innerText.includes("query.js?x=1");
   }, "Results include the source with the query string");
+  dbg.toolbox.closeToolbox();
 });
 
 
@@ -419,6 +430,80 @@ add_task(async function testSourceTreeWithWebExtensionContentScript() {
 
 
 
+add_task(async function testSourceTreeNamesForWebExtensions() {
+  await pushPref("devtools.chrome.enabled", true);
+  const extension = await installAndStartContentScriptExtension();
+
+  const dbg = await initDebugger("doc-content-script-sources.html");
+  await waitForSourcesInSourceTree(dbg, [], {
+    noExpand: true,
+  });
+
+  is(
+    getLabel(dbg, 2),
+    "Test content script extension",
+    "Test content script extension is labeled properly"
+  );
+  is(getLabel(dbg, 3), "resource://gre", "resource://gre is labeled properly");
+
+  await dbg.toolbox.closeToolbox();
+  await extension.unload();
+
+  
+  await pushPref("devtools.browsertoolbox.panel", "jsdebugger");
+
+  const ToolboxTask = await initBrowserToolboxTask();
+  await ToolboxTask.importFunctions({
+    createDebuggerContext,
+    waitUntil,
+    findSourceNodeWithText,
+    findAllElements,
+    getSelector,
+    findAllElementsWithSelector,
+    assertSourceTreeNode,
+  });
+
+  
+  
+  await ToolboxTask.spawn(JSON.stringify(selectors), async _selectors => {
+    this.selectors = _selectors;
+  });
+
+  await ToolboxTask.spawn(null, async () => {
+    try {
+      
+      
+      await gToolbox.getPanelWhenReady("jsdebugger");
+      const dbgx = createDebuggerContext(gToolbox);
+      let rootNodeForExtensions = null;
+      await waitUntil(() => {
+        rootNodeForExtensions = findSourceNodeWithText(dbgx, "extension");
+        return !!rootNodeForExtensions;
+      });
+      
+      if (
+        !!rootNodeForExtensions &&
+        !rootNodeForExtensions.querySelector(".arrow.expanded")
+      ) {
+        rootNodeForExtensions.querySelector(".arrow").click();
+      }
+
+      
+      
+      await assertSourceTreeNode(dbgx, "Picture-In-Picture");
+      await assertSourceTreeNode(dbgx, "Form Autofill");
+    } catch (e) {
+      console.log("Caught exception in spawn", e);
+      throw e;
+    }
+  });
+
+  await ToolboxTask.destroy();
+});
+
+
+
+
 
 
 
@@ -430,6 +515,22 @@ function getLabel(dbg, index) {
       
       .replace(/^[\s\u200b]*/g, "")
   );
+}
+
+
+
+
+
+
+
+
+async function assertSourceTreeNode(dbg, text) {
+  let node = null;
+  await waitUntil(() => {
+    node = findSourceNodeWithText(dbg, text);
+    return !!node;
+  });
+  ok(!!node, `Source tree node with text "${text}" exists`);
 }
 
 

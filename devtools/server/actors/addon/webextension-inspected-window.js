@@ -23,10 +23,6 @@ const {
   webExtensionInspectedWindowSpec,
 } = require("devtools/shared/specs/addon/webextension-inspected-window");
 
-const { WebExtensionPolicy } = Cu.getGlobalForObject(
-  require("resource://gre/modules/XPCOMUtils.jsm")
-);
-
 
 
 
