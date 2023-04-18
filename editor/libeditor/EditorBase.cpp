@@ -2802,7 +2802,8 @@ nsresult EditorBase::InsertTextWithTransaction(
   
   
   
-  EditorDOMPoint pointToInsert = FindBetterInsertionPoint(aPointToInsert);
+  EditorDOMPoint pointToInsert =
+      FindBetterInsertionPoint(aPointToInsert).To<EditorDOMPoint>();
 
   
   if (!pointToInsert.IsInTextNode()) {
@@ -2995,7 +2996,8 @@ nsresult EditorBase::InsertTextIntoTextNodeWithTransaction(
   if (IsHTMLEditor() && pointToInsert.IsSet()) {
     auto [begin, end] = ComputeInsertedRange(pointToInsert, aStringToInsert);
     if (begin.IsSet() && end.IsSet()) {
-      TopLevelEditSubActionDataRef().DidInsertText(*this, begin, end);
+      TopLevelEditSubActionDataRef().DidInsertText(
+          *this, begin.To<EditorRawDOMPoint>(), end.To<EditorRawDOMPoint>());
     }
     if (isIMETransaction) {
       
@@ -4234,8 +4236,8 @@ nsresult EditorBase::DeleteSelectionAsSubAction(
   
   
   
-  EditorDOMPoint atNewStartOfSelection(
-      EditorBase::GetStartPoint(SelectionRef()));
+  EditorDOMPoint atNewStartOfSelection =
+      EditorBase::GetStartPoint(SelectionRef()).To<EditorDOMPoint>();
   if (NS_WARN_IF(!atNewStartOfSelection.IsSet())) {
     
     
@@ -4696,8 +4698,9 @@ nsresult EditorBase::DeleteRangesWithTransaction(
       
       
       TopLevelEditSubActionDataRef().WillDeleteRange(
-          *this, aRangesToDelete.GetStartPointOfFirstRange(),
-          aRangesToDelete.GetEndPointOfFirstRange());
+          *this,
+          aRangesToDelete.GetStartPointOfFirstRange().To<EditorRawDOMPoint>(),
+          aRangesToDelete.GetEndPointOfFirstRange().To<EditorRawDOMPoint>());
     } else if (!deleteCharData) {
       TopLevelEditSubActionDataRef().WillDeleteContent(*this, *deleteContent);
     }

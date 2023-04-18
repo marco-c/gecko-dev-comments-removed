@@ -280,8 +280,8 @@ AutoRangeArray::ExtendAnchorFocusRangeFor(
       }
 
       
-      EditorRawDOMPoint insertionPoint =
-          aEditorBase.FindBetterInsertionPoint(atStartOfSelection);
+      EditorRawDOMPoint insertionPoint = aEditorBase.FindBetterInsertionPoint(
+          atStartOfSelection.To<EditorRawDOMPoint>());
       if (!insertionPoint.IsSet()) {
         NS_WARNING(
             "EditorBase::FindBetterInsertionPoint() failed, but ignored");
