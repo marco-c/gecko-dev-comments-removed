@@ -9,11 +9,13 @@
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/ScopeExit.h"
+#include "mozilla/StaticPrefs_svg.h"
 #include "mozilla/SVGObserverUtils.h"
 #include "mozilla/SVGUseFrame.h"
 #include "mozilla/URLExtraData.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/ShadowIncludingTreeIterator.h"
 #include "mozilla/dom/SVGLengthBinding.h"
 #include "mozilla/dom/SVGSVGElement.h"
 #include "mozilla/dom/SVGUseElementBinding.h"
@@ -24,8 +26,7 @@
 
 NS_IMPL_NS_NEW_SVG_ELEMENT(Use)
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 JSObject* SVGUseElement::WrapNode(JSContext* aCx,
                                   JS::Handle<JSObject*> aGivenProto) {
@@ -285,6 +286,70 @@ auto SVGUseElement::ScanAncestors(const Element& aTarget) const -> ScanResult {
 
 
 
+static bool IsForbiddenUseNode(const nsINode& aNode) {
+  if (!aNode.IsElement()) {
+    return false;
+  }
+  const auto* svg = SVGElement::FromNode(aNode);
+  return !svg || !svg->IsSVGGraphicsElement();
+}
+
+static void CollectForbiddenNodes(Element& aRoot,
+                                  nsTArray<RefPtr<nsINode>>& aNodes) {
+  auto iter = dom::ShadowIncludingTreeIterator(aRoot);
+  while (iter) {
+    nsINode* node = *iter;
+    if (IsForbiddenUseNode(*node)) {
+      aNodes.AppendElement(node);
+      iter.SkipChildren();
+      continue;
+    }
+    ++iter;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static void RemoveForbiddenNodes(Element& aRoot, bool aIsCrossDocument) {
+  switch (StaticPrefs::svg_use_element_graphics_element_restrictions()) {
+    case 0:
+      return;
+    case 1:
+      if (!aIsCrossDocument) {
+        return;
+      }
+      break;
+    default:
+      break;
+  }
+
+  AutoTArray<RefPtr<nsINode>, 10> unsafeNodes;
+  CollectForbiddenNodes(aRoot, unsafeNodes);
+  for (auto& unsafeNode : unsafeNodes) {
+    unsafeNode->Remove();
+  }
+}
+
 void SVGUseElement::UpdateShadowTree() {
   MOZ_ASSERT(IsInComposedDoc());
 
@@ -330,9 +395,10 @@ void SVGUseElement::UpdateShadowTree() {
   }
 
   {
-    nsNodeInfoManager* nodeInfoManager = targetElement->OwnerDoc() == OwnerDoc()
-                                             ? nullptr
-                                             : OwnerDoc()->NodeInfoManager();
+    const bool isCrossDocument = targetElement->OwnerDoc() != OwnerDoc();
+
+    nsNodeInfoManager* nodeInfoManager =
+        isCrossDocument ? OwnerDoc()->NodeInfoManager() : nullptr;
 
     nsCOMPtr<nsINode> newNode =
         targetElement->Clone(true, nodeInfoManager, IgnoreErrors());
@@ -342,6 +408,7 @@ void SVGUseElement::UpdateShadowTree() {
 
     MOZ_ASSERT(newNode->IsElement());
     newElement = newNode.forget().downcast<Element>();
+    RemoveForbiddenNodes(*newElement, isCrossDocument);
   }
 
   if (newElement->IsAnyOfSVGElements(nsGkAtoms::svg, nsGkAtoms::symbol)) {
@@ -568,5 +635,4 @@ nsCSSPropertyID SVGUseElement::GetCSSPropertyIdForAttrEnum(uint8_t aAttrEnum) {
   }
 }
 
-}  
 }  
