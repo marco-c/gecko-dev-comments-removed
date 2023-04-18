@@ -795,9 +795,8 @@ void FetchEvent::RespondWith(JSContext* aCx, Promise& aArg, ErrorResult& aRv) {
         ir->GetFragment(), spec, line, column);
 
     aArg.AppendNativeHandler(handler);
-  } else {
-    MOZ_ASSERT(mRespondWithHandler);
-
+    
+  } else if (mRespondWithHandler) {
     mRespondWithHandler->RespondWithCalledAt(spec, line, column);
     aArg.AppendNativeHandler(mRespondWithHandler);
     mRespondWithHandler = nullptr;
@@ -844,7 +843,8 @@ void FetchEvent::ReportCanceled() {
     ::AsyncLog(mChannel.get(), mPreventDefaultScriptSpec,
                mPreventDefaultLineNumber, mPreventDefaultColumnNumber,
                "InterceptionCanceledWithURL"_ns, requestURL);
-  } else {
+    
+  } else if (mRespondWithHandler) {
     mRespondWithHandler->ReportCanceled(mPreventDefaultScriptSpec,
                                         mPreventDefaultLineNumber,
                                         mPreventDefaultColumnNumber);
