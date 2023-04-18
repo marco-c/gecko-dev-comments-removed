@@ -4573,9 +4573,9 @@ void nsGlobalWindowInner::PageHidden() {
   
   
 
-  nsFocusManager* fm = nsFocusManager::GetFocusManager();
-  if (fm) {
-    fm->WindowHidden(GetOuterWindow(), nsFocusManager::GenerateFocusActionId());
+  if (RefPtr<nsFocusManager> fm = nsFocusManager::GetFocusManager()) {
+    nsCOMPtr<nsPIDOMWindowOuter> outerWindow = GetOuterWindow();
+    fm->WindowHidden(outerWindow, nsFocusManager::GenerateFocusActionId());
   }
 
   mNeedsFocus = true;
