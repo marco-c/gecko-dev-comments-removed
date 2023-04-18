@@ -406,11 +406,26 @@ nsPrinterCUPS::PrinterInfoLock nsPrinterCUPS::TryEnsurePrinterInfo(
 
         
         
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        const bool namesMightNotMatch =
+            hostname != serverName || hostname == "localhost";
         const bool portsDiffer =
             mShim.httpAddrPort(mShim.httpGetAddress(aConnection)) !=
             mShim.ippPort();
         const bool cupsDestDeviceFlag =
-            (hostname != serverName && serverName[0] != '/') || portsDiffer;
+            (namesMightNotMatch && serverName[0] != '/') || portsDiffer;
 
         
         
