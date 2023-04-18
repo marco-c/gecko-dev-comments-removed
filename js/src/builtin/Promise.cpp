@@ -5257,6 +5257,16 @@ template <typename T>
   return PerformPromiseThenWithReaction(cx, unwrappedPromise, reaction);
 }
 
+[[nodiscard]] bool js::InternalAsyncGeneratorAwait(
+    JSContext* cx, JS::Handle<AsyncGeneratorObject*> asyncGenObj,
+    JS::Handle<JS::Value> value, PromiseHandler onFulfilled,
+    PromiseHandler onRejected) {
+  auto extra = [&](Handle<PromiseReactionRecord*> reaction) {
+    reaction->setIsAsyncGenerator(asyncGenObj);
+  };
+  return InternalAwait(cx, value, nullptr, onFulfilled, onRejected, extra);
+}
+
 
 
 
@@ -5282,12 +5292,9 @@ template <typename T>
 [[nodiscard]] bool js::AsyncGeneratorAwait(
     JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
     HandleValue value) {
-  auto extra = [&](Handle<PromiseReactionRecord*> reaction) {
-    reaction->setIsAsyncGenerator(asyncGenObj);
-  };
-  return InternalAwait(cx, value, nullptr,
-                       PromiseHandler::AsyncGeneratorAwaitedFulfilled,
-                       PromiseHandler::AsyncGeneratorAwaitedRejected, extra);
+  return InternalAsyncGeneratorAwait(
+      cx, asyncGenObj, value, PromiseHandler::AsyncGeneratorAwaitedFulfilled,
+      PromiseHandler::AsyncGeneratorAwaitedRejected);
 }
 
 
@@ -5685,11 +5692,8 @@ enum class ResumeNextKind { Enqueue, Reject, Resolve };
           
           
           
-          auto extra = [&](Handle<PromiseReactionRecord*> reaction) {
-            reaction->setIsAsyncGenerator(generator);
-          };
-          return InternalAwait(cx, value, nullptr, onFulfilled, onRejected,
-                               extra);
+          return InternalAsyncGeneratorAwait(cx, generator, value, onFulfilled,
+                                             onRejected);
         }
 
         
@@ -5730,11 +5734,8 @@ enum class ResumeNextKind { Enqueue, Reject, Resolve };
       const PromiseHandler onRejected =
           PromiseHandler::AsyncGeneratorYieldReturnAwaitedRejected;
 
-      auto extra = [&](Handle<PromiseReactionRecord*> reaction) {
-        reaction->setIsAsyncGenerator(generator);
-      };
-      return InternalAwait(cx, argument, nullptr, onFulfilled, onRejected,
-                           extra);
+      return InternalAsyncGeneratorAwait(cx, generator, argument, onFulfilled,
+                                         onRejected);
     }
 
     
