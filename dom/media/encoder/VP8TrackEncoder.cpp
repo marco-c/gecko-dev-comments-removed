@@ -117,9 +117,9 @@ nsresult CreateEncoderConfig(int32_t aWidth, int32_t aHeight,
   
   config->rc_resize_allowed = 0;
   
-  config->rc_undershoot_pct = 200;
+  config->rc_undershoot_pct = 100;
   
-  config->rc_overshoot_pct = 200;
+  config->rc_overshoot_pct = 15;
   
   config->rc_buf_initial_sz = 500;
   
