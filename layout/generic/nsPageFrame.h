@@ -72,6 +72,15 @@ class nsPageFrame final : public nsContainerFrame {
 
   nsSize ComputePageSize() const;
 
+  
+  
+  
+  
+  float ComputePageSizeScale(const nsSize aContentPageSize) const;
+  inline float ComputePageSizeScale() const {
+    return ComputePageSizeScale(ComputePageSize());
+  }
+
  protected:
   explicit nsPageFrame(ComputedStyle* aStyle, nsPresContext* aPresContext);
   virtual ~nsPageFrame();

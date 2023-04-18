@@ -499,31 +499,11 @@ static gfx::Matrix4x4 ComputePagesPerSheetAndPageSizeTransform(
 
   
   
-  float scale = 1.0f;
+  const nsSize contentPageSize = pageFrame->ComputePageSize();
+  float scale = pageFrame->ComputePageSizeScale(contentPageSize);
   nsPoint gridOrigin;
   uint32_t rowIdx = 0;
   uint32_t colIdx = 0;
-
-  
-  
-  
-  const nsSize actualPaperSize = pageFrame->PresContext()->GetPageSize();
-  const nsSize contentPageSize = pageFrame->ComputePageSize();
-  {
-    nscoord contentPageHeight = contentPageSize.height;
-    
-    if (contentPageSize.width > actualPaperSize.width) {
-      scale *= float(actualPaperSize.width) / float(contentPageSize.width);
-      contentPageHeight = NSToCoordRound(contentPageHeight * scale);
-    }
-    
-    if (contentPageHeight > actualPaperSize.height) {
-      scale *= float(actualPaperSize.height) / float(contentPageHeight);
-    }
-  }
-  MOZ_ASSERT(
-      scale <= 1.0f,
-      "Page-size mismatches should only have caused us to scale down, not up.");
 
   if (nsSharedPageData* pd = pageFrame->GetSharedPageData()) {
     const auto* ppsInfo = pd->PagesPerSheetInfo();
@@ -597,6 +577,37 @@ nsSize nsPageFrame::ComputePageSize() const {
     MOZ_ASSERT(pageSize.IsAuto(), "Impossible page-size value?");
   }
   return size;
+}
+
+float nsPageFrame::ComputePageSizeScale(const nsSize aContentPageSize) const {
+  MOZ_ASSERT(aContentPageSize == ComputePageSize(),
+             "Incorrect content page size");
+
+  
+  
+  if (PageContentFrame()->StylePage()->mSize.IsAuto()) {
+    return 1.0f;
+  }
+
+  
+  
+  
+  float scale = 1.0f;
+  const nsSize actualPaperSize = PresContext()->GetPageSize();
+  nscoord contentPageHeight = aContentPageSize.height;
+  
+  if (aContentPageSize.width > actualPaperSize.width) {
+    scale *= float(actualPaperSize.width) / float(aContentPageSize.width);
+    contentPageHeight = NSToCoordRound(contentPageHeight * scale);
+  }
+  
+  if (contentPageHeight > actualPaperSize.height) {
+    scale *= float(actualPaperSize.height) / float(contentPageHeight);
+  }
+  MOZ_ASSERT(
+      scale <= 1.0f,
+      "Page-size mismatches should only have caused us to scale down, not up.");
+  return scale;
 }
 
 void nsPageFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
