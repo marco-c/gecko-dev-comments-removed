@@ -593,14 +593,6 @@ class nsBaseWidget : public nsIWidget, public nsSupportsWeakReference {
 
   bool HasRemoteContent() const { return mHasRemoteContent; }
 
-  void NotifyRollupGeometryChange() {
-    
-    
-    if (gRollupListener) {
-      gRollupListener->NotifyGeometryChange();
-    }
-  }
-
   
 
 
