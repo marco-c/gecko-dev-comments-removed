@@ -1702,6 +1702,24 @@ class nsDisplayListBuilder {
   
 
 
+  void AddReusableDisplayItem(nsDisplayItem* aItem);
+
+  
+
+
+
+
+
+  void RemoveReusedDisplayItem(nsDisplayItem* aItem);
+
+  
+
+
+  void ClearReuseableDisplayItems();
+
+  
+
+
 
   void ReuseDisplayItem(nsDisplayItem* aItem);
 
@@ -1900,6 +1918,9 @@ class nsDisplayListBuilder {
 
   bool mIsForContent;
   bool mIsReusingStackingContextItems;
+
+  
+  nsTHashSet<nsDisplayItem*> mReuseableItems;
 };
 
 class nsDisplayItem;
@@ -2094,6 +2115,11 @@ class nsDisplayItem : public nsDisplayItemLink {
     if (aBuilder->IsForPainting() && aBuilder->IsForContent()) {
       DL_LOGV("Destroying display item %p (%s)", this, Name());
     }
+
+    if (IsReusedItem()) {
+      aBuilder->RemoveReusedDisplayItem(this);
+    }
+
     this->~nsDisplayItem();
     aBuilder->Destroy(type, this);
   }

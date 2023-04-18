@@ -1507,7 +1507,8 @@ MOZ_NEVER_INLINE_DEBUG void ReuseStackingContextItem(
     aItem->UpdateBounds(aBuilder);
   }
 
-  DL_LOGD("Retaining display item %p", aItem);
+  aBuilder->AddReusableDisplayItem(aItem);
+  DL_LOGD("Reusing display item %p", aItem);
 }
 
 bool IsSupportedFrameType(const nsIFrame* aFrame) {
@@ -1558,10 +1559,8 @@ bool IsReuseableStackingContextItem(nsDisplayItem* aItem) {
 
 
 void CollectStackingContextItems(nsDisplayListBuilder* aBuilder,
-                                 nsDisplayList* aList,
-                                 nsTArray<nsDisplayItem*>& aOutItems,
-                                 nsIFrame* aOuterFrame, int aDepth = 0,
-                                 bool aParentReused = false) {
+                                 nsDisplayList* aList, nsIFrame* aOuterFrame,
+                                 int aDepth = 0, bool aParentReused = false) {
   nsDisplayList out;
 
   while (nsDisplayItem* item = aList->RemoveBottom()) {
@@ -1593,8 +1592,8 @@ void CollectStackingContextItems(nsDisplayListBuilder* aBuilder,
     const bool isStackingContextItem = IsReuseableStackingContextItem(item);
 
     if (item->GetChildren()) {
-      CollectStackingContextItems(aBuilder, item->GetChildren(), aOutItems,
-                                  item->Frame(), aDepth + 1,
+      CollectStackingContextItems(aBuilder, item->GetChildren(), item->Frame(),
+                                  aDepth + 1,
                                   aParentReused || isStackingContextItem);
     }
 
@@ -1604,7 +1603,6 @@ void CollectStackingContextItems(nsDisplayListBuilder* aBuilder,
       out.AppendToTop(item);
     } else if (isStackingContextItem) {
       
-      aOutItems.AppendElement(item);
       ReuseStackingContextItem(aBuilder, item);
     } else {
       
@@ -1622,27 +1620,6 @@ void CollectStackingContextItems(nsDisplayListBuilder* aBuilder,
   aList->RestoreState();
 }
 
-
-
-
-
-void ClearPreviousItems(nsDisplayListBuilder* aBuilder,
-                        nsTArray<nsDisplayItem*>& aItems) {
-  const size_t total = aItems.Length();
-  size_t reused = 0;
-  for (auto* item : aItems) {
-    if (item->IsReusedItem()) {
-      reused++;
-      item->SetReusable();
-    } else {
-      item->Destroy(aBuilder);
-    }
-  }
-
-  DL_LOGI("RDL - Reused %zu of %zu SC display items", reused, total);
-  aItems.Clear();
-}
-
 }  
 
 bool RetainedDisplayListBuilder::TrySimpleUpdate(
@@ -1652,10 +1629,8 @@ bool RetainedDisplayListBuilder::TrySimpleUpdate(
     return false;
   }
 
-  MOZ_ASSERT(mPreviousItems.IsEmpty());
   RDL::MarkAllAncestorFrames(aModifiedFrames, aOutFramesWithProps);
-  RDL::CollectStackingContextItems(&mBuilder, &mList, mPreviousItems,
-                                   RootReferenceFrame());
+  RDL::CollectStackingContextItems(&mBuilder, &mList, RootReferenceFrame());
 
   return true;
 }
@@ -1746,7 +1721,7 @@ PartialUpdateResult RetainedDisplayListBuilder::AttemptPartialUpdate(
   if (mBuilder.PartialBuildFailed()) {
     DL_LOGI("RDL - Partial update failed!");
     mBuilder.LeavePresShell(RootReferenceFrame(), nullptr);
-    RDL::ClearPreviousItems(&mBuilder, mPreviousItems);
+    mBuilder.ClearReuseableDisplayItems();
     mList.DeleteAll(&mBuilder);
     modifiedDL.DeleteAll(&mBuilder);
     Metrics()->mPartialUpdateFailReason = PartialUpdateFailReason::Content;
@@ -1775,7 +1750,7 @@ PartialUpdateResult RetainedDisplayListBuilder::AttemptPartialUpdate(
   } else {
     MOZ_ASSERT(mList.IsEmpty());
     mList = std::move(modifiedDL);
-    RDL::ClearPreviousItems(&mBuilder, mPreviousItems);
+    mBuilder.ClearReuseableDisplayItems();
     result = PartialUpdateResult::Updated;
   }
 
