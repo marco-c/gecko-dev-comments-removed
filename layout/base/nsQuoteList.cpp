@@ -10,6 +10,7 @@
 #include "nsReadableUtils.h"
 #include "nsIContent.h"
 #include "nsIFrame.h"
+#include "nsIFrameInlines.h"
 #include "nsContainerFrame.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/dom/Text.h"
@@ -52,12 +53,14 @@ nsString nsQuoteNode::Text() {
 
   if (quotesProp.IsAuto()) {
     
-    const nsIFrame* frame = mPseudoFrame->GetParent();
+    const nsIFrame* frame = mPseudoFrame->GetInFlowParent();
     
     
     
     if (!frame->Style()->IsRootElementStyle()) {
-      frame = frame->GetParent();
+      if (const nsIFrame* parent = frame->GetInFlowParent()) {
+        frame = parent;
+      }
     }
     const intl::Quotes* quotes =
         intl::QuotesForLang(frame->StyleFont()->mLanguage);
