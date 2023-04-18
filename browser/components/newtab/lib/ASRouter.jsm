@@ -511,8 +511,6 @@ const MessageLoaderUtils = {
   },
 };
 
-this.MessageLoaderUtils = MessageLoaderUtils;
-
 
 
 
@@ -1785,7 +1783,6 @@ class _ASRouter {
     await this.loadMessagesFromAllProviders([experimentProvider]);
   }
 }
-this._ASRouter = _ASRouter;
 
 
 

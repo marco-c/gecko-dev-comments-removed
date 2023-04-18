@@ -599,8 +599,6 @@ class _ToolbarPanelHub {
   }
 }
 
-this._ToolbarPanelHub = _ToolbarPanelHub;
-
 
 
 

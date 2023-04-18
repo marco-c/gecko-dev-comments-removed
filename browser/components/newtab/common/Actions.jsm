@@ -17,8 +17,6 @@ const BACKGROUND_PROCESS = 2;
 const globalImportContext =
   typeof Window === "undefined" ? BACKGROUND_PROCESS : UI_CODE;
 
-this.globalImportContext = globalImportContext;
-
 
 
 
@@ -366,8 +364,6 @@ function WebExtEvent(type, data, importContext = globalImportContext) {
   const action = { type, data };
   return importContext === UI_CODE ? AlsoToMain(action) : action;
 }
-
-this.actionTypes = actionTypes;
 
 const actionCreators = {
   BroadcastToContent,

@@ -168,8 +168,6 @@ class _MomentsPageHub {
   }
 }
 
-this._MomentsPageHub = _MomentsPageHub;
-
 
 
 

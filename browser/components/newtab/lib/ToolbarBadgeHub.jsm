@@ -305,8 +305,6 @@ class _ToolbarBadgeHub {
   }
 }
 
-this._ToolbarBadgeHub = _ToolbarBadgeHub;
-
 
 
 

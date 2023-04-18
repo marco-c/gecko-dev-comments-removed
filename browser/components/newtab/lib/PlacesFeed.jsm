@@ -604,8 +604,6 @@ class PlacesFeed {
   }
 }
 
-this.PlacesFeed = PlacesFeed;
-
 
 PlacesFeed.BookmarksObserver = BookmarksObserver;
 PlacesFeed.PlacesObserver = PlacesObserver;

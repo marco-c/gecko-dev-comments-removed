@@ -17,7 +17,6 @@ const SEARCH_SHORTCUTS = [
     url: "https://yandex.com",
   },
 ];
-this.SEARCH_SHORTCUTS = SEARCH_SHORTCUTS;
 
 
 const CUSTOM_SEARCH_SHORTCUTS = [
@@ -50,7 +49,6 @@ function getSearchProvider(candidateShortURL) {
     null
   );
 }
-this.getSearchProvider = getSearchProvider;
 
 
 
@@ -59,7 +57,6 @@ async function getSearchFormURL(keyword) {
   const engine = await Services.search.getEngineByAlias(keyword);
   return engine?.wrappedJSObject._searchForm;
 }
-this.getSearchFormURL = getSearchFormURL;
 
 
 
@@ -68,7 +65,6 @@ async function checkHasSearchEngine(keyword) {
     e => e.aliases.includes(keyword) && !e.hidden
   );
 }
-this.checkHasSearchEngine = checkHasSearchEngine;
 
 const EXPORTED_SYMBOLS = [
   "checkHasSearchEngine",

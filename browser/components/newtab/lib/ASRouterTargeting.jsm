@@ -841,10 +841,6 @@ const ASRouterTargeting = {
   },
 };
 
-
-this.getSortedMessages = getSortedMessages;
-this.QueryCache = QueryCache;
-this.CachedTargetingGetter = CachedTargetingGetter;
 const EXPORTED_SYMBOLS = [
   "ASRouterTargeting",
   "QueryCache",
