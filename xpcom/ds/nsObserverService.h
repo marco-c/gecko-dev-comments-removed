@@ -37,7 +37,6 @@ class nsObserverService final : public nsIObserverService,
   [[nodiscard]] static nsresult Create(nsISupports* aOuter, const nsIID& aIID,
                                        void** aInstancePtr);
 
-  NS_IMETHODIMP HasObservers(const char* aTopic, bool& aFound) override;
   
   
   NS_IMETHOD UnmarkGrayStrongObservers();
