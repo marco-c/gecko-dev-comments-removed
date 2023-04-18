@@ -315,6 +315,7 @@ class FormAutofillSection {
         }
       } else {
         delete profile[key];
+        delete profile[`${key}-formatted`];
       }
     }
   }
@@ -1163,21 +1164,12 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
       return element.tagName === "INPUT" ? element : null;
     };
     let month = getInputElementByField("cc-exp-month", this);
-    
-    
-    
     if (month) {
-      let placeholder = month.placeholder;
-
       
-      let result = /(?<!.)mm(?!.)/i.test(placeholder);
-      if (result) {
-        profile["cc-exp-month-formatted"] = profile["cc-exp-month"]
-          .toString()
-          .padStart(2, "0");
-      }
+      profile["cc-exp-month-formatted"] = profile["cc-exp-month"]
+        ?.toString()
+        .padStart(2, "0");
     }
-
     let year = getInputElementByField("cc-exp-year", this);
     
     
