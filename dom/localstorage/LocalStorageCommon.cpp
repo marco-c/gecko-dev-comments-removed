@@ -50,7 +50,10 @@ bool NextGenLocalStorageEnabled() {
       
       
       
-      bool enabled = StaticPrefs::dom_storage_next_gen_DoNotUseDirectly();
+      bool enabled =
+          !StaticPrefs::
+              dom_storage_enable_unsupported_legacy_implementation_DoNotUseDirectly();
+
       gNextGenLocalStorageEnabled = enabled ? 1 : 0;
     }
 

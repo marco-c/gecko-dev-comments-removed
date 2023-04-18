@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+async function testSteps() {
+  info("Setting pref");
+
+  Services.prefs.setBoolPref("dom.storage.next_gen", false);
+
+  ok(Services.domStorageManager.nextGenLocalStorageEnabled, "LSNG enabled");
+}
