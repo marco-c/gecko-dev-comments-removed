@@ -993,6 +993,19 @@ bool DrawTargetWebgl::SharedContext::SupportsPattern(const Pattern& aPattern) {
 
 
 
+
+static inline bool SupportsLayering(const DrawOptions& aOptions) {
+  switch (aOptions.mCompositionOp) {
+    case CompositionOp::OP_OVER:
+      
+      return true;
+    default:
+      return false;
+  }
+}
+
+
+
 static void ReleaseTextureHandle(void* aPtr) {
   static_cast<TextureHandle*>(aPtr)->SetSurface(nullptr);
 }
@@ -1013,19 +1026,34 @@ bool DrawTargetWebgl::DrawRect(const Rect& aRect, const Pattern& aPattern,
   
   
   
-  if ((!mWebglValid && !mSkiaLayer) || !PrepareContext(aClipped)) {
-    if (!aAccelOnly) {
-      DrawRectFallback(aRect, aPattern, aOptions, aMaskColor, aTransformed,
-                       aClipped, aStrokeOptions);
+  
+  
+  
+  
+  if (mWebglValid ||
+      (mSkiaLayer && (aAccelOnly || !SupportsLayering(aOptions)))) {
+    
+    
+    
+    
+    if (PrepareContext(aClipped)) {
+      
+      
+      return mSharedContext->DrawRectAccel(
+          aRect, aPattern, aOptions, aMaskColor, aHandle, aTransformed,
+          aClipped, aAccelOnly, aForceUpdate, aStrokeOptions);
     }
-    return false;
   }
 
   
   
-  return mSharedContext->DrawRectAccel(
-      aRect, aPattern, aOptions, aMaskColor, aHandle, aTransformed, aClipped,
-      aAccelOnly, aForceUpdate, aStrokeOptions);
+  
+  
+  if (!aAccelOnly) {
+    DrawRectFallback(aRect, aPattern, aOptions, aMaskColor, aTransformed,
+                     aClipped, aStrokeOptions);
+  }
+  return false;
 }
 
 void DrawTargetWebgl::DrawRectFallback(const Rect& aRect,
@@ -2387,8 +2415,7 @@ void DrawTargetWebgl::FillGlyphs(ScaledFont* aFont, const GlyphBuffer& aBuffer,
 }
 
 void DrawTargetWebgl::MarkSkiaChanged(const DrawOptions& aOptions) {
-  if (aOptions.mCompositionOp == CompositionOp::OP_OVER) {
-    
+  if (SupportsLayering(aOptions)) {
     if (!mSkiaValid) {
       
       mSkiaValid = true;
