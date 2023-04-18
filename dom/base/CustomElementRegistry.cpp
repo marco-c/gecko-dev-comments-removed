@@ -975,8 +975,7 @@ void CustomElementRegistry::Define(
       }
     }
 
-    if (StaticPrefs::dom_webcomponents_disabledFeatures_enabled()) {
-      
+    
 
 
 
@@ -985,21 +984,20 @@ void CustomElementRegistry::Define(
 
 
 
-      if (!JSObjectToAtomArray(aCx, constructor, u"disabledFeatures"_ns,
-                               disabledFeatures, aRv)) {
-        return;
-      }
-
-      
-      
-      disableInternals = disabledFeatures.Contains(
-          static_cast<nsStaticAtom*>(nsGkAtoms::internals));
-
-      
-      
-      disableShadow = disabledFeatures.Contains(
-          static_cast<nsStaticAtom*>(nsGkAtoms::shadow));
+    if (!JSObjectToAtomArray(aCx, constructor, u"disabledFeatures"_ns,
+                             disabledFeatures, aRv)) {
+      return;
     }
+
+    
+    
+    disableInternals = disabledFeatures.Contains(
+        static_cast<nsStaticAtom*>(nsGkAtoms::internals));
+
+    
+    
+    disableShadow = disabledFeatures.Contains(
+        static_cast<nsStaticAtom*>(nsGkAtoms::shadow));
 
     if (StaticPrefs::dom_webcomponents_formAssociatedCustomElement_enabled()) {
       
