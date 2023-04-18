@@ -1286,12 +1286,9 @@ bool IMEContentObserver::UpdateSelectionCache(bool aRequireFlush ) {
   MOZ_ASSERT(querySelectedTextEvent.mReply->mOffsetAndData.isSome());
 
   mFocusedWidget = querySelectedTextEvent.mReply->mFocusedWidget;
-  mSelectionData.mOffset = querySelectedTextEvent.mReply->StartOffset();
-  *mSelectionData.mString = querySelectedTextEvent.mReply->DataRef();
-  mSelectionData.SetWritingMode(
-      querySelectedTextEvent.mReply->WritingModeRef());
-  mSelectionData.mReversed = querySelectedTextEvent.mReply->mReversed;
+  mSelectionData.Assign(querySelectedTextEvent);
 
+  
   
 
   MOZ_LOG(sIMECOLog, LogLevel::Debug,
@@ -1788,10 +1785,8 @@ void IMEContentObserver::IMENotificationSender::SendSelectionChange() {
   
   SelectionChangeData& newSelChangeData = observer->mSelectionData;
   if (lastSelChangeData.IsValid() &&
-      lastSelChangeData.mOffset == newSelChangeData.mOffset &&
-      lastSelChangeData.String() == newSelChangeData.String() &&
-      lastSelChangeData.GetWritingMode() == newSelChangeData.GetWritingMode() &&
-      lastSelChangeData.mReversed == newSelChangeData.mReversed) {
+      lastSelChangeData.EqualsRangeAndDirectionAndWritingMode(
+          newSelChangeData)) {
     MOZ_LOG(sIMECOLog, LogLevel::Debug,
             ("0x%p IMEContentObserver::IMENotificationSender::"
              "SendSelectionChange(), not notifying IME of "
