@@ -1146,6 +1146,13 @@ struct CompilationStencil {
   CompilationStencil(CompilationStencil&&) = delete;
   CompilationStencil& operator=(const CompilationStencil&) = delete;
   CompilationStencil& operator=(CompilationStencil&&) = delete;
+#ifdef DEBUG
+  ~CompilationStencil() {
+    
+    
+    MOZ_ASSERT(!refCount);
+  }
+#endif
 
   static inline ScriptStencilIterable functionScriptStencils(
       const CompilationStencil& stencil, CompilationGCOutput& gcOutput);
