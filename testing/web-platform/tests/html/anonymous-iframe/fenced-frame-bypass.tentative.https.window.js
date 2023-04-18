@@ -33,8 +33,7 @@ promise_test(async test => {
     await importScript("/common/utils.js");
     await importScript("/html/cross-origin-embedder-policy/credentialless" +
       "/resources/common.js");
-    await importScript("/html/cross-origin-embedder-policy/anonymous-iframe" +
-      "/resources/common.js");
+    await importScript("/html/anonymous-iframe/resources/common.js");
     const support_loading_mode_fenced_frame =
       "|header(Supports-Loading-Mode,fenced-frame)";
     const anonymous_iframe_2 =
