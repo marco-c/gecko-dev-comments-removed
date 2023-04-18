@@ -3789,6 +3789,8 @@ var AddonManager = {
   
   
   
+  
+  
   _errors: new Map([
     
     ["ERROR_NETWORK_FAILURE", -1],
@@ -3801,9 +3803,7 @@ var AddonManager = {
     
     ["ERROR_SIGNEDSTATE_REQUIRED", -5],
     
-    
     ["ERROR_UNEXPECTED_ADDON_TYPE", -6],
-    
     
     ["ERROR_INCORRECT_ID", -7],
     

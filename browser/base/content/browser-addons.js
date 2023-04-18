@@ -813,12 +813,18 @@ var gXPInstallObserver = {
               install.sourceURI.host;
           }
 
+          
           let error =
             host || install.error == 0
               ? "addonInstallError"
               : "addonLocalInstallError";
           let args;
           if (install.error < 0) {
+            
+            
+            
+            
+            
             error += install.error;
             args = [brandShortName, install.name];
           } else if (
