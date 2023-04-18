@@ -40,7 +40,7 @@ add_task(async function() {
   
   
   await dbg.actions.stepIn(getThreadContext(dbg));
-  assertNotPaused(dbg, "Stepping in two times resumes");
+  ok(!isPaused(dbg), "Stepping in two times resumes");
 
   await dbg.toolbox.closeToolbox();
 });

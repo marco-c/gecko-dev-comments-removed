@@ -50,8 +50,10 @@ add_task(async function() {
 
   
   
-  invokeInTab("main");
-  await waitForPaused(dbg);
+  await waitUntil(() => {
+    invokeInTab("main");
+    return isPaused(dbg);
+  });
   await onBreakpoint;
 
   ok(true, "paused at unmapped breakpoint");

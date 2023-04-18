@@ -121,7 +121,7 @@ add_task(async function testReloadingStableOriginalSource() {
 
   
   
-  await wait(1000);
+  await waitForTime(1000);
 
   assertNotPaused(dbg);
   is(dbg.selectors.getBreakpointCount(dbg), 0, "No breakpoints");
