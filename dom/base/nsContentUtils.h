@@ -899,7 +899,8 @@ class nsContentUtils {
                                   const nsACString& aType);
 
   
-  static bool HasSitePerm(nsIPrincipal* aPrincipal, const nsACString& aType);
+  static bool HasExactSitePerm(nsIPrincipal* aPrincipal,
+                               const nsACString& aType);
 
   
   static bool HaveEqualPrincipals(Document* aDoc1, Document* aDoc2);
