@@ -197,7 +197,7 @@ class EdgeVectorTracer final : public JS::CallbackTracer {
   
   bool wantNames;
 
-  void onChild(const JS::GCCellPtr& thing) override {
+  void onChild(JS::GCCellPtr thing) override {
     if (!okay) {
       return;
     }

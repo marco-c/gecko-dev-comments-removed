@@ -621,7 +621,7 @@ struct VerifyTraceProtoAndIfaceCacheCalledTracer : public JS::CallbackTracer {
       : JS::CallbackTracer(cx, JS::TracerKind::VerifyTraceProtoAndIface),
         ok(false) {}
 
-  void onChild(const JS::GCCellPtr&) override {
+  void onChild(JS::GCCellPtr) override {
     
     
   }

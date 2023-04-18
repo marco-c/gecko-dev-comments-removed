@@ -321,7 +321,7 @@ class JS_PUBLIC_API CallbackTracer
 
   
   
-  virtual void onChild(const JS::GCCellPtr& thing) = 0;
+  virtual void onChild(JS::GCCellPtr thing) = 0;
 
  private:
   template <typename T>
