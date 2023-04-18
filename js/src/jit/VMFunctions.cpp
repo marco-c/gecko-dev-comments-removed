@@ -1774,37 +1774,31 @@ bool HasNativeDataPropertyPure(JSContext* cx, JSObject* obj, Value* vp) {
   }
 
   do {
-    if (obj->is<NativeObject>()) {
-      uint32_t unused;
-      if (obj->shape()->lookup(cx, id, &unused)) {
-        vp[1].setBoolean(true);
-        return true;
+    if (MOZ_UNLIKELY(!obj->is<NativeObject>())) {
+      return false;
+    }
+
+    uint32_t unused;
+    if (obj->shape()->lookup(cx, id, &unused)) {
+      vp[1].setBoolean(true);
+      return true;
+    }
+
+    
+    if (MOZ_UNLIKELY(!obj->is<PlainObject>())) {
+      
+      
+      if (ClassMayResolveId(cx->names(), obj->getClass(), id, obj)) {
+        return false;
       }
 
       
-      if (MOZ_UNLIKELY(!obj->is<PlainObject>())) {
-        
-        
-        if (ClassMayResolveId(cx->names(), obj->getClass(), id, obj)) {
+      
+      if (obj->is<TypedArrayObject>()) {
+        if (MaybeTypedArrayIndexString(id)) {
           return false;
         }
-
-        
-        
-        if (obj->is<TypedArrayObject>()) {
-          if (MaybeTypedArrayIndexString(id)) {
-            return false;
-          }
-        }
       }
-    } else if (obj->is<TypedObject>()) {
-      RootedTypedObject typedObj(cx, &obj->as<TypedObject>());
-      if (typedObj->rttValue().hasProperty(cx, typedObj, id)) {
-        vp[1].setBoolean(true);
-        return true;
-      }
-    } else {
-      return false;
     }
 
     
