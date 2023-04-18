@@ -185,8 +185,7 @@ void SetUpWritableStreamDefaultController(
   }
 
   
-  RefPtr<Promise> startPromise =
-      Promise::Create(aStream->GetParentObject(), aRv);
+  RefPtr<Promise> startPromise = Promise::Create(GetIncumbentGlobal(), aRv);
   if (aRv.Failed()) {
     return;
   }
