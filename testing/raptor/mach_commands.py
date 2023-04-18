@@ -187,6 +187,7 @@ class RaptorRunner(MozbuildObject):
         sys.path.insert(0, os.path.join(self.topsrcdir, "tools", "browsertime"))
         try:
             import mach_commands as browsertime
+            import platform
 
             
             
@@ -268,13 +269,14 @@ class RaptorRunner(MozbuildObject):
             if _should_install():
                 
                 print("Missing browsertime files...attempting to install")
-                subprocess.check_call(
+                subprocess.check_output(
                     [
                         os.path.join(self.topsrcdir, "mach"),
                         "browsertime",
                         "--setup",
                         "--clobber",
-                    ]
+                    ],
+                    shell="windows" in platform.system().lower(),
                 )
                 if _should_install():
                     raise Exception(
