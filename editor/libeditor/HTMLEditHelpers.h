@@ -346,7 +346,6 @@ class MOZ_STACK_CLASS SplitNodeResult final {
 
 
 
-
   template <typename EditorDOMPointType>
   EditorDOMPointType AtSplitPoint() const {
     if (Failed()) {

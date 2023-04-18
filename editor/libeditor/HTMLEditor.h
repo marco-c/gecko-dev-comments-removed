@@ -731,6 +731,14 @@ class HTMLEditor final : public EditorBase,
 
 
 
+  enum class WithTransaction { No, Yes };
+  friend std::ostream& operator<<(std::ostream& aStream,
+                                  WithTransaction aWithTransaction) {
+    aStream << "WithTransaction::"
+            << (aWithTransaction == WithTransaction::Yes ? "Yes" : "No");
+    return aStream;
+  }
+
   
 
 
@@ -746,9 +754,13 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  MOZ_CAN_RUN_SCRIPT Result<RefPtr<Element>, nsresult>
-  InsertBRElementWithTransaction(const EditorDOMPoint& aPointToInsert,
-                                 EDirection aSelect = eNone);
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT Result<RefPtr<Element>, nsresult> InsertBRElement(
+      WithTransaction aWithTransaction, const EditorDOMPoint& aPointToInsert,
+      EDirection aSelect = eNone);
 
   
 
@@ -1488,10 +1500,14 @@ class HTMLEditor final : public EditorBase,
 
 
 
+
+
+
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<RefPtr<Element>, nsresult>
-  CreateAndInsertElementWithTransaction(
-      nsAtom& aTagName, const EditorDOMPoint& aPointToInsert,
-      std::function<nsresult(Element&)>&& aInitializer);
+  CreateAndInsertElement(WithTransaction aWithTransaction, nsAtom& aTagName,
+                         const EditorDOMPoint& aPointToInsert,
+                         std::function<nsresult(Element&)>&& aInitializer);
 
   
 
@@ -1515,7 +1531,6 @@ class HTMLEditor final : public EditorBase,
       nsAtom& aTag, const EditorDOMPoint& aStartOfDeepestRightNode);
 
   
-
 
 
 
