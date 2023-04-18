@@ -112,8 +112,12 @@ static void MarkSameFloatManagerLinesDirty(nsBlockFrame* aBlock) {
 
 static bool BlockHasAnyFloats(nsIFrame* aFrame) {
   nsBlockFrame* block = do_QueryFrame(aFrame);
-  if (!block) return false;
-  if (block->GetChildList(nsIFrame::kFloatList).FirstChild()) return true;
+  if (!block) {
+    return false;
+  }
+  if (block->GetChildList(nsIFrame::kFloatList).FirstChild()) {
+    return true;
+  }
 
   for (const auto& line : block->Lines()) {
     if (line.IsBlock() && BlockHasAnyFloats(line.mFirstChild)) {
@@ -322,7 +326,9 @@ void nsBlockFrame::InitDebugFlags() {
       bool error = false;
       for (;;) {
         char* cm = strchr(flags, ',');
-        if (cm) *cm = '\0';
+        if (cm) {
+          *cm = '\0';
+        }
 
         bool found = false;
         const BlockDebugFlags* bdf = gFlags;
@@ -340,7 +346,9 @@ void nsBlockFrame::InitDebugFlags() {
           error = true;
         }
 
-        if (!cm) break;
+        if (!cm) {
+          break;
+        }
         *cm = ',';
         flags = cm + 1;
       }
@@ -391,7 +399,9 @@ static void RecordReflowStatus(bool aChildIsBlock,
   
   
   int index = 0;
-  if (!aChildIsBlock) index |= 1;
+  if (!aChildIsBlock) {
+    index |= 1;
+  }
 
   
   uint32_t newS = record[index];
@@ -761,7 +771,9 @@ void nsBlockFrame::CheckIntrinsicCacheAgainstShrinkWrapState() {
 
 nscoord nsBlockFrame::GetMinISize(gfxContext* aRenderingContext) {
   nsIFrame* firstInFlow = FirstContinuation();
-  if (firstInFlow != this) return firstInFlow->GetMinISize(aRenderingContext);
+  if (firstInFlow != this) {
+    return firstInFlow->GetMinISize(aRenderingContext);
+  }
 
   DISPLAY_MIN_INLINE_SIZE(this, mCachedMinISize);
 
@@ -849,7 +861,9 @@ nscoord nsBlockFrame::GetMinISize(gfxContext* aRenderingContext) {
 
 nscoord nsBlockFrame::GetPrefISize(gfxContext* aRenderingContext) {
   nsIFrame* firstInFlow = FirstContinuation();
-  if (firstInFlow != this) return firstInFlow->GetPrefISize(aRenderingContext);
+  if (firstInFlow != this) {
+    return firstInFlow->GetPrefISize(aRenderingContext);
+  }
 
   DISPLAY_PREF_INLINE_SIZE(this, mCachedPrefISize);
 
@@ -1316,7 +1330,9 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
   
   
   bool needFloatManager = nsBlockFrame::BlockNeedsFloatManager(this);
-  if (needFloatManager) autoFloatManager.CreateFloatManager(aPresContext);
+  if (needFloatManager) {
+    autoFloatManager.CreateFloatManager(aPresContext);
+  }
 
   
   
@@ -1683,7 +1699,9 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
 
     int32_t ectc = nsLineBox::GetCtorCount();
     int32_t numLines = mLines.size();
-    if (!numLines) numLines = 1;
+    if (!numLines) {
+      numLines = 1;
+    }
     PRTime delta, perLineDelta, lines;
     lines = int64_t(numLines);
     delta = end - start;
@@ -2392,7 +2410,9 @@ void nsBlockFrame::PropagateFloatDamage(BlockReflowState& aState,
 
   
   
-  if (!floatManager->HasAnyFloats()) return;
+  if (!floatManager->HasAnyFloats()) {
+    return;
+  }
 
   
   if (floatManager->HasFloatDamage()) {
@@ -2564,7 +2584,9 @@ void nsBlockFrame::ReflowDirtyLines(BlockReflowState& aState) {
     AutoNoisyIndenter indent2(gNoisyReflow);
 #endif
 
-    if (selfDirty) line->MarkDirty();
+    if (selfDirty) {
+      line->MarkDirty();
+    }
 
     
     
@@ -2837,10 +2859,11 @@ void nsBlockFrame::ReflowDirtyLines(BlockReflowState& aState) {
 
       lastLineMovedUp = deltaBCoord < 0;
 
-      if (deltaBCoord != 0)
+      if (deltaBCoord != 0) {
         SlideLine(aState, line, deltaBCoord);
-      else
+      } else {
         repositionViews = true;
+      }
 
       NS_ASSERTION(!line->IsDirty() || !line->HasFloats(),
                    "Possibly stale float cache here!");
@@ -2928,7 +2951,9 @@ void nsBlockFrame::ReflowDirtyLines(BlockReflowState& aState) {
   }
 
   
-  if (repositionViews) nsContainerFrame::PlaceFrameView(this);
+  if (repositionViews) {
+    nsContainerFrame::PlaceFrameView(this);
+  }
 
   
   
@@ -3200,7 +3225,9 @@ void nsBlockFrame::DeleteLine(BlockReflowState& aState,
     FreeLineBox(line);
     
     
-    if (aLine != aLineEnd) aLine->MarkPreviousMarginDirty();
+    if (aLine != aLineEnd) {
+      aLine->MarkPreviousMarginDirty();
+    }
   }
 }
 
@@ -4290,7 +4317,9 @@ void nsBlockFrame::DoReflowInlineFrames(
 
   
   
-  if (aFloatAvailableSpace.HasFloats()) aLine->SetLineIsImpactedByFloat(true);
+  if (aFloatAvailableSpace.HasFloats()) {
+    aLine->SetLineIsImpactedByFloat(true);
+  }
 #ifdef REALLY_NOISY_REFLOW
   printf("nsBlockFrame::DoReflowInlineFrames %p impacted = %d\n", this,
          aFloatAvailableSpace.HasFloats());
@@ -4737,14 +4766,18 @@ static nsFloatCache* GetLastFloat(nsLineBox* aLine) {
 
 static bool CheckPlaceholderInLine(nsIFrame* aBlock, nsLineBox* aLine,
                                    nsFloatCache* aFC) {
-  if (!aFC) return true;
+  if (!aFC) {
+    return true;
+  }
   NS_ASSERTION(!aFC->mFloat->GetPrevContinuation(),
                "float in a line should never be a continuation");
   NS_ASSERTION(!aFC->mFloat->HasAnyStateBits(NS_FRAME_IS_PUSHED_FLOAT),
                "float in a line should never be a pushed float");
   nsIFrame* ph = aFC->mFloat->FirstInFlow()->GetPlaceholderFrame();
   for (nsIFrame* f = ph; f; f = f->GetParent()) {
-    if (f->GetParent() == aBlock) return aLine->Contains(f);
+    if (f->GetParent() == aBlock) {
+      return aLine->Contains(f);
+    }
   }
   NS_ASSERTION(false, "aBlock is not an ancestor of aFrame!");
   return true;
@@ -5520,7 +5553,9 @@ nsFrameList* nsBlockFrame::GetPushedFloats() const {
 
 nsFrameList* nsBlockFrame::EnsurePushedFloats() {
   nsFrameList* result = GetPushedFloats();
-  if (result) return result;
+  if (result) {
+    return result;
+  }
 
   result = new (PresShell()) nsFrameList;
   SetProperty(PushedFloatProperty(), result);
@@ -6024,10 +6059,14 @@ static nsIFrame* FindChildContaining(nsBlockFrame* aFrame,
     nsIFrame* block = aFrame;
     do {
       child = nsLayoutUtils::FindChildContainingDescendant(block, aFindFrame);
-      if (child) break;
+      if (child) {
+        break;
+      }
       block = block->GetNextContinuation();
     } while (block);
-    if (!child) return nullptr;
+    if (!child) {
+      return nullptr;
+    }
     if (!child->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
       break;
     }
@@ -6044,7 +6083,9 @@ nsBlockInFlowLineIterator::nsBlockInFlowLineIterator(nsBlockFrame* aFrame,
   *aFoundValidLine = false;
 
   nsIFrame* child = FindChildContaining(aFrame, aFindFrame);
-  if (!child) return;
+  if (!child) {
+    return;
+  }
 
   LineIterator line_end = aFrame->LinesEnd();
   mLine = aFrame->LinesBegin();
@@ -6107,7 +6148,9 @@ nsBlockInFlowLineIterator::nsBlockInFlowLineIterator(nsBlockFrame* aFrame,
   
   
 
-  if (!FindValidLine()) return;
+  if (!FindValidLine()) {
+    return;
+  }
 
   do {
     if (mLine->Contains(child)) {
@@ -6148,7 +6191,9 @@ bool nsBlockInFlowLineIterator::Prev() {
       }
     } else {
       mFrame = static_cast<nsBlockFrame*>(mFrame->GetPrevInFlow());
-      if (!mFrame) return false;
+      if (!mFrame) {
+        return false;
+      }
       nsBlockFrame::FrameLines* overflowLines = mFrame->GetOverflowLines();
       if (overflowLines) {
         mLineList = &overflowLines->mLines;
@@ -6164,15 +6209,21 @@ bool nsBlockInFlowLineIterator::Prev() {
 
 bool nsBlockInFlowLineIterator::FindValidLine() {
   LineIterator end = mLineList->end();
-  if (mLine != end) return true;
+  if (mLine != end) {
+    return true;
+  }
   bool currentlyInOverflowLines = GetInOverflow();
   while (true) {
     if (currentlyInOverflowLines) {
       mFrame = static_cast<nsBlockFrame*>(mFrame->GetNextInFlow());
-      if (!mFrame) return false;
+      if (!mFrame) {
+        return false;
+      }
       mLineList = &mFrame->mLines;
       mLine = mLineList->begin();
-      if (mLine != mLineList->end()) return true;
+      if (mLine != mLineList->end()) {
+        return true;
+      }
     } else {
       nsBlockFrame::FrameLines* overflowLines = mFrame->GetOverflowLines();
       if (overflowLines) {
@@ -6666,7 +6717,9 @@ void nsBlockFrame::ReflowFloat(BlockReflowState& aState,
     
     
     
-    if (aReflowStatus.IsIncomplete()) aReflowStatus.Reset();
+    if (aReflowStatus.IsIncomplete()) {
+      aReflowStatus.Reset();
+    }
   }
 
   
@@ -6800,7 +6853,9 @@ void nsBlockFrame::RecoverFloats(nsFloatManager& aFloatManager, WritingMode aWM,
        f = f->GetNextSibling()) {
     LogicalRect region = nsFloatManager::GetRegionFor(aWM, f, aContainerSize);
     aFloatManager.AddFloat(f, region, aWM, aContainerSize);
-    if (!stop && f->GetNextInFlow()) stop = f->GetNextInFlow();
+    if (!stop && f->GetNextInFlow()) {
+      stop = f->GetNextInFlow();
+    }
   }
 
   
@@ -7137,7 +7192,9 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     PRTime end = PR_Now();
 
     int32_t numLines = mLines.size();
-    if (!numLines) numLines = 1;
+    if (!numLines) {
+      numLines = 1;
+    }
     PRTime lines, deltaPerLine, delta;
     lines = int64_t(numLines);
     delta = end - start;
@@ -7518,7 +7575,9 @@ void nsBlockFrame::DoCollectFloats(nsIFrame* aFrame, nsFrameList& aList,
       DoCollectFloats(aFrame->GetChildList(kOverflowList).FirstChild(), aList,
                       true);
     }
-    if (!aCollectSiblings) break;
+    if (!aCollectSiblings) {
+      break;
+    }
     aFrame = aFrame->GetNextSibling();
   }
 }
