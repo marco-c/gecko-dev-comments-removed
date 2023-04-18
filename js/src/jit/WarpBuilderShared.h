@@ -265,8 +265,7 @@ class MOZ_STACK_CLASS CallInfo {
     MOZ_ASSERT(argFormat_ == ArgFormat::Array);
     
     
-    
-    return getArg(argc() - 1 - constructing_);
+    return getArg(argc() - 1);
   }
 };
 
