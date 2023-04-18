@@ -220,14 +220,18 @@ void VideoFrameContainer::ClearFutureFrames(TimeStamp aNow) {
 }
 
 void VideoFrameContainer::ClearCachedResources() {
+  MutexAutoLock lock(mMutex);
   mImageContainer->ClearCachedResources();
 }
 
 ImageContainer* VideoFrameContainer::GetImageContainer() {
+  
+  
   return mImageContainer;
 }
 
 double VideoFrameContainer::GetFrameDelay() {
+  MutexAutoLock lock(mMutex);
   return mImageContainer->GetPaintDelay().ToSeconds();
 }
 

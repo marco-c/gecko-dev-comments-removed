@@ -86,6 +86,7 @@ class VideoFrameContainer {
   void ForgetElement() { mOwner = nullptr; }
 
   uint32_t GetDroppedImageCount() {
+    MutexAutoLock lock(mMutex);
     return mImageContainer->GetDroppedImageCount();
   }
 
