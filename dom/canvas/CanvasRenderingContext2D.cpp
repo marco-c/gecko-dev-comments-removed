@@ -2754,22 +2754,25 @@ void CanvasRenderingContext2D::FillRect(double aX, double aY, double aW,
       
       gfx::Rect patternBounds(style->mSurface->GetRect());
       patternBounds = style->mTransform.TransformBounds(patternBounds);
-      gfx::Rect bounds(aX, aY, aW, aH);
-      
-      
-      bounds = bounds.Intersect(patternBounds);
       if (style->mTransform.HasNonAxisAlignedTransform()) {
         
         
         std::swap(limitx, limity);
       }
+      
+      
+      
+      
+      
       if (limitx) {
-        aX = bounds.x;
-        aW = bounds.width;
+        double x2 = aX + aW;
+        aX = std::max(aX, double(patternBounds.x));
+        aW = std::max(std::min(x2, double(patternBounds.XMost())) - aX, 0.0);
       }
       if (limity) {
-        aY = bounds.y;
-        aH = bounds.height;
+        double y2 = aY + aH;
+        aY = std::max(aY, double(patternBounds.y));
+        aH = std::max(std::min(y2, double(patternBounds.YMost())) - aY, 0.0);
       }
     }
   }
