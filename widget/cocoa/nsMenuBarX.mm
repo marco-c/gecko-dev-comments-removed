@@ -407,20 +407,17 @@ nsresult nsMenuBarX::Paint() {
 
   
   
-  NSMenu* outgoingMenu = [[NSApp mainMenu] retain];
-  
-  NSApp.mainMenu = mNativeMenu;
+  NSMenu* outgoingMenu = NSApp.mainMenu;
   NS_ASSERTION(outgoingMenu.numberOfItems > 0,
                "Main menu does not have any items, something is terribly wrong!");
 
   NSMenuItem* appMenuItem = [[outgoingMenu itemAtIndex:0] retain];
   [outgoingMenu removeItemAtIndex:0];
-  if (appMenuItem) {
-    [mNativeMenu insertItem:appMenuItem atIndex:0];
-  }
+  [mNativeMenu insertItem:appMenuItem atIndex:0];
   [appMenuItem release];
-  [outgoingMenu release];
 
+  
+  NSApp.mainMenu = mNativeMenu;
   SetSystemHelpMenu();
   nsMenuBarX::sLastGeckoMenuBarPainted = this;
 
