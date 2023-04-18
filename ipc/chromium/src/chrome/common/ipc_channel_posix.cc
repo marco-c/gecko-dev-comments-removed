@@ -399,15 +399,15 @@ bool Channel::ChannelImpl::ProcessIncomingMessages() {
       
       
       uint32_t message_length = 0;
-      if (incoming_message_.isSome()) {
-        message_length = incoming_message_.ref().size();
+      if (incoming_message_) {
+        message_length = incoming_message_->size();
       } else {
         message_length = Message::MessageSize(p, end);
       }
 
       if (!message_length) {
         
-        MOZ_ASSERT(incoming_message_.isNothing());
+        MOZ_ASSERT(!incoming_message_);
 
         
         
@@ -421,10 +421,10 @@ bool Channel::ChannelImpl::ProcessIncomingMessages() {
       input_buf_offset_ = 0;
 
       bool partial;
-      if (incoming_message_.isSome()) {
+      if (incoming_message_) {
         
         
-        Message& m = incoming_message_.ref();
+        Message& m = *incoming_message_;
 
         
         
@@ -443,7 +443,7 @@ bool Channel::ChannelImpl::ProcessIncomingMessages() {
         
         uint32_t in_buf = std::min(message_length, uint32_t(end - p));
 
-        incoming_message_.emplace(p, in_buf);
+        incoming_message_ = mozilla::MakeUnique<Message>(p, in_buf);
         p += in_buf;
 
         
@@ -454,7 +454,7 @@ bool Channel::ChannelImpl::ProcessIncomingMessages() {
         break;
       }
 
-      Message& m = incoming_message_.ref();
+      Message& m = *incoming_message_;
 
       if (m.header()->num_handles) {
         
@@ -531,10 +531,10 @@ bool Channel::ChannelImpl::ProcessIncomingMessages() {
           return false;
         }
 #endif
-        listener_->OnMessageReceived(std::move(m));
+        listener_->OnMessageReceived(std::move(incoming_message_));
       }
 
-      incoming_message_.reset();
+      incoming_message_ = nullptr;
     }
 
     input_overflow_fds_ = std::vector<int>(&fds[fds_i], &fds[num_fds]);
@@ -542,14 +542,12 @@ bool Channel::ChannelImpl::ProcessIncomingMessages() {
     
     
     
-    if (incoming_message_.isNothing() && input_buf_offset_ == 0 &&
+    if (!incoming_message_ && input_buf_offset_ == 0 &&
         !input_overflow_fds_.empty()) {
       
       return false;
     }
   }
-
-  return true;
 }
 
 bool Channel::ChannelImpl::ProcessOutgoingMessages() {

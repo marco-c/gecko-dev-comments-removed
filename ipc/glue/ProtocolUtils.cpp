@@ -479,27 +479,26 @@ void IProtocol::SetManagerAndRegister(IProtocol* aManager, int32_t aId) {
   aManager->RegisterID(this, aId);
 }
 
-bool IProtocol::ChannelSend(IPC::Message* aMsg) {
-  UniquePtr<IPC::Message> msg(aMsg);
+bool IProtocol::ChannelSend(UniquePtr<IPC::Message> aMsg) {
   if (CanSend()) {
     
     
     
-    GetIPCChannel()->Send(std::move(msg));
+    GetIPCChannel()->Send(std::move(aMsg));
     return true;
   }
 
-  WarnMessageDiscarded(msg.get());
+  WarnMessageDiscarded(aMsg.get());
   return false;
 }
 
-bool IProtocol::ChannelSend(IPC::Message* aMsg, IPC::Message* aReply) {
-  UniquePtr<IPC::Message> msg(aMsg);
+bool IProtocol::ChannelSend(UniquePtr<IPC::Message> aMsg,
+                            UniquePtr<IPC::Message>* aReply) {
   if (CanSend()) {
-    return GetIPCChannel()->Send(std::move(msg), aReply);
+    return GetIPCChannel()->Send(std::move(aMsg), aReply);
   }
 
-  WarnMessageDiscarded(msg.get());
+  WarnMessageDiscarded(aMsg.get());
   return false;
 }
 
@@ -798,7 +797,7 @@ void IPDLResolverInner::ResolveOrReject(
   WriteIPDLParam(&writer, actor, aResolve);
   aWrite(reply.get(), actor);
 
-  actor->ChannelSend(reply.release());
+  actor->ChannelSend(std::move(reply));
 }
 
 void IPDLResolverInner::Destroy() {

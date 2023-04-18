@@ -50,16 +50,16 @@ void ForkServer::InitProcess(int* aArgc, char*** aArgv) {
 bool ForkServer::HandleMessages() {
   
   
-  IPC::Message hello;
+  UniquePtr<IPC::Message> hello;
   mTcver->RecvInfallible(
       hello, "Expect to receive a HELLO message from the parent process!");
-  MOZ_ASSERT(hello.type() == kHELLO_MESSAGE_TYPE);
+  MOZ_ASSERT(hello->type() == kHELLO_MESSAGE_TYPE);
 
   
-  mTcver->SendInfallible(hello, "Fail to ack the received HELLO!");
+  mTcver->SendInfallible(*hello, "Fail to ack the received HELLO!");
 
   while (true) {
-    IPC::Message msg;
+    UniquePtr<IPC::Message> msg;
     if (!mTcver->Recv(msg)) {
       break;
     }
@@ -196,12 +196,10 @@ inline void SanitizeBuffers(IPC::Message& aMsg, std::vector<std::string>& aArgv,
 
 
 
-void ForkServer::OnMessageReceived(IPC::Message&& message) {
-  IPC::Message msg(std::move(message));
-
+void ForkServer::OnMessageReceived(UniquePtr<IPC::Message> message) {
   std::vector<std::string> argv;
   base::LaunchOptions options;
-  if (!ParseForkNewSubprocess(msg, argv, &options)) {
+  if (!ParseForkNewSubprocess(*message, argv, &options)) {
     return;
   }
 
@@ -233,7 +231,7 @@ void ForkServer::OnMessageReceived(IPC::Message&& message) {
   
   
   
-  SanitizeBuffers(msg, argv, options);
+  SanitizeBuffers(*message, argv, options);
 }
 
 
