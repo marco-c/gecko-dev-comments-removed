@@ -818,7 +818,7 @@ BrowserChild::ProvideWindow(nsIOpenWindowInfo* aOpenWindowInfo,
                             uint32_t aChromeFlags, bool aCalledFromJS,
                             nsIURI* aURI, const nsAString& aName,
                             const nsACString& aFeatures, bool aForceNoOpener,
-                            bool aForceNoReferrer,
+                            bool aForceNoReferrer, bool aIsPopupRequested,
                             nsDocShellLoadState* aLoadState, bool* aWindowIsNew,
                             BrowsingContext** aReturn) {
   *aReturn = nullptr;
@@ -848,10 +848,10 @@ BrowserChild::ProvideWindow(nsIOpenWindowInfo* aOpenWindowInfo,
   
   
   ContentChild* cc = ContentChild::GetSingleton();
-  return cc->ProvideWindowCommon(this, aOpenWindowInfo, aChromeFlags,
-                                 aCalledFromJS, aURI, aName, aFeatures,
-                                 aForceNoOpener, aForceNoReferrer, aLoadState,
-                                 aWindowIsNew, aReturn);
+  return cc->ProvideWindowCommon(
+      this, aOpenWindowInfo, aChromeFlags, aCalledFromJS, aURI, aName,
+      aFeatures, aForceNoOpener, aForceNoReferrer, aIsPopupRequested,
+      aLoadState, aWindowIsNew, aReturn);
 }
 
 void BrowserChild::DestroyWindow() {

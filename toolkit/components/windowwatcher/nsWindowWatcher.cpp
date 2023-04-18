@@ -520,7 +520,11 @@ nsWindowWatcher::OpenWindowWithRemoteTab(nsIRemoteTab* aRemoteTab,
   SizeSpec sizeSpec;
   CalcSizeSpec(features, false, sizeSpec);
 
-  uint32_t chromeFlags = CalculateChromeFlagsForContent(features);
+  
+  
+  
+  bool unused = false;
+  uint32_t chromeFlags = CalculateChromeFlagsForContent(features, &unused);
 
   if (isPrivateBrowsingWindow) {
     chromeFlags |= nsIWebBrowserChrome::CHROME_PRIVATE_WINDOW;
@@ -697,6 +701,8 @@ nsresult nsWindowWatcher::OpenWindowInternal(
   SizeSpec sizeSpec;
   CalcSizeSpec(features, hasChromeParent, sizeSpec);
 
+  bool isPopupRequested = false;
+
   
   
   
@@ -707,7 +713,7 @@ nsresult nsWindowWatcher::OpenWindowInternal(
   } else {
     MOZ_DIAGNOSTIC_ASSERT(parentBC && parentBC->IsContent(),
                           "content caller must provide content parent");
-    chromeFlags = CalculateChromeFlagsForContent(features);
+    chromeFlags = CalculateChromeFlagsForContent(features, &isPopupRequested);
 
     if (aDialog) {
       MOZ_ASSERT(XRE_IsParentProcess());
@@ -841,8 +847,8 @@ nsresult nsWindowWatcher::OpenWindowInternal(
       if (provider) {
         rv = provider->ProvideWindow(
             openWindowInfo, chromeFlags, aCalledFromJS, uriToLoad, name,
-            featuresStr, aForceNoOpener, aForceNoReferrer, aLoadState,
-            &windowIsNew, getter_AddRefs(newBC));
+            featuresStr, aForceNoOpener, aForceNoReferrer, isPopupRequested,
+            aLoadState, &windowIsNew, getter_AddRefs(newBC));
 
         if (NS_SUCCEEDED(rv) && newBC) {
           nsCOMPtr<nsIDocShell> newDocShell = newBC->GetDocShell();
@@ -1765,8 +1771,10 @@ bool nsWindowWatcher::ShouldOpenPopup(const WindowFeatures& aFeatures) {
 
 
 
+
+
 uint32_t nsWindowWatcher::CalculateChromeFlagsForContent(
-    const WindowFeatures& aFeatures) {
+    const WindowFeatures& aFeatures, bool* aIsPopupRequested) {
   if (aFeatures.IsEmpty() || !ShouldOpenPopup(aFeatures)) {
     
     
@@ -1774,6 +1782,7 @@ uint32_t nsWindowWatcher::CalculateChromeFlagsForContent(
   }
 
   
+  *aIsPopupRequested = true;
   return nsIWebBrowserChrome::CHROME_MINIMAL_POPUP;
 }
 
