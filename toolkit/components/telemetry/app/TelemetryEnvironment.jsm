@@ -376,7 +376,7 @@ const SEARCH_ENGINE_MODIFIED_TOPIC = "browser-search-engine-modified";
 const SEARCH_SERVICE_TOPIC = "browser-search-service";
 const SESSIONSTORE_WINDOWS_RESTORED_TOPIC = "sessionstore-windows-restored";
 const PREF_CHANGED_TOPIC = "nsPref:changed";
-const BLOCKLIST_LOADED_TOPIC = "plugin-blocklist-loaded";
+const GMP_PROVIDER_REGISTERED_TOPIC = "gmp-provider-registered";
 const AUTO_UPDATE_PREF_CHANGE_TOPIC =
   UpdateUtils.PER_INSTALLATION_PREFS["app.update.auto"].observerTopic;
 const BACKGROUND_UPDATE_PREF_CHANGE_TOPIC =
@@ -572,7 +572,7 @@ function EnvironmentAddonBuilder(environment) {
 
   
   
-  this._blocklistObserverAdded = false;
+  this._gmpProviderObserverAdded = false;
 
   
   this._loaded = false;
@@ -596,7 +596,7 @@ EnvironmentAddonBuilder.prototype = {
       try {
         this._shutdownState = "Awaiting _updateAddons";
         
-        await this._updateAddons(true);
+        await this._updateAddons();
 
         if (!this._environment._addonsAreFull) {
           
@@ -655,9 +655,9 @@ EnvironmentAddonBuilder.prototype = {
   
   observe(aSubject, aTopic, aData) {
     this._environment._log.trace("observe - Topic " + aTopic);
-    if (aTopic == BLOCKLIST_LOADED_TOPIC) {
-      Services.obs.removeObserver(this, BLOCKLIST_LOADED_TOPIC);
-      this._blocklistObserverAdded = false;
+    if (aTopic == GMP_PROVIDER_REGISTERED_TOPIC) {
+      Services.obs.removeObserver(this, GMP_PROVIDER_REGISTERED_TOPIC);
+      this._gmpProviderObserverAdded = false;
       let gmpPluginsPromise = this._getActiveGMPlugins();
       gmpPluginsPromise.then(
         gmpPlugins => {
@@ -709,8 +709,8 @@ EnvironmentAddonBuilder.prototype = {
   _shutdownBlocker() {
     if (this._loaded) {
       AddonManager.removeAddonListener(this);
-      if (this._blocklistObserverAdded) {
-        Services.obs.removeObserver(this, BLOCKLIST_LOADED_TOPIC);
+      if (this._gmpProviderObserverAdded) {
+        Services.obs.removeObserver(this, GMP_PROVIDER_REGISTERED_TOPIC);
       }
     }
 
@@ -732,17 +732,13 @@ EnvironmentAddonBuilder.prototype = {
 
 
 
-
-
-
-
-  async _updateAddons(atStartup) {
+  async _updateAddons() {
     this._environment._log.trace("_updateAddons");
 
     let addons = {
       activeAddons: await this._getActiveAddons(),
       theme: await this._getActiveTheme(),
-      activeGMPlugins: await this._getActiveGMPlugins(atStartup),
+      activeGMPlugins: await this._getActiveGMPlugins(),
     };
 
     let result = {
@@ -881,17 +877,13 @@ EnvironmentAddonBuilder.prototype = {
 
 
 
-
-
-
-
-  async _getActiveGMPlugins(atStartup) {
+  async _getActiveGMPlugins() {
     
     
-    if (atStartup || !Services.blocklist.isLoaded) {
-      if (!this._blocklistObserverAdded) {
-        Services.obs.addObserver(this, BLOCKLIST_LOADED_TOPIC);
-        this._blocklistObserverAdded = true;
+    if (!AddonManager.hasProvider("GMPProvider")) {
+      if (!this._gmpProviderObserverAdded) {
+        Services.obs.addObserver(this, GMP_PROVIDER_REGISTERED_TOPIC);
+        this._gmpProviderObserverAdded = true;
       }
       return {
         "dummy-gmp": {
