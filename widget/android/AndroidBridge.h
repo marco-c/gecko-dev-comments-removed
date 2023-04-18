@@ -31,6 +31,7 @@ class AutoLocalJNIFrame;
 namespace hal {
 class BatteryInformation;
 class NetworkInformation;
+enum class ScreenOrientation : uint32_t;
 }  
 
 class AndroidBridge final {
@@ -79,11 +80,7 @@ class AndroidBridge final {
 
   void GetCurrentNetworkInformation(hal::NetworkInformation* aNetworkInfo);
 
-  
-  
-  
-  
-  uint32_t GetScreenOrientation();
+  hal::ScreenOrientation GetScreenOrientation();
   uint16_t GetScreenAngle();
 
   nsresult GetProxyForURI(const nsACString& aSpec, const nsACString& aScheme,

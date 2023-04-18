@@ -4886,7 +4886,7 @@ void nsDocShell::ActivenessMaybeChanged() {
       
       if (isActive && mBrowsingContext->IsTop()) {
         
-        uint16_t orientation = mBrowsingContext->GetOrientationLock();
+        auto orientation = mBrowsingContext->GetOrientationLock();
         ScreenOrientation::UpdateActiveOrientationLock(orientation);
       }
 
@@ -9459,13 +9459,13 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
   
   
   
-  if (mBrowsingContext->GetOrientationLock() != hal::eScreenOrientation_None) {
+  if (mBrowsingContext->GetOrientationLock() != hal::ScreenOrientation::None) {
     MOZ_ASSERT(mBrowsingContext->IsTop());
     MOZ_ALWAYS_SUCCEEDS(
-        mBrowsingContext->SetOrientationLock(hal::eScreenOrientation_None));
+        mBrowsingContext->SetOrientationLock(hal::ScreenOrientation::None));
     if (mBrowsingContext->IsActive()) {
       ScreenOrientation::UpdateActiveOrientationLock(
-          hal::eScreenOrientation_None);
+          hal::ScreenOrientation::None);
     }
   }
 
