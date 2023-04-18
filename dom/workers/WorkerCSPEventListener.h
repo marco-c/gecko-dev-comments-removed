@@ -30,10 +30,10 @@ class WorkerCSPEventListener final : public nsICSPEventListener {
   WorkerCSPEventListener();
   ~WorkerCSPEventListener() = default;
 
-  Mutex mMutex;
+  Mutex mMutex MOZ_UNANNOTATED;
 
   
-  RefPtr<WeakWorkerRef> mWorkerRef GUARDED_BY(mMutex);
+  RefPtr<WeakWorkerRef> mWorkerRef;
 };
 
 }  

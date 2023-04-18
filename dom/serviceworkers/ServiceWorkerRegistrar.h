@@ -75,8 +75,8 @@ class ServiceWorkerRegistrar : public nsIObserver,
   nsresult WriteData(const nsTArray<ServiceWorkerRegistrationData>& aData);
   void DeleteData();
 
-  void RegisterServiceWorkerInternal(const ServiceWorkerRegistrationData& aData)
-      REQUIRES(mMonitor);
+  void RegisterServiceWorkerInternal(
+      const ServiceWorkerRegistrationData& aData);
 
   ServiceWorkerRegistrar();
   virtual ~ServiceWorkerRegistrar();
@@ -97,14 +97,12 @@ class ServiceWorkerRegistrar : public nsIObserver,
   bool IsSupportedVersion(const nsACString& aVersion) const;
 
  protected:
-  mozilla::Monitor mMonitor;
+  mozilla::Monitor mMonitor MOZ_UNANNOTATED;
 
   
-  nsCOMPtr<nsIFile> mProfileDir GUARDED_BY(mMonitor);
-  
-  
-  nsTArray<ServiceWorkerRegistrationData> mData GUARDED_BY(mMonitor);
-  bool mDataLoaded GUARDED_BY(mMonitor);
+  nsCOMPtr<nsIFile> mProfileDir;
+  nsTArray<ServiceWorkerRegistrationData> mData;
+  bool mDataLoaded;
 
   
   uint32_t mDataGeneration;

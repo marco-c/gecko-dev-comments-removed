@@ -656,9 +656,8 @@ class DebuggerImmediateRunnable : public WorkerRunnable {
   }
 };
 
-
-void PeriodicGCTimerCallback(nsITimer* aTimer,
-                             void* aClosure) NO_THREAD_SAFETY_ANALYSIS {
+void PeriodicGCTimerCallback(nsITimer* aTimer, void* aClosure) {
+  
   auto* workerPrivate = static_cast<WorkerPrivate*>(aClosure);
   MOZ_DIAGNOSTIC_ASSERT(workerPrivate);
   workerPrivate->AssertIsOnWorkerThread();
@@ -667,8 +666,7 @@ void PeriodicGCTimerCallback(nsITimer* aTimer,
                                         false );
 }
 
-void IdleGCTimerCallback(nsITimer* aTimer,
-                         void* aClosure) NO_THREAD_SAFETY_ANALYSIS {
+void IdleGCTimerCallback(nsITimer* aTimer, void* aClosure) {
   auto* workerPrivate = static_cast<WorkerPrivate*>(aClosure);
   MOZ_DIAGNOSTIC_ASSERT(workerPrivate);
   workerPrivate->AssertIsOnWorkerThread();
@@ -937,8 +935,8 @@ nsString ComputeWorkerPrivateId() {
 class WorkerPrivate::EventTarget final : public nsISerialEventTarget {
   
   
-  mozilla::Mutex mMutex;
-  WorkerPrivate* mWorkerPrivate GUARDED_BY(mMutex);
+  mozilla::Mutex mMutex MOZ_UNANNOTATED;
+  WorkerPrivate* mWorkerPrivate;
   nsIEventTarget* mWeakNestedEventTarget;
   nsCOMPtr<nsIEventTarget> mNestedEventTarget;
 
@@ -2975,6 +2973,8 @@ void WorkerPrivate::UnrootGlobalScopes() {
 
 void WorkerPrivate::DoRunLoop(JSContext* aCx) {
   auto data = mWorkerThreadAccessible.Access();
+  MOZ_ASSERT(mThread);
+
   MOZ_RELEASE_ASSERT(!GetExecutionManager());
 
   RefPtr<WorkerThread> thread;
@@ -3620,13 +3620,10 @@ void WorkerPrivate::ScheduleDeletion(WorkerRanOrNot aRanOrNot) {
   }
 }
 
-bool WorkerPrivate::CollectRuntimeStats(
-    JS::RuntimeStats* aRtStats, bool aAnonymize) NO_THREAD_SAFETY_ANALYSIS {
-  
-  
+bool WorkerPrivate::CollectRuntimeStats(JS::RuntimeStats* aRtStats,
+                                        bool aAnonymize) {
   AssertIsOnWorkerThread();
   NS_ASSERTION(aRtStats, "Null RuntimeStats!");
-  
   NS_ASSERTION(mJSContext, "This must never be null!");
 
   return JS::CollectRuntimeStats(mJSContext, aRtStats, nullptr, aAnonymize);
@@ -4053,8 +4050,6 @@ bool WorkerPrivate::RunCurrentSyncLoop() {
   
   {
     MutexAutoLock lock(mMutex);
-    
-    
     
     thread = mThread;
   }

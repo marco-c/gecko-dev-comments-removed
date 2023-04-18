@@ -84,10 +84,10 @@ class WorkerThread;
 
 
 
-class CAPABILITY SharedMutex {
+class SharedMutex {
   using Mutex = mozilla::Mutex;
 
-  class CAPABILITY RefCountedMutex final : public Mutex {
+  class RefCountedMutex final : public Mutex {
    public:
     explicit RefCountedMutex(const char* aName) : Mutex(aName) {}
 
@@ -105,17 +105,11 @@ class CAPABILITY SharedMutex {
 
   SharedMutex(const SharedMutex& aOther) = default;
 
-  operator Mutex&() RETURN_CAPABILITY(this) { return *mMutex; }
+  operator Mutex&() RETURN_CAPABILITY(*mMutex) { return *mMutex; }
 
-  operator const Mutex&() const RETURN_CAPABILITY(this) { return *mMutex; }
+  operator const Mutex&() const RETURN_CAPABILITY(*mMutex) { return *mMutex; }
 
-  
-  void Lock() CAPABILITY_ACQUIRE() { mMutex->Lock(); }
-  void Unlock() CAPABILITY_RELEASE() { mMutex->Unlock(); }
-
-  
-  void AssertCurrentThreadOwns() const
-      ASSERT_CAPABILITY(this) NO_THREAD_SAFETY_ANALYSIS {
+  void AssertCurrentThreadOwns() const ASSERT_CAPABILITY(*mMutex) {
     mMutex->AssertCurrentThreadOwns();
   }
 };
@@ -172,18 +166,18 @@ class WorkerPrivate final
 
   bool Cancel() { return Notify(Canceling); }
 
-  bool Close() REQUIRES(mMutex);
+  bool Close();
 
   
   
   static void OverrideLoadInfoLoadGroup(WorkerLoadInfo& aLoadInfo,
                                         nsIPrincipal* aPrincipal);
 
-  bool IsDebuggerRegistered() NO_THREAD_SAFETY_ANALYSIS {
+  bool IsDebuggerRegistered() {
     AssertIsOnMainThread();
 
     
-    return mDebuggerRegistered;  
+    return mDebuggerRegistered;
   }
 
   bool ExtensionAPIAllowed() {
@@ -367,7 +361,7 @@ class WorkerPrivate final
     return mFetchHandlerWasAdded;
   }
 
-  JSContext* GetJSContext() const NO_THREAD_SAFETY_ANALYSIS {
+  JSContext* GetJSContext() const {
     
     
     AssertIsOnWorkerThread();
@@ -545,7 +539,7 @@ class WorkerPrivate final
     return mParentStatus;
   }
 
-  WorkerStatus ParentStatus() const REQUIRES(mMutex) {
+  WorkerStatus ParentStatus() const {
     mMutex.AssertCurrentThreadOwns();
     return mParentStatus;
   }
@@ -1044,8 +1038,6 @@ class WorkerPrivate final
   void IncreaseWorkerFinishedRunnableCount() { ++mWorkerFinishedRunnableCount; }
   void DecreaseWorkerFinishedRunnableCount() { --mWorkerFinishedRunnableCount; }
 
-  Mutex& Mutex() RETURN_CAPABILITY(mMutex) { return mMutex; }
-
  private:
   WorkerPrivate(
       WorkerPrivate* aParent, const nsAString& aScriptURL, bool aIsChromeWorker,
@@ -1098,14 +1090,13 @@ class WorkerPrivate final
     return ProcessAllControlRunnablesLocked();
   }
 
-  ProcessAllControlRunnablesResult ProcessAllControlRunnablesLocked()
-      REQUIRES(mMutex);
+  ProcessAllControlRunnablesResult ProcessAllControlRunnablesLocked();
 
   void EnableMemoryReporter();
 
   void DisableMemoryReporter();
 
-  void WaitForWorkerEvents() REQUIRES(mMutex);
+  void WaitForWorkerEvents();
 
   
   
@@ -1142,7 +1133,7 @@ class WorkerPrivate final
   
   nsresult DispatchLockHeld(already_AddRefed<WorkerRunnable> aRunnable,
                             nsIEventTarget* aSyncLoopTarget,
-                            const MutexAutoLock& aProofOfLock) REQUIRES(mMutex);
+                            const MutexAutoLock& aProofOfLock);
 
   
   
@@ -1181,7 +1172,7 @@ class WorkerPrivate final
   friend class mozilla::dom::WorkerThread;
 
   SharedMutex mMutex;
-  mozilla::CondVar mCondVar GUARDED_BY(mMutex);
+  mozilla::CondVar mCondVar;
 
   
   
@@ -1215,18 +1206,18 @@ class WorkerPrivate final
   LocationInfo mLocationInfo;
 
   
-  workerinternals::JSSettings mJSSettings GUARDED_BY(mMutex);
+  workerinternals::JSSettings mJSSettings;
 
   WorkerDebugger* mDebugger;
 
   workerinternals::Queue<WorkerControlRunnable*, 4> mControlQueue;
   workerinternals::Queue<WorkerRunnable*, 4> mDebuggerQueue;
 
+  JSContext* mJSContext;
+  RefPtr<WorkerThread> mThread;
   
   
-  JSContext* mJSContext GUARDED_BY(mMutex);
   
-  RefPtr<WorkerThread> mThread GUARDED_BY(mMutex);
   
   
   
@@ -1270,7 +1261,7 @@ class WorkerPrivate final
   RefPtr<WorkerCSPEventListener> mCSPEventListener;
 
   
-  nsTArray<RefPtr<WorkerRunnable>> mPreStartRunnables GUARDED_BY(mMutex);
+  nsTArray<RefPtr<WorkerRunnable>> mPreStartRunnables;
 
   
   RefPtr<RemoteWorkerChild> mRemoteWorkerController;
@@ -1280,8 +1271,8 @@ class WorkerPrivate final
 
   JS::UniqueChars mDefaultLocale;  
   TimeStamp mKillTime;
-  WorkerStatus mParentStatus GUARDED_BY(mMutex);
-  WorkerStatus mStatus GUARDED_BY(mMutex);
+  WorkerStatus mParentStatus;
+  WorkerStatus mStatus;
 
   
   
@@ -1414,7 +1405,7 @@ class WorkerPrivate final
   
   const bool mIsSecureContext;
 
-  bool mDebuggerRegistered GUARDED_BY(mMutex);
+  bool mDebuggerRegistered;
 
   
   
