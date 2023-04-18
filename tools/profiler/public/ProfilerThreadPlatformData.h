@@ -60,6 +60,14 @@ class PlatformData {
 #endif
 };
 
+
+
+
+
+
+bool GetCpuTimeSinceThreadStartInNs(uint64_t* aResult,
+                                    const PlatformData& aPlatformData);
+
 }  
 
 #endif  

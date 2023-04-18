@@ -270,6 +270,7 @@ class ThreadRegistrationData {
   static const int SLEEPING_OBSERVED = 2;
   
   Atomic<int> mSleep{AWAKE};
+  Atomic<uint64_t> mThreadCpuTimeInNsAtLastSleep{0};
 
   
   
@@ -338,6 +339,20 @@ class ThreadRegistrationUnlockedConstReaderAndAtomicRW
   void SetAwake() {
     MOZ_ASSERT(mSleep != AWAKE);
     mSleep = AWAKE;
+  }
+
+  
+  
+  uint64_t GetNewCpuTimeInNs() {
+    uint64_t newCpuTimeNs;
+    if (!GetCpuTimeSinceThreadStartInNs(&newCpuTimeNs, PlatformDataCRef())) {
+      newCpuTimeNs = 0;
+    }
+    uint64_t before = mThreadCpuTimeInNsAtLastSleep;
+    uint64_t result =
+        MOZ_LIKELY(newCpuTimeNs > before) ? newCpuTimeNs - before : 0;
+    mThreadCpuTimeInNsAtLastSleep = newCpuTimeNs;
+    return result;
   }
 
   
