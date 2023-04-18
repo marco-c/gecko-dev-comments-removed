@@ -126,7 +126,9 @@ function renderMultistage(ready) {
   window.AWGetImportableSites = () => "[]";
   window.AWGetRegion = receive("GET_REGION");
   window.AWGetSelectedTheme = receive("GET_SELECTED_THEME");
-  window.AWSendEventTelemetry = receive("TELEMETRY_EVENT");
+  
+  window.AWSendEventTelemetry =
+    CONFIG?.metrics === "block" ? () => {} : receive("TELEMETRY_EVENT");
   window.AWSendToParent = (name, data) => receive(name)(data);
   window.AWFinish = () => {
     window.close();

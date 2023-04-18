@@ -17,6 +17,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   UITour: "resource:///modules/UITour.jsm",
   FxAccounts: "resource://gre/modules/FxAccounts.jsm",
   MigrationUtils: "resource:///modules/MigrationUtils.jsm",
+  Spotlight: "resource://activity-stream/lib/Spotlight.jsm",
 });
 
 const SpecialMessageActions = {
@@ -323,6 +324,9 @@ const SpecialMessageActions = {
           "privacy.restrict3rdpartystorage.rollout.preferences.TCPToggleInStandard",
           true
         );
+        break;
+      case "SHOW_SPOTLIGHT":
+        Spotlight.showSpotlightDialog(browser, action.data);
         break;
       default:
         throw new Error(
