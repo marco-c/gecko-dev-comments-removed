@@ -481,8 +481,11 @@ fn tweak_when_ignoring_colors(
             
             
             
+            
+            
+            
             if let Some(color) = declaration.color_value() {
-                if color.is_system() || alpha_channel(color, context) == 0 {
+                if color.is_system() {
                     return;
                 }
             }
