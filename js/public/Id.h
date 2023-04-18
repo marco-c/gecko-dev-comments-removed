@@ -37,17 +37,6 @@
 #include "js/TracingAPI.h"
 #include "js/TypeDecls.h"
 
-
-
-#define JSID_TYPE_INT_BIT 0x1
-
-
-#define JSID_TYPE_STRING 0x0
-#define JSID_TYPE_VOID 0x2
-#define JSID_TYPE_SYMBOL 0x4
-
-#define JSID_TYPE_MASK 0x7
-
 namespace JS {
 
 enum class SymbolCode : uint32_t;
@@ -56,7 +45,17 @@ class PropertyKey {
   uintptr_t asBits_;
 
  public:
-  constexpr PropertyKey() : asBits_(JSID_TYPE_VOID) {}
+  
+  
+  static constexpr uintptr_t IntTagBit = 0x1;
+  
+  static constexpr uintptr_t StringTypeTag = 0x0;
+  static constexpr uintptr_t VoidTypeTag = 0x2;
+  static constexpr uintptr_t SymbolTypeTag = 0x4;
+  
+  static constexpr uintptr_t TypeMask = 0x7;
+
+  constexpr PropertyKey() : asBits_(VoidTypeTag) {}
 
   static constexpr MOZ_ALWAYS_INLINE PropertyKey fromRawBits(uintptr_t bits) {
     PropertyKey id;
@@ -72,21 +71,18 @@ class PropertyKey {
   }
 
   MOZ_ALWAYS_INLINE bool isVoid() const {
-    MOZ_ASSERT_IF((asBits_ & JSID_TYPE_MASK) == JSID_TYPE_VOID,
-                  asBits_ == JSID_TYPE_VOID);
-    return asBits_ == JSID_TYPE_VOID;
+    MOZ_ASSERT_IF((asBits_ & TypeMask) == VoidTypeTag, asBits_ == VoidTypeTag);
+    return asBits_ == VoidTypeTag;
   }
 
-  MOZ_ALWAYS_INLINE bool isInt() const {
-    return !!(asBits_ & JSID_TYPE_INT_BIT);
-  }
+  MOZ_ALWAYS_INLINE bool isInt() const { return !!(asBits_ & IntTagBit); }
 
   MOZ_ALWAYS_INLINE bool isString() const {
-    return (asBits_ & JSID_TYPE_MASK) == JSID_TYPE_STRING;
+    return (asBits_ & TypeMask) == StringTypeTag;
   }
 
   MOZ_ALWAYS_INLINE bool isSymbol() const {
-    return (asBits_ & JSID_TYPE_MASK) == JSID_TYPE_SYMBOL;
+    return (asBits_ & TypeMask) == SymbolTypeTag;
   }
 
   MOZ_ALWAYS_INLINE bool isGCThing() const { return isString() || isSymbol(); }
@@ -103,18 +99,17 @@ class PropertyKey {
     MOZ_ASSERT(isString());
     
     
-    return reinterpret_cast<JSString*>(asBits_ ^ JSID_TYPE_STRING);
+    return reinterpret_cast<JSString*>(asBits_ ^ StringTypeTag);
   }
 
   MOZ_ALWAYS_INLINE JS::Symbol* toSymbol() const {
     MOZ_ASSERT(isSymbol());
-    return reinterpret_cast<JS::Symbol*>(asBits_ ^ JSID_TYPE_SYMBOL);
+    return reinterpret_cast<JS::Symbol*>(asBits_ ^ SymbolTypeTag);
   }
 
   js::gc::Cell* toGCThing() const {
     MOZ_ASSERT(isGCThing());
-    return reinterpret_cast<js::gc::Cell*>(asBits_ &
-                                           ~uintptr_t(JSID_TYPE_MASK));
+    return reinterpret_cast<js::gc::Cell*>(asBits_ & ~TypeMask);
   }
 
   GCCellPtr toGCCellPtr() const {
@@ -138,15 +133,15 @@ class PropertyKey {
 
   static constexpr PropertyKey Int(int32_t i) {
     MOZ_ASSERT(fitsInInt(i));
-    uint32_t bits = (static_cast<uint32_t>(i) << 1) | JSID_TYPE_INT_BIT;
+    uint32_t bits = (static_cast<uint32_t>(i) << 1) | IntTagBit;
     return PropertyKey::fromRawBits(bits);
   }
 
   static PropertyKey Symbol(JS::Symbol* sym) {
     MOZ_ASSERT(sym != nullptr);
-    MOZ_ASSERT((uintptr_t(sym) & JSID_TYPE_MASK) == 0);
+    MOZ_ASSERT((uintptr_t(sym) & TypeMask) == 0);
     MOZ_ASSERT(!js::gc::IsInsideNursery(reinterpret_cast<js::gc::Cell*>(sym)));
-    return PropertyKey::fromRawBits(uintptr_t(sym) | JSID_TYPE_SYMBOL);
+    return PropertyKey::fromRawBits(uintptr_t(sym) | SymbolTypeTag);
   }
 
   
@@ -178,16 +173,16 @@ class PropertyKey {
   
   
   static PropertyKey fromNonIntAtom(JSAtom* atom) {
-    MOZ_ASSERT((uintptr_t(atom) & JSID_TYPE_MASK) == 0);
+    MOZ_ASSERT((uintptr_t(atom) & TypeMask) == 0);
     MOZ_ASSERT(PropertyKey::isNonIntAtom(atom));
-    return PropertyKey::fromRawBits(uintptr_t(atom) | JSID_TYPE_STRING);
+    return PropertyKey::fromRawBits(uintptr_t(atom) | StringTypeTag);
   }
 
   
   static PropertyKey fromNonIntAtom(JSString* str) {
-    MOZ_ASSERT((uintptr_t(str) & JSID_TYPE_MASK) == 0);
+    MOZ_ASSERT((uintptr_t(str) & TypeMask) == 0);
     MOZ_ASSERT(PropertyKey::isNonIntAtom(str));
-    return PropertyKey::fromRawBits(uintptr_t(str) | JSID_TYPE_STRING);
+    return PropertyKey::fromRawBits(uintptr_t(str) | StringTypeTag);
   }
 
   
