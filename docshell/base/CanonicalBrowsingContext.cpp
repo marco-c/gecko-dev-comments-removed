@@ -1293,7 +1293,7 @@ void CanonicalBrowsingContext::GoBack(
 
   
   if (mCurrentLoad) {
-    mCurrentLoad->Cancel(NS_BINDING_ABORTED);
+    mCurrentLoad->Cancel(NS_BINDING_CANCELLED_OLD_LOAD);
   }
 
   if (nsDocShell* docShell = nsDocShell::Cast(GetDocShell())) {
@@ -1319,7 +1319,7 @@ void CanonicalBrowsingContext::GoForward(
 
   
   if (mCurrentLoad) {
-    mCurrentLoad->Cancel(NS_BINDING_ABORTED);
+    mCurrentLoad->Cancel(NS_BINDING_CANCELLED_OLD_LOAD);
   }
 
   if (auto* docShell = nsDocShell::Cast(GetDocShell())) {
@@ -1345,7 +1345,7 @@ void CanonicalBrowsingContext::GoToIndex(
 
   
   if (mCurrentLoad) {
-    mCurrentLoad->Cancel(NS_BINDING_ABORTED);
+    mCurrentLoad->Cancel(NS_BINDING_CANCELLED_OLD_LOAD);
   }
 
   if (auto* docShell = nsDocShell::Cast(GetDocShell())) {
@@ -1369,7 +1369,7 @@ void CanonicalBrowsingContext::Reload(uint32_t aReloadFlags) {
 
   
   if (mCurrentLoad) {
-    mCurrentLoad->Cancel(NS_BINDING_ABORTED);
+    mCurrentLoad->Cancel(NS_BINDING_CANCELLED_OLD_LOAD);
   }
 
   if (auto* docShell = nsDocShell::Cast(GetDocShell())) {
@@ -2084,7 +2084,7 @@ bool CanonicalBrowsingContext::StartDocumentLoad(
   
   if (StaticPrefs::browser_tabs_documentchannel_parent_controlled() &&
       mozilla::SessionHistoryInParent() && mCurrentLoad) {
-    mCurrentLoad->Cancel(NS_BINDING_ABORTED);
+    mCurrentLoad->Cancel(NS_BINDING_CANCELLED_OLD_LOAD);
   }
   mCurrentLoad = aLoad;
 
