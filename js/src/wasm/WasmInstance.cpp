@@ -67,12 +67,23 @@ using CheckedU32 = CheckedInt<uint32_t>;
 
 
 static_assert(alignof(Instance) >=
-  std::max(sizeof(Registers::RegisterContent), sizeof(FloatRegisters::RegisterContent)));
+              std::max(sizeof(Registers::RegisterContent),
+                       sizeof(FloatRegisters::RegisterContent)));
 
 
 
 
 static_assert(Instance::offsetOfGlobalArea() % alignof(Instance) == 0);
+
+
+
+
+static_assert(Instance::offsetOfMemoryBase() == 0);
+
+
+
+
+static_assert(Instance::offsetOfLastCommonJitField() < 128);
 
 
 
@@ -1307,13 +1318,13 @@ Instance::Instance(JSContext* cx, Handle<WasmInstanceObject*> object,
                    HandleWasmMemoryObject memory, SharedTableVector&& tables,
                    UniqueDebugState maybeDebug)
     : realm_(cx->realm()),
-      object_(object),
       jsJitArgsRectifier_(
           cx->runtime()->jitRuntime()->getArgumentsRectifier().value),
       jsJitExceptionHandler_(
           cx->runtime()->jitRuntime()->getExceptionTail().value),
       preBarrierCode_(
           cx->runtime()->jitRuntime()->preBarrier(MIRType::Object).value),
+      object_(object),
       code_(std::move(code)),
       memory_(memory),
       tables_(std::move(tables)),

@@ -65,6 +65,10 @@ struct TagDesc;
 
 class alignas(16) Instance {
   
+  
+  
+
+  
   uint8_t* memoryBase_;
 
   
@@ -79,9 +83,6 @@ class alignas(16) Instance {
 
   
   JSContext* cx_;
-
-  
-  const JSClass* valueBoxClass_;
 
 #ifdef ENABLE_WASM_EXCEPTIONS
   
@@ -104,11 +105,21 @@ class alignas(16) Instance {
   
   Atomic<uint32_t, mozilla::Relaxed> interrupt_;
 
+  
+  
+  
   const JS::shadow::Zone::BarrierState* addressOfNeedsIncrementalBarrier_;
 
+ public:
   
-  void* allocatedBase_;
+  
+  
+  
+  static constexpr size_t offsetOfLastCommonJitField() {
+    return offsetof(Instance, addressOfNeedsIncrementalBarrier_);
+  }
 
+ private:
   
   
   void** jumpTable_;
@@ -118,7 +129,9 @@ class alignas(16) Instance {
   uint32_t baselineScratch_[2];
 
   
-  WeakHeapPtrWasmInstanceObject object_;
+  
+  
+  const JSClass* valueBoxClass_;
 
   
   void* jsJitArgsRectifier_;
@@ -128,6 +141,9 @@ class alignas(16) Instance {
 
   
   void* preBarrierCode_;
+
+  
+  WeakHeapPtrWasmInstanceObject object_;
 
   
   const SharedCode code_;
@@ -152,6 +168,9 @@ class alignas(16) Instance {
   
   bool hasGcTypes_;
 #endif
+
+  
+  void* allocatedBase_;
 
   
   
