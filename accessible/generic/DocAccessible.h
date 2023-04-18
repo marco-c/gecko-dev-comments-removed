@@ -114,6 +114,17 @@ class DocAccessible : public HyperTextAccessibleWrap,
   
 
 
+
+
+
+
+
+
+  void QueueCacheUpdate(LocalAccessible* aAcc, uint64_t aNewDomain);
+
+  
+
+
   nsIAccessiblePivot* VirtualCursor();
 
   
@@ -349,13 +360,6 @@ class DocAccessible : public HyperTextAccessibleWrap,
   
 
 
-
-
-  void MarkForBoundsProcessing(LocalAccessible* aAcc);
-
-  
-
-
   void UpdateText(nsIContent* aTextNode);
 
   
@@ -505,7 +509,7 @@ class DocAccessible : public HyperTextAccessibleWrap,
 
 
 
-  void ProcessBoundsChanged();
+  void ProcessQueuedCacheUpdates();
 
   
 
@@ -758,6 +762,12 @@ class DocAccessible : public HyperTextAccessibleWrap,
   DocAccessibleChild* mIPCDoc;
 
   nsTHashSet<RefPtr<LocalAccessible>> mMaybeBoundsChanged;
+
+  
+  
+  
+  nsTHashMap<RefPtr<LocalAccessible>, uint64_t> mQueuedCacheUpdates;
+
   
   
   nsTHashSet<RefPtr<LocalAccessible>> mMovedAccessibles;
