@@ -276,10 +276,10 @@ class JitFrameLayout : public CommonFrameLayout {
   }
   uintptr_t numActualArgs() const { return numActualArgs_; }
 
-  void* callerFramePtr() const {
+  uint8_t* callerFramePtr() const {
     
     auto* p = reinterpret_cast<const uintptr_t*>(this) - 1;
-    return reinterpret_cast<void*>(*p);
+    return reinterpret_cast<uint8_t*>(*p);
   }
 
   

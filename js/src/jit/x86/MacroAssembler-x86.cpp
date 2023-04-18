@@ -596,7 +596,8 @@ void MacroAssemblerX86::handleFailureWithHandlerTail(Label* profilerExitTail) {
   bind(&returnIon);
   loadValue(Address(esp, ResumeFromException::offsetOfException()),
             JSReturnOperand);
-  loadPtr(Address(esp, ResumeFromException::offsetOfFramePointer()), esp);
+  loadPtr(Address(esp, ResumeFromException::offsetOfFramePointer()), ebp);
+  loadPtr(Address(esp, ResumeFromException::offsetOfStackPointer()), esp);
 
   
   

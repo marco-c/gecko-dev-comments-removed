@@ -5321,6 +5321,8 @@ void MacroAssemblerLOONG64Compat::handleFailureWithHandlerTail(
   loadValue(Address(StackPointer, ResumeFromException::offsetOfException()),
             JSReturnOperand);
   loadPtr(Address(StackPointer, ResumeFromException::offsetOfFramePointer()),
+          FramePointer);
+  loadPtr(Address(StackPointer, ResumeFromException::offsetOfStackPointer()),
           StackPointer);
 
   
