@@ -476,52 +476,6 @@ static ArgResult CheckArgExists(const char* aArg) {
 bool gSafeMode = false;
 bool gFxREmbedded = false;
 
-
-
-
-
-
-
-
-
-
-
-
-
-static const char kPrefFissionAutostart[] = "fission.autostart";
-
-
-
-
-
-
-
-
-
-static const char kPrefFissionExperimentEnrollmentStatus[] =
-    "fission.experiment.enrollmentStatus";
-
-
-
-
-
-
-static const char kPrefFissionExperimentStartupEnrollmentStatus[] =
-    "fission.experiment.startupEnrollmentStatus";
-
-
-
-
-
-
-static const char kPrefFissionAutostartSession[] = "fission.autostart.session";
-
-static nsIXULRuntime::ExperimentStatus gFissionExperimentStatus =
-    nsIXULRuntime::eExperimentStatusUnenrolled;
-static bool gFissionAutostart = false;
-static bool gFissionAutostartInitialized = false;
-static nsIXULRuntime::FissionDecisionStatus gFissionDecisionStatus;
-
 enum E10sStatus {
   kE10sEnabledByDefault,
   kE10sDisabledByUser,
@@ -593,14 +547,158 @@ bool BrowserTabsRemoteAutostart() {
   return gBrowserTabsRemoteAutostart;
 }
 
+}  
 
+
+
+
+
+
+static bool gWin32kInitialized = false;
+
+
+
+
+static nsIXULRuntime::ContentWin32kLockdownState gWin32kStatus;
+
+
+
+
+static nsIXULRuntime::ExperimentStatus gWin32kExperimentStatus =
+    nsIXULRuntime::eExperimentStatusUnenrolled;
+
+#ifdef XP_WIN
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static const char kPrefWin32k[] = "security.sandbox.content.win32k-disable";
+
+
+
+
+
+
+static const char kPrefWin32kExperimentEnrollmentStatus[] =
+    "security.sandbox.content.win32k-experiment.enrollmentStatus";
+
+
+
+
+
+
+
+static const char kPrefWin32kExperimentStartupEnrollmentStatus[] =
+    "security.sandbox.content.win32k-experiment.startupEnrollmentStatus";
 
 namespace mozilla {
-nsIXULRuntime::ContentWin32kLockdownState GetWin32kLockdownState() {
+
+bool Win32kExperimentEnrolled() {
+  MOZ_ASSERT(XRE_IsParentProcess());
+  return gWin32kExperimentStatus == nsIXULRuntime::eExperimentStatusControl ||
+         gWin32kExperimentStatus == nsIXULRuntime::eExperimentStatusTreatment;
+}
+
+}  
+
+static bool Win32kRequirementsUnsatisfied(
+    nsIXULRuntime::ContentWin32kLockdownState aStatus) {
+  return aStatus == nsIXULRuntime::ContentWin32kLockdownState::
+                        OperatingSystemNotSupported ||
+         aStatus ==
+             nsIXULRuntime::ContentWin32kLockdownState::MissingWebRender ||
+         aStatus ==
+             nsIXULRuntime::ContentWin32kLockdownState::MissingRemoteWebGL;
+}
+
+static void Win32kExperimentDisqualify() {
+  MOZ_ASSERT(XRE_IsParentProcess());
+  Preferences::SetUint(kPrefWin32kExperimentEnrollmentStatus,
+                       nsIXULRuntime::eExperimentStatusDisqualified);
+}
+
+static void OnWin32kEnrollmentStatusChanged(const char* aPref, void* aData) {
+  auto newStatusInt =
+      Preferences::GetUint(kPrefWin32kExperimentEnrollmentStatus,
+                           nsIXULRuntime::eExperimentStatusUnenrolled);
+  auto newStatus = newStatusInt < nsIXULRuntime::eExperimentStatusCount
+                       ? nsIXULRuntime::ExperimentStatus(newStatusInt)
+                       : nsIXULRuntime::eExperimentStatusDisqualified;
+
+  
+  Preferences::SetUint(kPrefWin32kExperimentStartupEnrollmentStatus, newStatus);
+}
+
+namespace {
+
+
+
+class Win32kEnrollmentStatusShutdownObserver final : public nsIObserver {
+ public:
+  NS_DECL_ISUPPORTS
+
+  NS_IMETHOD Observe(nsISupports* aSubject, const char* aTopic,
+                     const char16_t* aData) override {
+    MOZ_ASSERT(!strcmp("profile-before-change", aTopic));
+    OnWin32kEnrollmentStatusChanged(kPrefWin32kExperimentEnrollmentStatus,
+                                    nullptr);
+    return NS_OK;
+  }
+
+ private:
+  ~Win32kEnrollmentStatusShutdownObserver() = default;
+};
+NS_IMPL_ISUPPORTS(Win32kEnrollmentStatusShutdownObserver, nsIObserver)
+}  
+
+static void OnWin32kChanged(const char* aPref, void* aData) {
+  
+  
+  if (Win32kExperimentEnrolled() && Preferences::HasUserValue(kPrefWin32k)) {
+    Win32kExperimentDisqualify();
+  }
+}
+
+#endif  
+
+namespace mozilla {
+void EnsureWin32kInitialized();
+}
+
+nsIXULRuntime::ContentWin32kLockdownState GetLiveWin32kLockdownState() {
 #ifdef XP_WIN
 
   
   MOZ_ASSERT(NS_IsMainThread());
+  mozilla::EnsureWin32kInitialized();
 
   if (gSafeMode) {
     return nsIXULRuntime::ContentWin32kLockdownState::DisabledBySafeMode;
@@ -655,6 +753,14 @@ nsIXULRuntime::ContentWin32kLockdownState GetWin32kLockdownState() {
     }
   }
 
+  if (gWin32kExperimentStatus ==
+      nsIXULRuntime::ExperimentStatus::eExperimentStatusControl) {
+    return nsIXULRuntime::ContentWin32kLockdownState::DisabledByControlGroup;
+  } else if (gWin32kExperimentStatus ==
+             nsIXULRuntime::ExperimentStatus::eExperimentStatusTreatment) {
+    return nsIXULRuntime::ContentWin32kLockdownState::EnabledByTreatmentGroup;
+  }
+
   if (defaultValue) {
     return nsIXULRuntime::ContentWin32kLockdownState::EnabledByDefault;
   } else {
@@ -668,8 +774,139 @@ nsIXULRuntime::ContentWin32kLockdownState GetWin32kLockdownState() {
 #endif
 }
 
+namespace mozilla {
+
+void EnsureWin32kInitialized() {
+  if (gWin32kInitialized) {
+    return;
+  }
+  gWin32kInitialized = true;
+
+#ifdef XP_WIN
+
+  
+  
+  
+  
+  uint32_t experimentRaw =
+      Preferences::GetUint(kPrefWin32kExperimentStartupEnrollmentStatus,
+                           nsIXULRuntime::eExperimentStatusUnenrolled);
+  gWin32kExperimentStatus =
+      experimentRaw < nsIXULRuntime::eExperimentStatusCount
+          ? nsIXULRuntime::ExperimentStatus(experimentRaw)
+          : nsIXULRuntime::eExperimentStatusDisqualified;
+
+  
+  
+  Preferences::RegisterCallback(&OnWin32kEnrollmentStatusChanged,
+                                kPrefWin32kExperimentEnrollmentStatus);
+  if (nsCOMPtr<nsIObserverService> observerService =
+          mozilla::services::GetObserverService()) {
+    nsCOMPtr<nsIObserver> shutdownObserver =
+        new Win32kEnrollmentStatusShutdownObserver();
+    observerService->AddObserver(shutdownObserver, "profile-before-change",
+                                 false);
+  }
+
+  
+  
+  auto tmpStatus = GetLiveWin32kLockdownState();
+  if (Win32kExperimentEnrolled() && Win32kRequirementsUnsatisfied(tmpStatus)) {
+    Win32kExperimentDisqualify();
+    gWin32kExperimentStatus = nsIXULRuntime::eExperimentStatusDisqualified;
+  }
+
+  
+  
+  
+  if (Preferences::HasUserValue(kPrefWin32k) && Win32kExperimentEnrolled()) {
+    Win32kExperimentDisqualify();
+    gWin32kExperimentStatus = nsIXULRuntime::eExperimentStatusDisqualified;
+  }
+
+  
+  
+  
+
+  Preferences::RegisterCallback(&OnWin32kChanged, kPrefWin32k);
+
+  
+  gWin32kStatus = GetLiveWin32kLockdownState();
+
+#else
+  gWin32kStatus =
+      nsIXULRuntime::ContentWin32kLockdownState::OperatingSystemNotSupported;
+  gWin32kExperimentStatus = nsIXULRuntime::eExperimentStatusUnenrolled;
+
+#endif  
+}
+
+nsIXULRuntime::ContentWin32kLockdownState GetWin32kLockdownState() {
+#ifdef XP_WIN
+
+  mozilla::EnsureWin32kInitialized();
+  return gWin32kStatus;
+
+#else
+
+  return nsIXULRuntime::ContentWin32kLockdownState::OperatingSystemNotSupported;
+
+#endif
+}
+
 }  
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static const char kPrefFissionAutostart[] = "fission.autostart";
+
+
+
+
+
+
+
+
+
+static const char kPrefFissionExperimentEnrollmentStatus[] =
+    "fission.experiment.enrollmentStatus";
+
+
+
+
+
+
+static const char kPrefFissionExperimentStartupEnrollmentStatus[] =
+    "fission.experiment.startupEnrollmentStatus";
+
+
+
+
+
+
+static const char kPrefFissionAutostartSession[] = "fission.autostart.session";
+
+static nsIXULRuntime::ExperimentStatus gFissionExperimentStatus =
+    nsIXULRuntime::eExperimentStatusUnenrolled;
+static bool gFissionAutostart = false;
+static bool gFissionAutostartInitialized = false;
+static nsIXULRuntime::FissionDecisionStatus gFissionDecisionStatus;
+
+namespace mozilla {
 
 bool FissionExperimentEnrolled() {
   MOZ_ASSERT(XRE_IsParentProcess());
@@ -844,6 +1081,12 @@ bool FissionAutostart() {
   EnsureFissionAutostartInitialized();
   return gFissionAutostart;
 }
+
+}  
+
+
+
+namespace mozilla {
 
 bool SessionHistoryInParent() {
   return FissionAutostart() ||
@@ -1151,6 +1394,41 @@ nsXULAppInfo::GetLastAppBuildID(nsACString& aResult) {
 NS_IMETHODIMP
 nsXULAppInfo::GetFissionAutostart(bool* aResult) {
   *aResult = FissionAutostart();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsXULAppInfo::GetWin32kExperimentStatus(ExperimentStatus* aResult) {
+  if (!XRE_IsParentProcess()) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  EnsureWin32kInitialized();
+  *aResult = gWin32kExperimentStatus;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsXULAppInfo::GetWin32kLiveStatusTestingOnly(
+    nsIXULRuntime::ContentWin32kLockdownState* aResult) {
+  if (!XRE_IsParentProcess()) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  EnsureWin32kInitialized();
+  *aResult = GetLiveWin32kLockdownState();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsXULAppInfo::GetWin32kSessionStatus(
+    nsIXULRuntime::ContentWin32kLockdownState* aResult) {
+  if (!XRE_IsParentProcess()) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  EnsureWin32kInitialized();
+  *aResult = gWin32kStatus;
   return NS_OK;
 }
 
