@@ -3081,6 +3081,9 @@ class HTMLEditor final : public EditorBase,
     [[nodiscard]] bool IsSpannedFromOtherRow() const {
       return mElement && mCurrent.mRow != mFirst.mRow;
     }
+    [[nodiscard]] bool IsNextColumnSpannedFromOtherColumn() const {
+      return mElement && mCurrent.mColumn + 1 < NextColumnIndex();
+    }
 
     
 
@@ -3241,6 +3244,13 @@ class HTMLEditor final : public EditorBase,
 
   Result<RefPtr<Element>, nsresult> GetSelectedOrParentTableElement(
       bool* aIsCellSelected = nullptr) const;
+
+  
+
+
+
+
+  Result<RefPtr<Element>, nsresult> GetFirstSelectedCellElementInTable() const;
 
   
 
@@ -3604,14 +3614,8 @@ class HTMLEditor final : public EditorBase,
 
 
 
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT nsresult InsertTableColumnsWithTransaction(
-      int32_t aNumberOfColumnsToInsert, InsertPosition aInsertPosition);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult InsertTableColumnsWithTransaction(
+      const EditorDOMPoint& aPointToInsert, int32_t aNumberOfColumnsToInsert);
 
   
 
