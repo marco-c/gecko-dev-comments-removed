@@ -156,20 +156,6 @@ def get_tasks_with_downstream(labels, full_task_graph, label_to_taskid):
     ).nodes & set(label_to_taskid.keys())
 
 
-def get_downstream_browsertime_tasks(labels, full_task_graph, label_to_taskid):
-    
-    
-    
-    
-    return full_task_graph.graph.transitive_closure(set(labels), reverse=True).nodes
-
-
-def rename_browsertime_vismet_task(label):
-    
-    
-    return label.replace("-vismet", "") + "-e10s"
-
-
 def fetch_graph_and_labels(parameters, graph_config):
     decision_task_id = find_decision_task(parameters, graph_config)
 
