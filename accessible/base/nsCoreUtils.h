@@ -14,6 +14,7 @@
 
 #include "nsPoint.h"
 #include "nsTArray.h"
+#include "Units.h"
 
 class nsRange;
 class nsTreeColumn;
@@ -170,7 +171,7 @@ class nsCoreUtils {
 
 
   static void ScrollFrameToPoint(nsIFrame* aScrollableFrame, nsIFrame* aFrame,
-                                 const nsIntPoint& aPoint);
+                                 const mozilla::LayoutDeviceIntPoint& aPoint);
 
   
 
@@ -186,7 +187,7 @@ class nsCoreUtils {
 
 
 
-  static nsIntPoint GetScreenCoordsForWindow(nsINode* aNode);
+  static mozilla::LayoutDeviceIntPoint GetScreenCoordsForWindow(nsINode* aNode);
 
   
 

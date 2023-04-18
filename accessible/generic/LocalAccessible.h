@@ -406,10 +406,7 @@ class LocalAccessible : public nsISupports, public Accessible {
 
   virtual nsRect BoundsInAppUnits() const;
 
-  
-
-
-  virtual nsIntRect Bounds() const override;
+  virtual LayoutDeviceIntRect Bounds() const override;
 
   
 

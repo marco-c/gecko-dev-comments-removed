@@ -139,9 +139,9 @@ class nsAccUtils {
 
 
 
-  static nsIntPoint ConvertToScreenCoords(int32_t aX, int32_t aY,
-                                          uint32_t aCoordinateType,
-                                          LocalAccessible* aAccessible);
+  static LayoutDeviceIntPoint ConvertToScreenCoords(
+      int32_t aX, int32_t aY, uint32_t aCoordinateType,
+      LocalAccessible* aAccessible);
 
   
 
@@ -163,7 +163,9 @@ class nsAccUtils {
 
 
 
-  static nsIntPoint GetScreenCoordsForParent(LocalAccessible* aAccessible);
+
+  static LayoutDeviceIntPoint GetScreenCoordsForParent(
+      LocalAccessible* aAccessible);
 
   
 
