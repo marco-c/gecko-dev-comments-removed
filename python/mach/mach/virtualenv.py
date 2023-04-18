@@ -332,7 +332,7 @@ class VirtualenvManager(VirtualenvHelper):
             if req.satisfied_by is not None:
                 return
 
-        return self._run_pip(["install", package], stderr=subprocess.STDOUT)
+        self._run_pip(["install", package])
 
     def install_pip_requirements(self, path, require_hashes=True, quiet=False):
         """Install a pip requirements.txt file.
@@ -356,11 +356,9 @@ class VirtualenvManager(VirtualenvHelper):
         if quiet:
             args.append("--quiet")
 
-        return self._run_pip(args, stderr=subprocess.STDOUT)
+        self._run_pip(args)
 
-    def _run_pip(self, args, **kwargs):
-        kwargs.setdefault("check", True)
-
+    def _run_pip(self, args):
         
         
         
@@ -376,9 +374,13 @@ class VirtualenvManager(VirtualenvHelper):
         
         
         
-        pip = [self.python_path, "-m", "pip"]
-        return subprocess.run(
-            pip + args, cwd=self.topsrcdir, env=env, universal_newlines=True, **kwargs
+        subprocess.run(
+            [self.python_path, "-m", "pip"] + args,
+            cwd=self.topsrcdir,
+            env=env,
+            universal_newlines=True,
+            stderr=subprocess.STDOUT,
+            check=True,
         )
 
     def _site_packages_dir(self):
