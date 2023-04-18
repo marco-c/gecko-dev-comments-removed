@@ -96,6 +96,23 @@ const SnapshotMonitor = new (class SnapshotMonitor {
   
 
 
+
+
+
+  get skipMinimumSizeBuilders() {
+    let names = [];
+    for (let builder of this.#groupBuilders) {
+      let name = builder.skipMinimumSize;
+      if (name) {
+        names.push(builder.name);
+      }
+    }
+    return names;
+  }
+
+  
+
+
   init() {
     
     if (

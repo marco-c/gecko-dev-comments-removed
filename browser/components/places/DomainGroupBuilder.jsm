@@ -28,6 +28,18 @@ const DomainGroupBuilder = new (class DomainGroupBuilder {
 
 
 
+  name = "domain";
+
+  
+
+
+
+  skipMinimumSize = false;
+
+  
+
+
+
 
 
   async rebuild(snapshots) {
@@ -159,7 +171,7 @@ const DomainGroupBuilder = new (class DomainGroupBuilder {
     this.#currentGroups = new Map();
 
     let groups = await SnapshotGroups.query({
-      builder: "domain",
+      builder: this.name,
       limit: -1,
       skipMinimum: true,
     });
@@ -182,7 +194,7 @@ const DomainGroupBuilder = new (class DomainGroupBuilder {
   #generateDomainData(domain, url) {
     return {
       title: CommonNames.getURLName(new URL(url)),
-      builder: "domain",
+      builder: this.name,
       builderMetadata: {
         domain,
       },

@@ -28,6 +28,18 @@ const PinnedGroupBuilder = new (class PinnedGroupBuilder {
 
 
 
+  name = "pinned";
+
+  
+
+
+
+  skipMinimumSize = true;
+
+  
+
+
+
 
 
   async rebuild(snapshots) {
@@ -116,7 +128,7 @@ const PinnedGroupBuilder = new (class PinnedGroupBuilder {
     }
 
     let groups = await SnapshotGroups.query({
-      builder: "pinned",
+      builder: this.name,
       limit: -1,
       skipMinimum: true,
     });
