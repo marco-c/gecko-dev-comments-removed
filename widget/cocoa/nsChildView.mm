@@ -2760,20 +2760,30 @@ NSEvent* gLastDragMouseDownEvent = nil;
 
 
 
-
 - (BOOL)shouldDelayWindowOrderingForEvent:(NSEvent*)aEvent {
-  
-  if (![[self window] isKindOfClass:[PopupWindow class]]) return NO;
+  NSWindow* window = self.window;
 
   
   
-  return ![[self window] parentWindow];
+  if ([window isKindOfClass:[PopupWindow class]] && !window.parentWindow) {
+    return YES;
+  }
+
+  
+  if (window.level == NSFloatingWindowLevel) {
+    return YES;
+  }
+
+  return NO;
 }
 
 - (void)mouseDown:(NSEvent*)theEvent {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   if ([self shouldDelayWindowOrderingForEvent:theEvent]) {
+    
+    
+    
     [NSApp preventWindowOrdering];
   }
 
