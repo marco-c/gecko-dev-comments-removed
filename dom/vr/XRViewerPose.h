@@ -13,8 +13,7 @@
 
 #include "gfxVR.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class XRRigidTransform;
 class XRView;
@@ -41,7 +40,6 @@ class XRViewerPose final : public XRPose {
   nsTArray<RefPtr<XRView>> mViews;
 };
 
-}  
 }  
 
 #endif  

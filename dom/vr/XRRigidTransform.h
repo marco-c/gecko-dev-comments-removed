@@ -12,8 +12,7 @@
 
 #include "gfxVR.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class VRFrameData;
 
@@ -63,7 +62,6 @@ class XRRigidTransform final : public nsWrapperCache {
   bool mNeedsUpdate;
 };
 
-}  
 }  
 
 #endif  
