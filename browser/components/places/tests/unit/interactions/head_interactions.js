@@ -19,6 +19,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 
 var gProfD = do_get_profile(true);
+Services.prefs.setBoolPref("browser.pagethumbnails.capturing_disabled", true);
 
 
 const TOPIC_ADDED = "places-snapshots-added";
