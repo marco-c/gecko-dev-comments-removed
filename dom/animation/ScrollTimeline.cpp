@@ -8,6 +8,7 @@
 
 #include "mozilla/dom/Animation.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/AnimationTarget.h"
 #include "nsIFrame.h"
 #include "nsIScrollableFrame.h"
 #include "nsLayoutUtils.h"
@@ -48,12 +49,6 @@ ScrollTimeline::ScrollTimeline(Document* aDocument, Element* aScroller)
       
       
       
-      
-      
-      
-      
-      
-      
       mSource(aScroller),
       mDirection(StyleScrollDirection::Auto) {
   MOZ_ASSERT(aDocument);
@@ -65,6 +60,22 @@ ScrollTimeline::ScrollTimeline(Document* aDocument, Element* aScroller)
                          PlaybackDirection::Normal, FillMode::Both);
 
   RegisterWithScrollSource();
+}
+
+already_AddRefed<ScrollTimeline> ScrollTimeline::FromRule(
+    const RawServoScrollTimelineRule& aRule, Document* aDocument,
+    const NonOwningAnimationTarget& aTarget) {
+  
+  RefPtr<ScrollTimeline> timeline = new ScrollTimeline(
+      aDocument, aTarget.mElement->OwnerDoc()->GetDocumentElement());
+  
+  
+  
+  
+  
+  
+  timeline->mDirection = Servo_ScrollTimelineRule_GetOrientation(&aRule);
+  return timeline.forget();
 }
 
 Nullable<TimeDuration> ScrollTimeline::GetCurrentTimeAsDuration() const {

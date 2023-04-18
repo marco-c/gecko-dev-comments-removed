@@ -619,11 +619,12 @@ impl StylesheetInvalidationSet {
                     
                 }
             },
-            ScrollTimeline(..) => {
-                
-                
-            },
-            CounterStyle(..) | Page(..) | Viewport(..) | FontFeatureValues(..) => {
+            
+            ScrollTimeline(..) |
+            CounterStyle(..) |
+            Page(..) |
+            Viewport(..) |
+            FontFeatureValues(..) => {
                 debug!(
                     " > Found unsupported rule, marking the whole subtree \
                      invalid."
