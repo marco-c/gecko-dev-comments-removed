@@ -269,7 +269,8 @@ namespace jit {
   _(ThrowUninitializedThis, js::ThrowUninitializedThis)                        \
   _(ToBigInt, js::ToBigInt)                                                    \
   _(ToStringSlow, js::ToStringSlow<CanGC>)                                     \
-  _(ValueToIterator, js::ValueToIterator)
+  _(ValueToIterator, js::ValueToIterator)                                      \
+  _(VarEnvironmentObjectCreate, js::VarEnvironmentObject::create)
 
 
 

@@ -1795,14 +1795,6 @@ static bool CanIonCompileOrInlineScript(JSScript* script, const char** reason) {
     return false;
   }
 
-  if (script->functionHasExtraBodyVarScope() &&
-      script->functionExtraBodyVarScope()->hasEnvironment()) {
-    
-    
-    *reason = "has extra var environment";
-    return false;
-  }
-
   return true;
 }  
 

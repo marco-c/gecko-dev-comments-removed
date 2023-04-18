@@ -58,7 +58,7 @@ class MOZ_STACK_CLASS WarpScriptOracle {
     return oracle_->abort(script_, args...);
   }
 
-  AbortReasonOr<WarpEnvironment> createEnvironment();
+  WarpEnvironment createEnvironment();
   AbortReasonOr<Ok> maybeInlineIC(WarpOpSnapshotList& snapshots,
                                   BytecodeLocation loc);
   AbortReasonOr<bool> maybeInlineCall(WarpOpSnapshotList& snapshots,
@@ -245,7 +245,7 @@ ICEntry& WarpScriptOracle::getICEntryAndFallback(BytecodeLocation loc,
   return icScript_->icEntry(icEntryIndex_ - 1);
 }
 
-AbortReasonOr<WarpEnvironment> WarpScriptOracle::createEnvironment() {
+WarpEnvironment WarpScriptOracle::createEnvironment() {
   
   
   
@@ -268,11 +268,6 @@ AbortReasonOr<WarpEnvironment> WarpScriptOracle::createEnvironment() {
     MOZ_ASSERT(!script_->hasNonSyntacticScope());
     JSObject* obj = &script_->global().lexicalEnvironment();
     return WarpEnvironment(ConstantObjectEnvironment(obj));
-  }
-
-  
-  if (fun->needsExtraBodyVarEnvironment()) {
-    return abort(AbortReason::Disable, "Extra var environment unsupported");
   }
 
   JSObject* templateEnv = script_->jitScript()->templateEnvironment();
@@ -308,8 +303,7 @@ AbortReasonOr<WarpScriptSnapshot*> WarpScriptOracle::createScriptSnapshot() {
     oracle_->bailoutInfo().setFailedLexicalCheck();
   }
 
-  WarpEnvironment environment{NoEnvironment()};
-  MOZ_TRY_VAR(environment, createEnvironment());
+  WarpEnvironment environment = createEnvironment();
 
   
   
@@ -601,6 +595,7 @@ AbortReasonOr<WarpScriptSnapshot*> WarpScriptOracle::createScriptSnapshot() {
       case JSOp::PopLexicalEnv:
       case JSOp::FreshenLexicalEnv:
       case JSOp::RecreateLexicalEnv:
+      case JSOp::PushVarEnv:
       case JSOp::PushClassBodyEnv:
       case JSOp::ImplicitThis:
       case JSOp::CheckClassHeritage:
