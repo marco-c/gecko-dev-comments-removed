@@ -24,6 +24,7 @@ extern "system" {
 pub fn getrandom_inner(dest: &mut [u8]) -> Result<(), Error> {
     
     for chunk in dest.chunks_mut(u32::max_value() as usize) {
+        
         let ret = unsafe {
             BCryptGenRandom(
                 ptr::null_mut(),

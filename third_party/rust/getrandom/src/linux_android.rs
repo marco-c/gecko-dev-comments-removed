@@ -14,6 +14,7 @@ use crate::{
 };
 
 pub fn getrandom_inner(dest: &mut [u8]) -> Result<(), Error> {
+    
     static HAS_GETRANDOM: LazyBool = LazyBool::new();
     if HAS_GETRANDOM.unsync_init(is_getrandom_available) {
         sys_fill_exact(dest, |buf| unsafe {
