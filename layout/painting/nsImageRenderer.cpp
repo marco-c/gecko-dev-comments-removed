@@ -440,7 +440,7 @@ void nsImageRenderer::SetPreferredSize(const CSSSizeOrRatio& aIntrinsicSize,
 
 
 static uint32_t ConvertImageRendererToDrawFlags(uint32_t aImageRendererFlags) {
-  uint32_t drawFlags = imgIContainer::FLAG_NONE;
+  uint32_t drawFlags = imgIContainer::FLAG_ASYNC_NOTIFY;
   if (aImageRendererFlags & nsImageRenderer::FLAG_SYNC_DECODE_IMAGES) {
     drawFlags |= imgIContainer::FLAG_SYNC_DECODE;
   }
