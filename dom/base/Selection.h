@@ -171,7 +171,7 @@ class Selection final : public nsSupportsWeakReference,
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult AddRangesForUserSelectableNodes(
-      nsRange* aRange, int32_t* aOutIndex,
+      nsRange* aRange, Maybe<size_t>* aOutIndex,
       const DispatchSelectstartEvent aDispatchSelectstartEvent);
 
   
@@ -186,7 +186,7 @@ class Selection final : public nsSupportsWeakReference,
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult AddRangesForSelectableNodes(
-      nsRange* aRange, int32_t* aOutIndex,
+      nsRange* aRange, Maybe<size_t>* aOutIndex,
       DispatchSelectstartEvent aDispatchSelectstartEvent);
 
  public:
@@ -308,7 +308,7 @@ class Selection final : public nsSupportsWeakReference,
 
 
   bool IsCollapsed() const {
-    uint32_t cnt = mStyledRanges.Length();
+    size_t cnt = mStyledRanges.Length();
     if (cnt == 0) {
       return true;
     }
@@ -772,9 +772,9 @@ class Selection final : public nsSupportsWeakReference,
 
 
 
+
   MOZ_CAN_RUN_SCRIPT nsresult MaybeAddTableCellRange(nsRange& aRange,
-                                                     bool* aDidAddRange,
-                                                     int32_t* aOutIndex);
+                                                     Maybe<size_t>* aOutIndex);
 
   Document* GetDocument() const;
 
@@ -804,7 +804,7 @@ class Selection final : public nsSupportsWeakReference,
 
 
 
-    static int32_t FindInsertionPoint(
+    static size_t FindInsertionPoint(
         const nsTArray<StyledRange>* aElementArray, const nsINode& aPointNode,
         uint32_t aPointOffset,
         int32_t (*aComparator)(const nsINode&, uint32_t, const nsRange&));
@@ -817,14 +817,18 @@ class Selection final : public nsSupportsWeakReference,
 
 
 
+
+
+
     nsresult GetIndicesForInterval(const nsINode* aBeginNode,
                                    uint32_t aBeginOffset,
                                    const nsINode* aEndNode, uint32_t aEndOffset,
-                                   bool aAllowAdjacent, int32_t& aStartIndex,
-                                   int32_t& aEndIndex) const;
+                                   bool aAllowAdjacent,
+                                   Maybe<size_t>& aStartIndex,
+                                   Maybe<size_t>& aEndIndex) const;
 
     bool HasEqualRangeBoundariesAt(const nsRange& aRange,
-                                   int32_t aRangeIndex) const;
+                                   size_t aRangeIndex) const;
 
     
 
@@ -833,8 +837,9 @@ class Selection final : public nsSupportsWeakReference,
 
 
 
+
     MOZ_CAN_RUN_SCRIPT nsresult MaybeAddRangeAndTruncateOverlaps(
-        nsRange* aRange, int32_t* aOutIndex, Selection& aSelection);
+        nsRange* aRange, Maybe<size_t>* aOutIndex, Selection& aSelection);
 
     
 
