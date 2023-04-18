@@ -308,11 +308,6 @@ void CanonicalBrowsingContext::ReplacedBy(
   txn.SetExplicitActive(GetExplicitActive());
   txn.SetHasRestoreData(GetHasRestoreData());
   txn.SetShouldDelayMediaFromStart(GetShouldDelayMediaFromStart());
-  
-  
-  
-  txn.SetSandboxFlags(GetSandboxFlags());
-  txn.SetInitialSandboxFlags(GetSandboxFlags());
   if (aNewContext->EverAttached()) {
     MOZ_ALWAYS_SUCCEEDS(txn.Commit(aNewContext));
   } else {
