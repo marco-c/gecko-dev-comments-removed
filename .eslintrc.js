@@ -183,7 +183,6 @@ module.exports = {
         
         
         "caps/tests/unit/test_origin.js",
-        "chrome/test/unit/test_no_remote_registration.js",
         "extensions/permissions/**",
         "image/test/unit/**",
         "intl/uconv/tests/unit/test_bug317216.js",
