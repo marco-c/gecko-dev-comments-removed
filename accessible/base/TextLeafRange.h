@@ -171,6 +171,16 @@ class TextLeafPoint final {
 
   TextLeafPoint FindParagraphSameAcc(nsDirection aDirection,
                                      bool aIncludeOrigin) const;
+
+  bool IsInSpellingError() const;
+
+  
+
+
+
+
+  TextLeafPoint FindSpellingErrorSameAcc(nsDirection aDirection,
+                                         bool aIncludeOrigin) const;
 };
 
 
