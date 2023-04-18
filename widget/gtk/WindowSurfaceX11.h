@@ -13,9 +13,9 @@
 #  include "mozilla/gfx/Types.h"
 
 #  include <X11/Xlib.h>
+#  include "X11UndefineNone.h"
 
-namespace mozilla {
-namespace widget {
+namespace mozilla::widget {
 
 class WindowSurfaceX11 : public WindowSurface {
  public:
@@ -33,7 +33,6 @@ class WindowSurfaceX11 : public WindowSurface {
   const gfx::SurfaceFormat mFormat;
 };
 
-}  
 }  
 
 #endif  
