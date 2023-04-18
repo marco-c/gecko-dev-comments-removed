@@ -69,10 +69,8 @@ XPCOMUtils.defineLazyPreferenceGetter(
 );
 
 
-var fxAccountsCommon = {};
-ChromeUtils.import(
-  "resource://gre/modules/FxAccountsCommon.js",
-  fxAccountsCommon
+var fxAccountsCommon = ChromeUtils.import(
+  "resource://gre/modules/FxAccountsCommon.js"
 );
 
 const SCOPE_OLD_SYNC = fxAccountsCommon.SCOPE_OLD_SYNC;

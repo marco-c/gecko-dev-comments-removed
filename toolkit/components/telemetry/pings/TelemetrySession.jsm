@@ -401,9 +401,10 @@ var Impl = {
     
     var appTimestamps = {};
     try {
-      let o = {};
-      ChromeUtils.import("resource://gre/modules/TelemetryTimestamps.jsm", o);
-      appTimestamps = o.TelemetryTimestamps.get();
+      let { TelemetryTimestamps } = ChromeUtils.import(
+        "resource://gre/modules/TelemetryTimestamps.jsm"
+      );
+      appTimestamps = TelemetryTimestamps.get();
     } catch (ex) {}
 
     

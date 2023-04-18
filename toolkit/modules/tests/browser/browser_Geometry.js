@@ -2,10 +2,9 @@
 
 
 
-var tempScope = {};
-ChromeUtils.import("resource://gre/modules/Geometry.jsm", tempScope);
-var Point = tempScope.Point;
-var Rect = tempScope.Rect;
+const { Point, Rect } = ChromeUtils.import(
+  "resource://gre/modules/Geometry.jsm"
+);
 
 function test() {
   ok(Rect, "Rect class exists");

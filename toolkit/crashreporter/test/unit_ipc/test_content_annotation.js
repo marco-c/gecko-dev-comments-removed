@@ -10,9 +10,10 @@ add_task(async function run_test() {
   }
 
   
-  let scope = {};
-  ChromeUtils.import("resource://gre/modules/TelemetryController.jsm", scope);
-  scope.TelemetryController.testSetup();
+  let { TelemetryController } = ChromeUtils.import(
+    "resource://gre/modules/TelemetryController.jsm"
+  );
+  TelemetryController.testSetup();
 
   
   await do_content_crash(
