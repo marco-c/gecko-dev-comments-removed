@@ -128,9 +128,14 @@ fn build(sdk_path: Option<&str>, target: &str) {
     if target.contains("apple-ios") {
         
         
-        builder = builder.blacklist_item("timezone");
-        builder = builder.blacklist_item("objc_object");
+        builder = builder.blocklist_item("timezone");
+        builder = builder.blocklist_item("objc_object");
     }
+
+    
+    
+    
+    builder = builder.layout_tests(false);
 
     let meta_header: Vec<_> = headers
         .iter()
