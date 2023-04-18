@@ -5,7 +5,6 @@
 
 #include "nsISupports.idl"
 
-
 %{ C++
 #include "nsMargin.h"
 #include "nsTArray.h"
@@ -22,6 +21,7 @@ native nsNativeIntMargin(nsIntMargin);
 [ref] native nsNativeIntMarginRef(nsIntMargin);
 
 interface nsIPrintSession;
+interface nsIOutputStream;
 
 
 
@@ -79,22 +79,23 @@ interface nsIPrintSettings : nsISupports
   const long kJustRight  = 2;
 
   
-
-
   const short kPaperSizeInches      = 0;
   const short kPaperSizeMillimeters = 1;
 
   
-
-
   const short kPortraitOrientation  = 0;
   const short kLandscapeOrientation = 1;
 
   
-
-
   const short kOutputFormatNative = 0;
   const short kOutputFormatPDF    = 2;
+
+  
+  cenum OutputDestinationType : 8 {
+    kOutputDestinationPrinter = 0,
+    kOutputDestinationFile = 1,
+    kOutputDestinationStream = 2,
+  };
 
   
 
@@ -298,17 +299,19 @@ interface nsIPrintSettings : nsISupports
 
   attribute long    numPagesPerSheet;
 
-  attribute AString printerName;   
+  
+  [infallible] attribute nsIPrintSettings_OutputDestinationType outputDestination;
+  [infallible] attribute short outputFormat;
 
-  attribute boolean printToFile;
-  attribute AString toFileName;
-  attribute short   outputFormat;
+  attribute AString printerName;          
+  attribute AString toFileName;           
+  attribute nsIOutputStream outputStream; 
 
-  attribute long    printPageDelay; 
+  [infallible] attribute long printPageDelay; 
 
-  attribute long    resolution;     
+  [infallible] attribute long resolution;     
 
-  attribute long    duplex;         
+  [infallible] attribute long duplex;         
 
   
   

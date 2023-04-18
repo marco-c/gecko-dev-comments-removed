@@ -270,7 +270,11 @@ var PrintUtils = {
 
     async function makePrintSettingsMaybeEnsuringToFileName() {
       let settings = PrintUtils.getPrintSettings();
-      if (settings.printToFile && !settings.toFileName) {
+      if (
+        settings.outputDestination ==
+          Ci.nsIPrintSettings.kOutputDestinationFile &&
+        !settings.toFileName
+      ) {
         
         
         
