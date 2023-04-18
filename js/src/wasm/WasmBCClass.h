@@ -1043,11 +1043,13 @@ struct BaseCompiler final {
 #ifdef JS_CODEGEN_X86
   
   
-  void stashI64(RegPtr regForTls, RegI64 r);
+  
+  void stashI64(RegPtr regForInstance, RegI64 r);
 
   
   
-  void unstashI64(RegPtr regForTls, RegI64 r);
+  
+  void unstashI64(RegPtr regForInstance, RegI64 r);
 #endif
 
   
@@ -1091,9 +1093,10 @@ struct BaseCompiler final {
   
 
   Address addressOfTableField(const TableDesc& table, uint32_t fieldOffset,
-                              RegPtr tls);
-  void loadTableLength(const TableDesc& table, RegPtr tls, RegI32 length);
-  void loadTableElements(const TableDesc& table, RegPtr tls, RegPtr elements);
+                              RegPtr instance);
+  void loadTableLength(const TableDesc& table, RegPtr instance, RegI32 length);
+  void loadTableElements(const TableDesc& table, RegPtr instance,
+                         RegPtr elements);
 
   
   
@@ -1107,45 +1110,45 @@ struct BaseCompiler final {
   
   template <typename RegIndexType>
   void prepareMemoryAccess(MemoryAccessDesc* access, AccessCheck* check,
-                           RegPtr tls, RegIndexType ptr);
+                           RegPtr instance, RegIndexType ptr);
 
   void branchAddNoOverflow(uint64_t offset, RegI32 ptr, Label* ok);
   void branchTestLowZero(RegI32 ptr, Imm32 mask, Label* ok);
-  void boundsCheck4GBOrLargerAccess(RegPtr tls, RegI32 ptr, Label* ok);
-  void boundsCheckBelow4GBAccess(RegPtr tls, RegI32 ptr, Label* ok);
+  void boundsCheck4GBOrLargerAccess(RegPtr instance, RegI32 ptr, Label* ok);
+  void boundsCheckBelow4GBAccess(RegPtr instance, RegI32 ptr, Label* ok);
 
   void branchAddNoOverflow(uint64_t offset, RegI64 ptr, Label* ok);
   void branchTestLowZero(RegI64 ptr, Imm32 mask, Label* ok);
-  void boundsCheck4GBOrLargerAccess(RegPtr tls, RegI64 ptr, Label* ok);
-  void boundsCheckBelow4GBAccess(RegPtr tls, RegI64 ptr, Label* ok);
+  void boundsCheck4GBOrLargerAccess(RegPtr instance, RegI64 ptr, Label* ok);
+  void boundsCheckBelow4GBAccess(RegPtr instance, RegI64 ptr, Label* ok);
 
 #if defined(WASM_HAS_HEAPREG)
   template <typename RegIndexType>
   BaseIndex prepareAtomicMemoryAccess(MemoryAccessDesc* access,
-                                      AccessCheck* check, RegPtr tls,
+                                      AccessCheck* check, RegPtr instance,
                                       RegIndexType ptr);
 #else
   
   
   template <typename RegIndexType>
   Address prepareAtomicMemoryAccess(MemoryAccessDesc* access,
-                                    AccessCheck* check, RegPtr tls,
+                                    AccessCheck* check, RegPtr instance,
                                     RegIndexType ptr);
 #endif
 
   template <typename RegIndexType>
   void computeEffectiveAddress(MemoryAccessDesc* access);
 
-  [[nodiscard]] bool needTlsForAccess(const AccessCheck& check);
+  [[nodiscard]] bool needInstanceForAccess(const AccessCheck& check);
 
   
   
-  void executeLoad(MemoryAccessDesc* access, AccessCheck* check, RegPtr tls,
-                   RegI32 ptr, AnyReg dest, RegI32 temp);
-  void load(MemoryAccessDesc* access, AccessCheck* check, RegPtr tls,
+  void executeLoad(MemoryAccessDesc* access, AccessCheck* check,
+                   RegPtr instance, RegI32 ptr, AnyReg dest, RegI32 temp);
+  void load(MemoryAccessDesc* access, AccessCheck* check, RegPtr instance,
             RegI32 ptr, AnyReg dest, RegI32 temp);
 #ifdef ENABLE_WASM_MEMORY64
-  void load(MemoryAccessDesc* access, AccessCheck* check, RegPtr tls,
+  void load(MemoryAccessDesc* access, AccessCheck* check, RegPtr instance,
             RegI64 ptr, AnyReg dest, RegI64 temp);
 #endif
 
@@ -1156,12 +1159,12 @@ struct BaseCompiler final {
 
   
   
-  void executeStore(MemoryAccessDesc* access, AccessCheck* check, RegPtr tls,
-                    RegI32 ptr, AnyReg src, RegI32 temp);
-  void store(MemoryAccessDesc* access, AccessCheck* check, RegPtr tls,
+  void executeStore(MemoryAccessDesc* access, AccessCheck* check,
+                    RegPtr instance, RegI32 ptr, AnyReg src, RegI32 temp);
+  void store(MemoryAccessDesc* access, AccessCheck* check, RegPtr instance,
              RegI32 ptr, AnyReg src, RegI32 temp);
 #ifdef ENABLE_WASM_MEMORY64
-  void store(MemoryAccessDesc* access, AccessCheck* check, RegPtr tls,
+  void store(MemoryAccessDesc* access, AccessCheck* check, RegPtr instance,
              RegI64 ptr, AnyReg src, RegI64 temp);
 #endif
 
@@ -1247,7 +1250,7 @@ struct BaseCompiler final {
   [[nodiscard]] bool throwFrom(RegRef exn, uint32_t lineOrBytecode);
 
   
-  void loadTag(RegPtr tlsData, uint32_t tagIndex, RegRef tagDst);
+  void loadTag(RegPtr instanceData, uint32_t tagIndex, RegRef tagDst);
 
   
   void consumePendingException(RegRef* exnDst, RegRef* tagDst);
@@ -1380,9 +1383,9 @@ struct BaseCompiler final {
   [[nodiscard]] bool emitTeeLocal();
   [[nodiscard]] bool emitGetGlobal();
   [[nodiscard]] bool emitSetGlobal();
-  [[nodiscard]] RegPtr maybeLoadTlsForAccess(const AccessCheck& check);
-  [[nodiscard]] RegPtr maybeLoadTlsForAccess(const AccessCheck& check,
-                                             RegPtr specific);
+  [[nodiscard]] RegPtr maybeLoadInstanceForAccess(const AccessCheck& check);
+  [[nodiscard]] RegPtr maybeLoadInstanceForAccess(const AccessCheck& check,
+                                                  RegPtr specific);
   [[nodiscard]] bool emitLoad(ValType type, Scalar::Type viewType);
   [[nodiscard]] bool emitStore(ValType resultType, Scalar::Type viewType);
   [[nodiscard]] bool emitSelect(bool typed);
@@ -1578,7 +1581,8 @@ struct BaseCompiler final {
   [[nodiscard]] bool emitTableSet();
   [[nodiscard]] bool emitTableSize();
 
-  void emitTableBoundsCheck(const TableDesc& table, RegI32 index, RegPtr tls);
+  void emitTableBoundsCheck(const TableDesc& table, RegI32 index,
+                            RegPtr instance);
   [[nodiscard]] bool emitTableGetAnyRef(uint32_t tableIndex);
   [[nodiscard]] bool emitTableSetAnyRef(uint32_t tableIndex);
 

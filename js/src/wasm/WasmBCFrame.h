@@ -499,7 +499,7 @@ class BaseStackFrame final : public BaseStackFrameAllocator {
   Maybe<int32_t> stackResultsPtrOffset_;
 
   
-  uint32_t tlsPointerOffset_;
+  uint32_t instancePointerOffset_;
 
   
   uint32_t varLow_;
@@ -516,7 +516,7 @@ class BaseStackFrame final : public BaseStackFrameAllocator {
         masm(masm),
         maxFramePushed_(0),
         stackAddOffset_(0),
-        tlsPointerOffset_(UINT32_MAX),
+        instancePointerOffset_(UINT32_MAX),
         varLow_(UINT32_MAX),
         varHigh_(UINT32_MAX),
         sp_(masm.getStackPointer()) {}
@@ -613,7 +613,7 @@ class BaseStackFrame final : public BaseStackFrameAllocator {
     
     const uint32_t pointerAlignedVarHigh = AlignBytes(varHigh_, sizeof(void*));
     const uint32_t localSize = pointerAlignedVarHigh + sizeof(void*);
-    tlsPointerOffset_ = localSize;
+    instancePointerOffset_ = localSize;
 
     setLocalSize(AlignBytes(localSize, WasmStackAlignment));
 
@@ -726,15 +726,15 @@ class BaseStackFrame final : public BaseStackFrameAllocator {
                   Address(sp_, stackOffset(stackResultsPtrOffset_.value())));
   }
 
-  void loadTlsPtr(Register dst) {
-    masm.loadPtr(Address(sp_, stackOffset(tlsPointerOffset_)), dst);
+  void loadInstancePtr(Register dst) {
+    masm.loadPtr(Address(sp_, stackOffset(instancePointerOffset_)), dst);
   }
 
-  void storeTlsPtr(Register tls) {
-    masm.storePtr(tls, Address(sp_, stackOffset(tlsPointerOffset_)));
+  void storeInstancePtr(Register instance) {
+    masm.storePtr(instance, Address(sp_, stackOffset(instancePointerOffset_)));
   }
 
-  int32_t getTlsPtrOffset() { return stackOffset(tlsPointerOffset_); }
+  int32_t getInstancePtrOffset() { return stackOffset(instancePointerOffset_); }
 
   
   
