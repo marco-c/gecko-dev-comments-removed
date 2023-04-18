@@ -28,6 +28,9 @@ window.onload = function() {
   }
 </style>
 <body>
+  Won't scroll if matched:
+  match suffix
+  match suffix3
   <div class="spacer"></div>
   <p>
     The quick brown fox jumped over the lazy dog.
@@ -37,11 +40,15 @@ window.onload = function() {
     foo foo foo bar bar bar
   </p>
   <p>
+    match suffix2
+    prefix match suffix3 matchEnd suffix4 matchEnd suffix5
+  </p>
+  <p>
     Lorem
 
     <br> <i>    </i>
     <div>  &nbsp </div>
-    
+    <!-- This <p> puts lots of non textual stuff between words -->
     <div style="display: none">This isn't rendered</div>
     <div style="visibility: hidden">This also isn't visible</div>
     <iframe srcdoc="Inner Iframe"></iframe>
@@ -53,7 +60,7 @@ window.onload = function() {
 
     <br> <i>    </i>
     <div>  &nbsp </div>
-    
+    <!-- This <p> puts lots of non textual stuff between words -->
     <div style="display: none">This isn't rendered</div>
     <div style="visibility: hidden">This also isn't visible</div>
     <iframe srcdoc="Inner Iframe"></iframe>
