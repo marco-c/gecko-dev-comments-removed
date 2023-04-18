@@ -61,7 +61,14 @@ async function checkDownloadWithExtensionState(
     ? promiseDownloadFinished(publicList)
     : null;
 
+  
+  let waitForLoad;
+  if (type == "application/pdf") {
+    waitForLoad = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+  }
+
   await task();
+  await waitForLoad;
 
   let win;
   if (shouldExpectDialog) {
@@ -94,24 +101,36 @@ async function checkDownloadWithExtensionState(
     dialog.acceptDialog();
   }
 
-  
-  let download = await downloadFinishedPromise;
-  if (download) {
-    
+  if (type == "application/pdf") {
     is(
-      PathUtils.filename(download.target.path),
-      expectedName,
-      `Downloaded file should match ${expectedName}`
+      gURLBar.inputField.value,
+      "data:application/pdf,hello",
+      "url is correct for " + type
     );
-    gPathsToRemove.push(download.target.path);
-    let pathToRemove = download.target.path;
+
+    let backPromise = BrowserTestUtils.waitForLocationChange(gBrowser);
+    gBrowser.goBack();
+    await backPromise; 
+  } else {
     
-    await publicList.removeFinished();
-    await IOUtils.remove(pathToRemove);
-  } else if (win) {
-    
-    
-    win.close();
+    let download = await downloadFinishedPromise;
+    if (download) {
+      
+      is(
+        PathUtils.filename(download.target.path),
+        expectedName,
+        `Downloaded file should match ${expectedName}`
+      );
+      gPathsToRemove.push(download.target.path);
+      let pathToRemove = download.target.path;
+      
+      await publicList.removeFinished();
+      await IOUtils.remove(pathToRemove);
+    } else if (win) {
+      
+      
+      win.close();
+    }
   }
 
   return closedPromise;

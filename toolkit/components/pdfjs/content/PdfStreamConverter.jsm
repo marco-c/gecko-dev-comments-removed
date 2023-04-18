@@ -1237,6 +1237,13 @@ PdfStreamConverter.prototype = {
     PdfJsTelemetry.onDocumentSize(aRequest.contentLength);
 
     
+    
+    
+    
+    
+    aRequest.contentDisposition = Ci.nsIChannel.DISPOSITION_FORCE_INLINE;
+
+    
     var contentLength = aRequest.contentLength;
     this.dataListener = new PdfDataListener(contentLength);
     this.binaryStream = Cc["@mozilla.org/binaryinputstream;1"].createInstance(

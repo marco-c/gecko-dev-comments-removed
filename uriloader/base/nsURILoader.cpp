@@ -42,6 +42,7 @@
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Unused.h"
+#include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_general.h"
 #include "nsContentUtils.h"
@@ -267,6 +268,41 @@ nsresult nsDocumentOpenInfo::DispatchContent(nsIRequest* request,
   }
 
   LOG(("  forceExternalHandling: %s", forceExternalHandling ? "yes" : "no"));
+
+  
+  
+  
+  
+  if (forceExternalHandling &&
+      mContentType.LowerCaseEqualsASCII(APPLICATION_PDF) &&
+      StaticPrefs::browser_download_improvements_to_download_panel()) {
+    nsCOMPtr<nsILoadInfo> loadInfo;
+    aChannel->GetLoadInfo(getter_AddRefs(loadInfo));
+
+    
+    
+    RefPtr<dom::BrowsingContext> browsingContext;
+    loadInfo->GetTargetBrowsingContext(getter_AddRefs(browsingContext));
+    if (!browsingContext->IsSubframe()) {
+      nsCOMPtr<nsIMIMEInfo> mimeInfo;
+
+      nsCOMPtr<nsIMIMEService> mimeSvc(
+          do_GetService(NS_MIMESERVICE_CONTRACTID));
+      NS_ENSURE_TRUE(mimeSvc, NS_ERROR_FAILURE);
+      mimeSvc->GetFromTypeAndExtension(nsLiteralCString(APPLICATION_PDF), ""_ns,
+                                       getter_AddRefs(mimeInfo));
+
+      if (mimeInfo) {
+        int32_t action = nsIMIMEInfo::saveToDisk;
+        mimeInfo->GetPreferredAction(&action);
+
+        bool alwaysAsk = true;
+        mimeInfo->GetAlwaysAskBeforeHandling(&alwaysAsk);
+        forceExternalHandling =
+            alwaysAsk || action != nsIMIMEInfo::handleInternally;
+      }
+    }
+  }
 
   if (!forceExternalHandling) {
     
