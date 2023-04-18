@@ -531,6 +531,11 @@ void ScriptProcessorNode::UpdateConnectedStatus() {
     MarkInactive();
   }
 
+  
+  if (!mTrack) {
+    return;
+  }
+
   auto engine = static_cast<ScriptProcessorNodeEngine*>(mTrack->Engine());
   engine->GetSharedBuffers()->NotifyNodeIsConnected(isConnected);
 }
