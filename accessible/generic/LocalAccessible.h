@@ -555,12 +555,6 @@ class LocalAccessible : public nsISupports, public Accessible {
   virtual already_AddRefed<nsIURI> AnchorURIAt(uint32_t aAnchorIndex) const;
 
   
-
-
-  void ToTextPoint(HyperTextAccessible** aContainer, int32_t* aOffset,
-                   bool aIsBefore = true) const;
-
-  
   
 
   

@@ -19,19 +19,22 @@ class Selection;
 }  
 namespace a11y {
 
+class Accessible;
 class LocalAccessible;
-class HyperTextAccessible;
+
+
+
 
 
 
 
 struct TextPoint final {
-  TextPoint(HyperTextAccessible* aContainer, int32_t aOffset)
+  TextPoint(Accessible* aContainer, int32_t aOffset)
       : mContainer(aContainer), mOffset(aOffset) {}
   TextPoint(const TextPoint& aPoint)
       : mContainer(aPoint.mContainer), mOffset(aPoint.mOffset) {}
 
-  HyperTextAccessible* mContainer;
+  Accessible* mContainer;
   int32_t mOffset;
 
   bool operator==(const TextPoint& aPoint) const {
@@ -43,10 +46,13 @@ struct TextPoint final {
 
 
 
+
+
+
 class TextRange final {
  public:
-  TextRange(HyperTextAccessible* aRoot, HyperTextAccessible* aStartContainer,
-            int32_t aStartOffset, HyperTextAccessible* aEndContainer,
+  TextRange(Accessible* aRoot, Accessible* aStartContainer,
+            int32_t aStartOffset, Accessible* aEndContainer,
             int32_t aEndOffset);
   TextRange() : mStartOffset{0}, mEndOffset{0} {}
   TextRange(TextRange&& aRange)
@@ -65,9 +71,10 @@ class TextRange final {
     return *this;
   }
 
-  HyperTextAccessible* StartContainer() const { return mStartContainer; }
+  Accessible* Root() { return mRoot; }
+  Accessible* StartContainer() const { return mStartContainer; }
   int32_t StartOffset() const { return mStartOffset; }
-  HyperTextAccessible* EndContainer() const { return mEndContainer; }
+  Accessible* EndContainer() const { return mEndContainer; }
   int32_t EndOffset() const { return mEndOffset; }
 
   bool operator==(const TextRange& aRange) const {
@@ -85,13 +92,13 @@ class TextRange final {
   
 
 
-  LocalAccessible* Container() const;
+  Accessible* Container() const;
 
   
 
 
 
-  void EmbeddedChildren(nsTArray<LocalAccessible*>* aChildren) const;
+  void EmbeddedChildren(nsTArray<Accessible*>* aChildren) const;
 
   
 
@@ -102,7 +109,7 @@ class TextRange final {
 
 
 
-  bool Crop(LocalAccessible* aContainer);
+  bool Crop(Accessible* aContainer);
 
   MOZ_CAN_RUN_SCRIPT bool SetSelectionAt(int32_t aSelectionNum) const;
 
@@ -131,11 +138,11 @@ class TextRange final {
 
   bool IsValid() const { return mRoot; }
 
-  void SetStartPoint(HyperTextAccessible* aContainer, int32_t aOffset) {
+  void SetStartPoint(Accessible* aContainer, int32_t aOffset) {
     mStartContainer = aContainer;
     mStartOffset = aOffset;
   }
-  void SetEndPoint(HyperTextAccessible* aContainer, int32_t aOffset) {
+  void SetEndPoint(Accessible* aContainer, int32_t aOffset) {
     mStartContainer = aContainer;
     mStartOffset = aOffset;
   }
@@ -150,9 +157,8 @@ class TextRange final {
   friend class HyperTextAccessible;
   friend class xpcAccessibleTextRange;
 
-  void Set(HyperTextAccessible* aRoot, HyperTextAccessible* aStartContainer,
-           int32_t aStartOffset, HyperTextAccessible* aEndContainer,
-           int32_t aEndOffset);
+  void Set(Accessible* aRoot, Accessible* aStartContainer, int32_t aStartOffset,
+           Accessible* aEndContainer, int32_t aEndOffset);
 
   
 
@@ -161,22 +167,21 @@ class TextRange final {
 
 
 
-  bool TextInternal(nsAString& aText, LocalAccessible* aCurrent,
+  bool TextInternal(nsAString& aText, Accessible* aCurrent,
                     uint32_t aStartIntlOffset) const;
 
   
 
 
 
-  LocalAccessible* CommonParent(LocalAccessible* aAcc1, LocalAccessible* aAcc2,
-                                nsTArray<LocalAccessible*>* aParents1,
-                                uint32_t* aPos1,
-                                nsTArray<LocalAccessible*>* aParents2,
-                                uint32_t* aPos2) const;
+  Accessible* CommonParent(Accessible* aAcc1, Accessible* aAcc2,
+                           nsTArray<Accessible*>* aParents1, uint32_t* aPos1,
+                           nsTArray<Accessible*>* aParents2,
+                           uint32_t* aPos2) const;
 
-  RefPtr<HyperTextAccessible> mRoot;
-  RefPtr<HyperTextAccessible> mStartContainer;
-  RefPtr<HyperTextAccessible> mEndContainer;
+  Accessible* mRoot;
+  Accessible* mStartContainer;
+  Accessible* mEndContainer;
   int32_t mStartOffset;
   int32_t mEndOffset;
 };
