@@ -85,8 +85,10 @@ class SelectionActionDelegateChild extends GeckoViewActorChild {
         if (e.reason === "longpressonemptycontent") {
           return false;
         }
-        if (e.selectionEditable && e.target && e.target.activeElement) {
-          const element = e.target.activeElement;
+        
+        const element =
+          Services.focus.focusedElement || e.target?.activeElement;
+        if (e.selectionEditable && e.target && element) {
           let value = "";
           if (element.value) {
             value = element.value;
@@ -142,7 +144,7 @@ class SelectionActionDelegateChild extends GeckoViewActorChild {
 
     
     const win = aEvent.target.defaultView;
-    const focus = aEvent.target.activeElement;
+    const focus = Services.focus.focusedElement;
     return (
       win &&
       win.HTMLInputElement &&
