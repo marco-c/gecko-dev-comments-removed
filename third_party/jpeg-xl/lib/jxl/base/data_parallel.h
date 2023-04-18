@@ -15,16 +15,15 @@
 #include "jxl/parallel_runner.h"
 #include "lib/jxl/base/bits.h"
 #include "lib/jxl/base/status.h"
+#if JXL_COMPILER_MSVC
+
+#pragma warning(disable : 4180)
+#endif
 
 namespace jxl {
 
 class ThreadPool {
  public:
-  
-  
-  
-  struct SkipInit {};
-
   ThreadPool(JxlParallelRunner runner, void* runner_opaque)
       : runner_(runner ? runner : &ThreadPool::SequentialRunnerStatic),
         runner_opaque_(runner ? runner_opaque : static_cast<void*>(this)) {}
@@ -54,14 +53,9 @@ class ThreadPool {
   }
 
   
-  template <class DataFunc>
-  bool Run(uint32_t begin, uint32_t end, const SkipInit ,
-           const DataFunc& data_func, const char* caller = "") {
-    return Run(begin, end, ReturnTrueInit, data_func, caller);
-  }
+  static Status NoInit(size_t num_threads) { return true; }
 
  private:
-  static Status ReturnTrueInit(size_t num_threads) { return true; }
 
   
   
@@ -104,21 +98,21 @@ class ThreadPool {
   void* const runner_opaque_;
 };
 
-
 template <class InitFunc, class DataFunc>
-bool RunOnPool(ThreadPool* pool, const uint32_t begin, const uint32_t end,
-               const InitFunc& init_func, const DataFunc& data_func,
-               const char* caller) {
-  Status ret = true;
+Status RunOnPool(ThreadPool* pool, const uint32_t begin, const uint32_t end,
+                 const InitFunc& init_func, const DataFunc& data_func,
+                 const char* caller) {
   if (pool == nullptr) {
     ThreadPool default_pool(nullptr, nullptr);
-    ret = default_pool.Run(begin, end, init_func, data_func, caller);
+    return default_pool.Run(begin, end, init_func, data_func, caller);
   } else {
-    ret = pool->Run(begin, end, init_func, data_func, caller);
+    return pool->Run(begin, end, init_func, data_func, caller);
   }
-  return ret;
 }
 
 }  
+#if JXL_COMPILER_MSVC
+#pragma warning(default : 4180)
+#endif
 
 #endif  

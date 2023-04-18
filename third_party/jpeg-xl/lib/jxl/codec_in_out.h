@@ -71,11 +71,6 @@ struct Blobs {
 
 
 
-
-enum class DecodeTarget { kPixels, kQuantizedCoeffs };
-
-
-
 class CodecInOut {
  public:
   CodecInOut() : preview_frame(&metadata.m) {
@@ -135,13 +130,13 @@ class CodecInOut {
   }
 
   
-  Status TransformTo(const ColorEncoding& c_desired,
+  Status TransformTo(const ColorEncoding& c_desired, const JxlCmsInterface& cms,
                      ThreadPool* pool = nullptr) {
     if (metadata.m.have_preview) {
-      JXL_RETURN_IF_ERROR(preview_frame.TransformTo(c_desired, pool));
+      JXL_RETURN_IF_ERROR(preview_frame.TransformTo(c_desired, cms, pool));
     }
     for (ImageBundle& ib : frames) {
-      JXL_RETURN_IF_ERROR(ib.TransformTo(c_desired, pool));
+      JXL_RETURN_IF_ERROR(ib.TransformTo(c_desired, cms, pool));
     }
     return true;
   }
@@ -162,27 +157,6 @@ class CodecInOut {
   
 
   SizeConstraints constraints;
-  
-  DecodeTarget dec_target = DecodeTarget::kPixels;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  float target_nits = 0;
 
   
 

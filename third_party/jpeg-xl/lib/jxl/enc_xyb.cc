@@ -159,15 +159,15 @@ V LinearFromSRGB(V encoded) {
   return TF_SRGB().DisplayFromEncoded(encoded);
 }
 
-void LinearSRGBToXYB(const Image3F& linear,
-                     const float* JXL_RESTRICT premul_absorb, ThreadPool* pool,
-                     Image3F* JXL_RESTRICT xyb) {
+Status LinearSRGBToXYB(const Image3F& linear,
+                       const float* JXL_RESTRICT premul_absorb,
+                       ThreadPool* pool, Image3F* JXL_RESTRICT xyb) {
   const size_t xsize = linear.xsize();
 
   const HWY_FULL(float) d;
-  RunOnPool(
-      pool, 0, static_cast<uint32_t>(linear.ysize()), ThreadPool::SkipInit(),
-      [&](const int task, const int ) {
+  return RunOnPool(
+      pool, 0, static_cast<uint32_t>(linear.ysize()), ThreadPool::NoInit,
+      [&](const uint32_t task, size_t ) {
         const size_t y = static_cast<size_t>(task);
         const float* JXL_RESTRICT row_in0 = linear.ConstPlaneRow(0, y);
         const float* JXL_RESTRICT row_in1 = linear.ConstPlaneRow(1, y);
@@ -187,14 +187,14 @@ void LinearSRGBToXYB(const Image3F& linear,
       "LinearToXYB");
 }
 
-void SRGBToXYB(const Image3F& srgb, const float* JXL_RESTRICT premul_absorb,
-               ThreadPool* pool, Image3F* JXL_RESTRICT xyb) {
+Status SRGBToXYB(const Image3F& srgb, const float* JXL_RESTRICT premul_absorb,
+                 ThreadPool* pool, Image3F* JXL_RESTRICT xyb) {
   const size_t xsize = srgb.xsize();
 
   const HWY_FULL(float) d;
-  RunOnPool(
-      pool, 0, static_cast<uint32_t>(srgb.ysize()), ThreadPool::SkipInit(),
-      [&](const int task, const int ) {
+  return RunOnPool(
+      pool, 0, static_cast<uint32_t>(srgb.ysize()), ThreadPool::NoInit,
+      [&](const uint32_t task, size_t ) {
         const size_t y = static_cast<size_t>(task);
         const float* JXL_RESTRICT row_srgb0 = srgb.ConstPlaneRow(0, y);
         const float* JXL_RESTRICT row_srgb1 = srgb.ConstPlaneRow(1, y);
@@ -214,16 +214,16 @@ void SRGBToXYB(const Image3F& srgb, const float* JXL_RESTRICT premul_absorb,
       "SRGBToXYB");
 }
 
-void SRGBToXYBAndLinear(const Image3F& srgb,
-                        const float* JXL_RESTRICT premul_absorb,
-                        ThreadPool* pool, Image3F* JXL_RESTRICT xyb,
-                        Image3F* JXL_RESTRICT linear) {
+Status SRGBToXYBAndLinear(const Image3F& srgb,
+                          const float* JXL_RESTRICT premul_absorb,
+                          ThreadPool* pool, Image3F* JXL_RESTRICT xyb,
+                          Image3F* JXL_RESTRICT linear) {
   const size_t xsize = srgb.xsize();
 
   const HWY_FULL(float) d;
-  RunOnPool(
-      pool, 0, static_cast<uint32_t>(srgb.ysize()), ThreadPool::SkipInit(),
-      [&](const int task, const int ) {
+  return RunOnPool(
+      pool, 0, static_cast<uint32_t>(srgb.ysize()), ThreadPool::NoInit,
+      [&](const uint32_t task, size_t ) {
         const size_t y = static_cast<size_t>(task);
         const float* JXL_RESTRICT row_srgb0 = srgb.ConstPlaneRow(0, y);
         const float* JXL_RESTRICT row_srgb1 = srgb.ConstPlaneRow(1, y);
@@ -256,7 +256,7 @@ void SRGBToXYBAndLinear(const Image3F& srgb,
 
 
 const ImageBundle* ToXYB(const ImageBundle& in, ThreadPool* pool,
-                         Image3F* JXL_RESTRICT xyb,
+                         Image3F* JXL_RESTRICT xyb, const JxlCmsInterface& cms,
                          ImageBundle* const JXL_RESTRICT linear) {
   PROFILER_FUNC;
 
@@ -284,7 +284,7 @@ const ImageBundle* ToXYB(const ImageBundle& in, ThreadPool* pool,
   
   
   if (c_linear_srgb.SameColorEncoding(in.c_current())) {
-    LinearSRGBToXYB(in.color(), premul_absorb, pool, xyb);
+    JXL_CHECK(LinearSRGBToXYB(in.color(), premul_absorb, pool, xyb));
     
     
     if (want_linear) {
@@ -298,13 +298,14 @@ const ImageBundle* ToXYB(const ImageBundle& in, ThreadPool* pool,
   if (in.IsSRGB()) {
     
     if (!want_linear) {
-      SRGBToXYB(in.color(), premul_absorb, pool, xyb);
+      JXL_CHECK(SRGBToXYB(in.color(), premul_absorb, pool, xyb));
       return &in;
     }
 
     
     linear->SetFromImage(Image3F(xsize, ysize), c_linear_srgb);
-    SRGBToXYBAndLinear(in.color(), premul_absorb, pool, xyb, linear->color());
+    JXL_CHECK(SRGBToXYBAndLinear(in.color(), premul_absorb, pool, xyb,
+                                 linear->color()));
     return linear;
   }
 
@@ -323,26 +324,27 @@ const ImageBundle* ToXYB(const ImageBundle& in, ThreadPool* pool,
   }
 
   const ImageBundle* ptr;
-  JXL_CHECK(
-      TransformIfNeeded(in, c_linear_srgb, pool, linear_storage_ptr, &ptr));
+  JXL_CHECK(TransformIfNeeded(in, c_linear_srgb, cms, pool, linear_storage_ptr,
+                              &ptr));
   
   JXL_ASSERT(ptr == linear_storage_ptr);
 
-  LinearSRGBToXYB(*linear_storage_ptr->color(), premul_absorb, pool, xyb);
+  JXL_CHECK(
+      LinearSRGBToXYB(*linear_storage_ptr->color(), premul_absorb, pool, xyb));
   return want_linear ? linear : &in;
 }
 
 
 
-void RgbToYcbcr(const ImageF& r_plane, const ImageF& g_plane,
-                const ImageF& b_plane, ImageF* y_plane, ImageF* cb_plane,
-                ImageF* cr_plane, ThreadPool* pool) {
+Status RgbToYcbcr(const ImageF& r_plane, const ImageF& g_plane,
+                  const ImageF& b_plane, ImageF* y_plane, ImageF* cb_plane,
+                  ImageF* cr_plane, ThreadPool* pool) {
   const HWY_FULL(float) df;
   const size_t S = Lanes(df);  
 
   const size_t xsize = r_plane.xsize();
   const size_t ysize = r_plane.ysize();
-  if ((xsize == 0) || (ysize == 0)) return;
+  if ((xsize == 0) || (ysize == 0)) return true;
 
   
   
@@ -389,8 +391,8 @@ void RgbToYcbcr(const ImageF& r_plane, const ImageF& g_plane,
       }
     }
   };
-  RunOnPool(pool, 0, static_cast<int>(num_stripes), ThreadPool::SkipInit(),
-            transform, "RgbToYcbCr");
+  return RunOnPool(pool, 0, static_cast<int>(num_stripes), ThreadPool::NoInit,
+                   transform, "RgbToYcbCr");
 }
 
 
@@ -402,15 +404,15 @@ HWY_AFTER_NAMESPACE();
 namespace jxl {
 HWY_EXPORT(ToXYB);
 const ImageBundle* ToXYB(const ImageBundle& in, ThreadPool* pool,
-                         Image3F* JXL_RESTRICT xyb,
+                         Image3F* JXL_RESTRICT xyb, const JxlCmsInterface& cms,
                          ImageBundle* JXL_RESTRICT linear_storage) {
-  return HWY_DYNAMIC_DISPATCH(ToXYB)(in, pool, xyb, linear_storage);
+  return HWY_DYNAMIC_DISPATCH(ToXYB)(in, pool, xyb, cms, linear_storage);
 }
 
 HWY_EXPORT(RgbToYcbcr);
-void RgbToYcbcr(const ImageF& r_plane, const ImageF& g_plane,
-                const ImageF& b_plane, ImageF* y_plane, ImageF* cb_plane,
-                ImageF* cr_plane, ThreadPool* pool) {
+Status RgbToYcbcr(const ImageF& r_plane, const ImageF& g_plane,
+                  const ImageF& b_plane, ImageF* y_plane, ImageF* cb_plane,
+                  ImageF* cr_plane, ThreadPool* pool) {
   return HWY_DYNAMIC_DISPATCH(RgbToYcbcr)(r_plane, g_plane, b_plane, y_plane,
                                           cb_plane, cr_plane, pool);
 }
@@ -419,18 +421,18 @@ HWY_EXPORT(TestCubeRoot);
 void TestCubeRoot() { return HWY_DYNAMIC_DISPATCH(TestCubeRoot)(); }
 
 
-Image3F OpsinDynamicsImage(const Image3B& srgb8) {
+Image3F OpsinDynamicsImage(const Image3B& srgb8, const JxlCmsInterface& cms) {
   ImageMetadata metadata;
   metadata.SetUintSamples(8);
   metadata.color_encoding = ColorEncoding::SRGB();
   ImageBundle ib(&metadata);
   ib.SetFromImage(ConvertToFloat(srgb8), metadata.color_encoding);
-  JXL_CHECK(ib.TransformTo(ColorEncoding::LinearSRGB(ib.IsGray())));
+  JXL_CHECK(ib.TransformTo(ColorEncoding::LinearSRGB(ib.IsGray()), cms));
   ThreadPool* null_pool = nullptr;
   Image3F xyb(srgb8.xsize(), srgb8.ysize());
 
   ImageBundle linear_storage(&metadata);
-  (void)ToXYB(ib, null_pool, &xyb, &linear_storage);
+  (void)ToXYB(ib, null_pool, &xyb, cms, &linear_storage);
   return xyb;
 }
 

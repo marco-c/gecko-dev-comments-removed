@@ -13,6 +13,7 @@
 
 #include <vector>
 
+#include "jxl/cms_interface.h"
 #include "lib/jxl/aux_out_fwd.h"
 #include "lib/jxl/base/compiler_specific.h"
 #include "lib/jxl/base/data_parallel.h"
@@ -148,10 +149,11 @@ class ImageBundle {
 
   
   
-  Status TransformTo(const ColorEncoding& c_desired,
+  Status TransformTo(const ColorEncoding& c_desired, const JxlCmsInterface& cms,
                      ThreadPool* pool = nullptr);
   
-  Status CopyTo(const Rect& rect, const ColorEncoding& c_desired, Image3F* out,
+  Status CopyTo(const Rect& rect, const ColorEncoding& c_desired,
+                const JxlCmsInterface& cms, Image3F* out,
                 ThreadPool* pool = nullptr) const;
 
   
@@ -211,11 +213,22 @@ class ImageBundle {
   YCbCrChromaSubsampling chroma_subsampling;
 
   FrameOrigin origin{0, 0};
+
+  
+  
+  
+  
   
   uint32_t duration = 0;
+  uint32_t timecode = 0;
+
+  
+  
+  
   bool use_for_next_frame = false;
   bool blend = false;
   BlendMode blendmode = BlendMode::kBlend;
+
   std::string name;
 
  private:

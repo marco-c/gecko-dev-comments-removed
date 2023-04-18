@@ -13,6 +13,7 @@
 
 #include <functional>
 
+#include "lib/jxl/codec_in_out.h"
 #include "lib/jxl/jpeg/jpeg_data.h"
 
 namespace jxl {
@@ -23,6 +24,9 @@ namespace jpeg {
 using JPEGOutput = std::function<size_t(const uint8_t* buf, size_t len)>;
 
 Status WriteJpeg(const JPEGData& jpg, const JPEGOutput& out);
+
+
+Status EncodeImageJPGCoefficients(const CodecInOut* io, PaddedBytes* bytes);
 
 }  
 }  

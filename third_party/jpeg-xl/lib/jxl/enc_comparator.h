@@ -44,8 +44,8 @@ class Comparator {
 
 
 float ComputeScore(const ImageBundle& rgb0, const ImageBundle& rgb1,
-                   Comparator* comparator, ImageF* diffmap = nullptr,
-                   ThreadPool* pool = nullptr);
+                   Comparator* comparator, const JxlCmsInterface& cms,
+                   ImageF* diffmap = nullptr, ThreadPool* pool = nullptr);
 
 }  
 

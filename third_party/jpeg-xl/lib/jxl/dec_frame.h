@@ -54,8 +54,11 @@ class FrameDecoder {
  public:
   
   FrameDecoder(PassesDecoderState* dec_state, const CodecMetadata& metadata,
-               ThreadPool* pool)
-      : dec_state_(dec_state), pool_(pool), frame_header_(&metadata) {}
+               ThreadPool* pool, bool use_slow_rendering_pipeline)
+      : dec_state_(dec_state),
+        pool_(pool),
+        frame_header_(&metadata),
+        use_slow_rendering_pipeline_(use_slow_rendering_pipeline) {}
 
   
   
@@ -134,6 +137,15 @@ class FrameDecoder {
   
   
   bool HasDecodedDC() const { return finalized_dc_; }
+  bool HasDecodedAll() const { return NumSections() == num_sections_done_; }
+
+  
+  
+  
+  
+  
+  
+  void SetPauseAtProgressive() { pause_at_progressive_ = true; }
 
   
   
@@ -196,11 +208,14 @@ class FrameDecoder {
   Status ProcessDCGlobal(BitReader* br);
   Status ProcessDCGroup(size_t dc_group_id, BitReader* br);
   void FinalizeDC();
-  void AllocateOutput();
+  Status AllocateOutput();
+  void PreparePipeline();
   Status ProcessACGlobal(BitReader* br);
   Status ProcessACGroup(size_t ac_group_id, BitReader* JXL_RESTRICT* br,
                         size_t num_passes, size_t thread, bool force_draw,
                         bool dc_only);
+  void MarkSections(const SectionInfo* sections, size_t num,
+                    SectionStatus* section_status);
 
   
   
@@ -214,6 +229,9 @@ class FrameDecoder {
     }
     dec_state_->EnsureStorage(storage_size);
     use_task_id_ = num_threads > num_tasks;
+    if (dec_state_->render_pipeline) {
+      dec_state_->render_pipeline->PrepareForThreads(storage_size);
+    }
   }
 
   size_t GetStorageLocation(size_t thread, size_t task) {
@@ -262,7 +280,9 @@ class FrameDecoder {
   std::vector<uint8_t> decoded_dc_groups_;
   bool decoded_dc_global_;
   bool decoded_ac_global_;
+  bool HasEverything() const;
   bool finalized_dc_ = true;
+  size_t num_sections_done_ = 0;
   bool is_finalized_ = true;
   size_t num_renders_ = 0;
   bool allocated_ = false;
@@ -275,6 +295,11 @@ class FrameDecoder {
   
   
   bool use_task_id_ = false;
+
+  
+  bool use_slow_rendering_pipeline_;
+
+  bool pause_at_progressive_ = false;
 };
 
 }  

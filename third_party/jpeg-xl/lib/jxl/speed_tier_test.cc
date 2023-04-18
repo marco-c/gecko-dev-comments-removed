@@ -104,7 +104,7 @@ TEST_P(SpeedTierTest, Roundtrip) {
   test::Roundtrip(&io, cparams, dparams, nullptr, &io2);
 
   
-  EXPECT_LE(ButteraugliDistance(io, io2, cparams.ba_params,
+  EXPECT_LE(ButteraugliDistance(io, io2, cparams.ba_params, GetJxlCms(),
                                 nullptr, nullptr),
             2.8);
 }

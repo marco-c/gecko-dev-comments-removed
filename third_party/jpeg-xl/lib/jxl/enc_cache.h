@@ -73,10 +73,11 @@ struct PassesEncoderState {
 
 
 class ModularFrameEncoder;
-void InitializePassesEncoder(const Image3F& opsin, ThreadPool* pool,
-                             PassesEncoderState* passes_enc_state,
-                             ModularFrameEncoder* modular_frame_encoder,
-                             AuxOut* aux_out);
+Status InitializePassesEncoder(const Image3F& opsin, const JxlCmsInterface& cms,
+                               ThreadPool* pool,
+                               PassesEncoderState* passes_enc_state,
+                               ModularFrameEncoder* modular_frame_encoder,
+                               AuxOut* aux_out);
 
 
 struct EncCache {

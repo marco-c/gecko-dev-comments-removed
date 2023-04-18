@@ -41,6 +41,11 @@ struct OutputEncodingInfo {
   Status Set(const CodecMetadata& metadata, const ColorEncoding& default_enc);
   bool all_default_opsin = true;
   bool color_encoding_is_original = false;
+  
+  
+  float luminances[3] = {0.2126, 0.7152, 0.0722};
+  
+  float intensity_target;
 };
 
 
