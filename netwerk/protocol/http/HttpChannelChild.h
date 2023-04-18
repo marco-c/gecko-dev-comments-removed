@@ -361,6 +361,10 @@ class HttpChannelChild final : public PHttpChannelChild,
 
   
   
+  uint8_t mIsFirstPartOfMultiPart : 1;
+
+  
+  
   uint8_t mIsLastPartOfMultiPart : 1;
 
   
