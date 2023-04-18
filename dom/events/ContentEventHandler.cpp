@@ -2973,9 +2973,9 @@ nsresult ContentEventHandler::ConvertToRootRelativeOffset(nsIFrame* aFrame,
 }
 
 static void AdjustRangeForSelection(nsIContent* aRoot, nsINode** aNode,
-                                    int32_t* aNodeOffset) {
+                                    Maybe<uint32_t>* aNodeOffset) {
   nsINode* node = *aNode;
-  int32_t nodeOffset = *aNodeOffset;
+  Maybe<uint32_t> nodeOffset = *aNodeOffset;
   if (aRoot == node || NS_WARN_IF(!node->GetParent()) || !node->IsText()) {
     return;
   }
@@ -2983,9 +2983,10 @@ static void AdjustRangeForSelection(nsIContent* aRoot, nsINode** aNode,
   
   
   
-  int32_t textLength = static_cast<int32_t>(node->AsContent()->TextLength());
-  MOZ_ASSERT(nodeOffset <= textLength, "Offset is past length of text node");
-  if (nodeOffset != textLength) {
+  const uint32_t textLength = node->AsContent()->TextLength();
+  MOZ_ASSERT(nodeOffset.isNothing() || *nodeOffset <= textLength,
+             "Offset is past length of text node");
+  if (nodeOffset.isNothing() || *nodeOffset != textLength) {
     return;
   }
 
@@ -3001,9 +3002,21 @@ static void AdjustRangeForSelection(nsIContent* aRoot, nsINode** aNode,
     return;
   }
 
+  
+  
+  
+  
+  
+  
   *aNode = node->GetParent();
-  MOZ_ASSERT((*aNode)->ComputeIndexOf(node).isSome());
-  *aNodeOffset = (*aNode)->ComputeIndexOf_Deprecated(node) + 1;
+  Maybe<uint32_t> index = (*aNode)->ComputeIndexOf(node);
+  MOZ_ASSERT(index.isSome());
+  if (index.isSome()) {
+    MOZ_ASSERT(*index != UINT32_MAX);
+    *aNodeOffset = Some(*index + 1u);
+  } else {
+    *aNodeOffset = Some(0u);
+  }
 }
 
 nsresult ContentEventHandler::OnSelectionEvent(WidgetSelectionEvent* aEvent) {
@@ -3032,12 +3045,13 @@ nsresult ContentEventHandler::OnSelectionEvent(WidgetSelectionEvent* aEvent) {
 
   nsINode* startNode = rawRange.GetStartContainer();
   nsINode* endNode = rawRange.GetEndContainer();
-  int32_t startNodeOffset = rawRange.StartOffset();
-  int32_t endNodeOffset = rawRange.EndOffset();
+  Maybe<uint32_t> startNodeOffset = Some(rawRange.StartOffset());
+  Maybe<uint32_t> endNodeOffset = Some(rawRange.EndOffset());
   AdjustRangeForSelection(mRootContent, &startNode, &startNodeOffset);
   AdjustRangeForSelection(mRootContent, &endNode, &endNodeOffset);
   if (NS_WARN_IF(!startNode) || NS_WARN_IF(!endNode) ||
-      NS_WARN_IF(startNodeOffset < 0) || NS_WARN_IF(endNodeOffset < 0)) {
+      NS_WARN_IF(startNodeOffset.isNothing()) ||
+      NS_WARN_IF(endNodeOffset.isNothing())) {
     return NS_ERROR_UNEXPECTED;
   }
 
@@ -3046,8 +3060,8 @@ nsresult ContentEventHandler::OnSelectionEvent(WidgetSelectionEvent* aEvent) {
     nsCOMPtr<nsINode> endNodeStrong(endNode);
     ErrorResult error;
     MOZ_KnownLive(mSelection)
-        ->SetBaseAndExtentInLimiter(*endNodeStrong, endNodeOffset,
-                                    *startNodeStrong, startNodeOffset, error);
+        ->SetBaseAndExtentInLimiter(*endNodeStrong, *endNodeOffset,
+                                    *startNodeStrong, *startNodeOffset, error);
     if (NS_WARN_IF(error.Failed())) {
       return error.StealNSResult();
     }
@@ -3056,8 +3070,8 @@ nsresult ContentEventHandler::OnSelectionEvent(WidgetSelectionEvent* aEvent) {
     nsCOMPtr<nsINode> endNodeStrong(endNode);
     ErrorResult error;
     MOZ_KnownLive(mSelection)
-        ->SetBaseAndExtentInLimiter(*startNodeStrong, startNodeOffset,
-                                    *endNodeStrong, endNodeOffset, error);
+        ->SetBaseAndExtentInLimiter(*startNodeStrong, *startNodeOffset,
+                                    *endNodeStrong, *endNodeOffset, error);
     if (NS_WARN_IF(error.Failed())) {
       return error.StealNSResult();
     }
