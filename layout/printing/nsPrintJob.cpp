@@ -212,43 +212,6 @@ static void BuildNestedPrintObjects(const UniquePtr<nsPrintObject>& aParentPO,
   }
 }
 
-
-
-
-
-
-
-
-
-static nsresult EnsureSettingsHasPrinterNameSet(
-    nsIPrintSettings* aPrintSettings) {
-#if defined(XP_MACOSX) || defined(ANDROID)
-  
-  return NS_OK;
-#else
-  NS_ENSURE_ARG_POINTER(aPrintSettings);
-
-  
-  nsString printerName;
-  nsresult rv = aPrintSettings->GetPrinterName(printerName);
-  if (NS_SUCCEEDED(rv) && !printerName.IsEmpty()) {
-    return NS_OK;
-  }
-
-  
-  
-  nsCOMPtr<nsIPrintSettingsService> printSettingsService =
-      do_GetService(sPrintSettingsServiceContractID, &rv);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  rv = printSettingsService->GetLastUsedPrinterName(printerName);
-  if (NS_SUCCEEDED(rv) && !printerName.IsEmpty()) {
-    rv = aPrintSettings->SetPrinterName(printerName);
-  }
-  return rv;
-#endif
-}
-
 static nsresult GetDefaultPrintSettings(nsIPrintSettings** aSettings) {
   *aSettings = nullptr;
 
@@ -475,8 +438,6 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
   if (!printData->mPrintObject->mDocument ||
       !printData->mPrintObject->mDocument->GetRootElement())
     return NS_ERROR_GFX_PRINTER_STARTDOC;
-
-  MOZ_TRY(EnsureSettingsHasPrinterNameSet(printData->mPrintSettings));
 
   printData->mPrintSettings->GetShrinkToFit(&printData->mShrinkToFit);
 

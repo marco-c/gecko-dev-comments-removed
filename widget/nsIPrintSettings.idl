@@ -291,7 +291,13 @@ interface nsIPrintSettings : nsISupports
   [infallible] attribute nsIPrintSettings_OutputDestinationType outputDestination;
   [infallible] attribute short outputFormat;
 
-  attribute AString printerName;          
+  
+
+
+
+
+
+  attribute AString printerName;
 
   
 

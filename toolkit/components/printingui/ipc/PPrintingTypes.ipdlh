@@ -60,11 +60,11 @@ struct PrintData {
   
   
   
+  
 
   
   short outputDestination;
   short outputFormat;
-  nsString printerName;
 
   int32_t printPageDelay;
   int32_t resolution;
