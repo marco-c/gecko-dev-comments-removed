@@ -1,7 +1,9 @@
 
 
 
-const JsonSchema = ChromeUtils.import("resource://gre/modules/JsonSchema.jsm");
+const { JsonSchema } = ChromeUtils.import(
+  "resource://gre/modules/JsonSchema.jsm"
+);
 
 add_task(function test_basicSchema() {
   info("Testing validation of a basic schema");

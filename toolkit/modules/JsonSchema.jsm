@@ -63,6 +63,8 @@ class Validator {
 
 
 
+
+
   constructor(
     schema,
     { draft = detectSchemaDraft(schema), shortCircuit = true } = {}
@@ -171,4 +173,10 @@ function detectSchemaDraft(schema, defaultDraft = "2019-09") {
   }
 }
 
-const EXPORTED_SYMBOLS = ["Validator", "validate", "sandbox"];
+const JsonSchema = {
+  Validator,
+  validate,
+  detectSchemaDraft,
+};
+
+const EXPORTED_SYMBOLS = ["JsonSchema"];
