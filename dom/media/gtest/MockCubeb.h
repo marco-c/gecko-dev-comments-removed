@@ -256,6 +256,8 @@ class MockCubeb {
   
   int EnumerateDevices(cubeb_device_type aType,
                        cubeb_device_collection* aCollection);
+  
+  int DestroyDeviceCollection(cubeb_device_collection* aCollection);
 
   
   
@@ -391,9 +393,7 @@ int cubeb_mock_enumerate_devices(cubeb* context, cubeb_device_type type,
 
 int cubeb_mock_device_collection_destroy(cubeb* context,
                                          cubeb_device_collection* collection) {
-  delete[] collection->device;
-  collection->count = 0;
-  return CUBEB_OK;
+  return MockCubeb::AsMock(context)->DestroyDeviceCollection(collection);
 }
 
 int cubeb_mock_register_device_collection_changed(
