@@ -6014,14 +6014,6 @@ bool BytecodeEmitter::emitReturn(UnaryNode* returnNode) {
     return false;
   }
 
-  bool needsIteratorResult =
-      sc->isFunctionBox() && sc->asFunctionBox()->needsIteratorResult();
-  if (needsIteratorResult) {
-    if (!emitPrepareIteratorResult()) {
-      return false;
-    }
-  }
-
   if (!updateSourceCoordNotes(returnNode->pn_pos.begin)) {
     return false;
   }
@@ -6044,12 +6036,6 @@ bool BytecodeEmitter::emitReturn(UnaryNode* returnNode) {
   } else {
     
     if (!emit1(JSOp::Undefined)) {
-      return false;
-    }
-  }
-
-  if (needsIteratorResult) {
-    if (!emitFinishIteratorResult(true)) {
       return false;
     }
   }
@@ -6081,23 +6067,63 @@ bool BytecodeEmitter::emitReturn(UnaryNode* returnNode) {
 }
 
 bool BytecodeEmitter::finishReturn(BytecodeOffset setRvalOffset) {
-  bool needsFinalYield =
-      sc->isFunctionBox() && sc->asFunctionBox()->needsFinalYield();
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
   bool isDerivedClassConstructor =
       sc->isFunctionBox() && sc->asFunctionBox()->isDerivedClassConstructor();
+  bool needsFinalYield =
+      sc->isFunctionBox() && sc->asFunctionBox()->needsFinalYield();
+  bool needsIteratorResult =
+      sc->isFunctionBox() && sc->asFunctionBox()->needsIteratorResult();
+  bool needsPromiseResult =
+      sc->isFunctionBox() && sc->asFunctionBox()->needsPromiseResult();
   bool isSimpleReturn =
       setRvalOffset.valid() &&
       setRvalOffset + BytecodeOffsetDiff(JSOpLength_SetRval) ==
           bytecodeSection().offset();
+  MOZ_ASSERT_IF(needsIteratorResult || needsPromiseResult, needsFinalYield);
+
+  if (isDerivedClassConstructor) {
+    MOZ_ASSERT(!needsFinalYield);
+    if (!emitJump(JSOp::Goto, &endOfDerivedClassConstructorBody)) {
+      return false;
+    }
+    return true;
+  }
 
   if (needsFinalYield) {
     
     
     NameLocation loc = *locationOfNameBoundInScopeType<FunctionScope>(
         TaggedParserAtomIndex::WellKnown::dotGenerator(), varEmitterScope);
-
-    
-    if (sc->asFunctionBox()->needsPromiseResult()) {
+    if (needsIteratorResult) {
+      
+      if (!emitPrepareIteratorResult()) {
+        return false;
+      }
+      if (!emit1(JSOp::GetRval)) {
+        return false;
+      }
+      if (!emitFinishIteratorResult(true)) {
+        return false;
+      }
+      if (!emit1(JSOp::SetRval)) {
+        
+        return false;
+      }
+    } else if (needsPromiseResult) {
+      
       if (!emit1(JSOp::GetRval)) {
         
         return false;
@@ -6117,7 +6143,6 @@ bool BytecodeEmitter::finishReturn(BytecodeOffset setRvalOffset) {
         return false;
       }
     }
-
     if (!emitGetNameAtLocation(TaggedParserAtomIndex::WellKnown::dotGenerator(),
                                loc)) {
       return false;
@@ -6125,23 +6150,18 @@ bool BytecodeEmitter::finishReturn(BytecodeOffset setRvalOffset) {
     if (!emitYieldOp(JSOp::FinalYieldRval)) {
       return false;
     }
-  } else if (isDerivedClassConstructor) {
-    if (!emitJump(JSOp::Goto, &endOfDerivedClassConstructorBody)) {
-      return false;
-    }
-  } else if (isSimpleReturn) {
-    
-    
+    return true;
+  }
+
+  if (isSimpleReturn) {
     MOZ_ASSERT(JSOp(bytecodeSection().code()[setRvalOffset.value()]) ==
                JSOp::SetRval);
     bytecodeSection().code()[setRvalOffset.value()] = jsbytecode(JSOp::Return);
-  } else {
-    if (!emitReturnRval()) {
-      return false;
-    }
+    return true;
   }
 
-  return true;
+  
+  return emitReturnRval();
 }
 
 bool BytecodeEmitter::emitGetDotGeneratorInScope(EmitterScope& currentScope) {
