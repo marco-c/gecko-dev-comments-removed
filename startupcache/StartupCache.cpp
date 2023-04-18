@@ -65,6 +65,7 @@ MOZ_DEFINE_MALLOC_SIZE_OF(StartupCacheMallocSizeOf)
 NS_IMETHODIMP
 StartupCache::CollectReports(nsIHandleReportCallback* aHandleReport,
                              nsISupports* aData, bool aAnonymize) {
+  MutexAutoLock lock(mTableLock);
   MOZ_COLLECT_REPORT(
       "explicit/startup-cache/mapping", KIND_NONHEAP, UNITS_BYTES,
       mCacheData.nonHeapSizeOfExcludingThis(),
@@ -226,8 +227,11 @@ nsresult StartupCache::Init() {
                                      false);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  auto result = LoadArchive();
-  rv = result.isErr() ? result.unwrapErr() : NS_OK;
+  {
+    MutexAutoLock lock(mTableLock);
+    auto result = LoadArchive();
+    rv = result.isErr() ? result.unwrapErr() : NS_OK;
+  }
 
   gFoundDiskCacheOnInit = rv != NS_ERROR_FILE_NOT_FOUND;
 
@@ -259,6 +263,8 @@ void StartupCache::StartPrefetchMemoryThread() {
 Result<Ok, nsresult> StartupCache::LoadArchive() {
   MOZ_ASSERT(NS_IsMainThread(), "Can only load startup cache on main thread");
   if (gIgnoreDiskCache) return Err(NS_ERROR_FAILURE);
+
+  mTableLock.AssertCurrentThreadOwns();
 
   MOZ_TRY(mCacheData.init(mFile));
   auto size = mCacheData.size();
@@ -359,6 +365,7 @@ bool StartupCache::HasEntry(const char* id) {
 
   MOZ_ASSERT(NS_IsMainThread(), "Startup cache only available on main thread");
 
+  MutexAutoLock lock(mTableLock);
   return mTable.has(nsDependentCString(id));
 }
 
@@ -374,6 +381,7 @@ nsresult StartupCache::GetBuffer(const char* id, const char** outbuf,
   auto telemetry =
       MakeScopeExit([&label] { Telemetry::AccumulateCategorical(label); });
 
+  MutexAutoLock lock(mTableLock);
   decltype(mTable)::Ptr p = mTable.lookup(nsDependentCString(id));
   if (!p) {
     return NS_ERROR_NOT_AVAILABLE;
@@ -418,6 +426,7 @@ nsresult StartupCache::GetBuffer(const char* id, const char** outbuf,
           uncompressed.From(totalWritten), compressed.From(totalRead));
       if (NS_WARN_IF(result.isErr())) {
         value.mData = nullptr;
+        MutexAutoUnlock unlock(mTableLock);
         InvalidateCache();
         return NS_ERROR_FAILURE;
       }
@@ -457,19 +466,19 @@ nsresult StartupCache::PutBuffer(const char* id, UniquePtr<char[]>&& inbuf,
     return NS_ERROR_NOT_AVAILABLE;
   }
 
+  
+  
+  MutexAutoTryLock lock(mTableLock);
+  if (!lock) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+  mTableLock.AssertCurrentThreadOwns();
   bool exists = mTable.has(nsDependentCString(id));
-
   if (exists) {
     NS_WARNING("Existing entry in StartupCache.");
     
     return NS_OK;
   }
-  
-  
-  if (!mTableLock.TryLock()) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-  auto lockGuard = MakeScopeExit([&] { mTableLock.Unlock(); });
 
   
   
@@ -613,7 +622,7 @@ Result<Ok, nsresult> StartupCache::WriteToDisk() {
 void StartupCache::InvalidateCache(bool memoryOnly) {
   WaitOnPrefetchThread();
   
-  MutexAutoLock unlock(mTableLock);
+  MutexAutoLock lock(mTableLock);
 
   mWrittenOnce = false;
   if (memoryOnly) {
@@ -663,31 +672,29 @@ void StartupCache::MaybeInitShutdownWrite() {
 void StartupCache::EnsureShutdownWriteComplete() {
   
   
-  if (mWrittenOnce || (mCacheData.initialized() && !ShouldCompactCache())) {
+  if (mWrittenOnce) {
+    return;
+  }
+  MutexAutoLock lock(mTableLock);
+  if (mCacheData.initialized() && !ShouldCompactCache()) {
     return;
   }
   
   
-  if (!mTableLock.TryLock()) {
-    
-    
-    mTableLock.Lock();
-  } else {
-    
-    
-    WaitOnPrefetchThread();
-    mDirty = true;
-    mCacheData.reset();
-    
-    
 
-    auto writeResult = WriteToDisk();
-    Unused << NS_WARN_IF(writeResult.isErr());
-    
-    
-    
-  }
-  mTableLock.Unlock();
+  
+  
+  WaitOnPrefetchThread();
+  mDirty = true;
+  mCacheData.reset();
+  
+  
+
+  auto writeResult = WriteToDisk();
+  Unused << NS_WARN_IF(writeResult.isErr());
+  
+  
+  
 }
 
 void StartupCache::IgnoreDiskCache() {
@@ -707,13 +714,21 @@ void StartupCache::ThreadedPrefetch(void* aClosure) {
   NS_SetCurrentThreadName("StartupCache");
   mozilla::IOInterposer::RegisterCurrentThread();
   StartupCache* startupCacheObj = static_cast<StartupCache*>(aClosure);
-  uint8_t* buf = startupCacheObj->mCacheData.get<uint8_t>().get();
-  size_t size = startupCacheObj->mCacheData.size();
+  uint8_t* buf;
+  size_t size;
+  {
+    MutexAutoLock lock(startupCacheObj->mTableLock);
+    buf = startupCacheObj->mCacheData.get<uint8_t>().get();
+    size = startupCacheObj->mCacheData.size();
+  }
+  
+  
   MMAP_FAULT_HANDLER_BEGIN_BUFFER(buf, size)
   PrefetchMemory(buf, size);
   MMAP_FAULT_HANDLER_CATCH()
   mozilla::IOInterposer::UnregisterCurrentThread();
 }
+
 
 bool StartupCache::ShouldCompactCache() {
   
@@ -748,19 +763,24 @@ void StartupCache::MaybeWriteOffMainThread() {
     return;
   }
 
-  if (mCacheData.initialized() && !ShouldCompactCache()) {
-    return;
+  {
+    MutexAutoLock lock(mTableLock);
+    if (mCacheData.initialized() && !ShouldCompactCache()) {
+      return;
+    }
   }
-
   
   WaitOnPrefetchThread();
-  mDirty = true;
-  mCacheData.reset();
+  {
+    MutexAutoLock lock(mTableLock);
+    mDirty = true;
+    mCacheData.reset();
+  }
 
   RefPtr<StartupCache> self = this;
   nsCOMPtr<nsIRunnable> runnable =
       NS_NewRunnableFunction("StartupCache::Write", [self]() mutable {
-        MutexAutoLock unlock(self->mTableLock);
+        MutexAutoLock lock(self->mTableLock);
         auto result = self->WriteToDisk();
         Unused << NS_WARN_IF(result.isErr());
       });
