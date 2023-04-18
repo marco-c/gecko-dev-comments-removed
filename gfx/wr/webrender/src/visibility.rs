@@ -10,7 +10,6 @@
 use api::{DebugFlags};
 use api::units::*;
 use std::{usize};
-use crate::batch::BatchFilter;
 use crate::clip::{ClipStore, ClipChainStack};
 use crate::composite::CompositeState;
 use crate::spatial_tree::{SpatialTree, SpatialNodeIndex};
@@ -18,7 +17,7 @@ use crate::clip::{ClipInstance, ClipChainInstance};
 use crate::frame_builder::FrameBuilderConfig;
 use crate::gpu_cache::GpuCache;
 use crate::picture::{PictureCompositeMode, ClusterFlags, SurfaceInfo, TileCacheInstance};
-use crate::picture::{SurfaceIndex, RasterConfig};
+use crate::picture::{SurfaceIndex, RasterConfig, TileRect, SubSliceIndex};
 use crate::prim_store::{ClipTaskIndex, PictureIndex, PrimitiveInstanceKind};
 use crate::prim_store::{PrimitiveStore, PrimitiveInstance};
 use crate::render_backend::{DataStores, ScratchBuffer};
@@ -98,25 +97,16 @@ pub enum VisibilityState {
     
     PassThrough,
     
-    
-    
-    Coarse {
-        
-        filter: BatchFilter,
-
+    Visible {
         
         
         vis_flags: PrimitiveVisibilityFlags,
-    },
-    
-    
-    Detailed {
-        
-        filter: BatchFilter,
 
         
+        tile_rect: TileRect,
+
         
-        vis_flags: PrimitiveVisibilityFlags,
+        sub_slice_index: SubSliceIndex,
     },
 }
 
