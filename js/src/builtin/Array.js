@@ -307,6 +307,7 @@ function ArrayFilter(callbackfn) {
     return A;
 }
 
+#ifdef NIGHTLY_BUILD
 
 
 
@@ -446,6 +447,8 @@ function ArrayGroupByToMap(callbackfn) {
     
     return map;
 }
+
+#endif
 
 
 function ArrayReduce(callbackfn) {
