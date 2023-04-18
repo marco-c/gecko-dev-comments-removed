@@ -142,8 +142,13 @@ class MenuList extends PureComponent {
 
     
     let hasCheckbox = false;
-    Children.forEach(this.props.children, child => {
-      if (typeof child.props.checked !== "undefined") {
+    Children.forEach(this.props.children, (child, i) => {
+      if (child == null || typeof child == "undefined") {
+        console.warn("MenuList children at index", i, "is", child);
+        return;
+      }
+
+      if (typeof child?.props?.checked !== "undefined") {
         hasCheckbox = true;
       }
     });
