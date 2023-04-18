@@ -367,7 +367,7 @@ nsresult nsParser::WillBuildModel() {
   NS_ENSURE_SUCCESS(rv, rv);
 
   rv = mDTD->WillBuildModel(*mParserContext, mSink);
-  nsresult sinkResult = mSink->WillBuildModel(mDTD->GetMode());
+  nsresult sinkResult = mSink->WillBuildModel(mParserContext->mDTDMode);
   
   
   
