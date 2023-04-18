@@ -339,7 +339,9 @@ this.chrome_settings_overrides = class extends ExtensionAPI {
           extension.startupReason
         );
     }
-    if (disable && item?.enabled) {
+    
+    
+    if (disable && item?.enabled !== false) {
       item = await ExtensionSettingsStore.disable(
         extension.id,
         DEFAULT_SEARCH_STORE_TYPE,
@@ -367,7 +369,10 @@ this.chrome_settings_overrides = class extends ExtensionAPI {
         
         
         
-        browser: windowTracker.topWindow.gBrowser.selectedBrowser,
+        
+        
+        browser: windowTracker.topWindow?.gBrowser.selectedBrowser,
+        id: extension.id,
         name: extension.name,
         icon: extension.iconURL,
         currentEngine: defaultEngine.name,
@@ -476,7 +481,7 @@ this.chrome_settings_overrides = class extends ExtensionAPI {
           Services.search.defaultEngine = Services.search.getEngineByName(
             engineName
           );
-        } else {
+        } else if (extension.startupReason == "ADDON_ENABLE") {
           
           await this.promptDefaultSearch(engineName);
         }
