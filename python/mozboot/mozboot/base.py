@@ -155,6 +155,7 @@ class BaseBootstrapper(object):
         self.no_system_changes = no_system_changes
         self.state_dir = None
         self.srcdir = None
+        self.configure_sandbox = None
 
     def validate_environment(self):
         """
@@ -383,7 +384,32 @@ class BaseBootstrapper(object):
         self.install_toolchain_artifact_impl(clang_tools_path, toolchain_job)
 
     def install_toolchain_artifact(self, toolchain_job, no_unpack=False):
-        self.install_toolchain_artifact_impl(self.state_dir, toolchain_job, no_unpack)
+        if no_unpack:
+            return self.install_toolchain_artifact_impl(
+                self.state_dir, toolchain_job, no_unpack
+            )
+
+        if not self.configure_sandbox:
+            from mozbuild.configure import ConfigureSandbox
+
+            
+            
+            
+            self.configure_sandbox = sandbox = ConfigureSandbox(
+                {}, argv=["configure", "--enable-bootstrap", f"MOZCONFIG={os.devnull}"]
+            )
+            moz_configure = os.path.join(self.srcdir, "build", "moz.configure")
+            sandbox.include_file(os.path.join(moz_configure, "init.configure"))
+            
+            
+            sandbox["developer_options"] = sandbox["always"]
+            sandbox.include_file(os.path.join(moz_configure, "bootstrap.configure"))
+
+        
+        
+        self.configure_sandbox._value_for(
+            self.configure_sandbox["bootstrap_path"](toolchain_job)
+        )
 
     def install_toolchain_artifact_impl(
         self, install_dir, toolchain_job, no_unpack=False
