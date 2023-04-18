@@ -124,7 +124,8 @@ class FragmentOrElement : public nsIContent {
   
 
 
-  void FireNodeRemovedForChildren();
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void FireNodeRemovedForChildren();
 
   static void ClearContentUnbinder();
   static bool CanSkip(nsINode* aNode, bool aRemovingAllowed);
