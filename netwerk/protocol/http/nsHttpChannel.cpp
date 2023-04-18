@@ -2376,6 +2376,7 @@ nsresult nsHttpChannel::ContinueProcessResponse3(nsresult rv) {
       }
       break;
 
+    case 408:
     case 425:
     case 429:
       
