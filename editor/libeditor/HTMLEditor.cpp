@@ -659,6 +659,34 @@ nsresult HTMLEditor::OnFocus(const nsINode& aOriginalEventTargetNode) {
   return EditorBase::OnFocus(aOriginalEventTargetNode);
 }
 
+nsresult HTMLEditor::OnBlur(const EventTarget* aEventTarget) {
+  
+  
+  nsFocusManager* focusManager = nsFocusManager::GetFocusManager();
+  if (MOZ_UNLIKELY(!focusManager)) {
+    return NS_OK;
+  }
+
+  
+  
+  if (focusManager->GetFocusedElement()) {
+    return NS_OK;
+  }
+
+  
+  
+  
+  
+  
+  if (IsInDesignMode() && Element::FromEventTargetOrNull(aEventTarget)) {
+    return NS_OK;
+  }
+  nsresult rv = FinalizeSelection();
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "EditorBase::FinalizeSelection() failed");
+  return rv;
+}
+
 Element* HTMLEditor::FindSelectionRoot(const nsINode& aNode) const {
   MOZ_ASSERT(aNode.IsDocument() || aNode.IsContent(),
              "aNode must be content or document node");

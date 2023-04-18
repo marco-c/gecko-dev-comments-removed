@@ -607,7 +607,7 @@ class EditorBase : public nsIEditor,
 
 
 
-  nsresult OnBlur(const dom::EventTarget* aEventTarget);
+  virtual nsresult OnBlur(const dom::EventTarget* aEventTarget) = 0;
 
   
 
