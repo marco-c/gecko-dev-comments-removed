@@ -1031,7 +1031,7 @@ GlobalObjectData::GlobalObjectData(Zone* zone) : varNames(zone) {}
 
 void GlobalObjectData::trace(JSTracer* trc, GlobalObject* global) {
   
-  if (!JS::RuntimeHeapIsMinorCollecting()) {
+  if (trc->runtime()->heapState() != JS::HeapState::MinorCollecting) {
     varNames.trace(trc);
   }
 

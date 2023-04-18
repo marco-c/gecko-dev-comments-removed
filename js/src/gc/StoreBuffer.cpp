@@ -29,6 +29,20 @@ JS_PUBLIC_API void js::gc::UnlockStoreBuffer(StoreBuffer* sb) {
   sb->unlock();
 }
 
+#ifdef DEBUG
+void StoreBuffer::checkAccess() const {
+  
+  
+  
+  if (runtime_->heapState() != JS::HeapState::Idle) {
+    MOZ_ASSERT(!CurrentThreadIsGCMarking());
+    lock_.assertOwnedByCurrentThread();
+  } else {
+    MOZ_ASSERT(CurrentThreadCanAccessRuntime(runtime_));
+  }
+}
+#endif
+
 bool StoreBuffer::WholeCellBuffer::init() {
   MOZ_ASSERT(!stringHead_);
   MOZ_ASSERT(!nonStringHead_);
