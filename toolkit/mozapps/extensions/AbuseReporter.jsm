@@ -23,7 +23,7 @@ const MAX_STRING_LENGTH = 255;
 const MIN_MS_BETWEEN_SUBMITS = 30000;
 
 
-const SUPPORTED_ADDON_TYPES = ["extension", "theme"];
+const SUPPORTED_ADDON_TYPES = ["extension", "theme", "sitepermission"];
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   AddonManager: "resource://gre/modules/AddonManager.jsm",
