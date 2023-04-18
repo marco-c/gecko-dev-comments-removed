@@ -159,7 +159,6 @@ static bool IsLocalAccAtLineStart(LocalAccessible* aAcc) {
   if (!prevFrame) {
     return false;
   }
-  nsIFrame::GetLastLeaf(&prevFrame);
   auto [thisBlock, thisLineFrame] = thisFrame->GetContainingBlockForLine(
        false);
   if (!thisBlock) {
@@ -167,6 +166,10 @@ static bool IsLocalAccAtLineStart(LocalAccessible* aAcc) {
     
     return true;
   }
+  nsIFrame::GetLastLeaf(&prevFrame);
+  
+  
+  prevFrame = prevFrame->LastContinuation();
   auto [prevBlock, prevLineFrame] = prevFrame->GetContainingBlockForLine(
        false);
   if (thisBlock != prevBlock) {
