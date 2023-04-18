@@ -5560,8 +5560,31 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArraySlice() {
   }
 
   
-  if (!thisval_.isObject() || !IsPackedArray(&thisval_.toObject())) {
+  if (!thisval_.isObject()) {
     return AttachDecision::NoAction;
+  }
+
+  bool isPackedArray = IsPackedArray(&thisval_.toObject());
+  if (!isPackedArray) {
+    if (!thisval_.toObject().is<ArgumentsObject>()) {
+      return AttachDecision::NoAction;
+    }
+    auto* args = &thisval_.toObject().as<ArgumentsObject>();
+
+    
+    if (args->hasOverriddenElement()) {
+      return AttachDecision::NoAction;
+    }
+
+    
+    if (args->hasOverriddenLength()) {
+      return AttachDecision::NoAction;
+    }
+
+    
+    if (args->anyArgIsForwarded()) {
+      return AttachDecision::NoAction;
+    }
   }
 
   
@@ -5571,8 +5594,6 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArraySlice() {
   if (argc_ > 1 && !args_[1].isInt32()) {
     return AttachDecision::NoAction;
   }
-
-  RootedArrayObject arr(cx_, &thisval_.toObject().as<ArrayObject>());
 
   JSObject* templateObj = NewDenseFullyAllocatedArray(cx_, 0, TenuredObject);
   if (!templateObj) {
@@ -5589,7 +5610,24 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArraySlice() {
   ValOperandId thisValId =
       writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
   ObjOperandId objId = writer.guardToObject(thisValId);
-  writer.guardClass(objId, GuardClassKind::Array);
+
+  if (isPackedArray) {
+    writer.guardClass(objId, GuardClassKind::Array);
+  } else {
+    auto* args = &thisval_.toObject().as<ArgumentsObject>();
+
+    if (args->is<MappedArgumentsObject>()) {
+      writer.guardClass(objId, GuardClassKind::MappedArguments);
+    } else {
+      MOZ_ASSERT(args->is<UnmappedArgumentsObject>());
+      writer.guardClass(objId, GuardClassKind::UnmappedArguments);
+    }
+
+    uint8_t flags = ArgumentsObject::ELEMENT_OVERRIDDEN_BIT |
+                    ArgumentsObject::LENGTH_OVERRIDDEN_BIT |
+                    ArgumentsObject::FORWARDED_ARGUMENTS_BIT;
+    writer.guardArgumentsObjectFlags(objId, flags);
+  }
 
   Int32OperandId int32BeginId;
   if (argc_ > 0) {
@@ -5605,14 +5643,20 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArraySlice() {
     ValOperandId endId =
         writer.loadArgumentFixedSlot(ArgumentKind::Arg1, argc_);
     int32EndId = writer.guardToInt32(endId);
-  } else {
+  } else if (isPackedArray) {
     int32EndId = writer.loadInt32ArrayLength(objId);
+  } else {
+    int32EndId = writer.loadArgumentsObjectLength(objId);
   }
 
-  writer.packedArraySliceResult(templateObj, objId, int32BeginId, int32EndId);
+  if (isPackedArray) {
+    writer.packedArraySliceResult(templateObj, objId, int32BeginId, int32EndId);
+  } else {
+    writer.argumentsSliceResult(templateObj, objId, int32BeginId, int32EndId);
+  }
   writer.returnFromIC();
 
-  trackAttached("ArraySlice");
+  trackAttached(isPackedArray ? "ArraySlice" : "ArgumentsSlice");
   return AttachDecision::Attach;
 }
 
