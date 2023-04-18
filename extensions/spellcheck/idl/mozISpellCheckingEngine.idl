@@ -23,7 +23,7 @@ interface mozISpellCheckingEngine : nsISupports {
 
 
 
-  attribute ACString dictionary;
+  attribute Array<ACString> dictionaries;
 
   
 
