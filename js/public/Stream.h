@@ -486,56 +486,6 @@ extern JS_PUBLIC_API bool ReadableStreamReaderReleaseLock(JSContext* cx,
 extern JS_PUBLIC_API JSObject* ReadableStreamDefaultReaderRead(
     JSContext* cx, HandleObject reader);
 
-class JS_PUBLIC_API WritableStreamUnderlyingSink {
- public:
-  virtual ~WritableStreamUnderlyingSink() = default;
-
-  
-
-
-
-
-
-
-
-  virtual void finalize() = 0;
-};
-
-
-
-
-
-
-
-
-
-using AbortSignalIsAborted = bool (*)(JSObject* signal);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API void InitPipeToHandling(const JSClass* abortSignalClass,
-                                             AbortSignalIsAborted isAborted,
-                                             JSContext* cx);
-
 }  
 
 #endif  
