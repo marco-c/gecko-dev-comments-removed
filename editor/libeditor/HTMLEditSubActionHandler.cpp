@@ -3440,15 +3440,25 @@ EditActionResult HTMLEditor::ChangeSelectedHardLinesToList(
             "MoveNodeResult::SuggestCaretPointTo() failed, but ignored");
         
         if (!content->IsHTMLElement(&aListItemElementTagName)) {
-          RefPtr<Element> newListItemElement = ReplaceContainerWithTransaction(
-              MOZ_KnownLive(*content->AsElement()), aListItemElementTagName);
-          if (NS_WARN_IF(Destroyed())) {
-            return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
-          }
-          if (!newListItemElement) {
+          const CreateElementResult newListItemElementOrError =
+              ReplaceContainerWithTransaction(
+                  MOZ_KnownLive(*content->AsElement()),
+                  aListItemElementTagName);
+          if (newListItemElementOrError.isErr()) {
             NS_WARNING("HTMLEditor::ReplaceContainerWithTransaction() failed");
-            return EditActionResult(NS_ERROR_FAILURE);
+            return EditActionResult(newListItemElementOrError.inspectErr());
           }
+          nsresult rv = newListItemElementOrError.SuggestCaretPointTo(
+              *this, {SuggestCaret::OnlyIfHasSuggestion,
+                      SuggestCaret::OnlyIfTransactionsAllowedToDoIt,
+                      SuggestCaret::AndIgnoreTrivialError});
+          if (NS_FAILED(rv)) {
+            NS_WARNING("CreateElementResult::SuggestCaretPointTo() failed");
+            return EditActionResult(rv);
+          }
+          NS_WARNING_ASSERTION(
+              rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
+              "CreateElementResult::SuggestCaretPointTo() failed, but ignored");
         }
       } else {
         
@@ -3483,15 +3493,25 @@ EditActionResult HTMLEditor::ChangeSelectedHardLinesToList(
         
         
         if (!content->IsHTMLElement(&aListItemElementTagName)) {
-          RefPtr<Element> newListItemElement = ReplaceContainerWithTransaction(
-              MOZ_KnownLive(*content->AsElement()), aListItemElementTagName);
-          if (NS_WARN_IF(Destroyed())) {
-            return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
-          }
-          if (!newListItemElement) {
+          const CreateElementResult newListItemElementOrError =
+              ReplaceContainerWithTransaction(
+                  MOZ_KnownLive(*content->AsElement()),
+                  aListItemElementTagName);
+          if (newListItemElementOrError.isErr()) {
             NS_WARNING("HTMLEditor::ReplaceContainerWithTransaction() failed");
-            return EditActionResult(NS_ERROR_FAILURE);
+            return EditActionResult(newListItemElementOrError.inspectErr());
           }
+          nsresult rv = newListItemElementOrError.SuggestCaretPointTo(
+              *this, {SuggestCaret::OnlyIfHasSuggestion,
+                      SuggestCaret::OnlyIfTransactionsAllowedToDoIt,
+                      SuggestCaret::AndIgnoreTrivialError});
+          if (NS_FAILED(rv)) {
+            NS_WARNING("CreateElementResult::SuggestCaretPointTo() failed");
+            return EditActionResult(rv);
+          }
+          NS_WARNING_ASSERTION(
+              rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
+              "CreateElementResult::SuggestCaretPointTo() failed, but ignored");
         }
       }
       Element* element = Element::FromNode(content);
@@ -3628,18 +3648,20 @@ EditActionResult HTMLEditor::ChangeSelectedHardLinesToList(
     
     
     if (content->IsHTMLElement(nsGkAtoms::p)) {
-      RefPtr<Element> newListItemElement = ReplaceContainerWithTransaction(
-          MOZ_KnownLive(*content->AsElement()), aListItemElementTagName);
-      if (NS_WARN_IF(Destroyed())) {
-        return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
-      }
-      if (!newListItemElement) {
+      CreateElementResult newListItemElementOrError =
+          ReplaceContainerWithTransaction(MOZ_KnownLive(*content->AsElement()),
+                                          aListItemElementTagName);
+      if (newListItemElementOrError.isErr()) {
         NS_WARNING("HTMLEditor::ReplaceContainerWithTransaction() failed");
-        return EditActionResult(NS_ERROR_FAILURE);
+        return EditActionResult(newListItemElementOrError.inspectErr());
       }
+      
+      newListItemElementOrError.IgnoreCaretPointSuggestion();
+      const OwningNonNull<Element> newListItemElement =
+          newListItemElementOrError.UnwrapNewNode();
       prevListItem = nullptr;
       const MoveNodeResult moveListItemElementResult =
-          MoveNodeToEndWithTransaction(*newListItemElement, *curList);
+          MoveNodeToEndWithTransaction(newListItemElement, *curList);
       if (moveListItemElementResult.isErr()) {
         NS_WARNING("HTMLEditor::MoveNodeToEndWithTransaction() failed");
         return EditActionResult(moveListItemElementResult.unwrapErr());
@@ -5467,16 +5489,24 @@ CreateElementResult HTMLEditor::ChangeListElementType(Element& aListElement,
     if (HTMLEditUtils::IsListItem(childContent->AsElement()) &&
         !childContent->IsHTMLElement(&aNewListItemTag)) {
       OwningNonNull<Element> listItemElement = *childContent->AsElement();
-      RefPtr<Element> newListItemElement =
+      CreateElementResult newListItemElementOrError =
           ReplaceContainerWithTransaction(listItemElement, aNewListItemTag);
-      if (NS_WARN_IF(Destroyed())) {
-        return CreateElementResult(NS_ERROR_EDITOR_DESTROYED);
-      }
-      if (!newListItemElement) {
+      if (newListItemElementOrError.isErr()) {
         NS_WARNING("HTMLEditor::ReplaceContainerWithTransaction() failed");
-        return CreateElementResult(NS_ERROR_FAILURE);
+        return newListItemElementOrError;
       }
-      childContent = newListItemElement;
+      nsresult rv = newListItemElementOrError.SuggestCaretPointTo(
+          *this, {SuggestCaret::OnlyIfHasSuggestion,
+                  SuggestCaret::OnlyIfTransactionsAllowedToDoIt,
+                  SuggestCaret::AndIgnoreTrivialError});
+      if (NS_FAILED(rv)) {
+        NS_WARNING("CreateElementResult::SuggestCaretPointTo() failed");
+        return CreateElementResult(rv);
+      }
+      NS_WARNING_ASSERTION(
+          rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
+          "CreateElementResult::SuggestCaretPointTo() failed, but ignored");
+      childContent = newListItemElementOrError.GetNewNode();
       continue;
     }
     if (HTMLEditUtils::IsAnyListElement(childContent->AsElement()) &&
@@ -5500,14 +5530,24 @@ CreateElementResult HTMLEditor::ChangeListElementType(Element& aListElement,
     return CreateElementResult(&aListElement);
   }
 
-  RefPtr<Element> listElement =
+  CreateElementResult listElementOrError =
       ReplaceContainerWithTransaction(aListElement, aNewListTag);
-  if (NS_WARN_IF(Destroyed())) {
-    return CreateElementResult(NS_ERROR_EDITOR_DESTROYED);
+  if (listElementOrError.isErr()) {
+    NS_WARNING("HTMLEditor::ReplaceContainerWithTransaction() failed");
+    return listElementOrError;
   }
-  NS_WARNING_ASSERTION(listElement,
-                       "HTMLEditor::ReplaceContainerWithTransaction() failed");
-  return CreateElementResult(std::move(listElement));
+  nsresult rv = listElementOrError.SuggestCaretPointTo(
+      *this, {SuggestCaret::OnlyIfHasSuggestion,
+              SuggestCaret::OnlyIfTransactionsAllowedToDoIt,
+              SuggestCaret::AndIgnoreTrivialError});
+  if (NS_FAILED(rv)) {
+    NS_WARNING("CreateElementResult::SuggestCaretPointTo() failed");
+    return CreateElementResult(rv);
+  }
+  NS_WARNING_ASSERTION(
+      rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
+      "CreateElementResult::SuggestCaretPointTo() failed, but ignored");
+  return CreateElementResult(listElementOrError.UnwrapNewNode());
 }
 
 nsresult HTMLEditor::CreateStyleForInsertText(
@@ -8511,23 +8551,34 @@ nsresult HTMLEditor::CreateOrChangeBlockContainerElement(
         HTMLEditUtils::IsFormatNode(content)) {
       
       curBlock = nullptr;
-      newBlock = ReplaceContainerAndCloneAttributesWithTransaction(
-          MOZ_KnownLive(*content->AsElement()), aBlockTag);
-      if (NS_WARN_IF(Destroyed())) {
-        return NS_ERROR_EDITOR_DESTROYED;
-      }
-      if (!newBlock) {
+      CreateElementResult newBlockElementOrError =
+          ReplaceContainerAndCloneAttributesWithTransaction(
+              MOZ_KnownLive(*content->AsElement()), aBlockTag);
+      if (newBlockElementOrError.isErr()) {
         NS_WARNING(
             "EditorBase::ReplaceContainerAndCloneAttributesWithTransaction() "
             "failed");
-        return NS_ERROR_FAILURE;
+        return newBlockElementOrError.unwrapErr();
       }
       
       
       
-      if (NS_WARN_IF(newBlock->GetParentNode() != atContent.GetContainer())) {
+      if (NS_WARN_IF(newBlockElementOrError.GetNewNode()->GetParentNode() !=
+                     atContent.GetContainer())) {
         return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
       }
+      nsresult rv = newBlockElementOrError.SuggestCaretPointTo(
+          *this, {SuggestCaret::OnlyIfHasSuggestion,
+                  SuggestCaret::OnlyIfTransactionsAllowedToDoIt,
+                  SuggestCaret::AndIgnoreTrivialError});
+      if (NS_FAILED(rv)) {
+        NS_WARNING("CreateElementResult::SuggestCaretPointTo() failed");
+        return rv;
+      }
+      NS_WARNING_ASSERTION(
+          rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
+          "CreateElementResult::SuggestCaretPointTo() failed, but ignored");
+      newBlock = newBlockElementOrError.UnwrapNewNode();
       continue;
     }
 

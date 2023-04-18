@@ -3823,19 +3823,19 @@ already_AddRefed<Element> HTMLEditor::InsertContainerWithTransactionInternal(
   return newContainer.forget();
 }
 
-already_AddRefed<Element> HTMLEditor::ReplaceContainerWithTransactionInternal(
+CreateElementResult HTMLEditor::ReplaceContainerWithTransactionInternal(
     Element& aOldContainer, nsAtom& aTagName, nsAtom& aAttribute,
     const nsAString& aAttributeValue, bool aCloneAllAttributes) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
-  EditorDOMPoint atOldContainer(&aOldContainer);
-  if (NS_WARN_IF(!atOldContainer.IsSet())) {
-    return nullptr;
+  if (NS_WARN_IF(!HTMLEditUtils::IsRemovableNode(aOldContainer)) ||
+      NS_WARN_IF(!HTMLEditUtils::IsSimplyEditableNode(aOldContainer))) {
+    return CreateElementResult(NS_ERROR_FAILURE);
   }
 
-  RefPtr<Element> newContainer = CreateHTMLContent(&aTagName);
+  const RefPtr<Element> newContainer = CreateHTMLContent(&aTagName);
   if (NS_WARN_IF(!newContainer)) {
-    return nullptr;
+    return CreateElementResult(NS_ERROR_FAILURE);
   }
 
   
@@ -3847,68 +3847,73 @@ already_AddRefed<Element> HTMLEditor::ReplaceContainerWithTransactionInternal(
                                         aAttributeValue, true);
     if (NS_FAILED(rv)) {
       NS_WARNING("Element::SetAttr() failed");
-      return nullptr;
+      return CreateElementResult(NS_ERROR_FAILURE);
     }
   }
 
-  
-  
-  
+  const OwningNonNull<nsINode> parentNode = *aOldContainer.GetParentNode();
+  const nsCOMPtr<nsINode> referenceNode = aOldContainer.GetNextSibling();
   AutoReplaceContainerSelNotify selStateNotify(RangeUpdaterRef(), aOldContainer,
                                                *newContainer);
   {
+    AutoTArray<OwningNonNull<nsIContent>, 32> arrayOfChildren;
+    HTMLEditor::CollectChildren(
+        aOldContainer, arrayOfChildren, 0u, CollectListChildren::No,
+        CollectTableChildren::No,
+        
+        
+        CollectNonEditableNodes::Yes);
+    
+    
+    
+    
     AutoTransactionsConserveSelection conserveSelection(*this);
     
-    while (aOldContainer.HasChildren()) {
-      nsCOMPtr<nsIContent> child = aOldContainer.GetFirstChild();
-      if (NS_WARN_IF(!child)) {
-        return nullptr;
+    
+    
+    for (const OwningNonNull<nsIContent>& child : Reversed(arrayOfChildren)) {
+      MoveNodeResult moveChildResult =
+          MoveNodeWithTransaction(MOZ_KnownLive(child),  
+                                  EditorDOMPoint(newContainer, 0u));
+      if (moveChildResult.isErr()) {
+        NS_WARNING("HTMLEditor::MoveNodeWithTransaction() failed");
+        return CreateElementResult(moveChildResult.unwrapErr());
       }
-      nsresult rv = DeleteNodeWithTransaction(*child);
-      if (NS_FAILED(rv)) {
-        NS_WARNING("HTMLEditor::DeleteNodeWithTransaction() failed");
-        return nullptr;
-      }
-
-      CreateContentResult insertChildContentResult = InsertNodeWithTransaction(
-          *child, EditorDOMPoint::AtEndOf(newContainer));
-      if (insertChildContentResult.isErr()) {
-        NS_WARNING("EditorBase::InsertNodeWithTransaction() failed");
-        return nullptr;
-      }
-      insertChildContentResult.IgnoreCaretPointSuggestion();
+      
+      
+      moveChildResult.IgnoreCaretPointSuggestion();
     }
   }
 
   
-  NS_WARNING_ASSERTION(atOldContainer.IsSetAndValid(),
-                       "The old container might be moved by mutation observer");
-  CreateElementResult insertNewContainerElementResult =
-      InsertNodeWithTransaction<Element>(*newContainer, atOldContainer);
-  if (insertNewContainerElementResult.isErr()) {
-    NS_WARNING("EditorBase::InsertNodeWithTransaction() failed");
-    return nullptr;
-  }
-  nsresult rv = insertNewContainerElementResult.SuggestCaretPointTo(
-      *this, {SuggestCaret::OnlyIfHasSuggestion,
-              SuggestCaret::OnlyIfTransactionsAllowedToDoIt,
-              SuggestCaret::AndIgnoreTrivialError});
-  if (NS_FAILED(rv)) {
-    NS_WARNING("CreateElementResult::SuggestCaretPointTo() failed");
-    return nullptr;
-  }
-  NS_WARNING_ASSERTION(
-      rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
-      "CreateElementResult::SuggestCaretPointTo() failed, but ignored");
-
   
-  rv = DeleteNodeWithTransaction(aOldContainer);
+  nsresult rv = DeleteNodeWithTransaction(aOldContainer);
+  if (MOZ_UNLIKELY(Destroyed())) {
+    NS_WARNING(
+        "HTMLEditor::DeleteNodeWithTransaction() caused destroying the editor");
+    return CreateElementResult(NS_ERROR_EDITOR_DESTROYED);
+  }
   if (NS_FAILED(rv)) {
     NS_WARNING("HTMLEditor::DeleteNodeWithTransaction() failed");
-    return nullptr;
+    return CreateElementResult(rv);
   }
 
-  return newContainer.forget();
+  if (referenceNode && (!referenceNode->GetParentNode() ||
+                        parentNode != referenceNode->GetParentNode())) {
+    NS_WARNING(
+        "The reference node for insertion has been moved to different parent, "
+        "so we got lost the insertion point");
+    return CreateElementResult(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+  }
+
+  
+  CreateElementResult insertNewContainerElementResult =
+      InsertNodeWithTransaction<Element>(
+          *newContainer, referenceNode ? EditorDOMPoint(referenceNode)
+                                       : EditorDOMPoint::AtEndOf(*parentNode));
+  NS_WARNING_ASSERTION(insertNewContainerElementResult.isOk(),
+                       "EditorBase::InsertNodeWithTransaction() failed");
+  return insertNewContainerElementResult;
 }
 
 Result<EditorDOMPoint, nsresult> HTMLEditor::RemoveContainerWithTransaction(

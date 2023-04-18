@@ -44,8 +44,13 @@ already_AddRefed<MoveNodeTransaction> MoveNodeTransaction::MaybeCreate(
   
   
   if (NS_WARN_IF(!HTMLEditUtils::IsRemovableNode(aContentToMove)) ||
+      
+      
+      
+      
       NS_WARN_IF(!HTMLEditUtils::IsSimplyEditableNode(
-          *aPointToInsert.GetContainer()))) {
+                     *aPointToInsert.GetContainer()) &&
+                 aPointToInsert.GetContainer()->IsInComposedDoc())) {
     return nullptr;
   }
   RefPtr<MoveNodeTransaction> transaction =

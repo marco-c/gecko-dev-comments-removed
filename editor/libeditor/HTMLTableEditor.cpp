@@ -2909,18 +2909,21 @@ NS_IMETHODIMP HTMLEditor::SwitchTableCellHeaderType(Element* aSourceCell,
 
   
   
-  RefPtr<Element> newCell = ReplaceContainerAndCloneAttributesWithTransaction(
-      *aSourceCell, MOZ_KnownLive(*newCellName));
-  if (!newCell) {
+  CreateElementResult newCellElementOrError =
+      ReplaceContainerAndCloneAttributesWithTransaction(
+          *aSourceCell, MOZ_KnownLive(*newCellName));
+  if (newCellElementOrError.isErr()) {
     NS_WARNING(
         "EditorBase::ReplaceContainerAndCloneAttributesWithTransaction() "
         "failed");
-    return NS_ERROR_FAILURE;
+    return newCellElementOrError.unwrapErr();
   }
+  
+  newCellElementOrError.IgnoreCaretPointSuggestion();
 
   
   if (aNewCell) {
-    newCell.forget(aNewCell);
+    newCellElementOrError.UnwrapNewNode().forget(aNewCell);
   }
 
   return NS_OK;
