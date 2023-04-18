@@ -172,8 +172,6 @@ class WebRenderImageData : public WebRenderUserData {
 
   bool IsAsync() { return mPipelineId.isSome(); }
 
-  bool UsingSharedSurface(ContainerProducerID aProducerId) const;
-
   void ClearImageKey();
 
  protected:
@@ -182,11 +180,6 @@ class WebRenderImageData : public WebRenderUserData {
   RefPtr<ImageClient> mImageClient;
   Maybe<wr::PipelineId> mPipelineId;
   RefPtr<ImageContainer> mContainer;
-  
-  
-  
-  
-  bool mOwnsKey;
 };
 
 
