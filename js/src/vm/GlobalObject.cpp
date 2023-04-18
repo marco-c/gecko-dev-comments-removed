@@ -227,10 +227,6 @@ bool GlobalObject::resolveConstructor(JSContext* cx,
   
   AutoRealm ar(cx, global);
 
-  if (global->zone()->createdForHelperThread()) {
-    return resolveOffThreadConstructor(cx, global, key);
-  }
-
   MOZ_ASSERT(!cx->isHelperThreadContext());
 
   
@@ -445,10 +441,6 @@ bool GlobalObject::maybeResolveGlobalThis(JSContext* cx,
 JSObject* GlobalObject::createBuiltinProto(JSContext* cx,
                                            Handle<GlobalObject*> global,
                                            ProtoKind kind, ObjectInitOp init) {
-  if (global->zone()->createdForHelperThread()) {
-    return createOffThreadBuiltinProto(cx, global, kind);
-  }
-
   MOZ_ASSERT(!cx->isHelperThreadContext());
   if (!init(cx, global)) {
     return nullptr;
@@ -461,10 +453,6 @@ JSObject* GlobalObject::createBuiltinProto(JSContext* cx,
                                            Handle<GlobalObject*> global,
                                            ProtoKind kind, HandleAtom tag,
                                            ObjectInitWithTagOp init) {
-  if (global->zone()->createdForHelperThread()) {
-    return createOffThreadBuiltinProto(cx, global, kind);
-  }
-
   MOZ_ASSERT(!cx->isHelperThreadContext());
   if (!init(cx, global, tag)) {
     return nullptr;
@@ -517,7 +505,8 @@ bool GlobalObject::resolveOffThreadConstructor(JSContext* cx,
   
   
 
-  MOZ_ASSERT(global->zone()->createdForHelperThread());
+  
+  MOZ_ASSERT(false);
   MOZ_ASSERT(key == JSProto_Object || key == JSProto_Function ||
              key == JSProto_Array || key == JSProto_RegExp ||
              key == JSProto_AsyncFunction || key == JSProto_GeneratorFunction ||
@@ -550,7 +539,8 @@ JSObject* GlobalObject::createOffThreadBuiltinProto(
   
   
 
-  MOZ_ASSERT(global->zone()->createdForHelperThread());
+  
+  MOZ_ASSERT(false);
   MOZ_ASSERT(kind == ProtoKind::ModuleProto ||
              kind == ProtoKind::ImportEntryProto ||
              kind == ProtoKind::ExportEntryProto ||

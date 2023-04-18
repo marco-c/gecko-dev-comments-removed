@@ -77,14 +77,9 @@ void CheckZone<Helper>::check() const {
     return;
   }
 
-  if (zone->usedByHelperThread()) {
-    
-    MOZ_ASSERT(zone->ownedByCurrentHelperThread());
-  } else {
-    
-    
-    MOZ_ASSERT(CurrentThreadCanAccessRuntime(TlsContext.get()->runtime()));
-  }
+  
+  
+  MOZ_ASSERT(CurrentThreadCanAccessRuntime(TlsContext.get()->runtime()));
 }
 
 template class CheckZone<AllowedHelperThread::None>;

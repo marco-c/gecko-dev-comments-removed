@@ -181,15 +181,6 @@ namespace JS {
 
 
 class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
- private:
-  enum class HelperThreadUse : uint32_t { None, Pending, Active };
-  mozilla::Atomic<HelperThreadUse, mozilla::SequentiallyConsistent>
-      helperThreadUse_;
-
-  
-  
-  js::UnprotectedData<JSContext*> helperThreadOwnerContext_;
-
  public:
   js::gc::ArenaLists arenas;
 
@@ -347,31 +338,6 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   [[nodiscard]] bool init();
 
   void destroy(JSFreeOp* fop);
-
-  bool ownedByCurrentHelperThread();
-  void setHelperThreadOwnerContext(JSContext* cx);
-
-  
-  bool createdForHelperThread() const {
-    return helperThreadUse_ != HelperThreadUse::None;
-  }
-  
-  bool usedByHelperThread() {
-    MOZ_ASSERT_IF(isAtomsZone(), helperThreadUse_ == HelperThreadUse::None);
-    return helperThreadUse_ == HelperThreadUse::Active;
-  }
-  void setCreatedForHelperThread() {
-    MOZ_ASSERT(helperThreadUse_ == HelperThreadUse::None);
-    helperThreadUse_ = HelperThreadUse::Pending;
-  }
-  void setUsedByHelperThread() {
-    MOZ_ASSERT(helperThreadUse_ == HelperThreadUse::Pending);
-    helperThreadUse_ = HelperThreadUse::Active;
-  }
-  void clearUsedByHelperThread() {
-    MOZ_ASSERT(helperThreadUse_ != HelperThreadUse::None);
-    helperThreadUse_ = HelperThreadUse::None;
-  }
 
   [[nodiscard]] bool findSweepGroupEdges(Zone* atomsZone);
 

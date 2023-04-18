@@ -272,7 +272,6 @@ void gc::GCRuntime::startVerifyPreBarriers() {
   marker.start();
 
   for (ZonesIter zone(this, WithAtoms); !zone.done(); zone.next()) {
-    MOZ_ASSERT(!zone->usedByHelperThread());
     zone->setNeedsIncrementalBarrier(true);
     zone->arenas.clearFreeLists();
   }
@@ -827,12 +826,6 @@ void HeapCheckTracerBase::onChild(JS::GCCellPtr thing) {
 
   
   if (cell->runtimeFromAnyThread() != rt) {
-    return;
-  }
-
-  
-  Zone* zone = thing.asCell()->zone();
-  if (zone->usedByHelperThread()) {
     return;
   }
 
