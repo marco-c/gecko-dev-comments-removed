@@ -1541,7 +1541,7 @@ PK11_InitSlot(SECMODModule *mod, CK_SLOT_ID slotID, PK11SlotInfo *slot)
 
 
 
-    if (PK11_GETTAB(slot)->C_GetSlotInfo(slotID, &slotInfo) != CKR_OK) {
+    if (PK11_GetSlotInfo(slot, &slotInfo) != SECSuccess) {
         slot->disabled = PR_TRUE;
         slot->reason = PK11_DIS_COULD_NOT_INIT_TOKEN;
         return;
@@ -1620,41 +1620,42 @@ pk11_IsPresentCertLoad(PK11SlotInfo *slot, PRBool loadCerts)
     }
 
     
-    if (!slot->isThreadSafe)
-        PK11_EnterSlotMonitor(slot);
-    if (PK11_GETTAB(slot)->C_GetSlotInfo(slot->slotID, &slotInfo) != CKR_OK) {
-        if (!slot->isThreadSafe)
-            PK11_ExitSlotMonitor(slot);
+    if (PK11_GetSlotInfo(slot, &slotInfo) != SECSuccess) {
         return PR_FALSE;
     }
+
     if ((slotInfo.flags & CKF_TOKEN_PRESENT) == 0) {
         
         if (slot->session != CK_INVALID_HANDLE) {
+            if (!slot->isThreadSafe) {
+                PK11_EnterSlotMonitor(slot);
+            }
             PK11_GETTAB(slot)
                 ->C_CloseSession(slot->session);
             slot->session = CK_INVALID_HANDLE;
+            if (!slot->isThreadSafe) {
+                PK11_ExitSlotMonitor(slot);
+            }
         }
-        if (!slot->isThreadSafe)
-            PK11_ExitSlotMonitor(slot);
         return PR_FALSE;
     }
 
     
 
     if (slot->session != CK_INVALID_HANDLE) {
-        if (slot->isThreadSafe)
+        if (slot->isThreadSafe) {
             PK11_EnterSlotMonitor(slot);
+        }
         crv = PK11_GETTAB(slot)->C_GetSessionInfo(slot->session, &sessionInfo);
         if (crv != CKR_OK) {
             PK11_GETTAB(slot)
                 ->C_CloseSession(slot->session);
             slot->session = CK_INVALID_HANDLE;
         }
-        if (slot->isThreadSafe)
+        if (slot->isThreadSafe) {
             PK11_ExitSlotMonitor(slot);
+        }
     }
-    if (!slot->isThreadSafe)
-        PK11_ExitSlotMonitor(slot);
 
     
     if (slot->session != CK_INVALID_HANDLE)
