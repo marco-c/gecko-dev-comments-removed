@@ -139,6 +139,8 @@ class MOZ_STACK_CLASS BaselineStackBuilder {
     MOZ_ASSERT(!header_);
     MOZ_ASSERT(bufferUsed_ == 0);
 
+    prevFramePtr_ = frame_->callerFramePtr();
+
     uint8_t* bufferRaw = cx_->pod_calloc<uint8_t>(bufferTotal_);
     if (!bufferRaw) {
       return false;
@@ -410,62 +412,6 @@ class MOZ_STACK_CLASS BaselineStackBuilder {
     }
     return reinterpret_cast<uint8_t*>(frame_) + (offset - bufferUsed_);
   }
-
-  BufferPointer<JitFrameLayout> topFrameAddress() {
-    return pointerAtStackOffset<JitFrameLayout>(0);
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  void* calculatePrevFramePtr() {
-    
-    BufferPointer<JitFrameLayout> topFrame = topFrameAddress();
-    FrameType type = topFrame->prevType();
-
-    
-    
-    
-    
-    if (JSJitFrameIter::isEntry(type) || type == FrameType::IonJS ||
-        type == FrameType::IonICCall) {
-      return nullptr;
-    }
-
-    
-    
-    
-    
-    if (type == FrameType::BaselineJS) {
-      return nullptr;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    if (type == FrameType::BaselineStub) {
-      size_t offset = JitFrameLayout::Size() + topFrame->prevFrameLocalSize() +
-                      BaselineStubFrameLayout::reverseOffsetOfSavedFramePtr();
-      return virtualPointerAtStackOffset(offset);
-    }
-
-    
-    MOZ_ASSERT(type == FrameType::Rectifier);
-    size_t priorOffset =
-        JitFrameLayout::Size() + topFrame->prevFrameLocalSize() - sizeof(void*);
-    return virtualPointerAtStackOffset(priorOffset);
-  }
 };
 
 BaselineStackBuilder::BaselineStackBuilder(JSContext* cx,
@@ -527,9 +473,7 @@ bool BaselineStackBuilder::initFrame() {
   
   
   
-  
-  void* prevFramePtr = calculatePrevFramePtr();
-  if (!writePtr(prevFramePtr, "PrevFramePtr")) {
+  if (!writePtr(prevFramePtr(), "PrevFramePtr")) {
     return false;
   }
   prevFramePtr_ = virtualPointerAtStackOffset(0);
