@@ -355,6 +355,7 @@ class MediaManager final : public nsIMediaManagerService,
 
   void RemoveMediaDevicesCallback(uint64_t aWindowID);
   void DeviceListChanged();
+  void HandleDeviceListChanged();
 
   
   
