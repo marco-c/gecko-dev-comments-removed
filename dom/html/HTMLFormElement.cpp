@@ -1134,8 +1134,7 @@ void HTMLFormElement::AssertDocumentOrder(
     const nsTArray<nsGenericHTMLFormElement*>& aControls, nsIContent* aForm) {
   
   
-  return;
-
+#  if 0
   
   
   
@@ -1146,6 +1145,7 @@ void HTMLFormElement::AssertDocumentOrder(
           "Form controls not ordered correctly");
     }
   }
+#  endif
 }
 
 
@@ -1160,8 +1160,7 @@ void HTMLFormElement::AssertDocumentOrder(
     nsIContent* aForm) {
   
   
-  return;
-
+#  if 0
   
   
   
@@ -1172,6 +1171,7 @@ void HTMLFormElement::AssertDocumentOrder(
           "Form controls not ordered correctly");
     }
   }
+#  endif
 }
 #endif
 
