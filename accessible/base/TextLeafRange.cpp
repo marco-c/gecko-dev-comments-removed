@@ -735,8 +735,10 @@ TextLeafPoint TextLeafPoint::FindBoundary(AccessibleTextBoundary aBoundaryType,
                                           bool aIncludeOrigin) const {
   if (IsCaret()) {
     if (aBoundaryType == nsIAccessibleText::BOUNDARY_CHAR) {
-      
-      return ActualizeCaret( false);
+      if (IsCaretAtEndOfLine()) {
+        
+        return ActualizeCaret( false);
+      }
     }
     return ActualizeCaret().FindBoundary(aBoundaryType, aDirection,
                                          aIncludeOrigin);
@@ -766,7 +768,7 @@ TextLeafPoint TextLeafPoint::FindBoundary(AccessibleTextBoundary aBoundaryType,
             
             
             boundary = searchFrom;
-          } else if (searchFrom.mOffset <
+          } else if (searchFrom.mOffset + 1 <
                      static_cast<int32_t>(
                          nsAccUtils::TextLength(searchFrom.mAcc))) {
             boundary.mAcc = searchFrom.mAcc;
