@@ -110,7 +110,7 @@ class nsDeviceContext final {
   
 
 
-  nsresult GetDepth(uint32_t& aDepth);
+  uint32_t GetDepth();
 
   
 
