@@ -111,9 +111,9 @@ class nsCaseTransformTextRunFactory : public nsTransformingTextRunFactory {
   
   
   
-  
   static bool TransformString(
-      const nsAString& aString, nsString& aConvertedString, bool aAllUppercase,
+      const nsAString& aString, nsString& aConvertedString,
+      const mozilla::Maybe<mozilla::StyleTextTransform>& aGlobalTransform,
       bool aCaseTransformsOnly, const nsAtom* aLanguage,
       nsTArray<bool>& aCharsToMergeArray, nsTArray<bool>& aDeletedCharsArray,
       const nsTransformedTextRun* aTextRun = nullptr,
