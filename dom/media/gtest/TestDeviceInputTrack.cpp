@@ -542,6 +542,11 @@ TEST_F(TestDeviceInputTrack, ErrorCallback) {
   WaitFor(stream->ErrorForcedEvent());
 
   
+  
+  
+  WaitFor(stream->ErrorStoppedEvent());
+
+  
   DispatchFunction([&] { track->StopAudio(); });
   Unused << WaitFor(cubeb->StreamDestroyEvent());
 
