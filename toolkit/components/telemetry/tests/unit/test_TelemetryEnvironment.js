@@ -7,9 +7,6 @@ const { AddonManager, AddonManagerPrivate } = ChromeUtils.import(
 const { TelemetryEnvironment } = ChromeUtils.import(
   "resource://gre/modules/TelemetryEnvironment.jsm"
 );
-const { ContentTaskUtils } = ChromeUtils.import(
-  "resource://testing-common/ContentTaskUtils.jsm"
-);
 const { SearchTestUtils } = ChromeUtils.import(
   "resource://testing-common/SearchTestUtils.jsm"
 );
@@ -140,8 +137,7 @@ add_task(async function setup() {
   do_get_profile();
 
   
-  let FOG = Cc["@mozilla.org/toolkit/glean;1"].createInstance(Ci.nsIFOG);
-  FOG.initializeFOG();
+  Services.fog.initializeFOG();
 
   
   const distroDir = FileUtils.getDir("ProfD", ["sysfeatures", "app0"], true);

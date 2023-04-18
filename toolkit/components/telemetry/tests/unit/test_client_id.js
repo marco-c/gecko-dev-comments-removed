@@ -23,10 +23,6 @@ function run_test() {
     "state.json"
   );
 
-  
-  let FOG = Cc["@mozilla.org/toolkit/glean;1"].createInstance(Ci.nsIFOG);
-  FOG.initializeFOG();
-
   Services.prefs.setBoolPref(
     "toolkit.telemetry.testing.overrideProductsCheck",
     true
@@ -47,7 +43,7 @@ add_task(async function test_client_id() {
   
   await ClientID._reset();
   Services.prefs.clearUserPref(PREF_CACHED_CLIENTID);
-  await OS.File.remove(drsPath, { ignoreAbsent: true });
+  await IOUtils.remove(drsPath, { ignoreAbsent: true });
   let clientID = await ClientID.getClientID();
   Assert.equal(typeof clientID, "string");
   Assert.ok(uuidRegex.test(clientID));
@@ -55,8 +51,7 @@ add_task(async function test_client_id() {
   
   await ClientID._reset();
   Services.prefs.clearUserPref(PREF_CACHED_CLIENTID);
-  await OS.File.writeAtomic(drsPath, "abcd", {
-    encoding: "utf-8",
+  await IOUtils.writeUTF8(drsPath, "abcd", {
     tmpPath: drsPath + ".tmp",
   });
   clientID = await ClientID.getClientID();

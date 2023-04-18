@@ -11,12 +11,6 @@ const { TelemetryEnvironmentTesting } = ChromeUtils.import(
   "resource://testing-common/TelemetryEnvironmentTesting.jsm"
 );
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "ExtensionTestUtils",
-  "resource://testing-common/ExtensionXPCShellUtils.jsm"
-);
-
 SearchTestUtils.init(this);
 
 function promiseNextTick() {
@@ -36,8 +30,7 @@ add_task(async function setup() {
   do_get_profile();
 
   
-  let FOG = Cc["@mozilla.org/toolkit/glean;1"].createInstance(Ci.nsIFOG);
-  FOG.initializeFOG();
+  Services.fog.initializeFOG();
 
   
   const distroDir = FileUtils.getDir("ProfD", ["sysfeatures", "app0"], true);

@@ -24,8 +24,7 @@ add_task(function test_setup() {
   do_get_profile();
 
   
-  let FOG = Cc["@mozilla.org/toolkit/glean;1"].createInstance(Ci.nsIFOG);
-  FOG.initializeFOG();
+  Services.fog.initializeFOG();
 });
 
 add_task(async function test_record_update_environment() {

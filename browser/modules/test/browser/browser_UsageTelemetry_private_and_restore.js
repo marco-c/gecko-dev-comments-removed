@@ -32,8 +32,7 @@ function promiseBrowserStateRestored() {
 add_task(async function test_privateMode() {
   
   Services.telemetry.clearScalars();
-  let FOG = Cc["@mozilla.org/toolkit/glean;1"].createInstance(Ci.nsIFOG);
-  FOG.testResetFOG();
+  Services.fog.testResetFOG();
 
   
   let privateWin = await BrowserTestUtils.openNewBrowserWindow({

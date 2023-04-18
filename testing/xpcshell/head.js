@@ -534,8 +534,7 @@ function _execute_test() {
       
       
       
-      const FOG = Cc["@mozilla.org/toolkit/glean;1"].createInstance(Ci.nsIFOG);
-      FOG.initializeFOG();
+      _Services.fog.initializeFOG();
     } catch (ex) {
       do_throw(`Failed to initialize GeckoView: ${ex}`, ex.stack);
     }

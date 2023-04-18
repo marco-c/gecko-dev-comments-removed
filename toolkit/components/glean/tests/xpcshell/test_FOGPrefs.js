@@ -13,12 +13,11 @@ const LOCALHOST_PREF = "telemetry.fog.test.localhost_port";
 
 do_get_profile();
 
-const FOG = Cc["@mozilla.org/toolkit/glean;1"].createInstance(Ci.nsIFOG);
 
 
 Services.prefs.setIntPref(LOCALHOST_PREF, 45326);
 
-FOG.initializeFOG();
+Services.fog.initializeFOG();
 
 add_task(function test_fog_upload_only() {
   

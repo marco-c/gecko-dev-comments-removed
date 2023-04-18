@@ -777,8 +777,7 @@ function startup() {
     InitLater(() => {
       
       
-      const FOG = Cc["@mozilla.org/toolkit/glean;1"].createInstance(Ci.nsIFOG);
-      FOG.registerCustomPings();
+      Services.fog.registerCustomPings();
     });
 
     
