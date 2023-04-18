@@ -111,7 +111,6 @@ def build_docs(
     linkcheck=None,
     verbose=None,
 ):
-    command_context.activate_virtualenv()
     
     import setup_helper
 
