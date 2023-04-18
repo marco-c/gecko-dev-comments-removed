@@ -98,6 +98,7 @@ static bool ReadableStreamDefaultControllerCanCloseOrEnqueue(
   ReadableStream::ReaderState state = aController->GetStream()->State();
 
   
+  
   if (!aController->CloseRequested() &&
       state == ReadableStream::ReaderState::Readable) {
     return true;
@@ -105,6 +106,50 @@ static bool ReadableStreamDefaultControllerCanCloseOrEnqueue(
 
   
   return false;
+}
+
+enum class CloseOrEnqueue { Close, Enqueue };
+
+
+
+
+
+static bool ReadableStreamDefaultControllerCanCloseOrEnqueueAndThrow(
+    ReadableStreamDefaultController* aController,
+    CloseOrEnqueue aCloseOrEnqueue, ErrorResult& aRv) {
+  
+  ReadableStream::ReaderState state = aController->GetStream()->State();
+
+  nsCString prefix;
+  if (aCloseOrEnqueue == CloseOrEnqueue::Close) {
+    prefix = "Cannot close a readable stream that "_ns;
+  } else {
+    prefix = "Cannot enqueue into a readable stream that "_ns;
+  }
+
+  switch (state) {
+    case ReadableStream::ReaderState::Readable:
+      
+      
+      
+      
+      
+      if (!aController->CloseRequested()) {
+        return true;
+      }
+
+      
+      aRv.ThrowTypeError(prefix + "has already been requested to close."_ns);
+      return false;
+
+    case ReadableStream::ReaderState::Closed:
+      aRv.ThrowTypeError(prefix + "is already closed."_ns);
+      return false;
+
+    case ReadableStream::ReaderState::Errored:
+      aRv.ThrowTypeError(prefix + "has errored."_ns);
+      return false;
+  }
 }
 
 static Nullable<double> ReadableStreamDefaultControllerGetDesiredSize(
@@ -158,6 +203,7 @@ void ReadableStreamDefaultControllerClose(
   if (!ReadableStreamDefaultControllerCanCloseOrEnqueue(aController)) {
     return;
   }
+
   
   ReadableStream* stream = aController->GetStream();
 
@@ -177,10 +223,11 @@ void ReadableStreamDefaultControllerClose(
 
 void ReadableStreamDefaultController::Close(JSContext* aCx, ErrorResult& aRv) {
   
-  if (!ReadableStreamDefaultControllerCanCloseOrEnqueue(this)) {
-    aRv.ThrowTypeError("Cannot Close");
+  if (!ReadableStreamDefaultControllerCanCloseOrEnqueueAndThrow(
+          this, CloseOrEnqueue::Close, aRv)) {
     return;
   }
+
   
   ReadableStreamDefaultControllerClose(aCx, this, aRv);
 }
@@ -280,8 +327,8 @@ void ReadableStreamDefaultController::Enqueue(JSContext* aCx,
                                               JS::Handle<JS::Value> aChunk,
                                               ErrorResult& aRv) {
   
-  if (!ReadableStreamDefaultControllerCanCloseOrEnqueue(this)) {
-    aRv.ThrowTypeError("Cannot Enqueue");
+  if (!ReadableStreamDefaultControllerCanCloseOrEnqueueAndThrow(
+          this, CloseOrEnqueue::Enqueue, aRv)) {
     return;
   }
 
