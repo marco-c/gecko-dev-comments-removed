@@ -977,22 +977,13 @@ function ArraySpeciesCreate(originalArray, length) {
 
 function IsConcatSpreadable(O) {
     
-
-
-    var maybeSpreadable = true;
-
-    
-    if (!IsObject(O)) {
-        maybeSpreadable = false;
+    if (!IsObject(O)
 #ifdef ENABLE_RECORD_TUPLE
-        
-        if (IsTuple(O)) {
-            return true;
-        }
+        && !IsTuple(O)
 #endif
-    }
-    if (!maybeSpreadable)
+    ) {
         return false;
+    }
 
     
     var spreadable = O[GetBuiltinSymbol("isConcatSpreadable")];
@@ -1001,13 +992,13 @@ function IsConcatSpreadable(O) {
     if (spreadable !== undefined)
         return ToBoolean(spreadable);
 
-    
-    spreadable |= IsArray(O);
 #ifdef ENABLE_RECORD_TUPLE
-    
-    spreadable |= IsTuple(O);
+    if (IsTuple(O))
+        return true;
 #endif
-    return spreadable;
+
+    
+    return IsArray(O);
 }
 
 
@@ -1034,6 +1025,11 @@ function ArrayConcat(arg1) {
     while (true) {
         
         if (IsConcatSpreadable(E)) {
+#ifdef ENABLE_RECORD_TUPLE
+            
+            E = ToObject(E);
+#endif
+
             
             len = ToLength(E.length);
 
