@@ -58,8 +58,6 @@ class DevToolsWorkerChild extends JSWindowActorChild {
     
     this._connections = new Map();
 
-    this._onConnectionChange = this._onConnectionChange.bind(this);
-
     EventEmitter.decorate(this);
   }
 
@@ -283,7 +281,6 @@ class DevToolsWorkerChild extends JSWindowActorChild {
     
     
     DevToolsServer.registerActors({ target: true });
-    DevToolsServer.on("connectionchange", this._onConnectionChange);
 
     const connection = DevToolsServer.connectToParentWindowActor(
       this,
@@ -411,30 +408,6 @@ class DevToolsWorkerChild extends JSWindowActorChild {
     }
 
     watcherConnectionData.connection.close();
-  }
-
-  
-
-
-
-  _onConnectionChange() {
-    const { DevToolsServer } = lazy.Loader.require(
-      "devtools/server/devtools-server"
-    );
-
-    
-    
-    if (DevToolsServer.hasConnection() || DevToolsServer.keepAlive) {
-      return;
-    }
-
-    if (this._destroyed) {
-      return;
-    }
-    this._destroyed = true;
-
-    DevToolsServer.off("connectionchange", this._onConnectionChange);
-    DevToolsServer.destroy();
   }
 
   async sendPacket(packet, prefix) {

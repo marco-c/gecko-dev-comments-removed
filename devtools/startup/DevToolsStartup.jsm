@@ -974,9 +974,10 @@ DevToolsStartup.prototype = {
       portOrPath = Number(port) ? port : defaultPort;
     }
 
-    const { DevToolsLoader } = ChromeUtils.import(
-      "resource://devtools/shared/loader/Loader.jsm"
-    );
+    const {
+      useDistinctSystemPrincipalLoader,
+      releaseDistinctSystemPrincipalLoader,
+    } = ChromeUtils.import("resource://devtools/shared/loader/Loader.jsm");
 
     try {
       
@@ -985,9 +986,7 @@ DevToolsStartup.prototype = {
       
       
       
-      const serverLoader = new DevToolsLoader({
-        invisibleToDebugger: true,
-      });
+      const serverLoader = useDistinctSystemPrincipalLoader(this);
       const { DevToolsServer: devToolsServer } = serverLoader.require(
         "devtools/server/devtools-server"
       );
@@ -995,6 +994,11 @@ DevToolsStartup.prototype = {
         "devtools/shared/security/socket"
       );
       devToolsServer.init();
+
+      
+      
+      devToolsServer.keepAlive = true;
+
       devToolsServer.registerAllActors();
       devToolsServer.allowChromeProcess = true;
       const socketOptions = { portOrPath, webSocket };
@@ -1013,7 +1017,7 @@ DevToolsStartup.prototype = {
         if (devToolsServer) {
           devToolsServer.destroy();
         }
-        serverLoader.destroy();
+        releaseDistinctSystemPrincipalLoader(this);
       };
       Services.obs.addObserver(close, "quit-application");
     } catch (e) {

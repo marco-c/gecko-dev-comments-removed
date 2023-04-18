@@ -5,6 +5,7 @@
 
 function run_test() {
   
+  DevToolsServer.keepAlive = true;
   DevToolsServer.init();
   DevToolsServer.registerAllActors();
 

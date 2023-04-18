@@ -101,6 +101,8 @@ function initTestDevToolsServer() {
   DevToolsServer.setRootActor(createRootActor);
   
   DevToolsServer.init();
+  
+  DevToolsServer.keepAlive = true;
 }
 
 
