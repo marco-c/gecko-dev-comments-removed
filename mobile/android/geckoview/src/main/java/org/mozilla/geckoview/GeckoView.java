@@ -560,10 +560,16 @@ public class GeckoView extends FrameLayout {
     if (mSession != null) {
       final GeckoRuntime runtime = mSession.getRuntime();
       if (runtime != null) {
-        
-        
-        
-        runtime.orientationChanged(newConfig.orientation);
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1) {
+          
+          
+          
+          
+          
+          
+          runtime.orientationChanged(newConfig.orientation);
+        }
+
         runtime.configurationChanged(newConfig);
       }
     }
