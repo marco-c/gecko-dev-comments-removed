@@ -51,11 +51,39 @@ extern "C" {
 #endif
 
 
+#ifdef __has_attribute
+# define EVUTIL_HAS_ATTRIBUTE __has_attribute
+#endif
+
+#if defined(__clang__) && __clang__ == 1
+# if defined(__apple_build_version__)
+#  if __clang_major__ <= 6
+#   undef EVUTIL_HAS_ATTRIBUTE
+#  endif
+# else 
+#  if __clang_major__ == 3 && __clang_minor__ >= 2 && __clang_minor__ <= 5
+#   undef EVUTIL_HAS_ATTRIBUTE
+#  endif
+# endif 
+#endif 
+#ifndef EVUTIL_HAS_ATTRIBUTE
+# define EVUTIL_HAS_ATTRIBUTE(x) 0
+#endif
+
+
 #ifdef EVENT__inline
 #define inline EVENT__inline
 #endif
-#if defined(EVENT____func__) && !defined(__func__)
-#define __func__ EVENT____func__
+
+
+#if defined(EVENT__HAVE___func__)
+# ifndef __func__
+#  define __func__ __func__
+# endif
+#elif defined(EVENT__HAVE___FUNCTION__)
+# define __func__ __FUNCTION__
+#else
+# define __func__ __FILE__
 #endif
 
 
@@ -219,19 +247,26 @@ extern "C" {
 
 
 
+EVENT2_EXPORT_SYMBOL
 int EVUTIL_ISALPHA_(char c);
+EVENT2_EXPORT_SYMBOL
 int EVUTIL_ISALNUM_(char c);
 int EVUTIL_ISSPACE_(char c);
+EVENT2_EXPORT_SYMBOL
 int EVUTIL_ISDIGIT_(char c);
+EVENT2_EXPORT_SYMBOL
 int EVUTIL_ISXDIGIT_(char c);
 int EVUTIL_ISPRINT_(char c);
 int EVUTIL_ISLOWER_(char c);
 int EVUTIL_ISUPPER_(char c);
+EVENT2_EXPORT_SYMBOL
 char EVUTIL_TOUPPER_(char c);
+EVENT2_EXPORT_SYMBOL
 char EVUTIL_TOLOWER_(char c);
 
 
 
+EVENT2_EXPORT_SYMBOL
 void evutil_rtrim_lws_(char *);
 
 
@@ -258,13 +293,16 @@ void evutil_rtrim_lws_(char *);
 
 int evutil_open_closeonexec_(const char *pathname, int flags, unsigned mode);
 
+EVENT2_EXPORT_SYMBOL
 int evutil_read_file_(const char *filename, char **content_out, size_t *len_out,
     int is_binary);
 
+EVENT2_EXPORT_SYMBOL
 int evutil_socket_connect_(evutil_socket_t *fd_ptr, const struct sockaddr *sa, int socklen);
 
 int evutil_socket_finished_connecting_(evutil_socket_t fd);
 
+EVENT2_EXPORT_SYMBOL
 int evutil_ersatz_socketpair_(int, int , int, evutil_socket_t[]);
 
 int evutil_resolve_(int family, const char *hostname, struct sockaddr *sa,
@@ -289,15 +327,18 @@ struct evutil_weakrand_state {
 
 
 
+EVENT2_EXPORT_SYMBOL
 ev_uint32_t evutil_weakrand_seed_(struct evutil_weakrand_state *state, ev_uint32_t seed);
 
 
 
 
+EVENT2_EXPORT_SYMBOL
 ev_int32_t evutil_weakrand_(struct evutil_weakrand_state *seed);
 
 
 
+EVENT2_EXPORT_SYMBOL
 ev_int32_t evutil_weakrand_range_(struct evutil_weakrand_state *seed, ev_int32_t top);
 
 
@@ -306,6 +347,12 @@ ev_int32_t evutil_weakrand_range_(struct evutil_weakrand_state *seed, ev_int32_t
 #define EVUTIL_UNLIKELY(p) __builtin_expect(!!(p),0)
 #else
 #define EVUTIL_UNLIKELY(p) (p)
+#endif
+
+#if EVUTIL_HAS_ATTRIBUTE(fallthrough)
+#define EVUTIL_FALLTHROUGH __attribute__((fallthrough))
+#else
+#define EVUTIL_FALLTHROUGH
 #endif
 
 
@@ -357,16 +404,22 @@ typedef struct evdns_getaddrinfo_request* (*evdns_getaddrinfo_fn)(
     const char *nodename, const char *servname,
     const struct evutil_addrinfo *hints_in,
     void (*cb)(int, struct evutil_addrinfo *, void *), void *arg);
+EVENT2_EXPORT_SYMBOL
 void evutil_set_evdns_getaddrinfo_fn_(evdns_getaddrinfo_fn fn);
 typedef void (*evdns_getaddrinfo_cancel_fn)(
     struct evdns_getaddrinfo_request *req);
+EVENT2_EXPORT_SYMBOL
 void evutil_set_evdns_getaddrinfo_cancel_fn_(evdns_getaddrinfo_cancel_fn fn);
 
+EVENT2_EXPORT_SYMBOL
 struct evutil_addrinfo *evutil_new_addrinfo_(struct sockaddr *sa,
     ev_socklen_t socklen, const struct evutil_addrinfo *hints);
+EVENT2_EXPORT_SYMBOL
 struct evutil_addrinfo *evutil_addrinfo_append_(struct evutil_addrinfo *first,
     struct evutil_addrinfo *append);
+EVENT2_EXPORT_SYMBOL
 void evutil_adjust_hints_for_addrconfig_(struct evutil_addrinfo *hints);
+EVENT2_EXPORT_SYMBOL
 int evutil_getaddrinfo_common_(const char *nodename, const char *servname,
     struct evutil_addrinfo *hints, struct evutil_addrinfo **res, int *portnum);
 
@@ -379,6 +432,7 @@ void evutil_getaddrinfo_cancel_async_(struct evdns_getaddrinfo_request *data);
 
 
 
+EVENT2_EXPORT_SYMBOL
 int evutil_sockaddr_is_loopback_(const struct sockaddr *sa);
 
 
@@ -387,6 +441,7 @@ int evutil_sockaddr_is_loopback_(const struct sockaddr *sa);
 
 
 
+EVENT2_EXPORT_SYMBOL
 const char *evutil_format_sockaddr_port_(const struct sockaddr *sa, char *out, size_t outlen);
 
 int evutil_hex_char_to_int_(char c);
@@ -396,6 +451,7 @@ void evutil_free_secure_rng_globals_(void);
 void evutil_free_globals_(void);
 
 #ifdef _WIN32
+EVENT2_EXPORT_SYMBOL
 HMODULE evutil_load_windows_system_library_(const TCHAR *library_name);
 #endif
 
@@ -444,6 +500,7 @@ HMODULE evutil_load_windows_system_library_(const TCHAR *library_name);
 #endif
 #endif
 
+EVENT2_EXPORT_SYMBOL
 evutil_socket_t evutil_socket_(int domain, int type, int protocol);
 evutil_socket_t evutil_accept4_(evutil_socket_t sockfd, struct sockaddr *addr,
     ev_socklen_t *addrlen, int flags);
@@ -475,6 +532,17 @@ evutil_socket_t evutil_eventfd_(unsigned initval, int flags);
 #endif
 
 void evutil_memclear_(void *mem, size_t len);
+
+struct in_addr;
+struct in6_addr;
+
+
+EVENT2_EXPORT_SYMBOL
+int evutil_v4addr_is_local_(const struct in_addr *in);
+
+
+EVENT2_EXPORT_SYMBOL
+int evutil_v6addr_is_local_(const struct in6_addr *in);
 
 #ifdef __cplusplus
 }

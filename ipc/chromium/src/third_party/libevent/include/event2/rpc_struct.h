@@ -39,6 +39,16 @@ extern "C" {
 
 
 
+#ifndef TAILQ_ENTRY
+#define EVENT_DEFINED_TQENTRY_
+#define TAILQ_ENTRY(type)						\
+struct {								\
+	struct type *tqe_next;	/* next element */			\
+	struct type **tqe_prev;	/* address of previous next element */	\
+}
+#endif 
+
+
 
 
 struct evrpc_status {
@@ -92,6 +102,10 @@ struct evrpc {
 	
 	struct evrpc_base *base;
 };
+
+#ifdef EVENT_DEFINED_TQENTRY_
+#undef TAILQ_ENTRY
+#endif
 
 #ifdef __cplusplus
 }

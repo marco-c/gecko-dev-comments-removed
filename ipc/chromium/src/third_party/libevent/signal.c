@@ -85,7 +85,9 @@
 #ifndef _WIN32
 
 
+#ifndef __cdecl
 #define __cdecl
+#endif
 #endif
 
 static int evsig_add(struct event_base *, evutil_socket_t, short, short, void *);

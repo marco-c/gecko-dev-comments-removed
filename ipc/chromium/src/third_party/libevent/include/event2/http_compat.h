@@ -58,6 +58,8 @@ extern "C" {
 
 
 
+
+EVENT2_EXPORT_SYMBOL
 struct evhttp *evhttp_start(const char *address, ev_uint16_t port);
 
 
@@ -67,6 +69,7 @@ struct evhttp *evhttp_start(const char *address, ev_uint16_t port);
 
 
 
+EVENT2_EXPORT_SYMBOL
 struct evhttp_connection *evhttp_connection_new(
 	const char *address, ev_uint16_t port);
 
@@ -76,6 +79,7 @@ struct evhttp_connection *evhttp_connection_new(
 
 
 
+EVENT2_EXPORT_SYMBOL
 void evhttp_connection_set_base(struct evhttp_connection *evcon,
     struct event_base *base);
 

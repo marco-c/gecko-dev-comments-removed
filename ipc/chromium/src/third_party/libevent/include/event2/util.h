@@ -58,9 +58,6 @@ extern "C" {
 #endif
 #include <stdarg.h>
 #ifdef EVENT__HAVE_NETDB_H
-#if !defined(_GNU_SOURCE)
-#define _GNU_SOURCE
-#endif
 #include <netdb.h>
 #endif
 
@@ -259,6 +256,7 @@ extern "C" {
 #define EV_INT32_MAX  INT32_MAX
 #define EV_INT32_MIN  INT32_MIN
 #define EV_UINT16_MAX UINT16_MAX
+#define EV_INT16_MIN  INT16_MIN
 #define EV_INT16_MAX  INT16_MAX
 #define EV_UINT8_MAX  UINT8_MAX
 #define EV_INT8_MAX   INT8_MAX
@@ -431,8 +429,21 @@ int evutil_make_listen_socket_reuseable_port(evutil_socket_t sock);
 
 
 
+
+
+
+EVENT2_EXPORT_SYMBOL
+int evutil_make_listen_socket_ipv6only(evutil_socket_t sock);
+
+
+
+
+
+
+
 EVENT2_EXPORT_SYMBOL
 int evutil_make_socket_closeonexec(evutil_socket_t sock);
+
 
 
 
@@ -470,6 +481,7 @@ int evutil_socket_geterror(evutil_socket_t sock);
 
 EVENT2_EXPORT_SYMBOL
 const char *evutil_socket_error_to_string(int errcode);
+#define EVUTIL_INVALID_SOCKET INVALID_SOCKET
 #elif defined(EVENT_IN_DOXYGEN_)
 
 
@@ -493,14 +505,16 @@ const char *evutil_socket_error_to_string(int errcode);
 #define evutil_socket_geterror(sock) ...
 
 #define evutil_socket_error_to_string(errcode) ...
+#define EVUTIL_INVALID_SOCKET -1
 
-#else
+#else 
 #define EVUTIL_SOCKET_ERROR() (errno)
 #define EVUTIL_SET_SOCKET_ERROR(errcode)		\
 		do { errno = (errcode); } while (0)
 #define evutil_socket_geterror(sock) (errno)
 #define evutil_socket_error_to_string(errcode) (strerror(errcode))
-#endif
+#define EVUTIL_INVALID_SOCKET -1
+#endif 
 
 
 
@@ -598,6 +612,12 @@ int evutil_vsnprintf(char *buf, size_t buflen, const char *format, va_list ap)
 
 EVENT2_EXPORT_SYMBOL
 const char *evutil_inet_ntop(int af, const void *src, char *dst, size_t len);
+
+
+
+EVENT2_EXPORT_SYMBOL
+int evutil_inet_pton_scope(int af, const char *src, void *dst,
+	unsigned *indexp);
 
 EVENT2_EXPORT_SYMBOL
 int evutil_inet_pton(int af, const char *src, void *dst);
@@ -842,7 +862,7 @@ int evutil_secure_rng_init(void);
 EVENT2_EXPORT_SYMBOL
 int evutil_secure_rng_set_urandom_device_file(char *fname);
 
-#if !defined(__OpenBSD__) && !defined(__FreeBSD__) && !defined(ANDROID)
+#if !defined(EVENT__HAVE_ARC4RANDOM) || defined(EVENT__HAVE_ARC4RANDOM_ADDRANDOM)
 
 
 

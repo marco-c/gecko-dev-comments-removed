@@ -108,6 +108,18 @@ typedef void (*evconnlistener_errorcb)(struct evconnlistener *, void *);
 
 
 
+#define LEV_OPT_BIND_IPV6ONLY		(1u<<8)
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -179,11 +179,39 @@ extern "C" {
 
 #define DNS_QUERY_NO_SEARCH 1
 
+
 #define DNS_OPTION_SEARCH 1
+
 #define DNS_OPTION_NAMESERVERS 2
+
+
+
+
+
+
+
+
+
 #define DNS_OPTION_MISC 4
+
 #define DNS_OPTION_HOSTSFILE 8
-#define DNS_OPTIONS_ALL 15
+
+
+
+
+
+
+
+#define DNS_OPTIONS_ALL (    \
+    DNS_OPTION_SEARCH      | \
+    DNS_OPTION_NAMESERVERS | \
+    DNS_OPTION_MISC        | \
+    DNS_OPTION_HOSTSFILE   | \
+    0                        \
+)
+
+
+#define DNS_OPTION_NAMESERVERS_NO_DEFAULT 16
 
 
 #define DNS_NO_SEARCH DNS_QUERY_NO_SEARCH
@@ -208,6 +236,10 @@ struct event_base;
 
 
 #define EVDNS_BASE_DISABLE_WHEN_INACTIVE 0x8000
+
+
+
+#define EVDNS_BASE_NAMESERVERS_NO_DEFAULT 0x10000
 
 
 
@@ -433,6 +465,7 @@ void evdns_cancel_request(struct evdns_base *base, struct evdns_request *req);
 
 
 
+
 EVENT2_EXPORT_SYMBOL
 int evdns_base_set_option(struct evdns_base *base, const char *option, const char *val);
 
@@ -478,6 +511,7 @@ int evdns_base_resolv_conf_parse(struct evdns_base *base, int flags, const char 
 EVENT2_EXPORT_SYMBOL
 int evdns_base_load_hosts(struct evdns_base *base, const char *hosts_fname);
 
+#if defined(EVENT_IN_DOXYGEN_) || defined(_WIN32)
 
 
 
@@ -488,7 +522,6 @@ int evdns_base_load_hosts(struct evdns_base *base, const char *hosts_fname);
 
 
 
-#ifdef _WIN32
 EVENT2_EXPORT_SYMBOL
 int evdns_base_config_windows_nameservers(struct evdns_base *);
 #define EVDNS_BASE_CONFIG_WINDOWS_NAMESERVERS_IMPLEMENTED
@@ -606,6 +639,7 @@ typedef void (*evdns_request_callback_fn_type)(struct evdns_server_request *, vo
 
 #define EVDNS_FLAGS_AA	0x400
 #define EVDNS_FLAGS_RD	0x080
+
 
 
 

@@ -46,6 +46,7 @@ typedef void (*deferred_cb_fn)(struct event_callback *, void *);
 
 
 
+EVENT2_EXPORT_SYMBOL
 void event_deferred_cb_init_(struct event_callback *, ev_uint8_t, deferred_cb_fn, void *);
 
 
@@ -54,12 +55,14 @@ void event_deferred_cb_set_priority_(struct event_callback *, ev_uint8_t);
 
 
 
+EVENT2_EXPORT_SYMBOL
 void event_deferred_cb_cancel_(struct event_base *, struct event_callback *);
 
 
 
 
 
+EVENT2_EXPORT_SYMBOL
 int event_deferred_cb_schedule_(struct event_base *, struct event_callback *);
 
 #ifdef __cplusplus

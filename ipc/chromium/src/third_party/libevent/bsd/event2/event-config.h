@@ -24,12 +24,18 @@
 
 
 
-#if !defined(__NetBSD__)
 #define EVENT__HAVE_ACCEPT4 1
-#endif
+
+
+
 
 
 #define EVENT__HAVE_ARC4RANDOM 1
+
+
+#if defined(__DragonFly__) || defined(__NetBSD__)
+#define EVENT__HAVE_ARC4RANDOM_ADDRANDOM 1
+#endif
 
 
 #define EVENT__HAVE_ARC4RANDOM_BUF 1
@@ -50,14 +56,6 @@
 
 
 
-#define EVENT__HAVE_DECL_KERN_RANDOM 0
-
-
-
-#define EVENT__HAVE_DECL_RANDOM_UUID 0
-
-
-
 
 
 #define EVENT__HAVE_DLFCN_H 1
@@ -73,9 +71,6 @@
 
 
 #define EVENT__HAVE_ERRNO_H 1
-
-
-
 
 
 
@@ -123,6 +118,11 @@
 #define EVENT__HAVE_GETPROTOBYNUMBER 1
 
 
+#if !defined(__OpenBSD__)
+#define EVENT__HAVE_GETRANDOM 1
+#endif
+
+
 #define EVENT__HAVE_GETSERVBYNAME 1
 
 
@@ -147,7 +147,13 @@
 #define EVENT__HAVE_KQUEUE 1
 
 
+
+
+
 #define EVENT__HAVE_LIBZ 1
+
+
+
 
 
 
@@ -175,6 +181,9 @@
 
 
 #define EVENT__HAVE_NETINET_TCP_H 1
+
+
+
 
 
 
@@ -276,6 +285,9 @@
 
 
 
+#define EVENT__HAVE_STRUCT_LINGER 1
+
+
 #define EVENT__HAVE_STRUCT_SOCKADDR_IN6 1
 
 
@@ -294,7 +306,7 @@
 
 
 
-#define EVENT__HAVE_STRUCT_SO_LINGER 1
+#define EVENT__HAVE_STRUCT_SOCKADDR_UN 1
 
 
 #define EVENT__HAVE_SYSCTL 1
@@ -324,6 +336,11 @@
 #define EVENT__HAVE_SYS_QUEUE_H 1
 
 
+#if !defined(__OpenBSD__)
+#define EVENT__HAVE_SYS_RANDOM_H 1
+#endif
+
+
 #define EVENT__HAVE_SYS_RESOURCE_H 1
 
 
@@ -349,6 +366,9 @@
 
 
 #define EVENT__HAVE_SYS_TYPES_H 1
+
+
+#define EVENT__HAVE_SYS_UN_H 1
 
 
 #define EVENT__HAVE_SYS_UIO_H 1
@@ -405,21 +425,28 @@
 #define EVENT__HAVE_VASPRINTF 1
 
 
-#if !defined(__DragonFly__) && !defined(__OpenBSD__)
-#define EVENT__HAVE_WAITPID_WITH_WNOWAIT 1
-#endif
-
-
 #define EVENT__HAVE_WORKING_KQUEUE 1
 
 
 #define EVENT__HAVE_ZLIB_H 1
 
 
+
+
+
+
+
+
+#define EVENT__HAVE___FUNCTION__ 1
+
+
+#define EVENT__HAVE___func__ 1
+
+
 #define EVENT__LT_OBJDIR ".libs/"
 
 
-#define EVENT__NUMERIC_VERSION 0x02010800
+#define EVENT__NUMERIC_VERSION 0x02010c00
 
 
 #define EVENT__PACKAGE "libevent"
@@ -431,7 +458,7 @@
 #define EVENT__PACKAGE_NAME "libevent"
 
 
-#define EVENT__PACKAGE_STRING "libevent 2.1.8-stable"
+#define EVENT__PACKAGE_STRING "libevent 2.1.12-stable"
 
 
 #define EVENT__PACKAGE_TARNAME "libevent"
@@ -440,7 +467,7 @@
 #define EVENT__PACKAGE_URL ""
 
 
-#define EVENT__PACKAGE_VERSION "2.1.8-stable"
+#define EVENT__PACKAGE_VERSION "2.1.12-stable"
 
 
 
@@ -486,6 +513,13 @@
 
 
 #ifdef __LP64__
+#define EVENT__SIZEOF_TIME_T 8
+#else
+#define EVENT__SIZEOF_TIME_T 4
+#endif
+
+
+#ifdef __LP64__
 #define EVENT__SIZEOF_VOID_P 8
 #else
 #define EVENT__SIZEOF_VOID_P 4
@@ -496,43 +530,40 @@
 
 
 
-#define EVENT__STDC_HEADERS 1
+#define STDC_HEADERS 1
 
 
 #define EVENT__TIME_WITH_SYS_TIME 1
 
 
-#ifndef EVENT___ALL_SOURCE
-# define EVENT___ALL_SOURCE 1
+#ifndef _ALL_SOURCE
+# define _ALL_SOURCE 1
 #endif
 
-#ifndef EVENT___GNU_SOURCE
-# define EVENT___GNU_SOURCE 1
+#ifndef _GNU_SOURCE
+# define _GNU_SOURCE 1
 #endif
 
-#ifndef EVENT___POSIX_PTHREAD_SEMANTICS
-# define EVENT___POSIX_PTHREAD_SEMANTICS 1
+#ifndef _POSIX_PTHREAD_SEMANTICS
+# define _POSIX_PTHREAD_SEMANTICS 1
 #endif
 
-#ifndef EVENT___TANDEM_SOURCE
-# define EVENT___TANDEM_SOURCE 1
+#ifndef _TANDEM_SOURCE
+# define _TANDEM_SOURCE 1
 #endif
 
-#ifndef EVENT____EXTENSIONS__
-# define EVENT____EXTENSIONS__ 1
-#endif
-
-
-
-#define EVENT__VERSION "2.1.8-stable"
-
-
-#ifndef EVENT___DARWIN_USE_64_BIT_INODE
-# define EVENT___DARWIN_USE_64_BIT_INODE 1
+#ifndef __EXTENSIONS__
+# define __EXTENSIONS__ 1
 #endif
 
 
 
+#define EVENT__VERSION "2.1.12-stable"
+
+
+#ifndef _DARWIN_USE_64_BIT_INODE
+# define _DARWIN_USE_64_BIT_INODE 1
+#endif
 
 
 
@@ -555,7 +586,10 @@
 
 
 
-#ifndef EVENT____cplusplus
+
+
+
+#ifndef __cplusplus
 
 #endif
 

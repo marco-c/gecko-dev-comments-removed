@@ -306,6 +306,13 @@ extern const struct bufferevent_ops bufferevent_ops_pair;
 #define BEV_IS_FILTER(bevp) ((bevp)->be_ops == &bufferevent_ops_filter)
 #define BEV_IS_PAIR(bevp) ((bevp)->be_ops == &bufferevent_ops_pair)
 
+#if defined(EVENT__HAVE_OPENSSL)
+extern const struct bufferevent_ops bufferevent_ops_openssl;
+#define BEV_IS_OPENSSL(bevp) ((bevp)->be_ops == &bufferevent_ops_openssl)
+#else
+#define BEV_IS_OPENSSL(bevp) 0
+#endif
+
 #ifdef _WIN32
 extern const struct bufferevent_ops bufferevent_ops_async;
 #define BEV_IS_ASYNC(bevp) ((bevp)->be_ops == &bufferevent_ops_async)
@@ -314,13 +321,16 @@ extern const struct bufferevent_ops bufferevent_ops_async;
 #endif
 
 
+EVENT2_EXPORT_SYMBOL
 int bufferevent_init_common_(struct bufferevent_private *, struct event_base *, const struct bufferevent_ops *, enum bufferevent_options options);
 
 
 
+EVENT2_EXPORT_SYMBOL
 void bufferevent_suspend_read_(struct bufferevent *bufev, bufferevent_suspend_flags what);
 
 
+EVENT2_EXPORT_SYMBOL
 void bufferevent_unsuspend_read_(struct bufferevent *bufev, bufferevent_suspend_flags what);
 
 
@@ -347,16 +357,19 @@ void bufferevent_unsuspend_write_(struct bufferevent *bufev, bufferevent_suspend
 
 
 
+EVENT2_EXPORT_SYMBOL
 int bufferevent_disable_hard_(struct bufferevent *bufev, short event);
 
 
 
+EVENT2_EXPORT_SYMBOL
 int bufferevent_enable_locking_(struct bufferevent *bufev, void *lock);
 
 
 #define bufferevent_incref_(bufev) bufferevent_incref(bufev)
 
 
+EVENT2_EXPORT_SYMBOL
 void bufferevent_incref_and_lock_(struct bufferevent *bufev);
 
 
@@ -365,17 +378,21 @@ void bufferevent_incref_and_lock_(struct bufferevent *bufev);
 
 
 
+EVENT2_EXPORT_SYMBOL
 int bufferevent_decref_and_unlock_(struct bufferevent *bufev);
 
 
 
+EVENT2_EXPORT_SYMBOL
 void bufferevent_run_readcb_(struct bufferevent *bufev, int options);
 
 
+EVENT2_EXPORT_SYMBOL
 void bufferevent_run_writecb_(struct bufferevent *bufev, int options);
 
 
 
+EVENT2_EXPORT_SYMBOL
 void bufferevent_run_eventcb_(struct bufferevent *bufev, short what, int options);
 
 
@@ -399,6 +416,7 @@ bufferevent_trigger_nolock_(struct bufferevent *bufev, short iotype, int options
 
 
 
+EVENT2_EXPORT_SYMBOL
 int bufferevent_add_event_(struct event *ev, const struct timeval *tv);
 
 
@@ -408,18 +426,32 @@ int bufferevent_add_event_(struct event *ev, const struct timeval *tv);
 
 
 
+EVENT2_EXPORT_SYMBOL
 void bufferevent_init_generic_timeout_cbs_(struct bufferevent *bev);
 
 
 
 
+EVENT2_EXPORT_SYMBOL
 int bufferevent_generic_adj_timeouts_(struct bufferevent *bev);
+EVENT2_EXPORT_SYMBOL
 int bufferevent_generic_adj_existing_timeouts_(struct bufferevent *bev);
 
+EVENT2_EXPORT_SYMBOL
 enum bufferevent_options bufferevent_get_options_(struct bufferevent *bev);
 
+EVENT2_EXPORT_SYMBOL
 const struct sockaddr*
 bufferevent_socket_get_conn_address_(struct bufferevent *bev);
+
+EVENT2_EXPORT_SYMBOL
+void
+bufferevent_socket_set_conn_address_fd_(struct bufferevent *bev, evutil_socket_t fd);
+
+EVENT2_EXPORT_SYMBOL
+void
+bufferevent_socket_set_conn_address_(struct bufferevent *bev, struct sockaddr *addr, size_t addrlen);
+
 
 
 
@@ -465,11 +497,15 @@ bufferevent_socket_get_conn_address_(struct bufferevent *bev);
 
 
 
+EVENT2_EXPORT_SYMBOL
 int bufferevent_decrement_write_buckets_(struct bufferevent_private *bev,
     ev_ssize_t bytes);
+EVENT2_EXPORT_SYMBOL
 int bufferevent_decrement_read_buckets_(struct bufferevent_private *bev,
     ev_ssize_t bytes);
+EVENT2_EXPORT_SYMBOL
 ev_ssize_t bufferevent_get_read_max_(struct bufferevent_private *bev);
+EVENT2_EXPORT_SYMBOL
 ev_ssize_t bufferevent_get_write_max_(struct bufferevent_private *bev);
 
 int bufferevent_ratelim_init_(struct bufferevent_private *bev);

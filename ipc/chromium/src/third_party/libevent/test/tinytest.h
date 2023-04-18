@@ -35,7 +35,10 @@
 
 #define TT_OFF_BY_DEFAULT  (1<<3)
 
-#define TT_FIRST_USER_FLAG (1<<4)
+
+#define TT_RETRIABLE	(1<<4)
+
+#define TT_FIRST_USER_FLAG (1<<5)
 
 typedef void (*testcase_fn)(void *);
 

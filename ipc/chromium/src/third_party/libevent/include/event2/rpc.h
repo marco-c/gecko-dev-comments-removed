@@ -27,6 +27,10 @@
 #ifndef EVENT2_RPC_H_INCLUDED_
 #define EVENT2_RPC_H_INCLUDED_
 
+
+#include <event2/util.h>
+#include <event2/visibility.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -178,6 +182,7 @@ EVRPC_STRUCT(rpcname) {	\
 	struct evhttp_request* http_req; \
 	struct evbuffer* rpc_data; \
 };								     \
+EVENT2_EXPORT_SYMBOL \
 int evrpc_send_request_##rpcname(struct evrpc_pool *, \
     struct reqstruct *, struct rplystruct *, \
     void (*)(struct evrpc_status *, \
@@ -187,6 +192,7 @@ int evrpc_send_request_##rpcname(struct evrpc_pool *, \
 struct evrpc_pool;
 
 
+EVENT2_EXPORT_SYMBOL
 struct evrpc_request_wrapper *evrpc_make_request_ctx(
 	struct evrpc_pool *pool, void *request, void *reply,
 	const char *rpcname,
@@ -257,10 +263,13 @@ struct evrpc_request_wrapper *evrpc_make_request_ctx(
 #define EVRPC_REQUEST_HTTP(rpc_req) (rpc_req)->http_req
 
 
+EVENT2_EXPORT_SYMBOL
 void evrpc_request_done(struct evrpc_req_generic *req);
 
 
+EVENT2_EXPORT_SYMBOL
 void *evrpc_get_request(struct evrpc_req_generic *req);
+EVENT2_EXPORT_SYMBOL
 void *evrpc_get_reply(struct evrpc_req_generic *req);
 
 
@@ -288,6 +297,7 @@ struct evhttp;
 
 
 
+EVENT2_EXPORT_SYMBOL
 struct evrpc_base *evrpc_init(struct evhttp *server);
 
 
@@ -298,6 +308,7 @@ struct evrpc_base *evrpc_init(struct evhttp *server);
 
 
 
+EVENT2_EXPORT_SYMBOL
 void evrpc_free(struct evrpc_base *base);
 
 
@@ -319,10 +330,10 @@ void evrpc_free(struct evrpc_base *base);
 #define EVRPC_REGISTER(base, name, request, reply, callback, cbarg)	\
 	evrpc_register_generic(base, #name,				\
 	    (void (*)(struct evrpc_req_generic *, void *))callback, cbarg, \
-	    (void *(*)(void *))request##_new, NULL,			\
+	    (void *(*)(void *))request##_new_with_arg, NULL,		\
 	    (void (*)(void *))request##_free,				\
 	    (int (*)(void *, struct evbuffer *))request##_unmarshal,	\
-	    (void *(*)(void *))reply##_new, NULL,			\
+	    (void *(*)(void *))reply##_new_with_arg, NULL,		\
 	    (void (*)(void *))reply##_free, \
 	    (int (*)(void *))reply##_complete, \
 	    (void (*)(struct evbuffer *, void *))reply##_marshal)
@@ -334,6 +345,7 @@ void evrpc_free(struct evrpc_base *base);
 
 
 
+EVENT2_EXPORT_SYMBOL
 int evrpc_register_rpc(struct evrpc_base *, struct evrpc *,
     void (*)(struct evrpc_req_generic*, void *), void *);
 
@@ -347,6 +359,7 @@ int evrpc_register_rpc(struct evrpc_base *, struct evrpc *,
 
 #define EVRPC_UNREGISTER(base, name) evrpc_unregister_rpc((base), #name)
 
+EVENT2_EXPORT_SYMBOL
 int evrpc_unregister_rpc(struct evrpc_base *base, const char *name);
 
 
@@ -385,6 +398,7 @@ struct evrpc_status;
 
 
 
+EVENT2_EXPORT_SYMBOL
 int evrpc_make_request(struct evrpc_request_wrapper *ctx);
 
 
@@ -397,12 +411,15 @@ int evrpc_make_request(struct evrpc_request_wrapper *ctx);
 
 
 
+
+EVENT2_EXPORT_SYMBOL
 struct evrpc_pool *evrpc_pool_new(struct event_base *base);
 
 
 
 
 
+EVENT2_EXPORT_SYMBOL
 void evrpc_pool_free(struct evrpc_pool *pool);
 
 
@@ -413,6 +430,7 @@ void evrpc_pool_free(struct evrpc_pool *pool);
 
 
 
+EVENT2_EXPORT_SYMBOL
 void evrpc_pool_add_connection(struct evrpc_pool *pool,
     struct evhttp_connection *evcon);
 
@@ -424,6 +442,7 @@ void evrpc_pool_add_connection(struct evrpc_pool *pool,
 
 
 
+EVENT2_EXPORT_SYMBOL
 void evrpc_pool_remove_connection(struct evrpc_pool *pool,
     struct evhttp_connection *evcon);
 
@@ -442,6 +461,7 @@ void evrpc_pool_remove_connection(struct evrpc_pool *pool,
 
 
 
+EVENT2_EXPORT_SYMBOL
 void evrpc_pool_set_timeout(struct evrpc_pool *pool, int timeout_in_secs);
 
 
@@ -489,6 +509,7 @@ enum EVRPC_HOOK_RESULT {
 
 
 
+EVENT2_EXPORT_SYMBOL
 void *evrpc_add_hook(void *vbase,
     enum EVRPC_HOOK_TYPE hook_type,
     int (*cb)(void *, struct evhttp_request *, struct evbuffer *, void *),
@@ -502,6 +523,7 @@ void *evrpc_add_hook(void *vbase,
 
 
 
+EVENT2_EXPORT_SYMBOL
 int evrpc_remove_hook(void *vbase,
     enum EVRPC_HOOK_TYPE hook_type,
     void *handle);
@@ -511,8 +533,8 @@ int evrpc_remove_hook(void *vbase,
 
 
 
-int
-evrpc_resume_request(void *vbase, void *ctx, enum EVRPC_HOOK_RESULT res);
+EVENT2_EXPORT_SYMBOL
+int evrpc_resume_request(void *vbase, void *ctx, enum EVRPC_HOOK_RESULT res);
 
 
 
@@ -525,6 +547,7 @@ evrpc_resume_request(void *vbase, void *ctx, enum EVRPC_HOOK_RESULT res);
 
 
 
+EVENT2_EXPORT_SYMBOL
 void evrpc_hook_add_meta(void *ctx, const char *key,
     const void *data, size_t data_size);
 
@@ -538,6 +561,7 @@ void evrpc_hook_add_meta(void *ctx, const char *key,
 
 
 
+EVENT2_EXPORT_SYMBOL
 int evrpc_hook_find_meta(void *ctx, const char *key,
     void **data, size_t *data_size);
 
@@ -547,6 +571,8 @@ int evrpc_hook_find_meta(void *ctx, const char *key,
 
 
 
+
+EVENT2_EXPORT_SYMBOL
 struct evhttp_connection *evrpc_hook_get_connection(void *ctx);
 
 
@@ -556,6 +582,7 @@ struct evhttp_connection *evrpc_hook_get_connection(void *ctx);
 
 
 
+EVENT2_EXPORT_SYMBOL
 int evrpc_send_request_generic(struct evrpc_pool *pool,
     void *request, void *reply,
     void (*cb)(struct evrpc_status *, void *, void *, void *),
@@ -572,8 +599,8 @@ int evrpc_send_request_generic(struct evrpc_pool *pool,
 
 
 
-int
-evrpc_register_generic(struct evrpc_base *base, const char *name,
+EVENT2_EXPORT_SYMBOL
+int evrpc_register_generic(struct evrpc_base *base, const char *name,
     void (*callback)(struct evrpc_req_generic *, void *), void *cbarg,
     void *(*req_new)(void *), void *req_new_arg, void (*req_free)(void *),
     int (*req_unmarshal)(void *, struct evbuffer *),
@@ -582,9 +609,12 @@ evrpc_register_generic(struct evrpc_base *base, const char *name,
     void (*rpl_marshal)(struct evbuffer *, void *));
 
 
+EVENT2_EXPORT_SYMBOL
 struct evrpc_pool* evrpc_request_get_pool(struct evrpc_request_wrapper *ctx);
+EVENT2_EXPORT_SYMBOL
 void evrpc_request_set_pool(struct evrpc_request_wrapper *ctx,
     struct evrpc_pool *pool);
+EVENT2_EXPORT_SYMBOL
 void evrpc_request_set_cb(struct evrpc_request_wrapper *ctx,
     void (*cb)(struct evrpc_status*, void *request, void *reply, void *arg),
     void *cb_arg);

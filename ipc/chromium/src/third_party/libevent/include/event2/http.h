@@ -81,6 +81,7 @@ struct evdns_base;
 
 
 
+
 EVENT2_EXPORT_SYMBOL
 struct evhttp *evhttp_new(struct event_base *base);
 
@@ -518,6 +519,7 @@ enum evhttp_request_kind { EVHTTP_REQUEST, EVHTTP_RESPONSE };
 
 
 
+
 EVENT2_EXPORT_SYMBOL
 struct evhttp_connection *evhttp_connection_base_bufferevent_new(
 	struct event_base *base, struct evdns_base *dnsbase, struct bufferevent* bev, const char *address, ev_uint16_t port);
@@ -625,6 +627,7 @@ void evhttp_request_set_on_complete_cb(struct evhttp_request *req,
 
 EVENT2_EXPORT_SYMBOL
 void evhttp_request_free(struct evhttp_request *req);
+
 
 
 

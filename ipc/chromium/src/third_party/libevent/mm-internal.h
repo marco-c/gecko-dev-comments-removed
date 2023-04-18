@@ -43,6 +43,7 @@ extern "C" {
 
 
 
+EVENT2_EXPORT_SYMBOL
 void *event_mm_malloc_(size_t sz);
 
 
@@ -53,6 +54,7 @@ void *event_mm_malloc_(size_t sz);
 
 
 
+EVENT2_EXPORT_SYMBOL
 void *event_mm_calloc_(size_t count, size_t size);
 
 
@@ -63,9 +65,12 @@ void *event_mm_calloc_(size_t count, size_t size);
 
 
 
+EVENT2_EXPORT_SYMBOL
 char *event_mm_strdup_(const char *str);
 
+EVENT2_EXPORT_SYMBOL
 void *event_mm_realloc_(void *p, size_t sz);
+EVENT2_EXPORT_SYMBOL
 void event_mm_free_(void *p);
 #define mm_malloc(sz) event_mm_malloc_(sz)
 #define mm_calloc(count, size) event_mm_calloc_((count), (size))

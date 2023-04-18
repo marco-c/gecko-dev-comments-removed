@@ -91,8 +91,9 @@ typedef void (*evbuffer_cb)(struct evbuffer *buffer, size_t old_len, size_t new_
 
 
 
+
 EVENT2_EXPORT_SYMBOL
-void evbuffer_setcb(struct evbuffer *buffer, evbuffer_cb cb, void *cbarg);
+int evbuffer_setcb(struct evbuffer *buffer, evbuffer_cb cb, void *cbarg);
 
 
 

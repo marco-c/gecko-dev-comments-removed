@@ -1,8 +1,8 @@
-# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
-# vim: set filetype=python:
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
 
 libevent_path_prefix = '.'
 include(libevent_path_prefix + '/libeventcommon.mozbuild')
@@ -16,13 +16,13 @@ if CONFIG['MOZ_SYSTEM_LIBEVENT']:
 UNIFIED_SOURCES += [
     'libevent/buffer.c',
     'libevent/bufferevent.c',
+    'libevent/bufferevent_filter.c',
     'libevent/bufferevent_ratelim.c',
     'libevent/bufferevent_sock.c',
     'libevent/evdns.c',
     'libevent/event.c',
     'libevent/event_tagging.c',
     'libevent/evmap.c',
-    'libevent/evrpc.c',
     'libevent/evthread.c',
     'libevent/evthread_pthread.c',
     'libevent/evutil.c',
@@ -35,6 +35,11 @@ UNIFIED_SOURCES += [
     'libevent/select.c',
     'libevent/signal.c',
     'libevent/strlcpy.c',
+]
+
+SOURCES += [
+    'libevent/bufferevent_pair.c', 
+    'libevent/evrpc.c',            
 ]
 
 if os_macosx or os_bsd:
@@ -57,7 +62,7 @@ if os_solaris:
         'libevent/evport.c',
     ]
 
-# We allow warnings for third-party code that can be updated from upstream.
+
 AllowCompilerWarnings()
 
 Library('libevent')

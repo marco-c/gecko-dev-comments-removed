@@ -223,9 +223,6 @@
 
 
 
-
-
-
 #define EVENT__HAVE_SYS_STAT_H 1
 
 
@@ -274,7 +271,7 @@
 
 
 
-#define EVENT__NUMERIC_VERSION 0x02010800
+#define EVENT__NUMERIC_VERSION 0x02010c00
 
 
 #define EVENT__PACKAGE "libevent"
@@ -325,28 +322,21 @@
 #endif
 
 
-#define EVENT__STDC_HEADERS 1
+#ifdef _WIN64
+#define EVENT__SIZEOF_TIME_T 8
+#else
+#define EVENT__SIZEOF_TIME_T 4
+#endif
 
 
 #define EVENT__TIME_WITH_SYS_TIME 1
 
 
-#define EVENT__VERSION "2.1.8-stable"
-
-
-#define EVENT____func__ __FUNCTION__
+#define EVENT__VERSION "2.1.12-stable"
 
 
 
-
-
-
-#ifndef _EVENT___cplusplus
 #define EVENT__inline __inline
-#endif
-
-
-
 
 
 

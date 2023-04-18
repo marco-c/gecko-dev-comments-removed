@@ -694,9 +694,6 @@ void event_base_free(struct event_base *);
 
 
 
-
-
-
 EVENT2_EXPORT_SYMBOL
 void event_base_free_nofinalize(struct event_base *);
 
@@ -945,9 +942,6 @@ int event_base_got_break(struct event_base *);
 
 
 
-
-
-
 #define EV_FINALIZE     0x40
 
 
@@ -965,9 +959,11 @@ int event_base_got_break(struct event_base *);
 
 
 
+
+
 #define evtimer_assign(ev, b, cb, arg) \
 	event_assign((ev), (b), -1, 0, (cb), (arg))
-#define evtimer_new(b, cb, arg)	       event_new((b), -1, 0, (cb), (arg))
+#define evtimer_new(b, cb, arg)		event_new((b), -1, 0, (cb), (arg))
 #define evtimer_add(ev, tv)		event_add((ev), (tv))
 #define evtimer_del(ev)			event_del(ev)
 #define evtimer_pending(ev, tv)		event_pending((ev), EV_TIMEOUT, (tv))
@@ -988,6 +984,20 @@ int event_base_got_break(struct event_base *);
 #define evsignal_del(ev)		event_del(ev)
 #define evsignal_pending(ev, tv)	event_pending((ev), EV_SIGNAL, (tv))
 #define evsignal_initialized(ev)	event_initialized(ev)
+
+
+
+
+
+
+
+
+
+#define evuser_new(b, cb, arg)		event_new((b), -1, 0, (cb), (arg))
+#define evuser_del(ev)			event_del(ev)
+#define evuser_pending(ev, tv)		event_pending((ev), 0, (tv))
+#define evuser_initialized(ev)		event_initialized(ev)
+#define evuser_trigger(ev)		event_active((ev), 0, 0)
 
 
 
@@ -1133,14 +1143,7 @@ void event_free(struct event *);
 
 
 
-
-
-
-
 typedef void (*event_finalize_callback_fn)(struct event *, void *);
-
-
-
 
 
 
@@ -1260,14 +1263,8 @@ int event_del(struct event *);
 
 
 
-
-
-
 EVENT2_EXPORT_SYMBOL
 int event_del_noblock(struct event *ev);
-
-
-
 
 
 
