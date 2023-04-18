@@ -76,20 +76,24 @@ auto PreferenceSheet::PrefsKindFor(const Document& aDoc) -> PrefsKind {
   return PrefsKind::Content;
 }
 
-static bool UseAccessibilityTheme(bool aIsChrome) {
-  return !aIsChrome &&
-         !!LookAndFeel::GetInt(LookAndFeel::IntID::UseAccessibilityTheme, 0);
-}
-
-static bool UseDocumentColors(bool aIsChrome, bool aUseAcccessibilityTheme) {
+static bool UseDocumentColors(bool aUseAcccessibilityTheme) {
   switch (StaticPrefs::browser_display_document_color_use()) {
     case 1:
       return true;
     case 2:
-      return aIsChrome;
+      return false;
     default:
       return !aUseAcccessibilityTheme;
   }
+}
+
+static bool UseStandinsForNativeColors() {
+  return nsContentUtils::ShouldResistFingerprinting(
+             "we want to have consistent colors across the browser if RFP is "
+             "enabled, so we check the global preference"
+             "not excluding chrome browsers or webpages, so we call the legacy "
+             "RFP function to prevent that") ||
+         StaticPrefs::ui_use_standins_for_native_colors();
 }
 
 void PreferenceSheet::Prefs::LoadColors(bool aIsLight) {
@@ -102,13 +106,6 @@ void PreferenceSheet::Prefs::LoadColors(bool aIsLight) {
     std::swap(colors.mDefault, colors.mDefaultBackground);
   }
 
-  const bool useStandins = nsContentUtils::UseStandinsForNativeColors();
-  
-  
-  
-  
-  const bool usePrefColors = !useStandins && !mIsChrome &&
-                             !StaticPrefs::browser_display_use_system_colors();
   const auto scheme = aIsLight ? ColorScheme::Light : ColorScheme::Dark;
 
   
@@ -119,13 +116,16 @@ void PreferenceSheet::Prefs::LoadColors(bool aIsLight) {
   GetColor("browser.active_color", scheme, colors.mActiveLink);
   GetColor("browser.visited_color", scheme, colors.mVisitedLink);
 
-  if (usePrefColors) {
+  
+  
+  
+  if (mUsePrefColors && !mUseStandins) {
     GetColor("browser.display.background_color", scheme,
              colors.mDefaultBackground);
     GetColor("browser.display.foreground_color", scheme, colors.mDefault);
   } else {
     using ColorID = LookAndFeel::ColorID;
-    const auto standins = LookAndFeel::UseStandins(useStandins);
+    const auto standins = LookAndFeel::UseStandins(mUseStandins);
     colors.mDefault = LookAndFeel::Color(ColorID::Windowtext, scheme, standins,
                                          colors.mDefault);
     colors.mDefaultBackground = LookAndFeel::Color(
@@ -181,11 +181,49 @@ void PreferenceSheet::Prefs::Load(bool aIsChrome) {
   *this = {};
 
   mIsChrome = aIsChrome;
-  mUseAccessibilityTheme = UseAccessibilityTheme(aIsChrome);
+
+  
+  if (!aIsChrome) {
+    mUseAccessibilityTheme =
+        LookAndFeel::GetInt(LookAndFeel::IntID::UseAccessibilityTheme);
+    mUseDocumentColors = UseDocumentColors(mUseAccessibilityTheme);
+    mUsePrefColors = !StaticPrefs::browser_display_use_system_colors();
+    mUseStandins = UseStandinsForNativeColors();
+  }
 
   LoadColors(true);
   LoadColors(false);
-  mUseDocumentColors = UseDocumentColors(aIsChrome, mUseAccessibilityTheme);
+
+  mColorSchemeChoice = [&] {
+    
+    
+    if (mUseDocumentColors) {
+      return ColorSchemeChoice::Standard;
+    }
+#ifdef XP_WIN
+    
+    
+    
+    if (mUseAccessibilityTheme) {
+      mMustUseLightColorSet = true;
+      return ColorSchemeChoice::Light;
+    }
+#endif
+    
+    
+    
+    if (mUsePrefColors) {
+      
+      
+      mMustUseLightColorSet = true;
+      return LookAndFeel::IsDarkColor(mLightColors.mDefaultBackground)
+                 ? ColorSchemeChoice::Dark
+                 : ColorSchemeChoice::Light;
+    }
+    
+    
+    return ColorSchemeChoice::UserPreferred;
+  }();
 }
 
 void PreferenceSheet::Initialize() {
@@ -206,7 +244,9 @@ void PreferenceSheet::Initialize() {
     
     
     
+    
     sPrintPrefs.mLightColors = Prefs().mLightColors;
+    sPrintPrefs.mUseStandins = true;
   }
 
   nsAutoString useDocumentColorPref;
