@@ -25,9 +25,6 @@
 
 
 
-
-
-
 "use strict";
 
 const { AppConstants } = ChromeUtils.import(

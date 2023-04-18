@@ -3448,14 +3448,6 @@ nsCString nsIFile::HumanReadablePath() {
 }
 
 NS_IMETHODIMP
-nsLocalFile::GetNativeCanonicalPath(nsACString& aResult) {
-  NS_WARNING("This method is lossy. Use GetCanonicalPath !");
-  EnsureShortPath();
-  NS_CopyUnicodeToNative(mShortWorkingPath, aResult);
-  return NS_OK;
-}
-
-NS_IMETHODIMP
 nsLocalFile::CopyToNative(nsIFile* aNewParentDir, const nsACString& aNewName) {
   
   CHECK_mWorkingPath();
