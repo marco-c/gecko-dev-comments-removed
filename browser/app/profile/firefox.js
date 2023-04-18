@@ -569,6 +569,9 @@ pref("browser.search.separatePrivateDefault.ui.banner.max", 0);
 
 pref("browser.privatebrowsing.vpnpromourl", "https://vpn.mozilla.org/?utm_source=firefox-browser&utm_medium=firefox-%CHANNEL%-browser&utm_campaign=private-browsing-vpn-link");
 
+
+pref("browser.privacySegmentation.enabled", false);
+
 pref("browser.sessionhistory.max_entries", 50);
 
 
