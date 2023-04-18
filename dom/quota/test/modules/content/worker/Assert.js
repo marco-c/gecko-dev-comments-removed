@@ -1,0 +1,14 @@
+
+
+
+
+
+const Assert = {
+  ok(value, message) {
+    postMessage({
+      op: "ok",
+      value: !!value,
+      message,
+    });
+  },
+};

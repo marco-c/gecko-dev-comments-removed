@@ -1,0 +1,13 @@
+
+
+
+
+"use strict";
+
+module.exports = {
+  globals: {
+    Assert: true,
+    exported_symbols: true,
+    require_module: true,
+  },
+};

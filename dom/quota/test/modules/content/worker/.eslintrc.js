@@ -1,0 +1,21 @@
+
+
+
+
+
+"use strict";
+
+module.exports = {
+  env: {
+    worker: true,
+  },
+
+  overrides: [
+    {
+      files: ["Assert.js", "ModuleLoader.js"],
+      parserOptions: {
+        sourceType: "script",
+      },
+    },
+  ],
+};

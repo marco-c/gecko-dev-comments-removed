@@ -1,0 +1,11 @@
+
+
+
+
+
+
+export const Assert = {
+  ok(value, message) {
+    ok(value, message);
+  },
+};

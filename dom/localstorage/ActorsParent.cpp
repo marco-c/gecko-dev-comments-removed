@@ -8526,6 +8526,15 @@ nsresult QuotaClient::AboutToClearOrigins(
     return NS_OK;
   }
 
+  
+  
+  
+  
+  if (aOriginScope.IsOrigin() &&
+      aOriginScope.GetOrigin() == QuotaManager::GetOriginForChrome()) {
+    return NS_OK;
+  }
+
   const bool shadowWrites = gShadowWrites;
 
   QM_TRY_INSPECT(const auto& archivedOriginScope,

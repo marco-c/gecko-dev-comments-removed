@@ -4,6 +4,8 @@
 
 
 
+TEST_DIRS += ["test"]
+
 EXPORTS.mozilla.dom += [
     "FileSystemDirectoryHandle.h",
     "FileSystemDirectoryIterator.h",
