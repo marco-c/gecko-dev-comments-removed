@@ -18,13 +18,19 @@ use neqo_common::{qdebug, Datagram};
 use std::mem;
 use test_fixture::{self, now};
 
-fn check_discarded(peer: &mut Connection, pkt: Datagram, dropped: usize, dups: usize) {
+fn check_discarded(
+    peer: &mut Connection,
+    pkt: Datagram,
+    response: bool,
+    dropped: usize,
+    dups: usize,
+) {
     
     mem::drop(peer.process_output(now()));
 
     let before = peer.stats();
     let out = peer.process(Some(pkt), now());
-    assert!(out.as_dgram_ref().is_none());
+    assert_eq!(out.as_dgram_ref().is_some(), response);
     let after = peer.stats();
     assert_eq!(dropped, after.dropped_rx - before.dropped_rx);
     assert_eq!(dups, after.dups_rx - before.dups_rx);
@@ -64,7 +70,8 @@ fn discarded_initial_keys() {
     
     
     
-    check_discarded(&mut client, init_pkt_s.unwrap(), 2, 1);
+    
+    check_discarded(&mut client, init_pkt_s.unwrap(), true, 2, 1);
 
     assert!(maybe_authenticate(&mut client));
 
@@ -72,7 +79,7 @@ fn discarded_initial_keys() {
     
     
     
-    check_discarded(&mut server, init_pkt_c.clone().unwrap(), 1, 1);
+    check_discarded(&mut server, init_pkt_c.clone().unwrap(), false, 1, 1);
 
     qdebug!("---- client: SH..FIN -> FIN");
     let out = client.process(None, now()).dgram();
@@ -87,7 +94,7 @@ fn discarded_initial_keys() {
     
     
     
-    check_discarded(&mut server, init_pkt_c.unwrap(), 1, 0);
+    check_discarded(&mut server, init_pkt_c.unwrap(), false, 1, 0);
 }
 
 #[test]
@@ -200,7 +207,7 @@ fn key_update_consecutive() {
 
     
     
-    check_discarded(&mut client, dgram, 1, 0);
+    check_discarded(&mut client, dgram, false, 1, 0);
 }
 
 

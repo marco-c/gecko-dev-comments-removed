@@ -27,7 +27,7 @@ use std::ops::Range;
 use std::rc::Rc;
 
 
-pub fn default_server() -> Server {
+pub fn new_server(params: ConnectionParameters) -> Server {
     Server::new(
         now(),
         test_fixture::DEFAULT_KEYS,
@@ -35,9 +35,14 @@ pub fn default_server() -> Server {
         test_fixture::anti_replay(),
         Box::new(AllowZeroRtt {}),
         Rc::new(RefCell::new(CountingConnectionIdGenerator::default())),
-        ConnectionParameters::default(),
+        params,
     )
     .expect("should create a server")
+}
+
+
+pub fn default_server() -> Server {
+    new_server(ConnectionParameters::default())
 }
 
 
@@ -109,6 +114,7 @@ pub fn decode_initial_header(dgram: &Datagram) -> (&[u8], &[u8], &[u8], &[u8]) {
         dec.decode(payload_len).unwrap(),
     )
 }
+
 
 
 #[must_use]
@@ -184,15 +190,9 @@ pub fn apply_header_protection(hp: &HpKey, packet: &mut [u8], pn_bytes: Range<us
     }
 }
 
-pub fn get_ticket(server: &mut Server) -> ResumptionToken {
-    let mut client = default_client();
-    let mut server_conn = connect(&mut client, server);
 
-    server_conn.borrow_mut().send_ticket(now(), &[]).unwrap();
-    let dgram = server.process(None, now()).dgram();
-    client.process_input(dgram.unwrap(), now()); 
-
-    let ticket = client
+pub fn find_ticket(client: &mut Connection) -> ResumptionToken {
+    client
         .events()
         .find_map(|e| {
             if let ConnectionEvent::ResumptionToken(token) = e {
@@ -201,7 +201,18 @@ pub fn get_ticket(server: &mut Server) -> ResumptionToken {
                 None
             }
         })
-        .unwrap();
+        .unwrap()
+}
+
+
+pub fn generate_ticket(server: &mut Server) -> ResumptionToken {
+    let mut client = default_client();
+    let mut server_conn = connect(&mut client, server);
+
+    server_conn.borrow_mut().send_ticket(now(), &[]).unwrap();
+    let dgram = server.process(None, now()).dgram();
+    client.process_input(dgram.unwrap(), now()); 
+    let ticket = find_ticket(&mut client);
 
     
     client.close(now(), 0, "got a ticket");
