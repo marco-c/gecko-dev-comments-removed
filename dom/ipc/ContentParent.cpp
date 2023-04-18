@@ -2513,7 +2513,7 @@ bool ContentParent::BeginSubprocessLaunch(ProcessPriority aPriority) {
   
   
   mPrefSerializer = MakeUnique<mozilla::ipc::SharedPreferenceSerializer>(
-      ShouldSyncPreference);
+      ShouldSanitizePreference);
   if (!mPrefSerializer->SerializeToSharedMemory()) {
     NS_WARNING("SharedPreferenceSerializer::SerializeToSharedMemory failed");
     MarkAsDead();
@@ -3641,8 +3641,8 @@ ContentParent::Observe(nsISupports* aSubject, const char* aTopic,
     NS_LossyConvertUTF16toASCII strData(aData);
 
     
-    if (!ShouldSyncPreference(strData.Data(),
-                               false)) {
+    if (ShouldSanitizePreference(strData.Data(),
+                                  false)) {
       return NS_OK;
     }
 
