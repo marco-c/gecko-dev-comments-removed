@@ -7943,18 +7943,17 @@ void CodeGenerator::visitWasmRegisterResult(LWasmRegisterResult* lir) {
 }
 
 void CodeGenerator::visitWasmCall(LWasmCall* lir) {
-  MWasmCall* mir = lir->mir();
+  MWasmCallBase* mir = lir->mir();
 
 #ifdef ENABLE_WASM_EXCEPTIONS
   
   
   bool inTry = mir->inTry();
-  size_t tryNoteIndex = 0;
-  if (inTry && !masm.wasmStartTry(&tryNoteIndex)) {
-    
-    
-    
-    inTry = false;
+  if (inTry) {
+    size_t tryNoteIndex = mir->tryNoteIndex();
+    wasm::WasmTryNoteVector& tryNotes = masm.tryNotes();
+    wasm::WasmTryNote& tryNote = tryNotes[tryNoteIndex];
+    tryNote.begin = masm.currentOffset();
   }
 #endif
 
@@ -8048,23 +8047,49 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
 #ifdef ENABLE_WASM_EXCEPTIONS
   if (inTry) {
     
-    
-    
-    
-    
-    
-    
-
+    size_t tryNoteIndex = mir->tryNoteIndex();
     wasm::WasmTryNoteVector& tryNotes = masm.tryNotes();
     wasm::WasmTryNote& tryNote = tryNotes[tryNoteIndex];
     tryNote.end = masm.currentOffset();
-    tryNote.entryPoint = tryNote.end;
-    tryNote.framePushed = masm.framePushed();
+    MOZ_ASSERT(tryNote.end > tryNote.begin);
 
     
-    MOZ_ASSERT(tryNote.end > tryNote.begin);
+    
+    LBlock* block = lir->block();
+    MOZ_RELEASE_ASSERT(*block->rbegin() == lir ||
+                       (block->rbegin()->isWasmCallIndirectAdjunctSafepoint() &&
+                        *(++block->rbegin()) == lir));
+
+    
+    jumpToBlock(lir->mirCatchable()->getSuccessor(
+        MWasmCallCatchable::FallthroughBranchIndex));
   }
 #endif
+}
+
+void CodeGenerator::visitWasmCallLandingPrePad(LWasmCallLandingPrePad* lir) {
+  LBlock* block = lir->block();
+  MWasmCallLandingPrePad* mir = lir->mir();
+  MBasicBlock* mirBlock = mir->block();
+  MBasicBlock* callMirBlock = mir->callBlock();
+
+  
+  
+  MOZ_RELEASE_ASSERT(mirBlock == callMirBlock->getSuccessor(
+                                     MWasmCallCatchable::PrePadBranchIndex));
+
+  
+  
+  MOZ_RELEASE_ASSERT(*block->begin() == lir || (block->begin()->isMoveGroup() &&
+                                                *(++block->begin()) == lir));
+
+  wasm::WasmTryNoteVector& tryNotes = masm.tryNotes();
+  wasm::WasmTryNote& tryNote = tryNotes[mir->tryNoteIndex()];
+  
+  
+  
+  tryNote.entryPoint = block->label()->offset();
+  tryNote.framePushed = masm.framePushed();
 }
 
 void CodeGenerator::visitWasmCallIndirectAdjunctSafepoint(

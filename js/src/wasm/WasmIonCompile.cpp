@@ -161,123 +161,6 @@ struct Control {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 struct IonCompilePolicy {
   
   using Value = MDefinition*;
@@ -301,7 +184,7 @@ class CallCompileState {
   WasmABIArgGenerator abi_;
 
   
-  MWasmCall::Args regArgs_;
+  MWasmCallBase::Args regArgs_;
 
   
   ABIArg instanceArg_;
@@ -351,10 +234,13 @@ class FunctionCompiler {
   MWasmParameter* tlsPointer_;
   MWasmParameter* stackResultPointer_;
 
+  
+  WasmTryNoteVector& tryNotes_;
+
  public:
   FunctionCompiler(const ModuleEnvironment& moduleEnv, Decoder& decoder,
                    const FuncCompileInput& func, const ValTypeVector& locals,
-                   MIRGenerator& mirGen)
+                   MIRGenerator& mirGen, WasmTryNoteVector& tryNotes)
       : moduleEnv_(moduleEnv),
         iter_(moduleEnv, decoder),
         func_(func),
@@ -369,7 +255,8 @@ class FunctionCompiler {
         loopDepth_(0),
         blockDepth_(0),
         tlsPointer_(nullptr),
-        stackResultPointer_(nullptr) {}
+        stackResultPointer_(nullptr),
+        tryNotes_(tryNotes) {}
 
   const ModuleEnvironment& moduleEnv() const { return moduleEnv_; }
 
@@ -1864,14 +1751,14 @@ class FunctionCompiler {
             MWrapInt64ToInt32::New(alloc(), argDef,  false);
         curBlock_->add(mirHigh);
         return call->regArgs_.append(
-                   MWasmCall::Arg(AnyRegister(arg.gpr64().low), mirLow)) &&
+                   MWasmCallBase::Arg(AnyRegister(arg.gpr64().low), mirLow)) &&
                call->regArgs_.append(
-                   MWasmCall::Arg(AnyRegister(arg.gpr64().high), mirHigh));
+                   MWasmCallBase::Arg(AnyRegister(arg.gpr64().high), mirHigh));
       }
 #endif
       case ABIArg::GPR:
       case ABIArg::FPU:
-        return call->regArgs_.append(MWasmCall::Arg(arg.reg(), argDef));
+        return call->regArgs_.append(MWasmCallBase::Arg(arg.reg(), argDef));
       case ABIArg::Stack: {
         auto* mir =
             MWasmStackArg::New(alloc(), arg.offsetFromArgBase(), argDef);
@@ -1954,7 +1841,7 @@ class FunctionCompiler {
     }
 
     if (!call->regArgs_.append(
-            MWasmCall::Arg(AnyRegister(InstanceReg), tlsPointer_))) {
+            MWasmCallBase::Arg(AnyRegister(InstanceReg), tlsPointer_))) {
       return false;
     }
 
@@ -2076,6 +1963,35 @@ class FunctionCompiler {
     return true;
   }
 
+  bool catchableCall(const CallSiteDesc& desc, const CalleeDesc& callee, const MWasmCallBase::Args& args, const ArgTypeVector& argTypes, MDefinition* index = nullptr) {
+    MWasmCallTryDesc tryDesc;
+#ifdef ENABLE_WASM_EXCEPTIONS
+    if (!beginTryCall(&tryDesc)) {
+      return false;
+    }
+#endif
+
+    MInstruction* ins;
+    if (tryDesc.inTry) {
+      ins = MWasmCallCatchable::New(alloc(), desc, callee, args,
+                                    StackArgAreaSizeUnaligned(argTypes), tryDesc, index);
+    } else {
+      ins = MWasmCallUncatchable::New(alloc(), desc, callee, args,
+                                      StackArgAreaSizeUnaligned(argTypes), index);
+    }
+    if (!ins) {
+      return false;
+    }
+    curBlock_->add(ins);
+
+#ifdef ENABLE_WASM_EXCEPTIONS
+    if (!finishTryCall(&tryDesc)) {
+      return false;
+    }
+#endif
+    return true;
+  }
+
   bool callDirect(const FuncType& funcType, uint32_t funcIndex,
                   uint32_t lineOrBytecode, const CallCompileState& call,
                   DefVector* results) {
@@ -2087,20 +2003,10 @@ class FunctionCompiler {
     ResultType resultType = ResultType::Vector(funcType.results());
     auto callee = CalleeDesc::function(funcIndex);
     ArgTypeVector args(funcType);
-    bool inTry = false;
-#ifdef ENABLE_WASM_EXCEPTIONS
-    
-    
-    inTry = inTryCode();
-#endif
-    auto* ins = MWasmCall::New(alloc(), desc, callee, call.regArgs_,
-                               StackArgAreaSizeUnaligned(args), inTry);
-    if (!ins) {
+
+    if (!catchableCall(desc, callee, call.regArgs_, args)) {
       return false;
     }
-
-    curBlock_->add(ins);
-
     return collectCallResults(resultType, call.stackResultArea_, results);
   }
 
@@ -2139,20 +2045,10 @@ class FunctionCompiler {
     CallSiteDesc desc(lineOrBytecode, CallSiteDesc::Indirect);
     ArgTypeVector args(funcType);
     ResultType resultType = ResultType::Vector(funcType.results());
-    bool inTry = false;
-#ifdef ENABLE_WASM_EXCEPTIONS
-    
-    
-    inTry = inTryCode();
-#endif
-    auto* ins = MWasmCall::New(alloc(), desc, callee, call.regArgs_,
-                               StackArgAreaSizeUnaligned(args), inTry, index);
-    if (!ins) {
+
+    if (!catchableCall(desc, callee, call.regArgs_, args, index)) {
       return false;
     }
-
-    curBlock_->add(ins);
-
     return collectCallResults(resultType, call.stackResultArea_, results);
   }
 
@@ -2167,20 +2063,10 @@ class FunctionCompiler {
     auto callee = CalleeDesc::import(globalDataOffset);
     ArgTypeVector args(funcType);
     ResultType resultType = ResultType::Vector(funcType.results());
-    bool inTry = false;
-#ifdef ENABLE_WASM_EXCEPTIONS
-    
-    
-    inTry = inTryCode();
-#endif
-    auto* ins = MWasmCall::New(alloc(), desc, callee, call.regArgs_,
-                               StackArgAreaSizeUnaligned(args), inTry);
-    if (!ins) {
+
+    if (!catchableCall(desc, callee, call.regArgs_, args)) {
       return false;
     }
-
-    curBlock_->add(ins);
-
     return collectCallResults(resultType, call.stackResultArea_, results);
   }
 
@@ -2196,8 +2082,8 @@ class FunctionCompiler {
 
     CallSiteDesc desc(lineOrBytecode, CallSiteDesc::Symbolic);
     auto callee = CalleeDesc::builtin(builtin.identity);
-    auto* ins = MWasmCall::New(alloc(), desc, callee, call.regArgs_,
-                               StackArgAreaSizeUnaligned(builtin), false);
+    auto* ins = MWasmCallUncatchable::New(alloc(), desc, callee, call.regArgs_,
+                                          StackArgAreaSizeUnaligned(builtin));
     if (!ins) {
       return false;
     }
@@ -2220,7 +2106,7 @@ class FunctionCompiler {
     }
 
     CallSiteDesc desc(lineOrBytecode, CallSiteDesc::Symbolic);
-    auto* ins = MWasmCall::NewBuiltinInstanceMethodCall(
+    auto* ins = MWasmCallUncatchable::NewBuiltinInstanceMethodCall(
         alloc(), desc, builtin.identity, builtin.failureMode, call.instanceArg_,
         call.regArgs_, StackArgAreaSizeUnaligned(builtin));
     if (!ins) {
@@ -2854,51 +2740,48 @@ class FunctionCompiler {
     return true;
   }
 
-  bool checkPendingExceptionAndBranch(uint32_t relativeTryDepth) {
+  bool beginTryCall(MWasmCallTryDesc* call) {
+    call->inTry = inTryBlock(&call->relativeTryDepth);
+    if (!call->inTry) {
+      return true;
+    }
     
-    
-
-    MOZ_ASSERT(inTryCode());
-
-    
-    MBasicBlock* fallthroughBlock = nullptr;
-    if (!newBlock(curBlock_, &fallthroughBlock)) {
+    if (!tryNotes_.append(WasmTryNote())) {
       return false;
     }
-    MBasicBlock* prePadBlock = nullptr;
-    if (!newBlock(curBlock_, &prePadBlock)) {
-      return false;
+    call->tryNoteIndex = tryNotes_.length() - 1;
+    
+    return newBlock(curBlock_, &call->fallthroughBlock) &&
+           newBlock(curBlock_, &call->prePadBlock);
+  }
+
+  bool finishTryCall(MWasmCallTryDesc* call) {
+    if (!call->inTry) {
+      return true;
     }
+
+    
+    MBasicBlock* callBlock = curBlock_;
+    curBlock_ = call->prePadBlock;
+
+    
+    curBlock_->add(
+        MWasmCallLandingPrePad::New(alloc(), callBlock, call->tryNoteIndex));
+    
     MDefinition* pendingException = loadPendingException();
-    MDefinition* nullVal = nullRefConstant();
-    
-    MDefinition* pendingExceptionIsNotNull = compare(
-        pendingException, nullVal, JSOp::Ne, MCompare::Compare_RefOrNull);
-    MTest* branchIfNull = MTest::New(alloc(), pendingExceptionIsNotNull,
-                                     prePadBlock, fallthroughBlock);
-    curBlock_->end(branchIfNull);
-
-    
-    curBlock_ = prePadBlock;
     
     MDefinition* pendingTag = loadPendingExceptionTag();
     
     clearPendingExceptionState();
     
-    if (!endWithPadPatch(prePadBlock, pendingException, pendingTag,
-                         relativeTryDepth)) {
+    if (!endWithPadPatch(call->prePadBlock, pendingException, pendingTag,
+                         call->relativeTryDepth)) {
       return false;
     }
 
     
-    curBlock_ = fallthroughBlock;
+    curBlock_ = call->fallthroughBlock;
     return true;
-  }
-
-  bool maybeCheckPendingExceptionAfterCall() {
-    uint32_t relativeTryDepth;
-    return !inTryBlock(&relativeTryDepth) ||
-           checkPendingExceptionAndBranch(relativeTryDepth);
   }
 
   
@@ -3909,12 +3792,6 @@ static bool EmitCall(FunctionCompiler& f, bool asmJSFuncDef) {
     }
   }
 
-#ifdef ENABLE_WASM_EXCEPTIONS
-  if (!f.maybeCheckPendingExceptionAfterCall()) {
-    return false;
-  }
-#endif
-
   f.iter().setResults(results.length(), results);
   return true;
 }
@@ -3954,12 +3831,6 @@ static bool EmitCallIndirect(FunctionCompiler& f, bool oldStyle) {
                       &results)) {
     return false;
   }
-
-#ifdef ENABLE_WASM_EXCEPTIONS
-  if (!f.maybeCheckPendingExceptionAfterCall()) {
-    return false;
-  }
-#endif
 
   f.iter().setResults(results.length(), results);
   return true;
@@ -7042,7 +6913,7 @@ bool wasm::IonCompileFunctions(const ModuleEnvironment& moduleEnv,
 
     
     {
-      FunctionCompiler f(moduleEnv, d, func, locals, mir);
+      FunctionCompiler f(moduleEnv, d, func, locals, mir, masm.tryNotes());
       if (!f.init()) {
         return false;
       }
