@@ -3618,17 +3618,19 @@ void PresShell::DoScrollContentIntoView() {
   bool haveRect = false;
   bool useWholeLineHeightForInlines = data->mContentScrollVAxis.mWhenToScroll !=
                                       WhenToScroll::IfNotFullyVisible;
-  
-  
-  nsIFrame* prevBlock = nullptr;
-  nsAutoLineIterator lines;
-  
-  
-  int32_t curLine = 0;
-  do {
-    AccumulateFrameBounds(container, frame, useWholeLineHeightForInlines,
-                          frameBounds, haveRect, prevBlock, lines, curLine);
-  } while ((frame = frame->GetNextContinuation()));
+  {
+    nsIFrame* prevBlock = nullptr;
+    
+    
+    nsAutoLineIterator lines;
+    
+    
+    int32_t curLine = 0;
+    do {
+      AccumulateFrameBounds(container, frame, useWholeLineHeightForInlines,
+                            frameBounds, haveRect, prevBlock, lines, curLine);
+    } while ((frame = frame->GetNextContinuation()));
+  }
 
   ScrollFrameRectIntoView(container, frameBounds, scrollMargin,
                           data->mContentScrollVAxis, data->mContentScrollHAxis,
