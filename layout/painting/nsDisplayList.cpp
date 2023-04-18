@@ -2957,8 +2957,8 @@ nsDisplayBackgroundImage::~nsDisplayBackgroundImage() {
 }
 
 static nsIFrame* GetBackgroundComputedStyleFrame(nsIFrame* aFrame) {
-  nsIFrame* f;
-  if (!nsCSSRendering::FindBackgroundFrame(aFrame, &f)) {
+  nsIFrame* f = nsCSSRendering::FindBackgroundFrame(aFrame);
+  if (!f) {
     
     
     

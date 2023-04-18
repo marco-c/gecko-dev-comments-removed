@@ -292,8 +292,7 @@ struct nsCSSRendering {
 
 
   static mozilla::ComputedStyle* FindBackground(const nsIFrame* aForFrame);
-  static bool FindBackgroundFrame(const nsIFrame* aForFrame,
-                                  nsIFrame** aBackgroundFrame);
+  static nsIFrame* FindBackgroundFrame(const nsIFrame* aForFrame);
 
   
 
