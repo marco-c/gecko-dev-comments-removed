@@ -721,8 +721,7 @@ void wasm::GenerateFunctionPrologue(MacroAssembler& masm,
   
   if (tier1FuncIndex) {
     Register scratch = ABINonArgReg0;
-    masm.loadPtr(Address(InstanceReg, Instance::offsetOfJumpTable()),
-                 scratch);
+    masm.loadPtr(Address(InstanceReg, Instance::offsetOfJumpTable()), scratch);
     masm.jump(Address(scratch, *tier1FuncIndex * sizeof(uintptr_t)));
   }
 

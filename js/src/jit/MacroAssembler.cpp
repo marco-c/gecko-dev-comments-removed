@@ -3165,8 +3165,7 @@ CodeOffset MacroAssembler::callWithABI(wasm::BytecodeOffset bytecode,
 
   
   if (tlsOffset) {
-    loadPtr(Address(getStackPointer(), *tlsOffset + stackAdjust),
-            InstanceReg);
+    loadPtr(Address(getStackPointer(), *tlsOffset + stackAdjust), InstanceReg);
   } else {
     MOZ_CRASH("tlsOffset is Nothing only for unsupported abi calls.");
   }
@@ -3787,9 +3786,9 @@ std::pair<CodeOffset, uint32_t> MacroAssembler::wasmReserveStackChecked(
 
   reserveStack(amount);
   Label ok;
-  branchStackPtrRhs(
-      Assembler::Below,
-      Address(InstanceReg, wasm::Instance::offsetOfStackLimit()), &ok);
+  branchStackPtrRhs(Assembler::Below,
+                    Address(InstanceReg, wasm::Instance::offsetOfStackLimit()),
+                    &ok);
   wasmTrap(wasm::Trap::StackOverflow, trapOffset);
   CodeOffset trapInsnOffset = CodeOffset(currentOffset());
   bind(&ok);
@@ -3822,13 +3821,13 @@ CodeOffset MacroAssembler::wasmCallImport(const wasm::CallSiteDesc& desc,
   loadWasmGlobalPtr(
       globalDataOffset + offsetof(wasm::FuncImportInstanceData, realm),
       ABINonArgReg1);
-  loadPtr(Address(InstanceReg, wasm::Instance::offsetOfCx()),
-          ABINonArgReg2);
+  loadPtr(Address(InstanceReg, wasm::Instance::offsetOfCx()), ABINonArgReg2);
   storePtr(ABINonArgReg1, Address(ABINonArgReg2, JSContext::offsetOfRealm()));
 
   
-  loadWasmGlobalPtr(globalDataOffset + offsetof(wasm::FuncImportInstanceData, instance),
-                    InstanceReg);
+  loadWasmGlobalPtr(
+      globalDataOffset + offsetof(wasm::FuncImportInstanceData, instance),
+      InstanceReg);
 
   storePtr(InstanceReg,
            Address(getStackPointer(), WasmCalleeInstanceOffsetBeforeCall));
@@ -3953,11 +3952,10 @@ void MacroAssembler::wasmCallIndirect(const wasm::CallSiteDesc& desc,
     if (tableSize.isSome()) {
       branch32(Assembler::Condition::Below, index, Imm32(*tableSize), &ok);
     } else {
-      branch32(
-          Assembler::Condition::Above,
-          Address(InstanceReg, wasm::Instance::offsetOfGlobalArea() +
-                                       callee.tableLengthGlobalDataOffset()),
-          index, &ok);
+      branch32(Assembler::Condition::Above,
+               Address(InstanceReg, wasm::Instance::offsetOfGlobalArea() +
+                                        callee.tableLengthGlobalDataOffset()),
+               index, &ok);
     }
     wasmTrap(wasm::Trap::OutOfBounds, trapOffset);
     bind(&ok);
@@ -4254,8 +4252,7 @@ void MacroAssembler::loadWasmPinnedRegsFromInstance(
     append(wasm::Trap::IndirectCallToNull,
            wasm::TrapSite(currentOffset(), *trapOffset));
   }
-  loadPtr(Address(InstanceReg, wasm::Instance::offsetOfMemoryBase()),
-          HeapReg);
+  loadPtr(Address(InstanceReg, wasm::Instance::offsetOfMemoryBase()), HeapReg);
 #else
   MOZ_ASSERT(!trapOffset);
 #endif

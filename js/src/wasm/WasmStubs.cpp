@@ -821,7 +821,7 @@ static bool GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe,
   masm.loadWasmPinnedRegsFromInstance();
 
   masm.storePtr(InstanceReg, Address(masm.getStackPointer(),
-                                         WasmCalleeInstanceOffsetBeforeCall));
+                                     WasmCalleeInstanceOffsetBeforeCall));
 
   
   
@@ -928,14 +928,12 @@ static void GenerateJitEntryThrow(MacroAssembler& masm, unsigned frameSize) {
   masm.freeStack(frameSize);
   MoveSPForJitABI(masm);
 
-  masm.loadPtr(Address(InstanceReg, Instance::offsetOfCx()),
-               ScratchIonEntry);
+  masm.loadPtr(Address(InstanceReg, Instance::offsetOfCx()), ScratchIonEntry);
   masm.enterFakeExitFrameForWasm(ScratchIonEntry, ScratchIonEntry,
                                  ExitFrameType::WasmGenericJitEntry);
 
-  masm.loadPtr(
-      Address(InstanceReg, Instance::offsetOfJSJitExceptionHandler()),
-      ScratchIonEntry);
+  masm.loadPtr(Address(InstanceReg, Instance::offsetOfJSJitExceptionHandler()),
+               ScratchIonEntry);
   masm.jump(ScratchIonEntry);
 }
 
@@ -1280,7 +1278,7 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
   masm.loadWasmPinnedRegsFromInstance();
 
   masm.storePtr(InstanceReg, Address(masm.getStackPointer(),
-                                         WasmCalleeInstanceOffsetBeforeCall));
+                                     WasmCalleeInstanceOffsetBeforeCall));
 
   
   
@@ -1407,8 +1405,7 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
     if (argsIter->kind() == ABIArg::GPR) {
       masm.movePtr(InstanceReg, argsIter->gpr());
     } else {
-      masm.storePtr(InstanceReg,
-                    Address(sp, argsIter->offsetFromArgBase()));
+      masm.storePtr(InstanceReg, Address(sp, argsIter->offsetFromArgBase()));
     }
     argsIter++;
 
@@ -1602,7 +1599,7 @@ void wasm::GenerateDirectCallFromJit(MacroAssembler& masm, const FuncExport& fe,
   
   masm.movePtr(ImmPtr(&inst), InstanceReg);
   masm.storePtr(InstanceReg, Address(masm.getStackPointer(),
-                                         WasmCalleeInstanceOffsetBeforeCall));
+                                     WasmCalleeInstanceOffsetBeforeCall));
   masm.loadWasmPinnedRegsFromInstance();
 
   
@@ -2323,16 +2320,14 @@ static bool GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi,
   
   Register scratch = ABINonArgReturnReg1;   
   Register scratch2 = ABINonArgReturnReg0;  
-  FillArgumentArrayForJitExit(masm, InstanceReg, funcImportIndex,
-                              fi.funcType(), argOffset, scratch, scratch2,
-                              throwLabel);
+  FillArgumentArrayForJitExit(masm, InstanceReg, funcImportIndex, fi.funcType(),
+                              argOffset, scratch, scratch2, throwLabel);
   argOffset += fi.funcType().args().length() * sizeof(Value);
   MOZ_ASSERT(argOffset == sizeOfThisAndArgs + sizeOfPreFrame + frameAlignExtra);
 
   
   const size_t savedTlsOffset = argOffset;
-  masm.storePtr(InstanceReg,
-                Address(masm.getStackPointer(), savedTlsOffset));
+  masm.storePtr(InstanceReg, Address(masm.getStackPointer(), savedTlsOffset));
 
   
   Register callee = ABINonArgReturnReg0;  
@@ -2390,8 +2385,7 @@ static bool GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi,
   AssertStackAlignment(masm, JitStackAlignment,
                        sizeOfRetAddr + frameAlignExtra);
 
-  masm.loadPtr(Address(masm.getStackPointer(), savedTlsOffset),
-               InstanceReg);
+  masm.loadPtr(Address(masm.getStackPointer(), savedTlsOffset), InstanceReg);
   masm.moveStackPtrTo(FramePointer);
   masm.addPtr(Imm32(masm.framePushed()), FramePointer);
   offsets->untrustedFPEnd = masm.currentOffset();
@@ -2480,9 +2474,8 @@ static bool GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi,
   {
     
     masm.bind(&rectify);
-    masm.loadPtr(
-        Address(InstanceReg, Instance::offsetOfJSJitArgsRectifier()),
-        callee);
+    masm.loadPtr(Address(InstanceReg, Instance::offsetOfJSJitArgsRectifier()),
+                 callee);
     masm.jump(&rejoinBeforeCall);
   }
 

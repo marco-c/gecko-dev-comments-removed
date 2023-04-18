@@ -627,8 +627,8 @@ void BaseCompiler::insertBreakablePoint(CallSiteDesc::Kind kind) {
 #if defined(JS_CODEGEN_X64)
   
   static_assert(Instance::offsetOfDebugTrapHandler() < 128);
-  masm.cmpq(Imm32(0),
-            Operand(Address(InstanceReg, Instance::offsetOfDebugTrapHandler())));
+  masm.cmpq(Imm32(0), Operand(Address(InstanceReg,
+                                      Instance::offsetOfDebugTrapHandler())));
 
   
   Label L;
@@ -645,8 +645,8 @@ void BaseCompiler::insertBreakablePoint(CallSiteDesc::Kind kind) {
 #elif defined(JS_CODEGEN_X86)
   
   static_assert(Instance::offsetOfDebugTrapHandler() < 128);
-  masm.cmpl(Imm32(0),
-            Operand(Address(InstanceReg, Instance::offsetOfDebugTrapHandler())));
+  masm.cmpl(Imm32(0), Operand(Address(InstanceReg,
+                                      Instance::offsetOfDebugTrapHandler())));
 
   
   Label L;
@@ -664,8 +664,8 @@ void BaseCompiler::insertBreakablePoint(CallSiteDesc::Kind kind) {
   ScratchPtr scratch(*this);
   ARMRegister tmp(scratch, 64);
   Label L;
-  masm.Ldr(tmp, MemOperand(
-                    Address(InstanceReg, Instance::offsetOfDebugTrapHandler())));
+  masm.Ldr(tmp, MemOperand(Address(InstanceReg,
+                                   Instance::offsetOfDebugTrapHandler())));
   masm.Cbz(tmp, &L);
   masm.Bl(&debugTrapStub_);
   masm.append(CallSiteDesc(iter_.lastOpcodeOffset(), kind),
@@ -708,7 +708,8 @@ void BaseCompiler::insertBreakpointStub() {
     ScratchPtr scratch(*this);
 
     
-    masm.loadPtr(Address(InstanceReg, Instance::offsetOfDebugFilter()), scratch);
+    masm.loadPtr(Address(InstanceReg, Instance::offsetOfDebugFilter()),
+                 scratch);
 
     
     
@@ -723,7 +724,8 @@ void BaseCompiler::insertBreakpointStub() {
     ScratchPtr scratch(*this);
 
     
-    masm.loadPtr(Address(InstanceReg, Instance::offsetOfDebugFilter()), scratch);
+    masm.loadPtr(Address(InstanceReg, Instance::offsetOfDebugFilter()),
+                 scratch);
     masm.branchTestPtr(Assembler::NonZero, Address(scratch, func_.index / 32),
                        Imm32(1 << (func_.index % 32)), &L);
     masm.abiret();
@@ -739,8 +741,8 @@ void BaseCompiler::insertBreakpointStub() {
 
     ScratchRegisterScope tmp1(masm);
     ScratchI32 tmp2(*this);
-    masm.ma_ldr(DTRAddr(InstanceReg, DtrOffImm(Instance::offsetOfDebugFilter())),
-                tmp1);
+    masm.ma_ldr(
+        DTRAddr(InstanceReg, DtrOffImm(Instance::offsetOfDebugFilter())), tmp1);
     masm.ma_mov(Imm32(func_.index / 32), tmp2);
     masm.ma_ldr(DTRAddr(tmp1, DtrRegImmShift(tmp2, LSL, 0)), tmp2);
     masm.ma_tst(tmp2, Imm32(1 << func_.index % 32), tmp1, Assembler::Always);
@@ -1617,8 +1619,7 @@ void BaseCompiler::consumePendingException(RegRef* exnDst, RegRef* tagDst) {
   RegPtr pendingAddr = RegPtr(PreBarrierReg);
   needPtr(pendingAddr);
   masm.computeEffectiveAddress(
-      Address(InstanceReg, Instance::offsetOfPendingException()),
-      pendingAddr);
+      Address(InstanceReg, Instance::offsetOfPendingException()), pendingAddr);
   *exnDst = needRef();
   masm.loadPtr(Address(pendingAddr, 0), *exnDst);
   emitBarrieredClear(pendingAddr);

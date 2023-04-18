@@ -456,10 +456,10 @@ void LIRGeneratorARM::lowerDivI64(MDiv* div) {
 
 void LIRGeneratorARM::lowerWasmBuiltinDivI64(MWasmBuiltinDivI64* div) {
   if (div->isUnsigned()) {
-    LUDivOrModI64* lir = new (alloc())
-        LUDivOrModI64(useInt64RegisterAtStart(div->lhs()),
-                      useInt64RegisterAtStart(div->rhs()),
-                      useFixedAtStart(div->tls(), InstanceReg));
+    LUDivOrModI64* lir =
+        new (alloc()) LUDivOrModI64(useInt64RegisterAtStart(div->lhs()),
+                                    useInt64RegisterAtStart(div->rhs()),
+                                    useFixedAtStart(div->tls(), InstanceReg));
     defineReturn(lir, div);
     return;
   }
@@ -476,10 +476,10 @@ void LIRGeneratorARM::lowerModI64(MMod* mod) {
 
 void LIRGeneratorARM::lowerWasmBuiltinModI64(MWasmBuiltinModI64* mod) {
   if (mod->isUnsigned()) {
-    LUDivOrModI64* lir = new (alloc())
-        LUDivOrModI64(useInt64RegisterAtStart(mod->lhs()),
-                      useInt64RegisterAtStart(mod->rhs()),
-                      useFixedAtStart(mod->tls(), InstanceReg));
+    LUDivOrModI64* lir =
+        new (alloc()) LUDivOrModI64(useInt64RegisterAtStart(mod->lhs()),
+                                    useInt64RegisterAtStart(mod->rhs()),
+                                    useFixedAtStart(mod->tls(), InstanceReg));
     defineReturn(lir, mod);
     return;
   }
@@ -1083,9 +1083,8 @@ void LIRGeneratorARM::lowerWasmBuiltinTruncateToInt64(
   MDefinition* tls = ins->tls();
   MOZ_ASSERT(opd->type() == MIRType::Double || opd->type() == MIRType::Float32);
 
-  defineReturn(new (alloc())
-                   LWasmTruncateToInt64(useRegisterAtStart(opd),
-                                        useFixedAtStart(tls, InstanceReg)),
+  defineReturn(new (alloc()) LWasmTruncateToInt64(
+                   useRegisterAtStart(opd), useFixedAtStart(tls, InstanceReg)),
                ins);
 }
 

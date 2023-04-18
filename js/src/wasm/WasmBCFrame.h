@@ -544,10 +544,9 @@ class BaseStackFrame final : public BaseStackFrameAllocator {
   void checkStack(Register tmp, BytecodeOffset trapOffset) {
     stackAddOffset_ = masm.sub32FromStackPtrWithPatch(tmp);
     Label ok;
-    masm.branchPtr(
-        Assembler::Below,
-        Address(InstanceReg, wasm::Instance::offsetOfStackLimit()), tmp,
-        &ok);
+    masm.branchPtr(Assembler::Below,
+                   Address(InstanceReg, wasm::Instance::offsetOfStackLimit()),
+                   tmp, &ok);
     masm.wasmTrap(Trap::StackOverflow, trapOffset);
     masm.bind(&ok);
   }
