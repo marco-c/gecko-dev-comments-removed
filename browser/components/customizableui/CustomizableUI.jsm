@@ -1857,12 +1857,27 @@ var CustomizableUIInternal = {
 
       if (aWidget.l10nId) {
         node.setAttribute("data-l10n-id", aWidget.l10nId);
+        if (button != node) {
+          
+          
+          
+          
+          
+          
+          button.setAttribute("data-l10n-id", aWidget.l10nId);
+        }
+
         if (shortcut) {
           node.setAttribute("data-l10n-args", JSON.stringify({ shortcut }));
+          if (button != node) {
+            
+            button.setAttribute("data-l10n-args", JSON.stringify({ shortcut }));
+          }
         }
       } else {
         node.setAttribute("label", this.getLocalizedProperty(aWidget, "label"));
         if (button != node) {
+          
           button.setAttribute("label", node.getAttribute("label"));
         }
 
@@ -1874,6 +1889,7 @@ var CustomizableUIInternal = {
         if (tooltip) {
           node.setAttribute("tooltiptext", tooltip);
           if (button != node) {
+            
             button.setAttribute("tooltiptext", tooltip);
           }
         }
