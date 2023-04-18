@@ -1,10 +1,10 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
+/*
+ * Defines a handler object to represent forms that autofill can handle.
+ */
 
 "use strict";
 
@@ -46,7 +46,7 @@ XPCOMUtils.defineLazyGetter(this, "reauthPasswordPromptMessage", () => {
   const brandShortName = FormAutofillUtils.brandBundle.GetStringFromName(
     "brandShortName"
   );
-  
+  // The string name for Mac is changed because the value needed updating.
   const platform = AppConstants.platform.replace("macosx", "macos");
   return FormAutofillUtils.stringBundle.formatStringFromName(
     `useCreditCardPasswordPrompt.${platform}`,
@@ -69,15 +69,15 @@ class FormAutofillSection {
     this.filledRecordGUID = null;
     this.winUtils = winUtils;
 
-    
-
-
+    /**
+     * Enum for form autofill MANUALLY_MANAGED_STATES values
+     */
     this._FIELD_STATE_ENUM = {
-      
+      // not themed
       [FIELD_STATES.NORMAL]: null,
-      
+      // highlighted
       [FIELD_STATES.AUTO_FILLED]: "autofill",
-      
+      // highlighted && grey color text
       [FIELD_STATES.PREVIEW]: "-moz-autofill-preview",
     };
 
@@ -94,91 +94,91 @@ class FormAutofillSection {
     };
   }
 
-  
-
-
-
-
-
-
+  /*
+   * Examine the section is a valid section or not based on its fieldDetails or
+   * other information. This method must be overrided.
+   *
+   * @returns {boolean} True for a valid section, otherwise false
+   *
+   */
   isValidSection() {
     throw new TypeError("isValidSection method must be overrided");
   }
 
-  
-
-
-
-
-
-
+  /*
+   * Examine the section is an enabled section type or not based on its
+   * preferences. This method must be overrided.
+   *
+   * @returns {boolean} True for an enabled section type, otherwise false
+   *
+   */
   isEnabled() {
     throw new TypeError("isEnabled method must be overrided");
   }
 
-  
-
-
-
-
-
-
-
+  /*
+   * Examine the section is createable for storing the profile. This method
+   * must be overrided.
+   *
+   * @param {Object} record The record for examining createable
+   * @returns {boolean} True for the record is createable, otherwise false
+   *
+   */
   isRecordCreatable(record) {
     throw new TypeError("isRecordCreatable method must be overridden");
   }
 
-  
-
-
-
-
-
+  /**
+   * Override this method if the profile is needed to apply some transformers.
+   *
+   * @param {Object} profile
+   *        A profile should be converted based on the specific requirement.
+   */
   applyTransformers(profile) {}
 
-  
-
-
-
-
-
-
+  /**
+   * Override this method if the profile is needed to be customized for
+   * previewing values.
+   *
+   * @param {Object} profile
+   *        A profile for pre-processing before previewing values.
+   */
   preparePreviewProfile(profile) {}
 
-  
-
-
-
-
-
-
-
+  /**
+   * Override this method if the profile is needed to be customized for filling
+   * values.
+   *
+   * @param {Object} profile
+   *        A profile for pre-processing before filling values.
+   * @returns {boolean} Whether the profile should be filled.
+   */
   async prepareFillingProfile(profile) {
     return true;
   }
 
-  
-
-
-
-
-
-
+  /*
+   * Override this methid if any data for `createRecord` is needed to be
+   * normailized before submitting the record.
+   *
+   * @param {Object} profile
+   *        A record for normalization.
+   */
   normalizeCreatingRecord(data) {}
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /*
+   * Override this method if there is any field value needs to compute for a
+   * specific case. Return the original value in the default case.
+   * @param {String} value
+   *        The original field value.
+   * @param {Object} fieldDetail
+   *        A fieldDetail of the related element.
+   * @param {HTMLElement} element
+   *        A element for checking converting value.
+   *
+   * @returns {String}
+   *          A string of the converted value.
+   */
   computeFillingValue(value, fieldName, element) {
     return value;
   }
@@ -241,8 +241,8 @@ class FormAutofillSection {
           delete cache[value];
           this._cacheValue.matchingSelectOption.set(element, cache);
         }
-        
-        
+        // Delete the field so the phishing hint won't treat it as a "also fill"
+        // field.
         delete profile[fieldName];
       }
     }
@@ -272,12 +272,12 @@ class FormAutofillSection {
       if (maxLength) {
         switch (typeof profile[key]) {
           case "string":
-            
-            
-            
-            
-            
-            
+            // If this is an expiration field and our previous
+            // adaptations haven't resulted in a string that is
+            // short enough to satisfy the field length, and the
+            // field is constrained to a length of 5, then we
+            // assume it is intended to hold an expiration of the
+            // form "MM/YY".
             if (key == "cc-exp" && maxLength == 5) {
               const month2Digits = (
                 "0" + profile["cc-exp-month"].toString()
@@ -285,9 +285,9 @@ class FormAutofillSection {
               const year2Digits = profile["cc-exp-year"].toString().slice(-2);
               profile[key] = `${month2Digits}/${year2Digits}`;
             } else if (key == "cc-number") {
-              
-              
-              
+              // We want to show the last four digits of credit card so that
+              // the masked credit card previews correctly and appears correctly
+              // in the autocomplete menu
               profile[key] = profile[key].substr(
                 profile[key].length - maxLength
               );
@@ -296,14 +296,14 @@ class FormAutofillSection {
             }
             break;
           case "number":
-            
-            
+            // There's no way to truncate a number smaller than a
+            // single digit.
             if (maxLength < 1) {
               maxLength = 1;
             }
-            
-            
-            
+            // The only numbers we store are expiration month/year,
+            // and if they truncate, we want the final digits, not
+            // the initial ones.
             profile[key] = profile[key] % Math.pow(10, maxLength);
             break;
           default:
@@ -326,15 +326,15 @@ class FormAutofillSection {
     return originalProfiles;
   }
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Processes form fields that can be autofilled, and populates them with the
+   * profile provided by backend.
+   *
+   * @param {Object} profile
+   *        A profile to be filled in.
+   * @returns {boolean}
+   *          True if successful, false if failed
+   */
   async autofillFields(profile) {
     let focusedDetail = this._focusedDetail;
     if (!focusedDetail) {
@@ -351,10 +351,10 @@ class FormAutofillSection {
 
     this.filledRecordGUID = profile.guid;
     for (let fieldDetail of this.fieldDetails) {
-      
-      
-      
-      
+      // Avoid filling field value in the following cases:
+      // 1. a non-empty input field for an unfocused input
+      // 2. the invalid value set
+      // 3. value already chosen in select element
 
       let element = fieldDetail.elementWeakRef.get();
       if (!element) {
@@ -362,25 +362,25 @@ class FormAutofillSection {
       }
 
       element.previewValue = "";
-      
-      
-      
-      
-      
+      // Bug 1687679: Since profile appears to be presentation ready data, we need to utilize the "x-formatted" field
+      // that is generated when presentation ready data doesn't fit into the autofilling element.
+      // For example, autofilling expiration month into an input element will not work as expected if
+      // the month is less than 10, since the input is expected a zero-padded string.
+      // See Bug 1722941 for follow up.
       let value =
         profile[`${fieldDetail.fieldName}-formatted`] ||
         profile[fieldDetail.fieldName];
 
-      
+      // Bug 1688607: The transform function allows us to handle the multiple credit card number fields case
       if (fieldDetail.transform) {
         value = fieldDetail.transform(value);
       }
       if (ChromeUtils.getClassName(element) === "HTMLInputElement" && value) {
-        
-        
-        
-        
-        
+        // For the focused input element, it will be filled with a valid value
+        // anyway.
+        // For the others, the fields should be only filled when their values are empty
+        // or their values are equal to the site prefill value
+        // or are the result of an earlier auto-fill.
         if (
           element == focusedInput ||
           (element != focusedInput &&
@@ -397,8 +397,8 @@ class FormAutofillSection {
         if (!option) {
           continue;
         }
-        
-        
+        // Do not change value or dispatch events if the option is already selected.
+        // Use case for multiple select is not considered here.
         if (!option.selected) {
           option.selected = true;
           element.focus({ preventScroll: true });
@@ -409,7 +409,7 @@ class FormAutofillSection {
             new element.ownerGlobal.Event("change", { bubbles: true })
           );
         }
-        
+        // Autofill highlight appears regardless if value is changed or not
         this._changeFieldState(fieldDetail, FIELD_STATES.AUTO_FILLED);
       }
     }
@@ -417,12 +417,12 @@ class FormAutofillSection {
     return true;
   }
 
-  
-
-
-
-
-
+  /**
+   * Populates result to the preview layers with given profile.
+   *
+   * @param {Object} profile
+   *        A profile to be previewed with
+   */
   previewFormFields(profile) {
     log.debug("preview profile: ", profile);
 
@@ -432,14 +432,14 @@ class FormAutofillSection {
       let element = fieldDetail.elementWeakRef.get();
       let value = profile[fieldDetail.fieldName] || "";
 
-      
+      // Skip the field that is null
       if (!element) {
         continue;
       }
 
       if (ChromeUtils.getClassName(element) === "HTMLSelectElement") {
-        
-        
+        // Unlike text input, select element is always previewed even if
+        // the option is already selected.
         if (value) {
           let cache = this._cacheValue.matchingSelectOption.get(element) || {};
           let option = cache[value] && cache[value].get();
@@ -450,7 +450,7 @@ class FormAutofillSection {
           }
         }
       } else if (element.value && element.value != element.defaultValue) {
-        
+        // Skip the field if the user has already entered text and that text is not the site prefilled value.
         continue;
       }
       element.previewValue = value;
@@ -461,9 +461,9 @@ class FormAutofillSection {
     }
   }
 
-  
-
-
+  /**
+   * Clear preview text and background highlight of all fields.
+   */
   clearPreviewedFormFields() {
     log.debug("clear previewed fields in:", this.form);
 
@@ -476,8 +476,8 @@ class FormAutofillSection {
 
       element.previewValue = "";
 
-      
-      
+      // We keep the state if this field has
+      // already been auto-filled.
       if (fieldDetail.state == FIELD_STATES.AUTO_FILLED) {
         continue;
       }
@@ -486,9 +486,9 @@ class FormAutofillSection {
     }
   }
 
-  
-
-
+  /**
+   * Clear value and highlight style of all filled fields.
+   */
   clearPopulatedForm() {
     for (let fieldDetail of this.fieldDetails) {
       let element = fieldDetail.elementWeakRef.get();
@@ -497,7 +497,7 @@ class FormAutofillSection {
         continue;
       }
 
-      
+      // Only reset value for input element.
       if (
         fieldDetail.state == FIELD_STATES.AUTO_FILLED &&
         ChromeUtils.getClassName(element) === "HTMLInputElement"
@@ -507,14 +507,14 @@ class FormAutofillSection {
     }
   }
 
-  
-
-
-
-
-
-
-
+  /**
+   * Change the state of a field to correspond with different presentations.
+   *
+   * @param {Object} fieldDetail
+   *        A fieldDetail of which its element is about to update the state.
+   * @param {string} nextState
+   *        Used to determine the next state
+   */
   _changeFieldState(fieldDetail, nextState) {
     let element = fieldDetail.elementWeakRef.get();
 
@@ -535,8 +535,8 @@ class FormAutofillSection {
 
     let nextStateValue = null;
     for (let [state, mmStateValue] of Object.entries(this._FIELD_STATE_ENUM)) {
-      
-      
+      // The NORMAL state is simply the absence of other manually
+      // managed states so we never need to add or remove it.
       if (!mmStateValue) {
         continue;
       }
@@ -572,18 +572,18 @@ class FormAutofillSection {
     return !!this.filledRecordGUID;
   }
 
-  
-
-
-
-
-
-
-
+  /**
+   *  Condenses multiple credit card number fields into one fieldDetail
+   *  in order to submit the credit card record correctly.
+   *
+   * @param {Array.<object>} condensedDetails
+   *  An array of fieldDetails
+   * @memberof FormAutofillSection
+   */
   _condenseMultipleCCNumberFields(condensedDetails) {
     let countOfCCNumbers = 0;
-    
-    
+    // We ignore the cases where there are more than or less than four credit card number
+    // fields in a form as this is not a valid case for filling the credit card number.
     for (let i = condensedDetails.length - 1; i >= 0; i--) {
       if (condensedDetails[i].fieldName == "cc-number") {
         countOfCCNumbers++;
@@ -601,17 +601,17 @@ class FormAutofillSection {
       }
     }
   }
-  
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Return the record that is converted from `fieldDetails` and only valid
+   * form record is included.
+   *
+   * @returns {Object|null}
+   *          A record object consists of three properties:
+   *            - guid: The id of the previously-filled profile or null if omitted.
+   *            - record: A valid record converted from details with trimmed result.
+   *            - untouchedFields: Fields that aren't touched after autofilling.
+   *          Return `null` for any uncreatable or invalid record.
+   */
   createRecord() {
     let details = this.fieldDetails;
     if (!this.isEnabled() || !details || !details.length) {
@@ -631,12 +631,12 @@ class FormAutofillSection {
 
     condensedDetails.forEach(detail => {
       let element = detail.elementWeakRef.get();
-      
+      // Remove the unnecessary spaces
       let value = detail.fieldValue ?? (element && element.value.trim());
       value = this.computeFillingValue(value, detail, element);
 
       if (!value || value.length > FormAutofillUtils.MAX_FIELD_VALUE_LENGTH) {
-        
+        // Keep the property and preserve more information for updating
         data.record[detail.fieldName] = "";
         return;
       }
@@ -669,8 +669,8 @@ class FormAutofillSection {
           targetFieldDetail.fieldName
         );
 
-        
-        
+        // If the user manually blanks a credit card field, then
+        // we want the popup to be activated.
         if (
           ChromeUtils.getClassName(target) !== "HTMLSelectElement" &&
           isCreditCardField &&
@@ -703,16 +703,16 @@ class FormAutofillSection {
           const element = fieldDetail.elementWeakRef.get();
 
           if (ChromeUtils.getClassName(element) === "HTMLSelectElement") {
-            
-            
+            // Dim fields are those we don't attempt to revert their value
+            // when clear the target set, such as <select>.
             dimFieldDetails.push(fieldDetail);
           } else {
             isAutofilled |= fieldDetail.state == FIELD_STATES.AUTO_FILLED;
           }
         }
         if (!isAutofilled) {
-          
-          
+          // Restore the dim fields to initial state as well once we knew
+          // that user had intention to clear the filled form manually.
           for (const fieldDetail of dimFieldDetails) {
             this._changeFieldState(fieldDetail, FIELD_STATES.NORMAL);
           }
@@ -744,10 +744,10 @@ class FormAutofillAddressSection extends FormAutofillSection {
   isRecordCreatable(record) {
     if (
       record.country &&
-      !FormAutofill.supportedCountries.includes(record.country)
+      !FormAutofill.isAutofillAddressesAvailableInCountry(record.country)
     ) {
-      
-      
+      // We don't want to save data in the wrong fields due to not having proper
+      // heuristic regexes in countries we don't yet support.
       log.warn("isRecordCreatable: Country not supported:", record.country);
       return false;
     }
@@ -781,8 +781,8 @@ class FormAutofillAddressSection extends FormAutofillSection {
 
   addressTransformer(profile) {
     if (profile["street-address"]) {
-      
-      
+      // "-moz-street-address-one-line" is used by the labels in
+      // ProfileAutoCompleteResult.
       profile["-moz-street-address-one-line"] = this._getOneLineStreetAddress(
         profile["street-address"]
       );
@@ -808,12 +808,12 @@ class FormAutofillAddressSection extends FormAutofillSection {
     }
   }
 
-  
-
-
-
-
-
+  /**
+   * Replace tel with tel-national if tel violates the input element's
+   * restriction.
+   * @param {Object} profile
+   *        A profile to be converted.
+   */
   telTransformer(profile) {
     if (!profile.tel || !profile["tel-national"]) {
       return;
@@ -828,7 +828,7 @@ class FormAutofillAddressSection extends FormAutofillSection {
     let _pattern;
     let testPattern = str => {
       if (!_pattern) {
-        
+        // The pattern has to match the entire value.
         _pattern = new RegExp("^(?:" + element.pattern + ")$", "u");
       }
       return _pattern.test(str);
@@ -847,12 +847,12 @@ class FormAutofillAddressSection extends FormAutofillSection {
     }
 
     if (detail._reason != "autocomplete") {
-      
-      
-      
-      
-      
-      
+      // Since we only target people living in US and using en-US websites in
+      // MVP, it makes more sense to fill `tel-national` instead of `tel`
+      // if the field is identified by heuristics and no other clues to
+      // determine which one is better.
+      // TODO: [Bug 1407545] This should be improved once more countries are
+      // supported.
       profile.tel = profile["tel-national"];
     } else if (element.pattern) {
       if (testPattern(profile["tel-national"])) {
@@ -865,13 +865,13 @@ class FormAutofillAddressSection extends FormAutofillSection {
     }
   }
 
-  
-
-
-
-
-
-
+  /*
+   * Apply all address related transformers.
+   *
+   * @param {Object} profile
+   *        A profile for adjusting address related value.
+   * @override
+   */
   applyTransformers(profile) {
     this.addressTransformer(profile);
     this.telTransformer(profile);
@@ -880,16 +880,16 @@ class FormAutofillAddressSection extends FormAutofillSection {
   }
 
   computeFillingValue(value, fieldDetail, element) {
-    
+    // Try to abbreviate the value of select element.
     if (
       fieldDetail.fieldName == "address-level1" &&
       ChromeUtils.getClassName(element) === "HTMLSelectElement"
     ) {
-      
-      
-      
+      // Don't save the record when the option value is empty *OR* there
+      // are multiple options being selected. The empty option is usually
+      // assumed to be default along with a meaningless text to users.
       if (!value || element.selectedOptions.length != 1) {
-        
+        // Keep the property and preserve more information for address updating
         value = "";
       } else {
         let text = element.selectedOptions[0].text.trim();
@@ -905,11 +905,11 @@ class FormAutofillAddressSection extends FormAutofillSection {
       return;
     }
 
-    
+    // Normalize Country
     if (address.record.country) {
       let detail = this.getFieldDetailByName("country");
-      
-      
+      // Try identifying country field aggressively if it doesn't come from
+      // @autocomplete.
       if (detail._reason != "autocomplete") {
         let countryCode = FormAutofillUtils.identifyCountryCode(
           address.record.country
@@ -920,7 +920,7 @@ class FormAutofillAddressSection extends FormAutofillSection {
       }
     }
 
-    
+    // Normalize Tel
     FormAutofillUtils.compressTel(address.record);
     if (address.record.tel) {
       let allTelComponentsAreUntouched = Object.keys(address.record)
@@ -929,17 +929,17 @@ class FormAutofillAddressSection extends FormAutofillSection {
         )
         .every(field => address.untouchedFields.includes(field));
       if (allTelComponentsAreUntouched) {
-        
+        // No need to verify it if none of related fields are modified after autofilling.
         if (!address.untouchedFields.includes("tel")) {
           address.untouchedFields.push("tel");
         }
       } else {
         let strippedNumber = address.record.tel.replace(/[\s\(\)-]/g, "");
 
-        
-        
-        
-        
+        // Remove "tel" if it contains invalid characters or the length of its
+        // number part isn't between 5 and 15.
+        // (The maximum length of a valid number in E.164 format is 15 digits
+        //  according to https://en.wikipedia.org/wiki/E.164 )
         if (!/^(\+?)[\da-zA-Z]{5,15}$/.test(strippedNumber)) {
           address.record.tel = "";
         }
@@ -949,22 +949,22 @@ class FormAutofillAddressSection extends FormAutofillSection {
 }
 
 class FormAutofillCreditCardSection extends FormAutofillSection {
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Credit Card Section Constructor
+   *
+   * @param {Object} fieldDetails
+   *        The fieldDetail objects for the fields in this section
+   * @param {Object} winUtils
+   *        A WindowUtils reference for the Window the section appears in
+   * @param {Object} handler
+   *        The FormAutofillHandler responsible for this section
+   */
   constructor(fieldDetails, winUtils, handler) {
     super(fieldDetails, winUtils);
 
     this.handler = handler;
 
-    
+    // Identifier used to correlate events relating to the same form
     this.flowId = Services.uuid.generateUUID().toString();
     log.debug("Creating new credit card section with flowId =", this.flowId);
 
@@ -972,7 +972,7 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
       return;
     }
 
-    
+    // Record which fields could be identified
     let identified = new Set();
     fieldDetails.forEach(detail => identified.add(detail.fieldName));
     Services.telemetry.recordEvent(
@@ -995,8 +995,8 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
       1
     );
 
-    
-    
+    // Check whether the section is in an <iframe>; and, if so,
+    // watch for the <iframe> to pagehide.
     if (handler.window.location != handler.window.parent?.location) {
       log.debug(
         "Credit card form is in an iframe -- watching for pagehide",
@@ -1075,8 +1075,8 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
     let ccExpMonth = profile["cc-exp-month"];
     let ccExpYear = profile["cc-exp-year"];
     if (element.tagName != "INPUT" || !element.placeholder) {
-      
-      
+      // Bug 1688576: Change YYYY-MM to MM/YYYY since MM/YYYY is the
+      // preferred presentation format for credit card expiry dates.
       profile["cc-exp"] =
         ccExpMonth.toString().padStart(2, "0") + "/" + ccExpYear.toString();
       return;
@@ -1085,11 +1085,11 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
     let result,
       placeholder = element.placeholder;
 
-    
-    
-    
-    
-    
+    // Bug 1687681: This is a short term fix to other locales having
+    // different characters to represent year.
+    // For example, FR locales may use "A" to represent year.
+    // For example, DE locales may use "J" to represent year.
+    // This approach will not scale well and should be investigated in a follow up bug.
     let monthChars = "m";
     let yearChars = "yaj";
 
@@ -1102,8 +1102,8 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
       "i"
     );
 
-    
-    
+    // If the month first check finds a result, where placeholder is "mm - yyyy",
+    // the result will be structured as such: ["mm - yyyy", "mm", "-", "yyyy"]
     result = monthFirstCheck.exec(placeholder);
     if (result) {
       profile["cc-exp"] =
@@ -1116,14 +1116,14 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
     let yearFirstCheck = new RegExp(
       "(?:\\b|^)((?:[" +
       yearChars +
-      "]{2}){1,2})\\s*([\\-/])\\s*((?:[" + 
+      "]{2}){1,2})\\s*([\\-/])\\s*((?:[" + // either one or two counts of 'yy' or 'aa' sequence
         monthChars +
         "]){1,2})(?:\\b|$)",
-      "i" 
+      "i" // either one or two counts of a 'm' sequence
     );
 
-    
-    
+    // If the year first check finds a result, where placeholder is "yyyy mm",
+    // the result will be structured as such: ["yyyy mm", "yyyy", " ", "mm"]
     result = yearFirstCheck.exec(placeholder);
 
     if (result) {
@@ -1146,13 +1146,13 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
 
     let element = detail.elementWeakRef.get();
 
-    
-    
-    
+    // If the expiration month element is an input,
+    // then we examine any placeholder to see if we should format the expiration month
+    // as a zero padded string in order to autofill correctly.
     if (element.tagName === "INPUT") {
       let placeholder = element.placeholder;
 
-      
+      // Checks for 'MM' placeholder and converts the month to a two digit string.
       let result = /(?<!.)mm(?!.)/i.test(placeholder);
       if (result) {
         profile["cc-exp-month-formatted"] = profile["cc-exp-month"]
@@ -1163,7 +1163,7 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
   }
 
   async _decrypt(cipherText, reauth) {
-    
+    // Get the window for the form field.
     let window;
     for (let fieldDetail of this.fieldDetails) {
       let element = fieldDetail.elementWeakRef.get();
@@ -1183,18 +1183,18 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
     });
   }
 
-  
-
-
-
-
-
-
+  /*
+   * Apply all credit card related transformers.
+   *
+   * @param {Object} profile
+   *        A profile for adjusting credit card related value.
+   * @override
+   */
   applyTransformers(profile) {
-    
-    
-    
-    
+    // The matchSelectOptions transformer must be placed after the expiry transformers.
+    // This ensures that the expiry value that is cached in the matchSelectOptions
+    // matches the expiry value that is stored in the profile ensuring that autofill works
+    // correctly when dealing with option elements.
     this.creditCardExpDateTransformer(profile);
     this.creditCardExpMonthTransformer(profile);
     this.matchSelectOptions(profile);
@@ -1213,9 +1213,9 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
       return value;
     }
 
-    
-    
-    
+    // Don't save the record when the option value is empty *OR* there
+    // are multiple options being selected. The empty option is usually
+    // assumed to be default along with a meaningless text to users.
     if (value && element.selectedOptions.length == 1) {
       let selectedOption = element.selectedOptions[0];
       let networkType =
@@ -1225,41 +1225,41 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
         return networkType;
       }
     }
-    
-    
+    // If we couldn't match the value to any network, we'll
+    // strip this field when submitting.
     return value;
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Customize for previewing profile
+   *
+   * @param {Object} profile
+   *        A profile for pre-processing before previewing values.
+   * @override
+   */
   preparePreviewProfile(profile) {
-    
-    
+    // Always show the decrypted credit card number when Master Password is
+    // disabled.
     if (profile["cc-number-decrypted"]) {
       profile["cc-number"] = profile["cc-number-decrypted"];
     } else if (!profile["cc-number"].startsWith("****")) {
-      
-      
+      // Show the previewed credit card as "**** 4444" which is
+      // needed when a credit card number field has a maxlength of four.
       profile["cc-number"] = "****" + profile["cc-number"];
     }
   }
 
-  
-
-
-
-
-
-
-
+  /**
+   * Customize for filling profile
+   *
+   * @param {Object} profile
+   *        A profile for pre-processing before filling values.
+   * @returns {boolean} Whether the profile should be filled.
+   * @override
+   */
   async prepareFillingProfile(profile) {
-    
-    
+    // Prompt the OS login dialog to get the decrypted credit
+    // card number.
     if (profile["cc-number-encrypted"]) {
       let decrypted = await this._decrypt(
         profile["cc-number-encrypted"],
@@ -1267,7 +1267,7 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
       );
 
       if (!decrypted) {
-        
+        // Early return if the decrypted is empty or undefined
         return false;
       }
 
@@ -1281,7 +1281,7 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
       return false;
     }
 
-    
+    // Calculate values for telemetry
     let extra = {
       cc_name: "unavailable",
       cc_number: "unavailable",
@@ -1324,42 +1324,42 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
   }
 }
 
-
-
-
+/**
+ * Handles profile autofill for a DOM Form element.
+ */
 class FormAutofillHandler {
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Initialize the form from `FormLike` object to handle the section or form
+   * operations.
+   * @param {FormLike} form Form that need to be auto filled
+   * @param {function} onFormSubmitted Function that can be invoked
+   *                   to simulate form submission. Function is passed
+   *                   three arguments: (1) a FormLike for the form being
+   *                   submitted, (2) the corresponding Window, and (3) the
+   *                   responsible FormAutofillHandler.
+   */
   constructor(form, onFormSubmitted = () => {}) {
     this._updateForm(form);
 
-    
-
-
+    /**
+     * The window to which this form belongs
+     */
     this.window = this.form.rootElement.ownerGlobal;
 
-    
-
-
+    /**
+     * A WindowUtils reference of which Window the form belongs
+     */
     this.winUtils = this.window.windowUtils;
 
-    
-
-
+    /**
+     * Time in milliseconds since epoch when a user started filling in the form.
+     */
     this.timeStartedFillingMS = null;
 
-    
-
-
-
+    /**
+     * This function is used if the form handler (or one of its sections)
+     * determines that it needs to act as if the form had been submitted.
+     */
     this.onFormSubmitted = () => {
       onFormSubmitted(this.form, this.window, this);
     };
@@ -1383,20 +1383,20 @@ class FormAutofillHandler {
     return this._focusedSection;
   }
 
-  
-
-
-
-
-
+  /**
+   * Check the form is necessary to be updated. This function should be able to
+   * detect any changes including all control elements in the form.
+   * @param {HTMLElement} element The element supposed to be in the form.
+   * @returns {boolean} FormAutofillHandler.form is updated or not.
+   */
   updateFormIfNeeded(element) {
-    
-    
-    
-    
-    
-    
-    
+    // When the following condition happens, FormAutofillHandler.form should be
+    // updated:
+    // * The count of form controls is changed.
+    // * When the element can not be found in the current form.
+    //
+    // However, we should improve the function to detect the element changes.
+    // e.g. a tel field is changed from type="hidden" to type="tel".
 
     let _formLike;
     let getFormLike = () => {
@@ -1426,44 +1426,44 @@ class FormAutofillHandler {
     return false;
   }
 
-  
-
-
-
-
+  /**
+   * Update the form with a new FormLike, and the related fields should be
+   * updated or clear to ensure the data consistency.
+   * @param {FormLike} form a new FormLike to replace the original one.
+   */
   _updateForm(form) {
-    
-
-
+    /**
+     * DOM Form element to which this object is attached.
+     */
     this.form = form;
 
-    
-
-
-
-
-
-
-
-
-
-
-
-
+    /**
+     * Array of collected data about relevant form fields.  Each item is an object
+     * storing the identifying details of the field and a reference to the
+     * originally associated element from the form.
+     *
+     * The "section", "addressType", "contactType", and "fieldName" values are
+     * used to identify the exact field when the serializable data is received
+     * from the backend.  There cannot be multiple fields which have
+     * the same exact combination of these values.
+     *
+     * A direct reference to the associated element cannot be sent to the user
+     * interface because processing may be done in the parent process.
+     */
     this.fieldDetails = null;
 
     this.sections = [];
     this._sectionCache = new WeakMap();
   }
 
-  
-
-
-
-
-
-
-
+  /**
+   * Set fieldDetails from the form about fields that can be autofilled.
+   *
+   * @param {boolean} allowDuplicates
+   *        true to remain any duplicated field details otherwise to remove the
+   *        duplicated ones.
+   * @returns {Array} The valid address and credit card details.
+   */
   collectFormFields(allowDuplicates = false) {
     let sections = FormAutofillHeuristics.getFormInfo(
       this.form,
@@ -1503,13 +1503,13 @@ class FormAutofillHandler {
     return this.sections.some(section => section.isFilled());
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Processes form fields that can be autofilled, and populates them with the
+   * profile provided by backend.
+   *
+   * @param {Object} profile
+   *        A profile to be filled in.
+   */
   async autofillFormFields(profile) {
     let noFilledSectionsPreviously = !this._hasFilledSection();
     await this.activeSection.autofillFields(profile);
@@ -1523,7 +1523,7 @@ class FormAutofillHandler {
           section.resetFieldStates();
         }
       }
-      
+      // Unregister listeners once no field is in AUTO_FILLED state.
       if (!this._hasFilledSection()) {
         this.form.rootElement.removeEventListener("input", onChangeHandler, {
           mozSystemGroup: true,
@@ -1535,7 +1535,7 @@ class FormAutofillHandler {
     };
 
     if (noFilledSectionsPreviously) {
-      
+      // Handle the highlight style resetting caused by user's correction afterward.
       log.debug("register change handler for filled form:", this.form);
       this.form.rootElement.addEventListener("input", onChangeHandler, {
         mozSystemGroup: true,
@@ -1565,14 +1565,14 @@ class FormAutofillHandler {
     }
   }
 
-  
-
-
-
-
-
-
-
+  /**
+   * Collect the filled sections within submitted form and convert all the valid
+   * field data into multiple records.
+   *
+   * @returns {Object} records
+   *          {Array.<Object>} records.address
+   *          {Array.<Object>} records.creditCard
+   */
   createRecords() {
     const records = {
       address: [],
