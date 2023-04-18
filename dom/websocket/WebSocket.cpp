@@ -1640,22 +1640,19 @@ nsresult WebSocketImpl::Init(JSContext* aCx, nsIPrincipal* aLoadingPrincipal,
       
       return NS_ERROR_CONTENT_BLOCKED;
     }
-  }
 
-  
-  
-  if (!mIsServerSide && !mSecure && originDoc &&
-      !nsMixedContentBlocker::IsPotentiallyTrustworthyLoopbackURL(
-          originDoc->GetDocumentURI())) {
-    nsCOMPtr<nsIURI> uri;
-    nsresult rv = NS_NewURI(getter_AddRefs(uri), mURI);
-    NS_ENSURE_SUCCESS(rv, rv);
+    
+    
+    if (!mSecure && originDoc &&
+        !nsMixedContentBlocker::IsPotentiallyTrustworthyLoopbackURL(
+            originDoc->GetDocumentURI())) {
+      nsCOMPtr<nsIURI> uri;
+      nsresult rv = NS_NewURI(getter_AddRefs(uri), mURI);
+      NS_ENSURE_SUCCESS(rv, rv);
 
-    nsCOMPtr<nsIChannel> channel = originDoc->GetChannel();
-    if (channel) {
-      nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
-
-      if (nsHTTPSOnlyUtils::ShouldUpgradeWebSocket(uri, loadInfo)) {
+      
+      
+      if (nsHTTPSOnlyUtils::ShouldUpgradeWebSocket(uri, secCheckLoadInfo)) {
         mURI.ReplaceSubstring("ws://", "wss://");
         if (NS_WARN_IF(mURI.Find("wss://") != 0)) {
           return NS_OK;

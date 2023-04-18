@@ -221,6 +221,12 @@ bool nsHTTPSOnlyUtils::ShouldUpgradeWebSocket(nsIURI* aURI,
   }
 
   
+  if (!aLoadInfo->TriggeringPrincipal()->IsSystemPrincipal() &&
+      TestIfPrincipalIsExempt(aLoadInfo->TriggeringPrincipal())) {
+    return false;
+  }
+
+  
   
   nsAutoCString scheme;
   aURI->GetScheme(scheme);
