@@ -262,11 +262,7 @@ class WebConsole {
 
 
 
-
-
-
-
-  getDebuggerFrames() {
+  getSelectedFrameActorID() {
     const { toolbox } = this;
     if (!toolbox) {
       return null;
@@ -277,7 +273,7 @@ class WebConsole {
       return null;
     }
 
-    return panel.getFrames();
+    return panel.getSelectedFrameActorID();
   }
 
   

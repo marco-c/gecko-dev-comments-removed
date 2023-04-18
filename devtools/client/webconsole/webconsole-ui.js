@@ -721,26 +721,6 @@ class WebConsoleUI {
     this[id] = node;
   }
 
-  
-
-
-
-
-  getFrameActor() {
-    const state = this.hud.getDebuggerFrames();
-    if (!state) {
-      return null;
-    }
-
-    const frame = state.frames[state.selected];
-
-    if (!frame) {
-      return null;
-    }
-
-    return frame.actor;
-  }
-
   getSelectedNodeActorID() {
     const inspectorSelection = this.hud.getInspectorSelection();
     return inspectorSelection?.nodeFront?.actorID;
