@@ -1747,6 +1747,11 @@ class SchemaAPIManager extends EventEmitter {
 
   _checkGetAPI(name, extension, scope = null) {
     let module = this.getModule(name);
+    if (!module) {
+      
+      
+      return false;
+    }
 
     if (
       module.permissions &&
