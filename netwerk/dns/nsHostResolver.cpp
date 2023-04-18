@@ -1084,7 +1084,7 @@ nsresult nsHostResolver::NameLookup(nsHostRecord* rec,
   
   
   rec->mTRRSkippedReason = TRRSkippedReason::TRR_UNSET;
-
+  rec->mFirstTRRSkippedReason = TRRSkippedReason::TRR_UNSET;
   rec->mTrrAttempts = 0;
 
   ComputeEffectiveTRRMode(rec);
@@ -1354,6 +1354,7 @@ bool nsHostResolver::MaybeRetryTRRLookup(
     auto trrQuery = aAddrRec->mTRRQuery.Lock();
     trrQuery.ref() = nullptr;
   }
+  aAddrRec->NotifyRetryingTrr();
   TrrLookup(aAddrRec, aLock, nullptr );
   return true;
 }
