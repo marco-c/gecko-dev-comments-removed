@@ -1424,6 +1424,65 @@ class LoginFormState {
 
     return [usernameField, newPasswordField, oldPasswordField];
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+  getFieldContext(aField) {
+    
+    if (
+      !HTMLInputElement.isInstance(aField) ||
+      (!aField.hasBeenTypePassword &&
+        !lazy.LoginHelper.isUsernameFieldType(aField)) ||
+      aField.nodePrincipal.isNullPrincipal ||
+      aField.nodePrincipal.schemeIs("about") ||
+      !aField.ownerDocument
+    ) {
+      return null;
+    }
+    let { hasBeenTypePassword } = aField;
+
+    
+    
+    const LOGIN_FIELD_ORDER = ["username", "new-password", "current-password"];
+    let usernameAndPasswordFields = this.getUserNameAndPasswordFields(aField);
+    let fieldNameHint;
+    let indexOfFieldInUsernameAndPasswordFields = usernameAndPasswordFields.indexOf(
+      aField
+    );
+    if (indexOfFieldInUsernameAndPasswordFields == -1) {
+      
+      
+      
+      fieldNameHint = hasBeenTypePassword ? "current-password" : "other";
+    } else {
+      fieldNameHint =
+        LOGIN_FIELD_ORDER[indexOfFieldInUsernameAndPasswordFields];
+    }
+    let [, newPasswordField] = usernameAndPasswordFields;
+
+    return {
+      activeField: {
+        disabled: aField.disabled || aField.readOnly,
+        fieldNameHint,
+      },
+      
+      passwordField: {
+        found: !!newPasswordField,
+        disabled:
+          newPasswordField &&
+          (newPasswordField.disabled || newPasswordField.readOnly),
+      },
+    };
+  }
 }
 
 
@@ -3151,67 +3210,5 @@ class LoginManagerChild extends JSWindowActorChild {
         formid: form.rootElement.id,
       });
     }
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-  getFieldContext(aField) {
-    
-    if (
-      !HTMLInputElement.isInstance(aField) ||
-      (!aField.hasBeenTypePassword &&
-        !lazy.LoginHelper.isUsernameFieldType(aField)) ||
-      aField.nodePrincipal.isNullPrincipal ||
-      aField.nodePrincipal.schemeIs("about") ||
-      !aField.ownerDocument
-    ) {
-      return null;
-    }
-    let { hasBeenTypePassword } = aField;
-
-    
-    
-    const LOGIN_FIELD_ORDER = ["username", "new-password", "current-password"];
-    const docState = this.stateForDocument(aField.ownerDocument);
-    let usernameAndPasswordFields = docState.getUserNameAndPasswordFields(
-      aField
-    );
-    let fieldNameHint;
-    let indexOfFieldInUsernameAndPasswordFields = usernameAndPasswordFields.indexOf(
-      aField
-    );
-    if (indexOfFieldInUsernameAndPasswordFields == -1) {
-      
-      
-      
-      fieldNameHint = hasBeenTypePassword ? "current-password" : "other";
-    } else {
-      fieldNameHint =
-        LOGIN_FIELD_ORDER[indexOfFieldInUsernameAndPasswordFields];
-    }
-    let [, newPasswordField] = usernameAndPasswordFields;
-
-    return {
-      activeField: {
-        disabled: aField.disabled || aField.readOnly,
-        fieldNameHint,
-      },
-      
-      passwordField: {
-        found: !!newPasswordField,
-        disabled:
-          newPasswordField &&
-          (newPasswordField.disabled || newPasswordField.readOnly),
-      },
-    };
   }
 }
