@@ -3,7 +3,6 @@
 
 
 import os
-import sys
 
 from mach.util import UserError
 from mozpack.files import FileFinder
@@ -14,10 +13,6 @@ from mach.decorators import (
     CommandArgument,
     Command,
 )
-
-
-here = os.path.abspath(os.path.dirname(__file__))
-sys.path.append(here)
 
 
 def run_module_main_on(module, input_filename):
