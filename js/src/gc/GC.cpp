@@ -4540,61 +4540,60 @@ void js::gc::Cell::dump() const {
 }
 #endif
 
-static inline bool CanCheckGrayBits(const Cell* cell) {
+JS_PUBLIC_API bool js::gc::detail::CanCheckGrayBits(const TenuredCell* cell) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
   MOZ_ASSERT(cell);
-  if (!cell->isTenured()) {
+
+  auto runtime = cell->runtimeFromAnyThread();
+  MOZ_ASSERT(CurrentThreadCanAccessRuntime(runtime));
+
+  if (!runtime->gc.areGrayBitsValid()) {
     return false;
   }
 
-  auto tc = &cell->asTenured();
-  auto rt = tc->runtimeFromAnyThread();
-  if (!CurrentThreadCanAccessRuntime(rt) || !rt->gc.areGrayBitsValid()) {
+  JS::Zone* zone = cell->zone();
+
+  if (runtime->gc.isIncrementalGCInProgress() && !zone->wasGCStarted()) {
     return false;
   }
 
-  
-  
-  return !tc->zone()->isGCPreparing();
+  return !zone->isGCPreparing();
 }
 
-JS_PUBLIC_API bool js::gc::detail::CellIsMarkedGrayIfKnown(const Cell* cell) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  if (!CanCheckGrayBits(cell)) {
+JS_PUBLIC_API bool js::gc::detail::CellIsMarkedGrayIfKnown(
+    const TenuredCell* cell) {
+  MOZ_ASSERT_IF(cell->isPermanentAndMayBeShared(), cell->isMarkedBlack());
+  if (!cell->isMarkedGray()) {
     return false;
   }
 
-  auto tc = &cell->asTenured();
-  auto rt = tc->runtimeFromMainThread();
-  if (rt->gc.isIncrementalGCInProgress() && !tc->zone()->wasGCStarted()) {
-    return false;
-  }
-
-  return detail::CellIsMarkedGray(tc);
+  return CanCheckGrayBits(cell);
 }
 
 #ifdef DEBUG
 
 JS_PUBLIC_API void js::gc::detail::AssertCellIsNotGray(const Cell* cell) {
+  if (!cell->isTenured()) {
+    return;
+  }
+
   
   
   
   
   
 
-  if (!CanCheckGrayBits(cell)) {
+  auto tc = &cell->asTenured();
+  if (!tc->isMarkedGray() || !CanCheckGrayBits(tc)) {
     return;
   }
 
@@ -4602,7 +4601,6 @@ JS_PUBLIC_API void js::gc::detail::AssertCellIsNotGray(const Cell* cell) {
   
   MOZ_ASSERT(!JS::RuntimeHeapIsCycleCollecting());
 
-  auto tc = &cell->asTenured();
   if (tc->zone()->isGCMarkingBlackAndGray()) {
     
     
