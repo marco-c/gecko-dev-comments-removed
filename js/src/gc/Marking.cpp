@@ -867,11 +867,39 @@ void GCMarker::severWeakDelegate(JSObject* key, JSObject* delegate) {
 
 
 void GCMarker::restoreWeakDelegate(JSObject* key, JSObject* delegate) {
-  if (!key->zone()->needsIncrementalBarrier() ||
-      !delegate->zone()->needsIncrementalBarrier()) {
+  if (!key->zone()->needsIncrementalBarrier()) {
+    
+    if (key->zone()->gcEphemeronEdges(key).has(key)) {
+      fprintf(stderr, "key zone: %d\n", int(key->zone()->gcState()));
+#ifdef DEBUG
+      key->dump();
+#endif
+      fprintf(stderr, "delegate zone: %d\n", int(delegate->zone()->gcState()));
+#ifdef DEBUG
+      delegate->dump();
+#endif
+    }
     MOZ_ASSERT(
         !key->zone()->gcEphemeronEdges(key).has(key),
         "non-collecting zone should not have populated gcEphemeronEdges");
+    return;
+  }
+  if (!delegate->zone()->needsIncrementalBarrier()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     return;
   }
   auto* p = key->zone()->gcEphemeronEdges(key).get(key);
