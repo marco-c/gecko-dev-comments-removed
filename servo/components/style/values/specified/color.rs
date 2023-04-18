@@ -27,19 +27,29 @@ pub enum ColorSpace {
     
     Srgb,
     
+    LinearSrgb,
+    
+    #[parse(aliases = "xyz-d65")]
     Xyz,
+    
+    XyzD50,
     
     Lab,
     
+    Hsl,
+    
+    Hwb,
+    
     Lch,
+    
 }
 
 impl ColorSpace {
     
     pub fn is_polar(self) -> bool {
         match self {
-            Self::Srgb | Self::Xyz | Self::Lab => false,
-            Self::Lch => true,
+            Self::Srgb | Self::LinearSrgb | Self::Xyz | Self::XyzD50 | Self::Lab => false,
+            Self::Hsl | Self::Hwb | Self::Lch => true,
         }
     }
 }
