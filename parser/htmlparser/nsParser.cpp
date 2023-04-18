@@ -457,16 +457,6 @@ CParserContext* nsParser::PopContext() {
 
 
 
-
-
-
-void nsParser::SetUnusedInput(nsString& aBuffer) { mUnusedInput = aBuffer; }
-
-
-
-
-
-
 NS_IMETHODIMP
 nsParser::Terminate(void) {
   

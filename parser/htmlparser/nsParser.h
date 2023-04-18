@@ -182,18 +182,6 @@ class nsParser final : public nsIParser,
 
 
 
-
-
-
-
-
-  void SetUnusedInput(nsString& aBuffer);
-
-  
-
-
-
-
   virtual nsresult ResumeParse(bool allowIteration = true,
                                bool aIsFinalChunk = false,
                                bool aCanInterrupt = true);
@@ -255,14 +243,6 @@ class nsParser final : public nsIParser,
 
 
   virtual bool IsScriptCreated() override;
-
-  
-
-
-
-
-
-  void SetCanInterrupt(bool aCanInterrupt);
 
   
 
