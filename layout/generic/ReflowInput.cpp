@@ -1214,8 +1214,7 @@ void ReflowInput::CalculateHypotheticalPosition(
 
   
   
-  nscoord boxISize;
-  bool knowBoxISize = false;
+  Maybe<nscoord> boxISize;
   if (mStyleDisplay->IsOriginalDisplayInlineOutside() && !mFlags.mIsReplaced) {
     
     
@@ -1236,16 +1235,13 @@ void ReflowInput::CalculateHypotheticalPosition(
       
       
       if (intrinsicSize) {
-        boxISize = LogicalSize(wm, *intrinsicSize).ISize(wm) +
-                   outsideBoxISizing + insideBoxISizing;
-        knowBoxISize = true;
+        boxISize.emplace(LogicalSize(wm, *intrinsicSize).ISize(wm) +
+                         outsideBoxISizing + insideBoxISizing);
       }
 
     } else if (isAutoISize) {
       
-      boxISize = blockContentSize.ISize(wm);
-      knowBoxISize = true;
-
+      boxISize.emplace(blockContentSize.ISize(wm));
     } else {
       
       
@@ -1254,12 +1250,11 @@ void ReflowInput::CalculateHypotheticalPosition(
       CalculateBorderPaddingMargin(eLogicalAxisBlock,
                                    blockContentSize.BSize(wm),
                                    &insideBoxBSizing, &dummy);
-      boxISize =
+      boxISize.emplace(
           ComputeISizeValue(wm, blockContentSize,
                             LogicalSize(wm, insideBoxISizing, insideBoxBSizing),
                             outsideBoxISizing, styleISize) +
-          insideBoxISizing + outsideBoxISizing;
-      knowBoxISize = true;
+          insideBoxISizing + outsideBoxISizing);
     }
   }
 
@@ -1446,7 +1441,7 @@ void ReflowInput::CalculateHypotheticalPosition(
                  insideBoxSizing + outsideBoxSizing;
     }
 
-    LogicalSize boxSize(wm, knowBoxISize ? boxISize : 0, boxBSize);
+    LogicalSize boxSize(wm, boxISize.valueOr(0), boxBSize);
 
     LogicalPoint origin(wm, aHypotheticalPos.mIStart, aHypotheticalPos.mBStart);
     origin =
