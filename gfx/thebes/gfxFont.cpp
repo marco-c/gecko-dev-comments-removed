@@ -2970,7 +2970,7 @@ bool gfxFont::ShapeFragmentWithoutWordCache(DrawTarget* aDrawTarget,
 
       
       
-      if constexpr (sizeof(T) == sizeof(char16_t)) {
+      if (sizeof(T) == sizeof(char16_t)) {
         uint32_t i;
         for (i = 0; i < BACKTRACK_LIMIT; ++i) {
           if (aTextRun->IsClusterStart(aOffset + fragLen - i)) {
@@ -3151,7 +3151,7 @@ bool gfxFont::SplitAndInitTextRun(
             gfx::ShapedTextFlags::TEXT_DISABLE_OPTIONAL_LIGATURES |
             gfx::ShapedTextFlags::TEXT_USE_MATH_SCRIPT |
             gfx::ShapedTextFlags::TEXT_ORIENT_MASK);
-  if constexpr (sizeof(T) == sizeof(uint8_t)) {
+  if (sizeof(T) == sizeof(uint8_t)) {
     flags |= gfx::ShapedTextFlags::TEXT_IS_8BIT;
   }
 
@@ -3197,7 +3197,7 @@ bool gfxFont::SplitAndInitTextRun(
       
       
       
-      if constexpr (sizeof(T) == sizeof(char16_t)) {
+      if (sizeof(T) == sizeof(char16_t)) {
         if (wordIs8Bit) {
           wordFlags |= gfx::ShapedTextFlags::TEXT_IS_8BIT;
         }
