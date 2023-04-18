@@ -15,4 +15,11 @@ interface nsIUtilityProcessTest : nsISupports
 
   [implicit_jscontext]
   Promise startProcess();
+
+  
+
+
+
+
+  void stopProcess();
 };
