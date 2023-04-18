@@ -419,27 +419,54 @@ function _setProperty(elem, active, variableName, value) {
 }
 
 function _determineToolbarAndContentTheme(aDoc, aTheme) {
-  function prefValue(aColor) {
-    if (!aColor) {
-      return 2;
+  function prefValue(aColor, aIsForeground = false) {
+    if (typeof aColor != "object") {
+      aColor = _cssColorToRGBA(aDoc, aColor);
     }
-    return _isColorDark(aColor.r, aColor.g, aColor.b) ? 1 : 0;
+    return _isColorDark(aColor.r, aColor.g, aColor.b) == aIsForeground ? 1 : 0;
   }
 
-  
-  let toolbarColor = _cssColorToRGBA(
-    aDoc,
-    aTheme ? aTheme.toolbar_text || aTheme.textcolor || "black" : null
-  );
-  let contentColor = _cssColorToRGBA(aDoc, aTheme?.ntp_text);
-  Services.prefs.setIntPref(
-    "browser.theme.toolbar-theme",
-    prefValue(toolbarColor)
-  );
-  Services.prefs.setIntPref(
-    "browser.theme.content-theme",
-    prefValue(contentColor)
-  );
+  let toolbarTheme = (function() {
+    if (!aTheme) {
+      return 2;
+    }
+    
+    
+    
+    if (aTheme.toolbarColor) {
+      let color = _cssColorToRGBA(aDoc, aTheme.toolbarColor);
+      if (color.a == 1) {
+        return prefValue(color);
+      }
+    }
+    if (aTheme.toolbar_text) {
+      return prefValue(aTheme.toolbar_text,  true);
+    }
+    
+    
+    
+    
+    
+    return prefValue(aTheme.textcolor || "black",  true);
+  })();
+
+  let contentTheme = (function() {
+    if (!aTheme) {
+      return 2;
+    }
+    if (aTheme.ntp_background) {
+      
+      
+      return prefValue(aTheme.ntp_background);
+    }
+    if (aTheme.ntp_text) {
+      return prefValue(aTheme.ntp_text,  true);
+    }
+    return 2;
+  })();
+
+  Services.prefs.setIntPref("browser.theme.toolbar-theme", toolbarTheme);
+  Services.prefs.setIntPref("browser.theme.content-theme", contentTheme);
 }
 
 function _setProperties(root, active, themeData) {
