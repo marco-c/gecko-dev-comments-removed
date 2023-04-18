@@ -55,10 +55,16 @@ static bool InvokeWatchtowerCallback(JSContext* cx, const char* kind,
 
 static bool ReshapeForShadowedProp(JSContext* cx, HandleNativeObject obj,
                                    HandleId id) {
+  
+  
+  
+  
+  
+
   MOZ_ASSERT(obj->isUsedAsPrototype());
 
   
-  if (JSID_IS_INT(id)) {
+  if (id.isInt()) {
     return true;
   }
 
@@ -84,11 +90,6 @@ bool Watchtower::watchPropertyAddSlow(JSContext* cx, HandleNativeObject obj,
                                       HandleId id) {
   MOZ_ASSERT(watchesPropertyAdd(obj));
 
-  
-  
-  
-  
-  
   if (obj->isUsedAsPrototype()) {
     if (!ReshapeForShadowedProp(cx, obj, id)) {
       return false;
