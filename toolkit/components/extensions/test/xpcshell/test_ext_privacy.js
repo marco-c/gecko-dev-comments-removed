@@ -31,6 +31,7 @@ if (tlsMinPref != 1 && tlsMinPref != 3) {
   ok(false, "This test expects security.tls.version.min set to 1 or 3.");
 }
 const tlsMinVer = tlsMinPref === 3 ? "TLSv1.2" : "TLSv1";
+const READ_ONLY = true;
 
 add_task(async function test_privacy() {
   
@@ -51,11 +52,10 @@ add_task(async function test_privacy() {
   };
 
   async function background() {
-    browser.test.onMessage.addListener(async (msg, ...args) => {
-      let data = args[0];
+    browser.test.onMessage.addListener(async (msg, data, setting) => {
       
       
-      let apiObj = args[1].split(".").reduce((o, i) => o[i], browser.privacy);
+      let apiObj = setting.split(".").reduce((o, i) => o[i], browser.privacy);
       let settingData;
       switch (msg) {
         case "get":
@@ -347,29 +347,34 @@ add_task(async function test_privacy_other_prefs() {
   }
 
   async function background() {
-    browser.test.onMessage.addListener(async (msg, ...args) => {
-      let data = args[0];
+    let listeners = new Set([]);
+    browser.test.onMessage.addListener(async (msg, data, setting, readOnly) => {
       
       
-      let apiObj = args[1].split(".").reduce((o, i) => o[i], browser.privacy);
-      let settingData;
-      switch (msg) {
-        case "set":
-          try {
-            await apiObj.set(data);
-          } catch (e) {
-            browser.test.sendMessage("settingThrowsException", {
-              message: e.message,
-            });
-            break;
-          }
-          settingData = await apiObj.get({});
-          browser.test.sendMessage("settingData", settingData);
-          break;
-        case "get":
-          settingData = await apiObj.get({});
-          browser.test.sendMessage("gettingData", settingData);
-          break;
+      let apiObj = setting.split(".").reduce((o, i) => o[i], browser.privacy);
+      if (msg == "get") {
+        browser.test.sendMessage("gettingData", await apiObj.get({}));
+        return;
+      }
+
+      
+      
+      if (!listeners.has(setting)) {
+        apiObj.onChange.addListener(details => {
+          browser.test.sendMessage("settingData", details);
+        });
+        listeners.add(setting);
+      }
+      try {
+        await apiObj.set(data);
+      } catch (e) {
+        browser.test.sendMessage("settingThrowsException", {
+          message: e.message,
+        });
+      }
+      
+      if (readOnly) {
+        browser.test.sendMessage("settingData", await apiObj.get({}));
       }
     });
   }
@@ -908,7 +913,8 @@ add_task(async function test_privacy_other_prefs() {
   extension.sendMessage(
     "set",
     { value: !Preferences.get(GLOBAL_PRIVACY_CONTROL_PREF_NAME) },
-    "network.globalPrivacyControl"
+    "network.globalPrivacyControl",
+    READ_ONLY
   );
   let readOnlyGPCData = await extension.awaitMessage("settingData");
   equal(
@@ -941,7 +947,12 @@ add_task(async function test_privacy_other_prefs() {
   await testGetting("network.httpsOnlyMode", {}, "always");
 
   
-  extension.sendMessage("set", { value: "never" }, "network.httpsOnlyMode");
+  extension.sendMessage(
+    "set",
+    { value: "never" },
+    "network.httpsOnlyMode",
+    READ_ONLY
+  );
   let readOnlyData = await extension.awaitMessage("settingData");
   equal(readOnlyData.value, "always");
 
