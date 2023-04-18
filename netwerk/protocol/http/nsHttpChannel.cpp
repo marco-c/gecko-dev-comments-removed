@@ -5930,7 +5930,7 @@ void nsHttpChannel::MaybeResolveProxyAndBeginConnect() {
   
   if (!mProxyInfo &&
       !(mLoadFlags & (LOAD_ONLY_FROM_CACHE | LOAD_NO_NETWORK_IO)) &&
-      !BypassProxy() && NS_SUCCEEDED(ResolveProxy())) {
+      !LoadBypassProxy() && NS_SUCCEEDED(ResolveProxy())) {
     return;
   }
 
