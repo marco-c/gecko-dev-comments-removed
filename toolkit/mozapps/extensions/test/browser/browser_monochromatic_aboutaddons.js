@@ -66,6 +66,32 @@ add_task(async function testMonochromaticList() {
   );
 
   
+
+  
+  const isColorwayTheme = id => id.endsWith("-colorway@mozilla.org");
+
+  let builtInThemeIds = Array.from(BuiltInThemes.builtInThemeMap.keys()).filter(
+    id => isColorwayTheme(id) && !BuiltInThemes.themeIsExpired(id)
+  );
+
+  
+  let colorwayIds = Array.from(
+    colorwayList.querySelectorAll("addon-card"),
+    card => card.getAttribute("addon-id")
+  );
+
+  
+  
+  Assert.equal(colorwayIds.pop(), "test-colorway@mozilla.org");
+
+  
+  Assert.deepEqual(
+    colorwayIds,
+    builtInThemeIds,
+    "Both arrays should be the same"
+  );
+
+  
   let addon = await AddonManager.getAddonByID("test-colorway@mozilla.org");
   let enabledSection = getSection(doc, "enabled");
   let mutationPromise = BrowserTestUtils.waitForMutationCondition(
