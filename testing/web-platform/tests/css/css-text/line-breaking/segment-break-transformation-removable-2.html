@@ -15,13 +15,13 @@ or both the character before/after the segment breaks is F, W, or H (not A), and
 </head>
 <body>
 <div>Test passes if there is <b>no</b> white space between 2nd and 3rd CJK character.
-
+<!--Some[LF][LF][LF]Chinese-->
 <p>&#x4e00;&#x4e9b;&#x000a;&#x000a;&#x000a;&#x4e2d;&#x6587;</p>
-
+<!--Some[ZWSP][LF][LF][LF]Chinese-->
 <p>&#x4e00;&#x4e9b;&#x200b;&#x000a;&#x000a;&#x000a;&#x4e2d;&#x6587;</p>
-
+<!--Some[LF][LF][LF][ZWSP]Chinese-->
 <p>&#x4e00;&#x4e9b;&#x000a;&#x000a;&#x000a;&#x200b;&#x4e2d;&#x6587;</p>
-
+<!--Some[ZWSP][LF][LF][LF]Hangul-->
 <p>&#x4e00;&#x4e9b;&#x200b;&#x000a;&#x000a;&#x000a;&#xc5b8;&#xbb38;</p>
 </div>
 </body>
