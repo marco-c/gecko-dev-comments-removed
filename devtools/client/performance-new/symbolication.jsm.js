@@ -5,6 +5,9 @@
 "use strict";
 
 
+const lazy = {};
+
+
 
 
 
@@ -18,12 +21,12 @@
 
 
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "setTimeout",
   "resource://gre/modules/Timer.jsm"
 );
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "clearTimeout",
   "resource://gre/modules/Timer.jsm"
 );
@@ -81,8 +84,8 @@ function getWASMProfilerGetSymbolsModule() {
   }
 
   
-  clearTimeout(gCachedWASMModuleExpiryTimer);
-  gCachedWASMModuleExpiryTimer = setTimeout(
+  lazy.clearTimeout(gCachedWASMModuleExpiryTimer);
+  gCachedWASMModuleExpiryTimer = lazy.setTimeout(
     clearCachedWASMModule,
     EXPIRY_TIME_IN_MS
   );
