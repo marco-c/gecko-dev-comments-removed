@@ -142,12 +142,10 @@ void nsTextControlFrame::DestroyFrom(nsIFrame* aDestructRoot,
 
   
   
-  RefPtr<TextControlElement> textControlElement =
-      TextControlElement::FromNode(GetContent());
+  RefPtr textControlElement = TextControlElement::FromNode(GetContent());
   MOZ_ASSERT(textControlElement);
-  textControlElement->UnbindFromFrame(this);
-
   if (mMutationObserver) {
+    textControlElement->UnbindFromFrame(this);
     mRootNode->RemoveMutationObserver(mMutationObserver);
     mMutationObserver = nullptr;
   }
