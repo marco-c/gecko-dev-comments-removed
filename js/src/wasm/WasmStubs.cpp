@@ -1606,7 +1606,7 @@ void wasm::GenerateDirectCallFromJit(MacroAssembler& masm, const FuncExport& fe,
   GenPrintf(DebugChannel::Function, masm, "\n");
 
   
-  masm.movePtr(ImmPtr(inst.tlsData()), WasmTlsReg);
+  masm.movePtr(ImmPtr(&inst), WasmTlsReg);
   masm.storePtr(WasmTlsReg,
                 Address(masm.getStackPointer(), WasmCalleeTlsOffsetBeforeCall));
   masm.loadWasmPinnedRegsFromTls();
