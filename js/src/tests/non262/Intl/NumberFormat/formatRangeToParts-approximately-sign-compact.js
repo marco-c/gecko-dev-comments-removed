@@ -15,7 +15,7 @@ const options = {notation: "compact"};
 
 
 const approximatelySigns = [
-  "~", "≈", "ca.", "約",
+  "~", "∼", "≈", "≃", "ca.", "約", "dáàṣì", "dáàshì",
 ];
 
 

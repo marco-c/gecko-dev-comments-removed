@@ -81,21 +81,21 @@ const tests = {
     options: {style: "unit", unit: "meter"},
     ranges: [
       
-      {start: 0, end: 0, result: "≈0 m"},
+      {start: 0, end: 0, result: "≃0 m"},
       {start: -0, end: 0, result: "-0 – 0 m"},
       {start: -0, end: 0.1e-3, result: "-0 – 0 m"},
       {start: -0, end: "0.1e-3", result: "-0 – 0 m"},
       {start: "-0", end: 0.1e-3, result: "-0 – 0 m"},
-      {start: -0, end: -0, result: "≈-0 m"},
+      {start: -0, end: -0, result: "≃-0 m"},
 
       
-      {start: -Infinity, end: -Infinity, result: "≈-∞ m"},
+      {start: -Infinity, end: -Infinity, result: "≃-∞ m"},
       {start: -Infinity, end: -0, result: "-∞ – -0 m"},
       {start: -Infinity, end: +0, result: "-∞ – 0 m"},
       {start: -Infinity, end: +Infinity, result: "-∞ – ∞ m"},
 
       
-      {start: Infinity, end: Infinity, result: "≈∞ m"},
+      {start: Infinity, end: Infinity, result: "≃∞ m"},
 
       
       {start: 1, end: 100, result: "1–100 m"},
@@ -144,14 +144,14 @@ const tests = {
   "no": {
     options: {},
     ranges: [
-      {start: 1, end: 1, result: "ca. 1"},
+      {start: 1, end: 1, result: "ca.1"},
     ],
   },
   
   "ja": {
     options: {},
     ranges: [
-      {start: 1, end: 1, result: "約 1"},
+      {start: 1, end: 1, result: "約1"},
     ],
   },
 };
