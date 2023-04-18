@@ -4623,7 +4623,7 @@ AsyncPanZoomController::GetCurrentAsyncTransformWithOverscroll(
       GetCurrentAsyncTransform(aMode, aComponents, aSampleIndex);
   
   
-  if (aComponents.contains(AsyncTransformComponent::eVisual)) {
+  if (aComponents.contains(AsyncTransformComponent::eLayout)) {
     return asyncTransform * GetOverscrollTransform(aMode);
   }
   return asyncTransform;
@@ -4662,11 +4662,15 @@ AsyncPanZoomController::GetSampledScrollOffsets() const {
   for (std::deque<SampledAPZCState>::size_type index = 0;
        index < mSampledState.size(); index++) {
     ParentLayerPoint layerTranslation =
-        GetCurrentAsyncTransformWithOverscroll(
-            AsyncPanZoomController::eForCompositing, asyncTransformComponents,
-            index)
-            .TransformPoint(ParentLayerPoint(0, 0));
+        GetCurrentAsyncTransform(AsyncPanZoomController::eForCompositing,
+                                 asyncTransformComponents, index)
+            .mTranslation;
 
+    
+    
+    layerTranslation =
+        GetOverscrollTransform(AsyncPanZoomController::eForCompositing)
+            .TransformPoint(layerTranslation);
     
     
     
