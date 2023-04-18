@@ -689,8 +689,16 @@ void MediaDevices::OnDeviceChange() {
 
   
   
-  if (nsContentUtils::ShouldResistFingerprinting()) {
-    return;
+
+  if (nsContentUtils::ShouldResistFingerprinting(
+          "Guarding the more expensive RFP check with a simple one")) {
+    nsCOMPtr<nsIGlobalObject> global = xpc::NativeGlobal(GetWrapper());
+    nsCOMPtr<nsPIDOMWindowInner> owner = do_QueryInterface(global);
+
+    Document* doc = owner->GetExtantDoc();
+    if (nsContentUtils::ShouldResistFingerprinting(doc)) {
+      return;
+    }
   }
 
   mHaveUnprocessedDeviceListChange = true;
