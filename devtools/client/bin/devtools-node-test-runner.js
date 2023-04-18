@@ -18,6 +18,15 @@ const { execFileSync } = require("child_process");
 const { chdir } = require("process");
 const path = require("path");
 
+const os = require("os");
+
+
+const isWin = os.platform() === "win32";
+
+
+
+const YARN_PROCESS = isWin ? "yarn.cmd" : "yarn";
+
 
 const TEST_TYPES = {
   JEST: "jest",
@@ -147,7 +156,7 @@ function runTests() {
   console.log("[devtools-node-test-runner] Check `yarn` is available");
   try {
     
-    execFileSync("yarn", ["--version"]);
+    execFileSync(YARN_PROCESS, ["--version"]);
   } catch (e) {
     console.log(
       "[devtools-node-test-runner] ERROR: `yarn` is not installed. " +
@@ -157,12 +166,12 @@ function runTests() {
   }
 
   console.log("[devtools-node-test-runner] Run `yarn` in test folder");
-  execOut("yarn");
+  execOut(YARN_PROCESS);
 
   console.log(`TEST START | ${SUITES[suite].type} | ${suite}`);
 
   console.log("[devtools-node-test-runner] Run `yarn test` in test folder");
-  const { out, err } = execOut("yarn", ["test-ci"]);
+  const { out, err } = execOut(YARN_PROCESS, ["test-ci"]);
 
   if (err) {
     console.log("[devtools-node-test-runner] Error log");
