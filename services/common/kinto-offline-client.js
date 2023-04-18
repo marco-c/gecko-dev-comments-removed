@@ -2060,7 +2060,7 @@ var EXPORTED_SYMBOLS = ["Kinto"];
 
 
       _resolveRaw(conflict, resolution) {
-          const resolved = Object.assign(Object.assign({}, resolution), { 
+          const resolved = Object.assign(Object.assign({}, resolution), {
               
               last_modified: conflict.remote && conflict.remote.last_modified });
           
@@ -2208,7 +2208,7 @@ var EXPORTED_SYMBOLS = ["Kinto"];
           }, {});
           const newRecords = records.filter(record => {
               const localRecord = existingById[record.id];
-              const shouldKeep = 
+              const shouldKeep =
               
               localRecord === undefined ||
                   
@@ -2592,7 +2592,7 @@ var EXPORTED_SYMBOLS = ["Kinto"];
 
 
 
-  ChromeUtils.import("resource://gre/modules/Timer.jsm", global);
+  const { setTimeout, clearTimeout } = ChromeUtils.import("resource://gre/modules/Timer.jsm");
   const { XPCOMUtils } = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
   XPCOMUtils.defineLazyGlobalGetters(global, ["fetch", "indexedDB"]);
   ChromeUtils.defineModuleGetter(global, "EventEmitter", "resource://gre/modules/EventEmitter.jsm");
