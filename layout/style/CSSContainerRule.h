@@ -1,0 +1,49 @@
+
+
+
+
+
+
+#ifndef mozilla_dom_CSSContainerRule_h
+#define mozilla_dom_CSSContainerRule_h
+
+#include "mozilla/css/GroupRule.h"
+#include "mozilla/ServoBindingTypes.h"
+
+namespace mozilla::dom {
+
+class CSSContainerRule final : public css::ConditionRule {
+ public:
+  CSSContainerRule(RefPtr<RawServoContainerRule> aRawRule, StyleSheet* aSheet,
+                   css::Rule* aParentRule, uint32_t aLine, uint32_t aColumn);
+
+  NS_DECL_ISUPPORTS_INHERITED
+
+#ifdef DEBUG
+  void List(FILE* out = stdout, int32_t aIndent = 0) const final;
+#endif
+
+  RawServoContainerRule* Raw() const { return mRawRule; }
+  void SetRawAfterClone(RefPtr<RawServoContainerRule>);
+
+  
+  StyleCssRuleType Type() const override;
+  
+  void GetCssText(nsACString& aCssText) const final;
+  void GetConditionText(nsACString& aConditionText) final;
+  void SetConditionText(const nsACString& aConditionText, ErrorResult&) final;
+
+  size_t SizeOfIncludingThis(MallocSizeOf) const override;
+
+  JSObject* WrapObject(JSContext* aCx,
+                       JS::Handle<JSObject*> aGivenProto) override;
+
+ private:
+  virtual ~CSSContainerRule();
+
+  RefPtr<RawServoContainerRule> mRawRule;
+};
+
+}  
+
+#endif  

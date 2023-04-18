@@ -10,8 +10,7 @@
 #include "mozilla/css/GroupRule.h"
 #include "mozilla/ServoBindingTypes.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class CSSMediaRule final : public css::ConditionRule {
  public:
@@ -51,7 +50,6 @@ class CSSMediaRule final : public css::ConditionRule {
   RefPtr<dom::MediaList> mMediaList;
 };
 
-}  
 }  
 
 #endif  
