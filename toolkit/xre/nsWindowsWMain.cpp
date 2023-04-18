@@ -50,6 +50,17 @@ int main(int argc, char** argv);
 int main(int argc, char** argv, char** envp);
 #endif
 
+
+
+
+
+
+
+
+
+
+
+
 static void SanitizeEnvironmentVariables() {
   DWORD bufferSize = GetEnvironmentVariableW(L"PATH", nullptr, 0);
   if (bufferSize) {
@@ -57,7 +68,16 @@ static void SanitizeEnvironmentVariables() {
     if (bufferSize - 1 ==
         GetEnvironmentVariableW(L"PATH", originalPath, bufferSize)) {
       bufferSize = ExpandEnvironmentStringsW(originalPath, nullptr, 0);
-      if (bufferSize) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (bufferSize && bufferSize < 32768) {
         wchar_t* newPath = new wchar_t[bufferSize];
         if (ExpandEnvironmentStringsW(originalPath, newPath, bufferSize)) {
           SetEnvironmentVariableW(L"PATH", newPath);
