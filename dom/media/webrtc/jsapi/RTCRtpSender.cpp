@@ -600,7 +600,7 @@ already_AddRefed<dom::Promise> RTCRtpSender::ReplaceTrack(
       new ReplaceTrackOperation(mPc, mTransceiverImpl, aWithTrack);
   
   auto pc = mPc;
-  return do_AddRef(pc->Chain(op));
+  return pc->Chain(op);
 }
 
 nsPIDOMWindowInner* RTCRtpSender::GetParentObject() const { return mWindow; }

@@ -1172,27 +1172,29 @@ RefPtr<dom::Promise> PeerConnectionImpl::JSOperation::CallImpl() {
   return op->Call();
 }
 
-dom::Promise* PeerConnectionImpl::Chain(dom::ChainedOperation& aOperation) {
+already_AddRefed<dom::Promise> PeerConnectionImpl::Chain(
+    dom::ChainedOperation& aOperation) {
   MOZ_RELEASE_ASSERT(!mChainingOperation);
   mChainingOperation = true;
   RefPtr<Operation> operation = new JSOperation(this, aOperation);
-  auto* promise = Chain(operation);
+  RefPtr<Promise> promise = Chain(operation);
   mChainingOperation = false;
-  return promise;
+  return promise.forget();
 }
 
 
 
 
 
-dom::Promise* PeerConnectionImpl::Chain(const RefPtr<Operation>& aOperation) {
+already_AddRefed<dom::Promise> PeerConnectionImpl::Chain(
+    const RefPtr<Operation>& aOperation) {
   
   
   if (IsClosed()) {
     CSFLogDebug(LOGTAG, "%s:%d: Peer connection is closed", __FILE__, __LINE__);
     RefPtr<dom::Promise> error = MakePromise();
     error->MaybeRejectWithInvalidStateError("Peer connection is closed");
-    return error;
+    return error.forget();
   }
 
   
@@ -1204,7 +1206,7 @@ dom::Promise* PeerConnectionImpl::Chain(const RefPtr<Operation>& aOperation) {
   }
 
   
-  return aOperation->GetPromise();
+  return do_AddRef(aOperation->GetPromise());
 }
 
 void PeerConnectionImpl::RunNextOperation() {
