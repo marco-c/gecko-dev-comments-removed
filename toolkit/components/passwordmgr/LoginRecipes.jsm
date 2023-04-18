@@ -279,10 +279,9 @@ this.LoginRecipesContent = {
 
 
 
-
-  getRecipes(aActor, aHost, win) {
+  getRecipes(aHost, win) {
     let recipes;
-    let recipeMap = this._recipeCache.get(win);
+    const recipeMap = this._recipeCache.get(win);
 
     if (recipeMap) {
       recipes = recipeMap.get(aHost);
@@ -292,7 +291,11 @@ this.LoginRecipesContent = {
       }
     }
 
-    log.warn("getRecipes: falling back to a synchronous message for:", aHost);
+    if (!Cu.isInAutomation) {
+      
+      
+      log.warn("getRecipes: falling back to a synchronous message for:", aHost);
+    }
     recipes = Services.cpmm.sendSyncMessage("PasswordManager:findRecipes", {
       formOrigin: aHost,
     })[0];
