@@ -2059,6 +2059,9 @@ void MacroAssembler::generateBailoutTail(Register scratch,
       bind(&endOfCopy);
     }
 
+    loadPtr(Address(bailoutInfo, offsetof(BaselineBailoutInfo, resumeFramePtr)),
+            FramePointer);
+
     
     load32(Address(bailoutInfo,
                    offsetof(BaselineBailoutInfo, frameSizeOfInnerMostFrame)),
@@ -2071,7 +2074,6 @@ void MacroAssembler::generateBailoutTail(Register scratch,
     enterFakeExitFrame(scratch, scratch, ExitFrameType::Bare);
 
     
-    push(Address(bailoutInfo, offsetof(BaselineBailoutInfo, resumeFramePtr)));
     push(Address(bailoutInfo, offsetof(BaselineBailoutInfo, resumeAddr)));
 
     
@@ -2088,7 +2090,6 @@ void MacroAssembler::generateBailoutTail(Register scratch,
     Register jitcodeReg = enterRegs.takeAny();
 
     pop(jitcodeReg);
-    pop(FramePointer);
 
     
     addToStackPtr(Imm32(ExitFrameLayout::SizeWithFooter()));
