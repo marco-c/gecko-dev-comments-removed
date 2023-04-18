@@ -989,7 +989,6 @@ var AddonManagerInternal = {
 
 
 
-
   callProviders(aMethod, ...aArgs) {
     if (!aMethod || typeof aMethod != "string") {
       throw Components.Exception(
@@ -1106,8 +1105,6 @@ var AddonManagerInternal = {
   },
 
   
-
-
 
 
   observe(aSubject, aTopic, aData) {
