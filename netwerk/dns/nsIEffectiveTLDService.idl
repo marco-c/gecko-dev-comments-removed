@@ -102,6 +102,54 @@ interface nsIEffectiveTLDService : nsISupports
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+    ACString getSchemelessSite(in nsIURI aURI);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    ACString getSite(in nsIURI aURI);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
     ACString getPublicSuffixFromHost(in AUTF8String aHost);
 
     
