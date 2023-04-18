@@ -328,7 +328,7 @@ BrowserTabList.prototype._getActorForBrowser = async function(browser) {
 
 
 
-BrowserTabList.prototype.getTab = function({ browserId, tabId }) {
+BrowserTabList.prototype.getTab = function({ browserId }) {
   if (typeof browserId == "number") {
     const browsingContext = BrowsingContext.getCurrentTopByBrowserId(browserId);
     if (!browsingContext) {
@@ -345,21 +345,6 @@ BrowserTabList.prototype.getTab = function({ browserId, tabId }) {
       });
     }
     return this._getActorForBrowser(browser);
-  }
-  if (typeof tabId == "number") {
-    
-    for (const browser of this._getBrowsers()) {
-      if (
-        browser.frameLoader?.remoteTab &&
-        browser.frameLoader.remoteTab.tabId === tabId
-      ) {
-        return this._getActorForBrowser(browser);
-      }
-    }
-    return Promise.reject({
-      error: "noTab",
-      message: "Unable to find tab with tabId '" + tabId + "'",
-    });
   }
 
   const topAppWindow = Services.wm.getMostRecentWindow(
