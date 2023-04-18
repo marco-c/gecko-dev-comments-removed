@@ -355,7 +355,7 @@ impl ImageData {
 
 pub trait BlobImageResources {
     
-    fn get_font_data(&self, key: FontKey) -> &FontTemplate;
+    fn get_font_data(&self, key: FontKey) -> Option<FontTemplate>;
     
     fn get_font_instance_data(&self, key: FontInstanceKey) -> Option<FontInstanceData>;
 }
