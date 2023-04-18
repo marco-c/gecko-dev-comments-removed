@@ -1631,13 +1631,7 @@ void nsCocoaWindow::EnteredFullScreen(bool aFullScreen, bool aNativeMode) {
   UpdateFullscreenState(aFullScreen, aNativeMode);
 }
 
-static bool gMenubarAlwaysShownInFullScreen = false;
-
 void nsCocoaWindow::UpdateFullscreenState(bool aFullScreen, bool aNativeMode) {
-  if (aFullScreen) {
-    gMenubarAlwaysShownInFullScreen = NSMenu.menuBarVisible;
-  }
-
   bool wasInFullscreen = mInFullScreenMode;
   mInFullScreenMode = aFullScreen;
   if (aNativeMode || mInNativeFullScreenMode) {
@@ -3698,6 +3692,25 @@ static bool ScreenHasNotch(nsCocoaWindow* aGeckoWindow) {
   return false;
 }
 
+static bool ShouldShiftByMenubarHeightInFullscreen(nsCocoaWindow* aWindow) {
+  switch (StaticPrefs::widget_macos_shift_by_menubar_on_fullscreen()) {
+    case 0:
+      return false;
+    case 1:
+      return true;
+    default:
+      break;
+  }
+  
+  
+  
+  
+  
+  
+  
+  return !ScreenHasNotch(aWindow);
+}
+
 - (void)updateTitlebarShownAmount:(CGFloat)aShownAmount {
   NSInteger styleMask = [self styleMask];
   if (!(styleMask & NSWindowStyleMaskFullScreen)) {
@@ -3726,7 +3739,7 @@ static bool ScreenHasNotch(nsCocoaWindow* aGeckoWindow) {
       
       
       CGFloat shiftByPixels = mInitialTitlebarHeight * aShownAmount;
-      if (!gMenubarAlwaysShownInFullScreen && !ScreenHasNotch(geckoWindow)) {
+      if (ShouldShiftByMenubarHeightInFullscreen(geckoWindow)) {
         shiftByPixels += mMenuBarHeight * aShownAmount;
       }
       
