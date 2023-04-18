@@ -111,9 +111,9 @@ class MOZ_NON_TEMPORARY_CLASS FunctionToStringCache {
 class WeakRefHeapPtrVector
     : public GCVector<js::HeapPtrObject, 1, js::ZoneAllocPolicy> {
  public:
-  using GCVector::GCVector;
-
   
+  
+  using GCVector::GCVector;
   void traceWeak(JSTracer* trc, JSObject* target);
 };
 
@@ -124,8 +124,6 @@ class WeakRefMap
                        MovableCellHasher<HeapPtrObject>, ZoneAllocPolicy> {
  public:
   using GCHashMap::GCHashMap;
-  using Base = GCHashMap<HeapPtrObject, WeakRefHeapPtrVector,
-                         MovableCellHasher<HeapPtrObject>, ZoneAllocPolicy>;
   void traceWeak(JSTracer* trc, gc::StoreBuffer* sbToLock);
 };
 
