@@ -281,20 +281,6 @@ class nsParser final : public nsIParser,
   
 
 
-
-  
-
-
-
-
-
-
-
-  nsresult Tokenize(bool aIsFinalChunk = false);
-
-  
-
-
   nsresult Parse(const nsAString& aSourceBuffer, bool aLastCall);
 
  protected:
