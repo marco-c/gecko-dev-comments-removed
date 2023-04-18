@@ -245,20 +245,62 @@ void nsAppendEscapedHTML(const nsACString& aSrc, nsACString& aDst) {
 
 
 
+template <size_t N>
+static constexpr void AddUnescapedChars(const char (&aChars)[N],
+                                        uint32_t aFlags,
+                                        std::array<uint32_t, 256>& aTable) {
+  for (size_t i = 0; i < N - 1; ++i) {
+    aTable[static_cast<unsigned char>(aChars[i])] |= aFlags;
+  }
+}
+
+static constexpr std::array<uint32_t, 256> BuildEscapeChars() {
+  constexpr uint32_t kAllModes = esc_Scheme | esc_Username | esc_Password |
+                                 esc_Host | esc_Directory | esc_FileBaseName |
+                                 esc_FileExtension | esc_Param | esc_Query |
+                                 esc_Ref | esc_ExtHandler;
+
+  std::array<uint32_t, 256> table{0};
+
+  
+  AddUnescapedChars("0123456789", kAllModes, table);
+  AddUnescapedChars("ABCDEFGHIJKLMNOPQRSTUVWXYZ", kAllModes, table);
+  AddUnescapedChars("abcdefghijklmnopqrstuvwxyz", kAllModes, table);
+  AddUnescapedChars("!$&()*+,-_~", kAllModes, table);
+
+  
+  AddUnescapedChars(".", esc_Scheme, table);
+  
+  AddUnescapedChars("|", esc_Password, table);
+  AddUnescapedChars(".", esc_Host, table);
+  AddUnescapedChars("'./:;=@[]|", esc_Directory, table);
+  AddUnescapedChars("'.:;=@[]|", esc_FileBaseName, table);
+  AddUnescapedChars("':;=@[]|", esc_FileExtension, table);
+  AddUnescapedChars(".:;=@[\\]^`{|}", esc_Param, table);
+  AddUnescapedChars("./:;=?@[\\]^`{|}", esc_Query, table);
+  AddUnescapedChars("#'./:;=?@[\\]^{|}", esc_Ref, table);
+  AddUnescapedChars("#'./:;=?@[]", esc_ExtHandler, table);
+
+  return table;
+}
+
+static constexpr std::array<uint32_t, 256> EscapeChars = BuildEscapeChars();
+
+static bool dontNeedEscape(unsigned char aChar, uint32_t aFlags) {
+  return EscapeChars[(size_t)aChar] & aFlags;
+}
+static bool dontNeedEscape(uint16_t aChar, uint32_t aFlags) {
+  return aChar < EscapeChars.size() ? (EscapeChars[(size_t)aChar] & aFlags)
+                                    : false;
+}
 
 
 
 
 
-
-
-
-
-
-
-
-static const uint32_t EscapeChars[256] =
-    
+static_assert([]() constexpr {
+  constexpr uint32_t OldEscapeChars[256] =
+      
 
 {
        0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,  
@@ -271,16 +313,15 @@ static const uint32_t EscapeChars[256] =
   132095,132095,132095,132095,132095,132095,132095,132095,132095,132095,132095,   896,  1012,   896,132095,     0,  
        0                                                                                                            
 };
+  
 
-
-static bool dontNeedEscape(unsigned char aChar, uint32_t aFlags) {
-  return EscapeChars[(uint32_t)aChar] & aFlags;
-}
-static bool dontNeedEscape(uint16_t aChar, uint32_t aFlags) {
-  return aChar < mozilla::ArrayLength(EscapeChars)
-             ? (EscapeChars[(uint32_t)aChar] & aFlags)
-             : false;
-}
+  for (size_t i = 0; i < EscapeChars.size(); ++i) {
+    if (OldEscapeChars[i] != EscapeChars[i]) {
+      return false;
+    }
+  }
+  return true;
+}());
 
 
 
