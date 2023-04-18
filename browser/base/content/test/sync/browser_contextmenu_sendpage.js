@@ -10,16 +10,19 @@ const fxaDevices = [
     id: 1,
     name: "Foo",
     availableCommands: { "https://identity.mozilla.com/cmd/open-uri": "baz" },
+    lastAccessTime: Date.now(),
   },
   {
     id: 2,
     name: "Bar",
     availableCommands: { "https://identity.mozilla.com/cmd/open-uri": "boo" },
+    lastAccessTime: Date.now() + 60000, 
   },
   {
     id: 3,
     name: "Baz",
     clientRecord: "bar",
+    lastAccessTime: Date.now() + 120000, 
   }, 
   { id: 4, name: "Homer" }, 
 ];
