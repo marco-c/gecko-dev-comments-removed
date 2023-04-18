@@ -127,7 +127,7 @@ class BaseMediaResource : public MediaResource,
   
   
   
-  nsresult ModifyLoadFlags(nsLoadFlags aFlags);
+  void ModifyLoadFlags(nsLoadFlags aFlags);
 
   RefPtr<MediaResourceCallback> mCallback;
 
