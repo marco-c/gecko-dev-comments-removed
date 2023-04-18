@@ -40,6 +40,11 @@ loader.lazyRequireGetter(
   true
 );
 
+const BGSCRIPT_STATUSES = {
+  RUNNING: "RUNNING",
+  STOPPED: "STOPPED",
+};
+
 
 
 
@@ -79,9 +84,11 @@ const WebExtensionDescriptorActor = protocol.ActorClassWithSpec(
       const persistentBackgroundScript = ExtensionParent.DebugUtils.hasPersistentBackgroundScript(
         addonId
       );
+      const backgroundScriptStatus = this._getBackgroundScriptStatus();
 
       return {
         actor: this.actorID,
+        backgroundScriptStatus,
         
         
         
@@ -251,6 +258,20 @@ const WebExtensionDescriptorActor = protocol.ActorClassWithSpec(
     },
 
     
+    _getBackgroundScriptStatus() {
+      const isRunning = ExtensionParent.DebugUtils.isBackgroundScriptRunning(
+        this.addonId
+      );
+      
+      
+      
+      if (isRunning === undefined) {
+        return undefined;
+      }
+
+      return isRunning ? BGSCRIPT_STATUSES.RUNNING : BGSCRIPT_STATUSES.STOPPED;
+    },
+
     get _mm() {
       return (
         this._browser &&

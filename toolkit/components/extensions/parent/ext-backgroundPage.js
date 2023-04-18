@@ -89,6 +89,23 @@ class BackgroundPage extends HiddenExtensionPage {
       
       await Promise.all(context.listenerPromises);
       context.listenerPromises = null;
+
+      
+      
+      extensions.emit(
+        `devtools:background-script-status`,
+        extension.id,
+        true 
+      );
+      context.callOnClose({
+        close() {
+          extensions.emit(
+            `devtools:background-script-status`,
+            extension.id,
+            false 
+          );
+        },
+      });
     }
 
     if (extension.persistentListeners) {
@@ -98,6 +115,10 @@ class BackgroundPage extends HiddenExtensionPage {
       EventManager.clearPrimedListeners(extension, !!this.extension);
     }
 
+    
+    
+    
+    
     extension.emit("background-script-started");
   }
 
@@ -179,6 +200,23 @@ class BackgroundWorker {
       
       await Promise.all(context.listenerPromises);
       context.listenerPromises = null;
+
+      
+      
+      extensions.emit(
+        `devtools:background-script-status`,
+        extension.id,
+        true 
+      );
+      context.callOnClose({
+        close() {
+          extensions.emit(
+            `devtools:background-script-status`,
+            extension.id,
+            false 
+          );
+        },
+      });
     }
 
     if (extension.persistentListeners) {
@@ -188,6 +226,10 @@ class BackgroundWorker {
       EventManager.clearPrimedListeners(extension, !!this.extension);
     }
 
+    
+    
+    
+    
     extension.emit("background-script-started");
   }
 

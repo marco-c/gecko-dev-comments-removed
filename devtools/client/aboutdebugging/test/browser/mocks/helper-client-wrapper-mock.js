@@ -72,6 +72,13 @@ function createClientMock() {
       return null;
     },
     
+    createRootResourceCommand: () => {
+      return {
+        watchResources: () => new Promise(r => r()),
+        unwatchResources: () => {},
+      };
+    },
+    
     listAddons: () => [],
     
     listProcesses: () => [],

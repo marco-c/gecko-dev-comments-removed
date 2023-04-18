@@ -5,10 +5,15 @@
 "use strict";
 
 const {
+  EXTENSION_BGSCRIPT_STATUSES,
+  EXTENSION_BGSCRIPT_STATUS_UPDATED,
   UNWATCH_RUNTIME_START,
   WATCH_RUNTIME_SUCCESS,
 } = require("devtools/client/aboutdebugging/src/constants");
+
 const Actions = require("devtools/client/aboutdebugging/src/actions/index");
+
+const RootResourceCommand = require("devtools/shared/commands/root-resource/root-resource-command");
 
 function debugTargetListenerMiddleware(store) {
   const onExtensionsUpdated = () => {
@@ -23,11 +28,42 @@ function debugTargetListenerMiddleware(store) {
     store.dispatch(Actions.requestWorkers());
   };
 
-  return next => action => {
+  let rootResourceCommand;
+
+  function onExtensionsBackgroundScriptStatusAvailable(resources) {
+    for (const resource of resources) {
+      const backgroundScriptStatus = resource.payload.isRunning
+        ? EXTENSION_BGSCRIPT_STATUSES.RUNNING
+        : EXTENSION_BGSCRIPT_STATUSES.STOPPED;
+
+      store.dispatch({
+        type: EXTENSION_BGSCRIPT_STATUS_UPDATED,
+        id: resource.payload.addonId,
+        backgroundScriptStatus,
+      });
+    }
+  }
+
+  return next => async action => {
     switch (action.type) {
       case WATCH_RUNTIME_SUCCESS: {
         const { runtime } = action;
         const { clientWrapper } = runtime.runtimeDetails;
+
+        rootResourceCommand = clientWrapper.createRootResourceCommand();
+
+        
+        await rootResourceCommand
+          .watchResources(
+            [RootResourceCommand.TYPES.EXTENSIONS_BGSCRIPT_STATUS],
+            { onAvailable: onExtensionsBackgroundScriptStatusAvailable }
+          )
+          .catch(e => {
+            
+            
+            
+            console.error(e);
+          });
 
         
         clientWrapper.on("tabListChanged", onTabsUpdated);
@@ -42,6 +78,19 @@ function debugTargetListenerMiddleware(store) {
       case UNWATCH_RUNTIME_START: {
         const { runtime } = action;
         const { clientWrapper } = runtime.runtimeDetails;
+
+        
+        try {
+          rootResourceCommand?.unwatchResources(
+            [RootResourceCommand.TYPES.EXTENSIONS_BGSCRIPT_STATUS],
+            { onAvailable: onExtensionsBackgroundScriptStatusAvailable }
+          );
+        } catch (e) {
+          
+          
+          
+          console.error(e);
+        }
 
         
         clientWrapper.off("tabListChanged", onTabsUpdated);

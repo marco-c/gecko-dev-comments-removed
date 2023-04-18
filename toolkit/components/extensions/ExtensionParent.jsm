@@ -1456,6 +1456,42 @@ const DebugUtils = {
     return policy.extension.persistentBackground;
   },
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  isBackgroundScriptRunning(addonId) {
+    const policy = WebExtensionPolicy.getByID(addonId);
+
+    
+    
+    if (!(this.hasPersistentBackgroundScript(addonId) === false)) {
+      return undefined;
+    }
+
+    const views = policy?.extension?.views || [];
+    for (const view of views) {
+      if (
+        view.viewType === "background" ||
+        (view.viewType === "background_worker" && !view.unloaded)
+      ) {
+        return true;
+      }
+    }
+
+    return false;
+  },
+
   async terminateBackgroundScript(addonId) {
     
     
@@ -1465,6 +1501,17 @@ const DebugUtils = {
       return policy.extension.terminateBackground();
     }
     throw Error(`Unable to terminate background script for ${addonId}`);
+  },
+
+  watchBackgroundScriptStatusUpdates(callback) {
+    const listener = (_evtName, addonId, isRunning) => {
+      callback(addonId, isRunning);
+    };
+    apiManager.on(`devtools:background-script-status`, listener);
+
+    return () => {
+      apiManager.off(`devtools:background-script-status`, listener);
+    };
   },
 
   

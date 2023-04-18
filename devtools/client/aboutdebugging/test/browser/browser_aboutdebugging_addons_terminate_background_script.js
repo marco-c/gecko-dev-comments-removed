@@ -28,6 +28,19 @@ function promiseBackgroundContextUnloaded(extensionId) {
   return promiseBackgroundContextEvent(extensionId, "proxy-context-unload");
 }
 
+async function assertBackgroundStatus(extName, { document, expectedStatus }) {
+  const target = findDebugTargetByText(extName, document);
+  const getBackgroundStatusElement = () =>
+    target.querySelector(".extension-backgroundscript__status");
+  await waitFor(
+    () =>
+      getBackgroundStatusElement()?.classList.contains(
+        `extension-backgroundscript__status--${expectedStatus}`
+      ),
+    `Wait ${extName} Background script status "${expectedStatus}" to be rendered`
+  );
+}
+
 
 add_task(async function() {
   await SpecialPowers.pushPrefEnv({
@@ -48,6 +61,11 @@ add_task(async function() {
     EXTENSION_ID
   );
 
+  let waitForBGStatusUpdate = waitForDispatch(
+    window.AboutDebugging.store,
+    "EXTENSION_BGSCRIPT_STATUS_UPDATED"
+  );
+
   
   await installTemporaryExtensionFromXPI(
     {
@@ -56,11 +74,17 @@ add_task(async function() {
       
       extraProperties: {
         background: {
-          page: "bppage.html",
+          scripts: ["bgpage.js"],
           persistent: false,
         },
       },
-      files: { "bgpage.html": "" },
+      files: {
+        "bgpage.js": function() {
+          
+          
+          dump(`Background script loaded: ${window.location}\n`);
+        },
+      },
     },
     document
   );
@@ -113,16 +137,44 @@ add_task(async function() {
   info("Wait for the test extension background script to be loaded");
   await promiseBackgroundLoaded;
 
+  info("Wait for the test extension background script status update");
+  await waitForBGStatusUpdate;
+
+  await assertBackgroundStatus(EXTENSION_NAME, {
+    document,
+    expectedStatus: "running",
+  });
+
+  
+  
+  const backgroundStatus2 = target2.querySelector(
+    ".extension-backgroundscript__status"
+  );
+  ok(
+    !backgroundStatus2,
+    `${EXTENSION2_NAME} should not be showing background script status`
+  );
+
   info(`Click on the terminate button for ${EXTENSION_NAME}`);
   const waitForTerminateSuccess = waitForDispatch(
     window.AboutDebugging.store,
     "TERMINATE_EXTENSION_BGSCRIPT_SUCCESS"
   );
+  waitForBGStatusUpdate = waitForDispatch(
+    window.AboutDebugging.store,
+    "EXTENSION_BGSCRIPT_STATUS_UPDATED"
+  );
+
   terminateButton.click();
   await waitForTerminateSuccess;
 
   info("Wait for the extension background script to be unloaded");
   await promiseBackgroundUnloaded;
+
+  await assertBackgroundStatus(EXTENSION_NAME, {
+    document,
+    expectedStatus: "stopped",
+  });
 
   
   await Promise.all([
