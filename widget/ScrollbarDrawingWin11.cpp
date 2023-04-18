@@ -118,17 +118,27 @@ bool ScrollbarDrawingWin11::PaintScrollbarButton(
                        ColorPattern(ToDeviceColor(buttonColor)));
 
   
-  float arrowPolygonX[] = {-5.5f, 3.5f, 3.5f, -0.5f, -1.5f, -5.5f, -5.5f};
-  float arrowPolygonXActive[] = {-5.0f,  3.0f,  3.0f, -0.75f,
-                                 -1.25f, -5.0f, -5.0f};
-  float arrowPolygonXHover[] = {-6.0f,  4.0f,  4.0f, -0.25f,
-                                -1.75f, -6.0f, -6.0f};
+  float arrowPolygonX[] = {-4.5f, 4.5f, 4.5f, 0.5f, -0.5f, -4.5f, -4.5f};
+  float arrowPolygonXActive[] = {-4.0f,  4.0f,  4.0f, -0.25f,
+                                 -0.25f, -4.0f, -4.0f};
+  float arrowPolygonXHover[] = {-5.0f, 5.0f, 5.0f, 0.75f, -0.75f, -5.0f, -5.0f};
   float arrowPolygonY[] = {2.5f, 2.5f, 1.0f, -4.0f, -4.0f, 1.0f, 2.5f};
   float arrowPolygonYActive[] = {2.0f, 2.0f, 0.5f, -3.5f, -3.5f, 0.5f, 2.0f};
   float arrowPolygonYHover[] = {3.0f, 3.0f, 1.5f, -4.5f, -4.5f, 1.5f, 3.0f};
   float* arrowX = arrowPolygonX;
   float* arrowY = arrowPolygonY;
-  const float offset = aFrame->GetWritingMode().IsPhysicalLTR() ? 1.5f : -1.5f;
+  const bool horizontal =
+      aAppearance == StyleAppearance::ScrollbarbuttonRight ||
+      aAppearance == StyleAppearance::ScrollbarbuttonLeft;
+
+  const float offset = [&] {
+    
+    
+    if (horizontal) {
+      return -0.5f;
+    }
+    return aFrame->GetWritingMode().IsPhysicalLTR() ? 0.5f : -0.5f;
+  }();
   const float kPolygonSize = 17;
   const int32_t arrowNumPoints = ArrayLength(arrowPolygonX);
 
@@ -142,25 +152,25 @@ bool ScrollbarDrawingWin11::PaintScrollbarButton(
 
   switch (aAppearance) {
     case StyleAppearance::ScrollbarbuttonDown:
+    case StyleAppearance::ScrollbarbuttonRight:
       for (int32_t i = 0; i < arrowNumPoints; i++) {
         arrowY[i] *= -1;
       }
       [[fallthrough]];
     case StyleAppearance::ScrollbarbuttonUp:
-      for (int32_t i = 0; i < arrowNumPoints; i++) {
-        arrowX[i] += offset;
-      }
-      break;
-    case StyleAppearance::ScrollbarbuttonRight:
-      for (int32_t i = 0; i < arrowNumPoints; i++) {
-        arrowX[i] *= -1;
-      }
-      [[fallthrough]];
     case StyleAppearance::ScrollbarbuttonLeft:
-      std::swap(arrowX, arrowY);
+      if (offset != 0.0f) {
+        for (int32_t i = 0; i < arrowNumPoints; i++) {
+          arrowX[i] += offset;
+        }
+      }
       break;
     default:
       return false;
+  }
+
+  if (horizontal) {
+    std::swap(arrowX, arrowY);
   }
 
   ThemeDrawing::PaintArrow(aDrawTarget, aRect, arrowX, arrowY, kPolygonSize,
@@ -181,9 +191,23 @@ bool ScrollbarDrawingWin11::DoPaintScrollbarThumb(
 
   if (ScrollbarDrawing::IsParentScrollbarHoveredOrActive(aFrame)) {
     if (aHorizontal) {
+      
+      
+      
+      
+      
+      
       thumbRect.height = 6 * aDpiRatio.scale;
       thumbRect.y += 5 * aDpiRatio.scale;
     } else {
+      
+      
+      
+      
+      
+      
+      
+      
       thumbRect.width = 6 * aDpiRatio.scale;
       if (aFrame->GetWritingMode().IsPhysicalLTR()) {
         thumbRect.x += 6 * aDpiRatio.scale;
