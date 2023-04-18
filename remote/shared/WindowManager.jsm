@@ -245,32 +245,58 @@ class WindowManager {
 
 
 
-  waitForInitialApplicationWindowLoaded() {
+  waitForInitialApplicationWindow() {
     return new TimedPromise(
-      async resolve => {
-        const windowReadyTopic = AppInfo.isThunderbird
-          ? "mail-delayed-startup-finished"
-          : "browser-delayed-startup-finished";
+      resolve => {
+        const waitForWindow = () => {
+          let windowTypes;
+          if (AppInfo.isThunderbird) {
+            windowTypes = ["mail:3pane"];
+          } else {
+            
+            
+            windowTypes = ["navigator:browser", "navigator:geckoview"];
+          }
 
-        
-        const win = Services.wm.getMostRecentBrowserWindow();
+          let win;
+          for (const windowType of windowTypes) {
+            win = Services.wm.getMostRecentWindow(windowType);
+            if (win) {
+              break;
+            }
+          }
 
-        const windowLoaded = waitForObserverTopic(windowReadyTopic, {
-          checkFn: subject => (win !== null ? subject == win : true),
-        });
+          if (!win) {
+            
+            let checkTimer = Cc["@mozilla.org/timer;1"].createInstance(
+              Ci.nsITimer
+            );
+            checkTimer.initWithCallback(
+              waitForWindow,
+              100,
+              Ci.nsITimer.TYPE_ONE_SHOT
+            );
+          } else if (win.document.readyState != "complete") {
+            
+            let listener = ev => {
+              
+              
+              if (ev.target != win.document) {
+                return;
+              }
+              win.removeEventListener("load", listener);
+              waitForWindow();
+            };
+            win.addEventListener("load", listener, true);
+          } else {
+            resolve(win);
+          }
+        };
 
-        
-        if (win && win.document.readyState == "complete") {
-          resolve(win);
-          return;
-        }
-
-        
-        const { subject } = await windowLoaded;
-        resolve(subject);
+        waitForWindow();
       },
       {
-        errorMessage: "No applicable application window found",
+        errorMessage: "No applicable application windows found",
       }
     );
   }

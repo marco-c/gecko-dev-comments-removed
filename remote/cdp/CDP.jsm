@@ -98,7 +98,7 @@ class CDP {
     
     
     
-    logger.debug(`Waiting for initial application window`);
+    logger.debug(`Waiting for initial application window to be loaded`);
     await this.agent.browserStartupFinished;
 
     Cu.printStderr(`DevTools listening on ${this.address}\n`);

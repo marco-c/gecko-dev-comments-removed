@@ -112,25 +112,6 @@ XPCOMUtils.defineLazyServiceGetters(this, {
   PushService: ["@mozilla.org/push/Service;1", "nsIPushService"],
 });
 
-if (AppConstants.ENABLE_WEBDRIVER) {
-  XPCOMUtils.defineLazyServiceGetter(
-    this,
-    "Marionette",
-    "@mozilla.org/remote/marionette;1",
-    "nsIMarionette"
-  );
-
-  XPCOMUtils.defineLazyServiceGetter(
-    this,
-    "RemoteAgent",
-    "@mozilla.org/remote/agent;1",
-    "nsIRemoteAgent"
-  );
-} else {
-  this.Marionette = { running: false };
-  this.RemoteAgent = { running: false };
-}
-
 const PREF_PDFJS_ISDEFAULT_CACHE_STATE = "pdfjs.enabledCache.state";
 const PREF_DFPI_ENABLED_BY_DEFAULT =
   "privacy.restrict3rdpartystorage.rollout.enabledByDefault";
@@ -2699,8 +2680,10 @@ BrowserGlue.prototype = {
           
           
           
+          
+          
           let disabledForTesting =
-            (Cu.isInAutomation || Marionette.running || RemoteAgent.running) &&
+            Cu.isInAutomation &&
             Services.prefs.getBoolPref("app.update.disabledForTesting", false);
           if (!disabledForTesting) {
             BackgroundUpdate.maybeScheduleBackgroundUpdateTask();
@@ -2749,7 +2732,10 @@ BrowserGlue.prototype = {
         },
       },
 
+      
+      
       {
+        condition: AppConstants.ENABLE_WEBDRIVER,
         task: () => {
           
           
@@ -2758,6 +2744,8 @@ BrowserGlue.prototype = {
               null,
               "browser-startup-idle-tasks-finished"
             );
+
+            Services.obs.notifyObservers(null, "marionette-startup-requested");
           });
         },
       },

@@ -37,7 +37,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   IdlePromise: "chrome://remote/content/marionette/sync.js",
   l10n: "chrome://remote/content/marionette/l10n.js",
   Log: "chrome://remote/content/shared/Log.jsm",
-  Marionette: "chrome://remote/content/components/Marionette.jsm",
   MarionettePrefs: "chrome://remote/content/marionette/prefs.js",
   modal: "chrome://remote/content/marionette/modal.js",
   navigate: "chrome://remote/content/marionette/navigate.js",
@@ -423,66 +422,55 @@ GeckoDriver.prototype.newSession = async function(cmd) {
       this._currentSession.capabilities.delete("webSocketUrl");
     }
 
+    const win = await windowManager.waitForInitialApplicationWindow();
+
+    if (MarionettePrefs.clickToStart) {
+      Services.prompt.alert(
+        win,
+        "",
+        "Click to start execution of marionette tests"
+      );
+    }
+
+    this.addBrowser(win);
+    this.mainFrame = win;
+
     registerCommandsActor();
     enableEventsActor();
 
     
-    if (!this.currentSession.capabilities.get("moz:windowless")) {
-      
-      
-      
-      
-      
-      logger.debug(`Waiting for initial application window`);
-      await Marionette.browserStartupFinished;
+    this.dialogObserver = new modal.DialogObserver(() => this.curBrowser);
+    this.dialogObserver.add(this.handleModalDialog.bind(this));
 
-      const appWin = await windowManager.waitForInitialApplicationWindowLoaded();
+    for (let win of windowManager.windows) {
+      const tabBrowser = TabManager.getTabBrowser(win);
 
-      if (MarionettePrefs.clickToStart) {
-        Services.prompt.alert(
-          appWin,
-          "",
-          "Click to start execution of marionette tests"
-        );
-      }
-
-      this.addBrowser(appWin);
-      this.mainFrame = appWin;
-
-      
-      this.dialogObserver = new modal.DialogObserver(() => this.curBrowser);
-      this.dialogObserver.add(this.handleModalDialog.bind(this));
-
-      for (let win of windowManager.windows) {
-        const tabBrowser = TabManager.getTabBrowser(win);
-
-        if (tabBrowser) {
-          for (const tab of tabBrowser.tabs) {
-            const contentBrowser = TabManager.getBrowserForTab(tab);
-            this.registerBrowser(contentBrowser);
-          }
+      if (tabBrowser) {
+        for (const tab of tabBrowser.tabs) {
+          const contentBrowser = TabManager.getBrowserForTab(tab);
+          this.registerBrowser(contentBrowser);
         }
-
-        this.registerListenersForWindow(win);
       }
 
-      if (this.mainFrame) {
-        this.currentSession.chromeBrowsingContext = this.mainFrame.browsingContext;
-        this.mainFrame.focus();
-      }
-
-      if (this.curBrowser.tab) {
-        const browsingContext = this.curBrowser.contentBrowser.browsingContext;
-        this.currentSession.contentBrowsingContext = browsingContext;
-
-        await waitForInitialNavigationCompleted(browsingContext.webProgress);
-
-        this.curBrowser.contentBrowser.focus();
-      }
-
-      
-      this.dialog = modal.findModalDialogs(this.curBrowser);
+      this.registerListenersForWindow(win);
     }
+
+    if (this.mainFrame) {
+      this.currentSession.chromeBrowsingContext = this.mainFrame.browsingContext;
+      this.mainFrame.focus();
+    }
+
+    if (this.curBrowser.tab) {
+      const browsingContext = this.curBrowser.contentBrowser.browsingContext;
+      this.currentSession.contentBrowsingContext = browsingContext;
+
+      await waitForInitialNavigationCompleted(browsingContext.webProgress);
+
+      this.curBrowser.contentBrowser.focus();
+    }
+
+    
+    this.dialog = modal.findModalDialogs(this.curBrowser);
 
     Services.obs.addObserver(this, "browser-delayed-startup-finished");
   } catch (e) {
@@ -2068,10 +2056,7 @@ GeckoDriver.prototype.close = async function() {
   
   
   
-  if (
-    TabManager.getTabCount() === 1 &&
-    !this.currentSession.capabilities.get("moz:windowless")
-  ) {
+  if (TabManager.getTabCount() === 1) {
     return [];
   }
 
@@ -2108,7 +2093,7 @@ GeckoDriver.prototype.closeChromeWindow = async function() {
   
   
   
-  if (nwins == 1 && !this.currentSession.capabilities.get("moz:windowless")) {
+  if (nwins == 1) {
     return [];
   }
 
@@ -2628,19 +2613,6 @@ GeckoDriver.prototype.quit = async function(cmd) {
     throw new error.InvalidArgumentError(
       `"safeMode" only works with restart flag`
     );
-  }
-
-  if (flags.includes("eSilently")) {
-    if (!this.currentSession.capabilities.get("moz:windowless")) {
-      throw new error.UnsupportedOperationError(
-        `Silent restarts only allowed with "moz:windowless" capability set`
-      );
-    }
-    if (!flags.includes("eRestart")) {
-      throw new error.InvalidArgumentError(
-        `"silently" only works with restart flag`
-      );
-    }
   }
 
   let quitSeen;
