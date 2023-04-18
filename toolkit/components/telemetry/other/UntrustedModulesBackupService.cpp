@@ -23,13 +23,14 @@ bool ProcessHashKey::operator==(const ProcessHashKey& aOther) const {
 PLDHashNumber ProcessHashKey::Hash() const { return HashGeneric(mPid, mType); }
 
 void UntrustedModulesBackupData::Add(UntrustedModulesData&& aData) {
-  auto p = LookupForAdd(ProcessHashKey(aData.mProcessType, aData.mPid));
-  if (p) {
-    p.Data()->mData.Merge(std::move(aData));
-  } else {
-    auto data = MakeRefPtr<UntrustedModulesDataContainer>(std::move(aData));
-    p.OrInsert([data = std::move(data)]() { return data; });
-  }
+  WithEntryHandle(
+      ProcessHashKey(aData.mProcessType, aData.mPid), [&](auto&& p) {
+        if (p) {
+          p.Data()->mData.Merge(std::move(aData));
+        } else {
+          p.Insert(MakeRefPtr<UntrustedModulesDataContainer>(std::move(aData)));
+        }
+      });
 }
 
 
@@ -64,27 +65,20 @@ UntrustedModulesBackupService* UntrustedModulesBackupService::Get() {
   return sInstance;
 }
 
-void UntrustedModulesBackupService::Backup(BackupType aType,
-                                           UntrustedModulesData&& aData) {
-  mBackup[static_cast<uint32_t>(aType)].Add(std::move(aData));
+void UntrustedModulesBackupService::Backup(UntrustedModulesData&& aData) {
+  mStaging.Add(std::move(aData));
 }
 
 void UntrustedModulesBackupService::SettleAllStagingData() {
   UntrustedModulesBackupData staging;
-  staging.SwapElements(mBackup[static_cast<uint32_t>(BackupType::Staging)]);
+  staging.SwapElements(mStaging);
 
   for (auto&& iter = staging.Iter(); !iter.Done(); iter.Next()) {
     if (!iter.Data()) {
       continue;
     }
-    mBackup[static_cast<uint32_t>(BackupType::Settled)].Add(
-        std::move(iter.Data()->mData));
+    mSettled.Add(std::move(iter.Data()->mData));
   }
-}
-
-const UntrustedModulesBackupData& UntrustedModulesBackupService::Ref(
-    BackupType aType) const {
-  return mBackup[static_cast<uint32_t>(aType)];
 }
 
 }  

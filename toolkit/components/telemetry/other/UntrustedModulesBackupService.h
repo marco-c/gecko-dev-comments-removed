@@ -44,22 +44,24 @@ class UntrustedModulesBackupData
 
 class MOZ_HEAP_CLASS UntrustedModulesBackupService final {
  public:
-  enum class BackupType : uint32_t {
-    Staging = 0,
-    Settled,
-
-    Count
-  };
-
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(UntrustedModulesBackupService)
 
   static UntrustedModulesBackupService* Get();
-  void Backup(BackupType aType, UntrustedModulesData&& aData);
+
+  
+  void Backup(UntrustedModulesData&& aData);
+
   void SettleAllStagingData();
-  const UntrustedModulesBackupData& Ref(BackupType aType) const;
+
+  const UntrustedModulesBackupData& Staging() const { return mStaging; }
+  const UntrustedModulesBackupData& Settled() const { return mSettled; }
 
  private:
-  UntrustedModulesBackupData mBackup[static_cast<uint32_t>(BackupType::Count)];
+  
+  UntrustedModulesBackupData mStaging;
+
+  
+  UntrustedModulesBackupData mSettled;
 
   ~UntrustedModulesBackupService() = default;
 };

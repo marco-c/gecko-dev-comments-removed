@@ -29,8 +29,6 @@ using MultiGetUntrustedModulesPromise =
     MozPromise<bool , nsresult, true>;
 
 class MOZ_HEAP_CLASS MultiGetUntrustedModulesData final {
-  using BackupType = UntrustedModulesBackupService::BackupType;
-
  public:
   
 
@@ -101,7 +99,7 @@ class MOZ_HEAP_CLASS MultiGetUntrustedModulesData final {
     MOZ_ASSERT(NS_IsMainThread());
 
     if (aResult.isSome()) {
-      mBackupSvc->Backup(BackupType::Staging, std::move(aResult.ref()));
+      mBackupSvc->Backup(std::move(aResult.ref()));
     }
 
     OnCompletion();
@@ -172,12 +170,12 @@ void MultiGetUntrustedModulesData::Serialize(RefPtr<dom::Promise>&& aPromise) {
       if (mFlags & nsITelemetry::EXCLUDE_STACKINFO_FROM_LOADEVENTS) {
         
         
-        rv = serializer.Add(mBackupSvc->Ref(BackupType::Staging));
+        rv = serializer.Add(mBackupSvc->Staging());
         if (NS_WARN_IF(NS_FAILED(rv))) {
           aPromise->MaybeReject(rv);
           return;
         }
-        rv = serializer.Add(mBackupSvc->Ref(BackupType::Settled));
+        rv = serializer.Add(mBackupSvc->Settled());
         if (NS_WARN_IF(NS_FAILED(rv))) {
           aPromise->MaybeReject(rv);
           return;
@@ -194,8 +192,7 @@ void MultiGetUntrustedModulesData::Serialize(RefPtr<dom::Promise>&& aPromise) {
       
       mBackupSvc->SettleAllStagingData();
 
-      const UntrustedModulesBackupData& settledRef =
-          mBackupSvc->Ref(BackupType::Settled);
+      const UntrustedModulesBackupData& settledRef = mBackupSvc->Settled();
       if (settledRef.IsEmpty()) {
         aPromise->MaybeReject(NS_ERROR_NOT_AVAILABLE);
         return;
@@ -210,8 +207,7 @@ void MultiGetUntrustedModulesData::Serialize(RefPtr<dom::Promise>&& aPromise) {
   } else {
     
     
-    const UntrustedModulesBackupData& stagingRef =
-        mBackupSvc->Ref(BackupType::Staging);
+    const UntrustedModulesBackupData& stagingRef = mBackupSvc->Staging();
 
     if (stagingRef.IsEmpty()) {
       aPromise->MaybeReject(NS_ERROR_NOT_AVAILABLE);
