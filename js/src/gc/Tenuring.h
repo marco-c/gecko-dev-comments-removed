@@ -25,17 +25,15 @@ class TenuringTracer final : public GenericTracer {
   Nursery& nursery_;
 
   
-  size_t tenuredSize;
+  size_t tenuredSize = 0;
   
-  size_t tenuredCells;
+  size_t tenuredCells = 0;
 
   
   
   
-  gc::RelocationOverlay* objHead;
-  gc::RelocationOverlay** objTail;
-  gc::StringRelocationOverlay* stringHead;
-  gc::StringRelocationOverlay** stringTail;
+  gc::RelocationOverlay* objHead = nullptr;
+  gc::StringRelocationOverlay* stringHead = nullptr;
 
   JSObject* onObjectEdge(JSObject* obj) override;
   JSString* onStringEdge(JSString* str) override;
