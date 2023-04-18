@@ -262,7 +262,7 @@ def test_keyboard_interrupt():
     
     
     
-    cmd = [sys.executable, "runcli.py", "-l=string", "-l=slow"]
+    cmd = [sys.executable, "runcli.py", "-l=string", "-l=slow", "files/foobar.js"]
     env = os.environ.copy()
     env["PYTHONPATH"] = os.pathsep.join(sys.path)
     proc = subprocess.Popen(
