@@ -86,13 +86,6 @@ function test() {
         if (actor == "root") {
           continue;
         }
-        
-        
-        
-        if (actor.includes("framerateActor")) {
-          todo(false, "Front for " + actor + " still held in pool!");
-          continue;
-        }
         ok(false, "Front for " + actor + " still held in pool!");
       }
     }

@@ -5,11 +5,7 @@
 
 
 DevToolsModules(
-    "framerate.js",
     "memory.js",
-    "profiler.js",
-    "recorder.js",
-    "timeline.js",
 )
 
 with Files("**"):
