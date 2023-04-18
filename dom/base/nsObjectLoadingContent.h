@@ -493,6 +493,12 @@ class nsObjectLoadingContent : public nsImageLoadingContent,
   void MaybeFireErrorEvent();
 
   
+
+
+
+  void MaybeStoreCrossOriginFeaturePolicy();
+
+  
   nsCOMPtr<nsIStreamListener> mFinalListener;
 
   
