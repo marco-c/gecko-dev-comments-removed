@@ -248,7 +248,7 @@ class WebrtcVideoConduit
   void DumpCodecDB() const;
 
   
-  void VideoLatencyUpdate(uint64_t new_sample);
+  void VideoLatencyUpdate(uint64_t aNewSample);
 
   void CreateSendStream();
   void DeleteSendStream();
