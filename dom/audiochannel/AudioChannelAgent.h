@@ -15,8 +15,7 @@
 class nsPIDOMWindowInner;
 class nsPIDOMWindowOuter;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class AudioPlaybackConfig;
 
@@ -41,7 +40,6 @@ class AudioChannelAgent : public nsIAudioChannelAgent {
 
   bool IsWindowAudioCapturingEnabled() const;
   bool IsPlayingStarted() const;
-  bool ShouldBlockMedia() const;
 
  private:
   virtual ~AudioChannelAgent();
@@ -54,7 +52,6 @@ class AudioChannelAgent : public nsIAudioChannelAgent {
   nsPIDOMWindowOuter* Window() const { return mWindow; }
   uint64_t InnerWindowID() const;
   AudioPlaybackConfig GetMediaConfig() const;
-  bool IsDisposableSuspend(nsSuspendedTypes aSuspend) const;
 
   
   
@@ -77,7 +74,6 @@ class AudioChannelAgent : public nsIAudioChannelAgent {
   bool mIsRegToService;
 };
 
-}  
 }  
 
 #endif

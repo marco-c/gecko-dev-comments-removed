@@ -12,8 +12,7 @@
 class nsAttrName;
 class nsAttrValue;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -36,6 +35,5 @@ struct BorrowedAttrInfo {
   explicit operator bool() const { return mName != nullptr; }
 };
 
-}  
 }  
 #endif

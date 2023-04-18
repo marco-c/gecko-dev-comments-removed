@@ -22,8 +22,7 @@
 
 class nsIContent;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -259,7 +258,6 @@ class MOZ_NEEDS_MEMMOVABLE_MEMBERS StyleChildrenIterator
   using AllChildrenIterator::Seek;
 };
 
-}  
 }  
 
 #endif

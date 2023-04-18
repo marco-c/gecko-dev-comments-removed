@@ -16,8 +16,7 @@
 #include "nsIChannel.h"
 #include "mozilla/ipc/BackgroundUtils.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class ChildProcessChannelListener final {
   NS_INLINE_DECL_REFCOUNTING(ChildProcessChannelListener)
@@ -50,7 +49,6 @@ class ChildProcessChannelListener final {
   nsTHashMap<nsUint64HashKey, CallbackArgs> mChannelArgs;
 };
 
-}  
 }  
 
 #endif  

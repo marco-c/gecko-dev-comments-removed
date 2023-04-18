@@ -17,8 +17,7 @@
 #include "nsIGlobalObject.h"
 #include "nsTHashSet.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class Animation;
 class Document;
@@ -122,7 +121,6 @@ class AnimationTimeline : public nsISupports, public nsWrapperCache {
   LinkedList<dom::Animation> mAnimationOrder;
 };
 
-}  
 }  
 
 #endif  

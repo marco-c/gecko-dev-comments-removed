@@ -9,8 +9,7 @@
 
 #include "mozilla/dom/MessageSender.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class MessageBroadcaster;
 
@@ -40,7 +39,6 @@ class ChromeMessageSender final : public MessageSender {
   }
 };
 
-}  
 }  
 
 #endif  

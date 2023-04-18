@@ -10,8 +10,7 @@
 #include "mozilla/dom/AbortFollower.h"
 #include "mozilla/DOMEventTargetHelper.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -63,7 +62,6 @@ class AbortSignal : public DOMEventTargetHelper,
   ~AbortSignal();
 };
 
-}  
 }  
 
 #endif  

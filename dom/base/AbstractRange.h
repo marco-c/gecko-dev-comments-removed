@@ -23,8 +23,7 @@ class nsIContent;
 class nsINode;
 struct JSContext;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class Document;
 
@@ -126,7 +125,6 @@ class AbstractRange : public nsISupports, public nsWrapperCache {
   static bool sHasShutDown;
 };
 
-}  
 }  
 
 #endif  

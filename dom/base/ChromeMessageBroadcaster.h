@@ -9,8 +9,7 @@
 
 #include "mozilla/dom/MessageBroadcaster.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -51,7 +50,6 @@ class ChromeMessageBroadcaster final : public MessageBroadcaster {
                            aFlags | MessageManagerFlags::MM_CHROME) {}
 };
 
-}  
 }  
 
 #endif  
