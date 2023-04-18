@@ -327,6 +327,16 @@ void EventListenerManager::AddEventListenerInternal(
         window->SetHasGamepadEventListener();
       }
       break;
+    case eDeviceOrientation:
+    case eAbsoluteDeviceOrientation:
+    case eUserProximity:
+    case eDeviceLight:
+    case eDeviceMotion:
+#if defined(MOZ_WIDGET_ANDROID)
+    case eOrientationChange:
+#endif  
+      EnableDevice(aEventMessage);
+      break;
     default:
       
       
@@ -348,24 +358,30 @@ void EventListenerManager::AddEventListenerInternal(
                                    "handled above, aEventMessage=%s",
                                    ToChar(aEventMessage))
                        .get());
-      if (aTypeAtom == nsGkAtoms::ondeviceorientation) {
-        EnableDevice(eDeviceOrientation);
-      } else if (aTypeAtom == nsGkAtoms::onabsolutedeviceorientation) {
-        EnableDevice(eAbsoluteDeviceOrientation);
-      } else if (aTypeAtom == nsGkAtoms::onuserproximity) {
-        EnableDevice(eUserProximity);
-      } else if (aTypeAtom == nsGkAtoms::ondevicelight) {
-        EnableDevice(eDeviceLight);
-      } else if (aTypeAtom == nsGkAtoms::ondevicemotion) {
-        EnableDevice(eDeviceMotion);
+      NS_ASSERTION(
+          aTypeAtom != nsGkAtoms::ondeviceorientation,
+          nsPrintfCString("aEventMessage=%s", ToChar(aEventMessage)).get());
+      NS_ASSERTION(
+          aTypeAtom != nsGkAtoms::onabsolutedeviceorientation,
+          nsPrintfCString("aEventMessage=%s", ToChar(aEventMessage)).get());
+      NS_ASSERTION(
+          aTypeAtom != nsGkAtoms::onuserproximity,
+          nsPrintfCString("aEventMessage=%s", ToChar(aEventMessage)).get());
+      NS_ASSERTION(
+          aTypeAtom != nsGkAtoms::ondevicelight,
+          nsPrintfCString("aEventMessage=%s", ToChar(aEventMessage)).get());
+      NS_ASSERTION(
+          aTypeAtom != nsGkAtoms::ondevicemotion,
+          nsPrintfCString("aEventMessage=%s", ToChar(aEventMessage)).get());
 #if defined(MOZ_WIDGET_ANDROID)
-      } else if (aTypeAtom == nsGkAtoms::onorientationchange) {
-        EnableDevice(eOrientationChange);
-#endif
-      } else if (aTypeAtom == nsGkAtoms::ontouchstart ||
-                 aTypeAtom == nsGkAtoms::ontouchend ||
-                 aTypeAtom == nsGkAtoms::ontouchmove ||
-                 aTypeAtom == nsGkAtoms::ontouchcancel) {
+      NS_ASSERTION(
+          aTypeAtom != nsGkAtoms::onorientationchange,
+          nsPrintfCString("aEventMessage=%s", ToChar(aEventMessage)).get());
+#endif  
+      if (aTypeAtom == nsGkAtoms::ontouchstart ||
+          aTypeAtom == nsGkAtoms::ontouchend ||
+          aTypeAtom == nsGkAtoms::ontouchmove ||
+          aTypeAtom == nsGkAtoms::ontouchcancel) {
         mMayHaveTouchEventListener = true;
         nsPIDOMWindowInner* window = GetInnerWindowForTarget();
         
