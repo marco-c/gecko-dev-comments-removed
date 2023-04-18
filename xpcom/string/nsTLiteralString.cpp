@@ -1,0 +1,10 @@
+
+
+
+
+
+
+#include "nsTLiteralString.h"
+
+template class nsTLiteralString<char>;
+template class nsTLiteralString<char16_t>;

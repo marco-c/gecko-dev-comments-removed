@@ -1,0 +1,10 @@
+
+
+
+
+
+
+#include "nsCharSeparatedTokenizer.h"
+
+template class nsTSubstringSplitter<char>;
+template class nsTSubstringSplitter<char16_t>;
