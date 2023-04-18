@@ -340,10 +340,6 @@ pub struct TransEnv<'static_env, 'module_env> {
 
     
     
-    instance_gv: PackedOption<ir::GlobalValue>,
-
-    
-    
     interrupt_gv: PackedOption<ir::GlobalValue>,
 
     
@@ -371,7 +367,6 @@ impl<'static_env, 'module_env> TransEnv<'static_env, 'module_env> {
             signatures: HashMap::new(),
             func_gvs: SecondaryMap::new(),
             vmctx_gv: None.into(),
-            instance_gv: None.into(),
             interrupt_gv: None.into(),
             symbolic: [None.into(); bindings::SymbolicAddress::Limit as usize],
             cx_addr: None.into(),
@@ -384,7 +379,6 @@ impl<'static_env, 'module_env> TransEnv<'static_env, 'module_env> {
         self.signatures.clear();
         self.func_gvs.clear();
         self.vmctx_gv = None.into();
-        self.instance_gv = None.into();
         self.interrupt_gv = None.into();
         for entry in self.symbolic.iter_mut() {
             *entry = None.into();
@@ -440,32 +434,12 @@ impl<'static_env, 'module_env> TransEnv<'static_env, 'module_env> {
         let vmctx = self.get_vmctx_gv(func);
         let gv = func.create_global_value(ir::GlobalValueData::IAddImm {
             base: vmctx,
-            offset: imm64(self.module_env.func_import_tls_offset(index)),
+            offset: imm64(self.module_env.func_import_instance_offset(index)),
             global_type: POINTER_TYPE,
         });
         
         self.func_gvs[index] = gv.into();
         gv
-    }
-
-    
-    fn load_instance(&mut self, pos: &mut FuncCursor) -> ir::Value {
-        let gv = match self.instance_gv.expand() {
-            Some(gv) => gv,
-            None => {
-                
-                let vmctx = self.get_vmctx_gv(pos.func);
-                let gv = pos.func.create_global_value(ir::GlobalValueData::IAddImm {
-                    base: vmctx,
-                    offset: imm64(self.static_env.instance_tls_offset),
-                    global_type: POINTER_TYPE,
-                });
-                self.instance_gv = gv.into();
-                gv
-            }
-        };
-        let ga = pos.ins().global_value(POINTER_TYPE, gv);
-        pos.ins().load(POINTER_TYPE, ir::MemFlags::trusted(), ga, 0)
     }
 
     
@@ -477,7 +451,7 @@ impl<'static_env, 'module_env> TransEnv<'static_env, 'module_env> {
                 let vmctx = self.get_vmctx_gv(pos.func);
                 let gv = pos.func.create_global_value(ir::GlobalValueData::IAddImm {
                     base: vmctx,
-                    offset: imm64(self.static_env.interrupt_tls_offset),
+                    offset: imm64(self.static_env.interrupt_instance_offset),
                     global_type: POINTER_TYPE,
                 });
                 self.interrupt_gv = gv.into();
@@ -516,14 +490,14 @@ impl<'static_env, 'module_env> TransEnv<'static_env, 'module_env> {
 
     
     
-    fn switch_to_wasm_tls_realm(&mut self, pos: &mut FuncCursor) {
+    fn switch_to_wasm_instance_realm(&mut self, pos: &mut FuncCursor) {
         if self.cx_addr.is_none() {
             let vmctx = self.get_vmctx_gv(&mut pos.func);
             self.cx_addr = pos
                 .func
                 .create_global_value(ir::GlobalValueData::IAddImm {
                     base: vmctx,
-                    offset: imm64(self.static_env.cx_tls_offset),
+                    offset: imm64(self.static_env.cx_instance_offset),
                     global_type: POINTER_TYPE,
                 })
                 .into();
@@ -535,7 +509,7 @@ impl<'static_env, 'module_env> TransEnv<'static_env, 'module_env> {
                 .func
                 .create_global_value(ir::GlobalValueData::IAddImm {
                     base: vmctx,
-                    offset: imm64(self.static_env.realm_tls_offset),
+                    offset: imm64(self.static_env.realm_instance_offset),
                     global_type: POINTER_TYPE,
                 })
                 .into();
@@ -558,12 +532,12 @@ impl<'static_env, 'module_env> TransEnv<'static_env, 'module_env> {
         let flags = ir::MemFlags::trusted();
         let cx = pos
             .ins()
-            .load(ptr, flags, vmctx, offset32(self.static_env.cx_tls_offset));
+            .load(ptr, flags, vmctx, offset32(self.static_env.cx_instance_offset));
         let realm = pos.ins().load(
             ptr,
             flags,
             vmctx,
-            offset32(self.static_env.realm_tls_offset),
+            offset32(self.static_env.realm_instance_offset),
         );
         pos.ins()
             .store(flags, realm, cx, offset32(self.static_env.realm_cx_offset));
@@ -581,12 +555,12 @@ impl<'static_env, 'module_env> TransEnv<'static_env, 'module_env> {
         let flags = ir::MemFlags::trusted();
         let cx = pos
             .ins()
-            .load(ptr, flags, vmctx, offset32(self.static_env.cx_tls_offset));
+            .load(ptr, flags, vmctx, offset32(self.static_env.cx_instance_offset));
         let realm = pos.ins().load(
             ptr,
             flags,
             gv_addr,
-            offset32(self.static_env.realm_func_import_tls_offset),
+            offset32(self.static_env.realm_func_import_instance_offset),
         );
         pos.ins()
             .store(flags, realm, cx, offset32(self.static_env.realm_cx_offset));
@@ -598,13 +572,13 @@ impl<'static_env, 'module_env> TransEnv<'static_env, 'module_env> {
                 POINTER_TYPE,
                 ir::MemFlags::trusted(),
                 vmctx,
-                self.static_env.memory_base_tls_offset as i32,
+                self.static_env.memory_base_instance_offset as i32,
             );
             pos.ins().set_pinned_reg(heap_base);
         }
     }
 
-    fn reload_tls_and_pinned_regs(&mut self, pos: &mut FuncCursor) {
+    fn reload_instance_and_pinned_regs(&mut self, pos: &mut FuncCursor) {
         let vmctx_gv = self.get_vmctx_gv(&mut pos.func);
         let vmctx = pos.ins().global_value(POINTER_TYPE, vmctx_gv);
         self.load_pinned_reg(pos, vmctx);
@@ -644,7 +618,6 @@ impl<'static_env, 'module_env> TransEnv<'static_env, 'module_env> {
             sig
         });
 
-        let instance = self.load_instance(pos);
         let vmctx = pos
             .func
             .special_param(ir::ArgumentPurpose::VMContext)
@@ -656,15 +629,15 @@ impl<'static_env, 'module_env> TransEnv<'static_env, 'module_env> {
         let func_addr = pos.ins().func_addr(POINTER_TYPE, fnref);
         let call_ins = pos.ins().call_indirect(sigref, func_addr, &[]);
         let mut built_arguments = pos.func.dfg[call_ins].take_value_list().unwrap();
-        built_arguments.push(instance, &mut pos.func.dfg.value_lists);
+        built_arguments.push(vmctx, &mut pos.func.dfg.value_lists);
         built_arguments.extend(arguments.iter().cloned(), &mut pos.func.dfg.value_lists);
         built_arguments.push(vmctx, &mut pos.func.dfg.value_lists);
         built_arguments.push(vmctx, &mut pos.func.dfg.value_lists); 
         built_arguments.push(vmctx, &mut pos.func.dfg.value_lists); 
         pos.func.dfg[call_ins].put_value_list(built_arguments);
 
-        self.switch_to_wasm_tls_realm(pos);
-        self.reload_tls_and_pinned_regs(pos);
+        self.switch_to_wasm_instance_realm(pos);
+        self.reload_instance_and_pinned_regs(pos);
 
         if call.ret.is_none() {
             return None;
@@ -711,7 +684,7 @@ impl<'static_env, 'module_env> TransEnv<'static_env, 'module_env> {
 
         
         let vmctx_gv = self.get_vmctx_gv(func);
-        let offset = global.tls_offset();
+        let offset = global.instance_offset();
 
         
         
@@ -918,7 +891,7 @@ impl<'static_env, 'module_env> FuncEnvironment for TransEnv<'static_env, 'module
                 Some(pos.ins().iconst(POINTER_TYPE, imm))
             }
             bindings::TypeIdDescKind::Global => {
-                let gv = self.sig_global(pos.func, wsig_id.id_tls_offset());
+                let gv = self.sig_global(pos.func, wsig_id.id_instance_offset());
                 let addr = pos.ins().global_value(POINTER_TYPE, gv);
                 Some(
                     pos.ins()
@@ -992,8 +965,8 @@ impl<'static_env, 'module_env> FuncEnvironment for TransEnv<'static_env, 'module
             .CallIndirect(ir::Opcode::CallIndirect, ir::types::INVALID, sig_ref, args)
             .0;
 
-        self.switch_to_wasm_tls_realm(&mut pos);
-        self.reload_tls_and_pinned_regs(&mut pos);
+        self.switch_to_wasm_instance_realm(&mut pos);
+        self.reload_instance_and_pinned_regs(&mut pos);
 
         Ok(call)
     }
@@ -1021,7 +994,7 @@ impl<'static_env, 'module_env> FuncEnvironment for TransEnv<'static_env, 'module
             let fit_code = pos
                 .ins()
                 .load(POINTER_TYPE, ir::MemFlags::trusted(), gv_addr, 0);
-            let fit_tls = pos.ins().load(
+            let fit_instance = pos.ins().load(
                 POINTER_TYPE,
                 ir::MemFlags::trusted(),
                 gv_addr,
@@ -1033,14 +1006,14 @@ impl<'static_env, 'module_env> FuncEnvironment for TransEnv<'static_env, 'module
             let caller_vmctx = pos.ins().global_value(POINTER_TYPE, vmctx_gv);
 
             
-            self.switch_to_import_realm(&mut pos, fit_tls, gv_addr);
-            self.load_pinned_reg(&mut pos, fit_tls);
+            self.switch_to_import_realm(&mut pos, fit_instance, gv_addr);
+            self.load_pinned_reg(&mut pos, fit_instance);
 
             
-            args.push(fit_tls, &mut pos.func.dfg.value_lists);
+            args.push(fit_instance, &mut pos.func.dfg.value_lists);
 
             
-            args.push(fit_tls, &mut pos.func.dfg.value_lists);
+            args.push(fit_instance, &mut pos.func.dfg.value_lists);
             
             args.push(caller_vmctx, &mut pos.func.dfg.value_lists);
 
@@ -1054,8 +1027,8 @@ impl<'static_env, 'module_env> FuncEnvironment for TransEnv<'static_env, 'module
                 .ins()
                 .CallIndirect(ir::Opcode::CallIndirect, ir::types::INVALID, sig, args)
                 .0;
-            self.switch_to_wasm_tls_realm(&mut pos);
-            self.reload_tls_and_pinned_regs(&mut pos);
+            self.switch_to_wasm_instance_realm(&mut pos);
+            self.reload_instance_and_pinned_regs(&mut pos);
             Ok(call)
         } else {
             
@@ -1423,7 +1396,7 @@ impl TableInfo {
         vmctx: ir::GlobalValue,
     ) -> TableInfo {
         
-        let offset = wtab.tls_offset();
+        let offset = wtab.instance_offset();
         assert!(offset < i32::max_value() as usize);
         let offset = imm64(offset);
         let global = func.create_global_value(ir::GlobalValueData::IAddImm {
