@@ -55,7 +55,8 @@ extern "C" {
 
 
 
-typedef struct  _VADecPictureParameterBufferVP9 {
+typedef struct  _VADecPictureParameterBufferVP9
+{
     
 
 
@@ -75,8 +76,10 @@ typedef struct  _VADecPictureParameterBufferVP9 {
 
     VASurfaceID             reference_frames[8];
 
-    union {
-        struct {
+    union
+    {
+        struct
+        {
             
 
 
@@ -201,9 +204,12 @@ typedef struct  _VADecPictureParameterBufferVP9 {
 
 
 
-typedef struct  _VASegmentParameterVP9 {
-    union {
-        struct {
+typedef struct  _VASegmentParameterVP9
+{
+    union
+    {
+        struct
+        {
             
 
 
@@ -276,7 +282,8 @@ typedef struct  _VASegmentParameterVP9 {
 
 
 
-typedef struct _VASliceParameterBufferVP9 {
+typedef struct _VASliceParameterBufferVP9
+{
     
 
 

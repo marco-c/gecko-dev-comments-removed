@@ -80,7 +80,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include <va/va_version.h>
+#include "va_version.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -165,119 +165,29 @@ extern "C" {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-typedef void* VADisplay;    
-
-typedef int VAStatus;   
-
-#define VA_STATUS_SUCCESS           0x00000000
-#define VA_STATUS_ERROR_OPERATION_FAILED    0x00000001
-#define VA_STATUS_ERROR_ALLOCATION_FAILED   0x00000002
-#define VA_STATUS_ERROR_INVALID_DISPLAY     0x00000003
-#define VA_STATUS_ERROR_INVALID_CONFIG      0x00000004
-#define VA_STATUS_ERROR_INVALID_CONTEXT     0x00000005
-#define VA_STATUS_ERROR_INVALID_SURFACE     0x00000006
-#define VA_STATUS_ERROR_INVALID_BUFFER      0x00000007
-#define VA_STATUS_ERROR_INVALID_IMAGE       0x00000008
-#define VA_STATUS_ERROR_INVALID_SUBPICTURE  0x00000009
-#define VA_STATUS_ERROR_ATTR_NOT_SUPPORTED  0x0000000a
-#define VA_STATUS_ERROR_MAX_NUM_EXCEEDED    0x0000000b
-#define VA_STATUS_ERROR_UNSUPPORTED_PROFILE 0x0000000c
-#define VA_STATUS_ERROR_UNSUPPORTED_ENTRYPOINT  0x0000000d
-#define VA_STATUS_ERROR_UNSUPPORTED_RT_FORMAT   0x0000000e
-#define VA_STATUS_ERROR_UNSUPPORTED_BUFFERTYPE  0x0000000f
-#define VA_STATUS_ERROR_SURFACE_BUSY        0x00000010
+typedef void* VADisplay;	
+
+typedef int VAStatus;	
+
+#define VA_STATUS_SUCCESS			0x00000000
+#define VA_STATUS_ERROR_OPERATION_FAILED	0x00000001
+#define VA_STATUS_ERROR_ALLOCATION_FAILED	0x00000002
+#define VA_STATUS_ERROR_INVALID_DISPLAY		0x00000003
+#define VA_STATUS_ERROR_INVALID_CONFIG		0x00000004
+#define VA_STATUS_ERROR_INVALID_CONTEXT		0x00000005
+#define VA_STATUS_ERROR_INVALID_SURFACE		0x00000006
+#define VA_STATUS_ERROR_INVALID_BUFFER		0x00000007
+#define VA_STATUS_ERROR_INVALID_IMAGE		0x00000008
+#define VA_STATUS_ERROR_INVALID_SUBPICTURE	0x00000009
+#define VA_STATUS_ERROR_ATTR_NOT_SUPPORTED	0x0000000a
+#define VA_STATUS_ERROR_MAX_NUM_EXCEEDED	0x0000000b
+#define VA_STATUS_ERROR_UNSUPPORTED_PROFILE	0x0000000c
+#define VA_STATUS_ERROR_UNSUPPORTED_ENTRYPOINT	0x0000000d
+#define VA_STATUS_ERROR_UNSUPPORTED_RT_FORMAT	0x0000000e
+#define VA_STATUS_ERROR_UNSUPPORTED_BUFFERTYPE	0x0000000f
+#define VA_STATUS_ERROR_SURFACE_BUSY		0x00000010
 #define VA_STATUS_ERROR_FLAG_NOT_SUPPORTED      0x00000011
-#define VA_STATUS_ERROR_INVALID_PARAMETER   0x00000012
+#define VA_STATUS_ERROR_INVALID_PARAMETER	0x00000012
 #define VA_STATUS_ERROR_RESOLUTION_NOT_SUPPORTED 0x00000013
 #define VA_STATUS_ERROR_UNIMPLEMENTED           0x00000014
 #define VA_STATUS_ERROR_SURFACE_IN_DISPLAYING   0x00000015
@@ -297,14 +207,12 @@ typedef int VAStatus;
 
 #define VA_STATUS_ERROR_INVALID_FILTER_CHAIN    0x00000021
 
-#define VA_STATUS_ERROR_HW_BUSY                 0x00000022
+#define VA_STATUS_ERROR_HW_BUSY	                0x00000022
 
 #define VA_STATUS_ERROR_UNSUPPORTED_MEMORY_TYPE 0x00000024
 
 #define VA_STATUS_ERROR_NOT_ENOUGH_BUFFER       0x00000025
-
-#define VA_STATUS_ERROR_TIMEDOUT                0x00000026
-#define VA_STATUS_ERROR_UNKNOWN         0xFFFFFFFF
+#define VA_STATUS_ERROR_UNKNOWN			0xFFFFFFFF
 
 
 
@@ -348,13 +256,6 @@ typedef int VAStatus;
 #define VA_FILTER_SCALING_MASK          0x00000f00
 
 
-#define VA_FILTER_INTERPOLATION_DEFAULT                    0x00000000
-#define VA_FILTER_INTERPOLATION_NEAREST_NEIGHBOR           0x00001000
-#define VA_FILTER_INTERPOLATION_BILINEAR                   0x00002000
-#define VA_FILTER_INTERPOLATION_ADVANCED                   0x00003000
-#define VA_FILTER_INTERPOLATION_MASK                       0x0000f000
-
-
 #define VA_PADDING_LOW          4
 #define VA_PADDING_MEDIUM       8
 #define VA_PADDING_HIGH         16
@@ -362,45 +263,11 @@ typedef int VAStatus;
 
 
 
-#define VA_EXEC_SYNC              0x0
-
-#define VA_EXEC_ASYNC             0x1
-
-
-#define VA_EXEC_MODE_DEFAULT      0x0
-#define VA_EXEC_MODE_POWER_SAVING 0x1
-#define VA_EXEC_MODE_PERFORMANCE  0x2
-
-
-
-
-
-
-#define VA_FEATURE_NOT_SUPPORTED  0
-
-
-
-
-
-
-
-
-
-#define VA_FEATURE_SUPPORTED      1
-
-
-
-
-
-
-#define VA_FEATURE_REQUIRED       2
-
-
-
 
 const char *vaErrorStr(VAStatus error_status);
 
-typedef struct _VARectangle {
+typedef struct _VARectangle
+{
     int16_t x;
     int16_t y;
     uint16_t width;
@@ -439,7 +306,7 @@ VAMessageCallback vaSetInfoCallback(VADisplay dpy, VAMessageCallback callback, v
 
 
 
-typedef void* VANativeDisplay;  
+typedef void* VANativeDisplay;	
 
 int vaDisplayIsValid(VADisplay dpy);
 
@@ -448,21 +315,21 @@ int vaDisplayIsValid(VADisplay dpy);
 
 VAStatus vaSetDriverName(VADisplay dpy,
                          char *driver_name
-                        );
-
-
-
-
-VAStatus vaInitialize(
-    VADisplay dpy,
-    int *major_version,  
-    int *minor_version   
 );
 
 
 
 
-VAStatus vaTerminate(
+VAStatus vaInitialize (
+    VADisplay dpy,
+    int *major_version,	 
+    int *minor_version 	 
+);
+
+
+
+
+VAStatus vaTerminate (
     VADisplay dpy
 );
 
@@ -474,7 +341,7 @@ VAStatus vaTerminate(
 
 
 
-const char *vaQueryVendorString(
+const char *vaQueryVendorString (
     VADisplay dpy
 );
 
@@ -484,27 +351,28 @@ typedef int (*VAPrivFunc)(void);
 
 
 
-VAPrivFunc vaGetLibFunc(
+VAPrivFunc vaGetLibFunc (
     VADisplay dpy,
     const char *func
 );
 
 
-typedef enum {
+typedef enum
+{
     
     VAProfileNone                       = -1,
-    VAProfileMPEG2Simple        = 0,
-    VAProfileMPEG2Main          = 1,
-    VAProfileMPEG4Simple        = 2,
-    VAProfileMPEG4AdvancedSimple    = 3,
-    VAProfileMPEG4Main          = 4,
+    VAProfileMPEG2Simple		= 0,
+    VAProfileMPEG2Main			= 1,
+    VAProfileMPEG4Simple		= 2,
+    VAProfileMPEG4AdvancedSimple	= 3,
+    VAProfileMPEG4Main			= 4,
     VAProfileH264Baseline va_deprecated_enum = 5,
-    VAProfileH264Main           = 6,
-    VAProfileH264High           = 7,
-    VAProfileVC1Simple          = 8,
-    VAProfileVC1Main            = 9,
-    VAProfileVC1Advanced        = 10,
-    VAProfileH263Baseline       = 11,
+    VAProfileH264Main			= 6,
+    VAProfileH264High			= 7,
+    VAProfileVC1Simple			= 8,
+    VAProfileVC1Main			= 9,
+    VAProfileVC1Advanced		= 10,
+    VAProfileH263Baseline		= 11,
     VAProfileJPEGBaseline               = 12,
     VAProfileH264ConstrainedBaseline    = 13,
     VAProfileVP8Version0_3              = 14,
@@ -524,25 +392,21 @@ typedef enum {
     VAProfileHEVCMain444_12             = 28,
     VAProfileHEVCSccMain                = 29,
     VAProfileHEVCSccMain10              = 30,
-    VAProfileHEVCSccMain444             = 31,
-    VAProfileAV1Profile0                = 32,
-    VAProfileAV1Profile1                = 33,
-    VAProfileHEVCSccMain444_10          = 34,
-    
-    VAProfileProtected                  = 35
+    VAProfileHEVCSccMain444             = 31
 } VAProfile;
 
 
 
 
-typedef enum {
-    VAEntrypointVLD     = 1,
-    VAEntrypointIZZ     = 2,
-    VAEntrypointIDCT        = 3,
-    VAEntrypointMoComp      = 4,
-    VAEntrypointDeblocking  = 5,
-    VAEntrypointEncSlice    = 6,    
-    VAEntrypointEncPicture  = 7,    
+typedef enum
+{
+    VAEntrypointVLD		= 1,
+    VAEntrypointIZZ		= 2,
+    VAEntrypointIDCT		= 3,
+    VAEntrypointMoComp		= 4,
+    VAEntrypointDeblocking	= 5,
+    VAEntrypointEncSlice	= 6,	
+    VAEntrypointEncPicture 	= 7,	
     
 
 
@@ -551,7 +415,7 @@ typedef enum {
 
 
 
-    VAEntrypointEncSliceLP  = 8,
+    VAEntrypointEncSliceLP 	= 8,
     VAEntrypointVideoProc       = 10,   
     
 
@@ -587,28 +451,17 @@ typedef enum {
 
 
     VAEntrypointStats       = 12,
-    
-
-
-
-
-    VAEntrypointProtectedTEEComm       = 13,
-    
-
-
-
-
-    VAEntrypointProtectedContent       = 14,
 } VAEntrypoint;
 
 
-typedef enum {
-    VAConfigAttribRTFormat      = 0,
-    VAConfigAttribSpatialResidual   = 1,
-    VAConfigAttribSpatialClipping   = 2,
-    VAConfigAttribIntraResidual     = 3,
-    VAConfigAttribEncryption        = 4,
-    VAConfigAttribRateControl       = 5,
+typedef enum
+{
+    VAConfigAttribRTFormat		= 0,
+    VAConfigAttribSpatialResidual	= 1,
+    VAConfigAttribSpatialClipping	= 2,
+    VAConfigAttribIntraResidual		= 3,
+    VAConfigAttribEncryption		= 4,
+    VAConfigAttribRateControl		= 5,
 
     
     
@@ -623,8 +476,8 @@ typedef enum {
 
 
 
-    VAConfigAttribDecSliceMode      = 6,
-    
+    VAConfigAttribDecSliceMode		= 6,
+   
 
 
 
@@ -664,7 +517,7 @@ typedef enum {
 
 
 
-    VAConfigAttribDecProcessing     = 8,
+    VAConfigAttribDecProcessing		= 8,
     
     
     
@@ -831,7 +684,7 @@ typedef enum {
 
 
 
-    VAConfigAttribEncDirtyRect       = 28,
+     VAConfigAttribEncDirtyRect       = 28,
     
 
 
@@ -843,8 +696,8 @@ typedef enum {
 
 
 
-    VAConfigAttribEncParallelRateControl   = 29,
-    
+     VAConfigAttribEncParallelRateControl   = 29,
+     
 
 
 
@@ -852,13 +705,13 @@ typedef enum {
 
 
 
-    VAConfigAttribEncDynamicScaling        = 30,
-    
+     VAConfigAttribEncDynamicScaling        = 30,
+     
 
 
 
-    VAConfigAttribFrameSizeToleranceSupport = 31,
-    
+     VAConfigAttribFrameSizeToleranceSupport = 31,
+     
 
 
 
@@ -866,7 +719,7 @@ typedef enum {
 
 
 
-    VAConfigAttribFEIFunctionType     = 32,
+     VAConfigAttribFEIFunctionType     = 32,
     
 
 
@@ -883,14 +736,14 @@ typedef enum {
 
 
     VAConfigAttribStats               = 34,
-    
+     
 
 
 
 
 
 
-    VAConfigAttribEncTileSupport        = 35,
+     VAConfigAttribEncTileSupport        = 35,
     
 
 
@@ -925,78 +778,6 @@ typedef enum {
 
     VAConfigAttribMultipleFrame         = 40,
     
-
-
-
-    VAConfigAttribContextPriority       = 41,
-    
-
-
-
-
-
-    VAConfigAttribDecAV1Features    = 42,
-    
-    VAConfigAttribTEEType               = 43,
-    
-    VAConfigAttribTEETypeClient         = 44,
-    
-
-
-
-
-
-    VAConfigAttribProtectedContentCipherAlgorithm = 45,
-    
-
-
-
-
-
-    VAConfigAttribProtectedContentCipherBlockSize = 46,
-    
-
-
-
-
-
-    VAConfigAttribProtectedContentCipherMode = 47,
-    
-
-
-
-
-
-    VAConfigAttribProtectedContentCipherSampleType = 48,
-    
-
-
-
-
-
-    VAConfigAttribProtectedContentUsage = 49,
-
-    
-
-
-
-
-
-
-
-
-    VAConfigAttribEncHEVCFeatures       = 50,
-    
-
-
-
-
-
-
-
-
-    VAConfigAttribEncHEVCBlockSizes     = 51,
-    
     VAConfigAttribTypeMax
 } VAConfigAttribType;
 
@@ -1013,27 +794,27 @@ typedef struct _VAConfigAttrib {
 
 
 
-#define VA_RT_FORMAT_YUV420 0x00000001  ///< YUV 4:2:0 8-bit.
-#define VA_RT_FORMAT_YUV422 0x00000002  ///< YUV 4:2:2 8-bit.
-#define VA_RT_FORMAT_YUV444 0x00000004  ///< YUV 4:4:4 8-bit.
-#define VA_RT_FORMAT_YUV411 0x00000008  ///< YUV 4:1:1 8-bit.
-#define VA_RT_FORMAT_YUV400 0x00000010  ///< Greyscale 8-bit.
-#define VA_RT_FORMAT_YUV420_10  0x00000100  ///< YUV 4:2:0 10-bit.
-#define VA_RT_FORMAT_YUV422_10  0x00000200  ///< YUV 4:2:2 10-bit.
-#define VA_RT_FORMAT_YUV444_10  0x00000400  ///< YUV 4:4:4 10-bit.
-#define VA_RT_FORMAT_YUV420_12  0x00001000  ///< YUV 4:2:0 12-bit.
-#define VA_RT_FORMAT_YUV422_12  0x00002000  ///< YUV 4:2:2 12-bit.
-#define VA_RT_FORMAT_YUV444_12  0x00004000  ///< YUV 4:4:4 12-bit.
+#define VA_RT_FORMAT_YUV420	0x00000001	///< YUV 4:2:0 8-bit.
+#define VA_RT_FORMAT_YUV422	0x00000002	///< YUV 4:2:2 8-bit.
+#define VA_RT_FORMAT_YUV444	0x00000004	///< YUV 4:4:4 8-bit.
+#define VA_RT_FORMAT_YUV411	0x00000008	///< YUV 4:1:1 8-bit.
+#define VA_RT_FORMAT_YUV400	0x00000010	///< Greyscale 8-bit.
+#define VA_RT_FORMAT_YUV420_10	0x00000100	///< YUV 4:2:0 10-bit.
+#define VA_RT_FORMAT_YUV422_10	0x00000200	///< YUV 4:2:2 10-bit.
+#define VA_RT_FORMAT_YUV444_10	0x00000400	///< YUV 4:4:4 10-bit.
+#define VA_RT_FORMAT_YUV420_12	0x00001000	///< YUV 4:2:0 12-bit.
+#define VA_RT_FORMAT_YUV422_12	0x00002000	///< YUV 4:2:2 12-bit.
+#define VA_RT_FORMAT_YUV444_12	0x00004000	///< YUV 4:4:4 12-bit.
 
-#define VA_RT_FORMAT_RGB16  0x00010000  ///< Packed RGB, 16 bits per pixel.
-#define VA_RT_FORMAT_RGB32  0x00020000  ///< Packed RGB, 32 bits per pixel, 8 bits per colour sample.
-#define VA_RT_FORMAT_RGBP   0x00100000  ///< Planar RGB, 8 bits per sample.
-#define VA_RT_FORMAT_RGB32_10   0x00200000  ///< Packed RGB, 32 bits per pixel, 10 bits per colour sample.
+#define VA_RT_FORMAT_RGB16	0x00010000	///< Packed RGB, 16 bits per pixel.
+#define VA_RT_FORMAT_RGB32	0x00020000	///< Packed RGB, 32 bits per pixel, 8 bits per colour sample.
+#define VA_RT_FORMAT_RGBP	0x00100000	///< Planar RGB, 8 bits per sample.
+#define VA_RT_FORMAT_RGB32_10	0x00200000	///< Packed RGB, 32 bits per pixel, 10 bits per colour sample.
 
-#define VA_RT_FORMAT_PROTECTED  0x80000000
+#define VA_RT_FORMAT_PROTECTED	0x80000000
 
-#define VA_RT_FORMAT_RGB32_10BPP    VA_RT_FORMAT_RGB32_10   ///< @deprecated use VA_RT_FORMAT_RGB32_10 instead.
-#define VA_RT_FORMAT_YUV420_10BPP   VA_RT_FORMAT_YUV420_10  ///< @deprecated use VA_RT_FORMAT_YUV420_10 instead.
+#define VA_RT_FORMAT_RGB32_10BPP	VA_RT_FORMAT_RGB32_10	///< @deprecated use VA_RT_FORMAT_RGB32_10 instead.
+#define VA_RT_FORMAT_YUV420_10BPP	VA_RT_FORMAT_YUV420_10	///< @deprecated use VA_RT_FORMAT_YUV420_10 instead.
 
 
 
@@ -1051,7 +832,7 @@ typedef struct _VAConfigAttrib {
 #define VA_RC_VBR_CONSTRAINED           0x00000020
 
 
-#define VA_RC_ICQ           0x00000040
+#define VA_RC_ICQ			0x00000040
 
 
 #define VA_RC_MB                        0x00000080
@@ -1084,17 +865,7 @@ typedef struct _VAConfigAttrib {
 
 
 
-
 #define VA_RC_AVBR                      0x00000800
-
-
-
-
-
-
-
-
-#define VA_RC_TCBRC                     0x00001000
 
 
 
@@ -1109,10 +880,10 @@ typedef struct _VAConfigAttrib {
 
 typedef union _VAConfigAttribValDecJPEG {
     struct {
-        
-        uint32_t rotation : 4;
-        
-        uint32_t reserved : 28;
+    
+    uint32_t rotation : 4;
+    
+    uint32_t reserved : 28;
     } bits;
     uint32_t value;
 } VAConfigAttribValDecJPEG;
@@ -1191,10 +962,6 @@ typedef union _VAConfigAttribValDecJPEG {
 
 
 
-#define VA_ENC_SLICE_STRUCTURE_EQUAL_MULTI_ROWS         0x00000020
-
-
-
 typedef union _VAConfigAttribValMaxFrameSize {
     struct {
         
@@ -1206,7 +973,7 @@ typedef union _VAConfigAttribValMaxFrameSize {
         
         uint32_t multiple_pass  : 1;
         
-        uint32_t reserved       : 30;
+        uint32_t reserved       :30;
     } bits;
     uint32_t value;
 } VAConfigAttribValMaxFrameSize;
@@ -1250,8 +1017,6 @@ typedef union _VAConfigAttribValEncJPEG {
 
 #define VA_PREDICTION_DIRECTION_FUTURE                  0x00000002
 
-#define VA_PREDICTION_DIRECTION_BI_NOT_EMPTY            0x00000004
-
 
 
 
@@ -1278,7 +1043,7 @@ typedef union _VAConfigAttribValEncJPEG {
 typedef union _VAConfigAttribValEncROI {
     struct {
         
-        uint32_t num_roi_regions        : 8;
+        uint32_t num_roi_regions 		: 8;
         
 
 
@@ -1290,7 +1055,7 @@ typedef union _VAConfigAttribValEncROI {
 
 
 
-        uint32_t roi_rc_priority_support    : 1;
+        uint32_t roi_rc_priority_support	: 1;
         
 
 
@@ -1304,8 +1069,8 @@ typedef union _VAConfigAttribValEncROI {
 
         uint32_t roi_rc_qp_delta_support    : 1;
         uint32_t reserved                   : 22;
-    } bits;
-    uint32_t value;
+     } bits;
+     uint32_t value;
 } VAConfigAttribValEncROI;
 
 
@@ -1362,51 +1127,7 @@ typedef union _VAConfigAttribValMultipleFrame {
         uint32_t reserved                       : 23;
     } bits;
     uint32_t value;
-} VAConfigAttribValMultipleFrame;
-
-
-typedef union _VAConfigAttribValContextPriority {
-    struct {
-        
-
-        uint32_t priority     : 16;
-        
-        uint32_t reserved     : 16;
-    } bits;
-    uint32_t value;
-} VAConfigAttribValContextPriority;
-
-
-
-#define VA_PC_CIPHER_AES                    0x00000001
-
-
-
-#define VA_PC_BLOCK_SIZE_128                0x00000001
-
-#define VA_PC_BLOCK_SIZE_192                0x00000002
-
-#define VA_PC_BLOCK_SIZE_256                0x00000004
-
-
-
-#define VA_PC_CIPHER_MODE_ECB               0x00000001
-
-#define VA_PC_CIPHER_MODE_CBC               0x00000002
-
-#define VA_PC_CIPHER_MODE_CTR               0x00000004
-
-
-
-#define VA_PC_SAMPLE_TYPE_FULLSAMPLE        0x00000001
-
-#define VA_PC_SAMPLE_TYPE_SUBSAMPLE         0x00000002
-
-
-
-#define VA_PC_USAGE_DEFAULT                 0x00000000
-
-#define VA_PC_USAGE_WIDEVINE                0x00000001
+}VAConfigAttribValMultipleFrame;
 
 
 
@@ -1424,17 +1145,17 @@ typedef union _VAConfigAttribValContextPriority {
 #define VA_ATTRIB_NOT_SUPPORTED 0x80000000
 
 
-int vaMaxNumProfiles(
+int vaMaxNumProfiles (
     VADisplay dpy
 );
 
 
-int vaMaxNumEntrypoints(
+int vaMaxNumEntrypoints (
     VADisplay dpy
 );
 
 
-int vaMaxNumConfigAttributes(
+int vaMaxNumConfigAttributes (
     VADisplay dpy
 );
 
@@ -1444,10 +1165,10 @@ int vaMaxNumConfigAttributes(
 
 
 
-VAStatus vaQueryConfigProfiles(
+VAStatus vaQueryConfigProfiles (
     VADisplay dpy,
-    VAProfile *profile_list,    
-    int *num_profiles       
+    VAProfile *profile_list,	
+    int *num_profiles		
 );
 
 
@@ -1456,11 +1177,11 @@ VAStatus vaQueryConfigProfiles(
 
 
 
-VAStatus vaQueryConfigEntrypoints(
+VAStatus vaQueryConfigEntrypoints (
     VADisplay dpy,
     VAProfile profile,
-    VAEntrypoint *entrypoint_list,  
-    int *num_entrypoints        
+    VAEntrypoint *entrypoint_list,	
+    int *num_entrypoints		
 );
 
 
@@ -1471,7 +1192,7 @@ VAStatus vaQueryConfigEntrypoints(
 
 
 
-VAStatus vaGetConfigAttributes(
+VAStatus vaGetConfigAttributes (
     VADisplay dpy,
     VAProfile profile,
     VAEntrypoint entrypoint,
@@ -1489,7 +1210,7 @@ typedef VAGenericID VAConfigID;
 
 
 
-VAStatus vaCreateConfig(
+VAStatus vaCreateConfig (
     VADisplay dpy,
     VAProfile profile,
     VAEntrypoint entrypoint,
@@ -1501,7 +1222,7 @@ VAStatus vaCreateConfig(
 
 
 
-VAStatus vaDestroyConfig(
+VAStatus vaDestroyConfig (
     VADisplay dpy,
     VAConfigID config_id
 );
@@ -1514,13 +1235,13 @@ VAStatus vaDestroyConfig(
 
 
 
-VAStatus vaQueryConfigAttributes(
+VAStatus vaQueryConfigAttributes (
     VADisplay dpy,
     VAConfigID config_id,
-    VAProfile *profile,     
-    VAEntrypoint *entrypoint,   
+    VAProfile *profile, 	
+    VAEntrypoint *entrypoint, 	
     VAConfigAttrib *attrib_list,
-    int *num_attribs        
+    int *num_attribs 		
 );
 
 
@@ -1547,8 +1268,8 @@ typedef VAGenericID VAContextID;
 
 typedef VAGenericID VASurfaceID;
 
-#define VA_INVALID_ID       0xffffffff
-#define VA_INVALID_SURFACE  VA_INVALID_ID
+#define VA_INVALID_ID		0xffffffff
+#define VA_INVALID_SURFACE	VA_INVALID_ID
 
 
 typedef enum  {
@@ -1600,6 +1321,7 @@ typedef enum {
 
 
 
+
     VASurfaceAttribPixelFormat,
     
     VASurfaceAttribMinWidth,
@@ -1622,13 +1344,6 @@ typedef enum {
 
     VASurfaceAttribUsageHint,
     
-
-
-
-
-
-    VASurfaceAttribDRMFormatModifiers,
-    
     VASurfaceAttribCount
 } VASurfaceAttribType;
 
@@ -1650,11 +1365,11 @@ typedef struct _VASurfaceAttrib {
 
 
 
-#define VA_SURFACE_ATTRIB_MEM_TYPE_VA           0x00000001
+#define VA_SURFACE_ATTRIB_MEM_TYPE_VA			0x00000001
 
-#define VA_SURFACE_ATTRIB_MEM_TYPE_V4L2         0x00000002
+#define VA_SURFACE_ATTRIB_MEM_TYPE_V4L2			0x00000002
 
-#define VA_SURFACE_ATTRIB_MEM_TYPE_USER_PTR     0x00000004
+#define VA_SURFACE_ATTRIB_MEM_TYPE_USER_PTR		0x00000004
 
 
 
@@ -1689,33 +1404,33 @@ typedef struct _VASurfaceAttribExternalBuffers {
 
 
 
-#define VA_SURFACE_EXTBUF_DESC_ENABLE_TILING    0x00000001
+#define VA_SURFACE_EXTBUF_DESC_ENABLE_TILING	0x00000001
 
-#define VA_SURFACE_EXTBUF_DESC_CACHED       0x00000002
+#define VA_SURFACE_EXTBUF_DESC_CACHED		0x00000002
 
-#define VA_SURFACE_EXTBUF_DESC_UNCACHED     0x00000004
+#define VA_SURFACE_EXTBUF_DESC_UNCACHED		0x00000004
 
-#define VA_SURFACE_EXTBUF_DESC_WC       0x00000008
+#define VA_SURFACE_EXTBUF_DESC_WC		0x00000008
 
 #define VA_SURFACE_EXTBUF_DESC_PROTECTED        0x80000000
 
 
 
 
-#define VA_SURFACE_ATTRIB_USAGE_HINT_GENERIC    0x00000000
+#define VA_SURFACE_ATTRIB_USAGE_HINT_GENERIC 	0x00000000
 
-#define VA_SURFACE_ATTRIB_USAGE_HINT_DECODER    0x00000001
+#define VA_SURFACE_ATTRIB_USAGE_HINT_DECODER 	0x00000001
 
-#define VA_SURFACE_ATTRIB_USAGE_HINT_ENCODER    0x00000002
+#define VA_SURFACE_ATTRIB_USAGE_HINT_ENCODER 	0x00000002
 
-#define VA_SURFACE_ATTRIB_USAGE_HINT_VPP_READ   0x00000004
+#define VA_SURFACE_ATTRIB_USAGE_HINT_VPP_READ 	0x00000004
 
-#define VA_SURFACE_ATTRIB_USAGE_HINT_VPP_WRITE  0x00000008
+#define VA_SURFACE_ATTRIB_USAGE_HINT_VPP_WRITE 	0x00000008
 
-#define VA_SURFACE_ATTRIB_USAGE_HINT_DISPLAY    0x00000010
+#define VA_SURFACE_ATTRIB_USAGE_HINT_DISPLAY 	0x00000010
 
 
-#define VA_SURFACE_ATTRIB_USAGE_HINT_EXPORT     0x00000020
+#define VA_SURFACE_ATTRIB_USAGE_HINT_EXPORT 	0x00000020
 
 
 
@@ -1791,7 +1506,7 @@ vaCreateSurfaces(
 
 
 
-VAStatus vaDestroySurfaces(
+VAStatus vaDestroySurfaces (
     VADisplay dpy,
     VASurfaceID *surfaces,
     int num_surfaces
@@ -1810,7 +1525,7 @@ VAStatus vaDestroySurfaces(
 
 
 
-VAStatus vaCreateContext(
+VAStatus vaCreateContext (
     VADisplay dpy,
     VAConfigID config_id,
     int picture_width,
@@ -1818,7 +1533,7 @@ VAStatus vaCreateContext(
     int flag,
     VASurfaceID *render_targets,
     int num_render_targets,
-    VAContextID *context        
+    VAContextID *context		
 );
 
 
@@ -1826,7 +1541,7 @@ VAStatus vaCreateContext(
 
 
 
-VAStatus vaDestroyContext(
+VAStatus vaDestroyContext (
     VADisplay dpy,
     VAContextID context
 );
@@ -1849,7 +1564,7 @@ typedef VAGenericID VAMFContextID;
 
 
 
-VAStatus vaCreateMFContext(
+VAStatus vaCreateMFContext (
     VADisplay dpy,
     VAMFContextID *mf_context    
 );
@@ -1887,7 +1602,7 @@ VAStatus vaCreateMFContext(
 
 
 
-VAStatus vaMFAddContext(
+VAStatus vaMFAddContext (
     VADisplay dpy,
     VAMFContextID mf_context,
     VAContextID context
@@ -1905,7 +1620,7 @@ VAStatus vaMFAddContext(
 
 
 
-VAStatus vaMFReleaseContext(
+VAStatus vaMFReleaseContext (
     VADisplay dpy,
     VAMFContextID mf_context,
     VAContextID context
@@ -1921,31 +1636,32 @@ VAStatus vaMFReleaseContext(
 
 typedef VAGenericID VABufferID;
 
-typedef enum {
-    VAPictureParameterBufferType    = 0,
-    VAIQMatrixBufferType        = 1,
-    VABitPlaneBufferType        = 2,
-    VASliceGroupMapBufferType       = 3,
-    VASliceParameterBufferType      = 4,
-    VASliceDataBufferType       = 5,
-    VAMacroblockParameterBufferType = 6,
-    VAResidualDataBufferType        = 7,
-    VADeblockingParameterBufferType = 8,
-    VAImageBufferType           = 9,
-    VAProtectedSliceDataBufferType  = 10,
+typedef enum
+{
+    VAPictureParameterBufferType	= 0,
+    VAIQMatrixBufferType		= 1,
+    VABitPlaneBufferType		= 2,
+    VASliceGroupMapBufferType		= 3,
+    VASliceParameterBufferType		= 4,
+    VASliceDataBufferType		= 5,
+    VAMacroblockParameterBufferType	= 6,
+    VAResidualDataBufferType		= 7,
+    VADeblockingParameterBufferType	= 8,
+    VAImageBufferType			= 9,
+    VAProtectedSliceDataBufferType	= 10,
     VAQMatrixBufferType                 = 11,
     VAHuffmanTableBufferType            = 12,
     VAProbabilityBufferType             = 13,
 
-    
-    VAEncCodedBufferType        = 21,
-    VAEncSequenceParameterBufferType    = 22,
-    VAEncPictureParameterBufferType = 23,
-    VAEncSliceParameterBufferType   = 24,
+
+    VAEncCodedBufferType		= 21,
+    VAEncSequenceParameterBufferType	= 22,
+    VAEncPictureParameterBufferType	= 23,
+    VAEncSliceParameterBufferType	= 24,
     VAEncPackedHeaderParameterBufferType = 25,
     VAEncPackedHeaderDataBufferType     = 26,
-    VAEncMiscParameterBufferType    = 27,
-    VAEncMacroblockParameterBufferType  = 28,
+    VAEncMiscParameterBufferType	= 27,
+    VAEncMacroblockParameterBufferType	= 28,
     VAEncMacroblockMapBufferType        = 29,
 
     
@@ -1956,7 +1672,7 @@ typedef enum {
 
 
     VAEncQPBufferType                   = 30,
-    
+
     
 
 
@@ -2024,133 +1740,9 @@ typedef enum {
 
 
     VASubsetsParameterBufferType        = 57,
-    
-
-
-
-
-    VAContextParameterUpdateBufferType  = 58,
-    
-
-
-
-
-
-    VAProtectedSessionExecuteBufferType = 59,
-
-    
-
-
-
-    VAEncryptionParameterBufferType = 60,
 
     VABufferTypeMax
 } VABufferType;
-
-
-
-
-
-
-typedef struct _VAContextParameterUpdateBuffer {
-    union {
-        struct {
-            
-            uint32_t context_priority_update : 1;
-            
-            uint32_t reserved                : 31;
-        } bits;
-        uint32_t value;
-    } flags;
-    
-    VAConfigAttribValContextPriority context_priority;
-    
-    uint32_t reserved[VA_PADDING_MEDIUM];
-} VAContextParameterUpdateBuffer;
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define VA_ENCRYPTION_TYPE_FULLSAMPLE_CTR       0x00000001  /* AES CTR fullsample */
-#define VA_ENCRYPTION_TYPE_FULLSAMPLE_CBC       0x00000002  /* AES CBC fullsample */
-#define VA_ENCRYPTION_TYPE_SUBSAMPLE_CTR        0x00000004  /* AES CTR fullsample */
-#define VA_ENCRYPTION_TYPE_SUBSAMPLE_CBC        0x00000008  /* AES CBC fullsample */
-
-
-typedef struct _VAEncryptionSegmentInfo {
-    
-
-    uint32_t segment_start_offset;
-    
-    uint32_t segment_length;
-    
-
-    uint32_t partial_aes_block_size;
-    
-    uint32_t init_byte_length;
-    
-
-
-    uint8_t aes_cbc_iv_or_ctr[64];
-    
-    uint32_t va_reserved[VA_PADDING_MEDIUM];
-} VAEncryptionSegmentInfo;
-
-
-typedef struct _VAEncryptionParameters {
-    
-
-
-    uint32_t encryption_type;
-    
-    uint32_t num_segments;
-    
-    VAEncryptionSegmentInfo *segment_info;
-    
-
-
-    uint32_t status_report_index;
-    
-    uint32_t size_of_length;
-    
-
-    uint8_t wrapped_decrypt_blob[64];
-    
-
-    uint8_t wrapped_encrypt_blob[64];
-    
-
-
-
-    uint32_t key_blob_size;
-    
-
-
-
-
-
-
-
-    uint32_t blocks_stripe_encrypted;
-    
-
-
-
-
-
-    uint32_t blocks_stripe_clear;
-    
-    uint32_t va_reserved[VA_PADDING_MEDIUM];
-} VAEncryptionParameters;
 
 
 
@@ -2214,11 +1806,12 @@ vaQueryProcessingRate(
     unsigned int       *processing_rate
 );
 
-typedef enum {
-    VAEncMiscParameterTypeFrameRate     = 0,
-    VAEncMiscParameterTypeRateControl   = 1,
-    VAEncMiscParameterTypeMaxSliceSize  = 2,
-    VAEncMiscParameterTypeAIR       = 3,
+typedef enum
+{
+    VAEncMiscParameterTypeFrameRate 	= 0,
+    VAEncMiscParameterTypeRateControl  	= 1,
+    VAEncMiscParameterTypeMaxSliceSize	= 2,
+    VAEncMiscParameterTypeAIR    	= 3,
     
     VAEncMiscParameterTypeMaxFrameSize  = 4,
     
@@ -2310,13 +1903,15 @@ typedef struct _VAEncPackedHeaderParameterBuffer {
 
 
 
-typedef struct _VAEncMiscParameterBuffer {
+typedef struct _VAEncMiscParameterBuffer
+{
     VAEncMiscParameterType type;
     uint32_t data[];
 } VAEncMiscParameterBuffer;
 
 
-typedef struct _VAEncMiscParameterTemporalLayerStructure {
+typedef struct _VAEncMiscParameterTemporalLayerStructure
+{
     
     uint32_t number_of_layers;
     
@@ -2335,7 +1930,8 @@ typedef struct _VAEncMiscParameterTemporalLayerStructure {
 
 
 
-typedef struct _VAEncMiscParameterRateControl {
+typedef struct _VAEncMiscParameterRateControl
+{
     
     uint32_t bits_per_second;
     
@@ -2366,8 +1962,10 @@ typedef struct _VAEncMiscParameterRateControl {
 
 
     uint32_t basic_unit_size;
-    union {
-        struct {
+    union
+    {
+        struct
+        {
             
 
 
@@ -2434,16 +2032,7 @@ typedef struct _VAEncMiscParameterRateControl {
 
     uint32_t quality_factor;
     
-
-
-
-
-
-
-
-    uint32_t target_frame_size;
-    
-    uint32_t va_reserved[VA_PADDING_LOW];
+    uint32_t va_reserved[VA_PADDING_MEDIUM - 3];
 } VAEncMiscParameterRateControl;
 
 
@@ -2452,7 +2041,8 @@ typedef struct _VAEncMiscParameterRateControl {
 
 
 
-typedef struct _VAEncMiscParameterFrameRate {
+typedef struct _VAEncMiscParameterFrameRate
+{
     
 
 
@@ -2473,15 +2063,17 @@ typedef struct _VAEncMiscParameterFrameRate {
 
 
     uint32_t framerate;
-    union {
-        struct {
+    union
+    {
+        struct
+        {
             
             uint32_t temporal_id : 8;
             
             uint32_t reserved : 24;
-        } bits;
-        uint32_t value;
-    } framerate_flags;
+         } bits;
+         uint32_t value;
+     } framerate_flags;
 
     
     uint32_t                va_reserved[VA_PADDING_LOW];
@@ -2492,14 +2084,16 @@ typedef struct _VAEncMiscParameterFrameRate {
 
 
 
-typedef struct _VAEncMiscParameterMaxSliceSize {
+typedef struct _VAEncMiscParameterMaxSliceSize
+{
     uint32_t max_slice_size;
 
     
     uint32_t                va_reserved[VA_PADDING_LOW];
 } VAEncMiscParameterMaxSliceSize;
 
-typedef struct _VAEncMiscParameterAIR {
+typedef struct _VAEncMiscParameterAIR
+{
     uint32_t air_num_mbs;
     uint32_t air_threshold;
     uint32_t air_auto; 
@@ -2511,21 +2105,23 @@ typedef struct _VAEncMiscParameterAIR {
 
 
 
-typedef struct _VAEncMiscParameterRIR {
-    union {
+typedef struct _VAEncMiscParameterRIR
+{
+    union
+    {
         struct
-        
+	
 
 
 
 
 
         {
-            
+	    
             uint32_t enable_rir_column : 1;
-            
+	    
             uint32_t enable_rir_row : 1;
-            uint32_t reserved : 30;
+	    uint32_t reserved : 30;
         } bits;
         uint32_t value;
     } rir_flags;
@@ -2556,7 +2152,8 @@ typedef struct _VAEncMiscParameterRIR {
 
 
 
-typedef struct _VAEncMiscParameterHRD {
+typedef struct _VAEncMiscParameterHRD
+{
     
 
 
@@ -2652,17 +2249,20 @@ typedef struct _VAEncMiscParameterBufferQualityLevel {
 
 
 
-typedef struct _VAEncMiscParameterQuantization {
-    union {
-        
-        struct {
-            
+typedef struct _VAEncMiscParameterQuantization
+{
+    union
+    {
+    
+        struct
+        {
+	    
             uint32_t disable_trellis : 1;
-            
+	    
             uint32_t enable_trellis_I : 1;
-            
+	    
             uint32_t enable_trellis_P : 1;
-            
+	    
             uint32_t enable_trellis_B : 1;
             uint32_t reserved : 28;
         } bits;
@@ -2707,16 +2307,13 @@ typedef struct _VAEncMiscParameterSkipFrame {
 
 
 
-typedef struct _VAEncROI {
-    
+typedef struct _VAEncROI
+{
+        
 
 
-    VARectangle     roi_rectangle;
-    
-
-
-
-
+        VARectangle     roi_rectangle;
+        
 
 
 
@@ -2730,7 +2327,11 @@ typedef struct _VAEncROI {
 
 
 
-    int8_t            roi_value;
+
+
+
+
+        int8_t            roi_value;
 } VAEncROI;
 
 typedef struct _VAEncMiscParameterBufferROI {
@@ -2743,7 +2344,7 @@ typedef struct _VAEncMiscParameterBufferROI {
     int8_t                max_delta_qp;
     int8_t                min_delta_qp;
 
-    
+   
 
     VAEncROI            *roi;
     union {
@@ -2780,12 +2381,13 @@ typedef struct _VAEncMiscParameterBufferROI {
 
 
 
-typedef struct _VAEncMiscParameterBufferDirtyRect {
+typedef struct _VAEncMiscParameterBufferDirtyRect
+{
     
     uint32_t    num_roi_rectangle;
 
     
-    VARectangle    *roi_rectangle;
+     VARectangle    *roi_rectangle;
 } VAEncMiscParameterBufferDirtyRect;
 
 
@@ -2801,9 +2403,12 @@ typedef struct _VAEncMiscParameterParallelRateControl {
 
 
 
-typedef struct _VAEncMiscParameterEncQuality {
-    union {
-        struct {
+typedef struct _VAEncMiscParameterEncQuality
+{
+    union
+    {
+        struct
+        {
             
 
 
@@ -2875,7 +2480,8 @@ typedef struct _VAEncMiscParameterEncQuality {
 
 
 
-typedef struct _VAEncMiscParameterCustomRoundingControl {
+typedef struct _VAEncMiscParameterCustomRoundingControl
+{
     union {
         struct {
             
@@ -2900,8 +2506,8 @@ typedef struct _VAEncMiscParameterCustomRoundingControl {
 
             uint32_t    rounding_offset_inter           : 7;
 
-            
-            uint32_t    reserved                        : 16;
+           
+            uint32_t    reserved                        :16;
         }  bits;
         uint32_t    value;
     }   rounding_offset_setting;
@@ -2914,17 +2520,17 @@ typedef struct _VAEncMiscParameterCustomRoundingControl {
 
 
 
+#define VA_SLICE_DATA_FLAG_ALL		0x00	/* whole slice is in the buffer */
+#define VA_SLICE_DATA_FLAG_BEGIN	0x01	/* The beginning of the slice is in the buffer but the end if not */
+#define VA_SLICE_DATA_FLAG_MIDDLE	0x02	/* Neither beginning nor end of the slice is in the buffer */
+#define VA_SLICE_DATA_FLAG_END		0x04	/* end of the slice is in the buffer */
 
-#define VA_SLICE_DATA_FLAG_ALL      0x00    /* whole slice is in the buffer */
-#define VA_SLICE_DATA_FLAG_BEGIN    0x01    /* The beginning of the slice is in the buffer but the end if not */
-#define VA_SLICE_DATA_FLAG_MIDDLE   0x02    /* Neither beginning nor end of the slice is in the buffer */
-#define VA_SLICE_DATA_FLAG_END      0x04    /* end of the slice is in the buffer */
 
-
-typedef struct _VASliceParameterBufferBase {
-    uint32_t slice_data_size;   
-    uint32_t slice_data_offset; 
-    uint32_t slice_data_flag;   
+typedef struct _VASliceParameterBufferBase
+{
+    uint32_t slice_data_size;	
+    uint32_t slice_data_offset;	
+    uint32_t slice_data_flag;	
 } VASliceParameterBufferBase;
 
 
@@ -2978,7 +2584,8 @@ typedef struct _VAHuffmanTableBufferJPEGBaseline {
 
 
 
-typedef struct _VAPictureParameterBufferMPEG2 {
+typedef struct _VAPictureParameterBufferMPEG2
+{
     uint16_t horizontal_size;
     uint16_t vertical_size;
     VASurfaceID forward_reference_picture;
@@ -2988,17 +2595,17 @@ typedef struct _VAPictureParameterBufferMPEG2 {
     int32_t f_code; 
     union {
         struct {
-            uint32_t intra_dc_precision     : 2;
-            uint32_t picture_structure      : 2;
-            uint32_t top_field_first        : 1;
-            uint32_t frame_pred_frame_dct       : 1;
-            uint32_t concealment_motion_vectors : 1;
-            uint32_t q_scale_type           : 1;
-            uint32_t intra_vlc_format       : 1;
-            uint32_t alternate_scan         : 1;
-            uint32_t repeat_first_field     : 1;
-            uint32_t progressive_frame      : 1;
-            uint32_t is_first_field         : 1; 
+            uint32_t intra_dc_precision		: 2;
+            uint32_t picture_structure		: 2;
+            uint32_t top_field_first		: 1;
+            uint32_t frame_pred_frame_dct		: 1;
+            uint32_t concealment_motion_vectors	: 1;
+            uint32_t q_scale_type			: 1;
+            uint32_t intra_vlc_format		: 1;
+            uint32_t alternate_scan			: 1;
+            uint32_t repeat_first_field		: 1;
+            uint32_t progressive_frame		: 1;
+            uint32_t is_first_field			: 1; 
 
 
         } bits;
@@ -3010,7 +2617,8 @@ typedef struct _VAPictureParameterBufferMPEG2 {
 } VAPictureParameterBufferMPEG2;
 
 
-typedef struct _VAIQMatrixBufferMPEG2 {
+typedef struct _VAIQMatrixBufferMPEG2
+{
     
     int32_t load_intra_quantiser_matrix;
     
@@ -3033,7 +2641,8 @@ typedef struct _VAIQMatrixBufferMPEG2 {
 } VAIQMatrixBufferMPEG2;
 
 
-typedef struct _VASliceParameterBufferMPEG2 {
+typedef struct _VASliceParameterBufferMPEG2
+{
     uint32_t slice_data_size;
     uint32_t slice_data_offset;
     uint32_t slice_data_flag; 
@@ -3048,7 +2657,8 @@ typedef struct _VASliceParameterBufferMPEG2 {
 } VASliceParameterBufferMPEG2;
 
 
-typedef struct _VAMacroblockParameterBufferMPEG2 {
+typedef struct _VAMacroblockParameterBufferMPEG2
+{
     uint16_t macroblock_address;
     
 
@@ -3058,9 +2668,9 @@ typedef struct _VAMacroblockParameterBufferMPEG2 {
     uint8_t macroblock_type;  
     union {
         struct {
-            uint32_t frame_motion_type      : 2;
-            uint32_t field_motion_type      : 2;
-            uint32_t dct_type           : 1;
+            uint32_t frame_motion_type		: 2;
+            uint32_t field_motion_type		: 2;
+            uint32_t dct_type			: 1;
         } bits;
         uint32_t value;
     } macroblock_modes;
@@ -3091,10 +2701,10 @@ typedef struct _VAMacroblockParameterBufferMPEG2 {
 
 
 
-#define VA_MB_TYPE_MOTION_FORWARD   0x02
-#define VA_MB_TYPE_MOTION_BACKWARD  0x04
-#define VA_MB_TYPE_MOTION_PATTERN   0x08
-#define VA_MB_TYPE_MOTION_INTRA     0x10
+#define VA_MB_TYPE_MOTION_FORWARD	0x02
+#define VA_MB_TYPE_MOTION_BACKWARD	0x04
+#define VA_MB_TYPE_MOTION_PATTERN	0x08
+#define VA_MB_TYPE_MOTION_INTRA		0x10
 
 
 
@@ -3111,24 +2721,25 @@ typedef struct _VAMacroblockParameterBufferMPEG2 {
 
 
 
-typedef struct _VAPictureParameterBufferMPEG4 {
+typedef struct _VAPictureParameterBufferMPEG4
+{
     uint16_t vop_width;
     uint16_t vop_height;
     VASurfaceID forward_reference_picture;
     VASurfaceID backward_reference_picture;
     union {
         struct {
-            uint32_t short_video_header     : 1;
-            uint32_t chroma_format          : 2;
-            uint32_t interlaced         : 1;
-            uint32_t obmc_disable           : 1;
-            uint32_t sprite_enable          : 2;
-            uint32_t sprite_warping_accuracy    : 2;
-            uint32_t quant_type         : 1;
-            uint32_t quarter_sample         : 1;
-            uint32_t data_partitioned       : 1;
-            uint32_t reversible_vlc         : 1;
-            uint32_t resync_marker_disable      : 1;
+            uint32_t short_video_header		: 1;
+            uint32_t chroma_format			: 2;
+            uint32_t interlaced			: 1;
+            uint32_t obmc_disable			: 1;
+            uint32_t sprite_enable			: 2;
+            uint32_t sprite_warping_accuracy	: 2;
+            uint32_t quant_type			: 1;
+            uint32_t quarter_sample			: 1;
+            uint32_t data_partitioned		: 1;
+            uint32_t reversible_vlc			: 1;
+            uint32_t resync_marker_disable		: 1;
         } bits;
         uint32_t value;
     } vol_fields;
@@ -3138,12 +2749,12 @@ typedef struct _VAPictureParameterBufferMPEG4 {
     uint8_t quant_precision;
     union {
         struct {
-            uint32_t vop_coding_type        : 2;
-            uint32_t backward_reference_vop_coding_type : 2;
-            uint32_t vop_rounding_type      : 1;
-            uint32_t intra_dc_vlc_thr       : 3;
-            uint32_t top_field_first        : 1;
-            uint32_t alternate_vertical_scan_flag   : 1;
+            uint32_t vop_coding_type		: 2;
+            uint32_t backward_reference_vop_coding_type	: 2;
+            uint32_t vop_rounding_type		: 1;
+            uint32_t intra_dc_vlc_thr		: 3;
+            uint32_t top_field_first		: 1;
+            uint32_t alternate_vertical_scan_flag	: 1;
         } bits;
         uint32_t value;
     } vop_fields;
@@ -3162,7 +2773,8 @@ typedef struct _VAPictureParameterBufferMPEG4 {
 } VAPictureParameterBufferMPEG4;
 
 
-typedef struct _VAIQMatrixBufferMPEG4 {
+typedef struct _VAIQMatrixBufferMPEG4
+{
     
     int32_t load_intra_quant_mat;
     
@@ -3177,7 +2789,8 @@ typedef struct _VAIQMatrixBufferMPEG4 {
 } VAIQMatrixBufferMPEG4;
 
 
-typedef struct _VASliceParameterBufferMPEG4 {
+typedef struct _VASliceParameterBufferMPEG4
+{
     uint32_t slice_data_size;
     uint32_t slice_data_offset;
     uint32_t slice_data_flag; 
@@ -3215,7 +2828,8 @@ typedef enum
 
 
 
-typedef struct _VAPictureParameterBufferVC1 {
+typedef struct _VAPictureParameterBufferVC1
+{
     VASurfaceID forward_reference_picture;
     VASurfaceID backward_reference_picture;
     
@@ -3226,73 +2840,73 @@ typedef struct _VAPictureParameterBufferVC1 {
     
     union {
         struct {
-            uint32_t pulldown   : 1; 
-            uint32_t interlace  : 1; 
-            uint32_t tfcntrflag : 1; 
-            uint32_t finterpflag    : 1; 
-            uint32_t psf        : 1; 
-            uint32_t multires   : 1; 
-            uint32_t overlap    : 1; 
-            uint32_t syncmarker : 1; 
-            uint32_t rangered   : 1; 
-            uint32_t max_b_frames   : 3; 
-            uint32_t profile    : 2; 
+            uint32_t pulldown	: 1; 
+            uint32_t interlace	: 1; 
+            uint32_t tfcntrflag	: 1; 
+            uint32_t finterpflag	: 1; 
+            uint32_t psf		: 1; 
+            uint32_t multires	: 1; 
+            uint32_t overlap	: 1; 
+            uint32_t syncmarker	: 1; 
+            uint32_t rangered	: 1; 
+            uint32_t max_b_frames	: 3; 
+            uint32_t profile	: 2; 
         } bits;
         uint32_t value;
     } sequence_fields;
 
-    uint16_t coded_width;       
-    uint16_t coded_height;  
+    uint16_t coded_width;		
+    uint16_t coded_height;	
     union {
-        struct {
-            uint32_t broken_link    : 1; 
-            uint32_t closed_entry   : 1; 
-            uint32_t panscan_flag   : 1; 
-            uint32_t loopfilter : 1; 
-        } bits;
-        uint32_t value;
+	struct {
+            uint32_t broken_link	: 1; 
+            uint32_t closed_entry	: 1; 
+            uint32_t panscan_flag	: 1; 
+            uint32_t loopfilter	: 1; 
+	} bits;
+	uint32_t value;
     } entrypoint_fields;
     uint8_t conditional_overlap_flag; 
-    uint8_t fast_uvmc_flag; 
+    uint8_t fast_uvmc_flag;	
     union {
         struct {
-            uint32_t luma_flag  : 1; 
-            uint32_t luma       : 3; 
-            uint32_t chroma_flag    : 1; 
-            uint32_t chroma     : 3; 
+            uint32_t luma_flag	: 1; 
+            uint32_t luma		: 3; 
+            uint32_t chroma_flag	: 1; 
+            uint32_t chroma		: 3; 
         } bits;
         uint32_t value;
     } range_mapping_fields;
 
-    uint8_t b_picture_fraction; 
-    uint8_t cbp_table;      
-    uint8_t mb_mode_table;  
+    uint8_t b_picture_fraction;	
+    uint8_t cbp_table;		
+    uint8_t mb_mode_table;	
     uint8_t range_reduction_frame;
-    uint8_t rounding_control;   
-    uint8_t post_processing;    
-    uint8_t picture_resolution_index;   
-    uint8_t luma_scale;     
-    uint8_t luma_shift;     
+    uint8_t rounding_control;	
+    uint8_t post_processing;	
+    uint8_t picture_resolution_index;	
+    uint8_t luma_scale;		
+    uint8_t luma_shift;		
 
     union {
         struct {
-            uint32_t picture_type       : 3; 
-            uint32_t frame_coding_mode  : 3; 
-            uint32_t top_field_first    : 1; 
-            uint32_t is_first_field     : 1; 
-            uint32_t intensity_compensation : 1; 
+            uint32_t picture_type		: 3; 
+            uint32_t frame_coding_mode	: 3; 
+            uint32_t top_field_first	: 1; 
+            uint32_t is_first_field		: 1; 
+            uint32_t intensity_compensation	: 1; 
         } bits;
         uint32_t value;
     } picture_fields;
     union {
         struct {
-            uint32_t mv_type_mb : 1;    
-            uint32_t direct_mb  : 1;    
-            uint32_t skip_mb    : 1;    
-            uint32_t field_tx   : 1;    
-            uint32_t forward_mb : 1;    
-            uint32_t ac_pred    : 1;    
-            uint32_t overflags  : 1;    
+            uint32_t mv_type_mb	: 1; 	
+            uint32_t direct_mb	: 1; 	
+            uint32_t skip_mb	: 1; 	
+            uint32_t field_tx	: 1; 	
+            uint32_t forward_mb	: 1;	
+            uint32_t ac_pred	: 1;	
+            uint32_t overflags	: 1;	
         } flags;
         uint32_t value;
     } raw_coding;
@@ -3311,51 +2925,51 @@ typedef struct _VAPictureParameterBufferVC1 {
     union {
         struct {
             uint32_t reference_distance_flag : 1;
-            uint32_t reference_distance : 5;
+            uint32_t reference_distance	: 5;
             uint32_t num_reference_pictures: 1;
-            uint32_t reference_field_pic_indicator  : 1;
+            uint32_t reference_field_pic_indicator	: 1;
         } bits;
         uint32_t value;
     } reference_fields;
     union {
         struct {
-            uint32_t mv_mode        : 3; 
-            uint32_t mv_mode2       : 3; 
-            uint32_t mv_table       : 3; 
+            uint32_t mv_mode		: 3; 
+            uint32_t mv_mode2		: 3; 
+            uint32_t mv_table		: 3; 
             uint32_t two_mv_block_pattern_table: 2; 
-            uint32_t four_mv_switch     : 1; 
+            uint32_t four_mv_switch		: 1; 
             uint32_t four_mv_block_pattern_table : 2; 
-            uint32_t extended_mv_flag   : 1; 
-            uint32_t extended_mv_range  : 2; 
-            uint32_t extended_dmv_flag  : 1; 
-            uint32_t extended_dmv_range : 2; 
+            uint32_t extended_mv_flag	: 1; 
+            uint32_t extended_mv_range	: 2; 
+            uint32_t extended_dmv_flag	: 1; 
+            uint32_t extended_dmv_range	: 2; 
         } bits;
         uint32_t value;
     } mv_fields;
     union {
         struct {
-            uint32_t dquant : 2;    
-            uint32_t quantizer     : 2;     
-            uint32_t half_qp    : 1;    
+            uint32_t dquant	: 2; 	
+            uint32_t quantizer     : 2; 	
+            uint32_t half_qp	: 1; 	
             uint32_t pic_quantizer_scale : 5;
             uint32_t pic_quantizer_type : 1;
-            uint32_t dq_frame   : 1;    
-            uint32_t dq_profile : 2;    
-            uint32_t dq_sb_edge : 2;    
-            uint32_t dq_db_edge     : 2;    
-            uint32_t dq_binary_level : 1;   
+            uint32_t dq_frame	: 1; 	
+            uint32_t dq_profile	: 2; 	
+            uint32_t dq_sb_edge	: 2; 	
+            uint32_t dq_db_edge 	: 2; 	
+            uint32_t dq_binary_level : 1; 	
             uint32_t alt_pic_quantizer : 5;
         } bits;
         uint32_t value;
     } pic_quantizer_fields;
     union {
         struct {
-            uint32_t variable_sized_transform_flag  : 1;
-            uint32_t mb_level_transform_type_flag   : 1;
-            uint32_t frame_level_transform_type : 2;
-            uint32_t transform_ac_codingset_idx1    : 2;
-            uint32_t transform_ac_codingset_idx2    : 2;
-            uint32_t intra_transform_dc_table   : 1;
+            uint32_t variable_sized_transform_flag	: 1;
+            uint32_t mb_level_transform_type_flag	: 1;
+            uint32_t frame_level_transform_type	: 2;
+            uint32_t transform_ac_codingset_idx1	: 2;
+            uint32_t transform_ac_codingset_idx2	: 2;
+            uint32_t intra_transform_dc_table	: 1;
         } bits;
         uint32_t value;
     } transform_fields;
@@ -3387,7 +3001,8 @@ typedef struct _VAPictureParameterBufferVC1 {
 
 
 
-typedef struct _VASliceParameterBufferVC1 {
+typedef struct _VASliceParameterBufferVC1
+{
     uint32_t slice_data_size;
     uint32_t slice_data_offset;
     uint32_t slice_data_flag; 
@@ -3407,7 +3022,8 @@ typedef struct _VASliceParameterBufferVC1 {
 
 
 
-typedef struct _VAPictureH264 {
+typedef struct _VAPictureH264
+{
     VASurfaceID picture_id;
     uint32_t frame_idx;
     uint32_t flags;
@@ -3418,20 +3034,21 @@ typedef struct _VAPictureH264 {
     uint32_t                va_reserved[VA_PADDING_LOW];
 } VAPictureH264;
 
-#define VA_PICTURE_H264_INVALID         0x00000001
-#define VA_PICTURE_H264_TOP_FIELD       0x00000002
-#define VA_PICTURE_H264_BOTTOM_FIELD        0x00000004
-#define VA_PICTURE_H264_SHORT_TERM_REFERENCE    0x00000008
-#define VA_PICTURE_H264_LONG_TERM_REFERENCE 0x00000010
+#define VA_PICTURE_H264_INVALID			0x00000001
+#define VA_PICTURE_H264_TOP_FIELD		0x00000002
+#define VA_PICTURE_H264_BOTTOM_FIELD		0x00000004
+#define VA_PICTURE_H264_SHORT_TERM_REFERENCE	0x00000008
+#define VA_PICTURE_H264_LONG_TERM_REFERENCE	0x00000010
 
 
 
 
 
 
-typedef struct _VAPictureParameterBufferH264 {
+typedef struct _VAPictureParameterBufferH264
+{
     VAPictureH264 CurrPic;
-    VAPictureH264 ReferenceFrames[16];  
+    VAPictureH264 ReferenceFrames[16];	
     uint16_t picture_width_in_mbs_minus1;
     uint16_t picture_height_in_mbs_minus1;
     uint8_t bit_depth_luma_minus8;
@@ -3439,17 +3056,17 @@ typedef struct _VAPictureParameterBufferH264 {
     uint8_t num_ref_frames;
     union {
         struct {
-            uint32_t chroma_format_idc          : 2;
-            uint32_t residual_colour_transform_flag     : 1; 
-            uint32_t gaps_in_frame_num_value_allowed_flag   : 1;
-            uint32_t frame_mbs_only_flag            : 1;
-            uint32_t mb_adaptive_frame_field_flag       : 1;
-            uint32_t direct_8x8_inference_flag      : 1;
-            uint32_t MinLumaBiPredSize8x8           : 1; 
-            uint32_t log2_max_frame_num_minus4      : 4;
-            uint32_t pic_order_cnt_type         : 2;
-            uint32_t log2_max_pic_order_cnt_lsb_minus4  : 4;
-            uint32_t delta_pic_order_always_zero_flag   : 1;
+            uint32_t chroma_format_idc			: 2;
+            uint32_t residual_colour_transform_flag		: 1; 
+            uint32_t gaps_in_frame_num_value_allowed_flag	: 1;
+            uint32_t frame_mbs_only_flag			: 1;
+            uint32_t mb_adaptive_frame_field_flag		: 1;
+            uint32_t direct_8x8_inference_flag		: 1;
+            uint32_t MinLumaBiPredSize8x8			: 1; 
+            uint32_t log2_max_frame_num_minus4		: 4;
+            uint32_t pic_order_cnt_type			: 2;
+            uint32_t log2_max_pic_order_cnt_lsb_minus4	: 4;
+            uint32_t delta_pic_order_always_zero_flag	: 1;
         } bits;
         uint32_t value;
     } seq_fields;
@@ -3463,16 +3080,16 @@ typedef struct _VAPictureParameterBufferH264 {
     int8_t second_chroma_qp_index_offset;
     union {
         struct {
-            uint32_t entropy_coding_mode_flag   : 1;
-            uint32_t weighted_pred_flag     : 1;
-            uint32_t weighted_bipred_idc        : 2;
-            uint32_t transform_8x8_mode_flag    : 1;
-            uint32_t field_pic_flag         : 1;
-            uint32_t constrained_intra_pred_flag    : 1;
-            uint32_t pic_order_present_flag         : 1; 
+            uint32_t entropy_coding_mode_flag	: 1;
+            uint32_t weighted_pred_flag		: 1;
+            uint32_t weighted_bipred_idc		: 2;
+            uint32_t transform_8x8_mode_flag	: 1;
+            uint32_t field_pic_flag			: 1;
+            uint32_t constrained_intra_pred_flag	: 1;
+            uint32_t pic_order_present_flag			: 1; 
             uint32_t deblocking_filter_control_present_flag : 1;
-            uint32_t redundant_pic_cnt_present_flag     : 1;
-            uint32_t reference_pic_flag         : 1; 
+            uint32_t redundant_pic_cnt_present_flag		: 1;
+            uint32_t reference_pic_flag			: 1; 
         } bits;
         uint32_t value;
     } pic_fields;
@@ -3483,7 +3100,8 @@ typedef struct _VAPictureParameterBufferH264 {
 } VAPictureParameterBufferH264;
 
 
-typedef struct _VAIQMatrixBufferH264 {
+typedef struct _VAIQMatrixBufferH264
+{
     
     uint8_t ScalingList4x4[6][16];
     
@@ -3494,7 +3112,8 @@ typedef struct _VAIQMatrixBufferH264 {
 } VAIQMatrixBufferH264;
 
 
-typedef struct _VASliceParameterBufferH264 {
+typedef struct _VASliceParameterBufferH264
+{
     uint32_t slice_data_size;
     
     uint32_t slice_data_offset;
@@ -3532,8 +3151,8 @@ typedef struct _VASliceParameterBufferH264 {
     uint8_t disable_deblocking_filter_idc;
     int8_t slice_alpha_c0_offset_div2;
     int8_t slice_beta_offset_div2;
-    VAPictureH264 RefPicList0[32];  
-    VAPictureH264 RefPicList1[32];  
+    VAPictureH264 RefPicList0[32];	
+    VAPictureH264 RefPicList1[32];	
     uint8_t luma_log2_weight_denom;
     uint8_t chroma_log2_weight_denom;
     uint8_t luma_weight_l0_flag;
@@ -3556,10 +3175,11 @@ typedef struct _VASliceParameterBufferH264 {
 
 
 
-typedef enum {
-    VAEncPictureTypeIntra       = 0,
-    VAEncPictureTypePredictive      = 1,
-    VAEncPictureTypeBidirectional   = 2,
+typedef enum
+{
+    VAEncPictureTypeIntra		= 0,
+    VAEncPictureTypePredictive		= 1,
+    VAEncPictureTypeBidirectional	= 2,
 } VAEncPictureType;
 
 
@@ -3569,15 +3189,16 @@ typedef enum {
 
 
 
-typedef struct _VAEncSliceParameterBuffer {
-    uint32_t start_row_number;  
-    uint32_t slice_height;  
+typedef struct _VAEncSliceParameterBuffer
+{
+    uint32_t start_row_number;	
+    uint32_t slice_height;	
     union {
         struct {
-            uint32_t is_intra   : 1;
+            uint32_t is_intra	: 1;
             uint32_t disable_deblocking_filter_idc : 2;
-            uint32_t uses_long_term_ref     : 1;
-            uint32_t is_long_term_ref       : 1;
+            uint32_t uses_long_term_ref		:1;
+            uint32_t is_long_term_ref		:1;
         } bits;
         uint32_t value;
     } slice_flags;
@@ -3591,7 +3212,8 @@ typedef struct _VAEncSliceParameterBuffer {
 
 
 
-typedef struct _VAEncSequenceParameterBufferH263 {
+typedef struct _VAEncSequenceParameterBufferH263
+{
     uint32_t intra_period;
     uint32_t bits_per_second;
     uint32_t frame_rate;
@@ -3602,7 +3224,8 @@ typedef struct _VAEncSequenceParameterBufferH263 {
     uint32_t                va_reserved[VA_PADDING_LOW];
 } VAEncSequenceParameterBufferH263;
 
-typedef struct _VAEncPictureParameterBufferH263 {
+typedef struct _VAEncPictureParameterBufferH263
+{
     VASurfaceID reference_picture;
     VASurfaceID reconstructed_picture;
     VABufferID coded_buf;
@@ -3618,7 +3241,8 @@ typedef struct _VAEncPictureParameterBufferH263 {
 
 
 
-typedef struct _VAEncSequenceParameterBufferMPEG4 {
+typedef struct _VAEncSequenceParameterBufferMPEG4
+{
     uint8_t profile_and_level_indication;
     uint32_t intra_period;
     uint32_t video_object_layer_width;
@@ -3635,7 +3259,8 @@ typedef struct _VAEncSequenceParameterBufferMPEG4 {
     uint32_t                va_reserved[VA_PADDING_LOW];
 } VAEncSequenceParameterBufferMPEG4;
 
-typedef struct _VAEncPictureParameterBufferMPEG4 {
+typedef struct _VAEncPictureParameterBufferMPEG4
+{
     VASurfaceID reference_picture;
     VASurfaceID reconstructed_picture;
     VABufferID coded_buf;
@@ -3668,14 +3293,14 @@ typedef struct _VAEncPictureParameterBufferMPEG4 {
 
 
 
-VAStatus vaCreateBuffer(
+VAStatus vaCreateBuffer (
     VADisplay dpy,
     VAContextID context,
-    VABufferType type,  
-    unsigned int size,  
+    VABufferType type,	
+    unsigned int size,	
     unsigned int num_elements, 
-    void *data,     
-    VABufferID *buf_id  
+    void *data,		
+    VABufferID *buf_id	
 );
 
 
@@ -3706,9 +3331,9 @@ VAStatus vaCreateBuffer2(
 
 
 
-VAStatus vaBufferSetNumElements(
+VAStatus vaBufferSetNumElements (
     VADisplay dpy,
-    VABufferID buf_id,  
+    VABufferID buf_id,	
     unsigned int num_elements 
 );
 
@@ -3730,8 +3355,8 @@ VAStatus vaBufferSetNumElements(
 #define VA_CODED_BUF_STATUS_PICTURE_AVE_QP_MASK         0xff
 #define VA_CODED_BUF_STATUS_LARGE_SLICE_MASK            0x100
 #define VA_CODED_BUF_STATUS_SLICE_OVERFLOW_MASK         0x200
-#define VA_CODED_BUF_STATUS_BITRATE_OVERFLOW        0x400
-#define VA_CODED_BUF_STATUS_BITRATE_HIGH        0x800
+#define VA_CODED_BUF_STATUS_BITRATE_OVERFLOW		0x400
+#define VA_CODED_BUF_STATUS_BITRATE_HIGH		0x800
 
 
 
@@ -3744,7 +3369,7 @@ VAStatus vaBufferSetNumElements(
 
 
 #define VA_CODED_BUF_STATUS_BAD_BITSTREAM               0x8000
-#define VA_CODED_BUF_STATUS_AIR_MB_OVER_THRESHOLD   0xff0000
+#define VA_CODED_BUF_STATUS_AIR_MB_OVER_THRESHOLD	0xff0000
 
 
 
@@ -3806,10 +3431,10 @@ typedef  struct _VACodedBufferSegment  {
 
 
 
-VAStatus vaMapBuffer(
+VAStatus vaMapBuffer (
     VADisplay dpy,
-    VABufferID buf_id,  
-    void **pbuf     
+    VABufferID buf_id,	
+    void **pbuf 	
 );
 
 
@@ -3817,9 +3442,9 @@ VAStatus vaMapBuffer(
 
 
 
-VAStatus vaUnmapBuffer(
+VAStatus vaUnmapBuffer (
     VADisplay dpy,
-    VABufferID buf_id   
+    VABufferID buf_id	
 );
 
 
@@ -3831,7 +3456,7 @@ VAStatus vaUnmapBuffer(
 
 
 
-VAStatus vaDestroyBuffer(
+VAStatus vaDestroyBuffer (
     VADisplay dpy,
     VABufferID buffer_id
 );
@@ -4018,7 +3643,7 @@ VAStatus vaExportSurfaceHandle(VADisplay dpy,
 
 
 
-VAStatus vaBeginPicture(
+VAStatus vaBeginPicture (
     VADisplay dpy,
     VAContextID context,
     VASurfaceID render_target
@@ -4027,7 +3652,7 @@ VAStatus vaBeginPicture(
 
 
 
-VAStatus vaRenderPicture(
+VAStatus vaRenderPicture (
     VADisplay dpy,
     VAContextID context,
     VABufferID *buffers,
@@ -4042,7 +3667,7 @@ VAStatus vaRenderPicture(
 
 
 
-VAStatus vaEndPicture(
+VAStatus vaEndPicture (
     VADisplay dpy,
     VAContextID context
 );
@@ -4066,7 +3691,7 @@ VAStatus vaEndPicture(
 
 
 
-VAStatus vaMFSubmit(
+VAStatus vaMFSubmit (
     VADisplay dpy,
     VAMFContextID mf_context,
     VAContextID * contexts,
@@ -4084,59 +3709,32 @@ VAStatus vaMFSubmit(
 
 
 
-VAStatus vaSyncSurface(
+VAStatus vaSyncSurface (
     VADisplay dpy,
     VASurfaceID render_target
 );
 
-
-#define VA_TIMEOUT_INFINITE 0xFFFFFFFFFFFFFFFF
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-VAStatus vaSyncSurface2(
-    VADisplay dpy,
-    VASurfaceID surface,
-    uint64_t timeout_ns
-);
-
-typedef enum {
-    VASurfaceRendering  = 1, 
-    VASurfaceDisplaying = 2, 
-    
-    
-    VASurfaceReady  = 4, 
-    VASurfaceSkipped    = 8  
+typedef enum
+{
+    VASurfaceRendering	= 1, 
+    VASurfaceDisplaying	= 2, 
+                             
+                             
+    VASurfaceReady	= 4, 
+    VASurfaceSkipped	= 8  
 } VASurfaceStatus;
 
 
 
 
-VAStatus vaQuerySurfaceStatus(
+VAStatus vaQuerySurfaceStatus (
     VADisplay dpy,
     VASurfaceID render_target,
-    VASurfaceStatus *status 
+    VASurfaceStatus *status	
 );
 
-typedef enum {
+typedef enum
+{
     VADecodeSliceMissing            = 0,
     VADecodeMBError                 = 1,
 } VADecodeErrorType;
@@ -4145,7 +3743,8 @@ typedef enum {
 
 
 
-typedef struct _VASurfaceDecodeMBErrors {
+typedef struct _VASurfaceDecodeMBErrors
+{
     int32_t status; 
     uint32_t start_mb; 
     uint32_t end_mb;  
@@ -4177,46 +3776,6 @@ VAStatus vaQuerySurfaceError(
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-VAStatus vaSyncBuffer(
-    VADisplay dpy,
-    VABufferID buf_id,
-    uint64_t timeout_ns
-);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #define VA_FOURCC(ch0, ch1, ch2, ch3) \
     ((unsigned long)(unsigned char) (ch0) | ((unsigned long)(unsigned char) (ch1) << 8) | \
     ((unsigned long)(unsigned char) (ch2) << 16) | ((unsigned long)(unsigned char) (ch3) << 24 ))
@@ -4226,48 +3785,48 @@ VAStatus vaSyncBuffer(
 
 
 
-#define VA_FOURCC_NV12      0x3231564E
+#define VA_FOURCC_NV12		0x3231564E
 
 
 
-#define VA_FOURCC_NV21      0x3132564E
-
-
-
-
-
-#define VA_FOURCC_AI44      0x34344149
+#define VA_FOURCC_NV21		0x3132564E
 
 
 
 
 
-#define VA_FOURCC_RGBA      0x41424752
+#define VA_FOURCC_AI44		0x34344149
 
 
 
 
-#define VA_FOURCC_RGBX      0x58424752
+
+#define VA_FOURCC_RGBA		0x41424752
 
 
 
 
-#define VA_FOURCC_BGRA      0x41524742
+#define VA_FOURCC_RGBX		0x58424752
 
 
 
 
-#define VA_FOURCC_BGRX      0x58524742
+#define VA_FOURCC_BGRA		0x41524742
 
 
 
 
-#define VA_FOURCC_ARGB      0x42475241
+#define VA_FOURCC_BGRX		0x58524742
 
 
 
 
-#define VA_FOURCC_XRGB      0x42475258
+#define VA_FOURCC_ARGB		0x42475241
+
+
+
+
+#define VA_FOURCC_XRGB		0x42475258
 
 
 
@@ -4394,12 +3953,6 @@ VAStatus vaSyncBuffer(
 
 
 
-#define VA_FOURCC_Y212          0x32313259
-
-
-
-
-
 #define VA_FOURCC_Y216          0x36313259
 
 
@@ -4407,12 +3960,6 @@ VAStatus vaSyncBuffer(
 
 
 #define VA_FOURCC_Y410          0x30313459
-
-
-
-
-
-#define VA_FOURCC_Y412          0x32313459
 
 
 
@@ -4431,12 +3978,6 @@ VAStatus vaSyncBuffer(
 
 
 #define VA_FOURCC_P010          0x30313050
-
-
-
-
-
-#define VA_FOURCC_P012          0x32313050
 
 
 
@@ -4464,14 +4005,6 @@ VAStatus vaSyncBuffer(
 
 
 #define VA_FOURCC_A2B10G10R10   0x30334241 /* VA_FOURCC('A','B','3','0') */
-
-
-
-#define VA_FOURCC_X2R10G10B10   0x30335258 /* VA_FOURCC('X','R','3','0') */
-
-
-
-#define VA_FOURCC_X2B10G10R10   0x30334258 /* VA_FOURCC('X','B','3','0') */
 
 
 
@@ -4505,24 +4038,20 @@ VAStatus vaSyncBuffer(
 #define VA_FOURCC_ABGR64        0x34474241
 
 
+#define VA_LSB_FIRST		1
+#define VA_MSB_FIRST		2
 
-
-#define VA_FOURCC_XYUV          0x56555958
-
-
-#define VA_LSB_FIRST        1
-#define VA_MSB_FIRST        2
-
-typedef struct _VAImageFormat {
-    uint32_t    fourcc;
-    uint32_t    byte_order; 
-    uint32_t    bits_per_pixel;
+typedef struct _VAImageFormat
+{
+    uint32_t	fourcc;
+    uint32_t	byte_order; 
+    uint32_t	bits_per_pixel;
     
-    uint32_t    depth; 
-    uint32_t    red_mask;
-    uint32_t    green_mask;
-    uint32_t    blue_mask;
-    uint32_t    alpha_mask;
+    uint32_t	depth; 
+    uint32_t	red_mask;
+    uint32_t	green_mask;
+    uint32_t	blue_mask;
+    uint32_t	alpha_mask;
 
     
     uint32_t                va_reserved[VA_PADDING_LOW];
@@ -4530,10 +4059,11 @@ typedef struct _VAImageFormat {
 
 typedef VAGenericID VAImageID;
 
-typedef struct _VAImage {
-    VAImageID       image_id; 
-    VAImageFormat   format;
-    VABufferID      buf;    
+typedef struct _VAImage
+{
+    VAImageID		image_id; 
+    VAImageFormat	format;
+    VABufferID		buf;	
     
 
 
@@ -4541,20 +4071,20 @@ typedef struct _VAImage {
 
 
 
-    uint16_t    width;
-    uint16_t    height;
-    uint32_t    data_size;
-    uint32_t    num_planes; 
+    uint16_t	width;
+    uint16_t	height;
+    uint32_t	data_size;
+    uint32_t	num_planes;	
     
 
 
 
-    uint32_t    pitches[3];
+    uint32_t	pitches[3];
     
 
 
 
-    uint32_t    offsets[3];
+    uint32_t	offsets[3];
 
     
     int32_t num_palette_entries;   
@@ -4574,7 +4104,7 @@ typedef struct _VAImage {
 } VAImage;
 
 
-int vaMaxNumImageFormats(
+int vaMaxNumImageFormats (
     VADisplay dpy
 );
 
@@ -4584,10 +4114,10 @@ int vaMaxNumImageFormats(
 
 
 
-VAStatus vaQueryImageFormats(
+VAStatus vaQueryImageFormats (
     VADisplay dpy,
-    VAImageFormat *format_list, 
-    int *num_formats        
+    VAImageFormat *format_list,	
+    int *num_formats		
 );
 
 
@@ -4597,23 +4127,23 @@ VAStatus vaQueryImageFormats(
 
 
 
-VAStatus vaCreateImage(
+VAStatus vaCreateImage (
     VADisplay dpy,
     VAImageFormat *format,
     int width,
     int height,
-    VAImage *image  
+    VAImage *image	
 );
 
 
 
 
-VAStatus vaDestroyImage(
+VAStatus vaDestroyImage (
     VADisplay dpy,
     VAImageID image
 );
 
-VAStatus vaSetImagePalette(
+VAStatus vaSetImagePalette (
     VADisplay dpy,
     VAImageID image,
     
@@ -4628,10 +4158,10 @@ VAStatus vaSetImagePalette(
 
 
 
-VAStatus vaGetImage(
+VAStatus vaGetImage (
     VADisplay dpy,
     VASurfaceID surface,
-    int x,  
+    int x,	
     int y,
     unsigned int width, 
     unsigned int height,
@@ -4644,7 +4174,7 @@ VAStatus vaGetImage(
 
 
 
-VAStatus vaPutImage(
+VAStatus vaPutImage (
     VADisplay dpy,
     VASurfaceID surface,
     VAImageID image,
@@ -4689,10 +4219,10 @@ VAStatus vaPutImage(
 
 
 
-VAStatus vaDeriveImage(
+VAStatus vaDeriveImage (
     VADisplay dpy,
     VASurfaceID surface,
-    VAImage *image  
+    VAImage *image	
 );
 
 
@@ -4705,14 +4235,14 @@ VAStatus vaDeriveImage(
 typedef VAGenericID VASubpictureID;
 
 
-int vaMaxNumSubpictureFormats(
+int vaMaxNumSubpictureFormats (
     VADisplay dpy
 );
 
 
-#define VA_SUBPICTURE_CHROMA_KEYING         0x0001
-#define VA_SUBPICTURE_GLOBAL_ALPHA          0x0002
-#define VA_SUBPICTURE_DESTINATION_IS_SCREEN_COORD   0x0004
+#define VA_SUBPICTURE_CHROMA_KEYING			0x0001
+#define VA_SUBPICTURE_GLOBAL_ALPHA			0x0002
+#define VA_SUBPICTURE_DESTINATION_IS_SCREEN_COORD	0x0004
 
 
 
@@ -4725,26 +4255,26 @@ int vaMaxNumSubpictureFormats(
 
 
 
-VAStatus vaQuerySubpictureFormats(
+VAStatus vaQuerySubpictureFormats (
     VADisplay dpy,
-    VAImageFormat *format_list, 
-    unsigned int *flags,    
-    unsigned int *num_formats   
+    VAImageFormat *format_list,	
+    unsigned int *flags,	
+    unsigned int *num_formats	
 );
 
 
 
 
-VAStatus vaCreateSubpicture(
+VAStatus vaCreateSubpicture (
     VADisplay dpy,
     VAImageID image,
-    VASubpictureID *subpicture  
+    VASubpictureID *subpicture	
 );
 
 
 
 
-VAStatus vaDestroySubpicture(
+VAStatus vaDestroySubpicture (
     VADisplay dpy,
     VASubpictureID subpicture
 );
@@ -4753,7 +4283,7 @@ VAStatus vaDestroySubpicture(
 
 
 
-VAStatus vaSetSubpictureImage(
+VAStatus vaSetSubpictureImage (
     VADisplay dpy,
     VASubpictureID subpicture,
     VAImageID image
@@ -4768,7 +4298,7 @@ VAStatus vaSetSubpictureImage(
 
 
 
-VAStatus vaSetSubpictureChromakey(
+VAStatus vaSetSubpictureChromakey (
     VADisplay dpy,
     VASubpictureID subpicture,
     unsigned int chromakey_min,
@@ -4781,7 +4311,7 @@ VAStatus vaSetSubpictureChromakey(
 
 
 
-VAStatus vaSetSubpictureGlobalAlpha(
+VAStatus vaSetSubpictureGlobalAlpha (
     VADisplay dpy,
     VASubpictureID subpicture,
     float global_alpha
@@ -4794,7 +4324,7 @@ VAStatus vaSetSubpictureGlobalAlpha(
 
 
 
-VAStatus vaAssociateSubpicture(
+VAStatus vaAssociateSubpicture (
     VADisplay dpy,
     VASubpictureID subpicture,
     VASurfaceID *target_surfaces,
@@ -4817,7 +4347,7 @@ VAStatus vaAssociateSubpicture(
 
 
 
-VAStatus vaDeassociateSubpicture(
+VAStatus vaDeassociateSubpicture (
     VADisplay dpy,
     VASubpictureID subpicture,
     VASurfaceID *target_surfaces,
@@ -4832,17 +4362,8 @@ VAStatus vaDeassociateSubpicture(
 
 
 
-
-
-
-
-
-
-
-
-
-
-typedef enum {
+typedef enum
+{
     VADISPLAYATTRIB_BLE_OFF              = 0x00,
     VADISPLAYATTRIB_BLE_LOW,
     VADISPLAYATTRIB_BLE_MEDIUM,
@@ -4890,52 +4411,12 @@ typedef enum {
 #define VA_RENDER_DEVICE_EXTERNAL   2
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-typedef union _VADisplayAttribValSubDevice {
-    struct {
-        
-        uint32_t current_sub_device     : 4;
-        
-        uint32_t sub_device_count       : 4;
-        
-        uint32_t reserved               : 8;
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        uint32_t sub_device_mask       : 16;
-    } bits;
-    uint32_t value;
-} VADisplayAttribValSubDevice;
-
-
-typedef enum {
-    VADisplayAttribBrightness       = 0,
-    VADisplayAttribContrast     = 1,
-    VADisplayAttribHue          = 2,
-    VADisplayAttribSaturation       = 3,
+typedef enum
+{
+    VADisplayAttribBrightness		= 0,
+    VADisplayAttribContrast		= 1,
+    VADisplayAttribHue			= 2,
+    VADisplayAttribSaturation		= 3,
     
 
 
@@ -4984,7 +4465,7 @@ typedef enum {
 
 
 
-    VADisplayAttribOverlayColorKey  = 15,
+    VADisplayAttribOverlayColorKey	= 15,
     
 
 
@@ -5001,29 +4482,20 @@ typedef enum {
 
 
     VADisplayAttribRenderRect          = 18,
-    
-
-
-    VADisplayAttribSubDevice           = 19,
-    
-
-
-
-
-    VADisplayAttribCopy                 = 20,
 } VADisplayAttribType;
 
 
-#define VA_DISPLAY_ATTRIB_NOT_SUPPORTED 0x0000
-#define VA_DISPLAY_ATTRIB_GETTABLE  0x0001
-#define VA_DISPLAY_ATTRIB_SETTABLE  0x0002
+#define VA_DISPLAY_ATTRIB_NOT_SUPPORTED	0x0000
+#define VA_DISPLAY_ATTRIB_GETTABLE	0x0001
+#define VA_DISPLAY_ATTRIB_SETTABLE	0x0002
 
-typedef struct _VADisplayAttribute {
+typedef struct _VADisplayAttribute
+{
     VADisplayAttribType type;
     int32_t min_value;
     int32_t max_value;
-    int32_t value;  
-    
+    int32_t value;	
+
     uint32_t flags;
 
     
@@ -5031,7 +4503,7 @@ typedef struct _VADisplayAttribute {
 } VADisplayAttribute;
 
 
-int vaMaxNumDisplayAttributes(
+int vaMaxNumDisplayAttributes (
     VADisplay dpy
 );
 
@@ -5041,10 +4513,10 @@ int vaMaxNumDisplayAttributes(
 
 
 
-VAStatus vaQueryDisplayAttributes(
+VAStatus vaQueryDisplayAttributes (
     VADisplay dpy,
-    VADisplayAttribute *attr_list,  
-    int *num_attributes         
+    VADisplayAttribute *attr_list,	
+    int *num_attributes			
 );
 
 
@@ -5053,9 +4525,9 @@ VAStatus vaQueryDisplayAttributes(
 
 
 
-VAStatus vaGetDisplayAttributes(
+VAStatus vaGetDisplayAttributes (
     VADisplay dpy,
-    VADisplayAttribute *attr_list,  
+    VADisplayAttribute *attr_list,	
     int num_attributes
 );
 
@@ -5065,7 +4537,7 @@ VAStatus vaGetDisplayAttributes(
 
 
 
-VAStatus vaSetDisplayAttributes(
+VAStatus vaSetDisplayAttributes (
     VADisplay dpy,
     VADisplayAttribute *attr_list,
     int num_attributes
@@ -5083,7 +4555,8 @@ VAStatus vaSetDisplayAttributes(
 
 
 
-typedef struct _VAPictureHEVC {
+typedef struct _VAPictureHEVC
+{
     
 
 
@@ -5139,52 +4612,10 @@ typedef struct _VAPictureHEVC {
 
 #define VA_PICTURE_HEVC_RPS_LT_CURR             0x00000040
 
-typedef enum {
-    VACopyObjectSurface = 0,
-    VACopyObjectBuffer  = 1,
-} VACopyObjectType;
-
-typedef struct _VACopyObject {
-    VACopyObjectType  obj_type;    
-    union {
-        VASurfaceID surface_id;
-        VABufferID  buffer_id;
-    } object;
-
-    uint32_t    va_reserved[VA_PADDING_MEDIUM];
-} VACopyObject;
-
-typedef union _VACopyOption {
-    struct {
-        
-        uint32_t va_copy_sync : 2;
-        
-        uint32_t va_copy_mode : 4;
-        uint32_t reserved     : 26;
-    } bits;
-    uint32_t value;
-} VACopyOption;
 
 
-
-
-
-
-
-
-
-
-
-
-
-VAStatus vaCopy(VADisplay dpy, VACopyObject * dst, VACopyObject * src, VACopyOption option);
-
-
-
-#include <va/va_dec_vp8.h>
-#include <va/va_dec_vp9.h>
-#include <va/va_dec_av1.h>
-
+#include "va_dec_vp8.h"
+#include "va_dec_vp9.h"
 
 
 

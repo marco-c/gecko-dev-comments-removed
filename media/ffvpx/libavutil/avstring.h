@@ -24,7 +24,6 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "attributes.h"
-#include "version.h"
 
 
 
@@ -156,14 +155,10 @@ static inline size_t av_strnlen(const char *s, size_t len)
 
 char *av_asprintf(const char *fmt, ...) av_printf_format(1, 2);
 
-#if FF_API_D2STR
 
 
 
-
-attribute_deprecated
 char *av_d2str(double d);
-#endif
 
 
 
@@ -282,12 +277,7 @@ char *av_strireplace(const char *str, const char *from, const char *to);
 
 
 
-
-
-
 const char *av_basename(const char *path);
-
-
 
 
 
@@ -324,7 +314,6 @@ enum AVEscapeMode {
     AV_ESCAPE_MODE_AUTO,      
     AV_ESCAPE_MODE_BACKSLASH, 
     AV_ESCAPE_MODE_QUOTE,     
-    AV_ESCAPE_MODE_XML,       
 };
 
 
@@ -343,19 +332,6 @@ enum AVEscapeMode {
 
 
 #define AV_ESCAPE_FLAG_STRICT (1 << 1)
-
-
-
-
-
-#define AV_ESCAPE_FLAG_XML_SINGLE_QUOTES (1 << 2)
-
-
-
-
-
-#define AV_ESCAPE_FLAG_XML_DOUBLE_QUOTES (1 << 3)
-
 
 
 

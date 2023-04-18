@@ -130,7 +130,7 @@ int ff_slice_thread_init(AVCodecContext *avctx)
 {
     SliceThreadContext *c;
     int thread_count = avctx->thread_count;
-    void (*mainfunc)(void *);
+    static void (*mainfunc)(void *);
 
     
     if (av_codec_is_encoder(avctx->codec) &&

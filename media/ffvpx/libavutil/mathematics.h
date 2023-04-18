@@ -137,7 +137,6 @@ int64_t av_rescale(int64_t a, int64_t b, int64_t c) av_const;
 
 
 
-
 int64_t av_rescale_rnd(int64_t a, int64_t b, int64_t c, enum AVRounding rnd) av_const;
 
 

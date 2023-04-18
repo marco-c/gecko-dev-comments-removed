@@ -37,7 +37,7 @@
 
 
 
-#define VA_MINOR_VERSION    13
+#define VA_MINOR_VERSION    7
 
 
 
@@ -51,7 +51,7 @@
 
 
 
-#define VA_VERSION          1.13.0
+#define VA_VERSION          1.7.0
 
 
 
@@ -59,7 +59,7 @@
 
 
 
-#define VA_VERSION_S       "1.13.0"
+#define VA_VERSION_S       "1.7.0"
 
 
 

@@ -96,7 +96,6 @@ void ff_thread_report_progress(ThreadFrame *f, int progress, int field);
 
 void ff_thread_await_progress(ThreadFrame *f, int progress, int field);
 
-#if FF_API_THREAD_SAFE_CALLBACKS
 
 
 
@@ -106,9 +105,6 @@ void ff_thread_await_progress(ThreadFrame *f, int progress, int field);
 
 
 enum AVPixelFormat ff_thread_get_format(AVCodecContext *avctx, const enum AVPixelFormat *fmt);
-#else
-#define ff_thread_get_format ff_get_format
-#endif
 
 
 
@@ -133,7 +129,7 @@ int ff_thread_get_buffer(AVCodecContext *avctx, ThreadFrame *f, int flags);
 
 void ff_thread_release_buffer(AVCodecContext *avctx, ThreadFrame *f);
 
-int ff_thread_ref_frame(ThreadFrame *dst, const ThreadFrame *src);
+int ff_thread_ref_frame(ThreadFrame *dst, ThreadFrame *src);
 
 int ff_thread_init(AVCodecContext *s);
 int ff_slice_thread_execute_with_mainfunc(AVCodecContext *avctx,

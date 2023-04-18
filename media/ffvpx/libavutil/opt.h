@@ -218,8 +218,6 @@
 
 
 
-
-
 enum AVOptionType{
     AV_OPT_TYPE_FLAGS,
     AV_OPT_TYPE_INT,
@@ -290,10 +288,8 @@ typedef struct AVOption {
 
 #define AV_OPT_FLAG_READONLY        128
 #define AV_OPT_FLAG_BSF_PARAM       (1<<8) ///< a generic parameter which can be set by the user for bit stream filtering
-#define AV_OPT_FLAG_RUNTIME_PARAM   (1<<15) ///< a generic parameter which can be set by the user at runtime
 #define AV_OPT_FLAG_FILTERING_PARAM (1<<16) ///< a generic parameter which can be set by the user for filtering
 #define AV_OPT_FLAG_DEPRECATED      (1<<17) ///< set if option is deprecated, users should refer to AVOption.help text for more information
-#define AV_OPT_FLAG_CHILD_CONSTS    (1<<18) ///< set if option constants can also reside in child objects
 
 
     
@@ -648,29 +644,13 @@ const AVOption *av_opt_next(const void *obj, const AVOption *prev);
 
 void *av_opt_child_next(void *obj, void *prev);
 
-#if FF_API_CHILD_CLASS_NEXT
 
 
 
 
 
 
-
-
-attribute_deprecated
 const AVClass *av_opt_child_class_next(const AVClass *parent, const AVClass *prev);
-#endif
-
-
-
-
-
-
-
-const AVClass *av_opt_child_class_iterate(const AVClass *parent, void **iter);
-
-
-
 
 
 
@@ -729,7 +709,6 @@ int av_opt_set_dict_val(void *obj, const char *name, const AVDictionary *val, in
      AVERROR(EINVAL) : \
      av_opt_set_bin(obj, name, (const uint8_t *)(val), \
                     av_int_list_length(val, term) * sizeof(*(val)), flags))
-
 
 
 
