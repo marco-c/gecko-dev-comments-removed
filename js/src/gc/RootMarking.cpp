@@ -235,7 +235,7 @@ void js::gc::GCRuntime::traceRuntimeForMajorGC(JSTracer* trc,
   
   
   if (atomsZone->isGCMarking()) {
-    traceRuntimeAtoms(trc, session.checkAtomsAccess());
+    traceRuntimeAtoms(trc, session);
   }
 
   {

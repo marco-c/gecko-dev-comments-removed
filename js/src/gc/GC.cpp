@@ -2327,11 +2327,6 @@ bool GCRuntime::beginPreparePhase(JS::GCReason reason, AutoGCSession& session) {
     return false;
   }
 
-  
-  if (atomsZone->isCollecting()) {
-    session.maybeCheckAtomsAccess.emplace(rt);
-  }
-
   if (reason == JS::GCReason::DESTROY_RUNTIME) {
     restorePermanentSharedThings();
   }
@@ -3009,12 +3004,6 @@ void GCRuntime::incrementalSlice(SliceBudget& budget,
   AutoSetThreadIsPerformingGC performingGC;
 
   AutoGCSession session(this, JS::HeapState::MajorCollecting);
-
-  
-  
-  if (rt->activeGCInAtomsZone()) {
-    session.maybeCheckAtomsAccess.emplace(rt);
-  }
 
   bool destroyingRuntime = (reason == JS::GCReason::DESTROY_RUNTIME);
 
