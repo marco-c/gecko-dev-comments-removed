@@ -240,10 +240,6 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:__libc_memalign\n"
 
          
-         "race:setNeedsIncrementalBarrier\n"
-         "race:needsIncrementalBarrier\n"
-
-         
          "race:Sampler::sSigHandlerCoordinator\n"
 
          
