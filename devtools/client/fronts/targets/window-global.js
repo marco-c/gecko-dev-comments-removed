@@ -58,9 +58,7 @@ class WindowGlobalTargetFront extends TargetMixin(
 
 
   _onFrameUpdate(packet) {
-    
-    
-    this.emit("frame-update", { ...packet, isTopLevel: !packet.parentID });
+    this.emit("frame-update", packet);
   }
 
   

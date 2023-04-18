@@ -55,26 +55,11 @@ add_task(async function() {
   });
 
   info("Check that the content of the frames list was updated");
-  try {
-    await checkFramesList(toolbox, [
-      TEST_COM_URL,
-      "https://example.com/document-builder.sjs?html=example.com iframe",
-      "https://example.org/document-builder.sjs?html=example.org iframe",
-    ]);
-
-    
-    
-    ok(
-      !isFissionEnabled() || isEveryFrameTargetEnabled(),
-      "iframe picker should only display remote frames when EFT is enabled"
-    );
-  } catch (e) {
-    ok(
-      isFissionEnabled() && !isEveryFrameTargetEnabled(),
-      "iframe picker displays remote frames only when EFT is enabled"
-    );
-    return;
-  }
+  await checkFramesList(toolbox, [
+    TEST_COM_URL,
+    "https://example.com/document-builder.sjs?html=example.com iframe",
+    "https://example.org/document-builder.sjs?html=example.org iframe",
+  ]);
 
   info("Reload and check that the frames list is cleared");
   await reloadBrowser();
@@ -127,8 +112,7 @@ function getFramesButton(toolbox) {
 
 async function checkFramesList(toolbox, expectedFrames) {
   const frames = await waitFor(() => {
-    
-    const f = getFramesLabels(toolbox).filter(t => t !== "");
+    const f = getFramesLabels(toolbox);
     if (f.length !== expectedFrames.length) {
       return false;
     }

@@ -113,11 +113,7 @@ add_task(async function() {
 function getOnInspectorReadyAfterNavigation(inspector) {
   const promises = [inspector.once("reloaded")];
 
-  if (
-    isFissionEnabled() ||
-    isServerTargetSwitchingEnabled() ||
-    isEveryFrameTargetEnabled()
-  ) {
+  if (isFissionEnabled() || isServerTargetSwitchingEnabled()) {
     
     
     

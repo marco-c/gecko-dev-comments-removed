@@ -159,7 +159,6 @@ function Inspector(toolbox, commands) {
   );
   this._onTargetAvailable = this._onTargetAvailable.bind(this);
   this._onTargetDestroyed = this._onTargetDestroyed.bind(this);
-  this._onTargetSelected = this._onTargetSelected.bind(this);
   this._onWillNavigate = this._onWillNavigate.bind(this);
   this._updateSearchResultsLabel = this._updateSearchResultsLabel.bind(this);
 
@@ -209,8 +208,7 @@ Inspector.prototype = {
     await this.commands.targetCommand.watchTargets(
       [this.commands.targetCommand.TYPES.FRAME],
       this._onTargetAvailable,
-      this._onTargetDestroyed,
-      this._onTargetSelected
+      this._onTargetDestroyed
     );
 
     await this.toolbox.resourceCommand.watchResources(
@@ -275,30 +273,6 @@ Inspector.prototype = {
       this._getCssProperties(targetFront),
       this._getAccessibilityFront(targetFront),
     ]);
-  },
-
-  async _onTargetSelected({ targetFront }) {
-    
-    
-    if (this._highlighters) {
-      this._highlighters.hideAllHighlighters();
-    }
-    await this.initInspectorFront(targetFront);
-
-    
-    
-    if (targetFront.isDestroyed()) {
-      return;
-    }
-
-    const { walker } = await targetFront.getFront("inspector");
-    const rootNodeFront = await walker.getRootNode();
-    
-    this.selectionCssSelectors = [];
-    this._defaultNode = null;
-
-    
-    await this.onRootNodeAvailable(rootNodeFront);
   },
 
   _onTargetDestroyed({ targetFront }) {
@@ -557,7 +531,7 @@ Inspector.prototype = {
     this._defaultNode = null;
     this.selection.setNodeFront(null);
     if (this._highlighters) {
-      this._highlighters.hideAllHighlighters();
+      this._highlighters.onWillNavigate();
     }
     this._destroyMarkup();
     this._pendingSelectionUnique = null;
@@ -592,7 +566,7 @@ Inspector.prototype = {
       return null;
     }
 
-    const walker = rootNodeFront.walkerFront;
+    const walker = this.walker;
     const cssSelectors = this.selectionCssSelectors;
     
     const defaultNodeSelectors = [
@@ -1729,8 +1703,7 @@ Inspector.prototype = {
     this.commands.targetCommand.unwatchTargets(
       [this.commands.targetCommand.TYPES.FRAME],
       this._onTargetAvailable,
-      this._onTargetDestroyed,
-      this._onTargetSelected
+      this._onTargetDestroyed
     );
     const { resourceCommand } = this.toolbox;
     resourceCommand.unwatchResources(

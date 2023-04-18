@@ -2329,22 +2329,7 @@ MarkupView.prototype = {
 
 
   _getParentInTree: function(node) {
-    const parent = node.parentOrHost();
-    if (!parent) {
-      return null;
-    }
-
-    
-    
-    if (
-      node.targetFront !== parent.targetFront &&
-      node.targetFront ==
-        this.inspector.commands.targetCommand.selectedTargetFront
-    ) {
-      return null;
-    }
-
-    return parent;
+    return node.parentOrHost();
   },
 
   

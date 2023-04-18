@@ -321,7 +321,6 @@ function Toolbox(
   this.togglePaintFlashing = this.togglePaintFlashing.bind(this);
   this._onTargetAvailable = this._onTargetAvailable.bind(this);
   this._onTargetDestroyed = this._onTargetDestroyed.bind(this);
-  this._onTargetSelected = this._onTargetSelected.bind(this);
   this._onResourceAvailable = this._onResourceAvailable.bind(this);
   this._onResourceUpdated = this._onResourceUpdated.bind(this);
 
@@ -701,9 +700,7 @@ Toolbox.prototype = {
 
       
       
-      if (!targetFront.targetForm.ignoreSubFrames) {
-        targetFront.on("frame-update", this._updateFrames);
-      }
+      targetFront.on("frame-update", this._updateFrames);
       const consoleFront = await targetFront.getFront("console");
       consoleFront.on("inspectObject", this._onInspectObject);
     }
@@ -728,25 +725,6 @@ Toolbox.prototype = {
       }
       await this.initPerformance();
     }
-
-    if (targetFront.targetForm.ignoreSubFrames) {
-      this._updateFrames({
-        frames: [
-          {
-            id: targetFront.actorID,
-            targetFront,
-            url: targetFront.url,
-            title: targetFront.title,
-            isTopLevel: targetFront.isTopLevel,
-          },
-        ],
-      });
-    }
-  },
-
-  async _onTargetSelected({ targetFront }) {
-    this._updateFrames({ selected: targetFront.actorID });
-    this.selectTarget(targetFront.actorID);
   },
 
   _onTargetDestroyed({ targetFront }) {
@@ -770,17 +748,6 @@ Toolbox.prototype = {
 
     if (this.hostType !== Toolbox.HostType.PAGE) {
       this.store.dispatch(unregisterTarget(targetFront));
-    }
-
-    if (targetFront.targetForm.ignoreSubFrames) {
-      this._updateFrames({
-        frames: [
-          {
-            id: targetFront.actorID,
-            destroy: true,
-          },
-        ],
-      });
     }
   },
 
@@ -902,8 +869,7 @@ Toolbox.prototype = {
       await this.commands.targetCommand.watchTargets(
         this.commands.targetCommand.ALL_TYPES,
         this._onTargetAvailable,
-        this._onTargetDestroyed,
-        this._onTargetSelected
+        this._onTargetDestroyed
       );
 
       const onResourcesWatched = this.resourceCommand.watchResources(
@@ -2329,7 +2295,7 @@ Toolbox.prototype = {
     this.frameButton.isVisible = isVisible;
 
     if (isVisible) {
-      this.frameButton.isChecked = !selectedFrame.isTopLevel;
+      this.frameButton.isChecked = selectedFrame.parentID != null;
     }
   },
 
@@ -3258,10 +3224,7 @@ Toolbox.prototype = {
   },
 
   _listFrames: async function(event) {
-    if (
-      !this.target.getTrait("frames") ||
-      this.target.targetForm.ignoreSubFrames
-    ) {
+    if (!this.target.getTrait("frames")) {
       
       
       return Promise.resolve();
@@ -3269,11 +3232,6 @@ Toolbox.prototype = {
 
     try {
       const { frames } = await this.target.listFrames();
-
-      
-      for (const frame of frames) {
-        frame.isTopLevel = !frame.parentID;
-      }
       this._updateFrames({ frames });
     } catch (e) {
       console.error("Error while listing frames", e);
@@ -3283,65 +3241,29 @@ Toolbox.prototype = {
   
 
 
-
-
-  onIframePickerFrameSelected: function(frameIdOrTargetActorId) {
-    if (!this.frameMap.has(frameIdOrTargetActorId)) {
-      console.error(
-        `Can't focus on frame "${frameIdOrTargetActorId}", it is not a known frame`
-      );
-      return;
-    }
-
-    const frameInfo = this.frameMap.get(frameIdOrTargetActorId);
+  onSelectFrame: function(frameId) {
     
     
-    
-    if (!frameInfo.targetFront) {
-      this.target.switchToFrame({ windowId: frameIdOrTargetActorId });
-      return;
-    }
-
-    
-    
-    
-    this.commands.targetCommand.selectTarget(frameInfo.targetFront);
+    this.target.switchToFrame({ windowId: frameId });
   },
 
   
 
 
-
-
-  onHighlightFrame: async function(frameIdOrTargetActorId) {
-    
-    if (!this.rootFrameSelected) {
-      return;
-    }
-
-    const frameInfo = this.frameMap.get(frameIdOrTargetActorId);
-    if (!frameInfo) {
-      return;
-    }
-
-    let nodeFront;
-    if (frameInfo.targetFront) {
-      const inspectorFront = await frameInfo.targetFront.getFront("inspector");
-      nodeFront = await inspectorFront.walker.documentElement();
-    } else {
-      const inspectorFront = await this.target.getFront("inspector");
-      nodeFront = await inspectorFront.walker.getNodeActorFromWindowID(
-        frameIdOrTargetActorId
-      );
-    }
+  onHighlightFrame: async function(frameId) {
+    const inspectorFront = await this.target.getFront("inspector");
     const highlighter = this.getHighlighter();
-    return highlighter.highlight(nodeFront);
+
+    
+    if (this.rootFrameSelected) {
+      const nodeFront = await inspectorFront.walker.getNodeActorFromWindowID(
+        frameId
+      );
+      return highlighter.highlight(nodeFront);
+    }
   },
 
   
-
-
-
 
 
 
@@ -3357,20 +3279,8 @@ Toolbox.prototype = {
 
   _updateFrames: function(data) {
     
-    
-    
-    
-    
-    if (data.selected) {
-      data.selected = data.selected.toString();
-    } else if (data.frameData) {
-      data.frameData.id = data.frameData.id.toString();
-    } else if (data.frames) {
-      data.frames.forEach(frame => {
-        if (frame.id) {
-          frame.id = frame.id.toString();
-        }
-      });
+    if (!this.isReady) {
+      return;
     }
 
     
@@ -3379,20 +3289,6 @@ Toolbox.prototype = {
       this.selectedFrameId = null;
     } else if (data.selected) {
       this.selectedFrameId = data.selected;
-    } else if (data.frameData && this.frameMap.has(data.frameData.id)) {
-      const existingFrameData = this.frameMap.get(data.frameData.id);
-      if (
-        existingFrameData.title == data.frameData.title &&
-        existingFrameData.url == data.frameData.url
-      ) {
-        return;
-      }
-
-      this.frameMap.set(data.frameData.id, {
-        ...existingFrameData,
-        url: data.frameData.url,
-        title: data.frameData.title,
-      });
     } else if (data.frames) {
       data.frames.forEach(frame => {
         if (frame.destroy) {
@@ -3413,9 +3309,12 @@ Toolbox.prototype = {
     
     if (!this.selectedFrameId) {
       const frames = [...this.frameMap.values()];
-      const topFrames = frames.filter(frame => frame.isTopLevel);
+      const topFrames = frames.filter(frame => !frame.parentID);
       this.selectedFrameId = topFrames.length ? topFrames[0].id : null;
     }
+
+    
+    this.updateFrameButton();
 
     
     if (!this.debouncedToolbarUpdate) {
@@ -3432,35 +3331,37 @@ Toolbox.prototype = {
       );
     }
 
-    const updateUiElements = () => {
-      
-      this.updateFrameButton();
-
-      if (this.debouncedToolbarUpdate) {
-        this.debouncedToolbarUpdate();
-      }
-    };
-
-    
-    
-    if (!this.isReady) {
-      this.once("ready").then(() => updateUiElements);
-    } else {
-      updateUiElements();
+    if (this.debouncedToolbarUpdate) {
+      this.debouncedToolbarUpdate();
     }
   },
 
   
 
 
-  get rootFrameSelected() {
+
+
+
+  get selectedFrameDepth() {
     
     
     if (!this.selectedFrameId) {
-      return true;
+      return 0;
     }
+    let depth = 0;
+    let frame = this.frameMap.get(this.selectedFrameId);
+    while (frame) {
+      depth++;
+      frame = this.frameMap.get(frame.parentID);
+    }
+    return depth - 1;
+  },
 
-    return this.frameMap.get(this.selectedFrameId).isTopLevel;
+  
+
+
+  get rootFrameSelected() {
+    return this.selectedFrameDepth == 0;
   },
 
   
@@ -3958,8 +3859,7 @@ Toolbox.prototype = {
     this.commands.targetCommand.unwatchTargets(
       this.commands.targetCommand.ALL_TYPES,
       this._onTargetAvailable,
-      this._onTargetDestroyed,
-      this._onTargetSelected
+      this._onTargetDestroyed
     );
     this.resourceCommand.unwatchResources(
       [
@@ -4583,14 +4483,6 @@ Toolbox.prototype = {
         setTimeout(() => {
           
           this.store.dispatch(refreshTargets());
-
-          this._updateFrames({
-            frameData: {
-              id: resource.targetFront.actorID,
-              url: resource.targetFront.url,
-              title: resource.targetFront.title,
-            },
-          });
 
           if (resource.targetFront.isTopLevel) {
             this._refreshHostTitle();
