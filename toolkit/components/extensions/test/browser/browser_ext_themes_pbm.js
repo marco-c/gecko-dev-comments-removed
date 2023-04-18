@@ -9,11 +9,17 @@
 const { BuiltInThemes } = ChromeUtils.import(
   "resource:///modules/BuiltInThemes.jsm"
 );
+const { PromptTestUtils } = ChromeUtils.import(
+  "resource://testing-common/PromptTestUtils.jsm"
+);
 
 const IS_LINUX = AppConstants.platform == "linux";
 
 const LIGHT_THEME_ID = "firefox-compact-light@mozilla.org";
 const DARK_THEME_ID = "firefox-compact-dark@mozilla.org";
+
+
+requestLongerTimeout(2);
 
 
 
@@ -56,6 +62,40 @@ async function testWindowColorScheme({
       "LWT text color attribute should not be set."
     );
   }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function getPrefersColorSchemeInfo({ win, chrome = false }) {
+  let fn = async windowObj => {
+    
+    
+    let win = windowObj || content;
+
+    
+    await new Promise(resolve => {
+      win.requestAnimationFrame(() => win.requestAnimationFrame(resolve));
+    });
+    return {
+      light: win.matchMedia("(prefers-color-scheme: light)").matches,
+      dark: win.matchMedia("(prefers-color-scheme: dark)").matches,
+    };
+  };
+
+  if (chrome) {
+    return fn(win);
+  }
+
+  return SpecialPowers.spawn(win.gBrowser.selectedBrowser, [], fn);
 }
 
 add_task(async function setup() {
@@ -113,22 +153,7 @@ add_task(async function test_default_theme_light() {
     expectDefaultDarkAttribute: true,
   });
 
-  let prefersColorScheme = await SpecialPowers.spawn(
-    pbmWindowA.gBrowser.selectedBrowser,
-    [],
-    async () => {
-      
-      await new Promise(resolve => {
-        content.requestAnimationFrame(() =>
-          content.requestAnimationFrame(resolve)
-        );
-      });
-      return {
-        light: content.matchMedia("(prefers-color-scheme: light)").matches,
-        dark: content.matchMedia("(prefers-color-scheme: dark)").matches,
-      };
-    }
-  );
+  let prefersColorScheme = await getPrefersColorSchemeInfo({ win: pbmWindowA });
   ok(
     prefersColorScheme.light && !prefersColorScheme.dark,
     "Content of dark themed PBM window should still be themed light"
@@ -311,4 +336,102 @@ add_task(async function test_theme_switch_updates_existing_pbm_win() {
 
   await BrowserTestUtils.closeWindow(windowB);
   await BrowserTestUtils.closeWindow(pbmWindow);
+});
+
+
+add_task(async function test_pbm_dark_page_info() {
+  for (let isPBM of [false, true]) {
+    let win = await BrowserTestUtils.openNewBrowserWindow({
+      private: isPBM,
+    });
+    let windowTypeStr = isPBM ? "private" : "normal";
+
+    info(`Opening pageInfo from ${windowTypeStr} browsing.`);
+
+    await BrowserTestUtils.withNewTab(
+      { gBrowser: win.gBrowser, url: "https://example.com" },
+      async () => {
+        let pageInfo = win.BrowserPageInfo(null, "securityTab");
+        await BrowserTestUtils.waitForEvent(pageInfo, "page-info-init");
+
+        let prefersColorScheme = await getPrefersColorSchemeInfo({
+          win: pageInfo,
+          chrome: true,
+        });
+        if (isPBM) {
+          ok(
+            !prefersColorScheme.light && prefersColorScheme.dark,
+            "pageInfo from private window should be themed dark."
+          );
+        } else {
+          ok(
+            prefersColorScheme.light && !prefersColorScheme.dark,
+            "pageInfo from normal window should be themed light."
+          );
+        }
+
+        pageInfo.close();
+      }
+    );
+
+    await BrowserTestUtils.closeWindow(win);
+  }
+});
+
+
+add_task(async function test_pbm_dark_prompts() {
+  const { MODAL_TYPE_TAB, MODAL_TYPE_CONTENT } = Services.prompt;
+
+  for (let isPBM of [false, true]) {
+    let win = await BrowserTestUtils.openNewBrowserWindow({
+      private: isPBM,
+    });
+
+    
+    
+    for (let modalType of [MODAL_TYPE_TAB, MODAL_TYPE_CONTENT]) {
+      let windowTypeStr = isPBM ? "private" : "normal";
+      let modalTypeStr = modalType == MODAL_TYPE_TAB ? "tab" : "content";
+
+      info(`Opening ${modalTypeStr} prompt from ${windowTypeStr} browsing.`);
+
+      let openPromise = PromptTestUtils.waitForPrompt(
+        win.gBrowser.selectedBrowser,
+        {
+          modalType,
+          promptType: "alert",
+        }
+      );
+      let promptPromise = Services.prompt.asyncAlert(
+        win.gBrowser.selectedBrowser.browsingContext,
+        modalType,
+        "Hello",
+        "Hello, world!"
+      );
+
+      let dialog = await openPromise;
+
+      let prefersColorScheme = await getPrefersColorSchemeInfo({
+        win: dialog.ui.prompt,
+        chrome: true,
+      });
+
+      if (isPBM) {
+        ok(
+          !prefersColorScheme.light && prefersColorScheme.dark,
+          "Prompt from private window should be themed dark."
+        );
+      } else {
+        ok(
+          prefersColorScheme.light && !prefersColorScheme.dark,
+          "Prompt from normal window should be themed light."
+        );
+      }
+
+      await PromptTestUtils.handlePrompt(dialog);
+      await promptPromise;
+    }
+
+    await BrowserTestUtils.closeWindow(win);
+  }
 });
