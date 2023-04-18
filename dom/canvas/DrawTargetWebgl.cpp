@@ -2266,6 +2266,8 @@ GlyphCacheEntry::GlyphCacheEntry(const GlyphBuffer& aBuffer,
   mBuffer.mNumGlyphs = aBuffer.mNumGlyphs;
 }
 
+GlyphCacheEntry::~GlyphCacheEntry() { delete[] mBuffer.mGlyphs; }
+
 
 
 
