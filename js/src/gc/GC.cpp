@@ -277,9 +277,6 @@ using mozilla::TimeStamp;
 
 using JS::AutoGCRooter;
 
-
-static constexpr int IGC_MARK_SLICE_MULTIPLIER = 2;
-
 const AllocKind gc::slotsToThingKind[] = {
     
      AllocKind::OBJECT0,  AllocKind::OBJECT2,  AllocKind::OBJECT2,  AllocKind::OBJECT4,
@@ -3912,13 +3909,7 @@ SliceBudget GCRuntime::defaultBudget(JS::GCReason reason, int64_t millis) {
   
   
   if (millis == 0) {
-    if (reason == JS::GCReason::ALLOC_TRIGGER) {
-      millis = defaultSliceBudgetMS();
-    } else if (schedulingState.inHighFrequencyGCMode()) {
-      millis = defaultSliceBudgetMS() * IGC_MARK_SLICE_MULTIPLIER;
-    } else {
-      millis = defaultSliceBudgetMS();
-    }
+    millis = defaultSliceBudgetMS();
   }
 
   
