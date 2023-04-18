@@ -849,7 +849,7 @@ class nsWindow final : public nsBaseWidget {
   mozilla::Maybe<LayoutDeviceIntRect> mWindowButtonsRect;
 
   
-  POINT mCachedHitTestPoint = {0, 0};
+  LayoutDeviceIntPoint mCachedHitTestPoint;
   TimeStamp mCachedHitTestTime;
 
   RefPtr<mozilla::widget::InProcessWinCompositorWidget> mBasicLayersSurface;
