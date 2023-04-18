@@ -264,10 +264,11 @@ class BookmarkState {
   constructor(info, tags = "", keyword = "") {
     this._guid = info.itemGuid;
     this._postData = info.postData;
+    this._isTagContainer = info.isTag;
 
     
     this._originalState = {
-      title: info.title,
+      title: this._isTagContainer ? info.tag : info.title,
       uri: info.uri?.spec,
       tags: tags
         .trim()
@@ -275,7 +276,6 @@ class BookmarkState {
         .filter(tag => !!tag.length),
       keyword,
       parentGuid: info.parentGuid,
-      tag: info.tag,
     };
 
     
@@ -327,17 +327,19 @@ class BookmarkState {
 
 
 
-  _tagChanged(tag) {
-    this._newState.tag = tag;
-  }
-
-  
-
-
-
 
   async save() {
     if (!Object.keys(this._newState).length) {
+      return this._guid;
+    }
+
+    if (this._isTagContainer && this._newState.title) {
+      await PlacesTransactions.RenameTag({
+        oldTag: this._originalState.title,
+        tag: this._newState.title,
+      })
+        .transact()
+        .catch(Cu.reportError);
       return this._guid;
     }
 
@@ -408,14 +410,6 @@ class BookmarkState {
             PlacesTransactions.Move({
               guid: this._guid,
               newParentGuid: this._newState.parentGuid,
-            })
-          );
-          break;
-        case "tag":
-          transactions.push(
-            PlacesTransactions.RenameTag({
-              oldTag: this._originalState.tag,
-              tag: this._newState.tag,
             })
           );
           break;
