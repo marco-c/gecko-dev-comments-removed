@@ -629,8 +629,10 @@ void GPUParent::ActorDestroy(ActorDestroyReason aWhy) {
           mVsyncBridge = nullptr;
         }
         RemoteDecoderManagerParent::ShutdownVideoBridge();
-        CompositorThreadHolder::Shutdown();
+        
+        
         CanvasManagerParent::Shutdown();
+        CompositorThreadHolder::Shutdown();
         
         
         
