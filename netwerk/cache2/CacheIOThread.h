@@ -113,6 +113,8 @@ class CacheIOThread final : public nsIThreadObserver {
 
   mozilla::Monitor mMonitor{"CacheIOThread"};
   PRThread* mThread{nullptr};
+  
+  
   UniquePtr<detail::BlockingIOWatcher> mBlockingIOWatcher;
   Atomic<nsIThread*> mXPCOMThread{nullptr};
   Atomic<uint32_t, Relaxed> mLowestLevelWaiting{LAST_LEVEL};
@@ -126,7 +128,7 @@ class CacheIOThread final : public nsIThreadObserver {
   
   Atomic<bool, Relaxed> mHasXPCOMEvents{false};
   
-  bool mRerunCurrentEvent{false};
+  bool mRerunCurrentEvent{false};  
   
   
   bool mShutdown{false};

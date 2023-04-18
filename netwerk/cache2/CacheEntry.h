@@ -189,6 +189,7 @@ class CacheEntry final : public nsIRunnable, public CacheFileListener {
 
     
     
+    
     bool DeferDoom(bool* aDoom) const;
 
     
@@ -323,9 +324,10 @@ class CacheEntry final : public nsIRunnable, public CacheFileListener {
   
   
   Atomic<nsresult, ReleaseAcquire> mFileStatus{NS_ERROR_NOT_INITIALIZED};
-  nsCString mURI;
-  nsCString mEnhanceID;
-  nsCString mStorageID;
+  
+  nsCString const mURI;
+  nsCString const mEnhanceID;
+  nsCString const mStorageID;
 
   
   
@@ -337,6 +339,8 @@ class CacheEntry final : public nsIRunnable, public CacheFileListener {
   bool const mSkipSizeCheck;
   
   Atomic<bool, Relaxed> mIsDoomed{false};
+  
+  Atomic<bool, Relaxed> mPinned;
 
   
 
@@ -352,8 +356,6 @@ class CacheEntry final : public nsIRunnable, public CacheFileListener {
   
   
   bool mHasData : 1;
-  
-  bool mPinned : 1;
   
   
   bool mPinningKnown : 1;

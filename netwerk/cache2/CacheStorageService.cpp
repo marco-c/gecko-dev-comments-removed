@@ -2173,7 +2173,7 @@ void CacheStorageService::TelemetryRecordEntryCreation(
                                  timeStamp, TimeStamp::NowLoRes());
 }
 
-void CacheStorageService::TelemetryRecordEntryRemoval(CacheEntry const* entry) {
+void CacheStorageService::TelemetryRecordEntryRemoval(CacheEntry* entry) {
   MOZ_ASSERT(CacheStorageService::IsOnManagementThread());
 
   
