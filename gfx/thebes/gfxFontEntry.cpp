@@ -326,6 +326,11 @@ bool gfxFontEntry::TryGetSVGData(const gfxFont* aFont) {
     return false;
   }
 
+  
+  if (!NS_IsMainThread()) {
+    return false;
+  }
+
   if (!mSVGInitialized) {
     
     if (UnitsPerEm() == kInvalidUPEM) {
