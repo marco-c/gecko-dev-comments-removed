@@ -7866,12 +7866,24 @@ nsresult nsTextFrame::GetCharacterRectsInRange(int32_t aInOffset,
     if (mTextRun->IsVertical()) {
       rect.width = mRect.width;
       rect.height = iSize;
+      if (mTextRun->IsInlineReversed()) {
+        
+        
+        
+        rect.y -= rect.height;
+      }
     } else {
       rect.width = iSize;
       rect.height = mRect.height;
-
       if (Style()->IsTextCombined()) {
         rect.width *= GetTextCombineScaleFactor(this);
+      }
+      if (mTextRun->IsInlineReversed()) {
+        
+        
+        
+        
+        rect.x -= rect.width;
       }
     }
     aRects.AppendElement(rect);
