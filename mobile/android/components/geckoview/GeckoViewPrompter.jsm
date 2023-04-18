@@ -34,15 +34,8 @@ class GeckoViewPrompter {
       }
     }
 
-    if (this._domWin) {
-      this._dispatcher = GeckoViewUtils.getDispatcherForWindow(this._domWin);
-    }
-
-    if (!this._dispatcher) {
-      [
-        this._dispatcher,
-        this._domWin,
-      ] = GeckoViewUtils.getActiveDispatcherAndWindow();
+    if (!this._domWin) {
+      this._domWin = Services.wm.getMostRecentWindow("navigator:geckoview");
     }
 
     this._innerWindowId = this._domWin?.browsingContext.currentWindowContext.innerWindowId;
@@ -88,8 +81,7 @@ class GeckoViewPrompter {
   }
 
   _dismissUi() {
-    this.prompterActor?.unregisterPrompt(this);
-    this._dispatcher.dispatch("GeckoView:Prompt:Dismiss", { id: this.id });
+    this.prompterActor?.dismissPrompt(this);
   }
 
   accept(aInputText = this.inputText) {
@@ -186,46 +178,35 @@ class GeckoViewPrompter {
     });
   }
 
-  asyncShowPrompt(aMsg, aCallback) {
-    let handled = false;
+  async asyncShowPrompt(aMsg, aCallback) {
     this.message = aMsg;
     this.inputText = aMsg.value;
     this.callback = aCallback;
-    this.prompterActor?.registerPrompt(this);
-
-    const onResponse = response => {
-      if (handled) {
-        return;
-      }
-      if (!this.checkInnerWindow()) {
-        
-        aCallback(null);
-      } else {
-        aCallback(response);
-      }
-      
-      
-      
-      
-      
-      aMsg = undefined;
-      aCallback = undefined;
-      handled = true;
-    };
-
-    if (!this._dispatcher || !this.checkInnerWindow()) {
-      onResponse(null);
-      return;
-    }
 
     aMsg.id = this.id;
-    this._dispatcher.dispatch("GeckoView:Prompt", aMsg, {
-      onSuccess: onResponse,
-      onError: error => {
-        Cu.reportError("Prompt error: " + error);
-        onResponse(null);
-      },
-    });
-    this.prompterActor?.notifyPromptShow(this);
+
+    let response = null;
+    try {
+      if (this.checkInnerWindow()) {
+        response = await this.prompterActor.prompt(this, aMsg);
+      }
+    } catch (error) {
+      
+      warn`Error while prompting: ${error}`;
+    }
+
+    if (!this.checkInnerWindow()) {
+      
+      aCallback(null);
+    } else {
+      aCallback(response);
+    }
+    
+    
+    
+    
+    
+    aMsg = undefined;
+    aCallback = undefined;
   }
 }
