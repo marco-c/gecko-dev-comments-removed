@@ -111,13 +111,10 @@ class SnapshotSelector extends EventEmitter {
 
 
 
-
-
   constructor({
     count = 5,
     filterAdult = false,
-    selectOverlappingVisits = false,
-    selectCommonReferrer = false,
+    sourceWeights = undefined,
     getCurrentSessionUrls = () => new Set(),
   }) {
     super();
@@ -128,28 +125,23 @@ class SnapshotSelector extends EventEmitter {
     this.#context.count = count;
     this.#context.filterAdult = filterAdult;
 
-    if (selectOverlappingVisits || selectCommonReferrer) {
+    if (
+      sourceWeights ||
+      Services.prefs.getBoolPref(
+        "browser.pinebuild.snapshots.relevancy.enabled",
+        false
+      )
+    ) {
       
-      this.#context.sourceWeights = new Map([
-        [
-          "Overlapping",
-          selectOverlappingVisits
-            ? Services.prefs.getIntPref(
-                "browser.snapshots.source.Overlapping",
-                0
-              )
-            : 0,
-        ],
-        [
-          "CommonReferrer",
-          selectCommonReferrer
-            ? Services.prefs.getIntPref(
-                "browser.snapshots.source.CommonReferrer",
-                0
-              )
-            : 0,
-        ],
-      ]);
+      let branch = Services.prefs.getBranch("browser.snapshots.source.");
+      let weights = Object.fromEntries(
+        branch.getChildList("").map(name => [name, branch.getIntPref(name, 0)])
+      );
+
+      
+      Object.assign(weights, sourceWeights ?? {});
+
+      this.#context.sourceWeights = new Map(Object.entries(weights));
     }
 
     this.#context.getCurrentSessionUrls = getCurrentSessionUrls;
