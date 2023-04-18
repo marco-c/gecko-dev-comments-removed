@@ -908,22 +908,26 @@ class Tab extends TabBase {
 
     let entries = tabData.state ? tabData.state.entries : tabData.entries;
     let lastTabIndex = tabData.state ? tabData.state.index : tabData.index;
-    
-    
-    let entry = entries[lastTabIndex - 1];
 
     
-    
-    
-    
-    if (
-      extension.hasPermission("tabs") ||
-      extension.allowedOrigins.matches(entry.url)
-    ) {
-      result.url = entry.url;
-      result.title = entry.title;
-      if (tabData.image) {
-        result.favIconUrl = tabData.image;
+    if (entries.length) {
+      
+      
+      let entry = entries[lastTabIndex - 1];
+
+      
+      
+      
+      
+      if (
+        extension.hasPermission("tabs") ||
+        extension.allowedOrigins.matches(entry.url)
+      ) {
+        result.url = entry.url;
+        result.title = entry.title;
+        if (tabData.image) {
+          result.favIconUrl = tabData.image;
+        }
       }
     }
 
