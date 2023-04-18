@@ -7,6 +7,7 @@
 #ifndef mozilla_dom_Fetch_h
 #define mozilla_dom_Fetch_h
 
+#include "mozilla/Attributes.h"
 #include "nsCOMPtr.h"
 #include "nsError.h"
 #include "nsProxyRelease.h"
@@ -177,6 +178,11 @@ class FetchBody : public BodyStreamHolder, public AbortFollower {
 #ifdef MOZ_DOM_STREAMS
   
   
+  
+  
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void MaybeTeeReadableStreamBody(JSContext* aCx, ReadableStream** aBodyOut,
                                   FetchStreamReader** aStreamReader,
                                   nsIInputStream** aInputStream,
