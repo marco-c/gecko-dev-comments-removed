@@ -248,6 +248,10 @@ class ModuleLoaderBase : public nsISupports {
   
   nsresult EvaluateModule(ModuleLoadRequest* aRequest);
 
+  
+  
+  nsresult EvaluateModuleInContext(JSContext* aCx, ModuleLoadRequest* aRequest);
+
   void StartDynamicImport(ModuleLoadRequest* aRequest);
   void ProcessDynamicImport(ModuleLoadRequest* aRequest);
   void CancelAndClearDynamicImports();
