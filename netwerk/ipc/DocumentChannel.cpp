@@ -153,8 +153,6 @@ nsDocShell* DocumentChannel::GetDocShell() {
   return nsDocShell::Cast(docshell);
 }
 
-
-
 static bool URIUsesDocChannel(nsIURI* aURI) {
   if (SchemeIsJavascript(aURI)) {
     return false;

@@ -501,7 +501,8 @@ class nsDocShell final : public nsDocLoader,
       mozilla::dom::BrowsingContext* aBrowsingContext, uint32_t aLoadType);
 
   void SetLoadingSessionHistoryInfo(
-      const mozilla::dom::LoadingSessionHistoryInfo& aLoadingInfo);
+      const mozilla::dom::LoadingSessionHistoryInfo& aLoadingInfo,
+      bool aNeedToReportActiveAfterLoadingBecomesActive = false);
   const mozilla::dom::LoadingSessionHistoryInfo*
   GetLoadingSessionHistoryInfo() {
     return mLoadingEntry.get();
@@ -675,6 +676,12 @@ class nsDocShell final : public nsDocLoader,
       nsIURI* aCurrentURI, nsIReferrerInfo* aReferrerInfo,
       bool aNotifiedBeforeUnloadListeners = false);
 
+ public:
+  bool IsAboutBlankLoadOntoInitialAboutBlank(nsIURI* aURI,
+                                             bool aInheritPrincipal,
+                                             nsIPrincipal* aPrincipalToInherit);
+
+ private:
   
   
   
@@ -1214,6 +1221,8 @@ class nsDocShell final : public nsDocLoader,
   mozilla::UniquePtr<mozilla::dom::SessionHistoryInfo> mActiveEntry;
   bool mActiveEntryIsLoadingFromSessionHistory = false;
   
+  
+  
   mozilla::UniquePtr<mozilla::dom::LoadingSessionHistoryInfo> mLoadingEntry;
 
   
@@ -1362,6 +1371,12 @@ class nsDocShell final : public nsDocLoader,
 
 
   bool mCheckingSessionHistory : 1;
+
+  
+  
+  
+  
+  bool mNeedToReportActiveAfterLoadingBecomesActive : 1;
 };
 
 inline nsISupports* ToSupports(nsDocShell* aDocShell) {

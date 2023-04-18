@@ -373,6 +373,12 @@ class nsObjectLoadingContent : public nsImageLoadingContent,
 
   void QueueCheckPluginStopEvent();
 
+ public:
+  bool IsAboutBlankLoadOntoInitialAboutBlank(nsIURI* aURI,
+                                             bool aInheritPrincipal,
+                                             nsIPrincipal* aPrincipalToInherit);
+
+ private:
   
 
 

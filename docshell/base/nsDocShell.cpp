@@ -232,6 +232,7 @@
 #include "nsWidgetsCID.h"
 #include "nsXULAppAPI.h"
 
+#include "ThirdPartyUtil.h"
 #include "BRNameMatchingPolicy.h"
 #include "GeckoProfiler.h"
 #include "mozilla/NullPrincipal.h"
@@ -391,7 +392,8 @@ nsDocShell::nsDocShell(BrowsingContext* aBrowsingContext,
       mIsNavigating(false),
       mSuspendMediaWhenInactive(false),
       mForcedAutodetection(false),
-      mCheckingSessionHistory(false) {
+      mCheckingSessionHistory(false),
+      mNeedToReportActiveAfterLoadingBecomesActive(false) {
   
   if (aContentWindowID == 0) {
     mContentWindowID = nsContentUtils::GenerateWindowId();
@@ -1339,7 +1341,8 @@ void nsDocShell::FirePageHideShowNonRecursive(bool aShow) {
         mLoadGroup->AddRequest(channel, nullptr);
         SetCurrentURI(doc->GetDocumentURI(), channel,
                        true,
-                       false,  0);
+                       false,
+                       0);
         mLoadGroup->RemoveRequest(channel, nullptr, NS_OK);
         mIsRestoringDocument = false;
       }
@@ -1577,7 +1580,8 @@ nsDocShell::SetCurrentURI(nsIURI* aURI) {
   
   
   SetCurrentURI(aURI, nullptr,  true,
-                 false,  0);
+                 false,
+                 0);
   return NS_OK;
 }
 
@@ -6743,7 +6747,8 @@ nsresult nsDocShell::CreateAboutBlankContentViewer(
 
         SetCurrentURI(blankDoc->GetDocumentURI(), nullptr,
                        true,
-                       true,  0);
+                       true,
+                       0);
         rv = mIsBeingDestroyed ? NS_ERROR_NOT_AVAILABLE : NS_OK;
       }
     }
@@ -7561,7 +7566,8 @@ nsresult nsDocShell::RestoreFromHistory() {
     
     nsCOMPtr<nsIURI> uri = origLSHE->GetURI();
     SetCurrentURI(uri, document->GetChannel(),  true,
-                   false,  0);
+                   false,
+                   0);
   }
 
   
@@ -8839,6 +8845,7 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
   if (aLoadState->GetLoadingSessionHistoryInfo()) {
     mLoadingEntry = MakeUnique<LoadingSessionHistoryInfo>(
         *aLoadState->GetLoadingSessionHistoryInfo());
+    mNeedToReportActiveAfterLoadingBecomesActive = false;
   }
 
   
@@ -10116,6 +10123,14 @@ nsIPrincipal* nsDocShell::GetInheritedPrincipal(
   return true;
 }
 
+bool nsDocShell::IsAboutBlankLoadOntoInitialAboutBlank(
+    nsIURI* aURI, bool aInheritPrincipal, nsIPrincipal* aPrincipalToInherit) {
+  return NS_IsAboutBlank(aURI) && aInheritPrincipal &&
+         (aPrincipalToInherit == GetInheritedPrincipal(false)) &&
+         (!mContentViewer || !mContentViewer->GetDocument() ||
+          mContentViewer->GetDocument()->IsInitialDocument());
+}
+
 nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
                                Maybe<uint32_t> aCacheKey,
                                nsIRequest** aRequest) {
@@ -10260,8 +10275,41 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
   
   
   
+  
+  bool inheritPrincipal = false;
+
+  if (aLoadState->PrincipalToInherit()) {
+    bool isSrcdoc =
+        aLoadState->HasInternalLoadFlags(INTERNAL_LOAD_FLAGS_IS_SRCDOC);
+    bool inheritAttrs = nsContentUtils::ChannelShouldInheritPrincipal(
+        aLoadState->PrincipalToInherit(), aLoadState->URI(),
+        true,  
+        isSrcdoc);
+
+    inheritPrincipal = inheritAttrs && !SchemeIsData(aLoadState->URI());
+  }
+
+  
+  const bool isAboutBlankLoadOntoInitialAboutBlank =
+      IsAboutBlankLoadOntoInitialAboutBlank(aLoadState->URI(), inheritPrincipal,
+                                            aLoadState->PrincipalToInherit());
+
+  
+  
+  
   if (aLoadState->GetLoadingSessionHistoryInfo()) {
     SetLoadingSessionHistoryInfo(*aLoadState->GetLoadingSessionHistoryInfo());
+  } else if (isAboutBlankLoadOntoInitialAboutBlank &&
+             mozilla::SessionHistoryInParent()) {
+    
+    
+    UniquePtr<SessionHistoryInfo> entry = MakeUnique<SessionHistoryInfo>(
+        aLoadState->URI(), aLoadState->TriggeringPrincipal(),
+        aLoadState->PrincipalToInherit(),
+        aLoadState->PartitionedPrincipalToInherit(), aLoadState->Csp(),
+        mContentTypeHint);
+    mozilla::dom::LoadingSessionHistoryInfo info(*entry);
+    SetLoadingSessionHistoryInfo(info, true);
   }
 
   
@@ -10345,23 +10393,6 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
     return NS_ERROR_FAILURE;
   }
 
-  
-  
-  
-  
-  bool inheritPrincipal = false;
-
-  if (aLoadState->PrincipalToInherit()) {
-    bool isSrcdoc =
-        aLoadState->HasInternalLoadFlags(INTERNAL_LOAD_FLAGS_IS_SRCDOC);
-    bool inheritAttrs = nsContentUtils::ChannelShouldInheritPrincipal(
-        aLoadState->PrincipalToInherit(), aLoadState->URI(),
-        true,  
-        isSrcdoc);
-
-    inheritPrincipal = inheritAttrs && !SchemeIsData(aLoadState->URI());
-  }
-
   uint32_t sandboxFlags = mBrowsingContext->GetSandboxFlags();
   nsSecurityFlags securityFlags =
       nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL;
@@ -10393,6 +10424,30 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
                          Maybe<mozilla::dom::ServiceWorkerDescriptor>(),
                          sandboxFlags);
   RefPtr<WindowContext> context = mBrowsingContext->GetCurrentWindowContext();
+
+  if (isAboutBlankLoadOntoInitialAboutBlank) {
+    
+    
+    
+    
+    BrowsingContext* top = mBrowsingContext->Top();
+    if (top == mBrowsingContext) {
+      
+      
+      loadInfo->SetIsThirdPartyContextToTopWindow(false);
+    } else {
+      if (Document* topDoc = top->GetDocument()) {
+        bool thirdParty = false;
+        mozilla::Unused << topDoc->GetPrincipal()->IsThirdPartyPrincipal(
+            aLoadState->PrincipalToInherit(), &thirdParty);
+        loadInfo->SetIsThirdPartyContextToTopWindow(thirdParty);
+      } else {
+        
+        
+        loadInfo->SetIsThirdPartyContextToTopWindow(true);
+      }
+    }
+  }
 
   if (mLoadType != LOAD_ERROR_PAGE && context && context->IsInProcess() &&
       context->HasValidTransientUserGestureActivation()) {
@@ -10461,7 +10516,8 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
                                             currentUnstrippedURI);
 
   nsCOMPtr<nsIChannel> channel;
-  if (DocumentChannel::CanUseDocumentChannel(aLoadState->URI())) {
+  if (DocumentChannel::CanUseDocumentChannel(aLoadState->URI()) &&
+      !isAboutBlankLoadOntoInitialAboutBlank) {
     channel = DocumentChannel::CreateForDocument(aLoadState, loadInfo,
                                                  loadFlags, this, cacheKey,
                                                  uriModified, isXFOError);
@@ -13541,13 +13597,16 @@ bool nsDocShell::GetIsAttemptingToNavigate() {
 }
 
 void nsDocShell::SetLoadingSessionHistoryInfo(
-    const mozilla::dom::LoadingSessionHistoryInfo& aLoadingInfo) {
+    const mozilla::dom::LoadingSessionHistoryInfo& aLoadingInfo,
+    bool aNeedToReportActiveAfterLoadingBecomesActive) {
   
   
   MOZ_LOG(gSHLog, LogLevel::Debug,
           ("Setting the loading entry on nsDocShell %p to %s", this,
            aLoadingInfo.mInfo.GetURI()->GetSpecOrDefault().get()));
   mLoadingEntry = MakeUnique<LoadingSessionHistoryInfo>(aLoadingInfo);
+  mNeedToReportActiveAfterLoadingBecomesActive =
+      aNeedToReportActiveAfterLoadingBecomesActive;
 }
 
 void nsDocShell::MoveLoadingToActiveEntry(bool aPersist, bool aExpired,
@@ -13570,9 +13629,16 @@ void nsDocShell::MoveLoadingToActiveEntry(bool aPersist, bool aExpired,
     mActiveEntry = MakeUnique<SessionHistoryInfo>(mLoadingEntry->mInfo);
     mLoadingEntry.swap(loadingEntry);
     if (!mActiveEntryIsLoadingFromSessionHistory) {
+      if (mNeedToReportActiveAfterLoadingBecomesActive) {
+        
+        mBrowsingContext->SetActiveSessionHistoryEntry(
+            mozilla::Nothing(), mActiveEntry.get(), mLoadType,
+             0, false);
+      }
       mBrowsingContext->IncrementHistoryEntryCountForBrowsingContext();
     }
   }
+  mNeedToReportActiveAfterLoadingBecomesActive = false;
 
   if (mActiveEntry) {
     if (aCacheKey != 0) {
@@ -13582,12 +13648,14 @@ void nsDocShell::MoveLoadingToActiveEntry(bool aPersist, bool aExpired,
     uint32_t loadType =
         mLoadType == LOAD_ERROR_PAGE ? mFailedLoadType : mLoadType;
 
-    
-    
-    
-    mBrowsingContext->SessionHistoryCommit(*loadingEntry, loadType, mCurrentURI,
-                                           hadActiveEntry, aPersist, false,
-                                           aExpired, aCacheKey);
+    if (loadingEntry->mLoadId != UINT64_MAX) {
+      
+      
+      
+      mBrowsingContext->SessionHistoryCommit(
+          *loadingEntry, loadType, mCurrentURI, hadActiveEntry, aPersist, false,
+          aExpired, aCacheKey);
+    }
   }
 }
 
