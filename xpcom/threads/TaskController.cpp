@@ -145,8 +145,7 @@ constexpr PRUint32 sBaseStackSize = 2048 * 1024 - 2 * 4096;
 
 
 
-
-#if defined(MOZ_TSAN)
+#if defined(MOZ_TSAN) || defined(MOZ_ASAN)
 constexpr PRUint32 sStackSize = 2 * sBaseStackSize;
 #else
 constexpr PRUint32 sStackSize = sBaseStackSize;
