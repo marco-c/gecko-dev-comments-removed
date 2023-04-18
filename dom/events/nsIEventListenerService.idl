@@ -82,6 +82,7 @@ interface nsIEventListenerService : nsISupports
 
 
 
+  [can_run_script]
   Array<EventTarget> getEventTargetChainFor(in EventTarget aEventTarget,
                                             in boolean composed);
 
