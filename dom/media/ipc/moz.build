@@ -67,6 +67,9 @@ if CONFIG["MOZ_WMF"]:
         "MFMediaEngineParent.h",
         "MFMediaEngineUtils.h",
     ]
+    LOCAL_INCLUDES += [
+        "../platforms/wmf",
+    ]
 
 
 LOCAL_INCLUDES += [
