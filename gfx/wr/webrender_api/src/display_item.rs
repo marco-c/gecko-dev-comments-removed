@@ -829,6 +829,11 @@ pub enum ReferenceTransformBinding {
     
     
     
+    
+    
+    
+    
+    
     Computed {
         scale_from: Option<LayoutSize>,
         vertical_flip: bool,
