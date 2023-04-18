@@ -96,12 +96,27 @@ export function getTabMenuItems() {
   };
 }
 
+
+
+
+
+
+
+
 export function isSimilarTab(tab, url, isOriginal) {
   return tab.url === url && tab.isOriginal === isOriginal;
 }
 
+
+
+
+
+
+
+
+
 export function persistTabs(tabs) {
   return [...tabs]
     .filter(tab => tab.url)
-    .map(tab => ({ ...tab, sourceId: null }));
+    .map(tab => ({ ...tab, sourceId: null, threadActorID: null }));
 }

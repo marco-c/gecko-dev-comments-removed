@@ -2,10 +2,8 @@
 
 
 
-import { removeSourceActors } from "./source-actors";
 import { validateContext } from "../utils/context";
-
-import { getContext, getThread, getSourceActorsForThread } from "../selectors";
+import { getContext } from "../selectors";
 
 export function addTarget(targetFront) {
   return async function(args) {
@@ -22,19 +20,14 @@ export function removeTarget(targetFront) {
   return async function(args) {
     const { getState, client, dispatch } = args;
     const cx = getContext(getState());
-    const thread = getThread(getState(), targetFront.targetForm.threadActor);
+    const threadActorID = targetFront.targetForm.threadActor;
 
-    if (!thread) {
-      return;
-    }
+    client.removeThread(threadActorID);
 
-    client.removeThread(thread);
-    const sourceActors = getSourceActorsForThread(getState(), thread.actor);
-    dispatch(removeSourceActors(sourceActors));
     dispatch({
       type: "REMOVE_THREAD",
       cx,
-      oldThread: thread,
+      threadActorID,
     });
   };
 }
