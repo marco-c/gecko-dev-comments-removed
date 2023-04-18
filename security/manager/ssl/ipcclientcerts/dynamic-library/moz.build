@@ -28,13 +28,9 @@ if CONFIG["OS_ARCH"] == "WINNT":
         "userenv",
         "ws2_32",
     ]
-    
-    
-    
-    if CONFIG["RUSTC_VERSION"] and CONFIG["RUSTC_VERSION"] >= "1.57.0":
-        OS_LIBS += [
-            "bcrypt",
-        ]
+    OS_LIBS += [
+        "bcrypt",
+    ]
 
 
 SharedLibrary("ipcclientcerts")
