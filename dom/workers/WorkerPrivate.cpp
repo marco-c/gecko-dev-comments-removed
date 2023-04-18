@@ -1419,15 +1419,25 @@ nsresult WorkerPrivate::SetCSPFromHeaderValues(
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
+  mLoadInfo.mCSP = csp;
+
   
   bool evalAllowed = false;
   bool reportEvalViolations = false;
   rv = csp->GetAllowsEval(&reportEvalViolations, &evalAllowed);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  mLoadInfo.mCSP = csp;
   mLoadInfo.mEvalAllowed = evalAllowed;
-  mLoadInfo.mReportCSPViolations = reportEvalViolations;
+  mLoadInfo.mReportEvalCSPViolations = reportEvalViolations;
+
+  
+  bool wasmEvalAllowed = false;
+  bool reportWasmEvalViolations = false;
+  rv = csp->GetAllowsWasmEval(&reportWasmEvalViolations, &wasmEvalAllowed);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  mLoadInfo.mWasmEvalAllowed = wasmEvalAllowed;
+  mLoadInfo.mReportWasmEvalCSPViolations = reportWasmEvalViolations;
 
   mLoadInfo.mCSPInfo = MakeUnique<CSPInfo>();
   rv = CSPToCSPInfo(csp, mLoadInfo.mCSPInfo.get());
