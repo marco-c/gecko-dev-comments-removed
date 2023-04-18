@@ -16,22 +16,25 @@
 
 namespace mozilla {
 
+class VideoFramePool;
+
 class VideoFrameSurface {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(VideoFrameSurface)
 
-  VideoFrameSurface(){};
+  VideoFrameSurface() = default;
 
-  virtual void LockVAAPIData(AVCodecContext* aAVCodecContext, AVFrame* aAVFrame,
-                             FFmpegLibWrapper* aLib){};
-  virtual void ReleaseVAAPIData(bool aForFrameRecycle = true){};
-  virtual bool IsUsed() const = 0;
+  virtual class VideoFrameSurfaceDMABuf* AsVideoFrameSurfaceDMABuf() {
+    return nullptr;
+  }
+  virtual class VideoFrameSurfaceVAAPI* AsVideoFrameSurfaceVAAPI() {
+    return nullptr;
+  }
 
   virtual void SetYUVColorSpace(mozilla::gfx::YUVColorSpace aColorSpace) = 0;
   virtual void SetColorRange(mozilla::gfx::ColorRange aColorRange) = 0;
 
   virtual RefPtr<DMABufSurfaceYUV> GetDMABufSurface() { return nullptr; };
-
   virtual RefPtr<layers::Image> GetAsImage() = 0;
 
   
@@ -47,17 +50,18 @@ class VideoFrameSurface {
 
 
 class VideoFrameSurfaceDMABuf : public VideoFrameSurface {
+  friend class VideoFramePool;
+
  public:
   explicit VideoFrameSurfaceDMABuf(DMABufSurface* aSurface);
 
-  
-  
-  bool IsUsed() const { return mSurface->IsGlobalRefSet(); }
+  class VideoFrameSurfaceDMABuf* AsVideoFrameSurfaceDMABuf() {
+    return this;
+  }
 
   void SetYUVColorSpace(mozilla::gfx::YUVColorSpace aColorSpace) {
     mSurface->GetAsDMABufSurfaceYUV()->SetYUVColorSpace(aColorSpace);
   }
-
   void SetColorRange(mozilla::gfx::ColorRange aColorRange) {
     mSurface->GetAsDMABufSurfaceYUV()->SetColorRange(aColorRange);
   }
@@ -69,9 +73,14 @@ class VideoFrameSurfaceDMABuf : public VideoFrameSurface {
   RefPtr<layers::Image> GetAsImage();
 
  protected:
-  const RefPtr<DMABufSurface> mSurface;
+  
+  
+  bool IsUsed() const { return mSurface->IsGlobalRefSet(); }
+  void MarkAsUsed() { mSurface->GlobalRefAdd(); }
 
  protected:
+  const RefPtr<DMABufSurface> mSurface;
+
   ~VideoFrameSurfaceDMABuf(){};
 };
 
@@ -104,18 +113,23 @@ class VideoFrameSurfaceDMABuf : public VideoFrameSurface {
 
 
 
-
 class VideoFrameSurfaceVAAPI : public VideoFrameSurfaceDMABuf {
+  friend class VideoFramePool;
+
  public:
   explicit VideoFrameSurfaceVAAPI(DMABufSurface* aSurface);
 
+  virtual class VideoFrameSurfaceVAAPI* AsVideoFrameSurfaceVAAPI() {
+    return this;
+  }
+
+ protected:
   
   void LockVAAPIData(AVCodecContext* aAVCodecContext, AVFrame* aAVFrame,
                      FFmpegLibWrapper* aLib);
-
   
   
-  void ReleaseVAAPIData(bool aForFrameRecycle);
+  void ReleaseVAAPIData(bool aForFrameRecycle = true);
 
  private:
   ~VideoFrameSurfaceVAAPI();
@@ -125,13 +139,15 @@ class VideoFrameSurfaceVAAPI : public VideoFrameSurfaceDMABuf {
   AVBufferRef* mHWAVBuffer;
 };
 
+
 class VideoFramePool final {
  public:
   explicit VideoFramePool(bool aUseVAAPI);
   ~VideoFramePool();
 
   RefPtr<VideoFrameSurface> GetVideoFrameSurface(
-      VADRMPRIMESurfaceDescriptor& aVaDesc);
+      VADRMPRIMESurfaceDescriptor& aVaDesc, AVCodecContext* aAVCodecContext,
+      AVFrame* aAVFrame, FFmpegLibWrapper* aLib);
   RefPtr<VideoFrameSurface> GetVideoFrameSurface(AVPixelFormat aPixelFormat,
                                                  AVFrame* aFrame);
   void ReleaseUnusedVAAPIFrames();
@@ -141,6 +157,8 @@ class VideoFramePool final {
 
  private:
   const bool mUseVAAPI;
+  
+  mozilla::Mutex mSurfaceLock;
   nsTArray<RefPtr<VideoFrameSurface>> mDMABufSurfaces;
 };
 
