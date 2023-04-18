@@ -109,8 +109,7 @@ class MediaEngineWebRTCMicrophoneSource : public MediaEngineSource {
 
 class AudioInputProcessing : public AudioDataListener {
  public:
-  AudioInputProcessing(uint32_t aMaxChannelCount,
-                       const PrincipalHandle& aPrincipalHandle);
+  explicit AudioInputProcessing(uint32_t aMaxChannelCount);
   void Process(MediaTrackGraphImpl* aGraph, GraphTime aFrom, GraphTime aTo,
                AudioSegment* aInput, AudioSegment* aOutput);
 
@@ -201,9 +200,6 @@ class AudioInputProcessing : public AudioDataListener {
   AudioSegment mSegment;
   
   
-  const PrincipalHandle mPrincipal;
-  
-  
   
   bool mEnabled;
   
@@ -217,6 +213,8 @@ class AudioInputProcessing : public AudioDataListener {
   AutoTArray<AudioDataValue,
              SilentChannel::AUDIO_PROCESSING_FRAMES * GUESS_AUDIO_CHANNELS>
       mInterleavedBuffer;
+  
+  std::deque<std::pair<TrackTime, PrincipalHandle>> mChunksInPacketizer;
 };
 
 

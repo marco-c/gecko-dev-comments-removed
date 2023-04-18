@@ -358,7 +358,7 @@ void MediaEngineWebRTCMicrophoneSource::SetTrack(
   mPrincipal = aPrincipal;
 
   mInputProcessing =
-      MakeAndAddRef<AudioInputProcessing>(mDeviceMaxChannelCount, mPrincipal);
+      MakeAndAddRef<AudioInputProcessing>(mDeviceMaxChannelCount);
 
   NS_DispatchToMainThread(NS_NewRunnableFunction(
       __func__, [track = mTrack, processing = mInputProcessing]() mutable {
@@ -475,13 +475,11 @@ void MediaEngineWebRTCMicrophoneSource::GetSettings(
   aOutSettings = *mSettings;
 }
 
-AudioInputProcessing::AudioInputProcessing(
-    uint32_t aMaxChannelCount, const PrincipalHandle& aPrincipalHandle)
+AudioInputProcessing::AudioInputProcessing(uint32_t aMaxChannelCount)
     : mAudioProcessing(AudioProcessingBuilder().Create()),
       mRequestedInputChannelCount(aMaxChannelCount),
       mSkipProcessing(false),
       mInputDownmixBuffer(MAX_SAMPLING_FREQ * MAX_CHANNELS / 100),
-      mPrincipal(aPrincipalHandle),
       mEnabled(false),
       mEnded(false),
       mPacketCount(0) {}
@@ -852,7 +850,19 @@ void AudioInputProcessing::PacketizeAndProcess(MediaTrackGraphImpl* aGraph,
   MOZ_ASSERT(mPacketizerInput->mPacketSize ==
              GetPacketSize(aGraph->GraphRate()));
 
-  const PrincipalHandle principal = GetCheckedPrincipal(aSegment);
+  
+  auto pendingFrames = [&]() {
+    TrackTime frames = 0;
+    for (const auto& p : mChunksInPacketizer) {
+      frames += p.first;
+    }
+    return frames;
+  };
+
+  
+  MOZ_ASSERT(mPacketizerInput->FramesAvailable() ==
+             static_cast<uint32_t>(pendingFrames()));
+
   
   
   
@@ -865,6 +875,16 @@ void AudioInputProcessing::PacketizeAndProcess(MediaTrackGraphImpl* aGraph,
   
   mPacketizerInput->Input(mInterleavedBuffer.Elements(),
                           static_cast<uint32_t>(frameCount));
+
+  
+  
+  for (AudioSegment::ConstChunkIterator iter(aSegment); !iter.IsEnded();
+       iter.Next()) {
+    mChunksInPacketizer.emplace_back(
+        std::make_pair(iter->mDuration, iter->mPrincipalHandle));
+  }
+  MOZ_ASSERT(mPacketizerInput->FramesAvailable() ==
+             static_cast<uint32_t>(pendingFrames()));
 
   LOG_FRAME(
       "(Graph %p, Driver %p) AudioInputProcessing %p Packetizing %zu frames. "
@@ -990,19 +1010,58 @@ void AudioInputProcessing::PacketizeAndProcess(MediaTrackGraphImpl* aGraph,
       continue;
     }
 
-    LOG_FRAME(
-        "(Graph %p, Driver %p) AudioInputProcessing %p Appending %u frames of "
-        "packetized audio, leaving %u frames in packetizer",
-        aGraph, aGraph->CurrentDriver(), this, mPacketizerInput->mPacketSize,
-        mPacketizerInput->FramesAvailable());
-
     
     
     MOZ_ASSERT(processedOutputChannelPointers.Length() == channelCountInput);
-    RefPtr<SharedBuffer> other = buffer;
-    mSegment.AppendFrames(other.forget(), processedOutputChannelPointersConst,
-                          static_cast<int32_t>(mPacketizerInput->mPacketSize),
-                          principal);
+
+    
+    
+
+    auto getAudioChunk = [&](TrackTime aStart, TrackTime aEnd,
+                             const PrincipalHandle& aPrincipalHandle) {
+      RefPtr<SharedBuffer> other = buffer;
+      AudioChunk c =
+          AudioChunk(other.forget(), processedOutputChannelPointersConst,
+                     static_cast<TrackTime>(mPacketizerInput->mPacketSize),
+                     aPrincipalHandle);
+      c.SliceTo(aStart, aEnd);
+      return c;
+    };
+
+    
+    
+    TrackTime len = static_cast<TrackTime>(mPacketizerInput->mPacketSize);
+    
+    TrackTime start = 0;
+    
+    
+    while (!mChunksInPacketizer.empty()) {
+      auto& [frames, principal] = mChunksInPacketizer.front();
+      const TrackTime end = start + frames;
+      
+      
+      if (end > len) {
+        mSegment.AppendAndConsumeChunk(getAudioChunk(start, len, principal));
+        frames -= len - start;
+        break;
+      }
+      
+      
+      mSegment.AppendAndConsumeChunk(getAudioChunk(start, end, principal));
+      start = end;
+      mChunksInPacketizer.pop_front();
+    }
+
+    LOG_FRAME(
+        "(Graph %p, Driver %p) AudioInputProcessing %p Appending %u frames of "
+        "packetized audio, leaving %u frames in packetizer (%" PRId64
+        " frames in mChunksInPacketizer)",
+        aGraph, aGraph->CurrentDriver(), this, mPacketizerInput->mPacketSize,
+        mPacketizerInput->FramesAvailable(), pendingFrames());
+
+    
+    MOZ_ASSERT(mPacketizerInput->FramesAvailable() ==
+               static_cast<uint32_t>(pendingFrames()));
   }
 }
 
@@ -1056,6 +1115,7 @@ void AudioInputProcessing::EnsureAudioProcessing(MediaTrackGraphImpl* aGraph,
         static_cast<TrackTime>(mPacketizerInput->FramesAvailable());
     mSegment.AppendNullData(numBufferedFrames);
     mPacketizerInput = Nothing();
+    mChunksInPacketizer.clear();
   }
 
   mPacketizerInput.emplace(GetPacketSize(aGraph->GraphRate()), aChannels);
@@ -1100,34 +1160,7 @@ void AudioInputProcessing::ResetAudioProcessing(MediaTrackGraphImpl* aGraph) {
   mSegment.Clear();
 
   mPacketizerInput = Nothing();
-}
-
-PrincipalHandle AudioInputProcessing::GetCheckedPrincipal(
-    const AudioSegment& aSegment) {
-  MOZ_ASSERT(!aSegment.IsEmpty());
-
-  if (aSegment.IsNull()) {
-    return PRINCIPAL_HANDLE_NONE;
-  }
-
-  Maybe<PrincipalHandle> principal;
-  for (AudioSegment::ConstChunkIterator iter(aSegment); !iter.IsEnded();
-       iter.Next()) {
-    const AudioChunk& chunk = *iter;
-    if (!chunk.IsNull()) {
-      if (!principal) {
-        principal.emplace(chunk.mPrincipalHandle);
-        continue;
-      }
-      if (*principal != chunk.mPrincipalHandle) {
-        MOZ_DIAGNOSTIC_ASSERT(
-            false, "All non null data should have the same PrincipalHandle");
-      }
-    }
-  }
-  MOZ_DIAGNOSTIC_ASSERT(principal);
-  MOZ_DIAGNOSTIC_ASSERT(*principal == mPrincipal);
-  return principal.valueOr(mPrincipal);  
+  mChunksInPacketizer.clear();
 }
 
 void AudioInputTrack::Destroy() {
