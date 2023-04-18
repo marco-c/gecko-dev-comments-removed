@@ -334,9 +334,7 @@ bool ADTSTrackDemuxer::Init() {
   
   mInfo->mProfile = mInfo->mExtendedProfile =
       mParser->FirstFrame().Header().mObjectType;
-  AudioCodecSpecificBinaryBlob blob;
-  InitAudioSpecificConfig(mParser->FirstFrame(), blob.mBinaryBlob);
-  mInfo->mCodecSpecificConfig = AudioCodecSpecificVariant{std::move(blob)};
+  InitAudioSpecificConfig(mParser->FirstFrame(), mInfo->mCodecSpecificConfig);
 
   ADTSLOG("Init mInfo={mRate=%u mChannels=%u mBitDepth=%u mDuration=%" PRId64
           "}",

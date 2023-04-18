@@ -499,19 +499,8 @@ MediaResult AppleATDecoder::SetupDecoder(MediaRawData* aSample) {
 
   LOG("Initializing Apple AudioToolbox decoder");
 
-  
-  
-  
-  
-  bool shouldUseAacMagicCookie =
-      mConfig.mCodecSpecificConfig.is<AacCodecSpecificData>() &&
-      mMagicCookie.IsEmpty();
-
   nsTArray<uint8_t>& magicCookie =
-      shouldUseAacMagicCookie
-          ? *mConfig.mCodecSpecificConfig.as<AacCodecSpecificData>()
-                 .mEsDescriptorBinaryBlob
-          : mMagicCookie;
+      mMagicCookie.Length() ? mMagicCookie : *mConfig.mExtraData;
   AudioStreamBasicDescription inputFormat;
   PodZero(&inputFormat);
 

@@ -141,10 +141,6 @@ class FrameHeader {
     if (mValid) {
       
       mInfo.mMimeType = "audio/flac";
-      
-      
-      mInfo.mCodecSpecificConfig =
-          AudioCodecSpecificVariant{FlacCodecSpecificData{}};
     }
 
     return mValid;
@@ -670,19 +666,11 @@ UniquePtr<TrackInfo> FlacTrackDemuxer::GetInfo() const {
         info->mTags.AppendElement(MetadataTag(entry.GetKey(), entry.GetData()));
       }
     }
-    MOZ_ASSERT(info->IsAudio() &&
-                   info->GetAsAudioInfo()
-                       ->mCodecSpecificConfig.is<FlacCodecSpecificData>(),
-               "Should get flac specific data from parser");
     return info;
   } else if (mParser->FirstFrame().Info().IsValid()) {
     
     UniquePtr<TrackInfo> info = mParser->FirstFrame().Info().Clone();
     info->mDuration = Duration();
-    MOZ_ASSERT(info->IsAudio() &&
-                   info->GetAsAudioInfo()
-                       ->mCodecSpecificConfig.is<FlacCodecSpecificData>(),
-               "Should get flac specific data from parser");
     return info;
   }
   return nullptr;

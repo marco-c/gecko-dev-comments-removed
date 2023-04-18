@@ -151,58 +151,28 @@ MediaResult MP4AudioInfo::Update(const Mp4parseTrackInfo* track,
   
   
   
-  Mp4parseByteData mp4ParseSampleCodecSpecific =
+  Mp4parseByteData codecSpecificConfig =
       audio->sample_info[0].codec_specific_config;
-  Mp4parseByteData extraData = audio->sample_info[0].extra_data;
-  MOZ_ASSERT(mCodecSpecificConfig.is<NoCodecSpecificData>(),
-             "Should have no codec specific data yet");
   if (codecType == MP4PARSE_CODEC_OPUS) {
     mMimeType = "audio/opus"_ns;
-    OpusCodecSpecificData opusCodecSpecificData{};
     
     
     
-    if (mp4ParseSampleCodecSpecific.data &&
-        mp4ParseSampleCodecSpecific.length >= 12) {
-      uint16_t preskip = mozilla::LittleEndian::readUint16(
-          mp4ParseSampleCodecSpecific.data + 10);
-      opusCodecSpecificData.mContainerCodecDelayMicroSeconds =
-          mozilla::FramesToUsecs(preskip, 48000).value();
+    if (codecSpecificConfig.data && codecSpecificConfig.length >= 12) {
+      uint16_t preskip =
+          mozilla::LittleEndian::readUint16(codecSpecificConfig.data + 10);
+      mozilla::OpusDataDecoder::AppendCodecDelay(
+          mCodecSpecificConfig, mozilla::FramesToUsecs(preskip, 48000).value());
     } else {
       
-      opusCodecSpecificData.mContainerCodecDelayMicroSeconds = 0;
+      mozilla::OpusDataDecoder::AppendCodecDelay(mCodecSpecificConfig, 0);
     }
-    opusCodecSpecificData.mHeadersBinaryBlob->AppendElements(
-        mp4ParseSampleCodecSpecific.data, mp4ParseSampleCodecSpecific.length);
-    mCodecSpecificConfig =
-        AudioCodecSpecificVariant{std::move(opusCodecSpecificData)};
   } else if (codecType == MP4PARSE_CODEC_AAC) {
     mMimeType = "audio/mp4a-latm"_ns;
-    AacCodecSpecificData aacCodecSpecificData{};
-    
-    aacCodecSpecificData.mDecoderConfigDescriptorBinaryBlob->AppendElements(
-        mp4ParseSampleCodecSpecific.data, mp4ParseSampleCodecSpecific.length);
-    
-    aacCodecSpecificData.mEsDescriptorBinaryBlob->AppendElements(
-        extraData.data, extraData.length);
-    mCodecSpecificConfig =
-        AudioCodecSpecificVariant{std::move(aacCodecSpecificData)};
   } else if (codecType == MP4PARSE_CODEC_FLAC) {
-    MOZ_ASSERT(extraData.length == 0,
-               "FLAC doesn't expect extra data so doesn't handle it!");
     mMimeType = "audio/flac"_ns;
-    FlacCodecSpecificData flacCodecSpecificData{};
-    flacCodecSpecificData.mStreamInfoBinaryBlob->AppendElements(
-        mp4ParseSampleCodecSpecific.data, mp4ParseSampleCodecSpecific.length);
-    mCodecSpecificConfig =
-        AudioCodecSpecificVariant{std::move(flacCodecSpecificData)};
   } else if (codecType == MP4PARSE_CODEC_MP3) {
-    
-    
-    
     mMimeType = "audio/mpeg"_ns;
-    
-    mCodecSpecificConfig = AudioCodecSpecificVariant{Mp3CodecSpecificData{}};
   }
 
   mRate = audio->sample_info[0].sample_rate;
@@ -218,19 +188,11 @@ MediaResult MP4AudioInfo::Update(const Mp4parseTrackInfo* track,
     mProfile = audio->sample_info[0].profile;
   }
 
-  if (mCodecSpecificConfig.is<NoCodecSpecificData>()) {
-    
-    MOZ_ASSERT(
-        extraData.length == 0,
-        "Codecs that use extra data should be explicitly handled already");
-    AudioCodecSpecificBinaryBlob codecSpecificBinaryBlob;
-    
-    codecSpecificBinaryBlob.mBinaryBlob->AppendElements(
-        mp4ParseSampleCodecSpecific.data, mp4ParseSampleCodecSpecific.length);
-    mCodecSpecificConfig =
-        AudioCodecSpecificVariant{std::move(codecSpecificBinaryBlob)};
-  }
-
+  Mp4parseByteData extraData = audio->sample_info[0].extra_data;
+  
+  mExtraData->AppendElements(extraData.data, extraData.length);
+  mCodecSpecificConfig->AppendElements(codecSpecificConfig.data,
+                                       codecSpecificConfig.length);
   return NS_OK;
 }
 
