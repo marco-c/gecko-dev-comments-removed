@@ -15,6 +15,8 @@
 #include "js/Vector.h"
 #include "vm/ArgumentsObject.h"
 
+#include "gc/ObjectKind-inl.h"
+
 namespace js {
 namespace jit {
 
@@ -1530,6 +1532,7 @@ class ArgumentsReplacer : public MDefinitionVisitorDefaultNoop {
   void visitLoadArgumentsObjectArgHole(MLoadArgumentsObjectArgHole* ins);
   void visitArgumentsObjectLength(MArgumentsObjectLength* ins);
   void visitApplyArgsObj(MApplyArgsObj* ins);
+  void visitArrayFromArgumentsObject(MArrayFromArgumentsObject* ins);
   void visitLoadFixedSlot(MLoadFixedSlot* ins);
 
  public:
@@ -1643,6 +1646,7 @@ bool ArgumentsReplacer::escapes(MInstruction* ins, bool guardedForMapped) {
       case MDefinition::Opcode::GetArgumentsObjectArg:
       case MDefinition::Opcode::LoadArgumentsObjectArg:
       case MDefinition::Opcode::LoadArgumentsObjectArgHole:
+      case MDefinition::Opcode::ArrayFromArgumentsObject:
         break;
 
       
@@ -1987,6 +1991,95 @@ void ArgumentsReplacer::visitApplyArgsObj(MApplyArgsObj* ins) {
   ins->replaceAllUsesWith(newIns);
 
   newIns->stealResumePoint(ins);
+  ins->block()->discard(ins);
+}
+
+void ArgumentsReplacer::visitArrayFromArgumentsObject(
+    MArrayFromArgumentsObject* ins) {
+  
+  if (ins->argsObject() != args_) {
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  Shape* shape = ins->shape();
+  MOZ_ASSERT(shape);
+
+  MDefinition* replacement;
+  if (isInlinedArguments()) {
+    auto* actualArgs = args_->toCreateInlinedArgumentsObject();
+    uint32_t numActuals = actualArgs->numActuals();
+    MOZ_ASSERT(numActuals <= ArgumentsObject::MaxInlinedArgs);
+
+    
+    
+    
+    static_assert(
+        gc::CanUseFixedElementsForArray(ArgumentsObject::MaxInlinedArgs));
+
+    gc::InitialHeap heap = gc::DefaultHeap;
+
+    
+    auto* shapeConstant = MConstant::NewShape(alloc(), shape);
+    ins->block()->insertBefore(ins, shapeConstant);
+
+    auto* newArray =
+        MNewArrayObject::New(alloc(), shapeConstant, numActuals, heap);
+    ins->block()->insertBefore(ins, newArray);
+
+    if (numActuals) {
+      auto* elements = MElements::New(alloc(), newArray);
+      ins->block()->insertBefore(ins, elements);
+
+      MConstant* index = nullptr;
+      for (uint32_t i = 0; i < numActuals; i++) {
+        index = MConstant::New(alloc(), Int32Value(i));
+        ins->block()->insertBefore(ins, index);
+
+        MDefinition* arg = actualArgs->getArg(i);
+        auto* store = MStoreElement::New(alloc(), elements, index, arg,
+                                          false);
+        ins->block()->insertBefore(ins, store);
+
+        auto* barrier = MPostWriteBarrier::New(alloc(), newArray, arg);
+        ins->block()->insertBefore(ins, barrier);
+      }
+
+      auto* initLength = MSetInitializedLength::New(alloc(), elements, index);
+      ins->block()->insertBefore(ins, initLength);
+    }
+
+    replacement = newArray;
+  } else {
+    
+    
+    
+
+    auto* numActuals = MArgumentsLength::New(alloc());
+    ins->block()->insertBefore(ins, numActuals);
+
+    
+    uint32_t numFormals = 0;
+
+    auto* rest = MRest::New(alloc(), numActuals, numFormals, shape);
+    ins->block()->insertBefore(ins, rest);
+
+    replacement = rest;
+  }
+
+  ins->replaceAllUsesWith(replacement);
+
+  
   ins->block()->discard(ins);
 }
 

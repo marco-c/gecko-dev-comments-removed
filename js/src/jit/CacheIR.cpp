@@ -5071,17 +5071,23 @@ AttachDecision OptimizeSpreadCallIRGenerator::tryAttachArguments() {
   if (!val_.isObject()) {
     return AttachDecision::NoAction;
   }
-  JSObject* obj = &val_.toObject();
+  RootedObject obj(cx_, &val_.toObject());
   if (!obj->is<ArgumentsObject>()) {
     return AttachDecision::NoAction;
   }
-  auto* args = &obj->as<ArgumentsObject>();
+  auto args = obj.as<ArgumentsObject>();
 
   
   
   
   if (args->hasOverriddenElement() || args->hasOverriddenLength() ||
       args->hasOverriddenIterator() || args->anyArgIsForwarded()) {
+    return AttachDecision::NoAction;
+  }
+
+  RootedShape shape(cx_, GlobalObject::getArrayShapeWithDefaultProto(cx_));
+  if (!shape) {
+    cx_->recoverFromOutOfMemory();
     return AttachDecision::NoAction;
   }
 
@@ -5116,7 +5122,7 @@ AttachDecision OptimizeSpreadCallIRGenerator::tryAttachArguments() {
   
   writer.guardDynamicSlotIsSpecificObject(protoId, nextId, slot);
 
-  writer.arrayFromArgumentsObjectResult(objId);
+  writer.arrayFromArgumentsObjectResult(objId, shape);
   writer.returnFromIC();
 
   trackAttached("Arguments");
