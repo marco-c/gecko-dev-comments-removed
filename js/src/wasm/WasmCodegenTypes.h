@@ -554,7 +554,7 @@ using CallSiteTargetVector = Vector<CallSiteTarget, 0, SystemAllocPolicy>;
 
 
 
-struct WasmTryNote {
+struct TryNote {
  private:
   
   static const uint32_t BEGIN_NONE = UINT32_MAX;
@@ -571,7 +571,7 @@ struct WasmTryNote {
   WASM_CHECK_CACHEABLE_POD(begin_, end_, entryPoint_, framePushed_);
 
  public:
-  explicit WasmTryNote()
+  explicit TryNote()
       : begin_(BEGIN_NONE), end_(0), entryPoint_(0), framePushed_(0) {}
 
   
@@ -596,12 +596,14 @@ struct WasmTryNote {
 
   
   void setTryBodyBegin(uint32_t begin) {
+    
     MOZ_ASSERT(begin_ == BEGIN_NONE);
     begin_ = begin;
   }
 
   
   void setTryBodyEnd(uint32_t end) {
+    
     MOZ_ASSERT(begin_ != BEGIN_NONE);
     end_ = end;
     
@@ -621,16 +623,25 @@ struct WasmTryNote {
     entryPoint_ += offset;
   }
 
-  bool operator<(const WasmTryNote& other) const {
-    if (end_ == other.end_) {
-      return begin_ > other.begin_;
+  bool operator<(const TryNote& other) const {
+    
+    
+    if (this == &other) {
+      return false;
     }
+    
+    MOZ_ASSERT(end_ <= other.begin_ || begin_ >= other.end_ ||
+               (begin_ > other.begin_ && end_ < other.end_) ||
+               (other.begin_ > begin_ && other.end_ < end_));
+    
+    
+    
     return end_ < other.end_;
   }
 };
 
-WASM_DECLARE_CACHEABLE_POD(WasmTryNote);
-WASM_DECLARE_POD_VECTOR(WasmTryNote, WasmTryNoteVector)
+WASM_DECLARE_CACHEABLE_POD(TryNote);
+WASM_DECLARE_POD_VECTOR(TryNote, TryNoteVector)
 
 
 

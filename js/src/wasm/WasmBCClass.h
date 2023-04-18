@@ -1255,6 +1255,9 @@ struct BaseCompiler final {
   
   void consumePendingException(RegRef* exnDst, RegRef* tagDst);
 
+  [[nodiscard]] bool startTryNote(size_t* tryNoteIndex);
+  void finishTryNote(size_t tryNoteIndex);
+
   
   
   

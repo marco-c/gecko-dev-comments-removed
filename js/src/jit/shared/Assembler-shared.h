@@ -591,7 +591,7 @@ class AssemblerShared {
   wasm::CallSiteTargetVector callSiteTargets_;
   wasm::TrapSiteVectorArray trapSites_;
   wasm::SymbolicAccessVector symbolicAccesses_;
-  wasm::WasmTryNoteVector tryNotes_;
+  wasm::TryNoteVector tryNotes_;
 #ifdef DEBUG
   
   
@@ -660,7 +660,7 @@ class AssemblerShared {
   }
   
   
-  [[nodiscard]] bool append(wasm::WasmTryNote tryNote, size_t* tryNoteIndex) {
+  [[nodiscard]] bool append(wasm::TryNote tryNote, size_t* tryNoteIndex) {
     if (!tryNotes_.append(tryNote)) {
       enoughMemory_ = false;
       return false;
@@ -673,7 +673,7 @@ class AssemblerShared {
   wasm::CallSiteTargetVector& callSiteTargets() { return callSiteTargets_; }
   wasm::TrapSiteVectorArray& trapSites() { return trapSites_; }
   wasm::SymbolicAccessVector& symbolicAccesses() { return symbolicAccesses_; }
-  wasm::WasmTryNoteVector& tryNotes() { return tryNotes_; }
+  wasm::TryNoteVector& tryNotes() { return tryNotes_; }
 };
 
 

@@ -8076,8 +8076,8 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
   bool inTry = callBase->inTry();
   if (inTry) {
     size_t tryNoteIndex = callBase->tryNoteIndex();
-    wasm::WasmTryNoteVector& tryNotes = masm.tryNotes();
-    wasm::WasmTryNote& tryNote = tryNotes[tryNoteIndex];
+    wasm::TryNoteVector& tryNotes = masm.tryNotes();
+    wasm::TryNote& tryNote = tryNotes[tryNoteIndex];
     tryNote.setTryBodyBegin(masm.currentOffset());
   }
 
@@ -8200,8 +8200,8 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
   if (inTry) {
     
     size_t tryNoteIndex = callBase->tryNoteIndex();
-    wasm::WasmTryNoteVector& tryNotes = masm.tryNotes();
-    wasm::WasmTryNote& tryNote = tryNotes[tryNoteIndex];
+    wasm::TryNoteVector& tryNotes = masm.tryNotes();
+    wasm::TryNote& tryNote = tryNotes[tryNoteIndex];
     tryNote.setTryBodyEnd(masm.currentOffset());
 
     
@@ -8233,8 +8233,8 @@ void CodeGenerator::visitWasmCallLandingPrePad(LWasmCallLandingPrePad* lir) {
   MOZ_RELEASE_ASSERT(*block->begin() == lir || (block->begin()->isMoveGroup() &&
                                                 *(++block->begin()) == lir));
 
-  wasm::WasmTryNoteVector& tryNotes = masm.tryNotes();
-  wasm::WasmTryNote& tryNote = tryNotes[mir->tryNoteIndex()];
+  wasm::TryNoteVector& tryNotes = masm.tryNotes();
+  wasm::TryNote& tryNote = tryNotes[mir->tryNoteIndex()];
   
   
   

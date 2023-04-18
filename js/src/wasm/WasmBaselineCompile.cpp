@@ -1683,6 +1683,48 @@ void BaseCompiler::consumePendingException(RegRef* exnDst, RegRef* tagDst) {
   freePtr(pendingAddr);
 }
 
+bool BaseCompiler::startTryNote(size_t* tryNoteIndex) {
+  
+  
+  TryNoteVector& tryNotes = masm.tryNotes();
+  if (tryNotes.length() > 0) {
+    const TryNote& previous = tryNotes.back();
+    uint32_t currentOffset = masm.currentOffset();
+    if (previous.tryBodyBegin() == currentOffset ||
+        previous.tryBodyEnd() == currentOffset) {
+      masm.nop();
+    }
+  }
+
+  
+  wasm::TryNote tryNote = wasm::TryNote();
+  tryNote.setTryBodyBegin(masm.currentOffset());
+  return masm.append(tryNote, tryNoteIndex);
+}
+
+void BaseCompiler::finishTryNote(size_t tryNoteIndex) {
+  TryNoteVector& tryNotes = masm.tryNotes();
+  TryNote& tryNote = tryNotes[tryNoteIndex];
+
+  
+  if (tryNote.tryBodyBegin() == masm.currentOffset()) {
+    masm.nop();
+  }
+
+  
+  
+  if (tryNotes.length() > 0) {
+    const TryNote& previous = tryNotes.back();
+    uint32_t currentOffset = masm.currentOffset();
+    if (previous.tryBodyEnd() == currentOffset) {
+      masm.nop();
+    }
+  }
+
+  
+  tryNote.setTryBodyEnd(masm.currentOffset());
+}
+
 
 
 
@@ -3825,8 +3867,7 @@ bool BaseCompiler::emitTry() {
   if (!deadCode_) {
     
     controlItem().bceSafeOnExit = 0;
-    
-    if (!masm.wasmStartTry(&controlItem().tryNoteIndex)) {
+    if (!startTryNote(&controlItem().tryNoteIndex)) {
       return false;
     }
   }
@@ -3875,9 +3916,7 @@ void BaseCompiler::emitCatchSetup(LabelKind kind, Control& tryCatch,
   
   
   if (kind == LabelKind::Try) {
-    WasmTryNoteVector& tryNotes = masm.tryNotes();
-    WasmTryNote& tryNote = tryNotes[controlItem().tryNoteIndex];
-    tryNote.setTryBodyEnd(masm.currentOffset());
+    finishTryNote(controlItem().tryNoteIndex);
   }
 }
 
@@ -4091,9 +4130,12 @@ bool BaseCompiler::emitDelegate() {
   StackHeight savedHeight = fr.stackHeight();
   fr.setStackHeight(tryDelegate.stackHeight);
 
-  WasmTryNoteVector& tryNotes = masm.tryNotes();
-  WasmTryNote& tryNote = tryNotes[controlItem().tryNoteIndex];
-  tryNote.setTryBodyEnd(masm.currentOffset());
+  
+  finishTryNote(controlItem().tryNoteIndex);
+
+  
+  TryNoteVector& tryNotes = masm.tryNotes();
+  TryNote& tryNote = tryNotes[controlItem().tryNoteIndex];
   tryNote.setLandingPad(masm.currentOffset(), masm.framePushed());
 
   
@@ -4173,15 +4215,17 @@ bool BaseCompiler::endTryCatch(ResultType type) {
   StackHeight prePadHeight = fr.stackHeight();
   fr.setStackHeight(tryCatch.stackHeight);
 
-  WasmTryNoteVector& tryNotes = masm.tryNotes();
-  WasmTryNote& tryNote = tryNotes[controlItem().tryNoteIndex];
-  tryNote.setLandingPad(masm.currentOffset(), masm.framePushed());
-
   
   
   if (tryKind == LabelKind::Try) {
-    tryNote.setTryBodyEnd(masm.currentOffset());
+    
+    finishTryNote(controlItem().tryNoteIndex);
   }
+
+  
+  TryNoteVector& tryNotes = masm.tryNotes();
+  TryNote& tryNote = tryNotes[controlItem().tryNoteIndex];
+  tryNote.setLandingPad(masm.currentOffset(), masm.framePushed());
 
   
   
