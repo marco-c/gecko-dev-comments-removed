@@ -32,7 +32,8 @@ enum eHtml5SpeculativeLoad {
   eSpeculativeLoadSetDocumentMode,
   eSpeculativeLoadPreconnect,
   eSpeculativeLoadFont,
-  eSpeculativeLoadFetch
+  eSpeculativeLoadFetch,
+  eSpeculativeLoadMaybeComplainAboutCharset
 };
 
 class nsHtml5SpeculativeLoad {
@@ -275,6 +276,24 @@ class nsHtml5SpeculativeLoad {
         (char16_t)aCharsetSource);
   }
 
+  inline void InitMaybeComplainAboutCharset(const char* aMsgId, bool aError,
+                                            int32_t aLineNumber) {
+    MOZ_ASSERT(mOpCode == eSpeculativeLoadUninitialized,
+               "Trying to reinitialize a speculative load!");
+    mOpCode = eSpeculativeLoadMaybeComplainAboutCharset;
+    mCharsetOrSrcset.~nsString();
+    mMsgId = aMsgId;
+    mIsError = aError;
+    
+    
+    
+    
+    char16_t high = (char16_t)(((uint32_t)aLineNumber) >> 16);
+    char16_t low = (char16_t)(((uint32_t)aLineNumber) & 0xFFFF);
+    mTypeOrCharsetSourceOrDocumentModeOrMetaCSPOrSizesOrIntegrity.Assign(high);
+    mTypeOrCharsetSourceOrDocumentModeOrMetaCSPOrSizesOrIntegrity.Append(low);
+  }
+
   
 
 
@@ -309,6 +328,10 @@ class nsHtml5SpeculativeLoad {
 
 
   bool mIsAsync;
+
+  
+
+
   bool mIsDefer;
 
   
@@ -317,6 +340,11 @@ class nsHtml5SpeculativeLoad {
 
 
   bool mIsLinkPreload;
+
+  
+
+
+  bool mIsError;
 
   
 
@@ -338,9 +366,11 @@ class nsHtml5SpeculativeLoad {
 
 
 
+
   union {
     nsString mCharsetOrSrcset;
     const Encoding* mEncoding;
+    const char* mMsgId;
   };
   
 

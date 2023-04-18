@@ -1,8 +1,9 @@
 <!DOCTYPE HTML>
-
-
+<!-- Any copyright is dedicated to the Public Domain.
+     http://creativecommons.org/publicdomain/zero/1.0/ -->
 <html>
 <head>
+<meta charset="utf-8">
 <title></title>
 </head>
 <body>
@@ -10,23 +11,23 @@
 
 <img src="https://itisatracker.org/tests/toolkit/components/url-classifier/tests/mochitest/trackerFrame.sjs?id=img-src">
 
-
+<!--nsObjectLoadingContent::OpenChannel-->
 <object data="https://itisatracker.org/tests/toolkit/components/url-classifier/tests/mochitest/trackerFrame.sjs?id=object-data"></object>
 
-
+<!--ScriptLoader::StartLoad-->
 <script src="https://itisatracker.org/tests/toolkit/components/url-classifier/tests/mochitest/trackerFrame.sjs?id=script-src"></script>
 
-
+<!--nsDocShell::DoURILoad-->
 <iframe src="https://itisatracker.org/tests/toolkit/components/url-classifier/tests/mochitest/trackerFrame.sjs?id=iframe-src"></iframe>
 
-
+<!--Loader::LoadSheet-->
 <link rel="stylesheet" href="https://itisatracker.org/tests/toolkit/components/url-classifier/tests/mochitest/trackerFrame.sjs?id=link-rel-stylesheet" />
 
+<!--nsPrefetchNode::OpenChannel-->
+<!-- Temporarily disable this because it doesn't work in fission when the scheme is https -->
+<!--<link rel="prefetch" href="https://itisatracker.org/tests/toolkit/components/url-classifier/tests/mochitest/trackerFrame.sjs?id=link-rel-prefetch" />-->
 
-
-
-
-
+<!--HTMLMediaElement::ChannelLoader::LoadInternal-->
 <video src="https://itisatracker.org/tests/toolkit/components/url-classifier/tests/mochitest/trackerFrame.sjs?id=video-src">
 </video>
 
@@ -34,7 +35,7 @@
   <track default src="https://itisatracker.org/tests/toolkit/components/url-classifier/tests/mochitest/trackerFrame.sjs?id=track-src" ></track>
 </video>
 
-
+<!--SendPing-->
 <a ping="https://itisatracker.org/tests/toolkit/components/url-classifier/tests/mochitest/trackerFrame.sjs?id=ping" id="a-ping" href="#"></a>
 <script>
   (function() {
