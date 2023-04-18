@@ -2926,8 +2926,6 @@ static void CollectJavaThreadProfileData(
 
   
   while (true) {
-    constexpr auto threadId = ProfilerThreadId::FromNumber(1);
-
     
     java::GeckoJavaSampler::Marker::LocalRef marker =
         java::GeckoJavaSampler::PollNextMarker();
@@ -2937,6 +2935,7 @@ static void CollectJavaThreadProfileData(
     }
 
     
+    const auto threadId = ProfilerThreadId::FromNumber(marker->GetThreadId());
     nsCString markerName = marker->GetMarkerName()->ToCString();
     jni::String::LocalRef text = marker->GetMarkerText();
     TimeStamp startTime =
