@@ -48,6 +48,10 @@ const CREDITCARD_FORM_IFRAME_URL =
   "https://example.org" +
   HTTP_TEST_PATH +
   "creditCard/autocomplete_creditcard_iframe.html";
+const CREDITCARD_FORM_COMBINED_EXPIRY_URL =
+  "https://example.org" +
+  HTTP_TEST_PATH +
+  "creditCard/autocomplete_creditcard_cc_exp_field.html";
 
 const FTU_PREF = "extensions.formautofill.firstTimeUse";
 const CREDITCARDS_USED_STATUS_PREF = "extensions.formautofill.creditCards.used";

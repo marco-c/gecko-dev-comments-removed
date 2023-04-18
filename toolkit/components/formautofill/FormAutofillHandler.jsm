@@ -169,7 +169,7 @@ class FormAutofillSection {
 
 
 
-  normalizeCreatingRecord(data) {}
+  createNormalizedRecord(data) {}
 
   
 
@@ -650,7 +650,7 @@ class FormAutofillSection {
       }
     });
 
-    this.normalizeCreatingRecord(data);
+    this.createNormalizedRecord(data);
 
     if (!this.isRecordCreatable(data.record)) {
       return null;
@@ -921,7 +921,7 @@ class FormAutofillAddressSection extends FormAutofillSection {
     return value;
   }
 
-  normalizeCreatingRecord(address) {
+  createNormalizedRecord(address) {
     if (!address) {
       return;
     }
@@ -1318,6 +1318,26 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
       profile
     );
     return true;
+  }
+
+  createNormalizedRecord(creditCard) {
+    if (!creditCard?.record["cc-number"]) {
+      return;
+    }
+    
+    if (creditCard.record["cc-exp"]) {
+      let { month, year } = CreditCard.normalizeExpiration({
+        expirationString: creditCard.record["cc-exp"],
+        expirationMonth: creditCard.record["cc-exp-month"],
+        expirationYear: creditCard.record["cc-exp-year"],
+      });
+      if (month) {
+        creditCard.record["cc-exp-month"] = month;
+      }
+      if (year) {
+        creditCard.record["cc-exp-year"] = year;
+      }
+    }
   }
 }
 
