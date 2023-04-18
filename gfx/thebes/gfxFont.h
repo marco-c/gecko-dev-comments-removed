@@ -21,11 +21,11 @@
 #include "mozilla/Mutex.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/RWLock.h"
-#include "mozilla/ServoStyleConsts.h"
 #include "mozilla/TypedEnumBits.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/gfx/MatrixFwd.h"
 #include "mozilla/gfx/Point.h"
+#include "mozilla/gfx/2D.h"
 #include "mozilla/intl/UnicodeScriptCodes.h"
 #include "nsCOMPtr.h"
 #include "nsColor.h"
@@ -44,20 +44,8 @@
 #include "DrawMode.h"
 
 
-#include <stdlib.h>
-#include <string.h>
-#include <algorithm>
-#include "mozilla/Assertions.h"
-#include "mozilla/HashFunctions.h"
-#include "mozilla/ServoUtils.h"
-#include "mozilla/gfx/2D.h"
 #include "gfxFontEntry.h"
 #include "gfxFontFeatures.h"
-#include "gfxFontUtils.h"
-#include "gfxPlatform.h"
-#include "nsAtom.h"
-#include "nsDebug.h"
-#include "nsMathUtils.h"
 
 class gfxContext;
 class gfxGraphiteShaper;
@@ -527,6 +515,9 @@ class gfxTextPerfMetrics {
 
 namespace mozilla {
 namespace gfx {
+
+class UnscaledFont;
+
 
 
 
