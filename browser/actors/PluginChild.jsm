@@ -71,7 +71,7 @@ class PluginChild extends JSWindowActorChild {
 
 
   async onPluginCrashed(aEvent) {
-    if (!(aEvent instanceof this.contentWindow.PluginCrashedEvent)) {
+    if (!this.contentWindow.PluginCrashedEvent.isInstance(aEvent)) {
       return;
     }
 

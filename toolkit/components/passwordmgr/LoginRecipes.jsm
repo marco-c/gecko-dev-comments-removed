@@ -380,7 +380,7 @@ this.LoginRecipesContent = {
     
     if (
       
-      !(field instanceof aParent.ownerDocument.defaultView.HTMLInputElement)
+      !aParent.ownerDocument.defaultView.HTMLInputElement.isInstance(field)
     ) {
       log.warn("Login field isn't an <input> so ignoring it:", aSelector);
       return null;
