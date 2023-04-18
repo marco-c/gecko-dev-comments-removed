@@ -20,6 +20,7 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
 });
 
 XPCOMUtils.defineLazyGetter(lazy, "dbg", () => {
+  
   lazy.addDebuggerToGlobal(globalThis);
   return new Debugger();
 });
