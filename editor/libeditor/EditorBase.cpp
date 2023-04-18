@@ -555,6 +555,11 @@ void EditorBase::RemoveEventListeners() {
   mEventTarget = nullptr;
 }
 
+bool EditorBase::IsListeningToEvents() const {
+  return IsInitialized() && mEventListener &&
+         !mEventListener->DetachedFromEditor();
+}
+
 bool EditorBase::GetDesiredSpellCheckState() {
   
   if (mSpellcheckCheckboxState != eTriUnset) {
@@ -5622,6 +5627,40 @@ bool EditorBase::IsAcceptableInputEvent(WidgetGUIEvent* aGUIEvent) const {
   
   
   return IsActiveInDOMWindow();
+}
+
+bool EditorBase::CanKeepHandlingFocusEvent(
+    const nsINode& aOriginalEventTargetNode) const {
+  if (MOZ_UNLIKELY(!IsListeningToEvents() || Destroyed())) {
+    return false;
+  }
+
+  nsFocusManager* focusManager = nsFocusManager::GetFocusManager();
+  if (MOZ_UNLIKELY(!focusManager)) {
+    return false;
+  }
+
+  
+  
+  
+  if (aOriginalEventTargetNode.IsDocument()) {
+    return IsHTMLEditor() && aOriginalEventTargetNode.IsInDesignMode();
+  }
+  MOZ_ASSERT(aOriginalEventTargetNode.IsContent());
+
+  
+  
+  
+  if (!focusManager->GetFocusedElement()) {
+    return false;
+  }
+  const nsIContent* exposedTargetContent =
+      aOriginalEventTargetNode.AsContent()
+          ->FindFirstNonChromeOnlyAccessContent();
+  const nsIContent* exposedFocusedContent =
+      focusManager->GetFocusedElement()->FindFirstNonChromeOnlyAccessContent();
+  return exposedTargetContent && exposedFocusedContent &&
+         exposedTargetContent == exposedFocusedContent;
 }
 
 void EditorBase::OnFocus(const nsINode& aOriginalEventTargetNode) {

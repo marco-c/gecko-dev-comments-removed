@@ -200,22 +200,23 @@ void EditorEventListener::Disconnect() {
   }
   UninstallFromEditor();
 
+  const OwningNonNull<EditorBase> editorBase = *mEditorBase;
+  mEditorBase = nullptr;
+
   nsFocusManager* fm = nsFocusManager::GetFocusManager();
   if (fm) {
     nsIContent* focusedContent = fm->GetFocusedElement();
-    mozilla::dom::Element* root = mEditorBase->GetRoot();
+    mozilla::dom::Element* root = editorBase->GetRoot();
     if (focusedContent && root &&
         focusedContent->IsInclusiveDescendantOf(root)) {
       
       
-      DebugOnly<nsresult> rvIgnored = mEditorBase->FinalizeSelection();
+      DebugOnly<nsresult> rvIgnored = editorBase->FinalizeSelection();
       NS_WARNING_ASSERTION(
           NS_SUCCEEDED(rvIgnored),
           "EditorBase::FinalizeSelection() failed, but ignored");
     }
   }
-
-  mEditorBase = nullptr;
 }
 
 void EditorEventListener::UninstallFromEditor() {
@@ -1109,32 +1110,7 @@ nsresult EditorEventListener::Focus(InternalFocusEvent* aFocusEvent) {
     return NS_OK;
   }
 
-  auto CanKeepHandlingFocusEvent = [&]() -> bool {
-    if (this->DetachedFromEditor()) {
-      return false;
-    }
-    
-    
-    
-    if (originalEventTargetNode->IsDocument()) {
-      return originalEventTargetNode->IsInDesignMode();
-    }
-    MOZ_ASSERT(originalEventTargetNode->IsContent());
-    
-    
-    
-    if (!focusManager->GetFocusedElement()) {
-      return false;
-    }
-    const nsIContent* const exposedTargetContent =
-        originalEventTargetNode->AsContent()
-            ->FindFirstNonChromeOnlyAccessContent();
-    const nsIContent* const exposedFocusedContent =
-        focusManager->GetFocusedElement()
-            ->FindFirstNonChromeOnlyAccessContent();
-    return exposedTargetContent && exposedFocusedContent &&
-           exposedTargetContent == exposedFocusedContent;
-  };
+  const OwningNonNull<EditorBase> editorBase(*mEditorBase);
 
   RefPtr<PresShell> presShell = GetPresShell();
   if (MOZ_UNLIKELY(NS_WARN_IF(!presShell))) {
@@ -1143,17 +1119,18 @@ nsresult EditorEventListener::Focus(InternalFocusEvent* aFocusEvent) {
   
   
   presShell->FlushPendingNotifications(FlushType::Layout);
-  if (MOZ_UNLIKELY(!CanKeepHandlingFocusEvent())) {
+  if (MOZ_UNLIKELY(
+          !editorBase->CanKeepHandlingFocusEvent(*originalEventTargetNode))) {
     return NS_OK;
   }
 
   
   SpellCheckIfNeeded();
-  if (MOZ_UNLIKELY(!CanKeepHandlingFocusEvent())) {
+  if (MOZ_UNLIKELY(
+          !editorBase->CanKeepHandlingFocusEvent(*originalEventTargetNode))) {
     return NS_OK;
   }
 
-  OwningNonNull<EditorBase> editorBase(*mEditorBase);
   editorBase->OnFocus(*originalEventTargetNode);
   if (DetachedFromEditorOrDefaultPrevented(aFocusEvent)) {
     return NS_OK;

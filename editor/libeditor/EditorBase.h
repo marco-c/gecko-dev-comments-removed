@@ -599,6 +599,15 @@ class EditorBase : public nsIEditor,
 
 
 
+  [[nodiscard]] bool CanKeepHandlingFocusEvent(
+      const nsINode& aOriginalEventTargetNode) const;
+
+  
+
+
+
+
+
   MOZ_CAN_RUN_SCRIPT void OnFocus(const nsINode& aOriginalEventTargetNode);
 
   
@@ -2391,6 +2400,7 @@ class EditorBase : public nsIEditor,
   virtual nsresult InstallEventListeners();
   virtual void CreateEventListeners();
   virtual void RemoveEventListeners();
+  [[nodiscard]] bool IsListeningToEvents() const;
 
   
 
