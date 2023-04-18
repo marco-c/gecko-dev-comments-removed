@@ -445,6 +445,16 @@ this.FormAutofillUtils = {
 
 
 
+  isFieldAutofillable(element) {
+    return element && !element.readOnly && !element.disabled;
+  },
+
+  
+
+
+
+
+
 
 
 
@@ -464,7 +474,7 @@ this.FormAutofillUtils = {
 
 
 
-  isFieldEligibleForAutofill(element) {
+  isCreditCardOrAddressFieldType(element) {
     if (!element) {
       return false;
     }
