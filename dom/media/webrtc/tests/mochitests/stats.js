@@ -15,16 +15,21 @@ const statsExpectedByType = {
       "kind",
       "packetsReceived",
       "packetsLost",
+      "packetsDiscarded",
       "bytesReceived",
       "jitter",
     ],
     optional: ["remoteId", "nackCount"],
-    localVideoOnly: ["firCount", "pliCount", "framesDecoded"],
+    localVideoOnly: [
+      "firCount",
+      "pliCount",
+      "framesDecoded",
+      "discardedPackets",
+    ],
     unimplemented: [
       "mediaTrackId",
       "transportId",
       "codecId",
-      "packetsDiscarded",
       "associateStatsId",
       "sliCount",
       "packetsRepaired",
@@ -421,6 +426,13 @@ function pedanticChecks(report) {
 
       
       ok(
+        stat.packetsDiscarded >= 0 && stat.packetsDiscarded < 100,
+        `${stat.type}.packetsDiscarded is sane number for a short test. ` +
+          `value=${stat.packetsDiscarded}`
+      );
+
+      
+      ok(
         stat.bytesReceived >= 0 && stat.bytesReceived < 10 ** 9, 
         `${stat.type}.bytesReceived is a sane number for a short ` +
           `${stat.kind} test. value=${stat.bytesReceived}`
@@ -464,6 +476,12 @@ function pedanticChecks(report) {
             stat.type + " has field " + field + " when kind is video"
           );
         });
+        
+        ok(
+          stat.discardedPackets < 100,
+          `${stat.type}.discardedPackets is a sane number for a short test. ` +
+            `value=${stat.discardedPackets}`
+        );
         
         ok(
           stat.framesDecoded > 0 && stat.framesDecoded < 1000000,
