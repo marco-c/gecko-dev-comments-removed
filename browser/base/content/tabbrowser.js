@@ -1997,6 +1997,9 @@
         
         
         tab.removeAttribute("crashed");
+        
+        
+        this.tabContainer.updateTabIndicatorAttr(tab);
       } else {
         aBrowser.sendMessageToActor(
           "Browser:AppTab",
@@ -6208,6 +6211,7 @@
             
             
             tab.removeAttribute("crashed");
+            gBrowser.tabContainer.updateTabIndicatorAttr(tab);
           } else {
             browser.sendMessageToActor(
               "Browser:AppTab",
@@ -6491,6 +6495,7 @@
           delete this.mBrowser.initialPageLoadedFromUserAction;
           
           this.mTab.removeAttribute("crashed");
+          gBrowser.tabContainer.updateTabIndicatorAttr(this.mTab);
         }
 
         if (this._shouldShowProgress(aRequest)) {
