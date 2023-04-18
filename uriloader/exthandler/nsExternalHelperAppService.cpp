@@ -579,22 +579,9 @@ static const nsDefaultMimeTypeEntry nonDecodableExtensions[] = {
 
 
 
-
-
-
 static const char* forcedExtensionMimetypes[] = {
     APPLICATION_PDF, APPLICATION_OGG, APPLICATION_WASM,
     TEXT_CALENDAR,   TEXT_CSS,        TEXT_VCARD};
-
-
-
-
-
-
-
-
-static const char* anyExtensionMimetypes[] = {APPLICATION_ZIP, APPLICATION_JSON,
-                                              TEXT_XML};
 
 
 
@@ -3661,19 +3648,9 @@ nsExternalHelperAppService::ShouldModifyExtension(nsIMIMEInfo* aMimeInfo,
 
   
   
-  if (!aFileExt.IsEmpty()) {
-    for (const char* mime : anyExtensionMimetypes) {
-      if (MIMEType.Equals(mime)) {
-        return ModifyExtension_Ignore;
-      }
-    }
-  }
-
-  
-  
   bool canForce = StringBeginsWith(MIMEType, "image/"_ns) ||
                   StringBeginsWith(MIMEType, "audio/"_ns) ||
-                  StringBeginsWith(MIMEType, "video/"_ns);
+                  StringBeginsWith(MIMEType, "video/"_ns) || aFileExt.IsEmpty();
 
   if (!canForce) {
     for (const char* mime : forcedExtensionMimetypes) {
@@ -3687,7 +3664,7 @@ nsExternalHelperAppService::ShouldModifyExtension(nsIMIMEInfo* aMimeInfo,
     }
 
     if (!canForce) {
-      return ModifyExtension_Append;
+      return ModifyExtension_Ignore;
     }
   }
 

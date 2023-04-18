@@ -25,6 +25,7 @@ let types = {
   gook: "application/x-gook",
   zip: "application/zip",
   json: "application/json",
+  tar: "application/x-tar",
 };
 
 const PNG_DATA = atob(
@@ -200,7 +201,15 @@ function getItems(parentid) {
           elem.localName == "img" && elem.dataset.nodrag != "true";
         let unknown = elem.dataset.unknown;
         let noattach = elem.dataset.noattach;
-        elements.push({ draggable, unknown, filename, url, noattach });
+        let winexeext = elem.dataset.winexeext;
+        elements.push({
+          draggable,
+          unknown,
+          filename,
+          url,
+          noattach,
+          winexeext,
+        });
         elem = elem.nextElementSibling;
       }
       return elements;
@@ -579,11 +588,8 @@ add_task(async function save_links() {
       
       
       
-      if (idx == 54) {
-        expectedFilename += ".txt";
-      } else if (idx == 68) {
-        
-        expectedFilename += ".zip";
+      if (expectedItems[idx].winexeext) {
+        expectedFilename += "." + expectedItems[idx].winexeext;
       }
     }
 
