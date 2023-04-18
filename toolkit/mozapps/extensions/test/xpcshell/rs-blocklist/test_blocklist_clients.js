@@ -1,6 +1,5 @@
-const BlocklistGlobal = ChromeUtils.import(
-  "resource://gre/modules/Blocklist.jsm",
-  null
+const { BlocklistPrivate } = ChromeUtils.import(
+  "resource://gre/modules/Blocklist.jsm"
 );
 const { Utils: RemoteSettingsUtils } = ChromeUtils.import(
   "resource://services-settings/Utils.jsm"
@@ -29,17 +28,17 @@ add_task(async function setup() {
   );
 
   
-  BlocklistGlobal.ExtensionBlocklistRS.ensureInitialized();
-  BlocklistGlobal.GfxBlocklistRS._ensureInitialized();
+  BlocklistPrivate.ExtensionBlocklistRS.ensureInitialized();
+  BlocklistPrivate.GfxBlocklistRS._ensureInitialized();
 
   
   gBlocklistClients = [
     {
-      client: BlocklistGlobal.ExtensionBlocklistRS._client,
+      client: BlocklistPrivate.ExtensionBlocklistRS._client,
       expectHasDump: IS_ANDROID,
     },
     {
-      client: BlocklistGlobal.GfxBlocklistRS._client,
+      client: BlocklistPrivate.GfxBlocklistRS._client,
       expectHasDump: !IS_ANDROID,
     },
   ];

@@ -8,7 +8,7 @@
 
 
 
-var EXPORTED_SYMBOLS = ["Blocklist"];
+var EXPORTED_SYMBOLS = ["Blocklist", "BlocklistPrivate"];
 
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
@@ -263,8 +263,6 @@ const BlocklistTelemetry = {
   },
 };
 
-this.BlocklistTelemetry = BlocklistTelemetry;
-
 const Utils = {
   
 
@@ -510,9 +508,7 @@ async function targetAppFilter(entry, environment) {
 
 
 
-
-
-this.GfxBlocklistRS = {
+const GfxBlocklistRS = {
   _ensureInitialized() {
     if (this._initialized || !gBlocklistEnabled) {
       return;
@@ -687,9 +683,7 @@ this.GfxBlocklistRS = {
 
 
 
-
-
-this.ExtensionBlocklistRS = {
+const ExtensionBlocklistRS = {
   async _ensureEntries() {
     this.ensureInitialized();
     if (!this._entries && gBlocklistEnabled) {
@@ -957,9 +951,7 @@ this.ExtensionBlocklistRS = {
 
 
 
-
-
-this.ExtensionBlocklistMLBF = {
+const ExtensionBlocklistMLBF = {
   RS_ATTACHMENT_ID: "addons-mlbf.bin",
 
   async _fetchMLBF(record) {
@@ -1484,3 +1476,11 @@ let Blocklist = {
 };
 
 Blocklist._init();
+
+
+const BlocklistPrivate = {
+  BlocklistTelemetry,
+  ExtensionBlocklistMLBF,
+  ExtensionBlocklistRS,
+  GfxBlocklistRS,
+};

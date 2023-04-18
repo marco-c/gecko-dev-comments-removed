@@ -52,10 +52,12 @@ add_task(async function test_blocklist_lastModified_rs_scalars() {
   }
 
   const {
-    BlocklistTelemetry,
-    ExtensionBlocklistRS,
-    ExtensionBlocklistMLBF,
-  } = ChromeUtils.import("resource://gre/modules/Blocklist.jsm", null);
+    BlocklistPrivate: {
+      BlocklistTelemetry,
+      ExtensionBlocklistMLBF,
+      ExtensionBlocklistRS,
+    },
+  } = ChromeUtils.import("resource://gre/modules/Blocklist.jsm");
 
   
   
