@@ -12,6 +12,7 @@
 #include "nsStringFwd.h"
 
 class nsIPrincipal;
+class nsGlobalWindowInner;
 struct JSContext;
 class JSObject;
 
@@ -26,6 +27,13 @@ using OriginTrial = origin_trials_ffi::OriginTrial;
 
 class OriginTrials final {
  public:
+  using RawType = EnumSet<OriginTrial>;
+
+  OriginTrials() = default;
+
+  static OriginTrials FromRaw(RawType aRaw) { return OriginTrials(aRaw); }
+  const RawType& Raw() const { return mEnabledTrials; }
+
   
   
   
@@ -39,8 +47,13 @@ class OriginTrials final {
   
   static bool IsEnabled(JSContext*, JSObject*, OriginTrial);
 
+  
+  static OriginTrials FromWindow(const nsGlobalWindowInner*);
+
  private:
-  EnumSet<OriginTrial> mEnabledTrials;
+  explicit OriginTrials(RawType aRaw) : mEnabledTrials(aRaw) {}
+
+  RawType mEnabledTrials;
 };
 
 }  

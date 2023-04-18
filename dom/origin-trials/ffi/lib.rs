@@ -9,6 +9,8 @@ use std::ffi::c_void;
 pub enum OriginTrial {
     
     TestTrial = 1,
+
+    MAX,
 }
 
 impl OriginTrial {

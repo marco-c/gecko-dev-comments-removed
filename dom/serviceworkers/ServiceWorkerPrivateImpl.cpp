@@ -249,7 +249,9 @@ nsresult ServiceWorkerPrivateImpl::Initialize() {
        nullptr,
 
       storageAccess, isThirdPartyContextToTopWindow,
-      std::move(serviceWorkerData), regInfo->AgentClusterId(),
+      
+      
+      OriginTrials(), std::move(serviceWorkerData), regInfo->AgentClusterId(),
       remoteType.unwrap());
 
   mRemoteWorkerData.referrerInfo() = MakeAndAddRef<ReferrerInfo>();
