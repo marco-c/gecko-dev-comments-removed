@@ -80,7 +80,7 @@ class SharedWebrtcState {
 
 class PeerConnectionCtx {
  public:
-  static nsresult InitializeGlobal(nsIThread* mainThread);
+  static nsresult InitializeGlobal();
   static PeerConnectionCtx* GetInstance();
   static bool isActive();
   static void Destroy();
@@ -165,7 +165,6 @@ class PeerConnectionCtx {
   static PeerConnectionCtx* gInstance;
 
  public:
-  static nsIThread* gMainThread;
   static mozilla::StaticRefPtr<mozilla::PeerConnectionCtxObserver>
       gPeerConnectionCtxObserver;
 };
