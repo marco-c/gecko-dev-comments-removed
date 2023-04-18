@@ -211,7 +211,7 @@ bool PromiseDebugging::RemoveUncaughtRejectionObserver(
 }
 
 
-void PromiseDebugging::AddUncaughtRejection(JS::HandleObject aPromise) {
+void PromiseDebugging::AddUncaughtRejection(JS::Handle<JSObject*> aPromise) {
   
   if (CycleCollectedJSContext::Get()->mUncaughtRejections.append(aPromise)) {
     FlushRejections::DispatchNeeded();
@@ -219,7 +219,7 @@ void PromiseDebugging::AddUncaughtRejection(JS::HandleObject aPromise) {
 }
 
 
-void PromiseDebugging::AddConsumedRejection(JS::HandleObject aPromise) {
+void PromiseDebugging::AddConsumedRejection(JS::Handle<JSObject*> aPromise) {
   
   
   
@@ -254,7 +254,7 @@ void PromiseDebugging::FlushUncaughtRejectionsInternal() {
   auto& observers = storage->mUncaughtRejectionObservers;
 
   for (size_t i = 0; i < uncaught.length(); i++) {
-    JS::RootedObject promise(cx, uncaught[i]);
+    JS::Rooted<JSObject*> promise(cx, uncaught[i]);
     
     
     if (!promise) {
@@ -281,7 +281,7 @@ void PromiseDebugging::FlushUncaughtRejectionsInternal() {
   
 
   for (size_t i = 0; i < consumed.length(); i++) {
-    JS::RootedObject promise(cx, consumed[i]);
+    JS::Rooted<JSObject*> promise(cx, consumed[i]);
 
     for (size_t j = 0; j < observers.Length(); ++j) {
       RefPtr<UncaughtRejectionObserver> obs =
