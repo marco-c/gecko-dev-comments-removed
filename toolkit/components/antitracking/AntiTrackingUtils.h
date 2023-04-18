@@ -8,7 +8,6 @@
 #define mozilla_antitrackingutils_h
 
 #include "mozilla/AlreadyAddRefed.h"
-#include "mozilla/Maybe.h"
 #include "nsStringFwd.h"
 #include "ContentBlockingNotifier.h"
 
@@ -60,10 +59,6 @@ class AntiTrackingUtils final {
                                      bool aIsInPrivateBrowsing,
                                      uint32_t* aRejectedReason,
                                      uint32_t aBlockedReason);
-
-  
-  
-  static Maybe<size_t> CountSitesAllowStorageAccess(nsIPrincipal* aPrincipal);
 
   
   
