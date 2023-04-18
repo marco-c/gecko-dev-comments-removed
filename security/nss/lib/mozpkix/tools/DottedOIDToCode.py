@@ -43,11 +43,11 @@ def base128(value):
 
     
     result = [value % 0x80]
-    value /= 0x80
+    value = value // 0x80
 
     while value != 0:
         result = [0x80 | (value % 0x80)] + result
-        value /= 0x80
+        value = value // 0x80
 
     return result
 
