@@ -48,13 +48,15 @@ const PING_TYPE_UNINSTALL = "uninstall";
 const REASON_GATHER_PAYLOAD = "gather-payload";
 const REASON_GATHER_SUBSESSION_PAYLOAD = "gather-subsession-payload";
 
+const lazy = {};
+
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "jwcrypto",
   "resource://services-crypto/jwcrypto.jsm"
 );
 
-XPCOMUtils.defineLazyModuleGetters(this, {
+XPCOMUtils.defineLazyModuleGetters(lazy, {
   ClientID: "resource://gre/modules/ClientID.jsm",
   CoveragePing: "resource://gre/modules/CoveragePing.jsm",
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.jsm",
@@ -81,7 +83,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 var Policy = {
   now: () => new Date(),
   generatePingId: () => Utils.generateUUID(),
-  getCachedClientID: () => ClientID.getCachedClientID(),
+  getCachedClientID: () => lazy.ClientID.getCachedClientID(),
 };
 
 var EXPORTED_SYMBOLS = ["TelemetryController", "Policy"];
@@ -299,13 +301,13 @@ var Impl = {
   
   
   
-  _shutdownBarrier: new AsyncShutdown.Barrier(
+  _shutdownBarrier: new lazy.AsyncShutdown.Barrier(
     "TelemetryController: Waiting for clients."
   ),
   
   _shutdownState: "Shutdown not started.",
   
-  _connectionsBarrier: new AsyncShutdown.Barrier(
+  _connectionsBarrier: new lazy.AsyncShutdown.Barrier(
     "TelemetryController: Waiting for pending ping activity"
   ),
   
@@ -414,7 +416,8 @@ var Impl = {
 
     if (aOptions.addEnvironment) {
       pingData.environment =
-        aOptions.overrideEnvironment || TelemetryEnvironment.currentEnvironment;
+        aOptions.overrideEnvironment ||
+        lazy.TelemetryEnvironment.currentEnvironment;
     }
 
     return pingData;
@@ -473,7 +476,7 @@ var Impl = {
         .add();
       
       
-      this._clientID = await ClientID.getClientID();
+      this._clientID = await lazy.ClientID.getClientID();
     }
 
     let pingData = this.assemblePing(aType, aPayload, aOptions);
@@ -498,7 +501,7 @@ var Impl = {
         }
 
         const payload = {};
-        payload.encryptedData = await jwcrypto.generateJWE(
+        payload.encryptedData = await lazy.jwcrypto.generateJWE(
           aOptions.publicKey,
           new TextEncoder("utf-8").encode(JSON.stringify(aPayload))
         );
@@ -533,7 +536,7 @@ var Impl = {
 
     
     
-    let archivePromise = TelemetryArchive.promiseArchivePing(
+    let archivePromise = lazy.TelemetryArchive.promiseArchivePing(
       pingData
     ).catch(e =>
       this._log.error(
@@ -544,7 +547,7 @@ var Impl = {
     let p = [archivePromise];
 
     p.push(
-      TelemetrySend.submitPing(pingData, {
+      lazy.TelemetrySend.submitPing(pingData, {
         usePingSender: aOptions.usePingSender,
       })
     );
@@ -654,15 +657,15 @@ var Impl = {
 
     let pingData = this.assemblePing(aType, aPayload, aOptions);
 
-    let savePromise = TelemetryStorage.savePendingPing(pingData);
-    let archivePromise = TelemetryArchive.promiseArchivePing(pingData).catch(
-      e => {
-        this._log.error(
-          "addPendingPing - Failed to archive ping " + pingData.id,
-          e
-        );
-      }
-    );
+    let savePromise = lazy.TelemetryStorage.savePendingPing(pingData);
+    let archivePromise = lazy.TelemetryArchive.promiseArchivePing(
+      pingData
+    ).catch(e => {
+      this._log.error(
+        "addPendingPing - Failed to archive ping " + pingData.id,
+        e
+      );
+    });
 
     
     let promises = [savePromise, archivePromise];
@@ -675,7 +678,7 @@ var Impl = {
 
 
   async checkAbortedSessionPing() {
-    let ping = await TelemetryStorage.loadAbortedSessionPing();
+    let ping = await lazy.TelemetryStorage.loadAbortedSessionPing();
     this._log.trace(
       "checkAbortedSessionPing - found aborted-session ping: " + !!ping
     );
@@ -687,8 +690,8 @@ var Impl = {
       
       
       if (ping.clientId != Utils.knownClientID) {
-        await TelemetryStorage.addPendingPing(ping);
-        await TelemetryArchive.promiseArchivePing(ping);
+        await lazy.TelemetryStorage.addPendingPing(ping);
+        await lazy.TelemetryArchive.promiseArchivePing(ping);
       }
     } catch (e) {
       this._log.error(
@@ -696,7 +699,7 @@ var Impl = {
         e
       );
     } finally {
-      await TelemetryStorage.removeAbortedSessionPing();
+      await lazy.TelemetryStorage.removeAbortedSessionPing();
     }
   },
 
@@ -710,11 +713,11 @@ var Impl = {
     this._log.trace("saveAbortedSessionPing");
     const options = { addClientId: true, addEnvironment: true };
     const pingData = this.assemblePing(PING_TYPE_MAIN, aPayload, options);
-    return TelemetryStorage.saveAbortedSessionPing(pingData);
+    return lazy.TelemetryStorage.saveAbortedSessionPing(pingData);
   },
 
   removeAbortedSessionPing() {
-    return TelemetryStorage.removeAbortedSessionPing();
+    return lazy.TelemetryStorage.removeAbortedSessionPing();
   },
 
   async saveUninstallPing() {
@@ -726,7 +729,7 @@ var Impl = {
 
     let payload = {};
     try {
-      payload.otherInstalls = UninstallPing.getOtherInstallsCount();
+      payload.otherInstalls = lazy.UninstallPing.getOtherInstallsCount();
       this._log.info(
         "saveUninstallPing - otherInstalls",
         payload.otherInstalls
@@ -737,7 +740,7 @@ var Impl = {
     const options = { addClientId: true, addEnvironment: true };
     const pingData = this.assemblePing(PING_TYPE_UNINSTALL, payload, options);
 
-    return TelemetryStorage.saveUninstallPing(pingData);
+    return lazy.TelemetryStorage.saveUninstallPing(pingData);
   },
 
   
@@ -778,7 +781,7 @@ var Impl = {
     this._probeRegistrationPromise = this.registerJsProbes();
 
     
-    TelemetryReportingPolicy.setup();
+    lazy.TelemetryReportingPolicy.setup();
 
     if (!TelemetryControllerBase.enableTelemetryRecording()) {
       this._log.config(
@@ -791,21 +794,21 @@ var Impl = {
 
     
     
-    TelemetrySession.earlyInit(this._testMode);
+    lazy.TelemetrySession.earlyInit(this._testMode);
     Services.telemetry.earlyInit();
 
     
-    TelemetrySend.earlyInit();
+    lazy.TelemetrySend.earlyInit();
 
     
     
     
     
-    this._clientID = ClientID.getCachedClientID();
+    this._clientID = lazy.ClientID.getCachedClientID();
 
     
     
-    UpdatePing.earlyInit();
+    lazy.UpdatePing.earlyInit();
 
     
     
@@ -816,10 +819,10 @@ var Impl = {
         try {
           
           this._initialized = true;
-          await TelemetryEnvironment.delayedInit();
+          await lazy.TelemetryEnvironment.delayedInit();
 
           
-          this._clientID = await ClientID.getClientID();
+          this._clientID = await lazy.ClientID.getClientID();
 
           
           const uploadEnabled = Services.prefs.getBoolPref(
@@ -830,20 +833,20 @@ var Impl = {
             this._log.trace(
               "Upload enabled, but got canary client ID. Resetting."
             );
-            await ClientID.removeClientID();
-            this._clientID = await ClientID.getClientID();
+            await lazy.ClientID.removeClientID();
+            this._clientID = await lazy.ClientID.getClientID();
           } else if (!uploadEnabled && this._clientID != Utils.knownClientID) {
             this._log.trace(
               "Upload disabled, but got a valid client ID. Setting canary client ID."
             );
-            await ClientID.setCanaryClientID();
-            this._clientID = await ClientID.getClientID();
+            await lazy.ClientID.setCanaryClientID();
+            this._clientID = await lazy.ClientID.getClientID();
           }
 
-          await TelemetrySend.setup(this._testMode);
+          await lazy.TelemetrySend.setup(this._testMode);
 
           
-          await TelemetrySession.delayedInit();
+          await lazy.TelemetrySession.delayedInit();
           await Services.telemetry.delayedInit();
 
           if (
@@ -851,7 +854,7 @@ var Impl = {
               TelemetryUtils.Preferences.NewProfilePingEnabled,
               false
             ) &&
-            !TelemetrySession.newProfilePingSent
+            !lazy.TelemetrySession.newProfilePingSent
           ) {
             
             this.scheduleNewProfilePing();
@@ -860,38 +863,38 @@ var Impl = {
           
           
           
-          TelemetryStorage.runCleanPingArchiveTask();
+          lazy.TelemetryStorage.runCleanPingArchiveTask();
 
           
           
           
-          TelemetryStorage.removeFHRDatabase();
+          lazy.TelemetryStorage.removeFHRDatabase();
 
           
           
           if (!this._shuttingDown) {
             
-            TelemetryModules.start();
+            lazy.TelemetryModules.start();
 
             
-            await CoveragePing.startup();
+            await lazy.CoveragePing.startup();
 
             
             
             if (AppConstants.platform == "win") {
-              TelemetryUntrustedModulesPing.start();
+              lazy.TelemetryUntrustedModulesPing.start();
             }
           }
 
-          TelemetryEventPing.startup();
-          TelemetryPrioPing.startup();
+          lazy.TelemetryEventPing.startup();
+          lazy.TelemetryPrioPing.startup();
 
           if (uploadEnabled) {
             await this.saveUninstallPing().catch(e =>
               this._log.warn("_delayedInitTask - saveUninstallPing failed", e)
             );
           } else {
-            await TelemetryStorage.removeUninstallPings().catch(e =>
+            await lazy.TelemetryStorage.removeUninstallPings().catch(e =>
               this._log.warn("_delayedInitTask - saveUninstallPing", e)
             );
           }
@@ -907,7 +910,7 @@ var Impl = {
       this._testMode ? 0 : undefined
     );
 
-    AsyncShutdown.sendTelemetry.addBlocker(
+    lazy.AsyncShutdown.sendTelemetry.addBlocker(
       "TelemetryController: shutting down",
       () => this.shutdown(),
       () => this._getState()
@@ -937,12 +940,12 @@ var Impl = {
       }
 
       this._shutdownStep = "Update" + now();
-      UpdatePing.shutdown();
+      lazy.UpdatePing.shutdown();
 
       this._shutdownStep = "Event" + now();
-      TelemetryEventPing.shutdown();
+      lazy.TelemetryEventPing.shutdown();
       this._shutdownStep = "Prio" + now();
-      await TelemetryPrioPing.shutdown();
+      await lazy.TelemetryPrioPing.shutdown();
 
       
       
@@ -953,20 +956,20 @@ var Impl = {
 
       
       this._shutdownStep = "Policy" + now();
-      TelemetryReportingPolicy.shutdown();
+      lazy.TelemetryReportingPolicy.shutdown();
       this._shutdownStep = "Environment" + now();
-      TelemetryEnvironment.shutdown();
+      lazy.TelemetryEnvironment.shutdown();
 
       
       this._shutdownStep = "TelemetrySend" + now();
-      await TelemetrySend.shutdown();
+      await lazy.TelemetrySend.shutdown();
 
       
       this._shutdownStep = "Health ping" + now();
-      await TelemetryHealthPing.shutdown();
+      await lazy.TelemetryHealthPing.shutdown();
 
       this._shutdownStep = "TelemetrySession" + now();
-      await TelemetrySession.shutdown();
+      await lazy.TelemetrySession.shutdown();
       this._shutdownStep = "Services.telemetry" + now();
       await Services.telemetry.shutdown();
 
@@ -981,12 +984,12 @@ var Impl = {
       if (AppConstants.platform !== "android") {
         
         this._shutdownStep = "Flush pingsender batch" + now();
-        TelemetrySend.flushPingSenderBatch();
+        lazy.TelemetrySend.flushPingSenderBatch();
       }
 
       
       this._shutdownStep = "await TelemetryStorage" + now();
-      await TelemetryStorage.shutdown();
+      await lazy.TelemetryStorage.shutdown();
     } finally {
       
       this._initialized = false;
@@ -1070,7 +1073,7 @@ var Impl = {
       haveDelayedInitTask: !!this._delayedInitTask,
       shutdownBarrier: this._shutdownBarrier.state,
       connectionsBarrier: this._connectionsBarrier.state,
-      sendModule: TelemetrySend.getShutdownState(),
+      sendModule: lazy.TelemetrySend.getShutdownState(),
       haveDelayedNewProfileTask: !!this._delayedNewPingTask,
       shutdownStep: this._shutdownStep,
     };
@@ -1095,8 +1098,8 @@ var Impl = {
 
       
       let p = (async () => {
-        await ClientID.removeClientID();
-        let id = await ClientID.getClientID();
+        await lazy.ClientID.removeClientID();
+        let id = await lazy.ClientID.getClientID();
         this._clientID = id;
         Services.telemetry.scalarSet("telemetry.data_upload_optin", true);
 
@@ -1117,12 +1120,12 @@ var Impl = {
       try {
         
         
-        await TelemetrySend.clearCurrentPings();
+        await lazy.TelemetrySend.clearCurrentPings();
 
         
-        await TelemetryStorage.removeAppDataPings();
-        await TelemetryStorage.runRemovePendingPingsTask();
-        await TelemetryStorage.removeUninstallPings();
+        await lazy.TelemetryStorage.removeAppDataPings();
+        await lazy.TelemetryStorage.runRemovePendingPingsTask();
+        await lazy.TelemetryStorage.removeUninstallPings();
       } catch (e) {
         this._log.error(
           "_onUploadPrefChange - error clearing pending pings",
@@ -1130,7 +1133,7 @@ var Impl = {
         );
       } finally {
         
-        TelemetrySession.resetSubsessionCounter();
+        lazy.TelemetrySession.resetSubsessionCounter();
 
         
         
@@ -1140,9 +1143,9 @@ var Impl = {
         );
 
         
-        let oldClientId = await ClientID.getClientID();
-        await ClientID.setCanaryClientID();
-        this._clientID = await ClientID.getClientID();
+        let oldClientId = await lazy.ClientID.getClientID();
+        await lazy.ClientID.setCanaryClientID();
+        this._clientID = await lazy.ClientID.getClientID();
 
         
         this._log.trace("_onUploadPrefChange - Sending deletion-request ping.");
@@ -1213,7 +1216,7 @@ var Impl = {
       ? REASON_GATHER_SUBSESSION_PAYLOAD
       : REASON_GATHER_PAYLOAD;
     const type = PING_TYPE_MAIN;
-    const payload = TelemetrySession.getPayload(reason);
+    const payload = lazy.TelemetrySession.getPayload(reason);
     const options = { addClientId: true, addEnvironment: true };
     const ping = this.assemblePing(type, payload, options);
 
@@ -1225,12 +1228,12 @@ var Impl = {
     this._fnSyncPingShutdown = null;
     this._detachObservers();
 
-    let sessionReset = TelemetrySession.testReset();
+    let sessionReset = lazy.TelemetrySession.testReset();
 
-    this._connectionsBarrier = new AsyncShutdown.Barrier(
+    this._connectionsBarrier = new lazy.AsyncShutdown.Barrier(
       "TelemetryController: Waiting for pending ping activity"
     );
-    this._shutdownBarrier = new AsyncShutdown.Barrier(
+    this._shutdownBarrier = new lazy.AsyncShutdown.Barrier(
       "TelemetryController: Waiting for clients."
     );
 
@@ -1239,9 +1242,9 @@ var Impl = {
     let controllerSetup = this.setupTelemetry(true);
 
     await sessionReset;
-    await TelemetrySend.reset();
-    await TelemetryStorage.reset();
-    await TelemetryEnvironment.testReset();
+    await lazy.TelemetrySend.reset();
+    await lazy.TelemetryStorage.reset();
+    await lazy.TelemetryEnvironment.testReset();
 
     await controllerSetup;
   },
@@ -1306,7 +1309,7 @@ var Impl = {
       payload,
       options
     ).then(
-      () => TelemetrySession.markNewProfilePingSent(),
+      () => lazy.TelemetrySession.markNewProfilePingSent(),
       e =>
         this._log.error(
           "sendNewProfilePing - failed to submit new-profile ping",
