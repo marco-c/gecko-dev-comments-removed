@@ -32,19 +32,17 @@ pub use super::image::{EndingShape as GradientEndingShape, Gradient};
 pub use crate::values::specified::calc::CalcLengthPercentage;
 
 
-pub const AU_PER_PX: CSSFloat = 60.;
+pub const PX_PER_IN: CSSFloat = 96.;
 
-pub const AU_PER_IN: CSSFloat = AU_PER_PX * 96.;
+pub const PX_PER_CM: CSSFloat = PX_PER_IN / 2.54;
 
-pub const AU_PER_CM: CSSFloat = AU_PER_IN / 2.54;
+pub const PX_PER_MM: CSSFloat = PX_PER_IN / 25.4;
 
-pub const AU_PER_MM: CSSFloat = AU_PER_IN / 25.4;
+pub const PX_PER_Q: CSSFloat = PX_PER_MM / 4.;
 
-pub const AU_PER_Q: CSSFloat = AU_PER_MM / 4.;
+pub const PX_PER_PT: CSSFloat = PX_PER_IN / 72.;
 
-pub const AU_PER_PT: CSSFloat = AU_PER_IN / 72.;
-
-pub const AU_PER_PC: CSSFloat = AU_PER_PT * 12.;
+pub const PX_PER_PC: CSSFloat = PX_PER_PT * 12.;
 
 
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToCss, ToShmem)]
@@ -544,6 +542,7 @@ impl ViewportPercentageLength {
             ),
         }
     }
+
     fn try_sum(&self, other: &Self) -> Result<Self, ()> {
         use self::ViewportPercentageLength::*;
 
@@ -697,12 +696,12 @@ impl AbsoluteLength {
 
         let pixel = match *self {
             AbsoluteLength::Px(value) => value,
-            AbsoluteLength::In(value) => value * (AU_PER_IN / AU_PER_PX),
-            AbsoluteLength::Cm(value) => value * (AU_PER_CM / AU_PER_PX),
-            AbsoluteLength::Mm(value) => value * (AU_PER_MM / AU_PER_PX),
-            AbsoluteLength::Q(value) => value * (AU_PER_Q / AU_PER_PX),
-            AbsoluteLength::Pt(value) => value * (AU_PER_PT / AU_PER_PX),
-            AbsoluteLength::Pc(value) => value * (AU_PER_PC / AU_PER_PX),
+            AbsoluteLength::In(value) => value * PX_PER_IN,
+            AbsoluteLength::Cm(value) => value * PX_PER_CM,
+            AbsoluteLength::Mm(value) => value * PX_PER_MM,
+            AbsoluteLength::Q(value) => value * PX_PER_Q,
+            AbsoluteLength::Pt(value) => value * PX_PER_PT,
+            AbsoluteLength::Pc(value) => value * PX_PER_PC,
         };
         pixel.min(f32::MAX).max(f32::MIN)
     }
