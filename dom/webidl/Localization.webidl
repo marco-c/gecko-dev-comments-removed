@@ -73,7 +73,7 @@ interface Localization {
 
 
   [Throws]
-  constructor(sequence<UTF8String> aResourceIds,
+  constructor(sequence<L10nResourceId> aResourceIds,
               optional boolean aSync = false,
               optional L10nRegistry aRegistry,
               optional sequence<UTF8String> aLocales);
@@ -81,14 +81,14 @@ interface Localization {
   
 
 
-  void addResourceIds(sequence<UTF8String> aResourceIds);
+  void addResourceIds(sequence<L10nResourceId> aResourceIds);
 
   
 
 
 
 
-  unsigned long removeResourceIds(sequence<UTF8String> aResourceIds);
+  unsigned long removeResourceIds(sequence<L10nResourceId> aResourceIds);
 
   
 
