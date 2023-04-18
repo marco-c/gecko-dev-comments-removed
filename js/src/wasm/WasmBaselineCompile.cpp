@@ -724,8 +724,8 @@ void BaseCompiler::insertBreakpointStub() {
 
     
     
-    masm.branchTestPtr(Assembler::NonZero, Address(scratch, func_.index / 32),
-                       Imm32(1 << (func_.index % 32)), &L);
+    masm.branchTest32(Assembler::NonZero, Address(scratch, func_.index / 32),
+                      Imm32(1 << (func_.index % 32)), &L);
 
     
     masm.ret();
@@ -737,8 +737,8 @@ void BaseCompiler::insertBreakpointStub() {
     
     masm.loadPtr(Address(InstanceReg, Instance::offsetOfDebugFilter()),
                  scratch);
-    masm.branchTestPtr(Assembler::NonZero, Address(scratch, func_.index / 32),
-                       Imm32(1 << (func_.index % 32)), &L);
+    masm.branchTest32(Assembler::NonZero, Address(scratch, func_.index / 32),
+                      Imm32(1 << (func_.index % 32)), &L);
     masm.abiret();
   }
 #elif defined(JS_CODEGEN_ARM)
@@ -766,8 +766,8 @@ void BaseCompiler::insertBreakpointStub() {
     
     masm.loadPtr(Address(InstanceReg, Instance::offsetOfDebugFilter()),
                  scratch);
-    masm.branchTestPtr(Assembler::NonZero, Address(scratch, func_.index / 32),
-                       Imm32(1 << (func_.index % 32)), &L);
+    masm.branchTest32(Assembler::NonZero, Address(scratch, func_.index / 32),
+                      Imm32(1 << (func_.index % 32)), &L);
     masm.abiret();
   }
 #else
