@@ -107,21 +107,17 @@ bool jit::InitializeJit() {
   InitARMFlags();
 #endif
 
-  
-  ComputeJitSupportFlags();
-
-  CheckPerf();
-
 #ifndef JS_CODEGEN_NONE
   MOZ_ASSERT(js::jit::CPUFlagsHaveBeenComputed());
 #endif
-  return true;
-}
 
-void jit::ComputeJitSupportFlags() {
+  
   JitOptions.supportsFloatingPoint = MacroAssembler::SupportsFloatingPoint();
   JitOptions.supportsUnalignedAccesses =
       MacroAssembler::SupportsUnalignedAccesses();
+
+  CheckPerf();
+  return true;
 }
 
 bool jit::JitSupportsWasmSimd() {

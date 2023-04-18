@@ -150,10 +150,6 @@ class JitContext {
 [[nodiscard]] bool InitializeJit();
 
 
-
-void ComputeJitSupportFlags();
-
-
 JitContext* GetJitContext();
 JitContext* MaybeGetJitContext();
 
