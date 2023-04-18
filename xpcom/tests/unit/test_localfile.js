@@ -153,11 +153,15 @@ add_task(function test_diskCapacity() {
 add_task(
   {
     
-    skip_if: () => AppConstants.platform != "macosx",
+    skip_if: () => !["macosx", "win"].includes(AppConstants.platform),
   },
   function test_file_creation_time() {
     const file = do_get_profile();
-    file.append("testfile");
+    
+    
+    
+    
+    file.append("testfile-creation-time");
 
     if (file.exists()) {
       file.remove(true);
@@ -168,20 +172,7 @@ add_task(
     file.create(Ci.nsIFile.NORMAL_FILE_TYPE, 0o644);
     Assert.ok(file.exists());
 
-    let creationTime;
-    try {
-      creationTime = file.creationTime;
-    } catch (e) {
-      if (e.name === "NS_ERROR_NOT_AVAILABLE") {
-        
-        file.remove(true);
-        return;
-      }
-    }
-
-    const diff = Math.abs(creationTime - now);
-    Assert.ok(diff < MAX_TIME_DIFFERENCE);
-
+    const creationTime = file.creationTime;
     Assert.ok(creationTime === file.lastModifiedTime);
 
     file.lastModifiedTime = now + MILLIS_PER_DAY;
