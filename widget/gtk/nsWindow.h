@@ -535,7 +535,7 @@ class nsWindow final : public nsBaseWidget {
   GdkWindow* mGdkWindow;
   bool mWindowShouldStartDragging;
   PlatformCompositorWidgetDelegate* mCompositorWidgetDelegate;
-  WindowCompositorState mCompositorState;
+  mozilla::Atomic<WindowCompositorState, mozilla::Relaxed> mCompositorState;
   
   
   int mCompositorPauseTimeoutID;
