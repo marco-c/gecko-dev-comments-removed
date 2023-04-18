@@ -352,6 +352,8 @@ class AutofillRecords {
 
 
   async add(record, { sourceSync = false } = {}) {
+    this.log.debug("add:", record);
+
     let recordToSave = this._clone(record);
 
     if (sourceSync) {
@@ -458,7 +460,7 @@ class AutofillRecords {
 
 
   async update(guid, record, preserveOldProperties = false) {
-    this.log.debug(`update: ${guid}`);
+    this.log.debug("update:", guid, record);
 
     let recordFoundIndex = this._findIndexByGUID(guid);
     if (recordFoundIndex == -1) {
@@ -631,7 +633,7 @@ class AutofillRecords {
 
 
   async get(guid, { rawData = false } = {}) {
-    this.log.debug(`get: ${guid}`);
+    this.log.debug("get:", guid, rawData);
 
     let recordFound = this._findByGUID(guid);
     if (!recordFound) {
@@ -659,7 +661,7 @@ class AutofillRecords {
 
 
   async getAll({ rawData = false, includeDeleted = false } = {}) {
-    this.log.debug(`getAll. includeDeleted = ${includeDeleted}`);
+    this.log.debug("getAll", rawData, includeDeleted);
 
     let records = this._data.filter(r => !r.deleted || includeDeleted);
     
