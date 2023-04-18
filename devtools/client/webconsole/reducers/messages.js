@@ -508,18 +508,6 @@ function messages(
           ...visibleMessages.slice(insertIndex),
         ];
       }
-
-      
-      
-      
-      if (currMessage.source == "network") {
-        openState.mutableMessagesById = new Map(mutableMessagesById).set(
-          action.id,
-          {
-            ...currMessage,
-          }
-        );
-      }
       return openState;
 
     case constants.MESSAGE_CLOSE:
