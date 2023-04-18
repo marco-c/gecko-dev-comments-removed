@@ -43,6 +43,10 @@ struct FreeDelazifyTask;
 struct PromiseHelperTask;
 class PromiseObject;
 
+namespace frontend {
+struct ScriptStencilRef;
+}
+
 namespace jit {
 class IonCompileTask;
 class IonFreeTask;
@@ -613,12 +617,19 @@ struct DelazifyStrategy {
   
   
   
+  [[nodiscard]] virtual bool insert(ScriptIndex index,
+                                    frontend::ScriptStencilRef& ref) = 0;
+
   
   
   
-  [[nodiscard]] virtual bool add(JSContext* cx,
-                                 const frontend::CompilationStencil& stencil,
-                                 ScriptIndex index) = 0;
+  
+  
+  
+  
+  [[nodiscard]] bool add(JSContext* cx,
+                         const frontend::CompilationStencil& stencil,
+                         ScriptIndex index);
 };
 
 
@@ -638,9 +649,23 @@ struct DepthFirstDelazification final : public DelazifyStrategy {
   bool done() const override { return stack.empty(); }
   ScriptIndex next() override { return stack.popCopy(); }
   void clear() override { return stack.clear(); }
-  [[nodiscard]] bool add(JSContext* cx,
-                         const frontend::CompilationStencil& stencil,
-                         ScriptIndex index) override;
+  bool insert(ScriptIndex index, frontend::ScriptStencilRef&) override {
+    return stack.append(index);
+  }
+};
+
+
+
+
+
+struct LargeFirstDelazification final : public DelazifyStrategy {
+  using SourceSize = uint32_t;
+  Vector<std::pair<SourceSize, ScriptIndex>, 0, SystemAllocPolicy> heap;
+
+  bool done() const override { return heap.empty(); }
+  ScriptIndex next() override;
+  void clear() override { return heap.clear(); }
+  bool insert(ScriptIndex, frontend::ScriptStencilRef&) override;
 };
 
 
