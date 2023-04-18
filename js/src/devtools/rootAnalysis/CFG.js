@@ -467,8 +467,12 @@ function edgeUsesVariable(edge, variable, body)
     if (ignoreEdgeUse(edge, variable, body))
         return 0;
 
-    if (variable.Kind == "Return" && body.Index[1] == edge.Index[1] && body.BlockId.Kind == "Function")
-        return edge.Index[1]; 
+    if (variable.Kind == "Return" && body.Index[1] == edge.Index[1] && body.BlockId.Kind == "Function") {
+        
+        
+        
+        return edge.Index[1];
+    }
 
     var src = edge.Index[0];
 

@@ -395,6 +395,7 @@ function findGCBeforeValueUse(start_body, start_point, suppressed_bits, variable
             }
 
             
+            const had_gcInfo = Boolean(path.gcInfo);
             if (!path.gcInfo && !(body.attrs[ppoint] & ATTR_GC_SUPPRESSED) && !isGCSuppressed) {
                 var gcName = edgeCanGC(edge, body);
                 if (gcName) {
@@ -453,6 +454,38 @@ function findGCBeforeValueUse(start_body, start_point, suppressed_bits, variable
             
             
             
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            if (!had_gcInfo && edge_uses == edge.Index[1]) {
+                return path; 
+            }
 
             path.anyUse = path.anyUse || edge;
             bestPathWithAnyUse = bestPathWithAnyUse || path;
