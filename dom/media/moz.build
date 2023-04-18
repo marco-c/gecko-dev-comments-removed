@@ -280,7 +280,6 @@ UNIFIED_SOURCES += [
     "ImageToI420.cpp",
     "MediaCache.cpp",
     "MediaContainerType.cpp",
-    "MediaData.cpp",
     "MediaDecoder.cpp",
     "MediaDecoderStateMachine.cpp",
     "MediaDecoderStateMachineBase.cpp",
@@ -325,9 +324,11 @@ else:
 
 
 
+
 SOURCES += [
     "CubebUtils.cpp",
     "DecoderTraits.cpp",
+    "MediaData.cpp",
 ]
 
 
