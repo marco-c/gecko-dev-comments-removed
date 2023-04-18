@@ -179,6 +179,7 @@ class SVGTextFrame final : public SVGDisplayContainerFrame {
   using DrawTarget = gfx::DrawTarget;
   using Path = gfx::Path;
   using Point = gfx::Point;
+  using Rect = gfx::Rect;
 
  protected:
   explicit SVGTextFrame(ComputedStyle* aStyle, nsPresContext* aPresContext)
@@ -329,6 +330,14 @@ class SVGTextFrame final : public SVGDisplayContainerFrame {
 
   gfxRect TransformFrameRectFromTextChild(const nsRect& aRect,
                                           const nsIFrame* aChildFrame);
+
+  
+  Rect TransformFrameRectFromTextChild(const Rect& aRect,
+                                       const nsIFrame* aChildFrame);
+
+  
+  Point TransformFramePointFromTextChild(const Point& aPoint,
+                                         const nsIFrame* aChildFrame);
 
   
   void AppendDirectlyOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult) override;
