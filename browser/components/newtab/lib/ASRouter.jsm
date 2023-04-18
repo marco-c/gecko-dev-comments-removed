@@ -277,18 +277,9 @@ const MessageLoaderUtils = {
           );
         } else if (
           RS_PROVIDERS_WITH_L10N.includes(provider.id) &&
-          (RemoteL10n.isLocaleSupported(Services.locale.appLocaleAsBCP47) ||
-            
-            
-            
-            Services.locale.appLocaleAsBCP47 === "und")
+          RemoteL10n.isLocaleSupported(MessageLoaderUtils.locale)
         ) {
-          let locale = Services.locale.appLocaleAsBCP47;
-          
-          if (locale === "und") {
-            locale = "en-US";
-          }
-          const recordId = `${RS_FLUENT_RECORD_PREFIX}-${locale}`;
+          const recordId = `${RS_FLUENT_RECORD_PREFIX}-${MessageLoaderUtils.locale}`;
           const kinto = new KintoHttpClient(
             Services.prefs.getStringPref(RS_SERVER_PREF)
           );
@@ -497,6 +488,26 @@ const MessageLoaderUtils = {
     if (dirty) {
       await storage.set(MessageLoaderUtils.REMOTE_LOADER_CACHE_KEY, cache);
     }
+  },
+
+  
+
+
+
+
+
+  get locale() {
+    const localeMap = {
+      "ja-JP-macos": "ja-JP-mac",
+
+      
+      
+      
+      und: "en-US",
+    };
+
+    const locale = Services.locale.appLocaleAsBCP47;
+    return localeMap[locale] ?? locale;
   },
 };
 
