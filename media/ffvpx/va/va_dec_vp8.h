@@ -48,8 +48,7 @@ extern "C" {
 
 
 
-typedef struct _VABoolCoderContextVPX
-{
+typedef struct _VABoolCoderContextVPX {
     
     uint8_t range;
     
@@ -69,8 +68,7 @@ typedef struct _VABoolCoderContextVPX
 
 
 
-typedef struct  _VAPictureParameterBufferVP8
-{
+typedef struct  _VAPictureParameterBufferVP8 {
     
     uint32_t frame_width;
     
@@ -87,32 +85,32 @@ typedef struct  _VAPictureParameterBufferVP8
 
     union {
         struct {
-	    
-            uint32_t key_frame			: 1; 
-	    
-            uint32_t version			: 3;
-	    
-            uint32_t segmentation_enabled		: 1;
-	    
-            uint32_t update_mb_segmentation_map	: 1;
-	    
-            uint32_t update_segment_feature_data	: 1;
-	    
-            uint32_t filter_type			: 1; 
-	    
-            uint32_t sharpness_level		: 3; 
-	    
-            uint32_t loop_filter_adj_enable		: 1; 
-	    
-            uint32_t mode_ref_lf_delta_update	: 1; 
-	    
-            uint32_t sign_bias_golden		: 1; 
-	    
-            uint32_t sign_bias_alternate		: 1; 
-	    
-            uint32_t mb_no_coeff_skip		: 1; 
-	    
-            uint32_t loop_filter_disable		: 1; 
+            
+            uint32_t key_frame          : 1;
+            
+            uint32_t version            : 3;
+            
+            uint32_t segmentation_enabled       : 1;
+            
+            uint32_t update_mb_segmentation_map : 1;
+            
+            uint32_t update_segment_feature_data    : 1;
+            
+            uint32_t filter_type            : 1;
+            
+            uint32_t sharpness_level        : 3;
+            
+            uint32_t loop_filter_adj_enable     : 1;
+            
+            uint32_t mode_ref_lf_delta_update   : 1;
+            
+            uint32_t sign_bias_golden       : 1;
+            
+            uint32_t sign_bias_alternate        : 1;
+            
+            uint32_t mb_no_coeff_skip       : 1;
+            
+            uint32_t loop_filter_disable        : 1;
         } bits;
         uint32_t value;
     } pic_fields;
@@ -143,7 +141,7 @@ typedef struct  _VAPictureParameterBufferVP8
 
 
 
-    uint8_t y_mode_probs[4]; 
+    uint8_t y_mode_probs[4];
     
 
 
@@ -169,8 +167,7 @@ typedef struct  _VAPictureParameterBufferVP8
 
 
 
-typedef struct  _VASliceParameterBufferVP8
-{
+typedef struct  _VASliceParameterBufferVP8 {
     
 
 
@@ -182,7 +179,7 @@ typedef struct  _VASliceParameterBufferVP8
     
 
 
-    uint32_t slice_data_flag; 
+    uint32_t slice_data_flag;
     
 
 
@@ -218,8 +215,7 @@ typedef struct  _VASliceParameterBufferVP8
 
 
 
-typedef struct _VAProbabilityDataBufferVP8
-{
+typedef struct _VAProbabilityDataBufferVP8 {
     uint8_t dct_coeff_probs[4][8][3][11];
 
     
@@ -233,8 +229,7 @@ typedef struct _VAProbabilityDataBufferVP8
 
 
 
-typedef struct _VAIQMatrixBufferVP8
-{
+typedef struct _VAIQMatrixBufferVP8 {
     
 
 
