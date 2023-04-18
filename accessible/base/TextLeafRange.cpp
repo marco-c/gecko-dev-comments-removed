@@ -570,6 +570,13 @@ TextLeafPoint TextLeafPoint::FindPrevWordStartSameAcc(
   nsAutoString text;
   mAcc->AppendTextTo(text);
   TextLeafPoint lineStart = *this;
+  if (!aIncludeOrigin || (lineStart.mOffset == 1 && text.Length() == 1 &&
+                          text.CharAt(0) == '\n')) {
+    
+    
+    
+    --lineStart.mOffset;
+  }
   
   
   
@@ -581,7 +588,8 @@ TextLeafPoint TextLeafPoint::FindPrevWordStartSameAcc(
     
     lineStart = TextLeafPoint();
   } else {
-    lineStart = lineStart.FindLineStartSameAcc(eDirPrevious, aIncludeOrigin);
+    lineStart =
+        lineStart.FindLineStartSameAcc(eDirPrevious,  true);
   }
   
   intl::WordRange word;
