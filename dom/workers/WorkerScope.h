@@ -154,6 +154,10 @@ class WorkerGlobalScopeBase : public DOMEventTargetHelper,
 
   void NoteTerminating() { StartDying(); }
 
+  
+  
+  void NoteWorkerTerminated() { mWorkerPrivate = nullptr; }
+
   ClientSource& MutableClientSourceRef() const { return *mClientSource; }
 
   

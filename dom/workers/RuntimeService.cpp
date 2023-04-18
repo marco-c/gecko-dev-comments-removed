@@ -2137,6 +2137,9 @@ WorkerThreadPrimaryRunnable::Run() {
       return NS_ERROR_FAILURE;
     }
 
+    
+    nsWeakPtr globalScopeSentinel;
+
     {
       nsCycleCollector_startup();
 
@@ -2174,11 +2177,25 @@ WorkerThreadPrimaryRunnable::Run() {
       }
 
       
+      globalScopeSentinel = do_GetWeakReference(mWorkerPrivate->GlobalScope());
+
+      
+      
       
       
       
       
       mWorkerPrivate->ClearDebuggerEventQueue();
+
+      
+      
+      
+      NS_ProcessPendingEvents(nullptr);
+
+      
+      
+      
+      mWorkerPrivate->UnrootGlobalScopes();
 
       
       
@@ -2189,11 +2206,16 @@ WorkerThreadPrimaryRunnable::Run() {
       
       
       
-      mWorkerPrivate->ClearMainEventQueue(WorkerPrivate::WorkerRan);
+    }
 
-      
-      
-      
+    
+    nsCOMPtr<DOMEventTargetHelper> globalScopeAlive =
+        do_QueryReferent(globalScopeSentinel);
+    MOZ_ASSERT(!globalScopeAlive);
+    
+    if (globalScopeAlive) {
+      static_cast<WorkerGlobalScope*>(globalScopeAlive.get())
+          ->NoteWorkerTerminated();
     }
   }
 
