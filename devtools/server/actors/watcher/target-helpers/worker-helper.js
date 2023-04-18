@@ -4,11 +4,6 @@
 
 "use strict";
 
-const {
-  getAllRemoteBrowsingContexts,
-  shouldNotifyWindowGlobal,
-} = require("devtools/server/actors/watcher/target-helpers/utils.js");
-
 const DEVTOOLS_WORKER_JS_WINDOW_ACTOR_NAME = "DevToolsWorker";
 
 
@@ -21,7 +16,10 @@ async function createTargets(watcher) {
   
   
   
-  const browsingContexts = getFilteredBrowsingContext(watcher.browserElement);
+  const browsingContexts = watcher.getAllBrowsingContexts({
+    acceptSameProcessIframes: true,
+    forceAcceptTopLevelTarget: true,
+  });
   const promises = [];
   for (const browsingContext of browsingContexts) {
     const promise = browsingContext.currentWindowGlobal
@@ -48,7 +46,10 @@ async function createTargets(watcher) {
 
 async function destroyTargets(watcher) {
   
-  const browsingContexts = getFilteredBrowsingContext(watcher.browserElement);
+  const browsingContexts = watcher.getAllBrowsingContexts({
+    acceptSameProcessIframes: true,
+    forceAcceptTopLevelTarget: true,
+  });
   for (const browsingContext of browsingContexts) {
     let windowActor;
     try {
@@ -77,7 +78,10 @@ async function destroyTargets(watcher) {
 
 
 async function addSessionDataEntry({ watcher, type, entries }) {
-  const browsingContexts = getFilteredBrowsingContext(watcher.browserElement);
+  const browsingContexts = watcher.getAllBrowsingContexts({
+    acceptSameProcessIframes: true,
+    forceAcceptTopLevelTarget: true,
+  });
   const promises = [];
   for (const browsingContext of browsingContexts) {
     const promise = browsingContext.currentWindowGlobal
@@ -100,7 +104,10 @@ async function addSessionDataEntry({ watcher, type, entries }) {
 
 
 function removeSessionDataEntry({ watcher, type, entries }) {
-  const browsingContexts = getFilteredBrowsingContext(watcher.browserElement);
+  const browsingContexts = watcher.getAllBrowsingContexts({
+    acceptSameProcessIframes: true,
+    forceAcceptTopLevelTarget: true,
+  });
   for (const browsingContext of browsingContexts) {
     browsingContext.currentWindowGlobal
       .getActor(DEVTOOLS_WORKER_JS_WINDOW_ACTOR_NAME)
@@ -111,29 +118,6 @@ function removeSessionDataEntry({ watcher, type, entries }) {
         entries,
       });
   }
-}
-
-
-
-
-
-
-
-
-
-
-function getFilteredBrowsingContext(browserElement) {
-  const browsingContexts = getAllRemoteBrowsingContexts(
-    browserElement?.browsingContext
-  );
-  if (browserElement?.browsingContext) {
-    browsingContexts.push(browserElement?.browsingContext);
-  }
-  return browsingContexts.filter(browsingContext =>
-    shouldNotifyWindowGlobal(browsingContext, browserElement?.browserId, {
-      acceptNonRemoteFrame: true,
-    })
-  );
 }
 
 module.exports = {

@@ -21,6 +21,7 @@ const systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
 
 
 const {
+  CanonicalBrowsingContext,
   BrowsingContext,
   WindowGlobalParent,
   WindowGlobalChild,
@@ -254,6 +255,7 @@ exports.globals = {
   atob,
   Blob,
   btoa,
+  CanonicalBrowsingContext,
   BrowsingContext,
   WindowGlobalParent,
   WindowGlobalChild,

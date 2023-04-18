@@ -29,6 +29,8 @@ XPCOMUtils.defineLazyGetter(this, "DevToolsUtils", () =>
   Loader.require("devtools/shared/DevToolsUtils")
 );
 XPCOMUtils.defineLazyModuleGetters(this, {
+  isWindowGlobalPartOfContext:
+    "resource://devtools/server/actors/watcher/browsing-context-helpers.jsm",
   SessionDataHelpers:
     "resource://devtools/server/actors/watcher/SessionDataHelpers.jsm",
 });
@@ -122,7 +124,11 @@ class DevToolsWorkerChild extends JSWindowActorChild {
       const { targets, connectionPrefix, sessionContext } = sessionData;
       if (
         targets.includes("worker") &&
-        shouldNotifyWindowGlobal(this.manager, sessionContext)
+        isWindowGlobalPartOfContext(this.manager, sessionContext, {
+          acceptInitialDocument: true,
+          forceAcceptTopLevelTarget: true,
+          acceptSameProcessIframes: true,
+        })
       ) {
         this._watchWorkerTargets({
           watcherActorID,
@@ -149,12 +155,18 @@ class DevToolsWorkerChild extends JSWindowActorChild {
       
       if (
         this.manager.browsingContext.browserId != browserId &&
-        !shouldNotifyWindowGlobal(this.manager, message.data.sessionContext)
+        !isWindowGlobalPartOfContext(
+          this.manager,
+          message.data.sessionContext,
+          {
+            acceptInitialDocument: true,
+          }
+        )
       ) {
         throw new Error(
           "Mismatch between DevToolsWorkerParent and DevToolsWorkerChild  " +
             (this.manager.browsingContext.browserId == browserId
-              ? "window global shouldn't be notified (shouldNotifyWindowGlobal mismatch)"
+              ? "window global shouldn't be notified (isWindowGlobalPartOfContext mismatch)"
               : `expected browsing context with ID ${browserId}, but got ${this.manager.browsingContext.browserId}`)
         );
       }
@@ -522,35 +534,6 @@ class DevToolsWorkerChild extends JSWindowActorChild {
 
     this._connections.clear();
   }
-}
-
-
-
-
-function shouldNotifyWindowGlobal(windowGlobal, sessionContext) {
-  const browsingContext = windowGlobal.browsingContext;
-
-  
-  
-  if (
-    sessionContext.type == "browser-element" &&
-    browsingContext.browserId != sessionContext.browserId
-  ) {
-    return false;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  if (Cu.isRemoteProxy(windowGlobal.window)) {
-    return false;
-  }
-
-  return true;
 }
 
 

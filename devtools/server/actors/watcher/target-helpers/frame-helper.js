@@ -12,17 +12,8 @@ const {
   WindowGlobalLogger,
 } = require("devtools/server/connectors/js-window-actor/WindowGlobalLogger.jsm");
 const Targets = require("devtools/server/actors/targets/index");
-const {
-  getAllRemoteBrowsingContexts,
-  shouldNotifyWindowGlobal,
-} = require("devtools/server/actors/watcher/target-helpers/utils.js");
 
 const browsingContextAttachedObserverByWatcher = new Map();
-
-const isEveryFrameTargetEnabled = Services.prefs.getBoolPref(
-  "devtools.every-frame-target.enabled",
-  false
-);
 
 
 
@@ -90,8 +81,10 @@ async function createTargets(watcher) {
     });
   }
 
-  const browsingContexts = getFilteredRemoteBrowsingContext(
-    watcher.browserElement
+  const browsingContexts = watcher.getAllBrowsingContexts().filter(
+    
+    browsingContext =>
+      browsingContext != watcher.browserElement?.browsingContext
   );
   
   
@@ -168,17 +161,7 @@ async function createTargetForBrowsingContext({
 
 function destroyTargets(watcher) {
   
-  const browsingContexts = getFilteredRemoteBrowsingContext(
-    watcher.browserElement
-  );
-  if (
-    watcher.sessionContext.isServerTargetSwitchingEnabled &&
-    watcher.sessionContext.type == "browser-element"
-  ) {
-    
-    
-    browsingContexts.push(watcher.browserElement.browsingContext);
-  }
+  const browsingContexts = watcher.getAllBrowsingContexts();
 
   for (const browsingContext of browsingContexts) {
     logWindowGlobal(
@@ -290,57 +273,33 @@ function getWatchingBrowsingContexts(watcher) {
     watcher,
     Targets.TYPES.FRAME
   );
-  const { browserElement } = watcher;
-  const browsingContexts = watchingAdditionalTargets
-    ? getFilteredRemoteBrowsingContext(browserElement)
-    : [];
+  if (watchingAdditionalTargets) {
+    return watcher.getAllBrowsingContexts();
+  }
   
   
-  if (
-    watcher.sessionContext.type == "browser-element" ||
-    watcher.sessionContext.type == "webextension"
-  ) {
-    let topBrowsingContext;
-    if (watcher.sessionContext.type == "browser-element") {
-      topBrowsingContext = watcher.browserElement.browsingContext;
-    } else if (watcher.sessionContext.type == "webextension") {
-      topBrowsingContext = BrowsingContext.get(
-        watcher.sessionContext.addonBrowsingContextID
-      );
-    }
-
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (watcher.sessionContext.type == "webextension") {
+    const browsingContext = BrowsingContext.get(
+      watcher.sessionContext.addonBrowsingContextID
+    );
     
-    
-    
-    
-    
-    
-    if (
-      topBrowsingContext.currentWindowGlobal &&
-      topBrowsingContext.currentWindowGlobal.osPid != -1
-    ) {
-      browsingContexts.push(topBrowsingContext);
+    if (browsingContext.currentWindowGlobal) {
+      return [browsingContext];
     }
   }
-  return browsingContexts;
-}
-
-
-
-
-
-
-
-
-
-
-function getFilteredRemoteBrowsingContext(browserElement) {
-  return getAllRemoteBrowsingContexts(browserElement?.browsingContext).filter(
-    browsingContext =>
-      shouldNotifyWindowGlobal(browsingContext, browserElement?.browserId, {
-        acceptNonRemoteFrame: isEveryFrameTargetEnabled,
-      })
-  );
+  return [];
 }
 
 

@@ -17,11 +17,10 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 XPCOMUtils.defineLazyModuleGetters(this, {
+  isWindowGlobalPartOfContext:
+    "resource://devtools/server/actors/watcher/browsing-context-helpers.jsm",
   TargetActorRegistry:
     "resource://devtools/server/actors/targets/target-actor-registry.jsm",
-});
-
-XPCOMUtils.defineLazyModuleGetters(this, {
   WindowGlobalLogger:
     "resource://devtools/server/connectors/js-window-actor/WindowGlobalLogger.jsm",
 });
@@ -33,80 +32,6 @@ const isEveryFrameTargetEnabled = Services.prefs.getBoolPref(
 
 
 const SHARED_DATA_KEY_NAME = "DevTools:watchedPerWatcher";
-
-
-
-
-function shouldNotifyWindowGlobal(
-  windowGlobal,
-  sessionContext,
-  { acceptTopLevelTarget = false }
-) {
-  const browsingContext = windowGlobal.browsingContext;
-  
-  
-  const window = Services.wm.getCurrentInnerWindowWithId(
-    windowGlobal.innerWindowId
-  );
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (window.document.isInitialDocument) {
-    return false;
-  }
-
-  
-  
-  if (
-    sessionContext.type == "browser-element" &&
-    browsingContext.browserId != sessionContext.browserId
-  ) {
-    return false;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (
-    !acceptTopLevelTarget &&
-    sessionContext.type == "browser-element" &&
-    !browsingContext.parent
-  ) {
-    return false;
-  }
-
-  
-  
-  
-  
-  
-  
-  if (!isEveryFrameTargetEnabled && !windowGlobal.isProcessRoot) {
-    return false;
-  }
-
-  return true;
-}
 
 
 const DEBUG = false;
@@ -181,15 +106,12 @@ class DevToolsFrameChild extends JSWindowActorChild {
       
       
       
-      
-      
-      const acceptTopLevelTarget =
-        sessionContext.isServerTargetSwitchingEnabled ||
-        (isBFCache && this.isBfcacheInParentEnabled);
+      const forceAcceptTopLevelTarget =
+        isBFCache && this.isBfcacheInParentEnabled;
       if (
         sessionData.targets.includes("frame") &&
-        shouldNotifyWindowGlobal(this.manager, sessionContext, {
-          acceptTopLevelTarget,
+        isWindowGlobalPartOfContext(this.manager, sessionContext, {
+          forceAcceptTopLevelTarget,
         })
       ) {
         
@@ -494,14 +416,18 @@ class DevToolsFrameChild extends JSWindowActorChild {
       
       if (
         this.manager.browsingContext.browserId != browserId &&
-        !shouldNotifyWindowGlobal(this.manager, browserId, {
-          acceptTopLevelTarget: true,
-        })
+        !isWindowGlobalPartOfContext(
+          this.manager,
+          message.data.sessionContext,
+          {
+            forceAcceptTopLevelTarget: true,
+          }
+        )
       ) {
         throw new Error(
           "Mismatch between DevToolsFrameParent and DevToolsFrameChild " +
             (this.manager.browsingContext.browserId == browserId
-              ? "window global shouldn't be notified (shouldNotifyWindowGlobal mismatch)"
+              ? "window global shouldn't be notified (isWindowGlobalPartOfContext mismatch)"
               : `expected browsing context with browserId ${browserId}, but got ${this.manager.browsingContext.browserId}`)
         );
       }
