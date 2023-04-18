@@ -120,13 +120,15 @@ void WritableStreamDefaultController::SetSignal(AbortSignal* aSignal) {
   mSignal = aSignal;
 }
 
-void WritableStreamDefaultControllerAdvanceQueueIfNeeded(
+MOZ_CAN_RUN_SCRIPT static void
+WritableStreamDefaultControllerAdvanceQueueIfNeeded(
     JSContext* aCx, WritableStreamDefaultController* aController,
     ErrorResult& aRv);
 
 class WritableStartPromiseNativeHandler final : public PromiseNativeHandler {
   ~WritableStartPromiseNativeHandler() = default;
 
+  
   RefPtr<WritableStreamDefaultController> mController;
 
  public:
@@ -137,7 +139,8 @@ class WritableStartPromiseNativeHandler final : public PromiseNativeHandler {
       WritableStreamDefaultController* aController)
       : PromiseNativeHandler(), mController(aController) {}
 
-  void ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue) override {
+  MOZ_CAN_RUN_SCRIPT void ResolvedCallback(
+      JSContext* aCx, JS::Handle<JS::Value> aValue) override {
     
     
     
@@ -150,13 +153,15 @@ class WritableStartPromiseNativeHandler final : public PromiseNativeHandler {
     
     
     IgnoredErrorResult rv;
-    WritableStreamDefaultControllerAdvanceQueueIfNeeded(aCx, mController, rv);
+    WritableStreamDefaultControllerAdvanceQueueIfNeeded(
+        aCx, MOZ_KnownLive(mController), rv);
     if (rv.MaybeSetPendingException(aCx)) {
       return;
     }
   }
 
-  void RejectedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue) override {
+  MOZ_CAN_RUN_SCRIPT void RejectedCallback(
+      JSContext* aCx, JS::Handle<JS::Value> aValue) override {
     
     RefPtr<WritableStream> stream = mController->Stream();
     
@@ -331,7 +336,8 @@ class SinkCloseNativePromiseHandler final : public PromiseNativeHandler {
     stream->FinishInFlightClose();
   }
 
-  void RejectedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue) override {
+  MOZ_CAN_RUN_SCRIPT void RejectedCallback(
+      JSContext* aCx, JS::Handle<JS::Value> aValue) override {
     
     RefPtr<WritableStream> stream = mController->Stream();
     
@@ -355,7 +361,7 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(SinkCloseNativePromiseHandler)
 NS_INTERFACE_MAP_END
 
 
-void WritableStreamDefaultControllerProcessClose(
+MOZ_CAN_RUN_SCRIPT static void WritableStreamDefaultControllerProcessClose(
     JSContext* aCx, WritableStreamDefaultController* aController,
     ErrorResult& aRv) {
   
@@ -395,6 +401,7 @@ void WritableStreamDefaultControllerProcessClose(
 class SinkWriteNativePromiseHandler final : public PromiseNativeHandler {
   ~SinkWriteNativePromiseHandler() = default;
 
+  
   RefPtr<WritableStreamDefaultController> mController;
 
  public:
@@ -405,7 +412,8 @@ class SinkWriteNativePromiseHandler final : public PromiseNativeHandler {
       WritableStreamDefaultController* aController)
       : PromiseNativeHandler(), mController(aController) {}
 
-  void ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue) override {
+  MOZ_CAN_RUN_SCRIPT void ResolvedCallback(
+      JSContext* aCx, JS::Handle<JS::Value> aValue) override {
     
     RefPtr<WritableStream> stream = mController->Stream();
 
@@ -441,14 +449,16 @@ class SinkWriteNativePromiseHandler final : public PromiseNativeHandler {
     
     
     IgnoredErrorResult rv;
-    WritableStreamDefaultControllerAdvanceQueueIfNeeded(aCx, mController, rv);
+    WritableStreamDefaultControllerAdvanceQueueIfNeeded(
+        aCx, MOZ_KnownLive(mController), rv);
     
     NS_WARNING_ASSERTION(
         !rv.Failed(),
         "WritableStreamDefaultControllerAdvanceQueueIfNeeded failed");
   }
 
-  void RejectedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue) override {
+  MOZ_CAN_RUN_SCRIPT void RejectedCallback(
+      JSContext* aCx, JS::Handle<JS::Value> aValue) override {
     
     RefPtr<WritableStream> stream = mController->Stream();
 
@@ -476,7 +486,7 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(SinkWriteNativePromiseHandler)
 NS_INTERFACE_MAP_END
 
 
-void WritableStreamDefaultControllerProcessWrite(
+MOZ_CAN_RUN_SCRIPT static void WritableStreamDefaultControllerProcessWrite(
     JSContext* aCx, WritableStreamDefaultController* aController,
     JS::Handle<JS::Value> aChunk, ErrorResult& aRv) {
   
@@ -511,7 +521,7 @@ void WritableStreamDefaultControllerProcessWrite(
 constexpr JSWhyMagic CLOSE_SENTINEL = JS_GENERIC_MAGIC;
 
 
-void WritableStreamDefaultControllerAdvanceQueueIfNeeded(
+static void WritableStreamDefaultControllerAdvanceQueueIfNeeded(
     JSContext* aCx, WritableStreamDefaultController* aController,
     ErrorResult& aRv) {
   

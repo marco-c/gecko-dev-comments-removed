@@ -135,7 +135,7 @@ Nullable<double> WritableStreamDefaultWriter::GetDesiredSize(ErrorResult& aRv) {
 }
 
 
-already_AddRefed<Promise> WritableStreamDefaultWriterAbort(
+MOZ_CAN_RUN_SCRIPT already_AddRefed<Promise> WritableStreamDefaultWriterAbort(
     JSContext* aCx, WritableStreamDefaultWriter* aWriter,
     JS::Handle<JS::Value> aReason, ErrorResult& aRv) {
   
@@ -164,8 +164,10 @@ already_AddRefed<Promise> WritableStreamDefaultWriter::Abort(
 }
 
 
-already_AddRefed<Promise> WritableStreamDefaultWriterClose(
-    JSContext* aCx, WritableStreamDefaultWriter* aWriter, ErrorResult& aRv) {
+MOZ_CAN_RUN_SCRIPT static already_AddRefed<Promise>
+WritableStreamDefaultWriterClose(JSContext* aCx,
+                                 WritableStreamDefaultWriter* aWriter,
+                                 ErrorResult& aRv) {
   
   RefPtr<WritableStream> stream = aWriter->GetStream();
 
@@ -268,9 +270,11 @@ void WritableStreamDefaultWriter::ReleaseLock(JSContext* aCx,
 }
 
 
-already_AddRefed<Promise> WritableStreamDefaultWriterWrite(
-    JSContext* aCx, WritableStreamDefaultWriter* aWriter,
-    JS::Handle<JS::Value> aChunk, ErrorResult& aRv) {
+MOZ_CAN_RUN_SCRIPT static already_AddRefed<Promise>
+WritableStreamDefaultWriterWrite(JSContext* aCx,
+                                 WritableStreamDefaultWriter* aWriter,
+                                 JS::Handle<JS::Value> aChunk,
+                                 ErrorResult& aRv) {
   
   RefPtr<WritableStream> stream = aWriter->GetStream();
 
