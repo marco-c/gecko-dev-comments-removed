@@ -9,6 +9,7 @@
 #include "mozilla/Assertions.h"  
 
 #include "frontend/BytecodeEmitter.h"  
+#include "frontend/IfEmitter.h"        
 #include "frontend/SharedContext.h"    
 #include "vm/Opcodes.h"                
 
@@ -222,7 +223,24 @@ bool TryEmitter::emitFinallyEnd() {
     }
   }
 
+  InternalIfEmitter ifThrowing(bce_);
+  if (!ifThrowing.emitThenElse()) {
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::Throw)) {
+    return false;
+  }
+
+  if (!ifThrowing.emitElse()) {
+    return false;
+  }
+
   if (!bce_->emit1(JSOp::Retsub)) {
+    return false;
+  }
+
+  if (!ifThrowing.emitEnd()) {
     return false;
   }
 

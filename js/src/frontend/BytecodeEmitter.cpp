@@ -5061,12 +5061,12 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitTry(TryNode* tryNode) {
   
   
 
-  if (!emit1(JSOp::False)) {
+  BytecodeOffset off;
+  if (!emitN(JSOp::ResumeIndex, 3, &off)) {
     return false;
   }
 
-  BytecodeOffset off;
-  if (!emitN(JSOp::ResumeIndex, 3, &off)) {
+  if (!emit1(JSOp::False)) {
     return false;
   }
 

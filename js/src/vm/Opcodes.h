@@ -2636,6 +2636,9 @@
 
 
 
+
+
+
  \
     MACRO(ResumeIndex, resume_index, NULL, 4, 0, 1, JOF_RESUMEINDEX) \
     
@@ -2659,10 +2662,8 @@
 
 
 
-
-
  \
-    MACRO(Retsub, retsub, NULL, 1, 2, 0, JOF_BYTE) \
+    MACRO(Retsub, retsub, NULL, 1, 1, 0, JOF_BYTE) \
     
 
 

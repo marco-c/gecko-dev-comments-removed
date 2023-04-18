@@ -3403,8 +3403,8 @@ void MacroAssemblerARMCompat::handleFailureWithHandlerTail(
            scratch);
   }
 
-  pushValue(BooleanValue(true));
   pushValue(exception);
+  pushValue(BooleanValue(true));
   jump(r0);
 
   

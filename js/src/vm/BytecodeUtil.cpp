@@ -946,9 +946,8 @@ bool BytecodeParser::parse() {
         
         
         
-        
         uint32_t resumeOffset = script_->resumeOffsets()[GET_UINT24(pc)];
-        if (!recordBytecode(resumeOffset, offsetStack, stackDepth - 2)) {
+        if (!recordBytecode(resumeOffset, offsetStack, stackDepth - 1)) {
           return false;
         }
         break;
@@ -2116,10 +2115,10 @@ bool ExpressionDecompiler::decompilePC(jsbytecode* pc, uint8_t defIndex) {
         
         
         if (defIndex == 0) {
-          return write("THROWING");
+          return write("PC");
         }
         MOZ_ASSERT(defIndex == 1);
-        return write("PC");
+        return write("THROWING");
 
       case JSOp::FunctionThis:
       case JSOp::ImplicitThis:

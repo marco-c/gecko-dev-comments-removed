@@ -1846,7 +1846,6 @@ void MacroAssemblerMIPS64Compat::handleFailureWithHandlerTail(
 
   
   
-  
   bind(&finally);
   ValueOperand exception = ValueOperand(a1);
   loadValue(Address(sp, offsetof(ResumeFromException, exception)), exception);
@@ -1856,8 +1855,8 @@ void MacroAssemblerMIPS64Compat::handleFailureWithHandlerTail(
           BaselineFrameReg);
   loadPtr(Address(sp, offsetof(ResumeFromException, stackPointer)), sp);
 
-  pushValue(BooleanValue(true));
   pushValue(exception);
+  pushValue(BooleanValue(true));
   jump(a0);
 
   

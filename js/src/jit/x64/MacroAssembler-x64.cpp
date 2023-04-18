@@ -528,7 +528,6 @@ void MacroAssemblerX64::handleFailureWithHandlerTail(Label* profilerExitTail) {
 
   
   
-  
   bind(&finally);
   ValueOperand exception = ValueOperand(rcx);
   loadValue(Address(esp, offsetof(ResumeFromException, exception)), exception);
@@ -537,8 +536,8 @@ void MacroAssemblerX64::handleFailureWithHandlerTail(Label* profilerExitTail) {
   loadPtr(Address(rsp, offsetof(ResumeFromException, framePointer)), rbp);
   loadPtr(Address(rsp, offsetof(ResumeFromException, stackPointer)), rsp);
 
-  pushValue(BooleanValue(true));
   pushValue(exception);
+  pushValue(BooleanValue(true));
   jmp(Operand(rax));
 
   

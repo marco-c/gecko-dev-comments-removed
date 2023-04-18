@@ -10165,8 +10165,6 @@ js::shell::AutoReportException::~AutoReportException() {
 
     
     
-    
-    
     RootedObject stack(cx, exnStack.stack());
     if (exnStack.exception().isObject()) {
       RootedObject exception(cx, &exnStack.exception().toObject());

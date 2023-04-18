@@ -268,7 +268,6 @@ void MacroAssemblerCompat::handleFailureWithHandlerTail(
 
   
   
-  
   bind(&finally);
   ARMRegister exception = x1;
   Ldr(exception, MemOperand(PseudoStackPointer64,
@@ -282,8 +281,8 @@ void MacroAssemblerCompat::handleFailureWithHandlerTail(
       MemOperand(PseudoStackPointer64,
                  offsetof(ResumeFromException, stackPointer)));
   syncStackPtr();
-  pushValue(BooleanValue(true));
   push(exception);
+  pushValue(BooleanValue(true));
   Br(x0);
 
   

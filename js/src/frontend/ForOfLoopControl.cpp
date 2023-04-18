@@ -90,13 +90,20 @@ bool ForOfLoopControl::emitEndCodeNeedingIteratorClose(BytecodeEmitter* bce) {
   
   
   
+  
+  
+  
   uint32_t numYieldsEmitted = bce->bytecodeSection().numYields();
   if (numYieldsEmitted > numYieldsAtBeginCodeNeedingIterClose_) {
     if (!tryCatch_->emitFinally()) {
       return false;
     }
-
+    
     InternalIfEmitter ifGeneratorClosing(bce);
+    if (!bce->emit1(JSOp::Swap)) {
+      
+      return false;
+    }
     if (!bce->emit1(JSOp::IsGenClosing)) {
       
       return false;
@@ -115,6 +122,10 @@ bool ForOfLoopControl::emitEndCodeNeedingIteratorClose(BytecodeEmitter* bce) {
       return false;
     }
     if (!ifGeneratorClosing.emitEnd()) {
+      
+      return false;
+    }
+    if (!bce->emit1(JSOp::Swap)) {
       
       return false;
     }
