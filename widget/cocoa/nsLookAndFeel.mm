@@ -177,11 +177,7 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aScheme, nscolor
       color = NS_RGB(0xFF, 0xFF, 0xFF);
       break;
     case ColorID::MozButtonactivetext:
-      
-      
-      
-      color = nsCocoaFeatures::OnMontereyOrLater() ? GetColorFromNSColor(NSColor.controlTextColor)
-                                                   : NS_RGB(0xFF, 0xFF, 0xFF);
+      color = GetColorFromNSColor(NSColor.selectedControlTextColor);
       break;
     case ColorID::Captiontext:
     case ColorID::Menutext:
