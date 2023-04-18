@@ -134,8 +134,10 @@ LauncherVoidResult LaunchUnelevated(int aArgc, wchar_t* aArgv[]) {
     return LAUNCHER_ERROR_FROM_HRESULT(mscom.GetHResult());
   }
 
+  constexpr wchar_t const* kTagArg[1] = {L"--" ATTEMPTING_DEELEVATION_FLAG};
   
-  UniquePtr<wchar_t[]> cmdLine(MakeCommandLine(aArgc - 1, aArgv + 1));
+  UniquePtr<wchar_t[]> cmdLine(
+      MakeCommandLine(aArgc - 1, aArgv + 1, 1, kTagArg));
   if (!cmdLine) {
     return LAUNCHER_ERROR_GENERIC();
   }
