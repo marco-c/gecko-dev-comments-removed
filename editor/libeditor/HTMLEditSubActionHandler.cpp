@@ -467,11 +467,14 @@ nsresult HTMLEditor::OnEndHandlingTopLevelEditSubActionInternal() {
     }
 
     
-    rv = RemoveEmptyNodesIn(
-        MOZ_KnownLive(*TopLevelEditSubActionDataRef().mChangedRange));
-    if (NS_FAILED(rv)) {
-      NS_WARNING("HTMLEditor::RemoveEmptyNodesIn() failed");
-      return rv;
+    
+    if (TopLevelEditSubActionDataRef().mNeedsToCleanUpEmptyElements) {
+      nsresult rv = RemoveEmptyNodesIn(
+          MOZ_KnownLive(*TopLevelEditSubActionDataRef().mChangedRange));
+      if (NS_FAILED(rv)) {
+        NS_WARNING("HTMLEditor::RemoveEmptyNodesIn() failed");
+        return rv;
+      }
     }
 
     
@@ -634,7 +637,7 @@ nsresult HTMLEditor::OnEndHandlingTopLevelEditSubActionInternal() {
     
     
     if (mPlaceholderBatch &&
-        TopLevelEditSubActionDataRef().mNeedsToCleanUpEmptyInlineElements &&
+        TopLevelEditSubActionDataRef().mNeedsToCleanUpEmptyElements &&
         SelectionRef().IsCollapsed() && SelectionRef().GetFocusNode()) {
       RefPtr<Element> mostDistantEmptyInlineAncestor = nullptr;
       for (Element* ancestor :

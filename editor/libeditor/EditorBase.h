@@ -869,7 +869,10 @@ class EditorBase : public nsIEditor,
     
     
     
-    bool mNeedsToCleanUpEmptyInlineElements;
+    
+    
+    
+    bool mNeedsToCleanUpEmptyElements;
 
     
 
@@ -918,7 +921,7 @@ class EditorBase : public nsIEditor,
       mDidDeleteEmptyParentBlocks = false;
       mRestoreContentEditableCount = false;
       mDidNormalizeWhitespaces = false;
-      mNeedsToCleanUpEmptyInlineElements = true;
+      mNeedsToCleanUpEmptyElements = true;
     }
 
     
