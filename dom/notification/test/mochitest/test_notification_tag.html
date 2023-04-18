@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=782211
+-->
 <head>
   <title>Bug 782211</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -95,10 +95,7 @@
         throw Components.Exception("", Cr.NS_ERROR_NO_INTERFACE);
       },
 
-      createInstance(aOuter, aIID) {
-        if (aOuter != null) {
-          throw Components.Exception("", Cr.NS_ERROR_NO_AGGREGATION);
-        }
+      createInstance(aIID) {
         return this.QueryInterface(aIID);
       },
     };

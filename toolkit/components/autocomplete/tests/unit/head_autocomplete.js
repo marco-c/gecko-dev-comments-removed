@@ -151,7 +151,7 @@ AutoCompleteSearchBase.prototype = {
   ]),
 
   
-  createInstance(outer, iid) {
+  createInstance(iid) {
     return this.QueryInterface(iid);
   },
 };

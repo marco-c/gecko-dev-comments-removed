@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=936340
+-->
 <head>
   <title>Test that sendBeacon obeys content policy directives</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -42,9 +42,9 @@ function setupPolicy() {
         return this;
       throw SpecialPowers.Cr.NS_ERROR_NO_INTERFACE;
     },
-    
+
     // nsIFactory implementation
-    createInstance(outer, iid) {
+    createInstance(iid) {
       return this.QueryInterface(iid);
     },
 

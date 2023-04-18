@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1329288
+-->
 <head>
   <title>Test for Bug 1329288</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>        
@@ -12,7 +12,7 @@
 <a target="_blank" href="https://bugzilla.mozilla.org/show_bug.cgi?id=1329288">Mozilla Bug 1329288</a>
 
 
-
+<!-- have a testlink which we can use for the test to open a new window -->
 <a href="http://test1.example.org/tests/docshell/test/navigation/file_contentpolicy_block_window.html"
    target="_blank"
    id="testlink">This is a link</a>
@@ -50,7 +50,7 @@ var policy = {
   },
 
   // nsIFactory implementation
-  createInstance(outer, iid) {
+  createInstance(iid) {
     return this.QueryInterface(iid);
   },
 

@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=375314
+-->
 <head>
   <title>Test for Bug 375314</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -38,7 +38,7 @@ function createChromeScript() {
     ]),
 
     // nsIFactory implementation
-    createInstance(outer, iid) {
+    createInstance(iid) {
       return this.QueryInterface(iid);
     },
 

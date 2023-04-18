@@ -8,8 +8,7 @@
 
 extern "C" {
 
-nsresult nsKeyValueServiceConstructor(nsISupports* aOuter, REFNSIID aIID,
-                                      void** aResult);
+nsresult nsKeyValueServiceConstructor(REFNSIID aIID, void** aResult);
 }  
 
 NS_DEFINE_NAMED_CID(NS_KEY_VALUE_SERVICE_CID);
