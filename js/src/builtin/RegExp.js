@@ -349,7 +349,7 @@ function RegExpReplaceSlowPath(rx, S, lengthS, replaceValue,
     }
 
     
-    var results = [];
+    var results = new_List();
     var nResults = 0;
 
     
@@ -456,7 +456,7 @@ function RegExpGetComplexReplacement(result, matched, S, position,
                                      functionalReplace, firstDollarIndex)
 {
     
-    var captures = [];
+    var captures = new_List();
     var capturesLength = 0;
 
     
@@ -546,7 +546,7 @@ function RegExpGetFunctionalReplacement(result, S, position, replaceValue) {
     }
 
     
-    var captures = [];
+    var captures = new_List();
     for (var n = 0; n <= nCaptures; n++) {
         assert(typeof result[n] === "string" || result[n] === undefined,
                "RegExpMatcher returns only strings and undefined");

@@ -33,15 +33,6 @@
 
 
 
-
-function new_List() {
-    return std_Object_create(null);
-}
-
-
-
-
-
 function new_Record() {
     return std_Object_create(null);
 }

@@ -14,7 +14,7 @@ function CallModuleResolveHook(module, moduleRequest, expectedMinimumStatus)
 
 
 
-function ModuleGetExportedNames(exportStarSet = [])
+function ModuleGetExportedNames(exportStarSet = new_List())
 {
     if (!IsObject(this) || !IsModule(this)) {
         return callFunction(CallModuleMethodIfWrapped, this, exportStarSet,
@@ -26,13 +26,13 @@ function ModuleGetExportedNames(exportStarSet = [])
 
     
     if (callFunction(std_Array_includes, exportStarSet, module))
-        return [];
+        return new_List();
 
     
     DefineDataProperty(exportStarSet, exportStarSet.length, module);
 
     
-    let exportedNames = [];
+    let exportedNames = new_List();
     let namesCount = 0;
 
     
@@ -99,7 +99,7 @@ function ModuleSetStatus(module, newStatus)
 
 
 
-function ModuleResolveExport(exportName, resolveSet = [])
+function ModuleResolveExport(exportName, resolveSet = new_List())
 {
     assert(typeof exportName === "string", "ModuleResolveExport");
 
@@ -206,7 +206,7 @@ function GetModuleNamespace(module)
     
     if (typeof namespace === "undefined") {
         let exportedNames = callFunction(module.getExportedNames, module);
-        let unambiguousNames = [];
+        let unambiguousNames = new_List();
         for (let i = 0; i < exportedNames.length; i++) {
             let name = exportedNames[i];
             let resolution = callFunction(module.resolveExport, module, name);
@@ -312,7 +312,7 @@ function ModuleInstantiate()
     }
 
     
-    let stack = [];
+    let stack = new_List();
 
     
     try {
@@ -601,7 +601,7 @@ function ModuleEvaluate()
     const capability = CreateTopLevelCapability(module);
 
     
-    let stack = [];
+    let stack = new_List();
 
     
     try {
@@ -746,7 +746,7 @@ function InnerModuleEvaluation(module, stack, index)
 }
 
 
-function GatherAsyncParentCompletions(module, execList = []) {
+function GatherAsyncParentCompletions(module, execList = new_List()) {
   assert(module.status == MODULE_STATUS_EVALUATED, "bad status for async module");
 
   
