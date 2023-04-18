@@ -43,22 +43,11 @@ inline void EmitReturnFromIC(MacroAssembler& masm) {
   masm.abiret();  
 }
 
-inline void EmitBaselineLeaveStubFrame(MacroAssembler& masm,
-                                       bool calledIntoIon = false) {
+inline void EmitBaselineLeaveStubFrame(MacroAssembler& masm) {
   vixl::UseScratchRegisterScope temps(&masm.asVIXL());
   const ARMRegister scratch64 = temps.AcquireX();
 
-  
-  
-  
-  
-  if (calledIntoIon) {
-    masm.pop(scratch64.asUnsized());
-    masm.Lsr(scratch64, scratch64, FRAMESIZE_SHIFT);
-    masm.Add(masm.GetStackPointer64(), masm.GetStackPointer64(), scratch64);
-  } else {
-    masm.Mov(masm.GetStackPointer64(), FramePointer64);
-  }
+  masm.moveToStackPtr(FramePointer);
 
   
   masm.pop(FramePointer, ICStubReg, ICTailCallReg, scratch64.asUnsized());

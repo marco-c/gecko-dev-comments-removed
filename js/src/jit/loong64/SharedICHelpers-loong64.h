@@ -52,20 +52,8 @@ inline void EmitCallIC(MacroAssembler& masm, CodeOffset* callOffset) {
 
 inline void EmitReturnFromIC(MacroAssembler& masm) { masm.branch(ra); }
 
-inline void EmitBaselineLeaveStubFrame(MacroAssembler& masm,
-                                       bool calledIntoIon = false) {
-  
-  
-  
-  
-  if (calledIntoIon) {
-    ScratchRegisterScope scratch(masm);
-    masm.pop(scratch);
-    masm.rshiftPtr(Imm32(FRAMESIZE_SHIFT), scratch);
-    masm.addPtr(scratch, BaselineStackReg);
-  } else {
-    masm.movePtr(FramePointer, BaselineStackReg);
-  }
+inline void EmitBaselineLeaveStubFrame(MacroAssembler& masm) {
+  masm.movePtr(FramePointer, StackPointer);
 
   
   masm.loadPtr(Address(StackPointer, offsetof(BaselineStubFrame, savedFrame)),
