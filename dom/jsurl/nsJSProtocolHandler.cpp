@@ -232,18 +232,19 @@ nsresult nsJSThunk::EvaluateScript(
 
   mozilla::dom::Document* targetDoc = innerWin->GetExtantDoc();
 
-  if (targetDoc) {
-    
-    
-    if (targetDoc->HasScriptsBlockedBySandbox()) {
-      if (nsCOMPtr<nsIObserverService> obs =
-              mozilla::services::GetObserverService()) {
-        obs->NotifyWhenScriptSafe(ToSupports(innerWin),
-                                  "javascript-uri-blocked-by-sandbox");
-      }
-      return NS_ERROR_DOM_RETVAL_UNDEFINED;
+  
+  
+  if ((targetDoc && !targetDoc->IsScriptEnabled()) ||
+      (loadInfo->GetTriggeringSandboxFlags() & SANDBOXED_SCRIPTS)) {
+    if (nsCOMPtr<nsIObserverService> obs =
+            mozilla::services::GetObserverService()) {
+      obs->NotifyWhenScriptSafe(ToSupports(innerWin),
+                                "javascript-uri-blocked-by-sandbox");
     }
+    return NS_ERROR_DOM_RETVAL_UNDEFINED;
+  }
 
+  if (targetDoc) {
     
     
     
