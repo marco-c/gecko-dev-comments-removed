@@ -265,7 +265,9 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
   virtual void ScrollTo(nsPoint aScrollPosition, ScrollMode aMode,
                         const nsRect* aRange = nullptr,
                         nsIScrollbarMediator::ScrollSnapMode aSnap =
-                            nsIScrollbarMediator::DISABLE_SNAP) = 0;
+                            nsIScrollbarMediator::DISABLE_SNAP,
+                        mozilla::ScrollTriggeredByScript aTriggeredByScript =
+                            mozilla::ScrollTriggeredByScript::No) = 0;
   
 
 
