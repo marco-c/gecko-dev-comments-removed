@@ -329,25 +329,40 @@ add_task(async function test_iframe_navigate() {
     gBrowser,
     iframeURI2
   );
-  let newIFrameTabChildID = browsingContextChildID(
+  let firstTabChildID = browsingContextChildID(
     gBrowser.selectedBrowser.browsingContext
   );
 
   Assert.equal(
-    gTabPriorityWatcher.currentPriority(newIFrameTabChildID),
+    gTabPriorityWatcher.currentPriority(firstTabChildID),
     PROCESS_PRIORITY_FOREGROUND,
     "Loading a new tab should make it prioritized"
   );
+
+  if (SpecialPowers.useRemoteSubframes) {
+    
+    
+    
+    let remoteType = gBrowser.selectedBrowser.remoteType;
+    await TestUtils.waitForCondition(() => {
+      return (
+        ChromeUtils.getAllDOMProcesses().filter(
+          process => process.remoteType == remoteType
+        ).length == 1
+      );
+    }, `Waiting for there to be only one process with remote type ${remoteType}`);
+  }
 
   await BrowserTestUtils.withNewTab(
     "https://example.com/browser/dom/ipc/tests/file_cross_frame.html",
     async browser => {
       Assert.equal(
-        gTabPriorityWatcher.currentPriority(newIFrameTabChildID),
+        gTabPriorityWatcher.currentPriority(firstTabChildID),
         PROCESS_PRIORITY_BACKGROUND,
         "Switching to a new tab should deprioritize the old one"
       );
 
+      let secondTabChildID = browsingContextChildID(browser.browsingContext);
       let iframe = browser.browsingContext.children[0];
       let iframeChildID1 = browsingContextChildID(iframe);
 
@@ -365,16 +380,53 @@ add_task(async function test_iframe_navigate() {
       let iframePriority2 = gTabPriorityWatcher.currentPriority(iframeChildID2);
 
       if (SpecialPowers.useRemoteSubframes) {
+        
+        Assert.notEqual(
+          secondTabChildID,
+          firstTabChildID,
+          "file_cross_frame.html should be loaded into a different process " +
+            "than iframeURI2"
+        );
+
+        Assert.notEqual(
+          secondTabChildID,
+          iframeChildID1,
+          "file_cross_frame.html should be loaded into a different process " +
+            "than its initial iframe"
+        );
+
+        Assert.notEqual(
+          iframeChildID1,
+          firstTabChildID,
+          "The initial iframe loaded by file_cross_frame.html should be " +
+            "loaded into a different process than iframeURI2"
+        );
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         Assert.equal(
-          newIFrameTabChildID,
+          firstTabChildID,
           iframeChildID2,
           "The same site should get loaded into the same process"
         );
-        Assert.notEqual(
-          iframeChildID1,
-          iframeChildID2,
-          "Navigation should have switched processes"
-        );
+
+        
+        
+        
+        
         Assert.equal(
           iframePriority1,
           PROCESS_PRIORITY_BACKGROUND,
