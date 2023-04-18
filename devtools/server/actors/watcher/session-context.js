@@ -28,7 +28,6 @@
 
 
 
-const Services = require("Services");
 const Targets = require("devtools/server/actors/targets/index");
 const Resources = require("devtools/server/actors/resources/index");
 
@@ -49,15 +48,24 @@ const SESSION_TYPES = {
 
 
 
-function createBrowserSessionContext() {
+
+
+
+
+function createBrowserSessionContext(config) {
   const type = SESSION_TYPES.ALL;
+
   return {
     type,
     
     
     isServerTargetSwitchingEnabled: false,
-    supportedTargets: getWatcherSupportedTargets(type),
-    supportedResources: getWatcherSupportedResources(type),
+    supportedTargets: getWatcherSupportedTargets(type, {
+      isBrowserToolboxFission: config.isBrowserToolboxFission,
+    }),
+    supportedResources: getWatcherSupportedResources(type, {
+      isBrowserToolboxFission: config.isBrowserToolboxFission,
+    }),
   };
 }
 
@@ -155,12 +163,9 @@ function createWorkerSessionContext() {
 
 
 
-function getWatcherSupportedTargets(type) {
+function getWatcherSupportedTargets(type, { isBrowserToolboxFission } = {}) {
   
-  if (
-    type == SESSION_TYPES.ALL &&
-    !Services.prefs.getBoolPref("devtools.browsertoolbox.fission", false)
-  ) {
+  if (type == SESSION_TYPES.ALL && !isBrowserToolboxFission) {
     return {};
   }
 
@@ -179,12 +184,9 @@ function getWatcherSupportedTargets(type) {
 
 
 
-function getWatcherSupportedResources(type) {
+function getWatcherSupportedResources(type, { isBrowserToolboxFission } = {}) {
   
-  if (
-    type == SESSION_TYPES.ALL &&
-    !Services.prefs.getBoolPref("devtools.browsertoolbox.fission", false)
-  ) {
+  if (type == SESSION_TYPES.ALL && !isBrowserToolboxFission) {
     return {};
   }
 
