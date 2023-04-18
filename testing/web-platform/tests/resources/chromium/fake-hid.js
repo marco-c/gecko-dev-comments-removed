@@ -262,7 +262,7 @@ class FakeHidService {
 
   
   
-  async requestDevice(filters) {
+  async requestDevice(options) {
     return {devices: this.selectedDevices_};
   }
 
