@@ -13,7 +13,7 @@
 #include "HTMLEditorEventListener.h"
 #include "HTMLEditUtils.h"
 #include "InsertNodeTransaction.h"
-#include "JoinNodeTransaction.h"
+#include "JoinNodesTransaction.h"
 #include "ReplaceTextTransaction.h"
 #include "SplitNodeTransaction.h"
 #include "TypeInState.h"
@@ -4717,10 +4717,10 @@ JoinNodesResult HTMLEditor::JoinNodesWithTransaction(
   
   const uint32_t oldLeftNodeLen = aLeftContent.Length();
 
-  RefPtr<JoinNodeTransaction> transaction =
-      JoinNodeTransaction::MaybeCreate(*this, aLeftContent, aRightContent);
+  RefPtr<JoinNodesTransaction> transaction =
+      JoinNodesTransaction::MaybeCreate(*this, aLeftContent, aRightContent);
   if (MOZ_UNLIKELY(!transaction)) {
-    NS_WARNING("JoinNodeTransaction::MaybeCreate() failed");
+    NS_WARNING("JoinNodesTransaction::MaybeCreate() failed");
     return JoinNodesResult(NS_ERROR_FAILURE);
   }
 

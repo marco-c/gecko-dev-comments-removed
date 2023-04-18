@@ -3,11 +3,12 @@
 
 
 
-#ifndef JoinNodeTransaction_h
-#define JoinNodeTransaction_h
+#ifndef JoinNodesTransaction_h
+#define JoinNodesTransaction_h
 
-#include "mozilla/EditTransactionBase.h"  
-#include "nsCOMPtr.h"                     
+#include "EditTransactionBase.h"  
+
+#include "nsCOMPtr.h"  
 #include "nsCycleCollectionParticipant.h"
 #include "nsID.h"    
 #include "nscore.h"  
@@ -25,10 +26,10 @@ class HTMLEditor;
 
 
 
-class JoinNodeTransaction final : public EditTransactionBase {
+class JoinNodesTransaction final : public EditTransactionBase {
  protected:
-  JoinNodeTransaction(HTMLEditor& aHTMLEditor, nsIContent& aLeftContent,
-                      nsIContent& aRightContent);
+  JoinNodesTransaction(HTMLEditor& aHTMLEditor, nsIContent& aLeftContent,
+                       nsIContent& aRightContent);
 
  public:
   
@@ -39,7 +40,7 @@ class JoinNodeTransaction final : public EditTransactionBase {
 
 
 
-  static already_AddRefed<JoinNodeTransaction> MaybeCreate(
+  static already_AddRefed<JoinNodesTransaction> MaybeCreate(
       HTMLEditor& aHTMLEditor, nsIContent& aLeftContent,
       nsIContent& aRightContent);
 
@@ -49,17 +50,17 @@ class JoinNodeTransaction final : public EditTransactionBase {
 
   bool CanDoIt() const;
 
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(JoinNodeTransaction,
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(JoinNodesTransaction,
                                            EditTransactionBase)
   NS_IMETHOD QueryInterface(REFNSIID aIID, void** aInstancePtr) override;
 
   NS_DECL_EDITTRANSACTIONBASE
-  NS_DECL_EDITTRANSACTIONBASE_GETASMETHODS_OVERRIDE(JoinNodeTransaction)
+  NS_DECL_EDITTRANSACTIONBASE_GETASMETHODS_OVERRIDE(JoinNodesTransaction)
 
   MOZ_CAN_RUN_SCRIPT NS_IMETHOD RedoTransaction() override;
 
   friend std::ostream& operator<<(std::ostream& aStream,
-                                  const JoinNodeTransaction& aTransaction);
+                                  const JoinNodesTransaction& aTransaction);
 
  protected:
   RefPtr<HTMLEditor> mHTMLEditor;

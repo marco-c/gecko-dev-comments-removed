@@ -22,7 +22,7 @@
 #include "HTMLEditUtils.h"               
 #include "InsertNodeTransaction.h"       
 #include "InsertTextTransaction.h"       
-#include "JoinNodeTransaction.h"         
+#include "JoinNodesTransaction.h"        
 #include "PlaceholderTransaction.h"      
 #include "SplitNodeTransaction.h"        
 #include "mozilla/intl/BidiEmbeddingLevel.h"
