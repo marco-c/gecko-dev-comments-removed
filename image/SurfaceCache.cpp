@@ -1880,11 +1880,8 @@ void SurfaceCache::ReleaseImageOnMainThread(
   }
 
   
+  
   if (gXPCOMThreadsShutDown) {
-    
-    
-    
-    image::Image* intentionalLeak = aImage.take();
     return;
   }
 
