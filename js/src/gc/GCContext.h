@@ -4,8 +4,8 @@
 
 
 
-#ifndef gc_FreeOp_h
-#define gc_FreeOp_h
+#ifndef gc_GCContext_h
+#define gc_GCContext_h
 
 #include "mozilla/Assertions.h"  
 #include "mozilla/ThreadLocal.h"

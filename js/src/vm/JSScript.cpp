@@ -37,7 +37,7 @@
 #include "frontend/SourceNotes.h"  
 #include "frontend/StencilXdr.h"   
 #include "gc/AllocKind.h"          
-#include "gc/FreeOp.h"
+#include "gc/GCContext.h"
 #include "jit/BaselineJIT.h"
 #include "jit/CacheIRHealth.h"
 #include "jit/Invalidation.h"

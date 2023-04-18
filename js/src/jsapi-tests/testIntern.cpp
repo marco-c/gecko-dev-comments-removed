@@ -2,7 +2,7 @@
 
 
 
-#include "gc/FreeOp.h"
+#include "gc/GCContext.h"
 #include "gc/Marking.h"
 #include "jsapi-tests/tests.h"
 #include "util/Text.h"

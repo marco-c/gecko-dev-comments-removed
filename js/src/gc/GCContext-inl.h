@@ -4,10 +4,10 @@
 
 
 
-#ifndef gc_FreeOp_inl_h
-#define gc_FreeOp_inl_h
+#ifndef gc_GCContext_inl_h
+#define gc_GCContext_inl_h
 
-#include "gc/FreeOp.h"
+#include "gc/GCContext.h"
 
 #include "gc/ZoneAllocator.h"
 #include "js/RefCounted.h"

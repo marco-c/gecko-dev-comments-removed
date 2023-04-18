@@ -15,7 +15,7 @@
 #include "debugger/DebugAPI.h"    
 #include "debugger/Debugger.h"    
 #include "gc/Cell.h"              
-#include "gc/FreeOp.h"            
+#include "gc/GCContext.h"         
 #include "gc/GCEnum.h"            
 #include "gc/Marking.h"           
 #include "gc/Zone.h"              
@@ -29,8 +29,8 @@
 #include "vm/Runtime.h"           
 #include "vm/Stack.h"             
 
-#include "gc/FreeOp-inl.h"            
 #include "gc/GC-inl.h"                
+#include "gc/GCContext-inl.h"         
 #include "gc/Marking-inl.h"           
 #include "gc/WeakMap-inl.h"           
 #include "vm/BytecodeIterator-inl.h"  
