@@ -2950,9 +2950,8 @@ class HTMLEditor final : public EditorBase,
 
 
 
-
-  Element* GetNextTableRowElement(Element& aTableRowElement,
-                                  ErrorResult& aRv) const;
+  Result<RefPtr<Element>, nsresult> GetNextTableRowElement(
+      const Element& aTableRowElement) const;
 
   struct CellData;
 
