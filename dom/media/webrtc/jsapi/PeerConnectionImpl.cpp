@@ -2717,10 +2717,13 @@ nsTArray<RefPtr<dom::RTCStatsPromise>> PeerConnectionImpl::GetSenderStats(
             local.mBytesSent.Construct(audioStats->payload_bytes_sent);
             local.mNackCount.Construct(
                 audioStats->rtcp_packet_type_counts.nack_packets);
+            local.mHeaderBytesSent.Construct(
+                audioStats->header_and_padding_bytes_sent);
+            local.mRetransmittedPacketsSent.Construct(
+                audioStats->retransmitted_packets_sent);
+            local.mRetransmittedBytesSent.Construct(
+                audioStats->retransmitted_bytes_sent);
             
-
-
-
 
 
 
@@ -2805,14 +2808,14 @@ nsTArray<RefPtr<dom::RTCStatsPromise>> PeerConnectionImpl::GetSenderStats(
             if (streamStats->qp_sum) {
               local.mQpSum.Construct(*streamStats->qp_sum);
             }
+            local.mHeaderBytesSent.Construct(
+                streamStats->rtp_stats.transmitted.header_bytes +
+                streamStats->rtp_stats.transmitted.padding_bytes);
+            local.mRetransmittedPacketsSent.Construct(
+                streamStats->rtp_stats.retransmitted.packets);
+            local.mRetransmittedBytesSent.Construct(
+                streamStats->rtp_stats.retransmitted.payload_bytes);
             
-
-
-
-
-
-
-
 
 
 
