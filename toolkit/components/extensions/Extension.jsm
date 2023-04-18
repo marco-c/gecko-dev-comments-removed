@@ -2559,12 +2559,14 @@ class Extension extends ExtensionData {
 
   
   
+  
   serializeExtended() {
     return {
       backgroundScripts: this.backgroundScripts,
       backgroundWorkerScript: this.backgroundWorkerScript,
       childModules: this.modules && this.modules.child,
       dependencies: this.dependencies,
+      persistentBackground: this.persistentBackground,
       schemaURLs: this.schemaURLs,
     };
   }

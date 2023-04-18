@@ -1335,6 +1335,20 @@ this.menusInternal = class extends ExtensionAPIPersistent {
       menusInternal: {
         create: function(createProperties) {
           
+          if (!extension.persistentBackground) {
+            if (!createProperties.id) {
+              throw new ExtensionError(
+                "menus.create requires an id for non-persistent background scripts."
+              );
+            }
+            if (gMenuMap.get(extension).has(createProperties.id)) {
+              throw new ExtensionError(
+                `The menu id ${createProperties.id} already exists in menus.create.`
+              );
+            }
+          }
+
+          
           
           
           let menuItem = new MenuItem(extension, createProperties);
