@@ -95,11 +95,6 @@ class MediaEngineSourceInterface {
   
 
 
-  virtual bool GetScary() const = 0;
-
-  
-
-
 
   virtual RefPtr<GenericNonExclusivePromise> GetFirstFramePromise() const {
     return nullptr;
@@ -243,9 +238,6 @@ class MediaEngineSource : public MediaEngineSourceInterface {
 
   
   bool IsFake() const override;
-
-  
-  bool GetScary() const override;
 
   
   nsresult FocusOnSelectedSource() override;
