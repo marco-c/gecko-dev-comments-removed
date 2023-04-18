@@ -751,10 +751,12 @@ RemoteLazyInputStream::AsyncWait(nsIInputStreamCallback* aCallback,
     }
   }
 
-  
-  
-  InputStreamCallbackRunnable::Execute(do_AddRef(aCallback),
-                                       do_AddRef(eventTarget), this);
+  if (aCallback) {
+    
+    
+    InputStreamCallbackRunnable::Execute(do_AddRef(aCallback),
+                                         do_AddRef(eventTarget), this);
+  }
   return NS_OK;
 }
 
