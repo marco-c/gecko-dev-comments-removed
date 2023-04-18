@@ -574,6 +574,10 @@ GlobalObject* GlobalObject::createInternal(JSContext* cx,
   }
   global->data().emptyGlobalScope.init(emptyGlobalScope);
 
+  if (!GlobalObject::createIntrinsicsHolder(cx, global)) {
+    return nullptr;
+  }
+
   if (!JSObject::setQualifiedVarObj(cx, global)) {
     return nullptr;
   }
@@ -837,26 +841,30 @@ bool GlobalObject::addToVarNames(JSContext* cx, JS::Handle<JSAtom*> name) {
 
 NativeObject* GlobalObject::getIntrinsicsHolder(JSContext* cx,
                                                 Handle<GlobalObject*> global) {
-  if (NativeObject* holder = global->data().intrinsicsHolder) {
-    return holder;
-  }
+  NativeObject* holder = global->data().intrinsicsHolder;
+  MOZ_ASSERT(holder);
+  return holder;
+}
 
+
+bool GlobalObject::createIntrinsicsHolder(JSContext* cx,
+                                          Handle<GlobalObject*> global) {
   Rooted<NativeObject*> intrinsicsHolder(
       cx, NewPlainObjectWithProto(cx, nullptr, TenuredObject));
   if (!intrinsicsHolder) {
-    return nullptr;
+    return false;
   }
 
   
   if (!DefineDataProperty(cx, intrinsicsHolder, cx->names().undefined,
                           UndefinedHandleValue,
                           JSPROP_PERMANENT | JSPROP_READONLY)) {
-    return nullptr;
+    return false;
   }
 
   
   global->data().intrinsicsHolder.init(intrinsicsHolder);
-  return intrinsicsHolder;
+  return true;
 }
 
 
