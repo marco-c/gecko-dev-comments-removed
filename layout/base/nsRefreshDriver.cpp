@@ -509,7 +509,7 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
         MOZ_ASSERT(NS_IsMainThread());
         sVsyncPriorityEnabled = mozilla::BrowserTabsRemoteAutostart();
 
-        mObserver->NotifyParentProcessVsync();
+        mObserver->NotifyVsyncOnMainThread();
         return NS_OK;
       }
 
@@ -540,16 +540,25 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
       }
 
       if (XRE_IsContentProcess()) {
-        NotifyParentProcessVsync();
+        
+        
+        
+        NotifyVsyncOnMainThread();
         return true;
       }
 
+      
+      
+      
+      
+      
+      
       nsCOMPtr<nsIRunnable> vsyncEvent = new ParentProcessVsyncNotifier(this);
       NS_DispatchToMainThread(vsyncEvent);
       return true;
     }
 
-    void NotifyParentProcessVsync() {
+    void NotifyVsyncOnMainThread() {
       
       
       MOZ_ASSERT(NS_IsMainThread());
