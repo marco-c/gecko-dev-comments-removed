@@ -2928,7 +2928,7 @@ pub mod style_structs {
             
             
             pub fn specifies_animations(&self) -> bool {
-                self.animation_name_iter().any(|name| !name.is_none())
+                self.animation_name_iter().any(|name| name.0.is_some())
             }
 
             
