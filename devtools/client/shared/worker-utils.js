@@ -141,7 +141,10 @@ function asErrorMessage(error) {
   };
 }
 
-module.exports = {
-  WorkerDispatcher,
-  workerHandler,
-};
+
+if (typeof module !== "undefined") {
+  module.exports = {
+    WorkerDispatcher,
+    workerHandler,
+  };
+}
