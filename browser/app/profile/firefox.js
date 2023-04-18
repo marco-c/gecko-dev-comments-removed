@@ -124,6 +124,18 @@ pref("app.update.download.promptMaxAttempts", 2);
 
 pref("app.update.elevation.promptMaxAttempts", 2);
 
+#ifdef NIGHTLY_BUILD
+  
+  
+  
+  
+  
+  
+  
+  
+  pref("app.update.suppressPrompts", false);
+#endif
+
 
 
 pref("app.update.notifyDuringDownload", false);

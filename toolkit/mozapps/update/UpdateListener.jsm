@@ -7,6 +7,9 @@
 var EXPORTED_SYMBOLS = ["UpdateListener"];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { AppConstants } = ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm"
+);
 const { clearTimeout, setTimeout } = ChromeUtils.import(
   "resource://gre/modules/Timer.jsm"
 );
@@ -27,21 +30,101 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsIApplicationUpdateService"
 );
 
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "UpdateManager",
+  "@mozilla.org/updates/update-manager;1",
+  "nsIUpdateManager"
+);
+
 const PREF_APP_UPDATE_UNSUPPORTED_URL = "app.update.unsupported.url";
+const PREF_APP_UPDATE_SUPPRESS_PROMPTS = "app.update.suppressPrompts";
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "SUPPRESS_PROMPTS",
+  PREF_APP_UPDATE_SUPPRESS_PROMPTS,
+  false
+);
 
 
 var UpdateListener = {
   timeouts: [],
 
   restartDoorhangerShown: false,
+
   
   
   
   
   updateFirstReadyTime: null,
 
+  
+  
+  
+  
+  promptDelayMsFromBuild: 14 * 24 * 60 * 60 * 1000, 
+
+  promptDelayMsFromUpdate: 7 * 24 * 60 * 60 * 1000, 
+
+  
+  
+  promptMaxFutureVariation: 24 * 60 * 60 * 1000, 
+
+  latestUpdate: null,
+
+  availablePromptScheduled: false,
+
   get badgeWaitTime() {
     return Services.prefs.getIntPref("app.update.badgeWaitTime", 4 * 24 * 3600); 
+  },
+
+  get suppressedPromptDelay() {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    let now = Date.now();
+    let buildId = AppConstants.MOZ_BUILDID;
+    let buildTime =
+      new Date(
+        buildId.slice(0, 4),
+        buildId.slice(4, 6) - 1,
+        buildId.slice(6, 8),
+        buildId.slice(8, 10),
+        buildId.slice(10, 12),
+        buildId.slice(12, 14)
+      ).getTime() ?? 0;
+    let updateTime = UpdateManager.getUpdateAt(0)?.installDate ?? 0;
+    
+    if (buildTime - now > this.promptMaxFutureVariation) {
+      buildTime = 0;
+    }
+    if (updateTime - now > this.promptMaxFutureVariation) {
+      updateTime = 0;
+    }
+    let promptTime = now;
+    
+    if (updateTime && buildTime) {
+      promptTime = Math.min(
+        buildTime + this.promptDelayMsFromBuild,
+        updateTime + this.promptDelayMsFromUpdate
+      );
+    } else if (updateTime || buildTime) {
+      
+      
+      
+      
+      
+      promptTime = (updateTime || buildTime) + this.promptDelayMsFromUpdate;
+    }
+    return promptTime - now;
   },
 
   init() {
@@ -73,6 +156,7 @@ var UpdateListener = {
   clearCallbacks() {
     this.timeouts.forEach(t => clearTimeout(t));
     this.timeouts = [];
+    this.availablePromptScheduled = false;
   },
 
   addTimeout(time, callback) {
@@ -210,6 +294,32 @@ var UpdateListener = {
     });
   },
 
+  scheduleUpdateAvailableNotification(update) {
+    
+    this.showUpdateAvailableNotification(update, true);
+    
+    
+    
+    
+    
+    
+    this.latestUpdate = update;
+    
+    
+    
+    if (!this.availablePromptScheduled) {
+      this.addTimeout(Math.max(0, this.suppressedPromptDelay), () => {
+        
+        
+        if (UpdateManager.downloadingUpdate || UpdateManager.readyUpdate) {
+          return;
+        }
+        this.showUpdateAvailableNotification(this.latestUpdate, false);
+      });
+      this.availablePromptScheduled = true;
+    }
+  },
+
   handleUpdateError(update, status) {
     switch (status) {
       case "download-attempt-failed":
@@ -266,7 +376,11 @@ var UpdateListener = {
           this.updateFirstReadyTime + initialDoorhangerWaitTimeMs - now
         );
 
-        if (badgeWaitTimeMs < doorhangerWaitTimeMs) {
+        
+        
+        if (AppConstants.NIGHTLY_BUILD && SUPPRESS_PROMPTS) {
+          this.showRestartNotification(update, true);
+        } else if (badgeWaitTimeMs < doorhangerWaitTimeMs) {
           this.addTimeout(badgeWaitTimeMs, () => {
             
             if (!AppUpdateService.isOtherInstanceHandlingUpdates) {
@@ -297,7 +411,11 @@ var UpdateListener = {
       case "show-prompt":
         
         
-        this.showUpdateAvailableNotification(update, false);
+        if (AppConstants.NIGHTLY_BUILD && SUPPRESS_PROMPTS) {
+          this.scheduleUpdateAvailableNotification(update);
+        } else {
+          this.showUpdateAvailableNotification(update, false);
+        }
         break;
       case "cant-apply":
         this.clearCallbacks();

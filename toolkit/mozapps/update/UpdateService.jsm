@@ -3108,6 +3108,10 @@ UpdateService.prototype = {
   _checkForBackgroundUpdates: function AUS__checkForBackgroundUpdates(
     isNotify
   ) {
+    if (!this.disabledByPolicy && AppConstants.NIGHTLY_BUILD) {
+      
+      AUSTLMY.pingSuppressPrompts();
+    }
     if (this.disabledByPolicy || this.manualUpdateOnly) {
       
       
