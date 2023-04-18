@@ -11,11 +11,11 @@ const { XPCOMUtils } = ChromeUtils.import(
 const { ServiceRequest } = ChromeUtils.import(
   "resource://gre/modules/ServiceRequest.jsm"
 );
-
-XPCOMUtils.defineLazyModuleGetters(this, {
-  SharedUtils: "resource://services-settings/SharedUtils.jsm",
-  AppConstants: "resource://gre/modules/AppConstants.jsm",
-});
+ChromeUtils.defineModuleGetter(
+  this,
+  "AppConstants",
+  "resource://gre/modules/AppConstants.jsm"
+);
 
 XPCOMUtils.defineLazyServiceGetter(
   this,
@@ -202,6 +202,7 @@ var Utils = {
 
   async hasLocalData(client) {
     const timestamp = await client.db.getLastModified();
+    
     return timestamp !== null;
   },
 
@@ -254,12 +255,17 @@ var Utils = {
     const identifier = `${bucket}/${collection}`;
     let lastModified = this._dumpStats[identifier];
     if (lastModified === undefined) {
-      const { timestamp: dumpTimestamp } = await SharedUtils.loadJSONDump(
-        bucket,
-        collection
-      );
-      
-      lastModified = dumpTimestamp ?? -1;
+      try {
+        let res = await fetch(
+          `resource://app/defaults/settings/${bucket}/${collection}.json`
+        );
+        let records = (await res.json()).data;
+        
+        
+        lastModified = records[0]?.last_modified || 0;
+      } catch (e) {
+        lastModified = -1;
+      }
       this._dumpStats[identifier] = lastModified;
     }
     return lastModified;
