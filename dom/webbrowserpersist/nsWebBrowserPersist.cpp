@@ -2154,76 +2154,24 @@ nsresult nsWebBrowserPersist::CalculateAndAppendFileExt(
 
   
   if (!contentType.IsEmpty()) {
-    nsCOMPtr<nsIMIMEInfo> mimeInfo;
-    mMIMEService->GetFromTypeAndExtension(contentType, ""_ns,
-                                          getter_AddRefs(mimeInfo));
-
-    nsCOMPtr<nsIFile> localFile;
-    GetLocalFileFromURI(aURI, getter_AddRefs(localFile));
-
-    if (mimeInfo) {
-      nsCOMPtr<nsIURL> url(do_QueryInterface(aURI));
-      NS_ENSURE_TRUE(url, NS_ERROR_FAILURE);
-
-      nsAutoCString newFileName;
-      url->GetFileName(newFileName);
-
-      
-      bool hasExtension = false;
-      int32_t ext = newFileName.RFind(".");
-      if (ext != -1) {
-        mimeInfo->ExtensionExists(Substring(newFileName, ext + 1),
-                                  &hasExtension);
-      }
-
-      
-      nsAutoCString fileExt;
-      if (!hasExtension) {
-        
-        nsCOMPtr<nsIURL> oldurl(do_QueryInterface(aOriginalURIWithExtension));
-        NS_ENSURE_TRUE(oldurl, NS_ERROR_FAILURE);
-        oldurl->GetFileExtension(fileExt);
-        bool useOldExt = false;
-        if (!fileExt.IsEmpty()) {
-          mimeInfo->ExtensionExists(fileExt, &useOldExt);
-        }
+    nsAutoString newFileName;
+    if (NS_SUCCEEDED(mMIMEService->GetValidFileName(
+            aChannel, contentType, aOriginalURIWithExtension,
+            nsIMIMEService::VALIDATE_DEFAULT, newFileName))) {
+      nsCOMPtr<nsIFile> localFile;
+      GetLocalFileFromURI(aURI, getter_AddRefs(localFile));
+      if (localFile) {
+        localFile->SetLeafName(newFileName);
 
         
-        
-        
-        if (!useOldExt) {
-          nsAutoCString primaryExt;
-          mimeInfo->GetPrimaryExtension(primaryExt);
-          if (!primaryExt.IsEmpty()) {
-            fileExt = primaryExt;
-          }
-        }
-
-        if (!fileExt.IsEmpty()) {
-          uint32_t newLength = newFileName.Length() + fileExt.Length() + 1;
-          if (newLength > kDefaultMaxFilenameLength) {
-            if (fileExt.Length() > kDefaultMaxFilenameLength / 2)
-              fileExt.Truncate(kDefaultMaxFilenameLength / 2);
-
-            uint32_t diff = kDefaultMaxFilenameLength - 1 - fileExt.Length();
-            if (newFileName.Length() > diff) newFileName.Truncate(diff);
-          }
-          newFileName.Append('.');
-          newFileName.Append(fileExt);
-        }
-
-        if (localFile) {
-          localFile->SetLeafName(NS_ConvertUTF8toUTF16(newFileName));
-
-          
-          return NS_MutateURI(url)
-              .Apply(&nsIFileURLMutator::SetFile, localFile)
-              .Finalize(aOutURI);
-        }
-        return NS_MutateURI(url)
-            .Apply(&nsIURLMutator::SetFileName, newFileName, nullptr)
+        return NS_MutateURI(aURI)
+            .Apply(&nsIFileURLMutator::SetFile, localFile)
             .Finalize(aOutURI);
       }
+      return NS_MutateURI(aURI)
+          .Apply(&nsIURLMutator::SetFileName,
+                 NS_ConvertUTF16toUTF8(newFileName), nullptr)
+          .Finalize(aOutURI);
     }
   }
 
