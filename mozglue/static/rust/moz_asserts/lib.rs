@@ -18,7 +18,6 @@
 
 
 
-
 pub use mozbuild::config::NIGHTLY_BUILD;
 
 
