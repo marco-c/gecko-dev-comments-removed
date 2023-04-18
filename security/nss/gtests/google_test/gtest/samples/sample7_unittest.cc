@@ -34,7 +34,6 @@
 
 
 
-
 #include "prime_tables.h"
 
 #include "gtest/gtest.h"
@@ -50,9 +49,7 @@ using ::testing::Values;
 
 typedef PrimeTable* CreatePrimeTableFunc();
 
-PrimeTable* CreateOnTheFlyPrimeTable() {
-  return new OnTheFlyPrimeTable();
-}
+PrimeTable* CreateOnTheFlyPrimeTable() { return new OnTheFlyPrimeTable(); }
 
 template <size_t max_precalculated>
 PrimeTable* CreatePreCalculatedPrimeTable() {

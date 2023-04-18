@@ -38,16 +38,15 @@
 
 
 
-#ifndef GOOGLETEST_INCLUDE_GTEST_INTERNAL_GTEST_STRING_H_
-#define GOOGLETEST_INCLUDE_GTEST_INTERNAL_GTEST_STRING_H_
+#ifndef GTEST_INCLUDE_GTEST_INTERNAL_GTEST_STRING_H_
+#define GTEST_INCLUDE_GTEST_INTERNAL_GTEST_STRING_H_
 
 #ifdef __BORLANDC__
 
-# include <mem.h>
+#include <mem.h>
 #endif
 
 #include <string.h>
-#include <cstdint>
 #include <string>
 
 #include "gtest/internal/gtest-port.h"
@@ -123,8 +122,7 @@ class GTEST_API_ String {
   
   
   
-  static bool CaseInsensitiveCStringEquals(const char* lhs,
-                                           const char* rhs);
+  static bool CaseInsensitiveCStringEquals(const char* lhs, const char* rhs);
 
   
   
@@ -143,27 +141,24 @@ class GTEST_API_ String {
 
   
   
-  static bool EndsWithCaseInsensitive(
-      const std::string& str, const std::string& suffix);
+  static bool EndsWithCaseInsensitive(const std::string& str,
+                                      const std::string& suffix);
 
   
   static std::string FormatIntWidth2(int value);  
 
   
-  static std::string FormatIntWidthN(int value, int width);
-
-  
   static std::string FormatHexInt(int value);
 
   
-  static std::string FormatHexUInt32(uint32_t value);
+  static std::string FormatHexUInt32(UInt32 value);
 
   
   static std::string FormatByte(unsigned char value);
 
  private:
   String();  
-};  
+};           
 
 
 

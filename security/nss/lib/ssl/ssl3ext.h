@@ -38,7 +38,9 @@ struct TLSExtensionDataStr {
 
     
     PRUint16 numAdvertised;
-    PRUint16 *advertised; 
+    PRUint16 *advertised;      
+    PRUint16 echNumAdvertised; 
+    PRUint16 *echAdvertised;
     PRUint16 numNegotiated;
     PRUint16 negotiated[SSL_MAX_EXTENSIONS];
 
@@ -97,6 +99,7 @@ struct TLSExtensionDataStr {
 
     PRUint16 dtlsSRTPCipherSuite; 
 
+    unsigned int echXtnOffset;  
     unsigned int lastXtnOffset; 
 
     PRCList remoteKeyShares;    
@@ -200,5 +203,8 @@ SECStatus SSLExp_GetExtensionSupport(PRUint16 type,
 SECStatus SSLExp_InstallExtensionHooks(
     PRFileDesc *fd, PRUint16 extension, SSLExtensionWriter writer,
     void *writerArg, SSLExtensionHandler handler, void *handlerArg);
+sslCustomExtensionHooks *ssl_FindCustomExtensionHooks(sslSocket *ss, PRUint16 extension);
+SECStatus ssl_CallCustomExtensionSenders(sslSocket *ss, sslBuffer *buf,
+                                         SSLHandshakeType message);
 
 #endif

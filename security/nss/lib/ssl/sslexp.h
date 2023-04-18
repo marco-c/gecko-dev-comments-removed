@@ -506,6 +506,13 @@ typedef SECStatus(PR_CALLBACK *SSLResumptionTokenCallback)(
 
 
 
+
+
+
+
+
+
+
 #define SSL_EnableTls13GreaseEch(fd, enabled)        \
     SSL_EXPERIMENTAL_API("SSL_EnableTls13GreaseEch", \
                          (PRFileDesc * _fd, PRBool _enabled), (fd, enabled))
@@ -516,6 +523,27 @@ typedef SECStatus(PR_CALLBACK *SSLResumptionTokenCallback)(
 
 #define SSL_EnableTls13BackendEch(fd, enabled)        \
     SSL_EXPERIMENTAL_API("SSL_EnableTls13BackendEch", \
+                         (PRFileDesc * _fd, PRBool _enabled), (fd, enabled))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define SSL_CallExtensionWriterOnEchInner(fd, enabled)        \
+    SSL_EXPERIMENTAL_API("SSL_CallExtensionWriterOnEchInner", \
                          (PRFileDesc * _fd, PRBool _enabled), (fd, enabled))
 
 
