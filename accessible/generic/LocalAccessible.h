@@ -125,7 +125,13 @@ class LocalAccessible : public nsISupports, public Accessible {
   
 
 
+
+
   void* UniqueID() { return static_cast<void*>(this); }
+
+  virtual uint64_t ID() const override {
+    return reinterpret_cast<uintptr_t>(this);
+  }
 
   
 
