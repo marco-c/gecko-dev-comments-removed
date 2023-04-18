@@ -43,9 +43,8 @@ class AudioSink : private AudioStream::DataSource {
   ~AudioSink();
 
   
-  
-  Result<already_AddRefed<MediaSink::EndedPromise>, nsresult> Start(
-      const PlaybackParams& aParams);
+  nsresult Start(const PlaybackParams& aParams,
+                 MozPromiseHolder<MediaSink::EndedPromise>& aEndedPromise);
 
   
 
@@ -62,7 +61,9 @@ class AudioSink : private AudioStream::DataSource {
   media::TimeUnit UnplayedDuration() const;
 
   
-  void Shutdown();
+  
+  Maybe<MozPromiseHolder<MediaSink::EndedPromise>> Shutdown(
+      ShutdownCause aShutdownCause = ShutdownCause::Regular);
 
   void SetVolume(double aVolume);
   void SetStreamName(const nsAString& aStreamName);
@@ -86,6 +87,15 @@ class AudioSink : private AudioStream::DataSource {
   uint32_t PopFrames(AudioDataValue* aBuffer, uint32_t aFrames,
                      bool aAudioThreadChanged) override;
   bool Ended() const override;
+
+  
+  
+  
+  
+  
+  
+  
+  void ReenqueueUnplayedAudioDataIfNeeded();
 
   void CheckIsAudible(const Span<AudioDataValue>& aInterleaved,
                       size_t aChannel);
