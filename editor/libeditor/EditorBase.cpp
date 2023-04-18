@@ -4696,9 +4696,8 @@ nsresult EditorBase::DeleteRangesWithTransaction(
       
       
       TopLevelEditSubActionDataRef().WillDeleteRange(
-          *this,
-          aRangesToDelete.GetStartPointOfFirstRange().To<EditorRawDOMPoint>(),
-          aRangesToDelete.GetEndPointOfFirstRange().To<EditorRawDOMPoint>());
+          *this, aRangesToDelete.GetFirstRangeStartPoint<EditorRawDOMPoint>(),
+          aRangesToDelete.GetFirstRangeEndPoint<EditorRawDOMPoint>());
     } else if (!deleteCharData) {
       TopLevelEditSubActionDataRef().WillDeleteContent(*this, *deleteContent);
     }

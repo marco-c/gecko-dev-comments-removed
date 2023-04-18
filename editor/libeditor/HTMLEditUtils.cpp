@@ -1740,11 +1740,12 @@ EditorDOMPointType HTMLEditUtils::GetBetterInsertionPointFor(
     return EditorDOMPointType();
   }
 
-  auto pointToInsert = aPointToInsert.GetNonAnonymousSubtreePoint()
-                           .template To<EditorDOMPointType>();
-  if (NS_WARN_IF(!pointToInsert.IsSet()) ||
-      NS_WARN_IF(!pointToInsert.GetContainer()->IsInclusiveDescendantOf(
-          &aEditingHost))) {
+  auto pointToInsert =
+      aPointToInsert.template GetNonAnonymousSubtreePoint<EditorDOMPointType>();
+  if (MOZ_UNLIKELY(
+          NS_WARN_IF(!pointToInsert.IsSet()) ||
+          NS_WARN_IF(!pointToInsert.GetContainer()->IsInclusiveDescendantOf(
+              &aEditingHost)))) {
     
     return EditorDOMPointType();
   }
@@ -1789,8 +1790,8 @@ EditorDOMPointType HTMLEditUtils::GetBetterInsertionPointFor(
     return pointToInsert;
   }
 
-  return forwardScanFromPointToInsertResult.RawPointAfterContent()
-      .To<EditorDOMPointType>();
+  return forwardScanFromPointToInsertResult
+      .template PointAfterContent<EditorDOMPointType>();
 }
 
 }  

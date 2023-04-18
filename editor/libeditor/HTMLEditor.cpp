@@ -852,7 +852,8 @@ nsresult HTMLEditor::MaybeCollapseSelectionAtFirstEditableNode(
       if ((scanResultInTextNode.InVisibleOrCollapsibleCharacters() ||
            scanResultInTextNode.ReachedPreformattedLineBreak()) &&
           scanResultInTextNode.TextPtr() == text) {
-        nsresult rv = CollapseSelectionTo(scanResultInTextNode.Point());
+        nsresult rv = CollapseSelectionTo(
+            scanResultInTextNode.Point<EditorRawDOMPoint>());
         NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                              "EditorBase::CollapseSelectionTo() failed");
         return rv;
@@ -5055,7 +5056,7 @@ nsresult HTMLEditor::MoveNodeWithTransaction(
   }
 
   
-  auto pointToInsert = selNotify.ComputeInsertionPoint().To<EditorDOMPoint>();
+  auto pointToInsert = selNotify.ComputeInsertionPoint<EditorDOMPoint>();
   if (NS_WARN_IF(!pointToInsert.IsSet())) {
     return NS_ERROR_FAILURE;
   }
