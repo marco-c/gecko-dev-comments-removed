@@ -267,6 +267,11 @@ Maybe<InlinableCallData> FindInlinableCallData(ICCacheIRStub* stub) {
   }
 
   if (data.isSome()) {
+    
+    if (flags.getArgFormat() != CallFlags::Standard &&
+        flags.getArgFormat() != CallFlags::FunCall) {
+      return mozilla::Nothing();
+    }
     data->calleeOperand = calleeGuardOperand;
     data->callFlags = flags;
     data->target = target;
