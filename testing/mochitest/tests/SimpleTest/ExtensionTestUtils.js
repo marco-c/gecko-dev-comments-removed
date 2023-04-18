@@ -1,21 +1,9 @@
+var ExtensionTestUtils = {};
+
 const { ExtensionTestCommon } = SpecialPowers.Cu.import(
   "resource://testing-common/ExtensionTestCommon.jsm",
   {}
 );
-
-var ExtensionTestUtils = {
-  
-  
-  getBackgroundServiceWorkerEnabled() {
-    return ExtensionTestCommon.getBackgroundServiceWorkerEnabled();
-  },
-
-  
-  
-  isInBackgroundServiceWorkerTests() {
-    return ExtensionTestCommon.isInBackgroundServiceWorkerTests();
-  },
-};
 
 ExtensionTestUtils.loadExtension = function(ext) {
   

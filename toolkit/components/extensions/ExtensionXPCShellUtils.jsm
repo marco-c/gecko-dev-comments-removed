@@ -609,18 +609,6 @@ class ExternallyInstalledWrapper extends AOMExtensionWrapper {
 var ExtensionTestUtils = {
   BASE_MANIFEST,
 
-  
-  
-  getBackgroundServiceWorkerEnabled() {
-    return ExtensionTestCommon.getBackgroundServiceWorkerEnabled();
-  },
-
-  
-  
-  isInBackgroundServiceWorkerTests() {
-    return ExtensionTestCommon.isInBackgroundServiceWorkerTests();
-  },
-
   async normalizeManifest(
     manifest,
     manifestType = "manifest.WebExtensionManifest",

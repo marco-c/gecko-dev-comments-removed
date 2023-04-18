@@ -1177,9 +1177,7 @@ class MochitestDesktop(object):
             testURL = "about:blank"
         return testURL
 
-    def getTestsByScheme(
-        self, options, testsToFilter=None, disabled=True, manifestToFilter=None
-    ):
+    def getTestsByScheme(self, options, testsToFilter=None, disabled=True):
         """Build the url path to the specific test harness and test file or directory
         Build a manifest of tests to run and write out a json file for the harness to read
         testsToFilter option is used to filter/keep the tests provided in the list
@@ -1192,18 +1190,6 @@ class MochitestDesktop(object):
         paths = []
         for test in tests:
             if testsToFilter and (test["path"] not in testsToFilter):
-                continue
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            if manifestToFilter and (test["manifest"] not in manifestToFilter):
                 continue
             paths.append(test)
 
@@ -2661,7 +2647,7 @@ toolbar#nav-bar {
                 norm_paths.append(p)
         return norm_paths
 
-    def runMochitests(self, options, testsToRun, manifestToFilter=None):
+    def runMochitests(self, options, testsToRun):
         "This is a base method for calling other methods in this class for --bisect-chunk."
         
         bisect = bisection.Bisect(self)
@@ -2681,7 +2667,7 @@ toolbar#nav-bar {
                     )
                     bisection_log = 1
 
-            result = self.doTests(options, testsToRun, manifestToFilter)
+            result = self.doTests(options, testsToRun)
             if options.bisectChunk:
                 status = bisect.post_test(options, self.expectedError, self.result)
             else:
@@ -2968,7 +2954,7 @@ toolbar#nav-bar {
             
             
             tests_in_manifest = [t["path"] for t in tests if t["manifest"] == m]
-            res = self.runMochitests(options, tests_in_manifest, manifestToFilter=m)
+            res = self.runMochitests(options, tests_in_manifest)
             result = result or res
 
             
@@ -3047,7 +3033,7 @@ toolbar#nav-bar {
             if self.profiler_tempdir:
                 shutil.rmtree(self.profiler_tempdir)
 
-    def doTests(self, options, testsToFilter=None, manifestToFilter=None):
+    def doTests(self, options, testsToFilter=None):
         
         
         if options.bisectChunk or options.runByManifest:
@@ -3177,9 +3163,7 @@ toolbar#nav-bar {
 
             
             
-            for (scheme, tests) in self.getTestsByScheme(
-                options, testsToFilter, True, manifestToFilter
-            ):
+            for (scheme, tests) in self.getTestsByScheme(options, testsToFilter):
                 
                 
                 if not tests:
