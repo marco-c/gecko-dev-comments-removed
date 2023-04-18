@@ -11,6 +11,8 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  CONTEXT_DESCRIPTOR_TYPES:
+    "chrome://remote/content/shared/messagehandler/MessageHandler.jsm",
   MessageHandler:
     "chrome://remote/content/shared/messagehandler/MessageHandler.jsm",
 });
@@ -59,5 +61,53 @@ class WindowGlobalMessageHandler extends MessageHandler {
     throw new Error(
       `Cannot forward commands from a "WINDOW_GLOBAL" MessageHandler`
     );
+  }
+
+  async _applyInitialSessionDataItems(sessionDataItems) {
+    for (const sessionDataItem of sessionDataItems) {
+      const {
+        moduleName,
+        category,
+        contextDescriptor,
+        value,
+      } = sessionDataItem;
+      if (this._isRelevantContext(contextDescriptor)) {
+        await this.handleCommand({
+          moduleName,
+          commandName: "_applySessionData",
+          params: {
+            category,
+            
+            
+            
+            
+            values: [value],
+          },
+          destination: {
+            type: WindowGlobalMessageHandler.type,
+          },
+        });
+      }
+    }
+  }
+
+  _isRelevantContext(contextDescriptor) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    return contextDescriptor.type === CONTEXT_DESCRIPTOR_TYPES.ALL;
   }
 }

@@ -33,8 +33,18 @@ class Log extends Module {
   
 
 
-  _subscribeEvent(params) {
-    if (params.event === "log.entryAdded") {
+  _applySessionData(params) {
+    
+    
+    if (params.category === "event") {
+      for (const event of params.values) {
+        this._subscribeEvent(event);
+      }
+    }
+  }
+
+  _subscribeEvent(event) {
+    if (event === "log.entryAdded") {
       Services.obs.addObserver(
         this._onConsoleAPILogEvent,
         "console-api-log-event"

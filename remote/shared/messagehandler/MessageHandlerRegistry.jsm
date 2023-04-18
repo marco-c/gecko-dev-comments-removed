@@ -14,6 +14,8 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   EventEmitter: "resource://gre/modules/EventEmitter.jsm",
 
   Log: "chrome://remote/content/shared/Log.jsm",
+  readSessionData:
+    "chrome://remote/content/shared/messagehandler/sessiondata/SessionDataReader.jsm",
   RootMessageHandler:
     "chrome://remote/content/shared/messagehandler/RootMessageHandler.jsm",
   WindowGlobalMessageHandler:
@@ -95,17 +97,35 @@ class MessageHandlerRegistry extends EventEmitter {
 
 
 
-
-
-
-  getExistingMessageHandler(sessionId) {
-    return this._messageHandlersMap.get(sessionId);
+  createAllMessageHandlers() {
+    const data = readSessionData();
+    for (const [sessionId, sessionDataItems] of data) {
+      
+      
+      
+      
+      
+      this._createMessageHandler(sessionId, sessionDataItems);
+    }
   }
 
   destroy() {
     this._messageHandlersMap.forEach(messageHandler => {
       messageHandler.destroy();
     });
+  }
+
+  
+
+
+
+
+
+
+
+
+  getExistingMessageHandler(sessionId) {
+    return this._messageHandlersMap.get(sessionId);
   }
 
   
@@ -170,12 +190,11 @@ class MessageHandlerRegistry extends EventEmitter {
 
 
 
-
-
-  _createMessageHandler(sessionId) {
+  _createMessageHandler(sessionId, sessionDataItems) {
     const messageHandler = new this._messageHandlerClass(
       sessionId,
-      this._context
+      this._context,
+      sessionDataItems
     );
     this._messageHandlersMap.set(sessionId, messageHandler);
 

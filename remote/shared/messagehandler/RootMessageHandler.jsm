@@ -83,6 +83,36 @@ class RootMessageHandler extends MessageHandler {
 
 
 
+  addSessionData(sessionData = {}) {
+    const { moduleName, category, contextDescriptor, values } = sessionData;
+    this._sessionData.addSessionData(
+      moduleName,
+      category,
+      contextDescriptor,
+      values
+    );
+    return this.handleCommand({
+      moduleName,
+      commandName: "_applySessionData",
+      params: {
+        values,
+        category,
+      },
+      destination: {
+        broadcast: true,
+        type: WindowGlobalMessageHandler.type,
+      },
+    });
+  }
+
+  
+
+
+
+
+
+
+
 
   forwardCommand(command) {
     switch (command.destination.type) {

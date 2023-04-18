@@ -10,10 +10,6 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
-ChromeUtils.import(
-  "chrome://remote/content/shared/messagehandler/sessiondata/SessionDataReader.jsm"
-);
-
 XPCOMUtils.defineLazyModuleGetters(this, {
   error: "chrome://remote/content/shared/messagehandler/Errors.jsm",
   MessageHandlerRegistry:
@@ -40,6 +36,12 @@ class MessageHandlerFrameChild extends JSWindowActorChild {
     
     
     this._registry.on("message-handler-registry-event", this._onRegistryEvent);
+  }
+
+  handleEvent({ type }) {
+    if (type == "DOMWindowCreated") {
+      this._registry.createAllMessageHandlers();
+    }
   }
 
   async receiveMessage(message) {
