@@ -83,6 +83,10 @@ TOLERATED_DUPES = {
     "memoffset": 2,
     "mio": 2,
     "pin-project-lite": 2,
+    
+    
+    
+    "time": 2,
     "tokio": 3,
 }
 

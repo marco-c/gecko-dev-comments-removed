@@ -1,0 +1,7 @@
+
+
+use std::num::NonZeroUsize;
+
+pub(crate) fn num_threads() -> Option<NonZeroUsize> {
+    None
+}
