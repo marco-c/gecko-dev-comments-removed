@@ -789,7 +789,7 @@ class Chromium(ChromeChromiumBase):
         
         
         
-        if self.last_url_used is not None:
+        if hasattr(self, "last_url_used") and self.last_url_used is not None:
             return f"{self.last_url_used}{filename}"
 
         return f"{self._get_chromium_download_url(version)}{filename}"
