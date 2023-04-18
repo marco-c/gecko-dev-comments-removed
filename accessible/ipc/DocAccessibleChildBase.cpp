@@ -51,7 +51,16 @@ void DocAccessibleChildBase::SerializeTree(nsTArray<LocalAccessible*>& aTree,
       
       genericTypes |= eNumericValue;
     }
-    if (acc->ActionCount()) {
+    if (acc->IsTextLeaf() || acc->IsImage()) {
+      
+      
+      
+      
+      
+      if (acc->ActionCount()) {
+        genericTypes |= eActionable;
+      }
+    } else if (acc->HasPrimaryAction()) {
       genericTypes |= eActionable;
     }
 
