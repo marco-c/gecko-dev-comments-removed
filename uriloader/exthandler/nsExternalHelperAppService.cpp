@@ -515,8 +515,6 @@ static const nsExtraMimeTypeEntry extraMimeEntries[] = {
     {"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
      "xlsx", "Microsoft Excel (Open XML)"},
 
-    
-    
     {IMAGE_ART, "art", "ART Image"},
     {IMAGE_BMP, "bmp", "BMP Image"},
     {IMAGE_GIF, "gif", "GIF Image"},
