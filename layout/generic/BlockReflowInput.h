@@ -205,10 +205,11 @@ class BlockReflowInput {
       nscoord& aIStartResult, nscoord& aIEndResult) const;
 
   
-  void ComputeBlockAvailSpace(nsIFrame* aFrame,
-                              const nsFlowAreaRect& aFloatAvailableSpace,
-                              bool aBlockAvoidsFloats,
-                              mozilla::LogicalRect& aResult);
+  
+  
+  mozilla::LogicalRect ComputeBlockAvailSpace(
+      nsIFrame* aFrame, const nsFlowAreaRect& aFloatAvailableSpace,
+      bool aBlockAvoidsFloats);
 
   void RecoverStateFrom(nsLineList::iterator aLine, nscoord aDeltaBCoord);
 

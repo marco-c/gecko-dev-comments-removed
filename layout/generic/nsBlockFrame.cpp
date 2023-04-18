@@ -3735,9 +3735,8 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
     
     nsFlowAreaRect floatAvailableSpace = aState.GetFloatAvailableSpace();
     WritingMode wm = aState.mReflowInput.GetWritingMode();
-    LogicalRect availSpace(wm);
-    aState.ComputeBlockAvailSpace(frame, floatAvailableSpace,
-                                  replacedBlock != nullptr, availSpace);
+    LogicalRect availSpace = aState.ComputeBlockAvailSpace(
+        frame, floatAvailableSpace, (replacedBlock));
 
     
     
@@ -3937,9 +3936,9 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
             aState.mBCoord, ShapeType::ShapeOutside, &floatManagerState);
       }
 
-      LogicalRect oldAvailSpace(availSpace);
-      aState.ComputeBlockAvailSpace(frame, floatAvailableSpace,
-                                    replacedBlock != nullptr, availSpace);
+      const LogicalRect oldAvailSpace = availSpace;
+      availSpace = aState.ComputeBlockAvailSpace(frame, floatAvailableSpace,
+                                                 (replacedBlock));
 
       if (!advanced && availSpace.IsEqualEdges(oldAvailSpace)) {
         break;
