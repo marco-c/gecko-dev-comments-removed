@@ -16,7 +16,7 @@
 namespace mozilla {
 
 class AudioInputProcessing;
-class AudioInputTrack;
+class AudioProcessingTrack;
 
 
 
@@ -94,7 +94,7 @@ class MediaEngineWebRTCMicrophoneSource : public MediaEngineSource {
 
   
   
-  RefPtr<AudioInputTrack> mTrack;
+  RefPtr<AudioProcessingTrack> mTrack;
 
   
   RefPtr<AudioInputProcessing> mInputProcessing;
@@ -217,7 +217,7 @@ class AudioInputProcessing : public AudioDataListener {
 };
 
 
-class AudioInputTrack : public ProcessedMediaTrack {
+class AudioProcessingTrack : public ProcessedMediaTrack {
   
   RefPtr<AudioInputProcessing> mInputProcessing;
 
@@ -234,11 +234,11 @@ class AudioInputTrack : public ProcessedMediaTrack {
   
   Maybe<CubebUtils::AudioDeviceID> mDeviceId;
 
-  explicit AudioInputTrack(TrackRate aSampleRate)
+  explicit AudioProcessingTrack(TrackRate aSampleRate)
       : ProcessedMediaTrack(aSampleRate, MediaSegment::AUDIO,
                             new AudioSegment()) {}
 
-  ~AudioInputTrack() = default;
+  ~AudioProcessingTrack() = default;
 
  public:
   
@@ -252,7 +252,7 @@ class AudioInputTrack : public ProcessedMediaTrack {
   Maybe<CubebUtils::AudioDeviceID> DeviceId() const;
   void Destroy() override;
   void SetInputProcessing(RefPtr<AudioInputProcessing> aInputProcessing);
-  static AudioInputTrack* Create(MediaTrackGraph* aGraph);
+  static AudioProcessingTrack* Create(MediaTrackGraph* aGraph);
 
   
   void DestroyImpl() override;
@@ -273,7 +273,7 @@ class AudioInputTrack : public ProcessedMediaTrack {
                         size_t aFrames, TrackRate aRate, uint32_t aChannels);
 
   
-  AudioInputTrack* AsAudioInputTrack() override { return this; }
+  AudioProcessingTrack* AsAudioInputTrack() override { return this; }
 
  private:
   
