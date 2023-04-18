@@ -1973,6 +1973,15 @@ var gPrivacyPane = {
     }
 
     
+    const bestMatchLearnMoreLink = document.getElementById(
+      "firefoxSuggestBestMatchLearnMore"
+    );
+    bestMatchLearnMoreLink.setAttribute(
+      "href",
+      UrlbarProviderQuickSuggest.bestMatchHelpUrl
+    );
+
+    
     let links = document.querySelectorAll(".firefoxSuggestLearnMore");
     for (let link of links) {
       link.setAttribute("href", UrlbarProviderQuickSuggest.helpUrl);
@@ -2010,7 +2019,7 @@ var gPrivacyPane = {
 
       
       document.getElementById(
-        "firefoxSuggestBestMatch"
+        "firefoxSuggestBestMatchContainer"
       ).hidden = !UrlbarPrefs.get("bestMatchEnabled");
 
       

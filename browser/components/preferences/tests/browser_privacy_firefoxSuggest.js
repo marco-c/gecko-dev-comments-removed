@@ -26,6 +26,7 @@ const DATA_COLLECTION_CHECKBOX_ID = "firefoxSuggestDataCollectionToggle";
 const INFO_BOX_ID = "firefoxSuggestInfoBox";
 const INFO_TEXT_ID = "firefoxSuggestInfoText";
 const LEARN_MORE_CLASS = "firefoxSuggestLearnMore";
+const BEST_MATCH_CONTAINER_ID = "firefoxSuggestBestMatchContainer";
 const BEST_MATCH_CHECKBOX_ID = "firefoxSuggestBestMatch";
 
 
@@ -539,11 +540,11 @@ async function doBestMatchVisibilityTest(initialEnabled, newEnabled) {
   await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
 
   let doc = gBrowser.selectedBrowser.contentDocument;
-  let checkbox = doc.getElementById(BEST_MATCH_CHECKBOX_ID);
+  let container = doc.getElementById(BEST_MATCH_CONTAINER_ID);
   Assert.equal(
-    BrowserTestUtils.is_visible(checkbox),
+    BrowserTestUtils.is_visible(container),
     initialEnabled,
-    "The checkbox has the expected initial visibility"
+    "The checkbox container has the expected initial visibility"
   );
 
   
@@ -553,9 +554,9 @@ async function doBestMatchVisibilityTest(initialEnabled, newEnabled) {
 
   
   Assert.equal(
-    BrowserTestUtils.is_visible(checkbox),
+    BrowserTestUtils.is_visible(container),
     newEnabled,
-    "The checkbox has the expected visibility after setting enabled status"
+    "The checkbox container has the expected visibility after setting enabled status"
   );
 
   
@@ -576,10 +577,10 @@ add_task(async function bestMatchVisibility_experiment_beforeOpen() {
         leaveOpen: true,
       });
       let doc = gBrowser.selectedBrowser.contentDocument;
-      let checkbox = doc.getElementById(BEST_MATCH_CHECKBOX_ID);
+      let container = doc.getElementById(BEST_MATCH_CONTAINER_ID);
       Assert.ok(
-        BrowserTestUtils.is_visible(checkbox),
-        "The checkbox is visible"
+        BrowserTestUtils.is_visible(container),
+        "The checkbox container is visible"
       );
       gBrowser.removeCurrentTab();
     },
@@ -592,10 +593,10 @@ add_task(async function bestMatchVisibility_experiment_afterOpen() {
   
   await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
   let doc = gBrowser.selectedBrowser.contentDocument;
-  let checkbox = doc.getElementById(BEST_MATCH_CHECKBOX_ID);
+  let container = doc.getElementById(BEST_MATCH_CONTAINER_ID);
   Assert.ok(
-    BrowserTestUtils.is_hidden(checkbox),
-    "The checkbox is hidden initially"
+    BrowserTestUtils.is_hidden(container),
+    "The checkbox container is hidden initially"
   );
 
   
@@ -605,15 +606,15 @@ add_task(async function bestMatchVisibility_experiment_afterOpen() {
     },
     callback: () => {
       Assert.ok(
-        BrowserTestUtils.is_visible(checkbox),
-        "The checkbox is visible after installing the experiment"
+        BrowserTestUtils.is_visible(container),
+        "The checkbox container is visible after installing the experiment"
       );
     },
   });
 
   Assert.ok(
-    BrowserTestUtils.is_hidden(checkbox),
-    "The checkbox is hidden again after the experiment is uninstalled"
+    BrowserTestUtils.is_hidden(container),
+    "The checkbox container is hidden again after the experiment is uninstalled"
   );
 
   gBrowser.removeCurrentTab();
@@ -657,6 +658,40 @@ add_task(async function bestMatchToggle() {
 
   
   Services.prefs.clearUserPref("browser.urlbar.suggest.bestmatch");
+  gBrowser.removeCurrentTab();
+  await SpecialPowers.popPrefEnv();
+});
+
+
+add_task(async function clickBestMatchLearnMore() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.bestMatch.enabled", true]],
+  });
+
+  await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
+
+  const doc = gBrowser.selectedBrowser.contentDocument;
+  const link = doc.getElementById("firefoxSuggestBestMatchLearnMore");
+  Assert.ok(BrowserTestUtils.is_visible(link), "Learn-more link is visible");
+
+  const tabPromise = BrowserTestUtils.waitForNewTab(
+    gBrowser,
+    UrlbarProviderQuickSuggest.bestMatchHelpUrl
+  );
+
+  info("Clicking learn-more link");
+  link.scrollIntoView();
+  await BrowserTestUtils.synthesizeMouseAtCenter(
+    "#firefoxSuggestBestMatchLearnMore",
+    {},
+    gBrowser.selectedBrowser
+  );
+
+  info("Waiting for help page to load in a new tab");
+  const tab = await tabPromise;
+  gBrowser.removeTab(tab);
+
+  
   gBrowser.removeCurrentTab();
   await SpecialPowers.popPrefEnv();
 });
