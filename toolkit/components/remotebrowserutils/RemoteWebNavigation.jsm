@@ -4,8 +4,9 @@
 
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const lazy = {};
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "PrivateBrowsingUtils",
   "resource://gre/modules/PrivateBrowsingUtils.jsm"
 );
@@ -83,7 +84,7 @@ class RemoteWebNavigation {
         aURI,
         aLoadURIOptions.loadFlags
       );
-      let isBrowserPrivate = PrivateBrowsingUtils.isBrowserPrivate(
+      let isBrowserPrivate = lazy.PrivateBrowsingUtils.isBrowserPrivate(
         this._browser
       );
       if (isBrowserPrivate) {
