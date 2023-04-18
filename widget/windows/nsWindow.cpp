@@ -5214,6 +5214,13 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
         gfxDWriteFont::UpdateSystemTextVars();
         break;
       }
+      if (wParam == SPI_SETWORKAREA) {
+        
+        
+        
+        ScreenHelperWin::RefreshScreens();
+        break;
+      }
       if (auto lParamString = reinterpret_cast<const wchar_t*>(lParam)) {
         if (!wcscmp(lParamString, L"ImmersiveColorSet")) {
           
