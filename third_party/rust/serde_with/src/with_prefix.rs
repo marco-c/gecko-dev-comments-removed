@@ -101,9 +101,6 @@ use serde::{
 
 
 
-
-
-
 #[macro_export]
 macro_rules! with_prefix {
     ($module:ident $prefix:expr) => {
@@ -258,9 +255,9 @@ where
         self,
         _name: &'static str,
         _variant_index: u32,
-        _variant: &'static str,
+        variant: &'static str,
     ) -> Result<Self::Ok, Self::Error> {
-        Err(ser::Error::custom("wrong type for with_prefix"))
+        self.serialize_str(variant)
     }
 
     fn serialize_newtype_struct<T>(
@@ -393,8 +390,10 @@ where
     where
         T: ?Sized + Serialize,
     {
-        self.delegate
-            .serialize_entry(&format!("{}{}", self.prefix, key), value)
+        let mut prefixed_key = String::with_capacity(self.prefix.len() + key.len());
+        prefixed_key.push_str(self.prefix);
+        prefixed_key.push_str(key);
+        self.delegate.serialize_entry(&prefixed_key, value)
     }
 
     fn end(self) -> Result<Self::Ok, Self::Error> {
@@ -469,7 +468,7 @@ where
 {
     type Value = V::Value;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.delegate.expecting(formatter)
     }
 
@@ -490,6 +489,8 @@ where
 {
     type Error = A::Error;
 
+    
+    #[allow(clippy::manual_strip)]
     fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>, Self::Error>
     where
         K: DeserializeSeed<'de>,
@@ -525,7 +526,7 @@ where
 {
     type Value = V::Value;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.delegate.expecting(formatter)
     }
 
@@ -580,6 +581,8 @@ where
 {
     type Error = A::Error;
 
+    
+    #[allow(clippy::manual_strip)]
     fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>, Self::Error>
     where
         K: DeserializeSeed<'de>,

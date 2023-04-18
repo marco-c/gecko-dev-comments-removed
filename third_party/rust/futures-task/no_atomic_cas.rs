@@ -1,7 +1,7 @@
 
 
 
-const NO_ATOMIC_CAS_TARGETS: &[&str] = &[
+const NO_ATOMIC_CAS: &[&str] = &[
     "avr-unknown-gnu-atmega328",
     "bpfeb-unknown-none",
     "bpfel-unknown-none",

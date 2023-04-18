@@ -1,170 +1,4 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#![doc = include_str!(concat!(env!("OUT_DIR"), "/README-lib.md"))]
 #![forbid(unsafe_code)]
 #![cfg_attr(not(feature = "std"), no_std)]
 extern crate alloc;
@@ -174,6 +8,9 @@ mod decimal;
 mod error;
 mod ops;
 mod str;
+
+
+mod arithmetic_impls;
 
 #[cfg(feature = "rust-fuzz")]
 mod fuzz;
@@ -189,7 +26,24 @@ mod mysql;
 mod postgres;
 #[cfg(feature = "rocket-traits")]
 mod rocket;
-#[cfg(feature = "serde")]
+#[cfg(all(
+    feature = "serde",
+    not(any(
+        feature = "serde-with-str",
+        feature = "serde-with-float",
+        feature = "serde-with-arbitrary-precision"
+    ))
+))]
+mod serde;
+
+#[cfg(all(
+    feature = "serde",
+    any(
+        feature = "serde-with-str",
+        feature = "serde-with-float",
+        feature = "serde-with-arbitrary-precision"
+    )
+))]
 pub mod serde;
 
 pub use decimal::{Decimal, RoundingStrategy};
@@ -213,3 +67,6 @@ extern crate diesel;
 
 
 pub type Result<T> = core::result::Result<T, Error>;
+
+
+

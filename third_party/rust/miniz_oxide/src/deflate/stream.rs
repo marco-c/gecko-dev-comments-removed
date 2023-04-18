@@ -17,6 +17,9 @@ use crate::{MZError, MZFlush, MZStatus, StreamResult};
 
 
 
+
+
+
 pub fn deflate(
     compressor: &mut CompressorOxide,
     input: &[u8],
@@ -100,8 +103,8 @@ mod test {
     use crate::deflate::CompressorOxide;
     use crate::inflate::decompress_to_vec_zlib;
     use crate::{MZFlush, MZStatus};
-    use std::prelude::v1::*;
-    use std::vec;
+    use alloc::boxed::Box;
+    use alloc::vec;
 
     #[test]
     fn test_state() {

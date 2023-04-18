@@ -1,19 +1,38 @@
 use super::super::plumbing::*;
+use crate::SendPtr;
 use std::marker::PhantomData;
-use std::mem::MaybeUninit;
 use std::ptr;
 use std::slice;
 
 pub(super) struct CollectConsumer<'c, T: Send> {
     
-    target: &'c mut [MaybeUninit<T>],
+    start: SendPtr<T>,
+    len: usize,
+    marker: PhantomData<&'c mut T>,
+}
+
+impl<T: Send> CollectConsumer<'_, T> {
+    
+    pub(super) fn appender(vec: &mut Vec<T>, len: usize) -> CollectConsumer<'_, T> {
+        let start = vec.len();
+        assert!(vec.capacity() - start >= len);
+
+        
+        
+        
+        unsafe { CollectConsumer::new(vec.as_mut_ptr().add(start), len) }
+    }
 }
 
 impl<'c, T: Send + 'c> CollectConsumer<'c, T> {
     
     
-    pub(super) fn new(target: &'c mut [MaybeUninit<T>]) -> Self {
-        CollectConsumer { target }
+    unsafe fn new(start: *mut T, len: usize) -> Self {
+        CollectConsumer {
+            start: SendPtr(start),
+            len,
+            marker: PhantomData,
+        }
     }
 }
 
@@ -24,9 +43,12 @@ impl<'c, T: Send + 'c> CollectConsumer<'c, T> {
 #[must_use]
 pub(super) struct CollectResult<'c, T> {
     
-    target: &'c mut [MaybeUninit<T>],
     
-    len: usize,
+    
+    start: SendPtr<T>,
+    total_len: usize,
+    
+    initialized_len: usize,
     
     
     invariant_lifetime: PhantomData<&'c mut &'c mut [T]>,
@@ -37,13 +59,13 @@ unsafe impl<'c, T> Send for CollectResult<'c, T> where T: Send {}
 impl<'c, T> CollectResult<'c, T> {
     
     pub(super) fn len(&self) -> usize {
-        self.len
+        self.initialized_len
     }
 
     
     pub(super) fn release_ownership(mut self) -> usize {
-        let ret = self.len;
-        self.len = 0;
+        let ret = self.initialized_len;
+        self.initialized_len = 0;
         ret
     }
 }
@@ -53,9 +75,10 @@ impl<'c, T> Drop for CollectResult<'c, T> {
         
         
         unsafe {
-            
-            let start = self.target.as_mut_ptr() as *mut T;
-            ptr::drop_in_place(slice::from_raw_parts_mut(start, self.len));
+            ptr::drop_in_place(slice::from_raw_parts_mut(
+                self.start.0,
+                self.initialized_len,
+            ));
         }
     }
 }
@@ -66,24 +89,27 @@ impl<'c, T: Send + 'c> Consumer<T> for CollectConsumer<'c, T> {
     type Result = CollectResult<'c, T>;
 
     fn split_at(self, index: usize) -> (Self, Self, CollectReducer) {
-        let CollectConsumer { target } = self;
+        let CollectConsumer { start, len, .. } = self;
 
         
         
-        let (left, right) = target.split_at_mut(index);
-        (
-            CollectConsumer::new(left),
-            CollectConsumer::new(right),
-            CollectReducer,
-        )
+        unsafe {
+            assert!(index <= len);
+            (
+                CollectConsumer::new(start.0, index),
+                CollectConsumer::new(start.0.add(index), len - index),
+                CollectReducer,
+            )
+        }
     }
 
     fn into_folder(self) -> Self::Folder {
         
         
         CollectResult {
-            target: self.target,
-            len: 0,
+            start: self.start,
+            total_len: self.len,
+            initialized_len: 0,
             invariant_lifetime: PhantomData,
         }
     }
@@ -97,15 +123,17 @@ impl<'c, T: Send + 'c> Folder<T> for CollectResult<'c, T> {
     type Result = Self;
 
     fn consume(mut self, item: T) -> Self {
-        let dest = self
-            .target
-            .get_mut(self.len)
-            .expect("too many values pushed to consumer");
+        assert!(
+            self.initialized_len < self.total_len,
+            "too many values pushed to consumer"
+        );
 
         
+        
         unsafe {
-            dest.as_mut_ptr().write(item);
-            self.len += 1;
+            
+            self.start.0.add(self.initialized_len).write(item);
+            self.initialized_len += 1;
         }
 
         self
@@ -146,14 +174,13 @@ impl<'c, T> Reducer<CollectResult<'c, T>> for CollectReducer {
         
         
         
-        let left_end = left.target[left.len..].as_ptr();
-        if left_end == right.target.as_ptr() {
-            let len = left.len + right.release_ownership();
-            unsafe {
-                left.target = slice::from_raw_parts_mut(left.target.as_mut_ptr(), len);
+        unsafe {
+            let left_end = left.start.0.add(left.initialized_len);
+            if left_end == right.start.0 {
+                left.total_len += right.total_len;
+                left.initialized_len += right.release_ownership();
             }
-            left.len = len;
+            left
         }
-        left
     }
 }

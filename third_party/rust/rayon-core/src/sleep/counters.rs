@@ -53,7 +53,11 @@ impl JobsEventCounter {
 }
 
 
-const THREADS_BITS: usize = 10;
+#[cfg(target_pointer_width = "64")]
+const THREADS_BITS: usize = 16;
+
+#[cfg(target_pointer_width = "32")]
+const THREADS_BITS: usize = 8;
 
 
 
@@ -68,7 +72,7 @@ const INACTIVE_SHIFT: usize = 1 * THREADS_BITS;
 const JEC_SHIFT: usize = 2 * THREADS_BITS;
 
 
-const THREADS_MAX: usize = (1 << THREADS_BITS) - 1;
+pub(crate) const THREADS_MAX: usize = (1 << THREADS_BITS) - 1;
 
 
 const ONE_SLEEPING: usize = 1;

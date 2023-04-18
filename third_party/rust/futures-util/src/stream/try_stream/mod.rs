@@ -749,6 +749,10 @@ pub trait TryStreamExt: TryStream {
     
     
     
+    
+    
+    
+    
     fn try_flatten(self) -> TryFlatten<Self>
     where
         Self::Ok: TryStream,
@@ -998,6 +1002,7 @@ pub trait TryStreamExt: TryStream {
         Pin::new(self).try_poll_next(cx)
     }
 
+    
     
     
     

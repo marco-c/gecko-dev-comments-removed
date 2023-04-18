@@ -18,9 +18,7 @@ use diesel::sql_types::Numeric;
 #[allow(unused_imports)] 
 #[cfg(not(feature = "std"))]
 use num_traits::float::FloatCore;
-use num_traits::{
-    CheckedAdd, CheckedDiv, CheckedMul, CheckedRem, CheckedSub, FromPrimitive, Num, One, Signed, ToPrimitive, Zero,
-};
+use num_traits::{FromPrimitive, Num, One, Signed, ToPrimitive, Zero};
 
 
 const MIN: Decimal = Decimal {
@@ -99,6 +97,10 @@ pub struct UnpackedDecimal {
 #[derive(Clone, Copy)]
 #[cfg_attr(feature = "diesel", derive(FromSqlRow, AsExpression), sql_type = "Numeric")]
 #[cfg_attr(feature = "c-repr", repr(C))]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshDeserialize, borsh::BorshSerialize, borsh::BorshSchema)
+)]
 pub struct Decimal {
     
     
@@ -158,24 +160,114 @@ pub enum RoundingStrategy {
 #[allow(dead_code)]
 impl Decimal {
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub const MIN: Decimal = MIN;
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     pub const MAX: Decimal = MAX;
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub const ZERO: Decimal = ZERO;
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     pub const ONE: Decimal = ONE;
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub const NEGATIVE_ONE: Decimal = NEGATIVE_ONE;
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     pub const TWO: Decimal = TWO;
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub const TEN: Decimal = TEN;
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     pub const ONE_HUNDRED: Decimal = ONE_HUNDRED;
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub const ONE_THOUSAND: Decimal = ONE_THOUSAND;
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     #[cfg(feature = "maths")]
     pub const PI: Decimal = Decimal {
@@ -185,6 +277,15 @@ impl Decimal {
         hi: 1703060790,
     };
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[cfg(feature = "maths")]
     pub const HALF_PI: Decimal = Decimal {
         flags: 1835008,
@@ -192,6 +293,15 @@ impl Decimal {
         mid: 92937282,
         hi: 851530395,
     };
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     #[cfg(feature = "maths")]
     pub const QUARTER_PI: Decimal = Decimal {
@@ -201,6 +311,15 @@ impl Decimal {
         hi: 425765197,
     };
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[cfg(feature = "maths")]
     pub const TWO_PI: Decimal = Decimal {
         flags: 1835008,
@@ -209,6 +328,15 @@ impl Decimal {
         hi: 3406121580,
     };
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[cfg(feature = "maths")]
     pub const E: Decimal = Decimal {
         flags: 1835008,
@@ -216,6 +344,15 @@ impl Decimal {
         mid: 3958169141,
         hi: 1473583531,
     };
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     #[cfg(feature = "maths")]
     pub const E_INVERSE: Decimal = Decimal {
@@ -416,6 +553,9 @@ impl Decimal {
     
     
     
+    
+    
+    
     pub fn from_scientific(value: &str) -> Result<Decimal, Error> {
         const ERROR_MESSAGE: &str = "Failed to parse";
 
@@ -484,12 +624,65 @@ impl Decimal {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn from_str_radix(str: &str, radix: u32) -> Result<Self, crate::Error> {
+        if radix == 10 {
+            crate::str::parse_str_radix_10(str)
+        } else {
+            crate::str::parse_str_radix_n(str, radix)
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn from_str_exact(str: &str) -> Result<Self, crate::Error> {
+        crate::str::parse_str_radix_10_exact(str)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     #[must_use]
     pub const fn scale(&self) -> u32 {
         ((self.flags & SCALE_MASK) >> SCALE_SHIFT) as u32
     }
 
+    
     
     
     
@@ -605,6 +798,9 @@ impl Decimal {
     
     
     
+    
+    
+    
     pub fn set_scale(&mut self, scale: u32) -> Result<(), Error> {
         if scale > MAX_PRECISION_U32 {
             return Err(Error::ScaleExceedsMaximumPrecision(scale));
@@ -613,6 +809,18 @@ impl Decimal {
         Ok(())
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -739,11 +947,28 @@ impl Decimal {
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline(always)]
+    #[must_use]
     pub const fn is_sign_negative(&self) -> bool {
         self.flags & SIGN_MASK > 0
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
     
     #[inline(always)]
     #[must_use]
@@ -942,6 +1167,8 @@ impl Decimal {
     
     
     
+    
+    
     #[must_use]
     pub fn normalize(&self) -> Decimal {
         let mut result = *self;
@@ -949,6 +1176,8 @@ impl Decimal {
         result
     }
 
+    
+    
     
     
     
@@ -1363,6 +1592,7 @@ impl Decimal {
     
     
     
+    #[must_use]
     pub const fn unpack(&self) -> UnpackedDecimal {
         UnpackedDecimal {
             negative: self.is_sign_negative(),
@@ -1444,73 +1674,13 @@ impl Decimal {
     pub fn from_f64_retain(n: f64) -> Option<Self> {
         from_f64(n, false)
     }
-
-    
-    #[inline(always)]
-    #[must_use]
-    pub fn checked_add(self, other: Decimal) -> Option<Decimal> {
-        match ops::add_impl(&self, &other) {
-            CalculationResult::Ok(result) => Some(result),
-            CalculationResult::Overflow => None,
-            _ => None,
-        }
-    }
-
-    
-    #[inline(always)]
-    #[must_use]
-    pub fn checked_sub(self, other: Decimal) -> Option<Decimal> {
-        match ops::sub_impl(&self, &other) {
-            CalculationResult::Ok(result) => Some(result),
-            CalculationResult::Overflow => None,
-            _ => None,
-        }
-    }
-
-    
-    #[inline]
-    #[must_use]
-    pub fn checked_mul(self, other: Decimal) -> Option<Decimal> {
-        match ops::mul_impl(&self, &other) {
-            CalculationResult::Ok(result) => Some(result),
-            CalculationResult::Overflow => None,
-            _ => None,
-        }
-    }
-
-    
-    
-    #[inline]
-    #[must_use]
-    pub fn checked_div(self, other: Decimal) -> Option<Decimal> {
-        match ops::div_impl(&self, &other) {
-            CalculationResult::Ok(quot) => Some(quot),
-            CalculationResult::Overflow => None,
-            CalculationResult::DivByZero => None,
-        }
-    }
-
-    
-    #[inline]
-    #[must_use]
-    pub fn checked_rem(self, other: Decimal) -> Option<Decimal> {
-        match ops::rem_impl(&self, &other) {
-            CalculationResult::Ok(quot) => Some(quot),
-            CalculationResult::Overflow => None,
-            CalculationResult::DivByZero => None,
-        }
-    }
-
-    pub fn from_str_radix(str: &str, radix: u32) -> Result<Self, crate::Error> {
-        if radix == 10 {
-            crate::str::parse_str_radix_10(str)
-        } else {
-            crate::str::parse_str_radix_n(str, radix)
-        }
-    }
 }
 
 impl Default for Decimal {
+    
+    
+    
+    #[inline]
     fn default() -> Self {
         ZERO
     }
@@ -1527,8 +1697,84 @@ const fn flags(neg: bool, scale: u32) -> u32 {
     (scale << SCALE_SHIFT) | ((neg as u32) << SIGN_SHIFT)
 }
 
+macro_rules! integer_docs {
+    ( true ) => {
+        " by truncating and returning the integer component"
+    };
+    ( false ) => {
+        ""
+    };
+}
+
+
+
+#[rustfmt::skip]
+macro_rules! impl_try_from_decimal {
+    ($TInto:ty, $conversion_fn:path, $additional_docs:expr) => {
+        #[doc = concat!(
+            "Try to convert a `Decimal` to `",
+            stringify!($TInto),
+            "`",
+            $additional_docs,
+            ".\n\nCan fail if the `Decimal` is out of range for `",
+            stringify!($TInto),
+            "`.",
+        )]
+        impl core::convert::TryFrom<Decimal> for $TInto {
+            type Error = crate::Error;
+
+            #[inline]
+            fn try_from(t: Decimal) -> Result<Self, Error> {
+                $conversion_fn(&t).ok_or_else(|| Error::ConversionTo(stringify!($TInto).into()))
+            }
+        }
+    };
+}
+
+impl_try_from_decimal!(f32, Decimal::to_f32, integer_docs!(false));
+impl_try_from_decimal!(f64, Decimal::to_f64, integer_docs!(false));
+impl_try_from_decimal!(isize, Decimal::to_isize, integer_docs!(true));
+impl_try_from_decimal!(i8, Decimal::to_i8, integer_docs!(true));
+impl_try_from_decimal!(i16, Decimal::to_i16, integer_docs!(true));
+impl_try_from_decimal!(i32, Decimal::to_i32, integer_docs!(true));
+impl_try_from_decimal!(i64, Decimal::to_i64, integer_docs!(true));
+impl_try_from_decimal!(i128, Decimal::to_i128, integer_docs!(true));
+impl_try_from_decimal!(usize, Decimal::to_usize, integer_docs!(true));
+impl_try_from_decimal!(u8, Decimal::to_u8, integer_docs!(true));
+impl_try_from_decimal!(u16, Decimal::to_u16, integer_docs!(true));
+impl_try_from_decimal!(u32, Decimal::to_u32, integer_docs!(true));
+impl_try_from_decimal!(u64, Decimal::to_u64, integer_docs!(true));
+impl_try_from_decimal!(u128, Decimal::to_u128, integer_docs!(true));
+
+
+
+#[rustfmt::skip]
+macro_rules! impl_try_from_primitive {
+    ($TFrom:ty, $conversion_fn:path) => {
+        #[doc = concat!(
+            "Try to convert a `",
+            stringify!($TFrom),
+            "` into a `Decimal`.\n\nCan fail if the value is out of range for `Decimal`."
+        )]
+        impl core::convert::TryFrom<$TFrom> for Decimal {
+            type Error = crate::Error;
+
+            #[inline]
+            fn try_from(t: $TFrom) -> Result<Self, Error> {
+                $conversion_fn(t).ok_or_else(|| Error::ConversionTo("Decimal".into()))
+            }
+        }
+    };
+}
+
+impl_try_from_primitive!(f32, Self::from_f32);
+impl_try_from_primitive!(f64, Self::from_f64);
+
 macro_rules! impl_from {
     ($T:ty, $from_ty:path) => {
+        ///
+        /// Conversion to `Decimal`.
+        ///
         impl core::convert::From<$T> for Decimal {
             #[inline]
             fn from(t: $T) -> Self {
@@ -1537,6 +1783,7 @@ macro_rules! impl_from {
         }
     };
 }
+
 impl_from!(isize, FromPrimitive::from_isize);
 impl_from!(i8, FromPrimitive::from_i8);
 impl_from!(i16, FromPrimitive::from_i16);
@@ -1550,53 +1797,6 @@ impl_from!(u64, FromPrimitive::from_u64);
 
 impl_from!(i128, FromPrimitive::from_i128);
 impl_from!(u128, FromPrimitive::from_u128);
-
-macro_rules! forward_val_val_binop {
-    (impl $imp:ident for $res:ty, $method:ident) => {
-        impl $imp<$res> for $res {
-            type Output = $res;
-
-            #[inline]
-            fn $method(self, other: $res) -> $res {
-                (&self).$method(&other)
-            }
-        }
-    };
-}
-
-macro_rules! forward_ref_val_binop {
-    (impl $imp:ident for $res:ty, $method:ident) => {
-        impl<'a> $imp<$res> for &'a $res {
-            type Output = $res;
-
-            #[inline]
-            fn $method(self, other: $res) -> $res {
-                self.$method(&other)
-            }
-        }
-    };
-}
-
-macro_rules! forward_val_ref_binop {
-    (impl $imp:ident for $res:ty, $method:ident) => {
-        impl<'a> $imp<&'a $res> for $res {
-            type Output = $res;
-
-            #[inline]
-            fn $method(self, other: &$res) -> $res {
-                (&self).$method(other)
-            }
-        }
-    };
-}
-
-macro_rules! forward_all_binop {
-    (impl $imp:ident for $res:ty, $method:ident) => {
-        forward_val_val_binop!(impl $imp for $res, $method);
-        forward_ref_val_binop!(impl $imp for $res, $method);
-        forward_val_ref_binop!(impl $imp for $res, $method);
-    };
-}
 
 impl Zero for Decimal {
     fn zero() -> Decimal {
@@ -1645,41 +1845,6 @@ impl Signed for Decimal {
 
     fn is_negative(&self) -> bool {
         self.is_sign_negative()
-    }
-}
-
-impl CheckedAdd for Decimal {
-    #[inline]
-    fn checked_add(&self, v: &Decimal) -> Option<Decimal> {
-        Decimal::checked_add(*self, *v)
-    }
-}
-
-impl CheckedSub for Decimal {
-    #[inline]
-    fn checked_sub(&self, v: &Decimal) -> Option<Decimal> {
-        Decimal::checked_sub(*self, *v)
-    }
-}
-
-impl CheckedMul for Decimal {
-    #[inline]
-    fn checked_mul(&self, v: &Decimal) -> Option<Decimal> {
-        Decimal::checked_mul(*self, *v)
-    }
-}
-
-impl CheckedDiv for Decimal {
-    #[inline]
-    fn checked_div(&self, v: &Decimal) -> Option<Decimal> {
-        Decimal::checked_div(*self, *v)
-    }
-}
-
-impl CheckedRem for Decimal {
-    #[inline]
-    fn checked_rem(&self, v: &Decimal) -> Option<Decimal> {
-        Decimal::checked_rem(*self, *v)
     }
 }
 
@@ -2042,14 +2207,25 @@ impl ToPrimitive for Decimal {
     fn to_i64(&self) -> Option<i64> {
         let d = self.trunc();
         
-        if d.hi != 0 || (d.mid & 0x8000_0000) > 0 {
+        if d.hi != 0 {
             
+            return None;
+        }
+        let negative = self.is_sign_negative();
+
+        
+        if d.mid & 0x8000_0000 > 0 {
+            if negative && d.mid == 0x8000_0000 && d.lo == 0 {
+                
+                
+                return Some(i64::MIN);
+            }
             return None;
         }
 
         let raw: i64 = (i64::from(d.mid) << 32) | i64::from(d.lo);
-        if self.is_sign_negative() {
-            Some(-raw)
+        if negative {
+            Some(raw.neg())
         } else {
             Some(raw)
         }
@@ -2113,38 +2289,6 @@ impl ToPrimitive for Decimal {
     }
 }
 
-impl core::convert::TryFrom<f32> for Decimal {
-    type Error = crate::Error;
-
-    fn try_from(value: f32) -> Result<Self, Error> {
-        Self::from_f32(value).ok_or_else(|| Error::from("Failed to convert to Decimal"))
-    }
-}
-
-impl core::convert::TryFrom<f64> for Decimal {
-    type Error = crate::Error;
-
-    fn try_from(value: f64) -> Result<Self, Error> {
-        Self::from_f64(value).ok_or_else(|| Error::from("Failed to convert to Decimal"))
-    }
-}
-
-impl core::convert::TryFrom<Decimal> for f32 {
-    type Error = crate::Error;
-
-    fn try_from(value: Decimal) -> Result<Self, Self::Error> {
-        Decimal::to_f32(&value).ok_or_else(|| Error::from("Failed to convert to f32"))
-    }
-}
-
-impl core::convert::TryFrom<Decimal> for f64 {
-    type Error = crate::Error;
-
-    fn try_from(value: Decimal) -> Result<Self, Self::Error> {
-        Decimal::to_f64(&value).ok_or_else(|| Error::from("Failed to convert to f64"))
-    }
-}
-
 impl fmt::Display for Decimal {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         let (rep, additional) = crate::str::to_str_internal(self, false, f.precision());
@@ -2198,20 +2342,6 @@ impl<'a> Neg for &'a Decimal {
     }
 }
 
-forward_all_binop!(impl Add for Decimal, add);
-
-impl<'a, 'b> Add<&'b Decimal> for &'a Decimal {
-    type Output = Decimal;
-
-    #[inline(always)]
-    fn add(self, other: &Decimal) -> Decimal {
-        match ops::add_impl(self, other) {
-            CalculationResult::Ok(sum) => sum,
-            _ => panic!("Addition overflowed"),
-        }
-    }
-}
-
 impl AddAssign for Decimal {
     fn add_assign(&mut self, other: Decimal) {
         let result = self.add(other);
@@ -2237,20 +2367,6 @@ impl<'a> AddAssign<Decimal> for &'a mut Decimal {
 impl<'a> AddAssign<&'a Decimal> for &'a mut Decimal {
     fn add_assign(&mut self, other: &'a Decimal) {
         Decimal::add_assign(*self, *other)
-    }
-}
-
-forward_all_binop!(impl Sub for Decimal, sub);
-
-impl<'a, 'b> Sub<&'b Decimal> for &'a Decimal {
-    type Output = Decimal;
-
-    #[inline(always)]
-    fn sub(self, other: &Decimal) -> Decimal {
-        match ops::sub_impl(self, other) {
-            CalculationResult::Ok(sum) => sum,
-            _ => panic!("Subtraction overflowed"),
-        }
     }
 }
 
@@ -2282,20 +2398,6 @@ impl<'a> SubAssign<&'a Decimal> for &'a mut Decimal {
     }
 }
 
-forward_all_binop!(impl Mul for Decimal, mul);
-
-impl<'a, 'b> Mul<&'b Decimal> for &'a Decimal {
-    type Output = Decimal;
-
-    #[inline]
-    fn mul(self, other: &Decimal) -> Decimal {
-        match ops::mul_impl(self, other) {
-            CalculationResult::Ok(prod) => prod,
-            _ => panic!("Multiplication overflowed"),
-        }
-    }
-}
-
 impl MulAssign for Decimal {
     fn mul_assign(&mut self, other: Decimal) {
         let result = self.mul(other);
@@ -2324,20 +2426,6 @@ impl<'a> MulAssign<&'a Decimal> for &'a mut Decimal {
     }
 }
 
-forward_all_binop!(impl Div for Decimal, div);
-
-impl<'a, 'b> Div<&'b Decimal> for &'a Decimal {
-    type Output = Decimal;
-
-    fn div(self, other: &Decimal) -> Decimal {
-        match ops::div_impl(self, other) {
-            CalculationResult::Ok(quot) => quot,
-            CalculationResult::Overflow => panic!("Division overflowed"),
-            CalculationResult::DivByZero => panic!("Division by zero"),
-        }
-    }
-}
-
 impl DivAssign for Decimal {
     fn div_assign(&mut self, other: Decimal) {
         let result = self.div(other);
@@ -2363,21 +2451,6 @@ impl<'a> DivAssign<Decimal> for &'a mut Decimal {
 impl<'a> DivAssign<&'a Decimal> for &'a mut Decimal {
     fn div_assign(&mut self, other: &'a Decimal) {
         Decimal::div_assign(*self, *other)
-    }
-}
-
-forward_all_binop!(impl Rem for Decimal, rem);
-
-impl<'a, 'b> Rem<&'b Decimal> for &'a Decimal {
-    type Output = Decimal;
-
-    #[inline]
-    fn rem(self, other: &Decimal) -> Decimal {
-        match ops::rem_impl(self, other) {
-            CalculationResult::Ok(rem) => rem,
-            CalculationResult::Overflow => panic!("Division overflowed"),
-            CalculationResult::DivByZero => panic!("Division by zero"),
-        }
     }
 }
 

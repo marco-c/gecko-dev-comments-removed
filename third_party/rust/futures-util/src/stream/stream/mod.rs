@@ -199,6 +199,25 @@ pub use self::buffered::Buffered;
 
 #[cfg(not(futures_no_atomic_cas))]
 #[cfg(feature = "alloc")]
+mod flatten_unordered;
+
+#[cfg(not(futures_no_atomic_cas))]
+#[cfg(feature = "alloc")]
+#[allow(unreachable_pub)]
+pub use self::flatten_unordered::FlattenUnordered;
+
+#[cfg(not(futures_no_atomic_cas))]
+#[cfg(feature = "alloc")]
+delegate_all!(
+    /// Stream for the [`flat_map_unordered`](StreamExt::flat_map_unordered) method.
+    FlatMapUnordered<St, U, F>(
+        FlattenUnordered<Map<St, F>>
+    ): Debug + Sink + Stream + FusedStream + AccessInner[St, (. .)] + New[|x: St, limit: Option<usize>, f: F| FlattenUnordered::new(Map::new(x, f), limit)]
+    where St: Stream, U: Stream, U: Unpin, F: FnMut(St::Item) -> U
+);
+
+#[cfg(not(futures_no_atomic_cas))]
+#[cfg(feature = "alloc")]
 mod for_each_concurrent;
 #[cfg(not(futures_no_atomic_cas))]
 #[cfg(feature = "alloc")]
@@ -779,6 +798,50 @@ pub trait StreamExt: Stream {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(not(futures_no_atomic_cas))]
+    #[cfg(feature = "alloc")]
+    fn flatten_unordered(self, limit: impl Into<Option<usize>>) -> FlattenUnordered<Self>
+    where
+        Self::Item: Stream + Unpin,
+        Self: Sized,
+    {
+        FlattenUnordered::new(self, limit.into())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn flat_map<U, F>(self, f: F) -> FlatMap<Self, U, F>
     where
         F: FnMut(Self::Item) -> U,
@@ -786,6 +849,59 @@ pub trait StreamExt: Stream {
         Self: Sized,
     {
         assert_stream::<U::Item, _>(FlatMap::new(self, f))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(not(futures_no_atomic_cas))]
+    #[cfg(feature = "alloc")]
+    fn flat_map_unordered<U, F>(
+        self,
+        limit: impl Into<Option<usize>>,
+        f: F,
+    ) -> FlatMapUnordered<Self, U, F>
+    where
+        U: Stream + Unpin,
+        F: FnMut(Self::Item) -> U,
+        Self: Sized,
+    {
+        FlatMapUnordered::new(self, limit.into(), f)
     }
 
     

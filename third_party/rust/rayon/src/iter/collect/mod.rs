@@ -1,6 +1,4 @@
-use super::{IndexedParallelIterator, IntoParallelIterator, ParallelExtend, ParallelIterator};
-use std::mem::MaybeUninit;
-use std::slice;
+use super::{IndexedParallelIterator, ParallelIterator};
 
 mod consumer;
 use self::consumer::CollectConsumer;
@@ -19,7 +17,7 @@ where
 {
     v.truncate(0); 
     let len = pi.len();
-    Collect::new(v, len).with_consumer(|consumer| pi.drive(consumer));
+    collect_with_consumer(v, len, |consumer| pi.drive(consumer));
 }
 
 
@@ -33,12 +31,12 @@ where
 
 
 
-fn special_extend<I, T>(pi: I, len: usize, v: &mut Vec<T>)
+pub(super) fn special_extend<I, T>(pi: I, len: usize, v: &mut Vec<T>)
 where
     I: ParallelIterator<Item = T>,
     T: Send,
 {
-    Collect::new(v, len).with_consumer(|consumer| pi.drive_unindexed(consumer));
+    collect_with_consumer(v, len, |consumer| pi.drive_unindexed(consumer));
 }
 
 
@@ -55,9 +53,9 @@ where
     right.truncate(0);
 
     let len = pi.len();
-    Collect::new(right, len).with_consumer(|right_consumer| {
+    collect_with_consumer(right, len, |right_consumer| {
         let mut right_result = None;
-        Collect::new(left, len).with_consumer(|left_consumer| {
+        collect_with_consumer(left, len, |left_consumer| {
             let (left_r, right_r) = unzip_indexed(pi, left_consumer, right_consumer);
             right_result = Some(right_r);
             left_r
@@ -67,107 +65,52 @@ where
 }
 
 
-struct Collect<'c, T: Send> {
-    vec: &'c mut Vec<T>,
-    len: usize,
-}
-
-impl<'c, T: Send + 'c> Collect<'c, T> {
-    fn new(vec: &'c mut Vec<T>, len: usize) -> Self {
-        Collect { vec, len }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    fn with_consumer<F>(mut self, scope_fn: F)
-    where
-        F: FnOnce(CollectConsumer<'_, T>) -> CollectResult<'_, T>,
-    {
-        let slice = Self::reserve_get_tail_slice(&mut self.vec, self.len);
-        let result = scope_fn(CollectConsumer::new(slice));
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        let actual_writes = result.len();
-        assert!(
-            actual_writes == self.len,
-            "expected {} total writes, but got {}",
-            self.len,
-            actual_writes
-        );
-
-        
-        
-        result.release_ownership();
-
-        let new_len = self.vec.len() + self.len;
-
-        unsafe {
-            self.vec.set_len(new_len);
-        }
-    }
-
-    
-    
-    fn reserve_get_tail_slice(vec: &mut Vec<T>, len: usize) -> &mut [MaybeUninit<T>] {
-        
-        vec.reserve(len);
-
-        
-        
-        
-        let start = vec.len();
-        let tail_ptr = vec[start..].as_mut_ptr() as *mut MaybeUninit<T>;
-        unsafe { slice::from_raw_parts_mut(tail_ptr, len) }
-    }
-}
 
 
-impl<T> ParallelExtend<T> for Vec<T>
+
+
+
+
+
+fn collect_with_consumer<T, F>(vec: &mut Vec<T>, len: usize, scope_fn: F)
 where
     T: Send,
+    F: FnOnce(CollectConsumer<'_, T>) -> CollectResult<'_, T>,
 {
-    fn par_extend<I>(&mut self, par_iter: I)
-    where
-        I: IntoParallelIterator<Item = T>,
-    {
-        
-        let par_iter = par_iter.into_par_iter();
-        match par_iter.opt_len() {
-            Some(len) => {
-                
-                
-                
-                special_extend(par_iter, len, self);
-            }
-            None => {
-                
-                let list = super::extend::collect(par_iter);
-                self.reserve(super::extend::len(&list));
-                for mut vec in list {
-                    self.append(&mut vec);
-                }
-            }
-        }
+    
+    vec.reserve(len);
+
+    
+    let result = scope_fn(CollectConsumer::appender(vec, len));
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    let actual_writes = result.len();
+    assert!(
+        actual_writes == len,
+        "expected {} total writes, but got {}",
+        len,
+        actual_writes
+    );
+
+    
+    
+    result.release_ownership();
+
+    let new_len = vec.len() + len;
+
+    unsafe {
+        vec.set_len(new_len);
     }
 }

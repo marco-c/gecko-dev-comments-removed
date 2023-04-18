@@ -61,6 +61,11 @@ fn main() {
     }
 
     
+    if rustc_minor_ver >= 26 || rustc_dep_of_std {
+        println!("cargo:rustc-cfg=libc_int128");
+    }
+
+    
     
     
     if rustc_minor_ver >= 30 || rustc_dep_of_std {
@@ -80,6 +85,11 @@ fn main() {
 
     if rustc_minor_ver >= 51 || rustc_dep_of_std {
         println!("cargo:rustc-cfg=libc_ptr_addr_of");
+    }
+
+    
+    if rustc_minor_ver >= 37 || rustc_dep_of_std {
+        println!("cargo:rustc-cfg=libc_underscore_const_names");
     }
 
     

@@ -1,0 +1,11 @@
+#![deny(unused_must_use)]
+
+use anyhow::anyhow;
+
+fn main() -> anyhow::Result<()> {
+    if true {
+        
+        anyhow!("it failed");
+    }
+    Ok(())
+}

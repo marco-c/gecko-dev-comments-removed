@@ -1,8 +1,8 @@
 
 
-#[cfg(all(docsrs, not(unix)))]
+#[cfg(all(libloading_docs, not(unix)))]
 mod unix_imports {}
-#[cfg(any(not(docsrs), unix))]
+#[cfg(any(not(libloading_docs), unix))]
 mod unix_imports {
     pub(super) use std::os::unix::ffi::OsStrExt;
 }

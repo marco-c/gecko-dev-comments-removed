@@ -189,19 +189,21 @@ impl<'r> Latch for SpinLatch<'r> {
     fn set(&self) {
         let cross_registry;
 
-        let registry = if self.cross {
+        let registry: &Registry = if self.cross {
             
             
             
             
             
             cross_registry = Arc::clone(self.registry);
-            &cross_registry
+            &*cross_registry
         } else {
             
             
             
-            self.registry
+            
+            
+            &**self.registry
         };
         let target_worker_index = self.target_worker_index;
 

@@ -25,18 +25,39 @@ const TINFL_STATUS_HAS_MORE_OUTPUT: i32 = 2;
 pub enum TINFLStatus {
     
     
+    
+    
+    
+    
+    
+    
     FailedCannotMakeProgress = TINFL_STATUS_FAILED_CANNOT_MAKE_PROGRESS as i8,
+
     
     BadParam = TINFL_STATUS_BAD_PARAM as i8,
+
     
     
     Adler32Mismatch = TINFL_STATUS_ADLER32_MISMATCH as i8,
+
     
     Failed = TINFL_STATUS_FAILED as i8,
+
+    
+    
     
     Done = TINFL_STATUS_DONE as i8,
+
+    
+    
+    
+    
+    
+    
+    
     
     NeedsMoreInput = TINFL_STATUS_NEEDS_MORE_INPUT as i8,
+
     
     HasMoreOutput = TINFL_STATUS_HAS_MORE_OUTPUT as i8,
 }
@@ -99,6 +120,9 @@ pub fn decompress_to_vec_zlib_with_limit(
 ) -> Result<Vec<u8>, TINFLStatus> {
     decompress_to_vec_inner(input, inflate_flags::TINFL_FLAG_PARSE_ZLIB_HEADER, max_size)
 }
+
+
+
 
 fn decompress_to_vec_inner(
     input: &[u8],

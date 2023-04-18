@@ -6,7 +6,6 @@
 use crate::task::AtomicWaker;
 use alloc::sync::{Arc, Weak};
 use core::cell::UnsafeCell;
-use core::cmp;
 use core::fmt::{self, Debug};
 use core::iter::FromIterator;
 use core::marker::PhantomData;
@@ -30,33 +29,6 @@ use self::task::Task;
 
 mod ready_to_run_queue;
 use self::ready_to_run_queue::{Dequeue, ReadyToRunQueue};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-const YIELD_EVERY: usize = 32;
 
 
 
@@ -149,8 +121,9 @@ impl<Fut> FuturesUnordered<Fut> {
             next_ready_to_run: AtomicPtr::new(ptr::null_mut()),
             queued: AtomicBool::new(true),
             ready_to_run_queue: Weak::new(),
+            woken: AtomicBool::new(false),
         });
-        let stub_ptr = &*stub as *const Task<Fut>;
+        let stub_ptr = Arc::as_ptr(&stub);
         let ready_to_run_queue = Arc::new(ReadyToRunQueue {
             waker: AtomicWaker::new(),
             head: AtomicPtr::new(stub_ptr as *mut _),
@@ -195,6 +168,7 @@ impl<Fut> FuturesUnordered<Fut> {
             next_ready_to_run: AtomicPtr::new(ptr::null_mut()),
             queued: AtomicBool::new(true),
             ready_to_run_queue: Arc::downgrade(&self.ready_to_run_queue),
+            woken: AtomicBool::new(false),
         });
 
         
@@ -403,7 +377,7 @@ impl<Fut> FuturesUnordered<Fut> {
         
         
         
-        &*self.ready_to_run_queue.stub as *const _ as *mut _
+        Arc::as_ptr(&self.ready_to_run_queue.stub) as *mut _
     }
 }
 
@@ -411,12 +385,12 @@ impl<Fut: Future> Stream for FuturesUnordered<Fut> {
     type Item = Fut::Output;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        
-        let yield_every = cmp::min(self.len(), YIELD_EVERY);
+        let len = self.len();
 
         
         
         let mut polled = 0;
+        let mut yielded = 0;
 
         
         self.ready_to_run_queue.waker.register(cx.waker());
@@ -527,7 +501,11 @@ impl<Fut: Future> Stream for FuturesUnordered<Fut> {
             
             
             let res = {
-                let waker = Task::waker_ref(bomb.task.as_ref().unwrap());
+                let task = bomb.task.as_ref().unwrap();
+                
+                
+                task.woken.store(false, Relaxed);
+                let waker = Task::waker_ref(task);
                 let mut cx = Context::from_waker(&waker);
 
                 
@@ -540,12 +518,17 @@ impl<Fut: Future> Stream for FuturesUnordered<Fut> {
             match res {
                 Poll::Pending => {
                     let task = bomb.task.take().unwrap();
+                    
+                    
+                    yielded += task.woken.load(Relaxed) as usize;
                     bomb.queue.link(task);
 
-                    if polled == yield_every {
-                        
-                        
-                        
+                    
+                    
+                    
+                    
+                    
+                    if yielded >= 2 || polled == len {
                         cx.waker().wake_by_ref();
                         return Poll::Pending;
                     }

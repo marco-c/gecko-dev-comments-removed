@@ -168,6 +168,7 @@ fn skipping_and_zero_reads() {
     assert_eq!(reader.read_u8(4).unwrap(), 0b1011);
     
     assert_eq!(reader.read_u8(0).unwrap(), 0b0);
+    assert_eq!(reader.read_i8(0).unwrap(), 0b0);
     assert_eq!(reader.read_u8(4).unwrap(), 0b0101);
     reader.skip(3).unwrap(); 
     assert_eq!(reader.read_u16(10).unwrap(), 0b0101010101);
