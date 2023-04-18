@@ -1807,6 +1807,22 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
         return Allow();
 
         
+        
+        
+        
+      case __NR_sched_getaffinity:
+      case __NR_sched_setaffinity:
+      case __NR_sched_getparam:
+      case __NR_sched_setparam:
+      case __NR_sched_getscheduler:
+      case __NR_sched_setscheduler:
+      case __NR_sched_getattr:
+      case __NR_sched_setattr: {
+        Arg<pid_t> pid(0);
+        return If(pid == 0, Allow()).Else(Trap(SchedTrap, nullptr));
+      }
+
+        
       default:
         return SandboxPolicyCommon::EvaluateSyscall(sysno);
     }
