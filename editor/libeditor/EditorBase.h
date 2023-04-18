@@ -1705,7 +1705,7 @@ class EditorBase : public nsIEditor,
 
 
 
-  virtual MOZ_CAN_RUN_SCRIPT nsresult
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   DeleteNodeWithTransaction(nsIContent& aContent);
 
   
