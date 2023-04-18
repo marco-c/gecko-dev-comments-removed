@@ -2,19 +2,13 @@
 
 
 
-#[macro_use]
-extern crate log;
-extern crate once_cell;
-extern crate regex;
-extern crate tempfile;
-extern crate walkdir;
-
 pub mod adb;
 pub mod shell;
 
 #[cfg(test)]
 pub mod test;
 
+use log::{debug, warn};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use std::collections::BTreeMap;
