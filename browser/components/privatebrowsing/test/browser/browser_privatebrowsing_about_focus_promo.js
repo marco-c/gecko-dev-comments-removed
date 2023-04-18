@@ -57,7 +57,7 @@ add_task(async function test_focus_promo_in_disallowed_region() {
 
 add_task(
   async function test_klar_promo_in_certain_regions_with_English_locale() {
-    const testLocale = "en-GB"; 
+    const testLocale = "en-US"; 
     setLocale(testLocale);
 
     const testRegion = async region => {
