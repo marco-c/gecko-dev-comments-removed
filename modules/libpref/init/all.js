@@ -2211,6 +2211,11 @@ pref("extensions.blocklist.addonItemURL", "https://addons.mozilla.org/%LOCALE%/%
 
 pref("extensions.blocklist.level", 2);
 
+pref("extensions.eventPages.enabled", false);
+
+pref("extensions.manifestV3.enabled", false);
+
+
 pref("services.blocklist.bucket", "blocklists");
 pref("services.blocklist.addons.collection", "addons");
 pref("services.blocklist.addons.checked", 0);
