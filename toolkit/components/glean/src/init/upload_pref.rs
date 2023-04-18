@@ -4,7 +4,6 @@
 
 use std::ffi::CStr;
 use std::os::raw::c_char;
-use std::sync::atomic::{AtomicBool, Ordering};
 
 use nserror::{nsresult, NS_ERROR_FAILURE, NS_OK};
 use nsstring::{nsACString, nsCStr};
@@ -12,10 +11,6 @@ use xpcom::{
     interfaces::{nsIPrefBranch, nsISupports},
     RefPtr, XpCom,
 };
-
-
-
-static RECORDING_ENABLED: AtomicBool = AtomicBool::new(false);
 
 
 #[derive(xpcom)]
@@ -39,10 +34,6 @@ impl UploadPrefObserver {
                 (*pref_service).query_interface().ok_or(NS_ERROR_FAILURE)?;
             let pref_nscstr =
                 &nsCStr::from("datareporting.healthreport.uploadEnabled") as &nsACString;
-            (*pref_branch)
-                .AddObserverImpl(pref_nscstr, pref_obs.coerce(), false)
-                .to_result()?;
-            let pref_nscstr = &nsCStr::from("telemetry.fog.test.localhost_port") as &nsACString;
             (*pref_branch)
                 .AddObserverImpl(pref_nscstr, pref_obs.coerce(), false)
                 .to_result()?;
@@ -71,23 +62,12 @@ impl UploadPrefObserver {
             Err(_) => return NS_ERROR_FAILURE,
         };
         log::info!("Observed {:?}, {:?}", topic, pref_name);
-        debug_assert!(topic == "nsPref:changed");
         debug_assert!(
-            pref_name == "datareporting.healthreport.uploadEnabled"
-                || pref_name == "telemetry.fog.test.localhost_port"
+            topic == "nsPref:changed" && pref_name == "datareporting.healthreport.uploadEnabled"
         );
 
         let upload_enabled = static_prefs::pref!("datareporting.healthreport.uploadEnabled");
-        let recording_enabled = static_prefs::pref!("telemetry.fog.test.localhost_port") < 0;
-        if RECORDING_ENABLED.load(Ordering::SeqCst) && !recording_enabled {
-            
-            
-            
-            
-            glean::set_upload_enabled(false);
-        }
-        RECORDING_ENABLED.store(recording_enabled, Ordering::SeqCst);
-        glean::set_upload_enabled(upload_enabled || recording_enabled);
+        glean::set_upload_enabled(upload_enabled);
         NS_OK
     }
 }
