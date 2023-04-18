@@ -93,7 +93,9 @@ extern "C" __declspec(dllexport) __declspec(noinline) payload
   return p;
 }
 
-static bool patched_func_called = false;
+
+
+static volatile bool patched_func_called = false;
 
 static WindowsDllInterceptor::FuncHookType<decltype(&rotatePayload)>
     orig_rotatePayload;
@@ -194,7 +196,8 @@ struct InterceptorFunction {
     memcpy(funcCode, sInterceptorTemplate, TemplateLength);
 
     
-    auto pfPtr = reinterpret_cast<bool**>(&ret[PatchedFuncCalledIndex]);
+    auto pfPtr =
+        reinterpret_cast<volatile bool**>(&ret[PatchedFuncCalledIndex]);
     *pfPtr = &patched_func_called;
     return ret;
   }
