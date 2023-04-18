@@ -698,7 +698,11 @@ class ScrollWheelInput : public InputData {
 
   
   
-  bool IsAutoDir() const {
+  bool IsAutoDir(bool aForce = false) const {
+    if (aForce) {
+      return true;
+    }
+
     switch (mWheelDeltaAdjustmentStrategy) {
       case WheelDeltaAdjustmentStrategy::eAutoDir:
       case WheelDeltaAdjustmentStrategy::eAutoDirWithRootHonour:
@@ -717,9 +721,10 @@ class ScrollWheelInput : public InputData {
   
   
   
-  bool HonoursRoot() const {
+  bool HonoursRoot(bool aForce = false) const {
     return WheelDeltaAdjustmentStrategy::eAutoDirWithRootHonour ==
-           mWheelDeltaAdjustmentStrategy;
+               mWheelDeltaAdjustmentStrategy ||
+           aForce;
   }
 
   

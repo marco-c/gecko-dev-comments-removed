@@ -2128,12 +2128,13 @@ bool AsyncPanZoomController::CanScroll(const InputData& aEvent) const {
     
     
     
-    if (scrollWheelInput.IsAutoDir()) {
+    if (scrollWheelInput.IsAutoDir(mScrollMetadata.ForceMousewheelAutodir())) {
       RecursiveMutexAutoLock lock(mRecursiveMutex);
       auto deltaX = scrollWheelInput.mDeltaX;
       auto deltaY = scrollWheelInput.mDeltaY;
       bool isRTL =
-          IsContentOfHonouredTargetRightToLeft(scrollWheelInput.HonoursRoot());
+          IsContentOfHonouredTargetRightToLeft(scrollWheelInput.HonoursRoot(
+              mScrollMetadata.ForceMousewheelAutodirHonourRoot()));
       APZAutoDirWheelDeltaAdjuster adjuster(deltaX, deltaY, mX, mY, isRTL);
       if (adjuster.ShouldBeAdjusted()) {
         
@@ -2288,11 +2289,12 @@ nsEventStatus AsyncPanZoomController::OnScrollWheel(
   auto deltaX = aEvent.mDeltaX;
   auto deltaY = aEvent.mDeltaY;
   ParentLayerPoint delta;
-  if (aEvent.IsAutoDir()) {
+  if (aEvent.IsAutoDir(mScrollMetadata.ForceMousewheelAutodir())) {
     
     
     RecursiveMutexAutoLock lock(mRecursiveMutex);
-    bool isRTL = IsContentOfHonouredTargetRightToLeft(aEvent.HonoursRoot());
+    bool isRTL = IsContentOfHonouredTargetRightToLeft(
+        aEvent.HonoursRoot(mScrollMetadata.ForceMousewheelAutodirHonourRoot()));
     APZAutoDirWheelDeltaAdjuster adjuster(deltaX, deltaY, mX, mY, isRTL);
     if (adjuster.ShouldBeAdjusted()) {
       adjuster.Adjust();
@@ -5048,6 +5050,10 @@ void AsyncPanZoomController::NotifyLayersUpdated(
         aScrollMetadata.GetIsRDMTouchSimulationActive());
     mScrollMetadata.SetPrefersReducedMotion(
         aScrollMetadata.PrefersReducedMotion());
+    mScrollMetadata.SetForceMousewheelAutodir(
+        aScrollMetadata.ForceMousewheelAutodir());
+    mScrollMetadata.SetForceMousewheelAutodirHonourRoot(
+        aScrollMetadata.ForceMousewheelAutodirHonourRoot());
     mScrollMetadata.SetDisregardedDirection(
         aScrollMetadata.GetDisregardedDirection());
     mScrollMetadata.SetOverscrollBehavior(
