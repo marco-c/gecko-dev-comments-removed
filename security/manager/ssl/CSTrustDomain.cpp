@@ -131,14 +131,10 @@ Result CSTrustDomain::IsChainValid(const DERArray& certChain, Time time,
 Result CSTrustDomain::CheckSignatureDigestAlgorithm(DigestAlgorithm digestAlg,
                                                     EndEntityOrCA endEntityOrCA,
                                                     Time notBefore) {
-  switch (digestAlg) {
-    case DigestAlgorithm::sha256:  
-    case DigestAlgorithm::sha384:  
-    case DigestAlgorithm::sha512:
-      return Success;
-    case DigestAlgorithm::sha1:
-      return Result::ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED;
+  if (digestAlg == DigestAlgorithm::sha1) {
+    return Result::ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED;
   }
+  return Success;
 }
 
 Result CSTrustDomain::CheckRSAPublicKeyModulusSizeInBits(

@@ -54,6 +54,7 @@ Services.prefs.setIntPref("security.OCSP.enabled", 1);
 
 
 Services.prefs.setIntPref("security.OCSP.timeoutMilliseconds.soft", 5000);
+Services.prefs.setIntPref("security.pki.sha1_enforcement_level", 4);
 var args = [
   ["good", "default-ee", "unused", 0],
   ["expiredresponse", "default-ee", "unused", 0],
@@ -80,7 +81,8 @@ var willNotRetry = 1;
 
 
 
-var willRetry = 2;
+
+var willRetry = 6;
 
 function run_test() {
   let ocspResponder = new HttpServer();

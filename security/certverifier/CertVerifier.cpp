@@ -104,7 +104,7 @@ void CertificateTransparencyInfo::Reset() {
 CertVerifier::CertVerifier(OcspDownloadConfig odc, OcspStrictConfig osc,
                            mozilla::TimeDuration ocspTimeoutSoft,
                            mozilla::TimeDuration ocspTimeoutHard,
-                           uint32_t certShortLifetimeInDays,
+                           uint32_t certShortLifetimeInDays, SHA1Mode sha1Mode,
                            NetscapeStepUpPolicy netscapeStepUpPolicy,
                            CertificateTransparencyMode ctMode,
                            CRLiteMode crliteMode,
@@ -114,6 +114,7 @@ CertVerifier::CertVerifier(OcspDownloadConfig odc, OcspStrictConfig osc,
       mOCSPTimeoutSoft(ocspTimeoutSoft),
       mOCSPTimeoutHard(ocspTimeoutHard),
       mCertShortLifetimeInDays(certShortLifetimeInDays),
+      mSHA1Mode(sha1Mode),
       mNetscapeStepUpPolicy(netscapeStepUpPolicy),
       mCTMode(ctMode),
       mCRLiteMode(crliteMode) {
@@ -445,6 +446,24 @@ Result CertVerifier::VerifyCertificateTransparencyPolicy(
   return Success;
 }
 
+bool CertVerifier::SHA1ModeMoreRestrictiveThanGivenMode(SHA1Mode mode) {
+  switch (mSHA1Mode) {
+    case SHA1Mode::Forbidden:
+      return mode != SHA1Mode::Forbidden;
+    case SHA1Mode::ImportedRoot:
+      return mode != SHA1Mode::Forbidden && mode != SHA1Mode::ImportedRoot;
+    case SHA1Mode::ImportedRootOrBefore2016:
+      return mode == SHA1Mode::Allowed;
+    case SHA1Mode::Allowed:
+      return false;
+    
+    case SHA1Mode::UsedToBeBefore2016ButNowIsForbidden:
+    default:
+      MOZ_ASSERT(false, "unexpected SHA1Mode type");
+      return true;
+  }
+}
+
 Result CertVerifier::VerifyCert(
     const nsTArray<uint8_t>& certBytes, SECCertificateUsage usage, Time time,
     void* pinArg, const char* hostname,
@@ -457,6 +476,7 @@ Result CertVerifier::VerifyCert(
      EVStatus* evStatus,
      OCSPStaplingStatus* ocspStaplingStatus,
      KeySizeStatus* keySizeStatus,
+     SHA1ModeResult* sha1ModeResult,
      PinningTelemetryInfo* pinningTelemetryInfo,
      CertificateTransparencyInfo* ctInfo,
      bool* isBuiltChainRootBuiltInRoot) {
@@ -464,6 +484,7 @@ Result CertVerifier::VerifyCert(
 
   MOZ_ASSERT(usage == certificateUsageSSLServer || !(flags & FLAG_MUST_BE_EV));
   MOZ_ASSERT(usage == certificateUsageSSLServer || !keySizeStatus);
+  MOZ_ASSERT(usage == certificateUsageSSLServer || !sha1ModeResult);
 
   if (NS_FAILED(BlockUntilLoadableCertsLoaded())) {
     return Result::FATAL_ERROR_LIBRARY_FAILURE;
@@ -487,6 +508,13 @@ Result CertVerifier::VerifyCert(
       return Result::FATAL_ERROR_INVALID_ARGS;
     }
     *keySizeStatus = KeySizeStatus::NeverChecked;
+  }
+
+  if (sha1ModeResult) {
+    if (usage != certificateUsageSSLServer) {
+      return Result::FATAL_ERROR_INVALID_ARGS;
+    }
+    *sha1ModeResult = SHA1ModeResult::NeverChecked;
   }
 
   if (usage != certificateUsageSSLServer && (flags & FLAG_MUST_BE_EV)) {
@@ -539,10 +567,10 @@ Result CertVerifier::VerifyCert(
       NSSCertDBTrustDomain trustDomain(
           trustEmail, defaultOCSPFetching, mOCSPCache, pinArg, mOCSPTimeoutSoft,
           mOCSPTimeoutHard, mCertShortLifetimeInDays, MIN_RSA_BITS_WEAK,
-          ValidityCheckingMode::CheckingOff, NetscapeStepUpPolicy::NeverMatch,
-          mCRLiteMode, originAttributes, mThirdPartyRootInputs,
-          mThirdPartyIntermediateInputs, extraCertificates, builtChain, nullptr,
-          nullptr);
+          ValidityCheckingMode::CheckingOff, SHA1Mode::Allowed,
+          NetscapeStepUpPolicy::NeverMatch, mCRLiteMode, originAttributes,
+          mThirdPartyRootInputs, mThirdPartyIntermediateInputs,
+          extraCertificates, builtChain, nullptr, nullptr);
       rv = BuildCertChain(
           trustDomain, certDER, time, EndEntityOrCA::MustBeEndEntity,
           KeyUsage::digitalSignature, KeyPurposeId::id_kp_clientAuth,
@@ -556,6 +584,30 @@ Result CertVerifier::VerifyCert(
       
 
       
+      
+      
+      SHA1Mode sha1ModeConfigurations[] = {
+          SHA1Mode::Forbidden,
+          SHA1Mode::ImportedRoot,
+          SHA1Mode::ImportedRootOrBefore2016,
+          SHA1Mode::Allowed,
+      };
+
+      SHA1ModeResult sha1ModeResults[] = {
+          SHA1ModeResult::SucceededWithoutSHA1,
+          SHA1ModeResult::SucceededWithImportedRoot,
+          SHA1ModeResult::SucceededWithImportedRootOrSHA1Before2016,
+          SHA1ModeResult::SucceededWithSHA1,
+      };
+
+      size_t sha1ModeConfigurationsCount =
+          MOZ_ARRAY_LENGTH(sha1ModeConfigurations);
+
+      static_assert(MOZ_ARRAY_LENGTH(sha1ModeConfigurations) ==
+                        MOZ_ARRAY_LENGTH(sha1ModeResults),
+                    "digestAlgorithm array lengths differ");
+
+      
       NSSCertDBTrustDomain::OCSPFetching evOCSPFetching =
           (mOCSPDownloadConfig == ocspOff) || (flags & FLAG_LOCAL_ONLY)
               ? NSSCertDBTrustDomain::LocalOnlyOCSPForEV
@@ -564,14 +616,32 @@ Result CertVerifier::VerifyCert(
       CertPolicyId evPolicy;
       bool foundEVPolicy = GetFirstEVPolicy(certBytes, evPolicy);
       rv = Result::ERROR_UNKNOWN_ERROR;
-      if (foundEVPolicy) {
+      for (size_t i = 0;
+           i < sha1ModeConfigurationsCount && rv != Success && foundEVPolicy;
+           i++) {
+        
+        
+        
+        
+        
+        
+        if (SHA1ModeMoreRestrictiveThanGivenMode(sha1ModeConfigurations[i])) {
+          continue;
+        }
+
+        
+        
+        if (pinningTelemetryInfo) {
+          pinningTelemetryInfo->Reset();
+        }
+
         NSSCertDBTrustDomain trustDomain(
             trustSSL, evOCSPFetching, mOCSPCache, pinArg, mOCSPTimeoutSoft,
             mOCSPTimeoutHard, mCertShortLifetimeInDays, MIN_RSA_BITS,
-            ValidityCheckingMode::CheckForEV, mNetscapeStepUpPolicy,
-            mCRLiteMode, originAttributes, mThirdPartyRootInputs,
-            mThirdPartyIntermediateInputs, extraCertificates, builtChain,
-            pinningTelemetryInfo, hostname);
+            ValidityCheckingMode::CheckForEV, sha1ModeConfigurations[i],
+            mNetscapeStepUpPolicy, mCRLiteMode, originAttributes,
+            mThirdPartyRootInputs, mThirdPartyIntermediateInputs,
+            extraCertificates, builtChain, pinningTelemetryInfo, hostname);
         rv = BuildCertChainForOneKeyUsage(
             trustDomain, certDER, time,
             KeyUsage::digitalSignature,  
@@ -579,21 +649,36 @@ Result CertVerifier::VerifyCert(
             KeyUsage::keyAgreement,      
             KeyPurposeId::id_kp_serverAuth, evPolicy, stapledOCSPResponse,
             ocspStaplingStatus);
-        if (rv == Success) {
-          rv = VerifyCertificateTransparencyPolicy(
-              trustDomain, builtChain, sctsFromTLSInput, time, ctInfo);
+        if (rv == Success &&
+            sha1ModeConfigurations[i] == SHA1Mode::ImportedRoot &&
+            trustDomain.GetIsBuiltChainRootBuiltInRoot()) {
+          rv = Result::ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED;
         }
         if (rv == Success) {
+          MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
+                  ("cert is EV with status %i\n",
+                   static_cast<int>(sha1ModeResults[i])));
           if (evStatus) {
-            *evStatus = EVStatus::EV;
+            *evStatus = foundEVPolicy ? EVStatus::EV : EVStatus::NotEV;
+          }
+          if (sha1ModeResult) {
+            *sha1ModeResult = sha1ModeResults[i];
+          }
+          rv = VerifyCertificateTransparencyPolicy(
+              trustDomain, builtChain, sctsFromTLSInput, time, ctInfo);
+          if (rv != Success) {
+            break;
           }
           if (isBuiltChainRootBuiltInRoot) {
             *isBuiltChainRootBuiltInRoot =
                 trustDomain.GetIsBuiltChainRootBuiltInRoot();
           }
-          break;
         }
       }
+      if (rv == Success) {
+        break;
+      }
+
       if (flags & FLAG_MUST_BE_EV) {
         rv = Result::ERROR_POLICY_VALIDATION_FAILED;
         break;
@@ -612,52 +697,85 @@ Result CertVerifier::VerifyCert(
       size_t keySizeOptionsCount = MOZ_ARRAY_LENGTH(keySizeStatuses);
 
       for (size_t i = 0; i < keySizeOptionsCount && rv != Success; i++) {
-        
-        if (pinningTelemetryInfo) {
-          pinningTelemetryInfo->Reset();
-        }
+        for (size_t j = 0; j < sha1ModeConfigurationsCount && rv != Success;
+             j++) {
+          
+          
+          
+          
+          
+          
+          if (SHA1ModeMoreRestrictiveThanGivenMode(sha1ModeConfigurations[j])) {
+            continue;
+          }
 
-        NSSCertDBTrustDomain trustDomain(
-            trustSSL, defaultOCSPFetching, mOCSPCache, pinArg, mOCSPTimeoutSoft,
-            mOCSPTimeoutHard, mCertShortLifetimeInDays, keySizeOptions[i],
-            ValidityCheckingMode::CheckingOff, mNetscapeStepUpPolicy,
-            mCRLiteMode, originAttributes, mThirdPartyRootInputs,
-            mThirdPartyIntermediateInputs, extraCertificates, builtChain,
-            pinningTelemetryInfo, hostname);
-        rv = BuildCertChainForOneKeyUsage(
-            trustDomain, certDER, time,
-            KeyUsage::digitalSignature,  
-            KeyUsage::keyEncipherment,   
-            KeyUsage::keyAgreement,      
-            KeyPurposeId::id_kp_serverAuth, CertPolicyId::anyPolicy,
-            stapledOCSPResponse, ocspStaplingStatus);
-        if (rv != Success && !IsFatalError(rv) &&
-            rv != Result::ERROR_REVOKED_CERTIFICATE &&
-            trustDomain.GetIsErrorDueToDistrustedCAPolicy()) {
           
-          
-          
-          
-          rv = Result::ERROR_ADDITIONAL_POLICY_CONSTRAINT_FAILED;
-        }
-        if (rv == Success) {
-          rv = VerifyCertificateTransparencyPolicy(
-              trustDomain, builtChain, sctsFromTLSInput, time, ctInfo);
-        }
-        if (rv == Success) {
-          if (keySizeStatus) {
-            *keySizeStatus = keySizeStatuses[i];
+          if (pinningTelemetryInfo) {
+            pinningTelemetryInfo->Reset();
           }
-          if (isBuiltChainRootBuiltInRoot) {
-            *isBuiltChainRootBuiltInRoot =
-                trustDomain.GetIsBuiltChainRootBuiltInRoot();
+
+          NSSCertDBTrustDomain trustDomain(
+              trustSSL, defaultOCSPFetching, mOCSPCache, pinArg,
+              mOCSPTimeoutSoft, mOCSPTimeoutHard, mCertShortLifetimeInDays,
+              keySizeOptions[i], ValidityCheckingMode::CheckingOff,
+              sha1ModeConfigurations[j], mNetscapeStepUpPolicy, mCRLiteMode,
+              originAttributes, mThirdPartyRootInputs,
+              mThirdPartyIntermediateInputs, extraCertificates, builtChain,
+              pinningTelemetryInfo, hostname);
+          rv = BuildCertChainForOneKeyUsage(
+              trustDomain, certDER, time,
+              KeyUsage::digitalSignature,  
+              KeyUsage::keyEncipherment,   
+              KeyUsage::keyAgreement,      
+              KeyPurposeId::id_kp_serverAuth, CertPolicyId::anyPolicy,
+              stapledOCSPResponse, ocspStaplingStatus);
+          if (rv != Success && !IsFatalError(rv) &&
+              rv != Result::ERROR_REVOKED_CERTIFICATE &&
+              trustDomain.GetIsErrorDueToDistrustedCAPolicy()) {
+            
+            
+            
+            
+            rv = Result::ERROR_ADDITIONAL_POLICY_CONSTRAINT_FAILED;
           }
-          break;
+          if (rv == Success &&
+              sha1ModeConfigurations[j] == SHA1Mode::ImportedRoot &&
+              trustDomain.GetIsBuiltChainRootBuiltInRoot()) {
+            rv = Result::ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED;
+          }
+          if (rv == Success) {
+            if (keySizeStatus) {
+              *keySizeStatus = keySizeStatuses[i];
+            }
+            if (sha1ModeResult) {
+              *sha1ModeResult = sha1ModeResults[j];
+            }
+            rv = VerifyCertificateTransparencyPolicy(
+                trustDomain, builtChain, sctsFromTLSInput, time, ctInfo);
+            if (rv != Success) {
+              break;
+            }
+            if (isBuiltChainRootBuiltInRoot) {
+              *isBuiltChainRootBuiltInRoot =
+                  trustDomain.GetIsBuiltChainRootBuiltInRoot();
+            }
+          }
         }
       }
 
-      if (rv != Success && keySizeStatus) {
+      if (rv == Success) {
+        break;
+      }
+
+      if (keySizeStatus) {
         *keySizeStatus = KeySizeStatus::AlreadyBad;
+      }
+      
+      
+      
+      
+      if (sha1ModeResult && mSHA1Mode == SHA1Mode::Forbidden) {
+        *sha1ModeResult = SHA1ModeResult::Failed;
       }
 
       break;
@@ -667,10 +785,10 @@ Result CertVerifier::VerifyCert(
       NSSCertDBTrustDomain trustDomain(
           trustSSL, defaultOCSPFetching, mOCSPCache, pinArg, mOCSPTimeoutSoft,
           mOCSPTimeoutHard, mCertShortLifetimeInDays, MIN_RSA_BITS_WEAK,
-          ValidityCheckingMode::CheckingOff, mNetscapeStepUpPolicy, mCRLiteMode,
-          originAttributes, mThirdPartyRootInputs,
-          mThirdPartyIntermediateInputs, extraCertificates, builtChain, nullptr,
-          nullptr);
+          ValidityCheckingMode::CheckingOff, SHA1Mode::Allowed,
+          mNetscapeStepUpPolicy, mCRLiteMode, originAttributes,
+          mThirdPartyRootInputs, mThirdPartyIntermediateInputs,
+          extraCertificates, builtChain, nullptr, nullptr);
       rv = BuildCertChain(trustDomain, certDER, time, EndEntityOrCA::MustBeCA,
                           KeyUsage::keyCertSign, KeyPurposeId::id_kp_serverAuth,
                           CertPolicyId::anyPolicy, stapledOCSPResponse);
@@ -681,10 +799,10 @@ Result CertVerifier::VerifyCert(
       NSSCertDBTrustDomain trustDomain(
           trustEmail, defaultOCSPFetching, mOCSPCache, pinArg, mOCSPTimeoutSoft,
           mOCSPTimeoutHard, mCertShortLifetimeInDays, MIN_RSA_BITS_WEAK,
-          ValidityCheckingMode::CheckingOff, NetscapeStepUpPolicy::NeverMatch,
-          mCRLiteMode, originAttributes, mThirdPartyRootInputs,
-          mThirdPartyIntermediateInputs, extraCertificates, builtChain, nullptr,
-          nullptr);
+          ValidityCheckingMode::CheckingOff, SHA1Mode::Allowed,
+          NetscapeStepUpPolicy::NeverMatch, mCRLiteMode, originAttributes,
+          mThirdPartyRootInputs, mThirdPartyIntermediateInputs,
+          extraCertificates, builtChain, nullptr, nullptr);
       rv = BuildCertChain(
           trustDomain, certDER, time, EndEntityOrCA::MustBeEndEntity,
           KeyUsage::digitalSignature, KeyPurposeId::id_kp_emailProtection,
@@ -705,10 +823,10 @@ Result CertVerifier::VerifyCert(
       NSSCertDBTrustDomain trustDomain(
           trustEmail, defaultOCSPFetching, mOCSPCache, pinArg, mOCSPTimeoutSoft,
           mOCSPTimeoutHard, mCertShortLifetimeInDays, MIN_RSA_BITS_WEAK,
-          ValidityCheckingMode::CheckingOff, NetscapeStepUpPolicy::NeverMatch,
-          mCRLiteMode, originAttributes, mThirdPartyRootInputs,
-          mThirdPartyIntermediateInputs, extraCertificates, builtChain, nullptr,
-          nullptr);
+          ValidityCheckingMode::CheckingOff, SHA1Mode::Allowed,
+          NetscapeStepUpPolicy::NeverMatch, mCRLiteMode, originAttributes,
+          mThirdPartyRootInputs, mThirdPartyIntermediateInputs,
+          extraCertificates, builtChain, nullptr, nullptr);
       rv = BuildCertChain(trustDomain, certDER, time,
                           EndEntityOrCA::MustBeEndEntity,
                           KeyUsage::keyEncipherment,  
@@ -761,6 +879,7 @@ Result CertVerifier::VerifySSLServerCert(
      EVStatus* evStatus,
      OCSPStaplingStatus* ocspStaplingStatus,
      KeySizeStatus* keySizeStatus,
+     SHA1ModeResult* sha1ModeResult,
      PinningTelemetryInfo* pinningTelemetryInfo,
      CertificateTransparencyInfo* ctInfo,
      bool* isBuiltChainRootBuiltInRoot) {
@@ -792,7 +911,7 @@ Result CertVerifier::VerifySSLServerCert(
                   PromiseFlatCString(hostname).get(), builtChain, flags,
                   extraCertificates, stapledOCSPResponse, sctsFromTLS,
                   originAttributes, evStatus, ocspStaplingStatus, keySizeStatus,
-                  pinningTelemetryInfo, ctInfo,
+                  sha1ModeResult, pinningTelemetryInfo, ctInfo,
                   &isBuiltChainRootBuiltInRootLocal);
   if (rv != Success) {
     
