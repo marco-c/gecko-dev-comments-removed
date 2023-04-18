@@ -661,6 +661,24 @@ bool RequestInitWorkerRunnable::MainThreadRun() {
 
 
 
+nsresult NotifyWorkerLoadedRunnable::Run() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  RefPtr<WebExtensionPolicy> policy =
+      ExtensionPolicyService::GetSingleton().GetByURL(mSWBaseURI.get());
+
+  nsCOMPtr<mozIExtensionAPIRequestHandler> handler =
+      &ExtensionAPIRequestForwarder::APIRequestHandler();
+  MOZ_ASSERT(handler);
+
+  NS_WARN_IF(
+      NS_FAILED(handler->OnExtensionWorkerLoaded(policy, mSWDescriptorId)));
+
+  return NS_OK;
+}
+
+
+
 nsresult NotifyWorkerDestroyedRunnable::Run() {
   MOZ_ASSERT(NS_IsMainThread());
 
