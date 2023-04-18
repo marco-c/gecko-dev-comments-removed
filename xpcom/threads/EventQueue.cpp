@@ -57,7 +57,7 @@ void EventQueueInternal<ItemsPerPage>::PutEvent(
     return;
   }
 
-  if (profiler_thread_is_being_profiled()) {
+  if (profiler_thread_is_being_profiled(ThreadProfilingFeatures::Sampling)) {
     
     while (mDispatchTimes.Count() < mQueue.Count()) {
       mDispatchTimes.Push(TimeStamp());

@@ -50,6 +50,55 @@ class ProfiledThreadData;
 class PSAutoLock;
 struct JSContext;
 
+
+enum class ThreadProfilingFeatures : uint32_t {
+  
+  
+  NotProfiled = 0u,
+
+  
+  CPUUtilization = 1u << 0,
+  Sampling = 1u << 1,
+  Markers = 1u << 2,
+
+  
+  
+  Any = CPUUtilization | Sampling | Markers
+};
+
+
+template <typename... Ts>
+[[nodiscard]] constexpr ThreadProfilingFeatures Combine(
+    ThreadProfilingFeatures a1, Ts... as) {
+  static_assert((true && ... &&
+                 std::is_same_v<std::remove_cv_t<std::remove_reference_t<Ts>>,
+                                ThreadProfilingFeatures>));
+  return static_cast<ThreadProfilingFeatures>(
+      (static_cast<std::underlying_type_t<ThreadProfilingFeatures>>(a1) | ... |
+       static_cast<std::underlying_type_t<ThreadProfilingFeatures>>(as)));
+}
+
+
+
+template <typename... Ts>
+[[nodiscard]] constexpr ThreadProfilingFeatures Intersect(
+    ThreadProfilingFeatures a1, Ts... as) {
+  static_assert((true && ... &&
+                 std::is_same_v<std::remove_cv_t<std::remove_reference_t<Ts>>,
+                                ThreadProfilingFeatures>));
+  return static_cast<ThreadProfilingFeatures>(
+      (static_cast<std::underlying_type_t<ThreadProfilingFeatures>>(a1) & ... &
+       static_cast<std::underlying_type_t<ThreadProfilingFeatures>>(as)));
+}
+
+
+
+template <typename... Ts>
+[[nodiscard]] constexpr bool DoFeaturesIntersect(ThreadProfilingFeatures a1,
+                                                 ThreadProfilingFeatures a2) {
+  return Intersect(a1, a2) != ThreadProfilingFeatures::NotProfiled;
+}
+
 namespace mozilla::profiler {
 
 
@@ -81,7 +130,8 @@ class ThreadRegistrationData {
 #ifdef DEBUG
   
   ~ThreadRegistrationData() {
-    MOZ_ASSERT(mIsBeingProfiled == !!mProfiledThreadData);
+    MOZ_ASSERT((mProfilingFeatures != ThreadProfilingFeatures::NotProfiled) ==
+               !!mProfiledThreadData);
     MOZ_ASSERT(!mProfiledThreadData,
                "mProfiledThreadData pointer should have been reset before "
                "~ThreadRegistrationData");
@@ -185,11 +235,6 @@ class ThreadRegistrationData {
   
   
   
-  Atomic<bool, MemoryOrdering::Relaxed> mIsBeingProfiled{false};
-
-  
-  
-  
   
   
   
@@ -225,6 +270,12 @@ class ThreadRegistrationData {
   static const int SLEEPING_OBSERVED = 2;
   
   Atomic<int> mSleep{AWAKE};
+
+  
+  
+  
+  Atomic<ThreadProfilingFeatures, MemoryOrdering::Relaxed> mProfilingFeatures{
+      ThreadProfilingFeatures::NotProfiled};
 
   
   
@@ -271,7 +322,9 @@ class ThreadRegistrationUnlockedConstReaderAndAtomicRW
   
   
   
-  [[nodiscard]] bool IsBeingProfiled() const { return mIsBeingProfiled; }
+  [[nodiscard]] ThreadProfilingFeatures ProfilingFeatures() const {
+    return mProfilingFeatures;
+  }
 
   
   
@@ -326,15 +379,6 @@ class ThreadRegistrationUnlockedRWForLockedProfiler
   
   
 
-  
-  
-  
-  [[nodiscard]] bool IsBeingProfiled(const PSAutoLock&) const {
-    
-    
-    return mProfiledThreadData;
-  }
-
   [[nodiscard]] const ProfiledThreadData* GetProfiledThreadData(
       const PSAutoLock&) const {
     return mProfiledThreadData;
@@ -375,9 +419,10 @@ class ThreadRegistrationUnlockedReaderAndAtomicRWOnThread
 class ThreadRegistrationLockedRWFromAnyThread
     : public ThreadRegistrationUnlockedReaderAndAtomicRWOnThread {
  public:
-  void SetIsBeingProfiledWithProfiledThreadData(
-      ProfiledThreadData* aProfiledThreadData, const PSAutoLock&);
-  void ClearIsBeingProfiledAndProfiledThreadData(const PSAutoLock&);
+  void SetProfilingFeaturesAndData(ThreadProfilingFeatures aProfilingFeatures,
+                                   ProfiledThreadData* aProfiledThreadData,
+                                   const PSAutoLock&);
+  void ClearProfilingFeaturesAndData(const PSAutoLock&);
 
   
   
