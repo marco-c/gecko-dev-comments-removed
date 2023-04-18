@@ -594,7 +594,13 @@ const windowGlobalTargetPrototype = {
       originalBrowsingContext.currentWindowContext.innerWindowId;
     const parentInnerWindowId =
       originalBrowsingContext.parent?.currentWindowContext.innerWindowId;
-    const isPopup = !!originalBrowsingContext.opener;
+    
+    
+    
+    const isPopup =
+      !!originalBrowsingContext.opener &&
+      originalBrowsingContext.browserId !=
+        originalBrowsingContext.opener.browserId;
 
     const response = {
       actor: this.actorID,
