@@ -104,6 +104,21 @@ class Accessible {
   
 
 
+  bool IsBefore(const Accessible* aAcc) const;
+
+  bool IsAncestorOf(const Accessible* aAcc) const {
+    for (const Accessible* parent = aAcc->Parent(); parent;
+         parent = parent->Parent()) {
+      if (parent == this) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  
+
+
   enum class EWhichChildAtPoint { DirectChild, DeepestChild };
 
   virtual Accessible* ChildAtPoint(int32_t aX, int32_t aY,
