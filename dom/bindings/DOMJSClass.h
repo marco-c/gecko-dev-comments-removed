@@ -13,6 +13,7 @@
 #include "js/Wrapper.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/OriginTrials.h"
 #include "mozilla/Likely.h"
 
 #include "mozilla/dom/PrototypeList.h"  
@@ -129,6 +130,15 @@ struct PrefableDisablers {
     if (secureContext && !IsSecureContextOrObjectIsFromSecureContext(cx, obj)) {
       return false;
     }
+    if (trial != OriginTrial(0) &&
+        !OriginTrials::IsEnabled(cx, JS::GetNonCCWObjectGlobal(obj), trial)) {
+      
+      
+      
+      
+      
+      return false;
+    }
     if (enabledFunc && !enabledFunc(cx, JS::GetNonCCWObjectGlobal(obj))) {
       return false;
     }
@@ -140,6 +150,9 @@ struct PrefableDisablers {
 
   
   const bool secureContext;
+
+  
+  const OriginTrial trial;
 
   
   const uint16_t nonExposedGlobals;

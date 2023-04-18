@@ -7,7 +7,8 @@ use std::ffi::c_void;
 
 #[repr(u8)]
 pub enum OriginTrial {
-    TestTrial,
+    
+    TestTrial = 1,
 }
 
 impl OriginTrial {
