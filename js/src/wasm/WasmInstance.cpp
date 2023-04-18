@@ -994,57 +994,85 @@ bool Instance::initElems(JSContext* cx, uint32_t tableIndex,
   MOZ_ASSERT(dstOffset <= table.length());
   MOZ_ASSERT(len <= table.length() - dstOffset);
 
-  Tier tier = code().bestTier();
+  const Tier tier = code().bestTier();
   const MetadataTier& metadataTier = metadata(tier);
   const FuncImportVector& funcImports = metadataTier.funcImports;
-  const CodeRangeVector& codeRanges = metadataTier.codeRanges;
-  const Uint32Vector& funcToCodeRange = metadataTier.funcToCodeRange;
   const Uint32Vector& elemFuncIndices = seg.elemFuncIndices;
   MOZ_ASSERT(srcOffset <= elemFuncIndices.length());
   MOZ_ASSERT(len <= elemFuncIndices.length() - srcOffset);
 
-  uint8_t* codeBaseTier = codeBase(tier);
+  if (table.isFunction()) {
+    
+    
+    
+    if (!ensureIndirectStubs(cx, elemFuncIndices, srcOffset, len, tier,
+                             table.isImportedOrExported())) {
+      return false;
+    }
+  }
+
   for (uint32_t i = 0; i < len; i++) {
     uint32_t funcIndex = elemFuncIndices[srcOffset + i];
     if (IsNullFunction(funcIndex)) {
       table.setNull(dstOffset + i);
-    } else if (!table.isFunction()) {
+      continue;
+    }
+
+    if (!table.isFunction()) {
       
       void* fnref = Instance::refFunc(this, funcIndex);
       if (fnref == AnyRef::invalid().forCompiledCode()) {
         return false;  
       }
       table.fillAnyRef(dstOffset + i, 1, AnyRef::fromCompiledCode(fnref));
-    } else {
-      if (IsImportedFunction(funcIndex, metadataTier)) {
-        FuncImportTls& import = funcImportTls(funcImports[funcIndex]);
-        JSFunction* fun = import.fun;
-        (void)IsJSExportedFunction(fun);  
-        if (IsWasmExportedFunction(fun)) {
-          
-          
-          
-          
-          
-          
-          WasmInstanceObject* calleeInstanceObj =
-              ExportedFunctionToInstanceObject(fun);
-          Instance& calleeInstance = calleeInstanceObj->instance();
-          Tier calleeTier = calleeInstance.code().bestTier();
-          const CodeRange& calleeCodeRange =
-              calleeInstanceObj->getExportedFunctionCodeRange(fun, calleeTier);
-          void* code = calleeInstance.codeBase(calleeTier) +
-                       calleeCodeRange.funcCheckedCallEntry();
-          table.setFuncRef(dstOffset + i, code, &calleeInstance);
-          continue;
-        }
-      }
-      void* code =
-          codeBaseTier +
-          codeRanges[funcToCodeRange[funcIndex]].funcCheckedCallEntry();
-      table.setFuncRef(dstOffset + i, code, this);
+      continue;
     }
+
+    
+    
+
+    void* code = nullptr;
+    if (IsImportedFunction(funcIndex, metadataTier)) {
+      FuncImportTls& import = funcImportTls(funcImports[funcIndex]);
+      JSFunction* fun = import.fun;
+      if (IsJSExportedFunction(fun)) {
+        code = checkedCallEntry(funcIndex, tier);
+      } else {
+        code = getIndirectStub(funcIndex, import.tls, tier);
+        MOZ_ASSERT(code);
+      }
+    } else {
+      
+      
+      
+      
+      
+      if (table.isImportedOrExported()) {
+        code = getIndirectStub(funcIndex, tlsData(), tier);
+        MOZ_ASSERT(code);
+      } else {
+        code = checkedCallEntry(funcIndex, tier);
+      }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    MOZ_RELEASE_ASSERT(code);
+    table.setFuncRef(dstOffset + i, code, this);
   }
+
   return true;
 }
 
@@ -1121,8 +1149,8 @@ bool Instance::initElems(JSContext* cx, uint32_t tableIndex,
       break;
     case TableRepr::Func:
       MOZ_RELEASE_ASSERT(!table.isAsmJS());
-      if (!table.fillFuncRef(start, len, FuncRef::fromCompiledCode(value),
-                             cx)) {
+      if (!table.fillFuncRef(Nothing(), start, len,
+                             FuncRef::fromCompiledCode(value), cx)) {
         ReportOutOfMemory(cx);
         return -1;
       }
@@ -1162,23 +1190,39 @@ bool Instance::initElems(JSContext* cx, uint32_t tableIndex,
                                           uint32_t delta, uint32_t tableIndex) {
   MOZ_ASSERT(SASigTableGrow.failureMode == FailureMode::Infallible);
 
-  RootedAnyRef ref(TlsContext.get(), AnyRef::fromCompiledCode(initValue));
+  JSContext* cx = TlsContext.get();
+  RootedAnyRef ref(cx, AnyRef::fromCompiledCode(initValue));
   Table& table = *instance->tables()[tableIndex];
 
+  if (table.isFunction()) {
+    RootedFuncRef functionForFill(cx, FuncRef::fromAnyRefUnchecked(ref));
+
+    const Tier tier = instance->code().bestTier();
+    
+    
+    
+    
+    
+    
+    
+    if (!instance->ensureIndirectStub(cx, functionForFill.address(), tier,
+                                      table.isImportedOrExported())) {
+      return -1;
+    }
+    uint32_t oldSize = table.grow(delta);
+    if (oldSize != uint32_t(-1) && initValue != nullptr) {
+      MOZ_RELEASE_ASSERT(!table.isAsmJS());
+      MOZ_ALWAYS_TRUE(
+          table.fillFuncRef(Some(tier), oldSize, delta, functionForFill, cx));
+    }
+    return oldSize;
+  }
+
+  MOZ_ASSERT(!table.isFunction());
   uint32_t oldSize = table.grow(delta);
 
   if (oldSize != uint32_t(-1) && initValue != nullptr) {
-    switch (table.repr()) {
-      case TableRepr::Ref:
-        table.fillAnyRef(oldSize, delta, ref);
-        break;
-      case TableRepr::Func:
-        MOZ_RELEASE_ASSERT(!table.isAsmJS());
-        MOZ_ALWAYS_TRUE(table.fillFuncRef(oldSize, delta,
-                                          FuncRef::fromAnyRefUnchecked(ref),
-                                          TlsContext.get()));
-        break;
-    }
+    table.fillAnyRef(oldSize, delta, ref);
   }
 
   return oldSize;
@@ -1201,7 +1245,8 @@ bool Instance::initElems(JSContext* cx, uint32_t tableIndex,
       break;
     case TableRepr::Func:
       MOZ_RELEASE_ASSERT(!table.isAsmJS());
-      if (!table.fillFuncRef(index, 1, FuncRef::fromCompiledCode(value),
+      if (!table.fillFuncRef(Nothing(), index, 1,
+                             FuncRef::fromCompiledCode(value),
                              TlsContext.get())) {
         ReportOutOfMemory(TlsContext.get());
         return -1;
