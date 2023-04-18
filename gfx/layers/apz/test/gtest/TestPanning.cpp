@@ -82,13 +82,6 @@ class APZCPanningTester : public APZCBasicTester {
   }
 };
 
-TEST_F(APZCPanningTester, Pan) {
-  SCOPED_GFX_PREF_BOOL("layout.css.touch_action.enabled", false);
-  
-  SCOPED_GFX_PREF_FLOAT("apz.velocity_bias", 0.0);
-  DoPanTest(true, true, mozilla::layers::AllowedTouchBehavior::NONE);
-}
-
 
 
 
@@ -98,7 +91,6 @@ TEST_F(APZCPanningTester, Pan) {
 
 
 TEST_F(APZCPanningTester, PanWithTouchActionAuto) {
-  SCOPED_GFX_PREF_BOOL("layout.css.touch_action.enabled", true);
   
   SCOPED_GFX_PREF_FLOAT("apz.velocity_bias", 0.0);
   DoPanTest(true, true,
@@ -107,14 +99,12 @@ TEST_F(APZCPanningTester, PanWithTouchActionAuto) {
 }
 
 TEST_F(APZCPanningTester, PanWithTouchActionNone) {
-  SCOPED_GFX_PREF_BOOL("layout.css.touch_action.enabled", true);
   
   SCOPED_GFX_PREF_FLOAT("apz.velocity_bias", 0.0);
   DoPanTest(false, false, 0);
 }
 
 TEST_F(APZCPanningTester, PanWithTouchActionPanX) {
-  SCOPED_GFX_PREF_BOOL("layout.css.touch_action.enabled", true);
   
   SCOPED_GFX_PREF_FLOAT("apz.velocity_bias", 0.0);
   DoPanTest(false, false,
@@ -122,19 +112,12 @@ TEST_F(APZCPanningTester, PanWithTouchActionPanX) {
 }
 
 TEST_F(APZCPanningTester, PanWithTouchActionPanY) {
-  SCOPED_GFX_PREF_BOOL("layout.css.touch_action.enabled", true);
   
   SCOPED_GFX_PREF_FLOAT("apz.velocity_bias", 0.0);
   DoPanTest(true, true, mozilla::layers::AllowedTouchBehavior::VERTICAL_PAN);
 }
 
-TEST_F(APZCPanningTester, PanWithPreventDefaultAndTouchAction) {
-  SCOPED_GFX_PREF_BOOL("layout.css.touch_action.enabled", true);
-  DoPanWithPreventDefaultTest();
-}
-
 TEST_F(APZCPanningTester, PanWithPreventDefault) {
-  SCOPED_GFX_PREF_BOOL("layout.css.touch_action.enabled", false);
   DoPanWithPreventDefaultTest();
 }
 
@@ -158,8 +141,7 @@ TEST_F(APZCPanningTester, PanWithHistoricalTouchData) {
   
 
   APZEventResult result = TouchDown(apzc, ScreenIntPoint(0, 50), mcc->Time());
-  if (result.GetStatus() != nsEventStatus_eConsumeNoDefault &&
-      StaticPrefs::layout_css_touch_action_enabled()) {
+  if (result.GetStatus() != nsEventStatus_eConsumeNoDefault) {
     SetDefaultAllowedTouchBehavior(apzc, result.mInputBlockId);
   }
 
@@ -180,8 +162,7 @@ TEST_F(APZCPanningTester, PanWithHistoricalTouchData) {
   
 
   result = TouchDown(apzc, ScreenIntPoint(0, 50), mcc->Time());
-  if (result.GetStatus() != nsEventStatus_eConsumeNoDefault &&
-      StaticPrefs::layout_css_touch_action_enabled()) {
+  if (result.GetStatus() != nsEventStatus_eConsumeNoDefault) {
     SetDefaultAllowedTouchBehavior(apzc, result.mInputBlockId);
   }
 
@@ -198,8 +179,7 @@ TEST_F(APZCPanningTester, PanWithHistoricalTouchData) {
   
 
   result = TouchDown(apzc, ScreenIntPoint(0, 50), mcc->Time());
-  if (result.GetStatus() != nsEventStatus_eConsumeNoDefault &&
-      StaticPrefs::layout_css_touch_action_enabled()) {
+  if (result.GetStatus() != nsEventStatus_eConsumeNoDefault) {
     SetDefaultAllowedTouchBehavior(apzc, result.mInputBlockId);
   }
 

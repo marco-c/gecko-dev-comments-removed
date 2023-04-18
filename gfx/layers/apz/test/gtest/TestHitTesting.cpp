@@ -161,8 +161,6 @@ TEST_F(APZHitTestingTester, ComplexMultiLayerTree) {
 }
 
 TEST_F(APZHitTestingTester, TestRepaintFlushOnNewInputBlock) {
-  SCOPED_GFX_PREF_BOOL("layout.css.touch_action.enabled", false);
-
   
   
   
@@ -343,9 +341,7 @@ TEST_F(APZHitTestingTester, Bug1148350) {
 
   uint64_t blockId =
       TouchDown(manager, ScreenIntPoint(100, 100), mcc->Time()).mInputBlockId;
-  if (StaticPrefs::layout_css_touch_action_enabled()) {
-    SetDefaultAllowedTouchBehavior(manager, blockId);
-  }
+  SetDefaultAllowedTouchBehavior(manager, blockId);
   mcc->AdvanceByMillis(100);
 
   layers[0]->SetVisibleRegion(LayerIntRegion(LayerIntRect(0, 50, 200, 150)));

@@ -107,9 +107,7 @@ APZEventResult InputQueue::ReceiveTouchInput(
   if (aEvent.mType == MultiTouchInput::MULTITOUCH_START) {
     nsTArray<TouchBehaviorFlags> currentBehaviors;
     bool haveBehaviors = false;
-    if (!StaticPrefs::layout_css_touch_action_enabled()) {
-      haveBehaviors = true;
-    } else if (mActiveTouchBlock) {
+    if (mActiveTouchBlock) {
       haveBehaviors =
           mActiveTouchBlock->GetAllowedTouchBehaviors(currentBehaviors);
       
@@ -139,9 +137,7 @@ APZEventResult InputQueue::ReceiveTouchInput(
           aTarget, InputBlockState::TargetConfirmationState::eConfirmed,
           nullptr ,
           false );
-      if (StaticPrefs::layout_css_touch_action_enabled()) {
-        block->SetAllowedTouchBehaviors(currentBehaviors);
-      }
+      block->SetAllowedTouchBehaviors(currentBehaviors);
       INPQ_LOG("block %p tagged as fast-motion\n", block.get());
     } else if (aTouchBehaviors) {
       
