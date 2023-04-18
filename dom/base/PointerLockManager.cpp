@@ -366,8 +366,7 @@ PointerLockManager::PointerLockRequest::Run() {
   }
   
   
-  if (!error && !mUserInputOrChromeCaller &&
-      !document->GetUnretargetedFullScreenElement()) {
+  if (!error && !mUserInputOrChromeCaller && !document->Fullscreen()) {
     error = "PointerLockDeniedNotInputDriven";
   }
 
