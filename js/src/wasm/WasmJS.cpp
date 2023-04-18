@@ -69,6 +69,20 @@
 #include "vm/JSObject-inl.h"
 #include "vm/NativeObject-inl.h"
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 using namespace js;
 using namespace js::jit;
 using namespace js::wasm;

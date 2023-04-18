@@ -282,7 +282,8 @@ void Table::setNull(uint32_t index) {
   }
 }
 
-bool Table::copy(const Table& srcTable, uint32_t dstIndex, uint32_t srcIndex) {
+bool Table::copy(JSContext* cx, const Table& srcTable, uint32_t dstIndex,
+                 uint32_t srcIndex) {
   MOZ_RELEASE_ASSERT(!srcTable.isAsmJS_);
   switch (repr()) {
     case TableRepr::Func: {
@@ -314,8 +315,6 @@ bool Table::copy(const Table& srcTable, uint32_t dstIndex, uint32_t srcIndex) {
         case TableRepr::Func: {
           MOZ_RELEASE_ASSERT(srcTable.elemType().isFunc());
           
-          
-          JSContext* cx = TlsContext.get();
           RootedFunction fun(cx);
           if (!srcTable.getFuncRef(cx, srcIndex, &fun)) {
             

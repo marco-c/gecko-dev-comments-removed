@@ -115,8 +115,8 @@ class Table : public ShareableBase<Table> {
 
   
   
-  [[nodiscard]] bool copy(const Table& srcTable, uint32_t dstIndex,
-                          uint32_t srcIndex);
+  [[nodiscard]] bool copy(JSContext* cx, const Table& srcTable,
+                          uint32_t dstIndex, uint32_t srcIndex);
 
   
   [[nodiscard]] uint32_t grow(uint32_t delta);

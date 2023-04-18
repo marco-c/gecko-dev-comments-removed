@@ -384,15 +384,15 @@ extern MOZ_EXPORT int64_t __aeabi_uidivmod(int, int);
 
 
 
-static JitActivation* CallingActivation() {
-  Activation* act = TlsContext.get()->activation();
+static JitActivation* CallingActivation(JSContext* cx) {
+  Activation* act = cx->activation();
   MOZ_ASSERT(act->asJit()->hasWasmExitFP());
   return act->asJit();
 }
 
 static bool WasmHandleDebugTrap() {
-  JitActivation* activation = CallingActivation();
-  JSContext* cx = activation->cx();
+  JSContext* cx = TlsContext.get();  
+  JitActivation* activation = CallingActivation(cx);
   Frame* fp = activation->wasmExitFP();
   Instance* instance = GetNearestEffectiveTls(fp)->instance;
   const Code& code = instance->code();
@@ -521,7 +521,7 @@ bool wasm::HandleThrow(JSContext* cx, WasmFrameIter& iter,
   
   
 
-  MOZ_ASSERT(CallingActivation() == iter.activation());
+  MOZ_ASSERT(CallingActivation(cx) == iter.activation());
   MOZ_ASSERT(!iter.done());
   iter.setUnwind(WasmFrameIter::Unwind::True);
 
@@ -536,7 +536,7 @@ bool wasm::HandleThrow(JSContext* cx, WasmFrameIter& iter,
   RootedWasmInstanceObject keepAlive(cx, iter.instance()->object());
 
 #ifdef ENABLE_WASM_EXCEPTIONS
-  JitActivation* activation = CallingActivation();
+  JitActivation* activation = CallingActivation(cx);
   RootedValue exn(cx);
   bool hasCatchableException = HasCatchableException(activation, cx, &exn);
 #endif
@@ -626,8 +626,8 @@ bool wasm::HandleThrow(JSContext* cx, WasmFrameIter& iter,
 }
 
 static void* WasmHandleThrow(jit::ResumeFromException* rfe) {
-  JitActivation* activation = CallingActivation();
-  JSContext* cx = activation->cx();
+  JSContext* cx = TlsContext.get();  
+  JitActivation* activation = CallingActivation(cx);
   WasmFrameIter iter(activation);
   
   
@@ -675,8 +675,8 @@ static void* CheckInterrupt(JSContext* cx, JitActivation* activation) {
 
 
 static void* WasmHandleTrap() {
-  JitActivation* activation = CallingActivation();
-  JSContext* cx = activation->cx();
+  JSContext* cx = TlsContext.get();  
+  JitActivation* activation = CallingActivation(cx);
 
   switch (activation->wasmTrapData().trap) {
     case Trap::Unreachable:
@@ -727,13 +727,13 @@ static void* WasmHandleTrap() {
 }
 
 static void WasmReportV128JSCall() {
-  JSContext* cx = TlsContext.get();
+  JSContext* cx = TlsContext.get();  
   JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
                            JSMSG_WASM_BAD_VAL_TYPE);
 }
 
 static int32_t CoerceInPlace_ToInt32(Value* rawVal) {
-  JSContext* cx = TlsContext.get();
+  JSContext* cx = TlsContext.get();  
 
   int32_t i32;
   RootedValue val(cx, *rawVal);
@@ -747,7 +747,7 @@ static int32_t CoerceInPlace_ToInt32(Value* rawVal) {
 }
 
 static int32_t CoerceInPlace_ToBigInt(Value* rawVal) {
-  JSContext* cx = TlsContext.get();
+  JSContext* cx = TlsContext.get();  
 
   RootedValue val(cx, *rawVal);
   BigInt* bi = ToBigInt(cx, val);
@@ -761,7 +761,7 @@ static int32_t CoerceInPlace_ToBigInt(Value* rawVal) {
 }
 
 static int32_t CoerceInPlace_ToNumber(Value* rawVal) {
-  JSContext* cx = TlsContext.get();
+  JSContext* cx = TlsContext.get();  
 
   double dbl;
   RootedValue val(cx, *rawVal);
@@ -775,7 +775,7 @@ static int32_t CoerceInPlace_ToNumber(Value* rawVal) {
 }
 
 static void* BoxValue_Anyref(Value* rawVal) {
-  JSContext* cx = TlsContext.get();
+  JSContext* cx = TlsContext.get();  
   RootedValue val(cx, *rawVal);
   RootedAnyRef result(cx, AnyRef::null());
   if (!BoxAnyRef(cx, val, &result)) {
@@ -786,7 +786,7 @@ static void* BoxValue_Anyref(Value* rawVal) {
 
 static int32_t CoerceInPlace_JitEntry(int funcExportIndex, TlsData* tlsData,
                                       Value* argv) {
-  JSContext* cx = CallingActivation()->cx();
+  JSContext* cx = TlsContext.get();  
 
   const Code& code = tlsData->instance->code();
   const FuncExport& fe =
@@ -861,7 +861,7 @@ static int32_t CoerceInPlace_JitEntry(int funcExportIndex, TlsData* tlsData,
 
 
 static BigInt* AllocateBigIntTenuredNoGC() {
-  JSContext* cx = TlsContext.get();
+  JSContext* cx = TlsContext.get();  
 
   return js::AllocateBigInt<NoGC>(cx, gc::TenuredHeap);
 }
