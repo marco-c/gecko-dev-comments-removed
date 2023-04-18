@@ -53,9 +53,6 @@ const { setTimeout, clearTimeout } = ChromeUtils.import(
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
-XPCOMUtils.defineLazyModuleGetters(this, {
-  AppConstants: "resource://gre/modules/AppConstants.jsm",
-});
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   NimbusFeatures: "resource://nimbus/ExperimentAPI.jsm",
@@ -124,11 +121,7 @@ function applyWrapper(pipChild, originatingVideo) {
 
   
   
-  
-  let wrapperPath =
-    AppConstants.NIGHTLY_BUILD && overrides
-      ? overrides[1].videoWrapperScriptPath
-      : null;
+  let wrapperPath = overrides ? overrides[1].videoWrapperScriptPath : null;
   return new PictureInPictureChildVideoWrapper(
     wrapperPath,
     originatingVideo,
