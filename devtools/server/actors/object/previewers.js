@@ -22,6 +22,39 @@ loader.lazyRequireGetter(
 
 const OBJECT_PREVIEW_MAX_ITEMS = 10;
 
+const ERROR_CLASSNAMES = new Set([
+  "Error",
+  "EvalError",
+  "RangeError",
+  "ReferenceError",
+  "SyntaxError",
+  "TypeError",
+  "URIError",
+  "InternalError",
+  "AggregateError",
+  "CompileError",
+  "DebuggeeWouldRun",
+  "LinkError",
+  "RuntimeError",
+]);
+const ARRAY_LIKE_CLASSNAMES = new Set([
+  "DOMStringList",
+  "DOMTokenList",
+  "CSSRuleList",
+  "MediaList",
+  "StyleSheetList",
+  "NamedNodeMap",
+  "FileList",
+  "NodeList",
+]);
+const OBJECT_WITH_URL_CLASSNAMES = new Set([
+  "CSSImportRule",
+  "CSSStyleSheet",
+  "Location",
+]);
+
+
+
 
 
 
@@ -441,8 +474,6 @@ function wrappedPrimitivePreviewer(
   grip,
   rawObj
 ) {
-  const { obj, hooks } = objectActor;
-
   let v = null;
   try {
     v = classObj.prototype.valueOf.call(rawObj);
@@ -455,12 +486,9 @@ function wrappedPrimitivePreviewer(
     return false;
   }
 
-  const canHandle = GenericObject(
-    objectActor,
-    grip,
-    rawObj,
-    className === "String"
-  );
+  const { obj, hooks } = objectActor;
+
+  const canHandle = GenericObject(objectActor, grip, rawObj, className);
   if (!canHandle) {
     return false;
   }
@@ -471,12 +499,15 @@ function wrappedPrimitivePreviewer(
   return true;
 }
 
-function GenericObject(
-  objectActor,
-  grip,
-  rawObj,
-  specialStringBehavior = false
-) {
+
+
+
+
+
+
+
+
+function GenericObject(objectActor, grip, rawObj, className) {
   const { obj, hooks } = objectActor;
   if (grip.preview || grip.displayString || hooks.getGripDepth() > 1) {
     return false;
@@ -492,6 +523,7 @@ function GenericObject(
 
   let length,
     i = 0;
+  let specialStringBehavior = className === "String";
   if (specialStringBehavior) {
     length = DevToolsUtils.getProperty(obj, "length");
     if (typeof length != "number") {
@@ -634,57 +666,47 @@ previewers.Object = [
     return true;
   },
 
-  function Error({ obj, hooks }, grip) {
-    switch (obj.class) {
-      case "Error":
-      case "EvalError":
-      case "RangeError":
-      case "ReferenceError":
-      case "SyntaxError":
-      case "TypeError":
-      case "URIError":
-      case "InternalError":
-      case "AggregateError":
-      case "CompileError":
-      case "DebuggeeWouldRun":
-      case "LinkError":
-      case "RuntimeError":
-        
-        
-        const name = DevToolsUtils.getProperty(obj, "name", true);
-        const msg = DevToolsUtils.getProperty(obj, "message", true);
-        const stack = DevToolsUtils.getProperty(obj, "stack");
-        const fileName = DevToolsUtils.getProperty(obj, "fileName");
-        const lineNumber = DevToolsUtils.getProperty(obj, "lineNumber");
-        const columnNumber = DevToolsUtils.getProperty(obj, "columnNumber");
-
-        grip.preview = {
-          kind: "Error",
-          name: hooks.createValueGrip(name),
-          message: hooks.createValueGrip(msg),
-          stack: hooks.createValueGrip(stack),
-          fileName: hooks.createValueGrip(fileName),
-          lineNumber: hooks.createValueGrip(lineNumber),
-          columnNumber: hooks.createValueGrip(columnNumber),
-        };
-
-        const errorHasCause = obj.getOwnPropertyNames().includes("cause");
-        if (errorHasCause) {
-          grip.preview.cause = hooks.createValueGrip(
-            DevToolsUtils.getProperty(obj, "cause", true)
-          );
-        }
-
-        return true;
-      default:
-        return false;
-    }
-  },
-
-  function CSSMediaRule({ obj, hooks }, grip, rawObj) {
-    if (isWorker || !rawObj || obj.class != "CSSMediaRule") {
+  function Error(objectActor, grip, rawObj, className) {
+    if (!ERROR_CLASSNAMES.has(className)) {
       return false;
     }
+
+    const { hooks, obj } = objectActor;
+
+    
+    
+    const name = DevToolsUtils.getProperty(obj, "name", true);
+    const msg = DevToolsUtils.getProperty(obj, "message", true);
+    const stack = DevToolsUtils.getProperty(obj, "stack");
+    const fileName = DevToolsUtils.getProperty(obj, "fileName");
+    const lineNumber = DevToolsUtils.getProperty(obj, "lineNumber");
+    const columnNumber = DevToolsUtils.getProperty(obj, "columnNumber");
+
+    grip.preview = {
+      kind: "Error",
+      name: hooks.createValueGrip(name),
+      message: hooks.createValueGrip(msg),
+      stack: hooks.createValueGrip(stack),
+      fileName: hooks.createValueGrip(fileName),
+      lineNumber: hooks.createValueGrip(lineNumber),
+      columnNumber: hooks.createValueGrip(columnNumber),
+    };
+
+    const errorHasCause = obj.getOwnPropertyNames().includes("cause");
+    if (errorHasCause) {
+      grip.preview.cause = hooks.createValueGrip(
+        DevToolsUtils.getProperty(obj, "cause", true)
+      );
+    }
+
+    return true;
+  },
+
+  function CSSMediaRule(objectActor, grip, rawObj, className) {
+    if (!rawObj || className != "CSSMediaRule" || isWorker) {
+      return false;
+    }
+    const { hooks } = objectActor;
     grip.preview = {
       kind: "ObjectWithText",
       text: hooks.createValueGrip(rawObj.conditionText),
@@ -692,10 +714,11 @@ previewers.Object = [
     return true;
   },
 
-  function CSSStyleRule({ obj, hooks }, grip, rawObj) {
-    if (isWorker || !rawObj || obj.class != "CSSStyleRule") {
+  function CSSStyleRule(objectActor, grip, rawObj, className) {
+    if (!rawObj || className != "CSSStyleRule" || isWorker) {
       return false;
     }
+    const { hooks } = objectActor;
     grip.preview = {
       kind: "ObjectWithText",
       text: hooks.createValueGrip(rawObj.selectorText),
@@ -703,20 +726,17 @@ previewers.Object = [
     return true;
   },
 
-  function ObjectWithURL({ obj, hooks }, grip, rawObj) {
+  function ObjectWithURL(objectActor, grip, rawObj, className) {
     if (isWorker || !rawObj) {
       return false;
     }
 
     const isWindow = Window.isInstance(rawObj);
-    if (
-      obj.class != "CSSImportRule" &&
-      obj.class != "CSSStyleSheet" &&
-      obj.class != "Location" &&
-      !isWindow
-    ) {
+    if (!OBJECT_WITH_URL_CLASSNAMES.has(className) && !isWindow) {
       return false;
     }
+
+    const { hooks } = objectActor;
 
     let url;
     if (isWindow && rawObj.location) {
@@ -735,26 +755,17 @@ previewers.Object = [
     return true;
   },
 
-  function ArrayLike({ obj, hooks }, grip, rawObj) {
+  function ArrayLike(objectActor, grip, rawObj, className) {
     if (
-      isWorker ||
       !rawObj ||
-      (obj.class != "DOMStringList" &&
-        obj.class != "DOMTokenList" &&
-        obj.class != "CSSRuleList" &&
-        obj.class != "MediaList" &&
-        obj.class != "StyleSheetList" &&
-        obj.class != "NamedNodeMap" &&
-        obj.class != "FileList" &&
-        obj.class != "NodeList")
+      !ARRAY_LIKE_CLASSNAMES.has(className) ||
+      typeof rawObj.length != "number" ||
+      isWorker
     ) {
       return false;
     }
 
-    if (typeof rawObj.length != "number") {
-      return false;
-    }
-
+    const { obj, hooks } = objectActor;
     grip.preview = {
       kind: "ArrayLike",
       length: rawObj.length,
@@ -778,15 +789,16 @@ previewers.Object = [
     return true;
   },
 
-  function CSSStyleDeclaration({ obj, hooks }, grip, rawObj) {
+  function CSSStyleDeclaration(objectActor, grip, rawObj, className) {
     if (
-      isWorker ||
       !rawObj ||
-      (obj.class != "CSSStyleDeclaration" && obj.class != "CSS2Properties")
+      (className != "CSSStyleDeclaration" && className != "CSS2Properties") ||
+      isWorker
     ) {
       return false;
     }
 
+    const { hooks } = objectActor;
     grip.preview = {
       kind: "MapLike",
       size: rawObj.length,
@@ -803,15 +815,17 @@ previewers.Object = [
     return true;
   },
 
-  function DOMNode({ obj, hooks }, grip, rawObj) {
+  function DOMNode(objectActor, grip, rawObj, className) {
     if (
-      isWorker ||
-      obj.class == "Object" ||
+      className == "Object" ||
       !rawObj ||
-      !Node.isInstance(rawObj)
+      !Node.isInstance(rawObj) ||
+      isWorker
     ) {
       return false;
     }
+
+    const { obj, hooks } = objectActor;
 
     const preview = (grip.preview = {
       kind: "DOMNode",
@@ -863,11 +877,12 @@ previewers.Object = [
     return true;
   },
 
-  function DOMEvent({ obj, hooks }, grip, rawObj) {
-    if (isWorker || !rawObj || !Event.isInstance(rawObj)) {
+  function DOMEvent(objectActor, grip, rawObj) {
+    if (!rawObj || !Event.isInstance(rawObj) || isWorker) {
       return false;
     }
 
+    const { obj, hooks } = objectActor;
     const preview = (grip.preview = {
       kind: "DOMEvent",
       type: rawObj.type,
@@ -928,11 +943,12 @@ previewers.Object = [
     return true;
   },
 
-  function DOMException({ obj, hooks }, grip, rawObj) {
-    if (isWorker || !rawObj || obj.class !== "DOMException") {
+  function DOMException(objectActor, grip, rawObj, className) {
+    if (!rawObj || className !== "DOMException" || isWorker) {
       return false;
     }
 
+    const { hooks } = objectActor;
     grip.preview = {
       kind: "DOMException",
       name: hooks.createValueGrip(rawObj.name),
@@ -947,13 +963,8 @@ previewers.Object = [
     return true;
   },
 
-  function Object(objectActor, grip, rawObj) {
-    return GenericObject(
-      objectActor,
-      grip,
-      rawObj,
-       false
-    );
+  function Object(objectActor, grip, rawObj, className) {
+    return GenericObject(objectActor, grip, rawObj, className);
   },
 ];
 

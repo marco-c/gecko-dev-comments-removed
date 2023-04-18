@@ -233,9 +233,12 @@ const proto = {
 
 
   _populateGripPreview: function(grip, raw) {
-    for (const previewer of previewers[this.obj.class] || previewers.Object) {
+    
+    
+    const className = this.obj.class;
+    for (const previewer of previewers[className] || previewers.Object) {
       try {
-        const previewerResult = previewer(this, grip, raw);
+        const previewerResult = previewer(this, grip, raw, className);
         if (previewerResult) {
           return;
         }
