@@ -184,8 +184,10 @@ impl MidirWrapper {
 
 
 #[no_mangle]
-pub unsafe extern "C" fn midir_impl_init() -> *mut MidirWrapper {
+pub unsafe extern "C" fn midir_impl_init(callback: unsafe extern "C" fn(id: &nsString, name: &nsString, input: bool)) -> *mut MidirWrapper {
     if let Ok(midir_impl) = MidirWrapper::new() {
+        iterate_ports(&midir_impl.ports, callback);
+
         let midir_box = Box::new(midir_impl);
         
         Box::leak(midir_box) as *mut _
@@ -208,21 +210,6 @@ pub unsafe extern "C" fn midir_impl_shutdown(wrapper: *mut MidirWrapper) {
     
     
     let _midir_box = Box::from_raw(wrapper);
-}
-
-
-
-
-
-
-
-
-#[no_mangle]
-pub unsafe extern "C" fn midir_impl_enum_ports(
-    wrapper: *mut MidirWrapper,
-    callback: unsafe extern "C" fn(id: &nsString, name: &nsString, input: bool),
-) {
-    iterate_ports(&(*wrapper).ports, callback);
 }
 
 
