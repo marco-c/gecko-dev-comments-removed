@@ -1,7 +1,7 @@
 
 
 
- 
+
 function test_BrokenFile(path, shouldThrow, expectedName) {
   var didThrow = false;
   try {
@@ -29,14 +29,4 @@ function run_test() {
   test_BrokenFile("chrome://test/content/test.jsm",
                   true,
                   "NS_ERROR_FILE_NOT_FOUND");
-
-  
-  
-  Assert.equal(typeof(ChromeUtils.import("resource://test/bogus_exports_type.jsm",
-                                         null)),
-               "object");
-
-  Assert.equal(typeof(ChromeUtils.import("resource://test/bogus_element_type.jsm",
-                                         null)),
-               "object");
 }

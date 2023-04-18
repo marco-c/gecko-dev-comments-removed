@@ -19,12 +19,10 @@ function run_test() {
 
   
   
-  var module = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", null);
-  Assert.equal(typeof(XPCOMUtils), "undefined");
-  Assert.equal(typeof(module), "object");
-  Assert.equal(typeof(module.XPCOMUtils), "object");
-  Assert.equal(typeof(module.XPCOMUtils.defineLazyGetter), "function");
-  Assert.ok(scope.XPCOMUtils == module.XPCOMUtils);
+  Assert.throws(
+    () => ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", null),
+    TypeError
+  );
 
   
   Assert.equal(typeof(Cu.import), "function");
