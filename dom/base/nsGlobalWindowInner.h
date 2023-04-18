@@ -99,6 +99,10 @@ namespace mozilla {
 class AbstractThread;
 class ErrorResult;
 
+namespace hal {
+enum class ScreenOrientation : uint32_t;
+}
+
 namespace dom {
 class BarProp;
 class BrowsingContext;
@@ -134,9 +138,6 @@ class VRDisplay;
 enum class VRDisplayEventReason : uint8_t;
 class VREventObserver;
 class WakeLock;
-#if defined(MOZ_WIDGET_ANDROID)
-class WindowOrientationObserver;
-#endif
 struct WindowPostMessageOptions;
 class Worklet;
 namespace cache {
@@ -646,9 +647,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   nsDOMOfflineResourceList* GetApplicationCache(mozilla::ErrorResult& aError);
   nsDOMOfflineResourceList* GetApplicationCache() override;
 
-#if defined(MOZ_WIDGET_ANDROID)
-  int16_t Orientation(mozilla::dom::CallerType aCallerType) const;
-#endif
+  int16_t Orientation(mozilla::dom::CallerType aCallerType);
 
   already_AddRefed<mozilla::dom::Console> GetConsole(JSContext* aCx,
                                                      mozilla::ErrorResult& aRv);
@@ -1342,6 +1341,9 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
 
  protected:
   
+  bool mHasOrientationChangeListeners : 1;
+
+  
   bool mWasOffline : 1;
 
   
@@ -1473,6 +1475,9 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   uint32_t mFocusMethod;
 
   
+  int16_t mOrientationAngle = 0;
+
+  
   uint32_t mIdleRequestCallbackCounter;
   IdleRequests mIdleRequestCallbacks;
   RefPtr<IdleRequestExecutor> mIdleRequestExecutor;
@@ -1494,11 +1499,6 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   bool TryToObserveRefresh();
 
   nsTArray<uint32_t> mEnabledSensors;
-
-#if defined(MOZ_WIDGET_ANDROID)
-  mozilla::UniquePtr<mozilla::dom::WindowOrientationObserver>
-      mOrientationChangeObserver;
-#endif
 
 #ifdef MOZ_WEBSPEECH
   RefPtr<mozilla::dom::SpeechSynthesis> mSpeechSynthesis;

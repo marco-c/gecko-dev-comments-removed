@@ -20,9 +20,7 @@ namespace dom {
 
 class Promise;
 
-class ScreenOrientation final
-    : public DOMEventTargetHelper,
-      public mozilla::hal::ScreenConfigurationObserver {
+class ScreenOrientation final : public DOMEventTargetHelper {
   
   friend class ::nsScreen;
 
@@ -32,6 +30,9 @@ class ScreenOrientation final
                                            mozilla::DOMEventTargetHelper)
 
   IMPL_EVENT_HANDLER(change)
+
+  
+  void MaybeChanged();
 
   ScreenOrientation(nsPIDOMWindowInner* aWindow, nsScreen* aScreen);
 
@@ -49,10 +50,8 @@ class ScreenOrientation final
   OrientationType GetType(CallerType aCallerType, ErrorResult& aRv) const;
   uint16_t GetAngle(CallerType aCallerType, ErrorResult& aRv) const;
 
-  virtual JSObject* WrapObject(JSContext* aCx,
-                               JS::Handle<JSObject*> aGivenProto) override;
-
-  void Notify(const mozilla::hal::ScreenConfiguration& aConfiguration) override;
+  JSObject* WrapObject(JSContext* aCx,
+                       JS::Handle<JSObject*> aGivenProto) override;
 
   static void UpdateActiveOrientationLock(hal::ScreenOrientation aOrientation);
   static void AbortInProcessOrientationPromises(
@@ -103,6 +102,12 @@ class ScreenOrientation final
   RefPtr<VisibleEventListener> mVisibleListener;
   OrientationType mType;
   uint16_t mAngle;
+  
+  
+  
+  
+  
+  bool mTriedToLockDeviceOrientation = false;
 };
 
 }  
