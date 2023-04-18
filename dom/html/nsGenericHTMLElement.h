@@ -89,7 +89,7 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
   void SetInert(bool aInert, mozilla::ErrorResult& aError) {
     SetHTMLBoolAttr(nsGkAtoms::inert, aInert, aError);
   }
-  void Click(mozilla::dom::CallerType aCallerType);
+  MOZ_CAN_RUN_SCRIPT void Click(mozilla::dom::CallerType aCallerType);
   void GetAccessKey(nsString& aAccessKey) {
     GetHTMLAttr(nsGkAtoms::accesskey, aAccessKey);
   }
@@ -708,12 +708,16 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
       nsAtom* aAttrName, bool* aDefer) override;
 
   
-  void HandleKeyboardActivation(mozilla::EventChainPostVisitor&);
+
+
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void HandleKeyboardActivation(
+      mozilla::EventChainPostVisitor&);
 
   
-  static nsresult DispatchSimulatedClick(nsGenericHTMLElement* aElement,
-                                         bool aIsTrusted,
-                                         nsPresContext* aPresContext);
+  MOZ_CAN_RUN_SCRIPT static nsresult DispatchSimulatedClick(
+      nsGenericHTMLElement* aElement, bool aIsTrusted,
+      nsPresContext* aPresContext);
 
   
 
