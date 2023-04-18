@@ -74,6 +74,29 @@ class Logger {
   warn() {}
 }
 
+
+
+
+
+
+
+const cachedPlainObject = new Set();
+function updateGlobalOrObject(object) {
+  
+  
+  if (cachedPlainObject.has(object)) {
+    return global;
+  }
+
+  if (Object.getPrototypeOf(object).constructor.name !== "Object") {
+    return object;
+  }
+
+  cachedPlainObject.add(object);
+  Object.setPrototypeOf(object, global);
+  return global;
+}
+
 const TEST_GLOBAL = {
   JSWindowActorParent,
   JSWindowActorChild,
@@ -104,7 +127,7 @@ const TEST_GLOBAL = {
   browserSearchRegion: "US",
   BrowserWindowTracker: { getTopWindow() {} },
   ChromeUtils: {
-    defineModuleGetter() {},
+    defineModuleGetter: updateGlobalOrObject,
     generateQI() {
       return {};
     },
@@ -446,22 +469,15 @@ const TEST_GLOBAL = {
   },
   XPCOMUtils: {
     defineLazyGetter(object, name, f) {
-      if (object && name) {
-        object[name] = f();
-      } else {
-        f();
-      }
+      updateGlobalOrObject(object)[name] = f();
     },
-    defineLazyGlobalGetters() {},
-    defineLazyModuleGetter() {},
-    defineLazyModuleGetters() {},
-    defineLazyServiceGetter() {},
-    defineLazyServiceGetters() {},
-    defineLazyPreferenceGetter(obj, name) {
-      Object.defineProperty(obj, name, {
-        configurable: true,
-        get: () => "",
-      });
+    defineLazyGlobalGetters: updateGlobalOrObject,
+    defineLazyModuleGetter: updateGlobalOrObject,
+    defineLazyModuleGetters: updateGlobalOrObject,
+    defineLazyServiceGetter: updateGlobalOrObject,
+    defineLazyServiceGetters: updateGlobalOrObject,
+    defineLazyPreferenceGetter(object, name) {
+      updateGlobalOrObject(object)[name] = "";
     },
     generateQI() {
       return {};
