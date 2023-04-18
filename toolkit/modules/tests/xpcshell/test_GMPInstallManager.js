@@ -558,10 +558,25 @@ add_task(async function test_checkForAddons_contentSignatureSuccess() {
   
   TelemetryTestUtils.assertHistogram(xmlFetchResultHistogram, 2, 1);
   
-  Assert.equal(
-    Glean.gmp.updateXmlFetchResult.content_sig_success.testGetValue(),
-    1
-  );
+  const expectedGleanValues = {
+    cert_pin_success: 0,
+    cert_pin_net_request_error: 0,
+    cert_pin_net_timeout: 0,
+    cert_pin_abort: 0,
+    cert_pin_missing_data: 0,
+    cert_pin_failed: 0,
+    cert_pin_invalid: 0,
+    cert_pin_unknown_error: 0,
+    content_sig_success: 1,
+    content_sig_net_request_error: 0,
+    content_sig_net_timeout: 0,
+    content_sig_abort: 0,
+    content_sig_missing_data: 0,
+    content_sig_failed: 0,
+    content_sig_invalid: 0,
+    content_sig_unknown_error: 0,
+  };
+  checkGleanMetricCounts(expectedGleanValues);
 
   revertContentSigTestPrefs(previousUrlOverride);
 });
@@ -611,7 +626,296 @@ add_task(async function test_checkForAddons_contentSignatureFailure() {
     1
   );
 
+  
+  
+
+  
+  Preferences.set(GMPPrefs.KEY_URL_OVERRIDE, testServerInfo.badContentSigUri);
+  await installManager.checkForAddons();
+  
+  TelemetryTestUtils.assertHistogram(xmlFetchResultHistogram, 3, 2);
+  
+  
+  Assert.equal(
+    Glean.gmp.updateXmlFetchResult.content_sig_failed.testGetValue(),
+    1
+  );
+
+  
+  Preferences.set(
+    GMPPrefs.KEY_URL_OVERRIDE,
+    testServerInfo.invalidContentSigUri
+  );
+  await installManager.checkForAddons();
+  
+  TelemetryTestUtils.assertHistogram(xmlFetchResultHistogram, 3, 3);
+  
+  Assert.equal(
+    Glean.gmp.updateXmlFetchResult.content_sig_invalid.testGetValue(),
+    1
+  );
+
+  
+  Preferences.set(
+    GMPPrefs.KEY_URL_OVERRIDE,
+    "https://this.url.doesnt/go/anywhere"
+  );
+  await installManager.checkForAddons();
+  
+  TelemetryTestUtils.assertHistogram(xmlFetchResultHistogram, 3, 4);
+  
+  Assert.equal(
+    Glean.gmp.updateXmlFetchResult.content_sig_net_request_error.testGetValue(),
+    1
+  );
+
+  
+  
+  
+  let overriddenServiceRequest = new mockRequest(200, "", {
+    dropRequest: true,
+    timeout: true,
+  });
+  await ProductAddonCheckerTestUtils.overrideServiceRequest(
+    overriddenServiceRequest,
+    () => installManager.checkForAddons()
+  );
+  TelemetryTestUtils.assertHistogram(xmlFetchResultHistogram, 3, 5);
+  
+  Assert.equal(
+    Glean.gmp.updateXmlFetchResult.content_sig_net_timeout.testGetValue(),
+    1
+  );
+
+  
+  
+  
+  overriddenServiceRequest = new mockRequest(200, "", {
+    dropRequest: true,
+  });
+  let promise = ProductAddonCheckerTestUtils.overrideServiceRequest(
+    overriddenServiceRequest,
+    () => installManager.checkForAddons()
+  );
+  setTimeout(() => {
+    overriddenServiceRequest.abort();
+  }, 100);
+  await promise;
+  
+  TelemetryTestUtils.assertHistogram(xmlFetchResultHistogram, 3, 6);
+  
+  Assert.equal(
+    Glean.gmp.updateXmlFetchResult.content_sig_abort.testGetValue(),
+    1
+  );
+
+  Preferences.set(GMPPrefs.KEY_URL_OVERRIDE, testServerInfo.badXmlUri);
+  await installManager.checkForAddons();
+  
+  TelemetryTestUtils.assertHistogram(xmlFetchResultHistogram, 3, 7);
+  
+  Assert.equal(
+    Glean.gmp.updateXmlFetchResult.content_sig_xml_parse_error.testGetValue(),
+    1
+  );
+
+  
+  Preferences.set(GMPPrefs.KEY_URL_OVERRIDE, testServerInfo.badX5uRequestUri);
+  await installManager.checkForAddons();
+  
+  TelemetryTestUtils.assertHistogram(xmlFetchResultHistogram, 3, 8);
+  
+  Assert.equal(
+    Glean.gmp.updateXmlFetchResult.content_sig_net_request_error.testGetValue(),
+    2
+  );
+
+  
+  Preferences.set(GMPPrefs.KEY_URL_OVERRIDE, testServerInfo.x5uTimeoutUri);
+  
+  
+  testServerInfo.promiseHolder.installPromise = installManager.checkForAddons();
+  await testServerInfo.promiseHolder.installPromise;
+  
+  
+  await testServerInfo.promiseHolder.serverPromise;
+  delete testServerInfo.promiseHolder.installPromise;
+  delete testServerInfo.promiseHolder.serverPromise;
+  
+  TelemetryTestUtils.assertHistogram(xmlFetchResultHistogram, 3, 9);
+  
+  Assert.equal(
+    Glean.gmp.updateXmlFetchResult.content_sig_net_timeout.testGetValue(),
+    2
+  );
+
+  
+  Preferences.set(GMPPrefs.KEY_URL_OVERRIDE, testServerInfo.x5uAbortUri);
+  
+  
+  testServerInfo.promiseHolder.installPromise = installManager.checkForAddons();
+  await testServerInfo.promiseHolder.installPromise;
+  
+  
+  await testServerInfo.promiseHolder.serverPromise;
+  delete testServerInfo.promiseHolder.installPromise;
+  delete testServerInfo.promiseHolder.serverPromise;
+  
+  TelemetryTestUtils.assertHistogram(xmlFetchResultHistogram, 3, 10);
+  
+  Assert.equal(
+    Glean.gmp.updateXmlFetchResult.content_sig_abort.testGetValue(),
+    2
+  );
+
+  
+  const expectedGleanValues = {
+    cert_pin_success: 0,
+    cert_pin_net_request_error: 0,
+    cert_pin_net_timeout: 0,
+    cert_pin_abort: 0,
+    cert_pin_missing_data: 0,
+    cert_pin_failed: 0,
+    cert_pin_invalid: 0,
+    cert_pin_xml_parse_error: 0,
+    cert_pin_unknown_error: 0,
+    content_sig_success: 0,
+    content_sig_net_request_error: 2,
+    content_sig_net_timeout: 2,
+    content_sig_abort: 2,
+    content_sig_missing_data: 1,
+    content_sig_failed: 1,
+    content_sig_invalid: 1,
+    content_sig_xml_parse_error: 1,
+    content_sig_unknown_error: 0,
+  };
+  checkGleanMetricCounts(expectedGleanValues);
+
   revertContentSigTestPrefs(previousUrlOverride);
+});
+
+
+
+
+
+
+
+
+add_task(async function test_checkForAddons_telemetry_certPinning() {
+  
+  const previousUrlOverride = Preferences.get(GMPPrefs.KEY_URL_OVERRIDE, "");
+
+  let xmlFetchResultHistogram = resetGmpTelemetryAndGetHistogram();
+
+  
+  
+  
+  
+  const testServerInfo = getTestServerForContentSignatureTests();
+
+  Preferences.set(GMPPrefs.KEY_URL_OVERRIDE, testServerInfo.validUpdateUri);
+
+  let installManager = new GMPInstallManager();
+  try {
+    
+    
+    
+    await installManager.checkForAddons();
+    Assert.ok(true, "checkForAddons should succeed");
+  } catch (e) {
+    Assert.ok(false, "checkForAddons should succeed");
+  }
+
+  
+  TelemetryTestUtils.assertHistogram(xmlFetchResultHistogram, 0, 1);
+  
+  Assert.equal(
+    Glean.gmp.updateXmlFetchResult.cert_pin_success.testGetValue(),
+    1
+  );
+
+  
+  xmlFetchResultHistogram = TelemetryTestUtils.getAndClearHistogram(
+    "MEDIA_GMP_UPDATE_XML_FETCH_RESULT"
+  );
+  
+  Preferences.set(
+    GMPPrefs.KEY_URL_OVERRIDE,
+    "https://this.url.doesnt/go/anywhere"
+  );
+  await installManager.checkForAddons();
+  
+  TelemetryTestUtils.assertHistogram(xmlFetchResultHistogram, 1, 1);
+  
+  Assert.equal(
+    Glean.gmp.updateXmlFetchResult.cert_pin_net_request_error.testGetValue(),
+    1
+  );
+
+  
+  
+  
+  let overriddenServiceRequest = new mockRequest(200, "", {
+    dropRequest: true,
+    timeout: true,
+  });
+  await ProductAddonCheckerTestUtils.overrideServiceRequest(
+    overriddenServiceRequest,
+    () => installManager.checkForAddons()
+  );
+  TelemetryTestUtils.assertHistogram(xmlFetchResultHistogram, 1, 2);
+  
+  Assert.equal(
+    Glean.gmp.updateXmlFetchResult.cert_pin_net_timeout.testGetValue(),
+    1
+  );
+
+  
+  
+  
+  overriddenServiceRequest = new mockRequest(200, "", {
+    dropRequest: true,
+  });
+  let promise = ProductAddonCheckerTestUtils.overrideServiceRequest(
+    overriddenServiceRequest,
+    () => installManager.checkForAddons()
+  );
+  setTimeout(() => {
+    overriddenServiceRequest.abort();
+  }, 100);
+  await promise;
+  
+  TelemetryTestUtils.assertHistogram(xmlFetchResultHistogram, 1, 3);
+  
+  Assert.equal(Glean.gmp.updateXmlFetchResult.cert_pin_abort.testGetValue(), 1);
+
+  
+  const expectedGleanValues = {
+    cert_pin_success: 1,
+    cert_pin_net_request_error: 1,
+    cert_pin_net_timeout: 1,
+    cert_pin_abort: 1,
+    cert_pin_missing_data: 0,
+    cert_pin_failed: 0,
+    cert_pin_invalid: 0,
+    cert_pin_unknown_error: 0,
+    content_sig_success: 0,
+    content_sig_net_request_error: 0,
+    content_sig_net_timeout: 0,
+    content_sig_abort: 0,
+    content_sig_missing_data: 0,
+    content_sig_failed: 0,
+    content_sig_invalid: 0,
+    content_sig_unknown_error: 0,
+  };
+  checkGleanMetricCounts(expectedGleanValues);
+
+  
+  if (previousUrlOverride) {
+    Preferences.set(GMPPrefs.KEY_URL_OVERRIDE, previousUrlOverride);
+  } else {
+    Preferences.reset(GMPPrefs.KEY_URL_OVERRIDE);
+  }
 });
 
 
@@ -983,16 +1287,6 @@ function setCertRoot(filename) {
 
 
 
-function makeHandler(aVal) {
-  if (typeof aVal == "function") {
-    return { handleEvent: aVal };
-  }
-  return aVal;
-}
-
-
-
-
 function mockRequest(inputStatus, inputResponse, options) {
   this.inputStatus = inputStatus;
   this.inputResponse = inputResponse;
@@ -1058,37 +1352,37 @@ mockRequest.prototype = {
     });
   },
   set onabort(aValue) {
-    this._onabort = makeHandler(aValue);
+    this._onabort = aValue;
   },
   get onabort() {
     return this._onabort;
   },
   set onprogress(aValue) {
-    this._onprogress = makeHandler(aValue);
+    this._onprogress = aValue;
   },
   get onprogress() {
     return this._onprogress;
   },
   set onerror(aValue) {
-    this._onerror = makeHandler(aValue);
+    this._onerror = aValue;
   },
   get onerror() {
     return this._onerror;
   },
   set onload(aValue) {
-    this._onload = makeHandler(aValue);
+    this._onload = aValue;
   },
   get onload() {
     return this._onload;
   },
   set onloadend(aValue) {
-    this._onloadend = makeHandler(aValue);
+    this._onloadend = aValue;
   },
   get onloadend() {
     return this._onloadend;
   },
   set ontimeout(aValue) {
-    this._ontimeout = makeHandler(aValue);
+    this._ontimeout = aValue;
   },
   get ontimeout() {
     return this._ontimeout;
@@ -1207,6 +1501,39 @@ function resetGmpTelemetryAndGetHistogram() {
 
 
 
+function checkGleanMetricCounts(expectedGleanValues) {
+  for (const property in expectedGleanValues) {
+    if (Glean.gmp.updateXmlFetchResult[property].testGetValue()) {
+      Assert.equal(
+        Glean.gmp.updateXmlFetchResult[property].testGetValue(),
+        expectedGleanValues[property],
+        `${property} should have been recorded ${expectedGleanValues[property]} times`
+      );
+    } else {
+      Assert.equal(
+        expectedGleanValues[property],
+        0,
+        "testGetValue() being undefined should mean we expect a metric to not have been gathered"
+      );
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1226,7 +1553,11 @@ function getTestServerForContentSignatureTests() {
     ":" +
     testServer.identity.primaryPort;
 
-  let goodXml = readStringFromFile(do_get_file("good.xml"));
+  
+  
+  let promiseHolder = {};
+
+  const goodXml = readStringFromFile(do_get_file("good.xml"));
   
   
   
@@ -1246,9 +1577,9 @@ function getTestServerForContentSignatureTests() {
   const validX5uUrl = baseUri + validX5uPath;
 
   
-  const validContentSignatureHeader = `x5u=${validX5uUrl}; p384ecdsa=${goodXmlContentSignature}`;
   const validUpdatePath = "/valid_update.xml";
   testServer.registerPathHandler(validUpdatePath, (req, res) => {
+    const validContentSignatureHeader = `x5u=${validX5uUrl}; p384ecdsa=${goodXmlContentSignature}`;
     res.setHeader("content-signature", validContentSignatureHeader);
     res.write(goodXml);
   });
@@ -1259,9 +1590,100 @@ function getTestServerForContentSignatureTests() {
     res.write(goodXml);
   });
 
+  const badContentSigPath = "/update_bad_content_sig.xml";
+  testServer.registerPathHandler(badContentSigPath, (req, res) => {
+    res.setHeader(
+      "content-signature",
+      `x5u=${validX5uUrl}; p384ecdsa=I'm a bad content signature`
+    );
+    res.write(goodXml);
+  });
+
+  
+  const invalidXmlContentSignature = "Z" + goodXmlContentSignature.slice(1);
+  const invalidContentSigPath = "/update_invalid_content_sig.xml";
+  testServer.registerPathHandler(invalidContentSigPath, (req, res) => {
+    res.setHeader(
+      "content-signature",
+      `x5u=${validX5uUrl}; p384ecdsa=${invalidXmlContentSignature}`
+    );
+    res.write(goodXml);
+  });
+
+  const badXml = readStringFromFile(do_get_file("bad.xml"));
+  
+  
+  
+  const badXmlContentSignature =
+    "7QYnPqFoOlS02BpDdIRIljzmPr6BFwPs1z1y8KJUBlnU7EVG6FbnXmVVt5Op9wDz8YoQ_b-3i9rWpj40s8QZsMgo2eImx83LW9JE0d0z6sSAnwRb4lHFPpJXC_hv7wi7";
+  const badXmlPath = "/bad.xml";
+  testServer.registerPathHandler(badXmlPath, (req, res) => {
+    const validContentSignatureHeader = `x5u=${validX5uUrl}; p384ecdsa=${badXmlContentSignature}`;
+    res.setHeader("content-signature", validContentSignatureHeader);
+    res.write(badXml);
+  });
+
+  const badX5uRequestPath = "/bad_x5u_request.xml";
+  testServer.registerPathHandler(badX5uRequestPath, (req, res) => {
+    const badX5uUrlHeader = `x5u=https://this.is.a/bad/url; p384ecdsa=${goodXmlContentSignature}`;
+    res.setHeader("content-signature", badX5uUrlHeader);
+    res.write(badXml);
+  });
+
+  const x5uTimeoutPath = "/x5u_timeout.xml";
+  testServer.registerPathHandler(x5uTimeoutPath, (req, res) => {
+    const validContentSignatureHeader = `x5u=${validX5uUrl}; p384ecdsa=${goodXmlContentSignature}`;
+    
+    
+    let overriddenServiceRequest = new mockRequest(200, "", {
+      dropRequest: true,
+      timeout: true,
+    });
+    
+    
+    promiseHolder.serverPromise = ProductAddonCheckerTestUtils.overrideServiceRequest(
+      overriddenServiceRequest,
+      () => {
+        res.setHeader("content-signature", validContentSignatureHeader);
+        res.write(goodXml);
+        return promiseHolder.installPromise;
+      }
+    );
+  });
+
+  const x5uAbortPath = "/x5u_abort.xml";
+  testServer.registerPathHandler(x5uAbortPath, (req, res) => {
+    const validContentSignatureHeader = `x5u=${validX5uUrl}; p384ecdsa=${goodXmlContentSignature}`;
+    
+    
+    let overriddenServiceRequest = new mockRequest(200, "", {
+      dropRequest: true,
+    });
+    
+    
+    promiseHolder.serverPromise = ProductAddonCheckerTestUtils.overrideServiceRequest(
+      overriddenServiceRequest,
+      () => {
+        res.setHeader("content-signature", validContentSignatureHeader);
+        res.write(goodXml);
+        return promiseHolder.installPromise;
+      }
+    );
+    setTimeout(() => {
+      overriddenServiceRequest.abort();
+    }, 100);
+  });
+
   return {
     testServer,
+    promiseHolder,
     validUpdateUri: baseUri + validUpdatePath,
     missingContentSigUri: baseUri + missingContentSigPath,
+    badContentSigUri: baseUri + badContentSigPath,
+    invalidContentSigUri: baseUri + invalidContentSigPath,
+    badXmlUri: baseUri + badXmlPath,
+    badX5uRequestUri: baseUri + badX5uRequestPath,
+    x5uTimeoutUri: baseUri + x5uTimeoutPath,
+    x5uAbortUri: baseUri + x5uAbortPath,
   };
 }
