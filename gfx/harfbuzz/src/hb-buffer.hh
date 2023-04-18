@@ -93,6 +93,7 @@ struct hb_buffer_t
   hb_buffer_cluster_level_t cluster_level;
   hb_codepoint_t replacement; 
   hb_codepoint_t invisible; 
+  hb_codepoint_t not_found; 
   hb_buffer_scratch_flags_t scratch_flags; 
   unsigned int max_len; 
   int max_ops; 

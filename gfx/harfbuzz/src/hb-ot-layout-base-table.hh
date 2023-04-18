@@ -73,7 +73,7 @@ struct BaseCoordFormat2
   protected:
   HBUINT16	format;		
   FWORD		coordinate;	
-  HBGlyphID	referenceGlyph;	
+  HBGlyphID16	referenceGlyph;	
   HBUINT16	coordPoint;	
 
   public:

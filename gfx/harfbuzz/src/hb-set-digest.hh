@@ -168,15 +168,17 @@ struct hb_set_digest_combiner_t
 
 
 
-typedef hb_set_digest_combiner_t
-<
-  hb_set_digest_lowest_bits_t<unsigned long, 4>,
+using hb_set_digest_t =
   hb_set_digest_combiner_t
   <
-    hb_set_digest_lowest_bits_t<unsigned long, 0>,
-    hb_set_digest_lowest_bits_t<unsigned long, 9>
+    hb_set_digest_lowest_bits_t<unsigned long, 4>,
+    hb_set_digest_combiner_t
+    <
+      hb_set_digest_lowest_bits_t<unsigned long, 0>,
+      hb_set_digest_lowest_bits_t<unsigned long, 9>
+    >
   >
-> hb_set_digest_t;
+;
 
 
 #endif 

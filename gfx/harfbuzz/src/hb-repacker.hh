@@ -34,29 +34,68 @@
 #include "hb-vector.hh"
 
 
+
+
+
+
 struct graph_t
 {
   struct vertex_t
   {
     vertex_t () :
         distance (0),
-        incoming_edges (0),
+        space (0),
+        parents (),
         start (0),
         end (0),
         priority(0) {}
 
-    void fini () { obj.fini (); }
+    void fini () {
+      obj.fini ();
+      parents.fini ();
+    }
 
     hb_serialize_context_t::object_t obj;
     int64_t distance;
-    unsigned incoming_edges;
+    int64_t space;
+    hb_vector_t<unsigned> parents;
     unsigned start;
     unsigned end;
     unsigned priority;
 
     bool is_shared () const
     {
-      return incoming_edges > 1;
+      return parents.length > 1;
+    }
+
+    unsigned incoming_edges () const
+    {
+      return parents.length;
+    }
+
+    void remove_parent (unsigned parent_index)
+    {
+      for (unsigned i = 0; i < parents.length; i++)
+      {
+        if (parents[i] != parent_index) continue;
+        parents.remove (i);
+        break;
+      }
+    }
+
+    void remap_parents (const hb_vector_t<unsigned>& id_map)
+    {
+      for (unsigned i = 0; i < parents.length; i++)
+        parents[i] = id_map[parents[i]];
+    }
+
+    void remap_parent (unsigned old_index, unsigned new_index)
+    {
+      for (unsigned i = 0; i < parents.length; i++)
+      {
+        if (parents[i] == old_index)
+          parents[i] = new_index;
+      }
     }
 
     bool is_leaf () const
@@ -77,7 +116,7 @@ struct graph_t
 
       int64_t modified_distance =
           hb_min (hb_max(distance + distance_modifier (), 0), 0x7FFFFFFFFF);
-      return (modified_distance << 24) | (0x00FFFFFF & order);
+      return (modified_distance << 22) | (0x003FFFFF & order);
     }
 
     int64_t distance_modifier () const
@@ -91,34 +130,7 @@ struct graph_t
   struct overflow_record_t
   {
     unsigned parent;
-    const hb_serialize_context_t::object_t::link_t* link;
-  };
-
-  struct clone_buffer_t
-  {
-    clone_buffer_t () : head (nullptr), tail (nullptr) {}
-
-    bool copy (const hb_serialize_context_t::object_t& object)
-    {
-      fini ();
-      unsigned size = object.tail - object.head;
-      head = (char*) hb_malloc (size);
-      if (!head) return false;
-
-      memcpy (head, object.head, size);
-      tail = head + size;
-      return true;
-    }
-
-    char* head;
-    char* tail;
-
-    void fini ()
-    {
-      if (!head) return;
-      hb_free (head);
-      head = nullptr;
-    }
+    unsigned child;
   };
 
   
@@ -129,11 +141,12 @@ struct graph_t
 
 
   graph_t (const hb_vector_t<hb_serialize_context_t::object_t *>& objects)
-      : edge_count_invalid (true),
+      : parents_invalid (true),
         distance_invalid (true),
         positions_invalid (true),
         successful (true)
   {
+    num_roots_for_space_.push (1);
     bool removed_nil = false;
     for (unsigned i = 0; i < objects.length; i++)
     {
@@ -160,12 +173,13 @@ struct graph_t
   ~graph_t ()
   {
     vertices_.fini_deep ();
-    clone_buffers_.fini_deep ();
   }
 
   bool in_error () const
   {
-    return !successful || vertices_.in_error () || clone_buffers_.in_error ();
+    return !successful ||
+        vertices_.in_error () ||
+        num_roots_for_space_.in_error ();
   }
 
   const vertex_t& root () const
@@ -226,12 +240,13 @@ struct graph_t
 
     hb_vector_t<unsigned> queue;
     hb_vector_t<vertex_t> sorted_graph;
+    if (unlikely (!check_success (sorted_graph.resize (vertices_.length)))) return;
     hb_vector_t<unsigned> id_map;
     if (unlikely (!check_success (id_map.resize (vertices_.length)))) return;
 
     hb_vector_t<unsigned> removed_edges;
     if (unlikely (!check_success (removed_edges.resize (vertices_.length)))) return;
-    update_incoming_edge_count ();
+    update_parents ();
 
     queue.push (root_idx ());
     int new_id = vertices_.length - 1;
@@ -242,12 +257,12 @@ struct graph_t
       queue.remove (0);
 
       vertex_t& next = vertices_[next_id];
-      sorted_graph.push (next);
+      sorted_graph[new_id] = next;
       id_map[next_id] = new_id--;
 
       for (const auto& link : next.obj.links) {
         removed_edges[link.objidx]++;
-        if (!(vertices_[link.objidx].incoming_edges - removed_edges[link.objidx]))
+        if (!(vertices_[link.objidx].incoming_edges () - removed_edges[link.objidx]))
           queue.push (link.objidx);
       }
     }
@@ -255,14 +270,11 @@ struct graph_t
     check_success (!queue.in_error ());
     check_success (!sorted_graph.in_error ());
     if (!check_success (new_id == -1))
-      DEBUG_MSG (SUBSET_REPACK, nullptr, "Graph is not fully connected.");
+      print_orphaned_nodes ();
 
-    remap_obj_indices (id_map, &sorted_graph);
+    remap_all_obj_indices (id_map, &sorted_graph);
 
-    sorted_graph.as_array ().reverse ();
-
-    vertices_.fini_deep ();
-    vertices_ = sorted_graph;
+    hb_swap (vertices_, sorted_graph);
     sorted_graph.fini_deep ();
   }
 
@@ -283,12 +295,13 @@ struct graph_t
 
     hb_priority_queue_t queue;
     hb_vector_t<vertex_t> sorted_graph;
+    if (unlikely (!check_success (sorted_graph.resize (vertices_.length)))) return;
     hb_vector_t<unsigned> id_map;
     if (unlikely (!check_success (id_map.resize (vertices_.length)))) return;
 
     hb_vector_t<unsigned> removed_edges;
     if (unlikely (!check_success (removed_edges.resize (vertices_.length)))) return;
-    update_incoming_edge_count ();
+    update_parents ();
 
     queue.insert (root ().modified_distance (0), root_idx ());
     int new_id = root_idx ();
@@ -298,12 +311,12 @@ struct graph_t
       unsigned next_id = queue.pop_minimum().second;
 
       vertex_t& next = vertices_[next_id];
-      sorted_graph.push (next);
+      sorted_graph[new_id] = next;
       id_map[next_id] = new_id--;
 
       for (const auto& link : next.obj.links) {
         removed_edges[link.objidx]++;
-        if (!(vertices_[link.objidx].incoming_edges - removed_edges[link.objidx]))
+        if (!(vertices_[link.objidx].incoming_edges () - removed_edges[link.objidx]))
           
           
           
@@ -317,15 +330,65 @@ struct graph_t
     check_success (!queue.in_error ());
     check_success (!sorted_graph.in_error ());
     if (!check_success (new_id == -1))
-      DEBUG_MSG (SUBSET_REPACK, nullptr, "Graph is not fully connected.");
+      print_orphaned_nodes ();
 
-    remap_obj_indices (id_map, &sorted_graph);
+    remap_all_obj_indices (id_map, &sorted_graph);
 
-    sorted_graph.as_array ().reverse ();
-
-    vertices_.fini_deep ();
-    vertices_ = sorted_graph;
+    hb_swap (vertices_, sorted_graph);
     sorted_graph.fini_deep ();
+  }
+
+  
+
+
+  bool assign_32bit_spaces ()
+  {
+    unsigned root_index = root_idx ();
+    hb_set_t visited;
+    hb_set_t roots;
+    for (unsigned i = 0; i <= root_index; i++)
+    {
+      for (auto& l : vertices_[i].obj.links)
+      {
+        if (l.width == 4 && !l.is_signed)
+        {
+          roots.add (l.objidx);
+          find_subgraph (l.objidx, visited);
+        }
+      }
+    }
+
+    
+    
+    visited.invert ();
+
+    if (!roots) return false;
+
+    while (roots)
+    {
+      unsigned next = HB_SET_VALUE_INVALID;
+      if (!roots.next (&next)) break;
+
+      hb_set_t connected_roots;
+      find_connected_nodes (next, roots, visited, connected_roots);
+      isolate_subgraph (connected_roots);
+
+      unsigned next_space = this->next_space ();
+      num_roots_for_space_.push (0);
+      for (unsigned root : connected_roots)
+      {
+        DEBUG_MSG (SUBSET_REPACK, nullptr, "Subgraph %u gets space %u", root, next_space);
+        vertices_[root].space = next_space;
+        num_roots_for_space_[next_space] = num_roots_for_space_[next_space] + 1;
+        distance_invalid = true;
+        positions_invalid = true;
+      }
+
+      
+      
+    }
+
+    return true;
   }
 
   
@@ -333,50 +396,198 @@ struct graph_t
 
 
 
-  void duplicate (unsigned parent_idx, unsigned child_idx)
+
+
+  bool isolate_subgraph (hb_set_t& roots)
   {
-    DEBUG_MSG (SUBSET_REPACK, nullptr, "  Duplicating %d => %d",
-               parent_idx, child_idx);
+    update_parents ();
+    hb_hashmap_t<unsigned, unsigned> subgraph;
 
-    positions_invalid = true;
-
-    auto* clone = vertices_.push ();
-    auto& child = vertices_[child_idx];
-    clone_buffer_t* buffer = clone_buffers_.push ();
-    if (vertices_.in_error ()
-        || clone_buffers_.in_error ()
-        || !check_success (buffer->copy (child.obj))) {
-      return;
+    
+    
+    hb_set_t parents;
+    for (unsigned root_idx : roots)
+    {
+      subgraph.set (root_idx, wide_parents (root_idx, parents));
+      find_subgraph (root_idx, subgraph);
     }
 
-    clone->obj.head = buffer->head;
-    clone->obj.tail = buffer->tail;
-    clone->distance = child.distance;
-
-    for (const auto& l : child.obj.links)
-      clone->obj.links.push (l);
-
-    check_success (!clone->obj.links.in_error ());
-
-    auto& parent = vertices_[parent_idx];
-    unsigned clone_idx = vertices_.length - 2;
-    for (unsigned i = 0; i < parent.obj.links.length; i++)
+    unsigned original_root_idx = root_idx ();
+    hb_hashmap_t<unsigned, unsigned> index_map;
+    bool made_changes = false;
+    for (auto entry : subgraph.iter ())
     {
-      auto& l = parent.obj.links[i];
-      if (l.objidx == child_idx)
+      const auto& node = vertices_[entry.first];
+      unsigned subgraph_incoming_edges = entry.second;
+
+      if (subgraph_incoming_edges < node.incoming_edges ())
       {
-        l.objidx = clone_idx;
-        clone->incoming_edges++;
-        child.incoming_edges--;
+        
+        made_changes = true;
+        duplicate_subgraph (entry.first, index_map);
       }
     }
+
+    if (!made_changes)
+      return false;
+
+    if (original_root_idx != root_idx ()
+        && parents.has (original_root_idx))
+    {
+      
+      parents.add (root_idx ());
+      parents.del (original_root_idx);
+    }
+
+    auto new_subgraph =
+        + subgraph.keys ()
+        | hb_map([&] (unsigned node_idx) {
+          if (index_map.has (node_idx)) return index_map[node_idx];
+          return node_idx;
+        })
+        ;
+
+    remap_obj_indices (index_map, new_subgraph);
+    remap_obj_indices (index_map, parents.iter (), true);
+
+    
+    unsigned next = HB_SET_VALUE_INVALID;
+    while (roots.next (&next))
+    {
+      if (index_map.has (next))
+      {
+        roots.del (next);
+        roots.add (index_map[next]);
+      }
+    }
+
+    return true;
+  }
+
+  void find_subgraph (unsigned node_idx, hb_hashmap_t<unsigned, unsigned>& subgraph)
+  {
+    for (const auto& link : vertices_[node_idx].obj.links)
+    {
+      if (subgraph.has (link.objidx))
+      {
+        subgraph.set (link.objidx, subgraph[link.objidx] + 1);
+        continue;
+      }
+      subgraph.set (link.objidx, 1);
+      find_subgraph (link.objidx, subgraph);
+    }
+  }
+
+  void find_subgraph (unsigned node_idx, hb_set_t& subgraph)
+  {
+    if (subgraph.has (node_idx)) return;
+    subgraph.add (node_idx);
+    for (const auto& link : vertices_[node_idx].obj.links)
+      find_subgraph (link.objidx, subgraph);
+  }
+
+  
+
+
+
+
+  void duplicate_subgraph (unsigned node_idx, hb_hashmap_t<unsigned, unsigned>& index_map)
+  {
+    if (index_map.has (node_idx))
+      return;
+
+    index_map.set (node_idx, duplicate (node_idx));
+    for (const auto& l : object (node_idx).links) {
+      duplicate_subgraph (l.objidx, index_map);
+    }
+  }
+
+  
+
+
+  unsigned duplicate (unsigned node_idx)
+  {
+    positions_invalid = true;
+    distance_invalid = true;
+
+    auto* clone = vertices_.push ();
+    auto& child = vertices_[node_idx];
+    if (vertices_.in_error ()) {
+      return -1;
+    }
+
+    clone->obj.head = child.obj.head;
+    clone->obj.tail = child.obj.tail;
+    clone->distance = child.distance;
+    clone->space = child.space;
+    clone->parents.reset ();
+
+    unsigned clone_idx = vertices_.length - 2;
+    for (const auto& l : child.obj.links)
+    {
+      clone->obj.links.push (l);
+      vertices_[l.objidx].parents.push (clone_idx);
+    }
+
+    check_success (!clone->obj.links.in_error ());
 
     
     
     
     vertex_t root = vertices_[vertices_.length - 2];
-    vertices_[vertices_.length - 2] = *clone;
+    vertices_[clone_idx] = *clone;
     vertices_[vertices_.length - 1] = root;
+
+    
+    for (const auto& l : root.obj.links)
+      vertices_[l.objidx].remap_parent (root_idx () - 1, root_idx ());
+
+    return clone_idx;
+  }
+
+  
+
+
+
+
+  bool duplicate (unsigned parent_idx, unsigned child_idx)
+  {
+    update_parents ();
+
+    unsigned links_to_child = 0;
+    for (const auto& l : vertices_[parent_idx].obj.links)
+    {
+      if (l.objidx == child_idx) links_to_child++;
+    }
+
+    if (vertices_[child_idx].incoming_edges () <= links_to_child)
+    {
+      
+      
+      DEBUG_MSG (SUBSET_REPACK, nullptr, "  Not duplicating %d => %d",
+                 parent_idx, child_idx);
+      return false;
+    }
+
+    DEBUG_MSG (SUBSET_REPACK, nullptr, "  Duplicating %d => %d",
+               parent_idx, child_idx);
+
+    unsigned clone_idx = duplicate (child_idx);
+    if (clone_idx == (unsigned) -1) return false;
+    
+    if (parent_idx == clone_idx) parent_idx++;
+
+    auto& parent = vertices_[parent_idx];
+    for (unsigned i = 0; i < parent.obj.links.length; i++)
+    {
+      auto& l = parent.obj.links[i];
+      if (l.objidx != child_idx)
+        continue;
+
+      reassign_link (l, parent_idx, clone_idx);
+    }
+
+    return true;
   }
 
   
@@ -414,7 +625,7 @@ struct graph_t
 
         overflow_record_t r;
         r.parent = parent_idx;
-        r.link = &link;
+        r.child = link.objidx;
         overflows->push (r);
       }
     }
@@ -423,25 +634,111 @@ struct graph_t
     return overflows->length;
   }
 
+  void print_orphaned_nodes ()
+  {
+    if (!DEBUG_ENABLED(SUBSET_REPACK)) return;
+
+    DEBUG_MSG (SUBSET_REPACK, nullptr, "Graph is not fully connected.");
+    parents_invalid = true;
+    update_parents();
+
+    for (unsigned i = 0; i < root_idx (); i++)
+    {
+      const auto& v = vertices_[i];
+      if (!v.parents)
+        DEBUG_MSG (SUBSET_REPACK, nullptr, "Node %u is orphaned.", i);
+    }
+  }
+
   void print_overflows (const hb_vector_t<overflow_record_t>& overflows)
   {
     if (!DEBUG_ENABLED(SUBSET_REPACK)) return;
 
-    update_incoming_edge_count ();
+    update_parents ();
     for (const auto& o : overflows)
     {
-      const auto& child = vertices_[o.link->objidx];
-      DEBUG_MSG (SUBSET_REPACK, nullptr, "  overflow from %d => %d (%d incoming , %d outgoing)",
+      const auto& parent = vertices_[o.parent];
+      const auto& child = vertices_[o.child];
+      DEBUG_MSG (SUBSET_REPACK, nullptr,
+                 "  overflow from "
+                 "%4d (%4d in, %4d out, space %2d) => "
+                 "%4d (%4d in, %4d out, space %2d)",
                  o.parent,
-                 o.link->objidx,
-                 child.incoming_edges,
-                 child.obj.links.length);
+                 parent.incoming_edges (),
+                 parent.obj.links.length,
+                 space_for (o.parent),
+                 o.child,
+                 child.incoming_edges (),
+                 child.obj.links.length,
+                 space_for (o.child));
     }
+  }
+
+  unsigned num_roots_for_space (unsigned space) const
+  {
+    return num_roots_for_space_[space];
+  }
+
+  unsigned next_space () const
+  {
+    return num_roots_for_space_.length;
+  }
+
+  void move_to_new_space (unsigned index)
+  {
+    auto& node = vertices_[index];
+    num_roots_for_space_.push (1);
+    num_roots_for_space_[node.space] = num_roots_for_space_[node.space] - 1;
+    node.space = num_roots_for_space_.length - 1;
+  }
+
+  unsigned space_for (unsigned index, unsigned* root = nullptr) const
+  {
+    const auto& node = vertices_[index];
+    if (node.space)
+    {
+      if (root != nullptr)
+        *root = index;
+      return node.space;
+    }
+
+    if (!node.parents)
+    {
+      if (root)
+        *root = index;
+      return 0;
+    }
+
+    return space_for (node.parents[0], root);
   }
 
   void err_other_error () { this->successful = false; }
 
  private:
+
+  
+
+
+  unsigned wide_parents (unsigned node_idx, hb_set_t& parents) const
+  {
+    unsigned count = 0;
+    hb_set_t visited;
+    for (unsigned p : vertices_[node_idx].parents)
+    {
+      if (visited.has (p)) continue;
+      visited.add (p);
+
+      for (const auto& l : vertices_[p].obj.links)
+      {
+        if (l.objidx == node_idx && l.width == 4 && !l.is_signed)
+        {
+          count++;
+          parents.add (p);
+        }
+      }
+    }
+    return count;
+  }
 
   bool check_success (bool success)
   { return this->successful && (success || (err_other_error (), false)); }
@@ -449,22 +746,22 @@ struct graph_t
   
 
 
-  void update_incoming_edge_count ()
+  void update_parents ()
   {
-    if (!edge_count_invalid) return;
+    if (!parents_invalid) return;
 
     for (unsigned i = 0; i < vertices_.length; i++)
-      vertices_[i].incoming_edges = 0;
+      vertices_[i].parents.reset ();
 
-    for (const vertex_t& v : vertices_)
+    for (unsigned p = 0; p < vertices_.length; p++)
     {
-      for (auto& l : v.obj.links)
+      for (auto& l : vertices_[p].obj.links)
       {
-        vertices_[l.objidx].incoming_edges++;
+        vertices_[l.objidx].parents.push (p);
       }
     }
 
-    edge_count_invalid = false;
+    parents_invalid = false;
   }
 
   
@@ -515,23 +812,25 @@ struct graph_t
     hb_priority_queue_t queue;
     queue.insert (0, vertices_.length - 1);
 
-    hb_set_t visited;
+    hb_vector_t<bool> visited;
+    visited.resize (vertices_.length);
 
     while (!queue.in_error () && !queue.is_empty ())
     {
       unsigned next_idx = queue.pop_minimum ().second;
-      if (visited.has (next_idx)) continue;
+      if (visited[next_idx]) continue;
       const auto& next = vertices_[next_idx];
       int64_t next_distance = vertices_[next_idx].distance;
-      visited.add (next_idx);
+      visited[next_idx] = true;
 
       for (const auto& link : next.obj.links)
       {
-        if (visited.has (link.objidx)) continue;
+        if (visited[link.objidx]) continue;
 
         const auto& child = vertices_[link.objidx].obj;
-        int64_t child_weight = child.tail - child.head +
-                               ((int64_t) 1 << (link.width * 8));
+        unsigned link_width = link.width ? link.width : 4; 
+        int64_t child_weight = (child.tail - child.head) +
+                               ((int64_t) 1 << (link_width * 8)) * (vertices_[link.objidx].space + 1);
         int64_t child_distance = next_distance + child_weight;
 
         if (child_distance < vertices_[link.objidx].distance)
@@ -545,7 +844,7 @@ struct graph_t
     check_success (!queue.in_error ());
     if (!check_success (queue.is_empty ()))
     {
-      DEBUG_MSG (SUBSET_REPACK, nullptr, "Graph is not fully connected.");
+      print_orphaned_nodes ();
       return;
     }
 
@@ -576,6 +875,10 @@ struct graph_t
   bool is_valid_offset (int64_t offset,
                         const hb_serialize_context_t::object_t::link_t& link) const
   {
+    if (unlikely (!link.width))
+      
+      return link.is_signed || offset >= 0;
+
     if (link.is_signed)
     {
       if (link.width == 4)
@@ -597,11 +900,48 @@ struct graph_t
   
 
 
-  void remap_obj_indices (const hb_vector_t<unsigned>& id_map,
-                          hb_vector_t<vertex_t>* sorted_graph) const
+
+  void reassign_link (hb_serialize_context_t::object_t::link_t& link,
+                      unsigned parent_idx,
+                      unsigned new_idx)
+  {
+    unsigned old_idx = link.objidx;
+    link.objidx = new_idx;
+    vertices_[old_idx].remove_parent (parent_idx);
+    vertices_[new_idx].parents.push (parent_idx);
+  }
+
+  
+
+
+  template<typename Iterator, hb_requires (hb_is_iterator (Iterator))>
+  void remap_obj_indices (const hb_hashmap_t<unsigned, unsigned>& id_map,
+                          Iterator subgraph,
+                          bool only_wide = false)
+  {
+    if (!id_map) return;
+    for (unsigned i : subgraph)
+    {
+      for (unsigned j = 0; j < vertices_[i].obj.links.length; j++)
+      {
+        auto& link = vertices_[i].obj.links[j];
+        if (!id_map.has (link.objidx)) continue;
+        if (only_wide && !(link.width == 4 && !link.is_signed)) continue;
+
+        reassign_link (link, i, id_map[link.objidx]);
+      }
+    }
+  }
+
+  
+
+
+  void remap_all_obj_indices (const hb_vector_t<unsigned>& id_map,
+                              hb_vector_t<vertex_t>* sorted_graph) const
   {
     for (unsigned i = 0; i < sorted_graph->length; i++)
     {
+      (*sorted_graph)[i].remap_parents (id_map);
       for (unsigned j = 0; j < (*sorted_graph)[i].obj.links.length; j++)
       {
         auto& link = (*sorted_graph)[i].obj.links[j];
@@ -631,6 +971,9 @@ struct graph_t
   {
     switch (link.width)
     {
+    case 0:
+      
+      return;
     case 4:
       if (link.is_signed)
       {
@@ -656,16 +999,122 @@ struct graph_t
     }
   }
 
+  
+
+
+
+
+
+
+  void find_connected_nodes (unsigned start_idx,
+                             hb_set_t& targets,
+                             hb_set_t& visited,
+                             hb_set_t& connected)
+  {
+    if (visited.has (start_idx)) return;
+    visited.add (start_idx);
+
+    if (targets.has (start_idx))
+    {
+      targets.del (start_idx);
+      connected.add (start_idx);
+    }
+
+    const auto& v = vertices_[start_idx];
+
+    
+    for (const auto& l : v.obj.links)
+      find_connected_nodes (l.objidx, targets, visited, connected);
+
+    for (unsigned p : v.parents)
+      find_connected_nodes (p, targets, visited, connected);
+  }
+
  public:
   
   hb_vector_t<vertex_t> vertices_;
  private:
-  hb_vector_t<clone_buffer_t> clone_buffers_;
-  bool edge_count_invalid;
+  bool parents_invalid;
   bool distance_invalid;
   bool positions_invalid;
   bool successful;
+  hb_vector_t<unsigned> num_roots_for_space_;
 };
+
+static bool _try_isolating_subgraphs (const hb_vector_t<graph_t::overflow_record_t>& overflows,
+                                      graph_t& sorted_graph)
+{
+  for (int i = overflows.length - 1; i >= 0; i--)
+  {
+    const graph_t::overflow_record_t& r = overflows[i];
+    unsigned root = 0;
+    unsigned space = sorted_graph.space_for (r.parent, &root);
+    if (!space) continue;
+    if (sorted_graph.num_roots_for_space (space) <= 1) continue;
+
+    DEBUG_MSG (SUBSET_REPACK, nullptr, "Overflow in space %d moving subgraph %d to space %d.",
+               space,
+               root,
+               sorted_graph.next_space ());
+
+    hb_set_t roots;
+    roots.add (root);
+    sorted_graph.isolate_subgraph (roots);
+    for (unsigned new_root : roots)
+      sorted_graph.move_to_new_space (new_root);
+    return true;
+  }
+  return false;
+}
+
+static bool _process_overflows (const hb_vector_t<graph_t::overflow_record_t>& overflows,
+                                hb_set_t& priority_bumped_parents,
+                                graph_t& sorted_graph)
+{
+  bool resolution_attempted = false;
+
+  
+  for (int i = overflows.length - 1; i >= 0; i--)
+  {
+    const graph_t::overflow_record_t& r = overflows[i];
+    const auto& child = sorted_graph.vertices_[r.child];
+    if (child.is_shared ())
+    {
+      
+      
+      if (!sorted_graph.duplicate (r.parent, r.child)) continue;
+      return true;
+    }
+
+    if (child.is_leaf () && !priority_bumped_parents.has (r.parent))
+    {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      sorted_graph.raise_childrens_priority (r.parent);
+      priority_bumped_parents.add (r.parent);
+      resolution_attempted = true;
+      continue;
+    }
+
+    
+    
+    
+  }
+
+  return resolution_attempted;
+}
+
+
 
 
 
@@ -680,7 +1129,9 @@ struct graph_t
 
 inline void
 hb_resolve_overflows (const hb_vector_t<hb_serialize_context_t::object_t *>& packed,
-                      hb_serialize_context_t* c) {
+                      hb_tag_t table_tag,
+                      hb_serialize_context_t* c,
+                      unsigned max_rounds = 10) {
   
   
   graph_t sorted_graph (packed);
@@ -693,68 +1144,36 @@ hb_resolve_overflows (const hb_vector_t<hb_serialize_context_t::object_t *>& pac
 
   sorted_graph.sort_shortest_distance ();
 
+  if ((table_tag == HB_OT_TAG_GPOS
+       ||  table_tag == HB_OT_TAG_GSUB)
+      && sorted_graph.will_overflow ())
+  {
+    DEBUG_MSG (SUBSET_REPACK, nullptr, "Assigning spaces to 32 bit subgraphs.");
+    if (sorted_graph.assign_32bit_spaces ())
+      sorted_graph.sort_shortest_distance ();
+  }
+
   unsigned round = 0;
   hb_vector_t<graph_t::overflow_record_t> overflows;
   
   while (!sorted_graph.in_error ()
          && sorted_graph.will_overflow (&overflows)
-         && round++ < 10) {
-    DEBUG_MSG (SUBSET_REPACK, nullptr, "=== Over flow resolution round %d ===", round);
+         && round++ < max_rounds) {
+    DEBUG_MSG (SUBSET_REPACK, nullptr, "=== Overflow resolution round %d ===", round);
     sorted_graph.print_overflows (overflows);
 
-    bool resolution_attempted = false;
     hb_set_t priority_bumped_parents;
-    
-    for (int i = overflows.length - 1; i >= 0; i--)
-    {
-      const graph_t::overflow_record_t& r = overflows[i];
-      const auto& child = sorted_graph.vertices_[r.link->objidx];
-      if (child.is_shared ())
-      {
-        
-        
-        sorted_graph.duplicate (r.parent, r.link->objidx);
-        resolution_attempted = true;
 
-        
-        
+    if (!_try_isolating_subgraphs (overflows, sorted_graph))
+    {
+      if (!_process_overflows (overflows, priority_bumped_parents, sorted_graph))
+      {
+        DEBUG_MSG (SUBSET_REPACK, nullptr, "No resolution available :(");
         break;
       }
-
-      if (child.is_leaf () && !priority_bumped_parents.has (r.parent))
-      {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        sorted_graph.raise_childrens_priority (r.parent);
-        priority_bumped_parents.add (r.parent);
-        resolution_attempted = true;
-        continue;
-      }
-
-      
-      
-      
     }
 
-    if (resolution_attempted)
-    {
-      sorted_graph.sort_shortest_distance ();
-      continue;
-    }
-
-    DEBUG_MSG (SUBSET_REPACK, nullptr, "No resolution available :(");
-    c->err (HB_SERIALIZE_ERROR_OFFSET_OVERFLOW);
-    return;
+    sorted_graph.sort_shortest_distance ();
   }
 
   if (sorted_graph.in_error ())
@@ -762,8 +1181,14 @@ hb_resolve_overflows (const hb_vector_t<hb_serialize_context_t::object_t *>& pac
     c->err (HB_SERIALIZE_ERROR_OTHER);
     return;
   }
+
+  if (sorted_graph.will_overflow ())
+  {
+    c->err (HB_SERIALIZE_ERROR_OFFSET_OVERFLOW);
+    DEBUG_MSG (SUBSET_REPACK, nullptr, "Offset overflow resolution failed.");
+    return;
+  }
   sorted_graph.serialize (c);
 }
-
 
 #endif 

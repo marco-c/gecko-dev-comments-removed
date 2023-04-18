@@ -33,15 +33,14 @@
 
 struct hb_bimap_t
 {
-  hb_bimap_t () { init (); }
-  ~hb_bimap_t () { fini (); }
-
+  
   void init ()
   {
     forw_map.init ();
     back_map.init ();
   }
 
+  
   void fini ()
   {
     forw_map.fini ();
@@ -99,14 +98,6 @@ struct hb_bimap_t
 
 struct hb_inc_bimap_t : hb_bimap_t
 {
-  hb_inc_bimap_t () { init (); }
-
-  void init ()
-  {
-    hb_bimap_t::init ();
-    next_value = 0;
-  }
-
   
 
 
@@ -165,7 +156,7 @@ struct hb_inc_bimap_t : hb_bimap_t
   }
 
   protected:
-  unsigned int	next_value;
+  unsigned int next_value = 0;
 };
 
 #endif 

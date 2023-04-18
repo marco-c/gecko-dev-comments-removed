@@ -82,7 +82,7 @@ struct BaselineTableFormat2Part
   }
 
   protected:
-  HBGlyphID	stdGlyph;	
+  HBGlyphID16	stdGlyph;	
 
 
 
@@ -105,7 +105,7 @@ struct BaselineTableFormat3Part
   }
 
   protected:
-  HBGlyphID	stdGlyph;	
+  HBGlyphID16	stdGlyph;	
   HBUINT16	ctlPoints[32];	
   Lookup<HBUINT16>
 		lookupTable;	

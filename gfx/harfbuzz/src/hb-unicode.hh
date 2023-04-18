@@ -165,6 +165,7 @@ HB_UNICODE_FUNCS_IMPLEMENT_CALLBACKS_SIMPLE
 
 
 
+
   static hb_bool_t
   is_default_ignorable (hb_codepoint_t ch)
   {

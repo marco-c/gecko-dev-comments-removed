@@ -56,8 +56,10 @@ enum myanmar_category_t {
   OT_VS   = 30, 
   OT_P    = 31, 
   OT_D    = 32, 
+  OT_ML   = 33, 
 };
 
+using myanmar_position_t = indic_position_t;
 
 static inline void
 set_myanmar_properties (hb_glyph_info_t &info)
@@ -65,7 +67,7 @@ set_myanmar_properties (hb_glyph_info_t &info)
   hb_codepoint_t u = info.codepoint;
   unsigned int type = hb_indic_get_categories (u);
   unsigned int cat = type & 0xFFu;
-  indic_position_t pos = (indic_position_t) (type >> 8);
+  myanmar_position_t pos = (myanmar_position_t) (type >> 8);
 
   
 
@@ -114,8 +116,12 @@ set_myanmar_properties (hb_glyph_info_t &info)
       cat = OT_D; 
       break;
 
-    case 0x103Eu: case 0x1060u:
+    case 0x103Eu:
       cat = OT_MH;
+      break;
+
+    case 0x1060u:
+      cat = OT_ML;
       break;
 
     case 0x103Cu:

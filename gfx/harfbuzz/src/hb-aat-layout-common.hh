@@ -96,8 +96,8 @@ struct LookupSegmentSingle
     return_trace (c->check_struct (this) && value.sanitize (c, base));
   }
 
-  HBGlyphID	last;		
-  HBGlyphID	first;		
+  HBGlyphID16	last;		
+  HBGlyphID16	first;		
   T		value;		
   public:
   DEFINE_SIZE_STATIC (4 + T::static_size);
@@ -162,11 +162,11 @@ struct LookupSegmentArray
     TRACE_SANITIZE (this);
     return_trace (c->check_struct (this) &&
 		  first <= last &&
-		  valuesZ.sanitize (c, base, last - first + 1, hb_forward<Ts> (ds)...));
+		  valuesZ.sanitize (c, base, last - first + 1, std::forward<Ts> (ds)...));
   }
 
-  HBGlyphID	last;		
-  HBGlyphID	first;		
+  HBGlyphID16	last;		
+  HBGlyphID16	first;		
   NNOffset16To<UnsizedArrayOf<T>>
 		valuesZ;	
 
@@ -225,7 +225,7 @@ struct LookupSingle
     return_trace (c->check_struct (this) && value.sanitize (c, base));
   }
 
-  HBGlyphID	glyph;		
+  HBGlyphID16	glyph;		
   T		value;		
   public:
   DEFINE_SIZE_STATIC (2 + T::static_size);
@@ -287,7 +287,7 @@ struct LookupFormat8
 
   protected:
   HBUINT16	format;		
-  HBGlyphID	firstGlyph;	
+  HBGlyphID16	firstGlyph;	
   HBUINT16	glyphCount;	
 
   UnsizedArrayOf<T>
@@ -329,7 +329,7 @@ struct LookupFormat10
   protected:
   HBUINT16	format;		
   HBUINT16	valueSize;	
-  HBGlyphID	firstGlyph;	
+  HBGlyphID16	firstGlyph;	
   HBUINT16	glyphCount;	
 
   UnsizedArrayOf<HBUINT8>
@@ -661,7 +661,7 @@ struct ClassTable
     return_trace (c->check_struct (this) && classArray.sanitize (c));
   }
   protected:
-  HBGlyphID		firstGlyph;	
+  HBGlyphID16		firstGlyph;	
   Array16Of<HBUCHAR>	classArray;	
 
   public:

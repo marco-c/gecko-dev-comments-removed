@@ -100,7 +100,7 @@ struct UnconditionalAddGlyphAction
   protected:
   ActionSubrecordHeader
 		header;
-  HBGlyphID	addGlyph;	
+  HBGlyphID16	addGlyph;	
 
 
   public:
@@ -121,11 +121,11 @@ struct ConditionalAddGlyphAction
   HBFixed	substThreshold; 
 
 
-  HBGlyphID	addGlyph;	
+  HBGlyphID16	addGlyph;	
 
 
 
-  HBGlyphID	substGlyph;	
+  HBGlyphID16	substGlyph;	
 
 
   public:
@@ -170,7 +170,7 @@ struct RepeatedAddGlyphAction
   ActionSubrecordHeader
 		header;
   HBUINT16	flags;		
-  HBGlyphID	glyph;		
+  HBGlyphID16	glyph;		
 
   public:
   DEFINE_SIZE_STATIC (10);

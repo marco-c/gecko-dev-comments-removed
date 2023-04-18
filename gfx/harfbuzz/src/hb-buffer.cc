@@ -224,6 +224,7 @@ hb_buffer_t::reset ()
   flags = HB_BUFFER_FLAG_DEFAULT;
   replacement = HB_BUFFER_REPLACEMENT_CODEPOINT_DEFAULT;
   invisible = 0;
+  not_found = 0;
 
   clear ();
 }
@@ -607,6 +608,7 @@ DEFINE_NULL_INSTANCE (hb_buffer_t) =
   HB_BUFFER_FLAG_DEFAULT,
   HB_BUFFER_CLUSTER_LEVEL_DEFAULT,
   HB_BUFFER_REPLACEMENT_CODEPOINT_DEFAULT,
+  0, 
   0, 
   HB_BUFFER_SCRATCH_FLAG_DEFAULT,
   HB_BUFFER_MAX_LEN_DEFAULT,
@@ -1156,6 +1158,46 @@ hb_codepoint_t
 hb_buffer_get_invisible_glyph (hb_buffer_t    *buffer)
 {
   return buffer->invisible;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void
+hb_buffer_set_not_found_glyph (hb_buffer_t    *buffer,
+			       hb_codepoint_t  not_found)
+{
+  if (unlikely (hb_object_is_immutable (buffer)))
+    return;
+
+  buffer->not_found = not_found;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+hb_codepoint_t
+hb_buffer_get_not_found_glyph (hb_buffer_t    *buffer)
+{
+  return buffer->not_found;
 }
 
 

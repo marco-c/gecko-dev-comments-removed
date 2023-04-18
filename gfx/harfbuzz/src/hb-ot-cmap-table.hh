@@ -604,7 +604,7 @@ struct CmapSubtableTrimmed
   UINT		length;		
   UINT		language;	
   UINT		startCharCode;	
-  ArrayOf<HBGlyphID, UINT>
+  ArrayOf<HBGlyphID16, UINT>
 		glyphIdArray;	
 
   public:
@@ -900,7 +900,7 @@ struct UVSMapping
   }
 
   HBUINT24	unicodeValue;	
-  HBGlyphID	glyphID;	
+  HBGlyphID16	glyphID;	
   public:
   DEFINE_SIZE_STATIC (5);
 };
