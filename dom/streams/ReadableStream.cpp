@@ -824,8 +824,7 @@ static void ReadableStreamDefaultTee(JSContext* aCx, ReadableStream* aStream,
   
 
   
-  RefPtr<TeeState> teeState =
-      TeeState::Create(aCx, aStream, aCloneForBranch2, aRv);
+  RefPtr<TeeState> teeState = TeeState::Create(aStream, aCloneForBranch2, aRv);
   if (aRv.Failed()) {
     return;
   }
