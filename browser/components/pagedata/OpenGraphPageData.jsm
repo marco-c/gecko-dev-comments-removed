@@ -33,9 +33,6 @@ const OpenGraphPageData = {
       let propertyName = tag.getAttribute("property").substring(3);
 
       switch (propertyName) {
-        case "description":
-          pageData.description = tag.getAttribute("content");
-          break;
         case "site_name":
           pageData.siteName = tag.getAttribute("content");
           break;
