@@ -515,8 +515,12 @@ license file's hash.
         
         subprocess.check_call([cargo, "update", "-p", "gkrust"], cwd=self.topsrcdir)
 
-        with open(os.path.join(self.topsrcdir, "Cargo.lock")) as fh:
+        with open(os.path.join(self.topsrcdir, "Cargo.lock")) as fh, open(
+            os.path.join(self.topsrcdir, "Cargo.toml")
+        ) as toml_fh:
             cargo_lock = pytoml.load(fh)
+            cargo_toml = pytoml.load(toml_fh)
+            patches = cargo_toml.get("patch", {}).get("crates-io", {})
             failed = False
             for package in cargo_lock.get("patch", {}).get("unused", []):
                 self.log(
@@ -549,6 +553,11 @@ license file's hash.
 
             for name, packages in grouped.items():
                 num = len(packages)
+                
+                
+                
+                if patches.get(name, {}).get("path", "").startswith("build/rust"):
+                    num -= 1
                 expected = TOLERATED_DUPES.get(name, 1)
                 if num > expected:
                     self.log(
@@ -580,7 +589,7 @@ license file's hash.
                         "{file} to reflect this improvement.",
                     )
                     failed = True
-                elif num < expected:
+                elif num < expected and num > 0:
                     self.log(
                         logging.ERROR,
                         "less_duplicate_crate",
