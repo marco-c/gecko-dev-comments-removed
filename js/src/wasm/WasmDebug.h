@@ -85,8 +85,6 @@ class DebugState {
   const SharedModule module_;
 
   
-  
-  
 
   bool enterFrameTrapsEnabled_;
   uint32_t enterAndLeaveFrameTrapsCounter_;

@@ -79,10 +79,6 @@ struct ImportValues {
 
 
 
-
-
-
-
 class Module : public JS::WasmModule {
   const SharedCode code_;
   const ImportVector imports_;
@@ -194,8 +190,7 @@ class Module : public JS::WasmModule {
   void serialize(const LinkData& linkData, uint8_t* begin, size_t size) const;
   void serialize(const LinkData& linkData,
                  JS::OptimizedEncodingListener& listener) const;
-  static RefPtr<Module> deserialize(const uint8_t* begin, size_t size,
-                                    Metadata* maybeMetadata = nullptr);
+  static RefPtr<Module> deserialize(const uint8_t* begin, size_t size);
   bool loggingDeserialized() const { return loggingDeserialized_; }
 
   
