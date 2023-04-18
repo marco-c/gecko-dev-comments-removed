@@ -1678,7 +1678,7 @@ void ContentParent::Init() {
 
   RefPtr<GeckoMediaPluginServiceParent> gmps(
       GeckoMediaPluginServiceParent::GetSingleton());
-  gmps->UpdateContentProcessGMPCapabilities();
+  gmps->UpdateContentProcessGMPCapabilities(this);
 
   
   

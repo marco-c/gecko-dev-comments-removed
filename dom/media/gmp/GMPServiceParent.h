@@ -24,6 +24,7 @@
 template <class>
 struct already_AddRefed;
 using FlushFOGDataPromise = mozilla::dom::ContentParent::FlushFOGDataPromise;
+using ContentParent = mozilla::dom::ContentParent;
 
 namespace mozilla {
 class OriginAttributesPattern;
@@ -73,7 +74,10 @@ class GeckoMediaPluginServiceParent final
   void ServiceUserCreated(GMPServiceParent* aServiceParent);
   void ServiceUserDestroyed(GMPServiceParent* aServiceParent);
 
-  void UpdateContentProcessGMPCapabilities();
+  
+  
+  void UpdateContentProcessGMPCapabilities(
+      ContentParent* aContentProcess = nullptr);
 
   void SendFlushFOGData(nsTArray<RefPtr<FlushFOGDataPromise>>& promises);
 
