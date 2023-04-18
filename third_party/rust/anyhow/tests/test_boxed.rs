@@ -1,3 +1,8 @@
+#![allow(
+    
+    clippy::nonstandard_macro_braces,
+)]
+
 use anyhow::anyhow;
 use std::error::Error as StdError;
 use std::io;

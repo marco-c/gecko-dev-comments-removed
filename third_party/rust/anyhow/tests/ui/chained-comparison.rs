@@ -1,0 +1,8 @@
+use anyhow::{ensure, Result};
+
+fn main() -> Result<()> {
+    
+    
+    ensure!(false == false == true);
+    Ok(())
+}

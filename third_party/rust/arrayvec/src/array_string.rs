@@ -82,11 +82,11 @@ impl<const CAP: usize> ArrayString<CAP>
 
     
     #[inline]
-    pub fn len(&self) -> usize { self.len as usize }
+    pub const fn len(&self) -> usize { self.len as usize }
 
     
     #[inline]
-    pub fn is_empty(&self) -> bool { self.len() == 0 }
+    pub const fn is_empty(&self) -> bool { self.len() == 0 }
 
     
     
@@ -137,8 +137,30 @@ impl<const CAP: usize> ArrayString<CAP>
     
     
     
+    
+    #[inline]
+    pub fn zero_filled() -> Self {
+        assert_capacity_limit!(CAP);
+        
+        
+        unsafe {
+            ArrayString {
+                xs: MaybeUninit::zeroed().assume_init(),
+                len: CAP as _
+            }
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline(always)]
-    pub fn capacity(&self) -> usize { CAP }
+    pub const fn capacity(&self) -> usize { CAP }
 
     
     
@@ -150,7 +172,20 @@ impl<const CAP: usize> ArrayString<CAP>
     
     
     
-    pub fn is_full(&self) -> bool { self.len() == self.capacity() }
+    pub const fn is_full(&self) -> bool { self.len() == self.capacity() }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub const fn remaining_capacity(&self) -> usize {
+        self.capacity() - self.len()
+    }
 
     
     
@@ -367,6 +402,11 @@ impl<const CAP: usize> ArrayString<CAP>
 
     
     pub fn as_str(&self) -> &str {
+        self
+    }
+
+    
+    pub fn as_mut_str(&mut self) -> &mut str {
         self
     }
 

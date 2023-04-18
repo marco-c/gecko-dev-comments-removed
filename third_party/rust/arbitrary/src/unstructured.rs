@@ -403,6 +403,13 @@ impl<'a> Unstructured<'a> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
     pub fn fill_buffer(&mut self, buffer: &mut [u8]) -> Result<()> {
         let n = std::cmp::min(buffer.len(), self.data.len());
         buffer[..n].copy_from_slice(&self.data[..n]);

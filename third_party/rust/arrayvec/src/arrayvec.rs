@@ -108,7 +108,7 @@ impl<T, const CAP: usize> ArrayVec<T, CAP> {
     
     
     #[inline(always)]
-    pub fn len(&self) -> usize { self.len as usize }
+    pub const fn len(&self) -> usize { self.len as usize }
 
     
     
@@ -120,7 +120,7 @@ impl<T, const CAP: usize> ArrayVec<T, CAP> {
     
     
     #[inline]
-    pub fn is_empty(&self) -> bool { self.len() == 0 }
+    pub const fn is_empty(&self) -> bool { self.len() == 0 }
 
     
     
@@ -131,7 +131,7 @@ impl<T, const CAP: usize> ArrayVec<T, CAP> {
     
     
     #[inline(always)]
-    pub fn capacity(&self) -> usize { CAP }
+    pub const fn capacity(&self) -> usize { CAP }
 
     
     
@@ -143,7 +143,7 @@ impl<T, const CAP: usize> ArrayVec<T, CAP> {
     
     
     
-    pub fn is_full(&self) -> bool { self.len() == self.capacity() }
+    pub const fn is_full(&self) -> bool { self.len() == self.capacity() }
 
     
     
@@ -154,7 +154,7 @@ impl<T, const CAP: usize> ArrayVec<T, CAP> {
     
     
     
-    pub fn remaining_capacity(&self) -> usize {
+    pub const fn remaining_capacity(&self) -> usize {
         self.capacity() - self.len()
     }
 
@@ -493,21 +493,38 @@ impl<T, const CAP: usize> ArrayVec<T, CAP> {
 
         let mut g = BackshiftOnDrop { v: self, processed_len: 0, deleted_cnt: 0, original_len };
 
-        while g.processed_len < original_len {
+        #[inline(always)]
+        fn process_one<F: FnMut(&mut T) -> bool, T, const CAP: usize, const DELETED: bool>(
+            f: &mut F,
+            g: &mut BackshiftOnDrop<'_, T, CAP>
+        ) -> bool {
             let cur = unsafe { g.v.as_mut_ptr().add(g.processed_len) };
             if !f(unsafe { &mut *cur }) {
                 g.processed_len += 1;
                 g.deleted_cnt += 1;
                 unsafe { ptr::drop_in_place(cur) };
-                continue;
+                return false;
             }
-            if g.deleted_cnt > 0 {
+            if DELETED {
                 unsafe {
                     let hole_slot = g.v.as_mut_ptr().add(g.processed_len - g.deleted_cnt);
                     ptr::copy_nonoverlapping(cur, hole_slot, 1);
                 }
             }
             g.processed_len += 1;
+            true
+        }
+
+        
+        while g.processed_len != original_len {
+            if !process_one::<F, T, CAP, false>(&mut f, &mut g) {
+                break;
+            }
+        }
+
+        
+        while g.processed_len != original_len {
+            process_one::<F, T, CAP, true>(&mut f, &mut g);
         }
 
         drop(g);

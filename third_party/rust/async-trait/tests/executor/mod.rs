@@ -4,6 +4,7 @@ use std::ptr;
 use std::task::{Context, Poll, RawWaker, RawWakerVTable, Waker};
 
 
+#[allow(clippy::missing_panics_doc)]
 pub fn block_on_simple<F: Future>(mut fut: F) -> F::Output {
     unsafe fn clone(_null: *const ()) -> RawWaker {
         unimplemented!()
