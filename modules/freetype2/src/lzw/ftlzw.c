@@ -369,7 +369,7 @@
     FT_ZERO( stream );
     stream->memory = memory;
 
-    if ( !FT_NEW( zip ) )
+    if ( !FT_QNEW( zip ) )
     {
       error = ft_lzw_file_init( zip, stream, source );
       if ( error )

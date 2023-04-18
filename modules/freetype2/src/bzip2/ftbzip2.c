@@ -57,8 +57,9 @@
   
 
 
-  typedef void *(* alloc_func)(void*, int, int);
-  typedef void (* free_func)(void*, void*);
+  typedef void* (*alloc_func)( void*, int, int );
+  typedef void  (*free_func) ( void*, void* );
+
 
   static void*
   ft_bzip2_alloc( FT_Memory  memory,
@@ -106,6 +107,7 @@
     FT_ULong   pos;                          
     FT_Byte*   cursor;
     FT_Byte*   limit;
+    FT_Bool    reset;                        
 
   } FT_BZip2FileRec, *FT_BZip2File;
 
@@ -153,6 +155,7 @@
     zip->limit  = zip->buffer + FT_BZIP2_BUFFER_SIZE;
     zip->cursor = zip->limit;
     zip->pos    = 0;
+    zip->reset  = 0;
 
     
     {
@@ -228,6 +231,7 @@
       zip->limit  = zip->buffer + FT_BZIP2_BUFFER_SIZE;
       zip->cursor = zip->limit;
       zip->pos    = 0;
+      zip->reset  = 0;
 
       BZ2_bzDecompressInit( bzstream, 0, 0 );
     }
@@ -302,18 +306,23 @@
 
       err = BZ2_bzDecompress( bzstream );
 
-      if ( err == BZ_STREAM_END )
+      if ( err != BZ_OK )
       {
-        zip->limit = (FT_Byte*)bzstream->next_out;
-        if ( zip->limit == zip->cursor )
-          error = FT_THROW( Invalid_Stream_Operation );
-        break;
-      }
-      else if ( err != BZ_OK )
-      {
-        zip->limit = zip->cursor;
-        error      = FT_THROW( Invalid_Stream_Operation );
-        break;
+        zip->reset = 1;
+
+        if ( err == BZ_STREAM_END )
+        {
+          zip->limit = (FT_Byte*)bzstream->next_out;
+          if ( zip->limit == zip->cursor )
+            error = FT_THROW( Invalid_Stream_Operation );
+          break;
+        }
+        else
+        {
+          zip->limit = zip->cursor;
+          error      = FT_THROW( Invalid_Stream_Operation );
+          break;
+        }
       }
     }
 
@@ -365,7 +374,7 @@
 
     
     
-    if ( pos < zip->pos )
+    if ( pos < zip->pos || zip->reset )
     {
       error = ft_bzip2_file_reset( zip );
       if ( error )

@@ -650,7 +650,7 @@
     FT_Error     error;
 
 
-    if ( !FT_NEW( globals ) )
+    if ( !FT_QNEW( globals ) )
     {
       FT_UInt    count;
       FT_Short*  read;

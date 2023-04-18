@@ -488,9 +488,9 @@
 
 
 
-    l = (  4732UL  * bgra[0] * bgra[0] +
-          46871UL  * bgra[1] * bgra[1] +
-          13933UL  * bgra[2] * bgra[2] ) >> 16;
+    l = (  4731UL  * bgra[0] * bgra[0] +
+          46868UL  * bgra[1] * bgra[1] +
+          13937UL  * bgra[2] * bgra[2] ) >> 16;
 
     
 

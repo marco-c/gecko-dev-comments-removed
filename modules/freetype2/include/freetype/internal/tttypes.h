@@ -1605,7 +1605,7 @@ FT_BEGIN_HEADER
     FT_ULong              hdmx_table_size;
     FT_UInt               hdmx_record_count;
     FT_ULong              hdmx_record_size;
-    FT_Byte*              hdmx_record_sizes;
+    FT_Byte**             hdmx_records;
 
     FT_Byte*              sbit_table;
     FT_ULong              sbit_table_size;
@@ -1643,6 +1643,9 @@ FT_BEGIN_HEADER
     
     void*                 cpal;
     void*                 colr;
+
+    
+    void*                 svg;
 
   } TT_FaceRec;
 
@@ -1768,6 +1771,9 @@ FT_BEGIN_HEADER
 
     
     FT_ListRec       composites;
+
+    
+    FT_Byte*         widthp;
 
   } TT_LoaderRec;
 

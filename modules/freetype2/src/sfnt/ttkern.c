@@ -94,7 +94,7 @@
 
       p_next = p;
 
-      p += 2; 
+      p       += 2; 
       length   = FT_NEXT_USHORT( p );
       coverage = FT_NEXT_USHORT( p );
 
@@ -144,7 +144,7 @@
 
 
           cur_pair = FT_NEXT_ULONG( p );
-          if ( cur_pair <= old_pair )
+          if ( cur_pair < old_pair )
             break;
 
           p += 2;
@@ -187,11 +187,18 @@
                        FT_UInt  left_glyph,
                        FT_UInt  right_glyph )
   {
-    FT_Int    result = 0;
-    FT_UInt   count, mask;
-    FT_Byte*  p       = face->kern_table;
-    FT_Byte*  p_limit = p + face->kern_table_size;
+    FT_Int   result = 0;
+    FT_UInt  count, mask;
 
+    FT_Byte*  p;
+    FT_Byte*  p_limit;
+
+
+    if ( !face->kern_table )
+      return result;
+
+    p       = face->kern_table;
+    p_limit = p + face->kern_table_size;
 
     p   += 4;
     mask = 0x0001;

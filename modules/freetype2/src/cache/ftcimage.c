@@ -64,7 +64,7 @@
     FTC_INode  inode  = NULL;
 
 
-    if ( !FT_NEW( inode ) )
+    if ( !FT_QNEW( inode ) )
     {
       FTC_GNode         gnode  = FTC_GNODE( inode );
       FTC_Family        family = gquery->family;
@@ -74,6 +74,7 @@
 
       
       FTC_GNode_Init( gnode, gindex, family );
+      inode->glyph = NULL;
 
       
       error = clazz->family_load_glyph( family, gindex, cache,

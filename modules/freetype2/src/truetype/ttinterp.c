@@ -5260,16 +5260,21 @@
       }
     }
 
-    exc->GS.instruct_control &= ~(FT_Byte)Kf;
-    exc->GS.instruct_control |= (FT_Byte)L;
+    
+    if ( exc->iniRange == tt_coderange_cvt )
+    {
+      exc->GS.instruct_control &= ~(FT_Byte)Kf;
+      exc->GS.instruct_control |= (FT_Byte)L;
+    }
 
-    if ( K == 3 )
+    
+    else if ( exc->iniRange == tt_coderange_glyph && K == 3 )
     {
 #ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
       
       
       if ( SUBPIXEL_HINTING_INFINALITY )
-        exc->ignore_x_mode = FT_BOOL( L == 4 );
+        exc->ignore_x_mode = !FT_BOOL( L == 4 );
 #endif
 
 #ifdef TT_SUPPORT_SUBPIXEL_HINTING_MINIMAL
@@ -5280,6 +5285,8 @@
         exc->backward_compatibility = !FT_BOOL( L == 4 );
 #endif
     }
+    else if ( exc->pedantic_hinting )
+      exc->error = FT_THROW( Invalid_Reference );
   }
 
 
@@ -7755,35 +7762,6 @@
 #endif 
 
 
-#ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
-    exc->iup_called = FALSE;
-#endif 
-
-#ifdef TT_SUPPORT_SUBPIXEL_HINTING_MINIMAL
-    
-
-
-
-
-
-
-
-
-
-
-
-
-    if ( SUBPIXEL_HINTING_MINIMAL          &&
-         exc->subpixel_hinting_lean        &&
-         !FT_IS_TRICKY( &exc->face->root ) )
-      exc->backward_compatibility = !( exc->GS.instruct_control & 4 );
-    else
-      exc->backward_compatibility = FALSE;
-
-    exc->iupx_called = FALSE;
-    exc->iupy_called = FALSE;
-#endif
-
     
     
     num_twilight_points = FT_MAX( 30,
@@ -7860,6 +7838,15 @@
 
     Compute_Funcs( exc );
     Compute_Round( exc, (FT_Byte)exc->GS.round_state );
+
+    
+#ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
+    exc->iup_called  = FALSE;
+#endif
+#ifdef TT_SUPPORT_SUBPIXEL_HINTING_MINIMAL
+    exc->iupx_called = FALSE;
+    exc->iupy_called = FALSE;
+#endif
 
     do
     {

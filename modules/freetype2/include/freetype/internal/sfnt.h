@@ -333,6 +333,33 @@ FT_BEGIN_HEADER
 
 
 
+  typedef FT_Error
+  (*TT_Load_Svg_Doc_Func)( FT_GlyphSlot  glyph,
+                           FT_UInt       glyph_index );
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   typedef FT_Error
   (*TT_Set_SBit_Strike_Func)( TT_Face          face,
@@ -946,6 +973,11 @@ FT_BEGIN_HEADER
     TT_Get_Name_Func     get_name;
     TT_Get_Name_ID_Func  get_name_id;
 
+    
+    TT_Load_Table_Func    load_svg;
+    TT_Free_Table_Func    free_svg;
+    TT_Load_Svg_Doc_Func  load_svg_doc;
+
   } SFNT_Interface;
 
 
@@ -997,7 +1029,10 @@ FT_BEGIN_HEADER
           colr_blend_,                   \
           get_metrics_,                  \
           get_name_,                     \
-          get_name_id_ )                 \
+          get_name_id_,                  \
+          load_svg_,                     \
+          free_svg_,                     \
+          load_svg_doc_ )                \
   static const SFNT_Interface  class_ =  \
   {                                      \
     goto_table_,                         \
@@ -1042,7 +1077,10 @@ FT_BEGIN_HEADER
     colr_blend_,                         \
     get_metrics_,                        \
     get_name_,                           \
-    get_name_id_                         \
+    get_name_id_,                        \
+    load_svg_,                           \
+    free_svg_,                           \
+    load_svg_doc_                        \
   };
 
 

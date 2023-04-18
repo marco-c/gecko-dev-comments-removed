@@ -44,14 +44,8 @@
 
     parser = &loader.parser;
 
-    if ( FT_QALLOC( face->ttf_data, 12 ) )
-      goto Exit;
-
-    
-    
-    
-    
-    face->ttf_size = 12;
+    face->ttf_data = NULL;
+    face->ttf_size = 0;
 
     error = t42_parser_init( parser,
                              face->root.stream,
@@ -152,6 +146,11 @@
 
   Exit:
     t42_loader_done( &loader );
+    if ( error )
+    {
+      FT_FREE( face->ttf_data );
+      face->ttf_size = 0;
+    }
     return error;
   }
 

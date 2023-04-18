@@ -50,6 +50,9 @@ FT_TRACE_DEF( raster )
 FT_TRACE_DEF( smooth )    
 
   
+FT_TRACE_DEF( otsvg )     
+
+  
 FT_TRACE_DEF( cache )     
 
   
@@ -61,6 +64,7 @@ FT_TRACE_DEF( ttbdf )
 FT_TRACE_DEF( ttcmap )    
 FT_TRACE_DEF( ttcolr )    
 FT_TRACE_DEF( ttcpal )    
+FT_TRACE_DEF( ttsvg )     
 FT_TRACE_DEF( ttkern )    
 FT_TRACE_DEF( ttload )    
 FT_TRACE_DEF( ttmtx )     

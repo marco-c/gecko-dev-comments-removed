@@ -282,6 +282,8 @@ FT_BEGIN_HEADER
 
     TT_Size_Metrics    ttmetrics;
 
+    FT_Byte*           widthp;          
+
     FT_ULong           strike_index;      
 
 #ifdef TT_USE_BYTECODE_INTERPRETER

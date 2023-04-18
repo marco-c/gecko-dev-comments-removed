@@ -26,6 +26,7 @@
 #include "ftccback.h"
 #include "ftcerror.h"
 
+#undef  FT_COMPONENT
 #define FT_COMPONENT  cache
 
 
@@ -182,7 +183,8 @@
       if ( !error )
       {
         if ( face->glyph->format == FT_GLYPH_FORMAT_BITMAP  ||
-             face->glyph->format == FT_GLYPH_FORMAT_OUTLINE )
+             face->glyph->format == FT_GLYPH_FORMAT_OUTLINE ||
+             face->glyph->format == FT_GLYPH_FORMAT_SVG     )
         {
           
           FT_Glyph  glyph;

@@ -116,7 +116,7 @@
     FT_UInt        nn;
 
 
-    if ( !FT_NEW( node ) )
+    if ( !FT_QNEW( node ) )
     {
       node->face_id    = query->face_id;
       node->cmap_index = query->cmap_index;

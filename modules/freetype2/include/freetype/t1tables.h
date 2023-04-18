@@ -504,12 +504,32 @@ FT_BEGIN_HEADER
 
 
 
+
+
+
+
+
+
+
+
+
+
   FT_EXPORT( FT_Error )
   FT_Get_PS_Font_Info( FT_Face      face,
                        PS_FontInfo  afont_info );
 
 
   
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -48,6 +48,8 @@ FT_BEGIN_HEADER
 #define MIN_SPREAD      2
   
 #define MAX_SPREAD      32
+  
+#define ONE_PIXEL       ( 1 << 6 )
 
 
   

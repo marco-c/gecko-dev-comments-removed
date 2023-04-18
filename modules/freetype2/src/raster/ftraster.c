@@ -2269,7 +2269,7 @@
         
         
         while ( --c2 > 0 )
-          *(++target) = 0xFF;
+          *( ++target ) = 0xFF;
 
         target[1] |= f2;
       }

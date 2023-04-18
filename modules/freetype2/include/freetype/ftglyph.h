@@ -234,6 +234,92 @@ FT_BEGIN_HEADER
 
 
 
+  typedef struct FT_SvgGlyphRec_*  FT_SvgGlyph;
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  typedef struct  FT_SvgGlyphRec_
+  {
+    FT_GlyphRec  root;
+
+    FT_Byte*  svg_document;
+    FT_ULong  svg_document_length;
+
+    FT_UInt  glyph_index;
+
+    FT_Size_Metrics  metrics;
+    FT_UShort        units_per_EM;
+
+    FT_UShort  start_glyph_id;
+    FT_UShort  end_glyph_id;
+
+    FT_Matrix  transform;
+    FT_Vector  delta;
+
+  } FT_SvgGlyphRec;
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
 
 
 

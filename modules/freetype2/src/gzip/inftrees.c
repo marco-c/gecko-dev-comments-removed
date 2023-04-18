@@ -6,15 +6,10 @@
 #include "zutil.h"
 #include "inftrees.h"
 
-#if !defined(BUILDFIXED) && !defined(STDC)
-#  define BUILDFIXED
-#endif
+#define MAXBITS 15
 
-
-#if 0
-local const char inflate_copyright[] =
-   " inflate 1.1.4 Copyright 1995-2002 Mark Adler ";
-#endif
+const char inflate_copyright[] =
+   " inflate 1.2.12 Copyright 1995-2022 Mark Adler ";
 
 
 
@@ -23,38 +18,61 @@ local const char inflate_copyright[] =
 
 
 
-#define exop word.what.Exop
-#define bits word.what.Bits
 
 
-local int huft_build OF((
-    uIntf *,            
-    uInt,               
-    uInt,               
-    const uIntf *,      
-    const uIntf *,      
-    inflate_huft * FAR*,
-    uIntf *,            
-    inflate_huft *,     
-    uInt *,             
-    uIntf * ));         
 
 
-local const uInt cplens[31] = { 
+
+
+
+
+
+
+
+int ZLIB_INTERNAL inflate_table(
+    codetype type,
+    unsigned short FAR *lens,
+    unsigned codes,
+    code FAR * FAR *table,
+    unsigned FAR *bits,
+    unsigned short FAR *work)
+{
+    unsigned len;               
+    unsigned sym;               
+    unsigned min, max;          
+    unsigned root;              
+    unsigned curr;              
+    unsigned drop;              
+    int left;                   
+    unsigned used;              
+    unsigned huff;              
+    unsigned incr;              
+    unsigned fill;              
+    unsigned low;               
+    unsigned mask;              
+    code here;                  
+    code FAR *next;             
+    const unsigned short FAR *base;     
+    const unsigned short FAR *extra;    
+    unsigned match;             
+    unsigned short count[MAXBITS+1];    
+    unsigned short offs[MAXBITS+1];     
+    static const unsigned short lbase[31] = { 
         3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31,
         35, 43, 51, 59, 67, 83, 99, 115, 131, 163, 195, 227, 258, 0, 0};
-        
-local const uInt cplext[31] = { 
-        0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2,
-        3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0, 112, 112}; 
-local const uInt cpdist[30] = { 
+    static const unsigned short lext[31] = { 
+        16, 16, 16, 16, 16, 16, 16, 16, 17, 17, 17, 17, 18, 18, 18, 18,
+        19, 19, 19, 19, 20, 20, 20, 20, 21, 21, 21, 21, 16, 199, 202};
+    static const unsigned short dbase[32] = { 
         1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193,
         257, 385, 513, 769, 1025, 1537, 2049, 3073, 4097, 6145,
-        8193, 12289, 16385, 24577};
-local const uInt cpdext[30] = { 
-        0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6,
-        7, 7, 8, 8, 9, 9, 10, 10, 11, 11,
-        12, 12, 13, 13};
+        8193, 12289, 16385, 24577, 0, 0};
+    static const unsigned short dext[32] = { 
+        16, 16, 16, 16, 17, 17, 18, 18, 19, 19, 20, 20, 21, 21, 22, 22,
+        23, 23, 24, 24, 25, 25, 26, 26, 27, 27,
+        28, 28, 29, 29, 64, 64};
+
+    
 
 
 
@@ -85,384 +103,202 @@ local const uInt cpdext[30] = {
 
 
 
+    
+    for (len = 0; len <= MAXBITS; len++)
+        count[len] = 0;
+    for (sym = 0; sym < codes; sym++)
+        count[lens[sym]]++;
+
+    
+    root = *bits;
+    for (max = MAXBITS; max >= 1; max--)
+        if (count[max] != 0) break;
+    if (root > max) root = max;
+    if (max == 0) {                     
+        here.op = (unsigned char)64;    
+        here.bits = (unsigned char)1;
+        here.val = (unsigned short)0;
+        *(*table)++ = here;             
+        *(*table)++ = here;
+        *bits = 1;
+        return 0;     
+    }
+    for (min = 1; min < max; min++)
+        if (count[min] != 0) break;
+    if (root < min) root = min;
+
+    
+    left = 1;
+    for (len = 1; len <= MAXBITS; len++) {
+        left <<= 1;
+        left -= count[len];
+        if (left < 0) return -1;        
+    }
+    if (left > 0 && (type == CODES || max != 1))
+        return -1;                      
+
+    
+    offs[1] = 0;
+    for (len = 1; len < MAXBITS; len++)
+        offs[len + 1] = offs[len] + count[len];
+
+    
+    for (sym = 0; sym < codes; sym++)
+        if (lens[sym] != 0) work[offs[lens[sym]]++] = (unsigned short)sym;
+
+    
 
 
 
 
 
-#define BMAX 15         /* maximum bit length of any code */
-
-local int huft_build( 
-uIntf *b,               
-uInt n,                 
-uInt s,                 
-const uIntf *d,         
-const uIntf *e,         
-inflate_huft * FAR *t,  
-uIntf *m,               
-inflate_huft *hp,       
-uInt *hn,               
-uIntf *v                
 
 
 
 
-)
-{
-
-  uInt a;                       
-  uInt c[BMAX+1];               
-  uInt f;                       
-  int g;                        
-  int h;                        
-  uInt i;                       
-  uInt j;                       
-  int k;                        
-  int l;                        
-  uInt mask;                    
-  uIntf *p;                     
-  inflate_huft *q;              
-  struct inflate_huft_s r;      
-  inflate_huft *u[BMAX];        
-  int w;                        
-  uInt x[BMAX+1];               
-  uIntf *xp;                    
-  int y;                        
-  uInt z;                       
 
 
-  
-  r.base = 0;
-
-  
-  p = c;
-#define C0 *p++ = 0;
-#define C2 C0 C0 C0 C0
-#define C4 C2 C2 C2 C2
-  C4                            
-  p = b;  i = n;
-  do {
-    c[*p++]++;                  
-  } while (--i);
-  if (c[0] == n)                
-  {
-    *t = (inflate_huft *)Z_NULL;
-    *m = 0;
-    return Z_OK;
-  }
 
 
-  
-  l = *m;
-  for (j = 1; j <= BMAX; j++)
-    if (c[j])
-      break;
-  k = j;                        
-  if ((uInt)l < j)
-    l = j;
-  for (i = BMAX; i; i--)
-    if (c[i])
-      break;
-  g = i;                        
-  if ((uInt)l > i)
-    l = i;
-  *m = l;
 
 
-  
-  for (y = 1 << j; j < i; j++, y <<= 1)
-    if ((y -= c[j]) < 0)
-      return Z_DATA_ERROR;
-  if ((y -= c[i]) < 0)
-    return Z_DATA_ERROR;
-  c[i] += y;
 
 
-  
-  x[1] = j = 0;
-  p = c + 1;  xp = x + 2;
-  while (--i) {                 
-    *xp++ = (j += *p++);
-  }
 
 
-  
-  p = b;  i = 0;
-  do {
-    if ((j = *p++) != 0)
-      v[x[j]++] = i;
-  } while (++i < n);
-  n = x[g];                     
 
 
-  
-  x[0] = i = 0;                 
-  p = v;                        
-  h = -1;                       
-  w = -l;                       
-  u[0] = (inflate_huft *)Z_NULL;        
-  q = (inflate_huft *)Z_NULL;   
-  z = 0;                        
 
-  
-  for (; k <= g; k++)
-  {
-    a = c[k];
-    while (a--)
-    {
-      
-      
-      while (k > w + l)
-      {
-        h++;
-        w += l;                 
 
+
+
+
+
+
+
+
+    
+    switch (type) {
+    case CODES:
+        base = extra = work;    
+        match = 20;
+        break;
+    case LENS:
+        base = lbase;
+        extra = lext;
+        match = 257;
+        break;
+    default:    
+        base = dbase;
+        extra = dext;
+        match = 0;
+    }
+
+    
+    huff = 0;                   
+    sym = 0;                    
+    len = min;                  
+    next = *table;              
+    curr = root;                
+    drop = 0;                   
+    low = (unsigned)(-1);       
+    used = 1U << root;          
+    mask = used - 1;            
+
+    
+    if ((type == LENS && used > ENOUGH_LENS) ||
+        (type == DISTS && used > ENOUGH_DISTS))
+        return 1;
+
+    
+    for (;;) {
         
-        z = g - w;
-        z = z > (uInt)l ? (uInt)l : z;        
-        if ((f = 1 << (j = k - w)) > a + 1)     
-        {                       
-          f -= a + 1;           
-          xp = c + k;
-          if (j < z)
-            while (++j < z)     
-            {
-              if ((f <<= 1) <= *++xp)
-                break;          
-              f -= *xp;         
-            }
+        here.bits = (unsigned char)(len - drop);
+        if (work[sym] + 1U < match) {
+            here.op = (unsigned char)0;
+            here.val = work[sym];
         }
-        z = 1 << j;             
+        else if (work[sym] >= match) {
+            here.op = (unsigned char)(extra[work[sym] - match]);
+            here.val = base[work[sym] - match];
+        }
+        else {
+            here.op = (unsigned char)(32 + 64);         
+            here.val = 0;
+        }
 
         
-        if (*hn + z > MANY)     
-          return Z_DATA_ERROR;  
-        u[h] = q = hp + *hn;
-        *hn += z;
+        incr = 1U << (len - drop);
+        fill = 1U << curr;
+        min = fill;                 
+        do {
+            fill -= incr;
+            next[(huff >> drop) + fill] = here;
+        } while (fill != 0);
 
         
-        if (h)
-        {
-          x[h] = i;             
-          r.bits = (Byte)l;     
-          r.exop = (Byte)j;     
-          j = i >> (w - l);
-          r.base = (uInt)(q - u[h-1] - j);   
-          u[h-1][j] = r;        
+        incr = 1U << (len - 1);
+        while (huff & incr)
+            incr >>= 1;
+        if (incr != 0) {
+            huff &= incr - 1;
+            huff += incr;
         }
         else
-          *t = q;               
-      }
+            huff = 0;
 
-      
-      r.bits = (Byte)(k - w);
-      if (p >= v + n)
-        r.exop = 128 + 64;      
-      else if (*p < s)
-      {
-        r.exop = (Byte)(*p < 256 ? 0 : 32 + 64);     
-        r.base = *p++;          
-      }
-      else
-      {
-        r.exop = (Byte)(e[*p - s] + 16 + 64);
-        r.base = d[*p++ - s];
-      }
+        
+        sym++;
+        if (--(count[len]) == 0) {
+            if (len == max) break;
+            len = lens[work[sym]];
+        }
 
-      
-      f = 1 << (k - w);
-      for (j = i >> w; j < z; j += f)
-        q[j] = r;
+        
+        if (len > root && (huff & mask) != low) {
+            
+            if (drop == 0)
+                drop = root;
 
-      
-      for (j = 1 << (k - 1); i & j; j >>= 1)
-        i ^= j;
-      i ^= j;
+            
+            next += min;            
 
-      
-      mask = (1 << w) - 1;      
-      while ((i & mask) != x[h])
-      {
-        h--;                    
-        w -= l;
-        mask = (1 << w) - 1;
-      }
-    }
-  }
+            
+            curr = len - drop;
+            left = (int)(1 << curr);
+            while (curr + drop < max) {
+                left -= count[curr + drop];
+                if (left <= 0) break;
+                curr++;
+                left <<= 1;
+            }
 
+            
+            used += 1U << curr;
+            if ((type == LENS && used > ENOUGH_LENS) ||
+                (type == DISTS && used > ENOUGH_DISTS))
+                return 1;
 
-  
-  return y != 0 && g != 1 ? Z_BUF_ERROR : Z_OK;
-}
-
-
-local int inflate_trees_bits( 
-uIntf *c,               
-uIntf *bb,              
-inflate_huft * FAR *tb, 
-inflate_huft *hp,       
-z_streamp z             
-)
-{
-  int r;
-  uInt hn = 0;          
-  uIntf *v;             
-
-  if ((v = (uIntf*)ZALLOC(z, 19, sizeof(uInt))) == Z_NULL)
-    return Z_MEM_ERROR;
-  r = huft_build(c, 19, 19, (uIntf*)Z_NULL, (uIntf*)Z_NULL,
-                 tb, bb, hp, &hn, v);
-  if (r == Z_DATA_ERROR)
-    z->msg = (char*)"oversubscribed dynamic bit lengths tree";
-  else if (r == Z_BUF_ERROR || *bb == 0)
-  {
-    z->msg = (char*)"incomplete dynamic bit lengths tree";
-    r = Z_DATA_ERROR;
-  }
-  ZFREE(z, v);
-  return r;
-}
-
-
-local int inflate_trees_dynamic( 
-uInt nl,                
-uInt nd,                
-uIntf *c,               
-uIntf *bl,              
-uIntf *bd,              
-inflate_huft * FAR *tl, 
-inflate_huft * FAR *td, 
-inflate_huft *hp,       
-z_streamp z             
-)
-{
-  int r;
-  uInt hn = 0;          
-  uIntf *v;             
-
-  
-  if ((v = (uIntf*)ZALLOC(z, 288, sizeof(uInt))) == Z_NULL)
-    return Z_MEM_ERROR;
-
-  
-  r = huft_build(c, nl, 257, cplens, cplext, tl, bl, hp, &hn, v);
-  if (r != Z_OK || *bl == 0)
-  {
-    if (r == Z_DATA_ERROR)
-      z->msg = (char*)"oversubscribed literal/length tree";
-    else if (r != Z_MEM_ERROR)
-    {
-      z->msg = (char*)"incomplete literal/length tree";
-      r = Z_DATA_ERROR;
-    }
-    ZFREE(z, v);
-    return r;
-  }
-
-  
-  r = huft_build(c + nl, nd, 0, cpdist, cpdext, td, bd, hp, &hn, v);
-  if (r != Z_OK || (*bd == 0 && nl > 257))
-  {
-    if (r == Z_DATA_ERROR)
-      z->msg = (char*)"oversubscribed distance tree";
-    else if (r == Z_BUF_ERROR) {
-#if 0
-    {
-#endif
-#ifdef PKZIP_BUG_WORKAROUND
-      r = Z_OK;
-    }
-#else
-      z->msg = (char*)"incomplete distance tree";
-      r = Z_DATA_ERROR;
-    }
-    else if (r != Z_MEM_ERROR)
-    {
-      z->msg = (char*)"empty distance tree with lengths";
-      r = Z_DATA_ERROR;
-    }
-    ZFREE(z, v);
-    return r;
-#endif
-  }
-
-  
-  ZFREE(z, v);
-  return Z_OK;
-}
-
-
-
-#ifdef BUILDFIXED
-local int fixed_built = 0;
-#define FIXEDH 544      /* number of hufts used by fixed tables */
-local inflate_huft fixed_mem[FIXEDH];
-local uInt fixed_bl;
-local uInt fixed_bd;
-local inflate_huft *fixed_tl;
-local inflate_huft *fixed_td;
-#else
-#include "inffixed.h"
-#endif
-
-
-local int inflate_trees_fixed( 
-uIntf *bl,                      
-uIntf *bd,                      
-const inflate_huft * FAR *tl,   
-const inflate_huft * FAR *td,   
-z_streamp z                     
-)
-{
-#ifdef BUILDFIXED
-  
-  if (!fixed_built)
-  {
-    int k;              
-    uInt f = 0;         
-    uIntf *c;           
-    uIntf *v;           
-
-    
-    if ((c = (uIntf*)ZALLOC(z, 288, sizeof(uInt))) == Z_NULL)
-      return Z_MEM_ERROR;
-    if ((v = (uIntf*)ZALLOC(z, 288, sizeof(uInt))) == Z_NULL)
-    {
-      ZFREE(z, c);
-      return Z_MEM_ERROR;
+            
+            low = huff & mask;
+            (*table)[low].op = (unsigned char)curr;
+            (*table)[low].bits = (unsigned char)root;
+            (*table)[low].val = (unsigned short)(next - *table);
+        }
     }
 
     
-    for (k = 0; k < 144; k++)
-      c[k] = 8;
-    for (; k < 256; k++)
-      c[k] = 9;
-    for (; k < 280; k++)
-      c[k] = 7;
-    for (; k < 288; k++)
-      c[k] = 8;
-    fixed_bl = 9;
-    huft_build(c, 288, 257, cplens, cplext, &fixed_tl, &fixed_bl,
-               fixed_mem, &f, v);
+
+
+    if (huff != 0) {
+        here.op = (unsigned char)64;            
+        here.bits = (unsigned char)(len - drop);
+        here.val = (unsigned short)0;
+        next[huff] = here;
+    }
 
     
-    for (k = 0; k < 30; k++)
-      c[k] = 5;
-    fixed_bd = 5;
-    huft_build(c, 30, 0, cpdist, cpdext, &fixed_td, &fixed_bd,
-               fixed_mem, &f, v);
-
-    
-    ZFREE(z, v);
-    ZFREE(z, c);
-    fixed_built = 1;
-  }
-#else
-  FT_UNUSED(z);
-#endif
-  *bl = fixed_bl;
-  *bd = fixed_bd;
-  *tl = fixed_tl;
-  *td = fixed_td;
-  return Z_OK;
+    *table += used;
+    *bits = root;
+    return 0;
 }

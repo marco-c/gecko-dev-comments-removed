@@ -248,7 +248,7 @@
     else
 #endif 
     {
-      CFF_Font cff = (CFF_Font)(face->extra.data);
+      CFF_Font cff = (CFF_Font)( face->extra.data );
 
 
       bchar_index = cff_lookup_glyph_by_stdcharcode( cff, bchar );

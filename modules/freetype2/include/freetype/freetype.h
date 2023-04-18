@@ -275,6 +275,13 @@ FT_BEGIN_HEADER
 
 
 
+
+
+
+
+
+
+
   
 
 
@@ -513,6 +520,8 @@ FT_BEGIN_HEADER
 
 
   
+
+
 
 
 
@@ -1229,6 +1238,19 @@ FT_BEGIN_HEADER
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 #define FT_FACE_FLAG_SCALABLE          ( 1L <<  0 )
 #define FT_FACE_FLAG_FIXED_SIZES       ( 1L <<  1 )
 #define FT_FACE_FLAG_FIXED_WIDTH       ( 1L <<  2 )
@@ -1245,6 +1267,9 @@ FT_BEGIN_HEADER
 #define FT_FACE_FLAG_TRICKY            ( 1L << 13 )
 #define FT_FACE_FLAG_COLOR             ( 1L << 14 )
 #define FT_FACE_FLAG_VARIATION         ( 1L << 15 )
+#define FT_FACE_FLAG_SVG               ( 1L << 16 )
+#define FT_FACE_FLAG_SBIX              ( 1L << 17 )
+#define FT_FACE_FLAG_SBIX_OVERLAY      ( 1L << 18 )
 
 
   
@@ -1483,6 +1508,124 @@ FT_BEGIN_HEADER
 
 #define FT_HAS_COLOR( face ) \
           ( !!( (face)->face_flags & FT_FACE_FLAG_COLOR ) )
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+#define FT_HAS_SVG( face ) \
+          ( !!( (face)->face_flags & FT_FACE_FLAG_SVG ) )
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define FT_HAS_SBIX( face ) \
+          ( !!( (face)->face_flags & FT_FACE_FLAG_SBIX ) )
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define FT_HAS_SBIX_OVERLAY( face ) \
+          ( !!( (face)->face_flags & FT_FACE_FLAG_SBIX_OVERLAY ) )
 
 
   
@@ -2839,6 +2982,8 @@ FT_BEGIN_HEADER
 
 
 
+
+
   FT_EXPORT( FT_Error )
   FT_Load_Glyph( FT_Face   face,
                  FT_UInt   glyph_index,
@@ -3068,20 +3213,42 @@ FT_BEGIN_HEADER
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #define FT_LOAD_DEFAULT                      0x0
-#define FT_LOAD_NO_SCALE                     ( 1L << 0 )
-#define FT_LOAD_NO_HINTING                   ( 1L << 1 )
-#define FT_LOAD_RENDER                       ( 1L << 2 )
-#define FT_LOAD_NO_BITMAP                    ( 1L << 3 )
-#define FT_LOAD_VERTICAL_LAYOUT              ( 1L << 4 )
-#define FT_LOAD_FORCE_AUTOHINT               ( 1L << 5 )
-#define FT_LOAD_CROP_BITMAP                  ( 1L << 6 )
-#define FT_LOAD_PEDANTIC                     ( 1L << 7 )
-#define FT_LOAD_IGNORE_GLOBAL_ADVANCE_WIDTH  ( 1L << 9 )
+#define FT_LOAD_NO_SCALE                     ( 1L << 0  )
+#define FT_LOAD_NO_HINTING                   ( 1L << 1  )
+#define FT_LOAD_RENDER                       ( 1L << 2  )
+#define FT_LOAD_NO_BITMAP                    ( 1L << 3  )
+#define FT_LOAD_VERTICAL_LAYOUT              ( 1L << 4  )
+#define FT_LOAD_FORCE_AUTOHINT               ( 1L << 5  )
+#define FT_LOAD_CROP_BITMAP                  ( 1L << 6  )
+#define FT_LOAD_PEDANTIC                     ( 1L << 7  )
+#define FT_LOAD_IGNORE_GLOBAL_ADVANCE_WIDTH  ( 1L << 9  )
 #define FT_LOAD_NO_RECURSE                   ( 1L << 10 )
 #define FT_LOAD_IGNORE_TRANSFORM             ( 1L << 11 )
 #define FT_LOAD_MONOCHROME                   ( 1L << 12 )
 #define FT_LOAD_LINEAR_DESIGN                ( 1L << 13 )
+#define FT_LOAD_SBITS_ONLY                   ( 1L << 14 )
 #define FT_LOAD_NO_AUTOHINT                  ( 1L << 15 )
   
 #define FT_LOAD_COLOR                        ( 1L << 20 )
@@ -3091,8 +3258,8 @@ FT_BEGIN_HEADER
   
 
   
-#define FT_LOAD_ADVANCE_ONLY                 ( 1L << 8 )
-#define FT_LOAD_SBITS_ONLY                   ( 1L << 14 )
+#define FT_LOAD_ADVANCE_ONLY                 ( 1L << 8  )
+#define FT_LOAD_SVG_ONLY                     ( 1L << 23 )
 
 
   
@@ -3371,6 +3538,44 @@ FT_BEGIN_HEADER
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef enum  FT_Render_Mode_
   {
     FT_RENDER_MODE_NORMAL = 0,
@@ -3392,9 +3597,6 @@ FT_BEGIN_HEADER
 
 
   
-
-
-
 
 
 
@@ -4739,7 +4941,7 @@ FT_BEGIN_HEADER
 
 
 #define FREETYPE_MAJOR  2
-#define FREETYPE_MINOR  11
+#define FREETYPE_MINOR  12
 #define FREETYPE_PATCH  1
 
 

@@ -352,6 +352,10 @@
 
           count = FT_GET_USHORT_LE();
 
+          FT_TRACE2(( type_id == 0x8007U ? "RT_FONTDIR count %hu\n" :
+                      type_id == 0x8008U ? "RT_FONT count %hu\n" : "",
+                                           count ));
+
           if ( type_id == 0x8008U )
           {
             font_count  = count;
@@ -485,7 +489,7 @@
                                       &dir_entry1 )                )
             goto Exit;
 
-          if ( !(dir_entry1.offset & 0x80000000UL )  )
+          if ( !( dir_entry1.offset & 0x80000000UL )  )
           {
             error = FT_THROW( Invalid_File_Format );
             goto Exit;
@@ -509,7 +513,7 @@
                                         &dir_entry2 )                )
               goto Exit;
 
-            if ( !(dir_entry2.offset & 0x80000000UL )  )
+            if ( !( dir_entry2.offset & 0x80000000UL )  )
             {
               error = FT_THROW( Invalid_File_Format );
               goto Exit;

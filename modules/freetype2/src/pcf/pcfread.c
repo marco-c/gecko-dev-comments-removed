@@ -1034,16 +1034,6 @@
          enc->lastRow  > 0xFF         )
       return FT_THROW( Invalid_Table );
 
-    nencoding = (FT_ULong)( enc->lastCol - enc->firstCol + 1 ) *
-                (FT_ULong)( enc->lastRow - enc->firstRow + 1 );
-
-    if ( FT_NEW_ARRAY( enc->offset, nencoding ) )
-      goto Bail;
-
-    error = FT_Stream_EnterFrame( stream, 2 * nencoding );
-    if ( error )
-      goto Exit;
-
     FT_TRACE5(( "\n" ));
 
     defaultCharRow = enc->defaultChar >> 8;
@@ -1063,6 +1053,13 @@
       defaultCharRow = enc->firstRow;
       defaultCharCol = enc->firstCol;
     }
+
+    nencoding = (FT_ULong)( enc->lastCol - enc->firstCol + 1 ) *
+                (FT_ULong)( enc->lastRow - enc->firstRow + 1 );
+
+    error = FT_Stream_EnterFrame( stream, 2 * nencoding );
+    if ( error )
+      goto Bail;
 
     
 
@@ -1109,6 +1106,9 @@
     
     face->metrics[0] = face->metrics[defaultCharEncodingOffset];
 
+    if ( FT_QNEW_ARRAY( enc->offset, nencoding ) )
+      goto Bail;
+
     
     offset = enc->offset;
     for ( i = enc->firstRow; i <= enc->lastRow; i++ )
@@ -1130,11 +1130,6 @@
       }
     }
     FT_Stream_ExitFrame( stream );
-
-    return error;
-
-  Exit:
-    FT_FREE( enc->offset );
 
   Bail:
     return error;

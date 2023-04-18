@@ -779,6 +779,18 @@
 
   
 
+
+
+
+
+
+
+
+#define FT_OTSVG_H  <freetype/otsvg.h>
+
+
+  
+
   
 #define FT_ERROR_DEFINITIONS_H  <freetype/fterrdef.h>
 #define FT_PARAMETER_TAGS_H     <freetype/ftparams.h>

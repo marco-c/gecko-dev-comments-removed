@@ -69,10 +69,21 @@
   
   
   
-#include "zlib.h"
 
-#undef  SLOW
-#define SLOW  1  /* we can't use asm-optimized sources here! */
+  
+  
+  
+  
+  
+  
+#if defined( __GNUC__ ) ||  defined( __clang__ )
+#define HAVE_HIDDEN  1
+#define ZEXPORT
+#define ZEXTERN      static
+#endif
+
+#define Z_SOLO      1
+#define Z_FREETYPE  1
 
 #if defined( _MSC_VER )      
   
@@ -83,24 +94,23 @@
 #pragma warning( disable : 4244 )
 #endif 
 
-  
+#if defined( __GNUC__ )
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-prototypes"
+#pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
+#pragma GCC diagnostic ignored "-Wredundant-decls"
+#endif
 
-#define NO_INFLATE_MASK
-#include "zutil.h"
-#include "inftrees.h"
-#include "infblock.h"
-#include "infcodes.h"
-#include "infutil.h"
-#undef  NO_INFLATE_MASK
-
-  
 #include "zutil.c"
-#include "inftrees.c"
-#include "infutil.c"
-#include "infcodes.c"
-#include "infblock.c"
+#include "inffast.c"
 #include "inflate.c"
+#include "inftrees.c"
 #include "adler32.c"
+#include "crc32.c"
+
+#if defined( __GNUC__ )
+#pragma GCC diagnostic pop
+#endif
 
 #if defined( _MSC_VER )
 #pragma warning( pop )
@@ -150,7 +160,7 @@
 
 #if !defined( FT_CONFIG_OPTION_SYSTEM_ZLIB ) && !defined( USE_ZLIB_ZCALLOC )
 
-  local voidpf
+  voidpf ZLIB_INTERNAL
   zcalloc ( voidpf    opaque,
             unsigned  items,
             unsigned  size )
@@ -158,7 +168,8 @@
     return ft_gzip_alloc( opaque, items, size );
   }
 
-  local void
+
+  void ZLIB_INTERNAL
   zcfree( voidpf  opaque,
           voidpf  ptr )
   {
@@ -751,16 +762,7 @@
     stream.zfree  = ft_gzip_free;
     stream.opaque = memory;
 
-    
-
-
-
-
-#ifdef FT_CONFIG_OPTION_SYSTEM_ZLIB
     err = inflateInit2( &stream, MAX_WBITS|32 );
-#else
-    err = inflateInit2( &stream, MAX_WBITS );
-#endif
 
     if ( err != Z_OK )
       return FT_THROW( Invalid_Argument );

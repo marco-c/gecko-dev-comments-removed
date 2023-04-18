@@ -522,19 +522,29 @@
 
     else if ( apaint->format == FT_COLR_PAINTFORMAT_RADIAL_GRADIENT )
     {
+      FT_Pos  tmp;
+
+
       if ( !read_color_line( child_table_p,
                              &apaint->u.radial_gradient.colorline ) )
         return 0;
 
+      
+      
+      
+      
+
       apaint->u.radial_gradient.c0.x = INT_TO_FIXED( FT_NEXT_SHORT( p ) );
       apaint->u.radial_gradient.c0.y = INT_TO_FIXED( FT_NEXT_SHORT( p ) );
 
-      apaint->u.radial_gradient.r0 = FT_NEXT_USHORT( p ) << 16;
+      tmp                          = INT_TO_FIXED( FT_NEXT_SHORT( p ) );
+      apaint->u.radial_gradient.r0 = tmp < 0 ? FT_INT_MAX : tmp;
 
       apaint->u.radial_gradient.c1.x = INT_TO_FIXED( FT_NEXT_SHORT( p ) );
       apaint->u.radial_gradient.c1.y = INT_TO_FIXED( FT_NEXT_SHORT( p ) );
 
-      apaint->u.radial_gradient.r1 = FT_NEXT_USHORT( p ) << 16;
+      tmp                          = INT_TO_FIXED( FT_NEXT_SHORT( p ) );
+      apaint->u.radial_gradient.r1 = tmp < 0 ? FT_INT_MAX : tmp;
 
       return 1;
     }
@@ -824,7 +834,7 @@
   {
     Colr*  colr;
 
-    FT_Byte  *p, *p1, *clip_base;
+    FT_Byte  *p, *p1, *clip_base, *limit;
 
     FT_Byte    clip_list_format;
     FT_ULong   num_clip_boxes, i;
@@ -847,6 +857,16 @@
 
     p = colr->clip_list;
 
+    
+    
+    
+    
+    limit = (FT_Byte*)colr->table + colr->table_size;
+
+    
+    if ( p > limit - ( 1 + 4 ) )
+      return 0;
+
     clip_base        = p;
     clip_list_format = FT_NEXT_BYTE ( p );
 
@@ -856,6 +876,12 @@
       return 0;
 
     num_clip_boxes = FT_NEXT_ULONG( p );
+
+    
+    
+    if ( colr->table_size / ( 2 + 2 + 3 ) < num_clip_boxes ||
+         p > limit - ( 2 + 2 + 3 ) * num_clip_boxes        )
+      return 0;
 
     for ( i = 0; i < num_clip_boxes; ++i )
     {
@@ -867,12 +893,17 @@
       {
         p1 = (FT_Byte*)( clip_base + clip_box_offset );
 
-        if ( p1 >= ( (FT_Byte*)colr->table + colr->table_size ) )
+        
+        if ( p1 > limit - 1 )
           return 0;
 
         format = FT_NEXT_BYTE( p1 );
 
         if ( format > 1 )
+          return 0;
+
+        
+        if ( p1 > limit - ( 2 + 2 + 2 + 2 ) )
           return 0;
 
         

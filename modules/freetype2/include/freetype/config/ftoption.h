@@ -223,6 +223,10 @@ FT_BEGIN_HEADER
 
 
 
+
+
+
+
   
 
 
@@ -524,6 +528,20 @@ FT_BEGIN_HEADER
 
 
   
+
+
+
+
+
+
+
+
+
+
+#define FT_CONFIG_OPTION_SVG
+
+
+
 
 
 
@@ -1002,8 +1020,8 @@ FT_BEGIN_HEADER
 #error "Invalid CFF darkening parameters!"
 #endif
 
-FT_END_HEADER
 
+FT_END_HEADER
 
 #endif 
 
