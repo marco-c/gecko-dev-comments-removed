@@ -97,6 +97,12 @@ class WindowGlobalMessageHandler extends MessageHandler {
         });
       }
     }
+
+    
+    this.emitEvent("window-global-handler-created", {
+      contextId: this._contextId,
+      innerWindowId: this._innerWindowId,
+    });
   }
 
   forwardCommand(command) {
