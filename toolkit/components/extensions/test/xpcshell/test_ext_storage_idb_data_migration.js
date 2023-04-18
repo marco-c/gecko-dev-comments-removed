@@ -591,7 +591,7 @@ add_task(async function test_storage_local_data_migration_failure() {
   
   
   
-  jsonFile.data.set("fake_invalid_key", new Error());
+  jsonFile.data.set("fake_invalid_key", function() {});
 
   async function background() {
     await browser.storage.local.set({

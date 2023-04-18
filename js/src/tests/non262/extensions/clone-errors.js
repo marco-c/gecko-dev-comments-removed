@@ -13,7 +13,6 @@ function check(v) {
 }
 
 
-check(new Error("oops"));
 check(this);
 check(Math);
 check(function () {});
