@@ -209,13 +209,6 @@ function wrapExceptions(global, fn) {
   }
 }
 
-function specialPowersHasInstance(value) {
-  
-  
-  
-  return value instanceof this;
-}
-
 let SpecialPowersHandler = {
   construct(target, args) {
     
@@ -270,14 +263,6 @@ let SpecialPowersHandler = {
     return wrapExceptions(global, () => {
       let obj = waiveXraysIfAppropriate(this.wrapped.get(target).obj, prop);
       let val = Reflect.get(obj, prop);
-      if (val === undefined && prop == Symbol.hasInstance) {
-        
-        
-        
-        
-        
-        return wrapPrivileged(specialPowersHasInstance, global);
-      }
       return wrapIfUnwrapped(val, global);
     });
   },
@@ -308,20 +293,6 @@ let SpecialPowersHandler = {
       let desc = Reflect.getOwnPropertyDescriptor(obj, prop);
 
       if (desc === undefined) {
-        if (prop == Symbol.hasInstance) {
-          
-          
-          
-          
-          
-          return {
-            value: wrapPrivileged(specialPowersHasInstance, global),
-            writeable: true,
-            configurable: true,
-            enumerable: false,
-          };
-        }
-
         return undefined;
       }
 
