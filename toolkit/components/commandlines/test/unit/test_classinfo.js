@@ -3,10 +3,6 @@
 
 
 function run_test() {
-  var commandLine = Cu.createCommandLine(
-    [],
-    null,
-    Ci.nsICommandLine.STATE_INITIAL_LAUNCH
-  );
+  var commandLine = Cu.createCommandLine();
   Assert.ok("length" in commandLine);
 }

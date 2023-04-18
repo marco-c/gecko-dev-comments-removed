@@ -3,11 +3,7 @@
 
 
 function run_test() {
-  var commandLine = Cu.createCommandLine(
-    [],
-    null,
-    Ci.nsICommandLine.STATE_INITIAL_LAUNCH
-  );
+  var commandLine = Cu.createCommandLine();
   var urlFile = do_get_file("../unit/data/test_bug410156.desktop");
   var uri = commandLine.resolveURI(urlFile.path);
   Assert.equal(uri.spec, "http://www.bug410156.com/");
