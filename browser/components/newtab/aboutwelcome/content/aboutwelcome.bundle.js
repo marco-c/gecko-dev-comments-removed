@@ -1202,10 +1202,11 @@ function useLanguageSwitcher(appAndSystemLocaleInfo, screens, screenIndex, setSc
       setLangPackInstallPhase("installation-error");
     });
   }, [negotiatedLanguage]);
-  const shouldHideLanguageSwitcher = screen && (appAndSystemLocaleInfo === null || appAndSystemLocaleInfo === void 0 ? void 0 : appAndSystemLocaleInfo.matchType) !== "language-mismatch";
   const [languageFilteredScreens, setLanguageFilteredScreens] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(screens);
   (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(function filterScreen() {
-    if (shouldHideLanguageSwitcher || (negotiatedLanguage === null || negotiatedLanguage === void 0 ? void 0 : negotiatedLanguage.langPack) === null) {
+    
+    
+    if (screen && ((appAndSystemLocaleInfo === null || appAndSystemLocaleInfo === void 0 ? void 0 : appAndSystemLocaleInfo.matchType) !== "language-mismatch" || (negotiatedLanguage === null || negotiatedLanguage === void 0 ? void 0 : negotiatedLanguage.langPack) === null)) {
       if (screenIndex > languageMismatchScreenIndex) {
         setScreenIndex(screenIndex - 1);
       }
