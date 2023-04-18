@@ -72,6 +72,26 @@ class MacroAssembler;
 
 namespace wasm {
 
+struct IndirectStubTarget {
+  uint32_t functionIdx;
+  void* checkedCallEntryAddress;
+  TlsData* tls;
+
+  bool operator==(const IndirectStubTarget& other) const {
+    bool result = functionIdx == other.functionIdx && tls == other.tls;
+    
+    
+    
+    
+    MOZ_ASSERT_IF(result,
+                  (checkedCallEntryAddress == other.checkedCallEntryAddress));
+    return result;
+  }
+};
+
+using VectorOfIndirectStubTarget =
+    Vector<IndirectStubTarget, 8, SystemAllocPolicy>;
+
 struct MetadataTier;
 struct Metadata;
 
@@ -516,13 +536,21 @@ class LazyStubSegment : public CodeSegment {
   }
 
   bool hasSpace(size_t bytes) const;
-  bool addStubs(size_t codeLength, const Uint32Vector& funcExportIndices,
-                const FuncExportVector& funcExports,
-                const CodeRangeVector& codeRanges, uint8_t** codePtr,
-                size_t* indexFirstInsertedCodeRange);
+  [[nodiscard]] bool addStubs(size_t codeLength,
+                              const Uint32Vector& funcExportIndices,
+                              const FuncExportVector& funcExports,
+                              const CodeRangeVector& codeRanges,
+                              uint8_t** codePtr,
+                              size_t* indexFirstInsertedCodeRange);
+
+  [[nodiscard]] bool addIndirectStubs(size_t codeLength,
+                                      const VectorOfIndirectStubTarget& targets,
+                                      const CodeRangeVector& codeRanges,
+                                      uint8_t** codePtr,
+                                      size_t* indexFirstInsertedCodeRange);
 
   const CodeRangeVector& codeRanges() const { return codeRanges_; }
-  const CodeRange* lookupRange(const void* pc) const;
+  [[nodiscard]] const CodeRange* lookupRange(const void* pc) const;
 
   void addSizeOfMisc(MallocSizeOf mallocSizeOf, size_t* code,
                      size_t* data) const;
@@ -589,36 +617,42 @@ class LazyStubTier {
   IndirectStubVector indirectStubVector_;
   size_t lastStubSegmentIndex_;
 
-  bool createManyEntryStubs(const Uint32Vector& funcExportIndices,
-                            const CodeTier& codeTier,
-                            bool flushAllThreadsIcaches,
-                            size_t* stubSegmentIndex);
+  [[nodiscard]] bool createManyEntryStubs(const Uint32Vector& funcExportIndices,
+                                          const CodeTier& codeTier,
+                                          bool flushAllThreadsIcaches,
+                                          size_t* stubSegmentIndex);
 
  public:
   LazyStubTier() : lastStubSegmentIndex_(0) {}
 
   
   
-  bool createOneEntryStub(uint32_t funcExportIndex, const CodeTier& codeTier);
+  [[nodiscard]] bool createOneEntryStub(uint32_t funcExportIndex,
+                                        const CodeTier& codeTier);
 
   bool entryStubsEmpty() const { return stubSegments_.empty(); }
   bool hasEntryStub(uint32_t funcIndex) const;
 
   
   
-  void* lookupInterpEntry(uint32_t funcIndex) const;
+  [[nodiscard]] void* lookupInterpEntry(uint32_t funcIndex) const;
 
   
-  void* lookupIndirectStub(uint32_t funcIndex, void* tls) const;
+  [[nodiscard]] bool createManyIndirectStubs(
+      const VectorOfIndirectStubTarget& targets, const CodeTier& codeTier);
 
-  const CodeRange* lookupRange(const void* pc) const;
+  
+  [[nodiscard]] void* lookupIndirectStub(uint32_t funcIndex, void* tls) const;
+
+  [[nodiscard]] const CodeRange* lookupRange(const void* pc) const;
 
   
   
   
   
-  bool createTier2(const Uint32Vector& funcExportIndices,
-                   const CodeTier& codeTier, Maybe<size_t>* stubSegmentIndex);
+  [[nodiscard]] bool createTier2(const Uint32Vector& funcExportIndices,
+                                 const CodeTier& codeTier,
+                                 Maybe<size_t>* stubSegmentIndex);
   void setJitEntries(const Maybe<size_t>& stubSegmentIndex, const Code& code);
 
   void addSizeOfMisc(MallocSizeOf mallocSizeOf, size_t* code,
