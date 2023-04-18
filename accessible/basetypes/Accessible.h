@@ -322,12 +322,12 @@ class Accessible {
   
 
 
-  virtual AccGroupInfo* GetGroupInfo() const { return nullptr; }
+  virtual AccGroupInfo* GetGroupInfo() const = 0;
 
   
 
 
-  virtual AccGroupInfo* GetOrCreateGroupInfo() { return nullptr; }
+  virtual AccGroupInfo* GetOrCreateGroupInfo() = 0;
 
   
 
