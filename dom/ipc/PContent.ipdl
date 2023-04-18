@@ -1931,6 +1931,13 @@ parent:
     
     
     async GetSystemIcon(nsIURI aURI) returns (nsresult aResult, ByteBuf? aData);
+
+#ifdef FUZZING_SNAPSHOT
+    
+    
+    
+    async SignalFuzzingReady();
+#endif
 };
 
 }

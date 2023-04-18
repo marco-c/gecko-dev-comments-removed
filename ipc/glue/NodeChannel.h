@@ -19,6 +19,10 @@
 #include "mozilla/DataMutex.h"
 #include "mozilla/UniquePtr.h"
 
+#ifdef FUZZING_SNAPSHOT
+#  include "mozilla/fuzzing/IPCFuzzController.h"
+#endif
+
 namespace mozilla::ipc {
 
 class NodeController;
@@ -30,6 +34,11 @@ class NodeController;
 class NodeChannel final : public IPC::Channel::Listener {
   using NodeName = mojo::core::ports::NodeName;
   using PortName = mojo::core::ports::PortName;
+
+#ifdef FUZZING_SNAPSHOT
+  
+  friend class mozilla::fuzzing::IPCFuzzController;
+#endif
 
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_DESTROY(NodeChannel, Destroy())
@@ -97,6 +106,10 @@ class NodeChannel final : public IPC::Channel::Listener {
   
   void SetName(const NodeName& aNewName) { mName = aNewName; }
 
+#ifdef FUZZING_SNAPSHOT
+  const NodeName& GetName() { return mName; }
+#endif
+
 #ifdef XP_MACOSX
   
   
@@ -141,6 +154,11 @@ class NodeChannel final : public IPC::Channel::Listener {
 
   
   bool mClosed = false;
+
+#ifdef FUZZING_SNAPSHOT
+  
+  bool mBlockSendRecv = false;
+#endif
 
   
   WeakPtr<IPC::Channel::Listener> mExistingListener;

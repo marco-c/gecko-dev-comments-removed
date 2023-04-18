@@ -325,6 +325,10 @@
 #  include "mozilla/CodeCoverageHandler.h"
 #endif
 
+#ifdef FUZZING_SNAPSHOT
+#  include "mozilla/fuzzing/IPCFuzzController.h"
+#endif
+
 
 #include "Benchmark.h"
 
@@ -7752,6 +7756,14 @@ IPCResult ContentParent::RecvGetSystemIcon(nsIURI* aURI,
       "platforms");
 #endif
 }
+
+#ifdef FUZZING_SNAPSHOT
+IPCResult ContentParent::RecvSignalFuzzingReady() {
+  
+  
+  return IPC_OK();
+}
+#endif
 
 }  
 }  

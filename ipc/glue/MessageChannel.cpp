@@ -15,6 +15,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/DebugOnly.h"
+#include "mozilla/Fuzzing.h"
 #include "mozilla/IntentionalCrash.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Monitor.h"
@@ -42,6 +43,10 @@
 
 #ifdef OS_WIN
 #  include "mozilla/gfx/Logging.h"
+#endif
+
+#ifdef FUZZING_SNAPSHOT
+#  include "mozilla/fuzzing/IPCFuzzController.h"
 #endif
 
 
@@ -1509,9 +1514,52 @@ MessageChannel::MessageTask::MessageTask(MessageChannel* aChannel,
       mMonitor(aChannel->mMonitor),
       mChannel(aChannel),
       mMessage(std::move(aMessage)),
-      mScheduled(false) {}
+      mScheduled(false)
+#ifdef FUZZING_SNAPSHOT
+      ,
+      mFuzzStopped(false)
+#endif
+{
+
+#ifdef FUZZING_SNAPSHOT
+  if (mMessage.IsFuzzMsg()) {
+    MOZ_FUZZING_IPC_MT_CTOR();
+  }
+#endif
+}
+
+MessageChannel::MessageTask::~MessageTask() {
+#ifdef FUZZING_SNAPSHOT
+  
+  
+  
+  if (mMessage.IsFuzzMsg() && !mFuzzStopped) {
+    MOZ_FUZZING_IPC_MT_STOP();
+  } else if (!mMessage.IsFuzzMsg() && !fuzzing::Nyx::instance().started()) {
+    MOZ_FUZZING_IPC_PRE_FUZZ_MT_STOP();
+  }
+#endif
+}
 
 nsresult MessageChannel::MessageTask::Run() {
+#ifdef FUZZING_SNAPSHOT
+  if (!mMessage.IsFuzzMsg()) {
+    if (fuzzing::Nyx::instance().started()) {
+      
+      
+      
+      
+      
+      
+      
+      return NS_OK;
+    }
+    
+    
+    MOZ_FUZZING_IPC_PRE_FUZZ_MT_RUN();
+  }
+#endif
+
   mMonitor->AssertNotCurrentThreadOwns();
 
   
@@ -1533,6 +1581,13 @@ nsresult MessageChannel::MessageTask::Run() {
   mMonitor->AssertSameMonitor(*Channel()->mMonitor);
   proxy = Channel()->Listener()->GetLifecycleProxy();
   Channel()->RunMessage(proxy, *this);
+
+#ifdef FUZZING_SNAPSHOT
+  if (mMessage.IsFuzzMsg() && !mFuzzStopped) {
+    MOZ_FUZZING_IPC_MT_STOP();
+    mFuzzStopped = true;
+  }
+#endif
   return NS_OK;
 }
 
@@ -1553,6 +1608,13 @@ nsresult MessageChannel::MessageTask::Cancel() {
   }
 
   remove();
+
+#ifdef FUZZING_SNAPSHOT
+  if (mMessage.IsFuzzMsg() && !mFuzzStopped) {
+    MOZ_FUZZING_IPC_MT_STOP();
+    mFuzzStopped = true;
+  }
+#endif
 
   return NS_OK;
 }
