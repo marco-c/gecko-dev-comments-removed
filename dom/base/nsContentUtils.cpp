@@ -10003,8 +10003,11 @@ void nsContentUtils::StructuredClone(JSContext* aCx, nsIGlobalObject* aGlobal,
   }
 
   JS::CloneDataPolicy clonePolicy;
+  
   clonePolicy.allowIntraClusterClonableSharedObjects();
-  clonePolicy.allowSharedMemoryObjects();
+  if (aGlobal->IsSharedMemoryAllowed()) {
+    clonePolicy.allowSharedMemoryObjects();
+  }
 
   StructuredCloneHolder holder(StructuredCloneHolder::CloningSupported,
                                StructuredCloneHolder::TransferringSupported,
