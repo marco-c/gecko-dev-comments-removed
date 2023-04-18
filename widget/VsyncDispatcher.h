@@ -105,16 +105,36 @@ class VsyncDispatcher final {
   
   void RemoveVsyncObserver(VsyncObserver* aVsyncObserver);
 
+  
+  
+  
+  
+  
+  
+  void AddMainThreadObserver(VsyncObserver* aObserver);
+  void RemoveMainThreadObserver(VsyncObserver* aObserver);
+
  private:
   virtual ~VsyncDispatcher();
   void UpdateVsyncStatus();
   bool NeedsVsync();
 
   
+  void NotifyMainThreadObservers(VsyncEvent aEvent);
+
+  
   
   
   gfx::VsyncSource* mVsyncSource;
-  DataMutex<nsTArray<RefPtr<VsyncObserver>>> mVsyncObservers;
+
+  struct State {
+    nsTArray<RefPtr<VsyncObserver>> mObservers;
+    nsTArray<RefPtr<VsyncObserver>> mMainThreadObservers;
+    VsyncId mLastVsyncIdSentToMainThread;
+    VsyncId mLastMainThreadProcessedVsyncId;
+  };
+
+  DataMutex<State> mState;
 };
 
 }  
