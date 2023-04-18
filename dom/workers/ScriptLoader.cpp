@@ -810,9 +810,13 @@ class WorkerScriptLoader final : public nsINamed {
     return NS_OK;
   }
 
+  
   bool IsMainWorkerScript() const {
     return mIsMainScript && mWorkerScriptType == WorkerScript;
   }
+
+  
+  bool IsMainScript() const { return mIsMainScript; }
 
   bool IsDebuggerScript() const { return mWorkerScriptType == DebuggerScript; }
 
@@ -1616,7 +1620,7 @@ nsresult NetworkLoadHandler::PrepareForRequest(nsIRequest* aRequest) {
   
   
   
-  MOZ_ASSERT_IF(mLoader->mIsMainScript, channel == mLoadInfo.mChannel);
+  MOZ_ASSERT_IF(mLoader->IsMainScript(), channel == mLoadInfo.mChannel);
   mLoadInfo.mChannel = channel;
 
   
@@ -2009,7 +2013,7 @@ void CacheLoadHandler::ResolvedCallback(JSContext* aCx,
       NS_GetCrossOriginEmbedderPolicyFromHeader(coepHeader);
 
   rv = ScriptResponseHeaderProcessor::ProcessCrossOriginEmbedderPolicyHeader(
-      mLoader->mWorkerPrivate, coep, mLoader->mIsMainScript);
+      mLoader->mWorkerPrivate, coep, mLoader->IsMainScript());
 
   if (NS_WARN_IF(NS_FAILED(rv))) {
     Fail(rv);
