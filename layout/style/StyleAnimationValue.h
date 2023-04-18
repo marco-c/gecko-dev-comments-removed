@@ -83,7 +83,7 @@ struct AnimationValue {
   const mozilla::StylePositionOrAuto& GetOffsetAnchorProperty() const;
 
   
-  mozilla::gfx::Size GetScaleValue(const nsIFrame* aFrame) const;
+  mozilla::gfx::MatrixScales GetScaleValue(const nsIFrame* aFrame) const;
 
   
   void SerializeSpecifiedValue(nsCSSPropertyID aProperty,
