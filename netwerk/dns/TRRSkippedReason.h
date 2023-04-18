@@ -51,6 +51,27 @@ enum class TRRSkippedReason : uint32_t {
   ODOH_DECRYPTION_FAILED = 36,  
 };
 
+inline bool IsRelevantTRRSkipReason(TRRSkippedReason aReason) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (aReason == TRRSkippedReason::TRR_REQ_MODE_DISABLED ||
+      aReason == TRRSkippedReason::TRR_DISABLED_FLAG ||
+      aReason == TRRSkippedReason::TRR_EXCLUDED) {
+    return false;
+  }
+  return true;
+}
+
 }  
 }  
 
