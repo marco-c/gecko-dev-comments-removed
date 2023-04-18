@@ -312,6 +312,10 @@ test_description_schema = Schema(
         
         
         
+        Optional("variant-suffix"): str,
+        
+        
+        
         
         Required("e10s"): optionally_keyed_by(
             "test-platform", "project", Any(bool, "both")
@@ -586,33 +590,47 @@ def split_variants(config, tasks):
     """
     validate_schema(variant_description_schema, TEST_VARIANTS, "In variants.yml:")
 
+    def apply_variant(variant, task):
+        task["description"] = variant["description"].format(**task)
+
+        suffix = f"-{variant['suffix']}"
+        group, symbol = split_symbol(task["treeherder-symbol"])
+        if group != "?":
+            group += suffix
+        else:
+            symbol += suffix
+        task["treeherder-symbol"] = join_symbol(group, symbol)
+
+        
+        task.setdefault("variant-suffix", "")
+        task["variant-suffix"] += suffix
+
+        
+        task.update(variant.get("replace", {}))
+        return merge(task, variant.get("merge", {}))
+
     for task in tasks:
         variants = task.pop("variants", [])
 
         yield copy.deepcopy(task)
 
         for name in variants:
-            variant = TEST_VARIANTS[name]
-
-            if "when" in variant:
-                context = {"task": task, "mobile": get_mobile_project(task)}
-                if not jsone.render(variant["when"], context):
-                    continue
-
+            
+            parts = name.split("+")
             taskv = copy.deepcopy(task)
-            taskv["attributes"]["unittest_variant"] = name
-            taskv["description"] = variant["description"].format(**taskv)
+            for part in parts:
+                variant = TEST_VARIANTS[part]
 
-            suffix = f"-{variant['suffix']}"
-            group, symbol = split_symbol(taskv["treeherder-symbol"])
-            if group != "?":
-                group += suffix
+                
+                if "when" in variant:
+                    context = {"task": task, "mobile": get_mobile_project(task)}
+                    if not jsone.render(variant["when"], context):
+                        break
+
+                taskv = apply_variant(variant, taskv)
             else:
-                symbol += suffix
-            taskv["treeherder-symbol"] = join_symbol(group, symbol)
-
-            taskv.update(variant.get("replace", {}))
-            yield merge(taskv, variant.get("merge", {}))
+                taskv["attributes"]["unittest_variant"] = name
+                yield taskv
 
 
 @transforms.add
@@ -1841,9 +1859,9 @@ def make_job_description(config, tasks):
 
         try_name = task["try-name"]
         if attributes.get("unittest_variant"):
-            suffix = TEST_VARIANTS[attributes["unittest_variant"]]["suffix"]
-            label += f"-{suffix}"
-            try_name += f"-{suffix}"
+            suffix = task.pop("variant-suffix")
+            label += suffix
+            try_name += suffix
 
         if task["e10s"]:
             label += "-e10s"
