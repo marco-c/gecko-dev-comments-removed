@@ -2357,12 +2357,6 @@ pref("bidi.browser.ui", false);
 
 
 
-pref("layout.css.dpi", -1);
-
-
-
-
-
 
 pref("layout.scrollbar.side", 0);
 
