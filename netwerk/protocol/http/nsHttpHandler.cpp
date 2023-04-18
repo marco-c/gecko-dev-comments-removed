@@ -1361,7 +1361,7 @@ void nsHttpHandler::PrefsChanged(const char* pref) {
     
     rv = Preferences::GetInt(HTTP_PREF("spdy.chunk-size"), &val);
     if (NS_SUCCEEDED(rv)) {
-      mSpdySendingChunkSize = (uint32_t)clamped(val, 1, 0x3fff);
+      mSpdySendingChunkSize = (uint32_t)clamped(val, 1, 0xffffff);
     }
   }
 
