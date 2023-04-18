@@ -86,7 +86,7 @@ class FlacTrackDemuxer : public MediaTrackDemuxer,
 
   
   
-  int32_t Read(uint8_t* aBuffer, int64_t aOffset, int32_t aSize);
+  uint32_t Read(uint8_t* aBuffer, int64_t aOffset, int32_t aSize);
 
   
   double AverageFrameLength() const;
