@@ -176,8 +176,7 @@ class nsLineBreaker {
   
 
 
-
-  void SetWordBreak(mozilla::intl::LineBreaker::WordBreak aMode) {
+  void SetWordBreak(mozilla::intl::WordBreakRule aMode) {
     
     if (aMode != mWordBreak && !mCurrentWord.IsEmpty()) {
       nsresult rv = FlushCurrentWord();
@@ -187,7 +186,7 @@ class nsLineBreaker {
       
       
       
-      if (mWordBreak == mozilla::intl::LineBreaker::WordBreak::BreakAll) {
+      if (mWordBreak == mozilla::intl::WordBreakRule::BreakAll) {
         mBreakHere = true;
       }
     }
@@ -273,7 +272,7 @@ class nsLineBreaker {
   
   bool mBreakHere;
   
-  mozilla::intl::LineBreaker::WordBreak mWordBreak;
+  mozilla::intl::WordBreakRule mWordBreak;
   
   mozilla::intl::LineBreaker::Strictness mStrictness;
   
