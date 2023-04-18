@@ -7,8 +7,8 @@
 #include "ScrollTimeline.h"
 
 #include "mozilla/dom/Animation.h"
-#include "mozilla/dom/Document.h"
 #include "mozilla/AnimationTarget.h"
+#include "mozilla/PresShell.h"
 #include "nsIFrame.h"
 #include "nsIScrollableFrame.h"
 #include "nsLayoutUtils.h"
@@ -26,12 +26,12 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(ScrollTimeline,
                                                 AnimationTimeline)
   tmp->Teardown();
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocument)
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mSource)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mSource.mElement)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(ScrollTimeline,
                                                   AnimationTimeline)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDocument)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSource)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSource.mElement)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN_INHERITED(ScrollTimeline,
@@ -43,7 +43,7 @@ NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(ScrollTimeline,
 
 TimingParams ScrollTimeline::sTiming;
 
-ScrollTimeline::ScrollTimeline(Document* aDocument, Element* aScroller)
+ScrollTimeline::ScrollTimeline(Document* aDocument, const Scroller& aScroller)
     : AnimationTimeline(aDocument->GetParentObject()),
       mDocument(aDocument),
       
@@ -67,7 +67,8 @@ already_AddRefed<ScrollTimeline> ScrollTimeline::FromRule(
     const NonOwningAnimationTarget& aTarget) {
   
   RefPtr<ScrollTimeline> timeline = new ScrollTimeline(
-      aDocument, aTarget.mElement->OwnerDoc()->GetDocumentElement());
+      aDocument, Scroller::Auto(aTarget.mElement->OwnerDoc()));
+
   
   
   
@@ -79,10 +80,10 @@ already_AddRefed<ScrollTimeline> ScrollTimeline::FromRule(
 }
 
 Nullable<TimeDuration> ScrollTimeline::GetCurrentTimeAsDuration() const {
-  const nsIFrame* frame = nsLayoutUtils::GetScrollFrameFromContent(mSource);
-  const nsIScrollableFrame* scrollFrame =
-      frame ? frame->GetScrollTargetFrame() : nullptr;
-  if (!scrollFrame) {
+  const nsIFrame* frame =
+      mSource ? mSource.mElement->GetPrimaryFrame() : nullptr;
+  const nsIScrollableFrame* scrollFrame = GetScrollFrame();
+  if (!frame || !scrollFrame) {
     return nullptr;
   }
 
@@ -117,7 +118,7 @@ void ScrollTimeline::RegisterWithScrollSource() {
   }
 
   if (ScrollTimelineSet* scrollTimelineSet =
-          ScrollTimelineSet::GetOrCreateScrollTimelineSet(mSource)) {
+          ScrollTimelineSet::GetOrCreateScrollTimelineSet(mSource.mElement)) {
     scrollTimelineSet->AddScrollTimeline(*this);
   }
 }
@@ -128,12 +129,31 @@ void ScrollTimeline::UnregisterFromScrollSource() {
   }
 
   if (ScrollTimelineSet* scrollTimelineSet =
-          ScrollTimelineSet::GetScrollTimelineSet(mSource)) {
+          ScrollTimelineSet::GetScrollTimelineSet(mSource.mElement)) {
     scrollTimelineSet->RemoveScrollTimeline(*this);
     if (scrollTimelineSet->IsEmpty()) {
-      ScrollTimelineSet::DestroyScrollTimelineSet(mSource);
+      ScrollTimelineSet::DestroyScrollTimelineSet(mSource.mElement);
     }
   }
+}
+
+const nsIScrollableFrame* ScrollTimeline::GetScrollFrame() const {
+  if (!mSource) {
+    return nullptr;
+  }
+
+  switch (mSource.mType) {
+    case Scroller::Type::Auto:
+      if (const PresShell* presShell =
+              mSource.mElement->OwnerDoc()->GetPresShell()) {
+        return presShell->GetRootScrollFrameAsScrollable();
+      }
+      break;
+    case Scroller::Type::Other:
+    default:
+      return nsLayoutUtils::FindScrollableFrameFor(mSource.mElement);
+  }
+  return nullptr;
 }
 
 
@@ -142,9 +162,9 @@ void ScrollTimeline::UnregisterFromScrollSource() {
 
  ScrollTimelineSet* ScrollTimelineSet::GetScrollTimelineSet(
     Element* aElement) {
-  MOZ_ASSERT(aElement);
-  return static_cast<ScrollTimelineSet*>(
-      aElement->GetProperty(nsGkAtoms::scrollTimelinesProperty));
+  return aElement ? static_cast<ScrollTimelineSet*>(aElement->GetProperty(
+                        nsGkAtoms::scrollTimelinesProperty))
+                  : nullptr;
 }
 
  ScrollTimelineSet* ScrollTimelineSet::GetOrCreateScrollTimelineSet(

@@ -8,10 +8,13 @@
 #define mozilla_dom_ScrollTimeline_h
 
 #include "mozilla/dom/AnimationTimeline.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/HashTable.h"
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/TimingParams.h"
 #include "mozilla/WritingModes.h"
+
+class nsIScrollableFrame;
 
 namespace mozilla {
 
@@ -19,7 +22,6 @@ struct NonOwningAnimationTarget;
 
 namespace dom {
 
-class Document;
 class Element;
 
 
@@ -62,8 +64,36 @@ class Element;
 
 class ScrollTimeline final : public AnimationTimeline {
  public:
+  struct Scroller {
+    
+    enum class Type : uint8_t {
+      
+      Auto,
+      
+      Other,
+    };
+    Type mType = Type::Auto;
+    RefPtr<Element> mElement;
+
+    
+    
+    static Scroller Auto(const Document* aOwnerDoc) {
+      
+      
+      
+      
+      
+      return {Type::Auto, aOwnerDoc->GetDocumentElement()};
+    }
+
+    explicit operator bool() const { return mElement; }
+    bool operator==(const Scroller& aOther) const {
+      return mType == aOther.mType && mElement == aOther.mElement;
+    }
+  };
+
   ScrollTimeline() = delete;
-  ScrollTimeline(Document* aDocument, Element* aScroller);
+  ScrollTimeline(Document* aDocument, const Scroller& aScroller);
 
   
   static already_AddRefed<ScrollTimeline> FromRule(
@@ -127,6 +157,8 @@ class ScrollTimeline final : public AnimationTimeline {
   void RegisterWithScrollSource();
   void UnregisterFromScrollSource();
 
+  const nsIScrollableFrame* GetScrollFrame() const;
+
   
   
   
@@ -152,7 +184,7 @@ class ScrollTimeline final : public AnimationTimeline {
   
   
   
-  RefPtr<Element> mSource;
+  Scroller mSource;
   StyleScrollDirection mDirection;
 
   
