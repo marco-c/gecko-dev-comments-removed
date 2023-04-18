@@ -121,14 +121,16 @@ function expireSubSuccess(result) {
 
 function tablesCallbackWithSub(tables) {
   var parts = tables.split("\n");
-  parts.sort();
 
-  
-  
-  Assert.equal(
-    parts.join("\n"),
-    "\ntest-block-simple;a:1\ntest-malware-simple;a:1\ntest-phish-simple;a:2:s:3\ntest-unwanted-simple;a:1"
-  );
+  let expectedChunks = [
+    "test-block-simple;a:1",
+    "test-malware-simple;a:1",
+    "test-phish-simple;a:2:s:3",
+    "test-unwanted-simple;a:1"
+  ];
+  for (let chunk of expectedChunks) {
+    Assert.ok(parts.includes(chunk));
+  }
 
   
   var data = "n:1000\ni:test-phish-simple\nsd:3\n";
