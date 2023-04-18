@@ -63,9 +63,6 @@ XPCOMUtils.defineLazyGetter(this, "logConsole", function() {
 
 
 
-
-
-
 class SnapshotSelector extends EventEmitter {
   
 
@@ -90,8 +87,7 @@ class SnapshotSelector extends EventEmitter {
   #context = {
     count: undefined,
     filterAdult: false,
-    selectOverlappingVisits: false,
-    selectCommonReferrer: false,
+    sourceWeights: null,
     url: undefined,
     type: undefined,
     getCurrentSessionUrls: undefined,
@@ -131,8 +127,31 @@ class SnapshotSelector extends EventEmitter {
     );
     this.#context.count = count;
     this.#context.filterAdult = filterAdult;
-    this.#context.selectOverlappingVisits = selectOverlappingVisits;
-    this.#context.selectCommonReferrer = selectCommonReferrer;
+
+    if (selectOverlappingVisits || selectCommonReferrer) {
+      
+      this.#context.sourceWeights = new Map([
+        [
+          "Overlapping",
+          selectOverlappingVisits
+            ? Services.prefs.getIntPref(
+                "browser.snapshots.source.Overlapping",
+                0
+              )
+            : 0,
+        ],
+        [
+          "CommonReferrer",
+          selectCommonReferrer
+            ? Services.prefs.getIntPref(
+                "browser.snapshots.source.CommonReferrer",
+                0
+              )
+            : 0,
+        ],
+      ]);
+    }
+
     this.#context.getCurrentSessionUrls = getCurrentSessionUrls;
     SnapshotSelector.#selectors.add(this);
   }
@@ -178,10 +197,7 @@ class SnapshotSelector extends EventEmitter {
 
 
   async #buildSnapshots() {
-    if (
-      this.#context.selectOverlappingVisits ||
-      this.#context.selectCommonReferrer
-    ) {
+    if (this.#context.sourceWeights) {
       await this.#buildRelevancySnapshots();
       return;
     }
@@ -231,34 +247,36 @@ class SnapshotSelector extends EventEmitter {
     
     
     let context = { ...this.#context };
-    logConsole.debug("Building overlapping snapshots", context);
+    logConsole.debug("Building relevant snapshots", context);
 
-    let snapshots = [];
+    let recommendationGroups = await Promise.all(
+      Object.entries(Snapshots.recommendationSources).map(
+        async ([key, source]) => {
+          let weight = context.sourceWeights.get(key) ?? 0;
+          if (weight == 0) {
+            return { recommendations: [], weight };
+          }
 
-    if (context.selectOverlappingVisits) {
-      snapshots = await Snapshots.recommendationSources.Overlapping(context);
+          let recommendations = await source(context);
 
-      logConsole.debug(
-        "Found overlapping snapshots:",
-        snapshots.map(s => s.url)
-      );
-    }
+          logConsole.debug(
+            `Found ${key} recommendations:`,
+            recommendations.map(r => r.snapshot.url)
+          );
 
-    if (context.selectCommonReferrer) {
-      let commonReferrerSnapshots = await Snapshots.recommendationSources.CommonReferrer(
-        context
-      );
+          return { recommendations, weight };
+        }
+      )
+    );
 
-      logConsole.debug(
-        "Found common referrer snapshots:",
-        commonReferrerSnapshots.map(s => s.url)
-      );
+    let recommendations = SnapshotScorer.combineAndScore(
+      context,
+      ...recommendationGroups
+    );
 
-      snapshots = snapshots.concat(commonReferrerSnapshots);
-    }
-
-    snapshots = SnapshotScorer.combineAndScore(context, snapshots);
-    snapshots = snapshots.slice(0, context.count);
+    let snapshots = recommendations
+      .slice(0, context.count)
+      .map(r => r.snapshot);
 
     logConsole.debug(
       "Reduced final candidates:",

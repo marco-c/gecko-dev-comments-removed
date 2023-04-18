@@ -31,6 +31,24 @@ XPCOMUtils.defineLazyGetter(this, "logConsole", function() {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 const SnapshotScorer = new (class SnapshotScorer {
   
 
@@ -75,14 +93,30 @@ const SnapshotScorer = new (class SnapshotScorer {
 
 
 
-  combineAndScore(selectionContext, ...snapshotGroups) {
-    let combined = new Map();
-    let currentDate = this.#dateOverride ?? Date.now();
 
+  combineAndScore(selectionContext, ...recommendationGroups) {
+    
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+    let combined = new Map();
+
+    let currentDate = this.#dateOverride ?? Date.now();
     let currentSessionUrls = selectionContext.getCurrentSessionUrls();
 
-    for (let group of snapshotGroups) {
-      for (let snapshot of group) {
+    for (let { recommendations, weight } of recommendationGroups) {
+      for (let { snapshot, score } of recommendations) {
         if (
           selectionContext.filterAdult &&
           FilterAdult.isAdultUrl(snapshot.url)
@@ -90,25 +124,47 @@ const SnapshotScorer = new (class SnapshotScorer {
           continue;
         }
 
-        let existing = combined.get(snapshot.url);
-        let score = this.#score(snapshot, currentDate, currentSessionUrls);
-        logConsole.debug("Scored", score, "for", snapshot.url);
+        let currentScore = combined.get(snapshot.url);
+        if (currentScore) {
+          
+          
+          currentScore.sourceScore = Math.max(
+            currentScore.sourceScore,
+            score * weight
+          );
+        } else {
+          currentScore = {
+            snapshot,
+            snapshotScore: this.#score(
+              snapshot,
+              currentDate,
+              currentSessionUrls
+            ),
+            sourceScore: score * weight,
+          };
 
-        if (existing) {
-          if (score > existing.relevancyScore) {
-            snapshot.relevancyScore = score;
-            combined.set(snapshot.url, snapshot);
-          }
-        } else if (score >= this.snapshotThreshold) {
-          snapshot.relevancyScore = score;
-          combined.set(snapshot.url, snapshot);
+          combined.set(snapshot.url, currentScore);
         }
       }
     }
 
-    return [...combined.values()].sort(
-      (a, b) => b.relevancyScore - a.relevancyScore
-    );
+    let recommendations = [];
+    for (let currentScore of combined.values()) {
+      let recommendation = {
+        snapshot: currentScore.snapshot,
+        score: currentScore.snapshotScore + currentScore.sourceScore,
+      };
+
+      logConsole.debug(
+        `Scored ${recommendation.score} for ${recommendation.snapshot.url}`
+      );
+
+      if (recommendation.score >= this.snapshotThreshold) {
+        recommendations.push(recommendation);
+      }
+    }
+
+    return recommendations.sort((a, b) => b.score - a.score);
   }
 
   
@@ -175,27 +231,6 @@ const SnapshotScorer = new (class SnapshotScorer {
 
   _scoreCurrentSession(snapshot, currentSessionUrls) {
     return currentSessionUrls.has(snapshot.url) ? 1 : 0;
-  }
-
-  
-
-
-
-
-
-  _scoreInNavigation(snapshot) {
-    return snapshot.commonReferrerScore ?? 0;
-  }
-
-  
-
-
-
-
-
-
-  _scoreIsOverlappingVisit(snapshot) {
-    return snapshot.overlappingVisitScore ?? 0;
   }
 
   

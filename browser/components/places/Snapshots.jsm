@@ -38,6 +38,15 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 
 
+
+
+
+
+
+
+
+
+
 XPCOMUtils.defineLazyGetter(this, "logConsole", function() {
   return console.createInstance({
     prefix: "SnapshotsManager",
@@ -692,8 +701,8 @@ const Snapshots = new (class Snapshots {
     }
 
     return rows.map(row => ({
-      ...this.#translateRow(row),
-      overlappingVisitScore: row.getResultByName("overlappingVisitScore"),
+      snapshot: this.#translateRow(row),
+      score: row.getResultByName("overlappingVisitScore"),
     }));
   }
 
@@ -734,8 +743,8 @@ const Snapshots = new (class Snapshots {
     );
 
     return rows.map(row => ({
-      ...this.#translateRow(row),
-      commonReferrerScore: 1.0,
+      snapshot: this.#translateRow(row),
+      score: 1.0,
     }));
   }
 
