@@ -96,10 +96,10 @@ class ConsoleOutput extends Component {
         for (const entry of entries) {
           
           
-          this.scrolledToBottom = entry.intersectionRatio >= 0.5;
+          this.scrolledToBottom = entry.intersectionRatio > 0;
         }
       },
-      { root: this.outputNode, threshold: [0.5] }
+      { root: this.outputNode, rootMargin: "10px" }
     );
 
     this.resizeObserver.observe(this.getElementToObserve());
