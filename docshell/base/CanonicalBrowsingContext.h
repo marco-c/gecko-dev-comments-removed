@@ -459,12 +459,6 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   void RemovePendingDiscard();
 
-  bool ShouldAddEntryForRefresh(const SessionHistoryEntry* aEntry) {
-    nsCOMPtr<nsIURI> currentURI = GetCurrentURI();
-    return BrowsingContext::ShouldAddEntryForRefresh(currentURI,
-                                                     aEntry->Info());
-  }
-
   
   
   uint64_t mProcessId;
