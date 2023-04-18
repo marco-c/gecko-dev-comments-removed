@@ -315,6 +315,11 @@ double RemoteAccessibleBase<Derived>::Step() const {
 
 template <class Derived>
 Maybe<nsRect> RemoteAccessibleBase<Derived>::RetrieveCachedBounds() const {
+  MOZ_ASSERT(mCachedFields);
+  if (!mCachedFields) {
+    return Nothing();
+  }
+
   Maybe<const nsTArray<int32_t>&> maybeArray =
       mCachedFields->GetAttribute<nsTArray<int32_t>>(nsGkAtoms::relativeBounds);
   if (maybeArray) {
@@ -392,102 +397,99 @@ nsRect RemoteAccessibleBase<Derived>::GetBoundsInAppUnits() const {
 template <class Derived>
 LayoutDeviceIntRect RemoteAccessibleBase<Derived>::BoundsWithOffset(
     Maybe<nsRect> aOffset) const {
-  if (mCachedFields) {
-    Maybe<nsRect> maybeBounds = RetrieveCachedBounds();
-    if (maybeBounds) {
-      nsRect bounds = *maybeBounds;
-      const DocAccessibleParent* topDoc = IsDoc() ? AsDoc() : nullptr;
+  Maybe<nsRect> maybeBounds = RetrieveCachedBounds();
+  if (maybeBounds) {
+    nsRect bounds = *maybeBounds;
+    const DocAccessibleParent* topDoc = IsDoc() ? AsDoc() : nullptr;
 
-      if (aOffset.isSome()) {
+    if (aOffset.isSome()) {
+      
+      nsRect internalRect = *aOffset;
+      bounds.SetRectX(bounds.x + internalRect.x, internalRect.width);
+      bounds.SetRectY(bounds.y + internalRect.y, internalRect.height);
+    }
+
+    Unused << ApplyTransform(bounds);
+
+    LayoutDeviceIntRect devPxBounds;
+    const Accessible* acc = Parent();
+
+    while (acc && acc->IsRemote()) {
+      RemoteAccessible* remoteAcc = const_cast<Accessible*>(acc)->AsRemote();
+
+      if (Maybe<nsRect> maybeRemoteBounds = remoteAcc->RetrieveCachedBounds()) {
+        nsRect remoteBounds = *maybeRemoteBounds;
         
-        nsRect internalRect = *aOffset;
-        bounds.SetRectX(bounds.x + internalRect.x, internalRect.width);
-        bounds.SetRectY(bounds.y + internalRect.y, internalRect.height);
-      }
+        
+        
+        
+        Maybe<float> res;
+        if (remoteAcc->IsDoc()) {
+          
+          
+          
+          
+          
+          
+          
+          res = remoteAcc->AsDoc()->mCachedFields->GetAttribute<float>(
+              nsGkAtoms::resolution);
+          MOZ_ASSERT(res, "No cached document resolution found.");
+          bounds.ScaleRoundOut(res.valueOr(1.0f));
 
-      Unused << ApplyTransform(bounds);
-
-      LayoutDeviceIntRect devPxBounds;
-      const Accessible* acc = Parent();
-
-      while (acc && acc->IsRemote()) {
-        RemoteAccessible* remoteAcc = const_cast<Accessible*>(acc)->AsRemote();
-
-        if (Maybe<nsRect> maybeRemoteBounds =
-                remoteAcc->RetrieveCachedBounds()) {
-          nsRect remoteBounds = *maybeRemoteBounds;
-          
-          
-          
-          
-          Maybe<float> res;
-          if (remoteAcc->IsDoc()) {
-            
-            
-            
-            
-            
-            
-            
-            res = remoteAcc->AsDoc()->mCachedFields->GetAttribute<float>(
-                nsGkAtoms::resolution);
-            MOZ_ASSERT(res, "No cached document resolution found.");
-            bounds.ScaleRoundOut(res.valueOr(1.0f));
-
-            topDoc = remoteAcc->AsDoc();
-          }
-
-          
-          
-          
-          
-          remoteAcc->ApplyScrollOffset(remoteBounds);
-
-          
-          
-          
-          bounds.MoveBy(remoteBounds.X(), remoteBounds.Y());
-          Unused << remoteAcc->ApplyTransform(bounds);
+          topDoc = remoteAcc->AsDoc();
         }
 
-        acc = acc->Parent();
+        
+        
+        
+        
+        remoteAcc->ApplyScrollOffset(remoteBounds);
+
+        
+        
+        
+        bounds.MoveBy(remoteBounds.X(), remoteBounds.Y());
+        Unused << remoteAcc->ApplyTransform(bounds);
       }
 
-      MOZ_ASSERT(topDoc);
-      if (topDoc) {
+      acc = acc->Parent();
+    }
+
+    MOZ_ASSERT(topDoc);
+    if (topDoc) {
+      
+      
+      
+      
+      auto appUnitsPerDevPixel = topDoc->mCachedFields->GetAttribute<int32_t>(
+          nsGkAtoms::_moz_device_pixel_ratio);
+      MOZ_ASSERT(appUnitsPerDevPixel);
+      if (appUnitsPerDevPixel) {
         
-        
-        
-        
-        auto appUnitsPerDevPixel = topDoc->mCachedFields->GetAttribute<int32_t>(
-            nsGkAtoms::_moz_device_pixel_ratio);
-        MOZ_ASSERT(appUnitsPerDevPixel);
-        if (appUnitsPerDevPixel) {
-          
-          devPxBounds = LayoutDeviceIntRect::FromAppUnitsToNearest(
-              bounds, *appUnitsPerDevPixel);
-        }
+        devPxBounds = LayoutDeviceIntRect::FromAppUnitsToNearest(
+            bounds, *appUnitsPerDevPixel);
       }
+    }
 
 #if !defined(ANDROID)
+    
+    
+    
+    if (LocalAccessible* localAcc = const_cast<Accessible*>(acc)->AsLocal()) {
       
       
-      
-      if (LocalAccessible* localAcc = const_cast<Accessible*>(acc)->AsLocal()) {
-        
-        
-        LayoutDeviceIntRect localBounds = localAcc->Bounds();
+      LayoutDeviceIntRect localBounds = localAcc->Bounds();
 
-        
-        
-        
-        
-        devPxBounds.MoveBy(localBounds.X(), localBounds.Y());
-      }
+      
+      
+      
+      
+      devPxBounds.MoveBy(localBounds.X(), localBounds.Y());
+    }
 #endif
 
-      return devPxBounds;
-    }
+    return devPxBounds;
   }
 
   return LayoutDeviceIntRect();
