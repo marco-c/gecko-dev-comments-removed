@@ -734,9 +734,10 @@ FxAccountsInternal.prototype = {
       this.observerPreloads = [
         
         () => {
-          let scope = {};
-          ChromeUtils.import("resource://services-sync/main.js", scope);
-          return scope.Weave.Service.promiseInitialized;
+          let { Weave } = ChromeUtils.import(
+            "resource://services-sync/main.js"
+          );
+          return Weave.Service.promiseInitialized;
         },
       ];
     }

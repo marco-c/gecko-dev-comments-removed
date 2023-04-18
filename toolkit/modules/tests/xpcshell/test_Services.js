@@ -65,9 +65,10 @@ function run_test() {
   
   
   
-  let tmp = {};
-  ChromeUtils.import("resource://testing-common/AppInfo.jsm", tmp);
-  tmp.updateAppInfo();
+  let { updateAppInfo } = ChromeUtils.import(
+    "resource://testing-common/AppInfo.jsm"
+  );
+  updateAppInfo();
 
   
   Cu.unload("resource://gre/modules/Services.jsm");

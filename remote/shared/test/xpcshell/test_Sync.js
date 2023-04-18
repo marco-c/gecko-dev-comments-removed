@@ -29,8 +29,7 @@ add_task(async function test_AnimationFramePromiseAbortWhenWindowClosed() {
 add_test(function test_executeSoon_callback() {
   
   
-  let sync = {};
-  ChromeUtils.import("chrome://remote/content/shared/Sync.jsm", sync);
+  let sync = ChromeUtils.import("chrome://remote/content/shared/Sync.jsm");
 
   for (let func of ["foo", null, true, [], {}]) {
     Assert.throws(() => sync.executeSoon(func), /TypeError/);

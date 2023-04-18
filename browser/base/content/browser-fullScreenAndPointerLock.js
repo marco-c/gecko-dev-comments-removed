@@ -94,9 +94,10 @@ var PointerlockFsWarning = {
     } else {
       textElem.removeAttribute("hidden");
       
-      let utils = {};
-      ChromeUtils.import("resource://gre/modules/DownloadUtils.jsm", utils);
-      let displayHost = utils.DownloadUtils.getURIHost(uri.spec)[0];
+      let { DownloadUtils } = ChromeUtils.import(
+        "resource://gre/modules/DownloadUtils.jsm"
+      );
+      let displayHost = DownloadUtils.getURIHost(uri.spec)[0];
       let l10nString = {
         "fullscreen-warning": "fullscreen-warning-domain",
         "pointerlock-warning": "pointerlock-warning-domain",
