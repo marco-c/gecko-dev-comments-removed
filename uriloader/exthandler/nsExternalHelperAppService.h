@@ -351,12 +351,6 @@ class nsExternalAppHandler final : public nsIStreamListener,
 
 
 
-  bool mDialogShowing;
-
-  
-
-
-
 
   uint32_t mReason;
 

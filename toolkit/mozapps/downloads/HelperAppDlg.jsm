@@ -407,8 +407,7 @@ nsUnknownContentTypeDialog.prototype = {
               }
             }
           }
-          
-          aLauncher.saveDestinationAvailable(result, true);
+          aLauncher.saveDestinationAvailable(result);
         });
       });
     })().catch(Cu.reportError);
