@@ -1177,14 +1177,28 @@ CGRGBPixel* Offscreen::getCG(const SkScalerContext_Mac& context, const SkGlyph& 
         CGContextSetTextDrawingMode(fCG.get(), kCGTextFill);
 
         
-        
-        CGContextSetGrayFillColor(fCG.get(), lightOnDark ? 1.0f : 0.0f, 1.0f);
-
-        
         fDoAA = !doAA;
         fDoLCD = !doLCD;
 
         CGContextSetTextMatrix(fCG.get(), context.fTransform);
+    }
+
+    if (glyph.isColor()) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        SkColor4f color = SkColor4f::FromColor(context.getRec().getLuminanceColor());
+        CGContextSetRGBFillColor(fCG.get(), color.fR, color.fG, color.fB, 1.0f);
+    } else {
+        
+        
+        CGContextSetGrayFillColor(fCG.get(), lightOnDark ? 1.0f : 0.0f, 1.0f);
     }
 
     if (fDoAA != doAA) {
