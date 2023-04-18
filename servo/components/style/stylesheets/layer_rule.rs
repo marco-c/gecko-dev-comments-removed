@@ -62,17 +62,6 @@ impl LayerOrder {
 }
 
 
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, PartialOrd, Ord)]
-pub struct LayerId(pub u32);
-
-impl LayerId {
-    
-    pub const fn root() -> Self {
-        Self(0)
-    }
-}
-
-
 #[derive(Clone, Debug, Eq, Hash, MallocSizeOf, PartialEq, ToShmem)]
 pub struct LayerName(pub SmallVec<[AtomIdent; 1]>);
 
