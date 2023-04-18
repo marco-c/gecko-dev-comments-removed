@@ -7,11 +7,6 @@ var { Toolbox } = require("devtools/client/framework/toolbox");
 var { LEFT, RIGHT, BOTTOM, WINDOW } = Toolbox.HostType;
 var toolbox;
 
-
-
-
-requestLongerTimeout(2);
-
 const URL =
   "data:text/html;charset=utf8,test for opening toolbox in different hosts";
 

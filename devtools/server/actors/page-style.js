@@ -1102,11 +1102,6 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
       kinds.add(kind);
 
       for (const styleActor of [...this.refMap.values()]) {
-        
-        
-        if (!styleActor._parentSheet) {
-          continue;
-        }
         const resourceId = this.styleSheetsManager.getStyleSheetResourceId(
           styleActor._parentSheet
         );
