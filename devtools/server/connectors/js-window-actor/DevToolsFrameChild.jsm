@@ -502,13 +502,10 @@ class DevToolsFrameChild extends JSWindowActorChild {
     
     
     
-    const isMatchingBrowserElement =
-      this.manager.browsingContext.browserId == sessionContext.browserId;
-    const isMatchingWebExtension =
-      this.document.nodePrincipal.addonId == sessionContext.addonId;
     if (
-      (sessionContext.type == "browser-element" && isMatchingBrowserElement) ||
-      (sessionContext.type == "webextension" && isMatchingWebExtension)
+      isWindowGlobalPartOfContext(this.manager, sessionContext, {
+        forceAcceptTopLevelTarget: true,
+      })
     ) {
       
       

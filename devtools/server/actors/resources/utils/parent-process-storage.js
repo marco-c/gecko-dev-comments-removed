@@ -7,6 +7,10 @@
 const { storageTypePool } = require("devtools/server/actors/storage");
 const EventEmitter = require("devtools/shared/event-emitter");
 const Services = require("Services");
+const {
+  getAllBrowsingContextsForContext,
+  isWindowGlobalPartOfContext,
+} = require("devtools/server/actors/watcher/browsing-context-helpers.jsm");
 
 
 const BATCH_DELAY = 200;
@@ -202,22 +206,24 @@ class ParentProcessStorage {
 
   async _onNewWindowGlobal(windowGlobal, isBfCacheNavigation) {
     
-    
     if (
-      this.watcherActor.sessionContext.type == "browser-element" &&
-      windowGlobal.browsingContext.browserId !=
-        this.watcherActor.sessionContext.browserId
+      !isWindowGlobalPartOfContext(
+        windowGlobal,
+        this.watcherActor.sessionContext,
+        { acceptNoWindowGlobal: true, acceptSameProcessIframes: true }
+      )
     ) {
       return;
     }
+
     
     if (windowGlobal.documentURI.displaySpec === "about:blank") {
       return;
     }
 
+    
     const isTopContext =
       windowGlobal.browsingContext.top == windowGlobal.browsingContext;
-
     if (!isTopContext) {
       return;
     }
@@ -335,14 +341,18 @@ class StorageActorMock extends EventEmitter {
   }
 
   get windows() {
-    
-    
-    return this.getAllBrowsingContexts()
-      .map(x => {
-        const uri = x.currentWindowGlobal.documentURI;
-        return { location: uri };
+    return (
+      getAllBrowsingContextsForContext(this.watcherActor.sessionContext, {
+        acceptSameProcessIframes: true,
       })
-      .filter(x => x.location.displaySpec !== "about:blank");
+        .map(x => {
+          const uri = x.currentWindowGlobal.documentURI;
+          return { location: uri };
+        })
+        
+        
+        .filter(x => x.location.displaySpec !== "about:blank")
+    );
   }
 
   
@@ -364,27 +374,11 @@ class StorageActorMock extends EventEmitter {
     }
   }
 
-  getAllBrowsingContexts() {
-    if (this.watcherActor.sessionContext.type == "browser-element") {
-      const browsingContext = this.watcherActor.browserElement.browsingContext;
-      return browsingContext
-        .getAllBrowsingContextsInSubtree()
-        .filter(x => !!x.currentWindowGlobal);
-    } else if (this.watcherActor.sessionContext.type == "webextension") {
-      return [
-        BrowsingContext.get(
-          this.watcherActor.sessionContext.addonBrowsingContextID
-        ),
-      ];
-    }
-    throw new Error(
-      "Unsupported session context type=" +
-        this.watcherActor.sessionContext.type
-    );
-  }
-
   getWindowFromHost(host) {
-    const hostBrowsingContext = this.getAllBrowsingContexts().find(x => {
+    const hostBrowsingContext = getAllBrowsingContextsForContext(
+      this.watcherActor.sessionContext,
+      { acceptSameProcessIframes: true }
+    ).find(x => {
       const hostName = this.getHostName(x.currentWindowGlobal.documentURI);
       return hostName === host;
     });
@@ -410,25 +404,28 @@ class StorageActorMock extends EventEmitter {
 
 
 
-  async observe(subject, topic) {
-    
+  async observe(windowGlobal, topic) {
     
     if (
-      this.watcherActor.sessionContext.type == "browser-element" &&
-      subject.browsingContext.browserId !=
-        this.watcherActor.sessionContext.browserId
+      !isWindowGlobalPartOfContext(
+        windowGlobal,
+        this.watcherActor.sessionContext,
+        { acceptNoWindowGlobal: true, acceptSameProcessIframes: true }
+      )
     ) {
       return;
     }
+
     
-    if (subject.documentURI.displaySpec === "about:blank") {
+    if (windowGlobal.documentURI.displaySpec === "about:blank") {
       return;
     }
 
     
     
     
-    const isTopContext = subject.browsingContext.top == subject.browsingContext;
+    const isTopContext =
+      windowGlobal.browsingContext.top == windowGlobal.browsingContext;
     if (
       isTopContext &&
       this.watcherActor.sessionContext.isServerTargetSwitchingEnabled
@@ -437,7 +434,7 @@ class StorageActorMock extends EventEmitter {
     }
 
     
-    const windowMock = { location: subject.documentURI };
+    const windowMock = { location: windowGlobal.documentURI };
     if (topic === "window-global-created") {
       this.emit("window-ready", windowMock);
     } else if (topic === "window-global-destroyed") {

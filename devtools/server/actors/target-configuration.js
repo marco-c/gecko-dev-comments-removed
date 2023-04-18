@@ -12,6 +12,9 @@ const {
 const {
   SessionDataHelpers,
 } = require("devtools/server/actors/watcher/SessionDataHelpers.jsm");
+const {
+  isBrowsingContextPartOfContext,
+} = require("devtools/server/actors/watcher/browsing-context-helpers.jsm");
 const { SUPPORTED_DATA } = SessionDataHelpers;
 const { TARGET_CONFIGURATION } = SUPPORTED_DATA;
 const Services = require("Services");
@@ -101,6 +104,8 @@ const TargetConfigurationActor = ActorClassWithSpec(targetConfigurationSpec, {
   _shouldHandleConfigurationInParentProcess() {
     
     
+    
+    
     return this.watcherActor.sessionContext.type == "browser-element";
   },
 
@@ -122,9 +127,14 @@ const TargetConfigurationActor = ActorClassWithSpec(targetConfigurationSpec, {
 
     
     
+    
+    
     if (
-      this.watcherActor.sessionContext.type == "browser-element" &&
-      browsingContext.browserId != this.watcherActor.sessionContext.browserId
+      !isBrowsingContextPartOfContext(
+        browsingContext,
+        this.watcherActor.sessionContext,
+        { acceptNoWindowGlobal: true, forceAcceptTopLevelTarget: true }
+      )
     ) {
       return;
     }

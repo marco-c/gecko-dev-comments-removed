@@ -48,73 +48,29 @@ const isEveryFrameTargetEnabled = Services.prefs.getBoolPref(
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 function isBrowsingContextPartOfContext(
   browsingContext,
   sessionContext,
-  {
-    forceAcceptTopLevelTarget = false,
-    acceptInitialDocument = false,
-    windowGlobal,
-  } = {}
+  options = {}
 ) {
-  
-  
-  if (browsingContext instanceof CanonicalBrowsingContext) {
-    windowGlobal = browsingContext.currentWindowGlobal;
-    
-    
-    if (!windowGlobal) {
-      return false;
-    }
+  let {
+    forceAcceptTopLevelTarget = false,
+    acceptNoWindowGlobal = false,
+    windowGlobal,
+  } = options;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (!browsingContext.isContent) {
-      return false;
-    }
-  } else if (!windowGlobal) {
-    throw new Error(
-      "isBrowsingContextPartOfContext expect a windowGlobal argument when called from the content process"
-    );
-  }
-
-  
-  
-  const window = Services.wm.getCurrentInnerWindowWithId(
-    windowGlobal.innerWindowId
-  );
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (Cu.isRemoteProxy(window)) {
-    return false;
-  }
-
-  
-  
-  
   
   
   
@@ -131,16 +87,39 @@ function isBrowsingContextPartOfContext(
   
   
   if (
-    (windowGlobal.isInitialDocument || window?.document.isInitialDocument) &&
-    !acceptInitialDocument
+    browsingContext instanceof CanonicalBrowsingContext &&
+    !browsingContext.isContent
   ) {
+    return false;
+  }
+
+  if (!windowGlobal) {
+    
+    
+    if (browsingContext instanceof CanonicalBrowsingContext) {
+      windowGlobal = browsingContext.currentWindowGlobal;
+    } else if (!windowGlobal && !acceptNoWindowGlobal) {
+      throw new Error(
+        "isBrowsingContextPartOfContext expect a windowGlobal argument when called from the content process"
+      );
+    }
+  }
+  
+  if (
+    windowGlobal &&
+    !_validateWindowGlobal(windowGlobal, sessionContext, options)
+  ) {
+    return false;
+  }
+  
+  
+  if (!windowGlobal && !acceptNoWindowGlobal) {
     return false;
   }
 
   
   if (sessionContext.type == "all") {
-    
-    return windowGlobal.isProcessRoot || isEveryFrameTargetEnabled;
+    return true;
   }
   if (sessionContext.type == "browser-element") {
     if (browsingContext.browserId != sessionContext.browserId) {
@@ -164,16 +143,15 @@ function isBrowsingContextPartOfContext(
     ) {
       return false;
     }
-    
-    
-    
-    
-    
-    
-    
-    return windowGlobal.isProcessRoot || isEveryFrameTargetEnabled;
+    return true;
   }
   if (sessionContext.type == "webextension") {
+    
+    
+    
+    if (!windowGlobal) {
+      return false;
+    }
     
     
     const principal =
@@ -182,6 +160,68 @@ function isBrowsingContextPartOfContext(
     return principal.addonId == sessionContext.addonId;
   }
   throw new Error("Unsupported session context type: " + sessionContext.type);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function _validateWindowGlobal(
+  windowGlobal,
+  sessionContext,
+  { acceptInitialDocument, acceptSameProcessIframes }
+) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const isInitialDocument =
+    windowGlobal.isInitialDocument ||
+    windowGlobal.browsingContext.window?.document.isInitialDocument;
+  if (isInitialDocument && !acceptInitialDocument) {
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  const isSameProcessIframe = !windowGlobal.isProcessRoot;
+  if (
+    isSameProcessIframe &&
+    !acceptSameProcessIframes &&
+    !isEveryFrameTargetEnabled
+  ) {
+    return false;
+  }
+
+  return true;
 }
 
 
@@ -221,7 +261,15 @@ function isWindowGlobalPartOfContext(windowGlobal, sessionContext, options) {
 
 
 
-function getAllBrowsingContextsForContext(sessionContext) {
+
+
+
+
+
+function getAllBrowsingContextsForContext(
+  sessionContext,
+  { acceptSameProcessIframes = false } = {}
+) {
   const browsingContexts = [];
 
   
@@ -286,6 +334,7 @@ function getAllBrowsingContextsForContext(sessionContext) {
     
     isBrowsingContextPartOfContext(bc, sessionContext, {
       forceAcceptTopLevelTarget: true,
+      acceptSameProcessIframes,
     })
   );
 }

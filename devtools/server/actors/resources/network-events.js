@@ -6,6 +6,9 @@
 
 const Services = require("Services");
 const { Pool } = require("devtools/shared/protocol/Pool");
+const {
+  isWindowGlobalPartOfContext,
+} = require("devtools/server/actors/watcher/browsing-context-helpers.jsm");
 
 loader.lazyRequireGetter(
   this,
@@ -155,18 +158,12 @@ class NetworkEventWatcher {
       return;
     }
     
-    
     if (
-      this.watcherActor.sessionContext.type == "browser-element" &&
-      windowGlobal.browsingContext.browserId !=
-        this.watcherActor.sessionContext.browserId
+      !isWindowGlobalPartOfContext(
+        windowGlobal,
+        this.watcherActor.sessionContext
+      )
     ) {
-      return;
-    }
-    
-    
-    
-    if (windowGlobal.isInitialDocument) {
       return;
     }
     const { innerWindowId } = windowGlobal;
