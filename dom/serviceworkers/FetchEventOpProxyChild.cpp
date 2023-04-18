@@ -192,6 +192,14 @@ void FetchEventOpProxyChild::ActorDestroy(ActorDestroyReason) {
   Unused << NS_WARN_IF(mRespondWithPromiseRequestHolder.Exists());
   mRespondWithPromiseRequestHolder.DisconnectIfExists();
 
+  
+  
+  
+  if (mPreloadResponsePromise) {
+    mPreloadResponsePromise->Resolve(
+        InternalResponse::NetworkError(NS_ERROR_DOM_ABORT_ERR), __func__);
+  }
+
   mOp->RevokeActor(this);
   mOp = nullptr;
 }
