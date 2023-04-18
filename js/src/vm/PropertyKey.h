@@ -18,7 +18,7 @@
 
 namespace js {
 
-static MOZ_ALWAYS_INLINE js::HashNumber HashPropertyKey(PropertyKey key) {
+static MOZ_ALWAYS_INLINE HashNumber HashPropertyKey(PropertyKey key) {
   
   
   if (MOZ_LIKELY(key.isAtom())) {
@@ -28,6 +28,16 @@ static MOZ_ALWAYS_INLINE js::HashNumber HashPropertyKey(PropertyKey key) {
     return key.toSymbol()->hash();
   }
   return mozilla::HashGeneric(key.asBits);
+}
+
+
+
+static MOZ_ALWAYS_INLINE HashNumber
+HashAtomOrSymbolPropertyKey(PropertyKey key) {
+  if (MOZ_LIKELY(key.isAtom())) {
+    return key.toAtom()->hash();
+  }
+  return key.toSymbol()->hash();
 }
 
 }  
