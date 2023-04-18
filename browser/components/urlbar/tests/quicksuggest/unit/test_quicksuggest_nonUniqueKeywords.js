@@ -19,14 +19,17 @@ let SUGGESTIONS_DATA = [
   {
     keywords: ["aaa", "bbb"],
     isSponsored: false,
+    score: 2 * UrlbarQuickSuggest.DEFAULT_SUGGESTION_SCORE,
   },
   {
     keywords: ["bbb"],
     isSponsored: true,
+    score: 4 * UrlbarQuickSuggest.DEFAULT_SUGGESTION_SCORE,
   },
   {
     keywords: ["bbb"],
     isSponsored: false,
+    score: 3 * UrlbarQuickSuggest.DEFAULT_SUGGESTION_SCORE,
   },
   {
     keywords: ["ccc"],
@@ -51,7 +54,7 @@ let TESTS = {
       {
         sponsored: true,
         nonsponsored: true,
-        expectedIndex: 0,
+        expectedIndex: 1,
       },
       {
         sponsored: false,
@@ -79,12 +82,12 @@ let TESTS = {
       {
         sponsored: true,
         nonsponsored: true,
-        expectedIndex: 1,
+        expectedIndex: 2,
       },
       {
         sponsored: false,
         nonsponsored: true,
-        expectedIndex: 1,
+        expectedIndex: 3,
       },
       {
         sponsored: true,
@@ -134,11 +137,12 @@ add_task(async function() {
   let qsSuggestions = [];
   let urlbarResults = [];
   for (let i = 0; i < SUGGESTIONS_DATA.length; i++) {
-    let { keywords, isSponsored } = SUGGESTIONS_DATA[i];
+    let { keywords, isSponsored, score } = SUGGESTIONS_DATA[i];
 
     
     let qsResult = {
       keywords,
+      score,
       id: i,
       url: "http://example.com/" + i,
       title: "Title " + i,
@@ -154,7 +158,10 @@ add_task(async function() {
       ...qsResult,
       block_id: qsResult.id,
       is_sponsored: isSponsored,
-      score: UrlbarQuickSuggest.SUGGESTION_SCORE,
+      score:
+        typeof score == "number"
+          ? score
+          : UrlbarQuickSuggest.DEFAULT_SUGGESTION_SCORE,
       source: "remote-settings",
       icon: null,
       position: undefined,

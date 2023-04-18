@@ -61,7 +61,7 @@ const ONBOARDING_URI =
 
 
 
-const SUGGESTION_SCORE = 0.2;
+const DEFAULT_SUGGESTION_SCORE = 0.2;
 
 
 
@@ -88,8 +88,8 @@ class QuickSuggest extends EventEmitter {
 
 
 
-  get SUGGESTION_SCORE() {
-    return SUGGESTION_SCORE;
+  get DEFAULT_SUGGESTION_SCORE() {
+    return DEFAULT_SUGGESTION_SCORE;
   }
 
   
@@ -165,7 +165,10 @@ class QuickSuggest extends EventEmitter {
       advertiser: result.advertiser,
       iab_category: result.iab_category,
       is_sponsored: !NONSPONSORED_IAB_CATEGORIES.has(result.iab_category),
-      score: SUGGESTION_SCORE,
+      score:
+        typeof result.score == "number"
+          ? result.score
+          : DEFAULT_SUGGESTION_SCORE,
       source: QUICK_SUGGEST_SOURCE.REMOTE_SETTINGS,
       icon: icons.shift(),
       position: result.position,
