@@ -139,13 +139,6 @@ typedef nsID nsIID;
 
 
 
-#define NS_DEFINE_IID(_name, _iidspec) const nsIID _name = _iidspec
-
-
-
-
-
-
 
 
 #define NS_DECLARE_STATIC_IID_ACCESSOR(the_iid) \
