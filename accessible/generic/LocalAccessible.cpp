@@ -3209,73 +3209,6 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
     }
   }
 
-  if (aCacheDomain & CacheDomain::Viewport && IsDoc()) {
-    
-    
-    DocAccessible* doc = AsDoc();
-    PresShell* presShell = doc->PresShellPtr();
-
-    if (nsIFrame* rootFrame = presShell->GetRootFrame()) {
-      nsTArray<nsIFrame*> frames;
-      nsIScrollableFrame* sf = presShell->GetRootScrollFrameAsScrollable();
-      nsRect scrollPort = sf ? sf->GetScrollPortRect() : rootFrame->GetRect();
-
-      nsLayoutUtils::GetFramesForArea(
-          RelativeTo{rootFrame}, scrollPort, frames,
-          {{
-            nsLayoutUtils::FrameForPointOption::OnlyVisible,
-            
-            
-            nsLayoutUtils::FrameForPointOption::IgnorePaintSuppression,
-            
-            
-            nsLayoutUtils::FrameForPointOption::IgnoreCrossDoc}});
-
-      nsTHashSet<LocalAccessible*> inViewAccs;
-      nsTArray<uint64_t> viewportCache;
-      for (nsIFrame* frame : frames) {
-        nsIContent* content = frame->GetContent();
-        if (!content) {
-          continue;
-        }
-
-        LocalAccessible* acc = doc->GetAccessibleOrContainer(content);
-        if (!acc) {
-          continue;
-        }
-
-        if (acc->IsTextLeaf() && nsAccUtils::MustPrune(acc->LocalParent())) {
-          acc = acc->LocalParent();
-        }
-
-        if (acc->IsImageMap()) {
-          
-          
-          
-          for (uint32_t i = 0; i < acc->ChildCount(); i++) {
-            LocalAccessible* child = acc->LocalChildAt(i);
-            MOZ_ASSERT(child);
-            if (inViewAccs.EnsureInserted(child)) {
-              viewportCache.AppendElement(
-                  child->IsDoc()
-                      ? 0
-                      : reinterpret_cast<uint64_t>(child->UniqueID()));
-            }
-          }
-        }
-
-        if (inViewAccs.EnsureInserted(acc)) {
-          viewportCache.AppendElement(
-              acc->IsDoc() ? 0 : reinterpret_cast<uint64_t>(acc->UniqueID()));
-        }
-      }
-
-      if (viewportCache.Length()) {
-        fields->SetAttribute(nsGkAtoms::viewport, std::move(viewportCache));
-      }
-    }
-  }
-
   bool boundsChanged = false;
   if (aCacheDomain & CacheDomain::Bounds) {
     nsRect newBoundsRect = ParentRelativeBounds();
@@ -3586,12 +3519,6 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
                              appUnitsPerDevPixel);
       }
     }
-  }
-
-  if ((aCacheDomain & (CacheDomain::Text | CacheDomain::ScrollPosition) ||
-       boundsChanged) &&
-      mDoc) {
-    mDoc->SetViewportCacheDirty(true);
   }
 
   return fields.forget();
