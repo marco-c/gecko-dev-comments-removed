@@ -2651,41 +2651,6 @@ inline static bool IsSVGContentWithCSSClip(const nsIFrame* aFrame) {
                                                   nsGkAtoms::foreignObject);
 }
 
-bool nsIFrame::FormsBackdropRoot() const {
-  
-  if (!GetParent()) {
-    return true;
-  }
-
-  const auto& style = *Style();
-  const auto& effects = *style.StyleEffects();
-  
-  if (!style.IsRootElementStyle()) {
-    if (effects.HasFilters() || effects.HasBackdropFilters()) {
-      return true;
-    }
-  }
-
-  if (effects.HasMixBlendMode()) {
-    return true;
-  }
-
-  
-  const auto& disp = *style.StyleDisplay();
-  if (HasOpacity(&disp, &effects)) {
-    return true;
-  }
-
-  
-  const auto& svgReset = *style.StyleSVGReset();
-  if (svgReset.HasMask() || svgReset.HasClipPath()) {
-    return true;
-  }
-
-  
-  return false;
-}
-
 Maybe<nsRect> nsIFrame::GetClipPropClipRect(const nsStyleDisplay* aDisp,
                                             const nsStyleEffects* aEffects,
                                             const nsSize& aSize) const {
@@ -2846,30 +2811,6 @@ class AutoSaveRestoreContainsBlendMode {
 
   ~AutoSaveRestoreContainsBlendMode() {
     mBuilder.SetContainsBlendMode(mSavedContainsBlendMode);
-  }
-};
-
-class AutoSaveRestoreContainsBackdropFilter {
-  nsDisplayListBuilder& mBuilder;
-  bool mSavedContainsBackdropFilter;
-
- public:
-  explicit AutoSaveRestoreContainsBackdropFilter(nsDisplayListBuilder& aBuilder)
-      : mBuilder(aBuilder),
-        mSavedContainsBackdropFilter(aBuilder.ContainsBackdropFilter()) {}
-
-  
-
-
-
-
-
-  void DelegateUp(bool aContainsBackdropFilter) {
-    mSavedContainsBackdropFilter = aContainsBackdropFilter;
-  }
-
-  ~AutoSaveRestoreContainsBackdropFilter() {
-    mBuilder.SetContainsBackdropFilter(mSavedContainsBackdropFilter);
   }
 };
 
@@ -3236,12 +3177,6 @@ void nsIFrame::BuildDisplayListForStackingContext(
   bool usingBackdropFilter = effects->HasBackdropFilters() &&
                              IsVisibleForPainting() &&
                              !style.IsRootElementStyle();
-  if (usingBackdropFilter) {
-    aBuilder->SetContainsBackdropFilter(true);
-  }
-
-  AutoSaveRestoreContainsBackdropFilter autoRestoreBackdropFilter(*aBuilder);
-  aBuilder->SetContainsBackdropFilter(false);
 
   nsRect visibleRectOutsideTransform = visibleRect;
   nsDisplayTransform::PrerenderInfo prerenderInfo;
@@ -3444,7 +3379,6 @@ void nsIFrame::BuildDisplayListForStackingContext(
 
   nsDisplayListCollection set(aBuilder);
   Maybe<nsRect> clipForMask;
-  bool insertBackdropRoot;
   {
     DisplayListClipState::AutoSaveRestore nestedClipState(aBuilder);
     nsDisplayListBuilder::AutoInTransformSetter inTransformSetter(aBuilder,
@@ -3490,9 +3424,6 @@ void nsIFrame::BuildDisplayListForStackingContext(
     aBuilder->Check();
     aBuilder->DisplayCaret(this, set.Outlines());
 
-    insertBackdropRoot =
-        aBuilder->ContainsBackdropFilter() && FormsBackdropRoot();
-
     
     
     
@@ -3511,7 +3442,7 @@ void nsIFrame::BuildDisplayListForStackingContext(
     
     
     
-    if ((insertBackdropRoot || aBuilder->ContainsBlendMode()) &&
+    if ((aBuilder->ContainsBlendMode()) &&
         aBuilder->IsRetainingDisplayList()) {
       if (aBuilder->IsPartialUpdate()) {
         aBuilder->SetPartialBuildFailed(true);
@@ -3519,13 +3450,6 @@ void nsIFrame::BuildDisplayListForStackingContext(
         aBuilder->SetDisablePartialUpdates(true);
       }
     }
-  }
-
-  
-  
-  
-  if (!insertBackdropRoot && aBuilder->ContainsBackdropFilter()) {
-    autoRestoreBackdropFilter.DelegateUp(true);
   }
 
   if (aBuilder->IsBackgroundOnly()) {
@@ -3576,14 +3500,6 @@ void nsIFrame::BuildDisplayListForStackingContext(
     DisplayListClipState::AutoSaveRestore blendContainerClipState(aBuilder);
     resultList.AppendToTop(nsDisplayBlendContainer::CreateForMixBlendMode(
         aBuilder, this, &resultList, containerItemASR));
-    createdContainer = true;
-  }
-
-  if (insertBackdropRoot) {
-    DisplayListClipState::AutoSaveRestore backdropRootContainerClipState(
-        aBuilder);
-    resultList.AppendNewToTop<nsDisplayBackdropRootContainer>(
-        aBuilder, this, &resultList, containerItemASR);
     createdContainer = true;
   }
 

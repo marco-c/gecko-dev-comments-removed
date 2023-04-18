@@ -1955,12 +1955,6 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  bool FormsBackdropRoot() const;
-
-  
-
-
-
 
 
 
