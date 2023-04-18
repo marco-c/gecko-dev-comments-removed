@@ -66,7 +66,7 @@ def install_sdk(logger, dest=None):
     
     
     
-    url = 'https://dl.google.com/android/repository/sdk-tools-%s-4333796.zip' % (os_name,)
+    url = f'https://dl.google.com/android/repository/sdk-tools-{os_name}-4333796.zip'
 
     logger.info("Getting SDK from %s" % url)
     temp_path = os.path.join(sdk_path, url.rsplit("/", 1)[1])

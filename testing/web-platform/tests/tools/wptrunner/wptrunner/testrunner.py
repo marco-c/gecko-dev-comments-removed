@@ -648,7 +648,7 @@ class TestRunnerManager(threading.Thread):
                 self.logger.info("Found a crash dump file; changing status to CRASH")
                 status = "CRASH"
             else:
-                self.logger.warning("Found a crash dump; should change status from %s to CRASH but this causes instability" % (status,))
+                self.logger.warning(f"Found a crash dump; should change status from {status} to CRASH but this causes instability")
 
         
         
@@ -830,11 +830,11 @@ class TestRunnerManager(threading.Thread):
                     
                     pass
                 else:
-                    self.logger.warning("Command left in command_queue during cleanup: %r, %r" % (cmd, data))
+                    self.logger.warning(f"Command left in command_queue during cleanup: {cmd!r}, {data!r}")
         while True:
             try:
                 cmd, data = self.remote_queue.get_nowait()
-                self.logger.warning("Command left in remote_queue during cleanup: %r, %r" % (cmd, data))
+                self.logger.warning(f"Command left in remote_queue during cleanup: {cmd!r}, {data!r}")
             except Empty:
                 break
 
