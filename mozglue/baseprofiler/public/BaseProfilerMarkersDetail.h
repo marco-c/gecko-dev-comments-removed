@@ -256,11 +256,6 @@ using BacktraceCaptureFunction = bool (*)(ProfileChunkedBuffer&,
 
 
 
-MFBT_API ProfileChunkedBuffer& StaticClearedBufferForMainThreadAddMarker();
-
-
-
-
 template <typename MarkerType, typename... Ts>
 ProfileBufferBlockIndex AddMarkerToBuffer(
     ProfileChunkedBuffer& aBuffer, const ProfilerString8View& aName,
@@ -282,28 +277,18 @@ ProfileBufferBlockIndex AddMarkerToBuffer(
     
     
     
-    auto CaptureStackAndAddMarker = [&](ProfileChunkedBuffer& aChunkedBuffer) {
-      aOptions.StackRef().UseRequestedBacktrace(
-          aBacktraceCaptureFunction(aChunkedBuffer, captureOptions)
-              ? &aChunkedBuffer
-              : nullptr);
-      
-      return AddMarkerWithOptionalStackToBuffer<MarkerType>(
-          aBuffer, aName, aCategory, std::move(aOptions), aTs...);
-    };
-
-    if (baseprofiler::profiler_is_main_thread()) {
-      
-      
-      return CaptureStackAndAddMarker(
-          StaticClearedBufferForMainThreadAddMarker());
-    }
     
     ProfileBufferChunkManagerSingle chunkManager(
         ProfileBufferChunkManager::scExpectedMaximumStackSize);
     ProfileChunkedBuffer chunkedBuffer(
         ProfileChunkedBuffer::ThreadSafety::WithoutMutex, chunkManager);
-    return CaptureStackAndAddMarker(chunkedBuffer);
+    aOptions.StackRef().UseRequestedBacktrace(
+        aBacktraceCaptureFunction(chunkedBuffer, captureOptions)
+            ? &chunkedBuffer
+            : nullptr);
+    
+    return AddMarkerWithOptionalStackToBuffer<MarkerType>(
+        aBuffer, aName, aCategory, std::move(aOptions), aTs...);
   }
 
   return AddMarkerWithOptionalStackToBuffer<MarkerType>(

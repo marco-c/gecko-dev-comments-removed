@@ -6,7 +6,6 @@
 #include "mozilla/BaseProfilerMarkers.h"
 
 #include "mozilla/Likely.h"
-#include "mozilla/Maybe.h"
 
 #include <limits>
 
@@ -73,28 +72,6 @@ static Streaming::MarkerTypeFunctions
  Span<const Streaming::MarkerTypeFunctions>
 Streaming::MarkerTypeFunctionsArray() {
   return {sMarkerTypeFunctions1Based, sDeserializerCount};
-}
-
-struct ChunkedBufferWithSingleManager {
-  ProfileBufferChunkManagerSingle mChunkManager{
-      ProfileBufferChunkManager::scExpectedMaximumStackSize};
-  ProfileChunkedBuffer mChunkedBuffer{
-      ProfileChunkedBuffer::ThreadSafety::WithoutMutex, mChunkManager};
-};
-
-static Maybe<ChunkedBufferWithSingleManager>
-    sMaybeChunkedBufferWithSingleManager;
-
-ProfileChunkedBuffer& StaticClearedBufferForMainThreadAddMarker() {
-  
-  if (MOZ_UNLIKELY(sMaybeChunkedBufferWithSingleManager.isNothing())) {
-    sMaybeChunkedBufferWithSingleManager.emplace();
-  } else {
-    
-    
-    sMaybeChunkedBufferWithSingleManager->mChunkedBuffer.Clear();
-  }
-  return sMaybeChunkedBufferWithSingleManager->mChunkedBuffer;
 }
 
 }  
