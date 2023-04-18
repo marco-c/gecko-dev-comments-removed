@@ -106,7 +106,6 @@ struct CycleCollectorStats {
   constexpr CycleCollectorStats() = default;
   void Init();
   void Clear();
-  void PrepareForCycleCollection(TimeStamp aNow);
   void AfterPrepareForCycleCollectionSlice(TimeStamp aDeadline,
                                            TimeStamp aBeginTime,
                                            TimeStamp aMaybeAfterGCTime);
@@ -1243,11 +1242,6 @@ void CycleCollectorStats::AfterCycleCollectionSlice() {
   mBeginSliceTime = TimeStamp();
 }
 
-void CycleCollectorStats::PrepareForCycleCollection(TimeStamp aNow) {
-  mBeginTime = aNow;
-  mSuspected = nsCycleCollector_suspectedCount();
-}
-
 void CycleCollectorStats::AfterPrepareForCycleCollectionSlice(
     TimeStamp aDeadline, TimeStamp aBeginTime, TimeStamp aMaybeAfterGCTime) {
   mBeginSliceTime = aBeginTime;
@@ -1433,10 +1427,7 @@ void nsJSContext::PrepareForCycleCollectionSlice(CCReason aReason,
   }
 
   if (!sScheduler.IsCollectingCycles()) {
-    sCCStats.PrepareForCycleCollection(beginTime);
-    sScheduler.NoteCCBegin(aReason, beginTime,
-                           sCCStats.mForgetSkippableBeforeCC,
-                           sCCStats.mSuspected, sCCStats.mRemovedPurples);
+    sScheduler.NoteCCBegin(aReason, beginTime);
   }
 
   sCCStats.AfterPrepareForCycleCollectionSlice(aDeadline, beginTime,
@@ -1496,7 +1487,9 @@ void nsJSContext::BeginCycleCollectionCallback(CCReason aReason) {
   MOZ_ASSERT(NS_IsMainThread());
 
   TimeStamp startTime = TimeStamp::Now();
-  sCCStats.PrepareForCycleCollection(startTime);
+  sCCStats.mBeginTime =
+      sCCStats.mBeginSliceTime.IsNull() ? startTime : sCCStats.mBeginSliceTime;
+  sCCStats.mSuspected = nsCycleCollector_suspectedCount();
 
   
   
@@ -1517,8 +1510,7 @@ void nsJSContext::BeginCycleCollectionCallback(CCReason aReason) {
 }
 
 
-void nsJSContext::EndCycleCollectionCallback(
-    const CycleCollectorResults& aResults) {
+void nsJSContext::EndCycleCollectionCallback(CycleCollectorResults& aResults) {
   MOZ_ASSERT(NS_IsMainThread());
 
   sScheduler.KillCCRunner();
@@ -1527,27 +1519,10 @@ void nsJSContext::EndCycleCollectionCallback(
   
   
   sCCStats.AfterCycleCollectionSlice();
+  sScheduler.NoteCycleCollected(aResults);
 
   TimeStamp endCCTimeStamp = TimeStamp::Now();
   TimeDuration ccNowDuration = TimeBetween(sCCStats.mBeginTime, endCCTimeStamp);
-
-  sScheduler.NoteCCEnd(aResults, endCCTimeStamp, sCCStats.mMaxSliceTime);
-
-  
-
-  sCCStats.SendTelemetry(ccNowDuration);
-
-  uint32_t cleanups = std::max(sCCStats.mForgetSkippableBeforeCC, 1u);
-
-  sCCStats.MaybeLogStats(aResults, cleanups);
-
-  sCCStats.MaybeNotifyStats(aResults, ccNowDuration, cleanups);
-
-  
-  sCCStats.Clear();
-
-  
-  
 
   if (sScheduler.NeedsGCAfterCC()) {
     MOZ_ASSERT(
@@ -1560,6 +1535,20 @@ void nsJSContext::EndCycleCollectionCallback(
                           StaticPrefs::javascript_options_gc_delay()) -
                           std::min(ccNowDuration, kMaxICCDuration));
   }
+
+  
+
+  sCCStats.SendTelemetry(ccNowDuration);
+
+  uint32_t cleanups = std::max(sCCStats.mForgetSkippableBeforeCC, 1u);
+
+  sCCStats.MaybeLogStats(aResults, cleanups);
+
+  sCCStats.MaybeNotifyStats(aResults, ccNowDuration, cleanups);
+
+  
+  sScheduler.NoteCCEnd(endCCTimeStamp);
+  sCCStats.Clear();
 }
 
 
@@ -1756,7 +1745,8 @@ static void DOMGCSliceCallback(JSContext* aCx, JS::GCProgress aProgress,
       
       sScheduler.KillGCRunner();
 
-      nsJSContext::MaybePokeCC();
+      TimeStamp now = TimeStamp::Now();
+      sScheduler.MaybePokeCC(now, nsCycleCollector_suspectedCount());
 
       if (aDesc.isZone_) {
         sScheduler.PokeFullGC();
@@ -1765,8 +1755,7 @@ static void DOMGCSliceCallback(JSContext* aCx, JS::GCProgress aProgress,
         sScheduler.KillFullGCTimer();
       }
 
-      if (sScheduler.IsCCNeeded(TimeStamp::Now(),
-                                nsCycleCollector_suspectedCount()) !=
+      if (sScheduler.IsCCNeeded(now, nsCycleCollector_suspectedCount()) !=
           CCReason::NO_REASON) {
         nsCycleCollector_dispatchDeferredDeletion();
       }

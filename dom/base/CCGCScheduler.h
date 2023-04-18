@@ -245,16 +245,13 @@ class CCGCScheduler {
 
   
   
-  void NoteCCBegin(CCReason aReason, TimeStamp aWhen,
-                   uint32_t aNumForgetSkippables, uint32_t aSuspected,
-                   uint32_t aRemovedPurples);
+  void NoteCCBegin(CCReason aReason, TimeStamp aWhen);
 
   
   
   
   
-  void NoteCCEnd(const CycleCollectorResults& aResults, TimeStamp aWhen,
-                 mozilla::TimeDuration aMaxSliceTime);
+  void NoteCCEnd(TimeStamp aWhen);
 
   void NoteGCSliceEnd(TimeDuration aSliceDuration) {
     if (mMajorGCReason == JS::GCReason::NO_REASON) {
@@ -305,6 +302,13 @@ class CCGCScheduler {
     mPreviousSuspectedCount = aSuspectedCCObjects;
     mCleanupsSinceLastGC++;
     return aSuspectedBeforeForgetSkippable - aSuspectedCCObjects;
+  }
+
+  
+  
+  void NoteCycleCollected(const CycleCollectorResults& aResults) {
+    mCCollectedWaitingForGC += aResults.mFreedGCed;
+    mCCollectedZonesWaitingForGC += aResults.mFreedJSZones;
   }
 
   

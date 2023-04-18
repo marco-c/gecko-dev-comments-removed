@@ -86,7 +86,7 @@ class nsJSContext : public nsIScriptContext {
 
   static void BeginCycleCollectionCallback(mozilla::CCReason aReason);
   static void EndCycleCollectionCallback(
-      const mozilla::CycleCollectorResults& aResults);
+      mozilla::CycleCollectorResults& aResults);
 
   
   
