@@ -1745,7 +1745,9 @@ extern "C" nsresult NS_CreateBackgroundTaskQueue(
 
 namespace IPC {
 class Message;
-}
+class MessageReader;
+class MessageWriter;
+}  
 
 class nsTimerImpl;
 

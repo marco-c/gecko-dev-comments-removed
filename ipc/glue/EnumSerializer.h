@@ -20,7 +20,9 @@ class PickleIterator;
 
 namespace IPC {
 class Message;
-}
+class MessageReader;
+class MessageWriter;
+}  
 
 #ifdef _MSC_VER
 #  pragma warning(disable : 4800)
