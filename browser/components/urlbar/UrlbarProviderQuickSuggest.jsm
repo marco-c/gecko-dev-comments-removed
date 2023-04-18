@@ -302,13 +302,15 @@ class ProviderQuickSuggest extends UrlbarProvider {
         sponsoredBlockId,
         requestId,
       } = result.payload;
+      
+      let advertiser = sponsoredAdvertiser.toLocaleLowerCase();
 
       let scenario = UrlbarPrefs.get("quicksuggest.scenario");
       
       PartnerLinkAttribution.sendContextualServicesPing(
         {
           scenario,
-          advertiser: sponsoredAdvertiser,
+          advertiser,
           block_id: sponsoredBlockId,
           position: telemetryResultIndex,
           reporting_url: sponsoredImpressionUrl,
@@ -322,7 +324,7 @@ class ProviderQuickSuggest extends UrlbarProvider {
         PartnerLinkAttribution.sendContextualServicesPing(
           {
             scenario,
-            advertiser: sponsoredAdvertiser,
+            advertiser,
             block_id: sponsoredBlockId,
             position: telemetryResultIndex,
             reporting_url: sponsoredClickUrl,
