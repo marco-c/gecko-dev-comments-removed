@@ -538,10 +538,8 @@ class TIPMessageHandler {
     
     
     if (!aMsgResult || aMsgCode != WM_GETOBJECT ||
-        static_cast<LONG>(aLParam) != OBJID_CLIENT ||
-        !WinUtils::GetNSWindowPtr(aHwnd) ||
-        ::GetWindowThreadProcessId(aHwnd, nullptr) != ::GetCurrentThreadId() ||
-        !IsA11yBlocked()) {
+        static_cast<LONG>(aLParam) != OBJID_CLIENT || !::NS_IsMainThread() ||
+        !WinUtils::GetNSWindowPtr(aHwnd) || !IsA11yBlocked()) {
       return sSendMessageTimeoutWStub(aHwnd, aMsgCode, aWParam, aLParam, aFlags,
                                       aTimeout, aMsgResult);
     }
@@ -916,6 +914,11 @@ void nsWindow::DestroyDirectManipulation() {
 nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
                           const LayoutDeviceIntRect& aRect,
                           nsWidgetInitData* aInitData) {
+  
+  
+  
+  MOZ_ASSERT(NS_IsMainThread());
+
   nsWidgetInitData defaultInitData;
   if (!aInitData) aInitData = &defaultInitData;
 
@@ -1011,6 +1014,10 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
       MOZ_ASSERT(extendedStyle == kPreXULSkeletonUIWindowStyleEx,
                  "The skeleton UI window extended style should match the "
                  "expected extended style for the first window created");
+      MOZ_ASSERT(
+          ::GetWindowThreadProcessId(mWnd, nullptr) == ::GetCurrentThreadId(),
+          "The skeleton UI window should be created on the same thread as "
+          "other windows");
       mIsShowingPreXULSkeletonUI = true;
 
       
@@ -1446,13 +1453,13 @@ void nsWindow::SubclassWindow(BOOL bState) {
         mWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(nsWindow::WindowProc)));
     NS_ASSERTION(mPrevWndProc, "Null standard window procedure");
     
-    WinUtils::SetNSWindowBasePtr(mWnd, this);
+    WinUtils::SetNSWindowPtr(mWnd, this);
   } else {
     if (IsWindow(mWnd)) {
       SetWindowLongPtrW(mWnd, GWLP_WNDPROC,
                         reinterpret_cast<LONG_PTR>(mPrevWndProc));
     }
-    WinUtils::SetNSWindowBasePtr(mWnd, nullptr);
+    WinUtils::SetNSWindowPtr(mWnd, nullptr);
     mPrevWndProc = nullptr;
   }
 }

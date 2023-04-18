@@ -938,33 +938,24 @@ HWND WinUtils::GetTopLevelHWND(HWND aWnd, bool aStopIfNotChild,
   return topWnd;
 }
 
-static const wchar_t* GetNSWindowPropName() {
-  static wchar_t sPropName[40] = L"";
-  if (!*sPropName) {
-    _snwprintf(sPropName, 39, L"MozillansIWidgetPtr%u",
-               ::GetCurrentProcessId());
-    sPropName[39] = '\0';
+
+
+static nsTHashMap<HWND, nsWindow*> sExtantNSWindows;
+
+
+void WinUtils::SetNSWindowPtr(HWND aWnd, nsWindow* aWindow) {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (!aWindow) {
+    sExtantNSWindows.Remove(aWnd);
+  } else {
+    sExtantNSWindows.InsertOrUpdate(aWnd, aWindow);
   }
-  return sPropName;
-}
-
-
-bool WinUtils::SetNSWindowBasePtr(HWND aWnd, nsWindow* aWidget) {
-  if (!aWidget) {
-    ::RemovePropW(aWnd, GetNSWindowPropName());
-    return true;
-  }
-  return ::SetPropW(aWnd, GetNSWindowPropName(), (HANDLE)aWidget);
-}
-
-
-nsWindow* WinUtils::GetNSWindowBasePtr(HWND aWnd) {
-  return static_cast<nsWindow*>(::GetPropW(aWnd, GetNSWindowPropName()));
 }
 
 
 nsWindow* WinUtils::GetNSWindowPtr(HWND aWnd) {
-  return static_cast<nsWindow*>(::GetPropW(aWnd, GetNSWindowPropName()));
+  MOZ_ASSERT(NS_IsMainThread());
+  return sExtantNSWindows.Get(aWnd);  
 }
 
 static BOOL CALLBACK AddMonitor(HMONITOR, HDC, LPRECT, LPARAM aParam) {

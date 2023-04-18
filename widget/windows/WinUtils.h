@@ -320,9 +320,13 @@ class WinUtils {
 
 
 
+  static void SetNSWindowPtr(HWND aWnd, nsWindow* aWindow);
+  
 
-  static bool SetNSWindowBasePtr(HWND aWnd, nsWindow* aWidget);
-  static nsWindow* GetNSWindowBasePtr(HWND aWnd);
+
+
+
+
   static nsWindow* GetNSWindowPtr(HWND aWnd);
 
   
