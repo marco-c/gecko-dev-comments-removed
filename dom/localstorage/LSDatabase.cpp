@@ -338,8 +338,7 @@ nsresult LSDatabase::EnsureSnapshot(LSObject* aObject, const nsAString& aKey,
   bool ok = mActor->SendPBackgroundLSSnapshotConstructor(
       actor, aObject->DocumentURI(), nsString(aKey),
        true,
-       131072,
-       4096, &initInfo);
+       0, &initInfo);
   if (NS_WARN_IF(!ok)) {
     return NS_ERROR_FAILURE;
   }
