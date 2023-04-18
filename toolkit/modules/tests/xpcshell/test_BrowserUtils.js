@@ -19,6 +19,10 @@ const { updateAppInfo } = ChromeUtils.import(
   "resource://testing-common/AppInfo.jsm"
 );
 
+const { Preferences } = ChromeUtils.import(
+  "resource://gre/modules/Preferences.jsm"
+);
+
 
 function setupRegions(home, current) {
   Region._setHomeRegion(home || "");
@@ -28,6 +32,29 @@ function setupRegions(home, current) {
 function setLanguage(language) {
   Services.locale.availableLocales = [language];
   Services.locale.requestedLocales = [language];
+}
+
+
+
+
+
+
+
+async function setupEnterprisePolicy() {
+  
+  
+  updateAppInfo({
+    name: "XPCShell",
+  });
+
+  
+  await EnterprisePolicyTesting.setupPolicyEngineWithJson({
+    policies: {
+      EnableTrackingProtection: {
+        Value: true,
+      },
+    },
+  });
 }
 
 add_task(async function test_shouldShowVPNPromo() {
@@ -77,21 +104,12 @@ add_task(async function test_shouldShowVPNPromo() {
     
     
     setupRegions(allowedRegion, allowedRegion);
-    
-    updateAppInfo({
-      name: "XPCShell",
-    });
-    
-    await EnterprisePolicyTesting.setupPolicyEngineWithJson({
-      policies: {
-        EnableTrackingProtection: {
-          Value: true,
-        },
-      },
-    });
+    await setupEnterprisePolicy();
+
     Assert.ok(!BrowserUtils.shouldShowVPNPromo());
 
-    await EnterprisePolicyTesting.setupPolicyEngineWithJson(""); 
+    
+    await EnterprisePolicyTesting.setupPolicyEngineWithJson("");
   }
 });
 
@@ -135,4 +153,36 @@ add_task(async function test_sendToDeviceEmailsSupported() {
   
   setLanguage(disallowedLanguage);
   Assert.ok(!BrowserUtils.sendToDeviceEmailsSupported());
+});
+
+add_task(async function test_shouldShowFocusPromo() {
+  const allowedRegion = "US";
+  const disallowedRegion = "CN";
+
+  
+  setupRegions(allowedRegion, allowedRegion);
+  Assert.ok(BrowserUtils.shouldShowPromo(BrowserUtils.PromoType.FOCUS));
+
+  
+  setupRegions(disallowedRegion);
+  Assert.ok(!BrowserUtils.shouldShowPromo(BrowserUtils.PromoType.FOCUS));
+
+  setupRegions(allowedRegion, allowedRegion);
+
+  
+  if (AppConstants.platform !== "android") {
+    
+    await setupEnterprisePolicy();
+
+    Assert.ok(!BrowserUtils.shouldShowPromo(BrowserUtils.PromoType.FOCUS));
+
+    
+    await EnterprisePolicyTesting.setupPolicyEngineWithJson("");
+  }
+
+  
+  Preferences.set("browser.promo.focus.enabled", false);
+  Assert.ok(!BrowserUtils.shouldShowPromo(BrowserUtils.PromoType.FOCUS));
+
+  Preferences.resetBranch("browser.promo.focus");
 });
