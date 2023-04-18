@@ -9,7 +9,7 @@ use crate::values::distance::{ComputeSquaredDistance, SquaredDistance};
 use crate::values::generics::color::{Color as GenericColor, ComplexColorRatios};
 use crate::values::specified::color::{ColorInterpolationMethod, ColorSpace, HueInterpolationMethod};
 use euclid::default::{Transform3D, Vector3D};
-use std::f32::consts::{PI, TAU};
+use std::f32::consts::PI;
 
 
 
@@ -29,6 +29,7 @@ pub struct RGBA {
 }
 
 const RAD_PER_DEG: f32 = PI / 180.0;
+const DEG_PER_RAD: f32 = 180.0 / PI;
 
 impl RGBA {
     
@@ -390,14 +391,8 @@ fn interpolate_premultiplied_component(
 }
 
 
-fn normalize_hue(mut v: f32) -> f32 {
-    while v < 0. {
-        v += TAU;
-    }
-    while v >= TAU {
-        v  -= TAU;
-    }
-    v
+fn normalize_hue(v: f32) -> f32 {
+    v - 360. * (v / 360.).floor()
 }
 
 fn adjust_hue(left: &mut f32, right: &mut f32, hue_interpolation: HueInterpolationMethod) {
@@ -431,31 +426,31 @@ fn adjust_hue(left: &mut f32, right: &mut f32, hue_interpolation: HueInterpolati
         HueInterpolationMethod::Shorter => {
             let delta = *right - *left;
 
-            if delta > PI {
-                *left += TAU;
-            } else if delta < -PI {
-                *right += TAU;
+            if delta > 180. {
+                *left += 360.;
+            } else if delta < -180. {
+                *right += 360.;
             }
         },
         
         HueInterpolationMethod::Longer => {
             let delta = *right - *left;
-            if 0. < delta && delta < PI {
-                *left += TAU;
-            } else if -1. * PI < delta && delta < 0. {
-                *right += TAU;
+            if 0. < delta && delta < 180. {
+                *left += 360.;
+            } else if -180. < delta && delta < 0. {
+                *right += 360.;
             }
         },
         
         HueInterpolationMethod::Increasing => {
             if *right < *left {
-                *right += TAU;
+                *right += 360.;
             }
         },
         
         HueInterpolationMethod::Decreasing => {
             if *left < *right {
-                *left += TAU;
+                *left += 360.;
             }
         },
         HueInterpolationMethod::Specified => unreachable!("Handled above"),
@@ -643,7 +638,6 @@ fn rgb_to_hsl(rgba: RGBA) -> (HSLA, f32, f32) {
         }
 
         hue *= 60.;
-        hue *= RAD_PER_DEG;
     }
 
     (HSLA { hue, sat, light, alpha }, min, max)
@@ -658,7 +652,7 @@ impl From<RGBA> for HSLA {
 impl From<HSLA> for RGBA {
     fn from(hsla: HSLA) -> Self {
         
-        let hue_normalized = normalize_hue(hsla.hue) / TAU;
+        let hue_normalized = normalize_hue(hsla.hue) / 360.;
         let (r, g, b) = cssparser::hsl_to_rgb(hue_normalized, hsla.sat, hsla.light);
         RGBA::new(r, g, b, hsla.alpha)
     }
@@ -679,7 +673,7 @@ impl From<RGBA> for HWBA {
 
 impl From<HWBA> for RGBA {
     fn from(hwba: HWBA) -> Self {
-        let hue_normalized = normalize_hue(hwba.hue) / TAU;
+        let hue_normalized = normalize_hue(hwba.hue) / 360.;
         let (r, g, b) = cssparser::hwb_to_rgb(hue_normalized, hwba.white, hwba.black);
         RGBA::new(r, g, b, hwba.alpha)
     }
@@ -868,7 +862,7 @@ impl From<LABA> for LCHA {
     
     
     fn from(laba: LABA) -> Self {
-        let hue = laba.b.atan2(laba.a);
+        let hue = laba.b.atan2(laba.a) * DEG_PER_RAD;
         let chroma = (laba.a * laba.a + laba.b * laba.b).sqrt();
         LCHA {
             lightness: laba.lightness,
@@ -884,8 +878,9 @@ impl From<LCHA> for LABA {
     
     
     fn from(lcha: LCHA) -> Self {
-        let a = lcha.chroma * lcha.hue.cos();
-        let b = lcha.chroma * lcha.hue.sin();
+        let hue_radians = lcha.hue * RAD_PER_DEG;
+        let a = lcha.chroma * hue_radians.cos();
+        let b = lcha.chroma * hue_radians.sin();
         LABA {
             lightness: lcha.lightness,
             a,
