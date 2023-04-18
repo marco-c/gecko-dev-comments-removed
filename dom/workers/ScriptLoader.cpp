@@ -371,13 +371,14 @@ class ScriptLoaderRunnable;
 class ScriptExecutorRunnable final : public MainThreadWorkerSyncRunnable {
   ScriptLoaderRunnable& mScriptLoader;
   const bool mIsWorkerScript;
-  const Span<ScriptLoadInfo> mLoadInfosAlreadyExecuted, mLoadInfosToExecute;
+  const Span<ScriptLoadInfo> mLoadInfosToExecute;
+  const bool mAllScriptsExecutable;
 
  public:
   ScriptExecutorRunnable(ScriptLoaderRunnable& aScriptLoader,
                          nsIEventTarget* aSyncLoopTarget, bool aIsWorkerScript,
-                         Span<ScriptLoadInfo> aLoadInfosAlreadyExecuted,
-                         Span<ScriptLoadInfo> aLoadInfosToExecute);
+                         Span<ScriptLoadInfo> aLoadInfosToExecute,
+                         bool aAllScriptsExecutable);
 
  private:
   ~ScriptExecutorRunnable() = default;
@@ -666,6 +667,7 @@ class ScriptLoaderRunnable final : public nsIRunnable, public nsINamed {
   WorkerScriptType mWorkerScriptType;
   bool mCanceledMainThread;
   ErrorResult& mRv;
+  bool mExecutionFailed = false;
 
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
@@ -1529,8 +1531,8 @@ class ScriptLoaderRunnable final : public nsIRunnable, public nsINamed {
 
       RefPtr<ScriptExecutorRunnable> runnable = new ScriptExecutorRunnable(
           *this, mSyncLoopTarget, IsMainWorkerScript(),
-          Span{begin, maybeRangeToExecute->first},
-          Span{maybeRangeToExecute->first, maybeRangeToExecute->second});
+          Span{maybeRangeToExecute->first, maybeRangeToExecute->second},
+           end == maybeRangeToExecute->second);
       if (!runnable->Dispatch()) {
         MOZ_ASSERT(false, "This should never fail!");
       }
@@ -2036,21 +2038,14 @@ class ChannelGetterRunnable final : public WorkerMainThreadRunnable {
 
 ScriptExecutorRunnable::ScriptExecutorRunnable(
     ScriptLoaderRunnable& aScriptLoader, nsIEventTarget* aSyncLoopTarget,
-    bool aIsWorkerScript, Span<ScriptLoadInfo> aLoadInfosAlreadyExecuted,
-    Span<ScriptLoadInfo> aLoadInfosToExecute)
+    bool aIsWorkerScript, Span<ScriptLoadInfo> aLoadInfosToExecute,
+    bool aAllScriptsExecutable)
     : MainThreadWorkerSyncRunnable(aScriptLoader.mWorkerPrivate,
                                    aSyncLoopTarget),
       mScriptLoader(aScriptLoader),
       mIsWorkerScript(aIsWorkerScript),
-      mLoadInfosAlreadyExecuted(aLoadInfosAlreadyExecuted),
-      mLoadInfosToExecute(aLoadInfosToExecute) {
-  
-  
-  MOZ_ASSERT_IF(mLoadInfosAlreadyExecuted.Length(),
-                mLoadInfosAlreadyExecuted.Elements() +
-                        mLoadInfosAlreadyExecuted.Length() ==
-                    mLoadInfosToExecute.Elements());
-}
+      mLoadInfosToExecute(aLoadInfosToExecute),
+      mAllScriptsExecutable(aAllScriptsExecutable) {}
 
 bool ScriptExecutorRunnable::IsDebuggerRunnable() const {
   
@@ -2070,7 +2065,6 @@ bool ScriptExecutorRunnable::PreRun(WorkerPrivate* aWorkerPrivate) {
     return false;
   }
 
-  MOZ_ASSERT(mLoadInfosAlreadyExecuted.Length() == 0);
   MOZ_ASSERT(!mScriptLoader.mRv.Failed());
 
   
@@ -2108,15 +2102,7 @@ bool ScriptExecutorRunnable::WorkerRun(JSContext* aCx,
   aWorkerPrivate->AssertIsOnWorkerThread();
 
   
-  if (std::any_of(
-          mLoadInfosAlreadyExecuted.cbegin(), mLoadInfosAlreadyExecuted.cend(),
-          [](const ScriptLoadInfo& loadInfo) {
-            NS_ASSERTION(!loadInfo.mChannel,
-                         "Should no longer have a channel!");
-            NS_ASSERTION(loadInfo.mExecutionScheduled, "Should be scheduled!");
-
-            return !loadInfo.mExecutionResult;
-          })) {
+  if (mScriptLoader.mExecutionFailed) {
     return true;
   }
 
@@ -2138,6 +2124,7 @@ bool ScriptExecutorRunnable::WorkerRun(JSContext* aCx,
     if (NS_FAILED(loadInfo.mLoadResult)) {
       workerinternals::ReportLoadError(mScriptLoader.mRv, loadInfo.mLoadResult,
                                        loadInfo.mURL);
+      mScriptLoader.mExecutionFailed = true;
       return true;
     }
 
@@ -2181,6 +2168,7 @@ bool ScriptExecutorRunnable::WorkerRun(JSContext* aCx,
     MOZ_ASSERT(loadInfo.ScriptTextIsNull());
     if (!successfullyEvaluated) {
       mScriptLoader.mRv.StealExceptionFromJSContext(aCx);
+      mScriptLoader.mExecutionFailed = true;
       return true;
     }
 
@@ -2299,8 +2287,7 @@ void ScriptExecutorRunnable::LogExceptionToConsole(
 }
 
 bool ScriptExecutorRunnable::AllScriptsExecutable() const {
-  return mScriptLoader.mLoadInfos.Length() ==
-         mLoadInfosAlreadyExecuted.Length() + mLoadInfosToExecute.Length();
+  return mAllScriptsExecutable;
 }
 
 void LoadAllScripts(WorkerPrivate* aWorkerPrivate,
