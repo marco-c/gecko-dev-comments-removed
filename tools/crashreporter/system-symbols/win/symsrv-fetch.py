@@ -149,7 +149,8 @@ async def fetch_missing_symbols(u):
     async with ClientSession() as client:
         async with client.get(u, headers=HEADERS) as resp:
             
-            data = await resp.text()
+            data = await resp.text("UTF-8")
+            
             return data.splitlines()[1:]
 
 
