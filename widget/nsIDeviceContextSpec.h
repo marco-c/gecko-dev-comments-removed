@@ -70,14 +70,14 @@ class nsIDeviceContextSpec : public nsISupports {
 
 
 
-  virtual float GetPrintingScale() { return 72.0f / GetDPI(); }
+  virtual float GetPrintingScale();
 
   
 
 
 
 
-  virtual gfxPoint GetPrintingTranslate() { return gfxPoint(0, 0); }
+  virtual gfxPoint GetPrintingTranslate();
 
   NS_IMETHOD BeginDocument(const nsAString& aTitle,
                            const nsAString& aPrintToFileName,
