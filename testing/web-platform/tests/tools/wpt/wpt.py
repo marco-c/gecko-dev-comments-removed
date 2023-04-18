@@ -117,11 +117,17 @@ def create_complete_parser():
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers()
 
+    
+    
+    
+    venv_path = os.environ["VIRTUAL_ENV"]
+    venv = virtualenv.Virtualenv(venv_path, True)
+
     for command in commands:
         props = commands[command]
 
-        if props["virtualenv"]:
-            setup_virtualenv(None, False, props)
+        for path in props.get("requirements", []):
+            venv.install_requirements(path)
 
         subparser = import_command('wpt', command, props)[1]
         if not subparser:
