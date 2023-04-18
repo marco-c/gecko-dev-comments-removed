@@ -41,6 +41,14 @@ extern bool LooselyEqual(JSContext* cx, JS::Handle<JS::Value> lval,
 extern bool SameValue(JSContext* cx, JS::Handle<JS::Value> v1,
                       JS::Handle<JS::Value> v2, bool* same);
 
+#ifdef ENABLE_RECORD_TUPLE
+
+
+
+
+extern bool SameValueZeroLinear(const JS::Value& lval, const JS::Value& rval);
+#endif
+
 
 
 
