@@ -3442,8 +3442,7 @@ void nsIFrame::BuildDisplayListForStackingContext(
     
     
     
-    if ((aBuilder->ContainsBlendMode()) &&
-        aBuilder->IsRetainingDisplayList()) {
+    if ((aBuilder->ContainsBlendMode()) && aBuilder->IsRetainingDisplayList()) {
       if (aBuilder->IsPartialUpdate()) {
         aBuilder->SetPartialBuildFailed(true);
       } else {

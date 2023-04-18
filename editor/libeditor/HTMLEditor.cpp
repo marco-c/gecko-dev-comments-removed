@@ -197,8 +197,7 @@ HTMLEditor::HTMLEditor()
       mDefaultParagraphSeparator(
           StaticPrefs::editor_use_div_for_default_newlines()
               ? ParagraphSeparator::div
-              : ParagraphSeparator::br) {
-}
+              : ParagraphSeparator::br) {}
 
 HTMLEditor::~HTMLEditor() {
   
