@@ -205,6 +205,10 @@ add_task(async function navigate_around() {
     "network.loadinfo.skip_type_assertion": {
       
     },
+    "extensions.screenshots.disabled": {
+      min: 50,
+      max: 51,
+    },
   };
 
   if (AppConstants.NIGHTLY_BUILD) {
