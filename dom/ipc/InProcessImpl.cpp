@@ -266,13 +266,13 @@ static IProtocol* GetOtherInProcessActor(IProtocol* aActor) {
 
   
   IProtocol* current = aActor;
-  while (current) {
+  while (current && current->CanRecv()) {
     if (current->GetProtocolId() == PInProcessMsgStart) {
       break;  
     }
     current = current->Manager();
   }
-  if (!current) {
+  if (!current || !current->CanRecv()) {
     return nullptr;  
   }
 
