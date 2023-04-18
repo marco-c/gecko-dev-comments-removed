@@ -2044,25 +2044,84 @@ JS::ArrayBuffer JS::ArrayBuffer::unwrap(JSObject* maybeWrapped) {
   return fromObject(ab);
 }
 
-void JS::ArrayBufferCopyData(JSContext* cx, Handle<JSObject*> toBlock,
+bool JS::ArrayBufferCopyData(JSContext* cx, Handle<JSObject*> toBlock,
                              size_t toIndex, Handle<JSObject*> fromBlock,
                              size_t fromIndex, size_t count) {
-  MOZ_ASSERT(toBlock->is<ArrayBufferObjectMaybeShared>());
-  MOZ_ASSERT(fromBlock->is<ArrayBufferObjectMaybeShared>());
+  Rooted<ArrayBufferObjectMaybeShared*> unwrappedToBlock(
+      cx, toBlock->maybeUnwrapIf<ArrayBufferObjectMaybeShared>());
+  if (!unwrappedToBlock) {
+    ReportAccessDenied(cx);
+    return false;
+  }
+
+  Rooted<ArrayBufferObjectMaybeShared*> unwrappedFromBlock(
+      cx, fromBlock->maybeUnwrapIf<ArrayBufferObjectMaybeShared>());
+  if (!unwrappedFromBlock) {
+    ReportAccessDenied(cx);
+    return false;
+  }
 
   
-  if (toBlock->is<ArrayBufferObject>() && fromBlock->is<ArrayBufferObject>()) {
-    Rooted<ArrayBufferObject*> toArray(cx, &toBlock->as<ArrayBufferObject>());
-    Rooted<ArrayBufferObject*> fromArray(cx,
-                                         &fromBlock->as<ArrayBufferObject>());
+  if (toIndex + count < toIndex ||      
+      fromIndex + count < fromIndex ||  
+      toIndex + count > unwrappedToBlock->byteLength() ||
+      fromIndex + count > unwrappedFromBlock->byteLength()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_ARRAYBUFFER_COPY_RANGE);
+    return false;
+  }
+
+  
+  if (unwrappedToBlock->is<ArrayBufferObject>() &&
+      unwrappedFromBlock->is<ArrayBufferObject>()) {
+    Rooted<ArrayBufferObject*> toArray(
+        cx, &unwrappedToBlock->as<ArrayBufferObject>());
+    Rooted<ArrayBufferObject*> fromArray(
+        cx, &unwrappedFromBlock->as<ArrayBufferObject>());
     ArrayBufferObject::copyData(toArray, toIndex, fromArray, fromIndex, count);
-    return;
+    return true;
   }
 
   Rooted<ArrayBufferObjectMaybeShared*> toArray(
-      cx, &toBlock->as<ArrayBufferObjectMaybeShared>());
+      cx, &unwrappedToBlock->as<ArrayBufferObjectMaybeShared>());
   Rooted<ArrayBufferObjectMaybeShared*> fromArray(
-      cx, &toBlock->as<ArrayBufferObjectMaybeShared>());
+      cx, &unwrappedFromBlock->as<ArrayBufferObjectMaybeShared>());
   SharedArrayBufferObject::copyData(toArray, toIndex, fromArray, fromIndex,
                                     count);
+
+  return true;
+}
+
+
+
+
+JSObject* JS::ArrayBufferClone(JSContext* cx, Handle<JSObject*> srcBuffer,
+                               size_t srcByteOffset, size_t srcLength) {
+  MOZ_ASSERT(srcBuffer->is<ArrayBufferObjectMaybeShared>());
+
+  
+  
+  if (IsDetachedArrayBufferObject(srcBuffer)) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_TYPED_ARRAY_DETACHED);
+    return nullptr;
+  }
+
+  
+  JS::RootedObject targetBuffer(cx, JS::NewArrayBuffer(cx, srcLength));
+  if (!targetBuffer) {
+    return nullptr;
+  }
+
+  
+  
+  
+  
+  if (!ArrayBufferCopyData(cx, targetBuffer, 0, srcBuffer, srcByteOffset,
+                           srcLength)) {
+    return nullptr;
+  }
+
+  
+  return targetBuffer;
 }

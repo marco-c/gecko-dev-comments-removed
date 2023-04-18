@@ -273,11 +273,27 @@ extern JS_PUBLIC_API void SetLargeArrayBuffersEnabled(bool enable);
 
 
 
-extern JS_PUBLIC_API void ArrayBufferCopyData(JSContext* cx,
-                                              Handle<JSObject*> toBlock,
-                                              size_t toIndex,
-                                              Handle<JSObject*> fromBlock,
-                                              size_t fromIndex, size_t count);
+
+
+
+[[nodiscard]] extern JS_PUBLIC_API bool ArrayBufferCopyData(
+    JSContext* cx, Handle<JSObject*> toBlock, size_t toIndex,
+    Handle<JSObject*> fromBlock, size_t fromIndex, size_t count);
+
+
+
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API JSObject* ArrayBufferClone(JSContext* cx,
+                                                Handle<JSObject*> srcBuffer,
+                                                size_t srcByteOffset,
+                                                size_t srcLength);
 
 }  
 
