@@ -203,7 +203,11 @@ class WebDriverSession {
 
     
     this._connections.forEach(connection => connection.close());
-    this._connections.clear();
+    if (this._connections.size > 0) {
+      logger.warn(
+        `Failed to close ${this._connections.size} WebSocket connections`
+      );
+    }
 
     
     if (this._messageHandler) {
@@ -275,6 +279,19 @@ class WebDriverSession {
 
   get unhandledPromptBehavior() {
     return this.capabilities.get("unhandledPromptBehavior");
+  }
+
+  
+
+
+
+
+  removeConnection(connection) {
+    if (this._connections.has(connection)) {
+      this._connections.delete(connection);
+    } else {
+      logger.warn("Trying to remove a connection that doesn't exist.");
+    }
   }
 
   toString() {

@@ -45,11 +45,26 @@ class WebDriverBiDiConnection extends WebSocketConnection {
 
   registerSession(session) {
     if (this.session) {
-      throw new error.UnknownError("A session has already been set");
+      throw new error.UnknownError("A WebDriver session has already been set");
     }
 
     this.session = session;
     logger.debug(`Connection ${this.id} attached to session ${session.id}`);
+  }
+
+  
+
+
+
+
+
+  unregisterSession() {
+    if (!this.session) {
+      return;
+    }
+
+    this.session.removeConnection(this);
+    this.session = null;
   }
 
   
@@ -117,6 +132,8 @@ class WebDriverBiDiConnection extends WebSocketConnection {
 
 
   onClosed() {
+    this.unregisterSession();
+
     super.onClosed();
   }
 
