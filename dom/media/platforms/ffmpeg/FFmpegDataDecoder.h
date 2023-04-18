@@ -52,17 +52,19 @@ class FFmpegDataDecoder<LIBAV_VER>
   MediaResult DoDecode(MediaRawData* aSample, bool* aGotFrame,
                        DecodedData& aOutResults);
 
-  FFmpegLibWrapper* mLib;
+  FFmpegLibWrapper* mLib;  
 
+  
   AVCodecContext* mCodecContext;
   AVCodecParserContext* mCodecParser;
   AVFrame* mFrame;
   RefPtr<MediaByteBuffer> mExtraData;
-  AVCodecID mCodecID;
+  AVCodecID mCodecID;  
 
  protected:
-  static StaticMutex sMonitor;
-  const RefPtr<TaskQueue> mTaskQueue;
+  static StaticMutex sMutex;  
+                              
+  const RefPtr<TaskQueue> mTaskQueue;  
 
  private:
   RefPtr<DecodePromise> ProcessDecode(MediaRawData* aSample);
@@ -74,7 +76,7 @@ class FFmpegDataDecoder<LIBAV_VER>
   virtual int ParserFlags() const { return PARSER_FLAG_COMPLETE_FRAMES; }
 
   MozPromiseHolder<DecodePromise> mPromise;
-  media::TimeUnit mLastInputDts;
+  media::TimeUnit mLastInputDts;  
 };
 
 }  
