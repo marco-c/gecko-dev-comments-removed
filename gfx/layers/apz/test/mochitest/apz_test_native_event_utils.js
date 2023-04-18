@@ -912,13 +912,13 @@ async function synthesizeNativePointerSequences(
   return true;
 }
 
-async function synthesizeNativeTouchSequences(
+function synthesizeNativeTouchSequences(
   aTarget,
   aPositions,
   aObserver = null,
   aTouchIds = [0]
 ) {
-  await synthesizeNativePointerSequences(
+  synthesizeNativePointerSequences(
     aTarget,
     "touch",
     aPositions,
@@ -927,7 +927,7 @@ async function synthesizeNativeTouchSequences(
   );
 }
 
-async function synthesizeNativePointerDrag(
+function synthesizeNativePointerDrag(
   aTarget,
   aPointerType,
   aX,
@@ -960,7 +960,7 @@ async function synthesizeNativePointerDrag(
 
 
 
-async function synthesizeNativeTouchDrag(
+function synthesizeNativeTouchDrag(
   aTarget,
   aX,
   aY,
@@ -1396,7 +1396,7 @@ async function promiseNativeMouseDrag(
 
 
 
-async function pinchZoomInTouchSequence(focusX, focusY) {
+function pinchZoomInTouchSequence(focusX, focusY) {
   
   var zoom_in = [
       [ { x: focusX - 25, y: focusY - 50 }, { x: focusX + 25, y: focusY + 50 } ],
@@ -1464,7 +1464,7 @@ async function pinchZoomInWithTouch(focusX, focusY) {
   let transformEndPromise = promiseTopic("APZ:TransformEnd");
 
   
-  await pinchZoomInTouchSequence(focusX, focusY);
+  pinchZoomInTouchSequence(focusX, focusY);
 
   
   await transformEndPromise;
@@ -1579,12 +1579,7 @@ async function synthesizeNativeTouchAndWaitForTransformEnd(
   let transformEndPromise = promiseTopic("APZ:TransformEnd");
 
   
-  await synthesizeNativeTouchSequences(
-    document.body,
-    touchSequence,
-    null,
-    touchIds
-  );
+  synthesizeNativeTouchSequences(document.body, touchSequence, null, touchIds);
 
   
   await transformEndPromise;
@@ -1631,19 +1626,19 @@ async function pinchZoomOutWithTouchAtCenter() {
 }
 
 
-async function synthesizeDoubleTap(element, x, y, useTouchpad) {
+function synthesizeDoubleTap(element, x, y, useTouchpad) {
   if (useTouchpad) {
-    await synthesizeNativeTouchpadDoubleTap(element, x, y);
+    synthesizeNativeTouchpadDoubleTap(element, x, y);
   } else {
-    await synthesizeNativeTap(element, x, y);
-    await synthesizeNativeTap(element, x, y);
+    synthesizeNativeTap(element, x, y);
+    synthesizeNativeTap(element, x, y);
   }
 }
 
 async function doubleTapOn(element, x, y, useTouchpad) {
   let transformEndPromise = promiseTransformEnd();
 
-  await synthesizeDoubleTap(element, x, y, useTouchpad);
+  synthesizeDoubleTap(element, x, y, useTouchpad);
 
   
   await transformEndPromise;
