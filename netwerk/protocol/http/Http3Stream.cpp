@@ -76,7 +76,8 @@ void Http3Stream::FindRequestContentLength() {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   
   
-  int32_t contentLengthStart = mFlatHttpRequestHeaders.Find("Content-Length:");
+  int32_t contentLengthStart =
+      mFlatHttpRequestHeaders.Find("content-length:",  true);
   if (contentLengthStart == -1) {
     
     return;
