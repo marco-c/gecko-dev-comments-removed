@@ -1,14 +1,31 @@
 
 
 
+
+import HomeOverlay from "./home/overlay.js";
+import SignupOverlay from "./signup/overlay.js";
+import SavedOverlay from "./saved/overlay.js";
+import pktPanelMessaging from "./messages.js";
+
 var PKT_PANEL = function() {};
 
 PKT_PANEL.prototype = {
-  init() {
-    if (this.inited) {
-      return;
-    }
-    this.overlay = new PKT_PANEL_OVERLAY();
+  initHome() {
+    this.overlay = new HomeOverlay();
+    this.init();
+  },
+
+  initSignup() {
+    this.overlay = new SignupOverlay();
+    this.init();
+  },
+
+  initSaved() {
+    this.overlay = new SavedOverlay();
+    this.init();
+  },
+
+  setupObservers() {
     this.setupMutationObserver();
     
     
@@ -17,7 +34,13 @@ PKT_PANEL.prototype = {
     
     
     this.setupIntersectionObserver();
+  },
 
+  init() {
+    if (this.inited) {
+      return;
+    }
+    this.setupObservers();
     this.inited = true;
   },
 
@@ -36,21 +59,6 @@ PKT_PANEL.prototype = {
         height: clientHeight,
       });
     }
-  },
-
-  
-  
-  clickHelper(element, { source = "", position }) {
-    element?.addEventListener(`click`, event => {
-      event.preventDefault();
-
-      pktPanelMessaging.sendMessage("PKT_openTabWithUrl", {
-        url: event.currentTarget.getAttribute(`href`),
-        activate: true,
-        source,
-        position,
-      });
-    });
   },
 
   setupIntersectionObserver() {
@@ -97,18 +105,5 @@ PKT_PANEL.prototype = {
   },
 };
 
-function onDOMLoaded() {
-  if (!window.thePKT_PANEL) {
-    var thePKT_PANEL = new PKT_PANEL();
-    
-    window.thePKT_PANEL = thePKT_PANEL;
-    thePKT_PANEL.init();
-  }
-  window.thePKT_PANEL.create();
-}
-
-if (document.readyState != `loading`) {
-  onDOMLoaded();
-} else {
-  document.addEventListener(`DOMContentLoaded`, onDOMLoaded);
-}
+window.PKT_PANEL = PKT_PANEL;
+window.pktPanelMessaging = pktPanelMessaging;
