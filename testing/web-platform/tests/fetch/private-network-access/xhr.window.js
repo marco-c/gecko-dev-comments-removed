@@ -14,31 +14,31 @@ setup(() => {
   assert_false(window.isSecureContext);
 });
 
-promise_test(t => fetchTest(t, {
+promise_test(t => xhrTest(t, {
   source: { server: Server.HTTP_LOCAL },
   target: { server: Server.HTTP_LOCAL },
-  expected: FetchTestResult.SUCCESS,
+  expected: XhrTestResult.SUCCESS,
 }), "local to local: no preflight required.");
 
-promise_test(t => fetchTest(t, {
+promise_test(t => xhrTest(t, {
   source: { server: Server.HTTP_LOCAL },
   target: {
     server: Server.HTTP_PRIVATE,
     behavior: { response: ResponseBehavior.allowCrossOrigin() },
   },
-  expected: FetchTestResult.SUCCESS,
+  expected: XhrTestResult.SUCCESS,
 }), "local to private: no preflight required.");
 
-promise_test(t => fetchTest(t, {
+promise_test(t => xhrTest(t, {
   source: { server: Server.HTTP_LOCAL },
   target: {
     server: Server.HTTP_PUBLIC,
     behavior: { response: ResponseBehavior.allowCrossOrigin() },
   },
-  expected: FetchTestResult.SUCCESS,
+  expected: XhrTestResult.SUCCESS,
 }), "local to public: no preflight required.");
 
-promise_test(t => fetchTest(t, {
+promise_test(t => xhrTest(t, {
   source: { server: Server.HTTP_PRIVATE },
   target: {
     server: Server.HTTP_LOCAL,
@@ -47,25 +47,25 @@ promise_test(t => fetchTest(t, {
       response: ResponseBehavior.allowCrossOrigin(),
     },
   },
-  expected: FetchTestResult.FAILURE,
+  expected: XhrTestResult.FAILURE,
 }), "private to local: failure.");
 
-promise_test(t => fetchTest(t, {
+promise_test(t => xhrTest(t, {
   source: { server: Server.HTTP_PRIVATE },
   target: { server: Server.HTTP_PRIVATE },
-  expected: FetchTestResult.SUCCESS,
+  expected: XhrTestResult.SUCCESS,
 }), "private to private: no preflight required.");
 
-promise_test(t => fetchTest(t, {
+promise_test(t => xhrTest(t, {
   source: { server: Server.HTTP_PRIVATE },
   target: {
     server: Server.HTTP_PUBLIC,
     behavior: { response: ResponseBehavior.allowCrossOrigin() },
   },
-  expected: FetchTestResult.SUCCESS,
+  expected: XhrTestResult.SUCCESS,
 }), "private to public: no preflight required.");
 
-promise_test(t => fetchTest(t, {
+promise_test(t => xhrTest(t, {
   source: { server: Server.HTTP_PUBLIC },
   target: {
     server: Server.HTTP_LOCAL,
@@ -74,10 +74,10 @@ promise_test(t => fetchTest(t, {
       response: ResponseBehavior.allowCrossOrigin(),
     },
   },
-  expected: FetchTestResult.FAILURE,
+  expected: XhrTestResult.FAILURE,
 }), "public to local: failure.");
 
-promise_test(t => fetchTest(t, {
+promise_test(t => xhrTest(t, {
   source: { server: Server.HTTP_PUBLIC },
   target: {
     server: Server.HTTP_PRIVATE,
@@ -86,20 +86,20 @@ promise_test(t => fetchTest(t, {
       response: ResponseBehavior.allowCrossOrigin(),
     },
   },
-  expected: FetchTestResult.FAILURE,
+  expected: XhrTestResult.FAILURE,
 }), "public to private: failure.");
 
-promise_test(t => fetchTest(t, {
+promise_test(t => xhrTest(t, {
   source: { server: Server.HTTP_PUBLIC },
   target: { server: Server.HTTP_PUBLIC },
-  expected: FetchTestResult.SUCCESS,
+  expected: XhrTestResult.SUCCESS,
 }), "public to public: no preflight required.");
 
 
 
 
 
-promise_test(t => fetchTest(t, {
+promise_test(t => xhrTest(t, {
   source: {
     server: Server.HTTP_LOCAL,
     treatAsPublic: true,
@@ -111,10 +111,10 @@ promise_test(t => fetchTest(t, {
       response: ResponseBehavior.allowCrossOrigin(),
     },
   },
-  expected: FetchTestResult.FAILURE,
+  expected: XhrTestResult.FAILURE,
 }), "treat-as-public-address to local: failure.");
 
-promise_test(t => fetchTest(t, {
+promise_test(t => xhrTest(t, {
   source: {
     server: Server.HTTP_LOCAL,
     treatAsPublic: true,
@@ -126,10 +126,10 @@ promise_test(t => fetchTest(t, {
       response: ResponseBehavior.allowCrossOrigin(),
     },
   },
-  expected: FetchTestResult.FAILURE,
+  expected: XhrTestResult.FAILURE,
 }), "treat-as-public-address to private: failure.");
 
-promise_test(t => fetchTest(t, {
+promise_test(t => xhrTest(t, {
   source: {
     server: Server.HTTP_LOCAL,
     treatAsPublic: true,
@@ -138,7 +138,7 @@ promise_test(t => fetchTest(t, {
     server: Server.HTTP_PUBLIC,
     behavior: { response: ResponseBehavior.allowCrossOrigin() },
   },
-  expected: FetchTestResult.SUCCESS,
+  expected: XhrTestResult.SUCCESS,
 }), "treat-as-public-address to public: no preflight required.");
 
 
@@ -146,7 +146,7 @@ promise_test(t => fetchTest(t, {
 
 
 
-promise_test(t => fetchTest(t, {
+promise_test(t => xhrTest(t, {
   source: { server: Server.HTTPS_PRIVATE },
   target: {
     server: Server.HTTPS_LOCAL,
@@ -155,10 +155,10 @@ promise_test(t => fetchTest(t, {
       response: ResponseBehavior.allowCrossOrigin(),
     },
   },
-  expected: FetchTestResult.FAILURE,
+  expected: XhrTestResult.FAILURE,
 }), "private https to local: failure.");
 
-promise_test(t => fetchTest(t, {
+promise_test(t => xhrTest(t, {
   source: { server: Server.HTTPS_PUBLIC },
   target: {
     server: Server.HTTPS_LOCAL,
@@ -167,10 +167,10 @@ promise_test(t => fetchTest(t, {
       response: ResponseBehavior.allowCrossOrigin(),
     },
   },
-  expected: FetchTestResult.FAILURE,
+  expected: XhrTestResult.FAILURE,
 }), "public https to local: failure.");
 
-promise_test(t => fetchTest(t, {
+promise_test(t => xhrTest(t, {
   source: { server: Server.HTTPS_PUBLIC },
   target: {
     server: Server.HTTPS_PRIVATE,
@@ -179,5 +179,5 @@ promise_test(t => fetchTest(t, {
       response: ResponseBehavior.allowCrossOrigin(),
     },
   },
-  expected: FetchTestResult.FAILURE,
+  expected: XhrTestResult.FAILURE,
 }), "public https to private: failure.");
