@@ -4,7 +4,7 @@
 
 
 
-pub use crate::prim_store::backdrop::Backdrop;
+pub use crate::prim_store::backdrop::{BackdropCapture, BackdropRender};
 pub use crate::prim_store::borders::{ImageBorder, NormalBorderPrim};
 pub use crate::prim_store::image::{Image, YuvImage};
 pub use crate::prim_store::line_dec::{LineDecoration};
