@@ -26,6 +26,11 @@ class nsHtml5TreeOpStage : public nsAHtml5TreeOpSink {
   
 
 
+  void MoveOpsTo(nsTArray<nsHtml5TreeOperation>& aOpQueue);
+
+  
+
+
   void MoveOpsAndSpeculativeLoadsTo(
       nsTArray<nsHtml5TreeOperation>& aOpQueue,
       nsTArray<nsHtml5SpeculativeLoad>& aSpeculativeLoadQueue);

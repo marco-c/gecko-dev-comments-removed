@@ -261,12 +261,9 @@ class nsHtml5SpeculativeLoad {
 
 
 
-
-
-
-
   inline void InitSetDocumentCharset(NotNull<const Encoding*> aEncoding,
-                                     int32_t aCharsetSource) {
+                                     int32_t aCharsetSource,
+                                     bool aCommitEncodingSpeculation) {
     MOZ_ASSERT(mOpCode == eSpeculativeLoadUninitialized,
                "Trying to reinitialize a speculative load!");
     mOpCode = eSpeculativeLoadSetDocumentCharset;
@@ -274,6 +271,7 @@ class nsHtml5SpeculativeLoad {
     mEncoding = aEncoding;
     mTypeOrCharsetSourceOrDocumentModeOrMetaCSPOrSizesOrIntegrity.Assign(
         (char16_t)aCharsetSource);
+    mCommitEncodingSpeculation = aCommitEncodingSpeculation;
   }
 
   inline void InitMaybeComplainAboutCharset(const char* aMsgId, bool aError,
@@ -345,6 +343,12 @@ class nsHtml5SpeculativeLoad {
 
 
   bool mIsError;
+
+  
+
+
+
+  bool mCommitEncodingSpeculation;
 
   
 

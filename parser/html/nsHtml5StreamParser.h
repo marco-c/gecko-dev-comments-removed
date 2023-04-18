@@ -219,9 +219,16 @@ class nsHtml5StreamParser final : public nsISupports {
 
   void RememberGt(int32_t aPos);
 
-  void PostEncodingCommitter();
+  
 
   
+
+
+
+
+
+
+  void PostLoadFlusher();
 
   
 

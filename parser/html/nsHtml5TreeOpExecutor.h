@@ -22,6 +22,7 @@
 #include "nsHashKeys.h"
 #include "mozilla/LinkedList.h"
 #include "nsHtml5DocumentBuilder.h"
+#include "nsCharsetSource.h"
 
 class nsHtml5Parser;
 class nsHtml5StreamParser;
@@ -59,21 +60,6 @@ class nsHtml5TreeOpExecutor final
 
 
   bool mSuppressEOF;
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  bool mPendingEncodingCommitment;
 
   bool mReadingFromStage;
   nsTArray<nsHtml5TreeOperation> mOpQueue;
@@ -194,15 +180,20 @@ class nsHtml5TreeOpExecutor final
 
   void RunFlushLoop();
 
-  void RunFlushLoopOrCommitToInternalEncoding();
-
   nsresult FlushDocumentWrite();
 
   void CommitToInternalEncoding();
 
+  void TakeOpsFromStage();
+
   void MaybeSuspend();
 
   void Start();
+
+  void SetDocumentCharsetAndSource(NotNull<const Encoding*> aEncoding,
+                                   nsCharsetSource aCharsetSource);
+
+  void UpdateCharsetSource(nsCharsetSource aCharsetSource);
 
   void NeedsCharsetSwitchTo(NotNull<const Encoding*> aEncoding, int32_t aSource,
                             uint32_t aLineNumber);

@@ -49,6 +49,11 @@ class nsHtml5Highlighter {
   
 
 
+  void UpdateCharsetSource(nsCharsetSource aCharsetSource);
+
+  
+
+
 
 
 

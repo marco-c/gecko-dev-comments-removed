@@ -142,8 +142,11 @@ void nsHtml5Highlighter::Start(const nsAutoString& aTitle) {
   
 
   mOpQueue.AppendElement()->Init(mozilla::AsVariant(opStartLayout()));
+}
 
-  FlushOps();
+void nsHtml5Highlighter::UpdateCharsetSource(nsCharsetSource aCharsetSource) {
+  opUpdateCharsetSource operation(aCharsetSource);
+  mOpQueue.AppendElement()->Init(mozilla::AsVariant(operation));
 }
 
 int32_t nsHtml5Highlighter::Transition(int32_t aState, bool aReconsume,

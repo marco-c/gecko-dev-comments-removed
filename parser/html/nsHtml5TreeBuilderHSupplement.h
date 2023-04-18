@@ -25,6 +25,15 @@ nsHtml5TreeOpStage* mSpeculativeLoadStage;
 nsresult mBroken;
 bool mCurrentHtmlScriptIsAsyncOrDefer;
 bool mPreventScriptExecution;
+
+
+
+
+
+
+
+
+bool mGenerateSpeculativeLoads;
 #ifdef DEBUG
 bool mActive;
 #endif
@@ -84,7 +93,8 @@ void MarkAsBrokenFromPortability(nsresult aRv);
 public:
 explicit nsHtml5TreeBuilder(nsHtml5OplessBuilder* aBuilder);
 
-nsHtml5TreeBuilder(nsAHtml5TreeOpSink* aOpSink, nsHtml5TreeOpStage* aStage);
+nsHtml5TreeBuilder(nsAHtml5TreeOpSink* aOpSink, nsHtml5TreeOpStage* aStage,
+                   bool aGenerateSpeculativeLoads);
 
 ~nsHtml5TreeBuilder();
 
@@ -104,8 +114,21 @@ bool Flush(bool aDiscretionary = false);
 
 void FlushLoads();
 
+
+
+
+
+
+
+
 void SetDocumentCharset(NotNull<const Encoding*> aEncoding,
-                        int32_t aCharsetSource);
+                        nsCharsetSource aCharsetSource,
+                        bool aCommitEncodingSpeculation);
+
+
+
+
+void UpdateCharsetSource(nsCharsetSource aCharsetSource);
 
 void StreamEnded();
 

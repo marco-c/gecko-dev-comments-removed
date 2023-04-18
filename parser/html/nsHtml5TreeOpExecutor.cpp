@@ -118,7 +118,6 @@ StaticRefPtr<IdleTaskRunner> gBackgroundFlushRunner;
 nsHtml5TreeOpExecutor::nsHtml5TreeOpExecutor()
     : nsHtml5DocumentBuilder(false),
       mSuppressEOF(false),
-      mPendingEncodingCommitment(false),
       mReadingFromStage(false),
       mStreamParser(nullptr),
       mPreloadedURLs(23),  
@@ -433,7 +432,7 @@ nsresult nsHtml5TreeOpExecutor::MarkAsBroken(nsresult aReason) {
 static bool BackgroundFlushCallback(TimeStamp ) {
   RefPtr<nsHtml5TreeOpExecutor> ex = gBackgroundFlushList->popFirst();
   if (ex) {
-    ex->RunFlushLoopOrCommitToInternalEncoding();
+    ex->RunFlushLoop();
   }
   if (gBackgroundFlushList && gBackgroundFlushList->isEmpty()) {
     delete gBackgroundFlushList;
@@ -447,22 +446,10 @@ static bool BackgroundFlushCallback(TimeStamp ) {
 
 void nsHtml5TreeOpExecutor::ContinueInterruptedParsingAsync() {
   if (mDocument && !mDocument->IsInBackgroundWindow()) {
-    if (mPendingEncodingCommitment) {
-      
-      
-      
-      
-      
-      
-      if (mStreamParser) {
-        mStreamParser->PostEncodingCommitter();
-      }
-    } else {
-      nsCOMPtr<nsIRunnable> flusher = new nsHtml5ExecutorReflusher(this);
-      if (NS_FAILED(
-              mDocument->Dispatch(TaskCategory::Network, flusher.forget()))) {
-        NS_WARNING("failed to dispatch executor flush event");
-      }
+    nsCOMPtr<nsIRunnable> flusher = new nsHtml5ExecutorReflusher(this);
+    if (NS_FAILED(
+            mDocument->Dispatch(TaskCategory::Network, flusher.forget()))) {
+      NS_WARNING("failed to dispatch executor flush event");
     }
   } else {
     if (!gBackgroundFlushList) {
@@ -813,44 +800,17 @@ nsresult nsHtml5TreeOpExecutor::FlushDocumentWrite() {
   return rv;
 }
 
-void nsHtml5TreeOpExecutor::RunFlushLoopOrCommitToInternalEncoding() {
-  if (mPendingEncodingCommitment) {
-    CommitToInternalEncoding();
-  } else {
-    RunFlushLoop();
-  }
-}
-
 void nsHtml5TreeOpExecutor::CommitToInternalEncoding() {
   if (MOZ_UNLIKELY(!mParser || !mStreamParser)) {
     
     ClearOpQueue();  
     return;
   }
-  mPendingEncodingCommitment = false;
-  RunFlushLoop();
-  if (MOZ_UNLIKELY(!mParser || !mStreamParser)) {
-    
-    ClearOpQueue();  
-    return;
-  }
-  
-  
-  
-  
-  if (!mParser->IsParserEnabled()) {
-    mPendingEncodingCommitment = true;
-    return;
-  }
-  if (!mOpQueue.IsEmpty()) {
-    mStreamParser->PostEncodingCommitter();
-    mPendingEncodingCommitment = true;
-    return;
-  }
   mStreamParser->ContinueAfterScriptsOrEncodingCommitment(nullptr, nullptr,
                                                           false);
-  RunFlushLoop();
 }
+
+void nsHtml5TreeOpExecutor::TakeOpsFromStage() { mStage.MoveOpsTo(mOpQueue); }
 
 
 bool nsHtml5TreeOpExecutor::IsScriptEnabled() {
@@ -957,6 +917,21 @@ void nsHtml5TreeOpExecutor::RunScript(nsIContent* aScriptElement) {
 void nsHtml5TreeOpExecutor::Start() {
   MOZ_ASSERT(!mStarted, "Tried to start when already started.");
   mStarted = true;
+}
+
+void nsHtml5TreeOpExecutor::UpdateCharsetSource(
+    nsCharsetSource aCharsetSource) {
+  if (mDocument) {
+    mDocument->SetDocumentCharacterSetSource(aCharsetSource);
+  }
+}
+
+void nsHtml5TreeOpExecutor::SetDocumentCharsetAndSource(
+    NotNull<const Encoding*> aEncoding, nsCharsetSource aCharsetSource) {
+  if (mDocument) {
+    mDocument->SetDocumentCharacterSetSource(aCharsetSource);
+    mDocument->SetDocumentCharacterSet(aEncoding);
+  }
 }
 
 void nsHtml5TreeOpExecutor::NeedsCharsetSwitchTo(
