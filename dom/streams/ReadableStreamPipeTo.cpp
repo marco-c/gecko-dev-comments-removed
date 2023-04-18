@@ -27,9 +27,6 @@ class WriteFinishedPromiseHandler;
 class ShutdownActionFinishedPromiseHandler;
 
 
-using ::ImplCycleCollectionUnlink;
-
-
 
 
 
