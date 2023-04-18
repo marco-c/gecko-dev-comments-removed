@@ -12,7 +12,12 @@ const { XPCOMUtils } = ChromeUtils.import(
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   EventEmitter: "resource://gre/modules/EventEmitter.jsm",
-  Services: "resource://gre/modules/Services.jsm",
+});
+
+XPCOMUtils.defineLazyGetter(this, "ConsoleAPIStorage", () => {
+  return Cc["@mozilla.org/consoleAPI-storage;1"].getService(
+    Ci.nsIConsoleAPIStorage
+  );
 });
 
 
@@ -68,13 +73,13 @@ class ConsoleAPIListener {
       return;
     }
 
-    Services.obs.addObserver(
+    ConsoleAPIStorage.addLogEventListener(
       this.#onConsoleAPIMessage,
-      "console-api-log-event"
+      Cc["@mozilla.org/systemprincipal;1"].createInstance(Ci.nsIPrincipal)
     );
 
-    // Emit cached messages after registering the observer, to make sure we
-    // don't miss any message.
+    
+    
     this.#emitCachedMessages();
 
     this.#listening = true;
@@ -85,18 +90,11 @@ class ConsoleAPIListener {
       return;
     }
 
-    Services.obs.removeObserver(
-      this.#onConsoleAPIMessage,
-      "console-api-log-event"
-    );
+    ConsoleAPIStorage.removeLogEventListener(this.#onConsoleAPIMessage);
     this.#listening = false;
   }
 
   #emitCachedMessages() {
-    const ConsoleAPIStorage = Cc[
-      "@mozilla.org/consoleAPI-storage;1"
-    ].getService(Ci.nsIConsoleAPIStorage);
-
     const cachedMessages = ConsoleAPIStorage.getEvents(this.#innerWindowId);
     for (const message of cachedMessages) {
       this.#onConsoleAPIMessage(message);
@@ -106,8 +104,8 @@ class ConsoleAPIListener {
   #onConsoleAPIMessage = message => {
     const messageObject = message.wrappedJSObject;
 
-    // Bail if this message was already emitted, useful to filter out cached
-    // messages already received by the consumer.
+    
+    
     if (this.#emittedMessages.has(messageObject)) {
       return;
     }
@@ -115,8 +113,8 @@ class ConsoleAPIListener {
     this.#emittedMessages.add(messageObject);
 
     if (messageObject.innerID !== this.#innerWindowId) {
-      // If the message doesn't match the innerWindowId of the current context
-      // ignore it.
+      
+      
       return;
     }
 

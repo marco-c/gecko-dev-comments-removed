@@ -5,7 +5,6 @@
 "use strict";
 
 const { Cc, Ci } = require("chrome");
-const Services = require("Services");
 const ChromeUtils = require("ChromeUtils");
 const {
   CONSOLE_WORKER_IDS,
@@ -75,9 +74,21 @@ class ConsoleAPIListener {
 
 
   init() {
+    const ConsoleAPIStorage = Cc[
+      "@mozilla.org/consoleAPI-storage;1"
+    ].getService(Ci.nsIConsoleAPIStorage);
+
     
     
-    Services.obs.addObserver(this, "console-api-log-event");
+    this.onConsoleAPILogEvent = this.onConsoleAPILogEvent.bind(this);
+    ConsoleAPIStorage.addLogEventListener(
+      this.onConsoleAPILogEvent,
+      
+      
+      
+      
+      Cc["@mozilla.org/systemprincipal;1"].createInstance(Ci.nsIPrincipal)
+    );
   }
 
   
@@ -87,9 +98,7 @@ class ConsoleAPIListener {
 
 
 
-
-
-  observe(message, topic) {
+  onConsoleAPILogEvent(message) {
     if (!this.handler) {
       return;
     }
@@ -233,7 +242,10 @@ class ConsoleAPIListener {
 
 
   destroy() {
-    Services.obs.removeObserver(this, "console-api-log-event");
+    const ConsoleAPIStorage = Cc[
+      "@mozilla.org/consoleAPI-storage;1"
+    ].getService(Ci.nsIConsoleAPIStorage);
+    ConsoleAPIStorage.removeLogEventListener(this.onConsoleAPILogEvent);
     this.window = this.handler = null;
   }
 }

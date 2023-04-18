@@ -584,7 +584,7 @@ function sendConsoleAPIMessage(aConsole, aLevel, aFrame, aArgs, aOptions = {}) {
     Ci.nsIConsoleAPIStorage
   );
   if (ConsoleAPIStorage) {
-    ConsoleAPIStorage.recordEvent("jsm", null, consoleEvent);
+    ConsoleAPIStorage.recordEvent("jsm", consoleEvent);
   }
 }
 

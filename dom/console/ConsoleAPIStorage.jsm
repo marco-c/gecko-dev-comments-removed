@@ -10,6 +10,12 @@ const STORAGE_MAX_EVENTS = 1000;
 
 var _consoleStorage = new Map();
 
+
+
+
+
+var _logEventListeners = [];
+
 const CONSOLEAPISTORAGE_CID = Components.ID(
   "{96cf7855-dfa9-4c6d-8276-f9705b4890f2}"
 );
@@ -104,9 +110,49 @@ ConsoleAPIStorageService.prototype = {
 
 
 
+  addLogEventListener: function CS_addLogEventListener(aListener, aPrincipal) {
+    
+    
+    
+    
+    
+    
+    const clone = !aPrincipal.subsumes(
+      Cc["@mozilla.org/systemprincipal;1"].createInstance(Ci.nsIPrincipal)
+    );
+    _logEventListeners.push({
+      callback: aListener,
+      clone,
+    });
+  },
+
+  
 
 
-  recordEvent: function CS_recordEvent(aId, aOuterId, aEvent) {
+
+
+
+  removeLogEventListener: function CS_removeLogEventListener(aListener) {
+    const index = _logEventListeners.findIndex(l => l.callback === aListener);
+    if (index != -1) {
+      _logEventListeners.splice(index, 1);
+    } else {
+      Cu.reportError(
+        "Attempted to remove a log event listener that does not exist."
+      );
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+  recordEvent: function CS_recordEvent(aId, aEvent) {
     if (!_consoleStorage.has(aId)) {
       _consoleStorage.set(aId, []);
     }
@@ -120,8 +166,13 @@ ConsoleAPIStorageService.prototype = {
       storage.shift();
     }
 
-    Services.obs.notifyObservers(aEvent, "console-api-log-event", aOuterId);
-    Services.obs.notifyObservers(aEvent, "console-storage-cache-event", aId);
+    for (let { callback, clone } of _logEventListeners) {
+      if (clone) {
+        callback(Cu.cloneInto(aEvent, callback));
+      } else {
+        callback(aEvent);
+      }
+    }
   },
 
   

@@ -5,12 +5,21 @@
 "use strict";
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 
 ChromeUtils.defineModuleGetter(
   this,
   "E10SUtils",
   "resource://gre/modules/E10SUtils.jsm"
 );
+
+XPCOMUtils.defineLazyGetter(this, "ConsoleAPIStorage", () => {
+  return Cc["@mozilla.org/consoleAPI-storage;1"].getService(
+    Ci.nsIConsoleAPIStorage
+  );
+});
 
 
 
@@ -34,7 +43,11 @@ const MSG_MGR_CONSOLE_VAR_SIZE = 8;
 const MSG_MGR_CONSOLE_INFO_MAX = 1024;
 
 function ContentProcessForward() {
-  Services.obs.addObserver(this, "console-api-log-event");
+  this.onConsoleAPILogEvent = this.onConsoleAPILogEvent.bind(this);
+  ConsoleAPIStorage.addLogEventListener(
+    this.onConsoleAPILogEvent,
+    Cc["@mozilla.org/systemprincipal;1"].createInstance(Ci.nsIPrincipal)
+  );
   Services.obs.addObserver(this, "xpcom-shutdown");
   Services.cpmm.addMessageListener(
     "DevTools:StopForwardingContentProcessMessage",
@@ -53,81 +66,76 @@ ContentProcessForward.prototype = {
     }
   },
 
-  observe(subject, topic, data) {
-    switch (topic) {
-      case "console-api-log-event": {
-        const consoleMsg = subject.wrappedJSObject;
+  onConsoleAPILogEvent(subject, data) {
+    const consoleMsg = subject.wrappedJSObject;
 
-        const msgData = {
-          ...consoleMsg,
-          arguments: [],
-          filename: consoleMsg.filename.substring(0, MSG_MGR_CONSOLE_INFO_MAX),
-          functionName:
-            consoleMsg.functionName &&
-            consoleMsg.functionName.substring(0, MSG_MGR_CONSOLE_INFO_MAX),
+    const msgData = {
+      ...consoleMsg,
+      arguments: [],
+      filename: consoleMsg.filename.substring(0, MSG_MGR_CONSOLE_INFO_MAX),
+      functionName:
+        consoleMsg.functionName &&
+        consoleMsg.functionName.substring(0, MSG_MGR_CONSOLE_INFO_MAX),
+      
+      wrappedJSObject: null,
+    };
+
+    
+    
+    const unavailString = "<unavailable>";
+    const unavailStringLength = unavailString.length * 2; 
+
+    
+    
+    let totalArgLength = 0;
+
+    
+    for (let arg of consoleMsg.arguments) {
+      if (
+        (typeof arg == "object" || typeof arg == "function") &&
+        arg !== null
+      ) {
+        if (Services.appinfo.remoteType === E10SUtils.EXTENSION_REMOTE_TYPE) {
           
-          wrappedJSObject: null,
-        };
-
-        
-        
-        const unavailString = "<unavailable>";
-        const unavailStringLength = unavailString.length * 2; 
-
-        
-        
-        let totalArgLength = 0;
-
-        
-        for (let arg of consoleMsg.arguments) {
-          if (
-            (typeof arg == "object" || typeof arg == "function") &&
-            arg !== null
-          ) {
-            if (
-              Services.appinfo.remoteType === E10SUtils.EXTENSION_REMOTE_TYPE
-            ) {
-              
-              
-              
-              try {
-                
-                
-                arg = Cu.cloneInto(arg, {});
-              } catch (e) {
-                arg = unavailString;
-              }
-            } else {
-              arg = unavailString;
-            }
-            totalArgLength += unavailStringLength;
-          } else if (typeof arg == "string") {
-            totalArgLength += arg.length * 2; 
-          } else {
-            totalArgLength += MSG_MGR_CONSOLE_VAR_SIZE;
-          }
-
-          if (totalArgLength <= MSG_MGR_CONSOLE_MAX_SIZE) {
-            msgData.arguments.push(arg);
-          } else {
+          
+          
+          try {
             
-            msgData.arguments = ["<truncated>"];
-            break;
+            
+            arg = Cu.cloneInto(arg, {});
+          } catch (e) {
+            arg = unavailString;
           }
+        } else {
+          arg = unavailString;
         }
-
-        Services.cpmm.sendAsyncMessage("Console:Log", msgData);
-        break;
+        totalArgLength += unavailStringLength;
+      } else if (typeof arg == "string") {
+        totalArgLength += arg.length * 2; 
+      } else {
+        totalArgLength += MSG_MGR_CONSOLE_VAR_SIZE;
       }
 
-      case "xpcom-shutdown":
-        this.uninit();
+      if (totalArgLength <= MSG_MGR_CONSOLE_MAX_SIZE) {
+        msgData.arguments.push(arg);
+      } else {
+        
+        msgData.arguments = ["<truncated>"];
         break;
+      }
+    }
+
+    Services.cpmm.sendAsyncMessage("Console:Log", msgData);
+  },
+
+  observe(subject, topic, data) {
+    if (topic == "xpcom-shutdown") {
+      this.uninit();
     }
   },
 
   uninit() {
-    Services.obs.removeObserver(this, "console-api-log-event");
+    ConsoleAPIStorage.removeLogEventListener(this.onConsoleAPILogEvent);
     Services.obs.removeObserver(this, "xpcom-shutdown");
     Services.cpmm.removeMessageListener(
       "DevTools:StopForwardingContentProcessMessage",

@@ -24,6 +24,9 @@ const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { clearTimeout, setTimeout } = ChromeUtils.import(
   "resource://gre/modules/Timer.jsm"
 );
+const ConsoleAPIStorage = Cc["@mozilla.org/consoleAPI-storage;1"].getService(
+  Ci.nsIConsoleAPIStorage
+);
 
 var TestUtils = {
   executeSoon(callbackFn) {
@@ -32,6 +35,64 @@ var TestUtils = {
 
   waitForTick() {
     return new Promise(resolve => this.executeSoon(resolve));
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  consoleMessageObserved(checkFn) {
+    return new Promise((resolve, reject) => {
+      let removed = false;
+      function observe(message) {
+        try {
+          if (checkFn && !checkFn(message)) {
+            return;
+          }
+          ConsoleAPIStorage.removeLogEventListener(observe);
+          
+          
+          
+          checkFn = null;
+          removed = true;
+
+          resolve(message);
+        } catch (ex) {
+          ConsoleAPIStorage.removeLogEventListener(observe);
+          checkFn = null;
+          removed = true;
+          reject(ex);
+        }
+      }
+
+      ConsoleAPIStorage.addLogEventListener(
+        observe,
+        Cc["@mozilla.org/systemprincipal;1"].createInstance(Ci.nsIPrincipal)
+      );
+
+      TestUtils.promiseTestFinished?.then(() => {
+        if (removed) {
+          return;
+        }
+
+        ConsoleAPIStorage.removeLogEventListener(observe);
+        let text =
+          "Console message observer not removed before the end of test";
+        reject(text);
+      });
+    });
   },
 
   

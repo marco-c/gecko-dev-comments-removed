@@ -291,17 +291,23 @@ const TESTS = {
 
 function onConsoleWarningLogged(warningMessage) {
   return new Promise(resolve => {
-    const observer = {
-      observe(subject) {
-        
-        const message = subject.wrappedJSObject.arguments[0];
-        if (message.includes(warningMessage)) {
-          Services.obs.removeObserver(observer, "console-api-log-event");
-          resolve();
-        }
-      },
+    const ConsoleAPIStorage = Cc[
+      "@mozilla.org/consoleAPI-storage;1"
+    ].getService(Ci.nsIConsoleAPIStorage);
+
+    const observer = subject => {
+      
+      const message = subject.wrappedJSObject.arguments[0];
+      if (message.includes(warningMessage)) {
+        ConsoleAPIStorage.removeLogEventListener(observer);
+        resolve();
+      }
     };
-    Services.obs.addObserver(observer, "console-api-log-event");
+
+    ConsoleAPIStorage.addLogEventListener(
+      observer,
+      Cc["@mozilla.org/systemprincipal;1"].createInstance(Ci.nsIPrincipal)
+    );
   });
 }
 
