@@ -249,9 +249,6 @@ extern "C" MOZ_EXPORT const wchar_t* GetDependentModulePaths() {
     return nullptr;
   }
 
-  
-  gSharedSection.Reset();
-
   LauncherResult<SharedSection::Layout*> resultView = gSharedSection.GetView();
   if (resultView.isErr()) {
     return nullptr;
