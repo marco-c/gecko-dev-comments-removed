@@ -22,8 +22,6 @@ user_pref("focusmanager.testmode", true);
 
 user_pref("media.navigator.streams.fake", true);
 
-user_pref("media.navigator.permission.disabled", true);
-
 user_pref("network.preload", true);
 
 user_pref("network.proxy.type", 0);

@@ -72,8 +72,11 @@ async function pushGetUserMediaTestPrefs({
       );
     }
   }
-  
-  testPrefs.push(["media.navigator.permission.disabled", true]);
+  if (loopbackAudio || loopbackVideo) {
+    
+    
+    testPrefs.push(["media.navigator.permission.disabled", true]);
+  }
   return SpecialPowers.pushPrefEnv({ set: testPrefs });
 }
 
