@@ -3,6 +3,7 @@
 
 
 import buildconfig
+import shutil
 import subprocess
 import os
 import sys
@@ -23,22 +24,118 @@ def relativize(path, base=None):
     return os.path.relpath(path, base)
 
 
+def search_path(paths, path):
+    for p in paths:
+        f = os.path.join(p, path)
+        if os.path.isfile(f):
+            return f
+    raise RuntimeError(f"Cannot find {path}")
+
+
+
+
+
+
+def preprocess(base, input, flags):
+    import argparse
+    import re
+    from collections import deque
+
+    IMPORT_RE = re.compile('import\s*"([^"]+)";')
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-I", action="append")
+    parser.add_argument("-D", action="append")
+    parser.add_argument("-acf")
+    args, remainder = parser.parse_known_args(flags)
+    preprocessor = (
+        [buildconfig.substs["_CXX"]]
+        
+        
+        
+        + ["-E", "-D__midl=801"]
+        + [f"-D{d}" for d in args.D or ()]
+        + [f"-I{i}" for i in args.I or ()]
+    )
+    includes = ["."] + buildconfig.substs["INCLUDE"].split(";") + (args.I or [])
+    seen = set()
+    queue = deque([input])
+    if args.acf:
+        queue.append(args.acf)
+    output = os.path.join(base, os.path.basename(input))
+    while True:
+        try:
+            input = queue.popleft()
+        except IndexError:
+            break
+        if os.path.basename(input) in seen:
+            continue
+        seen.add(os.path.basename(input))
+        input = search_path(includes, input)
+        
+        
+        if input.endswith(".idl") and os.path.exists(input[:-4] + ".acf"):
+            queue.append(input[:-4] + ".acf")
+        command = preprocessor + [input]
+        preprocessed = os.path.join(base, os.path.basename(input))
+        subprocess.run(command, stdout=open(preprocessed, "wb"), check=True)
+        
+        
+        with open(preprocessed, "r") as fh:
+            for line in fh:
+                if not line.startswith("import"):
+                    continue
+                m = IMPORT_RE.match(line)
+                if not m:
+                    continue
+                imp = m.group(1)
+                queue.append(imp)
+    flags = []
+    
+    
+    for i in [base] + (args.I or []):
+        flags.extend(["-I", i])
+    
+    if args.acf:
+        flags.extend(["-acf", os.path.join(base, os.path.basename(args.acf))])
+    flags.extend(remainder)
+    return output, flags
+
+
 def midl(out, input, *flags):
     out.avoid_writing_to_file()
-    midl = buildconfig.substs["MIDL"]
-    wine = buildconfig.substs.get("WINE")
+    midl_flags = buildconfig.substs["MIDL_FLAGS"]
     base = os.path.dirname(out.name) or "."
-    if midl.lower().endswith(".exe") and wine:
-        command = [wine, midl]
-    else:
-        command = [midl]
-    command.extend(buildconfig.substs["MIDL_FLAGS"])
-    command.extend([relativize(f, base) for f in flags])
-    command.append("-Oicf")
-    command.append(relativize(input, base))
-    print("Executing:", " ".join(command))
-    result = subprocess.run(command, cwd=base)
-    return result.returncode
+    tmpdir = None
+    try:
+        
+        
+        if "-no_cpp" in midl_flags:
+            
+            
+            
+            tmpdir = os.path.join(base, os.path.basename(input) + ".tmp")
+            os.makedirs(tmpdir, exist_ok=True)
+            try:
+                input, flags = preprocess(tmpdir, input, flags)
+            except subprocess.CalledProcessError as e:
+                return e.returncode
+        midl = buildconfig.substs["MIDL"]
+        wine = buildconfig.substs.get("WINE")
+        if midl.lower().endswith(".exe") and wine:
+            command = [wine, midl]
+        else:
+            command = [midl]
+        command.extend(midl_flags)
+        command.extend([relativize(f, base) for f in flags])
+        command.append("-Oicf")
+        command.append(relativize(input, base))
+        print("Executing:", " ".join(command))
+        result = subprocess.run(command, cwd=base)
+        return result.returncode
+    finally:
+        if tmpdir:
+            shutil.rmtree(tmpdir)
 
 
 

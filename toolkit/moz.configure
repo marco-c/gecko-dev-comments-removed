@@ -1358,13 +1358,11 @@ option(env="MIDL_FLAGS", nargs=1, help="Extra flags to pass to MIDL")
 
 @depends(
     "MIDL_FLAGS",
-    c_compiler,
     target,
-    host,
     midl,
     when=depends(midl, target)(lambda m, t: m and t.kernel == "WINNT"),
 )
-def midl_flags(flags, c_compiler, target, host, midl):
+def midl_flags(flags, target, midl):
     if flags:
         flags = flags[0].split()
     else:
@@ -1376,22 +1374,7 @@ def midl_flags(flags, c_compiler, target, host, midl):
             "x86_64": "x64",
             "aarch64": "arm64",
         }[target.cpu]
-        flags += ["-env", env]
-
-        if host.os == "WINNT":
-            return flags + ["-cpp_cmd", c_compiler.compiler]
-
-        
-        
-        
-        
-        
-        
-        
-        clang_cl_exe = find_program("clang-cl.exe")
-        if not clang_cl_exe:
-            die("Cannot find clang-cl.exe")
-        return flags + ["-cpp_cmd", clang_cl_exe]
+        return flags + ["-nologo", "-no_cpp", "-env", env]
 
     
     return flags + {
