@@ -28,6 +28,7 @@
 #include "nsIGlobalObject.h"
 #include "nsIScriptElement.h"
 #include "ScriptKind.h"
+#include "ScriptLoadContext.h"
 
 class nsICacheInfoChannel;
 
@@ -41,7 +42,7 @@ namespace dom {
 class Element;
 class ModuleLoadRequest;
 class ScriptLoadRequestList;
-class DOMScriptLoadContext;
+class ScriptLoadContext;
 
 
 
@@ -139,7 +140,7 @@ class ScriptLoadRequest
   ScriptLoadRequest(ScriptKind aKind, nsIURI* aURI,
                     ScriptFetchOptions* aFetchOptions,
                     const SRIMetadata& aIntegrity, nsIURI* aReferrer,
-                    DOMScriptLoadContext* aContext);
+                    ScriptLoadContext* aContext);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(ScriptLoadRequest)
@@ -265,7 +266,7 @@ class ScriptLoadRequest
 
   bool HasLoadContext() { return mLoadContext; }
 
-  DOMScriptLoadContext* GetLoadContext() {
+  ScriptLoadContext* GetLoadContext() {
     MOZ_ASSERT(mLoadContext);
     return mLoadContext;
   }
@@ -312,177 +313,7 @@ class ScriptLoadRequest
 
   
   
-  RefPtr<DOMScriptLoadContext> mLoadContext;
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class DOMScriptLoadContext : public PreloaderBase {
- protected:
-  virtual ~DOMScriptLoadContext();
-
- public:
-  explicit DOMScriptLoadContext(Element* aElement,
-                                nsIGlobalObject* aWebExtGlobal = nullptr);
-
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(DOMScriptLoadContext)
-
-  void SetRequest(ScriptLoadRequest* aRequest);
-
-  
-  static void PrioritizeAsPreload(nsIChannel* aChannel);
-  virtual void PrioritizeAsPreload() override;
-
-  bool IsPreload() const;
-
-  
-  
-  
-  nsIGlobalObject* GetWebExtGlobal() const;
-
-  bool CompileStarted() const {
-    return mRequest->InCompilingStage() ||
-           (mRequest->IsReadyToRun() && mWasCompiledOMT);
-  }
-
-  JS::OffThreadToken** OffThreadTokenPtr() {
-    return mOffThreadToken ? &mOffThreadToken : nullptr;
-  }
-
-  bool IsTracking() const { return mIsTracking; }
-  void SetIsTracking() {
-    MOZ_ASSERT(!mIsTracking);
-    mIsTracking = true;
-  }
-
-  void BlockOnload(Document* aDocument);
-
-  void MaybeUnblockOnload();
-
-  enum class ScriptMode : uint8_t {
-    eBlocking,
-    eDeferred,
-    eAsync,
-    eLinkPreload  
-                  
-  };
-
-  void SetScriptMode(bool aDeferAttr, bool aAsyncAttr, bool aLinkPreload);
-
-  bool IsLinkPreloadScript() const {
-    return mScriptMode == ScriptMode::eLinkPreload;
-  }
-
-  bool IsBlockingScript() const { return mScriptMode == ScriptMode::eBlocking; }
-
-  bool IsDeferredScript() const { return mScriptMode == ScriptMode::eDeferred; }
-
-  bool IsAsyncScript() const { return mScriptMode == ScriptMode::eAsync; }
-
-  nsIScriptElement* GetScriptElement() const;
-
-  
-  void SetIsPreloadRequest() {
-    MOZ_ASSERT(!GetScriptElement());
-    MOZ_ASSERT(!IsPreload());
-    mIsPreload = true;
-  }
-
-  
-  void SetIsLoadRequest(nsIScriptElement* aElement);
-
-  FromParser GetParserCreated() const {
-    nsIScriptElement* element = GetScriptElement();
-    if (!element) {
-      return NOT_FROM_PARSER;
-    }
-    return element->GetParserCreated();
-  }
-
-  
-  void GetProfilerLabel(nsACString& aOutString);
-
-  void MaybeCancelOffThreadScript();
-
-  TimeStamp mOffThreadParseStartTime;
-  TimeStamp mOffThreadParseStopTime;
-
-  ScriptMode mScriptMode;  
-  bool mScriptFromHead;    
-                           
-  bool mIsInline;          
-  bool mInDeferList;       
-  bool mInAsyncList;       
-                           
-  bool mIsNonAsyncScriptInserted;  
-                                   
-  bool mIsXSLT;                    
-  bool mInCompilingList;  
-  bool mIsTracking;       
-                          
-  bool mWasCompiledOMT;   
-                          
-
-  JS::OffThreadToken* mOffThreadToken;  
-
-  Atomic<Runnable*> mRunnable;  
-                                
-                                
-
-  int32_t mLineNo;
-
-  
-  bool mIsPreload;
-  nsCOMPtr<Element> mElement;
-
-  
-
-
-
-  nsCOMPtr<nsIGlobalObject> mWebExtGlobal;
-
-  RefPtr<ScriptLoadRequest> mRequest;
-
-  
-  RefPtr<Document> mLoadBlockedDocument;
-
-  
-  
-  nsresult mUnreportedPreloadError;
+  RefPtr<ScriptLoadContext> mLoadContext;
 };
 
 class ScriptLoadRequestList : private mozilla::LinkedList<ScriptLoadRequest> {

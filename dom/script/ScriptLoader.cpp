@@ -623,8 +623,8 @@ nsresult ScriptLoader::StartLoadInternal(ScriptLoadRequest* aRequest,
     
     
     
-    DOMScriptLoadContext::PrioritizeAsPreload(channel);
-    DOMScriptLoadContext::AddLoadBackgroundFlag(channel);
+    ScriptLoadContext::PrioritizeAsPreload(channel);
+    ScriptLoadContext::AddLoadBackgroundFlag(channel);
   } else if (nsCOMPtr<nsIClassOfService> cos = do_QueryInterface(channel)) {
     if (aRequest->GetLoadContext()->mScriptFromHead &&
         aRequest->GetLoadContext()->IsBlockingScript()) {
@@ -777,7 +777,7 @@ already_AddRefed<ScriptLoadRequest> ScriptLoader::CreateLoadRequest(
   nsCOMPtr<Element> domElement = do_QueryInterface(aElement);
   RefPtr<ScriptFetchOptions> fetchOptions =
       new ScriptFetchOptions(aCORSMode, aReferrerPolicy, aTriggeringPrincipal);
-  RefPtr<DOMScriptLoadContext> context = new DOMScriptLoadContext(domElement);
+  RefPtr<ScriptLoadContext> context = new ScriptLoadContext(domElement);
 
   if (aKind == ScriptKind::eClassic) {
     RefPtr<ScriptLoadRequest> aRequest = new ScriptLoadRequest(
