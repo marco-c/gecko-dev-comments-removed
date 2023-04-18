@@ -53,9 +53,18 @@
 #  include "nsClipboardWayland.h"
 #  include "gfxPlatformGtk.h"
 #endif
+#include "nsDirectoryService.h"
+#include "nsDirectoryServiceDefs.h"
+#include "nsEscape.h"
+#include "nsString.h"
 
 using namespace mozilla;
 using namespace mozilla::gfx;
+
+
+
+
+#define NS_DND_TIMEOUT 1000000
 
 #define NS_SYSTEMINFO_CONTRACTID "@mozilla.org/system-info;1"
 
@@ -161,11 +170,13 @@ nsDragService::nsDragService()
   mTargetDragDataReceived = false;
   mTargetDragData = 0;
   mTargetDragDataLen = 0;
+  mTempFileTimerID = 0;
 }
 
 nsDragService::~nsDragService() {
   LOGDRAGSERVICE(("nsDragService::~nsDragService"));
   if (mTaskSource) g_source_remove(mTaskSource);
+  if (mTempFileTimerID) g_source_remove(mTempFileTimerID);
 }
 
 NS_IMPL_ISUPPORTS_INHERITED(nsDragService, nsBaseDragService, nsIObserver)
@@ -455,7 +466,35 @@ bool nsDragService::SetAlphaPixmap(SourceSurface* aSurface,
 NS_IMETHODIMP
 nsDragService::StartDragSession() {
   LOGDRAGSERVICE(("nsDragService::StartDragSession"));
+  mTempFileUrl.Truncate();
   return nsBaseDragService::StartDragSession();
+}
+
+bool nsDragService::RemoveTempFiles() {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  int32_t count = mTemporaryFiles.Count();
+  for (int32_t pos = 0; pos < count; pos++) {
+    mTemporaryFiles[pos]->Remove( true);
+  }
+  mTemporaryFiles.Clear();
+
+  mTempFileTimerID = 0;
+  
+  return false;
+}
+
+gboolean nsDragService::TaskRemoveTempFiles(gpointer data) {
+  RefPtr<nsDragService> dragService = static_cast<nsDragService*>(data);
+  return dragService->RemoveTempFiles();
 }
 
 NS_IMETHODIMP
@@ -480,6 +519,15 @@ nsDragService::EndDragSession(bool aDoneDrag, uint32_t aKeyModifiers) {
 
   
   SetDragAction(DRAGDROP_ACTION_NONE);
+
+  
+  if (mTemporaryFiles.Count() > 0 && !mTempFileTimerID) {
+    LOGDRAGSERVICE(("  removing temporary files"));
+    
+    
+    mTempFileTimerID = g_timeout_add(NS_DND_TIMEOUT, TaskRemoveTempFiles, this);
+    mTempFileUrl.Truncate();
+  }
 
   
   mTargetDragContextForRemote = nullptr;
@@ -1151,9 +1199,6 @@ bool nsDragService::IsTargetContextList(void) {
   return retval;
 }
 
-
-#define NS_DND_TIMEOUT 1000000
-
 void nsDragService::GetTargetDragData(GdkAtom aFlavor,
                                       nsTArray<nsCString>& aDropFlavors) {
   LOGDRAGSERVICE(
@@ -1268,6 +1313,7 @@ GtkTargetList* nsDragService::GetSourceList(void) {
         
         if (flavors[i].EqualsLiteral(kURLMime)) {
           TargetArrayAddTarget(targetArray, gTextUriListType);
+          break;
         }
       }
     }  
@@ -1298,6 +1344,11 @@ GtkTargetList* nsDragService::GetSourceList(void) {
         
         else if (flavorStr.EqualsLiteral(kURLMime)) {
           TargetArrayAddTarget(targetArray, gMozUrlType);
+        }
+        
+        
+        else if (flavorStr.EqualsLiteral(kFilePromiseURLMime)) {
+          TargetArrayAddTarget(targetArray, gTextUriListType);
         }
         
         else if (widget::GdkIsX11Display() &&
@@ -1468,6 +1519,185 @@ static void CreateURIList(nsIArray* aItems, nsACString& aURIList) {
   }
 }
 
+static nsresult GetDownloadDetails(nsITransferable* aTransferable,
+                                   nsIURI** aSourceURI, nsAString& aFilename) {
+  *aSourceURI = nullptr;
+  MOZ_ASSERT(aTransferable != nullptr, "aTransferable must not be null");
+
+  
+  nsCOMPtr<nsISupports> urlPrimitive;
+  nsresult rv = aTransferable->GetTransferData(kFilePromiseURLMime,
+                                               getter_AddRefs(urlPrimitive));
+  if (NS_FAILED(rv)) {
+    return NS_ERROR_FAILURE;
+  }
+  nsCOMPtr<nsISupportsString> srcUrlPrimitive = do_QueryInterface(urlPrimitive);
+  if (!srcUrlPrimitive) {
+    return NS_ERROR_FAILURE;
+  }
+
+  nsAutoString srcUri;
+  srcUrlPrimitive->GetData(srcUri);
+  if (srcUri.IsEmpty()) {
+    return NS_ERROR_FAILURE;
+  }
+  nsCOMPtr<nsIURI> sourceURI;
+  NS_NewURI(getter_AddRefs(sourceURI), srcUri);
+
+  nsAutoString srcFileName;
+  nsCOMPtr<nsISupports> fileNamePrimitive;
+  rv = aTransferable->GetTransferData(kFilePromiseDestFilename,
+                                      getter_AddRefs(fileNamePrimitive));
+  if (NS_FAILED(rv)) {
+    return NS_ERROR_FAILURE;
+  }
+  nsCOMPtr<nsISupportsString> srcFileNamePrimitive =
+      do_QueryInterface(fileNamePrimitive);
+  if (srcFileNamePrimitive) {
+    srcFileNamePrimitive->GetData(srcFileName);
+  } else {
+    nsCOMPtr<nsIURL> sourceURL = do_QueryInterface(sourceURI);
+    if (!sourceURL) {
+      return NS_ERROR_FAILURE;
+    }
+    nsAutoCString urlFileName;
+    sourceURL->GetFileName(urlFileName);
+    NS_UnescapeURL(urlFileName);
+    CopyUTF8toUTF16(urlFileName, srcFileName);
+  }
+  if (srcFileName.IsEmpty()) {
+    return NS_ERROR_FAILURE;
+  }
+
+  sourceURI.swap(*aSourceURI);
+  aFilename = srcFileName;
+  return NS_OK;
+}
+
+
+nsresult nsDragService::CreateTempFile(nsITransferable* aItem,
+                                       GtkSelectionData* aSelectionData) {
+  LOGDRAGSERVICE(("nsDragService::CreateTempFile()"));
+
+  nsCOMPtr<nsIFile> tmpDir;
+  nsresult rv = NS_GetSpecialDirectory(NS_OS_TEMP_DIR, getter_AddRefs(tmpDir));
+
+  if (NS_FAILED(rv)) {
+    LOGDRAGSERVICE(("  Failed to get temp directory\n"));
+    return rv;
+  }
+
+  nsCOMPtr<nsIInputStream> inputStream;
+  nsCOMPtr<nsIChannel> channel;
+
+  
+  nsAutoString wideFileName;
+  nsCOMPtr<nsIURI> sourceURI;
+  rv = GetDownloadDetails(aItem, getter_AddRefs(sourceURI), wideFileName);
+  if (NS_FAILED(rv)) {
+    LOGDRAGSERVICE(
+        ("  Failed to extract file name and source uri from download url"));
+    return rv;
+  }
+
+  
+  nsCOMPtr<nsIPrincipal> principal = aItem->GetRequestingPrincipal();
+  nsContentPolicyType contentPolicyType = aItem->GetContentPolicyType();
+  nsCOMPtr<nsICookieJarSettings> cookieJarSettings =
+      aItem->GetCookieJarSettings();
+  rv = NS_NewChannel(getter_AddRefs(channel), sourceURI, principal,
+                     nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
+                     contentPolicyType, cookieJarSettings);
+  
+
+
+
+  if (NS_FAILED(rv)) {
+    LOGDRAGSERVICE(("  Failed to create new channel for source uri"));
+    return rv;
+  }
+
+  rv = channel->Open(getter_AddRefs(inputStream));
+  if (NS_FAILED(rv)) {
+    LOGDRAGSERVICE(("  Failed to open channel for source uri"));
+    return rv;
+  }
+
+  
+  tmpDir->Append(NS_LITERAL_STRING_FROM_CSTRING("dnd_file"));
+  rv = tmpDir->CreateUnique(nsIFile::DIRECTORY_TYPE, 0700);
+  if (NS_FAILED(rv)) {
+    LOGDRAGSERVICE(("  Failed create tmp dir"));
+    return rv;
+  }
+
+  
+  
+  nsCOMPtr<nsIFile> tempFile;
+  tmpDir->Clone(getter_AddRefs(tempFile));
+
+  mTemporaryFiles.AppendObject(tempFile);
+
+  if (mTempFileTimerID) {
+    g_source_remove(mTempFileTimerID);
+    mTempFileTimerID = 0;
+  }
+
+  
+  tmpDir->Append(wideFileName);
+
+  nsCOMPtr<nsIOutputStream> outputStream;
+  rv = NS_NewLocalFileOutputStream(getter_AddRefs(outputStream), tmpDir);
+  if (NS_FAILED(rv)) {
+    LOGDRAGSERVICE(("  Failed to open output stream for temporary file"));
+    return rv;
+  }
+
+  char buffer[8192];
+  uint32_t readCount = 0;
+  uint32_t writeCount = 0;
+  while (1) {
+    rv = inputStream->Read(buffer, sizeof(buffer), &readCount);
+    if (NS_FAILED(rv)) {
+      LOGDRAGSERVICE(("  Failed to read data from source uri"));
+      return rv;
+    }
+
+    if (readCount == 0) break;
+
+    rv = outputStream->Write(buffer, readCount, &writeCount);
+    if (NS_FAILED(rv)) {
+      LOGDRAGSERVICE(("  Failed to write data to temporary file"));
+      return rv;
+    }
+  }
+
+  inputStream->Close();
+  rv = outputStream->Close();
+  if (NS_FAILED(rv)) {
+    LOGDRAGSERVICE(("  Failed to write data to temporary file"));
+    return rv;
+  }
+
+  nsCOMPtr<nsIURI> uri;
+  rv = NS_NewFileURI(getter_AddRefs(uri), tmpDir);
+  if (NS_SUCCEEDED(rv)) {
+    nsCOMPtr<nsIURL> fileURL(do_QueryInterface(uri));
+    if (fileURL) {
+      nsAutoCString urltext;
+      rv = fileURL->GetSpec(urltext);
+      if (NS_SUCCEEDED(rv)) {
+        
+        LOGDRAGSERVICE(("  storing tmp file as %s", urltext.get()));
+        mTempFileUrl = urltext;
+        return NS_OK;
+      }
+    }
+  }
+
+  return NS_ERROR_FAILURE;
+}
+
 void nsDragService::SourceDataGet(GtkWidget* aWidget, GdkDragContext* aContext,
                                   GtkSelectionData* aSelectionData,
                                   guint32 aTime) {
@@ -1487,190 +1717,225 @@ void nsDragService::SourceDataGet(GtkWidget* aWidget, GdkDragContext* aContext,
     return;
   }
 
-  nsDependentCSubstring mimeFlavor(typeName, strlen(typeName));
   nsCOMPtr<nsITransferable> item;
   item = do_QueryElementAt(mSourceDataItems, 0);
-  if (item) {
+  if (!item) {
+    return;
+  }
+
+#ifdef MOZ_LOGGING
+  PRUint32 dragItems;
+  mSourceDataItems->GetLength(&dragItems);
+  LOGDRAGSERVICE(("source data items %d", dragItems));
+#endif
+
+  
+  
+  bool needToDoConversionToPlainText = false;
+  bool needToDoConversionToImage = false;
+
+  nsDependentCSubstring mimeFlavor(typeName, strlen(typeName));
+  const char* actualFlavor;
+  if (mimeFlavor.EqualsLiteral(kTextMime) ||
+      mimeFlavor.EqualsLiteral(gTextPlainUTF8Type)) {
+    actualFlavor = kUnicodeMime;
+    needToDoConversionToPlainText = true;
+  }
+  
+  
+  else if (mimeFlavor.EqualsLiteral(gMozUrlType)) {
+    actualFlavor = kURLMime;
+    needToDoConversionToPlainText = true;
+  }
+  
+  
+  else if (mimeFlavor.EqualsLiteral(gTextUriListType)) {
+    actualFlavor = gTextUriListType;
+    needToDoConversionToPlainText = true;
+
     
     
-    bool needToDoConversionToPlainText = false;
-    bool needToDoConversionToImage = false;
-    const char* actualFlavor;
-    if (mimeFlavor.EqualsLiteral(kTextMime) ||
-        mimeFlavor.EqualsLiteral(gTextPlainUTF8Type)) {
-      actualFlavor = kUnicodeMime;
-      needToDoConversionToPlainText = true;
-    }
     
     
-    else if (mimeFlavor.EqualsLiteral(gMozUrlType)) {
-      actualFlavor = kURLMime;
-      needToDoConversionToPlainText = true;
-    }
     
     
-    else if (mimeFlavor.EqualsLiteral(gTextUriListType)) {
-      actualFlavor = gTextUriListType;
-      needToDoConversionToPlainText = true;
-    }
+
     
-    else if (mimeFlavor.EqualsLiteral(gXdndDirectSaveType)) {
-      
-      gtk_selection_data_set(aSelectionData, target, 8, (guchar*)"E", 1);
-
-      GdkAtom property = gdk_atom_intern(gXdndDirectSaveType, FALSE);
-      GdkAtom type = gdk_atom_intern(kTextMime, FALSE);
-
-      guchar* data;
-      gint length;
-      if (!gdk_property_get(gdk_drag_context_get_source_window(aContext),
-                            property, type, 0, INT32_MAX, FALSE, nullptr,
-                            nullptr, &length, &data)) {
-        return;
-      }
-
-      
-      data = (guchar*)g_realloc(data, length + 1);
-      if (!data) return;
-      data[length] = '\0';
-
-      gchar* hostname;
-      char* gfullpath =
-          g_filename_from_uri((const gchar*)data, &hostname, nullptr);
-      g_free(data);
-      if (!gfullpath) return;
-
-      nsCString fullpath(gfullpath);
-      g_free(gfullpath);
-
-      LOGDRAGSERVICE(("XdndDirectSave filepath is %s\n", fullpath.get()));
-
-      
-      
-      if (hostname) {
-        nsCOMPtr<nsIPropertyBag2> infoService =
-            do_GetService(NS_SYSTEMINFO_CONTRACTID);
-        if (!infoService) return;
-
-        nsAutoCString host;
-        if (NS_SUCCEEDED(
-                infoService->GetPropertyAsACString(u"host"_ns, host))) {
-          if (!host.Equals(hostname)) {
-            LOGDRAGSERVICE(("ignored drag because of different host.\n"));
-
-            
-            gtk_selection_data_set(aSelectionData, target, 8, (guchar*)"F", 1);
-            g_free(hostname);
-            return;
-          }
-        }
-
-        g_free(hostname);
-      }
-
-      nsCOMPtr<nsIFile> file;
-      if (NS_FAILED(
-              NS_NewNativeLocalFile(fullpath, false, getter_AddRefs(file)))) {
-        return;
-      }
-
-      
-      
-
-      nsCOMPtr<nsIFile> directory;
-      file->GetParent(getter_AddRefs(directory));
-
-      item->SetTransferData(kFilePromiseDirectoryMime, directory);
-
-      nsCOMPtr<nsISupportsString> filenamePrimitive =
-          do_CreateInstance(NS_SUPPORTS_STRING_CONTRACTID);
-      if (!filenamePrimitive) return;
-
-      nsAutoString leafName;
-      file->GetLeafName(leafName);
-      filenamePrimitive->SetData(leafName);
-
-      item->SetTransferData(kFilePromiseDestFilename, filenamePrimitive);
-
-      
-      actualFlavor = kFilePromiseMime;
-      
-      
-    } else if (mimeFlavor.EqualsLiteral(kPNGImageMime) ||
-               mimeFlavor.EqualsLiteral(kJPEGImageMime) ||
-               mimeFlavor.EqualsLiteral(kJPGImageMime) ||
-               mimeFlavor.EqualsLiteral(kGIFImageMime)) {
-      actualFlavor = kNativeImageMime;
-      needToDoConversionToImage = true;
-    } else {
-      actualFlavor = typeName;
-    }
     nsresult rv;
     nsCOMPtr<nsISupports> data;
-    rv = item->GetTransferData(actualFlavor, getter_AddRefs(data));
+    rv = item->GetTransferData(kFilePromiseURLMime, getter_AddRefs(data));
 
-    if (strcmp(actualFlavor, kFilePromiseMime) == 0) {
-      if (NS_SUCCEEDED(rv)) {
-        
-        gtk_selection_data_set(aSelectionData, target, 8, (guchar*)"S", 1);
+    
+    
+    if (NS_SUCCEEDED(rv)) {
+      if (mTempFileUrl.IsEmpty()) {
+        rv = CreateTempFile(item, aSelectionData);
       }
+      if (NS_SUCCEEDED(rv)) {
+        gtk_selection_data_set(aSelectionData, target, 8,
+                               (guchar*)mTempFileUrl.get(),
+                               mTempFileUrl.Length());
+        
+        return;
+      }
+    }
+  }
+  
+  else if (mimeFlavor.EqualsLiteral(gXdndDirectSaveType)) {
+    
+    gtk_selection_data_set(aSelectionData, target, 8, (guchar*)"E", 1);
+
+    GdkAtom property = gdk_atom_intern(gXdndDirectSaveType, FALSE);
+    GdkAtom type = gdk_atom_intern(kTextMime, FALSE);
+
+    guchar* data;
+    gint length;
+    if (!gdk_property_get(gdk_drag_context_get_source_window(aContext),
+                          property, type, 0, INT32_MAX, FALSE, nullptr, nullptr,
+                          &length, &data)) {
       return;
     }
 
-    if (NS_SUCCEEDED(rv)) {
-      if (needToDoConversionToImage) {
-        LOGDRAGSERVICE(("  posting image\n"));
-        nsCOMPtr<imgIContainer> image = do_QueryInterface(data);
-        if (!image) {
-          LOGDRAGSERVICE(("  do_QueryInterface failed\n"));
-          return;
-        }
-        GdkPixbuf* pixbuf = nsImageToPixbuf::ImageToPixbuf(image);
-        if (!pixbuf) {
-          LOGDRAGSERVICE(("  ImageToPixbuf failed\n"));
-          return;
-        }
-        gtk_selection_data_set_pixbuf(aSelectionData, pixbuf);
-        LOGDRAGSERVICE(("  image data set\n"));
-        g_object_unref(pixbuf);
-      } else {
-        void* tmpData = nullptr;
-        uint32_t tmpDataLen = 0;
+    
+    data = (guchar*)g_realloc(data, length + 1);
+    if (!data) return;
+    data[length] = '\0';
 
-        nsPrimitiveHelpers::CreateDataFromPrimitive(
-            nsDependentCString(actualFlavor), data, &tmpData, &tmpDataLen);
-        
-        
-        if (needToDoConversionToPlainText) {
-          char* plainTextData = nullptr;
-          char16_t* castedUnicode = reinterpret_cast<char16_t*>(tmpData);
-          uint32_t plainTextLen = 0;
-          UTF16ToNewUTF8(castedUnicode, tmpDataLen / 2, &plainTextData,
-                         &plainTextLen);
-          if (tmpData) {
-            
-            free(tmpData);
-            tmpData = plainTextData;
-            tmpDataLen = plainTextLen;
-          }
-        }
-        if (tmpData) {
+    gchar* hostname;
+    char* gfullpath =
+        g_filename_from_uri((const gchar*)data, &hostname, nullptr);
+    g_free(data);
+    if (!gfullpath) return;
+
+    nsCString fullpath(gfullpath);
+    g_free(gfullpath);
+
+    LOGDRAGSERVICE(("XdndDirectSave filepath is %s\n", fullpath.get()));
+
+    
+    
+    if (hostname) {
+      nsCOMPtr<nsIPropertyBag2> infoService =
+          do_GetService(NS_SYSTEMINFO_CONTRACTID);
+      if (!infoService) return;
+
+      nsAutoCString host;
+      if (NS_SUCCEEDED(infoService->GetPropertyAsACString(u"host"_ns, host))) {
+        if (!host.Equals(hostname)) {
+          LOGDRAGSERVICE(("ignored drag because of different host.\n"));
+
           
-          gtk_selection_data_set(aSelectionData, target, 8, (guchar*)tmpData,
-                                 tmpDataLen);
-          
-          free(tmpData);
+          gtk_selection_data_set(aSelectionData, target, 8, (guchar*)"F", 1);
+          g_free(hostname);
+          return;
         }
       }
-    } else {
-      if (mimeFlavor.EqualsLiteral(gTextUriListType)) {
-        
-        nsAutoCString list;
-        CreateURIList(mSourceDataItems, list);
-        gtk_selection_data_set(aSelectionData, target, 8, (guchar*)list.get(),
-                               list.Length());
+
+      g_free(hostname);
+    }
+
+    nsCOMPtr<nsIFile> file;
+    if (NS_FAILED(
+            NS_NewNativeLocalFile(fullpath, false, getter_AddRefs(file)))) {
+      return;
+    }
+
+    
+    
+
+    nsCOMPtr<nsIFile> directory;
+    file->GetParent(getter_AddRefs(directory));
+
+    item->SetTransferData(kFilePromiseDirectoryMime, directory);
+
+    nsCOMPtr<nsISupportsString> filenamePrimitive =
+        do_CreateInstance(NS_SUPPORTS_STRING_CONTRACTID);
+    if (!filenamePrimitive) return;
+
+    nsAutoString leafName;
+    file->GetLeafName(leafName);
+    filenamePrimitive->SetData(leafName);
+
+    item->SetTransferData(kFilePromiseDestFilename, filenamePrimitive);
+
+    
+    actualFlavor = kFilePromiseMime;
+    
+    
+  } else if (mimeFlavor.EqualsLiteral(kPNGImageMime) ||
+             mimeFlavor.EqualsLiteral(kJPEGImageMime) ||
+             mimeFlavor.EqualsLiteral(kJPGImageMime) ||
+             mimeFlavor.EqualsLiteral(kGIFImageMime)) {
+    actualFlavor = kNativeImageMime;
+    needToDoConversionToImage = true;
+  } else {
+    actualFlavor = typeName;
+  }
+  nsresult rv;
+  nsCOMPtr<nsISupports> data;
+  rv = item->GetTransferData(actualFlavor, getter_AddRefs(data));
+
+  if (strcmp(actualFlavor, kFilePromiseMime) == 0) {
+    if (NS_SUCCEEDED(rv)) {
+      
+      gtk_selection_data_set(aSelectionData, target, 8, (guchar*)"S", 1);
+    }
+    return;
+  }
+
+  if (NS_SUCCEEDED(rv)) {
+    if (needToDoConversionToImage) {
+      LOGDRAGSERVICE(("  posting image\n"));
+      nsCOMPtr<imgIContainer> image = do_QueryInterface(data);
+      if (!image) {
+        LOGDRAGSERVICE(("  do_QueryInterface failed\n"));
         return;
       }
+      GdkPixbuf* pixbuf = nsImageToPixbuf::ImageToPixbuf(image);
+      if (!pixbuf) {
+        LOGDRAGSERVICE(("  ImageToPixbuf failed\n"));
+        return;
+      }
+      gtk_selection_data_set_pixbuf(aSelectionData, pixbuf);
+      LOGDRAGSERVICE(("  image data set\n"));
+      g_object_unref(pixbuf);
+    } else {
+      void* tmpData = nullptr;
+      uint32_t tmpDataLen = 0;
+
+      nsPrimitiveHelpers::CreateDataFromPrimitive(
+          nsDependentCString(actualFlavor), data, &tmpData, &tmpDataLen);
+      
+      
+      if (needToDoConversionToPlainText) {
+        char* plainTextData = nullptr;
+        char16_t* castedUnicode = reinterpret_cast<char16_t*>(tmpData);
+        uint32_t plainTextLen = 0;
+        UTF16ToNewUTF8(castedUnicode, tmpDataLen / 2, &plainTextData,
+                       &plainTextLen);
+        if (tmpData) {
+          
+          free(tmpData);
+          tmpData = plainTextData;
+          tmpDataLen = plainTextLen;
+        }
+      }
+      if (tmpData) {
+        
+        gtk_selection_data_set(aSelectionData, target, 8, (guchar*)tmpData,
+                               tmpDataLen);
+        
+        free(tmpData);
+      }
+    }
+  } else {
+    if (mimeFlavor.EqualsLiteral(gTextUriListType)) {
+      
+      nsAutoCString list;
+      CreateURIList(mSourceDataItems, list);
+      gtk_selection_data_set(aSelectionData, target, 8, (guchar*)list.get(),
+                             list.Length());
+      return;
     }
   }
 }
