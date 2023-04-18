@@ -58,6 +58,9 @@ function trr_test_setup() {
   addCertFromFile(certdb, "http2-ca.pem", "CTu,u,u");
 
   
+  Services.prefs.setBoolPref("network.trr.strict_native_fallback", false);
+
+  
   
 
   return h2Port;
@@ -91,6 +94,7 @@ function trr_clear_prefs() {
   Services.prefs.clearUserPref(
     "network.trr.send_empty_accept-encoding_headers"
   );
+  Services.prefs.clearUserPref("network.trr.strict_native_fallback");
 }
 
 
