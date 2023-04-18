@@ -220,13 +220,15 @@ const SnapshotGroups = new (class SnapshotGroups {
             MAX(sn.last_interaction_at) AS last_access,
             (SELECT group_concat(IFNULL(preview_image_url, ''), '|')
                     || '|' ||
-                    group_concat(IFNULL(url, ''), '|')
-            FROM moz_places_metadata_snapshots sns
-            JOIN moz_places_metadata_groups_to_snapshots gs USING(place_id)
-            JOIN moz_places h ON h.id = gs.place_id
-            WHERE gs.group_id = g.id
-            ORDER BY sns.last_interaction_at ASC
-            LIMIT 2
+                    group_concat(url, '|') FROM (
+              SELECT preview_image_url, url
+              FROM moz_places_metadata_snapshots sns
+              JOIN moz_places_metadata_groups_to_snapshots gs USING(place_id)
+              JOIN moz_places h ON h.id = gs.place_id
+              WHERE gs.group_id = g.id
+              ORDER BY sns.last_interaction_at ASC
+              LIMIT 2
+              )
             ) AS image_urls
       FROM moz_places_metadata_snapshots_groups g
       LEFT JOIN moz_places_metadata_groups_to_snapshots s ON s.group_id = g.id
@@ -380,9 +382,10 @@ const SnapshotGroups = new (class SnapshotGroups {
     let imageUrls = row.getResultByName("image_urls")?.split("|");
     let imageUrl = null;
     if (imageUrls) {
-      imageUrl = imageUrls[0] || imageUrls[2];
-      if (!imageUrl) {
-        imageUrl = imageUrls[1];
+      imageUrl = imageUrls[0] || imageUrls[1];
+      if (!imageUrl && imageUrls[2]) {
+        
+        imageUrl = imageUrls[2];
         if (PlacesPreviews.enabled) {
           imageUrl = PlacesPreviews.getPageThumbURL(imageUrl);
         } else {
