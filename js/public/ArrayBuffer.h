@@ -265,6 +265,20 @@ extern JS_PUBLIC_API void* StealArrayBufferContents(JSContext* cx,
 
 extern JS_PUBLIC_API void SetLargeArrayBuffersEnabled(bool enable);
 
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API void ArrayBufferCopyData(JSContext* cx,
+                                              Handle<JSObject*> toBlock,
+                                              size_t toIndex,
+                                              Handle<JSObject*> fromBlock,
+                                              size_t fromIndex, size_t count);
+
 }  
 
 #endif 
