@@ -15,8 +15,7 @@
 
 #include "mozilla/dom/BlobImpl.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class Proxy;
 class DOMString;
@@ -250,7 +249,6 @@ class XMLHttpRequestWorker final : public XMLHttpRequest {
   void ResetResponseData();
 };
 
-}  
 }  
 
 #endif  

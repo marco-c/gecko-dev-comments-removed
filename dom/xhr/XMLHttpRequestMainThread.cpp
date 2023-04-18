@@ -112,8 +112,7 @@
 
 using namespace mozilla::net;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -4158,5 +4157,4 @@ bool RequestHeaders::CharsetIterator::Next() {
   return true;
 }
 
-}  
 }  

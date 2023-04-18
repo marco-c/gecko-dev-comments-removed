@@ -12,8 +12,7 @@
 
 #include "mozilla/EventListenerManager.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class XMLHttpRequestUpload final : public XMLHttpRequestEventTarget {
  public:
@@ -33,7 +32,6 @@ class XMLHttpRequestUpload final : public XMLHttpRequestEventTarget {
   virtual ~XMLHttpRequestUpload() = default;
 };
 
-}  
 }  
 
 #endif  
