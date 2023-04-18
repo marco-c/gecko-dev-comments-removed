@@ -20,10 +20,11 @@ const { XPCOMUtils } = ChromeUtils.import(
 const lazy = {};
 
 XPCOMUtils.defineLazyModuleGetters(lazy, {
+  error: "chrome://remote/content/shared/webdriver/Errors.jsm",
   Log: "chrome://remote/content/shared/Log.jsm",
 });
 
-const { TYPE_REPEATING_SLACK } = Ci.nsITimer;
+const { TYPE_ONE_SHOT, TYPE_REPEATING_SLACK } = Ci.nsITimer;
 
 XPCOMUtils.defineLazyGetter(lazy, "logger", () =>
   lazy.Log.get(lazy.Log.TYPES.REMOTE_AGENT)
@@ -124,27 +125,47 @@ function Deferred() {
 
 
 
+
+
+
+
+
+
+
+
+
 function EventPromise(subject, eventName, options = {}) {
   const {
     capture = false,
     checkFn = null,
+    timeout = null,
     mozSystemGroup = false,
     wantUntrusted = false,
   } = options;
-
   if (
     !subject ||
     !("addEventListener" in subject) ||
     typeof eventName != "string" ||
     typeof capture != "boolean" ||
     (checkFn && typeof checkFn != "function") ||
+    (timeout !== null && typeof timeout != "number") ||
     typeof mozSystemGroup != "boolean" ||
     typeof wantUntrusted != "boolean"
   ) {
     throw new TypeError();
   }
+  if (timeout < 0) {
+    throw new RangeError();
+  }
 
   return new Promise((resolve, reject) => {
+    let timer;
+
+    function cleanUp() {
+      subject.removeEventListener(eventName, listener, capture);
+      timer?.cancel();
+    }
+
     function listener(event) {
       lazy.logger.trace(`Received DOM event ${event.type} for ${event.target}`);
       try {
@@ -156,7 +177,7 @@ function EventPromise(subject, eventName, options = {}) {
         lazy.logger.warn(`Event check failed: ${e.message}`);
       }
 
-      subject.removeEventListener(eventName, listener, capture);
+      cleanUp();
       executeSoon(() => resolve(event));
     }
 
@@ -165,6 +186,22 @@ function EventPromise(subject, eventName, options = {}) {
       mozSystemGroup,
       wantUntrusted,
     });
+
+    if (timeout !== null) {
+      timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+      timer.init(
+        () => {
+          cleanUp();
+          reject(
+            new lazy.error.TimeoutError(
+              `EventPromise timed out after ${timeout} ms`
+            )
+          );
+        },
+        timeout,
+        TYPE_ONE_SHOT
+      );
+    }
   });
 }
 
