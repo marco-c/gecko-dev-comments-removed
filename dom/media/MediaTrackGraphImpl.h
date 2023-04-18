@@ -754,11 +754,6 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-
-
-  
-  
-  CubebUtils::AudioDeviceID mInputDeviceID;
   CubebUtils::AudioDeviceID mOutputDeviceID;
 
   
