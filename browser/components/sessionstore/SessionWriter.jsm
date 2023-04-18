@@ -2,35 +2,9 @@
 
 
 
-
-
-
-
-
-
 "use strict";
 
-importScripts("resource://gre/modules/workers/require.js");
-
-var PromiseWorker = require("resource://gre/modules/workers/PromiseWorker.js");
-
-var worker = new PromiseWorker.AbstractWorker();
-worker.dispatch = function(method, args = []) {
-  return Agent[method](...args);
-};
-worker.postMessage = function(result, ...transfers) {
-  self.postMessage(result, ...transfers);
-};
-worker.close = function() {
-  self.close();
-};
-
-self.addEventListener("message", msg => worker.handleMessage(msg));
-self.addEventListener("unhandledrejection", function(error) {
-  throw error.reason;
-});
-
-
+var EXPORTED_SYMBOLS = ["SessionWriter"];
 
 
 
@@ -44,12 +18,6 @@ const STATE_CLEAN = "clean";
 
 
 const STATE_RECOVERY = "recovery";
-
-
-
-
-
-const STATE_RECOVERY_BACKUP = "recoveryBackup";
 
 
 
@@ -82,15 +50,22 @@ function lockIOWithMutex() {
   });
 }
 
-var Agent = {
+
+
+
+const SessionWriter = {
   init(origin, useOldExtension, paths, prefs = {}) {
-    return SessionWorkerInternal.init(origin, useOldExtension, paths, prefs);
+    return SessionWriterInternal.init(origin, useOldExtension, paths, prefs);
   },
+
+  
+
+
 
   async write(state, options = {}) {
     const unlock = await lockIOWithMutex();
     try {
-      return await SessionWorkerInternal.write(state, options);
+      return await SessionWriterInternal.write(state, options);
     } finally {
       unlock();
     }
@@ -99,21 +74,18 @@ var Agent = {
   async wipe() {
     const unlock = await lockIOWithMutex();
     try {
-      return await SessionWorkerInternal.wipe();
+      return await SessionWriterInternal.wipe();
     } finally {
       unlock();
     }
   },
 };
 
-var SessionWorkerInternal = {
+const SessionWriterInternal = {
   
   Paths: null,
 
   
-
-
-
 
 
 
@@ -374,8 +346,7 @@ var SessionWorkerInternal = {
 
     
     try {
-      let profileDir = await PathUtils.getProfileDir();
-      await this._wipeFromDir(profileDir, "sessionstore.bak");
+      await this._wipeFromDir(PathUtils.profileDir, "sessionstore.bak");
     } catch (ex) {
       exn = exn || ex;
     }

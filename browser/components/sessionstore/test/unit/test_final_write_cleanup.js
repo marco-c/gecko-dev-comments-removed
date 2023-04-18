@@ -7,58 +7,32 @@
 
 
 
-const { XPCOMUtils } = ChromeUtils.import(
-  "resource://gre/modules/XPCOMUtils.jsm"
-);
-const { SessionWorker } = ChromeUtils.import(
-  "resource:///modules/sessionstore/SessionWorker.jsm"
+const { SessionWriter } = ChromeUtils.import(
+  "resource:///modules/sessionstore/SessionWriter.jsm"
 );
 
-const profd = do_get_profile();
-const { SessionFile } = ChromeUtils.import(
-  "resource:///modules/sessionstore/SessionFile.jsm"
-);
-const { Paths } = SessionFile;
+
+do_get_profile();
+const {
+  SessionFile: { Paths },
+} = ChromeUtils.import("resource:///modules/sessionstore/SessionFile.jsm");
+
 const MAX_ENTRIES = 9;
 const URL = "http://example.com/#";
 
-
-const { updateAppInfo } = ChromeUtils.import(
-  "resource://testing-common/AppInfo.jsm"
-);
-updateAppInfo({
-  name: "SessionRestoreTest",
-  ID: "{230de50e-4cd1-11dc-8314-0800200c9a66}",
-  version: "1",
-  platformVersion: "",
-});
-
-var gSourceHandle;
+Cu.importGlobalProperties(["structuredClone"]);
 
 async function prepareWithLimit(back, fwd) {
-  await SessionFile.wipe();
-
-  if (!gSourceHandle) {
-    gSourceHandle = do_get_file("data/sessionstore_valid.js");
-  }
-  gSourceHandle.copyTo(profd, "sessionstore.js");
-  await writeCompressedFile(Paths.clean.replace("jsonlz4", "js"), Paths.clean);
-
-  Services.prefs.setIntPref("browser.sessionstore.max_serialize_back", back);
-  Services.prefs.setIntPref("browser.sessionstore.max_serialize_forward", fwd);
-
-  
-  await SessionFile.read();
+  SessionWriter.init("empty", false, Paths, {
+    maxSerializeBack: back,
+    maxSerializeForward: fwd,
+    maxUpgradeBackups: 3,
+  });
+  await SessionWriter.wipe();
 }
 
 add_task(async function setup() {
-  await SessionFile.read();
-
-  
-  registerCleanupFunction(() => {
-    Services.prefs.clearUserPref("browser.sessionstore.max_serialize_back");
-    Services.prefs.clearUserPref("browser.sessionstore.max_serialize_forward");
-  });
+  registerCleanupFunction(() => SessionWriter.wipe());
 });
 
 function createSessionState(index) {
@@ -73,8 +47,10 @@ function createSessionState(index) {
 }
 
 async function writeAndParse(state, path, options = {}) {
-  await SessionWorker.post("write", [state, options]);
-  return JSON.parse(await IOUtils.readUTF8(path, { decompress: true }));
+  
+  let data = structuredClone(state);
+  await SessionWriter.write(data, options);
+  return IOUtils.readJSON(path, { decompress: true });
 }
 
 add_task(async function test_shistory_cap_none() {
@@ -137,9 +113,4 @@ add_task(async function test_shistory_cap_upper_bound() {
   tabState.entries = tabState.entries.slice(3);
   tabState.index = 6;
   Assert.deepEqual(state, diskState, "cap applied");
-});
-
-add_task(async function cleanup() {
-  await SessionFile.wipe();
-  await SessionFile.read();
 });

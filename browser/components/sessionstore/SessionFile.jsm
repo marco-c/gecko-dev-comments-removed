@@ -19,11 +19,6 @@ var EXPORTED_SYMBOLS = ["SessionFile"];
 
 
 
-
-
-
-
-
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
@@ -32,7 +27,7 @@ const { XPCOMUtils } = ChromeUtils.import(
 XPCOMUtils.defineLazyModuleGetters(this, {
   RunState: "resource:///modules/sessionstore/RunState.jsm",
   SessionStore: "resource:///modules/sessionstore/SessionStore.jsm",
-  SessionWorker: "resource:///modules/sessionstore/SessionWorker.jsm",
+  SessionWriter: "resource:///modules/sessionstore/SessionWriter.jsm",
 });
 
 const PREF_UPGRADE_BACKUP = "browser.sessionstore.upgradeBackup.latestBuildID";
@@ -42,13 +37,6 @@ const PREF_MAX_UPGRADE_BACKUPS =
 const PREF_MAX_SERIALIZE_BACK = "browser.sessionstore.max_serialize_back";
 const PREF_MAX_SERIALIZE_FWD = "browser.sessionstore.max_serialize_forward";
 
-XPCOMUtils.defineLazyPreferenceGetter(
-  this,
-  "kMaxWriteFailures",
-  "browser.sessionstore.max_write_failures",
-  5
-);
-
 var SessionFile = {
   
 
@@ -57,6 +45,7 @@ var SessionFile = {
     return SessionFileInternal.read();
   },
   
+
 
 
   write(aData) {
@@ -76,15 +65,11 @@ var SessionFile = {
   get Paths() {
     return SessionFileInternal.Paths;
   },
-
-  get MaxWriteFailures() {
-    return kMaxWriteFailures;
-  },
 };
 
 Object.freeze(SessionFile);
 
-var profileDir = Services.dirsvc.get("ProfD", Ci.nsIFile).path;
+const profileDir = PathUtils.profileDir;
 
 var SessionFileInternal = {
   Paths: Object.freeze({
@@ -195,13 +180,7 @@ var SessionFileInternal = {
   _failures: 0,
 
   
-  
-  _workerHealth: {
-    failures: 0,
-  },
-
-  
-  _initializationStarted: false,
+  _initialized: false,
 
   
   
@@ -355,87 +334,38 @@ var SessionFileInternal = {
 
     result.noFilesFound = noFilesFound;
 
-    
-    
-    this._initWorker();
-
     return result;
   },
 
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  _initWorker() {
-    return new Promise(resolve => {
-      if (this._initializationStarted) {
-        resolve();
-        return;
-      }
+  _initWriter() {
+    if (this._initialized) {
+      return;
+    }
 
-      if (!this._readOrigin) {
-        throw new Error(
-          "_initWorker called too early! Please read the session file from disk first."
-        );
-      }
+    if (!this._readOrigin) {
+      throw new Error(
+        "_initWriter called too early! Please read the session file from disk first."
+      );
+    }
 
-      this._initializationStarted = true;
-      SessionWorker.post("init", [
-        this._readOrigin,
-        this._usingOldExtension,
-        this.Paths,
-        {
-          maxUpgradeBackups: Services.prefs.getIntPref(
-            PREF_MAX_UPGRADE_BACKUPS,
-            3
-          ),
-          maxSerializeBack: Services.prefs.getIntPref(
-            PREF_MAX_SERIALIZE_BACK,
-            10
-          ),
-          maxSerializeForward: Services.prefs.getIntPref(
-            PREF_MAX_SERIALIZE_FWD,
-            -1
-          ),
-        },
-      ])
-        .catch(err => {
-          
-          Promise.reject(err);
-        })
-        .then(resolve);
+    this._initialized = true;
+    SessionWriter.init(this._readOrigin, this._usingOldExtension, this.Paths, {
+      maxUpgradeBackups: Services.prefs.getIntPref(PREF_MAX_UPGRADE_BACKUPS, 3),
+      maxSerializeBack: Services.prefs.getIntPref(PREF_MAX_SERIALIZE_BACK, 10),
+      maxSerializeForward: Services.prefs.getIntPref(
+        PREF_MAX_SERIALIZE_FWD,
+        -1
+      ),
     });
   },
 
   
-  async _postToWorker(...args) {
-    await this._initWorker();
-    return SessionWorker.post(...args);
-  },
-
-  
-
-
-
-
-
-  _checkWorkerHealth() {
-    if (this._workerHealth.failures >= kMaxWriteFailures) {
-      SessionWorker.terminate();
-      
-      
-      this._initializationStarted = false;
-      
-      this._workerHealth.failures = 0;
-    }
+  _callWriter(method, args = []) {
+    this._initWriter();
+    return SessionWriter[method](...args);
   },
 
   write(aData) {
@@ -455,7 +385,7 @@ var SessionFileInternal = {
 
     this._attempts++;
     let options = { isFinalWrite, performShutdownCleanup };
-    let promise = this._postToWorker("write", [aData, options]);
+    let promise = this._callWriter("write", [aData, options]);
 
     
     promise = promise.then(
@@ -476,7 +406,6 @@ var SessionFileInternal = {
         
         console.error("Could not write session state file ", err, err.stack);
         this._failures++;
-        this._workerHealth.failures++;
         
         
         
@@ -510,17 +439,15 @@ var SessionFileInternal = {
           null,
           "sessionstore-final-state-write-complete"
         );
-      } else {
-        this._checkWorkerHealth();
       }
     });
   },
 
   wipe() {
-    return this._postToWorker("wipe").then(() => {
+    return this._callWriter("wipe").then(() => {
       
       
-      this._initializationStarted = false;
+      this._initialized = false;
     });
   },
 

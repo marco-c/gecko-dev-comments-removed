@@ -1079,8 +1079,6 @@ pref("browser.sessionstore.debug", false);
 
 pref("browser.sessionstore.cleanup.forget_closed_after", 1209600000);
 
-pref("browser.sessionstore.max_write_failures", 5);
-
 
 pref("browser.quitShortcut.disabled", false);
 
