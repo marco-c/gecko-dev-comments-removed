@@ -311,11 +311,7 @@ test_description_schema = Schema(
         Optional("expires-after"): str,
         
         
-        Optional("variants"): Any(list(TEST_VARIANTS)),
-        
-        
-        
-        Optional("variant-suffix"): str,
+        Optional("variants"): [str],
         
         
         
@@ -362,7 +358,7 @@ test_description_schema = Schema(
         ),
         
         
-        Required("max-run-time"): optionally_keyed_by("test-platform", int),
+        Required("max-run-time"): optionally_keyed_by("test-platform", "subtest", int),
         
         Optional("retry-exit-status"): [int],
         
@@ -435,7 +431,7 @@ test_description_schema = Schema(
         Required("test-platform"): str,
         
         
-        Optional("limit-platforms"): optionally_keyed_by("app", [str]),
+        Optional("limit-platforms"): optionally_keyed_by("app", "subtest", [str]),
         
         Required("test-name"): str,
         
@@ -466,6 +462,7 @@ test_description_schema = Schema(
         
         
         Optional("target"): optionally_keyed_by(
+            "app",
             "test-platform",
             Any(
                 str,
@@ -474,7 +471,8 @@ test_description_schema = Schema(
             ),
         ),
         
-        Optional("fetches"): {str: optionally_keyed_by("test-platform", [str])},
+        
+        Optional("fetches"): object,
         
         Optional("python-3"): bool,
         
@@ -567,6 +565,9 @@ def set_defaults(config, tasks):
         task["mozharness"].setdefault("set-moz-node-path", False)
         task["mozharness"].setdefault("chunked", False)
         yield task
+
+
+transforms.add_validate(test_description_schema)
 
 
 variant_description_schema = Schema(
@@ -675,9 +676,6 @@ def limit_platforms(config, tasks):
         limited_platforms = {key: key for key in task["limit-platforms"]}
         if keymatch(limited_platforms, task["test-platform"]):
             yield task
-
-
-transforms.add_validate(test_description_schema)
 
 
 @transforms.add
