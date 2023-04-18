@@ -13,8 +13,6 @@ include PURLClassifierInfo;
 
 include "mozilla/net/NeckoMessageUtils.h";
 
-using nsIHttpChannel::FlashPluginState from "nsIHttpChannel.h";
-
 namespace mozilla {
 namespace net {
 
@@ -60,10 +58,6 @@ child:
 
   
   async NotifyClassificationFlags(uint32_t aClassificationFlags, bool aIsThirdParty);
-
-  
-  
-  async NotifyFlashPluginStateChanged(FlashPluginState aState);
 
   
   async SetClassifierMatchedInfo(ClassifierInfo info);

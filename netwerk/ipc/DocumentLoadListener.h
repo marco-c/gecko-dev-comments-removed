@@ -432,7 +432,6 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   
   
-  
   struct ClassifierMatchedInfoParams {
     nsCString mList;
     nsCString mProvider;
@@ -449,9 +448,10 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
     bool mIsThirdParty;
   };
 
-  using IParentChannelFunction = mozilla::Variant<
-      nsIHttpChannel::FlashPluginState, ClassifierMatchedInfoParams,
-      ClassifierMatchedTrackingInfoParams, ClassificationFlagsParams>;
+  using IParentChannelFunction =
+      mozilla::Variant<ClassifierMatchedInfoParams,
+                       ClassifierMatchedTrackingInfoParams,
+                       ClassificationFlagsParams>;
 
   
   
