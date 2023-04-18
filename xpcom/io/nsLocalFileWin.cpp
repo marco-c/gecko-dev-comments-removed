@@ -2303,6 +2303,11 @@ nsLocalFile::Remove(bool aRecursive) {
 
   if (isDir) {
     if (aRecursive) {
+      
+      
+      
+      
+
       RefPtr<nsDirEnumerator> dirEnum = new nsDirEnumerator();
 
       rv = dirEnum->Init(this);
