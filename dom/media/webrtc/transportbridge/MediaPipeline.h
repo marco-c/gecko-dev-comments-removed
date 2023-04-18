@@ -319,6 +319,8 @@ class MediaPipelineTransmit
   
   RefPtr<MediaInputPort> mSendPort;
   
+  RefPtr<ProcessedMediaTrack> mSendPortSource;
+  
   
   bool mDescriptionInvalidated = true;
   
