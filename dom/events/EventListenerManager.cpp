@@ -448,6 +448,20 @@ void EventListenerManager::AddEventListenerInternal(
           }
         }
         break;
+      case eLegacyMouseLineOrPageScroll:
+        if (nsPIDOMWindowInner* window = GetInnerWindowForTarget()) {
+          if (Document* doc = window->GetExtantDoc()) {
+            doc->SetUseCounter(eUseCounter_custom_ondommousescroll);
+          }
+        }
+        break;
+      case eLegacyMousePixelScroll:
+        if (nsPIDOMWindowInner* window = GetInnerWindowForTarget()) {
+          if (Document* doc = window->GetExtantDoc()) {
+            doc->SetUseCounter(eUseCounter_custom_onmozmousepixelscroll);
+          }
+        }
+        break;
       default:
         
         
@@ -584,19 +598,14 @@ void EventListenerManager::AddEventListenerInternal(
                      nsPrintfCString("resolvedEventMessage=%s",
                                      ToChar(resolvedEventMessage))
                          .get());
-        if (aTypeAtom == nsGkAtoms::onDOMMouseScroll) {
-          if (nsPIDOMWindowInner* window = GetInnerWindowForTarget()) {
-            if (Document* doc = window->GetExtantDoc()) {
-              doc->SetUseCounter(eUseCounter_custom_ondommousescroll);
-            }
-          }
-        } else if (aTypeAtom == nsGkAtoms::onMozMousePixelScroll) {
-          if (nsPIDOMWindowInner* window = GetInnerWindowForTarget()) {
-            if (Document* doc = window->GetExtantDoc()) {
-              doc->SetUseCounter(eUseCounter_custom_onmozmousepixelscroll);
-            }
-          }
-        }
+        NS_ASSERTION(aTypeAtom != nsGkAtoms::onDOMMouseScroll,
+                     nsPrintfCString("resolvedEventMessage=%s",
+                                     ToChar(resolvedEventMessage))
+                         .get());
+        NS_ASSERTION(aTypeAtom != nsGkAtoms::onMozMousePixelScroll,
+                     nsPrintfCString("resolvedEventMessage=%s",
+                                     ToChar(resolvedEventMessage))
+                         .get());
         break;
     }
   }
