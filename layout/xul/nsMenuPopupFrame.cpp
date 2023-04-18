@@ -2411,8 +2411,14 @@ void nsMenuPopupFrame::MoveTo(const CSSPoint& aPos, bool aUpdateAttrs) {
     return;
   }
 
-  mAnchorType = MenuPopupAnchorType_Point;
   mScreenRect.MoveTo(appUnitsPos);
+  if (mAnchorType == MenuPopupAnchorType_Rect) {
+    
+    
+    mScreenRect.height = 0;
+  } else {
+    mAnchorType = MenuPopupAnchorType_Point;
+  }
 
   SetPopupPosition(nullptr, true, mSizedToPopup);
 
