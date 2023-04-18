@@ -5,7 +5,15 @@
 
 "use strict";
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+
+XPCOMUtils.defineLazyModuleGetters(this, {
+  Services: "resource://gre/modules/Services.jsm",
+  WindowsInstallsInfo:
+    "resource://gre/modules/components-utils/WindowsInstallsInfo.jsm",
+});
 
 var EXPORTED_SYMBOLS = ["UninstallPing"];
 
@@ -24,81 +32,10 @@ var UninstallPing = {
 
 
 
-  getOtherInstallsCount(rootKey) {
-    
-    
-    
-    
-    
-
-    
-    
-    function collectValues(rootKey, wowFlag, subKey, set, maxCount) {
-      if (set.size >= maxCount) {
-        return;
-      }
-
-      const key = Cc["@mozilla.org/windows-registry-key;1"].createInstance(
-        Ci.nsIWindowsRegKey
-      );
-
-      try {
-        key.open(rootKey, subKey, key.ACCESS_READ | wowFlag);
-      } catch (_e) {
-        
-        
-        return;
-      }
-      const valueCount = key.valueCount;
-
-      try {
-        for (let i = 0; i < valueCount && set.size < maxCount; ++i) {
-          set.add(key.getValueName(i).toLowerCase());
-        }
-      } finally {
-        key.close();
-      }
-    }
-
-    const subKeyName = `Software\\Mozilla\\${Services.appinfo.name}\\TaskBarIDs`;
-
-    const paths = new Set();
-
-    
-    
-    
-    paths.add(Services.dirsvc.get("GreBinD", Ci.nsIFile).path.toLowerCase());
-
-    const initialPathsCount = paths.size;
-    const maxPathsCount = initialPathsCount + this.MAX_OTHER_INSTALLS;
-
-    
-    
-    for (const wowFlag of [
-      Ci.nsIWindowsRegKey.WOW64_32,
-      Ci.nsIWindowsRegKey.WOW64_64,
-    ]) {
-      collectValues(
-        Ci.nsIWindowsRegKey.ROOT_KEY_LOCAL_MACHINE,
-        wowFlag,
-        subKeyName,
-        paths,
-        maxPathsCount
-      );
-    }
-
-    
-    
-    
-    collectValues(
-      Ci.nsIWindowsRegKey.ROOT_KEY_CURRENT_USER,
-      0 ,
-      subKeyName,
-      paths,
-      maxPathsCount
-    );
-
-    
-    return paths.size - initialPathsCount;
+  getOtherInstallsCount() {
+    return WindowsInstallsInfo.getInstallPaths(
+      this.MAX_OTHER_INSTALLS,
+      new Set([Services.dirsvc.get("GreBinD", Ci.nsIFile).path])
+    ).size;
   },
 };
