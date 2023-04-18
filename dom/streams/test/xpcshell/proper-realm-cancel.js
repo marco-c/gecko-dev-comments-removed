@@ -1,0 +1,5 @@
+
+var g = newGlobal();
+var ccwCancelMethod = new g.Function("return 17;");
+
+new ReadableStream({ cancel: ccwCancelMethod }).cancel("bye");
