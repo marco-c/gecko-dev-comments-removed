@@ -47,7 +47,7 @@ extern LazyLogModule gRenderThreadLog;
 
 UniquePtr<RenderCompositor> RenderCompositorANGLE::Create(
     const RefPtr<widget::CompositorWidget>& aWidget, nsACString& aError) {
-  const auto& gl = RenderThread::Get()->SingletonGL(aError);
+  RefPtr<gl::GLContext> gl = RenderThread::Get()->SingletonGL(aError);
   if (!gl) {
     if (aError.IsEmpty()) {
       aError.Assign("RcANGLE(no shared GL)"_ns);
@@ -58,7 +58,7 @@ UniquePtr<RenderCompositor> RenderCompositorANGLE::Create(
   }
 
   UniquePtr<RenderCompositorANGLE> compositor =
-      MakeUnique<RenderCompositorANGLE>(aWidget);
+      MakeUnique<RenderCompositorANGLE>(aWidget, std::move(gl));
   if (!compositor->Initialize(aError)) {
     return nullptr;
   }
@@ -66,8 +66,10 @@ UniquePtr<RenderCompositor> RenderCompositorANGLE::Create(
 }
 
 RenderCompositorANGLE::RenderCompositorANGLE(
-    const RefPtr<widget::CompositorWidget>& aWidget)
+    const RefPtr<widget::CompositorWidget>& aWidget,
+    RefPtr<gl::GLContext>&& aGL)
     : RenderCompositor(aWidget),
+      mGL(aGL),
       mEGLConfig(nullptr),
       mEGLSurface(nullptr),
       mUseTripleBuffering(false),
@@ -76,6 +78,7 @@ RenderCompositorANGLE::RenderCompositorANGLE(
       mUsePartialPresent(false),
       mFullRender(false),
       mDisablingNativeCompositor(false) {
+  MOZ_ASSERT(mGL);
   LOG("RenderCompositorANGLE::RenderCompositorANGLE()");
 }
 
@@ -87,16 +90,7 @@ RenderCompositorANGLE::~RenderCompositorANGLE() {
 }
 
 ID3D11Device* RenderCompositorANGLE::GetDeviceOfEGLDisplay(nsACString& aError) {
-  const auto& gl = RenderThread::Get()->SingletonGL(aError);
-  if (!gl) {
-    if (aError.IsEmpty()) {
-      aError.Assign("RcANGLE(no shared GL in get device)"_ns);
-    } else {
-      aError.Append("(GetDevice)"_ns);
-    }
-    return nullptr;
-  }
-  const auto& gle = gl::GLContextEGL::Cast(gl);
+  const auto& gle = gl::GLContextEGL::Cast(mGL);
   const auto& egl = gle->mEgl;
   MOZ_ASSERT(egl);
   if (!egl ||
@@ -119,27 +113,6 @@ ID3D11Device* RenderCompositorANGLE::GetDeviceOfEGLDisplay(nsACString& aError) {
   return device;
 }
 
-bool RenderCompositorANGLE::ShutdownEGLLibraryIfNecessary(nsACString& aError) {
-  const auto& displayDevice = GetDeviceOfEGLDisplay(aError);
-  RefPtr<ID3D11Device> device =
-      gfx::DeviceManagerDx::Get()->GetCompositorDevice();
-
-  
-  
-  
-  
-  
-  
-  
-
-  if ((!displayDevice || device.get() != displayDevice) &&
-      RenderThread::Get()->RendererCount() == 0) {
-    
-    RenderThread::Get()->ClearSingletonGL();
-  }
-  return true;
-}
-
 bool RenderCompositorANGLE::Initialize(nsACString& aError) {
   
   
@@ -151,26 +124,11 @@ bool RenderCompositorANGLE::Initialize(nsACString& aError) {
   }
 
   
-  if (!ShutdownEGLLibraryIfNecessary(aError)) {
-    aError.Append("(Shutdown EGL)"_ns);
-    return false;
-  }
-  const auto gl = RenderThread::Get()->SingletonGL(aError);
-  if (!gl) {
-    if (aError.IsEmpty()) {
-      aError.Assign("RcANGLE(no shared GL post maybe shutdown)"_ns);
-    } else {
-      aError.Append("(Initialize)"_ns);
-    }
-    return false;
-  }
-
   
-  
-  const auto& gle = gl::GLContextEGL::Cast(gl);
+  const auto& gle = gl::GLContextEGL::Cast(mGL);
   const auto& egl = gle->mEgl;
   if (!gl::CreateConfig(*egl, &mEGLConfig,  32,
-                         false, gl->IsGLES())) {
+                         false, mGL->IsGLES())) {
     aError.Assign("RcANGLE(create EGLConfig failed)"_ns);
     return false;
   }
@@ -192,7 +150,7 @@ bool RenderCompositorANGLE::Initialize(nsACString& aError) {
   if (gfx::gfxVars::UseWebRenderDCompWin()) {
     HWND compositorHwnd = GetCompositorHwnd();
     if (compositorHwnd) {
-      mDCLayerTree = DCLayerTree::Create(gl, mEGLConfig, mDevice, mCtx,
+      mDCLayerTree = DCLayerTree::Create(mGL, mEGLConfig, mDevice, mCtx,
                                          compositorHwnd, aError);
       if (!mDCLayerTree) {
         return false;
@@ -703,8 +661,7 @@ bool RenderCompositorANGLE::CreateEGLSurface() {
 
   const auto buffer = reinterpret_cast<EGLClientBuffer>(backBuf.get());
 
-  const auto gl = RenderThread::Get()->SingletonGL();
-  const auto& gle = gl::GLContextEGL::Cast(gl);
+  const auto& gle = gl::GLContextEGL::Cast(mGL);
   const auto& egl = gle->mEgl;
   const EGLSurface surface = egl->fCreatePbufferFromClientBuffer(
       LOCAL_EGL_D3D_TEXTURE_ANGLE, buffer, mEGLConfig, pbuffer_attribs);
