@@ -25,6 +25,7 @@
 #include "mozilla/BasicEvents.h"
 #include "mozilla/BitSet.h"
 #include "mozilla/OriginTrials.h"
+#include "mozilla/ContentBlockingNotifier.h"
 #include "mozilla/CORSMode.h"
 #include "mozilla/CallState.h"
 #include "mozilla/EventStates.h"
@@ -1264,6 +1265,16 @@ class Document : public nsINode,
 
   nsresult HasStorageAccessSync(bool& aHasStorageAccess);
   already_AddRefed<Promise> HasStorageAccess(ErrorResult& aRv);
+
+  
+  
+  
+  
+  
+  RefPtr<MozPromise<int, bool, true>> RequestStorageAccessAsyncHelper(
+      nsPIDOMWindowInner* aInnerWindow, BrowsingContext* aBrowsingContext,
+      nsIPrincipal* aPrincipal, bool aHasUserInteraction,
+      ContentBlockingNotifier::StorageAccessPermissionGrantedReason aNotifier);
   already_AddRefed<Promise> RequestStorageAccess(ErrorResult& aRv);
 
   already_AddRefed<Promise> RequestStorageAccessForOrigin(
