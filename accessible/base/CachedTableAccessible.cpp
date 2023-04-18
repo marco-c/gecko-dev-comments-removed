@@ -83,6 +83,7 @@ static StaticAutoPtr<CachedTablesMap> sCachedTables;
 
 
 CachedTableAccessible* CachedTableAccessible::GetFrom(Accessible* aAcc) {
+  MOZ_ASSERT(aAcc->IsTable());
   if (!sCachedTables) {
     sCachedTables = new CachedTablesMap();
     ClearOnShutdown(&sCachedTables);

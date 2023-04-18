@@ -2360,6 +2360,13 @@ void LocalAccessible::Shutdown() {
   
   mStateFlags |= eIsDefunct;
 
+  
+  
+  
+  if (StaticPrefs::accessibility_cache_enabled_AtStartup() && IsTable()) {
+    CachedTableAccessible::Invalidate(this);
+  }
+
   int32_t childCount = mChildren.Length();
   for (int32_t childIdx = 0; childIdx < childCount; childIdx++) {
     mChildren.ElementAt(childIdx)->UnbindFromParent();
@@ -2535,12 +2542,6 @@ void LocalAccessible::BindToParent(LocalAccessible* aParent,
 
 
 void LocalAccessible::UnbindFromParent() {
-  
-  
-  
-  if (StaticPrefs::accessibility_cache_enabled_AtStartup() && IsTable()) {
-    CachedTableAccessible::Invalidate(this);
-  }
   mParent = nullptr;
   mIndexInParent = -1;
   mIndexOfEmbeddedChild = -1;
