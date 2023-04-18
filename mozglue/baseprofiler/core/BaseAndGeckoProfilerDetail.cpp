@@ -1,0 +1,13 @@
+
+
+
+
+
+
+#include "mozilla/BaseAndGeckoProfilerDetail.h"
+
+namespace mozilla::profiler::detail {
+
+;  
+
+}  

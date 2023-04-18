@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef BaseAndGeckoProfilerDetail_h
+#define BaseAndGeckoProfilerDetail_h
+
+namespace mozilla::profiler::detail {
+
+;  
+
+}  
+
+#endif  
