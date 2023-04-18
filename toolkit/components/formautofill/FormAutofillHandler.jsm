@@ -402,6 +402,8 @@ class FormAutofillSection {
         if (!option.selected) {
           option.selected = true;
           element.focus({ preventScroll: true });
+          
+          element.value = option.value;
           element.dispatchEvent(
             new element.ownerGlobal.Event("input", { bubbles: true })
           );
