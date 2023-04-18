@@ -2,9 +2,9 @@
 
 
 
+from taskgraph.task import Task
 
 from .graph import Graph
-from .task import Task
 
 import attr
 
