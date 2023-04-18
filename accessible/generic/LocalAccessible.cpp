@@ -1036,6 +1036,7 @@ nsresult LocalAccessible::HandleAccEvent(AccEvent* aEvent) {
           ipcDoc->SendEvent(id, aEvent->GetEventType());
           break;
         }
+        case nsIAccessibleEvent::EVENT_TEXT_VALUE_CHANGE:
         case nsIAccessibleEvent::EVENT_VALUE_CHANGE: {
           SendCache(CacheDomain::Value, CacheUpdateType::Update);
           ipcDoc->SendEvent(id, aEvent->GetEventType());
@@ -3161,11 +3162,35 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
     }
   }
 
-  if ((aCacheDomain & CacheDomain::Value) && HasNumericValue()) {
-    fields->SetAttribute(nsGkAtoms::value, CurValue());
-    fields->SetAttribute(nsGkAtoms::max, MaxValue());
-    fields->SetAttribute(nsGkAtoms::min, MinValue());
-    fields->SetAttribute(nsGkAtoms::step, Step());
+  if (aCacheDomain & CacheDomain::Value) {
+    
+    
+    
+    
+    
+    bool cacheValueText = false;
+    if (HasNumericValue()) {
+      fields->SetAttribute(nsGkAtoms::value, CurValue());
+      fields->SetAttribute(nsGkAtoms::max, MaxValue());
+      fields->SetAttribute(nsGkAtoms::min, MinValue());
+      fields->SetAttribute(nsGkAtoms::step, Step());
+      cacheValueText = NativeHasNumericValue() ||
+                       (mContent->IsElement() &&
+                        mContent->AsElement()->HasAttr(
+                            kNameSpaceID_None, nsGkAtoms::aria_valuetext));
+    } else {
+      cacheValueText = IsTextField();
+    }
+
+    if (cacheValueText) {
+      nsString value;
+      Value(value);
+      if (!value.IsEmpty()) {
+        fields->SetAttribute(nsGkAtoms::aria_valuetext, std::move(value));
+      } else if (aUpdateType == CacheUpdateType::Update) {
+        fields->SetAttribute(nsGkAtoms::aria_valuetext, DeleteEntry());
+      }
+    }
   }
 
   if (aCacheDomain & CacheDomain::Bounds) {
