@@ -99,7 +99,7 @@ class WebDriverBiDi {
       
       
       
-      logger.debug(`Waiting for initial application window`);
+      logger.debug(`Waiting for initial application window to be loaded`);
       await this.agent.browserStartupFinished;
 
       this.agent.server.registerPathHandler(session.path, session);
