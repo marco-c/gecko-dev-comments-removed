@@ -2055,13 +2055,6 @@ impl TileCacheInstance {
         
         
         self.frames_until_size_eval = 0;
-        
-        
-        self.found_prims_after_backdrop = false;
-        if let Some(backdrop_surface) = &self.backdrop_surface {
-            resource_cache.destroy_compositor_surface(backdrop_surface.id);
-            self.backdrop_surface = None;
-        }
     }
 
     
