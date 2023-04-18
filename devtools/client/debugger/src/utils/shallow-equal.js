@@ -2,10 +2,6 @@
 
 
 
-export function strictEqual(value, other) {
-  return value === other;
-}
-
 export function shallowEqual(value, other) {
   return (
     value === other ||

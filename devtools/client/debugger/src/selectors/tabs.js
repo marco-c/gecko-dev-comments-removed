@@ -3,7 +3,7 @@
 
 
 import { createSelector } from "reselect";
-import { shallowEqual } from "../utils/resource";
+import { shallowEqual } from "../utils/shallow-equal";
 import { getPrettySourceURL } from "../utils/source";
 
 import { getSource, getSpecificSourceByURL, getSourcesMap } from "./sources";
