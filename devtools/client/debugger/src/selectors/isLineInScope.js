@@ -2,7 +2,7 @@
 
 
 
-import { getInScopeLines } from "../reducers/ast";
+import { getInScopeLines } from "./ast";
 import { getVisibleSelectedFrame } from "./pause";
 
 

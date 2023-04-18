@@ -2,7 +2,7 @@
 
 
 
-import { getSymbols } from "../../../reducers/ast";
+import { getSymbols } from "../../../selectors/ast";
 import {
   actions,
   selectors,
