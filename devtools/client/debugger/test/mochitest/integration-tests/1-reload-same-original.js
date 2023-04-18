@@ -9,6 +9,13 @@
 
 
 
+
+
+
+
+
+
+
 "use strict";
 
 addIntegrationTask(async function testReloadingStableOriginalSource(
