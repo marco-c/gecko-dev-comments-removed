@@ -532,9 +532,6 @@ ParseTask::ParseTask(ParseTaskKind kind, JSContext* cx,
   
   
   MOZ_ASSERT(!cx->isHelperThreadContext());
-
-  MOZ_ALWAYS_TRUE(scripts.reserve(scripts.capacity()));
-  MOZ_ALWAYS_TRUE(sourceObjects.reserve(sourceObjects.capacity()));
 }
 
 bool ParseTask::init(JSContext* cx, const ReadOnlyCompileOptions& options) {
@@ -560,9 +557,6 @@ void ParseTask::trace(JSTracer* trc) {
     return;
   }
 
-  scripts.trace(trc);
-  sourceObjects.trace(trc);
-
   if (stencilInput_) {
     stencilInput_->trace(trc);
   }
@@ -583,9 +577,7 @@ size_t ParseTask::sizeOfExcludingThis(
   
   
 
-  return options.sizeOfExcludingThis(mallocSizeOf) +
-         scripts.sizeOfExcludingThis(mallocSizeOf) +
-         sourceObjects.sizeOfExcludingThis(mallocSizeOf) + stencilInputSize +
+  return options.sizeOfExcludingThis(mallocSizeOf) + stencilInputSize +
          stencilSize + extensibleStencilSize +
          gcOutput_.sizeOfExcludingThis(mallocSizeOf);
 }
@@ -709,21 +701,6 @@ bool ParseTask::instantiateStencils(JSContext* cx) {
                                            gcOutput_);
   }
 
-  
-  
-  
-  
-  if (gcOutput_.sourceObject) {
-    sourceObjects.infallibleAppend(gcOutput_.sourceObject);
-  }
-
-  if (result) {
-    MOZ_ASSERT(gcOutput_.script);
-    MOZ_ASSERT_IF(gcOutput_.module,
-                  gcOutput_.module->script() == gcOutput_.script);
-    scripts.infallibleAppend(gcOutput_.script);
-  }
-
   return result;
 }
 
@@ -777,9 +754,6 @@ ScriptDecodeTask::ScriptDecodeTask(JSContext* cx,
 
 void ScriptDecodeTask::parse(JSContext* cx) {
   MOZ_ASSERT(cx->isHelperThreadContext());
-
-  RootedScript resultScript(cx);
-  Rooted<ScriptSourceObject*> sourceObject(cx);
 
   stencilInput_ = cx->make_unique<frontend::CompilationInput>(options);
   if (!stencilInput_) {
@@ -1827,11 +1801,6 @@ UniquePtr<ParseTask> GlobalHelperThreadState::finishParseTaskCommon(
       cx, removeFinishedParseTask(cx, kind, token));
 
   
-  
-  MOZ_ASSERT(parseTask->scripts.length() == 0);
-  MOZ_ASSERT(parseTask->sourceObjects.length() == 0);
-
-  
   if (parseTask->errors.outOfMemory) {
     ReportOutOfMemory(cx);
     return nullptr;
@@ -1869,8 +1838,7 @@ JSScript* GlobalHelperThreadState::finishSingleParseTask(
     return nullptr;
   }
 
-  MOZ_RELEASE_ASSERT(parseTask->scripts.length() == 1);
-  script = parseTask->scripts[0];
+  script = parseTask->gcOutput_.script;
 
   
   if (startEncoding == StartEncoding::Yes) {

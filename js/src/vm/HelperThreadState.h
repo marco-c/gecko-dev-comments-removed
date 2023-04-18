@@ -510,17 +510,7 @@ struct ParseTask : public mozilla::LinkedListElement<ParseTask>,
 
   
   
-  
-  
-  
-  GCVector<JSScript*, 1, SystemAllocPolicy> scripts;
-
-  
-  
   mozilla::Vector<RefPtr<JS::Stencil>> stencils;
-
-  
-  GCVector<ScriptSourceObject*, 1, SystemAllocPolicy> sourceObjects;
 
   
   UniquePtr<frontend::CompilationInput> stencilInput_;
