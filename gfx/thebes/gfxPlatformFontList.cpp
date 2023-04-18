@@ -1026,6 +1026,28 @@ gfxFont* gfxPlatformFontList::CommonFontFallback(
   GlobalFontMatch data(aCh, aNextCh, *aMatchStyle, aPresentation);
   FontVisibility level =
       aPresContext ? aPresContext->GetFontVisibility() : FontVisibility::User;
+
+  
+  
+  
+  gfxFont* candidateFont = nullptr;
+  FontFamily candidateFamily;
+  auto check = [&](gfxFontEntry* aFontEntry, FontFamily aFamily) -> gfxFont* {
+    gfxFont* font = aFontEntry->FindOrMakeFont(aMatchStyle);
+    if (aPresentation < eFontPresentation::EmojiDefault ||
+        font->HasColorGlyphFor(aCh, aNextCh)) {
+      aMatchedFamily = aFamily;
+      return font;
+    }
+    
+    
+    if (!candidateFont) {
+      candidateFont = font;
+      candidateFamily = aFamily;
+    }
+    return nullptr;
+  };
+
   if (SharedFontList()) {
     for (const auto name : defaultFallbacks) {
       fontlist::Family* family =
@@ -1037,8 +1059,13 @@ gfxFont* gfxPlatformFontList::CommonFontFallback(
       
       family->SearchAllFontsForChar(SharedFontList(), &data);
       if (data.mBestMatch) {
-        aMatchedFamily = FontFamily(family);
-        return data.mBestMatch->FindOrMakeFont(aMatchStyle);
+        gfxFont* font = check(data.mBestMatch, FontFamily(family));
+        if (font) {
+          
+          
+          RefPtr<gfxFont> autoRefDeref(candidateFont);
+          return font;
+        }
       }
     }
   } else {
@@ -1050,11 +1077,23 @@ gfxFont* gfxPlatformFontList::CommonFontFallback(
       }
       fallback->FindFontForChar(&data);
       if (data.mBestMatch) {
-        aMatchedFamily = FontFamily(fallback);
-        return data.mBestMatch->FindOrMakeFont(aMatchStyle);
+        gfxFont* font = check(data.mBestMatch, FontFamily(fallback));
+        if (font) {
+          RefPtr<gfxFont> autoRefDeref(candidateFont);
+          return font;
+        }
       }
     }
   }
+
+  
+  
+  
+  if (candidateFont) {
+    aMatchedFamily = candidateFamily;
+    return candidateFont;
+  }
+
   return nullptr;
 }
 
