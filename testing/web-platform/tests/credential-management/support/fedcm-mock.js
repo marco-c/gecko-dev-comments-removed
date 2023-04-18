@@ -2,20 +2,6 @@ import { RequestMode, RequestIdTokenStatus, LogoutStatus, RevokeStatus, Federate
 
 function toMojoIdTokenStatus(status) {
   return RequestIdTokenStatus["k" + status];
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }
 
 
@@ -31,12 +17,15 @@ export class MockFederatedAuthRequest {
     this.status_ = RequestIdTokenStatus.kError;
     this.logoutStatus_ = LogoutStatus.kError;
     this.revokeStatus_ = RevokeStatus.kError;
+    this.returnPending_ = false;
+    this.pendingPromiseResolve_ = null;
   }
 
   
   returnIdToken(token) {
     this.status_ = RequestIdTokenStatus.kSuccess;
     this.idToken_ = token;
+    this.returnPending_ = false;
   }
 
   
@@ -45,6 +34,13 @@ export class MockFederatedAuthRequest {
       throw new Error("Success is not a valid error");
     this.status_ = toMojoIdTokenStatus(error);
     this.idToken_ = null;
+    this.returnPending_ = false;
+  }
+
+  
+  
+  returnPendingPromise() {
+    this.returnPending_ = true;
   }
 
   
@@ -59,10 +55,24 @@ export class MockFederatedAuthRequest {
   
   
   async requestIdToken(provider, idRequest, mode) {
+    if (this.returnPending_) {
+      this.pendingPromise_ = new Promise((resolve, reject) => {
+        this.pendingPromiseResolve_ = resolve;
+      });
+      return this.pendingPromise_;
+    }
     return Promise.resolve({
       status: this.status_,
       idToken: this.idToken_
     });
+  }
+
+  async cancelTokenRequest() {
+    this.pendingPromiseResolve_({
+      status: toMojoIdTokenStatus("ErrorCanceled"),
+      idToken: null
+    });
+    this.pendingPromiseResolve_ = null;
   }
 
   async logout(logout_endpoints) {
