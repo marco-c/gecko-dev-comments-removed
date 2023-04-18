@@ -396,6 +396,12 @@ void EventListenerManager::AddEventListenerInternal(
           mMayHaveInputOrCompositionEventListener = true;
         }
         break;
+      case eSelectionChange:
+        mMayHaveSelectionChangeEventListener = true;
+        if (nsPIDOMWindowInner* window = GetInnerWindowForTarget()) {
+          window->SetHasSelectionChangeEventListeners();
+        }
+        break;
       default:
         
         
@@ -500,12 +506,11 @@ void EventListenerManager::AddEventListenerInternal(
                      nsPrintfCString("resolvedEventMessage=%s",
                                      ToChar(resolvedEventMessage))
                          .get());
-        if (aEventMessage == eSelectionChange) {
-          mMayHaveSelectionChangeEventListener = true;
-          if (nsPIDOMWindowInner* window = GetInnerWindowForTarget()) {
-            window->SetHasSelectionChangeEventListeners();
-          }
-        } else if (resolvedEventMessage == eFormSelect) {
+        NS_ASSERTION(aTypeAtom != nsGkAtoms::onselectionchange,
+                     nsPrintfCString("resolvedEventMessage=%s",
+                                     ToChar(resolvedEventMessage))
+                         .get());
+        if (resolvedEventMessage == eFormSelect) {
           mMayHaveFormSelectEventListener = true;
           if (nsPIDOMWindowInner* window = GetInnerWindowForTarget()) {
             window->SetHasFormSelectEventListeners();
