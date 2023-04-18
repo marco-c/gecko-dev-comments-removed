@@ -4,19 +4,26 @@
 
 "use strict";
 
+
+
+
 const stubs = new Map();
-stubs.set("StyleSheet", {
-  type: "object",
-  class: "CSSStyleSheet",
-  actor: "server1.conn2.obj1067",
-  extensible: true,
-  frozen: false,
-  sealed: false,
-  ownPropertyLength: 0,
-  preview: {
-    kind: "ObjectWithURL",
-    url: "https://example.com/styles.css",
+stubs.set(`StyleSheet`, {
+  "_grip": {
+    "type": "object",
+    "actor": "server0.conn0.windowGlobal4294967299/obj40",
+    "class": "CSSStyleSheet",
+    "ownPropertyLength": 0,
+    "extensible": true,
+    "frozen": false,
+    "sealed": false,
+    "isError": false,
+    "preview": {
+      "kind": "ObjectWithURL",
+      "url": "https://example.com/styles.css"
+    }
   },
+  "actorID": "server0.conn0.windowGlobal4294967299/obj40"
 });
 
 module.exports = stubs;
