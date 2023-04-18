@@ -1133,7 +1133,9 @@ bool nsHttpTransaction::PrepareSVCBRecordsForRetry(
   for (const auto& record : records) {
     nsAutoCString name;
     record->GetName(name);
-    if (name == aFailedDomainName) {
+    
+    
+    if (name == aFailedDomainName && !mAllRecordsInH3ExcludedListBefore) {
       
       continue;
     }
@@ -2560,20 +2562,25 @@ void nsHttpTransaction::DisableSpdy() {
   }
 }
 
-void nsHttpTransaction::DisableHttp3() {
+void nsHttpTransaction::DisableHttp3(bool aAllowRetryHTTPSRR) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
-
-  mCaps |= NS_HTTP_DISALLOW_HTTP3;
 
   
   
   
   
   if (mOrigConnInfo) {
-    LOG(("nsHttpTransaction::DisableHttp3 this=%p mOrigConnInfo=%s", this,
-         mOrigConnInfo->HashKey().get()));
+    LOG(
+        ("nsHttpTransaction::DisableHttp3 this=%p mOrigConnInfo=%s "
+         "aAllowRetryHTTPSRR=%d",
+         this, mOrigConnInfo->HashKey().get(), aAllowRetryHTTPSRR));
+    if (!aAllowRetryHTTPSRR) {
+      mCaps |= NS_HTTP_DISALLOW_HTTP3;
+    }
     return;
   }
+
+  mCaps |= NS_HTTP_DISALLOW_HTTP3;
 
   MOZ_ASSERT(mConnInfo);
   if (mConnInfo) {
