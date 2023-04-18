@@ -2869,10 +2869,9 @@ bool CanonicalBrowsingContext::StartApzAutoscroll(float aAnchorX,
   
   
   
-  CSSPoint anchorCss{aAnchorX, aAnchorY};
-  LayoutDeviceIntPoint anchor =
-      RoundedToInt(anchorCss * widget->GetDefaultScale());
-  anchor -= widget->WidgetToScreenOffset();
+  const LayoutDeviceIntPoint anchor =
+      RoundedToInt(LayoutDevicePoint(aAnchorX, aAnchorY)) -
+      widget->WidgetToScreenOffset();
 
   mozilla::layers::ScrollableLayerGuid guid(layersId, aPresShellId, aScrollId);
 
