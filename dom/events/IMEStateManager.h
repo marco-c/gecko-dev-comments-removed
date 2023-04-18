@@ -364,16 +364,20 @@ class IMEStateManager {
   
   
   
-  static StaticRefPtr<nsIContent> sContent;
-  static StaticRefPtr<nsPresContext> sPresContext;
+  static StaticRefPtr<nsIContent> sFocusedContent;
+  static StaticRefPtr<nsPresContext> sFocusedPresContext;
   
   
   
-  static nsIWidget* sWidget;
+  
+  
+  static nsIWidget* sTextInputHandlingWidget;
+  
   
   
   static nsIWidget* sFocusedIMEWidget;
   static StaticRefPtr<BrowserParent> sFocusedIMEBrowserParent;
+  
   
   
   
