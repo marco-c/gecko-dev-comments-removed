@@ -70,9 +70,6 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
 
 const kDataVersion = 3;
 
-
-const PERMISSION_SAVE_LOGINS = "login-saving";
-
 const MAX_DATE_MS = 8640000000000000;
 
 

@@ -39,8 +39,6 @@ const LoginInfo = Components.Constructor(
   "init"
 );
 
-const BRAND_BUNDLE = "chrome://branding/locale/brand.properties";
-
 
 
 

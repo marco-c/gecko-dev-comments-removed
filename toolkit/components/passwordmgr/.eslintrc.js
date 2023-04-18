@@ -12,14 +12,6 @@ module.exports = {
     
     complexity: ["error", 59],
 
-    "no-unused-vars": [
-      "error",
-      {
-        args: "none",
-        vars: "local",
-        varsIgnorePattern: "^(ids|ignored|unused)$",
-      },
-    ],
     "no-var": "error",
   },
 };
