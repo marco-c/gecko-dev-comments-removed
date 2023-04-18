@@ -1,0 +1,6 @@
+import time
+
+def main(request, response):
+    
+    time.sleep(1)
+    response.headers.set(b"Cache-Control", b"no-cache, no-store, must-revalidate");
