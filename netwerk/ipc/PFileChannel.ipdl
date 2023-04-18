@@ -13,7 +13,7 @@ namespace net {
 
 
 
-[RefCounted, ChildImpl=virtual]
+[ChildImpl=virtual]
 async protocol PFileChannel
 {
   manager PNecko;

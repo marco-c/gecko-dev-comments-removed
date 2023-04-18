@@ -7,7 +7,7 @@ namespace _ipdltest2 {
 
 
 
-[ChildImpl="TestEndpointOpensOpenedChild", ParentImpl="TestEndpointOpensOpenedParent"]
+[ManualDealloc, ChildImpl="TestEndpointOpensOpenedChild", ParentImpl="TestEndpointOpensOpenedParent"]
 intr protocol PTestEndpointOpensOpened {
 child:
     async Hi();

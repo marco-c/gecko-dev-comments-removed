@@ -34,7 +34,7 @@ namespace gfx {
 
 
 
-[NeedsOtherPid, ChildImpl="VRManagerChild", ParentImpl="VRManagerParent"]
+[ManualDealloc, NeedsOtherPid, ChildImpl="VRManagerChild", ParentImpl="VRManagerParent"]
 sync protocol PVRManager
 {
   manages PVRLayer;

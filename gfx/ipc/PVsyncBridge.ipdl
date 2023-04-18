@@ -14,7 +14,7 @@ namespace gfx {
 
 
 
-[NeedsOtherPid]
+[ManualDealloc, NeedsOtherPid]
 sync protocol PVsyncBridge
 {
 parent:

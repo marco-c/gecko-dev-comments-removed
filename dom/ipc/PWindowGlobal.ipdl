@@ -59,7 +59,7 @@ struct IPCWebShareData
 
 
 
-[RefCounted] async protocol PWindowGlobal
+async protocol PWindowGlobal
 {
   manager PBrowser or PInProcess;
 

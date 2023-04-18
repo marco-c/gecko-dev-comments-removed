@@ -19,7 +19,7 @@ namespace layers {
 
 
 
-[NeedsOtherPid]
+[ManualDealloc, NeedsOtherPid]
 sync protocol PVideoBridge
 {
   manages PTexture;

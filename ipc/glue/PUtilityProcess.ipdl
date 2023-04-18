@@ -24,7 +24,7 @@ namespace ipc {
 
 
 
-[RefCounted, NeedsOtherPid] protocol PUtilityProcess
+[NeedsOtherPid] protocol PUtilityProcess
 {
 parent:
   async InitCrashReporter(NativeThreadId threadId);

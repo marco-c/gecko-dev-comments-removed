@@ -26,7 +26,7 @@ namespace webgpu {
 
 
 
-[RefCounted] async protocol PWebGPU
+async protocol PWebGPU
 {
   manager PCanvasManager;
 

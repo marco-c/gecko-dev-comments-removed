@@ -178,7 +178,7 @@ struct PrintPreviewResultInfo
 
 
 
-[NestedUpTo=inside_cpow, RefCounted] sync protocol PBrowser
+[NestedUpTo=inside_cpow] sync protocol PBrowser
 {
     manager PContent;
 

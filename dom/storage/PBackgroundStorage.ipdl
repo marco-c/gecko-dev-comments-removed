@@ -17,7 +17,7 @@ namespace dom {
 
 
 
-[ChildImpl=virtual, ParentImpl=virtual]
+[ManualDealloc, ChildImpl=virtual, ParentImpl=virtual]
 sync protocol PBackgroundStorage
 {
   manager PBackground;

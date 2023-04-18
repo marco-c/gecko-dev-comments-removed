@@ -17,7 +17,7 @@ namespace layers {
 
 
 
-[RefCounted, NeedsOtherPid, ParentImpl="CanvasTranslator"]
+[NeedsOtherPid, ParentImpl="CanvasTranslator"]
 async protocol PCanvas {
 parent:
   

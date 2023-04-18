@@ -22,7 +22,7 @@ namespace dom {
 
 
 
-[ChildImpl=virtual, ParentImpl=virtual]
+[ManualDealloc, ChildImpl=virtual, ParentImpl=virtual]
 async protocol PSessionStorageObserver
 {
   manager PContent;

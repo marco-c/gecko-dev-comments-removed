@@ -16,7 +16,7 @@ namespace dom {
 
 
 
-[ChildImpl=virtual, ParentImpl="LoginReputationParent"]
+[ManualDealloc, ChildImpl=virtual, ParentImpl="LoginReputationParent"]
 protocol PLoginReputation
 {
   manager PContent;

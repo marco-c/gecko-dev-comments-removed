@@ -39,6 +39,7 @@ namespace layers {
 
 
 
+[ManualDealloc]
 protocol PAPZCTreeManager
 {
 manager PCompositorBridge;

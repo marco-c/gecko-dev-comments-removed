@@ -30,7 +30,7 @@ namespace layers {
 
 
 
-[RefCounted] sync protocol PAPZInputBridge
+sync protocol PAPZInputBridge
 {
 parent:
   

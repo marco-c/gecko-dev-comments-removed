@@ -17,7 +17,7 @@ namespace net {
 
 
 
-[ChildImpl="TransportProviderChild", ParentImpl="TransportProviderParent"]
+[ManualDealloc, ChildImpl="TransportProviderChild", ParentImpl="TransportProviderParent"]
 async protocol PTransportProvider
 {
   manager PNecko;

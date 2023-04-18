@@ -42,7 +42,7 @@ namespace layers {
 
 
 
-[ParentImpl="RemoteContentController"]
+[ManualDealloc, ParentImpl="RemoteContentController"]
 sync protocol PAPZ
 {
   manager PCompositorBridge;

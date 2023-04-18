@@ -41,7 +41,7 @@ namespace dom {
 
 
 
-[RefCounted] async protocol PBrowserBridge {
+async protocol PBrowserBridge {
   manager PBrowser;
 
 child:

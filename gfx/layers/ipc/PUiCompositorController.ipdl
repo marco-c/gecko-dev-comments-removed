@@ -20,7 +20,7 @@ namespace layers {
 
 
 
-[NeedsOtherPid]
+[ManualDealloc, NeedsOtherPid]
 sync protocol PUiCompositorController
 {
 
