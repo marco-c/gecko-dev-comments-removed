@@ -109,14 +109,19 @@ function isIPAddress(uri) {
 
 
 function processRequest({ requestLine, headers }) {
-  const origin = headers.get("origin");
-
   
-  const isTestOrigin = origin === "null" && nullOriginAllowed;
-  if (headers.has("origin") && !isTestOrigin) {
-    throw new Error(
-      `The handshake request has incorrect Origin header ${origin}`
-    );
+  
+  
+  if (RemoteAgent.webDriverBiDi) {
+    const origin = headers.get("origin");
+
+    
+    const isTestOrigin = origin === "null" && nullOriginAllowed;
+    if (headers.has("origin") && !isTestOrigin) {
+      throw new Error(
+        `The handshake request has incorrect Origin header ${origin}`
+      );
+    }
   }
 
   const hostHeader = headers.get("host");
