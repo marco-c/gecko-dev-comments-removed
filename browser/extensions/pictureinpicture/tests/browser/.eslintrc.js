@@ -1,0 +1,14 @@
+
+
+
+
+"use strict";
+
+module.exports = {
+  globals: {
+    ensureVideosReady: "readonly",
+    triggerPictureInPicture: "readonly",
+    isVideoMuted: "readonly",
+    isVideoPaused: "readonly",
+  },
+};

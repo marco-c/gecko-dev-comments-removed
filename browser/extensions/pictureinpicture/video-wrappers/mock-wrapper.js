@@ -1,0 +1,25 @@
+
+
+
+
+"use strict";
+
+class PictureInPictureVideoWrapper {
+  play(video) {
+    let playPauseButton = document.querySelector("#player .play-pause-button");
+    playPauseButton.click();
+  }
+
+  pause(video) {
+    let invalidSelector = "#player .pause-button";
+    let playPauseButton = document.querySelector(invalidSelector);
+    playPauseButton.click();
+  }
+
+  setMuted(video, isMuted) {
+    let muteButton = document.querySelector("#player .mute-button");
+    muteButton.click();
+  }
+}
+
+this.PictureInPictureVideoWrapper = PictureInPictureVideoWrapper;

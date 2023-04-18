@@ -49,6 +49,9 @@ ChromeUtils.defineModuleGetter(
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
+XPCOMUtils.defineLazyModuleGetters(this, {
+  AppConstants: "resource://gre/modules/AppConstants.jsm",
+});
 
 const TOGGLE_ENABLED_PREF =
   "media.videocontrols.picture-in-picture.video-toggle.enabled";
@@ -206,6 +209,11 @@ class PictureInPictureToggleChild extends JSWindowActorChild {
     if (state?.intersectionObserver) {
       state.intersectionObserver.disconnect();
     }
+
+    
+    this.videoWrapper?.destroy();
+    this.videoWrapper = null;
+
     
     this.isDestroyed = true;
   }
@@ -1386,6 +1394,37 @@ class PictureInPictureChild extends JSWindowActorChild {
 
 
 
+  applyWrapper(originatingVideo) {
+    let originatingDoc = originatingVideo.ownerDocument;
+    let originatingDocumentURI = originatingDoc.documentURI;
+
+    let overrides = gSiteOverrides.find(([matcher]) => {
+      return matcher.matches(originatingDocumentURI);
+    });
+
+    
+    
+    
+    let wrapperPath =
+      AppConstants.NIGHTLY_BUILD && !AppConstants.DEBUG && overrides
+        ? overrides[1].videoWrapperScriptPath
+        : null;
+    this.videoWrapper = new PictureInPictureChildVideoWrapper(
+      wrapperPath,
+      originatingVideo
+    );
+  }
+
+  
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1403,6 +1442,8 @@ class PictureInPictureChild extends JSWindowActorChild {
       await this.closePictureInPicture({ reason: "setup-failure" });
       return;
     }
+
+    this.applyWrapper(originatingVideo);
 
     let loadPromise = new Promise(resolve => {
       this.contentWindow.addEventListener("load", resolve, {
@@ -1460,29 +1501,29 @@ class PictureInPictureChild extends JSWindowActorChild {
 
   play() {
     let video = this.getWeakVideo();
-    if (video) {
-      video.play();
+    if (video && this.videoWrapper) {
+      this.videoWrapper.play(video);
     }
   }
 
   pause() {
     let video = this.getWeakVideo();
-    if (video) {
-      video.pause();
+    if (video && this.videoWrapper) {
+      this.videoWrapper.pause(video);
     }
   }
 
   mute() {
     let video = this.getWeakVideo();
-    if (video) {
-      video.muted = true;
+    if (video && this.videoWrapper) {
+      this.videoWrapper.setMuted(video, true);
     }
   }
 
   unmute() {
     let video = this.getWeakVideo();
-    if (video) {
-      video.muted = false;
+    if (video && this.videoWrapper) {
+      this.videoWrapper.setMuted(video, false);
     }
   }
 
@@ -1572,7 +1613,7 @@ class PictureInPictureChild extends JSWindowActorChild {
         break;
     }
 
-    const isVideoStreaming = video.duration == +Infinity;
+    const isVideoStreaming = this.videoWrapper.getDuration(video) == +Infinity;
     var oldval, newval;
 
     try {
@@ -1581,11 +1622,16 @@ class PictureInPictureChild extends JSWindowActorChild {
           if (!this.isKeyEnabled(KEYBOARD_CONTROLS.PLAY_PAUSE)) {
             return;
           }
-          if (video.paused || video.ended) {
-            video.play();
+
+          if (
+            this.videoWrapper.getPaused(video) ||
+            this.videoWrapper.getEnded(video)
+          ) {
+            this.videoWrapper.play(video);
           } else {
-            video.pause();
+            this.videoWrapper.pause(video);
           }
+
           break;
         case "accel-w" :
           if (!this.isKeyEnabled(KEYBOARD_CONTROLS.CLOSE)) {
@@ -1598,29 +1644,29 @@ class PictureInPictureChild extends JSWindowActorChild {
           if (!this.isKeyEnabled(KEYBOARD_CONTROLS.VOLUME)) {
             return;
           }
-          oldval = video.volume;
-          video.volume = oldval < 0.1 ? 0 : oldval - 0.1;
-          video.muted = false;
+          oldval = this.videoWrapper.getVolume(video);
+          this.videoWrapper.setVolume(video, oldval < 0.1 ? 0 : oldval - 0.1);
+          this.videoWrapper.setMuted(video, false);
           break;
         case "upArrow" :
           if (!this.isKeyEnabled(KEYBOARD_CONTROLS.VOLUME)) {
             return;
           }
-          oldval = video.volume;
-          video.volume = oldval > 0.9 ? 1 : oldval + 0.1;
-          video.muted = false;
+          oldval = this.videoWrapper.getVolume(video);
+          this.videoWrapper.setVolume(video, oldval > 0.9 ? 1 : oldval + 0.1);
+          this.videoWrapper.setMuted(video, false);
           break;
         case "accel-downArrow" :
           if (!this.isKeyEnabled(KEYBOARD_CONTROLS.MUTE_UNMUTE)) {
             return;
           }
-          video.muted = true;
+          this.videoWrapper.setMuted(video, true);
           break;
         case "accel-upArrow" :
           if (!this.isKeyEnabled(KEYBOARD_CONTROLS.MUTE_UNMUTE)) {
             return;
           }
-          video.muted = false;
+          this.videoWrapper.setMuted(video, false);
           break;
         case "leftArrow": 
         case "accel-leftArrow" :
@@ -1628,13 +1674,13 @@ class PictureInPictureChild extends JSWindowActorChild {
             return;
           }
 
-          oldval = video.currentTime;
+          oldval = this.videoWrapper.getCurrentTime(video);
           if (keystroke == "leftArrow") {
             newval = oldval - 15;
           } else {
-            newval = oldval - video.duration / 10;
+            newval = oldval - this.videoWrapper.getDuration(video) / 10;
           }
-          video.currentTime = newval >= 0 ? newval : 0;
+          this.videoWrapper.setCurrentTime(video, newval >= 0 ? newval : 0);
           break;
         case "rightArrow": 
         case "accel-rightArrow" :
@@ -1642,29 +1688,35 @@ class PictureInPictureChild extends JSWindowActorChild {
             return;
           }
 
-          oldval = video.currentTime;
-          var maxtime = video.duration;
+          oldval = this.videoWrapper.getCurrentTime(video);
+          var maxtime = this.videoWrapper.getDuration(video);
           if (keystroke == "rightArrow") {
             newval = oldval + 15;
           } else {
             newval = oldval + maxtime / 10;
           }
-          video.currentTime = newval <= maxtime ? newval : maxtime;
+          let selectedTime = newval <= maxtime ? newval : maxtime;
+          this.videoWrapper.setCurrentTime(video, selectedTime);
           break;
         case "home" :
           if (!this.isKeyEnabled(KEYBOARD_CONTROLS.SEEK)) {
             return;
           }
           if (!isVideoStreaming) {
-            video.currentTime = 0;
+            this.videoWrapper.setCurrentTime(video, 0);
           }
           break;
         case "end" :
           if (!this.isKeyEnabled(KEYBOARD_CONTROLS.SEEK)) {
             return;
           }
-          if (!isVideoStreaming && video.currentTime != video.duration) {
-            video.currentTime = video.duration;
+
+          let duration = this.videoWrapper.getDuration(video);
+          if (
+            !isVideoStreaming &&
+            this.videoWrapper.getCurrentTime(video) != duration
+          ) {
+            this.videoWrapper.setCurrentTime(video, duration);
           }
           break;
         default:
@@ -1672,5 +1724,250 @@ class PictureInPictureChild extends JSWindowActorChild {
     } catch (e) {
       
     }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class PictureInPictureChildVideoWrapper {
+  #sandbox;
+  #siteWrapper;
+
+  
+
+
+
+
+
+
+
+
+
+  constructor(videoWrapperScriptPath, video) {
+    this.#sandbox = videoWrapperScriptPath
+      ? this.#createSandbox(videoWrapperScriptPath, video)
+      : null;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  #callWrapperMethod({ name, args = [], fallback = () => {}, validateRetVal }) {
+    try {
+      const wrappedMethod = this.#siteWrapper?.[name];
+      if (typeof wrappedMethod === "function") {
+        let retVal = wrappedMethod.call(this.#siteWrapper, ...args);
+
+        if (!validateRetVal) {
+          Cu.reportError(
+            `No return value validator was provided for method ${name}(). Returning null.`
+          );
+          return null;
+        }
+
+        if (!validateRetVal(retVal)) {
+          Cu.reportError(
+            `Calling method ${name}() returned an unexpected value: ${retVal}. Returning null.`
+          );
+          return null;
+        }
+
+        return retVal;
+      }
+    } catch (e) {
+      Cu.reportError(`There was an error while calling ${name}(): `, e.message);
+    }
+
+    return fallback();
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  #createSandbox(videoWrapperScriptPath, video) {
+    const addonPolicy = WebExtensionPolicy.getByID(
+      "pictureinpicture@mozilla.org"
+    );
+    let wrapperScriptUrl = addonPolicy.getURL(videoWrapperScriptPath);
+    let originatingWin = video.ownerGlobal;
+    let originatingDoc = video.ownerDocument;
+
+    let sandbox = Cu.Sandbox([originatingDoc.nodePrincipal], {
+      sandboxName: "Picture-in-Picture video wrapper sandbox",
+      sandboxPrototype: originatingWin,
+      sameZoneAs: originatingWin,
+      wantXrays: false,
+    });
+
+    try {
+      Services.scriptloader.loadSubScript(wrapperScriptUrl, sandbox);
+    } catch (e) {
+      Cu.nukeSandbox(sandbox);
+      Cu.reportError("Error loading wrapper script for Picture-in-Picture" + e);
+      return null;
+    }
+
+    
+    
+    
+    
+    
+    
+    this.#siteWrapper = new sandbox.PictureInPictureVideoWrapper().wrappedJSObject;
+
+    return sandbox;
+  }
+
+  #isBoolean(val) {
+    return typeof val === "boolean";
+  }
+
+  #isNumber(val) {
+    return typeof val === "number";
+  }
+
+  destroy() {
+    if (this.#sandbox) {
+      Cu.nukeSandbox(this.#sandbox);
+    }
+  }
+
+  
+
+  play(video) {
+    return this.#callWrapperMethod({
+      name: "play",
+      args: [video],
+      fallback: () => video.play(),
+      validateRetVal: retVal => retVal == null,
+    });
+  }
+
+  pause(video) {
+    return this.#callWrapperMethod({
+      name: "pause",
+      args: [video],
+      fallback: () => video.pause(),
+      validateRetVal: retVal => retVal == null,
+    });
+  }
+
+  getPaused(video) {
+    return this.#callWrapperMethod({
+      name: "getPaused",
+      args: [video],
+      fallback: () => video.paused,
+      validateRetVal: retVal => this.#isBoolean(retVal),
+    });
+  }
+
+  getEnded(video) {
+    return this.#callWrapperMethod({
+      name: "getEnded",
+      args: [video],
+      fallback: () => video.ended,
+      validateRetVal: retVal => this.#isBoolean(retVal),
+    });
+  }
+
+  getDuration(video) {
+    return this.#callWrapperMethod({
+      name: "getDuration",
+      args: [video],
+      fallback: () => video.duration,
+      validateRetVal: retVal => this.#isNumber(retVal),
+    });
+  }
+
+  getCurrentTime(video) {
+    return this.#callWrapperMethod({
+      name: "getCurrentTime",
+      args: [video],
+      fallback: () => video.currentTime,
+      validateRetVal: retVal => this.#isNumber(retVal),
+    });
+  }
+
+  setCurrentTime(video, position) {
+    return this.#callWrapperMethod({
+      name: "setCurrentTime",
+      args: [video, position],
+      fallback: () => {
+        video.currentTime = position;
+      },
+      validateRetVal: retVal => retVal == null,
+    });
+  }
+
+  getVolume(video) {
+    return this.#callWrapperMethod({
+      name: "getVolume",
+      args: [video],
+      fallback: () => video.volume,
+      validateRetVal: retVal => this.#isNumber(retVal),
+    });
+  }
+
+  setVolume(video, volume) {
+    return this.#callWrapperMethod({
+      name: "setVolume",
+      args: [video, volume],
+      fallback: () => {
+        video.volume = volume;
+      },
+      validateRetVal: retVal => retVal == null,
+    });
+  }
+
+  setMuted(video, isMuted) {
+    return this.#callWrapperMethod({
+      name: "setMuted",
+      args: [video, isMuted],
+      fallback: () => {
+        video.muted = isMuted;
+      },
+      validateRetVal: retVal => retVal == null,
+    });
   }
 }
