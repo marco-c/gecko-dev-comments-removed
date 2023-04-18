@@ -115,23 +115,24 @@ class nsNSSComponent final : public nsINSSComponent, public nsIObserver {
   nsresult MaybeEnableIntermediatePreloadingHealer();
 
   
-  mozilla::Monitor mLoadableCertsLoadedMonitor MOZ_UNANNOTATED;
-  bool mLoadableCertsLoaded;
-  nsresult mLoadableCertsLoadedResult;
+  mozilla::Monitor mLoadableCertsLoadedMonitor;
+  bool mLoadableCertsLoaded GUARDED_BY(mLoadableCertsLoadedMonitor);
+  nsresult mLoadableCertsLoadedResult GUARDED_BY(mLoadableCertsLoadedMonitor);
 
   
-  mozilla::Mutex mMutex MOZ_UNANNOTATED;
+  mozilla::Mutex mMutex;
 
   
 
 #ifdef DEBUG
-  nsCString mTestBuiltInRootHash;
+  nsCString mTestBuiltInRootHash GUARDED_BY(mMutex);
 #endif
-  nsCString mContentSigningRootHash;
-  RefPtr<mozilla::psm::SharedCertVerifier> mDefaultCertVerifier;
-  nsString mMitmCanaryIssuer;
-  bool mMitmDetecionEnabled;
-  mozilla::Vector<EnterpriseCert> mEnterpriseCerts;
+  nsCString mContentSigningRootHash GUARDED_BY(mMutex);
+  RefPtr<mozilla::psm::SharedCertVerifier> mDefaultCertVerifier
+      GUARDED_BY(mMutex);
+  nsString mMitmCanaryIssuer GUARDED_BY(mMutex);
+  bool mMitmDetecionEnabled GUARDED_BY(mMutex);
+  mozilla::Vector<EnterpriseCert> mEnterpriseCerts GUARDED_BY(mMutex);
 
   
   static int mInstanceCount;

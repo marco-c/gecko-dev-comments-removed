@@ -194,24 +194,24 @@ class DataStorage : public nsIObserver {
                         nsTArray<DataStorageItem>* aItems,
                         const MutexAutoLock& aProofOfLock);
 
-  Mutex mMutex
-      MOZ_UNANNOTATED;  
-  DataStorageTable mPersistentDataTable;
-  DataStorageTable mTemporaryDataTable;
-  DataStorageTable mPrivateDataTable;
-  nsCOMPtr<nsIFile> mBackingFile;
-  bool mPendingWrite;  
-  bool mShuttingDown;
-  RefPtr<TaskQueue> mBackgroundTaskQueue;
+  Mutex mMutex;  
+  DataStorageTable mPersistentDataTable GUARDED_BY(mMutex);
+  DataStorageTable mTemporaryDataTable GUARDED_BY(mMutex);
+  DataStorageTable mPrivateDataTable GUARDED_BY(mMutex);
+  nsCOMPtr<nsIFile> mBackingFile GUARDED_BY(mMutex);
+  bool mPendingWrite GUARDED_BY(
+      mMutex);  
+  bool mShuttingDown GUARDED_BY(mMutex);
+  RefPtr<TaskQueue> mBackgroundTaskQueue GUARDED_BY(mMutex);
   
 
   nsCOMPtr<nsITimer> mTimer;  
 
   mozilla::Atomic<bool> mInitCalled;  
 
-  Monitor mReadyMonitor
-      MOZ_UNANNOTATED;  
-  bool mReady;  
+  Monitor mReadyMonitor;  
+  bool mReady GUARDED_BY(mReadyMonitor);  
+                                          
 
   const nsString mFilename;
 
