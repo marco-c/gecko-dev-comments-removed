@@ -23,20 +23,20 @@ PTH_FILENAME = "mach.pth"
 METADATA_FILENAME = "moz_virtualenv_metadata.json"
 
 
-class MozVirtualenvMetadataOutOfDateError(Exception):
+class MozSiteMetadataOutOfDateError(Exception):
     pass
 
 
-class MozVirtualenvMetadata:
-    """Moz-specific information that is encoded into a file at the root of a virtualenv"""
+class MozSiteMetadata:
+    """Details about a Moz-managed python environment"""
 
-    def __init__(self, hex_version, virtualenv_name, file_path):
+    def __init__(self, hex_version, site_name, file_path):
         self.hex_version = hex_version
-        self.virtualenv_name = virtualenv_name
+        self.site_name = site_name
         self.file_path = file_path
 
     def write(self):
-        raw = {"hex_version": self.hex_version, "virtualenv_name": self.virtualenv_name}
+        raw = {"hex_version": self.hex_version, "virtualenv_name": self.site_name}
         with open(self.file_path, "w") as file:
             json.dump(raw, file)
 
@@ -44,7 +44,7 @@ class MozVirtualenvMetadata:
         return (
             type(self) == type(other)
             and self.hex_version == other.hex_version
-            and self.virtualenv_name == other.virtualenv_name
+            and self.site_name == other.site_name
         )
 
     @classmethod
@@ -64,8 +64,8 @@ class MozVirtualenvMetadata:
         except FileNotFoundError:
             return None
         except KeyError:
-            raise MozVirtualenvMetadataOutOfDateError(
-                f'The virtualenv metadata at "{path}" is out-of-date.'
+            raise MozSiteMetadataOutOfDateError(
+                f'The moz site metadata at "{path}" is out-of-date.'
             )
 
 
@@ -95,19 +95,19 @@ class VirtualenvHelper(object):
         return os.path.join(self.bin_path, binary)
 
 
-class VirtualenvManager(VirtualenvHelper):
-    """Contains logic for managing virtualenvs for building the tree."""
+class MozSiteManager(VirtualenvHelper):
+    """Contains logic for managing the Python import scope for building the tree."""
 
     def __init__(
         self,
         topsrcdir,
         virtualenvs_dir,
-        virtualenv_name,
+        site_name,
         *,
         manifest_path=None,
     ):
-        virtualenv_path = os.path.join(virtualenvs_dir, virtualenv_name)
-        super(VirtualenvManager, self).__init__(virtualenv_path)
+        virtualenv_path = os.path.join(virtualenvs_dir, site_name)
+        super(MozSiteManager, self).__init__(virtualenv_path)
 
         
         
@@ -120,14 +120,14 @@ class VirtualenvManager(VirtualenvHelper):
         
         self.exe_info_path = os.path.join(self.virtualenv_root, "python_exe.txt")
 
-        self._virtualenv_name = virtualenv_name
+        self._site_name = site_name
         self._manifest_path = manifest_path or os.path.join(
-            topsrcdir, "build", f"{virtualenv_name}_virtualenv_packages.txt"
+            topsrcdir, "build", f"{site_name}_virtualenv_packages.txt"
         )
 
-        self._metadata = MozVirtualenvMetadata(
+        self._metadata = MozSiteMetadata(
             sys.hexversion,
-            virtualenv_name,
+            site_name,
             os.path.join(self.virtualenv_root, METADATA_FILENAME),
         )
 
@@ -178,12 +178,10 @@ class VirtualenvManager(VirtualenvHelper):
         
         
         try:
-            existing_metadata = MozVirtualenvMetadata.from_path(
-                self._metadata.file_path
-            )
+            existing_metadata = MozSiteMetadata.from_path(self._metadata.file_path)
             if existing_metadata != self._metadata:
                 return False
-        except MozVirtualenvMetadataOutOfDateError:
+        except MozSiteMetadataOutOfDateError:
             return False
 
         if env_requirements.pth_requirements or env_requirements.vendored_requirements:
@@ -207,10 +205,10 @@ class VirtualenvManager(VirtualenvHelper):
         return True
 
     def ensure(self):
-        """Ensure the virtualenv is present and up to date.
+        """Ensure the site is present and up to date.
 
-        If the virtualenv is up to date, this does nothing. Otherwise, it
-        creates and populates the virtualenv as necessary.
+        If the site is up to date, this does nothing. Otherwise, it
+        creates and populates a virtualenv as necessary.
 
         This should be the main API used from this class as it is the
         highest-level.
@@ -258,8 +256,8 @@ class VirtualenvManager(VirtualenvHelper):
     def requirements(self):
         if not os.path.exists(self._manifest_path):
             raise Exception(
-                f'The current command is using the "{self._virtualenv_name}" '
-                "virtualenv. However, that virtualenv is missing its associated "
+                f'The current command is using the "{self._site_name}" '
+                "site. However, that site is missing its associated "
                 f'requirements definition file at "{self._manifest_path}".'
             )
 
@@ -270,7 +268,7 @@ class VirtualenvManager(VirtualenvHelper):
         return MachEnvRequirements.from_requirements_definition(
             self.topsrcdir,
             is_thunderbird,
-            self._virtualenv_name in ("mach", "build"),
+            self._site_name in ("mach", "build"),
             self._manifest_path,
         )
 
@@ -305,10 +303,10 @@ class VirtualenvManager(VirtualenvHelper):
         return self.virtualenv_root
 
     def activate(self):
-        """Activate the virtualenv in this Python context.
+        """Activate this site in the current Python context.
 
         If you run a random Python script and wish to "activate" the
-        virtualenv, you can simply instantiate an instance of this class
+        site, you can simply instantiate an instance of this class
         and call .ensure() and .activate() to make the virtualenv active.
         """
 

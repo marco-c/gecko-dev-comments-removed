@@ -186,28 +186,26 @@ def _activate_python_environment(topsrcdir, state_dir):
         )
     ]
 
-    from mach.virtualenv import (
-        MozVirtualenvMetadata,
-        MozVirtualenvMetadataOutOfDateError,
-        VirtualenvManager,
+    from mach.site import (
+        MozSiteMetadata,
+        MozSiteMetadataOutOfDateError,
+        MozSiteManager,
     )
 
     try:
-        mach_virtualenv = VirtualenvManager(
+        mach_site = MozSiteManager(
             topsrcdir,
             os.path.join(state_dir, "_virtualenvs"),
             "mach",
         )
-        active_metadata = MozVirtualenvMetadata.from_runtime()
-        is_mach_virtualenv = (
-            active_metadata and active_metadata.virtualenv_name == "mach"
-        )
-    except MozVirtualenvMetadataOutOfDateError as e:
+        active_site_metadata = MozSiteMetadata.from_runtime()
+        is_mach_site = active_site_metadata and active_site_metadata.site_name == "mach"
+    except MozSiteMetadataOutOfDateError as e:
         print(e)
         print('This should be resolved by running "./mach create-mach-environment".')
         sys.exit(1)
 
-    requirements = mach_virtualenv.requirements()
+    requirements = mach_site.requirements()
     if os.environ.get("MACH_USE_SYSTEM_PYTHON") or os.environ.get("MOZ_AUTOMATION"):
         env_var = (
             "MOZ_AUTOMATION"
@@ -261,14 +259,14 @@ def _activate_python_environment(topsrcdir, state_dir):
             _scrub_system_site_packages()
 
         sys.path[0:0] = requirements.pths_as_absolute(topsrcdir)
-    elif is_mach_virtualenv:
+    elif is_mach_site:
         
         
         
         
         
         
-        if not mach_virtualenv.up_to_date(skip_pip_package_check=True):
+        if not mach_site.up_to_date(skip_pip_package_check=True):
             print(
                 'The "mach" virtualenv is not up-to-date, please run '
                 '"./mach create-mach-environment"'
