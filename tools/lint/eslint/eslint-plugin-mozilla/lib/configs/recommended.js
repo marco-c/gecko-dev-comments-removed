@@ -21,8 +21,8 @@ module.exports = {
   extends: ["eslint:recommended", "plugin:prettier/recommended"],
 
   globals: {
-    Cc: false,
     
+    Cc: false,
     ChromeUtils: false,
     Ci: false,
     Components: false,
@@ -31,20 +31,20 @@ module.exports = {
     Debugger: false,
     InstallTrigger: false,
     
-    
     InternalError: true,
-    Intl: false,
-    SharedArrayBuffer: false,
-    StopIteration: false,
+    
     dump: true,
     
     
     
     location: true,
     openDialog: false,
-    saveStack: false,
+    
     sizeToContent: false,
     
+    
+    
+    structuredClone: false,
     
     uneval: false,
   },
@@ -58,6 +58,11 @@ module.exports = {
         "mozilla/jsm": true,
       },
       files: ["**/*.jsm", "**/*.jsm.js"],
+      globals: {
+        
+        
+        Intl: false,
+      },
       rules: {
         "mozilla/mark-exported-symbols-as-used": "error",
         
