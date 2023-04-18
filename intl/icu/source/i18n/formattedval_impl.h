@@ -169,6 +169,7 @@ public:
     inline const FormattedStringBuilder& getStringRef() const {
         return fString;
     }
+    void resetString();
 
     
 

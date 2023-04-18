@@ -155,7 +155,7 @@ Format::parseObject(const UnicodeString& source,
 
 
 
-UBool
+bool
 Format::operator==(const Format& that) const
 {
     

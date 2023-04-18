@@ -434,7 +434,7 @@ public:
 
 
 
-    virtual UBool operator==(const Format& other) const;
+    virtual bool operator==(const Format& other) const override;
 
     
 
@@ -443,14 +443,14 @@ public:
 
 
 
-    virtual UBool operator!=(const Format& other) const;
+    virtual bool operator!=(const Format& other) const;
 
     
 
 
 
 
-    virtual PluralFormat* clone() const;
+    virtual PluralFormat* clone() const override;
 
    
 
@@ -469,7 +469,7 @@ public:
    UnicodeString& format(const Formattable& obj,
                          UnicodeString& appendTo,
                          FieldPosition& pos,
-                         UErrorCode& status) const;
+                         UErrorCode& status) const override;
 
    
 
@@ -505,7 +505,7 @@ public:
 
    virtual void parseObject(const UnicodeString& source,
                             Formattable& result,
-                            ParsePosition& parse_pos) const;
+                            ParsePosition& parse_pos) const override;
 
     
 
@@ -520,7 +520,7 @@ public:
 
 
 
-     virtual UClassID getDynamicClassID() const;
+     virtual UClassID getDynamicClassID() const override;
 
 private:
      
@@ -548,7 +548,7 @@ private:
 
         virtual ~PluralSelectorAdapter();
 
-        virtual UnicodeString select(void *context, double number, UErrorCode& ) const;
+        virtual UnicodeString select(void *context, double number, UErrorCode& ) const override;
 
         void reset();
 

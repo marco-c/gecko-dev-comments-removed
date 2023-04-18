@@ -206,7 +206,7 @@ public:
 
 
 
-  virtual void Append(const char* bytes, int32_t n);
+  virtual void Append(const char* bytes, int32_t n) override;
   
 
 
@@ -224,7 +224,7 @@ public:
   virtual char* GetAppendBuffer(int32_t min_capacity,
                                 int32_t desired_capacity_hint,
                                 char* scratch, int32_t scratch_capacity,
-                                int32_t* result_capacity);
+                                int32_t* result_capacity) override;
   
 
 
@@ -291,7 +291,7 @@ class StringByteSink : public ByteSink {
 
 
 
-  virtual void Append(const char* data, int32_t n) { dest_->append(data, n); }
+  virtual void Append(const char* data, int32_t n) override { dest_->append(data, n); }
  private:
   StringClass* dest_;
 

@@ -58,7 +58,7 @@ public:
 
 
 
-    virtual CaseMapTransliterator* clone() const = 0;
+    virtual CaseMapTransliterator* clone() const override = 0;
 
     
 
@@ -82,7 +82,7 @@ protected:
 
     virtual void handleTransliterate(Replaceable& text,
                                      UTransPosition& offsets, 
-                                     UBool isIncremental) const;
+                                     UBool isIncremental) const override;
 
     UCaseMapFull *fMap;
 

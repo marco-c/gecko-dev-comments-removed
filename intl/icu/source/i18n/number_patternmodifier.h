@@ -117,7 +117,9 @@ class U_I18N_API MutablePatternModifier
 
 
 
-    void setPatternAttributes(UNumberSignDisplay signDisplay, bool perMille);
+
+
+    void setPatternAttributes(UNumberSignDisplay signDisplay, bool perMille, bool approximately);
 
     
 
@@ -193,6 +195,11 @@ class U_I18N_API MutablePatternModifier
 
     UnicodeString getSymbol(AffixPatternType type) const U_OVERRIDE;
 
+    
+
+
+    UnicodeString getCurrencySymbolForUnitWidth(UErrorCode& status) const;
+
     UnicodeString toUnicodeString() const;
 
   private:
@@ -204,6 +211,7 @@ class U_I18N_API MutablePatternModifier
     Field fField;
     UNumberSignDisplay fSignDisplay;
     bool fPerMilleReplacesPercent;
+    bool fApproximately;
 
     
     const DecimalFormatSymbols *fSymbols;

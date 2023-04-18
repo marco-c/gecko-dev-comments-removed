@@ -186,7 +186,7 @@ public:
   
 
   
-  virtual IndianCalendar* clone() const;
+  virtual IndianCalendar* clone() const override;
 
  private:
   
@@ -200,7 +200,7 @@ public:
   
 
 
-  virtual int32_t handleGetLimit(UCalendarDateFields field, ELimitType limitType) const;
+  virtual int32_t handleGetLimit(UCalendarDateFields field, ELimitType limitType) const override;
   
   
 
@@ -209,32 +209,32 @@ public:
 
 
 
-  virtual int32_t handleGetMonthLength(int32_t extendedYear, int32_t month) const;
+  virtual int32_t handleGetMonthLength(int32_t extendedYear, int32_t month) const override;
   
   
 
 
 
-  virtual int32_t handleGetYearLength(int32_t extendedYear) const;
-
-  
-  
-  
-
-  
-  
-
-
-  virtual int32_t handleComputeMonthStart(int32_t eyear, int32_t month, UBool useMonth) const;
+  virtual int32_t handleGetYearLength(int32_t extendedYear) const override;
 
   
   
   
 
   
+  
 
 
-  virtual int32_t handleGetExtendedYear();
+  virtual int32_t handleComputeMonthStart(int32_t eyear, int32_t month, UBool useMonth) const override;
+
+  
+  
+  
+
+  
+
+
+  virtual int32_t handleGetExtendedYear() override;
 
   
 
@@ -252,7 +252,7 @@ public:
 
 
 
-  virtual void handleComputeFields(int32_t julianDay, UErrorCode &status);
+  virtual void handleComputeFields(int32_t julianDay, UErrorCode &status) override;
 
   
  public: 
@@ -261,7 +261,7 @@ public:
 
 
 
-  virtual UClassID getDynamicClassID(void) const;
+  virtual UClassID getDynamicClassID(void) const override;
 
   
 
@@ -282,7 +282,7 @@ public:
 
 
 
-  virtual const char * getType() const;
+  virtual const char * getType() const override;
 
 private:
   IndianCalendar(); 
@@ -299,27 +299,27 @@ protected:
 
 
 
-  virtual UBool inDaylightTime(UErrorCode& status) const;
+  virtual UBool inDaylightTime(UErrorCode& status) const override;
 
 
   
 
 
 
-  virtual UBool haveDefaultCentury() const;
+  virtual UBool haveDefaultCentury() const override;
 
   
 
 
 
 
-  virtual UDate defaultCenturyStart() const;
+  virtual UDate defaultCenturyStart() const override;
 
   
 
 
 
-  virtual int32_t defaultCenturyStartYear() const;
+  virtual int32_t defaultCenturyStartYear() const override;
 };
 
 U_NAMESPACE_END

@@ -115,12 +115,12 @@ class EscapeTransliterator : public Transliterator {
     
 
 
-    virtual EscapeTransliterator* clone() const;
+    virtual EscapeTransliterator* clone() const override;
 
     
 
 
-    virtual UClassID getDynamicClassID() const;
+    virtual UClassID getDynamicClassID() const override;
 
     
 
@@ -133,7 +133,7 @@ class EscapeTransliterator : public Transliterator {
 
 
     virtual void handleTransliterate(Replaceable& text, UTransPosition& offset,
-                             UBool isIncremental) const;
+                             UBool isIncremental) const override;
 
 };
 

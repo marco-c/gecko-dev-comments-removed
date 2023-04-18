@@ -36,8 +36,8 @@ U_NAMESPACE_BEGIN
 class U_TOOLUTIL_API PropertyNames {
 public:
     virtual ~PropertyNames();
-    virtual int32_t getPropertyEnum(const char *name) const;
-    virtual int32_t getPropertyValueEnum(int32_t property, const char *name) const;
+    virtual int32_t getPropertyEnum(const char *name) const = 0;
+    virtual int32_t getPropertyValueEnum(int32_t property, const char *name) const = 0;
 };
 
 struct U_TOOLUTIL_API UniProps {
@@ -159,7 +159,6 @@ private:
 
     static const int32_t kNumLineBuffers=3;
 
-    PropertyNames *icuPnames;  
     const PropertyNames *pnames;  
     FILE *file;
     int32_t defaultLineIndex, blockLineIndex, lineIndex;

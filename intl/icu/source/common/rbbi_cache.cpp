@@ -74,7 +74,7 @@ UBool RuleBasedBreakIterator::DictionaryCache::following(int32_t fromPos, int32_
             return TRUE;
         }
     }
-    UPRV_UNREACHABLE;
+    UPRV_UNREACHABLE_EXIT;
 }
 
 
@@ -114,7 +114,7 @@ UBool RuleBasedBreakIterator::DictionaryCache::preceding(int32_t fromPos, int32_
             return TRUE;
         }
     }
-    UPRV_UNREACHABLE;
+    UPRV_UNREACHABLE_EXIT;
 }
 
 void RuleBasedBreakIterator::DictionaryCache::populateDictionary(int32_t startPos, int32_t endPos,
@@ -163,7 +163,7 @@ void RuleBasedBreakIterator::DictionaryCache::populateDictionary(int32_t startPo
         
         
         if (lbe != NULL) {
-            foundBreakCount += lbe->findBreaks(text, rangeStart, rangeEnd, fBreaks);
+            foundBreakCount += lbe->findBreaks(text, rangeStart, rangeEnd, fBreaks, status);
         }
 
         
@@ -386,7 +386,7 @@ UBool RuleBasedBreakIterator::BreakCache::populateNear(int32_t position, UErrorC
         
         while (fBoundaries[fEndBufIdx] < position) {
             if (!populateFollowing()) {
-                UPRV_UNREACHABLE;
+                UPRV_UNREACHABLE_EXIT;
             }
         }
         fBufIdx = fEndBufIdx;                      

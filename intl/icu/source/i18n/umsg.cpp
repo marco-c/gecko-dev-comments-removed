@@ -463,7 +463,7 @@ umsg_vformat(   const UMessageFormat *fmt,
 
         default:
             
-            UPRV_UNREACHABLE;
+            UPRV_UNREACHABLE_EXIT;
         }
     }
     UnicodeString resultStr;
@@ -590,11 +590,11 @@ umsg_vparse(const UMessageFormat *fmt,
             
             
             
-            UPRV_UNREACHABLE;
+            UPRV_UNREACHABLE_EXIT;
 
         
         case Formattable::kArray:
-            UPRV_UNREACHABLE;
+            UPRV_UNREACHABLE_EXIT;
         }
     }
 

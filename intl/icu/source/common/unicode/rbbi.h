@@ -260,7 +260,7 @@ public:
 
 
 
-    virtual UBool operator==(const BreakIterator& that) const;
+    virtual bool operator==(const BreakIterator& that) const override;
 
     
 
@@ -269,7 +269,7 @@ public:
 
 
 
-    inline UBool operator!=(const BreakIterator& that) const;
+    inline bool operator!=(const BreakIterator& that) const;
 
     
 
@@ -281,7 +281,7 @@ public:
 
 
 
-    virtual RuleBasedBreakIterator* clone() const;
+    virtual RuleBasedBreakIterator* clone() const override;
 
     
 
@@ -326,7 +326,7 @@ public:
 
 
 
-    virtual  CharacterIterator& getText(void) const;
+    virtual  CharacterIterator& getText(void) const override;
 
 
     
@@ -343,7 +343,7 @@ public:
 
 
 
-     virtual UText *getUText(UText *fillIn, UErrorCode &status) const;
+     virtual UText *getUText(UText *fillIn, UErrorCode &status) const override;
 
     
 
@@ -352,20 +352,7 @@ public:
 
 
 
-    virtual void adoptText(CharacterIterator* newText);
-
-    
-
-
-
-
-
-
-
-
-
-
-    virtual void setText(const UnicodeString& newText);
+    virtual void adoptText(CharacterIterator* newText) override;
 
     
 
@@ -378,88 +365,7 @@ public:
 
 
 
-
-
-    virtual void  setText(UText *text, UErrorCode &status);
-
-    
-
-
-
-
-    virtual int32_t first(void);
-
-    
-
-
-
-
-    virtual int32_t last(void);
-
-    
-
-
-
-
-
-
-
-
-
-    virtual int32_t next(int32_t n);
-
-    
-
-
-
-
-    virtual int32_t next(void);
-
-    
-
-
-
-
-    virtual int32_t previous(void);
-
-    
-
-
-
-
-
-
-    virtual int32_t following(int32_t offset);
-
-    
-
-
-
-
-
-
-    virtual int32_t preceding(int32_t offset);
-
-    
-
-
-
-
-
-
-
-    virtual UBool isBoundary(int32_t offset);
-
-    
-
-
-
-
-
-
-
-    virtual int32_t current(void) const;
-
+    virtual void setText(const UnicodeString& newText) override;
 
     
 
@@ -474,6 +380,88 @@ public:
 
 
 
+    virtual void  setText(UText *text, UErrorCode &status) override;
+
+    
+
+
+
+
+    virtual int32_t first(void) override;
+
+    
+
+
+
+
+    virtual int32_t last(void) override;
+
+    
+
+
+
+
+
+
+
+
+
+    virtual int32_t next(int32_t n) override;
+
+    
+
+
+
+
+    virtual int32_t next(void) override;
+
+    
+
+
+
+
+    virtual int32_t previous(void) override;
+
+    
+
+
+
+
+
+
+    virtual int32_t following(int32_t offset) override;
+
+    
+
+
+
+
+
+
+    virtual int32_t preceding(int32_t offset) override;
+
+    
+
+
+
+
+
+
+
+    virtual UBool isBoundary(int32_t offset) override;
+
+    
+
+
+
+
+
+
+
+    virtual int32_t current(void) const override;
+
+
+    
 
 
 
@@ -492,7 +480,19 @@ public:
 
 
 
-    virtual int32_t getRuleStatus() const;
+
+
+
+
+
+
+
+
+
+
+
+
+    virtual int32_t getRuleStatus() const override;
 
    
 
@@ -517,7 +517,7 @@ public:
 
 
 
-    virtual int32_t getRuleStatusVec(int32_t *fillInVec, int32_t capacity, UErrorCode &status);
+    virtual int32_t getRuleStatusVec(int32_t *fillInVec, int32_t capacity, UErrorCode &status) override;
 
     
 
@@ -530,7 +530,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID(void) const;
+    virtual UClassID getDynamicClassID(void) const override;
 
     
 
@@ -574,7 +574,7 @@ public:
 
     virtual RuleBasedBreakIterator *createBufferClone(void *stackBuffer,
                                                       int32_t &BufferSize,
-                                                      UErrorCode &status);
+                                                      UErrorCode &status) override;
 #endif  
 
     
@@ -621,7 +621,7 @@ public:
 
 
 
-    virtual RuleBasedBreakIterator &refreshInputText(UText *input, UErrorCode &status);
+    virtual RuleBasedBreakIterator &refreshInputText(UText *input, UErrorCode &status) override;
 
 
 private:
@@ -719,7 +719,7 @@ private:
 
 
 
-inline UBool RuleBasedBreakIterator::operator!=(const BreakIterator& that) const {
+inline bool RuleBasedBreakIterator::operator!=(const BreakIterator& that) const {
     return !operator==(that);
 }
 

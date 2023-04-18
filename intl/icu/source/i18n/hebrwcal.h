@@ -192,7 +192,7 @@ public:
 
 
 
-    virtual HebrewCalendar* clone() const;
+    virtual HebrewCalendar* clone() const override;
     
 public:
     
@@ -205,7 +205,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID(void) const;
+    virtual UClassID getDynamicClassID(void) const override;
 
     
 
@@ -226,7 +226,7 @@ public:
 
 
 
-    virtual const char * getType() const;
+    virtual const char * getType() const override;
 
 
     
@@ -242,25 +242,12 @@ public:
 
 
 
-    virtual void add(UCalendarDateFields field, int32_t amount, UErrorCode& status);
+    virtual void add(UCalendarDateFields field, int32_t amount, UErrorCode& status) override;
     
 
 
-    virtual void add(EDateFields field, int32_t amount, UErrorCode& status);
+    virtual void add(EDateFields field, int32_t amount, UErrorCode& status) override;
 
-
-    
-
-
-
-
-
-
-
-
-
-
-    virtual void roll(UCalendarDateFields field, int32_t amount, UErrorCode& status);
 
     
 
@@ -273,7 +260,20 @@ public:
 
 
 
-    virtual void roll(EDateFields field, int32_t amount, UErrorCode& status);
+    virtual void roll(UCalendarDateFields field, int32_t amount, UErrorCode& status) override;
+
+    
+
+
+
+
+
+
+
+
+
+
+    virtual void roll(EDateFields field, int32_t amount, UErrorCode& status) override;
 
     
 
@@ -303,7 +303,7 @@ public:
 
 
 
-    virtual int32_t handleGetLimit(UCalendarDateFields field, ELimitType limitType) const;
+    virtual int32_t handleGetLimit(UCalendarDateFields field, ELimitType limitType) const override;
 
     
 
@@ -312,7 +312,7 @@ public:
 
 
 
-    virtual int32_t handleGetMonthLength(int32_t extendedYear, int32_t month) const;
+    virtual int32_t handleGetMonthLength(int32_t extendedYear, int32_t month) const override;
 
     
 
@@ -321,7 +321,7 @@ public:
 
 
 
-    virtual int32_t handleGetYearLength(int32_t eyear) const;
+    virtual int32_t handleGetYearLength(int32_t eyear) const override;
     
 
 
@@ -337,7 +337,7 @@ public:
 
 
 
-    virtual void handleComputeFields(int32_t julianDay, UErrorCode &status);
+    virtual void handleComputeFields(int32_t julianDay, UErrorCode &status) override;
     
 
 
@@ -346,7 +346,7 @@ public:
 
 
 
-    virtual int32_t handleGetExtendedYear();
+    virtual int32_t handleGetExtendedYear() override;
     
 
 
@@ -361,7 +361,7 @@ public:
 
 
     virtual int32_t handleComputeMonthStart(int32_t eyear, int32_t month,
-                                                   UBool useMonth) const;
+                                                   UBool useMonth) const override;
 
 
     
@@ -370,7 +370,7 @@ public:
 
 
 
-    virtual void validateField(UCalendarDateFields field, UErrorCode &status);
+    virtual void validateField(UCalendarDateFields field, UErrorCode &status) override;
 
  protected:
 
@@ -383,26 +383,26 @@ public:
 
 
 
-  virtual UBool inDaylightTime(UErrorCode& status) const;
+  virtual UBool inDaylightTime(UErrorCode& status) const override;
 
-    
-
-
-
-    virtual UBool haveDefaultCentury() const;
-
-    
+  
 
 
 
+  virtual UBool haveDefaultCentury() const override;
 
-    virtual UDate defaultCenturyStart() const;
-
-    
-
+  
 
 
-    virtual int32_t defaultCenturyStartYear() const;
+
+
+  virtual UDate defaultCenturyStart() const override;
+
+  
+
+
+
+  virtual int32_t defaultCenturyStartYear() const override;
 
  private: 
     

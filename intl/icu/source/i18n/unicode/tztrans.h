@@ -86,7 +86,7 @@ public:
 
 
 
-    UBool operator==(const TimeZoneTransition& that) const;
+    bool operator==(const TimeZoneTransition& that) const;
 
     
 
@@ -95,7 +95,7 @@ public:
 
 
 
-    UBool operator!=(const TimeZoneTransition& that) const;
+    bool operator!=(const TimeZoneTransition& that) const;
 
     
 
@@ -187,7 +187,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID(void) const;
+    virtual UClassID getDynamicClassID(void) const override;
 };
 
 U_NAMESPACE_END

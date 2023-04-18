@@ -1185,23 +1185,23 @@ static const UChar UNESCAPE_MAP[] = {
 enum { UNESCAPE_MAP_LENGTH = UPRV_LENGTHOF(UNESCAPE_MAP) };
 
 
-static int8_t _digit8(UChar c) {
-    if (c >= 0x0030 && c <= 0x0037) {
-        return (int8_t)(c - 0x0030);
+static int32_t _digit8(UChar c) {
+    if (c >= u'0' && c <= u'7') {
+        return c - u'0';
     }
     return -1;
 }
 
 
-static int8_t _digit16(UChar c) {
-    if (c >= 0x0030 && c <= 0x0039) {
-        return (int8_t)(c - 0x0030);
+static int32_t _digit16(UChar c) {
+    if (c >= u'0' && c <= u'9') {
+        return c - u'0';
     }
-    if (c >= 0x0041 && c <= 0x0046) {
-        return (int8_t)(c - (0x0041 - 10));
+    if (c >= u'A' && c <= u'F') {
+        return c - (u'A' - 10);
     }
-    if (c >= 0x0061 && c <= 0x0066) {
-        return (int8_t)(c - (0x0061 - 10));
+    if (c >= u'a' && c <= u'f') {
+        return c - (u'a' - 10);
     }
     return -1;
 }
@@ -1216,14 +1216,13 @@ u_unescapeAt(UNESCAPE_CHAR_AT charAt,
              void *context) {
 
     int32_t start = *offset;
-    UChar c;
+    UChar32 c;
     UChar32 result = 0;
     int8_t n = 0;
     int8_t minDig = 0;
     int8_t maxDig = 0;
     int8_t bitsPerDigit = 4; 
-    int8_t dig;
-    int32_t i;
+    int32_t dig;
     UBool braces = FALSE;
 
     
@@ -1236,15 +1235,15 @@ u_unescapeAt(UNESCAPE_CHAR_AT charAt,
 
     
     switch (c) {
-    case 0x0075 :
+    case u'u':
         minDig = maxDig = 4;
         break;
-    case 0x0055 :
+    case u'U':
         minDig = maxDig = 8;
         break;
-    case 0x0078 :
+    case u'x':
         minDig = 1;
-        if (*offset < length && charAt(*offset, context) == 0x7B ) {
+        if (*offset < length && charAt(*offset, context) == u'{') {
             ++(*offset);
             braces = TRUE;
             maxDig = 8;
@@ -1266,7 +1265,7 @@ u_unescapeAt(UNESCAPE_CHAR_AT charAt,
     if (minDig != 0) {
         while (*offset < length && n < maxDig) {
             c = charAt(*offset, context);
-            dig = (int8_t)((bitsPerDigit == 3) ? _digit8(c) : _digit16(c));
+            dig = (bitsPerDigit == 3) ? _digit8(c) : _digit16(c);
             if (dig < 0) {
                 break;
             }
@@ -1278,7 +1277,7 @@ u_unescapeAt(UNESCAPE_CHAR_AT charAt,
             goto err;
         }
         if (braces) {
-            if (c != 0x7D ) {
+            if (c != u'}') {
                 goto err;
             }
             ++(*offset);
@@ -1293,16 +1292,15 @@ u_unescapeAt(UNESCAPE_CHAR_AT charAt,
         if (*offset < length && U16_IS_LEAD(result)) {
             int32_t ahead = *offset + 1;
             c = charAt(*offset, context);
-            if (c == 0x5C  && ahead < length) {
+            if (c == u'\\' && ahead < length) {
                 
                 
                 
-                int32_t tailLimit = ahead + 5;
+                int32_t tailLimit = ahead + 11;
                 if (tailLimit > length) {
                     tailLimit = length;
                 }
-                c = (UChar) u_unescapeAt(charAt, &ahead, tailLimit,
-                                         context);
+                c = u_unescapeAt(charAt, &ahead, tailLimit, context);
             }
             if (U16_IS_TRAIL(c)) {
                 *offset = ahead;
@@ -1313,7 +1311,7 @@ u_unescapeAt(UNESCAPE_CHAR_AT charAt,
     }
 
     
-    for (i=0; i<UNESCAPE_MAP_LENGTH; i+=2) {
+    for (int32_t i=0; i<UNESCAPE_MAP_LENGTH; i+=2) {
         if (c == UNESCAPE_MAP[i]) {
             return UNESCAPE_MAP[i+1];
         } else if (c < UNESCAPE_MAP[i]) {
@@ -1322,13 +1320,13 @@ u_unescapeAt(UNESCAPE_CHAR_AT charAt,
     }
 
     
-    if (c == 0x0063  && *offset < length) {
+    if (c == u'c' && *offset < length) {
         c = charAt((*offset)++, context);
         if (U16_IS_LEAD(c) && *offset < length) {
             UChar c2 = charAt(*offset, context);
             if (U16_IS_TRAIL(c2)) {
                 ++(*offset);
-                c = (UChar) U16_GET_SUPPLEMENTARY(c, c2); 
+                c = U16_GET_SUPPLEMENTARY(c, c2);
             }
         }
         return 0x1F & c;

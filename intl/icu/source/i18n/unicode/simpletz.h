@@ -111,7 +111,7 @@ public:
 
 
 
-    virtual UBool operator==(const TimeZone& that) const;
+    virtual bool operator==(const TimeZone& that) const override;
 
     
 
@@ -571,7 +571,7 @@ public:
 
 
     virtual int32_t getOffset(uint8_t era, int32_t year, int32_t month, int32_t day,
-                              uint8_t dayOfWeek, int32_t millis, UErrorCode& status) const;
+                              uint8_t dayOfWeek, int32_t millis, UErrorCode& status) const override;
 
     
 
@@ -590,7 +590,7 @@ public:
 
     virtual int32_t getOffset(uint8_t era, int32_t year, int32_t month, int32_t day,
                            uint8_t dayOfWeek, int32_t milliseconds,
-                           int32_t monthLength, UErrorCode& status) const;
+                           int32_t monthLength, UErrorCode& status) const override;
     
 
 
@@ -618,7 +618,7 @@ public:
 
 
     virtual void getOffset(UDate date, UBool local, int32_t& rawOffset,
-                           int32_t& dstOffset, UErrorCode& ec) const;
+                           int32_t& dstOffset, UErrorCode& ec) const override;
 
 #ifndef U_FORCE_HIDE_DRAFT_API
     
@@ -628,7 +628,7 @@ public:
     virtual void getOffsetFromLocal(
         UDate date, UTimeZoneLocalOption nonExistingTimeOpt,
         UTimeZoneLocalOption duplicatedTimeOpt,
-        int32_t& rawOffset, int32_t& dstOffset, UErrorCode& status) const;
+        int32_t& rawOffset, int32_t& dstOffset, UErrorCode& status) const override;
 #endif 
 
     
@@ -638,7 +638,7 @@ public:
 
 
 
-    virtual int32_t getRawOffset(void) const;
+    virtual int32_t getRawOffset(void) const override;
 
     
 
@@ -647,7 +647,7 @@ public:
 
 
 
-    virtual void setRawOffset(int32_t offsetMillis);
+    virtual void setRawOffset(int32_t offsetMillis) override;
 
     
 
@@ -668,7 +668,7 @@ public:
 
 
 
-    virtual int32_t getDSTSavings(void) const;
+    virtual int32_t getDSTSavings(void) const override;
 
     
 
@@ -676,7 +676,7 @@ public:
 
 
 
-    virtual UBool useDaylightTime(void) const;
+    virtual UBool useDaylightTime(void) const override;
 
 #ifndef U_FORCE_HIDE_DEPRECATED_API
     
@@ -693,7 +693,7 @@ public:
 
 
 
-    virtual UBool inDaylightTime(UDate date, UErrorCode& status) const;
+    virtual UBool inDaylightTime(UDate date, UErrorCode& status) const override;
 #endif  
 
     
@@ -702,7 +702,7 @@ public:
 
 
 
-    UBool hasSameRules(const TimeZone& other) const;
+    UBool hasSameRules(const TimeZone& other) const override;
 
     
 
@@ -711,17 +711,7 @@ public:
 
 
 
-    virtual SimpleTimeZone* clone() const;
-
-    
-
-
-
-
-
-
-
-    virtual UBool getNextTransition(UDate base, UBool inclusive, TimeZoneTransition& result) const;
+    virtual SimpleTimeZone* clone() const override;
 
     
 
@@ -731,7 +721,7 @@ public:
 
 
 
-    virtual UBool getPreviousTransition(UDate base, UBool inclusive, TimeZoneTransition& result) const;
+    virtual UBool getNextTransition(UDate base, UBool inclusive, TimeZoneTransition& result) const override;
 
     
 
@@ -741,7 +731,17 @@ public:
 
 
 
-    virtual int32_t countTransitionRules(UErrorCode& status) const;
+    virtual UBool getPreviousTransition(UDate base, UBool inclusive, TimeZoneTransition& result) const override;
+
+    
+
+
+
+
+
+
+
+    virtual int32_t countTransitionRules(UErrorCode& status) const override;
 
     
 
@@ -760,7 +760,7 @@ public:
 
 
     virtual void getTimeZoneRules(const InitialTimeZoneRule*& initial,
-        const TimeZoneRule* trsrules[], int32_t& trscount, UErrorCode& status) const;
+        const TimeZoneRule* trsrules[], int32_t& trscount, UErrorCode& status) const override;
 
 
 public:
@@ -775,7 +775,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID(void) const;
+    virtual UClassID getDynamicClassID(void) const override;
 
     
 

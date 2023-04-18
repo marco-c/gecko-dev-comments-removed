@@ -79,10 +79,10 @@ StringCharacterIterator::operator=(const StringCharacterIterator& that) {
     return *this;
 }
 
-UBool
+bool
 StringCharacterIterator::operator==(const ForwardCharacterIterator& that) const {
     if (this == &that) {
-        return TRUE;
+        return true;
     }
 
     
@@ -90,7 +90,7 @@ StringCharacterIterator::operator==(const ForwardCharacterIterator& that) const 
     
 
     if (typeid(*this) != typeid(that)) {
-        return FALSE;
+        return false;
     }
 
     StringCharacterIterator&    realThat = (StringCharacterIterator&)that;

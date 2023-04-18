@@ -111,7 +111,7 @@ static void U_CALLCONV cloneUnicodeString(UElement *dst, UElement *src) {
     dst->pointer = new UnicodeString(*(UnicodeString*)src->pointer);
 }
 
-static int8_t U_CALLCONV compareUnicodeString(UElement t1, UElement t2) {
+static int32_t U_CALLCONV compareUnicodeString(UElement t1, UElement t2) {
     const UnicodeString &a = *(const UnicodeString*)t1.pointer;
     const UnicodeString &b = *(const UnicodeString*)t2.pointer;
     return a.compare(b);
@@ -278,14 +278,14 @@ UnicodeSet *UnicodeSet::cloneAsThawed() const {
 
 
 
-UBool UnicodeSet::operator==(const UnicodeSet& o) const {
-    if (len != o.len) return FALSE;
+bool UnicodeSet::operator==(const UnicodeSet& o) const {
+    if (len != o.len) return false;
     for (int32_t i = 0; i < len; ++i) {
-        if (list[i] != o.list[i]) return FALSE;
+        if (list[i] != o.list[i]) return false;
     }
-    if (hasStrings() != o.hasStrings()) { return FALSE; }
-    if (hasStrings() && *strings != *o.strings) return FALSE;
-    return TRUE;
+    if (hasStrings() != o.hasStrings()) { return false; }
+    if (hasStrings() && *strings != *o.strings) return false;
+    return true;
 }
 
 
@@ -984,7 +984,6 @@ void UnicodeSet::_add(const UnicodeString& s) {
     strings->sortedInsert(t, compareUnicodeString, ec);
     if (U_FAILURE(ec)) {
         setToBogus();
-        delete t;
     }
 }
 
@@ -1968,8 +1967,7 @@ void UnicodeSet::retain(const UChar32* other, int32_t otherLen, int8_t polarity)
 
 
 
-void UnicodeSet::_appendToPat(UnicodeString& buf, const UnicodeString& s, UBool
-escapeUnprintable) {
+void UnicodeSet::_appendToPat(UnicodeString& buf, const UnicodeString& s, UBool escapeUnprintable) {
     UChar32 cp;
     for (int32_t i = 0; i < s.length(); i += U16_LENGTH(cp)) {
         _appendToPat(buf, cp = s.char32At(i), escapeUnprintable);
@@ -1980,14 +1978,12 @@ escapeUnprintable) {
 
 
 
-void UnicodeSet::_appendToPat(UnicodeString& buf, UChar32 c, UBool
-escapeUnprintable) {
-    if (escapeUnprintable && ICU_Utility::isUnprintable(c)) {
+void UnicodeSet::_appendToPat(UnicodeString& buf, UChar32 c, UBool escapeUnprintable) {
+    if (escapeUnprintable ? ICU_Utility::isUnprintable(c) : ICU_Utility::shouldAlwaysBeEscaped(c)) {
         
         
-        if (ICU_Utility::escapeUnprintable(buf, c)) {
-            return;
-        }
+        ICU_Utility::escape(buf, c);
+        return;
     }
     
     switch (c) {
@@ -2013,6 +2009,19 @@ escapeUnprintable) {
     buf.append(c);
 }
 
+void UnicodeSet::_appendToPat(UnicodeString &result, UChar32 start, UChar32 end,
+                              UBool escapeUnprintable) {
+    _appendToPat(result, start, escapeUnprintable);
+    if (start != end) {
+        if ((start+1) != end ||
+                
+                start == 0xdbff) {
+            result.append(u'-');
+        }
+        _appendToPat(result, end, escapeUnprintable);
+    }
+}
+
 
 
 
@@ -2027,7 +2036,8 @@ UnicodeString& UnicodeSet::_toPattern(UnicodeString& result,
         for (i=0; i<patLen; ) {
             UChar32 c;
             U16_NEXT(pat, i, patLen, c);
-            if (escapeUnprintable && ICU_Utility::isUnprintable(c)) {
+            if (escapeUnprintable ?
+                    ICU_Utility::isUnprintable(c) : ICU_Utility::shouldAlwaysBeEscaped(c)) {
                 
                 
                 
@@ -2035,7 +2045,7 @@ UnicodeString& UnicodeSet::_toPattern(UnicodeString& result,
                 if ((backslashCount % 2) == 1) {
                     result.truncate(result.length() - 1);
                 }
-                ICU_Utility::escapeUnprintable(result, c);
+                ICU_Utility::escape(result, c);
                 backslashCount = 0;
             } else {
                 result.append(c);
@@ -2074,52 +2084,51 @@ UnicodeString& UnicodeSet::_generatePattern(UnicodeString& result,
 {
     result.append(u'[');
 
-
-
-
-
-
-
-
-
-
-
-    int32_t count = getRangeCount();
+    int32_t i = 0;
+    int32_t limit = len & ~1;  
 
     
     
     
-    if (count > 1 &&
-        getRangeStart(0) == MIN_VALUE &&
-        getRangeEnd(count-1) == MAX_VALUE) {
-
+    
+    
+    
+    
+    
+    
+    
+    
+    if (len >= 4 && list[0] == 0 && limit == len && !hasStrings()) {
         
         result.append(u'^');
-
-        for (int32_t i = 1; i < count; ++i) {
-            UChar32 start = getRangeEnd(i-1)+1;
-            UChar32 end = getRangeStart(i)-1;
-            _appendToPat(result, start, escapeUnprintable);
-            if (start != end) {
-                if ((start+1) != end) {
-                    result.append(u'-');
-                }
-                _appendToPat(result, end, escapeUnprintable);
-            }
-        }
+        
+        
+        i = 1;
+        --limit;
     }
 
     
-    else {
-        for (int32_t i = 0; i < count; ++i) {
-            UChar32 start = getRangeStart(i);
-            UChar32 end = getRangeEnd(i);
-            _appendToPat(result, start, escapeUnprintable);
-            if (start != end) {
-                if ((start+1) != end) {
-                    result.append(u'-');
-                }
-                _appendToPat(result, end, escapeUnprintable);
+    while (i < limit) {
+        UChar32 start = list[i];  
+        UChar32 end = list[i + 1] - 1;  
+        if (!(0xd800 <= end && end <= 0xdbff)) {
+            _appendToPat(result, start, end, escapeUnprintable);
+            i += 2;
+        } else {
+            
+            
+            
+            int32_t firstLead = i;
+            while ((i += 2) < limit && list[i] <= 0xdbff) {}
+            int32_t firstAfterLead = i;
+            
+            while (i < limit && (start = list[i]) <= 0xdfff) {
+                _appendToPat(result, start, list[i + 1] - 1, escapeUnprintable);
+                i += 2;
+            }
+            
+            for (int j = firstLead; j < firstAfterLead; j += 2) {
+                _appendToPat(result, list[j], list[j + 1] - 1, escapeUnprintable);
             }
         }
     }

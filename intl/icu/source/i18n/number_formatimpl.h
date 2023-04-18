@@ -36,6 +36,12 @@ class NumberFormatterImpl : public UMemory {
     
 
 
+
+    NumberFormatterImpl(UErrorCode &) {}
+
+    
+
+
     static int32_t formatStatic(const MacroProps &macros, UFormattedNumberData *results,
                                 UErrorCode &status);
 
@@ -108,12 +114,6 @@ class NumberFormatterImpl : public UMemory {
     LocalPointer<MixedUnitLongNameHandler> fMixedUnitLongNameHandler;
     LocalPointer<const LongNameMultiplexer> fLongNameMultiplexer;
     LocalPointer<const CompactHandler> fCompactHandler;
-
-    
-    struct Warehouse {
-        CurrencySymbols fCurrencySymbols;
-    } fWarehouse;
-
 
     NumberFormatterImpl(const MacroProps &macros, bool safe, UErrorCode &status);
 

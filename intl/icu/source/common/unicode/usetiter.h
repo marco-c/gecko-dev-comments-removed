@@ -63,12 +63,9 @@ class UnicodeString;
 
 
 
-class U_COMMON_API UnicodeSetIterator : public UObject {
 
- protected:
-
+class U_COMMON_API UnicodeSetIterator U_FINAL : public UObject {
     
-
 
 
 
@@ -76,7 +73,6 @@ class U_COMMON_API UnicodeSetIterator : public UObject {
     enum { IS_STRING = -1 };
 
     
-
 
 
 
@@ -90,11 +86,9 @@ class U_COMMON_API UnicodeSetIterator : public UObject {
 
 
 
-
     UChar32 codepointEnd;
 
     
-
 
 
 
@@ -170,6 +164,25 @@ class U_COMMON_API UnicodeSetIterator : public UObject {
 
     const UnicodeString& getString();
 
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+
+
+    inline UnicodeSetIterator &skipToStrings() {
+        
+        range = endRange;
+        endElement = -1;
+        nextElement = 0;
+        return *this;
+    }
+#endif  
+
     
 
 
@@ -242,42 +255,34 @@ class U_COMMON_API UnicodeSetIterator : public UObject {
 
 
 
-    virtual UClassID getDynamicClassID() const;
+    virtual UClassID getDynamicClassID() const override;
 
     
 
- protected:
+private:
 
     
     
     
     
-
 
     const UnicodeSet* set;
     
 
-
     int32_t endRange;
     
-
 
     int32_t range;
     
 
-
     int32_t endElement;
     
 
-
     int32_t nextElement;
     
-    
-
 
     int32_t nextString;
     
-
 
     int32_t stringCount;
 
@@ -285,28 +290,23 @@ class U_COMMON_API UnicodeSetIterator : public UObject {
 
 
 
-
     UnicodeString *cpString;
 
     
 
-
-    UnicodeSetIterator(const UnicodeSetIterator&); 
-
-    
-
-
-    UnicodeSetIterator& operator=(const UnicodeSetIterator&); 
+    UnicodeSetIterator(const UnicodeSetIterator&) = delete;
 
     
 
+    UnicodeSetIterator& operator=(const UnicodeSetIterator&) = delete;
 
-    virtual void loadRange(int32_t range);
+    
 
+    void loadRange(int32_t range);
 };
 
 inline UBool UnicodeSetIterator::isString() const {
-    return codepoint == (UChar32)IS_STRING;
+    return codepoint < 0;
 }
 
 inline UChar32 UnicodeSetIterator::getCodepoint() const {

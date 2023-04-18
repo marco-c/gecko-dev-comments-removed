@@ -191,7 +191,7 @@ public:
   
 
 
-  virtual UClassID getDynamicClassID() const;
+  virtual UClassID getDynamicClassID() const override;
 
 #ifdef SERVICE_DEBUG
  public:
@@ -315,7 +315,7 @@ class U_COMMON_API SimpleFactory : public ICUServiceFactory {
 
 
 
-  virtual UObject* create(const ICUServiceKey& key, const ICUService* service, UErrorCode& status) const;
+  virtual UObject* create(const ICUServiceKey& key, const ICUService* service, UErrorCode& status) const override;
 
   
 
@@ -324,7 +324,7 @@ class U_COMMON_API SimpleFactory : public ICUServiceFactory {
 
 
 
-  virtual void updateVisibleIDs(Hashtable& result, UErrorCode& status) const;
+  virtual void updateVisibleIDs(Hashtable& result, UErrorCode& status) const override;
 
   
 
@@ -336,7 +336,7 @@ class U_COMMON_API SimpleFactory : public ICUServiceFactory {
 
 
 
-  virtual UnicodeString& getDisplayName(const UnicodeString& id, const Locale& locale, UnicodeString& result) const;
+  virtual UnicodeString& getDisplayName(const UnicodeString& id, const Locale& locale, UnicodeString& result) const override;
 
 public:
  
@@ -347,7 +347,7 @@ public:
  
 
 
-  virtual UClassID getDynamicClassID() const;
+  virtual UClassID getDynamicClassID() const override;
 
 #ifdef SERVICE_DEBUG
  public:
@@ -390,7 +390,7 @@ public:
     
 
 
-    virtual UClassID getDynamicClassID() const;
+    virtual UClassID getDynamicClassID() const override;
     
 };
 
@@ -930,7 +930,7 @@ class U_COMMON_API ICUService : public ICUNotifier {
 
 
 
-    virtual UBool acceptsListener(const EventListener& l) const;
+    virtual UBool acceptsListener(const EventListener& l) const override;
 
     
 
@@ -941,7 +941,7 @@ class U_COMMON_API ICUService : public ICUNotifier {
 
 
 
-    virtual void notifyListener(EventListener& l) const;
+    virtual void notifyListener(EventListener& l) const override;
 
     
 

@@ -144,7 +144,7 @@ public:
 
 
 
-    virtual RuleBasedTransliterator* clone() const;
+    virtual RuleBasedTransliterator* clone() const override;
 
 protected:
     
@@ -152,7 +152,7 @@ protected:
 
 
     virtual void handleTransliterate(Replaceable& text, UTransPosition& offsets,
-                                     UBool isIncremental) const;
+                                     UBool isIncremental) const override;
 
 public:
     
@@ -168,19 +168,19 @@ public:
 
 
     virtual UnicodeString& toRules(UnicodeString& result,
-                                   UBool escapeUnprintable) const;
+                                   UBool escapeUnprintable) const override;
 
 protected:
     
 
 
-    virtual void handleGetSourceSet(UnicodeSet& result) const;
+    virtual void handleGetSourceSet(UnicodeSet& result) const override;
 
 public:
     
 
 
-    virtual UnicodeSet& getTargetSet(UnicodeSet& result) const;
+    virtual UnicodeSet& getTargetSet(UnicodeSet& result) const override;
 
     
 
@@ -205,7 +205,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID(void) const;
+    virtual UClassID getDynamicClassID(void) const override;
 
 private:
 

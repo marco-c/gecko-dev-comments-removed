@@ -114,7 +114,7 @@ public:
 
 
 
-    virtual UBool operator==(const ForwardCharacterIterator& that) const = 0;
+    virtual bool operator==(const ForwardCharacterIterator& that) const = 0;
     
     
 
@@ -126,7 +126,7 @@ public:
 
 
 
-    inline UBool operator!=(const ForwardCharacterIterator& that) const;
+    inline bool operator!=(const ForwardCharacterIterator& that) const;
     
     
 
@@ -142,7 +142,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID(void) const = 0;
+    virtual UClassID getDynamicClassID(void) const override = 0;
     
     
 
@@ -692,7 +692,7 @@ protected:
     int32_t  end;
 };
 
-inline UBool
+inline bool
 ForwardCharacterIterator::operator!=(const ForwardCharacterIterator& that) const {
     return !operator==(that);
 }

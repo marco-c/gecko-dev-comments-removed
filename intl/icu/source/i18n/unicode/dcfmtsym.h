@@ -169,8 +169,14 @@ public:
 
 
         kExponentMultiplicationSymbol,
+#ifndef U_HIDE_INTERNAL_API
         
-        kFormatSymbolCount = kNineDigitSymbol + 2
+
+
+        kApproximatelySignSymbol,
+#endif  
+        
+        kFormatSymbolCount = kExponentMultiplicationSymbol + 2
     };
 
     
@@ -255,7 +261,7 @@ public:
 
 
 
-    UBool operator==(const DecimalFormatSymbols& other) const;
+    bool operator==(const DecimalFormatSymbols& other) const;
 
     
 
@@ -264,7 +270,7 @@ public:
 
 
 
-    UBool operator!=(const DecimalFormatSymbols& other) const { return !operator==(other); }
+    bool operator!=(const DecimalFormatSymbols& other) const { return !operator==(other); }
 
     
 
@@ -289,7 +295,7 @@ public:
 
 
 
-    void setSymbol(ENumberFormatSymbol symbol, const UnicodeString &value, const UBool propogateDigits);
+    void setSymbol(ENumberFormatSymbol symbol, const UnicodeString &value, const UBool propagateDigits);
 
 #ifndef U_HIDE_INTERNAL_API
     
@@ -353,7 +359,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID() const;
+    virtual UClassID getDynamicClassID() const override;
 
     
 

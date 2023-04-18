@@ -297,7 +297,6 @@ Locale::Locale( const   char * newLanguage,
     else
     {
         UErrorCode status = U_ZERO_ERROR;
-        int32_t size = 0;
         int32_t lsize = 0;
         int32_t csize = 0;
         int32_t vsize = 0;
@@ -313,7 +312,6 @@ Locale::Locale( const   char * newLanguage,
                 setToBogus();
                 return;
             }
-            size = lsize;
         }
 
         CharString togo(newLanguage, lsize, status); 
@@ -326,7 +324,6 @@ Locale::Locale( const   char * newLanguage,
                 setToBogus();
                 return;
             }
-            size += csize;
         }
 
         
@@ -350,21 +347,6 @@ Locale::Locale( const   char * newLanguage,
             }
         }
 
-        if( vsize > 0 )
-        {
-            size += vsize;
-        }
-
-        
-        if ( vsize > 0 )
-        {
-            size += 2;  
-        }
-        else if ( csize > 0 )
-        {
-            size += 1;  
-        }
-
         if ( newKeywords != NULL)
         {
             ksize = (int32_t)uprv_strlen(newKeywords);
@@ -372,10 +354,8 @@ Locale::Locale( const   char * newLanguage,
               setToBogus();
               return;
             }
-            size += ksize + 1;
         }
 
-        
         
 
         
@@ -503,7 +483,7 @@ Locale::clone() const {
     return new Locale(*this);
 }
 
-UBool
+bool
 Locale::operator==( const   Locale& other) const
 {
     return (uprv_strcmp(other.fullName, fullName) == 0);
@@ -1231,7 +1211,7 @@ AliasReplacer::parseLanguageReplacement(
         status = U_MEMORY_ALLOCATION_ERROR;
         return;
     }
-    toBeFreed.addElement(str, status);
+    toBeFreed.addElementX(str, status);
     char* data = str->data();
     replacedLanguage = (const char*) data;
     char* endOfField = uprv_strchr(data, '_');
@@ -1445,7 +1425,7 @@ AliasReplacer::replaceTerritory(UVector& toBeFreed, UErrorCode& status)
             return false;
         }
         replacedRegion = item->data();
-        toBeFreed.addElement(item.orphan(), status);
+        toBeFreed.addElementX(item.orphan(), status);
     }
     U_ASSERT(!same(region, replacedRegion));
     region = replacedRegion;
@@ -1583,13 +1563,8 @@ AliasReplacer::replaceTransformedExtensions(
             }
             tkey = nextTKey;
         } while (tkey != nullptr);
-        tfields.sort([](UElement e1, UElement e2) -> int8_t {
-            
-            
-            
-            int res = uprv_strcmp(
-                (const char*)e1.pointer, (const char*)e2.pointer);
-            return (res == 0) ? 0 : ((res > 0) ? 1 : -1);
+        tfields.sort([](UElement e1, UElement e2) -> int32_t {
+            return uprv_strcmp((const char*)e1.pointer, (const char*)e2.pointer);
         }, status);
         for (int32_t i = 0; i < tfields.size(); i++) {
              if (output.length() > 0) {
@@ -1631,13 +1606,8 @@ AliasReplacer::outputToString(
         if (!notEmpty(script) && !notEmpty(region)) {
           out.append(SEP_CHAR, status);
         }
-        variants.sort([](UElement e1, UElement e2) -> int8_t {
-            
-            
-            
-            int res = uprv_strcmp(
-                (const char*)e1.pointer, (const char*)e2.pointer);
-            return (res == 0) ? 0 : ((res > 0) ? 1 : -1);
+        variants.sort([](UElement e1, UElement e2) -> int32_t {
+            return uprv_strcmp((const char*)e1.pointer, (const char*)e2.pointer);
         }, status);
         int32_t variantsStart = out.length();
         for (int32_t i = 0; i < variants.size(); i++) {
@@ -1689,21 +1659,16 @@ AliasReplacer::replace(const Locale& locale, CharString& out, UErrorCode& status
         while ((end = uprv_strchr(start, SEP_CHAR)) != nullptr &&
                U_SUCCESS(status)) {
             *end = NULL_CHAR;  
-            variants.addElement(start, status);
+            variants.addElementX(start, status);
             start = end + 1;
         }
-        variants.addElement(start, status);
+        variants.addElementX(start, status);
     }
     if (U_FAILURE(status)) { return false; }
 
     
-    variants.sort([](UElement e1, UElement e2) -> int8_t {
-        
-        
-        
-        int res = uprv_strcmp(
-            (const char*)e1.pointer, (const char*)e2.pointer);
-        return (res == 0) ? 0 : ((res > 0) ? 1 : -1);
+    variants.sort([](UElement e1, UElement e2) -> int32_t {
+        return uprv_strcmp((const char*)e1.pointer, (const char*)e2.pointer);
     }, status);
 
     
@@ -2453,7 +2418,7 @@ private:
 
 public:
     static UClassID U_EXPORT2 getStaticClassID(void) { return (UClassID)&fgClassID; }
-    virtual UClassID getDynamicClassID(void) const { return getStaticClassID(); }
+    virtual UClassID getDynamicClassID(void) const override { return getStaticClassID(); }
 public:
     KeywordEnumeration(const char *keys, int32_t keywordLen, int32_t currentIndex, UErrorCode &status)
         : keywords((char *)&fgClassID), current((char *)&fgClassID), length(0) {
@@ -2477,13 +2442,13 @@ public:
 
     virtual ~KeywordEnumeration();
 
-    virtual StringEnumeration * clone() const
+    virtual StringEnumeration * clone() const override
     {
         UErrorCode status = U_ZERO_ERROR;
         return new KeywordEnumeration(keywords, length, (int32_t)(current - keywords), status);
     }
 
-    virtual int32_t count(UErrorCode &) const {
+    virtual int32_t count(UErrorCode &) const override {
         char *kw = keywords;
         int32_t result = 0;
         while(*kw) {
@@ -2493,7 +2458,7 @@ public:
         return result;
     }
 
-    virtual const char* next(int32_t* resultLength, UErrorCode& status) {
+    virtual const char* next(int32_t* resultLength, UErrorCode& status) override {
         const char* result;
         int32_t len;
         if(U_SUCCESS(status) && *current != 0) {
@@ -2512,13 +2477,13 @@ public:
         return result;
     }
 
-    virtual const UnicodeString* snext(UErrorCode& status) {
+    virtual const UnicodeString* snext(UErrorCode& status) override {
         int32_t resultLength = 0;
         const char *s = next(&resultLength, status);
         return setChars(s, resultLength, status);
     }
 
-    virtual void reset(UErrorCode& ) {
+    virtual void reset(UErrorCode& ) override {
         current = keywords;
     }
 };
@@ -2536,7 +2501,7 @@ public:
     using KeywordEnumeration::KeywordEnumeration;
     virtual ~UnicodeKeywordEnumeration();
 
-    virtual const char* next(int32_t* resultLength, UErrorCode& status) {
+    virtual const char* next(int32_t* resultLength, UErrorCode& status) override {
         const char* legacy_key = KeywordEnumeration::next(nullptr, status);
         while (U_SUCCESS(status) && legacy_key != nullptr) {
             const char* key = uloc_toUnicodeLocaleKey(legacy_key);

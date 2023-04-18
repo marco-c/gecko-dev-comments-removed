@@ -91,7 +91,7 @@ public:
 
 
 
-    virtual TaiwanCalendar* clone() const;
+    virtual TaiwanCalendar* clone() const override;
 
 public:
     
@@ -104,7 +104,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID(void) const;
+    virtual UClassID getDynamicClassID(void) const override;
 
     
 
@@ -125,7 +125,7 @@ public:
 
 
 
-    virtual const char * getType() const;
+    virtual const char * getType() const override;
 
 private:
     TaiwanCalendar(); 
@@ -139,13 +139,13 @@ private:
 
 
 
-    virtual int32_t handleGetExtendedYear();
+    virtual int32_t handleGetExtendedYear() override;
     
 
 
 
 
-    virtual void handleComputeFields(int32_t julianDay, UErrorCode& status);
+    virtual void handleComputeFields(int32_t julianDay, UErrorCode& status) override;
     
 
 
@@ -153,26 +153,26 @@ private:
 
 
 
-    virtual int32_t handleGetLimit(UCalendarDateFields field, ELimitType limitType) const;
+    virtual int32_t handleGetLimit(UCalendarDateFields field, ELimitType limitType) const override;
 
     
 
 
 
-    virtual UBool haveDefaultCentury() const;
+    virtual UBool haveDefaultCentury() const override;
 
     
 
 
 
 
-    virtual UDate defaultCenturyStart() const;
+    virtual UDate defaultCenturyStart() const override;
 
     
 
 
 
-    virtual int32_t defaultCenturyStartYear() const;
+    virtual int32_t defaultCenturyStartYear() const override;
 };
 
 U_NAMESPACE_END

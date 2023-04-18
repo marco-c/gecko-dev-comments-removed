@@ -126,22 +126,13 @@ public:
 
 
 
-    virtual TimeUnitFormat* clone() const;
+    virtual TimeUnitFormat* clone() const override;
 
     
 
 
 
     TimeUnitFormat& operator=(const TimeUnitFormat& other);
-
-    
-
-
-
-
-
-
-    UBool operator!=(const Format& other) const;
 
     
 
@@ -167,7 +158,7 @@ public:
 
     virtual void parseObject(const UnicodeString& source,
                              Formattable& result,
-                             ParsePosition& pos) const;
+                             ParsePosition& pos) const override;
 
     
 
@@ -193,7 +184,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID(void) const;
+    virtual UClassID getDynamicClassID(void) const override;
 
 private:
     Hashtable*    fTimeUnitToCountToPatterns[TimeUnit::UTIMEUNIT_FIELD_COUNT];
@@ -235,11 +226,6 @@ private:
 
     friend struct TimeUnitFormatReadSink;
 };
-
-inline UBool
-TimeUnitFormat::operator!=(const Format& other) const  {
-    return !operator==(other);
-}
 
 U_NAMESPACE_END
 

@@ -164,7 +164,7 @@ class PersianCalendar : public Calendar {
   
 
   
-  virtual PersianCalendar* clone() const;
+  virtual PersianCalendar* clone() const override;
 
  private:
   
@@ -194,7 +194,7 @@ class PersianCalendar : public Calendar {
   
 
 
-  virtual int32_t handleGetLimit(UCalendarDateFields field, ELimitType limitType) const;
+  virtual int32_t handleGetLimit(UCalendarDateFields field, ELimitType limitType) const override;
   
   
 
@@ -203,13 +203,13 @@ class PersianCalendar : public Calendar {
 
 
 
-  virtual int32_t handleGetMonthLength(int32_t extendedYear, int32_t month) const;
+  virtual int32_t handleGetMonthLength(int32_t extendedYear, int32_t month) const override;
   
   
 
 
 
-  virtual int32_t handleGetYearLength(int32_t extendedYear) const;
+  virtual int32_t handleGetYearLength(int32_t extendedYear) const override;
     
   
   
@@ -219,7 +219,7 @@ class PersianCalendar : public Calendar {
   
 
 
-  virtual int32_t handleComputeMonthStart(int32_t eyear, int32_t month, UBool useMonth) const;
+  virtual int32_t handleComputeMonthStart(int32_t eyear, int32_t month, UBool useMonth) const override;
 
   
   
@@ -228,7 +228,7 @@ class PersianCalendar : public Calendar {
   
 
 
-  virtual int32_t handleGetExtendedYear();
+  virtual int32_t handleGetExtendedYear() override;
 
   
 
@@ -246,7 +246,7 @@ class PersianCalendar : public Calendar {
 
 
 
-  virtual void handleComputeFields(int32_t julianDay, UErrorCode &status);
+  virtual void handleComputeFields(int32_t julianDay, UErrorCode &status) override;
 
   
  public: 
@@ -255,7 +255,7 @@ class PersianCalendar : public Calendar {
 
 
 
-  virtual UClassID getDynamicClassID(void) const;
+  virtual UClassID getDynamicClassID(void) const override;
 
   
 
@@ -276,7 +276,7 @@ class PersianCalendar : public Calendar {
 
 
 
-  virtual const char * getType() const;
+  virtual const char * getType() const override;
 
  private:
   PersianCalendar(); 
@@ -292,26 +292,26 @@ class PersianCalendar : public Calendar {
 
 
 
-  virtual UBool inDaylightTime(UErrorCode& status) const;
+  virtual UBool inDaylightTime(UErrorCode& status) const override;
 
   
 
 
 
-  virtual UBool haveDefaultCentury() const;
+  virtual UBool haveDefaultCentury() const override;
 
   
 
 
 
 
-  virtual UDate defaultCenturyStart() const;
+  virtual UDate defaultCenturyStart() const override;
 
   
 
 
 
-  virtual int32_t defaultCenturyStartYear() const;
+  virtual int32_t defaultCenturyStartYear() const override;
 };
 
 U_NAMESPACE_END

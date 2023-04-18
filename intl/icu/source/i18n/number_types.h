@@ -63,25 +63,28 @@ enum AffixPatternType {
             TYPE_PLUS_SIGN = -2,
 
     
-            TYPE_PERCENT = -3,
+            TYPE_APPROXIMATELY_SIGN = -3,
 
     
-            TYPE_PERMILLE = -4,
+            TYPE_PERCENT = -4,
 
     
-            TYPE_CURRENCY_SINGLE = -5,
+            TYPE_PERMILLE = -5,
 
     
-            TYPE_CURRENCY_DOUBLE = -6,
+            TYPE_CURRENCY_SINGLE = -6,
 
     
-            TYPE_CURRENCY_TRIPLE = -7,
+            TYPE_CURRENCY_DOUBLE = -7,
 
     
-            TYPE_CURRENCY_QUAD = -8,
+            TYPE_CURRENCY_TRIPLE = -8,
 
     
-            TYPE_CURRENCY_QUINT = -9,
+            TYPE_CURRENCY_QUAD = -9,
+
+    
+            TYPE_CURRENCY_QUINT = -10,
 
     
             TYPE_CURRENCY_OVERFLOW = -15
@@ -137,6 +140,11 @@ class U_I18N_API AffixPatternProvider {
 
 
     virtual bool hasBody() const = 0;
+
+    
+
+
+    virtual bool currencyAsDecimal() const = 0;
 };
 
 

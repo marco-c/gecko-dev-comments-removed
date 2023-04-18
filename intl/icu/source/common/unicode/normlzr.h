@@ -584,7 +584,7 @@ public:
 
 
 
-  UBool        operator==(const Normalizer& that) const;
+  bool         operator==(const Normalizer& that) const;
 
   
 
@@ -594,7 +594,7 @@ public:
 
 
 
-  inline UBool        operator!=(const Normalizer& that) const;
+  inline bool         operator!=(const Normalizer& that) const;
 
   
 
@@ -732,7 +732,7 @@ public:
 
 
 
-  virtual UClassID getDynamicClassID() const;
+  virtual UClassID getDynamicClassID() const override;
 #endif  
 
 private:
@@ -777,7 +777,7 @@ private:
 
 
 #ifndef U_HIDE_DEPRECATED_API
-inline UBool
+inline bool
 Normalizer::operator!= (const Normalizer& other) const
 { return ! operator==(other); }
 

@@ -62,6 +62,7 @@ struct U_I18N_API ParsedSubpatternInfo {
     bool hasPercentSign = false;
     bool hasPerMilleSign = false;
     bool hasCurrencySign = false;
+    bool hasCurrencyDecimal = false;
     bool hasMinusSign = false;
     bool hasPlusSign = false;
 
@@ -104,6 +105,8 @@ struct U_I18N_API ParsedPatternInfo : public AffixPatternProvider, public UMemor
 
     bool hasBody() const U_OVERRIDE;
 
+    bool currencyAsDecimal() const U_OVERRIDE;
+
   private:
     struct U_I18N_API ParserState {
         const UnicodeString& pattern; 
@@ -119,8 +122,13 @@ struct U_I18N_API ParsedPatternInfo : public AffixPatternProvider, public UMemor
             return *this;
         }
 
+        
         UChar32 peek();
 
+        
+        UChar32 peek2();
+
+        
         UChar32 next();
 
         
@@ -308,6 +316,7 @@ class U_I18N_API PatternStringUtils {
 
     static void patternInfoToStringBuilder(const AffixPatternProvider& patternInfo, bool isPrefix,
                                            PatternSignType patternSignType,
+                                           bool approximately,
                                            StandardPlural::Form plural, bool perMilleReplacesPercent,
                                            UnicodeString& output);
 

@@ -115,7 +115,6 @@ typedef enum UCurrNameStyle {
 
     UCURR_NARROW_SYMBOL_NAME,
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -134,7 +133,6 @@ typedef enum UCurrNameStyle {
 
 
     UCURR_VARIANT_SYMBOL_NAME
-#endif  
     
 } UCurrNameStyle;
 

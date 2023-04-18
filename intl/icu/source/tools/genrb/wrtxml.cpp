@@ -522,7 +522,7 @@ printComments(struct UString *src, const char *resName, UBool printTranslate, UE
                 write_utf8_file(out,UnicodeString(">\n"));
             }
         }else if(getShowWarning()){
-            fprintf(stderr, "Warning: Tranlate attribute for resource %s cannot be set. XLIFF prohibits it.\n", resName);
+            fprintf(stderr, "Warning: Translate attribute for resource %s cannot be set. XLIFF prohibits it.\n", resName);
             
             write_utf8_file(out,UnicodeString(">\n"));
         }
@@ -924,8 +924,6 @@ bin_write_xml(BinaryResource *res, const char* id, const char* , UErrorCode *sta
 static void
 table_write_xml(TableResource *res, const char* id, const char* language, UBool isTopLevel, UErrorCode *status) {
 
-    uint32_t  i         = 0;
-
     struct SResource *current = NULL;
     char* sid = NULL;
 
@@ -940,7 +938,6 @@ table_write_xml(TableResource *res, const char* id, const char* language, UBool 
     }
 
     current = res->fFirst;
-    i = 0;
 
     while (current != NULL) {
         res_write_xml(current, sid, language, FALSE, status);
@@ -949,7 +946,6 @@ table_write_xml(TableResource *res, const char* id, const char* language, UBool 
             return;
         }
 
-        i += 1;
         current = current->fNext;
     }
 

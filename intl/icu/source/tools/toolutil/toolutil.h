@@ -48,7 +48,7 @@ public:
     IcuToolErrorCode(const char *loc) : location(loc) {}
     virtual ~IcuToolErrorCode();
 protected:
-    virtual void handleFailure() const;
+    virtual void handleFailure() const override;
 private:
     const char *location;
 };
@@ -125,6 +125,21 @@ uprv_mkdir(const char *pathname, UErrorCode *status);
 U_CAPI UBool U_EXPORT2
 uprv_fileExists(const char *file);
 #endif
+
+
+
+
+
+
+
+
+
+
+U_CAPI int32_t U_EXPORT2
+uprv_compareGoldenFiles(
+    const char* buffer, int32_t bufferLen,
+    const char* goldenFilePath,
+    bool overwrite);
 
 
 

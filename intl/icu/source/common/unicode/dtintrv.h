@@ -89,7 +89,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID(void) const;
+    virtual UClassID getDynamicClassID(void) const override;
 
     
     
@@ -109,14 +109,14 @@ public:
 
 
 
-    virtual UBool operator==(const DateInterval& other) const;
+    virtual bool operator==(const DateInterval& other) const;
 
     
 
 
 
 
-    inline UBool operator!=(const DateInterval& other) const;
+    inline bool operator!=(const DateInterval& other) const;
 
 
     
@@ -151,7 +151,7 @@ DateInterval::getToDate() const {
 }
 
 
-inline UBool 
+inline bool
 DateInterval::operator!=(const DateInterval& other) const { 
     return ( !operator==(other) );
 }

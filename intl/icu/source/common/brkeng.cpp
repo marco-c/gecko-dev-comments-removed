@@ -25,6 +25,7 @@
 #include "brkeng.h"
 #include "cmemory.h"
 #include "dictbe.h"
+#include "lstmbe.h"
 #include "charstr.h"
 #include "dictionarydata.h"
 #include "mutex.h"
@@ -77,7 +78,9 @@ int32_t
 UnhandledEngine::findBreaks( UText *text,
                              int32_t ,
                              int32_t endPos,
-                             UVector32 & ) const {
+                             UVector32 &,
+                             UErrorCode &status) const {
+    if (U_FAILURE(status)) return 0;
     UChar32 c = utext_current32(text); 
     while((int32_t)utext_getNativeIndex(text) < endPos && fHandled->contains(c)) {
         utext_next32(text);            
@@ -132,14 +135,13 @@ ICULanguageBreakFactory::getEngineFor(UChar32 c) {
     static UMutex gBreakEngineMutex;
     Mutex m(&gBreakEngineMutex);
 
-    if (fEngines == NULL) {
-        UStack  *engines = new UStack(_deleteEngine, NULL, status);
-        if (U_FAILURE(status) || engines == NULL) {
+    if (fEngines == nullptr) {
+        LocalPointer<UStack>  engines(new UStack(_deleteEngine, nullptr, status), status);
+        if (U_FAILURE(status) ) {
             
-            delete engines;
-            return NULL;
+            return nullptr;
         }
-        fEngines = engines;
+        fEngines = engines.orphan();
     } else {
         int32_t i = fEngines->size();
         while (--i >= 0) {
@@ -152,10 +154,10 @@ ICULanguageBreakFactory::getEngineFor(UChar32 c) {
     
     
     lbe = loadEngineFor(c);
-    if (lbe != NULL) {
+    if (lbe != nullptr) {
         fEngines->push((void *)lbe, status);
     }
-    return lbe;
+    return U_SUCCESS(status) ? lbe : nullptr;
 }
 
 const LanguageBreakEngine *
@@ -163,9 +165,26 @@ ICULanguageBreakFactory::loadEngineFor(UChar32 c) {
     UErrorCode status = U_ZERO_ERROR;
     UScriptCode code = uscript_getScript(c, &status);
     if (U_SUCCESS(status)) {
+        const LanguageBreakEngine *engine = nullptr;
+        
+        const LSTMData *data = CreateLSTMDataForScript(code, status);
+        if (U_SUCCESS(status)) {
+            if (data != nullptr) {
+                engine = CreateLSTMBreakEngine(code, data, status);
+                if (U_SUCCESS(status) && engine != nullptr) {
+                    return engine;
+                }
+                if (engine != nullptr) {
+                    delete engine;
+                    engine = nullptr;
+                } else {
+                    DeleteLSTMData(data);
+                }
+            }
+        }
+        status = U_ZERO_ERROR;  
         DictionaryMatcher *m = loadDictionaryMatcherFor(code);
         if (m != NULL) {
-            const LanguageBreakEngine *engine = NULL;
             switch(code) {
             case USCRIPT_THAI:
                 engine = new ThaiBreakEngine(m, status);

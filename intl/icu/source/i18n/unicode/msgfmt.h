@@ -420,7 +420,7 @@ public:
 
 
 
-    virtual MessageFormat* clone() const;
+    virtual MessageFormat* clone() const override;
 
     
 
@@ -429,7 +429,7 @@ public:
 
 
 
-    virtual UBool operator==(const Format& other) const;
+    virtual bool operator==(const Format& other) const override;
 
     
 
@@ -715,7 +715,7 @@ public:
     virtual UnicodeString& format(const Formattable& obj,
                                   UnicodeString& appendTo,
                                   FieldPosition& pos,
-                                  UErrorCode& status) const;
+                                  UErrorCode& status) const override;
 
     
 
@@ -790,7 +790,7 @@ public:
 
     virtual void parseObject(const UnicodeString& source,
                              Formattable& result,
-                             ParsePosition& pos) const;
+                             ParsePosition& pos) const override;
 
     
 
@@ -850,7 +850,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID(void) const;
+    virtual UClassID getDynamicClassID(void) const override;
 
     
 
@@ -898,7 +898,7 @@ private:
     public:
         PluralSelectorProvider(const MessageFormat &mf, UPluralType type);
         virtual ~PluralSelectorProvider();
-        virtual UnicodeString select(void *ctx, double number, UErrorCode& ec) const;
+        virtual UnicodeString select(void *ctx, double number, UErrorCode& ec) const override;
 
         void reset();
     private:
@@ -1088,22 +1088,22 @@ private:
 
     class U_I18N_API DummyFormat : public Format {
     public:
-        virtual UBool operator==(const Format&) const;
-        virtual DummyFormat* clone() const;
+        virtual bool operator==(const Format&) const override;
+        virtual DummyFormat* clone() const override;
         virtual UnicodeString& format(const Formattable& obj,
                               UnicodeString& appendTo,
                               UErrorCode& status) const;
         virtual UnicodeString& format(const Formattable&,
                                       UnicodeString& appendTo,
                                       FieldPosition&,
-                                      UErrorCode& status) const;
+                                      UErrorCode& status) const override;
         virtual UnicodeString& format(const Formattable& obj,
                                       UnicodeString& appendTo,
                                       FieldPositionIterator* posIter,
-                                      UErrorCode& status) const;
+                                      UErrorCode& status) const override;
         virtual void parseObject(const UnicodeString&,
                                  Formattable&,
-                                 ParsePosition&) const;
+                                 ParsePosition&) const override;
     };
 
     friend class MessageFormatAdapter; 

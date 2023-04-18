@@ -303,7 +303,7 @@ public:
 
 
 
-    virtual GregorianCalendar* clone() const;
+    virtual GregorianCalendar* clone() const override;
 
     
 
@@ -350,7 +350,7 @@ public:
 
 
 
-    virtual UBool isEquivalentTo(const Calendar& other) const;
+    virtual UBool isEquivalentTo(const Calendar& other) const override;
 
 #ifndef U_FORCE_HIDE_DEPRECATED_API
     
@@ -364,7 +364,7 @@ public:
 
 
 
-    virtual void roll(EDateFields field, int32_t amount, UErrorCode& status);
+    virtual void roll(EDateFields field, int32_t amount, UErrorCode& status) override;
 #endif  
 
     
@@ -378,7 +378,7 @@ public:
 
 
 
-    virtual void roll(UCalendarDateFields field, int32_t amount, UErrorCode& status);
+    virtual void roll(UCalendarDateFields field, int32_t amount, UErrorCode& status) override;
 
 #ifndef U_HIDE_DEPRECATED_API
     
@@ -409,7 +409,7 @@ public:
 
 
 
-    int32_t getActualMinimum(UCalendarDateFields field, UErrorCode &status) const;
+    int32_t getActualMinimum(UCalendarDateFields field, UErrorCode &status) const override;
 
 #ifndef U_HIDE_DEPRECATED_API
     
@@ -434,7 +434,7 @@ public:
 
 
 
-    virtual int32_t getActualMaximum(UCalendarDateFields field, UErrorCode& status) const;
+    virtual int32_t getActualMaximum(UCalendarDateFields field, UErrorCode& status) const override;
 
     
 
@@ -445,7 +445,7 @@ public:
 
 
 
-    virtual UBool inDaylightTime(UErrorCode& status) const;
+    virtual UBool inDaylightTime(UErrorCode& status) const override;
 
 public:
 
@@ -459,7 +459,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID(void) const;
+    virtual UClassID getDynamicClassID(void) const override;
 
     
 
@@ -484,7 +484,7 @@ public:
 
 
 
-    virtual const char * getType() const;
+    virtual const char * getType() const override;
 
  private:
     GregorianCalendar(); 
@@ -512,7 +512,7 @@ public:
 
 
     virtual int32_t handleComputeMonthStart(int32_t eyear, int32_t month,
-                                                   UBool useMonth) const;
+                                                   UBool useMonth) const override;
 
     
 
@@ -522,7 +522,7 @@ public:
 
 
 
-    virtual int32_t handleComputeJulianDay(UCalendarDateFields bestField)  ;
+    virtual int32_t handleComputeJulianDay(UCalendarDateFields bestField) override;
 
     
 
@@ -531,7 +531,7 @@ public:
 
 
 
-    virtual int32_t handleGetMonthLength(int32_t extendedYear, int32_t month) const;
+    virtual int32_t handleGetMonthLength(int32_t extendedYear, int32_t month) const override;
 
     
 
@@ -540,7 +540,7 @@ public:
 
 
 
-    virtual int32_t handleGetYearLength(int32_t eyear) const;
+    virtual int32_t handleGetYearLength(int32_t eyear) const override;
 
     
 
@@ -615,7 +615,7 @@ public:
 
 
 
-    virtual int32_t handleGetLimit(UCalendarDateFields field, ELimitType limitType) const;
+    virtual int32_t handleGetLimit(UCalendarDateFields field, ELimitType limitType) const override;
 
     
 
@@ -625,7 +625,7 @@ public:
 
 
 
-    virtual int32_t handleGetExtendedYear();
+    virtual int32_t handleGetExtendedYear() override;
 
     
 
@@ -635,7 +635,7 @@ public:
 
 
 
-    virtual int32_t handleGetExtendedYearFromWeekFields(int32_t yearWoy, int32_t woy);
+    virtual int32_t handleGetExtendedYearFromWeekFields(int32_t yearWoy, int32_t woy) override;
 
 
     
@@ -653,7 +653,7 @@ public:
 
 
 
-    virtual void handleComputeFields(int32_t julianDay, UErrorCode &status);
+    virtual void handleComputeFields(int32_t julianDay, UErrorCode &status) override;
 
  private:
     
@@ -759,19 +759,19 @@ public:
 
 
 
-    virtual UBool haveDefaultCentury() const;
+    virtual UBool haveDefaultCentury() const override;
 
     
 
 
 
-    virtual UDate defaultCenturyStart() const;
+    virtual UDate defaultCenturyStart() const override;
 
     
 
 
 
-    virtual int32_t defaultCenturyStartYear() const;
+    virtual int32_t defaultCenturyStartYear() const override;
 };
 
 U_NAMESPACE_END

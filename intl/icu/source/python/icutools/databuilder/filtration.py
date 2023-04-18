@@ -274,6 +274,9 @@ def _preprocess_file_filters(requests, config, io):
     for category in all_categories:
         filter_json = default_filter_json
         
+        if "brkitr_lstm" == category:
+            filter_json = "exclude"
+        
         if "featureFilters" in json_data and category in json_data["featureFilters"]:
             filter_json = json_data["featureFilters"][category]
         if filter_json == "include" and "localeFilter" in json_data and category.endswith("_tree"):

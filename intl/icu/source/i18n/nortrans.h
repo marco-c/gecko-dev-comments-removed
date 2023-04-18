@@ -44,12 +44,12 @@ class NormalizationTransliterator : public Transliterator {
 
 
 
-    virtual NormalizationTransliterator* clone() const;
+    virtual NormalizationTransliterator* clone() const override;
 
     
 
 
-    virtual UClassID getDynamicClassID() const;
+    virtual UClassID getDynamicClassID() const override;
 
     
 
@@ -68,7 +68,7 @@ class NormalizationTransliterator : public Transliterator {
 
 
     virtual void handleTransliterate(Replaceable& text, UTransPosition& offset,
-                             UBool isIncremental) const;
+                             UBool isIncremental) const override;
  public:
 
     

@@ -251,7 +251,7 @@ public:
 
 
 
-    virtual ChoiceFormat* clone() const;
+    virtual ChoiceFormat* clone() const override;
 
     
 
@@ -261,7 +261,7 @@ public:
 
 
 
-    virtual UBool operator==(const Format& other) const;
+    virtual bool operator==(const Format& other) const override;
 
     
 
@@ -375,7 +375,7 @@ public:
 
     virtual UnicodeString& format(double number,
                                   UnicodeString& appendTo,
-                                  FieldPosition& pos) const;
+                                  FieldPosition& pos) const override;
     
 
 
@@ -389,7 +389,7 @@ public:
 
     virtual UnicodeString& format(int32_t number,
                                   UnicodeString& appendTo,
-                                  FieldPosition& pos) const;
+                                  FieldPosition& pos) const override;
 
     
 
@@ -404,7 +404,7 @@ public:
 
     virtual UnicodeString& format(int64_t number,
                                   UnicodeString& appendTo,
-                                  FieldPosition& pos) const;
+                                  FieldPosition& pos) const override;
 
     
 
@@ -444,7 +444,7 @@ public:
 
     virtual void parse(const UnicodeString& text,
                        Formattable& result,
-                       ParsePosition& parsePosition) const;
+                       ParsePosition& parsePosition) const override;
 
     
 
@@ -454,7 +454,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID(void) const;
+    virtual UClassID getDynamicClassID(void) const override;
 
     
 

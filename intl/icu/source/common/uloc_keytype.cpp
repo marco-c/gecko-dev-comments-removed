@@ -168,11 +168,13 @@ initFromResourceBundle(UErrorCode& sts) {
         }
 
         
-        tmpSts = U_ZERO_ERROR;
-        LocalUResourceBundlePointer typeMapResByKey(ures_getByKey(typeMapRes.getAlias(), legacyKeyId, NULL, &tmpSts));
-        if (U_FAILURE(tmpSts)) {
+        LocalUResourceBundlePointer typeMapResByKey(ures_getByKey(typeMapRes.getAlias(), legacyKeyId, NULL, &sts));
+        if (U_FAILURE(sts)) {
             
-            UPRV_UNREACHABLE;
+            
+            
+            
+            UPRV_UNREACHABLE_ASSERT;
         } else {
             LocalUResourceBundlePointer typeMapEntry;
 

@@ -54,7 +54,7 @@ public:
 
 
 
-    virtual BreakTransliterator* clone() const;
+    virtual BreakTransliterator* clone() const override;
 
     virtual const UnicodeString &getInsertion() const;
 
@@ -63,7 +63,7 @@ public:
     
 
 
-    virtual UClassID getDynamicClassID() const;
+    virtual UClassID getDynamicClassID() const override;
 
     
 
@@ -82,7 +82,7 @@ public:
 
 
     virtual void handleTransliterate(Replaceable& text, UTransPosition& offset,
-                                     UBool isIncremental) const;
+                                     UBool isIncremental) const override;
 
  private:
      LocalPointer<BreakIterator> cachedBI;

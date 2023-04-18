@@ -164,7 +164,7 @@ public:
 
 
 
-    UBool              operator==(const FieldPosition& that) const;
+    bool               operator==(const FieldPosition& that) const;
 
     
 
@@ -172,7 +172,7 @@ public:
 
 
 
-    UBool              operator!=(const FieldPosition& that) const;
+    bool               operator!=(const FieldPosition& that) const;
 
     
 
@@ -236,7 +236,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID() const;
+    virtual UClassID getDynamicClassID() const override;
 
     
 
@@ -274,7 +274,7 @@ FieldPosition::operator=(const FieldPosition& copy)
     return *this;
 }
 
-inline UBool
+inline bool
 FieldPosition::operator==(const FieldPosition& copy) const
 {
     return (fField == copy.fField &&
@@ -282,7 +282,7 @@ FieldPosition::operator==(const FieldPosition& copy) const
         fBeginIndex == copy.fBeginIndex);
 }
 
-inline UBool
+inline bool
 FieldPosition::operator!=(const FieldPosition& copy) const
 {
     return !operator==(copy);

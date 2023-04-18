@@ -266,7 +266,7 @@ public:
 
 
 
-    virtual NumberFormat* clone() const = 0;
+    virtual NumberFormat* clone() const override = 0;
 
     
 
@@ -274,7 +274,7 @@ public:
 
 
 
-    virtual UBool operator==(const Format& other) const;
+    virtual bool operator==(const Format& other) const override;
 
 
     using Format::format;
@@ -297,7 +297,7 @@ public:
     virtual UnicodeString& format(const Formattable& obj,
                                   UnicodeString& appendTo,
                                   FieldPosition& pos,
-                                  UErrorCode& status) const;
+                                  UErrorCode& status) const override;
 
     
 
@@ -318,7 +318,7 @@ public:
     virtual UnicodeString& format(const Formattable& obj,
                                   UnicodeString& appendTo,
                                   FieldPositionIterator* posIter,
-                                  UErrorCode& status) const;
+                                  UErrorCode& status) const override;
 
     
 
@@ -350,7 +350,7 @@ public:
 
     virtual void parseObject(const UnicodeString& source,
                              Formattable& result,
-                             ParsePosition& parse_pos) const;
+                             ParsePosition& parse_pos) const override;
 
     
 
@@ -1077,7 +1077,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID(void) const = 0;
+    virtual UClassID getDynamicClassID(void) const override = 0;
 
 protected:
 
@@ -1238,12 +1238,12 @@ public:
     
 
 
-    virtual UBool visible(void) const;
+    virtual UBool visible(void) const override;
 
     
 
 
-    virtual const UnicodeString * getSupportedIDs(int32_t &count, UErrorCode& status) const;
+    virtual const UnicodeString * getSupportedIDs(int32_t &count, UErrorCode& status) const override;
 };
 #endif 
 

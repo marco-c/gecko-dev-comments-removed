@@ -52,22 +52,22 @@ public:
 
     virtual void handleReplaceBetween(int32_t start,
                                       int32_t limit,
-                                      const UnicodeString& text);
+                                      const UnicodeString& text) override;
 
     virtual void extractBetween(int32_t start,
                                 int32_t limit,
-                                UnicodeString& target) const;
+                                UnicodeString& target) const override;
 
-    virtual void copy(int32_t start, int32_t limit, int32_t dest);
-
-    
+    virtual void copy(int32_t start, int32_t limit, int32_t dest) override;
 
     
 
+    
 
 
 
-    virtual UClassID getDynamicClassID() const;
+
+    virtual UClassID getDynamicClassID() const override;
 
     
 
@@ -78,11 +78,11 @@ public:
 
 protected:
 
-    virtual int32_t getLength() const;
+    virtual int32_t getLength() const override;
 
-    virtual UChar getCharAt(int32_t offset) const;
+    virtual UChar getCharAt(int32_t offset) const override;
 
-    virtual UChar32 getChar32At(int32_t offset) const;
+    virtual UChar32 getChar32At(int32_t offset) const override;
 };
 
 UOBJECT_DEFINE_RTTI_IMPLEMENTATION(ReplaceableGlue)

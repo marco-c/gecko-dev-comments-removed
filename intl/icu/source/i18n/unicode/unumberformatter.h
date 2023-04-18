@@ -204,7 +204,6 @@ typedef enum UNumberUnitWidth {
 
             UNUM_UNIT_WIDTH_ISO_CODE = 3,
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -226,7 +225,6 @@ typedef enum UNumberUnitWidth {
 
 
             UNUM_UNIT_WIDTH_VARIANT = 5,
-#endif  
 
     
 
@@ -772,7 +770,6 @@ unumf_resultGetAllFieldPositions(const UFormattedNumber* uresult, UFieldPosition
                                  UErrorCode* ec);
 
 
-#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -797,7 +794,6 @@ unumf_resultToDecimalNumber(
        char* dest,
        int32_t destCapacity,
        UErrorCode* ec);
-#endif 
 
 
 

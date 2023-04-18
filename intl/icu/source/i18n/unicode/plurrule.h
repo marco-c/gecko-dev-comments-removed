@@ -373,7 +373,6 @@ public:
 
     UnicodeString select(const number::FormattedNumber& number, UErrorCode& status) const;
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -391,7 +390,6 @@ public:
 
 
     UnicodeString select(const number::FormattedNumberRange& range, UErrorCode& status) const;
-#endif 
 
 #ifndef U_HIDE_INTERNAL_API
     
@@ -538,7 +536,7 @@ public:
 
 
 
-    virtual UBool operator==(const PluralRules& other) const;
+    virtual bool operator==(const PluralRules& other) const;
 
     
 
@@ -548,7 +546,7 @@ public:
 
 
 
-    UBool operator!=(const PluralRules& other) const  {return !operator==(other);}
+    bool operator!=(const PluralRules& other) const  {return !operator==(other);}
 
 
     
@@ -564,7 +562,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID() const;
+    virtual UClassID getDynamicClassID() const override;
 
 
 private:

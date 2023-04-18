@@ -1093,6 +1093,8 @@ Transliterator::createFromRules(const UnicodeString& ID,
     }
     else {
         UVector transliterators(status);
+        
+        
         int32_t passNumber = 1;
 
         int32_t limit = parser.idBlockVector.size();
@@ -1108,10 +1110,15 @@ Transliterator::createFromRules(const UnicodeString& ID,
                         delete temp;
                         return nullptr;
                     }
-                    if (temp != NULL && typeid(*temp) != typeid(NullTransliterator))
+                    if (temp != NULL && typeid(*temp) != typeid(NullTransliterator)) {
                         transliterators.addElement(temp, status);
-                    else
+                        if (U_FAILURE(status)) {
+                            delete temp;
+                            return nullptr;
+                        }
+                    } else {
                         delete temp;
+                    }
                 }
             }
             if (!parser.dataVector.isEmpty()) {
@@ -1127,6 +1134,13 @@ Transliterator::createFromRules(const UnicodeString& ID,
                     return t;
                 }
                 transliterators.addElement(temprbt, status);
+                if (U_FAILURE(status)) {
+                    delete temprbt;
+                    return t;
+                }
+                
+                
+                
             }
         }
 

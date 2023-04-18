@@ -116,20 +116,20 @@ public:
 
 
 
-    virtual JapaneseCalendar* clone() const;
+    virtual JapaneseCalendar* clone() const override;
 
     
 
 
 
 
-    virtual int32_t handleGetExtendedYear();
+    virtual int32_t handleGetExtendedYear() override;
 
     
 
 
 
-    virtual int32_t getActualMaximum(UCalendarDateFields field, UErrorCode& status) const;
+    virtual int32_t getActualMaximum(UCalendarDateFields field, UErrorCode& status) const override;
 
 
 public:
@@ -143,7 +143,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID(void) const;
+    virtual UClassID getDynamicClassID(void) const override;
 
     
 
@@ -164,24 +164,24 @@ public:
 
 
 
-    virtual const char * getType() const;
+    virtual const char * getType() const override;
 
     
 
 
 
-    virtual UBool haveDefaultCentury() const;
+    virtual UBool haveDefaultCentury() const override;
 
     
 
 
 
-    virtual UDate defaultCenturyStart() const;
+    virtual UDate defaultCenturyStart() const override;
     
 
 
 
-    virtual int32_t defaultCenturyStartYear() const;
+    virtual int32_t defaultCenturyStartYear() const override;
 
 private:
     JapaneseCalendar(); 
@@ -191,28 +191,19 @@ protected:
 
 
 
-    virtual int32_t internalGetEra() const;
+    virtual int32_t internalGetEra() const override;
 
     
 
 
 
-    virtual void handleComputeFields(int32_t julianDay, UErrorCode& status);
+    virtual void handleComputeFields(int32_t julianDay, UErrorCode& status) override;
 
     
 
 
 
-    virtual int32_t handleGetLimit(UCalendarDateFields field, ELimitType limitType) const;
-
-    
-
-
-
-
-
-
-    virtual int32_t getDefaultMonthInYear(int32_t eyear);
+    virtual int32_t handleGetLimit(UCalendarDateFields field, ELimitType limitType) const override;
 
     
 
@@ -221,8 +212,17 @@ protected:
 
 
 
+    virtual int32_t getDefaultMonthInYear(int32_t eyear) override;
 
-    virtual int32_t getDefaultDayInMonth(int32_t eyear, int32_t month);
+    
+
+
+
+
+
+
+
+    virtual int32_t getDefaultDayInMonth(int32_t eyear, int32_t month) override;
 };
 
 U_NAMESPACE_END

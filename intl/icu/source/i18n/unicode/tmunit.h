@@ -73,7 +73,7 @@ public:
 
 
 
-    virtual TimeUnit* clone() const;
+    virtual TimeUnit* clone() const override;
 
     
 
@@ -95,7 +95,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID() const;
+    virtual UClassID getDynamicClassID() const override;
 
     
 

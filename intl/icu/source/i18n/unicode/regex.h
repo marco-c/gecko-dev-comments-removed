@@ -119,7 +119,7 @@ public:
 
 
 
-    UBool           operator==(const RegexPattern& that) const;
+    bool            operator==(const RegexPattern& that) const;
 
     
 
@@ -129,7 +129,7 @@ public:
 
 
 
-    inline UBool    operator!=(const RegexPattern& that) const {return ! operator ==(that);}
+    inline bool     operator!=(const RegexPattern& that) const {return ! operator ==(that);}
 
     
 
@@ -569,7 +569,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID() const;
+    virtual UClassID getDynamicClassID() const override;
 
     
 
@@ -1746,7 +1746,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID() const;
+    virtual UClassID getDynamicClassID() const override;
 
 private:
     

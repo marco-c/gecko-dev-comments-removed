@@ -81,7 +81,7 @@ class U_I18N_API CurrencyAmount: public Measure {
 
 
 
-    virtual CurrencyAmount* clone() const;
+    virtual CurrencyAmount* clone() const override;
 
     
 
@@ -97,7 +97,7 @@ class U_I18N_API CurrencyAmount: public Measure {
 
 
 
-    virtual UClassID getDynamicClassID() const;
+    virtual UClassID getDynamicClassID() const override;
 
     
 

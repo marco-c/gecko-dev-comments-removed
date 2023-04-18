@@ -49,12 +49,12 @@ public:
 
 
 
-    virtual NameUnicodeTransliterator* clone() const;
+    virtual NameUnicodeTransliterator* clone() const override;
 
     
 
 
-    virtual UClassID getDynamicClassID() const;
+    virtual UClassID getDynamicClassID() const override;
 
     
 
@@ -73,7 +73,7 @@ public:
 
 
     virtual void handleTransliterate(Replaceable& text, UTransPosition& offset,
-                                     UBool isIncremental) const;
+                                     UBool isIncremental) const override;
 
     
 

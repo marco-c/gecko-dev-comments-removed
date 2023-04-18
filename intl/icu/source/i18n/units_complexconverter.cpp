@@ -164,7 +164,7 @@ MaybeStackVector<Measure> ComplexUnitsConverter::convert(double quantity,
         if (i < n - 1) {
             
             
-            int64_t flooredQuantity = floor(quantity * (1 + DBL_EPSILON));
+            int64_t flooredQuantity = static_cast<int64_t>(floor(quantity * (1 + DBL_EPSILON)));
             if (uprv_isNaN(quantity)) {
                 
                 
@@ -244,20 +244,20 @@ void ComplexUnitsConverter::applyRounder(MaybeStackArray<int64_t, 5> &intValues,
     }
 
     
-    int64_t carry = floor(unitsConverters_[lastIndex]->convertInverse(quantity) * (1 + DBL_EPSILON));
+    int64_t carry = static_cast<int64_t>(floor(unitsConverters_[lastIndex]->convertInverse(quantity) * (1 + DBL_EPSILON)));
     if (carry <= 0) {
         return;
     }
-    quantity -= unitsConverters_[lastIndex]->convert(carry);
+    quantity -= unitsConverters_[lastIndex]->convert(static_cast<double>(carry));
     intValues[lastIndex - 1] += carry;
 
     
     for (int32_t j = lastIndex - 1; j > 0; j--) {
-        carry = floor(unitsConverters_[j]->convertInverse(intValues[j]) * (1 + DBL_EPSILON));
+        carry = static_cast<int64_t>(floor(unitsConverters_[j]->convertInverse(static_cast<double>(intValues[j])) * (1 + DBL_EPSILON)));
         if (carry <= 0) {
             return;
         }
-        intValues[j] -= round(unitsConverters_[j]->convert(carry));
+        intValues[j] -= static_cast<int64_t>(round(unitsConverters_[j]->convert(static_cast<double>(carry))));
         intValues[j - 1] += carry;
     }
 }

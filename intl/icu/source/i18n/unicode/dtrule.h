@@ -144,7 +144,7 @@ public:
 
 
 
-    UBool operator==(const DateTimeRule& that) const;
+    bool operator==(const DateTimeRule& that) const;
 
     
 
@@ -153,7 +153,7 @@ public:
 
 
 
-    UBool operator!=(const DateTimeRule& that) const;
+    bool operator!=(const DateTimeRule& that) const;
 
     
 
@@ -243,7 +243,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID(void) const;
+    virtual UClassID getDynamicClassID(void) const override;
 };
 
 U_NAMESPACE_END

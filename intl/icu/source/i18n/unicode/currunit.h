@@ -94,7 +94,7 @@ class U_I18N_API CurrencyUnit: public MeasureUnit {
 
 
 
-    virtual CurrencyUnit* clone() const;
+    virtual CurrencyUnit* clone() const override;
 
     
 
@@ -110,7 +110,7 @@ class U_I18N_API CurrencyUnit: public MeasureUnit {
 
 
 
-    virtual UClassID getDynamicClassID() const;
+    virtual UClassID getDynamicClassID() const override;
 
     
 

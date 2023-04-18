@@ -77,7 +77,7 @@ public:
 
 
 
-    virtual UnicodeFilter* clone() const = 0;
+    virtual UnicodeFilter* clone() const override = 0;
 
     
 
@@ -93,7 +93,7 @@ public:
 
 
 
-    virtual UnicodeMatcher* toMatcher() const;
+    virtual UnicodeMatcher* toMatcher() const override;
 
     
 
@@ -102,13 +102,13 @@ public:
     virtual UMatchDegree matches(const Replaceable& text,
                                  int32_t& offset,
                                  int32_t limit,
-                                 UBool incremental);
+                                 UBool incremental) override;
 
     
 
 
 
-    virtual void setData(const TransliterationRuleData*);
+    virtual void setData(const TransliterationRuleData*) override;
 
     
 

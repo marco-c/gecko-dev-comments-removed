@@ -413,7 +413,6 @@ public:
 
         Builder &addSupportedLocale(const Locale &locale);
 
-#ifndef U_HIDE_DRAFT_API
         
 
 
@@ -423,7 +422,6 @@ public:
 
 
         Builder &setNoDefaultLocale();
-#endif  
 
         
 
@@ -474,7 +472,6 @@ public:
             return *this;
         }
 
-#ifndef U_HIDE_DRAFT_API
         
 
 
@@ -497,7 +494,6 @@ public:
 
 
         Builder &setMaxDistance(const Locale &desired, const Locale &supported);
-#endif  
 
         
 
@@ -638,7 +634,6 @@ public:
 
     Result getBestMatchResult(Locale::Iterator &desiredLocales, UErrorCode &errorCode) const;
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -653,7 +648,6 @@ public:
 
 
     UBool isMatch(const Locale &desired, const Locale &supported, UErrorCode &errorCode) const;
-#endif  
 
 #ifndef U_HIDE_INTERNAL_API
     

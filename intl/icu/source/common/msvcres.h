@@ -19,7 +19,7 @@
 
 #include "unicode/uversion.h"
 
-#define ICU_WEBSITE "http://icu-project.org"
+#define ICU_WEBSITE "https://icu.unicode.org/"
 #define ICU_COMPANY "The ICU Project"
 #define ICU_PRODUCT_PREFIX "ICU"
 #define ICU_PRODUCT "International Components for Unicode"

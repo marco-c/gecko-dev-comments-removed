@@ -526,14 +526,14 @@ public:
 
 
 
-    UBool operator==(const MessagePattern &other) const;
+    bool operator==(const MessagePattern &other) const;
 
     
 
 
 
 
-    inline UBool operator!=(const MessagePattern &other) const {
+    inline bool operator!=(const MessagePattern &other) const {
         return !operator==(other);
     }
 
@@ -797,14 +797,14 @@ public:
 
 
 
-        UBool operator==(const Part &other) const;
+        bool operator==(const Part &other) const;
 
         
 
 
 
 
-        inline UBool operator!=(const Part &other) const {
+        inline bool operator!=(const Part &other) const {
             return !operator==(other);
         }
 

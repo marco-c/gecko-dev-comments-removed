@@ -106,7 +106,7 @@ class U_COMMON_API LocaleKey : public ICUServiceKey {
     
 
 
-    virtual UnicodeString& prefix(UnicodeString& result) const;
+    virtual UnicodeString& prefix(UnicodeString& result) const override;
 
     
 
@@ -116,17 +116,17 @@ class U_COMMON_API LocaleKey : public ICUServiceKey {
     
 
 
-    virtual UnicodeString& canonicalID(UnicodeString& result) const;
+    virtual UnicodeString& canonicalID(UnicodeString& result) const override;
 
     
 
 
-    virtual UnicodeString& currentID(UnicodeString& result) const;
+    virtual UnicodeString& currentID(UnicodeString& result) const override;
 
     
 
 
-    virtual UnicodeString& currentDescriptor(UnicodeString& result) const;
+    virtual UnicodeString& currentDescriptor(UnicodeString& result) const override;
 
     
 
@@ -147,13 +147,13 @@ class U_COMMON_API LocaleKey : public ICUServiceKey {
 
 
 
-    virtual UBool fallback();
+    virtual UBool fallback() override;
 
     
 
 
 
-    virtual UBool isFallbackOf(const UnicodeString& id) const;
+    virtual UBool isFallbackOf(const UnicodeString& id) const override;
     
  public:
     
@@ -161,7 +161,7 @@ class U_COMMON_API LocaleKey : public ICUServiceKey {
 
     static UClassID U_EXPORT2 getStaticClassID();
 
-    virtual UClassID getDynamicClassID() const;
+    virtual UClassID getDynamicClassID() const override;
 
     
 
@@ -238,7 +238,7 @@ protected:
 
 
 public:
-    virtual UObject* create(const ICUServiceKey& key, const ICUService* service, UErrorCode& status) const;
+    virtual UObject* create(const ICUServiceKey& key, const ICUService* service, UErrorCode& status) const override;
 
 protected:
     virtual UBool handlesKey(const ICUServiceKey& key, UErrorCode& status) const;
@@ -248,12 +248,12 @@ public:
 
 
 
-    virtual void updateVisibleIDs(Hashtable& result, UErrorCode& status) const;
+    virtual void updateVisibleIDs(Hashtable& result, UErrorCode& status) const override;
 
     
 
 
-    virtual UnicodeString& getDisplayName(const UnicodeString& id, const Locale& locale, UnicodeString& result) const;
+    virtual UnicodeString& getDisplayName(const UnicodeString& id, const Locale& locale, UnicodeString& result) const override;
 
 protected:
     
@@ -281,7 +281,7 @@ public:
 
     static UClassID U_EXPORT2 getStaticClassID();
 
-    virtual UClassID getDynamicClassID() const;
+    virtual UClassID getDynamicClassID() const override;
 
 #ifdef SERVICE_DEBUG
  public:
@@ -324,13 +324,13 @@ class U_COMMON_API SimpleLocaleKeyFactory : public LocaleKeyFactory {
     
 
 
-    virtual UObject* create(const ICUServiceKey& key, const ICUService* service, UErrorCode& status) const;
+    virtual UObject* create(const ICUServiceKey& key, const ICUService* service, UErrorCode& status) const override;
 
     
 
 
 
-    virtual void updateVisibleIDs(Hashtable& result, UErrorCode& status) const;
+    virtual void updateVisibleIDs(Hashtable& result, UErrorCode& status) const override;
 
  protected:
     
@@ -345,7 +345,7 @@ public:
 
     static UClassID U_EXPORT2 getStaticClassID();
 
-    virtual UClassID getDynamicClassID() const;
+    virtual UClassID getDynamicClassID() const override;
 
 #ifdef SERVICE_DEBUG
  public:
@@ -394,20 +394,20 @@ protected:
     
 
 
-    virtual const Hashtable* getSupportedIDs(UErrorCode& status) const;
+    virtual const Hashtable* getSupportedIDs(UErrorCode& status) const override;
 
     
 
 
 
-    virtual UObject* handleCreate(const Locale& loc, int32_t kind, const ICUService* service, UErrorCode& status) const;
+    virtual UObject* handleCreate(const Locale& loc, int32_t kind, const ICUService* service, UErrorCode& status) const override;
 
 public:
     
 
 
     static UClassID U_EXPORT2 getStaticClassID();
-    virtual UClassID getDynamicClassID() const;
+    virtual UClassID getDynamicClassID() const override;
 
 
 #ifdef SERVICE_DEBUG
@@ -512,7 +512,7 @@ class U_COMMON_API ICULocaleService : public ICUService
 
 
 
-  virtual URegistryKey registerInstance(UObject* objToAdopt, const UnicodeString& locale, UBool visible, UErrorCode& status);
+  virtual URegistryKey registerInstance(UObject* objToAdopt, const UnicodeString& locale, UBool visible, UErrorCode& status) override;
 
   
 
@@ -531,7 +531,7 @@ class U_COMMON_API ICULocaleService : public ICUService
   
 
 
-  virtual ICUServiceKey* createKey(const UnicodeString* id, UErrorCode& status) const;
+  virtual ICUServiceKey* createKey(const UnicodeString* id, UErrorCode& status) const override;
 
   
 
@@ -546,6 +546,6 @@ U_NAMESPACE_END
     
 #endif
 
-    
+
 #endif
 

@@ -42,10 +42,30 @@
 
 
 
-#if defined(UPRV_UNREACHABLE)
+
+
+
+
+#if defined(UPRV_UNREACHABLE_ASSERT)
+    
+#elif U_DEBUG
+#   include <assert.h>
+#   define UPRV_UNREACHABLE_ASSERT assert(false)
+#elif U_CPLUSPLUS_VERSION
+#   define UPRV_UNREACHABLE_ASSERT (void)0
+#else
+#   define UPRV_UNREACHABLE_ASSERT
+#endif
+
+
+
+
+
+
+#if defined(UPRV_UNREACHABLE_EXIT)
     
 #else
-#   define UPRV_UNREACHABLE abort()
+#   define UPRV_UNREACHABLE_EXIT abort()
 #endif
 
 #endif

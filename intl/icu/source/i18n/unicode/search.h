@@ -272,7 +272,7 @@ public:
 
 
 
-    virtual UBool operator==(const SearchIterator &that) const;
+    virtual bool operator==(const SearchIterator &that) const;
 
     
 
@@ -280,7 +280,7 @@ public:
 
 
 
-    UBool operator!=(const SearchIterator &that) const;
+    bool operator!=(const SearchIterator &that) const;
 
     
 
@@ -566,7 +566,7 @@ protected:
     void setMatchNotFound();
 };
 
-inline UBool SearchIterator::operator!=(const SearchIterator &that) const
+inline bool SearchIterator::operator!=(const SearchIterator &that) const
 {
    return !operator==(that); 
 }

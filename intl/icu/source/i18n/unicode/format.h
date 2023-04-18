@@ -111,7 +111,7 @@ public:
 
 
 
-    virtual UBool operator==(const Format& other) const = 0;
+    virtual bool operator==(const Format& other) const = 0;
 
     
 
@@ -120,7 +120,7 @@ public:
 
 
 
-    UBool operator!=(const Format& other) const { return !operator==(other); }
+    bool operator!=(const Format& other) const { return !operator==(other); }
 
     
 

@@ -45,19 +45,19 @@ public:
 
 
 
-    virtual NullTransliterator* clone() const;
+    virtual NullTransliterator* clone() const override;
 
     
 
 
 
     virtual void handleTransliterate(Replaceable& text, UTransPosition& offset,
-                                     UBool isIncremental) const;
+                                     UBool isIncremental) const override;
 
     
 
 
-    virtual UClassID getDynamicClassID() const;
+    virtual UClassID getDynamicClassID() const override;
 
     
 

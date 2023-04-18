@@ -230,7 +230,7 @@ class U_I18N_API IslamicCalendar : public Calendar {
   
 
   
-  virtual IslamicCalendar* clone() const;
+  virtual IslamicCalendar* clone() const override;
 
  private:
   
@@ -292,7 +292,7 @@ class U_I18N_API IslamicCalendar : public Calendar {
   
 
 
-  virtual int32_t handleGetLimit(UCalendarDateFields field, ELimitType limitType) const;
+  virtual int32_t handleGetLimit(UCalendarDateFields field, ELimitType limitType) const override;
   
   
 
@@ -301,13 +301,13 @@ class U_I18N_API IslamicCalendar : public Calendar {
 
 
 
-  virtual int32_t handleGetMonthLength(int32_t extendedYear, int32_t month) const;
+  virtual int32_t handleGetMonthLength(int32_t extendedYear, int32_t month) const override;
   
   
 
 
 
-  virtual int32_t handleGetYearLength(int32_t extendedYear) const;
+  virtual int32_t handleGetYearLength(int32_t extendedYear) const override;
     
   
   
@@ -317,7 +317,7 @@ class U_I18N_API IslamicCalendar : public Calendar {
   
 
 
-  virtual int32_t handleComputeMonthStart(int32_t eyear, int32_t month, UBool useMonth) const;
+  virtual int32_t handleComputeMonthStart(int32_t eyear, int32_t month, UBool useMonth) const override;
 
   
   
@@ -326,7 +326,7 @@ class U_I18N_API IslamicCalendar : public Calendar {
   
 
 
-  virtual int32_t handleGetExtendedYear();
+  virtual int32_t handleGetExtendedYear() override;
 
   
 
@@ -344,7 +344,7 @@ class U_I18N_API IslamicCalendar : public Calendar {
 
 
 
-  virtual void handleComputeFields(int32_t julianDay, UErrorCode &status);
+  virtual void handleComputeFields(int32_t julianDay, UErrorCode &status) override;
 
   
  public: 
@@ -353,7 +353,7 @@ class U_I18N_API IslamicCalendar : public Calendar {
 
 
 
-  virtual UClassID getDynamicClassID(void) const;
+  virtual UClassID getDynamicClassID(void) const override;
 
   
 
@@ -374,7 +374,7 @@ class U_I18N_API IslamicCalendar : public Calendar {
 
 
 
-  virtual const char * getType() const;
+  virtual const char * getType() const override;
 
  private:
   IslamicCalendar(); 
@@ -391,27 +391,27 @@ class U_I18N_API IslamicCalendar : public Calendar {
 
 
 
-  virtual UBool inDaylightTime(UErrorCode& status) const;
+  virtual UBool inDaylightTime(UErrorCode& status) const override;
 
 
   
 
 
 
-  virtual UBool haveDefaultCentury() const;
+  virtual UBool haveDefaultCentury() const override;
 
   
 
 
 
 
-  virtual UDate defaultCenturyStart() const;
+  virtual UDate defaultCenturyStart() const override;
 
   
 
 
 
-  virtual int32_t defaultCenturyStartYear() const;
+  virtual int32_t defaultCenturyStartYear() const override;
 
  private:
   

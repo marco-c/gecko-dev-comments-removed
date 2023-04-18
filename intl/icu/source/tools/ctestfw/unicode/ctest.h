@@ -86,6 +86,13 @@ U_CDECL_END
 
 
 
+#define WRITE_GOLDEN_DATA_OPTION 7
+
+
+
+
+
+
 extern T_CTEST_EXPORT_API size_t MAX_MEMORY_ALLOCATION;
 
 

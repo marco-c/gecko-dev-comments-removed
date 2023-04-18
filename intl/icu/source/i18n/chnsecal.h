@@ -144,7 +144,7 @@ class U_I18N_API ChineseCalendar : public Calendar {
   virtual ~ChineseCalendar();
 
   
-  virtual ChineseCalendar* clone() const;
+  virtual ChineseCalendar* clone() const override;
 
  private:
 
@@ -162,18 +162,18 @@ class U_I18N_API ChineseCalendar : public Calendar {
   
 
  protected:
-  virtual int32_t handleGetLimit(UCalendarDateFields field, ELimitType limitType) const;
-  virtual int32_t handleGetMonthLength(int32_t extendedYear, int32_t month) const;
-  virtual int32_t handleComputeMonthStart(int32_t eyear, int32_t month, UBool useMonth) const;
-  virtual int32_t handleGetExtendedYear();
-  virtual void handleComputeFields(int32_t julianDay, UErrorCode &status);
-  virtual const UFieldResolutionTable* getFieldResolutionTable() const;
+  virtual int32_t handleGetLimit(UCalendarDateFields field, ELimitType limitType) const override;
+  virtual int32_t handleGetMonthLength(int32_t extendedYear, int32_t month) const override;
+  virtual int32_t handleComputeMonthStart(int32_t eyear, int32_t month, UBool useMonth) const override;
+  virtual int32_t handleGetExtendedYear() override;
+  virtual void handleComputeFields(int32_t julianDay, UErrorCode &status) override;
+  virtual const UFieldResolutionTable* getFieldResolutionTable() const override;
 
  public:
-  virtual void add(UCalendarDateFields field, int32_t amount, UErrorCode &status);
-  virtual void add(EDateFields field, int32_t amount, UErrorCode &status);
-  virtual void roll(UCalendarDateFields field, int32_t amount, UErrorCode &status);
-  virtual void roll(EDateFields field, int32_t amount, UErrorCode &status);
+  virtual void add(UCalendarDateFields field, int32_t amount, UErrorCode &status) override;
+  virtual void add(EDateFields field, int32_t amount, UErrorCode &status) override;
+  virtual void roll(UCalendarDateFields field, int32_t amount, UErrorCode &status) override;
+  virtual void roll(EDateFields field, int32_t amount, UErrorCode &status) override;
 
   
   
@@ -204,7 +204,7 @@ class U_I18N_API ChineseCalendar : public Calendar {
 
 
 
-  virtual UClassID getDynamicClassID(void) const;
+  virtual UClassID getDynamicClassID(void) const override;
 
   
 
@@ -225,7 +225,7 @@ class U_I18N_API ChineseCalendar : public Calendar {
 
 
 
-  virtual const char * getType() const;
+  virtual const char * getType() const override;
 
 
  protected:
@@ -238,27 +238,27 @@ class U_I18N_API ChineseCalendar : public Calendar {
 
 
 
-  virtual UBool inDaylightTime(UErrorCode& status) const;
+  virtual UBool inDaylightTime(UErrorCode& status) const override;
 
 
   
 
 
 
-  virtual UBool haveDefaultCentury() const;
+  virtual UBool haveDefaultCentury() const override;
 
   
 
 
 
 
-  virtual UDate defaultCenturyStart() const;
+  virtual UDate defaultCenturyStart() const override;
 
   
 
 
 
-  virtual int32_t defaultCenturyStartYear() const;
+  virtual int32_t defaultCenturyStartYear() const override;
 
  private: 
 

@@ -299,7 +299,7 @@ public:
 
 
 
-    virtual UBool operator==(const Format& other) const;
+    virtual bool operator==(const Format& other) const override;
 
     
 
@@ -307,7 +307,7 @@ public:
 
 
 
-    virtual TimeZoneFormat* clone() const;
+    virtual TimeZoneFormat* clone() const override;
 
     
 
@@ -636,7 +636,7 @@ public:
 
 
     virtual UnicodeString& format(const Formattable& obj, UnicodeString& appendTo,
-        FieldPosition& pos, UErrorCode& status) const;
+        FieldPosition& pos, UErrorCode& status) const override;
 
     
 
@@ -650,7 +650,7 @@ public:
 
 
 
-    virtual void parseObject(const UnicodeString& source, Formattable& result, ParsePosition& parse_pos) const;
+    virtual void parseObject(const UnicodeString& source, Formattable& result, ParsePosition& parse_pos) const override;
 
     
 
@@ -662,7 +662,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID() const;
+    virtual UClassID getDynamicClassID() const override;
 
 protected:
     

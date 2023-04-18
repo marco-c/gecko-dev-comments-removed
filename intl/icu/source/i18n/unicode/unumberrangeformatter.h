@@ -193,12 +193,10 @@ typedef enum UNumberRangeIdentityResult {
 
 
     UNUM_IDENTITY_RESULT_COUNT
-#endif
+#endif  
 
 } UNumberRangeIdentityResult;
 
-
-#ifndef U_HIDE_DRAFT_API
 
 struct UNumberRangeFormatter;
 
@@ -467,8 +465,6 @@ U_DEFINE_LOCAL_OPEN_POINTER(LocalUNumberRangeFormatterPointer, UNumberRangeForma
 U_DEFINE_LOCAL_OPEN_POINTER(LocalUFormattedNumberRangePointer, UFormattedNumberRange, unumrf_closeResult);
 
 U_NAMESPACE_END
-#endif 
-
 #endif 
 
 #endif 

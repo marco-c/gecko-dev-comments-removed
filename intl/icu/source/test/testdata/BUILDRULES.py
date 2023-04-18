@@ -45,6 +45,10 @@ def generate_rb(config, io, common_vars):
         "testempty",
         "testtypes",
         
+        "Thai_graphclust_model4_heavy",
+        "Thai_codepoints_exclusive_model5_heavy",
+        "Burmese_graphclust_model5_heavy"
+        
         
         
     ]
@@ -168,7 +172,6 @@ def generate_conv(config, io, common_vars):
             repeat_with = {}
         )
     ]
-
 
 def generate_copy(config, io, common_vars):
     return [

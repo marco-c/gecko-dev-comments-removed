@@ -55,6 +55,7 @@ struct UFormattedNumberRange;
 
 
 
+
 enum UPluralType {
     
 
@@ -180,7 +181,6 @@ uplrules_selectFormatted(const UPluralRules *uplrules,
                UChar *keyword, int32_t capacity,
                UErrorCode *status);
 
-#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -201,7 +201,6 @@ uplrules_selectForRange(const UPluralRules *uplrules,
                const struct UFormattedNumberRange* urange,
                UChar *keyword, int32_t capacity,
                UErrorCode *status);
-#endif 
 
 #ifndef U_HIDE_INTERNAL_API
 

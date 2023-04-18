@@ -1518,6 +1518,9 @@ struct U_I18N_API MacroProps : public UMemory {
     UNumberSignDisplay sign = UNUM_SIGN_COUNT;
 
     
+    bool approximately = false;
+
+    
     UNumberDecimalSeparatorDisplay decimal = UNUM_DECIMAL_SEPARATOR_COUNT;
 
     
@@ -2164,7 +2167,6 @@ class U_I18N_API NumberFormatterSettings {
 
     Derived scale(const Scale &scale) &&;
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -2217,7 +2219,6 @@ class U_I18N_API NumberFormatterSettings {
 
 
     Derived usage(StringPiece usage) &&;
-#endif 
 
 #ifndef U_HIDE_DRAFT_API
 #ifndef U_HIDE_INTERNAL_API
@@ -2486,6 +2487,12 @@ class U_I18N_API LocalizedNumberFormatter
 
 #ifndef U_HIDE_INTERNAL_API
 
+            
+    
+
+
+    const DecimalFormatSymbols* getDecimalFormatSymbols() const;
+    
     
 
 
@@ -2715,7 +2722,6 @@ class U_I18N_API FormattedNumber : public UMemory, public FormattedValue {
     template<typename StringClass>
     inline StringClass toDecimalNumber(UErrorCode& status) const;
 
-#ifndef U_HIDE_DRAFT_API
 	
 
 
@@ -2729,6 +2735,7 @@ class U_I18N_API FormattedNumber : public UMemory, public FormattedValue {
 
     MeasureUnit getOutputUnit(UErrorCode& status) const;
 
+#ifndef U_HIDE_INTERNAL_API
     
 
 
@@ -2736,9 +2743,6 @@ class U_I18N_API FormattedNumber : public UMemory, public FormattedValue {
 
 
     const char *getGender(UErrorCode& status) const;
-#endif 
-
-#ifndef U_HIDE_INTERNAL_API
 
     
 

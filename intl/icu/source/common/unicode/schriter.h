@@ -124,7 +124,7 @@ public:
 
 
 
-  virtual UBool          operator==(const ForwardCharacterIterator& that) const;
+  virtual bool           operator==(const ForwardCharacterIterator& that) const override;
 
   
 
@@ -133,7 +133,7 @@ public:
 
 
 
-  virtual StringCharacterIterator* clone() const;
+  virtual StringCharacterIterator* clone() const override;
 
   
 
@@ -149,14 +149,14 @@ public:
 
 
 
-  virtual void            getText(UnicodeString& result);
+  virtual void            getText(UnicodeString& result) override;
 
   
 
 
 
 
-  virtual UClassID         getDynamicClassID(void) const;
+  virtual UClassID         getDynamicClassID(void) const override;
 
   
 

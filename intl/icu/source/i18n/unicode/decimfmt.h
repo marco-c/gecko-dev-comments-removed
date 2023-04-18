@@ -909,7 +909,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
 
-    UBool operator==(const Format& other) const U_OVERRIDE;
+    bool operator==(const Format& other) const U_OVERRIDE;
 
 
     using NumberFormat::format;

@@ -223,14 +223,14 @@ public:
 
 
 
-    virtual UBool operator==(const Collator& other) const;
+    virtual bool operator==(const Collator& other) const override;
 
     
 
 
 
 
-    virtual RuleBasedCollator* clone() const;
+    virtual RuleBasedCollator* clone() const override;
 
     
 
@@ -274,7 +274,7 @@ public:
 
     virtual UCollationResult compare(const UnicodeString& source,
                                      const UnicodeString& target,
-                                     UErrorCode &status) const;
+                                     UErrorCode &status) const override;
 
     
 
@@ -292,7 +292,7 @@ public:
     virtual UCollationResult compare(const UnicodeString& source,
                                      const UnicodeString& target,
                                      int32_t length,
-                                     UErrorCode &status) const;
+                                     UErrorCode &status) const override;
 
     
 
@@ -312,7 +312,7 @@ public:
 
     virtual UCollationResult compare(const char16_t* source, int32_t sourceLength,
                                      const char16_t* target, int32_t targetLength,
-                                     UErrorCode &status) const;
+                                     UErrorCode &status) const override;
 
     
 
@@ -327,7 +327,7 @@ public:
 
     virtual UCollationResult compare(UCharIterator &sIter,
                                      UCharIterator &tIter,
-                                     UErrorCode &status) const;
+                                     UErrorCode &status) const override;
 
     
 
@@ -344,7 +344,7 @@ public:
 
     virtual UCollationResult compareUTF8(const StringPiece &source,
                                          const StringPiece &target,
-                                         UErrorCode &status) const;
+                                         UErrorCode &status) const override;
 
     
 
@@ -362,7 +362,7 @@ public:
 
     virtual CollationKey& getCollationKey(const UnicodeString& source,
                                           CollationKey& key,
-                                          UErrorCode& status) const;
+                                          UErrorCode& status) const override;
 
     
 
@@ -382,14 +382,14 @@ public:
     virtual CollationKey& getCollationKey(const char16_t *source,
                                           int32_t sourceLength,
                                           CollationKey& key,
-                                          UErrorCode& status) const;
+                                          UErrorCode& status) const override;
 
     
 
 
 
 
-    virtual int32_t hashCode() const;
+    virtual int32_t hashCode() const override;
 
 #ifndef U_FORCE_HIDE_DEPRECATED_API
     
@@ -402,7 +402,7 @@ public:
 
 
 
-    virtual Locale getLocale(ULocDataLocaleType type, UErrorCode& status) const;
+    virtual Locale getLocale(ULocDataLocaleType type, UErrorCode& status) const override;
 #endif  
 
     
@@ -417,7 +417,7 @@ public:
 
 
 
-    virtual void getVersion(UVersionInfo info) const;
+    virtual void getVersion(UVersionInfo info) const override;
 
 #ifndef U_HIDE_DEPRECATED_API
     
@@ -449,7 +449,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID(void) const;
+    virtual UClassID getDynamicClassID(void) const override;
 
     
 
@@ -511,7 +511,7 @@ public:
 
 
     virtual void setAttribute(UColAttribute attr, UColAttributeValue value,
-                              UErrorCode &status);
+                              UErrorCode &status) override;
 
     
 
@@ -521,7 +521,7 @@ public:
 
 
     virtual UColAttributeValue getAttribute(UColAttribute attr,
-                                            UErrorCode &status) const;
+                                            UErrorCode &status) const override;
 
     
 
@@ -539,7 +539,7 @@ public:
 
 
 
-    virtual Collator &setMaxVariable(UColReorderCode group, UErrorCode &errorCode);
+    virtual Collator &setMaxVariable(UColReorderCode group, UErrorCode &errorCode) override;
 
     
 
@@ -547,7 +547,7 @@ public:
 
 
 
-    virtual UColReorderCode getMaxVariable() const;
+    virtual UColReorderCode getMaxVariable() const override;
 
 #ifndef U_FORCE_HIDE_DEPRECATED_API
     
@@ -566,7 +566,7 @@ public:
 
 
 
-    virtual uint32_t setVariableTop(const char16_t *varTop, int32_t len, UErrorCode &status);
+    virtual uint32_t setVariableTop(const char16_t *varTop, int32_t len, UErrorCode &status) override;
 
     
 
@@ -583,7 +583,7 @@ public:
 
 
 
-    virtual uint32_t setVariableTop(const UnicodeString &varTop, UErrorCode &status);
+    virtual uint32_t setVariableTop(const UnicodeString &varTop, UErrorCode &status) override;
 
     
 
@@ -596,7 +596,7 @@ public:
 
 
 
-    virtual void setVariableTop(uint32_t varTop, UErrorCode &status);
+    virtual void setVariableTop(uint32_t varTop, UErrorCode &status) override;
 #endif  
 
     
@@ -606,7 +606,7 @@ public:
 
 
 
-    virtual uint32_t getVariableTop(UErrorCode &status) const;
+    virtual uint32_t getVariableTop(UErrorCode &status) const override;
 
     
 
@@ -617,7 +617,7 @@ public:
 
 
 
-    virtual UnicodeSet *getTailoredSet(UErrorCode &status) const;
+    virtual UnicodeSet *getTailoredSet(UErrorCode &status) const override;
 
     
 
@@ -634,7 +634,7 @@ public:
 
 
     virtual int32_t getSortKey(const UnicodeString& source, uint8_t *result,
-                               int32_t resultLength) const;
+                               int32_t resultLength) const override;
 
     
 
@@ -653,7 +653,7 @@ public:
 
 
     virtual int32_t getSortKey(const char16_t *source, int32_t sourceLength,
-                               uint8_t *result, int32_t resultLength) const;
+                               uint8_t *result, int32_t resultLength) const override;
 
     
 
@@ -670,7 +670,7 @@ public:
 
      virtual int32_t getReorderCodes(int32_t *dest,
                                      int32_t destCapacity,
-                                     UErrorCode& status) const;
+                                     UErrorCode& status) const override;
 
     
 
@@ -685,7 +685,7 @@ public:
 
      virtual void setReorderCodes(const int32_t* reorderCodes,
                                   int32_t reorderCodesLength,
-                                  UErrorCode& status) ;
+                                  UErrorCode& status) override;
 
     
 
@@ -694,7 +694,7 @@ public:
     virtual UCollationResult internalCompareUTF8(
             const char *left, int32_t leftLength,
             const char *right, int32_t rightLength,
-            UErrorCode &errorCode) const;
+            UErrorCode &errorCode) const override;
 
     
 
@@ -722,7 +722,7 @@ public:
     virtual int32_t internalGetShortDefinitionString(const char *locale,
                                                      char *buffer,
                                                      int32_t capacity,
-                                                     UErrorCode &status) const;
+                                                     UErrorCode &status) const override;
 
     
 
@@ -730,7 +730,7 @@ public:
 
     virtual int32_t internalNextSortKeyPart(
             UCharIterator *iter, uint32_t state[2],
-            uint8_t *dest, int32_t count, UErrorCode &errorCode) const;
+            uint8_t *dest, int32_t count, UErrorCode &errorCode) const override;
 
     
     
@@ -806,7 +806,7 @@ protected:
 
 
 
-    virtual void setLocales(const Locale& requestedLocale, const Locale& validLocale, const Locale& actualLocale);
+    virtual void setLocales(const Locale& requestedLocale, const Locale& validLocale, const Locale& actualLocale) override;
 
 private:
     friend class CollationElementIterator;

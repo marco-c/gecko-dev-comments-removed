@@ -297,7 +297,7 @@ public:
 
 
 
-    virtual UBool operator==(const SearchIterator &that) const;
+    virtual bool operator==(const SearchIterator &that) const override;
 
     
 
@@ -314,7 +314,7 @@ public:
 
 
 
-    virtual void setOffset(int32_t position, UErrorCode &status);
+    virtual void setOffset(int32_t position, UErrorCode &status) override;
 
     
 
@@ -324,21 +324,8 @@ public:
 
 
 
-    virtual int32_t getOffset(void) const;
+    virtual int32_t getOffset(void) const override;
 
-    
-
-
-
-
-
-
-
-
-
-
-    virtual void setText(const UnicodeString &text, UErrorCode &status);
-    
     
 
 
@@ -350,10 +337,23 @@ public:
 
 
 
+    virtual void setText(const UnicodeString &text, UErrorCode &status) override;
+    
+    
 
 
 
-    virtual void setText(CharacterIterator &text, UErrorCode &status);
+
+
+
+
+
+
+
+
+
+
+    virtual void setText(CharacterIterator &text, UErrorCode &status) override;
 
     
 
@@ -403,7 +403,7 @@ public:
 
 
 
-    virtual void reset();
+    virtual void reset() override;
 
     
 
@@ -413,14 +413,14 @@ public:
 
 
 
-    virtual StringSearch * safeClone() const;
+    virtual StringSearch * safeClone() const override;
     
     
 
 
 
 
-    virtual UClassID getDynamicClassID() const;
+    virtual UClassID getDynamicClassID() const override;
 
     
 
@@ -455,7 +455,7 @@ protected:
 
 
 
-    virtual int32_t handleNext(int32_t position, UErrorCode &status);
+    virtual int32_t handleNext(int32_t position, UErrorCode &status) override;
 
     
 
@@ -479,7 +479,7 @@ protected:
 
 
 
-    virtual int32_t handlePrev(int32_t position, UErrorCode &status);
+    virtual int32_t handlePrev(int32_t position, UErrorCode &status) override;
     
 private :
     StringSearch(); 

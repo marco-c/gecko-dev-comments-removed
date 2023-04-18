@@ -111,13 +111,13 @@ class StringReplacer : public UnicodeFunctor, public UnicodeReplacer {
     
 
 
-    virtual StringReplacer* clone() const;
+    virtual StringReplacer* clone() const override;
 
     
 
 
 
-    virtual UnicodeReplacer* toReplacer() const;
+    virtual UnicodeReplacer* toReplacer() const override;
 
     
 
@@ -125,23 +125,23 @@ class StringReplacer : public UnicodeFunctor, public UnicodeReplacer {
     virtual int32_t replace(Replaceable& text,
                             int32_t start,
                             int32_t limit,
-                            int32_t& cursor);
+                            int32_t& cursor) override;
 
     
 
 
     virtual UnicodeString& toReplacerPattern(UnicodeString& result,
-                                             UBool escapeUnprintable) const;
+                                             UBool escapeUnprintable) const override;
 
     
 
 
-    virtual void addReplacementSetTo(UnicodeSet& toUnionTo) const;
+    virtual void addReplacementSetTo(UnicodeSet& toUnionTo) const override;
 
     
 
 
-    virtual void setData(const TransliterationRuleData*);
+    virtual void setData(const TransliterationRuleData*) override;
 
     
 
@@ -151,7 +151,7 @@ class StringReplacer : public UnicodeFunctor, public UnicodeReplacer {
     
 
 
-    virtual UClassID getDynamicClassID() const;
+    virtual UClassID getDynamicClassID() const override;
 };
 
 U_NAMESPACE_END

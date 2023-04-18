@@ -66,18 +66,18 @@ public:
     
 
 
-    virtual AnyTransliterator* clone() const;
+    virtual AnyTransliterator* clone() const override;
 
     
 
 
     virtual void handleTransliterate(Replaceable& text, UTransPosition& index,
-                                     UBool incremental) const;
+                                     UBool incremental) const override;
 
     
 
 
-    virtual UClassID getDynamicClassID() const;
+    virtual UClassID getDynamicClassID() const override;
 
     
 

@@ -66,7 +66,7 @@ class DangiCalendar : public ChineseCalendar {
 
 
 
-  virtual DangiCalendar* clone() const;
+  virtual DangiCalendar* clone() const override;
 
   
   
@@ -74,7 +74,7 @@ class DangiCalendar : public ChineseCalendar {
 
  private:
 
-  const TimeZone* getDangiCalZoneAstroCalc(void) const;
+  const TimeZone* getDangiCalZoneAstroCalc(UErrorCode &status) const;
 
   
  public: 
@@ -83,7 +83,7 @@ class DangiCalendar : public ChineseCalendar {
 
 
 
-  virtual UClassID getDynamicClassID(void) const;
+  virtual UClassID getDynamicClassID(void) const override;
 
   
 
@@ -104,7 +104,7 @@ class DangiCalendar : public ChineseCalendar {
 
 
 
-  const char * getType() const;
+  const char * getType() const override;
 
 
  private:

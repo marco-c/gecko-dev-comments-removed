@@ -142,7 +142,7 @@ public:
 
 
 
-    virtual UBool operator==(const TimeZoneNames& other) const = 0;
+    virtual bool operator==(const TimeZoneNames& other) const = 0;
 
     
 
@@ -151,7 +151,7 @@ public:
 
 
 
-    UBool operator!=(const TimeZoneNames& other) const { return !operator==(other); }
+    bool operator!=(const TimeZoneNames& other) const { return !operator==(other); }
 
     
 

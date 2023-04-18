@@ -68,6 +68,14 @@ const DateFmtBestPattern *LocaleCacheKey<DateFmtBestPattern>::createObject(
 class U_I18N_API DateFmtBestPatternKey : public LocaleCacheKey<DateFmtBestPattern> { 
 private:
     UnicodeString fSkeleton;
+protected:
+    virtual bool equals(const CacheKeyBase &other) const override {
+       if (!LocaleCacheKey<DateFmtBestPattern>::equals(other)) {
+           return false;
+       }
+       
+       return operator==(static_cast<const DateFmtBestPatternKey &>(other));
+    }
 public:
     DateFmtBestPatternKey(
         const Locale &loc,
@@ -79,27 +87,17 @@ public:
             LocaleCacheKey<DateFmtBestPattern>(other),
             fSkeleton(other.fSkeleton) { }
     virtual ~DateFmtBestPatternKey();
-    virtual int32_t hashCode() const {
+    virtual int32_t hashCode() const override {
         return (int32_t)(37u * (uint32_t)LocaleCacheKey<DateFmtBestPattern>::hashCode() + (uint32_t)fSkeleton.hashCode());
     }
-    virtual UBool operator==(const CacheKeyBase &other) const {
-       
-       if (this == &other) { 	
-           return TRUE;
-       }
-       if (!LocaleCacheKey<DateFmtBestPattern>::operator==(other)) {
-           return FALSE;
-       }
-       
-       const DateFmtBestPatternKey &realOther =
-               static_cast<const DateFmtBestPatternKey &>(other);
-       return (realOther.fSkeleton == fSkeleton);
+    inline bool operator==(const DateFmtBestPatternKey &other) const {
+        return fSkeleton == other.fSkeleton;
     }
-    virtual CacheKeyBase *clone() const {
+    virtual CacheKeyBase *clone() const override {
         return new DateFmtBestPatternKey(*this);
     }
     virtual const DateFmtBestPattern *createObject(
-            const void * , UErrorCode &status) const {
+            const void * , UErrorCode &status) const override {
         LocalPointer<DateTimePatternGenerator> dtpg(
                     DateTimePatternGenerator::createInstance(fLoc, status));
         if (U_FAILURE(status)) {
@@ -174,7 +172,7 @@ DateFormat::~DateFormat()
 
 
 
-UBool
+bool
 DateFormat::operator==(const Format& other) const
 {
     

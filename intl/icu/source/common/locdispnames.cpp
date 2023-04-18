@@ -316,17 +316,29 @@ _getStringOrCopyKey(const char *path, const char *locale,
             
         }
     } else {
+        bool isLanguageCode = (uprv_strncmp(tableKey, _kLanguages, 9) == 0);
         
-        if (!uprv_strncmp(tableKey, "Languages", 9) && uprv_strtol(itemKey, NULL, 10)) {
+        if (isLanguageCode && uprv_strtol(itemKey, NULL, 10)) {
             *pErrorCode = U_MISSING_RESOURCE_ERROR;
         } else {
             
             s=uloc_getTableStringWithFallback(path, locale,
-                                               tableKey, 
+                                               tableKey,
                                                subTableKey,
                                                itemKey,
                                                &length,
                                                pErrorCode);
+            if (U_FAILURE(*pErrorCode) && isLanguageCode && itemKey != nullptr) {
+                
+                *pErrorCode = U_ZERO_ERROR;
+                Locale canonKey = Locale::createCanonical(itemKey);
+                s=uloc_getTableStringWithFallback(path, locale,
+                                                    tableKey,
+                                                    subTableKey,
+                                                    canonKey.getName(),
+                                                    &length,
+                                                    pErrorCode);
+            }
         }
     }
 

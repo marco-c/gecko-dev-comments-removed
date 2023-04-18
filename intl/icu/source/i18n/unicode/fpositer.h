@@ -84,7 +84,7 @@ public:
 
 
 
-    UBool operator==(const FieldPositionIterator&) const;
+    bool operator==(const FieldPositionIterator&) const;
 
     
 
@@ -92,7 +92,7 @@ public:
 
 
 
-    UBool operator!=(const FieldPositionIterator& rhs) const { return !operator==(rhs); }
+    bool operator!=(const FieldPositionIterator& rhs) const { return !operator==(rhs); }
 
     
 

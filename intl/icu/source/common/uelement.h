@@ -56,7 +56,10 @@ typedef UBool U_CALLCONV UElementsAreEqual(const UElement e1, const UElement e2)
 
 
 
-typedef int8_t U_CALLCONV UElementComparator(UElement e1, UElement e2);
+
+
+
+typedef int32_t U_CALLCONV UElementComparator(UElement e1, UElement e2);
 
 
 

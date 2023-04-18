@@ -119,23 +119,14 @@ public:
 
 
 
-  virtual UBool          operator==(const ForwardCharacterIterator& that) const;
+  virtual bool           operator==(const ForwardCharacterIterator& that) const override;
 
   
 
 
 
 
-  virtual int32_t         hashCode(void) const;
-
-  
-
-
-
-
-
-
-  virtual UCharCharacterIterator* clone() const;
+  virtual int32_t         hashCode(void) const override;
 
   
 
@@ -144,7 +135,7 @@ public:
 
 
 
-  virtual char16_t         first(void);
+  virtual UCharCharacterIterator* clone() const override;
 
   
 
@@ -153,8 +144,7 @@ public:
 
 
 
-
-  virtual char16_t         firstPostInc(void);
+  virtual char16_t         first(void) override;
 
   
 
@@ -164,46 +154,7 @@ public:
 
 
 
-
-  virtual UChar32       first32(void);
-
-  
-
-
-
-
-
-
-
-  virtual UChar32       first32PostInc(void);
-
-  
-
-
-
-
-
-
-  virtual char16_t         last(void);
-
-  
-
-
-
-
-
-
-  virtual UChar32       last32(void);
-
-  
-
-
-
-
-
-
-
-  virtual char16_t         setIndex(int32_t position);
+  virtual char16_t         firstPostInc(void) override;
 
   
 
@@ -214,32 +165,7 @@ public:
 
 
 
-
-
-  virtual UChar32       setIndex32(int32_t position);
-
-  
-
-
-
-
-  virtual char16_t         current(void) const;
-
-  
-
-
-
-
-  virtual UChar32       current32(void) const;
-
-  
-
-
-
-
-
-
-  virtual char16_t         next(void);
+  virtual UChar32       first32(void) override;
 
   
 
@@ -249,7 +175,25 @@ public:
 
 
 
-  virtual char16_t         nextPostInc(void);
+  virtual UChar32       first32PostInc(void) override;
+
+  
+
+
+
+
+
+
+  virtual char16_t         last(void) override;
+
+  
+
+
+
+
+
+
+  virtual UChar32       last32(void) override;
 
   
 
@@ -259,59 +203,7 @@ public:
 
 
 
-
-
-  virtual UChar32       next32(void);
-
-  
-
-
-
-
-
-
-
-  virtual UChar32       next32PostInc(void);
-
-  
-
-
-
-
-
-
-
-
-  virtual UBool        hasNext();
-
-  
-
-
-
-
-
-
-  virtual char16_t         previous(void);
-
-  
-
-
-
-
-
-
-  virtual UChar32       previous32(void);
-
-  
-
-
-
-
-
-
-
-
-  virtual UBool        hasPrevious();
+  virtual char16_t         setIndex(int32_t position) override;
 
   
 
@@ -324,7 +216,115 @@ public:
 
 
 
-  virtual int32_t      move(int32_t delta, EOrigin origin);
+  virtual UChar32       setIndex32(int32_t position) override;
+
+  
+
+
+
+
+  virtual char16_t         current(void) const override;
+
+  
+
+
+
+
+  virtual UChar32       current32(void) const override;
+
+  
+
+
+
+
+
+
+  virtual char16_t         next(void) override;
+
+  
+
+
+
+
+
+
+
+  virtual char16_t         nextPostInc(void) override;
+
+  
+
+
+
+
+
+
+
+
+
+  virtual UChar32       next32(void) override;
+
+  
+
+
+
+
+
+
+
+  virtual UChar32       next32PostInc(void) override;
+
+  
+
+
+
+
+
+
+
+
+  virtual UBool        hasNext() override;
+
+  
+
+
+
+
+
+
+  virtual char16_t         previous(void) override;
+
+  
+
+
+
+
+
+
+  virtual UChar32       previous32(void) override;
+
+  
+
+
+
+
+
+
+
+
+  virtual UBool        hasPrevious() override;
+
+  
+
+
+
+
+
+
+
+
+
+
+  virtual int32_t      move(int32_t delta, EOrigin origin) override;
 
   
 
@@ -341,7 +341,7 @@ public:
    
 #undef move32
 #endif
-  virtual int32_t      move32(int32_t delta, EOrigin origin);
+  virtual int32_t      move32(int32_t delta, EOrigin origin) override;
 
   
 
@@ -356,7 +356,7 @@ public:
 
 
 
-  virtual void            getText(UnicodeString& result);
+  virtual void            getText(UnicodeString& result) override;
 
   
 
@@ -370,7 +370,7 @@ public:
 
 
 
-  virtual UClassID        getDynamicClassID(void) const;
+  virtual UClassID        getDynamicClassID(void) const override;
 
 protected:
   

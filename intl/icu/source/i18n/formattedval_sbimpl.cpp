@@ -96,6 +96,11 @@ void FormattedValueStringBuilderImpl::getAllFieldPositions(FieldPositionIterator
     }
 }
 
+void FormattedValueStringBuilderImpl::resetString() {
+    fString.clear();
+    spanIndicesCount = 0;
+}
+
 
 
 static constexpr Field kEndField = Field(0xf, 0xf);
@@ -283,27 +288,27 @@ bool FormattedValueStringBuilderImpl::nextPositionImpl(ConstrainedFieldPosition&
 
 void FormattedValueStringBuilderImpl::appendSpanInfo(UFieldCategory category, int32_t spanValue, int32_t start, int32_t length, UErrorCode& status) {
     if (U_FAILURE(status)) { return; }
-    U_ASSERT(spanIndices.getCapacity() >= spanValue);
-    if (spanIndices.getCapacity() == spanValue) {
-        if (!spanIndices.resize(spanValue * 2, spanValue)) {
+    U_ASSERT(spanIndices.getCapacity() >= spanIndicesCount);
+    if (spanIndices.getCapacity() == spanIndicesCount) {
+        if (!spanIndices.resize(spanIndicesCount * 2, spanIndicesCount)) {
             status = U_MEMORY_ALLOCATION_ERROR;
             return;
         }
     }
-    spanIndices[spanValue] = {category, spanValue, start, length};
+    spanIndices[spanIndicesCount] = {category, spanValue, start, length};
     spanIndicesCount++;
 }
 
 void FormattedValueStringBuilderImpl::prependSpanInfo(UFieldCategory category, int32_t spanValue, int32_t start, int32_t length, UErrorCode& status) {
     if (U_FAILURE(status)) { return; }
-    U_ASSERT(spanIndices.getCapacity() >= spanValue);
-    if (spanIndices.getCapacity() == spanValue) {
-        if (!spanIndices.resize(spanValue * 2, spanValue)) {
+    U_ASSERT(spanIndices.getCapacity() >= spanIndicesCount);
+    if (spanIndices.getCapacity() == spanIndicesCount) {
+        if (!spanIndices.resize(spanIndicesCount * 2, spanIndicesCount)) {
             status = U_MEMORY_ALLOCATION_ERROR;
             return;
         }
     }
-    for (int32_t i = spanValue - 1; i >= 0; i--) {
+    for (int32_t i = spanIndicesCount - 1; i >= 0; i--) {
         spanIndices[i+1] = spanIndices[i];
     }
     spanIndices[0] = {category, spanValue, start, length};

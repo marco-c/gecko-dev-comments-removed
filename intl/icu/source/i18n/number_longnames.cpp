@@ -259,20 +259,16 @@ class InflectedPluralSink : public ResourceSink {
 
     
     void put(const char *key, ResourceValue &value, UBool , UErrorCode &status) U_OVERRIDE {
-        ResourceTable pluralsTable = value.getTable(status);
+        int32_t pluralIndex = getIndex(key, status);
         if (U_FAILURE(status)) { return; }
-        for (int32_t i = 0; pluralsTable.getKeyAndValue(i, key, value); ++i) {
-            int32_t pluralIndex = getIndex(key, status);
-            if (U_FAILURE(status)) { return; }
-            if (!outArray[pluralIndex].isBogus()) {
-                
-                continue;
-            }
-            ResourceTable genderTable = value.getTable(status);
-            ResourceTable caseTable; 
-            if (loadForPluralForm(genderTable, caseTable, value, status)) {
-                outArray[pluralIndex] = value.getUnicodeString(status);
-            }
+        if (!outArray[pluralIndex].isBogus()) {
+            
+            return;
+        }
+        ResourceTable genderTable = value.getTable(status);
+        ResourceTable caseTable; 
+        if (loadForPluralForm(genderTable, caseTable, value, status)) {
+            outArray[pluralIndex] = value.getUnicodeString(status);
         }
     }
 
@@ -370,18 +366,11 @@ void getInflectedMeasureData(StringPiece subKey,
     key.append(subKey, status);
 
     UErrorCode localStatus = status;
-    ures_getAllItemsWithFallback(unitsBundle.getAlias(), key.data(), sink, localStatus);
+    ures_getAllChildrenWithFallback(unitsBundle.getAlias(), key.data(), sink, localStatus);
     if (width == UNUM_UNIT_WIDTH_SHORT) {
         status = localStatus;
         return;
     }
-
-    
-    
-    key.clear();
-    key.append("unitsShort/", status);
-    key.append(subKey, status);
-    ures_getAllItemsWithFallback(unitsBundle.getAlias(), key.data(), sink, status);
 }
 
 class PluralTableSink : public ResourceSink {
@@ -396,20 +385,16 @@ class PluralTableSink : public ResourceSink {
     }
 
     void put(const char *key, ResourceValue &value, UBool , UErrorCode &status) U_OVERRIDE {
-        ResourceTable pluralsTable = value.getTable(status);
-        if (U_FAILURE(status)) { return; }
-        for (int32_t i = 0; pluralsTable.getKeyAndValue(i, key, value); ++i) {
-            if (uprv_strcmp(key, "case") == 0) {
-                continue;
-            }
-            int32_t index = getIndex(key, status);
-            if (U_FAILURE(status)) { return; }
-            if (!outArray[index].isBogus()) {
-                continue;
-            }
-            outArray[index] = value.getUnicodeString(status);
-            if (U_FAILURE(status)) { return; }
+        if (uprv_strcmp(key, "case") == 0) {
+            return;
         }
+        int32_t index = getIndex(key, status);
+        if (U_FAILURE(status)) { return; }
+        if (!outArray[index].isBogus()) {
+            return;
+        }
+        outArray[index] = value.getUnicodeString(status);
+        if (U_FAILURE(status)) { return; }
     }
 
   private:
@@ -490,7 +475,7 @@ void getMeasureData(const Locale &locale,
         
         
         
-        ures_getAllItemsWithFallback(unitsBundle.getAlias(), caseKey.data(), sink, localStatus);
+        ures_getAllChildrenWithFallback(unitsBundle.getAlias(), caseKey.data(), sink, localStatus);
     }
 
     
@@ -499,20 +484,13 @@ void getMeasureData(const Locale &locale,
     
     
     UErrorCode localStatus = U_ZERO_ERROR;
-    ures_getAllItemsWithFallback(unitsBundle.getAlias(), key.data(), sink, localStatus);
+    ures_getAllChildrenWithFallback(unitsBundle.getAlias(), key.data(), sink, localStatus);
     if (width == UNUM_UNIT_WIDTH_SHORT) {
         if (U_FAILURE(localStatus)) {
             status = localStatus;
         }
         return;
     }
-
-    
-    
-    key.clear();
-    key.append("unitsShort", status);
-    key.append(subKey, status);
-    ures_getAllItemsWithFallback(unitsBundle.getAlias(), key.data(), sink, status);
 }
 
 
@@ -523,7 +501,7 @@ void getCurrencyLongNameData(const Locale &locale, const CurrencyUnit &currency,
     PluralTableSink sink(outArray);
     LocalUResourceBundlePointer unitsBundle(ures_open(U_ICUDATA_CURR, locale.getName(), &status));
     if (U_FAILURE(status)) { return; }
-    ures_getAllItemsWithFallback(unitsBundle.getAlias(), "CurrencyUnitPatterns", sink, status);
+    ures_getAllChildrenWithFallback(unitsBundle.getAlias(), "CurrencyUnitPatterns", sink, status);
     if (U_FAILURE(status)) { return; }
     for (int32_t i = 0; i < StandardPlural::Form::COUNT; i++) {
         UnicodeString &pattern = outArray[i];
@@ -1702,7 +1680,7 @@ const Modifier *MixedUnitLongNameHandler::getModifier(Signum ,
     
     
     
-    UPRV_UNREACHABLE;
+    UPRV_UNREACHABLE_EXIT;
     return nullptr;
 }
 

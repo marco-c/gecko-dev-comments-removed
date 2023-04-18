@@ -120,7 +120,7 @@ public:
 
 
 
-    UBool operator==(const DateTimePatternGenerator& other) const;
+    bool operator==(const DateTimePatternGenerator& other) const;
 
     
 
@@ -129,7 +129,7 @@ public:
 
 
 
-    UBool operator!=(const DateTimePatternGenerator& other) const;
+    bool operator!=(const DateTimePatternGenerator& other) const;
 
     
 
@@ -513,7 +513,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID() const;
+    virtual UClassID getDynamicClassID() const override;
 
     
 

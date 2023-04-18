@@ -124,7 +124,7 @@ public:
 
 
 
-    virtual UBool operator==(const BreakIterator&) const = 0;
+    virtual bool operator==(const BreakIterator&) const = 0;
 
     
 
@@ -132,7 +132,7 @@ public:
 
 
 
-    UBool operator!=(const BreakIterator& rhs) const { return !operator==(rhs); }
+    bool operator!=(const BreakIterator& rhs) const { return !operator==(rhs); }
 
     
 
@@ -146,7 +146,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID(void) const = 0;
+    virtual UClassID getDynamicClassID(void) const override = 0;
 
     
 

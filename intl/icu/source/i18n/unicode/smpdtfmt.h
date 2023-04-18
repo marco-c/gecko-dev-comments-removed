@@ -867,7 +867,7 @@ public:
 
 
 
-    virtual SimpleDateFormat* clone() const;
+    virtual SimpleDateFormat* clone() const override;
 
     
 
@@ -876,7 +876,7 @@ public:
 
 
 
-    virtual UBool operator==(const Format& other) const;
+    virtual bool operator==(const Format& other) const override;
 
 
     using DateFormat::format;
@@ -899,7 +899,7 @@ public:
 
     virtual UnicodeString& format(  Calendar& cal,
                                     UnicodeString& appendTo,
-                                    FieldPosition& pos) const;
+                                    FieldPosition& pos) const override;
 
     
 
@@ -922,7 +922,7 @@ public:
     virtual UnicodeString& format(  Calendar& cal,
                                     UnicodeString& appendTo,
                                     FieldPositionIterator* posIter,
-                                    UErrorCode& status) const;
+                                    UErrorCode& status) const override;
 
     using DateFormat::parse;
 
@@ -954,7 +954,7 @@ public:
 
     virtual void parse( const UnicodeString& text,
                         Calendar& cal,
-                        ParsePosition& pos) const;
+                        ParsePosition& pos) const override;
 
 
     
@@ -1097,7 +1097,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID(void) const;
+    virtual UClassID getDynamicClassID(void) const override;
 
     
 
@@ -1108,7 +1108,7 @@ public:
 
 
 
-    virtual void adoptCalendar(Calendar* calendarToAdopt);
+    virtual void adoptCalendar(Calendar* calendarToAdopt) override;
 
     
     
@@ -1144,7 +1144,7 @@ public:
 
 
 
-    virtual void setContext(UDisplayContext value, UErrorCode& status);
+    virtual void setContext(UDisplayContext value, UErrorCode& status) override;
 
     
 
@@ -1153,7 +1153,7 @@ public:
 
 
 
-    void adoptNumberFormat(NumberFormat *formatToAdopt);
+    void adoptNumberFormat(NumberFormat *formatToAdopt) override;
 
     
 

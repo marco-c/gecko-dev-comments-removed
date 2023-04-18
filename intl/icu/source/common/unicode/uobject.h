@@ -262,8 +262,8 @@ protected:
     
 
     
-    virtual inline UBool operator==(const UObject &other) const { return this==&other; }
-    inline UBool operator!=(const UObject &other) const { return !operator==(other); }
+    virtual inline bool operator==(const UObject &other) const { return this==&other; }
+    inline bool operator!=(const UObject &other) const { return !operator==(other); }
 
     
     

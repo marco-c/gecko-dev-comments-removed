@@ -96,7 +96,7 @@ bool ScientificModifier::isStrong() const {
 bool ScientificModifier::containsField(Field field) const {
     (void)field;
     
-    UPRV_UNREACHABLE;
+    UPRV_UNREACHABLE_EXIT;
 }
 
 void ScientificModifier::getParameters(Parameters& output) const {

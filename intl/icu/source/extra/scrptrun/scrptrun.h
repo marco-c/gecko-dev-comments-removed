@@ -62,7 +62,7 @@ public:
 
 
 
-    virtual inline UClassID getDynamicClassID() const { return getStaticClassID(); }
+    virtual inline UClassID getDynamicClassID() const override { return getStaticClassID(); }
 
     
 

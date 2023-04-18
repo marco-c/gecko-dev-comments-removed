@@ -434,7 +434,7 @@ public:
 
 
 
-    virtual DateIntervalFormat* clone() const;
+    virtual DateIntervalFormat* clone() const override;
 
     
 
@@ -443,7 +443,7 @@ public:
 
 
 
-    virtual UBool operator==(const Format& other) const;
+    virtual bool operator==(const Format& other) const override;
 
     
 
@@ -452,7 +452,7 @@ public:
 
 
 
-    UBool operator!=(const Format& other) const;
+    bool operator!=(const Format& other) const;
 
 
     using Format::format;
@@ -479,7 +479,7 @@ public:
     virtual UnicodeString& format(const Formattable& obj,
                                   UnicodeString& appendTo,
                                   FieldPosition& fieldPosition,
-                                  UErrorCode& status) const ;
+                                  UErrorCode& status) const override;
 
 
 
@@ -595,7 +595,7 @@ public:
 
     virtual void parseObject(const UnicodeString& source,
                              Formattable& result,
-                             ParsePosition& parse_pos) const;
+                             ParsePosition& parse_pos) const override;
 
 
     
@@ -652,7 +652,6 @@ public:
 
     virtual void setTimeZone(const TimeZone& zone);
 
-#ifndef U_FORCE_HIDE_DRAFT_API
     
 
 
@@ -678,7 +677,6 @@ public:
 
 
     virtual UDisplayContext getContext(UDisplayContextType type, UErrorCode& status) const;
-#endif  
 
     
 
@@ -704,7 +702,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID(void) const;
+    virtual UClassID getDynamicClassID(void) const override;
 
 protected:
 
@@ -1199,7 +1197,7 @@ private:
     UDisplayContext fCapitalizationContext;
 };
 
-inline UBool
+inline bool
 DateIntervalFormat::operator!=(const Format& other) const  {
     return !operator==(other);
 }

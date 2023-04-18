@@ -311,7 +311,7 @@ OlsonTimeZone::~OlsonTimeZone() {
 
 
 
-UBool OlsonTimeZone::operator==(const TimeZone& other) const {
+bool OlsonTimeZone::operator==(const TimeZone& other) const {
     return ((this == &other) ||
             (typeid(*this) == typeid(other) &&
             TimeZone::operator==(other) &&

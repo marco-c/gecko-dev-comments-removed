@@ -156,7 +156,7 @@ public:
 
 
 
-    UBool operator==(const CollationElementIterator& other) const;
+    bool operator==(const CollationElementIterator& other) const;
 
     
 
@@ -165,7 +165,7 @@ public:
 
 
 
-    UBool operator!=(const CollationElementIterator& other) const;
+    bool operator!=(const CollationElementIterator& other) const;
 
     
 
@@ -279,7 +279,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID() const;
+    virtual UClassID getDynamicClassID() const override;
 
     
 

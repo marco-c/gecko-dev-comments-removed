@@ -47,7 +47,7 @@ public:
 
 
 
-    virtual RemoveTransliterator* clone() const;
+    virtual RemoveTransliterator* clone() const override;
 
     
 
@@ -59,12 +59,12 @@ public:
 
 
     virtual void handleTransliterate(Replaceable& text, UTransPosition& offset,
-                                     UBool isIncremental) const;
+                                     UBool isIncremental) const override;
 
     
 
 
-    virtual UClassID getDynamicClassID() const;
+    virtual UClassID getDynamicClassID() const override;
 
     
 

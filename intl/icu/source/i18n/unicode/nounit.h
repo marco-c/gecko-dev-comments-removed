@@ -18,8 +18,6 @@
 
 #include "unicode/measunit.h"
 
-#ifndef U_HIDE_DRAFT_API
-
 
 
 
@@ -79,7 +77,6 @@ namespace NoUnit {
 
 U_NAMESPACE_END
 
-#endif  
 #endif 
 
 #endif 

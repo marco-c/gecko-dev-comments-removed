@@ -660,13 +660,13 @@ private:
 
 
 
-     virtual UBool operator==(const AlphabeticIndex& other) const;
+     virtual bool operator==(const AlphabeticIndex& other) const;
 
     
 
 
 
-     virtual UBool operator!=(const AlphabeticIndex& other) const;
+     virtual bool operator!=(const AlphabeticIndex& other) const;
 
      
      void init(const Locale *locale, UErrorCode &status);

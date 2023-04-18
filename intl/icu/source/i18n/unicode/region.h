@@ -81,13 +81,13 @@ public:
 
 
 
-    UBool operator==(const Region &that) const;
+    bool operator==(const Region &that) const;
 
     
 
 
 
-    UBool operator!=(const Region &that) const;
+    bool operator!=(const Region &that) const;
  
     
 

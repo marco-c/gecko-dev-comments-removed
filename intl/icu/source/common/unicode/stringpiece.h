@@ -332,7 +332,7 @@ operator==(const StringPiece& x, const StringPiece& y);
 
 
 
-inline UBool operator!=(const StringPiece& x, const StringPiece& y) {
+inline bool operator!=(const StringPiece& x, const StringPiece& y) {
   return !(x == y);
 }
 

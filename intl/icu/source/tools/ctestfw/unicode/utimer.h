@@ -159,7 +159,7 @@
 
 typedef struct UTimer UTimer;
 
-typedef void FuntionToBeTimed(void* param);
+typedef void FunctionToBeTimed(void* param);
 
 
 #if U_PLATFORM_USES_ONLY_WIN32_API
@@ -264,7 +264,7 @@ utimer_getElapsedSeconds(UTimer* timer){
 static inline double U_EXPORT2
 utimer_loopUntilDone(double thresholdTimeVal,
                      int32_t* loopCount, 
-                     FuntionToBeTimed fn, 
+                     FunctionToBeTimed fn, 
                      void* param){
     UTimer timer;
     double currentVal=0;

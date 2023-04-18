@@ -52,12 +52,12 @@ class TitlecaseTransliterator : public CaseMapTransliterator {
 
 
 
-    virtual TitlecaseTransliterator* clone() const;
+    virtual TitlecaseTransliterator* clone() const override;
 
     
 
 
-    virtual UClassID getDynamicClassID() const;
+    virtual UClassID getDynamicClassID() const override;
 
     
 
@@ -76,7 +76,7 @@ protected:
 
 
     virtual void handleTransliterate(Replaceable& text, UTransPosition& offset,
-                             UBool isIncremental) const;
+                             UBool isIncremental) const override;
 
 private:
     

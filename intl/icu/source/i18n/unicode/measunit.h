@@ -107,12 +107,14 @@ typedef enum UMeasurePrefix {
 
     UMEASURE_PREFIX_YOTTA = UMEASURE_PREFIX_ONE + 24,
 
+#ifndef U_HIDE_INTERNAL_API
     
 
 
 
 
     UMEASURE_PREFIX_INTERNAL_MAX_SI = UMEASURE_PREFIX_YOTTA,
+#endif  
 
     
 
@@ -433,14 +435,14 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
 
-    virtual UBool operator==(const UObject& other) const;
+    virtual bool operator==(const UObject& other) const;
 
     
 
 
 
 
-    UBool operator!=(const UObject& other) const {
+    bool operator!=(const UObject& other) const {
         return !(*this == other);
     }
 
@@ -577,7 +579,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
     MeasureUnit product(const MeasureUnit& other, UErrorCode& status) const;
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -594,7 +595,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     inline std::pair<LocalArray<MeasureUnit>, int32_t> splitToSingleUnits(UErrorCode& status) const;
-#endif 
 
     
 
@@ -664,7 +664,7 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
 
-    virtual UClassID getDynamicClassID(void) const;
+    virtual UClassID getDynamicClassID(void) const override;
 
 #ifndef U_HIDE_INTERNAL_API
     
@@ -954,6 +954,24 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit getSquareYard();
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    static MeasureUnit *createItem(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getItem();
+#endif 
 
     
 
@@ -1805,6 +1823,24 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit getThermUs();
 
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    static MeasureUnit *createKilowattHourPer100Kilometer(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getKilowattHourPer100Kilometer();
+#endif 
+
     
 
 
@@ -1901,7 +1937,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit getMegahertz();
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -1917,7 +1952,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit getDot();
-#endif 
 
     
 
@@ -2079,7 +2113,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit getDecimeter();
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -2095,7 +2128,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit getEarthRadius();
-#endif 
 
     
 
@@ -2385,7 +2417,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit getYard();
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -2401,9 +2432,7 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit getCandela();
-#endif 
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -2419,7 +2448,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit getLumen();
-#endif 
 
     
 
@@ -2501,7 +2529,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit getEarthMass();
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -2517,7 +2544,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit getGrain();
-#endif 
 
     
 
@@ -3335,7 +3361,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit getDeciliter();
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -3351,9 +3376,7 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit getDessertSpoon();
-#endif 
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -3369,9 +3392,7 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit getDessertSpoonImperial();
-#endif 
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -3387,9 +3408,7 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit getDram();
-#endif 
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -3405,7 +3424,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit getDrop();
-#endif 
 
     
 
@@ -3487,7 +3505,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit getHectoliter();
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -3503,7 +3520,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit getJigger();
-#endif 
 
     
 
@@ -3553,7 +3569,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit getMilliliter();
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -3569,7 +3584,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit getPinch();
-#endif 
 
     
 
@@ -3619,7 +3633,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit getQuart();
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -3635,7 +3648,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit getQuartImperial();
-#endif 
 
     
 
@@ -3724,7 +3736,6 @@ private:
     friend class number::impl::LongNameHandler;
 };
 
-#ifndef U_HIDE_DRAFT_API
 
 inline std::pair<LocalArray<MeasureUnit>, int32_t>
 MeasureUnit::splitToSingleUnits(UErrorCode& status) const {
@@ -3732,12 +3743,11 @@ MeasureUnit::splitToSingleUnits(UErrorCode& status) const {
     auto array = splitToSingleUnitsImpl(length, status);
     return std::make_pair(std::move(array), length);
 }
-#endif 
 
 U_NAMESPACE_END
 
 #endif 
 
-#endif 
+#endif
 
-#endif 
+#endif

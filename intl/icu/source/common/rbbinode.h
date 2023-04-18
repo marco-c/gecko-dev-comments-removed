@@ -108,7 +108,7 @@ class RBBINode : public UMemory {
 
     private:
         RBBINode &operator = (const RBBINode &other); 
-        UBool operator == (const RBBINode &other);    
+        bool operator == (const RBBINode &other);     
 
 #ifdef RBBI_DEBUG
     public:

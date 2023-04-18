@@ -329,7 +329,7 @@ public:
 
 
 
-    UBool   operator==(const    Locale&     other) const;
+    bool    operator==(const    Locale&     other) const;
 
     
 
@@ -339,7 +339,7 @@ public:
 
 
 
-    inline UBool   operator!=(const    Locale&     other) const;
+    inline bool    operator!=(const    Locale&     other) const;
 
     
 
@@ -1005,7 +1005,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID() const;
+    virtual UClassID getDynamicClassID() const override;
 
     
 
@@ -1163,7 +1163,7 @@ private:
     friend void U_CALLCONV locale_available_init();
 };
 
-inline UBool
+inline bool
 Locale::operator!=(const    Locale&     other) const
 {
     return !operator==(other);

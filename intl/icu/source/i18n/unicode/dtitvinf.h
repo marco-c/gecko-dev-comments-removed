@@ -214,7 +214,7 @@ public:
 
 
 
-    virtual UBool operator==(const DateIntervalInfo& other) const;
+    virtual bool operator==(const DateIntervalInfo& other) const;
 
     
 
@@ -223,7 +223,7 @@ public:
 
 
 
-    UBool operator!=(const DateIntervalInfo& other) const;
+    bool operator!=(const DateIntervalInfo& other) const;
 
 
 
@@ -319,7 +319,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID() const;
+    virtual UClassID getDynamicClassID() const override;
 
     
 
@@ -508,7 +508,7 @@ private:
 };
 
 
-inline UBool
+inline bool
 DateIntervalInfo::operator!=(const DateIntervalInfo& other) const {
     return !operator==(other);
 }

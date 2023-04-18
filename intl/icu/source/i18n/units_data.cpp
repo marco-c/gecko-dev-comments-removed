@@ -59,7 +59,7 @@ class ConversionRateDataSink : public ResourceSink {
 
 
 
-    void put(const char *source, ResourceValue &value, UBool , UErrorCode &status) {
+    void put(const char *source, ResourceValue &value, UBool , UErrorCode &status) override {
         if (U_FAILURE(status)) { return; }
         if (uprv_strcmp(source, "convertUnits") != 0) {
             
@@ -146,7 +146,7 @@ class UnitPreferencesSink : public ResourceSink {
 
 
 
-    void put(const char *key, ResourceValue &value, UBool , UErrorCode &status) {
+    void put(const char *key, ResourceValue &value, UBool , UErrorCode &status) override {
         if (U_FAILURE(status)) { return; }
         if (uprv_strcmp(key, "unitPreferenceData") != 0) {
             

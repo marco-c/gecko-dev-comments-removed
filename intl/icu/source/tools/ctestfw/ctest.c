@@ -126,6 +126,7 @@ int ERR_MSG =1;
 int QUICK = 1;  
 int WARN_ON_MISSING_DATA = 0; 
 UTraceLevel ICU_TRACE = UTRACE_OFF;  
+int WRITE_GOLDEN_DATA = 0; 
 size_t MINIMUM_MEMORY_SIZE_FAILURE = (size_t)-1; 
 size_t MAXIMUM_MEMORY_SIZE_FAILURE = (size_t)-1; 
 static const char *ARGV_0 = "[ALL]";
@@ -1069,6 +1070,9 @@ initArgs( int argc, const char* const argv[], ArgHandlerPtr argHandler, void *co
         else if (strcmp( argv[i], "-t_oc") == 0) {
             ICU_TRACE = UTRACE_OPEN_CLOSE;
         }
+        else if (strcmp( argv[i], "-G") == 0) {
+            WRITE_GOLDEN_DATA = 1;
+        }
         else if (strcmp( argv[i], "-h" )==0 || strcmp( argv[i], "--help" )==0)
         {
             help( argv[0] );
@@ -1202,6 +1206,7 @@ static void help ( const char *argv0 )
     printf("    -m n[-q] Min-Max memory size that will cause an allocation failure.\n");
     printf("        The default is the maximum value of size_t. Max is optional.\n");
     printf("    -r  Repeat tests after calling u_cleanup \n");
+    printf("    -G  Write golden data files \n");
     printf("    [/subtest]  To run a subtest \n");
     printf("    eg: to run just the utility tests type: cintltest /tsutil) \n");
 }
@@ -1221,6 +1226,8 @@ getTestOption ( int32_t testOption ) {
             return ERR_MSG;
         case ICU_TRACE_OPTION:
             return ICU_TRACE;
+        case WRITE_GOLDEN_DATA_OPTION:
+            return WRITE_GOLDEN_DATA;
         default :
             return 0;
     }
@@ -1248,6 +1255,8 @@ setTestOption ( int32_t testOption, int32_t value) {
         case ICU_TRACE_OPTION:
             ICU_TRACE = (UTraceLevel)value;
             break;
+        case WRITE_GOLDEN_DATA_OPTION:
+            WRITE_GOLDEN_DATA = value;
         default :
             break;
     }

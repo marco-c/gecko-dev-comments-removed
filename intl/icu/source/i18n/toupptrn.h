@@ -50,12 +50,12 @@ class UppercaseTransliterator : public CaseMapTransliterator {
 
 
 
-    virtual UppercaseTransliterator* clone() const;
+    virtual UppercaseTransliterator* clone() const override;
 
     
 
 
-    virtual UClassID getDynamicClassID() const;
+    virtual UClassID getDynamicClassID() const override;
 
     
 

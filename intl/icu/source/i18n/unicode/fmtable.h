@@ -182,7 +182,7 @@ public:
 
 
 
-    UBool          operator==(const Formattable &other) const;
+    bool           operator==(const Formattable &other) const;
 
     
 
@@ -190,7 +190,7 @@ public:
 
 
 
-    UBool          operator!=(const Formattable& other) const
+    bool           operator!=(const Formattable& other) const
       { return !operator==(other); }
 
     
@@ -587,7 +587,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID() const;
+    virtual UClassID getDynamicClassID() const override;
 
     
 

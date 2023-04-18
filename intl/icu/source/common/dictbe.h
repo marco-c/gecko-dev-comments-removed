@@ -62,9 +62,10 @@ class DictionaryBreakEngine : public LanguageBreakEngine {
 
 
 
-  virtual UBool handles(UChar32 c) const;
+  virtual UBool handles(UChar32 c) const override;
 
   
+
 
 
 
@@ -78,7 +79,8 @@ class DictionaryBreakEngine : public LanguageBreakEngine {
   virtual int32_t findBreaks( UText *text,
                               int32_t startPos,
                               int32_t endPos,
-                              UVector32 &foundBreaks ) const;
+                              UVector32 &foundBreaks,
+                              UErrorCode& status ) const override;
 
  protected:
 
@@ -98,10 +100,12 @@ class DictionaryBreakEngine : public LanguageBreakEngine {
 
 
 
+
   virtual int32_t divideUpDictionaryRange( UText *text,
                                            int32_t rangeStart,
                                            int32_t rangeEnd,
-                                           UVector32 &foundBreaks ) const = 0;
+                                           UVector32 &foundBreaks,
+                                           UErrorCode& status) const = 0;
 
 };
 
@@ -155,10 +159,12 @@ class ThaiBreakEngine : public DictionaryBreakEngine {
 
 
 
+
   virtual int32_t divideUpDictionaryRange( UText *text,
                                            int32_t rangeStart,
                                            int32_t rangeEnd,
-                                           UVector32 &foundBreaks ) const;
+                                           UVector32 &foundBreaks,
+                                           UErrorCode& status) const override;
 
 };
 
@@ -211,72 +217,55 @@ class LaoBreakEngine : public DictionaryBreakEngine {
 
 
 
+
   virtual int32_t divideUpDictionaryRange( UText *text,
                                            int32_t rangeStart,
                                            int32_t rangeEnd,
-                                           UVector32 &foundBreaks ) const;
+                                           UVector32 &foundBreaks,
+                                           UErrorCode& status) const override;
 
 };
 
 
 
- 
- 
 
 
 
 
 
 
- 
-class BurmeseBreakEngine : public DictionaryBreakEngine { 
- private: 
+
+
+
+class BurmeseBreakEngine : public DictionaryBreakEngine {
+ private:
     
 
 
- 
- 
-  UnicodeSet                fBurmeseWordSet; 
-  UnicodeSet                fEndWordSet; 
-  UnicodeSet                fBeginWordSet; 
-  UnicodeSet                fMarkSet; 
-  DictionaryMatcher  *fDictionary; 
- 
- public: 
- 
+
+
+  UnicodeSet                fBurmeseWordSet;
+  UnicodeSet                fEndWordSet;
+  UnicodeSet                fBeginWordSet;
+  UnicodeSet                fMarkSet;
+  DictionaryMatcher  *fDictionary;
+
+ public:
+
   
 
 
 
 
- 
-  BurmeseBreakEngine(DictionaryMatcher *adoptDictionary, UErrorCode &status); 
- 
+
+  BurmeseBreakEngine(DictionaryMatcher *adoptDictionary, UErrorCode &status);
+
   
 
- 
-  virtual ~BurmeseBreakEngine(); 
- 
- protected: 
- 
 
+  virtual ~BurmeseBreakEngine();
 
-
-
-
-
-
- 
-  virtual int32_t divideUpDictionaryRange( UText *text, 
-                                           int32_t rangeStart, 
-                                           int32_t rangeEnd, 
-                                           UVector32 &foundBreaks ) const; 
- 
-}; 
- 
-
-
- 
+ protected:
  
 
 
@@ -284,37 +273,58 @@ class BurmeseBreakEngine : public DictionaryBreakEngine {
 
 
 
- 
-class KhmerBreakEngine : public DictionaryBreakEngine { 
- private: 
+
+
+
+  virtual int32_t divideUpDictionaryRange( UText *text,
+                                           int32_t rangeStart,
+                                           int32_t rangeEnd,
+                                           UVector32 &foundBreaks,
+                                           UErrorCode& status) const override;
+
+};
+
+
+
+
+
+
+
+
+
+
+
+
+class KhmerBreakEngine : public DictionaryBreakEngine {
+ private:
     
 
 
- 
- 
-  UnicodeSet                fKhmerWordSet; 
-  UnicodeSet                fEndWordSet; 
-  UnicodeSet                fBeginWordSet; 
-  UnicodeSet                fMarkSet; 
-  DictionaryMatcher  *fDictionary; 
- 
- public: 
- 
+
+
+  UnicodeSet                fKhmerWordSet;
+  UnicodeSet                fEndWordSet;
+  UnicodeSet                fBeginWordSet;
+  UnicodeSet                fMarkSet;
+  DictionaryMatcher  *fDictionary;
+
+ public:
+
   
 
 
 
 
- 
-  KhmerBreakEngine(DictionaryMatcher *adoptDictionary, UErrorCode &status); 
- 
+
+  KhmerBreakEngine(DictionaryMatcher *adoptDictionary, UErrorCode &status);
+
   
 
+
+  virtual ~KhmerBreakEngine();
+
+ protected:
  
-  virtual ~KhmerBreakEngine(); 
- 
- protected: 
- 
 
 
 
@@ -322,14 +332,16 @@ class KhmerBreakEngine : public DictionaryBreakEngine {
 
 
 
- 
-  virtual int32_t divideUpDictionaryRange( UText *text, 
-                                           int32_t rangeStart, 
-                                           int32_t rangeEnd, 
-                                           UVector32 &foundBreaks ) const; 
- 
-}; 
- 
+
+
+  virtual int32_t divideUpDictionaryRange( UText *text,
+                                           int32_t rangeStart,
+                                           int32_t rangeEnd,
+                                           UVector32 &foundBreaks,
+                                           UErrorCode& status) const override;
+
+};
+
 #if !UCONFIG_NO_NORMALIZATION
 
 
@@ -387,10 +399,12 @@ class CjkBreakEngine : public DictionaryBreakEngine {
 
 
 
+
   virtual int32_t divideUpDictionaryRange( UText *text,
           int32_t rangeStart,
           int32_t rangeEnd,
-          UVector32 &foundBreaks ) const;
+          UVector32 &foundBreaks,
+          UErrorCode& status) const override;
 
 };
 

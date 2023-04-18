@@ -87,7 +87,7 @@ public:
 
 
 
-    virtual TimeUnitAmount* clone() const;
+    virtual TimeUnitAmount* clone() const override;
 
     
     
@@ -103,7 +103,7 @@ public:
 
 
 
-    virtual UBool operator==(const UObject& other) const;
+    virtual bool operator==(const UObject& other) const;
 
 
     
@@ -112,7 +112,7 @@ public:
 
 
 
-    UBool operator!=(const UObject& other) const;
+    bool operator!=(const UObject& other) const;
 
 
     
@@ -140,7 +140,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID(void) const;
+    virtual UClassID getDynamicClassID(void) const override;
 
 
     
@@ -160,7 +160,7 @@ public:
 
 
 
-inline UBool 
+inline bool
 TimeUnitAmount::operator!=(const UObject& other) const {
     return !operator==(other);
 }

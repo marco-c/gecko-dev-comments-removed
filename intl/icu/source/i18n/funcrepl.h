@@ -70,13 +70,13 @@ class FunctionReplacer : public UnicodeFunctor, public UnicodeReplacer {
     
 
 
-    virtual FunctionReplacer* clone() const;
+    virtual FunctionReplacer* clone() const override;
 
     
 
 
 
-    virtual UnicodeReplacer* toReplacer() const;
+    virtual UnicodeReplacer* toReplacer() const override;
 
     
 
@@ -84,28 +84,28 @@ class FunctionReplacer : public UnicodeFunctor, public UnicodeReplacer {
     virtual int32_t replace(Replaceable& text,
                             int32_t start,
                             int32_t limit,
-                            int32_t& cursor);
+                            int32_t& cursor) override;
 
     
 
 
     virtual UnicodeString& toReplacerPattern(UnicodeString& rule,
-                                             UBool escapeUnprintable) const;
+                                             UBool escapeUnprintable) const override;
 
     
 
 
-    virtual void addReplacementSetTo(UnicodeSet& toUnionTo) const;
+    virtual void addReplacementSetTo(UnicodeSet& toUnionTo) const override;
 
     
 
 
-    virtual void setData(const TransliterationRuleData*);
+    virtual void setData(const TransliterationRuleData*) override;
 
     
 
 
-    virtual UClassID getDynamicClassID() const;
+    virtual UClassID getDynamicClassID() const override;
 
     
 

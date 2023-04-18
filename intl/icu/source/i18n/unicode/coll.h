@@ -253,7 +253,7 @@ public:
 
 
 
-    virtual UBool operator==(const Collator& other) const;
+    virtual bool operator==(const Collator& other) const;
 
     
 
@@ -262,7 +262,7 @@ public:
 
 
 
-    virtual UBool operator!=(const Collator& other) const;
+    virtual bool operator!=(const Collator& other) const;
 
     
 
@@ -864,7 +864,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID(void) const = 0;
+    virtual UClassID getDynamicClassID(void) const override = 0;
 
     
 

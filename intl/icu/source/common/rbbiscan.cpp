@@ -1223,7 +1223,7 @@ void RBBIRuleScanner::scanSet() {
         
         
         #ifdef RBBI_DEBUG
-            RBBIDebugPrintf("UnicodeSet parse postion.ErrorIndex = %d\n", pos.getIndex());
+            RBBIDebugPrintf("UnicodeSet parse position.ErrorIndex = %d\n", pos.getIndex());
         #endif
         error(localStatus);
         delete uset;

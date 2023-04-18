@@ -60,7 +60,7 @@ U_CDECL_BEGIN
 
 
 
-#define U_UNICODE_VERSION "13.0"
+#define U_UNICODE_VERSION "14.0"
 
 
 
@@ -483,12 +483,63 @@ typedef enum UProperty {
 
 
     UCHAR_EXTENDED_PICTOGRAPHIC=64,
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+    UCHAR_BASIC_EMOJI=65,
+    
+
+
+
+
+
+    UCHAR_EMOJI_KEYCAP_SEQUENCE=66,
+    
+
+
+
+
+
+    UCHAR_RGI_EMOJI_MODIFIER_SEQUENCE=67,
+    
+
+
+
+
+
+    UCHAR_RGI_EMOJI_FLAG_SEQUENCE=68,
+    
+
+
+
+
+
+    UCHAR_RGI_EMOJI_TAG_SEQUENCE=69,
+    
+
+
+
+
+
+    UCHAR_RGI_EMOJI_ZWJ_SEQUENCE=70,
+    
+
+
+
+
+
+    UCHAR_RGI_EMOJI=71,
+#endif  
 #ifndef U_HIDE_DEPRECATED_API
     
 
 
 
-    UCHAR_BINARY_LIMIT,
+    UCHAR_BINARY_LIMIT=72,
 #endif  
 
     
@@ -1807,6 +1858,33 @@ enum UBlockCode {
     
     UBLOCK_YEZIDI = 308, 
 
+    
+
+    
+    UBLOCK_ARABIC_EXTENDED_B = 309, 
+    
+    UBLOCK_CYPRO_MINOAN = 310, 
+    
+    UBLOCK_ETHIOPIC_EXTENDED_B = 311, 
+    
+    UBLOCK_KANA_EXTENDED_B = 312, 
+    
+    UBLOCK_LATIN_EXTENDED_F = 313, 
+    
+    UBLOCK_LATIN_EXTENDED_G = 314, 
+    
+    UBLOCK_OLD_UYGHUR = 315, 
+    
+    UBLOCK_TANGSA = 316, 
+    
+    UBLOCK_TOTO = 317, 
+    
+    UBLOCK_UNIFIED_CANADIAN_ABORIGINAL_SYLLABICS_EXTENDED_A = 318, 
+    
+    UBLOCK_VITHKUQI = 319, 
+    
+    UBLOCK_ZNAMENNY_MUSICAL_NOTATION = 320, 
+
 #ifndef U_HIDE_DEPRECATED_API
     
 
@@ -1814,7 +1892,7 @@ enum UBlockCode {
 
 
 
-    UBLOCK_COUNT = 309,
+    UBLOCK_COUNT = 321,
 #endif  
 
     
@@ -2105,6 +2183,9 @@ typedef enum UJoiningGroup {
 
     U_JG_HANIFI_ROHINGYA_KINNA_YA,  
     U_JG_HANIFI_ROHINGYA_PA,  
+
+    U_JG_THIN_YEH,  
+    U_JG_VERTICAL_TAIL,  
 
 #ifndef U_HIDE_DEPRECATED_API
     
@@ -2598,6 +2679,37 @@ typedef enum UVerticalOrientation {
 
 U_CAPI UBool U_EXPORT2
 u_hasBinaryProperty(UChar32 c, UProperty which);
+
+#ifndef U_HIDE_DRAFT_API
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+U_CAPI UBool U_EXPORT2
+u_stringHasBinaryProperty(const UChar *s, int32_t length, UProperty which);
+
+#endif  
 
 
 

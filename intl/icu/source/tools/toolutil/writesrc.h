@@ -23,8 +23,20 @@
 
 #include <stdio.h>
 #include "unicode/utypes.h"
+#include "unicode/ucpmap.h"
 #include "unicode/ucptrie.h"
+#include "unicode/umutablecptrie.h"
+#include "unicode/uset.h"
 #include "utrie2.h"
+
+
+
+
+
+typedef enum UTargetSyntax {
+    UPRV_TARGET_SYNTAX_CCODE = 0,
+    UPRV_TARGET_SYNTAX_TOML = 1,
+} UTargetSyntax;
 
 
 
@@ -38,7 +50,23 @@ usrc_create(const char *path, const char *filename, int32_t copyrightYear, const
 
 
 U_CAPI FILE * U_EXPORT2
-usrc_createTextData(const char *path, const char *filename, const char *generator);
+usrc_createTextData(const char *path, const char *filename, int32_t copyrightYear, const char *generator);
+
+
+
+
+U_CAPI void U_EXPORT2
+usrc_writeCopyrightHeader(FILE *f, const char *prefix, int32_t copyrightYear);
+
+
+
+
+U_CAPI void U_EXPORT2
+usrc_writeFileNameGeneratedBy(
+        FILE *f,
+        const char *prefix,
+        const char *filename,
+        const char *generator);
 
 
 
@@ -51,6 +79,7 @@ U_CAPI void U_EXPORT2
 usrc_writeArray(FILE *f,
                 const char *prefix,
                 const void *p, int32_t width, int32_t length,
+                const char *indent,
                 const char *postfix);
 
 
@@ -83,7 +112,8 @@ U_CAPI void U_EXPORT2
 usrc_writeUCPTrieArrays(FILE *f,
                         const char *indexPrefix, const char *dataPrefix,
                         const UCPTrie *pTrie,
-                        const char *postfix);
+                        const char *postfix,
+                        UTargetSyntax syntax);
 
 
 
@@ -95,13 +125,50 @@ usrc_writeUCPTrieStruct(FILE *f,
                         const char *prefix,
                         const UCPTrie *pTrie,
                         const char *indexName, const char *dataName,
-                        const char *postfix);
+                        const char *postfix,
+                        UTargetSyntax syntax);
 
 
 
 
 U_CAPI void U_EXPORT2
-usrc_writeUCPTrie(FILE *f, const char *name, const UCPTrie *pTrie);
+usrc_writeUCPTrie(FILE *f, const char *name, const UCPTrie *pTrie, UTargetSyntax syntax);
+
+
+
+
+U_CAPI void U_EXPORT2
+usrc_writeUnicodeSet(
+    FILE *f,
+    const USet *pSet,
+    UTargetSyntax syntax);
+
+#ifdef __cplusplus
+
+U_NAMESPACE_BEGIN
+
+class U_TOOLUTIL_API ValueNameGetter {
+public:
+    virtual ~ValueNameGetter();
+    virtual const char *getName(uint32_t value) = 0;
+};
+
+U_NAMESPACE_END
+
+
+
+
+
+
+
+U_CAPI void U_EXPORT2
+usrc_writeUCPMap(
+    FILE *f,
+    const UCPMap *pMap,
+    icu::ValueNameGetter *valueNameGetter,
+    UTargetSyntax syntax);
+
+#endif  
 
 
 
@@ -118,5 +185,14 @@ usrc_writeArrayOfMostlyInvChars(FILE *f,
                                 const char *prefix,
                                 const char *p, int32_t length,
                                 const char *postfix);
+
+
+
+
+
+U_CAPI void U_EXPORT2
+usrc_writeStringAsASCII(FILE *f,
+                        const UChar* ptr, int32_t length,
+                        UTargetSyntax syntax);
 
 #endif

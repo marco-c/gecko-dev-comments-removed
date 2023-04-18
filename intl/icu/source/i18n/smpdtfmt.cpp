@@ -64,6 +64,7 @@
 #include "uassert.h"
 #include "cmemory.h"
 #include "umutex.h"
+#include "mutex.h"
 #include <float.h>
 #include "smpdtfst.h"
 #include "sharednumberformat.h"
@@ -596,9 +597,27 @@ SimpleDateFormat& SimpleDateFormat::operator=(const SimpleDateFormat& other)
     
     
     delete fTimeZoneFormat;
-    fTimeZoneFormat = NULL;
-    if (other.fTimeZoneFormat) {
-        fTimeZoneFormat = new TimeZoneFormat(*other.fTimeZoneFormat);
+    fTimeZoneFormat = nullptr;
+    TimeZoneFormat *otherTZFormat;
+    {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        Mutex m(&LOCK);
+        otherTZFormat = other.fTimeZoneFormat;
+    }
+    if (otherTZFormat) {
+        fTimeZoneFormat = new TimeZoneFormat(*otherTZFormat);
     }
 
 #if !UCONFIG_NO_BREAK_ITERATION
@@ -639,7 +658,7 @@ SimpleDateFormat::clone() const
 
 
 
-UBool
+bool
 SimpleDateFormat::operator==(const Format& other) const
 {
     if (DateFormat::operator==(other)) {
@@ -654,7 +673,7 @@ SimpleDateFormat::operator==(const Format& other) const
                 fHaveDefaultCentury  == that->fHaveDefaultCentury &&
                 fDefaultCenturyStart == that->fDefaultCenturyStart);
     }
-    return FALSE;
+    return false;
 }
 
 
@@ -1855,7 +1874,7 @@ SimpleDateFormat::subFormat(UnicodeString &appendTo,
                     }
                 }
                 else {
-                    UPRV_UNREACHABLE;
+                    UPRV_UNREACHABLE_EXIT;
                 }
             }
             appendTo += zoneString;
@@ -1863,7 +1882,10 @@ SimpleDateFormat::subFormat(UnicodeString &appendTo,
         break;
 
     case UDAT_QUARTER_FIELD:
-        if (count >= 4)
+        if (count >= 5)
+            _appendSymbol(appendTo, value/3, fSymbols->fNarrowQuarters,
+                          fSymbols->fNarrowQuartersCount);
+         else if (count == 4)
             _appendSymbol(appendTo, value/3, fSymbols->fQuarters,
                           fSymbols->fQuartersCount);
         else if (count == 3)
@@ -1874,7 +1896,10 @@ SimpleDateFormat::subFormat(UnicodeString &appendTo,
         break;
 
     case UDAT_STANDALONE_QUARTER_FIELD:
-        if (count >= 4)
+        if (count >= 5)
+            _appendSymbol(appendTo, value/3, fSymbols->fStandaloneNarrowQuarters,
+                          fSymbols->fStandaloneNarrowQuartersCount);
+        else if (count == 4)
             _appendSymbol(appendTo, value/3, fSymbols->fStandaloneQuarters,
                           fSymbols->fStandaloneQuartersCount);
         else if (count == 3)
@@ -2561,10 +2586,10 @@ SimpleDateFormat::parse(const UnicodeString& text, Calendar& cal, ParsePosition&
             if (btz != NULL) {
                 if (tzTimeType == UTZFMT_TIME_TYPE_STANDARD) {
                     btz->getOffsetFromLocal(localMillis,
-                        BasicTimeZone::kStandard, BasicTimeZone::kStandard, raw, dst, status);
+                        UCAL_TZ_LOCAL_STANDARD_FORMER, UCAL_TZ_LOCAL_STANDARD_LATTER, raw, dst, status);
                 } else {
                     btz->getOffsetFromLocal(localMillis,
-                        BasicTimeZone::kDaylight, BasicTimeZone::kDaylight, raw, dst, status);
+                        UCAL_TZ_LOCAL_DAYLIGHT_FORMER, UCAL_TZ_LOCAL_DAYLIGHT_LATTER, raw, dst, status);
                 }
             } else {
                 
@@ -3466,6 +3491,11 @@ int32_t SimpleDateFormat::subParse(const UnicodeString& text, int32_t& start, UC
                                           fSymbols->fShortQuarters, fSymbols->fShortQuartersCount, cal)) > 0)
                     return newStart;
             }
+            if(getBooleanAttribute(UDAT_PARSE_MULTIPLE_PATTERNS_FOR_MATCH, status) || count == 5) {
+                if ((newStart = matchQuarterString(text, start, UCAL_MONTH,
+                                      fSymbols->fNarrowQuarters, fSymbols->fNarrowQuartersCount, cal)) > 0)
+                    return newStart;
+            }
             if (!getBooleanAttribute(UDAT_PARSE_ALLOW_NUMERIC, status))
                 return newStart;
             
@@ -3496,6 +3526,11 @@ int32_t SimpleDateFormat::subParse(const UnicodeString& text, int32_t& start, UC
             if(getBooleanAttribute(UDAT_PARSE_MULTIPLE_PATTERNS_FOR_MATCH, status) || count == 3) {
                 if ((newStart = matchQuarterString(text, start, UCAL_MONTH,
                                           fSymbols->fStandaloneShortQuarters, fSymbols->fStandaloneShortQuartersCount, cal)) > 0)
+                    return newStart;
+            }
+            if(getBooleanAttribute(UDAT_PARSE_MULTIPLE_PATTERNS_FOR_MATCH, status) || count == 5) {
+                if ((newStart = matchQuarterString(text, start, UCAL_MONTH,
+                                          fSymbols->fStandaloneNarrowQuarters, fSymbols->fStandaloneNarrowQuartersCount, cal)) > 0)
                     return newStart;
             }
             if (!getBooleanAttribute(UDAT_PARSE_ALLOW_NUMERIC, status))
@@ -4308,19 +4343,10 @@ SimpleDateFormat::skipUWhiteSpace(const UnicodeString& text, int32_t pos) const 
 
 TimeZoneFormat *
 SimpleDateFormat::tzFormat(UErrorCode &status) const {
-    if (fTimeZoneFormat == NULL) {
-        umtx_lock(&LOCK);
-        {
-            if (fTimeZoneFormat == NULL) {
-                TimeZoneFormat *tzfmt = TimeZoneFormat::createInstance(fLocale, status);
-                if (U_FAILURE(status)) {
-                    return NULL;
-                }
-
-                const_cast<SimpleDateFormat *>(this)->fTimeZoneFormat = tzfmt;
-            }
-        }
-        umtx_unlock(&LOCK);
+    Mutex m(&LOCK);
+    if (fTimeZoneFormat == nullptr && U_SUCCESS(status)) {
+        const_cast<SimpleDateFormat *>(this)->fTimeZoneFormat =
+                TimeZoneFormat::createInstance(fLocale, status);
     }
     return fTimeZoneFormat;
 }

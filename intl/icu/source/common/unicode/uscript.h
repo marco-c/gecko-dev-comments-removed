@@ -484,6 +484,17 @@ typedef enum UScriptCode {
       
       USCRIPT_YEZIDI                        = 192,
 
+      
+      USCRIPT_CYPRO_MINOAN                  = 193,
+      
+      USCRIPT_OLD_UYGHUR                    = 194,
+      
+      USCRIPT_TANGSA                        = 195,
+      
+      USCRIPT_TOTO                          = 196,
+      
+      USCRIPT_VITHKUQI                      = 197,
+
 #ifndef U_HIDE_DEPRECATED_API
     
 
@@ -491,7 +502,7 @@ typedef enum UScriptCode {
 
 
 
-    USCRIPT_CODE_LIMIT    = 193
+    USCRIPT_CODE_LIMIT    = 198
 #endif  
 } UScriptCode;
 

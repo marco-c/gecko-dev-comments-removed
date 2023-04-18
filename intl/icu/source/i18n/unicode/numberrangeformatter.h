@@ -617,7 +617,6 @@ class U_I18N_API FormattedNumberRange : public UMemory, public FormattedValue {
     
     UBool nextPosition(ConstrainedFieldPosition& cfpos, UErrorCode& status) const U_OVERRIDE;
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -639,9 +638,8 @@ class U_I18N_API FormattedNumberRange : public UMemory, public FormattedValue {
 
     template<typename StringClass>
     inline std::pair<StringClass, StringClass> getDecimalNumbers(UErrorCode& status) const;
-#endif
 
-
+    
 
 
 
@@ -652,7 +650,16 @@ class U_I18N_API FormattedNumberRange : public UMemory, public FormattedValue {
 
     UNumberRangeIdentityResult getIdentityResult(UErrorCode& status) const;
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+    FormattedNumberRange()
+        : fData(nullptr), fErrorCode(U_INVALID_STATE_ERROR) {}
+#endif
+
+
 
 
     FormattedNumberRange(const FormattedNumberRange&) = delete;
@@ -714,7 +721,6 @@ class U_I18N_API FormattedNumberRange : public UMemory, public FormattedValue {
     friend struct impl::UFormattedNumberRangeImpl;
 };
 
-#ifndef U_HIDE_DRAFT_API
 
 template<typename StringClass>
 std::pair<StringClass, StringClass> FormattedNumberRange::getDecimalNumbers(UErrorCode& status) const {
@@ -725,7 +731,6 @@ std::pair<StringClass, StringClass> FormattedNumberRange::getDecimalNumbers(UErr
     getDecimalNumbers(sink1, sink2, status);
     return std::make_pair(str1, str2);
 }
-#endif 
 
 
 

@@ -276,6 +276,12 @@ class RuleCharacterIterator;
 
 
 
+
+
+
+
+
+
 class U_COMMON_API UnicodeSet U_FINAL : public UnicodeFilter {
 private:
     
@@ -485,14 +491,14 @@ public:
 
 
 
-    virtual UBool operator==(const UnicodeSet& o) const;
+    virtual bool operator==(const UnicodeSet& o) const;
 
     
 
 
 
 
-    inline UBool operator!=(const UnicodeSet& o) const;
+    inline bool operator!=(const UnicodeSet& o) const;
 
     
 
@@ -503,7 +509,7 @@ public:
 
 
 
-    virtual UnicodeSet* clone() const;
+    virtual UnicodeSet* clone() const override;
 
     
 
@@ -705,7 +711,7 @@ public:
 
 
     virtual UnicodeString& toPattern(UnicodeString& result,
-                                     UBool escapeUnprintable = false) const;
+                                     UBool escapeUnprintable = false) const override;
 
     
 
@@ -774,6 +780,10 @@ public:
 
 
 
+
+
+
+
     virtual int32_t size(void) const;
 
     
@@ -784,6 +794,14 @@ public:
 
     virtual UBool isEmpty(void) const;
 
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+    UBool hasStrings() const;
+#endif  
+
     
 
 
@@ -791,7 +809,7 @@ public:
 
 
 
-    virtual UBool contains(UChar32 c) const;
+    virtual UBool contains(UChar32 c) const override;
 
     
 
@@ -1000,7 +1018,7 @@ public:
     virtual UMatchDegree matches(const Replaceable& text,
                          int32_t& offset,
                          int32_t limit,
-                         UBool incremental);
+                         UBool incremental) override;
 
 private:
     
@@ -1049,7 +1067,7 @@ public:
 
 
 
-    virtual void addMatchSetTo(UnicodeSet& toUnionTo) const;
+    virtual void addMatchSetTo(UnicodeSet& toUnionTo) const override;
 
     
 
@@ -1062,6 +1080,12 @@ public:
     int32_t indexOf(UChar32 c) const;
 
     
+
+
+
+
+
+
 
 
 
@@ -1264,7 +1288,12 @@ public:
 
 
 
-    virtual UnicodeSet& complement(void);
+
+
+
+
+
+    virtual UnicodeSet& complement();
 
     
 
@@ -1504,7 +1533,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID(void) const;
+    virtual UClassID getDynamicClassID(void) const override;
 
 private:
 
@@ -1525,7 +1554,7 @@ private:
 
 
 
-    virtual UBool matchesIndexValue(uint8_t v) const;
+    virtual UBool matchesIndexValue(uint8_t v) const override;
 
 private:
     friend class RBBIRuleScanner;
@@ -1567,7 +1596,6 @@ private:
     void swapBuffers(void);
 
     UBool allocateStrings(UErrorCode &status);
-    UBool hasStrings() const;
     int32_t stringsSize() const;
     UBool stringsContains(const UnicodeString &s) const;
 
@@ -1580,6 +1608,9 @@ private:
     static void _appendToPat(UnicodeString& buf, const UnicodeString& s, UBool escapeUnprintable);
 
     static void _appendToPat(UnicodeString& buf, UChar32 c, UBool escapeUnprintable);
+
+    static void _appendToPat(UnicodeString &result, UChar32 start, UChar32 end,
+                             UBool escapeUnprintable);
 
     
     
@@ -1693,7 +1724,7 @@ private:
 
 
 
-inline UBool UnicodeSet::operator!=(const UnicodeSet& o) const {
+inline bool UnicodeSet::operator!=(const UnicodeSet& o) const {
     return !operator==(o);
 }
 

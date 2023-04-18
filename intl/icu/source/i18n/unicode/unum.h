@@ -412,7 +412,6 @@ typedef enum UNumberFormatFields {
 } UNumberFormatFields;
 
 
-#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -434,7 +433,6 @@ typedef enum UNumberFormatMinimumGroupingDigits {
 
     UNUM_MINIMUM_GROUPING_DIGITS_MIN2 = -3,
 } UNumberFormatMinimumGroupingDigits;
-#endif  
 
 
 
@@ -1429,12 +1427,19 @@ typedef enum UNumberFormatSymbol {
 
   UNUM_EXPONENT_MULTIPLICATION_SYMBOL = 27,
 
+#ifndef U_HIDE_INTERNAL_API
+  
+
+
+  UNUM_APPROXIMATELY_SIGN_SYMBOL = 28,
+#endif
+
 #ifndef U_HIDE_DEPRECATED_API
     
 
 
 
-  UNUM_FORMAT_SYMBOL_COUNT = 28
+  UNUM_FORMAT_SYMBOL_COUNT = 29
 #endif  
 } UNumberFormatSymbol;
 

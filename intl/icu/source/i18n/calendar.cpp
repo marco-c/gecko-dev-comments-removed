@@ -427,7 +427,7 @@ protected:
     
     
 
-    virtual void updateVisibleIDs(Hashtable& result, UErrorCode& status) const
+    virtual void updateVisibleIDs(Hashtable& result, UErrorCode& status) const override
     {
         if (U_SUCCESS(status)) {
             for(int32_t i=0;gCalTypes[i] != NULL;i++) {
@@ -439,7 +439,7 @@ protected:
         }
     }
 
-    virtual UObject* create(const ICUServiceKey& key, const ICUService* , UErrorCode& status) const {
+    virtual UObject* create(const ICUServiceKey& key, const ICUService* , UErrorCode& status) const override {
 #ifdef U_DEBUG_CALSVC
         if(dynamic_cast<const LocaleKey*>(&key) == NULL) {
             fprintf(stderr, "::create - not a LocaleKey!\n");
@@ -485,7 +485,7 @@ public:
     DefaultCalendarFactory() : ICUResourceBundleFactory() { }
     virtual ~DefaultCalendarFactory();
 protected:
-    virtual UObject* create(const ICUServiceKey& key, const ICUService* , UErrorCode& status) const  {
+    virtual UObject* create(const ICUServiceKey& key, const ICUService* , UErrorCode& status) const override {
 
         LocaleKey &lkey = (LocaleKey&)key;
         Locale loc;
@@ -517,7 +517,7 @@ public:
 
     virtual ~CalendarService();
 
-    virtual UObject* cloneInstance(UObject* instance) const {
+    virtual UObject* cloneInstance(UObject* instance) const override {
         UnicodeString *s = dynamic_cast<UnicodeString *>(instance);
         if(s != NULL) {
             return s->clone();
@@ -530,7 +530,7 @@ public:
         }
     }
 
-    virtual UObject* handleDefault(const ICUServiceKey& key, UnicodeString* , UErrorCode& status) const {
+    virtual UObject* handleDefault(const ICUServiceKey& key, UnicodeString* , UErrorCode& status) const override {
         LocaleKey& lkey = (LocaleKey&)key;
         
 
@@ -555,7 +555,7 @@ public:
         return nc;
     }
 
-    virtual UBool isDefault() const {
+    virtual UBool isDefault() const override {
         return countFactories() == 1;
     }
 };
@@ -1031,7 +1031,7 @@ Calendar::getCalendarTypeFromLocale(
     }
 }
 
-UBool
+bool
 Calendar::operator==(const Calendar& that) const
 {
     UErrorCode status = U_ZERO_ERROR;
@@ -3163,8 +3163,8 @@ int32_t Calendar::computeZoneOffset(double millis, double millisInDay, UErrorCod
     UDate wall = millis + millisInDay;
     BasicTimeZone* btz = getBasicTimeZone();
     if (btz) {
-        int duplicatedTimeOpt = (fRepeatedWallTime == UCAL_WALLTIME_FIRST) ? BasicTimeZone::kFormer : BasicTimeZone::kLatter;
-        int nonExistingTimeOpt = (fSkippedWallTime == UCAL_WALLTIME_FIRST) ? BasicTimeZone::kLatter : BasicTimeZone::kFormer;
+        UTimeZoneLocalOption duplicatedTimeOpt = (fRepeatedWallTime == UCAL_WALLTIME_FIRST) ? UCAL_TZ_LOCAL_FORMER : UCAL_TZ_LOCAL_LATTER;
+        UTimeZoneLocalOption nonExistingTimeOpt = (fSkippedWallTime == UCAL_WALLTIME_FIRST) ? UCAL_TZ_LOCAL_LATTER : UCAL_TZ_LOCAL_FORMER;
         btz->getOffsetFromLocal(wall, nonExistingTimeOpt, duplicatedTimeOpt, rawOffset, dstOffset, ec);
     } else {
         const TimeZone& tz = getTimeZone();

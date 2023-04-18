@@ -48,12 +48,12 @@ class UnicodeNameTransliterator : public Transliterator {
     
 
 
-    virtual UnicodeNameTransliterator* clone() const;
+    virtual UnicodeNameTransliterator* clone() const override;
 
     
 
 
-    virtual UClassID getDynamicClassID() const;
+    virtual UClassID getDynamicClassID() const override;
 
     
 
@@ -72,7 +72,7 @@ class UnicodeNameTransliterator : public Transliterator {
 
 
     virtual void handleTransliterate(Replaceable& text, UTransPosition& offset,
-                                     UBool isIncremental) const;
+                                     UBool isIncremental) const override;
 
 private:
     

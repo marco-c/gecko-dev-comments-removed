@@ -325,7 +325,7 @@ public:
 
 
 
-  inline UBool operator== (const UnicodeString& text) const;
+  inline bool operator== (const UnicodeString& text) const;
 
   
 
@@ -334,7 +334,7 @@ public:
 
 
 
-  inline UBool operator!= (const UnicodeString& text) const;
+  inline bool operator!= (const UnicodeString& text) const;
 
   
 
@@ -1526,7 +1526,7 @@ public:
 
   virtual void extractBetween(int32_t start,
               int32_t limit,
-              UnicodeString& target) const;
+              UnicodeString& target) const override;
 
   
 
@@ -2456,14 +2456,14 @@ public:
 
   virtual void handleReplaceBetween(int32_t start,
                                     int32_t limit,
-                                    const UnicodeString& text);
+                                    const UnicodeString& text) override;
 
   
 
 
 
 
-  virtual UBool hasMetaData() const;
+  virtual UBool hasMetaData() const override;
 
   
 
@@ -2478,7 +2478,7 @@ public:
 
 
 
-  virtual void copy(int32_t start, int32_t limit, int32_t dest);
+  virtual void copy(int32_t start, int32_t limit, int32_t dest) override;
 
   
 
@@ -3338,7 +3338,7 @@ public:
 
 
 
-  virtual UnicodeString *clone() const;
+  virtual UnicodeString *clone() const override;
 
   
 
@@ -3444,7 +3444,7 @@ public:
 
 
 
-  virtual UClassID getDynamicClassID() const;
+  virtual UClassID getDynamicClassID() const override;
 
   
   
@@ -3455,21 +3455,21 @@ protected:
 
 
 
-  virtual int32_t getLength() const;
+  virtual int32_t getLength() const override;
 
   
 
 
 
 
-  virtual char16_t getCharAt(int32_t offset) const;
+  virtual char16_t getCharAt(int32_t offset) const override;
 
   
 
 
 
 
-  virtual UChar32 getChar32At(int32_t offset) const;
+  virtual UChar32 getChar32At(int32_t offset) const override;
 
 private:
   
@@ -3946,7 +3946,7 @@ UnicodeString::doCompare(int32_t start,
   }
 }
 
-inline UBool
+inline bool
 UnicodeString::operator== (const UnicodeString& text) const
 {
   if(isBogus()) {
@@ -3957,7 +3957,7 @@ UnicodeString::operator== (const UnicodeString& text) const
   }
 }
 
-inline UBool
+inline bool
 UnicodeString::operator!= (const UnicodeString& text) const
 { return (! operator==(text)); }
 

@@ -70,10 +70,12 @@ class LanguageBreakEngine : public UMemory {
 
 
 
+
   virtual int32_t findBreaks( UText *text,
                               int32_t startPos,
                               int32_t endPos,
-                              UVector32 &foundBreaks ) const = 0;
+                              UVector32 &foundBreaks,
+                              UErrorCode &status) const = 0;
 
 };
 
@@ -174,9 +176,10 @@ class UnhandledEngine : public LanguageBreakEngine {
 
 
 
-  virtual UBool handles(UChar32 c) const;
+  virtual UBool handles(UChar32 c) const override;
 
  
+
 
 
 
@@ -190,7 +193,8 @@ class UnhandledEngine : public LanguageBreakEngine {
   virtual int32_t findBreaks( UText *text,
                               int32_t startPos,
                               int32_t endPos,
-                              UVector32 &foundBreaks ) const;
+                              UVector32 &foundBreaks,
+                              UErrorCode &status) const override;
 
  
 
@@ -243,7 +247,7 @@ class ICULanguageBreakFactory : public LanguageBreakFactory {
 
 
 
-  virtual const LanguageBreakEngine *getEngineFor(UChar32 c);
+  virtual const LanguageBreakEngine *getEngineFor(UChar32 c) override;
 
 protected:
  

@@ -229,13 +229,13 @@ public:
 
 
 
-    virtual DateFormat* clone() const = 0;
+    virtual DateFormat* clone() const override = 0;
 
     
 
 
 
-    virtual UBool operator==(const Format&) const;
+    virtual bool operator==(const Format&) const override;
 
 
     using Format::format;
@@ -257,7 +257,7 @@ public:
     virtual UnicodeString& format(const Formattable& obj,
                                   UnicodeString& appendTo,
                                   FieldPosition& pos,
-                                  UErrorCode& status) const;
+                                  UErrorCode& status) const override;
 
     
 
@@ -277,7 +277,7 @@ public:
     virtual UnicodeString& format(const Formattable& obj,
                                   UnicodeString& appendTo,
                                   FieldPositionIterator* posIter,
-                                  UErrorCode& status) const;
+                                  UErrorCode& status) const override;
     
 
 
@@ -523,7 +523,7 @@ public:
 
     virtual void parseObject(const UnicodeString& source,
                              Formattable& result,
-                             ParsePosition& parse_pos) const;
+                             ParsePosition& parse_pos) const override;
 
     
 

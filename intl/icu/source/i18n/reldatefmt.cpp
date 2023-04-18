@@ -588,7 +588,7 @@ struct RelDateTimeFmtDataSink : public ResourceSink {
     }
 
     virtual void put(const char *key, ResourceValue &value,
-                     UBool , UErrorCode &errorCode) {
+                     UBool , UErrorCode &errorCode) override {
         
         ResourceTable table = value.getTable(errorCode);
         if (U_FAILURE(errorCode)) { return; }

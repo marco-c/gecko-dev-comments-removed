@@ -87,7 +87,7 @@ class U_I18N_API Measure: public UObject {
 
 
 
-    UBool operator==(const UObject& other) const;
+    bool operator==(const UObject& other) const;
 
     
 
@@ -127,7 +127,7 @@ class U_I18N_API Measure: public UObject {
 
 
 
-    virtual UClassID getDynamicClassID(void) const;
+    virtual UClassID getDynamicClassID(void) const override;
 
  protected:
     

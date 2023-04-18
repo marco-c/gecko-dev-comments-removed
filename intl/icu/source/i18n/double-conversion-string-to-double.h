@@ -218,6 +218,18 @@ class StringToDoubleConverter {
                       int length,
                       int* processed_characters_count) const;
 
+  
+  template <typename T>
+  T StringTo(const char* buffer,
+             int length,
+             int* processed_characters_count) const;
+
+  
+  template <typename T>
+  T StringTo(const uc16* buffer,
+             int length,
+             int* processed_characters_count) const;
+
  private:
   const int flags_;
   const double empty_string_value_;

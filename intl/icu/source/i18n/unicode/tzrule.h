@@ -56,7 +56,7 @@ public:
 
 
 
-    virtual UBool operator==(const TimeZoneRule& that) const;
+    virtual bool operator==(const TimeZoneRule& that) const;
 
     
 
@@ -65,7 +65,7 @@ public:
 
 
 
-    virtual UBool operator!=(const TimeZoneRule& that) const;
+    virtual bool operator!=(const TimeZoneRule& that) const;
 
     
 
@@ -231,7 +231,7 @@ public:
 
 
 
-    virtual InitialTimeZoneRule* clone() const;
+    virtual InitialTimeZoneRule* clone() const override;
 
     
 
@@ -247,7 +247,7 @@ public:
 
 
 
-    virtual UBool operator==(const TimeZoneRule& that) const;
+    virtual bool operator==(const TimeZoneRule& that) const override;
 
     
 
@@ -256,7 +256,7 @@ public:
 
 
 
-    virtual UBool operator!=(const TimeZoneRule& that) const;
+    virtual bool operator!=(const TimeZoneRule& that) const override;
 
     
 
@@ -280,7 +280,7 @@ public:
 
 
 
-    virtual UBool isEquivalentTo(const TimeZoneRule& that) const;
+    virtual UBool isEquivalentTo(const TimeZoneRule& that) const override;
 
     
 
@@ -293,7 +293,7 @@ public:
 
 
 
-    virtual UBool getFirstStart(int32_t prevRawOffset, int32_t prevDSTSavings, UDate& result) const;
+    virtual UBool getFirstStart(int32_t prevRawOffset, int32_t prevDSTSavings, UDate& result) const override;
 
     
 
@@ -306,7 +306,7 @@ public:
 
 
 
-    virtual UBool getFinalStart(int32_t prevRawOffset, int32_t prevDSTSavings, UDate& result) const;
+    virtual UBool getFinalStart(int32_t prevRawOffset, int32_t prevDSTSavings, UDate& result) const override;
 
     
 
@@ -323,7 +323,7 @@ public:
 
 
     virtual UBool getNextStart(UDate base, int32_t prevRawOffset, int32_t prevDSTSavings,
-        UBool inclusive, UDate& result) const;
+        UBool inclusive, UDate& result) const override;
 
     
 
@@ -340,7 +340,7 @@ public:
 
 
     virtual UBool getPreviousStart(UDate base, int32_t prevRawOffset, int32_t prevDSTSavings,
-        UBool inclusive, UDate& result) const;
+        UBool inclusive, UDate& result) const override;
 
 public:
     
@@ -367,7 +367,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID(void) const;
+    virtual UClassID getDynamicClassID(void) const override;
 };
 
 
@@ -442,7 +442,7 @@ public:
 
 
 
-    virtual AnnualTimeZoneRule* clone() const;
+    virtual AnnualTimeZoneRule* clone() const override;
 
     
 
@@ -458,7 +458,7 @@ public:
 
 
 
-    virtual UBool operator==(const TimeZoneRule& that) const;
+    virtual bool operator==(const TimeZoneRule& that) const override;
 
     
 
@@ -467,7 +467,7 @@ public:
 
 
 
-    virtual UBool operator!=(const TimeZoneRule& that) const;
+    virtual bool operator!=(const TimeZoneRule& that) const override;
 
     
 
@@ -515,7 +515,7 @@ public:
 
 
 
-    virtual UBool isEquivalentTo(const TimeZoneRule& that) const;
+    virtual UBool isEquivalentTo(const TimeZoneRule& that) const override;
 
     
 
@@ -528,7 +528,7 @@ public:
 
 
 
-    virtual UBool getFirstStart(int32_t prevRawOffset, int32_t prevDSTSavings, UDate& result) const;
+    virtual UBool getFirstStart(int32_t prevRawOffset, int32_t prevDSTSavings, UDate& result) const override;
 
     
 
@@ -541,7 +541,7 @@ public:
 
 
 
-    virtual UBool getFinalStart(int32_t prevRawOffset, int32_t prevDSTSavings, UDate& result) const;
+    virtual UBool getFinalStart(int32_t prevRawOffset, int32_t prevDSTSavings, UDate& result) const override;
 
     
 
@@ -558,7 +558,7 @@ public:
 
 
     virtual UBool getNextStart(UDate base, int32_t prevRawOffset, int32_t prevDSTSavings,
-        UBool inclusive, UDate& result) const;
+        UBool inclusive, UDate& result) const override;
 
     
 
@@ -575,7 +575,7 @@ public:
 
 
     virtual UBool getPreviousStart(UDate base, int32_t prevRawOffset, int32_t prevDSTSavings,
-        UBool inclusive, UDate& result) const;
+        UBool inclusive, UDate& result) const override;
 
 
 private:
@@ -608,7 +608,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID(void) const;
+    virtual UClassID getDynamicClassID(void) const override;
 };
 
 
@@ -658,7 +658,7 @@ public:
 
 
 
-    virtual TimeArrayTimeZoneRule* clone() const;
+    virtual TimeArrayTimeZoneRule* clone() const override;
 
     
 
@@ -674,7 +674,7 @@ public:
 
 
 
-    virtual UBool operator==(const TimeZoneRule& that) const;
+    virtual bool operator==(const TimeZoneRule& that) const override;
 
     
 
@@ -683,7 +683,7 @@ public:
 
 
 
-    virtual UBool operator!=(const TimeZoneRule& that) const;
+    virtual bool operator!=(const TimeZoneRule& that) const override;
 
     
 
@@ -721,7 +721,7 @@ public:
 
 
 
-    virtual UBool isEquivalentTo(const TimeZoneRule& that) const;
+    virtual UBool isEquivalentTo(const TimeZoneRule& that) const override;
 
     
 
@@ -734,7 +734,7 @@ public:
 
 
 
-    virtual UBool getFirstStart(int32_t prevRawOffset, int32_t prevDSTSavings, UDate& result) const;
+    virtual UBool getFirstStart(int32_t prevRawOffset, int32_t prevDSTSavings, UDate& result) const override;
 
     
 
@@ -747,7 +747,7 @@ public:
 
 
 
-    virtual UBool getFinalStart(int32_t prevRawOffset, int32_t prevDSTSavings, UDate& result) const;
+    virtual UBool getFinalStart(int32_t prevRawOffset, int32_t prevDSTSavings, UDate& result) const override;
 
     
 
@@ -764,7 +764,7 @@ public:
 
 
     virtual UBool getNextStart(UDate base, int32_t prevRawOffset, int32_t prevDSTSavings,
-        UBool inclusive, UDate& result) const;
+        UBool inclusive, UDate& result) const override;
 
     
 
@@ -781,7 +781,7 @@ public:
 
 
     virtual UBool getPreviousStart(UDate base, int32_t prevRawOffset, int32_t prevDSTSavings,
-        UBool inclusive, UDate& result) const;
+        UBool inclusive, UDate& result) const override;
 
 
 private:
@@ -819,7 +819,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID(void) const;
+    virtual UClassID getDynamicClassID(void) const override;
 };
 
 

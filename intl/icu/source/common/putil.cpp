@@ -727,12 +727,21 @@ static char *gTimeZoneBufferPtr = NULL;
 
 #if !U_PLATFORM_USES_ONLY_WIN32_API
 #define isNonDigit(ch) (ch < '0' || '9' < ch)
+#define isDigit(ch) ('0' <= ch && ch <= '9')
 static UBool isValidOlsonID(const char *id) {
     int32_t idx = 0;
+    int32_t idxMax = 0;
 
     
 
     while (id[idx] && isNonDigit(id[idx]) && id[idx] != ',') {
+        idx++;
+    }
+
+    
+
+    idxMax = idx + 2;
+    while (id[idx] && isDigit(id[idx]) && idx < idxMax) {
         idx++;
     }
 

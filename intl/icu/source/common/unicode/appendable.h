@@ -174,7 +174,7 @@ public:
 
 
 
-    virtual UBool appendCodeUnit(char16_t c);
+    virtual UBool appendCodeUnit(char16_t c) override;
 
     
 
@@ -182,16 +182,7 @@ public:
 
 
 
-    virtual UBool appendCodePoint(UChar32 c);
-
-    
-
-
-
-
-
-
-    virtual UBool appendString(const char16_t *s, int32_t length);
+    virtual UBool appendCodePoint(UChar32 c) override;
 
     
 
@@ -200,7 +191,16 @@ public:
 
 
 
-    virtual UBool reserveAppendCapacity(int32_t appendCapacity);
+    virtual UBool appendString(const char16_t *s, int32_t length) override;
+
+    
+
+
+
+
+
+
+    virtual UBool reserveAppendCapacity(int32_t appendCapacity) override;
 
     
 
@@ -226,7 +226,7 @@ public:
     virtual char16_t *getAppendBuffer(int32_t minCapacity,
                                    int32_t desiredCapacityHint,
                                    char16_t *scratch, int32_t scratchCapacity,
-                                   int32_t *resultCapacity);
+                                   int32_t *resultCapacity) override;
 
 private:
     UnicodeString &str;

@@ -169,6 +169,11 @@ class U_I18N_API DecimalQuantity : public IFixedDecimal, public UMemory {
     
 
 
+    void resetExponent();
+
+    
+
+
 
     bool isZeroish() const;
 
@@ -427,6 +432,8 @@ class U_I18N_API DecimalQuantity : public IFixedDecimal, public UMemory {
     int8_t getDigitPos(int32_t position) const;
 
     
+
+
 
 
 

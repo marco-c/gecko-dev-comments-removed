@@ -68,13 +68,13 @@ protected:
 
 
 
-    virtual int32_t handleComputeMonthStart(int32_t eyear, int32_t month, UBool useMonth) const;
+    virtual int32_t handleComputeMonthStart(int32_t eyear, int32_t month, UBool useMonth) const override;
 
     
 
 
 
-    virtual int32_t handleGetLimit(UCalendarDateFields field, ELimitType limitType) const;
+    virtual int32_t handleGetLimit(UCalendarDateFields field, ELimitType limitType) const override;
 
     
 
@@ -85,13 +85,13 @@ protected:
 
 
 
-    virtual UBool inDaylightTime(UErrorCode&) const;
+    virtual UBool inDaylightTime(UErrorCode&) const override;
 
     
 
 
 
-    virtual UBool haveDefaultCentury() const;
+    virtual UBool haveDefaultCentury() const override;
 
 protected:
     

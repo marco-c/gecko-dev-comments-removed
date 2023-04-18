@@ -85,12 +85,12 @@ public:
 
 
 
-    UBool operator==(const UVector64& other);
+    bool operator==(const UVector64& other);
 
     
 
 
-    inline UBool operator!=(const UVector64& other);
+    inline bool operator!=(const UVector64& other);
 
     
     
@@ -170,7 +170,7 @@ public:
     
 
 
-    virtual UClassID getDynamicClassID() const;
+    virtual UClassID getDynamicClassID() const override;
 
 private:
     void _init(int32_t initialCapacity, UErrorCode &status);
@@ -249,7 +249,7 @@ inline int64_t UVector64::lastElementi(void) const {
     return elementAti(count-1);
 }
 
-inline UBool UVector64::operator!=(const UVector64& other) {
+inline bool UVector64::operator!=(const UVector64& other) {
     return !operator==(other);
 }
 

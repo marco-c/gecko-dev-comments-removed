@@ -35,7 +35,8 @@ static const char kDefaultCurrency8[] = "XXX";
 
 
 
-CharString U_I18N_API getUnitQuantity(StringPiece baseUnitIdentifier, UErrorCode &status);
+
+CharString U_I18N_API getUnitQuantity(const MeasureUnitImpl &baseMeasureUnitImpl, UErrorCode &status);
 
 
 
@@ -96,6 +97,7 @@ struct U_I18N_API SingleUnitImpl : public UMemory {
         if (dimensionality > 0 && other.dimensionality < 0) {
             return -1;
         }
+
         
         int32_t thisQuantity = this->getUnitCategoryIndex();
         int32_t otherQuantity = other.getUnitCategoryIndex();
@@ -105,6 +107,7 @@ struct U_I18N_API SingleUnitImpl : public UMemory {
         if (thisQuantity > otherQuantity) {
             return 1;
         }
+
         
         if (index < other.index) {
             return -1;
@@ -112,15 +115,39 @@ struct U_I18N_API SingleUnitImpl : public UMemory {
         if (index > other.index) {
             return 1;
         }
+
         
         
         
-        if (unitPrefix < other.unitPrefix) {
-            return -1;
-        }
-        if (unitPrefix > other.unitPrefix) {
+        
+        int32_t unitBase = umeas_getPrefixBase(unitPrefix);
+        int32_t otherUnitBase = umeas_getPrefixBase(other.unitPrefix);
+
+        
+        int32_t unitPower = unitBase == 1024  ? umeas_getPrefixPower(unitPrefix) * 3
+                                                                 : umeas_getPrefixPower(unitPrefix);
+        int32_t otherUnitPower =
+            otherUnitBase == 1024  ? umeas_getPrefixPower(other.unitPrefix) * 3
+                                                      : umeas_getPrefixPower(other.unitPrefix);
+
+        
+        
+        
+        
+        if (unitPower < otherUnitPower) {
             return 1;
         }
+        if (unitPower > otherUnitPower) {
+            return -1;
+        }
+
+        if (unitBase < otherUnitBase) {
+            return 1;
+        }
+        if (unitBase > otherUnitBase) {
+            return -1;
+        }
+
         return 0;
     }
 
@@ -269,7 +296,22 @@ class U_I18N_API MeasureUnitImpl : public UMemory {
 
 
 
+
+
+    MeasureUnitImpl copyAndSimplify(UErrorCode &status) const;
+
+    
+
+
+
+
+
     bool appendSingleUnit(const SingleUnitImpl& singleUnit, UErrorCode& status);
+
+    
+
+
+    void serialize(UErrorCode &status);
 
     
     UMeasureUnitComplexity complexity = UMEASURE_UNIT_SINGLE;
@@ -287,12 +329,6 @@ class U_I18N_API MeasureUnitImpl : public UMemory {
 
 
     CharString identifier;
-
-  private:
-    
-
-
-    void serialize(UErrorCode &status);
 
     
     

@@ -733,6 +733,11 @@ uset_compact(USet* set);
 
 
 
+
+
+
+
+
 U_CAPI void U_EXPORT2
 uset_complement(USet* set);
 
@@ -851,6 +856,16 @@ uset_removeAllStrings(USet* set);
 U_CAPI UBool U_EXPORT2
 uset_isEmpty(const USet* set);
 
+#ifndef U_HIDE_DRAFT_API
+
+
+
+
+
+U_CAPI UBool U_EXPORT2
+uset_hasStrings(const USet *set);
+#endif  
+
 
 
 
@@ -908,8 +923,18 @@ uset_indexOf(const USet* set, UChar32 c);
 
 
 
+
+
+
+
+
 U_CAPI UChar32 U_EXPORT2
 uset_charAt(const USet* set, int32_t charIndex);
+
+
+
+
+
 
 
 
@@ -922,6 +947,19 @@ uset_charAt(const USet* set, int32_t charIndex);
 U_CAPI int32_t U_EXPORT2
 uset_size(const USet* set);
 
+#ifndef U_HIDE_DRAFT_API
+
+
+
+
+
+
+
+
+U_CAPI int32_t U_EXPORT2
+uset_getRangeCount(const USet *set);
+#endif  
+
 
 
 
@@ -932,6 +970,16 @@ uset_size(const USet* set);
 
 U_CAPI int32_t U_EXPORT2
 uset_getItemCount(const USet* set);
+
+
+
+
+
+
+
+
+
+
 
 
 

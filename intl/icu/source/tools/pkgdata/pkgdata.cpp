@@ -1505,7 +1505,7 @@ static int32_t pkg_generateLibraryFile(const char *targetDir, const char mode, c
 
         if (PDS_Name[0]) {
             sprintf(PDS_LibName,"%s%s%s%s%s",
-                    "\"
+                    "\"//'",
                     getenv("LOADMOD"),
                     "(",
                     PDS_Name,

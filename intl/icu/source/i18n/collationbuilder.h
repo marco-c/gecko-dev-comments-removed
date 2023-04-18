@@ -57,7 +57,7 @@ private:
 
     
     virtual void addReset(int32_t strength, const UnicodeString &str,
-                          const char *&errorReason, UErrorCode &errorCode);
+                          const char *&errorReason, UErrorCode &errorCode) override;
     
 
 
@@ -70,7 +70,7 @@ private:
     
     virtual void addRelation(int32_t strength, const UnicodeString &prefix,
                              const UnicodeString &str, const UnicodeString &extension,
-                             const char *&errorReason, UErrorCode &errorCode);
+                             const char *&errorReason, UErrorCode &errorCode) override;
 
     
 
@@ -115,11 +115,11 @@ private:
 
     
     virtual void suppressContractions(const UnicodeSet &set, const char *&parserErrorReason,
-                                      UErrorCode &errorCode);
+                                      UErrorCode &errorCode) override;
 
     
     virtual void optimize(const UnicodeSet &set, const char *&parserErrorReason,
-                          UErrorCode &errorCode);
+                          UErrorCode &errorCode) override;
 
     
 

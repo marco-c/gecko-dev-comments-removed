@@ -31,7 +31,6 @@
 #define MAGIC2 19641227
 
 #define URES_MAX_ALIAS_LEVEL 256
-#define URES_MAX_BUFFER_SIZE 256
 
 #define EMPTY_SET 0x2205
 
@@ -61,16 +60,27 @@ struct UResourceDataEntry {
 #define RES_PATH_SEPARATOR   '/'
 #define RES_PATH_SEPARATOR_S   "/"
 
+U_CAPI void U_EXPORT2 ures_initStackObject(UResourceBundle* resB);
+
+#ifdef __cplusplus
+
 struct UResourceBundle {
     const char *fKey; 
+    
+
+
+
+
     UResourceDataEntry *fData; 
     char *fVersion;
-    UResourceDataEntry *fTopLevelData; 
+    
+
+
+
+
+
+    UResourceDataEntry *fValidLocaleDataEntry;
     char *fResPath; 
-    
-    
-    
-    ResourceData fResData;
     char fResBuf[RES_BUFSIZE];
     int32_t fResPathLen;
     Resource fRes;
@@ -81,12 +91,8 @@ struct UResourceBundle {
     int32_t fIndex;
     int32_t fSize;
 
-     
+    inline const ResourceData &getResData() const { return fData->fData; }
 };
-
-U_CAPI void U_EXPORT2 ures_initStackObject(UResourceBundle* resB);
-
-#ifdef __cplusplus
 
 U_NAMESPACE_BEGIN
 
@@ -161,9 +167,6 @@ U_CFUNC const char* ures_getPath(const UResourceBundle* resB);
 
 U_CAPI UBool U_EXPORT2 ures_dumpCacheContents(void);
 #endif
-
-
-
 
 
 U_CFUNC UResourceBundle *ures_copyResb(UResourceBundle *r, const UResourceBundle *original, UErrorCode *status);
@@ -277,7 +280,6 @@ ures_getByKeyWithFallback(const UResourceBundle *resB,
 
 
 
-
 U_CAPI const UChar* U_EXPORT2 
 ures_getStringByKeyWithFallback(const UResourceBundle *resB, 
                           const char* inKey,  
@@ -291,9 +293,38 @@ ures_getValueWithFallback(const UResourceBundle *bundle, const char *path,
                           UResourceBundle *tempFillIn,
                           icu::ResourceDataValue &value, UErrorCode &errorCode);
 
+
+
+
+
+
+
+
+
+
+
 U_CAPI void U_EXPORT2
 ures_getAllItemsWithFallback(const UResourceBundle *bundle, const char *path,
                              icu::ResourceSink &sink, UErrorCode &errorCode);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+U_CAPI void U_EXPORT2
+ures_getAllChildrenWithFallback(const UResourceBundle *bundle, const char *path,
+                                icu::ResourceSink &sink, UErrorCode &errorCode);
 
 #endif  
 

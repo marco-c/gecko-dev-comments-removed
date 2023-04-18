@@ -29,12 +29,12 @@ class CharsetRecog_UTF8: public CharsetRecognizer {
 		
     virtual ~CharsetRecog_UTF8();		 
 
-    const char *getName() const;
+    const char *getName() const override;
 
     
 
 
-    UBool match(InputText *input, CharsetMatch *results) const;
+    UBool match(InputText *input, CharsetMatch *results) const override;
 	
 };
 

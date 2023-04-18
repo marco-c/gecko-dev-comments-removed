@@ -841,7 +841,7 @@ typedef enum ULocAvailableType {
 
 
   ULOC_AVAILABLE_COUNT
-#endif
+#endif  
 } ULocAvailableType;
 
 

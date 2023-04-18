@@ -74,7 +74,7 @@ public:
 
 
 
-    virtual UBool operator==(const NFSubstitution& rhs) const;
+    virtual bool operator==(const NFSubstitution& rhs) const;
 
     
 
@@ -82,7 +82,7 @@ public:
 
 
 
-    UBool operator!=(const NFSubstitution& rhs) const { return !operator==(rhs); }
+    bool operator!=(const NFSubstitution& rhs) const { return !operator==(rhs); }
     
     
 
@@ -250,7 +250,7 @@ private:
 
 public:
     static UClassID getStaticClassID(void);
-    virtual UClassID getDynamicClassID(void) const;
+    virtual UClassID getDynamicClassID(void) const override;
 };
 
 U_NAMESPACE_END

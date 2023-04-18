@@ -1530,7 +1530,21 @@ typedef enum UDateFormatSymbolType {
 
 
 
-    UDAT_ZODIAC_NAMES_NARROW
+    UDAT_ZODIAC_NAMES_NARROW,
+    
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+    UDAT_NARROW_QUARTERS,
+    
+    
+
+
+
+    UDAT_STANDALONE_NARROW_QUARTERS
+#endif 
 } UDateFormatSymbolType;
 
 struct UDateFormatSymbols;

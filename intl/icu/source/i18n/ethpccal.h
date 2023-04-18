@@ -141,14 +141,14 @@ public:
 
 
 
-    virtual EthiopicCalendar* clone() const;
+    virtual EthiopicCalendar* clone() const override;
 
     
 
 
 
 
-    virtual const char * getType() const;
+    virtual const char * getType() const override;
 
     
 
@@ -173,38 +173,38 @@ protected:
 
 
 
-    virtual int32_t handleGetExtendedYear();
+    virtual int32_t handleGetExtendedYear() override;
 
     
 
 
 
-    virtual void handleComputeFields(int32_t julianDay, UErrorCode &status);
+    virtual void handleComputeFields(int32_t julianDay, UErrorCode &status) override;
 
     
 
 
 
-    virtual int32_t handleGetLimit(UCalendarDateFields field, ELimitType limitType) const;
+    virtual int32_t handleGetLimit(UCalendarDateFields field, ELimitType limitType) const override;
 
     
 
 
 
 
-    virtual UDate defaultCenturyStart() const;
+    virtual UDate defaultCenturyStart() const override;
 
     
 
 
 
-    virtual int32_t defaultCenturyStartYear() const;
+    virtual int32_t defaultCenturyStartYear() const override;
 
     
 
 
 
-    virtual int32_t getJDEpochOffset() const;
+    virtual int32_t getJDEpochOffset() const override;
 
 private:
     
@@ -229,7 +229,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID(void) const;
+    virtual UClassID getDynamicClassID(void) const override;
 
     
 

@@ -98,7 +98,7 @@ public:
     
 
 
-    virtual CompoundTransliterator* clone() const;
+    virtual CompoundTransliterator* clone() const override;
 
     
 
@@ -137,33 +137,33 @@ public:
 
 
     virtual UnicodeString& toRules(UnicodeString& result,
-                                   UBool escapeUnprintable) const;
+                                   UBool escapeUnprintable) const override;
 
  protected:
     
 
 
-    virtual void handleGetSourceSet(UnicodeSet& result) const;
+    virtual void handleGetSourceSet(UnicodeSet& result) const override;
 
  public:
     
 
 
-    virtual UnicodeSet& getTargetSet(UnicodeSet& result) const;
+    virtual UnicodeSet& getTargetSet(UnicodeSet& result) const override;
 
 protected:
     
 
 
     virtual void handleTransliterate(Replaceable& text, UTransPosition& idx,
-                                     UBool incremental) const;
+                                     UBool incremental) const override;
 
 public:
 
     
 
 
-    virtual UClassID getDynamicClassID() const;
+    virtual UClassID getDynamicClassID() const override;
 
     
 

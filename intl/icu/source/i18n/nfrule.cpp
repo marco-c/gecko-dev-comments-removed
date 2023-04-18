@@ -631,7 +631,7 @@ util_equalSubstitutions(const NFSubstitution* sub1, const NFSubstitution* sub2)
 
 
 
-UBool
+bool
 NFRule::operator==(const NFRule& rhs) const
 {
     return baseValue == rhs.baseValue

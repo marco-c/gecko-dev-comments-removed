@@ -57,9 +57,12 @@ class U_COMMON_API ICU_Utility  {
 
 
 
-
-
     static UBool isUnprintable(UChar32 c);
+
+    
+
+
+    static UBool shouldAlwaysBeEscaped(UChar32 c);
 
     
 
@@ -68,6 +71,13 @@ class U_COMMON_API ICU_Utility  {
 
 
     static UBool escapeUnprintable(UnicodeString& result, UChar32 c);
+
+    
+
+
+
+
+    static UnicodeString &escape(UnicodeString& result, UChar32 c);
 
     
 

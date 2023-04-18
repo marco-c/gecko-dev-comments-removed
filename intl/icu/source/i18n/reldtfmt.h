@@ -71,7 +71,7 @@ public:
 
 
 
-    virtual RelativeDateFormat* clone() const;
+    virtual RelativeDateFormat* clone() const override;
 
     
 
@@ -80,7 +80,7 @@ public:
 
 
 
-    virtual UBool operator==(const Format& other) const;
+    virtual bool operator==(const Format& other) const override;
 
 
     using DateFormat::format;
@@ -103,7 +103,7 @@ public:
 
     virtual UnicodeString& format(  Calendar& cal,
                                     UnicodeString& appendTo,
-                                    FieldPosition& pos) const;
+                                    FieldPosition& pos) const override;
 
     
 
@@ -122,7 +122,7 @@ public:
     virtual UnicodeString& format(const Formattable& obj,
                                   UnicodeString& appendTo,
                                   FieldPosition& pos,
-                                  UErrorCode& status) const;
+                                  UErrorCode& status) const override;
 
 
     
@@ -146,7 +146,7 @@ public:
 
     virtual void parse( const UnicodeString& text,
                         Calendar& cal,
-                        ParsePosition& pos) const;
+                        ParsePosition& pos) const override;
 
     
 
@@ -187,7 +187,7 @@ public:
 
 
     virtual UDate parse( const UnicodeString& text,
-                        UErrorCode& status) const;
+                        UErrorCode& status) const override;
 
     
 
@@ -245,7 +245,7 @@ public:
 
 
 
-    virtual void setContext(UDisplayContext value, UErrorCode& status);
+    virtual void setContext(UDisplayContext value, UErrorCode& status) override;
 
 private:
     SimpleDateFormat *fDateTimeFormatter;
@@ -327,7 +327,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID(void) const;
+    virtual UClassID getDynamicClassID(void) const override;
 };
 
 

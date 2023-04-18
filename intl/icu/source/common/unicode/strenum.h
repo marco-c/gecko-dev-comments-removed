@@ -199,7 +199,7 @@ public:
 
 
 
-    virtual UBool operator==(const StringEnumeration& that)const;
+    virtual bool operator==(const StringEnumeration& that)const;
     
 
 
@@ -207,7 +207,7 @@ public:
 
 
 
-    virtual UBool operator!=(const StringEnumeration& that)const;
+    virtual bool operator!=(const StringEnumeration& that)const;
 
 protected:
     

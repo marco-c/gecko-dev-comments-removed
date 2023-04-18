@@ -24,7 +24,6 @@
 #include "unicode/bytestrie.h"
 #include "unicode/bytestriebuilder.h"
 #include "unicode/localpointer.h"
-#include "unicode/measunit.h"
 #include "unicode/stringpiece.h"
 #include "unicode/stringtriebuilder.h"
 #include "unicode/ures.h"
@@ -187,7 +186,7 @@ class SimpleUnitIdentifiersSink : public icu::ResourceSink {
 
 
 
-    void put(const char * , ResourceValue &value, UBool , UErrorCode &status) {
+    void put(const char * , ResourceValue &value, UBool , UErrorCode &status) override {
         ResourceTable table = value.getTable(status);
         if (U_FAILURE(status)) return;
 
@@ -275,7 +274,7 @@ class CategoriesSink : public icu::ResourceSink {
     explicit CategoriesSink(const UChar **out, int32_t &outSize, BytesTrieBuilder &trieBuilder)
         : outQuantitiesArray(out), outSize(outSize), trieBuilder(trieBuilder), outIndex(0) {}
 
-    void put(const char * , ResourceValue &value, UBool , UErrorCode &status) {
+    void put(const char * , ResourceValue &value, UBool , UErrorCode &status) override {
         ResourceArray array = value.getArray(status);
         if (U_FAILURE(status)) {
             return;
@@ -335,9 +334,6 @@ char *gSerializedUnitExtrasStemTrie = nullptr;
 const UChar **gCategories = nullptr;
 
 int32_t gCategoriesCount = 0;
-
-const char *kConsumption = "consumption";
-size_t kConsumptionLen = strlen("consumption");
 
 char *gSerializedUnitCategoriesTrie = nullptr;
 
@@ -809,17 +805,13 @@ compareSingleUnits(const void* , const void* left, const void* right) {
 
 
 
-int32_t getUnitCategoryIndex(StringPiece baseUnitIdentifier, UErrorCode &status) {
-    umtx_initOnce(gUnitExtrasInitOnce, &initUnitExtras, status);
-    if (U_FAILURE(status)) {
-        return -1;
-    }
-    BytesTrie trie(gSerializedUnitCategoriesTrie);
-    UStringTrieResult result = trie.next(baseUnitIdentifier.data(), baseUnitIdentifier.length());
+int32_t getUnitCategoryIndex(BytesTrie &trie, StringPiece baseUnitIdentifier, UErrorCode &status) {
+    UStringTrieResult result = trie.reset().next(baseUnitIdentifier.data(), baseUnitIdentifier.length());
     if (!USTRINGTRIE_HAS_VALUE(result)) {
         status = U_UNSUPPORTED_ERROR;
         return -1;
     }
+
     return trie.getValue();
 }
 
@@ -847,29 +839,76 @@ umeas_getPrefixBase(UMeasurePrefix unitPrefix) {
     return 10;
 }
 
-CharString U_I18N_API getUnitQuantity(StringPiece baseUnitIdentifier, UErrorCode &status) {
+CharString U_I18N_API getUnitQuantity(const MeasureUnitImpl &baseMeasureUnitImpl, UErrorCode &status) {
     CharString result;
-    U_ASSERT(result.length() == 0);
+    MeasureUnitImpl baseUnitImpl = baseMeasureUnitImpl.copy(status);
+    UErrorCode localStatus = U_ZERO_ERROR;
+    umtx_initOnce(gUnitExtrasInitOnce, &initUnitExtras, status);
     if (U_FAILURE(status)) {
         return result;
     }
-    UErrorCode localStatus = U_ZERO_ERROR;
-    int32_t idx = getUnitCategoryIndex(baseUnitIdentifier, localStatus);
+    BytesTrie trie(gSerializedUnitCategoriesTrie);
+
+    baseUnitImpl.serialize(status);
+    StringPiece identifier = baseUnitImpl.identifier.data();
+    int32_t idx = getUnitCategoryIndex(trie, identifier, localStatus);
+    if (U_FAILURE(status)) {
+        return result;
+    }
+
+    
     if (U_FAILURE(localStatus)) {
-        
-        
-        
-        if (uprv_strcmp(baseUnitIdentifier.data(), "meter-per-cubic-meter") == 0) {
-            result.append(kConsumption, (int32_t)kConsumptionLen, status);
+        localStatus = U_ZERO_ERROR;
+        baseUnitImpl.takeReciprocal(status);
+        baseUnitImpl.serialize(status);
+        identifier.set(baseUnitImpl.identifier.data());
+        idx = getUnitCategoryIndex(trie, identifier, localStatus);
+
+        if (U_FAILURE(status)) {
             return result;
         }
+    }
+
+    
+    MeasureUnitImpl simplifiedUnit = baseMeasureUnitImpl.copyAndSimplify(status);
+    if (U_FAILURE(status)) {
+        return result;
+    }
+    if (U_FAILURE(localStatus)) {
+        localStatus = U_ZERO_ERROR;
+        simplifiedUnit.serialize(status);
+        identifier.set(simplifiedUnit.identifier.data());
+        idx = getUnitCategoryIndex(trie, identifier, localStatus);
+
+        if (U_FAILURE(status)) {
+            return result;
+        }
+    }
+
+    
+    if (U_FAILURE(localStatus)) {
+        localStatus = U_ZERO_ERROR;
+        simplifiedUnit.takeReciprocal(status);
+        simplifiedUnit.serialize(status);
+        identifier.set(simplifiedUnit.identifier.data());
+        idx = getUnitCategoryIndex(trie, identifier, localStatus);
+
+        if (U_FAILURE(status)) {
+            return result;
+        }
+    }
+
+    
+    if (U_FAILURE(localStatus)) {
         status = U_INVALID_FORMAT_ERROR;
         return result;
     }
+
     if (idx < 0 || idx >= gCategoriesCount) {
         status = U_INVALID_FORMAT_ERROR;
         return result;
     }
+
     result.appendInvariantChars(gCategories[idx], u_strlen(gCategories[idx]), status);
     return result;
 }
@@ -987,6 +1026,33 @@ void MeasureUnitImpl::takeReciprocal(UErrorCode& ) {
     for (int32_t i = 0; i < singleUnits.length(); i++) {
         singleUnits[i]->dimensionality *= -1;
     }
+}
+
+MeasureUnitImpl MeasureUnitImpl::copyAndSimplify(UErrorCode &status) const {
+    MeasureUnitImpl result;
+    for (int32_t i = 0; i < singleUnits.length(); i++) {
+        const SingleUnitImpl &singleUnit = *this->singleUnits[i];
+        
+        
+        
+        bool unitExist = false;
+        for (int32_t j = 0; j < result.singleUnits.length(); j++) {
+            if (uprv_strcmp(result.singleUnits[j]->getSimpleUnitID(), singleUnit.getSimpleUnitID()) ==
+                    0 &&
+                result.singleUnits[j]->unitPrefix == singleUnit.unitPrefix) {
+                unitExist = true;
+                result.singleUnits[j]->dimensionality =
+                    result.singleUnits[j]->dimensionality + singleUnit.dimensionality;
+                break;
+            }
+        }
+
+        if (!unitExist) {
+            result.appendSingleUnit(singleUnit, status);
+        }
+    }
+
+    return result;
 }
 
 bool MeasureUnitImpl::appendSingleUnit(const SingleUnitImpl &singleUnit, UErrorCode &status) {

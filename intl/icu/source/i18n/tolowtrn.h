@@ -50,12 +50,12 @@ class LowercaseTransliterator : public CaseMapTransliterator {
 
 
 
-    virtual LowercaseTransliterator* clone() const;
+    virtual LowercaseTransliterator* clone() const override;
 
     
 
 
-    virtual UClassID getDynamicClassID() const;
+    virtual UClassID getDynamicClassID() const override;
 
     
 

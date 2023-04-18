@@ -478,15 +478,24 @@ static const CanonicalizationMap CANONICALIZE_MAP[] = {
 
 #define _hasBCP47Extension(id) (id && uprv_strstr(id, "@") == NULL && getShortestSubtagLength(localeID) == 1)
 
-#define _ConvertBCP47(finalID, id, buffer, length,err) UPRV_BLOCK_MACRO_BEGIN { \
-    if (uloc_forLanguageTag(id, buffer, length, NULL, err) <= 0 || \
-            U_FAILURE(*err) || *err == U_STRING_NOT_TERMINATED_WARNING) { \
-        finalID=id; \
-        if (*err == U_STRING_NOT_TERMINATED_WARNING) { *err = U_BUFFER_OVERFLOW_ERROR; } \
-    } else { \
-        finalID=buffer; \
-    } \
-} UPRV_BLOCK_MACRO_END
+static const char* _ConvertBCP47(
+        const char* id, char* buffer, int32_t length,
+        UErrorCode* err, int32_t* pLocaleIdSize) {
+    const char* finalID;
+    int32_t localeIDSize = uloc_forLanguageTag(id, buffer, length, NULL, err);
+    if (localeIDSize <= 0 || U_FAILURE(*err) || *err == U_STRING_NOT_TERMINATED_WARNING) {
+        finalID=id;
+        if (*err == U_STRING_NOT_TERMINATED_WARNING) {
+            *err = U_BUFFER_OVERFLOW_ERROR;
+        }
+    } else {
+        finalID=buffer;
+    }
+    if (pLocaleIdSize != nullptr) {
+        *pLocaleIdSize = localeIDSize;
+    }
+    return finalID;
+}
 
 static int32_t getShortestSubtagLength(const char *localeID) {
     int32_t localeIDLength = static_cast<int32_t>(uprv_strlen(localeID));
@@ -767,7 +776,8 @@ ulocimp_getKeywordValue(const char* localeID,
       }
 
       if (_hasBCP47Extension(localeID)) {
-          _ConvertBCP47(tmpLocaleID, localeID, tempBuffer, sizeof(tempBuffer), status);
+          tmpLocaleID = _ConvertBCP47(localeID, tempBuffer,
+                                      sizeof(tempBuffer), status, nullptr);
       } else {
           tmpLocaleID=localeID;
       }
@@ -1404,10 +1414,11 @@ uloc_openKeywords(const char* localeID,
     }
 
     if (_hasBCP47Extension(localeID)) {
-        _ConvertBCP47(tmpLocaleID, localeID, tempBuffer, sizeof(tempBuffer), status);
+        tmpLocaleID = _ConvertBCP47(localeID, tempBuffer,
+                                    sizeof(tempBuffer), status, nullptr);
     } else {
         if (localeID==NULL) {
-           localeID=uloc_getDefault();
+            localeID=uloc_getDefault();
         }
         tmpLocaleID=localeID;
     }
@@ -1473,19 +1484,41 @@ _canonicalize(const char* localeID,
               ByteSink& sink,
               uint32_t options,
               UErrorCode* err) {
+    if (U_FAILURE(*err)) {
+        return;
+    }
+
     int32_t j, fieldCount=0, scriptSize=0, variantSize=0;
-    char tempBuffer[ULOC_FULLNAME_CAPACITY];
+    PreflightingLocaleIDBuffer tempBuffer;  
+    CharString localeIDWithHyphens;  
     const char* origLocaleID;
     const char* tmpLocaleID;
     const char* keywordAssign = NULL;
     const char* separatorIndicator = NULL;
 
-    if (U_FAILURE(*err)) {
-        return;
-    }
-
     if (_hasBCP47Extension(localeID)) {
-        _ConvertBCP47(tmpLocaleID, localeID, tempBuffer, sizeof(tempBuffer), err);
+        const char* localeIDPtr = localeID;
+
+        
+        if (uprv_strchr(localeID, '_') != nullptr && localeID[1] != '-' && localeID[1] != '_') {
+            localeIDWithHyphens.append(localeID, -1, *err);
+            if (U_SUCCESS(*err)) {
+                for (char* p = localeIDWithHyphens.data(); *p != '\0'; ++p) {
+                    if (*p == '_') {
+                        *p = '-';
+                    }
+                }
+                localeIDPtr = localeIDWithHyphens.data();
+            }
+        }
+
+        do {
+            
+            
+            tmpLocaleID = _ConvertBCP47(localeIDPtr, tempBuffer.getBuffer(),
+                                        tempBuffer.getCapacity(), err,
+                                        &(tempBuffer.requestedCapacity));
+        } while (tempBuffer.needToTryAgain(err));
     } else {
         if (localeID==NULL) {
            localeID=uloc_getDefault();
@@ -1771,7 +1804,7 @@ uloc_getVariant(const char* localeID,
     }
 
     if (_hasBCP47Extension(localeID)) {
-        _ConvertBCP47(tmpLocaleID, localeID, tempBuffer, sizeof(tempBuffer), err);
+        tmpLocaleID =_ConvertBCP47(localeID, tempBuffer, sizeof(tempBuffer), err, nullptr);
     } else {
         if (localeID==NULL) {
            localeID=uloc_getDefault();

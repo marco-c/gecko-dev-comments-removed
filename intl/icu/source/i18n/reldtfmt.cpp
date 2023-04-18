@@ -135,7 +135,7 @@ RelativeDateFormat* RelativeDateFormat::clone() const {
     return new RelativeDateFormat(*this);
 }
 
-UBool RelativeDateFormat::operator==(const Format& other) const {
+bool RelativeDateFormat::operator==(const Format& other) const {
     if(DateFormat::operator==(other)) {
         
         
@@ -146,7 +146,7 @@ UBool RelativeDateFormat::operator==(const Format& other) const {
                 fTimePattern==that->fTimePattern   &&
                 fLocale==that->fLocale );
     }
-    return FALSE;
+    return false;
 }
 
 static const UChar APOSTROPHE = (UChar)0x0027;
@@ -485,7 +485,7 @@ struct RelDateFmtDataSink : public ResourceSink {
   virtual ~RelDateFmtDataSink();
 
   virtual void put(const char *key, ResourceValue &value,
-                   UBool , UErrorCode &errorCode) {
+                   UBool , UErrorCode &errorCode) override {
       ResourceTable relDayTable = value.getTable(errorCode);
       int32_t n = 0;
       int32_t len = 0;

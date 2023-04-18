@@ -158,7 +158,7 @@ void CompactData::getUniquePatterns(UVector &output, UErrorCode &status) const {
 
         
         
-        output.addElement(const_cast<UChar *>(pattern), status);
+        output.addElementX(const_cast<UChar *>(pattern), status);
 
         continue_outer:
         continue;

@@ -78,21 +78,21 @@ class StringMatcher : public UnicodeFunctor, public UnicodeMatcher, public Unico
 
 
 
-    virtual StringMatcher* clone() const;
+    virtual StringMatcher* clone() const override;
 
     
 
 
 
 
-    virtual UnicodeMatcher* toMatcher() const;
+    virtual UnicodeMatcher* toMatcher() const override;
 
     
 
 
 
 
-    virtual UnicodeReplacer* toReplacer() const;
+    virtual UnicodeReplacer* toReplacer() const override;
 
     
 
@@ -119,7 +119,7 @@ class StringMatcher : public UnicodeFunctor, public UnicodeMatcher, public Unico
     virtual UMatchDegree matches(const Replaceable& text,
                                  int32_t& offset,
                                  int32_t limit,
-                                 UBool incremental);
+                                 UBool incremental) override;
 
     
 
@@ -128,7 +128,7 @@ class StringMatcher : public UnicodeFunctor, public UnicodeMatcher, public Unico
 
 
     virtual UnicodeString& toPattern(UnicodeString& result,
-                                     UBool escapeUnprintable = false) const;
+                                     UBool escapeUnprintable = false) const override;
 
     
 
@@ -140,17 +140,17 @@ class StringMatcher : public UnicodeFunctor, public UnicodeMatcher, public Unico
 
 
 
-    virtual UBool matchesIndexValue(uint8_t v) const;
+    virtual UBool matchesIndexValue(uint8_t v) const override;
 
     
 
 
-    virtual void addMatchSetTo(UnicodeSet& toUnionTo) const;
+    virtual void addMatchSetTo(UnicodeSet& toUnionTo) const override;
 
     
 
 
-    virtual void setData(const TransliterationRuleData*);
+    virtual void setData(const TransliterationRuleData*) override;
 
     
 
@@ -172,7 +172,7 @@ class StringMatcher : public UnicodeFunctor, public UnicodeMatcher, public Unico
     virtual int32_t replace(Replaceable& text,
                             int32_t start,
                             int32_t limit,
-                            int32_t& cursor);
+                            int32_t& cursor) override;
 
     
 
@@ -188,7 +188,7 @@ class StringMatcher : public UnicodeFunctor, public UnicodeMatcher, public Unico
 
 
     virtual UnicodeString& toReplacerPattern(UnicodeString& result,
-                                             UBool escapeUnprintable) const;
+                                             UBool escapeUnprintable) const override;
 
     
 
@@ -199,7 +199,7 @@ class StringMatcher : public UnicodeFunctor, public UnicodeMatcher, public Unico
     
 
 
-    virtual UClassID getDynamicClassID() const;
+    virtual UClassID getDynamicClassID() const override;
 
     
 
@@ -211,7 +211,7 @@ class StringMatcher : public UnicodeFunctor, public UnicodeMatcher, public Unico
 
 
 
-    virtual void addReplacementSetTo(UnicodeSet& toUnionTo) const;
+    virtual void addReplacementSetTo(UnicodeSet& toUnionTo) const override;
 
  private:
 

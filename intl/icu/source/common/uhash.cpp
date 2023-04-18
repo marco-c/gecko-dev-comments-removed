@@ -379,7 +379,7 @@ _uhash_find(const UHashtable *hash, UHashTok key,
 
 
 
-        UPRV_UNREACHABLE;
+        UPRV_UNREACHABLE_EXIT;
     }
     return &(elements[theIndex]);
 }

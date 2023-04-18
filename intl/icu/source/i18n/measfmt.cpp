@@ -427,12 +427,12 @@ MeasureFormat::~MeasureFormat() {
     delete listFormatter;
 }
 
-UBool MeasureFormat::operator==(const Format &other) const {
+bool MeasureFormat::operator==(const Format &other) const {
     if (this == &other) { 
-        return TRUE;
+        return true;
     }
     if (!Format::operator==(other)) {
-        return FALSE;
+        return false;
     }
     const MeasureFormat &rhs = static_cast<const MeasureFormat &>(other);
 
@@ -441,7 +441,7 @@ UBool MeasureFormat::operator==(const Format &other) const {
 
     
     if (fWidth != rhs.fWidth) {
-        return FALSE;
+        return false;
     }
     
     
@@ -451,10 +451,10 @@ UBool MeasureFormat::operator==(const Format &other) const {
         const char *rhsLocaleId = rhs.getLocaleID(status);
         if (U_FAILURE(status)) {
             
-            return FALSE;
+            return false;
         }
         if (uprv_strcmp(localeId, rhsLocaleId) != 0) {
-            return FALSE;
+            return false;
         }
     }
     

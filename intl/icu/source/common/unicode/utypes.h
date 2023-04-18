@@ -479,7 +479,6 @@ typedef enum UErrorCode {
     U_COLLATOR_VERSION_MISMATCH = 28,   
     U_USELESS_COLLATOR_ERROR  = 29,     
     U_NO_WRITE_PERMISSION     = 30,     
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -488,7 +487,6 @@ typedef enum UErrorCode {
 
 
     U_INPUT_TOO_LONG_ERROR = 31,
-#endif  
 
 #ifndef U_HIDE_DEPRECATED_API
     

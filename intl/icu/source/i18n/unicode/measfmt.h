@@ -148,13 +148,13 @@ class U_I18N_API MeasureFormat : public Format {
 
 
 
-    virtual UBool operator==(const Format &other) const;
+    virtual bool operator==(const Format &other) const override;
 
     
 
 
 
-    virtual MeasureFormat *clone() const;
+    virtual MeasureFormat *clone() const override;
 
     
 
@@ -164,7 +164,7 @@ class U_I18N_API MeasureFormat : public Format {
             const Formattable &obj,
             UnicodeString &appendTo,
             FieldPosition &pos,
-            UErrorCode &status) const;
+            UErrorCode &status) const override;
 
 #ifndef U_FORCE_HIDE_DRAFT_API
     
@@ -176,7 +176,7 @@ class U_I18N_API MeasureFormat : public Format {
     virtual void parseObject(
             const UnicodeString &source,
             Formattable &reslt,
-            ParsePosition &pos) const;
+            ParsePosition &pos) const override;
 #endif  
 
     
@@ -286,7 +286,7 @@ class U_I18N_API MeasureFormat : public Format {
 
 
 
-    virtual UClassID getDynamicClassID(void) const;
+    virtual UClassID getDynamicClassID(void) const override;
 
  protected:
     

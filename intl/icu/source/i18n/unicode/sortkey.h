@@ -145,7 +145,7 @@ public:
 
 
 
-    UBool                   operator==(const CollationKey& source) const;
+    bool                    operator==(const CollationKey& source) const;
 
     
 
@@ -153,7 +153,7 @@ public:
 
 
 
-    UBool                   operator!=(const CollationKey& source) const;
+    bool                    operator!=(const CollationKey& source) const;
 
 
     
@@ -237,7 +237,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID() const;
+    virtual UClassID getDynamicClassID() const override;
 
     
 
@@ -316,7 +316,7 @@ private:
     } fUnion;
 };
 
-inline UBool
+inline bool
 CollationKey::operator!=(const CollationKey& other) const
 {
     return !(*this == other);

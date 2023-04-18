@@ -174,7 +174,7 @@ public:
 
 
 
-    UBool operator==(const DateFormatSymbols& other) const;
+    bool operator==(const DateFormatSymbols& other) const;
 
     
 
@@ -183,7 +183,7 @@ public:
 
 
 
-    UBool operator!=(const DateFormatSymbols& other) const { return !operator==(other); }
+    bool operator!=(const DateFormatSymbols& other) const { return !operator==(other); }
 
     
 
@@ -392,11 +392,9 @@ public:
 
 
 
-
     const UnicodeString* getQuarters(int32_t& count, DtContextType context, DtWidthType width) const;
 
     
-
 
 
 
@@ -630,7 +628,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID() const;
+    virtual UClassID getDynamicClassID() const override;
 
     
 
@@ -778,6 +776,13 @@ private:
     
 
 
+
+    UnicodeString  *fNarrowQuarters;
+    int32_t         fNarrowQuartersCount;
+    
+    
+
+
     UnicodeString  *fStandaloneQuarters;
     int32_t         fStandaloneQuartersCount;
 
@@ -787,6 +792,13 @@ private:
     UnicodeString  *fStandaloneShortQuarters;
     int32_t         fStandaloneShortQuartersCount;
 
+    
+
+
+
+    UnicodeString  *fStandaloneNarrowQuarters;
+    int32_t         fStandaloneNarrowQuartersCount;
+    
     
 
 

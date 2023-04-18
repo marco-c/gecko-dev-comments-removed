@@ -47,28 +47,28 @@ public:
 
 
 
-    virtual int32_t count(UErrorCode& status) const;
+    virtual int32_t count(UErrorCode& status) const override;
 
-    virtual const char* next(int32_t *resultLength, UErrorCode& status);
-
-    
-
-
-
-
-
-    virtual const UnicodeString* snext(UErrorCode& status);
+    virtual const char* next(int32_t *resultLength, UErrorCode& status) override;
 
     
 
 
 
-    virtual void reset(UErrorCode& status);
+
+
+    virtual const UnicodeString* snext(UErrorCode& status) override;
 
     
 
 
-    virtual UClassID getDynamicClassID() const;
+
+    virtual void reset(UErrorCode& status) override;
+
+    
+
+
+    virtual UClassID getDynamicClassID() const override;
 
     
 

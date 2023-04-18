@@ -199,6 +199,7 @@ public:
         const int32_t* rawOffset,
         UErrorCode& ec);
 
+#ifndef U_HIDE_DEPRECATED_API
     
 
 
@@ -207,7 +208,19 @@ public:
 
 
     static StringEnumeration* U_EXPORT2 createEnumeration();
+#endif  
 
+    
+
+
+
+
+
+
+
+    static StringEnumeration* U_EXPORT2 createEnumeration(UErrorCode& status);
+
+#ifndef U_HIDE_DEPRECATED_API
     
 
 
@@ -226,6 +239,7 @@ public:
 
 
     static StringEnumeration* U_EXPORT2 createEnumeration(int32_t rawOffset);
+#endif  
 
     
 
@@ -237,7 +251,42 @@ public:
 
 
 
-    static StringEnumeration* U_EXPORT2 createEnumeration(const char* country);
+
+
+
+
+
+
+
+
+    static StringEnumeration* U_EXPORT2 createEnumerationForRawOffset(int32_t rawOffset, UErrorCode& status);
+
+#ifndef U_HIDE_DEPRECATED_API
+    
+
+
+
+
+
+
+
+
+
+    static StringEnumeration* U_EXPORT2 createEnumeration(const char* region);
+#endif  
+
+    
+
+
+
+
+
+
+
+
+
+
+    static StringEnumeration* U_EXPORT2 createEnumerationForRegion(const char* region, UErrorCode& status);
 
     
 
@@ -458,7 +507,7 @@ public:
 
 
 
-    virtual UBool operator==(const TimeZone& that) const;
+    virtual bool operator==(const TimeZone& that) const;
 
     
 
@@ -469,7 +518,7 @@ public:
 
 
 
-    UBool operator!=(const TimeZone& that) const {return !operator==(that);}
+    bool operator!=(const TimeZone& that) const {return !operator==(that);}
 
     
 
@@ -790,7 +839,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID(void) const = 0;
+    virtual UClassID getDynamicClassID(void) const override = 0;
     
     
 

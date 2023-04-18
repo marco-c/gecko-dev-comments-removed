@@ -146,12 +146,12 @@ class U_I18N_API OlsonTimeZone: public BasicTimeZone {
     
 
 
-    virtual UBool operator==(const TimeZone& other) const;
+    virtual bool operator==(const TimeZone& other) const override;
 
     
 
 
-    virtual OlsonTimeZone* clone() const;
+    virtual OlsonTimeZone* clone() const override;
 
     
 
@@ -161,14 +161,14 @@ class U_I18N_API OlsonTimeZone: public BasicTimeZone {
     
 
 
-    virtual UClassID getDynamicClassID() const;
+    virtual UClassID getDynamicClassID() const override;
     
     
 
 
     virtual int32_t getOffset(uint8_t era, int32_t year, int32_t month,
                               int32_t day, uint8_t dayOfWeek,
-                              int32_t millis, UErrorCode& ec) const;
+                              int32_t millis, UErrorCode& ec) const override;
 
     
 
@@ -176,13 +176,13 @@ class U_I18N_API OlsonTimeZone: public BasicTimeZone {
     virtual int32_t getOffset(uint8_t era, int32_t year, int32_t month,
                               int32_t day, uint8_t dayOfWeek,
                               int32_t millis, int32_t monthLength,
-                              UErrorCode& ec) const;
+                              UErrorCode& ec) const override;
 
     
 
 
     virtual void getOffset(UDate date, UBool local, int32_t& rawOffset,
-                   int32_t& dstOffset, UErrorCode& ec) const;
+                   int32_t& dstOffset, UErrorCode& ec) const override;
 
     
 
@@ -190,22 +190,14 @@ class U_I18N_API OlsonTimeZone: public BasicTimeZone {
     virtual void getOffsetFromLocal(
         UDate date, UTimeZoneLocalOption nonExistingTimeOpt,
         UTimeZoneLocalOption duplicatedTimeOpt,
-        int32_t& rawOffset, int32_t& dstOffset, UErrorCode& status) const;
+        int32_t& rawOffset, int32_t& dstOffset, UErrorCode& status) const override;
 
     
 
 
 
 
-    virtual void setRawOffset(int32_t offsetMillis);
-
-    
-
-
-
-
-
-    virtual int32_t getRawOffset() const;
+    virtual void setRawOffset(int32_t offsetMillis) override;
 
     
 
@@ -213,22 +205,7 @@ class U_I18N_API OlsonTimeZone: public BasicTimeZone {
 
 
 
-    virtual UBool useDaylightTime() const;
-
-    
-
-
-    virtual UBool inDaylightTime(UDate date, UErrorCode& ec) const;
-
-    
-
-
-    virtual int32_t getDSTSavings() const;
-
-    
-
-
-    virtual UBool hasSameRules(const TimeZone& other) const;
+    virtual int32_t getRawOffset() const override;
 
     
 
@@ -236,9 +213,22 @@ class U_I18N_API OlsonTimeZone: public BasicTimeZone {
 
 
 
+    virtual UBool useDaylightTime() const override;
+
+    
 
 
-    virtual UBool getNextTransition(UDate base, UBool inclusive, TimeZoneTransition& result) const;
+    virtual UBool inDaylightTime(UDate date, UErrorCode& ec) const override;
+
+    
+
+
+    virtual int32_t getDSTSavings() const override;
+
+    
+
+
+    virtual UBool hasSameRules(const TimeZone& other) const override;
 
     
 
@@ -248,7 +238,7 @@ class U_I18N_API OlsonTimeZone: public BasicTimeZone {
 
 
 
-    virtual UBool getPreviousTransition(UDate base, UBool inclusive, TimeZoneTransition& result) const;
+    virtual UBool getNextTransition(UDate base, UBool inclusive, TimeZoneTransition& result) const override;
 
     
 
@@ -258,7 +248,17 @@ class U_I18N_API OlsonTimeZone: public BasicTimeZone {
 
 
 
-    virtual int32_t countTransitionRules(UErrorCode& status) const;
+    virtual UBool getPreviousTransition(UDate base, UBool inclusive, TimeZoneTransition& result) const override;
+
+    
+
+
+
+
+
+
+
+    virtual int32_t countTransitionRules(UErrorCode& status) const override;
 
     
 
@@ -276,7 +276,7 @@ class U_I18N_API OlsonTimeZone: public BasicTimeZone {
 
 
     virtual void getTimeZoneRules(const InitialTimeZoneRule*& initial,
-        const TimeZoneRule* trsrules[], int32_t& trscount, UErrorCode& status) const;
+        const TimeZoneRule* trsrules[], int32_t& trscount, UErrorCode& status) const override;
 
     
 

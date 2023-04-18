@@ -1527,7 +1527,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID(void) const = 0;
+    virtual UClassID getDynamicClassID(void) const override = 0;
 
 private:
     static UBool initializeRegistry(UErrorCode &status);

@@ -369,13 +369,13 @@ RuleBasedBreakIterator::clone() const {
 
 
 
-UBool
+bool
 RuleBasedBreakIterator::operator==(const BreakIterator& that) const {
     if (typeid(*this) != typeid(that)) {
-        return FALSE;
+        return false;
     }
     if (this == &that) {
-        return TRUE;
+        return true;
     }
 
     
@@ -388,21 +388,21 @@ RuleBasedBreakIterator::operator==(const BreakIterator& that) const {
         
         
         
-        return FALSE;
+        return false;
     }
 
     if (!(fPosition == that2.fPosition &&
             fRuleStatusIndex == that2.fRuleStatusIndex &&
             fDone == that2.fDone)) {
-        return FALSE;
+        return false;
     }
 
     if (that2.fData == fData ||
         (fData != NULL && that2.fData != NULL && *that2.fData == *fData)) {
             
-            return TRUE;
+            return true;
         }
-    return FALSE;
+    return false;
 }
 
 
@@ -1260,6 +1260,7 @@ RuleBasedBreakIterator::getLanguageBreakEngine(UChar32 c) {
         
         fLanguageBreakEngines->insertElementAt(fUnhandledBreakEngine, 0, status);
         
+        U_ASSERT(!fLanguageBreakEngines->hasDeleter());
         if (U_FAILURE(status)) {
             delete fUnhandledBreakEngine;
             fUnhandledBreakEngine = 0;

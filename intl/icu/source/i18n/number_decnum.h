@@ -56,6 +56,13 @@ class U_I18N_API DecNum : public UMemory {
 
     bool isZero() const;
 
+    
+    bool isSpecial() const;
+
+    bool isInfinity() const;
+
+    bool isNaN() const;
+
     void toString(ByteSink& output, UErrorCode& status) const;
 
     inline CharString toCharString(UErrorCode& status) const {

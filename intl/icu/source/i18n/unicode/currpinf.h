@@ -92,7 +92,7 @@ public:
 
 
 
-    UBool operator==(const CurrencyPluralInfo& info) const;
+    bool operator==(const CurrencyPluralInfo& info) const;
 
 
     
@@ -100,7 +100,7 @@ public:
 
 
 
-    UBool operator!=(const CurrencyPluralInfo& info) const;
+    bool operator!=(const CurrencyPluralInfo& info) const;
 
 
     
@@ -184,7 +184,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID() const;
+    virtual UClassID getDynamicClassID() const override;
 
     
 
@@ -259,7 +259,7 @@ private:
 };
 
 
-inline UBool
+inline bool
 CurrencyPluralInfo::operator!=(const CurrencyPluralInfo& info) const {
     return !operator==(info);
 }  

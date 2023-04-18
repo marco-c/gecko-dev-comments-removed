@@ -145,14 +145,14 @@ public:
 
 
 
-    virtual CopticCalendar* clone() const;
+    virtual CopticCalendar* clone() const override;
 
     
 
 
 
 
-    const char * getType() const;
+    const char * getType() const override;
 
 protected:
     
@@ -163,32 +163,32 @@ protected:
 
 
 
-    virtual int32_t handleGetExtendedYear();
+    virtual int32_t handleGetExtendedYear() override;
 
     
 
 
 
-    virtual void handleComputeFields(int32_t julianDay, UErrorCode &status);
+    virtual void handleComputeFields(int32_t julianDay, UErrorCode &status) override;
 
     
 
 
 
 
-    virtual UDate defaultCenturyStart() const;
+    virtual UDate defaultCenturyStart() const override;
 
     
 
 
 
-    virtual int32_t defaultCenturyStartYear() const;
+    virtual int32_t defaultCenturyStartYear() const override;
 
     
 
 
 
-    virtual int32_t getJDEpochOffset() const;
+    virtual int32_t getJDEpochOffset() const override;
 
 
 public:
@@ -202,7 +202,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID(void) const;
+    virtual UClassID getDynamicClassID(void) const override;
 
     
 
