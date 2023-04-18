@@ -756,7 +756,17 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
             this.documentEventsListener = new DocumentEventsListener(
               this.parentActor
             );
-            this.documentEventsListener.on("*", this.onDocumentEvent);
+
+            this.documentEventsListener.on("dom-loading", data =>
+              this.onDocumentEvent("dom-loading", data)
+            );
+            this.documentEventsListener.on("dom-interactive", data =>
+              this.onDocumentEvent("dom-interactive", data)
+            );
+            this.documentEventsListener.on("dom-complete", data =>
+              this.onDocumentEvent("dom-complete", data)
+            );
+
             this.documentEventsListener.listen();
           }
           startedListeners.push(event);
@@ -1798,12 +1808,6 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
 
 
   onDocumentEvent: function(name, { time, hasNativeConsoleAPI }) {
-    
-    
-    
-    if (name == "will-navigate") {
-      return;
-    }
     this.emit("documentEvent", {
       name,
       time,

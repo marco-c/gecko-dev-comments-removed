@@ -161,24 +161,30 @@ Timeline.prototype = {
 
     
     if (this._withMarkers && markers.length > 0) {
-      this.emit("markers", markers, endTime);
+      this.emit("markers", { markers, endTime });
     }
 
     
     if (this._withTicks) {
-      this.emit("ticks", endTime, this._framerate.getPendingTicks());
+      this.emit("ticks", {
+        delta: endTime,
+        timestamps: this._framerate.getPendingTicks(),
+      });
     }
 
     
     if (this._withMemory) {
-      this.emit("memory", endTime, this._memory.measure());
+      this.emit("memory", {
+        delta: endTime,
+        measurement: this._memory.measure(),
+      });
     }
 
     
     if (this._withFrames && this._withMarkers) {
       const frames = this._stackFrames.makeEvent();
       if (frames) {
-        this.emit("frames", endTime, frames);
+        this.emit("frames", { delta: endTime, frames });
       }
     }
 
@@ -354,20 +360,21 @@ Timeline.prototype = {
 
     const endTime = docShells[0].now();
 
-    this.emit(
-      "markers",
-      collections.map(({ startTimestamp: start, endTimestamp: end }) => {
-        return {
-          name: "GarbageCollection",
-          causeName: reason,
-          nonincrementalReason: nonincrementalReason,
-          cycle: gcCycleNumber,
-          start,
-          end,
-        };
-      }),
-      endTime
-    );
+    this.emit("markers", {
+      markers: collections.map(
+        ({ startTimestamp: start, endTimestamp: end }) => {
+          return {
+            name: "GarbageCollection",
+            causeName: reason,
+            nonincrementalReason: nonincrementalReason,
+            cycle: gcCycleNumber,
+            start,
+            end,
+          };
+        }
+      ),
+      endTime,
+    });
   },
 };
 

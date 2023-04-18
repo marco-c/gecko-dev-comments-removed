@@ -260,15 +260,6 @@ class EventEmitter {
       }
     }
 
-    
-    
-    
-    
-    const hasWildcardListeners = target[eventListeners].has("*");
-    if (type !== "*" && hasWildcardListeners) {
-      EventEmitter.emit(target, "*", type, ...rest);
-    }
-
     if (async) {
       return Promise.all(promises);
     }
