@@ -122,8 +122,6 @@ test_description_schema = Schema(
         
         Required("run-without-variant"): optionally_keyed_by("test-platform", bool),
         
-        Optional("webrender"): bool,
-        
         Required("instance-size"): optionally_keyed_by(
             "test-platform", Any("default", "large", "xlarge")
         ),
@@ -326,15 +324,6 @@ def set_defaults(config, tasks):
             task.setdefault("allow-software-gl-layers", True)
         else:
             task["allow-software-gl-layers"] = False
-
-        
-        
-        
-        
-        if "-qr/" in task["test-platform"]:
-            task["webrender"] = True
-        else:
-            task.setdefault("webrender", False)
 
         task.setdefault("try-name", task["test-name"])
         task.setdefault("os-groups", [])
