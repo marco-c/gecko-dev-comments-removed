@@ -5,6 +5,7 @@
 
 EXPORTS.mozilla.intl = [
     "src/Bidi.h",
+    "src/BidiClass.h",
     "src/BidiEmbeddingLevel.h",
     "src/Calendar.h",
     "src/Collator.h",
