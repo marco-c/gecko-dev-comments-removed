@@ -1113,7 +1113,7 @@ void nsSprocketLayout::ComputeChildSizes(
     
     
     bool limit = true;
-    for (int pass = 1; true == limit; pass++) {
+    while (limit) {
       limit = false;
       boxSizes = aBoxSizes;
       computedBoxSizes = aComputedBoxSizes;
