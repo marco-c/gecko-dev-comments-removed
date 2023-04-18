@@ -14,6 +14,7 @@ const DEBUG_PLATFORM_EVENTS = false;
 
 const { Cc, Ci, Cu } = require("chrome");
 const Services = require("Services");
+const ChromeUtils = require("ChromeUtils");
 
 loader.lazyRequireGetter(
   this,
@@ -424,7 +425,7 @@ NetworkObserver.prototype = {
         if (reason == 0) {
           
           
-          reason = NetworkUtils.getErrorCodeString(status);
+          reason = ChromeUtils.getXPCOMErrorName(status);
         }
         this._createNetworkEvent(subject, {
           blockedReason: reason,
