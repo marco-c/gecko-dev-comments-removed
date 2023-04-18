@@ -6,7 +6,25 @@
 #define __nsLookAndFeel
 
 #include "nsXPLookAndFeel.h"
-#include "AndroidBridge.h"
+
+namespace mozilla {
+
+
+struct AndroidSystemColors {
+  nscolor textColorPrimary;
+  nscolor textColorPrimaryInverse;
+  nscolor textColorSecondary;
+  nscolor textColorSecondaryInverse;
+  nscolor textColorTertiary;
+  nscolor textColorTertiaryInverse;
+  nscolor textColorHighlight;
+  nscolor colorForeground;
+  nscolor colorBackground;
+  nscolor panelColorForeground;
+  nscolor panelColorBackground;
+  nscolor colorAccent;
+};
+}  
 
 class nsLookAndFeel final : public nsXPLookAndFeel {
  public:

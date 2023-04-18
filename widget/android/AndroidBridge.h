@@ -6,32 +6,17 @@
 #ifndef AndroidBridge_h__
 #define AndroidBridge_h__
 
-#include <jni.h>
-#include <android/log.h>
-#include <cstdlib>
-#include <unistd.h>
-
-#include "APKOpen.h"
-
 #include "nsCOMPtr.h"
 
-#include "js/RootingAPI.h"
-#include "js/Value.h"
 #include "mozilla/jni/Refs.h"
 
 #include "nsIMutableArray.h"
 #include "nsIMIMEInfo.h"
-#include "nsColor.h"
 
 #include "nsIAndroidBridge.h"
 
-#include "mozilla/Likely.h"
-#include "mozilla/Mutex.h"
-#include "mozilla/Types.h"
 #include "mozilla/jni/Utils.h"
 #include "nsTHashMap.h"
-
-#include "Units.h"
 
 
 
@@ -46,37 +31,8 @@ class BatteryInformation;
 class NetworkInformation;
 }  
 
-
-
-struct AndroidSystemColors {
-  nscolor textColorPrimary;
-  nscolor textColorPrimaryInverse;
-  nscolor textColorSecondary;
-  nscolor textColorSecondaryInverse;
-  nscolor textColorTertiary;
-  nscolor textColorTertiaryInverse;
-  nscolor textColorHighlight;
-  nscolor colorForeground;
-  nscolor colorBackground;
-  nscolor panelColorForeground;
-  nscolor panelColorBackground;
-  nscolor colorAccent;
-};
-
 class AndroidBridge final {
  public:
-  enum {
-    
-    
-    NOTIFY_IME_OPEN_VKB = -2,
-    NOTIFY_IME_REPLY_EVENT = -1,
-  };
-
-  enum {
-    LAYER_CLIENT_TYPE_NONE = 0,
-    LAYER_CLIENT_TYPE_GL = 2  
-  };
-
   static bool IsJavaUiThread() {
     return mozilla::jni::GetUIThreadId() == gettid();
   }
