@@ -85,7 +85,7 @@ bool ReadableStreamReaderGenericInitialize(JSContext* aCx,
 
       return true;
     
-    case ReadableStream::ReaderState::Errored:
+    case ReadableStream::ReaderState::Errored: {
       
       
       JS::RootedValue rootedError(aCx, aStream->StoredError());
@@ -94,6 +94,10 @@ bool ReadableStreamReaderGenericInitialize(JSContext* aCx,
       
       aReader->ClosedPromise()->SetSettledPromiseIsHandled();
       return true;
+    }
+    default:
+      MOZ_ASSERT_UNREACHABLE("Unknown ReaderState");
+      return false;
   }
 }
 

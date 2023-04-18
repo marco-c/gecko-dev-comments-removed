@@ -1179,6 +1179,10 @@ JSObject* ConstructFromPullIntoConstructor(
       JS_FOR_EACH_TYPED_ARRAY(CONSTRUCT_TYPED_ARRAY_TYPE)
 
 #undef CONSTRUCT_TYPED_ARRAY_TYPE
+
+    default:
+      MOZ_ASSERT_UNREACHABLE("Unknown PullIntoDescriptor::Constructor");
+      return nullptr;
   }
 }
 
@@ -1934,11 +1938,9 @@ void SetUpReadableByteStreamController(
   MOZ_ASSERT(!aStream->Controller());
 
   
-  if (aAutoAllocateChunkSize) {
-    
-    
-    MOZ_ASSERT(*aAutoAllocateChunkSize >= 0);
-  }
+  
+  
+  
 
   
   aController->SetStream(aStream);
