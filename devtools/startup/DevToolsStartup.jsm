@@ -38,40 +38,41 @@ const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
 );
+const lazy = {};
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "CustomizableUI",
   "resource:///modules/CustomizableUI.jsm"
 );
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "CustomizableWidgets",
   "resource:///modules/CustomizableWidgets.jsm"
 );
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "PrivateBrowsingUtils",
   "resource://gre/modules/PrivateBrowsingUtils.jsm"
 );
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "ProfilerMenuButton",
   "resource://devtools/client/performance-new/popup/menu-button.jsm.js"
 );
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "WebChannel",
   "resource://gre/modules/WebChannel.jsm"
 );
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "PanelMultiView",
   "resource:///modules/PanelMultiView.jsm"
 );
 
 
 
-XPCOMUtils.defineLazyGetter(this, "Telemetry", function() {
+XPCOMUtils.defineLazyGetter(lazy, "Telemetry", function() {
   const { require } = ChromeUtils.import(
     "resource://devtools/shared/loader/Loader.jsm"
   );
@@ -81,7 +82,7 @@ XPCOMUtils.defineLazyGetter(this, "Telemetry", function() {
   return Telemetry;
 });
 
-XPCOMUtils.defineLazyGetter(this, "KeyShortcutsBundle", function() {
+XPCOMUtils.defineLazyGetter(lazy, "KeyShortcutsBundle", function() {
   return new Localization(["devtools/startup/key-shortcuts.ftl"], true);
 });
 
@@ -100,14 +101,14 @@ XPCOMUtils.defineLazyGetter(this, "KeyShortcutsBundle", function() {
 
 function getLocalizedKeyShortcut(id) {
   try {
-    return KeyShortcutsBundle.formatValueSync(id);
+    return lazy.KeyShortcutsBundle.formatValueSync(id);
   } catch (e) {
     console.error("Failed to retrieve DevTools localized shortcut for id", id);
     return null;
   }
 }
 
-XPCOMUtils.defineLazyGetter(this, "KeyShortcuts", function() {
+XPCOMUtils.defineLazyGetter(lazy, "KeyShortcuts", function() {
   const isMac = AppConstants.platform == "macosx";
 
   
@@ -226,7 +227,7 @@ XPCOMUtils.defineLazyGetter(this, "KeyShortcuts", function() {
     });
   }
 
-  if (ProfilerMenuButton.isInNavbar()) {
+  if (lazy.ProfilerMenuButton.isInNavbar()) {
     shortcuts.push(...getProfilerKeyShortcuts());
   }
 
@@ -298,7 +299,7 @@ function validateProfilerWebChannelUrl(targetUrl) {
   return frontEndUrl;
 }
 
-XPCOMUtils.defineLazyGetter(this, "ProfilerPopupBackground", function() {
+XPCOMUtils.defineLazyGetter(lazy, "ProfilerPopupBackground", function() {
   return ChromeUtils.import(
     "resource://devtools/client/performance-new/popup/background.jsm.js"
   );
@@ -327,7 +328,7 @@ DevToolsStartup.prototype = {
 
   get telemetry() {
     if (!this._telemetry) {
-      this._telemetry = new Telemetry();
+      this._telemetry = new lazy.Telemetry();
       this._telemetry.setEventRecordingEnabled(true);
     }
     return this._telemetry;
@@ -525,8 +526,8 @@ DevToolsStartup.prototype = {
     }
 
     const id = "developer-button";
-    const widget = CustomizableUI.getWidget(id);
-    if (widget && widget.provider == CustomizableUI.PROVIDER_API) {
+    const widget = lazy.CustomizableUI.getWidget(id);
+    if (widget && widget.provider == lazy.CustomizableUI.PROVIDER_API) {
       return;
     }
 
@@ -541,7 +542,7 @@ DevToolsStartup.prototype = {
       tooltiptext: "developer-button.tooltiptext2",
       onViewShowing: event => {
         const doc = event.target.ownerDocument;
-        const developerItems = PanelMultiView.getViewNode(doc, subviewId);
+        const developerItems = lazy.PanelMultiView.getViewNode(doc, subviewId);
         this.addDevToolsItemsToSubview(developerItems);
       },
       onInit(anchor) {
@@ -556,8 +557,8 @@ DevToolsStartup.prototype = {
         this.hookKeyShortcuts(doc.defaultView);
       },
     };
-    CustomizableUI.createWidget(item);
-    CustomizableWidgets.push(item);
+    lazy.CustomizableUI.createWidget(item);
+    lazy.CustomizableWidgets.push(item);
 
     this.developerToggleCreated = true;
   },
@@ -574,8 +575,8 @@ DevToolsStartup.prototype = {
     const menu = doc.getElementById("menuWebDeveloperPopup");
     const itemsToDisplay = [...menu.children];
 
-    CustomizableUI.clearSubview(subview);
-    CustomizableUI.fillSubviewFromMenuItems(itemsToDisplay, subview);
+    lazy.CustomizableUI.clearSubview(subview);
+    lazy.CustomizableUI.fillSubviewFromMenuItems(itemsToDisplay, subview);
   },
 
   onMoreToolsViewShowing(moreToolsView) {
@@ -604,12 +605,12 @@ DevToolsStartup.prototype = {
 
     if (isPopupFeatureFlagEnabled) {
       
-      ProfilerMenuButton.initialize(this.toggleProfilerKeyShortcuts);
+      lazy.ProfilerMenuButton.initialize(this.toggleProfilerKeyShortcuts);
     } else {
       
       
       const enable = () => {
-        ProfilerMenuButton.initialize(this.toggleProfilerKeyShortcuts);
+        lazy.ProfilerMenuButton.initialize(this.toggleProfilerKeyShortcuts);
         Services.prefs.removeObserver(featureFlagPref, enable);
       };
       Services.prefs.addObserver(featureFlagPref, enable);
@@ -644,12 +645,12 @@ DevToolsStartup.prototype = {
         validateProfilerWebChannelUrl(Services.prefs.getStringPref(urlPref))
       );
 
-      channel = new WebChannel("profiler.firefox.com", urlForWebChannel);
+      channel = new lazy.WebChannel("profiler.firefox.com", urlForWebChannel);
 
       channel.listen((id, message, target) => {
         
         
-        ProfilerPopupBackground.handleWebChannelMessage(
+        lazy.ProfilerPopupBackground.handleWebChannelMessage(
           channel,
           id,
           message,
@@ -696,7 +697,7 @@ DevToolsStartup.prototype = {
     const keyset = doc.createXULElement("keyset");
     keyset.setAttribute("id", "devtoolsKeyset");
 
-    this.attachKeys(doc, KeyShortcuts, keyset);
+    this.attachKeys(doc, lazy.KeyShortcuts, keyset);
 
     
     
@@ -775,11 +776,11 @@ DevToolsStartup.prototype = {
       
       switch (key.id) {
         case "profilerStartStop": {
-          ProfilerPopupBackground.toggleProfiler("aboutprofiling");
+          lazy.ProfilerPopupBackground.toggleProfiler("aboutprofiling");
           return;
         }
         case "profilerCapture": {
-          ProfilerPopupBackground.captureProfile("aboutprofiling");
+          lazy.ProfilerPopupBackground.captureProfile("aboutprofiling");
           return;
         }
       }
@@ -1092,7 +1093,7 @@ DevToolsStartup.prototype = {
   
   
   get KeyShortcuts() {
-    return KeyShortcuts;
+    return lazy.KeyShortcuts;
   },
   get wrappedJSObject() {
     return this;
@@ -1184,7 +1185,7 @@ const JsonView = {
             null ,
             false ,
             null ,
-            PrivateBrowsingUtils.isBrowserPrivate(
+            lazy.PrivateBrowsingUtils.isBrowserPrivate(
               browser
             ) ,
             Services.scriptSecurityManager.getSystemPrincipal()
