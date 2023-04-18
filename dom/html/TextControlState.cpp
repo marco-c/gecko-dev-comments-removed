@@ -5,6 +5,7 @@
 
 
 #include "TextControlState.h"
+#include "mozilla/Attributes.h"
 #include "mozilla/TextInputListener.h"
 
 #include "nsCOMPtr.h"
@@ -41,6 +42,7 @@
 #include "mozilla/dom/HTMLTextAreaElement.h"
 #include "mozilla/dom/Text.h"
 #include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/StaticPrefs_ui.h"
 #include "nsFrameSelection.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/Telemetry.h"
@@ -967,58 +969,79 @@ TextInputListener::HandleEvent(Event* aEvent) {
     }
   }
 
-  KeyEventHandler* keyHandlers = ShortcutKeys::GetHandlers(
-      mTxtCtrlElement->IsTextArea() ? HandlerType::eTextArea
-                                    : HandlerType::eInput);
+  auto ExecuteOurShortcutKeys = [&](TextControlElement& aTextControlElement)
+                                    MOZ_CAN_RUN_SCRIPT_FOR_DEFINITION -> bool {
+    KeyEventHandler* keyHandlers = ShortcutKeys::GetHandlers(
+        aTextControlElement.IsTextArea() ? HandlerType::eTextArea
+                                         : HandlerType::eInput);
 
-  RefPtr<nsAtom> eventTypeAtom =
-      ShortcutKeys::ConvertEventToDOMEventType(widgetKeyEvent);
-  for (KeyEventHandler* handler = keyHandlers; handler;
-       handler = handler->GetNextHandler()) {
-    if (!handler->EventTypeEquals(eventTypeAtom)) {
-      continue;
+    RefPtr<nsAtom> eventTypeAtom =
+        ShortcutKeys::ConvertEventToDOMEventType(widgetKeyEvent);
+    for (KeyEventHandler* handler = keyHandlers; handler;
+         handler = handler->GetNextHandler()) {
+      if (!handler->EventTypeEquals(eventTypeAtom)) {
+        continue;
+      }
+
+      if (!handler->KeyEventMatched(keyEvent, 0, IgnoreModifierState())) {
+        continue;
+      }
+
+      
+      
+      nsresult rv = handler->ExecuteHandler(&aTextControlElement, aEvent);
+      if (NS_SUCCEEDED(rv)) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  auto ExecuteNativeKeyBindings =
+      [&](TextControlElement& aTextControlElement)
+          MOZ_CAN_RUN_SCRIPT_FOR_DEFINITION -> bool {
+    if (widgetKeyEvent->mMessage != eKeyPress) {
+      return false;
     }
 
-    if (!handler->KeyEventMatched(keyEvent, 0, IgnoreModifierState())) {
-      continue;
+    nsIWidget::NativeKeyBindingsType nativeKeyBindingsType =
+        aTextControlElement.IsTextArea()
+            ? nsIWidget::NativeKeyBindingsForMultiLineEditor
+            : nsIWidget::NativeKeyBindingsForSingleLineEditor;
+
+    nsIWidget* widget = widgetKeyEvent->mWidget;
+    
+    if (MOZ_UNLIKELY(!widget)) {
+      widget = mFrame->GetNearestWidget();
+      if (MOZ_UNLIKELY(NS_WARN_IF(!widget))) {
+        return false;
+      }
     }
 
     
     
-    RefPtr<TextControlElement> textControlElement(mTxtCtrlElement);
-    nsresult rv = handler->ExecuteHandler(textControlElement, aEvent);
-    if (NS_SUCCEEDED(rv)) {
-      return rv;
+    
+    
+    AutoRestore<nsCOMPtr<nsIWidget>> saveWidget(widgetKeyEvent->mWidget);
+    widgetKeyEvent->mWidget = widget;
+    if (widgetKeyEvent->ExecuteEditCommands(nativeKeyBindingsType,
+                                            DoCommandCallback, mFrame)) {
+      aEvent->PreventDefault();
+      return true;
     }
-  }
+    return false;
+  };
 
-  if (widgetKeyEvent->mMessage != eKeyPress) {
-    return NS_OK;
-  }
-
-  nsIWidget::NativeKeyBindingsType nativeKeyBindingsType =
-      mTxtCtrlElement->IsTextArea()
-          ? nsIWidget::NativeKeyBindingsForMultiLineEditor
-          : nsIWidget::NativeKeyBindingsForSingleLineEditor;
-
-  nsIWidget* widget = widgetKeyEvent->mWidget;
-  
-  if (!widget) {
-    widget = mFrame->GetNearestWidget();
-    if (NS_WARN_IF(!widget)) {
-      return NS_OK;
+  OwningNonNull<TextControlElement> textControlElement(*mTxtCtrlElement);
+  if (StaticPrefs::
+          ui_key_textcontrol_prefer_native_key_bindings_over_builtin_shortcut_key_definitions()) {
+    if (!ExecuteNativeKeyBindings(textControlElement)) {
+      ExecuteOurShortcutKeys(textControlElement);
     }
-  }
-
-  
-  
-  
-  
-  AutoRestore<nsCOMPtr<nsIWidget>> saveWidget(widgetKeyEvent->mWidget);
-  widgetKeyEvent->mWidget = widget;
-  if (widgetKeyEvent->ExecuteEditCommands(nativeKeyBindingsType,
-                                          DoCommandCallback, mFrame)) {
-    aEvent->PreventDefault();
+  } else {
+    if (!ExecuteOurShortcutKeys(textControlElement)) {
+      ExecuteNativeKeyBindings(textControlElement);
+    }
   }
   return NS_OK;
 }
