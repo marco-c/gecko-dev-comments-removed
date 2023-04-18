@@ -165,6 +165,13 @@ function createTestGlobal(name) {
     Cc["@mozilla.org/systemprincipal;1"].createInstance(Ci.nsIPrincipal)
   );
   sandbox.__name = name;
+  
+  
+  sandbox.performance = { timing: {} };
+  sandbox.document = {
+    readyState: "complete",
+    defaultView: sandbox,
+  };
   return sandbox;
 }
 
