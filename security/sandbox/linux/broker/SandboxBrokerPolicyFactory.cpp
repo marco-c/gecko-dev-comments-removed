@@ -63,12 +63,6 @@ static const int deny = SandboxBroker::FORCE_DENY;
 
 static void AddMesaSysfsPaths(SandboxBroker::Policy* aPolicy) {
   
-  aPolicy->AddPrefix(rdonly, "/sys/dev/char/226:");
-
-  
-  aPolicy->AddAncestors("/sys/dev/char/");
-
-  
   if (auto dir = opendir("/dev/dri")) {
     while (auto entry = readdir(dir)) {
       if (entry->d_name[0] != '.') {
@@ -77,16 +71,27 @@ static void AddMesaSysfsPaths(SandboxBroker::Policy* aPolicy) {
         if (stat(devPath.get(), &sb) == 0 && S_ISCHR(sb.st_mode)) {
           
           
-          static const Array<const char*, 2> kSuffixes = {"", "/device"};
+          static const Array<nsCString, 2> kSuffixes = {""_ns, "/device"_ns};
+          nsPrintfCString prefix("/sys/dev/char/%u:%u", major(sb.st_rdev),
+                                 minor(sb.st_rdev));
           for (const auto suffix : kSuffixes) {
-            nsPrintfCString sysPath("/sys/dev/char/%u:%u%s", major(sb.st_rdev),
-                                    minor(sb.st_rdev), suffix);
+            nsCString sysPath(prefix + suffix);
+
             
             
             
             
             UniqueFreePtr<char[]> realSysPath(realpath(sysPath.get(), nullptr));
             if (realSysPath) {
+              
+              
+              
+              
+              char *term = strrchr(realSysPath.get(), '/');
+              if (term && strncmp(term, "/virtio", 7) == 0) {
+                *term = 0;
+              }
+
               constexpr const char* kMesaAttrSuffixes[] = {
                   "config",    "device",           "revision",
                   "subsystem", "subsystem_device", "subsystem_vendor",
@@ -99,9 +104,19 @@ static void AddMesaSysfsPaths(SandboxBroker::Policy* aPolicy) {
               }
               
               nsPrintfCString basePath("%s/", realSysPath.get());
-              aPolicy->AddAncestors(basePath.get());
+              aPolicy->AddAncestors(basePath.get(), rdonly);
             }
           }
+
+          
+          
+          
+          
+          
+          
+          nsCString subsystemPath(prefix + "/device/subsystem"_ns);
+          aPolicy->AddPath(rdonly, subsystemPath.get());
+          aPolicy->AddAncestors(subsystemPath.get(), rdonly);
         }
       }
     }
@@ -700,8 +715,6 @@ void SandboxBrokerPolicyFactory::InitContentPolicy() {
   if (!headless && HasAtiDrivers()) {
     policy->AddDir(rdonly, "/opt/amdgpu/share");
     policy->AddPath(rdonly, "/sys/module/amdgpu");
-    
-    policy->AddDir(access, "/sys");
   }
 
   mCommonContentPolicy.reset(policy);
