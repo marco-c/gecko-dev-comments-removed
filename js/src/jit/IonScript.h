@@ -186,11 +186,12 @@ class alignas(8) IonScript final : public TrailingArray {
   
   
   
-  HeapPtrObject* nurseryObjects() {
-    return offsetToPointer<HeapPtrObject>(nurseryObjectsOffset());
+  HeapPtr<JSObject*>* nurseryObjects() {
+    return offsetToPointer<HeapPtr<JSObject*>>(nurseryObjectsOffset());
   }
   size_t numNurseryObjects() const {
-    return numElements<HeapPtrObject>(nurseryObjectsOffset(), osiIndexOffset());
+    return numElements<HeapPtr<JSObject*>>(nurseryObjectsOffset(),
+                                           osiIndexOffset());
   }
   void* addressOfNurseryObject(uint32_t index) {
     MOZ_ASSERT(index < numNurseryObjects());

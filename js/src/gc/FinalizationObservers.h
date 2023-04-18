@@ -27,20 +27,21 @@ class FinalizationObservers {
 
   
   
-  using RegistrySet = GCHashSet<HeapPtrObject, MovableCellHasher<HeapPtrObject>,
-                                ZoneAllocPolicy>;
+  using RegistrySet =
+      GCHashSet<HeapPtr<JSObject*>, MovableCellHasher<HeapPtr<JSObject*>>,
+                ZoneAllocPolicy>;
   RegistrySet registries;
 
   
-  using RecordVector = GCVector<HeapPtrObject, 1, ZoneAllocPolicy>;
+  using RecordVector = GCVector<HeapPtr<JSObject*>, 1, ZoneAllocPolicy>;
 
   
   
   
   
   using RecordMap =
-      GCHashMap<HeapPtrObject, RecordVector, MovableCellHasher<HeapPtrObject>,
-                ZoneAllocPolicy>;
+      GCHashMap<HeapPtr<JSObject*>, RecordVector,
+                MovableCellHasher<HeapPtr<JSObject*>>, ZoneAllocPolicy>;
   RecordMap recordMap;
 
   
@@ -55,10 +56,10 @@ class FinalizationObservers {
   
   
   using WeakRefHeapPtrVector =
-      GCVector<js::HeapPtrObject, 1, js::ZoneAllocPolicy>;
+      GCVector<js::HeapPtr<JSObject*>, 1, js::ZoneAllocPolicy>;
   using WeakRefMap =
-      GCHashMap<HeapPtrObject, WeakRefHeapPtrVector,
-                MovableCellHasher<HeapPtrObject>, ZoneAllocPolicy>;
+      GCHashMap<HeapPtr<JSObject*>, WeakRefHeapPtrVector,
+                MovableCellHasher<HeapPtr<JSObject*>>, ZoneAllocPolicy>;
   WeakRefMap weakRefMap;
 
   
@@ -106,8 +107,9 @@ class FinalizationObservers {
 class FinalizationRegistryGlobalData {
   
   
-  using RecordSet = GCHashSet<HeapPtrObject, MovableCellHasher<HeapPtrObject>,
-                              ZoneAllocPolicy>;
+  using RecordSet =
+      GCHashSet<HeapPtr<JSObject*>, MovableCellHasher<HeapPtr<JSObject*>>,
+                ZoneAllocPolicy>;
   RecordSet recordSet;
 
  public:

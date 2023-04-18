@@ -242,7 +242,8 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   
   
   using RttValueObjectSet =
-      js::GCHashSet<js::HeapPtrObject, js::MovableCellHasher<js::HeapPtrObject>,
+      js::GCHashSet<js::HeapPtr<JSObject*>,
+                    js::MovableCellHasher<js::HeapPtr<JSObject*>>,
                     js::SystemAllocPolicy>;
 
   js::ZoneData<JS::WeakCache<RttValueObjectSet>> rttValueObjects_;
@@ -286,7 +287,8 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   friend class js::gc::ZoneList;
 
   using KeptAliveSet =
-      JS::GCHashSet<js::HeapPtrObject, js::MovableCellHasher<js::HeapPtrObject>,
+      JS::GCHashSet<js::HeapPtr<JSObject*>,
+                    js::MovableCellHasher<js::HeapPtr<JSObject*>>,
                     js::ZoneAllocPolicy>;
   friend class js::WeakRefObject;
   js::ZoneOrGCTaskData<KeptAliveSet> keptObjects;
