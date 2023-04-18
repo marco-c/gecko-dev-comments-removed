@@ -147,7 +147,21 @@ void JSJitFrameIter::baselineScriptAndPc(JSScript** scriptRes,
 Value* JSJitFrameIter::actualArgs() const { return jsFrame()->argv() + 1; }
 
 uint8_t* JSJitFrameIter::prevFp() const {
-  return current_ + current()->prevFrameLocalSize() + current()->headerSize();
+  uint8_t* res =
+      current_ + current()->prevFrameLocalSize() + current()->headerSize();
+#ifdef DEBUG
+  
+  
+  
+  
+  static constexpr size_t FPOffset = CommonFrameLayout::FramePointerOffset;
+  if (current()->prevType() == FrameType::WasmToJSJit) {
+    MOZ_ASSERT(current()->callerFramePtr() == res);
+  } else if (current()->prevType() != FrameType::CppToJSJit) {
+    MOZ_ASSERT(current()->callerFramePtr() + FPOffset == res);
+  }
+#endif
+  return res;
 }
 
 void JSJitFrameIter::operator++() {
