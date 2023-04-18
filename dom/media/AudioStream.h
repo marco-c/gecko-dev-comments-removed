@@ -346,8 +346,6 @@ class AudioStream final {
 
   DataSource& mDataSource;
 
-  bool mPrefillQuirk;
-
   
   
   
