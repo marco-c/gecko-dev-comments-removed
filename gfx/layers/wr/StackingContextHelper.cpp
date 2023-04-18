@@ -43,10 +43,12 @@ static nsSize ComputeDesiredDisplaySizeForAnimation(nsIFrame* aContainerFrame) {
 }
 
 
-Size ChooseScale(nsIFrame* aContainerFrame, nsDisplayItem* aContainerItem,
-                 const nsRect& aVisibleRect, float aXScale, float aYScale,
-                 const Matrix& aTransform2d, bool aCanDraw2D) {
-  Size scale;
+MatrixScales ChooseScale(nsIFrame* aContainerFrame,
+                         nsDisplayItem* aContainerItem,
+                         const nsRect& aVisibleRect, float aXScale,
+                         float aYScale, const Matrix& aTransform2d,
+                         bool aCanDraw2D) {
+  MatrixScales scale;
   
   if (aCanDraw2D && !aContainerFrame->Combines3DTransformWithAncestors() &&
       !aContainerFrame->HasPerspective()) {
@@ -65,17 +67,17 @@ Size ChooseScale(nsIFrame* aContainerFrame, nsDisplayItem* aContainerItem,
       
       nsSize scaledVisibleSize = nsSize(aVisibleRect.Width() * aXScale,
                                         aVisibleRect.Height() * aYScale);
-      scale = nsLayoutUtils::ComputeSuitableScaleForAnimation(
+      Size size = nsLayoutUtils::ComputeSuitableScaleForAnimation(
           aContainerFrame, scaledVisibleSize, displaySize);
+      scale = MatrixScales(size.width, size.height);
       
       
       float incomingScale = std::max(aXScale, aYScale);
-      scale.width *= incomingScale;
-      scale.height *= incomingScale;
+      scale = scale * ScaleFactor<UnknownUnits, UnknownUnits>(incomingScale);
     } else {
       
       
-      scale = aTransform2d.ScaleFactors().ToSize();
+      scale = aTransform2d.ScaleFactors();
       
       
       
@@ -84,8 +86,8 @@ Size ChooseScale(nsIFrame* aContainerFrame, nsDisplayItem* aContainerItem,
       
       Matrix frameTransform;
       if (ActiveLayerTracker::IsScaleSubjectToAnimation(aContainerFrame)) {
-        scale.width = gfxUtils::ClampToScaleFactor(scale.width);
-        scale.height = gfxUtils::ClampToScaleFactor(scale.height);
+        scale.xScale = gfxUtils::ClampToScaleFactor(scale.xScale);
+        scale.yScale = gfxUtils::ClampToScaleFactor(scale.yScale);
 
         
         
@@ -95,11 +97,11 @@ Size ChooseScale(nsIFrame* aContainerFrame, nsDisplayItem* aContainerItem,
               ComputeDesiredDisplaySizeForAnimation(aContainerFrame);
           maxScale = Max(maxScale, displaySize / aVisibleRect.Size());
         }
-        if (scale.width > maxScale.width) {
-          scale.width = gfxUtils::ClampToScaleFactor(maxScale.width, true);
+        if (scale.xScale > maxScale.width) {
+          scale.xScale = gfxUtils::ClampToScaleFactor(maxScale.width, true);
         }
-        if (scale.height > maxScale.height) {
-          scale.height = gfxUtils::ClampToScaleFactor(maxScale.height, true);
+        if (scale.yScale > maxScale.height) {
+          scale.yScale = gfxUtils::ClampToScaleFactor(maxScale.height, true);
         }
       } else {
         
@@ -107,11 +109,11 @@ Size ChooseScale(nsIFrame* aContainerFrame, nsDisplayItem* aContainerItem,
     }
     
     
-    if (fabs(scale.width) < 1e-8 || fabs(scale.height) < 1e-8) {
-      scale = Size(1.0, 1.0);
+    if (fabs(scale.xScale) < 1e-8 || fabs(scale.yScale) < 1e-8) {
+      scale = MatrixScales(1.0, 1.0);
     }
   } else {
-    scale = Size(1.0, 1.0);
+    scale = MatrixScales(1.0, 1.0);
   }
 
   
@@ -119,10 +121,8 @@ Size ChooseScale(nsIFrame* aContainerFrame, nsDisplayItem* aContainerItem,
   
   
   
-  scale =
-      Size(std::min(scale.width, 32768.0f), std::min(scale.height, 32768.0f));
-
-  return scale;
+  return MatrixScales(std::min(scale.xScale, 32768.0f),
+                      std::min(scale.yScale, 32768.0f));
 }
 
 StackingContextHelper::StackingContextHelper(
@@ -152,17 +152,16 @@ StackingContextHelper::StackingContextHelper(
       int32_t apd = aContainerFrame->PresContext()->AppUnitsPerDevPixel();
       nsRect r = LayoutDevicePixel::ToAppUnits(aBounds, apd);
       mScale = ChooseScale(aContainerFrame, aContainerItem, r,
-                           aParentSC.mScale.width, aParentSC.mScale.height,
+                           aParentSC.mScale.xScale, aParentSC.mScale.yScale,
                            mInheritedTransform,
                             true);
     } else {
-      mScale = gfx::Size(1.0f, 1.0f);
+      mScale = gfx::MatrixScales(1.0f, 1.0f);
       mInheritedTransform = gfx::Matrix::Scaling(1.f, 1.f);
     }
 
     if (aParams.mAnimated) {
-      mSnappingSurfaceTransform =
-          gfx::Matrix::Scaling(mScale.width, mScale.height);
+      mSnappingSurfaceTransform = gfx::Matrix::Scaling(mScale);
     } else {
       mSnappingSurfaceTransform =
           transform2d * aParentSC.mSnappingSurfaceTransform;
@@ -173,11 +172,12 @@ StackingContextHelper::StackingContextHelper(
              aContainerItem &&
              aContainerItem->GetType() == DisplayItemType::TYPE_ASYNC_ZOOM &&
              aContainerItem->Frame()) {
-    double resolution = aContainerItem->Frame()->PresShell()->GetResolution();
+    float resolution = aContainerItem->Frame()->PresShell()->GetResolution();
     gfx::Matrix transform = gfx::Matrix::Scaling(resolution, resolution);
 
     mInheritedTransform = transform * aParentSC.mInheritedTransform;
-    mScale = resolution * aParentSC.mScale;
+    mScale =
+        ScaleFactor<UnknownUnits, UnknownUnits>(resolution) * aParentSC.mScale;
 
     MOZ_ASSERT(!aParams.mAnimated);
     mSnappingSurfaceTransform = transform * aParentSC.mSnappingSurfaceTransform;
@@ -198,8 +198,7 @@ StackingContextHelper::StackingContextHelper(
         gfx::Matrix::Scaling(resolution.xScale, resolution.yScale);
 
     mInheritedTransform = transform * aParentSC.mInheritedTransform;
-    mScale = gfx::Size(aParentSC.mScale.width * resolution.xScale,
-                       aParentSC.mScale.height * resolution.yScale);
+    mScale = aParentSC.mScale * resolution;
 
     MOZ_ASSERT(!aParams.mAnimated);
     mSnappingSurfaceTransform = transform * aParentSC.mSnappingSurfaceTransform;
@@ -211,7 +210,7 @@ StackingContextHelper::StackingContextHelper(
 
   auto rasterSpace =
       mRasterizeLocally
-          ? wr::RasterSpace::Local(std::max(mScale.width, mScale.height))
+          ? wr::RasterSpace::Local(std::max(mScale.xScale, mScale.yScale))
           : wr::RasterSpace::Screen();
 
   MOZ_ASSERT(!aParams.clip.IsNone());

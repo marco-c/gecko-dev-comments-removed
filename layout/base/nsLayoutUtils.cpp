@@ -6507,9 +6507,9 @@ CSSIntSize nsLayoutUtils::ComputeSizeForDrawingWithFallback(
   return imageSize;
 }
 
- LayerIntRect SnapRectForImage(const gfx::Matrix& aTransform,
-                                           const gfx::Size& aScaleFactors,
-                                           const LayoutDeviceRect& aRect) {
+ LayerIntRect SnapRectForImage(
+    const gfx::Matrix& aTransform, const gfx::MatrixScales& aScaleFactors,
+    const LayoutDeviceRect& aRect) {
   
   
   bool snapped = false;
@@ -6543,10 +6543,8 @@ CSSIntSize nsLayoutUtils::ComputeSizeForDrawingWithFallback(
   if (!snapped) {
     
     
-    snapRect = RoundedToInt(LayerRect(aRect.X() * aScaleFactors.width,
-                                      aRect.Y() * aScaleFactors.height,
-                                      aRect.Width() * aScaleFactors.width,
-                                      aRect.Height() * aScaleFactors.height));
+    snapRect = RoundedToInt(
+        aRect * LayoutDeviceToLayerScale2D::FromUnknownScale(aScaleFactors));
   }
 
   
@@ -6569,14 +6567,14 @@ IntSize nsLayoutUtils::ComputeImageContainerDrawingParameters(
   MOZ_ASSERT(aImage);
   MOZ_ASSERT(aForFrame);
 
-  gfx::Size scaleFactors = aSc.GetInheritedScale();
+  MatrixScales scaleFactors = aSc.GetInheritedScale();
   SamplingFilter samplingFilter =
       nsLayoutUtils::GetSamplingFilterForFrame(aForFrame);
 
   
   
   SVGImageContext::MaybeStoreContextPaint(aSVGContext, aForFrame, aImage);
-  if ((scaleFactors.width != 1.0 || scaleFactors.height != 1.0) &&
+  if ((scaleFactors.xScale != 1.0 || scaleFactors.yScale != 1.0) &&
       aImage->GetType() == imgIContainer::TYPE_VECTOR &&
       (!aSVGContext || !aSVGContext->GetViewportSize())) {
     gfxSize gfxDestSize(aDestRect.Width(), aDestRect.Height());
