@@ -79,9 +79,6 @@ function prepareMessage(resource, idGenerator) {
     resource = transformResource(resource);
   }
 
-  if (resource.allowRepeating) {
-    resource.repeatId = getRepeatId(resource);
-  }
   resource.id = idGenerator.getNextId(resource);
   return resource;
 }
@@ -421,33 +418,146 @@ function transformEvaluationResultPacket(packet) {
 }
 
 
-function getRepeatId(message) {
-  return JSON.stringify(
-    {
-      frame: message.frame,
-      groupId: message.groupId,
-      indent: message.indent,
-      level: message.level,
-      messageText: message.messageText,
-      parameters: message.parameters,
-      source: message.source,
-      type: message.type,
-      userProvidedStyles: message.userProvidedStyles,
-      private: message.private,
-      stacktrace: message.stacktrace,
-    },
-    function(_, value) {
-      if (typeof value === "bigint") {
-        return value.toString() + "n";
-      }
 
-      if (value && value._grip) {
-        return value._grip;
-      }
 
-      return value;
+
+
+
+
+
+
+
+function areMessagesSimilar(message1, message2) {
+  if (!message1 || !message2) {
+    return false;
+  }
+
+  if (!areMessagesParametersSimilar(message1, message2)) {
+    return false;
+  }
+
+  if (!areMessagesStacktracesSimilar(message1, message2)) {
+    return false;
+  }
+
+  if (
+    !message1.allowRepeating ||
+    !message2.allowRepeating ||
+    message1.type !== message2.type ||
+    message1.level !== message2.level ||
+    message1.source !== message2.source ||
+    message1.category !== message2.category ||
+    message1.frame?.source !== message2.frame?.source ||
+    message1.frame?.line !== message2.frame?.line ||
+    message1.frame?.column !== message2.frame?.column ||
+    message1.messageText !== message2.messageText ||
+    message1.private !== message2.private ||
+    message1.errorMessageName !== message2.errorMessageName ||
+    message1.hasException !== message2.hasException ||
+    message1.isPromiseRejection !== message2.isPromiseRejection ||
+    message1.userProvidedStyles?.length !==
+      message2.userProvidedStyles?.length ||
+    `${message1.userProvidedStyles}` !== `${message2.userProvidedStyles}`
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
+
+
+
+
+
+
+
+
+
+function areMessagesParametersSimilar(message1, message2) {
+  const message1ParamsLength = message1.parameters?.length;
+  if (message1ParamsLength !== message2.parameters?.length) {
+    return false;
+  }
+
+  if (!message1ParamsLength) {
+    return true;
+  }
+
+  for (let i = 0; i < message1ParamsLength; i++) {
+    const message1Parameter = message1.parameters[i];
+    const message2Parameter = message2.parameters[i];
+    
+    
+    if (
+      message1.hasException &&
+      message2.hasException &&
+      message1Parameter._grip?.class == message2Parameter._grip?.class &&
+      message1Parameter._grip?.preview?.message ==
+        message2Parameter._grip?.preview?.message &&
+      message1Parameter._grip?.preview?.stack ==
+        message2Parameter._grip?.preview?.stack
+    ) {
+      continue;
     }
-  );
+
+    
+    
+    
+    
+    if (message1Parameter._grip || message2Parameter._grip) {
+      return false;
+    }
+
+    if (message1Parameter.type !== message2Parameter.type) {
+      return false;
+    }
+
+    if (message1Parameter.type) {
+      if (message1Parameter.text !== message2Parameter.text) {
+        return false;
+      }
+    } else if (message1Parameter !== message2Parameter) {
+      return false;
+    }
+  }
+  return true;
+}
+
+
+
+
+
+
+
+
+function areMessagesStacktracesSimilar(message1, message2) {
+  const message1StackLength = message1.stacktrace?.length;
+  if (message1StackLength !== message2.stacktrace?.length) {
+    return false;
+  }
+
+  if (!message1StackLength) {
+    return true;
+  }
+
+  for (let i = 0; i < message1StackLength; i++) {
+    const message1Frame = message1.stacktrace[i];
+    const message2Frame = message2.stacktrace[i];
+
+    if (message1Frame.filename !== message2Frame.filename) {
+      return false;
+    }
+
+    if (message1Frame.columnNumber !== message2Frame.columnNumber) {
+      return false;
+    }
+
+    if (message1Frame.lineNumber !== message2Frame.lineNumber) {
+      return false;
+    }
+  }
+  return true;
 }
 
 
@@ -789,6 +899,7 @@ function isMessageNetworkError(message) {
 }
 
 module.exports = {
+  areMessagesSimilar,
   createWarningGroupMessage,
   createSimpleTableMessage,
   getArrayTypeNames,
@@ -804,6 +915,4 @@ module.exports = {
   isWarningGroup,
   l10n,
   prepareMessage,
-  
-  getRepeatId,
 };

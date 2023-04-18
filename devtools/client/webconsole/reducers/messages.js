@@ -33,6 +33,7 @@ loader.lazyRequireGetter(
 loader.lazyRequireGetter(
   this,
   [
+    "areMessagesSimilar",
     "createWarningGroupMessage",
     "isWarningGroup",
     "getWarningGroupType",
@@ -142,10 +143,10 @@ function addMessage(newMessage, state, filtersState, prefsState, uiState) {
   const isUnsorted =
     lastMessage && lastMessage.timeStamp > newMessage.timeStamp;
 
-  if (lastMessage && newMessage.allowRepeating && messagesById.size > 0) {
+  if (lastMessage && messagesById.size > 0) {
     if (
-      lastMessage.repeatId === newMessage.repeatId &&
-      lastMessage.groupId === currentGroup
+      lastMessage.groupId === currentGroup &&
+      areMessagesSimilar(lastMessage, newMessage)
     ) {
       state.repeatById[lastMessage.id] = (repeatById[lastMessage.id] || 1) + 1;
       return state;
@@ -365,33 +366,36 @@ function messages(
   switch (action.type) {
     case constants.MESSAGES_ADD:
       
-      const list = [];
-      let prunableCount = 0;
-      let lastMessageRepeatId = -1;
-      for (let i = action.messages.length - 1; i >= 0; i--) {
-        const message = action.messages[i];
-        if (
-          !message.groupId &&
-          !isGroupType(message.type) &&
-          message.type !== MESSAGE_TYPE.END_GROUP
-        ) {
-          if (message.repeatId !== lastMessageRepeatId) {
-            prunableCount++;
-          }
-          
-          
+      
+      const batchHasMoreMessagesThanLogLimit =
+        action.messages.length > logLimit;
+      const list = batchHasMoreMessagesThanLogLimit ? [] : action.messages;
+      if (batchHasMoreMessagesThanLogLimit) {
+        let prunableCount = 0;
+        let lastMessage = null;
+        for (let i = action.messages.length - 1; i >= 0; i--) {
+          const message = action.messages[i];
           if (
-            prunableCount <= logLimit ||
-            message.repeatId == lastMessageRepeatId
+            !message.groupId &&
+            !isGroupType(message.type) &&
+            message.type !== MESSAGE_TYPE.END_GROUP
           ) {
-            list.unshift(action.messages[i]);
+            const messagesSimilar = areMessagesSimilar(lastMessage, message);
+            if (!messagesSimilar) {
+              prunableCount++;
+            }
+            
+            
+            if (prunableCount <= logLimit || messagesSimilar) {
+              list.unshift(action.messages[i]);
+            } else {
+              break;
+            }
           } else {
-            break;
+            list.unshift(message);
           }
-        } else {
-          list.unshift(message);
+          lastMessage = message;
         }
-        lastMessageRepeatId = message.repeatId;
       }
 
       newState = cloneState(state);
