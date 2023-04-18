@@ -14,6 +14,7 @@
 #include "LayoutLogging.h"
 #include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/SVGUtils.h"
+#include "mozilla/WritingModes.h"
 #include "nsBlockFrame.h"
 #include "nsCSSAnonBoxes.h"
 #include "nsFlexContainerFrame.h"
@@ -1179,6 +1180,33 @@ static bool AreAllEarlierInFlowFramesEmpty(nsIFrame* aFrame,
   return true;
 }
 
+static bool AxisPolarityFlipped(LogicalAxis aThisAxis, WritingMode aThisWm,
+                                WritingMode aOtherWm) {
+  if (MOZ_LIKELY(aThisWm == aOtherWm)) {
+    
+    return false;
+  }
+  LogicalAxis otherAxis = aThisWm.IsOrthogonalTo(aOtherWm)
+                              ? GetOrthogonalAxis(aThisAxis)
+                              : aThisAxis;
+  NS_ASSERTION(
+      aThisWm.PhysicalAxis(aThisAxis) == aOtherWm.PhysicalAxis(otherAxis),
+      "Physical axes must match!");
+  Side thisStartSide =
+      aThisWm.PhysicalSide(MakeLogicalSide(aThisAxis, eLogicalEdgeStart));
+  Side otherStartSide =
+      aOtherWm.PhysicalSide(MakeLogicalSide(otherAxis, eLogicalEdgeStart));
+  return thisStartSide != otherStartSide;
+}
+
+static bool InlinePolarityFlipped(WritingMode aThisWm, WritingMode aOtherWm) {
+  return AxisPolarityFlipped(eLogicalAxisInline, aThisWm, aOtherWm);
+}
+
+static bool BlockPolarityFlipped(WritingMode aThisWm, WritingMode aOtherWm) {
+  return AxisPolarityFlipped(eLogicalAxisBlock, aThisWm, aOtherWm);
+}
+
 
 
 
@@ -1396,14 +1424,27 @@ void ReflowInput::CalculateHypotheticalPosition(
   
   
   
+  const bool hypotheticalPosWillUseCbwm =
+      cbwm.GetBlockDir() != wm.GetBlockDir();
+  
+  
+  
   const LogicalMargin border = aCBReflowInput->ComputedLogicalBorder(wm);
-  aHypotheticalPos.mIStart -= border.IStart(wm);
-  aHypotheticalPos.mBStart -= border.BStart(wm);
+  if (hypotheticalPosWillUseCbwm && InlinePolarityFlipped(wm, cbwm)) {
+    aHypotheticalPos.mIStart += border.IEnd(wm);
+  } else {
+    aHypotheticalPos.mIStart -= border.IStart(wm);
+  }
 
+  if (hypotheticalPosWillUseCbwm && BlockPolarityFlipped(wm, cbwm)) {
+    aHypotheticalPos.mBStart += border.BEnd(wm);
+  } else {
+    aHypotheticalPos.mBStart -= border.BStart(wm);
+  }
   
   
 
-  if (cbwm.GetBlockDir() != wm.GetBlockDir()) {
+  if (hypotheticalPosWillUseCbwm) {
     
     
     
