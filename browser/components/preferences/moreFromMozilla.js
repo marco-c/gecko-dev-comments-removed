@@ -236,6 +236,11 @@ var gMoreFromMozillaPane = {
               : ""
           }` +
           ".svg";
+        
+        img.setAttribute(
+          "data-l10n-id",
+          "more-from-moz-qr-code-firefox-mobile-img"
+        );
 
         
         
