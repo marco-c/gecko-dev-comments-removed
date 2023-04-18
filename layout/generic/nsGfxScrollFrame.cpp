@@ -5281,8 +5281,10 @@ nsresult ScrollFrameHelper::FireScrollPortEvent() {
           : eScrollPortUnderflow,
       nullptr);
   event.mOrient = orient;
-  return EventDispatcher::Dispatch(mOuter->GetContent(), mOuter->PresContext(),
-                                   &event);
+
+  RefPtr<nsIContent> content = mOuter->GetContent();
+  RefPtr<nsPresContext> presContext = mOuter->PresContext();
+  return EventDispatcher::Dispatch(content, presContext, &event);
 }
 
 void ScrollFrameHelper::PostScrollEndEvent() {
@@ -5777,7 +5779,8 @@ ScrollFrameHelper::ScrollEvent::ScrollEvent(ScrollFrameHelper* aHelper,
                                                                    aDelayed);
 }
 
-NS_IMETHODIMP
+
+MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP
 ScrollFrameHelper::ScrollEvent::Run() {
   if (mHelper) {
     mHelper->FireScrollEvent();
@@ -5799,10 +5802,10 @@ ScrollFrameHelper::ScrollEndEvent::Run() {
 }
 
 void ScrollFrameHelper::FireScrollEvent() {
-  nsIContent* content = mOuter->GetContent();
-  nsPresContext* prescontext = mOuter->PresContext();
+  RefPtr<nsIContent> content = mOuter->GetContent();
+  RefPtr<nsPresContext> presContext = mOuter->PresContext();
   AUTO_PROFILER_TRACING_MARKER_DOCSHELL("Paint", "FireScrollEvent", GRAPHICS,
-                                        prescontext->GetDocShell());
+                                        presContext->GetDocShell());
 
   MOZ_ASSERT(mScrollEvent);
   mScrollEvent->Revoke();
@@ -5836,15 +5839,16 @@ void ScrollFrameHelper::FireScrollEvent() {
   mozilla::layers::ScrollLinkedEffectDetector detector(
       content->GetComposedDoc());
   if (mIsRoot) {
-    if (Document* doc = content->GetUncomposedDoc()) {
-      EventDispatcher::Dispatch(ToSupports(doc), prescontext, &event, nullptr,
-                                &status);
+    if (RefPtr<Document> doc = content->GetUncomposedDoc()) {
+      
+      EventDispatcher::Dispatch(MOZ_KnownLive(ToSupports(doc)), presContext,
+                                &event, nullptr, &status);
     }
   } else {
     
     
     event.mFlags.mBubbles = false;
-    EventDispatcher::Dispatch(content, prescontext, &event, nullptr, &status);
+    EventDispatcher::Dispatch(content, presContext, &event, nullptr, &status);
   }
   ActiveLayerTracker::SetCurrentScrollHandlerFrame(nullptr);
 }
@@ -5858,7 +5862,8 @@ void ScrollFrameHelper::PostScrollEvent(bool aDelayed) {
   mScrollEvent = new ScrollEvent(this, aDelayed);
 }
 
-NS_IMETHODIMP
+
+MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP
 ScrollFrameHelper::AsyncScrollPortEvent::Run() {
   return mHelper ? mHelper->FireScrollPortEvent() : NS_OK;
 }
@@ -7414,7 +7419,8 @@ void ScrollFrameHelper::PostScrolledAreaEvent() {
 
 
 
-NS_IMETHODIMP
+
+MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP
 ScrollFrameHelper::ScrolledAreaEvent::Run() {
   if (mHelper) {
     mHelper->FireScrolledAreaEvent();
@@ -7426,12 +7432,14 @@ void ScrollFrameHelper::FireScrolledAreaEvent() {
   mScrolledAreaEvent.Forget();
 
   InternalScrollAreaEvent event(true, eScrolledAreaChanged, nullptr);
-  nsPresContext* prescontext = mOuter->PresContext();
+  RefPtr<nsPresContext> presContext = mOuter->PresContext();
   nsIContent* content = mOuter->GetContent();
 
   event.mArea = mScrolledFrame->ScrollableOverflowRectRelativeToParent();
-  if (Document* doc = content->GetUncomposedDoc()) {
-    EventDispatcher::Dispatch(ToSupports(doc), prescontext, &event, nullptr);
+  if (RefPtr<Document> doc = content->GetUncomposedDoc()) {
+    
+    EventDispatcher::Dispatch(MOZ_KnownLive(ToSupports(doc)), presContext,
+                              &event, nullptr);
   }
 }
 
