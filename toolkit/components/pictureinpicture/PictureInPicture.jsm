@@ -381,6 +381,11 @@ var PictureInPicture = {
 
 
   unload(window) {
+    TelemetryStopwatch.finish(
+      "FX_PICTURE_IN_PICTURE_WINDOW_OPEN_DURATION",
+      window
+    );
+
     gCurrentPlayerCount -= 1;
     
     this.savePosition(window);
@@ -423,6 +428,14 @@ var PictureInPicture = {
       null,
       features,
       null
+    );
+
+    TelemetryStopwatch.start(
+      "FX_PICTURE_IN_PICTURE_WINDOW_OPEN_DURATION",
+      pipWindow,
+      {
+        inSeconds: true,
+      }
     );
 
     pipWindow.windowUtils.setResizeMargin(RESIZE_MARGIN_PX);
