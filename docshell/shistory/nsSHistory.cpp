@@ -1268,12 +1268,12 @@ static void FinishRestore(CanonicalBrowsingContext* aBrowsingContext,
       shistory->UpdateIndex();
     }
     loadingBC->HistoryCommitIndexAndLength();
-    Unused << loadingBC->SetIsInBFCache(false);
+
     
     
     
 
-    frameLoaderOwner->ReplaceFrameLoader(aFrameLoader);
+    frameLoaderOwner->RestoreFrameLoaderFromBFCache(aFrameLoader);
 
     
     
@@ -1284,6 +1284,13 @@ static void FinishRestore(CanonicalBrowsingContext* aBrowsingContext,
       aBrowsingContext->SetActiveSessionHistoryEntry(currentSHEntry);
       currentFrameLoader->Destroy();
     }
+
+    Unused << loadingBC->SetIsInBFCache(false);
+
+    
+    
+    
+    frameLoaderOwner->UpdateFocusAndMouseEnterStateAfterFrameLoaderChange();
 
     return;
   }
