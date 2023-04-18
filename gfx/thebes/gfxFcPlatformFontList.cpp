@@ -2116,14 +2116,31 @@ bool gfxFcPlatformFontList::FindAndAddFamilies(
   const auto& cached = mFcSubstituteCache.LookupOrInsertWith(cacheKey, [&] {
     
     const FcChar8* kSentinelName = ToFcChar8Ptr("-moz-sentinel");
-    FcChar8* sentinelFirstFamily = nullptr;
+    const FcChar8* terminator = nullptr;
     RefPtr<FcPattern> sentinelSubst = dont_AddRef(FcPatternCreate());
     FcPatternAddString(sentinelSubst, FC_FAMILY, kSentinelName);
     if (!lang.IsEmpty()) {
       FcPatternAddString(sentinelSubst, FC_LANG, ToFcChar8Ptr(lang.get()));
     }
     FcConfigSubstitute(nullptr, sentinelSubst, FcMatchPattern);
-    FcPatternGetString(sentinelSubst, FC_FAMILY, 0, &sentinelFirstFamily);
+
+    
+    
+    
+    
+    
+    
+    FcChar8* substName;
+    for (int i = 0; FcPatternGetString(sentinelSubst, FC_FAMILY, i,
+                                       &substName) == FcResultMatch;
+         i++) {
+      if (FcStrCmp(substName, kSentinelName) == 0) {
+        terminator = kSentinelName;
+        break;
+      } else if (!terminator) {
+        terminator = substName;
+      }
+    }
 
     
     RefPtr<FcPattern> fontWithSentinel = dont_AddRef(FcPatternCreate());
@@ -2137,12 +2154,10 @@ bool gfxFcPlatformFontList::FindAndAddFamilies(
 
     
     AutoTArray<FamilyAndGeneric, 10> cachedFamilies;
-    FcChar8* substName = nullptr;
     for (int i = 0; FcPatternGetString(fontWithSentinel, FC_FAMILY, i,
                                        &substName) == FcResultMatch;
          i++) {
-      if (sentinelFirstFamily &&
-          FcStrCmp(substName, sentinelFirstFamily) == 0) {
+      if (terminator && FcStrCmp(substName, terminator) == 0) {
         break;
       }
       gfxPlatformFontList::FindAndAddFamilies(
