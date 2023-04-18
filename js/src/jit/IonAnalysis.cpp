@@ -1234,7 +1234,15 @@ static void EliminateTriviallyDeadResumePointOperands(MIRGraph& graph,
                                                       MResumePoint* rp) {
   
   
-  if (rp->mode() != ResumeMode::ResumeAt || JSOp(*rp->pc()) != JSOp::Pop) {
+  if (rp->mode() != ResumeMode::ResumeAt) {
+    return;
+  }
+
+  jsbytecode* pc = rp->pc();
+  if (JSOp(*pc) == JSOp::JumpTarget) {
+    pc += JSOpLength_JumpTarget;
+  }
+  if (JSOp(*pc) != JSOp::Pop) {
     return;
   }
 
