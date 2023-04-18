@@ -563,6 +563,12 @@ DIRS += ["build", "debugger", "frontend", "gc", "irregexp", "jit", "util", "wasm
 if CONFIG["CC_TYPE"] == "clang":
     CXXFLAGS += ["-fstandalone-debug"]
 
+
+
+
+if CONFIG["NIGHTLY_BUILD"] and CONFIG["INTEL_ARCHITECTURE"]:
+    DIRS += ["intgemm"]
+
 if CONFIG["JS_JITSPEW"]:
     DIRS += ["zydis"]
 
