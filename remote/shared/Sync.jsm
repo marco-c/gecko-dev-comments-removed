@@ -6,6 +6,7 @@
 
 var EXPORTED_SYMBOLS = [
   "AnimationFramePromise",
+  "Deferred",
   "EventPromise",
   "executeSoon",
   "PollPromise",
@@ -20,6 +21,49 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 });
 
 const { TYPE_REPEATING_SLACK } = Ci.nsITimer;
+
+
+
+
+
+
+
+
+
+function AnimationFramePromise(win) {
+  const animationFramePromise = new Promise(resolve => {
+    win.requestAnimationFrame(resolve);
+  });
+
+  
+  const windowClosedPromise = new PollPromise(resolve => {
+    if (win.closed) {
+      resolve();
+    }
+  });
+
+  return Promise.race([animationFramePromise, windowClosedPromise]);
+}
+
+
+
+
+
+
+
+
+
+
+function Deferred() {
+  const deferred = {};
+
+  deferred.promise = new Promise((resolve, reject) => {
+    deferred.resolve = resolve;
+    deferred.reject = reject;
+  });
+
+  return deferred;
+}
 
 
 
@@ -101,29 +145,6 @@ function executeSoon(fn) {
   }
 
   Services.tm.dispatchToMainThread(fn);
-}
-
-
-
-
-
-
-
-
-
-function AnimationFramePromise(win) {
-  const animationFramePromise = new Promise(resolve => {
-    win.requestAnimationFrame(resolve);
-  });
-
-  
-  const windowClosedPromise = new PollPromise(resolve => {
-    if (win.closed) {
-      resolve();
-    }
-  });
-
-  return Promise.race([animationFramePromise, windowClosedPromise]);
 }
 
 

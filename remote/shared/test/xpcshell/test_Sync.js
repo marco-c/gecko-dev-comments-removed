@@ -2,7 +2,9 @@
 
 
 
-const { AnimationFramePromise, PollPromise } = ChromeUtils.import(
+const { setTimeout } = ChromeUtils.import("resource://gre/modules/Timer.jsm");
+
+const { AnimationFramePromise, Deferred, PollPromise } = ChromeUtils.import(
   "chrome://remote/content/shared/Sync.jsm"
 );
 
@@ -24,6 +26,30 @@ add_task(async function test_AnimationFramePromiseAbortWhenWindowClosed() {
     requestAnimationFrame() {},
   };
   await AnimationFramePromise(win);
+});
+
+add_task(async function test_DeferredRejected() {
+  const deferred = Deferred();
+
+  
+  setTimeout(() => deferred.reject(new Error("foo")), 100);
+
+  try {
+    await deferred.promise;
+    ok(false);
+  } catch (e) {
+    equal(e.message, "foo");
+  }
+});
+
+add_task(async function test_DeferredResolved() {
+  const deferred = Deferred();
+
+  
+  setTimeout(() => deferred.resolve("foo"), 100);
+
+  const result = await deferred.promise;
+  equal(result, "foo");
 });
 
 add_test(function test_executeSoon_callback() {
