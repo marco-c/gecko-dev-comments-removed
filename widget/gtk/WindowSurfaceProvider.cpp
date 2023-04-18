@@ -161,10 +161,22 @@ WindowSurfaceProvider::StartRemoteDrawingInRegion(
 
 void WindowSurfaceProvider::EndRemoteDrawingInRegion(
     gfx::DrawTarget* aDrawTarget, const LayoutDeviceIntRegion& aInvalidRegion) {
-  MutexAutoLock lock(mMutex);
+  auto commit = [RefPtr{mWidget}, this, aInvalidRegion]() {
+    MutexAutoLock lock(mMutex);
+    
+    if (mWindowSurface && mWindowSurfaceValid) {
+      mWindowSurface->Commit(aInvalidRegion);
+    }
+  };
+
   
-  if (mWindowSurface && mWindowSurfaceValid) {
-    mWindowSurface->Commit(aInvalidRegion);
+  
+  if (moz_container_wayland_is_commiting_to_parent(
+          mWidget->GetMozContainer())) {
+    NS_DispatchToMainThread(NS_NewRunnableFunction(
+        "WindowSurfaceProvider::EndRemoteDrawingInRegion", commit));
+  } else {
+    commit();
   }
 }
 
