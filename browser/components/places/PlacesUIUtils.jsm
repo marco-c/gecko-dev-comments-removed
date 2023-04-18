@@ -1806,14 +1806,13 @@ var PlacesUIUtils = {
     }
   },
 
-  setImage(aItem, aElement) {
+  getImageURL(aItem) {
     let iconURL = aItem.image;
     
     if (/^https?:/.test(iconURL)) {
       iconURL = "moz-anno:favicon:" + iconURL;
     }
-
-    aElement.setAttribute("image", iconURL);
+    return iconURL;
   },
 
   
