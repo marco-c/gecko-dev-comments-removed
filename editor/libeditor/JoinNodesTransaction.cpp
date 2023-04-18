@@ -125,6 +125,10 @@ nsresult JoinNodesTransaction::DoTransactionInternal(
   const OwningNonNull<HTMLEditor> htmlEditor = *mHTMLEditor;
   const OwningNonNull<nsIContent> removingContent = *mRemovedContent;
   const OwningNonNull<nsIContent> keepingContent = *mKeepingContent;
+  
+  
+  const uint32_t removingContentOffset =
+      *removingContent->ComputeIndexInParentNode();
   nsresult rv;
   
   EditorDOMPoint joinNodesPoint(mKeepingContent, 0u);
@@ -133,6 +137,13 @@ nsresult JoinNodesTransaction::DoTransactionInternal(
                                          &joinNodesPoint);
     rv = htmlEditor->DoJoinNodes(keepingContent, removingContent);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "HTMLEditor::DoJoinNodes() failed");
+
+    DebugOnly<nsresult> rvIgnored =
+        htmlEditor->RangeUpdaterRef().SelAdjJoinNodes(
+            CreateJoinedPoint<EditorRawDOMPoint>(), removingContent,
+            removingContentOffset, JoinNodesDirection::LeftNodeIntoRightNode);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
+                         "RangeUpdater::SelAdjJoinNodes() failed, but ignored");
   }
   
   
