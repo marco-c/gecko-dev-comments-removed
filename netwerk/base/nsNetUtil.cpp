@@ -3381,13 +3381,6 @@ void CheckForBrokenChromeURL(nsILoadInfo* aLoadInfo, nsIURI* aURI) {
     return;
   }
 
-#ifdef ANDROID
-  
-  if (StringEndsWith(filePath, "/built_in_addons.json"_ns)) {
-    return;
-  }
-#endif
-
   
   
   
