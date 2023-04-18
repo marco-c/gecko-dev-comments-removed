@@ -309,7 +309,7 @@ class nsBlockFrame : public nsContainerFrame {
 
 
 
-  nscoord ComputeFinalBSize(BlockReflowState& aBri,
+  nscoord ComputeFinalBSize(BlockReflowState& aState,
                             nscoord aBEndEdgeOfChildren);
 
   void Reflow(nsPresContext* aPresContext, ReflowOutput& aDesiredSize,

@@ -37,7 +37,7 @@ class nsLineLayout {
 
   void Init(BlockReflowState* aState, nscoord aMinLineBSize,
             int32_t aLineNumber) {
-    mBlockRI = aState;
+    mBlockRS = aState;
     mMinLineBSize = aMinLineBSize;
     mLineNumber = aLineNumber;
   }
@@ -150,10 +150,10 @@ class nsLineLayout {
     
     
     
-    MOZ_ASSERT(mBlockRI,
-               "Should not call this method if there is no block reflow input "
+    MOZ_ASSERT(mBlockRS,
+               "Should not call this method if there is no block reflow state "
                "available");
-    return mBlockRI->AddFloat(this, aFloat, aAvailableISize);
+    return mBlockRS->AddFloat(this, aFloat, aAvailableISize);
   }
 
   void SetTrimmableISize(nscoord aTrimmableISize) {
@@ -364,7 +364,7 @@ class nsLineLayout {
   
   
   
-  BlockReflowState* mBlockRI; 
+  BlockReflowState* mBlockRS = nullptr; 
 
   nsLineList::iterator mLineBox;
 

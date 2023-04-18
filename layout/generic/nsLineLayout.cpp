@@ -57,7 +57,6 @@ nsLineLayout::nsLineLayout(nsPresContext* aPresContext,
       mBaseLineLayout(aBaseLineLayout),
       mLastOptionalBreakFrame(nullptr),
       mForceBreakFrame(nullptr),
-      mBlockRI(nullptr), 
       mLastOptionalBreakPriority(gfxBreakPriority::eNoBreak),
       mLastOptionalBreakFrameOffset(-1),
       mForceBreakFrameOffset(-1),
@@ -908,7 +907,7 @@ void nsLineLayout::ReflowFrame(nsIFrame* aFrame, nsReflowStatus& aReflowStatus,
             
             !outOfFlowFrame->IsLetterFrame() &&
             !GetOutermostLineLayout()
-                 ->mBlockRI->mFlags.mCanHaveOverflowMarkers) {
+                 ->mBlockRS->mFlags.mCanHaveOverflowMarkers) {
           
           RecordNoWrapFloat(outOfFlowFrame);
         } else {
@@ -1446,11 +1445,11 @@ void nsLineLayout::DumpPerSpanData(PerSpanData* psd, int32_t aIndent) {
 #endif
 
 void nsLineLayout::RecordNoWrapFloat(nsIFrame* aFloat) {
-  GetOutermostLineLayout()->mBlockRI->mNoWrapFloats.AppendElement(aFloat);
+  GetOutermostLineLayout()->mBlockRS->mNoWrapFloats.AppendElement(aFloat);
 }
 
 void nsLineLayout::FlushNoWrapFloats() {
-  auto& noWrapFloats = GetOutermostLineLayout()->mBlockRI->mNoWrapFloats;
+  auto& noWrapFloats = GetOutermostLineLayout()->mBlockRS->mNoWrapFloats;
   for (nsIFrame* floatedFrame : noWrapFloats) {
     TryToPlaceFloat(floatedFrame);
   }

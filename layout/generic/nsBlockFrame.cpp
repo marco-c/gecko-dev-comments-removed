@@ -7689,14 +7689,14 @@ nsBlockFrame* nsBlockFrame::GetNearestAncestorBlock(nsIFrame* aCandidate) {
   return nullptr;
 }
 
-nscoord nsBlockFrame::ComputeFinalBSize(BlockReflowState& aBri,
+nscoord nsBlockFrame::ComputeFinalBSize(BlockReflowState& aState,
                                         nscoord aBEndEdgeOfChildren) {
-  const WritingMode wm = aBri.mReflowInput.GetWritingMode();
+  const WritingMode wm = aState.mReflowInput.GetWritingMode();
 
   const nscoord effectiveContentBoxBSize =
-      GetEffectiveComputedBSize(aBri.mReflowInput, aBri.mConsumedBSize);
-  const nscoord blockStartBP = aBri.BorderPadding().BStart(wm);
-  const nscoord blockEndBP = aBri.BorderPadding().BEnd(wm);
+      GetEffectiveComputedBSize(aState.mReflowInput, aState.mConsumedBSize);
+  const nscoord blockStartBP = aState.BorderPadding().BStart(wm);
+  const nscoord blockEndBP = aState.BorderPadding().BEnd(wm);
 
   NS_ASSERTION(
       !IsTrueOverflowContainer() || (effectiveContentBoxBSize == 0 &&
@@ -7724,30 +7724,31 @@ nscoord nsBlockFrame::ComputeFinalBSize(BlockReflowState& aBri,
     return std::min(effectiveBorderBoxBSize, aBEndEdgeOfChildren);
   }
 
-  const nscoord availBSize = aBri.mReflowInput.AvailableBSize();
+  const nscoord availBSize = aState.mReflowInput.AvailableBSize();
   if (availBSize == NS_UNCONSTRAINEDSIZE) {
     return effectiveBorderBoxBSize;
   }
 
   
-  const bool isChildStatusComplete = aBri.mReflowStatus.IsComplete();
+  const bool isChildStatusComplete = aState.mReflowStatus.IsComplete();
   if (isChildStatusComplete && effectiveContentBoxBSize > 0 &&
       effectiveBorderBoxBSize > availBSize &&
-      ShouldAvoidBreakInside(aBri.mReflowInput)) {
-    aBri.mReflowStatus.SetInlineLineBreakBeforeAndReset();
+      ShouldAvoidBreakInside(aState.mReflowInput)) {
+    aState.mReflowStatus.SetInlineLineBreakBeforeAndReset();
     return effectiveBorderBoxBSize;
   }
 
-  const bool isBDBClone = aBri.mReflowInput.mStyleBorder->mBoxDecorationBreak ==
-                          StyleBoxDecorationBreak::Clone;
+  const bool isBDBClone =
+      aState.mReflowInput.mStyleBorder->mBoxDecorationBreak ==
+      StyleBoxDecorationBreak::Clone;
 
   
   
-  const nscoord maxContentBoxBSize = aBri.ContentBSize();
+  const nscoord maxContentBoxBSize = aState.ContentBSize();
 
   
   
-  const nscoord maxContentBoxBEnd = aBri.ContentBEnd();
+  const nscoord maxContentBoxBEnd = aState.ContentBEnd();
 
   
   
@@ -7782,7 +7783,7 @@ nscoord nsBlockFrame::ComputeFinalBSize(BlockReflowState& aBri,
     
     
     
-    if (MOZ_UNLIKELY(aBri.mReflowInput.mFlags.mIsTopOfPage && isBDBClone &&
+    if (MOZ_UNLIKELY(aState.mReflowInput.mFlags.mIsTopOfPage && isBDBClone &&
                      maxContentBoxBSize <= 0 &&
                      aBEndEdgeOfChildren == blockStartBP)) {
       
@@ -7834,7 +7835,7 @@ nscoord nsBlockFrame::ComputeFinalBSize(BlockReflowState& aBri,
       
       
     } else {
-      aBri.mReflowStatus.SetOverflowIncomplete();
+      aState.mReflowStatus.SetOverflowIncomplete();
     }
   } else {
     NS_ASSERTION(!IsTrueOverflowContainer(),
@@ -7844,9 +7845,9 @@ nscoord nsBlockFrame::ComputeFinalBSize(BlockReflowState& aBri,
       finalBorderBoxBSize =
           NSCoordSaturatingAdd(finalBorderBoxBSize, blockEndBP);
     }
-    aBri.mReflowStatus.SetIncomplete();
+    aState.mReflowStatus.SetIncomplete();
     if (!GetNextInFlow()) {
-      aBri.mReflowStatus.SetNextInFlowNeedsReflow();
+      aState.mReflowStatus.SetNextInFlowNeedsReflow();
     }
   }
 
