@@ -179,5 +179,17 @@ def http2_compatible() -> bool:
             'OpenSSL (found: %s)' % ssl.OPENSSL_VERSION)
         return True
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
     ssl_v = ssl.OPENSSL_VERSION_INFO
-    return ssl_v[0] == 1 and (ssl_v[1] == 1 or (ssl_v[1] == 0 and ssl_v[2] >= 2))
+    return (ssl_v[0] > 1 or
+            (ssl_v[0] == 1 and
+             (ssl_v[1] == 1 or
+              (ssl_v[1] == 0 and ssl_v[2] >= 2))))
