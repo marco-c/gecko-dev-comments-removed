@@ -276,7 +276,7 @@ nsresult BackgroundTasks::RemoveStaleTemporaryProfileDirectories(
     }
 
     
-    if (aPrefix.Compare(entryName.get(), false, aPrefix.Length()) != 0) {
+    if (!StringBeginsWith(entryName, aPrefix)) {
       continue;
     }
 

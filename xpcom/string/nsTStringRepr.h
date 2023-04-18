@@ -239,12 +239,7 @@ class nsTStringRepr {
 
 
 
-
-
-  template <typename Q = T, typename EnableIfChar = mozilla::CharOnlyT<Q>>
-  int32_t Compare(
-      const char_type* aString, bool aIgnoreCase = false,
-      size_type aCount = std::numeric_limits<size_type>::max()) const;
+  int32_t Compare(const string_view& aString) const;
 
   
 
@@ -253,18 +248,11 @@ class nsTStringRepr {
 
 
 
-
-  template <typename Q = T, typename EnableIfChar = mozilla::CharOnlyT<Q>>
-  bool EqualsIgnoreCase(
-      const char_type* aString,
-      size_type aCount = std::numeric_limits<size_type>::max()) const {
-    return Compare(aString, true, aCount) == 0;
+  bool EqualsIgnoreCase(const std::string_view& aString) const;
+  bool EqualsIgnoreCase(const char* aString, size_type aCount) const {
+    MOZ_DIAGNOSTIC_ASSERT(aCount != std::numeric_limits<size_type>::max());
+    return EqualsIgnoreCase(std::string_view(aString, aCount));
   }
-
-  template <typename Q = T, typename EnableIfChar16 = mozilla::Char16OnlyT<Q>>
-  bool EqualsIgnoreCase(
-      const incompatible_char_type* aString,
-      size_type aCount = std::numeric_limits<size_type>::max()) const;
 
 #if defined(MOZ_USE_CHAR16_WRAPPER)
   template <typename Q = T, typename EnableIfChar16 = Char16OnlyT<Q>>
