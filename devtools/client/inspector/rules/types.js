@@ -161,13 +161,5 @@ exports.rule = {
   selector: PropTypes.shape(selector),
 
   
-  sourceLink: PropTypes.shape({
-    
-    label: PropTypes.string,
-    
-    title: PropTypes.string,
-  }),
-
-  
   type: PropTypes.number,
 };
