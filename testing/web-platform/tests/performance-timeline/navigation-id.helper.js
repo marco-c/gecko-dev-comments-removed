@@ -3,51 +3,99 @@
 
 
 
-function runNavigationIdTest(params, description) {
-  const defaultParams = {
-    constants: {
-      performanceMarkName: 'mark_navigation_id',
-      performanceMeasureName: 'measure_navigation_id',
-    },
-    
-    
-    
-    funcBeforeNavigation: (constants) => {
-      window.performance.mark(constants.performanceMarkName);
-      return window.performance
-        .getEntriesByName(constants.performanceMarkName)[0]
-        .navigationId;
-    },
-    funcAfterBFCacheLoad: (expectedNavigationId, constants) => {
-      window.performance.mark(
-        constants.performanceMarkName + expectedNavigationId);
-      window.performance.measure(
-        constants.performanceMeasureName + expectedNavigationId,
-        constants.performanceMarkName,
-        constants.performanceMarkName + expectedNavigationId);
-      return [
-        window.performance
-          .getEntriesByName(
-            constants.performanceMarkName + expectedNavigationId)[0]
-          .navigationId,
-        window.performance
-          .getEntriesByName(
-            constants.performanceMeasureName + expectedNavigationId)[0]
-          .navigationId
-      ];
-    },
-  };
-  params = { ...defaultParams, ...params };
-  runBfcacheWithMultipleNavigationTest(params, description);
+
+
+let testInitial = () => {
+  return window.performance.getEntries().map(e => e.navigationId);
 }
 
-function runBfcacheWithMultipleNavigationTest(params, description) {
+let testMarkMeasure = (expectedNavigationId, markName, MeasureName) => {
+  const markName1 = 'test-mark';
+  const markName2 = 'test-mark' + expectedNavigationId;
+  const measureName = 'test-measure' + expectedNavigationId;
+
+  window.performance.mark(markName1);
+  window.performance.mark(markName2);
+  window.performance.measure(measureName, markName1, markName2);
+  return window.performance.getEntriesByName(markName2).concat(
+    window.performance.getEntriesByName(measureName)).map(e => e.navigationId);
+}
+
+let testResourceTiming = async (expectedNavigationId) => {
+  let navigationId = -1;
+
+  let p = new Promise(resolve => {
+    new PerformanceObserver((list) => {
+      const entry = list.getEntries().find(e => e.name.includes('json_resource') && e.navigationId == expectedNavigationId);
+      if (entry) {
+        navigationId = entry.navigationId;
+        resolve();
+      }
+    }).observe({ type: 'resource' });
+  });
+
+  const resp = await fetch('/performance-timeline/resources/json_resource.json');
+  await p;
+  return [navigationId];
+}
+
+let testElementTiming = async (expectedNavigationId) => {
+  let navigationId = -1;
+  let p = new Promise(resolve => {
+    new PerformanceObserver((list) => {
+      const entry = list.getEntries().find(e => e.entryType === 'element' && e.identifier === 'test-element-timing' + expectedNavigationId);
+      if (entry) {
+        navigationId = entry.navigationId;
+        resolve();
+      }
+    }).observe({ type: 'element' });
+  });
+
+  let el = document.createElement('p');
+  el.setAttribute('elementtiming', 'test-element-timing' + expectedNavigationId);
+  el.textContent = 'test element timing text';
+  document.body.appendChild(el);
+  await p;
+  return [navigationId];
+}
+
+let testLongTask = async () => {
+  let navigationIds = [];
+
+  let p = new Promise(resolve => {
+    new PerformanceObserver((list) => {
+      const entry = list.getEntries().find(e => e.entryType === 'longtask')
+      if (entry) {
+        navigationIds.push(entry.navigationId);
+        navigationIds = navigationIds.concat(
+          entry.attribution.map(a => a.navigationId));
+        resolve();
+      }
+    }).observe({ type: 'longtask' });
+  });
+
+  const script = document.createElement('script');
+  script.src = '/performance-timeline/resources/make_long_task.js';
+  document.body.appendChild(script);
+  await p;
+  document.body.removeChild(script);
+  return navigationIds;
+}
+
+const testFunctionMap = {
+  'mark_measure': testMarkMeasure,
+  'resource_timing': testResourceTiming,
+  'element_timing': testElementTiming,
+  'long_task_task_attribution': testLongTask,
+};
+
+function runNavigationIdTest(params, description) {
   const defaultParams = {
     openFunc: url => window.open(url, '_blank', 'noopener'),
     scripts: [],
     funcBeforeNavigation: () => { },
     targetOrigin: originCrossSite,
-    navigationTimes: 1,
+    navigationTimes: 4,
     funcAfterAssertion: () => { },
   }  
   params = { ...defaultParams, ...params };
@@ -58,25 +106,25 @@ function runBfcacheWithMultipleNavigationTest(params, description) {
 
     const urlA = executorPath + pageA.context_id;
     const urlB = params.targetOrigin + executorPath + pageB.context_id;
-
+    
     params.openFunc(urlA);
-
     await pageA.execute_script(waitForPageShow);
 
     
-    let navigationId = await pageA.execute_script(
-      params.funcBeforeNavigation, [params.constants])
-    assert_implements_optional(
-      navigationId === 1, 'Navigation Id should be 0.');
+    let navigationIds = await pageA.execute_script(testInitial);
+    assert_true(
+      navigationIds.every(t => t === 1), 'All Navigation Ids should be 1.');
 
     for (i = 1; i <= params.navigationTimes; i++) {
+      
       await navigateAndThenBack(pageA, pageB, urlB);
 
-      let navigationIds = await pageA.execute_script(
-        params.funcAfterBFCacheLoad, [i + 1, params.constants]);
-      assert_implements_optional(
+      
+      navigationIds = await pageA.execute_script(
+        testFunctionMap[params.testName], [i + 1]);
+      assert_true(
         navigationIds.every(t => t === (i + 1)),
-        'Navigation Id should all be ' + (i + 1) + '.');
+        params.testName + ' Navigation Id should all be ' + (i + 1) + '.');
     }
   }, description);
 }
