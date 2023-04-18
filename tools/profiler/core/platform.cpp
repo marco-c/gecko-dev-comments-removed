@@ -283,7 +283,7 @@ static constexpr uint32_t DefaultFeatures() {
 static constexpr uint32_t StartupExtraDefaultFeatures() {
   
   
-  return ProfilerFeature::FileIOAll;
+  return ProfilerFeature::FileIOAll | ProfilerFeature::IPCMessages;
 }
 
 

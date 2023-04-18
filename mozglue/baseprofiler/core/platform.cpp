@@ -240,7 +240,7 @@ static constexpr uint32_t DefaultFeatures() {
 static constexpr uint32_t StartupExtraDefaultFeatures() {
   
   
-  return ProfilerFeature::MainThreadIO;
+  return ProfilerFeature::MainThreadIO | ProfilerFeature::IPCMessages;
 }
 
 
