@@ -33,6 +33,9 @@
 
 var EXPORTED_SYMBOLS = ["CrashMonitor"];
 
+const { PromiseUtils } = ChromeUtils.import(
+  "resource://gre/modules/PromiseUtils.jsm"
+);
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const NOTIFICATIONS = [
@@ -58,6 +61,11 @@ var CrashMonitorInternal = {
 
 
   checkpoints: {},
+
+  
+
+
+  allCheckpointsWritten: PromiseUtils.defer(),
 
   
 
@@ -158,8 +166,11 @@ var CrashMonitor = {
 
     
     IOUtils.profileBeforeChange.addBlocker(
-      "CrashMonitor: Writing notifications to file after receiving profile-before-change",
-      () => this.writeCheckpoint("profile-before-change"),
+      "CrashMonitor: Writing notifications to file after receiving profile-before-change and awaiting all checkpoints written",
+      async () => {
+        await this.writeCheckpoint("profile-before-change");
+        await CrashMonitorInternal.allCheckpointsWritten.promise;
+      },
       () => this.checkpoints
     );
 
@@ -183,6 +194,8 @@ var CrashMonitor = {
       NOTIFICATIONS.forEach(function(aTopic) {
         Services.obs.removeObserver(this, aTopic);
       }, this);
+
+      CrashMonitorInternal.allCheckpointsWritten.resolve();
     }
   },
 
