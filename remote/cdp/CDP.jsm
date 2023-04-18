@@ -79,7 +79,10 @@ class CDP {
     
     
     
-    logger.debug(`Delay start-up until all windows have been restored`);
+    
+    logger.debug(
+      `Awaiting all initial windows to be restored before enabling the protocol`
+    );
     await this.agent.browserStartupFinished;
 
     
