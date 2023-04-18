@@ -100,86 +100,90 @@ FormAutofillPreferences.prototype = {
       "h2"
     );
     let formAutofillGroup = document.createXULElement("vbox");
-    let addressAutofill = document.createXULElement("hbox");
-    let addressAutofillCheckboxGroup = document.createXULElement("hbox");
-    let addressAutofillCheckbox = document.createXULElement("checkbox");
-    let addressAutofillLearnMore = document.createXULElement("label", {
-      is: "text-link",
-    });
-    let savedAddressesBtn = document.createXULElement("button", {
-      is: "highlightable-button",
-    });
-    
-    let savedAddressesBtnWrapper = document.createXULElement("hbox");
-    let savedCreditCardsBtnWrapper = document.createXULElement("hbox");
-
-    savedAddressesBtn.className = "accessory-button";
-    addressAutofillCheckbox.className = "tail-with-learn-more";
-    addressAutofillLearnMore.className = "learnMore";
-
-    formAutofillGroup.id = "formAutofillGroup";
-    addressAutofill.id = "addressAutofill";
-    addressAutofillLearnMore.id = "addressAutofillLearnMore";
-
-    formAutofillGroupBoxLabelHeading.textContent = this.bundle.GetStringFromName(
-      "autofillHeader"
-    );
-
-    addressAutofill.setAttribute("data-subcategory", "address-autofill");
-    addressAutofillCheckbox.setAttribute(
-      "label",
-      this.bundle.GetStringFromName("autofillAddressesCheckbox")
-    );
-    addressAutofillLearnMore.textContent = this.bundle.GetStringFromName(
-      "learnMoreLabel"
-    );
-    savedAddressesBtn.setAttribute(
-      "label",
-      this.bundle.GetStringFromName("savedAddressesBtnLabel")
-    );
     
     
-    savedAddressesBtnWrapper.setAttribute("align", "start");
-
-    addressAutofillLearnMore.setAttribute("href", addressLearnMoreURL);
-
     
-    savedAddressesBtn.setAttribute(
-      "searchkeywords",
-      MANAGE_ADDRESSES_KEYWORDS.concat(EDIT_ADDRESS_KEYWORDS)
-        .map(key => this.bundle.GetStringFromName(key))
-        .join("\n")
-    );
-
-    
-    if (FormAutofill.isAutofillAddressesEnabled) {
-      addressAutofillCheckbox.setAttribute("checked", true);
-    }
-
-    addressAutofillCheckboxGroup.setAttribute("align", "center");
-    addressAutofillCheckboxGroup.flex = 1;
+    this.refs = {};
+    this.refs.formAutofillGroup = formAutofillGroup;
+    this.refs.formAutofillFragment = formAutofillFragment;
 
     formAutofillGroupBoxLabel.appendChild(formAutofillGroupBoxLabelHeading);
     formAutofillFragment.appendChild(formAutofillGroupBoxLabel);
     formAutofillFragment.appendChild(formAutofillGroup);
-    formAutofillGroup.appendChild(addressAutofill);
-    addressAutofill.appendChild(addressAutofillCheckboxGroup);
-    addressAutofillCheckboxGroup.appendChild(addressAutofillCheckbox);
-    addressAutofillCheckboxGroup.appendChild(addressAutofillLearnMore);
-    addressAutofill.appendChild(savedAddressesBtnWrapper);
-    savedAddressesBtnWrapper.appendChild(savedAddressesBtn);
+    if (FormAutofill.isAutofillAddressesAvailable) {
+      let savedAddressesBtnWrapper = document.createXULElement("hbox");
+      let addressAutofill = document.createXULElement("hbox");
+      let addressAutofillCheckboxGroup = document.createXULElement("hbox");
+      let addressAutofillCheckbox = document.createXULElement("checkbox");
+      let addressAutofillLearnMore = document.createXULElement("label", {
+        is: "text-link",
+      });
+      let savedAddressesBtn = document.createXULElement("button", {
+        is: "highlightable-button",
+      });
+      savedAddressesBtn.className = "accessory-button";
+      addressAutofillCheckbox.className = "tail-with-learn-more";
+      addressAutofillLearnMore.className = "learnMore";
 
-    this.refs = {
-      formAutofillFragment,
-      formAutofillGroup,
-      addressAutofillCheckbox,
-      savedAddressesBtn,
-    };
+      formAutofillGroup.id = "formAutofillGroup";
+      addressAutofill.id = "addressAutofill";
+      addressAutofillLearnMore.id = "addressAutofillLearnMore";
+
+      formAutofillGroupBoxLabelHeading.textContent = this.bundle.GetStringFromName(
+        "autofillHeader"
+      );
+
+      addressAutofill.setAttribute("data-subcategory", "address-autofill");
+      addressAutofillCheckbox.setAttribute(
+        "label",
+        this.bundle.GetStringFromName("autofillAddressesCheckbox")
+      );
+      addressAutofillLearnMore.textContent = this.bundle.GetStringFromName(
+        "learnMoreLabel"
+      );
+      savedAddressesBtn.setAttribute(
+        "label",
+        this.bundle.GetStringFromName("savedAddressesBtnLabel")
+      );
+      
+      
+      savedAddressesBtnWrapper.setAttribute("align", "start");
+
+      addressAutofillLearnMore.setAttribute("href", addressLearnMoreURL);
+
+      
+      savedAddressesBtn.setAttribute(
+        "searchkeywords",
+        MANAGE_ADDRESSES_KEYWORDS.concat(EDIT_ADDRESS_KEYWORDS)
+          .map(key => this.bundle.GetStringFromName(key))
+          .join("\n")
+      );
+
+      
+      if (FormAutofill.isAutofillAddressesEnabled) {
+        addressAutofillCheckbox.setAttribute("checked", true);
+      }
+
+      addressAutofillCheckboxGroup.setAttribute("align", "center");
+      addressAutofillCheckboxGroup.flex = 1;
+
+      formAutofillGroup.appendChild(addressAutofill);
+      addressAutofill.appendChild(addressAutofillCheckboxGroup);
+      addressAutofillCheckboxGroup.appendChild(addressAutofillCheckbox);
+      addressAutofillCheckboxGroup.appendChild(addressAutofillLearnMore);
+      addressAutofill.appendChild(savedAddressesBtnWrapper);
+      savedAddressesBtnWrapper.appendChild(savedAddressesBtn);
+
+      this.refs.formAutofillFragment = formAutofillFragment;
+      this.refs.addressAutofillCheckbox = addressAutofillCheckbox;
+      this.refs.savedAddressesBtn = savedAddressesBtn;
+    }
 
     if (
       FormAutofill.isAutofillCreditCardsAvailable &&
       !FormAutofill.isAutofillCreditCardsHideUI
     ) {
+      let savedCreditCardsBtnWrapper = document.createXULElement("hbox");
       let creditCardAutofill = document.createXULElement("hbox");
       let creditCardAutofillCheckboxGroup = document.createXULElement("hbox");
       let creditCardAutofillCheckbox = document.createXULElement("checkbox");
