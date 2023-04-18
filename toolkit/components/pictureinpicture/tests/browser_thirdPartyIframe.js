@@ -60,7 +60,9 @@ add_task(async () => {
         await SimpleTest.promiseFocus(window);
 
         
-        pipWin = await triggerPictureInPicture(iframeBc, videoID, true);
+        pipWin = await triggerPictureInPicture(iframeBc, videoID, () => {
+          document.getElementById("View:PictureInPicture").doCommand();
+        });
         ok(pipWin, "Got Picture-in-Picture window using command.");
 
         await ensureMessageAndClosePiP(iframeBc, videoID, pipWin, true);

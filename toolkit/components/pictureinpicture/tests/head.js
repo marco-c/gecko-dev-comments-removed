@@ -100,17 +100,21 @@ const DEFAULT_TOGGLE_STYLES = {
 
 
 
-async function triggerPictureInPicture(browser, videoID, withCommand) {
+
+
+
+
+async function triggerPictureInPicture(browser, videoID, triggerFn) {
   let domWindowOpened = BrowserTestUtils.domWindowOpenedAndLoaded(null);
 
   let videoReady = null;
-  if (withCommand) {
+  if (triggerFn) {
     await SpecialPowers.spawn(browser, [videoID], async videoID => {
       let video = content.document.getElementById(videoID);
       video.focus();
     });
 
-    document.getElementById("View:PictureInPicture").doCommand();
+    triggerFn();
 
     videoReady = SpecialPowers.spawn(browser, [videoID], async videoID => {
       let video = content.document.getElementById(videoID);
