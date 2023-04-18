@@ -189,6 +189,10 @@ if (params.timeoutAsPass) {
   TestRunner.timeoutAsPass = true;
 }
 
+if (params.conditionedProfile) {
+  TestRunner.conditionedProfile = true;
+}
+
 
 TestRunner.logger.addListener("dumpListener", consoleLevel + "", function(msg) {
   dump(msg.info.join(" ") + "\n");
