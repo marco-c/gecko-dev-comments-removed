@@ -63,6 +63,11 @@ static uint32_t ResultStackSize(ValType type) {
   }
 }
 
+
+
+
+
+
 uint32_t js::wasm::MIRTypeToABIResultSize(jit::MIRType type) {
   switch (type) {
     case MIRType::Int32:
