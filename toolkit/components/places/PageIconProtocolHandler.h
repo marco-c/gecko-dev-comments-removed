@@ -7,13 +7,20 @@
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/ClearOnShutdown.h"
+#include "mozilla/MozPromise.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/net/RemoteStreamGetter.h"
 #include "nsIProtocolHandler.h"
 #include "nsThreadUtils.h"
 #include "nsWeakReference.h"
 
-namespace mozilla {
-namespace places {
+namespace mozilla::places {
+
+struct FaviconMetadata;
+using FaviconMetadataPromise =
+    mozilla::MozPromise<FaviconMetadata, nsresult, false>;
+
+using net::RemoteStreamPromise;
 
 class PageIconProtocolHandler final : public nsIProtocolHandler,
                                       public nsSupportsWeakReference {
@@ -30,14 +37,58 @@ class PageIconProtocolHandler final : public nsIProtocolHandler,
     return do_AddRef(sSingleton);
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  RefPtr<RemoteStreamPromise> NewStream(nsIURI* aChildURI,
+                                        nsILoadInfo* aLoadInfo,
+                                        bool* aTerminateSender);
+
  private:
   ~PageIconProtocolHandler() = default;
 
+  
+
+
+
+
+
+
+
+
+
+
+  Result<Ok, nsresult> SubstituteRemoteChannel(nsIURI* aURI,
+                                               nsILoadInfo* aLoadInfo,
+                                               nsIChannel** aRetVal);
+
+  RefPtr<FaviconMetadataPromise> GetFaviconData(nsIURI* aPageIconURI,
+                                                nsILoadInfo* aLoadInfo);
+
   nsresult NewChannelInternal(nsIURI*, nsILoadInfo*, nsIChannel**);
+
+  nsresult GetStreams(nsIAsyncInputStream** inStream,
+                      nsIAsyncOutputStream** outStream);
+
+  
+  static void NewSimpleChannel(nsIURI* aURI, nsILoadInfo* aLoadinfo,
+                               mozilla::net::RemoteStreamGetter* aStreamGetter,
+                               nsIChannel** aRetVal);
   static StaticRefPtr<PageIconProtocolHandler> sSingleton;
 };
 
-}  
 }  
 
 #endif

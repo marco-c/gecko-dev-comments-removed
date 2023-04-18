@@ -1,7 +1,49 @@
+
+
+
+"use strict";
+
+
 const ICON_DATAURL =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACklEQVQI12NgAAAAAgAB4iG8MwAAAABJRU5ErkJggg==";
 const TEST_URI = NetUtil.newURI("http://mozilla.org/");
 const ICON_URI = NetUtil.newURI("http://mozilla.org/favicon.ico");
+
+const { XPCShellContentUtils } = ChromeUtils.import(
+  "resource://testing-common/XPCShellContentUtils.jsm"
+);
+
+const PAGE_ICON_TEST_URLS = [
+  "page-icon:http://example.com/",
+  "page-icon:http://a-site-never-before-seen.test",
+  
+  
+  "page-icon:test",
+  "page-icon:",
+  "page-icon:chrome://something.html",
+  "page-icon:foo://bar/baz",
+];
+
+XPCShellContentUtils.init(this);
+
+const HTML = String.raw`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+</head>
+<body>
+  Hello from example.com!
+</body>
+</html>`;
+
+const server = XPCShellContentUtils.createHttpServer({
+  hosts: ["example.com"],
+});
+
+server.registerPathHandler("/", (request, response) => {
+  response.setHeader("Content-Type", "text/html");
+  response.write(HTML);
+});
 
 function fetchIconForSpec(spec) {
   return new Promise((resolve, reject) => {
@@ -119,4 +161,83 @@ add_task(async function page_with_ref() {
     Assert.deepEqual(data, gFavicon.data, "Got the favicon data");
     await PlacesUtils.history.remove(url);
   }
+});
+
+
+
+
+add_task(async function page_content_process() {
+  let contentPage = await XPCShellContentUtils.loadContentPage(
+    "http://example.com/",
+    {
+      remote: true,
+    }
+  );
+  Assert.notEqual(
+    contentPage.browsingContext.currentRemoteType,
+    "privilegedabout"
+  );
+
+  await contentPage.spawn(PAGE_ICON_TEST_URLS, async URLS => {
+    
+    
+    for (let url of URLS) {
+      let img = content.document.createElement("img");
+      img.src = url;
+      let imgPromise = new Promise((resolve, reject) => {
+        img.addEventListener("error", e => {
+          Assert.ok(true, "Got expected load error.");
+          resolve();
+        });
+        img.addEventListener("load", e => {
+          Assert.ok(false, "Did not expect a successful load.");
+          reject();
+        });
+      });
+      content.document.body.appendChild(img);
+      await imgPromise;
+    }
+  });
+
+  await contentPage.close();
+});
+
+
+
+
+add_task(async function page_privileged_about_content_process() {
+  
+  let contentPage = await XPCShellContentUtils.loadContentPage(
+    "about:certificate",
+    {
+      remote: true,
+    }
+  );
+  Assert.equal(
+    contentPage.browsingContext.currentRemoteType,
+    "privilegedabout"
+  );
+
+  await contentPage.spawn(PAGE_ICON_TEST_URLS, async URLS => {
+    
+    
+    for (let url of URLS) {
+      let img = content.document.createElement("img");
+      img.src = url;
+      let imgPromise = new Promise((resolve, reject) => {
+        img.addEventListener("error", e => {
+          Assert.ok(false, "Did not expect an error.");
+          reject();
+        });
+        img.addEventListener("load", e => {
+          Assert.ok(true, "Got expected load event.");
+          resolve();
+        });
+      });
+      content.document.body.appendChild(img);
+      await imgPromise;
+    }
+  });
+
+  await contentPage.close();
 });

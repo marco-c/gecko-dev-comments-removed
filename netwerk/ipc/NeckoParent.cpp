@@ -45,6 +45,9 @@
 #include "mozilla/dom/network/TCPServerSocketParent.h"
 #include "mozilla/dom/network/UDPSocketParent.h"
 #include "mozilla/dom/ServiceWorkerManager.h"
+#ifdef MOZ_PLACES
+#  include "mozilla/places/PageIconProtocolHandler.h"
+#endif
 #include "mozilla/LoadContext.h"
 #include "mozilla/MozPromise.h"
 #include "nsPrintfCString.h"
@@ -74,6 +77,9 @@ using mozilla::ipc::PrincipalInfo;
 using mozilla::net::PTCPServerSocketParent;
 using mozilla::net::PTCPSocketParent;
 using mozilla::net::PUDPSocketParent;
+#ifdef MOZ_PLACES
+using mozilla::places::PageIconProtocolHandler;
+#endif
 
 namespace mozilla {
 namespace net {
@@ -872,6 +878,60 @@ mozilla::ipc::IPCResult NeckoParent::RecvGetPageThumbStream(
       });
 
   return IPC_OK();
+}
+
+mozilla::ipc::IPCResult NeckoParent::RecvGetPageIconStream(
+    nsIURI* aURI, const Maybe<LoadInfoArgs>& aLoadInfoArgs,
+    GetPageIconStreamResolver&& aResolver) {
+#ifdef MOZ_PLACES
+  
+  
+  
+  
+  
+  
+  if (static_cast<ContentParent*>(Manager())->GetRemoteType() !=
+      PRIVILEGEDABOUT_REMOTE_TYPE) {
+    return IPC_FAIL(this, "Wrong process type");
+  }
+
+  if (aLoadInfoArgs.isNothing()) {
+    return IPC_FAIL(this, "Page-icon request must include loadInfo");
+  }
+
+  nsCOMPtr<nsILoadInfo> loadInfo;
+  nsresult rv = mozilla::ipc::LoadInfoArgsToLoadInfo(aLoadInfoArgs,
+                                                     getter_AddRefs(loadInfo));
+  if (NS_FAILED(rv)) {
+    return IPC_FAIL(this, "Page-icon request must include loadInfo");
+  }
+
+  RefPtr<PageIconProtocolHandler> ph(PageIconProtocolHandler::GetSingleton());
+  MOZ_ASSERT(ph);
+
+  nsCOMPtr<nsIInputStream> inputStream;
+  bool terminateSender = true;
+  auto inputStreamPromise = ph->NewStream(aURI, loadInfo, &terminateSender);
+
+  if (terminateSender) {
+    return IPC_FAIL(this, "Malformed page-icon request");
+  }
+
+  inputStreamPromise->Then(
+      GetMainThreadSerialEventTarget(), __func__,
+      [aResolver](const RemoteStreamInfo& aInfo) { aResolver(Some(aInfo)); },
+      [aResolver](nsresult aRv) {
+        
+        
+        
+        Unused << NS_WARN_IF(NS_FAILED(aRv));
+        aResolver(Nothing());
+      });
+
+  return IPC_OK();
+#else
+  return IPC_FAIL(this, "page-icon: protocol unavailable");
+#endif
 }
 
 }  
