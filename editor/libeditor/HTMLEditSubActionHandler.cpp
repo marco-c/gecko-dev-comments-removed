@@ -5682,7 +5682,17 @@ nsresult HTMLEditor::AlignBlockContentsWithDivElement(
   Result<RefPtr<Element>, nsresult> maybeNewDivElement =
       CreateAndInsertElementWithTransaction(
           *nsGkAtoms::div, EditorDOMPoint(&aBlockElement, 0),
-          [](Element& aDivElement) -> nsresult { return NS_OK; });
+          
+          [&](Element& aDivElement) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
+            
+            
+            nsresult rv = SetAttributeOrEquivalent(
+                &aDivElement, nsGkAtoms::align, aAlignType, false);
+            NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                                 "EditorBase::SetAttributeOrEquivalent("
+                                 "nsGkAtoms::align) failed");
+            return rv;
+          });
   if (maybeNewDivElement.isErr()) {
     NS_WARNING(
         "HTMLEditor::CreateAndInsertElementWithTransaction(nsGkAtoms::div) "
@@ -5690,13 +5700,6 @@ nsresult HTMLEditor::AlignBlockContentsWithDivElement(
     return maybeNewDivElement.unwrapErr();
   }
   MOZ_ASSERT(maybeNewDivElement.inspect());
-  nsresult rv =
-      SetAttributeOrEquivalent(MOZ_KnownLive(maybeNewDivElement.inspect()),
-                               nsGkAtoms::align, aAlignType, false);
-  if (NS_FAILED(rv)) {
-    NS_WARNING("EditorBase::SetAttributeOrEquivalent(nsGkAtoms::align) failed");
-    return rv;
-  }
   
   
   
