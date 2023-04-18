@@ -2914,6 +2914,7 @@ GeckoDriver.prototype.print = async function(cmd) {
   assert.boolean(settings.shrinkToFit);
   assert.boolean(settings.landscape);
   assert.boolean(settings.printBackground);
+  assert.array(settings.pageRanges);
 
   const linkedBrowser = this.curBrowser.tab.linkedBrowser;
   const filePath = await print.printToFile(linkedBrowser, settings);
