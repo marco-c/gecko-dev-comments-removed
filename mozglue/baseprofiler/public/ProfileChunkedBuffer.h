@@ -141,6 +141,18 @@ class ProfileChunkedBuffer {
   
   
   
+  void SetChunkManagerIfDifferent(ProfileBufferChunkManager& aChunkManager) {
+    baseprofiler::detail::BaseProfilerMaybeAutoLock lock(mMutex);
+    if (!mChunkManager || mChunkManager != &aChunkManager) {
+      Unused << ResetChunkManager(lock);
+      SetChunkManager(aChunkManager, lock);
+    }
+  }
+
+  
+  
+  
+  
   
   
   
