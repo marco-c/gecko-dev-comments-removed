@@ -27,8 +27,6 @@ XPCOMUtils.defineLazyServiceGetters(this, {
   ],
 });
 
-XPCOMUtils.defineLazyGlobalGetters(this, ["XMLSerializer"]);
-
 
 
 

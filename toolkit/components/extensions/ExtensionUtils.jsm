@@ -18,7 +18,7 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/Timer.jsm"
 );
 
-XPCOMUtils.defineLazyGlobalGetters(this, ["fetch", "btoa"]);
+XPCOMUtils.defineLazyGlobalGetters(this, ["fetch"]);
 
 
 XPCOMUtils.defineLazyGetter(this, "idleTimeout", () =>

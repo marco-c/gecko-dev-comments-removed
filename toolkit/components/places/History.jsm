@@ -89,8 +89,6 @@ XPCOMUtils.defineLazyServiceGetter(
   "mozIAsyncHistory"
 );
 
-XPCOMUtils.defineLazyGlobalGetters(this, ["URL"]);
-
 
 
 

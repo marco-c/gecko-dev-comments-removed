@@ -11,8 +11,6 @@ const { XPCOMUtils } = ChromeUtils.import(
 
 var EXPORTED_SYMBOLS = ["ViewSourcePageChild"];
 
-XPCOMUtils.defineLazyGlobalGetters(this, ["NodeFilter"]);
-
 const BUNDLE_URL = "chrome://global/locale/viewSource.properties";
 
 

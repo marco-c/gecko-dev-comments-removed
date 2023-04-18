@@ -12,11 +12,6 @@ const { PromiseUtils } = ChromeUtils.import(
 );
 const { Async } = ChromeUtils.import("resource://services-common/async.js");
 const { httpRequest } = ChromeUtils.import("resource://gre/modules/Http.jsm");
-const { XPCOMUtils } = ChromeUtils.import(
-  "resource://gre/modules/XPCOMUtils.jsm"
-);
-
-XPCOMUtils.defineLazyGlobalGetters(this, ["XMLHttpRequest"]);
 
 
 const MAX_REQUEST_DATA = 5000; 

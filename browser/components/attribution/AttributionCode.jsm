@@ -37,7 +37,6 @@ XPCOMUtils.defineLazyGetter(this, "log", () => {
   };
   return new ConsoleAPI(consoleOptions);
 });
-XPCOMUtils.defineLazyGlobalGetters(this, ["URL"]);
 
 
 
