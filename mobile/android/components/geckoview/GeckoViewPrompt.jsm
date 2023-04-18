@@ -65,7 +65,8 @@ class PromptFactory {
 
     if (className === "HTMLSelectElement") {
       if (target.multiple) {
-        return this._handleSelect(target);
+        this._handleSelect(target);
+        return;
       }
       
       return;
