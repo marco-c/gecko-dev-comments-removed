@@ -965,7 +965,9 @@ void nsPresContext::RecomputeBrowsingContextDependentData() {
   if (oldOverride != mColorSchemeOverride) {
     
     
-    MediaFeatureValuesChanged({MediaFeatureChangeReason::SystemMetricsChange},
+    
+    MediaFeatureValuesChanged({RestyleHint::RecascadeSubtree(), nsChangeHint(0),
+                               MediaFeatureChangeReason::SystemMetricsChange},
                               MediaFeatureChangePropagation::JustThisDocument);
   }
 
