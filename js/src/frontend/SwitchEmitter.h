@@ -385,6 +385,7 @@ class MOZ_STACK_CLASS SwitchEmitter {
   
   
   
+ protected:
   enum class State {
     
     Start,
@@ -455,6 +456,16 @@ class MOZ_STACK_CLASS SwitchEmitter {
  private:
   [[nodiscard]] bool emitCaseOrDefaultJump(uint32_t caseIndex, bool isDefault);
   [[nodiscard]] bool emitImplicitDefault();
+};
+
+
+
+
+
+
+class MOZ_STACK_CLASS InternalSwitchEmitter : public SwitchEmitter {
+ public:
+  explicit InternalSwitchEmitter(BytecodeEmitter* bce);
 };
 
 } 
