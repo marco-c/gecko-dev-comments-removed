@@ -5,6 +5,7 @@
 
 
 #include "ServiceWorkerManager.h"
+#include "ServiceWorkerPrivateImpl.h"
 
 #include <algorithm>
 
@@ -718,7 +719,7 @@ void ServiceWorkerManager::MaybeFinishShutdown() {
   mActor = nullptr;
 
   
-  ServiceWorkerPrivate::RunningShutdown();
+  ServiceWorkerPrivateImpl::RunningShutdown();
 }
 
 class ServiceWorkerResolveWindowPromiseOnRegisterCallback final
