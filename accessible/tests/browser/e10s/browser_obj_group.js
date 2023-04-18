@@ -436,7 +436,7 @@ addAccessibleTask(
 
     testGroupParentAttrs(getAcc("treegrid"), 2, true);
     
-    testGroupParentAttrs(getAcc("treegrid_row1"), 4, false, isCacheEnabled);
+    testGroupParentAttrs(getAcc("treegrid_row1"), 4, false);
   }
 );
 
@@ -498,13 +498,13 @@ addAccessibleTask(
 
     
     
-    testGroupAttrs(getAcc("table_cell"), 3, 4, null, isCacheEnabled);
-    testGroupAttrs(getAcc("table_row"), 2, 2, null, isCacheEnabled);
+    testGroupAttrs(getAcc("table_cell"), 3, 4);
+    testGroupAttrs(getAcc("table_row"), 2, 2);
 
     
-    testGroupParentAttrs(getAcc("table"), 2, false, isCacheEnabled);
+    testGroupParentAttrs(getAcc("table"), 2, false);
     
-    testGroupParentAttrs(getAcc("table_row"), 4, false, isCacheEnabled);
+    testGroupParentAttrs(getAcc("table_row"), 4, false);
   }
 );
 
