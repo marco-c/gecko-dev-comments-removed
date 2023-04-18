@@ -89,12 +89,17 @@ class HTMLCanvasElementObserver final : public nsIObserver {
 
 class FrameCaptureListener : public SupportsWeakPtr {
  public:
-  FrameCaptureListener() = default;
+  FrameCaptureListener() : mFrameCaptureRequested(false) {}
 
   
 
 
-  virtual bool FrameCaptureRequested(const TimeStamp& aTime) const = 0;
+  void RequestFrameCapture() { mFrameCaptureRequested = true; }
+
+  
+
+
+  bool FrameCaptureRequested() const { return mFrameCaptureRequested; }
 
   
 
@@ -105,6 +110,8 @@ class FrameCaptureListener : public SupportsWeakPtr {
 
  protected:
   virtual ~FrameCaptureListener() = default;
+
+  bool mFrameCaptureRequested;
 };
 
 class HTMLCanvasElement final : public nsGenericHTMLElement,
@@ -242,7 +249,7 @@ class HTMLCanvasElement final : public nsGenericHTMLElement,
 
 
 
-  bool IsFrameCaptureRequested(const TimeStamp& aTime) const;
+  bool IsFrameCaptureRequested() const;
 
   
 
