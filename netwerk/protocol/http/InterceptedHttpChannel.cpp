@@ -1371,23 +1371,26 @@ void InterceptedHttpChannel::InterceptionTimeStamps::RecordTime(
   
   MOZ_ASSERT(mStatus == Initialized || aStatus == Canceled);
 
-  if (mStatus == Initialized) {
-    mStatus = aStatus;
-  } else {
-    switch (mStatus) {
-      case Synthesized:
-        mStatus = CanceledAfterSynthesized;
-        break;
-      case Reset:
-        mStatus = CanceledAfterReset;
-        break;
-      case Redirected:
-        mStatus = CanceledAfterRedirected;
-        break;
-      default:
-        MOZ_ASSERT(false);
-        break;
-    }
+  switch (mStatus) {
+    case Initialized:
+      mStatus = aStatus;
+      break;
+    case Synthesized:
+      mStatus = CanceledAfterSynthesized;
+      break;
+    case Reset:
+      mStatus = CanceledAfterReset;
+      break;
+    case Redirected:
+      mStatus = CanceledAfterRedirected;
+      break;
+    
+    
+    case Created:
+      return;
+    default:
+      MOZ_ASSERT(false);
+      break;
   }
 
   RecordTimeInternal(std::move(aTimeStamp));
