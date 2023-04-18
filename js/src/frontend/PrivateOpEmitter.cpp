@@ -302,9 +302,22 @@ bool PrivateOpEmitter::emitIncDec() {
     return false;
   }
 
-  if (!bce_->emitElemOpBase(JSOp::StrictSetElem)) {
+  if (brandLoc_) {
+    if (!bce_->emit2(JSOp::ThrowMsg,
+                     uint8_t(ThrowMsgKind::AssignToPrivateMethod))) {
+      return false;
+    }
+
     
-    return false;
+    if (!bce_->emitPopN(2)) {
+      
+      return false;
+    }
+  } else {
+    if (!bce_->emitElemOpBase(JSOp::StrictSetElem)) {
+      
+      return false;
+    }
   }
 
   if (isPostIncDec()) {

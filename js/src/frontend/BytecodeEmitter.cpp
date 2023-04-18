@@ -9995,10 +9995,6 @@ bool BytecodeEmitter::emitInitializeInstanceMembers() {
 
   if (memberInitializers.hasPrivateBrand) {
     
-    
-    
-
-    
     if (!emitGetName(TaggedParserAtomIndex::WellKnown::dotThis())) {
       
       return false;
@@ -10016,11 +10012,11 @@ bool BytecodeEmitter::emitInitializeInstanceMembers() {
       
       return false;
     }
-    if (!emitBuiltinObject(BuiltinObjectKind::FunctionPrototype)) {
+    if (!emit1(JSOp::Null)) {
       
       return false;
     }
-    if (!emit1(JSOp::InitHiddenElemGetter)) {
+    if (!emit1(JSOp::InitHiddenElem)) {
       
       return false;
     }
