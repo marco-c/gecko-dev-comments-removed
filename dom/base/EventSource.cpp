@@ -2038,13 +2038,17 @@ already_AddRefed<EventSource> EventSource::Constructor(
 
     
     
-    if (!eventSource->mESImpl->CreateWorkerRef(workerPrivate)) {
+    
+    if (!eventSource->mESImpl ||
+        !eventSource->mESImpl->CreateWorkerRef(workerPrivate)) {
       
       
-      
-      
-      
-      eventSource->mESImpl->Close();
+      if (eventSource->mESImpl) {
+        
+        
+        
+        eventSource->mESImpl->Close();
+      }
       eventSource->mReadyState = EventSourceImpl::CONNECTING;
 
       return eventSource.forget();
