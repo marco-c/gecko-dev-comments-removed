@@ -5,13 +5,14 @@
 
 #include <stdio.h>
 
-#include "mozilla/HTMLEditor.h"
+#include "HTMLEditor.h"
 
+#include "EditAction.h"
+#include "EditorDOMPoint.h"
+#include "EditorUtils.h"
 #include "HTMLEditUtils.h"
+
 #include "mozilla/Assertions.h"
-#include "mozilla/EditAction.h"
-#include "mozilla/EditorDOMPoint.h"
-#include "mozilla/EditorUtils.h"
 #include "mozilla/FlushType.h"
 #include "mozilla/IntegerRange.h"
 #include "mozilla/PresShell.h"
@@ -85,9 +86,7 @@ class MOZ_STACK_CLASS AutoSelectionSetterAfterTableEdit final {
 
 
 void HTMLEditor::CellIndexes::Update(HTMLEditor& aHTMLEditor,
-                                     Selection& aSelection, ErrorResult& aRv) {
-  MOZ_ASSERT(!aRv.Failed());
-
+                                     Selection& aSelection) {
   
   
   RefPtr<Element> cellElement =
@@ -96,24 +95,19 @@ void HTMLEditor::CellIndexes::Update(HTMLEditor& aHTMLEditor,
     NS_WARNING(
         "HTMLEditor::GetInclusiveAncestorByTagNameAtSelection(nsGkAtoms::td) "
         "failed");
-    aRv.Throw(NS_ERROR_FAILURE);
     return;
   }
 
   RefPtr<PresShell> presShell{aHTMLEditor.GetPresShell()};
-  Update(*cellElement, presShell, aRv);
-  NS_WARNING_ASSERTION(!aRv.Failed(), "CellIndexes::Update() failed");
+  Update(*cellElement, presShell);
 }
 
 void HTMLEditor::CellIndexes::Update(Element& aCellElement,
-                                     PresShell* aPresShell, ErrorResult& aRv) {
-  MOZ_ASSERT(!aRv.Failed());
-
+                                     PresShell* aPresShell) {
   
   
   
   if (NS_WARN_IF(!aPresShell)) {
-    aRv.Throw(NS_ERROR_INVALID_ARG);
     return;
   }
 
@@ -122,20 +116,22 @@ void HTMLEditor::CellIndexes::Update(Element& aCellElement,
   nsIFrame* frameOfCell = aCellElement.GetPrimaryFrame();
   if (!frameOfCell) {
     NS_WARNING("There was no layout information of aCellElement");
-    aRv.Throw(NS_ERROR_FAILURE);
     return;
   }
 
   nsITableCellLayout* tableCellLayout = do_QueryFrame(frameOfCell);
   if (!tableCellLayout) {
     NS_WARNING("aCellElement was not a table cell");
-    aRv.Throw(NS_ERROR_FAILURE);  
     return;
   }
 
-  aRv = tableCellLayout->GetCellIndexes(mRow, mColumn);
-  NS_WARNING_ASSERTION(!aRv.Failed(),
-                       "nsITableCellLayout::GetCellIndexes() failed");
+  if (NS_FAILED(tableCellLayout->GetCellIndexes(mRow, mColumn))) {
+    NS_WARNING("nsITableCellLayout::GetCellIndexes() failed");
+    mRow = mColumn = -1;
+    return;
+  }
+
+  MOZ_ASSERT(!isErr());
 }
 
 
@@ -143,9 +139,7 @@ void HTMLEditor::CellIndexes::Update(Element& aCellElement,
 
 
 void HTMLEditor::CellData::Update(HTMLEditor& aHTMLEditor,
-                                  Element& aTableElement, ErrorResult& aRv) {
-  MOZ_ASSERT(!aRv.Failed());
-
+                                  Element& aTableElement) {
   mElement = nullptr;
   mIsSelected = false;
   mFirst.mRow = -1;
@@ -158,7 +152,6 @@ void HTMLEditor::CellData::Update(HTMLEditor& aHTMLEditor,
   nsTableWrapperFrame* tableFrame = HTMLEditor::GetTableFrame(&aTableElement);
   if (!tableFrame) {
     NS_WARNING("There was no layout information of the table");
-    aRv.Throw(NS_ERROR_FAILURE);
     return;
   }
 
@@ -168,18 +161,19 @@ void HTMLEditor::CellData::Update(HTMLEditor& aHTMLEditor,
   nsTableCellFrame* cellFrame =
       tableFrame->GetCellFrameAt(mCurrent.mRow, mCurrent.mColumn);
   if (!cellFrame) {
+    mFirst.mRow = mCurrent.mRow;
+    mFirst.mColumn = mCurrent.mColumn;
     return;
   }
 
-  mElement = cellFrame->GetContent()->AsElement();
+  mElement = Element::FromNodeOrNull(cellFrame->GetContent());
   if (!mElement) {
-    NS_WARNING("The cell frame didn't have cell element");
-    aRv.Throw(NS_ERROR_FAILURE);
     return;
   }
   mIsSelected = cellFrame->IsSelected();
   mFirst.mRow = cellFrame->RowIndex();
   mFirst.mColumn = cellFrame->ColIndex();
+  MOZ_ASSERT(!mFirst.isErr());
   mRowSpan = cellFrame->GetRowSpan();
   mColSpan = cellFrame->GetColSpan();
   mEffectiveRowSpan =
@@ -192,11 +186,9 @@ void HTMLEditor::CellData::Update(HTMLEditor& aHTMLEditor,
 
 
 
-void HTMLEditor::TableSize::Update(HTMLEditor& aHTMLEditor,
-                                   Element& aTableOrElementInTable,
-                                   ErrorResult& aRv) {
-  MOZ_ASSERT(!aRv.Failed());
 
+Result<HTMLEditor::TableSize, nsresult> HTMLEditor::TableSize::Create(
+    HTMLEditor& aHTMLEditor, Element& aTableOrElementInTable) {
   
   
   
@@ -208,18 +200,20 @@ void HTMLEditor::TableSize::Update(HTMLEditor& aHTMLEditor,
     NS_WARNING(
         "HTMLEditor::GetInclusiveAncestorByTagNameInternal(nsGkAtoms::table) "
         "failed");
-    aRv.Throw(NS_ERROR_FAILURE);
-    return;
+    return Err(NS_ERROR_FAILURE);
   }
   nsTableWrapperFrame* tableFrame =
       do_QueryFrame(tableElement->GetPrimaryFrame());
   if (!tableFrame) {
     NS_WARNING("There was no layout information of the <table> element");
-    aRv.Throw(NS_ERROR_FAILURE);
-    return;
+    return Err(NS_ERROR_FAILURE);
   }
-  mRowCount = tableFrame->GetRowCount();
-  mColumnCount = tableFrame->GetColCount();
+  const int32_t rowCount = tableFrame->GetRowCount();
+  const int32_t columnCount = tableFrame->GetColCount();
+  if (NS_WARN_IF(rowCount < 0) || NS_WARN_IF(columnCount < 0)) {
+    return Err(NS_ERROR_FAILURE);
+  }
+  return TableSize(rowCount, columnCount);
 }
 
 
@@ -370,14 +364,11 @@ nsresult HTMLEditor::InsertTableCellsWithTransaction(
 
   
   
-  IgnoredErrorResult ignoredError;
-  CellData cellDataAtSelection(*this, *table, startRowIndex, startColIndex,
-                               ignoredError);
-  if (cellDataAtSelection.FailedOrNotFound()) {
-    NS_WARNING("CellData couldn't find selected cell");
+  const CellData cellDataAtSelection(*this, *table, startRowIndex,
+                                     startColIndex);
+  if (NS_WARN_IF(cellDataAtSelection.FailedOrNotFound())) {
     return NS_ERROR_FAILURE;
   }
-  MOZ_ASSERT(!ignoredError.Failed());
   MOZ_ASSERT(curCell == cellDataAtSelection.mElement);
 
   int32_t newCellIndex;
@@ -396,15 +387,16 @@ nsresult HTMLEditor::InsertTableCellsWithTransaction(
   AutoPlaceholderBatch treateAsOneTransaction(
       *this, ScrollSelectionIntoView::Yes, __FUNCTION__);
   
+  IgnoredErrorResult error;
   AutoEditSubActionNotifier startToHandleEditSubAction(
-      *this, EditSubAction::eInsertNode, nsIEditor::eNext, ignoredError);
-  if (NS_WARN_IF(ignoredError.ErrorCodeIs(NS_ERROR_EDITOR_DESTROYED))) {
-    return ignoredError.StealNSResult();
+      *this, EditSubAction::eInsertNode, nsIEditor::eNext, error);
+  if (NS_WARN_IF(error.ErrorCodeIs(NS_ERROR_EDITOR_DESTROYED))) {
+    return error.StealNSResult();
   }
   NS_WARNING_ASSERTION(
-      !ignoredError.Failed(),
+      !error.Failed(),
       "HTMLEditor::OnStartToHandleTopLevelEditSubAction() failed, but ignored");
-  ignoredError.SuppressException();
+  error.SuppressException();
 
   
   AutoSelectionSetterAfterTableEdit setCaret(
@@ -630,37 +622,35 @@ nsresult HTMLEditor::InsertTableColumnsWithTransaction(
   }
 
   
-  IgnoredErrorResult ignoredError;
-  CellData cellDataAtSelection(*this, *table, startRowIndex, startColIndex,
-                               ignoredError);
-  if (cellDataAtSelection.FailedOrNotFound()) {
-    NS_WARNING("CellData couldn't find selected cell");
+  const CellData cellDataAtSelection(*this, *table, startRowIndex,
+                                     startColIndex);
+  if (NS_WARN_IF(cellDataAtSelection.FailedOrNotFound())) {
     return NS_ERROR_FAILURE;
   }
-  MOZ_ASSERT(!ignoredError.Failed());
   MOZ_ASSERT(curCell == cellDataAtSelection.mElement);
 
-  ErrorResult error;
-  TableSize tableSize(*this, *table, error);
-  if (error.Failed()) {
-    NS_WARNING("TableSize failed");
-    return error.StealNSResult();
+  const Result<TableSize, nsresult> tableSizeOrError =
+      TableSize::Create(*this, *table);
+  if (NS_WARN_IF(tableSizeOrError.isErr())) {
+    return tableSizeOrError.inspectErr();
   }
+  const TableSize& tableSize = tableSizeOrError.inspect();
   
   MOZ_ASSERT(!tableSize.IsEmpty());
 
   AutoPlaceholderBatch treateAsOneTransaction(
       *this, ScrollSelectionIntoView::Yes, __FUNCTION__);
   
+  IgnoredErrorResult error;
   AutoEditSubActionNotifier startToHandleEditSubAction(
-      *this, EditSubAction::eInsertNode, nsIEditor::eNext, ignoredError);
-  if (NS_WARN_IF(ignoredError.ErrorCodeIs(NS_ERROR_EDITOR_DESTROYED))) {
-    return ignoredError.StealNSResult();
+      *this, EditSubAction::eInsertNode, nsIEditor::eNext, error);
+  if (NS_WARN_IF(error.ErrorCodeIs(NS_ERROR_EDITOR_DESTROYED))) {
+    return error.StealNSResult();
   }
   NS_WARNING_ASSERTION(
-      !ignoredError.Failed(),
+      !error.Failed(),
       "HTMLEditor::OnStartToHandleTopLevelEditSubAction() failed, but ignored");
-  ignoredError.SuppressException();
+  error.SuppressException();
 
   switch (aInsertPosition) {
     case InsertPosition::eBeforeSelectedCell:
@@ -707,12 +697,10 @@ nsresult HTMLEditor::InsertTableColumnsWithTransaction(
   for (int32_t rowIndex = 0; rowIndex < tableSize.mRowCount; rowIndex++) {
     if (startColIndex < tableSize.mColumnCount) {
       
-      CellData cellData(*this, *table, rowIndex, startColIndex, ignoredError);
-      if (cellData.FailedOrNotFound()) {
-        NS_WARNING("CellData failed");
+      const CellData cellData(*this, *table, rowIndex, startColIndex);
+      if (NS_WARN_IF(cellData.FailedOrNotFound())) {
         return NS_ERROR_FAILURE;
       }
-      MOZ_ASSERT(!ignoredError.Failed());
 
       
       
@@ -739,17 +727,17 @@ nsresult HTMLEditor::InsertTableColumnsWithTransaction(
       
       
       
-      CollapseSelectionToStartOf(*cellData.mElement, ignoredError);
-      if (MOZ_UNLIKELY(ignoredError.ErrorCodeIs(NS_ERROR_EDITOR_DESTROYED))) {
+      CollapseSelectionToStartOf(*cellData.mElement, error);
+      if (MOZ_UNLIKELY(error.ErrorCodeIs(NS_ERROR_EDITOR_DESTROYED))) {
         NS_WARNING(
             "EditorBase::CollapseSelectionToStartOf() caused destroying the "
             "editor");
         return NS_ERROR_EDITOR_DESTROYED;
       }
       NS_WARNING_ASSERTION(
-          !ignoredError.Failed(),
+          !error.Failed(),
           "EditorBase::CollapseSelectionToStartOf() failed, but ignored");
-      ignoredError.SuppressException();
+      error.SuppressException();
       rv = InsertTableCellsWithTransaction(aNumberOfColumnsToInsert,
                                            InsertPosition::eBeforeSelectedCell);
       NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
@@ -803,17 +791,17 @@ nsresult HTMLEditor::InsertTableColumnsWithTransaction(
     
     
     
-    CollapseSelectionToStartOf(*lastCellNode, ignoredError);
-    if (MOZ_UNLIKELY(ignoredError.ErrorCodeIs(NS_ERROR_EDITOR_DESTROYED))) {
+    CollapseSelectionToStartOf(*lastCellNode, error);
+    if (MOZ_UNLIKELY(error.ErrorCodeIs(NS_ERROR_EDITOR_DESTROYED))) {
       NS_WARNING(
           "EditorBase::CollapseSelectionToStartOf() caused destroying the "
           "editor");
       return NS_ERROR_EDITOR_DESTROYED;
     }
     NS_WARNING_ASSERTION(
-        !ignoredError.Failed(),
+        !error.Failed(),
         "EditorBase::CollapseSelectionToStartOf() failed, but ignored");
-    ignoredError.SuppressException();
+    error.SuppressException();
     rv = InsertTableCellsWithTransaction(aNumberOfColumnsToInsert,
                                          InsertPosition::eAfterSelectedCell);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
@@ -869,35 +857,33 @@ nsresult HTMLEditor::InsertTableRowsWithTransaction(
 
   
   
-  IgnoredErrorResult ignoredError;
-  CellData cellDataAtSelection(*this, *table, startRowIndex, startColIndex,
-                               ignoredError);
-  ignoredError.SuppressException();
-  if (cellDataAtSelection.FailedOrNotFound()) {
-    NS_WARNING("CellData couldn't find selected cell");
+  const CellData cellDataAtSelection(*this, *table, startRowIndex,
+                                     startColIndex);
+  if (NS_WARN_IF(cellDataAtSelection.FailedOrNotFound())) {
     return NS_ERROR_FAILURE;
   }
   MOZ_ASSERT(curCell == cellDataAtSelection.mElement);
 
-  ErrorResult error;
-  TableSize tableSize(*this, *table, error);
-  if (error.Failed()) {
-    NS_WARNING("TableSize failed");
-    return error.StealNSResult();
+  const Result<TableSize, nsresult> tableSizeOrError =
+      TableSize::Create(*this, *table);
+  if (NS_WARN_IF(tableSizeOrError.isErr())) {
+    return tableSizeOrError.inspectErr();
   }
+  const TableSize& tableSize = tableSizeOrError.inspect();
   
   MOZ_ASSERT(!tableSize.IsEmpty());
 
   AutoPlaceholderBatch treateAsOneTransaction(
       *this, ScrollSelectionIntoView::Yes, __FUNCTION__);
   
+  IgnoredErrorResult error;
   AutoEditSubActionNotifier startToHandleEditSubAction(
-      *this, EditSubAction::eInsertNode, nsIEditor::eNext, ignoredError);
-  if (NS_WARN_IF(ignoredError.ErrorCodeIs(NS_ERROR_EDITOR_DESTROYED))) {
-    return ignoredError.StealNSResult();
+      *this, EditSubAction::eInsertNode, nsIEditor::eNext, error);
+  if (NS_WARN_IF(error.ErrorCodeIs(NS_ERROR_EDITOR_DESTROYED))) {
+    return error.StealNSResult();
   }
   NS_WARNING_ASSERTION(
-      !ignoredError.Failed(),
+      !error.Failed(),
       "HTMLEditor::OnStartToHandleTopLevelEditSubAction() failed, but ignored");
 
   switch (aInsertPosition) {
@@ -940,7 +926,7 @@ nsresult HTMLEditor::InsertTableRowsWithTransaction(
     
     CellData cellData;
     for (int32_t colIndex = 0;; colIndex = cellData.NextColumnIndex()) {
-      cellData.Update(*this, *table, startRowIndex, colIndex, ignoredError);
+      cellData.Update(*this, *table, startRowIndex, colIndex);
       if (cellData.FailedOrNotFound()) {
         break;  
       }
@@ -984,7 +970,7 @@ nsresult HTMLEditor::InsertTableRowsWithTransaction(
     const int32_t kLastRowIndex = tableSize.mRowCount - 1;
     CellData cellData;
     for (int32_t colIndex = 0;; colIndex = cellData.NextColumnIndex()) {
-      cellData.Update(*this, *table, kLastRowIndex, colIndex, ignoredError);
+      cellData.Update(*this, *table, kLastRowIndex, colIndex);
       if (cellData.FailedOrNotFound()) {
         break;  
       }
@@ -1218,13 +1204,13 @@ nsresult HTMLEditor::DeleteTableCellWithTransaction(
 
   SelectedTableCellScanner scanner(SelectionRef());
 
-  ErrorResult error;
-  TableSize tableSize(*this, *table, error);
-  if (error.Failed()) {
-    NS_WARNING("TableSize failed");
-    return error.StealNSResult();
+  Result<TableSize, nsresult> tableSizeOrError =
+      TableSize::Create(*this, *table);
+  if (NS_WARN_IF(tableSizeOrError.isErr())) {
+    return tableSizeOrError.unwrapErr();
   }
-
+  
+  TableSize tableSize = tableSizeOrError.unwrap();
   MOZ_ASSERT(!tableSize.IsEmpty());
 
   
@@ -1308,11 +1294,10 @@ nsresult HTMLEditor::DeleteTableCellWithTransaction(
   const RefPtr<PresShell> presShell{GetPresShell()};
   
   
-  CellIndexes firstCellIndexes(MOZ_KnownLive(scanner.ElementsRef()[0]),
-                               presShell, error);
-  if (error.Failed()) {
-    NS_WARNING("CellIndexes failed");
-    return error.StealNSResult();
+  const CellIndexes firstCellIndexes(MOZ_KnownLive(scanner.ElementsRef()[0]),
+                                     presShell);
+  if (NS_WARN_IF(firstCellIndexes.isErr())) {
+    return NS_ERROR_FAILURE;
   }
   startRowIndex = firstCellIndexes.mRow;
   startColIndex = firstCellIndexes.mColumn;
@@ -1340,11 +1325,10 @@ nsresult HTMLEditor::DeleteTableCellWithTransaction(
           if (!selectedCellElement) {
             break;
           }
-          CellIndexes nextSelectedCellIndexes(*selectedCellElement, presShell,
-                                              error);
-          if (error.Failed()) {
-            NS_WARNING("CellIndexes failed");
-            return error.StealNSResult();
+          const CellIndexes nextSelectedCellIndexes(*selectedCellElement,
+                                                    presShell);
+          if (NS_WARN_IF(nextSelectedCellIndexes.isErr())) {
+            return NS_ERROR_FAILURE;
           }
           nextRow = nextSelectedCellIndexes.mRow;
           startColIndex = nextSelectedCellIndexes.mColumn;
@@ -1394,11 +1378,10 @@ nsresult HTMLEditor::DeleteTableCellWithTransaction(
           if (!selectedCellElement) {
             break;
           }
-          CellIndexes nextSelectedCellIndexes(*selectedCellElement, presShell,
-                                              error);
-          if (error.Failed()) {
-            NS_WARNING("CellIndexes failed");
-            return error.StealNSResult();
+          const CellIndexes nextSelectedCellIndexes(*selectedCellElement,
+                                                    presShell);
+          if (NS_WARN_IF(nextSelectedCellIndexes.isErr())) {
+            return NS_ERROR_FAILURE;
           }
           startRowIndex = nextSelectedCellIndexes.mRow;
           nextCol = nextSelectedCellIndexes.mColumn;
@@ -1438,10 +1421,9 @@ nsresult HTMLEditor::DeleteTableCellWithTransaction(
       return NS_OK;
     }
 
-    CellIndexes nextCellIndexes(*selectedCellElement, presShell, error);
-    if (error.Failed()) {
-      NS_WARNING("CellIndexes failed");
-      return error.StealNSResult();
+    const CellIndexes nextCellIndexes(*selectedCellElement, presShell);
+    if (NS_WARN_IF(nextCellIndexes.isErr())) {
+      return NS_ERROR_FAILURE;
     }
     startRowIndex = nextCellIndexes.mRow;
     startColIndex = nextCellIndexes.mColumn;
@@ -1515,12 +1497,10 @@ nsresult HTMLEditor::DeleteTableCellContentsWithTransaction() {
     const RefPtr<PresShell> presShell{GetPresShell()};
     
     
-    ErrorResult error;
-    CellIndexes firstCellIndexes(MOZ_KnownLive(scanner.ElementsRef()[0]),
-                                 presShell, error);
-    if (error.Failed()) {
-      NS_WARNING("CellIndexes failed");
-      return error.StealNSResult();
+    const CellIndexes firstCellIndexes(MOZ_KnownLive(scanner.ElementsRef()[0]),
+                                       presShell);
+    if (NS_WARN_IF(firstCellIndexes.isErr())) {
+      return NS_ERROR_FAILURE;
     }
     cell = scanner.ElementsRef()[0];
     startRowIndex = firstCellIndexes.mRow;
@@ -1585,25 +1565,25 @@ nsresult HTMLEditor::DeleteSelectedTableColumnsWithTransaction(
     return NS_OK;
   }
 
-  ErrorResult error;
-  TableSize tableSize(*this, *table, error);
-  if (error.Failed()) {
-    NS_WARNING("TableSize failed");
-    return error.StealNSResult();
+  const Result<TableSize, nsresult> tableSizeOrError =
+      TableSize::Create(*this, *table);
+  if (NS_WARN_IF(tableSizeOrError.isErr())) {
+    return EditorBase::ToGenericNSResult(tableSizeOrError.inspectErr());
   }
+  const TableSize& tableSize = tableSizeOrError.inspect();
 
   AutoPlaceholderBatch treateAsOneTransaction(
       *this, ScrollSelectionIntoView::Yes, __FUNCTION__);
 
   
-  IgnoredErrorResult ignoredError;
+  IgnoredErrorResult error;
   AutoEditSubActionNotifier startToHandleEditSubAction(
-      *this, EditSubAction::eDeleteNode, nsIEditor::eNext, ignoredError);
-  if (NS_WARN_IF(ignoredError.ErrorCodeIs(NS_ERROR_EDITOR_DESTROYED))) {
-    return ignoredError.StealNSResult();
+      *this, EditSubAction::eDeleteNode, nsIEditor::eNext, error);
+  if (NS_WARN_IF(error.ErrorCodeIs(NS_ERROR_EDITOR_DESTROYED))) {
+    return error.StealNSResult();
   }
   NS_WARNING_ASSERTION(
-      !ignoredError.Failed(),
+      !error.Failed(),
       "HTMLEditor::OnStartToHandleTopLevelEditSubAction() failed, but ignored");
 
   
@@ -1624,11 +1604,10 @@ nsresult HTMLEditor::DeleteSelectedTableColumnsWithTransaction(
     const RefPtr<PresShell> presShell{GetPresShell()};
     
     
-    CellIndexes firstCellIndexes(MOZ_KnownLive(scanner.ElementsRef()[0]),
-                                 presShell, error);
-    if (error.Failed()) {
-      NS_WARNING("CellIndexes failed");
-      return error.StealNSResult();
+    const CellIndexes firstCellIndexes(MOZ_KnownLive(scanner.ElementsRef()[0]),
+                                       presShell);
+    if (NS_WARN_IF(firstCellIndexes.isErr())) {
+      return NS_ERROR_FAILURE;
     }
     startRowIndex = firstCellIndexes.mRow;
     startColIndex = firstCellIndexes.mColumn;
@@ -1660,10 +1639,9 @@ nsresult HTMLEditor::DeleteSelectedTableColumnsWithTransaction(
   for (RefPtr<Element> selectedCellElement = scanner.GetFirstElement();
        selectedCellElement;) {
     if (selectedCellElement != scanner.ElementsRef()[0]) {
-      CellIndexes cellIndexes(*selectedCellElement, presShell, error);
-      if (error.Failed()) {
-        NS_WARNING("CellIndexes failed");
-        return error.StealNSResult();
+      const CellIndexes cellIndexes(*selectedCellElement, presShell);
+      if (NS_WARN_IF(cellIndexes.isErr())) {
+        return NS_ERROR_FAILURE;
       }
       startRowIndex = cellIndexes.mRow;
       startColIndex = cellIndexes.mColumn;
@@ -1676,10 +1654,9 @@ nsresult HTMLEditor::DeleteSelectedTableColumnsWithTransaction(
       if (!selectedCellElement) {
         break;
       }
-      CellIndexes cellIndexes(*selectedCellElement, presShell, error);
-      if (error.Failed()) {
-        NS_WARNING("CellIndexes failed");
-        return error.StealNSResult();
+      const CellIndexes cellIndexes(*selectedCellElement, presShell);
+      if (NS_WARN_IF(cellIndexes.isErr())) {
+        return NS_ERROR_FAILURE;
       }
       startRowIndex = cellIndexes.mRow;
       nextCol = cellIndexes.mColumn;
@@ -1697,13 +1674,8 @@ nsresult HTMLEditor::DeleteTableColumnWithTransaction(Element& aTableElement,
                                                       int32_t aColumnIndex) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
-  
-  ErrorResult error;
-  IgnoredErrorResult ignoredError;
-
   for (int32_t rowIndex = 0;; rowIndex++) {
-    CellData cellData(*this, aTableElement, rowIndex, aColumnIndex,
-                      ignoredError);
+    const CellData cellData(*this, aTableElement, rowIndex, aColumnIndex);
     
     
     
@@ -1772,11 +1744,12 @@ nsresult HTMLEditor::DeleteTableColumnWithTransaction(Element& aTableElement,
 
     
     
-    TableSize tableSize(*this, aTableElement, error);
-    if (error.Failed()) {
-      NS_WARNING("TableSize failed");
-      return error.StealNSResult();
+    const Result<TableSize, nsresult> tableSizeOrError =
+        TableSize::Create(*this, aTableElement);
+    if (NS_WARN_IF(tableSizeOrError.isErr())) {
+      return tableSizeOrError.inspectErr();
     }
+    const TableSize& tableSize = tableSizeOrError.inspect();
 
     if (tableSize.mRowCount == 1) {
       
@@ -1841,25 +1814,25 @@ nsresult HTMLEditor::DeleteSelectedTableRowsWithTransaction(
     return NS_OK;
   }
 
-  ErrorResult error;
-  TableSize tableSize(*this, *table, error);
-  if (error.Failed()) {
-    NS_WARNING("TableSize failed");
-    return error.StealNSResult();
+  const Result<TableSize, nsresult> tableSizeOrError =
+      TableSize::Create(*this, *table);
+  if (NS_WARN_IF(tableSizeOrError.isErr())) {
+    return tableSizeOrError.inspectErr();
   }
+  const TableSize& tableSize = tableSizeOrError.inspect();
 
   AutoPlaceholderBatch treateAsOneTransaction(
       *this, ScrollSelectionIntoView::Yes, __FUNCTION__);
 
   
-  IgnoredErrorResult ignoredError;
+  IgnoredErrorResult error;
   AutoEditSubActionNotifier startToHandleEditSubAction(
-      *this, EditSubAction::eDeleteNode, nsIEditor::eNext, ignoredError);
-  if (NS_WARN_IF(ignoredError.ErrorCodeIs(NS_ERROR_EDITOR_DESTROYED))) {
-    return ignoredError.StealNSResult();
+      *this, EditSubAction::eDeleteNode, nsIEditor::eNext, error);
+  if (NS_WARN_IF(error.ErrorCodeIs(NS_ERROR_EDITOR_DESTROYED))) {
+    return error.StealNSResult();
   }
   NS_WARNING_ASSERTION(
-      !ignoredError.Failed(),
+      !error.Failed(),
       "HTMLEditor::OnStartToHandleTopLevelEditSubAction() failed, but ignored");
 
   
@@ -1881,11 +1854,10 @@ nsresult HTMLEditor::DeleteSelectedTableRowsWithTransaction(
     const RefPtr<PresShell> presShell{GetPresShell()};
     
     
-    CellIndexes firstCellIndexes(MOZ_KnownLive(scanner.ElementsRef()[0]),
-                                 presShell, error);
-    if (error.Failed()) {
-      NS_WARNING("CellIndexes failed");
-      return error.StealNSResult();
+    const CellIndexes firstCellIndexes(MOZ_KnownLive(scanner.ElementsRef()[0]),
+                                       presShell);
+    if (NS_WARN_IF(firstCellIndexes.isErr())) {
+      return NS_ERROR_FAILURE;
     }
     startRowIndex = firstCellIndexes.mRow;
     startColIndex = firstCellIndexes.mColumn;
@@ -1931,10 +1903,9 @@ nsresult HTMLEditor::DeleteSelectedTableRowsWithTransaction(
   for (RefPtr<Element> selectedCellElement = scanner.GetFirstElement();
        selectedCellElement;) {
     if (selectedCellElement != scanner.ElementsRef()[0]) {
-      CellIndexes cellIndexes(*selectedCellElement, presShell, error);
-      if (error.Failed()) {
-        NS_WARNING("CellIndexes failed");
-        return error.StealNSResult();
+      const CellIndexes cellIndexes(*selectedCellElement, presShell);
+      if (NS_WARN_IF(cellIndexes.isErr())) {
+        return NS_ERROR_FAILURE;
       }
       startRowIndex = cellIndexes.mRow;
       startColIndex = cellIndexes.mColumn;
@@ -1947,10 +1918,9 @@ nsresult HTMLEditor::DeleteSelectedTableRowsWithTransaction(
       if (!selectedCellElement) {
         break;
       }
-      CellIndexes cellIndexes(*selectedCellElement, presShell, error);
-      if (error.Failed()) {
-        NS_WARNING("CellIndexes failed");
-        return error.StealNSResult();
+      const CellIndexes cellIndexes(*selectedCellElement, presShell);
+      if (NS_WARN_IF(cellIndexes.isErr())) {
+        return NS_ERROR_FAILURE;
       }
       nextRow = cellIndexes.mRow;
       startColIndex = cellIndexes.mColumn;
@@ -1970,24 +1940,24 @@ nsresult HTMLEditor::DeleteTableRowWithTransaction(Element& aTableElement,
                                                    int32_t aRowIndex) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
-  ErrorResult error;
-  TableSize tableSize(*this, aTableElement, error);
-  if (error.Failed()) {
-    NS_WARNING("TableSize failed");
-    return error.StealNSResult();
+  const Result<TableSize, nsresult> tableSizeOrError =
+      TableSize::Create(*this, aTableElement);
+  if (NS_WARN_IF(tableSizeOrError.isErr())) {
+    return tableSizeOrError.inspectErr();
   }
+  const TableSize& tableSize = tableSizeOrError.inspect();
 
   
-  IgnoredErrorResult ignoredError;
+  IgnoredErrorResult error;
   AutoEditSubActionNotifier startToHandleEditSubAction(
-      *this, EditSubAction::eDeleteNode, nsIEditor::eNext, ignoredError);
-  if (NS_WARN_IF(ignoredError.ErrorCodeIs(NS_ERROR_EDITOR_DESTROYED))) {
-    return ignoredError.StealNSResult();
+      *this, EditSubAction::eDeleteNode, nsIEditor::eNext, error);
+  if (NS_WARN_IF(error.ErrorCodeIs(NS_ERROR_EDITOR_DESTROYED))) {
+    return error.StealNSResult();
   }
   NS_WARNING_ASSERTION(
-      !ignoredError.Failed(),
+      !error.Failed(),
       "HTMLEditor::OnStartToHandleTopLevelEditSubAction() failed, but ignored");
-  ignoredError.SuppressException();
+  error.SuppressException();
 
   
   
@@ -2007,13 +1977,10 @@ nsresult HTMLEditor::DeleteTableRowWithTransaction(Element& aTableElement,
   int32_t columnIndex = 0;
   while (aRowIndex < tableSize.mRowCount &&
          columnIndex < tableSize.mColumnCount) {
-    CellData cellData(*this, aTableElement, aRowIndex, columnIndex,
-                      ignoredError);
-    if (cellData.FailedOrNotFound()) {
-      NS_WARNING("CellData failed");
+    const CellData cellData(*this, aTableElement, aRowIndex, columnIndex);
+    if (NS_WARN_IF(cellData.FailedOrNotFound())) {
       return NS_ERROR_FAILURE;
     }
-    MOZ_ASSERT(!ignoredError.Failed());
 
     
     
@@ -2175,12 +2142,12 @@ NS_IMETHODIMP HTMLEditor::SelectAllTableCells() {
     return NS_ERROR_FAILURE;
   }
 
-  ErrorResult error;
-  TableSize tableSize(*this, *table, error);
-  if (error.Failed()) {
-    NS_WARNING("TableSize failed");
-    return EditorBase::ToGenericNSResult(error.StealNSResult());
+  const Result<TableSize, nsresult> tableSizeOrError =
+      TableSize::Create(*this, *table);
+  if (NS_WARN_IF(tableSizeOrError.isErr())) {
+    return EditorBase::ToGenericNSResult(tableSizeOrError.inspectErr());
   }
+  const TableSize& tableSize = tableSizeOrError.inspect();
 
   
   
@@ -2199,18 +2166,16 @@ NS_IMETHODIMP HTMLEditor::SelectAllTableCells() {
 
   
   bool cellSelected = false;
-  IgnoredErrorResult ignoredError;
   for (int32_t row = 0; row < tableSize.mRowCount; row++) {
     CellData cellData;
     for (int32_t col = 0; col < tableSize.mColumnCount;
          col = cellData.NextColumnIndex()) {
-      cellData.Update(*this, *table, row, col, ignoredError);
+      cellData.Update(*this, *table, row, col);
       if (cellData.FailedOrNotFound()) {
         NS_WARNING("CellData::Update() failed, but might be ignored");
         rv = NS_ERROR_FAILURE;
         break;
       }
-      MOZ_ASSERT(!ignoredError.Failed());
 
       
       
@@ -2286,12 +2251,12 @@ NS_IMETHODIMP HTMLEditor::SelectTableRow() {
     return NS_ERROR_FAILURE;
   }
 
-  ErrorResult error;
-  TableSize tableSize(*this, *table, error);
-  if (error.Failed()) {
-    NS_WARNING("TableSize failed");
-    return EditorBase::ToGenericNSResult(error.StealNSResult());
+  const Result<TableSize, nsresult> tableSizeOrError =
+      TableSize::Create(*this, *table);
+  if (NS_WARN_IF(tableSizeOrError.isErr())) {
+    return EditorBase::ToGenericNSResult(tableSizeOrError.inspectErr());
   }
+  const TableSize& tableSize = tableSizeOrError.inspect();
 
   
   
@@ -2314,17 +2279,15 @@ NS_IMETHODIMP HTMLEditor::SelectTableRow() {
 
   
   bool cellSelected = false;
-  IgnoredErrorResult ignoredError;
   CellData cellData;
   for (int32_t col = 0; col < tableSize.mColumnCount;
        col = cellData.NextColumnIndex()) {
-    cellData.Update(*this, *table, startRowIndex, col, ignoredError);
+    cellData.Update(*this, *table, startRowIndex, col);
     if (cellData.FailedOrNotFound()) {
       NS_WARNING("CellData::Update() failed, but might be ignored");
       rv = NS_ERROR_FAILURE;
       break;
     }
-    MOZ_ASSERT(!ignoredError.Failed());
 
     
     
@@ -2399,12 +2362,12 @@ NS_IMETHODIMP HTMLEditor::SelectTableColumn() {
     return NS_ERROR_FAILURE;
   }
 
-  ErrorResult error;
-  TableSize tableSize(*this, *table, error);
-  if (error.Failed()) {
-    NS_WARNING("TableSize failed");
-    return EditorBase::ToGenericNSResult(error.StealNSResult());
+  const Result<TableSize, nsresult> tableSizeOrError =
+      TableSize::Create(*this, *table);
+  if (NS_WARN_IF(tableSizeOrError.isErr())) {
+    return EditorBase::ToGenericNSResult(tableSizeOrError.inspectErr());
   }
+  const TableSize& tableSize = tableSizeOrError.inspect();
 
   
   
@@ -2423,17 +2386,15 @@ NS_IMETHODIMP HTMLEditor::SelectTableColumn() {
 
   
   bool cellSelected = false;
-  IgnoredErrorResult ignoredError;
   CellData cellData;
   for (int32_t row = 0; row < tableSize.mRowCount;
        row = cellData.NextRowIndex()) {
-    cellData.Update(*this, *table, row, startColIndex, ignoredError);
+    cellData.Update(*this, *table, row, startColIndex);
     if (cellData.FailedOrNotFound()) {
       NS_WARNING("CellData::Update() failed, but might be ignored");
       rv = NS_ERROR_FAILURE;
       break;
     }
-    MOZ_ASSERT(!ignoredError.Failed());
 
     
     
@@ -2604,10 +2565,8 @@ nsresult HTMLEditor::SplitCellIntoColumns(Element* aTable, int32_t aRowIndex,
     *aNewCell = nullptr;
   }
 
-  IgnoredErrorResult ignoredError;
-  CellData cellData(*this, *aTable, aRowIndex, aColIndex, ignoredError);
-  if (cellData.FailedOrNotFound()) {
-    NS_WARNING("CellData failed");
+  const CellData cellData(*this, *aTable, aRowIndex, aColIndex);
+  if (NS_WARN_IF(cellData.FailedOrNotFound())) {
     return NS_ERROR_FAILURE;
   }
 
@@ -2657,10 +2616,8 @@ nsresult HTMLEditor::SplitCellIntoRows(Element* aTable, int32_t aRowIndex,
     *aNewCell = nullptr;
   }
 
-  IgnoredErrorResult ignoredError;
-  CellData cellData(*this, *aTable, aRowIndex, aColIndex, ignoredError);
-  if (cellData.FailedOrNotFound()) {
-    NS_WARNING("CellData failed");
+  const CellData cellData(*this, *aTable, aRowIndex, aColIndex);
+  if (NS_WARN_IF(cellData.FailedOrNotFound())) {
     return NS_ERROR_FAILURE;
   }
 
@@ -2670,12 +2627,12 @@ nsresult HTMLEditor::SplitCellIntoRows(Element* aTable, int32_t aRowIndex,
     return NS_OK;
   }
 
-  ErrorResult error;
-  TableSize tableSize(*this, *aTable, error);
-  if (error.Failed()) {
-    NS_WARNING("TableSize failed");
-    return error.StealNSResult();
+  const Result<TableSize, nsresult> tableSizeOrError =
+      TableSize::Create(*this, *aTable);
+  if (NS_WARN_IF(tableSizeOrError.isErr())) {
+    return tableSizeOrError.inspectErr();
   }
+  const TableSize& tableSize = tableSizeOrError.inspect();
 
   
   RefPtr<Element> cellElementAtInsertionPoint;
@@ -2686,16 +2643,14 @@ nsresult HTMLEditor::SplitCellIntoRows(Element* aTable, int32_t aRowIndex,
                rowBelowIndex = cellData.mFirst.mRow + aRowSpanAbove;
        colIndex <= tableSize.mColumnCount;
        colIndex = cellData.NextColumnIndex()) {
-    cellDataAtInsertionPoint.Update(*this, *aTable, rowBelowIndex, colIndex,
-                                    ignoredError);
+    cellDataAtInsertionPoint.Update(*this, *aTable, rowBelowIndex, colIndex);
     
     
     
     
     
     
-    if (cellDataAtInsertionPoint.FailedOrNotFound()) {
-      NS_WARNING("CellData::Update() failed");
+    if (NS_WARN_IF(cellDataAtInsertionPoint.FailedOrNotFound())) {
       return NS_ERROR_FAILURE;
     }
 
@@ -2874,21 +2829,21 @@ NS_IMETHODIMP HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents) {
   if (scanner.ElementsRef().Length() > 1) {
     
     
-    ErrorResult error;
-    TableSize tableSize(*this, *table, error);
-    if (error.Failed()) {
-      NS_WARNING("TableSize failed");
-      return EditorBase::ToGenericNSResult(error.StealNSResult());
+    Result<TableSize, nsresult> tableSizeOrError =
+        TableSize::Create(*this, *table);
+    if (NS_WARN_IF(tableSizeOrError.isErr())) {
+      return EditorBase::ToGenericNSResult(tableSizeOrError.unwrapErr());
     }
+    
+    TableSize tableSize = tableSizeOrError.unwrap();
 
     RefPtr<PresShell> presShell = GetPresShell();
     
     
-    CellIndexes firstSelectedCellIndexes(
-        MOZ_KnownLive(scanner.ElementsRef()[0]), presShell, error);
-    if (error.Failed()) {
-      NS_WARNING("CellIndexes failed");
-      return EditorBase::ToGenericNSResult(error.StealNSResult());
+    const CellIndexes firstSelectedCellIndexes(
+        MOZ_KnownLive(scanner.ElementsRef()[0]), presShell);
+    if (NS_WARN_IF(firstSelectedCellIndexes.isErr())) {
+      return NS_ERROR_FAILURE;
     }
 
     
@@ -2911,7 +2866,6 @@ NS_IMETHODIMP HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents) {
 
     
     
-    IgnoredErrorResult ignoredError;
     for (int32_t rowIndex = firstSelectedCellIndexes.mRow;
          rowIndex <= lastRowIndex; rowIndex++) {
       int32_t currentRowCount = tableSize.mRowCount;
@@ -2931,12 +2885,10 @@ NS_IMETHODIMP HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents) {
       int32_t colIndex = firstSelectedCellIndexes.mColumn;
       for (CellData cellData; colIndex < tableSize.mColumnCount;
            colIndex = cellData.NextColumnIndex()) {
-        cellData.Update(*this, *table, rowIndex, colIndex, ignoredError);
-        if (cellData.FailedOrNotFound()) {
-          NS_WARNING("CellData::Update() failed");
+        cellData.Update(*this, *table, rowIndex, colIndex);
+        if (NS_WARN_IF(cellData.FailedOrNotFound())) {
           return NS_ERROR_FAILURE;
         }
-        MOZ_ASSERT(!ignoredError.Failed());
 
         if (cellData.mIsSelected) {
           if (!cellFoundInRow) {
@@ -3010,12 +2962,10 @@ NS_IMETHODIMP HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents) {
       CellData cellData;
       for (int32_t colIndex = 0; colIndex < tableSize.mColumnCount;
            colIndex = cellData.NextColumnIndex()) {
-        cellData.Update(*this, *table, rowIndex, colIndex, ignoredError);
-        if (cellData.FailedOrNotFound()) {
-          NS_WARNING("CellData::Update() failed");
+        cellData.Update(*this, *table, rowIndex, colIndex);
+        if (NS_WARN_IF(cellData.FailedOrNotFound())) {
           return NS_ERROR_FAILURE;
         }
-        MOZ_ASSERT(!ignoredError.Failed());
 
         
         if (!cellData.mEffectiveColSpan) {
@@ -3079,12 +3029,13 @@ NS_IMETHODIMP HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents) {
 
     
     
+    IgnoredErrorResult error;
     AutoEditSubActionNotifier startToHandleEditSubAction(
-        *this, EditSubAction::eDeleteNode, nsIEditor::eNext, ignoredError);
-    if (NS_WARN_IF(ignoredError.ErrorCodeIs(NS_ERROR_EDITOR_DESTROYED))) {
-      return EditorBase::ToGenericNSResult(ignoredError.StealNSResult());
+        *this, EditSubAction::eDeleteNode, nsIEditor::eNext, error);
+    if (NS_WARN_IF(error.ErrorCodeIs(NS_ERROR_EDITOR_DESTROYED))) {
+      return EditorBase::ToGenericNSResult(error.StealNSResult());
     }
-    NS_WARNING_ASSERTION(!ignoredError.Failed(),
+    NS_WARNING_ASSERTION(!error.Failed(),
                          "HTMLEditor::OnStartToHandleTopLevelEditSubAction() "
                          "failed, but ignored");
 
@@ -3112,10 +3063,10 @@ NS_IMETHODIMP HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents) {
       Element* deletedCell =
           HTMLEditUtils::GetTableCellElementIfOnlyOneSelected(*range);
       if (!deletedCell) {
-        SelectionRef().RemoveRangeAndUnselectFramesAndNotifyListeners(
-            *range, ignoredError);
+        SelectionRef().RemoveRangeAndUnselectFramesAndNotifyListeners(*range,
+                                                                      error);
         NS_WARNING_ASSERTION(
-            !ignoredError.Failed(),
+            !error.Failed(),
             "Selection::RemoveRangeAndUnselectFramesAndNotifyListeners() "
             "failed, but ignored");
         rangeCount--;
@@ -3145,25 +3096,18 @@ NS_IMETHODIMP HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents) {
   } else {
     
     
-    IgnoredErrorResult ignoredError;
-    CellData leftCellData(*this, *table, startRowIndex, startColIndex,
-                          ignoredError);
-    if (leftCellData.FailedOrNotFound()) {
-      NS_WARNING("CellData for left cell failed");
+    const CellData leftCellData(*this, *table, startRowIndex, startColIndex);
+    if (NS_WARN_IF(leftCellData.FailedOrNotFound())) {
       return NS_ERROR_FAILURE;
     }
-    MOZ_ASSERT(!ignoredError.Failed());
 
     
-    CellData rightCellData(
+    const CellData rightCellData(
         *this, *table, leftCellData.mFirst.mRow,
-        leftCellData.mFirst.mColumn + leftCellData.mEffectiveColSpan,
-        ignoredError);
-    if (rightCellData.FailedOrNotFound()) {
-      NS_WARNING("CellData for right cell failed");
+        leftCellData.mFirst.mColumn + leftCellData.mEffectiveColSpan);
+    if (NS_WARN_IF(rightCellData.FailedOrNotFound())) {
       return NS_ERROR_FAILURE;
     }
-    MOZ_ASSERT(!ignoredError.Failed());
 
     
     
@@ -3333,29 +3277,26 @@ nsresult HTMLEditor::FixBadRowSpan(Element* aTable, int32_t aRowIndex,
     return NS_ERROR_INVALID_ARG;
   }
 
-  ErrorResult error;
-  TableSize tableSize(*this, *aTable, error);
-  if (error.Failed()) {
-    NS_WARNING("TableSize failed");
-    return error.StealNSResult();
+  const Result<TableSize, nsresult> tableSizeOrError =
+      TableSize::Create(*this, *aTable);
+  if (NS_WARN_IF(tableSizeOrError.isErr())) {
+    return tableSizeOrError.inspectErr();
   }
+  const TableSize& tableSize = tableSizeOrError.inspect();
 
   int32_t minRowSpan = -1;
-  IgnoredErrorResult ignoredError;
   CellData cellData;
   for (int32_t colIndex = 0; colIndex < tableSize.mColumnCount;
        colIndex = cellData.NextColumnIndex()) {
-    cellData.Update(*this, *aTable, aRowIndex, colIndex, ignoredError);
+    cellData.Update(*this, *aTable, aRowIndex, colIndex);
     
     
     
     
     
-    if (cellData.FailedOrNotFound()) {
-      NS_WARNING("CellData::Update() failed");
+    if (NS_WARN_IF(cellData.FailedOrNotFound())) {
       return NS_ERROR_FAILURE;
     }
-    MOZ_ASSERT(!ignoredError.Failed());
 
     
     
@@ -3377,12 +3318,10 @@ nsresult HTMLEditor::FixBadRowSpan(Element* aTable, int32_t aRowIndex,
     CellData cellData;
     for (int32_t colIndex = 0; colIndex < tableSize.mColumnCount;
          colIndex = cellData.NextColumnIndex()) {
-      cellData.Update(*this, *aTable, aRowIndex, colIndex, ignoredError);
-      if (cellData.FailedOrNotFound()) {
-        NS_WARNING("CellData::Udpate() failed");
+      cellData.Update(*this, *aTable, aRowIndex, colIndex);
+      if (NS_WARN_IF(cellData.FailedOrNotFound())) {
         return NS_ERROR_FAILURE;
       }
-      MOZ_ASSERT(!ignoredError.Failed());
 
       
       
@@ -3399,12 +3338,12 @@ nsresult HTMLEditor::FixBadRowSpan(Element* aTable, int32_t aRowIndex,
       MOZ_ASSERT(colIndex < cellData.NextColumnIndex());
     }
   }
-  tableSize.Update(*this, *aTable, error);
-  if (error.Failed()) {
-    NS_WARNING("TableSize::Update() failed");
-    return error.StealNSResult();
+  const Result<TableSize, nsresult> newTableSizeOrError =
+      TableSize::Create(*this, *aTable);
+  if (NS_WARN_IF(newTableSizeOrError.isErr())) {
+    return newTableSizeOrError.inspectErr();
   }
-  aNewRowCount = tableSize.mRowCount;
+  aNewRowCount = newTableSizeOrError.inspect().mRowCount;
   return NS_OK;
 }
 
@@ -3414,29 +3353,26 @@ nsresult HTMLEditor::FixBadColSpan(Element* aTable, int32_t aColIndex,
     return NS_ERROR_INVALID_ARG;
   }
 
-  ErrorResult error;
-  TableSize tableSize(*this, *aTable, error);
-  if (error.Failed()) {
-    NS_WARNING("TableSize failed");
-    return error.StealNSResult();
+  const Result<TableSize, nsresult> tableSizeOrError =
+      TableSize::Create(*this, *aTable);
+  if (NS_WARN_IF(tableSizeOrError.isErr())) {
+    return tableSizeOrError.inspectErr();
   }
+  const TableSize& tableSize = tableSizeOrError.inspect();
 
   int32_t minColSpan = -1;
-  IgnoredErrorResult ignoredError;
   CellData cellData;
   for (int32_t rowIndex = 0; rowIndex < tableSize.mRowCount;
        rowIndex = cellData.NextRowIndex()) {
-    cellData.Update(*this, *aTable, rowIndex, aColIndex, ignoredError);
+    cellData.Update(*this, *aTable, rowIndex, aColIndex);
     
     
     
     
     
-    if (cellData.FailedOrNotFound()) {
-      NS_WARNING("CellData::Update() failed");
+    if (NS_WARN_IF(cellData.FailedOrNotFound())) {
       return NS_ERROR_FAILURE;
     }
-    MOZ_ASSERT(!ignoredError.Failed());
 
     
     
@@ -3457,12 +3393,10 @@ nsresult HTMLEditor::FixBadColSpan(Element* aTable, int32_t aColIndex,
     CellData cellData;
     for (int32_t rowIndex = 0; rowIndex < tableSize.mRowCount;
          rowIndex = cellData.NextRowIndex()) {
-      cellData.Update(*this, *aTable, rowIndex, aColIndex, ignoredError);
-      if (cellData.FailedOrNotFound()) {
-        NS_WARNING("CellData::Update() failed");
+      cellData.Update(*this, *aTable, rowIndex, aColIndex);
+      if (NS_WARN_IF(cellData.FailedOrNotFound())) {
         return NS_ERROR_FAILURE;
       }
-      MOZ_ASSERT(!ignoredError.Failed());
 
       
       
@@ -3479,12 +3413,12 @@ nsresult HTMLEditor::FixBadColSpan(Element* aTable, int32_t aColIndex,
       MOZ_ASSERT(rowIndex < cellData.NextRowIndex());
     }
   }
-  tableSize.Update(*this, *aTable, error);
-  if (error.Failed()) {
-    NS_WARNING("TableSize::Update() failed");
-    return error.StealNSResult();
+  const Result<TableSize, nsresult> newTableSizeOrError =
+      TableSize::Create(*this, *aTable);
+  if (NS_WARN_IF(newTableSizeOrError.isErr())) {
+    return newTableSizeOrError.inspectErr();
   }
-  aNewColCount = tableSize.mColumnCount;
+  aNewColCount = newTableSizeOrError.inspect().mColumnCount;
   return NS_OK;
 }
 
@@ -3530,12 +3464,13 @@ nsresult HTMLEditor::NormalizeTableInternal(Element& aTableOrElementInTable) {
     }
   }
 
-  ErrorResult error;
-  TableSize tableSize(*this, *tableElement, error);
-  if (error.Failed()) {
-    NS_WARNING("TableSize failed");
-    return error.StealNSResult();
+  Result<TableSize, nsresult> tableSizeOrError =
+      TableSize::Create(*this, *tableElement);
+  if (NS_WARN_IF(tableSizeOrError.isErr())) {
+    return tableSizeOrError.unwrapErr();
   }
+  
+  TableSize tableSize = tableSizeOrError.unwrap();
 
   
   AutoSelectionRestorer restoreSelectionLater(*this);
@@ -3543,14 +3478,14 @@ nsresult HTMLEditor::NormalizeTableInternal(Element& aTableOrElementInTable) {
   AutoPlaceholderBatch treateAsOneTransaction(
       *this, ScrollSelectionIntoView::Yes, __FUNCTION__);
   
-  IgnoredErrorResult ignoredError;
+  IgnoredErrorResult error;
   AutoEditSubActionNotifier startToHandleEditSubAction(
-      *this, EditSubAction::eInsertNode, nsIEditor::eNext, ignoredError);
-  if (NS_WARN_IF(ignoredError.ErrorCodeIs(NS_ERROR_EDITOR_DESTROYED))) {
-    return ignoredError.StealNSResult();
+      *this, EditSubAction::eInsertNode, nsIEditor::eNext, error);
+  if (NS_WARN_IF(error.ErrorCodeIs(NS_ERROR_EDITOR_DESTROYED))) {
+    return error.StealNSResult();
   }
   NS_WARNING_ASSERTION(
-      !ignoredError.Failed(),
+      !error.Failed(),
       "HTMLEditor::OnStartToHandleTopLevelEditSubAction() failed, but ignored");
 
   
@@ -3577,16 +3512,14 @@ nsresult HTMLEditor::NormalizeTableInternal(Element& aTableOrElementInTable) {
   for (int32_t rowIndex = 0; rowIndex < tableSize.mRowCount; rowIndex++) {
     RefPtr<Element> previousCellElementInRow;
     for (int32_t colIndex = 0; colIndex < tableSize.mColumnCount; colIndex++) {
-      CellData cellData(*this, *tableElement, rowIndex, colIndex, ignoredError);
+      CellData cellData(*this, *tableElement, rowIndex, colIndex);
       
       
       
       
-      if (cellData.FailedOrNotFound()) {
-        NS_WARNING("CellData::Update() failed");
+      if (NS_WARN_IF(cellData.FailedOrNotFound())) {
         return NS_ERROR_FAILURE;
       }
-      MOZ_ASSERT(!ignoredError.Failed());
 
       if (cellData.mElement) {
         
@@ -3638,22 +3571,19 @@ NS_IMETHODIMP HTMLEditor::GetCellIndexes(Element* aCellElement,
   if (!aCellElement) {
     
     
-    ErrorResult error;
-    CellIndexes cellIndexes(*this, SelectionRef(), error);
-    if (error.Failed()) {
-      return EditorBase::ToGenericNSResult(error.StealNSResult());
+    const CellIndexes cellIndexes(*this, SelectionRef());
+    if (NS_WARN_IF(cellIndexes.isErr())) {
+      return NS_ERROR_FAILURE;
     }
     *aRowIndex = cellIndexes.mRow;
     *aColumnIndex = cellIndexes.mColumn;
     return NS_OK;
   }
 
-  ErrorResult error;
   const RefPtr<PresShell> presShell{GetPresShell()};
-  CellIndexes cellIndexes(*aCellElement, presShell, error);
-  if (error.Failed()) {
-    NS_WARNING("CellIndexes failed");
-    return EditorBase::ToGenericNSResult(error.StealNSResult());
+  const CellIndexes cellIndexes(*aCellElement, presShell);
+  if (NS_WARN_IF(cellIndexes.isErr())) {
+    return NS_ERROR_FAILURE;
   }
   *aRowIndex = cellIndexes.mRow;
   *aColumnIndex = cellIndexes.mColumn;
@@ -3671,18 +3601,18 @@ nsTableWrapperFrame* HTMLEditor::GetTableFrame(Element* aTableElement) {
 
 int32_t HTMLEditor::GetNumberOfCellsInRow(Element& aTableElement,
                                           int32_t aRowIndex) {
-  IgnoredErrorResult ignoredError;
-  TableSize tableSize(*this, aTableElement, ignoredError);
-  if (ignoredError.Failed()) {
-    NS_WARNING("TableSize failed");
+  const Result<TableSize, nsresult> tableSizeOrError =
+      TableSize::Create(*this, aTableElement);
+  if (NS_WARN_IF(tableSizeOrError.isErr())) {
     return -1;
   }
 
   int32_t numberOfCells = 0;
   CellData cellData;
-  for (int32_t columnIndex = 0; columnIndex < tableSize.mColumnCount;
+  for (int32_t columnIndex = 0;
+       columnIndex < tableSizeOrError.inspect().mColumnCount;
        columnIndex = cellData.NextColumnIndex()) {
-    cellData.Update(*this, aTableElement, aRowIndex, columnIndex, ignoredError);
+    cellData.Update(*this, aTableElement, aRowIndex, columnIndex);
     
     
     
@@ -3690,7 +3620,6 @@ int32_t HTMLEditor::GetNumberOfCellsInRow(Element& aTableElement,
     if (cellData.FailedOrNotFound()) {
       break;
     }
-    MOZ_ASSERT(!ignoredError.Failed());
 
     
     if (cellData.mElement && !cellData.IsSpannedFromOtherRow()) {
@@ -3728,14 +3657,13 @@ NS_IMETHODIMP HTMLEditor::GetTableSize(Element* aTableOrElementInTable,
     }
   }
 
-  ErrorResult error;
-  TableSize tableSize(*this, *tableOrElementInTable, error);
-  if (error.Failed()) {
-    NS_WARNING("TableSize failed");
-    return EditorBase::ToGenericNSResult(error.StealNSResult());
+  const Result<TableSize, nsresult> tableSizeOrError =
+      TableSize::Create(*this, *tableOrElementInTable);
+  if (NS_WARN_IF(tableSizeOrError.isErr())) {
+    return EditorBase::ToGenericNSResult(tableSizeOrError.inspectErr());
   }
-  *aRowCount = tableSize.mRowCount;
-  *aColumnCount = tableSize.mColumnCount;
+  *aRowCount = tableSizeOrError.inspect().mRowCount;
+  *aColumnCount = tableSizeOrError.inspect().mColumnCount;
   return NS_OK;
 }
 
@@ -3780,13 +3708,11 @@ NS_IMETHODIMP HTMLEditor::GetCellDataAt(
     }
   }
 
-  IgnoredErrorResult ignoredError;
-  CellData cellData(*this, *table, aRowIndex, aColumnIndex, ignoredError);
-  if (cellData.FailedOrNotFound()) {
-    NS_WARNING("CellData failed");
+  const CellData cellData(*this, *table, aRowIndex, aColumnIndex);
+  if (NS_WARN_IF(cellData.FailedOrNotFound())) {
     return NS_ERROR_FAILURE;
   }
-  cellData.mElement.forget(aCellElement);
+  NS_ADDREF(*aCellElement = cellData.mElement.get());
   *aIsSelected = cellData.mIsSelected;
   *aStartRowIndex = cellData.mFirst.mRow;
   *aStartColumnIndex = cellData.mFirst.mColumn;
@@ -3943,12 +3869,10 @@ nsresult HTMLEditor::GetCellContext(Element** aTable, Element** aCell,
 
   
   if (aRowIndex || aColumnIndex) {
-    ErrorResult error;
     const RefPtr<PresShell> presShell{GetPresShell()};
-    CellIndexes cellIndexes(*cell, presShell, error);
-    if (error.Failed()) {
-      NS_WARNING("CellIndexes failed");
-      return error.StealNSResult();
+    const CellIndexes cellIndexes(*cell, presShell);
+    if (NS_WARN_IF(cellIndexes.isErr())) {
+      return NS_ERROR_FAILURE;
     }
     if (aRowIndex) {
       *aRowIndex = cellIndexes.mRow;
@@ -4023,12 +3947,10 @@ NS_IMETHODIMP HTMLEditor::GetFirstSelectedCellInTable(int32_t* aRowIndex,
     return NS_OK;
   }
 
-  ErrorResult error;
   RefPtr<PresShell> presShell = GetPresShell();
-  CellIndexes indexes(*firstSelectedCellElement, presShell, error);
-  if (error.Failed()) {
-    NS_WARNING("CellIndexes failed");
-    return error.StealNSResult();
+  const CellIndexes indexes(*firstSelectedCellElement, presShell);
+  if (NS_WARN_IF(indexes.isErr())) {
+    return NS_ERROR_FAILURE;
   }
 
   firstSelectedCellElement.forget(aCellElement);
@@ -4287,12 +4209,12 @@ NS_IMETHODIMP HTMLEditor::GetSelectedCellsType(Element* aElement,
     }
   }
 
-  ErrorResult error;
-  TableSize tableSize(*this, *table, error);
-  if (error.Failed()) {
-    NS_WARNING("TableSize failed");
-    return EditorBase::ToGenericNSResult(error.StealNSResult());
+  const Result<TableSize, nsresult> tableSizeOrError =
+      TableSize::Create(*this, *table);
+  if (NS_WARN_IF(tableSizeOrError.isErr())) {
+    return EditorBase::ToGenericNSResult(tableSizeOrError.inspectErr());
   }
+  const TableSize& tableSize = tableSizeOrError.inspect();
 
   
   SelectedTableCellScanner scanner(SelectionRef());
@@ -4312,11 +4234,10 @@ NS_IMETHODIMP HTMLEditor::GetSelectedCellsType(Element* aElement,
        scanner.ElementsRef()) {
     
     
-    CellIndexes selectedCellIndexes(MOZ_KnownLive(selectedCellElement),
-                                    presShell, error);
-    if (error.Failed()) {
-      NS_WARNING("CellIndexes failed");
-      return EditorBase::ToGenericNSResult(error.StealNSResult());
+    const CellIndexes selectedCellIndexes(MOZ_KnownLive(selectedCellElement),
+                                          presShell);
+    if (NS_WARN_IF(selectedCellIndexes.isErr())) {
+      return NS_ERROR_FAILURE;
     }
     if (!indexArray.Contains(selectedCellIndexes.mColumn)) {
       indexArray.AppendElement(selectedCellIndexes.mColumn);
@@ -4344,11 +4265,10 @@ NS_IMETHODIMP HTMLEditor::GetSelectedCellsType(Element* aElement,
        scanner.ElementsRef()) {
     
     
-    CellIndexes selectedCellIndexes(MOZ_KnownLive(selectedCellElement),
-                                    presShell, error);
-    if (error.Failed()) {
-      NS_WARNING("CellIndexes failed");
-      return EditorBase::ToGenericNSResult(error.StealNSResult());
+    const CellIndexes selectedCellIndexes(MOZ_KnownLive(selectedCellElement),
+                                          presShell);
+    if (NS_WARN_IF(selectedCellIndexes.isErr())) {
+      return NS_ERROR_FAILURE;
     }
 
     if (!indexArray.Contains(selectedCellIndexes.mRow)) {
@@ -4374,16 +4294,13 @@ bool HTMLEditor::AllCellsInRowSelected(Element* aTable, int32_t aRowIndex,
     return false;
   }
 
-  IgnoredErrorResult ignoredError;
   CellData cellData;
   for (int32_t col = 0; col < aNumberOfColumns;
        col = cellData.NextColumnIndex()) {
-    cellData.Update(*this, *aTable, aRowIndex, col, ignoredError);
-    if (cellData.FailedOrNotFound()) {
-      NS_WARNING("CellData::Update() failed");
+    cellData.Update(*this, *aTable, aRowIndex, col);
+    if (NS_WARN_IF(cellData.FailedOrNotFound())) {
       return false;
     }
-    MOZ_ASSERT(!ignoredError.Failed());
 
     
     
@@ -4413,15 +4330,12 @@ bool HTMLEditor::AllCellsInColumnSelected(Element* aTable, int32_t aColIndex,
     return false;
   }
 
-  IgnoredErrorResult ignoredError;
   CellData cellData;
   for (int32_t row = 0; row < aNumberOfRows; row = cellData.NextRowIndex()) {
-    cellData.Update(*this, *aTable, row, aColIndex, ignoredError);
-    if (cellData.FailedOrNotFound()) {
-      NS_WARNING("CellData::Update() failed");
+    cellData.Update(*this, *aTable, row, aColIndex);
+    if (NS_WARN_IF(cellData.FailedOrNotFound())) {
       return false;
     }
-    MOZ_ASSERT(!ignoredError.Failed());
 
     
     
