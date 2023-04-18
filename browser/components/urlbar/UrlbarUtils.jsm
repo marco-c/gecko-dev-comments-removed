@@ -2110,6 +2110,11 @@ class L10nCache {
 
   constructor(l10n) {
     this.l10n = Cu.getWeakReference(l10n);
+    this.QueryInterface = ChromeUtils.generateQI([
+      "nsIObserver",
+      "nsISupportsWeakReference",
+    ]);
+    Services.obs.addObserver(this, "intl:app-locales-changed", true);
   }
 
   
@@ -2234,6 +2239,31 @@ class L10nCache {
 
   clear() {
     this._messagesByKey.clear();
+  }
+
+  
+
+
+
+
+  size() {
+    return this._messagesByKey.size;
+  }
+
+  
+
+
+
+
+
+  async observe(subject, topic, data) {
+    switch (topic) {
+      case "intl:app-locales-changed": {
+        await this.l10n.ready;
+        this.clear();
+        break;
+      }
+    }
   }
 
   
