@@ -735,11 +735,6 @@ void nsTextControlFrame::ReflowTextControlChild(
   
   auto overridePadding =
       isButtonBox ? Nothing() : Some(aReflowInput.ComputedLogicalPadding(wm));
-  if (!isButtonBox && aButtonBoxISize) {
-    
-    overridePadding->IEnd(outerWM) = 0;
-  }
-
   
   
   
@@ -748,6 +743,8 @@ void nsTextControlFrame::ReflowTextControlChild(
   kidReflowInput.Init(aPresContext, overrideCBSize, Nothing(), overridePadding);
 
   LogicalPoint position(wm);
+  const auto& bp = aReflowInput.ComputedLogicalBorderPadding(outerWM);
+
   if (!isButtonBox) {
     MOZ_ASSERT(wm == outerWM,
                "Shouldn't have to care about orthogonal "
@@ -755,13 +752,10 @@ void nsTextControlFrame::ReflowTextControlChild(
                "except for the number spin-box which forces "
                "horizontal-tb");
 
-    const auto& border = aReflowInput.ComputedLogicalBorder(wm);
-
     
-    
-    
-    position.B(wm) = border.BStart(wm);
-    position.I(wm) = border.IStart(wm);
+    const auto& padding = aReflowInput.ComputedLogicalPadding(wm);
+    position.B(wm) = bp.BStart(wm) - padding.BStart(wm);
+    position.I(wm) = bp.IStart(wm) - padding.IStart(wm);
 
     
     
@@ -779,7 +773,6 @@ void nsTextControlFrame::ReflowTextControlChild(
               containerSize, ReflowChildFlags::Default, aStatus);
 
   if (isButtonBox) {
-    const auto& bp = aReflowInput.ComputedLogicalBorderPadding(outerWM);
     auto size = desiredSize.Size(outerWM);
     
     
