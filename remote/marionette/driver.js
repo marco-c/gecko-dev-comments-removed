@@ -56,7 +56,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
     "chrome://remote/content/marionette/actors/MarionetteCommandsParent.jsm",
   waitForInitialNavigationCompleted:
     "chrome://remote/content/shared/Navigate.jsm",
-  waitForLoadEvent: "chrome://remote/content/marionette/sync.js",
   waitForObserverTopic: "chrome://remote/content/marionette/sync.js",
   WebDriverSession: "chrome://remote/content/shared/webdriver/Session.jsm",
   WebElement: "chrome://remote/content/marionette/element.js",
@@ -2008,13 +2007,6 @@ GeckoDriver.prototype.newWindow = async function(cmd) {
 
   let contentBrowser;
 
-  
-  
-  const onBrowserContentLoaded = waitForLoadEvent(
-    "pageshow",
-    () => contentBrowser?.browsingContext
-  );
-
   switch (type) {
     case "window":
       let win = await this.curBrowser.openBrowserWindow(focus, isPrivate);
@@ -2028,16 +2020,13 @@ GeckoDriver.prototype.newWindow = async function(cmd) {
       contentBrowser = browser.getBrowserForTab(tab);
   }
 
-  await onBrowserContentLoaded;
-
   
   
-  let windowId = await new PollPromise((resolve, reject) => {
-    let id = windowManager.getIdForBrowser(contentBrowser);
-    windowManager.windowHandles.includes(id) ? resolve(id) : reject();
-  });
+  await waitForInitialNavigationCompleted(contentBrowser.browsingContext);
 
-  return { handle: windowId.toString(), type };
+  const id = windowManager.getIdForBrowser(contentBrowser);
+
+  return { handle: id.toString(), type };
 };
 
 

@@ -11,14 +11,9 @@ const {
   Sleep,
   TimedPromise,
   waitForEvent,
-  waitForLoadEvent,
   waitForMessage,
   waitForObserverTopic,
 } = ChromeUtils.import("chrome://remote/content/marionette/sync.js");
-
-const { EventDispatcher } = ChromeUtils.import(
-  "chrome://remote/content/marionette/actors/MarionetteEventsParent.jsm"
-);
 
 
 
@@ -454,21 +449,6 @@ add_task(async function test_waitForEvent_wantsUntrustedTypes() {
     equal(element, event.target);
     equal(expected_untrusted, event.untrusted);
   }
-});
-
-add_task(async function test_waitForLoadEvent() {
-  const mockBrowsingContext = {};
-  const onLoad = waitForLoadEvent("pageshow", () => mockBrowsingContext);
-
-  
-  EventDispatcher.emit("page-load", {
-    type: "pageshow",
-    browsingContext: mockBrowsingContext,
-  });
-
-  const loadEvent = await onLoad;
-  equal(loadEvent.type, "pageshow");
-  equal(loadEvent.browsingContext, mockBrowsingContext);
 });
 
 add_task(async function test_waitForMessage_messageManagerAndMessageTypes() {

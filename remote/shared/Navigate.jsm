@@ -43,7 +43,10 @@ function waitForInitialNavigationCompleted(browsingContext) {
         Ci.nsIWebProgress.NOTIFY_STATE_DOCUMENT
     );
 
-    if (!browsingContext.webProgress.isLoadingDocument) {
+    
+    const isInitial = !browsingContext.currentWindowGlobal;
+
+    if (!browsingContext.webProgress.isLoadingDocument && !isInitial) {
       logger.trace("Initial navigation already completed");
       resolve();
     }

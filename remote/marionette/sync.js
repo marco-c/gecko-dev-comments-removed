@@ -13,7 +13,6 @@ const EXPORTED_SYMBOLS = [
   "Sleep",
   "TimedPromise",
   "waitForEvent",
-  "waitForLoadEvent",
   "waitForMessage",
   "waitForObserverTopic",
 ];
@@ -27,10 +26,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   AppConstants: "resource://gre/modules/AppConstants.jsm",
 
   error: "chrome://remote/content/shared/webdriver/Errors.jsm",
-  EventDispatcher:
-    "chrome://remote/content/marionette/actors/MarionetteEventsParent.jsm",
   Log: "chrome://remote/content/shared/Log.jsm",
-  truncate: "chrome://remote/content/shared/Format.jsm",
 });
 
 XPCOMUtils.defineLazyGetter(this, "logger", () =>
@@ -522,47 +518,6 @@ function waitForEvent(
       capture,
       wantsUntrusted
     );
-  });
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function waitForLoadEvent(eventName, browsingContextFn) {
-  let onPageLoad;
-  return new Promise(resolve => {
-    onPageLoad = (_, data) => {
-      
-      if (data.browsingContext !== browsingContextFn()) {
-        return;
-      }
-
-      logger.trace(
-        truncate`[${data.browsingContext.id}] Received event ${data.type} for ${data.documentURI}`
-      );
-
-      if (data.type === eventName) {
-        EventDispatcher.off("page-load", onPageLoad);
-        resolve(data);
-      }
-    };
-    EventDispatcher.on("page-load", onPageLoad);
   });
 }
 
