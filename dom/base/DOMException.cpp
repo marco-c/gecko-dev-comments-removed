@@ -49,12 +49,7 @@ enum DOM4ErrorTypeCodeMap {
   TimeoutError = DOMException_Binding::TIMEOUT_ERR,
   InvalidNodeTypeError = DOMException_Binding::INVALID_NODE_TYPE_ERR,
   DataCloneError = DOMException_Binding::DATA_CLONE_ERR,
-  InvalidPointerId = 0,
   EncodingError = 0,
-
-  
-  TypeError = 0,
-  RangeError = 0,
 
   
 
