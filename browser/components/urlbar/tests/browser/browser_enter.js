@@ -303,3 +303,25 @@ add_task(async function typeCharWhileProcessingEnter() {
   
   BrowserTestUtils.removeTab(tab);
 });
+
+add_task(async function keyupEnterWhilePressingMeta() {
+  const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
+
+  info("Keydown Meta+Enter");
+  gURLBar.focus();
+  gURLBar.value = "";
+  EventUtils.synthesizeKey("KEY_Enter", { type: "keydown", metaKey: true });
+
+  
+  
+  
+  info("Keyup Meta");
+  EventUtils.synthesizeKey("KEY_Meta", { type: "keyup" });
+
+  
+  EventUtils.synthesizeKey("a");
+  is(gURLBar.value, "a", "Can input a char");
+
+  
+  BrowserTestUtils.removeTab(tab);
+});

@@ -3260,10 +3260,17 @@ class UrlbarInput {
   }
 
   async _on_keyup(event) {
-    if (
-      event.keyCode === KeyEvent.DOM_VK_RETURN &&
-      this._keyDownEnterDeferred
-    ) {
+    if (event.keyCode === KeyEvent.DOM_VK_CONTROL) {
+      this._isKeyDownWithCtrl = false;
+    }
+
+    this._toggleActionOverride(event);
+
+    
+    
+    
+    
+    if (this._keyDownEnterDeferred) {
       if (this._keyDownEnterDeferred.loadedContent) {
         try {
           const loadingBrowser = await this._keyDownEnterDeferred.promise;
@@ -3273,24 +3280,19 @@ class UrlbarInput {
             
             this.selectionStart = this.selectionEnd = 0;
           }
-          this._keyDownEnterDeferred = null;
         } catch (ex) {
           
           
           
           
         }
-        return;
+      } else {
+        
+        this._keyDownEnterDeferred.resolve();
       }
 
-      
-      this._keyDownEnterDeferred.resolve();
       this._keyDownEnterDeferred = null;
-    } else if (event.keyCode === KeyEvent.DOM_VK_CONTROL) {
-      this._isKeyDownWithCtrl = false;
     }
-
-    this._toggleActionOverride(event);
   }
 
   _on_compositionstart(event) {
