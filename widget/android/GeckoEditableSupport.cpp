@@ -743,7 +743,8 @@ void GeckoEditableSupport::FlushIMEChanges(FlushChangesFlag aFlags) {
 
   if (textTransaction.IsValid()) {
     mEditable->OnTextChange(textTransaction.text, textTransaction.start,
-                            textTransaction.oldEnd, textTransaction.newEnd);
+                            textTransaction.oldEnd, textTransaction.newEnd,
+                            causedOnlyByComposition);
     if (flushOnException()) {
       return;
     }
@@ -977,10 +978,12 @@ bool GeckoEditableSupport::DoReplaceText(int32_t aStart, int32_t aEnd,
     }
   } else if (composition->String().Equals(string)) {
     
-
-
-
-    IMENotification::TextChangeData dummyChange(aStart, aEnd, aEnd, false,
+    
+    
+    
+    
+    
+    IMENotification::TextChangeData dummyChange(aStart, aEnd, aEnd, true,
                                                 false);
     PostFlushIMEChanges();
     mIMESelectionChanged = true;

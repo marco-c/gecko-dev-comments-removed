@@ -1525,7 +1525,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
 
     if (type == SessionTextInput.EditableListener.NOTIFY_IME_OF_BLUR) {
       synchronized (this) {
-        onTextChange(token, "", 0, Integer.MAX_VALUE);
+        onTextChange(token, "", 0, Integer.MAX_VALUE, false);
         mActions.clear();
         mFocusedToken = null;
       }
@@ -2042,7 +2042,11 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
 
   @Override 
   public void onTextChange(
-      final IBinder token, final CharSequence text, final int start, final int unboundedOldEnd) {
+      final IBinder token,
+      final CharSequence text,
+      final int start,
+      final int unboundedOldEnd,
+      final boolean causedOnlyByComposition) {
     
     if (DEBUG) {
       final StringBuilder sb = new StringBuilder("onTextChange(");
@@ -2070,7 +2074,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
     final int oldEnd = unboundedOldEnd > currentLength ? currentLength : unboundedOldEnd;
     final int newEnd = start + text.length();
 
-    if (start == 0 && unboundedOldEnd > currentLength) {
+    if (start == 0 && unboundedOldEnd > currentLength && !causedOnlyByComposition) {
       
       
       
