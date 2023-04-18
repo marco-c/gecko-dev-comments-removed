@@ -274,9 +274,11 @@ already_AddRefed<nsIThreadObserver> ThreadEventQueue::GetObserverOnThread()
 
 void ThreadEventQueue::SetObserver(nsIThreadObserver* aObserver) {
   
-  MutexAutoLock lock(mLock);
-  nsCOMPtr observer = aObserver;
-  mObserver.swap(observer);
+  nsCOMPtr<nsIThreadObserver> observer = aObserver;
+  {
+    MutexAutoLock lock(mLock);
+    mObserver.swap(observer);
+  }
   if (NS_IsMainThread()) {
     TaskController::Get()->SetThreadObserver(aObserver);
   }
