@@ -25,7 +25,8 @@
   }
   int len = static_cast<int>(aLength);
 
-  if (!NSS_IsInitialized()) {
+  
+  if (!NS_IsMainThread() || !NSS_IsInitialized()) {
     return false;
   }
 
