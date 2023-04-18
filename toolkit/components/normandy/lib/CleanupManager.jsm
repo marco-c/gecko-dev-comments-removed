@@ -4,8 +4,10 @@
 
 "use strict";
 
+const lazy = {};
+
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "AsyncShutdown",
   "resource://gre/modules/AsyncShutdown.jsm"
 );
@@ -40,7 +42,7 @@ class CleanupManagerClass {
 
       
       
-      AsyncShutdown.profileBeforeChange.addBlocker(
+      lazy.AsyncShutdown.profileBeforeChange.addBlocker(
         "ShieldRecipeClient: Cleaning up",
         this.cleanupPromise
       );
