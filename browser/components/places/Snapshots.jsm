@@ -148,6 +148,11 @@ const Snapshots = new (class Snapshots {
     if (!PlacesPreviews.enabled) {
       PageThumbs.addExpirationFilter(this);
     }
+
+    this.recommendationSources = {
+      Overlapping: this.#queryOverlapping.bind(this),
+      CommonReferrer: this.#queryCommonReferrer.bind(this),
+    };
   }
 
   #notify(topic, urls) {
@@ -638,10 +643,10 @@ const Snapshots = new (class Snapshots {
 
 
 
-  async queryOverlapping(context_url) {
-    let current_id = await this.queryPlaceIdFromUrl(context_url);
+  async #queryOverlapping(selectionContext) {
+    let current_id = await this.queryPlaceIdFromUrl(selectionContext.url);
     if (current_id == -1) {
-      logConsole.debug(`PlaceId not found for url ${context_url}`);
+      logConsole.debug(`PlaceId not found for url ${selectionContext.url}`);
       return [];
     }
 
@@ -686,9 +691,10 @@ const Snapshots = new (class Snapshots {
       return [];
     }
 
-    return rows.map(row =>
-      this.#translateRow(row, { includeOverlappingVisitScore: true })
-    );
+    return rows.map(row => ({
+      ...this.#translateRow(row),
+      overlappingVisitScore: row.getResultByName("overlappingVisitScore"),
+    }));
   }
 
   
@@ -699,10 +705,10 @@ const Snapshots = new (class Snapshots {
 
 
 
-  async queryCommonReferrer(context_url) {
+  async #queryCommonReferrer(selectionContext) {
     let db = await PlacesUtils.promiseDBConnection();
 
-    let context_place_id = await this.queryPlaceIdFromUrl(context_url);
+    let context_place_id = await this.queryPlaceIdFromUrl(selectionContext.url);
     if (context_place_id == -1) {
       return [];
     }
@@ -727,11 +733,10 @@ const Snapshots = new (class Snapshots {
       { context_place_id }
     );
 
-    return rows.map(row => {
-      let snapshot = this.#translateRow(row);
-      snapshot.commonReferrerScore = 1.0;
-      return snapshot;
-    });
+    return rows.map(row => ({
+      ...this.#translateRow(row),
+      commonReferrerScore: 1.0,
+    }));
   }
 
   
@@ -741,10 +746,7 @@ const Snapshots = new (class Snapshots {
 
 
 
-
-
-
-  #translateRow(row, { includeOverlappingVisitScore = false } = {}) {
+  #translateRow(row) {
     
     let pageData;
     let pageDataStr = row.getResultByName("page_data");
@@ -755,11 +757,6 @@ const Snapshots = new (class Snapshots {
       } catch (e) {
         logConsole.error(e);
       }
-    }
-
-    let overlappingVisitScore = 0;
-    if (includeOverlappingVisitScore) {
-      overlappingVisitScore = row.getResultByName("overlappingVisitScore");
     }
 
     let snapshot = {
@@ -778,7 +775,6 @@ const Snapshots = new (class Snapshots {
       ),
       documentType: row.getResultByName("document_type"),
       userPersisted: row.getResultByName("user_persisted"),
-      overlappingVisitScore,
       pageData: pageData ?? new Map(),
       visitCount: row.getResultByName("visit_count"),
     };
