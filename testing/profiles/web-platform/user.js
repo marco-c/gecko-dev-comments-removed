@@ -12,6 +12,8 @@ user_pref("browser.sessionstore.resume_from_crash", false);
 
 user_pref("browser.toolbars.bookmarks.visibility", "never");
 
+user_pref("dom.testing.testutils.enabled", true);
+
 
 
 user_pref("extensions.autoDisableScopes", 10);

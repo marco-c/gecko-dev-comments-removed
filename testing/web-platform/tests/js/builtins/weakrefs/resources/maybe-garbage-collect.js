@@ -11,8 +11,8 @@
 
 
 async function maybeGarbageCollectAsync() {
-  if (typeof TestUtils !== 'undefined' && TestUtils.gc) {
-    await TestUtils.gc();
+  if (typeof testUtils !== 'undefined' && testUtils.gc) {
+    await testUtils.gc();
   } else if (self.gc) {
     
     

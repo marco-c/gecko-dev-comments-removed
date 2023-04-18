@@ -47,8 +47,11 @@ self.constructorThrowsForAll = (constructor, firstArgs) => {
                                                  'constructor should throw a TypeError'));
 };
 
-self.garbageCollect = () => {
-  if (self.gc) {
+self.garbageCollect = async () => {
+  if (self.testUtils?.gc) {
+    
+    await testUtils.gc();
+  } else if (self.gc) {
     
     
     
