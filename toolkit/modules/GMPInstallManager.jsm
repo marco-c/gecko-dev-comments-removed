@@ -318,7 +318,7 @@ GMPInstallManager.prototype = {
     
     let checkContentSignature = GMPPrefs.getBool(
       GMPPrefs.KEY_CHECK_CONTENT_SIGNATURE,
-      false
+      true
     );
 
     let allowNonBuiltIn = true;
