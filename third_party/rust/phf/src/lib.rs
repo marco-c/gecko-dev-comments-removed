@@ -36,42 +36,7 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#![doc(html_root_url = "https://docs.rs/phf/0.10")]
+#![doc(html_root_url="https://docs.rs/phf/0.7")]
 #![warn(missing_docs)]
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -98,19 +63,8 @@ extern crate std as core;
 
 
 
-
-
-
-
-#[proc_macro_hack::proc_macro_hack]
-pub use phf_macros::phf_map;
-
-#[cfg(feature = "macros")]
-
-
-
-#[proc_macro_hack::proc_macro_hack]
-pub use phf_macros::phf_ordered_map;
+#[::proc_macro_hack::proc_macro_hack]
+pub use phf_macros:: phf_map;
 
 #[cfg(feature = "macros")]
 
@@ -131,27 +85,40 @@ pub use phf_macros::phf_ordered_map;
 
 
 
-#[proc_macro_hack::proc_macro_hack]
+
+#[::proc_macro_hack::proc_macro_hack]
 pub use phf_macros::phf_set;
 
-#[cfg(feature = "macros")]
+use core::ops::Deref;
 
-
-
-#[proc_macro_hack::proc_macro_hack]
-pub use phf_macros::phf_ordered_set;
-
+pub use phf_shared::PhfHash;
 #[doc(inline)]
 pub use self::map::Map;
 #[doc(inline)]
-pub use self::ordered_map::OrderedMap;
-#[doc(inline)]
-pub use self::ordered_set::OrderedSet;
-#[doc(inline)]
 pub use self::set::Set;
-pub use phf_shared::PhfHash;
 
 pub mod map;
-pub mod ordered_map;
-pub mod ordered_set;
 pub mod set;
+
+
+
+
+
+#[doc(hidden)]
+pub enum Slice<T: 'static> {
+    Static(&'static [T]),
+    #[cfg(feature = "std")]
+    Dynamic(Vec<T>),
+}
+
+impl<T> Deref for Slice<T> {
+    type Target = [T];
+
+    fn deref(&self) -> &[T] {
+        match *self {
+            Slice::Static(t) => t,
+            #[cfg(feature = "std")]
+            Slice::Dynamic(ref t) => t,
+        }
+    }
+}

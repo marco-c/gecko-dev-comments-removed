@@ -27,40 +27,35 @@
 
 
 
-#![doc(
-    html_logo_url = "https://www.rust-lang.org/logos/rust-logo-128x128-blk.png",
-    html_favicon_url = "https://www.rust-lang.org/favicon.ico",
-    html_root_url = "https://rust-random.github.io/rand/"
-)]
+#![doc(html_logo_url = "https://www.rust-lang.org/logos/rust-logo-128x128-blk.png",
+       html_favicon_url = "https://www.rust-lang.org/favicon.ico",
+       html_root_url = "https://rust-random.github.io/rand/")]
+
 #![deny(missing_docs)]
 #![deny(missing_debug_implementations)]
 #![doc(test(attr(allow(unused_variables), deny(warnings))))]
-#![cfg_attr(doc_cfg, feature(doc_cfg))]
-#![no_std]
 
-use core::convert::AsMut;
+#![allow(clippy::unreadable_literal)]
+
+#![cfg_attr(not(feature="std"), no_std)]
+
+
 use core::default::Default;
+use core::convert::AsMut;
+use core::ptr::copy_nonoverlapping;
 
-#[cfg(feature = "std")] extern crate std;
-#[cfg(feature = "alloc")] extern crate alloc;
-#[cfg(feature = "alloc")] use alloc::boxed::Box;
+#[cfg(all(feature="alloc", not(feature="std")))] extern crate alloc;
+#[cfg(all(feature="alloc", not(feature="std")))] use alloc::boxed::Box;
 
 pub use error::Error;
-#[cfg(feature = "getrandom")] pub use os::OsRng;
+#[cfg(feature="getrandom")] pub use os::OsRng;
 
 
-pub mod block;
 mod error;
+pub mod block;
 pub mod impls;
 pub mod le;
-#[cfg(feature = "getrandom")] mod os;
-
-
-
-
-
-
-
+#[cfg(feature="getrandom")] mod os;
 
 
 
@@ -145,8 +140,10 @@ pub trait RngCore {
     
     
     
+    
     fn next_u32(&mut self) -> u32;
 
+    
     
     
     
@@ -170,6 +167,8 @@ pub trait RngCore {
     
     fn fill_bytes(&mut self, dest: &mut [u8]);
 
+    
+    
     
     
     
@@ -305,35 +304,30 @@ pub trait SeedableRng: Sized {
     
     fn seed_from_u64(mut state: u64) -> Self {
         
-        fn pcg32(state: &mut u64) -> [u8; 4] {
-            const MUL: u64 = 6364136223846793005;
-            const INC: u64 = 11634580027462260723;
+        const MUL: u64 = 6364136223846793005;
+        const INC: u64 = 11634580027462260723;
 
+        let mut seed = Self::Seed::default();
+        for chunk in seed.as_mut().chunks_mut(4) {
             
             
-            *state = state.wrapping_mul(MUL).wrapping_add(INC);
-            let state = *state;
+            state = state.wrapping_mul(MUL).wrapping_add(INC);
 
             
             let xorshifted = (((state >> 18) ^ state) >> 27) as u32;
             let rot = (state >> 59) as u32;
-            let x = xorshifted.rotate_right(rot);
-            x.to_le_bytes()
-        }
+            let x = xorshifted.rotate_right(rot).to_le();
 
-        let mut seed = Self::Seed::default();
-        let mut iter = seed.as_mut().chunks_exact_mut(4);
-        for chunk in &mut iter {
-            chunk.copy_from_slice(&pcg32(&mut state));
-        }
-        let rem = iter.into_remainder();
-        if !rem.is_empty() {
-            rem.copy_from_slice(&pcg32(&mut state)[..rem.len()]);
+            unsafe {
+                let p = &x as *const u32 as *const u8;
+                copy_nonoverlapping(p, chunk.as_mut_ptr(), chunk.len());
+            }
         }
 
         Self::from_seed(seed)
     }
 
+    
     
     
     
@@ -378,8 +372,7 @@ pub trait SeedableRng: Sized {
     
     
     
-    #[cfg(feature = "getrandom")]
-    #[cfg_attr(doc_cfg, doc(cfg(feature = "getrandom")))]
+    #[cfg(feature="getrandom")]
     fn from_entropy() -> Self {
         let mut seed = Self::Seed::default();
         if let Err(err) = getrandom::getrandom(seed.as_mut()) {
@@ -417,7 +410,7 @@ impl<'a, R: RngCore + ?Sized> RngCore for &'a mut R {
 
 
 
-#[cfg(feature = "alloc")]
+#[cfg(feature="alloc")]
 impl<R: RngCore + ?Sized> RngCore for Box<R> {
     #[inline(always)]
     fn next_u32(&mut self) -> u32 {
@@ -440,7 +433,7 @@ impl<R: RngCore + ?Sized> RngCore for Box<R> {
     }
 }
 
-#[cfg(feature = "std")]
+#[cfg(feature="std")]
 impl std::io::Read for dyn RngCore {
     fn read(&mut self, buf: &mut [u8]) -> Result<usize, std::io::Error> {
         self.try_fill_bytes(buf)?;
@@ -452,7 +445,7 @@ impl std::io::Read for dyn RngCore {
 impl<'a, R: CryptoRng + ?Sized> CryptoRng for &'a mut R {}
 
 
-#[cfg(feature = "alloc")]
+#[cfg(feature="alloc")]
 impl<R: CryptoRng + ?Sized> CryptoRng for Box<R> {}
 
 #[cfg(test)]
@@ -464,7 +457,6 @@ mod test {
         struct SeedableNum(u64);
         impl SeedableRng for SeedableNum {
             type Seed = [u8; 8];
-
             fn from_seed(seed: Self::Seed) -> Self {
                 let mut x = [0u64; 1];
                 le::read_u64_into(&seed, &mut x);
@@ -485,12 +477,10 @@ mod test {
             
             
             
-            assert!((20..=44).contains(&weight));
+            assert!(weight >= 20 && weight <= 44);
 
             for (i2, r2) in results.iter().enumerate() {
-                if i1 == i2 {
-                    continue;
-                }
+                if i1 == i2 { continue; }
                 let diff_weight = (r1 ^ r2).count_ones();
                 assert!(diff_weight >= 20);
             }

@@ -13,7 +13,6 @@ use crate::vec::Vec;
 use core::cmp::Ordering;
 use core::fmt;
 use core::hash::{BuildHasher, Hash};
-use core::ops::RangeBounds;
 
 use crate::Entries;
 use crate::IndexSet;
@@ -110,42 +109,6 @@ impl<'a, T: Sync> ParallelIterator for ParIter<'a, T> {
 
 impl<T: Sync> IndexedParallelIterator for ParIter<'_, T> {
     indexed_parallel_iterator_methods!(Bucket::key_ref);
-}
-
-
-impl<'a, T, S> ParallelDrainRange<usize> for &'a mut IndexSet<T, S>
-where
-    T: Send,
-{
-    type Item = T;
-    type Iter = ParDrain<'a, T>;
-
-    fn par_drain<R: RangeBounds<usize>>(self, range: R) -> Self::Iter {
-        ParDrain {
-            entries: self.map.core.par_drain(range),
-        }
-    }
-}
-
-
-
-
-
-
-
-
-pub struct ParDrain<'a, T: Send> {
-    entries: rayon::vec::Drain<'a, Bucket<T>>,
-}
-
-impl<T: Send> ParallelIterator for ParDrain<'_, T> {
-    type Item = T;
-
-    parallel_iterator_methods!(Bucket::key);
-}
-
-impl<T: Send> IndexedParallelIterator for ParDrain<'_, T> {
-    indexed_parallel_iterator_methods!(Bucket::key);
 }
 
 
@@ -509,37 +472,6 @@ where
         entries.par_sort_by(move |a, b| cmp(&a.key, &b.key));
         IntoParIter { entries }
     }
-
-    
-    pub fn par_sort_unstable(&mut self)
-    where
-        T: Ord,
-    {
-        self.with_entries(|entries| {
-            entries.par_sort_unstable_by(|a, b| T::cmp(&a.key, &b.key));
-        });
-    }
-
-    
-    pub fn par_sort_unstable_by<F>(&mut self, cmp: F)
-    where
-        F: Fn(&T, &T) -> Ordering + Sync,
-    {
-        self.with_entries(|entries| {
-            entries.par_sort_unstable_by(move |a, b| cmp(&a.key, &b.key));
-        });
-    }
-
-    
-    
-    pub fn par_sorted_unstable_by<F>(self, cmp: F) -> IntoParIter<T>
-    where
-        F: Fn(&T, &T) -> Ordering + Sync,
-    {
-        let mut entries = self.into_entries();
-        entries.par_sort_unstable_by(move |a, b| cmp(&a.key, &b.key));
-        IntoParIter { entries }
-    }
 }
 
 
@@ -690,7 +622,7 @@ mod tests {
             I1: ParallelIterator<Item = &'a i32>,
             I2: Iterator<Item = i32>,
         {
-            let v1: Vec<_> = iter1.copied().collect();
+            let v1: Vec<_> = iter1.cloned().collect();
             let v2: Vec<_> = iter2.collect();
             assert_eq!(v1, v2);
         }

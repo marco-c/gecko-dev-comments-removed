@@ -10,10 +10,10 @@
 
 use rand_core::{Error, RngCore, SeedableRng};
 
-#[cfg(target_pointer_width = "64")]
-type Rng = super::xoshiro256plusplus::Xoshiro256PlusPlus;
-#[cfg(not(target_pointer_width = "64"))]
-type Rng = super::xoshiro128plusplus::Xoshiro128PlusPlus;
+#[cfg(all(not(target_os = "emscripten"), target_pointer_width = "64"))]
+type Rng = rand_pcg::Pcg64Mcg;
+#[cfg(not(all(not(target_os = "emscripten"), target_pointer_width = "64")))]
+type Rng = rand_pcg::Pcg32;
 
 
 
@@ -73,11 +73,7 @@ type Rng = super::xoshiro128plusplus::Xoshiro128PlusPlus;
 
 
 
-
-
-
-#[cfg_attr(doc_cfg, doc(cfg(feature = "small_rng")))]
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug)]
 pub struct SmallRng(Rng);
 
 impl RngCore for SmallRng {

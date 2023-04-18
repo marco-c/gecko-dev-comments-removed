@@ -9,8 +9,6 @@
 
 
 
-#![allow(deprecated)]
-
 use std::fmt;
 use std::io::Read;
 
@@ -34,8 +32,18 @@ use rand_core::{impls, Error, RngCore};
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 #[derive(Debug)]
-#[deprecated(since="0.8.4", note="removal due to lack of usage")]
 pub struct ReadRng<R> {
     reader: R,
 }
@@ -78,7 +86,6 @@ impl<R: Read> RngCore for ReadRng<R> {
 
 
 #[derive(Debug)]
-#[deprecated(since="0.8.4")]
 pub struct ReadError(std::io::Error);
 
 impl fmt::Display for ReadError {
@@ -96,8 +103,6 @@ impl std::error::Error for ReadError {
 
 #[cfg(test)]
 mod test {
-    use std::println;
-
     use super::ReadRng;
     use crate::RngCore;
 
@@ -105,24 +110,24 @@ mod test {
     fn test_reader_rng_u64() {
         
         #[rustfmt::skip]
-        let v = [0u8, 0, 0, 0, 0, 0, 0, 1,
-                 0,   4, 0, 0, 3, 0, 0, 2,
-                 5,   0, 0, 0, 0, 0, 0, 0];
+        let v = vec![0u8, 0, 0, 0, 0, 0, 0, 1,
+                     0  , 0, 0, 0, 0, 0, 0, 2,
+                     0,   0, 0, 0, 0, 0, 0, 3];
         let mut rng = ReadRng::new(&v[..]);
 
-        assert_eq!(rng.next_u64(), 1 << 56);
-        assert_eq!(rng.next_u64(), (2 << 56) + (3 << 32) + (4 << 8));
-        assert_eq!(rng.next_u64(), 5);
+        assert_eq!(rng.next_u64(), 1_u64.to_be());
+        assert_eq!(rng.next_u64(), 2_u64.to_be());
+        assert_eq!(rng.next_u64(), 3_u64.to_be());
     }
 
     #[test]
     fn test_reader_rng_u32() {
-        let v = [0u8, 0, 0, 1, 0, 0, 2, 0, 3, 0, 0, 0];
+        let v = vec![0u8, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 3];
         let mut rng = ReadRng::new(&v[..]);
 
-        assert_eq!(rng.next_u32(), 1 << 24);
-        assert_eq!(rng.next_u32(), 2 << 16);
-        assert_eq!(rng.next_u32(), 3);
+        assert_eq!(rng.next_u32(), 1_u32.to_be());
+        assert_eq!(rng.next_u32(), 2_u32.to_be());
+        assert_eq!(rng.next_u32(), 3_u32.to_be());
     }
 
     #[test]

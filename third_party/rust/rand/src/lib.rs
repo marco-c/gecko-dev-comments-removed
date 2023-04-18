@@ -48,16 +48,15 @@
 #![deny(missing_docs)]
 #![deny(missing_debug_implementations)]
 #![doc(test(attr(allow(unused_variables), deny(warnings))))]
-#![no_std]
-#![cfg_attr(feature = "simd_support", feature(stdsimd))]
-#![cfg_attr(doc_cfg, feature(doc_cfg))]
+#![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(all(feature = "simd_support", feature = "nightly"), feature(stdsimd))]
 #![allow(
-    clippy::float_cmp,
-    clippy::neg_cmp_op_on_partial_ord,
+    clippy::excessive_precision,
+    clippy::unreadable_literal,
+    clippy::float_cmp
 )]
 
-#[cfg(feature = "std")] extern crate std;
-#[cfg(feature = "alloc")] extern crate alloc;
+#[cfg(all(feature = "alloc", not(feature = "std")))] extern crate alloc;
 
 #[allow(unused)]
 macro_rules! trace { ($($x:tt)*) => (
@@ -94,19 +93,19 @@ macro_rules! error { ($($x:tt)*) => (
 pub use rand_core::{CryptoRng, Error, RngCore, SeedableRng};
 
 
+#[cfg(feature = "std")] pub use crate::rngs::thread::thread_rng;
+
+
 pub mod distributions;
 pub mod prelude;
-mod rng;
 pub mod rngs;
 pub mod seq;
 
 
-#[cfg(all(feature = "std", feature = "std_rng"))]
-pub use crate::rngs::thread::thread_rng;
-pub use rng::{Fill, Rng};
-
-#[cfg(all(feature = "std", feature = "std_rng"))]
+use crate::distributions::uniform::{SampleBorrow, SampleUniform, UniformSampler};
 use crate::distributions::{Distribution, Standard};
+use core::num::Wrapping;
+use core::{mem, slice};
 
 
 
@@ -145,40 +144,410 @@ use crate::distributions::{Distribution, Standard};
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[cfg(all(feature = "std", feature = "std_rng"))]
-#[cfg_attr(doc_cfg, doc(cfg(all(feature = "std", feature = "std_rng"))))]
+pub trait Rng: RngCore {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    fn gen<T>(&mut self) -> T
+    where Standard: Distribution<T> {
+        Standard.sample(self)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn gen_range<T: SampleUniform, B1, B2>(&mut self, low: B1, high: B2) -> T
+    where
+        B1: SampleBorrow<T> + Sized,
+        B2: SampleBorrow<T> + Sized,
+    {
+        T::Sampler::sample_single(low, high, self)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn sample<T, D: Distribution<T>>(&mut self, distr: D) -> T {
+        distr.sample(self)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn sample_iter<T, D>(self, distr: D) -> distributions::DistIter<D, Self, T>
+    where
+        D: Distribution<T>,
+        Self: Sized,
+    {
+        distr.sample_iter(self)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn fill<T: AsByteSliceMut + ?Sized>(&mut self, dest: &mut T) {
+        self.fill_bytes(dest.as_byte_slice_mut());
+        dest.to_le();
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn try_fill<T: AsByteSliceMut + ?Sized>(&mut self, dest: &mut T) -> Result<(), Error> {
+        self.try_fill_bytes(dest.as_byte_slice_mut())?;
+        dest.to_le();
+        Ok(())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    fn gen_bool(&mut self, p: f64) -> bool {
+        let d = distributions::Bernoulli::new(p).unwrap();
+        self.sample(d)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    fn gen_ratio(&mut self, numerator: u32, denominator: u32) -> bool {
+        let d = distributions::Bernoulli::from_ratio(numerator, denominator).unwrap();
+        self.sample(d)
+    }
+}
+
+impl<R: RngCore + ?Sized> Rng for R {}
+
+
+
+
+pub trait AsByteSliceMut {
+    
+    fn as_byte_slice_mut(&mut self) -> &mut [u8];
+
+    
+    fn to_le(&mut self);
+}
+
+impl AsByteSliceMut for [u8] {
+    fn as_byte_slice_mut(&mut self) -> &mut [u8] {
+        self
+    }
+
+    fn to_le(&mut self) {}
+}
+
+macro_rules! impl_as_byte_slice {
+    () => {};
+    ($t:ty) => {
+        impl AsByteSliceMut for [$t] {
+            fn as_byte_slice_mut(&mut self) -> &mut [u8] {
+                if self.len() == 0 {
+                    unsafe {
+                        // must not use null pointer
+                        slice::from_raw_parts_mut(0x1 as *mut u8, 0)
+                    }
+                } else {
+                    unsafe {
+                        slice::from_raw_parts_mut(self.as_mut_ptr()
+                            as *mut u8,
+                            self.len() * mem::size_of::<$t>()
+                        )
+                    }
+                }
+            }
+
+            fn to_le(&mut self) {
+                for x in self {
+                    *x = x.to_le();
+                }
+            }
+        }
+
+        impl AsByteSliceMut for [Wrapping<$t>] {
+            fn as_byte_slice_mut(&mut self) -> &mut [u8] {
+                if self.len() == 0 {
+                    unsafe {
+                        // must not use null pointer
+                        slice::from_raw_parts_mut(0x1 as *mut u8, 0)
+                    }
+                } else {
+                    unsafe {
+                        slice::from_raw_parts_mut(self.as_mut_ptr()
+                            as *mut u8,
+                            self.len() * mem::size_of::<$t>()
+                        )
+                    }
+                }
+            }
+
+            fn to_le(&mut self) {
+                for x in self {
+                    *x = Wrapping(x.0.to_le());
+                }
+            }
+        }
+    };
+    ($t:ty, $($tt:ty,)*) => {
+        impl_as_byte_slice!($t);
+        // TODO: this could replace above impl once Rust #32463 is fixed
+        // impl_as_byte_slice!(Wrapping<$t>);
+        impl_as_byte_slice!($($tt,)*);
+    }
+}
+
+impl_as_byte_slice!(u16, u32, u64, usize,);
+#[cfg(not(target_os = "emscripten"))]
+impl_as_byte_slice!(u128);
+impl_as_byte_slice!(i8, i16, i32, i64, isize,);
+#[cfg(not(target_os = "emscripten"))]
+impl_as_byte_slice!(i128);
+
+macro_rules! impl_as_byte_slice_arrays {
+    ($n:expr,) => {};
+    ($n:expr, $N:ident) => {
+        impl<T> AsByteSliceMut for [T; $n] where [T]: AsByteSliceMut {
+            fn as_byte_slice_mut(&mut self) -> &mut [u8] {
+                self[..].as_byte_slice_mut()
+            }
+
+            fn to_le(&mut self) {
+                self[..].to_le()
+            }
+        }
+    };
+    ($n:expr, $N:ident, $($NN:ident,)*) => {
+        impl_as_byte_slice_arrays!($n, $N);
+        impl_as_byte_slice_arrays!($n - 1, $($NN,)*);
+    };
+    (!div $n:expr,) => {};
+    (!div $n:expr, $N:ident, $($NN:ident,)*) => {
+        impl_as_byte_slice_arrays!($n, $N);
+        impl_as_byte_slice_arrays!(!div $n / 2, $($NN,)*);
+    };
+}
+#[rustfmt::skip]
+impl_as_byte_slice_arrays!(32, N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,);
+impl_as_byte_slice_arrays!(!div 4096, N,N,N,N,N,N,N,);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(feature = "std")]
 #[inline]
 pub fn random<T>() -> T
 where Standard: Distribution<T> {
@@ -188,6 +557,8 @@ where Standard: Distribution<T> {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::rngs::mock::StepRng;
+    #[cfg(all(not(feature = "std"), feature = "alloc"))] use alloc::boxed::Box;
 
     
     pub fn rng(seed: u64) -> impl RngCore {
@@ -198,17 +569,155 @@ mod test {
     }
 
     #[test]
-    #[cfg(all(feature = "std", feature = "std_rng"))]
+    fn test_fill_bytes_default() {
+        let mut r = StepRng::new(0x11_22_33_44_55_66_77_88, 0);
+
+        
+        let lengths = [0, 1, 2, 3, 4, 5, 6, 7, 80, 81, 82, 83, 84, 85, 86, 87];
+        for &n in lengths.iter() {
+            let mut buffer = [0u8; 87];
+            let v = &mut buffer[0..n];
+            r.fill_bytes(v);
+
+            
+            for (i, &byte) in v.iter().enumerate() {
+                if byte == 0 {
+                    panic!("byte {} of {} is zero", i, n)
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_fill() {
+        let x = 9041086907909331047; 
+        let mut rng = StepRng::new(x, 0);
+
+        
+        let mut array = [0u64; 2];
+        rng.fill(&mut array[..]);
+        assert_eq!(array, [x, x]);
+        assert_eq!(rng.next_u64(), x);
+
+        
+        let mut array = [0u32; 2];
+        rng.fill(&mut array[..]);
+        assert_eq!(array, [x as u32, (x >> 32) as u32]);
+        assert_eq!(rng.next_u32(), x as u32);
+
+        
+        let mut warray = [Wrapping(0u32); 2];
+        rng.fill(&mut warray[..]);
+        assert_eq!(array[0], warray[0].0);
+        assert_eq!(array[1], warray[1].0);
+    }
+
+    #[test]
+    fn test_fill_empty() {
+        let mut array = [0u32; 0];
+        let mut rng = StepRng::new(0, 1);
+        rng.fill(&mut array);
+        rng.fill(&mut array[..]);
+    }
+
+    #[test]
+    fn test_gen_range() {
+        let mut r = rng(101);
+        for _ in 0..1000 {
+            let a = r.gen_range(-4711, 17);
+            assert!(a >= -4711 && a < 17);
+            let a = r.gen_range(-3i8, 42);
+            assert!(a >= -3i8 && a < 42i8);
+            let a = r.gen_range(&10u16, 99);
+            assert!(a >= 10u16 && a < 99u16);
+            let a = r.gen_range(-100i32, &2000);
+            assert!(a >= -100i32 && a < 2000i32);
+            let a = r.gen_range(&12u32, &24u32);
+            assert!(a >= 12u32 && a < 24u32);
+
+            assert_eq!(r.gen_range(0u32, 1), 0u32);
+            assert_eq!(r.gen_range(-12i64, -11), -12i64);
+            assert_eq!(r.gen_range(3_000_000, 3_000_001), 3_000_000);
+        }
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_gen_range_panic_int() {
+        let mut r = rng(102);
+        r.gen_range(5, -2);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_gen_range_panic_usize() {
+        let mut r = rng(103);
+        r.gen_range(5, 2);
+    }
+
+    #[test]
+    fn test_gen_bool() {
+        let mut r = rng(105);
+        for _ in 0..5 {
+            assert_eq!(r.gen_bool(0.0), false);
+            assert_eq!(r.gen_bool(1.0), true);
+        }
+    }
+
+    #[test]
+    fn test_rng_trait_object() {
+        use crate::distributions::{Distribution, Standard};
+        let mut rng = rng(109);
+        let mut r = &mut rng as &mut dyn RngCore;
+        r.next_u32();
+        r.gen::<i32>();
+        assert_eq!(r.gen_range(0, 1), 0);
+        let _c: u8 = Standard.sample(&mut r);
+    }
+
+    #[test]
+    #[cfg(feature = "alloc")]
+    fn test_rng_boxed_trait() {
+        use crate::distributions::{Distribution, Standard};
+        let rng = rng(110);
+        let mut r = Box::new(rng) as Box<dyn RngCore>;
+        r.next_u32();
+        r.gen::<i32>();
+        assert_eq!(r.gen_range(0, 1), 0);
+        let _c: u8 = Standard.sample(&mut r);
+    }
+
+    #[test]
+    #[cfg(feature = "std")]
     fn test_random() {
+        
         let _n: usize = random();
         let _f: f32 = random();
         let _o: Option<Option<i8>> = random();
-        #[allow(clippy::type_complexity)]
         let _many: (
             (),
             (usize, isize, Option<(u32, (bool,))>),
             (u8, i8, u16, i16, u32, i32, u64, i64),
             (f32, (f64, (f64,))),
         ) = random();
+    }
+
+    #[test]
+    #[cfg_attr(miri, ignore)] 
+    fn test_gen_ratio_average() {
+        const NUM: u32 = 3;
+        const DENOM: u32 = 10;
+        const N: u32 = 100_000;
+
+        let mut sum: u32 = 0;
+        let mut rng = rng(111);
+        for _ in 0..N {
+            if rng.gen_ratio(NUM, DENOM) {
+                sum += 1;
+            }
+        }
+        
+        let expected = (NUM * N) / DENOM; 
+        assert!(((sum - expected) as i32).abs() < 500);
     }
 }

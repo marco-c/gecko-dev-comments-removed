@@ -7,16 +7,14 @@
 
 
 
-use crate::{
-    util::LazyUsize,
-    util_libc::{open_readonly, sys_fill_exact},
-    Error,
-};
-use core::{
-    cell::UnsafeCell,
-    sync::atomic::{AtomicUsize, Ordering::Relaxed},
-};
+use crate::util::LazyUsize;
+use crate::util_libc::{open_readonly, sys_fill_exact};
+use crate::Error;
+use core::cell::UnsafeCell;
+use core::sync::atomic::{AtomicUsize, Ordering::Relaxed};
 
+#[cfg(target_os = "redox")]
+const FILE_PATH: &str = "rand:\0";
 #[cfg(any(
     target_os = "dragonfly",
     target_os = "emscripten",
@@ -26,7 +24,7 @@ use core::{
     target_os = "illumos"
 ))]
 const FILE_PATH: &str = "/dev/random\0";
-#[cfg(any(target_os = "android", target_os = "linux", target_os = "redox"))]
+#[cfg(any(target_os = "android", target_os = "linux"))]
 const FILE_PATH: &str = "/dev/urandom\0";
 
 pub fn getrandom_inner(dest: &mut [u8]) -> Result<(), Error> {
@@ -101,7 +99,7 @@ fn wait_until_rng_ready() -> Result<(), Error> {
         
         let res = unsafe { libc::poll(&mut pfd, 1, -1) };
         if res >= 0 {
-            debug_assert_eq!(res, 1); 
+            assert_eq!(res, 1); 
             return Ok(());
         }
         let err = crate::util_libc::last_os_error();

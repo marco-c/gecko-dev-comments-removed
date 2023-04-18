@@ -34,15 +34,3 @@
 mod error;
 mod lib_generated;
 pub use lib_generated::*;
-
-
-pub const DIRCOOKIE_START: Dircookie = 0;
-
-
-pub const FD_STDIN: Fd = 0;
-
-
-pub const FD_STDOUT: Fd = 1;
-
-
-pub const FD_STDERR: Fd = 2;

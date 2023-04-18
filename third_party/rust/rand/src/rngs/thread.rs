@@ -8,9 +8,8 @@
 
 
 
-use core::cell::UnsafeCell;
-use std::rc::Rc;
-use std::thread_local;
+use std::cell::UnsafeCell;
+use std::ptr::NonNull;
 
 use super::std::Core;
 use crate::rngs::adapter::ReseedingRng;
@@ -54,26 +53,20 @@ const THREAD_RNG_RESEED_THRESHOLD: u64 = 1024 * 64;
 
 
 
-
-
-
-#[cfg_attr(doc_cfg, doc(cfg(all(feature = "std", feature = "std_rng"))))]
-#[derive(Clone, Debug)]
+#[derive(Copy, Clone, Debug)]
 pub struct ThreadRng {
     
-    rng: Rc<UnsafeCell<ReseedingRng<Core, OsRng>>>,
+    rng: NonNull<ReseedingRng<Core, OsRng>>,
 }
 
 thread_local!(
-    // We require Rc<..> to avoid premature freeing when thread_rng is used
-    // within thread-local destructors. See #968.
-    static THREAD_RNG_KEY: Rc<UnsafeCell<ReseedingRng<Core, OsRng>>> = {
+    static THREAD_RNG_KEY: UnsafeCell<ReseedingRng<Core, OsRng>> = {
         let r = Core::from_rng(OsRng).unwrap_or_else(|err|
                 panic!("could not initialize thread_rng: {}", err));
         let rng = ReseedingRng::new(r,
                                     THREAD_RNG_RESEED_THRESHOLD,
                                     OsRng);
-        Rc::new(UnsafeCell::new(rng))
+        UnsafeCell::new(rng)
     }
 );
 
@@ -84,10 +77,10 @@ thread_local!(
 
 
 
-#[cfg_attr(doc_cfg, doc(cfg(all(feature = "std", feature = "std_rng"))))]
 pub fn thread_rng() -> ThreadRng {
-    let rng = THREAD_RNG_KEY.with(|t| t.clone());
-    ThreadRng { rng }
+    let raw = THREAD_RNG_KEY.with(|t| t.get());
+    let nn = NonNull::new(raw).unwrap();
+    ThreadRng { rng: nn }
 }
 
 impl Default for ThreadRng {
@@ -99,32 +92,20 @@ impl Default for ThreadRng {
 impl RngCore for ThreadRng {
     #[inline(always)]
     fn next_u32(&mut self) -> u32 {
-        
-        
-        let rng = unsafe { &mut *self.rng.get() };
-        rng.next_u32()
+        unsafe { self.rng.as_mut().next_u32() }
     }
 
     #[inline(always)]
     fn next_u64(&mut self) -> u64 {
-        
-        
-        let rng = unsafe { &mut *self.rng.get() };
-        rng.next_u64()
+        unsafe { self.rng.as_mut().next_u64() }
     }
 
     fn fill_bytes(&mut self, dest: &mut [u8]) {
-        
-        
-        let rng = unsafe { &mut *self.rng.get() };
-        rng.fill_bytes(dest)
+        unsafe { self.rng.as_mut().fill_bytes(dest) }
     }
 
     fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), Error> {
-        
-        
-        let rng = unsafe { &mut *self.rng.get() };
-        rng.try_fill_bytes(dest)
+        unsafe { self.rng.as_mut().try_fill_bytes(dest) }
     }
 }
 
@@ -138,6 +119,6 @@ mod test {
         use crate::Rng;
         let mut r = crate::thread_rng();
         r.gen::<i32>();
-        assert_eq!(r.gen_range(0..1), 0);
+        assert_eq!(r.gen_range(0, 1), 0);
     }
 }

@@ -8,8 +8,9 @@
 
 
 
-use crate::{impls, CryptoRng, Error, RngCore};
+
 use getrandom::getrandom;
+use crate::{CryptoRng, RngCore, Error, impls};
 
 
 
@@ -43,7 +44,6 @@ use getrandom::getrandom;
 
 
 
-#[cfg_attr(doc_cfg, doc(cfg(feature = "getrandom")))]
 #[derive(Clone, Copy, Debug, Default)]
 pub struct OsRng;
 

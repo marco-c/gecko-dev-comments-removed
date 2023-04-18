@@ -12,7 +12,7 @@ use crate::vec::{self, Vec};
 use ::core::cmp::Ordering;
 use ::core::fmt;
 use ::core::hash::{BuildHasher, Hash, Hasher};
-use ::core::iter::{FromIterator, FusedIterator};
+use ::core::iter::FromIterator;
 use ::core::ops::{Index, IndexMut, RangeBounds};
 use ::core::slice::{Iter as SliceIter, IterMut as SliceIterMut};
 
@@ -69,12 +69,12 @@ pub use self::core::{Entry, OccupiedEntry, VacantEntry};
 
 #[cfg(has_std)]
 pub struct IndexMap<K, V, S = RandomState> {
-    pub(crate) core: IndexMapCore<K, V>,
+    core: IndexMapCore<K, V>,
     hash_builder: S,
 }
 #[cfg(not(has_std))]
 pub struct IndexMap<K, V, S> {
-    pub(crate) core: IndexMapCore<K, V>,
+    core: IndexMapCore<K, V>,
     hash_builder: S,
 }
 
@@ -166,7 +166,10 @@ impl<K, V, S> IndexMap<K, V, S> {
     #[inline]
     pub fn with_capacity_and_hasher(n: usize, hash_builder: S) -> Self {
         if n == 0 {
-            Self::with_hasher(hash_builder)
+            IndexMap {
+                core: IndexMapCore::new(),
+                hash_builder,
+            }
         } else {
             IndexMap {
                 core: IndexMapCore::with_capacity(n),
@@ -176,14 +179,8 @@ impl<K, V, S> IndexMap<K, V, S> {
     }
 
     
-    
-    
-    
-    pub const fn with_hasher(hash_builder: S) -> Self {
-        IndexMap {
-            core: IndexMapCore::new(),
-            hash_builder,
-        }
+    pub fn with_hasher(hash_builder: S) -> Self {
+        Self::with_capacity_and_hasher(0, hash_builder)
     }
 
     
@@ -234,13 +231,6 @@ impl<K, V, S> IndexMap<K, V, S> {
     }
 
     
-    pub fn into_keys(self) -> IntoKeys<K, V> {
-        IntoKeys {
-            iter: self.into_entries().into_iter(),
-        }
-    }
-
-    
     pub fn values(&self) -> Values<'_, K, V> {
         Values {
             iter: self.as_entries().iter(),
@@ -252,13 +242,6 @@ impl<K, V, S> IndexMap<K, V, S> {
     pub fn values_mut(&mut self) -> ValuesMut<'_, K, V> {
         ValuesMut {
             iter: self.as_entries_mut().iter_mut(),
-        }
-    }
-
-    
-    pub fn into_values(self) -> IntoValues<K, V> {
-        IntoValues {
-            iter: self.into_entries().into_iter(),
         }
     }
 
@@ -440,8 +423,6 @@ where
         }
     }
 
-    
-    
     
     pub fn get_index_of<Q: ?Sized>(&self, key: &Q) -> Option<usize>
     where
@@ -640,8 +621,6 @@ where
     
     
     
-    
-    
     pub fn pop(&mut self) -> Option<(K, V)> {
         self.core.pop()
     }
@@ -674,8 +653,8 @@ where
     where
         K: Ord,
     {
-        self.with_entries(move |entries| {
-            entries.sort_by(move |a, b| K::cmp(&a.key, &b.key));
+        self.with_entries(|entries| {
+            entries.sort_by(|a, b| Ord::cmp(&a.key, &b.key));
         });
     }
 
@@ -706,52 +685,6 @@ where
     {
         let mut entries = self.into_entries();
         entries.sort_by(move |a, b| cmp(&a.key, &a.value, &b.key, &b.value));
-        IntoIter {
-            iter: entries.into_iter(),
-        }
-    }
-
-    
-    
-    
-    
-    pub fn sort_unstable_keys(&mut self)
-    where
-        K: Ord,
-    {
-        self.with_entries(move |entries| {
-            entries.sort_unstable_by(move |a, b| K::cmp(&a.key, &b.key));
-        });
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn sort_unstable_by<F>(&mut self, mut cmp: F)
-    where
-        F: FnMut(&K, &V, &K, &V) -> Ordering,
-    {
-        self.with_entries(move |entries| {
-            entries.sort_unstable_by(move |a, b| cmp(&a.key, &a.value, &b.key, &b.value));
-        });
-    }
-
-    
-    
-    
-    
-    #[inline]
-    pub fn sorted_unstable_by<F>(self, mut cmp: F) -> IntoIter<K, V>
-    where
-        F: FnMut(&K, &V, &K, &V) -> Ordering,
-    {
-        let mut entries = self.into_entries();
-        entries.sort_unstable_by(move |a, b| cmp(&a.key, &a.value, &b.key, &b.value));
         IntoIter {
             iter: entries.into_iter(),
         }
@@ -864,7 +797,9 @@ impl<'a, K, V> Iterator for Keys<'a, K, V> {
 }
 
 impl<K, V> DoubleEndedIterator for Keys<'_, K, V> {
-    double_ended_iterator_methods!(Bucket::key_ref);
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.iter.next_back().map(Bucket::key_ref)
+    }
 }
 
 impl<K, V> ExactSizeIterator for Keys<'_, K, V> {
@@ -872,8 +807,6 @@ impl<K, V> ExactSizeIterator for Keys<'_, K, V> {
         self.iter.len()
     }
 }
-
-impl<K, V> FusedIterator for Keys<'_, K, V> {}
 
 
 impl<K, V> Clone for Keys<'_, K, V> {
@@ -897,42 +830,6 @@ impl<K: fmt::Debug, V> fmt::Debug for Keys<'_, K, V> {
 
 
 
-pub struct IntoKeys<K, V> {
-    iter: vec::IntoIter<Bucket<K, V>>,
-}
-
-impl<K, V> Iterator for IntoKeys<K, V> {
-    type Item = K;
-
-    iterator_methods!(Bucket::key);
-}
-
-impl<K, V> DoubleEndedIterator for IntoKeys<K, V> {
-    double_ended_iterator_methods!(Bucket::key);
-}
-
-impl<K, V> ExactSizeIterator for IntoKeys<K, V> {
-    fn len(&self) -> usize {
-        self.iter.len()
-    }
-}
-
-impl<K, V> FusedIterator for IntoKeys<K, V> {}
-
-impl<K: fmt::Debug, V> fmt::Debug for IntoKeys<K, V> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let iter = self.iter.as_slice().iter().map(Bucket::key_ref);
-        f.debug_list().entries(iter).finish()
-    }
-}
-
-
-
-
-
-
-
-
 pub struct Values<'a, K, V> {
     iter: SliceIter<'a, Bucket<K, V>>,
 }
@@ -944,7 +841,9 @@ impl<'a, K, V> Iterator for Values<'a, K, V> {
 }
 
 impl<K, V> DoubleEndedIterator for Values<'_, K, V> {
-    double_ended_iterator_methods!(Bucket::value_ref);
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.iter.next_back().map(Bucket::value_ref)
+    }
 }
 
 impl<K, V> ExactSizeIterator for Values<'_, K, V> {
@@ -952,8 +851,6 @@ impl<K, V> ExactSizeIterator for Values<'_, K, V> {
         self.iter.len()
     }
 }
-
-impl<K, V> FusedIterator for Values<'_, K, V> {}
 
 
 impl<K, V> Clone for Values<'_, K, V> {
@@ -988,52 +885,14 @@ impl<'a, K, V> Iterator for ValuesMut<'a, K, V> {
 }
 
 impl<K, V> DoubleEndedIterator for ValuesMut<'_, K, V> {
-    double_ended_iterator_methods!(Bucket::value_mut);
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.iter.next_back().map(Bucket::value_mut)
+    }
 }
 
 impl<K, V> ExactSizeIterator for ValuesMut<'_, K, V> {
     fn len(&self) -> usize {
         self.iter.len()
-    }
-}
-
-impl<K, V> FusedIterator for ValuesMut<'_, K, V> {}
-
-
-
-
-
-
-
-
-
-
-pub struct IntoValues<K, V> {
-    iter: vec::IntoIter<Bucket<K, V>>,
-}
-
-impl<K, V> Iterator for IntoValues<K, V> {
-    type Item = V;
-
-    iterator_methods!(Bucket::value);
-}
-
-impl<K, V> DoubleEndedIterator for IntoValues<K, V> {
-    double_ended_iterator_methods!(Bucket::value);
-}
-
-impl<K, V> ExactSizeIterator for IntoValues<K, V> {
-    fn len(&self) -> usize {
-        self.iter.len()
-    }
-}
-
-impl<K, V> FusedIterator for IntoValues<K, V> {}
-
-impl<K, V: fmt::Debug> fmt::Debug for IntoValues<K, V> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let iter = self.iter.as_slice().iter().map(Bucket::value_ref);
-        f.debug_list().entries(iter).finish()
     }
 }
 
@@ -1055,7 +914,9 @@ impl<'a, K, V> Iterator for Iter<'a, K, V> {
 }
 
 impl<K, V> DoubleEndedIterator for Iter<'_, K, V> {
-    double_ended_iterator_methods!(Bucket::refs);
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.iter.next_back().map(Bucket::refs)
+    }
 }
 
 impl<K, V> ExactSizeIterator for Iter<'_, K, V> {
@@ -1063,8 +924,6 @@ impl<K, V> ExactSizeIterator for Iter<'_, K, V> {
         self.iter.len()
     }
 }
-
-impl<K, V> FusedIterator for Iter<'_, K, V> {}
 
 
 impl<K, V> Clone for Iter<'_, K, V> {
@@ -1099,7 +958,9 @@ impl<'a, K, V> Iterator for IterMut<'a, K, V> {
 }
 
 impl<K, V> DoubleEndedIterator for IterMut<'_, K, V> {
-    double_ended_iterator_methods!(Bucket::ref_mut);
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.iter.next_back().map(Bucket::ref_mut)
+    }
 }
 
 impl<K, V> ExactSizeIterator for IterMut<'_, K, V> {
@@ -1107,10 +968,6 @@ impl<K, V> ExactSizeIterator for IterMut<'_, K, V> {
         self.iter.len()
     }
 }
-
-impl<K, V> FusedIterator for IterMut<'_, K, V> {}
-
-
 
 
 
@@ -1130,7 +987,9 @@ impl<K, V> Iterator for IntoIter<K, V> {
 }
 
 impl<K, V> DoubleEndedIterator for IntoIter<K, V> {
-    double_ended_iterator_methods!(Bucket::key_value);
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.iter.next_back().map(Bucket::key_value)
+    }
 }
 
 impl<K, V> ExactSizeIterator for IntoIter<K, V> {
@@ -1138,8 +997,6 @@ impl<K, V> ExactSizeIterator for IntoIter<K, V> {
         self.iter.len()
     }
 }
-
-impl<K, V> FusedIterator for IntoIter<K, V> {}
 
 impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for IntoIter<K, V> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -1167,21 +1024,6 @@ impl<K, V> Iterator for Drain<'_, K, V> {
 
 impl<K, V> DoubleEndedIterator for Drain<'_, K, V> {
     double_ended_iterator_methods!(Bucket::key_value);
-}
-
-impl<K, V> ExactSizeIterator for Drain<'_, K, V> {
-    fn len(&self) -> usize {
-        self.iter.len()
-    }
-}
-
-impl<K, V> FusedIterator for Drain<'_, K, V> {}
-
-impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for Drain<'_, K, V> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let iter = self.iter.as_slice().iter().map(Bucket::refs);
-        f.debug_list().entries(iter).finish()
-    }
 }
 
 impl<'a, K, V, S> IntoIterator for &'a IndexMap<K, V, S> {
@@ -1391,25 +1233,6 @@ where
     }
 }
 
-#[cfg(all(has_std, rustc_1_51))]
-impl<K, V, const N: usize> From<[(K, V); N]> for IndexMap<K, V, RandomState>
-where
-    K: Hash + Eq,
-{
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn from(arr: [(K, V); N]) -> Self {
-        std::array::IntoIter::new(arr).collect()
-    }
-}
-
 impl<K, V, S> Extend<(K, V)> for IndexMap<K, V, S>
 where
     K: Hash + Eq,
@@ -1567,7 +1390,7 @@ mod tests {
 
         let mut keys = vec![];
         keys.extend(0..16);
-        keys.extend(if cfg!(miri) { 32..64 } else { 128..267 });
+        keys.extend(128..267);
 
         for &i in &keys {
             let old_map = map.clone();
@@ -1851,18 +1674,7 @@ mod tests {
     fn keys() {
         let vec = vec![(1, 'a'), (2, 'b'), (3, 'c')];
         let map: IndexMap<_, _> = vec.into_iter().collect();
-        let keys: Vec<_> = map.keys().copied().collect();
-        assert_eq!(keys.len(), 3);
-        assert!(keys.contains(&1));
-        assert!(keys.contains(&2));
-        assert!(keys.contains(&3));
-    }
-
-    #[test]
-    fn into_keys() {
-        let vec = vec![(1, 'a'), (2, 'b'), (3, 'c')];
-        let map: IndexMap<_, _> = vec.into_iter().collect();
-        let keys: Vec<i32> = map.into_keys().collect();
+        let keys: Vec<_> = map.keys().cloned().collect();
         assert_eq!(keys.len(), 3);
         assert!(keys.contains(&1));
         assert!(keys.contains(&2));
@@ -1873,7 +1685,7 @@ mod tests {
     fn values() {
         let vec = vec![(1, 'a'), (2, 'b'), (3, 'c')];
         let map: IndexMap<_, _> = vec.into_iter().collect();
-        let values: Vec<_> = map.values().copied().collect();
+        let values: Vec<_> = map.values().cloned().collect();
         assert_eq!(values.len(), 3);
         assert!(values.contains(&'a'));
         assert!(values.contains(&'b'));
@@ -1887,32 +1699,10 @@ mod tests {
         for value in map.values_mut() {
             *value *= 2
         }
-        let values: Vec<_> = map.values().copied().collect();
+        let values: Vec<_> = map.values().cloned().collect();
         assert_eq!(values.len(), 3);
         assert!(values.contains(&2));
         assert!(values.contains(&4));
         assert!(values.contains(&6));
-    }
-
-    #[test]
-    fn into_values() {
-        let vec = vec![(1, 'a'), (2, 'b'), (3, 'c')];
-        let map: IndexMap<_, _> = vec.into_iter().collect();
-        let values: Vec<char> = map.into_values().collect();
-        assert_eq!(values.len(), 3);
-        assert!(values.contains(&'a'));
-        assert!(values.contains(&'b'));
-        assert!(values.contains(&'c'));
-    }
-
-    #[test]
-    #[cfg(all(has_std, rustc_1_51))]
-    fn from_array() {
-        let map = IndexMap::from([(1, 2), (3, 4)]);
-        let mut expected = IndexMap::new();
-        expected.insert(1, 2);
-        expected.insert(3, 4);
-
-        assert_eq!(map, expected)
     }
 }

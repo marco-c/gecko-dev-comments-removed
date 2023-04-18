@@ -96,24 +96,21 @@
 
 
 
-#[cfg_attr(doc_cfg, doc(cfg(feature = "std")))]
-#[cfg(feature = "std")] pub mod adapter;
+pub mod adapter;
 
+#[cfg(feature = "std")] mod entropy;
 pub mod mock; 
               
-
-#[cfg(all(feature = "small_rng", target_pointer_width = "64"))]
-mod xoshiro256plusplus;
-#[cfg(all(feature = "small_rng", not(target_pointer_width = "64")))]
-mod xoshiro128plusplus;
 #[cfg(feature = "small_rng")] mod small;
+mod std;
+#[cfg(feature = "std")] pub(crate) mod thread;
 
-#[cfg(feature = "std_rng")] mod std;
-#[cfg(all(feature = "std", feature = "std_rng"))] pub(crate) mod thread;
+#[allow(deprecated)]
+#[cfg(feature = "std")]
+pub use self::entropy::EntropyRng;
 
 #[cfg(feature = "small_rng")] pub use self::small::SmallRng;
-#[cfg(feature = "std_rng")] pub use self::std::StdRng;
-#[cfg(all(feature = "std", feature = "std_rng"))] pub use self::thread::ThreadRng;
+pub use self::std::StdRng;
+#[cfg(feature = "std")] pub use self::thread::ThreadRng;
 
-#[cfg_attr(doc_cfg, doc(cfg(feature = "getrandom")))]
 #[cfg(feature = "getrandom")] pub use rand_core::OsRng;

@@ -13,7 +13,6 @@ use crate::vec::Vec;
 use core::cmp::Ordering;
 use core::fmt;
 use core::hash::{BuildHasher, Hash};
-use core::ops::RangeBounds;
 
 use crate::Bucket;
 use crate::Entries;
@@ -140,13 +139,6 @@ pub struct ParIterMut<'a, K, V> {
     entries: &'a mut [Bucket<K, V>],
 }
 
-impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for ParIterMut<'_, K, V> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let iter = self.entries.iter().map(Bucket::refs);
-        f.debug_list().entries(iter).finish()
-    }
-}
-
 impl<'a, K: Sync + Send, V: Send> ParallelIterator for ParIterMut<'a, K, V> {
     type Item = (&'a K, &'a mut V);
 
@@ -155,43 +147,6 @@ impl<'a, K: Sync + Send, V: Send> ParallelIterator for ParIterMut<'a, K, V> {
 
 impl<K: Sync + Send, V: Send> IndexedParallelIterator for ParIterMut<'_, K, V> {
     indexed_parallel_iterator_methods!(Bucket::ref_mut);
-}
-
-
-impl<'a, K, V, S> ParallelDrainRange<usize> for &'a mut IndexMap<K, V, S>
-where
-    K: Send,
-    V: Send,
-{
-    type Item = (K, V);
-    type Iter = ParDrain<'a, K, V>;
-
-    fn par_drain<R: RangeBounds<usize>>(self, range: R) -> Self::Iter {
-        ParDrain {
-            entries: self.core.par_drain(range),
-        }
-    }
-}
-
-
-
-
-
-
-
-
-pub struct ParDrain<'a, K: Send, V: Send> {
-    entries: rayon::vec::Drain<'a, Bucket<K, V>>,
-}
-
-impl<K: Send, V: Send> ParallelIterator for ParDrain<'_, K, V> {
-    type Item = (K, V);
-
-    parallel_iterator_methods!(Bucket::key_value);
-}
-
-impl<K: Send, V: Send> IndexedParallelIterator for ParDrain<'_, K, V> {
-    indexed_parallel_iterator_methods!(Bucket::key_value);
 }
 
 
@@ -371,41 +326,6 @@ where
         entries.par_sort_by(move |a, b| cmp(&a.key, &a.value, &b.key, &b.value));
         IntoParIter { entries }
     }
-
-    
-    pub fn par_sort_unstable_keys(&mut self)
-    where
-        K: Ord,
-    {
-        self.with_entries(|entries| {
-            entries.par_sort_unstable_by(|a, b| K::cmp(&a.key, &b.key));
-        });
-    }
-
-    
-    
-    
-    
-    
-    pub fn par_sort_unstable_by<F>(&mut self, cmp: F)
-    where
-        F: Fn(&K, &V, &K, &V) -> Ordering + Sync,
-    {
-        self.with_entries(|entries| {
-            entries.par_sort_unstable_by(move |a, b| cmp(&a.key, &a.value, &b.key, &b.value));
-        });
-    }
-
-    
-    
-    pub fn par_sorted_unstable_by<F>(self, cmp: F) -> IntoParIter<K, V>
-    where
-        F: Fn(&K, &V, &K, &V) -> Ordering + Sync,
-    {
-        let mut entries = self.into_entries();
-        entries.par_sort_unstable_by(move |a, b| cmp(&a.key, &a.value, &b.key, &b.value));
-        IntoParIter { entries }
-    }
 }
 
 
@@ -417,13 +337,6 @@ where
 
 pub struct ParValuesMut<'a, K, V> {
     entries: &'a mut [Bucket<K, V>],
-}
-
-impl<K, V: fmt::Debug> fmt::Debug for ParValuesMut<'_, K, V> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let iter = self.entries.iter().map(Bucket::value_ref);
-        f.debug_list().entries(iter).finish()
-    }
 }
 
 impl<'a, K: Send, V: Send> ParallelIterator for ParValuesMut<'a, K, V> {
@@ -551,7 +464,7 @@ mod tests {
     fn keys() {
         let vec = vec![(1, 'a'), (2, 'b'), (3, 'c')];
         let map: IndexMap<_, _> = vec.into_par_iter().collect();
-        let keys: Vec<_> = map.par_keys().copied().collect();
+        let keys: Vec<_> = map.par_keys().cloned().collect();
         assert_eq!(keys.len(), 3);
         assert!(keys.contains(&1));
         assert!(keys.contains(&2));
@@ -562,7 +475,7 @@ mod tests {
     fn values() {
         let vec = vec![(1, 'a'), (2, 'b'), (3, 'c')];
         let map: IndexMap<_, _> = vec.into_par_iter().collect();
-        let values: Vec<_> = map.par_values().copied().collect();
+        let values: Vec<_> = map.par_values().cloned().collect();
         assert_eq!(values.len(), 3);
         assert!(values.contains(&'a'));
         assert!(values.contains(&'b'));
@@ -574,7 +487,7 @@ mod tests {
         let vec = vec![(1, 1), (2, 2), (3, 3)];
         let mut map: IndexMap<_, _> = vec.into_par_iter().collect();
         map.par_values_mut().for_each(|value| *value *= 2);
-        let values: Vec<_> = map.par_values().copied().collect();
+        let values: Vec<_> = map.par_values().cloned().collect();
         assert_eq!(values.len(), 3);
         assert!(values.contains(&2));
         assert!(values.contains(&4));

@@ -177,89 +177,7 @@ pub const ERRNO_TXTBSY: Errno = 74;
 pub const ERRNO_XDEV: Errno = 75;
 
 pub const ERRNO_NOTCAPABLE: Errno = 76;
-pub fn errno_name(code: u16) -> &'static str {
-    match code {
-        ERRNO_SUCCESS => "SUCCESS",
-        ERRNO_2BIG => "2BIG",
-        ERRNO_ACCES => "ACCES",
-        ERRNO_ADDRINUSE => "ADDRINUSE",
-        ERRNO_ADDRNOTAVAIL => "ADDRNOTAVAIL",
-        ERRNO_AFNOSUPPORT => "AFNOSUPPORT",
-        ERRNO_AGAIN => "AGAIN",
-        ERRNO_ALREADY => "ALREADY",
-        ERRNO_BADF => "BADF",
-        ERRNO_BADMSG => "BADMSG",
-        ERRNO_BUSY => "BUSY",
-        ERRNO_CANCELED => "CANCELED",
-        ERRNO_CHILD => "CHILD",
-        ERRNO_CONNABORTED => "CONNABORTED",
-        ERRNO_CONNREFUSED => "CONNREFUSED",
-        ERRNO_CONNRESET => "CONNRESET",
-        ERRNO_DEADLK => "DEADLK",
-        ERRNO_DESTADDRREQ => "DESTADDRREQ",
-        ERRNO_DOM => "DOM",
-        ERRNO_DQUOT => "DQUOT",
-        ERRNO_EXIST => "EXIST",
-        ERRNO_FAULT => "FAULT",
-        ERRNO_FBIG => "FBIG",
-        ERRNO_HOSTUNREACH => "HOSTUNREACH",
-        ERRNO_IDRM => "IDRM",
-        ERRNO_ILSEQ => "ILSEQ",
-        ERRNO_INPROGRESS => "INPROGRESS",
-        ERRNO_INTR => "INTR",
-        ERRNO_INVAL => "INVAL",
-        ERRNO_IO => "IO",
-        ERRNO_ISCONN => "ISCONN",
-        ERRNO_ISDIR => "ISDIR",
-        ERRNO_LOOP => "LOOP",
-        ERRNO_MFILE => "MFILE",
-        ERRNO_MLINK => "MLINK",
-        ERRNO_MSGSIZE => "MSGSIZE",
-        ERRNO_MULTIHOP => "MULTIHOP",
-        ERRNO_NAMETOOLONG => "NAMETOOLONG",
-        ERRNO_NETDOWN => "NETDOWN",
-        ERRNO_NETRESET => "NETRESET",
-        ERRNO_NETUNREACH => "NETUNREACH",
-        ERRNO_NFILE => "NFILE",
-        ERRNO_NOBUFS => "NOBUFS",
-        ERRNO_NODEV => "NODEV",
-        ERRNO_NOENT => "NOENT",
-        ERRNO_NOEXEC => "NOEXEC",
-        ERRNO_NOLCK => "NOLCK",
-        ERRNO_NOLINK => "NOLINK",
-        ERRNO_NOMEM => "NOMEM",
-        ERRNO_NOMSG => "NOMSG",
-        ERRNO_NOPROTOOPT => "NOPROTOOPT",
-        ERRNO_NOSPC => "NOSPC",
-        ERRNO_NOSYS => "NOSYS",
-        ERRNO_NOTCONN => "NOTCONN",
-        ERRNO_NOTDIR => "NOTDIR",
-        ERRNO_NOTEMPTY => "NOTEMPTY",
-        ERRNO_NOTRECOVERABLE => "NOTRECOVERABLE",
-        ERRNO_NOTSOCK => "NOTSOCK",
-        ERRNO_NOTSUP => "NOTSUP",
-        ERRNO_NOTTY => "NOTTY",
-        ERRNO_NXIO => "NXIO",
-        ERRNO_OVERFLOW => "OVERFLOW",
-        ERRNO_OWNERDEAD => "OWNERDEAD",
-        ERRNO_PERM => "PERM",
-        ERRNO_PIPE => "PIPE",
-        ERRNO_PROTO => "PROTO",
-        ERRNO_PROTONOSUPPORT => "PROTONOSUPPORT",
-        ERRNO_PROTOTYPE => "PROTOTYPE",
-        ERRNO_RANGE => "RANGE",
-        ERRNO_ROFS => "ROFS",
-        ERRNO_SPIPE => "SPIPE",
-        ERRNO_SRCH => "SRCH",
-        ERRNO_STALE => "STALE",
-        ERRNO_TIMEDOUT => "TIMEDOUT",
-        ERRNO_TXTBSY => "TXTBSY",
-        ERRNO_XDEV => "XDEV",
-        ERRNO_NOTCAPABLE => "NOTCAPABLE",
-        _ => "Unknown error.",
-    }
-}
-pub fn errno_docs(code: u16) -> &'static str {
+pub(crate) fn strerror(code: u16) -> &'static str {
     match code {
         ERRNO_SUCCESS => "No error occurred. System call completed successfully.",
         ERRNO_2BIG => "Argument list too long.",
@@ -414,7 +332,7 @@ pub const RIGHTS_POLL_FD_READWRITE: Rights = 0x8000000;
 pub const RIGHTS_SOCK_SHUTDOWN: Rights = 0x10000000;
 pub type Fd = u32;
 #[repr(C)]
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone)]
 pub struct Iovec {
     
     pub buf: *mut u8,
@@ -422,7 +340,7 @@ pub struct Iovec {
     pub buf_len: Size,
 }
 #[repr(C)]
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone)]
 pub struct Ciovec {
     
     pub buf: *const u8,
@@ -460,7 +378,7 @@ pub const FILETYPE_SOCKET_STREAM: Filetype = 6;
 
 pub const FILETYPE_SYMBOLIC_LINK: Filetype = 7;
 #[repr(C)]
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone)]
 pub struct Dirent {
     
     pub d_next: Dircookie,
@@ -498,7 +416,7 @@ pub const FDFLAGS_RSYNC: Fdflags = 0x8;
 
 pub const FDFLAGS_SYNC: Fdflags = 0x10;
 #[repr(C)]
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone)]
 pub struct Fdstat {
     
     pub fs_filetype: Filetype,
@@ -534,7 +452,7 @@ pub const OFLAGS_EXCL: Oflags = 0x4;
 pub const OFLAGS_TRUNC: Oflags = 0x8;
 pub type Linkcount = u64;
 #[repr(C)]
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone)]
 pub struct Filestat {
     
     pub dev: Device,
@@ -568,7 +486,7 @@ pub type Eventrwflags = u16;
 
 pub const EVENTRWFLAGS_FD_READWRITE_HANGUP: Eventrwflags = 0x1;
 #[repr(C)]
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone)]
 pub struct EventFdReadwrite {
     
     pub nbytes: Filesize,
@@ -576,7 +494,13 @@ pub struct EventFdReadwrite {
     pub flags: Eventrwflags,
 }
 #[repr(C)]
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone)]
+pub union EventU {
+    
+    pub fd_readwrite: EventFdReadwrite,
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
 pub struct Event {
     
     pub userdata: Userdata,
@@ -585,8 +509,7 @@ pub struct Event {
     
     pub r#type: Eventtype,
     
-    
-    pub fd_readwrite: EventFdReadwrite,
+    pub u: EventU,
 }
 pub type Subclockflags = u16;
 
@@ -596,7 +519,7 @@ pub type Subclockflags = u16;
 
 pub const SUBCLOCKFLAGS_SUBSCRIPTION_CLOCK_ABSTIME: Subclockflags = 0x1;
 #[repr(C)]
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone)]
 pub struct SubscriptionClock {
     
     pub id: Clockid,
@@ -609,31 +532,27 @@ pub struct SubscriptionClock {
     pub flags: Subclockflags,
 }
 #[repr(C)]
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone)]
 pub struct SubscriptionFdReadwrite {
     
     pub file_descriptor: Fd,
 }
 #[repr(C)]
 #[derive(Copy, Clone)]
-pub union SubscriptionUU {
+pub union SubscriptionU {
+    
     pub clock: SubscriptionClock,
-    pub fd_read: SubscriptionFdReadwrite,
-    pub fd_write: SubscriptionFdReadwrite,
+    
+    pub fd_readwrite: SubscriptionFdReadwrite,
 }
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct SubscriptionU {
-    pub tag: Eventtype,
-    pub u: SubscriptionUU,
-}
-
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct Subscription {
     
     
     pub userdata: Userdata,
+    
+    pub r#type: Eventtype,
     
     pub u: SubscriptionU,
 }
@@ -750,7 +669,7 @@ pub type Preopentype = u8;
 
 pub const PREOPENTYPE_DIR: Preopentype = 0;
 #[repr(C)]
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone)]
 pub struct PrestatDir {
     
     pub pr_name_len: Size,
@@ -758,15 +677,17 @@ pub struct PrestatDir {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub union PrestatU {
+    
     pub dir: PrestatDir,
 }
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct Prestat {
-    pub tag: Preopentype,
+    
+    pub pr_type: Preopentype,
+    
     pub u: PrestatU,
 }
-
 
 
 pub unsafe fn args_get(argv: *mut *mut u8, argv_buf: *mut u8) -> Result<()> {
@@ -813,19 +734,16 @@ pub unsafe fn environ_get(environ: *mut *mut u8, environ_buf: *mut u8) -> Result
 
 
 pub unsafe fn environ_sizes_get() -> Result<(Size, Size)> {
-    let mut environc = MaybeUninit::uninit();
-    let mut environ_buf_size = MaybeUninit::uninit();
-    let rc = wasi_snapshot_preview1::environ_sizes_get(
-        environc.as_mut_ptr(),
-        environ_buf_size.as_mut_ptr(),
-    );
+    let mut argc = MaybeUninit::uninit();
+    let mut argv_buf_size = MaybeUninit::uninit();
+    let rc =
+        wasi_snapshot_preview1::environ_sizes_get(argc.as_mut_ptr(), argv_buf_size.as_mut_ptr());
     if let Some(err) = Error::from_raw_error(rc) {
         Err(err)
     } else {
-        Ok((environc.assume_init(), environ_buf_size.assume_init()))
+        Ok((argc.assume_init(), argv_buf_size.assume_init()))
     }
 }
-
 
 
 
@@ -1037,7 +955,7 @@ pub unsafe fn fd_filestat_set_times(
 
 
 
-pub unsafe fn fd_pread(fd: Fd, iovs: IovecArray<'_>, offset: Filesize) -> Result<Size> {
+pub unsafe fn fd_pread(fd: Fd, iovs: IovecArray, offset: Filesize) -> Result<Size> {
     let mut nread = MaybeUninit::uninit();
     let rc =
         wasi_snapshot_preview1::fd_pread(fd, iovs.as_ptr(), iovs.len(), offset, nread.as_mut_ptr());
@@ -1088,7 +1006,7 @@ pub unsafe fn fd_prestat_dir_name(fd: Fd, path: *mut u8, path_len: Size) -> Resu
 
 
 
-pub unsafe fn fd_pwrite(fd: Fd, iovs: CiovecArray<'_>, offset: Filesize) -> Result<Size> {
+pub unsafe fn fd_pwrite(fd: Fd, iovs: CiovecArray, offset: Filesize) -> Result<Size> {
     let mut nwritten = MaybeUninit::uninit();
     let rc = wasi_snapshot_preview1::fd_pwrite(
         fd,
@@ -1114,7 +1032,7 @@ pub unsafe fn fd_pwrite(fd: Fd, iovs: CiovecArray<'_>, offset: Filesize) -> Resu
 
 
 
-pub unsafe fn fd_read(fd: Fd, iovs: IovecArray<'_>) -> Result<Size> {
+pub unsafe fn fd_read(fd: Fd, iovs: IovecArray) -> Result<Size> {
     let mut nread = MaybeUninit::uninit();
     let rc = wasi_snapshot_preview1::fd_read(fd, iovs.as_ptr(), iovs.len(), nread.as_mut_ptr());
     if let Some(err) = Error::from_raw_error(rc) {
@@ -1231,7 +1149,7 @@ pub unsafe fn fd_tell(fd: Fd) -> Result<Filesize> {
 
 
 
-pub unsafe fn fd_write(fd: Fd, iovs: CiovecArray<'_>) -> Result<Size> {
+pub unsafe fn fd_write(fd: Fd, iovs: CiovecArray) -> Result<Size> {
     let mut nwritten = MaybeUninit::uninit();
     let rc = wasi_snapshot_preview1::fd_write(fd, iovs.as_ptr(), iovs.len(), nwritten.as_mut_ptr());
     if let Some(err) = Error::from_raw_error(rc) {
@@ -1380,7 +1298,7 @@ pub unsafe fn path_open(
     path: &str,
     oflags: Oflags,
     fs_rights_base: Rights,
-    fs_rights_inheriting: Rights,
+    fs_rights_inherting: Rights,
     fdflags: Fdflags,
 ) -> Result<Fd> {
     let mut opened_fd = MaybeUninit::uninit();
@@ -1391,7 +1309,7 @@ pub unsafe fn path_open(
         path.len(),
         oflags,
         fs_rights_base,
-        fs_rights_inheriting,
+        fs_rights_inherting,
         fdflags,
         opened_fd.as_mut_ptr(),
     );
@@ -1602,11 +1520,7 @@ pub unsafe fn random_get(buf: *mut u8, buf_len: Size) -> Result<()> {
 
 
 
-pub unsafe fn sock_recv(
-    fd: Fd,
-    ri_data: IovecArray<'_>,
-    ri_flags: Riflags,
-) -> Result<(Size, Roflags)> {
+pub unsafe fn sock_recv(fd: Fd, ri_data: IovecArray, ri_flags: Riflags) -> Result<(Size, Roflags)> {
     let mut ro_datalen = MaybeUninit::uninit();
     let mut ro_flags = MaybeUninit::uninit();
     let rc = wasi_snapshot_preview1::sock_recv(
@@ -1636,7 +1550,7 @@ pub unsafe fn sock_recv(
 
 
 
-pub unsafe fn sock_send(fd: Fd, si_data: CiovecArray<'_>, si_flags: Siflags) -> Result<Size> {
+pub unsafe fn sock_send(fd: Fd, si_data: CiovecArray, si_flags: Siflags) -> Result<Size> {
     let mut so_datalen = MaybeUninit::uninit();
     let rc = wasi_snapshot_preview1::sock_send(
         fd,
@@ -1680,8 +1594,7 @@ pub mod wasi_snapshot_preview1 {
         
         pub fn environ_get(environ: *mut *mut u8, environ_buf: *mut u8) -> Errno;
         
-        pub fn environ_sizes_get(environc: *mut Size, environ_buf_size: *mut Size) -> Errno;
-        
+        pub fn environ_sizes_get(argc: *mut Size, argv_buf_size: *mut Size) -> Errno;
         
         
         
@@ -1847,7 +1760,7 @@ pub mod wasi_snapshot_preview1 {
             path_len: usize,
             oflags: Oflags,
             fs_rights_base: Rights,
-            fs_rights_inheriting: Rights,
+            fs_rights_inherting: Rights,
             fdflags: Fdflags,
             opened_fd: *mut Fd,
         ) -> Errno;

@@ -17,11 +17,8 @@
 
 
 
-use crate::{
-    use_file,
-    util_libc::{sys_fill_exact, Weak},
-    Error,
-};
+use crate::util_libc::{sys_fill_exact, Weak};
+use crate::{use_file, Error};
 use core::mem;
 
 #[cfg(target_os = "illumos")]

@@ -122,123 +122,152 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #![doc(
     html_logo_url = "https://www.rust-lang.org/logos/rust-logo-128x128-blk.png",
     html_favicon_url = "https://www.rust-lang.org/favicon.ico",
-    html_root_url = "https://docs.rs/getrandom/0.2.6"
+    html_root_url = "https://rust-random.github.io/rand/"
 )]
 #![no_std]
+#![cfg_attr(feature = "stdweb", recursion_limit = "128")]
 #![warn(rust_2018_idioms, unused_lifetimes, missing_docs)]
-#![cfg_attr(docsrs, feature(doc_cfg))]
 
 #[macro_use]
 extern crate cfg_if;
 
+cfg_if! {
+    if #[cfg(feature = "log")] {
+        #[allow(unused)]
+        #[macro_use]
+        extern crate log;
+    } else {
+        #[allow(unused)]
+        macro_rules! error {
+            ($($x:tt)*) => {};
+        }
+        #[allow(unused)]
+        macro_rules! warn {
+            ($($x:tt)*) => {};
+        }
+        #[allow(unused)]
+        macro_rules! info {
+            ($($x:tt)*) => {};
+        }
+    }
+}
+
 mod error;
+pub use crate::error::Error;
+
 mod util;
 
 
-#[cfg(feature = "custom")]
-mod custom;
-#[cfg(feature = "std")]
-mod error_impls;
 
-pub use crate::error::Error;
+#[cfg(any(
+    feature = "std",
+    all(windows, not(getrandom_uwp)),
+    target_os = "android",
+    target_os = "dragonfly",
+    target_os = "emscripten",
+    target_os = "freebsd",
+    target_os = "fuchsia",
+    target_os = "haiku",
+    target_os = "illumos",
+    target_os = "ios",
+    target_os = "linux",
+    target_os = "macos",
+    target_os = "netbsd",
+    target_os = "openbsd",
+    target_os = "redox",
+    target_os = "solaris",
+))]
+mod error_impls;
 
 
 
 
 cfg_if! {
-    if #[cfg(any(target_os = "emscripten", target_os = "haiku",
-                 target_os = "redox"))] {
-        mod util_libc;
-        #[path = "use_file.rs"] mod imp;
-    } else if #[cfg(any(target_os = "android", target_os = "linux"))] {
+    if #[cfg(target_os = "android")] {
         mod util_libc;
         mod use_file;
         #[path = "linux_android.rs"] mod imp;
-    } else if #[cfg(any(target_os = "illumos", target_os = "solaris"))] {
+    } else if #[cfg(target_os = "cloudabi")] {
+        #[path = "cloudabi.rs"] mod imp;
+    } else if #[cfg(target_os = "dragonfly")] {
+        mod util_libc;
+        #[path = "use_file.rs"] mod imp;
+    } else if #[cfg(target_os = "emscripten")] {
+        mod util_libc;
+        #[path = "use_file.rs"] mod imp;
+    } else if #[cfg(target_os = "freebsd")] {
+        mod util_libc;
+        #[path = "bsd_arandom.rs"] mod imp;
+    } else if #[cfg(target_os = "fuchsia")] {
+        #[path = "fuchsia.rs"] mod imp;
+    } else if #[cfg(target_os = "haiku")] {
+        mod util_libc;
+        #[path = "use_file.rs"] mod imp;
+    } else if #[cfg(target_os = "illumos")] {
         mod util_libc;
         mod use_file;
         #[path = "solaris_illumos.rs"] mod imp;
-    } else if #[cfg(any(target_os = "freebsd", target_os = "netbsd"))] {
-        mod util_libc;
-        #[path = "bsd_arandom.rs"] mod imp;
-    } else if #[cfg(target_os = "dragonfly")] {
-        mod util_libc;
-        mod use_file;
-        #[path = "dragonfly.rs"] mod imp;
-    } else if #[cfg(target_os = "fuchsia")] {
-        #[path = "fuchsia.rs"] mod imp;
     } else if #[cfg(target_os = "ios")] {
         #[path = "ios.rs"] mod imp;
+    } else if #[cfg(target_os = "linux")] {
+        mod util_libc;
+        mod use_file;
+        #[path = "linux_android.rs"] mod imp;
     } else if #[cfg(target_os = "macos")] {
         mod util_libc;
         mod use_file;
         #[path = "macos.rs"] mod imp;
+    } else if #[cfg(target_os = "netbsd")] {
+        mod util_libc;
+        #[path = "bsd_arandom.rs"] mod imp;
     } else if #[cfg(target_os = "openbsd")] {
         mod util_libc;
         #[path = "openbsd.rs"] mod imp;
+    } else if #[cfg(target_os = "redox")] {
+        mod util_libc;
+        #[path = "use_file.rs"] mod imp;
+    } else if #[cfg(target_os = "solaris")] {
+        mod util_libc;
+        mod use_file;
+        #[path = "solaris_illumos.rs"] mod imp;
     } else if #[cfg(target_os = "wasi")] {
         #[path = "wasi.rs"] mod imp;
-    } else if #[cfg(all(target_arch = "x86_64", target_os = "hermit"))] {
-        #[path = "rdrand.rs"] mod imp;
     } else if #[cfg(target_os = "vxworks")] {
         mod util_libc;
         #[path = "vxworks.rs"] mod imp;
-    } else if #[cfg(target_os = "solid_asp3")] {
-        #[path = "solid.rs"] mod imp;
-    } else if #[cfg(target_os = "espidf")] {
-        #[path = "espidf.rs"] mod imp;
+    } else if #[cfg(all(windows, getrandom_uwp))] {
+        #[path = "windows_uwp.rs"] mod imp;
     } else if #[cfg(windows)] {
         #[path = "windows.rs"] mod imp;
-    } else if #[cfg(all(target_arch = "x86_64", target_env = "sgx"))] {
+    } else if #[cfg(all(target_arch = "x86_64", any(
+                  target_os = "hermit",
+                  target_os = "l4re",
+                  target_os = "uefi",
+                  target_env = "sgx",
+              )))] {
         #[path = "rdrand.rs"] mod imp;
-    } else if #[cfg(all(feature = "rdrand",
-                        any(target_arch = "x86_64", target_arch = "x86")))] {
-        #[path = "rdrand.rs"] mod imp;
-    } else if #[cfg(all(feature = "js",
-                        target_arch = "wasm32", target_os = "unknown"))] {
-        #[path = "js.rs"] mod imp;
-    } else if #[cfg(all(target_os = "horizon", target_arch = "arm"))] {
-        // We check for target_arch = "arm" because the Nintendo Switch also
-        // uses Horizon OS (it is aarch64).
-        mod util_libc;
-        #[path = "3ds.rs"] mod imp;
-    } else if #[cfg(feature = "custom")] {
-        use custom as imp;
     } else if #[cfg(all(target_arch = "wasm32", target_os = "unknown"))] {
-        compile_error!("the wasm32-unknown-unknown target is not supported by \
-                        default, you may need to enable the \"js\" feature. \
-                        For more information see: \
-                        https://docs.rs/getrandom/#webassembly-support");
+        cfg_if! {
+            if #[cfg(feature = "wasm-bindgen")] {
+                #[path = "wasm32_bindgen.rs"] mod imp;
+            } else if #[cfg(feature = "stdweb")] {
+                #[path = "wasm32_stdweb.rs"] mod imp;
+            } else {
+                // Always have an implementation for wasm32-unknown-unknown.
+                // See https://github.com/rust-random/getrandom/issues/87
+                #[path = "dummy.rs"] mod imp;
+            }
+        }
+    } else if #[cfg(feature = "dummy")] {
+        #[path = "dummy.rs"] mod imp;
     } else {
-        compile_error!("target is not supported, for more information see: \
-                        https://docs.rs/getrandom/#unsupported-targets");
+        compile_error!("\
+            target is not supported, for more information see: \
+            https://docs.rs/getrandom/#unsupported-targets\
+        ");
     }
 }
 
@@ -255,7 +284,7 @@ cfg_if! {
 
 
 
-pub fn getrandom(dest: &mut [u8]) -> Result<(), Error> {
+pub fn getrandom(dest: &mut [u8]) -> Result<(), error::Error> {
     if dest.is_empty() {
         return Ok(());
     }

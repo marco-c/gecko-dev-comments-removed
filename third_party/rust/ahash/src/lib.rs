@@ -10,58 +10,35 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #![deny(clippy::correctness, clippy::complexity, clippy::perf)]
 #![allow(clippy::pedantic, clippy::cast_lossless, clippy::unreadable_literal)]
 #![cfg_attr(all(not(test), not(feature = "std")), no_std)]
-#![cfg_attr(feature = "specialize", feature(min_specialization))]
-#![cfg_attr(feature = "stdsimd", feature(stdsimd))]
+#![cfg_attr(feature = "specialize", feature(specialization))]
 
 #[macro_use]
 mod convert;
 
-#[cfg(any(
-    all(any(target_arch = "x86", target_arch = "x86_64"), target_feature = "aes", not(miri)),
-    all(any(target_arch = "arm", target_arch = "aarch64"), target_feature = "crypto", not(miri), feature = "stdsimd")
-))]
+#[cfg(all(any(target_arch = "x86", target_arch = "x86_64"), target_feature = "aes", not(miri)))]
 mod aes_hash;
 mod fallback_hash;
 #[cfg(test)]
 mod hash_quality_test;
 
+mod operations;
 #[cfg(feature = "std")]
 mod hash_map;
 #[cfg(feature = "std")]
 mod hash_set;
-mod operations;
 mod random_state;
 mod specialize;
 
-#[cfg(any(
-    all(any(target_arch = "x86", target_arch = "x86_64"), target_feature = "aes", not(miri)),
-    all(any(target_arch = "arm", target_arch = "aarch64"), target_feature = "crypto", not(miri), feature = "stdsimd")
-))]
+#[cfg(feature = "compile-time-rng")]
+use const_random::const_random;
+
+#[cfg(all(any(target_arch = "x86", target_arch = "x86_64"), target_feature = "aes", not(miri)))]
 pub use crate::aes_hash::AHasher;
 
-#[cfg(not(any(
-    all(any(target_arch = "x86", target_arch = "x86_64"), target_feature = "aes", not(miri)),
-    all(any(target_arch = "arm", target_arch = "aarch64"), target_feature = "crypto", not(miri), feature = "stdsimd")
-)))]
+#[cfg(not(all(any(target_arch = "x86", target_arch = "x86_64"), target_feature = "aes", not(miri))))]
 pub use crate::fallback_hash::AHasher;
 pub use crate::random_state::RandomState;
 
@@ -71,8 +48,6 @@ pub use crate::specialize::CallHasher;
 pub use crate::hash_map::AHashMap;
 #[cfg(feature = "std")]
 pub use crate::hash_set::AHashSet;
-use core::hash::BuildHasher;
-use core::hash::Hash;
 use core::hash::Hasher;
 
 
@@ -97,8 +72,7 @@ use core::hash::Hasher;
 
 
 impl Default for AHasher {
-    
-    
+
     
     
     
@@ -121,65 +95,70 @@ impl Default for AHasher {
     
     
     #[inline]
+    #[cfg(feature = "compile-time-rng")]
     fn default() -> AHasher {
-        RandomState::with_fixed_keys().build_hasher()
+        AHasher::new_with_keys(const_random!(u128), const_random!(u128))
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    #[cfg(not(feature = "compile-time-rng"))]
+    fn default() -> AHasher {
+        const K1: u128 = (random_state::INIT_SEED[0] as u128).wrapping_mul(random_state::MULTIPLE as u128);
+        const K2: u128 = (random_state::INIT_SEED[1] as u128).wrapping_mul(random_state::MULTIPLE as u128);
+        AHasher::new_with_keys(K1, K2)
     }
 }
 
 
-pub(crate) trait BuildHasherExt: BuildHasher {
+pub(crate) trait HasherExt: Hasher {
     #[doc(hidden)]
-    fn hash_as_u64<T: Hash + ?Sized>(&self, value: &T) -> u64;
+    fn hash_u64(self, value: u64) -> u64;
 
     #[doc(hidden)]
-    fn hash_as_fixed_length<T: Hash + ?Sized>(&self, value: &T) -> u64;
-
-    #[doc(hidden)]
-    fn hash_as_str<T: Hash + ?Sized>(&self, value: &T) -> u64;
+    fn short_finish(&self) -> u64;
 }
 
-impl<B: BuildHasher> BuildHasherExt for B {
+impl<T: Hasher> HasherExt for T {
     #[inline]
     #[cfg(feature = "specialize")]
-    default fn hash_as_u64<T: Hash + ?Sized>(&self, value: &T) -> u64 {
-        let mut hasher = self.build_hasher();
-        value.hash(&mut hasher);
-        hasher.finish()
+    default fn hash_u64(self, value: u64) -> u64 {
+        value.get_hash(self)
     }
     #[inline]
     #[cfg(not(feature = "specialize"))]
-    fn hash_as_u64<T: Hash + ?Sized>(&self, value: &T) -> u64 {
-        let mut hasher = self.build_hasher();
-        value.hash(&mut hasher);
-        hasher.finish()
+    fn hash_u64(self, value: u64) -> u64 {
+        value.get_hash(self)
     }
     #[inline]
     #[cfg(feature = "specialize")]
-    default fn hash_as_fixed_length<T: Hash + ?Sized>(&self, value: &T) -> u64 {
-        let mut hasher = self.build_hasher();
-        value.hash(&mut hasher);
-        hasher.finish()
+    default fn short_finish(&self) -> u64 {
+        self.finish()
     }
     #[inline]
     #[cfg(not(feature = "specialize"))]
-    fn hash_as_fixed_length<T: Hash + ?Sized>(&self, value: &T) -> u64 {
-        let mut hasher = self.build_hasher();
-        value.hash(&mut hasher);
-        hasher.finish()
-    }
-    #[inline]
-    #[cfg(feature = "specialize")]
-    default fn hash_as_str<T: Hash + ?Sized>(&self, value: &T) -> u64 {
-        let mut hasher = self.build_hasher();
-        value.hash(&mut hasher);
-        hasher.finish()
-    }
-    #[inline]
-    #[cfg(not(feature = "specialize"))]
-    fn hash_as_str<T: Hash + ?Sized>(&self, value: &T) -> u64 {
-        let mut hasher = self.build_hasher();
-        value.hash(&mut hasher);
-        hasher.finish()
+    fn short_finish(&self) -> u64 {
+        self.finish()
     }
 }
 
@@ -190,14 +169,13 @@ impl<B: BuildHasher> BuildHasherExt for B {
 
 
 
-#[cfg(feature = "std")]
 #[cfg(test)]
 mod test {
     use crate::convert::Convert;
     use crate::*;
     use std::collections::HashMap;
-    use std::hash::Hash;
 
+    #[cfg(feature = "std")]
     #[test]
     fn test_default_builder() {
         use core::hash::BuildHasherDefault;
@@ -205,7 +183,6 @@ mod test {
         let mut map = HashMap::<u32, u64, BuildHasherDefault<AHasher>>::default();
         map.insert(1, 3);
     }
-
     #[test]
     fn test_builder() {
         let mut map = HashMap::<u32, u64, RandomState>::default();
@@ -217,43 +194,6 @@ mod test {
         let input: &[u8] = b"dddddddd";
         let bytes: u64 = as_array!(input, 8).convert();
         assert_eq!(bytes, 0x6464646464646464);
-    }
-
-
-    #[test]
-    fn test_non_zero() {
-        let mut hasher1 = AHasher::new_with_keys(0, 0);
-        let mut hasher2 = AHasher::new_with_keys(0, 0);
-        "foo".hash(&mut hasher1);
-        "bar".hash(&mut hasher2);
-        assert_ne!(hasher1.finish(), 0);
-        assert_ne!(hasher2.finish(), 0);
-        assert_ne!(hasher1.finish(), hasher2.finish());
-
-        let mut hasher1 = AHasher::new_with_keys(0, 0);
-        let mut hasher2 = AHasher::new_with_keys(0, 0);
-        3_u64.hash(&mut hasher1);
-        4_u64.hash(&mut hasher2);
-        assert_ne!(hasher1.finish(), 0);
-        assert_ne!(hasher2.finish(), 0);
-        assert_ne!(hasher1.finish(), hasher2.finish());
-    }
-
-    #[test]
-    fn test_non_zero_specialized() {
-        let hasher_build = RandomState::with_seeds(0,0,0,0);
-
-        let h1 = str::get_hash("foo", &hasher_build);
-        let h2 = str::get_hash("bar", &hasher_build);
-        assert_ne!(h1, 0);
-        assert_ne!(h2, 0);
-        assert_ne!(h1, h2);
-
-        let h1 = u64::get_hash(&3_u64, &hasher_build);
-        let h2 = u64::get_hash(&4_u64, &hasher_build);
-        assert_ne!(h1, 0);
-        assert_ne!(h2, 0);
-        assert_ne!(h1, h2);
     }
 
     #[test]

@@ -123,9 +123,17 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/phf_codegen/0.9")]
 
-use phf_shared::{FmtConst, PhfHash};
+
+
+
+
+
+
+
+#![doc(html_root_url = "https://docs.rs/phf_codegen/0.7")]
+
+use phf_shared::{PhfHash, FmtConst};
 use std::collections::HashSet;
 use std::fmt;
 use std::hash::Hash;
@@ -135,7 +143,7 @@ use phf_generator::HashState;
 struct Delegate<T>(T);
 
 impl<T: FmtConst> fmt::Display for Delegate<T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.0.fmt_const(f)
     }
 }
@@ -188,7 +196,7 @@ impl<K: Hash + PhfHash + Eq + FmtConst> Map<K> {
     
     
     
-    pub fn build(&self) -> DisplayMap<'_, K> {
+    pub fn build(&self) -> DisplayMap<K> {
         let mut set = HashSet::new();
         for key in &self.keys {
             if !set.insert(key) {
@@ -213,53 +221,45 @@ pub struct DisplayMap<'a, K> {
     state: HashState,
     keys: &'a [K],
     values: &'a [String],
+
 }
 
 impl<'a, K: FmtConst + 'a> fmt::Display for DisplayMap<'a, K> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         
-        write!(
-            f,
-            "{}::Map {{
+        write!(f,
+               "{}::Map {{
     key: {:?},
-    disps: &[",
-            self.path, self.state.key
-        )?;
+    disps: {}::Slice::Static(&[",
+               self.path, self.state.key, self.path)?;
 
         
         for &(d1, d2) in &self.state.disps {
-            write!(
-                f,
-                "
+            write!(f,
+                   "
         ({}, {}),",
-                d1, d2
-            )?;
+                   d1,
+                   d2)?;
         }
 
-        write!(
-            f,
-            "
-    ],
-    entries: &[",
-        )?;
+        write!(f,
+               "
+    ]),
+    entries: {}::Slice::Static(&[", self.path)?;
 
         
         for &idx in &self.state.map {
-            write!(
-                f,
-                "
+            write!(f,
+                   "
         ({}, {}),",
-                Delegate(&self.keys[idx]),
-                &self.values[idx]
-            )?;
+                   Delegate(&self.keys[idx]),
+                   &self.values[idx])?;
         }
 
-        write!(
-            f,
-            "
-    ],
-}}"
-        )
+        write!(f,
+               "
+    ]),
+}}")
     }
 }
 
@@ -271,7 +271,9 @@ pub struct Set<T> {
 impl<T: Hash + PhfHash + Eq + FmtConst> Set<T> {
     
     pub fn new() -> Set<T> {
-        Set { map: Map::new() }
+        Set {
+            map: Map::new(),
+        }
     }
 
     
@@ -292,195 +294,20 @@ impl<T: Hash + PhfHash + Eq + FmtConst> Set<T> {
     
     
     
-    pub fn build(&self) -> DisplaySet<'_, T> {
+    pub fn build(&self) -> DisplaySet<T> {
         DisplaySet {
-            inner: self.map.build(),
+            inner: self.map.build()
         }
     }
 }
 
 
-pub struct DisplaySet<'a, T> {
+pub struct DisplaySet<'a, T: 'a> {
     inner: DisplayMap<'a, T>,
 }
 
 impl<'a, T: FmtConst + 'a> fmt::Display for DisplaySet<'a, T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}::Set {{ map: {} }}", self.inner.path, self.inner)
-    }
-}
-
-
-pub struct OrderedMap<K> {
-    keys: Vec<K>,
-    values: Vec<String>,
-    path: String,
-}
-
-impl<K: Hash + PhfHash + Eq + FmtConst> OrderedMap<K> {
-    
-    pub fn new() -> OrderedMap<K> {
-        OrderedMap {
-            keys: vec![],
-            values: vec![],
-            path: String::from("::phf"),
-        }
-    }
-
-    
-    pub fn phf_path(&mut self, path: &str) -> &mut OrderedMap<K> {
-        self.path = path.to_owned();
-        self
-    }
-
-    
-    
-    
-    pub fn entry(&mut self, key: K, value: &str) -> &mut OrderedMap<K> {
-        self.keys.push(key);
-        self.values.push(value.to_owned());
-        self
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    pub fn build(&self) -> DisplayOrderedMap<'_, K> {
-        let mut set = HashSet::new();
-        for key in &self.keys {
-            if !set.insert(key) {
-                panic!("duplicate key `{}`", Delegate(key));
-            }
-        }
-
-        let state = phf_generator::generate_hash(&self.keys);
-
-        DisplayOrderedMap {
-            path: &self.path,
-            state,
-            keys: &self.keys,
-            values: &self.values,
-        }
-    }
-}
-
-
-pub struct DisplayOrderedMap<'a, K> {
-    path: &'a str,
-    state: HashState,
-    keys: &'a [K],
-    values: &'a [String],
-}
-
-impl<'a, K: FmtConst + 'a> fmt::Display for DisplayOrderedMap<'a, K> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}::OrderedMap {{
-    key: {:?},
-    disps: &[",
-            self.path, self.state.key
-        )?;
-        for &(d1, d2) in &self.state.disps {
-            write!(
-                f,
-                "
-        ({}, {}),",
-                d1, d2
-            )?;
-        }
-        write!(
-            f,
-            "
-    ],
-    idxs: &[",
-        )?;
-        for &idx in &self.state.map {
-            write!(
-                f,
-                "
-        {},",
-                idx
-            )?;
-        }
-        write!(
-            f,
-            "
-    ],
-    entries: &[",
-        )?;
-        for (key, value) in self.keys.iter().zip(self.values.iter()) {
-            write!(
-                f,
-                "
-        ({}, {}),",
-                Delegate(key),
-                value
-            )?;
-        }
-        write!(
-            f,
-            "
-    ],
-}}"
-        )
-    }
-}
-
-
-pub struct OrderedSet<T> {
-    map: OrderedMap<T>,
-}
-
-impl<T: Hash + PhfHash + Eq + FmtConst> OrderedSet<T> {
-    
-    pub fn new() -> OrderedSet<T> {
-        OrderedSet {
-            map: OrderedMap::new(),
-        }
-    }
-
-    
-    pub fn phf_path(&mut self, path: &str) -> &mut OrderedSet<T> {
-        self.map.phf_path(path);
-        self
-    }
-
-    
-    pub fn entry(&mut self, entry: T) -> &mut OrderedSet<T> {
-        self.map.entry(entry, "()");
-        self
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    pub fn build(&self) -> DisplayOrderedSet<'_, T> {
-        DisplayOrderedSet {
-            inner: self.map.build(),
-        }
-    }
-}
-
-
-pub struct DisplayOrderedSet<'a, T> {
-    inner: DisplayOrderedMap<'a, T>,
-}
-
-impl<'a, T: FmtConst + 'a> fmt::Display for DisplayOrderedSet<'a, T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}::OrderedSet {{ map: {} }}",
-            self.inner.path, self.inner
-        )
     }
 }

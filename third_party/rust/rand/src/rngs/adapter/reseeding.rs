@@ -75,12 +75,6 @@ use rand_core::{CryptoRng, Error, RngCore, SeedableRng};
 
 
 
-
-
-
-
-
-
 #[derive(Debug)]
 pub struct ReseedingRng<R, Rsdr>(BlockRng<ReseedingCore<R, Rsdr>>)
 where
@@ -285,7 +279,7 @@ where
 }
 
 
-#[cfg(all(unix, not(target_os = "emscripten")))]
+#[cfg(all(unix, feature = "std", not(target_os = "emscripten")))]
 mod fork {
     use core::sync::atomic::{AtomicUsize, Ordering};
     use std::sync::Once;
@@ -316,21 +310,13 @@ mod fork {
 
     pub fn register_fork_handler() {
         static REGISTER: Once = Once::new();
-        REGISTER.call_once(|| {
-            
-            let ret = unsafe { libc::pthread_atfork(
-                Some(fork_handler),
-                Some(fork_handler),
-                Some(fork_handler),
-            ) };
-            if ret != 0 {
-                panic!("libc::pthread_atfork failed with code {}", ret);
-            }
+        REGISTER.call_once(|| unsafe {
+            libc::pthread_atfork(None, None, Some(fork_handler));
         });
     }
 }
 
-#[cfg(not(all(unix, not(target_os = "emscripten"))))]
+#[cfg(not(all(unix, feature = "std", not(target_os = "emscripten"))))]
 mod fork {
     pub fn get_fork_counter() -> usize {
         0
@@ -339,7 +325,6 @@ mod fork {
 }
 
 
-#[cfg(feature = "std_rng")]
 #[cfg(test)]
 mod test {
     use super::ReseedingRng;
@@ -369,8 +354,6 @@ mod test {
 
     #[test]
     fn test_clone_reseeding() {
-        #![allow(clippy::redundant_clone)]
-
         let mut zero = StepRng::new(0, 0);
         let rng = Core::from_rng(&mut zero).unwrap();
         let mut rng1 = ReseedingRng::new(rng, 32 * 4, zero);

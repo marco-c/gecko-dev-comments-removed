@@ -14,9 +14,6 @@ use crate::Rng;
 use core::mem;
 #[cfg(feature = "simd_support")] use packed_simd::*;
 
-#[cfg(feature = "serde1")]
-use serde::{Serialize, Deserialize};
-
 
 
 
@@ -42,7 +39,6 @@ use serde::{Serialize, Deserialize};
 
 
 #[derive(Clone, Copy, Debug)]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct OpenClosed01;
 
 
@@ -69,7 +65,6 @@ pub struct OpenClosed01;
 
 
 #[derive(Clone, Copy, Debug)]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct Open01;
 
 

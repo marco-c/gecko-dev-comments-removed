@@ -5,13 +5,8 @@
 
 
 
-use core::{fmt, num::NonZeroU32};
-
-
-
-
-
-
+use core::fmt;
+use core::num::NonZeroU32;
 
 
 
@@ -24,35 +19,13 @@ use core::{fmt, num::NonZeroU32};
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub struct Error(NonZeroU32);
 
-const fn internal_error(n: u16) -> Error {
-    
-    let code = Error::INTERNAL_START + (n as u32);
-    Error(unsafe { NonZeroU32::new_unchecked(code) })
-}
-
 impl Error {
+    #[deprecated(since = "0.1.7")]
     
-    pub const UNSUPPORTED: Error = internal_error(0);
+    pub const UNKNOWN: Error = UNSUPPORTED;
+    #[deprecated(since = "0.1.7")]
     
-    pub const ERRNO_NOT_POSITIVE: Error = internal_error(1);
-    
-    pub const IOS_SEC_RANDOM: Error = internal_error(3);
-    
-    pub const WINDOWS_RTL_GEN_RANDOM: Error = internal_error(4);
-    
-    pub const FAILED_RDRAND: Error = internal_error(5);
-    
-    pub const NO_RDRAND: Error = internal_error(6);
-    
-    pub const WEB_CRYPTO: Error = internal_error(7);
-    
-    pub const WEB_GET_RANDOM_VALUES: Error = internal_error(8);
-    
-    pub const VXWORKS_RAND_SECURE: Error = internal_error(11);
-    
-    pub const NODE_CRYPTO: Error = internal_error(12);
-    
-    pub const NODE_RANDOM_FILL_SYNC: Error = internal_error(13);
+    pub const UNAVAILABLE: Error = UNSUPPORTED;
 
     
     
@@ -68,19 +41,10 @@ impl Error {
     
     
     
-    
-    
     #[inline]
     pub fn raw_os_error(self) -> Option<i32> {
         if self.0.get() < Self::INTERNAL_START {
-            match () {
-                #[cfg(target_os = "solid_asp3")]
-                
-                
-                () => Some(-(self.0.get() as i32)),
-                #[cfg(not(target_os = "solid_asp3"))]
-                () => Some(self.0.get() as i32),
-            }
+            Some(self.0.get() as i32)
         } else {
             None
         }
@@ -91,7 +55,7 @@ impl Error {
     
     
     #[inline]
-    pub const fn code(self) -> NonZeroU32 {
+    pub fn code(self) -> NonZeroU32 {
         self.0
     }
 }
@@ -161,19 +125,41 @@ impl From<NonZeroU32> for Error {
     }
 }
 
+
+macro_rules! internal_error {
+    ($n:expr) => {
+        Error(unsafe { NonZeroU32::new_unchecked(Error::INTERNAL_START + $n as u16 as u32) })
+    };
+}
+
+
+pub(crate) const UNSUPPORTED: Error = internal_error!(0);
+pub(crate) const ERRNO_NOT_POSITIVE: Error = internal_error!(1);
+pub(crate) const UNKNOWN_IO_ERROR: Error = internal_error!(2);
+pub(crate) const SEC_RANDOM_FAILED: Error = internal_error!(3);
+pub(crate) const RTL_GEN_RANDOM_FAILED: Error = internal_error!(4);
+pub(crate) const FAILED_RDRAND: Error = internal_error!(5);
+pub(crate) const NO_RDRAND: Error = internal_error!(6);
+pub(crate) const BINDGEN_CRYPTO_UNDEF: Error = internal_error!(7);
+pub(crate) const BINDGEN_GRV_UNDEF: Error = internal_error!(8);
+pub(crate) const STDWEB_NO_RNG: Error = internal_error!(9);
+pub(crate) const STDWEB_RNG_FAILED: Error = internal_error!(10);
+pub(crate) const RAND_SECURE_FATAL: Error = internal_error!(11);
+
 fn internal_desc(error: Error) -> Option<&'static str> {
     match error {
-        Error::UNSUPPORTED => Some("getrandom: this target is not supported"),
-        Error::ERRNO_NOT_POSITIVE => Some("errno: did not return a positive value"),
-        Error::IOS_SEC_RANDOM => Some("SecRandomCopyBytes: iOS Security framework failure"),
-        Error::WINDOWS_RTL_GEN_RANDOM => Some("RtlGenRandom: Windows system function failure"),
-        Error::FAILED_RDRAND => Some("RDRAND: failed multiple times: CPU issue likely"),
-        Error::NO_RDRAND => Some("RDRAND: instruction not supported"),
-        Error::WEB_CRYPTO => Some("Web Crypto API is unavailable"),
-        Error::WEB_GET_RANDOM_VALUES => Some("Web API crypto.getRandomValues is unavailable"),
-        Error::VXWORKS_RAND_SECURE => Some("randSecure: VxWorks RNG module is not initialized"),
-        Error::NODE_CRYPTO => Some("Node.js crypto module is unavailable"),
-        Error::NODE_RANDOM_FILL_SYNC => Some("Node.js API crypto.randomFillSync is unavailable"),
+        UNSUPPORTED => Some("getrandom: this target is not supported"),
+        ERRNO_NOT_POSITIVE => Some("errno: did not return a positive value"),
+        UNKNOWN_IO_ERROR => Some("Unknown std::io::Error"),
+        SEC_RANDOM_FAILED => Some("SecRandomCopyBytes: call failed"),
+        RTL_GEN_RANDOM_FAILED => Some("RtlGenRandom: call failed"),
+        FAILED_RDRAND => Some("RDRAND: failed multiple times: CPU issue likely"),
+        NO_RDRAND => Some("RDRAND: instruction not supported"),
+        BINDGEN_CRYPTO_UNDEF => Some("wasm-bindgen: self.crypto is undefined"),
+        BINDGEN_GRV_UNDEF => Some("wasm-bindgen: crypto.getRandomValues is undefined"),
+        STDWEB_NO_RNG => Some("stdweb: no randomness source available"),
+        STDWEB_RNG_FAILED => Some("stdweb: failed to get randomness"),
+        RAND_SECURE_FATAL => Some("randSecure: random number generator module is not initialized"),
         _ => None,
     }
 }

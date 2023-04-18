@@ -7,20 +7,24 @@
 
 
 
-use crate::Error;
-use core::{ffi::c_void, ptr::null};
+use crate::{error::SEC_RANDOM_FAILED, Error};
+
+
+
+#[repr(C)]
+struct SecRandom([u8; 0]);
 
 #[link(name = "Security", kind = "framework")]
 extern "C" {
-    fn SecRandomCopyBytes(rnd: *const c_void, count: usize, bytes: *mut u8) -> i32;
+    static kSecRandomDefault: *const SecRandom;
+
+    fn SecRandomCopyBytes(rnd: *const SecRandom, count: usize, bytes: *mut u8) -> i32;
 }
 
 pub fn getrandom_inner(dest: &mut [u8]) -> Result<(), Error> {
-    
-    let ret = unsafe { SecRandomCopyBytes(null(), dest.len(), dest.as_mut_ptr()) };
-    
-    if ret != 0 {
-        Err(Error::IOS_SEC_RANDOM)
+    let ret = unsafe { SecRandomCopyBytes(kSecRandomDefault, dest.len(), dest.as_mut_ptr()) };
+    if ret == -1 {
+        Err(SEC_RANDOM_FAILED)
     } else {
         Ok(())
     }

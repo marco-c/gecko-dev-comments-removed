@@ -12,12 +12,8 @@ use core::num::NonZeroU32;
 use wasi::random_get;
 
 pub fn getrandom_inner(dest: &mut [u8]) -> Result<(), Error> {
-    unsafe {
-        random_get(dest.as_mut_ptr(), dest.len()).map_err(|e: wasi::Error| {
-            
-            
-            
-            NonZeroU32::new_unchecked(e.raw_error() as u32).into()
-        })
-    }
+    unsafe { random_get(dest.as_mut_ptr(), dest.len()) }.map_err(|e: wasi::Error| {
+        
+        NonZeroU32::new(e.raw_error() as u32).unwrap().into()
+    })
 }
