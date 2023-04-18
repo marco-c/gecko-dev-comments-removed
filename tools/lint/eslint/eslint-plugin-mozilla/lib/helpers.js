@@ -15,7 +15,6 @@ const fs = require("fs");
 const ini = require("multi-ini");
 const recommendedConfig = require("./configs/recommended");
 
-var gModules = null;
 var gRootDir = null;
 var directoryManifests = new Map();
 
@@ -50,10 +49,6 @@ const callExpressionMultiDefinitions = [
   "loader.lazyRequireGetter(globalThis,",
 ];
 
-const imports = [
-  /^(?:Cu|Components\.utils|ChromeUtils)\.import\(".*\/((.*?)\.jsm?)", (?:globalThis|this)\)/,
-];
-
 const workerImportFilenameMatch = /(.*\/)*((.*?)\.jsm?)/;
 
 module.exports = {
@@ -62,24 +57,6 @@ module.exports = {
       this._iniParser = new ini.Parser();
     }
     return this._iniParser;
-  },
-
-  get modulesGlobalData() {
-    if (!gModules) {
-      if (this.isMozillaCentralBased()) {
-        gModules = require(path.join(
-          this.rootDir,
-          "tools",
-          "lint",
-          "eslint",
-          "modules.json"
-        ));
-      } else {
-        gModules = require("./modules.json");
-      }
-    }
-
-    return gModules;
   },
 
   get servicesData() {
@@ -339,33 +316,6 @@ module.exports = {
       source = this.getASTSource(node);
     } catch (e) {
       return [];
-    }
-
-    for (let reg of imports) {
-      let match = source.match(reg);
-      if (match) {
-        
-        if (node.expression.arguments.length > 1 && !isGlobal) {
-          return [];
-        }
-
-        let globalModules = this.modulesGlobalData;
-
-        if (match[1] in globalModules) {
-          
-          
-          
-          
-          let explicit = globalModules[match[1]].length == 1;
-          return globalModules[match[1]].map(name => ({
-            name,
-            writable: true,
-            explicit,
-          }));
-        }
-
-        return [{ name: match[2], writable: true, explicit: true }];
-      }
     }
 
     
