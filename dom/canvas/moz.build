@@ -77,6 +77,11 @@ EXPORTS.mozilla.gfx += [
 ]
 
 
+
+
+
+
+
 UNIFIED_SOURCES += [
     "CanvasGradient.cpp",
     "CanvasImageCache.cpp",
@@ -89,13 +94,13 @@ UNIFIED_SOURCES += [
     "ImageData.cpp",
     "nsICanvasRenderingContextInternal.cpp",
     "OffscreenCanvas.cpp",
-    "OffscreenCanvasDisplayHelper.cpp",
     "XRWebGLLayer.cpp",
 ]
 
 SOURCES += [
     "DrawTargetWebgl.cpp",  
     "ImageUtils.cpp",
+    "OffscreenCanvasDisplayHelper.cpp",  
 ]
 
 
