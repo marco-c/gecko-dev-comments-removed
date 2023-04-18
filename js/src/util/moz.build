@@ -37,5 +37,3 @@ SOURCES += [
 
 if CONFIG["CC_TYPE"] in ("clang", "gcc"):
     SOURCES["DoubleToString.cpp"].flags += ["-Wno-implicit-fallthrough"]
-
-REQUIRES_UNIFIED_BUILD = True
