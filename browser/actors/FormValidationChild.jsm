@@ -30,7 +30,7 @@ class FormValidationChild extends JSWindowActorChild {
     switch (aEvent.type) {
       case "MozInvalidForm":
         aEvent.preventDefault();
-        this.notifyInvalidSubmit(aEvent.target, aEvent.detail);
+        this.notifyInvalidSubmit(aEvent.detail);
         break;
       case "pageshow":
         if (this._isRootDocumentEvent(aEvent)) {
@@ -51,7 +51,7 @@ class FormValidationChild extends JSWindowActorChild {
     }
   }
 
-  notifyInvalidSubmit(aFormElement, aInvalidElements) {
+  notifyInvalidSubmit(aInvalidElements) {
     
     for (let element of aInvalidElements) {
       
@@ -65,18 +65,29 @@ class FormValidationChild extends JSWindowActorChild {
           ChromeUtils.getClassName(element) === "HTMLInputElement" ||
           ChromeUtils.getClassName(element) === "HTMLTextAreaElement" ||
           ChromeUtils.getClassName(element) === "HTMLSelectElement" ||
-          ChromeUtils.getClassName(element) === "HTMLButtonElement"
+          ChromeUtils.getClassName(element) === "HTMLButtonElement" ||
+          element.isFormAssociatedCustomElements
         )
       ) {
         continue;
       }
 
-      if (!Services.focus.elementIsFocusable(element, 0)) {
+      let validationMessage = element.isFormAssociatedCustomElements
+        ? element.internals.validationMessage
+        : element.validationMessage;
+
+      if (element.isFormAssociatedCustomElements) {
+        
+        
+        element = element.internals.validationAnchor;
+      }
+
+      if (!element || !Services.focus.elementIsFocusable(element, 0)) {
         continue;
       }
 
       
-      this._validationMessage = element.validationMessage;
+      this._validationMessage = validationMessage;
 
       
       if (this._element == element) {

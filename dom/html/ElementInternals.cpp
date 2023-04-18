@@ -7,6 +7,7 @@
 #include "mozilla/dom/ElementInternals.h"
 
 #include "mozilla/dom/CustomElementRegistry.h"
+#include "mozilla/dom/CustomEvent.h"
 #include "mozilla/dom/ElementInternalsBinding.h"
 #include "mozilla/dom/FormData.h"
 #include "mozilla/dom/HTMLElement.h"
@@ -243,6 +244,49 @@ bool ElementInternals::CheckValidity(ErrorResult& aRv) {
 }
 
 
+bool ElementInternals::ReportValidity(ErrorResult& aRv) {
+  if (!mTarget || !mTarget->IsFormAssociatedElement()) {
+    aRv.ThrowNotSupportedError(
+        "Target element is not a form-associated custom element");
+    return false;
+  }
+
+  bool defaultAction = true;
+  if (nsIConstraintValidation::CheckValidity(*mTarget, &defaultAction)) {
+    return true;
+  }
+
+  if (!defaultAction) {
+    return false;
+  }
+
+  AutoTArray<RefPtr<Element>, 1> invalidElements;
+  invalidElements.AppendElement(mTarget);
+
+  AutoJSAPI jsapi;
+  if (!jsapi.Init(mTarget->GetOwnerGlobal())) {
+    return false;
+  }
+  JS::Rooted<JS::Value> detail(jsapi.cx());
+  if (!ToJSValue(jsapi.cx(), invalidElements, &detail)) {
+    return false;
+  }
+
+  mTarget->UpdateState(true);
+
+  RefPtr<CustomEvent> event =
+      NS_NewDOMCustomEvent(mTarget->OwnerDoc(), nullptr, nullptr);
+  event->InitCustomEvent(jsapi.cx(), u"MozInvalidForm"_ns,
+                          true,
+                          true, detail);
+  event->SetTrusted(true);
+  event->WidgetEventPtr()->mFlags.mOnlyChromeDispatch = true;
+  mTarget->DispatchEvent(*event);
+
+  return false;
+}
+
+
 already_AddRefed<nsINodeList> ElementInternals::GetLabels(
     ErrorResult& aRv) const {
   if (!mTarget || !mTarget->IsFormAssociatedElement()) {
@@ -251,6 +295,16 @@ already_AddRefed<nsINodeList> ElementInternals::GetLabels(
     return nullptr;
   }
   return mTarget->Labels();
+}
+
+nsGenericHTMLElement* ElementInternals::GetValidationAnchor(
+    ErrorResult& aRv) const {
+  if (!mTarget || !mTarget->IsFormAssociatedElement()) {
+    aRv.ThrowNotSupportedError(
+        "Target element is not a form-associated custom element");
+    return nullptr;
+  }
+  return mValidationAnchor;
 }
 
 void ElementInternals::SetForm(HTMLFormElement* aForm) { mForm = aForm; }
