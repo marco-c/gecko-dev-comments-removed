@@ -25,8 +25,6 @@
 #include "nsProxyRelease.h"
 #include "nsStreamUtils.h"
 
-#include <cstdint>
-
 namespace mozilla::dom {
 
 
@@ -317,8 +315,8 @@ void BodyStream::requestData(JSContext* aCx, JS::HandleObject aStream,
 void BodyStream::WriteIntoReadRequestBuffer(JSContext* aCx,
                                             ReadableStream* aStream,
                                             JS::Handle<JSObject*> aChunk,
-                                            uint32_t aLength,
-                                            uint32_t* aByteWritten) {
+                                            size_t aLength,
+                                            size_t* aByteWritten) {
 #else
 
 
@@ -555,34 +553,20 @@ void BodyStream::EnqueueChunkWithSizeIntoStream(JSContext* aCx,
                                                 uint64_t aAvailableData,
                                                 ErrorResult& aRv) {
   
-  
-  
-  uint32_t ableToRead =
-      std::min(static_cast<uint64_t>(256 * 1024 * 1024), aAvailableData);
-
-  
   aRv.MightThrowJSException();
-  JS::RootedObject chunk(aCx, JS_NewUint8Array(aCx, ableToRead));
+  JS::RootedObject chunk(aCx, JS_NewUint8Array(aCx, aAvailableData));
   if (!chunk) {
     aRv.StealExceptionFromJSContext(aCx);
     return;
   }
 
+  size_t bytesWritten = 0;
+  size_t unusedData = 0;
   {
-    uint32_t bytesWritten = 0;
+    WriteIntoReadRequestBuffer(aCx, aStream, chunk, aAvailableData,
+                               &bytesWritten);
 
-    WriteIntoReadRequestBuffer(aCx, aStream, chunk, ableToRead, &bytesWritten);
-
-    
-    
-    if (bytesWritten == 0) {
-      return;
-    }
-
-    
-    
-    
-    MOZ_DIAGNOSTIC_ASSERT((ableToRead - bytesWritten) == 0);
+    unusedData = aAvailableData - bytesWritten;
   }
 
   MOZ_ASSERT(aStream->Controller()->IsByte());
@@ -593,6 +577,9 @@ void BodyStream::EnqueueChunkWithSizeIntoStream(JSContext* aCx,
   if (aRv.Failed()) {
     return;
   }
+
+  
+  byteStreamController->SetQueueTotalSize((double)unusedData);
 }
 #endif
 

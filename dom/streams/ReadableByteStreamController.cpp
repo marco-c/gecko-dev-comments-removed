@@ -682,15 +682,10 @@ MOZ_CAN_RUN_SCRIPT void ReadableByteStreamControllerFillReadRequestFromQueue(
     ReadRequest* aReadRequest, ErrorResult& aRv) {
   
   MOZ_ASSERT(aController->QueueTotalSize() > 0);
-  
-  MOZ_ASSERT(aController->Queue().length() > 0);
 
   
   
   RefPtr<ReadableByteStreamQueueEntry> entry = aController->Queue().popFirst();
-
-  
-  MOZ_ASSERT(entry);
 
   
   
