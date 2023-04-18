@@ -3796,15 +3796,16 @@ void gfxFont::SanitizeMetrics(gfxFont::Metrics* aMetrics,
 
 
 
-UniquePtr<const gfxFont::Metrics> gfxFont::CreateVerticalMetrics() {
+void gfxFont::CreateVerticalMetrics() {
   const uint32_t kHheaTableTag = TRUETYPE_TAG('h', 'h', 'e', 'a');
   const uint32_t kVheaTableTag = TRUETYPE_TAG('v', 'h', 'e', 'a');
   const uint32_t kPostTableTag = TRUETYPE_TAG('p', 'o', 's', 't');
   const uint32_t kOS_2TableTag = TRUETYPE_TAG('O', 'S', '/', '2');
   uint32_t len;
 
-  UniquePtr<Metrics> metrics = MakeUnique<Metrics>();
-  ::memset(metrics.get(), 0, sizeof(Metrics));
+  mVerticalMetrics = MakeUnique<Metrics>();
+  auto* metrics = mVerticalMetrics.get();
+  ::memset(metrics, 0, sizeof(Metrics));
 
   
   
@@ -3869,6 +3870,7 @@ UniquePtr<const gfxFont::Metrics> gfxFont::CreateVerticalMetrics() {
   }
 
   
+  metrics->ideographicWidth = -1.0;
   gfxFontEntry::AutoTable vheaTable(mFontEntry, kVheaTableTag);
   if (vheaTable && mFUnitsConvFactor >= 0.0) {
     const MetricsHeader* vhea = reinterpret_cast<const MetricsHeader*>(
@@ -3888,6 +3890,7 @@ UniquePtr<const gfxFont::Metrics> gfxFont::CreateVerticalMetrics() {
         metrics->maxDescent = halfExtent;
         SET_SIGNED(externalLeading, vhea->lineGap);
       }
+      metrics->ideographicWidth = GetCharAdvance(kWaterIdeograph, true);
     }
   }
 
@@ -3948,8 +3951,6 @@ UniquePtr<const gfxFont::Metrics> gfxFont::CreateVerticalMetrics() {
   metrics->maxHeight = metrics->maxAscent + metrics->maxDescent;
   metrics->xHeight = metrics->emHeight / 2;
   metrics->capHeight = metrics->maxAscent;
-
-  return std::move(metrics);
 }
 
 gfxFloat gfxFont::SynthesizeSpaceWidth(uint32_t aCh) {

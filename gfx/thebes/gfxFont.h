@@ -1632,11 +1632,14 @@ class gfxFont {
     gfxFloat aveCharWidth;
     gfxFloat spaceWidth;
     gfxFloat zeroWidth;  
+    gfxFloat ideographicWidth;  
 
     gfxFloat ZeroOrAveCharWidth() const {
       return zeroWidth >= 0 ? zeroWidth : aveCharWidth;
     }
   };
+  
+  static constexpr uint32_t kWaterIdeograph = 0x6C34;
 
   typedef nsFontMetrics::FontOrientation Orientation;
 
@@ -1645,7 +1648,7 @@ class gfxFont {
       return GetHorizontalMetrics();
     }
     if (!mVerticalMetrics) {
-      mVerticalMetrics = CreateVerticalMetrics();
+      CreateVerticalMetrics();
     }
     return *mVerticalMetrics;
   }
@@ -1959,7 +1962,7 @@ class gfxFont {
  protected:
   virtual const Metrics& GetHorizontalMetrics() = 0;
 
-  mozilla::UniquePtr<const Metrics> CreateVerticalMetrics();
+  void CreateVerticalMetrics();
 
   
   
@@ -2204,7 +2207,7 @@ class gfxFont {
   RefPtr<mozilla::gfx::ScaledFont> mAzureScaledFont;
 
   
-  mozilla::UniquePtr<const Metrics> mVerticalMetrics;
+  mozilla::UniquePtr<Metrics> mVerticalMetrics;
 
   
   mozilla::UniquePtr<gfxMathTable> mMathTable;

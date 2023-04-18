@@ -21,6 +21,8 @@ pub struct FontMetrics {
     
     pub cap_height: Option<Length>,
     
+    pub ic_width: Option<Length>,
+    
     pub ascent: Length,
 }
 
@@ -30,6 +32,7 @@ impl Default for FontMetrics {
             x_height: None,
             zero_advance_measure: None,
             cap_height: None,
+            ic_width: None,
             ascent: Length::new(0.0),
         }
     }

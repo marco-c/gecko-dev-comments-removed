@@ -485,6 +485,7 @@ struct GeckoFontMetrics {
   mozilla::Length mXSize;
   mozilla::Length mChSize;     
   mozilla::Length mCapHeight;  
+  mozilla::Length mIcWidth;    
   mozilla::Length mAscent;
 };
 
