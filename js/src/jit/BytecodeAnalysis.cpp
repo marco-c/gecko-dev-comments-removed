@@ -63,6 +63,9 @@ bool BytecodeAnalysis::init(TempAllocator& alloc) {
   
   
   
+  
+  
+  
   bool normallyReachable = true;
   bool normallyReachableReturn = false;
 
@@ -279,10 +282,6 @@ IonBytecodeInfo js::jit::AnalyzeBytecodeForIon(JSContext* cx,
       case JSOp::FunWithProto:
       case JSOp::GlobalOrEvalDeclInstantiation:
         result.usesEnvironmentChain = true;
-        break;
-
-      case JSOp::Finally:
-        result.hasTryFinally = true;
         break;
 
       default:
