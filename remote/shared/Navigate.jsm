@@ -28,8 +28,11 @@ const webProgressListeners = new Set();
 
 
 function waitForInitialNavigationCompleted(browsingContext) {
-  let listener;
+  
+  
+  const webProgress = browsingContext.webProgress;
 
+  let listener;
   return new Promise(resolve => {
     listener = new ProgressListener(resolve);
     
@@ -37,7 +40,7 @@ function waitForInitialNavigationCompleted(browsingContext) {
 
     
     
-    browsingContext.webProgress.addProgressListener(
+    webProgress.addProgressListener(
       listener,
       Ci.nsIWebProgress.NOTIFY_STATE_WINDOW |
         Ci.nsIWebProgress.NOTIFY_STATE_DOCUMENT
@@ -46,12 +49,12 @@ function waitForInitialNavigationCompleted(browsingContext) {
     
     const isInitial = !browsingContext.currentWindowGlobal;
 
-    if (!browsingContext.webProgress.isLoadingDocument && !isInitial) {
+    if (!webProgress.isLoadingDocument && !isInitial) {
       logger.trace("Initial navigation already completed");
       resolve();
     }
   }).finally(() => {
-    browsingContext.webProgress.removeProgressListener(
+    webProgress.removeProgressListener(
       listener,
       Ci.nsIWebProgress.NOTIFY_STATE_WINDOW |
         Ci.nsIWebProgress.NOTIFY_STATE_DOCUMENT
