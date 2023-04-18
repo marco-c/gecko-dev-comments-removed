@@ -286,11 +286,8 @@ bool IonSetPropertyIC::update(JSContext* cx, HandleScript outerScript,
       InitGlobalLexicalOperation(cx, &cx->global()->lexicalEnvironment(),
                                  script, pc, rhs);
     } else if (IsPropertyInitOp(JSOp(*pc))) {
-      
-      
-      
-      
-      if (!InitElemOperation(cx, pc, obj, idVal, rhs)) {
+      RootedPropertyName name(cx, idVal.toString()->asAtom().asPropertyName());
+      if (!InitPropertyOperation(cx, pc, obj, name, rhs)) {
         return false;
       }
     } else {
