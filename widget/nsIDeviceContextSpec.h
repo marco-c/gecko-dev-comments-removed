@@ -90,6 +90,13 @@ class nsIDeviceContextSpec : public nsISupports {
 
  protected:
   nsCOMPtr<nsIPrintSettings> mPrintSettings;
+
+#ifdef MOZ_ENABLE_SKIA_PDF
+  
+  
+  
+  bool mPrintViaSkPDF = false;
+#endif
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIDeviceContextSpec, NS_IDEVICE_CONTEXT_SPEC_IID)

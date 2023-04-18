@@ -72,11 +72,6 @@ class nsDeviceContextSpecWin : public nsIDeviceContextSpec {
   
   
   nsCOMPtr<nsIFile> mTempFile;
-
-  
-  
-  
-  bool mPrintViaSkPDF = false;
 };
 
 
