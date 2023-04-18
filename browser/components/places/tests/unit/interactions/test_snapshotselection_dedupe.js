@@ -51,6 +51,18 @@ const TEST_DATA = [
     title: "Relevant",
     created_at: now - 50000,
   },
+  
+  
+  {
+    url: "https://example.com/title1",
+    title: "Long title with a difference to the other one.",
+    created_at: now - 5000,
+  },
+  {
+    url: "https://example.com/title2",
+    title: "Long title with a difference to the previous one.",
+    created_at: now - 6000,
+  },
 ];
 
 add_setup(async () => {
@@ -76,7 +88,7 @@ add_setup(async () => {
 
 add_task(async function test_dedupe() {
   let selector = new SnapshotSelector({
-    count: 5,
+    count: 6,
     filterAdult: false,
     getCurrentSessionUrls: () => new Set(),
   });
@@ -90,6 +102,17 @@ add_task(async function test_dedupe() {
     { url: "https://example.com/1", title: "Example1" },
     
     { url: "https://example.com/2?foo=341256", title: "Example2" },
+    
+    {
+      url: "https://example.com/title1",
+      title: "Long title with a difference to the other one.",
+      titleDifferentIndex: 40,
+    },
+    {
+      url: "https://example.com/title2",
+      title: "Long title with a difference to the previous one.",
+      titleDifferentIndex: 40,
+    },
     
     { url: "https://example.com/foo", title: "Other" },
     
@@ -120,6 +143,17 @@ add_task(async function test_relevancy_dedupe() {
       userPersisted: Snapshots.USER_PERSISTED.PINNED,
     },
     { url: "https://example.com/1", title: "Example1" },
+    
+    {
+      url: "https://example.com/title1",
+      title: "Long title with a difference to the other one.",
+      titleDifferentIndex: 40,
+    },
+    {
+      url: "https://example.com/title2",
+      title: "Long title with a difference to the previous one.",
+      titleDifferentIndex: 40,
+    },
     { url: "https://example.com/foo", title: "Other" },
   ]);
 });

@@ -45,9 +45,6 @@ const ITEM_CHANGED_BATCH_NOTIFICATION_THRESHOLD = 10;
 
 
 const TAB_DROP_TYPE = "application/x-moz-tabbrowser-tab";
-const PREF_LOAD_BOOKMARKS_IN_BACKGROUND =
-  "browser.tabs.loadBookmarksInBackground";
-const PREF_LOAD_BOOKMARKS_IN_TABS = "browser.tabs.loadBookmarksInTabs";
 
 let InternalFaviconLoader = {
   
@@ -1818,6 +1815,72 @@ var PlacesUIUtils = {
 
     aElement.setAttribute("image", iconURL);
   },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  insertTitleStartDiffs(candidates) {
+    function findStartDifference(a, b) {
+      let i;
+      
+      for (i = PlacesUIUtils.similarTitlesMinChars; i < a.length; i++) {
+        if (a[i] != b[i]) {
+          return i;
+        }
+      }
+      if (b.length > i) {
+        return i;
+      }
+      
+      return -1;
+    }
+
+    let longTitles = new Map();
+
+    for (let candidate of candidates) {
+      
+      if (candidate.title.length < this.similarTitlesMinChars) {
+        continue;
+      }
+      let titleBeginning = candidate.title.slice(0, this.similarTitlesMinChars);
+      let matches = longTitles.get(titleBeginning);
+      if (matches) {
+        for (let match of matches) {
+          let startDiff = findStartDifference(candidate.title, match.title);
+          if (startDiff > 0) {
+            candidate.titleDifferentIndex = startDiff;
+            
+            
+            if (
+              !("titleDifferentIndex" in match) ||
+              match.titleDifferentIndex > startDiff
+            ) {
+              match.titleDifferentIndex = startDiff;
+            }
+          }
+        }
+
+        matches.push(candidate);
+      } else {
+        longTitles.set(titleBeginning, [candidate]);
+      }
+    }
+  },
 };
 
 
@@ -1853,14 +1916,20 @@ XPCOMUtils.defineLazyGetter(PlacesUIUtils, "ellipsis", function() {
 
 XPCOMUtils.defineLazyPreferenceGetter(
   PlacesUIUtils,
+  "similarTitlesMinChars",
+  "browser.places.similarTitlesMinChars",
+  20
+);
+XPCOMUtils.defineLazyPreferenceGetter(
+  PlacesUIUtils,
   "loadBookmarksInBackground",
-  PREF_LOAD_BOOKMARKS_IN_BACKGROUND,
+  "browser.tabs.loadBookmarksInBackground",
   false
 );
 XPCOMUtils.defineLazyPreferenceGetter(
   PlacesUIUtils,
   "loadBookmarksInTabs",
-  PREF_LOAD_BOOKMARKS_IN_TABS,
+  "browser.tabs.loadBookmarksInTabs",
   false
 );
 XPCOMUtils.defineLazyPreferenceGetter(
