@@ -25,7 +25,7 @@ class PromiseNativeThenHandlerBase : public PromiseNativeHandler {
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS(PromiseNativeThenHandlerBase)
 
-  PromiseNativeThenHandlerBase(Promise& aPromise) : mPromise(&aPromise) {}
+  PromiseNativeThenHandlerBase(Promise* aPromise) : mPromise(aPromise) {}
 
   void ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue,
                         ErrorResult& aRv) override;
@@ -114,7 +114,11 @@ class NativeThenHandler final : public PromiseNativeThenHandlerBase {
 
 
 
-  NativeThenHandler(Promise& aPromise, ResolveCallback&& aOnResolve,
+
+
+
+
+  NativeThenHandler(Promise* aPromise, ResolveCallback&& aOnResolve,
                     RejectCallback&& aOnReject, Args&&... aArgs)
       : PromiseNativeThenHandlerBase(aPromise),
         mOnResolve(std::forward<ResolveCallback>(aOnResolve)),
@@ -182,7 +186,7 @@ Promise::ThenCatchWithCycleCollectedArgs(ResolveCallback&& aOnResolve,
   }
 
   auto* handler = new (fallible) HandlerType(
-      *promise, std::forward<ResolveCallback>(aOnResolve),
+      promise, std::forward<ResolveCallback>(aOnResolve),
       std::forward<RejectCallback>(aOnReject), std::forward<Args>(aArgs)...);
 
   if (!handler) {
