@@ -81,6 +81,37 @@ class nsExpatDriver : public nsIDTD {
                                           nsIInputStream** aStream,
                                           nsIURI** aAbsURI);
 
+  enum class ChunkOrBufferIsFinal {
+    None,
+    FinalChunk,
+    FinalChunkAndBuffer,
+  };
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void ParseChunk(const char16_t* aBuffer, uint32_t aLength,
+                  ChunkOrBufferIsFinal aIsFinal, uint32_t* aConsumed,
+                  XML_Size* aLastLineLength);
   
 
 
@@ -94,20 +125,13 @@ class nsExpatDriver : public nsIDTD {
 
 
 
-
-
-
-  void ParseBuffer(const char16_t* aBuffer, uint32_t aLength, bool aIsFinal,
-                   uint32_t* aConsumed);
-
-  
 
 
 
 
   void ChunkAndParseBuffer(const char16_t* aBuffer, uint32_t aLength,
                            bool aIsFinal, uint32_t* aPassedToExpat,
-                           uint32_t* aConsumed);
+                           uint32_t* aConsumed, XML_Size* aLastLineLength);
 
   nsresult HandleError();
 

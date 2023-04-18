@@ -1138,16 +1138,17 @@ nsresult nsExpatDriver::HandleError() {
 void nsExpatDriver::ChunkAndParseBuffer(const char16_t* aBuffer,
                                         uint32_t aLength, bool aIsFinal,
                                         uint32_t* aPassedToExpat,
-                                        uint32_t* aConsumed) {
+                                        uint32_t* aConsumed,
+                                        XML_Size* aLastLineLength) {
   *aConsumed = 0;
+  *aLastLineLength = 0;
 
   uint32_t remainder = aLength;
   while (remainder > sMaxChunkLength) {
-    uint32_t consumed = 0;
-    ParseBuffer(aBuffer, sMaxChunkLength,  false, &consumed);
+    ParseChunk(aBuffer, sMaxChunkLength, ChunkOrBufferIsFinal::None, aConsumed,
+               aLastLineLength);
     aBuffer += sMaxChunkLength;
     remainder -= sMaxChunkLength;
-    *aConsumed += consumed;
     if (NS_FAILED(mInternalState)) {
       
       
@@ -1156,16 +1157,20 @@ void nsExpatDriver::ChunkAndParseBuffer(const char16_t* aBuffer,
     }
   }
 
-  uint32_t consumed = 0;
-  ParseBuffer(aBuffer, remainder, aIsFinal, &consumed);
-  *aConsumed += consumed;
+  ParseChunk(aBuffer, remainder,
+             aIsFinal ? ChunkOrBufferIsFinal::FinalChunkAndBuffer
+                      : ChunkOrBufferIsFinal::FinalChunk,
+             aConsumed, aLastLineLength);
   *aPassedToExpat = aLength;
 }
 
-void nsExpatDriver::ParseBuffer(const char16_t* aBuffer, uint32_t aLength,
-                                bool aIsFinal, uint32_t* aConsumed) {
+void nsExpatDriver::ParseChunk(const char16_t* aBuffer, uint32_t aLength,
+                               ChunkOrBufferIsFinal aIsFinal,
+                               uint32_t* aConsumed, XML_Size* aLastLineLength) {
   NS_ASSERTION((aBuffer && aLength != 0) || (!aBuffer && aLength == 0), "?");
-  NS_ASSERTION(mInternalState != NS_OK || aIsFinal || aBuffer,
+  NS_ASSERTION(mInternalState != NS_OK ||
+                   (aIsFinal == ChunkOrBufferIsFinal::FinalChunkAndBuffer) ||
+                   aBuffer,
                "Useless call, we won't call Expat");
   MOZ_ASSERT(!BlockedOrInterrupted() || !aBuffer,
              "Non-null buffer when resuming");
@@ -1180,47 +1185,55 @@ void nsExpatDriver::ParseBuffer(const char16_t* aBuffer, uint32_t aLength,
   int32_t parserBytesBefore = RLBOX_EXPAT_SAFE_MCALL(
       XML_GetCurrentByteIndex, parserBytesBefore_verifier);
 
-  if (mInternalState == NS_OK || BlockedOrInterrupted()) {
-    XML_Status status;
-    bool inParser = mInParser;  
-    mInParser = true;
-    if (BlockedOrInterrupted()) {
-      mInternalState = NS_OK;  
-      status = RLBOX_EXPAT_SAFE_MCALL(MOZ_XML_ResumeParser, status_verifier);
-    } else {
-      auto buffer = TransferBuffer<char16_t>(Sandbox(), aBuffer, aLength);
-      MOZ_RELEASE_ASSERT(!aBuffer || !!*buffer,
-                         "Chunking should avoid OOM in ParseBuffer");
+  if (mInternalState != NS_OK && !BlockedOrInterrupted()) {
+    return;
+  }
 
-      status = RLBOX_EXPAT_SAFE_MCALL(
-          MOZ_XML_Parse, status_verifier,
-          rlbox::sandbox_reinterpret_cast<const char*>(*buffer),
-          aLength * sizeof(char16_t), aIsFinal);
-    }
-    mInParser = inParser;  
-
-    auto parserBytesConsumed_verifier = [&](auto parserBytesConsumed) {
-      MOZ_RELEASE_ASSERT(parserBytesConsumed >= 0, "Unexpected value");
-      MOZ_RELEASE_ASSERT(parserBytesConsumed >= parserBytesBefore,
-                         "How'd this happen?");
-      MOZ_RELEASE_ASSERT(parserBytesConsumed % sizeof(char16_t) == 0,
-                         "Consumed part of a char16_t?");
-      return parserBytesConsumed;
-    };
-    int32_t parserBytesConsumed = RLBOX_EXPAT_SAFE_MCALL(
-        XML_GetCurrentByteIndex, parserBytesConsumed_verifier);
-
-    
-    *aConsumed = (parserBytesConsumed - parserBytesBefore) / sizeof(char16_t);
-
-    NS_ASSERTION(status != XML_STATUS_SUSPENDED || BlockedOrInterrupted(),
-                 "Inconsistent expat suspension state.");
-
-    if (status == XML_STATUS_ERROR) {
-      mInternalState = NS_ERROR_HTMLPARSER_STOPPARSING;
-    }
+  XML_Status status;
+  bool inParser = mInParser;  
+  mInParser = true;
+  Maybe<TransferBuffer<char16_t>> buffer;
+  if (BlockedOrInterrupted()) {
+    mInternalState = NS_OK;  
+    status = RLBOX_EXPAT_SAFE_MCALL(MOZ_XML_ResumeParser, status_verifier);
   } else {
-    *aConsumed = 0;
+    buffer.emplace(Sandbox(), aBuffer, aLength);
+    MOZ_RELEASE_ASSERT(!aBuffer || !!*buffer.ref(),
+                       "Chunking should avoid OOM in ParseBuffer");
+
+    status = RLBOX_EXPAT_SAFE_MCALL(
+        MOZ_XML_Parse, status_verifier,
+        rlbox::sandbox_reinterpret_cast<const char*>(*buffer.ref()),
+        aLength * sizeof(char16_t),
+        aIsFinal == ChunkOrBufferIsFinal::FinalChunkAndBuffer);
+  }
+  mInParser = inParser;  
+
+  auto parserBytesConsumed_verifier = [&](auto parserBytesConsumed) {
+    MOZ_RELEASE_ASSERT(parserBytesConsumed >= 0, "Unexpected value");
+    MOZ_RELEASE_ASSERT(parserBytesConsumed >= parserBytesBefore,
+                       "How'd this happen?");
+    MOZ_RELEASE_ASSERT(parserBytesConsumed % sizeof(char16_t) == 0,
+                       "Consumed part of a char16_t?");
+    return parserBytesConsumed;
+  };
+  int32_t parserBytesConsumed = RLBOX_EXPAT_SAFE_MCALL(
+      XML_GetCurrentByteIndex, parserBytesConsumed_verifier);
+
+  
+  *aConsumed += (parserBytesConsumed - parserBytesBefore) / sizeof(char16_t);
+
+  NS_ASSERTION(status != XML_STATUS_SUSPENDED || BlockedOrInterrupted(),
+               "Inconsistent expat suspension state.");
+
+  if (status == XML_STATUS_ERROR) {
+    mInternalState = NS_ERROR_HTMLPARSER_STOPPARSING;
+  }
+
+  if (*aConsumed > 0 &&
+      (aIsFinal != ChunkOrBufferIsFinal::None || NS_FAILED(mInternalState))) {
+    *aLastLineLength = RLBOX_EXPAT_SAFE_MCALL(MOZ_XML_GetCurrentColumnNumber,
+                                              safe_unverified<XML_Size>);
   }
 }
 
@@ -1291,8 +1304,9 @@ nsresult nsExpatDriver::ResumeParse(nsScanner& aScanner, bool aIsFinalChunk) {
 
     uint32_t passedToExpat;
     uint32_t consumed;
+    XML_Size lastLineLength;
     ChunkAndParseBuffer(buffer, length, noMoreBuffers, &passedToExpat,
-                        &consumed);
+                        &consumed, &lastLineLength);
     MOZ_ASSERT_IF(passedToExpat != length, NS_FAILED(mInternalState));
     MOZ_ASSERT(consumed <= passedToExpat + mExpatBuffered);
     if (consumed > 0) {
@@ -1302,10 +1316,6 @@ nsresult nsExpatDriver::ResumeParse(nsScanner& aScanner, bool aIsFinalChunk) {
       
       
       
-
-      
-      XML_Size lastLineLength = RLBOX_EXPAT_SAFE_MCALL(
-          XML_GetCurrentColumnNumber, safe_unverified<XML_Size>);
 
       if (lastLineLength <= consumed) {
         
