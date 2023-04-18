@@ -6850,27 +6850,14 @@ nsTransparencyMode nsLayoutUtils::GetFrameTransparency(
   return eTransparencyOpaque;
 }
 
-static bool IsPopupFrame(const nsIFrame* aFrame) {
-  
-  LayoutFrameType frameType = aFrame->Type();
-  if (frameType == LayoutFrameType::ListControl) {
-    const nsListControlFrame* lcf =
-        static_cast<const nsListControlFrame*>(aFrame);
-    return lcf->IsInDropDownMode();
-  }
-
-  
-  return frameType == LayoutFrameType::MenuPopup;
-}
-
 
 bool nsLayoutUtils::IsPopup(const nsIFrame* aFrame) {
   
   if (!aFrame->HasView()) {
-    NS_ASSERTION(!IsPopupFrame(aFrame), "popup frame must have a view");
+    NS_ASSERTION(!aFrame->IsMenuPopupFrame(), "popup frame must have a view");
     return false;
   }
-  return IsPopupFrame(aFrame);
+  return aFrame->IsMenuPopupFrame();
 }
 
 

@@ -2912,32 +2912,7 @@ nsIFrame* nsCSSFrameConstructor::ConstructSelectFrame(
             PseudoStyleType::dropDownList, computedStyle);
 
     
-    nsListControlFrame* listFrame =
-        NS_NewListControlFrame(mPresShell, listStyle);
-
-    
-    listFrame->SetComboboxFrame(comboboxFrame);
-
-    
-    comboboxFrame->SetDropDown(listFrame);
-
-    NS_ASSERTION(!listFrame->IsAbsPosContainingBlock(),
-                 "Ended up with positioned dropdown list somehow.");
-    NS_ASSERTION(!listFrame->IsFloating(),
-                 "Ended up with floating dropdown list somehow.");
-
-    
     nsFrameList childList;
-
-    
-    
-    nsContainerFrame* scrolledFrame =
-        NS_NewSelectsAreaFrame(mPresShell, computedStyle, flags);
-
-    InitializeSelectFrame(aState, listFrame, scrolledFrame, content,
-                          comboboxFrame, listStyle, true, childList);
-
-    NS_ASSERTION(listFrame->GetView(), "ListFrame's view is nullptr");
 
     
     
@@ -2973,12 +2948,6 @@ nsIFrame* nsCSSFrameConstructor::ConstructSelectFrame(
 
     comboboxFrame->SetInitialChildList(kPrincipalList, childList);
 
-    
-    
-    nsFrameList popupList;
-    popupList.AppendFrame(nullptr, listFrame);
-    comboboxFrame->SetInitialChildList(nsIFrame::kSelectPopupList, popupList);
-
     aState.mFrameState = historyState;
     if (aState.mFrameState) {
       
@@ -2997,22 +2966,17 @@ nsIFrame* nsCSSFrameConstructor::ConstructSelectFrame(
   
   
 
-  InitializeSelectFrame(aState, listFrame, scrolledFrame, content, aParentFrame,
-                        computedStyle, false, aFrameList);
+  InitializeListboxSelect(aState, listFrame, scrolledFrame, content,
+                          aParentFrame, computedStyle, aFrameList);
 
   return listFrame;
 }
 
-
-
-
-
-
-void nsCSSFrameConstructor::InitializeSelectFrame(
+void nsCSSFrameConstructor::InitializeListboxSelect(
     nsFrameConstructorState& aState, nsContainerFrame* scrollFrame,
     nsContainerFrame* scrolledFrame, nsIContent* aContent,
     nsContainerFrame* aParentFrame, ComputedStyle* aComputedStyle,
-    bool aBuildCombobox, nsFrameList& aFrameList) {
+    nsFrameList& aFrameList) {
   
   nsContainerFrame* geometricParent =
       aState.GetGeometricParent(*aComputedStyle->StyleDisplay(), aParentFrame);
@@ -3022,14 +2986,9 @@ void nsCSSFrameConstructor::InitializeSelectFrame(
   
 
   scrollFrame->Init(aContent, geometricParent, nullptr);
-
-  if (!aBuildCombobox) {
-    aState.AddChild(scrollFrame, aFrameList, aContent, aParentFrame);
-  }
-
+  aState.AddChild(scrollFrame, aFrameList, aContent, aParentFrame);
   BuildScrollFrame(aState, aContent, aComputedStyle, scrolledFrame,
                    geometricParent, scrollFrame);
-
   if (aState.mFrameState) {
     
     RestoreFrameStateFor(scrollFrame, aState.mFrameState);

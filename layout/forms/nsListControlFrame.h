@@ -24,17 +24,13 @@
 #include "nsISelectControlFrame.h"
 #include "nsSelectsAreaFrame.h"
 
-
-#ifdef KeyPress
-#  undef KeyPress
-#endif
-
 class nsComboboxControlFrame;
 class nsPresContext;
-class nsListEventListener;
 
 namespace mozilla {
 class PresShell;
+class HTMLSelectEventListener;
+
 namespace dom {
 class Event;
 class HTMLOptionElement;
@@ -86,6 +82,10 @@ class nsListControlFrame final : public nsHTMLScrollFrame,
 
   nsContainerFrame* GetContentInsertionFrame() final;
 
+  int32_t GetEndSelectionIndex() const { return mEndSelectionIndex; }
+
+  mozilla::dom::HTMLOptionElement* GetCurrentOption() const;
+
   bool IsFrameOfType(uint32_t aFlags) const final {
     return nsHTMLScrollFrame::IsFrameOfType(
         aFlags & ~(nsIFrame::eReplaced | nsIFrame::eReplacedContainsBlock));
@@ -108,9 +108,7 @@ class nsListControlFrame final : public nsHTMLScrollFrame,
   mozilla::a11y::AccType AccessibleType() final;
 #endif
 
-  void SetComboboxFrame(nsIFrame* aComboboxFrame);
   int32_t GetSelectedIndex();
-  HTMLOptionElement* GetCurrentOption();
 
   
 
@@ -122,25 +120,7 @@ class nsListControlFrame final : public nsHTMLScrollFrame,
   void CaptureMouseEvents(bool aGrabMouseEvents);
   nscoord GetBSizeOfARow();
   uint32_t GetNumberOfOptions();
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void AboutToDropDown();
 
-  
-
-
-  void AboutToRollup();
-
-  
-
-
-
-  MOZ_CAN_RUN_SCRIPT
-  void FireOnInputAndOnChange();
-
-  
-
-
-
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void ComboboxFinish(int32_t aIndex);
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void OnContentReset();
 
   
@@ -164,17 +144,19 @@ class nsListControlFrame final : public nsHTMLScrollFrame,
 
 
   MOZ_CAN_RUN_SCRIPT
-  nsresult MouseDown(mozilla::dom::Event* aMouseEvent);
+  nsresult HandleLeftButtonMouseDown(mozilla::dom::Event* aMouseEvent);
   MOZ_CAN_RUN_SCRIPT
-  nsresult MouseUp(mozilla::dom::Event* aMouseEvent);
-  MOZ_CAN_RUN_SCRIPT
-  nsresult MouseMove(mozilla::dom::Event* aMouseEvent);
+  nsresult HandleLeftButtonMouseUp(mozilla::dom::Event* aMouseEvent);
   MOZ_CAN_RUN_SCRIPT
   nsresult DragMove(mozilla::dom::Event* aMouseEvent);
   MOZ_CAN_RUN_SCRIPT
-  nsresult KeyDown(mozilla::dom::Event* aKeyEvent);
+
   MOZ_CAN_RUN_SCRIPT
-  nsresult KeyPress(mozilla::dom::Event* aKeyEvent);
+  bool PerformSelection(int32_t aClickedIndex, bool aIsShift, bool aIsControl);
+  MOZ_CAN_RUN_SCRIPT
+  void UpdateSelectionAfterKeyEvent(int32_t aNewIndex, uint32_t aCharCode,
+                                    bool aIsShift, bool aIsControlOrMeta,
+                                    bool aIsControlSelectMode);
 
   
 
@@ -184,8 +166,6 @@ class nsListControlFrame final : public nsHTMLScrollFrame,
 
 
   HTMLOptionElement* GetOption(uint32_t aIndex) const;
-
-  static void ComboboxFocusSet();
 
   
   bool IsFocused() { return this == mFocused; }
@@ -225,23 +205,7 @@ class nsListControlFrame final : public nsHTMLScrollFrame,
   
 
 
-  bool IsInDropDownMode() const;
-
-  
-
-
   uint32_t GetNumDisplayRows() const { return mNumDisplayRows; }
-
-  
-
-
-
-  bool GetDropdownCanGrow() const { return mDropdownCanGrow; }
-
-  
-
-
-  static void Shutdown();
 
 #ifdef ACCESSIBILITY
   
@@ -258,13 +222,6 @@ class nsListControlFrame final : public nsHTMLScrollFrame,
 
 
 
-  HTMLOptionElement* GetNonDisabledOptionFrom(int32_t aFromIndex,
-                                              int32_t* aFoundIndex = nullptr);
-
-  
-
-
-
 
   MOZ_CAN_RUN_SCRIPT
   bool UpdateSelection();
@@ -277,12 +234,7 @@ class nsListControlFrame final : public nsHTMLScrollFrame,
                                           nsGkAtoms::multiple);
   }
 
-  
-
-
-
-  MOZ_CAN_RUN_SCRIPT
-  void DropDownToggleKey(mozilla::dom::Event* aKeyEvent);
+  mozilla::dom::HTMLSelectElement& Select() const;
 
   
 
@@ -298,27 +250,6 @@ class nsListControlFrame final : public nsHTMLScrollFrame,
   MOZ_CAN_RUN_SCRIPT void ScrollToFrame(HTMLOptionElement& aOptElement);
 
   MOZ_CAN_RUN_SCRIPT void ScrollToIndex(int32_t anIndex);
-
-  
-
-
-
-
-
-
-
-
-
-  bool IgnoreMouseEventForSelection(mozilla::dom::Event* aEvent);
-
-  
-
-
-
-  void UpdateInListState(mozilla::dom::Event* aEvent);
-  void AdjustIndexForDisabledOpt(int32_t aStartIndex, int32_t& anNewIndex,
-                                 int32_t aNumOptions, int32_t aDoAdjustInc,
-                                 int32_t aDoAdjustIncNext);
 
   
 
@@ -340,7 +271,6 @@ class nsListControlFrame final : public nsHTMLScrollFrame,
                                 int32_t& aCurIndex);
 
   bool CheckIfAllFramesHere();
-  bool IsLeftButton(mozilla::dom::Event* aMouseEvent);
 
   
   nscoord CalcFallbackRowBSize(float aFontSizeInflation);
@@ -354,15 +284,6 @@ class nsListControlFrame final : public nsHTMLScrollFrame,
   void SetComboboxItem(int32_t aIndex);
 
   
-
-
-
-
-  void ReflowAsDropdown(nsPresContext* aPresContext, ReflowOutput& aDesiredSize,
-                        const ReflowInput& aReflowInput,
-                        nsReflowStatus& aStatus);
-
-  
   bool SetOptionsSelectedFromFrame(int32_t aStartIndex, int32_t aEndIndex,
                                    bool aValue, bool aClearAll);
   bool ToggleOptionSelectedFromFrame(int32_t aIndex);
@@ -372,19 +293,16 @@ class nsListControlFrame final : public nsHTMLScrollFrame,
   bool ExtendedSelection(int32_t aStartIndex, int32_t aEndIndex,
                          bool aClearAll);
   MOZ_CAN_RUN_SCRIPT
-  bool PerformSelection(int32_t aClickedIndex, bool aIsShift, bool aIsControl);
-  MOZ_CAN_RUN_SCRIPT
   bool HandleListSelection(mozilla::dom::Event* aDOMEvent,
                            int32_t selectedIndex);
   void InitSelectionRange(int32_t aClickedIndex);
-  MOZ_CAN_RUN_SCRIPT
-  void PostHandleKeyEvent(int32_t aNewIndex, uint32_t aCharCode, bool aIsShift,
-                          bool aIsControlOrMeta);
 
  public:
   nsSelectsAreaFrame* GetOptionsContainer() const {
     return static_cast<nsSelectsAreaFrame*>(GetScrolledFrame());
   }
+
+  static constexpr int32_t kNothingSelected = -1;
 
  protected:
   nscoord BSizeOfARow() { return GetOptionsContainer()->BSizeOfARow(); }
@@ -394,21 +312,12 @@ class nsListControlFrame final : public nsHTMLScrollFrame,
 
   uint32_t GetNumberOfRows();
 
-  nsView* GetViewInternal() const final { return mView; }
-  void SetViewInternal(nsView* aView) final { mView = aView; }
-
   
   int32_t mStartSelectionIndex;
   int32_t mEndSelectionIndex;
 
-  nsComboboxControlFrame* mComboboxFrame;
-
-  
-  nsView* mView;
-
   uint32_t mNumDisplayRows;
   bool mChangesSinceDragStart : 1;
-  bool mButtonDown : 1;
 
   
   bool mItemSelectionStarted : 1;
@@ -420,9 +329,6 @@ class nsListControlFrame final : public nsHTMLScrollFrame,
   bool mPostChildrenLoadedReset : 1;
 
   
-  bool mControlSelectMode : 1;
-
-  
   
   bool mMightNeedSecondPass : 1;
 
@@ -431,10 +337,6 @@ class nsListControlFrame final : public nsHTMLScrollFrame,
 
 
   bool mHasPendingInterruptAtStartOfReflow : 1;
-
-  
-  
-  bool mDropdownCanGrow : 1;
 
   
   bool mForceSelection : 1;
@@ -449,33 +351,13 @@ class nsListControlFrame final : public nsHTMLScrollFrame,
   
   nscolor mLastDropdownBackstopColor;
 
-  RefPtr<nsListEventListener> mEventListener;
+  RefPtr<mozilla::HTMLSelectEventListener> mEventListener;
 
   static nsListControlFrame* mFocused;
-  static mozilla::StaticAutoPtr<nsString> sIncrementalString;
 
 #ifdef DO_REFLOW_COUNTER
   int32_t mReflowId;
 #endif
-
- private:
-  
-  static nsAString& GetIncrementalString();
-  static DOMTimeStamp gLastKeyTime;
-
-  class MOZ_RAII AutoIncrementalSearchResetter {
-   public:
-    AutoIncrementalSearchResetter() : mCancelled(false) {}
-    ~AutoIncrementalSearchResetter() {
-      if (!mCancelled) {
-        nsListControlFrame::GetIncrementalString().Truncate();
-      }
-    }
-    void Cancel() { mCancelled = true; }
-
-   private:
-    bool mCancelled;
-  };
 };
 
 #endif 

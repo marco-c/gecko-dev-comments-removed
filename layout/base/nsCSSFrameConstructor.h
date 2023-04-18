@@ -1662,16 +1662,13 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   void FinishBuildingScrollFrame(nsContainerFrame* aScrollFrame,
                                  nsIFrame* aScrolledFrame);
 
-  
-  
-  
-  void InitializeSelectFrame(nsFrameConstructorState& aState,
-                             nsContainerFrame* aScrollFrame,
-                             nsContainerFrame* aScrolledFrame,
-                             nsIContent* aContent,
-                             nsContainerFrame* aParentFrame,
-                             ComputedStyle* aComputedStyle, bool aBuildCombobox,
-                             nsFrameList& aFrameList);
+  void InitializeListboxSelect(nsFrameConstructorState& aState,
+                               nsContainerFrame* aScrollFrame,
+                               nsContainerFrame* aScrolledFrame,
+                               nsIContent* aContent,
+                               nsContainerFrame* aParentFrame,
+                               ComputedStyle* aComputedStyle,
+                               nsFrameList& aFrameList);
 
   
 

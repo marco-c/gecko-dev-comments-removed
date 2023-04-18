@@ -49,22 +49,6 @@ void nsSelectsAreaFrame::Reflow(nsPresContext* aPresContext,
                "Must have an nsListControlFrame!  Frame constructor is "
                "broken");
 
-  bool isInDropdownMode = list->IsInDropDownMode();
-
-  
-  
-  WritingMode wm = aReflowInput.GetWritingMode();
-  nscoord oldBSize;
-  if (isInDropdownMode) {
-    
-    
-    if (!HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
-      oldBSize = BSize(wm);
-    } else {
-      oldBSize = NS_UNCONSTRAINEDSIZE;
-    }
-  }
-
   nsBlockFrame::Reflow(aPresContext, aDesiredSize, aReflowInput, aStatus);
 
   
@@ -76,9 +60,7 @@ void nsSelectsAreaFrame::Reflow(nsPresContext* aPresContext,
     
     
     
-    if (newBSizeOfARow != mBSizeOfARow ||
-        (isInDropdownMode &&
-         (oldBSize != aDesiredSize.BSize(wm) || oldBSize != BSize(wm)))) {
+    if (newBSizeOfARow != mBSizeOfARow) {
       mBSizeOfARow = newBSizeOfARow;
       list->SetSuppressScrollbarUpdate(true);
     }
