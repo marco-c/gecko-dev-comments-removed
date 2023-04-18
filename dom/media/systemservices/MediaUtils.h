@@ -26,8 +26,7 @@
 
 class nsIEventTarget;
 
-namespace mozilla {
-namespace media {
+namespace mozilla::media {
 
 
 
@@ -321,8 +320,6 @@ AwaitAll(already_AddRefed<nsIEventTarget> aPool,
       Promise::All(taskQueue, aPromises);
   return Await(pool.forget(), p);
 }
-
-}  
 
 }  
 

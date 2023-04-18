@@ -11,9 +11,7 @@
 #include "AudioNodeTrack.h"
 #include "AudioSegment.h"
 
-namespace mozilla {
-
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -137,7 +135,6 @@ inline void AudioParamTimeline::GetValuesAtTime(int64_t aTime, float* aBuffer,
   }
 }
 
-}  
 }  
 
 #endif

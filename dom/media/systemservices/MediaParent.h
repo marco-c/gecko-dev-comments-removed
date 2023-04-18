@@ -11,8 +11,7 @@
 
 #include "mozilla/media/PMediaParent.h"
 
-namespace mozilla {
-namespace media {
+namespace mozilla::media {
 
 
 
@@ -87,7 +86,6 @@ inline mozilla::ipc::IPCResult IPCResult(Parent<NonE10s>* aSelf,
 PMediaParent* AllocPMediaParent();
 bool DeallocPMediaParent(PMediaParent* aActor);
 
-}  
 }  
 
 #endif  

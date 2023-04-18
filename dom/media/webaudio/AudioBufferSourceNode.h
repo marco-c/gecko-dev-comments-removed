@@ -10,8 +10,7 @@
 #include "AudioScheduledSourceNode.h"
 #include "AudioBuffer.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 struct AudioBufferSourceOptions;
 class AudioParam;
@@ -125,7 +124,6 @@ class AudioBufferSourceNode final : public AudioScheduledSourceNode,
   bool mBufferSet;
 };
 
-}  
 }  
 
 #endif

@@ -10,15 +10,13 @@
 #include "mozilla/dom/AudioParamDescriptorBinding.h"
 #include "nsTArray.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
 
 typedef nsTArray<AudioParamDescriptor> AudioParamDescriptorMap;
 
-}  
 }  
 
 #endif  

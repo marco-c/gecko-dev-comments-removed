@@ -11,8 +11,7 @@
 #  include "MediaSystemResourceTypes.h"
 #  include "mozilla/media/PMediaSystemResourceManagerParent.h"
 
-namespace mozilla {
-namespace media {
+namespace mozilla::media {
 
 
 
@@ -55,7 +54,6 @@ class MediaSystemResourceManagerParent final
       mResourceRequests;
 };
 
-}  
 }  
 
 #endif

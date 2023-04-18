@@ -14,8 +14,7 @@
 #include "nsISupportsImpl.h"
 #include "nsTString.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class HTMLMediaElement;
 
@@ -186,7 +185,6 @@ class nsTimeupdateRunner : public nsMediaEventRunner {
   bool mIsMandatory;
 };
 
-}  
 }  
 
 #endif  
