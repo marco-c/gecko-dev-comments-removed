@@ -230,7 +230,6 @@ class Http2Session final : public ASpdySession,
   
   void TransactionHasDataToWrite(nsAHttpTransaction*) override;
   void TransactionHasDataToRecv(nsAHttpTransaction*) override;
-  void SanityCheck() override;
 
   
   void TransactionHasDataToWrite(Http2Stream*);
