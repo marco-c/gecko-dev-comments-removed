@@ -1875,6 +1875,8 @@ pub struct TileCacheInstance {
     
     pub local_clip_rect: PictureRect,
     
+    pub screen_rect_in_pic_space: PictureRect,
+    
     surface_index: SurfaceIndex,
     
     
@@ -1967,6 +1969,7 @@ impl TileCacheInstance {
             tile_bounds_p1: TileOffset::zero(),
             local_rect: PictureRect::zero(),
             local_clip_rect: PictureRect::zero(),
+            screen_rect_in_pic_space: PictureRect::zero(),
             surface_index: SurfaceIndex(0),
             background_color: params.background_color,
             backdrop: BackdropInfo::empty(),
@@ -2128,12 +2131,17 @@ impl TileCacheInstance {
         
         self.backdrop = BackdropInfo::empty();
 
+        
+        
         let pic_to_world_mapper = SpaceMapper::new_with_target(
             frame_context.root_spatial_node_index,
             self.spatial_node_index,
             frame_context.global_screen_world_rect,
             frame_context.spatial_tree,
         );
+        self.screen_rect_in_pic_space = pic_to_world_mapper
+            .unmap(&frame_context.global_screen_world_rect)
+            .expect("unable to unmap screen rect");
 
         
         
@@ -2335,15 +2343,11 @@ impl TileCacheInstance {
             world_tile_size.height / self.local_to_surface.scale.y,
         );
 
-        let screen_rect_in_pic_space = pic_to_world_mapper
-            .unmap(&frame_context.global_screen_world_rect)
-            .expect("unable to unmap screen rect");
-
         
         
         
         
-        let desired_rect_in_pic_space = screen_rect_in_pic_space
+        let desired_rect_in_pic_space = self.screen_rect_in_pic_space
             .inflate(0.0, 1.0 * self.tile_size.height);
 
         let needed_rect_in_pic_space = desired_rect_in_pic_space
@@ -3041,6 +3045,17 @@ impl TileCacheInstance {
         }
 
         
+        
+        
+        
+        
+        
+        
+        
+        
+        let visible_local_rect = self.local_rect.intersection(&self.screen_rect_in_pic_space).unwrap_or_default();
+
+        
         let mut prim_info = PrimitiveDependencyInfo::new(
             prim_instance.uid(),
             pic_coverage_rect,
@@ -3372,7 +3387,11 @@ impl TileCacheInstance {
         
         
         let mut vis_flags = PrimitiveVisibilityFlags::empty();
-        self.found_prims_after_backdrop = true;
+        if pic_coverage_rect.intersects(&visible_local_rect) {
+            
+            
+            self.found_prims_after_backdrop = true;
+        }
         let sub_slice = &mut self.sub_slices[sub_slice_index];
 
         if let Some(mut backdrop_candidate) = backdrop_candidate {
@@ -3449,12 +3468,17 @@ impl TileCacheInstance {
                         .unwrap_or(PictureRect::zero());
                 }
 
+                
+                backdrop_candidate.opaque_rect = backdrop_candidate.opaque_rect.intersection(&visible_local_rect).unwrap_or(PictureRect::zero());
+
                 if backdrop_candidate.opaque_rect.contains_box(&self.backdrop.opaque_rect) {
                     self.backdrop.opaque_rect = backdrop_candidate.opaque_rect;
                 }
 
                 if let Some(kind) = backdrop_candidate.kind {
-                    if backdrop_candidate.opaque_rect.contains_box(&self.local_rect) {
+                    
+                    
+                    if backdrop_candidate.opaque_rect.contains_box(&visible_local_rect) {
                         
                         
                         
