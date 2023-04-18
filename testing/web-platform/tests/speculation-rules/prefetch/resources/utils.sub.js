@@ -58,6 +58,22 @@ class PrefetchAgent extends RemoteContext {
 }
 
 
+function getPrefetchUrlList(n) {
+  let urls = [];
+  for (let i=0; i<n; i++) {
+    let params = new URLSearchParams({uuid: token()});
+    urls.push(new URL(`prefetch.py?${params}`, SR_PREFETCH_UTILS_URL));
+  }
+  return urls;
+}
+
+async function isUrlPrefetched(url) {
+  let response = await fetch(url);
+  assert_true(response.ok);
+  return response.json();
+}
+
+
 async function spawnWindow(t, extra = {}) {
   let agent = new PrefetchAgent(token(), t);
   let w = window.open(agent.getExecutorURL(), extra);
