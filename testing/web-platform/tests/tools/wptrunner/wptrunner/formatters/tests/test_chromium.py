@@ -4,17 +4,31 @@ from os.path import dirname, join
 from io import StringIO
 
 from mozlog import handlers, structuredlog
+import pytest
 
 sys.path.insert(0, join(dirname(__file__), "..", ".."))
 from formatters.chromium import ChromiumFormatter
 
 
-def test_chromium_required_fields(capfd):
+@pytest.fixture
+def logger():
+    test_logger = structuredlog.StructuredLogger("test_a")
+    try:
+        yield test_logger
+    finally:
+        
+        
+        
+        
+        
+        test_logger.reset_state()
+
+
+def test_chromium_required_fields(logger, capfd):
     
 
     
     output = StringIO()
-    logger = structuredlog.StructuredLogger("test_a")
     logger.add_handler(handlers.StreamHandler(output, ChromiumFormatter()))
 
     
@@ -22,6 +36,7 @@ def test_chromium_required_fields(capfd):
     logger.test_start("test-id-1")
     logger.test_end("test-id-1", status="PASS", expected="PASS")
     logger.suite_end()
+    logger.shutdown()
 
     
     
@@ -45,13 +60,12 @@ def test_chromium_required_fields(capfd):
     assert "expected" in test_obj
 
 
-def test_chromium_test_name_trie(capfd):
+def test_chromium_test_name_trie(logger, capfd):
     
     
 
     
     output = StringIO()
-    logger = structuredlog.StructuredLogger("test_a")
     logger.add_handler(handlers.StreamHandler(output, ChromiumFormatter()))
 
     
@@ -62,6 +76,7 @@ def test_chromium_test_name_trie(capfd):
     logger.test_start("/foo/test-id-2")
     logger.test_end("/foo/test-id-2", status="ERROR", expected="TIMEOUT")
     logger.suite_end()
+    logger.shutdown()
 
     
     
@@ -85,12 +100,11 @@ def test_chromium_test_name_trie(capfd):
     assert test_obj["expected"] == "TIMEOUT"
 
 
-def test_num_failures_by_type(capfd):
+def test_num_failures_by_type(logger, capfd):
     
 
     
     output = StringIO()
-    logger = structuredlog.StructuredLogger("test_a")
     logger.add_handler(handlers.StreamHandler(output, ChromiumFormatter()))
 
     
@@ -104,6 +118,7 @@ def test_num_failures_by_type(capfd):
     logger.test_start("t4")
     logger.test_end("t4", status="TIMEOUT", expected="CRASH")
     logger.suite_end()
+    logger.shutdown()
 
     
     
@@ -121,12 +136,11 @@ def test_num_failures_by_type(capfd):
     assert num_failures_by_type["TIMEOUT"] == 1
 
 
-def test_subtest_messages(capfd):
+def test_subtest_messages(logger, capfd):
     
 
     
     output = StringIO()
-    logger = structuredlog.StructuredLogger("test_a")
     logger.add_handler(handlers.StreamHandler(output, ChromiumFormatter()))
 
     
@@ -145,6 +159,7 @@ def test_subtest_messages(capfd):
     logger.test_end("t2", status="TIMEOUT", expected="PASS",
                     message="t2_message")
     logger.suite_end()
+    logger.shutdown()
 
     
     
@@ -178,12 +193,11 @@ def test_subtest_messages(capfd):
     assert "wpt_subtest_failure" not in t2_artifacts.keys()
 
 
-def test_subtest_failure(capfd):
+def test_subtest_failure(logger, capfd):
     
 
     
     output = StringIO()
-    logger = structuredlog.StructuredLogger("test_a")
     formatter = ChromiumFormatter()
     logger.add_handler(handlers.StreamHandler(output, formatter))
 
@@ -204,6 +218,7 @@ def test_subtest_failure(capfd):
     
     logger.test_end("t1", status="PASS", expected="PASS", message="top_message")
     logger.suite_end()
+    logger.shutdown()
 
     
     
@@ -240,12 +255,11 @@ def test_subtest_failure(capfd):
     assert "t1" not in formatter.tests_with_subtest_fails
 
 
-def test_expected_subtest_failure(capfd):
+def test_expected_subtest_failure(logger, capfd):
     
 
     
     output = StringIO()
-    logger = structuredlog.StructuredLogger("test_a")
     formatter = ChromiumFormatter()
     logger.add_handler(handlers.StreamHandler(output, formatter))
 
@@ -267,6 +281,7 @@ def test_expected_subtest_failure(capfd):
     
     logger.test_end("t1", status="OK", expected="OK")
     logger.suite_end()
+    logger.shutdown()
 
     
     
@@ -296,12 +311,11 @@ def test_expected_subtest_failure(capfd):
     assert test_obj["expected"] == "PASS"
 
 
-def test_unexpected_subtest_pass(capfd):
+def test_unexpected_subtest_pass(logger, capfd):
     
 
     
     output = StringIO()
-    logger = structuredlog.StructuredLogger("test_a")
     formatter = ChromiumFormatter()
     logger.add_handler(handlers.StreamHandler(output, formatter))
 
@@ -319,6 +333,7 @@ def test_unexpected_subtest_pass(capfd):
     
     logger.test_end("t1", status="PASS", expected="PASS")
     logger.suite_end()
+    logger.shutdown()
 
     
     
@@ -349,12 +364,11 @@ def test_unexpected_subtest_pass(capfd):
     assert "t1" not in formatter.tests_with_subtest_fails
 
 
-def test_expected_test_fail(capfd):
+def test_expected_test_fail(logger, capfd):
     
 
     
     output = StringIO()
-    logger = structuredlog.StructuredLogger("test_a")
     logger.add_handler(handlers.StreamHandler(output, ChromiumFormatter()))
 
     
@@ -362,6 +376,7 @@ def test_expected_test_fail(capfd):
     logger.test_start("t1")
     logger.test_end("t1", status="ERROR", expected="ERROR")
     logger.suite_end()
+    logger.shutdown()
 
     
     
@@ -382,13 +397,12 @@ def test_expected_test_fail(capfd):
     assert "is_unexpected" not in test_obj
 
 
-def test_unexpected_test_fail(capfd):
+def test_unexpected_test_fail(logger, capfd):
     
     
 
     
     output = StringIO()
-    logger = structuredlog.StructuredLogger("test_a")
     logger.add_handler(handlers.StreamHandler(output, ChromiumFormatter()))
 
     
@@ -396,6 +410,7 @@ def test_unexpected_test_fail(capfd):
     logger.test_start("t1")
     logger.test_end("t1", status="ERROR", expected="OK")
     logger.suite_end()
+    logger.shutdown()
 
     
     
@@ -417,13 +432,12 @@ def test_unexpected_test_fail(capfd):
     assert test_obj["is_unexpected"] is True
 
 
-def test_flaky_test_expected(capfd):
+def test_flaky_test_expected(logger, capfd):
     
     
 
     
     output = StringIO()
-    logger = structuredlog.StructuredLogger("test_a")
     logger.add_handler(handlers.StreamHandler(output, ChromiumFormatter()))
 
     
@@ -431,6 +445,7 @@ def test_flaky_test_expected(capfd):
     logger.test_start("t1")
     logger.test_end("t1", status="ERROR", expected="OK", known_intermittent=["ERROR", "TIMEOUT"])
     logger.suite_end()
+    logger.shutdown()
 
     
     
@@ -453,13 +468,12 @@ def test_flaky_test_expected(capfd):
     assert "is_unexpected" not in test_obj
 
 
-def test_flaky_test_unexpected(capfd):
+def test_flaky_test_unexpected(logger, capfd):
     
     
 
     
     output = StringIO()
-    logger = structuredlog.StructuredLogger("test_a")
     logger.add_handler(handlers.StreamHandler(output, ChromiumFormatter()))
 
     
@@ -467,6 +481,7 @@ def test_flaky_test_unexpected(capfd):
     logger.test_start("t1")
     logger.test_end("t1", status="ERROR", expected="OK", known_intermittent=["TIMEOUT"])
     logger.suite_end()
+    logger.shutdown()
 
     
     
@@ -489,12 +504,11 @@ def test_flaky_test_unexpected(capfd):
     assert test_obj["is_unexpected"] is True
 
 
-def test_precondition_failed(capfd):
+def test_precondition_failed(logger, capfd):
     
 
     
     output = StringIO()
-    logger = structuredlog.StructuredLogger("test_a")
     logger.add_handler(handlers.StreamHandler(output, ChromiumFormatter()))
 
     
@@ -502,6 +516,7 @@ def test_precondition_failed(capfd):
     logger.test_start("t1")
     logger.test_end("t1", status="PRECONDITION_FAILED", expected="OK")
     logger.suite_end()
+    logger.shutdown()
 
     
     
@@ -523,13 +538,49 @@ def test_precondition_failed(capfd):
     assert test_obj["is_unexpected"] is True
 
 
-def test_known_intermittent_empty(capfd):
+def test_repeated_runs(logger, capfd):
+    
+
+    
+    output = StringIO()
+    logger.add_handler(handlers.StreamHandler(output, ChromiumFormatter()))
+
+    
+    logger.suite_start(["t1"], run_info={}, time=123)
+    logger.test_start("t1")
+    logger.test_end("t1", status="PASS", expected="PASS", known_intermittent=[])
+    logger.suite_end()
+
+    
+    logger.suite_start(["t1"], run_info={}, time=456)
+    logger.test_start("t1")
+    logger.test_end("t1", status="FAIL", expected="PASS", known_intermittent=[])
+    logger.suite_end()
+
+    logger.shutdown()
+
+    
+    
+    captured = capfd.readouterr()
+    assert captured.out == ""
+    assert captured.err == ""
+
+    
+    output.seek(0)
+    output_json = json.load(output)
+
+    
+    test_obj = output_json["tests"]["t1"]
+    assert test_obj["actual"] == "FAIL"
+    assert test_obj["expected"] == "PASS"
+
+
+def test_known_intermittent_empty(logger, capfd):
     
     
 
     
     output = StringIO()
-    logger = structuredlog.StructuredLogger("test_a")
     logger.add_handler(handlers.StreamHandler(output, ChromiumFormatter()))
 
     
@@ -537,6 +588,7 @@ def test_known_intermittent_empty(capfd):
     logger.test_start("t1")
     logger.test_end("t1", status="OK", expected="OK", known_intermittent=[])
     logger.suite_end()
+    logger.shutdown()
 
     
     
@@ -555,12 +607,11 @@ def test_known_intermittent_empty(capfd):
     assert test_obj["expected"] == "PASS"
 
 
-def test_known_intermittent_duplicate(capfd):
+def test_known_intermittent_duplicate(logger, capfd):
     
 
     
     output = StringIO()
-    logger = structuredlog.StructuredLogger("test_a")
     logger.add_handler(handlers.StreamHandler(output, ChromiumFormatter()))
 
     
@@ -571,6 +622,7 @@ def test_known_intermittent_duplicate(capfd):
     logger.test_start("t1")
     logger.test_end("t1", status="ERROR", expected="ERROR", known_intermittent=["FAIL", "ERROR"])
     logger.suite_end()
+    logger.shutdown()
 
     
     
@@ -588,12 +640,11 @@ def test_known_intermittent_duplicate(capfd):
     assert test_obj["expected"] == "FAIL"
 
 
-def test_reftest_screenshots(capfd):
+def test_reftest_screenshots(logger, capfd):
     
 
     
     output = StringIO()
-    logger = structuredlog.StructuredLogger("test_a")
     logger.add_handler(handlers.StreamHandler(output, ChromiumFormatter()))
 
     
@@ -607,6 +658,7 @@ def test_reftest_screenshots(capfd):
         ]
     })
     logger.suite_end()
+    logger.shutdown()
 
     
     
@@ -625,12 +677,11 @@ def test_reftest_screenshots(capfd):
     ]
 
 
-def test_process_output_crashing_test(capfd):
+def test_process_output_crashing_test(logger, capfd):
     """Test that chromedriver logs are preserved for crashing tests"""
 
     
     output = StringIO()
-    logger = structuredlog.StructuredLogger("test_a")
     logger.add_handler(handlers.StreamHandler(output, ChromiumFormatter()))
 
     logger.suite_start(["t1", "t2", "t3"], run_info={}, time=123)
@@ -652,6 +703,7 @@ def test_process_output_crashing_test(capfd):
     logger.test_end("t3", status="FAIL", expected="PASS")
 
     logger.suite_end()
+    logger.shutdown()
 
     
     
