@@ -63,7 +63,9 @@ class nsHtml5Highlighter {
   
 
 
-  void End();
+
+
+  [[nodiscard]] bool End();
 
   
 
@@ -82,7 +84,16 @@ class nsHtml5Highlighter {
 
 
 
-  bool FlushOps();
+
+  bool ShouldFlushOps();
+
+  
+
+
+
+
+
+  mozilla::Result<bool, nsresult> FlushOps();
 
   
 

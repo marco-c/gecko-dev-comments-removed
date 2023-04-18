@@ -412,13 +412,13 @@ class nsHtml5StreamParser final : public nsISupports {
 
 
 
-  void CommitLocalFileToEncoding();
+  [[nodiscard]] nsresult CommitLocalFileToEncoding();
 
   
 
 
 
-  void ReDecodeLocalFile() REQUIRES(mTokenizerMutex);
+  [[nodiscard]] nsresult ReDecodeLocalFile() REQUIRES(mTokenizerMutex);
 
   
 

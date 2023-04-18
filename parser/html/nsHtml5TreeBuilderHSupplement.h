@@ -110,7 +110,12 @@ void SetOpSink(nsAHtml5TreeOpSink* aOpSink) { mOpSink = aOpSink; }
 
 void ClearOps() { mOpQueue.Clear(); }
 
-bool Flush(bool aDiscretionary = false);
+
+
+
+
+
+mozilla::Result<bool, nsresult> Flush(bool aDiscretionary = false);
 
 void FlushLoads();
 

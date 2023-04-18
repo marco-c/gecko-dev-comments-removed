@@ -184,7 +184,7 @@ class nsHtml5TreeOpExecutor final
 
   void CommitToInternalEncoding();
 
-  void TakeOpsFromStage();
+  [[nodiscard]] bool TakeOpsFromStage();
 
   void MaybeSuspend();
 
@@ -220,7 +220,8 @@ class nsHtml5TreeOpExecutor final
 
 
 
-  virtual void MoveOpsFrom(nsTArray<nsHtml5TreeOperation>& aOpQueue) override;
+  [[nodiscard]] virtual bool MoveOpsFrom(
+      nsTArray<nsHtml5TreeOperation>& aOpQueue) override;
 
   void ClearOpQueue();
 
