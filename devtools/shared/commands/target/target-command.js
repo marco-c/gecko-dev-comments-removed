@@ -23,6 +23,7 @@ const {
 } = require("devtools/shared/commands/target/legacy-target-watchers/legacy-workers-watcher");
 
 class TargetCommand extends EventEmitter {
+  #selectedTargetFront;
   
 
 
@@ -81,9 +82,11 @@ class TargetCommand extends EventEmitter {
     
     this._createListeners = new EventEmitter();
     this._destroyListeners = new EventEmitter();
+    this._selectListeners = new EventEmitter();
 
     this._onTargetAvailable = this._onTargetAvailable.bind(this);
     this._onTargetDestroyed = this._onTargetDestroyed.bind(this);
+    this._onTargetSelected = this._onTargetSelected.bind(this);
 
     this.legacyImplementation = {
       process: new LegacyProcessesWatcher(
@@ -130,6 +133,10 @@ class TargetCommand extends EventEmitter {
     this._onResourceAvailable = this._onResourceAvailable.bind(this);
   }
 
+  get selectedTargetFront() {
+    return this.#selectedTargetFront || this.targetFront;
+  }
+
   
   
   
@@ -171,6 +178,7 @@ class TargetCommand extends EventEmitter {
       
       this.targetFront = targetFront;
       this.descriptorFront.setTarget(targetFront);
+      this.#selectedTargetFront = null;
 
       if (isFirstTarget && this.isServerTargetSwitchingEnabled()) {
         this._gotFirstTopLevelTarget = true;
@@ -297,6 +305,17 @@ class TargetCommand extends EventEmitter {
     });
     this._targets.delete(targetFront);
 
+    
+    if (this.#selectedTargetFront == targetFront) {
+      
+      if (isTargetSwitching) {
+        this.#selectedTargetFront = null;
+      } else {
+        
+        this.selectTarget(this.targetFront);
+      }
+    }
+
     if (shouldDestroyTargetFront) {
       
       
@@ -308,6 +327,23 @@ class TargetCommand extends EventEmitter {
 
       targetFront.destroy();
     }
+  }
+
+  
+
+
+
+  async _onTargetSelected(targetFront) {
+    if (this.#selectedTargetFront == targetFront) {
+      
+      return;
+    }
+
+    this.#selectedTargetFront = targetFront;
+    const targetType = this.getTargetType(targetFront);
+    await this._selectListeners.emitAsync(targetType, {
+      targetFront,
+    });
   }
 
   _setListening(type, value) {
@@ -600,7 +636,11 @@ class TargetCommand extends EventEmitter {
 
 
 
-  async watchTargets(types, onAvailable, onDestroy) {
+
+
+
+
+  async watchTargets(types, onAvailable, onDestroy, onSelect) {
     if (typeof onAvailable != "function") {
       throw new Error(
         "TargetCommand.watchTargets expects a function as second argument"
@@ -670,6 +710,9 @@ class TargetCommand extends EventEmitter {
       if (onDestroy) {
         this._destroyListeners.on(type, onDestroy);
       }
+      if (onSelect) {
+        this._selectListeners.on(type, onSelect);
+      }
     }
 
     await Promise.all(promises);
@@ -680,7 +723,7 @@ class TargetCommand extends EventEmitter {
 
 
 
-  unwatchTargets(types, onAvailable, onDestroy) {
+  unwatchTargets(types, onAvailable, onDestroy, onSelect) {
     if (typeof onAvailable != "function") {
       throw new Error(
         "TargetCommand.unwatchTargets expects a function as second argument"
@@ -697,6 +740,9 @@ class TargetCommand extends EventEmitter {
       this._createListeners.off(type, onAvailable);
       if (onDestroy) {
         this._destroyListeners.off(type, onDestroy);
+      }
+      if (onSelect) {
+        this._selectListeners.off(type, onSelect);
       }
     }
     this._pendingWatchTargetInitialization.delete(onAvailable);
@@ -838,7 +884,7 @@ class TargetCommand extends EventEmitter {
 
 
   selectTarget(targetFront) {
-    console.warn("Not implemented yet");
+    return this._onTargetSelected(targetFront);
   }
 
   isTargetRegistered(targetFront) {
@@ -864,7 +910,9 @@ class TargetCommand extends EventEmitter {
     this.stopListening();
     this._createListeners.off();
     this._destroyListeners.off();
+    this._selectListeners.off();
 
+    this.#selectedTargetFront = null;
     this._isDestroyed = true;
   }
 }

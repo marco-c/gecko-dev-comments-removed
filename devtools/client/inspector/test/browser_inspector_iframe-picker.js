@@ -6,7 +6,6 @@
 
 
 
-
 const FrameURL =
   "data:text/html;charset=UTF-8," +
   encodeURI('<div id="in-iframe">frame</div>');
@@ -15,8 +14,6 @@ const URL =
   encodeURI('<iframe src="' + FrameURL + '"></iframe><div id="top">top</div>');
 
 add_task(async function() {
-  Services.prefs.setBoolPref("devtools.command-button-frames.enabled", true);
-
   const { inspector, toolbox } = await openInspectorForURL(URL);
 
   
@@ -43,9 +40,7 @@ add_task(async function() {
 
   
   const menuList = toolbox.doc.getElementById("toolbox-frame-menu");
-  const frames = Array.prototype.slice.call(
-    menuList.querySelectorAll(".command")
-  );
+  const frames = Array.from(menuList.querySelectorAll(".command"));
   is(frames.length, 2, "We have both frames in the menu");
 
   frames.sort(function(a, b) {
@@ -83,17 +78,17 @@ add_task(async function() {
 
   
   
-  const newRoot = inspector.once("new-root");
+  let newRoot = inspector.once("new-root");
   await selectNode("#top", inspector);
   info("Select the iframe");
   frames[0].click();
 
-  await willNavigate;
+  if (!isEveryFrameTargetEnabled()) {
+    await willNavigate;
+  }
   await newRoot;
 
-  info("Navigation to the iframe is done, the inspector should be back up");
-
-  
+  info("The iframe is selected, check that the markup view was updated");
   await assertMarkupViewAsTree(
     `
     body
@@ -101,13 +96,25 @@ add_task(async function() {
     "body",
     inspector
   );
-
-  
   assertMarkupViewIsLoaded(inspector);
 
-  await selectNode("#frame", inspector);
+  info(
+    "Remove the iframe and check that the inspector gets updated to show the top level frame markup"
+  );
+  newRoot = inspector.once("new-root");
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function() {
+    content.document.querySelector("iframe").remove();
+  });
+  await newRoot;
 
-  Services.prefs.clearUserPref("devtools.command-button-frames.enabled");
+  await assertMarkupViewAsTree(
+    `
+    body
+      div id="top"`,
+    "body",
+    inspector
+  );
+  assertMarkupViewIsLoaded(inspector);
 });
 
 function assertMarkupViewIsLoaded(inspector) {
