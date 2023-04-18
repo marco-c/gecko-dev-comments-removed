@@ -8,6 +8,7 @@
 
 #  include "mozilla/UniquePtr.h"
 #  include "mozilla/RefPtr.h"
+#  include "mozilla/Variant.h"
 #  include "nsTHashMap.h"
 #  include "nsString.h"
 #  include "nsTArray.h"
@@ -37,6 +38,191 @@ class MetadataTag {
 };
 
 typedef nsTHashMap<nsCStringHashKey, nsCString> MetadataTags;
+
+
+
+
+
+
+
+
+struct NoCodecSpecificData {
+  bool operator==(const NoCodecSpecificData& rhs) const { return true; }
+};
+
+
+
+struct AudioCodecSpecificBinaryBlob {
+  bool operator==(const AudioCodecSpecificBinaryBlob& rhs) const {
+    return *mBinaryBlob == *rhs.mBinaryBlob;
+  }
+
+  RefPtr<MediaByteBuffer> mBinaryBlob{new MediaByteBuffer};
+};
+
+
+
+
+
+struct AacCodecSpecificData {
+  bool operator==(const AacCodecSpecificData& rhs) const {
+    return *mEsDescriptorBinaryBlob == *rhs.mEsDescriptorBinaryBlob &&
+           *mDecoderConfigDescriptorBinaryBlob ==
+               *rhs.mDecoderConfigDescriptorBinaryBlob;
+  }
+
+  
+  
+  RefPtr<MediaByteBuffer> mEsDescriptorBinaryBlob{new MediaByteBuffer};
+
+  
+  
+  
+  
+  
+  
+  RefPtr<MediaByteBuffer> mDecoderConfigDescriptorBinaryBlob{
+      new MediaByteBuffer};
+};
+
+struct FlacCodecSpecificData {
+  bool operator==(const FlacCodecSpecificData& rhs) const {
+    return *mStreamInfoBinaryBlob == *rhs.mStreamInfoBinaryBlob;
+  }
+
+  
+  
+  
+  
+  
+  RefPtr<MediaByteBuffer> mStreamInfoBinaryBlob{new MediaByteBuffer};
+};
+
+struct Mp3CodecSpecificData {
+  bool operator==(const Mp3CodecSpecificData& rhs) const {
+    return mEncoderDelayFrames == rhs.mEncoderDelayFrames &&
+           mEncoderPaddingFrames == rhs.mEncoderPaddingFrames;
+  }
+
+  
+  
+  
+  uint32_t mEncoderDelayFrames{0};
+
+  
+  
+  
+  uint32_t mEncoderPaddingFrames{0};
+};
+
+struct OpusCodecSpecificData {
+  bool operator==(const OpusCodecSpecificData& rhs) const {
+    return mContainerCodecDelayMicroSeconds ==
+               rhs.mContainerCodecDelayMicroSeconds &&
+           *mHeadersBinaryBlob == *rhs.mHeadersBinaryBlob;
+  }
+  
+  
+  
+  
+  
+  
+  
+  
+  int64_t mContainerCodecDelayMicroSeconds{-1};
+
+  
+  
+  RefPtr<MediaByteBuffer> mHeadersBinaryBlob{new MediaByteBuffer};
+};
+
+struct VorbisCodecSpecificData {
+  bool operator==(const VorbisCodecSpecificData& rhs) const {
+    return *mHeadersBinaryBlob == *rhs.mHeadersBinaryBlob;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<MediaByteBuffer> mHeadersBinaryBlob{new MediaByteBuffer};
+};
+
+struct WaveCodecSpecificData {
+  bool operator==(const WaveCodecSpecificData& rhs) const { return true; }
+  
+  
+};
+
+using AudioCodecSpecificVariant =
+    mozilla::Variant<NoCodecSpecificData, AudioCodecSpecificBinaryBlob,
+                     AacCodecSpecificData, FlacCodecSpecificData,
+                     Mp3CodecSpecificData, OpusCodecSpecificData,
+                     VorbisCodecSpecificData, WaveCodecSpecificData>;
+
+
+
+
+
+inline already_AddRefed<MediaByteBuffer> ForceGetAudioCodecSpecificBlob(
+    const AudioCodecSpecificVariant& v) {
+  return v.match(
+      [](const NoCodecSpecificData&) {
+        return RefPtr<MediaByteBuffer>(new MediaByteBuffer).forget();
+      },
+      [](const AudioCodecSpecificBinaryBlob& binaryBlob) {
+        return RefPtr<MediaByteBuffer>(binaryBlob.mBinaryBlob).forget();
+      },
+      [](const AacCodecSpecificData& aacData) {
+        
+        
+        
+        
+        
+        return RefPtr<MediaByteBuffer>(
+                   aacData.mDecoderConfigDescriptorBinaryBlob)
+            .forget();
+      },
+      [](const FlacCodecSpecificData& flacData) {
+        return RefPtr<MediaByteBuffer>(flacData.mStreamInfoBinaryBlob).forget();
+      },
+      [](const Mp3CodecSpecificData&) {
+        return RefPtr<MediaByteBuffer>(new MediaByteBuffer).forget();
+      },
+      [](const OpusCodecSpecificData& opusData) {
+        return RefPtr<MediaByteBuffer>(opusData.mHeadersBinaryBlob).forget();
+      },
+      [](const VorbisCodecSpecificData& vorbisData) {
+        return RefPtr<MediaByteBuffer>(vorbisData.mHeadersBinaryBlob).forget();
+      },
+      [](const WaveCodecSpecificData&) {
+        return RefPtr<MediaByteBuffer>(new MediaByteBuffer).forget();
+      });
+}
+
+
+
+
+inline already_AddRefed<MediaByteBuffer> GetAudioCodecSpecificBlob(
+    const AudioCodecSpecificVariant& v) {
+  MOZ_ASSERT(!v.is<NoCodecSpecificData>(),
+             "NoCodecSpecificData shouldn't be used as a blob");
+  MOZ_ASSERT(!v.is<AacCodecSpecificData>(),
+             "AacCodecSpecificData has 2 blobs internally, one should "
+             "explicitly be selected");
+  MOZ_ASSERT(!v.is<Mp3CodecSpecificData>(),
+             "Mp3CodecSpecificData shouldn't be used as a blob");
+
+  return ForceGetAudioCodecSpecificBlob(v);
+}
+
+
+
+
 
 class TrackInfo {
  public:
@@ -326,7 +512,8 @@ class AudioInfo : public TrackInfo {
   int8_t mExtendedProfile;
 
   RefPtr<MediaByteBuffer> mCodecSpecificConfig;
-  RefPtr<MediaByteBuffer> mExtraData;
+  RefPtr<MediaByteBuffer> mExtraData;  
+                                       
 };
 
 class EncryptionInfo {
