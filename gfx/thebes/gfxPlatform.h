@@ -45,6 +45,7 @@ typedef struct FT_LibraryRec_* FT_Library;
 namespace mozilla {
 struct StyleFontFamilyList;
 class LogModule;
+class VsyncDispatcher;
 namespace layers {
 class FrameStats;
 }
@@ -667,6 +668,13 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
 
 
+  RefPtr<mozilla::VsyncDispatcher> GetGlobalVsyncDispatcher();
+
+  
+
+
+
+
   static bool IsInLayoutAsapMode();
 
   
@@ -928,6 +936,10 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
   
   RefPtr<mozilla::gfx::VsyncSource> mVsyncSource;
+
+  
+  
+  RefPtr<mozilla::VsyncDispatcher> mVsyncDispatcher;
 
   RefPtr<mozilla::gfx::DrawTarget> mScreenReferenceDrawTarget;
 
