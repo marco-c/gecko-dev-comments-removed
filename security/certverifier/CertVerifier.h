@@ -172,7 +172,8 @@ class CertVerifier {
        KeySizeStatus* keySizeStatus = nullptr,
        SHA1ModeResult* sha1ModeResult = nullptr,
        PinningTelemetryInfo* pinningTelemetryInfo = nullptr,
-       CertificateTransparencyInfo* ctInfo = nullptr);
+       CertificateTransparencyInfo* ctInfo = nullptr,
+       bool* isBuiltChainRootBuiltInRoot = nullptr);
 
   mozilla::pkix::Result VerifySSLServerCert(
       const nsTArray<uint8_t>& peerCert, mozilla::pkix::Time time, void* pinarg,
@@ -193,7 +194,7 @@ class CertVerifier {
        SHA1ModeResult* sha1ModeResult = nullptr,
        PinningTelemetryInfo* pinningTelemetryInfo = nullptr,
        CertificateTransparencyInfo* ctInfo = nullptr,
-       bool* isBuiltCertChainRootBuiltInRoot = nullptr);
+       bool* isBuiltChainRootBuiltInRoot = nullptr);
 
   enum class SHA1Mode {
     Allowed = 0,
