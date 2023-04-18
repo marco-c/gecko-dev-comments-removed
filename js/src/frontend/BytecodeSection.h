@@ -327,7 +327,6 @@ class BytecodeSection {
   
   
   
-  
   CGResumeOffsetList resumeOffsetList_;
 
   

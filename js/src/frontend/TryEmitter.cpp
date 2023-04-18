@@ -252,6 +252,7 @@ bool TryEmitter::emitFinallyEnd() {
     
     
     
+    
     if (!bce_->emit1(JSOp::Pop)) {
       return false;
     }
