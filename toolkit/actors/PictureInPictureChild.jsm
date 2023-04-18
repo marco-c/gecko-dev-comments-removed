@@ -81,9 +81,6 @@ const SEEK_TIME_SECS = 5;
 const EMPTIED_TIMEOUT_MS = 1000;
 
 
-const TEXT_TRACKS_STYLE_BOTTOM_MULTIPLIER = 0.066;
-
-
 
 
 var gPlayerContents = new WeakSet();
@@ -1415,6 +1412,9 @@ class PictureInPictureChild extends JSWindowActorChild {
     const isReducedMotionEnabled = originatingWindow.matchMedia(
       "(prefers-reduced-motion: reduce)"
     ).matches;
+    const textTracksFontScale = this.document
+      .querySelector(":root")
+      .style.getPropertyValue("--font-scale");
 
     if (isFullscreen || isReducedMotionEnabled) {
       textTracks.removeAttribute("overlap-video-controls");
@@ -1424,8 +1424,7 @@ class PictureInPictureChild extends JSWindowActorChild {
     if (isVideoControlsShowing) {
       let playerVideoRect = textTracks.parentElement.getBoundingClientRect();
       let isOverlap =
-        playerVideoRect.bottom -
-          TEXT_TRACKS_STYLE_BOTTOM_MULTIPLIER * playerVideoRect.height >
+        playerVideoRect.bottom - textTracksFontScale * playerVideoRect.height >
         playerBottomControlsDOMRect.top;
 
       if (isOverlap) {
