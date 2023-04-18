@@ -675,7 +675,7 @@ WithEnvironmentObject* WithEnvironmentObject::createNonSyntactic(
 }
 
 static inline bool IsUnscopableDotName(JSContext* cx, HandleId id) {
-  return id.isAtom(cx->names().dotThis);
+  return id.isAtom(cx->names().dotThis) || id.isAtom(cx->names().dotNewTarget);
 }
 
 #ifdef DEBUG
@@ -716,6 +716,7 @@ static bool CheckUnscopables(JSContext* cx, HandleObject obj, HandleId id,
 static bool with_LookupProperty(JSContext* cx, HandleObject obj, HandleId id,
                                 MutableHandleObject objp,
                                 PropertyResult* propp) {
+  
   
   if (IsUnscopableDotName(cx, id)) {
     objp.set(nullptr);
