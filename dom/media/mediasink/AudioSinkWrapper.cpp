@@ -81,6 +81,7 @@ TimeUnit AudioSinkWrapper::GetPosition(TimeStamp* aTimeStamp) {
     
     pos = mAudioSink->GetPosition();
     LOGV("%p: Getting position from the Audio Sink %lf", this, pos.ToSeconds());
+    mLastClockSource = ClockSource::AudioStream;
   } else if (!mPlayStartTime.IsNull()) {
     
     
@@ -100,10 +101,12 @@ TimeUnit AudioSinkWrapper::GetPosition(TimeStamp* aTimeStamp) {
         mEndedPromiseHolder.Resolve(true, __func__);
       }
     }
+    mLastClockSource = ClockSource::SystemClock;
   } else {
     
     pos = mPlayDuration;
     LOGV("%p: Getting static position, not playing %lf", this, pos.ToSeconds());
+    mLastClockSource = ClockSource::Paused;
   }
 
   if (aTimeStamp) {
