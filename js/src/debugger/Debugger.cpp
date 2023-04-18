@@ -18,12 +18,13 @@
 #include "mozilla/Variant.h"           
 #include "mozilla/Vector.h"            
 
-#include <algorithm>   
-#include <functional>  
-#include <stddef.h>    
-#include <stdint.h>    
-#include <string.h>    
-#include <utility>     
+#include <algorithm>    
+#include <functional>   
+#include <stddef.h>     
+#include <stdint.h>     
+#include <string.h>     
+#include <type_traits>  
+#include <utility>      
 
 #include "jsapi.h"    
 #include "jstypes.h"  
@@ -880,7 +881,8 @@ bool DebuggerList<HookIsEnabledFun>::dispatchResumptionHook(
 
 JSObject* Debugger::getHook(Hook hook) const {
   MOZ_ASSERT(hook >= 0 && hook < HookCount);
-  const Value& v = object->getReservedSlot(JSSLOT_DEBUG_HOOK_START + hook);
+  const Value& v = object->getReservedSlot(JSSLOT_DEBUG_HOOK_START +
+                                           std::underlying_type_t<Hook>(hook));
   return v.isUndefined() ? nullptr : &v.toObject();
 }
 
@@ -4160,7 +4162,8 @@ bool Debugger::CallData::ToNative(JSContext* cx, unsigned argc, Value* vp) {
 bool Debugger::getHookImpl(JSContext* cx, const CallArgs& args, Debugger& dbg,
                            Hook which) {
   MOZ_ASSERT(which >= 0 && which < HookCount);
-  args.rval().set(dbg.object->getReservedSlot(JSSLOT_DEBUG_HOOK_START + which));
+  args.rval().set(dbg.object->getReservedSlot(
+      JSSLOT_DEBUG_HOOK_START + std::underlying_type_t<Hook>(which)));
   return true;
 }
 
@@ -4180,7 +4183,7 @@ bool Debugger::setHookImpl(JSContext* cx, const CallArgs& args, Debugger& dbg,
                               JSMSG_NOT_CALLABLE_OR_UNDEFINED);
     return false;
   }
-  uint32_t slot = JSSLOT_DEBUG_HOOK_START + which;
+  uint32_t slot = JSSLOT_DEBUG_HOOK_START + std::underlying_type_t<Hook>(which);
   RootedValue oldHook(cx, dbg.object->getReservedSlot(slot));
   dbg.object->setReservedSlot(slot, args[0]);
   if (hookObservesAllExecution(which)) {
