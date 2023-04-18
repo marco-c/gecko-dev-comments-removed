@@ -286,11 +286,7 @@ class RemoteAccessibleBase : public Accessible, public HyperTextAccessibleBase {
   virtual TableAccessibleBase* AsTableBase() override;
   virtual TableCellAccessibleBase* AsTableCellBase() override;
 
-  
-
-
-
-  virtual void DOMNodeID(nsString& aID) const;
+  virtual void DOMNodeID(nsString& aID) const override;
 
   
   virtual already_AddRefed<AccAttributes> DefaultTextAttributes() override;

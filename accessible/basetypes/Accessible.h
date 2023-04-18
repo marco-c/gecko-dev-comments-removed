@@ -257,6 +257,11 @@ class Accessible {
   virtual nsAtom* LandmarkRole() const;
 
   
+
+
+  virtual void DOMNodeID(nsString& aID) const = 0;
+
+  
   
 
   
