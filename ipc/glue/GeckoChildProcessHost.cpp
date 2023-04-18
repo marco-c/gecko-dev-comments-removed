@@ -420,6 +420,13 @@ GeckoChildProcessHost::GeckoChildProcessHost(GeckoProcessType aProcessType,
     if (NS_SUCCEEDED(rv)) {
       contentTempDir->GetNativePath(mTmpDirName);
     }
+  } else if (aProcessType == GeckoProcessType_RDD) {
+    
+    
+    
+    
+    
+    mLaunchOptions->env_map["MESA_GLSL_CACHE_DISABLE"] = "true";
   }
 #endif
 #if defined(MOZ_ENABLE_FORKSERVER)
