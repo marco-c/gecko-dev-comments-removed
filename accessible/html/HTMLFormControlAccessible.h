@@ -354,10 +354,12 @@ class HTMLDateTimeAccessible : public HyperTextAccessibleWrap {
         HyperTextAccessibleWrap::NativeAttributes();
     
     
-    nsString type;
-    if (mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::type,
-                                       type)) {
-      attributes->SetAttribute(nsGkAtoms::textInputType, std::move(type));
+    if (const nsAttrValue* attr =
+            mContent->AsElement()->GetParsedAttr(nsGkAtoms::type)) {
+      RefPtr<nsAtom> inputType = attr->GetAsAtom();
+      if (inputType) {
+        attributes->SetAttribute(nsGkAtoms::textInputType, inputType);
+      }
     }
     return attributes.forget();
   }
