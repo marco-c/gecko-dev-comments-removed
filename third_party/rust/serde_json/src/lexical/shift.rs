@@ -3,7 +3,7 @@
 
 
 use super::float::ExtendedFloat;
-use crate::lib::mem;
+use core::mem;
 
 
 #[inline]

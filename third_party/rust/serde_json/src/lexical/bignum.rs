@@ -3,7 +3,7 @@
 
 
 use super::math::*;
-use crate::lib::Vec;
+use alloc::vec::Vec;
 
 
 #[derive(Clone, PartialEq, Eq)]

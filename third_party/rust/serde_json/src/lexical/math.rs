@@ -9,7 +9,8 @@
 use super::large_powers;
 use super::num::*;
 use super::small_powers::*;
-use crate::lib::{cmp, iter, mem, Vec};
+use alloc::vec::Vec;
+use core::{cmp, iter, mem};
 
 
 
@@ -593,7 +594,7 @@ mod large {
 
         
         let mut carry = false;
-        for (xi, yi) in (&mut x[xstart..]).iter_mut().zip(y.iter()) {
+        for (xi, yi) in x[xstart..].iter_mut().zip(y.iter()) {
             
             
             
