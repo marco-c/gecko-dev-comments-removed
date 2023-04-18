@@ -400,6 +400,10 @@ def run_sibling_transforms(config, tasks):
         ("variant", None),
         ("raptor", lambda t: t["suite"] == "raptor"),
         ("other", None),
+        
+        
+        
+        ("chunk", None),
     )
 
     for task in tasks:
