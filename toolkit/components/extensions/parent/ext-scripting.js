@@ -117,14 +117,18 @@ const makeInternalContentScript = details => {
     scriptId: getUniqueId(),
     options: {
       allFrames: details.allFrames || false,
+      
+      
+      
+      checkPermissions: true,
       cssPaths: details.css || [],
       excludeMatches: details.excludeMatches,
       jsPaths: details.js || [],
       matchAboutBlank: true,
       matches: details.matches,
       originAttributesPatterns: null,
-      runAt: details.runAt || "document_idle",
       persistAcrossSessions: details.persistAcrossSessions,
+      runAt: details.runAt || "document_idle",
     },
   };
 };
