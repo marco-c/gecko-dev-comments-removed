@@ -1767,6 +1767,9 @@ bool Instance::init(JSContext* cx, const JSFunctionVector& funcImports,
         if (!rttValue) {
           return false;
         }
+        
+        
+        MOZ_ASSERT(rttValue.get()->isTenured());
         *((GCPtrObject*)addressOfTypeId(typeDef.id)) = rttValue;
         hasGcTypes_ = true;
       }
