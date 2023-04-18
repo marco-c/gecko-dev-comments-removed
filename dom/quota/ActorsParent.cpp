@@ -3761,12 +3761,20 @@ void QuotaManager::SafeMaybeRecordQuotaClientShutdownStep(
   }
 }
 
+void QuotaManager::RecordQuotaManagerShutdownStep(
+    const nsACString& aStepDescription) {
+  
+  MOZ_ASSERT(mShutdownStarted);
+
+  RecordShutdownStep(Nothing{}, aStepDescription);
+}
+
 void QuotaManager::MaybeRecordQuotaManagerShutdownStep(
     const nsACString& aStepDescription) {
   
 
   if (ShutdownStarted()) {
-    RecordShutdownStep(Nothing{}, aStepDescription);
+    RecordQuotaManagerShutdownStep(aStepDescription);
   }
 }
 
@@ -3812,139 +3820,173 @@ void QuotaManager::Shutdown() {
   MOZ_DIAGNOSTIC_ASSERT(!gShutdown);
 
   
-  
-  gShutdown = true;
 
+  auto flagShutdownStarted = [this]() {
+    
+    
+    
+    gShutdown = true;
+
+    
+    
+    
+
+    mShutdownStartedAt.init(TimeStamp::NowLoRes());
+    mShutdownStarted = true;
+  };
+
+  auto initiateShutdownWorkThreads = [this]() {
+    RecordQuotaManagerShutdownStep("initiateShutdownWorkThreads"_ns);
+    bool needsToWait = false;
+    for (Client::Type type : AllClientTypes()) {
+      
+      
+      
+      needsToWait |= (*mClients)[type]->InitiateShutdownWorkThreads();
+    }
+
+    return needsToWait;
+  };
+
+  auto isAllClientsShutdownComplete = [this] {
+    return std::all_of(AllClientTypes().cbegin(), AllClientTypes().cend(),
+                       [&self = *this](const auto type) {
+                         return (*self.mClients)[type]->IsShutdownCompleted();
+                       });
+  };
+
+  auto forceKillTimerCallback = [](nsITimer* aTimer, void* aClosure) {
+    auto forceCrashTimerCallback = [](nsITimer* aTimer, void* aClosure) {
+      auto* const quotaManager = static_cast<QuotaManager*>(aClosure);
+
+      nsCString annotation;
+
+      {
+        for (Client::Type type : quotaManager->AllClientTypes()) {
+          auto& quotaClient = *(*quotaManager->mClients)[type];
+
+          if (!quotaClient.IsShutdownCompleted()) {
+            annotation.AppendPrintf("%s: %s\nIntermediate steps:\n%s\n\n",
+                                    Client::TypeToText(type).get(),
+                                    quotaClient.GetShutdownStatus().get(),
+                                    quotaManager->mShutdownSteps[type].get());
+          }
+        }
+
+        if (gNormalOriginOps) {
+          MutexAutoLock lock(quotaManager->mQuotaMutex);
+
+          annotation.AppendPrintf("QM: %zu normal origin ops pending\n",
+                                  gNormalOriginOps->Length());
+#ifdef MOZ_COLLECTING_RUNNABLE_TELEMETRY
+          for (const auto& op : *gNormalOriginOps) {
+            nsCString name;
+            op->GetName(name);
+            annotation.AppendPrintf("Op: %s pending\n", name.get());
+          }
+#endif
+          annotation.AppendPrintf(
+              "Intermediate steps:\n%s\n",
+              quotaManager->mQuotaManagerShutdownSteps.get());
+        }
+      }
+
+      CrashReporter::AnnotateCrashReport(
+          CrashReporter::Annotation::QuotaManagerShutdownTimeout, annotation);
+
+      MOZ_CRASH("Quota manager shutdown timed out");
+    };
+
+    auto* const quotaManager = static_cast<QuotaManager*>(aClosure);
+
+    
+    
+    quotaManager->RecordQuotaManagerShutdownStep("forceKillTimerCallback"_ns);
+
+    
+    
+    
+    
+    quotaManager->GetClient(Client::IDB)->AbortAllOperations();
+
+    for (Client::Type type : quotaManager->AllClientTypes()) {
+      quotaManager->GetClient(type)->ForceKillActors();
+    }
+
+    MOZ_ALWAYS_SUCCEEDS(aTimer->InitWithNamedFuncCallback(
+        forceCrashTimerCallback, aClosure, SHUTDOWN_FORCE_CRASH_TIMEOUT_MS,
+        nsITimer::TYPE_ONE_SHOT, "quota::QuotaManager::ForceCrashTimer"));
+  };
+
+  auto shutdownAndJoinWorkThreads = [this]() {
+    RecordQuotaManagerShutdownStep("shutdownAndJoinWorkThreads"_ns);
+    for (Client::Type type : AllClientTypes()) {
+      (*mClients)[type]->FinalizeShutdownWorkThreads();
+    }
+  };
+
+  auto shutdownAndJoinIOThread = [this]() {
+    
+    
+    
+    
+    RefPtr<Runnable> runnable =
+        NewRunnableMethod("dom::quota::QuotaManager::ShutdownStorage", this,
+                          &QuotaManager::ShutdownStorage);
+    MOZ_ASSERT(runnable);
+
+    
+    QM_WARNONLY_TRY(
+        QM_TO_RESULT((*mIOThread)->Dispatch(runnable, NS_DISPATCH_NORMAL)));
+
+    
+    QM_WARNONLY_TRY(QM_TO_RESULT((*mIOThread)->Shutdown()));
+  };
+
+  auto invalidatePendingDirectoryLocks = [this]() {
+    for (RefPtr<DirectoryLockImpl>& lock : mPendingDirectoryLocks) {
+      lock->Invalidate();
+    }
+  };
+
+  
+
+  flagShutdownStarted();
+
+  
+  
+  
   StopIdleMaintenance();
 
-  mShutdownStartedAt.init(TimeStamp::NowLoRes());
-  mShutdownStarted = true;
-
-  const auto& allClientTypes = AllClientTypes();
-
-  bool needsToWait = false;
-  for (Client::Type type : allClientTypes) {
-    needsToWait |= (*mClients)[type]->InitiateShutdownWorkThreads();
-  }
-  needsToWait |= static_cast<bool>(gNormalOriginOps);
+  const bool needsToWait =
+      initiateShutdownWorkThreads() | static_cast<bool>(gNormalOriginOps);
 
   
   
   if (needsToWait) {
     MOZ_ALWAYS_SUCCEEDS(
         (*mShutdownTimer)
-            ->InitWithNamedFuncCallback(
-                [](nsITimer* aTimer, void* aClosure) {
-                  auto* const quotaManager =
-                      static_cast<QuotaManager*>(aClosure);
-
-                  for (Client::Type type : quotaManager->AllClientTypes()) {
-                    
-                    
-                    if (type == Client::IDB) {
-                      (*quotaManager->mClients)[type]->AbortAllOperations();
-                    }
-
-                    (*quotaManager->mClients)[type]->ForceKillActors();
-                  }
-
-                  MOZ_ALWAYS_SUCCEEDS(aTimer->InitWithNamedFuncCallback(
-                      [](nsITimer* aTimer, void* aClosure) {
-                        auto* const quotaManager =
-                            static_cast<QuotaManager*>(aClosure);
-
-                        nsCString annotation;
-
-                        {
-                          for (Client::Type type :
-                               quotaManager->AllClientTypes()) {
-                            auto& quotaClient =
-                                *(*quotaManager->mClients)[type];
-
-                            if (!quotaClient.IsShutdownCompleted()) {
-                              annotation.AppendPrintf(
-                                  "%s: %s\nIntermediate steps:\n%s\n\n",
-                                  Client::TypeToText(type).get(),
-                                  quotaClient.GetShutdownStatus().get(),
-                                  quotaManager->mShutdownSteps[type].get());
-                            }
-                          }
-
-                          if (gNormalOriginOps) {
-                            MutexAutoLock lock(quotaManager->mQuotaMutex);
-
-                            annotation.AppendPrintf(
-                                "QM: %zu normal origin ops pending\n",
-                                gNormalOriginOps->Length());
-#ifdef MOZ_COLLECTING_RUNNABLE_TELEMETRY
-                            for (const auto& op : *gNormalOriginOps) {
-                              nsCString name;
-                              op->GetName(name);
-                              annotation.AppendPrintf("Op: %s pending\n",
-                                                      name.get());
-                            }
-#endif
-                            annotation.AppendPrintf(
-                                "Intermediate steps:\n%s\n",
-                                quotaManager->mQuotaManagerShutdownSteps.get());
-                          }
-                        }
-
-                        
-                        
-                        MOZ_DIAGNOSTIC_ASSERT(!annotation.IsEmpty());
-
-                        CrashReporter::AnnotateCrashReport(
-                            CrashReporter::Annotation::
-                                QuotaManagerShutdownTimeout,
-                            annotation);
-
-                        MOZ_CRASH("Quota manager shutdown timed out");
-                      },
-                      aClosure, SHUTDOWN_FORCE_CRASH_TIMEOUT_MS,
-                      nsITimer::TYPE_ONE_SHOT,
-                      "quota::QuotaManager::ForceCrashTimer"));
-                },
-                this, SHUTDOWN_FORCE_KILL_TIMEOUT_MS, nsITimer::TYPE_ONE_SHOT,
-                "quota::QuotaManager::ForceKillTimer"));
+            ->InitWithNamedFuncCallback(forceKillTimerCallback, this,
+                                        SHUTDOWN_FORCE_KILL_TIMEOUT_MS,
+                                        nsITimer::TYPE_ONE_SHOT,
+                                        "quota::QuotaManager::ForceKillTimer"));
 
     MOZ_ALWAYS_TRUE(SpinEventLoopUntil(
-        "QuotaManager::Shutdown"_ns, [this, &allClientTypes] {
-          return !gNormalOriginOps &&
-                 std::all_of(
-                     allClientTypes.cbegin(), allClientTypes.cend(),
-                     [&self = *this](const auto type) {
-                       return (*self.mClients)[type]->IsShutdownCompleted();
-                     });
+        "QuotaManager::Shutdown"_ns, [isAllClientsShutdownComplete]() {
+          return !gNormalOriginOps && isAllClientsShutdownComplete();
         }));
   }
 
-  for (Client::Type type : allClientTypes) {
-    (*mClients)[type]->FinalizeShutdownWorkThreads();
-  }
+  shutdownAndJoinWorkThreads();
 
+  
+  
   
   QM_WARNONLY_TRY(QM_TO_RESULT((*mShutdownTimer)->Cancel()));
 
-  
-  
-  
-  
-  RefPtr<Runnable> runnable =
-      NewRunnableMethod("dom::quota::QuotaManager::ShutdownStorage", this,
-                        &QuotaManager::ShutdownStorage);
-  MOZ_ASSERT(runnable);
+  shutdownAndJoinIOThread();
 
-  
-  QM_WARNONLY_TRY(
-      QM_TO_RESULT((*mIOThread)->Dispatch(runnable, NS_DISPATCH_NORMAL)));
-
-  
-  QM_WARNONLY_TRY(QM_TO_RESULT((*mIOThread)->Shutdown()));
-
-  for (RefPtr<DirectoryLockImpl>& lock : mPendingDirectoryLocks) {
-    lock->Invalidate();
-  }
+  invalidatePendingDirectoryLocks();
 }
 
 void QuotaManager::InitQuotaForOrigin(

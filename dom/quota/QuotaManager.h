@@ -382,6 +382,9 @@ class QuotaManager final : public BackgroundThreadObject {
       Client::Type aClientType, const nsACString& aStepDescription);
 
   
+  void RecordQuotaManagerShutdownStep(const nsACString& aStepDescription);
+
+  
   void MaybeRecordQuotaManagerShutdownStep(const nsACString& aStepDescription);
 
   template <typename F>
