@@ -435,7 +435,6 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-
     id: "bug1646791",
     platform: "all",
     domain: "santanderbank.com",
@@ -445,16 +444,14 @@ const AVAILABLE_UA_OVERRIDES = [
         "*://*.bancosantander.es/*",
         "*://*.gruposantander.es/*",
         "*://*.santander.co.uk/*",
-        "*://bob.santanderbank.com/*",
-        "*://rolb.santanderbank.com/*",
       ],
       uaTransformer: originalUA => {
         
         
-        return originalUA
-          .replace("Gecko", "like Gecko")
-          .replace("Firefox/100.0", "Firefox/96.0")
-          .replace("rv:100.0", "rv:96.0");
+        return UAHelpers.capVersionTo99(originalUA).replace(
+          "Gecko",
+          "like Gecko"
+        );
       },
     },
   },
@@ -475,25 +472,6 @@ const AVAILABLE_UA_OVERRIDES = [
       matches: ["*://www.jp.square-enix.com/music/sem/page/FF7R/ost/*"],
       uaTransformer: originalUA => {
         return originalUA + " Chrome/83";
-      },
-    },
-  },
-  {
-    
-
-
-
-
-
-
-    id: "bug1654888",
-    platform: "android",
-    domain: "ebuyer.com",
-    bug: "1654888",
-    config: {
-      matches: ["*://*.ebuyer.com/*"],
-      uaTransformer: () => {
-        return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
   },
@@ -695,24 +673,6 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-    id: "bug1741892",
-    platform: "all",
-    domain: "goal.com",
-    bug: "1741892",
-    config: {
-      matches: ["*://goal.com/*"],
-      uaTransformer: originalUA => {
-        return originalUA + " Chrome/98.0.1086.0";
-      },
-    },
-  },
-  {
-    
-
-
-
-
-
 
     id: "bug1743745",
     platform: "android",
@@ -769,26 +729,28 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-
     id: "bug1743429",
-    platform: "desktop",
+    platform: "all",
     domain: "Sites with known Version 100 User Agent breakage",
     bug: "1743429",
     config: {
       matches: [
         "*://*.wordpress.org/*", 
+        "*://bethesda.net/*", 
+        "*://genehmigung.ahs-vwa.at/*", 
+        "*://moje.pzu.pl/*", 
+        "*://simperium.com/*", 
+        "*://wifi.sncf/*", 
+        "*://www.brownells.com/*", 
+        "*://www.eurosportplayer.com/*", 
+        "*://www.hannaandersson.com/*", 
+        "*://www.petalmail.com/*", 
+        "*://www.sc.com/in/*", 
+        "*://www.screwfix.com/*", 
+        "*://www.smsv.com.ar/*", 
       ],
       uaTransformer: originalUA => {
-        if (!originalUA.includes("Firefox/100.0")) {
-          return originalUA;
-        }
-
-        
-        
-        
-        return originalUA
-          .replace("Firefox/100.0", "Firefox/96.0")
-          .replace("rv:100.0", "rv:96.0");
+        return UAHelpers.capVersionTo99(originalUA);
       },
     },
   },
@@ -811,6 +773,9 @@ const AVAILABLE_UA_OVERRIDES = [
         "*://*.wnep.com/*",
         "*://*.dn.se/*",
         "*://*.dailymail.co.uk/*",
+        "*://*.kohls.com/*",
+        "*://*.expressen.se/*",
+        "*://*.walmart.com/*",
       ],
       uaTransformer: originalUA => {
         if (!originalUA.includes("Android 12;")) {
@@ -818,6 +783,99 @@ const AVAILABLE_UA_OVERRIDES = [
         }
 
         return originalUA.replace("Android 12;", "Android 12.0;");
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+
+    id: "bug1754180",
+    platform: "android",
+    domain: "nordjyske.dk",
+    bug: "1754180",
+    config: {
+      matches: ["*://nordjyske.dk/*"],
+      uaTransformer: originalUA => {
+        return UAHelpers.getDeviceAppropriateChromeUA("97.0.4692.9", "Pixel 4");
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+
+    id: "bug1753631",
+    platform: "android",
+    domain: "expertflyer.com",
+    bug: "1753631",
+    config: {
+      matches: ["*://*.expertflyer.com/*"],
+      uaTransformer: originalUA => {
+        return originalUA + " AppleWebKit";
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+
+    id: "bug1753461",
+    platform: "desktop",
+    domain: "serieson.naver.com",
+    bug: "1753461",
+    config: {
+      matches: ["*://serieson.naver.com/*"],
+      uaTransformer: originalUA => {
+        return "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.99 Safari/537.36";
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+
+    id: "bug1756872",
+    platform: "android",
+    domain: "www.dolcegabbana.com",
+    bug: "1756872",
+    config: {
+      matches: ["*://www.dolcegabbana.com/*"],
+      uaTransformer: originalUA => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
+  {
+    
+
+
+
+
+    id: "bug1751604",
+    platform: "desktop",
+    domain: "www.otsuka.co.jp",
+    bug: "1751604",
+    config: {
+      matches: ["*://www.otsuka.co.jp/fib/*"],
+      uaTransformer: originalUA => {
+        return UAHelpers.getDeviceAppropriateChromeUA("97.0.4692.9");
       },
     },
   },
