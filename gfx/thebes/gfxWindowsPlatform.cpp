@@ -315,6 +315,13 @@ void gfxWindowsPlatform::InitMemoryReportersForGPUProcess() {
 
 nsresult gfxWindowsPlatform::GetGpuTimeSinceProcessStartInMs(
     uint64_t* aResult) {
+  
+  
+  if (IsWin32kLockedDown()) {
+    *aResult = 0;
+    return NS_OK;
+  }
+
   nsModuleHandle module(LoadLibrary(L"gdi32.dll"));
   if (!module) {
     return NS_ERROR_NOT_AVAILABLE;
