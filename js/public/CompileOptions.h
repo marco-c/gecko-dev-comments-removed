@@ -180,6 +180,11 @@ class JS_PUBLIC_API TransitiveCompileOptions {
   bool usePinnedBytecode = false;
 
   
+  
+  
+  bool allocateInstantiationStorage = false;
+
+  
 
 
 
