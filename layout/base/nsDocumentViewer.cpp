@@ -1400,7 +1400,7 @@ nsDocumentViewer::PageHide(bool aIsUnload) {
     NS_ENSURE_STATE(mDocument);
 
     
-    nsPIDOMWindowOuter* window = mDocument->GetWindow();
+    RefPtr<nsPIDOMWindowOuter> window = mDocument->GetWindow();
 
     if (!window) {
       
@@ -1427,7 +1427,8 @@ nsDocumentViewer::PageHide(bool aIsUnload) {
 
     Document::PageUnloadingEventTimeStamp timestamp(mDocument);
 
-    EventDispatcher::Dispatch(window, mPresContext, &event, nullptr, &status);
+    RefPtr<nsPresContext> presContext = mPresContext;
+    EventDispatcher::Dispatch(window, presContext, &event, nullptr, &status);
   }
 
   

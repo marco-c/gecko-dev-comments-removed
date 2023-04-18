@@ -958,11 +958,13 @@ class nsDocShell final : public nsDocLoader,
   
   
   
-  void FirePageHideNotificationInternal(bool aIsUnload,
-                                        bool aSkipCheckingDynEntries);
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void FirePageHideNotificationInternal(
+      bool aIsUnload, bool aSkipCheckingDynEntries);
 
   void ThawFreezeNonRecursive(bool aThaw);
-  void FirePageHideShowNonRecursive(bool aShow);
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void FirePageHideShowNonRecursive(bool aShow);
 
   nsresult Dispatch(mozilla::TaskCategory aCategory,
                     already_AddRefed<nsIRunnable>&& aRunnable);
