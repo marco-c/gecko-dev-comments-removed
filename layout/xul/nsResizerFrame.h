@@ -1,0 +1,83 @@
+
+
+
+
+
+#ifndef nsResizerFrame_h___
+#define nsResizerFrame_h___
+
+#include "mozilla/Attributes.h"
+#include "mozilla/EventForwards.h"
+#include "nsTitleBarFrame.h"
+
+class nsIBaseWindow;
+
+namespace mozilla {
+class PresShell;
+}  
+
+class nsResizerFrame final : public nsTitleBarFrame {
+ protected:
+  typedef mozilla::LayoutDeviceIntPoint LayoutDeviceIntPoint;
+  typedef mozilla::LayoutDeviceIntRect LayoutDeviceIntRect;
+
+  struct Direction {
+    int8_t mHorizontal;
+    int8_t mVertical;
+  };
+
+ public:
+  NS_DECL_FRAMEARENA_HELPERS(nsResizerFrame)
+
+  friend nsIFrame* NS_NewResizerFrame(mozilla::PresShell* aPresShell,
+                                      ComputedStyle* aStyle);
+
+  explicit nsResizerFrame(ComputedStyle* aStyle, nsPresContext* aPresContext);
+
+  virtual nsresult HandleEvent(nsPresContext* aPresContext,
+                               mozilla::WidgetGUIEvent* aEvent,
+                               nsEventStatus* aEventStatus) override;
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
+  virtual void MouseClicked(mozilla::WidgetMouseEvent* aEvent) override;
+
+ protected:
+  nsIContent* GetContentToResize(mozilla::PresShell* aPresShell,
+                                 nsIBaseWindow** aWindow);
+
+  Direction GetDirection();
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  static void AdjustDimensions(int32_t* aPos, int32_t* aSize, int32_t aMinSize,
+                               int32_t aMaxSize, int32_t aMovement,
+                               int8_t aResizerDirection);
+
+  struct SizeInfo {
+    nsCString width, height;
+  };
+  static void SizeInfoDtorFunc(void* aObject, nsAtom* aPropertyName,
+                               void* aPropertyValue, void* aData);
+  static void ResizeContent(nsIContent* aContent, const Direction& aDirection,
+                            const SizeInfo& aSizeInfo,
+                            SizeInfo* aOriginalSizeInfo);
+  static void MaybePersistOriginalSize(nsIContent* aContent,
+                                       const SizeInfo& aSizeInfo);
+  static void RestoreOriginalSize(nsIContent* aContent);
+
+ protected:
+  LayoutDeviceIntRect mMouseDownRect;
+  LayoutDeviceIntPoint mMouseDownPoint;
+};  
+
+#endif 
