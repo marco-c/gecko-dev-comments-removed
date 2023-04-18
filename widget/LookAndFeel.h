@@ -203,10 +203,6 @@ class LookAndFeel {
     
 
 
-    OperatingSystemVersionIdentifier,
-    
-
-
 
     ScrollbarButtonAutoRepeatBehavior,
     
@@ -338,16 +334,6 @@ class LookAndFeel {
   static bool UseOverlayScrollbars() {
     return GetInt(IntID::UseOverlayScrollbars);
   }
-
-  
-
-
-  enum class OperatingSystemVersion {
-    Windows7 = 2,
-    Windows8,
-    Windows10,
-    Unknown
-  };
 
   enum {
     eScrollArrow_None = 0,

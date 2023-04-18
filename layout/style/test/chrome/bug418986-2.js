@@ -70,9 +70,6 @@ var suppressed_toggles = [
 var toggles_enabled_in_content = [];
 
 
-var windows_versions = ["windows-win7", "windows-win8", "windows-win10"];
-
-
 var OS = SpecialPowers.Services.appinfo.OS;
 
 
@@ -125,27 +122,6 @@ var testToggles = function(resisting) {
 
 
 
-var testWindowsSpecific = function(resisting, queryName, possibleValues) {
-  let foundValue = null;
-  possibleValues.forEach(function(val) {
-    if (keyValMatches(queryName, val)) {
-      foundValue = val;
-    }
-  });
-  if (resisting || !is_chrome_window) {
-    ok(!foundValue, queryName + " should have no match");
-  } else {
-    ok(
-      foundValue,
-      foundValue
-        ? "Match found: '" + queryName + ":" + foundValue + "'"
-        : "Should have a match for '" + queryName + "'"
-    );
-  }
-};
-
-
-
 
 
 var generateHtmlLines = function(resisting) {
@@ -167,13 +143,6 @@ var generateHtmlLines = function(resisting) {
     div.textContent = key;
     fragment.appendChild(div);
   });
-  if (OS === "WINNT") {
-    let div = document.createElementNS(HTML_NS, "div");
-    div.setAttribute("class", "windows");
-    div.setAttribute("id", "-moz-os-version");
-    div.textContent = "-moz-os-version";
-    fragment.appendChild(div);
-  }
   return fragment;
 };
 
@@ -242,15 +211,6 @@ var generateCSSLines = function(resisting) {
       lines += suppressedMediaQueryCSSLine(key, "green");
     }
   });
-  if (OS === "WINNT") {
-    lines +=
-      ".windows { background-color: " + (resisting ? "green" : "red") + ";}\n";
-    lines +=
-      windows_versions.map(val => "(-moz-os-version: " + val + ")").join(", ") +
-      " { #-moz-os-version { background-color: " +
-      (resisting ? "red" : "green") +
-      ";} }\n";
-  }
   return lines;
 };
 
@@ -361,9 +321,6 @@ var test = async function(isContent) {
       testMatch(key, resisting ? onVal : offVal);
     });
     testToggles(resisting);
-    if (OS === "WINNT") {
-      testWindowsSpecific(resisting, "-moz-os-version", windows_versions);
-    }
     testCSS(resisting);
     if (OS === "Darwin") {
       testOSXFontSmoothing(resisting);
