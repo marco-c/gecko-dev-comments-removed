@@ -60,18 +60,21 @@
 #ifndef mozHunspell_h__
 #define mozHunspell_h__
 
-#include <hunspell.hxx>
+#include "RLBoxHunspell.h"
 #include "mozISpellCheckingEngine.h"
 #include "mozIPersonalDictionary.h"
 #include "nsString.h"
 #include "nsCOMPtr.h"
 #include "nsCOMArray.h"
+#include "nsHashKeys.h"
 #include "nsIMemoryReporter.h"
 #include "nsIObserver.h"
 #include "nsIURI.h"
 #include "mozilla/Encoding.h"
+#include "mozilla/UniquePtr.h"
 #include "nsInterfaceHashtable.h"
 #include "nsWeakReference.h"
+#include "nsTHashMap.h"
 #include "nsCycleCollectionParticipant.h"
 #include "mozHunspellAllocator.h"
 
@@ -100,9 +103,6 @@ class mozHunspell final : public mozISpellCheckingEngine,
 
   void LoadDictionaryList(bool aNotifyChildProcesses);
 
-  
-  nsresult ConvertCharset(const nsAString& aStr, std::string& aDst);
-
   NS_DECL_NSIMEMORYREPORTER
 
  protected:
@@ -111,19 +111,25 @@ class mozHunspell final : public mozISpellCheckingEngine,
   void DictionariesChanged(bool aNotifyChildProcesses);
 
   nsCOMPtr<mozIPersonalDictionary> mPersonalDictionary;
-  mozilla::UniquePtr<mozilla::Encoder> mEncoder;
-  mozilla::UniquePtr<mozilla::Decoder> mDecoder;
 
   
   nsInterfaceHashtable<nsStringHashKey, nsIURI> mDictionaries;
-  nsString mDictionary;
-  nsCString mAffixFileName;
 
   
   nsCOMArray<nsIFile> mDynamicDirectories;
   nsInterfaceHashtable<nsStringHashKey, nsIURI> mDynamicDictionaries;
 
-  Hunspell* mHunspell;
+  struct DictionaryData {
+    mozilla::UniquePtr<mozilla::Encoder> mEncoder;
+    mozilla::UniquePtr<mozilla::Decoder> mDecoder;
+    mozilla::UniquePtr<RLBoxHunspell> mHunspell;
+    nsCString mAffixFileName;
+
+    
+    nsresult ConvertCharset(const nsAString& aStr, std::string& aDst);
+  };
+
+  nsTHashMap<nsCStringHashKey, DictionaryData> mHunspells;
 };
 
 #endif
