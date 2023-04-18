@@ -27,7 +27,6 @@
 #include "js/OffThreadScriptCompilation.h"  
 #include "js/SourceText.h"                  
 #include "js/Transcoding.h"  
-#include "js/UniquePtr.h"  
 
 struct JS_PUBLIC_API JSContext;
 class JS_PUBLIC_API JSTracer;
@@ -41,9 +40,11 @@ struct CompilationGCOutput;
 }  
 }  
 
-namespace JS {
 
-class OffThreadToken;
+
+
+
+namespace JS {
 
 using Stencil = js::frontend::CompilationStencil;
 
@@ -88,42 +89,35 @@ struct InstantiationStorage {
   void trace(JSTracer* trc);
 };
 
+}  
+
+
+
+
+
+namespace JS {
+
 
 
 
 JS_PUBLIC_API void StencilAddRef(Stencil* stencil);
 JS_PUBLIC_API void StencilRelease(Stencil* stencil);
 
+}  
+
+namespace mozilla {
+template <>
+struct RefPtrTraits<JS::Stencil> {
+  static void AddRef(JS::Stencil* stencil) { JS::StencilAddRef(stencil); }
+  static void Release(JS::Stencil* stencil) { JS::StencilRelease(stencil); }
+};
+}  
 
 
 
 
 
-
-extern JS_PUBLIC_API already_AddRefed<Stencil> CompileGlobalScriptToStencil(
-    JSContext* cx, const ReadOnlyCompileOptions& options,
-    SourceText<mozilla::Utf8Unit>& srcBuf);
-extern JS_PUBLIC_API already_AddRefed<Stencil> CompileGlobalScriptToStencil(
-    JSContext* cx, const ReadOnlyCompileOptions& options,
-    SourceText<char16_t>& srcBuf);
-
-
-
-
-
-extern JS_PUBLIC_API already_AddRefed<Stencil> CompileModuleScriptToStencil(
-    JSContext* cx, const ReadOnlyCompileOptions& options,
-    SourceText<mozilla::Utf8Unit>& srcBuf);
-extern JS_PUBLIC_API already_AddRefed<Stencil> CompileModuleScriptToStencil(
-    JSContext* cx, const ReadOnlyCompileOptions& options,
-    SourceText<char16_t>& srcBuf);
-
-
-extern JS_PUBLIC_API JSScript* InstantiateGlobalStencil(
-    JSContext* cx, const InstantiateOptions& options, Stencil* stencil);
-extern JS_PUBLIC_API JSScript* InstantiateGlobalStencil(
-    JSContext* cx, const InstantiateOptions& options, Stencil* stencil,
-    InstantiationStorage* storage);
+namespace JS {
 
 
 
@@ -132,6 +126,56 @@ extern JS_PUBLIC_API bool StencilIsBorrowed(Stencil* stencil);
 
 extern JS_PUBLIC_API bool StencilCanLazilyParse(Stencil* stencil);
 
+extern JS_PUBLIC_API size_t SizeOfStencil(Stencil* stencil,
+                                          mozilla::MallocSizeOf mallocSizeOf);
+
+}  
+
+
+
+
+
+namespace JS {
+
+
+
+
+
+
+
+extern JS_PUBLIC_API already_AddRefed<Stencil> CompileGlobalScriptToStencil(
+    JSContext* cx, const ReadOnlyCompileOptions& options,
+    SourceText<mozilla::Utf8Unit>& srcBuf);
+extern JS_PUBLIC_API already_AddRefed<Stencil> CompileGlobalScriptToStencil(
+    JSContext* cx, const ReadOnlyCompileOptions& options,
+    SourceText<char16_t>& srcBuf);
+
+
+
+
+
+extern JS_PUBLIC_API already_AddRefed<Stencil> CompileModuleScriptToStencil(
+    JSContext* cx, const ReadOnlyCompileOptions& options,
+    SourceText<mozilla::Utf8Unit>& srcBuf);
+extern JS_PUBLIC_API already_AddRefed<Stencil> CompileModuleScriptToStencil(
+    JSContext* cx, const ReadOnlyCompileOptions& options,
+    SourceText<char16_t>& srcBuf);
+
+}  
+
+
+
+
+
+namespace JS {
+
+
+extern JS_PUBLIC_API JSScript* InstantiateGlobalStencil(
+    JSContext* cx, const InstantiateOptions& options, Stencil* stencil);
+extern JS_PUBLIC_API JSScript* InstantiateGlobalStencil(
+    JSContext* cx, const InstantiateOptions& options, Stencil* stencil,
+    InstantiationStorage* storage);
+
 
 
 extern JS_PUBLIC_API JSObject* InstantiateModuleStencil(
@@ -139,6 +183,16 @@ extern JS_PUBLIC_API JSObject* InstantiateModuleStencil(
 extern JS_PUBLIC_API JSObject* InstantiateModuleStencil(
     JSContext* cx, const InstantiateOptions& options, Stencil* stencil,
     InstantiationStorage* storage);
+
+}  
+
+
+
+
+
+namespace JS {
+
+class OffThreadToken;
 
 
 extern JS_PUBLIC_API TranscodeResult EncodeStencil(JSContext* cx,
@@ -151,8 +205,19 @@ extern JS_PUBLIC_API TranscodeResult DecodeStencil(JSContext* cx,
                                                    const TranscodeRange& range,
                                                    Stencil** stencilOut);
 
-extern JS_PUBLIC_API size_t SizeOfStencil(Stencil* stencil,
-                                          mozilla::MallocSizeOf mallocSizeOf);
+
+
+
+extern JS_PUBLIC_API bool StartIncrementalEncoding(JSContext* cx,
+                                                   RefPtr<Stencil>&& stencil);
+
+}  
+
+
+
+
+
+namespace JS {
 
 
 
@@ -198,6 +263,13 @@ extern JS_PUBLIC_API OffThreadToken* DecodeStencilOffThread(
     JSContext* cx, const DecodeOptions& options, const TranscodeRange& range,
     OffThreadCompileCallback callback, void* callbackData);
 
+
+
+
+
+
+
+
 extern JS_PUBLIC_API OffThreadToken* DecodeMultiStencilsOffThread(
     JSContext* cx, const DecodeOptions& options, TranscodeSources& sources,
     OffThreadCompileCallback callback, void* callbackData);
@@ -224,6 +296,7 @@ extern JS_PUBLIC_API bool FinishDecodeMultiStencilsOffThread(
     JSContext* cx, OffThreadToken* token,
     mozilla::Vector<RefPtr<Stencil>>* stencils);
 
+
 extern JS_PUBLIC_API void CancelCompileToStencilOffThread(
     JSContext* cx, OffThreadToken* token);
 
@@ -236,20 +309,6 @@ extern JS_PUBLIC_API void CancelDecodeStencilOffThread(JSContext* cx,
 extern JS_PUBLIC_API void CancelDecodeMultiStencilsOffThread(
     JSContext* cx, OffThreadToken* token);
 
-
-
-
-extern JS_PUBLIC_API bool StartIncrementalEncoding(JSContext* cx,
-                                                   RefPtr<Stencil>&& stencil);
-
-}  
-
-namespace mozilla {
-template <>
-struct RefPtrTraits<JS::Stencil> {
-  static void AddRef(JS::Stencil* stencil) { JS::StencilAddRef(stencil); }
-  static void Release(JS::Stencil* stencil) { JS::StencilRelease(stencil); }
-};
 }  
 
 #endif  
