@@ -1004,11 +1004,6 @@ class ConfigureSandbox(dict):
         
         
         wrapped_os["environ"] = self._environ
-        
-        wrapped_path = {}
-        exec_("from os.path import *", {}, wrapped_path)
-        wrapped_path.update(self.OS.path.__dict__)
-        wrapped_os["path"] = ReadOnlyNamespace(**wrapped_path)
         return ReadOnlyNamespace(**wrapped_os)
 
     @memoized_property
