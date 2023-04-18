@@ -35,6 +35,7 @@
 #include "js/Context.h"
 #include "js/Debug.h"
 #include "js/experimental/CTypes.h"      
+#include "js/experimental/JSStencil.h"   
 #include "js/experimental/SourceHook.h"  
 #include "js/friend/StackLimits.h"       
 #include "js/friend/UsageStatistics.h"   

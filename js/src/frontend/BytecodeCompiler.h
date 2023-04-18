@@ -127,9 +127,9 @@ ModuleObject* CompileModule(JSContext* cx,
 
 
 
-UniquePtr<CompilationStencil> ParseModuleToStencil(
+already_AddRefed<CompilationStencil> ParseModuleToStencil(
     JSContext* cx, CompilationInput& input, JS::SourceText<char16_t>& srcBuf);
-UniquePtr<CompilationStencil> ParseModuleToStencil(
+already_AddRefed<CompilationStencil> ParseModuleToStencil(
     JSContext* cx, CompilationInput& input,
     JS::SourceText<mozilla::Utf8Unit>& srcBuf);
 
