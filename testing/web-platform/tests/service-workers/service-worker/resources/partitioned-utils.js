@@ -58,7 +58,9 @@ function loadAndReturnSwData(t, url, frame_type) {
 }
 
 
-async function setup3pIframe() {
+
+
+async function setupServiceWorker() {
 
   const script = './partitioned-storage-sw.js';
   const scope = './partitioned-';
