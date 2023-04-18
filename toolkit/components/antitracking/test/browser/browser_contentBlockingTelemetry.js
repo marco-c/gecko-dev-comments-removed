@@ -21,6 +21,30 @@ function clearTelemetry() {
   Services.telemetry.getHistogramById("STORAGE_ACCESS_REMAINING_DAYS").clear();
 }
 
+const expectedExpiredDays = getExpectedExpiredDaysFromPref(
+  "privacy.restrict3rdpartystorage.expiration"
+);
+const expectedExpiredDaysRedirect = getExpectedExpiredDaysFromPref(
+  "privacy.restrict3rdpartystorage.expiration_redirect"
+);
+
+function getExpectedExpiredDaysFromPref(pref) {
+  let expiredSecond = Services.prefs.getIntPref(pref);
+
+  
+  if (expiredSecond <= 0) {
+    return 0;
+  }
+
+  
+  
+  
+  
+  
+  
+  return Math.trunc((expiredSecond - 1) / 86400);
+}
+
 async function testTelemetry(
   aProbeInParent,
   aExpectedCnt,
@@ -179,7 +203,7 @@ add_task(async function testTelemetryForStorageAccessAPI() {
 
   
   
-  await testTelemetry(false, 1, LABEL_STORAGE_ACCESS_API, 29);
+  await testTelemetry(false, 1, LABEL_STORAGE_ACCESS_API, expectedExpiredDays);
 });
 
 add_task(async function testTelemetryForWindowOpenHeuristic() {
@@ -254,7 +278,7 @@ add_task(async function testTelemetryForWindowOpenHeuristic() {
 
   
   
-  await testTelemetry(false, 1, LABEL_OPENER, 29);
+  await testTelemetry(false, 1, LABEL_OPENER, expectedExpiredDays);
 });
 
 add_task(async function testTelemetryForUserInteractionHeuristic() {
@@ -340,7 +364,7 @@ add_task(async function testTelemetryForUserInteractionHeuristic() {
   
   
   
-  await testTelemetry(false, 2, LABEL_OPENER_AFTER_UI, 29);
+  await testTelemetry(false, 2, LABEL_OPENER_AFTER_UI, expectedExpiredDays);
 });
 
 add_task(async function testTelemetryForRedirectHeuristic() {
@@ -378,5 +402,5 @@ add_task(async function testTelemetryForRedirectHeuristic() {
 
   
   
-  await testTelemetry(true, 1, LABEL_REDIRECT, 0);
+  await testTelemetry(true, 1, LABEL_REDIRECT, expectedExpiredDaysRedirect);
 });
