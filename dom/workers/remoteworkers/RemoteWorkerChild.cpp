@@ -378,9 +378,7 @@ nsresult RemoteWorkerChild::ExecWorkerOnMainThread(RemoteWorkerData&& aData) {
   
   
   info.mEvalAllowed = true;
-  info.mReportEvalCSPViolations = false;
-  info.mWasmEvalAllowed = true;
-  info.mReportWasmEvalCSPViolations = false;
+  info.mReportCSPViolations = false;
   info.mSecureContext = aData.isSecureContext()
                             ? WorkerLoadInfo::eSecureContext
                             : WorkerLoadInfo::eInsecureContext;

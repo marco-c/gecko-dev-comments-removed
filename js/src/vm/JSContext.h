@@ -818,10 +818,6 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
 
   inline bool runningWithTrustedPrincipals();
 
-  
-  
-  bool isRuntimeCodeGenEnabled(JS::RuntimeCode kind, js::HandleString code);
-
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
   size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 

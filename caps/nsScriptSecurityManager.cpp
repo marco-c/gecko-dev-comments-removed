@@ -448,7 +448,7 @@ NS_IMPL_ISUPPORTS(nsScriptSecurityManager, nsIScriptSecurityManager)
 
 
 bool nsScriptSecurityManager::ContentSecurityPolicyPermitsJSAction(
-    JSContext* cx, JS::RuntimeCode aKind, JS::Handle<JSString*> aCode) {
+    JSContext* cx, JS::HandleString aCode) {
   MOZ_ASSERT(cx == nsContentUtils::GetCurrentJSContext());
 
   
@@ -484,37 +484,30 @@ bool nsScriptSecurityManager::ContentSecurityPolicyPermitsJSAction(
 
   bool evalOK = true;
   bool reportViolation = false;
-  nsAutoJSString scriptSample;
-  if (aKind == JS::RuntimeCode::JS) {
-    nsresult rv = csp->GetAllowsEval(&reportViolation, &evalOK);
+  nsresult rv = csp->GetAllowsEval(&reportViolation, &evalOK);
 
-    
-    
-    
-    
-    if (reportViolation || subjectPrincipal->IsSystemPrincipal() ||
-        XRE_IsE10sParentProcess()) {
-      if (NS_WARN_IF(!scriptSample.init(cx, aCode))) {
-        JS_ClearPendingException(cx);
-        return false;
-      }
+  
+  
+  
+  nsAutoJSString scriptSample;
+  if (reportViolation || subjectPrincipal->IsSystemPrincipal() ||
+      XRE_IsE10sParentProcess()) {
+    if (NS_WARN_IF(!scriptSample.init(cx, aCode))) {
+      JS_ClearPendingException(cx);
+      return false;
     }
+  }
 
 #if !defined(ANDROID)
-    if (!nsContentSecurityUtils::IsEvalAllowed(
-            cx, subjectPrincipal->IsSystemPrincipal(), scriptSample)) {
-      return false;
-    }
+  if (!nsContentSecurityUtils::IsEvalAllowed(
+          cx, subjectPrincipal->IsSystemPrincipal(), scriptSample)) {
+    return false;
+  }
 #endif
 
-    if (NS_FAILED(rv)) {
-      NS_WARNING("CSP: failed to get allowsEval");
-      return true;  
-    }
-  } else {
-    if (NS_FAILED(csp->GetAllowsWasmEval(&reportViolation, &evalOK))) {
-      return false;
-    }
+  if (NS_FAILED(rv)) {
+    NS_WARNING("CSP: failed to get allowsEval");
+    return true;  
   }
 
   if (reportViolation) {
@@ -529,12 +522,7 @@ bool nsScriptSecurityManager::ContentSecurityPolicyPermitsJSAction(
     } else {
       MOZ_ASSERT(!JS_IsExceptionPending(cx));
     }
-
-    uint16_t violationType =
-        aKind == JS::RuntimeCode::JS
-            ? nsIContentSecurityPolicy::VIOLATION_TYPE_EVAL
-            : nsIContentSecurityPolicy::VIOLATION_TYPE_WASM_EVAL;
-    csp->LogViolationDetails(violationType,
+    csp->LogViolationDetails(nsIContentSecurityPolicy::VIOLATION_TYPE_EVAL,
                              nullptr,  
                              cspEventListener, fileName, scriptSample, lineNum,
                              columnNum, u""_ns, u""_ns);

@@ -66,22 +66,11 @@ extern JS_PUBLIC_API void JS_DropPrincipals(JSContext* cx,
 
 typedef bool (*JSSubsumesOp)(JSPrincipals* first, JSPrincipals* second);
 
-namespace JS {
-enum class RuntimeCode { JS, WASM };
-}  
 
 
 
 
-
-
-
-
-
-
-
-typedef bool (*JSCSPEvalChecker)(JSContext* cx, JS::RuntimeCode kind,
-                                 JS::HandleString code);
+typedef bool (*JSCSPEvalChecker)(JSContext* cx, JS::HandleString code);
 
 struct JSSecurityCallbacks {
   JSCSPEvalChecker contentSecurityPolicyAllows;

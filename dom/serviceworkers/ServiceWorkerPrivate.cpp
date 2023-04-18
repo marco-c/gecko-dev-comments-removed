@@ -1759,9 +1759,7 @@ nsresult ServiceWorkerPrivate::SpawnWorkerIfNeeded(WakeUpReason aWhy,
   
   
   info.mEvalAllowed = true;
-  info.mReportEvalCSPViolations = false;
-  info.mWasmEvalAllowed = true;
-  info.mReportWasmEvalCSPViolations = false;
+  info.mReportCSPViolations = false;
 
   WorkerPrivate::OverrideLoadInfoLoadGroup(info, info.mPrincipal);
 

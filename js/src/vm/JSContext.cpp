@@ -1188,18 +1188,6 @@ bool JSContext::isThrowingDebuggeeWouldRun() {
              JSEXN_DEBUGGEEWOULDRUN;
 }
 
-bool JSContext::isRuntimeCodeGenEnabled(JS::RuntimeCode kind,
-                                        HandleString code) {
-  
-  
-  if (JSCSPEvalChecker allows =
-          runtime()->securityCallbacks->contentSecurityPolicyAllows) {
-    return allows(this, kind, code);
-  }
-
-  return true;
-}
-
 size_t JSContext::sizeOfExcludingThis(
     mozilla::MallocSizeOf mallocSizeOf) const {
   

@@ -23,11 +23,6 @@ interface nsIAddonPolicyService : nsISupports
   
 
 
-  readonly attribute AString defaultCSPV3;
-
-  
-
-
   AString getBaseCSP(in AString aAddonId);
 
   
@@ -91,7 +86,6 @@ interface nsIAddonContentPolicy : nsISupports
   const unsigned long CSP_ALLOW_LOCALHOST = (1<<0);
   const unsigned long CSP_ALLOW_EVAL = (1<<1);
   const unsigned long CSP_ALLOW_REMOTE = (1<<2);
-  const unsigned long CSP_ALLOW_WASM = (1<<3);
 
   
 

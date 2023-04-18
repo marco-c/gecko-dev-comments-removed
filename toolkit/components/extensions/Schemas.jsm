@@ -1147,8 +1147,7 @@ const FORMATS = {
     let flags =
       context.manifestVersion < 3
         ? Ci.nsIAddonContentPolicy.CSP_ALLOW_ANY
-        : Ci.nsIAddonContentPolicy.CSP_ALLOW_LOCALHOST |
-          Ci.nsIAddonContentPolicy.CSP_ALLOW_WASM;
+        : Ci.nsIAddonContentPolicy.CSP_ALLOW_LOCALHOST;
     let error = contentPolicyService.validateAddonCSP(string, flags);
     if (error != null) {
       
