@@ -110,107 +110,100 @@ void DocumentOrShadowRoot::RemoveSheetFromStylesIfApplicable(
 }
 
 
-void DocumentOrShadowRoot::SetAdoptedStyleSheets(
-    const Sequence<OwningNonNull<StyleSheet>>& aAdoptedStyleSheets,
-    ErrorResult& aRv) {
+void DocumentOrShadowRoot::OnSetAdoptedStyleSheets(StyleSheet& aSheet,
+                                                   uint32_t aIndex,
+                                                   ErrorResult& aRv) {
   Document& doc = *AsNode().OwnerDoc();
-  for (const OwningNonNull<StyleSheet>& sheet : aAdoptedStyleSheets) {
-    
-    if (!sheet->IsConstructed()) {
-      return aRv.ThrowNotAllowedError(
-          "Each adopted style sheet must be created through the Constructable "
-          "StyleSheets API");
-    }
-    
-    
-    if (!sheet->ConstructorDocumentMatches(doc)) {
-      return aRv.ThrowNotAllowedError(
-          "Each adopted style sheet's constructor document must match the "
-          "document or shadow root's node document");
-    }
+  
+  
+  
+  if (!aSheet.IsConstructed()) {
+    return aRv.ThrowNotAllowedError(
+        "Adopted style sheet must be created through the Constructable "
+        "StyleSheets API");
+  }
+  if (!aSheet.ConstructorDocumentMatches(doc)) {
+    return aRv.ThrowNotAllowedError(
+        "Adopted style sheet's constructor document must match the "
+        "document or shadow root's node document");
   }
 
   auto* shadow = ShadowRoot::FromNode(AsNode());
   MOZ_ASSERT((mKind == Kind::ShadowRoot) == !!shadow);
 
-  StyleSheetSet set(aAdoptedStyleSheets.Length());
-  size_t commonPrefix = 0;
-
+  auto existingIndex = mAdoptedStyleSheets.LastIndexOf(&aSheet);
   
-  
-  size_t min =
-      std::min(aAdoptedStyleSheets.Length(), mAdoptedStyleSheets.Length());
-  for (size_t i = 0; i < min; ++i) {
-    if (aAdoptedStyleSheets[i] != mAdoptedStyleSheets[i]) {
-      break;
-    }
-    ++commonPrefix;
-    set.Insert(mAdoptedStyleSheets[i]);
+  mAdoptedStyleSheets.InsertElementAt(aIndex, &aSheet);
+  if (existingIndex == mAdoptedStyleSheets.NoIndex) {
+    
+    aSheet.AddAdopter(*this);
+  } else if (existingIndex < aIndex) {
+    
+    
+    RemoveSheetFromStylesIfApplicable(aSheet);
+  } else {
+    
+    
+    
+    return;
   }
 
-  
-  
-  
-  if (commonPrefix != mAdoptedStyleSheets.Length()) {
-    StyleSheetSet removedSet(mAdoptedStyleSheets.Length() - commonPrefix);
-    for (size_t i = mAdoptedStyleSheets.Length(); i != commonPrefix; --i) {
-      StyleSheet* sheetToRemove = mAdoptedStyleSheets.ElementAt(i - 1);
-      if (MOZ_UNLIKELY(set.Contains(sheetToRemove))) {
-        
-        
-        set.Clear();
-        
-        
-        commonPrefix = 0;
-      }
-      if (MOZ_LIKELY(removedSet.EnsureInserted(sheetToRemove))) {
-        RemoveSheetFromStylesIfApplicable(*sheetToRemove);
-        sheetToRemove->RemoveAdopter(*this);
-      }
-    }
-    mAdoptedStyleSheets.TruncateLength(commonPrefix);
-  }
-
-  
-  mAdoptedStyleSheets.SetCapacity(aAdoptedStyleSheets.Length());
-
-  
-  for (const auto& sheet : Span(aAdoptedStyleSheets).From(commonPrefix)) {
-    if (MOZ_UNLIKELY(!set.EnsureInserted(sheet))) {
-      
-      
-      
-      RemoveSheetFromStylesIfApplicable(*sheet);
+  if (aSheet.IsApplicable()) {
+    if (mKind == Kind::Document) {
+      doc.AddStyleSheetToStyleSets(aSheet);
     } else {
-      sheet->AddAdopter(*this);
+      shadow->InsertSheetIntoAuthorData(aIndex, aSheet, mAdoptedStyleSheets);
     }
-    mAdoptedStyleSheets.AppendElement(sheet);
-    if (sheet->IsApplicable()) {
-      if (mKind == Kind::Document) {
-        doc.AddStyleSheetToStyleSets(*sheet);
-      } else {
-        shadow->InsertSheetIntoAuthorData(mAdoptedStyleSheets.Length() - 1,
-                                          *sheet, mAdoptedStyleSheets);
-      }
+  }
+}
+
+void DocumentOrShadowRoot::OnDeleteAdoptedStyleSheets(StyleSheet& aSheet,
+                                                      uint32_t aIndex,
+                                                      ErrorResult&) {
+  MOZ_ASSERT(mAdoptedStyleSheets.ElementAt(aIndex) == &aSheet);
+  mAdoptedStyleSheets.RemoveElementAt(aIndex);
+  auto existingIndex = mAdoptedStyleSheets.LastIndexOf(&aSheet);
+  if (existingIndex != mAdoptedStyleSheets.NoIndex && existingIndex >= aIndex) {
+    
+    
+    return;
+  }
+
+  RemoveSheetFromStylesIfApplicable(aSheet);
+  if (existingIndex == mAdoptedStyleSheets.NoIndex) {
+    
+    aSheet.RemoveAdopter(*this);
+  } else if (aSheet.IsApplicable()) {
+    
+    nsINode& node = AsNode();
+    if (mKind == Kind::Document) {
+      node.AsDocument()->AddStyleSheetToStyleSets(aSheet);
+    } else {
+      ShadowRoot::FromNode(node)->InsertSheetIntoAuthorData(
+          existingIndex, aSheet, mAdoptedStyleSheets);
     }
   }
 }
 
 void DocumentOrShadowRoot::ClearAdoptedStyleSheets() {
-  EnumerateUniqueAdoptedStyleSheetsBackToFront([&](StyleSheet& aSheet) {
-    RemoveSheetFromStylesIfApplicable(aSheet);
-    aSheet.RemoveAdopter(*this);
-  });
-  mAdoptedStyleSheets.Clear();
+  auto* shadow = ShadowRoot::FromNode(AsNode());
+  auto* doc = shadow ? nullptr : AsNode().AsDocument();
+  MOZ_ASSERT(shadow || doc);
+  IgnoredErrorResult rv;
+  while (!mAdoptedStyleSheets.IsEmpty()) {
+    if (shadow) {
+      ShadowRoot_Binding::AdoptedStyleSheetsHelpers::RemoveLastElement(shadow,
+                                                                       rv);
+    } else {
+      Document_Binding::AdoptedStyleSheetsHelpers::RemoveLastElement(doc, rv);
+    }
+    MOZ_DIAGNOSTIC_ASSERT(!rv.Failed(), "Removal doesn't fail");
+  }
 }
 
 void DocumentOrShadowRoot::CloneAdoptedSheetsFrom(
     const DocumentOrShadowRoot& aSource) {
   if (!aSource.AdoptedSheetCount()) {
-    return;
-  }
-  Sequence<OwningNonNull<StyleSheet>> list;
-  if (!list.SetCapacity(mAdoptedStyleSheets.Length(), fallible)) {
     return;
   }
 
@@ -220,18 +213,17 @@ void DocumentOrShadowRoot::CloneAdoptedSheetsFrom(
       sourceDoc.GetProperty(nsGkAtoms::adoptedsheetclones));
   MOZ_ASSERT(clonedSheetMap);
 
+  
+  
   for (const StyleSheet* sheet : aSource.mAdoptedStyleSheets) {
     RefPtr<StyleSheet> clone = clonedSheetMap->LookupOrInsertWith(
         sheet, [&] { return sheet->CloneAdoptedSheet(ownerDoc); });
     MOZ_ASSERT(clone);
     MOZ_DIAGNOSTIC_ASSERT(clone->ConstructorDocumentMatches(ownerDoc));
-    DebugOnly<bool> succeeded = list.AppendElement(std::move(clone), fallible);
-    MOZ_ASSERT(succeeded);
+    ErrorResult rv;
+    OnSetAdoptedStyleSheets(*clone, mAdoptedStyleSheets.Length(), rv);
+    MOZ_ASSERT(!rv.Failed());
   }
-
-  ErrorResult rv;
-  SetAdoptedStyleSheets(list, rv);
-  MOZ_ASSERT(!rv.Failed());
 }
 
 Element* DocumentOrShadowRoot::GetElementById(const nsAString& aElementId) {
