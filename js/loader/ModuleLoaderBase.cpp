@@ -8,6 +8,7 @@
 #include "LoadedScript.h"
 #include "ModuleLoadRequest.h"
 #include "ScriptLoadRequest.h"
+#include "mozilla/dom/ScriptSettings.h"  
 #include "mozilla/dom/ScriptTrace.h"
 
 #include "js/Array.h"  
@@ -31,6 +32,7 @@
 
 using mozilla::GetMainThreadSerialEventTarget;
 using mozilla::Preferences;
+using mozilla::UniquePtr;
 using mozilla::dom::AutoJSAPI;
 
 namespace JS::loader {
@@ -1097,6 +1099,50 @@ void ModuleLoaderBase::CancelAndClearDynamicImports() {
     FinishDynamicImportAndReject(req->AsModuleRequest(), NS_ERROR_ABORT);
   }
   mDynamicImportRequests.CancelRequestsAndClear();
+}
+
+UniquePtr<ImportMap> ModuleLoaderBase::ParseImportMap(
+    ScriptLoadRequest* aRequest) {
+  AutoJSAPI jsapi;
+  if (!jsapi.Init(GetGlobalObject())) {
+    return nullptr;
+  }
+
+  MOZ_ASSERT(aRequest->IsTextSource());
+  MaybeSourceText maybeSource;
+  nsresult rv = aRequest->GetScriptSource(jsapi.cx(), &maybeSource);
+  if (NS_FAILED(rv)) {
+    return nullptr;
+  }
+
+  JS::SourceText<char16_t>& text = maybeSource.ref<SourceText<char16_t>>();
+  ReportWarningHelper warning{mLoader, aRequest};
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  return ImportMap::ParseString(jsapi.cx(), text, aRequest->mBaseURL, warning);
+}
+
+void ModuleLoaderBase::RegisterImportMap(UniquePtr<ImportMap> aImportMap) {
+  
+  MOZ_ASSERT(aImportMap);
+
+  
+  
+  mImportMap = std::move(aImportMap);
 }
 
 #undef LOG

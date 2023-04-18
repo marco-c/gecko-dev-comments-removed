@@ -822,7 +822,7 @@ already_AddRefed<ScriptLoadRequest> ScriptLoader::CreateLoadRequest(
       aCORSMode, aReferrerPolicy, aTriggeringPrincipal, domElement);
   RefPtr<ScriptLoadContext> context = new ScriptLoadContext();
 
-  if (aKind == ScriptKind::eClassic) {
+  if (aKind == ScriptKind::eClassic || aKind == ScriptKind::eImportMap) {
     RefPtr<ScriptLoadRequest> aRequest = new ScriptLoadRequest(
         aKind, aURI, fetchOptions, aIntegrity, referrer, context);
 
@@ -1166,6 +1166,29 @@ bool ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
 
     return false;
   }
+
+  if (request->IsImportMapRequest()) {
+    UniquePtr<ImportMap> importMap = mModuleLoader->ParseImportMap(request);
+
+    
+    
+    
+    
+    if (!importMap) {
+      NS_DispatchToCurrentThread(
+          NewRunnableMethod("nsIScriptElement::FireErrorEvent", aElement,
+                            &nsIScriptElement::FireErrorEvent));
+      return false;
+    }
+
+    
+    MOZ_ASSERT(aElement->GetScriptIsImportMap());
+
+    
+    mModuleLoader->RegisterImportMap(std::move(importMap));
+    return false;
+  }
+
   request->mState = ScriptLoadRequest::State::Ready;
   if (aElement->GetParserCreated() == FROM_PARSER_XSLT &&
       (!ReadyToExecuteParserBlockingScripts() || !mXSLTRequests.isEmpty())) {
@@ -2992,6 +3015,19 @@ void ScriptLoader::ReportErrorToConsole(ScriptLoadRequest* aRequest,
                                   "Script Loader"_ns, mDocument,
                                   nsContentUtils::eDOM_PROPERTIES, message,
                                   params, nullptr, u""_ns, lineNo, columnNo);
+}
+
+void ScriptLoader::ReportWarningToConsole(
+    ScriptLoadRequest* aRequest, const char* aMessageName,
+    const nsTArray<nsString>& aParams) const {
+  nsIScriptElement* element =
+      aRequest->GetScriptLoadContext()->GetScriptElement();
+  uint32_t lineNo = element ? element->GetScriptLineNumber() : 0;
+  uint32_t columnNo = element ? element->GetScriptColumnNumber() : 0;
+  nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
+                                  "Script Loader"_ns, mDocument,
+                                  nsContentUtils::eDOM_PROPERTIES, aMessageName,
+                                  aParams, nullptr, u""_ns, lineNo, columnNo);
 }
 
 void ScriptLoader::ReportPreloadErrorsToConsole(ScriptLoadRequest* aRequest) {

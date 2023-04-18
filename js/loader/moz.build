@@ -5,6 +5,7 @@
 
 
 EXPORTS.js.loader += [
+    "ImportMap.h",
     "LoadContextBase.h",
     "LoadedScript.h",
     "ModuleLoaderBase.h",
@@ -14,6 +15,7 @@ EXPORTS.js.loader += [
 ]
 
 UNIFIED_SOURCES += [
+    "ImportMap.cpp",
     "LoadContextBase.cpp",
     "LoadedScript.cpp",
     "ModuleLoaderBase.cpp",
