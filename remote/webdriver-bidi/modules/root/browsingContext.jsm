@@ -160,7 +160,7 @@ class BrowsingContextModule extends Module {
 
 
   getTree(options = {}) {
-    const { maxDepth = null, parent: parentId = null } = options;
+    const { maxDepth = null, root: rootId = null } = options;
 
     if (maxDepth !== null) {
       assert.positiveInteger(
@@ -170,16 +170,11 @@ class BrowsingContextModule extends Module {
     }
 
     let contexts;
-    if (parentId !== null) {
+    if (rootId !== null) {
       
       
-
-      assert.string(
-        parentId,
-        `Expected "parent" to be a string, got ${parentId}`
-      );
-
-      contexts = [this.#getBrowsingContext(parentId)];
+      assert.string(rootId, `Expected "root" to be a string, got ${rootId}`);
+      contexts = [this.#getBrowsingContext(rootId)];
     } else {
       
       contexts = TabManager.browsers.map(browser => browser.browsingContext);
