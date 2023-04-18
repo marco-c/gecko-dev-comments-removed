@@ -338,7 +338,17 @@ void FrameAnimator::ResetAnimation(AnimationState& aState) {
 
   
   
-  aState.UpdateState(mImage, mSize);
+  OrientedIntRect rect =
+      OrientedIntRect::FromUnknownRect(aState.UpdateState(mImage, mSize));
+
+  if (!rect.IsEmpty()) {
+    nsCOMPtr<nsIEventTarget> eventTarget = do_GetMainThread();
+    RefPtr<RasterImage> image = mImage;
+    nsCOMPtr<nsIRunnable> ev = NS_NewRunnableFunction(
+        "FrameAnimator::ResetAnimation",
+        [=]() -> void { image->NotifyProgress(NoProgress, rect); });
+    eventTarget->Dispatch(ev.forget(), NS_DISPATCH_NORMAL);
+  }
 }
 
 RefreshResult FrameAnimator::RequestRefresh(AnimationState& aState,
