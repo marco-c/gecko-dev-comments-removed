@@ -686,6 +686,17 @@ struct DelazifyTask : public mozilla::LinkedListElement<DelazifyTask>,
       JSContext* cx, const JS::ReadOnlyCompileOptions& options,
       UniquePtr<frontend::ExtensibleCompilationStencil>&& initial);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool isInterrupted() { return false; }
+
   bool runtimeMatches(JSRuntime* rt) { return runtime == rt; }
 
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;

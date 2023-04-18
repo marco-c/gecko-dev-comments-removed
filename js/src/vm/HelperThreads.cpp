@@ -1029,6 +1029,8 @@ void DelazifyTask::runHelperThreadTask(AutoLockHelperThreadState& lock) {
 
   
   
+  
+  
   if (!strategy->done()) {
     HelperThreadState().submitTask(this, lock);
   } else {
@@ -1045,50 +1047,52 @@ bool DelazifyTask::runTask(JSContext* cx) {
   gc::AutoSuppressNurseryCellAlloc noNurseryAlloc(cx);
 
   using namespace js::frontend;
-  RefPtr<CompilationStencil> innerStencil;
-  ScriptIndex scriptIndex = strategy->next();
-  {
-    BorrowingCompilationStencil borrow(merger.getResult());
+  while (!strategy->done() || isInterrupted()) {
+    RefPtr<CompilationStencil> innerStencil;
+    ScriptIndex scriptIndex = strategy->next();
+    {
+      BorrowingCompilationStencil borrow(merger.getResult());
 
-    
-    ScriptStencilRef scriptRef{borrow, scriptIndex};
-    MOZ_ASSERT(!scriptRef.scriptData().isGhost());
-    MOZ_ASSERT(!scriptRef.scriptData().hasSharedData());
+      
+      ScriptStencilRef scriptRef{borrow, scriptIndex};
+      MOZ_ASSERT(!scriptRef.scriptData().isGhost());
+      MOZ_ASSERT(!scriptRef.scriptData().hasSharedData());
 
-    
-    innerStencil = DelazifyCanonicalScriptedFunction(cx, borrow, scriptIndex);
-    if (!innerStencil) {
-      return false;
-    }
-
-    
-    
-    StencilCache& cache = runtime->caches().delazificationCache;
-    StencilContext key(borrow.source, scriptRef.scriptExtra().extent);
-    if (auto guard = cache.isSourceCached(borrow.source)) {
-      if (!cache.putNew(guard, key, innerStencil.get())) {
-        ReportOutOfMemory(cx);
+      
+      innerStencil = DelazifyCanonicalScriptedFunction(cx, borrow, scriptIndex);
+      if (!innerStencil) {
         return false;
       }
-    } else {
+
       
       
-      strategy->clear();
-      return true;
+      StencilCache& cache = runtime->caches().delazificationCache;
+      StencilContext key(borrow.source, scriptRef.scriptExtra().extent);
+      if (auto guard = cache.isSourceCached(borrow.source)) {
+        if (!cache.putNew(guard, key, innerStencil.get())) {
+          ReportOutOfMemory(cx);
+          return false;
+        }
+      } else {
+        
+        
+        strategy->clear();
+        return true;
+      }
     }
-  }
 
-  
-  
-  
-  if (!merger.addDelazification(cx, *innerStencil)) {
-    return false;
-  }
-
-  {
-    BorrowingCompilationStencil borrow(merger.getResult());
-    if (!strategy->add(cx, borrow, scriptIndex)) {
+    
+    
+    
+    if (!merger.addDelazification(cx, *innerStencil)) {
       return false;
+    }
+
+    {
+      BorrowingCompilationStencil borrow(merger.getResult());
+      if (!strategy->add(cx, borrow, scriptIndex)) {
+        return false;
+      }
     }
   }
 
