@@ -453,7 +453,6 @@ enum class Op {
   RefEq = 0xd5,
 
   FirstPrefix = 0xfa,
-  IntrinsicPrefix = 0xfa,
   GcPrefix = 0xfb,
   MiscPrefix = 0xfc,
   SimdPrefix = 0xfd,
@@ -940,7 +939,8 @@ enum class ThreadOp {
   Limit
 };
 
-enum class IntrinsicOp {
+enum class IntrinsicId {
+
 
 
 
@@ -993,6 +993,10 @@ enum class MozOp {
   
   OldCallDirect,
   OldCallIndirect,
+
+  
+  
+  Intrinsic,
 
   Limit
 };

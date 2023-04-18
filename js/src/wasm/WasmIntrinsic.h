@@ -46,11 +46,11 @@ struct Intrinsic {
   bool funcType(FuncType* type) const;
 
   
-  static const Intrinsic& getFromOp(IntrinsicOp op);
+  static const Intrinsic& getFromId(IntrinsicId id);
 };
 
 
-bool CompileIntrinsicModule(JSContext* cx, const mozilla::Span<IntrinsicOp> ops,
+bool CompileIntrinsicModule(JSContext* cx, const mozilla::Span<IntrinsicId> ids,
                             Shareable sharedMemory,
                             MutableHandleWasmModuleObject result);
 

@@ -54,10 +54,10 @@ bool Intrinsic::funcType(FuncType* type) const {
 }
 
 
-const Intrinsic& Intrinsic::getFromOp(IntrinsicOp op) {
-  switch (op) {
+const Intrinsic& Intrinsic::getFromId(IntrinsicId id) {
+  switch (id) {
 #define OP(op, export, sa_name, abitype, entry, idx) \
-  case IntrinsicOp::op:                              \
+  case IntrinsicId::op:                              \
     return Intrinsic##op;
     FOR_EACH_INTRINSIC(OP)
 #undef OP
@@ -66,7 +66,7 @@ const Intrinsic& Intrinsic::getFromOp(IntrinsicOp op) {
   }
 }
 
-bool EncodeIntrinsicBody(const Intrinsic& intrinsic, IntrinsicOp op,
+bool EncodeIntrinsicBody(const Intrinsic& intrinsic, IntrinsicId id,
                          Bytes* body) {
   Encoder encoder(*body);
   if (!EncodeLocalEntries(encoder, ValTypeVector())) {
@@ -77,7 +77,10 @@ bool EncodeIntrinsicBody(const Intrinsic& intrinsic, IntrinsicOp op,
       return false;
     }
   }
-  if (!encoder.writeOp(op)) {
+  if (!encoder.writeOp(MozOp::Intrinsic)) {
+    return false;
+  }
+  if (!encoder.writeVarU32(uint32_t(id))) {
     return false;
   }
   if (!encoder.writeOp(Op::End)) {
@@ -87,7 +90,7 @@ bool EncodeIntrinsicBody(const Intrinsic& intrinsic, IntrinsicOp op,
 }
 
 bool wasm::CompileIntrinsicModule(JSContext* cx,
-                                  const mozilla::Span<IntrinsicOp> ops,
+                                  const mozilla::Span<IntrinsicId> ids,
                                   Shareable sharedMemory,
                                   MutableHandleWasmModuleObject result) {
   
@@ -121,15 +124,15 @@ bool wasm::CompileIntrinsicModule(JSContext* cx,
   moduleEnv.memory = Some(MemoryDesc(Limits(0, Nothing(), sharedMemory)));
 
   
-  if (!moduleEnv.initTypes(ops.size())) {
+  if (!moduleEnv.initTypes(ids.size())) {
     return false;
   }
 
   
   
-  for (uint32_t funcIndex = 0; funcIndex < ops.size(); funcIndex++) {
-    const IntrinsicOp& op = ops[funcIndex];
-    const Intrinsic& intrinsic = Intrinsic::getFromOp(op);
+  for (uint32_t funcIndex = 0; funcIndex < ids.size(); funcIndex++) {
+    const IntrinsicId& id = ids[funcIndex];
+    const Intrinsic& intrinsic = Intrinsic::getFromId(id);
 
     FuncType type;
     if (!intrinsic.funcType(&type)) {
@@ -142,7 +145,7 @@ bool wasm::CompileIntrinsicModule(JSContext* cx,
   
   
   
-  for (uint32_t funcIndex = 0; funcIndex < ops.size(); funcIndex++) {
+  for (uint32_t funcIndex = 0; funcIndex < ids.size(); funcIndex++) {
     FuncDesc decl(&(*moduleEnv.types)[funcIndex].funcType(),
                   &moduleEnv.typeIds[funcIndex], funcIndex);
     if (!moduleEnv.funcs.append(decl)) {
@@ -153,8 +156,8 @@ bool wasm::CompileIntrinsicModule(JSContext* cx,
   }
 
   
-  for (uint32_t funcIndex = 0; funcIndex < ops.size(); funcIndex++) {
-    const Intrinsic& intrinsic = Intrinsic::getFromOp(ops[funcIndex]);
+  for (uint32_t funcIndex = 0; funcIndex < ids.size(); funcIndex++) {
+    const Intrinsic& intrinsic = Intrinsic::getFromId(ids[funcIndex]);
 
     UniqueChars exportString = DuplicateString(intrinsic.exportName);
     if (!exportString ||
@@ -176,13 +179,13 @@ bool wasm::CompileIntrinsicModule(JSContext* cx,
 
   
   Vector<Bytes, 1, SystemAllocPolicy> bodies;
-  if (!bodies.reserve(ops.size())) {
+  if (!bodies.reserve(ids.size())) {
     ReportOutOfMemory(cx);
     return false;
   }
-  for (uint32_t funcIndex = 0; funcIndex < ops.size(); funcIndex++) {
-    IntrinsicOp op = ops[funcIndex];
-    const Intrinsic& intrinsic = Intrinsic::getFromOp(ops[funcIndex]);
+  for (uint32_t funcIndex = 0; funcIndex < ids.size(); funcIndex++) {
+    IntrinsicId id = ids[funcIndex];
+    const Intrinsic& intrinsic = Intrinsic::getFromId(ids[funcIndex]);
 
     
     
@@ -191,7 +194,7 @@ bool wasm::CompileIntrinsicModule(JSContext* cx,
 
     
     
-    if (!EncodeIntrinsicBody(intrinsic, op, &bytecode) ||
+    if (!EncodeIntrinsicBody(intrinsic, id, &bytecode) ||
         !mg.compileFuncDef(funcIndex, 0, bytecode.begin(),
                            bytecode.begin() + bytecode.length())) {
       
