@@ -32,23 +32,13 @@ bool GdkIsX11Display();
 
 GdkDevice* GdkGetPointer();
 
+
+const char* GetSnapInstanceName();
+inline bool IsRunningUnderSnap() { return !!GetSnapInstanceName(); }
 bool IsRunningUnderFlatpak();
-
-
-
-
-
-#ifdef MOZ_APP_NAME
-#  define SNAP_INSTANCE_NAME MOZ_APP_NAME
-#endif
-
-bool IsRunningUnderSnap();
 inline bool IsRunningUnderFlatpakOrSnap() {
   return IsRunningUnderFlatpak() || IsRunningUnderSnap();
 }
-
-
-const char* GetSnapInstanceName();
 
 enum class PortalKind {
   FilePicker,
