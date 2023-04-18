@@ -349,6 +349,8 @@ moz_linker = dependable(False)
 
 fold_libs = dependable(False)
 
+dmd = dependable(False)
+
 include(include_project_configure)
 
 
