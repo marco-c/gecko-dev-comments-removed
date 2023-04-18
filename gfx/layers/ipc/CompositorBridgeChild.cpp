@@ -116,7 +116,11 @@ void CompositorBridgeChild::AfterDestroy() {
   
   
   if (!mActorDestroyed) {
-    Send__delete__(this);
+    
+    
+    if (GetIPCChannel()->CanSend()) {
+      Send__delete__(this);
+    }
     mActorDestroyed = true;
   }
 
