@@ -78,7 +78,7 @@ check_and_add_warning(
 add_warning("-Wno-invalid-offsetof", cxx_compiler)
 
 
-check_and_add_warning("-Wclass-varargs", when=not_clang_cl)
+check_and_add_warning("-Wclass-varargs")
 
 
 check_and_add_warning("-Wempty-init-stmt", cxx_compiler)
