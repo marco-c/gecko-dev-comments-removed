@@ -399,8 +399,7 @@ class ScrollFrameHelper : public nsIReflowCallback {
   nsIFrame* GetFrameForStyle() const;
 
   
-  ScrollSnapInfo ComputeScrollSnapInfo(
-      const Maybe<nsPoint>& aDestination) const;
+  ScrollSnapInfo ComputeScrollSnapInfo() const;
 
   bool NeedsScrollSnap() const;
 
@@ -470,11 +469,7 @@ class ScrollFrameHelper : public nsIReflowCallback {
 
   bool UsesOverlayScrollbars() const;
 
-  
-  
-  
-  ScrollSnapInfo GetScrollSnapInfo(
-      const mozilla::Maybe<nsPoint>& aDestination) const;
+  ScrollSnapInfo GetScrollSnapInfo() const;
 
   static bool ShouldActivateAllScrollFrames();
   nsRect RestrictToRootDisplayPort(const nsRect& aDisplayportBase);
@@ -1235,7 +1230,7 @@ class nsHTMLScrollFrame : public nsContainerFrame,
   }
 
   ScrollSnapInfo GetScrollSnapInfo() const final {
-    return mHelper.GetScrollSnapInfo(Nothing());
+    return mHelper.GetScrollSnapInfo();
   }
 
   bool DragScroll(mozilla::WidgetEvent* aEvent) final {
@@ -1707,7 +1702,7 @@ class nsXULScrollFrame final : public nsBoxFrame,
   }
 
   ScrollSnapInfo GetScrollSnapInfo() const final {
-    return mHelper.GetScrollSnapInfo(Nothing());
+    return mHelper.GetScrollSnapInfo();
   }
 
   bool DragScroll(mozilla::WidgetEvent* aEvent) final {
