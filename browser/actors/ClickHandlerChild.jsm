@@ -58,17 +58,15 @@ class ClickHandlerChild extends JSWindowActorChild {
     }
 
     
-    
-    
-    if (!event.isTrusted && !ownerDoc.consumeTransientUserGestureActivation()) {
-      return;
-    }
-
-    
     if (event.button == 0) {
       if (ownerDoc.documentURI.startsWith("about:blocked")) {
         return;
       }
+    }
+
+    
+    if (!event.isTrusted && !ownerDoc.hasValidTransientUserGestureActivation) {
+      return;
     }
 
     let [href, node, principal] = BrowserUtils.hrefAndLinkNodeForClickEvent(
@@ -117,6 +115,26 @@ class ClickHandlerChild extends JSWindowActorChild {
         );
       } catch (e) {
         return;
+      }
+
+      if (
+        !event.isTrusted &&
+        BrowserUtils.whereToOpenLink(event) != "current"
+      ) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        ownerDoc.consumeTransientUserGestureActivation();
+        
+        
+        
       }
 
       json.href = href;

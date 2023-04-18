@@ -14,6 +14,7 @@ var { XPCOMUtils } = ChromeUtils.import(
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   AboutNewTab: "resource:///modules/AboutNewTab.jsm",
+  BrowserUtils: "resource://gre/modules/BrowserUtils.jsm",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
   ContextualIdentityService:
     "resource://gre/modules/ContextualIdentityService.jsm",
@@ -162,92 +163,13 @@ function openUILink(
 }
 
 
-
 function getRootEvent(aEvent) {
-  
-  
-  
-  if (!aEvent) {
-    return aEvent;
-  }
-  let tempEvent = aEvent;
-  while (tempEvent.sourceEvent) {
-    if (tempEvent.sourceEvent.button == 1) {
-      aEvent = tempEvent.sourceEvent;
-      break;
-    }
-    tempEvent = tempEvent.sourceEvent;
-  }
-  return aEvent;
+  return BrowserUtils.getRootEvent(aEvent);
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 function whereToOpenLink(e, ignoreButton, ignoreAlt) {
-  
-  
-  
-  if (!e) {
-    return "current";
-  }
-
-  e = getRootEvent(e);
-
-  var shift = e.shiftKey;
-  var ctrl = e.ctrlKey;
-  var meta = e.metaKey;
-  var alt = e.altKey && !ignoreAlt;
-
-  
-  let middle = !ignoreButton && e.button == 1;
-  let middleUsesTabs = Services.prefs.getBoolPref(
-    "browser.tabs.opentabfor.middleclick",
-    true
-  );
-  let middleUsesNewWindow = Services.prefs.getBoolPref(
-    "middlemouse.openNewWindow",
-    false
-  );
-
-  
-
-  var metaKey = AppConstants.platform == "macosx" ? meta : ctrl;
-  if (metaKey || (middle && middleUsesTabs)) {
-    return shift ? "tabshifted" : "tab";
-  }
-
-  if (alt && Services.prefs.getBoolPref("browser.altClickSave", false)) {
-    return "save";
-  }
-
-  if (shift || (middle && !middleUsesTabs && middleUsesNewWindow)) {
-    return "window";
-  }
-
-  return "current";
+  return BrowserUtils.whereToOpenLink(e, ignoreButton, ignoreAlt);
 }
 
 

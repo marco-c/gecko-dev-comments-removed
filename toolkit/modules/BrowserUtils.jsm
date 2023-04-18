@@ -7,6 +7,9 @@
 
 var EXPORTED_SYMBOLS = ["BrowserUtils"];
 
+const { AppConstants } = ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm"
+);
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
@@ -204,6 +207,95 @@ var BrowserUtils = {
       null,
       node && node.ownerDocument.nodePrincipal,
     ];
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  whereToOpenLink(e, ignoreButton, ignoreAlt) {
+    
+    
+    
+    if (!e) {
+      return "current";
+    }
+
+    e = this.getRootEvent(e);
+
+    var shift = e.shiftKey;
+    var ctrl = e.ctrlKey;
+    var meta = e.metaKey;
+    var alt = e.altKey && !ignoreAlt;
+
+    
+    let middle = !ignoreButton && e.button == 1;
+    let middleUsesTabs = Services.prefs.getBoolPref(
+      "browser.tabs.opentabfor.middleclick",
+      true
+    );
+    let middleUsesNewWindow = Services.prefs.getBoolPref(
+      "middlemouse.openNewWindow",
+      false
+    );
+
+    
+
+    var metaKey = AppConstants.platform == "macosx" ? meta : ctrl;
+    if (metaKey || (middle && middleUsesTabs)) {
+      return shift ? "tabshifted" : "tab";
+    }
+
+    if (alt && Services.prefs.getBoolPref("browser.altClickSave", false)) {
+      return "save";
+    }
+
+    if (shift || (middle && !middleUsesTabs && middleUsesNewWindow)) {
+      return "window";
+    }
+
+    return "current";
+  },
+
+  
+  
+  getRootEvent(aEvent) {
+    
+    
+    
+    if (!aEvent) {
+      return aEvent;
+    }
+    let tempEvent = aEvent;
+    while (tempEvent.sourceEvent) {
+      if (tempEvent.sourceEvent.button == 1) {
+        aEvent = tempEvent.sourceEvent;
+        break;
+      }
+      tempEvent = tempEvent.sourceEvent;
+    }
+    return aEvent;
   },
 };
 
