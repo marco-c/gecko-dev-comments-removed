@@ -591,14 +591,15 @@ class EditorBase : public nsIEditor,
 
 
 
-  virtual Element* FindSelectionRoot(nsINode* aNode) const;
+  [[nodiscard]] virtual Element* FindSelectionRoot(const nsINode& aNode) const;
 
   
 
 
 
 
-  MOZ_CAN_RUN_SCRIPT void OnFocus(nsINode& aFocusEventTargetNode);
+
+  MOZ_CAN_RUN_SCRIPT void OnFocus(const nsINode& aOriginalEventTargetNode);
 
   
 
@@ -2431,7 +2432,11 @@ class EditorBase : public nsIEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT nsresult InitializeSelection(nsINode& aFocusEventTarget);
+
+
+
+  MOZ_CAN_RUN_SCRIPT nsresult
+  InitializeSelection(const nsINode& aOriginalEventTargetNode);
 
   enum NotificationForEditorObservers {
     eNotifyEditorObserversOfEnd,
