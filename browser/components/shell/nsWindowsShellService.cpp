@@ -3,6 +3,8 @@
 
 
 
+#define UNICODE
+
 #include "nsWindowsShellService.h"
 
 #include "BinaryPath.h"
