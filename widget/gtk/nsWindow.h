@@ -441,42 +441,14 @@ class nsWindow final : public nsBaseWidget {
   void DispatchDeactivateEvent(void);
   void MaybeDispatchResized();
 
-  virtual void RegisterTouchWindow() override;
-  virtual bool CompositorInitiallyPaused() override {
+  void RegisterTouchWindow() override;
+  bool CompositorInitiallyPaused() override {
     return mCompositorState == COMPOSITOR_PAUSED_INITIALLY;
   }
   nsCOMPtr<nsIWidget> mParent;
-  
-  bool mIsDestroyed;
-  
-  bool mNeedsDispatchResized;
-  
-  
-  bool mIsShown;
-  
-  
-  
-  
-  
-  bool mNeedsShow;
-  
-  
-  bool mIsMapped;
-  
-  bool mEnabled;
-  
-  bool mCreated;
-  
-  bool mHandleTouchEvent;
-  
-  bool mIsDragPopup;
-  nsPopupType mPopupHint;
-  bool mWindowScaleFactorChanged;
-  int mWindowScaleFactor;
-  bool mCompositedScreen;
-  bool mIsAccelerated;
+  nsPopupType mPopupHint{};
+  int mWindowScaleFactor = 1;
 
- private:
   void UpdateAlpha(mozilla::gfx::SourceSurface* aSourceSurface,
                    nsIntRect aBoundsRect);
 
@@ -540,26 +512,24 @@ class nsWindow final : public nsBaseWidget {
   nsCString mGtkWindowRoleName;
   void RefreshWindowClass();
 
-  GtkWidget* mShell;
-  MozContainer* mContainer;
-  GdkWindow* mGdkWindow;
-  bool mWindowShouldStartDragging;
-  PlatformCompositorWidgetDelegate* mCompositorWidgetDelegate;
-  mozilla::Atomic<WindowCompositorState, mozilla::Relaxed> mCompositorState;
+  GtkWidget* mShell = nullptr;
+  MozContainer* mContainer = nullptr;
+  GdkWindow* mGdkWindow = nullptr;
+  PlatformCompositorWidgetDelegate* mCompositorWidgetDelegate = nullptr;
+  mozilla::Atomic<WindowCompositorState, mozilla::Relaxed> mCompositorState{
+      COMPOSITOR_ENABLED};
   
   
-  int mCompositorPauseTimeoutID;
+  int mCompositorPauseTimeoutID = 0;
 
-  uint32_t mHasMappedToplevel : 1, mRetryPointerGrab : 1;
-  nsSizeMode mSizeState;
-  float mAspectRatio;
-  float mAspectRatioSaved;
+  nsSizeMode mSizeState = nsSizeMode_Normal;
+  float mAspectRatio = 0.0f;
+  float mAspectRatioSaved = 0.0f;
   nsIntPoint mClientOffset;
 
   
-  guint32 mLastScrollEventTime;
+  guint32 mLastScrollEventTime = GDK_CURRENT_TIME;
   mozilla::ScreenCoord mLastPinchEventSpan;
-  bool mPanInProgress = false;
 
   
   nsRefPtrHashtable<nsPtrHashKey<GdkEventSequence>, mozilla::dom::Touch>
@@ -567,64 +537,170 @@ class nsWindow final : public nsBaseWidget {
 
   
   
-  unsigned int mPendingConfigures;
+  unsigned int mPendingConfigures = 0;
 
   
   
-  GtkWindowDecoration mGtkWindowDecoration;
-  
-  bool mDrawToContainer;
-  
-  bool mDrawInTitlebar;
-  
-  bool mTitlebarBackdropState;
+  GtkWindowDecoration mGtkWindowDecoration = GTK_DECORATION_NONE;
+
   
   LayoutDeviceIntRegion mDraggableRegion;
-  
-  bool mIsPIPWindow;
-  
-  
-  
-  bool mIsWaylandPanelWindow;
-  
-  
-  
-  bool mIsChildWindow;
-  bool mAlwaysOnTop;
-  bool mNoAutoHide;
-  bool mMouseTransparent;
 
   
   static GdkCursor* gsGtkCursorCache[eCursorCount];
 
   
-  bool mIsTransparent;
+  bool mIsDestroyed : 1;
+  
+  bool mNeedsDispatchResized : 1;
+  
+  
+  bool mIsShown : 1;
   
   
   
-  gchar* mTransparencyBitmap;
-  int32_t mTransparencyBitmapWidth;
-  int32_t mTransparencyBitmapHeight;
   
   
-  bool mTransparencyBitmapForTitlebar;
+  bool mNeedsShow : 1;
+  
+  
+  bool mIsMapped : 1;
+  
+  bool mEnabled : 1;
+  
+  bool mCreated : 1;
+  
+  bool mHandleTouchEvent : 1;
+  
+  bool mIsDragPopup : 1;
+  bool mWindowScaleFactorChanged : 1;
+  bool mCompositedScreen : 1;
+  bool mIsAccelerated : 1;
+  bool mWindowShouldStartDragging : 1;
+  bool mHasMappedToplevel : 1;
+  bool mRetryPointerGrab : 1;
+  bool mPanInProgress : 1;
+  
+  bool mDrawToContainer : 1;
+  
+  bool mDrawInTitlebar : 1;
+  
+  bool mTitlebarBackdropState : 1;
+  
+  bool mIsPIPWindow : 1;
+  
+  
+  
+  bool mIsWaylandPanelWindow : 1;
+  
+  
+  
+  bool mIsChildWindow : 1;
+  bool mAlwaysOnTop : 1;
+  bool mNoAutoHide : 1;
+  bool mMouseTransparent : 1;
+  bool mIsTransparent : 1;
+  
+  
+  
+  bool mBoundsAreValid : 1;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  bool mPopupTrackInHierarchy : 1;
+  bool mPopupTrackInHierarchyConfigured : 1;
+
+  
+
+
+
+  bool mHiddenPopupPositioned : 1;
 
   
   
-  bool mHasAlphaVisual;
+  bool mTransparencyBitmapForTitlebar : 1;
+
+  
+  
+  bool mHasAlphaVisual : 1;
+
+  
+  bool mPopupAnchored : 1;
+
+  
+  bool mPopupContextMenu : 1;
+
+  
+  
+  bool mPopupMatchesLayout : 1;
+
+  
+
+
+  bool mPopupChanged : 1;
+
+  
+  bool mPopupTemporaryHidden : 1;
+
+  
+  bool mPopupClosed : 1;
+
+  
+  bool mPopupUseMoveToRect : 1;
+
+  bool mPreferredPopupRectFlushed : 1;
+  
+
+
+
+
+
+  bool mWaitingForMoveToRectCallback : 1;
+
+  
+  
+  
+  gchar* mTransparencyBitmap = nullptr;
+  int32_t mTransparencyBitmapWidth = 0;
+  int32_t mTransparencyBitmapHeight = 0;
 
   
   void InitDragEvent(mozilla::WidgetDragEvent& aEvent);
 
-  float mLastMotionPressure;
+  float mLastMotionPressure = 0.0f;
 
   
   
-  nsSizeMode mLastSizeMode;
-  
-  
-  
-  bool mBoundsAreValid;
+  nsSizeMode mLastSizeMode = nsSizeMode_Normal;
 
   static bool DragInProgress(void);
 
@@ -704,85 +780,15 @@ class nsWindow final : public nsBaseWidget {
   
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  bool mPopupTrackInHierarchy;
-  bool mPopupTrackInHierarchyConfigured;
+  GdkPoint mPopupPosition{};
 
   
 
-
-
-  bool mHiddenPopupPositioned;
+  GdkPoint mRelativePopupPosition{};
 
   
 
-
-  GdkPoint mPopupPosition;
-
-  
-
-  bool mPopupAnchored;
-
-  
-
-  bool mPopupContextMenu;
-
-  
-
-  GdkPoint mRelativePopupPosition;
-
-  
-
-  GdkPoint mRelativePopupOffset;
-
-  
-
-
-  bool mPopupMatchesLayout;
-
-  
-
-
-  bool mPopupChanged;
-
-  
-
-  bool mPopupTemporaryHidden;
-
-  
-
-  bool mPopupClosed;
-
-  
-
-  bool mPopupUseMoveToRect;
+  GdkPoint mRelativePopupOffset{};
 
   
 
@@ -799,18 +805,8 @@ class nsWindow final : public nsBaseWidget {
   RefPtr<nsWindow> mWaylandPopupPrev;
 
   
-
-
   nsRect mPreferredPopupRect;
-  bool mPreferredPopupRectFlushed;
 
-  
-
-
-
-
-
-  bool mWaitingForMoveToRectCallback;
   LayoutDeviceIntRect mNewBoundsAfterMoveToRect;
 
   
@@ -889,9 +885,9 @@ class nsWindow final : public nsBaseWidget {
 #ifdef MOZ_WAYLAND
   RefPtr<mozilla::gfx::VsyncSource> mWaylandVsyncSource;
   LayoutDeviceIntPoint mNativePointerLockCenter;
-  zwp_locked_pointer_v1* mLockedPointer;
-  zwp_relative_pointer_v1* mRelativePointer;
-  xdg_activation_token_v1* mXdgToken;
+  zwp_locked_pointer_v1* mLockedPointer = nullptr;
+  zwp_relative_pointer_v1* mRelativePointer = nullptr;
+  xdg_activation_token_v1* mXdgToken = nullptr;
 #endif
   mozilla::widget::WindowSurfaceProvider mSurfaceProvider;
 };
