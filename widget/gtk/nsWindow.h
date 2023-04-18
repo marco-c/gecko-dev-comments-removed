@@ -503,7 +503,8 @@ class nsWindow final : public nsBaseWidget {
   nsWindow* GetTransientForWindowIfPopup();
   bool IsHandlingTouchSequence(GdkEventSequence* aSequence);
 
-  void ResizeInt(int aX, int aY, int aWidth, int aHeight, bool aMove);
+  void ResizeInt(const mozilla::Maybe<LayoutDeviceIntPoint>& aMove,
+                 LayoutDeviceIntSize aSize);
   void NativeMoveResizeWaylandPopup(bool aMove, bool aResize);
 
   
