@@ -416,7 +416,9 @@ class MachSiteManager:
             
             *self._requirements.pths_as_absolute(self._topsrcdir),
             
-            *_deprioritize_venv_packages(environment),
+            *_deprioritize_venv_packages(
+                environment, self._site_packages_source == SitePackagesSource.VENV
+            ),
         ]
 
     def _virtualenv(self):
@@ -711,10 +713,11 @@ class CommandSiteManager:
 
         
         lines.extend(self._requirements.pths_as_absolute(self._topsrcdir))
-        if self._populate_virtualenv:
-            
-            
-            lines.extend(_deprioritize_venv_packages(self._virtualenv))
+        
+        
+        lines.extend(
+            _deprioritize_venv_packages(self._virtualenv, self._populate_virtualenv)
+        )
 
         
         
@@ -779,12 +782,19 @@ class PythonVirtualenv:
         return os.path.join(normalized_venv_root, relative_path)
 
     def site_packages_dirs(self):
-        
         return list(
-            {
-                self.resolve_sysconfig_packages_path("purelib"),
-                self.resolve_sysconfig_packages_path("platlib"),
-            }
+            filter(
+                None,
+                [
+                    
+                    self.prefix if sys.platform.startswith("win") else None,
+                    
+                    *{
+                        self.resolve_sysconfig_packages_path("purelib"),
+                        self.resolve_sysconfig_packages_path("platlib"),
+                    },
+                ],
+            )
         )
 
     def pip_install_with_constraints(self, pip_args):
@@ -948,11 +958,16 @@ class ExternalPythonSite:
             [
                 self.python_path,
                 "-c",
-                "import sys; import site; " "packages = site.getsitepackages(); "
+                "import os; import sys; import site; "
+                "packages = site.getsitepackages(); "
                 
                 
                 "packages.insert(0, site.getusersitepackages()) if "
-                "    sys.prefix == sys.base_prefix else None;"
+                "    sys.prefix == sys.base_prefix else None; "
+                
+                
+                
+                "packages = [p for p in packages if os.path.exists(p)]; "
                 "print(packages)",
             ],
             universal_newlines=True,
@@ -965,7 +980,13 @@ class ExternalPythonSite:
         system_out, _ = system.communicate()
         assert stdlib.returncode == 0
         assert system.returncode == 0
-        return ast.literal_eval(stdlib_out), ast.literal_eval(system_out)
+        stdlib = ast.literal_eval(stdlib_out)
+        system = ast.literal_eval(system_out)
+        
+        
+        
+        system = [path for path in system if path not in stdlib]
+        return stdlib, system
 
     def sys_path_stdlib(self):
         """Return list of default sys.path entries for the standard library"""
@@ -1110,23 +1131,16 @@ def _assert_pip_check(topsrcdir, pthfile_lines, virtualenv_name, requirements):
         ] = "1"
 
 
-def _deprioritize_venv_packages(virtualenv):
+def _deprioritize_venv_packages(virtualenv, populate_virtualenv):
     
     
     
     
     
-
-    
-    
-    implicitly_added_dirs = [
-        virtualenv.prefix,
-        *virtualenv.site_packages_dirs(),
-    ]
 
     return [
         line
-        for site_packages_dir in implicitly_added_dirs
+        for site_packages_dir in virtualenv.site_packages_dirs()
         
         
         
@@ -1134,10 +1148,15 @@ def _deprioritize_venv_packages(virtualenv):
         
         
         
-        for line in (
-            "import sys; sys.path = [p for p in sys.path if "
-            f"p.lower() != {repr(site_packages_dir)}.lower()]",
-            f"import sys; sys.path.append({repr(site_packages_dir)})",
+        for line in filter(
+            None,
+            (
+                "import sys; sys.path = [p for p in sys.path if "
+                f"p.lower() != {repr(site_packages_dir)}.lower()]",
+                f"import sys; sys.path.append({repr(site_packages_dir)})"
+                if populate_virtualenv
+                else None,
+            ),
         )
     ]
 
@@ -1256,7 +1275,7 @@ def activate_virtualenv(virtualenv: PythonVirtualenv):
     )
     os.environ["VIRTUAL_ENV"] = virtualenv.prefix
 
-    for path in (virtualenv.prefix, *virtualenv.site_packages_dirs()):
+    for path in virtualenv.site_packages_dirs():
         site.addsitedir(os.path.realpath(path))
 
     sys.prefix = virtualenv.prefix
