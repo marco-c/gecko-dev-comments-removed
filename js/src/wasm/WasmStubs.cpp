@@ -992,7 +992,7 @@ static void GenerateBigIntInitialization(MacroAssembler& masm,
 
 static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
                              const FuncExport& fe, const Maybe<ImmPtr>& funcPtr,
-                             Offsets* offsets) {
+                             CallableOffsets* offsets) {
   AutoCreatedBy acb(masm, "GenerateJitEntry");
 
   AssertExpectedSP(masm);
@@ -1004,6 +1004,11 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
   
   
   
+  
+  
+  
+
+  MOZ_ASSERT(masm.framePushed() == sizeof(JSJitToWasmFrame));
 
   unsigned normalBytesNeeded = StackArgBytesForWasmABI(fe.funcType());
 
@@ -1017,12 +1022,14 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
 
   
   
-  unsigned frameSize = StackDecrementForCall(WasmStackAlignment,
-                                             masm.framePushed(), bytesNeeded);
+  unsigned frameSizeExclFP = StackDecrementForCall(
+      WasmStackAlignment, masm.framePushed(), bytesNeeded);
 
   
   
-  masm.reserveStack(frameSize);
+  masm.reserveStack(frameSizeExclFP);
+
+  uint32_t frameSize = masm.framePushed();
 
   GenerateJitEntryLoadInstance(masm, frameSize);
 
@@ -1295,7 +1302,7 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
   masm.branchPtr(Assembler::Equal, FramePointer, Imm32(FailFP), &exception);
 
   
-  masm.freeStack(frameSize);
+  masm.freeStack(frameSizeExclFP);
 
   GenPrintf(DebugChannel::Function, masm, "wasm-function[%d]; returns ",
             fe.funcIndex());
@@ -1336,11 +1343,11 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
         masm.jump(&done);
         masm.bind(&fail);
         
-        masm.reserveStack(frameSize);
+        masm.reserveStack(frameSizeExclFP);
         masm.jump(&exception);
         masm.bind(&done);
         
-        masm.setFramePushed(0);
+        masm.setFramePushed(sizeof(JSJitToWasmFrame));
         break;
       }
       case ValType::Rtt:
@@ -1356,7 +1363,7 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
           case RefType::Extern:
             
             
-            GenerateJitEntryLoadInstance(masm,  0);
+            GenerateJitEntryLoadInstance(masm, sizeof(JSJitToWasmFrame));
             UnboxAnyrefIntoValueReg(masm, InstanceReg, ReturnReg,
                                     JSReturnOperand, WasmJitEntryReturnScratch);
             break;
@@ -1370,9 +1377,10 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
 
   GenPrintf(DebugChannel::Function, masm, "\n");
 
-  MOZ_ASSERT(masm.framePushed() == 0);
+  MOZ_ASSERT(masm.framePushed() == sizeof(JSJitToWasmFrame));
+
   AssertExpectedSP(masm);
-  GenerateJitEntryEpilogue(masm);
+  GenerateJitEntryEpilogue(masm, offsets);
   MOZ_ASSERT(masm.framePushed() == 0);
 
   
@@ -3011,10 +3019,12 @@ bool wasm::GenerateEntryStubs(MacroAssembler& masm, size_t funcExportIndex,
     return true;
   }
 
-  if (!GenerateJitEntry(masm, funcExportIndex, fe, callee, &offsets)) {
+  CallableOffsets jitOffsets;
+  if (!GenerateJitEntry(masm, funcExportIndex, fe, callee, &jitOffsets)) {
     return false;
   }
-  if (!codeRanges->emplaceBack(CodeRange::JitEntry, fe.funcIndex(), offsets)) {
+  if (!codeRanges->emplaceBack(CodeRange::JitEntry, fe.funcIndex(),
+                               jitOffsets)) {
     return false;
   }
 

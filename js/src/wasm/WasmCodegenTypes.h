@@ -348,7 +348,7 @@ class CodeRange {
   
 
   bool hasReturn() const {
-    return isFunction() || isImportExit() || isDebugTrap();
+    return isFunction() || isImportExit() || isDebugTrap() || isJitEntry();
   }
   uint32_t ret() const {
     MOZ_ASSERT(hasReturn());
