@@ -55,7 +55,7 @@ SwipeTracker::SwipeTracker(nsIWidget& aWidget,
       mEventsHaveStartedNewGesture(false),
       mRegisteredWithRefreshDriver(false) {
   SendSwipeEvent(eSwipeGestureStart, 0, 0.0, aSwipeStartEvent.mTimeStamp);
-  ProcessEvent(aSwipeStartEvent);
+  ProcessEvent(aSwipeStartEvent,  true);
 }
 
 void SwipeTracker::Destroy() { UnregisterFromRefreshDriver(); }
@@ -101,7 +101,8 @@ bool SwipeTracker::ComputeSwipeSuccess() const {
          kSwipeSuccessThreshold;
 }
 
-nsEventStatus SwipeTracker::ProcessEvent(const PanGestureInput& aEvent) {
+nsEventStatus SwipeTracker::ProcessEvent(
+    const PanGestureInput& aEvent, bool aProcessingFirstEvent ) {
   
   
   if (!mEventsAreControllingSwipe || !SwipingInAllowedDirection()) {
@@ -119,16 +120,38 @@ nsEventStatus SwipeTracker::ProcessEvent(const PanGestureInput& aEvent) {
                  mWidget.GetDefaultScaleInternal() /
                  StaticPrefs::widget_swipe_whole_page_pixel_size();
   mGestureAmount = ClampToAllowedRange(mGestureAmount + delta);
-  SendSwipeEvent(eSwipeGestureUpdate, 0, mGestureAmount, aEvent.mTimeStamp);
-
   if (aEvent.mType != PanGestureInput::PANGESTURE_END) {
-    double elapsedSeconds =
-        std::max(0.008, (aEvent.mTimeStamp - mLastEventTimeStamp).ToSeconds());
-    mCurrentVelocity = delta / elapsedSeconds;
+    if (!aProcessingFirstEvent) {
+      double elapsedSeconds = std::max(
+          0.008, (aEvent.mTimeStamp - mLastEventTimeStamp).ToSeconds());
+      mCurrentVelocity = delta / elapsedSeconds;
+    }
     mLastEventTimeStamp = aEvent.mTimeStamp;
-  } else {
+  }
+
+  const bool computedSwipeSuccess = ComputeSwipeSuccess();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  double eventAmount = mGestureAmount;
+  if (computedSwipeSuccess) {
+    eventAmount = kSwipeSuccessThreshold;
+    if (mGestureAmount < 0.f) {
+      eventAmount = -eventAmount;
+    }
+  }
+  SendSwipeEvent(eSwipeGestureUpdate, 0, eventAmount, aEvent.mTimeStamp);
+
+  if (aEvent.mType == PanGestureInput::PANGESTURE_END) {
     mEventsAreControllingSwipe = false;
-    if (ComputeSwipeSuccess()) {
+    if (computedSwipeSuccess) {
       
       
       SendSwipeEvent(eSwipeGesture, mSwipeDirection, 0.0, aEvent.mTimeStamp);
