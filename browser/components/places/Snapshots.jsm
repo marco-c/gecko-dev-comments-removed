@@ -10,8 +10,6 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
-const VERSION_PREF = "browser.places.snapshots.version";
-
 XPCOMUtils.defineLazyModuleGetters(this, {
   BackgroundPageThumbs: "resource://gre/modules/BackgroundPageThumbs.jsm",
   CommonNames: "resource:///modules/CommonNames.jsm",
@@ -502,7 +500,6 @@ const Snapshots = new (class Snapshots {
     sortDescending = true,
     sortBy = "last_interaction_at",
   } = {}) {
-    await this.#ensureVersionUpdates();
     let db = await PlacesUtils.promiseDBConnection();
 
     let clauses = [];
@@ -568,7 +565,6 @@ const Snapshots = new (class Snapshots {
 
 
   async queryPlaceIdFromUrl(url) {
-    await this.#ensureVersionUpdates();
     let db = await PlacesUtils.promiseDBConnection();
 
     let rows = await db.executeCached(
@@ -597,8 +593,6 @@ const Snapshots = new (class Snapshots {
 
 
   async queryOverlapping(context_url) {
-    await this.#ensureVersionUpdates();
-
     let current_id = await this.queryPlaceIdFromUrl(context_url);
     if (current_id == -1) {
       logConsole.debug(`PlaceId not found for url ${context_url}`);
@@ -660,7 +654,6 @@ const Snapshots = new (class Snapshots {
 
 
   async queryCommonReferrer(context_url) {
-    await this.#ensureVersionUpdates();
     let db = await PlacesUtils.promiseDBConnection();
 
     let context_place_id = await this.queryPlaceIdFromUrl(context_url);
@@ -693,39 +686,6 @@ const Snapshots = new (class Snapshots {
       snapshot.commonReferrerScore = 1.0;
       return snapshot;
     });
-  }
-
-  
-
-
-
-
-  async #ensureVersionUpdates() {
-    let dbVersion = Services.prefs.getIntPref(VERSION_PREF, 0);
-    try {
-      if (dbVersion < 1) {
-        try {
-          
-          let pathToKeyframes = PathUtils.join(
-            PathUtils.profileDir,
-            "keyframes.sqlite"
-          );
-          await IOUtils.remove(pathToKeyframes);
-        } catch (ex) {
-          console.warn(`Failed to delete keyframes.sqlite: ${ex}`);
-        }
-      }
-    } finally {
-      Services.prefs.setIntPref(VERSION_PREF, this.currentVersion);
-    }
-  }
-
-  
-
-
-
-  get currentVersion() {
-    return 1;
   }
 
   
