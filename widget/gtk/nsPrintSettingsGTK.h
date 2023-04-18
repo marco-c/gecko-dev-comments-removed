@@ -33,6 +33,10 @@ class nsPrintSettingsGTK : public nsPrintSettings {
   nsPrintSettingsGTK();
   explicit nsPrintSettingsGTK(const PrintSettingsInitializer& aSettings);
 
+  static nsPrintSettingsGTK* From(nsIPrintSettings* aPrintSettings) {
+    return static_cast<nsPrintSettingsGTK*>(aPrintSettings);
+  }
+
   
   
   
