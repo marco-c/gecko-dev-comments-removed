@@ -45,7 +45,7 @@ interface nsILocalFileWin : nsIFile
 
 
 
-    readonly attribute AString canonicalPath;
+    [noscript] readonly attribute AString canonicalPath;
     [noscript] readonly attribute ACString nativeCanonicalPath;
 
     
