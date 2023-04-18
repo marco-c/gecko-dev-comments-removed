@@ -15,8 +15,6 @@
 #include "js/Vector.h"
 #include "vm/ArgumentsObject.h"
 
-#include "gc/ObjectKind-inl.h"
-
 namespace js {
 namespace jit {
 
@@ -961,16 +959,6 @@ static bool IsArrayEscaped(MInstruction* ins, MInstruction* newArray) {
         break;
       }
 
-      
-      case MDefinition::Opcode::Compare: {
-        bool canFold;
-        if (!def->toCompare()->tryFold(&canFold)) {
-          JitSpewDef(JitSpew_Escape, "has an unsupported compare\n", def);
-          return true;
-        }
-        break;
-      }
-
       case MDefinition::Opcode::PostWriteBarrier:
       case MDefinition::Opcode::PostWriteElementBarrier:
         break;
@@ -1050,7 +1038,6 @@ class ArrayMemoryView : public MDefinitionVisitorDefaultNoop {
   void visitGuardToClass(MGuardToClass* ins);
   void visitGuardArrayIsPacked(MGuardArrayIsPacked* ins);
   void visitUnbox(MUnbox* ins);
-  void visitCompare(MCompare* ins);
   void visitApplyArray(MApplyArray* ins);
   void visitConstructArray(MConstructArray* ins);
 };
@@ -1403,25 +1390,6 @@ void ArrayMemoryView::visitUnbox(MUnbox* ins) {
   ins->block()->discard(ins);
 }
 
-void ArrayMemoryView::visitCompare(MCompare* ins) {
-  
-  if (ins->lhs() != arr_ && ins->rhs() != arr_) {
-    return;
-  }
-
-  bool folded;
-  MOZ_ALWAYS_TRUE(ins->tryFold(&folded));
-
-  auto* cst = MConstant::New(alloc_, BooleanValue(folded));
-  ins->block()->insertBefore(ins, cst);
-
-  
-  ins->replaceAllUsesWith(cst);
-
-  
-  ins->block()->discard(ins);
-}
-
 void ArrayMemoryView::visitApplyArray(MApplyArray* ins) {
   
   MDefinition* elements = ins->getElements();
@@ -1532,7 +1500,6 @@ class ArgumentsReplacer : public MDefinitionVisitorDefaultNoop {
   void visitLoadArgumentsObjectArgHole(MLoadArgumentsObjectArgHole* ins);
   void visitArgumentsObjectLength(MArgumentsObjectLength* ins);
   void visitApplyArgsObj(MApplyArgsObj* ins);
-  void visitArrayFromArgumentsObject(MArrayFromArgumentsObject* ins);
   void visitLoadFixedSlot(MLoadFixedSlot* ins);
 
  public:
@@ -1646,7 +1613,6 @@ bool ArgumentsReplacer::escapes(MInstruction* ins, bool guardedForMapped) {
       case MDefinition::Opcode::GetArgumentsObjectArg:
       case MDefinition::Opcode::LoadArgumentsObjectArg:
       case MDefinition::Opcode::LoadArgumentsObjectArgHole:
-      case MDefinition::Opcode::ArrayFromArgumentsObject:
         break;
 
       
@@ -1994,95 +1960,6 @@ void ArgumentsReplacer::visitApplyArgsObj(MApplyArgsObj* ins) {
   ins->block()->discard(ins);
 }
 
-void ArgumentsReplacer::visitArrayFromArgumentsObject(
-    MArrayFromArgumentsObject* ins) {
-  
-  if (ins->argsObject() != args_) {
-    return;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  Shape* shape = ins->shape();
-  MOZ_ASSERT(shape);
-
-  MDefinition* replacement;
-  if (isInlinedArguments()) {
-    auto* actualArgs = args_->toCreateInlinedArgumentsObject();
-    uint32_t numActuals = actualArgs->numActuals();
-    MOZ_ASSERT(numActuals <= ArgumentsObject::MaxInlinedArgs);
-
-    
-    
-    
-    static_assert(
-        gc::CanUseFixedElementsForArray(ArgumentsObject::MaxInlinedArgs));
-
-    gc::InitialHeap heap = gc::DefaultHeap;
-
-    
-    auto* shapeConstant = MConstant::NewShape(alloc(), shape);
-    ins->block()->insertBefore(ins, shapeConstant);
-
-    auto* newArray =
-        MNewArrayObject::New(alloc(), shapeConstant, numActuals, heap);
-    ins->block()->insertBefore(ins, newArray);
-
-    if (numActuals) {
-      auto* elements = MElements::New(alloc(), newArray);
-      ins->block()->insertBefore(ins, elements);
-
-      MConstant* index = nullptr;
-      for (uint32_t i = 0; i < numActuals; i++) {
-        index = MConstant::New(alloc(), Int32Value(i));
-        ins->block()->insertBefore(ins, index);
-
-        MDefinition* arg = actualArgs->getArg(i);
-        auto* store = MStoreElement::New(alloc(), elements, index, arg,
-                                          false);
-        ins->block()->insertBefore(ins, store);
-
-        auto* barrier = MPostWriteBarrier::New(alloc(), newArray, arg);
-        ins->block()->insertBefore(ins, barrier);
-      }
-
-      auto* initLength = MSetInitializedLength::New(alloc(), elements, index);
-      ins->block()->insertBefore(ins, initLength);
-    }
-
-    replacement = newArray;
-  } else {
-    
-    
-    
-
-    auto* numActuals = MArgumentsLength::New(alloc());
-    ins->block()->insertBefore(ins, numActuals);
-
-    
-    uint32_t numFormals = 0;
-
-    auto* rest = MRest::New(alloc(), numActuals, numFormals, shape);
-    ins->block()->insertBefore(ins, rest);
-
-    replacement = rest;
-  }
-
-  ins->replaceAllUsesWith(replacement);
-
-  
-  ins->block()->discard(ins);
-}
-
 void ArgumentsReplacer::visitLoadFixedSlot(MLoadFixedSlot* ins) {
   
   if (ins->object() != args_) {
@@ -2126,7 +2003,6 @@ class RestReplacer : public MDefinitionVisitorDefaultNoop {
   void visitGuardShape(MGuardShape* ins);
   void visitGuardArrayIsPacked(MGuardArrayIsPacked* ins);
   void visitUnbox(MUnbox* ins);
-  void visitCompare(MCompare* ins);
   void visitLoadElement(MLoadElement* ins);
   void visitArrayLength(MArrayLength* ins);
   void visitInitializedLength(MInitializedLength* ins);
@@ -2238,16 +2114,6 @@ bool RestReplacer::escapes(MInstruction* ins) {
         }
         if (escapes(def->toInstruction())) {
           JitSpewDef(JitSpew_Escape, "is indirectly escaped by\n", def);
-          return true;
-        }
-        break;
-      }
-
-      
-      case MDefinition::Opcode::Compare: {
-        bool canFold;
-        if (!def->toCompare()->tryFold(&canFold)) {
-          JitSpewDef(JitSpew_Escape, "has an unsupported compare\n", def);
           return true;
         }
         break;
@@ -2423,25 +2289,6 @@ void RestReplacer::visitUnbox(MUnbox* ins) {
 
   
   ins->replaceAllUsesWith(rest_);
-
-  
-  ins->block()->discard(ins);
-}
-
-void RestReplacer::visitCompare(MCompare* ins) {
-  
-  if (ins->lhs() != rest_ && ins->rhs() != rest_) {
-    return;
-  }
-
-  bool folded;
-  MOZ_ALWAYS_TRUE(ins->tryFold(&folded));
-
-  auto* cst = MConstant::New(alloc(), BooleanValue(folded));
-  ins->block()->insertBefore(ins, cst);
-
-  
-  ins->replaceAllUsesWith(cst);
 
   
   ins->block()->discard(ins);
