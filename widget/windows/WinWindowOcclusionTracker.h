@@ -99,7 +99,6 @@ class WinWindowOcclusionTracker final : public DisplayStatusListener,
     
     static WindowOcclusionCalculator* GetInstance() { return sCalculator; }
 
-    void Initialize();
     void Shutdown(layers::SynchronousTask* aTask);
 
     void EnableOcclusionTrackingForWindow(HWND hwnd);
@@ -236,6 +235,7 @@ class WinWindowOcclusionTracker final : public DisplayStatusListener,
     
     HWND mMovingWindow = 0;
 
+    
     
     RefPtr<IVirtualDesktopManager> mVirtualDesktopManager;
 
