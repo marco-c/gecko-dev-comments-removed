@@ -439,7 +439,14 @@ StorageActors.defaults = function(typeName, observationTopics) {
           }
         }
 
-        toReturn.total = this.getObjectsSize(host, names, options);
+        if (this.typeName === "Cache") {
+          
+          
+          
+          toReturn.total = toReturn.data.length;
+        } else {
+          toReturn.total = this.getObjectsSize(host, names, options);
+        }
       } else {
         let obj = await this.getValuesForHost(
           host,
