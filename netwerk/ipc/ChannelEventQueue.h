@@ -166,7 +166,7 @@ class ChannelEventQueue final {
   void SuspendInternal();
   void ResumeInternal();
 
-  bool MaybeSuspendIfEventsAreSuppressed();
+  bool MaybeSuspendIfEventsAreSuppressed() REQUIRES(mMutex);
 
   inline void MaybeFlushQueue();
   void FlushQueue();
@@ -174,12 +174,13 @@ class ChannelEventQueue final {
 
   ChannelEvent* TakeEvent();
 
-  nsTArray<UniquePtr<ChannelEvent>> mEventQueue;
+  nsTArray<UniquePtr<ChannelEvent>> mEventQueue GUARDED_BY(mMutex);
 
-  uint32_t mSuspendCount;
-  bool mSuspended;
-  uint32_t mForcedCount;  
-  bool mFlushing;
+  uint32_t mSuspendCount GUARDED_BY(mMutex);
+  bool mSuspended GUARDED_BY(mMutex);
+  uint32_t mForcedCount  
+      GUARDED_BY(mMutex);
+  bool mFlushing GUARDED_BY(mMutex);
 
   
   
@@ -187,13 +188,13 @@ class ChannelEventQueue final {
   bool mForXMLHttpRequest;
 
   
-  nsISupports* mOwner;
+  nsISupports* mOwner GUARDED_BY(mMutex);
 
   
-  Mutex mMutex MOZ_UNANNOTATED;
+  Mutex mMutex;
 
   
-  RecursiveMutex mRunningMutex MOZ_UNANNOTATED;
+  RecursiveMutex mRunningMutex ACQUIRED_BEFORE(mMutex);
 
   friend class AutoEventEnqueuer;
 };
