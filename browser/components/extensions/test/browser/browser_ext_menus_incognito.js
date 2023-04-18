@@ -118,7 +118,7 @@ add_task(async function test_no_show_hide_for_private_window() {
   });
 
   
-  let menu = await openContextMenu("body", privateWindow);
+  let menu = await openContextMenu("body div", privateWindow);
   
   ok(
     !privateWindow.document.getElementById(extMenuId),
