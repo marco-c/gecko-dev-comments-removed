@@ -153,8 +153,13 @@ MsaaDocAccessible::get_accValue(VARIANT aVarChild, BSTR __RPC_FAR* aValue) {
   HRESULT hr = MsaaAccessible::get_accValue(aVarChild, aValue);
   if (FAILED(hr) || *aValue || aVarChild.lVal != CHILDID_SELF) return hr;
 
-  DocAccessible* docAcc = DocAcc();
   
+  
+  MOZ_ASSERT(mAcc);
+  if (mAcc->IsRemote()) {
+    return E_NOTIMPL;
+  }
+  DocAccessible* docAcc = DocAcc();
   
   MOZ_ASSERT(docAcc);
   
