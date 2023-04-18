@@ -2130,26 +2130,34 @@ nsCString& ScriptLoader::BytecodeMimeTypeFor(ScriptLoadRequest* aRequest) {
   return nsContentUtils::JSScriptBytecodeMimeType();
 }
 
-nsresult ScriptLoader::MaybePrepareForBytecodeEncoding(
-    JS::Handle<JSScript*> aScript, ScriptLoadRequest* aRequest, nsresult aRv) {
-  bool encodeBytecode = ShouldCacheBytecode(aRequest);
+void ScriptLoader::MaybePrepareForBytecodeEncodingBeforeExecute(
+    ScriptLoadRequest* aRequest, JS::Handle<JSScript*> aScript) {
+  if (!ShouldCacheBytecode(aRequest)) {
+    return;
+  }
 
-  
-  if (aScript && encodeBytecode) {
-    aRequest->MarkForBytecodeEncoding(aScript);
+  aRequest->MarkForBytecodeEncoding(aScript);
+}
+
+nsresult ScriptLoader::MaybePrepareForBytecodeEncodingAfterExecute(
+    ScriptLoadRequest* aRequest, nsresult aRv) {
+  if (aRequest->IsMarkedForBytecodeEncoding()) {
     TRACE_FOR_TEST(aRequest->GetLoadContext()->GetScriptElement(),
                    "scriptloader_encode");
+    
+    
     MOZ_ASSERT(aRequest->mBytecodeOffset == aRequest->mScriptBytecode.length());
     RegisterForBytecodeEncoding(aRequest);
-  } else {
-    LOG(
-        ("ScriptLoadRequest (%p): Bytecode-cache: disabled (rv = %X, "
-         "script = %p)",
-         aRequest, unsigned(aRv), aScript.get()));
-    TRACE_FOR_TEST_NONE(aRequest->GetLoadContext()->GetScriptElement(),
-                        "scriptloader_no_encode");
-    aRequest->mCacheInfo = nullptr;
+
+    return aRv;
   }
+
+  LOG(("ScriptLoadRequest (%p): Bytecode-cache: disabled (rv = %X)", aRequest,
+       unsigned(aRv)));
+  TRACE_FOR_TEST_NONE(aRequest->GetLoadContext()->GetScriptElement(),
+                      "scriptloader_no_encode");
+  aRequest->mCacheInfo = nullptr;
+
   return aRv;
 }
 
@@ -2192,17 +2200,23 @@ nsresult ScriptLoader::EvaluateScript(nsIGlobalObject* aGlobalObject,
   
   
   
-  JS::Rooted<JSScript*> script(cx);
   if (rv == NS_OK) {
-    script = exec.GetScript();
-    LOG(("ScriptLoadRequest (%p): Evaluate Script", aRequest));
-    AUTO_PROFILER_MARKER_TEXT("ScriptExecution", JS,
-                              MarkerInnerWindowIdFromJSContext(cx),
-                              profilerLabelString);
+    JS::Rooted<JSScript*> script(cx, exec.GetScript());
+    MaybePrepareForBytecodeEncodingBeforeExecute(aRequest, script);
 
-    rv = ExecuteCompiledScript(cx, exec, classicScript);
+    {
+      LOG(("ScriptLoadRequest (%p): Evaluate Script", aRequest));
+      AUTO_PROFILER_MARKER_TEXT("ScriptExecution", JS,
+                                MarkerInnerWindowIdFromJSContext(cx),
+                                profilerLabelString);
+
+      rv = ExecuteCompiledScript(cx, exec, classicScript);
+    }
   }
-  rv = MaybePrepareForBytecodeEncoding(script, aRequest, rv);
+
+  
+  
+  rv = MaybePrepareForBytecodeEncodingAfterExecute(aRequest, rv);
 
   
   
