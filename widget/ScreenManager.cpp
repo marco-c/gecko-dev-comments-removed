@@ -44,7 +44,17 @@ void ScreenManager::SetHelper(UniquePtr<Helper> aHelper) {
   mHelper = std::move(aHelper);
 }
 
+
 void ScreenManager::Refresh(nsTArray<RefPtr<Screen>>&& aScreens) {
+  if (PastShutdownPhase(ShutdownPhase::XPCOMShutdown)) {
+    
+    
+    return;
+  }
+  GetSingleton().RefreshInternal(std::move(aScreens));
+}
+
+void ScreenManager::RefreshInternal(nsTArray<RefPtr<Screen>>&& aScreens) {
   MOZ_LOG(sScreenLog, LogLevel::Debug, ("Refresh screens"));
 
   mScreenList = std::move(aScreens);
