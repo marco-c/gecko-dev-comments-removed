@@ -136,8 +136,10 @@ async function addJsonViewTab(
 function clickJsonNode(selector) {
   info("Expanding node: '" + selector + "'");
 
-  const browser = gBrowser.selectedBrowser;
-  return BrowserTestUtils.synthesizeMouseAtCenter(selector, {}, browser);
+  
+  return ContentTask.spawn(gBrowser.selectedBrowser, selector, selector => {
+    content.document.querySelector(selector).click();
+  });
 }
 
 

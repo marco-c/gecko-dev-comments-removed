@@ -93,6 +93,9 @@ add_task(async function() {
   await assertRowSelected(1);
 
   
+  await SpecialPowers.spawn(tab.linkedBrowser, [], function() {
+    content.document.querySelector(".treeTable").focus();
+  });
   for (let i = 2; i < numRows; ++i) {
     await BrowserTestUtils.synthesizeKey(
       "VK_DOWN",
