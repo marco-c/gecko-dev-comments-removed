@@ -207,9 +207,6 @@ pub struct SurfaceBuilder {
     builder_stack: Vec<CommandBufferBuilder>,
     
     dirty_rect_stack: Vec<Vec<PictureRect>>,
-    
-    
-    pub sub_graph_output_stack: Vec<RenderTaskId>,
 }
 
 impl SurfaceBuilder {
@@ -218,7 +215,6 @@ impl SurfaceBuilder {
             current_cmd_buffers: CommandBufferTargets::Tiled { tiles: FastHashMap::default() },
             builder_stack: Vec::new(),
             dirty_rect_stack: Vec::new(),
-            sub_graph_output_stack: Vec::new(),
         }
     }
 
@@ -249,6 +245,7 @@ impl SurfaceBuilder {
         &mut self,
         surface_index: SurfaceIndex,
         is_sub_graph: bool,
+        wraps_sub_graph: bool,
         clipping_rect: PictureRect,
         descriptor: SurfaceDescriptor,
         surfaces: &mut [SurfaceInfo],
@@ -270,6 +267,7 @@ impl SurfaceBuilder {
                     render_task_id,
                     is_sub_graph,
                     None,
+                    wraps_sub_graph,
                 )
             }
             SurfaceDescriptorKind::Chained { render_task_id, root_task_id } => {
@@ -277,6 +275,7 @@ impl SurfaceBuilder {
                     render_task_id,
                     is_sub_graph,
                     Some(root_task_id),
+                    wraps_sub_graph,
                 )
             }
         };
@@ -405,16 +404,32 @@ impl SurfaceBuilder {
                     let mut src_task_ids = Vec::new();
 
                     
-                    self.sub_graph_output_stack.push(child_root_task_id.unwrap_or(child_render_task_id));
+                    
+                    
+                    
+                    
+                    
 
                     
                     
                     
-                    
-                    
-                    
+                    let sub_graph_source_index = self.builder_stack
+                        .iter()
+                        .rposition(|builder| {
+                            !builder.wraps_sub_graph
+                        })
+                        .expect("bug: no parent that is not a sub graph wrapper");
 
-                    match self.builder_stack.last_mut().unwrap().kind {
+                    let sub_graph_parent = if sub_graph_source_index == self.builder_stack.len() - 1 {
+                        None
+                    } else {
+                        match self.builder_stack.last().unwrap().kind {
+                            CommandBufferBuilderKind::Simple { render_task_id, .. } => Some(render_task_id),
+                            _ => panic!("bug: should not occur on tiled surfaces"),
+                        }
+                    };
+
+                    match self.builder_stack[sub_graph_source_index].kind {
                         CommandBufferBuilderKind::Tiled { ref mut tiles } => {
                             let keys: Vec<TileKey> = tiles.keys().cloned().collect();
 
@@ -457,6 +472,12 @@ impl SurfaceBuilder {
                                                 location,          
                                                 RenderTaskKind::Picture(pic_task),
                                             ),
+                                        );
+
+                                        
+                                        rg_builder.add_dependency(
+                                            sub_graph_parent.unwrap_or(new_task_id),
+                                            child_root_task_id.unwrap_or(child_render_task_id),
                                         );
 
                                         
@@ -515,6 +536,12 @@ impl SurfaceBuilder {
                                     location,          
                                     RenderTaskKind::Picture(pic_task),
                                 ),
+                            );
+
+                            
+                            rg_builder.add_dependency(
+                                sub_graph_parent.unwrap_or(new_task_id),
+                                child_root_task_id.unwrap_or(child_render_task_id),
                             );
 
                             
