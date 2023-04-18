@@ -377,33 +377,40 @@ class IMMHandler final {
   int32_t mCursorPosition;
   uint32_t mCompositionStart;
 
-  class Selection final {
+  class Selection {
    public:
-    Selection() : mOffset(UINT32_MAX), mIsValid(false) {}
+    Selection() = default;
     Selection(const Selection& aOther) = delete;
     void operator=(const Selection& aOther) = delete;
 
-    void Clear() {
-      mOffset = UINT32_MAX;
-      mIsValid = false;
+    void ClearRange() {
+      mOffsetAndData.reset();
+      
+      
+      
     }
-    uint32_t StartOffset() const { return mOffset; }
-    uint32_t EndOffset() const { return mOffset + Length(); }
-    const nsString& DataRef() const { return mString; }
-    uint32_t Length() const { return mString.Length(); }
-    bool Collapsed() const { return !Length(); }
+
+    const OffsetAndData<uint32_t>& OffsetAndDataRef() const {
+      return mOffsetAndData.ref();
+    }
+
     const WritingMode& WritingModeRef() const { return mWritingMode; }
 
-    bool IsValid() const;
-    bool Update(const IMENotification& aIMENotification);
-    bool Init(nsWindow* aWindow);
-    bool EnsureValidSelection(nsWindow* aWindow);
+    bool HasRange() const { return mOffsetAndData.isSome(); }
+    void Update(
+        const IMENotification::SelectionChangeDataBase& aSelectionChangeData);
+    
+
+
+
+
+    bool EnsureSelectionRange(nsWindow* aWindow);
 
    private:
-    nsString mString;
-    uint32_t mOffset;
+    void QuerySelection(nsWindow* aWindow);
+
+    Maybe<OffsetAndData<uint32_t>> mOffsetAndData;
     WritingMode mWritingMode;
-    bool mIsValid;
   };
   
   
@@ -420,7 +427,7 @@ class IMMHandler final {
     
     
     static Selection sTempSelection;
-    sTempSelection.Clear();
+    sTempSelection.ClearRange();
     return sTempSelection;
   }
 
