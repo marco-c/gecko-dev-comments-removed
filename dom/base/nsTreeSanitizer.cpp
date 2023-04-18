@@ -1215,7 +1215,8 @@ void nsTreeSanitizer::SanitizeAttributes(mozilla::dom::Element* aElement,
         continue;
       }
       if (IsURL(aAllowed.mURLs, attrLocal)) {
-        if (SanitizeURL(aElement, attrNs, attrLocal)) {
+        bool fragmentOnly = aElement->IsSVGElement(nsGkAtoms::use);
+        if (SanitizeURL(aElement, attrNs, attrLocal, fragmentOnly)) {
           
           
           --ac;
@@ -1294,7 +1295,7 @@ void nsTreeSanitizer::SanitizeAttributes(mozilla::dom::Element* aElement,
 }
 
 bool nsTreeSanitizer::SanitizeURL(mozilla::dom::Element* aElement,
-                                  int32_t aNamespace, nsAtom* aLocalName) {
+                                  int32_t aNamespace, nsAtom* aLocalName, bool aFragmentsOnly) {
   nsAutoString value;
   aElement->GetAttr(aNamespace, aLocalName, value);
 
@@ -1304,6 +1305,15 @@ bool nsTreeSanitizer::SanitizeURL(mozilla::dom::Element* aElement,
   
   if (!v.IsEmpty() && v.First() == u'#') {
     return false;
+  }
+  
+  if (aFragmentsOnly) {
+    aElement->UnsetAttr(aNamespace, aLocalName, false);
+    if (mLogRemovals) {
+      LogMessage("Removed unsafe URI from element attribute.",
+                 aElement->OwnerDoc(), aElement, aLocalName);
+    }
+    return true;
   }
 
   nsIScriptSecurityManager* secMan = nsContentUtils::GetSecurityManager();

@@ -200,8 +200,9 @@ class nsTreeSanitizer {
 
 
 
+
   bool SanitizeURL(mozilla::dom::Element* aElement, int32_t aNamespace,
-                   nsAtom* aLocalName);
+                   nsAtom* aLocalName, bool aFragmentsOnly = false);
 
   
 
