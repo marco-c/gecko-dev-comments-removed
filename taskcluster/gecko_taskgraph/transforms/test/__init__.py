@@ -25,10 +25,8 @@ import logging
 import re
 from importlib import import_module
 
-import jsone
 from mozbuild.schedules import INCLUSIVE_COMPONENTS
 from mozbuild.util import ReadOnlyDict
-from taskgraph.util.yaml import load_yaml
 from voluptuous import (
     Any,
     Optional,
@@ -39,15 +37,14 @@ from voluptuous import (
 import gecko_taskgraph
 from gecko_taskgraph.optimize.schema import OptimizationSchema
 from gecko_taskgraph.transforms.base import TransformSequence
+from gecko_taskgraph.transforms.test.variant import TEST_VARIANTS
 from gecko_taskgraph.util.attributes import keymatch
 from gecko_taskgraph.util.keyed_by import evaluate_keyed_by
-from gecko_taskgraph.util.templates import merge
 from gecko_taskgraph.util.treeherder import split_symbol, join_symbol
 from gecko_taskgraph.util.platforms import platform_family
 from gecko_taskgraph.util.schema import (
     optionally_keyed_by,
     resolve_keyed_by,
-    validate_schema,
     Schema,
 )
 from gecko_taskgraph.util.chunking import (
@@ -216,11 +213,6 @@ MACOSX_WORKER_TYPES = {
     "macosx1100-64": "t-osx-1100-m1",
 }
 
-
-TEST_VARIANTS = load_yaml(
-    gecko_taskgraph.GECKO, "taskcluster", "ci", "test", "variants.yml"
-)
-"""List of available test variants defined."""
 
 DYNAMIC_CHUNK_DURATION = 20 * 60  
 """The approximate time each test chunk should take to run."""
@@ -571,73 +563,6 @@ def set_defaults(config, tasks):
 transforms.add_validate(test_description_schema)
 
 
-variant_description_schema = Schema(
-    {
-        str: {
-            Required("description"): str,
-            Required("suffix"): str,
-            Optional("contact"): str,
-            Optional("when"): {Any("$eval", "$if"): str},
-            Optional("replace"): {str: object},
-            Optional("merge"): {str: object},
-        }
-    }
-)
-"""variant description schema"""
-
-
-@transforms.add
-def split_variants(config, tasks):
-    """Splits test definitions into multiple tasks based on the `variants` key.
-
-    If `variants` are defined, the original task will be yielded along with a
-    copy of the original task for each variant defined in the list. The copies
-    will have the 'unittest_variant' attribute set.
-    """
-    validate_schema(variant_description_schema, TEST_VARIANTS, "In variants.yml:")
-
-    def apply_variant(variant, task):
-        task["description"] = variant["description"].format(**task)
-
-        suffix = f"-{variant['suffix']}"
-        group, symbol = split_symbol(task["treeherder-symbol"])
-        if group != "?":
-            group += suffix
-        else:
-            symbol += suffix
-        task["treeherder-symbol"] = join_symbol(group, symbol)
-
-        
-        task.setdefault("variant-suffix", "")
-        task["variant-suffix"] += suffix
-
-        
-        task.update(variant.get("replace", {}))
-        return merge(task, variant.get("merge", {}))
-
-    for task in tasks:
-        variants = task.pop("variants", [])
-
-        yield copy.deepcopy(task)
-
-        for name in variants:
-            
-            parts = name.split("+")
-            taskv = copy.deepcopy(task)
-            for part in parts:
-                variant = TEST_VARIANTS[part]
-
-                
-                if "when" in variant:
-                    if not jsone.render(variant["when"], {"task": task}):
-                        break
-
-                taskv = apply_variant(variant, taskv)
-            else:
-                taskv["attributes"]["unittest_variant"] = name
-                yield taskv
-
-
 @transforms.add
 def resolve_keys(config, tasks):
     for task in tasks:
@@ -657,7 +582,10 @@ def resolve_keys(config, tasks):
 def run_sibling_transforms(config, tasks):
     """Runs other transform files next to this module."""
     
-    transform_modules = (("raptor", lambda t: t["suite"] == "raptor"),)
+    transform_modules = (
+        ("variant", None),
+        ("raptor", lambda t: t["suite"] == "raptor"),
+    )
 
     for task in tasks:
         xforms = TransformSequence()
