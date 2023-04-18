@@ -13,7 +13,6 @@ use crate::values::specified::page as specified;
 pub use generics::page::GenericPageSize;
 pub use generics::page::Orientation;
 pub use generics::page::PaperSize;
-pub use specified::PageName;
 
 
 
