@@ -157,9 +157,15 @@ class WebrtcVideoConduit
   Ssrcs GetLocalSSRCs() const override;
   Maybe<Ssrc> GetRemoteSSRC() const override;
 
-  void UnsetRemoteSSRC(uint32_t ssrc) override;
-  void SetRemoteSSRCConfig(uint32_t ssrc, uint32_t rtxSsrc);
-  void SetRemoteSSRCAndRestartAsNeeded(uint32_t ssrc, uint32_t rtxSsrc);
+  
+  void UnsetRemoteSSRC(uint32_t aSsrc) override;
+
+ private:
+  void NotifyUnsetCurrentRemoteSSRC();
+  void SetRemoteSSRCConfig(uint32_t aSsrc, uint32_t aRtxSsrc);
+  void SetRemoteSSRCAndRestartAsNeeded(uint32_t aSsrc, uint32_t aRtxSsrc);
+
+ public:
   
   
   void EnsureLocalSSRC();
