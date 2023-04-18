@@ -45,6 +45,9 @@ class MFTDecoder final {
   already_AddRefed<IMFAttributes> GetAttributes();
 
   
+  already_AddRefed<IMFAttributes> GetOutputStreamAttributes();
+
+  
   
   HRESULT GetOutputMediaType(RefPtr<IMFMediaType>& aMediaType);
   const GUID& GetOutputMediaSubType() const { return mOutputSubType; }
