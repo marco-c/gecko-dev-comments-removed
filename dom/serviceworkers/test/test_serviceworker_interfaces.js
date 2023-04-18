@@ -261,7 +261,13 @@ var interfaceNamesInGlobalScope = [
   
   { name: "PushSubscriptionOptions" },
   
+  "ReadableByteStreamController",
+  
   "ReadableStream",
+  
+  "ReadableStreamBYOBReader",
+  
+  "ReadableStreamBYOBRequest",
   
   "ReadableStreamDefaultController",
   

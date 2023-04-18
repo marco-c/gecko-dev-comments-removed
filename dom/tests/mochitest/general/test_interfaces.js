@@ -955,7 +955,13 @@ var interfaceNamesInGlobalScope = [
   
   { name: "Range", insecureContext: true },
   
+  { name: "ReadableByteStreamController", insecureContext: true },
+  
   { name: "ReadableStream", insecureContext: true },
+  
+  { name: "ReadableStreamBYOBReader", insecureContext: true },
+  
+  { name: "ReadableStreamBYOBRequest", insecureContext: true },
   
   { name: "ReadableStreamDefaultController", insecureContext: true },
   
