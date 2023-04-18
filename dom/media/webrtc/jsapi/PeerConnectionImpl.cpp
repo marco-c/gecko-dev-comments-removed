@@ -384,12 +384,6 @@ PeerConnectionImpl::~PeerConnectionImpl() {
     mTimeCard = nullptr;
   }
 
-  if (PeerConnectionCtx::isActive()) {
-    PeerConnectionCtx::GetInstance()->RemovePeerConnection(mHandle);
-  } else {
-    CSFLogError(LOGTAG, "PeerConnectionCtx is already gone. Ignoring...");
-  }
-
   CSFLogInfo(LOGTAG, "%s: PeerConnectionImpl destructor invoked for %s",
              __FUNCTION__, mHandle.c_str());
 }
@@ -1891,6 +1885,7 @@ PeerConnectionImpl::Close() {
     return NS_OK;
   }
 
+  STAMP_TIMECARD(mTimeCard, "Close");
   mSignalingState = RTCSignalingState::Closed;
 
   
@@ -1998,6 +1993,12 @@ PeerConnectionImpl::Close() {
               transportHandler->ExitPrivateMode();
             }
           });
+
+  if (PeerConnectionCtx::isActive()) {
+    
+    
+    PeerConnectionCtx::GetInstance()->RemovePeerConnection(mHandle);
+  }
 
   return NS_OK;
 }
