@@ -58,25 +58,6 @@ void gfxFT2FontBase::UnlockFTFace() const
   mFTFace->Unlock();
 }
 
-gfxFT2FontEntryBase::CmapCacheSlot* gfxFT2FontEntryBase::GetCmapCacheSlot(
-    uint32_t aCharCode) {
-  
-  
-  
-  
-  
-  if (!mCmapCache) {
-    mCmapCache = mozilla::MakeUnique<CmapCacheSlot[]>(kNumCmapCacheSlots);
-
-    
-    
-    
-    
-    mCmapCache[0].mCharCode = 1;
-  }
-  return &mCmapCache[aCharCode % kNumCmapCacheSlots];
-}
-
 static FT_ULong GetTableSizeFromFTFace(SharedFTFace* aFace,
                                        uint32_t aTableTag) {
   if (!aFace) {
@@ -112,17 +93,44 @@ nsresult gfxFT2FontEntryBase::CopyFaceTable(SharedFTFace* aFace,
   return NS_OK;
 }
 
-uint32_t gfxFT2FontBase::GetGlyph(uint32_t aCharCode) {
-  
-  
-  
-  auto* slot = static_cast<gfxFT2FontEntryBase*>(mFontEntry.get())
-                   ->GetCmapCacheSlot(aCharCode);
-  if (slot->mCharCode != aCharCode) {
-    slot->mCharCode = aCharCode;
-    slot->mGlyphIndex = gfxFT2LockedFace(this).GetGlyph(aCharCode);
+uint32_t gfxFT2FontEntryBase::GetGlyph(uint32_t aCharCode,
+                                       gfxFT2FontBase* aFont) {
+  const uint32_t slotIndex = aCharCode % kNumCmapCacheSlots;
+  {
+    
+    AutoReadLock lock(mLock);
+    if (mCmapCache) {
+      const auto& slot = mCmapCache[slotIndex];
+      if (slot.mCharCode == aCharCode) {
+        return slot.mGlyphIndex;
+      }
+    }
   }
-  return slot->mGlyphIndex;
+
+  
+  AutoWriteLock lock(mLock);
+
+  
+  
+  
+  
+  
+  if (!mCmapCache) {
+    mCmapCache = mozilla::MakeUnique<CmapCacheSlot[]>(kNumCmapCacheSlots);
+
+    
+    
+    
+    
+    mCmapCache[0].mCharCode = 1;
+  }
+
+  auto& slot = mCmapCache[slotIndex];
+  if (slot.mCharCode != aCharCode) {
+    slot.mCharCode = aCharCode;
+    slot.mGlyphIndex = gfxFT2LockedFace(aFont).GetGlyph(aCharCode);
+  }
+  return slot.mGlyphIndex;
 }
 
 
@@ -741,10 +749,6 @@ const gfxFT2FontBase::GlyphMetrics& gfxFT2FontBase::GetCachedGlyphMetrics(
     }
     return metrics;
   });
-}
-
-int32_t gfxFT2FontBase::GetGlyphWidth(uint16_t aGID) {
-  return GetCachedGlyphMetrics(aGID).mAdvance;
 }
 
 bool gfxFT2FontBase::GetGlyphBounds(uint16_t aGID, gfxRect* aBounds,
