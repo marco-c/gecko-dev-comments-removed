@@ -13372,23 +13372,22 @@ ssl3_HandleRecord(sslSocket *ss, SSL3Ciphertext *cText)
         return SECFailure;
     }
 
-    if (plaintext->space < cTextSizeLimit) {
-        rv = sslBuffer_Grow(plaintext, cTextSizeLimit);
-        if (rv != SECSuccess) {
-            ssl_ReleaseSpecReadLock(ss); 
-            SSL_DBG(("%d: SSL3[%d]: HandleRecord, tried to get %d bytes",
-                     SSL_GETPID(), ss->fd, cTextSizeLimit));
-            
-            
-            return SECFailure;
-        }
-    }
+#ifdef DEBUG
+    
+
+
+
+    PR_ASSERT(sslBuffer_Grow(plaintext, TLS_1_2_MAX_CTEXT_LENGTH) == SECSuccess);
+#endif
+    
+
+
+    PR_ASSERT(plaintext->space >= cTextSizeLimit);
 
     
 
     rType = cText->hdr[0];
     
-
 
 
     if (spec->epoch == 0 && ((IS_DTLS(ss) &&
@@ -13526,8 +13525,18 @@ ssl3_HandleRecord(sslSocket *ss, SSL3Ciphertext *cText)
         return SECFailure;
     }
 
-    return ssl3_HandleNonApplicationData(ss, rType, epoch, cText->seqNum,
-                                         plaintext);
+    rv = ssl3_HandleNonApplicationData(ss, rType, epoch, cText->seqNum,
+                                       plaintext);
+
+#ifdef DEBUG
+    
+
+
+
+    sslBuffer_Clear(&ss->gs.buf);
+#endif
+
+    return rv;
 }
 
 

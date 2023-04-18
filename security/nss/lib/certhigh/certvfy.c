@@ -738,6 +738,16 @@ cert_VerifyCertChainOld(CERTCertDBHandle *handle, CERTCertificate *cert,
         }
 
         
+
+        if (SECOID_CompareAlgorithmID(
+                &subjectCert->signatureWrap.signatureAlgorithm,
+                &subjectCert->signature)) {
+            PORT_SetError(SEC_ERROR_ALGORITHM_MISMATCH);
+            LOG_ERROR(log, subjectCert, count, 0);
+            goto loser;
+        }
+
+        
         issuerCert = CERT_FindCertIssuer(subjectCert, t, certUsage);
         if (!issuerCert) {
             PORT_SetError(SEC_ERROR_UNKNOWN_ISSUER);

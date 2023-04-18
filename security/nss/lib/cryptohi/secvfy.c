@@ -347,7 +347,7 @@ sec_DecodeSigAlg(const SECKEYPublicKey *key, SECOidTag sigAlg,
                 PORT_DestroyCheapArena(&tmpArena);
 
                 
-                if (HASH_GetHashTypeByOidTag(*hashalg) == HASH_AlgNULL) {
+                if (rv != SECSuccess || HASH_GetHashTypeByOidTag(*hashalg) == HASH_AlgNULL) {
                     
                     return SECFailure;
                 }

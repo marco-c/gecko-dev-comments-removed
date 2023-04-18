@@ -126,4 +126,31 @@ TEST_F(GatherV2ClientHelloTest, GatherEmptyV2RecordShortHeader) {
   ConnectExpectMalformedClientHello(buffer);
 }
 
+
+
+
+
+
+
+
+
+
+
+TEST_P(TlsConnectStream, GatherBufferPartialReadTest) {
+  EnsureTlsSetup();
+  Connect();
+
+  client_->SendData(1000);
+
+  if (version_ > SSL_LIBRARY_VERSION_TLS_1_0) {
+    for (unsigned i = 1; i <= 20; i++) {
+      server_->ReadBytes(50);
+      ASSERT_EQ(server_->received_bytes(), 50U * i);
+    }
+  } else {
+    server_->ReadBytes(50);
+    ASSERT_EQ(server_->received_bytes(), 1000U);
+  }
+}
+
 }  

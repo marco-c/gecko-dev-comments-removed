@@ -26,16 +26,16 @@ typedef struct ssl2GatherStr ssl2Gather;
 SECStatus
 ssl3_InitGather(sslGather *gs)
 {
-    SECStatus status;
-
     gs->state = GS_INIT;
     gs->writeOffset = 0;
     gs->readOffset = 0;
     gs->dtlsPacketOffset = 0;
     gs->dtlsPacket.len = 0;
     gs->rejectV2Records = PR_FALSE;
-    status = sslBuffer_Grow(&gs->buf, 4096);
-    return status;
+    
+
+
+    return sslBuffer_Grow(&gs->buf, TLS_1_2_MAX_CTEXT_LENGTH);
 }
 
 
@@ -560,6 +560,15 @@ ssl3_GatherCompleteHandshake(sslSocket *ss, int flags)
             cText.buf = &ss->gs.inbuf;
             rv = ssl3_HandleRecord(ss, &cText);
         }
+
+#ifdef DEBUG
+        
+
+
+
+        sslBuffer_Clear(&ss->gs.inbuf);
+#endif
+
         if (rv < 0) {
             return ss->recvdCloseNotify ? 0 : rv;
         }
