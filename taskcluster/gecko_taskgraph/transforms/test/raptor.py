@@ -21,11 +21,17 @@ transforms = TransformSequence()
 raptor_description_schema = Schema(
     {
         
-        Optional("apps"): optionally_keyed_by("test-platform", "subtest", [str]),
-        Optional("raptor-test"): str,
-        Optional("raptor-subtests"): optionally_keyed_by("app", "test-platform", list),
-        Optional("activity"): optionally_keyed_by("app", str),
-        Optional("binary-path"): optionally_keyed_by("app", str),
+        Optional("raptor"): {
+            Optional("activity"): optionally_keyed_by("app", str),
+            Optional("apps"): optionally_keyed_by("test-platform", "subtest", [str]),
+            Optional("binary-path"): optionally_keyed_by("app", str),
+            Optional("run-visual-metrics"): optionally_keyed_by("app", bool),
+            Optional("subtests"): optionally_keyed_by("app", "test-platform", list),
+            Optional("test"): str,
+            Optional("test-url-param"): optionally_keyed_by(
+                "subtest", "test-platform", str
+            ),
+        },
         
         Optional("max-run-time"): optionally_keyed_by(
             "app", "subtest", "test-platform", test_description_schema["max-run-time"]
@@ -33,7 +39,7 @@ raptor_description_schema = Schema(
         Optional("run-on-projects"): optionally_keyed_by(
             "app",
             "test-name",
-            "raptor-test",
+            "raptor.test",
             "subtest",
             "variant",
             test_description_schema["run-on-projects"],
@@ -43,12 +49,8 @@ raptor_description_schema = Schema(
             "app", test_description_schema["target"]
         ),
         Optional("tier"): optionally_keyed_by(
-            "app", "raptor-test", "subtest", "variant", test_description_schema["tier"]
+            "app", "raptor.test", "subtest", "variant", test_description_schema["tier"]
         ),
-        Optional("test-url-param"): optionally_keyed_by(
-            "subtest", "test-platform", str
-        ),
-        Optional("run-visual-metrics"): optionally_keyed_by("app", bool),
         Required("test-name"): test_description_schema["test-name"],
         Required("test-platform"): test_description_schema["test-platform"],
         Required("require-signed-extensions"): test_description_schema[
@@ -66,7 +68,7 @@ transforms.add_validate(raptor_description_schema)
 @transforms.add
 def set_defaults(config, tests):
     for test in tests:
-        test.setdefault("run-visual-metrics", False)
+        test.setdefault("raptor", {}).setdefault("run-visual-metrics", False)
         yield test
 
 
@@ -81,7 +83,7 @@ def split_apps(config, tests):
     }
 
     for test in tests:
-        apps = test.pop("apps", None)
+        apps = test["raptor"].pop("apps", None)
         if not apps:
             yield test
             continue
@@ -116,7 +118,7 @@ def handle_keyed_by_prereqs(config, tests):
     as well.
     """
     for test in tests:
-        resolve_keyed_by(test, "raptor-subtests", item_name=test["test-name"])
+        resolve_keyed_by(test, "raptor.subtests", item_name=test["test-name"])
         yield test
 
 
@@ -125,7 +127,7 @@ def split_raptor_subtests(config, tests):
     for test in tests:
         
         
-        subtests = test.pop("raptor-subtests", None)
+        subtests = test["raptor"].pop("subtests", None)
         if not subtests:
             yield test
             continue
@@ -152,16 +154,16 @@ def split_raptor_subtests(config, tests):
 @transforms.add
 def handle_keyed_by(config, tests):
     fields = [
-        "test-url-param",
+        "raptor.test-url-param",
+        "raptor.run-visual-metrics",
+        "raptor.activity",
+        "raptor.binary-path",
         "limit-platforms",
-        "activity",
-        "binary-path",
         "fetches.fetch",
         "max-run-time",
         "run-on-projects",
         "target",
         "tier",
-        "run-visual-metrics",
     ]
     for test in tests:
         for field in fields:
@@ -193,13 +195,13 @@ def split_page_load_by_url(config, tests):
             )
 
         if test["test-name"].startswith("browsertime-"):
-            test["raptor-test"] = subtest
+            test["raptor"]["test"] = subtest
 
             
             test["test-name"] = test["test-name"].replace("youtube-playback-", "")
         else:
             
-            test["raptor-test"] = "raptor-tp6-" + subtest + "-{}".format(test["app"])
+            test["raptor"]["test"] = "raptor-tp6-" + subtest + "-{}".format(test["app"])
 
         
         test["test-name"] += f"-{subtest}"
@@ -262,7 +264,7 @@ def add_extra_options(config, tests):
         elif test_platform.startswith("android-hw-p2"):
             extra_options.append("--device-name=p2_aarch64")
 
-        if test.pop("run-visual-metrics", False):
+        if test["raptor"].pop("run-visual-metrics", False):
             extra_options.append("--browsertime-video")
             test["attributes"]["run-visual-metrics"] = True
 
@@ -271,20 +273,22 @@ def add_extra_options(config, tests):
                 "--app={}".format(test["app"])
             )  
 
-        if "activity" in test:
-            extra_options.append("--activity={}".format(test.pop("activity")))
+        if "activity" in test["raptor"]:
+            extra_options.append("--activity={}".format(test["raptor"].pop("activity")))
 
-        if "binary-path" in test:
-            extra_options.append("--binary-path={}".format(test.pop("binary-path")))
+        if "binary-path" in test["raptor"]:
+            extra_options.append(
+                "--binary-path={}".format(test["raptor"].pop("binary-path"))
+            )
 
-        if "raptor-test" in test:
-            extra_options.append("--test={}".format(test.pop("raptor-test")))
+        if "test" in test["raptor"]:
+            extra_options.append("--test={}".format(test["raptor"].pop("test")))
 
         if test["require-signed-extensions"]:
             extra_options.append("--is-release-build")
 
-        if "test-url-param" in test:
-            param = test.pop("test-url-param")
+        if "test-url-param" in test["raptor"]:
+            param = test["raptor"].pop("test-url-param")
             if not param == []:
                 extra_options.append(
                     "--test-url-params={}".format(param.replace(" ", ""))

@@ -479,6 +479,7 @@ test_description_schema = Schema(
         Optional("python-3"): bool,
         
         
+        Optional("raptor"): object,
         
         
         Optional("app"): str,
