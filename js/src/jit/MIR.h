@@ -333,32 +333,34 @@ class AliasSet {
         1 << 9,                  
     WasmGlobalCell = 1 << 10,    
     WasmTableElement = 1 << 11,  
-    WasmStackResult = 1 << 12,   
+    WasmTableMeta = 1 << 12,     
+                                 
+    WasmStackResult = 1 << 13,   
 
     
     
     
     
     
-    ExceptionState = 1 << 13,
+    ExceptionState = 1 << 14,
 
     
     
-    DOMProxyExpando = 1 << 14,
+    DOMProxyExpando = 1 << 15,
 
     
-    MapOrSetHashTable = 1 << 15,
+    MapOrSetHashTable = 1 << 16,
 
     
-    RNG = 1 << 16,
+    RNG = 1 << 17,
 
     
-    WasmPendingException = 1 << 17,
+    WasmPendingException = 1 << 18,
 
     Last = WasmPendingException,
 
     Any = Last | (Last - 1),
-    NumCategories = 18,
+    NumCategories = 19,
 
     
     Store_ = 1 << 31
@@ -8988,11 +8990,12 @@ class MWasmLoadTls : public MUnaryInstruction, public NoTypePolicy::Data {
         aliases_(aliases) {
     
     
-    MOZ_ASSERT(aliases_.flags() ==
-                   AliasSet::Load(AliasSet::WasmHeapMeta).flags() ||
-               aliases_.flags() ==
-                   AliasSet::Load(AliasSet::WasmPendingException).flags() ||
-               aliases_.flags() == AliasSet::None().flags());
+    MOZ_ASSERT(
+        aliases_.flags() == AliasSet::Load(AliasSet::WasmHeapMeta).flags() ||
+        aliases_.flags() == AliasSet::Load(AliasSet::WasmTableMeta).flags() ||
+        aliases_.flags() ==
+            AliasSet::Load(AliasSet::WasmPendingException).flags() ||
+        aliases_.flags() == AliasSet::None().flags());
 
     
     MOZ_ASSERT(type == MIRType::Pointer || type == MIRType::Int32 ||
@@ -9081,12 +9084,21 @@ class MWasmHeapBase : public MUnaryInstruction, public NoTypePolicy::Data {
 
 
 class MWasmBoundsCheck : public MBinaryInstruction, public NoTypePolicy::Data {
+ public:
+  enum Target {
+    Memory,
+    Table,
+  };
+
+ private:
   wasm::BytecodeOffset bytecodeOffset_;
+  Target target_;
 
   explicit MWasmBoundsCheck(MDefinition* index, MDefinition* boundsCheckLimit,
-                            wasm::BytecodeOffset bytecodeOffset)
+                            wasm::BytecodeOffset bytecodeOffset, Target target)
       : MBinaryInstruction(classOpcode, index, boundsCheckLimit),
-        bytecodeOffset_(bytecodeOffset) {
+        bytecodeOffset_(bytecodeOffset),
+        target_(target) {
     MOZ_ASSERT(index->type() == boundsCheckLimit->type());
 
     
@@ -9103,6 +9115,8 @@ class MWasmBoundsCheck : public MBinaryInstruction, public NoTypePolicy::Data {
   NAMED_OPERANDS((0, index), (1, boundsCheckLimit))
 
   AliasSet getAliasSet() const override { return AliasSet::None(); }
+
+  bool isMemory() const { return target_ == MWasmBoundsCheck::Memory; }
 
   bool isRedundant() const { return !isGuard(); }
 
@@ -9578,6 +9592,25 @@ class MWasmLoadGlobalCell : public MUnaryInstruction,
   AliasType mightAlias(const MDefinition* def) const override;
 };
 
+class MWasmLoadTableElement : public MBinaryInstruction,
+                              public NoTypePolicy::Data {
+  MWasmLoadTableElement(MDefinition* elements, MDefinition* index)
+      : MBinaryInstruction(classOpcode, elements, index) {
+    setResultType(MIRType::RefOrNull);
+    setMovable();
+  }
+
+ public:
+  INSTRUCTION_HEADER(WasmLoadTableElement)
+  TRIVIAL_NEW_WRAPPERS
+  NAMED_OPERANDS((0, elements))
+  NAMED_OPERANDS((1, index))
+
+  AliasSet getAliasSet() const override {
+    return AliasSet::Load(AliasSet::WasmTableElement);
+  }
+};
+
 class MWasmStoreGlobalVar : public MBinaryInstruction,
                             public NoTypePolicy::Data {
   MWasmStoreGlobalVar(unsigned globalDataOffset, MDefinition* value,
@@ -9667,6 +9700,38 @@ class MWasmDerivedPointer : public MUnaryInstruction,
 
   ALLOW_CLONE(MWasmDerivedPointer)
 };
+
+class MWasmDerivedIndexPointer : public MBinaryInstruction,
+                                 public NoTypePolicy::Data {
+  MWasmDerivedIndexPointer(MDefinition* base, MDefinition* index, Scale scale)
+      : MBinaryInstruction(classOpcode, base, index), scale_(scale) {
+    setResultType(MIRType::Pointer);
+    setMovable();
+  }
+
+  Scale scale_;
+
+ public:
+  INSTRUCTION_HEADER(WasmDerivedIndexPointer)
+  TRIVIAL_NEW_WRAPPERS
+  NAMED_OPERANDS((0, base))
+  NAMED_OPERANDS((1, index))
+
+  Scale scale() const { return scale_; }
+
+  AliasSet getAliasSet() const override { return AliasSet::None(); }
+
+  bool congruentTo(const MDefinition* ins) const override {
+    return congruentIfOperandsEqual(ins) &&
+           ins->toWasmDerivedIndexPointer()->scale() == scale();
+  }
+
+  ALLOW_CLONE(MWasmDerivedIndexPointer)
+};
+
+
+
+
 
 class MWasmStoreRef : public MAryInstruction<3>, public NoTypePolicy::Data {
   AliasSet::Flag aliasSet_;

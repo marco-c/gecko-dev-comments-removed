@@ -73,7 +73,8 @@ struct TableInstanceData {
 
   
   
-  void* functionBase;
+  
+  void* elements;
 };
 
 
