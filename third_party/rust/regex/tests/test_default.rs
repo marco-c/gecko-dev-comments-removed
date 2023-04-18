@@ -150,3 +150,73 @@ fn regex_is_reasonably_small() {
     assert_eq!(16, size_of::<bytes::Regex>());
     assert_eq!(16, size_of::<bytes::RegexSet>());
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[test]
+fn big_empty_regex_fails() {
+    use regex::Regex;
+
+    let result = Regex::new("(?:){4294967295}");
+    assert!(result.is_err());
+}
+
+
+#[test]
+fn big_empty_reps_chain_regex_fails() {
+    use regex::Regex;
+
+    let result = Regex::new("(?:){64}{64}{64}{64}{64}{64}");
+    assert!(result.is_err());
+}
+
+
+
+#[test]
+fn big_zero_reps_regex_fails() {
+    use regex::Regex;
+
+    let result = Regex::new(r"x{0}{4294967295}");
+    assert!(result.is_err());
+}
+
+
+#[test]
+fn empty_alt_regex_fails() {
+    use regex::Regex;
+
+    let result = Regex::new(r"(?:|){4294967295}");
+    assert!(result.is_err());
+}
