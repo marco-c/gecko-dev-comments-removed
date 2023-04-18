@@ -104,7 +104,30 @@ bool MsaaIdGenerator::ReleaseID(uint32_t aID) {
     return false;
   }
   if (StaticPrefs::accessibility_cache_enabled_AtStartup()) {
-    mIDSet->ReleaseID(~aID);
+    
+    
+    
+    
+    
+    const uint32_t kReleaseDelay = 1000;
+    mIDsToRelease.AppendElement(aID);
+    if (mReleaseIDTimer) {
+      mReleaseIDTimer->SetDelay(kReleaseDelay);
+    } else {
+      NS_NewTimerWithCallback(
+          getter_AddRefs(mReleaseIDTimer),
+          
+          
+          [this](nsITimer* aTimer) {
+            for (auto id : mIDsToRelease) {
+              mIDSet->ReleaseID(~id);
+            }
+            mIDsToRelease.Clear();
+            mReleaseIDTimer = nullptr;
+          },
+          kReleaseDelay, nsITimer::TYPE_ONE_SHOT,
+          "a11y::MsaaIdGenerator::ReleaseIDDelayed");
+    }
     return true;
   }
   detail::MsaaIDCracker cracked(aID);
