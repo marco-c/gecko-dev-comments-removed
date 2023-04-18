@@ -65,6 +65,10 @@ const DEFAULT_SUGGESTION_SCORE = 0.2;
 
 
 
+const ADD_RESULTS_CHUNK_SIZE = 1000;
+
+
+
 
 
 class QuickSuggest extends EventEmitter {
@@ -393,6 +397,9 @@ class QuickSuggest extends EventEmitter {
   _resultsByKeyword = new Map();
 
   
+  _addResultsChunkSize = ADD_RESULTS_CHUNK_SIZE;
+
+  
 
 
 
@@ -462,7 +469,7 @@ class QuickSuggest extends EventEmitter {
         let { buffer } = await this._rs.attachments.download(record);
         let results = JSON.parse(new TextDecoder("utf-8").decode(buffer));
         log.debug(`Adding ${results.length} results`);
-        this._addResults(results);
+        await this._addResults(results);
       }
     });
   }
@@ -484,21 +491,51 @@ class QuickSuggest extends EventEmitter {
 
 
 
-  _addResults(results) {
-    for (let result of results) {
-      for (let keyword of result.keywords) {
-        
-        
-        
-        let object = this._resultsByKeyword.get(keyword);
-        if (!object) {
-          this._resultsByKeyword.set(keyword, result);
-        } else if (!Array.isArray(object)) {
-          this._resultsByKeyword.set(keyword, [object, result]);
-        } else {
-          object.push(result);
-        }
-      }
+  async _addResults(results) {
+    
+    
+    
+    
+    
+    let resultIndex = 0;
+    let keywordIndex = 0;
+
+    
+    while (resultIndex < results.length) {
+      await new Promise(resolve => {
+        Services.tm.idleDispatchToMainThread(() => {
+          
+          let indexInChunk = 0;
+          while (
+            indexInChunk < this._addResultsChunkSize &&
+            resultIndex < results.length
+          ) {
+            let result = results[resultIndex];
+            if (keywordIndex == result.keywords.length) {
+              resultIndex++;
+              keywordIndex = 0;
+              continue;
+            }
+            
+            
+            
+            let keyword = result.keywords[keywordIndex];
+            let object = this._resultsByKeyword.get(keyword);
+            if (!object) {
+              this._resultsByKeyword.set(keyword, result);
+            } else if (!Array.isArray(object)) {
+              this._resultsByKeyword.set(keyword, [object, result]);
+            } else {
+              object.push(result);
+            }
+            keywordIndex++;
+            indexInChunk++;
+          }
+
+          
+          resolve();
+        });
+      });
     }
   }
 
