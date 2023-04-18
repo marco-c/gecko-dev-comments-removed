@@ -22,16 +22,19 @@ def warnings_as_errors(warnings_as_errors):
 
 set_config("WARNINGS_AS_ERRORS", warnings_as_errors)
 
+not_clang_cl = depends(c_compiler)(lambda c: c.type != "clang-cl")
 
 
 
 
 
 
-add_warning("-Wall")
+add_warning("-Wall", when=not_clang_cl)
+
+add_warning("-W3", when=depends(c_compiler)(lambda c: c.type == "clang-cl"))
 
 
-check_and_add_warning("-Wbitfield-enum-conversion")
+check_and_add_warning("-Wbitfield-enum-conversion", when=not_clang_cl)
 
 
 check_and_add_warning("-Wdeprecated-this-capture", cxx_compiler)
@@ -43,7 +46,7 @@ add_warning("-Wempty-body")
 check_and_add_warning("-Wformat-type-confusion")
 
 
-add_warning("-Wignored-qualifiers")
+add_warning("-Wignored-qualifiers", when=not_clang_cl)
 
 
 add_warning("-Wpointer-arith")
@@ -52,7 +55,7 @@ add_warning("-Wpointer-arith")
 check_and_add_warning("-Wshadow-field-in-constructor-modified")
 
 
-add_warning("-Wsign-compare")
+add_warning("-Wsign-compare", when=not_clang_cl)
 
 
 add_warning("-Wtype-limits")
@@ -61,21 +64,21 @@ add_warning("-Wtype-limits")
 check_and_add_warning("-Wno-error=tautological-type-limit-compare")
 
 
-add_warning("-Wunreachable-code")
-check_and_add_warning("-Wunreachable-code-return")
+add_warning("-Wunreachable-code", when=not_clang_cl)
+check_and_add_warning("-Wunreachable-code-return", when=not_clang_cl)
 
 
 
 check_and_add_warning(
     "-Wunused-but-set-parameter",
-    when=depends(c_compiler)(lambda c: c.type == "clang"),
+    when=depends(c_compiler)(lambda c: c.type in ("clang", "clang-cl")),
 )
 
 
 add_warning("-Wno-invalid-offsetof", cxx_compiler)
 
 
-check_and_add_warning("-Wclass-varargs")
+check_and_add_warning("-Wclass-varargs", when=not_clang_cl)
 
 
 check_and_add_warning("-Wempty-init-stmt", cxx_compiler)
@@ -94,7 +97,7 @@ check_and_add_warning("-Wno-range-loop-analysis")
 check_and_add_warning("-Wc++2a-compat", cxx_compiler)
 
 
-check_and_add_warning("-Wcomma", cxx_compiler)
+check_and_add_warning("-Wcomma", cxx_compiler, when=not_clang_cl)
 
 
 check_and_add_warning("-Wduplicated-cond")
@@ -103,7 +106,7 @@ check_and_add_warning("-Wduplicated-cond")
 check_and_add_warning("-Wenum-compare-conditional")
 
 
-check_and_add_warning("-Wimplicit-fallthrough", cxx_compiler)
+check_and_add_warning("-Wimplicit-fallthrough", cxx_compiler, when=not_clang_cl)
 
 
 with only_when(depends(target)(lambda t: t.kernel == "Darwin")):
@@ -197,29 +200,94 @@ check_and_add_warning("-Wformat-security", when=c_format_warning & cxx_format_wa
 check_and_add_warning("-Wformat-overflow=2", when=c_format_warning & cxx_format_warning)
 
 
-with only_when(depends(target)(lambda t: t.kernel == "WINNT")):
+with only_when(target_is_windows):
+    
+    
+    
     
     
     check_and_add_warning("-Wno-unknown-pragmas")
 
-    
-    
-    check_and_add_warning("-Wno-unused-function")
+    with only_when(depends(c_compiler)(lambda c: c.type == "clang-cl")):
+        
+        
+        check_and_add_warning("-Wno-ignored-pragmas")
 
-    
-    
-    
-    check_and_add_warning("-Wno-conversion-null")
+        
+        
+        
+        check_and_add_warning("-Wno-deprecated-declarations")
 
-    
-    
-    check_and_add_warning("-Wno-switch")
+        
+        
+        
+        check_and_add_warning("-Wno-microsoft-enum-value", cxx_compiler)
 
-    
-    
-    
-    
-    check_and_add_warning("-Wno-enum-compare")
+        
+        
+        
+        
+        check_and_add_warning("-Wno-microsoft-include", cxx_compiler)
+
+        
+        
+        
+        
+        check_and_add_warning("-Wno-invalid-noreturn")
+
+        
+        
+        check_and_add_warning("-Wno-inconsistent-missing-override", cxx_compiler)
+
+        
+        
+        
+        
+        
+        
+        
+        
+        check_and_add_warning("-Wno-implicit-exception-spec-mismatch", cxx_compiler)
+
+        
+        
+        
+        check_and_add_warning("-Wno-microsoft-exception-spec", cxx_compiler)
+
+        
+        
+        check_and_add_warning("-Wno-unused-local-typedef", cxx_compiler)
+
+        
+        
+        check_and_add_warning("-Wno-ignored-attributes", cxx_compiler)
+
+        
+        
+        
+        
+        
+        check_and_add_warning("-Wno-used-but-marked-unused", cxx_compiler)
+
+    with only_when(depends(c_compiler)(lambda c: c.type != "clang-cl")):
+        
+        
+        check_and_add_warning("-Wno-unused-function")
+
+        
+        
+        
+        check_and_add_warning("-Wno-conversion-null")
+
+        
+        
+        check_and_add_warning("-Wno-switch")
+
+        
+        
+        
+        
+        check_and_add_warning("-Wno-enum-compare")
 
 
 check_and_add_warning("-Wno-gnu-zero-variadic-macro-arguments")
