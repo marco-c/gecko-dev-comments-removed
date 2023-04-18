@@ -141,3 +141,18 @@ add_task(async function apa_test_title_case_menubar() {
 
   await BrowserTestUtils.closeWindow(newWin);
 });
+
+
+
+
+
+add_task(async function apa_test_title_case_macos_dock_menu() {
+  if (AppConstants.platform != "macosx") {
+    return;
+  }
+
+  let hiddenWindow = Services.appShell.hiddenDOMWindow;
+  Assert.ok(hiddenWindow, "Could get at hidden window");
+  let menupopup = hiddenWindow.document.getElementById("menu_mac_dockmenu");
+  checkMenuItems(menupopup);
+});
