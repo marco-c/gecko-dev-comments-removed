@@ -530,9 +530,10 @@ const manifestTypes = new Map([
 
 
 class ExtensionData {
-  constructor(rootURI) {
+  constructor(rootURI, isPrivileged = false) {
     this.rootURI = rootURI;
     this.resourceURL = rootURI.spec;
+    this.isPrivileged = isPrivileged;
 
     this.manifest = null;
     this.type = null;
@@ -551,6 +552,38 @@ class ExtensionData {
     this.errors = [];
     this.warnings = [];
     this.eventPagesEnabled = eventPagesEnabled;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  static async constructAsync({ rootURI, checkPrivileged }) {
+    let extension = new ExtensionData(rootURI);
+    
+    await extension.initializeAddonTypeAndID();
+    let { type, id } = extension;
+    
+    
+    type = type == "langpack" ? "locale" : type;
+    extension.isPrivileged = await checkPrivileged(type, id);
+    return extension;
+  }
+
+  static getIsPrivileged({ signedState, builtIn, temporarilyInstalled }) {
+    return (
+      signedState === AddonManager.SIGNEDSTATE_PRIVILEGED ||
+      signedState === AddonManager.SIGNEDSTATE_SYSTEM ||
+      builtIn ||
+      (AddonSettings.EXPERIMENTS_ENABLED && temporarilyInstalled)
+    );
   }
 
   get builtinMessages() {
@@ -725,25 +758,8 @@ class ExtensionData {
     });
   }
 
-  canCheckSignature() {
-    
-    
-    
-    
-    
-    
-    
-    return this.constructor != ExtensionData;
-  }
-
   get restrictSchemes() {
-    
-    
-    
-    
-    
-    
-    return !this.hasPermission("mozillaAddons");
+    return !(this.isPrivileged && this.hasPermission("mozillaAddons"));
   }
 
   
@@ -1027,15 +1043,48 @@ class ExtensionData {
     return Schemas.normalize(this.rawManifest, manifestType, context);
   }
 
+  async initializeAddonTypeAndID() {
+    if (this.type) {
+      
+      return;
+    }
+    this.rawManifest = await this.readJSON("manifest.json");
+    let manifest = this.rawManifest;
+
+    if (manifest.theme) {
+      this.type = "theme";
+    } else if (manifest.langpack_id) {
+      
+      this.type = "langpack";
+    } else if (manifest.dictionaries) {
+      this.type = "dictionary";
+    } else if (manifest.site_permissions) {
+      this.type = "sitepermission";
+    } else {
+      this.type = "extension";
+    }
+
+    if (!this.id) {
+      let bss =
+        manifest.browser_specific_settings?.gecko ||
+        manifest.applications?.gecko;
+      let id = bss?.id;
+      
+      
+      
+      
+      if (typeof id == "string") {
+        this.id = id;
+      }
+    }
+  }
+
   
   async parseManifest() {
-    let [manifest] = await Promise.all([
-      this.readJSON("manifest.json"),
-      Management.lazyInit(),
-    ]);
+    await Promise.all([this.initializeAddonTypeAndID(), Management.lazyInit()]);
 
+    let manifest = this.rawManifest;
     this.manifest = manifest;
-    this.rawManifest = manifest;
 
     if (manifest.default_locale) {
       await this.initLocale();
@@ -1052,18 +1101,6 @@ class ExtensionData {
         
         Cu.reportError("Ignoring l10n_resources in unprivileged extension");
       }
-    }
-
-    if (this.manifest.theme) {
-      this.type = "theme";
-    } else if (this.manifest.langpack_id) {
-      this.type = "langpack";
-    } else if (this.manifest.dictionaries) {
-      this.type = "dictionary";
-    } else if (this.manifest.site_permissions) {
-      this.type = "sitepermission";
-    } else {
-      this.type = "extension";
     }
 
     let normalized = await this._getNormalizedManifest();
@@ -1096,8 +1133,6 @@ class ExtensionData {
       this.logWarning("Event pages are not currently supported.");
     }
 
-    this.id ??= manifest.applications?.gecko?.id;
-
     let apiNames = new Set();
     let dependencies = new Set();
     let originPermissions = new Set();
@@ -1106,6 +1141,9 @@ class ExtensionData {
 
     let schemaPromises = new Map();
 
+    
+    
+    
     let result = {
       apiNames,
       dependencies,
@@ -1148,18 +1186,6 @@ class ExtensionData {
         } else if (type.api) {
           apiNames.add(type.api);
         } else if (type.invalid) {
-          if (!this.canCheckSignature() && PRIVILEGED_PERMS.has(perm)) {
-            
-            
-            
-            
-            
-            
-            
-            
-            continue;
-          }
-
           this.manifestWarning(`Invalid extension permission: ${perm}`);
           continue;
         }
@@ -2101,7 +2127,7 @@ let pendingExtensions = new Map();
 
 class Extension extends ExtensionData {
   constructor(addonData, startupReason) {
-    super(addonData.resourceURI);
+    super(addonData.resourceURI, addonData.isPrivileged);
 
     this.startupStates = new Set();
     this.state = "Not started";
@@ -2343,15 +2369,6 @@ class Extension extends ExtensionData {
 
   get manifestCacheKey() {
     return [this.id, this.version, Services.locale.appLocaleAsBCP47];
-  }
-
-  get isPrivileged() {
-    return (
-      this.addonData.signedState === AddonManager.SIGNEDSTATE_PRIVILEGED ||
-      this.addonData.signedState === AddonManager.SIGNEDSTATE_SYSTEM ||
-      this.addonData.builtIn ||
-      (AddonSettings.EXPERIMENTS_ENABLED && this.temporarilyInstalled)
-    );
   }
 
   get temporarilyInstalled() {
