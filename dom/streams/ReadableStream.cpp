@@ -20,6 +20,8 @@
 #include "mozilla/dom/QueueWithSizes.h"
 #include "mozilla/dom/QueuingStrategyBinding.h"
 #include "mozilla/dom/ReadRequest.h"
+#include "mozilla/dom/ReadableByteStreamController.h"
+#include "mozilla/dom/ReadableStreamBYOBReader.h"
 #include "mozilla/dom/ReadableStreamBinding.h"
 #include "mozilla/dom/ReadableStreamDefaultController.h"
 #include "mozilla/dom/ReadableStreamDefaultReader.h"
@@ -35,6 +37,27 @@
 #include "nsISupports.h"
 
 #include <unistd.h>
+
+inline void ImplCycleCollectionTraverse(
+    nsCycleCollectionTraversalCallback& aCallback,
+    mozilla::Variant<mozilla::Nothing,
+                     RefPtr<mozilla::dom::ReadableStreamDefaultReader>>&
+        aReader,
+    const char* aName, uint32_t aFlags = 0) {
+  if (aReader.is<RefPtr<mozilla::dom::ReadableStreamDefaultReader>>()) {
+    ImplCycleCollectionTraverse(
+        aCallback,
+        aReader.as<RefPtr<mozilla::dom::ReadableStreamDefaultReader>>(), aName,
+        aFlags);
+  }
+}
+
+inline void ImplCycleCollectionUnlink(
+    mozilla::Variant<mozilla::Nothing,
+                     RefPtr<mozilla::dom::ReadableStreamDefaultReader>>&
+        aReader) {
+  aReader = AsVariant(mozilla::Nothing());
+}
 
 namespace mozilla {
 namespace dom {
@@ -62,12 +85,13 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(ReadableStream)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
-ReadableStream::ReadableStream(nsIGlobalObject* aGlobal) : mGlobal(aGlobal) {
+ReadableStream::ReadableStream(nsIGlobalObject* aGlobal)
+    : mGlobal(aGlobal), mReader(nullptr) {
   mozilla::HoldJSObjects(this);
 }
 
 ReadableStream::ReadableStream(const GlobalObject& aGlobal)
-    : mGlobal(do_QueryInterface(aGlobal.GetAsSupports())) {
+    : mGlobal(do_QueryInterface(aGlobal.GetAsSupports())), mReader(nullptr) {
   mozilla::HoldJSObjects(this);
 }
 
@@ -146,9 +170,9 @@ already_AddRefed<ReadableStream> ReadableStream::Constructor(
 
     
     (void)highWaterMark;
-    MOZ_CRASH("Byte Streams Not Yet Implemented");
+    aRv.ThrowNotSupportedError("BYOB Byte Streams Not Yet Supported");
 
-    return readableStream.forget();
+    return nullptr;
   }
 
   
@@ -315,8 +339,12 @@ already_AddRefed<Promise> ReadableStreamCancel(JSContext* aCx,
 
   
   if (reader && reader->IsBYOB()) {
-    MOZ_CRASH(
-        "NYI: Implement read into request clearing when BYOB readers exist");
+    for (auto* readIntoRequest : reader->AsBYOB()->ReadIntoRequests()) {
+      readIntoRequest->CloseSteps(aCx, JS::UndefinedHandleValue, aRv);
+      if (aRv.Failed()) {
+        return nullptr;
+      }
+    }
   }
 
   
@@ -387,18 +415,23 @@ AcquireReadableStreamDefaultReader(JSContext* aCx, ReadableStream* aStream,
 }
 
 
-
-already_AddRefed<ReadableStreamDefaultReader> ReadableStream::GetReader(
-    JSContext* aCx, const ReadableStreamGetReaderOptions& aOptions,
-    ErrorResult& aRv) {
+void ReadableStream::GetReader(JSContext* aCx,
+                               const ReadableStreamGetReaderOptions& aOptions,
+                               OwningReadableStreamReader& resultReader,
+                               ErrorResult& aRv) {
   
   if (!aOptions.mMode.WasPassed()) {
     RefPtr<ReadableStream> thisRefPtr = this;
-    return AcquireReadableStreamDefaultReader(aCx, thisRefPtr, aRv);
+    RefPtr<ReadableStreamDefaultReader> defaultReader =
+        AcquireReadableStreamDefaultReader(aCx, thisRefPtr, aRv);
+    if (aRv.Failed()) {
+      return;
+    }
+    resultReader.SetAsReadableStreamDefaultReader() = defaultReader;
+    return;
   }
   
-  MOZ_CRASH("BYOB STREAMS NOT IMPLEMENTED");
-  return nullptr;
+  aRv.ThrowTypeError("BYOB STREAMS NOT IMPLEMENTED");
 }
 
 
@@ -456,9 +489,19 @@ void ReadableStreamError(JSContext* aCx, ReadableStream* aStream,
     
     defaultReader->ReadRequests().clear();
   } else {
-    MOZ_ASSERT(reader->IsBYOB());
     
-    MOZ_CRASH("BYOBReader not yet implemented");
+    
+    MOZ_ASSERT(reader->IsBYOB());
+    ReadableStreamBYOBReader* byobReader = reader->AsBYOB();
+    
+    for (auto* readIntoRequest : byobReader->ReadIntoRequests()) {
+      readIntoRequest->ErrorSteps(aCx, aValue, aRv);
+      if (aRv.Failed()) {
+        return;
+      }
+    }
+    
+    byobReader->ReadIntoRequests().clear();
   }
 }
 
@@ -725,6 +768,10 @@ static void ReadableStreamTee(JSContext* aCx, ReadableStream* aStream,
   
   
   
+  if (aStream->Controller()->IsByte()) {
+    aRv.ThrowTypeError("Cannot yet tee a byte stream controller");
+    return;
+  }
   
   ReadableStreamDefaultTee(aCx, aStream, aCloneForBranch2, aResult, aRv);
 }
@@ -734,6 +781,21 @@ void ReadableStream::Tee(JSContext* aCx,
                          nsTArray<RefPtr<ReadableStream>>& aResult,
                          ErrorResult& aRv) {
   ReadableStreamTee(aCx, this, false, aResult, aRv);
+}
+
+
+void ReadableStreamAddReadIntoRequest(ReadableStream* aStream,
+                                      ReadIntoRequest* aReadIntoRequest) {
+  
+  MOZ_ASSERT(aStream->GetReader()->IsBYOB());
+
+  
+  MOZ_ASSERT(aStream->State() == ReadableStream::ReaderState::Readable ||
+             aStream->State() == ReadableStream::ReaderState::Closed);
+
+  
+  aStream->GetReader()->AsBYOB()->ReadIntoRequests().insertBack(
+      aReadIntoRequest);
 }
 
 }  

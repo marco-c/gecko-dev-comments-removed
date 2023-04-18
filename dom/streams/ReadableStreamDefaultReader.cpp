@@ -57,9 +57,10 @@ JSObject* ReadableStreamDefaultReader::WrapObject(
 }
 
 
-static bool ReadableStreamReaderGenericInitialize(
-    JSContext* aCx, ReadableStreamDefaultReader* aReader,
-    ReadableStream* aStream, ErrorResult& aRv) {
+bool ReadableStreamReaderGenericInitialize(JSContext* aCx,
+                                           ReadableStreamGenericReader* aReader,
+                                           ReadableStream* aStream,
+                                           ErrorResult& aRv) {
   
   aReader->SetStream(aStream);
 
@@ -267,8 +268,8 @@ already_AddRefed<Promise> ReadableStreamDefaultReader::Read(JSContext* aCx,
 }
 
 
-static void ReadableStreamGenericRelease(ReadableStreamDefaultReader* aReader,
-                                         ErrorResult& aRv) {
+void ReadableStreamReaderGenericRelease(ReadableStreamGenericReader* aReader,
+                                        ErrorResult& aRv) {
   
   MOZ_ASSERT(aReader->GetStream());
   
@@ -311,11 +312,11 @@ void ReadableStreamDefaultReader::ReleaseLock(ErrorResult& aRv) {
   }
 
   
-  ReadableStreamGenericRelease(this, aRv);
+  ReadableStreamReaderGenericRelease(this, aRv);
 }
 
 
-already_AddRefed<Promise> ReadableStreamDefaultReader::Closed() const {
+already_AddRefed<Promise> ReadableStreamGenericReader::Closed() const {
   
   return do_AddRef(mClosedPromise);
 }
@@ -323,7 +324,7 @@ already_AddRefed<Promise> ReadableStreamDefaultReader::Closed() const {
 
 MOZ_CAN_RUN_SCRIPT
 static already_AddRefed<Promise> ReadableStreamGenericReaderCancel(
-    JSContext* aCx, ReadableStreamDefaultReader* aReader,
+    JSContext* aCx, ReadableStreamGenericReader* aReader,
     JS::Handle<JS::Value> aReason, ErrorResult& aRv) {
   
   RefPtr<ReadableStream> stream = aReader->GetStream();
@@ -335,10 +336,8 @@ static already_AddRefed<Promise> ReadableStreamGenericReaderCancel(
   return ReadableStreamCancel(aCx, stream, aReason, aRv);
 }
 
-
-
 MOZ_CAN_RUN_SCRIPT
-already_AddRefed<Promise> ReadableStreamDefaultReader::Cancel(
+already_AddRefed<Promise> ReadableStreamGenericReader::Cancel(
     JSContext* aCx, JS::Handle<JS::Value> aReason, ErrorResult& aRv) {
   
   if (!mStream) {
