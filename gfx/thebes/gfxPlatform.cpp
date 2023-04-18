@@ -2861,6 +2861,17 @@ void gfxPlatform::InitWebGLConfig() {
       gfxVars::SetAllowEglRbab(false);
     }
   }
+
+  if (kIsWayland || kIsX11) {
+    
+    
+    nsString adapterDriverVendor;
+    gfxInfo->GetAdapterDriverVendor(adapterDriverVendor);
+    if (adapterDriverVendor.Find("mesa") != -1 &&
+        adapterDriverVendor.Find("radeonsi") != -1) {
+      gfxVars::SetUseDMABufSurfaceExport(false);
+    }
+  }
 }
 
 void gfxPlatform::InitWebGPUConfig() {
