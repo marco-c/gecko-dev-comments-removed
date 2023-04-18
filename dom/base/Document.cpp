@@ -14486,7 +14486,8 @@ void Document::RestorePreviousFullscreenState(UniquePtr<FullscreenExit> aExit) {
   
   Document* newFullscreenDoc;
   if (fullscreenCount > 1) {
-    lastDoc->UnsetFullscreenElement();
+    DebugOnly<bool> removedFullscreenElement = lastDoc->PopFullscreenElement();
+    MOZ_ASSERT(removedFullscreenElement);
     newFullscreenDoc = lastDoc;
   } else {
     lastDoc->CleanupFullscreenState();
@@ -14551,38 +14552,10 @@ static void NotifyFullScreenChangedForMediaElement(Element& aElement) {
   }
 }
 
-
-void Document::ClearFullscreenStateOnElement(Element& aElement) {
-  
-  aElement.RemoveStates(NS_EVENT_STATE_FULLSCREEN);
-  NotifyFullScreenChangedForMediaElement(aElement);
-  
-  if (auto* iframe = HTMLIFrameElement::FromNode(aElement)) {
-    iframe->SetFullscreenFlag(false);
-  }
-}
-
 void Document::CleanupFullscreenState() {
-  
-  
-  
-  
-  
-  
-  
-  mTopLayer.RemoveElementsBy([&](const nsWeakPtr& weakPtr) {
-    nsCOMPtr<Element> element(do_QueryReferent(weakPtr));
-    if (!element || !element->IsInComposedDoc() ||
-        element->OwnerDoc() != this) {
-      return true;
-    }
-
-    if (element->State().HasState(NS_EVENT_STATE_FULLSCREEN)) {
-      ClearFullscreenStateOnElement(*element);
-      return true;
-    }
-    return false;
-  });
+  while (PopFullscreenElement()) {
+    
+  }
 
   mFullscreenRoot = nullptr;
 
@@ -14593,28 +14566,47 @@ void Document::CleanupFullscreenState() {
           mSavedResolution, ResolutionChangeOrigin::MainThreadRestore);
     }
   }
-
-  UpdateViewportScrollbarOverrideForFullscreen(this);
 }
 
-void Document::UnsetFullscreenElement() {
+bool Document::PopFullscreenElement() {
   Element* removedElement = TopLayerPop([](Element* element) -> bool {
     return element->State().HasState(NS_EVENT_STATE_FULLSCREEN);
   });
 
+  if (!removedElement) {
+    return false;
+  }
+
   MOZ_ASSERT(removedElement->State().HasState(NS_EVENT_STATE_FULLSCREEN));
-  ClearFullscreenStateOnElement(*removedElement);
+  removedElement->RemoveStates(NS_EVENT_STATE_FULLSCREEN);
+  NotifyFullScreenChangedForMediaElement(*removedElement);
+  
+  if (auto* iframe = HTMLIFrameElement::FromNode(removedElement)) {
+    iframe->SetFullscreenFlag(false);
+  }
   UpdateViewportScrollbarOverrideForFullscreen(this);
+  return true;
 }
 
 void Document::SetFullscreenElement(Element& aElement) {
-  TopLayerPush(aElement);
   aElement.AddStates(NS_EVENT_STATE_FULLSCREEN);
+  TopLayerPush(aElement);
   NotifyFullScreenChangedForMediaElement(aElement);
   UpdateViewportScrollbarOverrideForFullscreen(this);
 }
 
+static EventStates TopLayerModalStates() {
+  EventStates modalStates = NS_EVENT_STATE_MODAL_DIALOG;
+  if (StaticPrefs::dom_fullscreen_modal()) {
+    modalStates |= NS_EVENT_STATE_FULLSCREEN;
+  }
+  return modalStates;
+}
+
 void Document::TopLayerPush(Element& aElement) {
+  const bool modal =
+      aElement.State().HasAtLeastOneOfStates(TopLayerModalStates());
+
   auto predictFunc = [&aElement](Element* element) {
     return element == &aElement;
   };
@@ -14622,70 +14614,45 @@ void Document::TopLayerPush(Element& aElement) {
 
   mTopLayer.AppendElement(do_GetWeakReference(&aElement));
   NS_ASSERTION(GetTopLayerTop() == &aElement, "Should match");
-}
 
-void Document::AddModalDialog(HTMLDialogElement& aDialogElement) {
-  TopLayerPush(aDialogElement);
+  if (modal) {
+    aElement.AddStates(NS_EVENT_STATE_TOPMOST_MODAL);
 
-  Element* root = GetRootElement();
-  MOZ_RELEASE_ASSERT(root, "dialog in document without root?");
-
-  
-  
-  
-  
-  
-  root->AddStates(NS_EVENT_STATE_MOZINERT);
-  aDialogElement.AddStates(NS_EVENT_STATE_MODAL_DIALOG |
-                           NS_EVENT_STATE_TOPMOST_MODAL_DIALOG);
-
-  
-  
-  
-  
-  
-  for (const nsWeakPtr& weakPtr : Reversed(mTopLayer)) {
-    nsCOMPtr<Element> element(do_QueryReferent(weakPtr));
-    if (auto* dialog = HTMLDialogElement::FromNodeOrNull(element)) {
-      if (dialog != &aDialogElement) {
-        dialog->RemoveStates(NS_EVENT_STATE_TOPMOST_MODAL_DIALOG);
-        
-        
+    bool foundExistingModalElement = false;
+    for (const nsWeakPtr& weakPtr : Reversed(mTopLayer)) {
+      nsCOMPtr<Element> element(do_QueryReferent(weakPtr));
+      if (element && element != &aElement &&
+          element->State().HasState(NS_EVENT_STATE_TOPMOST_MODAL)) {
+        element->RemoveStates(NS_EVENT_STATE_TOPMOST_MODAL);
+        foundExistingModalElement = true;
         break;
       }
     }
-  }
-}
 
-void Document::RemoveModalDialog(HTMLDialogElement& aDialogElement) {
-  aDialogElement.RemoveStates(NS_EVENT_STATE_MODAL_DIALOG |
-                              NS_EVENT_STATE_TOPMOST_MODAL_DIALOG);
-
-  auto predicate = [&aDialogElement](Element* element) -> bool {
-    return element == &aDialogElement;
-  };
-
-  DebugOnly<Element*> removedElement = TopLayerPop(predicate);
-  MOZ_ASSERT(removedElement == &aDialogElement);
-
-  
-  
-  for (const nsWeakPtr& weakPtr : Reversed(mTopLayer)) {
-    nsCOMPtr<Element> element(do_QueryReferent(weakPtr));
-    if (auto* dialog = HTMLDialogElement::FromNodeOrNull(element)) {
-      if (dialog != &aDialogElement) {
-        dialog->AddStates(NS_EVENT_STATE_TOPMOST_MODAL_DIALOG);
+    if (!foundExistingModalElement) {
+      Element* root = GetRootElement();
+      MOZ_RELEASE_ASSERT(root, "top layer element outside of document?");
+      if (&aElement != root) {
         
         
-        return;
+        root->AddStates(NS_EVENT_STATE_MOZINERT);
       }
     }
   }
+}
 
-  Element* root = GetRootElement();
-  if (root && !root->GetBoolAttr(nsGkAtoms::inert)) {
-    root->RemoveStates(NS_EVENT_STATE_MOZINERT);
-  }
+void Document::AddModalDialog(HTMLDialogElement& aDialogElement) {
+  aDialogElement.AddStates(NS_EVENT_STATE_MODAL_DIALOG);
+  TopLayerPush(aDialogElement);
+}
+
+void Document::RemoveModalDialog(HTMLDialogElement& aDialogElement) {
+  auto predicate = [&aDialogElement](Element* element) -> bool {
+    return element == &aDialogElement;
+  };
+  DebugOnly<Element*> removedElement = TopLayerPop(predicate);
+  MOZ_ASSERT(removedElement == &aDialogElement);
+  aDialogElement.RemoveStates(NS_EVENT_STATE_MODAL_DIALOG);
 }
 
 Element* Document::TopLayerPop(FunctionRef<bool(Element*)> aPredicate) {
@@ -14719,6 +14686,33 @@ Element* Document::TopLayerPop(FunctionRef<bool(Element*)> aPredicate) {
     } else {
       
       break;
+    }
+  }
+
+  if (!removedElement) {
+    return nullptr;
+  }
+
+  const EventStates modalStates = TopLayerModalStates();
+  const bool modal = removedElement->State().HasAtLeastOneOfStates(modalStates);
+
+  if (modal) {
+    removedElement->RemoveStates(NS_EVENT_STATE_TOPMOST_MODAL);
+    bool foundExistingModalElement = false;
+    for (const nsWeakPtr& weakPtr : Reversed(mTopLayer)) {
+      nsCOMPtr<Element> element(do_QueryReferent(weakPtr));
+      if (element && element->State().HasAtLeastOneOfStates(modalStates)) {
+        element->AddStates(NS_EVENT_STATE_TOPMOST_MODAL);
+        foundExistingModalElement = true;
+        break;
+      }
+    }
+    
+    if (!foundExistingModalElement) {
+      Element* root = GetRootElement();
+      if (root && !root->GetBoolAttr(nsGkAtoms::inert)) {
+        root->RemoveStates(NS_EVENT_STATE_MOZINERT);
+      }
     }
   }
 

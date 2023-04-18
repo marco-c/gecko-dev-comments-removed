@@ -1905,8 +1905,6 @@ class Document : public nsINode,
   void RequestFullscreenInParentProcess(UniquePtr<FullscreenRequest> aRequest,
                                         bool applyFullScreenDirectly);
 
-  static void ClearFullscreenStateOnElement(Element&);
-
   
   void TopLayerPush(Element&);
 
@@ -1921,7 +1919,7 @@ class Document : public nsINode,
 
   
   
-  void UnsetFullscreenElement();
+  bool PopFullscreenElement();
 
   
   
