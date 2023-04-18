@@ -633,17 +633,13 @@ static bool CollectRuntimeStatsHelper(JSContext* cx, RuntimeStats* rtStats,
                                       IterateCellCallback statsCellCallback) {
   
   
-  JSRuntime* rt = cx->runtime();
-  WaitForOffThreadParses(rt);
-
-  
-  
   gc::FinishGC(cx);
   JS::AutoAssertNoGC nogc(cx);
 
   
   WaitForAllHelperThreads();
 
+  JSRuntime* rt = cx->runtime();
   if (!rtStats->realmStatsVector.reserve(rt->numRealms)) {
     return false;
   }
