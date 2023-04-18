@@ -16,9 +16,10 @@
 
 
 #![allow(dead_code, unused_imports, unused_parens, unknown_lints, renamed_and_removed_lints)]
-#![allow(clippy::no_effect, clippy::needless_lifetimes)]
+#![allow(clippy::needless_lifetimes)]
 
 use pin_project::pin_project;
+
 
 struct Struct<T, U> {
     
@@ -26,43 +27,26 @@ struct Struct<T, U> {
     unpinned: U,
 }
 
-#[doc(hidden)]
-#[allow(dead_code)]
-#[allow(single_use_lifetimes)]
-#[allow(clippy::mut_mut)]
-#[allow(clippy::type_repetition_in_bounds)]
-struct __StructProjection<'pin, T, U>
-where
-    Struct<T, U>: 'pin,
-{
-    pinned: ::pin_project::__private::Pin<&'pin mut (T)>,
-    unpinned: &'pin mut (U),
-}
-#[doc(hidden)]
-#[allow(dead_code)]
-#[allow(single_use_lifetimes)]
-#[allow(clippy::type_repetition_in_bounds)]
-struct __StructProjectionRef<'pin, T, U>
-where
-    Struct<T, U>: 'pin,
-{
-    pinned: ::pin_project::__private::Pin<&'pin (T)>,
-    unpinned: &'pin (U),
-}
-#[doc(hidden)]
-#[allow(dead_code)]
-#[allow(unreachable_pub)]
-#[allow(single_use_lifetimes)]
-struct __StructProjectionOwned<T, U> {
-    pinned: ::pin_project::__private::PhantomData<T>,
-    unpinned: U,
-}
-
-#[doc(hidden)]
-#[allow(non_upper_case_globals)]
-#[allow(single_use_lifetimes)]
-#[allow(clippy::used_underscore_binding)]
 const _: () = {
+    struct __StructProjection<'pin, T, U>
+    where
+        Struct<T, U>: 'pin,
+    {
+        pinned: ::pin_project::__private::Pin<&'pin mut (T)>,
+        unpinned: &'pin mut (U),
+    }
+    struct __StructProjectionRef<'pin, T, U>
+    where
+        Struct<T, U>: 'pin,
+    {
+        pinned: ::pin_project::__private::Pin<&'pin (T)>,
+        unpinned: &'pin (U),
+    }
+    struct __StructProjectionOwned<T, U> {
+        pinned: ::pin_project::__private::PhantomData<T>,
+        unpinned: U,
+    }
+
     impl<T, U> Struct<T, U> {
         fn project<'pin>(
             self: ::pin_project::__private::Pin<&'pin mut Self>,
@@ -92,6 +76,12 @@ const _: () = {
         ) -> __StructProjectionOwned<T, U> {
             unsafe {
                 let __self_ptr: *mut Self = self.get_unchecked_mut();
+
+                
+                
+                let __guard =
+                    ::pin_project::__private::UnsafeOverwriteGuard::new(__self_ptr, __replacement);
+
                 let Self { pinned, unpinned } = &mut *__self_ptr;
 
                 
@@ -102,24 +92,28 @@ const _: () = {
 
                 
                 
-                let __guard = ::pin_project::__private::UnsafeOverwriteGuard {
-                    target: __self_ptr,
-                    value: ::pin_project::__private::ManuallyDrop::new(__replacement),
-                };
-
-                
-                
                 
                 
                 
                 {
-                    let __guard = ::pin_project::__private::UnsafeDropInPlaceGuard(pinned);
+                    let __guard = ::pin_project::__private::UnsafeDropInPlaceGuard::new(pinned);
                 }
 
                 
                 __result
             }
         }
+    }
+
+    
+    
+    
+    
+    
+    #[forbid(unaligned_references, safe_packed_borrows)]
+    fn __assert_not_repr_packed<T, U>(this: &Struct<T, U>) {
+        let _ = &this.pinned;
+        let _ = &this.unpinned;
     }
 
     
@@ -137,7 +131,12 @@ const _: () = {
         __Struct<'pin, T, U>: ::pin_project::__private::Unpin
     {
     }
-    unsafe impl<T, U> ::pin_project::UnsafeUnpin for Struct<T, U> {}
+    
+    #[doc(hidden)]
+    unsafe impl<'pin, T, U> ::pin_project::UnsafeUnpin for Struct<T, U> where
+        __Struct<'pin, T, U>: ::pin_project::__private::Unpin
+    {
+    }
 
     
     
@@ -146,19 +145,11 @@ const _: () = {
     #[allow(clippy::drop_bounds, drop_bounds)]
     impl<T: ::pin_project::__private::Drop> StructMustNotImplDrop for T {}
     impl<T, U> StructMustNotImplDrop for Struct<T, U> {}
+    
+    
+    #[doc(hidden)]
     impl<T, U> ::pin_project::__private::PinnedDrop for Struct<T, U> {
         unsafe fn drop(self: ::pin_project::__private::Pin<&mut Self>) {}
-    }
-
-    
-    
-    
-    
-    
-    #[forbid(unaligned_references, safe_packed_borrows)]
-    fn __assert_not_repr_packed<T, U>(this: &Struct<T, U>) {
-        let _ = &this.pinned;
-        let _ = &this.unpinned;
     }
 };
 

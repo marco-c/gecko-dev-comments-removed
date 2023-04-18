@@ -1,9 +1,16 @@
 use pin_project::pin_project;
 
-#[repr(packed = "")] 
-struct S1 {
-    f: (),
-}
+
+
+
+
+
+
+
+
+
+
+
 
 #[pin_project]
 #[repr(packed = "")] 

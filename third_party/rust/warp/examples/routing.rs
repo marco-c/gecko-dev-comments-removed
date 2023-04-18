@@ -10,6 +10,9 @@ async fn main() {
     
 
     
+    let hello_world = warp::path::end().map(|| "Hello, World at root!");
+
+    
     let hi = warp::path("hi").map(|| "Hello, World!");
 
     
@@ -81,8 +84,17 @@ async fn main() {
     
     
     
+    
 
-    let routes = warp::get().and(hi.or(hello_from_warp).or(bye).or(math).or(sum).or(times));
+    let routes = warp::get().and(
+        hello_world
+            .or(hi)
+            .or(hello_from_warp)
+            .or(bye)
+            .or(math)
+            .or(sum)
+            .or(times),
+    );
 
     
     

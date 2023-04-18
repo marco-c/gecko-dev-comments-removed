@@ -19,9 +19,10 @@
 
 
 #![allow(dead_code, unused_imports, unused_parens, unknown_lints, renamed_and_removed_lints)]
-#![allow(clippy::no_effect, clippy::needless_lifetimes)]
+#![allow(clippy::needless_lifetimes)]
 
 use pin_project::pin_project;
+
 
 pub struct Struct<T, U> {
     
@@ -29,35 +30,22 @@ pub struct Struct<T, U> {
     unpinned: U,
 }
 
-#[doc(hidden)]
-#[allow(dead_code)]
-#[allow(single_use_lifetimes)]
-#[allow(clippy::mut_mut)]
-#[allow(clippy::type_repetition_in_bounds)]
-pub(crate) struct __StructProjection<'pin, T, U>
-where
-    Struct<T, U>: 'pin,
-{
-    pinned: ::pin_project::__private::Pin<&'pin mut (T)>,
-    unpinned: &'pin mut (U),
-}
-#[doc(hidden)]
-#[allow(dead_code)]
-#[allow(single_use_lifetimes)]
-#[allow(clippy::type_repetition_in_bounds)]
-pub(crate) struct __StructProjectionRef<'pin, T, U>
-where
-    Struct<T, U>: 'pin,
-{
-    pinned: ::pin_project::__private::Pin<&'pin (T)>,
-    unpinned: &'pin (U),
-}
-
-#[doc(hidden)]
-#[allow(non_upper_case_globals)]
-#[allow(single_use_lifetimes)]
-#[allow(clippy::used_underscore_binding)]
 const _: () = {
+    pub(crate) struct __StructProjection<'pin, T, U>
+    where
+        Struct<T, U>: 'pin,
+    {
+        pinned: ::pin_project::__private::Pin<&'pin mut (T)>,
+        unpinned: &'pin mut (U),
+    }
+    pub(crate) struct __StructProjectionRef<'pin, T, U>
+    where
+        Struct<T, U>: 'pin,
+    {
+        pinned: ::pin_project::__private::Pin<&'pin (T)>,
+        unpinned: &'pin (U),
+    }
+
     impl<T, U> Struct<T, U> {
         pub(crate) fn project<'pin>(
             self: ::pin_project::__private::Pin<&'pin mut Self>,
@@ -87,6 +75,17 @@ const _: () = {
     
     
     
+    
+    #[forbid(unaligned_references, safe_packed_borrows)]
+    fn __assert_not_repr_packed<T, U>(this: &Struct<T, U>) {
+        let _ = &this.pinned;
+        let _ = &this.unpinned;
+    }
+
+    
+    
+    
+    
     impl<'pin, T, U> ::pin_project::__private::Unpin for Struct<T, U> where
         ::pin_project::__private::Wrapper<'pin, ::pin_project::__private::PhantomPinned>:
             ::pin_project::__private::Unpin
@@ -98,7 +97,12 @@ const _: () = {
     
     
     
-    unsafe impl<T, U> ::pin_project::UnsafeUnpin for Struct<T, U> {}
+    #[doc(hidden)]
+    unsafe impl<'pin, T, U> ::pin_project::UnsafeUnpin for Struct<T, U> where
+        ::pin_project::__private::Wrapper<'pin, ::pin_project::__private::PhantomPinned>:
+            ::pin_project::__private::Unpin
+    {
+    }
 
     
     
@@ -107,19 +111,11 @@ const _: () = {
     #[allow(clippy::drop_bounds, drop_bounds)]
     impl<T: ::pin_project::__private::Drop> StructMustNotImplDrop for T {}
     impl<T, U> StructMustNotImplDrop for Struct<T, U> {}
+    
+    
+    #[doc(hidden)]
     impl<T, U> ::pin_project::__private::PinnedDrop for Struct<T, U> {
         unsafe fn drop(self: ::pin_project::__private::Pin<&mut Self>) {}
-    }
-
-    
-    
-    
-    
-    
-    #[forbid(unaligned_references, safe_packed_borrows)]
-    fn __assert_not_repr_packed<T, U>(this: &Struct<T, U>) {
-        let _ = &this.pinned;
-        let _ = &this.unpinned;
     }
 };
 

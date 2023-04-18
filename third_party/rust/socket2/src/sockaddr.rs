@@ -1,26 +1,13 @@
-use std::fmt;
-use std::mem::{self, MaybeUninit};
-use std::net::{Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6};
-use std::ptr;
+use std::mem::{self, size_of, MaybeUninit};
+use std::net::{SocketAddr, SocketAddrV4, SocketAddrV6};
+use std::{fmt, io};
 
-#[cfg(any(unix, target_os = "redox"))]
-use libc::{
-    in6_addr, in_addr, sa_family_t, sockaddr, sockaddr_in, sockaddr_in6, sockaddr_storage,
-    socklen_t, AF_INET, AF_INET6,
+use crate::sys::{
+    sa_family_t, sockaddr, sockaddr_in, sockaddr_in6, sockaddr_storage, socklen_t, AF_INET,
+    AF_INET6,
 };
 #[cfg(windows)]
-use winapi::shared::in6addr::{in6_addr_u, IN6_ADDR as in6_addr};
-#[cfg(windows)]
-use winapi::shared::inaddr::{in_addr_S_un, IN_ADDR as in_addr};
-#[cfg(windows)]
-use winapi::shared::ws2def::{
-    ADDRESS_FAMILY as sa_family_t, AF_INET, AF_INET6, SOCKADDR as sockaddr,
-    SOCKADDR_IN as sockaddr_in, SOCKADDR_STORAGE as sockaddr_storage,
-};
-#[cfg(windows)]
-use winapi::shared::ws2ipdef::{SOCKADDR_IN6_LH_u, SOCKADDR_IN6_LH as sockaddr_in6};
-#[cfg(windows)]
-use winapi::um::ws2tcpip::socklen_t;
+use winapi::shared::ws2ipdef::SOCKADDR_IN6_LH_u;
 
 
 
@@ -31,34 +18,55 @@ pub struct SockAddr {
     len: socklen_t,
 }
 
-impl fmt::Debug for SockAddr {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        let mut builder = fmt.debug_struct("SockAddr");
-        builder.field("family", &self.family());
-        if let Some(addr) = self.as_inet() {
-            builder.field("inet", &addr);
-        } else if let Some(addr) = self.as_inet6() {
-            builder.field("inet6", &addr);
-        }
-        builder.finish()
-    }
-}
-
+#[allow(clippy::len_without_is_empty)]
 impl SockAddr {
     
-    pub unsafe fn from_raw_parts(addr: *const sockaddr, len: socklen_t) -> SockAddr {
-        let mut storage = MaybeUninit::<sockaddr_storage>::zeroed();
-        ptr::copy_nonoverlapping(
-            addr as *const _ as *const u8,
-            storage.as_mut_ptr() as *mut u8,
-            len as usize,
-        );
-
-        SockAddr {
-            
-            storage: storage.assume_init(),
-            len,
-        }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub const unsafe fn new(storage: sockaddr_storage, len: socklen_t) -> SockAddr {
+        SockAddr { storage, len }
     }
 
     
@@ -69,103 +77,103 @@ impl SockAddr {
     
     
     
-    #[cfg(all(unix, feature = "unix"))]
-    pub fn unix<P>(path: P) -> ::std::io::Result<SockAddr>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub unsafe fn init<F, T>(init: F) -> io::Result<(T, SockAddr)>
     where
-        P: AsRef<::std::path::Path>,
+        F: FnOnce(*mut sockaddr_storage, *mut socklen_t) -> io::Result<T>,
     {
-        use libc::{c_char, sockaddr_un, AF_UNIX};
-        use std::cmp::Ordering;
-        use std::io;
-        use std::os::unix::ffi::OsStrExt;
-
-        unsafe {
-            let mut addr = mem::zeroed::<sockaddr_un>();
-            addr.sun_family = AF_UNIX as sa_family_t;
-
-            let bytes = path.as_ref().as_os_str().as_bytes();
-
-            match (bytes.get(0), bytes.len().cmp(&addr.sun_path.len())) {
+        const STORAGE_SIZE: socklen_t = size_of::<sockaddr_storage>() as socklen_t;
+        
+        
+        
+        
+        
+        let mut storage = MaybeUninit::<sockaddr_storage>::zeroed();
+        let mut len = STORAGE_SIZE;
+        init(storage.as_mut_ptr(), &mut len).map(|res| {
+            debug_assert!(len <= STORAGE_SIZE, "overflown address storage");
+            let addr = SockAddr {
                 
-                (Some(&0), Ordering::Greater) => {
-                    return Err(io::Error::new(
-                        io::ErrorKind::InvalidInput,
-                        "path must be no longer than SUN_LEN",
-                    ));
-                }
-                (Some(&0), _) => {}
-                (_, Ordering::Greater) | (_, Ordering::Equal) => {
-                    return Err(io::Error::new(
-                        io::ErrorKind::InvalidInput,
-                        "path must be shorter than SUN_LEN",
-                    ));
-                }
-                _ => {}
-            }
+                
+                storage: storage.assume_init(),
+                len,
+            };
+            (res, addr)
+        })
+    }
 
-            for (dst, src) in addr.sun_path.iter_mut().zip(bytes) {
-                *dst = *src as c_char;
-            }
-            
+    
+    pub const fn family(&self) -> sa_family_t {
+        self.storage.ss_family
+    }
 
-            let base = &addr as *const _ as usize;
-            let path = &addr.sun_path as *const _ as usize;
-            let sun_path_offset = path - base;
+    
+    pub const fn len(&self) -> socklen_t {
+        self.len
+    }
 
-            let mut len = sun_path_offset + bytes.len();
-            match bytes.get(0) {
-                Some(&0) | None => {}
-                Some(_) => len += 1,
-            }
-            Ok(SockAddr::from_raw_parts(
-                &addr as *const _ as *const _,
-                len as socklen_t,
-            ))
-        }
+    
+    pub const fn as_ptr(&self) -> *const sockaddr {
+        &self.storage as *const _ as *const _
+    }
+
+    
+    #[cfg(all(unix, not(target_os = "redox")))]
+    pub(crate) const fn as_storage_ptr(&self) -> *const sockaddr_storage {
+        &self.storage
     }
 
     
     
-    pub fn as_inet(&self) -> Option<SocketAddrV4> {
-        match self.as_std() {
-            Some(SocketAddr::V4(addr)) => Some(addr),
-            _ => None,
-        }
-    }
-
-    
-    
-    pub fn as_inet6(&self) -> Option<SocketAddrV6> {
-        match self.as_std() {
-            Some(SocketAddr::V6(addr)) => Some(addr),
-            _ => None,
-        }
-    }
-
-    
-    
-    pub fn as_std(&self) -> Option<SocketAddr> {
+    pub fn as_socket(&self) -> Option<SocketAddr> {
         if self.storage.ss_family == AF_INET as sa_family_t {
             
             let addr = unsafe { &*(&self.storage as *const _ as *const sockaddr_in) };
 
-            #[cfg(unix)]
-            let ip = Ipv4Addr::from(addr.sin_addr.s_addr.to_ne_bytes());
-            #[cfg(windows)]
-            let ip = {
-                let ip_bytes = unsafe { addr.sin_addr.S_un.S_un_b() };
-                Ipv4Addr::from([ip_bytes.s_b1, ip_bytes.s_b2, ip_bytes.s_b3, ip_bytes.s_b4])
-            };
+            let ip = crate::sys::from_in_addr(addr.sin_addr);
             let port = u16::from_be(addr.sin_port);
             Some(SocketAddr::V4(SocketAddrV4::new(ip, port)))
         } else if self.storage.ss_family == AF_INET6 as sa_family_t {
             
             let addr = unsafe { &*(&self.storage as *const _ as *const sockaddr_in6) };
 
-            #[cfg(unix)]
-            let ip = Ipv6Addr::from(addr.sin6_addr.s6_addr);
-            #[cfg(windows)]
-            let ip = Ipv6Addr::from(*unsafe { addr.sin6_addr.u.Byte() });
+            let ip = crate::sys::from_in6_addr(addr.sin6_addr);
             let port = u16::from_be(addr.sin6_port);
             Some(SocketAddr::V6(SocketAddrV6::new(
                 ip,
@@ -184,38 +192,39 @@ impl SockAddr {
     }
 
     
-    pub fn family(&self) -> sa_family_t {
-        self.storage.ss_family
+    
+    pub fn as_socket_ipv4(&self) -> Option<SocketAddrV4> {
+        match self.as_socket() {
+            Some(SocketAddr::V4(addr)) => Some(addr),
+            _ => None,
+        }
     }
 
     
-    pub fn len(&self) -> socklen_t {
-        self.len
-    }
-
     
-    pub fn as_ptr(&self) -> *const sockaddr {
-        &self.storage as *const _ as *const _
+    pub fn as_socket_ipv6(&self) -> Option<SocketAddrV6> {
+        match self.as_socket() {
+            Some(SocketAddr::V6(addr)) => Some(addr),
+            _ => None,
+        }
+    }
+}
+
+impl From<SocketAddr> for SockAddr {
+    fn from(addr: SocketAddr) -> SockAddr {
+        match addr {
+            SocketAddr::V4(addr) => addr.into(),
+            SocketAddr::V6(addr) => addr.into(),
+        }
     }
 }
 
 impl From<SocketAddrV4> for SockAddr {
     fn from(addr: SocketAddrV4) -> SockAddr {
-        #[cfg(unix)]
-        let sin_addr = in_addr {
-            s_addr: u32::from_ne_bytes(addr.ip().octets()),
-        };
-        #[cfg(windows)]
-        let sin_addr = unsafe {
-            let mut s_un = mem::zeroed::<in_addr_S_un>();
-            *s_un.S_addr_mut() = u32::from_ne_bytes(addr.ip().octets());
-            in_addr { S_un: s_un }
-        };
-
         let sockaddr_in = sockaddr_in {
             sin_family: AF_INET as sa_family_t,
             sin_port: addr.port().to_be(),
-            sin_addr,
+            sin_addr: crate::sys::to_in_addr(addr.ip()),
             sin_zero: Default::default(),
             #[cfg(any(
                 target_os = "dragonfly",
@@ -240,16 +249,6 @@ impl From<SocketAddrV4> for SockAddr {
 
 impl From<SocketAddrV6> for SockAddr {
     fn from(addr: SocketAddrV6) -> SockAddr {
-        #[cfg(unix)]
-        let sin6_addr = in6_addr {
-            s6_addr: addr.ip().octets(),
-        };
-        #[cfg(windows)]
-        let sin6_addr = unsafe {
-            let mut u = mem::zeroed::<in6_addr_u>();
-            *u.Byte_mut() = addr.ip().octets();
-            in6_addr { u }
-        };
         #[cfg(windows)]
         let u = unsafe {
             let mut u = mem::zeroed::<SOCKADDR_IN6_LH_u>();
@@ -260,7 +259,7 @@ impl From<SocketAddrV6> for SockAddr {
         let sockaddr_in6 = sockaddr_in6 {
             sin6_family: AF_INET6 as sa_family_t,
             sin6_port: addr.port().to_be(),
-            sin6_addr,
+            sin6_addr: crate::sys::to_in6_addr(addr.ip()),
             sin6_flowinfo: addr.flowinfo(),
             #[cfg(unix)]
             sin6_scope_id: addr.scope_id(),
@@ -289,36 +288,61 @@ impl From<SocketAddrV6> for SockAddr {
     }
 }
 
-impl From<SocketAddr> for SockAddr {
-    fn from(addr: SocketAddr) -> SockAddr {
-        match addr {
-            SocketAddr::V4(addr) => addr.into(),
-            SocketAddr::V6(addr) => addr.into(),
-        }
+impl fmt::Debug for SockAddr {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut f = fmt.debug_struct("SockAddr");
+        #[cfg(any(
+            target_os = "dragonfly",
+            target_os = "freebsd",
+            target_os = "haiku",
+            target_os = "hermit",
+            target_os = "ios",
+            target_os = "macos",
+            target_os = "netbsd",
+            target_os = "openbsd",
+            target_os = "vxworks",
+        ))]
+        f.field("ss_len", &self.storage.ss_len);
+        f.field("ss_family", &self.storage.ss_family)
+            .field("len", &self.len)
+            .finish()
     }
 }
 
-#[cfg(test)]
-mod test {
-    use super::*;
+#[test]
+fn ipv4() {
+    use std::net::Ipv4Addr;
+    let std = SocketAddrV4::new(Ipv4Addr::new(1, 2, 3, 4), 9876);
+    let addr = SockAddr::from(std);
+    assert_eq!(addr.family(), AF_INET as sa_family_t);
+    assert_eq!(addr.len(), size_of::<sockaddr_in>() as socklen_t);
+    assert_eq!(addr.as_socket(), Some(SocketAddr::V4(std)));
+    assert_eq!(addr.as_socket_ipv4(), Some(std));
+    assert!(addr.as_socket_ipv6().is_none());
 
-    #[test]
-    fn inet() {
-        let raw = "127.0.0.1:80".parse::<SocketAddrV4>().unwrap();
-        let addr = SockAddr::from(raw);
-        assert!(addr.as_inet6().is_none());
-        let addr = addr.as_inet().unwrap();
-        assert_eq!(raw, addr);
-    }
+    let addr = SockAddr::from(SocketAddr::from(std));
+    assert_eq!(addr.family(), AF_INET as sa_family_t);
+    assert_eq!(addr.len(), size_of::<sockaddr_in>() as socklen_t);
+    assert_eq!(addr.as_socket(), Some(SocketAddr::V4(std)));
+    assert_eq!(addr.as_socket_ipv4(), Some(std));
+    assert!(addr.as_socket_ipv6().is_none());
+}
 
-    #[test]
-    fn inet6() {
-        let raw = "[2001:db8::ff00:42:8329]:80"
-            .parse::<SocketAddrV6>()
-            .unwrap();
-        let addr = SockAddr::from(raw);
-        assert!(addr.as_inet().is_none());
-        let addr = addr.as_inet6().unwrap();
-        assert_eq!(raw, addr);
-    }
+#[test]
+fn ipv6() {
+    use std::net::Ipv6Addr;
+    let std = SocketAddrV6::new(Ipv6Addr::new(1, 2, 3, 4, 5, 6, 7, 8), 9876, 11, 12);
+    let addr = SockAddr::from(std);
+    assert_eq!(addr.family(), AF_INET6 as sa_family_t);
+    assert_eq!(addr.len(), size_of::<sockaddr_in6>() as socklen_t);
+    assert_eq!(addr.as_socket(), Some(SocketAddr::V6(std)));
+    assert!(addr.as_socket_ipv4().is_none());
+    assert_eq!(addr.as_socket_ipv6(), Some(std));
+
+    let addr = SockAddr::from(SocketAddr::from(std));
+    assert_eq!(addr.family(), AF_INET6 as sa_family_t);
+    assert_eq!(addr.len(), size_of::<sockaddr_in6>() as socklen_t);
+    assert_eq!(addr.as_socket(), Some(SocketAddr::V6(std)));
+    assert!(addr.as_socket_ipv4().is_none());
+    assert_eq!(addr.as_socket_ipv6(), Some(std));
 }

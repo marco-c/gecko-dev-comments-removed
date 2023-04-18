@@ -2,13 +2,13 @@
 
 use std::pin::Pin;
 
-struct Struct {}
+struct S {}
 
-impl Struct {
+impl S {
     fn take_ref_self(ref self: Pin<&mut Self>) {} 
     fn take_ref_mut_self(ref mut self: Pin<&mut Self>) {} 
 
-    fn self_subpat(self @ Struct {}: Self) {} 
+    fn self_subpat(self @ S {}: Self) {} 
 }
 
 fn main() {}

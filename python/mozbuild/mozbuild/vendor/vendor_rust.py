@@ -74,7 +74,7 @@ PACKAGES_WE_ALWAYS_WANT_AN_OVERRIDE_OF = [
 
 TOLERATED_DUPES = {
     "base64": 2,
-    "bytes": 3,
+    "bytes": 2,
     "crossbeam-deque": 2,
     "crossbeam-epoch": 2,
     "crossbeam-utils": 3,
@@ -82,12 +82,11 @@ TOLERATED_DUPES = {
     "libloading": 2,
     "memoffset": 2,
     "mio": 2,
-    "pin-project-lite": 2,
     
     
     
     "time": 2,
-    "tokio": 3,
+    "tokio": 2,
 }
 
 

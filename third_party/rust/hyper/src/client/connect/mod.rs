@@ -73,17 +73,30 @@
 
 
 
+
+
+
+
+
+
 use std::fmt;
 
-use ::http::Response;
+use ::http::Extensions;
 
-#[cfg(feature = "tcp")]
-pub mod dns;
-#[cfg(feature = "tcp")]
-mod http;
-#[cfg(feature = "tcp")]
-pub use self::http::{HttpConnector, HttpInfo};
-pub use self::sealed::Connect;
+cfg_feature! {
+    #![feature = "tcp"]
+
+    pub use self::http::{HttpConnector, HttpInfo};
+
+    pub mod dns;
+    mod http;
+}
+
+cfg_feature! {
+    #![any(feature = "http1", feature = "http2")]
+
+    pub use self::sealed::Connect;
+}
 
 
 pub trait Connection {
@@ -144,6 +157,11 @@ impl Connected {
     }
 
     
+    pub fn is_proxied(&self) -> bool {
+        self.is_proxied
+    }
+
+    
     pub fn extra<T: Clone + Send + Sync + 'static>(mut self, extra: T) -> Connected {
         if let Some(prev) = self.extra {
             self.extra = Some(Extra(Box::new(ExtraChain(prev.0, extra))));
@@ -154,6 +172,12 @@ impl Connected {
     }
 
     
+    pub fn get_extras(&self, extensions: &mut Extensions) {
+        if let Some(extra) = &self.extra {
+            extra.set(extensions);
+        }
+    }
+
     
     pub fn negotiated_h2(mut self) -> Connected {
         self.alpn = Alpn::H2;
@@ -161,7 +185,13 @@ impl Connected {
     }
 
     
+    pub fn is_negotiated_h2(&self) -> bool {
+        self.alpn == Alpn::H2
+    }
+
     
+    
+    #[cfg(feature = "http2")]
     pub(super) fn clone(&self) -> Connected {
         Connected {
             alpn: self.alpn.clone(),
@@ -174,7 +204,7 @@ impl Connected {
 
 
 impl Extra {
-    pub(super) fn set(&self, res: &mut Response<crate::Body>) {
+    pub(super) fn set(&self, res: &mut Extensions) {
         self.0.set(res);
     }
 }
@@ -193,7 +223,7 @@ impl fmt::Debug for Extra {
 
 trait ExtraInner: Send + Sync {
     fn clone_box(&self) -> Box<dyn ExtraInner>;
-    fn set(&self, res: &mut Response<crate::Body>);
+    fn set(&self, res: &mut Extensions);
 }
 
 
@@ -210,8 +240,8 @@ where
         Box::new(self.clone())
     }
 
-    fn set(&self, res: &mut Response<crate::Body>) {
-        res.extensions_mut().insert(self.0.clone());
+    fn set(&self, res: &mut Extensions) {
+        res.insert(self.0.clone());
     }
 }
 
@@ -231,12 +261,13 @@ where
         Box::new(self.clone())
     }
 
-    fn set(&self, res: &mut Response<crate::Body>) {
+    fn set(&self, res: &mut Extensions) {
         self.0.set(res);
-        res.extensions_mut().insert(self.1.clone());
+        res.insert(self.1.clone());
     }
 }
 
+#[cfg(any(feature = "http1", feature = "http2"))]
 pub(super) mod sealed {
     use std::error::Error as StdError;
 
@@ -334,13 +365,13 @@ mod tests {
     fn test_connected_extra() {
         let c1 = Connected::new().extra(Ex1(41));
 
-        let mut res1 = crate::Response::new(crate::Body::empty());
+        let mut ex = ::http::Extensions::new();
 
-        assert_eq!(res1.extensions().get::<Ex1>(), None);
+        assert_eq!(ex.get::<Ex1>(), None);
 
-        c1.extra.as_ref().expect("c1 extra").set(&mut res1);
+        c1.extra.as_ref().expect("c1 extra").set(&mut ex);
 
-        assert_eq!(res1.extensions().get::<Ex1>(), Some(&Ex1(41)));
+        assert_eq!(ex.get::<Ex1>(), Some(&Ex1(41)));
     }
 
     #[test]
@@ -353,17 +384,17 @@ mod tests {
             .extra(Ex2("zoom"))
             .extra(Ex3("pew pew"));
 
-        let mut res1 = crate::Response::new(crate::Body::empty());
+        let mut ex1 = ::http::Extensions::new();
 
-        assert_eq!(res1.extensions().get::<Ex1>(), None);
-        assert_eq!(res1.extensions().get::<Ex2>(), None);
-        assert_eq!(res1.extensions().get::<Ex3>(), None);
+        assert_eq!(ex1.get::<Ex1>(), None);
+        assert_eq!(ex1.get::<Ex2>(), None);
+        assert_eq!(ex1.get::<Ex3>(), None);
 
-        c1.extra.as_ref().expect("c1 extra").set(&mut res1);
+        c1.extra.as_ref().expect("c1 extra").set(&mut ex1);
 
-        assert_eq!(res1.extensions().get::<Ex1>(), Some(&Ex1(45)));
-        assert_eq!(res1.extensions().get::<Ex2>(), Some(&Ex2("zoom")));
-        assert_eq!(res1.extensions().get::<Ex3>(), Some(&Ex3("pew pew")));
+        assert_eq!(ex1.get::<Ex1>(), Some(&Ex1(45)));
+        assert_eq!(ex1.get::<Ex2>(), Some(&Ex2("zoom")));
+        assert_eq!(ex1.get::<Ex3>(), Some(&Ex3("pew pew")));
 
         
         let c2 = Connected::new()
@@ -371,11 +402,11 @@ mod tests {
             .extra(Ex2("hiccup"))
             .extra(Ex1(99));
 
-        let mut res2 = crate::Response::new(crate::Body::empty());
+        let mut ex2 = ::http::Extensions::new();
 
-        c2.extra.as_ref().expect("c2 extra").set(&mut res2);
+        c2.extra.as_ref().expect("c2 extra").set(&mut ex2);
 
-        assert_eq!(res2.extensions().get::<Ex1>(), Some(&Ex1(99)));
-        assert_eq!(res2.extensions().get::<Ex2>(), Some(&Ex2("hiccup")));
+        assert_eq!(ex2.get::<Ex1>(), Some(&Ex1(99)));
+        assert_eq!(ex2.get::<Ex2>(), Some(&Ex2("hiccup")));
     }
 }

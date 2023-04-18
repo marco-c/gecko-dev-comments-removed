@@ -1,11 +1,11 @@
 use pin_project::pin_project;
 
 #[pin_project]
-struct Foo {
+struct S {
     #[pin]
-    inner: u8,
+    f: u8,
 }
 
-impl Unpin for __Foo {} 
+impl Unpin for __S {} 
 
 fn main() {}

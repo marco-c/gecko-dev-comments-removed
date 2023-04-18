@@ -2,10 +2,10 @@ use std::pin::Pin;
 
 #[cfg_attr(any(), pin_project::pin_project)]
 struct Foo<T> {
-    inner: T,
+    f: T,
 }
 
 fn main() {
-    let mut x = Foo { inner: 0_u8 };
-    let _x = Pin::new(&mut x).project(); 
+    let mut x = Foo { f: 0_u8 };
+    let _ = Pin::new(&mut x).project(); 
 }
