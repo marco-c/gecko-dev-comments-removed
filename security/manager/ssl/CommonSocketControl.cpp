@@ -153,15 +153,17 @@ CommonSocketControl::IsAcceptableForHost(const nsACString& hostname,
   
   
 
+  UniqueCERTCertificate nssCert;
+
   nsCOMPtr<nsIX509Cert> cert;
   if (NS_FAILED(GetServerCert(getter_AddRefs(cert)))) {
     return NS_OK;
   }
-  if (!cert) {
-    return NS_OK;
+  if (cert) {
+    nssCert.reset(cert->GetCert());
   }
-  nsTArray<uint8_t> certDER;
-  if (NS_FAILED(cert->GetRawDER(certDER))) {
+
+  if (!nssCert) {
     return NS_OK;
   }
 
@@ -179,7 +181,7 @@ CommonSocketControl::IsAcceptableForHost(const nsACString& hostname,
   
   Input serverCertInput;
   mozilla::pkix::Result rv =
-      serverCertInput.Init(certDER.Elements(), certDER.Length());
+      serverCertInput.Init(nssCert->derCert.data, nssCert->derCert.len);
   if (rv != Success) {
     return NS_OK;
   }

@@ -470,10 +470,22 @@ static nsresult OverrideAllowedForHost(
 
 static SECStatus BlockServerCertChangeForSpdy(
     nsNSSSocketInfo* infoObject, const UniqueCERTCertificate& serverCert) {
+  
+  
+  nsCOMPtr<nsIX509Cert> cert;
+
   if (!infoObject->IsHandshakeCompleted()) {
     
     
     return SECSuccess;
+  }
+
+  infoObject->GetServerCert(getter_AddRefs(cert));
+  if (!cert) {
+    MOZ_ASSERT_UNREACHABLE(
+        "TransportSecurityInfo must have a cert implementing nsIX509Cert");
+    PR_SetError(SEC_ERROR_LIBRARY_FAILURE, 0);
+    return SECFailure;
   }
 
   
@@ -489,30 +501,20 @@ static SECStatus BlockServerCertChangeForSpdy(
   if (NS_FAILED(rv)) {
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
             ("BlockServerCertChangeForSpdy failed GetNegotiatedNPN() call."
-             " Assuming spdy."));
+             " Assuming spdy.\n"));
   }
 
   
-  nsCOMPtr<nsIX509Cert> cert;
-  infoObject->GetServerCert(getter_AddRefs(cert));
-  if (!cert) {
-    PR_SetError(SEC_ERROR_LIBRARY_FAILURE, 0);
-    return SECFailure;
-  }
-  nsTArray<uint8_t> certDER;
-  if (NS_FAILED(cert->GetRawDER(certDER))) {
-    PR_SetError(SEC_ERROR_LIBRARY_FAILURE, 0);
-    return SECFailure;
-  }
-  if (certDER.Length() == serverCert->derCert.len &&
-      memcmp(certDER.Elements(), serverCert->derCert.data, certDER.Length()) ==
-          0) {
+  UniqueCERTCertificate c(cert->GetCert());
+  MOZ_ASSERT(c, "Somehow couldn't get underlying cert from nsIX509Cert");
+  bool sameCert = CERT_CompareCerts(c.get(), serverCert.get());
+  if (sameCert) {
     return SECSuccess;
   }
 
   
   MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-          ("SPDY refused to allow new cert during renegotiation"));
+          ("SPDY Refused to allow new cert during renegotiation\n"));
   PR_SetError(SSL_ERROR_RENEGOTIATION_NOT_ALLOWED, 0);
   return SECFailure;
 }
