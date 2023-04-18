@@ -261,7 +261,9 @@ class nsIOService final : public nsIIOService,
   nsTHashSet<nsCString> mObserverTopicForSocketProcess;
   
   
-  nsTHashSet<nsCString> mSocketProcessTopicBlackList;
+  nsTHashSet<nsCString> mSocketProcessTopicBlockedList;
+  
+  nsTHashSet<nsCString> mIOServiceTopicList;
 
   nsCOMPtr<nsIObserverService> mObserverService;
 
