@@ -79,6 +79,8 @@ struct Copier<T, sizeof(uint64_t), false> {
 template <typename T, size_t size>
 struct Copier<T, size, true> {
   static void Copy(T* dest, const char* iter) {
+    
+    DCHECK_EQ((((uintptr_t)iter) & (MOZ_ALIGNOF(T) - 1)), 0);
     *dest = *reinterpret_cast<const T*>(iter);
   }
 };
@@ -609,8 +611,22 @@ bool Pickle::WriteBytesZeroCopy(void* data, uint32_t data_len,
                                 uint32_t capacity) {
   BeginWrite(data_len, sizeof(memberAlignmentType));
 
+  uint32_t new_capacity = AlignInt(capacity);
+#ifndef MOZ_MEMORY
+  if (new_capacity > capacity) {
+    
+    
+    
+    
+    
+    
+    
+    
+    data = realloc(data, new_capacity);
+  }
+#endif
   buffers_.WriteBytesZeroCopy(reinterpret_cast<char*>(data), data_len,
-                              capacity);
+                              new_capacity);
 
   EndWrite(data_len);
   return true;
