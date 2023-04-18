@@ -38,12 +38,6 @@ if CONFIG["MOZ_TSAN"]:
 if CONFIG["OS_TARGET"] == "WINNT":
     if CONFIG["MOZ_MEMORY"]:
         DEFFILE = "mozglue.def"
-    OS_LIBS += [
-        "advapi32",
-        "user32",
-        "winmm",
-        "uuid",
-    ]
     
     
     
