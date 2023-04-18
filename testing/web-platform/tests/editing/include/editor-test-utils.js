@@ -76,21 +76,9 @@ class EditorTestUtils {
   sendSelectAllShortcutKey() {
     return this.sendKey(
       "a",
-      (() => {
-        
-        
-        
-        if (
-          this.window.navigator.userAgent.includes("Linux") &&
-          this.window.navigator.userAgent.includes("Gecko") &&
-          !this.window.navigator.userAgent.includes("KHTML")
-        ) {
-          return this.kAlt;
-        }
-        return this.window.navigator.platform.includes("Mac")
-          ? this.kMeta
-          : this.kControl;
-      })()
+      this.window.navigator.platform.includes("Mac")
+        ? this.kMeta
+        : this.kControl
     );
   }
 

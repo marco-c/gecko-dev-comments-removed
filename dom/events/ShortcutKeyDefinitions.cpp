@@ -183,10 +183,11 @@ ShortcutKeyData ShortcutKeys::sInputHandlers[] = {
     {u"keypress", nullptr, u"y", u"accel",       u"cmd_redo"},   
 #endif  
 
-#if defined(XP_WIN) || defined(MOZ_WIDGET_COCOA) || defined(MOZ_WIDGET_ANDROID)
+#if defined(XP_WIN) || defined(MOZ_WIDGET_COCOA) || defined(MOZ_WIDGET_GTK) ||\
+    defined(MOZ_WIDGET_ANDROID)
     {u"keypress", nullptr, u"a", u"accel",       u"cmd_selectAll"},  
 #endif  
-#if defined(MOZ_WIDGET_GTK) || defined(USE_EMACS_KEY_BINDINGS)
+#if defined(USE_EMACS_KEY_BINDINGS)
     {u"keypress", nullptr, u"a", u"alt",         u"cmd_selectAll"},  
 #endif  
 
@@ -359,11 +360,11 @@ ShortcutKeyData ShortcutKeys::sTextAreaHandlers[] = {
     {u"keypress", nullptr, u"y", u"accel",       u"cmd_redo"},       
 #endif  
 
-#if defined(XP_WIN) || defined(MOZ_WIDGET_COCOA) ||\
+#if defined(XP_WIN) || defined(MOZ_WIDGET_COCOA) || defined(MOZ_WIDGET_GTK) ||\
     defined(MOZ_WIDGET_ANDROID)
     {u"keypress", nullptr, u"a", u"accel",       u"cmd_selectAll"},  
 #endif  
-#if defined(MOZ_WIDGET_GTK) || defined(USE_EMACS_KEY_BINDINGS)
+#if defined(USE_EMACS_KEY_BINDINGS)
     {u"keypress", nullptr, u"a", u"alt",         u"cmd_selectAll"},  
 #endif  
 
@@ -554,7 +555,7 @@ ShortcutKeyData ShortcutKeys::sBrowserHandlers[] = {
 #endif  
 
     {u"keypress", nullptr, u"a", u"accel",       u"cmd_selectAll"},  
-#if defined(MOZ_WIDGET_GTK) || defined(USE_EMACS_KEY_BINDINGS)
+#if defined(USE_EMACS_KEY_BINDINGS)
     {u"keypress", nullptr, u"a", u"alt",         u"cmd_selectAll"},  
 #endif  
 
@@ -722,10 +723,11 @@ ShortcutKeyData ShortcutKeys::sEditorHandlers[] = {
     {u"keypress", nullptr, u"y", u"accel",           u"cmd_redo"},               
 #endif  
 
-#if defined(XP_WIN) || defined(MOZ_WIDGET_COCOA) || defined(MOZ_WIDGET_ANDROID)
+#if defined(XP_WIN) || defined(MOZ_WIDGET_COCOA) || defined(MOZ_WIDGET_GTK) ||\
+    defined(MOZ_WIDGET_ANDROID)
     {u"keypress", nullptr, u"a", u"accel",           u"cmd_selectAll"},          
 #endif  
-#if defined(MOZ_WIDGET_GTK) || defined(USE_EMACS_KEY_BINDINGS)
+#if defined(USE_EMACS_KEY_BINDINGS)
     {u"keypress", nullptr, u"a", u"alt",             u"cmd_selectAll"},          
 #endif  
 
