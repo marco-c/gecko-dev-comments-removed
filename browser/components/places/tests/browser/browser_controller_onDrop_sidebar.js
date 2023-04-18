@@ -7,6 +7,17 @@ const TEST_URL = "about:buildconfig";
 
 add_setup(async function() {
   
+  
+  
+  info("Ensure Places init is complete");
+  let placesInitCompleteObserved = TestUtils.topicObserved(
+    "places-browser-init-complete"
+  );
+  Cc["@mozilla.org/browser/browserglue;1"]
+    .getService(Ci.nsIObserver)
+    .observe(null, "browser-glue-test", "places-browser-init-complete");
+  await placesInitCompleteObserved;
+  
   await PlacesUtils.bookmarks.eraseEverything();
 
   registerCleanupFunction(async function() {
