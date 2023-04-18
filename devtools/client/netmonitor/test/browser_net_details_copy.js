@@ -151,6 +151,12 @@ add_task(async function() {
   const responsePanel = document.querySelector("#response-panel");
 
   const objectRow = responsePanel.querySelectorAll(".objectRow")[0];
+
+  
+  const waitOpenNode = waitForDOM(document, ".stringRow");
+  const toggleButton = objectRow.querySelector("td span.treeIcon");
+  toggleButton.click();
+  await waitOpenNode;
   const stringRow = responsePanel.querySelectorAll(".stringRow")[0];
 
   
