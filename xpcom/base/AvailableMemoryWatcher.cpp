@@ -169,7 +169,7 @@ void nsAvailableMemoryWatcherBase::RecordTelemetryEventOnHighMemory() {
 
 
 
-#if !defined(XP_WIN) && !defined(XP_MACOSX)
+#if !defined(XP_WIN) && !defined(XP_MACOSX) && !defined(XP_LINUX)
 already_AddRefed<nsAvailableMemoryWatcherBase> CreateAvailableMemoryWatcher() {
   RefPtr instance(new nsAvailableMemoryWatcherBase);
   return do_AddRef(instance);
