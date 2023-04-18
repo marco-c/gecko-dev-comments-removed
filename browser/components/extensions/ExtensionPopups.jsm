@@ -425,6 +425,12 @@ class BasePopup {
       if (this.destroyed) {
         return;
       }
+      
+      
+      
+      
+      
+      this.blockParser = false;
       this.browser.messageManager.sendAsyncMessage("Extension:UnblockParser");
     });
   }
@@ -580,6 +586,11 @@ class ViewPopup extends BasePopup {
     this.tempPanel = panel;
     this.tempBrowser = this.browser;
 
+    
+    
+    
+    
+    
     this.browser.classList.add("webextension-preload-browser");
   }
 
