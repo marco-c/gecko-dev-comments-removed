@@ -2232,9 +2232,7 @@ class gfxFont {
   
   RefPtr<gfxCharacterMap> mUnicodeRangeMap;
 
-  
-  
-  const RefPtr<mozilla::gfx::UnscaledFont> mUnscaledFont;
+  RefPtr<mozilla::gfx::UnscaledFont> mUnscaledFont GUARDED_BY(mLock);
 
   mozilla::Atomic<mozilla::gfx::ScaledFont*> mAzureScaledFont;
 
