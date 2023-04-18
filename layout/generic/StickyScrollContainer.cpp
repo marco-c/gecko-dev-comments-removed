@@ -34,6 +34,12 @@ StickyScrollContainer::~StickyScrollContainer() {
 
 StickyScrollContainer* StickyScrollContainer::GetStickyScrollContainerForFrame(
     nsIFrame* aFrame) {
+  if (MOZ_UNLIKELY(aFrame->IsTableFrame())) {
+    
+    
+    return nullptr;
+  }
+
   nsIScrollableFrame* scrollFrame = nsLayoutUtils::GetNearestScrollableFrame(
       aFrame->GetParent(), nsLayoutUtils::SCROLLABLE_SAME_DOC |
                                nsLayoutUtils::SCROLLABLE_STOP_AT_PAGE |
@@ -345,7 +351,10 @@ void StickyScrollContainer::GetScrollRanges(nsIFrame* aFrame,
 void StickyScrollContainer::PositionContinuations(nsIFrame* aFrame) {
   NS_ASSERTION(nsLayoutUtils::IsFirstContinuationOrIBSplitSibling(aFrame),
                "Should be starting from the first continuation");
-  nsPoint translation = ComputePosition(aFrame) - aFrame->GetNormalPosition();
+  bool hadProperty;
+  nsPoint translation =
+      ComputePosition(aFrame) - aFrame->GetNormalPosition(&hadProperty);
+  MOZ_ASSERT(hadProperty, "Sticky child without saved normal position?");
 
   
   for (nsIFrame* cont = aFrame; cont;
