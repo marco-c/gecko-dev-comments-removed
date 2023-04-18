@@ -179,7 +179,7 @@ extern JS_PUBLIC_API void JS_ShutDown(void);
 namespace JS {
 
 
-void SetAVXEnabled();
+void SetAVXEnabled(bool enabled);
 }  
 #endif
 
