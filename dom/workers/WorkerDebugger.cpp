@@ -4,8 +4,6 @@
 
 
 
-#include "WorkerDebugger.h"
-
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/MessageEvent.h"
 #include "mozilla/dom/MessageEventBinding.h"
@@ -18,9 +16,9 @@
 #include "ScriptLoader.h"
 #include "WorkerCommon.h"
 #include "WorkerError.h"
-#include "WorkerPrivate.h"
 #include "WorkerRunnable.h"
-#include "WorkerScope.h"
+#include "WorkerDebugger.h"
+
 #if defined(XP_WIN)
 #  include <processthreadsapi.h>  
 #else
@@ -549,7 +547,9 @@ RefPtr<PerformanceInfoPromise> WorkerDebugger::ReportPerformanceInfo() {
 
   
   
-  RefPtr<WorkerPrivate> workerRef = mWorkerPrivate;
+  
+  WorkerPrivate* workerPtr = mWorkerPrivate;
+  RefPtr<WorkerPrivate> workerRef = workerPtr;
   RefPtr<AbstractThread> mainThread = AbstractThread::MainThread();
 
   return CollectMemoryInfo(top, mainThread)
