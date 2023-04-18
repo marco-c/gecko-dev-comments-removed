@@ -36,7 +36,7 @@ class ScheduleHandleRenderTextureOps : public wr::NotificationHandler {
 
 WebRenderTextureHost::WebRenderTextureHost(
     const SurfaceDescriptor& aDesc, TextureFlags aFlags, TextureHost* aTexture,
-    wr::ExternalImageId& aExternalImageId)
+    const wr::ExternalImageId& aExternalImageId)
     : TextureHost(aFlags), mWrappedTextureHost(aTexture) {
   
   

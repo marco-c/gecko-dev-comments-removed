@@ -19,6 +19,7 @@ namespace gfx {
 
 
 
+[NeedsOtherPid]
 sync protocol PCanvasManager
 {
   manages PWebGL;
