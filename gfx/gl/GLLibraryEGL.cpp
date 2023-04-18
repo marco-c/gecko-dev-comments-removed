@@ -696,7 +696,7 @@ EglDisplay::EglDisplay(const PrivateUseOnly&, GLLibraryEGL& lib,
     
     
     
-    if (strcmp(vendor, "ARM") == 0) {
+    if (vendor && (strcmp(vendor, "ARM") == 0)) {
       MarkExtensionUnsupported(EGLExtension::KHR_surfaceless_context);
     }
   }
