@@ -4269,7 +4269,6 @@ AMTelemetry = {
     
     
     
-    
     Services.telemetry.setEventRecordingEnabled("addonsManager", true);
   },
 

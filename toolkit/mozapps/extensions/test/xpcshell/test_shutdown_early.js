@@ -11,7 +11,6 @@ const { TelemetryEnvironment } = ChromeUtils.import(
 
 add_task(async function test_shutdown_immediately_after_startup() {
   
-  Services.prefs.setBoolPref("extensions.incognito.migrated", true);
   Services.prefs.setCharPref("extensions.lastAppVersion", "42");
   createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "42");
 
