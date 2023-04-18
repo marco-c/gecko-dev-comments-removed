@@ -1394,16 +1394,20 @@ class UrlbarInput {
     let firstToken = end == -1 ? trimmedValue : trimmedValue.substring(0, end);
     
     let searchMode = UrlbarUtils.searchModeForToken(firstToken);
+    let firstTokenIsRestriction = !!searchMode;
     if (!searchMode && searchEngine) {
       searchMode = { engineName: searchEngine.name };
+      firstTokenIsRestriction = searchEngine.aliases.includes(firstToken);
     }
 
     if (searchMode) {
       searchMode.entry = searchModeEntry;
       this.searchMode = searchMode;
-      
-      
-      value = value.replace(firstToken, "");
+      if (firstTokenIsRestriction) {
+        
+        
+        value = value.replace(firstToken, "");
+      }
       if (UrlbarTokenizer.REGEXP_SPACES.test(value[0])) {
         
         
