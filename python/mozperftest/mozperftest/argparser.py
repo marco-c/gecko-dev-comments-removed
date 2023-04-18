@@ -20,7 +20,7 @@ from mozperftest.test import get_layers as test_layers
 from mozperftest.metrics import get_layers as metrics_layers  
 from mozperftest.utils import convert_day  
 
-FLAVORS = "desktop-browser", "mobile-browser", "doc", "xpcshell"
+FLAVORS = "desktop-browser", "mobile-browser", "doc", "xpcshell", "webpagetest"
 
 
 class Options:
