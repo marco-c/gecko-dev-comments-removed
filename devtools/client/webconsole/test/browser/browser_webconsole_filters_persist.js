@@ -32,7 +32,9 @@ add_task(async function() {
   });
 
   
-  await waitFor(() => findMessage(hud, "Expected color but found ‘blouge’"));
+  await waitFor(() =>
+    findWarningMessage(hud, "Expected color but found ‘blouge’")
+  );
 
   info("Close and re-open the console");
   await closeTabAndToolbox();
@@ -45,7 +47,9 @@ add_task(async function() {
   });
 
   
-  await waitFor(() => findMessage(hud, "Expected color but found ‘blouge’"));
+  await waitFor(() =>
+    findWarningMessage(hud, "Expected color but found ‘blouge’")
+  );
 
   
   await closeTabAndToolbox();

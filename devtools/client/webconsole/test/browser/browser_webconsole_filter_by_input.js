@@ -66,8 +66,8 @@ add_task(async function() {
   const lastSeason = SEASONS[SEASONS.length - 1];
   await waitFor(
     () =>
-      findMessage(hud, lastSeason.english) &&
-      findMessage(hud, lastSeason.chinese)
+      findConsoleAPIMessage(hud, lastSeason.english) &&
+      findConsoleAPIMessage(hud, lastSeason.chinese)
   );
 
   

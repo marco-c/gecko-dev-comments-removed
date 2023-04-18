@@ -30,7 +30,7 @@ add_task(async function() {
 });
 
 async function testWarningNotPresent(hud) {
-  ok(!findMessage(hud, "logging API"), "no warning displayed");
+  ok(!findWarningMessage(hud, "logging API"), "no warning displayed");
 
   
   info(
@@ -38,21 +38,22 @@ async function testWarningNotPresent(hud) {
   );
   await reloadBrowser();
   await waitFor(() => {
-    
-    
-    return findMessages(hud, "foo").length === 3;
+    return (
+      findConsoleAPIMessages(hud, "foo").length === 2 &&
+      findMessagesByType(hud, "foo", ".navigationMarker").length === 1
+    );
   });
 
-  ok(!findMessage(hud, "logging API"), "no warning displayed");
+  ok(!findWarningMessage(hud, "logging API"), "no warning displayed");
 }
 
 async function testWarningPresent(hud) {
   info("wait for the warning to show");
-  await waitFor(() => findMessage(hud, "logging API"));
+  await waitFor(() => findWarningMessage(hud, "logging API"));
 
   info("reload the test page and wait for the warning to show");
   await reloadBrowser();
   await waitFor(() => {
-    return findMessages(hud, "logging API").length === 2;
+    return findWarningMessages(hud, "logging API").length === 2;
   });
 }

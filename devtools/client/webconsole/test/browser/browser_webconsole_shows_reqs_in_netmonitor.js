@@ -41,7 +41,7 @@ add_task(async function() {
 
   
   
-  await waitFor(() => findMessage(hud, TEST_PATH));
+  await waitFor(() => findMessageByType(hud, TEST_PATH, ".network"));
 
   ok(true, "The network message was found in the console");
 });

@@ -13,7 +13,7 @@ add_task(async function() {
   const hud = await openNewTabAndConsole(TEST_URI);
   const loggedString = "iframe added";
   
-  await waitFor(() => findMessage(hud, loggedString));
+  await waitFor(() => findConsoleAPIMessage(hud, loggedString));
   ok(true, "The initial message is displayed in the console");
   
   const onMessage = waitForMessage(hud, loggedString);
