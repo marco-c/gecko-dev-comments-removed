@@ -47,9 +47,9 @@ var gSearchResultsPane = {
       this.searchInput.addEventListener("command", this);
       window.addEventListener("DOMContentLoaded", () => {
         this.searchInput.focus();
+        
+        window.requestIdleCallback(() => this.initializeCategories());
       });
-      
-      window.requestIdleCallback(() => this.initializeCategories());
     }
     let helpUrl =
       Services.urlFormatter.formatURLPref("app.support.baseURL") +
