@@ -25,6 +25,10 @@
 
 
 
+
+
+
+
 _ACAO = ("Access-Control-Allow-Origin", "*")
 _ACAPN = ("Access-Control-Allow-Private-Network", "true")
 
@@ -58,12 +62,18 @@ def _handle_preflight_request(request, response):
 def _handle_final_request(request, response):
   uuid = _get_uuid(request)
   if uuid is not None and request.server.stash.take(uuid) is None:
-    raise Exception("no matching preflight request for {}".format(uuid))
+    return (405, [], "no preflight received for {}".format(uuid))
 
   mode = request.GET.get(b"final-headers")
   headers = _get_response_headers(request.method, mode)
 
-  return (headers, "success")
+  mime_type = request.GET.get(b"mime-type")
+  if mime_type is not None:
+    headers.append(("Content-Type", mime_type),)
+
+  body = request.GET.get(b"body") or "success"
+
+  return (headers, body)
 
 def main(request, response):
   try:
