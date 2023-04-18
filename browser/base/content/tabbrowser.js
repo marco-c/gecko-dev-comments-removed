@@ -6403,24 +6403,9 @@
             
 
             this.mBrowser.userTypedValue = null;
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
+
             let isNavigating = this.mBrowser.isNavigating;
-            if (
-              this.mTab.selected &&
-              aStatus != Cr.NS_BINDING_CANCELLED_OLD_LOAD &&
-              !isNavigating
-            ) {
+            if (this.mTab.selected && !isNavigating) {
               gURLBar.setURI();
             }
           } else if (isSuccessful) {

@@ -69,9 +69,6 @@ static mozilla::LazyLogModule sPBContext("PBContext");
 
 static uint32_t gNumberOfPrivateContexts = 0;
 
-
-static uint64_t gParentInitiatedNavigationEpoch = 0;
-
 static void IncreasePrivateCount() {
   gNumberOfPrivateContexts++;
   MOZ_LOG(sPBContext, mozilla::LogLevel::Debug,
@@ -1138,10 +1135,6 @@ void CanonicalBrowsingContext::CanonicalDiscard() {
     mTabMediaController = nullptr;
   }
 
-  if (mCurrentLoad) {
-    mCurrentLoad->Cancel(NS_BINDING_ABORTED);
-  }
-
   if (mWebProgress) {
     RefPtr<BrowsingContextWebProgress> progress = mWebProgress;
     progress->ContextDiscarded();
@@ -1297,7 +1290,7 @@ void CanonicalBrowsingContext::GoBack(
 
   
   if (mCurrentLoad) {
-    mCurrentLoad->Cancel(NS_BINDING_CANCELLED_OLD_LOAD);
+    mCurrentLoad->Cancel(NS_BINDING_ABORTED);
   }
 
   if (nsDocShell* docShell = nsDocShell::Cast(GetDocShell())) {
@@ -1323,7 +1316,7 @@ void CanonicalBrowsingContext::GoForward(
 
   
   if (mCurrentLoad) {
-    mCurrentLoad->Cancel(NS_BINDING_CANCELLED_OLD_LOAD);
+    mCurrentLoad->Cancel(NS_BINDING_ABORTED);
   }
 
   if (auto* docShell = nsDocShell::Cast(GetDocShell())) {
@@ -1349,7 +1342,7 @@ void CanonicalBrowsingContext::GoToIndex(
 
   
   if (mCurrentLoad) {
-    mCurrentLoad->Cancel(NS_BINDING_CANCELLED_OLD_LOAD);
+    mCurrentLoad->Cancel(NS_BINDING_ABORTED);
   }
 
   if (auto* docShell = nsDocShell::Cast(GetDocShell())) {
@@ -1373,7 +1366,7 @@ void CanonicalBrowsingContext::Reload(uint32_t aReloadFlags) {
 
   
   if (mCurrentLoad) {
-    mCurrentLoad->Cancel(NS_BINDING_CANCELLED_OLD_LOAD);
+    mCurrentLoad->Cancel(NS_BINDING_ABORTED);
   }
 
   if (auto* docShell = nsDocShell::Cast(GetDocShell())) {
@@ -2037,8 +2030,7 @@ bool CanonicalBrowsingContext::LoadInParent(nsDocShellLoadState* aLoadState,
   
   
   if (!IsTopContent() || !GetContentParent() ||
-      !StaticPrefs::browser_tabs_documentchannel_parent_controlled() ||
-      !mozilla::SessionHistoryInParent()) {
+      !StaticPrefs::browser_tabs_documentchannel_parent_controlled()) {
     return false;
   }
 
@@ -2047,10 +2039,6 @@ bool CanonicalBrowsingContext::LoadInParent(nsDocShellLoadState* aLoadState,
     return false;
   }
 
-  MOZ_ASSERT(!net::SchemeIsJavascript(aLoadState->URI()));
-
-  MOZ_ALWAYS_SUCCEEDS(
-      SetParentInitiatedNavigationEpoch(++gParentInitiatedNavigationEpoch));
   
   
   
@@ -2066,8 +2054,7 @@ bool CanonicalBrowsingContext::AttemptSpeculativeLoadInParent(
   
   
   if (!IsTopContent() || !GetContentParent() ||
-      (StaticPrefs::browser_tabs_documentchannel_parent_controlled() &&
-       mozilla::SessionHistoryInParent())) {
+      StaticPrefs::browser_tabs_documentchannel_parent_controlled()) {
     return false;
   }
 
@@ -2087,14 +2074,8 @@ bool CanonicalBrowsingContext::StartDocumentLoad(
   
   
   if (StaticPrefs::browser_tabs_documentchannel_parent_controlled() &&
-      mozilla::SessionHistoryInParent() && mCurrentLoad) {
-    
-    MOZ_ASSERT(!aLoad->IsLoadingJSURI());
-
-    
-    if (!aLoad->IsDownload()) {
-      mCurrentLoad->Cancel(NS_BINDING_CANCELLED_OLD_LOAD);
-    }
+      mCurrentLoad) {
+    mCurrentLoad->Cancel(NS_BINDING_ABORTED);
   }
   mCurrentLoad = aLoad;
 

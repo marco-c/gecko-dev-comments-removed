@@ -939,11 +939,6 @@ with modules["URILOADER"]:
     
     errors["NS_REFRESHURI_HEADER_FOUND"] = SUCCESS(2)
 
-    
-    
-    
-    errors["NS_BINDING_CANCELLED_OLD_LOAD"] = FAILURE(39)
-
 
 
 
