@@ -552,7 +552,9 @@ class ScriptLoader final : public ScriptLoaderInterface {
   nsresult ProcessRequest(ScriptLoadRequest* aRequest) override;
   nsresult CompileOffThreadOrProcessRequest(ScriptLoadRequest* aRequest);
   void FireScriptAvailable(nsresult aResult, ScriptLoadRequest* aRequest);
-  void FireScriptEvaluated(nsresult aResult, ScriptLoadRequest* aRequest);
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void FireScriptEvaluated(
+      nsresult aResult, ScriptLoadRequest* aRequest);
 
   
   nsresult EvaluateScriptElement(ScriptLoadRequest* aRequest);
