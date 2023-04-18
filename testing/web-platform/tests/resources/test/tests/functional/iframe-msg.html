@@ -1,10 +1,7 @@
 <!DOCTYPE HTML>
 <html>
 <head>
-<meta name="variant" content="">
-<meta name="variant" content="?keep-promise">
 <title>Example with iframe that notifies containing document via cross document messaging</title>
-<script src="../../variants.js"></script>
 <script src="/resources/testharness.js"></script>
 <script src="/resources/testharnessreport.js"></script>
 </head>
@@ -65,7 +62,7 @@ on_event(window,
          });
 </script>
 <iframe src="single-page-test-pass.html" style="display:none">
-  
+  <!-- single-page-test-pass.html implements a file_is_test test. -->
 </iframe>
 <script type="text/json" id="expected">
 {

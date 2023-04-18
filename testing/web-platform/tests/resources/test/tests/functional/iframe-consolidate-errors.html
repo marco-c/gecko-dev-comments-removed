@@ -1,10 +1,7 @@
 <!DOCTYPE HTML>
 <html>
 <head>
-<meta name="variant" content="">
-<meta name="variant" content="?keep-promise">
 <title>Example with iframe that consolidates errors via fetch_tests_from_window</title>
-<script src="../../variants.js"></script>
 <script src="/resources/testharness.js"></script>
 <script src="/resources/testharnessreport.js"></script>
 <script>
@@ -20,7 +17,7 @@ child context.</p>
 <div id="log"></div>
 
 <iframe id="childContext" src="uncaught-exception-handle.html" style="display:none"></iframe>
-
+<!-- apisample4.html is a failing suite due to an unhandled Error. -->
 
 <script>
   var childContext = document.getElementById("childContext");
