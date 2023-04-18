@@ -2600,17 +2600,6 @@ var SessionStoreInternal = {
     
     
     
-    let hasNoCacheState = !cacheState;
-    let cacheStateKeys = hasNoCacheState ? [] : Object.keys(cacheState);
-    if (cacheStateKeys.length === 1 && cacheStateKeys.includes("isPrivate")) {
-      hasNoCacheState = true;
-    }
-
-    
-    
-    
-    
-    
     
     
     
@@ -2623,7 +2612,7 @@ var SessionStoreInternal = {
     
     let shouldUpdateCacheState =
       userTypedValue &&
-      (hasNoCacheState || (hasStartedLoad && !cacheState.userTypedValue));
+      (!cacheState || (hasStartedLoad && !cacheState.userTypedValue));
 
     if (shouldUpdateCacheState) {
       
