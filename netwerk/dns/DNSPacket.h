@@ -22,7 +22,7 @@ class DOHresp {
   nsresult Add(uint32_t TTL, unsigned char const* dns, unsigned int index,
                uint16_t len, bool aLocalAllowed);
   nsTArray<NetAddr> mAddresses;
-  uint32_t mTtl = UINT32_MAX;
+  uint32_t mTtl = 0;
 };
 
 
