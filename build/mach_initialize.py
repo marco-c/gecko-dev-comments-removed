@@ -179,38 +179,14 @@ def _activate_python_environment(topsrcdir, state_dir):
         )
     ]
 
-    from mach.site import (
-        MachSiteManager,
-        VirtualenvOutOfDateException,
-        MozSiteMetadata,
-        MozSiteMetadataOutOfDateError,
-    )
+    from mach.site import MachSiteManager
 
-    try:
-        active_metadata = MozSiteMetadata.from_runtime()
-        if not active_metadata and os.path.basename(sys.prefix) == "mach":
-            
-            
-            
-            
-            
-            
-            
-            raise MozSiteMetadataOutOfDateError(
-                "Mach virtualenv is missing metadata file."
-            )
-        mach_environment = MachSiteManager.from_environment(
-            topsrcdir,
-            
-            os.path.normpath(state_dir),
-        )
-        mach_environment.activate()
-    except (VirtualenvOutOfDateException, MozSiteMetadataOutOfDateError):
-        print(
-            'The "mach" virtualenv is not up-to-date, please run '
-            '"./mach create-mach-environment"'
-        )
-        sys.exit(1)
+    mach_environment = MachSiteManager.from_environment(
+        topsrcdir,
+        
+        os.path.normpath(state_dir),
+    )
+    mach_environment.activate()
 
 
 def initialize(topsrcdir):

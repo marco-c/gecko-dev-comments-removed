@@ -337,7 +337,6 @@ class Bootstrapper(object):
         self._validate_python_environment()
 
         if self.instance.no_system_changes:
-            self.instance.ensure_mach_environment(checkout_root)
             self.maybe_install_private_packages_or_exit(
                 state_dir, checkout_root, application
             )
@@ -345,10 +344,6 @@ class Bootstrapper(object):
             sys.exit(0)
 
         self.instance.install_system_packages()
-        
-        
-        
-        self.instance.ensure_mach_environment(checkout_root)
 
         
         getattr(self.instance, "install_%s_packages" % application)(mozconfig_builder)
