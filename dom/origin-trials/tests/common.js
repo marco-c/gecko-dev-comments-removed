@@ -1,0 +1,11 @@
+function assertTestTrialActive(shouldBeActive) {
+  is(
+    !!navigator.testTrialGatedAttribute,
+    shouldBeActive,
+    "Should match active status for Navigator.testTrialControlledAttribute"
+  );
+  
+  
+  
+  
+}
