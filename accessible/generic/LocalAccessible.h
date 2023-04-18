@@ -806,6 +806,13 @@ class LocalAccessible : public nsISupports, public Accessible {
   already_AddRefed<AccAttributes> BundleFieldsForCache(
       uint64_t aCacheDomain, CacheUpdateType aUpdateType);
 
+  
+
+
+
+
+  void SendCache(uint64_t aCacheDomain, CacheUpdateType aUpdate);
+
   virtual nsAtom* TagName() const override;
 
  protected:
@@ -992,13 +999,6 @@ class LocalAccessible : public nsISupports, public Accessible {
 
   virtual void ARIAGroupPosition(int32_t* aLevel, int32_t* aSetSize,
                                  int32_t* aPosInSet) const override;
-
-  
-
-
-
-
-  void SendCache(uint64_t aCacheDomain, CacheUpdateType aUpdate);
 
   
   
