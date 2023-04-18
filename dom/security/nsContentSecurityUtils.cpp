@@ -812,6 +812,12 @@ void nsContentSecurityUtils::DetectJsHacks() {
   if (!NS_IsMainThread()) {
     return;
   }
+
+  
+  if (!Preferences::IsServiceAvailable()) {
+    return;
+  }
+
   
   if (MOZ_LIKELY(sJSHacksChecked || sJSHacksPresent)) {
     return;
@@ -893,6 +899,12 @@ void nsContentSecurityUtils::DetectCssHacks() {
   if (!NS_IsMainThread()) {
     return;
   }
+
+  
+  if (!Preferences::IsServiceAvailable()) {
+    return;
+  }
+
   
   if (MOZ_LIKELY(sCSSHacksChecked || sCSSHacksPresent)) {
     return;
