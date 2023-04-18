@@ -595,7 +595,7 @@ FormAutofillHeuristics = {
 
 
   _isExpirationMonthLikely(element) {
-    if (ChromeUtils.getClassName(element) !== "HTMLSelectElement") {
+    if (!HTMLSelectElement.isInstance(element)) {
       return false;
     }
 
@@ -631,7 +631,7 @@ FormAutofillHeuristics = {
 
 
   _isExpirationYearLikely(element) {
-    if (ChromeUtils.getClassName(element) !== "HTMLSelectElement") {
+    if (!HTMLSelectElement.isInstance(element)) {
       return false;
     }
 
@@ -894,7 +894,7 @@ FormAutofillHeuristics = {
 
     
     
-    if (ChromeUtils.getClassName(element) == "HTMLSelectElement") {
+    if (HTMLSelectElement.isInstance(element)) {
       for (let option of element.querySelectorAll("option")) {
         if (
           CreditCard.getNetworkFromName(option.value) ||

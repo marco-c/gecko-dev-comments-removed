@@ -223,7 +223,7 @@ class FormAutofillSection {
       }
 
       let element = fieldDetail.elementWeakRef.get();
-      if (ChromeUtils.getClassName(element) !== "HTMLSelectElement") {
+      if (!HTMLSelectElement.isInstance(element)) {
         continue;
       }
 
@@ -376,7 +376,7 @@ class FormAutofillSection {
       if (fieldDetail.transform) {
         value = fieldDetail.transform(value);
       }
-      if (ChromeUtils.getClassName(element) === "HTMLInputElement" && value) {
+      if (HTMLInputElement.isInstance(element) && value) {
         
         
         
@@ -392,7 +392,7 @@ class FormAutofillSection {
           element.setUserInput(value);
           this._changeFieldState(fieldDetail, FIELD_STATES.AUTO_FILLED);
         }
-      } else if (ChromeUtils.getClassName(element) === "HTMLSelectElement") {
+      } else if (HTMLSelectElement.isInstance(element)) {
         let cache = this._cacheValue.matchingSelectOption.get(element) || {};
         let option = cache[value] && cache[value].get();
         if (!option) {
@@ -441,7 +441,7 @@ class FormAutofillSection {
         continue;
       }
 
-      if (ChromeUtils.getClassName(element) === "HTMLSelectElement") {
+      if (HTMLSelectElement.isInstance(element)) {
         
         
         if (value) {
@@ -502,9 +502,9 @@ class FormAutofillSection {
       }
 
       if (fieldDetail.state == FIELD_STATES.AUTO_FILLED) {
-        if (ChromeUtils.getClassName(element) === "HTMLInputElement") {
+        if (HTMLInputElement.isInstance(element)) {
           element.setUserInput("");
-        } else if (ChromeUtils.getClassName(element) === "HTMLSelectElement") {
+        } else if (HTMLSelectElement.isInstance(element)) {
           
           this._resetSelectElementValue(element);
         }
@@ -677,7 +677,7 @@ class FormAutofillSection {
         
         
         if (
-          ChromeUtils.getClassName(target) !== "HTMLSelectElement" &&
+          !HTMLSelectElement.isInstance(target) &&
           isCreditCardField &&
           target.value === ""
         ) {
@@ -702,7 +702,7 @@ class FormAutofillSection {
         for (const fieldDetail of this.fieldDetails) {
           const element = fieldDetail.elementWeakRef.get();
 
-          if (ChromeUtils.getClassName(element) === "HTMLSelectElement") {
+          if (HTMLSelectElement.isInstance(element)) {
             
             
             dimFieldDetails.push(fieldDetail);
@@ -813,8 +813,7 @@ class FormAutofillAddressSection extends FormAutofillSection {
       let streetAddressDetail = this.getFieldDetailByName("street-address");
       if (
         streetAddressDetail &&
-        ChromeUtils.getClassName(streetAddressDetail.elementWeakRef.get()) ===
-          "HTMLInputElement"
+        HTMLInputElement.isInstance(streetAddressDetail.elementWeakRef.get())
       ) {
         profile["street-address"] = profile["-moz-street-address-one-line"];
       }
@@ -907,7 +906,7 @@ class FormAutofillAddressSection extends FormAutofillSection {
     
     if (
       fieldDetail.fieldName == "address-level1" &&
-      ChromeUtils.getClassName(element) === "HTMLSelectElement"
+      HTMLSelectElement.isInstance(element)
     ) {
       
       
@@ -1256,7 +1255,7 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
   computeFillingValue(value, fieldDetail, element) {
     if (
       fieldDetail.fieldName != "cc-type" ||
-      ChromeUtils.getClassName(element) !== "HTMLSelectElement"
+      !HTMLSelectElement.isInstance(element)
     ) {
       return value;
     }

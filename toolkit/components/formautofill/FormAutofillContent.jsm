@@ -876,7 +876,7 @@ var FormAutofillContent = {
   _markAsAutofillField(field) {
     
     
-    if (!field || ChromeUtils.getClassName(field) !== "HTMLInputElement") {
+    if (!HTMLInputElement.isInstance(field)) {
       return;
     }
 
