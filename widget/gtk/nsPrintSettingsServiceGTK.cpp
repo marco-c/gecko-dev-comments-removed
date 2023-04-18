@@ -4,6 +4,8 @@
 
 
 #include "nsPrintSettingsServiceGTK.h"
+
+#include "mozilla/embedding/PPrintingTypes.h"
 #include "nsPrintSettingsGTK.h"
 
 using namespace mozilla::embedding;
