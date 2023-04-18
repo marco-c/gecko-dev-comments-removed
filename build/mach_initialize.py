@@ -111,7 +111,7 @@ def _maybe_activate_mozillabuild_environment():
         "accordingly."
     )
 
-    for entry in os.environ.get("PATH", "").split(":"):
+    for entry in os.environ.get("PATH", "").split(os.pathsep):
         entry = Path(entry)
         if mozillabuild in entry.parents:
             
