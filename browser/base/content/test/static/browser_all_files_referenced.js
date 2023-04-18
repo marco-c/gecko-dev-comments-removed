@@ -281,6 +281,11 @@ var whitelist = [
   { file: "resource://app/modules/SnapshotSelector.jsm" },
 
   
+  {
+    file: "resource://app/modules/SnapshotGroups.jsm",
+  },
+
+  
   { file: "resource://gre/localization/en-US/toolkit/global/run-from-dmg.ftl" },
 ];
 
