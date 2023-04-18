@@ -411,7 +411,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   void OpenAudioInputImpl(NativeInputTrack* aTrack);
   
 
-  virtual void OpenAudioInput(NativeInputTrack* aTrack) override;
+  virtual void OpenAudioInput(DeviceInputTrack* aTrack) override;
 
   
 
@@ -420,7 +420,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   
 
 
-  virtual void CloseAudioInput(NativeInputTrack* aTrack) override;
+  virtual void CloseAudioInput(DeviceInputTrack* aTrack) override;
 
   
 

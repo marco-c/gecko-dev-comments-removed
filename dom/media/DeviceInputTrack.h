@@ -12,8 +12,9 @@
 
 namespace mozilla {
 
+class NativeInputTrack;
 
-class NativeInputTrack : public ProcessedMediaTrack {
+class DeviceInputTrack : public ProcessedMediaTrack {
  public:
   
   
@@ -50,21 +51,61 @@ class NativeInputTrack : public ProcessedMediaTrack {
   
   
   
-  static Result<RefPtr<NativeInputTrack>, nsresult> OpenAudio(
+  
+  
+  static Result<RefPtr<DeviceInputTrack>, nsresult> OpenAudio(
       MediaTrackGraphImpl* aGraph, CubebUtils::AudioDeviceID aDeviceId,
       const PrincipalHandle& aPrincipalHandle, AudioDataListener* aListener);
   
   
-  static void CloseAudio(RefPtr<NativeInputTrack>&& aTrack,
+  static void CloseAudio(RefPtr<DeviceInputTrack>&& aTrack,
                          AudioDataListener* aListener);
+
+  
+  
+  uint32_t MaxRequestedInputChannels() const;
+  bool HasVoiceInput() const;
+  
+  void DeviceChanged(MediaTrackGraphImpl* aGraph) const;
+
+  
+  DeviceInputTrack* AsDeviceInputTrack() override { return this; }
+  virtual NativeInputTrack* AsNativeInputTrack() { return nullptr; }
+
+  
+  const CubebUtils::AudioDeviceID mDeviceId;
+  const PrincipalHandle mPrincipalHandle;
+
+ protected:
+  DeviceInputTrack(TrackRate aSampleRate, CubebUtils::AudioDeviceID aDeviceId,
+                   const PrincipalHandle& aPrincipalHandle);
+  ~DeviceInputTrack() = default;
+
+ private:
+  
+  void ReevaluateInputDevice();
+  void AddDataListener(AudioDataListener* aListener);
+  void RemoveDataListener(AudioDataListener* aListener);
+
+  
+  
+  int32_t mUserCount = 0;
+
+  
+  nsTArray<RefPtr<AudioDataListener>> mListeners;
+};
+
+class NativeInputTrack final : public DeviceInputTrack {
+ public:
+  
+  
+  NativeInputTrack(TrackRate aSampleRate, CubebUtils::AudioDeviceID aDeviceId,
+                   const PrincipalHandle& aPrincipalHandle);
 
   
   void DestroyImpl() override;
   void ProcessInput(GraphTime aFrom, GraphTime aTo, uint32_t aFlags) override;
   uint32_t NumberOfChannels() const override;
-
-  
-  void DeviceChanged(MediaTrackGraphImpl* aGraph);
 
   
   void NotifyInputStopped(MediaTrackGraphImpl* aGraph);
@@ -74,43 +115,19 @@ class NativeInputTrack : public ProcessedMediaTrack {
                        uint32_t aAlreadyBuffered);
 
   
-  uint32_t MaxRequestedInputChannels() const;
-  bool HasVoiceInput() const;
-
-  
   NativeInputTrack* AsNativeInputTrack() override { return this; }
 
-  
-  const CubebUtils::AudioDeviceID mDeviceId;
-  const PrincipalHandle mPrincipalHandle;
-
  private:
-  NativeInputTrack(TrackRate aSampleRate, CubebUtils::AudioDeviceID aDeviceId,
-                   const PrincipalHandle& aPrincipalHandle);
   ~NativeInputTrack() = default;
 
   
-  void ReevaluateInputDevice();
-  void AddDataListener(AudioDataListener* aListener);
-  void RemoveDataListener(AudioDataListener* aListener);
-
   
   
-  bool mIsBufferingAppended;
-
-  
+  bool mIsBufferingAppended = false;
   
   AudioSegment mPendingData;
-
   
   uint32_t mInputChannels = 0;
-
-  
-  
-  int32_t mUserCount = 0;
-
-  
-  nsTArray<RefPtr<AudioDataListener>> mDataUsers;
 };
 
 }  

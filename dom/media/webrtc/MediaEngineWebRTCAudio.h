@@ -228,7 +228,7 @@ class AudioProcessingTrack : public ProcessedMediaTrack {
 
   
   
-  RefPtr<NativeInputTrack> mDeviceInputTrack;
+  RefPtr<DeviceInputTrack> mDeviceInputTrack;
 
   
   
