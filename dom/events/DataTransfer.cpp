@@ -570,21 +570,17 @@ bool DataTransfer::PrincipalMaySetData(const nsAString& aType,
       return false;
     }
 
-    if (aType.EqualsASCII(kFileMime) || aType.EqualsASCII(kFilePromiseMime)) {
-      NS_WARNING(
-          "Disallowing adding x-moz-file or x-moz-file-promize types to "
-          "DataTransfer");
-      return false;
-    }
-
     
     
     
-    auto principal = BasePrincipal::Cast(aPrincipal);
-    if (!principal->AddonPolicy() &&
-        StringBeginsWith(aType, u"text/x-moz-place"_ns)) {
-      NS_WARNING("Disallowing adding moz-place types to DataTransfer");
-      return false;
+    if (FindInReadable(kInternal_Mimetype_Prefix, aType) &&
+        !StringBeginsWith(aType, u"text/x-moz-url"_ns)) {
+      auto principal = BasePrincipal::Cast(aPrincipal);
+      if (!principal->AddonPolicy() ||
+          !StringBeginsWith(aType, u"text/x-moz-place"_ns)) {
+        NS_WARNING("Disallowing adding this type to DataTransfer");
+        return false;
+      }
     }
   }
 
