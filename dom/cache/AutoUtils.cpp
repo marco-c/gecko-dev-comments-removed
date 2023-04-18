@@ -32,7 +32,6 @@ enum CleanupAction { Forget, Delete };
 
 void CleanupChild(CacheReadStream& aReadStream, CleanupAction aAction) {
   
-  
 }
 
 void CleanupChild(Maybe<CacheReadStream>& aMaybeReadStream,
