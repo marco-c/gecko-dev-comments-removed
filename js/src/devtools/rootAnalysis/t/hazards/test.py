@@ -7,6 +7,7 @@ test.run_analysis_script("gcTypes")
 
 
 gcFunctions = test.load_gcFunctions()
+print(gcFunctions)
 assert "void GC()" in gcFunctions
 assert "void suppressedFunction()" not in gcFunctions
 assert "void halfSuppressedFunction()" in gcFunctions
@@ -27,9 +28,8 @@ assert "this" in hazmap
 
 
 assert hazmap["cell2"].function == "Cell* f()"
-haz_functions = set(haz.function for haz in hazards)
-print(haz_functions)
-assert len(haz_functions) == 7
+print(len(set(haz.function for haz in hazards)))
+assert len(set(haz.function for haz in hazards)) == 4
 
 
 
@@ -39,16 +39,8 @@ assert hazmap["cell3"].GCFunction in (
     "void halfSuppressedFunction()",
     "void unsuppressedFunction()",
 )
-returnval_hazards = set(
-    haz.function for haz in hazards if haz.variable == "<returnvalue>"
-)
-assert returnval_hazards == set(
-    [
-        "Cell* f()",
-        "Cell* refptr_test1()",
-        "Cell* refptr_test3()",
-        "Cell* refptr_test4()",
-    ]
+assert hazmap["<returnvalue>"].GCFunction.startswith(
+    "void GCInDestructor::~GCInDestructor()"
 )
 
 assert "container1" in hazmap

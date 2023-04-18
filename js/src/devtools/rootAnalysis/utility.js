@@ -14,7 +14,6 @@ loadRelativeToScript('dumpCFG.js');
 var ATTR_GC_SUPPRESSED     = 1;
 var ATTR_CANSCRIPT_BOUNDED = 2; 
 var ATTR_DOM_ITERATING     = 4; 
-var ATTR_NONRELEASING      = 8; 
 
 var ATTRS_NONE             = 0;
 var ATTRS_ALL              = 7; 
@@ -75,131 +74,64 @@ function xprint(x, padding)
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 function parse_options(parameters, inArgs = scriptArgs) {
     const options = {};
 
-    const named = {};
+    const optional = {};
     const positional = [];
     for (const param of parameters) {
         if (param.name.startsWith("-")) {
-            named[param.name] = param;
-            if (!param.dest) {
-                if (!param.name.startsWith("--")) {
-                    throw new Error(`parameter '${param.name}' requires param.dest to be set`);
-                }
-                param.dest = param.name.substring(2).replace("-", "_");
-            }
+            optional[param.name] = param;
+            param.dest = param.dest || param.name.substring(2).replace("-", "_");
         } else {
-            if (!('default' in param) && positional.length > 0 && ('default' in positional.at(-1))) {
-                throw new Error(`required parameter '${param.name}' follows optional parameter`);
-            }
-            param.positional = true;
             positional.push(param);
             param.dest = param.dest || param.name.replace("-", "_");
         }
 
-        if (!param.type) {
-            if (param.nargs === "+") {
-                param.type = "list";
-            } else if (param.positional) {
-                param.type = "string";
-            } else {
-                param.type = "bool";
-            }
-        }
-
-        if ('default' in param) {
+        param.type = param.type || 'bool';
+        if ('default' in param)
             options[param.dest] = param.default;
-        }
     }
 
     options.rest = [];
     const args = [...inArgs];
-    let grabbing_into = undefined;
     while (args.length > 0) {
-        let arg = args.shift();
         let param;
-        if (arg.startsWith("-") && arg in named) {
-            param = named[arg];
-            if (param.type !== 'bool') {
-                if (args.length == 0) {
-                    throw(new Error(`${param.name} requires an argument`));
-                }
-                arg = args.shift();
-            }
-        } else {
-            const pos = arg.indexOf("=");
+        let pos = -1;
+        if (args[0] in optional)
+            param = optional[args[0]];
+        else {
+            pos = args[0].indexOf("=");
             if (pos != -1) {
-                const name = arg.substring(0, pos);
-                param = named[name];
-                if (!param) {
-                    throw(new Error(`Unknown option '${name}'`));
-                } else if (param.type === 'bool') {
-                    throw(new Error(`--${param.name} does not take an argument`));
-                }
-                arg = arg.substring(pos + 1);
+                param = optional[args[0].substring(0, pos)];
+                pos++;
             }
         }
 
-        
-        
-        if (!param && !grabbing_into && positional.length > 0) {
-            param = positional.shift();
-        }
-
-        
-        if (param) {
-            if (param.type === 'list') {
-                grabbing_into = options[param.dest] = options[param.dest] || [];
+        if (!param) {
+            if (positional.length > 0) {
+                param = positional.shift();
+                options[param.dest] = args.shift();
             } else {
-                grabbing_into = undefined;
+                options.rest.push(args.shift());
             }
+            continue;
         }
 
-        if (grabbing_into) {
-            grabbing_into.push(arg);
-        } else if (param) {
-            if (param.type === 'bool') {
-                options[param.dest] = true;
+        if (param.type != 'bool') {
+            if (pos != -1) {
+                options[param.dest] = args.shift().substring(pos);
             } else {
-                options[param.dest] = arg;
+                args.shift();
+                if (args.length == 0)
+                    throw(new Error(`--${param.name} requires an argument`));
+                options[param.dest] = args.shift();
             }
         } else {
-            options.rest.push(arg);
-        }
-    }
-
-    for (const param of positional) {
-        if (!('default' in param)) {
-            throw(new Error(`'${param.name}' option is required`));
-        }
-    }
-
-    for (const param of parameters) {
-        if (param.nargs === '+' && options[param.dest].length == 0) {
-            throw(new Error(`at least one value required for option '${param.name}'`));
+            if (pos != -1)
+                throw(new Error(`--${param.name} does not take an argument`));
+            options[param.dest] = true;
+            args.shift();
         }
     }
 
@@ -254,8 +186,13 @@ function collectBodyEdges(body)
 
 function getPredecessors(body)
 {
-    if (!('predecessors' in body))
-        collectBodyEdges(body);
+    try {
+        if (!('predecessors' in body))
+            collectBodyEdges(body);
+    } catch (e) {
+        debugger;
+        printErr("body is " + body);
+    }
     return body.predecessors;
 }
 

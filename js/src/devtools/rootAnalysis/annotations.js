@@ -32,13 +32,7 @@ var resetterMethods = {
     'js::UniquePtr': new Set(["reset"]),
     'mozilla::dom::Nullable': new Set(["SetNull"]),
     'mozilla::dom::TypedArray_base': new Set(["Reset"]),
-    'RefPtr': new Set(["forget"]),
-    'nsCOMPtr': new Set(["forget"]),
 };
-
-function isRefcountedDtor(name) {
-    return name.includes("::~RefPtr(") || name.includes("::~nsCOMPtr(");
-}
 
 function indirectCallCannotGC(fullCaller, fullVariable)
 {
