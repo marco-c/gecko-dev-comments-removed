@@ -225,6 +225,47 @@ var GeckoViewUtils = {
 
 
 
+  registerLazyWindowEventListener(
+    window,
+    events,
+    { handler, scope, name, once }
+  ) {
+    const dispatcher = this.getDispatcherForWindow(window);
+
+    this._addLazyListeners(
+      events,
+      handler,
+      scope,
+      name,
+      (events, listener) => {
+        dispatcher.registerListener(listener, events);
+      },
+      (handlers, listener, args) => {
+        if (!once) {
+          dispatcher.unregisterListener(listener, args[0]);
+          handlers.forEach(handler =>
+            dispatcher.registerListener(handler, args[0])
+          );
+        }
+        handlers.forEach(handler => handler.onEvent(...args));
+      }
+    );
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
   addLazyPrefObserver(aPrefs, { handler, scope, name, once }) {
@@ -322,6 +363,23 @@ var GeckoViewUtils = {
       }
     } catch (e) {}
     return null;
+  },
+
+  getActiveDispatcherAndWindow() {
+    const bc = Services.focus.activeBrowsingContext;
+    const win = bc ? bc.window : null; 
+    let dispatcher = this.getDispatcherForWindow(win);
+    if (dispatcher) {
+      return [dispatcher, win];
+    }
+
+    for (const win of Services.wm.getEnumerator( null)) {
+      dispatcher = this.getDispatcherForWindow(win);
+      if (dispatcher) {
+        return [dispatcher, win];
+      }
+    }
+    return [null, null];
   },
 
   

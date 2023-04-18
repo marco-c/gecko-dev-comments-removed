@@ -13,46 +13,11 @@ var EXPORTED_SYMBOLS = ["EventDispatcher"];
 const IS_PARENT_PROCESS =
   Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_DEFAULT;
 
-class ChildActorDispatcher {
-  constructor(actor) {
-    this._actor = actor;
-  }
-
-  
-  registerListener(aListener, aEvents) {
-    throw new Error("Cannot registerListener in child actor");
-  }
-  unregisterListener(aListener, aEvents) {
-    throw new Error("Cannot registerListener in child actor");
-  }
-
-  
-
-
-
-
-  sendRequest(aMsg) {
-    this._actor.sendAsyncMessage("DispatcherMessage", aMsg);
-  }
-
-  
-
-
-
-
-
-  sendRequestForResult(aMsg) {
-    return this._actor.sendQuery("DispatcherQuery", aMsg);
-  }
-}
-
 function DispatcherDelegate(aDispatcher, aMessageManager) {
   this._dispatcher = aDispatcher;
   this._messageManager = aMessageManager;
 
   if (!aDispatcher) {
-    
-    
     
     this._replies = new Map();
     (aMessageManager || Services.cpmm).addMessageListener(
@@ -259,15 +224,6 @@ var EventDispatcher = {
 
   forMessageManager(aMessageManager) {
     return new DispatcherDelegate(null, aMessageManager);
-  },
-
-  
-
-
-
-
-  forActor(aActor) {
-    return new ChildActorDispatcher(aActor);
   },
 
   receiveMessage(aMsg) {

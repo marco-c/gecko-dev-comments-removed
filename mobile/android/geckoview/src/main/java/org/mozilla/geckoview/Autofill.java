@@ -25,10 +25,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
 import org.mozilla.gecko.util.BundleEventListener;
 import org.mozilla.gecko.util.EventCallback;
 import org.mozilla.gecko.util.GeckoBundle;
@@ -37,8 +36,6 @@ import org.mozilla.gecko.util.ThreadUtils;
 public class Autofill {
   private static final boolean DEBUG = false;
 
-  @Deprecated
-  @DeprecationSchedule(id = "autofill-node", version = 104)
   public static final class Notify {
     private Notify() {}
 
@@ -168,190 +165,72 @@ public class Autofill {
   public @interface AutofillInputType {}
 
   
-  public static class NodeData {
-    
-    final int id;
-
-    String value;
-    Node node;
-    EventCallback callback;
-
-    NodeData(final int id, final Node node) {
-      this.id = id;
-      this.node = node;
-    }
-
-    
-
-
-
-
-    @AnyThread
-    public @Nullable String getValue() {
-      return value;
-    }
-
-    
-
-
-
-
-    @AnyThread
-    public int getId() {
-      return id;
-    }
-  }
-
-  
   public static final class Session {
     private static final String LOGTAG = "AutofillSession";
 
     private @NonNull final GeckoSession mGeckoSession;
     private Node mRoot;
-    private HashMap<String, NodeData> mUuidToNodeData;
-    private SparseArray<Node> mIdToNode;
-    private int mCurrentIndex = 0;
-    private String mId = null;
-
+    private SparseArray<Node> mNodes;
+    private HashMap<String, Integer> mUuidToId;
+    private int mCurrentIndex;
     
-    private String mFocusedUuid = null;
+    private int mId = View.NO_ID;
+    private int mFocusedId = View.NO_ID;
+    private int mFocusedRootId = View.NO_ID;
 
      Session(@NonNull final GeckoSession geckoSession) {
       mGeckoSession = geckoSession;
-      
-      clear(UUID.randomUUID().toString());
+      clear();
     }
 
-    @UiThread
+    @AnyThread
     @SuppressWarnings("checkstyle:javadocmethod")
     public @NonNull Rect getDefaultDimensions() {
-      final Rect rect = new Rect();
-      mGeckoSession.getSurfaceBounds(rect);
-      return rect;
+      return Support.getDummyAutofillRect(mGeckoSession, false, null);
     }
 
-     void clear(String newSessionId) {
-      mId = newSessionId;
-      mFocusedUuid = null;
-      mRoot = Node.newDummyRoot(getDefaultDimensions(), newSessionId);
-      mIdToNode = new SparseArray<>();
-      mUuidToNodeData = new HashMap<>();
-      addNode(mRoot);
+     void clear() {
+      mId = View.NO_ID;
+      mFocusedId = View.NO_ID;
+      mFocusedRootId = View.NO_ID;
+      mRoot = new Node.Builder(this).dimensions(getDefaultDimensions()).build();
+      mNodes = new SparseArray<>();
+      mUuidToId = new HashMap<>();
+      mCurrentIndex = 0;
     }
 
      boolean isEmpty() {
-      
-      return mUuidToNodeData.size() == 1;
-    }
-
-    
-    @UiThread
-    public @NonNull NodeData dataFor(final @NonNull Node node) {
-      NodeData data = mUuidToNodeData.get(node.getUuid());
-      Objects.requireNonNull(data);
-      return data;
-    }
-
-     void addRoot(@NonNull final Node node, final EventCallback callback) {
-      if (DEBUG) {
-        Log.d(LOGTAG, "addRoot: " + node);
-      }
-
-      mRoot.addChild(node);
-      addNode(node);
-      dataFor(node).callback = callback;
+      return mNodes.size() == 0;
     }
 
      void addNode(@NonNull final Node node) {
       if (DEBUG) {
         Log.d(LOGTAG, "addNode: " + node);
       }
+      node.setAutofillSession(this);
+      mNodes.put(node.getId(), node);
 
-      NodeData data = mUuidToNodeData.get(node.getUuid());
-      if (data == null) {
-        final int nodeId = mCurrentIndex++;
-        data = new NodeData(nodeId, node);
-        mUuidToNodeData.put(node.getUuid(), data);
-      } else {
-        data.node = node;
-      }
-
-      mIdToNode.put(data.id, node);
-      for (final Node child : node.getChildren()) {
-        addNode(child);
+      if (node.getParentId() == View.NO_ID) {
+        mRoot.addChild(node);
       }
     }
 
-    
-
-
-
-
-
-    @UiThread
-    public boolean isVisible(final @NonNull Node node) {
-      if (!Objects.equals(node.mSessionId, mId)) {
-        Log.w(LOGTAG, "Requesting visibility for older session " + node.mSessionId);
-        return false;
-      }
-      if (mRoot == node) {
-        
-        return true;
-      }
-      final Node focused = getFocused();
-      if (focused == null) {
-        return false;
-      }
-      final Node focusedRoot = focused.getRoot();
-      final Node focusedParent = focused.getParent();
-
-      final String parentUuid = node.getParent() != null ? node.getParent().getUuid() : null;
-      final String rootUuid = node.getRoot() != null ? node.getRoot().getUuid() : null;
-
-      return (focusedParent != null && focusedParent.getUuid().equals(parentUuid))
-          || (focusedRoot != null && focusedRoot.getUuid().equals(rootUuid));
+     void setFocus(final int id, final int rootId) {
+      mFocusedId = id;
+      mFocusedRootId = rootId;
     }
 
-    
-
-
-
-
-
-    @UiThread
-    public @Nullable Node getFocused() {
-      return getNode(mFocusedUuid);
+     int getFocusedId() {
+      return mFocusedId;
     }
 
-     void setFocus(final Node node) {
-      mFocusedUuid = node != null ? node.getUuid() : null;
-    }
-
-    
-
-
-
-
-    @UiThread
-    public @Nullable NodeData getFocusedData() {
-      final Node focused = getFocused();
-      return focused != null ? dataFor(focused) : null;
+     int getFocusedRootId() {
+      return mFocusedRootId;
     }
 
      @Nullable
-    Node getNode(final String uuid) {
-      if (uuid == null) {
-        return null;
-      }
-      final NodeData nodeData = mUuidToNodeData.get(uuid);
-      if (nodeData == null) {
-        return null;
-      }
-      return nodeData.node;
-    }
-
-     Node getNode(final int id) {
-      return mIdToNode.get(id);
+    Node getNode(final int id) {
+      return mNodes.get(id);
     }
 
     
@@ -365,23 +244,31 @@ public class Autofill {
       return mRoot;
     }
 
-     String getId() {
-      return mId;
+     int getIdFromUuid(final String uuid) {
+      final Integer id = mUuidToId.get(uuid);
+      if (id != null) {
+        return id;
+      }
+      return -1;
+    }
+
+     int mapUuidtoId(final String uuid) {
+      final int newId = ++mCurrentIndex;
+      mUuidToId.put(uuid, newId);
+      return newId;
     }
 
     @Override
-    @UiThread
+    @AnyThread
     public String toString() {
       final StringBuilder builder = new StringBuilder("Session {");
-      final Node focused = getFocused();
       builder
           .append("id=")
           .append(mId)
-          .append(", focused=")
-          .append(mFocusedUuid)
-          .append(", focusedRoot=")
-          .append(
-              (focused != null && focused.getRoot() != null) ? focused.getRoot().getUuid() : null)
+          .append(", focusedId=")
+          .append(mFocusedId)
+          .append(", focusedRootId=")
+          .append(mFocusedRootId)
           .append(", root=")
           .append(getRoot())
           .append("}");
@@ -394,64 +281,424 @@ public class Autofill {
     public void fillViewStructure(
         @NonNull final View view, @NonNull final ViewStructure structure, final int flags) {
       ThreadUtils.assertOnUiThread();
-      fillViewStructure(getRoot(), view, structure, flags);
+
+      getRoot().fillViewStructure(view, structure, flags);
+    }
+  }
+
+  
+
+
+
+  public static final class Node {
+    private static final String LOGTAG = "AutofillNode";
+
+    private int mId;
+    private String mUuid;
+    private int mRootId;
+    private int mParentId;
+    private Session mAutofillSession;
+    private @NonNull Rect mDimens;
+    private @NonNull Collection<Node> mChildren;
+    private @NonNull Map<String, String> mAttributes;
+    private boolean mEnabled;
+    private boolean mFocusable;
+    private @AutofillHint int mHint;
+    private @AutofillInputType int mInputType;
+    private @NonNull String mTag;
+    private @NonNull String mDomain;
+    private @NonNull String mValue;
+    private @Nullable EventCallback mCallback;
+
+    
+
+
+
+
+    @AnyThread
+    public int getId() {
+      return mId;
+    }
+
+     @NonNull
+    Node setId(final int id) {
+      mId = id;
+      return this;
+    }
+
+     @NonNull
+    Node setUuid(final String uuid) {
+      mUuid = uuid;
+      return this;
+    }
+
+     @NonNull
+    String getUuid() {
+      return mUuid;
+    }
+
+     @Nullable
+    Node getRoot() {
+      return getAutofillSession().getNode(mRootId);
+    }
+
+     @NonNull
+    Node setRootId(final int rootId) {
+      mRootId = rootId;
+      return this;
+    }
+
+     @Nullable
+    Node getParent() {
+      return getAutofillSession().getNode(mParentId);
+    }
+
+     int getParentId() {
+      return mParentId;
+    }
+
+     @NonNull
+    Node setParentId(final int parentId) {
+      mParentId = parentId;
+      return this;
+    }
+
+     @NonNull
+    Session getAutofillSession() {
+      return mAutofillSession;
+    }
+
+     @NonNull
+    Node setAutofillSession(@Nullable final Session session) {
+      mAutofillSession = session;
+      return this;
+    }
+
+    
+
+
+
+
+
+
+    @AnyThread
+    public boolean getVisible() {
+      final int focusedId = getAutofillSession().getFocusedId();
+      final int focusedRootId = getAutofillSession().getFocusedRootId();
+
+      if (focusedId == View.NO_ID) {
+        return false;
+      }
+
+      final int focusedParentId = getAutofillSession().getNode(focusedId).getParentId();
+
+      return mId == View.NO_ID
+          || 
+          mParentId == focusedParentId
+          || mRootId == focusedRootId;
+    }
+
+    
+
+
+
+
+
+    @AnyThread
+    public @NonNull Rect getDimensions() {
+      return mDimens;
+    }
+
+     @NonNull
+    Node setDimensions(final Rect rect) {
+      mDimens = rect;
+      return this;
+    }
+
+    
+
+
+
+
+    @AnyThread
+    public @NonNull Collection<Node> getChildren() {
+      return mChildren;
+    }
+
+     @NonNull
+    Node addChild(@NonNull final Node child) {
+      mChildren.add(child);
+      return this;
+    }
+
+    
+
+
+
+
+    @AnyThread
+    public @NonNull Map<String, String> getAttributes() {
+      return mAttributes;
+    }
+
+    @AnyThread
+    @SuppressWarnings("checkstyle:javadocmethod")
+    public @Nullable String getAttribute(@NonNull final String key) {
+      return mAttributes.get(key);
+    }
+
+     @NonNull
+    Node setAttributes(final Map<String, String> attributes) {
+      mAttributes = attributes;
+      return this;
+    }
+
+     @NonNull
+    Node setAttribute(final String key, final String value) {
+      mAttributes.put(key, value);
+      return this;
+    }
+
+    
+
+
+
+
+    @AnyThread
+    public boolean getEnabled() {
+      return mEnabled;
+    }
+
+     @NonNull
+    Node setEnabled(final boolean enabled) {
+      mEnabled = enabled;
+      return this;
+    }
+
+    
+
+
+
+
+    @AnyThread
+    public boolean getFocusable() {
+      return mFocusable;
+    }
+
+     @NonNull
+    Node setFocusable(final boolean focusable) {
+      mFocusable = focusable;
+      return this;
+    }
+
+    
+
+
+
+
+    @AnyThread
+    public boolean getFocused() {
+      return getId() != View.NO_ID && getAutofillSession().getFocusedId() == getId();
+    }
+
+    
+
+
+
+
+    @AnyThread
+    public @AutofillHint int getHint() {
+      return mHint;
+    }
+
+     @NonNull
+    Node setHint(final @AutofillHint int hint) {
+      mHint = hint;
+      return this;
+    }
+
+    
+
+
+
+
+    @AnyThread
+    public @AutofillInputType int getInputType() {
+      return mInputType;
+    }
+
+     @NonNull
+    Node setInputType(final @AutofillInputType int inputType) {
+      mInputType = inputType;
+      return this;
+    }
+
+    
+
+
+
+
+    @AnyThread
+    public @NonNull String getTag() {
+      return mTag;
+    }
+
+     @NonNull
+    Node setTag(final String tag) {
+      mTag = tag;
+      return this;
+    }
+
+    
+
+
+
+
+    @AnyThread
+    public @NonNull String getDomain() {
+      return mDomain;
+    }
+
+     @NonNull
+    Node setDomain(final String domain) {
+      mDomain = domain;
+      return this;
+    }
+
+    
+
+
+
+
+    @AnyThread
+    public @NonNull String getValue() {
+      return mValue;
+    }
+
+     @NonNull
+    Node setValue(final String value) {
+      mValue = value;
+      return this;
+    }
+
+     @Nullable
+    EventCallback getCallback() {
+      return mCallback;
+    }
+
+     @NonNull
+    Node setCallback(final EventCallback callback) {
+      mCallback = callback;
+      return this;
+    }
+
+     Node(@NonNull final Session session) {
+      mAutofillSession = session;
+      mId = View.NO_ID;
+      mDimens = new Rect(0, 0, 0, 0);
+      mAttributes = new ArrayMap<>();
+      mEnabled = false;
+      mFocusable = false;
+      mHint = Hint.NONE;
+      mInputType = InputType.NONE;
+      mTag = "";
+      mDomain = "";
+      mValue = "";
+      mChildren = new LinkedList<>();
+    }
+
+    @Override
+    @AnyThread
+    public String toString() {
+      final StringBuilder builder = new StringBuilder("Node {");
+      builder
+          .append("id=")
+          .append(mId)
+          .append(", parent=")
+          .append(mParentId)
+          .append(", root=")
+          .append(mRootId)
+          .append(", dims=")
+          .append(getDimensions().toShortString())
+          .append(", children=[");
+
+      for (final Node child : mChildren) {
+        builder.append(child.getId()).append(", ");
+      }
+
+      builder
+          .append("]")
+          .append(", attrs=")
+          .append(mAttributes)
+          .append(", enabled=")
+          .append(mEnabled)
+          .append(", focusable=")
+          .append(mFocusable)
+          .append(", focused=")
+          .append(getFocused())
+          .append(", visible=")
+          .append(getVisible())
+          .append(", hint=")
+          .append(Hint.toString(mHint))
+          .append(", type=")
+          .append(InputType.toString(mInputType))
+          .append(", tag=")
+          .append(mTag)
+          .append(", domain=")
+          .append(mDomain)
+          .append(", value=")
+          .append(mValue)
+          .append(", callback=")
+          .append(mCallback != null)
+          .append("}");
+
+      return builder.toString();
     }
 
     @TargetApi(23)
     @UiThread
     @SuppressWarnings("checkstyle:javadocmethod")
     public void fillViewStructure(
-        final @NonNull Node node,
-        @NonNull final View view,
-        @NonNull final ViewStructure structure,
-        final int flags) {
+        @NonNull final View view, @NonNull final ViewStructure structure, final int flags) {
       ThreadUtils.assertOnUiThread();
 
-      if (DEBUG) {
-        Log.d(LOGTAG, "fillViewStructure");
-      }
-
-      final NodeData data = dataFor(node);
-      if (data == null) {
-        return;
-      }
+      Log.d(LOGTAG, "fillViewStructure");
 
       if (Build.VERSION.SDK_INT >= 26) {
-        structure.setAutofillId(view.getAutofillId(), data.id);
-        structure.setWebDomain(node.getDomain());
-        structure.setAutofillValue(AutofillValue.forText(data.value));
+        structure.setAutofillId(view.getAutofillId(), getId());
+        structure.setWebDomain(getDomain());
+        structure.setAutofillValue(AutofillValue.forText(getValue()));
       }
 
-      structure.setId(data.id, null, null, null);
-      structure.setDimens(0, 0, 0, 0, node.getDimensions().width(), node.getDimensions().height());
+      structure.setId(getId(), null, null, null);
+      structure.setDimens(0, 0, 0, 0, getDimensions().width(), getDimensions().height());
 
       if (Build.VERSION.SDK_INT >= 26) {
-        final ViewStructure.HtmlInfo.Builder htmlBuilder =
-            structure.newHtmlInfoBuilder(node.getTag());
-        for (final String key : node.getAttributes().keySet()) {
-          htmlBuilder.addAttribute(key, String.valueOf(node.getAttribute(key)));
+        final ViewStructure.HtmlInfo.Builder htmlBuilder = structure.newHtmlInfoBuilder(getTag());
+        for (final String key : getAttributes().keySet()) {
+          htmlBuilder.addAttribute(key, String.valueOf(getAttribute(key)));
         }
 
         structure.setHtmlInfo(htmlBuilder.build());
       }
 
-      structure.setChildCount(node.getChildren().size());
+      structure.setChildCount(getChildren().size());
       int childCount = 0;
 
-      for (final Node child : node.getChildren()) {
+      for (final Node child : getChildren()) {
         final ViewStructure childStructure = structure.newChild(childCount);
-        fillViewStructure(child, view, childStructure, flags);
+        child.fillViewStructure(view, childStructure, flags);
         childCount++;
       }
 
-      switch (node.getTag()) {
+      switch (getTag()) {
         case "input":
         case "textarea":
           structure.setClassName("android.widget.EditText");
-          structure.setEnabled(node.getEnabled());
-          structure.setFocusable(node.getFocusable());
-          structure.setFocused(node.equals(getFocused()));
-          structure.setVisibility(isVisible(node) ? View.VISIBLE : View.INVISIBLE);
+          structure.setEnabled(getEnabled());
+          structure.setFocusable(getFocusable());
+          structure.setFocused(getFocused());
+          structure.setVisibility(getVisible() ? View.VISIBLE : View.INVISIBLE);
 
           if (Build.VERSION.SDK_INT >= 26) {
             structure.setAutofillType(View.AUTOFILL_TYPE_TEXT);
@@ -466,12 +713,12 @@ public class Autofill {
           break;
       }
 
-      if (Build.VERSION.SDK_INT < 26 || !"input".equals(node.getTag())) {
+      if (Build.VERSION.SDK_INT < 26 || !"input".equals(getTag())) {
         return;
       }
       
       
-      switch (node.getHint()) {
+      switch (getHint()) {
         case Hint.EMAIL_ADDRESS:
           {
             structure.setAutofillHints(new String[] {View.AUTOFILL_HINT_EMAIL_ADDRESS});
@@ -503,14 +750,9 @@ public class Autofill {
                     | android.text.InputType.TYPE_TEXT_VARIATION_WEB_EDIT_TEXT);
             break;
           }
-        case Hint.NONE:
-          {
-            
-            break;
-          }
       }
 
-      switch (node.getInputType()) {
+      switch (getInputType()) {
         case InputType.NUMBER:
           {
             structure.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
@@ -522,405 +764,194 @@ public class Autofill {
             structure.setInputType(android.text.InputType.TYPE_CLASS_PHONE);
             break;
           }
-        case InputType.TEXT:
-        case InputType.NONE:
-          
+        default:
           break;
       }
     }
-  }
 
-  
+     static class Builder {
+      private Node mNode;
 
-
-
-  public static final class Node {
-    private final String mUuid;
-    private final Node mRoot;
-    private final Node mParent;
-    private final @NonNull Rect mDimens;
-    private final @NonNull Map<String, Node> mChildren;
-    private final @NonNull Map<String, String> mAttributes;
-    private final boolean mEnabled;
-    private final boolean mFocusable;
-    private final @AutofillHint int mHint;
-    private final @AutofillInputType int mInputType;
-    private final @NonNull String mTag;
-    private final @NonNull String mDomain;
-    private final String mSessionId;
-
-    
-
-
-
-
-    @AnyThread
-    @Deprecated
-    @DeprecationSchedule(id = "autofill-node", version = 104)
-    public int getId() {
-      return 0;
-    }
-
-    
-    @NonNull
-    String getUuid() {
-      return mUuid;
-    }
-
-    
-    @Nullable
-    Node getRoot() {
-      return mRoot;
-    }
-
-    
-    @Nullable
-    Node getParent() {
-      return mParent;
-    }
-
-    
-
-
-
-
-
-
-    @AnyThread
-    @Deprecated
-    @DeprecationSchedule(id = "autofill-node", version = 104)
-    public boolean getVisible() {
-      return false;
-    }
-
-    
-
-
-
-
-
-    @AnyThread
-    public @NonNull Rect getDimensions() {
-      return mDimens;
-    }
-
-    
-
-
-
-
-    @AnyThread
-    public @NonNull Collection<Node> getChildren() {
-      return mChildren.values();
-    }
-
-    
-    @NonNull
-    Node addChild(@NonNull final Node child) {
-      mChildren.put(child.getUuid(), child);
-      return this;
-    }
-
-    
-
-
-
-
-    @AnyThread
-    public @NonNull Map<String, String> getAttributes() {
-      return mAttributes;
-    }
-
-    @AnyThread
-    @SuppressWarnings("checkstyle:javadocmethod")
-    public @Nullable String getAttribute(@NonNull final String key) {
-      return mAttributes.get(key);
-    }
-
-    
-
-
-
-
-    @AnyThread
-    public boolean getEnabled() {
-      return mEnabled;
-    }
-
-    
-
-
-
-
-    @AnyThread
-    public boolean getFocusable() {
-      return mFocusable;
-    }
-
-    
-
-
-
-
-    @AnyThread
-    @Deprecated
-    @DeprecationSchedule(id = "autofill-node", version = 104)
-    public boolean getFocused() {
-      return false;
-    }
-
-    
-
-
-
-
-    @AnyThread
-    public @AutofillHint int getHint() {
-      return mHint;
-    }
-
-    
-
-
-
-
-    @AnyThread
-    public @AutofillInputType int getInputType() {
-      return mInputType;
-    }
-
-    
-
-
-
-
-    @AnyThread
-    public @NonNull String getTag() {
-      return mTag;
-    }
-
-    
-
-
-
-
-    @AnyThread
-    public @NonNull String getDomain() {
-      return mDomain;
-    }
-
-    
-
-
-
-
-    @AnyThread
-    @Deprecated
-    @DeprecationSchedule(id = "autofill-node", version = 104)
-    public @NonNull String getValue() {
-      return null;
-    }
-
-    
-    static Node newDummyRoot(final Rect dimensions, final String sessionId) {
-      return new Node(dimensions, sessionId);
-    }
-
-     Node(final Rect dimensions, final String sessionId) {
-      mRoot = null;
-      mParent = null;
-      mUuid = UUID.randomUUID().toString();
-      mDimens = dimensions;
-      mSessionId = sessionId;
-      mAttributes = new ArrayMap<>();
-      mEnabled = false;
-      mFocusable = false;
-      mHint = Hint.NONE;
-      mInputType = InputType.NONE;
-      mTag = "";
-      mDomain = "";
-      mChildren = new HashMap<>();
-    }
-
-    @Override
-    @AnyThread
-    public String toString() {
-      final StringBuilder builder = new StringBuilder("Node {");
-      builder
-          .append("uuid=")
-          .append(mUuid)
-          .append(", sessionId=")
-          .append(mSessionId)
-          .append(", parent=")
-          .append(mParent != null ? mParent.getUuid() : null)
-          .append(", root=")
-          .append(mRoot != null ? mRoot.getUuid() : null)
-          .append(", dims=")
-          .append(getDimensions().toShortString())
-          .append(", children=[");
-
-      for (final Node child : mChildren.values()) {
-        builder.append(child.getUuid()).append(", ");
+       Builder(@NonNull final Session session) {
+        mNode = new Node(session);
       }
 
-      builder
-          .append("]")
-          .append(", attrs=")
-          .append(mAttributes)
-          .append(", enabled=")
-          .append(mEnabled)
-          .append(", focusable=")
-          .append(mFocusable)
-          .append(", hint=")
-          .append(Hint.toString(mHint))
-          .append(", type=")
-          .append(InputType.toString(mInputType))
-          .append(", tag=")
-          .append(mTag)
-          .append(", domain=")
-          .append(mDomain)
-          .append("}");
+      public Builder(@NonNull final Session autofillSession, @NonNull final GeckoBundle bundle) {
+        this(autofillSession);
 
-      return builder.toString();
-    }
+        final GeckoBundle bounds = bundle.getBundle("bounds");
 
-    
+        final String uuid = bundle.getString("uuid");
+        final int id = autofillSession.mapUuidtoId(uuid);
 
+        mNode
+            .setAutofillSession(autofillSession)
+            .setId(id)
+            .setUuid(uuid)
+            .setDomain(bundle.getString("origin", ""))
+            .setValue(bundle.getString("value", ""))
+            .setDimensions(
+                new Rect(
+                    bounds.getInt("left"),
+                    bounds.getInt("top"),
+                    bounds.getInt("right"),
+                    bounds.getInt("bottom")));
 
+        final String parentUuid = bundle.getString("parentUuid");
+        if (parentUuid != null) {
+          final int parentId = autofillSession.getIdFromUuid(parentUuid);
+          mNode.setParentId(parentId);
+        } else {
+          mNode.setParentId(View.NO_ID);
+        }
 
-    @TargetApi(23)
-    @UiThread
-    @SuppressWarnings("checkstyle:javadocmethod")
-    @Deprecated
-    @DeprecationSchedule(id = "autofill-node", version = 104)
-    public void fillViewStructure(
-        @NonNull final View view, @NonNull final ViewStructure structure, final int flags) {}
+        final String rootUuid = bundle.getString("rootUuid");
+        if (rootUuid != null) {
+          final int rootId = autofillSession.getIdFromUuid(rootUuid);
+          mNode.setRootId(rootId);
+        } else {
+          mNode.setRootId(View.NO_ID);
+        }
 
-     Node(
-        @NonNull final GeckoBundle bundle, final Rect defaultDimensions, final String sessionId) {
-      this(bundle,  null,  null, defaultDimensions, sessionId);
-    }
+        if (mNode.getDimensions().isEmpty()) {
+          
+          
+          mNode.setDimensions(autofillSession.getDefaultDimensions());
+        }
 
-     Node(
-        @NonNull final GeckoBundle bundle,
-        final Node root,
-        final Node parent,
-        final Rect defaultDimensions,
-        final String sessionId) {
-      final GeckoBundle bounds = bundle.getBundle("bounds");
+        final GeckoBundle[] children = bundle.getBundleArray("children");
+        if (children != null) {
+          for (final GeckoBundle childBundle : children) {
+            final Node child = new Builder(autofillSession, childBundle).build();
+            mNode.addChild(child);
+            autofillSession.addNode(child);
+          }
+        }
 
-      mSessionId = sessionId;
-      mUuid = bundle.getString("uuid");
-      mDomain = bundle.getString("origin", "");
-      final Rect dimens =
-          new Rect(
-              bounds.getInt("left"),
-              bounds.getInt("top"),
-              bounds.getInt("right"),
-              bounds.getInt("bottom"));
-      if (dimens.isEmpty()) {
-        
-        
-        mDimens = defaultDimensions;
-      } else {
-        mDimens = dimens;
-      }
+        String tag = bundle.getString("tag", "").toLowerCase(Locale.ROOT);
+        mNode.setTag(tag);
 
-      mParent = parent;
-      
-      mRoot = root != null ? root : this;
+        final GeckoBundle attrs = bundle.getBundle("attributes");
 
-      final GeckoBundle[] children = bundle.getBundleArray("children");
-      Map<String, Node> childrenMap = new HashMap<>(children != null ? children.length : 0);
+        for (final String key : attrs.keys()) {
+          mNode.setAttribute(key, String.valueOf(attrs.get(key)));
+        }
 
-      if (children != null) {
-        for (final GeckoBundle childBundle : children) {
-          final Node child = new Node(childBundle, mRoot, this, defaultDimensions, sessionId);
-          childrenMap.put(child.getUuid(), child);
+        if ("input".equals(tag) && !bundle.getBoolean("editable", false)) {
+          
+          tag = "";
+        }
+
+        switch (tag) {
+          case "input":
+          case "textarea":
+            {
+              final boolean disabled = bundle.getBoolean("disabled");
+              mNode.setEnabled(!disabled).setFocusable(!disabled);
+              break;
+            }
+          default:
+            break;
+        }
+
+        final String type = bundle.getString("type", "text").toLowerCase(Locale.ROOT);
+
+        switch (type) {
+          case "email":
+            {
+              mNode.setHint(Hint.EMAIL_ADDRESS).setInputType(InputType.TEXT);
+              break;
+            }
+          case "number":
+            {
+              mNode.setInputType(InputType.NUMBER);
+              break;
+            }
+          case "password":
+            {
+              mNode.setHint(Hint.PASSWORD).setInputType(InputType.TEXT);
+              break;
+            }
+          case "tel":
+            {
+              mNode.setInputType(InputType.PHONE);
+              break;
+            }
+          case "url":
+            {
+              mNode.setHint(Hint.URI).setInputType(InputType.TEXT);
+              break;
+            }
+          case "text":
+            {
+              final String autofillHint =
+                  bundle.getString("autofillhint", "").toLowerCase(Locale.ROOT);
+              if (autofillHint.equals("username")) {
+                mNode.setHint(Hint.USERNAME).setInputType(InputType.TEXT);
+              }
+              break;
+            }
         }
       }
 
-      mChildren = childrenMap;
-
-      mTag = bundle.getString("tag", "").toLowerCase(Locale.ROOT);
-
-      final GeckoBundle attrs = bundle.getBundle("attributes");
-      Map<String, String> attributes = new HashMap<>();
-
-      for (final String key : attrs.keys()) {
-        attributes.put(key, String.valueOf(attrs.get(key)));
+      public @NonNull Builder dimensions(final Rect rect) {
+        mNode.setDimensions(rect);
+        return this;
       }
 
-      mAttributes = attributes;
-
-      mEnabled =
-          enabledFromBundle(
-              mTag, bundle.getBoolean("editable", false), bundle.getBoolean("disabled", false));
-      mFocusable = mEnabled;
-
-      final String type = bundle.getString("type", "text").toLowerCase(Locale.ROOT);
-      final String hint = bundle.getString("autofillhint", "").toLowerCase(Locale.ROOT);
-      mInputType = typeFromBundle(type, hint);
-      mHint = hintFromBundle(type, hint);
-    }
-
-    private boolean enabledFromBundle(String tag, boolean editable, boolean disabled) {
-      switch (tag) {
-        case "input":
-          {
-            if (!editable) {
-              
-              return false;
-            }
-            return !disabled;
-          }
-        case "textarea":
-          return !disabled;
-        default:
-          return false;
-      }
-    }
-
-    private @AutofillHint int hintFromBundle(String type, String hint) {
-      switch (type) {
-        case "email":
-          return Hint.EMAIL_ADDRESS;
-        case "password":
-          return Hint.PASSWORD;
-        case "url":
-          return Hint.URI;
-        case "text":
-          {
-            if (hint.equals("username")) {
-              return Hint.USERNAME;
-            }
-            break;
-          }
+      public @NonNull Node build() {
+        return mNode;
       }
 
-      return Hint.NONE;
-    }
-
-    private @AutofillInputType int typeFromBundle(String type, String hint) {
-      switch (type) {
-        case "password":
-        case "url":
-        case "email":
-          return InputType.TEXT;
-        case "number":
-          return InputType.NUMBER;
-        case "tel":
-          return InputType.PHONE;
-        case "text":
-          {
-            if (hint.equals("username")) {
-              return InputType.TEXT;
-            }
-            break;
-          }
+      public @NonNull Builder id(final int id) {
+        mNode.setId(id);
+        return this;
       }
 
-      return InputType.NONE;
+      public @NonNull Builder child(@NonNull final Node child) {
+        mNode.addChild(child);
+        return this;
+      }
+
+      public @NonNull Builder attribute(final String key, final String value) {
+        mNode.setAttribute(key, value);
+        return this;
+      }
+
+      public @NonNull Builder enabled(final boolean enabled) {
+        mNode.setEnabled(enabled);
+        return this;
+      }
+
+      public @NonNull Builder focusable(final boolean focusable) {
+        mNode.setFocusable(focusable);
+        return this;
+      }
+
+      public @NonNull Builder hint(final int hint) {
+        mNode.setHint(hint);
+        return this;
+      }
+
+      public @NonNull Builder inputType(final int inputType) {
+        mNode.setInputType(inputType);
+        return this;
+      }
+
+      public @NonNull Builder tag(final String tag) {
+        mNode.setTag(tag);
+        return this;
+      }
+
+      public @NonNull Builder domain(final String domain) {
+        mNode.setDomain(domain);
+        return this;
+      }
+
+      public @NonNull Builder value(final String value) {
+        mNode.setValue(value);
+        return this;
+      }
     }
   }
 
@@ -937,55 +968,10 @@ public class Autofill {
 
 
     @UiThread
-    @Deprecated
-    @DeprecationSchedule(id = "autofill-node", version = 104)
     default void onAutofill(
         @NonNull final GeckoSession session,
         @AutofillNotify final int notification,
         @Nullable final Node node) {}
-
-    
-    @UiThread
-    default void onSessionStart(@NonNull final GeckoSession session) {}
-    
-    @UiThread
-    default void onSessionCommit(
-        @NonNull final GeckoSession session,
-        @NonNull final Node node,
-        @NonNull final NodeData data) {}
-    
-    @UiThread
-    default void onSessionCancel(@NonNull final GeckoSession session) {}
-    
-    @UiThread
-    default void onNodeAdd(
-        @NonNull final GeckoSession session,
-        @NonNull final Node node,
-        @NonNull final NodeData data) {}
-    
-    @UiThread
-    default void onNodeRemove(
-        @NonNull final GeckoSession session,
-        @NonNull final Node node,
-        @NonNull final NodeData data) {}
-    
-    @UiThread
-    default void onNodeUpdate(
-        @NonNull final GeckoSession session,
-        @NonNull final Node node,
-        @NonNull final NodeData data) {}
-    
-    @UiThread
-    default void onNodeFocus(
-        @NonNull final GeckoSession session,
-        @NonNull final Node focused,
-        @NonNull final NodeData data) {}
-    
-    @UiThread
-    default void onNodeBlur(
-        @NonNull final GeckoSession session,
-        @NonNull final Node prev,
-        @NonNull final NodeData data) {}
   }
 
    static final class Support implements BundleEventListener {
@@ -1005,7 +991,6 @@ public class Autofill {
           .getEventDispatcher()
           .registerUiThreadListener(
               this,
-              "GeckoView:StartAutofill",
               "GeckoView:AddAutofill",
               "GeckoView:ClearAutofill",
               "GeckoView:CommitAutofill",
@@ -1016,19 +1001,16 @@ public class Autofill {
     @Override
     public void handleMessage(
         final String event, final GeckoBundle message, final EventCallback callback) {
-      Log.d(LOGTAG, "handleMessage " + event);
       if ("GeckoView:AddAutofill".equals(event)) {
-        addNode(message.getBundle("node"), callback);
-      } else if ("GeckoView:StartAutofill".equals(event)) {
-        start(message.getString("sessionId"));
+        addNode(message, callback);
       } else if ("GeckoView:ClearAutofill".equals(event)) {
         clear();
       } else if ("GeckoView:OnAutofillFocus".equals(event)) {
-        onFocusChanged(message.getBundle("node"));
+        onFocusChanged(message);
       } else if ("GeckoView:CommitAutofill".equals(event)) {
-        commit(message.getBundle("node"));
+        commit(message);
       } else if ("GeckoView:UpdateAutofill".equals(event)) {
-        update(message.getBundle("node"));
+        update(message);
       }
     }
 
@@ -1045,41 +1027,45 @@ public class Autofill {
         return;
       }
 
-      final HashMap<Node, GeckoBundle> valueBundles = new HashMap<>();
+      GeckoBundle response = null;
+      EventCallback callback = null;
 
       for (int i = 0; i < values.size(); i++) {
         final int id = values.keyAt(i);
-        final Node node = getAutofillSession().getNode(id);
-        if (node == null) {
-          Log.w(LOGTAG, "Could not find node id=" + id);
-          continue;
-        }
-
         final CharSequence value = values.valueAt(i);
 
         if (DEBUG) {
           Log.d(LOGTAG, "Process autofill for id=" + id + ", value=" + value);
         }
 
-        if (node == getAutofillSession().getRoot()) {
-          
-          
-          Log.w(LOGTAG, "Ignoring autofill on session root.");
-          continue;
+        int rootId = id;
+        for (int currentId = id; currentId != View.NO_ID; ) {
+          final Node elem = getAutofillSession().getNode(currentId);
+
+          if (elem == null) {
+            return;
+          }
+          rootId = currentId;
+          currentId = elem.getParentId();
         }
 
-        final Node root = node.getRoot();
-        if (!valueBundles.containsKey(root)) {
-          valueBundles.put(root, new GeckoBundle());
+        final Node root = getAutofillSession().getNode(rootId);
+        final EventCallback newCallback = root != null ? root.getCallback() : null;
+        if (callback == null || newCallback != callback) {
+          if (callback != null) {
+            callback.sendSuccess(response);
+          }
+          response = new GeckoBundle(values.size() - i);
+          callback = newCallback;
         }
-        valueBundles.get(root).putString(node.getUuid(), String.valueOf(value));
+        final Node node = getAutofillSession().getNode(id);
+        if (node != null) {
+          response.putString(node.getUuid(), String.valueOf(value));
+        }
       }
 
-      for (final Node root : valueBundles.keySet()) {
-        final NodeData data = getAutofillSession().dataFor(root);
-        Objects.requireNonNull(data);
-        final EventCallback callback = data.callback;
-        callback.sendSuccess(valueBundles.get(root));
+      if (callback != null) {
+        callback.sendSuccess(response);
       }
     }
 
@@ -1106,44 +1092,30 @@ public class Autofill {
 
      void addNode(
         @NonNull final GeckoBundle message, @NonNull final EventCallback callback) {
-      final Session session = getAutofillSession();
-      final Node node = new Node(message, session.getDefaultDimensions(), session.getId());
+      final boolean initializing = getAutofillSession().isEmpty();
 
-      session.addRoot(node, callback);
-      addValues(message);
-
-      if (mDelegate != null) {
-        mDelegate.onNodeAdd(mGeckoSession, node, getAutofillSession().dataFor(node));
+      if (DEBUG) {
+        Log.d(LOGTAG, "addNode(" + message.getString("uuid") + ')');
       }
+
+      if (initializing) {
+        
+        
+        getAutofillSession().clear();
+      }
+
+      final Node node = new Node.Builder(getAutofillSession(), message).build();
+      node.setCallback(callback);
+      getAutofillSession().addNode(node);
+      maybeDispatch(initializing ? Notify.SESSION_STARTED : Notify.NODE_ADDED, node);
     }
 
-    private void addValues(final GeckoBundle message) {
-      final String uuid = message.getString("uuid");
-      if (uuid == null) {
+    private void maybeDispatch(final @AutofillNotify int notification, final Node node) {
+      if (mDelegate == null) {
         return;
       }
 
-      final String value = message.getString("value");
-      final Node node = getAutofillSession().getNode(uuid);
-      Objects.requireNonNull(node);
-      final NodeData data = getAutofillSession().dataFor(node);
-      Objects.requireNonNull(data);
-      data.value = value;
-
-      final GeckoBundle[] children = message.getBundleArray("children");
-      if (children != null) {
-        for (final GeckoBundle child : children) {
-          addValues(child);
-        }
-      }
-    }
-
-     void start(@Nullable final String sessionId) {
-      
-      getAutofillSession().clear(sessionId);
-      if (mDelegate != null) {
-        mDelegate.onSessionStart(mGeckoSession);
-      }
+      mDelegate.onAutofill(mGeckoSession, notification, node);
     }
 
      void commit(@Nullable final GeckoBundle message) {
@@ -1152,19 +1124,13 @@ public class Autofill {
       }
 
       final String uuid = message.getString("uuid");
-      final Node node = getAutofillSession().getNode(uuid);
-      if (node == null) {
-        Log.w(LOGTAG, "Cannot find node uuid=" + uuid);
-        return;
-      }
+      final int id = getAutofillSession().getIdFromUuid(uuid);
 
       if (DEBUG) {
-        Log.d(LOGTAG, "commit(" + uuid + ")");
+        Log.d(LOGTAG, "commit(" + id + ")");
       }
 
-      if (mDelegate != null) {
-        mDelegate.onSessionCommit(mGeckoSession, node, getAutofillSession().dataFor(node));
-      }
+      maybeDispatch(Notify.SESSION_COMMITTED, getAutofillSession().getNode(id));
     }
 
      void update(@Nullable final GeckoBundle message) {
@@ -1173,33 +1139,26 @@ public class Autofill {
       }
 
       final String uuid = message.getString("uuid");
+      final int id = getAutofillSession().getIdFromUuid(uuid);
 
       if (DEBUG) {
-        Log.d(LOGTAG, "update(" + uuid + ")");
+        Log.d(LOGTAG, "update(" + id + ")");
       }
 
-      final Node node = getAutofillSession().getNode(uuid);
+      final Node node = getAutofillSession().getNode(id);
       final String value = message.getString("value", "");
 
       if (node == null) {
-        Log.d(LOGTAG, "could not find node " + uuid);
+        Log.d(LOGTAG, "could not find node " + id);
         return;
       }
 
       if (DEBUG) {
-        final NodeData data = getAutofillSession().dataFor(node);
-        Log.d(
-            LOGTAG,
-            "updating node " + uuid + " value from " + data != null
-                ? data.value
-                : null + " to " + value);
+        Log.d(LOGTAG, "updating node " + id + " value from " + node.getValue() + " to " + value);
       }
 
-      getAutofillSession().dataFor(node).value = value;
-
-      if (mDelegate != null) {
-        mDelegate.onNodeUpdate(mGeckoSession, node, getAutofillSession().dataFor(node));
-      }
+      node.setValue(value);
+      maybeDispatch(Notify.NODE_UPDATED, node);
     }
 
      void clear() {
@@ -1211,73 +1170,76 @@ public class Autofill {
         Log.d(LOGTAG, "clear()");
       }
 
-      getAutofillSession().clear(null);
-      if (mDelegate != null) {
-        mDelegate.onSessionCancel(mGeckoSession);
-      }
+      getAutofillSession().clear();
+      maybeDispatch(Notify.SESSION_CANCELED, null);
     }
 
      void onFocusChanged(@Nullable final GeckoBundle message) {
-      final Session session = getAutofillSession();
-      if (session.isEmpty()) {
+      if (getAutofillSession().isEmpty()) {
         return;
       }
 
-      final Node prev = getAutofillSession().getFocused();
-      final String prevUuid = prev != null ? prev.getUuid() : null;
-      final String uuid = message != null ? message.getString("uuid") : null;
+      final int prevId = getAutofillSession().getFocusedId();
+      final int id;
+      final int root;
 
-      final Node focused;
-      if (uuid == null) {
-        focused = null;
+      if (message != null) {
+        final String uuid = message.getString("uuid");
+        id = getAutofillSession().getIdFromUuid(uuid);
+        final String rootUuid = message.getString("rootUuid");
+        root = getAutofillSession().getIdFromUuid(rootUuid);
       } else {
-        focused = session.getNode(uuid);
-        if (focused == null) {
-          Log.w(LOGTAG, "Cannot find node uuid=" + uuid);
-          return;
-        }
+        id = root = View.NO_ID;
       }
 
       if (DEBUG) {
-        Log.d(
-            LOGTAG,
-            "onFocusChanged(" + (prev != null ? prev.getUuid() : null) + " -> " + uuid + ')');
+        Log.d(LOGTAG, "onFocusChanged(" + prevId + " -> " + id + ')');
       }
 
-      if (Objects.equals(uuid, prevUuid)) {
-        
+      if (prevId == id) {
         return;
       }
 
-      session.setFocus(focused);
+      getAutofillSession().setFocus(id, root);
 
-      if (mDelegate != null) {
-        if (prev != null) {
-          mDelegate.onNodeBlur(mGeckoSession, prev, getAutofillSession().dataFor(prev));
-        }
-        if (uuid != null) {
-          mDelegate.onNodeFocus(mGeckoSession, focused, getAutofillSession().dataFor(focused));
-        }
+      if (prevId != View.NO_ID) {
+        maybeDispatch(Notify.NODE_BLURRED, getAutofillSession().getNode(prevId));
       }
+
+      if (id != View.NO_ID) {
+        maybeDispatch(Notify.NODE_FOCUSED, getAutofillSession().getNode(id));
+      }
+    }
+
+     static Rect getDummyAutofillRect(
+        @NonNull final GeckoSession geckoSession, final boolean screen, @Nullable final View view) {
+      final Rect rect = new Rect();
+      geckoSession.getSurfaceBounds(rect);
+
+      if (screen) {
+        if (view == null) {
+          throw new IllegalArgumentException();
+        }
+        final int[] offset = new int[2];
+        view.getLocationOnScreen(offset);
+        rect.offset(offset[0], offset[1]);
+      }
+      return rect;
     }
 
     @UiThread
     public void onActiveChanged(final boolean active) {
       ThreadUtils.assertOnUiThread();
 
-      final Node focused = getAutofillSession().getFocused();
+      final int focusedId = getAutofillSession().getFocusedId();
 
-      if (focused == null) {
+      if (focusedId == View.NO_ID) {
         return;
       }
 
-      if (mDelegate != null) {
-        if (active) {
-          mDelegate.onNodeFocus(mGeckoSession, focused, getAutofillSession().dataFor(focused));
-        } else {
-          mDelegate.onNodeBlur(mGeckoSession, focused, getAutofillSession().dataFor(focused));
-        }
-      }
+      maybeDispatch(
+          active ? Notify.NODE_FOCUSED : Notify.NODE_BLURRED,
+          getAutofillSession().getNode(focusedId));
     }
   }
 }

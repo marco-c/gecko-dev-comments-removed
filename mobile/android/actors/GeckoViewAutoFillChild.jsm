@@ -11,13 +11,11 @@ const { XPCOMUtils } = ChromeUtils.import(
 const { GeckoViewUtils } = ChromeUtils.import(
   "resource://gre/modules/GeckoViewUtils.jsm"
 );
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   FormLikeFactory: "resource://gre/modules/FormLikeFactory.jsm",
   GeckoViewAutofill: "resource://gre/modules/GeckoViewAutofill.jsm",
   WebNavigationFrames: "resource://gre/modules/WebNavigationFrames.jsm",
-  LoginManagerChild: "resource://gre/modules/LoginManagerChild.jsm",
 });
 
 const EXPORTED_SYMBOLS = ["GeckoViewAutoFillChild"];
@@ -26,349 +24,58 @@ class GeckoViewAutoFillChild extends GeckoViewActorChild {
   constructor() {
     super();
 
-    this._autofillElements = undefined;
-    this._autofillInfos = undefined;
+    XPCOMUtils.defineLazyGetter(this, "_autofill", function() {
+      return new GeckoViewAutofill(this.eventDispatcher);
+    });
   }
 
   
   handleEvent(aEvent) {
     debug`handleEvent: ${aEvent.type}`;
+    const { contentWindow } = this;
+
     switch (aEvent.type) {
       case "DOMFormHasPassword": {
-        this.addElement(FormLikeFactory.createFromForm(aEvent.composedTarget));
+        this._autofill.addElement(
+          FormLikeFactory.createFromForm(aEvent.composedTarget)
+        );
         break;
       }
       case "DOMInputPasswordAdded": {
         const input = aEvent.composedTarget;
         if (!input.form) {
-          this.addElement(FormLikeFactory.createFromField(input));
+          this._autofill.addElement(FormLikeFactory.createFromField(input));
         }
         break;
       }
       case "focusin": {
-        if (
-          this.contentWindow.HTMLInputElement.isInstance(aEvent.composedTarget)
-        ) {
-          this.onFocus(aEvent.composedTarget);
+        if (contentWindow.HTMLInputElement.isInstance(aEvent.composedTarget)) {
+          this._autofill.onFocus(aEvent.composedTarget);
         }
         break;
       }
       case "focusout": {
-        if (
-          this.contentWindow.HTMLInputElement.isInstance(aEvent.composedTarget)
-        ) {
-          this.onFocus(null);
+        if (contentWindow.HTMLInputElement.isInstance(aEvent.composedTarget)) {
+          this._autofill.onFocus(null);
         }
         break;
       }
       case "pagehide": {
-        if (aEvent.target === this.document) {
-          this.clearElements(this.browsingContext);
+        if (aEvent.target === contentWindow.top.document) {
+          this._autofill.clearElements();
         }
         break;
       }
       case "pageshow": {
-        if (aEvent.target === this.document) {
-          this.scanDocument(this.document);
+        if (aEvent.target === contentWindow.top.document && aEvent.persisted) {
+          this._autofill.scanDocument(aEvent.target);
         }
         break;
       }
       case "PasswordManager:ShowDoorhanger": {
         const { form: formLike } = aEvent.detail;
-        this.commitAutofill(formLike);
+        this._autofill.commitAutofill(formLike);
         break;
-      }
-    }
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  async addElement(aFormLike) {
-    debug`Adding auto-fill ${aFormLike.rootElement.tagName}`;
-
-    const window = aFormLike.rootElement.ownerGlobal;
-    
-    let passwordField;
-    for (const field of aFormLike.elements) {
-      if (
-        ChromeUtils.getClassName(field) === "HTMLInputElement" &&
-        field.type == "password"
-      ) {
-        passwordField = field;
-        break;
-      }
-    }
-
-    const [usernameField] = LoginManagerChild.forWindow(
-      window
-    ).getUserNameAndPasswordFields(passwordField || aFormLike.elements[0]);
-
-    const focusedElement = aFormLike.rootElement.ownerDocument.activeElement;
-    let sendFocusEvent = aFormLike.rootElement === focusedElement;
-
-    const rootInfo = this._getInfo(
-      aFormLike.rootElement,
-      null,
-      undefined,
-      null
-    );
-
-    rootInfo.rootUuid = rootInfo.uuid;
-    rootInfo.children = aFormLike.elements
-      .filter(
-        element =>
-          element.type != "hidden" &&
-          (!usernameField ||
-            element.type != "text" ||
-            element == usernameField ||
-            (element.getAutocompleteInfo() &&
-              element.getAutocompleteInfo().fieldName == "email"))
-      )
-      .map(element => {
-        sendFocusEvent |= element === focusedElement;
-        return this._getInfo(
-          element,
-          rootInfo.uuid,
-          rootInfo.uuid,
-          usernameField
-        );
-      });
-
-    try {
-      
-      
-      const responsePromise = this.sendQuery("Add", {
-        node: rootInfo,
-      });
-
-      if (sendFocusEvent) {
-        
-        this.onFocus(aFormLike.ownerDocument.activeElement);
-      }
-
-      const responses = await responsePromise;
-      
-      debug`Performing auto-fill ${Object.keys(responses)}`;
-
-      const AUTOFILL_STATE = "autofill";
-      const winUtils = window.windowUtils;
-
-      for (const uuid in responses) {
-        const entry =
-          this._autofillElements && this._autofillElements.get(uuid);
-        const element = entry && entry.get();
-        const value = responses[uuid] || "";
-
-        if (
-          window.HTMLInputElement.isInstance(element) &&
-          !element.disabled &&
-          element.parentElement
-        ) {
-          element.setUserInput(value);
-          if (winUtils && element.value === value) {
-            
-            winUtils.addManuallyManagedState(element, AUTOFILL_STATE);
-
-            
-            element.addEventListener(
-              "input",
-              _ => winUtils.removeManuallyManagedState(element, AUTOFILL_STATE),
-              { mozSystemGroup: true, once: true }
-            );
-          }
-        } else if (element) {
-          warn`Don't know how to auto-fill ${element.tagName}`;
-        }
-      }
-    } catch (error) {
-      warn`Cannot perform autofill ${error}`;
-    }
-  }
-
-  _getInfo(aElement, aParent, aRoot, aUsernameField) {
-    if (!this._autofillInfos) {
-      this._autofillInfos = new WeakMap();
-      this._autofillElements = new Map();
-    }
-
-    let info = this._autofillInfos.get(aElement);
-    if (info) {
-      return info;
-    }
-
-    const window = aElement.ownerGlobal;
-    const bounds = aElement.getBoundingClientRect();
-    const isInputElement = window.HTMLInputElement.isInstance(aElement);
-
-    info = {
-      isInputElement,
-      uuid: Services.uuid
-        .generateUUID()
-        .toString()
-        .slice(1, -1), 
-      parentUuid: aParent,
-      rootUuid: aRoot,
-      tag: aElement.tagName,
-      type: isInputElement ? aElement.type : null,
-      value: isInputElement ? aElement.value : null,
-      editable:
-        isInputElement &&
-        [
-          "color",
-          "date",
-          "datetime-local",
-          "email",
-          "month",
-          "number",
-          "password",
-          "range",
-          "search",
-          "tel",
-          "text",
-          "time",
-          "url",
-          "week",
-        ].includes(aElement.type),
-      disabled: isInputElement ? aElement.disabled : null,
-      attributes: Object.assign(
-        {},
-        ...Array.from(aElement.attributes)
-          .filter(attr => attr.localName !== "value")
-          .map(attr => ({ [attr.localName]: attr.value }))
-      ),
-      origin: aElement.ownerDocument.location.origin,
-      autofillhint: "",
-      bounds: {
-        left: bounds.left,
-        top: bounds.top,
-        right: bounds.right,
-        bottom: bounds.bottom,
-      },
-    };
-
-    if (aElement === aUsernameField) {
-      info.autofillhint = "username"; 
-    } else if (isInputElement) {
-      
-      const autocompleteInfo = aElement.getAutocompleteInfo();
-      if (autocompleteInfo) {
-        const autocompleteAttr = autocompleteInfo.fieldName;
-        if (autocompleteAttr == "email") {
-          info.type = "email";
-        }
-      }
-    }
-
-    this._autofillInfos.set(aElement, info);
-    this._autofillElements.set(info.uuid, Cu.getWeakReference(aElement));
-    return info;
-  }
-
-  _updateInfoValues(aElements) {
-    if (!this._autofillInfos) {
-      return [];
-    }
-
-    const updated = [];
-    for (const element of aElements) {
-      const info = this._autofillInfos.get(element);
-
-      if (!info?.isInputElement || info.value === element.value) {
-        continue;
-      }
-      debug`Updating value ${info.value} to ${element.value}`;
-
-      info.value = element.value;
-      this._autofillInfos.set(element, info);
-      updated.push(info);
-    }
-    return updated;
-  }
-
-  
-
-
-
-
-  onFocus(aTarget) {
-    debug`Auto-fill focus on ${aTarget && aTarget.tagName}`;
-
-    const info =
-      aTarget && this._autofillInfos && this._autofillInfos.get(aTarget);
-    if (!aTarget || info) {
-      this.sendAsyncMessage("Focus", {
-        node: info,
-      });
-    }
-  }
-
-  commitAutofill(aFormLike) {
-    if (!aFormLike) {
-      throw new Error("null-form on autofill commit");
-    }
-
-    debug`Committing auto-fill for ${aFormLike.rootElement.tagName}`;
-
-    const updatedNodeInfos = this._updateInfoValues([
-      aFormLike.rootElement,
-      ...aFormLike.elements,
-    ]);
-
-    for (const updatedInfo of updatedNodeInfos) {
-      debug`Updating node ${updatedInfo}`;
-      this.sendAsyncMessage("Update", {
-        node: updatedInfo,
-      });
-    }
-
-    const info = this._getInfo(aFormLike.rootElement);
-    if (info) {
-      debug`Committing node ${info}`;
-      this.sendAsyncMessage("Commit", {
-        node: info,
-      });
-    }
-  }
-
-  
-
-
-  clearElements(browsingContext) {
-    this._autofillInfos = undefined;
-    this._autofillElements = undefined;
-
-    if (browsingContext === browsingContext.top) {
-      this.sendAsyncMessage("Clear");
-    }
-  }
-
-  
-
-
-
-
-
-
-  scanDocument(aDoc) {
-    
-    const inputs = aDoc.querySelectorAll("input[type=password]");
-    let inputAdded = false;
-    for (let i = 0; i < inputs.length; i++) {
-      if (inputs[i].form) {
-        
-        this.addElement(FormLikeFactory.createFromForm(inputs[i].form));
-      } else if (!inputAdded) {
-        
-        inputAdded = true;
-        this.addElement(FormLikeFactory.createFromField(inputs[i]));
       }
     }
   }
