@@ -586,7 +586,7 @@ macro_rules! bool_pref_feature {
 
 
 
-pub static MEDIA_FEATURES: [QueryFeatureDescription; 60] = [
+pub static MEDIA_FEATURES: [QueryFeatureDescription; 59] = [
     feature!(
         atom!("width"),
         AllowsRanges::Yes,
@@ -854,10 +854,6 @@ pub static MEDIA_FEATURES: [QueryFeatureDescription; 60] = [
         atom!("-moz-scrollbar-end-forward"),
         ScrollArrowStyle,
         get_scrollbar_end_forward
-    ),
-    lnf_int_feature!(
-        atom!("-moz-scrollbar-thumb-proportional"),
-        ScrollSliderStyle
     ),
     lnf_int_feature!(atom!("-moz-menubar-drag"), MenuBarDrag),
     lnf_int_feature!(atom!("-moz-windows-default-theme"), WindowsDefaultTheme),

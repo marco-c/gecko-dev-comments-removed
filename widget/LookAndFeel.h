@@ -75,8 +75,6 @@ class LookAndFeel {
 
     
     ScrollArrowStyle,
-    
-    ScrollSliderStyle,
 
     
     ScrollButtonLeftMouseButtonAction,
@@ -367,8 +365,6 @@ class LookAndFeel {
     eScrollArrowStyle_BothAtTop =
         eScrollArrow_StartBackward | eScrollArrow_StartForward
   };
-
-  enum { eScrollThumbStyle_Normal, eScrollThumbStyle_Proportional };
 
   
   
