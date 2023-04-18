@@ -18,7 +18,7 @@ function run_test() {
         Services.loadContextInfo.default,
         new OpenCallback(NORMAL, "a1m", "a1d", function(entry) {
           
-          get_cache_service().clear();
+          Services.cache2.clear();
 
           
           asyncOpenCacheEntry(

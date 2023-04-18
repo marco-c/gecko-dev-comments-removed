@@ -27,10 +27,10 @@ function run_test() {
           { uri: "http://b/", lci: lcis[3] },
         ]; 
 
-        get_cache_service().asyncVisitAllStorages(
+        Services.cache2.asyncVisitAllStorages(
           
           new VisitCallback(8, expectedConsumption, entries, function() {
-            get_cache_service().asyncVisitAllStorages(
+            Services.cache2.asyncVisitAllStorages(
               
               new VisitCallback(8, expectedConsumption, null, function() {
                 finish_cache2_test();

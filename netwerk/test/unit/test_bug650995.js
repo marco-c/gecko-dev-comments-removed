@@ -92,7 +92,7 @@ function nextTest() {
   
   
   syncWithCacheIOThread(function() {
-    get_cache_service().clear();
+    Services.cache2.clear();
     syncWithCacheIOThread(runNextTest);
   });
 }

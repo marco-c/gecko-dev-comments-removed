@@ -409,7 +409,7 @@ function MultipleCallbacks(number, goon, delayed) {
 function wait_for_cache_index(continue_func) {
   
   
-  get_cache_service().asyncGetDiskConsumption({
+  Services.cache2.asyncGetDiskConsumption({
     onNetworkCacheDiskConsumption() {
       continue_func();
     },
