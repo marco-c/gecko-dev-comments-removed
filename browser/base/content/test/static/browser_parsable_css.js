@@ -59,6 +59,12 @@ let whitelist = [
     errorMessage: /Property contained reference to invalid variable.*color/i,
     isFromDevTools: true,
   },
+  
+  {
+    sourceName: /web\/viewer\.css$/i,
+    errorMessage: /Unknown property ‘text-size-adjust’\. {2}Declaration dropped\./i,
+    isFromDevTools: false,
+  },
 ];
 
 if (!Services.prefs.getBoolPref("layout.css.color-mix.enabled")) {
@@ -131,6 +137,7 @@ let propNameWhitelist = [
 
   
   { propName: "--zoom-factor", isFromDevTools: false },
+  { propName: "--viewport-scale-factor", isFromDevTools: false },
 ];
 
 
