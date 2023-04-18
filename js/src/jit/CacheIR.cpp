@@ -4212,7 +4212,9 @@ AttachDecision SetPropIRGenerator::tryAttachAddOrUpdateSparseElement(
   
   
   
-  ShapeGuardProtoChain(writer, aobj, objId);
+  if (IsPropertySetOp(op)) {
+    ShapeGuardProtoChain(writer, aobj, objId);
+  }
 
   
   
@@ -4576,6 +4578,13 @@ bool SetPropIRGenerator::canAttachAddSlotStub(HandleObject obj, HandleId id) {
     return false;
   }
 
+  JSOp op = JSOp(*pc_);
+  if (IsPropertyInitOp(op)) {
+    return true;
+  }
+
+  MOZ_ASSERT(IsPropertySetOp(op));
+
   
   
   for (JSObject* proto = obj->staticPrototype(); proto;
@@ -4659,6 +4668,8 @@ AttachDecision SetPropIRGenerator::tryAttachAddSlotStub(HandleShape oldShape) {
   }
 #endif
 
+  JSOp op = JSOp(*pc_);
+
   
   if (newShape->isDictionary() || !propInfo.isDataProperty() ||
       !propInfo.writable()) {
@@ -4678,7 +4689,10 @@ AttachDecision SetPropIRGenerator::tryAttachAddSlotStub(HandleShape oldShape) {
     writer.guardFunctionIsNonBuiltinCtor(objId);
   }
 
-  ShapeGuardProtoChain(writer, nobj, objId);
+  
+  if (IsPropertySetOp(op)) {
+    ShapeGuardProtoChain(writer, nobj, objId);
+  }
 
   
   
