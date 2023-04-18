@@ -1,3 +1,7 @@
+#[cfg(feature = "std")]
+use crate::buf::{reader, Reader};
+use crate::buf::{take, Chain, Take};
+
 use core::{cmp, mem, ptr};
 
 #[cfg(feature = "std")]
@@ -12,7 +16,7 @@ macro_rules! buf_get_impl {
         // this Option<ret> trick is to avoid keeping a borrow on self
         // when advance() is called (mut borrow) and to call bytes() only once
         let ret = $this
-            .bytes()
+            .chunk()
             .get(..SIZE)
             .map(|src| unsafe { $typ::$conv(*(src as *const _ as *const [_; SIZE])) });
 
@@ -123,7 +127,10 @@ pub trait Buf {
     
     
     
-    fn bytes(&self) -> &[u8];
+    
+    
+    #[cfg_attr(docsrs, doc(alias = "bytes"))]
+    fn chunk(&self) -> &[u8];
 
     
     
@@ -153,13 +160,13 @@ pub trait Buf {
     
     
     #[cfg(feature = "std")]
-    fn bytes_vectored<'a>(&'a self, dst: &mut [IoSlice<'a>]) -> usize {
+    fn chunks_vectored<'a>(&'a self, dst: &mut [IoSlice<'a>]) -> usize {
         if dst.is_empty() {
             return 0;
         }
 
         if self.has_remaining() {
-            dst[0] = IoSlice::new(self.bytes());
+            dst[0] = IoSlice::new(self.chunk());
             1
         } else {
             0
@@ -249,7 +256,7 @@ pub trait Buf {
             let cnt;
 
             unsafe {
-                let src = self.bytes();
+                let src = self.chunk();
                 cnt = cmp::min(src.len(), dst.len() - off);
 
                 ptr::copy_nonoverlapping(src.as_ptr(), dst[off..].as_mut_ptr(), cnt);
@@ -279,7 +286,7 @@ pub trait Buf {
     
     fn get_u8(&mut self) -> u8 {
         assert!(self.remaining() >= 1);
-        let ret = self.bytes()[0];
+        let ret = self.chunk()[0];
         self.advance(1);
         ret
     }
@@ -302,7 +309,7 @@ pub trait Buf {
     
     fn get_i8(&mut self) -> i8 {
         assert!(self.remaining() >= 1);
-        let ret = self.bytes()[0] as i8;
+        let ret = self.chunk()[0] as i8;
         self.advance(1);
         ret
     }
@@ -801,11 +808,100 @@ pub trait Buf {
     
     
     
-    fn to_bytes(&mut self) -> crate::Bytes {
+    
+    
+    
+    
+    
+    fn copy_to_bytes(&mut self, len: usize) -> crate::Bytes {
         use super::BufMut;
-        let mut ret = crate::BytesMut::with_capacity(self.remaining());
-        ret.put(self);
+
+        assert!(len <= self.remaining(), "`len` greater than remaining");
+
+        let mut ret = crate::BytesMut::with_capacity(len);
+        ret.put(self.take(len));
         ret.freeze()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn take(self, limit: usize) -> Take<Self>
+    where
+        Self: Sized,
+    {
+        take::new(self, limit)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn chain<U: Buf>(self, next: U) -> Chain<Self, U>
+    where
+        Self: Sized,
+    {
+        Chain::new(self, next)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "std")]
+    fn reader(self) -> Reader<Self>
+    where
+        Self: Sized,
+    {
+        reader::new(self)
     }
 }
 
@@ -815,13 +911,13 @@ macro_rules! deref_forward_buf {
             (**self).remaining()
         }
 
-        fn bytes(&self) -> &[u8] {
-            (**self).bytes()
+        fn chunk(&self) -> &[u8] {
+            (**self).chunk()
         }
 
         #[cfg(feature = "std")]
-        fn bytes_vectored<'b>(&'b self, dst: &mut [IoSlice<'b>]) -> usize {
-            (**self).bytes_vectored(dst)
+        fn chunks_vectored<'b>(&'b self, dst: &mut [IoSlice<'b>]) -> usize {
+            (**self).chunks_vectored(dst)
         }
 
         fn advance(&mut self, cnt: usize) {
@@ -908,8 +1004,8 @@ macro_rules! deref_forward_buf {
             (**self).get_int_le(nbytes)
         }
 
-        fn to_bytes(&mut self) -> crate::Bytes {
-            (**self).to_bytes()
+        fn copy_to_bytes(&mut self, len: usize) -> crate::Bytes {
+            (**self).copy_to_bytes(len)
         }
     };
 }
@@ -929,42 +1025,13 @@ impl Buf for &[u8] {
     }
 
     #[inline]
-    fn bytes(&self) -> &[u8] {
+    fn chunk(&self) -> &[u8] {
         self
     }
 
     #[inline]
     fn advance(&mut self, cnt: usize) {
         *self = &self[cnt..];
-    }
-}
-
-impl Buf for Option<[u8; 1]> {
-    fn remaining(&self) -> usize {
-        if self.is_some() {
-            1
-        } else {
-            0
-        }
-    }
-
-    fn bytes(&self) -> &[u8] {
-        self.as_ref()
-            .map(AsRef::as_ref)
-            .unwrap_or(Default::default())
-    }
-
-    fn advance(&mut self, cnt: usize) {
-        if cnt == 0 {
-            return;
-        }
-
-        if self.is_none() {
-            panic!("overflow");
-        } else {
-            assert_eq!(1, cnt);
-            *self = None;
-        }
     }
 }
 
@@ -981,7 +1048,7 @@ impl<T: AsRef<[u8]>> Buf for std::io::Cursor<T> {
         len - pos as usize
     }
 
-    fn bytes(&self) -> &[u8] {
+    fn chunk(&self) -> &[u8] {
         let len = self.get_ref().as_ref().len();
         let pos = self.position();
 

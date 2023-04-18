@@ -68,6 +68,29 @@ use crate::Buf;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 pub struct Bytes {
     ptr: *const u8,
     len: usize,
@@ -214,7 +237,7 @@ impl Bytes {
         };
 
         let end = match range.end_bound() {
-            Bound::Included(&n) => n + 1,
+            Bound::Included(&n) => n.checked_add(1).expect("out of range"),
             Bound::Excluded(&n) => n,
             Bound::Unbounded => len,
         };
@@ -507,7 +530,7 @@ impl Buf for Bytes {
     }
 
     #[inline]
-    fn bytes(&self) -> &[u8] {
+    fn chunk(&self) -> &[u8] {
         self.as_slice()
     }
 
@@ -525,8 +548,14 @@ impl Buf for Bytes {
         }
     }
 
-    fn to_bytes(&mut self) -> crate::Bytes {
-        core::mem::replace(self, Bytes::new())
+    fn copy_to_bytes(&mut self, len: usize) -> crate::Bytes {
+        if len == self.remaining() {
+            core::mem::replace(self, Bytes::new())
+        } else {
+            let ret = self.slice(..len);
+            self.advance(len);
+            ret
+        }
     }
 }
 
@@ -768,17 +797,22 @@ impl From<&'static str> for Bytes {
 
 impl From<Vec<u8>> for Bytes {
     fn from(vec: Vec<u8>) -> Bytes {
+        let slice = vec.into_boxed_slice();
+        slice.into()
+    }
+}
+
+impl From<Box<[u8]>> for Bytes {
+    fn from(slice: Box<[u8]>) -> Bytes {
         
         
         
-        if vec.is_empty() {
+        if slice.is_empty() {
             return Bytes::new();
         }
 
-        let slice = vec.into_boxed_slice();
         let len = slice.len();
-        let ptr = slice.as_ptr();
-        drop(Box::into_raw(slice));
+        let ptr = Box::into_raw(slice) as *mut u8;
 
         if ptr as usize & 0x1 == 0 {
             let data = ptr as usize | KIND_VEC;
@@ -999,28 +1033,30 @@ unsafe fn shallow_clone_vec(
     
     
     
-    let actual = atom.compare_and_swap(ptr as _, shared as _, Ordering::AcqRel);
+    match atom.compare_exchange(ptr as _, shared as _, Ordering::AcqRel, Ordering::Acquire) {
+        Ok(actual) => {
+            debug_assert!(actual as usize == ptr as usize);
+            
+            
+            Bytes {
+                ptr: offset,
+                len,
+                data: AtomicPtr::new(shared as _),
+                vtable: &SHARED_VTABLE,
+            }
+        }
+        Err(actual) => {
+            
+            
+            
+            let shared = Box::from_raw(shared);
+            mem::forget(*shared);
 
-    if actual as usize == ptr as usize {
-        
-        
-        return Bytes {
-            ptr: offset,
-            len,
-            data: AtomicPtr::new(shared as _),
-            vtable: &SHARED_VTABLE,
-        };
+            
+            
+            shallow_clone_arc(actual as _, offset, len)
+        }
     }
-
-    
-    
-    
-    let shared = Box::from_raw(shared);
-    mem::forget(*shared);
-
-    
-    
-    shallow_clone_arc(actual as _, offset, len)
 }
 
 unsafe fn release_shared(ptr: *mut Shared) {
