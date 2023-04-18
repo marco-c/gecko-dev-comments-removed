@@ -234,6 +234,13 @@ loadTypes("src_comp.xdb");
 
 
 
+print(`D ${ID.jscode} ${ID.gc}`);
+
+
+print(`D ${ID.anyfunc} ${ID.gc}`);
+
+
+
 
 
 for (const [fieldkey, methods] of virtualDefinitions) {
@@ -244,21 +251,6 @@ for (const [fieldkey, methods] of virtualDefinitions) {
     }
 }
 
-function ancestorClassesAndSelf(C) {
-    const ancestors = [C];
-    for (const base of (superclasses.get(C) || []))
-        ancestors.push(...ancestorClassesAndSelf(base));
-    return ancestors;
-}
-
-function isOverridable(C, field) {
-    for (const A of ancestorClassesAndSelf(C)) {
-        if (isOverridableField(C, A, field))
-            return true;
-    }
-    return false;
-}
-
 
 
 
@@ -266,7 +258,7 @@ function isOverridable(C, field) {
 for (const [csu, methods] of virtualDeclarations) {
     for (const {field, dtor} of methods) {
         const caller = getId(fieldKey(csu, field));
-        if (isOverridable(csu, field.Name[0]))
+        if (virtualCanRunJS(csu, field.Name[0]))
             printOnce(`D ${caller} ${functionId("(js-code)")}`);
         if (dtor)
             printOnce(`D ${caller} ${functionId(dtor)}`);

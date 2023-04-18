@@ -450,80 +450,22 @@ function isLimitConstructor(typeInfo, edgeType, varName)
 
 
 
-function isOverridableField(staticCSU, csu, field)
+
+
+
+
+
+
+
+function virtualCanRunJS(csu, field)
 {
-    
-    if (field == "AddRef" || field == "Release")
+    const tags = typeInfo.OtherFieldTags;
+    const iface = tags[csu]
+    if (!iface) {
         return false;
-
-    if (csu != 'nsISupports')
-        return false;
-
-    if (field.endsWith(" "))
-        return false; 
-
-    
-    
-    if (field == 'GetCurrentJSContext')
-        return false;
-    if (field == 'IsOnCurrentThread')
-        return false;
-    if (field == 'GetNativeContext')
-        return false;
-    if (field == "GetGlobalJSObject")
-        return false;
-    if (field == "GetGlobalJSObjectPreserveColor")
-        return false;
-    if (field == "GetIsMainThread")
-        return false;
-    if (field == "GetThreadFromPRThread")
-        return false;
-    if (field == "DocAddSizeOfIncludingThis")
-        return false;
-    if (field == "ConstructUbiNode")
-        return false;
-    if (field == "isSystemOrAddonPrincipal")
-        return false;
-    if (field == "GetIsAddonOrExpandedAddonPrincipal")
-        return false;
-
-    
-    if (field == "GetSiteOrigin")
-        return false;
-    if (field == "GetDomain")
-        return false;
-    if (field == "GetBaseDomain")
-        return false;
-    if (field == "GetOriginNoSuffix")
-        return false;
-
-    
-    if (field == "GetScheme")
-        return false;
-    if (field == "GetAsciiHostPort")
-        return false;
-    if (field == "GetAsciiSpec")
-        return false;
-    if (field == "SchemeIs")
-        return false;
-
-    if (staticCSU == 'nsIXPCScriptable' && field == "GetScriptableFlags")
-        return false;
-    if (staticCSU == 'nsIXPConnectJSObjectHolder' && field == 'GetJSObject')
-        return false;
-    if (staticCSU == 'nsIXPConnect' && field == 'GetSafeJSContext')
-        return false;
-
-    
-    
-    if (staticCSU == 'nsIScriptSecurityManager' && field == 'IsSystemPrincipal')
-        return false;
-
-    if (staticCSU == 'nsIScriptContext') {
-        if (field == 'GetWindowProxy' || field == 'GetWindowProxyPreserveColor')
-            return false;
     }
-    return true;
+    const virtual_method_tags = iface[field];
+    return virtual_method_tags && virtual_method_tags.includes("Can run script");
 }
 
 function listNonGCPointers() {

@@ -77,6 +77,19 @@ void unsuppressedFunction() {
   GC();  
 }
 
+class IDL_Interface {
+ public:
+  ANNOTATE("Can run script") virtual void canScriptThis() {}
+  virtual void cannotScriptThis() {}
+  ANNOTATE("Can run script") virtual void overridden_canScriptThis() = 0;
+  virtual void overridden_cannotScriptThis() = 0;
+};
+
+class IDL_Subclass : public IDL_Interface {
+  ANNOTATE("Can run script") void overridden_canScriptThis() override {}
+  void overridden_cannotScriptThis() override {}
+};
+
 volatile static int x = 3;
 volatile static int* xp = &x;
 struct GCInDestructor {
@@ -357,6 +370,40 @@ void safevals() {
     GC();
     use(unsafe13.get());
     JS_HAZ_VARIABLE_IS_GC_SAFE(unsafe13);
+  }
+
+  
+  IDL_Subclass sub;
+  IDL_Subclass* subp = &sub;
+  IDL_Interface* base = &sub;
+  {
+    Cell* unsafe14 = &cell;
+    base->canScriptThis();
+    use(unsafe14);
+  }
+  {
+    Cell* unsafe15 = &cell;
+    subp->canScriptThis();
+    use(unsafe15);
+  }
+  {
+    
+    
+    
+    
+    Cell* safe16 = &cell;
+    sub.canScriptThis();
+    use(safe16);
+  }
+  {
+    Cell* safe17 = &cell;
+    base->cannotScriptThis();
+    use(safe17);
+  }
+  {
+    Cell* safe18 = &cell;
+    subp->cannotScriptThis();
+    use(safe18);
   }
 }
 
