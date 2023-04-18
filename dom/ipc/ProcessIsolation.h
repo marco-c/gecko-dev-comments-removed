@@ -25,6 +25,10 @@ class WindowGlobalParent;
 extern mozilla::LazyLogModule gProcessIsolationLog;
 
 constexpr nsLiteralCString kHighValueCOOPPermission = "highValueCOOP"_ns;
+constexpr nsLiteralCString kHighValueHasSavedLoginPermission =
+    "highValueHasSavedLogin"_ns;
+constexpr nsLiteralCString kHighValueIsLoggedInPermission =
+    "highValueIsLoggedIn"_ns;
 
 
 
@@ -54,6 +58,27 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
     const nsACString& aCurrentRemoteType, bool aHasCOOPMismatch,
     uint32_t aLoadStateLoadType, const Maybe<uint64_t>& aChannelId,
     const Maybe<nsCString>& aRemoteTypeOverride);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void AddHighValuePermission(nsIPrincipal* aResultPrincipal,
+                            const nsACString& aPermissionType);
 
 }  
 
