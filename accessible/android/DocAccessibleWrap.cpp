@@ -41,14 +41,20 @@ DocAccessibleWrap::DocAccessibleWrap(Document* aDocument, PresShell* aPresShell)
   
   
   
-  SessionAccessibility::RegisterAccessible(this);
+  if (!IPCAccessibilityActive()) {
+    MonitorAutoLock mal(nsAccessibilityService::GetAndroidMonitor());
+    SessionAccessibility::RegisterAccessible(this);
+  }
 }
 
 DocAccessibleWrap::~DocAccessibleWrap() {}
 
 void DocAccessibleWrap::Shutdown() {
   
-  SessionAccessibility::RegisterAccessible(this);
+  if (!IPCAccessibilityActive()) {
+    MonitorAutoLock mal(nsAccessibilityService::GetAndroidMonitor());
+    SessionAccessibility::UnregisterAccessible(this);
+  }
   DocAccessible::Shutdown();
 }
 
