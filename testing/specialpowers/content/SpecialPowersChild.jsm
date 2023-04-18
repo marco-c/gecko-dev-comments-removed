@@ -1293,7 +1293,7 @@ class SpecialPowersChild extends JSWindowActorChild {
       return el;
     };
 
-    if (Window.isInstance(content)) {
+    if (!Cu.isRemoteProxy(content) && Window.isInstance(content)) {
       
       
       if (rect && !(rect.width && rect.height)) {
