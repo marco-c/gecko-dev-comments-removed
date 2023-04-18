@@ -10,7 +10,8 @@
 #include "mozilla/net/PHttpConnectionMgrParent.h"
 #include "mozilla/StaticMutex.h"
 
-namespace mozilla::net {
+namespace mozilla {
+namespace net {
 
 
 
@@ -38,6 +39,7 @@ class HttpConnectionMgrParent final : public PHttpConnectionMgrParent,
       sHttpUpgradeListenerMap;
 };
 
+}  
 }  
 
 #endif  

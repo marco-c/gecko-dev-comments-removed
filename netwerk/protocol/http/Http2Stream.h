@@ -24,7 +24,8 @@ namespace mozilla {
 class OriginAttributes;
 }
 
-namespace mozilla::net {
+namespace mozilla {
+namespace net {
 
 class nsStandardURL;
 class Http2Session;
@@ -389,6 +390,7 @@ class Http2Stream : public nsAHttpSegmentReader,
   bool mIsWebsocket;
 };
 
+}  
 }  
 
 #endif  
