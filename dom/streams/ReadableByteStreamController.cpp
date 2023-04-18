@@ -455,17 +455,20 @@ bool ReadableByteStreamControllerShouldCallPull(
   }
 
   
+  
   if (ReadableStreamHasDefaultReader(stream) &&
       ReadableStreamGetNumReadRequests(stream) > 0) {
     return true;
   }
 
   
+  
   if (ReadableStreamHasBYOBReader(stream) &&
       ReadableStreamGetNumReadIntoRequests(stream) > 0) {
     return true;
   }
 
+  
   
   Nullable<double> desiredSize =
       ReadableByteStreamControllerGetDesiredSize(aController);
@@ -474,12 +477,8 @@ bool ReadableByteStreamControllerShouldCallPull(
   MOZ_ASSERT(!desiredSize.IsNull());
 
   
-  if (desiredSize.Value() > 0) {
-    return true;
-  }
-
   
-  return false;
+  return desiredSize.Value() > 0;
 }
 
 

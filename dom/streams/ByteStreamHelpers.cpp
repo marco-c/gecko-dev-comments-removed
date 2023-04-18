@@ -52,18 +52,14 @@ bool CanTransferArrayBuffer(JSContext* aCx, JS::Handle<JSObject*> aObject,
   
   
   
+  
   bool hasDefinedArrayBufferDetachKey = false;
   if (!JS::HasDefinedArrayBufferDetachKey(aCx, aObject,
                                           &hasDefinedArrayBufferDetachKey)) {
     aRv.StealExceptionFromJSContext(aCx);
     return false;
   }
-  if (hasDefinedArrayBufferDetachKey) {
-    return false;
-  }
-
-  
-  return true;
+  return !hasDefinedArrayBufferDetachKey;
 }
 
 
@@ -94,7 +90,8 @@ JSObject* CloneAsUint8Array(JSContext* aCx, JS::HandleObject aObject) {
 
   
   JS::Rooted<JSObject*> array(
-      aCx, JS_NewUint8ArrayWithBuffer(aCx, buffer, 0, byteLength));
+      aCx, JS_NewUint8ArrayWithBuffer(aCx, buffer, 0,
+                                      static_cast<int64_t>(byteLength)));
   if (!array) {
     return nullptr;
   }

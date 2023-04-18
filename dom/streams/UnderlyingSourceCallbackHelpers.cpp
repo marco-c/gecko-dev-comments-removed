@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/BodyStream.h"
+#include "mozilla/dom/ReadableStreamDefaultController.h"
 #include "mozilla/dom/UnderlyingSourceCallbackHelpers.h"
 #include "mozilla/dom/UnderlyingSourceBinding.h"
 
