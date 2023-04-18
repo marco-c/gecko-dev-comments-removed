@@ -28,6 +28,9 @@ const PREF_TEST_NOTIFICATIONS =
 let loggingEnabled = false;
 
 
+let BindToObject, RequestBackoffV4;
+
+
 this.log = function log(...stuff) {
   if (!loggingEnabled) {
     return;
@@ -801,17 +804,19 @@ PROT_ListManager.prototype.QueryInterface = ChromeUtils.generateQI([
   "nsITimerCallback",
 ]);
 
-var modScope = this;
+let initialized = false;
 function Init() {
+  if (initialized) {
+    return;
+  }
+
   
   var jslib = Cc["@mozilla.org/url-classifier/jslib;1"].getService()
     .wrappedJSObject;
-  
-  modScope.BindToObject = jslib.BindToObject;
-  modScope.RequestBackoffV4 = jslib.RequestBackoffV4;
+  BindToObject = jslib.BindToObject;
+  RequestBackoffV4 = jslib.RequestBackoffV4;
 
-  
-  modScope.Init = function() {};
+  initialized = true;
 }
 
 function RegistrationData() {
