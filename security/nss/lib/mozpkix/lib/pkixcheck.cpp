@@ -100,6 +100,7 @@ CheckSignatureAlgorithm(TrustDomain& trustDomain,
 
   switch (publicKeyAlg) {
     case der::PublicKeyAlgorithm::RSA_PKCS1:
+    case der::PublicKeyAlgorithm::RSA_PSS:
     {
       
       

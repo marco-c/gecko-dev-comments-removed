@@ -336,6 +336,17 @@ TEST_F(TlsConnectStreamTls13, Ssl30ClientHelloWithSupportedVersions) {
   ConnectExpectAlert(server_, kTlsAlertProtocolVersion);
 }
 
+TEST_F(TlsConnectStreamTls13, Ssl30ServerHelloWithSupportedVersions) {
+  MakeTlsFilter<TlsServerHelloVersionSetter>(server_, SSL_LIBRARY_VERSION_3_0);
+  StartConnect();
+  client_->ExpectSendAlert(kTlsAlertProtocolVersion);
+  
+
+
+  server_->ExpectSendAlert(kTlsAlertUnexpectedMessage);
+  Handshake();
+}
+
 
 TEST_F(DtlsConnectTest, DtlsSupportedVersionsEncoding) {
   client_->SetVersionRange(SSL_LIBRARY_VERSION_TLS_1_1,

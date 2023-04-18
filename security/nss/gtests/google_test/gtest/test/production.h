@@ -30,8 +30,8 @@
 
 
 
-#ifndef GTEST_TEST_PRODUCTION_H_
-#define GTEST_TEST_PRODUCTION_H_
+#ifndef GOOGLETEST_TEST_PRODUCTION_H_
+#define GOOGLETEST_TEST_PRODUCTION_H_
 
 #include "gtest/gtest_prod.h"
 

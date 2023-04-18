@@ -32,18 +32,18 @@
 
 
 
-#include <stdio.h>   
+#include <stdio.h>  
 #include <stdlib.h>  
 
 #include "gtest/gtest.h"
 
 #if GTEST_HAS_SEH
-#include <windows.h>
+# include <windows.h>
 #endif
 
 #if GTEST_HAS_EXCEPTIONS
-#include <exception>  
-#include <stdexcept>
+# include <exception>  
+# include <stdexcept>
 #endif
 
 using testing::Test;
@@ -93,7 +93,9 @@ class SehExceptionInTearDownTest : public Test {
 
 TEST_F(SehExceptionInTearDownTest, ThrowsExceptionInTearDown) {}
 
-TEST(SehExceptionTest, ThrowsSehException) { RaiseException(42, 0, 0, NULL); }
+TEST(SehExceptionTest, ThrowsSehException) {
+  RaiseException(42, 0, 0, NULL);
+}
 
 #endif  
 
@@ -267,7 +269,9 @@ TEST_F(CxxExceptionInTestBodyTest, ThrowsStdCxxException) {
   throw std::runtime_error("Standard C++ exception");
 }
 
-TEST(CxxExceptionTest, ThrowsNonStdCxxException) { throw "C-string"; }
+TEST(CxxExceptionTest, ThrowsNonStdCxxException) {
+  throw "C-string";
+}
 
 
 

@@ -1263,6 +1263,20 @@ NSS_GetClientAuthData(void *arg,
 
 
 
+SSL_IMPORT SECStatus
+SSL_FilterClientCertListBySocket(PRFileDesc *socket, CERTCertList *certlist);
+
+
+
+
+
+SSL_IMPORT PRBool
+SSL_CertIsUsable(PRFileDesc *socket, CERTCertificate *cert);
+
+
+
+
+
 
 
 

@@ -318,20 +318,43 @@ nssUTF8_Length(const NSSUTF8 *s, PRStatus *statusOpt)
 
 
 
+
+
     while (0 != *c) {
         PRUint32 incr;
-        if ((*c & 0x80) == 0) {
+        if (*c < 0x80) {
             incr = 1;
-        } else if ((*c & 0xE0) == 0xC0) {
+        } else if (*c < 0xC2) {
+            nss_SetError(NSS_ERROR_INVALID_STRING);
+            goto loser;
+        } else if (*c < 0xE0) {
             incr = 2;
-        } else if ((*c & 0xF0) == 0xE0) {
+        } else if (*c == 0xE0) {
+            if (c[1] < 0xA0) {
+                nss_SetError(NSS_ERROR_INVALID_STRING);
+                goto loser;
+            }
             incr = 3;
-        } else if ((*c & 0xF8) == 0xF0) {
+        } else if (*c < 0xF0) {
+            if (*c == 0xED && c[1] > 0x9F) {
+                nss_SetError(NSS_ERROR_INVALID_STRING);
+                goto loser;
+            }
+            incr = 3;
+        } else if (*c == 0xF0) {
+            if (c[1] < 0x90) {
+                nss_SetError(NSS_ERROR_INVALID_STRING);
+                goto loser;
+            }
             incr = 4;
-        } else if ((*c & 0xFC) == 0xF8) {
-            incr = 5;
-        } else if ((*c & 0xFE) == 0xFC) {
-            incr = 6;
+        } else if (*c < 0xF4) {
+            incr = 4;
+        } else if (*c == 0xF4) {
+            if (c[1] > 0x8F) {
+                nss_SetError(NSS_ERROR_INVALID_STRING);
+                goto loser;
+            }
+            incr = 4;
         } else {
             nss_SetError(NSS_ERROR_INVALID_STRING);
             goto loser;
@@ -345,17 +368,17 @@ nssUTF8_Length(const NSSUTF8 *s, PRStatus *statusOpt)
             nss_SetError(NSS_ERROR_VALUE_TOO_LARGE);
             goto loser;
         }
+#endif 
 
         {
-            PRUint8 *d;
+            const PRUint8 *d;
             for (d = &c[1]; d < &c[incr]; d++) {
-                if ((*d & 0xC0) != 0xF0) {
+                if ((*d & 0xC0) != 0x80) {
                     nss_SetError(NSS_ERROR_INVALID_STRING);
                     goto loser;
                 }
             }
         }
-#endif 
 
         c += incr;
     }

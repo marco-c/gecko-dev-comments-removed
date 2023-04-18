@@ -44,16 +44,17 @@
 
 
 
-#ifndef GTEST_INCLUDE_GTEST_GTEST_MESSAGE_H_
-#define GTEST_INCLUDE_GTEST_GTEST_MESSAGE_H_
+#ifndef GOOGLETEST_INCLUDE_GTEST_GTEST_MESSAGE_H_
+#define GOOGLETEST_INCLUDE_GTEST_GTEST_MESSAGE_H_
 
 #include <limits>
 #include <memory>
+#include <sstream>
 
 #include "gtest/internal/gtest-port.h"
 
-GTEST_DISABLE_MSC_WARNINGS_PUSH_(
-    4251 )
+GTEST_DISABLE_MSC_WARNINGS_PUSH_(4251 \
+)
 
 
 
@@ -109,7 +110,7 @@ class GTEST_API_ Message {
 
   
   template <typename T>
-  inline Message& operator<<(const T& val) {
+  inline Message& operator <<(const T& val) {
     
     
     
@@ -124,7 +125,7 @@ class GTEST_API_ Message {
     
     
     
-    using ::operator<<;
+    using ::operator <<;
     *ss_ << val;
     return *this;
   }
@@ -143,7 +144,7 @@ class GTEST_API_ Message {
   
   
   template <typename T>
-  inline Message& operator<<(T* const& pointer) {  
+  inline Message& operator <<(T* const& pointer) {  
     if (pointer == nullptr) {
       *ss_ << "(null)";
     } else {
@@ -158,23 +159,25 @@ class GTEST_API_ Message {
   
   
   
-  Message& operator<<(BasicNarrowIoManip val) {
+  Message& operator <<(BasicNarrowIoManip val) {
     *ss_ << val;
     return *this;
   }
 
   
-  Message& operator<<(bool b) { return *this << (b ? "true" : "false"); }
+  Message& operator <<(bool b) {
+    return *this << (b ? "true" : "false");
+  }
 
   
   
-  Message& operator<<(const wchar_t* wide_c_str);
-  Message& operator<<(wchar_t* wide_c_str);
+  Message& operator <<(const wchar_t* wide_c_str);
+  Message& operator <<(wchar_t* wide_c_str);
 
 #if GTEST_HAS_STD_WSTRING
   
   
-  Message& operator<<(const ::std::wstring& wstr);
+  Message& operator <<(const ::std::wstring& wstr);
 #endif  
 
   
@@ -193,7 +196,7 @@ class GTEST_API_ Message {
 };
 
 
-inline std::ostream& operator<<(std::ostream& os, const Message& sb) {
+inline std::ostream& operator <<(std::ostream& os, const Message& sb) {
   return os << sb.GetString();
 }
 

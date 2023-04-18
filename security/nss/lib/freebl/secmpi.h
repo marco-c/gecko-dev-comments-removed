@@ -52,3 +52,12 @@
             PORT_SetError(SEC_ERROR_LIBRARY_FAILURE); \
             break;                                    \
     }
+
+
+mp_err mpp_random_secure(mp_int *a);
+
+
+mp_err mpp_pprime_secure(mp_int *a, int nt);
+
+
+mp_err mpp_make_prime_secure(mp_int *start, mp_size nBits, mp_size strong);

@@ -12,7 +12,9 @@
 #include "ckhelper.h"
 #endif 
 
-#include "pk11pub.h"
+#include "pkim.h"
+#include "dev3hack.h"
+#include "pk11func.h"
 
 
 #define NSSSLOT_TOKEN_DELAY_TIME 1
@@ -79,13 +81,6 @@ nssSlot_GetName(
     return slot->base.name;
 }
 
-NSS_IMPLEMENT NSSUTF8 *
-nssSlot_GetTokenName(
-    NSSSlot *slot)
-{
-    return nssToken_GetName(slot->token);
-}
-
 NSS_IMPLEMENT void
 nssSlot_ResetDelay(
     NSSSlot *slot)
@@ -123,11 +118,13 @@ nssSlot_IsTokenPresent(
 {
     CK_RV ckrv;
     PRStatus nssrv;
+    NSSToken *nssToken = NULL;
     
     nssSession *session;
     CK_SLOT_INFO slotInfo;
     void *epv;
     PRBool isPresent = PR_FALSE;
+    PRBool doUpdateCachedCerts = PR_FALSE;
 
     
     if (nssSlot_IsPermanent(slot)) {
@@ -169,23 +166,24 @@ nssSlot_IsTokenPresent(
 
     PZ_Unlock(slot->isPresentLock);
 
+    nssToken = PK11Slot_GetNSSToken(slot->pk11slot);
+    if (!nssToken) {
+        isPresent = PR_FALSE;
+        goto done;
+    }
+
     nssSlot_EnterMonitor(slot);
     ckrv = CKAPI(epv)->C_GetSlotInfo(slot->slotID, &slotInfo);
     nssSlot_ExitMonitor(slot);
     if (ckrv != CKR_OK) {
-        slot->token->base.name[0] = 0; 
+        nssToken->base.name[0] = 0; 
         isPresent = PR_FALSE;
         goto done;
     }
     slot->ckFlags = slotInfo.flags;
     
     if ((slot->ckFlags & CKF_TOKEN_PRESENT) == 0) {
-        if (!slot->token) {
-            
-            isPresent = PR_FALSE;
-            goto done;
-        }
-        session = nssToken_GetDefaultSession(slot->token);
+        session = nssToken_GetDefaultSession(nssToken);
         if (session) {
             nssSession_EnterMonitor(session);
             
@@ -197,21 +195,21 @@ nssSlot_IsTokenPresent(
             }
             nssSession_ExitMonitor(session);
         }
-        if (slot->token->base.name[0] != 0) {
+        if (nssToken->base.name[0] != 0) {
             
-            slot->token->base.name[0] = 0; 
-            nssToken_NotifyCertsNotVisible(slot->token);
+            nssToken->base.name[0] = 0; 
+            nssToken_NotifyCertsNotVisible(nssToken);
         }
-        slot->token->base.name[0] = 0; 
+        nssToken->base.name[0] = 0; 
         
-        nssToken_Remove(slot->token);
+        nssToken_Remove(nssToken);
         isPresent = PR_FALSE;
         goto done;
     }
     
 
 
-    session = nssToken_GetDefaultSession(slot->token);
+    session = nssToken_GetDefaultSession(nssToken);
     if (session) {
         PRBool tokenRemoved;
         nssSession_EnterMonitor(session);
@@ -237,17 +235,31 @@ nssSlot_IsTokenPresent(
 
 
 
-    nssToken_NotifyCertsNotVisible(slot->token);
-    nssToken_Remove(slot->token);
-    
-    nssrv = nssSlot_Refresh(slot);
-    isPresent = PR_TRUE;
+    nssToken_NotifyCertsNotVisible(nssToken);
+    nssToken_Remove(nssToken);
+    if (nssToken->base.name[0] == 0) {
+        doUpdateCachedCerts = PR_TRUE;
+    }
+    if (PK11_InitToken(slot->pk11slot, PR_FALSE) != SECSuccess) {
+        isPresent = PR_FALSE;
+        goto done;
+    }
+    if (doUpdateCachedCerts) {
+        nssTrustDomain_UpdateCachedTokenCerts(nssToken->trustDomain,
+                                              nssToken);
+    }
+    nssrv = nssToken_Refresh(nssToken);
     if (nssrv != PR_SUCCESS) {
-        slot->token->base.name[0] = 0; 
+        nssToken->base.name[0] = 0; 
         slot->ckFlags &= ~CKF_TOKEN_PRESENT;
         isPresent = PR_FALSE;
+        goto done;
     }
+    isPresent = PR_TRUE;
 done:
+    if (nssToken) {
+        (void)nssToken_Destroy(nssToken);
+    }
     
 
 
@@ -283,12 +295,7 @@ nssSlot_GetToken(
     NSSToken *rvToken = NULL;
 
     if (nssSlot_IsTokenPresent(slot)) {
-        
-
-        nssSlot_EnterMonitor(slot);
-        if (slot->token)
-            rvToken = nssToken_AddRef(slot->token);
-        nssSlot_ExitMonitor(slot);
+        rvToken = PK11Slot_GetNSSToken(slot->pk11slot);
     }
 
     return rvToken;

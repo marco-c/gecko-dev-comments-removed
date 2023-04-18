@@ -2552,6 +2552,10 @@ CERT_DestroyCertList(CERTCertList *certs)
 {
     PRCList *node;
 
+    if (!certs) {
+        return;
+    }
+
     while (!PR_CLIST_IS_EMPTY(&certs->list)) {
         node = PR_LIST_HEAD(&certs->list);
         CERT_DestroyCertificate(((CERTCertListNode *)node)->cert);
@@ -2864,6 +2868,86 @@ CERT_FilterCertListForUserCerts(CERTCertList *certList)
     }
 
     return (SECSuccess);
+}
+
+
+PRBool
+CERT_IsInList(const CERTCertificate *cert, const CERTCertList *certList)
+{
+    CERTCertListNode *node;
+    for (node = CERT_LIST_HEAD(certList); !CERT_LIST_END(node, certList);
+         node = CERT_LIST_NEXT(node)) {
+        if (node->cert == cert) {
+            return PR_TRUE;
+        }
+    }
+    return PR_FALSE;
+}
+
+
+
+SECStatus
+CERT_FilterCertListByCertList(CERTCertList *certList,
+                              const CERTCertList *filterList)
+{
+    CERTCertListNode *node, *freenode;
+    CERTCertificate *cert;
+
+    if (!certList) {
+        return SECFailure;
+    }
+
+    if (!filterList || CERT_LIST_EMPTY(certList)) {
+        
+        for (node = CERT_LIST_HEAD(certList); !CERT_LIST_END(node, certList);) {
+            freenode = node;
+            node = CERT_LIST_NEXT(node);
+            CERT_RemoveCertListNode(freenode);
+        }
+        return SECSuccess;
+    }
+
+    node = CERT_LIST_HEAD(certList);
+
+    while (!CERT_LIST_END(node, certList)) {
+        cert = node->cert;
+        if (!CERT_IsInList(cert, filterList)) {
+            
+            freenode = node;
+            node = CERT_LIST_NEXT(node);
+            CERT_RemoveCertListNode(freenode);
+        } else {
+            
+            node = CERT_LIST_NEXT(node);
+        }
+    }
+
+    return (SECSuccess);
+}
+
+SECStatus
+CERT_FilterCertListByNickname(CERTCertList *certList, char *nickname,
+                              void *pwarg)
+{
+    CERTCertList *nameList;
+    SECStatus rv;
+
+    if (!certList) {
+        return SECFailure;
+    }
+
+    
+
+
+
+
+    nameList = PK11_FindCertsFromNickname(nickname, pwarg);
+
+    
+    rv = CERT_FilterCertListByCertList(certList, nameList);
+    
+    CERT_DestroyCertList(nameList);
+    return rv;
 }
 
 static PZLock *certRefCountLock = NULL;

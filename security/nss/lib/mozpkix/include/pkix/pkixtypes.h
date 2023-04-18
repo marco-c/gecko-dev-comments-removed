@@ -309,6 +309,16 @@ class TrustDomain {
   
   
   
+  virtual Result VerifyRSAPSSSignedData(Input data,
+                                        DigestAlgorithm digestAlgorithm,
+                                        Input signature,
+                                        Input subjectPublicKeyInfo) = 0;
+
+  
+  
+  
+  
+  
   virtual Result CheckECDSACurveIsAcceptable(EndEntityOrCA endEntityOrCA,
                                              NamedCurve curve) = 0;
 

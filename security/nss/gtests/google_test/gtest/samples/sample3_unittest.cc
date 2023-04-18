@@ -85,19 +85,21 @@ class QueueTestSmpl3 : public testing::Test {
   
 
   
-  static int Double(int n) { return 2 * n; }
+  static int Double(int n) {
+    return 2*n;
+  }
 
   
-  void MapTester(const Queue<int>* q) {
+  void MapTester(const Queue<int> * q) {
     
     
-    const Queue<int>* const new_q = q->Map(Double);
+    const Queue<int> * const new_q = q->Map(Double);
 
     
     ASSERT_EQ(q->Size(), new_q->Size());
 
     
-    for (const QueueNode<int> *n1 = q->Head(), *n2 = new_q->Head();
+    for (const QueueNode<int>*n1 = q->Head(), *n2 = new_q->Head();
          n1 != nullptr; n1 = n1->next(), n2 = n2->next()) {
       EXPECT_EQ(2 * n1->element(), n2->element());
     }
@@ -122,7 +124,7 @@ TEST_F(QueueTestSmpl3, DefaultConstructor) {
 
 
 TEST_F(QueueTestSmpl3, Dequeue) {
-  int* n = q0_.Dequeue();
+  int * n = q0_.Dequeue();
   EXPECT_TRUE(n == nullptr);
 
   n = q1_.Dequeue();

@@ -42,6 +42,7 @@
 
 
 
+
 #include <limits.h>
 #include <time.h>
 #include "gtest/gtest.h"
@@ -83,10 +84,12 @@ class QuickTest : public testing::Test {
 
 
 
+
 class IntegerFunctionTest : public QuickTest {
   
   
 };
+
 
 
 
@@ -108,6 +111,7 @@ TEST_F(IntegerFunctionTest, Factorial) {
 }
 
 
+
 TEST_F(IntegerFunctionTest, IsPrime) {
   
   EXPECT_FALSE(IsPrime(-1));
@@ -126,6 +130,7 @@ TEST_F(IntegerFunctionTest, IsPrime) {
   EXPECT_FALSE(IsPrime(6));
   EXPECT_TRUE(IsPrime(23));
 }
+
 
 
 
@@ -161,7 +166,10 @@ class QueueTest : public QuickTest {
 
 
 
-TEST_F(QueueTest, DefaultConstructor) { EXPECT_EQ(0u, q0_.Size()); }
+
+TEST_F(QueueTest, DefaultConstructor) {
+  EXPECT_EQ(0u, q0_.Size());
+}
 
 
 TEST_F(QueueTest, Dequeue) {

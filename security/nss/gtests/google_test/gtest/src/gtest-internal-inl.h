@@ -31,17 +31,18 @@
 
 
 
-#ifndef GTEST_SRC_GTEST_INTERNAL_INL_H_
-#define GTEST_SRC_GTEST_INTERNAL_INL_H_
+#ifndef GOOGLETEST_SRC_GTEST_INTERNAL_INL_H_
+#define GOOGLETEST_SRC_GTEST_INTERNAL_INL_H_
 
 #ifndef _WIN32_WCE
-#include <errno.h>
+# include <errno.h>
 #endif  
 #include <stddef.h>
 #include <stdlib.h>  
 #include <string.h>  
 
 #include <algorithm>
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>
@@ -49,19 +50,19 @@
 #include "gtest/internal/gtest-port.h"
 
 #if GTEST_CAN_STREAM_RESULTS_
-#include <arpa/inet.h>  
-#include <netdb.h>      
+# include <arpa/inet.h>  
+# include <netdb.h>  
 #endif
 
 #if GTEST_OS_WINDOWS
-#include <windows.h>  
-#endif                
+# include <windows.h>  
+#endif  
 
 #include "gtest/gtest.h"
 #include "gtest/gtest-spi.h"
 
-GTEST_DISABLE_MSC_WARNINGS_PUSH_(
-    4251 )
+GTEST_DISABLE_MSC_WARNINGS_PUSH_(4251 \
+)
 
 namespace testing {
 
@@ -83,9 +84,11 @@ const char kAlsoRunDisabledTestsFlag[] = "also_run_disabled_tests";
 const char kBreakOnFailureFlag[] = "break_on_failure";
 const char kCatchExceptionsFlag[] = "catch_exceptions";
 const char kColorFlag[] = "color";
+const char kFailFast[] = "fail_fast";
 const char kFilterFlag[] = "filter";
 const char kListTestsFlag[] = "list_tests";
 const char kOutputFlag[] = "output";
+const char kBriefFlag[] = "brief";
 const char kPrintTimeFlag[] = "print_time";
 const char kPrintUTF8Flag[] = "print_utf8";
 const char kRandomSeedFlag[] = "random_seed";
@@ -122,21 +125,21 @@ GTEST_API_ std::string FormatEpochTimeInMillisAsIso8601(TimeInMillis ms);
 
 
 
-GTEST_API_ bool ParseInt32Flag(const char* str, const char* flag, Int32* value);
+GTEST_API_ bool ParseInt32Flag(
+    const char* str, const char* flag, int32_t* value);
 
 
 
-inline int GetRandomSeedFromFlag(Int32 random_seed_flag) {
-  const unsigned int raw_seed =
-      (random_seed_flag == 0) ? static_cast<unsigned int>(GetTimeInMillis())
-                              : static_cast<unsigned int>(random_seed_flag);
+inline int GetRandomSeedFromFlag(int32_t random_seed_flag) {
+  const unsigned int raw_seed = (random_seed_flag == 0) ?
+      static_cast<unsigned int>(GetTimeInMillis()) :
+      static_cast<unsigned int>(random_seed_flag);
 
   
   
   const int normalized_seed =
       static_cast<int>((raw_seed - 1U) %
-                       static_cast<unsigned int>(kMaxRandomSeed)) +
-      1;
+                       static_cast<unsigned int>(kMaxRandomSeed)) + 1;
   return normalized_seed;
 }
 
@@ -163,10 +166,12 @@ class GTestFlagSaver {
     color_ = GTEST_FLAG(color);
     death_test_style_ = GTEST_FLAG(death_test_style);
     death_test_use_fork_ = GTEST_FLAG(death_test_use_fork);
+    fail_fast_ = GTEST_FLAG(fail_fast);
     filter_ = GTEST_FLAG(filter);
     internal_run_death_test_ = GTEST_FLAG(internal_run_death_test);
     list_tests_ = GTEST_FLAG(list_tests);
     output_ = GTEST_FLAG(output);
+    brief_ = GTEST_FLAG(brief);
     print_time_ = GTEST_FLAG(print_time);
     print_utf8_ = GTEST_FLAG(print_utf8);
     random_seed_ = GTEST_FLAG(random_seed);
@@ -186,9 +191,11 @@ class GTestFlagSaver {
     GTEST_FLAG(death_test_style) = death_test_style_;
     GTEST_FLAG(death_test_use_fork) = death_test_use_fork_;
     GTEST_FLAG(filter) = filter_;
+    GTEST_FLAG(fail_fast) = fail_fast_;
     GTEST_FLAG(internal_run_death_test) = internal_run_death_test_;
     GTEST_FLAG(list_tests) = list_tests_;
     GTEST_FLAG(output) = output_;
+    GTEST_FLAG(brief) = brief_;
     GTEST_FLAG(print_time) = print_time_;
     GTEST_FLAG(print_utf8) = print_utf8_;
     GTEST_FLAG(random_seed) = random_seed_;
@@ -207,16 +214,18 @@ class GTestFlagSaver {
   std::string color_;
   std::string death_test_style_;
   bool death_test_use_fork_;
+  bool fail_fast_;
   std::string filter_;
   std::string internal_run_death_test_;
   bool list_tests_;
   std::string output_;
+  bool brief_;
   bool print_time_;
   bool print_utf8_;
-  internal::Int32 random_seed_;
-  internal::Int32 repeat_;
+  int32_t random_seed_;
+  int32_t repeat_;
   bool shuffle_;
-  internal::Int32 stack_trace_depth_;
+  int32_t stack_trace_depth_;
   std::string stream_result_to_;
   bool throw_on_failure_;
 } GTEST_ATTRIBUTE_UNUSED_;
@@ -227,7 +236,7 @@ class GTestFlagSaver {
 
 
 
-GTEST_API_ std::string CodePointToUtf8(UInt32 code_point);
+GTEST_API_ std::string CodePointToUtf8(uint32_t code_point);
 
 
 
@@ -263,14 +272,14 @@ GTEST_API_ bool ShouldShard(const char* total_shards_str,
 
 
 
-GTEST_API_ Int32 Int32FromEnvOrDie(const char* env_var, Int32 default_val);
+GTEST_API_ int32_t Int32FromEnvOrDie(const char* env_var, int32_t default_val);
 
 
 
 
 
-GTEST_API_ bool ShouldRunTestOnShard(int total_shards, int shard_index,
-                                     int test_id);
+GTEST_API_ bool ShouldRunTestOnShard(
+    int total_shards, int shard_index, int test_id);
 
 
 
@@ -282,7 +291,8 @@ inline int CountIf(const Container& c, Predicate predicate) {
   
   int count = 0;
   for (typename Container::const_iterator it = c.begin(); it != c.end(); ++it) {
-    if (predicate(*it)) ++count;
+    if (predicate(*it))
+      ++count;
   }
   return count;
 }
@@ -312,9 +322,9 @@ void ShuffleRange(internal::Random* random, int begin, int end,
   GTEST_CHECK_(0 <= begin && begin <= size)
       << "Invalid shuffle range start " << begin << ": must be in range [0, "
       << size << "].";
-  GTEST_CHECK_(begin <= end && end <= size) << "Invalid shuffle range finish "
-                                            << end << ": must be in range ["
-                                            << begin << ", " << size << "].";
+  GTEST_CHECK_(begin <= end && end <= size)
+      << "Invalid shuffle range finish " << end << ": must be in range ["
+      << begin << ", " << size << "].";
 
   
   
@@ -322,7 +332,7 @@ void ShuffleRange(internal::Random* random, int begin, int end,
     const int last_in_range = begin + range_width - 1;
     const int selected =
         begin +
-        static_cast<int>(random->Generate(static_cast<UInt32>(range_width)));
+        static_cast<int>(random->Generate(static_cast<uint32_t>(range_width)));
     std::swap((*v)[static_cast<size_t>(selected)],
               (*v)[static_cast<size_t>(last_in_range)]);
   }
@@ -383,13 +393,6 @@ class GTEST_API_ UnitTestOptions {
   static std::string GetAbsolutePathToOutputFile();
 
   
-
-  
-  
-  
-  
-  
-  static bool PatternMatchesString(const char* pattern, const char* str);
 
   
   
@@ -473,7 +476,7 @@ struct TraceInfo {
 
 
 class DefaultGlobalTestPartResultReporter
-    : public TestPartResultReporterInterface {
+  : public TestPartResultReporterInterface {
  public:
   explicit DefaultGlobalTestPartResultReporter(UnitTestImpl* unit_test);
   
@@ -593,7 +596,7 @@ class GTEST_API_ UnitTestImpl {
     return index < 0 ? nullptr : test_suites_[static_cast<size_t>(i)];
   }
 
-
+  
 #ifndef GTEST_REMOVE_LEGACY_TEST_CASEAPI_
   const TestCase* GetTestCase(int i) const { return GetTestSuite(i); }
 #endif  
@@ -672,6 +675,7 @@ class GTEST_API_ UnitTestImpl {
   void AddTestInfo(internal::SetUpTestSuiteFunc set_up_tc,
                    internal::TearDownTestSuiteFunc tear_down_tc,
                    TestInfo* test_info) {
+#if GTEST_HAS_DEATH_TEST
     
     
     
@@ -684,6 +688,7 @@ class GTEST_API_ UnitTestImpl {
       GTEST_CHECK_(!original_working_dir_.IsEmpty())
           << "Failed to get the current working directory.";
     }
+#endif  
 
     GetTestSuite(test_info->test_suite_name(), test_info->type_param(),
                  set_up_tc, tear_down_tc)
@@ -694,6 +699,17 @@ class GTEST_API_ UnitTestImpl {
   
   internal::ParameterizedTestSuiteRegistry& parameterized_test_registry() {
     return parameterized_test_registry_;
+  }
+
+  std::set<std::string>* ignored_parameterized_test_suites() {
+    return &ignored_parameterized_test_suites_;
+  }
+
+  
+  
+  internal::TypeParameterizedTestSuiteRegistry&
+  type_parameterized_test_registry() {
+    return type_parameterized_test_registry_;
   }
 
   
@@ -728,7 +744,9 @@ class GTEST_API_ UnitTestImpl {
   }
 
   
-  void ClearAdHocTestResult() { ad_hoc_test_result_.Clear(); }
+  void ClearAdHocTestResult() {
+    ad_hoc_test_result_.Clear();
+  }
 
   
   
@@ -736,7 +754,10 @@ class GTEST_API_ UnitTestImpl {
   
   void RecordProperty(const TestProperty& test_property);
 
-  enum ReactionToSharding { HONOR_SHARDING_PROTOCOL, IGNORE_SHARDING_PROTOCOL };
+  enum ReactionToSharding {
+    HONOR_SHARDING_PROTOCOL,
+    IGNORE_SHARDING_PROTOCOL
+  };
 
   
   
@@ -867,6 +888,12 @@ class GTEST_API_ UnitTestImpl {
   
   
   internal::ParameterizedTestSuiteRegistry parameterized_test_registry_;
+  internal::TypeParameterizedTestSuiteRegistry
+      type_parameterized_test_registry_;
+
+  
+  
+  std::set<std::string> ignored_parameterized_test_suites_;
 
   
   bool parameterized_tests_registered_;
@@ -959,9 +986,8 @@ GTEST_API_ bool IsValidEscape(char ch);
 GTEST_API_ bool AtomMatchesChar(bool escaped, char pattern, char ch);
 GTEST_API_ bool ValidateRegex(const char* regex);
 GTEST_API_ bool MatchRegexAtHead(const char* regex, const char* str);
-GTEST_API_ bool MatchRepetitionAndRegexAtHead(bool escaped, char ch,
-                                              char repeat, const char* regex,
-                                              const char* str);
+GTEST_API_ bool MatchRepetitionAndRegexAtHead(
+    bool escaped, char ch, char repeat, const char* regex, const char* str);
 GTEST_API_ bool MatchRegexAnywhere(const char* regex, const char* str);
 
 #endif  
@@ -992,22 +1018,11 @@ bool ParseNaturalNumber(const ::std::string& str, Integer* number) {
   errno = 0;
 
   char* end;
-
-
-
-#if GTEST_OS_WINDOWS && !defined(__GNUC__)
-
   
-  typedef unsigned __int64 BiggestConvertible;
-  const BiggestConvertible parsed = _strtoui64(str.c_str(), &end, 10);
+  
+  using BiggestConvertible = unsigned long long;  
 
-#else
-
-  typedef unsigned long long BiggestConvertible;  
-  const BiggestConvertible parsed = strtoull(str.c_str(), &end, 10);
-
-#endif  
-
+  const BiggestConvertible parsed = strtoull(str.c_str(), &end, 10);  
   const bool parse_success = *end == '\0' && errno == 0;
 
   GTEST_CHECK_(sizeof(Integer) <= sizeof(parsed));
@@ -1074,7 +1089,8 @@ class StreamingListener : public EmptyTestEventListener {
     }
 
     ~SocketWriter() override {
-      if (sockfd_ != -1) CloseConnection();
+      if (sockfd_ != -1)
+        CloseConnection();
     }
 
     
@@ -1084,8 +1100,9 @@ class StreamingListener : public EmptyTestEventListener {
 
       const auto len = static_cast<size_t>(message.length());
       if (write(sockfd_, message.c_str(), len) != static_cast<ssize_t>(len)) {
-        GTEST_LOG_(WARNING) << "stream_result_to: failed to stream to "
-                            << host_name_ << ":" << port_num_;
+        GTEST_LOG_(WARNING)
+            << "stream_result_to: failed to stream to "
+            << host_name_ << ":" << port_num_;
       }
     }
 
@@ -1118,9 +1135,7 @@ class StreamingListener : public EmptyTestEventListener {
   }
 
   explicit StreamingListener(AbstractSocketWriter* socket_writer)
-      : socket_writer_(socket_writer) {
-    Start();
-  }
+      : socket_writer_(socket_writer) { Start(); }
 
   void OnTestProgramStart(const UnitTest& ) override {
     SendLn("event=TestProgramStart");
@@ -1143,9 +1158,9 @@ class StreamingListener : public EmptyTestEventListener {
 
   void OnTestIterationEnd(const UnitTest& unit_test,
                           int ) override {
-    SendLn("event=TestIterationEnd&passed=" + FormatBool(unit_test.Passed()) +
-           "&elapsed_time=" + StreamableToString(unit_test.elapsed_time()) +
-           "ms");
+    SendLn("event=TestIterationEnd&passed=" +
+           FormatBool(unit_test.Passed()) + "&elapsed_time=" +
+           StreamableToString(unit_test.elapsed_time()) + "ms");
   }
 
   
@@ -1168,16 +1183,17 @@ class StreamingListener : public EmptyTestEventListener {
 
   void OnTestEnd(const TestInfo& test_info) override {
     SendLn("event=TestEnd&passed=" +
-           FormatBool((test_info.result())->Passed()) + "&elapsed_time=" +
+           FormatBool((test_info.result())->Passed()) +
+           "&elapsed_time=" +
            StreamableToString((test_info.result())->elapsed_time()) + "ms");
   }
 
   void OnTestPartResult(const TestPartResult& test_part_result) override {
     const char* file_name = test_part_result.file_name();
     if (file_name == nullptr) file_name = "";
-    SendLn("event=TestPartResult&file=" + UrlEncode(file_name) + "&line=" +
-           StreamableToString(test_part_result.line_number()) + "&message=" +
-           UrlEncode(test_part_result.message()));
+    SendLn("event=TestPartResult&file=" + UrlEncode(file_name) +
+           "&line=" + StreamableToString(test_part_result.line_number()) +
+           "&message=" + UrlEncode(test_part_result.message()));
   }
 
  private:

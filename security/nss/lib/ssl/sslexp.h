@@ -521,6 +521,19 @@ typedef SECStatus(PR_CALLBACK *SSLResumptionTokenCallback)(
 
 
 
+
+
+
+
+
+#define SSL_SetTls13GreaseEchSize(fd, size)           \
+    SSL_EXPERIMENTAL_API("SSL_SetTls13GreaseEchSize", \
+                         (PRFileDesc * _fd, PRUint8 _size), (fd, size))
+
+
+
+
+
 #define SSL_EnableTls13BackendEch(fd, enabled)        \
     SSL_EXPERIMENTAL_API("SSL_EnableTls13BackendEch", \
                          (PRFileDesc * _fd, PRBool _enabled), (fd, enabled))

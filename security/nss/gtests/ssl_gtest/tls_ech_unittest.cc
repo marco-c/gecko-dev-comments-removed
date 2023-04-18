@@ -909,6 +909,8 @@ TEST_P(EchCHPaddingTest, EchChPaddingEqual) {
   SSL_SetURL(client_->ssl_fd(), name1);
   if (grease_mode1) {
     EXPECT_EQ(SECSuccess, SSL_EnableTls13GreaseEch(client_->ssl_fd(), PR_TRUE));
+    EXPECT_EQ(SECSuccess,
+              SSL_SetTls13GreaseEchSize(client_->ssl_fd(), max_name_len));
     client_->ExpectEch(false);
     server_->ExpectEch(false);
   } else {
@@ -927,6 +929,8 @@ TEST_P(EchCHPaddingTest, EchChPaddingEqual) {
   SSL_SetURL(client_->ssl_fd(), name2);
   if (grease_mode2) {
     EXPECT_EQ(SECSuccess, SSL_EnableTls13GreaseEch(client_->ssl_fd(), PR_TRUE));
+    EXPECT_EQ(SECSuccess,
+              SSL_SetTls13GreaseEchSize(client_->ssl_fd(), max_name_len));
     client_->ExpectEch(false);
     server_->ExpectEch(false);
   } else {
@@ -945,13 +949,7 @@ TEST_P(EchCHPaddingTest, EchChPaddingEqual) {
   
   ASSERT_EQ(echXtnLen1 % 32, echXtnLen2 % 32);
   
-  
-  PRUint8 effective_len1 =
-      grease_mode1 ? TLS13_ECH_GREASE_SNI_LEN : max_name_len;
-  PRUint8 effective_len2 =
-      grease_mode2 ? TLS13_ECH_GREASE_SNI_LEN : max_name_len;
-  if (effective_len1 == effective_len2 && name_str1.size() <= effective_len1 &&
-      name_str2.size() <= effective_len2) {
+  if (name_str1.size() <= max_name_len && name_str2.size() <= max_name_len) {
     ASSERT_EQ(echXtnLen1, echXtnLen2);
   }
 }

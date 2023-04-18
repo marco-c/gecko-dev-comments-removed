@@ -159,7 +159,6 @@ nssModule_GetCertOrder(
 
 
 
-
 NSS_EXTERN PRStatus
 nssSlot_Destroy(
     NSSSlot *slot);
@@ -174,10 +173,6 @@ nssSlot_ResetDelay(
 
 NSS_EXTERN NSSUTF8 *
 nssSlot_GetName(
-    NSSSlot *slot);
-
-NSS_EXTERN NSSUTF8 *
-nssSlot_GetTokenName(
     NSSSlot *slot);
 
 NSS_EXTERN NSSModule *

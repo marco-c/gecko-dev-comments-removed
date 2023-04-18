@@ -83,29 +83,6 @@ ReadTagAndGetValue(Reader& input,  uint8_t& tag,  Input& value)
   return input.Skip(length, value);
 }
 
-static Result
-OptionalNull(Reader& input)
-{
-  if (input.Peek(NULLTag)) {
-    return Null(input);
-  }
-  return Success;
-}
-
-namespace {
-
-Result
-AlgorithmIdentifierValue(Reader& input,  Reader& algorithmOIDValue)
-{
-  Result rv = ExpectTagAndGetValue(input, der::OIDTag, algorithmOIDValue);
-  if (rv != Success) {
-    return rv;
-  }
-  return OptionalNull(input);
-}
-
-} 
-
 Result
 SignatureAlgorithmIdentifierValue(Reader& input,
                                   PublicKeyAlgorithm& publicKeyAlgorithm,
@@ -118,11 +95,37 @@ SignatureAlgorithmIdentifierValue(Reader& input,
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   Reader algorithmID;
-  Result rv = AlgorithmIdentifierValue(input, algorithmID);
+  Result rv = ExpectTagAndGetValue(input, der::OIDTag, algorithmID);
   if (rv != Success) {
     return rv;
   }
+  Input algorithmParamsInput;
+  rv = input.SkipToEnd(algorithmParamsInput);
+  if (rv != Success) {
+    return rv;
+  }
+  Reader algorithmParams(algorithmParamsInput);
 
   
   
@@ -175,6 +178,41 @@ SignatureAlgorithmIdentifierValue(Reader& input,
 
   
   
+  static const uint8_t id_RSA_PSS[] = {
+    0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01, 0x0a
+  };
+
+  
+  
+  
+  static const uint8_t rsaPSSWithSHA256MGF1WithSHA256Salt32[] = {
+    0x30, 0x34, 0xa0, 0x0f, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01,
+    0x65, 0x03, 0x04, 0x02, 0x01, 0x05, 0x00, 0xa1, 0x1c, 0x30, 0x1a, 0x06,
+    0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01, 0x08, 0x30, 0x0d,
+    0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x01, 0x05,
+    0x00, 0xa2, 0x03, 0x02, 0x01, 0x20
+  };
+  
+  
+  static const uint8_t rsaPSSWithSHA384MGF1WithSHA384Salt48[] = {
+    0x30, 0x34, 0xa0, 0x0f, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01,
+    0x65, 0x03, 0x04, 0x02, 0x02, 0x05, 0x00, 0xa1, 0x1c, 0x30, 0x1a, 0x06,
+    0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01, 0x08, 0x30, 0x0d,
+    0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x02, 0x05,
+    0x00, 0xa2, 0x03, 0x02, 0x01, 0x30
+  };
+  
+  
+  static const uint8_t rsaPSSWithSHA512MGF1WithSHA512Salt64[] = {
+    0x30, 0x34, 0xa0, 0x0f, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01,
+    0x65, 0x03, 0x04, 0x02, 0x03, 0x05, 0x00, 0xa1, 0x1c, 0x30, 0x1a, 0x06,
+    0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01, 0x08, 0x30, 0x0d,
+    0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x03, 0x05,
+    0x00, 0xa2, 0x03, 0x02, 0x01, 0x40
+  };
+
+  
+  
   if (algorithmID.MatchRest(sha256WithRSAEncryption)) {
     publicKeyAlgorithm = PublicKeyAlgorithm::RSA_PKCS1;
     digestAlgorithm = DigestAlgorithm::sha256;
@@ -203,8 +241,32 @@ SignatureAlgorithmIdentifierValue(Reader& input,
     
     publicKeyAlgorithm = PublicKeyAlgorithm::RSA_PKCS1;
     digestAlgorithm = DigestAlgorithm::sha1;
+  } else if (algorithmID.MatchRest(id_RSA_PSS)) {
+    publicKeyAlgorithm = PublicKeyAlgorithm::RSA_PSS;
+    if (algorithmParams.MatchRest(rsaPSSWithSHA256MGF1WithSHA256Salt32)) {
+      digestAlgorithm = DigestAlgorithm::sha256;
+    } else if (algorithmParams.MatchRest(rsaPSSWithSHA384MGF1WithSHA384Salt48)) {
+      digestAlgorithm = DigestAlgorithm::sha384;
+    } else if (algorithmParams.MatchRest(rsaPSSWithSHA512MGF1WithSHA512Salt64)) {
+      digestAlgorithm = DigestAlgorithm::sha512;
+    } else {
+      return Result::ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED;
+    }
   } else {
     return Result::ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED;
+  }
+
+  
+  if (publicKeyAlgorithm != PublicKeyAlgorithm::RSA_PSS) {
+    if (algorithmParams.Peek(NULLTag)) {
+      rv = Null(algorithmParams);
+      if (rv != Success) {
+        return rv;
+      }
+    }
+    if (!algorithmParams.AtEnd()) {
+      return Result::ERROR_BAD_DER;
+    }
   }
 
   return Success;
@@ -213,11 +275,24 @@ SignatureAlgorithmIdentifierValue(Reader& input,
 Result
 DigestAlgorithmIdentifier(Reader& input,  DigestAlgorithm& algorithm)
 {
+  
+  
+  
   return der::Nested(input, SEQUENCE, [&algorithm](Reader& r) -> Result {
     Reader algorithmID;
-    Result rv = AlgorithmIdentifierValue(r, algorithmID);
+    Result rv = ExpectTagAndGetValue(r, der::OIDTag, algorithmID);
     if (rv != Success) {
       return rv;
+    }
+    
+    if (r.Peek(NULLTag)) {
+      rv = Null(r);
+      if (rv != Success) {
+        return rv;
+      }
+    }
+    if (!r.AtEnd()) {
+      return Result::ERROR_BAD_DER;
     }
 
     

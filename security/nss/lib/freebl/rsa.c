@@ -208,7 +208,7 @@ generate_prime(mp_int *prime, int primeLen)
         pb[0] |= 0xC0;            
         pb[primeLen - 1] |= 0x01; 
         CHECK_MPI_OK(mp_read_unsigned_octets(prime, pb, primeLen));
-        err = mpp_make_prime(prime, primeLen * 8, PR_FALSE);
+        err = mpp_make_prime_secure(prime, primeLen * 8, PR_FALSE);
         if (err != MP_NO)
             goto cleanup;
         
@@ -391,7 +391,7 @@ rsa_is_prime(mp_int *p)
     }
 
     
-    res = mpp_pprime(p, 2);
+    res = mpp_pprime_secure(p, 2);
     return res;
 }
 

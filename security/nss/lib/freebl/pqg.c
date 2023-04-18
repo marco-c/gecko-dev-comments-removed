@@ -1432,7 +1432,7 @@ step_5:
 
 
     
-    err = mpp_pprime(&Q, prime_testcount_q(L, N));
+    err = mpp_pprime_secure(&Q, prime_testcount_q(L, N));
     passed = (err == MP_YES) ? SECSuccess : SECFailure;
     
 
@@ -1485,7 +1485,7 @@ step_5:
 
 
         
-        err = mpp_pprime(&P, prime_testcount_p(L, N));
+        err = mpp_pprime_secure(&P, prime_testcount_p(L, N));
         passed = (err == MP_YES) ? SECSuccess : SECFailure;
         
 
@@ -1713,9 +1713,9 @@ PQG_VerifyParams(const PQGParams *params,
     CHECK_MPI_OK(mp_mod(&P, &Q, &r));
     CHECKPARAM(mp_cmp_d(&r, 1) == 0);
     
-    CHECKPARAM(mpp_pprime(&Q, prime_testcount_q(L, N)) == MP_YES);
+    CHECKPARAM(mpp_pprime_secure(&Q, prime_testcount_q(L, N)) == MP_YES);
     
-    CHECKPARAM(mpp_pprime(&P, prime_testcount_p(L, N)) == MP_YES);
+    CHECKPARAM(mpp_pprime_secure(&P, prime_testcount_p(L, N)) == MP_YES);
     
     
     

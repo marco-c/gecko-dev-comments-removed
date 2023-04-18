@@ -32,13 +32,6 @@ nssToken_Destroy(
             PK11_FreeSlot(tok->pk11slot);
             PZ_DestroyLock(tok->base.lock);
             nssTokenObjectCache_Destroy(tok->cache);
-
-            
-
-            nssSlot_EnterMonitor(tok->slot);
-            tok->slot->token = NULL;
-            nssSlot_ExitMonitor(tok->slot);
-
             (void)nssSlot_Destroy(tok->slot);
             return nssArena_Destroy(tok->base.arena);
         }

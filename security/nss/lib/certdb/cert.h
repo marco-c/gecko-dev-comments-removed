@@ -1318,6 +1318,21 @@ SECStatus CERT_FilterCertListForUserCerts(CERTCertList *certList);
 
 
 
+SECStatus CERT_FilterCertListByNickname(CERTCertList *certList, char *nickname,
+                                        void *pwarg);
+
+
+PRBool CERT_IsInList(const CERTCertificate *cert, const CERTCertList *certList);
+
+
+
+SECStatus CERT_FilterCertListByCertList(CERTCertList *certList,
+                                        const CERTCertList *filterList);
+
+
+
+
+
 
 
 

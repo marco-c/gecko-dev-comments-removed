@@ -800,6 +800,21 @@ class TlsClientHelloVersionSetter : public TlsHandshakeFilter {
 };
 
 
+class TlsServerHelloVersionSetter : public TlsHandshakeFilter {
+ public:
+  TlsServerHelloVersionSetter(const std::shared_ptr<TlsAgent>& a,
+                              uint16_t version)
+      : TlsHandshakeFilter(a, {kTlsHandshakeServerHello}), version_(version) {}
+
+  virtual PacketFilter::Action FilterHandshake(const HandshakeHeader& header,
+                                               const DataBuffer& input,
+                                               DataBuffer* output);
+
+ private:
+  uint16_t version_;
+};
+
+
 class TlsLastByteDamager : public TlsHandshakeFilter {
  public:
   TlsLastByteDamager(const std::shared_ptr<TlsAgent>& a, uint8_t type)

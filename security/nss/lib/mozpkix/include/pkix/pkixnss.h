@@ -40,6 +40,12 @@ Result VerifyRSAPKCS1SignedDataNSS(Input data, DigestAlgorithm digestAlgorithm,
 
 
 
+Result VerifyRSAPSSSignedDataNSS(Input data, DigestAlgorithm digestAlgorithm,
+                                 Input signature, Input subjectPublicKeyInfo,
+                                 void* pkcs11PinArg);
+
+
+
 Result VerifyECDSASignedDataNSS(Input data, DigestAlgorithm digestAlgorithm,
                                 Input signature, Input subjectPublicKeyInfo,
                                 void* pkcs11PinArg);

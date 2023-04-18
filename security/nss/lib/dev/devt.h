@@ -81,7 +81,6 @@ typedef enum {
 struct NSSSlotStr {
     struct nssDeviceBaseStr base;
     NSSModule *module; 
-    NSSToken *token;   
     CK_SLOT_ID slotID;
     CK_FLAGS ckFlags; 
     struct nssSlotAuthInfoStr authInfo;
