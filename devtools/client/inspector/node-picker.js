@@ -31,27 +31,10 @@ class NodePicker extends EventEmitter {
     this.isPicking = false;
     
     this.doFocus = false;
-
-    
-    this._currentInspectorFronts = new Set();
-
-    this._onInspectorFrontAvailable = this._onInspectorFrontAvailable.bind(
-      this
-    );
-    this._onInspectorFrontDestroyed = this._onInspectorFrontDestroyed.bind(
-      this
-    );
-    this._onTargetAvailable = this._onTargetAvailable.bind(this);
-
-    this.start = this.start.bind(this);
-    this.stop = this.stop.bind(this);
-    this.togglePicker = this.togglePicker.bind(this);
-
-    this._onHovered = this._onHovered.bind(this);
-    this._onPicked = this._onPicked.bind(this);
-    this._onPreviewed = this._onPreviewed.bind(this);
-    this._onCanceled = this._onCanceled.bind(this);
   }
+
+  
+  #currentInspectorFronts = new Set();
 
   
 
@@ -60,12 +43,12 @@ class NodePicker extends EventEmitter {
 
 
 
-  togglePicker(doFocus) {
+  togglePicker = doFocus => {
     if (this.isPicking) {
       return this.stop({ canceled: true });
     }
     return this.start(doFocus);
-  }
+  };
 
   
 
@@ -75,20 +58,20 @@ class NodePicker extends EventEmitter {
 
 
 
-  async _onInspectorFrontAvailable(inspectorFront) {
-    this._currentInspectorFronts.add(inspectorFront);
+  #onInspectorFrontAvailable = async inspectorFront => {
+    this.#currentInspectorFronts.add(inspectorFront);
     
     
     await inspectorFront.initialize();
     const { walker } = inspectorFront;
-    walker.on("picker-node-hovered", this._onHovered);
-    walker.on("picker-node-picked", this._onPicked);
-    walker.on("picker-node-previewed", this._onPreviewed);
-    walker.on("picker-node-canceled", this._onCanceled);
+    walker.on("picker-node-hovered", this.#onHovered);
+    walker.on("picker-node-picked", this.#onPicked);
+    walker.on("picker-node-previewed", this.#onPreviewed);
+    walker.on("picker-node-canceled", this.#onCanceled);
     await walker.pick(this.doFocus);
 
     this.emitForTests("inspector-front-ready-for-picker", walker);
-  }
+  };
 
   
 
@@ -100,25 +83,28 @@ class NodePicker extends EventEmitter {
 
 
 
-  async _onInspectorFrontDestroyed(inspectorFront, { isDestroyCodepath } = {}) {
-    this._currentInspectorFronts.delete(inspectorFront);
+  #onInspectorFrontDestroyed = async (
+    inspectorFront,
+    { isDestroyCodepath } = {}
+  ) => {
+    this.#currentInspectorFronts.delete(inspectorFront);
 
     const { walker } = inspectorFront;
     if (!walker) {
       return;
     }
 
-    walker.off("picker-node-hovered", this._onHovered);
-    walker.off("picker-node-picked", this._onPicked);
-    walker.off("picker-node-previewed", this._onPreviewed);
-    walker.off("picker-node-canceled", this._onCanceled);
+    walker.off("picker-node-hovered", this.#onHovered);
+    walker.off("picker-node-picked", this.#onPicked);
+    walker.off("picker-node-previewed", this.#onPreviewed);
+    walker.off("picker-node-canceled", this.#onCanceled);
     
     
     
     if (!isDestroyCodepath) {
       await walker.cancelPick();
     }
-  }
+  };
 
   
 
@@ -129,13 +115,13 @@ class NodePicker extends EventEmitter {
 
 
 
-  async _onTargetAvailable({ targetFront }) {
+  #onTargetAvailable = async ({ targetFront }) => {
     targetFront.watchFronts(
       "inspector",
-      this._onInspectorFrontAvailable,
-      this._onInspectorFrontDestroyed
+      this.#onInspectorFrontAvailable,
+      this.#onInspectorFrontDestroyed
     );
-  }
+  };
 
   
 
@@ -146,7 +132,7 @@ class NodePicker extends EventEmitter {
 
 
 
-  async start(doFocus) {
+  start = async doFocus => {
     if (this.isPicking) {
       return;
     }
@@ -157,11 +143,11 @@ class NodePicker extends EventEmitter {
 
     this.targetCommand.watchTargets({
       types: this.targetCommand.ALL_TYPES,
-      onAvailable: this._onTargetAvailable,
+      onAvailable: this.#onTargetAvailable,
     });
 
     this.emit("picker-started");
-  }
+  };
 
   
 
@@ -174,7 +160,7 @@ class NodePicker extends EventEmitter {
 
 
 
-  async stop({ isDestroyCodepath, canceled } = {}) {
+  stop = async ({ isDestroyCodepath, canceled } = {}) => {
     if (!this.isPicking) {
       return;
     }
@@ -183,23 +169,23 @@ class NodePicker extends EventEmitter {
 
     this.targetCommand.unwatchTargets({
       types: this.targetCommand.ALL_TYPES,
-      onAvailable: this._onTargetAvailable,
+      onAvailable: this.#onTargetAvailable,
     });
 
-    for (const inspectorFront of this._currentInspectorFronts) {
-      await this._onInspectorFrontDestroyed(inspectorFront, {
+    for (const inspectorFront of this.#currentInspectorFronts) {
+      await this.#onInspectorFrontDestroyed(inspectorFront, {
         isDestroyCodepath,
       });
     }
 
-    this._currentInspectorFronts.clear();
+    this.#currentInspectorFronts.clear();
 
     this.emit("picker-stopped");
 
     if (canceled) {
       this.emit("picker-node-canceled");
     }
-  }
+  };
 
   destroy() {
     
@@ -214,17 +200,17 @@ class NodePicker extends EventEmitter {
 
 
 
-  _onHovered(data) {
+  #onHovered = data => {
     this.emit("picker-node-hovered", data.node);
 
     
     
-    for (const inspectorFront of this._currentInspectorFronts) {
+    for (const inspectorFront of this.#currentInspectorFronts) {
       if (inspectorFront.walker !== data.node.walkerFront) {
         inspectorFront.walker.clearPicker();
       }
     }
-  }
+  };
 
   
 
@@ -232,10 +218,10 @@ class NodePicker extends EventEmitter {
 
 
 
-  _onPicked(data) {
+  #onPicked = data => {
     this.emit("picker-node-picked", data.node);
     return this.stop();
-  }
+  };
 
   
 
@@ -244,17 +230,17 @@ class NodePicker extends EventEmitter {
 
 
 
-  _onPreviewed(data) {
+  #onPreviewed = data => {
     this.emit("picker-node-previewed", data.node);
-  }
+  };
 
   
 
 
 
-  _onCanceled() {
+  #onCanceled = data => {
     return this.stop({ canceled: true });
-  }
+  };
 }
 
 module.exports = NodePicker;
