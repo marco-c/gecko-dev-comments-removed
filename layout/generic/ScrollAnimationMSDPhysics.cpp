@@ -51,9 +51,10 @@ void ScrollAnimationMSDPhysics::Update(const TimeStamp& aTime,
 }
 
 void ScrollAnimationMSDPhysics::ApplyContentShift(const CSSPoint& aShiftDelta) {
-  nsPoint shiftDelta = CSSPoint::ToAppUnits(aShiftDelta);
-  mStartPos += shiftDelta;
-  mDestination += shiftDelta;
+  
+  
+  
+  mContentShift += CSSPoint::ToAppUnits(aShiftDelta);
 }
 
 double ScrollAnimationMSDPhysics::ComputeSpringConstant(
@@ -110,7 +111,8 @@ void ScrollAnimationMSDPhysics::SimulateUntil(const TimeStamp& aTime) {
 nsPoint ScrollAnimationMSDPhysics::PositionAt(const TimeStamp& aTime) {
   SimulateUntil(aTime);
   return nsPoint(NSToCoordRound(mModelX.GetPosition()),
-                 NSToCoordRound(mModelY.GetPosition()));
+                 NSToCoordRound(mModelY.GetPosition())) +
+         mContentShift;
 }
 
 nsSize ScrollAnimationMSDPhysics::VelocityAt(const TimeStamp& aTime) {
