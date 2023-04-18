@@ -16,6 +16,7 @@ namespace mozilla {
 namespace dom {
 
 class BlobImpl;
+class ContentChild;
 class ContentParent;
 class ContentProcess;
 
@@ -24,12 +25,18 @@ class ContentProcess;
 namespace net {
 
 class SocketProcessChild;
+class SocketProcessBridgeChild;
 
 }  
 
 namespace ipc {
 
 class PBackgroundChild;
+class PBackgroundStarterChild;
+
+
+
+
 
 
 
@@ -65,19 +72,26 @@ class BackgroundChild final {
   static PBackgroundChild* GetForCurrentThread();
 
   
-  static PBackgroundChild* GetOrCreateForCurrentThread(
-      nsIEventTarget* aMainEventTarget = nullptr);
+  static PBackgroundChild* GetOrCreateForCurrentThread();
+
+  
+  static PBackgroundChild* GetOrCreateSocketActorForCurrentThread();
+
+  
+  static PBackgroundChild* GetOrCreateForSocketParentBridgeForCurrentThread();
 
   
   static void CloseForCurrentThread();
 
   
-  static PBackgroundChild* GetOrCreateSocketActorForCurrentThread(
-      nsIEventTarget* aMainEventTarget = nullptr);
+  static void InitContentStarter(mozilla::dom::ContentChild* aContent);
 
   
-  static PBackgroundChild* GetOrCreateForSocketParentBridgeForCurrentThread(
-      nsIEventTarget* aMainEventTarget = nullptr);
+  static void InitSocketStarter(mozilla::net::SocketProcessChild* aSocket);
+
+  
+  static void InitSocketBridgeStarter(
+      mozilla::net::SocketProcessBridgeChild* aSocketBridge);
 
  private:
   

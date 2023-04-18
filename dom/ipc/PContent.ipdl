@@ -4,7 +4,7 @@
 
 
 
-include protocol PBackground;
+include protocol PBackgroundStarter;
 include protocol PBrowser;
 include protocol PCompositorManager;
 include protocol PContentPermissionRequest;
@@ -1021,7 +1021,7 @@ parent:
 
     async RemoveFromBFCache(MaybeDiscardedBrowsingContext aContext);
 
-    async InitBackground(Endpoint<PBackgroundParent> aEndpoint);
+    async InitBackground(Endpoint<PBackgroundStarterParent> aEndpoint);
 
     async CreateGMPService();
 

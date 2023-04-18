@@ -171,6 +171,7 @@ bool ContentProcess::Init(int aArgc, char* aArgv[]) {
   
   
   mozilla::ipc::BackgroundChild::Startup();
+  mozilla::ipc::BackgroundChild::InitContentStarter(&mContent);
 
   return true;
 }
