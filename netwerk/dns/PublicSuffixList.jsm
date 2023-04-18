@@ -33,7 +33,9 @@ const PublicSuffixList = {
       .then(async records => {
         if (records.length == 1) {
           
-          const fileURI = await this.CLIENT.attachments.download(records[0]);
+          const fileURI = await this.CLIENT.attachments.downloadToDisk(
+            records[0]
+          );
           
           this.notifyUpdate(fileURI);
         }
@@ -80,7 +82,7 @@ const PublicSuffixList = {
   async onUpdate({ data: { created, updated, deleted } }) {
     
     if (deleted.length == 1) {
-      await this.CLIENT.attachments.delete(deleted[0]);
+      await this.CLIENT.attachments.deleteFromDisk(deleted[0]);
     }
     
     const changed = created.concat(updated.map(u => u.new));
@@ -94,7 +96,7 @@ const PublicSuffixList = {
     
     let fileURI;
     try {
-      fileURI = await this.CLIENT.attachments.download(changed[0]);
+      fileURI = await this.CLIENT.attachments.downloadToDisk(changed[0]);
     } catch (err) {
       Cu.reportError(err);
       return;
