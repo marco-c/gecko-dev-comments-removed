@@ -289,6 +289,12 @@ var gEditItemOverlay = {
     } = this._setPaneInfo(aInfo);
 
     
+    
+    
+    
+    let instance = (this._instance = {});
+
+    
     if (
       aInfo.isNewBookmark &&
       parentGuid == PlacesUtils.bookmarks.toolbarGuid
@@ -326,6 +332,11 @@ var gEditItemOverlay = {
 
     if (showOrCollapse("keywordRow", isBookmark, "keyword")) {
       await this._initKeywordField().catch(Cu.reportError);
+      
+      
+      if (instance != this._instance || this._paneInfo == null) {
+        return;
+      }
       this._keywordField.readOnly = this.readOnly;
     }
 
@@ -342,6 +353,9 @@ var gEditItemOverlay = {
     
     if (showOrCollapse("folderRow", isItem, "folderPicker")) {
       await this._initFolderMenuList(parentGuid).catch(Cu.reportError);
+      if (instance != this._instance || this._paneInfo == null) {
+        return;
+      }
     }
 
     

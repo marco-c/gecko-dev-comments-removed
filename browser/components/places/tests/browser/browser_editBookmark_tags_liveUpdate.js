@@ -54,7 +54,7 @@ add_task(async function() {
 
   
   let node = await PlacesUIUtils.promiseNodeLikeFromFetchInfo(bm);
-  gEditItemOverlay.initPanel({ node });
+  await gEditItemOverlay.initPanel({ node });
 
   
   await promiseTagSelectorUpdated(() =>
@@ -99,7 +99,7 @@ add_task(async function() {
   });
 
   
-  gEditItemOverlay.initPanel({ uris: [TEST_URI, TEST_URI2] });
+  await gEditItemOverlay.initPanel({ uris: [TEST_URI, TEST_URI2] });
 
   
   await promiseTagSelectorUpdated(() =>
@@ -166,7 +166,7 @@ add_task(async function() {
   await checkTagsSelector([], []);
 
   
-  gEditItemOverlay.initPanel({ uris: [TEST_URI] });
+  await gEditItemOverlay.initPanel({ uris: [TEST_URI] });
 
   
   await promiseTagSelectorUpdated(() =>
@@ -201,7 +201,7 @@ add_task(async function() {
   await checkTagsSelector([], []);
 
   
-  gEditItemOverlay.initPanel({ uris: [TEST_URI, TEST_URI2] });
+  await gEditItemOverlay.initPanel({ uris: [TEST_URI, TEST_URI2] });
 
   
   await promiseTagSelectorUpdated(() =>

@@ -241,7 +241,7 @@ var gEditItemOverlay = {
 
 
 
-  initPanel(aInfo) {
+  async initPanel(aInfo) {
     if (typeof aInfo != "object" || aInfo === null) {
       throw new Error("aInfo must be an object.");
     }
@@ -280,6 +280,12 @@ var gEditItemOverlay = {
     } = this._setPaneInfo(aInfo);
 
     
+    
+    
+    
+    let instance = (this._instance = {});
+
+    
     if (
       aInfo.isNewBookmark &&
       parentGuid == PlacesUtils.bookmarks.toolbarGuid
@@ -316,7 +322,12 @@ var gEditItemOverlay = {
     }
 
     if (showOrCollapse("keywordRow", isBookmark, "keyword")) {
-      this._initKeywordField().catch(Cu.reportError);
+      await this._initKeywordField().catch(Cu.reportError);
+      
+      
+      if (instance != this._instance || this._paneInfo == null) {
+        return;
+      }
       this._keywordField.readOnly = this.readOnly;
     }
 
@@ -332,7 +343,10 @@ var gEditItemOverlay = {
     
     
     if (showOrCollapse("folderRow", isItem, "folderPicker")) {
-      this._initFolderMenuList(parentGuid).catch(Cu.reportError);
+      await this._initFolderMenuList(parentGuid).catch(Cu.reportError);
+      if (instance != this._instance || this._paneInfo == null) {
+        return;
+      }
     }
 
     
