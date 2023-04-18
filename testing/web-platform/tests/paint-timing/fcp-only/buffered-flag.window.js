@@ -19,6 +19,6 @@ async_test(t => {
   }).observe({'entryTypes': ['paint']});
   
   const img = document.createElement("img");
-  img.src = "resources/circles.png";
+  img.src = "../resources/circles.png";
   document.body.appendChild(img);
 }, "PerformanceObserver with buffered flag sees previous FCP entry.");
