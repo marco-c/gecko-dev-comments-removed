@@ -247,7 +247,8 @@ class nsFocusManager final : public nsIFocusManager,
 
 
 
-  void WindowShown(mozIDOMWindowProxy* aWindow, bool aNeedsFocus);
+  MOZ_CAN_RUN_SCRIPT void WindowShown(mozIDOMWindowProxy* aWindow,
+                                      bool aNeedsFocus);
 
   
 
@@ -459,11 +460,11 @@ class nsFocusManager final : public nsIFocusManager,
 
 
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  void Focus(nsPIDOMWindowOuter* aWindow, mozilla::dom::Element* aContent,
-             uint32_t aFlags, bool aIsNewDocument, bool aFocusChanged,
-             bool aWindowRaised, bool aAdjustWidget, uint64_t aActionId,
-             const mozilla::Maybe<BlurredElementInfo>& = mozilla::Nothing());
+  MOZ_CAN_RUN_SCRIPT void Focus(
+      nsPIDOMWindowOuter* aWindow, mozilla::dom::Element* aContent,
+      uint32_t aFlags, bool aIsNewDocument, bool aFocusChanged,
+      bool aWindowRaised, bool aAdjustWidget, uint64_t aActionId,
+      const mozilla::Maybe<BlurredElementInfo>& = mozilla::Nothing());
 
   
 
