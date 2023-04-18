@@ -54,6 +54,8 @@ XPCOMUtils.defineLazyModuleGetters(this, {
     "chrome://remote/content/shared/webdriver/Capabilities.jsm",
   unregisterCommandsActor:
     "chrome://remote/content/marionette/actors/MarionetteCommandsParent.jsm",
+  waitForInitialNavigationCompleted:
+    "chrome://remote/content/shared/Navigate.jsm",
   waitForLoadEvent: "chrome://remote/content/marionette/sync.js",
   waitForObserverTopic: "chrome://remote/content/marionette/sync.js",
   WebDriverSession: "chrome://remote/content/shared/webdriver/Session.jsm",
@@ -462,46 +464,7 @@ GeckoDriver.prototype.newSession = async function(cmd) {
       const browsingContext = this.curBrowser.contentBrowser.browsingContext;
       this.currentSession.contentBrowsingContext = browsingContext;
 
-      let resolveNavigation;
-
-      
-      const onProgressListenerNavigation = new Promise(
-        resolve => (resolveNavigation = resolve)
-      );
-
-      
-      
-      const navigationListener = {
-        onStateChange: (progress, request, flag, status) => {
-          const isStop = flag & Ci.nsIWebProgressListener.STATE_STOP;
-          if (isStop) {
-            resolveNavigation();
-          }
-        },
-
-        QueryInterface: ChromeUtils.generateQI([
-          "nsIWebProgressListener",
-          "nsISupportsWeakReference",
-        ]),
-      };
-
-      
-      
-      browsingContext.webProgress.addProgressListener(
-        navigationListener,
-        Ci.nsIWebProgress.NOTIFY_STATE_WINDOW |
-          Ci.nsIWebProgress.NOTIFY_STATE_DOCUMENT
-      );
-
-      if (browsingContext.webProgress.isLoadingDocument) {
-        await onProgressListenerNavigation;
-      }
-
-      browsingContext.webProgress.removeProgressListener(
-        navigationListener,
-        Ci.nsIWebProgress.NOTIFY_STATE_WINDOW |
-          Ci.nsIWebProgress.NOTIFY_STATE_DOCUMENT
-      );
+      await waitForInitialNavigationCompleted(browsingContext);
 
       this.curBrowser.contentBrowser.focus();
     }
