@@ -236,60 +236,33 @@
 
 
 
-namespace mozilla {
-
-namespace ipc {
-class IProtocol;
-class PBackgroundChild;
-class PBackgroundParent;
-}  
-
-namespace dom {
+namespace mozilla::dom {
 
 class IPCBlob;
-class ContentChild;
-class ContentParent;
 
 namespace IPCBlobUtils {
 
 already_AddRefed<BlobImpl> Deserialize(const IPCBlob& aIPCBlob);
 
-
-
-nsresult Serialize(BlobImpl* aBlobImpl, ContentChild* aManager,
-                   IPCBlob& aIPCBlob);
-
-nsresult Serialize(BlobImpl* aBlobImpl,
-                   mozilla::ipc::PBackgroundChild* aManager, IPCBlob& aIPCBlob);
-
-nsresult Serialize(BlobImpl* aBlobImpl, ContentParent* aManager,
-                   IPCBlob& aIPCBlob);
-
-nsresult Serialize(BlobImpl* aBlobImpl,
-                   mozilla::ipc::PBackgroundParent* aManager,
-                   IPCBlob& aIPCBlob);
-
-
-
-nsresult SerializeUntyped(BlobImpl* aBlobImpl, mozilla::ipc::IProtocol* aActor,
-                          IPCBlob& aIPCBlob);
+nsresult Serialize(BlobImpl* aBlobImpl, IPCBlob& aIPCBlob);
 
 }  
 }  
 
-namespace ipc {
+namespace IPC {
+
 
 
 
 
 template <>
-struct IPDLParamTraits<mozilla::dom::BlobImpl*> {
-  static void Write(IPC::MessageWriter* aWriter, IProtocol* aActor,
+struct ParamTraits<mozilla::dom::BlobImpl*> {
+  static void Write(IPC::MessageWriter* aWriter,
                     mozilla::dom::BlobImpl* aParam);
-  static bool Read(IPC::MessageReader* aReader, IProtocol* aActor,
+  static bool Read(IPC::MessageReader* aReader,
                    RefPtr<mozilla::dom::BlobImpl>* aResult);
 };
-}  
+
 }  
 
 #endif  

@@ -8122,31 +8122,18 @@ void nsContentUtils::TransferableToIPCTransferable(
       }
 
       if (blobImpl) {
-        IPCDataTransferData data;
+        
+        
+        
         IPCBlob ipcBlob;
-
-        
-        
-        
-        if (aChild) {
-          nsresult rv = IPCBlobUtils::Serialize(blobImpl, aChild, ipcBlob);
-          if (NS_WARN_IF(NS_FAILED(rv))) {
-            continue;
-          }
-
-          data = ipcBlob;
-        } else if (aParent) {
-          nsresult rv = IPCBlobUtils::Serialize(blobImpl, aParent, ipcBlob);
-          if (NS_WARN_IF(NS_FAILED(rv))) {
-            continue;
-          }
-
-          data = ipcBlob;
+        nsresult rv = IPCBlobUtils::Serialize(blobImpl, ipcBlob);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          continue;
         }
 
         IPCDataTransferItem* item = aIPCDataTransfer->items().AppendElement();
         item->flavor() = flavorStr;
-        item->data() = data;
+        item->data() = ipcBlob;
         item->dataType() = TransferableDataType::Blob;
       }
     }
