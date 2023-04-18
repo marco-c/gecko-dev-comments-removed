@@ -30,7 +30,7 @@ INCLUDE_VERSION_REGEXES = {
     
     "esr": r"'^\d+\.\d+(\.\d+)?esr$'",
     
-    "esr91-next": r"'^(52|60|68|78)+\.\d+(\.\d+)?esr$'",
+    "esr102-next": r"'^(52|60|68|78|91)+\.\d+(\.\d+)?esr$'",
     
     "thunderbird91-next": r"'^78\.\d+(\.\d+)?$'",
 }
