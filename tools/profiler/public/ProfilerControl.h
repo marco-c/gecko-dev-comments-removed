@@ -42,6 +42,7 @@ static inline void profiler_shutdown(
 
 #  include "mozilla/Attributes.h"
 #  include "mozilla/Maybe.h"
+#  include "mozilla/MozPromise.h"
 #  include "mozilla/PowerOfTwo.h"
 #  include "mozilla/Vector.h"
 
@@ -115,14 +116,18 @@ void profiler_shutdown(IsFastShutdown aIsFastShutdown = IsFastShutdown::No);
 
 
 
-void profiler_start(
+
+
+RefPtr<mozilla::GenericPromise> profiler_start(
     mozilla::PowerOfTwo32 aCapacity, double aInterval, uint32_t aFeatures,
     const char** aFilters, uint32_t aFilterCount, uint64_t aActiveTabID,
     const mozilla::Maybe<double>& aDuration = mozilla::Nothing());
 
 
 
-void profiler_stop();
+
+
+RefPtr<mozilla::GenericPromise> profiler_stop();
 
 
 
@@ -144,13 +149,19 @@ void profiler_ensure_started(
 
 
 
-void profiler_pause();
-void profiler_resume();
 
 
 
-void profiler_pause_sampling();
-void profiler_resume_sampling();
+RefPtr<mozilla::GenericPromise> profiler_pause();
+RefPtr<mozilla::GenericPromise> profiler_resume();
+
+
+
+
+
+
+RefPtr<mozilla::GenericPromise> profiler_pause_sampling();
+RefPtr<mozilla::GenericPromise> profiler_resume_sampling();
 
 
 
