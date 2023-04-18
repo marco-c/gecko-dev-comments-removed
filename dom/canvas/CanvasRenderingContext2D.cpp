@@ -4538,6 +4538,33 @@ SurfaceFromElementResult CanvasRenderingContext2D::CachedSurfaceFromElement(
   return res;
 }
 
+static void SwapScaleWidthHeightForRotation(gfx::Rect& aRect,
+                                            VideoInfo::Rotation aDegrees) {
+  if (aDegrees == VideoInfo::Rotation::kDegree_90 ||
+      aDegrees == VideoInfo::Rotation::kDegree_270) {
+    std::swap(aRect.width, aRect.height);
+  }
+}
+
+static Matrix ComputeRotationMatrix(gfxFloat aRotatedWidth,
+                                    gfxFloat aRotatedHeight,
+                                    VideoInfo::Rotation aDegrees) {
+  Matrix shiftVideoCenterToOrigin;
+  if (aDegrees == VideoInfo::Rotation::kDegree_90 ||
+      aDegrees == VideoInfo::Rotation::kDegree_270) {
+    shiftVideoCenterToOrigin =
+        Matrix::Translation(-aRotatedHeight / 2.0, -aRotatedWidth / 2.0);
+  } else {
+    shiftVideoCenterToOrigin =
+        Matrix::Translation(-aRotatedWidth / 2.0, -aRotatedHeight / 2.0);
+  }
+
+  Matrix rotation = Matrix::Rotation(gfx::Float(aDegrees / 180.0 * M_PI));
+  Matrix shiftLeftTopToOrigin =
+      Matrix::Translation(aRotatedWidth / 2.0, aRotatedHeight / 2.0);
+  return shiftVideoCenterToOrigin * rotation * shiftLeftTopToOrigin;
+}
+
 
 
 
@@ -4776,10 +4803,37 @@ void CanvasRenderingContext2D::DrawImage(const CanvasImageSource& aImage,
     if (!IsTargetValid() || !tempTarget) {
       return;
     }
+
+    VideoInfo::Rotation rotationDeg = VideoInfo::Rotation::kDegree_0;
+    if (HTMLVideoElement* video = HTMLVideoElement::FromNodeOrNull(element)) {
+      rotationDeg = video->RotationDegrees();
+    }
+
+    gfx::Rect destRect(aDx, aDy, aDw, aDh);
+
+    Matrix transform;
+    if (rotationDeg != VideoInfo::Rotation::kDegree_0) {
+      Matrix preTransform = ComputeRotationMatrix(aDw, aDh, rotationDeg);
+      transform = preTransform * Matrix::Translation(aDx, aDy);
+
+      SwapScaleWidthHeightForRotation(destRect, rotationDeg);
+      
+      
+      destRect.x = 0;
+      destRect.y = 0;
+    }
+    Matrix currentTransform = tempTarget->GetTransform();
+    transform *= currentTransform;
+
+    tempTarget->SetTransform(transform);
+
     tempTarget->DrawSurface(
-        srcSurf, gfx::Rect(aDx, aDy, aDw, aDh), sourceRect,
+        srcSurf, destRect, sourceRect,
         DrawSurfaceOptions(samplingFilter, SamplingBounds::UNBOUNDED),
         DrawOptions(CurrentState().globalAlpha, op, antialiasMode));
+
+    tempTarget->SetTransform(currentTransform);
+
   } else {
     DrawDirectlyToCanvas(drawInfo, &bounds, gfx::Rect(aDx, aDy, aDw, aDh),
                          gfx::Rect(aSx, aSy, aSw, aSh), imgSize);
