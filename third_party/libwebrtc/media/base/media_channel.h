@@ -501,6 +501,9 @@ struct VoiceReceiverInfo : public MediaReceiverInfo {
   uint64_t fec_packets_discarded = 0;
   
   
+  uint64_t packets_discarded = 0;
+  
+  
   float expand_rate = 0.0f;
   
   float speech_expand_rate = 0.0f;

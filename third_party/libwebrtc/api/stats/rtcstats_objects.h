@@ -434,8 +434,6 @@ class RTC_EXPORT RTCInboundRTPStreamStats final : public RTCRTPStreamStats {
   
   RTCStatsMember<double> round_trip_time;
   
-  RTCStatsMember<uint32_t> packets_discarded;
-  
   RTCStatsMember<uint32_t> packets_repaired;
   
   RTCStatsMember<uint32_t> burst_packets_lost;
@@ -549,6 +547,7 @@ class RTC_EXPORT RTCRemoteInboundRtpStreamStats final : public RTCStats {
   
   RTCStatsMember<int32_t> packets_lost;
   RTCStatsMember<double> jitter;
+  RTCStatsMember<uint64_t> packets_discarded;
   
   
   
