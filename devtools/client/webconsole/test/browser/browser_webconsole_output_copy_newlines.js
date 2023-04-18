@@ -6,7 +6,7 @@
 
 
 const TEST_URI =
-  "data:text/html,<meta charset=utf8>" +
+  "data:text/html,<!DOCTYPE html><meta charset=utf8>" +
   "Test copy multiple messages to clipboard";
 
 add_task(async function() {
