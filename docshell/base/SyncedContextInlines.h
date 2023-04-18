@@ -278,8 +278,8 @@ typename Transaction<Context>::IndexSet Transaction<Context>::Validate(
     
     MOZ_LOG(
         Context::GetSyncLog(), LogLevel::Debug,
-        ("Transaction::PartialRevert(#%" PRIx64 ", pid %d): %s", aOwner->Id(),
-         aSource ? aSource->OtherPid() : base::kInvalidProcessId,
+        ("Transaction::PartialRevert(#%" PRIx64 ", pid %" PRIPID "): %s",
+         aOwner->Id(), aSource ? aSource->OtherPid() : base::kInvalidProcessId,
          FormatTransaction<Context>(revertTxn.mModified, mValues,
                                     revertTxn.mValues)
              .get()));

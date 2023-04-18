@@ -170,7 +170,7 @@ class BaseProcessLauncher {
 #endif
         mTmpDirName(aHost->mTmpDirName),
         mChildId(++gChildCounter) {
-    SprintfLiteral(mPidString, "%d", base::GetCurrentProcId());
+    SprintfLiteral(mPidString, "%" PRIPID, base::GetCurrentProcId());
 
     
     nsCOMPtr<nsIEventTarget> threadOrPool = GetIPCLauncher();

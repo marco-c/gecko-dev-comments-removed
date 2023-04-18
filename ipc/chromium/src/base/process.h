@@ -23,6 +23,8 @@ namespace base {
 typedef HANDLE ProcessHandle;
 typedef DWORD ProcessId;
 
+#  define PRIPID "lu"
+
 const ProcessHandle kInvalidProcessHandle = INVALID_HANDLE_VALUE;
 
 
@@ -36,6 +38,8 @@ const ProcessId kInvalidProcessId = kuint32max;
 
 typedef pid_t ProcessHandle;
 typedef pid_t ProcessId;
+
+#  define PRIPID "d"
 
 const ProcessHandle kInvalidProcessHandle = -1;
 const ProcessId kInvalidProcessId = -1;
