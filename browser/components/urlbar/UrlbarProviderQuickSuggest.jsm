@@ -1285,6 +1285,8 @@ class ProviderQuickSuggest extends UrlbarProvider {
         let intervalMs = 1000 * stat.intervalSeconds;
         let elapsedIntervalCount = Math.floor(elapsedMs / intervalMs);
         if (elapsedIntervalCount) {
+          
+          
           this.logger.info(
             `Resetting impression counter for interval ${stat.intervalSeconds}s`
           );
@@ -1292,30 +1294,44 @@ class ProviderQuickSuggest extends UrlbarProvider {
             JSON.stringify({ type, stat, elapsedMs, elapsedIntervalCount })
           );
 
+          let newStartDateMs =
+            stat.startDateMs + elapsedIntervalCount * intervalMs;
+
           
-          let startDateMs = stat.startDateMs;
-          for (let i = 0; i < elapsedIntervalCount; i++) {
-            let endDateMs = startDateMs + intervalMs;
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          let startupDateMs = this._getStartupDateMs();
+          let elapsedIntervalCountBeforeStartup = Math.floor(
+            Math.max(0, startupDateMs - stat.startDateMs) / intervalMs
+          );
+          let elapsedIntervalCountAfterStartup =
+            elapsedIntervalCount - elapsedIntervalCountBeforeStartup;
+
+          if (elapsedIntervalCountAfterStartup) {
             this._recordImpressionCapEvent({
               eventType: "reset",
               suggestionType: type,
-              eventDateMs: endDateMs,
+              eventDateMs: newStartDateMs,
+              eventCount: elapsedIntervalCountAfterStartup,
               stat: {
                 ...stat,
-                startDateMs,
-                
-                
-                
-                
-                count: i == 0 ? stat.count : 0,
+                startDateMs:
+                  stat.startDateMs +
+                  elapsedIntervalCountBeforeStartup * intervalMs,
               },
             });
-            startDateMs += intervalMs;
           }
 
           
-          let remainderMs = elapsedMs - elapsedIntervalCount * intervalMs;
-          stat.startDateMs = now - remainderMs;
+          stat.startDateMs = newStartDateMs;
           stat.count = 0;
         }
       }
@@ -1343,13 +1359,14 @@ class ProviderQuickSuggest extends UrlbarProvider {
     eventType,
     suggestionType,
     stat,
+    eventCount = 1,
     eventDateMs = Date.now(),
   }) {
     
     let extra = {
       type: suggestionType,
       eventDate: String(eventDateMs),
-      endDate: String(stat.startDateMs + 1000 * stat.intervalSeconds),
+      eventCount: String(eventCount),
     };
     for (let [statKey, value] of Object.entries(stat)) {
       let extraKey = TELEMETRY_IMPRESSION_CAP_EXTRA_KEYS[statKey];
@@ -1365,6 +1382,18 @@ class ProviderQuickSuggest extends UrlbarProvider {
       "",
       extra
     );
+  }
+
+  
+
+
+
+
+
+
+
+  _getStartupDateMs() {
+    return Services.startup.getStartupInfo().process.getTime();
   }
 
   
