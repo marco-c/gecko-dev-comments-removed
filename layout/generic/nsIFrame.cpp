@@ -5585,9 +5585,11 @@ static FrameTarget GetSelectionClosestFrame(nsIFrame* aFrame,
   }
 
   
+  
   const bool useFrameEdge =
       aFrame->IsFlexOrGridContainer() || aFrame->IsTableFrame() ||
       (static_cast<nsImageFrame*>(do_QueryFrame(aFrame)) &&
+       !nsContentUtils::ContentIsDraggable(aFrame->GetContent()) &&
        !aFrame->GetContent()->IsEditable());
   return FrameTarget(aFrame, useFrameEdge, false);
 }
