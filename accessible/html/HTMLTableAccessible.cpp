@@ -374,8 +374,8 @@ bool HTMLTableAccessible::InsertChildAt(uint32_t aIndex,
   
   
   
-  return LocalAccessible::InsertChildAt(aChild->IsHTMLCaption() ? 0 : aIndex,
-                                        aChild);
+  return HyperTextAccessible::InsertChildAt(
+      aChild->IsHTMLCaption() ? 0 : aIndex, aChild);
 }
 
 role HTMLTableAccessible::NativeRole() const {

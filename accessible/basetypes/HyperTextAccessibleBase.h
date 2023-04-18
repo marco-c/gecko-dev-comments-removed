@@ -44,6 +44,12 @@ class HyperTextAccessibleBase {
 
 
 
+  virtual void InvalidateCachedHyperTextOffsets() = 0;
+
+  
+
+
+
 
   virtual int32_t GetChildIndexAtOffset(uint32_t aOffset) const;
 
@@ -60,16 +66,12 @@ class HyperTextAccessibleBase {
 
 
 
-
-
-  int32_t GetChildOffset(const Accessible* aChild,
-                         bool aInvalidateAfter = false) const;
+  int32_t GetChildOffset(const Accessible* aChild) const;
 
   
 
 
-  virtual int32_t GetChildOffset(uint32_t aChildIndex,
-                                 bool aInvalidateAfter = false) const;
+  virtual int32_t GetChildOffset(uint32_t aChildIndex) const;
 
   
 
@@ -189,6 +191,20 @@ class HyperTextAccessibleBase {
         const_cast<const HyperTextAccessibleBase*>(this)->Acc();
     return const_cast<Accessible*>(acc);
   }
+
+  
+
+
+
+
+
+  virtual const nsTArray<int32_t>& GetCachedHyperTextOffsets() const = 0;
+
+  
+
+
+
+  void BuildCachedHyperTextOffsets(nsTArray<int32_t>& aOffsets) const;
 
  private:
   
