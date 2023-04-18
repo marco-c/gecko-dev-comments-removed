@@ -599,6 +599,7 @@ class nsIFrame : public nsQueryFrame {
         mForceDescendIntoIfVisible(false),
         mBuiltDisplayList(false),
         mFrameIsModified(false),
+        mHasModifiedDescendants(false),
         mHasOverrideDirtyRegion(false),
         mMayHaveWillChangeBudget(false),
         mIsPrimaryFrame(false),
@@ -4893,6 +4894,11 @@ class nsIFrame : public nsQueryFrame {
     mFrameIsModified = aFrameIsModified;
   }
 
+  bool HasModifiedDescendants() const { return mHasModifiedDescendants; }
+  void SetHasModifiedDescendants(const bool aHasModifiedDescendants) {
+    mHasModifiedDescendants = aHasModifiedDescendants;
+  }
+
   bool HasOverrideDirtyRegion() const { return mHasOverrideDirtyRegion; }
   void SetHasOverrideDirtyRegion(const bool aHasDirtyRegion) {
     mHasOverrideDirtyRegion = aHasDirtyRegion;
@@ -5128,7 +5134,21 @@ class nsIFrame : public nsQueryFrame {
 
   bool mBuiltDisplayList : 1;
 
+  
+
+
+
   bool mFrameIsModified : 1;
+
+  
+
+
+
+  bool mHasModifiedDescendants : 1;
+
+  
+
+
 
   bool mHasOverrideDirtyRegion : 1;
 

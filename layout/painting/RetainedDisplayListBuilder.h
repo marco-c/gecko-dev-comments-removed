@@ -15,6 +15,9 @@ class nsWindowSizes;
 
 namespace mozilla {
 
+class nsDisplayItem;
+class nsDisplayList;
+
 
 
 
@@ -254,15 +257,33 @@ struct RetainedDisplayListBuilder {
                     nsIFrame** aOutModifiedAGR);
 
   nsIFrame* RootReferenceFrame() { return mBuilder.RootReferenceFrame(); }
+
+  
+
+
+
+
+  bool TrySimpleUpdate(const nsTArray<nsIFrame*>& aModifiedFrames,
+                       nsTArray<nsIFrame*>& aOutFramesWithProps);
+
   friend class MergeState;
 
   nsDisplayListBuilder mBuilder;
   RetainedDisplayList mList;
-  nsRect mPreviousVisibleRect;
   WeakFrame mPreviousCaret;
   RetainedDisplayListMetrics mMetrics;
+
+  
+  nsTArray<nsDisplayItem*> mPreviousItems;
 };
 
+namespace RDLUtils {
+
+void AssertFrameSubtreeUnmodified(const nsIFrame* aFrame);
+void AssertDisplayItemUnmodified(nsDisplayItem* aItem);
+void AssertDisplayListUnmodified(nsDisplayList* aList);
+
+}  
 }  
 
 #endif  
