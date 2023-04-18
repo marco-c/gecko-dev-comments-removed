@@ -95,25 +95,28 @@ public class GeckoJavaSampler {
     }
   }
 
+  
+
+
   private static class Marker extends JNIObject {
     
-    private String mMarkerName;
+    private final String mMarkerName;
     
-    private double mTime;
-    
-
-
-
-    private long mJavaTime;
-    
-    private double mEndTime;
+    private final double mTime;
     
 
 
 
-    private long mEndJavaTime;
+    private final long mJavaTime;
     
-    private @Nullable String mText;
+    private final double mEndTime;
+    
+
+
+
+    private final long mEndJavaTime;
+    
+    private @Nullable final String mText;
 
     
 
@@ -144,37 +147,40 @@ public class GeckoJavaSampler {
         @Nullable final String aText) {
       mMarkerName = aMarkerName;
       mText = aText;
+
       if (aStartTime != null) {
         
         mTime = aStartTime;
+        mJavaTime = 0;
         if (aEndTime != null) {
           
           mEndTime = aEndTime;
+          mEndJavaTime = 0;
         } else {
           
-          if (GeckoThread.isStateAtLeast(GeckoThread.State.JNI_READY)) {
-            mEndTime = getProfilerTime();
-          }
-          if (mEndTime == 0.0d) {
-            
-            
-            mEndJavaTime = SystemClock.elapsedRealtime();
-          }
+          mEndTime =
+              GeckoThread.isStateAtLeast(GeckoThread.State.JNI_READY) ? getProfilerTime() : 0;
+
+          
+          
+          mEndJavaTime = mEndTime == 0.0d ? SystemClock.elapsedRealtime() : 0;
         }
+
       } else {
         
+        mEndTime = 0;
+        mEndJavaTime = 0;
+
         if (aEndTime != null) {
           
           mTime = aEndTime;
+          mJavaTime = 0;
         } else {
-          if (GeckoThread.isStateAtLeast(GeckoThread.State.JNI_READY)) {
-            mTime = getProfilerTime();
-          }
-          if (mTime == 0.0d) {
-            
-            
-            mJavaTime = SystemClock.elapsedRealtime();
-          }
+          mTime = GeckoThread.isStateAtLeast(GeckoThread.State.JNI_READY) ? getProfilerTime() : 0;
+
+          
+          
+          mJavaTime = mTime == 0.0d ? SystemClock.elapsedRealtime() : 0;
         }
       }
     }
