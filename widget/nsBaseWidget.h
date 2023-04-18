@@ -40,6 +40,7 @@ class LiveResizeListener;
 class FallbackRenderer;
 class SwipeTracker;
 struct SwipeEventQueue;
+class WidgetWheelEvent;
 
 #ifdef ACCESSIBILITY
 namespace a11y {
@@ -335,6 +336,21 @@ class nsBaseWidget : public nsIWidget, public nsSupportsWeakReference {
     uint32_t allowedDirections;
   };
   SwipeInfo SendMayStartSwipe(const mozilla::PanGestureInput& aSwipeStartEvent);
+  enum class CanTriggerSwipe : bool {
+    No = false,
+    Yes = true,
+  };
+  
+  
+  mozilla::WidgetWheelEvent MayStartSwipeForAPZ(
+      const mozilla::PanGestureInput& aPanInput,
+      const mozilla::layers::APZEventResult& aApzResult,
+      CanTriggerSwipe aCanTriggerSwipe);
+
+  
+  
+  bool MayStartSwipeForNonAPZ(const mozilla::PanGestureInput& aPanInput,
+                              CanTriggerSwipe aCanTriggerSwipe);
 
   void NotifyWindowDestroyed();
   void NotifySizeMoveDone();
