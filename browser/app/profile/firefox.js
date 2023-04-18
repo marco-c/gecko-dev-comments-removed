@@ -2275,6 +2275,13 @@ pref("devtools.browsertoolbox.fission", false);
 #endif
 
 
+
+
+
+
+pref("devtools.browsertoolbox.scope", "everything");
+
+
 pref("devtools.target-switching.server.enabled", true);
 
 
