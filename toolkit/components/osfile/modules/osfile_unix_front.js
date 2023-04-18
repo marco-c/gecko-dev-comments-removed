@@ -19,7 +19,7 @@
     
 
     throw new Error(
-      "osfile_unix_front.jsm cannot be used from the main thread yet"
+      "osfile_unix_front.js cannot be used from the main thread yet"
     );
   }
   (function(exports) {

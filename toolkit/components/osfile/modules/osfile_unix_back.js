@@ -14,7 +14,7 @@
     
 
     throw new Error(
-      "osfile_unix_back.jsm cannot be used from the main thread yet"
+      "osfile_unix_back.js cannot be used from the main thread yet"
     );
   }
   (function(exports) {

@@ -29,7 +29,9 @@
     
     
 
-    throw new Error("osfile_win.jsm cannot be used from the main thread yet");
+    throw new Error(
+      "osfile_win_back.js cannot be used from the main thread yet"
+    );
   }
 
   (function(exports) {

@@ -18,7 +18,7 @@
     
     
     throw new Error(
-      "osfile_win_front.jsm cannot be used from the main thread yet"
+      "osfile_win_front.js cannot be used from the main thread yet"
     );
   }
 
