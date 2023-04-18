@@ -6,9 +6,6 @@
 
 const EXPORTED_SYMBOLS = ["ExtensionShortcuts", "ExtensionShortcutKeyMap"];
 
-const { XPCOMUtils } = ChromeUtils.import(
-  "resource://gre/modules/XPCOMUtils.jsm"
-);
 const { ExtensionCommon } = ChromeUtils.import(
   "resource://gre/modules/ExtensionCommon.jsm"
 );
@@ -35,17 +32,34 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/PrivateBrowsingUtils.jsm"
 );
 
-XPCOMUtils.defineLazyGetter(this, "windowTracker", () => {
-  return ExtensionParent.apiManager.global.windowTracker;
-});
-XPCOMUtils.defineLazyGetter(this, "browserActionFor", () => {
-  return ExtensionParent.apiManager.global.browserActionFor;
-});
-XPCOMUtils.defineLazyGetter(this, "pageActionFor", () => {
-  return ExtensionParent.apiManager.global.pageActionFor;
-});
-XPCOMUtils.defineLazyGetter(this, "sidebarActionFor", () => {
-  return ExtensionParent.apiManager.global.sidebarActionFor;
+
+
+
+
+
+
+
+Object.defineProperties(this, {
+  windowTracker: {
+    get() {
+      return ExtensionParent.apiManager.global.windowTracker;
+    },
+  },
+  browserActionFor: {
+    get() {
+      return ExtensionParent.apiManager.global.browserActionFor;
+    },
+  },
+  pageActionFor: {
+    get() {
+      return ExtensionParent.apiManager.global.pageActionFor;
+    },
+  },
+  sidebarActionFor: {
+    get() {
+      return ExtensionParent.apiManager.global.sidebarActionFor;
+    },
+  },
 });
 
 const { ExtensionError, DefaultMap } = ExtensionUtils;
