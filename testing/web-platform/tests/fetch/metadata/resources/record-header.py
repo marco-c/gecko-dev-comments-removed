@@ -123,6 +123,11 @@ def main(request, response):
       return b"self.postMessage('loaded');"
 
     
+    if key.startswith(b"worklet"):
+      response.headers.set(b"Content-Type", b"application/javascript")
+      return b""
+
+    
     if key.startswith(b"xslt"):
       response.headers.set(b"Content-Type", b"text/xsl")
       return b"""<?xml version="1.0" encoding="UTF-8"?>
