@@ -12,6 +12,8 @@ const TEST_URI =
 
 const expectedMessages = ["main file", "blah", "iframe 2", "iframe 3"];
 
+
+
 const expectedDupedMessage = "iframe 1";
 
 add_task(async function() {
@@ -27,8 +29,10 @@ add_task(async function() {
   await closeConsole();
   info("web console closed");
 
+  await pushPref("devtools.browserconsole.contentMessages", true);
   hud = await BrowserConsoleManager.toggleBrowserConsole();
-  await testBrowserConsole(hud);
+  ok(hud, "browser console opened");
+  await testMessages(hud);
 
   
   await clearOutput(hud);
@@ -42,21 +46,8 @@ async function testMessages(hud) {
     await waitFor(() => findMessage(hud, message));
   }
 
-  info("first messages matched");
+  ok(true, "Found expected unique messages");
 
-  const messages = await findMessages(hud, expectedDupedMessage);
-  is(messages.length, 2, `${expectedDupedMessage} is present twice`);
-}
-
-async function testBrowserConsole(hud) {
-  ok(hud, "browser console opened");
-
-  
-  
-  if (Services.appinfo.browserTabsRemoteAutostart) {
-    todo(false, "Bug 1241289");
-    return;
-  }
-
-  await testMessages(hud);
+  await waitFor(() => findMessages(hud, expectedDupedMessage).length == 2);
+  ok(true, `${expectedDupedMessage} is present twice`);
 }
