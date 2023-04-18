@@ -8101,6 +8101,11 @@ bool BytecodeEmitter::emitArguments(ListNode* argsList, bool isCall,
         return false;
       }
     }
+
+    if (!cone.emitSpreadArgumentsTestEnd()) {
+      
+      return false;
+    }
   } else {
     if (!cone.prepareForSpreadArguments()) {
       
@@ -8291,6 +8296,23 @@ bool BytecodeEmitter::emitCallOrNew(
   if (!emitArguments(argsList, isCall, isSpread, cone)) {
     
     return false;
+  }
+
+  
+  if (IsConstructOp(op)) {
+    if (op == JSOp::SuperCall || op == JSOp::SpreadSuperCall) {
+      if (!emit1(JSOp::NewTarget)) {
+        
+        return false;
+      }
+    } else {
+      
+      uint32_t effectiveArgc = isSpread ? 1 : argc;
+      if (!emitDupAt(effectiveArgc + 1)) {
+        
+        return false;
+      }
+    }
   }
 
   ParseNode* coordNode = getCoordNode(callNode, calleeNode, op, argsList);
