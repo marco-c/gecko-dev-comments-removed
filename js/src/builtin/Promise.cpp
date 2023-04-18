@@ -966,10 +966,6 @@ static bool IsSettledMaybeWrappedPromise(JSObject* promise) {
     JSContext* cx, HandleObject promiseObj, HandleValue reason,
     HandleSavedFrame unwrappedRejectionStack);
 
-[[nodiscard]] static bool RejectPromiseInternal(
-    JSContext* cx, Handle<PromiseObject*> promise, HandleValue reason,
-    HandleSavedFrame unwrappedRejectionStack = nullptr);
-
 
 
 
@@ -1048,9 +1044,9 @@ static bool Promise_then_impl(JSContext* cx, HandleValue promiseVal,
 
 
 
-[[nodiscard]] static bool ResolvePromiseInternal(JSContext* cx,
-                                                 HandleObject promise,
-                                                 HandleValue resolutionVal) {
+[[nodiscard]] bool js::ResolvePromiseInternal(
+    JSContext* cx, JS::Handle<JSObject*> promise,
+    JS::Handle<JS::Value> resolutionVal) {
   cx->check(promise, resolutionVal);
   MOZ_ASSERT(!IsSettledMaybeWrappedPromise(promise));
 
@@ -1479,9 +1475,10 @@ static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp);
 
 
 
-[[nodiscard]] static bool RejectPromiseInternal(
-    JSContext* cx, Handle<PromiseObject*> promise, HandleValue reason,
-    HandleSavedFrame unwrappedRejectionStack) {
+[[nodiscard]] bool js::RejectPromiseInternal(
+    JSContext* cx, JS::Handle<PromiseObject*> promise,
+    JS::Handle<JS::Value> reason,
+    JS::Handle<SavedFrame*> unwrappedRejectionStack ) {
   return ResolvePromise(cx, promise, reason, JS::PromiseState::Rejected,
                         unwrappedRejectionStack);
 }
@@ -5151,7 +5148,7 @@ bool js::IsPromiseForAsyncFunctionOrGenerator(JSObject* promise) {
          PromiseHasAnyFlag(promise->as<PromiseObject>(), PROMISE_FLAG_ASYNC);
 }
 
-[[nodiscard]] static PromiseObject* CreatePromiseObjectForAsyncGenerator(
+[[nodiscard]] PromiseObject* js::CreatePromiseObjectForAsyncGenerator(
     JSContext* cx) {
   PromiseObject* promise = CreatePromiseObjectWithoutResolutionFunctions(cx);
   if (!promise) {
@@ -5492,341 +5489,6 @@ bool js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args,
   
   args.rval().setObject(*resultPromise);
   return true;
-}
-
-enum class ResumeNextKind { Enqueue, Reject, Resolve };
-
-[[nodiscard]] static bool AsyncGeneratorResumeNext(
-    JSContext* cx, Handle<AsyncGeneratorObject*> generator, ResumeNextKind kind,
-    HandleValue valueOrException = UndefinedHandleValue, bool done = false);
-
-
-[[nodiscard]] bool js::AsyncGeneratorResolve(
-    JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj, HandleValue value,
-    bool done) {
-  return AsyncGeneratorResumeNext(cx, asyncGenObj, ResumeNextKind::Resolve,
-                                  value, done);
-}
-
-
-[[nodiscard]] bool js::AsyncGeneratorReject(
-    JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
-    HandleValue exception) {
-  return AsyncGeneratorResumeNext(cx, asyncGenObj, ResumeNextKind::Reject,
-                                  exception);
-}
-
-
-
-
-
-[[nodiscard]] static bool AsyncGeneratorResumeNext(
-    JSContext* cx, Handle<AsyncGeneratorObject*> generator, ResumeNextKind kind,
-    HandleValue valueOrException_ ,
-    bool done ) {
-  RootedValue valueOrException(cx, valueOrException_);
-
-  
-  
-  while (true) {
-    switch (kind) {
-      case ResumeNextKind::Enqueue:
-        
-        break;
-      case ResumeNextKind::Reject: {
-        
-        HandleValue exception = valueOrException;
-
-        
-        
-        
-        MOZ_ASSERT(!generator->isQueueEmpty());
-
-        
-        
-        AsyncGeneratorRequest* request =
-            AsyncGeneratorObject::dequeueRequest(cx, generator);
-        if (!request) {
-          return false;
-        }
-
-        
-        Rooted<PromiseObject*> resultPromise(cx, request->promise());
-
-        generator->cacheRequest(request);
-
-        
-        
-        if (!RejectPromiseInternal(cx, resultPromise, exception)) {
-          return false;
-        }
-
-        
-        
-        break;
-      }
-      case ResumeNextKind::Resolve: {
-        
-        HandleValue value = valueOrException;
-
-        
-        
-        
-        MOZ_ASSERT(!generator->isQueueEmpty());
-
-        
-        
-        AsyncGeneratorRequest* request =
-            AsyncGeneratorObject::dequeueRequest(cx, generator);
-        if (!request) {
-          return false;
-        }
-
-        
-        Rooted<PromiseObject*> resultPromise(cx, request->promise());
-
-        generator->cacheRequest(request);
-
-        
-        JSObject* resultObj = CreateIterResultObject(cx, value, done);
-        if (!resultObj) {
-          return false;
-        }
-
-        RootedValue resultValue(cx, ObjectValue(*resultObj));
-
-        
-        
-        if (!ResolvePromiseInternal(cx, resultPromise, resultValue)) {
-          return false;
-        }
-
-        
-        
-        break;
-      }
-    }
-
-    
-    
-    
-    
-    MOZ_ASSERT(!generator->isExecuting());
-    MOZ_ASSERT(!generator->isAwaitingYieldReturn());
-
-    
-    if (generator->isAwaitingReturn()) {
-      return true;
-    }
-
-    
-    
-    if (generator->isQueueEmpty()) {
-      return true;
-    }
-
-    
-    
-    Rooted<AsyncGeneratorRequest*> request(
-        cx, AsyncGeneratorObject::peekRequest(generator));
-    if (!request) {
-      return false;
-    }
-
-    
-    CompletionKind completionKind = request->completionKind();
-
-    
-    if (completionKind != CompletionKind::Normal) {
-      
-      if (generator->isSuspendedStart()) {
-        
-        
-        generator->setCompleted();
-      }
-
-      
-      if (generator->isCompleted()) {
-        RootedValue value(cx, request->completionValue());
-
-        
-        if (completionKind == CompletionKind::Return) {
-          
-          
-          generator->setAwaitingReturn();
-
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          const PromiseHandler onFulfilled =
-              PromiseHandler::AsyncGeneratorResumeNextReturnFulfilled;
-          const PromiseHandler onRejected =
-              PromiseHandler::AsyncGeneratorResumeNextReturnRejected;
-
-          
-          
-          
-          
-          
-          
-          
-          
-          return InternalAsyncGeneratorAwait(cx, generator, value, onFulfilled,
-                                             onRejected);
-        }
-
-        
-
-        
-        MOZ_ASSERT(completionKind == CompletionKind::Throw);
-
-        
-        
-        
-        kind = ResumeNextKind::Reject;
-        valueOrException.set(value);
-        continue;
-      }
-    } else if (generator->isCompleted()) {
-      
-      
-      kind = ResumeNextKind::Resolve;
-      valueOrException.setUndefined();
-      done = true;
-      continue;
-    }
-
-    
-    MOZ_ASSERT(generator->isSuspendedStart() || generator->isSuspendedYield());
-
-    RootedValue argument(cx, request->completionValue());
-
-    if (completionKind == CompletionKind::Return) {
-      
-      
-      
-      
-      generator->setAwaitingYieldReturn();
-
-      const PromiseHandler onFulfilled =
-          PromiseHandler::AsyncGeneratorYieldReturnAwaitedFulfilled;
-      const PromiseHandler onRejected =
-          PromiseHandler::AsyncGeneratorYieldReturnAwaitedRejected;
-
-      return InternalAsyncGeneratorAwait(cx, generator, argument, onFulfilled,
-                                         onRejected);
-    }
-
-    
-    
-    generator->setExecuting();
-
-    
-    return AsyncGeneratorResume(cx, generator, completionKind, argument);
-  }
-}
-
-
-[[nodiscard]] bool js::AsyncGeneratorEnqueue(JSContext* cx,
-                                             HandleValue asyncGenVal,
-                                             CompletionKind completionKind,
-                                             HandleValue completionValue,
-                                             MutableHandleValue result) {
-  
-
-  
-  if (!asyncGenVal.isObject() ||
-      !asyncGenVal.toObject().canUnwrapAs<AsyncGeneratorObject>()) {
-    
-    Rooted<PromiseObject*> resultPromise(
-        cx, CreatePromiseObjectForAsyncGenerator(cx));
-    if (!resultPromise) {
-      return false;
-    }
-
-    
-    RootedValue badGeneratorError(cx);
-    if (!GetTypeError(cx, JSMSG_NOT_AN_ASYNC_GENERATOR, &badGeneratorError)) {
-      return false;
-    }
-
-    
-    if (!RejectPromiseInternal(cx, resultPromise, badGeneratorError)) {
-      return false;
-    }
-
-    
-    result.setObject(*resultPromise);
-    return true;
-  }
-
-  Rooted<AsyncGeneratorObject*> asyncGenObj(
-      cx, &asyncGenVal.toObject().unwrapAs<AsyncGeneratorObject>());
-
-  bool wrapResult = false;
-  {
-    
-    
-    
-    
-    
-    
-
-    mozilla::Maybe<AutoRealm> ar;
-    RootedValue completionVal(cx, completionValue);
-    if (asyncGenObj->compartment() != cx->compartment()) {
-      ar.emplace(cx, asyncGenObj);
-      wrapResult = true;
-
-      if (!cx->compartment()->wrap(cx, &completionVal)) {
-        return false;
-      }
-    }
-
-    
-    Rooted<PromiseObject*> resultPromise(
-        cx, CreatePromiseObjectForAsyncGenerator(cx));
-    if (!resultPromise) {
-      return false;
-    }
-
-    
-    Rooted<AsyncGeneratorRequest*> request(
-        cx, AsyncGeneratorObject::createRequest(cx, asyncGenObj, completionKind,
-                                                completionVal, resultPromise));
-    if (!request) {
-      return false;
-    }
-
-    
-    if (!AsyncGeneratorObject::enqueueRequest(cx, asyncGenObj, request)) {
-      return false;
-    }
-
-    
-    if (!asyncGenObj->isExecuting() && !asyncGenObj->isAwaitingYieldReturn()) {
-      
-      if (!AsyncGeneratorResumeNext(cx, asyncGenObj, ResumeNextKind::Enqueue)) {
-        return false;
-      }
-    }
-
-    
-    result.setObject(*resultPromise);
-  }
-
-  return !wrapResult || cx->compartment()->wrap(cx, result);
 }
 
 
