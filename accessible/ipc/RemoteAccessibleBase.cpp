@@ -396,6 +396,7 @@ LayoutDeviceIntRect RemoteAccessibleBase<Derived>::BoundsWithOffset(
     Maybe<nsRect> maybeBounds = RetrieveCachedBounds();
     if (maybeBounds) {
       nsRect bounds = *maybeBounds;
+#if !defined(ANDROID)
       dom::CanonicalBrowsingContext* cbc =
           static_cast<dom::BrowserParent*>(mDoc->Manager())
               ->GetBrowsingContext()
@@ -403,6 +404,11 @@ LayoutDeviceIntRect RemoteAccessibleBase<Derived>::BoundsWithOffset(
       dom::BrowserParent* bp = cbc->GetBrowserParent();
       nsPresContext* presContext =
           bp->GetOwnerElement()->OwnerDoc()->GetPresContext();
+      float fullZoom = cbc->GetFullZoom();
+#else
+      
+      float fullZoom = 1.0;
+#endif
 
       if (aOffset.isSome()) {
         
@@ -411,7 +417,7 @@ LayoutDeviceIntRect RemoteAccessibleBase<Derived>::BoundsWithOffset(
         
         
         
-        internalRect.ScaleRoundOut(1 / cbc->GetFullZoom());
+        internalRect.ScaleRoundOut(1 / fullZoom);
         bounds.SetRectX(bounds.x + internalRect.x, internalRect.width);
         bounds.SetRectY(bounds.y + internalRect.y, internalRect.height);
       }
@@ -421,29 +427,7 @@ LayoutDeviceIntRect RemoteAccessibleBase<Derived>::BoundsWithOffset(
       LayoutDeviceIntRect devPxBounds;
       const Accessible* acc = Parent();
 
-      while (acc) {
-        if (LocalAccessible* localAcc =
-                const_cast<Accessible*>(acc)->AsLocal()) {
-          
-          
-          LayoutDeviceIntRect localBounds = localAcc->Bounds();
-
-          
-          devPxBounds = LayoutDeviceIntRect::FromAppUnitsToNearest(
-              bounds, presContext->AppUnitsPerDevPixel());
-
-          
-          
-          devPxBounds.ScaleRoundOut(cbc->GetFullZoom());
-
-          
-          
-          
-          
-          devPxBounds.MoveBy(localBounds.X(), localBounds.Y());
-          break;
-        }
-
+      while (acc && acc->IsRemote()) {
         RemoteAccessible* remoteAcc = const_cast<Accessible*>(acc)->AsRemote();
 
         if (Maybe<nsRect> maybeRemoteBounds =
@@ -484,15 +468,31 @@ LayoutDeviceIntRect RemoteAccessibleBase<Derived>::BoundsWithOffset(
         acc = acc->Parent();
       }
 
-      PresShell* presShell = presContext->PresShell();
+#if !defined(ANDROID)
+      
+      
+      
+      
+      if (LocalAccessible* localAcc = const_cast<Accessible*>(acc)->AsLocal()) {
+        
+        
+        LayoutDeviceIntRect localBounds = localAcc->Bounds();
 
-      
-      
-      
-      nsPoint viewportOffset = presShell->GetVisualViewportOffset() -
-                               presShell->GetLayoutViewportOffset();
-      devPxBounds.MoveBy(-(LayoutDeviceIntPoint::FromAppUnitsToNearest(
-          viewportOffset, presContext->AppUnitsPerDevPixel())));
+        
+        devPxBounds = LayoutDeviceIntRect::FromAppUnitsToNearest(
+            bounds, presContext->AppUnitsPerDevPixel());
+
+        
+        
+        devPxBounds.ScaleRoundOut(fullZoom);
+
+        
+        
+        
+        
+        devPxBounds.MoveBy(localBounds.X(), localBounds.Y());
+      }
+#endif
 
       return devPxBounds;
     }
