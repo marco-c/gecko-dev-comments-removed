@@ -705,11 +705,12 @@ class nsWindow final : public nsBaseWidget {
   
   
   struct WaylandPopupMoveToRectParams {
-    LayoutDeviceIntRect mAnchorRect;
-    GdkGravity mAnchorRectType;
-    GdkGravity mPopupAnchorType;
-    GdkAnchorHints mHints;
-    GdkPoint mOffset;
+    LayoutDeviceIntRect mAnchorRect = {0, 0, 0, 0};
+    GdkGravity mAnchorRectType = GDK_GRAVITY_NORTH_WEST;
+    GdkGravity mPopupAnchorType = GDK_GRAVITY_NORTH_WEST;
+    GdkAnchorHints mHints = GDK_ANCHOR_SLIDE;
+    GdkPoint mOffset = {0, 0};
+    bool mAnchorSet = false;
   };
 
   WaylandPopupMoveToRectParams mPopupMoveToRectParams;
