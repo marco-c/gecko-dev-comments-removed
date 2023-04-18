@@ -5643,11 +5643,11 @@ pub trait SceneBuilderHooks {
     
     fn pre_scene_build(&self);
     
-    fn pre_scene_swap(&self);
+    fn pre_scene_swap(&self, scenebuild_time: u64);
     
     
     
-    fn post_scene_swap(&self, document_id: &Vec<DocumentId>, info: PipelineInfo);
+    fn post_scene_swap(&self, document_id: &Vec<DocumentId>, info: PipelineInfo, sceneswap_time: u64);
     
     
     
