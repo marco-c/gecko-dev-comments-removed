@@ -6,7 +6,7 @@
 
 "use strict";
 
-const EXPORTED_SYMBOLS = ["MarionetteCommandsChild"];
+const EXPORTED_SYMBOLS = ["MarionetteCommandsChild", "clearActionInputState"];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { XPCOMUtils } = ChromeUtils.import(
@@ -33,17 +33,14 @@ XPCOMUtils.defineLazyGetter(lazy, "logger", () =>
   lazy.Log.get(lazy.Log.TYPES.MARIONETTE)
 );
 
+let inputStateIsDirty = false;
+
 class MarionetteCommandsChild extends JSWindowActorChild {
   constructor() {
     super();
 
     
-    
-
-    
     this.sandboxes = new lazy.Sandboxes(() => this.document.defaultView);
-    
-    this.actionState = null;
   }
 
   get innerWindowId() {
@@ -66,6 +63,8 @@ class MarionetteCommandsChild extends JSWindowActorChild {
       `[${this.browsingContext.id}] MarionetteCommands actor created ` +
         `for window id ${this.innerWindowId}`
     );
+
+    clearActionInputState();
   }
 
   async receiveMessage(msg) {
@@ -457,16 +456,14 @@ class MarionetteCommandsChild extends JSWindowActorChild {
 
   async performActions(options = {}) {
     const { actions, capabilities } = options;
-    if (this.actionState === null) {
-      this.actionState = new lazy.action.State({
-        specCompatPointerOrigin: !capabilities[
-          "moz:useNonSpecCompliantPointerOrigin"
-        ],
-      });
-    }
-    let actionChain = lazy.action.Chain.fromJSON(this.actionState, actions);
 
-    await actionChain.dispatch(this.actionState, this.document.defaultView);
+    await lazy.action.dispatch(
+      lazy.action.Chain.fromJSON(actions),
+      this.document.defaultView,
+      !capabilities["moz:useNonSpecCompliantPointerOrigin"]
+    );
+    inputStateIsDirty =
+      lazy.action.inputsToCancel.length || lazy.action.inputStateMap.size;
   }
 
   
@@ -476,15 +473,13 @@ class MarionetteCommandsChild extends JSWindowActorChild {
 
 
   async releaseActions() {
-    if (this.actionState === null) {
-      return;
-    }
-    this.actionState.inputsToCancel.reverse();
-    await this.actionState.inputsToCancel.dispatch(
-      this.actionState,
+    await lazy.action.dispatchTickActions(
+      lazy.action.inputsToCancel.reverse(),
+      0,
       this.document.defaultView
     );
-    this.actionState = null;
+    clearActionInputState();
+
     lazy.event.DoubleClickTracker.resetClick();
   }
 
@@ -562,5 +557,17 @@ class MarionetteCommandsChild extends JSWindowActorChild {
     const browsingContext = this.browsingContext.parent || this.browsingContext;
 
     return { browsingContextId: browsingContext.id };
+  }
+}
+
+
+
+
+function clearActionInputState() {
+  
+  if (inputStateIsDirty) {
+    lazy.action.inputStateMap.clear();
+    lazy.action.inputsToCancel.length = 0;
+    inputStateIsDirty = false;
   }
 }

@@ -103,9 +103,39 @@ event.DoubleClickTracker = {
 };
 
 
+
+
+
+
+
+
+
+event.getShiftedKey = function(rawKey) {
+  return lazy.keyData.getShiftedKey(rawKey);
+};
+
+
+
+
+
+
+
+
+
+
+
+event.getKeyData = function(rawKey) {
+  return lazy.keyData.getData(rawKey);
+};
+
+
 event.parseModifiers_ = function(modifiers, win) {
   return _getEventUtils(win)._parseModifiers(modifiers);
 };
+
+
+
+
 
 
 

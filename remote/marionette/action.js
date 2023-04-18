@@ -21,15 +21,10 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
   element: "chrome://remote/content/marionette/element.js",
   error: "chrome://remote/content/shared/webdriver/Errors.jsm",
   event: "chrome://remote/content/marionette/event.js",
-  keyData: "chrome://remote/content/shared/webdriver/KeyData.jsm",
-  Log: "chrome://remote/content/shared/Log.jsm",
   pprint: "chrome://remote/content/shared/Format.jsm",
   Sleep: "chrome://remote/content/marionette/sync.js",
 });
 
-XPCOMUtils.defineLazyGetter(lazy, "logger", () =>
-  lazy.Log.get(lazy.Log.TYPES.MARIONETTE)
-);
 
 
 
@@ -38,13 +33,27 @@ XPCOMUtils.defineLazyGetter(lazy, "logger", () =>
 
 
 
+const action = {
+  Pause: "pause",
+  KeyDown: "keyDown",
+  KeyUp: "keyUp",
+  PointerDown: "pointerDown",
+  PointerUp: "pointerUp",
+  PointerMove: "pointerMove",
+  PointerCancel: "pointerCancel",
+};
 
-
-
-
-
-
-this.action = {};
+const ACTIONS = {
+  none: new Set([action.Pause]),
+  key: new Set([action.Pause, action.KeyDown, action.KeyUp]),
+  pointer: new Set([
+    action.Pause,
+    action.PointerDown,
+    action.PointerUp,
+    action.PointerMove,
+    action.PointerCancel,
+  ]),
+};
 
 
 const MODIFIER_NAME_LOOKUP = {
@@ -55,131 +64,116 @@ const MODIFIER_NAME_LOOKUP = {
 };
 
 
+action.PointerOrigin = {
+  Viewport: "viewport",
+  Pointer: "pointer",
+};
 
 
-
-
-action.State = class {
-  constructor(options = {}) {
-    const { specCompatPointerOrigin = true } = options;
-
-    
-    this.specCompatPointerOrigin = specCompatPointerOrigin;
-
-    
+action.specCompatPointerOrigin = true;
 
 
 
 
 
-    this.inputStateMap = new Map();
-
-    
 
 
 
 
-    this.inputsToCancel = new TickActions();
-
-    
 
 
-    this.pointerIdMap = new Map();
+
+
+
+action.PointerOrigin.get = function(obj) {
+  let origin = obj;
+  if (typeof obj == "undefined") {
+    origin = this.Viewport;
+  } else if (typeof obj == "string") {
+    let name = capitalize(obj);
+    lazy.assert.in(
+      name,
+      this,
+      lazy.pprint`Unknown pointer-move origin: ${obj}`
+    );
+    origin = this[name];
+  } else if (!lazy.element.isElement(obj)) {
+    throw new lazy.error.InvalidArgumentError(
+      "Expected 'origin' to be undefined, " +
+        '"viewport", "pointer", ' +
+        lazy.pprint`or an element, got: ${obj}`
+    );
   }
+  return origin;
+};
 
-  toString() {
-    return `[object ${this.constructor.name} ${JSON.stringify(this)}]`;
-  }
 
+action.PointerType = {
+  Mouse: "mouse",
   
-
-
-
-
-
-  getInputSource(id) {
-    return this.inputStateMap.get(id);
-  }
-
   
-
-
-
-
-
-
-  getOrAddInputSource(id, newInputSource) {
-    let inputSource = this.getInputSource(id);
-    if (inputSource === undefined) {
-      this.inputStateMap.set(id, newInputSource);
-      inputSource = newInputSource;
-    }
-    return inputSource;
-  }
-
   
-
-
-
-
-
-  *inputSourcesByType(type) {
-    for (let [id, inputSource] of this.inputStateMap) {
-      if (inputSource.type === type) {
-        yield [id, inputSource];
-      }
-    }
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-  getPointerId(id, type) {
-    let pointerId = this.pointerIdMap.get(id);
-    if (pointerId === undefined) {
-      
-      const idValues = Array.from(this.pointerIdMap.values());
-      if (type === "mouse") {
-        for (let mouseId of [0, 1]) {
-          if (!idValues.includes(mouseId)) {
-            pointerId = mouseId;
-            break;
-          }
-        }
-      }
-      if (pointerId === undefined) {
-        pointerId = Math.max(1, ...idValues) + 1;
-      }
-      this.pointerIdMap.set(id, pointerId);
-    }
-    return pointerId;
-  }
 };
 
 
 
 
-class InputSource {
-  #id;
-  static type = null;
 
-  constructor(id) {
-    this.#id = id;
-    this.type = this.constructor.type;
+
+
+
+
+
+
+
+
+action.PointerType.get = function(str) {
+  let name = capitalize(str);
+  lazy.assert.in(name, this, lazy.pprint`Unknown pointerType: ${str}`);
+  return this[name];
+};
+
+
+
+
+
+
+action.inputStateMap = new Map();
+
+
+
+
+
+
+action.inputsToCancel = [];
+
+
+
+
+class InputState {
+  constructor() {
+    this.type = this.constructor.name.toLowerCase();
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  is(other) {
+    if (typeof other == "undefined") {
+      return false;
+    }
+    return this.type === other.type;
   }
 
   toString() {
-    return `[object ${this.constructor.name} id: ${this.#id} type: ${
-      this.type
-    }]`;
+    return `[object ${this.constructor.name}InputState]`;
   }
 
   
@@ -193,60 +187,42 @@ class InputSource {
 
 
 
-  static fromJSON(state, actionSequence) {
-    const { id, type } = actionSequence;
-    lazy.assert.string(
-      id,
-      lazy.pprint`Expected 'id' to be a string, got ${id}`
-    );
-    const cls = inputSourceTypes.get(type);
-    if (cls === undefined) {
-      throw new lazy.error.InvalidArgumentError(
-        lazy.pprint`Unknown action type: ${type}`
-      );
-    }
 
-    const sequenceInputSource = cls.fromJSON(state, actionSequence);
-    const inputSource = state.getOrAddInputSource(id, sequenceInputSource);
-    if (inputSource.type !== type) {
-      throw new lazy.error.InvalidArgumentError(
-        `Expected input source ${id} to be type ${inputSource.type}, ` +
-          `got ${type}`
-      );
+
+  static fromJSON(obj) {
+    let type = obj.type;
+    lazy.assert.in(type, ACTIONS, lazy.pprint`Unknown action type: ${type}`);
+    let name = type == "none" ? "Null" : capitalize(type);
+    if (name == "Pointer") {
+      if (
+        !obj.pointerType &&
+        (!obj.parameters || !obj.parameters.pointerType)
+      ) {
+        throw new lazy.error.InvalidArgumentError(
+          lazy.pprint`Expected obj to have pointerType, got ${obj}`
+        );
+      }
+      let pointerType = obj.pointerType || obj.parameters.pointerType;
+      return new action.InputState[name](pointerType);
     }
+    return new action.InputState[name]();
   }
 }
 
 
-
-
-class NullInputSource extends InputSource {
-  static type = "none";
-
-  static fromJSON(state, actionSequence) {
-    const { id } = actionSequence;
-    return new this(id);
-  }
-}
+action.InputState = {};
 
 
 
 
-class KeyInputSource extends InputSource {
-  static type = "key";
-
-  constructor(id) {
-    super(id);
+action.InputState.Key = class Key extends InputState {
+  constructor() {
+    super();
     this.pressed = new Set();
     this.alt = false;
     this.shift = false;
     this.ctrl = false;
     this.meta = false;
-  }
-
-  static fromJSON(state, actionSequence) {
-    const { id } = actionSequence;
-    return new this(id);
   }
 
   
@@ -310,24 +286,38 @@ class KeyInputSource extends InputSource {
   release(key) {
     return this.pressed.delete(key);
   }
-}
+};
 
 
 
 
-class PointerInputSource extends InputSource {
-  static type = "pointer";
+action.InputState.Null = class Null extends InputState {
+  constructor() {
+    super();
+    this.type = "none";
+  }
+};
 
-  
 
 
 
-  constructor(id, pointer) {
-    super(id);
-    this.pointer = pointer;
+
+
+
+
+
+
+action.InputState.Pointer = class Pointer extends InputState {
+  constructor(subtype) {
+    super();
+    this.pressed = new Set();
+    lazy.assert.defined(
+      subtype,
+      lazy.pprint`Expected subtype to be defined, got ${subtype}`
+    );
+    this.subtype = action.PointerType.get(subtype);
     this.x = 0;
     this.y = 0;
-    this.pressed = new Set();
   }
 
   
@@ -355,7 +345,7 @@ class PointerInputSource extends InputSource {
 
   press(button) {
     lazy.assert.positiveInteger(button);
-    this.pressed.add(button);
+    return this.pressed.add(button);
   }
 
   
@@ -371,27 +361,7 @@ class PointerInputSource extends InputSource {
     lazy.assert.positiveInteger(button);
     return this.pressed.delete(button);
   }
-
-  static fromJSON(state, actionSequence) {
-    const { id, parameters } = actionSequence;
-
-    const pointerType = parameters?.pointerType ?? "mouse";
-    const pointerId = state.getPointerId(id, pointerType);
-    const pointer = Pointer.fromJSON(pointerId, pointerType);
-    return new this(id, pointer);
-  }
-}
-
-const inputSourceTypes = new Map();
-for (let cls of [NullInputSource, KeyInputSource, PointerInputSource]) {
-  inputSourceTypes.set(cls.type, cls);
-}
-
-
-
-
-class Origin {
-  
+};
 
 
 
@@ -400,13 +370,6 @@ class Origin {
 
 
 
-  getOriginCoordinates(state, inputSource, win) {
-    throw new Error(
-      `originCoordinates not defined for ${this.constructor.name}`
-    );
-  }
-
-  
 
 
 
@@ -414,96 +377,24 @@ class Origin {
 
 
 
-  getTargetCoordinates(state, inputSource, coords, win) {
-    const [x, y] = coords;
-    const origin = this.getOriginCoordinates(state, inputSource, win);
-    return [origin.x + x, origin.y + y];
-  }
-
-  
 
 
 
-
-
-
-
-  static fromJSON(origin) {
-    if (origin === undefined || origin === "viewport") {
-      return new ViewportOrigin();
+action.Action = class {
+  constructor(id, type, subtype) {
+    if ([id, type, subtype].includes(undefined)) {
+      throw new lazy.error.InvalidArgumentError("Missing id, type or subtype");
     }
-    if (origin === "pointer") {
-      return new PointerOrigin();
+    for (let attr of [id, type, subtype]) {
+      lazy.assert.string(attr, lazy.pprint`Expected string, got ${attr}`);
     }
-    if (lazy.element.isElement(origin)) {
-      return new ElementOrigin(origin);
-    }
-
-    throw new lazy.error.InvalidArgumentError(
-      `Expected 'origin' to be undefined, "viewport", "pointer", ` +
-        lazy.pprint`or an element, got: ${origin}`
-    );
-  }
-}
-
-class ViewportOrigin extends Origin {
-  getOriginCoordinates(state, inputSource, win) {
-    return { x: 0, y: 0 };
-  }
-}
-
-class PointerOrigin extends Origin {
-  getOriginCoordinates(state, inputSource, win) {
-    return { x: inputSource.x, y: inputSource.y };
-  }
-}
-
-class ElementOrigin extends Origin {
-  
-
-
-  constructor(element) {
-    super();
-    this.element = element;
-  }
-
-  getOriginCoordinates(state, inputSource, win) {
-    if (state.specCompatPointerOrigin) {
-      const clientRects = this.element.getClientRects();
-      
-      if (!clientRects.length) {
-        throw new lazy.error.MoveTargetOutOfBoundsError(
-          `Origin element is not displayed`
-        );
-      }
-      return lazy.element.getInViewCentrePoint(clientRects[0], win);
-    }
-    return lazy.element.coordinates(this.element);
-  }
-}
-
-
-
-
-
-
-
-class Action {
-  
-  static type = null;
-  
-  static subtype = null;
-  
-  affectsWallClockTime = false;
-
-  constructor(id) {
     this.id = id;
-    this.type = this.constructor.type;
-    this.subtype = this.constructor.subtype;
+    this.type = type;
+    this.subtype = subtype;
   }
 
   toString() {
-    return `[${this.constructor.name} ${this.type}:${this.subtype}]`;
+    return `[action ${this.type}]`;
   }
 
   
@@ -518,795 +409,98 @@ class Action {
 
 
 
-  dispatch(state, inputSource, tickDuration, win) {
-    throw new Error(
-      `Action subclass ${this.constructor.name} must override dispatch()`
-    );
-  }
-
-  
 
 
 
-
-
-
-
-
-
-
-  static fromJSON(type, id, actionItem) {
-    const subtype = actionItem.type;
-    const subtypeMap = actionTypes.get(type);
-    if (subtypeMap === undefined) {
-      throw new lazy.error.InvalidArgumentError(`Unknown action type: ${type}`);
+  static fromJSON(actionSequence, actionItem) {
+    let type = actionSequence.type;
+    let id = actionSequence.id;
+    let subtypes = ACTIONS[type];
+    if (!subtypes) {
+      throw new lazy.error.InvalidArgumentError("Unknown type: " + type);
     }
-    let cls = subtypeMap.get(subtype);
-    
-    if (cls === undefined) {
-      cls = actionTypes.get("none").get(subtype);
-    }
-    if (cls === undefined) {
+    let subtype = actionItem.type;
+    if (!subtypes.has(subtype)) {
       throw new lazy.error.InvalidArgumentError(
-        `Unknown subtype ${subtype} for type ${type}`
+        `Unknown subtype for ${type} action: ${subtype}`
       );
     }
-    return cls.fromJSON(id, actionItem);
-  }
-}
 
-
-
-
-class NullAction extends Action {
-  static type = "none";
-}
-
-
-
-
-
-
-
-
-class PauseAction extends NullAction {
-  static subtype = "pause";
-  affectsWallClockTime = true;
-
-  constructor(id, options) {
-    super(id);
-    const { duration } = options;
-    this.duration = duration;
-  }
-
-  
-
-
-
-
-
-
-
-
-  dispatch(state, inputSource, tickDuration, win) {
-    const ms = this.duration ?? tickDuration;
-    lazy.logger.trace(
-      ` Dispatch ${this.constructor.name} with ${this.id} ${ms}`
-    );
-    return lazy.Sleep(ms);
-  }
-
-  static fromJSON(id, actionItem) {
-    const { duration } = actionItem;
-    if (duration !== undefined) {
-      lazy.assert.positiveInteger(
-        duration,
-        lazy.pprint`Expected 'duration' (${duration}) to be >= 0`
+    let item = new action.Action(id, type, subtype);
+    if (type === "pointer") {
+      action.processPointerAction(
+        id,
+        action.PointerParameters.fromJSON(actionSequence.parameters),
+        item
       );
     }
-    return new this(id, { duration });
-  }
-}
 
-
-
-
-
-
-
-
-class KeyAction extends Action {
-  static type = "key";
-
-  constructor(id, options) {
-    super(id);
-    const { value } = options;
-    this.value = value;
-  }
-
-  getEventData(inputSource) {
-    let value = this.value;
-    if (inputSource.shift) {
-      value = lazy.keyData.getShiftedKey(value);
-    }
-    return new KeyEventData(value);
-  }
-
-  static fromJSON(id, actionItem) {
-    
-    
-    
-    
-    const value = actionItem.value;
-    lazy.assert.string(
-      value,
-      "Expected 'value' to be a string that represents single code point " +
-        lazy.pprint`or grapheme cluster, got ${value}`
-    );
-    return new this(id, { value });
-  }
-}
-
-
-
-
-
-
-
-class KeyDownAction extends KeyAction {
-  static subtype = "keyDown";
-
-  dispatch(state, inputSource, tickDuration, win) {
-    lazy.logger.trace(
-      `Dispatch ${this.constructor.name} with ${this.id} ${this.value}`
-    );
-    return new Promise(resolve => {
-      const keyEvent = this.getEventData(inputSource);
-      keyEvent.repeat = inputSource.isPressed(keyEvent.key);
-      inputSource.press(keyEvent.key);
-      if (keyEvent.key in MODIFIER_NAME_LOOKUP) {
-        inputSource.setModState(keyEvent.key, true);
-      }
-
-      
-      state.inputsToCancel.push(new KeyUpAction(this.id, this));
-      keyEvent.update(state, inputSource);
-      lazy.event.sendKeyDown(keyEvent, win);
-
-      resolve();
-    });
-  }
-}
-
-
-
-
-
-
-
-class KeyUpAction extends KeyAction {
-  static subtype = "keyUp";
-
-  dispatch(state, inputSource, tickDuration, win) {
-    lazy.logger.trace(
-      `Dispatch ${this.constructor.name} with ${this.id} ${this.value}`
-    );
-    return new Promise(resolve => {
-      const keyEvent = this.getEventData(inputSource);
-      if (!inputSource.isPressed(keyEvent.key)) {
-        resolve();
-        return;
-      }
-      if (keyEvent.key in MODIFIER_NAME_LOOKUP) {
-        inputSource.setModState(keyEvent.key, false);
-      }
-      inputSource.release(keyEvent.key);
-      keyEvent.update(state, inputSource);
-
-      lazy.event.sendKeyUp(keyEvent, win);
-      resolve();
-    });
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class PointerAction extends Action {
-  static type = "pointer";
-
-  constructor(id, options) {
-    super(id);
-    const {
-      width,
-      height,
-      pressure,
-      tangentialPressure,
-      tiltX,
-      tiltY,
-      twist,
-      altitudeAngle,
-      azimuthAngle,
-    } = options;
-    this.width = width;
-    this.height = height;
-    this.pressure = pressure;
-    this.tangentialPressure = tangentialPressure;
-    this.tiltX = tiltX;
-    this.tiltY = tiltY;
-    this.twist = twist;
-    this.altitudeAngle = altitudeAngle;
-    this.azimuthAngle = azimuthAngle;
-  }
-
-  
-
-
-
-
-  static validateCommon(actionItem) {
-    const {
-      width,
-      height,
-      pressure,
-      tangentialPressure,
-      tiltX,
-      tiltY,
-      twist,
-      altitudeAngle,
-      azimuthAngle,
-    } = actionItem;
-    if (width !== undefined) {
-      lazy.assert.positiveInteger(
-        width,
-        lazy.pprint`Expected 'width' (${width}) to be >= 0`
-      );
-    }
-    if (height !== undefined) {
-      lazy.assert.positiveInteger(
-        height,
-        lazy.pprint`Expected 'height' (${height}) to be >= 0`
-      );
-    }
-    if (pressure !== undefined) {
-      lazy.assert.numberInRange(
-        pressure,
-        [0, 1],
-        lazy.pprint`Expected 'pressure' (${pressure}) to be in range 0 to 1`
-      );
-    }
-    if (tangentialPressure !== undefined) {
-      lazy.assert.numberInRange(
-        tangentialPressure,
-        [-1, 1],
-        lazy.pprint`Expected 'tangentialPressure' (${tangentialPressure}) to be in range -1 to 1`
-      );
-    }
-    if (tiltX !== undefined) {
-      lazy.assert.integerInRange(
-        tiltX,
-        [-90, 90],
-        lazy.pprint`Expected 'tiltX' (${tiltX}) to be in range -90 to 90`
-      );
-    }
-    if (tiltY !== undefined) {
-      lazy.assert.integerInRange(
-        tiltY,
-        [-90, 90],
-        lazy.pprint`Expected 'tiltY' (${tiltY}) to be in range -90 to 90`
-      );
-    }
-    if (twist !== undefined) {
-      lazy.assert.integerInRange(
-        twist,
-        [0, 359],
-        lazy.pprint`Expected 'twist' (${twist}) to be in range 0 to 359`
-      );
-    }
-    if (altitudeAngle !== undefined) {
-      lazy.assert.numberInRange(
-        altitudeAngle,
-        [0, Math.PI / 2],
-        lazy.pprint`Expected 'altitudeAngle' (${altitudeAngle}) to be in range 0 to ${Math.PI /
-          2}`
-      );
-    }
-    if (azimuthAngle !== undefined) {
-      lazy.assert.numberInRange(
-        azimuthAngle,
-        [0, 2 * Math.PI],
-        lazy.pprint`Expected 'azimuthAngle' (${azimuthAngle}) to be in range 0 to ${2 *
-          Math.PI}`
-      );
-    }
-    return {
-      width,
-      height,
-      pressure,
-      tangentialPressure,
-      tiltX,
-      tiltY,
-      twist,
-      altitudeAngle,
-      azimuthAngle,
-    };
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class PointerDownAction extends PointerAction {
-  static subtype = "pointerDown";
-
-  constructor(id, options) {
-    super(id, options);
-    const { button } = options;
-    this.button = button;
-  }
-
-  dispatch(state, inputSource, tickDuration, win) {
-    lazy.logger.trace(
-      `Dispatch ${this.constructor.name} ${inputSource.pointer.type} with id: ${this.id} button: ${this.button}`
-    );
-    return new Promise(resolve => {
-      if (inputSource.isPressed(this.button)) {
-        resolve();
-        return;
-      }
-
-      inputSource.press(this.button);
-      
-      state.inputsToCancel.push(new PointerUpAction(this.id, this));
-      inputSource.pointer.pointerDown(state, inputSource, this, win);
-      resolve();
-    });
-  }
-
-  static fromJSON(id, actionItem) {
-    const props = PointerAction.validateCommon(actionItem);
-    const { button } = actionItem;
-    lazy.assert.positiveInteger(
-      button,
-      lazy.pprint`Expected 'button' (${button}) to be >= 0`
-    );
-    props.button = button;
-    return new this(id, props);
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class PointerUpAction extends PointerAction {
-  static subtype = "pointerUp";
-
-  constructor(id, options) {
-    super(id, options);
-    const { button } = options;
-    this.button = button;
-  }
-
-  dispatch(state, inputSource, tickDuration, win) {
-    lazy.logger.trace(
-      `Dispatch ${this.constructor.name} ${inputSource.pointer.type} with id: ${this.id} button: ${this.button}`
-    );
-    return new Promise(resolve => {
-      if (!inputSource.isPressed(this.button)) {
-        resolve();
-        return;
-      }
-
-      inputSource.release(this.button);
-      inputSource.pointer.pointerUp(state, inputSource, this, win);
-
-      resolve();
-    });
-  }
-
-  static fromJSON(id, actionItem) {
-    const props = PointerAction.validateCommon(actionItem);
-    const { button } = actionItem;
-    lazy.assert.positiveInteger(
-      button,
-      lazy.pprint`Expected 'button' (${button}) to be >= 0`
-    );
-    props.button = button;
-    return new this(id, props);
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class PointerMoveAction extends PointerAction {
-  static subtype = "pointerMove";
-  affectsWallClockTime = true;
-
-  constructor(id, options) {
-    super(id, options);
-    const { duration, origin, x, y } = options;
-    this.duration = duration;
-    this.origin = origin;
-    this.x = x;
-    this.y = y;
-  }
-
-  dispatch(state, inputSource, tickDuration, win) {
-    lazy.logger.trace(
-      `Dispatch ${this.constructor.name} ${inputSource.pointer.type}  with id: ${this.id} x: ${this.x} y: ${this.y}`
-    );
-    const target = this.origin.getTargetCoordinates(
-      state,
-      inputSource,
-      [this.x, this.y],
-      win
-    );
-
-    assertInViewPort(target, win);
-
-    return moveOverTime(
-      [[inputSource.x, inputSource.y]],
-      [target],
-      this.duration ?? tickDuration,
-      target => this.performOnePointerMove(state, inputSource, target, win)
-    );
-  }
-
-  
-
-
-
-
-
-
-
-
-  performOnePointerMove(state, inputSource, targets, win) {
-    if (targets.length !== 1) {
-      throw new Error(
-        "PointerMoveAction.performOnePointerMove requires a single target"
-      );
-    }
-    const target = targets[0];
-    lazy.logger.trace(
-      `PointerMoveAction.performOnePointerMove ${JSON.stringify(target)}`
-    );
-    if (target[0] == inputSource.x && target[1] == inputSource.y) {
-      return;
+    switch (item.subtype) {
+      case action.KeyUp:
+      case action.KeyDown:
+        let key = actionItem.value;
+        
+        
+        
+        lazy.assert.string(
+          key,
+          "Expected 'value' to be a string that represents single code point " +
+            lazy.pprint`or grapheme cluster, got ${key}`
+        );
+        item.value = key;
+        break;
+
+      case action.PointerDown:
+      case action.PointerUp:
+        lazy.assert.positiveInteger(
+          actionItem.button,
+          lazy.pprint`Expected 'button' (${actionItem.button}) to be >= 0`
+        );
+        item.button = actionItem.button;
+        break;
+
+      case action.PointerMove:
+        item.duration = actionItem.duration;
+        if (typeof item.duration != "undefined") {
+          lazy.assert.positiveInteger(
+            item.duration,
+            lazy.pprint`Expected 'duration' (${item.duration}) to be >= 0`
+          );
+        }
+        item.origin = action.PointerOrigin.get(actionItem.origin);
+        item.x = actionItem.x;
+        if (typeof item.x != "undefined") {
+          lazy.assert.integer(
+            item.x,
+            lazy.pprint`Expected 'x' (${item.x}) to be an Integer`
+          );
+        }
+        item.y = actionItem.y;
+        if (typeof item.y != "undefined") {
+          lazy.assert.integer(
+            item.y,
+            lazy.pprint`Expected 'y' (${item.y}) to be an Integer`
+          );
+        }
+        break;
+
+      case action.PointerCancel:
+        throw new lazy.error.UnsupportedOperationError();
+
+      case action.Pause:
+        item.duration = actionItem.duration;
+        if (typeof item.duration != "undefined") {
+          
+          lazy.assert.positiveInteger(item.duration,
+            lazy.pprint`Expected 'duration' (${item.duration}) to be >= 0`
+          );
+        }
+        break;
     }
 
-    inputSource.pointer.pointerMove(
-      state,
-      inputSource,
-      this,
-      target[0],
-      target[1],
-      win
-    );
-
-    inputSource.x = target[0];
-    inputSource.y = target[1];
+    return item;
   }
-
-  static fromJSON(id, actionItem) {
-    const props = PointerAction.validateCommon(actionItem);
-    const { duration, origin, x, y } = actionItem;
-    if (duration !== undefined) {
-      lazy.assert.positiveInteger(
-        duration,
-        lazy.pprint`Expected 'duration' (${duration}) to be >= 0`
-      );
-    }
-    const originObject = Origin.fromJSON(origin);
-    if (x !== undefined) {
-      lazy.assert.integer(x, lazy.pprint`Expected 'x' (${x}) to be an Integer`);
-    }
-    if (y !== undefined) {
-      lazy.assert.integer(y, lazy.pprint`Expected 'y' (${y}) to be an Integer`);
-    }
-    props.duration = duration;
-    props.origin = originObject;
-    props.x = x;
-    props.y = y;
-    return new this(id, props);
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-async function moveOverTime(startCoords, targetCoords, duration, callback) {
-  lazy.logger.trace(
-    `moveOverTime start: ${startCoords} target: ${targetCoords} duration: ${duration}`
-  );
-
-  if (startCoords.length !== targetCoords.length) {
-    throw new Error(
-      "Expected equal number of start coordinates and target coordinates"
-    );
-  }
-
-  if (
-    !startCoords.every(item => item.length == 2) ||
-    !targetCoords.every(item => item.length == 2)
-  ) {
-    throw new Error(
-      "Expected start coordinates target coordinates to be Array of multiple [x,y] coordinates."
-    );
-  }
-
-  if (duration === 0) {
-    
-    callback(targetCoords);
-    return;
-  }
-
-  const timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
-  
-  const fps60 = 17;
-
-  const distances = targetCoords.map((targetCoord, i) => {
-    const startCoord = startCoords[i];
-    return [targetCoord[0] - startCoord[0], targetCoord[1] - startCoord[1]];
-  });
-  const ONE_SHOT = Ci.nsITimer.TYPE_ONE_SHOT;
-  const startTime = Date.now();
-  const intermediatePointerEvents = (async () => {
-    
-    await new Promise(resolveTimer =>
-      timer.initWithCallback(resolveTimer, fps60, ONE_SHOT)
-    );
-
-    let durationRatio = Math.floor(Date.now() - startTime) / duration;
-    const epsilon = fps60 / duration / 10;
-    while (1 - durationRatio > epsilon) {
-      const intermediateTargets = startCoords.map((startCoord, i) => {
-        let distance = distances[i];
-        return [
-          Math.floor(durationRatio * distance[0] + startCoord[0]),
-          Math.floor(durationRatio * distance[1] + startCoord[1]),
-        ];
-      });
-      callback(intermediateTargets);
-      
-      await new Promise(resolveTimer =>
-        timer.initWithCallback(resolveTimer, fps60, ONE_SHOT)
-      );
-
-      durationRatio = Math.floor(Date.now() - startTime) / duration;
-    }
-  })();
-
-  await intermediatePointerEvents;
-
-  
-  
-  callback(targetCoords);
-}
-
-const actionTypes = new Map();
-for (let cls of [
-  KeyDownAction,
-  KeyUpAction,
-  PauseAction,
-  PointerDownAction,
-  PointerUpAction,
-  PointerMoveAction,
-]) {
-  if (!actionTypes.has(cls.type)) {
-    actionTypes.set(cls.type, new Map());
-  }
-  actionTypes.get(cls.type).set(cls.subtype, cls);
-}
-
-
-
-
-class Pointer {
-  
-  static type = null;
-
-  constructor(id) {
-    this.id = id;
-  }
-
-  
-
-
-
-
-
-
-
-  pointerDown(state, inputSource, action, win) {
-    throw new Error(
-      `Unimplemented pointerDown for pointerType ${this.constructor.type}`
-    );
-  }
-
-  
-
-
-
-
-
-
-
-  pointerUp(state, inputSource, action, win) {
-    throw new Error(
-      `Unimplemented pointerUp for pointerType ${this.constructor.type}`
-    );
-  }
-
-  
-
-
-
-
-
-
-
-
-  pointerMove(state, inputSource, targetX, targetY, win) {
-    throw new Error(
-      `Unimplemented pointerMove for pointerType ${this.constructor.type}`
-    );
-  }
-
-  
-
-
-
-
-
-
-  static fromJSON(pointerId, pointerType) {
-    const cls = pointerTypes.get(pointerType);
-    if (cls === undefined) {
-      throw new lazy.error.InvalidArgumentError(
-        `Unknown pointerType: ${pointerType}`
-      );
-    }
-    return new cls(pointerId);
-  }
-}
-
-
-
-
-class MousePointer extends Pointer {
-  static type = "mouse";
-
-  pointerDown(state, inputSource, action, win) {
-    const mouseEvent = new MouseEventData("mousedown", {
-      button: action.button,
-    });
-    mouseEvent.update(state, inputSource);
-    if (mouseEvent.ctrlKey) {
-      if (lazy.AppInfo.isMac) {
-        mouseEvent.button = 2;
-        lazy.event.DoubleClickTracker.resetClick();
-      }
-    } else if (lazy.event.DoubleClickTracker.isClicked()) {
-      mouseEvent.clickCount = 2;
-    }
-    lazy.event.synthesizeMouseAtPoint(
-      inputSource.x,
-      inputSource.y,
-      mouseEvent,
-      win
-    );
-    if (
-      lazy.event.MouseButton.isSecondary(mouseEvent.button) ||
-      (mouseEvent.ctrlKey && lazy.AppInfo.isMac)
-    ) {
-      const contextMenuEvent = { ...mouseEvent, type: "contextmenu" };
-      lazy.event.synthesizeMouseAtPoint(
-        inputSource.x,
-        inputSource.y,
-        contextMenuEvent,
-        win
-      );
-    }
-  }
-
-  pointerUp(state, inputSource, action, win) {
-    const mouseEvent = new MouseEventData("mouseup", {
-      button: action.button,
-    });
-    mouseEvent.update(state, inputSource);
-    if (lazy.event.DoubleClickTracker.isClicked()) {
-      mouseEvent.clickCount = 2;
-    }
-    lazy.event.synthesizeMouseAtPoint(
-      inputSource.x,
-      inputSource.y,
-      mouseEvent,
-      win
-    );
-  }
-
-  pointerMove(state, inputSource, action, targetX, targetY, win) {
-    const mouseEvent = new MouseEventData("mousemove");
-    mouseEvent.update(state, inputSource);
-    lazy.event.synthesizeMouseAtPoint(targetX, targetY, mouseEvent, win);
-  }
-}
-
-const pointerTypes = new Map();
-for (let cls of [MousePointer]) {
-  pointerTypes.set(cls.type, cls);
-}
+};
 
 
 
@@ -1325,38 +519,24 @@ action.Chain = class extends Array {
 
 
 
-  dispatch(state, win) {
-    let i = 1;
-    const chainEvents = (async () => {
-      for (let tickActions of this) {
-        lazy.logger.trace(`Dispatching tick ${i++}/${this.length}`);
-        await tickActions.dispatch(state, win);
-      }
-    })();
-    return chainEvents;
-  }
-
-  
 
 
 
-
-
-
-
-  static fromJSON(state, actions) {
+  static fromJSON(actions) {
     lazy.assert.array(
       actions,
       lazy.pprint`Expected 'actions' to be an array, got ${actions}`
     );
 
-    const actionsByTick = new this();
+    let actionsByTick = new action.Chain();
     for (let actionSequence of actions) {
-      const inputSourceActions = Sequence.fromJSON(state, actionSequence);
+      
+      
+      let inputSourceActions = action.Sequence.fromJSON(actionSequence);
       for (let i = 0; i < inputSourceActions.length; i++) {
         
         if (actionsByTick.length < i + 1) {
-          actionsByTick.push(new TickActions());
+          actionsByTick.push([]);
         }
         actionsByTick[i].push(inputSourceActions[i]);
       }
@@ -1368,55 +548,8 @@ action.Chain = class extends Array {
 
 
 
-class TickActions extends Array {
-  
 
-
-
-
-  getDuration() {
-    let max = 0;
-    for (let action of this) {
-      if (action.affectsWallClockTime && action.duration) {
-        max = Math.max(action.duration, max);
-      }
-    }
-    return max;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  dispatch(state, win) {
-    const tickDuration = this.getDuration();
-    const pendingEvents = this.map(action => {
-      const inputSource = state.getInputSource(action.id);
-      return action.dispatch(state, inputSource, tickDuration, win);
-    });
-    return Promise.all(pendingEvents);
-  }
-}
-
-
-
-
-
-
-
-
-class Sequence extends Array {
+action.Sequence = class extends Array {
   toString() {
     return `[sequence ${super.toString()}]`;
   }
@@ -1427,38 +560,61 @@ class Sequence extends Array {
 
 
 
-  static fromJSON(state, actionSequence) {
-    
-    const { id, type, actions } = actionSequence;
 
+
+
+
+
+
+
+  static fromJSON(actionSequence) {
     
+    let inputSourceState = InputState.fromJSON(actionSequence);
+    let id = actionSequence.id;
+    lazy.assert.defined(id, "Expected 'id' to be defined");
+    lazy.assert.string(
+      id,
+      lazy.pprint`Expected 'id' to be a string, got ${id}`
+    );
+    let actionItems = actionSequence.actions;
     lazy.assert.array(
-      actions,
+      actionItems,
       "Expected 'actionSequence.actions' to be an array, " +
         lazy.pprint`got ${actionSequence.actions}`
     );
 
-    
-    InputSource.fromJSON(state, actionSequence);
-
-    const sequence = new this();
-    for (let actionItem of actions) {
-      sequence.push(Action.fromJSON(type, id, actionItem));
+    if (!action.inputStateMap.has(id)) {
+      action.inputStateMap.set(id, inputSourceState);
+    } else if (!action.inputStateMap.get(id).is(inputSourceState)) {
+      throw new lazy.error.InvalidArgumentError(
+        `Expected ${id} to be mapped to ${inputSourceState}, ` +
+          `got ${action.inputStateMap.get(id)}`
+      );
     }
 
-    return sequence;
+    let actions = new action.Sequence();
+    for (let actionItem of actionItems) {
+      actions.push(action.Action.fromJSON(actionSequence, actionItem));
+    }
+
+    return actions;
   }
-}
+};
 
 
 
 
-class InputEventData {
-  constructor() {
-    this.altKey = false;
-    this.shiftKey = false;
-    this.ctrlKey = false;
-    this.metaKey = false;
+
+
+
+
+action.PointerParameters = class {
+  constructor(pointerType = "mouse") {
+    this.pointerType = action.PointerType.get(pointerType);
+  }
+
+  toString() {
+    return `[pointerParameters ${this.pointerType}]`;
   }
 
   
@@ -1467,78 +623,270 @@ class InputEventData {
 
 
 
-  update(state, inputSource) {}
 
-  toString() {
-    return `${this.constructor.name} ${JSON.stringify(this)}`;
+  static fromJSON(parametersData) {
+    if (typeof parametersData == "undefined") {
+      return new action.PointerParameters();
+    }
+    return new action.PointerParameters(parametersData.pointerType);
   }
-}
+};
 
 
 
 
 
 
-class KeyEventData extends InputEventData {
+
+
+
+
+
+
+
+
+
+
+
+
+action.processPointerAction = function(id, pointerParams, act) {
+  if (
+    action.inputStateMap.has(id) &&
+    action.inputStateMap.get(id).type !== act.type
+  ) {
+    throw new lazy.error.InvalidArgumentError(
+      `Expected 'id' ${id} to be mapped to InputState whose type is ` +
+        action.inputStateMap.get(id).type +
+        lazy.pprint` , got ${act.type}`
+    );
+  }
+  let pointerType = pointerParams.pointerType;
+  if (
+    action.inputStateMap.has(id) &&
+    action.inputStateMap.get(id).subtype !== pointerType
+  ) {
+    throw new lazy.error.InvalidArgumentError(
+      `Expected 'id' ${id} to be mapped to InputState whose subtype is ` +
+        action.inputStateMap.get(id).subtype +
+        lazy.pprint` , got ${pointerType}`
+    );
+  }
+  act.pointerType = pointerParams.pointerType;
+};
+
+
+action.Key = class {
   constructor(rawKey) {
-    super();
-    const { key, code, location, printable } = lazy.keyData.getData(rawKey);
+    const { key, code, location, printable } = lazy.event.getKeyData(rawKey);
     this.key = key;
     this.code = code;
     this.location = location;
     this.printable = printable;
+    this.altKey = false;
+    this.shiftKey = false;
+    this.ctrlKey = false;
+    this.metaKey = false;
     this.repeat = false;
     
   }
 
-  update(state, inputSource) {
-    this.altKey = inputSource.alt;
-    this.shiftKey = inputSource.shift;
-    this.ctrlKey = inputSource.ctrl;
-    this.metaKey = inputSource.meta;
+  update(inputState) {
+    this.altKey = inputState.alt;
+    this.shiftKey = inputState.shift;
+    this.ctrlKey = inputState.ctrl;
+    this.metaKey = inputState.meta;
   }
-}
+};
 
 
-
-
-
-
-class PointerEventData extends InputEventData {
-  constructor(type) {
-    super();
+action.Mouse = class {
+  constructor(type, button = 0) {
     this.type = type;
-    this.buttons = 0;
-  }
-
-  update(state, inputSource) {
-    
-    
-    for (let [, otherInputSource] of state.inputSourcesByType("key")) {
-      this.altKey = otherInputSource.alt || this.altKey;
-      this.ctrlKey = otherInputSource.ctrl || this.ctrlKey;
-      this.metaKey = otherInputSource.meta || this.metaKey;
-      this.shiftKey = otherInputSource.shift || this.shiftKey;
-    }
-    let allButtons = Array.from(inputSource.pressed);
-    this.buttons = allButtons.reduce((a, i) => a + Math.pow(2, i), 0);
-  }
-}
-
-
-class MouseEventData extends PointerEventData {
-  constructor(type, options = {}) {
-    super(type);
-    const { button = 0 } = options;
     lazy.assert.positiveInteger(button);
     this.button = button;
     this.buttons = 0;
+    this.altKey = false;
+    this.shiftKey = false;
+    this.metaKey = false;
+    this.ctrlKey = false;
+    
+    
+    for (let inputState of action.inputStateMap.values()) {
+      if (inputState.type == "key") {
+        this.altKey = inputState.alt || this.altKey;
+        this.ctrlKey = inputState.ctrl || this.ctrlKey;
+        this.metaKey = inputState.meta || this.metaKey;
+        this.shiftKey = inputState.shift || this.shiftKey;
+      }
+    }
   }
 
-  update(state, inputSource) {
-    super.update(state, inputSource);
-    this.id = inputSource.pointer.id;
+  update(inputState) {
+    let allButtons = Array.from(inputState.pressed);
+    this.buttons = allButtons.reduce((a, i) => a + Math.pow(2, i), 0);
   }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+action.dispatch = function(chain, win, specCompatPointerOrigin = true) {
+  action.specCompatPointerOrigin = specCompatPointerOrigin;
+
+  let chainEvents = (async () => {
+    for (let tickActions of chain) {
+      await action.dispatchTickActions(
+        tickActions,
+        action.computeTickDuration(tickActions),
+        win
+      );
+    }
+  })();
+  return chainEvents;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+action.dispatchTickActions = function(tickActions, tickDuration, win) {
+  let pendingEvents = tickActions.map(toEvents(tickDuration, win));
+  return Promise.all(pendingEvents);
+};
+
+
+
+
+
+
+
+
+
+
+action.computeTickDuration = function(tickActions) {
+  let max = 0;
+  for (let a of tickActions) {
+    let affectsWallClockTime =
+      a.subtype == action.Pause ||
+      (a.type == "pointer" && a.subtype == action.PointerMove);
+    if (affectsWallClockTime && a.duration) {
+      max = Math.max(a.duration, max);
+    }
+  }
+  return max;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+action.computePointerDestination = function(a, inputState, center = undefined) {
+  let { x, y } = a;
+  switch (a.origin) {
+    case action.PointerOrigin.Viewport:
+      break;
+    case action.PointerOrigin.Pointer:
+      x += inputState.x;
+      y += inputState.y;
+      break;
+    default:
+      
+      lazy.assert.defined(center);
+      lazy.assert.in("x", center);
+      lazy.assert.in("y", center);
+      x += center.x;
+      y += center.y;
+  }
+  return { x, y };
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+function toEvents(tickDuration, win) {
+  return a => {
+    let inputState = action.inputStateMap.get(a.id);
+
+    switch (a.subtype) {
+      case action.KeyUp:
+        return dispatchKeyUp(a, inputState, win);
+
+      case action.KeyDown:
+        return dispatchKeyDown(a, inputState, win);
+
+      case action.PointerDown:
+        return dispatchPointerDown(a, inputState, win);
+
+      case action.PointerUp:
+        return dispatchPointerUp(a, inputState, win);
+
+      case action.PointerMove:
+        return dispatchPointerMove(a, inputState, tickDuration, win);
+
+      case action.PointerCancel:
+        throw new lazy.error.UnsupportedOperationError();
+
+      case action.Pause:
+        return dispatchPause(a, tickDuration);
+    }
+
+    return undefined;
+  };
 }
 
 
@@ -1552,16 +900,349 @@ class MouseEventData extends PointerEventData {
 
 
 
-function assertInViewPort(target, win) {
-  const [x, y] = target;
+
+
+
+function dispatchKeyDown(a, inputState, win) {
+  return new Promise(resolve => {
+    let value = a.value;
+    if (inputState.shift) {
+      value = lazy.event.getShiftedKey(value);
+    }
+
+    const keyEvent = new action.Key(value);
+    keyEvent.repeat = inputState.isPressed(keyEvent.key);
+
+    inputState.press(keyEvent.key);
+
+    if (keyEvent.key in MODIFIER_NAME_LOOKUP) {
+      inputState.setModState(keyEvent.key, true);
+    }
+
+    
+    action.inputsToCancel.push(Object.assign({}, a, { subtype: action.KeyUp }));
+    keyEvent.update(inputState);
+    lazy.event.sendKeyDown(keyEvent, win);
+
+    resolve();
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function dispatchKeyUp(a, inputState, win) {
+  return new Promise(resolve => {
+    let value = a.value;
+    if (inputState.shift) {
+      value = lazy.event.getShiftedKey(value);
+    }
+
+    const keyEvent = new action.Key(value);
+
+    if (!inputState.isPressed(keyEvent.key)) {
+      resolve();
+      return;
+    }
+
+    if (keyEvent.key in MODIFIER_NAME_LOOKUP) {
+      inputState.setModState(keyEvent.key, false);
+    }
+    inputState.release(keyEvent.key);
+    keyEvent.update(inputState);
+
+    lazy.event.sendKeyUp(keyEvent, win);
+    resolve();
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function dispatchPointerDown(a, inputState, win) {
+  return new Promise(resolve => {
+    if (inputState.isPressed(a.button)) {
+      resolve();
+      return;
+    }
+
+    inputState.press(a.button);
+    
+    let copy = Object.assign({}, a, { subtype: action.PointerUp });
+    action.inputsToCancel.push(copy);
+
+    switch (inputState.subtype) {
+      case action.PointerType.Mouse:
+        let mouseEvent = new action.Mouse("mousedown", a.button);
+        mouseEvent.update(inputState);
+        if (mouseEvent.ctrlKey) {
+          if (lazy.AppInfo.isMac) {
+            mouseEvent.button = 2;
+            lazy.event.DoubleClickTracker.resetClick();
+          }
+        } else if (lazy.event.DoubleClickTracker.isClicked()) {
+          mouseEvent = Object.assign({}, mouseEvent, { clickCount: 2 });
+        }
+        lazy.event.synthesizeMouseAtPoint(
+          inputState.x,
+          inputState.y,
+          mouseEvent,
+          win
+        );
+        if (
+          lazy.event.MouseButton.isSecondary(a.button) ||
+          (mouseEvent.ctrlKey && lazy.AppInfo.isMac)
+        ) {
+          let contextMenuEvent = Object.assign({}, mouseEvent, {
+            type: "contextmenu",
+          });
+          lazy.event.synthesizeMouseAtPoint(
+            inputState.x,
+            inputState.y,
+            contextMenuEvent,
+            win
+          );
+        }
+        break;
+
+      case action.PointerType.Pen:
+      case action.PointerType.Touch:
+        throw new lazy.error.UnsupportedOperationError(
+          "Only 'mouse' pointer type is supported"
+        );
+
+      default:
+        throw new TypeError(`Unknown pointer type: ${inputState.subtype}`);
+    }
+
+    resolve();
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function dispatchPointerUp(a, inputState, win) {
+  return new Promise(resolve => {
+    if (!inputState.isPressed(a.button)) {
+      resolve();
+      return;
+    }
+
+    inputState.release(a.button);
+
+    switch (inputState.subtype) {
+      case action.PointerType.Mouse:
+        let mouseEvent = new action.Mouse("mouseup", a.button);
+        mouseEvent.update(inputState);
+        if (lazy.event.DoubleClickTracker.isClicked()) {
+          mouseEvent = Object.assign({}, mouseEvent, { clickCount: 2 });
+        }
+        lazy.event.synthesizeMouseAtPoint(
+          inputState.x,
+          inputState.y,
+          mouseEvent,
+          win
+        );
+        break;
+
+      case action.PointerType.Pen:
+      case action.PointerType.Touch:
+        throw new lazy.error.UnsupportedOperationError(
+          "Only 'mouse' pointer type is supported"
+        );
+
+      default:
+        throw new TypeError(`Unknown pointer type: ${inputState.subtype}`);
+    }
+
+    resolve();
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function dispatchPointerMove(a, inputState, tickDuration, win) {
+  const timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+  
+  const fps60 = 17;
+
+  return new Promise((resolve, reject) => {
+    const start = Date.now();
+    const [startX, startY] = [inputState.x, inputState.y];
+
+    let coords = getElementCenter(a.origin, win);
+    let target = action.computePointerDestination(a, inputState, coords);
+    const [targetX, targetY] = [target.x, target.y];
+
+    if (!inViewPort(targetX, targetY, win)) {
+      throw new lazy.error.MoveTargetOutOfBoundsError(
+        `(${targetX}, ${targetY}) is out of bounds of viewport ` +
+          `width (${win.innerWidth}) ` +
+          `and height (${win.innerHeight})`
+      );
+    }
+
+    const duration =
+      typeof a.duration == "undefined" ? tickDuration : a.duration;
+    if (duration === 0) {
+      
+      performOnePointerMove(inputState, targetX, targetY, win);
+      resolve();
+      return;
+    }
+
+    const distanceX = targetX - startX;
+    const distanceY = targetY - startY;
+    const ONE_SHOT = Ci.nsITimer.TYPE_ONE_SHOT;
+    let intermediatePointerEvents = (async () => {
+      
+      await new Promise(resolveTimer =>
+        timer.initWithCallback(resolveTimer, fps60, ONE_SHOT)
+      );
+
+      let durationRatio = Math.floor(Date.now() - start) / duration;
+      const epsilon = fps60 / duration / 10;
+      while (1 - durationRatio > epsilon) {
+        let x = Math.floor(durationRatio * distanceX + startX);
+        let y = Math.floor(durationRatio * distanceY + startY);
+        performOnePointerMove(inputState, x, y, win);
+        
+        await new Promise(resolveTimer =>
+          timer.initWithCallback(resolveTimer, fps60, ONE_SHOT)
+        );
+
+        durationRatio = Math.floor(Date.now() - start) / duration;
+      }
+    })();
+
+    
+    
+    intermediatePointerEvents
+      .then(() => {
+        performOnePointerMove(inputState, targetX, targetY, win);
+        resolve();
+      })
+      .catch(err => {
+        reject(err);
+      });
+  });
+}
+
+function performOnePointerMove(inputState, targetX, targetY, win) {
+  if (targetX == inputState.x && targetY == inputState.y) {
+    return;
+  }
+
+  switch (inputState.subtype) {
+    case action.PointerType.Mouse:
+      let mouseEvent = new action.Mouse("mousemove");
+      mouseEvent.update(inputState);
+      
+      lazy.event.synthesizeMouseAtPoint(targetX, targetY, mouseEvent, win);
+      break;
+
+    case action.PointerType.Pen:
+    case action.PointerType.Touch:
+      throw new lazy.error.UnsupportedOperationError(
+        "Only 'mouse' pointer type is supported"
+      );
+
+    default:
+      throw new TypeError(`Unknown pointer type: ${inputState.subtype}`);
+  }
+
+  inputState.x = targetX;
+  inputState.y = targetY;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+function dispatchPause(a, tickDuration) {
+  let ms = typeof a.duration == "undefined" ? tickDuration : a.duration;
+  return lazy.Sleep(ms);
+}
+
+
+
+function capitalize(str) {
+  lazy.assert.string(str);
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+function inViewPort(x, y, win) {
   lazy.assert.number(x, `Expected x to be finite number`);
   lazy.assert.number(y, `Expected y to be finite number`);
   
-  if (x < 0 || y < 0 || x > win.innerWidth || y > win.innerHeight) {
-    throw new lazy.error.MoveTargetOutOfBoundsError(
-      `(${x}, ${y}) is out of bounds of viewport ` +
-        `width (${win.innerWidth}) ` +
-        `and height (${win.innerHeight})`
-    );
+  return !(x < 0 || y < 0 || x > win.innerWidth || y > win.innerHeight);
+}
+
+function getElementCenter(el, win) {
+  if (lazy.element.isElement(el)) {
+    if (action.specCompatPointerOrigin) {
+      return lazy.element.getInViewCentrePoint(el.getClientRects()[0], win);
+    }
+    return lazy.element.coordinates(el);
   }
+  return {};
 }

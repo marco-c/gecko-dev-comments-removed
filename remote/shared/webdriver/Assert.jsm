@@ -246,29 +246,6 @@ assert.positiveNumber = function(obj, msg = "") {
 
 
 
-
-
-assert.numberInRange = function(obj, range, msg = "") {
-  const [lower, upper] = range;
-  assert.number(obj, msg);
-  msg = msg || lazy.pprint`Expected ${obj} to be >= ${lower} and <= ${upper}`;
-  return assert.that(n => n >= lower && n <= upper, msg)(obj);
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 assert.callable = function(obj, msg = "") {
   msg = msg || lazy.pprint`${obj} is not callable`;
   return assert.that(o => typeof o == "function", msg)(obj);
@@ -330,29 +307,6 @@ assert.positiveInteger = function(obj, msg = "") {
   assert.integer(obj, msg);
   msg = msg || lazy.pprint`Expected ${obj} to be >= 0`;
   return assert.that(n => n >= 0, msg)(obj);
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-assert.integerInRange = function(obj, range, msg = "") {
-  const [lower, upper] = range;
-  assert.integer(obj, msg);
-  msg = msg || lazy.pprint`Expected ${obj} to be >= ${lower} and <= ${upper}`;
-  return assert.that(n => n >= lower && n <= upper, msg)(obj);
 };
 
 
