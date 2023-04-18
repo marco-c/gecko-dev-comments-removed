@@ -2550,6 +2550,9 @@ pref("devtools.webconsole.groupWarningMessages", true);
 pref("devtools.browserconsole.contentMessages", false);
 
 
+pref("devtools.browserconsole.enableNetworkMonitoring", false);
+
+
 pref("devtools.source-map.client-service.enabled", true);
 
 
