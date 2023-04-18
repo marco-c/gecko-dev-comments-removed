@@ -537,6 +537,7 @@ macro_rules! lnf_int_feature {
 
 
 
+#[allow(unused)]
 macro_rules! bool_pref_feature {
     ($feature_name:expr, $pref:tt) => {{
         fn __eval(_: &Context) -> bool {
@@ -557,7 +558,7 @@ macro_rules! bool_pref_feature {
 
 
 
-pub static MEDIA_FEATURES: [QueryFeatureDescription; 60] = [
+pub static MEDIA_FEATURES: [QueryFeatureDescription; 59] = [
     feature!(
         atom!("width"),
         AllowsRanges::Yes,
@@ -846,8 +847,4 @@ pub static MEDIA_FEATURES: [QueryFeatureDescription; 60] = [
         GTKCSDReversedPlacement
     ),
     lnf_int_feature!(atom!("-moz-system-dark-theme"), SystemUsesDarkTheme),
-    bool_pref_feature!(
-        atom!("-moz-proton-places-tooltip"),
-        "browser.proton.places-tooltip.enabled"
-    ),
 ];
