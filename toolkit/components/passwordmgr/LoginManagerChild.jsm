@@ -236,8 +236,7 @@ const observer = {
       
       case "blur": {
         if (docState.generatedPasswordFields.has(field)) {
-          const unmask = false;
-          loginManagerChild._togglePasswordFieldMasking(field, unmask);
+          docState._togglePasswordFieldMasking(field, false);
         }
         break;
       }
@@ -432,8 +431,7 @@ const observer = {
           docState.generatedPasswordFields.has(field)
         ) {
           
-          const unmask = true;
-          loginManagerChild._togglePasswordFieldMasking(field, unmask);
+          docState._togglePasswordFieldMasking(field, true);
           break;
         }
 
@@ -659,6 +657,31 @@ class LoginFormState {
     }
 
     return true;
+  }
+
+  _togglePasswordFieldMasking(passwordField, unmask) {
+    let { editor } = passwordField;
+
+    if (passwordField.type != "password") {
+      
+      lazy.log("_togglePasswordFieldMasking: Field isn't type=password");
+      return;
+    }
+
+    if (!unmask && !editor) {
+      
+      return;
+    }
+
+    if (unmask) {
+      editor.unmask(0);
+      return;
+    }
+
+    if (editor.autoMaskingEnabled) {
+      return;
+    }
+    editor.mask();
   }
 }
 
@@ -2317,7 +2340,7 @@ class LoginManagerChild extends JSWindowActorChild {
     }
     if (passwordField.ownerDocument.activeElement == passwordField) {
       
-      this._togglePasswordFieldMasking(passwordField, true);
+      docState._togglePasswordFieldMasking(passwordField, true);
     }
   }
 
@@ -2346,9 +2369,8 @@ class LoginManagerChild extends JSWindowActorChild {
   _stopTreatingAsGeneratedPasswordField(passwordField) {
     lazy.log("_stopTreatingAsGeneratedPasswordField");
 
-    let fields = this.stateForDocument(passwordField.ownerDocument)
-      .generatedPasswordFields;
-    fields.delete(passwordField);
+    const docState = this.stateForDocument(passwordField.ownerDocument);
+    docState.generatedPasswordFields.delete(passwordField);
 
     
     for (let eventType of ["blur", "focus"]) {
@@ -2359,7 +2381,7 @@ class LoginManagerChild extends JSWindowActorChild {
     }
 
     
-    this._togglePasswordFieldMasking(passwordField, false);
+    docState._togglePasswordFieldMasking(passwordField, false);
   }
 
   
@@ -2494,31 +2516,6 @@ class LoginManagerChild extends JSWindowActorChild {
       confirmPasswordInput.setUserInput(passwordField.value);
       this._highlightFilledField(confirmPasswordInput);
     }
-  }
-
-  _togglePasswordFieldMasking(passwordField, unmask) {
-    let { editor } = passwordField;
-
-    if (passwordField.type != "password") {
-      
-      lazy.log("_togglePasswordFieldMasking: Field isn't type=password");
-      return;
-    }
-
-    if (!unmask && !editor) {
-      
-      return;
-    }
-
-    if (unmask) {
-      editor.unmask(0);
-      return;
-    }
-
-    if (editor.autoMaskingEnabled) {
-      return;
-    }
-    editor.mask();
   }
 
   
