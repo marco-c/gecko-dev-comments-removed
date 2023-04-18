@@ -124,14 +124,12 @@ void HTMLDialogElement::UnbindFromTree(bool aNullParent) {
 
 void HTMLDialogElement::ShowModal(ErrorResult& aError) {
   if (!IsInComposedDoc()) {
-    aError.ThrowInvalidStateError("Dialog element is not connected");
-    return;
+    return aError.ThrowInvalidStateError("Dialog element is not connected");
   }
 
   if (Open()) {
-    aError.ThrowInvalidStateError(
+    return aError.ThrowInvalidStateError(
         "Dialog element already has an 'open' attribute");
-    return;
   }
 
   AddToTopLayerIfNeeded();
@@ -191,9 +189,11 @@ void HTMLDialogElement::FocusDialog() {
     if (rv.Failed()) {
       return;
     }
-  } else if (nsFocusManager* fm = nsFocusManager::GetFocusManager()) {
-    
-    fm->ClearFocus(OwnerDoc()->GetWindow());
+  } else if (IsInTopLayer()) {
+    if (nsFocusManager* fm = nsFocusManager::GetFocusManager()) {
+      
+      fm->ClearFocus(OwnerDoc()->GetWindow());
+    }
   }
 
   
