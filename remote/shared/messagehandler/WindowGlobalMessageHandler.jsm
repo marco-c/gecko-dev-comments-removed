@@ -89,7 +89,7 @@ class WindowGlobalMessageHandler extends MessageHandler {
             
             
             
-            values: [value],
+            added: [value],
           },
           destination: {
             type: WindowGlobalMessageHandler.type,

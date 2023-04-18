@@ -86,33 +86,7 @@ class RootMessageHandler extends MessageHandler {
 
 
   addSessionData(sessionData = {}) {
-    const { moduleName, category, contextDescriptor, values } = sessionData;
-    const addedValues = this._sessionData.addSessionData(
-      moduleName,
-      category,
-      contextDescriptor,
-      values
-    );
-
-    if (addedValues.length == 0) {
-      
-      return [];
-    }
-
-    return this.handleCommand({
-      moduleName,
-      commandName: "_applySessionData",
-      params: {
-        values: addedValues,
-        category,
-      },
-      destination: {
-        type: WindowGlobalMessageHandler.type,
-        contextDescriptor: {
-          type: CONTEXT_DESCRIPTOR_TYPES.ALL,
-        },
-      },
-    });
+    return this._updateSessionData(sessionData, { mode: "add" });
   }
 
   
@@ -133,5 +107,58 @@ class RootMessageHandler extends MessageHandler {
           `Cannot forward command to "${command.destination.type}" from "${this.constructor.type}".`
         );
     }
+  }
+
+  
+
+
+
+
+
+
+
+  removeSessionData(sessionData = {}) {
+    return this._updateSessionData(sessionData, { mode: "remove" });
+  }
+
+  _updateSessionData(sessionData, options = {}) {
+    const { mode } = options;
+
+    
+    
+    if (mode != "add" && mode != "remove") {
+      throw new Error(`Unsupported mode for _updateSessionData ${mode}`);
+    }
+
+    const { moduleName, category, contextDescriptor, values } = sessionData;
+    const isAdding = mode === "add";
+
+    const updateMethod = isAdding ? "addSessionData" : "removeSessionData";
+    const updatedValues = this._sessionData[updateMethod](
+      moduleName,
+      category,
+      contextDescriptor,
+      values
+    );
+
+    if (updatedValues.length == 0) {
+      
+      return [];
+    }
+
+    return this.handleCommand({
+      moduleName,
+      commandName: "_applySessionData",
+      params: {
+        [isAdding ? "added" : "removed"]: updatedValues,
+        category,
+      },
+      destination: {
+        type: WindowGlobalMessageHandler.type,
+        contextDescriptor: {
+          type: CONTEXT_DESCRIPTOR_TYPES.ALL,
+        },
+      },
+    });
   }
 }
