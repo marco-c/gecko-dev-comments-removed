@@ -3756,6 +3756,9 @@ pref("browser.region.update.enabled", true);
 
 pref("device.storage.enabled", false);
 
+
+pref("browser.history.maxStateObjectSize", 2097152);
+
 pref("browser.meta_refresh_when_inactive.disabled", false);
 
 
