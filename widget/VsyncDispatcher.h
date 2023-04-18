@@ -24,7 +24,7 @@ class VsyncObserver {
   
   
   
-  virtual bool NotifyVsync(const VsyncEvent& aVsync) = 0;
+  virtual void NotifyVsync(const VsyncEvent& aVsync) = 0;
 
  protected:
   VsyncObserver() = default;

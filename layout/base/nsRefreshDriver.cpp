@@ -516,7 +516,7 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
       MOZ_ASSERT(NS_IsMainThread());
     }
 
-    bool NotifyVsync(const VsyncEvent& aVsync) override {
+    void NotifyVsync(const VsyncEvent& aVsync) override {
       
       
       
@@ -525,7 +525,7 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
         bool hadPendingVsync = pendingVsync->isSome();
         *pendingVsync = Some(aVsync);
         if (hadPendingVsync) {
-          return true;
+          return;
         }
       }
 
@@ -534,7 +534,7 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
         
         
         NotifyVsyncOnMainThread();
-        return true;
+        return;
       }
 
       
@@ -551,7 +551,6 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
           useVsyncPriority ? nsIRunnablePriority::PRIORITY_VSYNC
                            : nsIRunnablePriority::PRIORITY_NORMAL);
       NS_DispatchToMainThread(vsyncEvent);
-      return true;
     }
 
     bool ShouldGiveNonVsyncTasksMoreTime() {

@@ -49,7 +49,7 @@ class CompositorVsyncScheduler {
 
 
 
-  bool NotifyVsync(const VsyncEvent& aVsync);
+  void NotifyVsync(const VsyncEvent& aVsync);
 
   
 
@@ -144,7 +144,7 @@ class CompositorVsyncScheduler {
 
    public:
     explicit Observer(CompositorVsyncScheduler* aOwner);
-    bool NotifyVsync(const VsyncEvent& aVsync) override;
+    void NotifyVsync(const VsyncEvent& aVsync) override;
     void Destroy();
 
    private:
