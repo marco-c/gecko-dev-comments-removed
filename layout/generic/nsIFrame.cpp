@@ -1180,9 +1180,14 @@ void nsIFrame::MarkNeedsDisplayItemRebuild() {
 
 void nsIFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
 #ifdef ACCESSIBILITY
-  if (nsAccessibilityService* accService = GetAccService()) {
-    
-    accService->NotifyOfComputedStyleChange(PresShell(), mContent);
+  
+  
+  
+  
+  if (aOldComputedStyle) {
+    if (nsAccessibilityService* accService = GetAccService()) {
+      accService->NotifyOfComputedStyleChange(PresShell(), mContent);
+    }
   }
 #endif
 

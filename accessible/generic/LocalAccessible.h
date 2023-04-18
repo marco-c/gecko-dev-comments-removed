@@ -1001,6 +1001,10 @@ class LocalAccessible : public nsISupports, public Accessible {
 
 
 
+
+
+
+
   RefPtr<const ComputedStyle> mOldComputedStyle;
 
   static const uint8_t kStateFlagsBits = 11;

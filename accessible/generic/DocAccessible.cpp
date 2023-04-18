@@ -1239,6 +1239,9 @@ bool DocAccessible::PruneOrInsertSubtree(nsIContent* aRoot) {
 #endif
 
     nsIFrame* frame = acc->GetFrame();
+    if (frame) {
+      acc->MaybeQueueCacheUpdateForStyleChanges();
+    }
 
     
     

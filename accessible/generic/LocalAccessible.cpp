@@ -3309,7 +3309,10 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
 }
 
 void LocalAccessible::MaybeQueueCacheUpdateForStyleChanges() {
-  if (!StaticPrefs::accessibility_cache_enabled_AtStartup()) {
+  
+  
+  if (!StaticPrefs::accessibility_cache_enabled_AtStartup() ||
+      !mOldComputedStyle) {
     return;
   }
 
