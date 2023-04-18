@@ -5202,8 +5202,7 @@ void nsGlobalWindowOuter::StopOuter(ErrorResult& aError) {
 void nsGlobalWindowOuter::PrintOuter(ErrorResult& aError) {
   if (!AreDialogsEnabled()) {
     
-    
-    return aError.ThrowNotSupportedError("Dialogs not enabled for this window");
+    return;
   }
 
   if (!StaticPrefs::print_tab_modal_enabled() && ShouldPromptToBlockDialogs() &&
