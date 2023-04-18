@@ -201,22 +201,6 @@ void UtilityProcessManager::OnProcessUnexpectedShutdown(
   DestroyProcess();
 }
 
-void UtilityProcessManager::NotifyRemoteActorDestroyed() {
-  if (!NS_IsMainThread()) {
-    RefPtr<UtilityProcessManager> self = this;
-    NS_DispatchToMainThread(NS_NewRunnableFunction(
-        "UtilityProcessManager::NotifyRemoteActorDestroyed()",
-        [self]() { self->NotifyRemoteActorDestroyed(); }));
-    return;
-  }
-
-  
-  
-  
-  
-  OnProcessUnexpectedShutdown(mProcess);
-}
-
 void UtilityProcessManager::CleanShutdown() { DestroyProcess(); }
 
 void UtilityProcessManager::DestroyProcess() {
@@ -266,7 +250,7 @@ class UtilityMemoryReporter : public MemoryReportingProcess {
     }
 
     return parent->SendRequestMemoryReport(aGeneration, aAnonymize,
-                                          aMinimizeMemoryUsage, aDMDFile);
+                                           aMinimizeMemoryUsage, aDMDFile);
   }
 
   int32_t Pid() const override {
