@@ -11,7 +11,7 @@ requestLongerTimeout(2);
 
 
 
-const TEST_URI = `data:text/html;charset=utf8,
+const TEST_URI = `data:text/html;charset=utf8,<!DOCTYPE html>
    <style>
      body { margin:0; }
      .big { width:20000px; height:20000px; }

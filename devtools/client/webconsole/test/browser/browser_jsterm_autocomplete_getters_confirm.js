@@ -6,7 +6,7 @@
 
 
 
-const TEST_URI = `data:text/html;charset=utf-8,
+const TEST_URI = `data:text/html;charset=utf-8,<!DOCTYPE html>
 <head>
   <script>
     /* Create a prototype-less object so popup does not contain native

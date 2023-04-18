@@ -5,7 +5,7 @@
 
 
 const TEST_URI =
-  "data:text/html;charset=utf8,<h1>test Object Inspector __proto__</h1>";
+  "data:text/html;charset=utf8,<!DOCTYPE html><h1>test Object Inspector __proto__</h1>";
 
 add_task(async function() {
   const hud = await openNewTabAndConsole(TEST_URI);

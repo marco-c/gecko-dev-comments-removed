@@ -6,7 +6,7 @@
 
 
 
-const TEST_URI = `data:text/html;charset=utf-8,
+const TEST_URI = `data:text/html;charset=utf-8,<!DOCTYPE html>
 <script>
 var x = "global";
 

@@ -6,7 +6,7 @@
 
 
 
-const TEST_URI = `data:text/html,Test console.table with modified variable`;
+const TEST_URI = `data:text/html,<!DOCTYPE html>Test console.table with modified variable`;
 
 add_task(async function() {
   const hud = await openNewTabAndConsole(TEST_URI);

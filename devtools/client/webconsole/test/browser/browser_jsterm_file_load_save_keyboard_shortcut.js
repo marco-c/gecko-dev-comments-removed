@@ -6,7 +6,7 @@
 
 
 const TEST_URI =
-  "data:text/html;charset=utf-8,Test load/save keyboard shortcut";
+  "data:text/html;charset=utf-8,<!DOCTYPE html>Test load/save keyboard shortcut";
 const { FileUtils } = ChromeUtils.import(
   "resource://gre/modules/FileUtils.jsm"
 );

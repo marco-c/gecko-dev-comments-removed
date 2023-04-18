@@ -2,7 +2,7 @@
 
 
 "use strict";
-const TEST_URI = `data:text/html;charset=utf8,<script>console.group('hello')</script>`;
+const TEST_URI = `data:text/html;charset=utf8,<!DOCTYPE html><script>console.group('hello')</script>`;
 
 add_task(async function() {
   
