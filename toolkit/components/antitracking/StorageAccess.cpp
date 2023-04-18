@@ -194,8 +194,7 @@ static StorageAccess InternalStorageAllowedCheckCached(
   
   
   nsGlobalWindowInner* win = nullptr;
-  if (aWindow &&
-      StaticPrefs::privacy_antitracking_cacheStorageAllowedForWindow()) {
+  if (aWindow) {
     win = nsGlobalWindowInner::Cast(aWindow);
 
     Maybe<StorageAccess> storageAccess =
