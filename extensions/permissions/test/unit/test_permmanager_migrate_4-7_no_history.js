@@ -22,10 +22,9 @@ var newClassID = Services.uuid.generateUUID();
 
 var registrar = Components.manager.QueryInterface(Ci.nsIComponentRegistrar);
 var oldClassID = registrar.contractIDToCID(CONTRACT_ID);
-var oldFactory = Components.manager.getClassObject(
-  Cc[CONTRACT_ID],
-  Ci.nsIFactory
-);
+
+
+Components.manager.getClassObject(Cc[CONTRACT_ID], Ci.nsIFactory);
 registrar.registerFactory(newClassID, "", CONTRACT_ID, factory);
 
 function cleanupFactory() {
@@ -57,6 +56,11 @@ add_task(function test() {
   } catch (e) {
     Assert.ok(true, "There wasn't a nsINavHistoryService");
   }
+
+  
+  
+  var pm = Services.perms;
+  Assert.ok(pm.all.length >= 0, "Permission manager not initialized?");
 
   let db = Services.storage.openDatabase(GetPermissionsFile(profile));
   db.schemaVersion = 4;
