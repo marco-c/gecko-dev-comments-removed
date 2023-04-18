@@ -1,24 +1,13 @@
 
 
 
-if ('gczeal' in this) {
-    gczeal(0);
+
+
+
+function foo() {
+    return "foo";
 }
 
-let source = `
-  function foo() {
-    return "foo";
-  }
+waitForStencilCache(foo);
 
-  waitForStencilCache(foo);
-  // false would be expected if threads are disabled.
-  assertEq(isInStencilCache(foo), true);
-`;
-
-const options = {
-    fileName: "inner-01.js",
-    lineNumber: 1,
-    eagerDelazificationStrategy: "CheckConcurrentWithOnDemand",
-    newContext: true,
-};
-evaluate(source, options);
+assertEq(isInStencilCache(foo), true);
