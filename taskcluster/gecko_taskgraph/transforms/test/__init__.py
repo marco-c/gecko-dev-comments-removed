@@ -123,9 +123,6 @@ test_description_schema = Schema(
         Required("run-without-variant"): optionally_keyed_by("test-platform", bool),
         
         Optional("webrender"): bool,
-        Optional("webrender-run-on-projects"): optionally_keyed_by(
-            "app", Any([str], "default")
-        ),
         
         Required("instance-size"): optionally_keyed_by(
             "test-platform", Any("default", "large", "xlarge")

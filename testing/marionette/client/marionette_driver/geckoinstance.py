@@ -42,6 +42,8 @@ class GeckoInstance(object):
         
         "apz.content_response_timeout": 60000,
         
+        "browser.topsites.contile.enabled": False,
+        
         "datareporting.healthreport.documentServerURI": "http://%(server)s/dummy/healthreport/",
         "datareporting.healthreport.logging.consoleEnabled": False,
         "datareporting.healthreport.service.enabled": False,
@@ -52,6 +54,8 @@ class GeckoInstance(object):
         "datareporting.policy.dataSubmissionPolicyBypassNotification": True,
         
         "dom.disable_beforeunload": True,
+        
+        "dom.file.createInChild": True,
         
         "dom.ipc.reportProcessHangs": False,
         
@@ -84,6 +88,8 @@ class GeckoInstance(object):
         
         "geo.wifi.scan": False,
         
+        "gfx.webrender.all": True,
+        
         
         "idle.lastDailyNotification": -1,
         
@@ -112,10 +118,6 @@ class GeckoInstance(object):
         "signon.rememberSignons": False,
         
         "toolkit.startup.max_resumed_crashes": -1,
-        
-        "dom.file.createInChild": True,
-        
-        "browser.topsites.contile.enabled": False,
     }
 
     def __init__(
@@ -132,7 +134,6 @@ class GeckoInstance(object):
         workspace=None,
         verbose=0,
         headless=False,
-        enable_webrender=False,
     ):
         self.runner_class = Runner
         self.app_args = app_args or []
@@ -152,7 +153,6 @@ class GeckoInstance(object):
         self._gecko_log = None
         self.verbose = verbose
         self.headless = headless
-        self.enable_webrender = enable_webrender
 
         
         self.unresponsive_count = 0
@@ -331,12 +331,6 @@ class GeckoInstance(object):
             env["MOZ_HEADLESS"] = "1"
             env["DISPLAY"] = "77"  
 
-        if self.enable_webrender:
-            env["MOZ_WEBRENDER"] = "1"
-            env["MOZ_ACCELERATED"] = "1"
-        else:
-            env["MOZ_WEBRENDER"] = "0"
-
         
         
         env.update(
@@ -483,10 +477,6 @@ class FennecInstance(GeckoInstance):
         }
 
         env = {} if self.env is None else self.env.copy()
-        if self.enable_webrender:
-            env["MOZ_WEBRENDER"] = "1"
-        else:
-            env["MOZ_WEBRENDER"] = "0"
 
         runner_args = {
             "app": self.package_name,

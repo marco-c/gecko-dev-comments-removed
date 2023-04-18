@@ -96,15 +96,6 @@ class AndroidEmulatorTest(
                 },
             ],
             [
-                ["--enable-webrender"],
-                {
-                    "action": "store_true",
-                    "dest": "enable_webrender",
-                    "default": False,
-                    "help": "Run with WebRender enabled.",
-                },
-            ],
-            [
                 ["--enable-fission"],
                 {
                     "action": "store_true",
@@ -174,11 +165,9 @@ class AndroidEmulatorTest(
         self.device_serial = "emulator-5554"
         self.log_raw_level = c.get("log_raw_level")
         self.log_tbpl_level = c.get("log_tbpl_level")
-        self.enable_webrender = c.get("enable_webrender")
-        if self.enable_webrender:
-            
-            
-            self.use_gles3 = True
+        
+        
+        self.use_gles3 = True
         self.enable_fission = c.get("enable_fission")
         self.extra_prefs = c.get("extra_prefs")
 
@@ -314,13 +303,6 @@ class AndroidEmulatorTest(
                 if self.total_chunks is not None:
                     cmd.extend(["--total-chunks", self.total_chunks])
 
-        
-        
-        
-        
-        
-        if self.enable_webrender:
-            cmd.extend(["--enable-webrender"])
         if self.enable_fission:
             cmd.extend(["--enable-fission"])
 

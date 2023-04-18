@@ -38,15 +38,6 @@ firefox_ui_tests_config_options = (
             },
         ],
         [
-            ["--enable-webrender"],
-            {
-                "action": "store_true",
-                "dest": "enable_webrender",
-                "default": False,
-                "help": "Enable the WebRender compositor in Gecko.",
-            },
-        ],
-        [
             ["--dry-run"],
             {
                 "dest": "dry_run",
@@ -296,9 +287,6 @@ class FirefoxUITests(TestingMixin, VCSToolsScript, CodeCoverageMixin):
             
             "-vv",
         ]
-
-        if self.config["enable_webrender"]:
-            cmd.append("--enable-webrender")
 
         
         cmd.extend(self.query_harness_args())

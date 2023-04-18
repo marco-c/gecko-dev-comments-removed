@@ -208,15 +208,6 @@ class Talos(
                 },
             ],
             [
-                ["--enable-webrender"],
-                {
-                    "action": "store_true",
-                    "dest": "enable_webrender",
-                    "default": False,
-                    "help": "Enable the WebRender compositor in Gecko.",
-                },
-            ],
-            [
                 ["--enable-fission"],
                 {
                     "action": "store_true",
@@ -536,8 +527,6 @@ class Talos(
             options.extend(
                 ["--setpref={}".format(p) for p in self.config["extra_prefs"]]
             )
-        if self.config["enable_webrender"]:
-            options.extend(["--enable-webrender"])
         
         
         if (

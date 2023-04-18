@@ -81,15 +81,6 @@ class AndroidHardwareTest(
             },
         ],
         [
-            ["--enable-webrender"],
-            {
-                "action": "store_true",
-                "dest": "enable_webrender",
-                "default": False,
-                "help": "Run with WebRender enabled.",
-            },
-        ],
-        [
             ["--enable-fission"],
             {
                 "action": "store_true",
@@ -166,7 +157,6 @@ class AndroidHardwareTest(
         self.xre_path = None
         self.log_raw_level = c.get("log_raw_level")
         self.log_tbpl_level = c.get("log_tbpl_level")
-        self.enable_webrender = c.get("enable_webrender")
         self.enable_fission = c.get("enable_fission")
         self.extra_prefs = c.get("extra_prefs")
         self.jittest_flags = c.get("jittest_flags")
@@ -289,13 +279,6 @@ class AndroidHardwareTest(
             else:
                 self.log("--repeat not supported in {}".format(category), level=WARNING)
 
-        
-        
-        
-        
-        
-        if self.enable_webrender:
-            cmd.extend(["--enable-webrender"])
         if self.enable_fission:
             cmd.extend(["--enable-fission"])
 

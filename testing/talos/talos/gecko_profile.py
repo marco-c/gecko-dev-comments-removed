@@ -44,8 +44,7 @@ class GeckoProfile(object):
         gecko_profile_threads = test_config.get(
             "gecko_profile_threads", "GeckoMain,Compositor"
         )
-        if browser_config["enable_webrender"]:
-            gecko_profile_threads += ",WR,Renderer"
+        gecko_profile_threads += ",WR,Renderer"
 
         
         

@@ -243,10 +243,7 @@ def write_test_settings_json(args, test_details, oskey):
     
     if test_details.get("gecko_profile", False):
         threads = ["GeckoMain", "Compositor"]
-
-        
-        if os.getenv("MOZ_WEBRENDER") == "1":
-            threads.extend(["Renderer", "WR"])
+        threads.extend(["Renderer", "WR"])
 
         if test_details.get("gecko_profile_threads"):
             

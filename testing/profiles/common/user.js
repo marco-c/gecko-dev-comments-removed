@@ -49,8 +49,6 @@ user_pref("extensions.getAddons.discovery.api_url", "data:;base64,eyJyZXN1bHRzIj
 user_pref("extensions.webextensions.warnings-as-errors", true);
 
 user_pref("general.useragent.updates.enabled", false);
-
-user_pref("gfx.webrender.all.qualified", false);
 user_pref("hangmonitor.timeout", 0); 
 user_pref("media.gmp-manager.updateEnabled", false);
 
