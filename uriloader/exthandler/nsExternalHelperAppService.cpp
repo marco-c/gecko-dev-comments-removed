@@ -3308,6 +3308,10 @@ nsExternalHelperAppService::ValidateFileNameForSaving(
   nsAutoCString extension;
   nsCOMPtr<nsIMIMEInfo> mimeInfo;
 
+  bool isBinaryType = aMimeType.EqualsLiteral(APPLICATION_OCTET_STREAM) ||
+                      aMimeType.EqualsLiteral(BINARY_OCTET_STREAM) ||
+                      aMimeType.EqualsLiteral("application/x-msdownload");
+
   
   
   
@@ -3327,7 +3331,9 @@ nsExternalHelperAppService::ValidateFileNameForSaving(
         }
 
         
-        if (aAllowURLExtension) {
+        
+        
+        if (aAllowURLExtension || isBinaryType) {
           url->GetFileExtension(extension);
         }
       }
@@ -3363,10 +3369,8 @@ nsExternalHelperAppService::ValidateFileNameForSaving(
       
       
       
-      bool useExtension = aMimeType.EqualsLiteral(APPLICATION_OCTET_STREAM) ||
-                          aMimeType.EqualsLiteral(BINARY_OCTET_STREAM) ||
-                          aMimeType.EqualsLiteral("application/x-msdownload") ||
-                          aMimeType.EqualsLiteral(APPLICATION_OGG);
+      bool useExtension =
+          isBinaryType || aMimeType.EqualsLiteral(APPLICATION_OGG);
       mimeService->GetFromTypeAndExtension(
           aMimeType, useExtension ? extension : EmptyCString(),
           getter_AddRefs(mimeInfo));
@@ -3392,42 +3396,49 @@ nsExternalHelperAppService::ValidateFileNameForSaving(
     if (extension.IsEmpty() ||
         NS_FAILED(mimeInfo->ExtensionExists(extension, &isValidExtension)) ||
         !isValidExtension) {
-      nsAutoCString originalExtension(extension);
       
-      bool useOldExtension = false;
-      if (aOriginalURI) {
-        nsCOMPtr<nsIURL> originalURL(do_QueryInterface(aOriginalURI));
-        if (originalURL) {
-          originalURL->GetFileExtension(extension);
-          if (!extension.IsEmpty()) {
-            mimeInfo->ExtensionExists(extension, &useOldExtension);
+      
+      if (aMimeType.EqualsLiteral(TEXT_PLAIN) || isBinaryType) {
+        extension.Truncate();
+      } else {
+        nsAutoCString originalExtension(extension);
+        
+        bool useOldExtension = false;
+        if (aOriginalURI) {
+          nsCOMPtr<nsIURL> originalURL(do_QueryInterface(aOriginalURI));
+          if (originalURL) {
+            originalURL->GetFileExtension(extension);
+            if (!extension.IsEmpty()) {
+              mimeInfo->ExtensionExists(extension, &useOldExtension);
+            }
           }
         }
-      }
 
-      if (!useOldExtension) {
-        
-        
-        
-        
-        mimeInfo->GetPrimaryExtension(extension);
-      }
-
-      ModifyExtensionType modify =
-          ShouldModifyExtension(mimeInfo, originalExtension);
-      if (modify == ModifyExtension_Replace) {
-        int32_t dotidx = fileName.RFind(".");
-        if (dotidx != -1) {
+        if (!useOldExtension) {
           
-          fileName.Truncate(dotidx);
+          
+          
+          
+          mimeInfo->GetPrimaryExtension(extension);
         }
-      }
 
-      
-      
-      if (modify != ModifyExtension_Ignore && !extension.IsEmpty()) {
-        fileName.AppendLiteral(".");
-        fileName.Append(NS_ConvertUTF8toUTF16(extension));
+        ModifyExtensionType modify =
+            ShouldModifyExtension(mimeInfo, originalExtension);
+        if (modify == ModifyExtension_Replace) {
+          int32_t dotidx = fileName.RFind(".");
+          if (dotidx != -1) {
+            
+            fileName.Truncate(dotidx);
+          }
+        }
+
+        
+        
+        
+        if (modify != ModifyExtension_Ignore && !extension.IsEmpty()) {
+          fileName.AppendLiteral(".");
+          fileName.Append(NS_ConvertUTF8toUTF16(extension));
+        }
       }
     }
   }
