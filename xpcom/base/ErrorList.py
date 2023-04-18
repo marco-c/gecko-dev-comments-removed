@@ -805,6 +805,19 @@ with modules["EDITOR"]:
     errors["NS_SUCCESS_EDITOR_ELEMENT_NOT_FOUND"] = SUCCESS(1)
     errors["NS_SUCCESS_EDITOR_FOUND_TARGET"] = SUCCESS(2)
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    errors["NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR"] = SUCCESS(3)
+
 
 
 

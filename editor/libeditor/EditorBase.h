@@ -2248,6 +2248,14 @@ class EditorBase : public nsIEditor,
       
       case NS_ERROR_EDITOR_NO_EDITABLE_RANGE:
         return NS_SUCCESS_DOM_NO_OPERATION;
+      
+      
+      
+      
+      
+      
+      case NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR:
+        return NS_OK;
       default:
         return aRv;
     }
@@ -2814,26 +2822,41 @@ class EditorBase : public nsIEditor,
   
   bool mIsHTMLEditorClass;
 
-  friend class AlignStateAtSelection;
-  friend class AutoRangeArray;
-  friend class CompositionTransaction;
-  friend class CSSEditUtils;
-  friend class DeleteNodeTransaction;
-  friend class DeleteRangeTransaction;
-  friend class DeleteTextTransaction;
-  friend class HTMLEditUtils;
-  friend class InsertNodeTransaction;
-  friend class InsertTextTransaction;
-  friend class JoinNodesTransaction;
-  friend class ListElementSelectionState;
-  friend class ListItemElementSelectionState;
-  friend class ParagraphStateAtSelection;
-  friend class ReplaceTextTransaction;
-  friend class SplitNodeTransaction;
-  friend class TypeInState;
-  friend class WhiteSpaceVisibilityKeeper;
-  friend class WSRunScanner;
-  friend class nsIEditor;
+  friend class AlignStateAtSelection;  
+                                       
+  friend class AutoRangeArray;  
+  friend class CompositionTransaction;  
+                                        
+                                        
+  friend class DeleteNodeTransaction;   
+  friend class DeleteRangeTransaction;  
+                                        
+  friend class DeleteTextTransaction;   
+                                        
+                                        
+  friend class InsertNodeTransaction;   
+                                        
+                                        
+  friend class InsertTextTransaction;   
+                                        
+                                        
+  friend class ListElementSelectionState;      
+                                               
+  friend class ListItemElementSelectionState;  
+                                               
+  friend class ParagraphStateAtSelection;      
+                                               
+  friend class ReplaceTextTransaction;  
+                                        
+                                        
+  friend class SplitNodeTransaction;    
+  friend class TypeInState;  
+                             
+  friend class WhiteSpaceVisibilityKeeper;  
+  friend class nsIEditor;                   
+
+  template <typename NodeType>
+  friend class CreateNodeResultBase;  
 };
 
 }  

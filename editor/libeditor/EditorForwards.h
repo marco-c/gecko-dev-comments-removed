@@ -6,6 +6,8 @@
 #ifndef mozilla_EditorHelperForwards_h
 #define mozilla_EditorHelperForwards_h
 
+#include "mozilla/EnumSet.h"
+
 #include <cstdint>
 
 
@@ -39,9 +41,16 @@ enum class EditorCommandParamType : uint16_t;
 enum class EditSubAction : int32_t;            
 enum class ParagraphSeparator;                 
 enum class SpecifiedStyle : uint8_t;           
+enum class SuggestCaret;                       
 
 enum class JoinNodesDirection;  
 enum class SplitNodeDirection;  
+
+
+
+
+
+using SuggestCaretOptions = EnumSet<SuggestCaret>;
 
 
 
