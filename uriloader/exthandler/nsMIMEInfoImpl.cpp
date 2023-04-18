@@ -81,16 +81,14 @@ nsMIMEInfoBase::nsMIMEInfoBase(const char* aMIMEType)
       mClass(eMIMEInfo),
       mPreferredAction(nsIMIMEInfo::saveToDisk),
       mAlwaysAskBeforeHandling(
-          StaticPrefs::
-              browser_download_always_ask_before_handling_new_types()) {}
+          !StaticPrefs::browser_download_improvements_to_download_panel()) {}
 
 nsMIMEInfoBase::nsMIMEInfoBase(const nsACString& aMIMEType)
     : mSchemeOrType(aMIMEType),
       mClass(eMIMEInfo),
       mPreferredAction(nsIMIMEInfo::saveToDisk),
       mAlwaysAskBeforeHandling(
-          StaticPrefs::
-              browser_download_always_ask_before_handling_new_types()) {}
+          !StaticPrefs::browser_download_improvements_to_download_panel()) {}
 
 
 
@@ -102,8 +100,7 @@ nsMIMEInfoBase::nsMIMEInfoBase(const nsACString& aType, HandlerClass aClass)
       mClass(aClass),
       mPreferredAction(nsIMIMEInfo::saveToDisk),
       mAlwaysAskBeforeHandling(
-          StaticPrefs::
-              browser_download_always_ask_before_handling_new_types() ||
+          !StaticPrefs::browser_download_improvements_to_download_panel() ||
           aClass != eMIMEInfo) {}
 
 nsMIMEInfoBase::~nsMIMEInfoBase() {}
