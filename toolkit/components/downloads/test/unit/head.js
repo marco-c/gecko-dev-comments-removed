@@ -956,7 +956,7 @@ var gMostRecentFirstBytePos;
 
 
 
-add_task(function test_common_initialize() {
+add_setup(function test_common_initialize() {
   
   gHttpServer = new HttpServer();
   gHttpServer.registerDirectory("/", do_get_file("../data"));

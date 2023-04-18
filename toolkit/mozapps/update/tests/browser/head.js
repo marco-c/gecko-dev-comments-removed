@@ -65,7 +65,7 @@ requestLongerTimeout(10);
 
 
 
-add_task(async function setupTestCommon() {
+add_setup(async function setupTestCommon() {
   await SpecialPowers.pushPrefEnv({
     set: [
       [PREF_APP_UPDATE_BADGEWAITTIME, 1800],

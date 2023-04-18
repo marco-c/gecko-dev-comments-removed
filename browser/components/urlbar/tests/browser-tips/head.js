@@ -47,12 +47,10 @@ const SEARCH_STRINGS = {
   UPDATE: "firefox update",
 };
 
-add_task(async function init() {
-  registerCleanupFunction(() => {
-    
-    
-    UrlbarProviderInterventions.resetAppUpdater();
-  });
+registerCleanupFunction(() => {
+  
+  
+  UrlbarProviderInterventions.resetAppUpdater();
 });
 
 

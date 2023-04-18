@@ -80,7 +80,7 @@ const RecipeHelpers = {
 
 
 
-add_task(async function test_common_initialize() {
+add_setup(async function test_common_initialize() {
   
   
   
@@ -100,7 +100,7 @@ add_task(async function test_common_initialize() {
   }
 });
 
-add_task(async function test_common_prefs() {
+add_setup(async function test_common_prefs() {
   Services.prefs.setStringPref(NEW_PASSWORD_HEURISTIC_ENABLED_PREF, "0.75");
 });
 

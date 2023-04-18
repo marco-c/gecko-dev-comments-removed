@@ -648,7 +648,7 @@ async function interactiveUpdateTest(autoUpdate, checkFn) {
 
 
 let testCleanup;
-add_task(async function() {
+add_setup(async function head_setup() {
   let addons = await AddonManager.getAllAddons();
   let existingAddons = new Set(addons.map(a => a.id));
 
