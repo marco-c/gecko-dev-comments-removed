@@ -272,27 +272,6 @@ nsParser::SetContentSink(nsIContentSink* aSink) {
 NS_IMETHODIMP_(nsIContentSink*)
 nsParser::GetContentSink() { return mSink; }
 
-static nsIDTD* FindSuitableDTD(CParserContext& aParserContext) {
-  
-  aParserContext.mAutoDetectStatus = ePrimaryDetect;
-
-  
-  MOZ_ASSERT(aParserContext.mParserCommand != eViewSource,
-             "The old parser is not supposed to be used for View Source "
-             "anymore.");
-
-  
-  
-  if (aParserContext.mDocType != eXML) {
-    return new CNavDTD();
-  }
-
-  
-  NS_ASSERTION(aParserContext.mDocType == eXML,
-               "What are you trying to send me, here?");
-  return new nsExpatDriver();
-}
-
 NS_IMETHODIMP
 nsParser::CancelParsingEvents() {
   if (mFlags & NS_PARSER_FLAG_PENDING_CONTINUE_EVENT) {
@@ -334,8 +313,21 @@ nsresult nsParser::WillBuildModel() {
     }
   }  
 
-  mDTD = FindSuitableDTD(*mParserContext);
-  NS_ENSURE_TRUE(mDTD, NS_ERROR_OUT_OF_MEMORY);
+  
+  mParserContext->mAutoDetectStatus = ePrimaryDetect;
+
+  
+  MOZ_ASSERT(mParserContext->mParserCommand != eViewSource,
+             "The old parser is not supposed to be used for View Source "
+             "anymore.");
+
+  
+  
+  if (mParserContext->mDocType == eXML) {
+    mDTD = new nsExpatDriver();
+  } else {
+    mDTD = new CNavDTD();
+  }
 
   nsITokenizer* tokenizer;
   nsresult rv = mParserContext->GetTokenizer(mDTD, mSink, tokenizer);
