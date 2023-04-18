@@ -419,11 +419,8 @@ function loadCallgraph(files)
     
     var limitedFunctions = {};
 
-    for (const [id, [any, all]] of Object.entries(functionAttrs)) {
-        if (all) {
-            limitedFunctions[functions.name[id]] = { attributes: all };
-        }
-    }
+    for (const [id, [any, all]] of Object.entries(functionAttrs))
+        limitedFunctions[functions.name[id]] = { attributes: all };
 
     for (const [id, limits, label] of recursive_roots) {
         const name = functions.name[id];

@@ -16,75 +16,51 @@ var sourceRoot = (os.getenv('SOURCE') || '') + '/';
 var functionName;
 var functionBodies;
 
-try {
-    var options = parse_options([
-        {
-            name: "--function",
-            type: 'string',
-        },
-        {
-            name: "-f",
-            type: "string",
-            dest: "function",
-        },
-        {
-            name: "gcFunctions",
-            default: "gcFunctions.lst"
-        },
-        {
-            name: "gcEdges",
-            default: "gcEdges.json"
-        },
-        {
-            name: "limitedFunctions",
-            default: "limitedFunctions.lst"
-        },
-        {
-            name: "gcTypes",
-            default: "gcTypes.txt"
-        },
-        {
-            name: "typeInfo",
-            default: "typeInfo.txt"
-        },
-        {
-            name: "batch",
-            type: "number",
-            default: 1
-        },
-        {
-            name: "numBatches",
-            type: "number",
-            default: 1
-        },
-        {
-            name: "tmpfile",
-            default: "tmp.txt"
-        },
-    ]);
-} catch (e) {
-    printErr(e);
-    printErr("Usage: analyzeRoots.js [-f function_name] <gcFunctions.lst> <gcEdges.txt> <limitedFunctions.lst> <gcTypes.txt> <typeInfo.txt> [start end [tmpfile]]");
-    quit(1);
+if (typeof scriptArgs[0] != 'string' || typeof scriptArgs[1] != 'string')
+    throw "Usage: analyzeRoots.js [-f function_name] <gcFunctions.lst> <gcEdges.txt> <limitedFunctions.lst> <gcTypes.txt> <typeInfo.txt> [start end [tmpfile]]";
+
+var theFunctionNameToFind;
+if (scriptArgs[0] == '--function' || scriptArgs[0] == '-f') {
+    theFunctionNameToFind = scriptArgs[1];
+    scriptArgs = scriptArgs.slice(2);
 }
+
+var gcFunctionsFile = scriptArgs[0] || "gcFunctions.lst";
+var gcEdgesFile = scriptArgs[1] || "gcEdges.txt";
+var limitedFunctionsFile = scriptArgs[2] || "limitedFunctions.lst";
+var gcTypesFile = scriptArgs[3] || "gcTypes.txt";
+var typeInfoFile = scriptArgs[4] || "typeInfo.txt";
+var batch = (scriptArgs[5]|0) || 1;
+var numBatches = (scriptArgs[6]|0) || 1;
+var tmpfile = scriptArgs[7] || "tmp.txt";
+
 var gcFunctions = {};
-var text = snarf(options.gcFunctions).split("\n");
+var text = snarf("gcFunctions.lst").split("\n");
 assert(text.pop().length == 0);
 for (const line of text)
     gcFunctions[mangled(line)] = readable(line);
 
-var limitedFunctions = JSON.parse(snarf(options.limitedFunctions));
+var limitedFunctions = JSON.parse(snarf(limitedFunctionsFile));
 text = null;
 
-var typeInfo = loadTypeInfo(options.typeInfo);
+var typeInfo = loadTypeInfo(typeInfoFile);
 
-var gcEdges = JSON.parse(os.file.readFile(options.gcEdges));
+var gcEdges = {};
+text = snarf(gcEdgesFile).split('\n');
+assert(text.pop().length == 0);
+for (const line of text) {
+    var [ block, edge, func ] = line.split(" || ");
+    if (!(block in gcEdges))
+        gcEdges[block] = {}
+    gcEdges[block][edge] = func;
+}
+text = null;
 
 var match;
 var gcThings = {};
 var gcPointers = {};
 
-text = snarf(options.gcTypes).split("\n");
+text = snarf(gcTypesFile).split("\n");
 for (var line of text) {
     if (match = /^GCThing: (.*)/.exec(line))
         gcThings[match[1]] = true;
@@ -117,6 +93,425 @@ function isUnrootedType(type)
         return type.Name in gcPointers;
     else
         return false;
+}
+
+function expressionUsesVariable(exp, variable)
+{
+    if (exp.Kind == "Var" && sameVariable(exp.Variable, variable))
+        return true;
+    if (!("Exp" in exp))
+        return false;
+    for (var childExp of exp.Exp) {
+        if (expressionUsesVariable(childExp, variable))
+            return true;
+    }
+    return false;
+}
+
+function expressionUsesVariableContents(exp, variable)
+{
+    if (!("Exp" in exp))
+        return false;
+    for (var childExp of exp.Exp) {
+        if (childExp.Kind == 'Drf') {
+            if (expressionUsesVariable(childExp, variable))
+                return true;
+        } else if (expressionUsesVariableContents(childExp, variable)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function isImmobileValue(exp) {
+    if (exp.Kind == "Int" && exp.String == "0") {
+        return true;
+    }
+    return false;
+}
+
+
+function isReturningImmobileValue(edge, variable)
+{
+    if (variable.Kind == "Return") {
+        if (edge.Exp[0].Kind == "Var" && sameVariable(edge.Exp[0].Variable, variable)) {
+            if (isImmobileValue(edge.Exp[1]))
+                return true;
+        }
+    }
+    return false;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function edgeUsesVariable(edge, variable, body)
+{
+    if (ignoreEdgeUse(edge, variable, body))
+        return 0;
+
+    if (variable.Kind == "Return" && body.Index[1] == edge.Index[1] && body.BlockId.Kind == "Function")
+        return edge.Index[1]; 
+
+    var src = edge.Index[0];
+
+    switch (edge.Kind) {
+
+    case "Assign": {
+        
+        if (isReturningImmobileValue(edge, variable))
+            return 0;
+        const [lhs, rhs] = edge.Exp;
+        
+        if (expressionUsesVariable(rhs, variable))
+            return src;
+        
+        
+        if (expressionUsesVariable(lhs, variable) && !expressionIsVariable(lhs, variable))
+            return src;
+        return 0;
+    }
+
+    case "Assume":
+        return expressionUsesVariableContents(edge.Exp[0], variable) ? src : 0;
+
+    case "Call": {
+        const callee = edge.Exp[0];
+        if (expressionUsesVariable(callee, variable))
+            return src;
+        if ("PEdgeCallInstance" in edge) {
+            if (expressionUsesVariable(edge.PEdgeCallInstance.Exp, variable)) {
+                if (edgeStartsValueLiveRange(edge, variable)) {
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                } else {
+                    return src;
+                }
+            }
+        }
+        if ("PEdgeCallArguments" in edge) {
+            for (var exp of edge.PEdgeCallArguments.Exp) {
+                if (expressionUsesVariable(exp, variable))
+                    return src;
+            }
+        }
+        if (edge.Exp.length == 1)
+            return 0;
+
+        
+        const lhs = edge.Exp[1];
+        if (expressionUsesVariable(lhs, variable) && !expressionIsVariable(lhs, variable))
+            return src;
+        return 0;
+    }
+
+    case "Loop":
+        return 0;
+
+    case "Assembly":
+        return 0;
+
+    default:
+        assert(false);
+    }
+}
+
+function expressionIsVariableAddress(exp, variable)
+{
+    while (exp.Kind == "Fld")
+        exp = exp.Exp[0];
+    return exp.Kind == "Var" && sameVariable(exp.Variable, variable);
+}
+
+function edgeTakesVariableAddress(edge, variable, body)
+{
+    if (ignoreEdgeUse(edge, variable, body))
+        return false;
+    if (ignoreEdgeAddressTaken(edge))
+        return false;
+    switch (edge.Kind) {
+    case "Assign":
+        return expressionIsVariableAddress(edge.Exp[1], variable);
+    case "Call":
+        if ("PEdgeCallArguments" in edge) {
+            for (var exp of edge.PEdgeCallArguments.Exp) {
+                if (expressionIsVariableAddress(exp, variable))
+                    return true;
+            }
+        }
+        return false;
+    default:
+        return false;
+    }
+}
+
+function expressionIsVariable(exp, variable)
+{
+    return exp.Kind == "Var" && sameVariable(exp.Variable, variable);
+}
+
+function expressionIsMethodOnVariable(exp, variable)
+{
+    
+    
+    while (exp.Kind == "Fld" && exp.Field.Name[0].startsWith("field:"))
+        exp = exp.Exp[0];
+
+    return exp.Kind == "Var" && sameVariable(exp.Variable, variable);
+}
+
+
+
+
+
+
+
+
+
+function edgeStartsValueLiveRange(edge, variable)
+{
+    
+    if (edge.Kind == "Assign") {
+        const [lhs, rhs] = edge.Exp;
+        return (expressionIsVariable(lhs, variable) &&
+                !isReturningImmobileValue(edge, variable));
+    }
+
+    if (edge.Kind != "Call")
+        return false;
+
+    
+    if (1 in edge.Exp) {
+        var lhs = edge.Exp[1];
+        if (expressionIsVariable(lhs, variable))
+            return true;
+    }
+
+    
+    if ("PEdgeCallInstance" in edge) {
+        var instance = edge.PEdgeCallInstance.Exp;
+
+        
+        if (instance.Kind == "Drf")
+            instance = instance.Exp[0];
+
+        if (!expressionIsVariable(instance, variable))
+            return false;
+
+        var callee = edge.Exp[0];
+        if (callee.Kind != "Var")
+            return false;
+
+        assert(callee.Variable.Kind == "Func");
+        var calleeName = readable(callee.Variable.Name[0]);
+
+        
+        var openParen = calleeName.indexOf('(');
+        if (openParen < 0)
+            return false;
+        calleeName = calleeName.substring(0, openParen);
+
+        var lastColon = calleeName.lastIndexOf('::');
+        if (lastColon < 0)
+            return false;
+        var constructorName = calleeName.substr(lastColon + 2);
+        calleeName = calleeName.substr(0, lastColon);
+
+        var lastTemplateOpen = calleeName.lastIndexOf('<');
+        if (lastTemplateOpen >= 0)
+            calleeName = calleeName.substr(0, lastTemplateOpen);
+
+        if (calleeName.endsWith(constructorName))
+            return true;
+    }
+
+    return false;
+}
+
+function edgeMovesVariable(edge, variable)
+{
+    if (edge.Kind != 'Call')
+        return false;
+    const callee = edge.Exp[0];
+    if (callee.Kind == 'Var' &&
+        callee.Variable.Kind == 'Func')
+    {
+        const { Variable: { Name: [ fullname, shortname ] } } = callee;
+        const [ mangled, unmangled ] = splitFunction(fullname);
+        
+        if (unmangled.match(/::UniquePtr<[^>]*>::UniquePtr\((\w+::)*UniquePtr<[^>]*>&&/))
+            return true;
+    }
+
+    return false;
+}
+
+
+
+
+function bodyEatsVariable(variable, body, startpoint)
+{
+    const successors = getSuccessors(body);
+    const work = [startpoint];
+    while (work.length > 0) {
+        const point = work.shift();
+        if (!(point in successors))
+            continue;
+        for (const edge of successors[point]) {
+            if (edgeMovesVariable(edge, variable))
+                return true;
+            
+            
+            
+            
+            
+            if (!edgeStartsValueLiveRange(edge, variable))
+                work.push(edge.Index[1]);
+        }
+    }
+    return false;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function edgeEndsValueLiveRange(edge, variable, body)
+{
+    
+    if (edge.Kind == "Assign") {
+        const [lhs, rhs] = edge.Exp;
+        return expressionIsVariable(lhs, variable) && isImmobileValue(rhs);
+    }
+
+    if (edge.Kind != "Call")
+        return false;
+
+    var callee = edge.Exp[0];
+
+    if (edge.Type.Kind == 'Function' &&
+        edge.Exp[0].Kind == 'Var' &&
+        edge.Exp[0].Variable.Kind == 'Func' &&
+        edge.Exp[0].Variable.Name[1] == 'MarkVariableAsGCSafe' &&
+        edge.Exp[0].Variable.Name[0].includes("JS::detail::MarkVariableAsGCSafe") &&
+        expressionIsVariable(edge.PEdgeCallArguments.Exp[0], variable))
+    {
+        
+        return true;
+    }
+
+    if (edge.Type.Kind == 'Function' &&
+        edge.Exp[0].Kind == 'Var' &&
+        edge.Exp[0].Variable.Kind == 'Func' &&
+        edge.Exp[0].Variable.Name[1] == 'move' &&
+        edge.Exp[0].Variable.Name[0].includes('std::move(') &&
+        expressionIsVariable(edge.PEdgeCallArguments.Exp[0], variable) &&
+        edge.Exp[1].Kind == 'Var' &&
+        edge.Exp[1].Variable.Kind == 'Temp')
+    {
+        
+        
+        
+        
+        
+        
+        
+        const lhs = edge.Exp[1].Variable;
+        if (bodyEatsVariable(lhs, body, edge.Index[1]))
+            return true;
+    }
+
+    if (edge.Type.Kind == 'Function' &&
+        edge.Type.TypeFunctionCSU &&
+        edge.PEdgeCallInstance &&
+        expressionIsMethodOnVariable(edge.PEdgeCallInstance.Exp, variable))
+    {
+        const typeName = edge.Type.TypeFunctionCSU.Type.Name;
+        const m = typeName.match(/^(((\w|::)+?)(\w+))</);
+        if (m) {
+            const [, type, namespace,, classname] = m;
+
+            
+            
+            const ctorName = `${namespace}${classname}<T>::${classname}()`;
+            if (callee.Kind == 'Var' &&
+                typesWithSafeConstructors.has(type) &&
+                callee.Variable.Name[0].includes(ctorName))
+            {
+                return true;
+            }
+
+            
+            if (callee.Kind == 'Var' &&
+                type in resetterMethods &&
+                resetterMethods[type].has(callee.Variable.Name[1]))
+            {
+                return true;
+            }
+        }
+    }
+
+    
+    if (edge.Type.Kind == 'Function' &&
+        edge.Type.TypeFunctionArgument &&
+        edge.PEdgeCallArguments)
+    {
+        for (const i in edge.Type.TypeFunctionArgument) {
+            const param = edge.Type.TypeFunctionArgument[i];
+            if (param.Type.Kind != 'CSU')
+                continue;
+            if (!param.Type.Name.startsWith("mozilla::UniquePtr<"))
+                continue;
+            const arg = edge.PEdgeCallArguments.Exp[i];
+            if (expressionIsVariable(arg, variable)) {
+                return true;
+            }
+        }
+    }
+
+    return false;
 }
 
 function edgeCanGC(edge)
@@ -176,328 +571,195 @@ function edgeCanGC(edge)
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function findGCBeforeValueUse(start_body, start_point, suppressed_bits, variable)
+function findGCBeforeValueUse(start_body, start_point, suppressed, variable)
 {
-    const isGCSuppressed = Boolean(suppressed_bits & ATTR_GC_SUPPRESSED);
-
-    
     
     
     
     
 
-    class Path {
-        get ProgressProperties() { return ["informativeUse", "anyUse", "gcInfo"]; }
+    var bodies_visited = new Map();
 
-        constructor(successor_path, body, ppoint) {
-            Object.assign(this, {body, ppoint});
-            if (successor_path !== undefined) {
-                this.successor = successor_path;
-                for (const prop of this.ProgressProperties) {
-                    if (prop in successor_path) {
-                        this[prop] = successor_path[prop];
+    let worklist = [{body: start_body, ppoint: start_point, preGCLive: false, gcInfo: null, why: null}];
+    while (worklist.length) {
+        
+        
+        
+        
+
+        var entry = worklist.pop();
+        var { body, ppoint, gcInfo, preGCLive } = entry;
+
+        
+        
+        var visited = bodies_visited.get(body);
+        if (!visited)
+            bodies_visited.set(body, visited = new Map());
+        if (visited.has(ppoint)) {
+            var seenEntry = visited.get(ppoint);
+
+            
+            
+            
+            if (seenEntry.gcInfo)
+                continue;
+
+            
+            
+            
+            
+            
+            
+            
+            
+            if (!gcInfo)
+                continue;
+        }
+        visited.set(ppoint, {body: body, gcInfo: gcInfo});
+
+        
+        
+        if (ppoint == body.Index[0]) {
+            if (body.BlockId.Kind == "Loop") {
+                
+                if ("BlockPPoint" in body) {
+                    for (var parent of body.BlockPPoint) {
+                        var found = false;
+                        for (var xbody of functionBodies) {
+                            if (sameBlockId(xbody.BlockId, parent.BlockId)) {
+                                assert(!found);
+                                found = true;
+                                worklist.push({body: xbody, ppoint: parent.Index,
+                                               gcInfo: gcInfo, why: entry});
+                            }
+                        }
+                        assert(found);
                     }
                 }
+
+                
+                
+                worklist.push({body: body, ppoint: body.Index[1],
+                               gcInfo: gcInfo, why: entry});
+            } else if ((variable.Kind == "Arg" || variable.Kind == "This") && gcInfo) {
+                
+                
+                return entry;
+            } else if (entry.preGCLive) {
+                
+                
+                
+                
+                return entry;
             }
         }
 
-        toString() {
-            const trail = [];
-            for (let path = this; path.ppoint; path = path.successor) {
-                trail.push(path.ppoint);
-            }
-            return trail.join();
-        }
+        var predecessors = getPredecessors(body);
+        if (!(ppoint in predecessors))
+            continue;
 
-        
-        
-        compare(other) {
-            for (const prop of this.ProgressProperties) {
-                const a = this.hasOwnProperty(prop);
-                const b = other.hasOwnProperty(prop);
-                if (a != b) {
-                    return a - b;
-                }
-            }
-            return 0;
-        }
-    };
-
-    
-    
-    let bestPathWithAnyUse = null;
-
-    const visitor = new class extends Visitor {
-        constructor() {
-            super(functionBodies);
-        }
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-
-        next_action(prev, current) {
-            
-            
-            
-
-            if (!current) {
-                
-                return "prune";
-            }
-
-            if (current.informativeUse) {
-                
-                
-                assert(current.gcInfo);
-                return "done";
-            }
-
-            if (prev === undefined) {
-                
-                return "continue";
-            }
-
-            if (!prev.gcInfo && current.gcInfo) {
-                
-                return "continue";
-            } else {
-                return "prune";
-            }
-        }
-
-        merge_info(prev, current) {
-            
-
-            if (!prev || !current) {
-                return prev || current;
-            }
-
-            
-            return prev.compare(current) >= 0 ? prev : current;
-        }
-
-        extend_path(edge, body, ppoint, successor_path) {
-            
-            
-            
-            const path = new Path(successor_path, body, ppoint);
-            if (edge === null) {
-                
-                
-                return path;
-            }
-
-            assert(ppoint == edge.Index[0]);
+        for (var edge of predecessors[ppoint]) {
+            var source = edge.Index[0];
 
             if (edgeEndsValueLiveRange(edge, variable, body)) {
                 
-                return null;
+                
+                
+                continue;
             }
 
-            const edge_starts = edgeStartsValueLiveRange(edge, variable);
-            const edge_uses = edgeUsesVariable(edge, variable, body);
+            var edge_kills = edgeStartsValueLiveRange(edge, variable);
+            var edge_uses = edgeUsesVariable(edge, variable, body);
 
-            if (edge_starts || edge_uses) {
-                if (!body.minimumUse || ppoint < body.minimumUse)
-                    body.minimumUse = ppoint;
+            if (edge_kills || edge_uses) {
+                if (!body.minimumUse || source < body.minimumUse)
+                    body.minimumUse = source;
             }
 
-            if (edge_starts) {
+            if (edge_kills) {
                 
                 
                 
                 
                 
-                if (path.gcInfo) {
-                    path.anyUse = path.anyUse || edge;
-                    path.informativeUse = path.informativeUse || edge;
-                    return path;
-                }
+                if (gcInfo)
+                    return {body: body, ppoint: source, gcInfo: gcInfo, why: entry };
 
                 
                 
-                
-                return null;
+                continue;
             }
 
-            
-            const had_gcInfo = Boolean(path.gcInfo);
-            if (!path.gcInfo && !(body.attrs[ppoint] & ATTR_GC_SUPPRESSED) && !isGCSuppressed) {
+            var src_gcInfo = gcInfo;
+            var src_preGCLive = preGCLive;
+            if (!gcInfo && !(body.attrs[source] & ATTR_GC_SUPPRESSED) && !(suppressed & ATTR_GC_SUPPRESSED)) {
                 var gcName = edgeCanGC(edge, body);
-                if (gcName) {
-                    path.gcInfo = {name:gcName, body, ppoint};
+                if (gcName)
+                    src_gcInfo = {name:gcName, body:body, ppoint:source};
+            }
+
+            if (edge_uses) {
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+
+                if (src_gcInfo) {
+                    src_preGCLive = true;
+                    if (edge.Kind == 'Assign')
+                        return {body:body, ppoint:source, gcInfo:src_gcInfo, why:entry};
                 }
             }
 
-            
-            if (ppoint == body.Index[0] && body.BlockId.Kind != "Loop") {
-                if (path.gcInfo && (variable.Kind == "Arg" || variable.Kind == "This")) {
-                    
-                    
-                    path.anyUse = path.informativeUse = true;
+            if (edge.Kind == "Loop") {
+                
+                
+                var found = false;
+                for (var xbody of functionBodies) {
+                    if (sameBlockId(xbody.BlockId, edge.BlockId)) {
+                        assert(!found);
+                        found = true;
+                        worklist.push({body:xbody, ppoint:xbody.Index[1],
+                                       preGCLive: src_preGCLive, gcInfo:src_gcInfo,
+                                       why:entry});
+                    }
                 }
-
-                if (path.anyUse) {
-                    
-                    
-                    
-                    
-                    
-                    return path;
-                }
-            }
-
-            if (!path.gcInfo) {
-                
-                return path;
-            }
-
-            if (!edge_uses) {
+                assert(found);
                 
                 
-                return path;
+                
+                break;
             }
 
             
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
+            worklist.push({body:body, ppoint:source,
+                           preGCLive: src_preGCLive, gcInfo:src_gcInfo,
+                           why:entry});
+        }
+    }
 
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            if (!had_gcInfo && edge_uses == edge.Index[1]) {
-                return path; 
-            }
-
-            path.anyUse = path.anyUse || edge;
-            bestPathWithAnyUse = bestPathWithAnyUse || path;
-            if (edge.Kind == 'Assign') {
-                path.informativeUse = edge; 
-            }
-
-            return path;
-        };
-    };
-
-    return BFS_upwards(start_body, start_point, functionBodies, visitor, new Path()) || bestPathWithAnyUse;
+    return null;
 }
 
 function variableLiveAcrossGC(suppressed, variable)
@@ -580,8 +842,8 @@ function unsafeVariableAddressTaken(suppressed, variable)
 
 function loadPrintedLines(functionName)
 {
-    assert(!os.system("xdbfind src_body.xdb '" + functionName + "' > " + options.tmpfile));
-    var lines = snarf(options.tmpfile).split('\n');
+    assert(!os.system("xdbfind src_body.xdb '" + functionName + "' > " + tmpfile));
+    var lines = snarf(tmpfile).split('\n');
 
     for (var body of functionBodies)
         body.lines = [];
@@ -644,15 +906,14 @@ function printEntryTrace(functionName, entry)
     if (!functionBodies[0].lines)
         loadPrintedLines(functionName);
 
-    while (entry.successor) {
+    while (entry) {
         var ppoint = entry.ppoint;
         var lineText = findLocation(entry.body, ppoint, {"brief": true});
 
         var edgeText = "";
-        if (entry.successor && entry.successor.body == entry.body) {
+        if (entry.why && entry.why.body == entry.body) {
             
-            
-            var next = entry.successor.ppoint;
+            var next = entry.why.ppoint;
 
             if (!entry.body.edgeTable) {
                 var table = {};
@@ -686,7 +947,7 @@ function printEntryTrace(functionName, entry)
         }
 
         print("    " + lineText + (edgeText.length ? ": " + edgeText : ""));
-        entry = entry.successor;
+        entry = entry.why;
     }
 }
 
@@ -757,7 +1018,6 @@ function processBodies(functionName, wholeBodyAttrs)
     
     
     
-    
     const ignoreVars = new Set();
     if (functionName.match(/mozilla::dom::/)) {
         const vars = functionBodies[0].DefineVariable.filter(
@@ -766,9 +1026,7 @@ function processBodies(functionName, wholeBodyAttrs)
             v => [ v.Variable.Name[0], v.Type.Name ]
         );
 
-        const holders = vars.filter(
-            ([n, t]) => n.match(/^arg\d+_holder$/) &&
-                        (t.includes("Argument") || t.includes("Rooter")));
+        const holders = vars.filter(([n, t]) => n.match(/^arg\d+_holder$/) && t.match(/Argument\b/));
         for (const [holder,] of holders) {
             ignoreVars.add(holder); 
             ignoreVars.add(holder.replace("_holder", "")); 
@@ -804,7 +1062,6 @@ function processBodies(functionName, wholeBodyAttrs)
         } else if (isUnrootedType(variable.Type)) {
             var result = variableLiveAcrossGC(suppressed, variable.Variable);
             if (result) {
-                assert(result.gcInfo);
                 var lineText = findLocation(result.gcInfo.body, result.gcInfo.ppoint);
                 if (annotations.has('Expect Hazards')) {
                     print("\nThis is expected, but '" + functionName + "'" +
@@ -848,7 +1105,7 @@ function processBodies(functionName, wholeBodyAttrs)
     }
 }
 
-if (options.batch == 1)
+if (batch == 1)
     print("Time: " + new Date);
 
 var xdb = xdbLibrary();
@@ -857,8 +1114,8 @@ xdb.open("src_body.xdb");
 var minStream = xdb.min_data_stream()|0;
 var maxStream = xdb.max_data_stream()|0;
 
-var start = batchStart(options.batch, options.numBatches, minStream, maxStream);
-var end = batchLast(options.batch, options.numBatches, minStream, maxStream);
+var start = batchStart(batch, numBatches, minStream, maxStream);
+var end = batchLast(batch, numBatches, minStream, maxStream);
 
 function process(name, json) {
     functionName = name;
@@ -877,9 +1134,6 @@ function process(name, json) {
             if (attrs)
                 pbody.attrs[id] = attrs;
         }
-        for (const edgeAttr of gcEdges[blockIdentifier(body)] || []) {
-            body.attrs[edgeAttr.Index[0]] |= edgeAttr.attrs;
-        }
     }
 
     
@@ -894,11 +1148,11 @@ function process(name, json) {
     processBodies(functionName, wholeBodyAttrs);
 }
 
-if (options.function) {
-    var data = xdb.read_entry(options.function);
+if (theFunctionNameToFind) {
+    var data = xdb.read_entry(theFunctionNameToFind);
     var json = data.readString();
     debugger;
-    process(options.function, json);
+    process(theFunctionNameToFind, json);
     xdb.free_string(data);
     quit(0);
 }
