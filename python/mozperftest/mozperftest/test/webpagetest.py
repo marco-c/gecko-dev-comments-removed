@@ -152,6 +152,7 @@ class WebPageTestData:
                 {"file": "webpagetest", "value": value, "xaxis": xaxis}
                 for xaxis, value in enumerate(data["values"])
             ],
+            "shouldAlert": True,
         }
 
     def transform(self, data):
@@ -323,7 +324,7 @@ class WebPageTest(Layer):
              and successfulRVRuns
             """
             
-            raise WPTErrorWithWebsite(
+            self.warning(
                 f"Something went wrong with firstview/repeat view runs for: {url}"
             )
         self.confirm_correct_browser_and_location(
@@ -341,12 +342,14 @@ class WebPageTest(Layer):
         metadata.add_result(
             {
                 "name": ("WebPageTest:" + re.match(r"(^.\w+)", website)[0]),
-                "framework": {"name": "mozperftest:"},
+                "framework": {"name": "mozperftest"},
                 "transformer": "mozperftest.test.webpagetest:WebPageTestData",
+                "shouldAlert": True,
                 "results": [
                     {
                         "values": [int(metric_value)],
                         "name": metric_name,
+                        "shouldAlert": True,
                     }
                     for metric_name, metric_value in requested_values.items()
                 ],
