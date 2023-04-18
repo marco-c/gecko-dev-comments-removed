@@ -42,7 +42,7 @@ class DebuggerScript : public NativeObject {
                                  HandleObject debugCtor);
   static DebuggerScript* create(JSContext* cx, HandleObject proto,
                                 Handle<DebuggerScriptReferent> referent,
-                                HandleNativeObject debugger);
+                                Handle<NativeObject*> debugger);
 
   void trace(JSTracer* trc);
 

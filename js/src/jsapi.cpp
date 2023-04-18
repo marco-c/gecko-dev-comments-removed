@@ -1966,7 +1966,7 @@ JS_PUBLIC_API bool JS_DeepFreezeObject(JSContext* cx, HandleObject obj) {
 
   
   if (obj->is<NativeObject>()) {
-    RootedNativeObject nobj(cx, &obj->as<NativeObject>());
+    Rooted<NativeObject*> nobj(cx, &obj->as<NativeObject>());
     for (uint32_t i = 0, n = nobj->slotSpan(); i < n; ++i) {
       if (!DeepFreezeSlot(cx, nobj->getSlot(i))) {
         return false;

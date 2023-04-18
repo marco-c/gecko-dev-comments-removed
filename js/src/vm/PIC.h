@@ -147,8 +147,8 @@ struct ForOfPIC {
     const GCPtrObject picObject_;
 
     
-    GCPtrNativeObject arrayProto_;
-    GCPtrNativeObject arrayIteratorProto_;
+    GCPtr<NativeObject*> arrayProto_;
+    GCPtr<NativeObject*> arrayIteratorProto_;
 
     
     

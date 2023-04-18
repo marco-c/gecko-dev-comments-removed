@@ -233,7 +233,7 @@ NativeObject* DebuggerFrame::initClass(JSContext* cx,
 
 
 DebuggerFrame* DebuggerFrame::create(
-    JSContext* cx, HandleObject proto, HandleNativeObject debugger,
+    JSContext* cx, HandleObject proto, Handle<NativeObject*> debugger,
     const FrameIter* maybeIter,
     Handle<AbstractGeneratorObject*> maybeGenerator) {
   Rooted<DebuggerFrame*> frame(

@@ -623,7 +623,8 @@ inline bool NativeObject::denseElementsMaybeInIteration() {
 
 
 static MOZ_ALWAYS_INLINE bool CallResolveOp(JSContext* cx,
-                                            HandleNativeObject obj, HandleId id,
+                                            Handle<NativeObject*> obj,
+                                            HandleId id,
                                             PropertyResult* propp) {
   MOZ_ASSERT(!cx->isHelperThreadContext());
 

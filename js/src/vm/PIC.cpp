@@ -42,14 +42,14 @@ bool js::ForOfPIC::Chain::initialize(JSContext* cx) {
   MOZ_ASSERT(!initialized_);
 
   
-  RootedNativeObject arrayProto(
+  Rooted<NativeObject*> arrayProto(
       cx, GlobalObject::getOrCreateArrayPrototype(cx, cx->global()));
   if (!arrayProto) {
     return false;
   }
 
   
-  RootedNativeObject arrayIteratorProto(
+  Rooted<NativeObject*> arrayIteratorProto(
       cx, GlobalObject::getOrCreateArrayIteratorPrototype(cx, cx->global()));
   if (!arrayIteratorProto) {
     return false;

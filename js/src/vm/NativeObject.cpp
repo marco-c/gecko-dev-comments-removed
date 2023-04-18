@@ -140,7 +140,7 @@ void ObjectElements::PreventExtensions(NativeObject* obj) {
 }
 
 
-bool ObjectElements::FreezeOrSeal(JSContext* cx, HandleNativeObject obj,
+bool ObjectElements::FreezeOrSeal(JSContext* cx, Handle<NativeObject*> obj,
                                   IntegrityLevel level) {
   MOZ_ASSERT_IF(level == IntegrityLevel::Frozen && obj->is<ArrayObject>(),
                 !obj->as<ArrayObject>().lengthIsWritable());
@@ -470,7 +470,7 @@ bool NativeObject::willBeSparseElements(uint32_t requiredCapacity,
 
 
 DenseElementResult NativeObject::maybeDensifySparseElements(
-    JSContext* cx, HandleNativeObject obj) {
+    JSContext* cx, Handle<NativeObject*> obj) {
   
 
 
@@ -966,7 +966,7 @@ void NativeObject::shrinkCapacityToInitializedLength(JSContext* cx) {
 }
 
 
-bool NativeObject::allocDictionarySlot(JSContext* cx, HandleNativeObject obj,
+bool NativeObject::allocDictionarySlot(JSContext* cx, Handle<NativeObject*> obj,
                                        uint32_t* slotp) {
   MOZ_ASSERT(obj->inDictionaryMode());
 
@@ -1028,7 +1028,7 @@ bool js::NativeLookupOwnProperty(
 }
 
 template bool js::NativeLookupOwnProperty<CanGC>(JSContext* cx,
-                                                 HandleNativeObject obj,
+                                                 Handle<NativeObject*> obj,
                                                  HandleId id,
                                                  PropertyResult* propp);
 
@@ -1051,7 +1051,7 @@ static bool CallJSAddPropertyOp(JSContext* cx, JSAddPropertyOp op,
 }
 
 static MOZ_ALWAYS_INLINE bool CallAddPropertyHook(JSContext* cx,
-                                                  HandleNativeObject obj,
+                                                  Handle<NativeObject*> obj,
                                                   HandleId id,
                                                   HandleValue value) {
   JSAddPropertyOp addProperty = obj->getClass()->getAddProperty();
@@ -1066,10 +1066,9 @@ static MOZ_ALWAYS_INLINE bool CallAddPropertyHook(JSContext* cx,
   return true;
 }
 
-static MOZ_ALWAYS_INLINE bool CallAddPropertyHookDense(JSContext* cx,
-                                                       HandleNativeObject obj,
-                                                       uint32_t index,
-                                                       HandleValue value) {
+static MOZ_ALWAYS_INLINE bool CallAddPropertyHookDense(
+    JSContext* cx, Handle<NativeObject*> obj, uint32_t index,
+    HandleValue value) {
   
   if (obj->is<ArrayObject>()) {
     ArrayObject* arr = &obj->as<ArrayObject>();
@@ -1102,9 +1101,10 @@ static bool WouldDefinePastNonwritableLength(ArrayObject* arr, uint32_t index) {
   return !arr->lengthIsWritable() && index >= arr->length();
 }
 
-static bool ChangeProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
-                           HandleObject getter, HandleObject setter,
-                           PropertyFlags flags, PropertyResult* existing) {
+static bool ChangeProperty(JSContext* cx, Handle<NativeObject*> obj,
+                           HandleId id, HandleObject getter,
+                           HandleObject setter, PropertyFlags flags,
+                           PropertyResult* existing) {
   MOZ_ASSERT(existing);
 
   Rooted<GetterSetter*> gs(cx);
@@ -1166,7 +1166,7 @@ enum class IsAddOrChange { Add, Change };
 
 template <IsAddOrChange AddOrChange>
 static MOZ_ALWAYS_INLINE bool AddOrChangeProperty(
-    JSContext* cx, HandleNativeObject obj, HandleId id,
+    JSContext* cx, Handle<NativeObject*> obj, HandleId id,
     Handle<PropertyDescriptor> desc, PropertyResult* existing = nullptr) {
   desc.assertComplete();
 
@@ -1274,7 +1274,7 @@ static MOZ_ALWAYS_INLINE bool AddOrChangeProperty(
 
 
 static MOZ_ALWAYS_INLINE bool AddDataProperty(JSContext* cx,
-                                              HandleNativeObject obj,
+                                              Handle<NativeObject*> obj,
                                               HandleId id, HandleValue v) {
   MOZ_ASSERT(!id.isInt());
 
@@ -1289,7 +1289,7 @@ static MOZ_ALWAYS_INLINE bool AddDataProperty(JSContext* cx,
   return CallAddPropertyHook(cx, obj, id, v);
 }
 
-bool js::AddSlotAndCallAddPropHook(JSContext* cx, HandleNativeObject obj,
+bool js::AddSlotAndCallAddPropHook(JSContext* cx, Handle<NativeObject*> obj,
                                    HandleValue v, Handle<Shape*> newShape) {
   MOZ_ASSERT(obj->getClass()->getAddProperty());
   MOZ_ASSERT(newShape->lastProperty().isDataProperty());
@@ -1322,7 +1322,7 @@ static bool IsDataDescriptor(const PropertyResult& prop) {
 static bool GetCustomDataProperty(JSContext* cx, HandleObject obj, HandleId id,
                                   MutableHandleValue vp);
 
-static bool GetExistingDataProperty(JSContext* cx, HandleNativeObject obj,
+static bool GetExistingDataProperty(JSContext* cx, Handle<NativeObject*> obj,
                                     HandleId id, const PropertyResult& prop,
                                     MutableHandleValue vp) {
   if (prop.isDenseElement()) {
@@ -1349,7 +1349,7 @@ static bool GetExistingDataProperty(JSContext* cx, HandleNativeObject obj,
 
 
 
-static bool DefinePropertyIsRedundant(JSContext* cx, HandleNativeObject obj,
+static bool DefinePropertyIsRedundant(JSContext* cx, Handle<NativeObject*> obj,
                                       HandleId id, const PropertyResult& prop,
                                       JS::PropertyAttributes attrs,
                                       Handle<PropertyDescriptor> desc,
@@ -1408,7 +1408,7 @@ static bool DefinePropertyIsRedundant(JSContext* cx, HandleNativeObject obj,
   return true;
 }
 
-bool js::NativeDefineProperty(JSContext* cx, HandleNativeObject obj,
+bool js::NativeDefineProperty(JSContext* cx, Handle<NativeObject*> obj,
                               HandleId id, Handle<PropertyDescriptor> desc_,
                               ObjectOpResult& result) {
   desc_.assertValid();
@@ -1659,14 +1659,14 @@ bool js::NativeDefineProperty(JSContext* cx, HandleNativeObject obj,
   return result.succeed();
 }
 
-bool js::NativeDefineDataProperty(JSContext* cx, HandleNativeObject obj,
+bool js::NativeDefineDataProperty(JSContext* cx, Handle<NativeObject*> obj,
                                   HandleId id, HandleValue value,
                                   unsigned attrs, ObjectOpResult& result) {
   Rooted<PropertyDescriptor> desc(cx, PropertyDescriptor::Data(value, attrs));
   return NativeDefineProperty(cx, obj, id, desc, result);
 }
 
-bool js::NativeDefineAccessorProperty(JSContext* cx, HandleNativeObject obj,
+bool js::NativeDefineAccessorProperty(JSContext* cx, Handle<NativeObject*> obj,
                                       HandleId id, HandleObject getter,
                                       HandleObject setter, unsigned attrs) {
   Rooted<PropertyDescriptor> desc(
@@ -1691,7 +1691,7 @@ bool js::NativeDefineAccessorProperty(JSContext* cx, HandleNativeObject obj,
   return true;
 }
 
-bool js::NativeDefineDataProperty(JSContext* cx, HandleNativeObject obj,
+bool js::NativeDefineDataProperty(JSContext* cx, Handle<NativeObject*> obj,
                                   HandleId id, HandleValue value,
                                   unsigned attrs) {
   ObjectOpResult result;
@@ -1709,14 +1709,14 @@ bool js::NativeDefineDataProperty(JSContext* cx, HandleNativeObject obj,
   return true;
 }
 
-bool js::NativeDefineDataProperty(JSContext* cx, HandleNativeObject obj,
+bool js::NativeDefineDataProperty(JSContext* cx, Handle<NativeObject*> obj,
                                   PropertyName* name, HandleValue value,
                                   unsigned attrs) {
   RootedId id(cx, NameToId(name));
   return NativeDefineDataProperty(cx, obj, id, value, attrs);
 }
 
-static bool DefineNonexistentProperty(JSContext* cx, HandleNativeObject obj,
+static bool DefineNonexistentProperty(JSContext* cx, Handle<NativeObject*> obj,
                                       HandleId id, HandleValue v,
                                       ObjectOpResult& result) {
   
@@ -1852,9 +1852,9 @@ bool js::AddOrUpdateSparseElementHelper(JSContext* cx, HandleArrayObject obj,
 
 
 
-bool js::NativeHasProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
-                           bool* foundp) {
-  RootedNativeObject pobj(cx, obj);
+bool js::NativeHasProperty(JSContext* cx, Handle<NativeObject*> obj,
+                           HandleId id, bool* foundp) {
+  Rooted<NativeObject*> pobj(cx, obj);
   PropertyResult prop;
 
   
@@ -1903,7 +1903,7 @@ bool js::NativeHasProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
 
 
 bool js::NativeGetOwnPropertyDescriptor(
-    JSContext* cx, HandleNativeObject obj, HandleId id,
+    JSContext* cx, Handle<NativeObject*> obj, HandleId id,
     MutableHandle<mozilla::Maybe<PropertyDescriptor>> desc) {
   PropertyResult prop;
   if (!NativeLookupOwnProperty<CanGC>(cx, obj, id, &prop)) {
@@ -1963,7 +1963,7 @@ static bool GetCustomDataProperty(JSContext* cx, HandleObject obj, HandleId id,
   return true;
 }
 
-static inline bool CallGetter(JSContext* cx, HandleNativeObject obj,
+static inline bool CallGetter(JSContext* cx, Handle<NativeObject*> obj,
                               HandleValue receiver, HandleId id,
                               PropertyInfo prop, MutableHandleValue vp) {
   MOZ_ASSERT(!prop.isDataProperty());
@@ -2003,7 +2003,7 @@ static MOZ_ALWAYS_INLINE bool GetExistingProperty(
 }
 
 bool js::NativeGetExistingProperty(JSContext* cx, HandleObject receiver,
-                                   HandleNativeObject obj, HandleId id,
+                                   Handle<NativeObject*> obj, HandleId id,
                                    PropertyInfo prop, MutableHandleValue vp) {
   RootedValue receiverValue(cx, ObjectValue(*receiver));
   return GetExistingProperty<CanGC>(cx, receiverValue, obj, id, prop, vp);
@@ -2168,7 +2168,7 @@ static MOZ_ALWAYS_INLINE bool NativeGetPropertyInline(
   }
 }
 
-bool js::NativeGetProperty(JSContext* cx, HandleNativeObject obj,
+bool js::NativeGetProperty(JSContext* cx, Handle<NativeObject*> obj,
                            HandleValue receiver, HandleId id,
                            MutableHandleValue vp) {
   return NativeGetPropertyInline<CanGC>(cx, obj, receiver, id, NotNameLookup,
@@ -2182,7 +2182,7 @@ bool js::NativeGetPropertyNoGC(JSContext* cx, NativeObject* obj,
                                        vp);
 }
 
-bool js::NativeGetElement(JSContext* cx, HandleNativeObject obj,
+bool js::NativeGetElement(JSContext* cx, Handle<NativeObject*> obj,
                           HandleValue receiver, int32_t index,
                           MutableHandleValue vp) {
   RootedId id(cx);
@@ -2272,7 +2272,8 @@ static bool MaybeReportUndeclaredVarAssignment(JSContext* cx, HandleId id) {
 
 
 
-static bool NativeSetExistingDataProperty(JSContext* cx, HandleNativeObject obj,
+static bool NativeSetExistingDataProperty(JSContext* cx,
+                                          Handle<NativeObject*> obj,
                                           HandleId id, PropertyInfo prop,
                                           HandleValue v,
                                           ObjectOpResult& result) {
@@ -2368,7 +2369,7 @@ bool js::SetPropertyOnProto(JSContext* cx, HandleObject obj, HandleId id,
 
 
 template <QualifiedBool IsQualified>
-static bool SetNonexistentProperty(JSContext* cx, HandleNativeObject obj,
+static bool SetNonexistentProperty(JSContext* cx, Handle<NativeObject*> obj,
                                    HandleId id, HandleValue v,
                                    HandleValue receiver,
                                    ObjectOpResult& result) {
@@ -2413,7 +2414,7 @@ static bool SetNonexistentProperty(JSContext* cx, HandleNativeObject obj,
 }
 
 
-static bool SetDenseElement(JSContext* cx, HandleNativeObject obj,
+static bool SetDenseElement(JSContext* cx, Handle<NativeObject*> obj,
                             uint32_t index, HandleValue v,
                             ObjectOpResult& result) {
   MOZ_ASSERT(!obj->is<TypedArrayObject>());
@@ -2432,7 +2433,8 @@ static bool SetDenseElement(JSContext* cx, HandleNativeObject obj,
 
 
 static bool SetExistingProperty(JSContext* cx, HandleId id, HandleValue v,
-                                HandleValue receiver, HandleNativeObject pobj,
+                                HandleValue receiver,
+                                Handle<NativeObject*> pobj,
                                 const PropertyResult& prop,
                                 ObjectOpResult& result) {
   
@@ -2497,14 +2499,14 @@ static bool SetExistingProperty(JSContext* cx, HandleId id, HandleValue v,
 }
 
 template <QualifiedBool IsQualified>
-bool js::NativeSetProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
-                           HandleValue v, HandleValue receiver,
+bool js::NativeSetProperty(JSContext* cx, Handle<NativeObject*> obj,
+                           HandleId id, HandleValue v, HandleValue receiver,
                            ObjectOpResult& result) {
   
   
   
   PropertyResult prop;
-  RootedNativeObject pobj(cx, obj);
+  Rooted<NativeObject*> pobj(cx, obj);
 
   
   
@@ -2568,19 +2570,19 @@ bool js::NativeSetProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
 }
 
 template bool js::NativeSetProperty<Qualified>(JSContext* cx,
-                                               HandleNativeObject obj,
+                                               Handle<NativeObject*> obj,
                                                HandleId id, HandleValue value,
                                                HandleValue receiver,
                                                ObjectOpResult& result);
 
 template bool js::NativeSetProperty<Unqualified>(JSContext* cx,
-                                                 HandleNativeObject obj,
+                                                 Handle<NativeObject*> obj,
                                                  HandleId id, HandleValue value,
                                                  HandleValue receiver,
                                                  ObjectOpResult& result);
 
-bool js::NativeSetElement(JSContext* cx, HandleNativeObject obj, uint32_t index,
-                          HandleValue v, HandleValue receiver,
+bool js::NativeSetElement(JSContext* cx, Handle<NativeObject*> obj,
+                          uint32_t index, HandleValue v, HandleValue receiver,
                           ObjectOpResult& result) {
   RootedId id(cx);
   if (!IndexToId(cx, index, &id)) {
@@ -2607,7 +2609,7 @@ static bool CallJSDeletePropertyOp(JSContext* cx, JSDeletePropertyOp op,
 }
 
 
-bool js::NativeDeleteProperty(JSContext* cx, HandleNativeObject obj,
+bool js::NativeDeleteProperty(JSContext* cx, Handle<NativeObject*> obj,
                               HandleId id, ObjectOpResult& result) {
 #ifdef ENABLE_RECORD_TUPLE
   MOZ_ASSERT(!js::IsExtendedPrimitive(*obj));
@@ -2658,7 +2660,7 @@ bool js::NativeDeleteProperty(JSContext* cx, HandleNativeObject obj,
 }
 
 bool js::CopyDataPropertiesNative(JSContext* cx, Handle<PlainObject*> target,
-                                  HandleNativeObject from,
+                                  Handle<NativeObject*> from,
                                   Handle<PlainObject*> excludedItems,
                                   bool* optimized) {
 #ifdef ENABLE_RECORD_TUPLE

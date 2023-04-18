@@ -535,7 +535,7 @@ bool js::SetIntegrityLevel(JSContext* cx, HandleObject obj,
   
   if (obj->is<NativeObject>() && !obj->is<TypedArrayObject>() &&
       !obj->is<MappedArgumentsObject>()) {
-    HandleNativeObject nobj = obj.as<NativeObject>();
+    Handle<NativeObject*> nobj = obj.as<NativeObject>();
 
     
     
@@ -609,7 +609,7 @@ bool js::SetIntegrityLevel(JSContext* cx, HandleObject obj,
   return true;
 }
 
-static bool ResolveLazyProperties(JSContext* cx, HandleNativeObject obj) {
+static bool ResolveLazyProperties(JSContext* cx, Handle<NativeObject*> obj) {
   const JSClass* clasp = obj->getClass();
   if (JSEnumerateOp enumerate = clasp->getEnumerate()) {
     if (!enumerate(cx, obj)) {
@@ -650,7 +650,7 @@ bool js::TestIntegrityLevel(JSContext* cx, HandleObject obj,
 
   
   if (obj->is<NativeObject>()) {
-    HandleNativeObject nobj = obj.as<NativeObject>();
+    Handle<NativeObject*> nobj = obj.as<NativeObject>();
 
     
     if (!ResolveLazyProperties(cx, nobj)) {
@@ -972,7 +972,7 @@ JS_PUBLIC_API bool JS_CopyOwnPropertiesAndPrivateFields(JSContext* cx,
 }
 
 static bool InitializePropertiesFromCompatibleNativeObject(
-    JSContext* cx, HandleNativeObject dst, HandleNativeObject src) {
+    JSContext* cx, Handle<NativeObject*> dst, Handle<NativeObject*> src) {
   cx->check(src, dst);
   MOZ_ASSERT(src->getClass() == dst->getClass());
   MOZ_ASSERT(dst->shape()->objectFlags().isEmpty());
@@ -1099,7 +1099,7 @@ bool NativeObject::prepareForSwap(JSContext* cx,
 }
 
 
-bool NativeObject::fixupAfterSwap(JSContext* cx, HandleNativeObject obj,
+bool NativeObject::fixupAfterSwap(JSContext* cx, Handle<NativeObject*> obj,
                                   gc::AllocKind kind,
                                   HandleValueVector slotValues) {
   
@@ -1433,13 +1433,13 @@ static NativeObject* DefineConstructorAndPrototype(
     const JSPropertySpec* static_ps, const JSFunctionSpec* static_fs,
     NativeObject** ctorp) {
   
-  RootedNativeObject proto(
+  Rooted<NativeObject*> proto(
       cx, GlobalObject::createBlankPrototypeInheriting(cx, clasp, protoProto));
   if (!proto) {
     return nullptr;
   }
 
-  RootedNativeObject ctor(cx);
+  Rooted<NativeObject*> ctor(cx);
   if (!constructor) {
     ctor = proto;
   } else {
@@ -2041,7 +2041,7 @@ bool js::PreventExtensions(JSContext* cx, HandleObject obj,
 
   if (obj->is<NativeObject>()) {
     
-    HandleNativeObject nobj = obj.as<NativeObject>();
+    Handle<NativeObject*> nobj = obj.as<NativeObject>();
     if (!ResolveLazyProperties(cx, nobj)) {
       return false;
     }

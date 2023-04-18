@@ -33,7 +33,7 @@ class DebuggerSource : public NativeObject {
                                  HandleObject debugCtor);
   static DebuggerSource* create(JSContext* cx, HandleObject proto,
                                 Handle<DebuggerSourceReferent> referent,
-                                HandleNativeObject debugger);
+                                Handle<NativeObject*> debugger);
 
   void trace(JSTracer* trc);
 

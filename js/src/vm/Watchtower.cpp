@@ -53,7 +53,7 @@ static bool InvokeWatchtowerCallback(JSContext* cx, const char* kind,
                               &rval);
 }
 
-static bool ReshapeForShadowedProp(JSContext* cx, HandleNativeObject obj,
+static bool ReshapeForShadowedProp(JSContext* cx, Handle<NativeObject*> obj,
                                    HandleId id) {
   
   
@@ -85,7 +85,8 @@ static bool ReshapeForShadowedProp(JSContext* cx, HandleNativeObject obj,
   return true;
 }
 
-static void InvalidateMegamorphicCache(JSContext* cx, HandleNativeObject obj) {
+static void InvalidateMegamorphicCache(JSContext* cx,
+                                       Handle<NativeObject*> obj) {
   
   
   
@@ -97,7 +98,7 @@ static void InvalidateMegamorphicCache(JSContext* cx, HandleNativeObject obj) {
 }
 
 
-bool Watchtower::watchPropertyAddSlow(JSContext* cx, HandleNativeObject obj,
+bool Watchtower::watchPropertyAddSlow(JSContext* cx, Handle<NativeObject*> obj,
                                       HandleId id) {
   MOZ_ASSERT(watchesPropertyAdd(obj));
 
@@ -189,7 +190,8 @@ bool Watchtower::watchProtoChangeSlow(JSContext* cx, HandleObject obj) {
 }
 
 
-bool Watchtower::watchPropertyRemoveSlow(JSContext* cx, HandleNativeObject obj,
+bool Watchtower::watchPropertyRemoveSlow(JSContext* cx,
+                                         Handle<NativeObject*> obj,
                                          HandleId id) {
   MOZ_ASSERT(watchesPropertyRemove(obj));
 
@@ -208,7 +210,8 @@ bool Watchtower::watchPropertyRemoveSlow(JSContext* cx, HandleNativeObject obj,
 }
 
 
-bool Watchtower::watchPropertyChangeSlow(JSContext* cx, HandleNativeObject obj,
+bool Watchtower::watchPropertyChangeSlow(JSContext* cx,
+                                         Handle<NativeObject*> obj,
                                          HandleId id) {
   MOZ_ASSERT(watchesPropertyChange(obj));
 
@@ -227,7 +230,8 @@ bool Watchtower::watchPropertyChangeSlow(JSContext* cx, HandleNativeObject obj,
 }
 
 
-bool Watchtower::watchFreezeOrSealSlow(JSContext* cx, HandleNativeObject obj) {
+bool Watchtower::watchFreezeOrSealSlow(JSContext* cx,
+                                       Handle<NativeObject*> obj) {
   MOZ_ASSERT(watchesFreezeOrSeal(obj));
 
   if (MOZ_UNLIKELY(obj->useWatchtowerTestingCallback())) {

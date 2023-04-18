@@ -3026,7 +3026,7 @@ static bool GetComputedIntrinsic(JSContext* cx, HandlePropertyName name,
   
   
 
-  RootedNativeObject computedIntrinsicsHolder(
+  Rooted<NativeObject*> computedIntrinsicsHolder(
       cx, cx->global()->getComputedIntrinsicsHolder());
   if (!computedIntrinsicsHolder) {
     auto computedIntrinsicHolderGuard = mozilla::MakeScopeExit(

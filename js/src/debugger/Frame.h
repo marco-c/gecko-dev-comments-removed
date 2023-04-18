@@ -147,7 +147,7 @@ class DebuggerFrame : public NativeObject {
   static NativeObject* initClass(JSContext* cx, Handle<GlobalObject*> global,
                                  HandleObject dbgCtor);
   static DebuggerFrame* create(JSContext* cx, HandleObject proto,
-                               HandleNativeObject debugger,
+                               Handle<NativeObject*> debugger,
                                const FrameIter* maybeIter,
                                Handle<AbstractGeneratorObject*> maybeGenerator);
 
