@@ -112,7 +112,16 @@ class TaskQueueWrapper : public webrtc::TaskQueueBase {
   }
 
   const RefPtr<TaskQueue> mTaskQueue;
-  DataMutex<bool> mHasShutdown{false, "TaskQueueWrapper::mHasShutdown"};
+
+  
+  
+  
+  
+  
+  
+  
+  DataMutexBase<bool, RecursiveMutex> mHasShutdown{
+      false, "TaskQueueWrapper::mHasShutdown"};
 };
 
 template <>
