@@ -10,9 +10,6 @@
 
 var EXPORTED_SYMBOLS = ["FileTestUtils"];
 
-const { AsyncShutdown } = ChromeUtils.import(
-  "resource://gre/modules/AsyncShutdown.jsm"
-);
 const { DownloadPaths } = ChromeUtils.import(
   "resource://gre/modules/DownloadPaths.jsm"
 );
@@ -122,31 +119,34 @@ XPCOMUtils.defineLazyGetter(
     let randomNumber = Math.floor(Math.random() * 1000000);
     let dir = FileUtils.getFile("TmpD", ["testdir-" + randomNumber]);
     dir.createUnique(Ci.nsIFile.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
-    AsyncShutdown.profileBeforeChange.addBlocker(
-      "Removing test files",
-      async () => {
-        
-        for (let path of gPathsToRemove) {
-          await this.tolerantRemove(path);
-        }
 
-        if (!(await OS.File.exists(dir.path))) {
-          return;
-        }
-
-        
-        let iterator = new OS.File.DirectoryIterator(dir.path);
-        try {
-          await iterator.forEach(entry =>
-            this.tolerantRemove(entry.path, entry.isDir)
-          );
-        } finally {
-          iterator.close();
-        }
-        
-        await OS.File.removeEmptyDir(dir.path);
+    
+    
+    
+    
+    
+    OS.File.shutdown.addBlocker("Removing test files", async () => {
+      
+      for (let path of gPathsToRemove) {
+        await this.tolerantRemove(path);
       }
-    );
+
+      if (!(await OS.File.exists(dir.path))) {
+        return;
+      }
+
+      
+      let iterator = new OS.File.DirectoryIterator(dir.path);
+      try {
+        await iterator.forEach(entry =>
+          this.tolerantRemove(entry.path, entry.isDir)
+        );
+      } finally {
+        iterator.close();
+      }
+      
+      await OS.File.removeEmptyDir(dir.path);
+    });
     return dir;
   }
 );
