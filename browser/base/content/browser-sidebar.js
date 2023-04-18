@@ -399,6 +399,12 @@ var SidebarUI = {
 
 
   toggle(commandID = this.lastOpenedId, triggerNode) {
+    if (
+      CustomizationHandler.isCustomizing() ||
+      CustomizationHandler.isExitingCustomizeMode
+    ) {
+      return Promise.resolve();
+    }
     
     
     
