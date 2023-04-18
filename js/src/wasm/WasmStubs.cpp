@@ -2925,39 +2925,6 @@ static bool GenerateTrapExit(MacroAssembler& masm, Label* throwLabel,
   return FinishOffsets(masm, offsets);
 }
 
-static void ClobberWasmRegsForLongJmp(MacroAssembler& masm, Register jumpReg) {
-  
-  AllocatableGeneralRegisterSet gprs(GeneralRegisterSet::All());
-  RegisterAllocator::takeWasmRegisters(gprs);
-  
-  
-  gprs.take(WasmTlsReg);
-  
-  gprs.take(jumpReg);
-  
-  for (GeneralRegisterIterator iter(gprs.asLiveSet()); iter.more(); ++iter) {
-    Register reg = *iter;
-    masm.xorPtr(reg, reg);
-  }
-
-  
-  
-  AllocatableFloatRegisterSet fprs(FloatRegisterSet::All());
-  
-  
-  
-  Maybe<FloatRegister> regNaN;
-  for (FloatRegisterIterator iter(fprs.asLiveSet()); iter.more(); ++iter) {
-    FloatRegister reg = *iter;
-    if (regNaN) {
-      masm.moveDouble(*regNaN, reg);
-      continue;
-    }
-    masm.loadConstantDouble(std::numeric_limits<double>::signaling_NaN(), reg);
-    regNaN = Some(reg);
-  }
-}
-
 
 
 
@@ -3039,7 +3006,6 @@ static bool GenerateThrowStub(MacroAssembler& masm, Label* throwLabel,
   masm.loadStackPtr(
       Address(ReturnReg, offsetof(ResumeFromException, stackPointer)));
   MoveSPForJitABI(masm);
-  ClobberWasmRegsForLongJmp(masm, scratch1);
   masm.jump(scratch1);
 
   
