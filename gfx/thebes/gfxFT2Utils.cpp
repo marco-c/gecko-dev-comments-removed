@@ -7,7 +7,7 @@
 #include "gfxFT2Utils.h"
 #include "mozilla/Likely.h"
 
-#ifdef HAVE_FONTCONFIG_FCFREETYPE_H
+#ifdef USE_FC_FREETYPE
 #  include <fontconfig/fcfreetype.h>
 #endif
 
@@ -19,7 +19,7 @@
 uint32_t gfxFT2LockedFace::GetGlyph(uint32_t aCharCode) {
   if (MOZ_UNLIKELY(!mFace)) return 0;
 
-#ifdef HAVE_FONTCONFIG_FCFREETYPE_H
+#ifdef USE_FC_FREETYPE
   
   
   
@@ -55,7 +55,7 @@ uint32_t gfxFT2LockedFace::GetUVSGlyph(uint32_t aCharCode,
   static CharVariantFunction sGetCharVariantPtr = FindCharVariantFunction();
   if (!sGetCharVariantPtr) return 0;
 
-#ifdef HAVE_FONTCONFIG_FCFREETYPE_H
+#ifdef USE_FC_FREETYPE
   
   
   if (!mFace->charmap || mFace->charmap->encoding != FT_ENCODING_UNICODE) {
