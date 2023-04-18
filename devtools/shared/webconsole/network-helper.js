@@ -123,6 +123,9 @@ var NetworkHelper = {
 
 
   convertToUnicode: function(text, charset) {
+    
+    
+    
     const conv = Cc[
       "@mozilla.org/intl/scriptableunicodeconverter"
     ].createInstance(Ci.nsIScriptableUnicodeConverter);
