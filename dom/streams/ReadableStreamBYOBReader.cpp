@@ -104,9 +104,17 @@ struct Read_ReadIntoRequest final : public ReadIntoRequest {
     
     
     
+
+    
+    
+    JS::RootedObject chunk(aCx, &aChunk.toObject());
+    if (!JS_WrapObject(aCx, &chunk)) {
+      return;
+    }
+
     ReadableStreamBYOBReadResult result;
     result.mValue.Construct();
-    result.mValue.Value().Init(&aChunk.toObject());
+    result.mValue.Value().Init(chunk);
     result.mDone.Construct(false);
 
     mPromise->MaybeResolve(result);
@@ -119,9 +127,17 @@ struct Read_ReadIntoRequest final : public ReadIntoRequest {
     
     
     
+
+    
+    
+    JS::RootedObject chunk(aCx, &aChunk.toObject());
+    if (!JS_WrapObject(aCx, &chunk)) {
+      return;
+    }
+
     ReadableStreamBYOBReadResult result;
     result.mValue.Construct();
-    result.mValue.Value().Init(&aChunk.toObject());
+    result.mValue.Value().Init(chunk);
     result.mDone.Construct(true);
 
     mPromise->MaybeResolve(result);
