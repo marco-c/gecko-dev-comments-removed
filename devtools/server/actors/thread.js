@@ -77,13 +77,6 @@ loader.lazyRequireGetter(
   true
 );
 
-loader.lazyRequireGetter(
-  this,
-  "isDocumentReady",
-  "devtools/server/actors/inspector/utils",
-  true
-);
-
 const PROMISE_REACTIONS = new WeakMap();
 function cacheReactionsForFrame(frame) {
   if (frame.asyncPromise) {
@@ -474,15 +467,6 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     
     
     if (!window?.document?.documentElement) {
-      return false;
-    }
-
-    
-    
-    
-    
-    
-    if (!isDocumentReady(window.document)) {
       return false;
     }
 
