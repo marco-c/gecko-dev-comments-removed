@@ -977,7 +977,8 @@ CanvasRenderingContext2D::CanvasRenderingContext2D(
       mHasPendingStableStateCallback(false),
       mIsEntireFrameInvalid(false),
       mPredictManyRedrawCalls(false),
-      mIsCapturedFrameInvalid(false),
+      mFrameCaptureState(FrameCaptureState::CLEAN,
+                         "CanvasRenderingContext2D::mFrameCaptureState"),
       mPathTransformWillUpdate(false),
       mInvalidateCount(0),
       mWriteOnly(false) {
@@ -1054,7 +1055,7 @@ nsresult CanvasRenderingContext2D::Reset() {
   
   mIsEntireFrameInvalid = false;
   mPredictManyRedrawCalls = false;
-  mIsCapturedFrameInvalid = false;
+  mFrameCaptureState = FrameCaptureState::CLEAN;
 
   return NS_OK;
 }
@@ -1122,7 +1123,7 @@ void CanvasRenderingContext2D::StyleColorToString(const nscolor& aColor,
 }
 
 nsresult CanvasRenderingContext2D::Redraw() {
-  mIsCapturedFrameInvalid = true;
+  mFrameCaptureState = FrameCaptureState::DIRTY;
 
   if (mIsEntireFrameInvalid) {
     return NS_OK;
@@ -1143,7 +1144,7 @@ nsresult CanvasRenderingContext2D::Redraw() {
 }
 
 void CanvasRenderingContext2D::Redraw(const gfx::Rect& aR) {
-  mIsCapturedFrameInvalid = true;
+  mFrameCaptureState = FrameCaptureState::DIRTY;
 
   ++mInvalidateCount;
 
@@ -1169,7 +1170,7 @@ void CanvasRenderingContext2D::Redraw(const gfx::Rect& aR) {
 void CanvasRenderingContext2D::DidRefresh() {}
 
 void CanvasRenderingContext2D::RedrawUser(const gfxRect& aR) {
-  mIsCapturedFrameInvalid = true;
+  mFrameCaptureState = FrameCaptureState::DIRTY;
 
   if (mIsEntireFrameInvalid) {
     ++mInvalidateCount;
@@ -1361,11 +1362,11 @@ bool CanvasRenderingContext2D::EnsureTarget(const gfx::Rect* aCoveredRect,
     mCanvasElement->InvalidateCanvas();
   }
   
-  bool capturedFrameInvalid = mIsCapturedFrameInvalid;
+  FrameCaptureState captureState = mFrameCaptureState;
   
   
   Redraw();
-  mIsCapturedFrameInvalid = capturedFrameInvalid;
+  mFrameCaptureState = captureState;
 
   return true;
 }
@@ -5504,14 +5505,6 @@ void CanvasRenderingContext2D::MarkContextClean() {
   }
   mIsEntireFrameInvalid = false;
   mInvalidateCount = 0;
-}
-
-void CanvasRenderingContext2D::MarkContextCleanForFrameCapture() {
-  mIsCapturedFrameInvalid = false;
-}
-
-bool CanvasRenderingContext2D::IsContextCleanForFrameCapture() {
-  return !mIsCapturedFrameInvalid;
 }
 
 void CanvasRenderingContext2D::GetAppUnitsValues(int32_t* aPerDevPixel,

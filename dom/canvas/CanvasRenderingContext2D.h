@@ -430,8 +430,12 @@ class CanvasRenderingContext2D final : public nsICanvasRenderingContextInternal,
   bool InitializeCanvasRenderer(nsDisplayListBuilder* aBuilder,
                                 CanvasRenderer* aRenderer) override;
   void MarkContextClean() override;
-  void MarkContextCleanForFrameCapture() override;
-  bool IsContextCleanForFrameCapture() override;
+  void MarkContextCleanForFrameCapture() override {
+    mFrameCaptureState = FrameCaptureState::CLEAN;
+  }
+  Watchable<FrameCaptureState>* GetFrameCaptureState() override {
+    return &mFrameCaptureState;
+  }
   NS_IMETHOD SetIsIPC(bool aIsIPC) override;
   
   void Redraw(const mozilla::gfx::Rect& aR);
@@ -750,7 +754,7 @@ class CanvasRenderingContext2D final : public nsICanvasRenderingContextInternal,
 
 
 
-  bool mIsCapturedFrameInvalid;
+  Watchable<FrameCaptureState> mFrameCaptureState;
 
   
 

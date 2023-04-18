@@ -16,6 +16,7 @@
 #include "mozilla/dom/OffscreenCanvas.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/StateWatching.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/WeakPtr.h"
@@ -51,6 +52,8 @@ namespace gfx {
 class SourceSurface;
 }  
 }  
+
+enum class FrameCaptureState : uint8_t { CLEAN, DIRTY };
 
 class nsICanvasRenderingContextInternal : public nsISupports,
                                           public mozilla::SupportsWeakPtr,
@@ -162,7 +165,8 @@ class nsICanvasRenderingContextInternal : public nsISupports,
 
   
   
-  virtual bool IsContextCleanForFrameCapture() = 0;
+  
+  virtual mozilla::Watchable<FrameCaptureState>* GetFrameCaptureState() = 0;
 
   
   NS_IMETHOD Redraw(const gfxRect& dirty) = 0;

@@ -7,6 +7,7 @@
 #  define mozilla_dom_HTMLCanvasElement_h
 
 #  include "mozilla/Attributes.h"
+#  include "mozilla/StateWatching.h"
 #  include "mozilla/WeakPtr.h"
 #  include "nsIDOMEventListener.h"
 #  include "nsIObserver.h"
@@ -23,6 +24,7 @@ class nsICanvasRenderingContextInternal;
 class nsIInputStream;
 class nsITimerCallback;
 enum class gfxAlphaType;
+enum class FrameCaptureState : uint8_t;
 
 namespace mozilla {
 
@@ -301,7 +303,8 @@ class HTMLCanvasElement final : public nsGenericHTMLElement,
   void MarkContextCleanForFrameCapture();
 
   
-  bool IsContextCleanForFrameCapture();
+  
+  Watchable<FrameCaptureState>* GetFrameCaptureState();
 
   nsresult GetContext(const nsAString& aContextId, nsISupports** aContext);
 
