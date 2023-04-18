@@ -34,6 +34,9 @@ static const char* sLibs[] = {
   "libavcodec.55.dylib",
   "libavcodec.54.dylib",
   "libavcodec.53.dylib",
+#elif defined(XP_OPENBSD)
+  "libavcodec.so", 
+                   
 #else
   "libavcodec.so.59",
   "libavcodec.so.58",
