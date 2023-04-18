@@ -419,12 +419,16 @@ var BookmarkPropertiesPanel = {
   onDialogAccept() {
     
     document.commandDispatcher.focusedElement?.blur();
+
+    
+    if (this._node.bookmarkGuid) {
+      window.arguments[0].bookmarkState = gEditItemOverlay._bookmarkState;
+    }
     
     
     gEditItemOverlay.uninitPanel(true);
-    if (this._node.bookmarkGuid) {
-      window.arguments[0].bookmarkGuid = this._node.bookmarkGuid;
-    }
+
+    window.arguments[0].bookmarkGuid = this._node.bookmarkGuid;
   },
 
   onDialogCancel() {

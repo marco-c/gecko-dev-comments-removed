@@ -214,6 +214,8 @@ function isToolbarVisible(aToolbar) {
 
 
 
+
+
 var withBookmarksDialog = async function(
   autoCancel,
   openFn,
@@ -295,7 +297,7 @@ var withBookmarksDialog = async function(
   if (closeFn) {
     closePromise = closeFn(dialogWin);
   }
-
+  let guid;
   try {
     await taskFn(dialogWin);
   } finally {
@@ -304,9 +306,11 @@ var withBookmarksDialog = async function(
       doc.getElementById("bookmarkpropertiesdialog").cancelDialog();
       await closePromise;
     }
+    guid = await PlacesUIUtils.lastBookmarkDialogDeferred.promise;
     
     await dialogClosePromise;
   }
+  return guid;
 };
 
 
