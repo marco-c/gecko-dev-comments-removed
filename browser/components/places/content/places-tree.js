@@ -17,7 +17,6 @@
 
       this.addEventListener("focus", event => {
         this._cachedInsertionPoint = undefined;
-
         
         
         document.commandDispatcher.updateCommands("focus");
@@ -67,6 +66,10 @@
             break;
           }
         }
+
+        
+        
+        this._isDragSource = true;
 
         this._controller.setDataTransfer(event);
         event.stopPropagation();
@@ -123,6 +126,7 @@
       });
 
       this.addEventListener("dragend", event => {
+        this._isDragSource = false;
         PlacesControllerDragHelper.currentDropTarget = null;
       });
     }
@@ -388,6 +392,10 @@
         orientation
       );
       return this._cachedInsertionPoint;
+    }
+
+    get isDragSource() {
+      return this._isDragSource;
     }
 
     get ownerWindow() {
