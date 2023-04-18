@@ -10,12 +10,12 @@
 #include "nsIMutationObserver.h"
 #include "mozilla/dom/RustTypes.h"
 
-class nsIContent;
 namespace mozilla {
 
 namespace dom {
 class Document;
-}
+class Element;
+}  
 }  
 
 #define NS_IDOCUMENT_OBSERVER_IID                    \
@@ -68,11 +68,9 @@ class nsIDocumentObserver : public nsIMutationObserver {
 
 
 
-
-
-  virtual void ContentStateChanged(mozilla::dom::Document*,
-                                   nsIContent* aContent,
-                                   mozilla::dom::ElementState aStateMask) = 0;
+  virtual void ElementStateChanged(mozilla::dom::Document*,
+                                   mozilla::dom::Element*,
+                                   mozilla::dom::ElementState) = 0;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIDocumentObserver, NS_IDOCUMENT_OBSERVER_IID)
@@ -89,10 +87,10 @@ NS_DEFINE_STATIC_IID_ACCESSOR(nsIDocumentObserver, NS_IDOCUMENT_OBSERVER_IID)
 #define NS_DECL_NSIDOCUMENTOBSERVER_ENDLOAD \
   virtual void EndLoad(mozilla::dom::Document*) override;
 
-#define NS_DECL_NSIDOCUMENTOBSERVER_CONTENTSTATECHANGED \
-  virtual void ContentStateChanged(                     \
-      mozilla::dom::Document*, nsIContent* aContent,    \
-      mozilla::dom::ElementState aStateMask) override;
+#define NS_DECL_NSIDOCUMENTOBSERVER_CONTENTSTATECHANGED     \
+  virtual void ElementStateChanged(mozilla::dom::Document*, \
+                                   mozilla::dom::Element*,  \
+                                   mozilla::dom::ElementState) override;
 
 #define NS_DECL_NSIDOCUMENTOBSERVER               \
   NS_DECL_NSIDOCUMENTOBSERVER_BEGINUPDATE         \
@@ -112,9 +110,9 @@ NS_DEFINE_STATIC_IID_ACCESSOR(nsIDocumentObserver, NS_IDOCUMENT_OBSERVER_IID)
   void _class::EndLoad(mozilla::dom::Document*) {}
 
 #define NS_IMPL_NSIDOCUMENTOBSERVER_STATE_STUB(_class)      \
-  void _class::ContentStateChanged(mozilla::dom::Document*, \
-                                   nsIContent* aContent,    \
-                                   mozilla::dom::ElementState aStateMask) {}
+  void _class::ElementStateChanged(mozilla::dom::Document*, \
+                                   mozilla::dom::Element*,  \
+                                   mozilla::dom::ElementState) {}
 
 #define NS_IMPL_NSIDOCUMENTOBSERVER_CONTENT(_class) \
   NS_IMPL_NSIMUTATIONOBSERVER_CONTENT(_class)

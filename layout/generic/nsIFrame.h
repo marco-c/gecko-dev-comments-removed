@@ -2359,7 +2359,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  virtual void ContentStatesChanged(mozilla::dom::ElementState aStates);
+  virtual void ElementStateChanged(mozilla::dom::ElementState aStates);
 
   
 

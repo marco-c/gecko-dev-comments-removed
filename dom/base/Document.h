@@ -2061,7 +2061,7 @@ class Document : public nsINode,
 
   
   
-  void ContentStateChanged(nsIContent* aContent, ElementState aStateMask);
+  void ElementStateChanged(Element*, ElementState);
 
   
   
