@@ -339,28 +339,27 @@ class JS_HAZ_ROOTED nsWrapperCache {
  private:
   void SetWrapperJSObject(JSObject* aWrapper);
 
-  FlagsType GetWrapperFlags() const {
-    
-    
-    MOZ_ASSERT(!NS_IsMainThread() || !mozilla::IsInServoTraversal());
-    return mFlags.Get() & kWrapperFlagsMask;
-  }
+  
+  
+  
+  
+  
+  
+  
+  FlagsType GetWrapperFlags() const { return mFlags.Get() & kWrapperFlagsMask; }
 
   bool HasWrapperFlag(FlagsType aFlag) const {
-    MOZ_ASSERT(!NS_IsMainThread() || !mozilla::IsInServoTraversal());
     MOZ_ASSERT((aFlag & ~kWrapperFlagsMask) == 0, "Bad wrapper flag bits");
     return !!(mFlags.Get() & aFlag);
   }
 
   void SetWrapperFlags(FlagsType aFlagsToSet) {
-    MOZ_ASSERT(!NS_IsMainThread() || !mozilla::IsInServoTraversal());
     MOZ_ASSERT((aFlagsToSet & ~kWrapperFlagsMask) == 0,
                "Bad wrapper flag bits");
     mFlags.Set(mFlags.Get() | aFlagsToSet);
   }
 
   void UnsetWrapperFlags(FlagsType aFlagsToUnset) {
-    MOZ_ASSERT(!NS_IsMainThread() || !mozilla::IsInServoTraversal());
     MOZ_ASSERT((aFlagsToUnset & ~kWrapperFlagsMask) == 0,
                "Bad wrapper flag bits");
     mFlags.Set(mFlags.Get() & ~aFlagsToUnset);
