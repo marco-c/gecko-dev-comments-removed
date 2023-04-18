@@ -67,16 +67,9 @@ class Channel {
   enum Mode { MODE_SERVER, MODE_CLIENT };
 
   enum {
-
-  
-  
-  
-  
-#ifndef FUZZING
+    
+    
     kMaximumMessageSize = 256 * 1024 * 1024,
-#else
-    kMaximumMessageSize = 4 * 1024 * 1024 * 1024,
-#endif
 
     
     kReadBufferSize = 4 * 1024,
