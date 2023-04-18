@@ -44,21 +44,21 @@ pub enum ConnectionEvent {
     },
     
     RecvStreamReadable {
-        stream_id: u64,
+        stream_id: StreamId,
     },
     
     RecvStreamReset {
-        stream_id: u64,
+        stream_id: StreamId,
         app_error: AppError,
     },
     
     SendStreamStopSending {
-        stream_id: u64,
+        stream_id: StreamId,
         app_error: AppError,
     },
     
     SendStreamComplete {
-        stream_id: u64,
+        stream_id: StreamId,
     },
     
     SendStreamCreatable {
@@ -99,9 +99,7 @@ impl ConnectionEvents {
     }
 
     pub fn recv_stream_readable(&self, stream_id: StreamId) {
-        self.insert(ConnectionEvent::RecvStreamReadable {
-            stream_id: stream_id.as_u64(),
-        });
+        self.insert(ConnectionEvent::RecvStreamReadable { stream_id });
     }
 
     pub fn recv_stream_reset(&self, stream_id: StreamId, app_error: AppError) {
@@ -109,7 +107,7 @@ impl ConnectionEvents {
         self.remove(|evt| matches!(evt, ConnectionEvent::RecvStreamReadable { stream_id: x } if *x == stream_id.as_u64()));
 
         self.insert(ConnectionEvent::RecvStreamReset {
-            stream_id: stream_id.as_u64(),
+            stream_id,
             app_error,
         });
     }
@@ -120,10 +118,10 @@ impl ConnectionEvents {
 
     pub fn send_stream_stop_sending(&self, stream_id: StreamId, app_error: AppError) {
         
-        self.remove(|evt| matches!(evt, ConnectionEvent::SendStreamWritable { stream_id: x } if *x == stream_id.as_u64()));
+        self.remove(|evt| matches!(evt, ConnectionEvent::SendStreamWritable { stream_id: x } if *x == stream_id));
 
         self.insert(ConnectionEvent::SendStreamStopSending {
-            stream_id: stream_id.as_u64(),
+            stream_id,
             app_error,
         });
     }
@@ -133,9 +131,7 @@ impl ConnectionEvents {
 
         self.remove(|evt| matches!(evt, ConnectionEvent::SendStreamStopSending { stream_id: x, .. } if *x == stream_id.as_u64()));
 
-        self.insert(ConnectionEvent::SendStreamComplete {
-            stream_id: stream_id.as_u64(),
-        });
+        self.insert(ConnectionEvent::SendStreamComplete { stream_id });
     }
 
     pub fn send_stream_creatable(&self, stream_type: StreamType) {
@@ -287,7 +283,7 @@ mod tests {
         assert_eq!(
             events[0],
             ConnectionEvent::SendStreamStopSending {
-                stream_id: 8,
+                stream_id: StreamId::new(8),
                 app_error: 55
             }
         );
