@@ -185,9 +185,24 @@ class WindowManager {
 
 
 
-  async openBrowserWindow(openerWindow, focus = false, isPrivate = false) {
+
+
+  async openBrowserWindow(options = {}) {
+    let { focus = false, isPrivate = false, openerWindow = null } = options;
+
     switch (AppInfo.name) {
       case "Firefox":
+        if (openerWindow === null) {
+          
+          openerWindow = Services.wm.getMostRecentBrowserWindow();
+        }
+
+        if (!openerWindow) {
+          throw new error.UnsupportedOperationError(
+            `openWindow() could not find a valid opener window`
+          );
+        }
+
         
         
         
@@ -202,7 +217,11 @@ class WindowManager {
           }
         );
 
+        
+        
+        
         win.focus();
+
         await Promise.all([activated, focused, startup]);
 
         
