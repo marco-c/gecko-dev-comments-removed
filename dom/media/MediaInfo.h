@@ -437,7 +437,6 @@ class VideoInfo : public TrackInfo {
 
   
   
-  
   Maybe<gfx::TransferFunction> mTransferFunction;
 
   
