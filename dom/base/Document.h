@@ -2889,6 +2889,10 @@ class Document : public nsINode,
 
   Document* GetTemplateContentsOwner();
 
+  Document* GetTemplateContentsOwnerIfExists() const {
+    return mTemplateContentsOwner.get();
+  }
+
   
 
 
