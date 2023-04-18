@@ -49,8 +49,10 @@ var gSearchPane = {
     window.addEventListener("dblclick", this);
 
     Services.obs.addObserver(this, "browser-search-engine-modified");
+    Services.obs.addObserver(this, "intl:app-locales-changed");
     window.addEventListener("unload", () => {
       Services.obs.removeObserver(this, "browser-search-engine-modified");
+      Services.obs.removeObserver(this, "intl:app-locales-changed");
     });
 
     let suggestsPref = Preferences.get("browser.search.suggest.enabled");
@@ -337,6 +339,14 @@ var gSearchPane = {
   
 
 
+  async appLocalesChanged() {
+    await document.l10n.ready;
+    await gEngineView.loadL10nNames();
+  },
+
+  
+
+
 
 
 
@@ -392,6 +402,10 @@ var gSearchPane = {
 
   observe(subject, topic, data) {
     switch (topic) {
+      case "intl:app-locales-changed": {
+        this.appLocalesChanged();
+        break;
+      }
       case "browser-search-engine-modified": {
         this.browserSearchEngineModified(subject, data);
         break;
