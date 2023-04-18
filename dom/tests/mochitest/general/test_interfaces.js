@@ -759,21 +759,21 @@ var interfaceNamesInGlobalScope = [
   
   { name: "MessagePort", insecureContext: true },
   
-  { name: "MIDIAccess", disabled: true },
+  { name: "MIDIAccess", android: false },
   
-  { name: "MIDIConnectionEvent", disabled: true },
+  { name: "MIDIConnectionEvent", android: false },
   
-  { name: "MIDIInputMap", disabled: true },
+  { name: "MIDIInputMap", android: false },
   
-  { name: "MIDIInput", disabled: true },
+  { name: "MIDIInput", android: false },
   
-  { name: "MIDIMessageEvent", disabled: true },
+  { name: "MIDIMessageEvent", android: false },
   
-  { name: "MIDIOutputMap", disabled: true },
+  { name: "MIDIOutputMap", android: false },
   
-  { name: "MIDIOutput", disabled: true },
+  { name: "MIDIOutput", android: false },
   
-  { name: "MIDIPort", disabled: true },
+  { name: "MIDIPort", android: false },
   
   { name: "MimeType", insecureContext: true },
   
