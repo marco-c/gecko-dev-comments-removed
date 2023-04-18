@@ -610,12 +610,27 @@ function pedanticChecks(report) {
       
       
       
-      if (report.get(stat.codecId).mimeType.includes("VP")) {
+      const mimeType = report.get(stat.codecId).mimeType;
+      if (mimeType.includes("VP")) {
         ok(
           stat.qpSum >= 0,
           `${stat.type}.qpSum is a sane number (${stat.kind}) ` +
             `for ${report.get(stat.codecId).mimeType}. value=${stat.qpSum}`
         );
+      } else if (mimeType.includes("H264")) {
+        
+        if (!stat.qpSum && !("qpSum" in stat)) {
+          ok(
+            !stat.qpSum && !("qpSum" in stat),
+            `${stat.type}.qpSum absent for ${report.get(stat.codecId).mimeType}`
+          );
+        } else {
+          ok(
+            stat.qpSum >= 0,
+            `${stat.type}.qpSum is a sane number (${stat.kind}) ` +
+              `for ${report.get(stat.codecId).mimeType}. value=${stat.qpSum}`
+          );
+        }
       } else {
         ok(
           !stat.qpSum && !("qpSum" in stat),

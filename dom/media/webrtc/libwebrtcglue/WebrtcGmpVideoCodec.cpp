@@ -610,6 +610,10 @@ void WebrtcGmpVideoEncoder::Encoded(
   unit._completeFrame = true;
 
   
+  mH264BitstreamParser.ParseBitstream(unit.data(), unit.size());
+  mH264BitstreamParser.GetLastSliceQp(&unit.qp_);
+
+  
   
   
   
