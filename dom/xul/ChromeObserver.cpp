@@ -175,8 +175,7 @@ void ChromeObserver::AttributeChanged(dom::Element* aElement,
       
       
       mDocument->ResetDocumentDirection();
-    } else if (aName == nsGkAtoms::lwtheme ||
-               aName == nsGkAtoms::lwthemetextcolor) {
+    } else if (aName == nsGkAtoms::lwtheme) {
       
       
       mDocument->ResetDocumentLWTheme();
@@ -190,8 +189,7 @@ void ChromeObserver::AttributeChanged(dom::Element* aElement,
       
       
       mDocument->ResetDocumentDirection();
-    } else if ((aName == nsGkAtoms::lwtheme ||
-                aName == nsGkAtoms::lwthemetextcolor)) {
+    } else if (aName == nsGkAtoms::lwtheme) {
       
       mDocument->ResetDocumentLWTheme();
     } else if (aName == nsGkAtoms::drawintitlebar) {

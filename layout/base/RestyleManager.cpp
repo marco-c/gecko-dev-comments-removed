@@ -3369,16 +3369,10 @@ void RestyleManager::TakeSnapshotForAttributeChange(Element& aElement,
 
 
 
-
-
 static inline bool AttributeChangeRequiresSubtreeRestyle(
     const Element& aElement, nsAtom* aAttr) {
   if (aAttr == nsGkAtoms::cellpadding) {
     return aElement.IsHTMLElement(nsGkAtoms::table);
-  }
-  if (aAttr == nsGkAtoms::lwtheme || aAttr == nsGkAtoms::lwthemetextcolor) {
-    Document* doc = aElement.OwnerDoc();
-    return doc->IsInChromeDocShell() && &aElement == doc->GetRootElement();
   }
   
   

@@ -358,14 +358,9 @@ enum class DeprecatedOperations : uint16_t {
 #define NS_DOCUMENT_STATE_LTR_LOCALE NS_DEFINE_EVENT_STATE_MACRO(2)
 
 #define NS_DOCUMENT_STATE_LWTHEME NS_DEFINE_EVENT_STATE_MACRO(3)
-#define NS_DOCUMENT_STATE_LWTHEME_BRIGHTTEXT NS_DEFINE_EVENT_STATE_MACRO(4)
-#define NS_DOCUMENT_STATE_LWTHEME_DARKTEXT NS_DEFINE_EVENT_STATE_MACRO(5)
 
 #define NS_DOCUMENT_STATE_ALL_LOCALEDIR_BITS \
   (NS_DOCUMENT_STATE_RTL_LOCALE | NS_DOCUMENT_STATE_LTR_LOCALE)
-#define NS_DOCUMENT_STATE_ALL_LWTHEME_BITS                            \
-  (NS_DOCUMENT_STATE_LWTHEME | NS_DOCUMENT_STATE_LWTHEME_BRIGHTTEXT | \
-   NS_DOCUMENT_STATE_LWTHEME_DARKTEXT)
 
 class ExternalResourceMap {
   using SubDocEnumFunc = FunctionRef<CallState(Document&)>;
@@ -3035,17 +3030,13 @@ class Document : public nsINode,
     SetStateObject(aDocument->mStateObjectContainer);
   }
 
-  enum class DocumentTheme { None, Neutral, Dark, Bright };
-
   
 
 
 
-
-
-  DocumentTheme GetDocumentLWTheme() const;
+  bool ComputeDocumentLWTheme() const;
   void ResetDocumentLWTheme() {
-    UpdateDocumentStates(NS_DOCUMENT_STATE_ALL_LWTHEME_BITS, true);
+    UpdateDocumentStates(NS_DOCUMENT_STATE_LWTHEME, true);
   }
 
   
