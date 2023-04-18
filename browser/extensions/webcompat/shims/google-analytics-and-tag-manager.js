@@ -174,3 +174,14 @@ if (window[window.GoogleAnalyticsObject || "ga"]?.loaded === undefined) {
   
   run(window.dataLayer?.hide?.end);
 }
+
+if (!window?.gaplugins?.Linker) {
+  window.gaplugins = window.gaplugins || {};
+  window.gaplugins.Linker = class {
+    autoLink() {}
+    decorate(url) {
+      return url;
+    }
+    passthrough() {}
+  };
+}
