@@ -2,7 +2,7 @@
  	"use strict";
  	var __webpack_modules__ = ({
 
- 672:
+ 318:
  ((__unused_webpack_module, __unused_webpack___webpack_exports__, __webpack_require__) => {
 
 
@@ -925,12 +925,43 @@ SavedOverlay.prototype = {
 
 
 
+
+function ArticleList(props) {
+  return react.createElement("ul", {
+    className: "stp_article_list"
+  }, props.articles.map(article => react.createElement("li", {
+    className: "stp_article_list_item"
+  }, react.createElement("a", {
+    className: "stp_article_list_link",
+    href: article.url
+  }, react.createElement("img", {
+    className: "stp_article_list_thumb",
+    src: article.thumbnail,
+    alt: article.alt
+  }), react.createElement("div", {
+    className: "stp_article_list_meta"
+  }, react.createElement("header", {
+    className: "stp_article_list_header"
+  }, article.title), react.createElement("p", {
+    className: "stp_article_list_publisher"
+  }, article.publisher))))));
+}
+
+ const ArticleList_ArticleList = (ArticleList);
+;
+
+
+
+
+
 var StyleGuideOverlay = function (options) {};
 
 StyleGuideOverlay.prototype = {
   create() {
     
-    react_dom.render( react.createElement(PopularTopics_PopularTopics, {
+    react_dom.render( react.createElement("div", null, react.createElement("h3", null, "JSX Components:"), react.createElement("h4", {
+      className: "stp_styleguide_h4"
+    }, "PopularTopics"), react.createElement(PopularTopics_PopularTopics, {
       pockethost: `getpocket.com`,
       utmsource: `styleguide`,
       topics: [{
@@ -946,7 +977,29 @@ StyleGuideOverlay.prototype = {
         title: "Science",
         topic: "science"
       }]
-    }), document.querySelector(`#stp_style_guide_components`));
+    }), react.createElement("h4", {
+      className: "stp_styleguide_h4"
+    }, "ArticleList"), react.createElement(ArticleList_ArticleList, {
+      articles: [{
+        title: "Article Title",
+        publisher: "Publisher",
+        thumbnail: "https://img-getpocket.cdn.mozilla.net/80x80/https://www.raritanheadwaters.org/wp-content/uploads/2020/04/red-fox.jpg",
+        url: "https://example.org",
+        alt: "Alt Text"
+      }, {
+        title: "Article Title",
+        publisher: "Publisher",
+        thumbnail: "https://img-getpocket.cdn.mozilla.net/80x80/https://www.raritanheadwaters.org/wp-content/uploads/2020/04/red-fox.jpg",
+        url: "https://example.org",
+        alt: "Alt Text"
+      }, {
+        title: "Article Title",
+        publisher: "Publisher",
+        thumbnail: "https://img-getpocket.cdn.mozilla.net/80x80/https://www.raritanheadwaters.org/wp-content/uploads/2020/04/red-fox.jpg",
+        url: "https://example.org",
+        alt: "Alt Text"
+      }]
+    })), document.querySelector(`#stp_style_guide_components`));
   }
 
 };
@@ -1198,7 +1251,7 @@ window.pktPanelMessaging = messages;
  	
  	
  	
- 	var __webpack_exports__ = __webpack_require__.O(undefined, [736], () => (__webpack_require__(672)))
+ 	var __webpack_exports__ = __webpack_require__.O(undefined, [736], () => (__webpack_require__(318)))
  	__webpack_exports__ = __webpack_require__.O(__webpack_exports__);
  	
  })()
