@@ -92,6 +92,11 @@ uint32_t ParseFeaturesFromStringArray(const char** aFeatures,
                                       uint32_t aFeatureCount,
                                       bool aIsStartup = false);
 
+
+void profiler_mark_thread_awake();
+
+void profiler_mark_thread_asleep();
+
 bool profiler_get_profile_json(
     SpliceableChunkedJSONWriter& aSpliceableChunkedJSONWriter,
     double aSinceTime, bool aIsShuttingDown,
