@@ -1503,17 +1503,6 @@ const DebugUtils = {
     throw Error(`Unable to terminate background script for ${addonId}`);
   },
 
-  watchBackgroundScriptStatusUpdates(callback) {
-    const listener = (_evtName, addonId, isRunning) => {
-      callback(addonId, isRunning);
-    };
-    apiManager.on(`devtools:background-script-status`, listener);
-
-    return () => {
-      apiManager.off(`devtools:background-script-status`, listener);
-    };
-  },
-
   
 
 

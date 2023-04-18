@@ -40,6 +40,13 @@ XPCOMUtils.defineLazyPreferenceGetter(
   delay => Math.min(Math.max(delay, 100), 5 * 60 * 1000)
 );
 
+function notifyBackgroundScriptStatus(addonId, isRunning) {
+  
+  
+  const subject = { addonId, isRunning };
+  Services.obs.notifyObservers(subject, "extension:background-script-status");
+}
+
 
 class BackgroundPage extends HiddenExtensionPage {
   constructor(extension, options) {
@@ -100,20 +107,10 @@ class BackgroundPage extends HiddenExtensionPage {
       await Promise.all(context.listenerPromises);
       context.listenerPromises = null;
 
-      
-      
-      extensions.emit(
-        `devtools:background-script-status`,
-        extension.id,
-        true 
-      );
+      notifyBackgroundScriptStatus(extension.id, true);
       context.callOnClose({
         close() {
-          extensions.emit(
-            `devtools:background-script-status`,
-            extension.id,
-            false 
-          );
+          notifyBackgroundScriptStatus(extension.id, false);
         },
       });
     }
@@ -211,20 +208,10 @@ class BackgroundWorker {
       await Promise.all(context.listenerPromises);
       context.listenerPromises = null;
 
-      
-      
-      extensions.emit(
-        `devtools:background-script-status`,
-        extension.id,
-        true 
-      );
+      notifyBackgroundScriptStatus(extension.id, true);
       context.callOnClose({
         close() {
-          extensions.emit(
-            `devtools:background-script-status`,
-            extension.id,
-            false 
-          );
+          notifyBackgroundScriptStatus(extension.id, false);
         },
       });
     }
