@@ -763,8 +763,8 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
       
       
       
-      double rate = mVsyncRefreshDriverTimer->GetTimerRate().ToMilliseconds();
-      TimeDuration gracePeriod = TimeDuration::FromMilliseconds(rate / 100.0f);
+      TimeDuration rate = mVsyncRefreshDriverTimer->GetTimerRate();
+      TimeDuration gracePeriod = rate / int64_t(100);
 
       if (shouldGiveNonVSyncTasksMoreTime) {
         if (!mLastTickEnd.IsNull() && XRE_IsContentProcess() &&
@@ -776,8 +776,7 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
           
           
           TimeDuration timeForOutsideTick = tickStart - mLastTickEnd;
-          TimeDuration maxOutsideTick =
-              TimeDuration::FromMilliseconds(4 * rate);
+          TimeDuration maxOutsideTick = rate * 4;
           if (timeForOutsideTick > maxOutsideTick) {
             timeForOutsideTick = maxOutsideTick;
           }
