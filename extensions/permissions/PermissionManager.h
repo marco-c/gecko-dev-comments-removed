@@ -194,15 +194,6 @@ class PermissionManager final : public nsIPermissionManager,
       nsIURI* aURI, const OriginAttributes* aOriginAttributes,
       const nsACString& aType, uint32_t* aPermission);
 
-  
-
-
-
-
-
-
-  static void Startup();
-
   nsresult RemovePermissionsWithAttributes(OriginAttributesPattern& aAttrs);
 
   
@@ -529,7 +520,7 @@ class PermissionManager final : public nsIPermissionManager,
                                       uint32_t aExpireType, int64_t aExpireTime,
                                       int64_t aModificationTime, int64_t aId);
 
-  nsCOMPtr<nsIAsyncShutdownClient> GetShutdownPhase() const;
+  nsCOMPtr<nsIAsyncShutdownClient> GetAsyncShutdownClient() const;
 
   void MaybeCompleteShutdown();
 
@@ -645,8 +636,6 @@ class PermissionManager final : public nsIPermissionManager,
   void CompleteMigrations();
 
   bool mMemoryOnlyDB;
-
-  bool mBlockerAdded;
 
   nsTHashtable<PermissionHashKey> mPermissionTable;
   
