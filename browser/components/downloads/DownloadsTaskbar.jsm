@@ -18,12 +18,13 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-XPCOMUtils.defineLazyModuleGetters(this, {
+const lazy = {};
+XPCOMUtils.defineLazyModuleGetters(lazy, {
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
   Downloads: "resource://gre/modules/Downloads.jsm",
 });
 
-XPCOMUtils.defineLazyGetter(this, "gWinTaskbar", function() {
+XPCOMUtils.defineLazyGetter(lazy, "gWinTaskbar", function() {
   if (!("@mozilla.org/windows-taskbar;1" in Cc)) {
     return null;
   }
@@ -33,14 +34,14 @@ XPCOMUtils.defineLazyGetter(this, "gWinTaskbar", function() {
   return winTaskbar.available && winTaskbar;
 });
 
-XPCOMUtils.defineLazyGetter(this, "gMacTaskbarProgress", function() {
+XPCOMUtils.defineLazyGetter(lazy, "gMacTaskbarProgress", function() {
   return (
     "@mozilla.org/widget/macdocksupport;1" in Cc &&
     Cc["@mozilla.org/widget/macdocksupport;1"].getService(Ci.nsITaskbarProgress)
   );
 });
 
-XPCOMUtils.defineLazyGetter(this, "gGtkTaskbarProgress", function() {
+XPCOMUtils.defineLazyGetter(lazy, "gGtkTaskbarProgress", function() {
   return (
     "@mozilla.org/widget/taskbarprogress/gtk;1" in Cc &&
     Cc["@mozilla.org/widget/taskbarprogress/gtk;1"].getService(
@@ -86,20 +87,20 @@ var DownloadsTaskbar = {
 
   registerIndicator(aBrowserWindow) {
     if (!this._taskbarProgress) {
-      if (gMacTaskbarProgress) {
+      if (lazy.gMacTaskbarProgress) {
         
-        this._taskbarProgress = gMacTaskbarProgress;
+        this._taskbarProgress = lazy.gMacTaskbarProgress;
         
         Services.obs.addObserver(() => {
           this._taskbarProgress = null;
-          gMacTaskbarProgress = null;
+          lazy.gMacTaskbarProgress = null;
         }, "quit-application-granted");
-      } else if (gWinTaskbar) {
+      } else if (lazy.gWinTaskbar) {
         
         
         this._attachIndicator(aBrowserWindow);
-      } else if (gGtkTaskbarProgress) {
-        this._taskbarProgress = gGtkTaskbarProgress;
+      } else if (lazy.gGtkTaskbarProgress) {
+        this._taskbarProgress = lazy.gGtkTaskbarProgress;
 
         this._attachGtkTaskbarProgress(aBrowserWindow);
       } else {
@@ -110,7 +111,7 @@ var DownloadsTaskbar = {
 
     
     if (!this._summary) {
-      Downloads.getSummary(Downloads.ALL)
+      lazy.Downloads.getSummary(lazy.Downloads.ALL)
         .then(summary => {
           
           
@@ -130,7 +131,7 @@ var DownloadsTaskbar = {
   _attachIndicator(aWindow) {
     
     let { docShell } = aWindow.browsingContext.topChromeWindow;
-    this._taskbarProgress = gWinTaskbar.getTaskbarProgress(docShell);
+    this._taskbarProgress = lazy.gWinTaskbar.getTaskbarProgress(docShell);
 
     
     
@@ -141,7 +142,7 @@ var DownloadsTaskbar = {
 
     aWindow.addEventListener("unload", () => {
       
-      let browserWindow = BrowserWindowTracker.getTopWindow();
+      let browserWindow = lazy.BrowserWindowTracker.getTopWindow();
       if (browserWindow) {
         
         this._attachIndicator(browserWindow);
@@ -170,7 +171,7 @@ var DownloadsTaskbar = {
 
     aWindow.addEventListener("unload", () => {
       
-      let browserWindow = BrowserWindowTracker.getTopWindow();
+      let browserWindow = lazy.BrowserWindowTracker.getTopWindow();
       if (browserWindow) {
         
         this._attachGtkTaskbarProgress(browserWindow);
