@@ -337,6 +337,10 @@ class XPCJSContext final : public mozilla::CycleCollectedJSContext,
   virtual void BeforeProcessTask(bool aMightBlock) override;
   virtual void AfterProcessTask(uint32_t aNewRecursionDepth) override;
 
+  
+  
+  virtual void MaybePokeGC() override;
+
   ~XPCJSContext();
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf);

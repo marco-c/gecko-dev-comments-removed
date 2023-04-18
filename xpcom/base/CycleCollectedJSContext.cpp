@@ -467,7 +467,7 @@ void CycleCollectedJSContext::AfterProcessTask(uint32_t aRecursionDepth) {
 
   
   
-  IsIdleGCTaskNeeded();
+  MaybePokeGC();
 }
 
 void CycleCollectedJSContext::AfterProcessMicrotasks() {
@@ -493,7 +493,9 @@ void CycleCollectedJSContext::AfterProcessMicrotasks() {
   JS::ClearKeptObjects(mJSContext);
 }
 
-void CycleCollectedJSContext::IsIdleGCTaskNeeded() const {
+void CycleCollectedJSContext::MaybePokeGC() {
+  
+  
   class IdleTimeGCTaskRunnable : public mozilla::IdleRunnable {
    public:
     using mozilla::IdleRunnable::IdleRunnable;
