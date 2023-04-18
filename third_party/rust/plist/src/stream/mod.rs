@@ -48,6 +48,7 @@ use crate::{
 
 
 #[derive(Clone, Debug, PartialEq)]
+#[non_exhaustive]
 pub enum Event<'a> {
     
     
@@ -62,9 +63,6 @@ pub enum Event<'a> {
     Real(f64),
     String(Cow<'a, str>),
     Uid(Uid),
-
-    #[doc(hidden)]
-    __Nonexhaustive,
 }
 
 
@@ -147,7 +145,6 @@ impl<'a> Iterator for Events<'a> {
                 Value::Integer(value) => Event::Integer(*value),
                 Value::String(value) => Event::String(Cow::Borrowed(value.as_str())),
                 Value::Uid(value) => Event::Uid(*value),
-                Value::__Nonexhaustive => unreachable!(),
             }
         }
 
@@ -243,7 +240,6 @@ pub trait Writer: private::Sealed {
             Event::Real(value) => self.write_real(*value),
             Event::String(value) => self.write_string(value),
             Event::Uid(value) => self.write_uid(*value),
-            Event::__Nonexhaustive => unreachable!(),
         }
     }
 
