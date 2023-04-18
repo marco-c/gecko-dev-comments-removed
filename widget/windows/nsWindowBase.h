@@ -56,12 +56,6 @@ class nsWindowBase : public nsBaseWidget {
 
 
 
-  virtual bool DispatchWindowEvent(mozilla::WidgetGUIEvent* aEvent) = 0;
-
-  
-
-
-
 
   virtual bool DispatchKeyboardEvent(mozilla::WidgetKeyboardEvent* aEvent) = 0;
 

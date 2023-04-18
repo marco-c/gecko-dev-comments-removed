@@ -1303,7 +1303,7 @@ bool MouseScrollHandler::Device::Elantech::HandleKeyMessage(
       
       
       InitEvent(aWidget, appCommandEvent, nullptr);
-      aWidget->DispatchWindowEvent(&appCommandEvent);
+      aWidget->DispatchWindowEvent(appCommandEvent);
     } else {
       MOZ_LOG(gMouseScrollLog, LogLevel::Info,
               ("MouseScroll::Device::Elantech::HandleKeyMessage(): Consumed"));

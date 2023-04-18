@@ -1298,12 +1298,6 @@ nsresult nsChildView::DispatchEvent(WidgetGUIEvent* event, nsEventStatus& aStatu
   return NS_OK;
 }
 
-bool nsChildView::DispatchWindowEvent(WidgetGUIEvent& event) {
-  nsEventStatus status;
-  DispatchEvent(&event, status);
-  return ConvertStatus(status);
-}
-
 nsIWidget* nsChildView::GetWidgetForListenerEvents() {
   
   if (!mWidgetListener && mParentWidget && mParentWidget->WindowType() == eWindowType_popup) {
