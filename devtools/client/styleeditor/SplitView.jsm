@@ -105,16 +105,7 @@ class SplitView {
 
 
 
-  get activeSummary() {
-    return this._activeSummary;
-  }
-
-  
-
-
-
-
-  set activeSummary(summary) {
+  setActiveSummary(summary) {
     if (summary == this._activeSummary) {
       return;
     }
@@ -178,7 +169,7 @@ class SplitView {
     }
     summary.addEventListener("click", event => {
       event.stopPropagation();
-      this.activeSummary = summary;
+      this.setActiveSummary(summary);
     });
 
     this._nav.appendChild(summary);
@@ -201,7 +192,7 @@ class SplitView {
 
   removeItem(summary) {
     if (summary == this._activeSummary) {
-      this.activeSummary = null;
+      this.setActiveSummary(null);
     }
 
     const binding = bindings.get(summary);
