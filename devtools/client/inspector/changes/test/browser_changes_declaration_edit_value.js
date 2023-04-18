@@ -9,9 +9,10 @@ const TEST_URI = `
   <style type='text/css'>
     div {
       color: red;
+      font-family: "courier";
     }
   </style>
-  <div></div>
+  <div>test</div>
 `;
 
 
@@ -21,32 +22,80 @@ const TEST_URI = `
 
 
 
-const VALUE_CHANGE_ITERATIONS = [
-  
-  {
-    value: "red",
-    add: null,
-    remove: null,
-  },
-  
-  {
-    value: "red !important",
-    add: { value: "red !important" },
-    remove: { value: "red" },
-  },
-  
-  {
-    value: "blue",
-    add: { value: "blue" },
-    remove: { value: "red" },
-  },
-  
-  {
-    value: "red",
-    add: null,
-    remove: null,
-  },
-];
+
+
+const ITERATIONS = {
+  color: [
+    
+    {
+      value: "red",
+      add: null,
+      remove: null,
+    },
+    
+    {
+      value: "red !important",
+      add: { value: "red !important" },
+      remove: { value: "red" },
+    },
+    
+    {
+      value: "blue",
+      add: { value: "blue" },
+      remove: { value: "red" },
+    },
+    
+    {
+      value: "red",
+      add: null,
+      remove: null,
+    },
+  ],
+  "font-family": [
+    
+    
+    {
+      value: '"ar',
+      add: { value: '"ar"' },
+      remove: { value: '"courier"' },
+      
+      
+      
+      
+      needsExtraFlush: true,
+    },
+    
+    {
+      value: '"ar\\i',
+      add: { value: '"ar\\i"' },
+      remove: { value: '"courier"' },
+    },
+    
+    {
+      value: '"ar\\ia',
+      add: { value: '"ar\\ia"' },
+      remove: { value: '"courier"' },
+    },
+    
+    {
+      value: '"aria',
+      add: { value: '"aria"' },
+      remove: { value: '"courier"' },
+    },
+    
+    {
+      value: '"arial',
+      add: { value: '"arial"' },
+      remove: { value: '"courier"' },
+    },
+    
+    {
+      value: '"courier"',
+      add: null,
+      remove: null,
+    },
+  ],
+};
 
 add_task(async function() {
   await addTab("data:text/html;charset=utf-8," + encodeURIComponent(TEST_URI));
@@ -54,15 +103,31 @@ add_task(async function() {
   const { document: doc, store } = selectChangesView(inspector);
 
   await selectNode("div", inspector);
-  const prop = getTextProperty(ruleView, 1, { color: "red" });
 
+  const colorProp = getTextProperty(ruleView, 1, { color: "red" });
+  await assertEditValue(ruleView, doc, store, colorProp, ITERATIONS.color);
+
+  const fontFamilyProp = getTextProperty(ruleView, 1, {
+    "font-family": '"courier"',
+  });
+  await assertEditValue(
+    ruleView,
+    doc,
+    store,
+    fontFamilyProp,
+    ITERATIONS["font-family"]
+  );
+});
+
+async function assertEditValue(ruleView, doc, store, prop, iterations) {
   let onTrackChange;
-
-  for (const { value, add, remove } of VALUE_CHANGE_ITERATIONS) {
+  for (const { value, add, needsExtraFlush, remove } of iterations) {
     onTrackChange = waitForDispatch(store, "TRACK_CHANGE");
 
     info(`Change the CSS declaration value to ${value}`);
-    await setProperty(ruleView, prop, value);
+    await setProperty(ruleView, prop, value, {
+      flushCount: needsExtraFlush ? 2 : 1,
+    });
     info("Wait for the change to be tracked");
     await onTrackChange;
 
@@ -102,4 +167,4 @@ add_task(async function() {
       );
     }
   }
-});
+}

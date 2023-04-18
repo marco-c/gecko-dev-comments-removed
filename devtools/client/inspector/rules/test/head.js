@@ -358,12 +358,18 @@ var addProperty = async function(
 
 
 
+
+
+
+
+
 var setProperty = async function(
   view,
   textProp,
   value,
-  blurNewProperty = true
+  { blurNewProperty = true, flushCount = 1 } = {}
 ) {
+  info("Set property to: " + value);
   await focusEditableField(view, textProp.editor.valueSpan);
 
   const onPreview = view.once("ruleview-changed");
@@ -374,14 +380,29 @@ var setProperty = async function(
   } else {
     EventUtils.sendString(value, view.styleWindow);
   }
+
+  info("Waiting for ruleview-changed after updating property");
   view.debounce.flush();
+  flushCount--;
+
+  while (flushCount > 0) {
+    
+    
+    await wait(100);
+    view.debounce.flush();
+    flushCount--;
+  }
+
   await onPreview;
 
   const onValueDone = view.once("ruleview-changed");
   EventUtils.synthesizeKey("VK_RETURN", {}, view.styleWindow);
+
+  info("Waiting for another ruleview-changed after setting property");
   await onValueDone;
 
   if (blurNewProperty) {
+    info("Force blur on the active element");
     view.styleDocument.activeElement.blur();
   }
 };

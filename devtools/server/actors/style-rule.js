@@ -8,7 +8,6 @@ const protocol = require("devtools/shared/protocol");
 const { getCSSLexer } = require("devtools/shared/css/lexer");
 const InspectorUtils = require("InspectorUtils");
 const TrackChangeEmitter = require("devtools/server/actors/utils/track-change-emitter");
-
 const {
   getRuleText,
   getTextAtLineColumn,
@@ -92,6 +91,8 @@ const StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
     
     
     this._declarations = [];
+
+    this._pendingDeclarationChanges = [];
 
     if (CSSRule.isInstance(item)) {
       this.type = item.type;
@@ -461,6 +462,16 @@ const StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
 
       
       
+      
+      
+      
+      this._pendingDeclarationChanges.forEach(change =>
+        this.logDeclarationChange(change, declarations, this._declarations)
+      );
+      this._pendingDeclarationChanges = [];
+
+      
+      
       this._declarations = declarations;
     }
 
@@ -711,9 +722,6 @@ const StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
       throw new Error("invalid call to setRuleText");
     }
 
-    
-    modifications.map(mod => this.logDeclarationChange(mod));
-
     if (this.type === ELEMENT_STYLE) {
       
       this.rawNode.setAttributeDevtools("style", newText);
@@ -750,6 +758,11 @@ const StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
 
     this.authoredText = newText;
     this.pageStyle.refreshObservedRules();
+
+    
+    
+    
+    this._pendingDeclarationChanges.push(...modifications);
 
     
     
@@ -794,7 +807,6 @@ const StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
     const tempElement = document.createElementNS(XHTML_NS, "div");
 
     for (const mod of modifications) {
-      this.logDeclarationChange(mod);
       if (mod.type === "set") {
         tempElement.style.setProperty(mod.name, mod.value, mod.priority || "");
         this.rawStyle.setProperty(
@@ -808,6 +820,11 @@ const StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
     }
 
     this.pageStyle.refreshObservedRules();
+
+    
+    
+    
+    this._pendingDeclarationChanges.push(...modifications);
 
     return this;
   },
@@ -913,7 +930,11 @@ const StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
 
 
 
-  logDeclarationChange(change) {
+
+
+
+
+  logDeclarationChange(change, newDeclarations, oldDeclarations) {
     
     const index = change.index;
     
@@ -923,7 +944,9 @@ const StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
       name: prevName,
       priority: prevPriority,
       commentOffsets,
-    } = this._declarations[index] || {};
+    } = oldDeclarations[index] || {};
+
+    const { value: currentValue } = newDeclarations[index] || {};
     
     
     const prevDisabled = !!commentOffsets;
@@ -941,9 +964,12 @@ const StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
         
         const name = change.newName ? change.newName : change.name;
         
+
+        const changeValue = currentValue || change.value;
         const newValue = change.priority
-          ? `${change.value} !important`
-          : change.value;
+          ? `${changeValue} !important`
+          : changeValue;
+
         
         
         const value = change.newName ? prevValue : newValue;
