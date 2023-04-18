@@ -377,9 +377,10 @@ class ScriptErrorEvent : public Runnable {
         mError(aRootingCx, aError),
         mErrorStack(aRootingCx, aErrorStack) {}
 
-  NS_IMETHOD Run() override {
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHOD Run() override {
     nsEventStatus status = nsEventStatus_eIgnore;
-    nsPIDOMWindowInner* win = mWindow;
+    nsCOMPtr<nsPIDOMWindowInner> win = mWindow;
     MOZ_ASSERT(win);
     MOZ_ASSERT(NS_IsMainThread());
     

@@ -10,6 +10,7 @@
 #include <algorithm>  
 #include "mozilla/AnimationComparator.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/Attributes.h"
 #include "mozilla/ContentEvents.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/Variant.h"
@@ -156,19 +157,21 @@ struct AnimationEventInfo {
     return nullptr;
   }
 
-  void Dispatch(nsPresContext* aPresContext) {
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void Dispatch(nsPresContext* aPresContext) {
+    RefPtr<dom::EventTarget> target = mTarget;
     if (mEvent.is<RefPtr<dom::AnimationPlaybackEvent>>()) {
-      EventDispatcher::DispatchDOMEvent(
-          mTarget, nullptr ,
-          mEvent.as<RefPtr<dom::AnimationPlaybackEvent>>(), aPresContext,
-          nullptr );
+      auto playbackEvent = mEvent.as<RefPtr<dom::AnimationPlaybackEvent>>();
+      EventDispatcher::DispatchDOMEvent(target, nullptr ,
+                                        playbackEvent, aPresContext,
+                                        nullptr );
       return;
     }
 
     MOZ_ASSERT(mEvent.is<InternalTransitionEvent>() ||
                mEvent.is<InternalAnimationEvent>());
 
-    EventDispatcher::Dispatch(mTarget, aPresContext, AsWidgetEvent());
+    EventDispatcher::Dispatch(target, aPresContext, AsWidgetEvent());
   }
 };
 

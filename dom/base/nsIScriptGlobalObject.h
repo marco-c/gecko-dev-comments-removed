@@ -26,9 +26,10 @@ struct ErrorEventInit;
 
 
 
-bool NS_HandleScriptError(nsIScriptGlobalObject* aScriptGlobal,
-                          const mozilla::dom::ErrorEventInit& aErrorEvent,
-                          nsEventStatus* aStatus);
+
+MOZ_CAN_RUN_SCRIPT_BOUNDARY bool NS_HandleScriptError(
+    nsIScriptGlobalObject* aScriptGlobal,
+    const mozilla::dom::ErrorEventInit& aErrorEvent, nsEventStatus* aStatus);
 
 
 #define NS_ISCRIPTGLOBALOBJECT_IID                   \
