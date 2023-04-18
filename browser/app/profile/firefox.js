@@ -1252,9 +1252,7 @@ pref("dom.ipc.shims.enabledWarnings", false);
   
   
   
-  #if defined(NIGHTLY_BUILD)
-    pref("security.sandbox.content.mac.disconnect-windowserver", true);
-  #endif
+  pref("security.sandbox.content.mac.disconnect-windowserver", true);
 #endif
 
 #if defined(XP_LINUX) && defined(MOZ_SANDBOX)
