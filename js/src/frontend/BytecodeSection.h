@@ -208,21 +208,6 @@ class BytecodeSection {
   }
 
   
-  bool lastOpcodeIsJumpTarget() const {
-    return lastTarget_.offset.valid() &&
-           offset() - lastTarget_.offset ==
-               BytecodeOffsetDiff(JSOpLength_JumpTarget);
-  }
-
-  
-  
-  
-  
-  BytecodeOffset lastNonJumpTargetOffset() const {
-    return lastOpcodeIsJumpTarget() ? lastTarget_.offset : offset();
-  }
-
-  
 
   int32_t stackDepth() const { return stackDepth_; }
   void setStackDepth(int32_t depth) { stackDepth_ = depth; }
