@@ -127,6 +127,9 @@ impl From<PrefReaderError> for RunnerError {
 #[derive(Debug)]
 pub struct FirefoxProcess {
     process: Child,
+    
+    
+    #[allow(dead_code)]
     profile: Profile,
 }
 
