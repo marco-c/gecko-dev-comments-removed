@@ -12,12 +12,27 @@ use crate::Atom;
 
 
 
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct FontMetrics {
     
     pub x_height: Option<Length>,
     
     pub zero_advance_measure: Option<Length>,
+    
+    pub cap_height: Option<Length>,
+    
+    pub ascent: Length,
+}
+
+impl Default for FontMetrics {
+    fn default() -> Self {
+        FontMetrics {
+            x_height: None,
+            zero_advance_measure: None,
+            cap_height: None,
+            ascent: Length::new(0.0),
+        }
+    }
 }
 
 
@@ -25,7 +40,10 @@ pub struct FontMetrics {
 pub enum FontMetricsOrientation {
     
     
-    MatchContext,
+    MatchContextPreferHorizontal,
+    
+    
+    MatchContextPreferVertical,
     
     Horizontal,
 }

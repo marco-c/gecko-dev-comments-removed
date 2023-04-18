@@ -214,8 +214,9 @@ void nsPresContext::ForceReflowForFontInfoUpdate(bool aNeedsReframe) {
 
   
   
-  auto restyleHint =
-      UsesExChUnits() ? RestyleHint::RecascadeSubtree() : RestyleHint{0};
+  auto restyleHint = UsesFontMetricDependentFontUnits()
+                         ? RestyleHint::RecascadeSubtree()
+                         : RestyleHint{0};
 
   RebuildAllStyleData(changeHint, restyleHint);
 }
@@ -271,7 +272,7 @@ nsPresContext::nsPresContext(dom::Document* aDocument, nsPresContextType aType)
       mPendingUIResolutionChanged(false),
       mPendingFontInfoUpdateReflowFromStyle(false),
       mIsGlyph(false),
-      mUsesExChUnits(false),
+      mUsesFontMetricDependentFontUnits(false),
       mCounterStylesDirty(true),
       mFontFeatureValuesDirty(true),
       mSuppressResizeReflow(false),
@@ -658,7 +659,7 @@ void nsPresContext::PreferenceChanged(const char* aPrefName) {
       
       StringBeginsWith(prefName, "gfx.font_rendering."_ns)) {
     changeHint |= NS_STYLE_HINT_REFLOW;
-    if (UsesExChUnits()) {
+    if (UsesFontMetricDependentFontUnits()) {
       restyleHint |= RestyleHint::RecascadeSubtree();
     }
   }
@@ -1772,7 +1773,7 @@ void nsPresContext::PostRebuildAllStyleDataEvent(
     return;
   }
   if (aRestyleHint.DefinitelyRecascadesAllSubtree()) {
-    mUsesExChUnits = false;
+    mUsesFontMetricDependentFontUnits = false;
   }
   RestyleManager()->RebuildAllStyleData(aExtraHint, aRestyleHint);
 }
@@ -1970,8 +1971,9 @@ void nsPresContext::UserFontSetUpdated(gfxUserFontEntry* aUpdatedFont) {
   
   
   if (!aUpdatedFont) {
-    auto hint =
-        UsesExChUnits() ? RestyleHint::RecascadeSubtree() : RestyleHint{0};
+    auto hint = UsesFontMetricDependentFontUnits()
+                    ? RestyleHint::RecascadeSubtree()
+                    : RestyleHint{0};
     PostRebuildAllStyleDataEvent(NS_STYLE_HINT_REFLOW, hint);
     return;
   }
