@@ -6,26 +6,9 @@
 
 var EXPORTED_SYMBOLS = ["SchemaOrgPageData"];
 
-const { PageDataCollector } = ChromeUtils.import(
-  "resource:///modules/pagedata/PageDataCollector.jsm"
+const { PageDataSchema } = ChromeUtils.import(
+  "resource:///modules/pagedata/PageDataSchema.jsm"
 );
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -106,56 +89,42 @@ function getProp(element, prop) {
 
 
 
-class SchemaOrgPageData extends PageDataCollector {
+function collectProduct(pageData, element) {
+  
   
 
-
-  async init() {
-    return this.#collect();
+  let images = getProp(element, "image");
+  if (images.length) {
+    pageData.image = images[0];
   }
 
-  
+  pageData.data[PageDataSchema.DATA_TYPE.PRODUCT] = {
+    name: getProp(element, "name")[0],
+  };
 
-
-
-
-
-
-
-
-  #collectProduct(element) {
-    
-    
-    return {
-      gtin: getProp(element, "gtin")[0],
-      name: getProp(element, "name")[0],
-      image: getProp(element, "image")[0] || undefined,
-      url: getProp(element, "url")[0] || undefined,
-      price: getProp(element, "price")[0],
-      currency: getProp(element, "priceCurrency")[0],
-    };
+  let prices = getProp(element, "price");
+  if (prices.length) {
+    let price = parseInt(prices[0]);
+    if (!isNaN(price)) {
+      pageData.data[PageDataSchema.DATA_TYPE.PRODUCT].price = {
+        value: price,
+        currency: getProp(element, "priceCurrency")[0],
+      };
+    }
   }
-
-  
-
+}
 
 
 
-  #collect() {
-    
 
 
-    let items = new Map();
-    let insert = (type, item) => {
-      let data = items.get(type);
-      if (!data) {
-        data = [];
-        items.set(type, data);
-      }
-      data.push(item);
-    };
 
-    let scopes = this.document.querySelectorAll(
+
+const SchemaOrgPageData = {
+  collect(document) {
+    let pageData = { data: {} };
+
+    let scopes = document.querySelectorAll(
       "[itemscope][itemtype^='https://schema.org/'], [itemscope][itemtype^='http://schema.org/']"
     );
 
@@ -170,14 +139,13 @@ class SchemaOrgPageData extends PageDataCollector {
 
       switch (itemType) {
         case "schema.org/Product":
-          insert(
-            PageDataCollector.DATA_TYPE.PRODUCT,
-            this.#collectProduct(scope)
-          );
+          if (!(PageDataSchema.DATA_TYPE.PRODUCT in pageData.data)) {
+            collectProduct(pageData, scope);
+          }
           break;
       }
     }
 
-    return Array.from(items, ([type, data]) => ({ type, data }));
-  }
-}
+    return pageData;
+  },
+};

@@ -12,6 +12,7 @@ const { XPCOMUtils } = ChromeUtils.import(
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   OpenGraphPageData: "resource:///modules/pagedata/OpenGraphPageData.jsm",
+  PageDataSchema: "resource:///modules/pagedata/PageDataSchema.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
   SchemaOrgPageData: "resource:///modules/pagedata/SchemaOrgPageData.jsm",
   Services: "resource://gre/modules/Services.jsm",
@@ -42,9 +43,14 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 
 
-function getCollectors(document) {
-  return [new SchemaOrgPageData(document), new OpenGraphPageData(document)];
-}
+
+
+
+
+
+XPCOMUtils.defineLazyGetter(this, "DATA_COLLECTORS", function() {
+  return [SchemaOrgPageData, OpenGraphPageData];
+});
 
 
 
@@ -56,12 +62,6 @@ class PageDataChild extends JSWindowActorChild {
 
 
   #deferTimer = null;
-  
-
-
-
-
-  #collectors = null;
 
   
 
@@ -106,77 +106,31 @@ class PageDataChild extends JSWindowActorChild {
   
 
 
-
-
-  #buildData() {
-    if (!this.#collectors) {
-      return [];
-    }
-
-    let results = [];
-    for (let data of this.#collectors.values()) {
-      if (data !== null) {
-        results = results.concat(data);
-      }
-    }
-
-    return results;
-  }
-
-  
-
-
-  async #beginCollection() {
-    if (this.#collectors !== null) {
-      
-      return this.#buildData();
-    }
-
+  async #collectData() {
     logConsole.debug("Starting collection", this.document.documentURI);
 
-    
+    let pending = DATA_COLLECTORS.map(async collector => {
+      try {
+        return await collector.collect(this.document);
+      } catch (e) {
+        logConsole.error("Error collecting page data", e);
+        return {};
+      }
+    });
 
-    this.#collectors = new Map();
-    let pending = [];
-    for (let collector of getCollectors(this.document)) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
+    let pageDataList = await Promise.all(pending);
 
-      pending.push(
-        collector.init().then(
-          data => {
-            this.#collectors.set(collector, data);
-          },
-          error => {
-            this.#collectors.set(collector, []);
-            logConsole.error(`Failed collecting page data`, error);
-          }
-        )
-      );
+    let pageData = pageDataList.reduce(PageDataSchema.coalescePageData, {
+      date: Date.now(),
+      url: this.document.documentURI,
+    });
+
+    try {
+      return PageDataSchema.validatePageData(pageData);
+    } catch (e) {
+      logConsole.error("Failed to collect valid page data", e);
+      return null;
     }
-
-    await Promise.all(pending);
-    
-
-    return this.#buildData();
   }
 
   
@@ -202,7 +156,7 @@ class PageDataChild extends JSWindowActorChild {
         }
         break;
       case "PageData:Collect":
-        return this.#beginCollection();
+        return this.#collectData();
     }
 
     return undefined;

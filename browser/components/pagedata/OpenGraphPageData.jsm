@@ -6,41 +6,10 @@
 
 var EXPORTED_SYMBOLS = ["OpenGraphPageData"];
 
-const { PageDataCollector } = ChromeUtils.import(
-  "resource:///modules/pagedata/PageDataCollector.jsm"
-);
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-const RELEVANT_TAGS = ["title", "site_name", "image", "type", "url"];
-
-
-
-
-
-
-class OpenGraphPageData extends PageDataCollector {
-  
-
-
-  async init() {
-    return this.#collect();
-  }
-
+const OpenGraphPageData = {
   
 
 
@@ -49,58 +18,30 @@ class OpenGraphPageData extends PageDataCollector {
 
 
 
+  collect(document) {
+    let pageData = {};
 
-  #collectOpenGraphTags(tags) {
     
     
-    let pageData = Object.fromEntries(
-      RELEVANT_TAGS.map(tag => [tag, undefined])
-    );
+    
+    
+    
+    let openGraphTags = document.querySelectorAll("meta[property^='og:'");
 
-    for (let tag of tags) {
+    for (let tag of openGraphTags) {
       
       let propertyName = tag.getAttribute("property").substring(3);
-      if (RELEVANT_TAGS.includes(propertyName)) {
-        pageData[propertyName] = tag.getAttribute("content");
+
+      switch (propertyName) {
+        case "site_name":
+          pageData.siteName = tag.getAttribute("content");
+          break;
+        case "image":
+          pageData.image = tag.getAttribute("content");
+          break;
       }
     }
 
     return pageData;
-  }
-
-  
-
-
-
-
-  #collect() {
-    
-
-
-    let items = new Map();
-    let insert = (type, item) => {
-      let data = items.get(type);
-      if (!data) {
-        data = [];
-        items.set(type, data);
-      }
-      data.push(item);
-    };
-
-    
-    
-    
-    
-    
-    let openGraphTags = this.document.querySelectorAll("meta[property^='og:'");
-    if (!openGraphTags.length) {
-      return [];
-    }
-    insert(
-      PageDataCollector.DATA_TYPE.GENERAL,
-      this.#collectOpenGraphTags(openGraphTags)
-    );
-
-    return Array.from(items, ([type, data]) => ({ type, data }));
-  }
-}
+  },
+};
