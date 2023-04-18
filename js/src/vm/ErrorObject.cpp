@@ -201,7 +201,6 @@ const JSClass ErrorObject::classes[JSEXN_ERROR_LIMIT] = {
     IMPLEMENT_ERROR_CLASS_MAYBE_WASM_TRAP(RuntimeError)};
 
 static void exn_finalize(JSFreeOp* fop, JSObject* obj) {
-  MOZ_ASSERT(fop->maybeOnHelperThread());
   if (JSErrorReport* report = obj->as<ErrorObject>().getErrorReport()) {
     
     fop->deleteUntracked(report);
