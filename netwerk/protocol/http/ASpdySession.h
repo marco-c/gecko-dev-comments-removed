@@ -102,24 +102,14 @@ class SpdyInformation {
   SpdyInformation();
   ~SpdyInformation() = default;
 
-  static const uint32_t kCount = 1;
-
-  
-  
-  [[nodiscard]] nsresult GetNPNIndex(const nsACString& npnString,
-                                     uint32_t* result) const;
-
-  
-  bool ProtocolEnabled(uint32_t index) const;
-
-  SpdyVersion Version[kCount];      
-  nsCString VersionString[kCount];  
+  SpdyVersion Version;      
+  nsCString VersionString;  
 
   
   
   
   
-  ALPNCallback ALPNCallbacks[kCount];
+  ALPNCallback ALPNCallbacks;
 };
 
 }  
