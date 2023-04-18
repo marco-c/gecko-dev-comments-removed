@@ -62,7 +62,20 @@ function* testSteps() {
   finishTest();
 }
 
-function setup() {
+async function setup(isXOrigin) {
+  
+  
+  
+  
+  if (isXOrigin) {
+    SpecialPowers.wrap(document).notifyUserGestureActivation();
+    await SpecialPowers.addPermission(
+      "storageAccessAPI",
+      true,
+      window.location.href
+    );
+    await SpecialPowers.wrap(document).requestStorageAccess();
+  }
   SpecialPowers.pushPrefEnv(
     {
       set: [["dom.storageManager.enabled", true]],
