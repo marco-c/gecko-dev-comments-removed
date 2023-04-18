@@ -4939,9 +4939,8 @@ nsresult nsIFrame::MoveCaretToEventPoint(nsPresContext* aPresContext,
       
       
       if (isEditor) {
-        nsCOMPtr<nsIURI> uri;
         for (Element* element : mContent->InclusiveAncestorsOfType<Element>()) {
-          if (element->IsLink(getter_AddRefs(uri))) {
+          if (element->IsLink()) {
             return nsFrameSelection::FocusMode::kCollapseToNewPoint;
           }
         }

@@ -176,11 +176,6 @@ void SVGAElement::UnbindFromTree(bool aNullParent) {
   SVGAElementBase::UnbindFromTree(aNullParent);
 }
 
-already_AddRefed<nsIURI> SVGAElement::GetHrefURI() const {
-  nsCOMPtr<nsIURI> hrefURI;
-  return IsLink(getter_AddRefs(hrefURI)) ? hrefURI.forget() : nullptr;
-}
-
 NS_IMETHODIMP_(bool)
 SVGAElement::IsAttributeMapped(const nsAtom* name) const {
   static const MappedAttributeEntry* const map[] = {sFEFloodMap,
@@ -219,7 +214,7 @@ bool SVGAElement::IsFocusableInternal(int32_t* aTabIndex, bool aWithMouse) {
 
   if (GetTabIndexAttrValue().isNothing()) {
     
-    if (!Link::HasURI()) {
+    if (!IsLink()) {
       
       
       if (aTabIndex) {
@@ -236,7 +231,10 @@ bool SVGAElement::IsFocusableInternal(int32_t* aTabIndex, bool aWithMouse) {
   return true;
 }
 
-bool SVGAElement::IsLink(nsIURI** aURI) const {
+already_AddRefed<nsIURI> SVGAElement::GetHrefURI() const {
+  
+  
+  
   
   
   
@@ -270,14 +268,12 @@ bool SVGAElement::IsLink(nsIURI** aURI) const {
     nsAutoString str;
     const uint8_t idx = useBareHref ? HREF : XLINK_HREF;
     mStringAttributes[idx].GetAnimValue(str, this);
-    nsContentUtils::NewURIWithDocumentCharset(aURI, str, OwnerDoc(),
-                                              GetBaseURI());
-    
-    return !!*aURI;
+    nsCOMPtr<nsIURI> uri;
+    nsContentUtils::NewURIWithDocumentCharset(getter_AddRefs(uri), str,
+                                              OwnerDoc(), GetBaseURI());
+    return uri.forget();
   }
-
-  *aURI = nullptr;
-  return false;
+  return nullptr;
 }
 
 void SVGAElement::GetLinkTarget(nsAString& aTarget) {

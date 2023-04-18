@@ -1947,9 +1947,7 @@ class Element : public FragmentOrElement {
 
 
 
-
-  bool CheckHandleEventForLinksPrecondition(EventChainVisitor& aVisitor,
-                                            nsIURI** aURI) const;
+  bool CheckHandleEventForLinksPrecondition(EventChainVisitor& aVisitor) const;
 
   
 
@@ -1964,6 +1962,25 @@ class Element : public FragmentOrElement {
   MOZ_CAN_RUN_SCRIPT
   nsresult PostHandleEventForLinks(EventChainPostVisitor& aVisitor);
 
+ public:
+  
+
+
+
+  bool IsLink() const {
+    return mState.HasAtLeastOneOfStates(NS_EVENT_STATE_VISITED |
+                                        NS_EVENT_STATE_UNVISITED);
+  }
+
+  
+
+
+
+
+
+
+  virtual already_AddRefed<nsIURI> GetHrefURI() const { return nullptr; }
+
   
 
 
@@ -1976,6 +1993,7 @@ class Element : public FragmentOrElement {
 
   virtual void GetLinkTarget(nsAString& aTarget);
 
+ protected:
   enum class ReparseAttributes { No, Yes };
   
 

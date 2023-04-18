@@ -833,10 +833,7 @@ void MathMLElement::SetIncrementScriptLevel(bool aIncrementScriptLevel,
   UpdateState(true);
 }
 
-int32_t MathMLElement::TabIndexDefault() {
-  nsCOMPtr<nsIURI> uri;
-  return IsLink(getter_AddRefs(uri)) ? 0 : -1;
-}
+int32_t MathMLElement::TabIndexDefault() { return IsLink() ? 0 : -1; }
 
 
 bool MathMLElement::IsFocusableInternal(int32_t* aTabIndex, bool aWithMouse) {
@@ -853,8 +850,7 @@ bool MathMLElement::IsFocusableInternal(int32_t* aTabIndex, bool aWithMouse) {
     *aTabIndex = tabIndex;
   }
 
-  nsCOMPtr<nsIURI> uri;
-  if (!IsLink(getter_AddRefs(uri))) {
+  if (!IsLink()) {
     
     return GetTabIndexAttrValue().isSome();
   }
@@ -879,15 +875,12 @@ bool MathMLElement::IsFocusableInternal(int32_t* aTabIndex, bool aWithMouse) {
   return true;
 }
 
-bool MathMLElement::IsLink(nsIURI** aURI) const {
-  bool hasHref = false;
+already_AddRefed<nsIURI> MathMLElement::GetHrefURI() const {
+  
+  
+  
   const nsAttrValue* href = mAttrs.GetAttr(nsGkAtoms::href, kNameSpaceID_None);
-  if (href) {
-    
-    
-    
-    hasHref = true;
-  } else if (!StaticPrefs::mathml_xlink_disabled()) {
+  if (!href && !StaticPrefs::mathml_xlink_disabled()) {
     
     
     
@@ -918,22 +911,21 @@ bool MathMLElement::IsLink(nsIURI** aURI) const {
                         eCaseMatters) != Element::ATTR_VALUE_NO_MATCH) {
       OwnerDoc()->WarnOnceAbout(
           dom::DeprecatedOperations::eMathML_DeprecatedXLinkAttribute);
-      hasHref = true;
+    } else {
+      href = nullptr;
     }
   }
 
-  if (hasHref) {
-    
-    nsAutoString hrefStr;
-    href->ToString(hrefStr);
-    nsContentUtils::NewURIWithDocumentCharset(aURI, hrefStr, OwnerDoc(),
-                                              GetBaseURI());
-    
-    return !!*aURI;
+  if (!href) {
+    return nullptr;
   }
-
-  *aURI = nullptr;
-  return false;
+  
+  nsAutoString hrefStr;
+  href->ToString(hrefStr);
+  nsCOMPtr<nsIURI> hrefURI;
+  nsContentUtils::NewURIWithDocumentCharset(getter_AddRefs(hrefURI), hrefStr,
+                                            OwnerDoc(), GetBaseURI());
+  return hrefURI.forget();
 }
 
 void MathMLElement::GetLinkTarget(nsAString& aTarget) {
@@ -972,11 +964,6 @@ void MathMLElement::GetLinkTarget(nsAString& aTarget) {
     }
     OwnerDoc()->GetBaseTarget(aTarget);
   }
-}
-
-already_AddRefed<nsIURI> MathMLElement::GetHrefURI() const {
-  nsCOMPtr<nsIURI> hrefURI;
-  return IsLink(getter_AddRefs(hrefURI)) ? hrefURI.forget() : nullptr;
 }
 
 bool MathMLElement::IsEventAttributeNameInternal(nsAtom* aName) {

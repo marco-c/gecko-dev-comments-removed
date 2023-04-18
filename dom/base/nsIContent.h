@@ -401,30 +401,6 @@ class nsIContent : public nsINode {
 
 
 
-  virtual bool IsLink(nsIURI** aURI) const = 0;
-
-  
-
-
-
-
-
-
-  virtual already_AddRefed<nsIURI> GetHrefURI() const { return nullptr; }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
