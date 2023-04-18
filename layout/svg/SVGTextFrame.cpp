@@ -126,13 +126,7 @@ static void GetAscentAndDescentInAppUnits(nsTextFrame* aFrame,
   gfxTextRun::Range range = ConvertOriginalToSkipped(
       it, aFrame->GetContentOffset(), aFrame->GetContentLength());
 
-  
-  
-  gfxTextRun::Metrics metrics =
-      textRun->MeasureText(range, gfxFont::LOOSE_INK_EXTENTS, nullptr, nullptr);
-
-  aAscent = metrics.mAscent;
-  aDescent = metrics.mDescent;
+  textRun->GetLineHeightMetrics(range, aAscent, aDescent);
 }
 
 
