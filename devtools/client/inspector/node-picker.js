@@ -221,6 +221,12 @@ class NodePicker extends EventEmitter {
 
     
     
+    if (!data.node.walkerFront.traits.clearPickerSupport) {
+      return;
+    }
+
+    
+    
     for (const inspectorFront of this._currentInspectorFronts) {
       if (inspectorFront.walker !== data.node.walkerFront) {
         inspectorFront.walker.clearPicker();

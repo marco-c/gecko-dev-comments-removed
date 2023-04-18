@@ -367,7 +367,11 @@ function TargetMixin(parentClass) {
     
     
     get isBrowsingContext() {
-      return this.typeName === "windowGlobalTarget";
+      
+      return (
+        this.typeName === "windowGlobalTarget" ||
+        this.typeName == "browsingContextTarget"
+      );
     }
 
     get name() {

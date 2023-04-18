@@ -12,8 +12,12 @@ exports.toggleRecordingAllocationStacks = function(commands) {
   return async function({ dispatch, getState }) {
     dispatch({ type: actions.TOGGLE_RECORD_ALLOCATION_STACKS_START });
 
-    if (commands.targetCommand.hasTargetWatcherSupport()) {
-      await commands.targetConfigurationCommand.updateConfiguration({
+    const { targetConfigurationCommand } = commands;
+    
+    
+    
+    if (targetConfigurationCommand.supports("recordAllocations")) {
+      await targetConfigurationCommand.updateConfiguration({
         recordAllocations: getState().recordingAllocationStacks
           ? null
           : ALLOCATION_RECORDING_OPTIONS,

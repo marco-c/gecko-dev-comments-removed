@@ -47,8 +47,10 @@ class AccessibleFront extends FrontClassWithSpec(accessibleSpec) {
     if (!BROWSER_TOOLBOX_FISSION_ENABLED && this.targetFront.isParentProcess) {
       return false;
     }
-
-    return this._form.useChildTargetToFetchChildren;
+    
+    
+    
+    return this._form.useChildTargetToFetchChildren || this._form.remoteFrame;
   }
 
   get role() {

@@ -570,7 +570,11 @@ class TargetCommand extends EventEmitter {
 
   getTargetType(target) {
     const { typeName } = target;
-    if (typeName == "windowGlobalTarget") {
+    
+    if (
+      typeName == "windowGlobalTarget" ||
+      typeName == "browsingContextTarget"
+    ) {
       return TargetCommand.TYPES.FRAME;
     }
 
