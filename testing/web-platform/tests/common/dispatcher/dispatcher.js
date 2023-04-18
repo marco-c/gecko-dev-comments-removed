@@ -117,6 +117,9 @@ class RemoteContext {
     }
 
     
+    if (response.name === 'TypeError') {
+      throw new TypeError(response.value);
+    }
     throw new Error(response.value);
   }
 
@@ -180,6 +183,7 @@ class Executor {
       } catch(e) {
         response = JSON.stringify({
           status: 'exception',
+          name: e.name,
           value: e.message
         });
       }
