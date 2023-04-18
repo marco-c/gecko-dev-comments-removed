@@ -1099,7 +1099,6 @@ static void RebuildVerifiedCertificateInformation(PRFileDesc* fd,
       nullptr,  
       nullptr,  
       nullptr,  
-      nullptr,  
       &certificateTransparencyInfo, &isBuiltCertChainRootBuiltInRoot);
 
   if (rv != Success) {
