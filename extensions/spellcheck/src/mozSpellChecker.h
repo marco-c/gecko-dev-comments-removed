@@ -136,7 +136,7 @@ class mozSpellChecker final {
 
 
 
-  nsresult GetCurrentDictionary(nsACString& aDictionary);
+  nsresult GetCurrentDictionaries(nsTArray<nsCString>& aDictionaries);
 
   
 
@@ -144,7 +144,16 @@ class mozSpellChecker final {
 
 
 
-  nsresult SetCurrentDictionary(const nsACString& aDictionary);
+  nsresult SetCurrentDictionary(const nsCString& aDictionary);
+
+  
+
+
+
+
+
+  RefPtr<mozilla::GenericPromise> SetCurrentDictionaries(
+      const nsTArray<nsCString>& aDictionaries);
 
   
 
@@ -170,7 +179,7 @@ class mozSpellChecker final {
   nsCOMPtr<mozISpellCheckingEngine> mSpellCheckingEngine;
   bool mFromStart;
 
-  nsCString mCurrentDictionary;
+  nsTArray<nsCString> mCurrentDictionaries;
 
   MOZ_CAN_RUN_SCRIPT
   nsresult SetupDoc(int32_t* outBlockOffset);
