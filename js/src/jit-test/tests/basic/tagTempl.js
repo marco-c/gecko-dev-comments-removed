@@ -24,8 +24,9 @@ csoLoop();
 
 
 if (helperThreadCount() !== 0) {
-    offThreadCompileScript("(x=>x)`abc`");
-    a = runOffThreadScript();
+    offThreadCompileToStencil("(x=>x)`abc`");
+    var stencil = finishOffThreadCompileToStencil();
+    a = evalStencil(stencil);
     check(a, ["abc"]);
     check(a.raw, ["abc"]);
     assertEq(a === a.raw, false);

@@ -1,7 +1,8 @@
 
 
-offThreadCompileScript(`
+offThreadCompileToStencil(`
  oomTest(() => "".search(/d/));
  fullcompartmentchecks(3);
 `);
-runOffThreadScript();
+var stencil = finishOffThreadCompileToStencil();
+evalStencil(stencil);

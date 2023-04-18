@@ -1,5 +1,5 @@
 
 gczeal(10);
 newGlobal();
-offThreadCompileScript("let x = 1;");
+offThreadCompileToStencil("let x = 1;");
 abortgc();

@@ -1,5 +1,5 @@
 
 verifyprebarriers();
-offThreadCompileScript('');
+offThreadCompileToStencil('');
 var dbg = new Debugger();
 var objects = dbg.findObjects();

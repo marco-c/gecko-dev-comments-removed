@@ -10,7 +10,7 @@ for (lfLocal in this) {
         lfGlobal[lfLocal] = this[lfLocal];
     }
 }
-lfGlobal.offThreadCompileScript(`
+lfGlobal.offThreadCompileToStencil(`
 if (!("oomAtAllocation" in this && "resetOOMFailure" in this))
     gczeal(0);
 function oomTest(f) {
@@ -30,7 +30,8 @@ var g = newGlobal();
 oomTest(function() { new revocable(); });
 `);
 try {
-    lfGlobal.runOffThreadScript();
+    var stencil = lfGlobal.finishOffThreadCompileToStencil();
+    lfGlobal.evalStencil(stencil);
 } catch(e) {
     
     assertEq(e, "out of memory");

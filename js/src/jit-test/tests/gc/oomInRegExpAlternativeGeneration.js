@@ -3,7 +3,7 @@
 
 
 if (typeof oomAfterAllocations == "function" && helperThreadCount() > 0) {
-  offThreadCompileScript(`
+  offThreadCompileToStencil(`
 [null, "", ""].forEach(function(locales) {
 try {
 Intl.NumberFormat(locales)
@@ -11,5 +11,6 @@ Intl.NumberFormat(locales)
 oomAfterAllocations(100);
 })
 `);
-  runOffThreadScript();
+  var stencil = finishOffThreadCompileToStencil();
+  evalStencil(stencil);
 }
