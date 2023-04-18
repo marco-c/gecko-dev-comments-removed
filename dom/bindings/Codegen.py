@@ -18034,9 +18034,6 @@ class CGForwardDeclarations(CGWrapper):
                         d.interface.maplikeOrSetlikeOrIterable.valueType, config
                     )
 
-            
-            builder.add(d.nativeType + "Atoms", isStruct=True)
-
             for m in d.interface.members:
                 if m.isAttr() and m.type.isObservableArray():
                     builder.forwardDeclareForType(m.type, config)
