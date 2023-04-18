@@ -1,4 +1,4 @@
-class NodeVisitor(object):
+class NodeVisitor:
     def visit(self, node):
         
         
@@ -7,7 +7,7 @@ class NodeVisitor(object):
         return func(node)
 
 
-class Node(object):
+class Node:
     def __init__(self, data=None):
         self.data = data
         self.parent = None

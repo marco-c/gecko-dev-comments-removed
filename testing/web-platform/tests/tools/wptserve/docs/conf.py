@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 
 
 
@@ -41,8 +40,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 
-project = u'wptserve'
-copyright = u'2013, Mozilla Foundation and other wptserve contributers'
+project = 'wptserve'
+copyright = '2013, Mozilla Foundation and other wptserve contributers'
 
 
 
@@ -184,8 +183,8 @@ latex_elements = {
 
 
 latex_documents = [
-  ('index', 'wptserve.tex', u'wptserve Documentation',
-   u'James Graham', 'manual'),
+  ('index', 'wptserve.tex', 'wptserve Documentation',
+   'James Graham', 'manual'),
 ]
 
 
@@ -214,8 +213,8 @@ latex_documents = [
 
 
 man_pages = [
-    ('index', 'wptserve', u'wptserve Documentation',
-     [u'James Graham'], 1)
+    ('index', 'wptserve', 'wptserve Documentation',
+     ['James Graham'], 1)
 ]
 
 
@@ -228,8 +227,8 @@ man_pages = [
 
 
 texinfo_documents = [
-  ('index', 'wptserve', u'wptserve Documentation',
-   u'James Graham', 'wptserve', 'One line description of project.',
+  ('index', 'wptserve', 'wptserve Documentation',
+   'James Graham', 'wptserve', 'One line description of project.',
    'Miscellaneous'),
 ]
 
