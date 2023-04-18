@@ -28,7 +28,7 @@ const DEFAULT_IDLE_TIMEOUT: Duration = Duration::from_secs(30);
 const MAX_QUEUED_DATAGRAMS_DEFAULT: usize = 10;
 
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub enum PreferredAddressConfig {
     
     Disabled,
@@ -41,7 +41,7 @@ pub enum PreferredAddressConfig {
 
 
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct ConnectionParameters {
     quic_version: QuicVersion,
     cc_algorithm: CongestionControlAlgorithm,
