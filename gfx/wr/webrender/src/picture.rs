@@ -3761,6 +3761,29 @@ impl SurfaceInfo {
         }
     }
 
+    pub fn map_to_device_rect(
+        &self,
+        local_rect: &PictureRect,
+        spatial_tree: &SpatialTree,
+    ) -> DeviceRect {
+        let raster_rect = if self.raster_spatial_node_index != self.surface_spatial_node_index {
+            assert_eq!(self.device_pixel_scale.0, 1.0);
+
+            let local_to_world = SpaceMapper::new_with_target(
+                spatial_tree.root_reference_frame_index(),
+                self.surface_spatial_node_index,
+                WorldRect::max_rect(),
+                spatial_tree,
+            );
+
+            local_to_world.map(&local_rect).unwrap()
+        } else {
+            local_rect.cast_unit()
+        };
+
+        raster_rect * self.device_pixel_scale
+    }
+
     
     
     pub fn get_surface_rect(
@@ -5051,10 +5074,7 @@ impl PicturePrimitive {
                         frame_context.fb_config.dual_source_blending_is_enabled &&
                             frame_context.fb_config.dual_source_blending_is_supported,
                     ).is_none() => {
-
                         let parent_surface = &frame_state.surfaces[parent_surface_index.0];
-                        let parent_raster_spatial_node_index = parent_surface.raster_spatial_node_index;
-                        let parent_device_pixel_scale = parent_surface.device_pixel_scale;
 
                         
                         
@@ -5062,9 +5082,9 @@ impl PicturePrimitive {
                         
                         
                         let map_pic_to_parent = SpaceMapper::new_with_target(
-                            parent_raster_spatial_node_index,
-                            self.spatial_node_index,
-                            RasterRect::max_rect(),         
+                            parent_surface.surface_spatial_node_index,
+                            surface_spatial_node_index,
+                            parent_surface.clipping_rect,
                             frame_context.spatial_tree,
                         );
                         let pic_in_raster_space = map_pic_to_parent
@@ -5073,8 +5093,8 @@ impl PicturePrimitive {
 
                         
                         
-                        let backdrop_rect = pic_in_raster_space.cast_unit() * parent_device_pixel_scale;
-                        let parent_surface_rect = parent_surface.clipping_rect.cast_unit() * parent_device_pixel_scale;
+                        let backdrop_rect = pic_in_raster_space;
+                        let parent_surface_rect = parent_surface.clipping_rect;
 
                         
                         
@@ -5088,7 +5108,16 @@ impl PicturePrimitive {
                                 
                                 
                                 
-                                let available_rect = available_rect.round_out();
+
+                                let backdrop_rect = parent_surface.map_to_device_rect(
+                                    &backdrop_rect,
+                                    frame_context.spatial_tree,
+                                );
+
+                                let available_rect = parent_surface.map_to_device_rect(
+                                    &available_rect,
+                                    frame_context.spatial_tree,
+                                ).round_out();
 
                                 let backdrop_uv = calculate_uv_rect_kind(
                                     available_rect,
