@@ -430,8 +430,8 @@ nsTArray<RefPtr<RTCStatsPromise>> RTCRtpReceiver::GetStatsInternal() {
               
               local.mFramesDecoded.Construct(videoStats->frames_decoded);
 
+              local.mFramesPerSecond.Construct(videoStats->decode_frame_rate);
               
-
 
 
 
