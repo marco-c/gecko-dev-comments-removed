@@ -21,6 +21,7 @@
 #include "nsURIHashKey.h"
 #include "mozilla/CORSMode.h"
 #include "mozilla/dom/LoadedScript.h"
+#include "mozilla/dom/JSExecutionContext.h"  
 #include "mozilla/dom/ScriptLoadRequest.h"
 #include "mozilla/MaybeOneOf.h"
 #include "mozilla/MozPromise.h"
@@ -602,7 +603,30 @@ class ScriptLoader final : public nsISupports {
   nsresult CompileOffThreadOrProcessRequest(ScriptLoadRequest* aRequest);
   void FireScriptAvailable(nsresult aResult, ScriptLoadRequest* aRequest);
   void FireScriptEvaluated(nsresult aResult, ScriptLoadRequest* aRequest);
-  nsresult EvaluateScript(ScriptLoadRequest* aRequest);
+
+  
+  nsresult EvaluateScriptElement(ScriptLoadRequest* aRequest);
+
+  
+  
+  nsresult CompileOrDecodeClassicScript(JSContext* aCx,
+                                        JSExecutionContext& aExec,
+                                        ScriptLoadRequest* aRequest);
+
+  nsresult MaybePrepareForBytecodeEncoding(JS::Handle<JSScript*> aScript,
+                                           ScriptLoadRequest* aRequest,
+                                           nsresult aRv);
+
+  
+  nsresult EvaluateScript(nsIGlobalObject* aGlobalObject,
+                          ScriptLoadRequest* aRequest);
+
+  
+  nsresult EvaluateModule(ScriptLoadRequest* aRequest);
+
+  
+  nsresult EvaluateModule(nsIGlobalObject* aGlobalObject,
+                          ScriptLoadRequest* aRequest);
 
   
 
