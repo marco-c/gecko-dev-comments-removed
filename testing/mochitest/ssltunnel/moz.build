@@ -18,6 +18,3 @@ USE_LIBS += [
 
 
 DisableStlWrapping()
-
-if CONFIG["CC_TYPE"] in ("clang", "gcc"):
-    CXXFLAGS += ["-Wno-shadow"]

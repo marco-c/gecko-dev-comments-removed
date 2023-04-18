@@ -111,7 +111,6 @@ if CONFIG["CC_TYPE"] in ("clang", "gcc"):
     
     
     SOURCES["Key.cpp"].flags += ["-Wno-error=type-limits"]
-    CXXFLAGS += ["-Wno-error=shadow"]
 
 LOCAL_INCLUDES += [
     "/dom/base",

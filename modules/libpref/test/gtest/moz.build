@@ -15,9 +15,6 @@ UNIFIED_SOURCES = [
     "Parser.cpp",
 ]
 
-if CONFIG["CC_TYPE"] in ("clang", "gcc"):
-    CXXFLAGS += ["-Wno-error=shadow"]
-
 
 
 if CONFIG["CC_TYPE"] == "clang":
