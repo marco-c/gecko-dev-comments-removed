@@ -18,7 +18,13 @@ use crate::take_unchecked;
 pub(crate) struct OnceCell<T> {
     
     
-    state_and_queue: AtomicUsize,
+    
+    
+    
+    
+    
+    
+    queue: AtomicUsize,
     _marker: PhantomData<*mut Waiter>,
     value: UnsafeCell<Option<T>>,
 }
@@ -34,38 +40,20 @@ unsafe impl<T: Send> Send for OnceCell<T> {}
 impl<T: RefUnwindSafe + UnwindSafe> RefUnwindSafe for OnceCell<T> {}
 impl<T: UnwindSafe> UnwindSafe for OnceCell<T> {}
 
-
-
-const INCOMPLETE: usize = 0x0;
-const RUNNING: usize = 0x1;
-const COMPLETE: usize = 0x2;
-
-
-
-const STATE_MASK: usize = 0x3;
-
-
-#[repr(align(4))] 
-struct Waiter {
-    thread: Cell<Option<Thread>>,
-    signaled: AtomicBool,
-    next: *const Waiter,
-}
-
-
-
-
-struct WaiterQueue<'a> {
-    state_and_queue: &'a AtomicUsize,
-    set_state_on_drop_to: usize,
-}
-
 impl<T> OnceCell<T> {
     pub(crate) const fn new() -> OnceCell<T> {
         OnceCell {
-            state_and_queue: AtomicUsize::new(INCOMPLETE),
+            queue: AtomicUsize::new(INCOMPLETE),
             _marker: PhantomData,
             value: UnsafeCell::new(None),
+        }
+    }
+
+    pub(crate) const fn with_value(value: T) -> OnceCell<T> {
+        OnceCell {
+            queue: AtomicUsize::new(COMPLETE),
+            _marker: PhantomData,
+            value: UnsafeCell::new(Some(value)),
         }
     }
 
@@ -76,7 +64,7 @@ impl<T> OnceCell<T> {
         
         
         
-        self.state_and_queue.load(Ordering::Acquire) == COMPLETE
+        self.queue.load(Ordering::Acquire) == COMPLETE
     }
 
     
@@ -90,20 +78,28 @@ impl<T> OnceCell<T> {
         let mut f = Some(f);
         let mut res: Result<(), E> = Ok(());
         let slot: *mut Option<T> = self.value.get();
-        initialize_inner(&self.state_and_queue, &mut || {
-            let f = unsafe { take_unchecked(&mut f) };
-            match f() {
-                Ok(value) => {
-                    unsafe { *slot = Some(value) };
-                    true
+        initialize_or_wait(
+            &self.queue,
+            Some(&mut || {
+                let f = unsafe { take_unchecked(&mut f) };
+                match f() {
+                    Ok(value) => {
+                        unsafe { *slot = Some(value) };
+                        true
+                    }
+                    Err(err) => {
+                        res = Err(err);
+                        false
+                    }
                 }
-                Err(err) => {
-                    res = Err(err);
-                    false
-                }
-            }
-        });
+            }),
+        );
         res
+    }
+
+    #[cold]
+    pub(crate) fn wait(&self) {
+        initialize_or_wait(&self.queue, None);
     }
 
     
@@ -146,65 +142,109 @@ impl<T> OnceCell<T> {
 
 
 
-#[inline(never)]
-fn initialize_inner(my_state_and_queue: &AtomicUsize, init: &mut dyn FnMut() -> bool) -> bool {
-    let mut state_and_queue = my_state_and_queue.load(Ordering::Acquire);
+const INCOMPLETE: usize = 0x0;
+const RUNNING: usize = 0x1;
+const COMPLETE: usize = 0x2;
 
-    loop {
-        match state_and_queue {
-            COMPLETE => return true,
-            INCOMPLETE => {
-                let exchange = my_state_and_queue.compare_exchange(
-                    state_and_queue,
-                    RUNNING,
-                    Ordering::Acquire,
-                    Ordering::Acquire,
-                );
-                if let Err(old) = exchange {
-                    state_and_queue = old;
-                    continue;
-                }
-                let mut waiter_queue = WaiterQueue {
-                    state_and_queue: my_state_and_queue,
-                    set_state_on_drop_to: INCOMPLETE, 
-                };
-                let success = init();
 
-                
-                waiter_queue.set_state_on_drop_to = if success { COMPLETE } else { INCOMPLETE };
-                return success;
-            }
-            _ => {
-                assert!(state_and_queue & STATE_MASK == RUNNING);
-                wait(&my_state_and_queue, state_and_queue);
-                state_and_queue = my_state_and_queue.load(Ordering::Acquire);
+
+const STATE_MASK: usize = 0x3;
+
+
+
+#[repr(align(4))] 
+struct Waiter {
+    thread: Cell<Option<Thread>>,
+    signaled: AtomicBool,
+    next: *const Waiter,
+}
+
+
+struct Guard<'a> {
+    queue: &'a AtomicUsize,
+    new_queue: usize,
+}
+
+impl Drop for Guard<'_> {
+    fn drop(&mut self) {
+        let queue = self.queue.swap(self.new_queue, Ordering::AcqRel);
+
+        assert_eq!(queue & STATE_MASK, RUNNING);
+
+        unsafe {
+            let mut waiter = (queue & !STATE_MASK) as *const Waiter;
+            while !waiter.is_null() {
+                let next = (*waiter).next;
+                let thread = (*waiter).thread.take().unwrap();
+                (*waiter).signaled.store(true, Ordering::Release);
+                waiter = next;
+                thread.unpark();
             }
         }
     }
 }
 
 
-fn wait(state_and_queue: &AtomicUsize, mut current_state: usize) {
-    loop {
-        if current_state & STATE_MASK != RUNNING {
-            return;
-        }
 
+
+
+
+
+#[inline(never)]
+fn initialize_or_wait(queue: &AtomicUsize, mut init: Option<&mut dyn FnMut() -> bool>) {
+    let mut curr_queue = queue.load(Ordering::Acquire);
+
+    loop {
+        let curr_state = curr_queue & STATE_MASK;
+        match (curr_state, &mut init) {
+            (COMPLETE, _) => return,
+            (INCOMPLETE, Some(init)) => {
+                let exchange = queue.compare_exchange(
+                    curr_queue,
+                    (curr_queue & !STATE_MASK) | RUNNING,
+                    Ordering::Acquire,
+                    Ordering::Acquire,
+                );
+                if let Err(new_queue) = exchange {
+                    curr_queue = new_queue;
+                    continue;
+                }
+                let mut guard = Guard { queue, new_queue: INCOMPLETE };
+                if init() {
+                    guard.new_queue = COMPLETE;
+                }
+                return;
+            }
+            (INCOMPLETE, None) | (RUNNING, _) => {
+                wait(&queue, curr_queue);
+                curr_queue = queue.load(Ordering::Acquire);
+            }
+            _ => debug_assert!(false),
+        }
+    }
+}
+
+fn wait(queue: &AtomicUsize, mut curr_queue: usize) {
+    let curr_state = curr_queue & STATE_MASK;
+    loop {
         let node = Waiter {
             thread: Cell::new(Some(thread::current())),
             signaled: AtomicBool::new(false),
-            next: (current_state & !STATE_MASK) as *const Waiter,
+            next: (curr_queue & !STATE_MASK) as *const Waiter,
         };
         let me = &node as *const Waiter as usize;
 
-        let exchange = state_and_queue.compare_exchange(
-            current_state,
-            me | RUNNING,
+        let exchange = queue.compare_exchange(
+            curr_queue,
+            me | curr_state,
             Ordering::Release,
             Ordering::Relaxed,
         );
-        if let Err(old) = exchange {
-            current_state = old;
+        if let Err(new_queue) = exchange {
+            if new_queue & STATE_MASK != curr_state {
+                return;
+            }
+            curr_queue = new_queue;
             continue;
         }
 
@@ -212,27 +252,6 @@ fn wait(state_and_queue: &AtomicUsize, mut current_state: usize) {
             thread::park();
         }
         break;
-    }
-}
-
-
-impl Drop for WaiterQueue<'_> {
-    fn drop(&mut self) {
-        let state_and_queue =
-            self.state_and_queue.swap(self.set_state_on_drop_to, Ordering::AcqRel);
-
-        assert_eq!(state_and_queue & STATE_MASK, RUNNING);
-
-        unsafe {
-            let mut queue = (state_and_queue & !STATE_MASK) as *const Waiter;
-            while !queue.is_null() {
-                let next = (*queue).next;
-                let thread = (*queue).thread.replace(None).unwrap();
-                (*queue).signaled.store(true, Ordering::Release);
-                queue = next;
-                thread.unpark();
-            }
-        }
     }
 }
 
