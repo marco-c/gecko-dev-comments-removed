@@ -45,13 +45,13 @@ class BrowserProcessSubThread : public base::Thread {
   
   
 
-  static StaticMutex sLock MOZ_UNANNOTATED;
+  static StaticMutex sLock;
 
   
   
   
   
-  static BrowserProcessSubThread* sBrowserThreads[ID_COUNT];
+  static BrowserProcessSubThread* sBrowserThreads[ID_COUNT] GUARDED_BY(sLock);
 };
 
 inline void AssertIOThread() {
