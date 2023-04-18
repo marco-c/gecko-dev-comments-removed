@@ -17,6 +17,7 @@ using mozilla::LogLevel;
 
 static mozilla::LazyLogModule sIdleLog("nsIUserIdleService");
 
+#ifdef MOZ_X11
 typedef bool (*_XScreenSaverQueryExtension_fn)(Display* dpy, int* event_base,
                                                int* error_base);
 
@@ -25,12 +26,14 @@ typedef XScreenSaverInfo* (*_XScreenSaverAllocInfo_fn)(void);
 typedef void (*_XScreenSaverQueryInfo_fn)(Display* dpy, Drawable drw,
                                           XScreenSaverInfo* info);
 
-static bool sInitialized = false;
 static _XScreenSaverQueryExtension_fn _XSSQueryExtension = nullptr;
 static _XScreenSaverAllocInfo_fn _XSSAllocInfo = nullptr;
 static _XScreenSaverQueryInfo_fn _XSSQueryInfo = nullptr;
+#endif
+static bool sInitialized = false;
 
 static void Initialize() {
+#ifdef MOZ_X11
   if (!mozilla::widget::GdkIsX11Display()) {
     return;
   }
@@ -59,14 +62,21 @@ static void Initialize() {
     MOZ_LOG(sIdleLog, LogLevel::Warning, ("Failed to get XSSQueryInfo!\n"));
 
   sInitialized = true;
+#endif
 }
 
+#ifdef MOZ_X11
 nsUserIdleServiceGTK::nsUserIdleServiceGTK() : mXssInfo(nullptr) {
+#else
+nsUserIdleServiceGTK::nsUserIdleServiceGTK() {
+#endif
   Initialize();
 }
 
 nsUserIdleServiceGTK::~nsUserIdleServiceGTK() {
+#ifdef MOZ_X11
   if (mXssInfo) XFree(mXssInfo);
+#endif
 
 
 
@@ -80,6 +90,7 @@ nsUserIdleServiceGTK::~nsUserIdleServiceGTK() {
 }
 
 bool nsUserIdleServiceGTK::PollIdleTime(uint32_t* aIdleTime) {
+#ifdef MOZ_X11
   if (!sInitialized) {
     
     return false;
@@ -109,6 +120,7 @@ bool nsUserIdleServiceGTK::PollIdleTime(uint32_t* aIdleTime) {
   }
   
   MOZ_LOG(sIdleLog, LogLevel::Warning, ("XSSQueryExtension returned false!\n"));
+#endif
   return false;
 }
 
