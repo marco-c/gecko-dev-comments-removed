@@ -935,9 +935,6 @@ pub trait TElement:
     
     fn namespace(&self)
         -> &<SelectorImpl as selectors::parser::SelectorImpl>::BorrowedNamespaceUrl;
-
-    
-    fn primary_box_size(&self) -> euclid::default::Size2D<app_units::Au>;
 }
 
 
