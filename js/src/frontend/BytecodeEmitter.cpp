@@ -6230,13 +6230,19 @@ bool BytecodeEmitter::emitCheckDerivedClassConstructorReturn() {
 }
 
 bool BytecodeEmitter::emitNewTarget() {
-  if (!emit1(JSOp::NewTarget)) {
+  MOZ_ASSERT(sc->allowNewTarget());
+
+  if (!emitGetName(TaggedParserAtomIndex::WellKnown::dotNewTarget())) {
+    
     return false;
   }
   return true;
 }
 
 bool BytecodeEmitter::emitNewTarget(NewTargetNode* pn) {
+  MOZ_ASSERT(pn->newTargetName()->isName(
+      TaggedParserAtomIndex::WellKnown::dotNewTarget()));
+
   return emitNewTarget();
 }
 
@@ -6244,6 +6250,8 @@ bool BytecodeEmitter::emitNewTarget(CallNode* pn) {
   MOZ_ASSERT(pn->callOp() == JSOp::SuperCall ||
              pn->callOp() == JSOp::SpreadSuperCall);
 
+  
+  
   return emitNewTarget();
 }
 
@@ -10835,6 +10843,17 @@ bool BytecodeEmitter::emitInitializeFunctionSpecialNames() {
     if (!emitInitializeFunctionSpecialName(
             this, TaggedParserAtomIndex::WellKnown::dotThis(),
             JSOp::FunctionThis)) {
+      return false;
+    }
+  }
+
+  
+  
+  
+  if (funbox->functionHasNewTargetBinding()) {
+    if (!emitInitializeFunctionSpecialName(
+            this, TaggedParserAtomIndex::WellKnown::dotNewTarget(),
+            JSOp::NewTarget)) {
       return false;
     }
   }

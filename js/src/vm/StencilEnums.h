@@ -247,6 +247,11 @@ enum class ImmutableScriptFlagsEnum : uint32_t {
   
   
   IsInlinableLargeFunction = 1 << 28,
+
+  
+  
+  
+  FunctionHasNewTargetBinding = 1 << 29,
 };
 
 enum class MutableScriptFlagsEnum : uint32_t {
