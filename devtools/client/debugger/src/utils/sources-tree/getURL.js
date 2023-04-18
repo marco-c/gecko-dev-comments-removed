@@ -32,12 +32,21 @@ export function getURL(source) {
   return getURLInternal(url);
 }
 
-export function getDisplayURL(source, defaultDomain = "") {
-  const { displayURL } = source;
-  if (!displayURL) {
+
+
+
+
+
+
+
+
+
+
+export function getDisplayURL(url, defaultDomain = "") {
+  if (!url) {
     return def;
   }
-  return getURLInternal(displayURL, defaultDomain);
+  return getURLInternal(url, defaultDomain);
 }
 
 function getURLInternal(url, defaultDomain) {
