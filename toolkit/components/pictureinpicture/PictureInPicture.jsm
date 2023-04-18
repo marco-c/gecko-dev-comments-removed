@@ -687,16 +687,14 @@ var PictureInPicture = {
     
     
     let newEvent = document.createEvent("MouseEvent");
-    let screenX = data.screenXDevPx / window.devicePixelRatio;
-    let screenY = data.screenYDevPx / window.devicePixelRatio;
     newEvent.initNSMouseEvent(
       "contextmenu",
       true,
       true,
       null,
       0,
-      screenX,
-      screenY,
+      data.screenX,
+      data.screenY,
       0,
       0,
       false,

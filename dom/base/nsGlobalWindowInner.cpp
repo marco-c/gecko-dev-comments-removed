@@ -211,7 +211,6 @@
 #include "nsDOMNavigationTiming.h"
 #include "nsDOMOfflineResourceList.h"
 #include "nsDebug.h"
-#include "nsDeviceContext.h"
 #include "nsDocShell.h"
 #include "nsFocusManager.h"
 #include "nsFrameMessageManager.h"
@@ -3517,31 +3516,28 @@ float nsGlobalWindowInner::GetMozInnerScreenY(CallerType aCallerType,
   FORWARD_TO_OUTER_OR_THROW(GetMozInnerScreenYOuter, (aCallerType), aError, 0);
 }
 
-static nsPresContext* GetPresContextForRatio(Document* aDoc) {
-  if (nsPresContext* presContext = aDoc->GetPresContext()) {
-    return presContext;
-  }
-  
-  
-  
-  Document* doc = aDoc;
-  while (doc->StyleOrLayoutObservablyDependsOnParentDocumentLayout()) {
-    doc = doc->GetInProcessParentDocument();
-    if (nsPresContext* presContext = doc->GetPresContext()) {
-      return presContext;
-    }
-  }
-  return nullptr;
-}
-
 double nsGlobalWindowInner::GetDevicePixelRatio(CallerType aCallerType,
                                                 ErrorResult& aError) {
   ENSURE_ACTIVE_DOCUMENT(aError, 0.0);
 
-  RefPtr<nsPresContext> presContext = GetPresContextForRatio(mDoc);
+  RefPtr<nsPresContext> presContext = mDoc->GetPresContext();
   if (NS_WARN_IF(!presContext)) {
     
-    return 1.0;
+    
+    
+    Document* doc = mDoc;
+    while (doc->StyleOrLayoutObservablyDependsOnParentDocumentLayout()) {
+      doc = doc->GetInProcessParentDocument();
+      presContext = doc->GetPresContext();
+      if (presContext) {
+        break;
+      }
+    }
+
+    if (!presContext) {
+      
+      return 1.0;
+    }
   }
 
   if (nsContentUtils::ResistFingerprinting(aCallerType)) {
@@ -3566,15 +3562,6 @@ double nsGlobalWindowInner::GetDevicePixelRatio(CallerType aCallerType,
 
   return double(AppUnitsPerCSSPixel()) /
          double(presContext->AppUnitsPerDevPixel());
-}
-
-double nsGlobalWindowInner::GetDesktopToDeviceScale(ErrorResult& aError) {
-  ENSURE_ACTIVE_DOCUMENT(aError, 0.0);
-  nsPresContext* presContext = GetPresContextForRatio(mDoc);
-  if (!presContext) {
-    return 1.0;
-  }
-  return presContext->DeviceContext()->GetDesktopToDeviceScale().scale;
 }
 
 uint64_t nsGlobalWindowInner::GetMozPaintCount(ErrorResult& aError) {

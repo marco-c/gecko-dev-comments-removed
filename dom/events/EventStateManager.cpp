@@ -602,9 +602,6 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
       ((mouseEvent && mouseEvent->IsReal()) ||
        aEvent->mClass == eWheelEventClass) &&
       !PointerLockManager::IsLocked()) {
-    
-    
-    
     sLastScreenPoint =
         Event::GetScreenCoords(aPresContext, aEvent, aEvent->mRefPoint);
     sLastClientPoint = Event::GetClientCoords(

@@ -870,11 +870,14 @@
 
       
       
-      let cssToDesktopScale =
-        window.devicePixelRatio / window.desktopToDeviceScale;
       var screen = Cc["@mozilla.org/gfx/screenmanager;1"]
         .getService(Ci.nsIScreenManager)
-        .screenForRect(eX * cssToDesktopScale, eY * cssToDesktopScale, 1, 1);
+        .screenForRect(
+          eX * window.devicePixelRatio,
+          eY * window.devicePixelRatio,
+          1,
+          1
+        );
       var fullX = {},
         fullY = {},
         fullWidth = {},
