@@ -928,6 +928,11 @@ var Policies = {
     },
   },
 
+  ExemptDomainFileTypePairsFromFileTypeDownloadWarnings: {
+    
+    
+  },
+
   Extensions: {
     onBeforeUIStartup(manager, param) {
       let uninstallingPromise = Promise.resolve();
