@@ -129,7 +129,7 @@ void RemoteWorkerService::InitializeOnTargetThread() {
   mActor = actor;
 }
 
-void RemoteWorkerService::ShutdownOnTargetThread() {
+void RemoteWorkerService::CloseActorOnTargetThread() {
   MOZ_ASSERT(mThread);
   MOZ_ASSERT(mThread->IsOnCurrentThread());
 
@@ -139,16 +139,6 @@ void RemoteWorkerService::ShutdownOnTargetThread() {
     mActor->Send__delete__(mActor);
     mActor = nullptr;
   }
-
-  
-  RefPtr<RemoteWorkerService> self = this;
-  nsCOMPtr<nsIRunnable> r =
-      NS_NewRunnableFunction("ShutdownOnMainThread", [self]() {
-        self->mThread->Shutdown();
-        self->mThread = nullptr;
-      });
-
-  SchedulerGroup::Dispatch(TaskCategory::Other, r.forget());
 }
 
 NS_IMETHODIMP
@@ -163,10 +153,19 @@ RemoteWorkerService::Observe(nsISupports* aSubject, const char* aTopic,
     }
 
     RefPtr<RemoteWorkerService> self = this;
-    nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
-        "ShutdownThread", [self]() { self->ShutdownOnTargetThread(); });
+    nsCOMPtr<nsIRunnable> r =
+        NS_NewRunnableFunction("RemoteWorkerService::CloseActorOnTargetThread",
+                               [self]() { self->CloseActorOnTargetThread(); });
 
     mThread->Dispatch(r.forget(), NS_DISPATCH_NORMAL);
+
+    
+    
+    
+    
+    
+    mThread->Shutdown();
+    mThread = nullptr;
 
     StaticMutexAutoLock lock(sRemoteWorkerServiceMutex);
     sRemoteWorkerService = nullptr;
