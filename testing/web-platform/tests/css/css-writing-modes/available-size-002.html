@@ -5,7 +5,6 @@
 <link rel="help" href="https://www.w3.org/TR/css-writing-modes-3/#orthogonal-auto">
 <link rel="match" href="reference/available-size-002-ref.html">
 <meta name="assert" content="When an orthogonal flow's ancestor doesn't have a definite block size but does have a fixed max-height, but isn't a scroller, do not use that size.">
-<meta name="flags" content="">
 <style>
 body > div {
   font-family: monospace; /* to be able to reliably measure things in ch*/
@@ -36,9 +35,9 @@ span {
 <div>
   <div>
     <aside id="green">0</aside>
-    <div>0 0 0 0 <span>0</span> 0 0 0</div> 
-
-
-
+    <div>0 0 0 0 <span>0</span> 0 0 0</div> <!-- If this div takes its height from
+    the max-height of its parent (which it shouldn't, since it's not a scroller),
+    it should wrap just right for the white 0 to
+    overlap with the green one. -->
   </div>
 </div>

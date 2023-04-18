@@ -10,7 +10,6 @@
   <link rel="match" href="../../reference/ref-filled-green-100px-square.xht">
   <link rel="stylesheet" type="text/css" href="/fonts/ahem.css">
 
-  <meta content="" name="flags">
   <meta content="When 'white-space' is 'pre', preserved white spaces at the end of the line affect the intrinsic min-content size." name="assert">
 
   <style>
@@ -59,19 +58,19 @@
 
   </div>
 
-  
+  <!--
 
+  The white spaces preceding or following
+  the "G", "M" and "Z" do not get
+  wrapped. That is by definition of
+  'white-space: pre'.
 
+  The line feeds (&NewLine;) wrap
+  content to the next line box.
 
+  Since div#test-overlapping-green
+  is floated and since its parent in
+  the flow is 0-width, then the float
+  is min-content sized.
 
-
-
-
-
-
-
-
-
-
-
-
+  -->

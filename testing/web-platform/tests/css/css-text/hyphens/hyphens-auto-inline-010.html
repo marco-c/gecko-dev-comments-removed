@@ -9,17 +9,16 @@
   <link rel="match" href="reference/hyphens-auto-inline-010M-ref.html">
   <link rel="match" href="reference/hyphens-auto-inline-010H-ref.html">
 
-  
+  <!--
+  User agents may use U+2010 HYPHEN <https://codepoints.net/U+2010>
+  when the font has the glyph, or
+  may use U+002D HYPHEN-MINUS <https://codepoints.net/U+002d>
+  otherwise. Some fonts will display slightly different glyphs for
+  these code points. Therefore these 2 reference files.
+  The M-ref.html reference file means the hyphen-Minus character U+002D.
+  The H-ref.html reference file means the Hyphen character U+2010.
+  -->
 
-
-
-
-
-
-
-
-
-  <meta content="" name="flags">
   <meta content="When 'hyphens' is set to 'auto' and applied to an inline element and when 'lang' attribute is also set to a valid value, then words may be broken at hyphenation opportunities determined automatically by an hyphenation resource appropriate to the language of the text involved.">
 
   <style>
@@ -41,12 +40,12 @@
 
   <div>There are <span>new engines now</span>.</div>
 
-  
-
-
-
-
-
-
-
-
+  <!--
+        Expected result:
+        There
+        are
+        new
+        en-
+        gines
+        now.
+  -->
