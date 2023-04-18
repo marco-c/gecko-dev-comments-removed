@@ -50,22 +50,10 @@ class ServiceWorkerPrivateImpl final : public ServiceWorkerPrivate::Inner,
 
   RefPtr<GenericPromise> SetSkipWaitingFlag();
 
-  static void ReportRunning();
-
-  static void CheckRunningShutdown() {
-    MOZ_ASSERT(sRunningServiceWorkers == 0);
-    MOZ_ASSERT(sRunningServiceWorkersFetch == 0);
-  }
-
  private:
   class RAIIActorPtrHolder;
 
   ~ServiceWorkerPrivateImpl();
-
-  
-
-
-  void UpdateRunning(int32_t aDelta, int32_t aFetchDelta);
 
   
 
@@ -255,15 +243,6 @@ class ServiceWorkerPrivateImpl final : public ServiceWorkerPrivate::Inner,
   RemoteWorkerData mRemoteWorkerData;
 
   TimeStamp mServiceWorkerLaunchTimeStart;
-
-  
-  
-  static uint32_t sRunningServiceWorkers;
-  static uint32_t sRunningServiceWorkersFetch;
-  static uint32_t sRunningServiceWorkersMax;
-  static uint32_t sRunningServiceWorkersFetchMax;
-
-  bool mHandlesFetch{false};
 };
 
 }  
