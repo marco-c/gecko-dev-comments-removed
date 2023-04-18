@@ -6467,16 +6467,30 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   const bool isDefiniteISize = styleISize.IsLengthPercentage();
-  const bool isFlexItemInlineAxisMainAxis =
-      isFlexItem && flexMainAxis == eLogicalAxisInline;
   const auto& minBSizeCoord = stylePos->MinBSize(aWM);
   const auto& maxBSizeCoord = stylePos->MaxBSize(aWM);
   const bool isAutoMinBSize =
       nsLayoutUtils::IsAutoBSize(minBSizeCoord, aCBSize.BSize(aWM));
   const bool isAutoMaxBSize =
       nsLayoutUtils::IsAutoBSize(maxBSizeCoord, aCBSize.BSize(aWM));
-  if (aspectRatio && !isDefiniteISize && !isFlexItemInlineAxisMainAxis) {
+  if (aspectRatio && !isDefiniteISize) {
     const MinMaxSize minMaxBSize{
         isAutoMinBSize ? 0
                        : nsLayoutUtils::ComputeBSizeValue(
@@ -6496,6 +6510,8 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
   
   
   
+  const bool isFlexItemInlineAxisMainAxis =
+      isFlexItem && flexMainAxis == eLogicalAxisInline;
   const auto& maxISizeCoord = stylePos->MaxISize(aWM);
   nscoord maxISize = NS_UNCONSTRAINEDSIZE;
   if (!maxISizeCoord.IsNone() && !isFlexItemInlineAxisMainAxis) {
