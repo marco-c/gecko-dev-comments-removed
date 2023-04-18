@@ -91,7 +91,7 @@ class WebDriverBiDi {
     
     let webSocketUrl = null;
     if (
-      this.agent.listening &&
+      this.agent.running &&
       (this.session.capabilities.get("webSocketUrl") || sessionlessConnection)
     ) {
       this.agent.server.registerPathHandler(this.session.path, this.session);
@@ -125,7 +125,7 @@ class WebDriverBiDi {
 
     
     
-    if (this.agent.listening && this.session.capabilities.get("webSocketUrl")) {
+    if (this.agent.running && this.session.capabilities.get("webSocketUrl")) {
       this.agent.server.registerPathHandler(this.session.path, null);
       logger.debug(`Unregistered session handler: ${this.session.path}`);
     }
