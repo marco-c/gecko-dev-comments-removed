@@ -303,6 +303,10 @@ bool ResultsToJSValue(JSContext* cx, ResultType type, void* registerResultLoc,
                       Maybe<char*> stackResultsLoc, MutableHandleValue rval,
                       CoercionLevel level = CoercionLevel::Spec);
 
+
+
+void ReportTrapError(JSContext* cx, unsigned errorNumber);
+
 }  
 }  
 
