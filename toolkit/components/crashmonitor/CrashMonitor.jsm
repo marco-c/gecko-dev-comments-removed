@@ -33,16 +33,26 @@
 
 var EXPORTED_SYMBOLS = ["CrashMonitor"];
 
+const { PrivateBrowsingUtils } = ChromeUtils.import(
+  "resource://gre/modules/PrivateBrowsingUtils.jsm"
+);
+const { PromiseUtils } = ChromeUtils.import(
+  "resource://gre/modules/PromiseUtils.jsm"
+);
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+
+const SESSIONSTORE_WINDOWS_RESTORED_TOPIC = "sessionstore-windows-restored";
+const SESSIONSTORE_FINAL_STATE_WRITE_COMPLETE_TOPIC =
+  "sessionstore-final-state-write-complete";
 
 const NOTIFICATIONS = [
   "final-ui-startup",
-  "sessionstore-windows-restored",
+  SESSIONSTORE_WINDOWS_RESTORED_TOPIC,
   "quit-application-granted",
   "quit-application",
   "profile-change-net-teardown",
   "profile-change-teardown",
-  "sessionstore-final-state-write-complete",
+  SESSIONSTORE_FINAL_STATE_WRITE_COMPLETE_TOPIC,
 ];
 
 const SHUTDOWN_PHASES = ["profile-before-change"];
@@ -58,6 +68,11 @@ var CrashMonitorInternal = {
 
 
   checkpoints: {},
+
+  
+
+
+  sessionStoreFinalWriteComplete: PromiseUtils.defer(),
 
   
 
@@ -158,9 +173,21 @@ var CrashMonitor = {
 
     
     IOUtils.profileBeforeChange.addBlocker(
-      "CrashMonitor: Writing notifications to file after receiving profile-before-change",
-      () => this.writeCheckpoint("profile-before-change"),
-      () => this.checkpoints
+      "CrashMonitor: Writing notifications to file after receiving profile-before-change and awaiting all checkpoints written",
+      async () => {
+        await this.writeCheckpoint("profile-before-change");
+
+        
+        
+        
+        if (
+          !PrivateBrowsingUtils.permanentPrivateBrowsing &&
+          CrashMonitorInternal.checkpoints[SESSIONSTORE_WINDOWS_RESTORED_TOPIC]
+        ) {
+          await CrashMonitorInternal.sessionStoreFinalWriteComplete.promise;
+        }
+      },
+      () => CrashMonitorInternal.checkpoints
     );
 
     CrashMonitorInternal.initialized = true;
@@ -183,6 +210,10 @@ var CrashMonitor = {
       NOTIFICATIONS.forEach(function(aTopic) {
         Services.obs.removeObserver(this, aTopic);
       }, this);
+    }
+
+    if (aTopic === SESSIONSTORE_FINAL_STATE_WRITE_COMPLETE_TOPIC) {
+      CrashMonitorInternal.sessionStoreFinalWriteComplete.resolve();
     }
   },
 
