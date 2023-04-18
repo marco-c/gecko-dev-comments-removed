@@ -181,50 +181,69 @@ add_task(async function test_create_discarded() {
   await extension.unload();
 });
 
-add_task(async function test_discarded_private_tab_restored() {
+async function test_early_discarded_tab_restored({ testPrivateTab }) {
   let extension = ExtensionTestUtils.loadExtension({
     incognitoOverride: "spanning",
-
-    background: async function() {
+    manifest: {
+      permissions: ["tabs"],
+    },
+    background: `(${async function(expectedIncognito) {
       browser.tabs.onUpdated.addListener(
         async (tabId, changeInfo, tab) => {
-          const { active, discarded, incognito } = tab;
-          if (!incognito || active || discarded) {
+          const { active, discarded, incognito, status } = tab;
+          if (
+            incognito !== expectedIncognito ||
+            active ||
+            discarded ||
+            
+            
+            
+            
+            
+            
+            status === "complete"
+          ) {
             return;
           }
+          browser.test.log(
+            `Test extension discarding tab: ${JSON.stringify(tab)}`
+          );
           await browser.tabs.discard(tabId);
           browser.test.sendMessage("tab-discarded");
         },
-        { properties: ["status"] }
+        { properties: ["status"], urls: ["https://example.com/*"] }
       );
-    },
+    }})(${testPrivateTab})`,
   });
 
-  
-  const privateWin = await BrowserTestUtils.openNewBrowserWindow({
-    private: true,
+  const newWin = await BrowserTestUtils.openNewBrowserWindow({
+    private: testPrivateTab,
   });
 
   await extension.startup();
 
   const newTab = await BrowserTestUtils.addTab(
-    privateWin.gBrowser,
+    newWin.gBrowser,
     "https://example.com/"
   );
   await extension.awaitMessage("tab-discarded");
-  is(newTab.getAttribute("pending"), "true", "private tab should be discarded");
+  is(
+    newTab.getAttribute("pending"),
+    "true",
+    "newly created tab should be discarded"
+  );
 
   const promiseTabLoaded = BrowserTestUtils.browserLoaded(newTab.linkedBrowser);
 
   info("Switching to the discarded background tab");
-  await BrowserTestUtils.switchTab(privateWin.gBrowser, newTab);
+  await BrowserTestUtils.switchTab(newWin.gBrowser, newTab);
 
   info("Wait for the restored tab to complete loading");
   await promiseTabLoaded;
   is(
     newTab.hasAttribute("pending"),
     false,
-    "discarded private tab should have been restored"
+    "discarded tab should have been restored"
   );
 
   is(
@@ -234,5 +253,15 @@ add_task(async function test_discarded_private_tab_restored() {
   );
 
   await extension.unload();
-  await BrowserTestUtils.closeWindow(privateWin);
+  await BrowserTestUtils.closeWindow(newWin);
+}
+
+
+
+add_task(function test_early_discarded_private_tab_restored() {
+  return test_early_discarded_tab_restored({ testPrivateTab: true });
+});
+
+add_task(async function test_early_discarded_regular_tab_restored() {
+  return test_early_discarded_tab_restored({ testPrivateTab: false });
 });
