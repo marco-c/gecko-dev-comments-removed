@@ -950,7 +950,7 @@ class nsLayoutUtils {
 
 
 
-  static MatrixScalesDouble GetTransformToAncestorScale(const nsIFrame* aFrame);
+  static MatrixScales GetTransformToAncestorScale(const nsIFrame* aFrame);
 
   
 
@@ -958,7 +958,7 @@ class nsLayoutUtils {
 
 
 
-  static MatrixScalesDouble GetTransformToAncestorScaleExcludingAnimated(
+  static MatrixScales GetTransformToAncestorScaleExcludingAnimated(
       nsIFrame* aFrame);
 
   

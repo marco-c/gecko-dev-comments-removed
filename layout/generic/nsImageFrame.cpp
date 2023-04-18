@@ -1079,12 +1079,11 @@ void nsImageFrame::MaybeDecodeForPredictedSize() {
 
   
   mozilla::PresShell* presShell = PresContext()->PresShell();
-  MatrixScalesDouble scale =
+  MatrixScales scale =
       ScaleFactor<UnknownUnits, UnknownUnits>(
           presShell->GetCumulativeResolution()) *
       nsLayoutUtils::GetTransformToAncestorScaleExcludingAnimated(this);
-  auto resolutionToScreen =
-      ViewAs<LayoutDeviceToScreenScale2D>(scale.ConvertTo<float>());
+  auto resolutionToScreen = ViewAs<LayoutDeviceToScreenScale2D>(scale);
 
   
   if (BrowserChild* browserChild = BrowserChild::GetFrom(presShell)) {
