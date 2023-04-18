@@ -240,6 +240,16 @@ Maybe<WritingMode> TextEventDispatcher::MaybeQueryWritingModeAtSelection()
     return Nothing();
   }
 
+  
+  
+  
+  
+  const InputContext inputContext = mWidget->GetInputContext();
+  if (XRE_IsE10sParentProcess() && inputContext.IsOriginContentProcess() &&
+      !inputContext.mIMEState.IsEditable()) {
+    return Nothing();
+  }
+
   WidgetQueryContentEvent querySelectedTextEvent(true, eQuerySelectedText,
                                                  mWidget);
   nsEventStatus status = nsEventStatus_eIgnore;
