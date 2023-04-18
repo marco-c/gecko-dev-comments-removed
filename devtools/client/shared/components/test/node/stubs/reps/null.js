@@ -4,11 +4,8 @@
 
 "use strict";
 
-
-
-
 const stubs = new Map();
-stubs.set(`Null`, {
+stubs.set("Null", {
   type: "null",
 });
 
