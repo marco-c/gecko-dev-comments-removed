@@ -646,6 +646,11 @@ GeckoDriver.prototype.getContext = function() {
 
 
 
+
+
+
+
+
 GeckoDriver.prototype.executeScript = async function(cmd) {
   let { script, args } = cmd.parameters;
   let opts = {
@@ -659,6 +664,11 @@ GeckoDriver.prototype.executeScript = async function(cmd) {
 
   return { value: await this.execute_(script, args, opts) };
 };
+
+
+
+
+
 
 
 
@@ -1189,6 +1199,8 @@ GeckoDriver.prototype.setWindowRect = async function(cmd) {
 
 
 
+
+
 GeckoDriver.prototype.switchToWindow = async function(cmd) {
   const { focus = true, handle } = cmd.parameters;
 
@@ -1324,6 +1336,10 @@ GeckoDriver.prototype.switchToParentFrame = async function() {
 
 
 
+
+
+
+
 GeckoDriver.prototype.switchToFrame = async function(cmd) {
   const { element: el, id } = cmd.parameters;
 
@@ -1406,6 +1422,10 @@ GeckoDriver.prototype.singleTap = async function(cmd) {
 
 
 
+
+
+
+
 GeckoDriver.prototype.performActions = async function(cmd) {
   lazy.assert.open(this.getBrowsingContext());
   await this._handleUserPrompts();
@@ -1434,6 +1454,12 @@ GeckoDriver.prototype.releaseActions = async function() {
 
   await this.getActor().releaseActions();
 };
+
+
+
+
+
+
 
 
 
@@ -1485,6 +1511,14 @@ GeckoDriver.prototype.findElement = async function(cmd) {
 
 
 
+
+
+
+
+
+
+
+
 GeckoDriver.prototype.findElements = async function(cmd) {
   const { element: el, using, value } = cmd.parameters;
 
@@ -1510,6 +1544,8 @@ GeckoDriver.prototype.findElements = async function(cmd) {
 
   return this.getActor().findElements(using, value, opts);
 };
+
+
 
 
 
@@ -1587,6 +1623,8 @@ GeckoDriver.prototype.getActiveElement = async function() {
 
 
 
+
+
 GeckoDriver.prototype.clickElement = async function(cmd) {
   const browsingContext = lazy.assert.open(this.getBrowsingContext());
   await this._handleUserPrompts();
@@ -1614,6 +1652,8 @@ GeckoDriver.prototype.clickElement = async function(cmd) {
     }
   );
 };
+
+
 
 
 
@@ -1666,6 +1706,8 @@ GeckoDriver.prototype.getElementAttribute = async function(cmd) {
 
 
 
+
+
 GeckoDriver.prototype.getElementProperty = async function(cmd) {
   lazy.assert.open(this.getBrowsingContext());
   await this._handleUserPrompts();
@@ -1696,6 +1738,8 @@ GeckoDriver.prototype.getElementProperty = async function(cmd) {
 
 
 
+
+
 GeckoDriver.prototype.getElementText = async function(cmd) {
   lazy.assert.open(this.getBrowsingContext());
   await this._handleUserPrompts();
@@ -1705,6 +1749,8 @@ GeckoDriver.prototype.getElementText = async function(cmd) {
 
   return this.getActor().getElementText(webEl);
 };
+
+
 
 
 
@@ -1785,6 +1831,8 @@ GeckoDriver.prototype.isElementDisplayed = async function(cmd) {
 
 
 
+
+
 GeckoDriver.prototype.getElementValueOfCssProperty = async function(cmd) {
   lazy.assert.open(this.getBrowsingContext());
   await this._handleUserPrompts();
@@ -1795,6 +1843,8 @@ GeckoDriver.prototype.getElementValueOfCssProperty = async function(cmd) {
 
   return this.getActor().getElementValueOfCssProperty(webEl, prop);
 };
+
+
 
 
 
@@ -1868,6 +1918,8 @@ GeckoDriver.prototype.isElementSelected = async function(cmd) {
 
 
 
+
+
 GeckoDriver.prototype.getElementRect = async function(cmd) {
   lazy.assert.open(this.getBrowsingContext());
   await this._handleUserPrompts();
@@ -1877,6 +1929,8 @@ GeckoDriver.prototype.getElementRect = async function(cmd) {
 
   return this.getActor().getElementRect(webEl);
 };
+
+
 
 
 
@@ -1909,6 +1963,8 @@ GeckoDriver.prototype.sendKeysToElement = async function(cmd) {
     this.currentSession.capabilities
   );
 };
+
+
 
 
 
@@ -2035,6 +2091,8 @@ GeckoDriver.prototype.deleteCookie = async function(cmd) {
     }
   }
 };
+
+
 
 
 
@@ -2231,6 +2289,10 @@ GeckoDriver.prototype.deleteSession = function() {
     this._currentSession = null;
   }
 };
+
+
+
+
 
 
 
@@ -2509,6 +2571,8 @@ GeckoDriver.prototype.fullscreenWindow = async function() {
 
 
 
+
+
 GeckoDriver.prototype.dismissDialog = async function() {
   lazy.assert.open(this.getBrowsingContext({ top: true }));
   this._checkIfAlertIsPresent();
@@ -2528,6 +2592,8 @@ GeckoDriver.prototype.dismissDialog = async function() {
 
 
 
+
+
 GeckoDriver.prototype.acceptDialog = async function() {
   lazy.assert.open(this.getBrowsingContext({ top: true }));
   this._checkIfAlertIsPresent();
@@ -2539,6 +2605,8 @@ GeckoDriver.prototype.acceptDialog = async function() {
   const win = this.getCurrentWindow();
   await new lazy.IdlePromise(win);
 };
+
+
 
 
 
@@ -2942,6 +3010,10 @@ GeckoDriver.prototype.teardownReftest = function() {
   this._reftest.teardown();
   this._reftest = null;
 };
+
+
+
+
 
 
 
