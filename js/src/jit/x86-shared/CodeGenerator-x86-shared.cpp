@@ -1546,7 +1546,6 @@ void CodeGenerator::visitModI(LModI* ins) {
     masm.bind(&negative);
 
     
-    Label notmin;
     masm.cmp32(lhs, Imm32(INT32_MIN));
     overflow = new (alloc()) ModOverflowCheck(ins, rhs);
     masm.j(Assembler::Equal, overflow->entry());
