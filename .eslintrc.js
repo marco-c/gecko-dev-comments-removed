@@ -73,6 +73,9 @@ module.exports = {
       configFile: path.join(__dirname, ".babel-eslint.rc.js"),
     },
   },
+  settings: {
+    "import/extensions": [".mjs"],
+  },
   ignorePatterns,
   
   root: true,
@@ -80,7 +83,7 @@ module.exports = {
   
   
   extends: ["plugin:mozilla/recommended"],
-  plugins: ["mozilla"],
+  plugins: ["mozilla", "import"],
   overrides: [
     {
       
@@ -90,6 +93,41 @@ module.exports = {
       env: {
         node: true,
         browser: false,
+      },
+    },
+    {
+      files: ["*.mjs"],
+      rules: {
+        "import/default": "error",
+        "import/export": "error",
+        "import/named": "error",
+        "import/namespace": "error",
+        "import/newline-after-import": "error",
+        "import/no-anonymous-default-export": "error",
+        "import/no-duplicates": "error",
+        "import/no-absolute-path": "error",
+        "import/no-named-default": "error",
+        "import/no-named-as-default": "error",
+        "import/no-named-as-default-member": "error",
+        "import/no-self-import": "error",
+        "import/no-unassigned-import": "error",
+        "import/no-unresolved": "error",
+        "import/no-useless-path-segments": "error",
+        "import/prefer-default-export": "error",
+      },
+    },
+    {
+      files: [
+        
+        
+        "*.sys.mjs",
+        
+        
+        
+        "devtools/shared/compatibility/**",
+      ],
+      rules: {
+        "import/no-unresolved": "off",
       },
     },
     {
