@@ -268,9 +268,9 @@ void UtilityProcessHost::OnChannelClosed() {
   if (!mShutdownRequested && mListener) {
     
     mListener->OnProcessUnexpectedShutdown(this);
-  } else {
-    DestroyProcess();
   }
+
+  DestroyProcess();
 
   
   UtilityProcessParent::Destroy(std::move(mUtilityProcessParent));
