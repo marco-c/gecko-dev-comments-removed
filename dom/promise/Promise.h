@@ -259,6 +259,12 @@ class Promise : public SupportsWeakPtr {
   
   
   
+  template <typename ResolveCallback, typename RejectCallback, typename... Args>
+  ThenResult<ResolveCallback, Args...> ThenCatchWithCycleCollectedArgs(
+      ResolveCallback&& aOnResolve, RejectCallback&& aOnReject,
+      Args&&... aArgs);
+
+  
   
   template <typename Callback, typename... Args>
   ThenResult<Callback, Args...> ThenWithCycleCollectedArgs(
