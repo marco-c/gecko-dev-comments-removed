@@ -12,7 +12,24 @@ async function changeAndVerifyPref(tab, newConfigValue) {
     async function({ newConfigValue }) {
       let radioId = newConfigValue ? "autoDesktop" : "manualDesktop";
       let radioElement = content.document.getElementById(radioId);
+      let updateRadioGroup = radioElement.radioGroup;
+      let promise = ContentTaskUtils.waitForEvent(
+        updateRadioGroup,
+        "ProcessedUpdatePrefChange"
+      );
       radioElement.click();
+      await promise;
+
+      is(
+        updateRadioGroup.value,
+        `${newConfigValue}`,
+        "Update preference should match expected"
+      );
+      is(
+        updateRadioGroup.disabled,
+        false,
+        "Update preferences should no longer be disabled"
+      );
     }
   );
 
@@ -22,20 +39,39 @@ async function changeAndVerifyPref(tab, newConfigValue) {
     newConfigValue,
     "Value returned should have matched the expected value"
   );
+}
 
-  await SpecialPowers.spawn(
-    tab.linkedBrowser,
-    [{ newConfigValue }],
-    async function({ newConfigValue }) {
-      let updateRadioGroup = content.document.getElementById(
-        "updateRadioGroup"
-      );
-      is(
-        updateRadioGroup.value,
-        `${newConfigValue}`,
-        "Update preference should match expected"
-      );
-    }
+async function changeAndVerifyUpdateWrites({
+  tab,
+  newConfigValue,
+  discardUpdate,
+  expectPrompt,
+  expectRemainingUpdate,
+}) {
+  
+  
+  
+  let confirmExReply = discardUpdate ? 0 : 1;
+  let didPrompt = false;
+  let promptService = {
+    QueryInterface: ChromeUtils.generateQI(["nsIPromptService"]),
+    confirmEx(...args) {
+      promptService._confirmExArgs = args;
+      didPrompt = true;
+      return confirmExReply;
+    },
+  };
+  Services.prompt = promptService;
+  await changeAndVerifyPref(tab, newConfigValue);
+  is(
+    didPrompt,
+    expectPrompt,
+    `We should ${expectPrompt ? "" : "not "}be prompted`
+  );
+  is(
+    !!gUpdateManager.readyUpdate,
+    expectRemainingUpdate,
+    `There should ${expectRemainingUpdate ? "" : "not "}be a ready update`
   );
 }
 
@@ -45,6 +81,12 @@ add_task(async function testUpdateAutoPrefUI() {
     "about:preferences"
   );
 
+  
+  await SpecialPowers.spawn(tab.linkedBrowser, [], () => {
+    content.gMainPane._minUpdatePrefDisableTime = 10;
+  });
+
+  info("Enable automatic updates and check that works.");
   await changeAndVerifyPref(tab, true);
   ok(
     !gUpdateManager.downloadingUpdate,
@@ -52,6 +94,7 @@ add_task(async function testUpdateAutoPrefUI() {
   );
   ok(!gUpdateManager.readyUpdate, "There should not be a ready update");
 
+  info("Disable automatic updates and check that works.");
   await changeAndVerifyPref(tab, false);
   ok(
     !gUpdateManager.downloadingUpdate,
@@ -68,47 +111,41 @@ add_task(async function testUpdateAutoPrefUI() {
   reloadUpdateManagerData();
   ok(!!gUpdateManager.readyUpdate, "There should be a ready update");
 
-  
-  
-  
-  let discardUpdate = 0;
   let { prompt } = Services;
-  let promptService = {
-    QueryInterface: ChromeUtils.generateQI(["nsIPromptService"]),
-    confirmEx(...args) {
-      promptService._confirmExArgs = args;
-      return discardUpdate;
-    },
-  };
-  Services.prompt = promptService;
   registerCleanupFunction(() => {
     Services.prompt = prompt;
   });
 
   
   
-  
-  discardUpdate = 1;
-  await changeAndVerifyPref(tab, false);
-  ok(!!gUpdateManager.readyUpdate, "There should be a ready update");
+  await changeAndVerifyUpdateWrites({
+    tab,
+    newConfigValue: false,
+    discardUpdate: false,
+    expectPrompt: true,
+    expectRemainingUpdate: true,
+  });
 
   
   
   
-  discardUpdate = 0;
-  await changeAndVerifyPref(tab, true);
-  ok(!!gUpdateManager.readyUpdate, "There should be a ready update");
+  await changeAndVerifyUpdateWrites({
+    tab,
+    newConfigValue: true,
+    discardUpdate: true,
+    expectPrompt: false,
+    expectRemainingUpdate: true,
+  });
 
   
   
-  
-  discardUpdate = 0;
-  await changeAndVerifyPref(tab, false);
-  ok(
-    !gUpdateManager.downloadingUpdate,
-    "There should not be a downloading update"
-  );
-  ok(!gUpdateManager.readyUpdate, "There should not be a ready update");
+  await changeAndVerifyUpdateWrites({
+    tab,
+    newConfigValue: false,
+    discardUpdate: true,
+    expectPrompt: true,
+    expectRemainingUpdate: false,
+  });
 
   await BrowserTestUtils.removeTab(tab);
 });
