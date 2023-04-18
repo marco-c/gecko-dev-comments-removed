@@ -187,6 +187,8 @@ class DisplayPortUtils {
 
 
 
+
+
   static bool GetDisplayPortForVisibilityTesting(nsIContent* aContent,
                                                  nsRect* aResult);
 
@@ -232,18 +234,6 @@ class DisplayPortUtils {
   static void SetDisplayPortBase(nsIContent* aContent, const nsRect& aBase);
   static void SetDisplayPortBaseIfNotSet(nsIContent* aContent,
                                          const nsRect& aBase);
-
-  
-
-
-  static bool GetCriticalDisplayPort(
-      nsIContent* aContent, nsRect* aResult,
-      const DisplayPortOptions& aOptions = DisplayPortOptions());
-
-  
-
-
-  static bool HasCriticalDisplayPort(nsIContent* aContent);
 
   
 

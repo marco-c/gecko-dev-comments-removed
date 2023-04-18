@@ -87,7 +87,6 @@ struct FrameMetrics {
         mCompositionBounds(0, 0, 0, 0),
         mCompositionBoundsWidthIgnoringScrollbars(0),
         mDisplayPort(0, 0, 0, 0),
-        mCriticalDisplayPort(0, 0, 0, 0),
         mScrollableRect(0, 0, 0, 0),
         mCumulativeResolution(),
         mDevPixelsPerCSSPixel(1),
@@ -116,7 +115,6 @@ struct FrameMetrics {
            mCompositionBoundsWidthIgnoringScrollbars ==
                aOther.mCompositionBoundsWidthIgnoringScrollbars &&
            mDisplayPort.IsEqualEdges(aOther.mDisplayPort) &&
-           mCriticalDisplayPort.IsEqualEdges(aOther.mCriticalDisplayPort) &&
            mScrollableRect.IsEqualEdges(aOther.mScrollableRect) &&
            mCumulativeResolution == aOther.mCumulativeResolution &&
            mDevPixelsPerCSSPixel == aOther.mDevPixelsPerCSSPixel &&
@@ -299,12 +297,6 @@ struct FrameMetrics {
   }
 
   const CSSRect& GetDisplayPort() const { return mDisplayPort; }
-
-  void SetCriticalDisplayPort(const CSSRect& aCriticalDisplayPort) {
-    mCriticalDisplayPort = aCriticalDisplayPort;
-  }
-
-  const CSSRect& GetCriticalDisplayPort() const { return mCriticalDisplayPort; }
 
   void SetCumulativeResolution(
       const LayoutDeviceToLayerScale& aCumulativeResolution) {
@@ -541,14 +533,6 @@ struct FrameMetrics {
   
   
   CSSRect mDisplayPort;
-
-  
-  
-  
-  
-  
-  
-  CSSRect mCriticalDisplayPort;
 
   
   
