@@ -234,7 +234,7 @@ static const uint32_t WasmTrapInstructionLength = 4;
 
 
 static constexpr uint32_t WasmCheckedCallEntryOffset = 0u;
-static constexpr uint32_t WasmCheckedTailEntryOffset = 16u;
+static constexpr uint32_t WasmCheckedTailEntryOffset = 20u;
 
 static constexpr Scale ScalePointer = TimesEight;
 
