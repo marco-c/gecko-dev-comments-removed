@@ -1199,7 +1199,7 @@ bool BuildImmutableProperty(JSContext* cx, HandleValue value, HandleId name,
       
       for (uint32_t i = 0; i < len; i++) {
         
-        childName.set(INT_TO_JSID(i));
+        childName.set(PropertyKey::Int(i));
 
         
         if (!GetProperty(cx, arr, value, childName, &childValue)) {
