@@ -52,7 +52,9 @@
 
 #include "base/basictypes.h"
 
-#if defined(OS_POSIX)
+#if defined(OS_WIN)
+#  include <windows.h>
+#elif defined(OS_POSIX)
 #  include <pthread.h>
 #endif
 
@@ -61,7 +63,7 @@ namespace base {
 
 struct ThreadLocalPlatform {
 #if defined(OS_WIN)
-  typedef int SlotType;
+  typedef DWORD SlotType;
 #elif defined(OS_POSIX)
   typedef pthread_key_t SlotType;
 #endif
