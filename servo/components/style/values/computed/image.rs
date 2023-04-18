@@ -48,8 +48,6 @@ pub type Gradient = generic::GenericGradient<
 
 pub type CrossFade = generic::CrossFade<Image, Color, Percentage>;
 
-pub type PercentOrNone = generic::PercentOrNone<Percentage>;
-
 
 pub type EndingShape = generic::GenericEndingShape<NonNegativeLength, NonNegativeLengthPercentage>;
 

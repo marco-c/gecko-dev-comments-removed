@@ -8,6 +8,7 @@
 
 use crate::custom_properties;
 use crate::values::generics::position::PositionComponent;
+use crate::values::generics::Optional;
 use crate::values::serialize_atom_identifier;
 use crate::Atom;
 use crate::Zero;
@@ -72,27 +73,13 @@ pub struct GenericCrossFade<Image, Color, Percentage> {
 }
 
 
-
-#[derive(
-    Clone, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToResolvedValue, ToShmem, ToCss,
-)]
-#[repr(C, u8)]
-pub enum PercentOrNone<Percentage> {
-    
-    #[css(skip)]
-    None,
-    
-    Percent(Percentage),
-}
-
-
 #[derive(
     Clone, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToResolvedValue, ToShmem, ToCss,
 )]
 #[repr(C)]
 pub struct GenericCrossFadeElement<Image, Color, Percentage> {
     
-    pub percent: PercentOrNone<Percentage>,
+    pub percent: Optional<Percentage>,
     
     
     pub image: GenericCrossFadeImage<Image, Color>,

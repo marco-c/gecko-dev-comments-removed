@@ -61,8 +61,6 @@ pub type CrossFadeElement = generic::CrossFadeElement<Image, Color, Percentage>;
 
 pub type CrossFadeImage = generic::CrossFadeImage<Image, Color>;
 
-pub type PercentOrNone = generic::PercentOrNone<Percentage>;
-
 
 pub type ImageSet = generic::ImageSet<Image, Resolution>;
 
@@ -303,6 +301,16 @@ impl CrossFade {
 }
 
 impl CrossFadeElement {
+    fn parse_percentage<'i, 't>(context: &ParserContext, input: &mut Parser<'i, 't>) -> Option<Percentage> {
+        
+        
+        
+        
+        input.try_parse(|input| Percentage::parse_non_negative(context, input))
+            .ok()
+            .map(|p| p.clamp_to_hundred())
+    }
+
     
     fn parse<'i, 't>(
         context: &ParserContext,
@@ -310,14 +318,17 @@ impl CrossFadeElement {
         cors_mode: CorsMode,
     ) -> Result<Self, ParseError<'i>> {
         
-        let mut percent = PercentOrNone::parse_or_none(context, input);
+        let mut percent = Self::parse_percentage(context, input);
         
         let image = CrossFadeImage::parse(context, input, cors_mode)?;
         
-        if percent == PercentOrNone::None {
-            percent = PercentOrNone::parse_or_none(context, input);
+        if percent.is_none() {
+            percent = Self::parse_percentage(context, input);
         }
-        Ok(Self { percent, image })
+        Ok(Self {
+            percent: percent.into(),
+            image,
+        })
     }
 }
 
@@ -336,22 +347,6 @@ impl CrossFadeImage {
             return Ok(Self::Image(image));
         }
         Ok(Self::Color(Color::parse(context, input)?))
-    }
-}
-
-impl PercentOrNone {
-    fn parse_or_none<'i, 't>(context: &ParserContext, input: &mut Parser<'i, 't>) -> Self {
-        
-        
-        
-        
-        
-        if let Ok(percent) = input.try_parse(|input| Percentage::parse_non_negative(context, input))
-        {
-            Self::Percent(percent.clamp_to_hundred())
-        } else {
-            Self::None
-        }
     }
 }
 
