@@ -24,108 +24,6 @@
 
 using namespace mozilla;
 
-
-
-
-#ifdef TIMERS_RUNTIME_STATS
-
-
-
-class StaticTimersStats {
- public:
-  explicit StaticTimersStats(const char* aName) : mName(aName) {}
-
-  ~StaticTimersStats() {
-    
-    using ULL = unsigned long long;
-    ULL n = static_cast<ULL>(mCount);
-    if (n == 0) {
-      printf("[%d] Timers stats `%s`: (nothing)\n",
-             int(profiler_current_process_id().ToNumber()), mName);
-    } else if (ULL sumNs = static_cast<ULL>(mSumDurationsNs); sumNs == 0) {
-      printf("[%d] Timers stats `%s`: %llu\n",
-             int(profiler_current_process_id().ToNumber()), mName, n);
-    } else {
-      printf("[%d] Timers stats `%s`: %llu ns / %llu = %llu ns, max %llu ns\n",
-             int(profiler_current_process_id().ToNumber()), mName, sumNs, n,
-             sumNs / n, static_cast<ULL>(mLongestDurationNs));
-    }
-  }
-
-  void AddDurationFrom(TimeStamp aStart) {
-    
-    DurationNs duration = static_cast<DurationNs>(
-        (TimeStamp::Now() - aStart).ToMicroseconds() * 1000 + 0.5);
-    mSumDurationsNs += duration;
-    ++mCount;
-    
-    for (;;) {
-      DurationNs longest = mLongestDurationNs;
-      if (MOZ_LIKELY(longest >= duration)) {
-        
-        break;
-      }
-      if (MOZ_LIKELY(mLongestDurationNs.compareExchange(longest, duration))) {
-        
-        break;
-      }
-      
-      
-    }
-  }
-
-  void AddCount() {
-    MOZ_ASSERT(mSumDurationsNs == 0, "Don't mix counts and durations");
-    ++mCount;
-  }
-
- private:
-  using DurationNs = uint64_t;
-  using Count = uint32_t;
-
-  Atomic<DurationNs> mSumDurationsNs{0};
-  Atomic<DurationNs> mLongestDurationNs{0};
-  Atomic<Count> mCount{0};
-  const char* mName;
-};
-
-
-
-class MOZ_RAII AutoTimersStats {
- public:
-  explicit AutoTimersStats(StaticTimersStats& aStats)
-      : mStats(aStats), mStart(TimeStamp::Now()) {}
-
-  ~AutoTimersStats() { mStats.AddDurationFrom(mStart); }
-
- private:
-  StaticTimersStats& mStats;
-  TimeStamp mStart;
-};
-
-
-
-
-
-
-
-#  define AUTO_TIMERS_STATS(name)                  \
-    static ::StaticTimersStats sStat##name(#name); \
-    ::AutoTimersStats autoStat##name(sStat##name);
-
-
-
-#  define COUNT_TIMERS_STATS(name)                 \
-    static ::StaticTimersStats sStat##name(#name); \
-    sStat##name.AddCount();
-
-#else  
-
-#  define AUTO_TIMERS_STATS(name)
-#  define COUNT_TIMERS_STATS(name)
-
-#endif  
-
 NS_IMPL_ISUPPORTS_INHERITED(TimerThread, Runnable, nsIObserver)
 
 TimerThread::TimerThread()
@@ -603,7 +501,6 @@ TimerThread::Run() {
 nsresult TimerThread::AddTimer(nsTimerImpl* aTimer,
                                const MutexAutoLock& aProofOfLock) {
   MonitorAutoLock lock(mMonitor);
-  AUTO_TIMERS_STATS(TimerThread_AddTimer);
 
   if (!aTimer->mEventTarget) {
     return NS_ERROR_NOT_INITIALIZED;
@@ -677,7 +574,6 @@ nsresult TimerThread::AddTimer(nsTimerImpl* aTimer,
 nsresult TimerThread::RemoveTimer(nsTimerImpl* aTimer,
                                   const MutexAutoLock& aProofOfLock) {
   MonitorAutoLock lock(mMonitor);
-  AUTO_TIMERS_STATS(TimerThread_RemoveTimer);
 
   
   
@@ -687,13 +583,10 @@ nsresult TimerThread::RemoveTimer(nsTimerImpl* aTimer,
   }
 
   
-  
-  
-  
-  
-  
-  
-  
+  if (mWaiting) {
+    mNotified = true;
+    mMonitor.Notify();
+  }
 
   if (profiler_thread_is_being_profiled_for_markers(mProfilerThreadId)) {
     nsAutoCString name;
@@ -714,7 +607,6 @@ nsresult TimerThread::RemoveTimer(nsTimerImpl* aTimer,
 TimeStamp TimerThread::FindNextFireTimeForCurrentThread(TimeStamp aDefault,
                                                         uint32_t aSearchBound) {
   MonitorAutoLock lock(mMonitor);
-  AUTO_TIMERS_STATS(TimerThread_FindNextFireTimeForCurrentThread);
   TimeStamp timeStamp = aDefault;
   uint32_t index = 0;
 
@@ -790,7 +682,6 @@ TimeStamp TimerThread::FindNextFireTimeForCurrentThread(TimeStamp aDefault,
 bool TimerThread::AddTimerInternal(nsTimerImpl* aTimer) {
   mMonitor.AssertCurrentThreadOwns();
   aTimer->mMutex.AssertCurrentThreadOwns();
-  AUTO_TIMERS_STATS(TimerThread_AddTimerInternal);
   if (mShutdown) {
     return false;
   }
@@ -815,23 +706,15 @@ bool TimerThread::AddTimerInternal(nsTimerImpl* aTimer) {
 bool TimerThread::RemoveTimerInternal(nsTimerImpl* aTimer) {
   mMonitor.AssertCurrentThreadOwns();
   aTimer->mMutex.AssertCurrentThreadOwns();
-  AUTO_TIMERS_STATS(TimerThread_RemoveTimerInternal);
-  if (!aTimer) {
-    COUNT_TIMERS_STATS(TimerThread_RemoveTimerInternal_nullptr);
+  if (!aTimer || !aTimer->mHolder) {
     return false;
   }
-  if (!aTimer->mHolder) {
-    COUNT_TIMERS_STATS(TimerThread_RemoveTimerInternal_not_in_list);
-    return false;
-  }
-  AUTO_TIMERS_STATS(TimerThread_RemoveTimerInternal_in_list);
   aTimer->mHolder->Forget(aTimer);
   return true;
 }
 
 void TimerThread::RemoveLeadingCanceledTimersInternal() {
   mMonitor.AssertCurrentThreadOwns();
-  AUTO_TIMERS_STATS(TimerThread_RemoveLeadingCanceledTimersInternal);
 
   
   
@@ -855,7 +738,6 @@ void TimerThread::RemoveLeadingCanceledTimersInternal() {
 
 void TimerThread::RemoveFirstTimerInternal() {
   mMonitor.AssertCurrentThreadOwns();
-  AUTO_TIMERS_STATS(TimerThread_RemoveFirstTimerInternal);
   MOZ_ASSERT(!mTimers.IsEmpty());
   std::pop_heap(mTimers.begin(), mTimers.end(), Entry::UniquePtrLessThan);
   mTimers.RemoveLastElement();
@@ -863,7 +745,6 @@ void TimerThread::RemoveFirstTimerInternal() {
 
 void TimerThread::PostTimerEvent(already_AddRefed<nsTimerImpl> aTimerRef) {
   mMonitor.AssertCurrentThreadOwns();
-  AUTO_TIMERS_STATS(TimerThread_PostTimerEvent);
 
   RefPtr<nsTimerImpl> timer(aTimerRef);
   if (!timer->mEventTarget) {
