@@ -841,6 +841,21 @@ void wasm::GenerateJitEntryPrologue(MacroAssembler& masm, Offsets* offsets) {
   masm.setFramePushed(0);
 }
 
+void wasm::GenerateJitEntryEpilogue(MacroAssembler& masm) {
+#ifdef JS_CODEGEN_ARM64
+  masm.loadPtr(Address(sp, 0), lr);
+  masm.addToStackPtr(Imm32(8));
+  
+  
+  
+  
+  masm.moveStackPtrTo(PseudoStackPointer);
+  masm.abiret();
+#else
+  masm.ret();
+#endif
+}
+
 
 
 

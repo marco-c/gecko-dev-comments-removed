@@ -1371,19 +1371,9 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
   GenPrintf(DebugChannel::Function, masm, "\n");
 
   MOZ_ASSERT(masm.framePushed() == 0);
-#ifdef JS_CODEGEN_ARM64
   AssertExpectedSP(masm);
-  masm.loadPtr(Address(sp, 0), lr);
-  masm.addToStackPtr(Imm32(8));
-  
-  
-  
-  
-  masm.moveStackPtrTo(PseudoStackPointer);
-  masm.abiret();
-#else
-  masm.ret();
-#endif
+  GenerateJitEntryEpilogue(masm);
+  MOZ_ASSERT(masm.framePushed() == 0);
 
   
   if (fe.funcType().args().length()) {
