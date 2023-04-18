@@ -106,7 +106,8 @@ class Frame extends Component {
     this._locationChanged = this._locationChanged.bind(this);
   }
 
-  componentWillMount() {
+  
+  UNSAFE_componentWillMount() {
     if (this.props.sourceMapURLService) {
       const location = savedFrameToLocation(this.props.frame);
       

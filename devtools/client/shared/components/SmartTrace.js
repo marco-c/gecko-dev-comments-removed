@@ -71,7 +71,8 @@ class SmartTrace extends Component {
     return { l10n: dbgL10n };
   }
 
-  componentWillMount() {
+  
+  UNSAFE_componentWillMount() {
     if (this.props.sourceMapURLService) {
       this.sourceMapURLServiceUnsubscriptions = [];
       const sourceMapInit = Promise.all(

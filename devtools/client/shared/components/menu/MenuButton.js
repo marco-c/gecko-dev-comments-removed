@@ -132,7 +132,8 @@ class MenuButton extends PureComponent {
     }
   }
 
-  componentWillReceiveProps(nextProps) {
+  
+  UNSAFE_componentWillReceiveProps(nextProps) {
     
     
     

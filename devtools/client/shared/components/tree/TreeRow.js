@@ -101,7 +101,8 @@ define(function(require, exports, module) {
       });
     }
 
-    componentWillReceiveProps(nextProps) {
+    
+    UNSAFE_componentWillReceiveProps(nextProps) {
       
       
       

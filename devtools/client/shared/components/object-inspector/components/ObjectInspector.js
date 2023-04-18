@@ -91,13 +91,15 @@ class ObjectInspector extends Component {
     self.shouldItemUpdate = this.shouldItemUpdate.bind(this);
   }
 
-  componentWillMount() {
+  
+  UNSAFE_componentWillMount() {
     this.roots = this.props.roots;
     this.focusedItem = this.props.focusedItem;
     this.activeItem = this.props.activeItem;
   }
 
-  componentWillUpdate(nextProps) {
+  
+  UNSAFE_componentWillUpdate(nextProps) {
     this.removeOutdatedNodesFromCache(nextProps);
 
     if (this.roots !== nextProps.roots) {
