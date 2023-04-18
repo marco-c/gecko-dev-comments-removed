@@ -14,6 +14,7 @@
 #include "ErrorList.h"
 #include "jsep/JsepTransceiver.h"
 #include "transport/transportlayer.h"  
+#include "mozilla/dom/RTCRtpTransceiverBinding.h"
 
 class nsIPrincipal;
 
@@ -41,7 +42,6 @@ class RTCRtpTransceiver;
 struct RTCRtpSourceEntry;
 class RTCRtpReceiver;
 class RTCRtpSender;
-}  
 
 
 
@@ -51,21 +51,23 @@ class RTCRtpSender;
 
 
 
-class TransceiverImpl : public nsISupports,
-                        public nsWrapperCache,
-                        public sigslot::has_slots<> {
+class RTCRtpTransceiver : public nsISupports,
+                          public nsWrapperCache,
+                          public sigslot::has_slots<> {
  public:
   
 
 
-  TransceiverImpl(nsPIDOMWindowInner* aWindow, bool aPrivacyNeeded,
-                  PeerConnectionImpl* aPc,
-                  MediaTransportHandler* aTransportHandler,
-                  JsepTransceiver* aJsepTransceiver,
-                  nsISerialEventTarget* aStsThread,
-                  dom::MediaStreamTrack* aSendTrack,
-                  WebrtcCallWrapper* aCallWrapper,
-                  RTCStatsIdGenerator* aIdGenerator);
+  RTCRtpTransceiver(nsPIDOMWindowInner* aWindow, bool aPrivacyNeeded,
+                    PeerConnectionImpl* aPc,
+                    MediaTransportHandler* aTransportHandler,
+                    JsepTransceiver* aJsepTransceiver,
+                    nsISerialEventTarget* aStsThread,
+                    MediaStreamTrack* aSendTrack,
+                    WebrtcCallWrapper* aCallWrapper,
+                    RTCStatsIdGenerator* aIdGenerator);
+
+  void Init(const RTCRtpTransceiverInit& aInit, ErrorResult& aRv);
 
   bool IsValid() const { return !!mConduit; }
 
@@ -76,7 +78,7 @@ class TransceiverImpl : public nsISupports,
   void ResetSync();
 
   nsresult SyncWithMatchingVideoConduits(
-      nsTArray<RefPtr<TransceiverImpl>>& transceivers);
+      nsTArray<RefPtr<RTCRtpTransceiver>>& transceivers);
 
   void Shutdown_m();
 
@@ -86,18 +88,28 @@ class TransceiverImpl : public nsISupports,
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
   nsPIDOMWindowInner* GetParentObject() const;
-  void SyncWithJS(dom::RTCRtpTransceiver& aJsTransceiver, ErrorResult& aRv);
-  dom::RTCRtpReceiver* Receiver() const { return mReceiver; }
-  dom::RTCRtpSender* Sender() const { return mSender; }
-  dom::RTCDtlsTransport* GetDtlsTransport() const { return mDtlsTransport; }
+  RTCRtpReceiver* Receiver() const { return mReceiver; }
+  RTCRtpSender* Sender() const { return mSender; }
+  RTCDtlsTransport* GetDtlsTransport() const { return mDtlsTransport; }
   void GetKind(nsAString& aKind) const;
+  void GetMid(nsAString& aMid) const;
+  RTCRtpTransceiverDirection Direction() const { return mDirection; }
+  void SetDirection(RTCRtpTransceiverDirection aDirection, ErrorResult& aRv);
+  Nullable<RTCRtpTransceiverDirection> GetCurrentDirection() {
+    return mCurrentDirection;
+  }
+  void Stop(ErrorResult& aRv);
+  void SetDirectionInternal(RTCRtpTransceiverDirection aDirection);
+  bool HasBeenUsedToSend() const { return mHasBeenUsedToSend; }
+  void SetAddTrackMagic();
 
   bool CanSendDTMF() const;
   bool Stopped() const { return mStopped; }
+  void SyncWithJsep();
 
   void UpdateDtlsTransportState(const std::string& aTransportId,
                                 TransportLayer::State aState);
-  void SetDtlsTransport(dom::RTCDtlsTransport* aDtlsTransport, bool aStable);
+  void SetDtlsTransport(RTCDtlsTransport* aDtlsTransport, bool aStable);
   void RollbackToStableDtlsTransport();
 
   std::string GetTransportId() const {
@@ -116,6 +128,8 @@ class TransceiverImpl : public nsISupports,
            mJsepTransceiver->mRecvTrack.GetActive();
   }
 
+  bool ShouldRemove() const;
+
   Maybe<const std::vector<UniquePtr<JsepCodecDescription>>&>
   GetNegotiatedSendCodecs() const;
 
@@ -133,7 +147,7 @@ class TransceiverImpl : public nsISupports,
 
   
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(TransceiverImpl)
+  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(RTCRtpTransceiver)
 
   static void NegotiatedDetailsToAudioCodecConfigs(
       const JsepTrackNegotiatedDetails& aDetails,
@@ -145,9 +159,8 @@ class TransceiverImpl : public nsISupports,
 
   
 
-  void ChainToDomPromiseWithCodecStats(
-      nsTArray<RefPtr<dom::RTCStatsPromise>> aStats,
-      const RefPtr<dom::Promise>& aDomPromise);
+  void ChainToDomPromiseWithCodecStats(nsTArray<RefPtr<RTCStatsPromise>> aStats,
+                                       const RefPtr<Promise>& aDomPromise);
 
   
 
@@ -156,21 +169,21 @@ class TransceiverImpl : public nsISupports,
 
 
 
-  static RefPtr<dom::RTCStatsPromise> ApplyCodecStats(
-      nsTArray<dom::RTCCodecStats> aCodecStats,
-      nsTArray<std::tuple<TransceiverImpl*,
-                          RefPtr<dom::RTCStatsPromise::AllPromiseType>>>
+  static RefPtr<RTCStatsPromise> ApplyCodecStats(
+      nsTArray<RTCCodecStats> aCodecStats,
+      nsTArray<std::tuple<RTCRtpTransceiver*,
+                          RefPtr<RTCStatsPromise::AllPromiseType>>>
           aTransceiverStatsPromises);
 
   AbstractCanonical<std::string>* CanonicalMid() { return &mMid; }
   AbstractCanonical<std::string>* CanonicalSyncGroup() { return &mSyncGroup; }
 
  private:
-  virtual ~TransceiverImpl();
+  virtual ~RTCRtpTransceiver();
   void InitAudio();
   void InitVideo();
   void InitConduitControl();
-  void Stop();
+  void StopImpl();
 
   nsCOMPtr<nsPIDOMWindowInner> mWindow;
   RefPtr<PeerConnectionImpl> mPc;
@@ -179,25 +192,31 @@ class TransceiverImpl : public nsISupports,
   nsCOMPtr<nsISerialEventTarget> mStsThread;
   
   RefPtr<WebrtcCallWrapper> mCallWrapper;
+  RefPtr<MediaStreamTrack> mSendTrack;
   RefPtr<RTCStatsIdGenerator> mIdGenerator;
   RefPtr<MediaSessionConduit> mConduit;
   
   
   
-  RefPtr<dom::RTCDtlsTransport> mDtlsTransport;
+  RefPtr<RTCDtlsTransport> mDtlsTransport;
   
   
   
-  RefPtr<dom::RTCDtlsTransport> mLastStableDtlsTransport;
-  RefPtr<dom::RTCRtpReceiver> mReceiver;
-  RefPtr<dom::RTCRtpSender> mSender;
+  RefPtr<RTCDtlsTransport> mLastStableDtlsTransport;
+  RefPtr<RTCRtpReceiver> mReceiver;
+  RefPtr<RTCRtpSender> mSender;
+  RTCRtpTransceiverDirection mDirection = RTCRtpTransceiverDirection::Sendrecv;
+  Nullable<RTCRtpTransceiverDirection> mCurrentDirection;
   bool mStopped = false;
   bool mShutdown = false;
-  bool mSyncing = false;
+  bool mHasBeenUsedToSend = false;
+  bool mPrivacyNeeded = false;
 
   Canonical<std::string> mMid;
   Canonical<std::string> mSyncGroup;
 };
+
+}  
 
 }  
 
