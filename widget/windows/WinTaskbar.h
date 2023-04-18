@@ -26,10 +26,13 @@ class WinTaskbar final : public nsIWinTaskbar {
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIWINTASKBAR
 
+  static bool GenerateAppUserModelID(nsAString& aAppUserModelId,
+                                     bool aPrivateBrowsing = false);
   
   
   static bool RegisterAppUserModelID();
-  static bool GetAppUserModelID(nsAString& aDefaultGroupId);
+  static bool GetAppUserModelID(nsAString& aDefaultGroupId,
+                                bool aPrivateBrowsing = false);
 
  private:
   bool Initialize();

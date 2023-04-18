@@ -70,6 +70,12 @@ interface nsIWinTaskbar : nsISupports
 
 
 
+  readonly attribute AString defaultPrivateGroupId;
+
+  
+
+
+
   
 
 
