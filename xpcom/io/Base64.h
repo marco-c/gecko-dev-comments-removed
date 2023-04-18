@@ -58,6 +58,8 @@ namespace mozilla {
 
 [[nodiscard]] nsresult Base64Decode(const nsAString& aBase64,
                                     nsAString& aBinary);
+[[nodiscard]] nsresult Base64Decode(const nsAString& aBase64,
+                                    nsACString& aBinary);
 
 enum class Base64URLEncodePaddingPolicy {
   Include,
