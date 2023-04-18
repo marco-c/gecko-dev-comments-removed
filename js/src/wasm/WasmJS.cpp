@@ -772,8 +772,12 @@ struct MOZ_STACK_CLASS SerializeListener : JS::OptimizedEncodingListener {
   }
 };
 
-bool wasm::CompileAndSerialize(const ShareableBytes& bytecode,
+bool wasm::CompileAndSerialize(JSContext* cx, const ShareableBytes& bytecode,
                                Bytes* serialized) {
+  
+  MOZ_ASSERT(CodeCachingAvailable(cx));
+
+  
   MutableCompileArgs compileArgs = js_new<CompileArgs>(ScriptedCaller());
   if (!compileArgs) {
     return false;
@@ -783,12 +787,19 @@ bool wasm::CompileAndSerialize(const ShareableBytes& bytecode,
   
   
   compileArgs->baselineEnabled = false;
+  compileArgs->forceTiering = false;
 
   
   
   
   
   compileArgs->ionEnabled = true;
+
+  
+  
+  
+  
+  compileArgs->features = FeatureArgs::build(cx, FeatureOptions());
 
   SerializeListener listener(serialized);
 
