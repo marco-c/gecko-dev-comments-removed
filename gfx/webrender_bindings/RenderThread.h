@@ -138,7 +138,7 @@ class RenderThread final {
   static RenderThread* Get();
 
   
-  static void Start();
+  static void Start(uint32_t aNamespace);
 
   
   static void ShutDown();
