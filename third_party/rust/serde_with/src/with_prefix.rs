@@ -1,5 +1,5 @@
-use std::fmt;
-
+use alloc::string::String;
+use core::fmt;
 use serde::{
     de::{self, DeserializeSeed, Deserializer, IgnoredAny, IntoDeserializer, MapAccess, Visitor},
     forward_to_deserialize_any,
@@ -101,17 +101,21 @@ use serde::{
 
 
 
+
+
+
+
+
 #[macro_export]
 macro_rules! with_prefix {
-    ($module:ident $prefix:expr) => {
-        mod $module {
-            use $crate::{
-                serde::{Deserialize, Deserializer, Serialize, Serializer},
-                with_prefix::WithPrefix,
-            };
+    ($module:ident $prefix:expr) => {$crate::with_prefix!(pub(self) $module $prefix);};
+    ($vis:vis $module:ident $prefix:expr) => {
+        $vis mod $module {
+            use $crate::serde::{Deserialize, Deserializer, Serialize, Serializer};
+            use $crate::with_prefix::WithPrefix;
 
             #[allow(dead_code)]
-            pub fn serialize<T, S>(object: &T, serializer: S) -> Result<S::Ok, S::Error>
+            pub fn serialize<T, S>(object: &T, serializer: S) -> ::std::result::Result<S::Ok, S::Error>
             where
                 T: Serialize,
                 S: Serializer,
@@ -123,7 +127,7 @@ macro_rules! with_prefix {
             }
 
             #[allow(dead_code)]
-            pub fn deserialize<'de, T, D>(deserializer: D) -> Result<T, D::Error>
+            pub fn deserialize<'de, T, D>(deserializer: D) -> ::std::result::Result<T, D::Error>
             where
                 T: Deserialize<'de>,
                 D: Deserializer<'de>,
@@ -489,16 +493,15 @@ where
 {
     type Error = A::Error;
 
-    
-    #[allow(clippy::manual_strip)]
     fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>, Self::Error>
     where
         K: DeserializeSeed<'de>,
     {
         while let Some(s) = self.delegate.next_key::<String>()? {
-            if s.starts_with(self.prefix) {
-                let without_prefix = s[self.prefix.len()..].into_deserializer();
-                return seed.deserialize(without_prefix).map(Some);
+            if let Some(without_prefix) = s.strip_prefix(self.prefix) {
+                return seed
+                    .deserialize(without_prefix.into_deserializer())
+                    .map(Some);
             }
             self.delegate.next_value::<IgnoredAny>()?;
         }
@@ -581,8 +584,6 @@ where
 {
     type Error = A::Error;
 
-    
-    #[allow(clippy::manual_strip)]
     fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>, Self::Error>
     where
         K: DeserializeSeed<'de>,
@@ -592,9 +593,10 @@ where
             return seed.deserialize(without_prefix).map(Some);
         }
         while let Some(s) = self.delegate.next_key::<String>()? {
-            if s.starts_with(self.prefix) {
-                let without_prefix = s[self.prefix.len()..].into_deserializer();
-                return seed.deserialize(without_prefix).map(Some);
+            if let Some(without_prefix) = s.strip_prefix(self.prefix) {
+                return seed
+                    .deserialize(without_prefix.into_deserializer())
+                    .map(Some);
             }
             self.delegate.next_value::<IgnoredAny>()?;
         }

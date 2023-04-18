@@ -2,13 +2,60 @@
 
 
 
+
+
 use crate::{
     de::DeserializeAs,
     formats::{Format, Lowercase, Uppercase},
     ser::SerializeAs,
 };
+use alloc::{borrow::Cow, format, vec::Vec};
+use core::{
+    convert::{TryFrom, TryInto},
+    marker::PhantomData,
+};
 use serde::{de::Error, Deserialize, Deserializer, Serializer};
-use std::{borrow::Cow, marker::PhantomData};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -86,7 +133,7 @@ where
 
 impl<'de, T, FORMAT> DeserializeAs<'de, T> for Hex<FORMAT>
 where
-    T: From<Vec<u8>>,
+    T: TryFrom<Vec<u8>>,
     FORMAT: Format,
 {
     fn deserialize_as<D>(deserializer: D) -> Result<T, D::Error>
@@ -95,6 +142,14 @@ where
     {
         <Cow<'de, str> as Deserialize<'de>>::deserialize(deserializer)
             .and_then(|s| hex::decode(&*s).map_err(Error::custom))
-            .map(Into::into)
+            .and_then(|vec: Vec<u8>| {
+                let length = vec.len();
+                vec.try_into().map_err(|_e: T::Error| {
+                    Error::custom(format!(
+                        "Can't convert a Byte Vector of length {} to the output type.",
+                        length
+                    ))
+                })
+            })
     }
 }

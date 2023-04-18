@@ -1,5 +1,7 @@
 
 
+use alloc::string::String;
+
 
 
 
@@ -66,6 +68,16 @@ create_format!(
     Uppercase
     /// Use lowercase characters
     Lowercase
+
+    /// Use in combination with [`OneOrMany`](crate::OneOrMany). Emit single element for lists of size 1.
+    PreferOne
+    /// Use in combination with [`OneOrMany`](crate::OneOrMany). Always emit the list form.
+    PreferMany
+
+    /// Emit padding during serialization.
+    Padded
+    /// Do not emit padding during serialization.
+    Unpadded
 );
 
 

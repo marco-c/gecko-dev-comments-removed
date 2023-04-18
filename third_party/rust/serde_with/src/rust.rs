@@ -1,19 +1,29 @@
 
 
-use crate::Separator;
-use serde::{
-    de::{Deserialize, DeserializeOwned, Deserializer, Error, MapAccess, SeqAccess, Visitor},
-    ser::{Serialize, SerializeMap, SerializeSeq, Serializer},
+use crate::{utils, Separator};
+#[cfg(doc)]
+use alloc::collections::BTreeMap;
+use alloc::{
+    string::{String, ToString},
+    vec::Vec,
 };
-use std::{
+use core::{
     cmp::Eq,
-    collections::{BTreeMap, HashMap},
     fmt::{self, Display},
-    hash::{BuildHasher, Hash},
+    hash::Hash,
     iter::FromIterator,
     marker::PhantomData,
     str::FromStr,
 };
+use serde::{
+    de::{Deserialize, DeserializeOwned, Deserializer, Error, MapAccess, SeqAccess, Visitor},
+    ser::{Serialize, Serializer},
+};
+#[cfg(doc)]
+use std::collections::HashMap;
+
+
+
 
 
 
@@ -75,7 +85,6 @@ use std::{
 
 pub mod display_fromstr {
     use super::*;
-    use std::str::FromStr;
 
     
     pub fn deserialize<'de, D, T>(deserializer: D) -> Result<T, D::Error>
@@ -114,9 +123,12 @@ pub mod display_fromstr {
         T: Display,
         S: Serializer,
     {
-        serializer.serialize_str(&*value.to_string())
+        serializer.collect_str(&value)
     }
 }
+
+
+
 
 
 
@@ -185,16 +197,7 @@ pub mod display_fromstr {
 
 
 pub mod seq_display_fromstr {
-    use serde::{
-        de::{Deserializer, Error, SeqAccess, Visitor},
-        ser::{SerializeSeq, Serializer},
-    };
-    use std::{
-        fmt::{self, Display},
-        iter::{FromIterator, IntoIterator},
-        marker::PhantomData,
-        str::FromStr,
-    };
+    use super::*;
 
     
     pub fn deserialize<'de, D, T, I>(deserializer: D) -> Result<T, D::Error>
@@ -217,20 +220,15 @@ pub mod seq_display_fromstr {
                 write!(formatter, "a sequence")
             }
 
-            fn visit_seq<A>(self, mut access: A) -> Result<Self::Value, A::Error>
+            fn visit_seq<A>(self, seq: A) -> Result<Self::Value, A::Error>
             where
                 A: SeqAccess<'de>,
             {
-                let mut values = access
-                    .size_hint()
-                    .map(Self::Value::with_capacity)
-                    .unwrap_or_else(Self::Value::new);
-
-                while let Some(value) = access.next_element::<&str>()? {
-                    values.push(value.parse::<S>().map_err(Error::custom)?);
-                }
-
-                Ok(values)
+                utils::SeqIter::new(seq)
+                    .map(|res| {
+                        res.and_then(|value: &str| value.parse::<S>().map_err(Error::custom))
+                    })
+                    .collect()
             }
         }
 
@@ -246,15 +244,26 @@ pub mod seq_display_fromstr {
         for<'a> &'a T: IntoIterator<Item = &'a I>,
         I: Display,
     {
-        let iter = value.into_iter();
-        let (_, to) = iter.size_hint();
-        let mut seq = serializer.serialize_seq(to)?;
-        for item in iter {
-            seq.serialize_element(&item.to_string())?;
+        struct SerializeString<'a, I>(&'a I);
+
+        impl<'a, I> Serialize for SerializeString<'a, I>
+        where
+            I: Display,
+        {
+            fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+            where
+                S: Serializer,
+            {
+                serializer.collect_str(self.0)
+            }
         }
-        seq.end()
+
+        serializer.collect_seq(value.into_iter().map(SerializeString))
     }
 }
+
+
+
 
 
 
@@ -1161,61 +1170,55 @@ pub mod string_empty_as_none {
 
 
 
-pub mod hashmap_as_tuple_list {
-    use super::{SerializeSeq, *}; 
+
+
+pub mod map_as_tuple_list {
+    
+    use super::*;
 
     
-    pub fn serialize<K, V, S, BH>(map: &HashMap<K, V, BH>, serializer: S) -> Result<S::Ok, S::Error>
+    pub fn serialize<'a, T, K, V, S>(map: T, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
-        K: Eq + Hash + Serialize,
-        V: Serialize,
-        BH: BuildHasher,
+        T: IntoIterator<Item = (&'a K, &'a V)>,
+        T::IntoIter: ExactSizeIterator,
+        K: Serialize + 'a,
+        V: Serialize + 'a,
     {
-        let mut seq = serializer.serialize_seq(Some(map.len()))?;
-        for item in map.iter() {
-            seq.serialize_element(&item)?;
-        }
-        seq.end()
+        serializer.collect_seq(map)
     }
 
     
-    pub fn deserialize<'de, K, V, BH, D>(deserializer: D) -> Result<HashMap<K, V, BH>, D::Error>
+    pub fn deserialize<'de, T, K, V, D>(deserializer: D) -> Result<T, D::Error>
     where
         D: Deserializer<'de>,
-        K: Eq + Hash + Deserialize<'de>,
+        T: FromIterator<(K, V)>,
+        K: Deserialize<'de>,
         V: Deserialize<'de>,
-        BH: BuildHasher + Default,
     {
-        deserializer.deserialize_seq(HashMapVisitor(PhantomData))
-    }
+        struct SeqVisitor<T, K, V>(PhantomData<(T, K, V)>);
 
-    #[allow(clippy::type_complexity)]
-    struct HashMapVisitor<K, V, BH>(PhantomData<fn() -> HashMap<K, V, BH>>);
-
-    impl<'de, K, V, BH> Visitor<'de> for HashMapVisitor<K, V, BH>
-    where
-        K: Deserialize<'de> + Eq + Hash,
-        V: Deserialize<'de>,
-        BH: BuildHasher + Default,
-    {
-        type Value = HashMap<K, V, BH>;
-
-        fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-            formatter.write_str("a list of key-value pairs")
-        }
-
-        fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+        impl<'de, T, K, V> Visitor<'de> for SeqVisitor<T, K, V>
         where
-            A: SeqAccess<'de>,
+            T: FromIterator<(K, V)>,
+            K: Deserialize<'de>,
+            V: Deserialize<'de>,
         {
-            let mut map =
-                HashMap::with_capacity_and_hasher(seq.size_hint().unwrap_or(0), BH::default());
-            while let Some((key, value)) = seq.next_element()? {
-                map.insert(key, value);
+            type Value = T;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                formatter.write_str("a list of key-value pairs")
             }
-            Ok(map)
+
+            fn visit_seq<A>(self, seq: A) -> Result<Self::Value, A::Error>
+            where
+                A: SeqAccess<'de>,
+            {
+                utils::SeqIter::new(seq).collect()
+            }
         }
+
+        deserializer.deserialize_seq(SeqVisitor(PhantomData))
     }
 }
 
@@ -1274,58 +1277,132 @@ pub mod hashmap_as_tuple_list {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[deprecated(
+    since = "1.8.0",
+    note = "Use the more general map_as_tuple_list module."
+)]
+pub mod hashmap_as_tuple_list {
+    #[doc(inline)]
+    #[deprecated(
+        since = "1.8.0",
+        note = "Use the more general map_as_tuple_list::deserialize function."
+    )]
+    pub use super::map_as_tuple_list::deserialize;
+    #[doc(inline)]
+    #[deprecated(
+        since = "1.8.0",
+        note = "Use the more general map_as_tuple_list::serialize function."
+    )]
+    pub use super::map_as_tuple_list::serialize;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[deprecated(
+    since = "1.8.0",
+    note = "Use the more general map_as_tuple_list module."
+)]
 pub mod btreemap_as_tuple_list {
-    use super::*;
-
-    
-    pub fn serialize<K, V, S>(map: &BTreeMap<K, V>, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-        K: Eq + Hash + Serialize,
-        V: Serialize,
-    {
-        let mut seq = serializer.serialize_seq(Some(map.len()))?;
-        for item in map.iter() {
-            seq.serialize_element(&item)?;
-        }
-        seq.end()
-    }
-
-    
-    pub fn deserialize<'de, K, V, D>(deserializer: D) -> Result<BTreeMap<K, V>, D::Error>
-    where
-        D: Deserializer<'de>,
-        K: Deserialize<'de> + Ord,
-        V: Deserialize<'de>,
-    {
-        deserializer.deserialize_seq(BTreeMapVisitor(PhantomData))
-    }
-
-    #[allow(clippy::type_complexity)]
-    struct BTreeMapVisitor<K, V>(PhantomData<fn() -> BTreeMap<K, V>>);
-
-    impl<'de, K, V> Visitor<'de> for BTreeMapVisitor<K, V>
-    where
-        K: Deserialize<'de> + Ord,
-        V: Deserialize<'de>,
-    {
-        type Value = BTreeMap<K, V>;
-
-        fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-            formatter.write_str("a list of key-value pairs")
-        }
-
-        fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
-        where
-            A: SeqAccess<'de>,
-        {
-            let mut map = BTreeMap::default();
-            while let Some((key, value)) = seq.next_element()? {
-                map.insert(key, value);
-            }
-            Ok(map)
-        }
-    }
+    #[doc(inline)]
+    #[deprecated(
+        since = "1.8.0",
+        note = "Use the more general map_as_tuple_list::deserialize function."
+    )]
+    pub use super::map_as_tuple_list::deserialize;
+    #[doc(inline)]
+    #[deprecated(
+        since = "1.8.0",
+        note = "Use the more general map_as_tuple_list::serialize function."
+    )]
+    pub use super::map_as_tuple_list::serialize;
 }
 
 
@@ -1425,7 +1502,7 @@ pub mod btreemap_as_tuple_list {
 
 
 pub mod tuple_list_as_map {
-    use super::{SerializeMap, *}; 
+    use super::*;
 
     
     pub fn serialize<'a, I, K, V, S>(iter: I, serializer: S) -> Result<S::Ok, S::Error>
@@ -1436,12 +1513,9 @@ pub mod tuple_list_as_map {
         V: Serialize + 'a,
         S: Serializer,
     {
-        let iter = iter.into_iter();
-        let mut map = serializer.serialize_map(Some(iter.len()))?;
-        for (key, value) in iter {
-            map.serialize_entry(&key, &value)?;
-        }
-        map.end()
+        
+        let iter = iter.into_iter().map(|(k, v)| (k, v));
+        serializer.collect_map(iter)
     }
 
     
@@ -1474,34 +1548,7 @@ pub mod tuple_list_as_map {
         where
             A: MapAccess<'de>,
         {
-            let iter = MapIter(map, PhantomData);
-            iter.collect()
-        }
-    }
-
-    struct MapIter<'de, A, K, V>(A, PhantomData<(&'de (), A, K, V)>);
-
-    impl<'de, A, K, V> Iterator for MapIter<'de, A, K, V>
-    where
-        A: MapAccess<'de>,
-        K: Deserialize<'de>,
-        V: Deserialize<'de>,
-    {
-        type Item = Result<(K, V), A::Error>;
-
-        fn next(&mut self) -> Option<Self::Item> {
-            match self.0.next_entry() {
-                Ok(Some(x)) => Some(Ok(x)),
-                Ok(None) => None,
-                Err(err) => Some(Err(err)),
-            }
-        }
-
-        fn size_hint(&self) -> (usize, Option<usize>) {
-            match self.0.size_hint() {
-                Some(size) => (size, Some(size)),
-                None => (0, None),
-            }
+            utils::MapIter::new(map).collect()
         }
     }
 }
@@ -1609,19 +1656,14 @@ pub mod bytes_or_string {
             Ok(v.into_bytes())
         }
 
-        fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+        fn visit_seq<A>(self, seq: A) -> Result<Self::Value, A::Error>
         where
             A: SeqAccess<'de>,
         {
-            let mut res = Vec::with_capacity(seq.size_hint().unwrap_or(0));
-            while let Some(value) = seq.next_element()? {
-                res.push(value);
-            }
-            Ok(res)
+            utils::SeqIter::new(seq).collect()
         }
     }
 }
-
 
 
 

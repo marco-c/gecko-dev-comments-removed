@@ -1,7 +1,10 @@
-#![deny(
+#![warn(
+    clippy::semicolon_if_nothing_returned,
     missing_copy_implementations,
+    
     missing_debug_implementations,
     missing_docs,
+    rust_2018_idioms,
     trivial_casts,
     trivial_numeric_casts,
     unused_extern_crates,
@@ -9,7 +12,7 @@
     unused_qualifications,
     variant_size_differences
 )]
-#![warn(rust_2018_idioms)]
+#![doc(test(attr(forbid(unsafe_code))))]
 #![doc(test(attr(deny(
     missing_copy_implementations,
     missing_debug_implementations,
@@ -18,16 +21,24 @@
     unused_extern_crates,
     unused_import_braces,
     unused_qualifications,
-    variant_size_differences,
 ))))]
 #![doc(test(attr(warn(rust_2018_idioms))))]
 
 #![doc(test(no_crate_inject))]
-#![doc(html_root_url = "https://docs.rs/serde_with/1.6.4")]
+#![doc(html_root_url = "https://docs.rs/serde_with/1.14.0")]
+#![cfg_attr(docsrs, feature(doc_cfg))]
+#![allow(
+    
+    
+    unknown_lints,
+    
+    clippy::only_used_in_recursion,
+    
+    clippy::derive_partial_eq_without_eq,
+)]
+#![no_std]
 
-#![allow(renamed_and_removed_lints)]
 
-#![allow(clippy::unknown_clippy_lints)]
 
 
 
@@ -207,21 +218,78 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern crate alloc;
 #[doc(hidden)]
 pub extern crate serde;
+extern crate std;
 
+#[cfg(feature = "base64")]
+#[cfg_attr(docsrs, doc(cfg(feature = "base64")))]
+pub mod base64;
 #[cfg(feature = "chrono")]
+#[cfg_attr(docsrs, doc(cfg(feature = "chrono")))]
 pub mod chrono;
+mod content;
 pub mod de;
 mod duplicate_key_impls;
+mod enum_map;
 mod flatten_maybe;
 pub mod formats;
 #[cfg(feature = "hex")]
+#[cfg_attr(docsrs, doc(cfg(feature = "hex")))]
 pub mod hex;
 #[cfg(feature = "json")]
+#[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 pub mod json;
 pub mod rust;
 pub mod ser;
+mod serde_conv;
+#[cfg(feature = "time_0_3")]
+#[cfg_attr(docsrs, doc(cfg(feature = "time_0_3")))]
+pub mod time_0_3;
 mod utils;
 #[doc(hidden)]
 pub mod with_prefix;
@@ -230,6 +298,7 @@ pub mod with_prefix;
 
 
 #[cfg(feature = "guide")]
+#[allow(unused_macro_rules)]
 macro_rules! generate_guide {
     (pub mod $name:ident; $($rest:tt)*) => {
         generate_guide!(@gen ".", pub mod $name { } $($rest)*);
@@ -261,17 +330,21 @@ generate_guide! {
     pub mod guide {
         pub mod feature_flags;
         pub mod serde_as;
+        pub mod serde_as_transformations;
     }
 }
 
 #[doc(inline)]
-pub use crate::{de::DeserializeAs, rust::StringWithSeparator, ser::SerializeAs};
+pub use crate::{
+    de::DeserializeAs, enum_map::EnumMap, rust::StringWithSeparator, ser::SerializeAs,
+};
+use core::marker::PhantomData;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 #[cfg(feature = "macros")]
+#[cfg_attr(docsrs, doc(cfg(feature = "macros")))]
 #[doc(inline)]
 pub use serde_with_macros::*;
-use std::marker::PhantomData;
 
 
 pub trait Separator {
@@ -564,7 +637,6 @@ pub struct NoneAsEmptyString;
 
 
 
-
 #[derive(Copy, Clone, Debug, Default)]
 pub struct DefaultOnError<T = Same>(PhantomData<T>);
 
@@ -625,6 +697,7 @@ pub struct DefaultOnError<T = Same>(PhantomData<T>);
 
 #[derive(Copy, Clone, Debug, Default)]
 pub struct DefaultOnNull<T = Same>(PhantomData<T>);
+
 
 
 
@@ -808,11 +881,17 @@ pub struct BytesOrString;
 
 
 
+
+
+
 #[derive(Copy, Clone, Debug, Default)]
 pub struct DurationSeconds<
     FORMAT: formats::Format = u64,
     STRICTNESS: formats::Strictness = formats::Strict,
 >(PhantomData<(FORMAT, STRICTNESS)>);
+
+
+
 
 
 
@@ -1131,11 +1210,24 @@ pub struct DurationNanoSecondsWithFrac<
 
 
 
+
+
+
+
+
 #[derive(Copy, Clone, Debug, Default)]
 pub struct TimestampSeconds<
     FORMAT: formats::Format = i64,
     STRICTNESS: formats::Strictness = formats::Strict,
 >(PhantomData<(FORMAT, STRICTNESS)>);
+
+
+
+
+
+
+
+
 
 
 
@@ -1319,3 +1411,624 @@ pub struct TimestampNanoSecondsWithFrac<
     FORMAT: formats::Format = f64,
     STRICTNESS: formats::Strictness = formats::Strict,
 >(PhantomData<(FORMAT, STRICTNESS)>);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Copy, Clone, Debug, Default)]
+pub struct Bytes;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Copy, Clone, Debug, Default)]
+pub struct OneOrMany<T, FORMAT: formats::Format = formats::PreferOne>(PhantomData<(T, FORMAT)>);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Copy, Clone, Debug, Default)]
+pub struct PickFirst<T>(PhantomData<T>);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Copy, Clone, Debug, Default)]
+pub struct FromInto<T>(PhantomData<T>);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Copy, Clone, Debug, Default)]
+pub struct TryFromInto<T>(PhantomData<T>);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Copy, Clone, Debug, Default)]
+pub struct BorrowCow;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Copy, Clone, Debug, Default)]
+pub struct VecSkipError<T>(PhantomData<T>);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Copy, Clone, Debug, Default)]
+pub struct BoolFromInt<S: formats::Strictness = formats::Strict>(PhantomData<S>);

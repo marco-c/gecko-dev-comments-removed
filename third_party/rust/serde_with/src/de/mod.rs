@@ -7,9 +7,12 @@
 
 
 
-pub(crate) mod impls;
+mod const_arrays;
+mod impls;
 
 use super::*;
+
+
 
 
 
@@ -117,7 +120,7 @@ pub struct DeserializeAsWrap<T, U> {
     marker: PhantomData<U>,
 }
 
-impl<'de, T, U> DeserializeAsWrap<T, U> {
+impl<T, U> DeserializeAsWrap<T, U> {
     
     pub fn into_inner(self) -> T {
         self.value
