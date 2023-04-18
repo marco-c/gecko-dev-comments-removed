@@ -10,14 +10,13 @@
 
 #![feature(overlapping_marker_traits)]
 
-use std::marker::PhantomPinned;
-
 use pin_project::pin_project;
+use std::marker::PhantomPinned;
 
 #[pin_project]
 struct Struct<T> {
     #[pin]
-    f: T,
+    x: T,
 }
 
 

@@ -33,8 +33,7 @@ use std::time::Instant;
 
 use h2::{Ping, PingPong};
 #[cfg(feature = "runtime")]
-use tokio::time::{Instant, Sleep};
-use tracing::{debug, trace};
+use tokio::time::{Delay, Instant};
 
 type WindowSize = u32;
 
@@ -52,22 +51,16 @@ pub(super) fn channel(ping_pong: PingPong, config: Config) -> (Recorder, Ponger)
         bdp: wnd,
         max_bandwidth: 0.0,
         rtt: 0.0,
-        ping_delay: Duration::from_millis(100),
-        stable_count: 0,
     });
 
-    let (bytes, next_bdp_at) = if bdp.is_some() {
-        (Some(0), Some(Instant::now()))
-    } else {
-        (None, None)
-    };
+    let bytes = bdp.as_ref().map(|_| 0);
 
     #[cfg(feature = "runtime")]
     let keep_alive = config.keep_alive_interval.map(|interval| KeepAlive {
         interval,
         timeout: config.keep_alive_timeout,
         while_idle: config.keep_alive_while_idle,
-        timer: Box::pin(tokio::time::sleep(interval)),
+        timer: tokio::time::delay_for(interval),
         state: KeepAliveState::Init,
     });
 
@@ -82,7 +75,6 @@ pub(super) fn channel(ping_pong: PingPong, config: Config) -> (Recorder, Ponger)
         is_keep_alive_timed_out: false,
         ping_pong,
         ping_sent_at: None,
-        next_bdp_at,
     }));
 
     (
@@ -133,9 +125,6 @@ struct Shared {
     
     
     bytes: Option<usize>,
-    
-    
-    next_bdp_at: Option<Instant>,
 
     
     
@@ -154,12 +143,6 @@ struct Bdp {
     max_bandwidth: f64,
     
     rtt: f64,
-    
-    
-    
-    ping_delay: Duration,
-    
-    stable_count: u32,
 }
 
 #[cfg(feature = "runtime")]
@@ -173,7 +156,7 @@ struct KeepAlive {
     while_idle: bool,
 
     state: KeepAliveState,
-    timer: Pin<Box<Sleep>>,
+    timer: Delay,
 }
 
 #[cfg(feature = "runtime")]
@@ -224,17 +207,6 @@ impl Recorder {
         #[cfg(feature = "runtime")]
         locked.update_last_read_at();
 
-        
-        
-
-        if let Some(ref next_bdp_at) = locked.next_bdp_at {
-            if Instant::now() < *next_bdp_at {
-                return;
-            } else {
-                locked.next_bdp_at = None;
-            }
-        }
-
         if let Some(ref mut bytes) = locked.bytes {
             *bytes += len;
         } else {
@@ -264,7 +236,6 @@ impl Recorder {
 
     
     
-    #[cfg(feature = "client")]
     pub(super) fn for_stream(self, stream: &h2::RecvStream) -> Self {
         if stream.is_end_stream() {
             disabled()
@@ -293,7 +264,6 @@ impl Recorder {
 
 impl Ponger {
     pub(super) fn poll(&mut self, cx: &mut task::Context<'_>) -> Poll<Ponged> {
-        let now = Instant::now();
         let mut locked = self.shared.lock().unwrap();
         #[cfg(feature = "runtime")]
         let is_idle = self.is_idle();
@@ -311,13 +281,13 @@ impl Ponger {
             return Poll::Pending;
         }
 
-        match locked.ping_pong.poll_pong(cx) {
+        let (bytes, rtt) = match locked.ping_pong.poll_pong(cx) {
             Poll::Ready(Ok(_pong)) => {
-                let start = locked
+                let rtt = locked
                     .ping_sent_at
-                    .expect("pong received implies ping_sent_at");
+                    .expect("pong received implies ping_sent_at")
+                    .elapsed();
                 locked.ping_sent_at = None;
-                let rtt = now - start;
                 trace!("recv pong");
 
                 #[cfg(feature = "runtime")]
@@ -328,20 +298,19 @@ impl Ponger {
                     }
                 }
 
-                if let Some(ref mut bdp) =  self.bdp {
+                if self.bdp.is_some() {
                     let bytes = locked.bytes.expect("bdp enabled implies bytes");
                     locked.bytes = Some(0); 
                     trace!("received BDP ack; bytes = {}, rtt = {:?}", bytes, rtt);
-
-                    let update = bdp.calculate(bytes, rtt);
-                    locked.next_bdp_at = Some(now + bdp.ping_delay);
-                    if let Some(update) = update {
-                        return Poll::Ready(Ponged::SizeUpdate(update))
-                    }
+                    (bytes, rtt)
+                } else {
+                    
+                    return Poll::Pending;
                 }
             }
             Poll::Ready(Err(e)) => {
                 debug!("pong error: {}", e);
+                return Poll::Pending;
             }
             Poll::Pending => {
                 #[cfg(feature = "runtime")]
@@ -354,11 +323,19 @@ impl Ponger {
                         }
                     }
                 }
-            }
-        }
 
-        
-        Poll::Pending
+                return Poll::Pending;
+            }
+        };
+
+        drop(locked);
+
+        if let Some(bdp) = self.bdp.as_mut().and_then(|bdp| bdp.calculate(bytes, rtt)) {
+            Poll::Ready(Ponged::SizeUpdate(bdp))
+        } else {
+            
+            Poll::Pending
+        }
     }
 
     #[cfg(feature = "runtime")]
@@ -408,7 +385,6 @@ impl Bdp {
     fn calculate(&mut self, bytes: usize, rtt: Duration) -> Option<WindowSize> {
         
         if self.bdp as usize == BDP_LIMIT {
-            self.stabilize_delay();
             return None;
         }
 
@@ -428,7 +404,6 @@ impl Bdp {
 
         if bw < self.max_bandwidth {
             
-            self.stabilize_delay();
             return None;
         } else {
             self.max_bandwidth = bw;
@@ -439,24 +414,9 @@ impl Bdp {
         if bytes >= self.bdp as usize * 2 / 3 {
             self.bdp = (bytes * 2).min(BDP_LIMIT) as WindowSize;
             trace!("BDP increased to {}", self.bdp);
-
-            self.stable_count = 0;
-            self.ping_delay /= 2;
             Some(self.bdp)
         } else {
-            self.stabilize_delay();
             None
-        }
-    }
-
-    fn stabilize_delay(&mut self) {
-        if self.ping_delay < Duration::from_secs(10) {
-            self.stable_count += 1;
-
-            if self.stable_count >= 2 {
-                self.ping_delay *= 4;
-                self.stable_count = 0;
-            }
         }
     }
 }
@@ -480,18 +440,9 @@ impl KeepAlive {
 
                 self.state = KeepAliveState::Scheduled;
                 let interval = shared.last_read_at() + self.interval;
-                self.timer.as_mut().reset(interval);
+                self.timer.reset(interval);
             }
-            KeepAliveState::PingSent => {
-                if shared.is_ping_sent() {
-                    return;
-                }
-
-                self.state = KeepAliveState::Scheduled;
-                let interval = shared.last_read_at() + self.interval;
-                self.timer.as_mut().reset(interval);
-            }
-            KeepAliveState::Scheduled => (),
+            KeepAliveState::Scheduled | KeepAliveState::PingSent => (),
         }
     }
 
@@ -511,7 +462,7 @@ impl KeepAlive {
                 shared.send_ping();
                 self.state = KeepAliveState::PingSent;
                 let timeout = Instant::now() + self.timeout;
-                self.timer.as_mut().reset(timeout);
+                self.timer.reset(timeout);
             }
             KeepAliveState::Init | KeepAliveState::PingSent => (),
         }

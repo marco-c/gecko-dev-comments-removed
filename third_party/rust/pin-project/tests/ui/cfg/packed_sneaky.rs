@@ -4,9 +4,9 @@ use pin_project::pin_project;
 
 #[pin_project]
 #[hidden_repr_cfg_not_any(packed)] 
-struct S {
+struct Foo {
     #[pin]
-    f: u32,
+    field: u32,
 }
 
 fn main() {}

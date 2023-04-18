@@ -7,12 +7,11 @@ use std::net::SocketAddr;
 #[cfg(feature = "tls")]
 use std::path::Path;
 
-use futures_util::{future, FutureExt, TryFuture, TryStream, TryStreamExt};
+use futures::{future, FutureExt, TryFuture, TryStream, TryStreamExt};
 use hyper::server::conn::AddrIncoming;
 use hyper::service::{make_service_fn, service_fn};
 use hyper::Server as HyperServer;
 use tokio::io::{AsyncRead, AsyncWrite};
-use tracing::Instrument;
 
 use crate::filter::Filter;
 use crate::reject::IsReject;
@@ -128,12 +127,12 @@ where
     <F::Future as TryFuture>::Error: IsReject,
 {
     
-    pub async fn run(self, addr: impl Into<SocketAddr>) {
+    pub async fn run(self, addr: impl Into<SocketAddr> + 'static) {
         let (addr, fut) = self.bind_ephemeral(addr);
-        let span = tracing::info_span!("Server::run", ?addr);
-        tracing::info!(parent: &span, "listening on http://{}", addr);
 
-        fut.instrument(span).await;
+        log::info!("listening on http://{}", addr);
+
+        fut.await;
     }
 
     
@@ -147,7 +146,6 @@ where
         I::Error: Into<Box<dyn StdError + Send + Sync>>,
     {
         self.run_incoming2(incoming.map_ok(crate::transport::LiftIo).into_stream())
-            .instrument(tracing::info_span!("Server::run_incoming"))
             .await;
     }
 
@@ -159,7 +157,7 @@ where
     {
         let fut = self.serve_incoming2(incoming);
 
-        tracing::info!("listening with custom incoming");
+        log::info!("listening with custom incoming");
 
         fut.await;
     }
@@ -180,19 +178,19 @@ where
     
     
     
-    pub async fn try_bind(self, addr: impl Into<SocketAddr>) {
+    pub async fn try_bind(self, addr: impl Into<SocketAddr> + 'static) {
         let addr = addr.into();
         let srv = match try_bind!(self, &addr) {
             Ok((_, srv)) => srv,
             Err(err) => {
-                tracing::error!("error binding to {}: {}", addr, err);
+                log::error!("error binding to {}: {}", addr, err);
                 return;
             }
         };
 
         srv.map(|result| {
             if let Err(err) = result {
-                tracing::error!("server error: {}", err)
+                log::error!("server error: {}", err)
             }
         })
         .await;
@@ -208,12 +206,12 @@ where
     
     pub fn bind_ephemeral(
         self,
-        addr: impl Into<SocketAddr>,
+        addr: impl Into<SocketAddr> + 'static,
     ) -> (SocketAddr, impl Future<Output = ()> + 'static) {
         let (addr, srv) = bind!(self, addr);
         let srv = srv.map(|result| {
             if let Err(err) = result {
-                tracing::error!("server error: {}", err)
+                log::error!("server error: {}", err)
             }
         });
 
@@ -229,13 +227,13 @@ where
     
     pub fn try_bind_ephemeral(
         self,
-        addr: impl Into<SocketAddr>,
+        addr: impl Into<SocketAddr> + 'static,
     ) -> Result<(SocketAddr, impl Future<Output = ()> + 'static), crate::Error> {
         let addr = addr.into();
         let (addr, srv) = try_bind!(self, &addr).map_err(crate::Error::new)?;
         let srv = srv.map(|result| {
             if let Err(err) = result {
-                tracing::error!("server error: {}", err)
+                log::error!("server error: {}", err)
             }
         });
 
@@ -283,7 +281,7 @@ where
         let (addr, srv) = bind!(self, addr);
         let fut = srv.with_graceful_shutdown(signal).map(|result| {
             if let Err(err) = result {
-                tracing::error!("server error: {}", err)
+                log::error!("server error: {}", err)
             }
         });
         (addr, fut)
@@ -302,7 +300,7 @@ where
         let (addr, srv) = try_bind!(self, &addr).map_err(crate::Error::new)?;
         let srv = srv.with_graceful_shutdown(signal).map(|result| {
             if let Err(err) = result {
-                tracing::error!("server error: {}", err)
+                log::error!("server error: {}", err)
             }
         });
 
@@ -314,15 +312,14 @@ where
     
     
     
-    pub fn serve_incoming<I>(self, incoming: I) -> impl Future<Output = ()>
+    pub fn serve_incoming<I>(self, incoming: I) -> impl Future<Output = ()> + 'static
     where
-        I: TryStream + Send,
+        I: TryStream + Send + 'static,
         I::Ok: AsyncRead + AsyncWrite + Send + 'static + Unpin,
         I::Error: Into<Box<dyn StdError + Send + Sync>>,
     {
         let incoming = incoming.map_ok(crate::transport::LiftIo);
         self.serve_incoming2(incoming)
-            .instrument(tracing::info_span!("Server::serve_incoming"))
     }
 
     
@@ -338,9 +335,9 @@ where
         self,
         incoming: I,
         signal: impl Future<Output = ()> + Send + 'static,
-    ) -> impl Future<Output = ()>
+    ) -> impl Future<Output = ()> + 'static
     where
-        I: TryStream + Send,
+        I: TryStream + Send + 'static,
         I::Ok: AsyncRead + AsyncWrite + Send + 'static + Unpin,
         I::Error: Into<Box<dyn StdError + Send + Sync>>,
     {
@@ -357,12 +354,9 @@ where
                     .await;
 
             if let Err(err) = srv {
-                tracing::error!("server error: {}", err);
+                log::error!("server error: {}", err);
             }
         }
-        .instrument(tracing::info_span!(
-            "Server::serve_incoming_with_graceful_shutdown"
-        ))
     }
 
     async fn serve_incoming2<I>(self, incoming: I)
@@ -379,7 +373,7 @@ where
             .await;
 
         if let Err(err) = srv {
-            tracing::error!("server error: {}", err);
+            log::error!("server error: {}", err);
         }
     }
 
@@ -416,78 +410,23 @@ where
     
 
     
-    
-    
     pub fn key_path(self, path: impl AsRef<Path>) -> Self {
         self.with_tls(|tls| tls.key_path(path))
     }
 
-    
-    
     
     pub fn cert_path(self, path: impl AsRef<Path>) -> Self {
         self.with_tls(|tls| tls.cert_path(path))
     }
 
     
-    
-    
-    
-    
-    
-    pub fn client_auth_optional_path(self, path: impl AsRef<Path>) -> Self {
-        self.with_tls(|tls| tls.client_auth_optional_path(path))
-    }
-
-    
-    
-    
-    
-    
-    
-    pub fn client_auth_required_path(self, path: impl AsRef<Path>) -> Self {
-        self.with_tls(|tls| tls.client_auth_required_path(path))
-    }
-
-    
-    
-    
     pub fn key(self, key: impl AsRef<[u8]>) -> Self {
         self.with_tls(|tls| tls.key(key.as_ref()))
     }
 
     
-    
-    
     pub fn cert(self, cert: impl AsRef<[u8]>) -> Self {
         self.with_tls(|tls| tls.cert(cert.as_ref()))
-    }
-
-    
-    
-    
-    
-    
-    
-    pub fn client_auth_optional(self, trust_anchor: impl AsRef<[u8]>) -> Self {
-        self.with_tls(|tls| tls.client_auth_optional(trust_anchor.as_ref()))
-    }
-
-    
-    
-    
-    
-    
-    
-    pub fn client_auth_required(self, trust_anchor: impl AsRef<[u8]>) -> Self {
-        self.with_tls(|tls| tls.client_auth_required(trust_anchor.as_ref()))
-    }
-
-    
-    
-    
-    pub fn ocsp_resp(self, resp: impl AsRef<[u8]>) -> Self {
-        self.with_tls(|tls| tls.ocsp_resp(resp.as_ref()))
     }
 
     fn with_tls<Func>(self, func: Func) -> Self
@@ -504,19 +443,19 @@ where
     
     
     
-    pub async fn run(self, addr: impl Into<SocketAddr>) {
+    pub async fn run(self, addr: impl Into<SocketAddr> + 'static) {
         let (addr, fut) = self.bind_ephemeral(addr);
-        let span = tracing::info_span!("TlsServer::run", %addr);
-        tracing::info!(parent: &span, "listening on https://{}", addr);
 
-        fut.instrument(span).await;
+        log::info!("listening on https://{}", addr);
+
+        fut.await;
     }
 
     
     
     
     
-    pub async fn bind(self, addr: impl Into<SocketAddr>) {
+    pub async fn bind(self, addr: impl Into<SocketAddr> + 'static) {
         let (_, fut) = self.bind_ephemeral(addr);
         fut.await;
     }
@@ -529,12 +468,12 @@ where
     
     pub fn bind_ephemeral(
         self,
-        addr: impl Into<SocketAddr>,
+        addr: impl Into<SocketAddr> + 'static,
     ) -> (SocketAddr, impl Future<Output = ()> + 'static) {
         let (addr, srv) = bind!(tls: self, addr);
         let srv = srv.map(|result| {
             if let Err(err) = result {
-                tracing::error!("server error: {}", err)
+                log::error!("server error: {}", err)
             }
         });
 
@@ -556,7 +495,7 @@ where
 
         let fut = srv.with_graceful_shutdown(signal).map(|result| {
             if let Err(err) = result {
-                tracing::error!("server error: {}", err)
+                log::error!("server error: {}", err)
             }
         });
         (addr, fut)
@@ -568,7 +507,7 @@ impl<F> ::std::fmt::Debug for TlsServer<F>
 where
     F: ::std::fmt::Debug,
 {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
         f.debug_struct("TlsServer")
             .field("server", &self.server)
             .finish()

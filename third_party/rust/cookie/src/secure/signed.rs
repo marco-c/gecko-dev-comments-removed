@@ -1,16 +1,14 @@
-use std::convert::TryInto;
-use std::borrow::{Borrow, BorrowMut};
+use secure::ring::digest::{SHA256, Algorithm};
+use secure::ring::hmac::{SigningKey, sign, verify_with_own_key as verify};
+use secure::{base64, Key};
 
-use sha2::Sha256;
-use hmac::{Hmac, Mac};
-
-use crate::secure::{base64, Key};
-use crate::{Cookie, CookieJar};
+use {Cookie, CookieJar};
 
 
 
-pub(crate) const BASE64_DIGEST_LEN: usize = 44;
-pub(crate) const KEY_LEN: usize = 32;
+static HMAC_DIGEST: &'static Algorithm = &SHA256;
+const BASE64_DIGEST_LEN: usize = 44;
+pub const KEY_LEN: usize = 32;
 
 
 
@@ -19,48 +17,34 @@ pub(crate) const KEY_LEN: usize = 32;
 
 
 
-#[cfg_attr(all(nightly, doc), doc(cfg(feature = "signed")))]
-pub struct SignedJar<J> {
-    parent: J,
-    key: [u8; KEY_LEN],
+
+
+pub struct SignedJar<'a> {
+    parent: &'a mut CookieJar,
+    key: SigningKey
 }
 
-impl<J> SignedJar<J> {
+impl<'a> SignedJar<'a> {
     
     
     
-    pub(crate) fn new(parent: J, key: &Key) -> SignedJar<J> {
-        SignedJar { parent, key: key.signing().try_into().expect("sign key len") }
-    }
-
-    
-    fn sign_cookie(&self, cookie: &mut Cookie) {
-        
-        let mut mac = Hmac::<Sha256>::new_from_slice(&self.key).expect("good key");
-        mac.update(cookie.value().as_bytes());
-
-        
-        let mut new_value = base64::encode(&mac.finalize().into_bytes());
-        new_value.push_str(cookie.value());
-        cookie.set_value(new_value);
+    #[doc(hidden)]
+    pub fn new(parent: &'a mut CookieJar, key: &Key) -> SignedJar<'a> {
+        SignedJar { parent: parent, key: SigningKey::new(HMAC_DIGEST, key.signing()) }
     }
 
     
     
     
-    fn _verify(&self, cookie_value: &str) -> Result<String, &'static str> {
-        if !cookie_value.is_char_boundary(BASE64_DIGEST_LEN) {
-            return Err("missing or invalid digest");
+    fn verify(&self, cookie_value: &str) -> Result<String, &'static str> {
+        if cookie_value.len() < BASE64_DIGEST_LEN {
+            return Err("length of value is <= BASE64_DIGEST_LEN");
         }
 
-        
         let (digest_str, value) = cookie_value.split_at(BASE64_DIGEST_LEN);
-        let digest = base64::decode(digest_str).map_err(|_| "bad base64 digest")?;
+        let sig = base64::decode(digest_str).map_err(|_| "bad base64 digest")?;
 
-        
-        let mut mac = Hmac::<Sha256>::new_from_slice(&self.key).expect("good key");
-        mac.update(value.as_bytes());
-        mac.verify_slice(&digest)
+        verify(&self.key, value.as_bytes(), &sig)
             .map(|_| value.to_string())
             .map_err(|_| "value did not verify")
     }
@@ -83,49 +67,18 @@ impl<J> SignedJar<J> {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    pub fn verify(&self, mut cookie: Cookie<'static>) -> Option<Cookie<'static>> {
-        if let Ok(value) = self._verify(cookie.value()) {
-            cookie.set_value(value);
-            return Some(cookie);
+    pub fn get(&self, name: &str) -> Option<Cookie<'static>> {
+        if let Some(cookie_ref) = self.parent.get(name) {
+            let mut cookie = cookie_ref.clone();
+            if let Ok(value) = self.verify(cookie.value()) {
+                cookie.set_value(value);
+                return Some(cookie);
+            }
         }
 
         None
     }
-}
 
-impl<J: Borrow<CookieJar>> SignedJar<J> {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn get(&self, name: &str) -> Option<Cookie<'static>> {
-        self.parent.borrow().get(name).and_then(|c| self.verify(c.clone()))
-    }
-}
-
-impl<J: BorrowMut<CookieJar>> SignedJar<J> {
     
     
     
@@ -144,7 +97,7 @@ impl<J: BorrowMut<CookieJar>> SignedJar<J> {
     
     pub fn add(&mut self, mut cookie: Cookie<'static>) {
         self.sign_cookie(&mut cookie);
-        self.parent.borrow_mut().add(cookie);
+        self.parent.add(cookie);
     }
 
     
@@ -170,7 +123,15 @@ impl<J: BorrowMut<CookieJar>> SignedJar<J> {
     
     pub fn add_original(&mut self, mut cookie: Cookie<'static>) {
         self.sign_cookie(&mut cookie);
-        self.parent.borrow_mut().add_original(cookie);
+        self.parent.add_original(cookie);
+    }
+
+    
+    fn sign_cookie(&self, cookie: &mut Cookie) {
+        let digest = sign(&self.key, cookie.value().as_bytes());
+        let mut new_value = base64::encode(digest.as_ref());
+        new_value.push_str(cookie.value());
+        cookie.set_value(new_value);
     }
 
     
@@ -197,55 +158,25 @@ impl<J: BorrowMut<CookieJar>> SignedJar<J> {
     
     
     pub fn remove(&mut self, cookie: Cookie<'static>) {
-        self.parent.borrow_mut().remove(cookie);
+        self.parent.remove(cookie);
     }
 }
 
 #[cfg(test)]
 mod test {
-    use crate::{CookieJar, Cookie, Key};
+    use {CookieJar, Cookie, Key};
 
     #[test]
     fn simple() {
         let key = Key::generate();
         let mut jar = CookieJar::new();
-        assert_simple_behaviour!(jar, jar.signed_mut(&key));
+        assert_simple_behaviour!(jar, jar.signed(&key));
     }
 
     #[test]
     fn private() {
         let key = Key::generate();
         let mut jar = CookieJar::new();
-        assert_secure_behaviour!(jar, jar.signed_mut(&key));
-    }
-
-    #[test]
-    fn roundtrip() {
-        
-        let key = Key::from(&[89, 202, 200, 125, 230, 90, 197, 245, 166, 249,
-            34, 169, 135, 31, 20, 197, 94, 154, 254, 79, 60, 26, 8, 143, 254,
-            24, 116, 138, 92, 225, 159, 60, 157, 41, 135, 129, 31, 226, 196, 16,
-            198, 168, 134, 4, 42, 1, 196, 24, 57, 103, 241, 147, 201, 185, 233,
-            10, 180, 170, 187, 89, 252, 137, 110, 107]);
-
-        let mut jar = CookieJar::new();
-        jar.add(Cookie::new("signed_with_ring014",
-                "3tdHXEQ2kf6fxC7dWzBGmpSLMtJenXLKrZ9cHkSsl1w=Tamper-proof"));
-        jar.add(Cookie::new("signed_with_ring016",
-                "3tdHXEQ2kf6fxC7dWzBGmpSLMtJenXLKrZ9cHkSsl1w=Tamper-proof"));
-
-        let signed = jar.signed(&key);
-        assert_eq!(signed.get("signed_with_ring014").unwrap().value(), "Tamper-proof");
-        assert_eq!(signed.get("signed_with_ring016").unwrap().value(), "Tamper-proof");
-    }
-
-    #[test]
-    fn issue_178() {
-        let data = "x=yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy£";
-        let c = Cookie::parse(data).expect("failed to parse cookie");
-        let key = Key::from(&[0u8; 64]);
-        let mut jar = CookieJar::new();
-        let signed = jar.signed_mut(&key);
-        assert!(signed.verify(c).is_none());
+        assert_secure_behaviour!(jar, jar.signed(&key));
     }
 }

@@ -12,7 +12,7 @@ mod streams;
 pub(crate) use self::prioritize::Prioritized;
 pub(crate) use self::recv::Open;
 pub(crate) use self::send::PollReset;
-pub(crate) use self::streams::{DynStreams, OpaqueStreamRef, StreamRef, Streams};
+pub(crate) use self::streams::{OpaqueStreamRef, StreamRef, Streams};
 
 use self::buffer::Buffer;
 use self::counts::Counts;
@@ -42,16 +42,10 @@ pub struct Config {
     pub initial_max_send_streams: usize,
 
     
-    pub local_max_buffer_size: usize,
-
-    
     pub local_next_stream_id: StreamId,
 
     
     pub local_push_enabled: bool,
-
-    
-    pub extended_connect_protocol_enabled: bool,
 
     
     pub local_reset_duration: Duration,

@@ -27,40 +27,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 use std::any::Any;
 use std::convert::Infallible;
 use std::error::Error as StdError;
@@ -177,8 +143,6 @@ fn __reject_custom_compilefail() {}
 
 
 
-
-
 pub trait Reject: fmt::Debug + Sized + Send + Sync + 'static {}
 
 trait Cause: fmt::Debug + Send + Sync + 'static {
@@ -243,7 +207,7 @@ macro_rules! enum_known {
         }
 
         impl fmt::Debug for Known {
-            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
                 match *self {
                     $(
                     $(#[$attr])*
@@ -254,7 +218,7 @@ macro_rules! enum_known {
         }
 
         impl fmt::Display for Known {
-            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
                 match *self {
                     $(
                     $(#[$attr])*
@@ -345,14 +309,11 @@ impl Rejection {
     
     
     pub fn is_not_found(&self) -> bool {
-        matches!(self.reason, Reason::NotFound)
-    }
-}
-
-impl<T: Reject> From<T> for Rejection {
-    #[inline]
-    fn from(err: T) -> Rejection {
-        custom(err)
+        if let Reason::NotFound = self.reason {
+            true
+        } else {
+            false
+        }
     }
 }
 
@@ -394,13 +355,13 @@ impl IsReject for Rejection {
 }
 
 impl fmt::Debug for Rejection {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_tuple("Rejection").field(&self.reason).finish()
     }
 }
 
 impl fmt::Debug for Reason {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Reason::NotFound => f.write_str("NotFound"),
             Reason::Other(ref other) => match **other {
@@ -457,7 +418,7 @@ impl Rejections {
                 res
             }
             Rejections::Custom(ref e) => {
-                tracing::error!(
+                log::error!(
                     "unhandled custom rejection, returning 500 response: {:?}",
                     e
                 );
@@ -552,8 +513,8 @@ impl MissingHeader {
     }
 }
 
-impl fmt::Display for MissingHeader {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl ::std::fmt::Display for MissingHeader {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
         write!(f, "Missing request header {:?}", self.name)
     }
 }
@@ -573,8 +534,8 @@ impl InvalidHeader {
     }
 }
 
-impl fmt::Display for InvalidHeader {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl ::std::fmt::Display for InvalidHeader {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
         write!(f, "Invalid request header {:?}", self.name)
     }
 }
@@ -594,8 +555,8 @@ impl MissingCookie {
     }
 }
 
-impl fmt::Display for MissingCookie {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl ::std::fmt::Display for MissingCookie {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
         write!(f, "Missing request cookie {:?}", self.name)
     }
 }

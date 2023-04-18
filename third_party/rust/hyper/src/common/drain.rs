@@ -1,35 +1,52 @@
 use std::mem;
 
-use pin_project_lite::pin_project;
-use tokio::sync::watch;
+use pin_project::pin_project;
+use tokio::sync::{mpsc, watch};
 
-use super::{task, Future, Pin, Poll};
+use super::{task, Future, Never, Pin, Poll};
 
-pub(crate) fn channel() -> (Signal, Watch) {
-    let (tx, rx) = watch::channel(());
-    (Signal { tx }, Watch { rx })
+
+#[derive(Clone, Copy)]
+enum Action {
+    Open,
+    
+    
 }
 
-pub(crate) struct Signal {
-    tx: watch::Sender<()>,
+pub fn channel() -> (Signal, Watch) {
+    let (tx, rx) = watch::channel(Action::Open);
+    let (drained_tx, drained_rx) = mpsc::channel(1);
+    (
+        Signal {
+            drained_rx,
+            _tx: tx,
+        },
+        Watch { drained_tx, rx },
+    )
 }
 
-pub(crate) struct Draining(Pin<Box<dyn Future<Output = ()> + Send + Sync>>);
+pub struct Signal {
+    drained_rx: mpsc::Receiver<Never>,
+    _tx: watch::Sender<Action>,
+}
+
+pub struct Draining {
+    drained_rx: mpsc::Receiver<Never>,
+}
 
 #[derive(Clone)]
-pub(crate) struct Watch {
-    rx: watch::Receiver<()>,
+pub struct Watch {
+    drained_tx: mpsc::Sender<Never>,
+    rx: watch::Receiver<Action>,
 }
 
-pin_project! {
-    #[allow(missing_debug_implementations)]
-    pub struct Watching<F, FN> {
-        #[pin]
-        future: F,
-        state: State<FN>,
-        watch: Pin<Box<dyn Future<Output = ()> + Send + Sync>>,
-        _rx: watch::Receiver<()>,
-    }
+#[allow(missing_debug_implementations)]
+#[pin_project]
+pub struct Watching<F, FN> {
+    #[pin]
+    future: F,
+    state: State<FN>,
+    watch: Watch,
 }
 
 enum State<F> {
@@ -38,9 +55,11 @@ enum State<F> {
 }
 
 impl Signal {
-    pub(crate) fn drain(self) -> Draining {
-        let _ = self.tx.send(());
-        Draining(Box::pin(async move { self.tx.closed().await }))
+    pub fn drain(self) -> Draining {
+        
+        Draining {
+            drained_rx: self.drained_rx,
+        }
     }
 }
 
@@ -48,27 +67,23 @@ impl Future for Draining {
     type Output = ();
 
     fn poll(mut self: Pin<&mut Self>, cx: &mut task::Context<'_>) -> Poll<Self::Output> {
-        Pin::new(&mut self.as_mut().0).poll(cx)
+        match ready!(self.drained_rx.poll_recv(cx)) {
+            Some(never) => match never {},
+            None => Poll::Ready(()),
+        }
     }
 }
 
 impl Watch {
-    pub(crate) fn watch<F, FN>(self, future: F, on_drain: FN) -> Watching<F, FN>
+    pub fn watch<F, FN>(self, future: F, on_drain: FN) -> Watching<F, FN>
     where
         F: Future,
         FN: FnOnce(Pin<&mut F>),
     {
-        let Self { mut rx } = self;
-        let _rx = rx.clone();
         Watching {
             future,
             state: State::Watch(on_drain),
-            watch: Box::pin(async move {
-                let _ = rx.changed().await;
-            }),
-            
-            
-            _rx,
+            watch: self,
         }
     }
 }
@@ -85,12 +100,12 @@ where
         loop {
             match mem::replace(me.state, State::Draining) {
                 State::Watch(on_drain) => {
-                    match Pin::new(&mut me.watch).poll(cx) {
-                        Poll::Ready(()) => {
+                    match me.watch.rx.poll_recv_ref(cx) {
+                        Poll::Ready(None) => {
                             
                             on_drain(me.future.as_mut());
                         }
-                        Poll::Pending => {
+                        Poll::Ready(Some(_ )) | Poll::Pending => {
                             *me.state = State::Watch(on_drain);
                             return me.future.poll(cx);
                         }

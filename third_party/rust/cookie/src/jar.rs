@@ -1,11 +1,12 @@
 use std::collections::HashSet;
+use std::mem::replace;
 
-#[cfg(feature = "signed")] use crate::secure::SignedJar;
-#[cfg(feature = "private")] use crate::secure::PrivateJar;
-#[cfg(any(feature = "signed", feature = "private"))] use crate::secure::Key;
+use time::{self, Duration};
 
-use crate::delta::DeltaCookie;
-use crate::Cookie;
+#[cfg(feature = "secure")]
+use secure::{PrivateJar, SignedJar, Key};
+use delta::DeltaCookie;
+use Cookie;
 
 
 
@@ -117,7 +118,7 @@ impl CookieJar {
         self.delta_cookies
             .get(name)
             .or_else(|| self.original_cookies.get(name))
-            .and_then(|c| if c.removed { None } else { Some(&c.cookie) })
+            .and_then(|c| if !c.removed { Some(&c.cookie) } else { None })
     }
 
     
@@ -220,15 +221,11 @@ impl CookieJar {
     
     
     
-    
-    
-    
-    
-    
-    
     pub fn remove(&mut self, mut cookie: Cookie<'static>) {
         if self.original_cookies.contains(cookie.name()) {
-            cookie.make_removal();
+            cookie.set_value("");
+            cookie.set_max_age(Duration::seconds(0));
+            cookie.set_expires(time::now() - Duration::days(365));
             self.delta_cookies.replace(DeltaCookie::removed(cookie));
         } else {
             self.delta_cookies.remove(cookie.name());
@@ -269,46 +266,22 @@ impl CookieJar {
     
     
     
-    pub fn force_remove<'a>(&mut self, cookie: &Cookie<'a>) {
+    
+    
+    pub fn force_remove<'a>(&mut self, cookie: Cookie<'a>) {
         self.original_cookies.remove(cookie.name());
         self.delta_cookies.remove(cookie.name());
     }
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn reset_delta(&mut self) {
-        self.delta_cookies = HashSet::new();
+    #[deprecated(since = "0.7.0", note = "calling this method may not remove \
+                 all cookies since the path and domain are not specified; use \
+                 `remove` instead")]
+    pub fn clear(&mut self) {
+        self.delta_cookies.clear();
+        for delta in replace(&mut self.original_cookies, HashSet::new()) {
+            self.remove(delta.cookie);
+        }
     }
 
     
@@ -405,9 +378,13 @@ impl CookieJar {
     
     
     
-    #[cfg(feature = "private")]
-    #[cfg_attr(all(nightly, doc), doc(cfg(feature = "private")))]
-    pub fn private<'a>(&'a self, key: &Key) -> PrivateJar<&'a Self> {
+    
+    
+    
+    
+    
+    #[cfg(feature = "secure")]
+    pub fn private(&mut self, key: &Key) -> PrivateJar {
         PrivateJar::new(self, key)
     }
 
@@ -433,12 +410,6 @@ impl CookieJar {
     
     
     
-    #[cfg(feature = "private")]
-    #[cfg_attr(all(nightly, doc), doc(cfg(feature = "private")))]
-    pub fn private_mut<'a>(&'a mut self, key: &Key) -> PrivateJar<&'a mut Self> {
-        PrivateJar::new(self, key)
-    }
-
     
     
     
@@ -450,54 +421,8 @@ impl CookieJar {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg(feature = "signed")]
-    #[cfg_attr(all(nightly, doc), doc(cfg(feature = "signed")))]
-    pub fn signed<'a>(&'a self, key: &Key) -> SignedJar<&'a Self> {
-        SignedJar::new(self, key)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg(feature = "signed")]
-    #[cfg_attr(all(nightly, doc), doc(cfg(feature = "signed")))]
-    pub fn signed_mut<'a>(&'a mut self, key: &Key) -> SignedJar<&'a mut Self> {
+    #[cfg(feature = "secure")]
+    pub fn signed(&mut self, key: &Key) -> SignedJar {
         SignedJar::new(self, key)
     }
 }
@@ -543,7 +468,7 @@ impl<'a> Iterator for Iter<'a> {
 #[cfg(test)]
 mod test {
     use super::CookieJar;
-    use crate::Cookie;
+    use Cookie;
 
     #[test]
     #[allow(deprecated)]
@@ -558,8 +483,7 @@ mod test {
         assert!(c.get("test2").is_some());
 
         c.add(Cookie::new("test3", ""));
-        c.remove(Cookie::named("test2"));
-        c.remove(Cookie::named("test3"));
+        c.clear();
 
         assert!(c.get("test").is_none());
         assert!(c.get("test2").is_none());
@@ -576,9 +500,9 @@ mod test {
     }
 
     #[test]
-    #[cfg(all(feature = "signed", feature = "private"))]
+    #[cfg(feature = "secure")]
     fn iter() {
-        let key = crate::Key::generate();
+        let key = ::Key::generate();
         let mut c = CookieJar::new();
 
         c.add_original(Cookie::new("original", "original"));
@@ -588,8 +512,8 @@ mod test {
         c.add(Cookie::new("test3", "test3"));
         assert_eq!(c.iter().count(), 4);
 
-        c.signed_mut(&key).add(Cookie::new("signed", "signed"));
-        c.private_mut(&key).add(Cookie::new("encrypted", "encrypted"));
+        c.signed(&key).add(Cookie::new("signed", "signed"));
+        c.private(&key).add(Cookie::new("encrypted", "encrypted"));
         assert_eq!(c.iter().count(), 6);
 
         c.remove(Cookie::named("test"));
@@ -607,6 +531,7 @@ mod test {
     }
 
     #[test]
+    #[cfg(feature = "secure")]
     fn delta() {
         use std::collections::HashMap;
         use time::Duration;

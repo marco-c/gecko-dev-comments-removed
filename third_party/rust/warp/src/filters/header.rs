@@ -7,7 +7,7 @@
 use std::convert::Infallible;
 use std::str::FromStr;
 
-use futures_util::future;
+use futures::future;
 use headers::{Header, HeaderMapExt};
 use http::header::HeaderValue;
 use http::HeaderMap;
@@ -38,7 +38,7 @@ pub fn header<T: FromStr + Send + 'static>(
     name: &'static str,
 ) -> impl Filter<Extract = One<T>, Error = Rejection> + Copy {
     filter_fn_one(move |route| {
-        tracing::trace!("header({:?})", name);
+        log::trace!("header({:?})", name);
         let route = route
             .headers()
             .get(name)
@@ -52,7 +52,7 @@ pub fn header<T: FromStr + Send + 'static>(
 pub(crate) fn header2<T: Header + Send + 'static>(
 ) -> impl Filter<Extract = One<T>, Error = Rejection> + Copy {
     filter_fn_one(move |route| {
-        tracing::trace!("header2({:?})", T::name());
+        log::trace!("header2({:?})", T::name());
         let route = route
             .headers()
             .typed_get()
@@ -80,7 +80,7 @@ where
     T: FromStr + Send + 'static,
 {
     filter_fn_one(move |route| {
-        tracing::trace!("optional({:?})", name);
+        log::trace!("optional({:?})", name);
         let result = route.headers().get(name).map(|value| {
             value
                 .to_str()
@@ -139,7 +139,7 @@ pub fn exact(
     value: &'static str,
 ) -> impl Filter<Extract = (), Error = Rejection> + Copy {
     filter_fn(move |route| {
-        tracing::trace!("exact?({:?}, {:?})", name, value);
+        log::trace!("exact?({:?}, {:?})", name, value);
         let route = route
             .headers()
             .get(name)
@@ -171,7 +171,7 @@ pub fn exact_ignore_case(
     value: &'static str,
 ) -> impl Filter<Extract = (), Error = Rejection> + Copy {
     filter_fn(move |route| {
-        tracing::trace!("exact_ignore_case({:?}, {:?})", name, value);
+        log::trace!("exact_ignore_case({:?}, {:?})", name, value);
         let route = route
             .headers()
             .get(name)
@@ -203,7 +203,7 @@ pub fn value(
     name: &'static str,
 ) -> impl Filter<Extract = One<HeaderValue>, Error = Rejection> + Copy {
     filter_fn_one(move |route| {
-        tracing::trace!("value({:?})", name);
+        log::trace!("value({:?})", name);
         let route = route
             .headers()
             .get(name)

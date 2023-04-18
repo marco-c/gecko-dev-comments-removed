@@ -1,7 +1,6 @@
 mod argument {
-    use std::pin::Pin;
-
     use pin_project::{pin_project, pinned_drop};
+    use std::pin::Pin;
 
     #[pin_project(PinnedDrop)]
     struct UnexpectedArg1(());
@@ -49,7 +48,7 @@ mod item {
     impl InherentImpl {} 
 
     #[pinned_drop]
-    fn func(_: Pin<&mut ()>) {} 
+    fn drop(_: Pin<&mut ()>) {} 
 }
 
 mod unsafety {
@@ -129,9 +128,8 @@ mod assoc_item {
 }
 
 mod method {
-    use std::pin::Pin;
-
     use pin_project::{pin_project, pinned_drop};
+    use std::pin::Pin;
 
     #[pin_project(PinnedDrop)]
     struct RetUnit(());
@@ -202,7 +200,7 @@ mod method {
 
     #[pinned_drop]
     impl PinnedDrop for InvalidName {
-        fn pinned_drop(self: Pin<&mut Self>) {} 
+        fn pinned_drop(&mut self) {} 
     }
 }
 

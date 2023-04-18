@@ -2,7 +2,7 @@ use std::ops::{Deref, DerefMut};
 use std::hash::{Hash, Hasher};
 use std::borrow::Borrow;
 
-use crate::Cookie;
+use Cookie;
 
 
 
@@ -19,14 +19,20 @@ impl DeltaCookie {
     
     #[inline]
     pub fn added(cookie: Cookie<'static>) -> DeltaCookie {
-        DeltaCookie { cookie, removed: false, }
+        DeltaCookie {
+            cookie: cookie,
+            removed: false,
+        }
     }
 
     
     
     #[inline]
     pub fn removed(cookie: Cookie<'static>) -> DeltaCookie {
-        DeltaCookie { cookie, removed: true, }
+        DeltaCookie {
+            cookie: cookie,
+            removed: true,
+        }
     }
 }
 

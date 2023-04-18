@@ -4,7 +4,7 @@ mod pin_argument {
     #[pin_project]
     struct Struct {
         #[pin()] 
-        f: (),
+        field: (),
     }
 
     #[pin_project]
@@ -19,7 +19,7 @@ mod pin_argument {
     enum EnumStruct {
         V {
             #[pin(foo)] 
-            f: (),
+            field: (),
         },
     }
 }
@@ -31,7 +31,7 @@ mod pin_attribute {
     struct DuplicateStruct {
         #[pin]
         #[pin] 
-        f: (),
+        field: (),
     }
 
     #[pin_project]
@@ -57,7 +57,7 @@ mod pin_attribute {
         V {
             #[pin]
             #[pin] 
-            f: (),
+            field: (),
         },
     }
 }
@@ -69,7 +69,7 @@ mod pin_item {
     #[pin] 
     struct Struct {
         #[pin]
-        f: (),
+        field: (),
     }
 
     #[pin_project]
@@ -88,9 +88,6 @@ mod pin_item {
 mod pin_project_argument {
     use pin_project::pin_project;
 
-    #[pin_project(Replace)] 
-    struct RemovedReplace(#[pin] ());
-
     #[pin_project(UnsafeUnpin,,)] 
     struct Unexpected1(#[pin] ());
 
@@ -108,6 +105,9 @@ mod pin_project_argument {
 
     #[pin_project(PinnedDrop, PinnedDrop)] 
     struct DuplicatePinnedDrop(#[pin] ());
+
+    #[pin_project(Replace, Replace)] 
+    struct DuplicateReplace(#[pin] ());
 
     #[pin_project(UnsafeUnpin, UnsafeUnpin)] 
     struct DuplicateUnsafeUnpin(#[pin] ());
@@ -142,11 +142,23 @@ mod pin_project_argument {
     #[pin_project(project_replace = A)] 
     struct ProjectReplaceWithoutReplace(#[pin] ());
 
+    #[pin_project(PinnedDrop, Replace)] 
+    struct PinnedDropWithReplace1(#[pin] ());
+
+    #[pin_project(Replace, UnsafeUnpin, PinnedDrop)] 
+    struct PinnedDropWithReplace2(#[pin] ());
+
     #[pin_project(PinnedDrop, project_replace)] 
     struct PinnedDropWithProjectReplace1(#[pin] ());
 
     #[pin_project(project_replace, UnsafeUnpin, PinnedDrop)] 
     struct PinnedDropWithProjectReplace2(#[pin] ());
+
+    #[pin_project(project_replace, Replace)] 
+    struct ProjectReplaceWithReplace1(#[pin] ());
+
+    #[pin_project(project_replace = B, Replace)] 
+    struct ProjectReplaceWithReplace2(#[pin] ());
 
     #[pin_project(UnsafeUnpin, !Unpin)] 
     struct UnsafeUnpinWithNotUnpin1(#[pin] ());
@@ -186,24 +198,10 @@ mod pin_project_argument {
 
     #[pin_project(project_replace = !)] 
     struct ProjectReplace3(#[pin] ());
-
-    #[pin_project(project_replace)] 
-    enum ProjectReplaceEnum {
-        V(#[pin] ()),
-    }
 }
 
 mod pin_project_conflict_naming {
     use pin_project::pin_project;
-
-    #[pin_project(project = OrigAndProj)] 
-    struct OrigAndProj(#[pin] ());
-
-    #[pin_project(project_ref = OrigAndProjRef)] 
-    struct OrigAndProjRef(#[pin] ());
-
-    #[pin_project(project_replace = OrigAndProjOwn)] 
-    struct OrigAndProjOwn(#[pin] ());
 
     #[pin_project(project = A, project_ref = A)] 
     struct ProjAndProjRef(#[pin] ());
@@ -255,9 +253,6 @@ mod pin_project_item {
         
         f: (),
     }
-
-    #[pin_project]
-    impl Impl {} 
 }
 
 

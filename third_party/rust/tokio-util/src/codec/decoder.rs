@@ -18,20 +18,6 @@ use std::io;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 pub trait Decoder {
     
     type Item;
@@ -123,11 +109,6 @@ pub trait Decoder {
     
     fn decode(&mut self, src: &mut BytesMut) -> Result<Option<Self::Item>, Self::Error>;
 
-    
-    
-    
-    
-    
     
     
     

@@ -135,10 +135,9 @@
 
 
 
-use crate::codec::{Codec, SendError, UserError};
-use crate::ext::Protocol;
+use crate::codec::{Codec, RecvError, SendError, UserError};
 use crate::frame::{Headers, Pseudo, Reason, Settings, StreamId};
-use crate::proto::{self, Error};
+use crate::proto;
 use crate::{FlowControl, PingPong, RecvStream, SendStream};
 
 use bytes::{Buf, Bytes};
@@ -150,7 +149,6 @@ use std::task::{Context, Poll};
 use std::time::Duration;
 use std::usize;
 use tokio::io::{AsyncRead, AsyncWrite, AsyncWriteExt};
-use tracing::Instrument;
 
 
 
@@ -319,9 +317,6 @@ pub struct Builder {
 
     
     initial_target_connection_window_size: Option<u32>,
-
-    
-    max_send_buffer_size: usize,
 
     
     reset_stream_max: usize,
@@ -521,19 +516,6 @@ where
                 (response, stream)
             })
     }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn is_extended_connect_protocol_enabled(&self) -> bool {
-        self.inner.is_extended_connect_protocol_enabled()
-    }
 }
 
 impl<B> fmt::Debug for SendRequest<B>
@@ -631,7 +613,6 @@ impl Builder {
     
     pub fn new() -> Builder {
         Builder {
-            max_send_buffer_size: proto::DEFAULT_MAX_SEND_BUFFER_SIZE,
             reset_stream_duration: Duration::from_secs(proto::DEFAULT_RESET_STREAM_SECS),
             reset_stream_max: proto::DEFAULT_RESET_STREAM_MAX,
             initial_target_connection_window_size: None,
@@ -978,24 +959,6 @@ impl Builder {
     
     
     
-    pub fn max_send_buffer_size(&mut self, max: usize) -> &mut Self {
-        assert!(max <= std::u32::MAX as usize);
-        self.max_send_buffer_size = max;
-        self
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -1152,27 +1115,10 @@ where
     T: AsyncRead + AsyncWrite + Unpin,
 {
     let builder = Builder::new();
-    builder
-        .handshake(io)
-        .instrument(tracing::trace_span!("client_handshake"))
-        .await
+    builder.handshake(io).await
 }
 
 
-
-async fn bind_connection<T>(io: &mut T) -> Result<(), crate::Error>
-where
-    T: AsyncRead + AsyncWrite + Unpin,
-{
-    tracing::debug!("binding client connection");
-
-    let msg: &'static [u8] = b"PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";
-    io.write_all(msg).await.map_err(crate::Error::from_io)?;
-
-    tracing::debug!("client connection bound");
-
-    Ok(())
-}
 
 impl<T, B> Connection<T, B>
 where
@@ -1183,7 +1129,12 @@ where
         mut io: T,
         builder: Builder,
     ) -> Result<(SendRequest<B>, Connection<T, B>), crate::Error> {
-        bind_connection(&mut io).await?;
+        log::debug!("binding client connection");
+
+        let msg: &'static [u8] = b"PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";
+        io.write_all(msg).await.map_err(crate::Error::from_io)?;
+
+        log::debug!("client connection bound");
 
         
         let mut codec = Codec::new(io);
@@ -1206,7 +1157,6 @@ where
             proto::Config {
                 next_stream_id: builder.stream_id,
                 initial_max_send_streams: builder.initial_max_send_streams,
-                max_send_buffer_size: builder.max_send_buffer_size,
                 reset_stream_duration: builder.reset_stream_duration,
                 reset_stream_max: builder.reset_stream_max,
                 settings: builder.settings.clone(),
@@ -1273,33 +1223,6 @@ where
     
     pub fn ping_pong(&mut self) -> Option<PingPong> {
         self.inner.take_user_pings().map(PingPong::new)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn max_concurrent_send_streams(&self) -> usize {
-        self.inner.max_send_streams()
-    }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn max_concurrent_recv_streams(&self) -> usize {
-        self.inner.max_recv_streams()
     }
 }
 
@@ -1452,7 +1375,6 @@ impl Peer {
     pub fn convert_send_message(
         id: StreamId,
         request: Request<()>,
-        protocol: Option<Protocol>,
         end_of_stream: bool,
     ) -> Result<Headers, SendError> {
         use http::request::Parts;
@@ -1472,7 +1394,7 @@ impl Peer {
 
         
         
-        let mut pseudo = Pseudo::request(method, uri, protocol);
+        let mut pseudo = Pseudo::request(method, uri);
 
         if pseudo.scheme.is_none() {
             
@@ -1516,8 +1438,6 @@ impl Peer {
 impl proto::Peer for Peer {
     type Poll = Response<()>;
 
-    const NAME: &'static str = "Client";
-
     fn r#dyn() -> proto::DynPeer {
         proto::DynPeer::Client
     }
@@ -1530,7 +1450,7 @@ impl proto::Peer for Peer {
         pseudo: Pseudo,
         fields: HeaderMap,
         stream_id: StreamId,
-    ) -> Result<Self::Poll, Error> {
+    ) -> Result<Self::Poll, RecvError> {
         let mut b = Response::builder();
 
         b = b.version(Version::HTTP_2);
@@ -1544,7 +1464,10 @@ impl proto::Peer for Peer {
             Err(_) => {
                 
                 
-                return Err(Error::library_reset(stream_id, Reason::PROTOCOL_ERROR));
+                return Err(RecvError::Stream {
+                    id: stream_id,
+                    reason: Reason::PROTOCOL_ERROR,
+                });
             }
         };
 

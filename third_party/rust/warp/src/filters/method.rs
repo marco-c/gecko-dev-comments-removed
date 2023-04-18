@@ -6,7 +6,7 @@
 
 
 
-use futures_util::future;
+use futures::future;
 use http::Method;
 
 use crate::filter::{filter_fn, filter_fn_one, Filter, One};
@@ -131,7 +131,7 @@ where
 {
     filter_fn(move |route| {
         let method = func();
-        tracing::trace!("method::{:?}?: {:?}", method, route.method());
+        log::trace!("method::{:?}?: {:?}", method, route.method());
         if route.method() == method {
             future::ok(())
         } else {

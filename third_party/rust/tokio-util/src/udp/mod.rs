@@ -1,4 +1,4 @@
 
 
 mod frame;
-pub use frame::UdpFramed;
+pub use self::frame::UdpFramed;

@@ -36,55 +36,30 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #![no_std]
 #![doc(test(
     no_crate_inject,
-    attr(
-        deny(warnings, rust_2018_idioms, single_use_lifetimes),
-        allow(dead_code, unused_variables)
-    )
+    attr(deny(warnings, rust_2018_idioms, single_use_lifetimes), allow(dead_code))
 ))]
 #![warn(missing_docs, rust_2018_idioms, single_use_lifetimes, unreachable_pub)]
 #![warn(clippy::default_trait_access, clippy::wildcard_imports)]
+
+#![allow(clippy::mem_replace_with_default, clippy::manual_non_exhaustive)]
 #![allow(clippy::needless_doctest_main)]
 
 #[doc(inline)]
 pub use pin_project_internal::pin_project;
 #[doc(inline)]
 pub use pin_project_internal::pinned_drop;
-
-
-
+#[allow(deprecated)]
+#[doc(inline)]
+pub use pin_project_internal::project;
+#[allow(deprecated)]
+#[doc(inline)]
+pub use pin_project_internal::project_ref;
+#[allow(deprecated)]
+#[doc(inline)]
+pub use pin_project_internal::project_replace;
 
 
 
@@ -148,10 +123,10 @@ pub unsafe trait UnsafeUnpin {}
 
 #[doc(hidden)]
 pub mod __private {
-    use core::mem::ManuallyDrop;
     #[doc(hidden)]
     pub use core::{
         marker::{PhantomData, PhantomPinned, Unpin},
+        mem::ManuallyDrop,
         ops::Drop,
         pin::Pin,
         ptr,
@@ -162,14 +137,6 @@ pub mod __private {
 
     use super::UnsafeUnpin;
 
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -255,14 +222,7 @@ pub mod __private {
 
     
     #[doc(hidden)]
-    pub struct UnsafeDropInPlaceGuard<T: ?Sized>(*mut T);
-
-    impl<T: ?Sized> UnsafeDropInPlaceGuard<T> {
-        #[doc(hidden)]
-        pub unsafe fn new(ptr: *mut T) -> Self {
-            Self(ptr)
-        }
-    }
+    pub struct UnsafeDropInPlaceGuard<T: ?Sized>(pub *mut T);
 
     impl<T: ?Sized> Drop for UnsafeDropInPlaceGuard<T> {
         fn drop(&mut self) {
@@ -276,15 +236,8 @@ pub mod __private {
     
     #[doc(hidden)]
     pub struct UnsafeOverwriteGuard<T> {
-        target: *mut T,
-        value: ManuallyDrop<T>,
-    }
-
-    impl<T> UnsafeOverwriteGuard<T> {
-        #[doc(hidden)]
-        pub unsafe fn new(target: *mut T, value: T) -> Self {
-            Self { target, value: ManuallyDrop::new(value) }
-        }
+        pub value: ManuallyDrop<T>,
+        pub target: *mut T,
     }
 
     impl<T> Drop for UnsafeOverwriteGuard<T> {

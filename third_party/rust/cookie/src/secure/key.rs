@@ -1,37 +1,32 @@
-const SIGNING_KEY_LEN: usize = 32;
-const ENCRYPTION_KEY_LEN: usize = 32;
-const COMBINED_KEY_LENGTH: usize = SIGNING_KEY_LEN + ENCRYPTION_KEY_LEN;
+use secure::ring::hkdf::expand;
+use secure::ring::digest::{SHA256, Algorithm};
+use secure::ring::hmac::SigningKey;
+use secure::ring::rand::{SecureRandom, SystemRandom};
 
+use secure::private::KEY_LEN as PRIVATE_KEY_LEN;
+use secure::signed::KEY_LEN as SIGNED_KEY_LEN;
 
-#[cfg(feature = "signed")]
-const_assert!(crate::secure::signed::KEY_LEN == SIGNING_KEY_LEN);
-#[cfg(feature = "private")]
-const_assert!(crate::secure::private::KEY_LEN == ENCRYPTION_KEY_LEN);
-
-
-
-
+static HKDF_DIGEST: &'static Algorithm = &SHA256;
+const KEYS_INFO: &'static str = "COOKIE;SIGNED:HMAC-SHA256;PRIVATE:AEAD-AES-256-GCM";
 
 
 
-#[cfg_attr(all(nightly, doc), doc(cfg(any(feature = "private", feature = "signed"))))]
+
+
+
+
+
+
+
+
 #[derive(Clone)]
-pub struct Key([u8; COMBINED_KEY_LENGTH ]);
-
-impl PartialEq for Key {
-    fn eq(&self, other: &Self) -> bool {
-        use subtle::ConstantTimeEq;
-
-        self.0.ct_eq(&other.0).into()
-    }
+pub struct Key {
+    signing_key: [u8; SIGNED_KEY_LEN],
+    encryption_key: [u8; PRIVATE_KEY_LEN]
 }
 
 impl Key {
     
-    const fn zero() -> Self {
-        Key([0; COMBINED_KEY_LENGTH])
-    }
-
     
     
     
@@ -53,51 +48,26 @@ impl Key {
     
     
     
-    pub fn from(key: &[u8]) -> Key {
-        if key.len() < 64 {
-            panic!("bad key length: expected >= 64 bytes, found {}", key.len());
-        }
-
-        let mut output = Key::zero();
-        output.0.copy_from_slice(&key[..COMBINED_KEY_LENGTH]);
-        output
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg(feature = "key-expansion")]
-    #[cfg_attr(all(nightly, doc), doc(cfg(feature = "key-expansion")))]
-    pub fn derive_from(master_key: &[u8]) -> Self {
-        if master_key.len() < 32 {
-            panic!("bad master key length: expected >= 32 bytes, found {}", master_key.len());
+    pub fn from_master(key: &[u8]) -> Key {
+        if key.len() < 32 {
+            panic!("bad master key length: expected at least 32 bytes, found {}", key.len());
         }
 
         
-        const KEYS_INFO: &[u8] = b"COOKIE;SIGNED:HMAC-SHA256;PRIVATE:AEAD-AES-256-GCM";
-        let mut both_keys = [0; COMBINED_KEY_LENGTH];
-        let hk = hkdf::Hkdf::<sha2::Sha256>::from_prk(master_key).expect("key length prechecked");
-        hk.expand(KEYS_INFO, &mut both_keys).expect("expand into keys");
-        Key::from(&both_keys)
+        let prk = SigningKey::new(HKDF_DIGEST, key);
+        let mut both_keys = [0; SIGNED_KEY_LEN + PRIVATE_KEY_LEN];
+        expand(&prk, KEYS_INFO.as_bytes(), &mut both_keys);
+
+        
+        let mut signing_key = [0; SIGNED_KEY_LEN];
+        let mut encryption_key = [0; PRIVATE_KEY_LEN];
+        signing_key.copy_from_slice(&both_keys[..SIGNED_KEY_LEN]);
+        encryption_key.copy_from_slice(&both_keys[SIGNED_KEY_LEN..]);
+
+        Key {
+            signing_key: signing_key,
+            encryption_key: encryption_key
+        }
     }
 
     
@@ -131,15 +101,17 @@ impl Key {
     
     
     pub fn try_generate() -> Option<Key> {
-        use crate::secure::rand::RngCore;
+        let mut sign_key = [0; SIGNED_KEY_LEN];
+        let mut enc_key = [0; PRIVATE_KEY_LEN];
 
-        let mut rng = crate::secure::rand::thread_rng();
-        let mut key = Key::zero();
-        rng.try_fill_bytes(&mut key.0).ok()?;
-        Some(key)
+        let rng = SystemRandom::new();
+        if rng.fill(&mut sign_key).is_err() || rng.fill(&mut enc_key).is_err() {
+            return None
+        }
+
+        Some(Key { signing_key: sign_key, encryption_key: enc_key })
     }
 
-    
     
     
     
@@ -151,10 +123,9 @@ impl Key {
     
     
     pub fn signing(&self) -> &[u8] {
-        &self.0[..SIGNING_KEY_LEN]
+        &self.signing_key[..]
     }
 
-    
     
     
     
@@ -166,22 +137,7 @@ impl Key {
     
     
     pub fn encryption(&self) -> &[u8] {
-        &self.0[SIGNING_KEY_LEN..]
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn master(&self) -> &[u8] {
-        &self.0
+        &self.encryption_key[..]
     }
 }
 
@@ -190,30 +146,18 @@ mod test {
     use super::Key;
 
     #[test]
-    fn from_works() {
-        let key = Key::from(&(0..64).collect::<Vec<_>>());
-
-        let signing: Vec<u8> = (0..32).collect();
-        assert_eq!(key.signing(), &*signing);
-
-        let encryption: Vec<u8> = (32..64).collect();
-        assert_eq!(key.encryption(), &*encryption);
-    }
-
-    #[test]
-    #[cfg(feature = "key-expansion")]
-    fn deterministic_derive() {
+    fn deterministic_from_master() {
         let master_key: Vec<u8> = (0..32).collect();
 
-        let key_a = Key::derive_from(&master_key);
-        let key_b = Key::derive_from(&master_key);
+        let key_a = Key::from_master(&master_key);
+        let key_b = Key::from_master(&master_key);
 
         assert_eq!(key_a.signing(), key_b.signing());
         assert_eq!(key_a.encryption(), key_b.encryption());
         assert_ne!(key_a.encryption(), key_a.signing());
 
         let master_key_2: Vec<u8> = (32..64).collect();
-        let key_2 = Key::derive_from(&master_key_2);
+        let key_2 = Key::from_master(&master_key_2);
 
         assert_ne!(key_2.signing(), key_a.signing());
         assert_ne!(key_2.encryption(), key_a.encryption());

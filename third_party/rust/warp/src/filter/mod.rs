@@ -7,16 +7,16 @@ mod or;
 mod or_else;
 mod recover;
 pub(crate) mod service;
-mod then;
 mod unify;
 mod untuple_one;
 mod wrap;
 
 use std::future::Future;
+use std::pin::Pin;
 
-use futures_util::{future, TryFuture, TryFutureExt};
+use futures::{future, TryFuture, TryFutureExt};
 
-pub(crate) use crate::generic::{one, Combine, Either, Func, One, Tuple};
+pub(crate) use crate::generic::{one, Combine, Either, Func, HList, One, Tuple};
 use crate::reject::{CombineRejection, IsReject, Rejection};
 use crate::route::{self, Route};
 
@@ -28,10 +28,8 @@ pub(crate) use self::map_err::MapErr;
 pub(crate) use self::or::Or;
 use self::or_else::OrElse;
 use self::recover::Recover;
-use self::then::Then;
 use self::unify::Unify;
 use self::untuple_one::UntupleOne;
-pub use self::wrap::wrap_fn;
 pub(crate) use self::wrap::{Wrap, WrapSealed};
 
 
@@ -199,38 +197,6 @@ pub trait Filter: FilterBase {
         }
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn then<F>(self, fun: F) -> Then<Self, F>
-    where
-        Self: Sized,
-        F: Func<Self::Extract> + Clone,
-        F::Output: Future + Send,
-    {
-        Then {
-            filter: self,
-            callback: fun,
-        }
-    }
-
-    
-    
-    
-    
-    
     
     
     
@@ -457,14 +423,17 @@ where
 
 pub(crate) fn filter_fn_one<F, U>(
     func: F,
-) -> impl Filter<Extract = (U::Ok,), Error = U::Error> + Copy
+) -> FilterFn<impl Fn(&mut Route) -> future::MapOk<U, fn(U::Ok) -> (U::Ok,)> + Copy>
 where
     F: Fn(&mut Route) -> U + Copy,
-    U: TryFuture + Send + 'static,
-    U::Ok: Send,
+    U: TryFuture,
     U::Error: IsReject,
 {
-    filter_fn(move |route| func(route).map_ok(|item| (item,)))
+    filter_fn(move |route| func(route).map_ok(tup_one as _))
+}
+
+fn tup_one<T>(item: T) -> (T,) {
+    (item,)
 }
 
 #[derive(Copy, Clone)]
@@ -483,10 +452,11 @@ where
 {
     type Extract = U::Ok;
     type Error = U::Error;
-    type Future = future::IntoFuture<U>;
+    type Future =
+        Pin<Box<dyn Future<Output = Result<Self::Extract, Self::Error>> + Send + 'static>>;
 
     #[inline]
     fn filter(&self, _: Internal) -> Self::Future {
-        route::with(|route| (self.func)(route)).into_future()
+        Box::pin(route::with(|route| (self.func)(route)).into_future())
     }
 }
