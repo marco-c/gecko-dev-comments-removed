@@ -697,6 +697,7 @@ let JSWINDOWACTORS = {
         
         
         unload: { createActor: false },
+        load: { mozSystemGroup: true, capture: true },
       },
     },
   },

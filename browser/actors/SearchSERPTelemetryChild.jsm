@@ -188,6 +188,15 @@ class SearchSERPTelemetryChild extends JSWindowActorChild {
         check();
         break;
       }
+      case "load": {
+        
+        
+        
+        
+        
+        check();
+        break;
+      }
       case "unload": {
         cancelCheck();
         break;

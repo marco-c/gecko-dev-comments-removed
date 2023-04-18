@@ -199,8 +199,8 @@ class TelemetryHandler {
     });
   }
 
-  reportPageWithAds(info) {
-    this._contentHandler._reportPageWithAds(info);
+  reportPageWithAds(info, browser) {
+    this._contentHandler._reportPageWithAds(info, browser);
   }
 
   
@@ -240,13 +240,14 @@ class TelemetryHandler {
     this._reportSerpPage(info, source, url);
 
     let item = this._browserInfoByURL.get(url);
+
     if (item) {
-      item.browsers.add(browser);
+      item.browsers.set(browser, "no ads reported");
       item.count++;
       item.source = source;
     } else {
-      this._browserInfoByURL.set(url, {
-        browsers: new WeakSet([browser]),
+      item = this._browserInfoByURL.set(url, {
+        browsers: new WeakMap().set(browser, "no ads reported"),
         info,
         count: 1,
         source,
@@ -779,13 +780,26 @@ class ContentHandler {
 
 
 
-  _reportPageWithAds(info) {
+
+
+
+
+  _reportPageWithAds(info, browser) {
     let item = this._findBrowserItemForURL(info.url);
     if (!item) {
       logConsole.warn(
         "Expected to report URI for",
         info.url,
         "with ads but couldn't find the information"
+      );
+      return;
+    }
+
+    let adReportState = item.browsers.get(browser);
+    if (adReportState == "ad reported") {
+      logConsole.debug(
+        "Ad was previously reported for browser with URI",
+        info.url
       );
       return;
     }
@@ -807,6 +821,8 @@ class ContentHandler {
       `${item.info.provider}:${item.info.type}`,
       1
     );
+
+    item.browsers.set(browser, "ad reported");
   }
 }
 
