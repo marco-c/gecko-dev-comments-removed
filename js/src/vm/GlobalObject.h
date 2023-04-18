@@ -1098,34 +1098,9 @@ class GlobalObject : public NativeObject {
   static JSObject* getOrCreateRealmKeyObject(JSContext* cx,
                                              Handle<GlobalObject*> global);
 
-  
-  struct OffThreadPlaceholderObject : public NativeObject {
-    
-    
-    static const int32_t ProtoKeyOrProtoKindSlot = 0;
-    static const JSClass class_;
-    static OffThreadPlaceholderObject* New(JSContext* cx, JSProtoKey key);
-    static OffThreadPlaceholderObject* New(JSContext* cx, ProtoKind kind);
-    inline int32_t getProtoKeyOrProtoKind() const;
-  };
-
-  static bool isOffThreadPrototypePlaceholder(JSObject* obj) {
-    return obj->is<OffThreadPlaceholderObject>();
-  }
-
-  JSObject* getPrototypeForOffThreadPlaceholder(JSObject* placeholder);
-
   static size_t offsetOfGlobalDataSlot() {
     return getFixedSlotOffset(GLOBAL_DATA_SLOT);
   }
-
- private:
-  static bool resolveOffThreadConstructor(JSContext* cx,
-                                          Handle<GlobalObject*> global,
-                                          JSProtoKey key);
-  static JSObject* createOffThreadBuiltinProto(JSContext* cx,
-                                               Handle<GlobalObject*> global,
-                                               ProtoKind kind);
 };
 
 
