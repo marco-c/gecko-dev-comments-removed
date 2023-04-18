@@ -1,10 +1,6 @@
 
 
 
-let { MockFilePicker } = SpecialPowers;
-MockFilePicker.init(window);
-registerCleanupFunction(() => MockFilePicker.cleanup());
-
 
 
 
@@ -92,170 +88,11 @@ function clickCheckbox(checkbox) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-async function testDownloadsPanelAfterDialog({
-  expectPanelToOpen = false,
-  preferredAction,
-  askWhereToSave = false,
-} = {}) {
-  const { saveToDisk, alwaysAsk } = Ci.nsIHandlerInfo;
-  if (![saveToDisk, alwaysAsk].includes(preferredAction)) {
-    preferredAction = saveToDisk;
-  }
-  const openUCT = preferredAction === alwaysAsk;
-  const TEST_PATH = getRootDirectory(gTestPath).replace(
-    "chrome://mochitests/content",
-    "https://example.com"
-  );
-  const MimeSvc = Cc["@mozilla.org/mime;1"].getService(Ci.nsIMIMEService);
-  const HandlerSvc = Cc["@mozilla.org/uriloader/handler-service;1"].getService(
-    Ci.nsIHandlerService
-  );
-  let publicList = await Downloads.getList(Downloads.PUBLIC);
-
-  for (let download of await publicList.getAll()) {
-    await publicList.remove(download);
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  if (askWhereToSave) {
-    MockFilePicker.returnValue = MockFilePicker.returnOK;
-    MockFilePicker.showCallback = function(fp) {
-      
-      let testFile = MockFilePicker.displayDirectory.clone();
-      testFile.append(fp.defaultString);
-      info("File picker download path: " + testFile.path);
-      MockFilePicker.setFiles([testFile]);
-      MockFilePicker.filterIndex = 0; 
-      MockFilePicker.showCallback = null;
-      
-      
-      return MockFilePicker.returnOK;
-    };
-  }
-
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.download.useDownloadDir", !askWhereToSave],
-      ["browser.download.always_ask_before_handling_new_types", openUCT],
-      ["browser.download.improvements_to_download_panel", true],
-      ["security.dialog_enable_delay", 0],
-    ],
-  });
-
-  
-  let mimeInfo = MimeSvc.getFromTypeAndExtension("text/plain", "txt");
-  let existed = HandlerSvc.exists(mimeInfo);
-  mimeInfo.alwaysAskBeforeHandling = openUCT;
-  mimeInfo.preferredAction = preferredAction;
-  HandlerSvc.store(mimeInfo);
-  registerCleanupFunction(async () => {
-    
-    if (existed) {
-      HandlerSvc.store(mimeInfo);
-    } else {
-      HandlerSvc.remove(mimeInfo);
-    }
-    await publicList.removeFinished();
-    BrowserTestUtils.removeTab(loadingTab);
-  });
-
-  let dialogWindowPromise = BrowserTestUtils.domWindowOpenedAndLoaded();
-  let downloadFinishedPromise = new Promise(resolve => {
-    publicList.addView({
-      onDownloadChanged(download) {
-        info("Download changed!");
-        if (download.succeeded || download.error) {
-          info("Download succeeded or failed.");
-          publicList.removeView(this);
-          resolve(download);
-        }
-      },
-    });
-  });
-
-  
-  let loadingTab = await BrowserTestUtils.openNewForegroundTab({
-    gBrowser,
-    opening: TEST_PATH + "foo.txt",
-    waitForLoad: false,
-    waitForStateStop: true,
-  });
-
-  
-  if (openUCT) {
-    let dialogWindow = await dialogWindowPromise;
-    is(
-      dialogWindow.location.href,
-      "chrome://mozapps/content/downloads/unknownContentType.xhtml",
-      "Should have seen the unknown content dialogWindow."
-    );
-    let doc = dialogWindow.document;
-    let dialog = doc.getElementById("unknownContentType");
-    let radio = doc.getElementById("save");
-    let button = dialog.getButton("accept");
-
-    await TestUtils.waitForCondition(
-      () => !button.disabled,
-      "Waiting for the UCT dialog's Accept button to be enabled."
-    );
-    ok(!radio.hidden, "The Save option should be visible");
-    
-    radio.click();
-    ok(radio.selected, "The Save option should be selected");
-    button.disabled = false;
-    dialog.acceptDialog();
-  }
-
-  info("Waiting for download to finish.");
-  let download = await downloadFinishedPromise;
-  ok(!download.error, "There should be no error.");
-  ok(
-    DownloadsPanel.isPanelShowing === expectPanelToOpen,
-    `Panel should${expectPanelToOpen ? " " : " not "}be showing.`
-  );
-  if (download?.target.exists) {
-    try {
-      info("Removing test file: " + download.target.path);
-      if (Services.appinfo.OS === "WINNT") {
-        await IOUtils.setPermissions(download.target.path, 0o600);
-      }
-      await IOUtils.remove(download.target.path);
-    } catch (ex) {
-      
-    }
-  }
-  for (let dl of await publicList.getAll()) {
-    await publicList.remove(dl);
-  }
-  BrowserTestUtils.removeTab(loadingTab);
-}
-
-
-
-
 add_task(async function test_downloads_panel_opens() {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.download.improvements_to_download_panel", true],
       ["browser.download.always_ask_before_handling_new_types", false],
-      ["browser.download.alwaysOpenPanel", true],
     ],
   });
   await checkPanelOpens();
@@ -266,7 +103,6 @@ add_task(async function test_customizemode_doesnt_wreck_things() {
     set: [
       ["browser.download.improvements_to_download_panel", true],
       ["browser.download.always_ask_before_handling_new_types", false],
-      ["browser.download.alwaysOpenPanel", true],
     ],
   });
 
@@ -278,7 +114,7 @@ add_task(async function test_customizemode_doesnt_wreck_things() {
   gCustomizeMode.enter();
   await customizationReadyPromise;
 
-  info("Try to open the panel (will not work, in customize mode)");
+  info("try to open the panel (will not work, in customize mode)");
   let promise = promisePanelOpened();
   DownloadsCommon.getData(window)._notifyDownloadEvent("start");
   await TestUtils.waitForCondition(
@@ -298,16 +134,10 @@ add_task(async function test_customizemode_doesnt_wreck_things() {
   gCustomizeMode.exit();
   await afterCustomizationPromise;
 
-  
-  
-  if (Services.focus.activeWindow != window) {
-    info("Main window is not active, trying to focus.");
-    await SimpleTest.promiseFocus(window);
-    is(Services.focus.activeWindow, window, "Main window should be active.");
-  }
   DownloadsCommon.getData(window)._notifyDownloadEvent("start");
-  await TestUtils.waitForCondition(
-    () => DownloadsPanel.isPanelShowing,
+  is(
+    DownloadsPanel.isPanelShowing,
+    true,
     "Panel state should indicate a preparation to be opened"
   );
   await promise;
@@ -625,51 +455,4 @@ add_task(async function test_alwaysOpenPanel_menuitem() {
   );
 
   await checkPanelOpens();
-});
-
-
-
-
-
-add_task(async function test_downloads_panel_after_no_dialogs() {
-  await testDownloadsPanelAfterDialog({ expectPanelToOpen: true });
-  ok(true, "Downloads panel opened because no dialogs were opened.");
-});
-
-
-
-
-
-add_task(async function test_downloads_panel_after_UCT_dialog() {
-  await testDownloadsPanelAfterDialog({
-    expectPanelToOpen: false,
-    preferredAction: Ci.nsIHandlerInfo.alwaysAsk,
-  });
-  ok(true, "Downloads panel suppressed after UCT dialog.");
-});
-
-
-
-
-
-add_task(async function test_downloads_panel_after_file_picker_dialog() {
-  await testDownloadsPanelAfterDialog({
-    expectPanelToOpen: false,
-    preferredAction: Ci.nsIHandlerInfo.saveToDisk,
-    askWhereToSave: true,
-  });
-  ok(true, "Downloads panel suppressed after file picker dialog.");
-});
-
-
-
-
-
-add_task(async function test_downloads_panel_after_both_dialogs() {
-  await testDownloadsPanelAfterDialog({
-    expectPanelToOpen: false,
-    preferredAction: Ci.nsIHandlerInfo.alwaysAsk,
-    askWhereToSave: true,
-  });
-  ok(true, "Downloads panel suppressed after UCT and file picker dialogs.");
 });
