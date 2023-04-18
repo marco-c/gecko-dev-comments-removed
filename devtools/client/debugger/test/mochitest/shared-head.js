@@ -1161,7 +1161,7 @@ function clickElementInTab(selector) {
 
 const isLinux = Services.appinfo.OS === "Linux";
 const isMac = Services.appinfo.OS === "Darwin";
-const cmdOrCtrl = isLinux ? { ctrlKey: true } : { metaKey: true };
+const cmdOrCtrl = isMac ? { metaKey: true } : { ctrlKey: true };
 const shiftOrAlt = isMac
   ? { accelKey: true, shiftKey: true }
   : { accelKey: true, altKey: true };
@@ -2002,7 +2002,6 @@ async function expandSourceTree(dbg) {
   );
   for (const rootNode of rootNodes) {
     await expandAllSourceNodes(dbg, rootNode);
-    await wait(250);
   }
 }
 
@@ -2019,21 +2018,51 @@ async function waitForSourcesInSourceTree(
   { noExpand = false } = {}
 ) {
   info(`waiting for ${sources.length} files in the source tree`);
-  await waitFor(async () => {
-    if (!noExpand) {
-      await expandSourceTree(dbg);
-    }
+  function getDisplayedSources() {
     
-    const displayedSources = [...findAllElements(dbg, "sourceTreeFiles")].map(
-      e => {
-        return e.textContent.trim().replace(/^[\s\u200b]*/g, "");
+    return [...findAllElements(dbg, "sourceTreeFiles")].map(e => {
+      return e.textContent.trim().replace(/^[\s\u200b]*/g, "");
+    });
+  }
+  try {
+    
+    
+    await waitFor(
+      async () => {
+        if (!noExpand) {
+          await expandSourceTree(dbg);
+        }
+        const displayedSources = getDisplayedSources();
+        return (
+          displayedSources.length == sources.length &&
+          sources.every(source => displayedSources.includes(source))
+        );
+      },
+      null,
+      100,
+      50
+    );
+  } catch (e) {
+    
+    const displayedSources = getDisplayedSources();
+    let msg = "Invalid Source Tree Content.\n";
+    const missingElements = [];
+    for (const source of sources) {
+      const idx = displayedSources.indexOf(source);
+      if (idx != -1) {
+        displayedSources.splice(idx, 1);
+      } else {
+        missingElements.push(source);
       }
-    );
-    return (
-      displayedSources.length == sources.length &&
-      sources.every(source => displayedSources.includes(source))
-    );
-  });
+    }
+    if (missingElements.length > 0) {
+      msg += "Missing elements: " + missingElements.join(", ") + "\n";
+    }
+    if (displayedSources.length > 0) {
+      msg += "Unexpected elements: " + displayedSources.join(", ");
+    }
+    throw new Error(msg);
+  }
 }
 
 async function waitForNodeToGainFocus(dbg, index) {
