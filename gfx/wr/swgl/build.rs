@@ -181,15 +181,18 @@ fn main() {
         
         
         
+        
         if tool.is_like_msvc() {
             build.flag("/fp:fast")
                  .flag("-Xclang")
-                 .flag("-mrecip=none");
+                 .flag("-mrecip=none")
+                 .flag("/clang:-fno-finite-math-only");
         } else if tool.is_like_clang() {
             
             
             build.flag("-ffast-math")
-                 .flag("-mrecip=none");
+                 .flag("-mrecip=none")
+                 .flag("-fno-finite-math-only");
         }
     }
 
