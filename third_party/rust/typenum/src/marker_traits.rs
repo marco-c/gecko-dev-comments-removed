@@ -15,26 +15,24 @@
 
 
 
-
-
-pub trait NonZero {}
-
-
-
-pub trait Zero {}
+use crate::sealed::Sealed;
 
 
 
+pub trait NonZero: Sealed {}
 
-pub trait Ord {
+
+
+pub trait Zero: Sealed {}
+
+
+pub trait Ord: Sealed {
     #[allow(missing_docs)]
     fn to_ordering() -> ::core::cmp::Ordering;
 }
 
 
-
-
-pub trait Bit: Copy + Default {
+pub trait Bit: Sealed + Copy + Default + 'static {
     #[allow(missing_docs)]
     const U8: u8;
     #[allow(missing_docs)]
@@ -58,9 +56,7 @@ pub trait Bit: Copy + Default {
 
 
 
-
-
-pub trait Unsigned: Copy + Default {
+pub trait Unsigned: Sealed + Copy + Default + 'static {
     #[allow(missing_docs)]
     const U8: u8;
     #[allow(missing_docs)]
@@ -127,9 +123,7 @@ pub trait Unsigned: Copy + Default {
 
 
 
-
-
-pub trait Integer {
+pub trait Integer: Sealed + Copy + Default + 'static {
     #[allow(missing_docs)]
     const I8: i8;
     #[allow(missing_docs)]
@@ -164,10 +158,7 @@ pub trait Integer {
 
 
 
-
-
-pub trait TypeArray {}
-
+pub trait TypeArray: Sealed {}
 
 
 
@@ -195,6 +186,4 @@ pub trait TypeArray {}
 
 
 
-
-
-pub trait PowerOfTwo {}
+pub trait PowerOfTwo: Sealed {}

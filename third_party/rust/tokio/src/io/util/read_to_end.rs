@@ -2,7 +2,7 @@ use crate::io::AsyncRead;
 
 use std::future::Future;
 use std::io;
-use std::mem::MaybeUninit;
+use std::mem::{self, MaybeUninit};
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
@@ -12,31 +12,20 @@ use std::task::{Context, Poll};
 pub struct ReadToEnd<'a, R: ?Sized> {
     reader: &'a mut R,
     buf: &'a mut Vec<u8>,
-    start_len: usize,
+    
+    
+    read: usize,
 }
 
-pub(crate) fn read_to_end<'a, R>(reader: &'a mut R, buf: &'a mut Vec<u8>) -> ReadToEnd<'a, R>
+pub(crate) fn read_to_end<'a, R>(reader: &'a mut R, buffer: &'a mut Vec<u8>) -> ReadToEnd<'a, R>
 where
     R: AsyncRead + Unpin + ?Sized,
 {
-    let start_len = buf.len();
+    prepare_buffer(buffer, reader);
     ReadToEnd {
         reader,
-        buf,
-        start_len,
-    }
-}
-
-struct Guard<'a> {
-    buf: &'a mut Vec<u8>,
-    len: usize,
-}
-
-impl Drop for Guard<'_> {
-    fn drop(&mut self) {
-        unsafe {
-            self.buf.set_len(self.len);
-        }
+        buf: buffer,
+        read: 0,
     }
 }
 
@@ -45,48 +34,114 @@ impl Drop for Guard<'_> {
 
 
 
-
-
-
-
-pub(super) fn read_to_end_internal<R: AsyncRead + ?Sized>(
-    mut rd: Pin<&mut R>,
-    cx: &mut Context<'_>,
+pub(super) unsafe fn read_to_end_internal<R: AsyncRead + ?Sized>(
     buf: &mut Vec<u8>,
-    start_len: usize,
+    mut reader: Pin<&mut R>,
+    num_read: &mut usize,
+    cx: &mut Context<'_>,
 ) -> Poll<io::Result<usize>> {
-    let mut g = Guard {
-        len: buf.len(),
-        buf,
-    };
-    let ret;
     loop {
-        if g.len == g.buf.len() {
-            unsafe {
-                g.buf.reserve(32);
-                let capacity = g.buf.capacity();
-                g.buf.set_len(capacity);
-
-                let b = &mut *(&mut g.buf[g.len..] as *mut [u8] as *mut [MaybeUninit<u8>]);
-
-                rd.prepare_uninitialized_buffer(b);
-            }
-        }
-
-        match ready!(rd.as_mut().poll_read(cx, &mut g.buf[g.len..])) {
-            Ok(0) => {
-                ret = Poll::Ready(Ok(g.len - start_len));
-                break;
-            }
-            Ok(n) => g.len += n,
-            Err(e) => {
-                ret = Poll::Ready(Err(e));
-                break;
+        
+        let ret = ready!(poll_read_to_end(buf, reader.as_mut(), cx));
+        match ret {
+            Err(err) => return Poll::Ready(Err(err)),
+            Ok(0) => return Poll::Ready(Ok(mem::replace(num_read, 0))),
+            Ok(num) => {
+                *num_read += num;
             }
         }
     }
+}
 
-    ret
+
+
+
+
+
+
+
+
+
+unsafe fn poll_read_to_end<R: AsyncRead + ?Sized>(
+    buf: &mut Vec<u8>,
+    read: Pin<&mut R>,
+    cx: &mut Context<'_>,
+) -> Poll<io::Result<usize>> {
+    
+    
+    
+    
+    
+    
+    reserve(buf, &*read, 32);
+
+    let unused_capacity: &mut [MaybeUninit<u8>] = get_unused_capacity(buf);
+
+    
+    
+    let slice: &mut [u8] = &mut *(unused_capacity as *mut [MaybeUninit<u8>] as *mut [u8]);
+
+    let res = ready!(read.poll_read(cx, slice));
+    if let Ok(num) = res {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let new_len = buf.len() + num;
+        assert!(new_len <= buf.capacity());
+
+        buf.set_len(new_len);
+    }
+    Poll::Ready(res)
+}
+
+
+pub(super) fn prepare_buffer<R: AsyncRead + ?Sized>(buf: &mut Vec<u8>, read: &R) {
+    let buffer = get_unused_capacity(buf);
+
+    
+    unsafe {
+        read.prepare_uninitialized_buffer(buffer);
+    }
+}
+
+
+
+fn reserve<R: AsyncRead + ?Sized>(buf: &mut Vec<u8>, read: &R, bytes: usize) {
+    if buf.capacity() - buf.len() >= bytes {
+        return;
+    }
+    buf.reserve(bytes);
+    
+    
+    prepare_buffer(buf, read);
+}
+
+
+fn get_unused_capacity(buf: &mut Vec<u8>) -> &mut [MaybeUninit<u8>] {
+    bytes::BufMut::bytes_mut(buf)
 }
 
 impl<A> Future for ReadToEnd<'_, A>
@@ -96,8 +151,10 @@ where
     type Output = io::Result<usize>;
 
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        let this = &mut *self;
-        read_to_end_internal(Pin::new(&mut this.reader), cx, this.buf, this.start_len)
+        let Self { reader, buf, read } = &mut *self;
+
+        
+        unsafe { read_to_end_internal(buf, Pin::new(*reader), read, cx) }
     }
 }
 

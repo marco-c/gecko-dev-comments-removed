@@ -6,7 +6,7 @@ use crate::runtime::task::{self, Task};
 
 
 
-pub(super) struct NoopSchedule;
+pub(crate) struct NoopSchedule;
 
 impl task::Schedule for NoopSchedule {
     fn bind(_task: Task<Self>) -> NoopSchedule {

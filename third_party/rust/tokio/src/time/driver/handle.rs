@@ -21,8 +21,9 @@ impl Handle {
     
     
     pub(crate) fn current() -> Self {
-        context::time_handle()
-            .expect("there is no timer running, must be called from the context of Tokio runtime")
+        context::time_handle().expect(
+            "there is no timer running, must be called from the context of a Tokio 0.2.x runtime",
+        )
     }
 
     

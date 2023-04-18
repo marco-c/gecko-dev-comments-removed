@@ -178,6 +178,9 @@ impl<T> Sender<T> {
     
     
     
+    
+    
+    
     pub fn send(mut self, t: T) -> Result<(), T> {
         let inner = self.inner.take().unwrap();
 
@@ -197,13 +200,14 @@ impl<T> Sender<T> {
     #[doc(hidden)] 
     pub fn poll_closed(&mut self, cx: &mut Context<'_>) -> Poll<()> {
         
-        ready!(crate::coop::poll_proceed(cx));
+        let coop = ready!(crate::coop::poll_proceed(cx));
 
         let inner = self.inner.as_ref().unwrap();
 
         let mut state = State::load(&inner.state, Acquire);
 
         if state.is_closed() {
+            coop.made_progress();
             return Poll::Ready(());
         }
 
@@ -216,6 +220,7 @@ impl<T> Sender<T> {
                 if state.is_closed() {
                     
                     State::set_tx_task(&inner.state);
+                    coop.made_progress();
                     return Ready(());
                 } else {
                     unsafe { inner.drop_tx_task() };
@@ -233,6 +238,7 @@ impl<T> Sender<T> {
             state = State::set_tx_task(&inner.state);
 
             if state.is_closed() {
+                coop.made_progress();
                 return Ready(());
             }
         }
@@ -357,6 +363,7 @@ impl<T> Drop for Sender<T> {
 }
 
 impl<T> Receiver<T> {
+    
     
     
     
@@ -548,17 +555,19 @@ impl<T> Inner<T> {
 
     fn poll_recv(&self, cx: &mut Context<'_>) -> Poll<Result<T, RecvError>> {
         
-        ready!(crate::coop::poll_proceed(cx));
+        let coop = ready!(crate::coop::poll_proceed(cx));
 
         
         let mut state = State::load(&self.state, Acquire);
 
         if state.is_complete() {
+            coop.made_progress();
             match unsafe { self.consume_value() } {
                 Some(value) => Ready(Ok(value)),
                 None => Ready(Err(RecvError(()))),
             }
         } else if state.is_closed() {
+            coop.made_progress();
             Ready(Err(RecvError(())))
         } else {
             if state.is_rx_task_set() {
@@ -572,6 +581,7 @@ impl<T> Inner<T> {
                         
                         State::set_rx_task(&self.state);
 
+                        coop.made_progress();
                         return match unsafe { self.consume_value() } {
                             Some(value) => Ready(Ok(value)),
                             None => Ready(Err(RecvError(()))),
@@ -592,6 +602,7 @@ impl<T> Inner<T> {
                 state = State::set_rx_task(&self.state);
 
                 if state.is_complete() {
+                    coop.made_progress();
                     match unsafe { self.consume_value() } {
                         Some(value) => Ready(Ok(value)),
                         None => Ready(Err(RecvError(()))),

@@ -42,7 +42,7 @@ cfg_resource_drivers! {
 mod thread;
 pub(crate) use self::thread::ParkThread;
 
-cfg_blocking_impl! {
+cfg_block_on! {
     pub(crate) use self::thread::{CachedParkThread, ParkError};
 }
 
@@ -88,6 +88,9 @@ pub(crate) trait Park {
     
     
     fn park_timeout(&mut self, duration: Duration) -> Result<(), Self::Error>;
+
+    
+    fn shutdown(&mut self);
 }
 
 

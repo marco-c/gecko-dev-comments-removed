@@ -154,6 +154,32 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 cfg_io_blocking! {
     pub(crate) mod blocking;
 }
@@ -169,6 +195,10 @@ pub use self::async_seek::AsyncSeek;
 
 mod async_write;
 pub use self::async_write::AsyncWrite;
+
+
+
+pub use std::io::{Error, ErrorKind, Result, SeekFrom};
 
 cfg_io_driver! {
     pub(crate) mod driver;
@@ -200,17 +230,14 @@ cfg_io_util! {
 
     pub(crate) mod util;
     pub use util::{
-        copy, empty, repeat, sink, AsyncBufReadExt, AsyncReadExt, AsyncSeekExt, AsyncWriteExt,
-        BufReader, BufStream, BufWriter, Copy, Empty, Lines, Repeat, Sink, Split, Take,
+        copy, duplex, empty, repeat, sink, AsyncBufReadExt, AsyncReadExt, AsyncSeekExt, AsyncWriteExt,
+        BufReader, BufStream, BufWriter, DuplexStream, Copy, Empty, Lines, Repeat, Sink, Split, Take,
     };
 
     cfg_stream! {
         pub use util::{stream_reader, StreamReader};
+        pub use util::{reader_stream, ReaderStream};
     }
-
-    // Re-export io::Error so that users don't have to deal with conflicts when
-    // `use`ing `tokio::io` and `std::io`.
-    pub use std::io::{Error, ErrorKind, Result};
 }
 
 cfg_not_io_util! {

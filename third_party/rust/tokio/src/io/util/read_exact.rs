@@ -10,6 +10,7 @@ use std::task::{Context, Poll};
 
 
 
+
 pub(crate) fn read_exact<'a, A>(reader: &'a mut A, buf: &'a mut [u8]) -> ReadExact<'a, A>
 where
     A: AsyncRead + Unpin + ?Sized,
@@ -23,9 +24,9 @@ where
 
 cfg_io_util! {
     /// Creates a future which will read exactly enough bytes to fill `buf`,
-    /// returning an error if EOF is hit sooner.
-    ///
-    /// On success the number of bytes is returned
+    
+    
+    
     #[derive(Debug)]
     #[must_use = "futures do nothing unless you `.await` or poll them"]
     pub struct ReadExact<'a, A: ?Sized> {

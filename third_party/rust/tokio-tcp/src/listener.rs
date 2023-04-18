@@ -5,12 +5,39 @@ use std::fmt;
 use std::io;
 use std::net::{self, SocketAddr};
 
-use futures::{Poll, Async};
+use futures::{Async, Poll};
 use mio;
 use tokio_reactor::{Handle, PollEvented};
 
-#[cfg(feature = "unstable-futures")]
-use futures2;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -21,6 +48,20 @@ pub struct TcpListener {
 }
 
 impl TcpListener {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -57,24 +98,29 @@ impl TcpListener {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn poll_accept(&mut self) -> Poll<(TcpStream, SocketAddr), io::Error> {
         let (io, addr) = try_ready!(self.poll_accept_std());
-
-        let io = mio::net::TcpStream::from_stream(io)?;
-        let io = TcpStream::new(io);
-
-        Ok((io, addr).into())
-    }
-
-    
-    #[cfg(feature = "unstable-futures")]
-    pub fn poll_accept2(&mut self, cx: &mut futures2::task::Context)
-        -> futures2::Poll<(TcpStream, SocketAddr), io::Error>
-    {
-        let (io, addr) = match self.poll_accept_std2(cx)? {
-            futures2::Async::Ready(x) => x,
-            futures2::Async::Pending => return Ok(futures2::Async::Pending),
-        };
 
         let io = mio::net::TcpStream::from_stream(io)?;
         let io = TcpStream::new(io);
@@ -110,6 +156,27 @@ impl TcpListener {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn poll_accept_std(&mut self) -> Poll<(net::TcpStream, SocketAddr), io::Error> {
         try_ready!(self.io.poll_read_ready(mio::Ready::readable()));
 
@@ -124,24 +191,6 @@ impl TcpListener {
     }
 
     
-    #[cfg(feature = "unstable-futures")]
-    pub fn poll_accept_std2(&mut self, cx: &mut futures2::task::Context)
-        -> futures2::Poll<(net::TcpStream, SocketAddr), io::Error>
-    {
-        if let futures2::Async::Pending = self.io.poll_read_ready2(cx, mio::Ready::readable())? {
-            return Ok(futures2::Async::Pending);
-        }
-
-        match self.io.get_ref().accept_std() {
-            Ok(pair) => Ok(pair.into()),
-            Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
-                self.io.clear_read_ready2(cx, mio::Ready::readable())?;
-                Ok(futures2::Async::Pending)
-            }
-            Err(e) => Err(e),
-        }
-    }
-
     
     
     
@@ -170,9 +219,23 @@ impl TcpListener {
     
     
     
-    pub fn from_std(listener: net::TcpListener, handle: &Handle)
-        -> io::Result<TcpListener>
-    {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn from_std(listener: net::TcpListener, handle: &Handle) -> io::Result<TcpListener> {
         let io = mio::net::TcpListener::from_std(listener)?;
         let io = PollEvented::new_with_handle(io, handle)?;
         Ok(TcpListener { io })
@@ -187,10 +250,49 @@ impl TcpListener {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn local_addr(&self) -> io::Result<SocketAddr> {
         self.io.get_ref().local_addr()
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -215,10 +317,41 @@ impl TcpListener {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn ttl(&self) -> io::Result<u32> {
         self.io.get_ref().ttl()
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -236,8 +369,8 @@ impl fmt::Debug for TcpListener {
 
 #[cfg(unix)]
 mod sys {
-    use std::os::unix::prelude::*;
     use super::TcpListener;
+    use std::os::unix::prelude::*;
 
     impl AsRawFd for TcpListener {
         fn as_raw_fd(&self) -> RawFd {

@@ -338,7 +338,6 @@ impl<T> Sender<T> {
         
         notify_all(&*shared);
 
-        
         Ok(())
     }
 

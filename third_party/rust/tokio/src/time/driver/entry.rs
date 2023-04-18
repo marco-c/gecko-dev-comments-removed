@@ -5,8 +5,8 @@ use crate::time::{Duration, Error, Instant};
 
 use std::cell::UnsafeCell;
 use std::ptr;
-use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering::SeqCst;
+use std::sync::atomic::{AtomicBool, AtomicU8};
 use std::sync::{Arc, Weak};
 use std::task::{self, Poll};
 use std::u64;
@@ -31,6 +31,7 @@ pub(crate) struct Entry {
     
     
     
+    
     inner: Weak<Inner>,
 
     
@@ -43,6 +44,11 @@ pub(crate) struct Entry {
     
     
     state: AtomicU64,
+
+    
+    
+    
+    error: AtomicU8,
 
     
     waker: AtomicWaker,
@@ -109,8 +115,9 @@ impl Entry {
         let entry: Entry;
 
         
-        if inner.increment().is_err() {
-            entry = Entry::new2(deadline, duration, Weak::new(), ERROR)
+        if let Err(err) = inner.increment() {
+            entry = Entry::new2(deadline, duration, Weak::new(), ERROR);
+            entry.error(err);
         } else {
             let when = inner.normalize_deadline(deadline);
             let state = if when <= inner.elapsed() {
@@ -122,8 +129,8 @@ impl Entry {
         }
 
         let entry = Arc::new(entry);
-        if inner.queue(&entry).is_err() {
-            entry.error();
+        if let Err(err) = inner.queue(&entry) {
+            entry.error(err);
         }
 
         entry
@@ -189,7 +196,12 @@ impl Entry {
         self.waker.wake();
     }
 
-    pub(crate) fn error(&self) {
+    pub(crate) fn error(&self, error: Error) {
+        
+        
+        
+        self.error.compare_and_swap(0, error.as_u8(), SeqCst);
+
         
         let mut curr = self.state.load(SeqCst);
 
@@ -234,7 +246,7 @@ impl Entry {
 
         if is_elapsed(curr) {
             return Poll::Ready(if curr == ERROR {
-                Err(Error::shutdown())
+                Err(Error::from_u8(self.error.load(SeqCst)))
             } else {
                 Ok(())
             });
@@ -246,7 +258,7 @@ impl Entry {
 
         if is_elapsed(curr) {
             return Poll::Ready(if curr == ERROR {
-                Err(Error::shutdown())
+                Err(Error::from_u8(self.error.load(SeqCst)))
             } else {
                 Ok(())
             });
@@ -266,8 +278,9 @@ impl Entry {
         let when = inner.normalize_deadline(deadline);
         let elapsed = inner.elapsed();
 
+        let next = if when <= elapsed { ELAPSED } else { when };
+
         let mut curr = entry.state.load(SeqCst);
-        let mut notify;
 
         loop {
             
@@ -276,16 +289,6 @@ impl Entry {
             
             if curr == ERROR || curr == when {
                 return;
-            }
-
-            let next;
-
-            if when <= elapsed {
-                next = ELAPSED;
-                notify = !is_elapsed(curr);
-            } else {
-                next = when;
-                notify = true;
             }
 
             let actual = entry.state.compare_and_swap(curr, next, SeqCst);
@@ -297,7 +300,16 @@ impl Entry {
             curr = actual;
         }
 
-        if notify {
+        
+        
+        if !is_elapsed(curr) && is_elapsed(next) {
+            entry.waker.wake();
+        }
+
+        
+        
+        
+        if !is_elapsed(curr) || !is_elapsed(next) {
             let _ = inner.queue(entry);
         }
     }
@@ -309,6 +321,7 @@ impl Entry {
             waker: AtomicWaker::new(),
             state: AtomicU64::new(state),
             queued: AtomicBool::new(false),
+            error: AtomicU8::new(0),
             next_atomic: UnsafeCell::new(ptr::null_mut()),
             when: UnsafeCell::new(None),
             next_stack: UnsafeCell::new(None),

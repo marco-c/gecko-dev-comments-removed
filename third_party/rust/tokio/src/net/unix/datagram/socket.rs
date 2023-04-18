@@ -1,5 +1,7 @@
 use crate::future::poll_fn;
 use crate::io::PollEvented;
+use crate::net::unix::datagram::split::{split, RecvHalf, SendHalf};
+use crate::net::unix::datagram::split_owned::{split_owned, OwnedRecvHalf, OwnedSendHalf};
 
 use std::convert::TryFrom;
 use std::fmt;
@@ -93,6 +95,73 @@ impl UnixDatagram {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn try_send(&mut self, buf: &[u8]) -> io::Result<usize> {
+        self.io.get_ref().send(buf)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn try_send_to<P>(&mut self, buf: &[u8], target: P) -> io::Result<usize>
+    where
+        P: AsRef<Path>,
+    {
+        self.io.get_ref().send_to(buf, target)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub(crate) fn poll_send_priv(
         &self,
         cx: &mut Context<'_>,
@@ -112,6 +181,11 @@ impl UnixDatagram {
     
     pub async fn recv(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         poll_fn(|cx| self.poll_recv_priv(cx, buf)).await
+    }
+
+    
+    pub fn try_recv(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        self.io.get_ref().recv(buf)
     }
 
     pub(crate) fn poll_recv_priv(
@@ -160,6 +234,11 @@ impl UnixDatagram {
         poll_fn(|cx| self.poll_recv_from_priv(cx, buf)).await
     }
 
+    
+    pub fn try_recv_from(&mut self, buf: &mut [u8]) -> io::Result<(usize, SocketAddr)> {
+        self.io.get_ref().recv_from(buf)
+    }
+
     pub(crate) fn poll_recv_from_priv(
         &self,
         cx: &mut Context<'_>,
@@ -200,6 +279,35 @@ impl UnixDatagram {
     
     pub fn shutdown(&self, how: Shutdown) -> io::Result<()> {
         self.io.get_ref().shutdown(how)
+    }
+
+    
+    
+    #[allow(clippy::needless_lifetimes)]
+    
+    
+    
+    
+    
+    
+    
+    pub fn split<'a>(&'a mut self) -> (RecvHalf<'a>, SendHalf<'a>) {
+        split(self)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn into_split(self) -> (OwnedRecvHalf, OwnedSendHalf) {
+        split_owned(self)
     }
 }
 

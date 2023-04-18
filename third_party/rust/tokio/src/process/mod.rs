@@ -108,6 +108,8 @@
 
 
 
+
+
 #[path = "unix/mod.rs"]
 #[cfg(unix)]
 mod imp;
@@ -140,6 +142,9 @@ use std::task::Poll;
 
 
 
+
+
+
 #[derive(Debug)]
 pub struct Command {
     std: StdCommand,
@@ -154,6 +159,8 @@ pub(crate) struct SpawnedChild {
 }
 
 impl Command {
+    
+    
     
     
     
@@ -701,13 +708,17 @@ where
 
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         
-        ready!(crate::coop::poll_proceed(cx));
+        let coop = ready!(crate::coop::poll_proceed(cx));
 
         let ret = Pin::new(&mut self.inner).poll(cx);
 
         if let Poll::Ready(Ok(_)) = ret {
             
             self.kill_on_drop = false;
+        }
+
+        if ret.is_ready() {
+            coop.made_progress();
         }
 
         ret
@@ -755,6 +766,32 @@ impl Child {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
     pub fn kill(&mut self) -> io::Result<()> {
         self.child.kill()
     }
@@ -872,6 +909,11 @@ impl AsyncWrite for ChildStdin {
 }
 
 impl AsyncRead for ChildStdout {
+    unsafe fn prepare_uninitialized_buffer(&self, _buf: &mut [std::mem::MaybeUninit<u8>]) -> bool {
+        
+        false
+    }
+
     fn poll_read(
         mut self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -882,6 +924,11 @@ impl AsyncRead for ChildStdout {
 }
 
 impl AsyncRead for ChildStderr {
+    unsafe fn prepare_uninitialized_buffer(&self, _buf: &mut [std::mem::MaybeUninit<u8>]) -> bool {
+        
+        false
+    }
+
     fn poll_read(
         mut self: Pin<&mut Self>,
         cx: &mut Context<'_>,

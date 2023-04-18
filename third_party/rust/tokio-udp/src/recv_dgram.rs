@@ -12,7 +12,7 @@ use futures::{Async, Future, Poll};
 #[derive(Debug)]
 pub struct RecvDgram<T> {
     
-    state: Option<RecvDgramInner<T>>
+    state: Option<RecvDgramInner<T>>,
 }
 
 
@@ -21,27 +21,83 @@ struct RecvDgramInner<T> {
     
     socket: UdpSocket,
     
-    buffer: T
+    buffer: T,
+}
+
+
+#[derive(Debug)]
+pub struct Parts<T> {
+    
+    pub socket: UdpSocket,
+    
+    pub buffer: T,
+
+    _priv: (),
 }
 
 impl<T> RecvDgram<T> {
     
     pub(crate) fn new(socket: UdpSocket, buffer: T) -> RecvDgram<T> {
-        let inner = RecvDgramInner { socket: socket, buffer: buffer };
+        let inner = RecvDgramInner {
+            socket: socket,
+            buffer: buffer,
+        };
         RecvDgram { state: Some(inner) }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn into_parts(mut self) -> Parts<T> {
+        let state = self
+            .state
+            .take()
+            .expect("into_parts called after completion");
+
+        Parts {
+            socket: state.socket,
+            buffer: state.buffer,
+            _priv: (),
+        }
     }
 }
 
 impl<T> Future for RecvDgram<T>
-    where T: AsMut<[u8]>,
+where
+    T: AsMut<[u8]>,
 {
     type Item = (UdpSocket, T, usize, SocketAddr);
     type Error = io::Error;
 
     fn poll(&mut self) -> Poll<Self::Item, io::Error> {
         let (n, addr) = {
-            let ref mut inner =
-                self.state.as_mut().expect("RecvDgram polled after completion");
+            let ref mut inner = self
+                .state
+                .as_mut()
+                .expect("RecvDgram polled after completion");
 
             try_ready!(inner.socket.poll_recv_from(inner.buffer.as_mut()))
         };

@@ -76,8 +76,13 @@ use std::{cmp, fmt};
 
 
 
+
+
+
+
+
 #[derive(Debug)]
-pub(crate) struct Driver<T> {
+pub(crate) struct Driver<T: Park> {
     
     inner: Arc<Inner>,
 
@@ -89,6 +94,9 @@ pub(crate) struct Driver<T> {
 
     
     clock: Clock,
+
+    
+    is_shutdown: bool,
 }
 
 
@@ -130,6 +138,7 @@ where
             wheel: wheel::Wheel::new(),
             park,
             clock,
+            is_shutdown: false,
         }
     }
 
@@ -220,7 +229,7 @@ where
                 
                 
                 entry.set_when_internal(None);
-                entry.error();
+                entry.error(Error::invalid());
             }
         }
     }
@@ -298,10 +307,12 @@ where
 
         Ok(())
     }
-}
 
-impl<T> Drop for Driver<T> {
-    fn drop(&mut self) {
+    fn shutdown(&mut self) {
+        if self.is_shutdown {
+            return;
+        }
+
         use std::u64;
 
         
@@ -312,8 +323,21 @@ impl<T> Drop for Driver<T> {
         let mut poll = wheel::Poll::new(u64::MAX);
 
         while let Some(entry) = self.wheel.poll(&mut poll, &mut ()) {
-            entry.error();
+            entry.error(Error::shutdown());
         }
+
+        self.park.shutdown();
+
+        self.is_shutdown = true;
+    }
+}
+
+impl<T> Drop for Driver<T>
+where
+    T: Park,
+{
+    fn drop(&mut self) {
+        self.shutdown();
     }
 }
 

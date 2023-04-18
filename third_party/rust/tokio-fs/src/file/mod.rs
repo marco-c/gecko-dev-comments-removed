@@ -2,12 +2,14 @@
 
 
 
+mod clone;
 mod create;
 mod metadata;
 mod open;
 mod open_options;
 mod seek;
 
+pub use self::clone::CloneFuture;
 pub use self::create::CreateFuture;
 pub use self::metadata::MetadataFuture;
 pub use self::open::OpenFuture;
@@ -19,8 +21,48 @@ use tokio_io::{AsyncRead, AsyncWrite};
 use futures::Poll;
 
 use std::fs::{File as StdFile, Metadata, Permissions};
-use std::io::{self, Read, Write, Seek};
+use std::io::{self, Read, Seek, Write};
 use std::path::Path;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -52,8 +94,26 @@ impl File {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn open<P>(path: P) -> OpenFuture<P>
-    where P: AsRef<Path> + Send + 'static,
+    where
+        P: AsRef<Path> + Send + 'static,
     {
         OpenOptions::new().read(true).open(path)
     }
@@ -73,8 +133,27 @@ impl File {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn create<P>(path: P) -> CreateFuture<P>
-    where P: AsRef<Path> + Send + 'static,
+    where
+        P: AsRef<Path> + Send + 'static,
     {
         CreateFuture::new(path)
     }
@@ -82,10 +161,41 @@ impl File {
     
     
     
-    pub(crate) fn from_std(std: StdFile) -> File {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn from_std(std: StdFile) -> File {
         File { std: Some(std) }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -108,6 +218,25 @@ impl File {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn seek(self, pos: io::SeekFrom) -> SeekFuture {
         SeekFuture::new(self, pos)
     }
@@ -116,10 +245,52 @@ impl File {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn poll_sync_all(&mut self) -> Poll<(), io::Error> {
         ::blocking_io(|| self.std().sync_all())
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -143,20 +314,93 @@ impl File {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn poll_set_len(&mut self, size: u64) -> Poll<(), io::Error> {
         ::blocking_io(|| self.std().set_len(size))
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     pub fn metadata(self) -> MetadataFuture {
         MetadataFuture::new(self)
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn poll_metadata(&mut self) -> Poll<Metadata, io::Error> {
         ::blocking_io(|| self.std().metadata())
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -182,10 +426,82 @@ impl File {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn try_clone(self) -> CloneFuture {
+        CloneFuture::new(self)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn poll_set_permissions(&mut self, perm: Permissions) -> Poll<(), io::Error> {
         ::blocking_io(|| self.std().set_permissions(perm))
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     

@@ -33,6 +33,25 @@ pub fn delay_until(deadline: Instant) -> Delay {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg_attr(docsrs, doc(alias = "sleep"))]
 pub fn delay_for(duration: Duration) -> Delay {
     delay_until(Instant::now() + duration)
 }

@@ -312,28 +312,17 @@ fn drop_cancels_tasks() {
     assert_eq!(1, Rc::strong_count(&rc1));
 }
 
-#[test]
-fn drop_cancels_remote_tasks() {
-    
+
+
+
+
+
+fn with_timeout(timeout: Duration, f: impl FnOnce() + Send + 'static) {
     use std::sync::mpsc::RecvTimeoutError;
 
     let (done_tx, done_rx) = std::sync::mpsc::channel();
     let thread = std::thread::spawn(move || {
-        let (tx, mut rx) = mpsc::channel::<()>(1024);
-
-        let mut rt = rt();
-
-        let local = LocalSet::new();
-        local.spawn_local(async move { while let Some(_) = rx.recv().await {} });
-        local.block_on(&mut rt, async {
-            time::delay_for(Duration::from_millis(1)).await;
-        });
-
-        drop(tx);
-
-        
-        
-        drop(local);
+        f();
 
         
         
@@ -349,10 +338,11 @@ fn drop_cancels_remote_tasks() {
     
     
     
-    match done_rx.recv_timeout(Duration::from_secs(60)) {
+    match done_rx.recv_timeout(timeout) {
         Err(RecvTimeoutError::Timeout) => panic!(
-            "test did not complete within 60 seconds, \
-             we have (probably) entered an infinite loop!"
+            "test did not complete within {:?} seconds, \
+             we have (probably) entered an infinite loop!",
+            timeout,
         ),
         
         
@@ -364,6 +354,49 @@ fn drop_cancels_remote_tasks() {
     }
 
     thread.join().expect("test thread should not panic!")
+}
+
+#[test]
+fn drop_cancels_remote_tasks() {
+    
+    with_timeout(Duration::from_secs(60), || {
+        let (tx, mut rx) = mpsc::channel::<()>(1024);
+
+        let mut rt = rt();
+
+        let local = LocalSet::new();
+        local.spawn_local(async move { while rx.recv().await.is_some() {} });
+        local.block_on(&mut rt, async {
+            time::delay_for(Duration::from_millis(1)).await;
+        });
+
+        drop(tx);
+
+        
+        
+        drop(local);
+    });
+}
+
+#[test]
+fn local_tasks_wake_join_all() {
+    
+    with_timeout(Duration::from_secs(60), || {
+        use futures::future::join_all;
+        use tokio::task::LocalSet;
+
+        let mut rt = rt();
+        let set = LocalSet::new();
+        let mut handles = Vec::new();
+
+        for _ in 1..=128 {
+            handles.push(set.spawn_local(async move {
+                tokio::task::spawn_local(async move {}).await.unwrap();
+            }));
+        }
+
+        rt.block_on(set.run_until(join_all(handles)));
+    });
 }
 
 #[tokio::test]

@@ -1,15 +1,15 @@
 #![allow(deprecated)]
 
-use std::io::{self, Read, Write};
 use std::fmt;
+use std::io::{self, Read, Write};
 
-use {AsyncRead, AsyncWrite};
-use codec::{Decoder, Encoder};
 use super::framed_read::{framed_read2, framed_read2_with_buffer, FramedRead2};
 use super::framed_write::{framed_write2, framed_write2_with_buffer, FramedWrite2};
+use codec::{Decoder, Encoder};
+use {AsyncRead, AsyncWrite};
 
-use futures::{Stream, Sink, StartSend, Poll};
-use bytes::{BytesMut};
+use bytes::BytesMut;
+use futures::{Poll, Sink, StartSend, Stream};
 
 
 
@@ -22,8 +22,9 @@ pub struct Framed<T, U> {
 pub struct Fuse<T, U>(pub T, pub U);
 
 impl<T, U> Framed<T, U>
-where T: AsyncRead + AsyncWrite,
-      U: Decoder + Encoder,
+where
+    T: AsyncRead + AsyncWrite,
+    U: Decoder + Encoder,
 {
     
     
@@ -70,10 +71,12 @@ impl<T, U> Framed<T, U> {
     
     
     
-    pub fn from_parts(parts: FramedParts<T, U>) -> Framed<T, U>
-    {
+    pub fn from_parts(parts: FramedParts<T, U>) -> Framed<T, U> {
         Framed {
-            inner: framed_read2_with_buffer(framed_write2_with_buffer(Fuse(parts.io, parts.codec), parts.write_buf), parts.read_buf),
+            inner: framed_read2_with_buffer(
+                framed_write2_with_buffer(Fuse(parts.io, parts.codec), parts.write_buf),
+                parts.read_buf,
+            ),
         }
     }
 
@@ -95,6 +98,24 @@ impl<T, U> Framed<T, U> {
     
     pub fn get_mut(&mut self) -> &mut T {
         &mut self.inner.get_mut().get_mut().0
+    }
+
+    
+    
+    
+    
+    
+    pub fn codec(&self) -> &U {
+        &self.inner.get_ref().get_ref().1
+    }
+
+    
+    
+    
+    
+    
+    pub fn codec_mut(&mut self) -> &mut U {
+        &mut self.inner.get_mut().get_mut().1
     }
 
     
@@ -127,8 +148,9 @@ impl<T, U> Framed<T, U> {
 }
 
 impl<T, U> Stream for Framed<T, U>
-    where T: AsyncRead,
-          U: Decoder,
+where
+    T: AsyncRead,
+    U: Decoder,
 {
     type Item = U::Item;
     type Error = U::Error;
@@ -139,17 +161,15 @@ impl<T, U> Stream for Framed<T, U>
 }
 
 impl<T, U> Sink for Framed<T, U>
-    where T: AsyncWrite,
-          U: Encoder,
-          U::Error: From<io::Error>,
+where
+    T: AsyncWrite,
+    U: Encoder,
+    U::Error: From<io::Error>,
 {
     type SinkItem = U::Item;
     type SinkError = U::Error;
 
-    fn start_send(&mut self,
-                  item: Self::SinkItem)
-                  -> StartSend<Self::SinkItem, Self::SinkError>
-    {
+    fn start_send(&mut self, item: Self::SinkItem) -> StartSend<Self::SinkItem, Self::SinkError> {
         self.inner.get_mut().start_send(item)
     }
 
@@ -163,14 +183,15 @@ impl<T, U> Sink for Framed<T, U>
 }
 
 impl<T, U> fmt::Debug for Framed<T, U>
-    where T: fmt::Debug,
-          U: fmt::Debug,
+where
+    T: fmt::Debug,
+    U: fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("Framed")
-         .field("io", &self.inner.get_ref().get_ref().0)
-         .field("codec", &self.inner.get_ref().get_ref().1)
-         .finish()
+            .field("io", &self.inner.get_ref().get_ref().0)
+            .field("codec", &self.inner.get_ref().get_ref().1)
+            .finish()
     }
 }
 

@@ -1,6 +1,7 @@
 use crate::io::util::DEFAULT_BUF_SIZE;
 use crate::io::{AsyncBufRead, AsyncRead, AsyncWrite};
 
+use bytes::Buf;
 use pin_project_lite::pin_project;
 use std::io::{self, Read};
 use std::mem::MaybeUninit;
@@ -20,10 +21,10 @@ pin_project! {
     /// help when reading very large amounts at once, or reading just one or a few
     /// times. It also provides no advantage when reading from a source that is
     /// already in memory, like a `Vec<u8>`.
-    ///
-    /// When the `BufReader` is dropped, the contents of its buffer will be
-    /// discarded. Creating multiple instances of a `BufReader` on the same
-    /// stream can cause data loss.
+    
+    
+    
+    
     #[cfg_attr(docsrs, doc(cfg(feature = "io-util")))]
     pub struct BufReader<R> {
         #[pin]
@@ -160,6 +161,14 @@ impl<R: AsyncRead + AsyncWrite> AsyncWrite for BufReader<R> {
         buf: &[u8],
     ) -> Poll<io::Result<usize>> {
         self.get_pin_mut().poll_write(cx, buf)
+    }
+
+    fn poll_write_buf<B: Buf>(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &mut B,
+    ) -> Poll<io::Result<usize>> {
+        self.get_pin_mut().poll_write_buf(cx, buf)
     }
 
     fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {

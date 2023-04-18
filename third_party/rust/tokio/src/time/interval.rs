@@ -33,6 +33,37 @@ use std::task::{Context, Poll};
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 pub fn interval(period: Duration) -> Interval {
     assert!(period > Duration::new(0, 0), "`period` must be non-zero.");
 
@@ -74,6 +105,11 @@ pub fn interval_at(start: Instant, period: Duration) -> Interval {
         period,
     }
 }
+
+
+
+
+
 
 
 #[derive(Debug)]

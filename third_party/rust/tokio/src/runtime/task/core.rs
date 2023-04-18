@@ -1,3 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+
 use crate::loom::cell::UnsafeCell;
 use crate::runtime::task::raw::{self, Vtable};
 use crate::runtime::task::state::State;
@@ -98,25 +109,24 @@ impl<T: Future, S: Schedule> Core<T, S> {
     
     
     
+    
+    
+    
+    
+    
+    
     pub(super) fn bind_scheduler(&self, task: Task<S>) {
-        use std::mem::ManuallyDrop;
+        
+        
+        
+        
+        
+        
+        
+        debug_assert!(!self.is_bound());
 
         
-        let task = ManuallyDrop::new(task);
-
-        
-        
-        
-        
-        
-        
-        
-        if self.is_bound() {
-            return;
-        }
-
-        
-        let scheduler = S::bind(ManuallyDrop::into_inner(task));
+        let scheduler = S::bind(task);
 
         
         self.scheduler.with_mut(|ptr| unsafe {

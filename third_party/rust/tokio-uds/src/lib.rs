@@ -1,6 +1,12 @@
 #![cfg(unix)]
-#![doc(html_root_url = "https://docs.rs/tokio-uds/0.2.5")]
-#![deny(missing_docs, warnings, missing_debug_implementations)]
+#![doc(html_root_url = "https://docs.rs/tokio-uds/0.2.7")]
+#![deny(missing_docs, missing_debug_implementations)]
+
+
+
+
+
+
 
 
 
@@ -34,5 +40,5 @@ pub use incoming::Incoming;
 pub use listener::UnixListener;
 pub use recv_dgram::RecvDgram;
 pub use send_dgram::SendDgram;
-pub use stream::{UnixStream, ConnectFuture};
+pub use stream::{ConnectFuture, UnixStream};
 pub use ucred::UCred;

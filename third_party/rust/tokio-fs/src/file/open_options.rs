@@ -90,7 +90,8 @@ impl OpenOptions {
     
     
     pub fn open<P>(&self, path: P) -> OpenFuture<P>
-    where P: AsRef<Path> + Send + 'static
+    where
+        P: AsRef<Path> + Send + 'static,
     {
         OpenFuture::new(self.0.clone(), path)
     }

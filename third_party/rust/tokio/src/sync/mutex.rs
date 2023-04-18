@@ -1,100 +1,123 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-use crate::coop::CoopFutureExt;
 use crate::sync::batch_semaphore as semaphore;
 
 use std::cell::UnsafeCell;
 use std::error::Error;
 use std::fmt;
 use std::ops::{Deref, DerefMut};
+use std::sync::Arc;
 
 
 
 
 
 
-#[derive(Debug)]
-pub struct Mutex<T> {
-    c: UnsafeCell<T>,
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub struct Mutex<T: ?Sized> {
     s: semaphore::Semaphore,
+    c: UnsafeCell<T>,
 }
 
 
@@ -105,16 +128,36 @@ pub struct Mutex<T> {
 
 
 
-pub struct MutexGuard<'a, T> {
+pub struct MutexGuard<'a, T: ?Sized> {
     lock: &'a Mutex<T>,
 }
 
 
 
 
-unsafe impl<T> Send for Mutex<T> where T: Send {}
-unsafe impl<T> Sync for Mutex<T> where T: Send {}
-unsafe impl<'a, T> Sync for MutexGuard<'a, T> where T: Send + Sync {}
+
+
+
+
+
+
+
+
+
+
+
+
+pub struct OwnedMutexGuard<T: ?Sized> {
+    lock: Arc<Mutex<T>>,
+}
+
+
+
+
+unsafe impl<T> Send for Mutex<T> where T: ?Sized + Send {}
+unsafe impl<T> Sync for Mutex<T> where T: ?Sized + Send {}
+unsafe impl<T> Sync for MutexGuard<'_, T> where T: ?Sized + Send + Sync {}
+unsafe impl<T> Sync for OwnedMutexGuard<T> where T: ?Sized + Send + Sync {}
 
 
 
@@ -126,7 +169,7 @@ pub struct TryLockError(());
 
 impl fmt::Display for TryLockError {
     fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(fmt, "{}", "operation would block")
+        write!(fmt, "operation would block")
     }
 }
 
@@ -140,17 +183,36 @@ fn bounds() {
     
     fn check_send_sync_val<T: Send + Sync>(_t: T) {}
     fn check_send_sync<T: Send + Sync>() {}
+    fn check_static<T: 'static>() {}
+    fn check_static_val<T: 'static>(_t: T) {}
+
     check_send::<MutexGuard<'_, u32>>();
+    check_send::<OwnedMutexGuard<u32>>();
     check_unpin::<Mutex<u32>>();
     check_send_sync::<Mutex<u32>>();
+    check_static::<OwnedMutexGuard<u32>>();
 
     let mutex = Mutex::new(1);
     check_send_sync_val(mutex.lock());
+    let arc_mutex = Arc::new(Mutex::new(1));
+    check_send_sync_val(arc_mutex.clone().lock_owned());
+    check_static_val(arc_mutex.lock_owned());
 }
 
-impl<T> Mutex<T> {
+impl<T: ?Sized> Mutex<T> {
     
-    pub fn new(t: T) -> Self {
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new(t: T) -> Self
+    where
+        T: Sized,
+    {
         Self {
             c: UnsafeCell::new(t),
             s: semaphore::Semaphore::new(1),
@@ -158,15 +220,82 @@ impl<T> Mutex<T> {
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub async fn lock(&self) -> MutexGuard<'_, T> {
-        self.s.acquire(1).cooperate().await.unwrap_or_else(|_| {
+        self.acquire().await;
+        MutexGuard { lock: self }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub async fn lock_owned(self: Arc<Self>) -> OwnedMutexGuard<T> {
+        self.acquire().await;
+        OwnedMutexGuard { lock: self }
+    }
+
+    async fn acquire(&self) {
+        self.s.acquire(1).await.unwrap_or_else(|_| {
             
             
             unreachable!()
         });
-        MutexGuard { lock: self }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     pub fn try_lock(&self) -> Result<MutexGuard<'_, T>, TryLockError> {
         match self.s.try_acquire(1) {
@@ -176,14 +305,55 @@ impl<T> Mutex<T> {
     }
 
     
-    pub fn into_inner(self) -> T {
-        self.c.into_inner()
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn try_lock_owned(self: Arc<Self>) -> Result<OwnedMutexGuard<T>, TryLockError> {
+        match self.s.try_acquire(1) {
+            Ok(_) => Ok(OwnedMutexGuard { lock: self }),
+            Err(_) => Err(TryLockError(())),
+        }
     }
-}
 
-impl<'a, T> Drop for MutexGuard<'a, T> {
-    fn drop(&mut self) {
-        self.lock.s.release(1)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn into_inner(self) -> T
+    where
+        T: Sized,
+    {
+        self.c.into_inner()
     }
 }
 
@@ -202,26 +372,81 @@ where
     }
 }
 
-impl<'a, T> Deref for MutexGuard<'a, T> {
+impl<T> std::fmt::Debug for Mutex<T>
+where
+    T: std::fmt::Debug,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut d = f.debug_struct("Mutex");
+        match self.try_lock() {
+            Ok(inner) => d.field("data", &*inner),
+            Err(_) => d.field("data", &format_args!("<locked>")),
+        };
+        d.finish()
+    }
+}
+
+
+
+impl<T: ?Sized> Drop for MutexGuard<'_, T> {
+    fn drop(&mut self) {
+        self.lock.s.release(1)
+    }
+}
+
+impl<T: ?Sized> Deref for MutexGuard<'_, T> {
     type Target = T;
     fn deref(&self) -> &Self::Target {
         unsafe { &*self.lock.c.get() }
     }
 }
 
-impl<'a, T> DerefMut for MutexGuard<'a, T> {
+impl<T: ?Sized> DerefMut for MutexGuard<'_, T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         unsafe { &mut *self.lock.c.get() }
     }
 }
 
-impl<'a, T: fmt::Debug> fmt::Debug for MutexGuard<'a, T> {
+impl<T: ?Sized + fmt::Debug> fmt::Debug for MutexGuard<'_, T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Debug::fmt(&**self, f)
     }
 }
 
-impl<'a, T: fmt::Display> fmt::Display for MutexGuard<'a, T> {
+impl<T: ?Sized + fmt::Display> fmt::Display for MutexGuard<'_, T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Display::fmt(&**self, f)
+    }
+}
+
+
+
+impl<T: ?Sized> Drop for OwnedMutexGuard<T> {
+    fn drop(&mut self) {
+        self.lock.s.release(1)
+    }
+}
+
+impl<T: ?Sized> Deref for OwnedMutexGuard<T> {
+    type Target = T;
+    fn deref(&self) -> &Self::Target {
+        unsafe { &*self.lock.c.get() }
+    }
+}
+
+impl<T: ?Sized> DerefMut for OwnedMutexGuard<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        unsafe { &mut *self.lock.c.get() }
+    }
+}
+
+impl<T: ?Sized + fmt::Debug> fmt::Debug for OwnedMutexGuard<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Debug::fmt(&**self, f)
+    }
+}
+
+impl<T: ?Sized + fmt::Display> fmt::Display for OwnedMutexGuard<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Display::fmt(&**self, f)
     }

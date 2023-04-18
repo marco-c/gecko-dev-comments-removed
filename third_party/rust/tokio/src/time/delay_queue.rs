@@ -432,6 +432,22 @@ impl<T> DelayQueue<T> {
     
     
     
+    fn remove_key(&mut self, key: &Key) {
+        use crate::time::wheel::Stack;
+
+        
+        if self.slab[key.index].expired {
+            self.expired.remove(&key.index, &mut self.slab);
+        } else {
+            self.wheel.remove(&key.index, &mut self.slab);
+        }
+    }
+
+    
+    
+    
+    
+    
     
     
     
@@ -456,15 +472,7 @@ impl<T> DelayQueue<T> {
     
     
     pub fn remove(&mut self, key: &Key) -> Expired<T> {
-        use crate::time::wheel::Stack;
-
-        
-        if self.slab[key.index].expired {
-            self.expired.remove(&key.index, &mut self.slab);
-        } else {
-            self.wheel.remove(&key.index, &mut self.slab);
-        }
-
+        self.remove_key(key);
         let data = self.slab.remove(key.index);
 
         Expired {
@@ -508,7 +516,7 @@ impl<T> DelayQueue<T> {
     
     
     pub fn reset_at(&mut self, key: &Key, when: Instant) {
-        self.wheel.remove(&key.index, &mut self.slab);
+        self.remove_key(key);
 
         
         let when = self.normalize_deadline(when);

@@ -1,5 +1,5 @@
-use std::io;
 use bytes::BytesMut;
+use std::io;
 
 
 
@@ -21,6 +21,5 @@ pub trait Encoder {
     
     
     
-    fn encode(&mut self, item: Self::Item, dst: &mut BytesMut)
-              -> Result<(), Self::Error>;
+    fn encode(&mut self, item: Self::Item, dst: &mut BytesMut) -> Result<(), Self::Error>;
 }

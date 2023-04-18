@@ -1,6 +1,8 @@
-use crate::coop::CoopFutureExt;
-use crate::sync::batch_semaphore::{AcquireError, Semaphore};
+use crate::sync::batch_semaphore::Semaphore;
 use std::cell::UnsafeCell;
+use std::fmt;
+use std::marker;
+use std::mem;
 use std::ops;
 
 #[cfg(not(loom))]
@@ -69,7 +71,7 @@ const MAX_READS: usize = 10;
 
 
 #[derive(Debug)]
-pub struct RwLock<T> {
+pub struct RwLock<T: ?Sized> {
     
     s: Semaphore,
 
@@ -84,46 +86,287 @@ pub struct RwLock<T> {
 
 
 
-#[derive(Debug)]
-pub struct RwLockReadGuard<'a, T> {
-    permit: ReleasingPermit<'a, T>,
-    lock: &'a RwLock<T>,
+
+pub struct RwLockReadGuard<'a, T: ?Sized> {
+    s: &'a Semaphore,
+    data: *const T,
+    marker: marker::PhantomData<&'a T>,
 }
 
+impl<'a, T> RwLockReadGuard<'a, T> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn map<F, U: ?Sized>(this: Self, f: F) -> RwLockReadGuard<'a, U>
+    where
+        F: FnOnce(&T) -> &U,
+    {
+        let data = f(&*this) as *const U;
+        let s = this.s;
+        
+        mem::forget(this);
+        RwLockReadGuard {
+            s,
+            data,
+            marker: marker::PhantomData,
+        }
+    }
 
-
-
-
-
-
-
-
-#[derive(Debug)]
-pub struct RwLockWriteGuard<'a, T> {
-    permit: ReleasingPermit<'a, T>,
-    lock: &'a RwLock<T>,
-}
-
-
-#[derive(Debug)]
-struct ReleasingPermit<'a, T> {
-    num_permits: u16,
-    lock: &'a RwLock<T>,
-}
-
-impl<'a, T> ReleasingPermit<'a, T> {
-    async fn acquire(
-        lock: &'a RwLock<T>,
-        num_permits: u16,
-    ) -> Result<ReleasingPermit<'a, T>, AcquireError> {
-        lock.s.acquire(num_permits).cooperate().await?;
-        Ok(Self { num_permits, lock })
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn try_map<F, U: ?Sized>(this: Self, f: F) -> Result<RwLockReadGuard<'a, U>, Self>
+    where
+        F: FnOnce(&T) -> Option<&U>,
+    {
+        let data = match f(&*this) {
+            Some(data) => data as *const U,
+            None => return Err(this),
+        };
+        let s = this.s;
+        
+        mem::forget(this);
+        Ok(RwLockReadGuard {
+            s,
+            data,
+            marker: marker::PhantomData,
+        })
     }
 }
 
-impl<'a, T> Drop for ReleasingPermit<'a, T> {
+impl<'a, T: ?Sized> fmt::Debug for RwLockReadGuard<'a, T>
+where
+    T: fmt::Debug,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Debug::fmt(&**self, f)
+    }
+}
+
+impl<'a, T: ?Sized> fmt::Display for RwLockReadGuard<'a, T>
+where
+    T: fmt::Display,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Display::fmt(&**self, f)
+    }
+}
+
+impl<'a, T: ?Sized> Drop for RwLockReadGuard<'a, T> {
     fn drop(&mut self) {
-        self.lock.s.release(self.num_permits as usize);
+        self.s.release(1);
+    }
+}
+
+
+
+
+
+
+
+
+
+pub struct RwLockWriteGuard<'a, T: ?Sized> {
+    s: &'a Semaphore,
+    data: *mut T,
+    marker: marker::PhantomData<&'a mut T>,
+}
+
+impl<'a, T: ?Sized> RwLockWriteGuard<'a, T> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn map<F, U: ?Sized>(mut this: Self, f: F) -> RwLockWriteGuard<'a, U>
+    where
+        F: FnOnce(&mut T) -> &mut U,
+    {
+        let data = f(&mut *this) as *mut U;
+        let s = this.s;
+        
+        mem::forget(this);
+        RwLockWriteGuard {
+            s,
+            data,
+            marker: marker::PhantomData,
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn try_map<F, U: ?Sized>(mut this: Self, f: F) -> Result<RwLockWriteGuard<'a, U>, Self>
+    where
+        F: FnOnce(&mut T) -> Option<&mut U>,
+    {
+        let data = match f(&mut *this) {
+            Some(data) => data as *mut U,
+            None => return Err(this),
+        };
+        let s = this.s;
+        
+        mem::forget(this);
+        Ok(RwLockWriteGuard {
+            s,
+            data,
+            marker: marker::PhantomData,
+        })
+    }
+}
+
+impl<'a, T: ?Sized> fmt::Debug for RwLockWriteGuard<'a, T>
+where
+    T: fmt::Debug,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Debug::fmt(&**self, f)
+    }
+}
+
+impl<'a, T: ?Sized> fmt::Display for RwLockWriteGuard<'a, T>
+where
+    T: fmt::Display,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Display::fmt(&**self, f)
+    }
+}
+
+impl<'a, T: ?Sized> Drop for RwLockWriteGuard<'a, T> {
+    fn drop(&mut self) {
+        self.s.release(MAX_READS);
     }
 }
 
@@ -140,9 +383,11 @@ fn bounds() {
     check_sync::<RwLock<u32>>();
     check_unpin::<RwLock<u32>>();
 
+    check_send::<RwLockReadGuard<'_, u32>>();
     check_sync::<RwLockReadGuard<'_, u32>>();
     check_unpin::<RwLockReadGuard<'_, u32>>();
 
+    check_send::<RwLockWriteGuard<'_, u32>>();
     check_sync::<RwLockWriteGuard<'_, u32>>();
     check_unpin::<RwLockWriteGuard<'_, u32>>();
 
@@ -154,12 +399,21 @@ fn bounds() {
 
 
 
-unsafe impl<T> Send for RwLock<T> where T: Send {}
-unsafe impl<T> Sync for RwLock<T> where T: Send + Sync {}
-unsafe impl<'a, T> Sync for RwLockReadGuard<'a, T> where T: Send + Sync {}
-unsafe impl<'a, T> Sync for RwLockWriteGuard<'a, T> where T: Send + Sync {}
+unsafe impl<T> Send for RwLock<T> where T: ?Sized + Send {}
+unsafe impl<T> Sync for RwLock<T> where T: ?Sized + Send + Sync {}
 
-impl<T> RwLock<T> {
+
+
+unsafe impl<T> Send for RwLockReadGuard<'_, T> where T: ?Sized + Sync {}
+unsafe impl<T> Sync for RwLockReadGuard<'_, T> where T: ?Sized + Send + Sync {}
+unsafe impl<T> Sync for RwLockWriteGuard<'_, T> where T: ?Sized + Send + Sync {}
+
+
+
+
+unsafe impl<T> Send for RwLockWriteGuard<'_, T> where T: ?Sized + Send + Sync {}
+
+impl<T: ?Sized> RwLock<T> {
     
     
     
@@ -169,7 +423,10 @@ impl<T> RwLock<T> {
     
     
     
-    pub fn new(value: T) -> RwLock<T> {
+    pub fn new(value: T) -> RwLock<T>
+    where
+        T: Sized,
+    {
         RwLock {
             c: UnsafeCell::new(value),
             s: Semaphore::new(MAX_READS),
@@ -208,12 +465,16 @@ impl<T> RwLock<T> {
     
     
     pub async fn read(&self) -> RwLockReadGuard<'_, T> {
-        let permit = ReleasingPermit::acquire(self, 1).await.unwrap_or_else(|_| {
+        self.s.acquire(1).await.unwrap_or_else(|_| {
             
             
             unreachable!()
         });
-        RwLockReadGuard { lock: self, permit }
+        RwLockReadGuard {
+            s: &self.s,
+            data: self.c.get(),
+            marker: marker::PhantomData,
+        }
     }
 
     
@@ -239,42 +500,46 @@ impl<T> RwLock<T> {
     
     
     pub async fn write(&self) -> RwLockWriteGuard<'_, T> {
-        let permit = ReleasingPermit::acquire(self, MAX_READS as u16)
-            .await
-            .unwrap_or_else(|_| {
-                
-                
-                unreachable!()
-            });
-
-        RwLockWriteGuard { lock: self, permit }
+        self.s.acquire(MAX_READS as u32).await.unwrap_or_else(|_| {
+            
+            
+            unreachable!()
+        });
+        RwLockWriteGuard {
+            s: &self.s,
+            data: self.c.get(),
+            marker: marker::PhantomData,
+        }
     }
 
     
-    pub fn into_inner(self) -> T {
+    pub fn into_inner(self) -> T
+    where
+        T: Sized,
+    {
         self.c.into_inner()
     }
 }
 
-impl<T> ops::Deref for RwLockReadGuard<'_, T> {
+impl<T: ?Sized> ops::Deref for RwLockReadGuard<'_, T> {
     type Target = T;
 
     fn deref(&self) -> &T {
-        unsafe { &*self.lock.c.get() }
+        unsafe { &*self.data }
     }
 }
 
-impl<T> ops::Deref for RwLockWriteGuard<'_, T> {
+impl<T: ?Sized> ops::Deref for RwLockWriteGuard<'_, T> {
     type Target = T;
 
     fn deref(&self) -> &T {
-        unsafe { &*self.lock.c.get() }
+        unsafe { &*self.data }
     }
 }
 
-impl<T> ops::DerefMut for RwLockWriteGuard<'_, T> {
+impl<T: ?Sized> ops::DerefMut for RwLockWriteGuard<'_, T> {
     fn deref_mut(&mut self) -> &mut T {
-        unsafe { &mut *self.lock.c.get() }
+        unsafe { &mut *self.data }
     }
 }
 
@@ -284,7 +549,7 @@ impl<T> From<T> for RwLock<T> {
     }
 }
 
-impl<T> Default for RwLock<T>
+impl<T: ?Sized> Default for RwLock<T>
 where
     T: Default,
 {

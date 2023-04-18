@@ -1,6 +1,7 @@
 use crate::future::poll_fn;
 use crate::io::{AsyncRead, AsyncWrite, PollEvented};
 use crate::net::unix::split::{split, ReadHalf, WriteHalf};
+use crate::net::unix::split_owned::{split_owned, OwnedReadHalf, OwnedWriteHalf};
 use crate::net::unix::ucred::{self, UCred};
 
 use std::convert::TryFrom;
@@ -111,8 +112,31 @@ impl UnixStream {
 
     
     
-    pub fn split(&mut self) -> (ReadHalf<'_>, WriteHalf<'_>) {
+    #[allow(clippy::needless_lifetimes)]
+    
+    
+    
+    
+    
+    
+    
+    pub fn split<'a>(&'a mut self) -> (ReadHalf<'a>, WriteHalf<'a>) {
         split(self)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn into_split(self) -> (OwnedReadHalf, OwnedWriteHalf) {
+        split_owned(self)
     }
 }
 

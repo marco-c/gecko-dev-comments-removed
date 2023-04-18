@@ -62,6 +62,22 @@ use std::task::Poll::*;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 pub struct File {
     std: Arc<sys::File>,
     state: State,
@@ -86,6 +102,11 @@ enum Operation {
 }
 
 impl File {
+    
+    
+    
+    
+    
     
     
     
@@ -149,6 +170,11 @@ impl File {
     
     
     
+    
+    
+    
+    
+    
     pub async fn create(path: impl AsRef<Path>) -> io::Result<File> {
         let path = path.as_ref().to_owned();
         let std_file = asyncify(move || sys::File::create(path)).await?;
@@ -176,6 +202,11 @@ impl File {
         }
     }
 
+    
+    
+    
+    
+    
     
     
     
@@ -251,6 +282,11 @@ impl File {
     
     
     
+    
+    
+    
+    
+    
     pub async fn sync_all(&mut self) -> io::Result<()> {
         self.complete_inflight().await;
 
@@ -280,6 +316,11 @@ impl File {
     
     
     
+    
+    
+    
+    
+    
     pub async fn sync_data(&mut self) -> io::Result<()> {
         self.complete_inflight().await;
 
@@ -287,6 +328,11 @@ impl File {
         asyncify(move || std.sync_data()).await
     }
 
+    
+    
+    
+    
+    
     
     
     
@@ -491,6 +537,11 @@ impl File {
 }
 
 impl AsyncRead for File {
+    unsafe fn prepare_uninitialized_buffer(&self, _buf: &mut [std::mem::MaybeUninit<u8>]) -> bool {
+        
+        false
+    }
+
     fn poll_read(
         mut self: Pin<&mut Self>,
         cx: &mut Context<'_>,

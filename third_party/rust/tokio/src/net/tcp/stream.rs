@@ -1,6 +1,7 @@
 use crate::future::poll_fn;
 use crate::io::{AsyncRead, AsyncWrite, PollEvented};
 use crate::net::tcp::split::{split, ReadHalf, WriteHalf};
+use crate::net::tcp::split_owned::{split_owned, OwnedReadHalf, OwnedWriteHalf};
 use crate::net::ToSocketAddrs;
 
 use bytes::Buf;
@@ -20,9 +21,16 @@ cfg_tcp! {
     /// A TCP stream can either be created by connecting to an endpoint, via the
     /// [`connect`] method, or by [accepting] a connection from a [listener].
     ///
+    /// Reading and writing to a `TcpStream` is usually done using the
+    /// convenience methods found on the [`AsyncReadExt`] and [`AsyncWriteExt`]
+    /// traits. Examples import these traits through [the prelude].
+    ///
     /// [`connect`]: method@TcpStream::connect
     /// [accepting]: method@super::TcpListener::accept
     /// [listener]: struct@super::TcpListener
+    /// [`AsyncReadExt`]: trait@crate::io::AsyncReadExt
+    /// [`AsyncWriteExt`]: trait@crate::io::AsyncWriteExt
+    /// [the prelude]: crate::prelude
     ///
     /// # Examples
     ///
@@ -42,12 +50,46 @@ cfg_tcp! {
     ///     Ok(())
     /// }
     /// ```
+    ///
+    /// The [`write_all`] method is defined on the [`AsyncWriteExt`] trait.
+    ///
+    /// [`write_all`]: fn@crate::io::AsyncWriteExt::write_all
+    /// [`AsyncWriteExt`]: trait@crate::io::AsyncWriteExt
     pub struct TcpStream {
         io: PollEvented<mio::net::TcpStream>,
     }
 }
 
 impl TcpStream {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -270,6 +312,11 @@ impl TcpStream {
         }
     }
 
+    
+    
+    
+    
+    
     
     
     
@@ -614,8 +661,31 @@ impl TcpStream {
 
     
     
-    pub fn split(&mut self) -> (ReadHalf<'_>, WriteHalf<'_>) {
+    #[allow(clippy::needless_lifetimes)]
+    
+    
+    
+    
+    
+    
+    
+    pub fn split<'a>(&'a mut self) -> (ReadHalf<'a>, WriteHalf<'a>) {
         split(self)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn into_split(self) -> (OwnedReadHalf, OwnedWriteHalf) {
+        split_owned(self)
     }
 
     

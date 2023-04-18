@@ -102,7 +102,7 @@ impl<T> Future for JoinHandle<T> {
         let mut ret = Poll::Pending;
 
         
-        ready!(crate::coop::poll_proceed(cx));
+        let coop = ready!(crate::coop::poll_proceed(cx));
 
         
         
@@ -124,6 +124,10 @@ impl<T> Future for JoinHandle<T> {
         
         unsafe {
             raw.try_read_output(&mut ret as *mut _ as *mut (), cx.waker());
+        }
+
+        if ret.is_ready() {
+            coop.made_progress();
         }
 
         ret

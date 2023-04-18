@@ -31,6 +31,7 @@ use std::{fmt, thread};
 
 
 #[macro_export]
+#[cfg_attr(docsrs, doc(cfg(all(feature = "rt-util", feature = "rt-core"))))]
 macro_rules! task_local {
      
     () => {};
@@ -49,7 +50,7 @@ macro_rules! task_local {
 #[macro_export]
 macro_rules! __task_local_inner {
     ($(#[$attr:meta])* $vis:vis $name:ident, $t:ty) => {
-        static $name: $crate::task::LocalKey<$t> = {
+        $vis static $name: $crate::task::LocalKey<$t> = {
             std::thread_local! {
                 static __KEY: std::cell::RefCell<Option<$t>> = std::cell::RefCell::new(None);
             }
@@ -90,6 +91,7 @@ macro_rules! __task_local_inner {
 
 
 
+#[cfg_attr(docsrs, doc(cfg(all(feature = "rt-util", feature = "rt-core"))))]
 pub struct LocalKey<T: 'static> {
     #[doc(hidden)]
     pub inner: thread::LocalKey<RefCell<Option<T>>>,

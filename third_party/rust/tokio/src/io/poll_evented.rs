@@ -90,17 +90,17 @@ cfg_io_driver! {
     /// These events are included as part of the read readiness event stream. The
     /// write readiness event stream is only for `Ready::writable()` events.
     ///
-    /// [`std::io::Read`]: https://doc.rust-lang.org/std/io/trait.Read.html
-    /// [`std::io::Write`]: https://doc.rust-lang.org/std/io/trait.Write.html
-    /// [`AsyncRead`]: ../io/trait.AsyncRead.html
-    /// [`AsyncWrite`]: ../io/trait.AsyncWrite.html
-    /// [`mio::Evented`]: https://docs.rs/mio/0.6/mio/trait.Evented.html
+    /// [`std::io::Read`]: trait@std::io::Read
+    /// [`std::io::Write`]: trait@std::io::Write
+    /// [`AsyncRead`]: trait@AsyncRead
+    /// [`AsyncWrite`]: trait@AsyncWrite
+    /// [`mio::Evented`]: trait@mio::Evented
     /// [`Registration`]: struct@Registration
-    /// [`TcpListener`]: ../net/struct.TcpListener.html
-    /// [`clear_read_ready`]: #method.clear_read_ready
-    /// [`clear_write_ready`]: #method.clear_write_ready
-    /// [`poll_read_ready`]: #method.poll_read_ready
-    /// [`poll_write_ready`]: #method.poll_write_ready
+    /// [`TcpListener`]: struct@crate::net::TcpListener
+    /// [`clear_read_ready`]: method@Self::clear_read_ready
+    /// [`clear_write_ready`]: method@Self::clear_write_ready
+    /// [`poll_read_ready`]: method@Self::poll_read_ready
+    /// [`poll_write_ready`]: method@Self::poll_write_ready
     pub struct PollEvented<E: Evented> {
         io: Option<E>,
         inner: Inner,
@@ -175,7 +175,35 @@ where
     
     
     pub fn new(io: E) -> io::Result<Self> {
-        let registration = Registration::new(&io)?;
+        PollEvented::new_with_ready(io, mio::Ready::all())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new_with_ready(io: E, ready: mio::Ready) -> io::Result<Self> {
+        let registration = Registration::new_with_ready(&io, ready)?;
         Ok(Self {
             io: Some(io),
             inner: Inner {
@@ -212,6 +240,11 @@ where
         Ok(io)
     }
 
+    
+    
+    
+    
+    
     
     
     
@@ -280,6 +313,11 @@ where
         Ok(())
     }
 
+    
+    
+    
+    
+    
     
     
     

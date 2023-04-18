@@ -51,13 +51,13 @@ where
         
         
         
-        let ref_inc = !self.core().is_bound();
+        let is_not_bound = !self.core().is_bound();
 
         
         
         
         
-        let snapshot = match self.header().state.transition_to_running(ref_inc) {
+        let snapshot = match self.header().state.transition_to_running(is_not_bound) {
             Ok(snapshot) => snapshot,
             Err(_) => {
                 
@@ -67,15 +67,20 @@ where
             }
         };
 
-        
-        
-        
-        
-        
-        
-        
-        
-        self.core().bind_scheduler(self.to_task());
+        if is_not_bound {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            self.core().bind_scheduler(self.to_task());
+        }
 
         
         
@@ -84,21 +89,15 @@ where
         let res = panic::catch_unwind(panic::AssertUnwindSafe(|| {
             struct Guard<'a, T: Future, S: Schedule> {
                 core: &'a Core<T, S>,
-                polled: bool,
             }
 
             impl<T: Future, S: Schedule> Drop for Guard<'_, T, S> {
                 fn drop(&mut self) {
-                    if !self.polled {
-                        self.core.drop_future_or_output();
-                    }
+                    self.core.drop_future_or_output();
                 }
             }
 
-            let mut guard = Guard {
-                core: self.core(),
-                polled: false,
-            };
+            let guard = Guard { core: self.core() };
 
             
             
@@ -108,7 +107,7 @@ where
                 let res = guard.core.poll(self.header());
 
                 
-                guard.polled = true;
+                mem::forget(guard);
 
                 res.map(Ok)
             }

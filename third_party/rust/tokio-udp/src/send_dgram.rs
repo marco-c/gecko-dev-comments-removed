@@ -12,7 +12,7 @@ use futures::{Async, Future, Poll};
 #[derive(Debug)]
 pub struct SendDgram<T> {
     
-    state: Option<SendDgramInner<T>>
+    state: Option<SendDgramInner<T>>,
 }
 
 
@@ -29,7 +29,11 @@ struct SendDgramInner<T> {
 impl<T> SendDgram<T> {
     
     pub(crate) fn new(socket: UdpSocket, buffer: T, addr: SocketAddr) -> SendDgram<T> {
-        let inner = SendDgramInner { socket: socket, buffer: buffer, addr: addr };
+        let inner = SendDgramInner {
+            socket: socket,
+            buffer: buffer,
+            addr: addr,
+        };
         SendDgram { state: Some(inner) }
     }
 }
@@ -39,19 +43,26 @@ fn incomplete_write(reason: &str) -> io::Error {
 }
 
 impl<T> Future for SendDgram<T>
-    where T: AsRef<[u8]>,
+where
+    T: AsRef<[u8]>,
 {
     type Item = (UdpSocket, T);
     type Error = io::Error;
 
     fn poll(&mut self) -> Poll<(UdpSocket, T), io::Error> {
         {
-            let ref mut inner =
-                self.state.as_mut().expect("SendDgram polled after completion");
-            let n = try_ready!(inner.socket.poll_send_to(inner.buffer.as_ref(), &inner.addr));
+            let ref mut inner = self
+                .state
+                .as_mut()
+                .expect("SendDgram polled after completion");
+            let n = try_ready!(inner
+                .socket
+                .poll_send_to(inner.buffer.as_ref(), &inner.addr));
             if n != inner.buffer.as_ref().len() {
-                return Err(incomplete_write("failed to send entire message \
-                                             in datagram"))
+                return Err(incomplete_write(
+                    "failed to send entire message \
+                     in datagram",
+                ));
             }
         }
 

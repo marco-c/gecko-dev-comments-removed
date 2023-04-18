@@ -126,6 +126,20 @@ impl UdpSocket {
     
     
     
+    pub fn try_send(&self, buf: &[u8]) -> io::Result<usize> {
+        self.io.get_ref().send(buf)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[doc(hidden)]
     pub fn poll_send(&self, cx: &mut Context<'_>, buf: &[u8]) -> Poll<io::Result<usize>> {
         ready!(self.io.poll_write_ready(cx))?;
@@ -183,6 +197,21 @@ impl UdpSocket {
                 "no addresses to send data to",
             )),
         }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn try_send_to(&self, buf: &[u8], target: SocketAddr) -> io::Result<usize> {
+        self.io.get_ref().send_to(buf, &target)
     }
 
     

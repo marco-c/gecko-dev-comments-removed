@@ -419,16 +419,30 @@
 
 
 
+
+
+
+
+
+
+
+
+
 cfg_sync! {
     mod barrier;
     pub use barrier::{Barrier, BarrierWaitResult};
 
     pub mod broadcast;
 
+    cfg_unstable! {
+        mod cancellation_token;
+        pub use cancellation_token::{CancellationToken, WaitForCancellationFuture};
+    }
+
     pub mod mpsc;
 
     mod mutex;
-    pub use mutex::{Mutex, MutexGuard};
+    pub use mutex::{Mutex, MutexGuard, TryLockError, OwnedMutexGuard};
 
     mod notify;
     pub use notify::Notify;
@@ -438,7 +452,7 @@ cfg_sync! {
     pub(crate) mod batch_semaphore;
     pub(crate) mod semaphore_ll;
     mod semaphore;
-    pub use semaphore::{Semaphore, SemaphorePermit};
+    pub use semaphore::{Semaphore, SemaphorePermit, OwnedSemaphorePermit};
 
     mod rwlock;
     pub use rwlock::{RwLock, RwLockReadGuard, RwLockWriteGuard};

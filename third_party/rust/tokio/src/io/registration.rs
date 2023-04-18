@@ -30,13 +30,13 @@ cfg_io_driver! {
     /// ## Platform-specific events
     ///
     /// `Registration` also allows receiving platform-specific `mio::Ready`
-    /// events. These events are included as part of the read readiness event
-    /// stream. The write readiness event stream is only for `Ready::writable()`
-    /// events.
-    ///
-    /// [`new`]: #method.new
-    /// [`poll_read_ready`]: #method.poll_read_ready`]
-    /// [`poll_write_ready`]: #method.poll_write_ready`]
+    
+    
+    
+    
+    
+    
+    
     #[derive(Debug)]
     pub struct Registration {
         handle: Handle,
@@ -66,9 +66,46 @@ impl Registration {
     where
         T: Evented,
     {
+        Registration::new_with_ready(io, mio::Ready::all())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new_with_ready<T>(io: &T, ready: mio::Ready) -> io::Result<Registration>
+    where
+        T: Evented,
+    {
         let handle = Handle::current();
         let address = if let Some(inner) = handle.inner() {
-            inner.add_source(io)?
+            inner.add_source(io, ready)?
         } else {
             return Err(io::Error::new(
                 io::ErrorKind::Other,
@@ -134,17 +171,19 @@ impl Registration {
     
     
     
-    
-    
-    
-    
     pub fn poll_read_ready(&self, cx: &mut Context<'_>) -> Poll<io::Result<mio::Ready>> {
         
-        ready!(crate::coop::poll_proceed(cx));
+        let coop = ready!(crate::coop::poll_proceed(cx));
 
-        let v = self.poll_ready(Direction::Read, Some(cx))?;
+        let v = self.poll_ready(Direction::Read, Some(cx)).map_err(|e| {
+            coop.made_progress();
+            e
+        })?;
         match v {
-            Some(v) => Poll::Ready(Ok(v)),
+            Some(v) => {
+                coop.made_progress();
+                Poll::Ready(Ok(v))
+            }
             None => Poll::Pending,
         }
     }
@@ -188,17 +227,19 @@ impl Registration {
     
     
     
-    
-    
-    
-    
     pub fn poll_write_ready(&self, cx: &mut Context<'_>) -> Poll<io::Result<mio::Ready>> {
         
-        ready!(crate::coop::poll_proceed(cx));
+        let coop = ready!(crate::coop::poll_proceed(cx));
 
-        let v = self.poll_ready(Direction::Write, Some(cx))?;
+        let v = self.poll_ready(Direction::Write, Some(cx)).map_err(|e| {
+            coop.made_progress();
+            e
+        })?;
         match v {
-            Some(v) => Poll::Ready(Ok(v)),
+            Some(v) => {
+                coop.made_progress();
+                Poll::Ready(Ok(v))
+            }
             None => Poll::Pending,
         }
     }

@@ -45,55 +45,85 @@
 
 
 
+
+
+
+
 use std::cell::Cell;
-use std::future::Future;
-use std::pin::Pin;
-use std::task::{Context, Poll};
-
-
-
-
-
-
-
-
-
-
-const BUDGET: usize = 128;
-
-
-const UNCONSTRAINED: usize = usize::max_value();
 
 thread_local! {
-    static HITS: Cell<usize> = Cell::new(UNCONSTRAINED);
+    static CURRENT: Cell<Budget> = Cell::new(Budget::unconstrained());
 }
 
 
 
+#[derive(Debug, Copy, Clone)]
+pub(crate) struct Budget(Option<u8>);
+
+impl Budget {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    const fn initial() -> Budget {
+        Budget(Some(128))
+    }
+
+    
+    const fn unconstrained() -> Budget {
+        Budget(None)
+    }
+}
+
+cfg_rt_threaded! {
+    impl Budget {
+        fn has_remaining(self) -> bool {
+            self.0.map(|budget| budget > 0).unwrap_or(true)
+        }
+    }
+}
+
+
 
 #[inline(always)]
-pub(crate) fn budget<F, R>(f: F) -> R
-where
-    F: FnOnce() -> R,
-{
-    HITS.with(move |hits| {
-        if hits.get() != UNCONSTRAINED {
-            
-            
-            
-            
-            return f();
-        }
+pub(crate) fn budget<R>(f: impl FnOnce() -> R) -> R {
+    with_budget(Budget::initial(), f)
+}
 
-        struct Guard<'a>(&'a Cell<usize>);
-        impl<'a> Drop for Guard<'a> {
-            fn drop(&mut self) {
-                self.0.set(UNCONSTRAINED);
-            }
-        }
+cfg_rt_threaded! {
+    /// Set the current task's budget
+    #[cfg(feature = "blocking")]
+    pub(crate) fn set(budget: Budget) {
+        CURRENT.with(|cell| cell.set(budget))
+    }
+}
 
-        hits.set(BUDGET);
-        let _guard = Guard(hits);
+#[inline(always)]
+fn with_budget<R>(budget: Budget, f: impl FnOnce() -> R) -> R {
+    struct ResetGuard<'a> {
+        cell: &'a Cell<Budget>,
+        prev: Budget,
+    }
+
+    impl<'a> Drop for ResetGuard<'a> {
+        fn drop(&mut self) {
+            self.cell.set(self.prev);
+        }
+    }
+
+    CURRENT.with(move |cell| {
+        let prev = cell.get();
+
+        cell.set(budget);
+
+        let _guard = ResetGuard { cell, prev };
+
         f()
     })
 }
@@ -101,279 +131,171 @@ where
 cfg_rt_threaded! {
     #[inline(always)]
     pub(crate) fn has_budget_remaining() -> bool {
-        HITS.with(|hits| hits.get() > 0)
+        CURRENT.with(|cell| cell.get().has_remaining())
     }
 }
 
 cfg_blocking_impl! {
     /// Forcibly remove the budgeting constraints early.
-    pub(crate) fn stop() {
-        HITS.with(|hits| {
-            hits.set(UNCONSTRAINED);
-        });
+    ///
+    /// Returns the remaining budget
+    pub(crate) fn stop() -> Budget {
+        CURRENT.with(|cell| {
+            let prev = cell.get();
+            cell.set(Budget::unconstrained());
+            prev
+        })
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[allow(unreachable_pub, dead_code)]
-pub fn limit<R>(bound: usize, f: impl FnOnce() -> R) -> R {
-    HITS.with(|hits| {
-        let budget = hits.get();
-        
-        let bound = std::cmp::min(budget, bound);
-        
-        let floor = budget.saturating_sub(bound);
-        
-        struct RestoreBudget<'a>(&'a Cell<usize>, usize);
-        impl<'a> Drop for RestoreBudget<'a> {
-            fn drop(&mut self) {
-                let left = self.0.get();
-                self.0.set(self.1 + left);
+cfg_coop! {
+    use std::task::{Context, Poll};
+
+    #[must_use]
+    pub(crate) struct RestoreOnPending(Cell<Budget>);
+
+    impl RestoreOnPending {
+        pub(crate) fn made_progress(&self) {
+            self.0.set(Budget::unconstrained());
+        }
+    }
+
+    impl Drop for RestoreOnPending {
+        fn drop(&mut self) {
+            // Don't reset if budget was unconstrained or if we made progress.
+            // They are both represented as the remembered budget being unconstrained.
+            let budget = self.0.get();
+            if !budget.is_unconstrained() {
+                CURRENT.with(|cell| {
+                    cell.set(budget);
+                });
             }
         }
-        
-        hits.set(bound);
-        let _restore = RestoreBudget(&hits, floor);
-        f()
-    })
-}
-
-
-#[allow(unreachable_pub, dead_code)]
-#[inline]
-pub fn poll_proceed(cx: &mut Context<'_>) -> Poll<()> {
-    HITS.with(|hits| {
-        let n = hits.get();
-        if n == UNCONSTRAINED {
-            
-            Poll::Ready(())
-        } else if n == 0 {
-            cx.waker().wake_by_ref();
-            Poll::Pending
-        } else {
-            hits.set(n.saturating_sub(1));
-            Poll::Ready(())
-        }
-    })
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[allow(unreachable_pub, dead_code)]
-#[inline]
-pub async fn proceed() {
-    use crate::future::poll_fn;
-    poll_fn(|cx| poll_proceed(cx)).await;
-}
-
-pin_project_lite::pin_project! {
-    /// A future that cooperatively yields to the task scheduler when polling,
-    /// if the task's budget is exhausted.
-    ///
-    /// Internally, this is simply a future combinator which calls
-    /// [`poll_proceed`] in its `poll` implementation before polling the wrapped
-    /// future.
-    ///
-    /// # Examples
-    ///
-    /// ```rust,ignore
-    /// # #[tokio::main]
-    /// # async fn main() {
-    /// use tokio::coop::CoopFutureExt;
-    ///
-    /// async {  /* ... */ }
-    ///     .cooperate()
-    ///     .await;
-    /// # }
-    /// ```
-    ///
-    /// [`poll_proceed`]: fn@poll_proceed
-    #[derive(Debug)]
-    #[allow(unreachable_pub, dead_code)]
-    pub struct CoopFuture<F> {
-        #[pin]
-        future: F,
     }
-}
 
-impl<F: Future> Future for CoopFuture<F> {
-    type Output = F::Output;
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        ready!(poll_proceed(cx));
-        self.project().future.poll(cx)
-    }
-}
-
-impl<F: Future> CoopFuture<F> {
+    /// Returns `Poll::Pending` if the current task has exceeded its budget and should yield.
+    ///
+    /// When you call this method, the current budget is decremented. However, to ensure that
+    /// progress is made every time a task is polled, the budget is automatically restored to its
+    /// former value if the returned `RestoreOnPending` is dropped. It is the caller's
+    /// responsibility to call `RestoreOnPending::made_progress` if it made progress, to ensure
+    /// that the budget empties appropriately.
+    ///
+    /// Note that `RestoreOnPending` restores the budget **as it was before `poll_proceed`**.
     
     
-    #[allow(unreachable_pub, dead_code)]
-    pub fn new(future: F) -> Self {
-        Self { future }
+    
+    #[inline]
+    pub(crate) fn poll_proceed(cx: &mut Context<'_>) -> Poll<RestoreOnPending> {
+        CURRENT.with(|cell| {
+            let mut budget = cell.get();
+
+            if budget.decrement() {
+                let restore = RestoreOnPending(Cell::new(cell.get()));
+                cell.set(budget);
+                Poll::Ready(restore)
+            } else {
+                cx.waker().wake_by_ref();
+                Poll::Pending
+            }
+        })
     }
-}
 
+    impl Budget {
+        /// Decrement the budget. Returns `true` if successful. Decrementing fails
+        /// when there is not enough remaining budget.
+        fn decrement(&mut self) -> bool {
+            if let Some(num) = &mut self.0 {
+                if *num > 0 {
+                    *num -= 1;
+                    true
+                } else {
+                    false
+                }
+            } else {
+                true
+            }
+        }
 
-
-cfg_sync! {
-    /// Extension trait providing `Future::cooperate` extension method.
-    ///
-    /// Note: if/when the co-op API becomes public, this method should probably be
-    /// provided by `FutureExt`, instead.
-    pub(crate) trait CoopFutureExt: Future {
-        /// Wrap `self` to cooperatively yield to the scheduler when polling, if the
-        /// task's budget is exhausted.
-        fn cooperate(self) -> CoopFuture<Self>
-        where
-            Self: Sized,
-        {
-            CoopFuture::new(self)
+        fn is_unconstrained(self) -> bool {
+            self.0.is_none()
         }
     }
-
-    impl<F> CoopFutureExt for F where F: Future {}
 }
 
 #[cfg(all(test, not(loom)))]
 mod test {
     use super::*;
 
-    fn get() -> usize {
-        HITS.with(|hits| hits.get())
+    fn get() -> Budget {
+        CURRENT.with(|cell| cell.get())
     }
 
     #[test]
     fn bugeting() {
+        use futures::future::poll_fn;
         use tokio_test::*;
 
-        assert_eq!(get(), UNCONSTRAINED);
-        assert_ready!(task::spawn(()).enter(|cx, _| poll_proceed(cx)));
-        assert_eq!(get(), UNCONSTRAINED);
-        budget(|| {
-            assert_eq!(get(), BUDGET);
-            assert_ready!(task::spawn(()).enter(|cx, _| poll_proceed(cx)));
-            assert_eq!(get(), BUDGET - 1);
-            assert_ready!(task::spawn(()).enter(|cx, _| poll_proceed(cx)));
-            assert_eq!(get(), BUDGET - 2);
-        });
-        assert_eq!(get(), UNCONSTRAINED);
+        assert!(get().0.is_none());
+
+        let coop = assert_ready!(task::spawn(()).enter(|cx, _| poll_proceed(cx)));
+
+        assert!(get().0.is_none());
+        drop(coop);
+        assert!(get().0.is_none());
 
         budget(|| {
-            limit(3, || {
-                assert_eq!(get(), 3);
-                assert_ready!(task::spawn(()).enter(|cx, _| poll_proceed(cx)));
-                assert_eq!(get(), 2);
-                limit(4, || {
-                    assert_eq!(get(), 2);
-                    assert_ready!(task::spawn(()).enter(|cx, _| poll_proceed(cx)));
-                    assert_eq!(get(), 1);
-                });
-                assert_eq!(get(), 1);
-                assert_ready!(task::spawn(()).enter(|cx, _| poll_proceed(cx)));
-                assert_eq!(get(), 0);
-                assert_pending!(task::spawn(()).enter(|cx, _| poll_proceed(cx)));
-                assert_eq!(get(), 0);
-                assert_pending!(task::spawn(()).enter(|cx, _| poll_proceed(cx)));
-                assert_eq!(get(), 0);
+            assert_eq!(get().0, Budget::initial().0);
+
+            let coop = assert_ready!(task::spawn(()).enter(|cx, _| poll_proceed(cx)));
+            assert_eq!(get().0.unwrap(), Budget::initial().0.unwrap() - 1);
+            drop(coop);
+            
+            assert_eq!(get().0, Budget::initial().0);
+
+            let coop = assert_ready!(task::spawn(()).enter(|cx, _| poll_proceed(cx)));
+            assert_eq!(get().0.unwrap(), Budget::initial().0.unwrap() - 1);
+            coop.made_progress();
+            drop(coop);
+            
+            assert_eq!(get().0.unwrap(), Budget::initial().0.unwrap() - 1);
+
+            let coop = assert_ready!(task::spawn(()).enter(|cx, _| poll_proceed(cx)));
+            assert_eq!(get().0.unwrap(), Budget::initial().0.unwrap() - 2);
+            coop.made_progress();
+            drop(coop);
+            assert_eq!(get().0.unwrap(), Budget::initial().0.unwrap() - 2);
+
+            budget(|| {
+                assert_eq!(get().0, Budget::initial().0);
+
+                let coop = assert_ready!(task::spawn(()).enter(|cx, _| poll_proceed(cx)));
+                assert_eq!(get().0.unwrap(), Budget::initial().0.unwrap() - 1);
+                coop.made_progress();
+                drop(coop);
+                assert_eq!(get().0.unwrap(), Budget::initial().0.unwrap() - 1);
             });
-            assert_eq!(get(), BUDGET - 3);
-            assert_ready!(task::spawn(()).enter(|cx, _| poll_proceed(cx)));
-            assert_eq!(get(), BUDGET - 4);
-            assert_ready!(task::spawn(proceed()).poll());
-            assert_eq!(get(), BUDGET - 5);
+
+            assert_eq!(get().0.unwrap(), Budget::initial().0.unwrap() - 2);
+        });
+
+        assert!(get().0.is_none());
+
+        budget(|| {
+            let n = get().0.unwrap();
+
+            for _ in 0..n {
+                let coop = assert_ready!(task::spawn(()).enter(|cx, _| poll_proceed(cx)));
+                coop.made_progress();
+            }
+
+            let mut task = task::spawn(poll_fn(|cx| {
+                let coop = ready!(poll_proceed(cx));
+                coop.made_progress();
+                Poll::Ready(())
+            }));
+
+            assert_pending!(task.poll());
         });
     }
 }

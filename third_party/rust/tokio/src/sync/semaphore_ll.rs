@@ -333,7 +333,8 @@ impl Semaphore {
 
         self.add_permits_locked(0, true);
     }
-
+    
+    
     
     pub(crate) fn add_permits(&self, n: usize) {
         if n == 0 {
@@ -853,8 +854,8 @@ impl TryAcquireError {
 impl fmt::Display for TryAcquireError {
     fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            TryAcquireError::Closed => write!(fmt, "{}", "semaphore closed"),
-            TryAcquireError::NoPermits => write!(fmt, "{}", "no permits available"),
+            TryAcquireError::Closed => write!(fmt, "semaphore closed"),
+            TryAcquireError::NoPermits => write!(fmt, "no permits available"),
         }
     }
 }
@@ -916,6 +917,10 @@ impl Waiter {
         let mut curr = WaiterState(self.state.load(Acquire));
 
         loop {
+            if curr.is_closed() {
+                return 0;
+            }
+
             if !curr.is_queued() {
                 assert_eq!(0, curr.permits_to_acquire());
             }

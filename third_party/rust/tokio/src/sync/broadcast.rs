@@ -109,13 +109,15 @@
 
 
 use crate::loom::cell::UnsafeCell;
-use crate::loom::future::AtomicWaker;
-use crate::loom::sync::atomic::{spin_loop_hint, AtomicBool, AtomicPtr, AtomicUsize};
-use crate::loom::sync::{Arc, Condvar, Mutex};
+use crate::loom::sync::atomic::AtomicUsize;
+use crate::loom::sync::{Arc, Mutex, RwLock, RwLockReadGuard};
+use crate::util::linked_list::{self, LinkedList};
 
 use std::fmt;
-use std::mem;
-use std::ptr;
+use std::future::Future;
+use std::marker::PhantomPinned;
+use std::pin::Pin;
+use std::ptr::NonNull;
 use std::sync::atomic::Ordering::SeqCst;
 use std::task::{Context, Poll, Waker};
 use std::usize;
@@ -194,7 +196,7 @@ pub struct Receiver<T> {
     next: u64,
 
     
-    wait: Arc<WaitNode>,
+    waiter: Option<Pin<Box<UnsafeCell<Waiter>>>>,
 }
 
 
@@ -247,19 +249,13 @@ pub enum TryRecvError {
 
 struct Shared<T> {
     
-    buffer: Box<[Slot<T>]>,
+    buffer: Box<[RwLock<Slot<T>>]>,
 
     
     mask: usize,
 
     
     tail: Mutex<Tail>,
-
-    
-    condvar: Condvar,
-
-    
-    wait_stack: AtomicPtr<WaitNode>,
 
     
     num_tx: AtomicUsize,
@@ -272,6 +268,12 @@ struct Tail {
 
     
     rx_cnt: usize,
+
+    
+    closed: bool,
+
+    
+    waiters: LinkedList<Waiter>,
 }
 
 
@@ -279,47 +281,79 @@ struct Slot<T> {
     
     
     
+    
+    
+    
     rem: AtomicUsize,
 
     
-    lock: AtomicUsize,
+    pos: u64,
+
+    
+    closed: bool,
 
     
     
     
-    write: Write<T>,
-}
-
-
-struct Write<T> {
-    
-    pos: UnsafeCell<u64>,
-
     
     val: UnsafeCell<Option<T>>,
 }
 
 
-#[derive(Debug)]
-struct WaitNode {
+struct Waiter {
     
-    queued: AtomicBool,
+    queued: bool,
 
     
-    waker: AtomicWaker,
+    waker: Option<Waker>,
 
     
-    next: UnsafeCell<*const WaitNode>,
+    pointers: linked_list::Pointers<Waiter>,
+
+    
+    _p: PhantomPinned,
 }
 
 struct RecvGuard<'a, T> {
-    slot: &'a Slot<T>,
-    tail: &'a Mutex<Tail>,
-    condvar: &'a Condvar,
+    slot: RwLockReadGuard<'a, Slot<T>>,
 }
 
 
-const MAX_RECEIVERS: usize = usize::MAX >> 1;
+struct Recv<R, T>
+where
+    R: AsMut<Receiver<T>>,
+{
+    
+    receiver: R,
+
+    
+    waiter: UnsafeCell<Waiter>,
+
+    _p: std::marker::PhantomData<T>,
+}
+
+
+
+
+struct Borrow<T>(T);
+
+impl<T> AsMut<Receiver<T>> for Borrow<Receiver<T>> {
+    fn as_mut(&mut self) -> &mut Receiver<T> {
+        &mut self.0
+    }
+}
+
+impl<'a, T> AsMut<Receiver<T>> for Borrow<&'a mut Receiver<T>> {
+    fn as_mut(&mut self) -> &mut Receiver<T> {
+        &mut *self.0
+    }
+}
+
+unsafe impl<R: AsMut<Receiver<T>> + Send, T: Send> Send for Recv<R, T> {}
+unsafe impl<R: AsMut<Receiver<T>> + Sync, T: Send> Sync for Recv<R, T> {}
+
+
+const MAX_RECEIVERS: usize = usize::MAX >> 2;
 
 
 
@@ -376,33 +410,30 @@ pub fn channel<T>(mut capacity: usize) -> (Sender<T>, Receiver<T>) {
     let mut buffer = Vec::with_capacity(capacity);
 
     for i in 0..capacity {
-        buffer.push(Slot {
+        buffer.push(RwLock::new(Slot {
             rem: AtomicUsize::new(0),
-            lock: AtomicUsize::new(0),
-            write: Write {
-                pos: UnsafeCell::new((i as u64).wrapping_sub(capacity as u64)),
-                val: UnsafeCell::new(None),
-            },
-        });
+            pos: (i as u64).wrapping_sub(capacity as u64),
+            closed: false,
+            val: UnsafeCell::new(None),
+        }));
     }
 
     let shared = Arc::new(Shared {
         buffer: buffer.into_boxed_slice(),
         mask: capacity - 1,
-        tail: Mutex::new(Tail { pos: 0, rx_cnt: 1 }),
-        condvar: Condvar::new(),
-        wait_stack: AtomicPtr::new(ptr::null_mut()),
+        tail: Mutex::new(Tail {
+            pos: 0,
+            rx_cnt: 1,
+            closed: false,
+            waiters: LinkedList::new(),
+        }),
         num_tx: AtomicUsize::new(1),
     });
 
     let rx = Receiver {
         shared: shared.clone(),
         next: 0,
-        wait: Arc::new(WaitNode {
-            queued: AtomicBool::new(false),
-            waker: AtomicWaker::new(),
-            next: UnsafeCell::new(ptr::null()),
-        }),
+        waiter: None,
     };
 
     let tx = Sender { shared };
@@ -512,11 +543,7 @@ impl<T> Sender<T> {
         Receiver {
             shared,
             next,
-            wait: Arc::new(WaitNode {
-                queued: AtomicBool::new(false),
-                waker: AtomicWaker::new(),
-                next: UnsafeCell::new(ptr::null()),
-            }),
+            waiter: None,
         }
     }
 
@@ -577,66 +604,47 @@ impl<T> Sender<T> {
         tail.pos = tail.pos.wrapping_add(1);
 
         
-        let slot = &self.shared.buffer[idx];
+        let mut slot = self.shared.buffer[idx].write().unwrap();
 
         
-        let mut prev = slot.lock.fetch_or(1, SeqCst);
+        slot.pos = pos;
 
-        while prev & !1 != 0 {
-            
-            tail = self.shared.condvar.wait(tail).unwrap();
+        
+        slot.rem.with_mut(|v| *v = rem);
 
-            prev = slot.lock.load(SeqCst);
-
-            if prev & 1 == 0 {
-                
-                
-                
-                
-                return Ok(rem);
-            }
-        }
-
-        if tail.pos.wrapping_sub(pos) > self.shared.buffer.len() as u64 {
-            
-            return Ok(rem);
+        
+        if value.is_none() {
+            tail.closed = true;
+            slot.closed = true;
+        } else {
+            slot.val.with_mut(|ptr| unsafe { *ptr = value });
         }
 
         
-        slot.write.pos.with_mut(|ptr| unsafe { *ptr = pos });
-        slot.write.val.with_mut(|ptr| unsafe { *ptr = value });
+        drop(slot);
 
-        
-        slot.rem.store(rem, SeqCst);
-
-        
-        slot.lock.store(0, SeqCst);
+        tail.notify_rx();
 
         
         
         
         drop(tail);
 
-        
-        self.notify_rx();
-
         Ok(rem)
     }
+}
 
-    fn notify_rx(&self) {
-        let mut curr = self.shared.wait_stack.swap(ptr::null_mut(), SeqCst) as *const WaitNode;
-
-        while !curr.is_null() {
-            let waiter = unsafe { Arc::from_raw(curr) };
-
+impl Tail {
+    fn notify_rx(&mut self) {
+        while let Some(mut waiter) = self.waiters.pop_back() {
             
-            curr = waiter.next.with(|ptr| unsafe { *ptr });
+            let waiter = unsafe { waiter.as_mut() };
 
-            
-            waiter.queued.store(false, SeqCst);
+            assert!(waiter.queued);
+            waiter.queued = false;
 
-            
-            waiter.waker.wake();
+            let waker = waiter.waker.take().unwrap();
+            waker.wake();
         }
     }
 }
@@ -660,47 +668,105 @@ impl<T> Drop for Sender<T> {
 
 impl<T> Receiver<T> {
     
-    
-    
-    fn recv_ref(&mut self, spin: bool) -> Result<RecvGuard<'_, T>, TryRecvError> {
+    fn recv_ref(
+        &mut self,
+        waiter: Option<(&UnsafeCell<Waiter>, &Waker)>,
+    ) -> Result<RecvGuard<'_, T>, TryRecvError> {
         let idx = (self.next & self.shared.mask as u64) as usize;
 
         
-        let slot = &self.shared.buffer[idx];
+        let mut slot = self.shared.buffer[idx].read().unwrap();
 
-        
-        if !slot.try_rx_lock() {
-            if spin {
-                while !slot.try_rx_lock() {
-                    spin_loop_hint();
-                }
-            } else {
+        if slot.pos != self.next {
+            let next_pos = slot.pos.wrapping_add(self.shared.buffer.len() as u64);
+
+            
+            
+            if waiter.is_none() && next_pos == self.next {
                 return Err(TryRecvError::Empty);
             }
-        }
 
-        let guard = RecvGuard {
-            slot,
-            tail: &self.shared.tail,
-            condvar: &self.shared.condvar,
-        };
+            
+            
+            
+            
+            
+            
+            
+            drop(slot);
 
-        if guard.pos() != self.next {
-            let pos = guard.pos();
+            let mut tail = self.shared.tail.lock().unwrap();
 
-            guard.drop_no_rem_dec();
+            
+            slot = self.shared.buffer[idx].read().unwrap();
 
-            if pos.wrapping_add(self.shared.buffer.len() as u64) == self.next {
-                return Err(TryRecvError::Empty);
-            } else {
-                let tail = self.shared.tail.lock().unwrap();
+            
+            
+            
+            if slot.pos != self.next {
+                let next_pos = slot.pos.wrapping_add(self.shared.buffer.len() as u64);
+
+                if next_pos == self.next {
+                    
+                    if let Some((waiter, waker)) = waiter {
+                        
+                        unsafe {
+                            
+                            waiter.with_mut(|ptr| {
+                                
+                                
+                                
+                                
+                                match (*ptr).waker {
+                                    Some(ref w) if w.will_wake(waker) => {}
+                                    _ => {
+                                        (*ptr).waker = Some(waker.clone());
+                                    }
+                                }
+
+                                if !(*ptr).queued {
+                                    (*ptr).queued = true;
+                                    tail.waiters.push_front(NonNull::new_unchecked(&mut *ptr));
+                                }
+                            });
+                        }
+                    }
+
+                    return Err(TryRecvError::Empty);
+                }
 
                 
                 
                 
                 
-                let next = tail.pos.wrapping_sub(self.shared.buffer.len() as u64);
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                let mut adjust = 0;
+                if tail.closed {
+                    adjust = 1
+                }
+                let next = tail
+                    .pos
+                    .wrapping_sub(self.shared.buffer.len() as u64 + adjust);
+
                 let missed = next.wrapping_sub(self.next);
+
+                drop(tail);
+
+                
+                if missed == 0 {
+                    self.next = self.next.wrapping_add(1);
+
+                    return Ok(RecvGuard { slot });
+                }
 
                 self.next = next;
 
@@ -710,7 +776,11 @@ impl<T> Receiver<T> {
 
         self.next = self.next.wrapping_add(1);
 
-        Ok(guard)
+        if slot.closed {
+            return Err(TryRecvError::Closed);
+        }
+
+        Ok(RecvGuard { slot })
     }
 }
 
@@ -757,23 +827,61 @@ where
     
     
     
+    
     pub fn try_recv(&mut self) -> Result<T, TryRecvError> {
-        let guard = self.recv_ref(false)?;
+        let guard = self.recv_ref(None)?;
         guard.clone_value().ok_or(TryRecvError::Closed)
     }
 
-    #[doc(hidden)] 
+    #[doc(hidden)]
+    #[deprecated(since = "0.2.21", note = "use async fn recv()")]
     pub fn poll_recv(&mut self, cx: &mut Context<'_>) -> Poll<Result<T, RecvError>> {
-        if let Some(value) = ok_empty(self.try_recv())? {
-            return Poll::Ready(Ok(value));
+        use Poll::{Pending, Ready};
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        struct Guard<'a, T> {
+            waiter: Option<Pin<Box<UnsafeCell<Waiter>>>>,
+            receiver: &'a mut Receiver<T>,
         }
 
-        self.register_waker(cx.waker());
+        impl<'a, T> Drop for Guard<'a, T> {
+            fn drop(&mut self) {
+                self.receiver.waiter = self.waiter.take();
+            }
+        }
 
-        if let Some(value) = ok_empty(self.try_recv())? {
-            Poll::Ready(Ok(value))
-        } else {
-            Poll::Pending
+        let waiter = self.waiter.take().or_else(|| {
+            Some(Box::pin(UnsafeCell::new(Waiter {
+                queued: false,
+                waker: None,
+                pointers: linked_list::Pointers::new(),
+                _p: PhantomPinned,
+            })))
+        });
+
+        let guard = Guard {
+            waiter,
+            receiver: self,
+        };
+        let res = guard
+            .receiver
+            .recv_ref(Some((&guard.waiter.as_ref().unwrap(), cx.waker())));
+
+        match res {
+            Ok(guard) => Ready(guard.clone_value().ok_or(RecvError::Closed)),
+            Err(TryRecvError::Closed) => Ready(Err(RecvError::Closed)),
+            Err(TryRecvError::Lagged(n)) => Ready(Err(RecvError::Lagged(n))),
+            Err(TryRecvError::Empty) => Pending,
         }
     }
 
@@ -842,44 +950,13 @@ where
     
     
     pub async fn recv(&mut self) -> Result<T, RecvError> {
-        use crate::future::poll_fn;
-
-        poll_fn(|cx| self.poll_recv(cx)).await
-    }
-
-    fn register_waker(&self, cx: &Waker) {
-        self.wait.waker.register_by_ref(cx);
-
-        if !self.wait.queued.load(SeqCst) {
-            
-            self.wait.queued.store(true, SeqCst);
-
-            let mut curr = self.shared.wait_stack.load(SeqCst);
-
-            
-            
-            let node = Arc::into_raw(self.wait.clone()) as *mut _;
-
-            loop {
-                
-                
-                self.wait.next.with_mut(|ptr| unsafe { *ptr = curr });
-
-                let res = self
-                    .shared
-                    .wait_stack
-                    .compare_exchange(curr, node, SeqCst, SeqCst);
-
-                match res {
-                    Ok(_) => return,
-                    Err(actual) => curr = actual,
-                }
-            }
-        }
+        let fut = Recv::<_, T>::new(Borrow(self));
+        fut.await
     }
 }
 
 #[cfg(feature = "stream")]
+#[doc(hidden)]
 impl<T> crate::stream::Stream for Receiver<T>
 where
     T: Clone,
@@ -890,6 +967,7 @@ where
         mut self: std::pin::Pin<&mut Self>,
         cx: &mut Context<'_>,
     ) -> Poll<Option<Result<T, RecvError>>> {
+        #[allow(deprecated)]
         self.poll_recv(cx).map(|v| match v {
             Ok(v) => Some(Ok(v)),
             lag @ Err(RecvError::Lagged(_)) => Some(lag),
@@ -902,14 +980,30 @@ impl<T> Drop for Receiver<T> {
     fn drop(&mut self) {
         let mut tail = self.shared.tail.lock().unwrap();
 
+        if let Some(waiter) = &self.waiter {
+            
+            let queued = waiter.with(|ptr| unsafe { (*ptr).queued });
+
+            if queued {
+                
+                
+                
+                
+                unsafe {
+                    waiter.with_mut(|ptr| {
+                        tail.waiters.remove((&mut *ptr).into());
+                    });
+                }
+            }
+        }
+
         tail.rx_cnt -= 1;
         let until = tail.pos;
 
         drop(tail);
 
         while self.next != until {
-            match self.recv_ref(true) {
-                
+            match self.recv_ref(None) {
                 Ok(_) => {}
                 
                 Err(TryRecvError::Closed) => break,
@@ -922,15 +1016,167 @@ impl<T> Drop for Receiver<T> {
     }
 }
 
-impl<T> Drop for Shared<T> {
+impl<R, T> Recv<R, T>
+where
+    R: AsMut<Receiver<T>>,
+{
+    fn new(receiver: R) -> Recv<R, T> {
+        Recv {
+            receiver,
+            waiter: UnsafeCell::new(Waiter {
+                queued: false,
+                waker: None,
+                pointers: linked_list::Pointers::new(),
+                _p: PhantomPinned,
+            }),
+            _p: std::marker::PhantomData,
+        }
+    }
+
+    
+    
+    fn project(self: Pin<&mut Self>) -> (&mut Receiver<T>, &UnsafeCell<Waiter>) {
+        unsafe {
+            
+            is_unpin::<&mut Receiver<T>>();
+
+            let me = self.get_unchecked_mut();
+            (me.receiver.as_mut(), &me.waiter)
+        }
+    }
+}
+
+impl<R, T> Future for Recv<R, T>
+where
+    R: AsMut<Receiver<T>>,
+    T: Clone,
+{
+    type Output = Result<T, RecvError>;
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<T, RecvError>> {
+        let (receiver, waiter) = self.project();
+
+        let guard = match receiver.recv_ref(Some((waiter, cx.waker()))) {
+            Ok(value) => value,
+            Err(TryRecvError::Empty) => return Poll::Pending,
+            Err(TryRecvError::Lagged(n)) => return Poll::Ready(Err(RecvError::Lagged(n))),
+            Err(TryRecvError::Closed) => return Poll::Ready(Err(RecvError::Closed)),
+        };
+
+        Poll::Ready(guard.clone_value().ok_or(RecvError::Closed))
+    }
+}
+
+cfg_stream! {
+    use futures_core::Stream;
+
+    impl<T: Clone> Receiver<T> {
+        /// Convert the receiver into a `Stream`.
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        pub fn into_stream(self) -> impl Stream<Item = Result<T, RecvError>> {
+            Recv::new(Borrow(self))
+        }
+    }
+
+    impl<R, T: Clone> Stream for Recv<R, T>
+    where
+        R: AsMut<Receiver<T>>,
+        T: Clone,
+    {
+        type Item = Result<T, RecvError>;
+
+        fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+            let (receiver, waiter) = self.project();
+
+            let guard = match receiver.recv_ref(Some((waiter, cx.waker()))) {
+                Ok(value) => value,
+                Err(TryRecvError::Empty) => return Poll::Pending,
+                Err(TryRecvError::Lagged(n)) => return Poll::Ready(Some(Err(RecvError::Lagged(n)))),
+                Err(TryRecvError::Closed) => return Poll::Ready(None),
+            };
+
+            Poll::Ready(guard.clone_value().map(Ok))
+        }
+    }
+}
+
+impl<R, T> Drop for Recv<R, T>
+where
+    R: AsMut<Receiver<T>>,
+{
     fn drop(&mut self) {
         
-        let mut curr = self.wait_stack.with_mut(|ptr| *ptr as *const WaitNode);
+        
+        let mut tail = self.receiver.as_mut().shared.tail.lock().unwrap();
 
-        while !curr.is_null() {
-            let waiter = unsafe { Arc::from_raw(curr) };
-            curr = waiter.next.with(|ptr| unsafe { *ptr });
+        
+        let queued = self.waiter.with(|ptr| unsafe { (*ptr).queued });
+
+        if queued {
+            
+            
+            
+            
+            unsafe {
+                self.waiter.with_mut(|ptr| {
+                    tail.waiters.remove((&mut *ptr).into());
+                });
+            }
         }
+    }
+}
+
+
+
+
+unsafe impl linked_list::Link for Waiter {
+    type Handle = NonNull<Waiter>;
+    type Target = Waiter;
+
+    fn as_raw(handle: &NonNull<Waiter>) -> NonNull<Waiter> {
+        *handle
+    }
+
+    unsafe fn from_raw(ptr: NonNull<Waiter>) -> NonNull<Waiter> {
+        ptr
+    }
+
+    unsafe fn pointers(mut target: NonNull<Waiter>) -> NonNull<linked_list::Pointers<Waiter>> {
+        NonNull::from(&mut target.as_mut().pointers)
     }
 }
 
@@ -946,79 +1192,22 @@ impl<T> fmt::Debug for Receiver<T> {
     }
 }
 
-impl<T> Slot<T> {
-    
-    
-    
-    fn try_rx_lock(&self) -> bool {
-        let mut curr = self.lock.load(SeqCst);
-
-        loop {
-            if curr & 1 == 1 {
-                
-                return false;
-            }
-
-            
-            let res = self.lock.compare_exchange(curr, curr + 2, SeqCst, SeqCst);
-
-            match res {
-                Ok(_) => return true,
-                Err(actual) => curr = actual,
-            }
-        }
-    }
-
-    fn rx_unlock(&self, tail: &Mutex<Tail>, condvar: &Condvar, rem_dec: bool) {
-        if rem_dec {
-            
-            if 1 == self.rem.fetch_sub(1, SeqCst) {
-                
-                self.write.val.with_mut(|ptr| unsafe { *ptr = None });
-            }
-        }
-
-        if 1 == self.lock.fetch_sub(2, SeqCst) - 2 {
-            
-            
-            mem::drop(tail.lock().unwrap());
-            
-            condvar.notify_all();
-        }
-    }
-}
-
 impl<'a, T> RecvGuard<'a, T> {
-    fn pos(&self) -> u64 {
-        self.slot.write.pos.with(|ptr| unsafe { *ptr })
-    }
-
     fn clone_value(&self) -> Option<T>
     where
         T: Clone,
     {
-        self.slot.write.val.with(|ptr| unsafe { (*ptr).clone() })
-    }
-
-    fn drop_no_rem_dec(self) {
-        self.slot.rx_unlock(self.tail, self.condvar, false);
-
-        mem::forget(self);
+        self.slot.val.with(|ptr| unsafe { (*ptr).clone() })
     }
 }
 
 impl<'a, T> Drop for RecvGuard<'a, T> {
     fn drop(&mut self) {
-        self.slot.rx_unlock(self.tail, self.condvar, true)
-    }
-}
-
-fn ok_empty<T>(res: Result<T, TryRecvError>) -> Result<Option<T>, RecvError> {
-    match res {
-        Ok(value) => Ok(Some(value)),
-        Err(TryRecvError::Empty) => Ok(None),
-        Err(TryRecvError::Lagged(n)) => Err(RecvError::Lagged(n)),
-        Err(TryRecvError::Closed) => Err(RecvError::Closed),
+        
+        if 1 == self.slot.rem.fetch_sub(1, SeqCst) {
+            
+            self.slot.val.with_mut(|ptr| unsafe { *ptr = None });
+        }
     }
 }
 
@@ -1044,3 +1233,5 @@ impl fmt::Display for TryRecvError {
 }
 
 impl std::error::Error for TryRecvError {}
+
+fn is_unpin<T: Unpin>() {}

@@ -1,5 +1,5 @@
 use super::batch_semaphore as ll; 
-use crate::coop::CoopFutureExt;
+use std::sync::Arc;
 
 
 
@@ -19,10 +19,26 @@ pub struct Semaphore {
 }
 
 
+
+
+
+
 #[must_use]
 #[derive(Debug)]
 pub struct SemaphorePermit<'a> {
     sem: &'a Semaphore,
+    permits: u16,
+}
+
+
+
+
+
+
+#[must_use]
+#[derive(Debug)]
+pub struct OwnedSemaphorePermit {
+    sem: Arc<Semaphore>,
     permits: u16,
 }
 
@@ -64,13 +80,15 @@ impl Semaphore {
     }
 
     
+    
+    
     pub fn add_permits(&self, n: usize) {
         self.ll_sem.release(n);
     }
 
     
     pub async fn acquire(&self) -> SemaphorePermit<'_> {
-        self.ll_sem.acquire(1).cooperate().await.unwrap();
+        self.ll_sem.acquire(1).await.unwrap();
         SemaphorePermit {
             sem: &self,
             permits: 1,
@@ -87,6 +105,34 @@ impl Semaphore {
             Err(_) => Err(TryAcquireError(())),
         }
     }
+
+    
+    
+    
+    
+    
+    pub async fn acquire_owned(self: Arc<Self>) -> OwnedSemaphorePermit {
+        self.ll_sem.acquire(1).await.unwrap();
+        OwnedSemaphorePermit {
+            sem: self.clone(),
+            permits: 1,
+        }
+    }
+
+    
+    
+    
+    
+    
+    pub fn try_acquire_owned(self: Arc<Self>) -> Result<OwnedSemaphorePermit, TryAcquireError> {
+        match self.ll_sem.try_acquire(1) {
+            Ok(_) => Ok(OwnedSemaphorePermit {
+                sem: self.clone(),
+                permits: 1,
+            }),
+            Err(_) => Err(TryAcquireError(())),
+        }
+    }
 }
 
 impl<'a> SemaphorePermit<'a> {
@@ -98,7 +144,22 @@ impl<'a> SemaphorePermit<'a> {
     }
 }
 
+impl OwnedSemaphorePermit {
+    
+    
+    
+    pub fn forget(mut self) {
+        self.permits = 0;
+    }
+}
+
 impl<'a> Drop for SemaphorePermit<'_> {
+    fn drop(&mut self) {
+        self.sem.add_permits(self.permits as usize);
+    }
+}
+
+impl Drop for OwnedSemaphorePermit {
     fn drop(&mut self) {
         self.sem.add_permits(self.permits as usize);
     }

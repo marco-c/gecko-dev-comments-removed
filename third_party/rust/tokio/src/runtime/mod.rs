@@ -271,7 +271,6 @@ use std::time::Duration;
 
 
 
-
 #[derive(Debug)]
 pub struct Runtime {
     
@@ -382,6 +381,12 @@ impl Runtime {
     
     
     
+    
+    
+    
+    
+    
+    
     #[cfg(feature = "rt-core")]
     pub fn spawn<F>(&self, future: F) -> JoinHandle<F::Output>
     where
@@ -409,6 +414,27 @@ impl Runtime {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn block_on<F: Future>(&mut self, future: F) -> F::Output {
         let kind = &mut self.kind;
 
@@ -421,6 +447,37 @@ impl Runtime {
         })
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     pub fn enter<F, R>(&self, f: F) -> R
     where
@@ -485,10 +542,39 @@ impl Runtime {
     
     
     
-    pub fn shutdown_timeout(self, duration: Duration) {
-        let Runtime {
-            mut blocking_pool, ..
-        } = self;
-        blocking_pool.shutdown(Some(duration));
+    pub fn shutdown_timeout(mut self, duration: Duration) {
+        
+        self.handle.spawner.shutdown();
+        self.blocking_pool.shutdown(Some(duration));
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn shutdown_background(self) {
+        self.shutdown_timeout(Duration::from_nanos(0))
     }
 }

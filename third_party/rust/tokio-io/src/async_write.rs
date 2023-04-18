@@ -1,8 +1,9 @@
-use std::io as std_io;
 use bytes::Buf;
 use futures::{Async, Poll};
+use std::io as std_io;
 
 use AsyncRead;
+
 
 
 
@@ -45,9 +46,7 @@ pub trait AsyncWrite: std_io::Write {
     fn poll_write(&mut self, buf: &[u8]) -> Poll<usize, std_io::Error> {
         match self.write(buf) {
             Ok(t) => Ok(Async::Ready(t)),
-            Err(ref e) if e.kind() == std_io::ErrorKind::WouldBlock => {
-                return Ok(Async::NotReady)
-            }
+            Err(ref e) if e.kind() == std_io::ErrorKind::WouldBlock => return Ok(Async::NotReady),
             Err(e) => return Err(e.into()),
         }
     }
@@ -64,9 +63,7 @@ pub trait AsyncWrite: std_io::Write {
     fn poll_flush(&mut self) -> Poll<(), std_io::Error> {
         match self.flush() {
             Ok(t) => Ok(Async::Ready(t)),
-            Err(ref e) if e.kind() == std_io::ErrorKind::WouldBlock => {
-                return Ok(Async::NotReady)
-            }
+            Err(ref e) if e.kind() == std_io::ErrorKind::WouldBlock => return Ok(Async::NotReady),
             Err(e) => return Err(e.into()),
         }
     }
@@ -136,7 +133,8 @@ pub trait AsyncWrite: std_io::Write {
     
     
     fn write_buf<B: Buf>(&mut self, buf: &mut B) -> Poll<usize, std_io::Error>
-        where Self: Sized,
+    where
+        Self: Sized,
     {
         if !buf.has_remaining() {
             return Ok(Async::Ready(0));
@@ -171,17 +169,23 @@ impl AsyncWrite for std_io::Sink {
     }
 }
 
-
-
 impl<T: AsyncRead> AsyncRead for std_io::Take<T> {
+    unsafe fn prepare_uninitialized_buffer(&self, buf: &mut [u8]) -> bool {
+        self.get_ref().prepare_uninitialized_buffer(buf)
+    }
 }
 
-
-
 impl<T, U> AsyncRead for std_io::Chain<T, U>
-    where T: AsyncRead,
-          U: AsyncRead,
+where
+    T: AsyncRead,
+    U: AsyncRead,
 {
+    unsafe fn prepare_uninitialized_buffer(&self, buf: &mut [u8]) -> bool {
+        let (t, u) = self.get_ref();
+        
+        
+        t.prepare_uninitialized_buffer(buf) || u.prepare_uninitialized_buffer(buf)
+    }
 }
 
 impl<T: AsyncWrite> AsyncWrite for std_io::BufWriter<T> {
@@ -197,8 +201,7 @@ impl<T: AsyncRead> AsyncRead for std_io::BufReader<T> {
     }
 }
 
-impl<T: AsRef<[u8]>> AsyncRead for std_io::Cursor<T> {
-}
+impl<T: AsRef<[u8]>> AsyncRead for std_io::Cursor<T> {}
 
 impl<'a> AsyncWrite for std_io::Cursor<&'a mut [u8]> {
     fn shutdown(&mut self) -> Poll<(), std_io::Error> {

@@ -1,8 +1,10 @@
-#![doc(html_root_url = "https://docs.rs/tokio/0.2.18")]
+#![doc(html_root_url = "https://docs.rs/tokio/0.2.25")]
 #![allow(
     clippy::cognitive_complexity,
     clippy::large_enum_variant,
-    clippy::needless_doctest_main
+    clippy::needless_doctest_main,
+    clippy::match_like_matches_macro,
+    clippy::stable_sort_primitive
 )]
 #![warn(
     missing_debug_implementations,
@@ -10,12 +12,57 @@
     rust_2018_idioms,
     unreachable_pub
 )]
-#![deny(intra_doc_link_resolution_failure)]
+#![cfg_attr(docsrs, deny(broken_intra_doc_links))]
 #![doc(test(
     no_crate_inject,
     attr(deny(warnings, rust_2018_idioms), allow(dead_code, unused_variables))
 ))]
 #![cfg_attr(docsrs, feature(doc_cfg))]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

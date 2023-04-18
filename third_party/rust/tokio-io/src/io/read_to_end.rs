@@ -1,7 +1,7 @@
 use std::io;
 use std::mem;
 
-use futures::{Poll, Future};
+use futures::{Future, Poll};
 
 use AsyncRead;
 
@@ -18,10 +18,7 @@ pub struct ReadToEnd<A> {
 
 #[derive(Debug)]
 enum State<A> {
-    Reading {
-        a: A,
-        buf: Vec<u8>,
-    },
+    Reading { a: A, buf: Vec<u8> },
     Empty,
 }
 
@@ -31,32 +28,33 @@ enum State<A> {
 
 
 
-
 pub fn read_to_end<A>(a: A, buf: Vec<u8>) -> ReadToEnd<A>
-    where A: AsyncRead,
+where
+    A: AsyncRead,
 {
     ReadToEnd {
-        state: State::Reading {
-            a: a,
-            buf: buf,
-        }
+        state: State::Reading { a: a, buf: buf },
     }
 }
 
 impl<A> Future for ReadToEnd<A>
-    where A: AsyncRead,
+where
+    A: AsyncRead,
 {
     type Item = (A, Vec<u8>);
     type Error = io::Error;
 
     fn poll(&mut self) -> Poll<(A, Vec<u8>), io::Error> {
         match self.state {
-            State::Reading { ref mut a, ref mut buf } => {
+            State::Reading {
+                ref mut a,
+                ref mut buf,
+            } => {
                 
                 
                 
                 try_nb!(a.read_to_end(buf));
-            },
+            }
             State::Empty => panic!("poll ReadToEnd after it's done"),
         }
 
