@@ -188,15 +188,6 @@ impl ExternalEvent {
 }
 
 
-#[derive(Copy, Clone, Deserialize, Serialize)]
-pub enum ScrollClamping {
-    
-    ToContentBounds,
-    
-    NoClamping,
-}
-
-
 pub trait RenderNotifier: Send {
     
     fn clone(&self) -> Box<dyn RenderNotifier>;
