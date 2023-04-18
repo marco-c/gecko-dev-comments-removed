@@ -737,21 +737,8 @@ class nsLayoutUtils {
 
 
 
-
   static nsIFrame* GetPopupFrameForEventCoordinates(
-      nsPresContext* aRootPresContext, const mozilla::WidgetEvent* aEvent);
-
-  
-
-
-
-
-
-
-
-  static nsIFrame* GetPopupFrameForPoint(
-      nsPresContext* aRootPresContext, nsIWidget* aWidget,
-      const mozilla::LayoutDeviceIntPoint& aPoint);
+      nsPresContext* aPresContext, const mozilla::WidgetEvent* aEvent);
 
   
 
