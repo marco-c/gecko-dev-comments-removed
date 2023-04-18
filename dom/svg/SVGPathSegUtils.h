@@ -10,6 +10,7 @@
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/dom/SVGPathSegBinding.h"
 #include "mozilla/gfx/Point.h"
+#include "mozilla/gfx/Rect.h"
 #include "nsDebug.h"
 
 namespace mozilla {
@@ -265,6 +266,20 @@ class SVGPathSegUtils {
   static void TraversePathSegment(const StylePathCommand& aCommand,
                                   SVGPathTraversalState& aState);
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+Maybe<gfx::Rect> SVGPathToAxisAlignedRect(Span<const StylePathCommand> aPath);
 
 }  
 
