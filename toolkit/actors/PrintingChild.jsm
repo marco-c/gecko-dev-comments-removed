@@ -361,10 +361,7 @@ class PrintingChild extends JSWindowActorChild {
       let printSettings = this.getPrintSettings(lastUsedPrinterName);
 
       
-      printSettings.showPrintProgress = !Services.prefs.getBoolPref(
-        "print.tab_modal.enabled",
-        false
-      );
+      printSettings.showPrintProgress = false;
 
       
       
