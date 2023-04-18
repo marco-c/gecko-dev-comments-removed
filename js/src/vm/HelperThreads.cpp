@@ -23,7 +23,6 @@
 #include "js/ContextOptions.h"  
 #include "js/experimental/JSStencil.h"
 #include "js/friend/StackLimits.h"  
-#include "js/GlobalObject.h"
 #include "js/HelperThreadAPI.h"
 #include "js/OffThreadScriptCompilation.h"  
 #include "js/SourceText.h"
@@ -529,11 +528,7 @@ AutoSetHelperThreadContext::~AutoSetHelperThreadContext() {
 
 ParseTask::ParseTask(ParseTaskKind kind, JSContext* cx,
                      JS::OffThreadCompileCallback callback, void* callbackData)
-    : kind(kind),
-      options(cx),
-      parseGlobal(nullptr),
-      callback(callback),
-      callbackData(callbackData) {
+    : kind(kind), options(cx), callback(callback), callbackData(callbackData) {
   
   
   MOZ_ASSERT(!cx->isHelperThreadContext());
@@ -554,12 +549,7 @@ bool ParseTask::init(JSContext* cx, const ReadOnlyCompileOptions& options) {
   return true;
 }
 
-void ParseTask::activate(JSRuntime* rt) {
-  rt->addParseTaskRef();
-  if (parseGlobal) {
-    rt->setUsedByHelperThread(parseGlobal->zone());
-  }
-}
+void ParseTask::activate(JSRuntime* rt) { rt->addParseTaskRef(); }
 
 ParseTask::~ParseTask() = default;
 
@@ -568,15 +558,6 @@ void ParseTask::trace(JSTracer* trc) {
     return;
   }
 
-  if (parseGlobal) {
-    Zone* zone = MaybeForwarded(parseGlobal)->zoneFromAnyThread();
-    if (zone->usedByHelperThread()) {
-      MOZ_ASSERT(!zone->isCollecting());
-      return;
-    }
-  }
-
-  TraceNullableRoot(trc, &parseGlobal, "ParseTask::parseGlobal");
   scripts.trace(trc);
   sourceObjects.trace(trc);
 
@@ -608,12 +589,6 @@ size_t ParseTask::sizeOfExcludingThis(
 }
 
 void ParseTask::runHelperThreadTask(AutoLockHelperThreadState& locked) {
-#ifdef DEBUG
-  if (parseGlobal) {
-    runtime->incOffThreadParsesRunning();
-  }
-#endif
-
   runTask(locked);
 
   
@@ -622,12 +597,6 @@ void ParseTask::runHelperThreadTask(AutoLockHelperThreadState& locked) {
   
   
   HelperThreadState().parseFinishedList(locked).insertBack(this);
-
-#ifdef DEBUG
-  if (parseGlobal) {
-    runtime->decOffThreadParsesRunning();
-  }
-#endif
 }
 
 void ParseTask::runTask(AutoLockHelperThreadState& lock) {
@@ -640,23 +609,6 @@ void ParseTask::runTask(AutoLockHelperThreadState& lock) {
   AutoSetContextRuntime ascr(runtime);
   AutoSetContextOffThreadFrontendErrors recordErrors(&this->errors);
   gc::AutoSuppressNurseryCellAlloc noNurseryAlloc(cx);
-
-  Zone* zone = nullptr;
-  if (parseGlobal) {
-    zone = parseGlobal->zoneFromAnyThread();
-    zone->setHelperThreadOwnerContext(cx);
-  }
-
-  auto resetOwnerContext = mozilla::MakeScopeExit([&] {
-    if (zone) {
-      zone->setHelperThreadOwnerContext(nullptr);
-    }
-  });
-
-  Maybe<AutoRealm> ar;
-  if (parseGlobal) {
-    ar.emplace(cx, parseGlobal);
-  }
 
   parse(cx);
 
@@ -1889,11 +1841,6 @@ bool GlobalHelperThreadState::canStartGCParallelTask(
 }
 
 static void LeaveParseTaskZone(JSRuntime* rt, ParseTask* task) {
-  
-  
-  if (task->parseGlobal) {
-    rt->clearUsedByHelperThread(task->parseGlobal->zoneFromAnyThread());
-  }
   rt->decParseTaskRef();
 }
 
@@ -2186,7 +2133,6 @@ void GlobalHelperThreadState::cancelParseTask(JSRuntime* rt, ParseTaskKind kind,
     if (task == waitingOnGC[i]) {
       MOZ_ASSERT(task->kind == kind);
       MOZ_ASSERT(task->runtimeMatches(rt));
-      task->parseGlobal->zoneFromAnyThread()->clearUsedByHelperThread();
       HelperThreadState().remove(waitingOnGC, &i);
       return;
     }

@@ -512,10 +512,6 @@ struct ParseTask : public mozilla::LinkedListElement<ParseTask>,
   JSRuntime* runtime = nullptr;
 
   
-  
-  JSObject* parseGlobal;
-
-  
   JS::OffThreadCompileCallback callback;
   void* callbackData;
 
