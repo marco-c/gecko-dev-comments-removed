@@ -149,6 +149,9 @@ var PictureInPicture = {
   weakWinToBrowser: new WeakMap(),
 
   
+  browserWeakMap: new WeakMap(),
+
+  
 
 
 
@@ -173,12 +176,39 @@ var PictureInPicture = {
     }
   },
 
+  
+
+
+
+  addPiPBrowserToWeakMap(browser) {
+    let count = this.browserWeakMap.has(browser)
+      ? this.browserWeakMap.get(browser)
+      : 0;
+    this.browserWeakMap.set(browser, count + 1);
+  },
+
+  
+
+
+
+
+  removePiPBrowserFromWeakMap(browser) {
+    let count = this.browserWeakMap.get(browser);
+    if (count <= 1) {
+      this.browserWeakMap.delete(browser);
+    } else {
+      this.browserWeakMap.set(browser, count - 1);
+    }
+  },
+
   onPipSwappedBrowsers(event) {
     let otherTab = event.detail;
     if (otherTab) {
       for (let win of Services.wm.getEnumerator(WINDOW_TYPE)) {
         if (this.weakWinToBrowser.get(win) === event.target.linkedBrowser) {
           this.weakWinToBrowser.set(win, otherTab.linkedBrowser);
+          this.removePiPBrowserFromWeakMap(event.target.linkedBrowser);
+          this.addPiPBrowserToWeakMap(otherTab.linkedBrowser);
         }
       }
       otherTab.addEventListener("TabSwapPictureInPicture", this);
@@ -285,6 +315,8 @@ var PictureInPicture = {
     if (!win) {
       return;
     }
+    this.removePiPBrowserFromWeakMap(this.weakWinToBrowser.get(win));
+
     await this.closePipWindow(win);
     gCloseReasons.set(win, reason);
   },
@@ -335,6 +367,7 @@ var PictureInPicture = {
     gNextWindowID++;
 
     this.weakWinToBrowser.set(win, browser);
+    this.addPiPBrowserToWeakMap(browser);
 
     Services.prefs.setBoolPref(
       "media.videocontrols.picture-in-picture.video-toggle.has-used",
@@ -717,6 +750,18 @@ var PictureInPicture = {
 
   hideToggle() {
     Services.prefs.setBoolPref(TOGGLE_ENABLED_PREF, false);
+  },
+
+  
+
+
+
+
+
+
+
+  isOriginatingBrowser(browser) {
+    return this.browserWeakMap.has(browser);
   },
 
   moveToggle() {

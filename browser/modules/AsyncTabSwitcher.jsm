@@ -12,6 +12,7 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 XPCOMUtils.defineLazyModuleGetters(this, {
   AppConstants: "resource://gre/modules/AppConstants.jsm",
+  PictureInPicture: "resource://gre/modules/PictureInPicture.jsm",
   Services: "resource://gre/modules/Services.jsm",
 });
 
@@ -649,8 +650,7 @@ class AsyncTabSwitcher {
     let numPending = 0;
     let numWarming = 0;
     for (let [tab, state] of this.tabState) {
-      
-      if (this.tabbrowser._printPreviewBrowsers.has(tab.linkedBrowser)) {
+      if (!this.shouldDeactivateDocShell(tab.linkedBrowser)) {
         continue;
       }
 
@@ -726,7 +726,7 @@ class AsyncTabSwitcher {
 
     
     for (let [tab, state] of this.tabState) {
-      if (this.tabbrowser._printPreviewBrowsers.has(tab.linkedBrowser)) {
+      if (!this.shouldDeactivateDocShell(tab.linkedBrowser)) {
         continue;
       }
 
@@ -852,8 +852,7 @@ class AsyncTabSwitcher {
   onSizeModeOrOcclusionStateChange() {
     if (this.minimizedOrFullyOccluded) {
       for (let [tab, state] of this.tabState) {
-        
-        if (this.tabbrowser._printPreviewBrowsers.has(tab.linkedBrowser)) {
+        if (!this.shouldDeactivateDocShell(tab.linkedBrowser)) {
           continue;
         }
 
@@ -913,6 +912,19 @@ class AsyncTabSwitcher {
     if (ourTab) {
       this.setTabStateNoAction(ourTab, otherState);
     }
+  }
+
+  
+
+
+
+
+
+  shouldDeactivateDocShell(browser) {
+    return !(
+      this.tabbrowser._printPreviewBrowsers.has(browser) ||
+      PictureInPicture.isOriginatingBrowser(browser)
+    );
   }
 
   shouldActivateDocShell(browser) {
@@ -1220,6 +1232,8 @@ class AsyncTabSwitcher {
       let linkedBrowser = tab.linkedBrowser;
       let isActive = linkedBrowser && linkedBrowser.docShellIsActive;
       let isRendered = linkedBrowser && linkedBrowser.renderLayers;
+      let isPiP =
+        linkedBrowser && PictureInPicture.isOriginatingBrowser(linkedBrowser);
 
       if (tab === this.lastVisibleTab) {
         tabString += "V";
@@ -1252,6 +1266,9 @@ class AsyncTabSwitcher {
       }
       if (isRendered) {
         extraStates += "R";
+      }
+      if (isPiP) {
+        extraStates += "P";
       }
       if (extraStates != "") {
         tabString += `(${extraStates})`;
