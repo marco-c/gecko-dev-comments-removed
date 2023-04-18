@@ -14,7 +14,7 @@ extern crate error_chain;
 
 mod errors {
     
-    error_chain!{}
+    error_chain! {}
 }
 
 
@@ -51,8 +51,8 @@ fn main() {
 #[allow(dead_code)]
 fn alternative_main() {
     if let Err(ref e) = run() {
-        use std::io::Write;
-        use error_chain::ChainedError; 
+        use error_chain::ChainedError;
+        use std::io::Write; 
         let stderr = &mut ::std::io::stderr();
         let errmsg = "Error writing to stderr";
 
@@ -68,13 +68,11 @@ fn alternative_main() {
 
 
 
-
 fn run() -> Result<()> {
     use std::fs::File;
 
     
-    File::open("tretrete")
-        .chain_err(|| "unable to open tretrete file")?;
+    File::open("tretrete").chain_err(|| "unable to open tretrete file")?;
 
     Ok(())
 }

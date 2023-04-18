@@ -7,7 +7,7 @@ extern crate error_chain;
 
 
 pub mod inner {
-    error_chain!{}
+    error_chain! {}
 }
 
 error_chain! {
