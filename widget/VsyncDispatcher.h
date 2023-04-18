@@ -31,6 +31,7 @@ class VsyncObserver {
   virtual ~VsyncObserver() = default;
 };  
 
+class VsyncDispatcher;
 
 
 
@@ -43,17 +44,15 @@ class VsyncObserver {
 
 
 
-class CompositorVsyncDispatcher final {
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CompositorVsyncDispatcher)
+
+class CompositorVsyncDispatcher final : public VsyncObserver {
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CompositorVsyncDispatcher, override)
 
  public:
-  CompositorVsyncDispatcher();
-  explicit CompositorVsyncDispatcher(RefPtr<gfx::VsyncSource> aVsyncSource);
+  explicit CompositorVsyncDispatcher(RefPtr<VsyncDispatcher> aVsyncDispatcher);
 
   
-  void NotifyVsync(const VsyncEvent& aVsync);
-
-  void MoveToSource(const RefPtr<gfx::VsyncSource>& aVsyncSource);
+  void NotifyVsync(const VsyncEvent& aVsync) override;
 
   
   void SetCompositorVsyncObserver(VsyncObserver* aVsyncObserver);
@@ -63,11 +62,12 @@ class CompositorVsyncDispatcher final {
   virtual ~CompositorVsyncDispatcher();
   void ObserveVsync(bool aEnable);
 
-  RefPtr<gfx::VsyncSource> mVsyncSource;
+  RefPtr<VsyncDispatcher> mVsyncDispatcher;
   Mutex mCompositorObserverLock MOZ_UNANNOTATED;
   RefPtr<VsyncObserver> mCompositorVsyncObserver;
   bool mDidShutdown;
 };
+
 
 
 
