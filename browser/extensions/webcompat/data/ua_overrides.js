@@ -792,6 +792,35 @@ const AVAILABLE_UA_OVERRIDES = [
       },
     },
   },
+  {
+    
+
+
+
+
+
+
+    id: "bug1751232",
+    platform: "android",
+    domain: "Sites with desktop layout for Android 12",
+    bug: "1751232",
+    config: {
+      matches: [
+        "*://*.dw.com/*",
+        "*://*.abc10.com/*",
+        "*://*.wnep.com/*",
+        "*://*.dn.se/*",
+        "*://*.dailymail.co.uk/*",
+      ],
+      uaTransformer: originalUA => {
+        if (!originalUA.includes("Android 12;")) {
+          return originalUA;
+        }
+
+        return originalUA.replace("Android 12;", "Android 12.0;");
+      },
+    },
+  },
 ];
 
 module.exports = AVAILABLE_UA_OVERRIDES;
