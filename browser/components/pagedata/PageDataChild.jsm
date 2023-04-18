@@ -11,20 +11,8 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  OpenGraphPageData: "resource:///modules/pagedata/OpenGraphPageData.jsm",
   PageDataSchema: "resource:///modules/pagedata/PageDataSchema.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
-  SchemaOrgPageData: "resource:///modules/pagedata/SchemaOrgPageData.jsm",
-  Services: "resource://gre/modules/Services.jsm",
-});
-
-XPCOMUtils.defineLazyGetter(this, "logConsole", function() {
-  return console.createInstance({
-    prefix: "PageData",
-    maxLogLevel: Services.prefs.getBoolPref("browser.pagedata.log", false)
-      ? "Debug"
-      : "Warn",
-  });
 });
 
 
@@ -35,22 +23,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "browser.pagedata.readyDelay",
   500
 );
-
-
-
-
-
-
-
-
-
-
-
-
-
-XPCOMUtils.defineLazyGetter(this, "DATA_COLLECTORS", function() {
-  return [SchemaOrgPageData, OpenGraphPageData];
-});
 
 
 
@@ -106,36 +78,6 @@ class PageDataChild extends JSWindowActorChild {
   
 
 
-  async #collectData() {
-    logConsole.debug("Starting collection", this.document.documentURI);
-
-    let pending = DATA_COLLECTORS.map(async collector => {
-      try {
-        return await collector.collect(this.document);
-      } catch (e) {
-        logConsole.error("Error collecting page data", e);
-        return {};
-      }
-    });
-
-    let pageDataList = await Promise.all(pending);
-
-    let pageData = pageDataList.reduce(PageDataSchema.coalescePageData, {
-      date: Date.now(),
-      url: this.document.documentURI,
-    });
-
-    try {
-      return PageDataSchema.validatePageData(pageData);
-    } catch (e) {
-      logConsole.error("Failed to collect valid page data", e);
-      return null;
-    }
-  }
-
-  
-
-
 
 
 
@@ -156,7 +98,7 @@ class PageDataChild extends JSWindowActorChild {
         }
         break;
       case "PageData:Collect":
-        return this.#collectData();
+        return PageDataSchema.collectPageData(this.document);
     }
 
     return undefined;
