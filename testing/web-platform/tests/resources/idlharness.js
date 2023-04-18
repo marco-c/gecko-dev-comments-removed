@@ -1529,12 +1529,12 @@ IdlInterface.prototype.test_self = function()
         
         assert_true(isConstructor(this.get_interface_object()), "interface object must pass IsConstructor check");
 
+        var interface_object = this.get_interface_object();
+        assert_throws_js(globalOf(interface_object).TypeError, function() {
+            interface_object();
+        }, "interface object didn't throw TypeError when called as a function");
+
         if (!this.constructors().length) {
-            
-            var interface_object = this.get_interface_object();
-            assert_throws_js(globalOf(interface_object).TypeError, function() {
-                interface_object();
-            }, "interface object didn't throw TypeError when called as a function");
             assert_throws_js(globalOf(interface_object).TypeError, function() {
                 new interface_object();
             }, "interface object didn't throw TypeError when called as a constructor");
