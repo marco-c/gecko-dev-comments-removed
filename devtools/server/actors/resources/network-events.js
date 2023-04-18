@@ -187,7 +187,13 @@ class NetworkEventWatcher {
         
         
         
+        
+        
+        
+        
+        
       } else if (
+        child.innerWindowId &&
         child.innerWindowId != innerWindowId &&
         windowGlobal.browsingContext ==
           this.watcherActor.browserElement?.browsingContext
