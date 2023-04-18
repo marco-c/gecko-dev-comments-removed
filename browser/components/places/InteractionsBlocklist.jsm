@@ -131,11 +131,54 @@ class _InteractionsBlocklist {
 
 
 
+  get urlRequirements() {
+    return new Map([
+      ["http:", {}],
+      ["https:", {}],
+      ["file:", { extension: "pdf" }],
+    ]);
+  }
+
+  
+
+
+
+
+
+  canRecordUrl(url) {
+    let protocol, pathname;
+    if (typeof url == "string") {
+      url = new URL(url);
+    }
+    if (url instanceof Ci.nsIURI) {
+      protocol = url.scheme + ":";
+      pathname = url.filePath;
+    } else {
+      protocol = url.protocol;
+      pathname = url.pathname;
+    }
+    let requirements = InteractionsBlocklist.urlRequirements.get(protocol);
+    return (
+      requirements &&
+      (!requirements.extension || pathname.endsWith(requirements.extension))
+    );
+  }
+
+  
+
+
+
+
+
 
 
 
   isUrlBlocklisted(urlToCheck) {
     if (FilterAdult.isAdultUrl(urlToCheck)) {
+      return true;
+    }
+
+    if (!this.canRecordUrl(urlToCheck)) {
       return true;
     }
 
@@ -153,6 +196,11 @@ class _InteractionsBlocklist {
       );
       return false;
     }
+
+    if (url.protocol == "file:") {
+      return false;
+    }
+
     let hostWithoutSuffix = UrlbarUtils.stripPublicSuffixFromHost(url.host);
     let [hostWithSubdomains] = UrlbarUtils.stripPrefixAndTrim(
       hostWithoutSuffix,

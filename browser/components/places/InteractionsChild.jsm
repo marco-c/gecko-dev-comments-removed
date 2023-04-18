@@ -7,12 +7,19 @@
 var EXPORTED_SYMBOLS = ["InteractionsChild"];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 
 ChromeUtils.defineModuleGetter(
   this,
   "PrivateBrowsingUtils",
   "resource://gre/modules/PrivateBrowsingUtils.jsm"
 );
+
+XPCOMUtils.defineLazyModuleGetters(this, {
+  InteractionsBlocklist: "resource:///modules/InteractionsBlocklist.jsm",
+});
 
 
 
@@ -32,10 +39,8 @@ class InteractionsChild extends JSWindowActorChild {
     }
     switch (event.type) {
       case "DOMContentLoaded": {
-        if (
-          !this.docShell.currentDocumentChannel ||
-          !(this.docShell.currentDocumentChannel instanceof Ci.nsIHttpChannel)
-        ) {
+        let docInfo = this.#getDocumentInfo();
+        if (!docInfo || !this.docShell.currentDocumentChannel) {
           
           
           
@@ -43,21 +48,18 @@ class InteractionsChild extends JSWindowActorChild {
           return;
         }
 
-        if (!this.docShell.currentDocumentChannel.requestSucceeded) {
+        if (
+          this.docShell.currentDocumentChannel instanceof Ci.nsIHttpChannel &&
+          !this.docShell.currentDocumentChannel.requestSucceeded
+        ) {
           return;
         }
 
-        let docInfo = await this.#getDocumentInfo();
-        if (docInfo) {
-          this.sendAsyncMessage("Interactions:PageLoaded", docInfo);
-        }
+        this.sendAsyncMessage("Interactions:PageLoaded", docInfo);
         break;
       }
       case "pagehide": {
-        if (
-          !this.docShell.currentDocumentChannel ||
-          !(this.docShell.currentDocumentChannel instanceof Ci.nsIHttpChannel)
-        ) {
+        if (!this.docShell.currentDocumentChannel) {
           return;
         }
 
@@ -81,11 +83,16 @@ class InteractionsChild extends JSWindowActorChild {
 
 
 
-  async #getDocumentInfo() {
+  #getDocumentInfo() {
     let doc = this.document;
+
+    let requirements = InteractionsBlocklist.urlRequirements.get(
+      doc.documentURIObject.scheme + ":"
+    );
     if (
-      doc.documentURIObject.scheme != "http" &&
-      doc.documentURIObject.scheme != "https"
+      !requirements ||
+      (requirements.extension &&
+        !doc.documentURIObject.spec.endsWith(requirements.extension))
     ) {
       return null;
     }
