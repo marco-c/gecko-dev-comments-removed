@@ -50,6 +50,11 @@ const EXPRESSIONS_BY_FILE = {
     ["False", `false`],
     ["NegZeroGrip", `1 / -Infinity`],
   ]),
+  "symbol.js": new Map([
+    ["Symbol", `Symbol("foo")`],
+    ["SymbolWithoutIdentifier", `Symbol()`],
+    ["SymbolWithLongString", `Symbol("aa".repeat(10000))`],
+  ]),
   "text-node.js": new Map([
     [
       "testRendering",
@@ -67,7 +72,6 @@ const EXPRESSIONS_BY_FILE = {
   ]),
   "undefined.js": new Map([["Undefined", `undefined`]]),
   "window.js": new Map([["Window", `window`]]),
-  
   
   
   

@@ -4,27 +4,30 @@
 
 "use strict";
 
+
+
+
 const stubs = new Map();
-stubs.set("Symbol", {
-  type: "symbol",
-  actor: "server1.conn1.child1/symbol1",
-  name: "foo",
+stubs.set(`Symbol`, {
+  "type": "symbol",
+  "actor": "server0.conn0.windowGlobal4294967299/symbol40",
+  "name": "foo"
 });
 
-stubs.set("SymbolWithoutIdentifier", {
-  type: "symbol",
-  actor: "server1.conn1.child1/symbol2",
+stubs.set(`SymbolWithoutIdentifier`, {
+  "type": "symbol",
+  "actor": "server0.conn0.windowGlobal4294967299/symbol42"
 });
 
-stubs.set("SymbolWithLongString", {
-  type: "symbol",
-  actor: "server1.conn1.child1/symbol1",
-  name: {
-    type: "longString",
-    initial: "aa".repeat(10000),
-    length: 20000,
-    actor: "server1.conn1.child1/longString58",
-  },
+stubs.set(`SymbolWithLongString`, {
+  "type": "symbol",
+  "actor": "server0.conn0.windowGlobal4294967299/symbol44",
+  "name": {
+    "type": "longString",
+    "actor": "server0.conn0.windowGlobal4294967299/longstractor45",
+    "length": 20000,
+    "initial": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  }
 });
 
 module.exports = stubs;
