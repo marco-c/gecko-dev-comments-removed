@@ -101,7 +101,8 @@ void UtilityProcessManager::OnPreferenceChange(const char16_t* aData) {
 
   mozilla::dom::Pref pref(strData,  false,
                            false, Nothing(), Nothing());
-  Preferences::GetPreference(&pref);
+  Preferences::GetPreference(&pref, GeckoProcessType_Utility,
+                              ""_ns);
 
   for (auto& p : mProcesses) {
     if (!p) {
