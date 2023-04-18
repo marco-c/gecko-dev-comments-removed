@@ -4,20 +4,20 @@
 
 
 
-Library('FuzzingDomBase')
+Library("FuzzingDomBase")
 
 SOURCES += [
-    'FuzzStructuredClone.cpp',
+    "FuzzStructuredClone.cpp",
 ]
 
 LOCAL_INCLUDES += [
-    '/dom/base',
-    '/dom/ipc',
+    "/dom/base",
+    "/dom/ipc",
 ]
 
-include('/ipc/chromium/chromium-config.mozbuild')
+include("/ipc/chromium/chromium-config.mozbuild")
 
 
 include("/tools/fuzzing/libfuzzer-config.mozbuild")
 
-FINAL_LIBRARY = 'xul-gtest'
+FINAL_LIBRARY = "xul-gtest"
