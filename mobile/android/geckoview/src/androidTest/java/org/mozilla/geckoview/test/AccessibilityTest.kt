@@ -385,6 +385,7 @@ class AccessibilityTest : BaseSessionTest() {
             }
         })
 
+        
         mainSession.finder.find("sweet", 0)
         sessionRule.waitUntilCalled(object : EventDelegate {
             @AssertCalled(count = 1)
@@ -397,6 +398,9 @@ class AccessibilityTest : BaseSessionTest() {
         
         mainSession.evaluateJS("""
             this.select(document.body, 0, 0);
+            
+            
+            document.activeElement.blur();
         """.trimIndent())
         sessionRule.waitUntilCalled(object : EventDelegate {
             @AssertCalled(count = 1)

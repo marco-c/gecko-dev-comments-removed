@@ -32,6 +32,11 @@ bool EventQueue::PushEvent(AccEvent* aEvent) {
                    aEvent->Document() == mDocument,
                "Queued event belongs to another document!");
 
+  if (aEvent->mEventType == nsIAccessibleEvent::EVENT_FOCUS) {
+    mFocusEvent = aEvent;
+    return true;
+  }
+
   
   
   mEvents.AppendElement(aEvent);
@@ -302,27 +307,38 @@ void EventQueue::CoalesceSelChangeEvents(AccSelChangeEvent* aTailEvent,
 void EventQueue::ProcessEventQueue() {
   
   const nsTArray<RefPtr<AccEvent> > events = std::move(mEvents);
-
   uint32_t eventCount = events.Length();
 #ifdef A11Y_LOG
-  if (eventCount > 0 && logging::IsEnabled(logging::eEvents)) {
+  if ((eventCount > 0 || mFocusEvent) && logging::IsEnabled(logging::eEvents)) {
     logging::MsgBegin("EVENTS", "events processing");
     logging::Address("document", mDocument);
     logging::MsgEnd();
   }
 #endif
 
+  if (mFocusEvent) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    RefPtr<AccEvent> event = std::move(mFocusEvent);
+    if (!event->mAccessible->IsDefunct()) {
+      FocusMgr()->ProcessFocusEvent(event);
+    }
+  }
+
   for (uint32_t idx = 0; idx < eventCount; idx++) {
     AccEvent* event = events[idx];
     if (event->mEventRule != AccEvent::eDoNotEmit) {
       LocalAccessible* target = event->GetAccessible();
       if (!target || target->IsDefunct()) continue;
-
-      
-      if (event->mEventType == nsIAccessibleEvent::EVENT_FOCUS) {
-        FocusMgr()->ProcessFocusEvent(event);
-        continue;
-      }
 
       
       if (event->mEventType ==
