@@ -29,6 +29,7 @@ add_task(async function test() {
   
   
   await openPopupAndAssertUrlForPreset({
+    window,
     preset: "Media",
     expectedUrl: FRONTEND_BASE_URL,
   });
@@ -36,14 +37,16 @@ add_task(async function test() {
   
   
   await openPopupAndAssertUrlForPreset({
+    window,
     preset: "Web Developer",
     expectedUrl: FRONTEND_BASE_URL + "?view=active-tab&implementation=js",
   });
 });
 
-async function openPopupAndAssertUrlForPreset({ preset, expectedUrl }) {
+async function openPopupAndAssertUrlForPreset({ window, preset, expectedUrl }) {
   
   await openPopupAndEnsureCloses(window, async () => {
+    const { document } = window;
     {
       
       const presetsInPopup = document.getElementById(

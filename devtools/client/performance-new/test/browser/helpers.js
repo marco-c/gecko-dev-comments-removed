@@ -200,7 +200,8 @@ async function makeSureProfilerPopupIsEnabled() {
 
 
 
-function waitForProfilerPopupEvent(eventName) {
+
+function waitForProfilerPopupEvent(window, eventName) {
   return new Promise(resolve => {
     function handleEvent(event) {
       if (event.target.getAttribute("viewId") === "PanelUI-profiler") {
@@ -220,11 +221,12 @@ function waitForProfilerPopupEvent(eventName) {
 
 
 
+
 async function _toggleOpenProfilerPopup(window) {
   info("Toggle open the profiler popup.");
 
   info("> Find the profiler menu button.");
-  const profilerDropmarker = document.getElementById(
+  const profilerDropmarker = window.document.getElementById(
     "profiler-button-dropmarker"
   );
   if (!profilerDropmarker) {
@@ -233,10 +235,10 @@ async function _toggleOpenProfilerPopup(window) {
     );
   }
 
-  const popupShown = waitForProfilerPopupEvent("popupshown");
+  const popupShown = waitForProfilerPopupEvent(window, "popupshown");
 
   info("> Trigger a click on the profiler button dropmarker.");
-  await EventUtils.synthesizeMouseAtCenter(profilerDropmarker, {});
+  await EventUtils.synthesizeMouseAtCenter(profilerDropmarker, {}, window);
 
   if (profilerDropmarker.getAttribute("open") !== "true") {
     throw new Error(
@@ -257,8 +259,9 @@ async function _toggleOpenProfilerPopup(window) {
 
 
 
+
 async function _closePopup(window) {
-  const popupHiddenPromise = waitForProfilerPopupEvent("popuphidden");
+  const popupHiddenPromise = waitForProfilerPopupEvent(window, "popuphidden");
   info("> Trigger an escape key to hide the popup");
   EventUtils.synthesizeKey("KEY_Escape");
 
@@ -292,7 +295,7 @@ async function withPopupOpen(window, callback) {
 async function openPopupAndEnsureCloses(window, callback) {
   await _toggleOpenProfilerPopup(window);
   
-  const popupHiddenPromise = waitForProfilerPopupEvent("popuphidden");
+  const popupHiddenPromise = waitForProfilerPopupEvent(window, "popuphidden");
   await callback();
   info("> Verifying that the popup was closed by the test.");
   await popupHiddenPromise;
@@ -467,11 +470,15 @@ function withAboutProfiling(callback) {
 
 
 
-async function withDevToolsPanel(url, callback) {
-  if (typeof url !== "string" && !callback) {
+
+async function withDevToolsPanel(url, callback, aWindow = window) {
+  if (typeof url === "function") {
+    aWindow = callback ?? window;
     callback = url;
     url = "about:blank";
   }
+
+  const { gBrowser } = aWindow;
 
   SpecialPowers.pushPrefEnv({
     set: [["devtools.performance.new-panel-enabled", "true"]],
