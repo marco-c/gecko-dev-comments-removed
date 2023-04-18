@@ -10,7 +10,6 @@
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/HashTable.h"
 #include "mozilla/intl/Segmenter.h"
-#include "nsCharTraits.h"
 
 #include "BaseChars.h"
 #include "IsCombiningDiacritic.h"
@@ -166,31 +165,6 @@ bool IsClusterExtender(uint32_t aCh, uint8_t aCategory) {
       (aCh >= 0xff9e && aCh <= 0xff9f) ||    
       (aCh >= 0x1F3FB && aCh <= 0x1F3FF) ||  
       (aCh >= 0xe0020 && aCh <= 0xe007f));   
-}
-
-void ClusterReverseIterator::Next() {
-  if (AtEnd()) {
-    NS_WARNING("ClusterReverseIterator has already reached the end");
-    return;
-  }
-
-  uint32_t ch;
-  do {
-    ch = *--mPos;
-
-    if (mPos > mLimit && NS_IS_SURROGATE_PAIR(*(mPos - 1), ch)) {
-      ch = SURROGATE_TO_UCS4(*--mPos, ch);
-    }
-
-    if (!IsClusterExtender(ch)) {
-      break;
-    }
-  } while (mPos > mLimit);
-
-  
-
-  NS_ASSERTION(mPos >= mLimit,
-               "ClusterReverseIterator::Next has overshot the string!");
 }
 
 uint32_t CountGraphemeClusters(const char16_t* aText, uint32_t aLength) {

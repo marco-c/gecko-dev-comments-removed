@@ -182,24 +182,6 @@ bool IsCombiningDiacritic(uint32_t aCh);
 
 uint32_t GetNaked(uint32_t aCh);
 
-
-
-class ClusterReverseIterator {
- public:
-  ClusterReverseIterator(const char16_t* aText, uint32_t aLength)
-      : mPos(aText + aLength), mLimit(aText) {}
-
-  operator const char16_t*() const { return mPos; }
-
-  bool AtEnd() const { return mPos <= mLimit; }
-
-  void Next();
-
- private:
-  const char16_t* mPos;
-  const char16_t* mLimit;
-};
-
 }  
 
 }  
