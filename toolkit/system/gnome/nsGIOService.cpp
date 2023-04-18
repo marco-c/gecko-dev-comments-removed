@@ -17,6 +17,7 @@
 #include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/WidgetUtilsGtk.h"
 #include "mozilla/StaticPrefs_widget.h"
+#include "mozilla/net/DNS.h"
 
 #include <gio/gio.h>
 #include <gtk/gtk.h>
@@ -407,6 +408,14 @@ nsGIOService::GetAppForURIScheme(const nsACString& aURIScheme,
   
   
   if (widget::ShouldUsePortal(widget::PortalKind::MimeHandler)) {
+    if (mozilla::net::IsLoopbackHostname(aURIScheme)) {
+      
+      
+      
+      
+      
+      return NS_ERROR_FAILURE;
+    }
     nsFlatpakHandlerApp* mozApp = new nsFlatpakHandlerApp();
     NS_ADDREF(*aApp = mozApp);
     return NS_OK;
