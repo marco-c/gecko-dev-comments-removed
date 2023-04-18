@@ -3135,6 +3135,11 @@ public class GeckoSession {
     
     final String ACTION_PASTE = "org.mozilla.geckoview.PASTE";
     
+
+
+
+    final String ACTION_PASTE_AS_PLAIN_TEXT = "org.mozilla.geckoview.PASTE_AS_PLAIN_TEXT";
+    
     final String ACTION_SELECT_ALL = "org.mozilla.geckoview.SELECT_ALL";
     
     final String ACTION_UNSELECT = "org.mozilla.geckoview.UNSELECT";
@@ -3292,6 +3297,16 @@ public class GeckoSession {
 
 
       @AnyThread
+      public void pasteAsPlainText() {
+        execute(ACTION_PASTE_AS_PLAIN_TEXT);
+      }
+
+      
+
+
+
+
+      @AnyThread
       public void selectAll() {
         execute(ACTION_SELECT_ALL);
       }
@@ -3390,6 +3405,7 @@ public class GeckoSession {
     SelectionActionDelegate.ACTION_COPY,
     SelectionActionDelegate.ACTION_DELETE,
     SelectionActionDelegate.ACTION_PASTE,
+    SelectionActionDelegate.ACTION_PASTE_AS_PLAIN_TEXT,
     SelectionActionDelegate.ACTION_SELECT_ALL,
     SelectionActionDelegate.ACTION_UNSELECT,
     SelectionActionDelegate.ACTION_COLLAPSE_TO_START,
