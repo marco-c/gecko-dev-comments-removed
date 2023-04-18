@@ -1869,6 +1869,13 @@ void nsHtml5StreamParser::DiscardMetaSpeculation() {
   mTokenizer->setLineNumber(1);
   mLastWasCR = false;
 
+  if (mMode == PLAIN_TEXT || mMode == VIEW_SOURCE_PLAIN) {
+    
+    
+    
+    mTokenizer->StartPlainText();
+  }
+
   mFirstBuffer = mLastBuffer;
   mFirstBuffer->setStart(0);
   mFirstBuffer->setEnd(0);
