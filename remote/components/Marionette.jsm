@@ -77,10 +77,6 @@ class MarionetteParentProcess {
 
     
     
-    this.gfxWindow = null;
-
-    
-    
     this.finalUIStartup = false;
 
     
@@ -169,18 +165,6 @@ class MarionetteParentProcess {
 
         break;
 
-      case "domwindowclosed":
-        if (this.gfxWindow === null || subject === this.gfxWindow) {
-          Services.obs.removeObserver(this, topic);
-          Services.obs.removeObserver(this, "toplevel-window-ready");
-
-          Services.obs.addObserver(this, "quit-application");
-
-          this.finalUIStartup = true;
-          await this.init();
-        }
-        break;
-
       case "domwindowopened":
         Services.obs.removeObserver(this, topic);
         this.suppressSafeModeDialog(subject);
@@ -205,33 +189,11 @@ class MarionetteParentProcess {
 
       case "marionette-startup-requested":
         Services.obs.removeObserver(this, topic);
+        Services.obs.removeObserver(this, "toplevel-window-ready");
+        Services.obs.addObserver(this, "quit-application");
 
-        
-        
-        
-        for (let win of Services.wm.getEnumerator(null)) {
-          if (
-            win.document.documentURI ==
-            "chrome://gfxsanity/content/sanityparent.html"
-          ) {
-            this.gfxWindow = win;
-            break;
-          }
-        }
-
-        if (this.gfxWindow) {
-          logger.trace(
-            "GFX sanity window detected, waiting until it has been closed..."
-          );
-          Services.obs.addObserver(this, "domwindowclosed");
-        } else {
-          Services.obs.removeObserver(this, "toplevel-window-ready");
-
-          Services.obs.addObserver(this, "quit-application");
-
-          this.finalUIStartup = true;
-          await this.init();
-        }
+        this.finalUIStartup = true;
+        await this.init();
 
         break;
 
