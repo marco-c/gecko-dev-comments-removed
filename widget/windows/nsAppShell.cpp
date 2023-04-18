@@ -585,6 +585,11 @@ nsresult nsAppShell::Init() {
 
 NS_IMETHODIMP
 nsAppShell::Run(void) {
+  
+  
+  
+  
+  
   if (XRE_IsParentProcess()) {
     mozilla::widget::StartAudioSession();
   }
