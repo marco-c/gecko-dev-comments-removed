@@ -3758,6 +3758,7 @@ bool fire_glxtest_process();
 #endif
 
 #include "GeckoProfiler.h"
+#include "ProfilerControl.h"
 
 
 class XREMain {

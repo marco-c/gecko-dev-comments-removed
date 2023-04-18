@@ -29,11 +29,6 @@
 #include "mozilla/ProfilerThreadState.h"
 #include "mozilla/ProgressLogger.h"
 
-enum class IsFastShutdown {
-  No,
-  Yes,
-};
-
 #ifndef MOZ_GECKO_PROFILER
 
 #  include "mozilla/UniquePtr.h"
@@ -42,9 +37,6 @@ enum class IsFastShutdown {
 
 
 
-
-#  define AUTO_PROFILER_INIT ::profiler_init_main_thread_id()
-#  define AUTO_PROFILER_INIT2
 
 #  define PROFILER_REGISTER_THREAD(name)
 #  define PROFILER_UNREGISTER_THREAD()
@@ -85,11 +77,6 @@ static inline mozilla::UniquePtr<mozilla::ProfileChunkedBuffer>
 profiler_capture_backtrace() {
   return nullptr;
 }
-
-static inline void profiler_init(void* stackTop) {}
-
-static inline void profiler_shutdown(
-    IsFastShutdown aIsFastShutdown = IsFastShutdown::No) {}
 
 static inline void profiler_set_process_name(
     const nsACString& aProcessName, const nsACString* aETLDplus1 = nullptr) {}
@@ -144,100 +131,10 @@ class SpliceableJSONWriter;
 }  
 class nsIURI;
 
-namespace mozilla {
-class MallocAllocPolicy;
-template <class T, size_t MinInlineCapacity, class AllocPolicy>
-class Vector;
-}  
-
 
 #  define PROFILER_RAII_PASTE(id, line) id##line
 #  define PROFILER_RAII_EXPAND(id, line) PROFILER_RAII_PASTE(id, line)
 #  define PROFILER_RAII PROFILER_RAII_EXPAND(raiiObject, __LINE__)
-
-
-
-
-
-static constexpr mozilla::PowerOfTwo32 PROFILER_DEFAULT_ENTRIES =
-#  if !defined(GP_PLAT_arm_android)
-    mozilla::MakePowerOfTwo32<8 * 1024 * 1024>();  
-#  else
-    mozilla::MakePowerOfTwo32<2 * 1024 * 1024>();  // 2M entries = 16MB
-#  endif
-
-
-
-
-
-static constexpr mozilla::PowerOfTwo32 PROFILER_DEFAULT_STARTUP_ENTRIES =
-#  if !defined(GP_PLAT_arm_android)
-    mozilla::MakePowerOfTwo32<64 * 1024 * 1024>();  
-#  else
-    mozilla::MakePowerOfTwo32<8 * 1024 * 1024>();  
-#  endif
-
-#  define PROFILER_DEFAULT_DURATION 20 /* seconds, for tests only */
-
-
-#  define PROFILER_DEFAULT_INTERVAL 1  /* millisecond */
-#  define PROFILER_MAX_INTERVAL 5000   /* milliseconds */
-#  define PROFILER_DEFAULT_ACTIVE_TAB_ID 0
-
-
-
-
-
-void profiler_init(void* stackTop);
-void profiler_init_threadmanager();
-
-
-#  define AUTO_PROFILER_INIT mozilla::AutoProfilerInit PROFILER_RAII
-
-#  define AUTO_PROFILER_INIT2 mozilla::AutoProfilerInit2 PROFILER_RAII
-
-
-
-
-void profiler_shutdown(IsFastShutdown aIsFastShutdown = IsFastShutdown::No);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void profiler_start(
-    mozilla::PowerOfTwo32 aCapacity, double aInterval, uint32_t aFeatures,
-    const char** aFilters, uint32_t aFilterCount, uint64_t aActiveTabID,
-    const mozilla::Maybe<double>& aDuration = mozilla::Nothing());
-
-
-
-void profiler_stop();
-
-
-
-
-
-
-void profiler_ensure_started(
-    mozilla::PowerOfTwo32 aCapacity, double aInterval, uint32_t aFeatures,
-    const char** aFilters, uint32_t aFilterCount, uint64_t aActiveTabID,
-    const mozilla::Maybe<double>& aDuration = mozilla::Nothing());
 
 
 
@@ -321,20 +218,6 @@ using PostSamplingCallback = std::function<void(SamplingState)>;
 
 
 
-
-
-void profiler_pause();
-void profiler_resume();
-
-
-
-void profiler_pause_sampling();
-void profiler_resume_sampling();
-
-
-
-
-
 void profiler_thread_sleep();
 void profiler_thread_wake();
 
@@ -359,16 +242,6 @@ void profiler_clear_js_context();
 
 
 
-
-
-
-
-
-void profiler_get_start_params(
-    int* aEntrySize, mozilla::Maybe<double>* aDuration, double* aInterval,
-    uint32_t* aFeatures,
-    mozilla::Vector<const char*, 0, mozilla::MallocAllocPolicy>* aFilters,
-    uint64_t* aActiveTabID);
 
 
 mozilla::ProfileBufferControlledChunkManager*
@@ -535,22 +408,6 @@ void profiler_save_profile_to_file(const char* aFilename);
 
 namespace mozilla {
 
-class MOZ_RAII AutoProfilerInit {
- public:
-  explicit AutoProfilerInit() { profiler_init(this); }
-
-  ~AutoProfilerInit() { profiler_shutdown(); }
-
- private:
-};
-
-class MOZ_RAII AutoProfilerInit2 {
- public:
-  explicit AutoProfilerInit2() { profiler_init_threadmanager(); }
-
- private:
-};
-
 
 
 class MOZ_RAII AutoProfilerRegisterThread final {
@@ -608,6 +465,6 @@ void GetProfilerEnvVarsForChildProcess(
 
 }  
 
-#endif
+#endif  
 
-#endif
+#endif  
