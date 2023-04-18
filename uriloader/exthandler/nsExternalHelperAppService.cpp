@@ -2016,14 +2016,10 @@ NS_IMETHODIMP nsExternalAppHandler::OnStartRequest(nsIRequest* request) {
     }
 
 #endif
-    bool alwaysAskWhereToSave =
-        !Preferences::GetBool("browser.download.useDownloadDir") &&
-        StaticPrefs::browser_download_improvements_to_download_panel();
 
-    if ((action == nsIMIMEInfo::useHelperApp ||
-         action == nsIMIMEInfo::useSystemDefault ||
-         shouldAutomaticallyHandleInternally) &&
-        !alwaysAskWhereToSave) {
+    if (action == nsIMIMEInfo::useHelperApp ||
+        action == nsIMIMEInfo::useSystemDefault ||
+        shouldAutomaticallyHandleInternally) {
       
       
       rv = mIsFileChannel ? LaunchLocalFile()
