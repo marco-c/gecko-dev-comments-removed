@@ -255,6 +255,8 @@ ScriptLoader::~ScriptLoader() {
 static void CollectScriptTelemetry(ScriptLoadRequest* aRequest) {
   using namespace mozilla::Telemetry;
 
+  MOZ_ASSERT(aRequest->IsLoading());
+
   
   if (!CanRecordExtended()) {
     return;
@@ -270,14 +272,13 @@ static void CollectScriptTelemetry(ScriptLoadRequest* aRequest) {
   
   
   
-  if (aRequest->IsLoadingSource()) {
+  if (aRequest->mFetchSourceOnly) {
     if (aRequest->GetLoadContext()->mIsInline) {
       AccumulateCategorical(LABELS_DOM_SCRIPT_LOADING_SOURCE::Inline);
     } else if (aRequest->IsTextSource()) {
       AccumulateCategorical(LABELS_DOM_SCRIPT_LOADING_SOURCE::SourceFallback);
     }
   } else {
-    MOZ_ASSERT(aRequest->IsLoading());
     if (aRequest->IsTextSource()) {
       AccumulateCategorical(LABELS_DOM_SCRIPT_LOADING_SOURCE::Source);
     } else if (aRequest->IsBytecode()) {
@@ -486,7 +487,7 @@ nsresult ScriptLoader::RestartLoad(ScriptLoadRequest* aRequest) {
 
   
   
-  aRequest->mState = ScriptLoadRequest::State::FetchingSource;
+  aRequest->mFetchSourceOnly = true;
   nsresult rv;
   if (aRequest->IsModuleRequest()) {
     rv = mModuleLoader->RestartModuleLoad(aRequest);
@@ -596,7 +597,7 @@ nsresult ScriptLoader::StartLoadInternal(ScriptLoadRequest* aRequest,
   if (cic && StaticPrefs::dom_script_loader_bytecode_cache_enabled()) {
     MOZ_ASSERT(!aRequest->GetLoadContext()->GetWebExtGlobal(),
                "Can not bytecode cache WebExt code");
-    if (!aRequest->IsLoadingSource()) {
+    if (!aRequest->mFetchSourceOnly) {
       
       
       
@@ -1078,7 +1079,7 @@ bool ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
                         referrerPolicy);
   request->GetLoadContext()->mIsInline = true;
   request->GetLoadContext()->mLineNo = aElement->GetScriptLineNumber();
-  request->mState = ScriptLoadRequest::State::FetchingSource;
+  request->mFetchSourceOnly = true;
   request->SetTextSource();
   TRACE_FOR_TEST_BOOL(request->GetLoadContext()->GetScriptElement(),
                       "scriptloader_load_source");

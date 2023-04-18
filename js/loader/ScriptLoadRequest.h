@@ -184,20 +184,11 @@ class ScriptLoadRequest
 
   virtual void SetReady();
 
-  enum class State : uint8_t {
-    Fetching,        
-    FetchingSource,  
-    Compiling,
-    LoadingImports,
-    Ready
-  };
+  enum class State : uint8_t { Fetching, Compiling, LoadingImports, Ready };
 
   bool IsReadyToRun() const { return mState == State::Ready; }
-  bool IsLoading() const {
-    return mState == State::Fetching || mState == State::FetchingSource;
-  }
 
-  bool IsLoadingSource() const { return mState == State::FetchingSource; }
+  bool IsLoading() const { return mState == State::Fetching; }
 
   bool InCompilingStage() const { return mState == State::Compiling; }
 
@@ -297,6 +288,7 @@ class ScriptLoadRequest
 
   bool mIsCanceled;    
   State mState;        
+  bool mFetchSourceOnly;  
   DataType mDataType;  
   RefPtr<ScriptFetchOptions> mFetchOptions;
   const SRIMetadata mIntegrity;
