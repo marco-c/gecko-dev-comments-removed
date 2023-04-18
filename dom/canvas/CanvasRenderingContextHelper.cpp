@@ -160,17 +160,23 @@ CanvasRenderingContextHelper::CreateContextHelper(
   return ret.forget();
 }
 
-already_AddRefed<nsISupports> CanvasRenderingContextHelper::GetContext(
+already_AddRefed<nsISupports> CanvasRenderingContextHelper::GetOrCreateContext(
     JSContext* aCx, const nsAString& aContextId,
     JS::Handle<JS::Value> aContextOptions, ErrorResult& aRv) {
   CanvasContextType contextType;
   if (!CanvasUtils::GetCanvasContextType(aContextId, &contextType))
     return nullptr;
 
+  return GetOrCreateContext(aCx, contextType, aContextOptions, aRv);
+}
+
+already_AddRefed<nsISupports> CanvasRenderingContextHelper::GetOrCreateContext(
+    JSContext* aCx, CanvasContextType aContextType,
+    JS::Handle<JS::Value> aContextOptions, ErrorResult& aRv) {
   if (!mCurrentContext) {
     
     RefPtr<nsICanvasRenderingContextInternal> context;
-    context = CreateContext(contextType);
+    context = CreateContext(aContextType);
     if (!context) {
       return nullptr;
     }
@@ -185,32 +191,32 @@ already_AddRefed<nsISupports> CanvasRenderingContextHelper::GetContext(
     }
 
     mCurrentContext = std::move(context);
-    mCurrentContextType = contextType;
+    mCurrentContextType = aContextType;
 
     nsresult rv = UpdateContext(aCx, aContextOptions, aRv);
     if (NS_FAILED(rv)) {
       
       
       
-      if (contextType == CanvasContextType::WebGL1)
+      if (aContextType == CanvasContextType::WebGL1) {
         Telemetry::Accumulate(Telemetry::CANVAS_WEBGL_SUCCESS, 0);
-      else if (contextType == CanvasContextType::WebGL2)
+      } else if (aContextType == CanvasContextType::WebGL2) {
         Telemetry::Accumulate(Telemetry::CANVAS_WEBGL2_SUCCESS, 0);
-      else if (contextType == CanvasContextType::WebGPU) {
+      } else if (aContextType == CanvasContextType::WebGPU) {
         
       }
       return nullptr;
     }
-    if (contextType == CanvasContextType::WebGL1)
+    if (aContextType == CanvasContextType::WebGL1) {
       Telemetry::Accumulate(Telemetry::CANVAS_WEBGL_SUCCESS, 1);
-    else if (contextType == CanvasContextType::WebGL2)
+    } else if (aContextType == CanvasContextType::WebGL2) {
       Telemetry::Accumulate(Telemetry::CANVAS_WEBGL2_SUCCESS, 1);
-    else if (contextType == CanvasContextType::WebGPU) {
+    } else if (aContextType == CanvasContextType::WebGPU) {
       
     }
   } else {
     
-    if (contextType != mCurrentContextType) return nullptr;
+    if (aContextType != mCurrentContextType) return nullptr;
   }
 
   nsCOMPtr<nsICanvasRenderingContextInternal> context = mCurrentContext;
