@@ -17,6 +17,7 @@
 #ifndef SCANNER
 #define SCANNER
 
+#include "nsCharsetSource.h"
 #include "nsCOMPtr.h"
 #include "nsString.h"
 #include "nsIParser.h"
@@ -44,13 +45,13 @@ class nsScanner final {
   
 
 
-  explicit nsScanner(const nsAString& anHTMLString);
+  nsScanner(const nsAString& anHTMLString, bool aIncremental);
 
   
 
 
 
-  nsScanner(nsIURI* aURI, bool aCreateStream);
+  explicit nsScanner(nsIURI* aURI);
 
   ~nsScanner();
 
@@ -176,7 +177,7 @@ class nsScanner final {
   nsScannerIterator mEndPosition;  
   nsCOMPtr<nsIURI> mURI;
   bool mIncremental;
-  int32_t mCharsetSource;
+  int32_t mCharsetSource = kCharsetUninitialized;
   nsCString mCharset;
   mozilla::UniquePtr<mozilla::Decoder> mUnicodeDecoder;
 
