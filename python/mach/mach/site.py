@@ -83,11 +83,6 @@ class MozSiteManager:
         self._virtualenv = MozVirtualenv(topsrcdir, site_name, self.virtualenv_root)
         self.bin_path = self._virtualenv.bin_path
         self.python_path = self._virtualenv.python_path
-
-        
-        
-        
-        os.environ.pop("__PYVENV_LAUNCHER__", None)
         self.topsrcdir = topsrcdir
 
         self._site_name = site_name
