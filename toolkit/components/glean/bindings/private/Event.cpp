@@ -69,6 +69,10 @@ GleanEvent::Record(JS::HandleValue aExtra, JSContext* aCx) {
                             u"Can't extract extra property"_ns);
         return NS_OK;
       }
+    } else if (value.isNullOrUndefined()) {
+      
+      
+      continue;
     } else {
       LogToBrowserConsole(
           nsIScriptError::warningFlag,
