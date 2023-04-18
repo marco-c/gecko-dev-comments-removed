@@ -1,11 +1,12 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "IPCStreamUtils.h"
 
+#include "nsIHttpHeaderVisitor.h"
 #include "nsIIPCSerializableInputStream.h"
 #include "mozIRemoteLazyInputStream.h"
 
@@ -19,6 +20,7 @@
 #include "mozilla/InputStreamLengthHelper.h"
 #include "mozilla/RemoteLazyInputStreamParent.h"
 #include "mozilla/Unused.h"
+#include "nsIMIMEInputStream.h"
 #include "nsNetCID.h"
 #include "BackgroundParentImpl.h"
 #include "BackgroundChildImpl.h"
@@ -30,9 +32,9 @@ namespace ipc {
 
 namespace {
 
-// These serialization and cleanup functions could be externally exposed.  For
-// now, though, keep them private to encourage use of the safer RAII
-// AutoIPCStream class.
+
+
+
 
 template <typename M>
 bool SerializeInputStreamWithFdsChild(nsIIPCSerializableInputStream* aStream,
@@ -41,8 +43,8 @@ bool SerializeInputStreamWithFdsChild(nsIIPCSerializableInputStream* aStream,
   MOZ_RELEASE_ASSERT(aStream);
   MOZ_ASSERT(aManager);
 
-  // If you change this size, please also update the payload size in
-  // test_reload_large_postdata.html.
+  
+  
   const uint64_t kTooLargeStream = 1024 * 1024;
 
   uint32_t sizeUsed = 0;
@@ -105,12 +107,63 @@ bool SerializeInputStream(nsIInputStream* aStream, IPCStream& aValue,
   return true;
 }
 
+class MIMEStreamHeaderVisitor final : public nsIHttpHeaderVisitor {
+ public:
+  explicit MIMEStreamHeaderVisitor(
+      nsTArray<mozilla::ipc::HeaderEntry>& aHeaders)
+      : mHeaders(aHeaders) {}
+
+  NS_DECL_ISUPPORTS
+  NS_IMETHOD VisitHeader(const nsACString& aName,
+                         const nsACString& aValue) override {
+    auto el = mHeaders.AppendElement();
+    el->name() = aName;
+    el->value() = aValue;
+    return NS_OK;
+  }
+
+ private:
+  ~MIMEStreamHeaderVisitor() = default;
+
+  nsTArray<mozilla::ipc::HeaderEntry>& mHeaders;
+};
+
+NS_IMPL_ISUPPORTS(MIMEStreamHeaderVisitor, nsIHttpHeaderVisitor)
+
 template <typename M>
 bool SerializeLazyInputStream(nsIInputStream* aStream, IPCStream& aValue,
                               M* aManager) {
   MOZ_ASSERT(aStream);
   MOZ_ASSERT(aManager);
   MOZ_ASSERT(XRE_IsParentProcess());
+
+  
+  
+  if (nsCOMPtr<nsIMIMEInputStream> mimeStream = do_QueryInterface(aStream)) {
+    MIMEInputStreamParams params;
+    params.startedReading() = false;
+
+    nsCOMPtr<nsIHttpHeaderVisitor> visitor =
+        new MIMEStreamHeaderVisitor(params.headers());
+    if (NS_WARN_IF(NS_FAILED(mimeStream->VisitHeaders(visitor)))) {
+      return false;
+    }
+
+    nsCOMPtr<nsIInputStream> dataStream;
+    if (NS_FAILED(mimeStream->GetData(getter_AddRefs(dataStream)))) {
+      return false;
+    }
+    if (dataStream) {
+      IPCStream data;
+      if (!SerializeLazyInputStream(dataStream, data, aManager)) {
+        return false;
+      }
+      params.optionalStream().emplace(std::move(data.stream()));
+    }
+
+    aValue.stream() = std::move(params);
+    return true;
+  }
 
   RefPtr<RemoteLazyInputStream> lazyStream =
       RemoteLazyInputStream::WrapStream(aStream);
@@ -162,8 +215,8 @@ bool SerializeInputStreamParent(nsIInputStream* aStream, M* aManager,
   MOZ_ASSERT(aManager);
   MOZ_ASSERT(aValue || aOptionalValue);
 
-  // When requesting a delayed start stream from the parent process, serialize
-  // it as a remote lazy stream to avoid bloating payloads.
+  
+  
   if (aDelayedStart && XRE_IsParentProcess()) {
     if (aValue) {
       return SerializeLazyInputStream(aStream, *aValue, aManager);
@@ -193,12 +246,12 @@ bool SerializeInputStreamParent(nsIInputStream* aStream, M* aManager,
                               aDelayedStart);
 }
 
-// Returns false if the serialization should not proceed. This means that the
-// inputStream is null.
+
+
 bool NormalizeOptionalValue(nsIInputStream* aStream, IPCStream* aValue,
                             Maybe<IPCStream>* aOptionalValue) {
   if (aValue) {
-    // if aStream is null, we will crash when serializing.
+    
     return true;
   }
 
@@ -211,10 +264,10 @@ bool NormalizeOptionalValue(nsIInputStream* aStream, IPCStream* aValue,
   return true;
 }
 
-}  // anonymous namespace
+}  
 
 already_AddRefed<nsIInputStream> DeserializeIPCStream(const IPCStream& aValue) {
-  nsTArray<FileDescriptor> fds;  // NOTE: Unused, should be removed.
+  nsTArray<FileDescriptor> fds;  
   return InputStreamHelper::DeserializeInputStream(aValue.stream(), fds);
 }
 
@@ -248,7 +301,7 @@ bool AutoIPCStream::Serialize(nsIInputStream* aStream,
   MOZ_ASSERT(!mTaken);
   MOZ_ASSERT(!IsSet());
 
-  // If NormalizeOptionalValue returns false, we don't have to proceed.
+  
   if (!NormalizeOptionalValue(aStream, mValue, mOptionalValue)) {
     return true;
   }
@@ -269,7 +322,7 @@ bool AutoIPCStream::Serialize(nsIInputStream* aStream,
   MOZ_ASSERT(!mTaken);
   MOZ_ASSERT(!IsSet());
 
-  // If NormalizeOptionalValue returns false, we don't have to proceed.
+  
   if (!NormalizeOptionalValue(aStream, mValue, mOptionalValue)) {
     return true;
   }
@@ -291,7 +344,7 @@ bool AutoIPCStream::Serialize(nsIInputStream* aStream,
   MOZ_ASSERT(!mTaken);
   MOZ_ASSERT(!IsSet());
 
-  // If NormalizeOptionalValue returns false, we don't have to proceed.
+  
   if (!NormalizeOptionalValue(aStream, mValue, mOptionalValue)) {
     return true;
   }
@@ -312,7 +365,7 @@ bool AutoIPCStream::Serialize(nsIInputStream* aStream,
   MOZ_ASSERT(!mTaken);
   MOZ_ASSERT(!IsSet());
 
-  // If NormalizeOptionalValue returns false, we don't have to proceed.
+  
   if (!NormalizeOptionalValue(aStream, mValue, mOptionalValue)) {
     return true;
   }
@@ -333,7 +386,7 @@ bool AutoIPCStream::Serialize(nsIInputStream* aStream,
   MOZ_ASSERT(!mTaken);
   MOZ_ASSERT(!IsSet());
 
-  // If NormalizeOptionalValue returns false, we don't have to proceed.
+  
   if (!NormalizeOptionalValue(aStream, mValue, mOptionalValue)) {
     return true;
   }
@@ -355,7 +408,7 @@ bool AutoIPCStream::Serialize(nsIInputStream* aStream,
   MOZ_ASSERT(!mTaken);
   MOZ_ASSERT(!IsSet());
 
-  // If NormalizeOptionalValue returns false, we don't have to proceed.
+  
   if (!NormalizeOptionalValue(aStream, mValue, mOptionalValue)) {
     return true;
   }
@@ -404,14 +457,14 @@ Maybe<IPCStream>& AutoIPCStream::TakeOptionalValue() {
 void IPDLParamTraits<nsIInputStream*>::Write(IPC::MessageWriter* aWriter,
                                              IProtocol* aActor,
                                              nsIInputStream* aParam) {
-  auto autoStream = MakeRefPtr<HoldIPCStream>(/* aDelayedStart */ true);
+  auto autoStream = MakeRefPtr<HoldIPCStream>( true);
 
   bool ok = false;
   bool found = false;
 
-  // We can only serialize our nsIInputStream if it's going to be sent over one
-  // of the protocols we support, or a protocol which is managed by one of the
-  // protocols we support.
+  
+  
+  
   IProtocol* actor = aActor;
   while (!found && actor) {
     switch (actor->GetProtocolId()) {
@@ -441,7 +494,7 @@ void IPDLParamTraits<nsIInputStream*>::Write(IPC::MessageWriter* aWriter,
         break;
     }
 
-    // Try the actor's manager.
+    
     actor = actor->Manager();
   }
 
@@ -453,9 +506,9 @@ void IPDLParamTraits<nsIInputStream*>::Write(IPC::MessageWriter* aWriter,
 
   WriteIPDLParam(aWriter, aActor, autoStream->TakeOptionalValue());
 
-  // Dispatch the autoStream to an async runnable, so that we guarantee it
-  // outlives this callstack, and doesn't shut down any actors we created
-  // until after we've finished sending the current message.
+  
+  
+  
   NS_ProxyRelease("IPDLParamTraits<nsIInputStream*>::Write::autoStream",
                   NS_GetCurrentThread(), autoStream.forget(), true);
 }
@@ -472,5 +525,5 @@ bool IPDLParamTraits<nsIInputStream*>::Read(IPC::MessageReader* aReader,
   return true;
 }
 
-}  // namespace ipc
-}  // namespace mozilla
+}  
+}  
