@@ -2437,6 +2437,10 @@ void ReportLoadError(ErrorResult& aRv, nsresult aLoadResult,
       aRv.ThrowSecurityError(err);
       break;
 
+    case NS_ERROR_CORRUPTED_CONTENT:
+      aRv.Throw(NS_ERROR_DOM_NETWORK_ERR);
+      break;
+
     default:
       
       
