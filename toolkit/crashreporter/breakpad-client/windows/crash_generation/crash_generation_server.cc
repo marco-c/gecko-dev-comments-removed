@@ -841,7 +841,15 @@ void CALLBACK CrashGenerationServer::OnDumpRequest(void* context, BOOLEAN) {
 
   
   
-  RunOnTemporaryStack(impl, context, 16 * 1024 * 1024);
+  
+  HRESULT const ret = RunOnTemporaryStack(impl, context, 16 * 1024 * 1024);
+  if (FAILED(ret)) {
+    
+    
+    
+    
+    impl(context);
+  }
 }
 
 
