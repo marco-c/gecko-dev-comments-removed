@@ -43,8 +43,8 @@ class Input extends ContentProcessDomain {
 
 
   _addContentEventListener(eventName) {
-    const eventPromise = new Promise(r => {
-      this.chromeEventHandler.addEventListener(eventName, r, {
+    const eventPromise = new Promise(resolve => {
+      this.chromeEventHandler.addEventListener(eventName, resolve, {
         mozSystemGroup: true,
         once: true,
       });
