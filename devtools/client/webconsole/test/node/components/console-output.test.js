@@ -13,22 +13,14 @@ const ConsoleOutput = createFactory(
 );
 const serviceContainer = require("devtools/client/webconsole/test/node/fixtures/serviceContainer");
 const { setupStore } = require("devtools/client/webconsole/test/node/helpers");
-const { initialize } = require("devtools/client/webconsole/actions/ui");
-const {
-  getInitialMessageCountForViewport,
-} = require("devtools/client/webconsole/utils/messages.js");
 
 const MESSAGES_NUMBER = 100;
-function getDefaultProps(initialized) {
+function getDefaultProps() {
   const store = setupStore(
     Array.from({ length: MESSAGES_NUMBER })
       
       .map((_, i) => (i % 2 ? "console.log(null)" : "console.log(NaN)"))
   );
-
-  if (initialized) {
-    store.dispatch(initialize());
-  }
 
   return {
     store,
@@ -37,22 +29,18 @@ function getDefaultProps(initialized) {
 }
 
 describe("ConsoleOutput component:", () => {
-  it("Render only the last messages that fits the viewport when non-initialized", () => {
-    
-    
-    const rendered = render(
-      Provider({ store: setupStore() }, ConsoleOutput(getDefaultProps(false)))
-    );
-    const messagesNumber = rendered.find(".message").length;
-    expect(messagesNumber).toBe(getInitialMessageCountForViewport(window));
-  });
+  it("Render every message", () => {
+    const Services = require("devtools/client/shared/test-helpers/jest-fixtures/Services");
+    Services.prefs.setBoolPref("devtools.testing", true);
 
-  it("Render every message when initialized", () => {
     
     
     const rendered = render(
-      Provider({ store: setupStore() }, ConsoleOutput(getDefaultProps(true)))
+      Provider({ store: setupStore() }, ConsoleOutput(getDefaultProps()))
     );
-    expect(rendered.find(".message").length).toBe(MESSAGES_NUMBER);
+
+    Services.prefs.setBoolPref("devtools.testing", false);
+    const visibleMessages = JSON.parse(rendered.prop("data-visible-messages"));
+    expect(visibleMessages.length).toBe(MESSAGES_NUMBER);
   });
 });

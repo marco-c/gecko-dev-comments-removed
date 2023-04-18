@@ -29,9 +29,9 @@ function testBrowserMenuSelectAll(hud) {
   const outputContainer = ui.outputNode.querySelector(".webconsole-output");
 
   is(
-    outputContainer.childNodes.length,
+    outputContainer.querySelectorAll(".message").length,
     6,
-    "the output node contains the expected number of children"
+    "the output node contains the expected number of messages"
   );
 
   
@@ -51,7 +51,13 @@ function checkMessagesSelected(outputContainer) {
   const messages = outputContainer.querySelectorAll(".message");
 
   for (const message of messages) {
-    const selected = selection.containsNode(message);
+    
+    
+    
+    
+    const selected = [...message.children].every(c =>
+      selection.containsNode(c)
+    );
     ok(selected, `Node containing text "${message.textContent}" was selected`);
   }
 }

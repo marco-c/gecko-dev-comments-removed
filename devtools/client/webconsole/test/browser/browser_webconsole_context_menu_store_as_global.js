@@ -83,6 +83,11 @@ add_task(async function() {
 });
 
 async function storeAsVariable(hud, msg, type, varIdx, equalTo) {
+  
+  msg = await findMessageVirtualized({
+    hud,
+    messageId: msg.getAttribute("data-message-id"),
+  });
   const element = msg.querySelector(".objectBox-" + type);
   const menuPopup = await openContextMenu(hud, element);
   const storeMenuItem = menuPopup.querySelector("#console-menu-store");

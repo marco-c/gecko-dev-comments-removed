@@ -22,6 +22,12 @@ Services.scriptloader.loadSubScript(
   this
 );
 
+
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/devtools/client/webconsole/test/browser/shared-head.js",
+  this
+);
+
 var {
   BrowserConsoleManager,
 } = require("devtools/client/webconsole/browser-console-manager");
@@ -359,12 +365,13 @@ function findMessages(hud, text, selector = ".message") {
 
 
 
+
 async function checkUniqueMessageExists(hud, msg, selector) {
   info(`Checking "${msg}" was logged`);
   let messages;
   try {
-    messages = await waitFor(() => {
-      const msgs = findMessages(hud, msg, selector);
+    messages = await waitFor(async () => {
+      const msgs = await findMessagesVirtualized({ hud, text: msg, selector });
       return msgs.length > 0 ? msgs : null;
     });
   } catch (e) {
@@ -1516,8 +1523,8 @@ function isScrolledToBottom(container) {
 
 
 
-function checkConsoleOutputForWarningGroup(hud, expectedMessages) {
-  const messages = findMessages(hud, "");
+async function checkConsoleOutputForWarningGroup(hud, expectedMessages) {
+  const messages = await findAllMessagesVirtualized(hud);
   is(
     messages.length,
     expectedMessages.length,
@@ -1540,8 +1547,12 @@ function checkConsoleOutputForWarningGroup(hud, expectedMessages) {
     return groups[0].startsWith("▶︎⚠") || groups[0].startsWith("▼⚠");
   };
 
-  expectedMessages.forEach((expectedMessage, i) => {
-    const message = messages[i];
+  for (let [i, expectedMessage] of expectedMessages.entries()) {
+    
+    const message = await findMessageVirtualized({
+      hud,
+      messageId: messages[i].getAttribute("data-message-id"),
+    });
     info(`Checking "${expectedMessage}"`);
 
     
@@ -1618,7 +1629,7 @@ function checkConsoleOutputForWarningGroup(hud, expectedMessages) {
       `Message includes ` +
         `the expected "${expectedMessage}" content - "${message.textContent.trim()}"`
     );
-  });
+  }
 }
 
 

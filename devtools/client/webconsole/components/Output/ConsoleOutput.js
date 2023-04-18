@@ -6,12 +6,14 @@
 const {
   Component,
   createElement,
+  createRef,
 } = require("devtools/client/shared/vendor/react");
 const dom = require("devtools/client/shared/vendor/react-dom-factories");
 const {
   connect,
 } = require("devtools/client/shared/redux/visibility-handler-connect");
 const { initialize } = require("devtools/client/webconsole/actions/ui");
+const LazyMessageList = require("devtools/client/webconsole/components/Output/LazyMessageList");
 
 const {
   getMutableMessagesById,
@@ -35,11 +37,9 @@ loader.lazyRequireGetter(
   "devtools/client/webconsole/components/Output/MessageContainer",
   true
 );
+loader.lazyRequireGetter(this, "flags", "devtools/shared/flags");
 
 const { MESSAGE_TYPE } = require("devtools/client/webconsole/constants");
-const {
-  getInitialMessageCountForViewport,
-} = require("devtools/client/webconsole/utils/messages.js");
 
 class ConsoleOutput extends Component {
   static get propTypes() {
@@ -63,6 +63,7 @@ class ConsoleOutput extends Component {
       networkMessageActiveTabId: PropTypes.string.isRequired,
       onFirstMeaningfulPaint: PropTypes.func.isRequired,
       editorMode: PropTypes.bool.isRequired,
+      cacheGeneration: PropTypes.number.isRequired,
     };
   }
 
@@ -70,6 +71,9 @@ class ConsoleOutput extends Component {
     super(props);
     this.onContextMenu = this.onContextMenu.bind(this);
     this.maybeScrollToBottom = this.maybeScrollToBottom.bind(this);
+    this.messageIdsToKeepAlive = new Set();
+    this.ref = createRef();
+    this.lazyMessageListRef = createRef();
 
     this.resizeObserver = new ResizeObserver(entries => {
       
@@ -91,7 +95,7 @@ class ConsoleOutput extends Component {
       this.scrollToBottom();
     }
 
-    this.lastMessageIntersectionObserver = new IntersectionObserver(
+    this.scrollDetectionIntersectionObserver = new IntersectionObserver(
       entries => {
         for (const entry of entries) {
           
@@ -105,7 +109,10 @@ class ConsoleOutput extends Component {
     this.resizeObserver.observe(this.getElementToObserve());
 
     const { serviceContainer, onFirstMeaningfulPaint, dispatch } = this.props;
-    serviceContainer.attachRefToWebConsoleUI("outputScroller", this.outputNode);
+    serviceContainer.attachRefToWebConsoleUI(
+      "outputScroller",
+      this.ref.current
+    );
 
     
     new Promise(res => requestAnimationFrame(res)).then(() => {
@@ -121,6 +128,11 @@ class ConsoleOutput extends Component {
   }
 
   componentWillUpdate(nextProps, nextState) {
+    this.isUpdating = true;
+    if (nextProps.cacheGeneration !== this.props.cacheGeneration) {
+      this.messageIdsToKeepAlive = new Set();
+    }
+
     if (nextProps.editorMode !== this.props.editorMode) {
       this.resizeObserver.disconnect();
     }
@@ -131,11 +143,12 @@ class ConsoleOutput extends Component {
       
       
       this.shouldScrollBottom = true;
+      this.scrolledToBottom = true;
       return;
     }
 
-    const { lastChild } = outputNode;
-    this.lastMessageIntersectionObserver.unobserve(lastChild);
+    const bottomBuffer = this.lazyMessageListRef.current.bottomBuffer;
+    this.scrollDetectionIntersectionObserver.unobserve(bottomBuffer);
 
     
     
@@ -175,14 +188,20 @@ class ConsoleOutput extends Component {
   }
 
   componentDidUpdate(prevProps) {
+    this.isUpdating = false;
     this.maybeScrollToBottom();
     if (this?.outputNode?.lastChild) {
-      this.lastMessageIntersectionObserver.observe(this.outputNode.lastChild);
+      const bottomBuffer = this.lazyMessageListRef.current.bottomBuffer;
+      this.scrollDetectionIntersectionObserver.observe(bottomBuffer);
     }
 
     if (prevProps.editorMode !== this.props.editorMode) {
       this.resizeObserver.observe(this.getElementToObserve());
     }
+  }
+
+  get outputNode() {
+    return this.ref.current;
   }
 
   maybeScrollToBottom() {
@@ -191,7 +210,25 @@ class ConsoleOutput extends Component {
     }
   }
 
+  
+  
+  
+  
+  maybeScrollToBottomMessageCallback(index) {
+    if (
+      this.outputNode &&
+      this.shouldScrollBottom &&
+      this.scrolledToBottom &&
+      this.lazyMessageListRef.current?.isItemNearBottom(index)
+    ) {
+      this.scrollToBottom();
+    }
+  }
+
   scrollToBottom() {
+    if (flags.testing && this.outputNode.hasAttribute("disable-autoscroll")) {
+      return;
+    }
     if (this.outputNode.scrollHeight > this.outputNode.clientHeight) {
       this.outputNode.scrollTop = this.outputNode.scrollHeight;
     }
@@ -215,7 +252,8 @@ class ConsoleOutput extends Component {
   }
 
   render() {
-    let {
+    const {
+      cacheGeneration,
       dispatch,
       visibleMessages,
       mutableMessages,
@@ -227,22 +265,10 @@ class ConsoleOutput extends Component {
       networkMessageActiveTabId,
       serviceContainer,
       timestampsVisible,
-      initialized,
     } = this.props;
 
-    if (!initialized) {
-      const numberMessagesFitViewport = getInitialMessageCountForViewport(
-        window
-      );
-      if (numberMessagesFitViewport < visibleMessages.length) {
-        visibleMessages = visibleMessages.slice(
-          visibleMessages.length - numberMessagesFitViewport
-        );
-      }
-    }
-
-    const messageNodes = visibleMessages.map(messageId =>
-      createElement(MessageContainer, {
+    const renderMessage = (messageId, index) => {
+      return createElement(MessageContainer, {
         dispatch,
         key: messageId,
         messageId,
@@ -264,20 +290,45 @@ class ConsoleOutput extends Component {
         networkMessageUpdate: networkMessagesUpdate[messageId],
         networkMessageActiveTabId,
         getMessage: () => mutableMessages.get(messageId),
-        maybeScrollToBottom: this.maybeScrollToBottom,
-      })
-    );
+        maybeScrollToBottom: () =>
+          this.maybeScrollToBottomMessageCallback(index),
+        
+        
+        setExpanded: () => this.messageIdsToKeepAlive.add(messageId),
+      });
+    };
 
+    
+    
+    
+    
+    
+    
+    const scrollOverdrawCount = 20;
+    const attrs = {
+      className: "webconsole-output",
+      role: "main",
+      onContextMenu: this.onContextMenu,
+      ref: this.ref,
+    };
+    if (flags.testing) {
+      attrs["data-visible-messages"] = JSON.stringify(visibleMessages);
+    }
     return dom.div(
-      {
-        className: "webconsole-output",
-        role: "main",
-        onContextMenu: this.onContextMenu,
-        ref: node => {
-          this.outputNode = node;
-        },
-      },
-      messageNodes
+      attrs,
+      createElement(LazyMessageList, {
+        viewportRef: this.ref,
+        items: visibleMessages,
+        itemDefaultHeight: 21,
+        editorMode: this.props.editorMode,
+        scrollOverdrawCount,
+        ref: this.lazyMessageListRef,
+        renderItem: renderMessage,
+        itemsToKeepAlive: this.messageIdsToKeepAlive,
+        serviceContainer,
+        cacheGeneration,
+        shouldScrollBottom: () => this.shouldScrollBottom && this.isUpdating,
+      })
     );
   }
 }
@@ -286,6 +337,7 @@ function mapStateToProps(state, props) {
   const mutableMessages = getMutableMessagesById(state);
   return {
     initialized: state.ui.initialized,
+    cacheGeneration: state.ui.cacheGeneration,
     
     
     messageCount: mutableMessages.size,
