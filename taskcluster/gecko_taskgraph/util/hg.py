@@ -128,9 +128,9 @@ def get_hg_revision_branch(root, revision):
 
 
 
-def get_hg_commit_message(root):
+def get_hg_commit_message(root, rev="."):
     return subprocess.check_output(
-        ["hg", "log", "-r", ".", "-T", "{desc}"], cwd=root, universal_newlines=True
+        ["hg", "log", "-r", rev, "-T", "{desc}"], cwd=root, universal_newlines=True
     )
 
 
