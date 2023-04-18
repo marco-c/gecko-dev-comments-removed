@@ -536,10 +536,6 @@ pref("browser.download.viewableInternally.enabledTypes", "xml,svg,webp,avif,jxl"
 
 pref("browser.download.autohideButton", true);
 
-
-
-pref("browser.download.alwaysOpenPanel", true);
-
 #ifndef XP_MACOSX
   pref("browser.helperApps.deleteTempFileOnExit", true);
 #endif
