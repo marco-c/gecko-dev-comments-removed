@@ -1972,8 +1972,7 @@ bool CompilationStencil::instantiateStencilAfterPreparation(
     
     
     
-    MOZ_ASSERT(stencil.functionKey ==
-               CompilationStencil::toFunctionKey(input.extent()));
+    MOZ_ASSERT(stencil.functionKey == input.extent().toFunctionKey());
 
     FunctionsFromExistingLazy(input, gcOutput);
     MOZ_ASSERT(gcOutput.functions.length() == stencil.scriptData.size());
@@ -3958,7 +3957,7 @@ bool CompilationStencilMerger::buildFunctionKeyToIndex(JSContext* cx) {
 
   for (size_t i = 1; i < initial_->scriptExtra.length(); i++) {
     const auto& extra = initial_->scriptExtra[i];
-    auto key = CompilationStencil::toFunctionKey(extra.extent);
+    auto key = extra.extent.toFunctionKey();
 
     
     
