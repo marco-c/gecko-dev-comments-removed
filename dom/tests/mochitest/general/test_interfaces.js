@@ -1290,6 +1290,14 @@ var interfaceNamesInGlobalScope = [
   
   { name: "TrackEvent", insecureContext: true },
   
+  { name: "TransformStream", insecureContext: true, nightly: true },
+  
+  {
+    name: "TransformStreamDefaultController",
+    insecureContext: true,
+    nightly: true,
+  },
+  
   { name: "TransitionEvent", insecureContext: true },
   
   { name: "TreeWalker", insecureContext: true },

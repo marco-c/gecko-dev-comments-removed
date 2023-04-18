@@ -291,6 +291,10 @@ var interfaceNamesInGlobalScope = [
   
   "TextEncoder",
   
+  { name: "TransformStream", nightly: true },
+  
+  { name: "TransformStreamDefaultController", nightly: true },
+  
   "URL",
   
   "URLSearchParams",

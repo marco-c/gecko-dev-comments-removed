@@ -287,6 +287,14 @@ var interfaceNamesInGlobalScope = [
   
   { name: "TextEncoder", insecureContext: true },
   
+  { name: "TransformStream", insecureContext: true, nightly: true },
+  
+  {
+    name: "TransformStreamDefaultController",
+    insecureContext: true,
+    nightly: true,
+  },
+  
   { name: "XMLHttpRequest", insecureContext: true },
   
   { name: "XMLHttpRequestEventTarget", insecureContext: true },
