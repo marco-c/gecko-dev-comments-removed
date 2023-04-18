@@ -131,16 +131,4 @@ void ScrollbarDrawingGTK::RecomputeScrollbarParams() {
     defaultSize = overrideSize;
   }
   mHorizontalScrollbarHeight = mVerticalScrollbarWidth = defaultSize;
-
-  
-  
-  
-  float scale =
-      LookAndFeel::GetFloat(LookAndFeel::FloatID::TextScaleFactor, 1.0f);
-  if (scale != 1.0f) {
-    mVerticalScrollbarWidth =
-        uint32_t(round(float(mVerticalScrollbarWidth) / scale));
-    mHorizontalScrollbarHeight =
-        uint32_t(round(float(mHorizontalScrollbarHeight) / scale));
-  }
 }

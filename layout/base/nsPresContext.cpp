@@ -929,7 +929,15 @@ void nsPresContext::RecomputeBrowsingContextDependentData() {
     
     return;
   }
-  SetFullZoom(browsingContext->FullZoom());
+  
+  
+  
+  
+  
+  
+  float effectiveFullZoom =
+      browsingContext->FullZoom() * LookAndFeel::GetTextScaleFactor();
+  SetFullZoom(effectiveFullZoom);
   SetTextZoom(browsingContext->TextZoom());
   SetOverrideDPPX(browsingContext->OverrideDPPX());
 
@@ -1580,6 +1588,9 @@ void nsPresContext::ThemeChangedInternal() {
   mPendingThemeChangeKind = 0;
 
   LookAndFeel::HandleGlobalThemeChange();
+
+  
+  RecomputeBrowsingContextDependentData();
 
   
   

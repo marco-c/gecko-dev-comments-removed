@@ -576,7 +576,8 @@ LookAndFeelFont nsLookAndFeel::GetLookAndFeelFontInternal(
   result.haveFont() = false;
 
   
-  double pixelScale = 1.0 / WinUtils::SystemScaleFactor();
+  double pixelScale =
+      1.0 / WinUtils::SystemScaleFactor() / LookAndFeel::GetTextScaleFactor();
 
   
   

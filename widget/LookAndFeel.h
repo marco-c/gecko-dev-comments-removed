@@ -445,6 +445,10 @@ class LookAndFeel {
     return GetColor(aId, aFrame).valueOr(aDefault);
   }
 
+  static float GetTextScaleFactor() {
+    return GetFloat(FloatID::TextScaleFactor, 1.0f);
+  }
+
   
 
 
