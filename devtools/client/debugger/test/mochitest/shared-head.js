@@ -220,24 +220,6 @@ function waitForSelectedSource(dbg, sourceOrUrl) {
   );
 }
 
-
-
-
-
-
-function assertNotPaused(dbg) {
-  ok(!isPaused(dbg), "client is not paused");
-}
-
-
-
-
-
-
-function assertPaused(dbg) {
-  ok(isPaused(dbg), "client is paused");
-}
-
 function assertEmptyLines(dbg, lines) {
   const sourceId = dbg.selectors.getSelectedSourceId();
   const breakableLines = dbg.selectors.getBreakableLines(sourceId);
@@ -398,17 +380,6 @@ function assertHighlightLocation(dbg, source, line) {
 
 
 
-function isPaused(dbg) {
-  return dbg.selectors.getIsCurrentThreadPaused();
-}
-
-
-
-
-
-
-
-
 
 
 function assertPausedAtSourceAndLine(
@@ -478,9 +449,39 @@ function waitForBreakpointRemoved(dbg, url, line) {
 
 
 
+function isPaused(dbg) {
+  return dbg.selectors.getIsCurrentThreadPaused();
+}
+
+
+
+
+
+
+
+
+function assertNotPaused(dbg, msg = "client is not paused") {
+  ok(!isPaused(dbg), msg);
+}
+
+
+
+
+
+
+function assertPaused(dbg, msg = "client is paused") {
+  ok(isPaused(dbg), msg);
+}
+
+
+
+
+
+
 
 
 async function waitForPaused(dbg, url) {
+  info("Waiting for the debugger to pause");
   const {
     getSelectedScope,
     getCurrentThread,
@@ -503,9 +504,8 @@ async function waitForPaused(dbg, url) {
 
 
 
-
-
 function waitForResumed(dbg) {
+  info("Waiting for the debugger to resume");
   return waitForState(dbg, state => !dbg.selectors.getIsCurrentThreadPaused());
 }
 

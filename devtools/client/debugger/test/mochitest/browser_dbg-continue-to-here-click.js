@@ -19,11 +19,12 @@ add_task(async function() {
 
   info("Cmd+click on a line and check the debugger continues to that line");
   const lineToContinueTo = 31;
+  const onResumed = waitForResumed(dbg);
   await cmdClickLine(dbg, lineToContinueTo);
 
   
   
-  await waitForState(dbg, () => !isPaused(dbg), "resumed");
+  await onResumed;
   
   await waitForPaused(dbg);
 
