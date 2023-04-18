@@ -3395,7 +3395,7 @@ BrowserGlue.prototype = {
   _migrateUI: function BG__migrateUI() {
     
     
-    const UI_VERSION = 127;
+    const UI_VERSION = 128;
     const BROWSER_DOCURL = AppConstants.BROWSER_CHROME_URL;
 
     const PROFILE_DIR = Services.dirsvc.get("ProfD", Ci.nsIFile).path;
@@ -4193,6 +4193,25 @@ BrowserGlue.prototype = {
     
     
     
+
+    
+    if (AppConstants.platform != "macosx" && currentUIVersion < 128) {
+      
+      
+      
+      
+      if (
+        !Services.prefs.getBoolPref(
+          "browser.download.improvements_to_download_panel",
+          true
+        )
+      ) {
+        Services.prefs.setBoolPref(
+          "browser.download.start_downloads_in_tmp_dir",
+          true
+        );
+      }
+    }
 
     
     Services.prefs.setIntPref("browser.migration.version", UI_VERSION);
