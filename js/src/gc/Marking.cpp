@@ -810,6 +810,15 @@ void GCMarker::markEphemeronEdges(EphemeronEdgeVector& edges) {
   
   
   MOZ_ASSERT(edges.length() == initialLength);
+
+  
+  
+  
+  
+  
+  if (color == CellColor::Black) {
+    edges.eraseIf([](auto& edge) { return edge.color == MarkColor::Black; });
+  }
 }
 
 
@@ -2545,8 +2554,9 @@ IncrementalProgress JS::Zone::enterWeakMarkingMode(GCMarker* marker,
       r.popFront();  
       if (edges.length() > 0) {
         gc::AutoSetMarkColor autoColor(*marker, srcColor);
+        uint32_t steps = edges.length();
         marker->markEphemeronEdges(edges);
-        budget.step(edges.length());
+        budget.step(steps);
         if (budget.isOverBudget()) {
           return NotFinished;
         }
