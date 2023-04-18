@@ -178,20 +178,20 @@ class MOZ_RAII AutoSuppressAllocationMetadataBuilder {
 template <typename T>
 [[nodiscard]] static MOZ_ALWAYS_INLINE T* SetNewObjectMetadata(JSContext* cx,
                                                                T* obj) {
+  MOZ_ASSERT(cx->isMainThreadContext());
   MOZ_ASSERT(!cx->realm()->hasObjectPendingMetadata());
 
   
   
-  if (!cx->isHelperThreadContext()) {
-    if (MOZ_UNLIKELY(cx->realm()->hasAllocationMetadataBuilder()) &&
-        !cx->zone()->suppressAllocationMetadataBuilder) {
-      
-      AutoSuppressAllocationMetadataBuilder suppressMetadata(cx);
+  if (MOZ_UNLIKELY(cx->realm()->hasAllocationMetadataBuilder()) &&
+      !cx->zone()->suppressAllocationMetadataBuilder) {
+    
+    
+    AutoSuppressAllocationMetadataBuilder suppressMetadata(cx);
 
-      Rooted<T*> rooted(cx, obj);
-      cx->realm()->setNewObjectMetadata(cx, rooted);
-      return rooted;
-    }
+    Rooted<T*> rooted(cx, obj);
+    cx->realm()->setNewObjectMetadata(cx, rooted);
+    return rooted;
   }
 
   return obj;

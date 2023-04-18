@@ -616,21 +616,12 @@ mozilla::HashCodeScrambler Realm::randomHashCodeScrambler() {
 }
 
 AutoSetNewObjectMetadata::AutoSetNewObjectMetadata(JSContext* cx)
-    : cx_(cx->isHelperThreadContext() ? nullptr : cx),
-      prevState_(cx, cx->realm()->objectMetadataState_) {
-  if (cx_) {
-    cx_->realm()->objectMetadataState_ =
-        NewObjectMetadataState(DelayMetadata());
-  }
+    : cx_(cx), prevState_(cx, cx->realm()->objectMetadataState_) {
+  MOZ_ASSERT(cx_->isMainThreadContext());
+  cx_->realm()->objectMetadataState_ = NewObjectMetadataState(DelayMetadata());
 }
 
 AutoSetNewObjectMetadata::~AutoSetNewObjectMetadata() {
-  
-  
-  if (!cx_) {
-    return;
-  }
-
   if (!cx_->isExceptionPending() && cx_->realm()->hasObjectPendingMetadata()) {
     
     
