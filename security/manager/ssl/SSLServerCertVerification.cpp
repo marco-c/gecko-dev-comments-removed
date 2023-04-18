@@ -95,7 +95,6 @@
 
 #include <cstring>
 
-#include "BRNameMatchingPolicy.h"
 #include "CertVerifier.h"
 #include "CryptoTask.h"
 #include "ExtendedValidation.h"
@@ -374,16 +373,12 @@ SECStatus DetermineCertOverrideErrors(const nsCOMPtr<nsIX509Cert>& cert,
     }
     
     
-    BRNameMatchingPolicy nameMatchingPolicy(
-        BRNameMatchingPolicy::Mode::DoNotEnforce);
     
     
     
     
     
-    
-    
-    result = CheckCertHostname(certInput, hostnameInput, nameMatchingPolicy);
+    result = CheckCertHostname(certInput, hostnameInput);
     
     if (result == Result::ERROR_BAD_DER ||
         result == Result::ERROR_BAD_CERT_DOMAIN) {

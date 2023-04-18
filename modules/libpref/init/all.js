@@ -117,18 +117,6 @@ pref("security.signed_app_signatures.policy", 2);
 
 
 
-
-
-
-
-pref("security.pki.name_matching_mode", 3);
-
-
-
-
-
-
-
 #ifdef RELEASE_OR_BETA
   pref("security.pki.netscape_step_up_policy", 1);
 #else
