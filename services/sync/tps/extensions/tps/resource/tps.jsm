@@ -1022,7 +1022,7 @@ var TPS = {
       let schema = JSON.parse(gTextDecoder.decode(bytes));
       Logger.logInfo("Successfully loaded schema");
 
-      this.pingValidator = new JsonSchema.validator(schema);
+      this.pingValidator = new JsonSchema.Validator(schema);
     } catch (e) {
       this.DumpError(
         `Failed to load ping schema relative to "${testFile}".`,
@@ -1203,6 +1203,10 @@ var TPS = {
         
         return;
       }
+      
+      
+      
+      record = JSON.parse(JSON.stringify(record));
       const result = this.pingValidator.validate(record);
       if (!result.valid) {
         
