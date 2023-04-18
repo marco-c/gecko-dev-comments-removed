@@ -276,8 +276,6 @@ test_description_schema = Schema(
         
         Optional("fetches"): object,
         
-        Optional("python-3"): bool,
-        
         
         Optional("raptor"): object,
         
