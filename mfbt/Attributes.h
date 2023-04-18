@@ -845,11 +845,24 @@
 
 
 
+
+
+
+
+
+
+
 #  ifdef XGILL_PLUGIN
+
 #    undef MOZ_MUST_OVERRIDE
-#    define MOZ_MUST_OVERRIDE
 #    undef MOZ_CAN_RUN_SCRIPT_FOR_DEFINITION
+#    undef MOZ_CAN_RUN_SCRIPT
+#    undef MOZ_CAN_RUN_SCRIPT_BOUNDARY
+#    define MOZ_MUST_OVERRIDE
 #    define MOZ_CAN_RUN_SCRIPT_FOR_DEFINITION
+#    define MOZ_CAN_RUN_SCRIPT
+#    define MOZ_CAN_RUN_SCRIPT_BOUNDARY
+
 #  endif
 
 #endif 
