@@ -1583,9 +1583,6 @@ pref("browser.newtabpage.activity-stream.feeds.section.topstories", true);
 
 pref("browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar", true);
 
-
-pref("browser.newtabpage.activity-stream.colorway-closet.enabled", false);
-
 pref("browser.newtabpage.activity-stream.logowordmark.alwaysVisible", true);
 
 

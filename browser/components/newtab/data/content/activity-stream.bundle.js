@@ -13942,17 +13942,6 @@ class ContentSection extends (external_React_default()).PureComponent {
 
 
 
-const ColorwayCloset = ({
-  dispatch
-}) => external_React_default().createElement("div", {
-  id: "colorway-closet"
-}, "Colorway Closet Placeholder");
-;
-
-
-
-
-
 
 
 
@@ -14003,9 +13992,7 @@ class _CustomizeMenu extends (external_React_default()).PureComponent {
       className: "close-button",
       "data-l10n-id": "newtab-custom-close-button",
       ref: c => this.closeButton = c
-    }), this.props.showColorwayCloset ? external_React_default().createElement(ColorwayCloset, {
-      dispatch: this.props.dispatch
-    }) : external_React_default().createElement((external_React_default()).Fragment, null), external_React_default().createElement(BackgroundsSection, null), external_React_default().createElement(ContentSection, {
+    }), external_React_default().createElement(BackgroundsSection, null), external_React_default().createElement(ContentSection, {
       openPreferences: this.props.openPreferences,
       setPref: this.props.setPref,
       enabledSections: this.props.enabledSections,
@@ -14418,7 +14405,6 @@ class BaseContent extends (external_React_default()).PureComponent {
     const noSectionsEnabled = !prefs["feeds.topsites"] && !pocketEnabled && filteredSections.filter(section => section.enabled).length === 0;
     const searchHandoffEnabled = prefs["improvesearch.handoffToAwesomebar"];
     const showCustomizationMenu = this.state.customizeMenuVisible;
-    const showColorwayCloset = prefs["colorway-closet.enabled"];
     const enabledSections = {
       topSitesEnabled: prefs["feeds.topsites"],
       pocketEnabled: prefs["feeds.section.topstories"],
@@ -14441,8 +14427,7 @@ class BaseContent extends (external_React_default()).PureComponent {
       enabledSections: enabledSections,
       pocketRegion: pocketRegion,
       mayHaveSponsoredTopSites: mayHaveSponsoredTopSites,
-      showing: showCustomizationMenu,
-      showColorwayCloset: showColorwayCloset
+      showing: showCustomizationMenu
     }), external_React_default().createElement("div", {
       className: outerClassName,
       onClick: this.closeCustomizationMenu
