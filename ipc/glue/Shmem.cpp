@@ -243,6 +243,9 @@ Shmem::Shmem(PrivateIPDLCaller, SharedMemory* aSegment, id_t aId)
   mSize = static_cast<size_t>(header->mSize);
 
   size_t pageSize = SharedMemory::SystemPageSize();
+  MOZ_ASSERT(mSegment->Size() - (2 * pageSize) >= mSize,
+             "illegal size in shared memory segment");
+
   
   
   mSegment->Protect(frontSentinel, pageSize, RightsNone);
@@ -374,6 +377,13 @@ void Shmem::Dealloc(PrivateIPDLCaller, SharedMemory* aSegment) {
 }
 
 #else  
+
+Shmem::Shmem(PrivateIPDLCaller, SharedMemory* aSegment, id_t aId)
+    : mSegment(aSegment), mData(aSegment->memory()), mSize(0), mId(aId) {
+  mSize = static_cast<size_t>(*PtrToSize(mSegment));
+  MOZ_RELEASE_ASSERT(mSegment->Size() - sizeof(uint32_t) >= mSize,
+                     "illegal size in shared memory segment");
+}
 
 
 already_AddRefed<Shmem::SharedMemory> Shmem::Alloc(PrivateIPDLCaller,
