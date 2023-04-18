@@ -98,10 +98,6 @@ bool RemoteWorkerManager::MatchRemoteType(const nsACString& processRemoteType,
   
   MOZ_ASSERT(!IsWebCoopCoepRemoteType(workerRemoteType));
 
-  
-  
-  MOZ_ASSERT(workerRemoteType != LARGE_ALLOCATION_REMOTE_TYPE);
-
   return processRemoteType.Equals(workerRemoteType);
 }
 

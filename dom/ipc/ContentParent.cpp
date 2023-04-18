@@ -741,7 +741,6 @@ const nsDependentCSubstring RemoteTypePrefix(
 
 bool IsWebRemoteType(const nsACString& aContentProcessType) {
   
-  
   return StringBeginsWith(aContentProcessType, DEFAULT_REMOTE_TYPE);
 }
 
@@ -1052,15 +1051,6 @@ ContentParent::GetNewOrUsedLaunchingBrowserProcess(
 
   nsTArray<ContentParent*>& contentParents = GetOrCreatePool(aRemoteType);
   uint32_t maxContentParents = GetMaxProcessCount(aRemoteType);
-  
-  if (aRemoteType == LARGE_ALLOCATION_REMOTE_TYPE &&
-      contentParents.Length() >= maxContentParents) {
-    MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
-            ("GetNewOrUsedProcess: returning Large Used process"));
-    return GetNewOrUsedLaunchingBrowserProcess(DEFAULT_REMOTE_TYPE, aGroup,
-                                               aPriority,
-                                               false);
-  }
 
   
   contentParent = GetUsedBrowserProcess(

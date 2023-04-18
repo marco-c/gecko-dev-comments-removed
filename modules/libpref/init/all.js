@@ -2490,9 +2490,6 @@ pref("dom.ipc.keepProcessesAlive.privilegedabout", 1);
 pref("svg.disabled", false);
 
 
-pref("dom.ipc.processCount.webLargeAllocation", 10);
-
-
 pref("browser.tabs.remote.autostart", false);
 
 

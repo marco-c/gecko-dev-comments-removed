@@ -40,7 +40,6 @@ const {
   EXTENSION_REMOTE_TYPE,
   FILE_REMOTE_TYPE,
   FISSION_WEB_REMOTE_TYPE,
-  LARGE_ALLOCATION_REMOTE_TYPE,
   NOT_REMOTE,
   PRIVILEGEDABOUT_REMOTE_TYPE,
   PRIVILEGEDMOZILLA_REMOTE_TYPE,
@@ -53,6 +52,7 @@ const {
   REMOTE_WORKER_TYPE_SHARED,
   REMOTE_WORKER_TYPE_SERVICE,
 } = Ci.nsIE10SUtils;
+
 
 
 add_task(function test_get_remote_type_for_service_worker() {
@@ -147,11 +147,11 @@ add_task(function test_get_remote_type_for_service_worker() {
 });
 
 
+
 add_task(function test_get_remote_type_for_shared_worker() {
   
   
   for (const [principal, preferredRemoteType] of [
-    [principalSecureCom, LARGE_ALLOCATION_REMOTE_TYPE],
     [
       principalSecureCom,
       `${WEB_REMOTE_COOP_COEP_TYPE_PREFIX}=${principalSecureCom.siteOrigin}`,
@@ -245,7 +245,6 @@ add_task(function test_get_remote_type_for_shared_worker() {
   
   for (const [preferredRemoteType, expectedRemoteType] of [
     [WEB_REMOTE_TYPE, WEB_REMOTE_TYPE],
-    [LARGE_ALLOCATION_REMOTE_TYPE, WEB_REMOTE_TYPE],
     ["fakeRemoteType", "fakeRemoteType"],
     
     
@@ -269,7 +268,6 @@ add_task(function test_get_remote_type_for_shared_worker() {
   
   for (const [preferredRemoteType, expectedRemoteType] of [
     [WEB_REMOTE_TYPE, WEB_REMOTE_TYPE],
-    [LARGE_ALLOCATION_REMOTE_TYPE, WEB_REMOTE_TYPE],
     ["fakeRemoteType", "fakeRemoteType"],
     
     

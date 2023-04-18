@@ -80,7 +80,6 @@ const PRIVILEGEDMOZILLA_REMOTE_TYPE = "privilegedmozilla";
 const SERVICEWORKER_REMOTE_TYPE = "webServiceWorker";
 
 
-const LARGE_ALLOCATION_REMOTE_TYPE = "webLargeAllocation";
 const DEFAULT_REMOTE_TYPE = WEB_REMOTE_TYPE;
 
 
@@ -274,7 +273,6 @@ var E10SUtils = {
   EXTENSION_REMOTE_TYPE,
   PRIVILEGEDABOUT_REMOTE_TYPE,
   PRIVILEGEDMOZILLA_REMOTE_TYPE,
-  LARGE_ALLOCATION_REMOTE_TYPE,
   FISSION_WEB_REMOTE_TYPE,
   SERVICEWORKER_REMOTE_TYPE,
 
@@ -662,17 +660,10 @@ var E10SUtils = {
       return NOT_REMOTE;
     }
 
-    if (
-      
-      
-      
-      aPreferredRemoteType === LARGE_ALLOCATION_REMOTE_TYPE ||
-      
-      
-      
-      
-      aPreferredRemoteType?.startsWith(WEB_REMOTE_COOP_COEP_TYPE_PREFIX)
-    ) {
+    
+    
+    
+    if (aPreferredRemoteType?.startsWith(WEB_REMOTE_COOP_COEP_TYPE_PREFIX)) {
       aPreferredRemoteType = DEFAULT_REMOTE_TYPE;
     }
 

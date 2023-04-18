@@ -386,38 +386,6 @@ static already_AddRefed<BasePrincipal> GetAboutReaderURLPrincipal(
 
 
 
-static bool IsLargeAllocationLoad(CanonicalBrowsingContext* aBrowsingContext,
-                                  nsIChannel* aChannel) {
-  if (!StaticPrefs::dom_largeAllocationHeader_enabled() ||
-      aBrowsingContext->UseRemoteSubframes()) {
-    return false;
-  }
-
-  nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aChannel);
-  if (!httpChannel) {
-    return false;
-  }
-
-  nsAutoCString ignoredHeaderValue;
-  nsresult rv =
-      httpChannel->GetResponseHeader("Large-Allocation"_ns, ignoredHeaderValue);
-  if (NS_FAILED(rv)) {
-    return false;
-  }
-
-  
-  
-#if defined(XP_WIN) && defined(_X86_)
-  return true;
-#else
-  return StaticPrefs::dom_largeAllocation_forceEnable();
-#endif
-}
-
-
-
-
-
 
 static bool ShouldIsolateSite(nsIPrincipal* aPrincipal,
                               CanonicalBrowsingContext* aTopBC) {
@@ -774,30 +742,6 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
   if (aCurrentRemoteType.IsEmpty()) {
     MOZ_ASSERT(!aParentWindow);
     options.mReplaceBrowsingContext = true;
-  }
-
-  
-  if (!aTopBC->UseRemoteSubframes()) {
-    MOZ_ASSERT(!aParentWindow,
-               "subframe switch when `UseRemoteSubframes()` is false?");
-    bool singleToplevel = aTopBC->Group()->Toplevels().Length() == 1;
-    bool isLargeAllocLoad = IsLargeAllocationLoad(aTopBC, aChannel);
-    
-    
-    if (isLargeAllocLoad && singleToplevel) {
-      options.mRemoteType = LARGE_ALLOCATION_REMOTE_TYPE;
-      options.mReplaceBrowsingContext = true;
-      return options;
-    }
-    if (aCurrentRemoteType == LARGE_ALLOCATION_REMOTE_TYPE) {
-      
-      
-      if (!singleToplevel) {
-        options.mRemoteType = LARGE_ALLOCATION_REMOTE_TYPE;
-        return options;
-      }
-      options.mReplaceBrowsingContext = true;
-    }
   }
 
   nsAutoCString siteOriginNoSuffix;

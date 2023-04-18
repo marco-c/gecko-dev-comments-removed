@@ -1932,8 +1932,7 @@ CanonicalBrowsingContext::ChangeRemoteness(
   RefPtr<ContentParent> existingProcess = GetContentParent();
   if (existingProcess && existingProcess->IsAlive() &&
       aOptions.mReplaceBrowsingContext &&
-      aOptions.mRemoteType == existingProcess->GetRemoteType() &&
-      aOptions.mRemoteType != LARGE_ALLOCATION_REMOTE_TYPE) {
+      aOptions.mRemoteType == existingProcess->GetRemoteType()) {
     change->mContentParent = existingProcess;
     change->mContentParent->AddKeepAlive();
     change->ProcessLaunched();
@@ -2588,12 +2587,6 @@ bool CanonicalBrowsingContext::AllowedInBFCache(
   }
 
   if (IsInProcess()) {
-    return false;
-  }
-
-  nsAutoCString remoteType;
-  GetCurrentRemoteType(remoteType, IgnoredErrorResult());
-  if (remoteType == LARGE_ALLOCATION_REMOTE_TYPE) {
     return false;
   }
 
