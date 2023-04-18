@@ -25,6 +25,10 @@ async function testRefresh(url) {
     await pageShownPromise;
 
     
+    pageShownPromise = BrowserTestUtils.waitForContentEvent(
+      browser,
+      "AboutReaderContentReady"
+    );
     refreshButton.click();
     await pageShownPromise;
     await SpecialPowers.spawn(browser, [], () => {
