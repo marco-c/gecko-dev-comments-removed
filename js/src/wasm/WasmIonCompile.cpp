@@ -1315,9 +1315,8 @@ class FunctionCompiler {
       actualBase = extended;
     }
 
-    auto* ins =
-        MWasmBoundsCheck::New(alloc(), actualBase, boundsCheckLimit,
-                              bytecodeOffset(), MWasmBoundsCheck::Memory);
+    auto* ins = MWasmBoundsCheck::New(alloc(), actualBase, boundsCheckLimit,
+                                      bytecodeOffset());
     curBlock_->add(ins);
     actualBase = ins;
 
@@ -1702,19 +1701,6 @@ class FunctionCompiler {
 
   
 
-  bool postBarrierFiltering(MDefinition* valueAddr, uint32_t lineOrBytecode) {
-    const SymbolicAddressSignature& callee = SASigPostBarrierFiltering;
-    CallCompileState args;
-    if (!passInstance(callee.argTypes[0], &args)) {
-      return false;
-    }
-    if (!passArg(valueAddr, callee.argTypes[1], &args)) {
-      return false;
-    }
-    finishCall(&args);
-    return builtinInstanceMethodCall(callee, lineOrBytecode, args);
-  }
-
   MDefinition* loadGlobalVar(unsigned globalDataOffset, bool isConst,
                              bool isIndirect, MIRType type) {
     if (inDeadCode()) {
@@ -1782,69 +1768,6 @@ class FunctionCompiler {
     curBlock_->add(store);
 
     return valueAddr;
-  }
-
-  MDefinition* loadTableField(const TableDesc& table, unsigned fieldOffset,
-                              MIRType type) {
-    uint32_t globalDataOffset =
-        offsetof(TlsData, globalArea) + table.globalDataOffset + fieldOffset;
-    auto* load = MWasmLoadTls::New(alloc(), tlsPointer_, globalDataOffset, type,
-                                   AliasSet::Load(AliasSet::WasmTableMeta));
-    curBlock_->add(load);
-    return load;
-  }
-  MDefinition* loadTableLength(const TableDesc& table) {
-    return loadTableField(table, offsetof(TableTls, length), MIRType::Int32);
-  }
-  MDefinition* loadTableElements(const TableDesc& table) {
-    return loadTableField(table, offsetof(TableTls, elements),
-                          MIRType::Pointer);
-  }
-
-  MDefinition* tableGetAnyRef(const TableDesc& table, MDefinition* index) {
-    
-    
-    auto* length = loadTableLength(table);
-    auto* check = MWasmBoundsCheck::New(
-        alloc(), index, length, bytecodeOffset(), MWasmBoundsCheck::Table);
-    curBlock_->add(check);
-    if (JitOptions.spectreIndexMasking) {
-      index = check;
-    }
-
-    
-    auto* elements = loadTableElements(table);
-    auto* element = MWasmLoadTableElement::New(alloc(), elements, index);
-    curBlock_->add(element);
-    return element;
-  }
-  MDefinition* tableSetAnyRef(const TableDesc& table, MDefinition* index,
-                              MDefinition* value, uint32_t lineOrBytecode) {
-    
-    
-    auto* length = loadTableLength(table);
-    auto* check = MWasmBoundsCheck::New(
-        alloc(), index, length, bytecodeOffset(), MWasmBoundsCheck::Table);
-    curBlock_->add(check);
-    if (JitOptions.spectreIndexMasking) {
-      index = check;
-    }
-
-    
-    auto* elements = loadTableElements(table);
-    auto* loc =
-        MWasmDerivedIndexPointer::New(alloc(), elements, index, ScalePointer);
-    curBlock_->add(loc);
-
-    
-    auto* store = MWasmStoreRef::New(alloc(), tlsPointer_, loc, value,
-                                     AliasSet::WasmTableElement);
-    curBlock_->add(store);
-    if (!postBarrierFiltering(loc, lineOrBytecode)) {
-      return nullptr;
-    }
-
-    return store;
   }
 
   void addInterruptCheck() {
@@ -4179,8 +4102,19 @@ static bool EmitSetGlobal(FunctionCompiler& f) {
   
   
 
-  if (barrierAddr && !f.postBarrierFiltering(barrierAddr, lineOrBytecode)) {
-    return false;
+  if (barrierAddr) {
+    const SymbolicAddressSignature& callee = SASigPostBarrierFiltering;
+    CallCompileState args;
+    if (!f.passInstance(callee.argTypes[0], &args)) {
+      return false;
+    }
+    if (!f.passArg(barrierAddr, callee.argTypes[1], &args)) {
+      return false;
+    }
+    f.finishCall(&args);
+    if (!f.builtinInstanceMethodCall(callee, lineOrBytecode, args)) {
+      return false;
+    }
   }
 
   return true;
@@ -5456,19 +5390,9 @@ static bool EmitTableGet(FunctionCompiler& f) {
     return true;
   }
 
-  const TableDesc& table = f.moduleEnv().tables[tableIndex];
-  if (table.elemType.tableRepr() == TableRepr::Ref) {
-    MDefinition* ret = f.tableGetAnyRef(table, index);
-    if (!ret) {
-      return false;
-    }
-    f.iter().setResult(ret);
-    return true;
-  }
-
   uint32_t lineOrBytecode = f.readCallSiteLineOrBytecode();
 
-  const SymbolicAddressSignature& callee = SASigTableGetFunc;
+  const SymbolicAddressSignature& callee = SASigTableGet;
   CallCompileState args;
   if (!f.passInstance(callee.argTypes[0], &args)) {
     return false;
@@ -5566,16 +5490,7 @@ static bool EmitTableSet(FunctionCompiler& f) {
 
   uint32_t lineOrBytecode = f.readCallSiteLineOrBytecode();
 
-  const TableDesc& table = f.moduleEnv().tables[tableIndex];
-  if (table.elemType.tableRepr() == TableRepr::Ref) {
-    MDefinition* ret = f.tableSetAnyRef(table, index, value, lineOrBytecode);
-    if (!ret) {
-      return false;
-    }
-    return true;
-  }
-
-  const SymbolicAddressSignature& callee = SASigTableSetFunc;
+  const SymbolicAddressSignature& callee = SASigTableSet;
   CallCompileState args;
   if (!f.passInstance(callee.argTypes[0], &args)) {
     return false;
@@ -5615,14 +5530,33 @@ static bool EmitTableSize(FunctionCompiler& f) {
     return true;
   }
 
-  const TableDesc& table = f.moduleEnv().tables[tableIndex];
+  uint32_t lineOrBytecode = f.readCallSiteLineOrBytecode();
 
-  MDefinition* length = f.loadTableLength(table);
-  if (!length) {
+  const SymbolicAddressSignature& callee = SASigTableSize;
+  CallCompileState args;
+  if (!f.passInstance(callee.argTypes[0], &args)) {
     return false;
   }
 
-  f.iter().setResult(length);
+  MDefinition* tableIndexArg =
+      f.constant(Int32Value(tableIndex), MIRType::Int32);
+  if (!tableIndexArg) {
+    return false;
+  }
+  if (!f.passArg(tableIndexArg, callee.argTypes[1], &args)) {
+    return false;
+  }
+
+  if (!f.finishCall(&args)) {
+    return false;
+  }
+
+  MDefinition* ret;
+  if (!f.builtinInstanceMethodCall(callee, lineOrBytecode, args, &ret)) {
+    return false;
+  }
+
+  f.iter().setResult(ret);
   return true;
 }
 
