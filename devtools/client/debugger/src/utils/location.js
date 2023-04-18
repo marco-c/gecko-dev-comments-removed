@@ -2,7 +2,6 @@
 
 
 
-import { sortBy } from "lodash";
 import { getSelectedLocation } from "./selected-location";
 
 export function comparePosition(a, b) {
@@ -25,12 +24,33 @@ export function createLocation({
 }
 
 export function sortSelectedLocations(locations, selectedSource) {
-  return sortBy(locations, [
+  return Array.from(locations).sort((locationA, locationB) => {
+    const aSelected = getSelectedLocation(locationA, selectedSource);
+    const bSelected = getSelectedLocation(locationB, selectedSource);
+
     
-    location => getSelectedLocation(location, selectedSource).line,
-    location => {
-      const selectedLocation = getSelectedLocation(location, selectedSource);
-      return selectedLocation.column === undefined || selectedLocation.column;
-    },
-  ]);
+    if (aSelected.line < bSelected.line) {
+      return -1;
+    }
+
+    if (aSelected.line > bSelected.line) {
+      return 1;
+    }
+
+    
+    
+    if (aSelected.column == bSelected.column) {
+      return 0;
+    }
+
+    if (aSelected.column === undefined) {
+      return -1;
+    }
+
+    if (bSelected.column === undefined) {
+      return 1;
+    }
+
+    return aSelected.column < bSelected.column ? -1 : 1;
+  });
 }

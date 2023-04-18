@@ -2,7 +2,6 @@
 
 
 
-import { sortBy } from "lodash";
 import {
   getOriginalFrameScope,
   getGeneratedFrameScope,
@@ -118,17 +117,26 @@ export function generateInlinePreview(cx, frame) {
       scopes = scopes.parent;
     }
 
-    const previews = {};
-    const sortedPreviews = sortBy(allPreviews, ["line", "column"]);
+    
+    allPreviews.sort((previewA, previewB) => {
+      if (previewA.line < previewB.line) {
+        return -1;
+      }
+      if (previewA.line > previewB.line) {
+        return 1;
+      }
+      
+      return previewA.column < previewB.column ? -1 : 1;
+    });
 
-    sortedPreviews.forEach(preview => {
+    const previews = {};
+    for (const preview of allPreviews) {
       const { line } = preview;
       if (!previews[line]) {
-        previews[line] = [preview];
-      } else {
-        previews[line].push(preview);
+        previews[line] = [];
       }
-    });
+      previews[line].push(preview);
+    }
 
     return dispatch({
       type: "ADD_INLINE_PREVIEW",
