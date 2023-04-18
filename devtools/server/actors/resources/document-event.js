@@ -59,7 +59,10 @@ class DocumentEventWatcher {
           title: name === "dom-interactive" ? targetActor.title : undefined,
           
           
-          url: name === "dom-loading" ? targetActor.url : undefined,
+          url:
+            name === "dom-loading" || name === "dom-interactive"
+              ? targetActor.url
+              : undefined,
           
           
           newURI: name === "will-navigate" ? newURI : null,
