@@ -21,4 +21,7 @@
 
 $DONOTEVALUATE();
 
-(x instanceof y) = 1;
+function _() {
+  (x instanceof y) = 1;
+}
+

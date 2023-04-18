@@ -9,10 +9,12 @@
 
 
 
+
 var arr = /\t/.exec("\u0009");
 if ((arr === null) || (arr[0] !== "\u0009")) {
   throw new Test262Error('#1: var arr = /\\t/.exec("\\u0009"); arr[0] === "\\u0009". Actual. ' + (arr && arr[0]));
 }
+
 
 var arr = /\t\t/.exec("a\u0009\u0009b");
 if ((arr === null) || (arr[0] !== "\u0009\u0009")) {

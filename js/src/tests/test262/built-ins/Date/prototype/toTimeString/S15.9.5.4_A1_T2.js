@@ -7,17 +7,12 @@
 
 
 
-assert.notSameValue(
-  delete Date.prototype.toTimeString,
-  false,
-  'The value of delete Date.prototype.toTimeString is not false'
-);
+if (delete Date.prototype.toTimeString === false) {
+  throw new Test262Error('#1: The Date.prototype.toTimeString property has not the attributes DontDelete');
+}
 
-assert(
-  !Date.prototype.hasOwnProperty('toTimeString'),
-  'The value of !Date.prototype.hasOwnProperty(\'toTimeString\') is expected to be true'
-);
-
-
+if (Date.prototype.hasOwnProperty('toTimeString')) {
+  throw new Test262Error('#2: The Date.prototype.toTimeString property has not the attributes DontDelete');
+}
 
 reportCompare(0, 0);

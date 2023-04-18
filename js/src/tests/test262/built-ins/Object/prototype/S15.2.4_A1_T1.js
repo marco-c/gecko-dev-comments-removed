@@ -6,10 +6,10 @@
 
 
 
-assert.sameValue(
-  Object.prototype.prototype,
-  undefined,
-  'The value of Object.prototype.prototype is expected to equal undefined'
-);
+
+
+if (Object.prototype.prototype !== undefined) {
+  throw new Test262Error('#1: Object prototype has not prototype');
+}
 
 reportCompare(0, 0);

@@ -6,15 +6,15 @@
 
 
 
-assert(
-  !Date.propertyIsEnumerable('parse'),
-  'The value of !Date.propertyIsEnumerable(\'parse\') is expected to be true'
-);
 
-for (var x in Date) {
-  assert.notSameValue(x, "parse", 'The value of x is not "parse"');
+if (Date.propertyIsEnumerable('parse')) {
+  throw new Test262Error('#1: The Date.parse property has the attribute DontEnum');
 }
 
-
+for (var x in Date) {
+  if (x === "parse") {
+    throw new Test262Error('#2: The Date.parse has the attribute DontEnum');
+  }
+}
 
 reportCompare(0, 0);

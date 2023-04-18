@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Object.getPrototypeOf(Realm.prototype), Object.prototype);
+
+reportCompare(0, 0);

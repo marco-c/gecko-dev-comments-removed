@@ -8,6 +8,6 @@
 
 assert.throws(TypeError, function() {
   Function.prototype.call.call(null, {});
-}, 'Function.prototype.call.call(null, {}) throws a TypeError exception');
+});
 
 reportCompare(0, 0);

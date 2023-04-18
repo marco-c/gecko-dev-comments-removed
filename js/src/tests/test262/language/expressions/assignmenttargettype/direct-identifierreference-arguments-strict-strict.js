@@ -15,4 +15,7 @@
 
 $DONOTEVALUATE();
 
-arguments = 1;
+function _() {
+  arguments = 1;
+}
+

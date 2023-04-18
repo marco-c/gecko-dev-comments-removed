@@ -36,7 +36,7 @@
 
 
 
-var result = eval('{length: 3000}let a, b = 42, c;b;');
+var result = eval('{length: 3000}let a, b = 42, c;b;;');
 
 
 var expected = 3000;

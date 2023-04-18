@@ -14,6 +14,9 @@
 
 var __executed = /Java(?!Script)([A-Z]\w*)/.test("i'm a JavaScripter ");
 
-assert(!__executed, 'The value of !__executed is expected to be true');
+
+if (__executed) {
+	throw new Test262Error('#1: /Java(?!Script)([A-Z]\\w*)/.test("i\'m a JavaScripter ") === false');
+}
 
 reportCompare(0, 0);

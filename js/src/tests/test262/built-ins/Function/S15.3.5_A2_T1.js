@@ -6,13 +6,20 @@
 
 
 
-assert.sameValue(
-  Function("var x =1; this.y=2;return \"OK\";")(),
-  "OK",
-  'Function("var x =1; this.y=2;return "OK";")() must return "OK"'
-);
 
-assert.sameValue(typeof x, "undefined", 'The value of `typeof x` is expected to be "undefined"');
-assert.sameValue(y, 2, 'The value of y is expected to be 2');
+
+if (Function("var x =1; this.y=2;return \"OK\";")() !== "OK") {
+  throw new Test262Error('#1: Every function instance has a [[Call]] property');
+}
+
+
+if (typeof x !== "undefined") {
+  throw new Test262Error('#2: Every function instance has a [[Call]] property');
+}
+
+
+if (y !== 2) {
+  throw new Test262Error('#3: Every function instance has a [[Call]] property');
+}
 
 reportCompare(0, 0);

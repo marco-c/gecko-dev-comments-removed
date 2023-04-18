@@ -35,10 +35,12 @@ var alphabet = [-1, obj, 1, 2, Infinity, NaN, "X", "a", true, undefined];
 
 alphabetR.sort();
 
+
 alphabetR.getClass = Object.prototype.toString;
 if (alphabetR.getClass() !== "[object " + "Object" + "]") {
   throw new Test262Error('#0: alphabetR.sort() is Object object, not Array object');
 }
+
 
 var result = true;
 for (var i = 0; i < 10; i++) {

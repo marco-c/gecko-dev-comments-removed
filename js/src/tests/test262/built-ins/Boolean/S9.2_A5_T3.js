@@ -8,7 +8,15 @@
 
 
 
-assert.sameValue(Boolean(" "), true, 'Boolean(" ") must return true');
-assert.sameValue(Boolean("Nonempty String"), true, 'Boolean("Nonempty String") must return true');
+
+
+if (Boolean(" ") !== true) {
+  throw new Test262Error('#1: Boolean(" ") === true. Actual: ' + (Boolean(" ")));
+}
+
+
+if (Boolean("Nonempty String") !== true) {
+  throw new Test262Error('#2: Boolean("Nonempty String") === true. Actual: ' + (Boolean("Nonempty String")));
+}
 
 reportCompare(0, 0);

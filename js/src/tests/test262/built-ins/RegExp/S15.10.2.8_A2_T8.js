@@ -12,6 +12,9 @@
 
 var __executed = /(\.(?!com|org)|\/)/.test("ah.com");
 
-assert(!__executed, 'The value of !__executed is expected to be true');
+
+if (__executed) {
+	throw new Test262Error('#1: /(\\.(?!com|org)|\\/)/.test("ah.com") === false');
+}
 
 reportCompare(0, 0);

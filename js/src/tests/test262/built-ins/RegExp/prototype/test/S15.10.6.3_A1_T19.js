@@ -9,10 +9,9 @@
 
 var __re = /e{1}/;
 
-assert.sameValue(
-  __re.test(void 0),
-  __re.exec(void 0) !== null,
-  '__re.test(void 0) must return __re.exec(void 0) !== null'
-);
+
+if (__re.test(void 0) !== (__re.exec(void 0) !== null)) {
+	throw new Test262Error('#0: __re = /e{1}/; __re.test(void 0) === (__re.exec(void 0) !== null)');
+}
 
 reportCompare(0, 0);

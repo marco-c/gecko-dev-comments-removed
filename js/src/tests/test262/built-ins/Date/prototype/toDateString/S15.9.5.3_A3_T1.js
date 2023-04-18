@@ -12,13 +12,8 @@
 
 var x = Date.prototype.toDateString.length;
 verifyNotWritable(Date.prototype.toDateString, "length", null, 1);
-
-assert.sameValue(
-  Date.prototype.toDateString.length,
-  x,
-  'The value of Date.prototype.toDateString.length is expected to equal the value of x'
-);
-
-
+if (Date.prototype.toDateString.length !== x) {
+  throw new Test262Error('#1: The Date.prototype.toDateString.length has the attribute ReadOnly');
+}
 
 reportCompare(0, 0);

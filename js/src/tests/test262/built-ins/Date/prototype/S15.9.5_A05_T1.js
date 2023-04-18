@@ -6,10 +6,9 @@
 
 
 
-assert.sameValue(
-  Date.prototype.hasOwnProperty("toLocaleString"),
-  true,
-  'Date.prototype.hasOwnProperty("toLocaleString") must return true'
-);
+
+if (Date.prototype.hasOwnProperty("toLocaleString") !== true) {
+  throw new Test262Error('#1: The Date.prototype has the property "toLocaleString"');
+}
 
 reportCompare(0, 0);

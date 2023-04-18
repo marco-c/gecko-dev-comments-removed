@@ -11,10 +11,19 @@
 
 var __re = RegExp.prototype;
 
-assert.sameValue(__re.hasOwnProperty('multiline'), true, '__re.hasOwnProperty(\'multiline\') must return true');
-assert.sameValue(delete __re.multiline, true, 'The value of `delete __re.multiline` is expected to be true');
-assert.sameValue(__re.hasOwnProperty('multiline'), false, '__re.hasOwnProperty(\'multiline\') must return false');
+
+if (__re.hasOwnProperty('multiline') !== true) {
+  throw new Test262Error('#0: __re = RegExp.prototype; __re.hasOwnProperty(\'multiline\') === true');
+}
 
 
+if ((delete __re.multiline) !== true) {
+  throw new Test262Error('#1: __re = RegExp.prototype; (delete __re.multiline) === true');
+}
+
+
+if (__re.hasOwnProperty('multiline') !== false) {
+  throw new Test262Error('#2: __re = RegExp.prototype;delete __re.multiline === true; __re.hasOwnProperty(\'multiline\') === false');
+}
 
 reportCompare(0, 0);

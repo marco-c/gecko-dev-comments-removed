@@ -8,10 +8,9 @@
 
 
 
-assert.sameValue(
-  typeof Promise.resolve,
-  "function",
-  'The value of `typeof Promise.resolve` is expected to be "function"'
-);
+
+if ((typeof Promise.resolve) !== "function") {
+  throw new Test262Error("Expected Promise.resolve to be a function");
+}
 
 reportCompare(0, 0);

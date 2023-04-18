@@ -1166,8 +1166,6 @@ nsresult nsAutoCompleteController::EnterMatch(bool aIsPopupSelection,
 
   
   nsAutoString value;
-  nsAutoString comment;
-
   popup->GetOverrideValue(value);
   if (value.IsEmpty()) {
     bool shouldComplete;
@@ -1178,7 +1176,6 @@ nsresult nsAutoCompleteController::EnterMatch(bool aIsPopupSelection,
     if (selectedIndex >= 0) {
       nsAutoString inputValue;
       input->GetTextValue(inputValue);
-      GetCommentAt(selectedIndex, comment);
       if (aIsPopupSelection || !completeSelection) {
         
         
@@ -1270,13 +1267,9 @@ nsresult nsAutoCompleteController::EnterMatch(bool aIsPopupSelection,
     }
   }
 
-  if (comment.IsEmpty()) {
-    comment.Assign(u"{}");
-  }
-
   nsCOMPtr<nsIObserverService> obsSvc = services::GetObserverService();
   NS_ENSURE_STATE(obsSvc);
-  obsSvc->NotifyObservers(input, "autocomplete-will-enter-text", comment.get());
+  obsSvc->NotifyObservers(input, "autocomplete-will-enter-text", nullptr);
 
   if (!value.IsEmpty()) {
     SetValueOfInputTo(value);

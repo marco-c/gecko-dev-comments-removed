@@ -43,10 +43,12 @@ var myComparefn = function(x, y) {
 
 alphabetR.sort(myComparefn);
 
+
 alphabetR.getClass = Object.prototype.toString;
 if (alphabetR.getClass() !== "[object " + "Object" + "]") {
   throw new Test262Error('#0: alphabetR.sort() is Object object, not Array object');
 }
+
 
 var result = true;
 for (var i = 0; i < 10; i++) {

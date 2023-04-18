@@ -8,6 +8,7 @@
 
 
 
+
 var x = [];
 x.length = {
   valueOf: function() {
@@ -15,6 +16,7 @@ x.length = {
   }
 };
 assert.sameValue(x.length, 2, 'The value of x.length is expected to be 2');
+
 
 x = [];
 x.length = {
@@ -27,6 +29,7 @@ x.length = {
 };
 assert.sameValue(x.length, 2, 'The value of x.length is expected to be 2');
 
+
 x = [];
 x.length = {
   valueOf: function() {
@@ -37,6 +40,7 @@ x.length = {
   }
 };
 assert.sameValue(x.length, 2, 'The value of x.length is expected to be 2');
+
 
 try {
   x = [];
@@ -54,6 +58,7 @@ catch (e) {
   assert.notSameValue(e, "error", 'The value of e is not "error"');
 }
 
+
 x = [];
 x.length = {
   toString: function() {
@@ -61,6 +66,7 @@ x.length = {
   }
 };
 assert.sameValue(x.length, 1, 'The value of x.length is expected to be 1');
+
 
 x = [];
 x.length = {
@@ -72,6 +78,7 @@ x.length = {
   }
 }
 assert.sameValue(x.length, 1, 'The value of x.length is expected to be 1');
+
 
 try {
   x = [];
@@ -89,6 +96,7 @@ try {
 catch (e) {
   assert.sameValue(e, "error", 'The value of e is expected to be "error"');
 }
+
 
 try {
   x = [];

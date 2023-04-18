@@ -10,24 +10,20 @@
 
 
 
-assert.sameValue(
-  RegExp.prototype.toString.hasOwnProperty('length'),
-  true,
-  'RegExp.prototype.toString.hasOwnProperty(\'length\') must return true'
-);
-
-assert.sameValue(
-  delete RegExp.prototype.toString.length,
-  true,
-  'The value of `delete RegExp.prototype.toString.length` is expected to be true'
-);
-
-assert.sameValue(
-  RegExp.prototype.toString.hasOwnProperty('length'),
-  false,
-  'RegExp.prototype.toString.hasOwnProperty(\'length\') must return false'
-);
 
 
+if ((RegExp.prototype.toString.hasOwnProperty('length') !== true)) {
+	throw new Test262Error('#0: RegExp.prototype.toString.hasOwnProperty(\'length\') === true');
+}
+
+
+if (delete RegExp.prototype.toString.length !== true) {
+	throw new Test262Error('#1: delete RegExp.prototype.toString.length === true');
+}
+
+
+if (RegExp.prototype.toString.hasOwnProperty('length') !== false) {
+	throw new Test262Error('#2: delete RegExp.prototype.toString.length; RegExp.prototype.toString.hasOwnProperty(\'length\') === false');
+}
 
 reportCompare(0, 0);

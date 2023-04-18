@@ -6,7 +6,15 @@
 
 
 
-assert(Number.hasOwnProperty("length"), 'Number.hasOwnProperty("length") must return true');
-assert.sameValue(Number.length, 1, 'The value of Number.length is expected to be 1');
+
+
+if (!Number.hasOwnProperty("length")) {
+  throw new Test262Error('#1: Number constructor has length property');
+}
+
+
+if (Number.length !== 1) {
+  throw new Test262Error('#2: Number constructor length property value is 1');
+}
 
 reportCompare(0, 0);

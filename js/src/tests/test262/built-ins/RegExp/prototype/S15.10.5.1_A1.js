@@ -6,6 +6,10 @@
 
 
 
-assert.sameValue(RegExp.hasOwnProperty('prototype'), true, 'RegExp.hasOwnProperty(\'prototype\') must return true');
+
+
+if (RegExp.hasOwnProperty('prototype') !== true) {
+	throw new Test262Error('#1: RegExp.hasOwnProperty(\'prototype\') === true');
+}
 
 reportCompare(0, 0);

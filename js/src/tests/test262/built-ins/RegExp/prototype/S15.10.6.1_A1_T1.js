@@ -8,10 +8,10 @@
 
 
 
-assert.sameValue(
-  RegExp.prototype.constructor,
-  RegExp,
-  'The value of RegExp.prototype.constructor is expected to equal the value of RegExp'
-);
+
+
+if (RegExp.prototype.constructor !== RegExp) {
+	throw new Test262Error('#1: RegExp.prototype.constructor === RegExp. Actual: ' + (RegExp.prototype.constructor));
+}
 
 reportCompare(0, 0);

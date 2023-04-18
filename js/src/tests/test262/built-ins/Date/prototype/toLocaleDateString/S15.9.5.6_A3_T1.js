@@ -12,13 +12,8 @@
 
 var x = Date.prototype.toLocaleDateString.length;
 verifyNotWritable(Date.prototype.toLocaleDateString, "length", null, 1);
-
-assert.sameValue(
-  Date.prototype.toLocaleDateString.length,
-  x,
-  'The value of Date.prototype.toLocaleDateString.length is expected to equal the value of x'
-);
-
-
+if (Date.prototype.toLocaleDateString.length !== x) {
+  throw new Test262Error('#1: The Date.prototype.toLocaleDateString.length has the attribute ReadOnly');
+}
 
 reportCompare(0, 0);

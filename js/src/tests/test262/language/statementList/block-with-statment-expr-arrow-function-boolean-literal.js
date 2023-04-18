@@ -55,6 +55,6 @@
 
 
 
-{length: 3000}() => 1, 42;
+{length: 3000}() => 1, 42;;
 
 reportCompare(0, 0);

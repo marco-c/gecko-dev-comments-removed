@@ -6,16 +6,15 @@
 
 
 
-assert.sameValue(
-  Number.prototype.toFixed.hasOwnProperty("length"),
-  true,
-  'Number.prototype.toFixed.hasOwnProperty("length") must return true'
-);
 
-assert.sameValue(
-  Number.prototype.toFixed.length,
-  1,
-  'The value of Number.prototype.toFixed.length is expected to be 1'
-);
+
+if (Number.prototype.toFixed.hasOwnProperty("length") !== true) {
+  throw new Test262Error('#1: The length property of the toFixed method is 1');
+}
+
+
+if (Number.prototype.toFixed.length !== 1) {
+  throw new Test262Error('#2: The length property of the toFixed method is 1');
+}
 
 reportCompare(0, 0);

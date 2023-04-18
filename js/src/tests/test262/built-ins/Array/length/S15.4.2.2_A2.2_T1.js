@@ -10,6 +10,7 @@
 
 
 
+
 try {
   new Array(-1);
   throw new Test262Error('#1.1: new Array(-1) throw RangeError. Actual: ' + (new Array(-1)));
@@ -21,6 +22,7 @@ try {
   );
 }
 
+
 try {
   new Array(4294967296);
   throw new Test262Error('#2.1: new Array(4294967296) throw RangeError. Actual: ' + (new Array(4294967296)));
@@ -31,6 +33,7 @@ try {
     'The result of evaluating (e instanceof RangeError) is expected to be true'
   );
 }
+
 
 try {
   new Array(4294967297);

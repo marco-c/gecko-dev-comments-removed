@@ -8,10 +8,11 @@
 
 
 
-assert.sameValue(
-  Object.prototype.valueOf.prototype,
-  undefined,
-  'The value of Object.prototype.valueOf.prototype is expected to equal undefined'
-);
+
+
+if (Object.prototype.valueOf.prototype !== undefined) {
+  throw new Test262Error('#1: Object.prototype.valueOf has not prototype property' + Object.prototype.valueOf.prototype);
+}
+
 
 reportCompare(0, 0);

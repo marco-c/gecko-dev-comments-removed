@@ -8,10 +8,10 @@
 
 
 
-assert.sameValue(
-  Object.prototype.isPrototypeOf(RegExp.prototype),
-  true,
-  'Object.prototype.isPrototypeOf(RegExp.prototype) must return true'
-);
+
+
+if (Object.prototype.isPrototypeOf(RegExp.prototype) !== true) {
+	throw new Test262Error('#1: Object.prototype.isPrototypeOf(RegExp.prototype) === true');
+}
 
 reportCompare(0, 0);

@@ -6,10 +6,10 @@
 
 
 
-assert.sameValue(
-  RegExp.prototype.test.prototype,
-  undefined,
-  'The value of RegExp.prototype.test.prototype is expected to equal undefined'
-);
+
+
+if (RegExp.prototype.test.prototype !== undefined) {
+  throw new Test262Error('#1: RegExp.prototype.test.prototype === undefined. Actual: ' + (RegExp.prototype.test.prototype));
+}
 
 reportCompare(0, 0);

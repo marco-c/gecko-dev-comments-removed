@@ -11,6 +11,9 @@
 
 var __executed = /[xyz]*1/.test('a0.b2.c3');
 
-assert(!__executed, 'The value of !__executed is expected to be true');
+
+if (__executed) {
+	throw new Test262Error('#1: /[xyz]*1/.test(\'a0.b2.c3\') === false');
+}
 
 reportCompare(0, 0);

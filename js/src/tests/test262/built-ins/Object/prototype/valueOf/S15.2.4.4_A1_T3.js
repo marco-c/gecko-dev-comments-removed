@@ -6,15 +6,22 @@
 
 
 
-assert.sameValue(
-  typeof Object.prototype.valueOf,
-  "function",
-  'The value of `typeof Object.prototype.valueOf` is expected to be "function"'
-);
+
+
+if (typeof Object.prototype.valueOf !== "function") {
+  throw new Test262Error('#1: valueOf method defined');
+}
 
 var obj = new Object("greenfield");
 
-assert.sameValue(typeof obj.valueOf, "function", 'The value of `typeof obj.valueOf` is expected to be "function"');
-assert.sameValue(obj.valueOf(), "greenfield", 'obj.valueOf() must return "greenfield"');
+
+if (typeof obj.valueOf !== "function") {
+  throw new Test262Error('#2: valueOf method accessed');
+}
+
+
+if (obj.valueOf() !== "greenfield") {
+  throw new Test262Error('#3: The valueOf method returns its this value');
+}
 
 reportCompare(0, 0);

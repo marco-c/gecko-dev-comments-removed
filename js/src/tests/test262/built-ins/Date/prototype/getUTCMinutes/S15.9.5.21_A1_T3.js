@@ -6,15 +6,15 @@
 
 
 
-assert(
-  !Date.prototype.propertyIsEnumerable('getUTCMinutes'),
-  'The value of !Date.prototype.propertyIsEnumerable(\'getUTCMinutes\') is expected to be true'
-);
 
-for (var x in Date.prototype) {
-  assert.notSameValue(x, "getUTCMinutes", 'The value of x is not "getUTCMinutes"');
+if (Date.prototype.propertyIsEnumerable('getUTCMinutes')) {
+  throw new Test262Error('#1: The Date.prototype.getUTCMinutes property has the attribute DontEnum');
 }
 
-
+for (var x in Date.prototype) {
+  if (x === "getUTCMinutes") {
+    throw new Test262Error('#2: The Date.prototype.getUTCMinutes has the attribute DontEnum');
+  }
+}
 
 reportCompare(0, 0);

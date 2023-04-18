@@ -42,7 +42,7 @@
 
 
 
-var result = eval('{length: 3000}[42];');
+var result = eval('{length: 3000}[42];;');
 
 
 var expected = 3000;

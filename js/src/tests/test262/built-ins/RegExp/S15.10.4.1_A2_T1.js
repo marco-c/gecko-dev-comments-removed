@@ -11,6 +11,7 @@
 
 
 
+
 var regExpObj = new RegExp(/\u0042/i, "i");
 assert(regExpObj.ignoreCase);
 

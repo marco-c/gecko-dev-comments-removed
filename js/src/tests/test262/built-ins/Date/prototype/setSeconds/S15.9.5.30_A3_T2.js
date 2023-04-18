@@ -8,17 +8,13 @@
 
 
 
-assert.sameValue(
-  delete Date.prototype.setSeconds.length,
-  true,
-  'The value of `delete Date.prototype.setSeconds.length` is expected to be true'
-);
 
-assert(
-  !Date.prototype.setSeconds.hasOwnProperty('length'),
-  'The value of !Date.prototype.setSeconds.hasOwnProperty(\'length\') is expected to be true'
-);
+if (delete Date.prototype.setSeconds.length !== true) {
+  throw new Test262Error('#1: The Date.prototype.setSeconds.length property does not have the attributes DontDelete');
+}
 
-
+if (Date.prototype.setSeconds.hasOwnProperty('length')) {
+  throw new Test262Error('#2: The Date.prototype.setSeconds.length property does not have the attributes DontDelete');
+}
 
 reportCompare(0, 0);

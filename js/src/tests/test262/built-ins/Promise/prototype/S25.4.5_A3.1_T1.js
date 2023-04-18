@@ -8,10 +8,9 @@
 
 
 
-assert.sameValue(
-  Promise.prototype.constructor,
-  Promise,
-  'The value of Promise.prototype.constructor is expected to equal the value of Promise'
-);
+
+if (Promise.prototype.constructor !== Promise) {
+  throw new Test262Error("Expected Promise.prototype.constructor to be Promise");
+}
 
 reportCompare(0, 0);

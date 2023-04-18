@@ -34,7 +34,7 @@
 
 
 
-var result = eval('function fn() {}{}');
+var result = eval('function fn() {}{};');
 
 assert.sameValue(result, undefined);
 

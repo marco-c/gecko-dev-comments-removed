@@ -40,7 +40,7 @@
 
 
 
-var result = eval('{length: 3000}/1/g;');
+var result = eval('{length: 3000}/1/g;;');
 
 
 var expected = 3000;

@@ -6,7 +6,15 @@
 
 
 
-assert(Date.hasOwnProperty("length"), 'Date.hasOwnProperty("length") must return true');
-assert.sameValue(Date.length, 7, 'The value of Date.length is expected to be 7');
+
+
+if (!Date.hasOwnProperty("length")) {
+  throw new Test262Error('#1: Date constructor has length property');
+}
+
+
+if (Date.length !== 7) {
+  throw new Test262Error('#2: Date constructor length property value should be 7');
+}
 
 reportCompare(0, 0);

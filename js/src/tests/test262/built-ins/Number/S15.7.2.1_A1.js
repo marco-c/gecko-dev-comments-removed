@@ -8,21 +8,49 @@
 
 
 
-assert.sameValue(typeof new Number(), "object", 'The value of `typeof new Number()` is expected to be "object"');
-assert.notSameValue(new Number(), undefined, 'new Number() is expected to not equal ``undefined``');
+
+
+if (typeof new Number() !== "object") {
+  throw new Test262Error("#1: typeof new Number() === 'object'");
+}
+
+
+if (new Number() === undefined) {
+  throw new Test262Error("#2: new Number() should not be undefined");
+}
+
 
 var x3 = new Number();
-assert.sameValue(typeof x3, "object", 'The value of `typeof x3` is expected to be "object"');
+if (typeof x3 !== "object") {
+  throw new Test262Error("#3: typeof new Number() === 'object'");
+}
+
 
 var x4 = new Number();
-assert.notSameValue(x4, undefined, 'The value of x4 is expected to not equal ``undefined``');
-assert.sameValue(typeof new Number(10), "object", 'The value of `typeof new Number(10)` is expected to be "object"');
-assert.notSameValue(new Number(10), undefined, 'new Number(10) is expected to not equal ``undefined``');
+if (x4 === undefined) {
+  throw new Test262Error("#4: new Number() should not be undefined");
+}
+
+
+if (typeof new Number(10) !== "object") {
+  throw new Test262Error("#5: typeof new Number(10) === 'object'");
+}
+
+
+if (new Number(10) === undefined) {
+  throw new Test262Error("#6: new Number(10) should not be undefined");
+}
+
 
 var x7 = new Number(10);
-assert.sameValue(typeof x7, "object", 'The value of `typeof x7` is expected to be "object"');
+if (typeof x7 !== "object") {
+  throw new Test262Error("#7: typeof new Number(10) === 'object'");
+}
+
 
 var x8 = new Number(10);
-assert.notSameValue(x8, undefined, 'The value of x8 is expected to not equal ``undefined``');
+if (x8 === undefined) {
+  throw new Test262Error("#8: new Number(10) should not be undefined");
+}
 
 reportCompare(0, 0);

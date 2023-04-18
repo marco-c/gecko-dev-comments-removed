@@ -70,59 +70,17 @@ function buildString(args) {
   return result;
 }
 
-function printCodePoint(codePoint) {
-  const hex = codePoint
-    .toString(16)
-    .toUpperCase()
-    .padStart(6, "0");
-  return `U+${hex}`;
-}
-
-function printStringCodePoints(string) {
-  const buf = [];
-  for (const symbol of string) {
-    const formatted = printCodePoint(symbol.codePointAt(0));
-    buf.push(formatted);
-  }
-  return buf.join(' ');
-}
-
-function testPropertyEscapes(regExp, string, expression) {
-  if (!regExp.test(string)) {
+function testPropertyEscapes(regex, string, expression) {
+  if (!regex.test(string)) {
     for (const symbol of string) {
-      printCodePoint(symbol.codePointAt(0));
+      const hex = symbol
+        .codePointAt(0)
+        .toString(16)
+        .toUpperCase()
+        .padStart(6, "0");
       assert(
-        regExp.test(symbol),
+        regex.test(symbol),
         `\`${ expression }\` should match U+${ hex } (\`${ symbol }\`)`
-      );
-    }
-  }
-}
-
-function testPropertyOfStrings(args) {
-  
-  
-  
-  const regExp = args.regExp;
-  const expression = args.expression;
-  const matchStrings = args.matchStrings;
-  const nonMatchStrings = args.nonMatchStrings;
-  const allStrings = matchStrings.join('');
-  if (!regExp.test(allStrings)) {
-    for (const string of matchStrings) {
-      assert(
-        regExp.test(string),
-        `\`${ expression }\` should match ${ string } (U+${ printStringCodePoints(string) })`
-      );
-    }
-  }
-
-  const allNonMatchStrings = nonMatchStrings.join('');
-  if (regExp.test(allNonMatchStrings)) {
-    for (const string of nonMatchStrings) {
-      assert(
-        !regExp.test(string),
-        `\`${ expression }\` should not match ${ string } (U+${ printStringCodePoints(string) })`
       );
     }
   }

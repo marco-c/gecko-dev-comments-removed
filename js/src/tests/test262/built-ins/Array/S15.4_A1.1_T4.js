@@ -9,9 +9,11 @@
 
 
 
+
 var x = [];
 x["0"] = 0;
 assert.sameValue(x[0], 0, 'The value of x[0] is expected to be 0');
+
 
 var y = [];
 y["1"] = 1;

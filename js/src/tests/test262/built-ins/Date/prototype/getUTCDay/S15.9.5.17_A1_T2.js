@@ -6,13 +6,13 @@
 
 
 
-assert.notSameValue(delete Date.prototype.getUTCDay, false, 'The value of delete Date.prototype.getUTCDay is not false');
 
-assert(
-  !Date.prototype.hasOwnProperty('getUTCDay'),
-  'The value of !Date.prototype.hasOwnProperty(\'getUTCDay\') is expected to be true'
-);
+if (delete Date.prototype.getUTCDay === false) {
+  throw new Test262Error('#1: The Date.prototype.getUTCDay property has not the attributes DontDelete');
+}
 
-
+if (Date.prototype.hasOwnProperty('getUTCDay')) {
+  throw new Test262Error('#2: The Date.prototype.getUTCDay property has not the attributes DontDelete');
+}
 
 reportCompare(0, 0);

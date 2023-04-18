@@ -11,6 +11,9 @@
 
 var __executed = /^..^e/.test("ab\ncde");
 
-assert(!__executed, 'The value of !__executed is expected to be true');
+
+if (__executed) {
+	throw new Test262Error('#1: /^..^e/.test("ab\\ncde") === false');
+}
 
 reportCompare(0, 0);

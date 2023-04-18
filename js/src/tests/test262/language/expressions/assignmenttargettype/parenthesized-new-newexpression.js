@@ -21,4 +21,7 @@
 
 $DONOTEVALUATE();
 
-(new f) = 1;
+function _() {
+  (new f) = 1;
+}
+

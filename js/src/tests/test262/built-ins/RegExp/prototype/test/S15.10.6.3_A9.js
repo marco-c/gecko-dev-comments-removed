@@ -8,24 +8,20 @@
 
 
 
-assert.sameValue(
-  RegExp.prototype.exec.hasOwnProperty('length'),
-  true,
-  'RegExp.prototype.exec.hasOwnProperty(\'length\') must return true'
-);
-
-assert.sameValue(
-  delete RegExp.prototype.exec.length,
-  true,
-  'The value of `delete RegExp.prototype.exec.length` is expected to be true'
-);
-
-assert.sameValue(
-  RegExp.prototype.exec.hasOwnProperty('length'),
-  false,
-  'RegExp.prototype.exec.hasOwnProperty(\'length\') must return false'
-);
 
 
+if ((RegExp.prototype.exec.hasOwnProperty('length') !== true)) {
+  throw new Test262Error('#0: RegExp.prototype.exec.hasOwnProperty(\'length\') === true');
+}
+
+
+if (delete RegExp.prototype.exec.length !== true) {
+  throw new Test262Error('#1: delete RegExp.prototype.exec.length === true');
+}
+
+
+if (RegExp.prototype.exec.hasOwnProperty('length') !== false) {
+  throw new Test262Error('#2: delete RegExp.prototype.exec.length; RegExp.prototype.exec.hasOwnProperty(\'length\') === false');
+}
 
 reportCompare(0, 0);

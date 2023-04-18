@@ -8,20 +8,23 @@
 
 
 
-assert.sameValue(
-  typeof Number.prototype,
-  "object",
-  'The value of `typeof Number.prototype` is expected to be "object"'
-);
 
-assert(Number.prototype == 0, 'The value of Number.prototype is expected to be 0');
+
+if (typeof Number.prototype !== "object") {
+  throw new Test262Error('#1: typeof Number.prototype === "object"');
+}
+
+
+if (Number.prototype != 0) {
+  throw new Test262Error('#2: Number.prototype == +0');
+} else if (1 / Number.prototype != Number.POSITIVE_INFINITY) {
+  throw new Test262Error('#2: Number.prototype == +0');
+}
 
 delete Number.prototype.toString;
 
-assert.sameValue(
-  Number.prototype.toString(),
-  "[object Number]",
-  'Number.prototype.toString() must return "[object Number]"'
-);
+if (Number.prototype.toString() !== "[object Number]") {
+  throw new Test262Error('#3: The [[Class]] property of the Number prototype object is set to "Number"');
+}
 
 reportCompare(0, 0);

@@ -11,10 +11,9 @@
 
 var __re = /(z)((a+)?(b+)?(c))*/;
 
-assert.sameValue(
-  __re.test((function(){return "zaacbbbcac"})()),
-  __re.exec((function(){return "zaacbbbcac"})()) !== null,
-  '__re.test((function(){return "zaacbbbcac"})()) must return __re.exec((function(){return "zaacbbbcac"})()) !== null'
-);
+
+if (__re.test((function(){return "zaacbbbcac"})()) !== (__re.exec((function(){return "zaacbbbcac"})()) !== null)) {
+	throw new Test262Error('#0: __re = /(z)((a+)?(b+)?(c))*/; __re.test((function(){return "zaacbbbcac"})()) === (__re.exec((function(){return "zaacbbbcac"})()) !== null)');
+}
 
 reportCompare(0, 0);

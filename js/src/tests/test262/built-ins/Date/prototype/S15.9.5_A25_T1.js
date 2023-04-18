@@ -6,10 +6,9 @@
 
 
 
-assert.sameValue(
-  Date.prototype.hasOwnProperty("getUTCMilliseconds"),
-  true,
-  'Date.prototype.hasOwnProperty("getUTCMilliseconds") must return true'
-);
+
+if (Date.prototype.hasOwnProperty("getUTCMilliseconds") !== true) {
+  throw new Test262Error('#1: The Date.prototype has the property "getUTCMilliseconds"');
+}
 
 reportCompare(0, 0);

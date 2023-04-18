@@ -7,6 +7,9 @@
 
 
 
-assert.sameValue(typeof Promise.race, "function", 'The value of `typeof Promise.race` is expected to be "function"');
+
+if (typeof Promise.race !== "function") {
+  throw new Test262Error("Expected Promise.race to be a function, actually " + typeof Promise.race);
+}
 
 reportCompare(0, 0);

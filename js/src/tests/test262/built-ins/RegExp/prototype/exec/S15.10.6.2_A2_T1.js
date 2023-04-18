@@ -13,16 +13,13 @@ var __instance = new Object;
 
 __instance.exec = RegExp.prototype.exec;
 
+
 try {
-    throw new Test262Error('#1.1: __instance = new Object; __instance.exec = RegExp.prototype.exec; __instance.exec("message to investigate"). Actual: ' + (__instance.exec("message to investigate")));
+	throw new Test262Error('#1.1: __instance = new Object; __instance.exec = RegExp.prototype.exec; __instance.exec("message to investigate"). Actual: ' + (__instance.exec("message to investigate")));
 } catch (e) {
-  assert.sameValue(
-    e instanceof TypeError,
-    true,
-    'The result of evaluating (e instanceof TypeError) is expected to be true'
-  );
+	if ((e instanceof TypeError) !== true) {
+		throw new Test262Error('#1.2: __instance = new Object; __instance.exec = RegExp.prototype.exec. Actual: ' + (e));
+	}
 }
-
-
 
 reportCompare(0, 0);

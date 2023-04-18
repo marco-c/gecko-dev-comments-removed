@@ -6,9 +6,9 @@
 
 
 
-assert(
-  Number.hasOwnProperty("NEGATIVE_INFINITY"),
-  'Number.hasOwnProperty("NEGATIVE_INFINITY") must return true'
-);
+
+if (!Number.hasOwnProperty("NEGATIVE_INFINITY")) {
+  throw new Test262Error('#1: The Number constructor has the property "NEGATIVE_INFINITY"');
+}
 
 reportCompare(0, 0);

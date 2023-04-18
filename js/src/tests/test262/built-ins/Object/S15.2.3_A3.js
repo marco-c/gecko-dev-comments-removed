@@ -6,11 +6,15 @@
 
 
 
-assert(
-  !!Object.hasOwnProperty("length"),
-  'The value of !!Object.hasOwnProperty("length") is expected to be true'
-);
 
-assert.sameValue(Object.length, 1, 'The value of Object.length is expected to be 1');
+
+if (!Object.hasOwnProperty("length")) {
+  throw new Test262Error('#1: The Object constructor has the property "length"');
+}
+
+
+if (Object.length !== 1) {
+  throw new Test262Error('#2: Object.length property value should be 1');
+}
 
 reportCompare(0, 0);

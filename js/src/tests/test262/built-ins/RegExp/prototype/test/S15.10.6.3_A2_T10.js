@@ -11,16 +11,13 @@
 
 var test = RegExp.prototype.test;
 
+
 try {
   throw new Test262Error('#1.1: test = RegExp.prototype.test; test("message to investigate"). Actual: ' + (test("message to investigate")));
 } catch (e) {
-  assert.sameValue(
-    e instanceof TypeError,
-    true,
-    'The result of evaluating (e instanceof TypeError) is expected to be true'
-  );
+  if ((e instanceof TypeError) !== true) {
+    throw new Test262Error('#1.2: test = RegExp.prototype.test; test("message to investigate"). Actual: ' + (e));
+  }
 }
-
-
 
 reportCompare(0, 0);

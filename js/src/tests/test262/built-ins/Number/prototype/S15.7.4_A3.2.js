@@ -6,10 +6,10 @@
 
 
 
-assert.sameValue(
-  Number.prototype.hasOwnProperty("toString"),
-  true,
-  'Number.prototype.hasOwnProperty("toString") must return true'
-);
+
+
+if (Number.prototype.hasOwnProperty("toString") !== true) {
+  throw new Test262Error('#1: The Number prototype object has the property toString');
+}
 
 reportCompare(0, 0);

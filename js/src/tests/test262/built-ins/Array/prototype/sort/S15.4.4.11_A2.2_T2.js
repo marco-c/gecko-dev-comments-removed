@@ -18,6 +18,7 @@ var myComparefn = function(x, y) {
   return 0;
 }
 
+
 alphabet.sort(myComparefn);
 var result = true;
 for (var i = 0; i < 26; i++) {

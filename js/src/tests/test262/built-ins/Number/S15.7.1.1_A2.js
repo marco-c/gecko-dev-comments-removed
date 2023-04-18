@@ -6,7 +6,17 @@
 
 
 
-assert.sameValue(typeof Number(), "number", 'The value of `typeof Number()` is expected to be "number"');
-assert.sameValue(Number(), 0, 'Number() must return 0');
+
+
+if (typeof Number() !== "number") {
+  throw new Test262Error('#1: typeof Number() should be "number", actual is "' + typeof Number() + '"');
+}
+
+
+if (Number() !== 0) {
+  throw new Test262Error('#2: Number() === 0, actual is ' + Number());
+} else if (1 / Number() !== Number.POSITIVE_INFINITY) {
+  throw new Test262Error('#2: Number() === +0, actual is ' + Number());
+}
 
 reportCompare(0, 0);

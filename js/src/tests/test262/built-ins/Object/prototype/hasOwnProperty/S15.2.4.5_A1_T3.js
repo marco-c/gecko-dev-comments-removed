@@ -20,26 +20,24 @@ var FACTORY = function() {
 
 var instance = new FACTORY;
 
-assert.sameValue(
-  typeof Object.prototype.hasOwnProperty,
-  "function",
-  'The value of `typeof Object.prototype.hasOwnProperty` is expected to be "function"'
-);
 
-assert.sameValue(
-  typeof instance.hasOwnProperty,
-  "function",
-  'The value of `typeof instance.hasOwnProperty` is expected to be "function"'
-);
+if (typeof Object.prototype.hasOwnProperty !== "function") {
+  throw new Test262Error('#1: hasOwnProperty method is defined');
+}
 
-assert(
-  !instance.hasOwnProperty("toString"),
-  'The value of !instance.hasOwnProperty("toString") is expected to be true'
-);
 
-assert(
-  !!instance.hasOwnProperty("aproperty"),
-  'The value of !!instance.hasOwnProperty("aproperty") is expected to be true'
-);
+if (typeof instance.hasOwnProperty !== "function") {
+  throw new Test262Error('#2: hasOwnProperty method is accessed');
+}
+
+
+if (instance.hasOwnProperty("toString")) {
+  throw new Test262Error('#3: hasOwnProperty method works properly');
+}
+
+
+if (!(instance.hasOwnProperty("aproperty"))) {
+  throw new Test262Error('#4: hasOwnProperty method works properly');
+}
 
 reportCompare(0, 0);

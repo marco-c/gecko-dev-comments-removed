@@ -6,10 +6,9 @@
 
 
 
-assert.sameValue(
-  Date.prototype.hasOwnProperty("toString"),
-  true,
-  'Date.prototype.hasOwnProperty("toString") must return true'
-);
+
+if (Date.prototype.hasOwnProperty("toString") !== true) {
+  throw new Test262Error('#1: The Date.prototype has the property "toString"');
+}
 
 reportCompare(0, 0);

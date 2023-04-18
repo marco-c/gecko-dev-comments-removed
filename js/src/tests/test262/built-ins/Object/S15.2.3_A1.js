@@ -6,9 +6,9 @@
 
 
 
-assert(
-  !!Object.hasOwnProperty("prototype"),
-  'The value of !!Object.hasOwnProperty("prototype") is expected to be true'
-);
+
+if (!Object.hasOwnProperty("prototype")) {
+  throw new Test262Error('#1: The Object constructor has the property "prototype"');
+}
 
 reportCompare(0, 0);

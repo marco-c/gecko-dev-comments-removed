@@ -8,6 +8,10 @@
 
 
 
-assert.sameValue(Boolean(""), false, 'Boolean("") must return false');
+
+
+if (Boolean("") !== false) {
+  throw new Test262Error('#1: Boolean("") === false. Actual: ' + (Boolean("")));
+}
 
 reportCompare(0, 0);

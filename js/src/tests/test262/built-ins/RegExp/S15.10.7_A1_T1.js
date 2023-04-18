@@ -7,16 +7,13 @@
 
 
 
+
 try {
-    throw new Test262Error('#1.1: /[^a]*/() throw TypeError. Actual: ' + (/[^a]*/()));
+	throw new Test262Error('#1.1: /[^a]*/() throw TypeError. Actual: ' + (/[^a]*/()));
 } catch (e) {
-  assert.sameValue(
-    e instanceof TypeError,
-    true,
-    'The result of evaluating (e instanceof TypeError) is expected to be true'
-  );
+	if ((e instanceof TypeError) !== true) {
+		throw new Test262Error('#1.2: /[^a]*/() throw TypeError. Actual: ' + (e));
+	}
 }
-
-
 
 reportCompare(0, 0);

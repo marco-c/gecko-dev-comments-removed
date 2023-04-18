@@ -12,13 +12,8 @@
 
 var x = Date.prototype.setMinutes.length;
 verifyNotWritable(Date.prototype.setMinutes, "length", null, 1);
-
-assert.sameValue(
-  Date.prototype.setMinutes.length,
-  x,
-  'The value of Date.prototype.setMinutes.length is expected to equal the value of x'
-);
-
-
+if (Date.prototype.setMinutes.length !== x) {
+  throw new Test262Error('#1: The Date.prototype.setMinutes.length has the attribute ReadOnly');
+}
 
 reportCompare(0, 0);

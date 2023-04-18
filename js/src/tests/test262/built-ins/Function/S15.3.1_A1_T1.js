@@ -11,14 +11,32 @@
 
 var f = Function("return arguments[0];");
 
-assert(f instanceof Function, 'The result of evaluating (f instanceof Function) is expected to be true');
-assert.sameValue(f(1), 1, 'f(1) must return 1');
+
+if (!(f instanceof Function)) {
+  throw new Test262Error('#1: f instanceof Function');
+}
+
+
+if (f(1) !== 1) {
+  throw new Test262Error('#2: f(1) !== 1');
+}
 
 var g = new Function("return arguments[0];");
 
 
-assert(g instanceof Function, 'The result of evaluating (g instanceof Function) is expected to be true');
-assert.sameValue(g("A"), "A", 'g("A") must return "A"');
-assert.sameValue(g("A"), f("A"), 'g("A") must return the same value returned by f("A")');
+
+if (!(g instanceof Function)) {
+  throw new Test262Error('#3: g instanceof Function');
+}
+
+
+if (g("A") !== "A") {
+  throw new Test262Error('#4: g("A") !== "A"');
+}
+
+
+if (g("A") !== f("A")) {
+  throw new Test262Error('#5: g("A") !== f("A")');
+}
 
 reportCompare(0, 0);

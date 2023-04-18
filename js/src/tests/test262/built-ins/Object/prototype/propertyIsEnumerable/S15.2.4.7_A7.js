@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+var FACTORY = Object.prototype.propertyIsEnumerable;
+
+assert.throws(TypeError, function() {
+  new FACTORY;
+});
+
+reportCompare(0, 0);

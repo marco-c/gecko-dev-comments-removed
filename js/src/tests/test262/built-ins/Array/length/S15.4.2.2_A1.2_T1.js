@@ -8,6 +8,7 @@
 
 
 
+
 var x = new Array(0);
 assert.sameValue(Object.prototype.toString.call(x), "[object Array]", 'Object.prototype.toString.call(new Array(0)) must return "[object Array]"');
 

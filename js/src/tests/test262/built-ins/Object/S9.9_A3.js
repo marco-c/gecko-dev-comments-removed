@@ -8,22 +8,35 @@
 
 
 
-assert.sameValue(Object(true).valueOf(), true, 'Object(true).valueOf() must return true');
-assert.sameValue(typeof Object(true), "object", 'The value of `typeof Object(true)` is expected to be "object"');
 
-assert.sameValue(
-  Object(true).constructor.prototype,
-  Boolean.prototype,
-  'The value of Object(true).constructor.prototype is expected to equal the value of Boolean.prototype'
-);
 
-assert.sameValue(Object(false).valueOf(), false, 'Object(false).valueOf() must return false');
-assert.sameValue(typeof Object(false), "object", 'The value of `typeof Object(false)` is expected to be "object"');
+if (Object(true).valueOf() !== true) {
+  throw new Test262Error('#1: Object(true).valueOf() === true. Actual: ' + (Object(true).valueOf()));
+}
 
-assert.sameValue(
-  Object(false).constructor.prototype,
-  Boolean.prototype,
-  'The value of Object(false).constructor.prototype is expected to equal the value of Boolean.prototype'
-);
+
+if (typeof Object(true) !== "object") {
+  throw new Test262Error('#2: typeof Object(true) === "object". Actual: ' + (typeof Object(true)));
+}
+
+
+if (Object(true).constructor.prototype !== Boolean.prototype) {
+  throw new Test262Error('#3: Object(true).constructor.prototype === Boolean.prototype. Actual: ' + (Object(true).constructor.prototype));
+}
+
+
+if (Object(false).valueOf() !== false) {
+  throw new Test262Error('#4: Object(false).valueOf() === false. Actual: ' + (Object(false).valueOf()));
+}
+
+
+if (typeof Object(false) !== "object") {
+  throw new Test262Error('#5: typeof Object(false) === "object". Actual: ' + (typeof Object(false)));
+}
+
+
+if (Object(false).constructor.prototype !== Boolean.prototype) {
+  throw new Test262Error('#6: Object(false).constructor.prototype === Boolean.prototype. Actual: ' + (Object(false).constructor.prototype));
+}
 
 reportCompare(0, 0);

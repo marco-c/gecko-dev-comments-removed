@@ -12,12 +12,14 @@
 var __re = "d+";
 var __instance = RegExp(__re, "i");
 
-assert.sameValue(
-  __instance.constructor,
-  RegExp,
-  'The value of __instance.constructor is expected to equal the value of RegExp'
-);
 
-assert.sameValue(__instance.source, __re, 'The value of __instance.source is expected to equal the value of __re');
+if (__instance.constructor !== RegExp) {
+	throw new Test262Error('#1: __re = "d+"; __instance = RegExp(__re, "i"); __instance.constructor === RegExp. Actual: ' + (__instance.constructor));
+}
+
+
+if (__instance.source !== __re) {
+	throw new Test262Error('#2: __re = "d+"; __instance = RegExp(__re, "i"); __instance.source === __re. Actual: '+ (__instance.source));
+}
 
 reportCompare(0, 0);

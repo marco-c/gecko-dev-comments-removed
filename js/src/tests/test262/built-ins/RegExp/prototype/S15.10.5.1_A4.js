@@ -7,14 +7,19 @@
 
 
 
-assert.sameValue(RegExp.hasOwnProperty('prototype'), true, 'RegExp.hasOwnProperty(\'prototype\') must return true');
+
+
+if (RegExp.hasOwnProperty('prototype') !== true) {
+	throw new Test262Error('#1: RegExp.hasOwnProperty(\'prototype\') === true');
+}
 
 var __obj = RegExp.prototype;
 
 verifyNotWritable(RegExp, "prototype", null, function(){return "shifted";});
 
-assert.sameValue(RegExp.prototype, __obj, 'The value of RegExp.prototype is expected to equal the value of __obj');
 
-
+if (RegExp.prototype !== __obj) {
+	throw new Test262Error('#2: __obj = RegExp.prototype; RegExp.prototype = function(){return "shifted";}; RegExp.prototype === __obj. Actual: ' + (RegExp.prototype));
+}
 
 reportCompare(0, 0);

@@ -6,10 +6,9 @@
 
 
 
-assert.sameValue(
-  Date.prototype.hasOwnProperty("getMinutes"),
-  true,
-  'Date.prototype.hasOwnProperty("getMinutes") must return true'
-);
+
+if (Date.prototype.hasOwnProperty("getMinutes") !== true) {
+  throw new Test262Error('#1: The Date.prototype has the property "getMinutes"');
+}
 
 reportCompare(0, 0);

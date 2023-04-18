@@ -8,59 +8,65 @@
 
 
 
-assert.sameValue(
-  Object("some string").valueOf(),
-  "some string",
-  'Object("some string").valueOf() must return "some string"'
-);
 
-assert.sameValue(
-  typeof Object("some string"),
-  "object",
-  'The value of `typeof Object("some string")` is expected to be "object"'
-);
 
-assert.sameValue(
-  Object("some string").constructor.prototype,
-  String.prototype,
-  'The value of Object("some string").constructor.prototype is expected to equal the value of String.prototype'
-);
+if (Object("some string").valueOf() !== "some string") {
+  throw new Test262Error('#1: Object("some string").valueOf() === "some string". Actual: ' + (Object("some string").valueOf()));
+}
 
-assert.sameValue(Object("").valueOf(), "", 'Object("").valueOf() must return ""');
-assert.sameValue(typeof Object(""), "object", 'The value of `typeof Object("")` is expected to be "object"');
 
-assert.sameValue(
-  Object("").constructor.prototype,
-  String.prototype,
-  'The value of Object("").constructor.prototype is expected to equal the value of String.prototype'
-);
+if (typeof Object("some string") !== "object") {
+  throw new Test262Error('#2: typeof Object("some string") === "object". Actual: ' + (typeof Object("some string")));
+}
 
-assert.sameValue(Object("\r\t\b\n\v\f").valueOf(), "\r\t\b\n\v\f", 'Object("rtbnvf").valueOf() must return "rtbnvf"');
 
-assert.sameValue(
-  typeof Object("\r\t\b\n\v\f"),
-  "object",
-  'The value of `typeof Object("rtbnvf")` is expected to be "object"'
-);
+if (Object("some string").constructor.prototype !== String.prototype) {
+  throw new Test262Error('#3: Object("some string").constructor.prototype === String.prototype. Actual: ' + (Object("some string").constructor.prototype));
+}
 
-assert.sameValue(
-  Object("\r\t\b\n\v\f").constructor.prototype,
-  String.prototype,
-  'The value of Object("rtbnvf").constructor.prototype is expected to equal the value of String.prototype'
-);
 
-assert.sameValue(Object(String(10)).valueOf(), "10", 'Object(String(10)).valueOf() must return "10"');
+if (Object("").valueOf() !== "") {
+  throw new Test262Error('#4: Object("").valueOf() === false. Actual: ' + (Object("").valueOf()));
+}
 
-assert.sameValue(
-  typeof Object(String(10)),
-  "object",
-  'The value of `typeof Object(String(10))` is expected to be "object"'
-);
 
-assert.sameValue(
-  Object(String(10)).constructor.prototype,
-  String.prototype,
-  'The value of Object(String(10)).constructor.prototype is expected to equal the value of String.prototype'
-);
+if (typeof Object("") !== "object") {
+  throw new Test262Error('#5: typeof Object("") === "object". Actual: ' + (typeof Object("")));
+}
+
+
+if (Object("").constructor.prototype !== String.prototype) {
+  throw new Test262Error('#6: Object("").constructor.prototype === String.prototype. Actual: ' + (Object("").constructor.prototype));
+}
+
+
+if (Object("\r\t\b\n\v\f").valueOf() !== "\r\t\b\n\v\f") {
+  throw new Test262Error('#7: Object("\\r\\t\\b\\n\\v\\f").valueOf() === false. Actual: ' + (Object("\r\t\b\n\v\f").valueOf()));
+}
+
+
+if (typeof Object("\r\t\b\n\v\f") !== "object") {
+  throw new Test262Error('#8: typeof Object("\\r\\t\\b\\n\\v\\f") === "object". Actual: ' + (typeof Object("\r\t\b\n\v\f")));
+}
+
+
+if (Object("\r\t\b\n\v\f").constructor.prototype !== String.prototype) {
+  throw new Test262Error('#9: Object("\\r\\t\\b\\n\\v\\f").constructor.prototype === String.prototype. Actual: ' + (Object("\r\t\b\n\v\f").constructor.prototype));
+}
+
+
+if (Object(String(10)).valueOf() !== "10") {
+  throw new Test262Error('#10: Object(String(10)).valueOf() === false. Actual: ' + (Object(String(10)).valueOf()));
+}
+
+
+if (typeof Object(String(10)) !== "object") {
+  throw new Test262Error('#11: typeof Object(String(10)) === "object". Actual: ' + (typeof Object(String(10))));
+}
+
+
+if (Object(String(10)).constructor.prototype !== String.prototype) {
+  throw new Test262Error('#12: Object(String(10)).constructor.prototype === String.prototype. Actual: ' + (Object(String(10)).constructor.prototype));
+}
 
 reportCompare(0, 0);

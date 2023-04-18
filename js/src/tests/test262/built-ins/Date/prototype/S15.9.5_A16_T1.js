@@ -6,10 +6,9 @@
 
 
 
-assert.sameValue(
-  Date.prototype.hasOwnProperty("getDay"),
-  true,
-  'Date.prototype.hasOwnProperty("getDay") must return true'
-);
+
+if (Date.prototype.hasOwnProperty("getDay") !== true) {
+  throw new Test262Error('#1: The Date.prototype has the property "getDay"');
+}
 
 reportCompare(0, 0);

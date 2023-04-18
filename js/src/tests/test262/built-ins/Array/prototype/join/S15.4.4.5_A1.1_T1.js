@@ -7,10 +7,12 @@
 
 
 
+
 var x = new Array();
 if (x.join() !== "") {
   throw new Test262Error('#1: x = new Array(); x.join() === "". Actual: ' + (x.join()));
 }
+
 
 x = [];
 x[0] = 1;

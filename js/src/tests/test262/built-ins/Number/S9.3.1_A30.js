@@ -8,9 +8,25 @@
 
 
 
-assert.sameValue(Number("0xe"), 14, 'Number("0xe") must return 14');
-assert.sameValue(Number("0xE"), 14, 'Number("0xE") must return 14');
-assert.sameValue(Number("0Xe"), 14, 'Number("0Xe") must return 14');
-assert.sameValue(+("0XE"), 14, 'The value of `+("0XE")` is expected to be 14');
+
+
+if (Number("0xe") !== 14) {
+  throw new Test262Error('#1: Number("0xe") === 14. Actual: ' + (Number("0xe")));
+}
+
+
+if (Number("0xE") !== 14) {
+  throw new Test262Error('#2: Number("0xE") === 14. Actual: ' + (Number("0xE")));
+}
+
+
+if (Number("0Xe") !== 14) {
+  throw new Test262Error('#3: Number("0Xe") === 14. Actual: ' + (Number("0Xe")));
+}
+
+
+if (+("0XE") !== 14) {
+  throw new Test262Error('#4: +("0XE") === 14. Actual: ' + (+("0XE")));
+}
 
 reportCompare(0, 0);

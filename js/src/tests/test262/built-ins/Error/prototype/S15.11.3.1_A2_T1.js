@@ -6,13 +6,21 @@
 
 
 
-assert(Error.hasOwnProperty('prototype'), 'Error.hasOwnProperty(\'prototype\') must return true');
 
-assert(
-  !Error.propertyIsEnumerable('prototype'),
-  'The value of !Error.propertyIsEnumerable(\'prototype\') is expected to be true'
-);
 
+
+if (!(Error.hasOwnProperty('prototype'))) {
+  throw new Test262Error('#0: Error.hasOwnProperty(\'prototype\') return true. Actual: ' + Error.hasOwnProperty('prototype'));
+}
+
+
+
+
+
+
+if (Error.propertyIsEnumerable('prototype')) {
+  throw new Test262Error('#1: Error.propertyIsEnumerable(\'prototype\') return false. Actual: ' + Error.propertyIsEnumerable('prototype'));
+}
 
 
 
@@ -22,12 +30,12 @@ assert(
 var cout = 0;
 
 for (var p in Error) {
-  if (p === "prototype") {
-    cout++;
-  }
+  if (p === "prototype") cout++;
 }
 
-assert.sameValue(cout, 0, 'The value of cout is expected to be 0');
+if (cout !== 0) {
+  throw new Test262Error('#2: cout === 0. Actual: ' + cout);
+}
 
 
 

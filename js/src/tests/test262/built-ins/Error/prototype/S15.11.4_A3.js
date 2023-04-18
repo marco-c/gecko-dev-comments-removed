@@ -7,9 +7,15 @@
 
 
 
-assert.throws(TypeError, () => {
+
+
+try {
   Error.prototype();
-  throw new Test262Error();
-});
+  throw new Test262Error('#1: "Error.prototype()" lead to throwing exception');
+} catch (e) {
+  if (e instanceof Test262Error) throw e;
+}
+
+
 
 reportCompare(0, 0);

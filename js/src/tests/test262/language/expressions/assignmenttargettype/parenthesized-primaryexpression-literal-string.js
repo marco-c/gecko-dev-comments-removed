@@ -17,4 +17,7 @@
 
 $DONOTEVALUATE();
 
-('') = 1;
+function _() {
+  ('') = 1;
+}
+

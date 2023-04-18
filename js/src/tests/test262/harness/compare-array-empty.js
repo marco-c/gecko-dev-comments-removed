@@ -7,6 +7,8 @@
 
 
 
-assert.compareArray([], [], 'Empty arrays are equivalent.');
+if (compareArray([], []) !== true) {
+  throw new Error('Empty arrays are equivalent.');
+}
 
 reportCompare(0, 0);

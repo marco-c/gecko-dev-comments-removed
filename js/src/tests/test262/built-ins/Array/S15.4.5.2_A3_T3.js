@@ -9,9 +9,11 @@
 
 
 
+
 var x = [];
 x.length = 4294967295;
 assert.sameValue(x.length, 4294967295, 'The value of x.length is expected to be 4294967295');
+
 
 try {
   x = [];

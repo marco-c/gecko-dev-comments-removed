@@ -7,6 +7,7 @@
 
 
 
+
 verifyWritable(Object, "assign");
 verifyNotEnumerable(Object, "assign");
 verifyConfigurable(Object, "assign");

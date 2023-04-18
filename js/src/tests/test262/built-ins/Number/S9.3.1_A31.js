@@ -8,9 +8,25 @@
 
 
 
-assert.sameValue(Number("0xf"), 15, 'Number("0xf") must return 15');
-assert.sameValue(Number("0xF"), 15, 'Number("0xF") must return 15');
-assert.sameValue(+("0Xf"), 15, 'The value of `+("0Xf")` is expected to be 15');
-assert.sameValue(Number("0XF"), 15, 'Number("0XF") must return 15');
+
+
+if (Number("0xf") !== 15) {
+  throw new Test262Error('#1: Number("0xf") === 15. Actual: ' + (Number("0xf")));
+}
+
+
+if (Number("0xF") !== 15) {
+  throw new Test262Error('#2: Number("0xF") === 15. Actual: ' + (Number("0xF")));
+}
+
+
+if (+("0Xf") !== 15) {
+  throw new Test262Error('#3: +("0Xf") === 15. Actual: ' + (+("0Xf")));
+}
+
+
+if (Number("0XF") !== 15) {
+  throw new Test262Error('#4: Number("0XF") === 15. Actual: ' + (Number("0XF")));
+}
 
 reportCompare(0, 0);

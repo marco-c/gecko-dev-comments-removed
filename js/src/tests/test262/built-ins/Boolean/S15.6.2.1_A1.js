@@ -9,21 +9,48 @@
 
 
 
-assert.sameValue(typeof new Boolean(), "object", 'The value of `typeof new Boolean()` is expected to be "object"');
-assert.notSameValue(new Boolean(), undefined, 'new Boolean() is expected to not equal ``undefined``');
+
+if (typeof new Boolean() !== "object") {
+  throw new Test262Error("#1: typeof new Boolean() === 'object'");
+}
+
+
+if (new Boolean() === undefined) {
+  throw new Test262Error("#2: new Boolean() should not be undefined");
+}
+
 
 var x3 = new Boolean();
-assert.sameValue(typeof x3, "object", 'The value of `typeof x3` is expected to be "object"');
+if (typeof x3 !== "object") {
+  throw new Test262Error("#3: typeof new Boolean() !== 'object'");
+}
+
 
 var x4 = new Boolean();
-assert.notSameValue(x4, undefined, 'The value of x4 is expected to not equal ``undefined``');
-assert.sameValue(typeof new Boolean(1), "object", 'The value of `typeof new Boolean(1)` is expected to be "object"');
-assert.notSameValue(new Boolean(1), undefined, 'new Boolean(1) is expected to not equal ``undefined``');
+if (x4 === undefined) {
+  throw new Test262Error("#4: new Boolean() should not be undefined");
+}
+
+
+if (typeof new Boolean(1) !== "object") {
+  throw new Test262Error("#5: typeof new Boolean(10) === 'object'");
+}
+
+
+if (new Boolean(1) === undefined) {
+  throw new Test262Error("#6: new Boolean(1) should not be undefined");
+}
+
 
 var x7 = new Boolean(1);
-assert.sameValue(typeof x7, "object", 'The value of `typeof x7` is expected to be "object"');
+if (typeof x7 !== "object") {
+  throw new Test262Error("#7: typeof new Boolean(1) !== 'object'");
+}
+
 
 var x8 = new Boolean(1);
-assert.notSameValue(x8, undefined, 'The value of x8 is expected to not equal ``undefined``');
+if (x8 === undefined) {
+  throw new Test262Error("#8: new Boolean(1) should not be undefined");
+}
 
 reportCompare(0, 0);

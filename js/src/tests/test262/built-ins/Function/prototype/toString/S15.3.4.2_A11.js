@@ -6,15 +6,15 @@
 
 
 
-assert(
-  Function.prototype.toString.hasOwnProperty("length"),
-  'Function.prototype.toString.hasOwnProperty("length") must return true'
-);
 
-assert.sameValue(
-  Function.prototype.toString.length,
-  0,
-  'The value of Function.prototype.toString.length is expected to be 0'
-);
+
+if (!(Function.prototype.toString.hasOwnProperty("length"))) {
+  throw new Test262Error('#1: The Function.prototype.toString has the length property');
+}
+
+
+if (Function.prototype.toString.length !== 0) {
+  throw new Test262Error('#2: The length property of the toString method is 0');
+}
 
 reportCompare(0, 0);

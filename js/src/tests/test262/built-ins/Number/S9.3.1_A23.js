@@ -6,8 +6,20 @@
 
 
 
-assert.sameValue(Number("7"), 7, 'Number("7") must return 7');
-assert.sameValue(Number("0x7"), 7, 'Number("0x7") must return 7');
-assert.sameValue(+("0X7"), 7, 'The value of `+("0X7")` is expected to be 7');
+
+
+if (Number("7") !== 7) {
+  throw new Test262Error('#1: Number("7") === 7. Actual: ' + (Number("7")));
+}
+
+
+if (Number("0x7") !== 7) {
+  throw new Test262Error('#2: Number("0x7") === 7. Actual: ' + (Number("0x7")));
+}
+
+
+if (+("0X7") !== 7) {
+  throw new Test262Error('#3: +("0X7") === 7. Actual: ' + (+("0X7")));
+}
 
 reportCompare(0, 0);

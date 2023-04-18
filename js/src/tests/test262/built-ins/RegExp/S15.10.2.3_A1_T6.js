@@ -16,30 +16,26 @@ var __expected = ["CD"];
 __expected.index = 4;
 __expected.input = "AEKFCD";
 
-assert.sameValue(
-  __executed.length,
-  __expected.length,
-  'The value of __executed.length is expected to equal the value of __expected.length'
-);
 
-assert.sameValue(
-  __executed.index,
-  __expected.index,
-  'The value of __executed.index is expected to equal the value of __expected.index'
-);
+if (__executed.length !== __expected.length) {
+	throw new Test262Error('#1: __executed = /ab|cd|ef/i.exec("AEKFCD"); __executed.length === ' + __expected.length + '. Actual: ' + __executed.length);
+}
 
-assert.sameValue(
-  __executed.input,
-  __expected.input,
-  'The value of __executed.input is expected to equal the value of __expected.input'
-);
+
+if (__executed.index !== __expected.index) {
+	throw new Test262Error('#2: __executed = /ab|cd|ef/i.exec("AEKFCD"); __executed.index === ' + __expected.index + '. Actual: ' + __executed.index);
+}
+
+
+if (__executed.input !== __expected.input) {
+	throw new Test262Error('#3: __executed = /ab|cd|ef/i.exec("AEKFCD"); __executed.input === ' + __expected.input + '. Actual: ' + __executed.input);
+}
+
 
 for(var index=0; index<__expected.length; index++) {
-  assert.sameValue(
-    __executed[index],
-    __expected[index],
-    'The value of __executed[index] is expected to equal the value of __expected[index]'
-  );
+	if (__executed[index] !== __expected[index]) {
+		throw new Test262Error('#4: __executed = /ab|cd|ef/i.exec("AEKFCD"); __executed[' + index + '] === ' + __expected[index] + '. Actual: ' + __executed[index]);
+	}
 }
 
 reportCompare(0, 0);

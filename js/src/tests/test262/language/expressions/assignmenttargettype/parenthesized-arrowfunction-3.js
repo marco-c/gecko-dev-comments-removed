@@ -21,4 +21,7 @@
 
 $DONOTEVALUATE();
 
-(((x) => x)) = 1;
+function _() {
+  (((x) => x)) = 1;
+}
+

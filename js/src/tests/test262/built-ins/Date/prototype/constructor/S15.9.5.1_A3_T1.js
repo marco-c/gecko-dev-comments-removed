@@ -12,13 +12,8 @@
 
 var x = Date.prototype.constructor.length;
 verifyNotWritable(Date.prototype.constructor, "length", null, 1);
-
-assert.sameValue(
-  Date.prototype.constructor.length,
-  x,
-  'The value of Date.prototype.constructor.length is expected to equal the value of x'
-);
-
-
+if (Date.prototype.constructor.length !== x) {
+  throw new Test262Error('#1: The Date.prototype.constructor.length has the attribute ReadOnly');
+}
 
 reportCompare(0, 0);

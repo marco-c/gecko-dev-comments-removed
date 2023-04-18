@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+var FACTORY = Object.prototype.toLocaleString;
+
+assert.throws(TypeError, function() {
+  new FACTORY;
+});
+
+reportCompare(0, 0);

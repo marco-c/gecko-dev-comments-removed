@@ -6,15 +6,15 @@
 
 
 
-assert(
-  !!Object.prototype.toLocaleString.hasOwnProperty("length"),
-  'The value of !!Object.prototype.toLocaleString.hasOwnProperty("length") is expected to be true'
-);
 
-assert.sameValue(
-  Object.prototype.toLocaleString.length,
-  0,
-  'The value of Object.prototype.toLocaleString.length is expected to be 0'
-);
+
+if (!(Object.prototype.toLocaleString.hasOwnProperty("length"))) {
+  throw new Test262Error('#1: The length property of the toLocaleString method is 0');
+}
+
+
+if (Object.prototype.toLocaleString.length !== 0) {
+  throw new Test262Error('#2: The length property of the toLocaleString method is 0');
+}
 
 reportCompare(0, 0);

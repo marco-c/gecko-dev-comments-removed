@@ -9,17 +9,13 @@
 
 
 
-assert.sameValue(
-  delete Date.prototype.getMinutes.length,
-  true,
-  'The value of `delete Date.prototype.getMinutes.length` is expected to be true'
-);
 
-assert(
-  !Date.prototype.getMinutes.hasOwnProperty('length'),
-  'The value of !Date.prototype.getMinutes.hasOwnProperty(\'length\') is expected to be true'
-);
+if (delete Date.prototype.getMinutes.length !== true) {
+  throw new Test262Error('#1: The Date.prototype.getMinutes.length property does not have the attributes DontDelete');
+}
 
-
+if (Date.prototype.getMinutes.hasOwnProperty('length')) {
+  throw new Test262Error('#2: The Date.prototype.getMinutes.length property does not have the attributes DontDelete');
+}
 
 reportCompare(0, 0);

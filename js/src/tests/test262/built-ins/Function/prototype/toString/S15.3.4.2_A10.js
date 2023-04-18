@@ -9,21 +9,19 @@
 
 
 
-assert(
-  Function.prototype.toString.hasOwnProperty('length'),
-  'Function.prototype.toString.hasOwnProperty(\'length\') must return true'
-);
+
+
+if (!(Function.prototype.toString.hasOwnProperty('length'))) {
+  throw new Test262Error('#1: the Function.prototype.toString has length property.');
+}
 
 var obj = Function.prototype.toString.length;
 
 verifyNotWritable(Function.prototype.toString, "length", null, function(){return "shifted";});
 
-assert.sameValue(
-  Function.prototype.toString.length,
-  obj,
-  'The value of Function.prototype.toString.length is expected to equal the value of obj'
-);
 
-
+if (Function.prototype.toString.length !== obj) {
+  throw new Test262Error('#2: the Function.prototype.toString length property has the attributes ReadOnly.');
+}
 
 reportCompare(0, 0);

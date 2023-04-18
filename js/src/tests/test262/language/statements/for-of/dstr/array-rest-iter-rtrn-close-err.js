@@ -50,6 +50,7 @@
 
 var returnCount = 0;
 var unreachable = 0;
+function ReturnError() {}
 var iterable = {};
 var iterator = {
   return: function() {

@@ -6,15 +6,15 @@
 
 
 
-assert(
-  !Date.prototype.propertyIsEnumerable('getTime'),
-  'The value of !Date.prototype.propertyIsEnumerable(\'getTime\') is expected to be true'
-);
 
-for (var x in Date.prototype) {
-  assert.notSameValue(x, "getTime", 'The value of x is not "getTime"');
+if (Date.prototype.propertyIsEnumerable('getTime')) {
+  throw new Test262Error('#1: The Date.prototype.getTime property has the attribute DontEnum');
 }
 
-
+for (var x in Date.prototype) {
+  if (x === "getTime") {
+    throw new Test262Error('#2: The Date.prototype.getTime has the attribute DontEnum');
+  }
+}
 
 reportCompare(0, 0);

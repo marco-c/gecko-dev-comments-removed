@@ -11,6 +11,9 @@
 
 var __executed = /^xxx/.test("yyyyy");
 
-assert(!__executed, 'The value of !__executed is expected to be true');
+
+if (__executed) {
+	throw new Test262Error('#1: /^xxx/.test("yyyyy") === false');
+}
 
 reportCompare(0, 0);

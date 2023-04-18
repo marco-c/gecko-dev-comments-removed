@@ -6,7 +6,15 @@
 
 
 
-assert.sameValue(Boolean(true), true, 'Boolean(true) must return true');
-assert.sameValue(Boolean(false), false, 'Boolean(false) must return false');
+
+
+if (Boolean(true) !== true) {
+  throw new Test262Error('#1: Boolean(true) === true. Actual: ' + (Boolean(true)));
+}
+
+
+if (Boolean(false) !== false) {
+  throw new Test262Error('#2: Boolean(false) === false. Actual: ' + (Boolean(false)));
+}
 
 reportCompare(0, 0);

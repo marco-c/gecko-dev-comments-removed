@@ -7,35 +7,99 @@
 
 
 
-assert.sameValue(Boolean(new Object()), true, 'Boolean(new Object()) must return true');
-assert.sameValue(Boolean(new String("")), true, 'Boolean(new String("")) must return true');
-assert.sameValue(Boolean(new String()), true, 'Boolean(new String()) must return true');
-assert.sameValue(Boolean(new Boolean(true)), true, 'Boolean(new Boolean(true)) must return true');
-assert.sameValue(Boolean(new Boolean(false)), true, 'Boolean(new Boolean(false)) must return true');
-assert.sameValue(Boolean(new Boolean()), true, 'Boolean(new Boolean()) must return true');
-assert.sameValue(Boolean(new Array()), true, 'Boolean(new Array()) must return true');
-assert.sameValue(Boolean(new Number()), true, 'Boolean(new Number()) must return true');
-assert.sameValue(Boolean(new Number(-0)), true, 'Boolean(new Number(-0)) must return true');
-assert.sameValue(Boolean(new Number(0)), true, 'Boolean(new Number(0)) must return true');
-assert.sameValue(Boolean(new Number()), true, 'Boolean(new Number()) must return true');
-assert.sameValue(Boolean(new Number(Number.NaN)), true, 'Boolean(new Number(Number.NaN)) must return true');
-assert.sameValue(Boolean(new Number(-1)), true, 'Boolean(new Number(-1)) must return true');
-assert.sameValue(Boolean(new Number(1)), true, 'Boolean(new Number(1)) must return true');
 
-assert.sameValue(
-  Boolean(new Number(Number.POSITIVE_INFINITY)),
-  true,
-  'Boolean(new Number(Number.POSITIVE_INFINITY)) must return true'
-);
+if (Boolean(new Object()) !== true) {
+  throw new Test262Error('#1: Boolean(new Object()) === true. Actual: ' + (Boolean(new Object())));
+}
 
-assert.sameValue(
-  Boolean(new Number(Number.NEGATIVE_INFINITY)),
-  true,
-  'Boolean(new Number(Number.NEGATIVE_INFINITY)) must return true'
-);
 
-assert.sameValue(Boolean(new Function()), true, 'Boolean(new Function()) must return true');
-assert.sameValue(Boolean(new Date()), true, 'Boolean(new Date()) must return true');
-assert.sameValue(Boolean(new Date(0)), true, 'Boolean(new Date(0)) must return true');
+if (Boolean(new String("")) !== true) {
+  throw new Test262Error('#2: Boolean(new String("")) === true. Actual: ' + (Boolean(new String(""))));
+}
+
+
+if (Boolean(new String()) !== true) {
+  throw new Test262Error('#3: Boolean(new String()) === true. Actual: ' + (Boolean(new String())));
+}
+
+
+if (Boolean(new Boolean(true)) !== true) {
+  throw new Test262Error('#4: Boolean(new Boolean(true)) === true. Actual: ' + (Boolean(new Boolean(true))));
+}
+
+
+if (Boolean(new Boolean(false)) !== true) {
+  throw new Test262Error('#5: Boolean(new Boolean(false)) === true. Actual: ' + (Boolean(new Boolean(false))));
+}
+
+
+if (Boolean(new Boolean()) !== true) {
+  throw new Test262Error('#6: Boolean(new Boolean()) === true. Actual: ' + (Boolean(new Boolean())));
+}
+
+
+if (Boolean(new Array()) !== true) {
+  throw new Test262Error('#7: Boolean(new Array()) === true. Actual: ' + (Boolean(new Array())));
+}
+
+
+if (Boolean(new Number()) !== true) {
+  throw new Test262Error('#8: Boolean(new Number()) === true. Actual: ' + (Boolean(new Number())));
+}
+
+
+if (Boolean(new Number(-0)) !== true) {
+  throw new Test262Error('#9: Boolean(new Number(-0)) === true. Actual: ' + (Boolean(new Number(-0))));
+}
+
+
+if (Boolean(new Number(0)) !== true) {
+  throw new Test262Error('#10: Boolean(new Number(0)) === true. Actual: ' + (Boolean(new Number(0))));
+}
+
+
+if (Boolean(new Number()) !== true) {
+  throw new Test262Error('#11: Boolean(new Number()) === true. Actual: ' + (Boolean(new Number())));
+}
+
+
+if (Boolean(new Number(Number.NaN)) !== true) {
+  throw new Test262Error('#12: Boolean(new Number(Number.NaN)) === true. Actual: ' + (Boolean(new Number(Number.NaN))));
+}
+
+
+if (Boolean(new Number(-1)) !== true) {
+  throw new Test262Error('#13: Boolean(new Number(-1)) === true. Actual: ' + (Boolean(new Number(-1))));
+}
+
+
+if (Boolean(new Number(1)) !== true) {
+  throw new Test262Error('#14: Boolean(new Number(1)) === true. Actual: ' + (Boolean(new Number(1))));
+}
+
+
+if (Boolean(new Number(Number.POSITIVE_INFINITY)) !== true) {
+  throw new Test262Error('#15: Boolean(new Number(Number.POSITIVE_INFINITY)) === true. Actual: ' + (Boolean(new Number(Number.POSITIVE_INFINITY))));
+}
+
+
+if (Boolean(new Number(Number.NEGATIVE_INFINITY)) !== true) {
+  throw new Test262Error('#16: Boolean(new Number(Number.NEGATIVE_INFINITY)) === true. Actual: ' + (Boolean(new Number(Number.NEGATIVE_INFINITY))));
+}
+
+
+if (Boolean(new Function()) !== true) {
+  throw new Test262Error('#17: Boolean(new Function()) === true. Actual: ' + (Boolean(new Function())));
+}
+
+
+if (Boolean(new Date()) !== true) {
+  throw new Test262Error('#18: Boolean(new Date()) === true. Actual: ' + (Boolean(new Date())));
+}
+
+
+if (Boolean(new Date(0)) !== true) {
+  throw new Test262Error('#19: Boolean(new Date(0)) === true. Actual: ' + (Boolean(new Date(0))));
+}
 
 reportCompare(0, 0);

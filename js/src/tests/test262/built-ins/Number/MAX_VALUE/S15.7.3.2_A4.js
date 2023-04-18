@@ -7,15 +7,15 @@
 
 
 
+
 for (var x in Number) {
-  assert.notSameValue(x, "MAX_VALUE", 'The value of x is not "MAX_VALUE"');
+  if (x === "MAX_VALUE") {
+    throw new Test262Error('#1: Number.MAX_VALUE has the attribute DontEnum');
+  }
 }
 
-assert(
-  !Number.propertyIsEnumerable('MAX_VALUE'),
-  'The value of !Number.propertyIsEnumerable(\'MAX_VALUE\') is expected to be true'
-);
-
-
+if (Number.propertyIsEnumerable('MAX_VALUE')) {
+  throw new Test262Error('#2: Number.MAX_VALUE has the attribute DontEnum');
+}
 
 reportCompare(0, 0);

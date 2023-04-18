@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(Realm.prototype, Symbol.toStringTag, {
+    value: 'Realm',
+    enumerable: false,
+    writable: false,
+    configurable: true
+});
+
+reportCompare(0, 0);

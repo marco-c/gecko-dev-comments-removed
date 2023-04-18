@@ -6,6 +6,10 @@
 
 
 
-assert.sameValue(Number("+1234567890"), 1234567890, 'Number("+1234567890") must return 1234567890');
+
+
+if (Number("+1234567890") !== +("1234567890")) {
+  throw new Test262Error('#1: Number("+1234567890") === +("1234567890")');
+}
 
 reportCompare(0, 0);

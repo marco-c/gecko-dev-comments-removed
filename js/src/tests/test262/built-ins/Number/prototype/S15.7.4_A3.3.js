@@ -6,10 +6,10 @@
 
 
 
-assert.sameValue(
-  Number.prototype.hasOwnProperty("toLocaleString"),
-  true,
-  'Number.prototype.hasOwnProperty("toLocaleString") must return true'
-);
+
+
+if (Number.prototype.hasOwnProperty("toLocaleString") !== true) {
+  throw new Test262Error('#1: The Number prototype object has the property toLocaleString');
+}
 
 reportCompare(0, 0);

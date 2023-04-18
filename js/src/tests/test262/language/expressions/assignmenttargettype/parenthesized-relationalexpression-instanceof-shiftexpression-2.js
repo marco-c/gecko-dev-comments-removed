@@ -21,4 +21,7 @@
 
 $DONOTEVALUATE();
 
-(true instanceof false) = 1;
+function _() {
+  (true instanceof false) = 1;
+}
+

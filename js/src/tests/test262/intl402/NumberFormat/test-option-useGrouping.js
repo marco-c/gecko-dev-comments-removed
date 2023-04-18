@@ -8,32 +8,6 @@
 
 
 
-
-
-
-
-
-
-
-
-function resolveUseGrouping(option) {
-  return new Intl.NumberFormat(undefined, { useGrouping: option }).resolvedOptions().useGrouping;
-}
-
-for (let string of ["min2", "auto", "always"]) {
-  assert.sameValue(resolveUseGrouping(string), string);
-}
-
-assert.sameValue(resolveUseGrouping(true), "always");
-assert.sameValue(resolveUseGrouping(false), false);
-assert.sameValue(resolveUseGrouping(undefined), "auto");
-
-for (let falsy of [0, null, ""]) {
-  assert.sameValue(resolveUseGrouping(falsy), false);
-}
-
-for (let truthy of [42, "MIN2", {}]) {
-  assert.throws(RangeError, () => { resolveUseGrouping(truthy); }, "Invalid truthy value");
-}
+testOption(Intl.NumberFormat, "useGrouping", "boolean", undefined, true);
 
 reportCompare(0, 0);

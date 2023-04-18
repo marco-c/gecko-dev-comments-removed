@@ -10,11 +10,14 @@
 
 
 
+
 var x = new Array(0);
 assert.sameValue(x.length, 0, 'The value of x.length is expected to be 0');
 
+
 var x = new Array(1);
 assert.sameValue(x.length, 1, 'The value of x.length is expected to be 1');
+
 
 var x = new Array(4294967295);
 assert.sameValue(x.length, 4294967295, 'The value of x.length is expected to be 4294967295');

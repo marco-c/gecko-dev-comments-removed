@@ -6,6 +6,9 @@
 
 
 
-assert(Function.hasOwnProperty("prototype"), 'Function.hasOwnProperty("prototype") must return true');
+
+if (!Function.hasOwnProperty("prototype")) {
+  throw new Test262Error('#1: The Function constructor has the property "prototype"');
+}
 
 reportCompare(0, 0);

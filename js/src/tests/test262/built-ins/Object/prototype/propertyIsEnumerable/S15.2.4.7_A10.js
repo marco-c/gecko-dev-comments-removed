@@ -11,10 +11,11 @@
 
 
 
-assert(
-  !!Object.prototype.propertyIsEnumerable.hasOwnProperty('length'),
-  'The value of !!Object.prototype.propertyIsEnumerable.hasOwnProperty("length") is expected to be true'
-);
+
+
+if (!(Object.prototype.propertyIsEnumerable.hasOwnProperty('length'))) {
+  throw new Test262Error('#1: the Object.prototype.propertyIsEnumerable has length property');
+}
 
 var obj = Object.prototype.propertyIsEnumerable.length;
 
@@ -22,12 +23,9 @@ verifyNotWritable(Object.prototype.propertyIsEnumerable, "length", null, functio
   return "shifted";
 });
 
-assert.sameValue(
-  Object.prototype.propertyIsEnumerable.length,
-  obj,
-  'The value of Object.prototype.propertyIsEnumerable.length is expected to equal the value of obj'
-);
 
-
+if (Object.prototype.propertyIsEnumerable.length !== obj) {
+  throw new Test262Error('#2: the Object.prototype.propertyIsEnumerable length property has the attributes ReadOnly');
+}
 
 reportCompare(0, 0);

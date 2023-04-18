@@ -6,6 +6,14 @@
 
 
 
-assert.sameValue(isFinite(Number.NEGATIVE_INFINITY), false, 'isFinite(Number.NEGATIVE_INFINITY) must return false');
+
+
+if (isFinite(Number.NEGATIVE_INFINITY) !== false) {
+  throw new Test262Error('#1: Number.NEGATIVE_INFINITY === Not-a-Finite');
+} else {
+  if ((Number.NEGATIVE_INFINITY < 0) !== true) {
+    throw new Test262Error('#1: Number.NEGATIVE_INFINITY === -Infinity');
+  }
+}
 
 reportCompare(0, 0);

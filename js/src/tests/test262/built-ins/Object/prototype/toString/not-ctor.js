@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  new Object.prototype.toString();
+});
+
+reportCompare(0, 0);

@@ -6,10 +6,9 @@
 
 
 
-assert.sameValue(
-  Date.prototype.hasOwnProperty("toUTCString"),
-  true,
-  'Date.prototype.hasOwnProperty("toUTCString") must return true'
-);
+
+if (Date.prototype.hasOwnProperty("toUTCString") !== true) {
+  throw new Test262Error('#1: The Date.prototype has the property "toUTCString"');
+}
 
 reportCompare(0, 0);

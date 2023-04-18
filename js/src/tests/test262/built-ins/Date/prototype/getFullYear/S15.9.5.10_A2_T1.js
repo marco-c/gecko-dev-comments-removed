@@ -7,16 +7,13 @@
 
 
 
-assert.sameValue(
-  Date.prototype.getFullYear.hasOwnProperty("length"),
-  true,
-  'Date.prototype.getFullYear.hasOwnProperty("length") must return true'
-);
 
-assert.sameValue(
-  Date.prototype.getFullYear.length,
-  0,
-  'The value of Date.prototype.getFullYear.length is expected to be 0'
-);
+if (Date.prototype.getFullYear.hasOwnProperty("length") !== true) {
+  throw new Test262Error('#1: The getFullYear has a "length" property');
+}
+
+if (Date.prototype.getFullYear.length !== 0) {
+  throw new Test262Error('#2: The "length" property of the getFullYear is 0');
+}
 
 reportCompare(0, 0);

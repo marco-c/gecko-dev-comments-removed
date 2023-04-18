@@ -6,8 +6,20 @@
 
 
 
-assert.sameValue(Number("3"), 3, 'Number("3") must return 3');
-assert.sameValue(+("0x3"), 3, 'The value of `+("0x3")` is expected to be 3');
-assert.sameValue(Number("0X3"), 3, 'Number("0X3") must return 3');
+
+
+if (Number("3") !== 3) {
+  throw new Test262Error('#1: Number("3") === 3. Actual: ' + (Number("3")));
+}
+
+
+if (+("0x3") !== 3) {
+  throw new Test262Error('#2: +("0x3") === 3. Actual: ' + (+("0x3")));
+}
+
+
+if (Number("0X3") !== 3) {
+  throw new Test262Error('#3: Number("0X3") === 3. Actual: ' + (Number("0X3")));
+}
 
 reportCompare(0, 0);

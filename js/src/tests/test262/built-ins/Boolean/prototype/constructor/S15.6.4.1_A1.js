@@ -8,10 +8,10 @@
 
 
 
-assert.sameValue(
-  Boolean.prototype.constructor,
-  Boolean,
-  'The value of Boolean.prototype.constructor is expected to equal the value of Boolean'
-);
+
+
+if (Boolean.prototype.constructor !== Boolean) {
+  throw new Test262Error('#1: Boolean.prototype.constructor === Boolean');
+}
 
 reportCompare(0, 0);

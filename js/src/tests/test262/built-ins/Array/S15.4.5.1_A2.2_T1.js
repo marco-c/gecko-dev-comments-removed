@@ -9,12 +9,15 @@
 
 
 
+
 var x = Array(100);
 x[0] = 1;
 assert.sameValue(x.length, 100, 'The value of x.length is expected to be 100');
 
+
 x[98] = 1;
 assert.sameValue(x.length, 100, 'The value of x.length is expected to be 100');
+
 
 x[99] = 1;
 assert.sameValue(x.length, 100, 'The value of x.length is expected to be 100');

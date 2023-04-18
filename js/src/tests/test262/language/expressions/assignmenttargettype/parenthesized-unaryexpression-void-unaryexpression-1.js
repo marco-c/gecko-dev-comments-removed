@@ -21,4 +21,7 @@
 
 $DONOTEVALUATE();
 
-(void 1) = 1;
+function _() {
+  (void 1) = 1;
+}
+

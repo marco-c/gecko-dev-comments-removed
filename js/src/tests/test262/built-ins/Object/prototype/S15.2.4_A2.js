@@ -13,6 +13,9 @@
 
 var tostr = Object.prototype.toString();
 
-assert.sameValue(tostr, "[object Object]", 'The value of tostr is expected to be "[object Object]"');
+
+if (tostr !== "[object Object]") {
+  throw new Test262Error('#1: the value of the internal [[Class]] property of Object prototype object is "Object"');
+}
 
 reportCompare(0, 0);

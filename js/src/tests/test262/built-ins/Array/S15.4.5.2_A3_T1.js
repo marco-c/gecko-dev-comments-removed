@@ -11,9 +11,11 @@
 
 
 
+
 var x = [];
 x.length = 1;
 assert.sameValue(x.length, 1, 'The value of x.length is expected to be 1');
+
 
 x[5] = 1;
 x.length = 10;

@@ -7,11 +7,13 @@
 
 
 
+
 try {
   var n = Number.prototype.toString(null);
   throw new Test262Error('#1: Number.prototype.toString(null) should throw an Error');
 }
 catch (e) {}
+
 
 try {
   var n = (new Number()).toString(null);
@@ -19,11 +21,13 @@ try {
 }
 catch (e) {}
 
+
 try {
   var n = (new Number(0)).toString(null);
   throw new Test262Error('#3: (new Number(0)).toString(null) should throw an Error');
 }
 catch (e) {}
+
 
 try {
   var n = (new Number(-1)).toString(null);
@@ -31,11 +35,13 @@ try {
 }
 catch (e) {}
 
+
 try {
   var n = (new Number(1)).toString(null);
   throw new Test262Error('#5: (new Number(1)).toString(null) should throw an Error');
 }
 catch (e) {}
+
 
 try {
   var n = (new Number(Number.NaN)).toString(null);
@@ -43,11 +49,13 @@ try {
 }
 catch (e) {}
 
+
 try {
   var n = (new Number(Number.POSITIVE_INFINITY)).toString(null);
   throw new Test262Error('#7: (new Number(Number.POSITIVE_INFINITY)).toString(null) should throw an Error');
 }
 catch (e) {}
+
 
 try {
   var n = (new Number(Number.NEGATIVE_INFINITY)).toString(null);

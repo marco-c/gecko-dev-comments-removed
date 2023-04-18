@@ -6,17 +6,13 @@
 
 
 
-assert.notSameValue(
-  delete Date.prototype.setUTCFullYear,
-  false,
-  'The value of delete Date.prototype.setUTCFullYear is not false'
-);
 
-assert(
-  !Date.prototype.hasOwnProperty('setUTCFullYear'),
-  'The value of !Date.prototype.hasOwnProperty(\'setUTCFullYear\') is expected to be true'
-);
+if (delete Date.prototype.setUTCFullYear === false) {
+  throw new Test262Error('#1: The Date.prototype.setUTCFullYear property has not the attributes DontDelete');
+}
 
-
+if (Date.prototype.hasOwnProperty('setUTCFullYear')) {
+  throw new Test262Error('#2: The Date.prototype.setUTCFullYear property has not the attributes DontDelete');
+}
 
 reportCompare(0, 0);

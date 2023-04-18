@@ -9,9 +9,10 @@
 
 
 
+var v = Object.prototype.valueOf;
+
 assert.throws(TypeError, function() {
-  const valueOf = Object.prototype.valueOf;
-  valueOf();
-}, '`const valueOf = Object.prototype.valueOf; valueOf()` throws a TypeError exception');
+  v();
+});
 
 reportCompare(0, 0);

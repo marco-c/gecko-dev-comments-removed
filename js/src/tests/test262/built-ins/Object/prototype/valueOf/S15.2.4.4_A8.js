@@ -8,21 +8,23 @@
 
 
 
-assert(
-  !!Object.prototype.valueOf.hasOwnProperty('length'),
-  'The value of !!Object.prototype.valueOf.hasOwnProperty("length") is expected to be true'
-);
 
-assert(
-  !Object.prototype.valueOf.propertyIsEnumerable('length'),
-  'The value of !Object.prototype.valueOf.propertyIsEnumerable("length") is expected to be true'
-);
 
-for (var p in Object.prototype.valueOf) {
-  assert.notSameValue(p, "length", 'The value of p is not "length"');
+if (!(Object.prototype.valueOf.hasOwnProperty('length'))) {
+  throw new Test262Error('#0: the Object.prototype.valueOf has length property.');
 }
 
 
+
+if (Object.prototype.valueOf.propertyIsEnumerable('length')) {
+  throw new Test262Error('#1: the Object.prototype.valueOf.length property has the attributes DontEnum');
+}
+
+
+for (var p in Object.prototype.valueOf) {
+  if (p === "length")
+    throw new Test262Error('#2: the Object.prototype.valueOf.length property has the attributes DontEnum');
+}
 
 
 reportCompare(0, 0);

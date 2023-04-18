@@ -12,13 +12,8 @@
 
 var x = Date.prototype.getUTCFullYear.length;
 verifyNotWritable(Date.prototype.getUTCFullYear, "length", null, 1);
-
-assert.sameValue(
-  Date.prototype.getUTCFullYear.length,
-  x,
-  'The value of Date.prototype.getUTCFullYear.length is expected to equal the value of x'
-);
-
-
+if (Date.prototype.getUTCFullYear.length !== x) {
+  throw new Test262Error('#1: The Date.prototype.getUTCFullYear.length has the attribute ReadOnly');
+}
 
 reportCompare(0, 0);

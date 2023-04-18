@@ -7,17 +7,13 @@
 
 
 
-assert.notSameValue(
-  delete Date.prototype.getMinutes,
-  false,
-  'The value of delete Date.prototype.getMinutes is not false'
-);
 
-assert(
-  !Date.prototype.hasOwnProperty('getMinutes'),
-  'The value of !Date.prototype.hasOwnProperty(\'getMinutes\') is expected to be true'
-);
+if (delete Date.prototype.getMinutes === false) {
+  throw new Test262Error('#1: The Date.prototype.getMinutes property has not the attributes DontDelete');
+}
 
-
+if (Date.prototype.hasOwnProperty('getMinutes')) {
+  throw new Test262Error('#2: The Date.prototype.getMinutes property has not the attributes DontDelete');
+}
 
 reportCompare(0, 0);

@@ -8,16 +8,15 @@
 
 
 
-assert.sameValue(
-  (new Number()).hasOwnProperty("toLocaleString"),
-  false,
-  '(new Number()).hasOwnProperty("toLocaleString") must return false'
-);
 
-assert.sameValue(
-  (new Number()).toLocaleString,
-  Number.prototype.toLocaleString,
-  'The value of (new Number()).toLocaleString is expected to equal the value of Number.prototype.toLocaleString'
-);
+
+if ((new Number()).hasOwnProperty("toLocaleString") !== false) {
+  throw new Test262Error('#1: Number instance must have no special property "toLocaleString"');
+}
+
+
+if ((new Number()).toLocaleString !== Number.prototype.toLocaleString) {
+  throw new Test262Error('#2: Number instance property "toLocaleString" must be inherited from Number prototype object');
+}
 
 reportCompare(0, 0);

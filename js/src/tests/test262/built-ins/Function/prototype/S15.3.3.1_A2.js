@@ -6,22 +6,21 @@
 
 
 
-assert(
-  !Function.propertyIsEnumerable('prototype'),
-  'The value of !Function.propertyIsEnumerable(\'prototype\') is expected to be true'
-);
+
+
+if (Function.propertyIsEnumerable('prototype')) {
+  throw new Test262Error('#1: the Function.prototype property has the attributes DontEnum');
+}
 
 
 var count = 0;
 
 for (var p in Function) {
-  if (p === "prototype") {
-    count++;
-  }
+  if (p === "prototype") count++;
 }
 
-assert.sameValue(count, 0, 'The value of count is expected to be 0');
-
-
+if (count !== 0) {
+  throw new Test262Error('#2: the Function.prototype property has the attributes DontEnum');
+}
 
 reportCompare(0, 0);

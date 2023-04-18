@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Object.isExtensible(Realm), true);
+
+reportCompare(0, 0);

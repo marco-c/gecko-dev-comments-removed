@@ -8,24 +8,62 @@
 
 
 
-assert.sameValue((new Number(1)).toFixed(), "1", '(new Number(1)).toFixed() must return "1"');
-assert.sameValue((new Number(1)).toFixed(0), "1", '(new Number(1)).toFixed(0) must return "1"');
-assert.sameValue((new Number(1)).toFixed(1), "1.0", '(new Number(1)).toFixed(1) must return "1.0"');
-assert.sameValue((new Number(1)).toFixed(1.1), "1.0", '(new Number(1)).toFixed(1.1) must return "1.0"');
-assert.sameValue((new Number(1)).toFixed(0.9), "1", '(new Number(1)).toFixed(0.9) must return "1"');
-assert.sameValue((new Number(1)).toFixed("1"), "1.0", '(new Number(1)).toFixed("1") must return "1.0"');
-assert.sameValue((new Number(1)).toFixed("1.1"), "1.0", '(new Number(1)).toFixed("1.1") must return "1.0"');
-assert.sameValue((new Number(1)).toFixed("0.9"), "1", '(new Number(1)).toFixed("0.9") must return "1"');
-assert.sameValue((new Number(1)).toFixed(Number.NaN), "1", '(new Number(1)).toFixed(Number.NaN) must return "1"');
 
-assert.sameValue(
-  (new Number(1)).toFixed("some string"),
-  "1",
-  '(new Number(1)).toFixed("some string") must return "1"'
-);
+
+if ((new Number(1)).toFixed() !== "1") {
+  throw new Test262Error('#1: (new Number(1)).prototype.toFixed() === "1"');
+}
+
+
+if ((new Number(1)).toFixed(0) !== "1") {
+  throw new Test262Error('#2: (new Number(1)).prototype.toFixed(0) === "1"');
+}
+
+
+if ((new Number(1)).toFixed(1) !== "1.0") {
+  throw new Test262Error('#3: (new Number(1)).prototype.toFixed(1) === "1.0"');
+}
+
+
+if ((new Number(1)).toFixed(1.1) !== "1.0") {
+  throw new Test262Error('#4: (new Number(1)).toFixed(1.1) === "1.0"');
+}
+
+
+if ((new Number(1)).toFixed(0.9) !== "1") {
+  throw new Test262Error('#5: (new Number(1)).toFixed(0.9) === "1"');
+}
+
+
+if ((new Number(1)).toFixed("1") !== "1.0") {
+  throw new Test262Error('#6: (new Number(1)).toFixed("1") === "1.0"');
+}
+
+
+if ((new Number(1)).toFixed("1.1") !== "1.0") {
+  throw new Test262Error('#7: (new Number(1)).toFixed("1.1") === "1.0"');
+}
+
+
+if ((new Number(1)).toFixed("0.9") !== "1") {
+  throw new Test262Error('#8: (new Number(1)).toFixed("0.9") === "1"');
+}
+
+
+if ((new Number(1)).toFixed(Number.NaN) !== "1") {
+  throw new Test262Error('#9: (new Number(1)).toFixed(Number.NaN) === "1"');
+}
+
+
+if ((new Number(1)).toFixed("some string") !== "1") {
+  throw new Test262Error('#9: (new Number(1)).toFixed("some string") === "1"');
+}
+
 
 try {
-  assert.sameValue((new Number(1)).toFixed(-0.1), "1", '(new Number(1)).toFixed(-0.1) must return "1"');
+  if ((new Number(1)).toFixed(-0.1) !== "1") {
+    throw new Test262Error('#10: (new Number(1)).toFixed(-0.1) === "1"');
+  }
 }
 catch (e) {
   throw new Test262Error('#10: (new Number(1)).toFixed(-0.1) should not throw ' + e);

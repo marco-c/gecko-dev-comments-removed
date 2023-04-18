@@ -6,6 +6,9 @@
 
 
 
-assert(Number.hasOwnProperty("prototype"), 'Number.hasOwnProperty("prototype") must return true');
+
+if (!Number.hasOwnProperty("prototype")) {
+  throw new Test262Error('#1: The Number constructor has the property "prototype"');
+}
 
 reportCompare(0, 0);

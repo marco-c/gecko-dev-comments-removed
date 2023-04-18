@@ -10,6 +10,7 @@
 
 
 
+
 try {
   var s1 = new Date();
   s1.valueOf = Number.prototype.valueOf;
@@ -17,8 +18,11 @@ try {
   throw new Test262Error('#1: Number.prototype.valueOf on not a Number object should throw TypeError');
 }
 catch (e) {
-  assert(e instanceof TypeError, 'The result of evaluating (e instanceof TypeError) is expected to be true');
+  if (!(e instanceof TypeError)) {
+    throw new Test262Error('#1: Number.prototype.valueOf on not a Number object should throw TypeError, not ' + e);
+  }
 }
+
 
 try {
   var s2 = new Date();
@@ -27,7 +31,9 @@ try {
   throw new Test262Error('#2: Number.prototype.valueOf on not a Number object should throw TypeError');
 }
 catch (e) {
-  assert(e instanceof TypeError, 'The result of evaluating (e instanceof TypeError) is expected to be true');
+  if (!(e instanceof TypeError)) {
+    throw new Test262Error('#2: Number.prototype.valueOf on not a Number object should throw TypeError, not ' + e);
+  }
 }
 
 reportCompare(0, 0);

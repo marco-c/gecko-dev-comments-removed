@@ -12,10 +12,9 @@
 
 var __re = new RegExp();
 
-assert.sameValue(
-  RegExp.prototype.isPrototypeOf(__re),
-  true,
-  'RegExp.prototype.isPrototypeOf(new RegExp()) must return true'
-);
+
+if (RegExp.prototype.isPrototypeOf(__re) !== true) {
+	throw new Test262Error('#1: __re = new RegExp(); RegExp.prototype.isPrototypeOf(__re) === true. Actual: ' + (RegExp.prototype.isPrototypeOf(__re)));
+}
 
 reportCompare(0, 0);

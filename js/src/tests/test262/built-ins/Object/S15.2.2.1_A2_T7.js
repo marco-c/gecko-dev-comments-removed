@@ -8,19 +8,29 @@
 
 
 
-assert.sameValue(typeof func, 'undefined', 'The value of `typeof func` is expected to be "undefined"');
+
+
+if (typeof func !== 'undefined') {
+  throw new Test262Error('#0: function expression can\'t be declarated');
+}
 
 var n_obj = new Object(function func() {
   return 1;
 });
 
-assert.sameValue(
-  n_obj.constructor,
-  Function,
-  'The value of n_obj.constructor is expected to equal the value of Function'
-);
 
-assert.sameValue(n_obj(), 1, 'n_obj() must return 1');
-assert.sameValue(typeof func, 'undefined', 'The value of `typeof func` is expected to be "undefined"');
+if (n_obj.constructor !== Function) {
+  throw new Test262Error('#1: When the Object constructor is called and if the value is an Object simply value returns');
+}
+
+
+if (n_obj() !== 1) {
+  throw new Test262Error('#2: When the Object constructor is called and if the value is an Object simply value returns');
+}
+
+
+if (typeof func !== 'undefined') {
+  throw new Test262Error('#3: function expression can\'t be declarated');
+}
 
 reportCompare(0, 0);

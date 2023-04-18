@@ -8,10 +8,11 @@
 
 
 
-assert.sameValue(
-  Object.prototype.toLocaleString.prototype,
-  undefined,
-  'The value of Object.prototype.toLocaleString.prototype is expected to equal undefined'
-);
+
+
+if (Object.prototype.toLocaleString.prototype !== undefined) {
+  throw new Test262Error('#1: Object.prototype.toLocaleString has not prototype property' + Object.prototype.toLocaleString.prototype);
+}
+
 
 reportCompare(0, 0);

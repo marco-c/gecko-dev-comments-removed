@@ -12,13 +12,8 @@
 
 var x = Date.prototype.setUTCHours.length;
 verifyNotWritable(Date.prototype.setUTCHours, "length", null, 1);
-
-assert.sameValue(
-  Date.prototype.setUTCHours.length,
-  x,
-  'The value of Date.prototype.setUTCHours.length is expected to equal the value of x'
-);
-
-
+if (Date.prototype.setUTCHours.length !== x) {
+  throw new Test262Error('#1: The Date.prototype.setUTCHours.length has the attribute ReadOnly');
+}
 
 reportCompare(0, 0);

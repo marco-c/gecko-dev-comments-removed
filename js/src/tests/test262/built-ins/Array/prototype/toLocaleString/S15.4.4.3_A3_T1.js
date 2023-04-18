@@ -8,6 +8,7 @@
 
 
 
+
 var n = 0;
 var obj = {
   toLocaleString: function() {

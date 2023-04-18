@@ -9,9 +9,9 @@
 
 
 for (var prop in this) {
-  assert.notSameValue(prop, "Infinity", 'The value of prop is not "Infinity"');
+  if (prop === "Infinity") {
+    throw new Test262Error('#1: The Infinity is DontEnum');
+  }
 }
-
-
 
 reportCompare(0, 0);

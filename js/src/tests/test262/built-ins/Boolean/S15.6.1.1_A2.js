@@ -6,7 +6,15 @@
 
 
 
-assert.sameValue(typeof Boolean(), "boolean", 'The value of `typeof Boolean()` is expected to be "boolean"');
-assert.sameValue(Boolean(), false, 'Boolean() must return false');
+
+
+if (typeof Boolean() !== "boolean") {
+  throw new Test262Error('#1: typeof Boolean() should be "boolean", actual is "' + typeof Boolean() + '"');
+}
+
+
+if (Boolean() !== false) {
+  throw new Test262Error('#2: Boolean() should be false');
+}
 
 reportCompare(0, 0);

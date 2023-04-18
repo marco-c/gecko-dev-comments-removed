@@ -36,6 +36,6 @@
 
 
 
-{length: 3000}let a, b = 42, c;b;
+{length: 3000}let a, b = 42, c;b;;
 
 reportCompare(0, 0);

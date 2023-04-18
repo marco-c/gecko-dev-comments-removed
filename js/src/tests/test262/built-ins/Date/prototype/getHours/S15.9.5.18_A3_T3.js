@@ -9,15 +9,15 @@
 
 
 
-assert(
-  !Date.prototype.getHours.propertyIsEnumerable('length'),
-  'The value of !Date.prototype.getHours.propertyIsEnumerable(\'length\') is expected to be true'
-);
 
-for (var x in Date.prototype.getHours) {
-  assert.notSameValue(x, "length", 'The value of x is not "length"');
+if (Date.prototype.getHours.propertyIsEnumerable('length')) {
+  throw new Test262Error('#1: The Date.prototype.getHours.length property has the attribute DontEnum');
 }
 
-
+for (var x in Date.prototype.getHours) {
+  if (x === "length") {
+    throw new Test262Error('#2: The Date.prototype.getHours.length has the attribute DontEnum');
+  }
+}
 
 reportCompare(0, 0);

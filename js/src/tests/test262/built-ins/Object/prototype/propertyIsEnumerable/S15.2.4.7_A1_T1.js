@@ -10,11 +10,11 @@
 
 
 
-assert.sameValue(
-  typeof Object.prototype.propertyIsEnumerable,
-  "function",
-  'The value of `typeof Object.prototype.propertyIsEnumerable` is expected to be "function"'
-);
+
+
+if (typeof Object.prototype.propertyIsEnumerable !== "function") {
+  throw new Test262Error('#1: propertyIsEnumerable method is defined');
+}
 
 var proto = {
   rootprop: "avis"
@@ -22,26 +22,26 @@ var proto = {
 
 function AVISFACTORY(name) {
   this.name = name
-}
+};
 
 AVISFACTORY.prototype = proto;
 
 var seagull = new AVISFACTORY("seagull");
 
-assert.sameValue(
-  typeof seagull.propertyIsEnumerable,
-  "function",
-  'The value of `typeof seagull.propertyIsEnumerable` is expected to be "function"'
-);
 
-assert(
-  !!seagull.propertyIsEnumerable("name"),
-  'The value of !!seagull.propertyIsEnumerable("name") is expected to be true'
-);
+if (typeof seagull.propertyIsEnumerable !== "function") {
+  throw new Test262Error('#2: propertyIsEnumerable method is accessed');
+}
 
-assert(
-  !seagull.propertyIsEnumerable("rootprop"),
-  'The value of !seagull.propertyIsEnumerable("rootprop") is expected to be true'
-);
+
+if (!(seagull.propertyIsEnumerable("name"))) {
+  throw new Test262Error('#3: propertyIsEnumerable method works properly');
+}
+
+
+if (seagull.propertyIsEnumerable("rootprop")) {
+  throw new Test262Error('#4: propertyIsEnumerable method does not consider objects in the prototype chain');
+}
+
 
 reportCompare(0, 0);

@@ -12,10 +12,12 @@
 
 
 
-var arg = {};
-var p = Promise.resolve(arg);
+var obj = {};
+var p = Promise.resolve(obj);
 
 p.then(3, 5)
-  .then(function(result) {
-  assert.sameValue(result, arg, 'The value of result is expected to equal the value of arg');
-}).then($DONE, $DONE);
+  .then(function(arg) {
+    if (arg !== obj) {
+      throw new Test262Error("Expected resolution object to be passed through, got " + arg);
+    }
+  }).then($DONE, $DONE);

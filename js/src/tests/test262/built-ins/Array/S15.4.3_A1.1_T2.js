@@ -9,6 +9,7 @@
 
 
 
+
 Function.prototype.toString = Object.prototype.toString;
 
 assert.sameValue(

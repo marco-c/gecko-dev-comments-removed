@@ -6,10 +6,9 @@
 
 
 
-assert.sameValue(
-  Date.prototype.hasOwnProperty("getUTCDay"),
-  true,
-  'Date.prototype.hasOwnProperty("getUTCDay") must return true'
-);
+
+if (Date.prototype.hasOwnProperty("getUTCDay") !== true) {
+  throw new Test262Error('#1: The Date.prototype has the property "getUTCDay"');
+}
 
 reportCompare(0, 0);

@@ -8,23 +8,28 @@
 
 
 
-assert.sameValue(typeof Number("10"), "number", 'The value of `typeof Number("10")` is expected to be "number"');
-assert.sameValue(typeof Number(10), "number", 'The value of `typeof Number(10)` is expected to be "number"');
 
-assert.sameValue(
-  typeof Number(new String("10")),
-  "number",
-  'The value of `typeof Number(new String("10"))` is expected to be "number"'
-);
 
-assert.sameValue(
-  typeof Number(new Object(10)),
-  "number",
-  'The value of `typeof Number(new Object(10))` is expected to be "number"'
-);
+if (typeof Number("10") !== "number") {
+  throw new Test262Error('#1: typeof Number("10") should be "number", actual is "' + typeof Number("10") + '"');
+}
 
-assert.sameValue(Number("abc"), NaN, 'Number("abc") returns NaN');
-assert.sameValue(Number("INFINITY"), NaN, 'Number("INFINITY") returns NaN');
-assert.sameValue(Number("infinity"), NaN, 'Number("infinity") returns NaN');
+
+if (typeof Number(10) !== "number") {
+  throw new Test262Error('#2: typeof Number(10) should be "number", actual is "' + typeof Number(10) + '"');
+}
+
+
+if (typeof Number(new String("10")) !== "number") {
+  throw new Test262Error('#3: typeof Number(new String("10")) should be "number", actual is "' + typeof Number(new String("10")) + '"');
+}
+
+
+if (typeof Number(new Object(10)) !== "number") {
+  throw new Test262Error('#4: typeof Number(new Object(10)) should be "number", actual is "' + typeof Number(new Object(10)) + '"');
+}
+
+
+assert.sameValue(Number("abc"), NaN, "Number('abc')");
 
 reportCompare(0, 0);

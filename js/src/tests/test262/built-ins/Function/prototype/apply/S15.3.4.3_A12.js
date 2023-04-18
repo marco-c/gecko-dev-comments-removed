@@ -8,10 +8,10 @@
 
 
 
-assert.sameValue(
-  Function.prototype.apply.prototype,
-  undefined,
-  'The value of Function.prototype.apply.prototype is expected to equal undefined'
-);
+
+
+if (Function.prototype.apply.prototype !== undefined) {
+  throw new Test262Error('#1: Function.prototype.apply has not prototype property' + Function.prototype.apply.prototype);
+}
 
 reportCompare(0, 0);

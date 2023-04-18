@@ -8,9 +8,13 @@
 
 
 
-assert(
-  Object.prototype.isPrototypeOf(Error.prototype),
-  'Object.prototype.isPrototypeOf(Error.prototype) must return true'
-);
+
+
+
+if (!Object.prototype.isPrototypeOf(Error.prototype)) {
+  throw new Test262Error('#1: Object.prototype.isPrototypeOf(Error.prototype) return true. Actual: ' + Object.prototype.isPrototypeOf(Error.prototype));
+}
+
+
 
 reportCompare(0, 0);

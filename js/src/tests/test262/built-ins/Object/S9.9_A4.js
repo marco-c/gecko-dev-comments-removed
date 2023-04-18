@@ -8,144 +8,170 @@
 
 
 
-assert.sameValue(Object(0).valueOf(), 0, 'Object(0).valueOf() must return 0');
-assert.sameValue(typeof Object(0), "object", 'The value of `typeof Object(0)` is expected to be "object"');
 
-assert.sameValue(
-  Object(0).constructor.prototype,
-  Number.prototype,
-  'The value of Object(0).constructor.prototype is expected to equal the value of Number.prototype'
-);
 
-assert.sameValue(Object(-0).valueOf(), -0, 'Object(-0).valueOf() must return -0');
-assert.sameValue(typeof Object(-0), "object", 'The value of `typeof Object(-0)` is expected to be "object"');
+if (Object(0).valueOf() !== 0) {
+  throw new Test262Error('#1: Object(0).valueOf() === 0. Actual: ' + (Object(0).valueOf()));
+}
 
-assert.sameValue(
-  Object(-0).constructor.prototype,
-  Number.prototype,
-  'The value of Object(-0).constructor.prototype is expected to equal the value of Number.prototype'
-);
 
-assert.sameValue(Object(1).valueOf(), 1, 'Object(1).valueOf() must return 1');
-assert.sameValue(typeof Object(1), "object", 'The value of `typeof Object(1)` is expected to be "object"');
+if (typeof Object(0) !== "object") {
+  throw new Test262Error('#2: typeof Object(0) === "object". Actual: ' + (typeof Object(0)));
+}
 
-assert.sameValue(
-  Object(1).constructor.prototype,
-  Number.prototype,
-  'The value of Object(1).constructor.prototype is expected to equal the value of Number.prototype'
-);
 
-assert.sameValue(Object(-1).valueOf(), -1, 'Object(-1).valueOf() must return -1');
-assert.sameValue(typeof Object(-1), "object", 'The value of `typeof Object(-1)` is expected to be "object"');
+if (Object(0).constructor.prototype !== Number.prototype) {
+  throw new Test262Error('#3: Object(0).constructor.prototype === Number.prototype. Actual: ' + (Object(0).constructor.prototype));
+}
 
-assert.sameValue(
-  Object(-1).constructor.prototype,
-  Number.prototype,
-  'The value of Object(-1).constructor.prototype is expected to equal the value of Number.prototype'
-);
 
-assert.sameValue(
-  Object(Number.MIN_VALUE).valueOf(),
-  Number.MIN_VALUE,
-  'Object(Number.MIN_VALUE).valueOf() returns Number.MIN_VALUE'
-);
+if (Object(-0).valueOf() !== -0) {
+  throw new Test262Error('#4.1: Object(-0).valueOf() === 0. Actual: ' + (Object(-0).valueOf()));
+} else if (1 / Object(-0).valueOf() !== Number.NEGATIVE_INFINITY) {
+  throw new Test262Error('#4.2: Object(-0).valueOf() === -0. Actual: +0');
+}
 
-assert.sameValue(
-  typeof Object(Number.MIN_VALUE),
-  "object",
-  'The value of `typeof Object(Number.MIN_VALUE)` is expected to be "object"'
-);
 
-assert.sameValue(
-  Object(Number.MIN_VALUE).constructor.prototype,
-  Number.prototype,
-  'The value of Object(Number.MIN_VALUE).constructor.prototype is expected to equal the value of Number.prototype'
-);
+if (typeof Object(-0) !== "object") {
+  throw new Test262Error('#5: typeof Object(-0) === "object". Actual: ' + (typeof Object(-0)));
+}
 
-assert.sameValue(
-  Object(Number.MAX_VALUE).valueOf(),
-  Number.MAX_VALUE,
-  'Object(Number.MAX_VALUE).valueOf() returns Number.MAX_VALUE'
-);
 
-assert.sameValue(
-  typeof Object(Number.MAX_VALUE),
-  "object",
-  'The value of `typeof Object(Number.MAX_VALUE)` is expected to be "object"'
-);
+if (Object(-0).constructor.prototype !== Number.prototype) {
+  throw new Test262Error('#6: Object(-0).constructor.prototype === Number.prototype. Actual: ' + (Object(-0).constructor.prototype));
+}
 
-assert.sameValue(
-  Object(Number.MAX_VALUE).constructor.prototype,
-  Number.prototype,
-  'The value of Object(Number.MAX_VALUE).constructor.prototype is expected to equal the value of Number.prototype'
-);
 
-assert.sameValue(
-  Object(Number.POSITIVE_INFINITY).valueOf(),
-  Number.POSITIVE_INFINITY,
-  'Object(Number.POSITIVE_INFINITY).valueOf() returns Number.POSITIVE_INFINITY'
-);
+if (Object(1).valueOf() !== 1) {
+  throw new Test262Error('#7: Object(1).valueOf() === 1. Actual: ' + (Object(1).valueOf()));
+}
 
-assert.sameValue(
-  typeof Object(Number.POSITIVE_INFINITY),
-  "object",
-  'The value of `typeof Object(Number.POSITIVE_INFINITY)` is expected to be "object"'
-);
 
-assert.sameValue(
-  Object(Number.POSITIVE_INFINITY).constructor.prototype,
-  Number.prototype,
-  'The value of Object(Number.POSITIVE_INFINITY).constructor.prototype is expected to equal the value of Number.prototype'
-);
+if (typeof Object(1) !== "object") {
+  throw new Test262Error('#8: typeof Object(1) === "object". Actual: ' + (typeof Object(1)));
+}
 
-assert.sameValue(
-  Object(Number.NEGATIVE_INFINITY).valueOf(),
-  Number.NEGATIVE_INFINITY,
-  'Object(Number.NEGATIVE_INFINITY).valueOf() returns Number.NEGATIVE_INFINITY'
-);
 
-assert.sameValue(
-  typeof Object(Number.NEGATIVE_INFINITY),
-  "object",
-  'The value of `typeof Object(Number.NEGATIVE_INFINITY)` is expected to be "object"'
-);
+if (Object(1).constructor.prototype !== Number.prototype) {
+  throw new Test262Error('#9: Object(1).constructor.prototype === Number.prototype. Actual: ' + (Object(1).constructor.prototype));
+}
 
-assert.sameValue(
-  Object(Number.NEGATIVE_INFINITY).constructor.prototype,
-  Number.prototype,
-  'The value of Object(Number.NEGATIVE_INFINITY).constructor.prototype is expected to equal the value of Number.prototype'
-);
 
-assert.sameValue(Object(NaN).valueOf(), NaN, 'Object(NaN).valueOf() returns NaN');
+if (Object(-1).valueOf() !== -1) {
+  throw new Test262Error('#10: Object(-1).valueOf() === -1. Actual: ' + (Object(-1).valueOf()));
+}
 
-assert.sameValue(
-  typeof Object(Number.NaN),
-  "object",
-  'The value of `typeof Object(Number.NaN)` is expected to be "object"'
-);
 
-assert.sameValue(
-  Object(Number.NaN).constructor.prototype,
-  Number.prototype,
-  'The value of Object(Number.NaN).constructor.prototype is expected to equal the value of Number.prototype'
-);
+if (typeof Object(-1) !== "object") {
+  throw new Test262Error('#11: typeof Object(-1) === "object". Actual: ' + (typeof Object(-1)));
+}
 
-assert.sameValue(Object(1.2345).valueOf(), 1.2345, 'Object(1.2345).valueOf() must return 1.2345');
-assert.sameValue(typeof Object(1.2345), "object", 'The value of `typeof Object(1.2345)` is expected to be "object"');
 
-assert.sameValue(
-  Object(1.2345).constructor.prototype,
-  Number.prototype,
-  'The value of Object(1.2345).constructor.prototype is expected to equal the value of Number.prototype'
-);
+if (Object(-1).constructor.prototype !== Number.prototype) {
+  throw new Test262Error('#12: Object(-1).constructor.prototype === Number.prototype. Actual: ' + (Object(-1).constructor.prototype));
+}
 
-assert.sameValue(Object(-1.2345).valueOf(), -1.2345, 'Object(-1.2345).valueOf() must return -1.2345');
-assert.sameValue(typeof Object(-1.2345), "object", 'The value of `typeof Object(-1.2345)` is expected to be "object"');
 
-assert.sameValue(
-  Object(-1.2345).constructor.prototype,
-  Number.prototype,
-  'The value of Object(-1.2345).constructor.prototype is expected to equal the value of Number.prototype'
-);
+if (Object(Number.MIN_VALUE).valueOf() !== Number.MIN_VALUE) {
+  throw new Test262Error('#13: Object(Number.MIN_VALUE).valueOf() === Number.MIN_VALUE. Actual: ' + (Object(Number.MIN_VALUE).valueOf()));
+}
+
+
+if (typeof Object(Number.MIN_VALUE) !== "object") {
+  throw new Test262Error('#14: typeof Object(Number.MIN_VALUE) === "object". Actual: ' + (typeof Object(Number.MIN_VALUE)));
+}
+
+
+if (Object(Number.MIN_VALUE).constructor.prototype !== Number.prototype) {
+  throw new Test262Error('#15: Object(Number.MIN_VALUE).constructor.prototype === Number.prototype. Actual: ' + (Object(Number.MIN_VALUE).constructor.prototype));
+}
+
+
+if (Object(Number.MAX_VALUE).valueOf() !== Number.MAX_VALUE) {
+  throw new Test262Error('#16: Object(Number.MAX_VALUE).valueOf() === Number.MAX_VALUE. Actual: ' + (Object(Number.MAX_VALUE).valueOf()));
+}
+
+
+if (typeof Object(Number.MAX_VALUE) !== "object") {
+  throw new Test262Error('#17: typeof Object(Number.MAX_VALUE) === "object". Actual: ' + (typeof Object(Number.MAX_VALUE)));
+}
+
+
+if (Object(Number.MAX_VALUE).constructor.prototype !== Number.prototype) {
+  throw new Test262Error('#18: Object(Number.MAX_VALUE).constructor.prototype === Number.prototype. Actual: ' + (Object(Number.MAX_VALUE).constructor.prototype));
+}
+
+
+if (Object(Number.POSITIVE_INFINITY).valueOf() !== Number.POSITIVE_INFINITY) {
+  throw new Test262Error('#19: Object(Number.POSITIVE_INFINITY).valueOf() === Number.POSITIVE_INFINITY. Actual: ' + (Object(Number.POSITIVE_INFINITY).valueOf()));
+}
+
+
+if (typeof Object(Number.POSITIVE_INFINITY) !== "object") {
+  throw new Test262Error('#20: typeof Object(Number.POSITIVE_INFINITY) === "object". Actual: ' + (typeof Object(Number.POSITIVE_INFINITY)));
+}
+
+
+if (Object(Number.POSITIVE_INFINITY).constructor.prototype !== Number.prototype) {
+  throw new Test262Error('#21: Object(Number.POSITIVE_INFINITY).constructor.prototype === Number.prototype. Actual: ' + (Object(Number.POSITIVE_INFINITY).constructor.prototype));
+}
+
+
+if (Object(Number.NEGATIVE_INFINITY).valueOf() !== Number.NEGATIVE_INFINITY) {
+  throw new Test262Error('#22: Object(Number.NEGATIVE_INFINITY).valueOf() === Number.NEGATIVE_INFINITY. Actual: ' + (Object(Number.NEGATIVE_INFINITY).valueOf()));
+}
+
+
+if (typeof Object(Number.NEGATIVE_INFINITY) !== "object") {
+  throw new Test262Error('#23: typeof Object(Number.NEGATIVE_INFINITY) === "object". Actual: ' + (typeof Object(Number.NEGATIVE_INFINITY)));
+}
+
+
+if (Object(Number.NEGATIVE_INFINITY).constructor.prototype !== Number.prototype) {
+  throw new Test262Error('#24: Object(Number.NEGATIVE_INFINITY).constructor.prototype === Number.prototype. Actual: ' + (Object(Number.NEGATIVE_INFINITY).constructor.prototype));
+}
+
+
+assert.sameValue(Object(NaN).valueOf(), NaN, "Object(NaN).valueOf()");
+
+
+if (typeof Object(Number.NaN) !== "object") {
+  throw new Test262Error('#26: typeof Object(Number.NaN) === "object". Actual: ' + (typeof Object(Number.NaN)));
+}
+
+
+if (Object(Number.NaN).constructor.prototype !== Number.prototype) {
+  throw new Test262Error('#27: Object(Number.NaN).constructor.prototype === Number.prototype. Actual: ' + (Object(Number.NaN).constructor.prototype));
+}
+
+
+if (Object(1.2345).valueOf() !== 1.2345) {
+  throw new Test262Error('#28: Object(1.2345).valueOf() === 1.2345. Actual: ' + (Object(1.2345).valueOf()));
+}
+
+
+if (typeof Object(1.2345) !== "object") {
+  throw new Test262Error('#29: typeof Object(1.2345) === "object". Actual: ' + (typeof Object(1.2345)));
+}
+
+
+if (Object(1.2345).constructor.prototype !== Number.prototype) {
+  throw new Test262Error('#30: Object(1.2345).constructor.prototype === Number.prototype. Actual: ' + (Object(1.2345).constructor.prototype));
+}
+
+
+if (Object(-1.2345).valueOf() !== -1.2345) {
+  throw new Test262Error('#31: Object(-1.2345).valueOf() === -1.2345. Actual: ' + (Object(-1.2345).valueOf()));
+}
+
+
+if (typeof Object(-1.2345) !== "object") {
+  throw new Test262Error('#32: typeof Object(-1.2345) === "object". Actual: ' + (typeof Object(-1.2345)));
+}
+
+
+if (Object(-1.2345).constructor.prototype !== Number.prototype) {
+  throw new Test262Error('#33: Object(-1.2345).constructor.prototype === Number.prototype. Actual: ' + (Object(-1.2345).constructor.prototype));
+}
 
 reportCompare(0, 0);

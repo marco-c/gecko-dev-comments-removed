@@ -14,15 +14,28 @@
 var f = Function.call(this, "return this.planet;");
 var g = Function.call(this, "return this.color;");
 
-assert.sameValue(f(), undefined, 'f() returns undefined');
+
+if (f() !== undefined) {
+  throw new Test262Error('#2: ');
+}
 
 var planet = "mars";
 
-assert.sameValue(f(), "mars", 'f() must return "mars"');
-assert.sameValue(g(), undefined, 'g() returns undefined');
+
+if (f() !== "mars") {
+  throw new Test262Error('#2: ');
+}
+
+
+if (g() !== undefined) {
+  throw new Test262Error('#3: ');
+}
 
 this.color = "red";
 
-assert.sameValue(g(), "red", 'g() must return "red"');
+
+if (g() !== "red") {
+  throw new Test262Error('#4: ');
+}
 
 reportCompare(0, 0);

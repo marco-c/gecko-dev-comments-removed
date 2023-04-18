@@ -13,17 +13,17 @@ verifyNotWritable(Object, "prototype", null, function() {
   return "shifted";
 });
 
-assert.sameValue(Object.prototype, obj, 'The value of Object.prototype is expected to equal the value of obj');
+
+if (Object.prototype !== obj) {
+  throw new Test262Error('#1: the Object.prototype property has the attributes ReadOnly.');
+}
+
 
 try {
   Object.prototype();
   throw new Test262Error('#2: the Object.prototype property has the attributes ReadOnly');
 } catch (e) {
-  if (e instanceof Test262Error) {
-    throw e;
-  }
+  if (e instanceof Test262Error) throw e;
 }
-
-
 
 reportCompare(0, 0);

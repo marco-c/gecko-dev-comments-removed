@@ -12,13 +12,8 @@
 
 var x = Date.prototype.getTimezoneOffset.length;
 verifyNotWritable(Date.prototype.getTimezoneOffset, "length", null, 1);
-
-assert.sameValue(
-  Date.prototype.getTimezoneOffset.length,
-  x,
-  'The value of Date.prototype.getTimezoneOffset.length is expected to equal the value of x'
-);
-
-
+if (Date.prototype.getTimezoneOffset.length !== x) {
+  throw new Test262Error('#1: The Date.prototype.getTimezoneOffset.length has the attribute ReadOnly');
+}
 
 reportCompare(0, 0);

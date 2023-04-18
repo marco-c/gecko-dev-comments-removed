@@ -11,6 +11,6 @@
 
 assert.throws(TypeError, function() {
   (1, Object.prototype.valueOf)();
-}, '(1, Object.prototype.valueOf)() throws a TypeError exception');
+});
 
 reportCompare(0, 0);

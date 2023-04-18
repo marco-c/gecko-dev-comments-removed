@@ -8,10 +8,10 @@
 
 
 
-assert.sameValue(
-  Object.prototype.constructor,
-  Object,
-  'The value of Object.prototype.constructor is expected to equal the value of Object'
-);
+
+
+if (Object.prototype.constructor !== Object) {
+  throw new Test262Error('#1: The initial value of Object.prototype.constructor is the built-in Object constructor');
+}
 
 reportCompare(0, 0);

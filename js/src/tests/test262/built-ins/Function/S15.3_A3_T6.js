@@ -13,10 +13,16 @@
 
 var f = Function.call(this, "return this.planet;");
 
-assert.sameValue(f(), undefined, 'f() returns undefined');
+
+if (f() !== undefined) {
+  throw new Test262Error('#1: ');
+}
 
 var planet = "mars";
 
-assert.sameValue(f(), "mars", 'f() must return "mars"');
+
+if (f() !== "mars") {
+  throw new Test262Error('#2: ');
+}
 
 reportCompare(0, 0);

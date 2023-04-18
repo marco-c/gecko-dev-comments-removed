@@ -6,6 +6,10 @@
 
 
 
-assert.sameValue(Boolean(null), false, 'Boolean(null) must return false');
+
+
+if (Boolean(null) !== false) {
+  throw new Test262Error('#1: Boolean(null) === false. Actual: ' + (Boolean(null)));
+}
 
 reportCompare(0, 0);

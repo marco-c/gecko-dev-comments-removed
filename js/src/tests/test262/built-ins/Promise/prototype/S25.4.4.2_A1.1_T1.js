@@ -9,10 +9,9 @@
 
 
 
-assert.notSameValue(
-  Promise.prototype,
-  undefined,
-  'The value of Promise.prototype is expected to not equal ``undefined``'
-);
+
+if (Promise.prototype === undefined) {
+  throw new Test262Error("Expected Promise.prototype to be defined.");
+}
 
 reportCompare(0, 0);

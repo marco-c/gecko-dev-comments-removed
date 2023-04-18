@@ -6,16 +6,35 @@
 
 
 
-assert.sameValue(Boolean.prototype.valueOf(true), false, 'Boolean.prototype.valueOf(true) must return false');
-assert.sameValue((new Boolean()).valueOf(true), false, '(new Boolean()).valueOf(true) must return false');
-assert.sameValue((new Boolean(0)).valueOf(true), false, '(new Boolean(0)).valueOf(true) must return false');
-assert.sameValue((new Boolean(-1)).valueOf(false), true, '(new Boolean(-1)).valueOf(false) must return true');
-assert.sameValue((new Boolean(1)).valueOf(false), true, '(new Boolean(1)).valueOf(false) must return true');
 
-assert.sameValue(
-  (new Boolean(new Object())).valueOf(false),
-  true,
-  '(new Boolean(new Object())).valueOf(false) must return true'
-);
+
+if (Boolean.prototype.valueOf(true) !== false) {
+  throw new Test262Error('#1: Boolean.prototype.valueOf(true) === false');
+}
+
+
+if ((new Boolean()).valueOf(true) !== false) {
+  throw new Test262Error('#2: (new Boolean()).valueOf(true) === false');
+}
+
+
+if ((new Boolean(0)).valueOf(true) !== false) {
+  throw new Test262Error('#3: (new Boolean(0)).valueOf(true) === false');
+}
+
+
+if ((new Boolean(-1)).valueOf(false) !== true) {
+  throw new Test262Error('#4: (new Boolean(-1)).valueOf(false) === true');
+}
+
+
+if ((new Boolean(1)).valueOf(false) !== true) {
+  throw new Test262Error('#5: (new Boolean(1)).valueOf(false) === true');
+}
+
+
+if ((new Boolean(new Object())).valueOf(false) !== true) {
+  throw new Test262Error('#6: (new Boolean(new Object())).valueOf(false) === true');
+}
 
 reportCompare(0, 0);

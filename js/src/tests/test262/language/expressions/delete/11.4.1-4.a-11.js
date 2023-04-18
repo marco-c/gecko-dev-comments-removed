@@ -13,6 +13,9 @@
 
 
 (function() {
+  function foo(a, b) {
+    return delete arguments.callee;
+  }
   var d = delete arguments.callee;
 
   assert.sameValue(d, true, 'd');

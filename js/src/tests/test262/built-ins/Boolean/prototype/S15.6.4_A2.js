@@ -9,9 +9,9 @@
 
 
 
-assert(
-  Object.prototype.isPrototypeOf(Boolean.prototype),
-  'Object.prototype.isPrototypeOf(Boolean.prototype) must return true'
-);
+
+if (!Object.prototype.isPrototypeOf(Boolean.prototype)) {
+  throw new Test262Error('#1: Object prototype object is the prototype of Boolean prototype object');
+}
 
 reportCompare(0, 0);

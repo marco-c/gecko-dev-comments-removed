@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+var FACTORY = Object.prototype.hasOwnProperty;
+
+assert.throws(TypeError, function() {
+  new FACTORY;
+});
+
+reportCompare(0, 0);

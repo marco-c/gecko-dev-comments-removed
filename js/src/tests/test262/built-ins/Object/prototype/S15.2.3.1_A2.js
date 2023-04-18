@@ -6,21 +6,21 @@
 
 
 
-assert(
-  !Object.propertyIsEnumerable('prototype'),
-  'The value of !Object.propertyIsEnumerable("prototype") is expected to be true'
-);
+
+
+if (Object.propertyIsEnumerable('prototype')) {
+  throw new Test262Error('#1: the Object.prototype property has the attributes DontEnum');
+}
+
 
 var cout = 0;
 
 for (var p in Object) {
-  if (p === "prototype") {
-    cout++;
-  }
+  if (p === "prototype") cout++;
 }
 
-assert.sameValue(cout, 0, 'The value of cout is expected to be 0');
-
-
+if (cout !== 0) {
+  throw new Test262Error('#2: the Object.prototype property has the attributes DontEnum');
+}
 
 reportCompare(0, 0);

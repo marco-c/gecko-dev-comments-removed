@@ -6,10 +6,9 @@
 
 
 
-assert.sameValue(
-  Date.prototype.hasOwnProperty("valueOf"),
-  true,
-  'Date.prototype.hasOwnProperty("valueOf") must return true'
-);
+
+if (Date.prototype.hasOwnProperty("valueOf") !== true) {
+  throw new Test262Error('#1: The Date.prototype has the property "valueOf"');
+}
 
 reportCompare(0, 0);

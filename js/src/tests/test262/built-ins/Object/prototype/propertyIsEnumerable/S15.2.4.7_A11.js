@@ -6,15 +6,15 @@
 
 
 
-assert(
-  !!Object.prototype.propertyIsEnumerable.hasOwnProperty("length"),
-  'The value of !!Object.prototype.propertyIsEnumerable.hasOwnProperty("length") is expected to be true'
-);
 
-assert.sameValue(
-  Object.prototype.propertyIsEnumerable.length,
-  1,
-  'The value of Object.prototype.propertyIsEnumerable.length is expected to be 1'
-);
+
+if (!(Object.prototype.propertyIsEnumerable.hasOwnProperty("length"))) {
+  throw new Test262Error('#1: the Object.prototype.propertyIsEnumerable has length property');
+}
+
+
+if (Object.prototype.propertyIsEnumerable.length !== 1) {
+  throw new Test262Error('#2: The length property of the toObject method is 1');
+}
 
 reportCompare(0, 0);

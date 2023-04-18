@@ -6,15 +6,15 @@
 
 
 
-assert(
-  !!Object.prototype.valueOf.hasOwnProperty("length"),
-  'The value of !!Object.prototype.valueOf.hasOwnProperty("length") is expected to be true'
-);
 
-assert.sameValue(
-  Object.prototype.valueOf.length,
-  0,
-  'The value of Object.prototype.valueOf.length is expected to be 0'
-);
+
+if (!(Object.prototype.valueOf.hasOwnProperty("length"))) {
+  throw new Test262Error('#1: The length property of the toObject method is 0');
+}
+
+
+if (Object.prototype.valueOf.length !== 0) {
+  throw new Test262Error('#2: The length property of the toObject method is 0');
+}
 
 reportCompare(0, 0);

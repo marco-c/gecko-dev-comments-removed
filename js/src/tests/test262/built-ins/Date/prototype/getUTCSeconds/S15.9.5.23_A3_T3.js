@@ -8,15 +8,15 @@
 
 
 
-assert(
-  !Date.prototype.getUTCSeconds.propertyIsEnumerable('length'),
-  'The value of !Date.prototype.getUTCSeconds.propertyIsEnumerable(\'length\') is expected to be true'
-);
 
-for (var x in Date.prototype.getUTCSeconds) {
-  assert.notSameValue(x, "length", 'The value of x is not "length"');
+if (Date.prototype.getUTCSeconds.propertyIsEnumerable('length')) {
+  throw new Test262Error('#1: The Date.prototype.getUTCSeconds.length property has the attribute DontEnum');
 }
 
-
+for (var x in Date.prototype.getUTCSeconds) {
+  if (x === "length") {
+    throw new Test262Error('#2: The Date.prototype.getUTCSeconds.length has the attribute DontEnum');
+  }
+}
 
 reportCompare(0, 0);

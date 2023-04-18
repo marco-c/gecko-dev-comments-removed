@@ -9,9 +9,14 @@
 
 
 
-assert.throws(TypeError, () => {
+
+
+try {
   new isNaN();
-  throw new Test262Error();
-});
+} catch (e) {
+  if ((e instanceof TypeError) !== true) {
+    throw new Test262Error('#1.2: new isNaN() throw TypeError. Actual: ' + (e));
+  }
+}
 
 reportCompare(0, 0);

@@ -14,28 +14,24 @@
 var __pattern = RegExp("1?","mig");
 var __re = new RegExp(__pattern, (function(){})());
 
-assert.sameValue(
-  __re.source,
-  __pattern.source,
-  'The value of __re.source is expected to equal the value of __pattern.source'
-);
 
-assert.sameValue(
-  __re.multiline,
-  __pattern.multiline,
-  'The value of __re.multiline is expected to equal the value of __pattern.multiline'
-);
+if (__re.source !== __pattern.source) {
+  throw new Test262Error('#1: __pattern = RegExp("1?","mig"); __re = new RegExp(__pattern, (function(){})()); __re.source === __pattern.source. Actual: '+ (__re.source));
+}
 
-assert.sameValue(
-  __re.global,
-  __pattern.global,
-  'The value of __re.global is expected to equal the value of __pattern.global'
-);
 
-assert.sameValue(
-  __re.ignoreCase,
-  __pattern.ignoreCase,
-  'The value of __re.ignoreCase is expected to equal the value of __pattern.ignoreCase'
-);
+if (__re.multiline !== __pattern.multiline) {
+  throw new Test262Error('#2: __pattern = RegExp("1?","mig"); __re = new RegExp(__pattern, (function(){})()); __re.multiline === __pattern.multiline. Actual: ' + (__re.multiline));
+}
+
+
+if (__re.global !== __pattern.global) {
+  throw new Test262Error('#3: __pattern = RegExp("1?","mig"); __re = new RegExp(__pattern, (function(){})()); __re.global === __pattern.global. Actual: ' + (__re.global));
+}
+
+
+if (__re.ignoreCase !== __pattern.ignoreCase) {
+  throw new Test262Error('#4: __pattern = RegExp("1?","mig"); __re = new RegExp(__pattern, (function(){})()); __re.ignoreCase === __pattern.ignoreCase. Actual: ' + (__re.ignoreCase));
+}
 
 reportCompare(0, 0);

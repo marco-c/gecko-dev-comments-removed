@@ -11,9 +11,6 @@
 
 
 
-
-
-
 var actual = new Intl.NumberFormat().resolvedOptions();
 
 var actual2 = new Intl.NumberFormat().resolvedOptions();
@@ -28,7 +25,7 @@ assert.sameValue(actual.style, "decimal");
 assert.sameValue(actual.minimumIntegerDigits, 1);
 assert.sameValue(actual.minimumFractionDigits, 0);
 assert.sameValue(actual.maximumFractionDigits, 3);
-assert.sameValue(actual.useGrouping, "auto");
+assert.sameValue(actual.useGrouping, true);
 
 var dataPropertyDesc = { writable: true, enumerable: true, configurable: true };
 verifyProperty(actual, "locale", dataPropertyDesc);

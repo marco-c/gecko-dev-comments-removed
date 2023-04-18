@@ -9,6 +9,9 @@
 
 var __re = /undefined/;
 
-assert.sameValue(__re.test(), __re.exec() !== null, '__re.test() must return __re.exec() !== null');
+
+if (__re.test() !== (__re.exec() !== null)) {
+	throw new Test262Error('#0: __re = /undefined/; __re.test() === (__re.exec() !== null)');
+}
 
 reportCompare(0, 0);

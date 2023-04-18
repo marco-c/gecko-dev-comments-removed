@@ -13,6 +13,9 @@
 
 var __executed = /["'][^"']*["']/.test('alice cries out: don\'t');
 
-assert(!__executed, 'The value of !__executed is expected to be true');
+
+if (__executed) {
+	throw new Test262Error('#1: /["\'][^"\']*["\']/.test(\'alice cries out: don\'t\') === false');
+}
 
 reportCompare(0, 0);

@@ -12,27 +12,31 @@
 
 var f = Function("arg1,arg2,arg3", null);
 
-assert(f.hasOwnProperty('length'));
+
+if (!(f.hasOwnProperty('length'))) {
+  throw new Test262Error('#1: the function has length property.');
+}
 
 var flength = f.length;
 
 verifyNotWritable(f, "length", null, function() {});
 
-assert.sameValue(f.length, flength);
+
+if (f.length !== flength) {
+  throw new Test262Error('#2: the function.length property has the attributes ReadOnly');
+}
+
 
 try {
   f.length();
   throw new Test262Error('#3: the function.length property has the attributes ReadOnly');
 } catch (e) {
-  if (e instanceof Test262Error) {
-    throw e;
-  }
+  if (e instanceof Test262Error) throw e;
 }
+
 
 if (f.length !== 3) {
   throw new Test262Error('#4: the length property has the attributes { ReadOnly }');
 }
-
-
 
 reportCompare(0, 0);

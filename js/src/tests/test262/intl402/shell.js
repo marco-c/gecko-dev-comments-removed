@@ -38,11 +38,6 @@
 
 
 
-
-
-
-
-
 function testWithIntlConstructors(f) {
   var constructors = ["Collator", "NumberFormat", "DateTimeFormat"];
 
@@ -2038,69 +2033,15 @@ function testForUnwantedRegExpChanges(testFunc) {
 
 
 
-function allCalendars() {
+
+
+
+
+
+function isValidNumberingSystem(name) {
+
   
-  
-  return [
-    "buddhist",
-    "chinese",
-    "coptic",
-    "dangi",
-    "ethioaa",
-    "ethiopic",
-    "gregory",
-    "hebrew",
-    "indian",
-    "islamic",
-    "islamic-umalqura",
-    "islamic-tbla",
-    "islamic-civil",
-    "islamic-rgsa",
-    "iso8601",
-    "japanese",
-    "persian",
-    "roc",
-  ];
-}
-
-
-
-
-
-function allCollations() {
-  
-  
-  return [
-    "big5han",
-    "compat",
-    "dict",
-    "direct",
-    "ducet",
-    "emoji",
-    "eor",
-    "gb2312",
-    "phonebk",
-    "phonetic",
-    "pinyin",
-    "reformed",
-    "search",
-    "searchjl",
-    "standard",
-    "stroke",
-    "trad",
-    "unihan",
-    "zhuyin",
-  ];
-}
-
-
-
-
-
-function allNumberingSystems() {
-  
-  
-  return [
+  var numberingSystems = [
     "adlm",
     "ahom",
     "arab",
@@ -2189,20 +2130,6 @@ function allNumberingSystems() {
     "wara",
     "wcho",
   ];
-}
-
-
-
-
-
-
-
-
-
-
-function isValidNumberingSystem(name) {
-
-  var numberingSystems = allNumberingSystems();
 
   var excluded = [
     "finance",
@@ -2288,59 +2215,6 @@ var numberingSystemDigits = {
   wara: "𑣠𑣡𑣢𑣣𑣤𑣥𑣦𑣧𑣨𑣩",
   wcho: "𞋰𞋱𞋲𞋳𞋴𞋵𞋶𞋷𞋸𞋹",
 };
-
-
-
-
-
-function allSimpleSanctionedUnits() {
-  
-  return [
-    "acre",
-    "bit",
-    "byte",
-    "celsius",
-    "centimeter",
-    "day",
-    "degree",
-    "fahrenheit",
-    "fluid-ounce",
-    "foot",
-    "gallon",
-    "gigabit",
-    "gigabyte",
-    "gram",
-    "hectare",
-    "hour",
-    "inch",
-    "kilobit",
-    "kilobyte",
-    "kilogram",
-    "kilometer",
-    "liter",
-    "megabit",
-    "megabyte",
-    "meter",
-    "mile",
-    "mile-scandinavian",
-    "milliliter",
-    "millimeter",
-    "millisecond",
-    "minute",
-    "month",
-    "ounce",
-    "percent",
-    "petabyte",
-    "pound",
-    "second",
-    "stone",
-    "terabit",
-    "terabyte",
-    "week",
-    "yard",
-    "year",
-  ];
-}
 
 
 

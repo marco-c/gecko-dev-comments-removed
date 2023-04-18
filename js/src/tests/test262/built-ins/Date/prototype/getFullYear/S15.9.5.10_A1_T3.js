@@ -7,15 +7,15 @@
 
 
 
-assert(
-  !Date.prototype.propertyIsEnumerable('getFullYear'),
-  'The value of !Date.prototype.propertyIsEnumerable(\'getFullYear\') is expected to be true'
-);
 
-for (var x in Date.prototype) {
-  assert.notSameValue(x, "getFullYear", 'The value of x is not "getFullYear"');
+if (Date.prototype.propertyIsEnumerable('getFullYear')) {
+  throw new Test262Error('#1: The Date.prototype.getFullYear property has the attribute DontEnum');
 }
 
-
+for (var x in Date.prototype) {
+  if (x === "getFullYear") {
+    throw new Test262Error('#2: The Date.prototype.getFullYear has the attribute DontEnum');
+  }
+}
 
 reportCompare(0, 0);

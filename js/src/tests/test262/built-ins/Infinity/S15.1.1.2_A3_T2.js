@@ -7,8 +7,10 @@
 
 
 
-assert.sameValue(delete Infinity, false, 'The value of `delete Infinity` is expected to be false');
 
 
+if (delete Infinity !== false) {
+  throw new Test262Error('#1: delete Infinity === false. Actual: ' + (delete Infinity));
+}
 
 reportCompare(0, 0);

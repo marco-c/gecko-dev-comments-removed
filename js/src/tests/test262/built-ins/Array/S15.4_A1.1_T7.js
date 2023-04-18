@@ -9,13 +9,16 @@
 
 
 
+
 var x = [];
 x[new Number(0)] = 0;
 assert.sameValue(x[0], 0, 'The value of x[0] is expected to be 0');
 
+
 var y = [];
 y[new Number(1)] = 1;
 assert.sameValue(y[1], 1, 'The value of y[1] is expected to be 1');
+
 
 var z = [];
 z[new Number(1.1)] = 1;

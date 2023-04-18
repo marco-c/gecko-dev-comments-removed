@@ -14,17 +14,16 @@
 
 
 
-assert.sameValue(
-  typeof Object.prototype.propertyIsEnumerable,
-  "function",
-  'The value of `typeof Object.prototype.propertyIsEnumerable` is expected to be "function"'
-);
 
-assert(
-  !Object.prototype.propertyIsEnumerable("propertyIsEnumerable"),
-  'The value of !Object.prototype.propertyIsEnumerable("propertyIsEnumerable") is expected to be true'
-);
 
+if (typeof Object.prototype.propertyIsEnumerable !== "function") {
+  throw new Test262Error('#1: hasOwnProperty method is defined');
+}
+
+
+if (Object.prototype.propertyIsEnumerable("propertyIsEnumerable")) {
+  throw new Test262Error('#2: hasOwnProperty method works properly');
+}
 
 
 reportCompare(0, 0);

@@ -11,6 +11,7 @@
 
 
 
+
 assert.sameValue(Promise[Symbol.species], Promise, "Promise[Symbol.species] is Promise");
 
 verifyNotWritable(Promise, Symbol.species, Symbol.species);

@@ -7,15 +7,15 @@
 
 
 
+
 for (var x in Number) {
-  assert.notSameValue(x, "MIN_VALUE", 'The value of x is not "MIN_VALUE"');
+  if (x === "MIN_VALUE") {
+    throw new Test262Error('#1: Number.MIN_VALUE has the attribute DontEnum');
+  }
 }
 
-assert(
-  !Number.propertyIsEnumerable('MIN_VALUE'),
-  'The value of !Number.propertyIsEnumerable(\'MIN_VALUE\') is expected to be true'
-);
-
-
+if (Number.propertyIsEnumerable('MIN_VALUE')) {
+  throw new Test262Error('#2: Number.MIN_VALUE has the attribute DontEnum');
+}
 
 reportCompare(0, 0);

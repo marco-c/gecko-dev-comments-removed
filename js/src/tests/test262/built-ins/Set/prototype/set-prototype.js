@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(this, "Set");
+verifyWritable(this, "Set");
+verifyConfigurable(this, "Set");
+
+reportCompare(0, 0);

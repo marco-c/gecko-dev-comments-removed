@@ -11,19 +11,16 @@
 
 __instance.test = RegExp.prototype.test;
 
+
 try {
   __instance.test("message to investigate");
   throw new Test262Error('#1.1: __instance.test = RegExp.prototype.test; __instance.test("message to investigate"); function __instance(){}');
 } catch (e) {
-  assert.sameValue(
-    e instanceof TypeError,
-    true,
-    'The result of evaluating (e instanceof TypeError) is expected to be true'
-  );
+  if ((e instanceof TypeError) !== true) {
+    throw new Test262Error('#1.2: __instance.test = RegExp.prototype.test; __instance.test("message to investigate"); function __instance(){}. Actual: ' + (e));
+  }
 }
 
 function __instance(){};
-
-
 
 reportCompare(0, 0);

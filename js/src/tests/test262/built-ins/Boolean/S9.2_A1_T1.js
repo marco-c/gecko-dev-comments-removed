@@ -9,9 +9,24 @@
 
 
 
-assert.sameValue(Boolean(undefined), false, 'Boolean(undefined) must return false');
-assert.sameValue(Boolean(void 0), false, 'Boolean(void 0) must return false');
-assert.sameValue(Boolean(eval("var x")), false, 'Boolean(eval("var x")) must return false');
-assert.sameValue(Boolean(), false, 'Boolean() must return false');
+
+if (Boolean(undefined) !== false) {
+  throw new Test262Error('#1: Boolean(undefined) === false. Actual: ' + (Boolean(undefined)));
+}
+
+
+if (Boolean(void 0) !== false) {
+  throw new Test262Error('#2: Boolean(undefined) === false. Actual: ' + (Boolean(undefined)));
+}
+
+
+if (Boolean(eval("var x")) !== false) {
+  throw new Test262Error('#3: Boolean(eval("var x")) === false. Actual: ' + (Boolean(eval("var x"))));
+}
+
+
+if (Boolean() !== false) {
+  throw new Test262Error('#4: Boolean() === false. Actual: ' + (Boolean()));
+}
 
 reportCompare(0, 0);

@@ -18,7 +18,14 @@
 
 var f = new Function("return arguments[0];");
 
-assert(f instanceof Function, 'The result of evaluating (f instanceof Function) is expected to be true');
-assert.sameValue(f("A"), "A", 'f("A") must return "A"');
+
+if (!(f instanceof Function)) {
+  throw new Test262Error('#3: When the Function constructor is called with one argument then body be that argument and the following steps are taken...');
+}
+
+
+if (f("A") !== "A") {
+  throw new Test262Error('#2: When the Function constructor is called with one argument then body be that argument and the following steps are taken...');
+}
 
 reportCompare(0, 0);

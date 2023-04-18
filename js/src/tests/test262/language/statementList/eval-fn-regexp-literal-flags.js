@@ -36,7 +36,7 @@
 
 
 
-var result = eval('function fn() {}/1/g;');
+var result = eval('function fn() {}/1/g;;');
 
 assert.sameValue(Object.getPrototypeOf(result), RegExp.prototype);
 assert.sameValue(result.flags, 'g');

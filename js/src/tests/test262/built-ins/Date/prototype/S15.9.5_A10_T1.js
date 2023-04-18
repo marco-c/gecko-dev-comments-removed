@@ -6,10 +6,9 @@
 
 
 
-assert.sameValue(
-  Date.prototype.hasOwnProperty("getFullYear"),
-  true,
-  'Date.prototype.hasOwnProperty("getFullYear") must return true'
-);
+
+if (Date.prototype.hasOwnProperty("getFullYear") !== true) {
+  throw new Test262Error('#1: The Date.prototype has the property "getFullYear"');
+}
 
 reportCompare(0, 0);

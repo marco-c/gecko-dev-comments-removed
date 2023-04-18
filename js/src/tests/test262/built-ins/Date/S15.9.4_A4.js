@@ -8,6 +8,10 @@
 
 
 
-assert(Function.prototype.isPrototypeOf(Date), 'Function.prototype.isPrototypeOf(Date) must return true');
+
+
+if (!(Function.prototype.isPrototypeOf(Date))) {
+  throw new Test262Error('#1: the value of the internal [[Prototype]] property of the Date constructor is the Function prototype object.');
+}
 
 reportCompare(0, 0);

@@ -6,8 +6,20 @@
 
 
 
-assert.sameValue(Number("9"), 9, 'Number("9") must return 9');
-assert.sameValue(+("0x9"), 9, 'The value of `+("0x9")` is expected to be 9');
-assert.sameValue(Number("0X9"), 9, 'Number("0X9") must return 9');
+
+
+if (Number("9") !== 9) {
+  throw new Test262Error('#1: Number("9") === 9. Actual: ' + (Number("9")));
+}
+
+
+if (+("0x9") !== 9) {
+  throw new Test262Error('#2: +("0x9") === 9. Actual: ' + (+("0x9")));
+}
+
+
+if (Number("0X9") !== 9) {
+  throw new Test262Error('#3: Number("0X9") === 9. Actual: ' + (Number("0X9")));
+}
 
 reportCompare(0, 0);

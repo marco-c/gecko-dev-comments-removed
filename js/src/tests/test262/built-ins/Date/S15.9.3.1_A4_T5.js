@@ -16,36 +16,80 @@
 
 
 
-function PoisonedValueOf(val) {
+var myObj = function(val) {
   this.value = val;
   this.valueOf = function() {
-    throw new Test262Error();
+    throw "valueOf-" + this.value;
   };
-  this.toString = function() {};
+  this.toString = function() {
+    throw "toString-" + this.value;
+  };
+};
+
+
+try {
+  var x1 = new Date(new myObj(1), new myObj(2), new myObj(3), new myObj(4), new myObj(5), new myObj(6));
+  throw new Test262Error("#1: The 1st step is calling ToNumber(year)");
+}
+catch (e) {
+  if (e !== "valueOf-1") {
+    throw new Test262Error("#1: The 1st step is calling ToNumber(year)");
+  }
 }
 
-assert.throws(Test262Error, () => {
-  new Date(new PoisonedValueOf(1), new PoisonedValueOf(2), new PoisonedValueOf(3), new PoisonedValueOf(4), new PoisonedValueOf(5), new PoisonedValueOf(6));
-}, '`new Date(new PoisonedValueOf(1), new PoisonedValueOf(2), new PoisonedValueOf(3), new PoisonedValueOf(4), new PoisonedValueOf(5), new PoisonedValueOf(6))` throws a Test262Error exception');
 
-assert.throws(Test262Error, () => {
-  new Date(1, new PoisonedValueOf(2), new PoisonedValueOf(3), new PoisonedValueOf(4), new PoisonedValueOf(5), new PoisonedValueOf(6));
-}, '`new Date(1, new PoisonedValueOf(2), new PoisonedValueOf(3), new PoisonedValueOf(4), new PoisonedValueOf(5), new PoisonedValueOf(6))` throws a Test262Error exception');
+try {
+  var x2 = new Date(1, new myObj(2), new myObj(3), new myObj(4), new myObj(5), new myObj(6));
+  throw new Test262Error("#2: The 2nd step is calling ToNumber(month)");
+}
+catch (e) {
+  if (e !== "valueOf-2") {
+    throw new Test262Error("#2: The 2nd step is calling ToNumber(month)");
+  }
+}
 
-assert.throws(Test262Error, () => {
-  new Date(1, 2, new PoisonedValueOf(3), new PoisonedValueOf(4), new PoisonedValueOf(5), new PoisonedValueOf(6));
-}, '`new Date(1, 2, new PoisonedValueOf(3), new PoisonedValueOf(4), new PoisonedValueOf(5), new PoisonedValueOf(6))` throws a Test262Error exception');
 
-assert.throws(Test262Error, () => {
-  new Date(1, 2, 3, new PoisonedValueOf(4), new PoisonedValueOf(5), new PoisonedValueOf(6));
-}, '`new Date(1, 2, 3, new PoisonedValueOf(4), new PoisonedValueOf(5), new PoisonedValueOf(6))` throws a Test262Error exception');
+try {
+  var x3 = new Date(1, 2, new myObj(3), new myObj(4), new myObj(5), new myObj(6));
+  throw new Test262Error("#3: The 3rd step is calling ToNumber(date)");
+}
+catch (e) {
+  if (e !== "valueOf-3") {
+    throw new Test262Error("#3: The 3rd step is calling ToNumber(date)");
+  }
+}
 
-assert.throws(Test262Error, () => {
-  new Date(1, 2, 3, 4, new PoisonedValueOf(5), new PoisonedValueOf(6));
-}, '`new Date(1, 2, 3, 4, new PoisonedValueOf(5), new PoisonedValueOf(6))` throws a Test262Error exception');
 
-assert.throws(Test262Error, () => {
-  new Date(1, 2, 3, 4, 5, new PoisonedValueOf(6));
-}, '`new Date(1, 2, 3, 4, 5, new PoisonedValueOf(6))` throws a Test262Error exception');
+try {
+  var x4 = new Date(1, 2, 3, new myObj(4), new myObj(5), new myObj(6));
+  throw new Test262Error("#4: The 4th step is calling ToNumber(hours)");
+}
+catch (e) {
+  if (e !== "valueOf-4") {
+    throw new Test262Error("#4: The 4th step is calling ToNumber(hours)");
+  }
+}
+
+
+try {
+  var x5 = new Date(1, 2, 3, 4, new myObj(5), new myObj(6));
+  throw new Test262Error("#5: The 5th step is calling ToNumber(minutes)");
+}
+catch (e) {
+  if (e !== "valueOf-5") {
+    throw new Test262Error("#5: The 5th step is calling ToNumber(minutes)");
+  }
+}
+
+
+try {
+  var x6 = new Date(1, 2, 3, 4, 5, new myObj(6));
+  throw new Test262Error("#6: The 6th step is calling ToNumber(seconds)");
+}
+catch (e) {
+  if (e !== "valueOf-6") {
+    throw new Test262Error("#6: The 6th step is calling ToNumber(seconds)");
+  }
+}
 
 reportCompare(0, 0);

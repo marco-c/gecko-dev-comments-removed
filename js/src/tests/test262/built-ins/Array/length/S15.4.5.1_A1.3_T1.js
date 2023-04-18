@@ -8,25 +8,31 @@
 
 
 
+
 var x = [];
 x.length = true;
 assert.sameValue(x.length, 1, 'The value of x.length is expected to be 1');
+
 
 x = [0];
 x.length = null;
 assert.sameValue(x.length, 0, 'The value of x.length is expected to be 0');
 
+
 x = [0];
 x.length = new Boolean(false);
 assert.sameValue(x.length, 0, 'The value of x.length is expected to be 0');
+
 
 x = [];
 x.length = new Number(1);
 assert.sameValue(x.length, 1, 'The value of x.length is expected to be 1');
 
+
 x = [];
 x.length = "1";
 assert.sameValue(x.length, 1, 'The value of x.length is expected to be 1');
+
 
 x = [];
 x.length = new String("1");

@@ -13,24 +13,44 @@
 
 
 
-assert.sameValue(Number(NaN), NaN, 'Number(true) returns NaN');
+assert.sameValue(Number(NaN), NaN, "NaN");
 
-assert.sameValue(Number(+0), +0, 'Number(+0) must return +0');
-assert.sameValue(Number(-0), -0, 'Number(-0) must return -0');
 
-assert.sameValue(
-  Number(Number.POSITIVE_INFINITY),
-  Number.POSITIVE_INFINITY,
-  'Number(Number.POSITIVE_INFINITY) returns Number.POSITIVE_INFINITY'
-);
+if (Number(+0) !== +0) {
+  throw new Test262Error('#2.1: Number(+0) === 0. Actual: ' + (Number(+0)));
+} else {
+  if (1 / Number(+0) !== Number.POSITIVE_INFINITY) {
+    throw new Test262Error('#2.2: Number(+0) === +0. Actual: -0');
+  }
+}
 
-assert.sameValue(
-  Number(Number.NEGATIVE_INFINITY),
-  Number.NEGATIVE_INFINITY,
-  'Number(Number.NEGATIVE_INFINITY) returns Number.NEGATIVE_INFINITY'
-);
 
-assert.sameValue(Number(Number.MAX_VALUE), Number.MAX_VALUE, 'Number(Number.MAX_VALUE) returns Number.MAX_VALUE');
-assert.sameValue(Number(Number.MIN_VALUE), Number.MIN_VALUE, 'Number(Number.MIN_VALUE) returns Number.MIN_VALUE');
+if (Number(-0) !== -0) {
+  throw new Test262Error('#3.1: Number(-0) === 0. Actual: ' + (Number(-0)));
+} else {
+  if (1 / Number(-0) !== Number.NEGATIVE_INFINITY) {
+    throw new Test262Error('#3.2: Number(-0) === -0. Actual: +0');
+  }
+}
+
+
+if (Number(Number.POSITIVE_INFINITY) !== Number.POSITIVE_INFINITY) {
+  throw new Test262Error('#4: Number(+Infinity) === +Infinity. Actual: ' + (Number(+Infinity)));
+}
+
+
+if (Number(Number.NEGATIVE_INFINITY) !== Number.NEGATIVE_INFINITY) {
+  throw new Test262Error('#5: Number(-Infinity) === -Infinity. Actual: ' + (Number(-Infinity)));
+}
+
+
+if (Number(Number.MAX_VALUE) !== Number.MAX_VALUE) {
+  throw new Test262Error('#6: Number(Number.MAX_VALUE) === Number.MAX_VALUE. Actual: ' + (Number(Number.MAX_VALUE)));
+}
+
+
+if (Number(Number.MIN_VALUE) !== Number.MIN_VALUE) {
+  throw new Test262Error('#7: Number(Number.MIN_VALUE) === Number.MIN_VALUE. Actual: ' + (Number(Number.MIN_VALUE)));
+}
 
 reportCompare(0, 0);

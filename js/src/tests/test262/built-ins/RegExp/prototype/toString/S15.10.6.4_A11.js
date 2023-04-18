@@ -6,16 +6,15 @@
 
 
 
-assert.sameValue(
-  RegExp.prototype.toString.hasOwnProperty("length"),
-  true,
-  'RegExp.prototype.toString.hasOwnProperty("length") must return true'
-);
 
-assert.sameValue(
-  RegExp.prototype.toString.length,
-  0,
-  'The value of RegExp.prototype.toString.length is expected to be 0'
-);
+
+if (RegExp.prototype.toString.hasOwnProperty("length") !== true) {
+	throw new Test262Error('#1: RegExp.prototype.toString.hasOwnProperty(\'length\') === true');
+}
+
+
+if (RegExp.prototype.toString.length !== 0) {
+	throw new Test262Error('#2: RegExp.prototype.toString.length === 0. Actual: ' + (RegExp.prototype.toString.length));
+}
 
 reportCompare(0, 0);

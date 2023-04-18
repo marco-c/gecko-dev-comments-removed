@@ -21,12 +21,16 @@ testWithTypedArrayConstructors(function(TA) {
   var ab = ta.buffer;
 
   var called = false;
-  ta.sort(function(a, b) {
-    
-    $DETACHBUFFER(ab);
-    return {
-      [Symbol.toPrimitive]() { called = true; }
-    };
+  assert.throws(TypeError, function() {
+    ta.sort(function(a, b) {
+      
+      
+      
+      $DETACHBUFFER(ab);
+      return {
+        [Symbol.toPrimitive]() { called = true; }
+      };
+    });
   });
 
   assert.sameValue(true, called);

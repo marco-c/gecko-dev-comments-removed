@@ -10,16 +10,16 @@
 
 
 
-assert(
-  !!Object.prototype.propertyIsEnumerable.hasOwnProperty('length'),
-  'The value of !!Object.prototype.propertyIsEnumerable.hasOwnProperty("length") is expected to be true'
-);
 
-assert(
-  !!delete Object.prototype.propertyIsEnumerable.length,
-  'The value of !!delete Object.prototype.propertyIsEnumerable.length is expected to be true'
-);
 
+if (!(Object.prototype.propertyIsEnumerable.hasOwnProperty('length'))) {
+  throw new Test262Error('#0: the Object.prototype.propertyIsEnumerable has length property');
+}
+
+
+if (!delete Object.prototype.propertyIsEnumerable.length) {
+  throw new Test262Error('#1: The Object.prototype.propertyIsEnumerable.length property does not have the attributes DontDelete');
+}
 
 
 reportCompare(0, 0);

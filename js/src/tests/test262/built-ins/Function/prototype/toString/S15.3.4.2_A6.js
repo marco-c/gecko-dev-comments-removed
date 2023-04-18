@@ -8,10 +8,10 @@
 
 
 
-assert.sameValue(
-  Function.prototype.toString.prototype,
-  undefined,
-  'The value of Function.prototype.toString.prototype is expected to equal undefined'
-);
+
+
+if (Function.prototype.toString.prototype !== undefined) {
+  throw new Test262Error('#1: Function.prototype.toString has not prototype property'+Function.prototype.toString.prototype);
+}
 
 reportCompare(0, 0);
