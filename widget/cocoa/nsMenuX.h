@@ -116,7 +116,7 @@ class nsMenuX final : public nsMenuParentX,
   
   
   
-  bool OnOpen();
+  MOZ_CAN_RUN_SCRIPT bool OnOpen();
 
   void PopupShowingEventWasSentAndApprovedExternally() { DidFirePopupShowing(); }
 
@@ -124,7 +124,8 @@ class nsMenuX final : public nsMenuParentX,
   
   
   
-  void MenuOpened();
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void MenuOpened();
 
   
   
@@ -203,22 +204,24 @@ class nsMenuX final : public nsMenuParentX,
   NSInteger CalculateNativeInsertionPoint(const MenuChild& aChild);
 
   
-  void MenuOpenedAsync();
+  MOZ_CAN_RUN_SCRIPT void MenuOpenedAsync();
 
   
   
   
   
   
-  void MenuClosedAsync();
+  MOZ_CAN_RUN_SCRIPT void MenuClosedAsync();
 
   
   
-  void FlushMenuOpenedRunnable();
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void FlushMenuOpenedRunnable();
 
   
   
-  void FlushMenuClosedRunnable();
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void FlushMenuClosedRunnable();
 
   
   
