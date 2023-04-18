@@ -11,11 +11,15 @@ add_task(async function() {
   
   await pushPref("devtools.toolbox.footer.height", 500);
 
-  const { tab, view } = await openFontInspectorForURL(TEST_URI);
-  const viewDoc = view.document;
+  const { view } = await openFontInspectorForURL(TEST_URI);
+  await testFontHighlighting(view);
 
-  const fontEls = getUsedFontsEls(viewDoc);
+  info("Check that highlighting still works after reloading the page");
+  await reloadBrowser();
+  await testFontHighlighting(view);
+});
 
+async function testFontHighlighting(view) {
   
   
   
@@ -23,15 +27,26 @@ add_task(async function() {
   
   const expectedSelectionChangeEvents = [2, 2, 2, 1, 1];
 
+  const viewDoc = view.document;
+
+  
+  const fontEls = await waitFor(() => {
+    const els = getUsedFontsEls(viewDoc);
+    if (els.length !== expectedSelectionChangeEvents.length) {
+      return false;
+    }
+
+    return els;
+  });
+
   for (let i = 0; i < fontEls.length; i++) {
-    info(`Mousing over and out of font number ${i} in the list`);
+    info(
+      `Mousing over and out of font number ${i} ("${fontEls[i].textContent}") in the list`
+    );
 
     
     const nameEl = fontEls[i];
-    let onEvents = waitForNSelectionEvents(
-      tab,
-      expectedSelectionChangeEvents[i]
-    );
+    let onEvents = waitForNSelectionEvents(expectedSelectionChangeEvents[i]);
     EventUtils.synthesizeMouse(
       nameEl,
       2,
@@ -48,7 +63,7 @@ add_task(async function() {
 
     
     const otherEl = viewDoc.querySelector("body");
-    onEvents = waitForNSelectionEvents(tab, 1);
+    onEvents = waitForNSelectionEvents(1);
     EventUtils.synthesizeMouse(
       otherEl,
       2,
@@ -60,24 +75,26 @@ add_task(async function() {
 
     ok(true, "1 selectionchange events detected on mouseout");
   }
-});
+}
 
-async function waitForNSelectionEvents(tab, numberOfTimes) {
-  await SpecialPowers.spawn(tab.linkedBrowser, [numberOfTimes], async function(
-    n
-  ) {
-    const win = content.wrappedJSObject;
+async function waitForNSelectionEvents(numberOfTimes) {
+  await SpecialPowers.spawn(
+    gBrowser.selectedBrowser,
+    [numberOfTimes],
+    async function(n) {
+      const win = content.wrappedJSObject;
 
-    await new Promise(resolve => {
-      let received = 0;
-      win.document.addEventListener("selectionchange", function listen() {
-        received++;
+      await new Promise(resolve => {
+        let received = 0;
+        win.document.addEventListener("selectionchange", function listen() {
+          received++;
 
-        if (received === n) {
-          win.document.removeEventListener("selectionchange", listen);
-          resolve();
-        }
+          if (received === n) {
+            win.document.removeEventListener("selectionchange", listen);
+            resolve();
+          }
+        });
       });
-    });
-  });
+    }
+  );
 }
