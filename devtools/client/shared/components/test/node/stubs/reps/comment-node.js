@@ -4,22 +4,33 @@
 
 "use strict";
 
+
+
+
 const stubs = new Map();
-stubs.set("Comment", {
-  type: "object",
-  actor: "server1.conn1.child1/obj47",
-  class: "Comment",
-  extensible: true,
-  frozen: false,
-  sealed: false,
-  ownPropertyLength: 0,
-  preview: {
-    kind: "DOMNode",
-    nodeType: 8,
-    nodeName: "#comment",
-    textContent:
-      "test\nand test\nand test\nand test\nand test\nand test\nand test",
+stubs.set(`Comment`, {
+  "_grip": {
+    "type": "object",
+    "actor": "server0.conn0.windowGlobal4294967299/obj26",
+    "class": "Comment",
+    "ownPropertyLength": 0,
+    "extensible": true,
+    "frozen": false,
+    "sealed": false,
+    "isError": false,
+    "preview": {
+      "kind": "DOMNode",
+      "nodeType": 8,
+      "nodeName": "#comment",
+      "isConnected": false,
+      "textContent": "test\nand test\nand test\nand test\nand test\nand test\nand test"
+    },
+    "contentDomReference": {
+      "browsingContextId": 51,
+      "id": 0.7876406289746626
+    }
   },
+  "actorID": "server0.conn0.windowGlobal4294967299/obj26"
 });
 
 module.exports = stubs;

@@ -26,6 +26,14 @@ const EXPRESSIONS_BY_FILE = {
       }`,
     ],
   ]),
+  "comment-node.js": new Map([
+    [
+      "Comment",
+      `{
+      document.createComment("test\\nand test\\nand test\\nand test\\nand test\\nand test\\nand test")
+    }`,
+    ],
+  ]),
   "infinity.js": new Map([
     ["Infinity", `Infinity`],
     ["NegativeInfinity", `-Infinity`],
@@ -40,7 +48,6 @@ const EXPRESSIONS_BY_FILE = {
   ]),
   "undefined.js": new Map([["Undefined", `undefined`]]),
   "window.js": new Map([["Window", `window`]]),
-  
   
   
   
