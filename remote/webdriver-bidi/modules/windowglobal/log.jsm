@@ -51,38 +51,6 @@ class LogModule extends Module {
 
 
 
-  _applySessionData(params) {
-    
-    
-    const { category, added = [], removed = [] } = params;
-    if (category === "event") {
-      for (const event of added) {
-        this._subscribeEvent(event);
-      }
-      for (const event of removed) {
-        this._unsubscribeEvent(event);
-      }
-    }
-  }
-
-  _subscribeEvent(event) {
-    if (event === "log.entryAdded") {
-      this.#consoleAPIListener.startListening();
-      this.#consoleMessageListener.startListening();
-    }
-  }
-
-  _unsubscribeEvent(event) {
-    if (event === "log.entryAdded") {
-      this.#consoleAPIListener.stopListening();
-      this.#consoleMessageListener.stopListening();
-    }
-  }
-
-  
-
-
-
 
 
 
@@ -111,6 +79,22 @@ class LogModule extends Module {
     return { callFrames };
   }
 
+  #getLogEntryLevelFromConsoleMethod(method) {
+    switch (method) {
+      case "assert":
+      case "error":
+        return "error";
+      case "debug":
+      case "trace":
+        return "debug";
+      case "warn":
+      case "warning":
+        return "warning";
+      default:
+        return "info";
+    }
+  }
+
   #onConsoleAPIMessage = (eventName, data = {}) => {
     const {
       
@@ -125,7 +109,7 @@ class LogModule extends Module {
     
 
     
-    const logEntrylevel = this._getLogEntryLevelFromConsoleMethod(method);
+    const logEntrylevel = this.#getLogEntryLevelFromConsoleMethod(method);
 
     
     const timestamp = timeStamp || Date.now();
@@ -195,19 +179,35 @@ class LogModule extends Module {
     this.emitProtocolEvent("log.entryAdded", entry);
   };
 
-  _getLogEntryLevelFromConsoleMethod(method) {
-    switch (method) {
-      case "assert":
-      case "error":
-        return "error";
-      case "debug":
-      case "trace":
-        return "debug";
-      case "warn":
-      case "warning":
-        return "warning";
-      default:
-        return "info";
+  
+
+
+
+  _applySessionData(params) {
+    
+    
+    const { category, added = [], removed = [] } = params;
+    if (category === "event") {
+      for (const event of added) {
+        this._subscribeEvent(event);
+      }
+      for (const event of removed) {
+        this._unsubscribeEvent(event);
+      }
+    }
+  }
+
+  _subscribeEvent(event) {
+    if (event === "log.entryAdded") {
+      this.#consoleAPIListener.startListening();
+      this.#consoleMessageListener.startListening();
+    }
+  }
+
+  _unsubscribeEvent(event) {
+    if (event === "log.entryAdded") {
+      this.#consoleAPIListener.stopListening();
+      this.#consoleMessageListener.stopListening();
     }
   }
 }
