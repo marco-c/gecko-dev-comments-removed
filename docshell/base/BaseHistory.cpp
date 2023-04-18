@@ -108,10 +108,6 @@ void BaseHistory::RegisterVisitedCallback(nsIURI* aURI, Link* aLink) {
   
   MOZ_DIAGNOSTIC_ASSERT(!links->mLinks.Contains(aLink),
                         "Already tracking this Link object!");
-  
-  
-  MOZ_DIAGNOSTIC_ASSERT(links->mStatus != VisitedStatus::Visited,
-                        "We don't keep tracking known-visited links");
 
   links->mLinks.AppendElement(aLink);
 
@@ -198,15 +194,6 @@ void BaseHistory::NotifyVisitedInThisProcess(nsIURI* aURI,
   const bool visited = aStatus == VisitedStatus::Visited;
   for (Link* link : links.mLinks.BackwardRange()) {
     link->VisitedQueryFinished(visited);
-  }
-
-  
-  
-  
-  
-  
-  if (visited) {
-    entry.Remove();
   }
 }
 

@@ -68,12 +68,6 @@ void Link::VisitedQueryFinished(bool aVisited) {
   
   mState = newState;
 
-  
-  
-  if (aVisited) {
-    mRegistered = false;
-  }
-
   MOZ_ASSERT(LinkState() == NS_EVENT_STATE_VISITED ||
                  LinkState() == NS_EVENT_STATE_UNVISITED,
              "Unexpected state obtained from LinkState()!");
