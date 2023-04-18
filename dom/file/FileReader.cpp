@@ -501,6 +501,14 @@ JSObject* FileReader::WrapObject(JSContext* aCx,
 }
 
 void FileReader::StartProgressEventTimer() {
+  if (!NS_IsMainThread() && !mWeakWorkerRef) {
+    
+    
+    
+    
+    return;
+  }
+
   if (!mProgressNotifier) {
     mProgressNotifier = NS_NewTimer(mTarget);
   }
