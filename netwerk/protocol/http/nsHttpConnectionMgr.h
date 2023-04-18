@@ -86,9 +86,6 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   [[nodiscard]] nsresult RemoveIdleConnection(nsHttpConnection*);
 
   
-  [[nodiscard]] nsresult DoSingleConnectionCleanup(nsHttpConnectionInfo*);
-
-  
   
   
   void ReportSpdyConnection(nsHttpConnection*, bool usingSpdy);
@@ -320,7 +317,6 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   void OnMsgCompleteUpgrade(int32_t, ARefBase*);
   void OnMsgUpdateParam(int32_t, ARefBase*);
   void OnMsgDoShiftReloadConnectionCleanup(int32_t, ARefBase*);
-  void OnMsgDoSingleConnectionCleanup(int32_t, ARefBase*);
   void OnMsgProcessFeedback(int32_t, ARefBase*);
   void OnMsgProcessAllSpdyPendingQ(int32_t, ARefBase*);
   void OnMsgUpdateRequestTokenBucket(int32_t, ARefBase*);
