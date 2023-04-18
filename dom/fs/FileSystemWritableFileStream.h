@@ -9,7 +9,11 @@
 
 #include "mozilla/dom/WritableStream.h"
 
-namespace mozilla::dom {
+namespace mozilla {
+
+class ErrorResult;
+
+namespace dom {
 
 class ArrayBufferViewOrArrayBufferOrBlobOrUSVStringOrWriteParams;
 
@@ -25,16 +29,18 @@ class FileSystemWritableFileStream final : public WritableStream {
 
   
   already_AddRefed<Promise> Write(
-      const ArrayBufferViewOrArrayBufferOrBlobOrUSVStringOrWriteParams& aData);
+      const ArrayBufferViewOrArrayBufferOrBlobOrUSVStringOrWriteParams& aData,
+      ErrorResult& aError);
 
-  already_AddRefed<Promise> Seek(uint64_t aPosition);
+  already_AddRefed<Promise> Seek(uint64_t aPosition, ErrorResult& aError);
 
-  already_AddRefed<Promise> Truncate(uint64_t aSize);
+  already_AddRefed<Promise> Truncate(uint64_t aSize, ErrorResult& aError);
 
  private:
   ~FileSystemWritableFileStream() = default;
 };
 
+}  
 }  
 
 #endif  

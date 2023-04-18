@@ -13,7 +13,11 @@
 
 class nsIGlobalObject;
 
-namespace mozilla::dom {
+namespace mozilla {
+
+class ErrorResult;
+
+namespace dom {
 
 class Promise;
 
@@ -31,7 +35,7 @@ class FileSystemDirectoryIterator : public nsISupports, public nsWrapperCache {
                        JS::Handle<JSObject*> aGivenProto) override;
 
   
-  already_AddRefed<Promise> Next();
+  already_AddRefed<Promise> Next(ErrorResult& aError);
 
  protected:
   virtual ~FileSystemDirectoryIterator() = default;
@@ -39,6 +43,7 @@ class FileSystemDirectoryIterator : public nsISupports, public nsWrapperCache {
   nsCOMPtr<nsIGlobalObject> mGlobal;
 };
 
+}  
 }  
 
 #endif  
