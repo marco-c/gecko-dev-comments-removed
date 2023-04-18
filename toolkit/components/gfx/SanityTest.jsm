@@ -200,13 +200,6 @@ function verifyLayersRendering(ctx) {
 }
 
 function testCompositor(test, win, ctx) {
-  if (win.windowUtils.layerManagerType.startsWith("WebRender")) {
-    
-    
-    reportResult(TEST_PASSED);
-    return true;
-  }
-
   takeWindowSnapshot(win, ctx);
   var testPassed = true;
 
@@ -429,6 +422,14 @@ SanityTest.prototype = {
         ",chrome,titlebar=0,scrollbars=0,popup=1",
       null
     );
+
+    let appWin = sanityTest.docShell.treeOwner
+      .QueryInterface(Ci.nsIInterfaceRequestor)
+      .getInterface(Ci.nsIAppWindow);
+
+    
+    
+    appWin.needFastSnaphot();
 
     
     

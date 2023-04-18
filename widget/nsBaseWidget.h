@@ -620,6 +620,8 @@ class nsBaseWidget : public nsIWidget, public nsSupportsWeakReference {
 
   void ClearCachedWebrenderResources() override;
 
+  bool SetNeedFastSnaphot() override;
+
   
 
 
@@ -730,6 +732,7 @@ class nsBaseWidget : public nsIWidget, public nsSupportsWeakReference {
   bool mIMEHasFocus;
   bool mIMEHasQuit;
   bool mIsFullyOccluded;
+  bool mNeedFastSnaphot;
   
   
   

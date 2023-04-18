@@ -147,6 +147,12 @@ bool RenderCompositorANGLE::Initialize(nsACString& aError) {
   }
 
   
+  
+  if (mWidget->GetCompositorOptions().NeedFastSnaphot()) {
+    mUseNativeCompositor = false;
+  }
+
+  
   if (gfx::gfxVars::UseWebRenderDCompWin()) {
     HWND compositorHwnd = GetCompositorHwnd();
     if (compositorHwnd) {

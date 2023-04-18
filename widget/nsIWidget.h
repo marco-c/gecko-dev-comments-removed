@@ -1989,6 +1989,12 @@ class nsIWidget : public nsISupports {
 
 
 
+  virtual bool SetNeedFastSnaphot() { return false; }
+
+  
+
+
+
   virtual RefPtr<mozilla::gfx::VsyncSource> GetVsyncSource() { return nullptr; }
 
   
