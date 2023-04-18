@@ -55,25 +55,12 @@ const known_scripts = {
   processScripts: new Set([
     "chrome://global/content/process-content.js",
     "resource://gre/modules/extensionProcessScriptLoader.js",
-    "resource://gre/modules/URLQueryStrippingListProcessScript.js",
   ]),
 };
 
 if (!gFissionBrowser) {
   known_scripts.modules.add(
     "resource:///modules/sessionstore/ContentSessionStore.jsm"
-  );
-}
-
-if (AppConstants.NIGHTLY_BUILD) {
-  
-  
-  
-  
-  
-
-  known_scripts.modules.add(
-    "resource://gre/modules/URLQueryStrippingListService.jsm"
   );
 }
 
