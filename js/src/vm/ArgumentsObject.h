@@ -310,6 +310,7 @@ class ArgumentsObject : public NativeObject {
     setFixedSlot(INITIAL_LENGTH_SLOT, Int32Value(v));
   }
 
+ private:
   
 
 
@@ -335,7 +336,23 @@ class ArgumentsObject : public NativeObject {
     return result;
   }
 
+ protected:
   bool markElementDeleted(JSContext* cx, uint32_t i);
+
+ public:
+  
+
+
+
+
+
+
+
+
+
+  bool isElement(uint32_t i) const {
+    return i < initialLength() && !isElementDeleted(i);
+  }
 
   
 
