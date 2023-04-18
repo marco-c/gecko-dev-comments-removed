@@ -16,8 +16,7 @@ using IPCResult = mozilla::ipc::IPCResult;
 
 NS_IMPL_ISUPPORTS(LockRequestChild, nsISupports)
 
-
-MOZ_CAN_RUN_SCRIPT_BOUNDARY static void RunCallbackAndSettlePromise(
+MOZ_CAN_RUN_SCRIPT static void RunCallbackAndSettlePromise(
     LockGrantedCallback& aCallback, mozilla::dom::Lock* lock,
     Promise& aPromise) {
   ErrorResult rv;
@@ -85,7 +84,9 @@ IPCResult LockRequestChild::RecvResolve(const LockMode& aLockMode,
     promise = mRequest.mPromise;
   }
 
-  RunCallbackAndSettlePromise(*mRequest.mCallback, lock, *promise);
+  
+  RunCallbackAndSettlePromise(MOZ_KnownLive(*mRequest.mCallback), lock,
+                              *promise);
   return IPC_OK();
 }
 

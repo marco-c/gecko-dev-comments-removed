@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef DOM_LOCKS_LOCKREQUESTCHILD_H_
 #define DOM_LOCKS_LOCKREQUESTCHILD_H_
@@ -35,7 +35,9 @@ class LockRequestChild final : public PLockRequestChild,
 
   void MaybeSetWorkerRef();
 
-  IPCResult RecvResolve(const LockMode& aLockMode, bool aIsAvailable);
+  // TODO: Use MOZ_CAN_RUN_SCRIPT when it gains IPDL support (bug 1539864)
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY IPCResult RecvResolve(const LockMode& aLockMode,
+                                                    bool aIsAvailable);
   IPCResult Recv__delete__(bool aAborted);
 
   void ActorDestroy(ActorDestroyReason aReason) final;
@@ -47,10 +49,10 @@ class LockRequestChild final : public PLockRequestChild,
 
   LockManagerChild* CastedManager() const;
 
-  LockRequest mRequest;
+  const LockRequest mRequest;
   RefPtr<StrongWorkerRef> mWorkerRef;
 };
 
-}  
+}  // namespace mozilla::dom::locks
 
-#endif  
+#endif  // DOM_LOCKS_LOCKREQUESTCHILD_H_
