@@ -208,7 +208,7 @@ class UntrustedModulesFixture : public TelemetryTestFixture {
     ModuleLoadCounter waitForOne({kTestModules[0]}, {1});
     EXPECT_TRUE(NS_SUCCEEDED(collector.Collect(waitForOne)));
     EXPECT_TRUE(waitForOne.Remains({kTestModules[0]}, {0}));
-    EXPECT_EQ(collector.Data().length(), 1);
+    EXPECT_EQ(collector.Data().length(), 1U);
 
     
     return UntrustedModulesData(std::move(collector.Data()[0]));
@@ -307,7 +307,7 @@ void UntrustedModulesFixture::ValidateUntrustedModules(
             &match)) {
       EXPECT_EQ(loadStatus, kKnownModules[match].mStatus);
     } else {
-      EXPECT_EQ(evt.mLoadStatus, 0);
+      EXPECT_EQ(evt.mLoadStatus, 0U);
     }
 
     if (BinarySearchIf(
@@ -329,19 +329,19 @@ void UntrustedModulesFixture::ValidateUntrustedModules(
   
   
   EXPECT_EQ(aData.mNumEvents, aData.mEvents.length());
-  EXPECT_GT(aData.mNumEvents, 0);
+  EXPECT_GT(aData.mNumEvents, 0U);
   if (aIsTruncatedData) {
-    EXPECT_EQ(aData.mStacks.GetModuleCount(), 0);
+    EXPECT_EQ(aData.mStacks.GetModuleCount(), 0U);
     EXPECT_LE(aData.mNumEvents, UntrustedModulesData::kMaxEvents);
   } else if (numBlockedEvents == aData.mNumEvents) {
     
     
-    EXPECT_EQ(aData.mStacks.GetModuleCount(), 0);
+    EXPECT_EQ(aData.mStacks.GetModuleCount(), 0U);
   } else {
-    EXPECT_GT(aData.mStacks.GetModuleCount(), 0);
+    EXPECT_GT(aData.mStacks.GetModuleCount(), 0U);
   }
-  EXPECT_EQ(aData.mSanitizationFailures, 0);
-  EXPECT_EQ(aData.mTrustTestFailures, 0);
+  EXPECT_EQ(aData.mSanitizationFailures, 0U);
+  EXPECT_EQ(aData.mTrustTestFailures, 0U);
 }
 
 BOOL CALLBACK UntrustedModulesFixture::InitialModuleLoadOnce(PINIT_ONCE, void*,
