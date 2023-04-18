@@ -738,21 +738,17 @@ class TextInputDelegateTest : BaseSessionTest() {
     }
 
     @WithDisplay(width = 512, height = 512) 
-    @Test fun sendDummpyKeyboardEvent() {
+    @Test fun sendDummyKeyboardEvent() {
         
         assumeThat("Not in designmode", id, not(equalTo("#designmode")))
 
-        mainSession.textInput.view = View(InstrumentationRegistry.getInstrumentation().targetContext)
-
-        mainSession.loadTestPath(INPUTS_PATH)
-        mainSession.waitForPageStop()
-
-        textContent = ""
-        mainSession.evaluateJS("document.querySelector('$id').focus()")
-        mainSession.waitUntilCalled(GeckoSession.TextInputDelegate::class, "restartInput")
+        setupContent("")
 
         val ic = mainSession.textInput.onCreateInputConnection(EditorInfo())!!
-        ic.commitText("a", 1)
+        assertText("Set initial text", ic, "")
+
+        commitText(ic, "foo", 1)
+        assertTextAndSelectionAt("commit text and selection", ic, "foo", 3)
 
         
         val promise =
@@ -763,7 +759,7 @@ class TextInputDelegateTest : BaseSessionTest() {
                                          { once: true }) },
                                      { once: true}))""")
         ic.beginBatchEdit();
-        ic.setSelection(0, 1)
+        ic.setSelection(0, 3)
         ic.setComposingText("", 1)
         ic.endBatchEdit()
         promise.value
