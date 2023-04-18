@@ -313,7 +313,21 @@ public class GeckoJavaSampler {
     return null;
   }
 
+  
+
+
+
+
+
+
   private static class MarkerStorage {
+    
+
+
+
+
+
+
     private volatile Queue<Marker> mMarkers;
 
     MarkerStorage() {}
