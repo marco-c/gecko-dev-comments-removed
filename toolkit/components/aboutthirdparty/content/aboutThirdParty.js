@@ -327,6 +327,13 @@ function visualizeData(aData) {
   document.getElementById("main").appendChild(mainContentFragment);
 }
 
+function clearVisualizedData() {
+  const mainDiv = document.getElementById("main");
+  while (mainDiv.firstChild) {
+    mainDiv.firstChild.remove();
+  }
+}
+
 async function collectCrashInfo() {
   const parseBigInt = maybeBigInt => {
     try {
@@ -396,10 +403,22 @@ async function onLoad() {
         return;
       }
 
+      
       const button = document.getElementById("button-reload");
-      button.addEventListener("click", () => {
-        location.reload();
-      });
+      button.addEventListener(
+        "click",
+        async event => {
+          
+          clearVisualizedData();
+          visualizeData(await fetchData());
+          event.target.hidden = true;
+        },
+        { once: true }
+      );
+
+      
+      
+      
       button.hidden = false;
     })
     .catch(Cu.reportError);
