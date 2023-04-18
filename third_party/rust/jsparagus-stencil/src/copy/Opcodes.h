@@ -755,6 +755,16 @@
 
 
 
+ \
+    MACRO(IsNullOrUndefined, is_null_or_undefined, NULL, 1, 1, 2, JOF_BYTE) \
+    
+
+
+
+
+
+
+
 
 
 
@@ -1751,13 +1761,9 @@
 
 
 
-
-
-
  \
     MACRO(Call, call, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_IC) \
     MACRO(CallIter, call_iter, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_IC) \
-    MACRO(FunCall, fun_call, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_IC) \
     MACRO(CallIgnoresRv, call_ignores_rv, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_IC) \
     
 
