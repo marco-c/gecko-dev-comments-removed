@@ -265,6 +265,9 @@ Maybe<gfx::Matrix4x4> StackingContextHelper::GetDeferredTransformMatrix()
     
     
     gfx::Matrix4x4 result = mDeferredTransformItem->GetTransform().GetMatrix();
+    if (!mDeferredTransformItem->mFrame->Combines3DTransformWithAncestors()) {
+      result.ProjectTo2D();
+    }
     if (mDeferredAncestorTransform) {
       result = result * *mDeferredAncestorTransform;
     }
