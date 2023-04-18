@@ -129,7 +129,7 @@ class EditorBase : public nsIEditor,
 
 
 
-  EditorBase();
+  explicit EditorBase(EditorType aEditorType);
 
   bool IsInitialized() const { return !!mDocument; }
   bool Destroyed() const { return mDidPreDestroy; }

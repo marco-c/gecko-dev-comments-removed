@@ -72,7 +72,7 @@ using namespace dom;
 using LeafNodeType = HTMLEditUtils::LeafNodeType;
 using LeafNodeTypes = HTMLEditUtils::LeafNodeTypes;
 
-TextEditor::TextEditor() {
+TextEditor::TextEditor() : EditorBase(EditorBase::EditorType::Text) {
   
   static_assert(
       sizeof(TextEditor) <= 512,
