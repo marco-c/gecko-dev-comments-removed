@@ -149,7 +149,7 @@ parent:
   
 
 
-  async GetPageThumbStream(nsIURI uri) returns (RemoteStreamInfo? info);
+  async GetPageThumbStream(nsIURI uri, LoadInfoArgs? loadInfo) returns (RemoteStreamInfo? info);
 
 child:
   

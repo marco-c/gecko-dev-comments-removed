@@ -830,7 +830,8 @@ mozilla::ipc::IPCResult NeckoParent::RecvEnsureHSTSData(
 }
 
 mozilla::ipc::IPCResult NeckoParent::RecvGetPageThumbStream(
-    nsIURI* aURI, GetPageThumbStreamResolver&& aResolver) {
+    nsIURI* aURI, const Maybe<LoadInfoArgs>& aLoadInfoArgs,
+    GetPageThumbStreamResolver&& aResolver) {
   
   
   
