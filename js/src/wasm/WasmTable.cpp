@@ -89,10 +89,7 @@ void Table::tracePrivate(JSTracer* trc) {
   
   
   
-  if (maybeObject_) {
-    MOZ_ASSERT(!gc::IsAboutToBeFinalized(&maybeObject_));
-    TraceEdge(trc, &maybeObject_, "wasm table object");
-  }
+  TraceNullableEdge(trc, &maybeObject_, "wasm table object");
 
   switch (repr()) {
     case TableRepr::Func: {

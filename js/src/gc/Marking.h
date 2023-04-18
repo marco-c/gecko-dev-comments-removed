@@ -72,15 +72,19 @@ inline bool IsMarked(JSRuntime* rt, BarrieredBase<T>* thingp) {
   return IsMarkedInternal(rt, ConvertToBase(thingp->unbarrieredAddress()));
 }
 
-template <typename T>
-inline bool IsAboutToBeFinalizedUnbarriered(T* thingp) {
-  return IsAboutToBeFinalizedInternal(ConvertToBase(thingp));
-}
+
+
+
+
 
 template <typename T>
 inline bool IsAboutToBeFinalized(const BarrieredBase<T>* thingp) {
   return IsAboutToBeFinalizedInternal(
       ConvertToBase(thingp->unbarrieredAddress()));
+}
+template <typename T>
+inline bool IsAboutToBeFinalizedUnbarriered(T* thingp) {
+  return IsAboutToBeFinalizedInternal(ConvertToBase(thingp));
 }
 
 inline bool IsAboutToBeFinalizedDuringMinorSweep(Cell* cell);
