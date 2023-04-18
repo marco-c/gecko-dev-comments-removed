@@ -2244,10 +2244,6 @@ DocumentLoadListener::OnStartRequest(nsIRequest* aRequest) {
 
       
       
-      
-
-      
-      
       browserParent->ResumeLoad(mLoadIdentifier);
 
       
