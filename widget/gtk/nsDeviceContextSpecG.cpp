@@ -8,6 +8,7 @@
 #include "mozilla/gfx/PrintTargetPDF.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Services.h"
+#include "mozilla/GUniquePtr.h"
 #include "mozilla/WidgetUtilsGtk.h"
 
 #include "plstr.h"
@@ -124,14 +125,15 @@ struct {
 #undef DECLARE_KNOWN_MONOCHROME_SETTING
 
 
-static GtkPaperSize* GtkPaperSizeFromIpp(const gchar* aIppName, gdouble aWidth,
-                                         gdouble aHeight) {
+static GUniquePtr<GtkPaperSize> GtkPaperSizeFromIpp(const gchar* aIppName,
+                                                    gdouble aWidth,
+                                                    gdouble aHeight) {
   static auto sPtr = (GtkPaperSize * (*)(const gchar*, gdouble, gdouble))
       dlsym(RTLD_DEFAULT, "gtk_paper_size_new_from_ipp");
   if (gtk_check_version(3, 16, 0)) {
     return nullptr;
   }
-  return sPtr(aIppName, aWidth, aHeight);
+  return GUniquePtr<GtkPaperSize>(sPtr(aIppName, aWidth, aHeight));
 }
 
 static bool PaperSizeAlmostEquals(GtkPaperSize* aSize,
@@ -151,41 +153,68 @@ static bool PaperSizeAlmostEquals(GtkPaperSize* aSize,
 
 
 
+static GUniquePtr<GtkPaperSize> PpdSizeFromIppName(const gchar* aIppName) {
+  static constexpr struct {
+    const char* mCups;
+    const char* mGtk;
+  } kMap[] = {
+      {CUPS_MEDIA_A3, GTK_PAPER_NAME_A3},
+      {CUPS_MEDIA_A4, GTK_PAPER_NAME_A4},
+      {CUPS_MEDIA_A5, GTK_PAPER_NAME_A5},
+      {CUPS_MEDIA_LETTER, GTK_PAPER_NAME_LETTER},
+      {CUPS_MEDIA_LEGAL, GTK_PAPER_NAME_LEGAL},
+      
+  };
+
+  for (const auto& entry : kMap) {
+    if (!strcmp(entry.mCups, aIppName)) {
+      return GUniquePtr<GtkPaperSize>(gtk_paper_size_new(entry.mGtk));
+    }
+  }
+
+  return nullptr;
+}
 
 
 
-static GtkPaperSize* GetStandardGtkPaperSize(GtkPaperSize* aGeckoPaperSize) {
+
+
+
+
+
+static GUniquePtr<GtkPaperSize> GetStandardGtkPaperSize(
+    GtkPaperSize* aGeckoPaperSize) {
+  
   const gchar* geckoName = gtk_paper_size_get_name(aGeckoPaperSize);
+  if (auto ppd = PpdSizeFromIppName(geckoName)) {
+    return ppd;
+  }
 
   
   
   
-  GtkPaperSize* size = GtkPaperSizeFromIpp(
-      geckoName, gtk_paper_size_get_width(aGeckoPaperSize, GTK_UNIT_POINTS),
-      gtk_paper_size_get_height(aGeckoPaperSize, GTK_UNIT_POINTS));
-  if (size && !gtk_paper_size_is_custom(size)) {
+  
+  if (auto ipp = GtkPaperSizeFromIpp(
+          geckoName, gtk_paper_size_get_width(aGeckoPaperSize, GTK_UNIT_POINTS),
+          gtk_paper_size_get_height(aGeckoPaperSize, GTK_UNIT_POINTS))) {
+    if (!gtk_paper_size_is_custom(ipp.get())) {
+      if (auto ppd = PpdSizeFromIppName(gtk_paper_size_get_name(ipp.get()))) {
+        return ppd;
+      }
+      return ipp;
+    }
+  }
+
+  GUniquePtr<GtkPaperSize> size(gtk_paper_size_new(geckoName));
+  
+  
+  
+  if (gtk_paper_size_is_equal(size.get(), aGeckoPaperSize) ||
+      PaperSizeAlmostEquals(aGeckoPaperSize, size.get())) {
     return size;
   }
 
-  if (size) {
-    gtk_paper_size_free(size);
-  }
-
-  size = gtk_paper_size_new(geckoName);
-  if (gtk_paper_size_is_equal(size, aGeckoPaperSize)) {
-    return size;
-  }
-
   
-  
-  
-  
-  if (PaperSizeAlmostEquals(aGeckoPaperSize, size)) {
-    return size;
-  }
-
-  
-  gtk_paper_size_free(size);
   return nullptr;
 }
 
@@ -206,7 +235,8 @@ NS_IMETHODIMP nsDeviceContextSpecGTK::Init(nsIWidget* aWidget,
   mGtkPageSetup = mPrintSettings->GetGtkPageSetup();
 
   GtkPaperSize* geckoPaperSize = gtk_page_setup_get_paper_size(mGtkPageSetup);
-  GtkPaperSize* gtkPaperSize = GetStandardGtkPaperSize(geckoPaperSize);
+  GUniquePtr<GtkPaperSize> gtkPaperSize =
+      GetStandardGtkPaperSize(geckoPaperSize);
 
   mGtkPageSetup = gtk_page_setup_copy(mGtkPageSetup);
   mGtkPrintSettings = gtk_print_settings_copy(mGtkPrintSettings);
@@ -225,14 +255,11 @@ NS_IMETHODIMP nsDeviceContextSpecGTK::Init(nsIWidget* aWidget,
     nsPrinterCUPS::ForEachExtraMonochromeSetting(applySetting);
   }
 
-  GtkPaperSize* properPaperSize = gtkPaperSize ? gtkPaperSize : geckoPaperSize;
+  GtkPaperSize* properPaperSize =
+      gtkPaperSize ? gtkPaperSize.get() : geckoPaperSize;
   gtk_print_settings_set_paper_size(mGtkPrintSettings, properPaperSize);
   gtk_page_setup_set_paper_size_and_default_margins(mGtkPageSetup,
                                                     properPaperSize);
-  if (gtkPaperSize) {
-    gtk_paper_size_free(gtkPaperSize);
-  }
-
   return NS_OK;
 }
 
