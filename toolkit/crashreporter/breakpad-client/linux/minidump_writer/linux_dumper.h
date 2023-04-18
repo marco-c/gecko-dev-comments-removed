@@ -102,10 +102,6 @@ class LinuxDumper {
   
   virtual bool GetThreadInfoByIndex(size_t index, ThreadInfo* info) = 0;
 
-  
-  
-  virtual bool GetThreadNameByIndex(size_t index, char* name, size_t size) = 0;
-
   size_t GetMainThreadIndex() const {
     for (size_t i = 0; i < threads_.size(); ++i) {
       if (threads_[i] == pid_) return i;
