@@ -96,12 +96,6 @@ const execute = (context, details, kind, method) => {
 
   
   
-  if (options.frameIds && options.frameIds.length === 0) {
-    return [];
-  }
-
-  
-  
   return tab.queryContent("Execute", options);
 };
 

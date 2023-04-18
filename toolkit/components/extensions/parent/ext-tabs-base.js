@@ -692,19 +692,14 @@ class TabBase {
     
     let byProcess = new DefaultMap(() => []);
     let framesFound = 0;
-    
-    
-    
-    let frameIdsSet = new Set(frameIds);
 
     
     function visit(bc) {
       let win = bc.currentWindowGlobal;
       let frameId = bc.parent ? bc.id : 0;
 
-      if (win?.domProcess && (!frameIds || frameIdsSet.has(frameId))) {
+      if (win?.domProcess && (!frameIds || frameIds.includes(frameId))) {
         byProcess.get(win.domProcess).push(win.innerWindowId);
-        frameIdsSet.delete(frameId);
         framesFound++;
       }
 
@@ -713,12 +708,6 @@ class TabBase {
       }
     }
     visit(this.browsingContext);
-
-    if (frameIdsSet.size > 0) {
-      throw new ExtensionError(
-        `Invalid frame IDs: [${Array.from(frameIdsSet).join(", ")}].`
-      );
-    }
 
     let promises = Array.from(byProcess.entries(), ([proc, windows]) =>
       proc.getActor("ExtensionContent").sendQuery(message, { windows, options })
