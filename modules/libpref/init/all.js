@@ -991,18 +991,6 @@ pref("print.more-settings.open", false);
 
 
 
-
-
-
-pref("print.print_unwriteable_margin_top",    -1);
-pref("print.print_unwriteable_margin_left",   -1);
-pref("print.print_unwriteable_margin_right",  -1);
-pref("print.print_unwriteable_margin_bottom", -1);
-
-
-
-
-
 pref("print.print_edge_top", 0);
 pref("print.print_edge_left", 0);
 pref("print.print_edge_right", 0);
