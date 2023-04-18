@@ -311,8 +311,15 @@ var SaveToPocket = {
         break;
       }
       case "Reader:Clicked-pocket-button": {
-        
-        Pocket.savePage(message.target);
+        let pocketPanel = message.target.ownerDocument.querySelector(
+          "#customizationui-widget-panel"
+        );
+        if (pocketPanel?.getAttribute("panelopen")) {
+          pocketPanel.hidePopup();
+        } else {
+          
+          Pocket.savePage(message.target);
+        }
         break;
       }
     }
