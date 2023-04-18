@@ -402,19 +402,16 @@ class RemoteSettingsClient extends EventEmitter {
 
 
 
-
   async get(options = {}) {
     const {
       filters = {},
       order = "", 
       dumpFallback = true,
-      emptyListFallback = true,
       loadDumpIfNewer = true,
       syncIfEmpty = true,
     } = options;
     let { verifySignature = false } = options;
 
-    const hasParallelCall = !!this._importingPromise;
     let data;
     try {
       let lastModified = await this.db.getLastModified();
@@ -481,10 +478,6 @@ class RemoteSettingsClient extends EventEmitter {
             verifySignature = false;
           }
         } catch (e) {
-          if (!hasParallelCall) {
-            
-            throw e;
-          }
           
           
           Cu.reportError(e);
@@ -509,15 +502,11 @@ class RemoteSettingsClient extends EventEmitter {
       );
       if (data !== null) {
         lazy.console.info(`${this.identifier} falling back to JSON dump`);
-      } else if (emptyListFallback) {
+      } else {
         lazy.console.info(
           `${this.identifier} no dump fallback, return empty list`
         );
         data = [];
-      } else {
-        
-        
-        throw e;
       }
       if (!lazy.ObjectUtils.isEmpty(filters)) {
         data = data.filter(r => lazy.Utils.filterObject(filters, r));

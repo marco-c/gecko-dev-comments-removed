@@ -174,8 +174,6 @@ const client = RemoteSettings("nimbus-desktop-experiments");
 
 
 async function setup(experiment) {
-  
-  await client.db.importChanges({}, Date.now(), [experiment], { clear: true });
   await SpecialPowers.pushPrefEnv({
     set: [
       ["app.shield.optoutstudies.enabled", true],
@@ -185,6 +183,8 @@ async function setup(experiment) {
       ],
     ],
   });
+
+  await client.db.importChanges({}, Date.now(), [experiment], { clear: true });
 }
 
 async function cleanup() {

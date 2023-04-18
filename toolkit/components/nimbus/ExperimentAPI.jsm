@@ -279,8 +279,6 @@ const ExperimentAPI = {
         filters: { slug },
       });
     } catch (e) {
-      
-      
       Cu.reportError(e);
       recipe = undefined;
     }
