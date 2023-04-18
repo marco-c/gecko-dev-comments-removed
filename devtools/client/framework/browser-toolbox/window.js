@@ -257,6 +257,11 @@ function installTestingServer() {
   DevToolsServer.allowChromeProcess = true;
 
   
+  
+  
+  DevToolsServer.keepAlive = true;
+
+  
   const socketOptions = { portOrPath: 6001 };
   const listener = new SocketListener(DevToolsServer, socketOptions);
   listener.open();
