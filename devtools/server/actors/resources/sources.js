@@ -8,6 +8,8 @@ const {
   TYPES: { SOURCE },
 } = require("devtools/server/actors/resources/index");
 
+const { STATES: THREAD_STATES } = require("devtools/server/actors/thread");
+
 
 
 
@@ -33,6 +35,17 @@ class SourceWatcher {
     threadActor.disableNewSourceEvents();
 
     threadActor.sourcesManager.on("newSource", this.onNewSource);
+
+    
+    
+    
+    
+    
+    
+    const isTargetCreation = threadActor.state == THREAD_STATES.DETACHED;
+    if (isTargetCreation && !targetActor.targetType.endsWith("worker")) {
+      await threadActor.attach({});
+    }
 
     
     
