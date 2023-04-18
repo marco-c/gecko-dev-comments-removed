@@ -189,7 +189,7 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["suggest.openpage", true],
 
   
-  ["suggest.quicksuggest", false],
+  ["suggest.quicksuggest.nonsponsored", false],
 
   
   ["suggest.quicksuggest.sponsored", false],
@@ -210,6 +210,8 @@ const PREF_URLBAR_DEFAULTS = new Map([
   
   ["quicksuggest.onboardingDialogChoice", ""],
 
+  
+  
   
   
   
@@ -681,7 +683,9 @@ class Preferences {
     
     
 
-    let nonSponsoredInitiallyEnabled = this.get("suggest.quicksuggest");
+    let nonSponsoredInitiallyEnabled = this.get(
+      "suggest.quicksuggest.nonsponsored"
+    );
     let sponsoredInitiallyEnabled = this.get("suggest.quicksuggest.sponsored");
 
     
@@ -709,7 +713,7 @@ class Preferences {
     
     
     let uiPrefNamesByVariable = {
-      quickSuggestNonSponsoredEnabled: "suggest.quicksuggest",
+      quickSuggestNonSponsoredEnabled: "suggest.quicksuggest.nonsponsored",
       quickSuggestSponsoredEnabled: "suggest.quicksuggest.sponsored",
       quickSuggestDataCollectionEnabled: "quicksuggest.dataCollection.enabled",
     };
@@ -746,7 +750,7 @@ class Preferences {
       )
     ) {
       if (nonSponsoredInitiallyEnabled) {
-        this.set("suggest.quicksuggest", true);
+        this.set("suggest.quicksuggest.nonsponsored", true);
       }
       if (sponsoredInitiallyEnabled) {
         this.set("suggest.quicksuggest.sponsored", true);
@@ -804,14 +808,14 @@ class Preferences {
         "quicksuggest.enabled": true,
         "quicksuggest.dataCollection.enabled": false,
         "quicksuggest.shouldShowOnboardingDialog": false,
-        "suggest.quicksuggest": true,
+        "suggest.quicksuggest.nonsponsored": true,
         "suggest.quicksuggest.sponsored": true,
       },
       online: {
         "quicksuggest.enabled": true,
         "quicksuggest.dataCollection.enabled": false,
         "quicksuggest.shouldShowOnboardingDialog": true,
-        "suggest.quicksuggest": false,
+        "suggest.quicksuggest.nonsponsored": false,
         "suggest.quicksuggest.sponsored": false,
       },
     };
@@ -831,8 +835,19 @@ class Preferences {
 
     
     
+    let suggestQuicksuggest = "browser.urlbar.suggest.quicksuggest";
+    if (Services.prefs.prefHasUserValue(suggestQuicksuggest)) {
+      this.set(
+        "suggest.quicksuggest.nonsponsored",
+        Services.prefs.getBoolPref(suggestQuicksuggest)
+      );
+      Services.prefs.clearUserPref(suggestQuicksuggest);
+    }
+
     
-    if (!this.get("suggest.quicksuggest")) {
+    
+    
+    if (!this.get("suggest.quicksuggest.nonsponsored")) {
       switch (scenario) {
         case "offline":
           
@@ -853,7 +868,7 @@ class Preferences {
     
     
     
-    if (scenario == "online" && this.get("suggest.quicksuggest")) {
+    if (scenario == "online" && this.get("suggest.quicksuggest.nonsponsored")) {
       this.set("quicksuggest.dataCollection.enabled", true);
     }
 

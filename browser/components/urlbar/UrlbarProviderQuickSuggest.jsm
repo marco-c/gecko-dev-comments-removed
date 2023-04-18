@@ -108,7 +108,7 @@ class ProviderQuickSuggest extends UrlbarProvider {
       !queryContext.searchMode &&
       !queryContext.isPrivate &&
       UrlbarPrefs.get("quickSuggestEnabled") &&
-      (UrlbarPrefs.get("suggest.quicksuggest") ||
+      (UrlbarPrefs.get("suggest.quicksuggest.nonsponsored") ||
         UrlbarPrefs.get("suggest.quicksuggest.sponsored"))
     );
   }
@@ -339,7 +339,6 @@ class ProviderQuickSuggest extends UrlbarProvider {
 
 
 
-
   onPrefChanged(pref) {
     switch (pref) {
       case "quicksuggest.dataCollection.enabled":
@@ -351,7 +350,7 @@ class ProviderQuickSuggest extends UrlbarProvider {
           );
         }
         break;
-      case "suggest.quicksuggest":
+      case "suggest.quicksuggest.nonsponsored":
         if (!UrlbarPrefs.updatingFirefoxSuggestScenario) {
           Services.telemetry.recordEvent(
             TELEMETRY_EVENT_CATEGORY,
@@ -555,7 +554,8 @@ class ProviderQuickSuggest extends UrlbarProvider {
     return (
       (suggestion.is_sponsored &&
         UrlbarPrefs.get("suggest.quicksuggest.sponsored")) ||
-      (!suggestion.is_sponsored && UrlbarPrefs.get("suggest.quicksuggest"))
+      (!suggestion.is_sponsored &&
+        UrlbarPrefs.get("suggest.quicksuggest.nonsponsored"))
     );
   }
 

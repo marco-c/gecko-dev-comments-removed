@@ -163,7 +163,7 @@ add_task(async function init() {
 
 
 add_task(async function nonsponsoredOnly_match() {
-  UrlbarPrefs.set("suggest.quicksuggest", true);
+  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", false);
 
   let context = createContext(NONSPONSORED_SEARCH_STRING, {
@@ -179,7 +179,7 @@ add_task(async function nonsponsoredOnly_match() {
 
 
 add_task(async function nonsponsoredOnly_noMatch() {
-  UrlbarPrefs.set("suggest.quicksuggest", true);
+  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", false);
 
   let context = createContext(SPONSORED_SEARCH_STRING, {
@@ -191,7 +191,7 @@ add_task(async function nonsponsoredOnly_noMatch() {
 
 
 add_task(async function sponsoredOnly_sponsored() {
-  UrlbarPrefs.set("suggest.quicksuggest", false);
+  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", false);
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
 
   let context = createContext(SPONSORED_SEARCH_STRING, {
@@ -207,7 +207,7 @@ add_task(async function sponsoredOnly_sponsored() {
 
 
 add_task(async function sponsoredOnly_nonsponsored() {
-  UrlbarPrefs.set("suggest.quicksuggest", false);
+  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", false);
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
 
   let context = createContext(NONSPONSORED_SEARCH_STRING, {
@@ -220,7 +220,7 @@ add_task(async function sponsoredOnly_nonsponsored() {
 
 
 add_task(async function both_sponsored() {
-  UrlbarPrefs.set("suggest.quicksuggest", true);
+  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
 
   let context = createContext(SPONSORED_SEARCH_STRING, {
@@ -236,7 +236,7 @@ add_task(async function both_sponsored() {
 
 
 add_task(async function both_nonsponsored() {
-  UrlbarPrefs.set("suggest.quicksuggest", true);
+  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
 
   let context = createContext(NONSPONSORED_SEARCH_STRING, {
@@ -252,7 +252,7 @@ add_task(async function both_nonsponsored() {
 
 
 add_task(async function both_noMatch() {
-  UrlbarPrefs.set("suggest.quicksuggest", true);
+  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
 
   let context = createContext("this doesn't match anything", {
@@ -265,7 +265,7 @@ add_task(async function both_noMatch() {
 
 
 add_task(async function neither_sponsored() {
-  UrlbarPrefs.set("suggest.quicksuggest", false);
+  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", false);
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", false);
 
   let context = createContext(SPONSORED_SEARCH_STRING, {
@@ -278,7 +278,7 @@ add_task(async function neither_sponsored() {
 
 
 add_task(async function neither_nonsponsored() {
-  UrlbarPrefs.set("suggest.quicksuggest", false);
+  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", false);
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", false);
 
   let context = createContext(NONSPONSORED_SEARCH_STRING, {
@@ -290,7 +290,7 @@ add_task(async function neither_nonsponsored() {
 
 
 add_task(async function caseInsensitiveAndLeadingSpaces() {
-  UrlbarPrefs.set("suggest.quicksuggest", true);
+  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
 
   let context = createContext("  " + SPONSORED_SEARCH_STRING.toUpperCase(), {
@@ -306,7 +306,7 @@ add_task(async function caseInsensitiveAndLeadingSpaces() {
 
 
 add_task(async function browser_search_suggest_enabled() {
-  UrlbarPrefs.set("suggest.quicksuggest", true);
+  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
   UrlbarPrefs.set("browser.search.suggest.enabled", false);
 
@@ -325,7 +325,7 @@ add_task(async function browser_search_suggest_enabled() {
 
 
 add_task(async function browser_search_suggest_enabled() {
-  UrlbarPrefs.set("suggest.quicksuggest", true);
+  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
   UrlbarPrefs.set("suggest.searches", false);
 
@@ -344,7 +344,7 @@ add_task(async function browser_search_suggest_enabled() {
 
 
 add_task(async function privateContext() {
-  UrlbarPrefs.set("suggest.quicksuggest", true);
+  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
 
   for (let privateSuggestionsEnabled of [true, false]) {
@@ -368,7 +368,7 @@ add_task(async function privateContext() {
 
 
 add_task(async function suggestionsBeforeGeneral_only() {
-  UrlbarPrefs.set("suggest.quicksuggest", true);
+  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
   UrlbarPrefs.set("browser.search.suggest.enabled", true);
   UrlbarPrefs.set("suggest.searches", true);
@@ -406,7 +406,7 @@ add_task(async function suggestionsBeforeGeneral_only() {
 
 
 add_task(async function suggestionsBeforeGeneral_others() {
-  UrlbarPrefs.set("suggest.quicksuggest", true);
+  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
   UrlbarPrefs.set("browser.search.suggest.enabled", true);
   UrlbarPrefs.set("suggest.searches", true);
@@ -461,7 +461,7 @@ add_task(async function suggestionsBeforeGeneral_others() {
 
 
 add_task(async function generalBeforeSuggestions_only() {
-  UrlbarPrefs.set("suggest.quicksuggest", true);
+  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
   UrlbarPrefs.set("browser.search.suggest.enabled", true);
   UrlbarPrefs.set("suggest.searches", true);
@@ -499,7 +499,7 @@ add_task(async function generalBeforeSuggestions_only() {
 
 
 add_task(async function generalBeforeSuggestions_others() {
-  UrlbarPrefs.set("suggest.quicksuggest", true);
+  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
   UrlbarPrefs.set("browser.search.suggest.enabled", true);
   UrlbarPrefs.set("suggest.searches", true);
@@ -616,7 +616,7 @@ async function doDedupeAgainstURLTest({
   
   
   info("Doing first query");
-  UrlbarPrefs.set("suggest.quicksuggest", false);
+  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", false);
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", false);
   let context = createContext(searchString, { isPrivate: false });
   await check_results({
@@ -635,7 +635,7 @@ async function doDedupeAgainstURLTest({
   });
 
   
-  UrlbarPrefs.set("suggest.quicksuggest", true);
+  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
 
   context = createContext(searchString, { isPrivate: false });
@@ -660,7 +660,7 @@ async function doDedupeAgainstURLTest({
   info("Doing second query");
   await check_results({ context, matches: expectedResults });
 
-  UrlbarPrefs.clear("suggest.quicksuggest");
+  UrlbarPrefs.clear("suggest.quicksuggest.nonsponsored");
   UrlbarPrefs.clear("suggest.quicksuggest.sponsored");
   UrlbarPrefs.clear("suggest.searches");
   await PlacesUtils.history.clear();
@@ -668,7 +668,7 @@ async function doDedupeAgainstURLTest({
 
 
 add_task(async function latencyTelemetry() {
-  UrlbarPrefs.set("suggest.quicksuggest", true);
+  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
 
   let histogram = Services.telemetry.getHistogramById(
@@ -702,7 +702,7 @@ add_task(async function latencyTelemetry() {
 
 add_task(async function setupAndTeardown() {
   
-  UrlbarPrefs.set("suggest.quicksuggest", false);
+  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", false);
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", false);
   await UrlbarQuickSuggest.readyPromise;
   Assert.ok(
@@ -713,18 +713,18 @@ add_task(async function setupAndTeardown() {
   
   
   
-  UrlbarPrefs.set("suggest.quicksuggest", true);
+  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
   await UrlbarQuickSuggest.readyPromise;
   Assert.ok(
     UrlbarQuickSuggest._rs,
-    "Settings client is non-null after enabling suggest.quicksuggest"
+    "Settings client is non-null after enabling suggest.quicksuggest.nonsponsored"
   );
 
-  UrlbarPrefs.set("suggest.quicksuggest", false);
+  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", false);
   await UrlbarQuickSuggest.readyPromise;
   Assert.ok(
     !UrlbarQuickSuggest._rs,
-    "Settings client is null after disabling suggest.quicksuggest"
+    "Settings client is null after disabling suggest.quicksuggest.nonsponsored"
   );
 
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
@@ -734,18 +734,18 @@ add_task(async function setupAndTeardown() {
     "Settings client is non-null after enabling suggest.quicksuggest.sponsored"
   );
 
-  UrlbarPrefs.set("suggest.quicksuggest", true);
+  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
   await UrlbarQuickSuggest.readyPromise;
   Assert.ok(
     UrlbarQuickSuggest._rs,
-    "Settings client remains non-null after enabling suggest.quicksuggest"
+    "Settings client remains non-null after enabling suggest.quicksuggest.nonsponsored"
   );
 
-  UrlbarPrefs.set("suggest.quicksuggest", false);
+  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", false);
   await UrlbarQuickSuggest.readyPromise;
   Assert.ok(
     UrlbarQuickSuggest._rs,
-    "Settings client remains non-null after disabling suggest.quicksuggest"
+    "Settings client remains non-null after disabling suggest.quicksuggest.nonsponsored"
   );
 
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", false);
@@ -755,11 +755,11 @@ add_task(async function setupAndTeardown() {
     "Settings client is null after disabling suggest.quicksuggest.sponsored"
   );
 
-  UrlbarPrefs.set("suggest.quicksuggest", true);
+  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
   await UrlbarQuickSuggest.readyPromise;
   Assert.ok(
     UrlbarQuickSuggest._rs,
-    "Settings client is non-null after enabling suggest.quicksuggest"
+    "Settings client is non-null after enabling suggest.quicksuggest.nonsponsored"
   );
 
   UrlbarPrefs.set("quicksuggest.enabled", false);
@@ -770,7 +770,7 @@ add_task(async function setupAndTeardown() {
   );
 
   
-  UrlbarPrefs.clear("suggest.quicksuggest");
+  UrlbarPrefs.clear("suggest.quicksuggest.nonsponsored");
   UrlbarPrefs.clear("suggest.quicksuggest.sponsored");
   UrlbarPrefs.set("quicksuggest.enabled", true);
   await UrlbarQuickSuggest.readyPromise;

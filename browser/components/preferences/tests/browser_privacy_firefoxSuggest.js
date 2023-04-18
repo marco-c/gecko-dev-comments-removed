@@ -200,7 +200,7 @@ add_task(async function togglesAndInfoBox() {
   
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.urlbar.suggest.quicksuggest", true],
+      ["browser.urlbar.suggest.quicksuggest.nonsponsored", true],
       ["browser.urlbar.suggest.quicksuggest.sponsored", true],
       ["browser.urlbar.quicksuggest.dataCollection.enabled", true],
     ],
@@ -218,7 +218,7 @@ add_task(async function togglesAndInfoBox() {
   
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.urlbar.suggest.quicksuggest", true],
+      ["browser.urlbar.suggest.quicksuggest.nonsponsored", true],
       ["browser.urlbar.suggest.quicksuggest.sponsored", true],
       ["browser.urlbar.quicksuggest.dataCollection.enabled", false],
     ],
@@ -236,7 +236,7 @@ add_task(async function togglesAndInfoBox() {
   
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.urlbar.suggest.quicksuggest", true],
+      ["browser.urlbar.suggest.quicksuggest.nonsponsored", true],
       ["browser.urlbar.suggest.quicksuggest.sponsored", false],
       ["browser.urlbar.quicksuggest.dataCollection.enabled", true],
     ],
@@ -254,7 +254,7 @@ add_task(async function togglesAndInfoBox() {
   
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.urlbar.suggest.quicksuggest", true],
+      ["browser.urlbar.suggest.quicksuggest.nonsponsored", true],
       ["browser.urlbar.suggest.quicksuggest.sponsored", false],
       ["browser.urlbar.quicksuggest.dataCollection.enabled", false],
     ],
@@ -272,7 +272,7 @@ add_task(async function togglesAndInfoBox() {
   
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.urlbar.suggest.quicksuggest", false],
+      ["browser.urlbar.suggest.quicksuggest.nonsponsored", false],
       ["browser.urlbar.suggest.quicksuggest.sponsored", true],
       ["browser.urlbar.quicksuggest.dataCollection.enabled", true],
     ],
@@ -290,7 +290,7 @@ add_task(async function togglesAndInfoBox() {
   
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.urlbar.suggest.quicksuggest", false],
+      ["browser.urlbar.suggest.quicksuggest.nonsponsored", false],
       ["browser.urlbar.suggest.quicksuggest.sponsored", true],
       ["browser.urlbar.quicksuggest.dataCollection.enabled", false],
     ],
@@ -308,7 +308,7 @@ add_task(async function togglesAndInfoBox() {
   
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.urlbar.suggest.quicksuggest", false],
+      ["browser.urlbar.suggest.quicksuggest.nonsponsored", false],
       ["browser.urlbar.suggest.quicksuggest.sponsored", false],
       ["browser.urlbar.quicksuggest.dataCollection.enabled", true],
     ],
@@ -326,7 +326,7 @@ add_task(async function togglesAndInfoBox() {
   
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.urlbar.suggest.quicksuggest", false],
+      ["browser.urlbar.suggest.quicksuggest.nonsponsored", false],
       ["browser.urlbar.suggest.quicksuggest.sponsored", false],
       ["browser.urlbar.quicksuggest.dataCollection.enabled", false],
     ],
@@ -353,7 +353,7 @@ add_task(async function clickToggles() {
   
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.urlbar.suggest.quicksuggest", true],
+      ["browser.urlbar.suggest.quicksuggest.nonsponsored", true],
       ["browser.urlbar.suggest.quicksuggest.sponsored", true],
       ["browser.urlbar.quicksuggest.dataCollection.enabled", true],
     ],
@@ -372,8 +372,10 @@ add_task(async function clickToggles() {
     gBrowser.selectedBrowser
   );
   Assert.ok(
-    !Services.prefs.getBoolPref("browser.urlbar.suggest.quicksuggest"),
-    "suggest.quicksuggest is false after clicking non-sponsored toggle"
+    !Services.prefs.getBoolPref(
+      "browser.urlbar.suggest.quicksuggest.nonsponsored"
+    ),
+    "suggest.quicksuggest.nonsponsored is false after clicking non-sponsored toggle"
   );
   assertCheckboxes({
     [NONSPONSORED_CHECKBOX_ID]: false,
@@ -389,8 +391,10 @@ add_task(async function clickToggles() {
     gBrowser.selectedBrowser
   );
   Assert.ok(
-    !Services.prefs.getBoolPref("browser.urlbar.suggest.quicksuggest"),
-    "suggest.quicksuggest remains false after clicking sponsored toggle"
+    !Services.prefs.getBoolPref(
+      "browser.urlbar.suggest.quicksuggest.nonsponsored"
+    ),
+    "suggest.quicksuggest.nonsponsored remains false after clicking sponsored toggle"
   );
   Assert.ok(
     !Services.prefs.getBoolPref(
@@ -412,8 +416,10 @@ add_task(async function clickToggles() {
     gBrowser.selectedBrowser
   );
   Assert.ok(
-    !Services.prefs.getBoolPref("browser.urlbar.suggest.quicksuggest"),
-    "suggest.quicksuggest remains false after clicking sponsored toggle"
+    !Services.prefs.getBoolPref(
+      "browser.urlbar.suggest.quicksuggest.nonsponsored"
+    ),
+    "suggest.quicksuggest.nonsponsored remains false after clicking sponsored toggle"
   );
   Assert.ok(
     !Services.prefs.getBoolPref(
@@ -449,7 +455,7 @@ add_task(async function clickLearnMore() {
   
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.urlbar.suggest.quicksuggest", true],
+      ["browser.urlbar.suggest.quicksuggest.nonsponsored", true],
       ["browser.urlbar.suggest.quicksuggest.sponsored", true],
       ["browser.urlbar.quicksuggest.dataCollection.enabled", true],
     ],

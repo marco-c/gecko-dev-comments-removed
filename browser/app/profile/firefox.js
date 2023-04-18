@@ -388,7 +388,7 @@ pref("browser.urlbar.suggest.calculator",           false);
 
 
 
-pref("browser.urlbar.suggest.quicksuggest", false, sticky);
+pref("browser.urlbar.suggest.quicksuggest.nonsponsored", false, sticky);
 
 
 
