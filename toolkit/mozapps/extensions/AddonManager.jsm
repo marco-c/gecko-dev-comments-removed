@@ -84,7 +84,9 @@ const { PromiseUtils } = ChromeUtils.import(
   "resource://gre/modules/PromiseUtils.jsm"
 );
 
-XPCOMUtils.defineLazyModuleGetters(this, {
+const lazy = {};
+
+XPCOMUtils.defineLazyModuleGetters(lazy, {
   AddonRepository: "resource://gre/modules/addons/AddonRepository.jsm",
   AbuseReporter: "resource://gre/modules/AbuseReporter.jsm",
   Extension: "resource://gre/modules/Extension.jsm",
@@ -93,7 +95,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 });
 
 XPCOMUtils.defineLazyPreferenceGetter(
-  this,
+  lazy,
   "WEBEXT_POSTDOWNLOAD_THIRD_PARTY",
   PREF_EM_POSTDOWNLOAD_THIRD_PARTY,
   false
@@ -515,7 +517,7 @@ var AddonManagerInternal = {
   externalExtensionLoaders: new Map(),
 
   recordTimestamp(name, value) {
-    TelemetryTimestamps.add(name, value);
+    lazy.TelemetryTimestamps.add(name, value);
   },
 
   
@@ -987,7 +989,7 @@ var AddonManagerInternal = {
     
     try {
       gRepoShutdownState = "in progress";
-      await AddonRepository.shutdown();
+      await lazy.AddonRepository.shutdown();
       gRepoShutdownState = "done";
     } catch (err) {
       savedError = err;
@@ -1025,7 +1027,7 @@ var AddonManagerInternal = {
     switch (aTopic) {
       case INTL_LOCALES_CHANGED: {
         
-        AddonRepository.backgroundUpdateCheck();
+        lazy.AddonRepository.backgroundUpdateCheck();
         return;
       }
     }
@@ -1192,7 +1194,7 @@ var AddonManagerInternal = {
 
     let newPerms = info.addon.userPermissions;
 
-    let difference = Extension.comparePermissions(oldPerms, newPerms);
+    let difference = lazy.Extension.comparePermissions(oldPerms, newPerms);
 
     
     if (!difference.origins.length && !difference.permissions.length) {
@@ -1253,7 +1255,7 @@ var AddonManagerInternal = {
 
         
         
-        await AddonRepository.backgroundUpdateCheck();
+        await lazy.AddonRepository.backgroundUpdateCheck();
 
         for (let addon of allAddons) {
           
@@ -2287,7 +2289,7 @@ var AddonManagerInternal = {
           aInstallingPrincipal.URI,
           aInstall
         );
-      } else if (!WEBEXT_POSTDOWNLOAD_THIRD_PARTY) {
+      } else if (!lazy.WEBEXT_POSTDOWNLOAD_THIRD_PARTY) {
         
         this.installNotifyObservers(
           "addon-install-blocked",
@@ -3004,7 +3006,10 @@ var AddonManagerInternal = {
   _verifyThirdPartyInstall(browser, url, install, info, source) {
     
     
-    if (!WEBEXT_POSTDOWNLOAD_THIRD_PARTY || ["AMO", "local"].includes(source)) {
+    if (
+      !lazy.WEBEXT_POSTDOWNLOAD_THIRD_PARTY ||
+      ["AMO", "local"].includes(source)
+    ) {
       return Promise.resolve();
     }
 
@@ -3412,19 +3417,21 @@ var AddonManagerInternal = {
         });
       }
 
-      let existingDialog = AbuseReporter.getOpenDialog();
+      let existingDialog = lazy.AbuseReporter.getOpenDialog();
       if (existingDialog) {
         existingDialog.close();
       }
 
-      const dialog = await AbuseReporter.openDialog(id, "amo", target).catch(
-        err => {
-          Cu.reportError(err);
-          return Promise.reject({
-            message: "Error creating abuse report",
-          });
-        }
-      );
+      const dialog = await lazy.AbuseReporter.openDialog(
+        id,
+        "amo",
+        target
+      ).catch(err => {
+        Cu.reportError(err);
+        return Promise.reject({
+          message: "Error creating abuse report",
+        });
+      });
 
       return dialog.promiseReport.then(
         async report => {
@@ -3740,7 +3747,7 @@ var AddonManagerPrivate = {
 
   
   overrideAddonRepository(mockRepo) {
-    AddonRepository = mockRepo;
+    lazy.AddonRepository = mockRepo;
   },
 
   
@@ -4354,7 +4361,7 @@ AMRemoteSettings = {
       }
 
       if (!this.client) {
-        this.client = RemoteSettings(this.RS_COLLECTION);
+        this.client = lazy.RemoteSettings(this.RS_COLLECTION);
         this.onSync = this.processEntries.bind(this);
         this.client.on("sync", this.onSync);
         
