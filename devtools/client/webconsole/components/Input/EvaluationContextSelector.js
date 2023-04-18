@@ -116,7 +116,7 @@ class EvaluationContextSelector extends Component {
       type: "checkbox",
       checked: selectedTarget ? selectedTarget == target : target.isTopLevel,
       label,
-      tooltip: target.url,
+      tooltip: target.url || target.name,
       icon: this.getIcon(target),
       onClick: () => selectTarget(target.actorID),
     });
@@ -130,27 +130,59 @@ class EvaluationContextSelector extends Component {
     targets.sort((a, b) => collator.compare(a.name, b.name));
 
     let mainTarget;
-    const frames = [];
-    const contentProcesses = [];
-    const dedicatedWorkers = [];
-    const sharedWorkers = [];
-    const serviceWorkers = [];
-
-    const dict = {
-      [TARGET_TYPES.FRAME]: frames,
-      [TARGET_TYPES.PROCESS]: contentProcesses,
-      [TARGET_TYPES.WORKER]: dedicatedWorkers,
-      [TARGET_TYPES.SHARED_WORKER]: sharedWorkers,
-      [TARGET_TYPES.SERVICE_WORKER]: serviceWorkers,
+    const sections = {
+      [TARGET_TYPES.FRAME]: [],
+      [TARGET_TYPES.WORKER]: [],
+      [TARGET_TYPES.SHARED_WORKER]: [],
+      [TARGET_TYPES.SERVICE_WORKER]: [],
     };
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    const processes = {};
+
+    const { webConsoleUI } = this.props;
+    const handleProcessTargets =
+      webConsoleUI.isBrowserConsole || webConsoleUI.isBrowserToolboxConsole;
 
     for (const target of targets) {
       const menuItem = this.renderMenuItem(target);
 
       if (target.isTopLevel) {
         mainTarget = menuItem;
+      } else if (target.targetType == TARGET_TYPES.PROCESS) {
+        if (!processes[target.processID]) {
+          processes[target.processID] = { frames: [] };
+        }
+        processes[target.processID].process = menuItem;
+      } else if (
+        target.targetType == TARGET_TYPES.FRAME &&
+        handleProcessTargets &&
+        target.processID
+      ) {
+        
+        
+        if (!processes[target.processID]) {
+          processes[target.processID] = { frames: [] };
+        }
+        processes[target.processID].frames.push(menuItem);
       } else {
-        dict[target.targetType].push(menuItem);
+        sections[target.targetType].push(menuItem);
       }
     }
 
@@ -159,7 +191,21 @@ class EvaluationContextSelector extends Component {
     
     const items = mainTarget ? [mainTarget] : [];
 
-    for (const [targetType, menuItems] of Object.entries(dict)) {
+    
+    
+    if (processes) {
+      for (const [pid, { process, frames }] of Object.entries(processes)) {
+        items.push(dom.hr({ role: "menuseparator", key: `${pid}-separator` }));
+        if (process) {
+          items.push(process);
+        }
+        if (frames) {
+          items.push(...frames);
+        }
+      }
+    }
+
+    for (const [targetType, menuItems] of Object.entries(sections)) {
       if (menuItems.length > 0) {
         items.push(
           dom.hr({ role: "menuseparator", key: `${targetType}-separator` }),

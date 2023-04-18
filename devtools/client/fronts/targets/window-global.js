@@ -38,6 +38,7 @@ class WindowGlobalTargetFront extends TargetMixin(
     this.actorID = json.actor;
     this.browsingContextID = json.browsingContextID;
     this.innerWindowId = json.innerWindowId;
+    this.processID = json.processID;
 
     
     

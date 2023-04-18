@@ -598,6 +598,7 @@ const windowGlobalTargetPrototype = {
     const response = {
       actor: this.actorID,
       browsingContextID,
+      processID: Services.appinfo.processID,
       
       followWindowGlobalLifeCycle: this.followWindowGlobalLifeCycle,
       innerWindowId,
