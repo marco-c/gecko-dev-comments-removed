@@ -44,6 +44,8 @@ class Frame extends Component {
   static get propTypes() {
     return {
       
+      className: PropTypes.string,
+      
       frame: PropTypes.shape({
         functionDisplayName: PropTypes.string,
         
@@ -129,6 +131,7 @@ class Frame extends Component {
       showEmptyPathAsHost,
       showFullSourceUrl,
       messageSource,
+      className,
     } = this.props;
     const { originalLocation } = this.state;
 
@@ -173,7 +176,7 @@ class Frame extends Component {
 
     const attributes = {
       "data-url": long,
-      className: "frame-link",
+      className: "frame-link" + (className ? ` ${className}` : ""),
     };
 
     if (showFunctionName) {
