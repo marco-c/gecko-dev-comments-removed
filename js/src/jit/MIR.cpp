@@ -2257,7 +2257,7 @@ static inline bool NeedNegativeZeroCheck(MDefinition* def) {
   
   for (MUseIterator use = def->usesBegin(); use != def->usesEnd(); use++) {
     if (use->consumer()->isResumePoint()) {
-      continue;
+      return true;
     }
 
     MDefinition* use_def = use->consumer()->toDefinition();
