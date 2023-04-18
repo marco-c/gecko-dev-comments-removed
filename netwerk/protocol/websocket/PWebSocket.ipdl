@@ -11,8 +11,6 @@ include protocol PTransportProvider;
 include IPCStream;
 include NeckoChannelParams;
 
-include protocol PFileDescriptorSet; 
-
 include "mozilla/net/WebSocketChannelParent.h";
 include "mozilla/net/WebSocketChannelChild.h";
 

@@ -6,7 +6,6 @@
 
 
 include protocol PSocketProcess;
-include protocol PFileDescriptorSet; 
 include protocol PInputChannelThrottleQueue;
 
 include IPCStream;
