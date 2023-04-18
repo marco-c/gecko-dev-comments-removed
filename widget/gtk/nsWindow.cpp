@@ -2457,7 +2457,7 @@ void nsWindow::SetSizeMode(nsSizeMode aMode) {
   LOG("nsWindow::SetSizeMode %d\n", aMode);
 
   
-  nsBaseWidget::SetSizeMode(aMode);
+  mSizeMode = aMode;
 
   
   

@@ -86,6 +86,7 @@ PuppetWidget::PuppetWidget(BrowserChild* aBrowserChild)
       mDefaultScale(-1),
       mEnabled(false),
       mVisible(false),
+      mSizeMode(nsSizeMode_Normal),
       mNeedIMEStateInit(false),
       mIgnoreCompositionEvents(false) {
   
