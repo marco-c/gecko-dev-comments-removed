@@ -316,7 +316,7 @@ class Tabbar extends Component {
     });
 
     
-    menu.popupAtTarget(target, this.props.menuDocument);
+    menu.popupAtTarget(target);
 
     return menu;
   }

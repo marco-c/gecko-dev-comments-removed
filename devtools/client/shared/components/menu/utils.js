@@ -49,7 +49,7 @@ function showMenu(items, options) {
   
   
   if (options.button) {
-    menu.popupAtTarget(options.button, window.document);
+    menu.popupAtTarget(options.button);
   } else {
     const screenX = options.screenX;
     const screenY = options.screenY;

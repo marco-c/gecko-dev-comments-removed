@@ -6,7 +6,6 @@
 
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 const EventEmitter = require("devtools/shared/event-emitter");
-const { getCurrentZoom } = require("devtools/shared/layout/utils");
 
 
 
@@ -63,17 +62,14 @@ Menu.prototype.insert = function(pos, menuItem) {
 
 
 
-
-
-Menu.prototype.popupAtTarget = function(target, doc) {
-  const zoom = getCurrentZoom(doc);
-
+Menu.prototype.popupAtTarget = function(target) {
   const rect = target.getBoundingClientRect();
-  const defaultView = target.ownerDocument.defaultView;
+  const doc = target.ownerDocument;
+  const defaultView = doc.defaultView;
   const x = rect.left + defaultView.mozInnerScreenX;
   const y = rect.bottom + defaultView.mozInnerScreenY;
 
-  this.popup(x * zoom, y * zoom, doc);
+  this.popup(x, y, doc);
 };
 
 
@@ -115,7 +111,14 @@ Menu.prototype.popup = function(screenX, screenY, doc) {
   
   
   const win = doc.defaultView;
-  doc = DevToolsUtils.getTopWindow(win).document;
+  const topWin = DevToolsUtils.getTopWindow(win);
+
+  
+  const winToTopWinCssScale = win.devicePixelRatio / topWin.devicePixelRatio;
+  screenX = screenX * winToTopWinCssScale;
+  screenY = screenY * winToTopWinCssScale;
+
+  doc = topWin.document;
 
   let popupset = doc.querySelector("popupset");
   if (!popupset) {
