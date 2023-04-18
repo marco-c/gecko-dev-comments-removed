@@ -254,10 +254,6 @@ var pktUI = (function() {
       "layoutRefresh",
       NimbusFeatures.saveToPocket.getVariable("layoutRefresh")
     );
-    url.searchParams.append(
-      "pockethost",
-      Services.prefs.getCharPref("extensions.pocket.site")
-    );
     url.searchParams.append("locale", getUILocale());
 
     

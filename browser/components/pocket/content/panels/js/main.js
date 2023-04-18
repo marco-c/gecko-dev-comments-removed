@@ -2,6 +2,7 @@
 
 
 
+
 import HomeOverlay from "./home/overlay.js";
 import SignupOverlay from "./signup/overlay.js";
 import SavedOverlay from "./saved/overlay.js";
@@ -107,7 +108,9 @@ PKT_PANEL.prototype = {
   },
 
   create() {
-    this.overlay.create();
+    const pockethost =
+      RPMGetStringPref("extensions.pocket.site") || "getpocket.com";
+    this.overlay.create({ pockethost });
   },
 };
 

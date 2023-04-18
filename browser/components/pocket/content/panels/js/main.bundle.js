@@ -427,11 +427,12 @@ var HomeOverlay = function (options) {
 };
 
 HomeOverlay.prototype = {
-  create() {
+  create({
+    pockethost
+  }) {
     const {
       searchParams
     } = new URL(window.location.href);
-    const pockethost = searchParams.get(`pockethost`) || `getpocket.com`;
     const locale = searchParams.get(`locale`) || ``;
     const layoutRefresh = searchParams.get(`layoutRefresh`) === `true`;
     const hideRecentSaves = searchParams.get(`hiderecentsaves`) === `true`;
@@ -625,7 +626,9 @@ var SignupOverlay = function (options) {
     });
   };
 
-  this.create = function () {
+  this.create = function ({
+    pockethost
+  }) {
     const parser = new DOMParser();
     let elBody = document.querySelector(`body`); 
 
@@ -633,7 +636,6 @@ var SignupOverlay = function (options) {
       searchParams
     } = new URL(window.location.href);
     const isEmailSignupEnabled = searchParams.get(`emailButton`) === `true`;
-    const pockethost = searchParams.get(`pockethost`) || `getpocket.com`;
     const locale = searchParams.get(`locale`) || ``;
     const language = locale.split(`-`)[0].toLowerCase();
     const layoutRefresh = searchParams.get(`layoutRefresh`) === `true`;
@@ -1521,7 +1523,9 @@ var SavedOverlay = function (options) {
 };
 
 SavedOverlay.prototype = {
-  create() {
+  create({
+    pockethost
+  }) {
     if (this.active) {
       return;
     }
@@ -1531,7 +1535,6 @@ SavedOverlay.prototype = {
     const {
       searchParams
     } = new URL(window.location.href);
-    const pockethost = searchParams.get(`pockethost`) || `getpocket.com`;
     const premiumStatus = searchParams.get(`premiumStatus`) == `1`;
     const locale = searchParams.get(`locale`) || ``;
     const language = locale.split(`-`)[0].toLowerCase();
@@ -1721,6 +1724,8 @@ StyleGuideOverlay.prototype = {
 
 
 
+
+
 var PKT_PANEL = function () {};
 
 PKT_PANEL.prototype = {
@@ -1824,7 +1829,10 @@ PKT_PANEL.prototype = {
   },
 
   create() {
-    this.overlay.create();
+    const pockethost = RPMGetStringPref("extensions.pocket.site") || "getpocket.com";
+    this.overlay.create({
+      pockethost
+    });
   }
 
 };
