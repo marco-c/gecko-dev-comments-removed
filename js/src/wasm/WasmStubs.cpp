@@ -1744,18 +1744,110 @@ static void StackCopy(MacroAssembler& masm, MIRType type, Register scratch,
   }
 }
 
-using ToValue = bool;
+static void FillArgumentArrayForInterpExit(MacroAssembler& masm,
+                                           unsigned funcImportIndex,
+                                           const FuncType& funcType,
+                                           unsigned argOffset,
+                                           Register scratch) {
+  
+  
+  const unsigned offsetFromFPToCallerStackArgs = sizeof(FrameWithTls);
+
+  GenPrintf(DebugChannel::Import, masm, "wasm-import[%u]; arguments ",
+            funcImportIndex);
+
+  ArgTypeVector args(funcType);
+  for (ABIArgIter i(args); !i.done(); i++) {
+    Address dst(masm.getStackPointer(), argOffset + i.index() * sizeof(Value));
+
+    MIRType type = i.mirType();
+    MOZ_ASSERT(args.isSyntheticStackResultPointerArg(i.index()) ==
+               (type == MIRType::StackResults));
+    switch (i->kind()) {
+      case ABIArg::GPR:
+        if (type == MIRType::Int32) {
+          GenPrintIsize(DebugChannel::Import, masm, i->gpr());
+          masm.store32(i->gpr(), dst);
+        } else if (type == MIRType::Int64) {
+          GenPrintI64(DebugChannel::Import, masm, i->gpr64());
+          masm.store64(i->gpr64(), dst);
+        } else if (type == MIRType::RefOrNull) {
+          GenPrintPtr(DebugChannel::Import, masm, i->gpr());
+          masm.storePtr(i->gpr(), dst);
+        } else if (type == MIRType::StackResults) {
+          GenPrintPtr(DebugChannel::Import, masm, i->gpr());
+          masm.storePtr(i->gpr(), dst);
+        } else {
+          MOZ_CRASH(
+              "FillArgumentArrayForInterpExit, ABIArg::GPR: unexpected type");
+        }
+        break;
+#ifdef JS_CODEGEN_REGISTER_PAIR
+      case ABIArg::GPR_PAIR:
+        if (type == MIRType::Int64) {
+          GenPrintI64(DebugChannel::Import, masm, i->gpr64());
+          masm.store64(i->gpr64(), dst);
+        } else {
+          MOZ_CRASH("wasm uses hardfp for function calls.");
+        }
+        break;
+#endif
+      case ABIArg::FPU: {
+        FloatRegister srcReg = i->fpu();
+        if (type == MIRType::Double) {
+          GenPrintF64(DebugChannel::Import, masm, srcReg);
+          masm.storeDouble(srcReg, dst);
+        } else if (type == MIRType::Float32) {
+          
+          GenPrintF32(DebugChannel::Import, masm, srcReg);
+          masm.storeFloat32(srcReg, dst);
+        } else if (type == MIRType::Simd128) {
+          
+          
+          
+          
+          ScratchDoubleScope dscratch(masm);
+          masm.loadConstantDouble(0, dscratch);
+          GenPrintF64(DebugChannel::Import, masm, dscratch);
+          masm.storeDouble(dscratch, dst);
+        } else {
+          MOZ_CRASH("Unknown MIRType in wasm exit stub");
+        }
+        break;
+      }
+      case ABIArg::Stack: {
+        Address src(FramePointer,
+                    offsetFromFPToCallerStackArgs + i->offsetFromArgBase());
+        if (type == MIRType::Simd128) {
+          
+          ScratchDoubleScope dscratch(masm);
+          masm.loadConstantDouble(0, dscratch);
+          GenPrintF64(DebugChannel::Import, masm, dscratch);
+          masm.storeDouble(dscratch, dst);
+        } else {
+          StackCopy(masm, type, scratch, src, dst);
+        }
+        break;
+      }
+      case ABIArg::Uninitialized:
+        MOZ_CRASH("Uninitialized ABIArg kind");
+    }
+  }
+  GenPrintf(DebugChannel::Import, masm, "\n");
+}
 
 
 
-static void FillArgumentArrayForExit(
-    MacroAssembler& masm, Register tls, unsigned funcImportIndex,
-    const FuncType& funcType, unsigned argOffset,
-    unsigned offsetFromFPToCallerStackArgs, Register scratch, Register scratch2,
-    Register scratch3, ToValue toValue, Label* throwLabel) {
+static void FillArgumentArrayForJitExit(MacroAssembler& masm, Register tls,
+                                        unsigned funcImportIndex,
+                                        const FuncType& funcType,
+                                        unsigned argOffset, Register scratch,
+                                        Register scratch2, Label* throwLabel) {
   MOZ_ASSERT(scratch != scratch2);
-  MOZ_ASSERT(scratch != scratch3);
-  MOZ_ASSERT(scratch2 != scratch3);
+
+  
+  
+  const unsigned offsetFromFPToCallerStackArgs = sizeof(FrameWithTls);
 
   
   
@@ -1774,51 +1866,29 @@ static void FillArgumentArrayForExit(
       case ABIArg::GPR:
         if (type == MIRType::Int32) {
           GenPrintIsize(DebugChannel::Import, masm, i->gpr());
-          if (toValue) {
-            masm.storeValue(JSVAL_TYPE_INT32, i->gpr(), dst);
-          } else {
-            masm.store32(i->gpr(), dst);
-          }
+          masm.storeValue(JSVAL_TYPE_INT32, i->gpr(), dst);
         } else if (type == MIRType::Int64) {
-          GenPrintI64(DebugChannel::Import, masm, i->gpr64());
-
-          if (toValue) {
-            
-            
-            MOZ_CRASH("Should not happen");
-          } else {
-            masm.store64(i->gpr64(), dst);
-          }
+          
+          
+          MOZ_CRASH("Should not happen");
         } else if (type == MIRType::RefOrNull) {
-          if (toValue) {
-            
-            
-            masm.movePtr(i->gpr(), scratch2);
-            UnboxAnyrefIntoValue(masm, tls, scratch2, dst, scratch);
-          } else {
-            GenPrintPtr(DebugChannel::Import, masm, i->gpr());
-            masm.storePtr(i->gpr(), dst);
-          }
+          
+          
+          masm.movePtr(i->gpr(), scratch2);
+          UnboxAnyrefIntoValue(masm, tls, scratch2, dst, scratch);
         } else if (type == MIRType::StackResults) {
-          MOZ_ASSERT(!toValue, "Multi-result exit to JIT unimplemented");
-          GenPrintPtr(DebugChannel::Import, masm, i->gpr());
-          masm.storePtr(i->gpr(), dst);
+          MOZ_CRASH("Multi-result exit to JIT unimplemented");
         } else {
-          MOZ_CRASH("FillArgumentArrayForExit, ABIArg::GPR: unexpected type");
+          MOZ_CRASH(
+              "FillArgumentArrayForJitExit, ABIArg::GPR: unexpected type");
         }
         break;
 #ifdef JS_CODEGEN_REGISTER_PAIR
       case ABIArg::GPR_PAIR:
         if (type == MIRType::Int64) {
-          GenPrintI64(DebugChannel::Import, masm, i->gpr64());
-
-          if (toValue) {
-            
-            
-            MOZ_CRASH("Should not happen");
-          } else {
-            masm.store64(i->gpr64(), dst);
-          }
+          
+          
+          MOZ_CRASH("Should not happen");
         } else {
           MOZ_CRASH("wasm uses hardfp for function calls.");
         }
@@ -1827,30 +1897,19 @@ static void FillArgumentArrayForExit(
       case ABIArg::FPU: {
         FloatRegister srcReg = i->fpu();
         if (type == MIRType::Double) {
-          if (toValue) {
-            
-            ScratchDoubleScope fpscratch(masm);
-            masm.moveDouble(srcReg, fpscratch);
-            masm.canonicalizeDouble(fpscratch);
-            GenPrintF64(DebugChannel::Import, masm, fpscratch);
-            masm.boxDouble(fpscratch, dst);
-          } else {
-            GenPrintF64(DebugChannel::Import, masm, srcReg);
-            masm.storeDouble(srcReg, dst);
-          }
+          
+          ScratchDoubleScope fpscratch(masm);
+          masm.moveDouble(srcReg, fpscratch);
+          masm.canonicalizeDouble(fpscratch);
+          GenPrintF64(DebugChannel::Import, masm, fpscratch);
+          masm.boxDouble(fpscratch, dst);
         } else if (type == MIRType::Float32) {
-          if (toValue) {
-            
-            ScratchDoubleScope fpscratch(masm);
-            masm.convertFloat32ToDouble(srcReg, fpscratch);
-            masm.canonicalizeDouble(fpscratch);
-            GenPrintF64(DebugChannel::Import, masm, fpscratch);
-            masm.boxDouble(fpscratch, dst);
-          } else {
-            
-            GenPrintF32(DebugChannel::Import, masm, srcReg);
-            masm.storeFloat32(srcReg, dst);
-          }
+          
+          ScratchDoubleScope fpscratch(masm);
+          masm.convertFloat32ToDouble(srcReg, fpscratch);
+          masm.canonicalizeDouble(fpscratch);
+          GenPrintF64(DebugChannel::Import, masm, fpscratch);
+          masm.boxDouble(fpscratch, dst);
         } else if (type == MIRType::Simd128) {
           
           
@@ -1859,11 +1918,7 @@ static void FillArgumentArrayForExit(
           ScratchDoubleScope dscratch(masm);
           masm.loadConstantDouble(0, dscratch);
           GenPrintF64(DebugChannel::Import, masm, dscratch);
-          if (toValue) {
-            masm.boxDouble(dscratch, dst);
-          } else {
-            masm.storeDouble(dscratch, dst);
-          }
+          masm.boxDouble(dscratch, dst);
         } else {
           MOZ_CRASH("Unknown MIRType in wasm exit stub");
         }
@@ -1872,55 +1927,43 @@ static void FillArgumentArrayForExit(
       case ABIArg::Stack: {
         Address src(FramePointer,
                     offsetFromFPToCallerStackArgs + i->offsetFromArgBase());
-        if (toValue) {
-          if (type == MIRType::Int32) {
-            masm.load32(src, scratch);
-            GenPrintIsize(DebugChannel::Import, masm, scratch);
-            masm.storeValue(JSVAL_TYPE_INT32, scratch, dst);
-          } else if (type == MIRType::Int64) {
-            
-            
-            MOZ_CRASH("Should not happen");
-          } else if (type == MIRType::RefOrNull) {
-            
-            
-            masm.loadPtr(src, scratch);
-            UnboxAnyrefIntoValue(masm, tls, scratch, dst, scratch2);
-          } else if (IsFloatingPointType(type)) {
-            ScratchDoubleScope dscratch(masm);
-            FloatRegister fscratch = dscratch.asSingle();
-            if (type == MIRType::Float32) {
-              masm.loadFloat32(src, fscratch);
-              masm.convertFloat32ToDouble(fscratch, dscratch);
-            } else {
-              masm.loadDouble(src, dscratch);
-            }
-            masm.canonicalizeDouble(dscratch);
-            GenPrintF64(DebugChannel::Import, masm, dscratch);
-            masm.boxDouble(dscratch, dst);
-          } else if (type == MIRType::Simd128) {
-            
-            
-            
-            
-            ScratchDoubleScope dscratch(masm);
-            masm.loadConstantDouble(0, dscratch);
-            GenPrintF64(DebugChannel::Import, masm, dscratch);
-            masm.boxDouble(dscratch, dst);
+        if (type == MIRType::Int32) {
+          masm.load32(src, scratch);
+          GenPrintIsize(DebugChannel::Import, masm, scratch);
+          masm.storeValue(JSVAL_TYPE_INT32, scratch, dst);
+        } else if (type == MIRType::Int64) {
+          
+          
+          MOZ_CRASH("Should not happen");
+        } else if (type == MIRType::RefOrNull) {
+          
+          
+          masm.loadPtr(src, scratch);
+          UnboxAnyrefIntoValue(masm, tls, scratch, dst, scratch2);
+        } else if (IsFloatingPointType(type)) {
+          ScratchDoubleScope dscratch(masm);
+          FloatRegister fscratch = dscratch.asSingle();
+          if (type == MIRType::Float32) {
+            masm.loadFloat32(src, fscratch);
+            masm.convertFloat32ToDouble(fscratch, dscratch);
           } else {
-            MOZ_CRASH(
-                "FillArgumentArrayForExit, ABIArg::Stack: unexpected type");
+            masm.loadDouble(src, dscratch);
           }
+          masm.canonicalizeDouble(dscratch);
+          GenPrintF64(DebugChannel::Import, masm, dscratch);
+          masm.boxDouble(dscratch, dst);
+        } else if (type == MIRType::Simd128) {
+          
+          
+          
+          
+          ScratchDoubleScope dscratch(masm);
+          masm.loadConstantDouble(0, dscratch);
+          GenPrintF64(DebugChannel::Import, masm, dscratch);
+          masm.boxDouble(dscratch, dst);
         } else {
-          if (type == MIRType::Simd128) {
-            
-            ScratchDoubleScope dscratch(masm);
-            masm.loadConstantDouble(0, dscratch);
-            GenPrintF64(DebugChannel::Import, masm, dscratch);
-            masm.storeDouble(dscratch, dst);
-          } else {
-            StackCopy(masm, type, scratch, src, dst);
-          }
+          MOZ_CRASH(
+              "FillArgumentArrayForJitExit, ABIArg::Stack: unexpected type");
         }
         break;
       }
@@ -1963,6 +2006,10 @@ static bool GenerateImportFunction(jit::MacroAssembler& masm,
   
   Register scratch = ABINonArgReg0;
 
+  
+  
+  
+  
   
   unsigned offsetFromFPToCallerStackArgs = sizeof(Frame);
   ArgTypeVector args(fi.funcType());
@@ -2052,6 +2099,14 @@ static bool GenerateImportInterpExit(MacroAssembler& masm, const FuncImport& fi,
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
   unsigned argOffset =
       AlignBytes(StackArgBytesForNativeABI(invokeArgTypes), sizeof(double));
   
@@ -2066,19 +2121,9 @@ static bool GenerateImportInterpExit(MacroAssembler& masm, const FuncImport& fi,
                        offsets);
 
   
-  
-  
-  
-  
-  unsigned offsetFromFPToCallerStackArgs = sizeof(FrameWithTls);
   Register scratch = ABINonArgReturnReg0;
-  Register scratch2 = ABINonArgReturnReg1;
-  
-  
-  Register scratch3 = ABINonVolatileReg;
-  FillArgumentArrayForExit(masm, WasmTlsReg, funcImportIndex, fi.funcType(),
-                           argOffset, offsetFromFPToCallerStackArgs, scratch,
-                           scratch2, scratch3, ToValue(false), throwLabel);
+  FillArgumentArrayForInterpExit(masm, funcImportIndex, fi.funcType(),
+                                 argOffset, scratch);
 
   
   ABIArgMIRTypeIter i(invokeArgTypes);
@@ -2229,6 +2274,10 @@ static bool GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi,
   
   
   
+  
+  
+  
+  
   static_assert(WasmStackAlignment >= JitStackAlignment, "subsumes");
   const unsigned sizeOfTlsSlot = sizeof(void*);
   const unsigned sizeOfRetAddr = sizeof(void*);
@@ -2280,19 +2329,10 @@ static bool GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi,
   argOffset += sizeof(Value);
 
   
-  
-  
-  
-  
-  const uint32_t offsetFromFPToCallerStackArgs = sizeof(FrameWithTls);
   Register scratch = ABINonArgReturnReg1;   
   Register scratch2 = ABINonArgReturnReg0;  
-  
-  
-  Register scratch3 = ABINonVolatileReg;
-  FillArgumentArrayForExit(masm, WasmTlsReg, funcImportIndex, fi.funcType(),
-                           argOffset, offsetFromFPToCallerStackArgs, scratch,
-                           scratch2, scratch3, ToValue(true), throwLabel);
+  FillArgumentArrayForJitExit(masm, WasmTlsReg, funcImportIndex, fi.funcType(),
+                              argOffset, scratch, scratch2, throwLabel);
   argOffset += fi.funcType().args().length() * sizeof(Value);
   MOZ_ASSERT(argOffset == sizeOfThisAndArgs + sizeOfPreFrame + frameAlignExtra);
 
@@ -2596,6 +2636,9 @@ bool wasm::GenerateBuiltinThunk(MacroAssembler& masm, ABIFunctionType abiType,
 
   GenerateExitPrologue(masm, framePushed, exitReason, offsets);
 
+  
+
+  
   
   unsigned offsetFromFPToCallerStackArgs = sizeof(FrameWithTls);
   Register scratch = ABINonArgReturnReg0;
