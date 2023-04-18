@@ -126,7 +126,7 @@ impl<T> VecHelper<T> for Vec<T> {
 
 
 
-#[derive(Debug, Clone, Copy, MallocSizeOf)]
+#[derive(Debug, Clone, Copy, MallocSizeOf, PartialEq)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct ScaleOffset {

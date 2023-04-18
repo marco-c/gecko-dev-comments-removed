@@ -143,6 +143,7 @@ pub struct SpatialNodeInfo<'a> {
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
+#[derive(PartialEq)]
 pub struct SceneSpatialNode {
     
     
