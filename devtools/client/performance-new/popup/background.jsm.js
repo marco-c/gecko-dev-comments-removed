@@ -667,6 +667,13 @@ async function getResponseForMessage(request, browser) {
       Services.prefs.setBoolPref(POPUP_FEATURE_FLAG_PREF, true);
 
       
+      
+      
+      
+      const supportedFeatures = Services.profiler.GetFeatures();
+      changePreset("aboutprofiling", "firefox-platform", supportedFeatures);
+
+      
       const { ProfilerMenuButton } = lazy.ProfilerMenuButton();
       ProfilerMenuButton.addToNavbar(ownerDocument);
 
