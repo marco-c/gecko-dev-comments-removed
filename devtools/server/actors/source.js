@@ -45,8 +45,18 @@ const windowsDrive = /^([a-zA-Z]:)/;
 function getSourceURL(source, window) {
   
   
-  const resourceURL =
-    (getDebuggerSourceURL(source) || "").split(" -> ").pop() || null;
+  let resourceURL = getDebuggerSourceURL(source) || "";
+
+  
+  
+  resourceURL = resourceURL.split(" -> ").pop();
+
+  
+  
+  
+  
+  
+  resourceURL = resourceURL.replace(/ line \d+ > .*$/, "");
 
   
   
@@ -72,7 +82,8 @@ function getSourceURL(source, window) {
     }
   }
 
-  return result;
+  
+  return result || null;
 }
 
 
