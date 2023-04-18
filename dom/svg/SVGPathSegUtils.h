@@ -266,6 +266,20 @@ class SVGPathSegUtils {
                                   SVGPathTraversalState& aState);
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+Maybe<gfx::Rect> SVGPathToAxisAlignedRect(Span<const StylePathCommand> aPath);
+
 }  
 
 #endif  
