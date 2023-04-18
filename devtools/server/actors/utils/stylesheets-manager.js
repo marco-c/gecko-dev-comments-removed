@@ -314,12 +314,11 @@ class StyleSheetsManager extends EventEmitter {
 
 
 
-  async update(
+
+  async setStyleSheetText(
     resourceId,
     text,
-    transition,
-    kind = UPDATE_GENERAL,
-    cause = ""
+    { transition = false, kind = UPDATE_GENERAL, cause = "" } = {}
   ) {
     const styleSheet = this._styleSheetMap.get(resourceId);
     InspectorUtils.parseStyleSheet(styleSheet, text);
