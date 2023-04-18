@@ -12,7 +12,6 @@
 #include "mozilla/EditorBase.h"
 #include "mozilla/EditorForwards.h"
 #include "mozilla/EditorUtils.h"
-#include "mozilla/ErrorResult.h"
 #include "mozilla/HTMLEditHelpers.h"
 #include "mozilla/ManualNAC.h"
 #include "mozilla/Result.h"
@@ -2892,8 +2891,8 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  Element* GetInclusiveAncestorByTagNameInternal(
-      const nsStaticAtom& aTagName, const nsIContent& aContent) const;
+  Element* GetInclusiveAncestorByTagNameInternal(const nsStaticAtom& aTagName,
+                                                 nsIContent& aContent) const;
 
   
 
@@ -2939,8 +2938,11 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  Result<RefPtr<Element>, nsresult> GetFirstTableRowElement(
-      const Element& aTableOrElementInTable) const;
+
+
+
+  Element* GetFirstTableRowElement(Element& aTableOrElementInTable,
+                                   ErrorResult& aRv) const;
 
   
 
@@ -2951,8 +2953,9 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  Result<RefPtr<Element>, nsresult> GetNextTableRowElement(
-      const Element& aTableRowElement) const;
+
+  Element* GetNextTableRowElement(Element& aTableRowElement,
+                                  ErrorResult& aRv) const;
 
   struct CellData;
 
@@ -3053,13 +3056,6 @@ class HTMLEditor final : public EditorBase,
     [[nodiscard]] static CellData AtIndexInTableElement(
         const HTMLEditor& aHTMLEditor, const Element& aTableElement,
         int32_t aRowIndex, int32_t aColumnIndex);
-    [[nodiscard]] static CellData AtIndexInTableElement(
-        const HTMLEditor& aHTMLEditor, const Element& aTableElement,
-        const CellIndexes& aIndexes) {
-      MOZ_ASSERT(!aIndexes.isErr());
-      return AtIndexInTableElement(aHTMLEditor, aTableElement, aIndexes.mRow,
-                                   aIndexes.mColumn);
-    }
 
     
 
@@ -3247,15 +3243,8 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  Result<RefPtr<Element>, nsresult> GetSelectedOrParentTableElement(
-      bool* aIsCellSelected = nullptr) const;
-
-  
-
-
-
-
-  Result<RefPtr<Element>, nsresult> GetFirstSelectedCellElementInTable() const;
+  already_AddRefed<Element> GetSelectedOrParentTableElement(
+      ErrorResult& aRv, bool* aIsCellSelected = nullptr) const;
 
   
 
@@ -3472,6 +3461,8 @@ class HTMLEditor final : public EditorBase,
       bool* aMixed, nsAString& aOutColor, bool aBlockLevel);
   nsresult GetHTMLBackgroundColorState(bool* aMixed, nsAString& outColor);
 
+  nsresult GetLastCellInRow(nsINode* aRowNode, nsINode** aCellNode);
+
   
 
 
@@ -3606,8 +3597,10 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult InsertTableCellsWithTransaction(
-      const EditorDOMPoint& aPointToInsert, int32_t aNumberOfCellsToInsert);
+
+
+  MOZ_CAN_RUN_SCRIPT nsresult InsertTableCellsWithTransaction(
+      int32_t aNumberOfCellsToInsert, InsertPosition aInsertPosition);
 
   
 
@@ -3615,8 +3608,14 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult InsertTableColumnsWithTransaction(
-      const EditorDOMPoint& aPointToInsert, int32_t aNumberOfColumnsToInsert);
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT nsresult InsertTableColumnsWithTransaction(
+      int32_t aNumberOfColumnsToInsert, InsertPosition aInsertPosition);
 
   
 
@@ -3631,8 +3630,7 @@ class HTMLEditor final : public EditorBase,
 
 
   MOZ_CAN_RUN_SCRIPT nsresult InsertTableRowsWithTransaction(
-      Element& aCellElement, int32_t aNumberOfRowsToInsert,
-      InsertPosition aInsertPosition);
+      int32_t aNumberOfRowsToInsert, InsertPosition aInsertPosition);
 
   
 

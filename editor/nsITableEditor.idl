@@ -268,7 +268,6 @@ interface nsITableEditor : nsISupports
 
 
 
-  [can_run_script]
   void getTableSize(in Element aTableOrElementInTable,
                     out long aRowCount, out long aColCount);
 
@@ -290,7 +289,6 @@ interface nsITableEditor : nsISupports
 
 
 
-  [can_run_script]
   Element getCellAt(in Element aTableElement,
                     in long aRowIndex, in long aColumnIndex);
 
@@ -339,7 +337,6 @@ interface nsITableEditor : nsISupports
 
 
 
-  [can_run_script]
   void getCellDataAt(in Element aTableElement,
                      in long aRowIndex, in long aColumnIndex,
                      out Element aCellElement,
@@ -366,7 +363,6 @@ interface nsITableEditor : nsISupports
 
 
 
-  [can_run_script]
   Element getFirstRow(in Element aTableElement);
 
   
@@ -397,7 +393,6 @@ interface nsITableEditor : nsISupports
 
 
 
-  [can_run_script]
   Element getSelectedOrParentTableElement(out AString aTagName,
                                           out long aCount);
 
@@ -455,6 +450,5 @@ interface nsITableEditor : nsISupports
 
 
 
-  [can_run_script]
   Array<Element> getSelectedCells();
 };
