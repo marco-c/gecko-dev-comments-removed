@@ -339,6 +339,11 @@ class DataTransfer final : public nsISupports, public nsWrapperCache {
 
   
   
+  
+  
+  
+  
+  
   void SetDataWithPrincipalFromOtherProcess(const nsAString& aFormat,
                                             nsIVariant* aData, uint32_t aIndex,
                                             nsIPrincipal* aPrincipal,
