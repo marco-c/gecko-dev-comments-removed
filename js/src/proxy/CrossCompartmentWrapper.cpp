@@ -4,6 +4,7 @@
 
 
 
+#include "builtin/FinalizationRegistryObject.h"
 #include "gc/PublicIterators.h"
 #include "js/friend/WindowProxy.h"  
 #include "js/Wrapper.h"
@@ -542,6 +543,10 @@ void js::RemapDeadWrapper(JSContext* cx, HandleObject wobj,
   MOZ_ASSERT(IsDeadProxyObject(wobj));
   MOZ_ASSERT(!newTarget->is<CrossCompartmentWrapperObject>());
 
+  
+  
+  MOZ_ASSERT(!newTarget->is<FinalizationRecordObject>());
+
   AutoDisableProxyCheck adpc;
 
   
@@ -632,6 +637,13 @@ JS_PUBLIC_API bool js::RecomputeWrappers(
     
     for (Compartment::ObjectWrapperEnum e(c, targetFilter); !e.empty();
          e.popFront()) {
+      
+      
+      JSObject* wrapper = *e.front().value().unsafeGet();
+      if (Wrapper::wrappedObject(wrapper)->is<FinalizationRecordObject>()) {
+        continue;
+      }
+
       
       if (!toRecompute.append(WrapperValue(e))) {
         return false;
