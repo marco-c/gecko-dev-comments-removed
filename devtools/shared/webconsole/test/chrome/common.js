@@ -69,6 +69,14 @@ var _attachConsole = async function(listeners, attachToTab, attachToWorker) {
       target = await targetDescriptor.getTarget();
     } else {
       const targetDescriptor = await client.mainRoot.getTab();
+      
+      
+      const {
+        createCommandsDictionary,
+      } = require("devtools/shared/commands/index");
+      const commands = await createCommandsDictionary(targetDescriptor);
+      
+      await commands.targetCommand.startListening();
       target = await targetDescriptor.getTarget();
       if (attachToWorker) {
         const workerName = "console-test-worker.js#" + new Date().getTime();
