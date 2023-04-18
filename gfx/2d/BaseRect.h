@@ -555,12 +555,10 @@ struct BaseRect {
   void Scale(T aScale) { Scale(aScale, aScale); }
   
   void Scale(T aXScale, T aYScale) {
-    T right = XMost() * aXScale;
-    T bottom = YMost() * aYScale;
     x = x * aXScale;
     y = y * aYScale;
-    width = right - x;
-    height = bottom - y;
+    width = width * aXScale;
+    height = height * aYScale;
   }
   
   
