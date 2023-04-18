@@ -18,8 +18,10 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.mozglue.JNIObject;
+
 
 
 
@@ -38,8 +40,9 @@ public class GeckoJavaSampler {
   @GuardedBy("GeckoJavaSampler.class")
   private static ScheduledExecutorService sSamplingScheduler;
 
+  
   @GuardedBy("GeckoJavaSampler.class")
-  private static ScheduledFuture<?> sSamplingFuture;
+  private static AtomicReference<ScheduledFuture<?>> sSamplingFuture = new AtomicReference<>();
 
   private static final MarkerStorage sMarkerStorage = new MarkerStorage();
 
@@ -47,10 +50,14 @@ public class GeckoJavaSampler {
 
 
 
+
+
+
+
+
   public static boolean isProfilerActive() {
     
-    
-    return sSamplingRunnable != null && sSamplingFuture != null;
+    return sSamplingFuture.get() != null;
   }
 
   
@@ -445,7 +452,8 @@ public class GeckoJavaSampler {
         return;
       }
 
-      if (sSamplingFuture != null && !sSamplingFuture.isDone()) {
+      final ScheduledFuture<?> future = sSamplingFuture.get();
+      if (future != null && !future.isDone()) {
         return;
       }
 
@@ -455,29 +463,29 @@ public class GeckoJavaSampler {
       sSamplingRunnable = new SamplingRunnable(aInterval, limitedEntryCount);
       sMarkerStorage.start(limitedEntryCount);
       sSamplingScheduler = Executors.newSingleThreadScheduledExecutor();
-      sSamplingFuture =
+      sSamplingFuture.set(
           sSamplingScheduler.scheduleAtFixedRate(
-              sSamplingRunnable, 0, sSamplingRunnable.mInterval, TimeUnit.MILLISECONDS);
+              sSamplingRunnable, 0, sSamplingRunnable.mInterval, TimeUnit.MILLISECONDS));
     }
   }
 
   @WrapForJNI
   public static void pauseSampling() {
     synchronized (GeckoJavaSampler.class) {
-      sSamplingFuture.cancel(false );
-      sSamplingFuture = null;
+      final ScheduledFuture<?> future = sSamplingFuture.getAndSet(null);
+      future.cancel(false );
     }
   }
 
   @WrapForJNI
   public static void unpauseSampling() {
     synchronized (GeckoJavaSampler.class) {
-      if (sSamplingFuture != null) {
+      if (sSamplingFuture.get() != null) {
         return;
       }
-      sSamplingFuture =
+      sSamplingFuture.set(
           sSamplingScheduler.scheduleAtFixedRate(
-              sSamplingRunnable, 0, sSamplingRunnable.mInterval, TimeUnit.MILLISECONDS);
+              sSamplingRunnable, 0, sSamplingRunnable.mInterval, TimeUnit.MILLISECONDS));
     }
   }
 
@@ -498,7 +506,7 @@ public class GeckoJavaSampler {
       }
       sSamplingScheduler = null;
       sSamplingRunnable = null;
-      sSamplingFuture = null;
+      sSamplingFuture.set(null);
       sMarkerStorage.stop();
     }
   }
