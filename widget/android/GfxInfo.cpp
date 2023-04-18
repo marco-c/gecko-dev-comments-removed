@@ -570,6 +570,18 @@ nsresult GfxInfo::GetFeatureStatusImpl(
           mGLStrings->Renderer().Find("Vivante GC7000UL",
                                        true) >= 0;
 
+      const bool isPowerVrFenceSyncCrash =
+          (mGLStrings->Renderer().Find("PowerVR Rogue G6200",
+                                        true) >= 0 ||
+           mGLStrings->Renderer().Find("PowerVR Rogue G6430",
+                                        true) >= 0 ||
+           mGLStrings->Renderer().Find("PowerVR Rogue GX6250",
+                                        true) >= 0) &&
+          (mGLStrings->Version().Find("3283119",  true) >= 0 ||
+           mGLStrings->Version().Find("3443629",  true) >= 0 ||
+           mGLStrings->Version().Find("3573678",  true) >= 0 ||
+           mGLStrings->Version().Find("3830101",  true) >= 0);
+
       if (isMali4xx) {
         
         *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
@@ -582,6 +594,10 @@ nsresult GfxInfo::GetFeatureStatusImpl(
         
         *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
         aFailureId = "FEATURE_FAILURE_VIVANTE_GC7000UL";
+      } else if (isPowerVrFenceSyncCrash) {
+        
+        *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
+        aFailureId = "FEATURE_FAILURE_POWERVR_FENCE_SYNC_CRASH";
       } else {
         *aStatus = nsIGfxInfo::FEATURE_ALLOW_QUALIFIED;
       }
