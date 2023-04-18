@@ -87,11 +87,8 @@ fn get_alpn(fd: *mut ssl::PRFileDesc, pre: bool) -> Res<Option<String>> {
 
     let alpn = match (pre, alpn_state) {
         (true, ssl::SSLNextProtoState::SSL_NEXT_PROTO_EARLY_VALUE)
-        | (
-            false,
-            ssl::SSLNextProtoState::SSL_NEXT_PROTO_NEGOTIATED
-            | ssl::SSLNextProtoState::SSL_NEXT_PROTO_SELECTED,
-        ) => {
+        | (false, ssl::SSLNextProtoState::SSL_NEXT_PROTO_NEGOTIATED)
+        | (false, ssl::SSLNextProtoState::SSL_NEXT_PROTO_SELECTED) => {
             chosen.truncate(usize::try_from(chosen_len)?);
             Some(match String::from_utf8(chosen) {
                 Ok(a) => a,
@@ -806,8 +803,6 @@ pub struct Client {
     agent: SecretAgent,
 
     
-    server_name: String,
-    
     resumption: Pin<Box<Vec<ResumptionToken>>>,
 }
 
@@ -816,15 +811,13 @@ impl Client {
     
     
     
-    pub fn new(server_name: impl Into<String>) -> Res<Self> {
-        let server_name = server_name.into();
+    pub fn new(server_name: &str) -> Res<Self> {
         let mut agent = SecretAgent::new()?;
-        let url = CString::new(server_name.as_bytes())?;
+        let url = CString::new(server_name)?;
         secstatus_to_res(unsafe { ssl::SSL_SetURL(agent.fd, url.as_ptr()) })?;
         agent.ready(false)?;
         let mut client = Self {
             agent,
-            server_name,
             resumption: Box::pin(Vec::new()),
         };
         client.ready()?;
@@ -871,11 +864,6 @@ impl Client {
             resumption.push(ResumptionToken::new(v, *t));
         }
         ssl::SECSuccess
-    }
-
-    #[must_use]
-    pub fn server_name(&self) -> &str {
-        &self.server_name
     }
 
     fn ready(&mut self) -> Res<()> {

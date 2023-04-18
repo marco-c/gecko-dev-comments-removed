@@ -5,7 +5,9 @@
 
 
 use crate::err::secstatus_to_res;
-use crate::p11::{CERTCertListNode, CERT_GetCertificateDer, CertList, Item, SECItem, SECItemArray};
+use crate::p11::{
+    CERTCertListNode, CERT_GetCertificateDer, CertList, Item, PRCList, SECItem, SECItemArray,
+};
 use crate::ssl::{
     PRFileDesc, SSL_PeerCertificateChain, SSL_PeerSignedCertTimestamps,
     SSL_PeerStapledOCSPResponses,
@@ -13,7 +15,7 @@ use crate::ssl::{
 use neqo_common::qerror;
 
 use std::convert::TryFrom;
-use std::ptr::{addr_of, NonNull};
+use std::ptr::NonNull;
 
 use std::slice;
 
@@ -88,7 +90,7 @@ impl CertificateInfo {
 
     fn head(certs: &CertList) -> *const CERTCertListNode {
         
-        unsafe { addr_of!((***certs).list).cast() }
+        unsafe { (&(***certs).list as *const PRCList).cast() }
     }
 }
 

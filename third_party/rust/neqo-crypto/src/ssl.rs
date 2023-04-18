@@ -10,9 +10,7 @@
     non_snake_case,
     clippy::cognitive_complexity,
     clippy::too_many_lines,
-    clippy::upper_case_acronyms,
-    unknown_lints,
-    clippy::borrow_as_ptr
+    clippy::upper_case_acronyms
 )]
 #![allow(unknown_lints, deref_nullptr)] 
 
