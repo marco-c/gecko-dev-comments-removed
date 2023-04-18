@@ -224,13 +224,12 @@ static already_AddRefed<dom::AnimationTimeline> GetTimeline(
       
       
       
-      return ScrollTimeline::FromRule(*rule, aPresContext->Document(),
-                                      aTarget);
+      return ScrollTimeline::FromRule(*rule, aPresContext->Document(), aTarget);
     }
     case StyleAnimationTimeline::Tag::Scroll: {
       const auto& scroll = aStyleTimeline.AsScroll();
-      return ScrollTimeline::FromAnonymousScroll(
-          aPresContext->Document(), aTarget, scroll._0, scroll._1);
+      return ScrollTimeline::FromAnonymousScroll(aPresContext->Document(),
+                                                 aTarget, scroll._0, scroll._1);
       break;
     }
     case StyleAnimationTimeline::Tag::Auto:

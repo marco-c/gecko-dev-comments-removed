@@ -1097,16 +1097,17 @@ void nsTableCellFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
       nsDisplayListBuilder::AutoCurrentActiveScrolledRootSetter asrSetter(
           aBuilder);
       if (IsStackingContext()) {
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         clipState.SetClipChainForContainingBlockDescendants(
             backgrounds->GetTableClipChain());
         asrSetter.SetCurrentActiveScrolledRoot(backgrounds->GetTableASR());
