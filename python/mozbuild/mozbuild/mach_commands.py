@@ -17,6 +17,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import errno
 
 import mozbuild.settings  
 import mozpack.path as mozpath
@@ -361,31 +362,60 @@ def show_log(command_context, log_file=None):
             ["less"], stdin=subprocess.PIPE, env=env, encoding="UTF-8"
         )
 
-        
-        
-        less_handler = logging.StreamHandler(stream=less.stdin)
-        less_handler.setFormatter(
-            command_context.log_manager.terminal_handler.formatter
-        )
-        less_handler.setLevel(command_context.log_manager.terminal_handler.level)
+        try:
+            
+            
+            less_handler = logging.StreamHandler(stream=less.stdin)
+            less_handler.setFormatter(
+                command_context.log_manager.terminal_handler.formatter
+            )
+            less_handler.setLevel(command_context.log_manager.terminal_handler.level)
 
-        
-        
-        original_handler = command_context.log_manager.replace_terminal_handler(
-            less_handler
-        )
+            
+            
+            original_handler = command_context.log_manager.replace_terminal_handler(
+                less_handler
+            )
 
-        
-        handle_log_file(command_context, log_file)
+            
+            original_logging_raise_exceptions = logging.raiseExceptions
 
-        
-        command_context.log_manager.replace_terminal_handler(original_handler)
+            
+            
+            logging.raiseExceptions = False
 
-        
-        less.stdin.close()
-        
-        less.wait()
+            
+            
+            handle_log_file(command_context, log_file)
+
+            
+            
+            less.stdin.close()
+
+            
+            less.wait()
+        except OSError as os_error:
+            
+            
+            if os_error.errno == errno.EPIPE or os_error.errno == errno.EINVAL:
+                
+                
+                
+                
+                
+                
+                pass
+            else:
+                raise
+        except Exception:
+            raise
+        finally:
+            
+            command_context.log_manager.replace_terminal_handler(original_handler)
+            logging.raiseExceptions = original_logging_raise_exceptions
     else:
+        
+        
         handle_log_file(command_context, log_file)
 
 
