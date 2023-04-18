@@ -637,10 +637,7 @@ class nsTSubstring : public mozilla::detail::nsTStringRepr<T> {
 
 
   void ReplaceChar(char_type aOldChar, char_type aNewChar);
-  void ReplaceChar(const char_type* aSet, char_type aNewChar);
-
-  template <typename Q = T, typename EnableIfChar16 = mozilla::Char16OnlyT<Q>>
-  void ReplaceChar(const char* aSet, char16_t aNewChar);
+  void ReplaceChar(const string_view& aSet, char_type aNewChar);
 
   
 
@@ -666,8 +663,8 @@ class nsTSubstring : public mozilla::detail::nsTStringRepr<T> {
 
 
 
-  void Trim(const char* aSet, bool aEliminateLeading = true,
-            bool aEliminateTrailing = true, bool aIgnoreQuotes = false);
+  void Trim(const std::string_view& aSet, bool aTrimLeading = true,
+            bool aTrimTrailing = true, bool aIgnoreQuotes = false);
 
   
 
