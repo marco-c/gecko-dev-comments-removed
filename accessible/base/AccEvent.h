@@ -333,6 +333,12 @@ class AccReorderEvent : public AccTreeMutationEvent {
   virtual unsigned int GetEventGroups() const override {
     return AccTreeMutationEvent::GetEventGroups() | (1U << eReorderEvent);
   }
+
+  
+
+
+
+  void SetInner() { mEventType = ::nsIAccessibleEvent::EVENT_INNER_REORDER; }
 };
 
 

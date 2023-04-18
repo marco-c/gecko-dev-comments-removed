@@ -507,6 +507,7 @@ static const char kEventTypeNames[][40] = {
     "live region added",                
     "live region removed",              
     "table styling changed",            
+    "inner reorder",                    
 };
 
 #endif

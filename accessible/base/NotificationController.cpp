@@ -280,12 +280,19 @@ bool NotificationController::QueueMutationEvent(AccTreeMutationEvent* aEvent) {
 }
 
 void NotificationController::DropMutationEvent(AccTreeMutationEvent* aEvent) {
-  
   if (aEvent->GetEventType() == nsIAccessibleEvent::EVENT_REORDER) {
-    aEvent->GetAccessible()->SetReorderEventTarget(false);
+    
+    
+    AccReorderEvent* reorderEvent = downcast_accEvent(aEvent);
+
+    MOZ_ASSERT(reorderEvent);
+    reorderEvent->SetInner();
+    return;
   } else if (aEvent->GetEventType() == nsIAccessibleEvent::EVENT_SHOW) {
+    
     aEvent->GetAccessible()->SetShowEventTarget(false);
   } else {
+    
     aEvent->GetAccessible()->SetHideEventTarget(false);
 
     AccHideEvent* hideEvent = downcast_accEvent(aEvent);
@@ -390,7 +397,7 @@ void NotificationController::CoalesceMutationEvents() {
 
         parent = parent->LocalParent();
       }
-    } else {
+    } else if (eventType == nsIAccessibleEvent::EVENT_HIDE) {
       MOZ_ASSERT(eventType == nsIAccessibleEvent::EVENT_HIDE,
                  "mutation event list has an invalid event");
 
@@ -578,21 +585,32 @@ void NotificationController::ProcessMutationEvents() {
   }
 
   
-  for (AccTreeMutationEvent* event = mFirstMutationEvent; event;
-       event = event->NextEvent()) {
-    if (event->GetEventType() != nsIAccessibleEvent::EVENT_REORDER) {
-      continue;
-    }
+  for (const uint32_t reorderType : {nsIAccessibleEvent::EVENT_INNER_REORDER,
+                                     nsIAccessibleEvent::EVENT_REORDER}) {
+    for (AccTreeMutationEvent* event = mFirstMutationEvent; event;
+         event = event->NextEvent()) {
+      if (event->GetEventType() != reorderType) {
+        continue;
+      }
 
-    nsEventShell::FireEvent(event);
-    if (!mDocument) {
-      return;
-    }
+      if (event->GetAccessible()->IsDefunct()) {
+        
+        
+        MOZ_ASSERT(reorderType == nsIAccessibleEvent::EVENT_INNER_REORDER,
+                   "An 'outer' reorder target should not be defunct");
+        continue;
+      }
 
-    LocalAccessible* target = event->GetAccessible();
-    target->Document()->MaybeNotifyOfValueChange(target);
-    if (!mDocument) {
-      return;
+      nsEventShell::FireEvent(event);
+      if (!mDocument) {
+        return;
+      }
+
+      LocalAccessible* target = event->GetAccessible();
+      target->Document()->MaybeNotifyOfValueChange(target);
+      if (!mDocument) {
+        return;
+      }
     }
   }
 }
@@ -1004,6 +1022,7 @@ NotificationController::EventMap::GetEventType(AccTreeMutationEvent* aEvent) {
     case nsIAccessibleEvent::EVENT_HIDE:
       return HideEvent;
     case nsIAccessibleEvent::EVENT_REORDER:
+    case nsIAccessibleEvent::EVENT_INNER_REORDER:
       return ReorderEvent;
     default:
       MOZ_ASSERT_UNREACHABLE("event has invalid type");
