@@ -92,14 +92,19 @@ already_AddRefed<ScrollTimeline> ScrollTimeline::FromRule(
 }
 
 Nullable<TimeDuration> ScrollTimeline::GetCurrentTimeAsDuration() const {
-  const nsIFrame* frame =
-      mSource ? mSource.mElement->GetPrimaryFrame() : nullptr;
-  const nsIScrollableFrame* scrollFrame = GetScrollFrame();
-  if (!frame || !scrollFrame) {
+  
+  if (!mSource || !mSource.mElement->GetPrimaryFrame()) {
     return nullptr;
   }
 
-  const auto orientation = GetPhysicalOrientation(frame->GetWritingMode());
+  
+  const nsIScrollableFrame* scrollFrame = GetScrollFrame();
+  if (!scrollFrame) {
+    return nullptr;
+  }
+
+  const auto orientation = Axis();
+
   
   
   if (!scrollFrame->GetAvailableScrollingDirections().contains(orientation)) {
@@ -122,6 +127,20 @@ Nullable<TimeDuration> ScrollTimeline::GetCurrentTimeAsDuration() const {
   double progress = position / range;
   return TimeDuration::FromMilliseconds(progress *
                                         SCROLL_TIMELINE_DURATION_MILLISEC);
+}
+
+layers::ScrollDirection ScrollTimeline::Axis() const {
+  MOZ_ASSERT(mSource && mSource.mElement->GetPrimaryFrame());
+
+  const WritingMode wm = mSource.mElement->GetPrimaryFrame()->GetWritingMode();
+  return mDirection == StyleScrollDirection::Horizontal ||
+                 (!wm.IsVertical() &&
+                  mDirection == StyleScrollDirection::Inline) ||
+                 (wm.IsVertical() &&
+                  (mDirection == StyleScrollDirection::Block ||
+                   mDirection == StyleScrollDirection::Auto))
+             ? layers::ScrollDirection::eHorizontal
+             : layers::ScrollDirection::eVertical;
 }
 
 void ScrollTimeline::UnregisterFromScrollSource() {

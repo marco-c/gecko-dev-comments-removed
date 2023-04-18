@@ -54,6 +54,9 @@ struct PropertyAnimation {
   dom::IterationCompositeOperation mIterationComposite;
   bool mIsNotPlaying;
 
+  
+  Maybe<ScrollTimelineOptions> mScrollTimelineOptions;
+
   void ResetLastCompositionValues() {
     mCurrentIterationOnLastCompose = 0;
     mSegmentIndexOnLastCompose = 0;

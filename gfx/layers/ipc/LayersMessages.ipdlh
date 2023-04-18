@@ -50,6 +50,7 @@ using mozilla::layers::ScaleMode from "mozilla/layers/LayersTypes.h";
 using mozilla::layers::EventRegionsOverride from "mozilla/layers/LayersTypes.h";
 using mozilla::layers::DiagnosticTypes from "mozilla/layers/CompositorTypes.h";
 using mozilla::layers::ScrollableLayerGuid::ViewID from "mozilla/layers/ScrollableLayerGuid.h";
+using mozilla::layers::ScrollDirection from "mozilla/layers/LayersTypes.h";
 using mozilla::layers::LayersBackend from "mozilla/layers/LayersTypes.h";
 using mozilla::layers::LayerHandle from "mozilla/layers/LayersTypes.h";
 using mozilla::layers::CompositableHandle from "mozilla/layers/LayersTypes.h";
@@ -170,6 +171,14 @@ struct AnimationSegment {
   PartialPrerenderData? partialPrerenderData;
 };
 
+
+struct ScrollTimelineOptions {
+  
+  ViewID source;
+  
+  ScrollDirection axis;
+};
+
 struct Animation {
   
   
@@ -232,6 +241,9 @@ struct Animation {
   Animatable baseStyle;
   
   TransformData? transformData;
+  
+  
+  ScrollTimelineOptions? scrollTimelineOptions;
 };
 
 struct CompositorAnimations {

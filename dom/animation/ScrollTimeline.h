@@ -139,6 +139,28 @@ class ScrollTimeline final : public AnimationTimeline {
     Tick();
   }
 
+  
+  
+  
+  
+  
+  
+  
+  bool IsActive() const { return GetScrollFrame(); }
+
+  Element* SourceElement() const {
+    MOZ_ASSERT(mSource);
+    return mSource.mElement;
+  }
+
+  
+  
+  
+  
+  
+  
+  layers::ScrollDirection Axis() const;
+
   static constexpr const TimingParams& GetTiming() { return sTiming; }
 
  protected:
@@ -158,23 +180,6 @@ class ScrollTimeline final : public AnimationTimeline {
   void UnregisterFromScrollSource();
 
   const nsIScrollableFrame* GetScrollFrame() const;
-
-  
-  
-  
-  
-  
-  
-  layers::ScrollDirection GetPhysicalOrientation(WritingMode aWM) const {
-    return mDirection == StyleScrollDirection::Horizontal ||
-                   (!aWM.IsVertical() &&
-                    mDirection == StyleScrollDirection::Inline) ||
-                   (aWM.IsVertical() &&
-                    (mDirection == StyleScrollDirection::Block ||
-                     mDirection == StyleScrollDirection::Auto))
-               ? layers::ScrollDirection::eHorizontal
-               : layers::ScrollDirection::eVertical;
-  }
 
   RefPtr<Document> mDocument;
 

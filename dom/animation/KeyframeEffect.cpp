@@ -2032,6 +2032,8 @@ KeyframeEffect::MatchForCompositor KeyframeEffect::IsMatchForCompositor(
   
   
   
+  
+  
   if (mAnimation->UsingScrollTimeline()) {
     return KeyframeEffect::MatchForCompositor::No;
   }
