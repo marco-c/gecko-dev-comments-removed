@@ -2766,6 +2766,15 @@ BrowserGlue.prototype = {
         },
       },
 
+      {
+        task: () => {
+          Services.obs.notifyObservers(
+            null,
+            "unblock-untrusted-modules-thread"
+          );
+        },
+      },
+
       
       
       {
