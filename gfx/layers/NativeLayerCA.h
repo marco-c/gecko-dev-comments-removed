@@ -42,31 +42,6 @@ namespace layers {
 class NativeLayerRootSnapshotterCA;
 class SurfacePoolHandleCA;
 
-enum class SpecializeType {
-  
-  
-  
-  
-  
-  
-
-  None,          
-  FailNotVideo,  
-                 
-                 
-  Active,        
-  FailPref,      
-  Fail10_13,
-  FailFullscreen,
-  FailIsoMouse,     
-  FailIsoTopVideo,  
-  FailIsoSize,      
-  FailIsoCenter,    
-  FailIsoOneVideo,
-  FailSurface,
-  FailEnqueue,
-};
-
 
 
 
@@ -154,16 +129,14 @@ class NativeLayerRootCA : public NativeLayerRoot {
   struct Representation {
     explicit Representation(CALayer* aRootCALayer);
     ~Representation();
-    SpecializeType Commit(WhichRepresentation aRepresentation,
-                          const nsTArray<RefPtr<NativeLayerCA>>& aSublayers,
-                          bool aWindowIsFullscreen, bool aMouseMovedRecently);
+    void Commit(WhichRepresentation aRepresentation,
+                const nsTArray<RefPtr<NativeLayerCA>>& aSublayers,
+                bool aWindowIsFullscreen, bool aMouseMovedRecently);
     CALayer* FindVideoLayerToIsolate(
         WhichRepresentation aRepresentation,
-        const nsTArray<RefPtr<NativeLayerCA>>& aSublayers,
-        SpecializeType& aSpecialize  
-    );
+        const nsTArray<RefPtr<NativeLayerCA>>& aSublayers);
     CALayer* mRootCALayer = nullptr;  
-    SpecializeType mIsIsolatingVideo = SpecializeType::FailNotVideo;
+    bool mIsIsolatingVideo = false;
     bool mMutatedLayerStructure = false;
     bool mMutatedMouseMovedRecently = false;
   };
@@ -202,12 +175,6 @@ class NativeLayerRootCA : public NativeLayerRoot {
 
   
   bool mMouseMovedRecently = false;
-
-  
-  
-  unsigned int mTelemetryCommitCount = 0;
-  static const unsigned int TELEMETRY_COMMIT_PERIOD =
-      600;  
 };
 
 class RenderSourceNLRS;
@@ -316,8 +283,7 @@ class NativeLayerCA : public NativeLayer {
 
   UpdateType HasUpdate(WhichRepresentation aRepresentation);
   bool WillUpdateAffectLayers(WhichRepresentation aRepresentation);
-  SpecializeType ApplyChanges(WhichRepresentation aRepresentation,
-                              UpdateType aUpdate);
+  bool ApplyChanges(WhichRepresentation aRepresentation, UpdateType aUpdate);
 
   void SetBackingScale(float aBackingScale);
 
@@ -352,8 +318,7 @@ class NativeLayerCA : public NativeLayer {
 
   bool IsVideo();
   bool IsVideoAndLocked(const MutexAutoLock& aProofOfLock);
-
-  SpecializeType CanSpecializeVideo(const MutexAutoLock& aProofOfLock);
+  bool ShouldSpecializeVideo(const MutexAutoLock& aProofOfLock);
 
   
   struct Representation {
@@ -373,15 +338,15 @@ class NativeLayerCA : public NativeLayer {
     
     
     
-    SpecializeType ApplyChanges(UpdateType aUpdate, const gfx::IntSize& aSize,
-                                bool aIsOpaque, const gfx::IntPoint& aPosition,
-                                const gfx::Matrix4x4& aTransform,
-                                const gfx::IntRect& aDisplayRect,
-                                const Maybe<gfx::IntRect>& aClipRect,
-                                float aBackingScale, bool aSurfaceIsFlipped,
-                                gfx::SamplingFilter aSamplingFilter,
-                                SpecializeType aSpecializeVideo,
-                                CFTypeRefPtr<IOSurfaceRef> aFrontSurface);
+    bool ApplyChanges(UpdateType aUpdate, const gfx::IntSize& aSize,
+                      bool aIsOpaque, const gfx::IntPoint& aPosition,
+                      const gfx::Matrix4x4& aTransform,
+                      const gfx::IntRect& aDisplayRect,
+                      const Maybe<gfx::IntRect>& aClipRect, float aBackingScale,
+                      bool aSurfaceIsFlipped,
+                      gfx::SamplingFilter aSamplingFilter,
+                      bool aSpecializeVideo,
+                      CFTypeRefPtr<IOSurfaceRef> aFrontSurface);
 
     
     
@@ -484,7 +449,7 @@ class NativeLayerCA : public NativeLayer {
   bool mSurfaceIsFlipped = false;
   const bool mIsOpaque = false;
   bool mRootWindowIsFullscreen = false;
-  SpecializeType mSpecializeVideo = SpecializeType::None;
+  bool mSpecializeVideo = false;
 };
 
 }  
