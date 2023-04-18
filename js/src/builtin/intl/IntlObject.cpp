@@ -669,7 +669,19 @@ static constexpr auto UnsupportedCurrencies() {
 
 
 
+
+
+static constexpr auto MissingCurrencies() {
+  return std::array{
+      "SLE",  
+      "VED",  
+  };
+}
+
+
+
 static constexpr auto UnsupportedCurrenciesArray = UnsupportedCurrencies();
+static constexpr auto MissingCurrenciesArray = MissingCurrencies();
 
 
 
@@ -691,6 +703,17 @@ static ArrayObject* AvailableCurrencies(JSContext* cx) {
     static constexpr auto& unsupported = UnsupportedCurrenciesArray;
 
     if (!EnumerationIntoList<unsupported>(cx, currencies.unwrap(), &list)) {
+      return nullptr;
+    }
+  }
+
+  
+  for (const char* value : MissingCurrenciesArray) {
+    auto* string = NewStringCopyZ<CanGC>(cx, value);
+    if (!string) {
+      return nullptr;
+    }
+    if (!list.append(string)) {
       return nullptr;
     }
   }
