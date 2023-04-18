@@ -177,12 +177,12 @@ class History final : public BaseHistory,
   bool mShuttingDown;
   
   
-  Mutex mShuttingDownMutex MOZ_UNANNOTATED;
+  Mutex mShuttingDownMutex;
   
   
   
   
-  Mutex mBlockShutdownMutex MOZ_UNANNOTATED;
+  Mutex mBlockShutdownMutex;
 
   
   friend class InsertVisitedURIs;

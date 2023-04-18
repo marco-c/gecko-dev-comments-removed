@@ -377,7 +377,7 @@ class MediaTrackGraphInitThreadRunnable;
 
 class ThreadedDriver : public GraphDriver {
   class IterationWaitHelper {
-    Monitor mMonitor MOZ_UNANNOTATED;
+    Monitor mMonitor;
     
     bool mNeedAnotherIteration = false;
     TimeStamp mWakeTime;

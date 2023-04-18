@@ -66,7 +66,7 @@ class nsAvailableMemoryWatcher final : public nsITimerCallback,
   
   
   
-  Mutex mMutex MOZ_UNANNOTATED;
+  Mutex mMutex;
   nsCOMPtr<nsITimer> mTimer;
   nsAutoHandle mLowMemoryHandle;
   HANDLE mWaitHandle;

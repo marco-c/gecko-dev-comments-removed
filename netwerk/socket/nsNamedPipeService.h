@@ -51,7 +51,7 @@ class NamedPipeService final : public nsINamedPipeService,
 
 
 
-  Mutex mLock MOZ_UNANNOTATED;
+  Mutex mLock;
   nsTArray<nsCOMPtr<nsINamedPipeDataObserver>>
       mObservers;  
   nsTArray<nsCOMPtr<nsINamedPipeDataObserver>>

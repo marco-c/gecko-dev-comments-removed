@@ -272,7 +272,7 @@ class BenchCollections : public ::testing::Test {
 
   
   
-  static StaticMutex sValsMutex MOZ_UNANNOTATED;
+  static StaticMutex sValsMutex;
 };
 
 void** BenchCollections::sVals;

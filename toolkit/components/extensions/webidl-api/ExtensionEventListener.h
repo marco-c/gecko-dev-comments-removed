@@ -112,7 +112,7 @@ class ExtensionEventListener final : public mozIExtensionEventListener {
   
   
   
-  Mutex mMutex MOZ_UNANNOTATED;
+  Mutex mMutex;
 };
 
 

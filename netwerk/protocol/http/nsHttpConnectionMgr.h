@@ -207,8 +207,7 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   
   
 
-  ReentrantMonitor mReentrantMonitor MOZ_UNANNOTATED{
-      "nsHttpConnectionMgr.mReentrantMonitor"};
+  ReentrantMonitor mReentrantMonitor{"nsHttpConnectionMgr.mReentrantMonitor"};
   
   
   nsCOMPtr<nsIEventTarget> mSocketThreadTarget;

@@ -209,7 +209,7 @@ class nsMemoryReporterManager final : public nsIMemoryReporterManager,
   
   static const uint32_t kTimeoutLengthMS = 180000;
 
-  mozilla::Mutex mMutex MOZ_UNANNOTATED;
+  mozilla::Mutex mMutex;
   bool mIsRegistrationBlocked;
 
   StrongReportersTable* mStrongReporters;

@@ -96,7 +96,7 @@ class RefMessageBody final {
   
   
   
-  Mutex mMutex MOZ_UNANNOTATED;
+  Mutex mMutex;
 
   UniquePtr<ipc::StructuredCloneData> mCloneData;
 

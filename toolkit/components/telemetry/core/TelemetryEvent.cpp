@@ -676,7 +676,7 @@ nsresult SerializeEventsArray(const EventRecordArray& events, JSContext* cx,
 
 
 
-static StaticMutex gTelemetryEventsMutex MOZ_UNANNOTATED;
+static StaticMutex gTelemetryEventsMutex;
 
 void TelemetryEvent::InitializeGlobalState(bool aCanRecordBase,
                                            bool aCanRecordExtended) {

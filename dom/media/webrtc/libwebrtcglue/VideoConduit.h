@@ -271,7 +271,7 @@ class WebrtcVideoConduit
 
   bool RequiresNewSendStream(const VideoCodecConfig& newConfig) const;
 
-  mutable mozilla::ReentrantMonitor mRendererMonitor MOZ_UNANNOTATED;
+  mutable mozilla::ReentrantMonitor mRendererMonitor;
 
   
   RefPtr<mozilla::VideoRenderer> mRenderer;
@@ -328,7 +328,7 @@ class WebrtcVideoConduit
   
   WatchManager<WebrtcVideoConduit> mWatchManager;
 
-  mutable Mutex mMutex MOZ_UNANNOTATED;
+  mutable Mutex mMutex;
 
   
   

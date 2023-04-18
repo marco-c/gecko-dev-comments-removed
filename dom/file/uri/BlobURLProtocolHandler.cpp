@@ -87,7 +87,7 @@ struct DataInfo {
 
 
 
-static StaticMutex sMutex MOZ_UNANNOTATED;
+static StaticMutex sMutex;
 
 
 

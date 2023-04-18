@@ -57,7 +57,7 @@ class GlobalAllocPolicy {
 
  private:
   
-  static StaticMutex sMutex MOZ_UNANNOTATED;
+  static StaticMutex sMutex;
 };
 
 
@@ -86,7 +86,7 @@ class AllocPolicyImpl : public AllocPolicy {
   void ResolvePromise(ReentrantMonitorAutoEnter& aProofOfLock);
 
   const int mMaxDecoderLimit;
-  ReentrantMonitor mMonitor MOZ_UNANNOTATED;
+  ReentrantMonitor mMonitor;
   
   int mDecoderLimit;
   

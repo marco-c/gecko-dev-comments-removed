@@ -131,7 +131,7 @@ class nsUnknownDecoder : public nsIStreamConverter,
   nsCString mContentType;
 
   
-  mutable mozilla::Mutex mMutex MOZ_UNANNOTATED;
+  mutable mozilla::Mutex mMutex;
 
  protected:
   nsresult ConvertEncodedData(nsIRequest* request, const char* data,

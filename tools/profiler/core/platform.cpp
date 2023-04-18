@@ -3676,8 +3676,7 @@ class SamplerThread {
   
   
   int mDelaySpyStart = 0;
-  Monitor mSpyingStateMonitor MOZ_UNANNOTATED{
-      "SamplerThread::mSpyingStateMonitor"};
+  Monitor mSpyingStateMonitor{"SamplerThread::mSpyingStateMonitor"};
 #elif defined(GP_OS_darwin) || defined(GP_OS_linux) || \
     defined(GP_OS_android) || defined(GP_OS_freebsd)
   pthread_t mThread;

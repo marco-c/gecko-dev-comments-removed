@@ -330,7 +330,7 @@ struct DequeWrapperAW : DequeWrapperST {
 
 
 struct DequeWrapperMW : DequeWrapperST {
-  mozilla::Mutex mMutex MOZ_UNANNOTATED;
+  mozilla::Mutex mMutex;
 
   DequeWrapperMW() : mMutex("DequeWrapperMW/MT") {}
 

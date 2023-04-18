@@ -106,7 +106,7 @@ class nsConsoleService final : public nsIConsoleService, public nsIObserver {
   ListenerHash mListeners;
 
   
-  mozilla::Mutex mLock MOZ_UNANNOTATED;
+  mozilla::Mutex mLock;
 };
 
 #endif 

@@ -50,7 +50,7 @@ class OpenSLESProvider {
   void DestroyEngine(SLObjectItf* aObjectm);
 
   
-  mozilla::Mutex mLock MOZ_UNANNOTATED;
+  mozilla::Mutex mLock;
   SLObjectItf mSLEngine;
   int mSLEngineUsers;
   bool mIsRealized;

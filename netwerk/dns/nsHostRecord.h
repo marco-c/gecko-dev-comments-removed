@@ -241,7 +241,7 @@ class AddrHostRecord final : public nsHostRecord {
 
 
 
-  Mutex addr_info_lock MOZ_UNANNOTATED{"AddrHostRecord.addr_info_lock"};
+  Mutex addr_info_lock{"AddrHostRecord.addr_info_lock"};
   
   int addr_info_gencnt = 0;
   RefPtr<mozilla::net::AddrInfo> addr_info;
@@ -355,7 +355,7 @@ class TypeHostRecord final : public nsHostRecord,
   bool RefreshForNegativeResponse() const override;
 
   mozilla::net::TypeRecordResultType mResults = AsVariant(mozilla::Nothing());
-  mozilla::Mutex mResultsLock MOZ_UNANNOTATED{"TypeHostRecord.mResultsLock"};
+  mozilla::Mutex mResultsLock{"TypeHostRecord.mResultsLock"};
 
   
   mozilla::TimeStamp mStart;

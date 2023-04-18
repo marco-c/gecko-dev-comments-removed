@@ -231,7 +231,7 @@ class CamerasChild final : public PCamerasChild {
 
   nsTArray<CapturerElement> mCallbacks;
   
-  Mutex mCallbackMutex MOZ_UNANNOTATED;
+  Mutex mCallbackMutex;
 
   bool mIPCIsAlive;
 
@@ -243,11 +243,11 @@ class CamerasChild final : public PCamerasChild {
   
   
   
-  Mutex mRequestMutex MOZ_UNANNOTATED;
+  Mutex mRequestMutex;
   
   
   
-  Monitor mReplyMonitor MOZ_UNANNOTATED;
+  Monitor mReplyMonitor;
   
   bool mReceivedReply;
   

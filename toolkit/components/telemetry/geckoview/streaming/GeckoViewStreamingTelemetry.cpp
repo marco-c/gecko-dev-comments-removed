@@ -36,7 +36,7 @@ void SendBatch(const StaticMutexAutoLock& aLock);
 
 static const char* const kApplicationBackgroundTopic = "application-background";
 
-static StaticMutex gMutex MOZ_UNANNOTATED;
+static StaticMutex gMutex;
 
 
 

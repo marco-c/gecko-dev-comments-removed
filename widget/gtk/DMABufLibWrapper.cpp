@@ -26,7 +26,7 @@ namespace widget {
 
 
 
-mozilla::StaticMutex nsGbmLib::sDRILock MOZ_UNANNOTATED;
+mozilla::StaticMutex nsGbmLib::sDRILock;
 
 void* nsGbmLib::sGbmLibHandle = nullptr;
 void* nsGbmLib::sXf86DrmLibHandle = nullptr;

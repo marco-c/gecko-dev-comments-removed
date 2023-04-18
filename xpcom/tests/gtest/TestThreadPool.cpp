@@ -110,7 +110,7 @@ TEST(ThreadPool, Parallelism)
   
   
   
-  Monitor mon MOZ_UNANNOTATED("ThreadPool::Parallelism");
+  Monitor mon("ThreadPool::Parallelism");
   bool done = false;
   nsCOMPtr<nsIRunnable> r1 = new Runnable1(mon, done);
   nsCOMPtr<nsIRunnable> r2 = new Runnable2(mon, done);

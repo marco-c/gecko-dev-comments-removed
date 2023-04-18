@@ -83,7 +83,7 @@ class MediaSourceDemuxer : public MediaDataDemuxer,
   MozPromiseHolder<InitPromise> mInitPromise;
 
   
-  mutable Monitor mMonitor MOZ_UNANNOTATED;
+  mutable Monitor mMonitor;
   RefPtr<TrackBuffersManager> mAudioTrack;
   RefPtr<TrackBuffersManager> mVideoTrack;
   MediaInfo mInfo;
@@ -138,7 +138,7 @@ class MediaSourceTrackDemuxer
   RefPtr<MediaSourceDemuxer> mParent;
   TrackInfo::TrackType mType;
   
-  Monitor mMonitor MOZ_UNANNOTATED;
+  Monitor mMonitor;
   media::TimeUnit mNextRandomAccessPoint;
   
   

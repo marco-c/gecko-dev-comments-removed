@@ -66,7 +66,7 @@ class nsUrlClassifierUtils final : public nsIUrlClassifierUtils,
 
   
   ProviderDictType mProviderDict;
-  mozilla::Mutex mProviderDictLock MOZ_UNANNOTATED;
+  mozilla::Mutex mProviderDictLock;
 };
 
 #endif  

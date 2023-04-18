@@ -499,7 +499,7 @@ class nsCocoaUtils {
   
 
 
-  static StaticMutex sMediaCaptureMutex MOZ_UNANNOTATED;
+  static StaticMutex sMediaCaptureMutex;
 };
 
 #endif  

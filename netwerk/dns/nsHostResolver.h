@@ -292,7 +292,7 @@ class nsHostResolver : public nsISupports, public AHostResolver {
   uint32_t mDefaultCacheLifetime = 0;  
   uint32_t mDefaultGracePeriod = 0;    
   
-  mutable Mutex mLock MOZ_UNANNOTATED{"nsHostResolver.mLock"};
+  mutable Mutex mLock{"nsHostResolver.mLock"};
   CondVar mIdleTaskCV;
   nsRefPtrHashtable<nsGenericHashKey<nsHostKey>, nsHostRecord> mRecordDB;
   PRTime mCreationTime;

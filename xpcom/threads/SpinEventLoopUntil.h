@@ -131,7 +131,7 @@ struct MOZ_STACK_CLASS AutoNestedEventLoopAnnotation {
 
   
   static AutoNestedEventLoopAnnotation* sCurrent;
-  static StaticMutex sStackMutex MOZ_UNANNOTATED;
+  static StaticMutex sStackMutex;
 
   
   

@@ -446,7 +446,7 @@ class TraceLoggerThreadState {
 
   
   
-  Mutex lock MOZ_UNANNOTATED;
+  Mutex lock;
 
   TraceLoggerThreadState() : lock(js::mutexid::TraceLoggerThreadState) {}
 

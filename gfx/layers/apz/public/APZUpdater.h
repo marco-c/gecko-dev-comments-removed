@@ -193,12 +193,12 @@ class APZUpdater {
   
   
   
-  static StaticMutex sWindowIdLock MOZ_UNANNOTATED;
+  static StaticMutex sWindowIdLock;
   static StaticAutoPtr<std::unordered_map<uint64_t, APZUpdater*>> sWindowIdMap;
   Maybe<wr::WrWindowId> mWindowId;
 
   
-  mutable Mutex mThreadIdLock MOZ_UNANNOTATED;
+  mutable Mutex mThreadIdLock;
   
   
   
@@ -215,7 +215,7 @@ class APZUpdater {
   };
 
   
-  Mutex mQueueLock MOZ_UNANNOTATED;
+  Mutex mQueueLock;
   
   
   

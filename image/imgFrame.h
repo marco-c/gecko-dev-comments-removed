@@ -219,7 +219,7 @@ class imgFrame {
   
   
 
-  mutable Monitor mMonitor MOZ_UNANNOTATED;
+  mutable Monitor mMonitor;
 
   
 

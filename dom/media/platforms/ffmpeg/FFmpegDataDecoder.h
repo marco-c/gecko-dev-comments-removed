@@ -65,9 +65,8 @@ class FFmpegDataDecoder<LIBAV_VER>
   AVCodecID mCodecID;  
 
  protected:
-  static StaticMutex sMutex
-      MOZ_UNANNOTATED;  
-                        
+  static StaticMutex sMutex;  
+                              
   const RefPtr<TaskQueue> mTaskQueue;  
 
  private:

@@ -342,7 +342,7 @@ class nsPipe final : public nsIPipe {
   
   RefPtr<nsPipeInputStream> mOriginalInput;
 
-  ReentrantMonitor mReentrantMonitor MOZ_UNANNOTATED;
+  ReentrantMonitor mReentrantMonitor;
   nsSegmentedBuffer mBuffer;
 
   

@@ -475,7 +475,7 @@ class SourceBuffer final {
   
 
   
-  mutable Mutex mMutex MOZ_UNANNOTATED;
+  mutable Mutex mMutex;
 
   
   AutoTArray<Chunk, 1> mChunks;

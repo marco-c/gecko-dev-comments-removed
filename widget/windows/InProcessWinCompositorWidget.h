@@ -88,7 +88,7 @@ class InProcessWinCompositorWidget final
   gfx::CriticalSection mPresentLock;
 
   
-  mozilla::Mutex mTransparentSurfaceLock MOZ_UNANNOTATED;
+  mozilla::Mutex mTransparentSurfaceLock;
   mozilla::Atomic<nsTransparencyMode, MemoryOrdering::Relaxed>
       mTransparencyMode;
 

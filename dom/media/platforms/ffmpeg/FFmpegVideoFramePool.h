@@ -131,7 +131,7 @@ class VideoFramePool final {
 
  private:
   
-  Mutex mSurfaceLock MOZ_UNANNOTATED;
+  Mutex mSurfaceLock;
   nsTArray<RefPtr<VideoFrameSurfaceVAAPI>> mDMABufSurfaces;
   
   

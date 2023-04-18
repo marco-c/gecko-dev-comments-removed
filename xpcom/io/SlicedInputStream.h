@@ -99,7 +99,7 @@ class SlicedInputStream final : public nsIAsyncInputStream,
   
   nsCOMPtr<nsIInputStreamLengthCallback> mAsyncWaitLengthCallback;
 
-  Mutex mMutex MOZ_UNANNOTATED;
+  Mutex mMutex;
 };
 
 }  

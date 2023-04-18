@@ -69,7 +69,7 @@ class IOActivityMonitor final : public nsINamed {
 
   Activities mActivities;
   
-  Mutex mLock MOZ_UNANNOTATED;
+  Mutex mLock;
 };
 
 }  

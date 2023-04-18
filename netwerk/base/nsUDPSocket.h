@@ -59,7 +59,7 @@ class nsUDPSocket final : public nsASocketHandler, public nsIUDPSocket {
 
   
   
-  Mutex mLock MOZ_UNANNOTATED{"nsUDPSocket.mLock"};
+  Mutex mLock{"nsUDPSocket.mLock"};
   PRFileDesc* mFD{nullptr};
   NetAddr mAddr;
   OriginAttributes mOriginAttributes;

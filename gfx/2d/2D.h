@@ -998,7 +998,7 @@ class SharedFTFace : public external::AtomicRefCounted<SharedFTFace> {
  private:
   FT_Face mFace;
   SharedFTFaceData* mData;
-  Mutex mLock MOZ_UNANNOTATED;
+  Mutex mLock;
   
   
   
@@ -2013,7 +2013,7 @@ class GFX2D_API Factory {
 
  private:
   static FT_Library mFTLibrary;
-  static StaticMutex mFTLock MOZ_UNANNOTATED;
+  static StaticMutex mFTLock;
 
  public:
 #endif
@@ -2082,10 +2082,10 @@ class GFX2D_API Factory {
  protected:
   
   
-  static StaticMutex mDeviceLock MOZ_UNANNOTATED;
+  static StaticMutex mDeviceLock;
   
   
-  static StaticMutex mDTDependencyLock MOZ_UNANNOTATED;
+  static StaticMutex mDTDependencyLock;
 
   friend class DrawTargetD2D1;
 #endif  

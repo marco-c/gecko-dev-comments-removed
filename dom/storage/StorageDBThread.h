@@ -286,7 +286,7 @@ class StorageDBThread final {
     virtual ~ThreadObserver() = default;
     bool mHasPendingEvents;
     
-    Monitor mMonitor MOZ_UNANNOTATED;
+    Monitor mMonitor;
   };
 
   class InitHelper;

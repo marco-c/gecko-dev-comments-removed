@@ -63,7 +63,7 @@ class RLBoxSandboxPool : public nsITimerCallback, public nsINamed {
   nsTArray<UniquePtr<RLBoxSandboxDataBase>> mPool;
   const size_t mDelaySeconds;
   nsCOMPtr<nsITimer> mTimer;
-  mozilla::Mutex mMutex MOZ_UNANNOTATED;
+  mozilla::Mutex mMutex;
 };
 
 

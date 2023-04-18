@@ -194,8 +194,7 @@ class DataStorage : public nsIObserver {
                         nsTArray<DataStorageItem>* aItems,
                         const MutexAutoLock& aProofOfLock);
 
-  Mutex mMutex
-      MOZ_UNANNOTATED;  
+  Mutex mMutex;  
   DataStorageTable mPersistentDataTable;
   DataStorageTable mTemporaryDataTable;
   DataStorageTable mPrivateDataTable;
@@ -209,8 +208,7 @@ class DataStorage : public nsIObserver {
 
   mozilla::Atomic<bool> mInitCalled;  
 
-  Monitor mReadyMonitor
-      MOZ_UNANNOTATED;  
+  Monitor mReadyMonitor;  
   bool mReady;  
 
   const nsString mFilename;

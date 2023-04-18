@@ -89,7 +89,7 @@ class AudioSession final : public IAudioSessionEvents {
   nsID mSessionGroupingParameter;
   SessionState mState;
   
-  mozilla::Mutex mMutex MOZ_UNANNOTATED;
+  mozilla::Mutex mMutex;
 
   ThreadSafeAutoRefCnt mRefCnt;
   NS_DECL_OWNINGTHREAD

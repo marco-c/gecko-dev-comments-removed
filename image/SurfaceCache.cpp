@@ -60,7 +60,7 @@ class SurfaceCacheImpl;
 static StaticRefPtr<SurfaceCacheImpl> sInstance;
 
 
-static StaticMutex sInstanceMutex MOZ_UNANNOTATED;
+static StaticMutex sInstanceMutex;
 
 
 

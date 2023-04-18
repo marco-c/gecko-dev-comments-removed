@@ -618,7 +618,7 @@ class MOZ_HEAP_CLASS NativeWeakPtrControlBlock final {
 
  private:
   const mozilla::jni::Object::WeakRef mJavaOwner;
-  mutable RWLock mLock MOZ_UNANNOTATED;  
+  mutable RWLock mLock;  
   StorageType mNativeImpl;
 };
 

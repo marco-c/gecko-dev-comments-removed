@@ -152,7 +152,7 @@ class MediaEngineRemoteVideoSource : public MediaEngineSource,
 
   
   
-  Mutex mMutex MOZ_UNANNOTATED;
+  Mutex mMutex;
 
   
   

@@ -365,7 +365,7 @@ class PermissionManager final : public nsIPermissionManager,
 
  private:
   ~PermissionManager();
-  static StaticMutex sCreationMutex MOZ_UNANNOTATED;
+  static StaticMutex sCreationMutex;
 
   
 
@@ -534,7 +534,7 @@ class PermissionManager final : public nsIPermissionManager,
   
   
   
-  Monitor mMonitor MOZ_UNANNOTATED;
+  Monitor mMonitor;
 
   enum State {
     

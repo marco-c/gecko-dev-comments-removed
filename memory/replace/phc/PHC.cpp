@@ -676,7 +676,7 @@ class GMut {
 
  public:
   
-  static Mutex sMutex MOZ_UNANNOTATED;
+  static Mutex sMutex;
 
   GMut()
       : mRNG(RandomSeed<0>(), RandomSeed<1>()),
