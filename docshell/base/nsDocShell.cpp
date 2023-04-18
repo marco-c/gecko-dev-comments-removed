@@ -5549,6 +5549,7 @@ nsresult nsDocShell::Embed(nsIContentViewer* aContentViewer,
 
   if (!aIsTransientAboutBlank && mozilla::SessionHistoryInParent()) {
     bool expired = false;
+    uint32_t cacheKey = 0;
     nsCOMPtr<nsICacheInfoChannel> cacheChannel = do_QueryInterface(aRequest);
     if (cacheChannel) {
       
@@ -5558,10 +5559,21 @@ nsresult nsDocShell::Embed(nsIContentViewer* aContentViewer,
       if (expTime <= now) {
         expired = true;
       }
+
+      
+      
+      
+      
+      
+      if (((!mLoadingEntry || !mLoadingEntry->mLoadIsFromSessionHistory) &&
+           mBrowsingContext->ShouldUpdateSessionHistory(mLoadType)) ||
+          IsForceReloadType(mLoadType)) {
+        cacheChannel->GetCacheKey(&cacheKey);
+      }
     }
 
     MOZ_LOG(gSHLog, LogLevel::Debug, ("document %p Embed", this));
-    MoveLoadingToActiveEntry(aPersist, expired);
+    MoveLoadingToActiveEntry(aPersist, expired, cacheKey);
   }
 
   bool updateHistory = true;
@@ -8882,15 +8894,17 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
            this, mLoadingEntry->mInfo.GetURI()->GetSpecOrDefault().get()));
       bool hadActiveEntry = !!mActiveEntry;
       mActiveEntry = MakeUnique<SessionHistoryInfo>(mLoadingEntry->mInfo);
+      if (cacheKey != 0) {
+        mActiveEntry->SetCacheKey(cacheKey);
+      }
       
       
       
       mBrowsingContext->SessionHistoryCommit(
           *mLoadingEntry, mLoadType, mCurrentURI, hadActiveEntry, true, true,
           
-          false);
+          false, cacheKey);
       
-      SetCacheKeyOnHistoryEntry(nullptr, cacheKey);
 
       
       
@@ -13411,7 +13425,8 @@ void nsDocShell::SetLoadingSessionHistoryInfo(
   mLoadingEntry = MakeUnique<LoadingSessionHistoryInfo>(aLoadingInfo);
 }
 
-void nsDocShell::MoveLoadingToActiveEntry(bool aPersist, bool aExpired) {
+void nsDocShell::MoveLoadingToActiveEntry(bool aPersist, bool aExpired,
+                                          uint32_t aCacheKey) {
   MOZ_ASSERT(mozilla::SessionHistoryInParent());
 
   MOZ_LOG(gSHLog, LogLevel::Debug,
@@ -13435,6 +13450,9 @@ void nsDocShell::MoveLoadingToActiveEntry(bool aPersist, bool aExpired) {
   }
 
   if (mActiveEntry) {
+    if (aCacheKey != 0) {
+      mActiveEntry->SetCacheKey(aCacheKey);
+    }
     MOZ_ASSERT(loadingEntry);
     uint32_t loadType =
         mLoadType == LOAD_ERROR_PAGE ? mFailedLoadType : mLoadType;
@@ -13444,7 +13462,7 @@ void nsDocShell::MoveLoadingToActiveEntry(bool aPersist, bool aExpired) {
     
     mBrowsingContext->SessionHistoryCommit(*loadingEntry, loadType, mCurrentURI,
                                            hadActiveEntry, aPersist, false,
-                                           aExpired);
+                                           aExpired, aCacheKey);
   }
 }
 

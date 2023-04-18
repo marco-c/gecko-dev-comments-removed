@@ -801,7 +801,8 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   void SessionHistoryCommit(const LoadingSessionHistoryInfo& aInfo,
                             uint32_t aLoadType, nsIURI* aCurrentURI,
                             bool aHadActiveEntry, bool aPersist,
-                            bool aCloneEntryChildren, bool aChannelExpired);
+                            bool aCloneEntryChildren, bool aChannelExpired,
+                            uint32_t aCacheKey);
 
   
   

@@ -1093,7 +1093,9 @@ class nsDocShell final : public nsDocLoader,
   
   
   
-  void MoveLoadingToActiveEntry(bool aPersist, bool aExpired);
+  
+  void MoveLoadingToActiveEntry(bool aPersist, bool aExpired,
+                                uint32_t aCacheKey);
 
   void ActivenessMaybeChanged();
 
