@@ -6090,10 +6090,6 @@ bool nsDisplayTransform::ComputePerspectiveMatrix(const nsIFrame* aFrame,
   }
 
   
-
-
-
-  
   
   
   nsIFrame* perspectiveFrame =
@@ -6110,7 +6106,7 @@ bool nsDisplayTransform::ComputePerspectiveMatrix(const nsIFrame* aFrame,
 
   MOZ_ASSERT(perspectiveDisplay->mChildPerspective.IsLength());
   float perspective =
-      perspectiveDisplay->mChildPerspective.length._0.ToCSSPixels();
+      perspectiveDisplay->mChildPerspective.AsLength().ToCSSPixels();
   perspective = std::max(1.0f, perspective);
   if (perspective < std::numeric_limits<Float>::epsilon()) {
     return true;
