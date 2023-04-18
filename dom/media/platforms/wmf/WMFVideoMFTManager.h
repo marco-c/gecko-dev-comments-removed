@@ -64,7 +64,8 @@ class WMFVideoMFTManager : public MFTManager {
 
   HRESULT SetDecoderMediaTypes();
 
-  bool CanUseDXVA(IMFMediaType* aInputType, IMFMediaType* aOutputType);
+  bool CanUseDXVA(IMFMediaType* aInputType, IMFMediaType* aOutputType,
+                  float aFramerate);
 
   
   
