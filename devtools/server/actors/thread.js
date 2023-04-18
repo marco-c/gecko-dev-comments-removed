@@ -77,6 +77,13 @@ loader.lazyRequireGetter(
   true
 );
 
+loader.lazyRequireGetter(
+  this,
+  "isDocumentReady",
+  "devtools/server/actors/inspector/utils",
+  true
+);
+
 const PROMISE_REACTIONS = new WeakMap();
 function cacheReactionsForFrame(frame) {
   if (frame.asyncPromise) {
@@ -460,16 +467,31 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
   },
 
   _canShowOverlay() {
+    const { window } = this._parent;
+
     
     
     
     
-    return (
-      
-      
-      this._parent.window?.document?.documentElement &&
-      !this._parent.window.isChromeWindow
-    );
+    if (!window?.document?.documentElement) {
+      return false;
+    }
+
+    
+    
+    
+    
+    
+    if (!isDocumentReady(window.document)) {
+      return false;
+    }
+
+    
+    if (window.isChromeWindow) {
+      return false;
+    }
+
+    return true;
   },
 
   async showOverlay() {
