@@ -4018,15 +4018,16 @@ AttachDecision SetPropIRGenerator::tryAttachSetDenseElement(
   return AttachDecision::Attach;
 }
 
-static bool CanAttachAddElement(NativeObject* obj, bool isInit) {
+static bool CanAttachAddElement(NativeObject* obj, bool isInit,
+                                AllowIndexedReceiver allowIndexedReceiver) {
   
   
+  if (allowIndexedReceiver == AllowIndexedReceiver::No && obj->isIndexed()) {
+    return false;
+  }
+
   do {
     
-    if (obj->isIndexed()) {
-      return false;
-    }
-
     const JSClass* clasp = obj->getClass();
     if (clasp != &ArrayObject::class_ &&
         (clasp->getAddProperty() || clasp->getResolve() ||
@@ -4049,9 +4050,13 @@ static bool CanAttachAddElement(NativeObject* obj, bool isInit) {
       return false;
     }
 
-    
-    
     NativeObject* nproto = &proto->as<NativeObject>();
+    if (nproto->isIndexed()) {
+      return false;
+    }
+
+    
+    
     if (nproto->denseElementsAreFrozen() &&
         nproto->getDenseInitializedLength() > 0) {
       return false;
@@ -4116,7 +4121,8 @@ AttachDecision SetPropIRGenerator::tryAttachSetDenseElementHole(
   }
 
   
-  if (!CanAttachAddElement(nobj, IsPropertyInitOp(op))) {
+  if (!CanAttachAddElement(nobj, IsPropertyInitOp(op),
+                           AllowIndexedReceiver::No)) {
     return AttachDecision::NoAction;
   }
 
@@ -4178,7 +4184,9 @@ AttachDecision SetPropIRGenerator::tryAttachAddOrUpdateSparseElement(
   }
 
   
-  if (PrototypeMayHaveIndexedProperties(aobj)) {
+  
+  if (!CanAttachAddElement(aobj,  false,
+                           AllowIndexedReceiver::Yes)) {
     return AttachDecision::NoAction;
   }
 
@@ -5275,7 +5283,8 @@ AttachDecision CallIRGenerator::tryAttachArrayPush(HandleFunction callee) {
   auto* thisarray = &thisobj->as<ArrayObject>();
 
   
-  if (!CanAttachAddElement(thisarray,  false)) {
+  if (!CanAttachAddElement(thisarray,  false,
+                           AllowIndexedReceiver::No)) {
     return AttachDecision::NoAction;
   }
 
