@@ -222,7 +222,8 @@ namespace mozilla {
 
 namespace dom {
 class Document;
-}
+class WorkerPrivate;
+}  
 
 namespace ipc {
 class PrincipalInfo;
@@ -300,6 +301,9 @@ class StoragePrincipalHelper final {
   
   static bool ShouldUsePartitionPrincipalForServiceWorker(
       nsIDocShell* aDocShell);
+
+  static bool ShouldUsePartitionPrincipalForServiceWorker(
+      dom::WorkerPrivate* aWorkerPrivate);
 
   
 

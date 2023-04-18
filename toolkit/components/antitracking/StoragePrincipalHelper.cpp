@@ -8,6 +8,7 @@
 
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
 #include "mozilla/ContentBlocking.h"
+#include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/StorageAccess.h"
@@ -404,6 +405,29 @@ bool StoragePrincipalHelper::ShouldUsePartitionPrincipalForServiceWorker(
   return AntiTrackingUtils::IsThirdPartyContext(
       document ? document->GetBrowsingContext()
                : aDocShell->GetBrowsingContext());
+}
+
+
+bool StoragePrincipalHelper::ShouldUsePartitionPrincipalForServiceWorker(
+    dom::WorkerPrivate* aWorkerPrivate) {
+  MOZ_ASSERT(aWorkerPrivate);
+
+  
+  
+  if (!StaticPrefs::privacy_partition_serviceWorkers()) {
+    return false;
+  }
+
+  nsCOMPtr<nsICookieJarSettings> cookieJarSettings =
+      aWorkerPrivate->CookieJarSettings();
+
+  
+  if (cookieJarSettings->GetCookieBehavior() !=
+      nsICookieService::BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN) {
+    return false;
+  }
+
+  return aWorkerPrivate->IsThirdPartyContextToTopWindow();
 }
 
 
