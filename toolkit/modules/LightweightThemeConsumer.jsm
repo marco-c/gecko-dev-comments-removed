@@ -28,9 +28,9 @@ ChromeUtils.defineModuleGetter(
 
 const toolkitVariableMap = [
   [
-    "--lwt-frame",
+    "--lwt-accent-color",
     {
-      lwtProperty: "frame",
+      lwtProperty: "accentcolor",
       processColor(rgbaChannels, element) {
         if (!rgbaChannels || rgbaChannels.a == 0) {
           return "white";
@@ -44,7 +44,7 @@ const toolkitVariableMap = [
   [
     "--lwt-text-color",
     {
-      lwtProperty: "tab_background_text",
+      lwtProperty: "textcolor",
       processColor(rgbaChannels, element) {
         if (!rgbaChannels) {
           rgbaChannels = { r: 0, g: 0, b: 0 };
@@ -429,7 +429,7 @@ function _determineToolbarAndContentTheme(aDoc, aTheme) {
   
   let toolbarColor = _cssColorToRGBA(
     aDoc,
-    aTheme ? aTheme.toolbar_text || aTheme.tab_background_text || "black" : null
+    aTheme ? aTheme.toolbar_text || aTheme.textcolor || "black" : null
   );
   let contentColor = _cssColorToRGBA(aDoc, aTheme?.ntp_text);
   Services.prefs.setIntPref(
