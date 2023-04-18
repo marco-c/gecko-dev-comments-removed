@@ -3880,11 +3880,25 @@ CodeOffset MacroAssembler::wasmCallIndirect(const wasm::CallSiteDesc& desc,
   Register scratch = WasmTableCallScratchReg0;
   Register index = WasmTableCallIndexReg;
 
+  
+  
+  
+
+  static_assert(sizeof(wasm::FunctionTableElem) == 8 ||
+                    sizeof(wasm::FunctionTableElem) == 16,
+                "elements of function tables are two words");
+
   if (callee.which() == wasm::CalleeDesc::AsmJSTable) {
     
     
     loadWasmGlobalPtr(callee.tableFunctionBaseGlobalDataOffset(), scratch);
-    loadPtr(BaseIndex(scratch, index, ScalePointer), scratch);
+    if (sizeof(wasm::FunctionTableElem) == 8) {
+      computeEffectiveAddress(BaseIndex(scratch, index, TimesEight), scratch);
+    } else {
+      lshift32(Imm32(4), index);
+      addPtr(index, scratch);
+    }
+    loadPtr(Address(scratch, offsetof(wasm::FunctionTableElem, code)), scratch);
     storePtr(WasmTlsReg,
              Address(getStackPointer(), WasmCallerTLSOffsetBeforeCall));
     storePtr(WasmTlsReg,
@@ -3893,22 +3907,6 @@ CodeOffset MacroAssembler::wasmCallIndirect(const wasm::CallSiteDesc& desc,
   }
 
   MOZ_ASSERT(callee.which() == wasm::CalleeDesc::WasmTable);
-
-  wasm::BytecodeOffset trapOffset(desc.lineOrBytecode());
-
-  
-  if (needsBoundsCheck) {
-    loadWasmGlobalPtr(callee.tableLengthGlobalDataOffset(), scratch);
-
-    Label ok;
-    branch32(Assembler::Condition::Below, index, scratch, &ok);
-    wasmTrap(wasm::Trap::OutOfBounds, trapOffset);
-    bind(&ok);
-  }
-
-  
-  
-  loadWasmGlobalPtr(callee.tableFunctionBaseGlobalDataOffset(), scratch);
 
   
   wasm::TypeIdDesc funcTypeId = callee.wasmTableSigId();
@@ -3923,8 +3921,30 @@ CodeOffset MacroAssembler::wasmCallIndirect(const wasm::CallSiteDesc& desc,
       break;
   }
 
+  wasm::BytecodeOffset trapOffset(desc.lineOrBytecode());
+
   
-  loadPtr(BaseIndex(scratch, index, ScalePointer), scratch);
+  if (needsBoundsCheck) {
+    loadWasmGlobalPtr(callee.tableLengthGlobalDataOffset(), scratch);
+
+    Label ok;
+    branch32(Assembler::Condition::Below, index, scratch, &ok);
+    wasmTrap(wasm::Trap::OutOfBounds, trapOffset);
+    bind(&ok);
+  }
+
+  
+  loadWasmGlobalPtr(callee.tableFunctionBaseGlobalDataOffset(), scratch);
+
+  
+  if (sizeof(wasm::FunctionTableElem) == 8) {
+    computeEffectiveAddress(BaseIndex(scratch, index, TimesEight), scratch);
+  } else {
+    lshift32(Imm32(4), index);
+    addPtr(index, scratch);
+  }
+
+  loadPtr(Address(scratch, offsetof(wasm::FunctionTableElem, code)), scratch);
 
 #ifdef ENABLE_WASM_CALL_INDIRECT_NULL
   CodeOffset callOffset = call(desc, scratch);

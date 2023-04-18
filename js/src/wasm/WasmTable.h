@@ -45,14 +45,12 @@ class Table : public ShareableBase<Table> {
       JS::WeakCache<GCHashSet<WeakHeapPtrWasmInstanceObject,
                               MovableCellHasher<WeakHeapPtrWasmInstanceObject>,
                               SystemAllocPolicy>>;
-  using UniqueCodePtrArray = UniquePtr<void*[], JS::FreePolicy>;
-  using UniqueTlsPtrArray = UniquePtr<TlsData*[], JS::FreePolicy>;
+  using UniqueFuncRefArray = UniquePtr<FunctionTableElem[], JS::FreePolicy>;
 
   WeakHeapPtrWasmTableObject maybeObject_;
   InstanceSet observers_;
-  UniqueCodePtrArray codePtrs_;  
-  UniqueTlsPtrArray tlsPtrs_;    
-  TableAnyRefVector objects_;    
+  UniqueFuncRefArray functions_;  
+  TableAnyRefVector objects_;     
   const RefType elemType_;
   const bool isAsmJS_;
   const bool isPublic_;
@@ -62,7 +60,7 @@ class Table : public ShareableBase<Table> {
   template <class>
   friend struct js::MallocProvider;
   Table(JSContext* cx, const TableDesc& desc, HandleWasmTableObject maybeObject,
-        UniqueCodePtrArray codePtrs, UniqueTlsPtrArray tlsPtrs);
+        UniqueFuncRefArray functions);
   Table(JSContext* cx, const TableDesc& desc, HandleWasmTableObject maybeObject,
         TableAnyRefVector&& objects);
 
@@ -98,10 +96,7 @@ class Table : public ShareableBase<Table> {
   
   
 
-#ifdef DEBUG
-  [[nodiscard]] bool isNull(uint32_t index) const;
-#endif
-
+  const FunctionTableElem& getFuncRef(uint32_t index) const;
   [[nodiscard]] bool getFuncRef(JSContext* cx, uint32_t index,
                                 MutableHandleFunction fun) const;
   void setFuncRef(uint32_t index, void* code, const Instance* instance);

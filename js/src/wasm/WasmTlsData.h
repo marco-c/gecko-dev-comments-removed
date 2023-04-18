@@ -169,6 +169,23 @@ struct TableTls {
   void* functionBase;
 };
 
+
+
+
+
+struct FunctionTableElem {
+  
+  
+  
+  
+  
+  void* code;
+
+  
+  
+  TlsData* tls;
+};
+
 }  
 }  
 
