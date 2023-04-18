@@ -497,6 +497,12 @@ pref("browser.urlbar.merino.endpointURL", "https://merino.services.mozilla.com/a
 
 pref("browser.urlbar.merino.timeoutMs", 200);
 
+
+pref("browser.urlbar.merino.providers", "");
+
+
+pref("browser.urlbar.merino.clientVariants", "");
+
 pref("browser.altClickSave", false);
 
 

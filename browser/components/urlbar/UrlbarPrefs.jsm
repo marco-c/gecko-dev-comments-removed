@@ -127,10 +127,16 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["maxRichResults", 10],
 
   
+  ["merino.clientVariants", ""],
+
+  
   ["merino.enabled", false],
 
   
   ["merino.endpointURL", "https://merino.services.mozilla.com/api/v1/suggest"],
+
+  
+  ["merino.providers", ""],
 
   
   ["merino.timeoutMs", 200],
