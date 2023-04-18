@@ -5972,9 +5972,12 @@ void ThreadRegistry::Unregister(ThreadRegistration::OnThreadRef aOnThreadRef) {
 
 void profiler_register_page(uint64_t aTabID, uint64_t aInnerWindowID,
                             const nsCString& aUrl,
-                            uint64_t aEmbedderInnerWindowID) {
-  DEBUG_LOG("profiler_register_page(%" PRIu64 ", %" PRIu64 ", %s, %" PRIu64 ")",
-            aTabID, aInnerWindowID, aUrl.get(), aEmbedderInnerWindowID);
+                            uint64_t aEmbedderInnerWindowID,
+                            bool aIsPrivateBrowsing) {
+  DEBUG_LOG("profiler_register_page(%" PRIu64 ", %" PRIu64 ", %s, %" PRIu64
+            ", %s)",
+            aTabID, aInnerWindowID, aUrl.get(), aEmbedderInnerWindowID,
+            aIsPrivateBrowsing ? "true" : "false");
 
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
@@ -5983,8 +5986,8 @@ void profiler_register_page(uint64_t aTabID, uint64_t aInnerWindowID,
   
   
   
-  RefPtr<PageInformation> pageInfo =
-      new PageInformation(aTabID, aInnerWindowID, aUrl, aEmbedderInnerWindowID);
+  RefPtr<PageInformation> pageInfo = new PageInformation(
+      aTabID, aInnerWindowID, aUrl, aEmbedderInnerWindowID, aIsPrivateBrowsing);
   CorePS::AppendRegisteredPage(lock, std::move(pageInfo));
 
   

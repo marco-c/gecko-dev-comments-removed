@@ -99,7 +99,8 @@ static inline void profiler_received_exit_profile(
 static inline void profiler_register_page(uint64_t aTabID,
                                           uint64_t aInnerWindowID,
                                           const nsCString& aUrl,
-                                          uint64_t aEmbedderInnerWindowID) {}
+                                          uint64_t aEmbedderInnerWindowID,
+                                          bool aIsPrivateBrowsing) {}
 static inline void profiler_unregister_page(uint64_t aRegisteredInnerWindowID) {
 }
 
@@ -266,9 +267,12 @@ void profiler_unregister_thread();
 
 
 
+
+
 void profiler_register_page(uint64_t aTabID, uint64_t aInnerWindowID,
                             const nsCString& aUrl,
-                            uint64_t aEmbedderInnerWindowID);
+                            uint64_t aEmbedderInnerWindowID,
+                            bool aIsPrivateBrowsing);
 
 
 

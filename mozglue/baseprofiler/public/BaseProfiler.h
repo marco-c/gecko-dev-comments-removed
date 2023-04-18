@@ -223,6 +223,7 @@ MFBT_API void profiler_register_page(uint64_t aTabD, uint64_t aInnerWindowID,
 
 
 
+
 MFBT_API void profiler_unregister_page(uint64_t aRegisteredInnerWindowID);
 
 
