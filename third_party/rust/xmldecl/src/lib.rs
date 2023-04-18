@@ -50,12 +50,7 @@ fn skip_encoding(hay: &[u8]) -> Option<&[u8]> {
 
 
 pub fn parse(bytes: &[u8]) -> Option<&'static encoding_rs::Encoding> {
-    let up_to_kilobyte = if bytes.len() > 1024 {
-        &bytes[..1024]
-    } else {
-        bytes
-    };
-    if let Some(after_xml) = up_to_kilobyte.strip_prefix(b"<?xml") {
+    if let Some(after_xml) = bytes.strip_prefix(b"<?xml") {
         if let Some(gt) = position(b'>', after_xml) {
             let until_gt = &after_xml[..gt];
             if let Some(tail) = skip_encoding(until_gt) {
@@ -371,6 +366,6 @@ mod tests {
         }
         v.extend_from_slice(b"?>AAAA");
         assert_eq!(v.len(), 1029);
-        assert_eq!(parse(&v), None);
+        assert_eq!(parse(&v), Some(encoding_rs::WINDOWS_1251));
     }
 }

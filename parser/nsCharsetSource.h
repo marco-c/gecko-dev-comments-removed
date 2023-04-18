@@ -6,7 +6,7 @@
 #define nsCharsetSource_h_
 
 
-enum {
+enum nsCharsetSource {
   kCharsetUninitialized,
   kCharsetFromFallback,
   kCharsetFromDocTypeDefault,  
@@ -17,21 +17,22 @@ enum {
   kCharsetFromInitialAutoDetectionWouldNotHaveBeenUTF8Content,
   kCharsetFromInitialAutoDetectionWouldNotHaveBeenUTF8DependedOnTLD,
   
+  kCharsetFromParentFrame,  
+                            
+                            
+  kCharsetFromXmlDeclaration,
+  kCharsetFromMetaTag,
+  kCharsetFromChannel,
+  kCharsetFromOtherComponent,
+  kCharsetFromInitialUserForcedAutoDetection,
+  
+  
   kCharsetFromFinalAutoDetectionWouldHaveBeenUTF8,
   kCharsetFromFinalAutoDetectionWouldNotHaveBeenUTF8Generic,
   kCharsetFromFinalAutoDetectionWouldNotHaveBeenUTF8Content,
   kCharsetFromFinalAutoDetectionWouldNotHaveBeenUTF8DependedOnTLD,
   kCharsetFromFinalAutoDetectionFile,
   
-  kCharsetFromParentFrame,  
-                            
-                            
-  kCharsetFromXmlDeclaration,
-  kCharsetFromMetaPrescan,  
-  kCharsetFromMetaTag,      
-  kCharsetFromChannel,
-  kCharsetFromOtherComponent,
-  kCharsetFromInitialUserForcedAutoDetection,
   kCharsetFromFinalUserForcedAutoDetection,
   kCharsetFromXmlDeclarationUtf16,  
                                     
