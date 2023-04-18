@@ -1998,11 +1998,6 @@ var gPrivacyPane = {
 
 
   _updateFirefoxSuggestSection(onInit = false) {
-    
-    document.getElementById(
-      "firefoxSuggestBestMatchContainer"
-    ).hidden = !UrlbarPrefs.get("bestMatchEnabled");
-
     let container = document.getElementById("firefoxSuggestContainer");
 
     if (UrlbarPrefs.get("quickSuggestEnabled")) {
@@ -2021,6 +2016,11 @@ var gPrivacyPane = {
       document
         .getElementById("openSearchEnginePreferences")
         .classList.add("extraMargin");
+
+      
+      document.getElementById(
+        "firefoxSuggestBestMatchContainer"
+      ).hidden = !UrlbarPrefs.get("bestMatchEnabled");
 
       
       this._updateFirefoxSuggestInfoBox();
