@@ -56,20 +56,100 @@ import { getAllThreads } from "./threads";
 
 export function initialSourcesState(state) {
   return {
+    
+
+
+
+
+
     sources: createInitial(),
+
+    
+
+
+
+
+
     urls: {},
+
+    
+
+
+
+
+
+
     plainUrls: {},
+
+    
+
+
+
+
     sourcesWithUrls: [],
-    content: {},
+
+    
+
+
+
+
+
+
+
+
+
     actors: {},
+
     breakpointPositions: {},
     breakableLines: {},
+
+    
+
+
+
+
+
     epoch: 1,
+
+    
+
+
+
+
+
+
+
+
+
     selectedLocation: undefined,
+
+    
+
+
+
     pendingSelectedLocation: prefs.pendingSelectedLocation,
+
+    
+
+
+
+
+
+
     projectDirectoryRoot: prefs.projectDirectoryRoot,
     projectDirectoryRootName: prefs.projectDirectoryRootName,
+
+    
+
+
+
+
+
+
+
+
     chromeAndExtensionsEnabled: prefs.chromeAndExtensionsEnabled,
+
     
 
 

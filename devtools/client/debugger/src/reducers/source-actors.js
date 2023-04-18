@@ -18,13 +18,24 @@ import {
 
 import { asyncActionAsValue } from "../actions/utils/middleware/promise";
 
+
+
+
+
+
+
+
+
+
+
+
+
 export const initial = createInitial();
 
 export default function update(state = initial, action) {
   switch (action.type) {
     case "INSERT_SOURCE_ACTORS": {
       const { items } = action;
-      
       
       state = insertResources(
         state,
