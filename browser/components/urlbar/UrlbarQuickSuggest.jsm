@@ -46,12 +46,13 @@ const DIALOG_VARIATION_PREF = "quickSuggestOnboardingDialogVariation";
 
 
 const ONBOARDING_CHOICE = {
-  ACCEPT: "accept",
-  REJECT: "reject",
-  DISMISSED_ESCAPE_KEY: "dismissed_escape_key",
-  DISMISSED_OTHER: "dismissed_other",
-  LEARN_MORE: "learn_more",
-  NOT_NOW: "not_now_link",
+  ACCEPT_2: "accept_2",
+  CLOSE_1: "close_1",
+  DISMISS_1: "dismiss_1",
+  DISMISS_2: "dismiss_2",
+  LEARN_MORE_2: "learn_more_2",
+  NOT_NOW_2: "not_now_2",
+  REJECT_2: "reject_2",
 };
 
 const ONBOARDING_URI =
@@ -234,70 +235,43 @@ class Suggestions {
 
     let win = BrowserWindowTracker.getTopWindow();
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    let escapeKeyPressed = false;
-    let keyListener = keyEvent => {
-      if (
-        keyEvent.keyCode == keyEvent.DOM_VK_ESCAPE &&
-        win.gDialogBox.dialog?.frameContentWindow?.document?.documentURI ==
-          ONBOARDING_URI
-      ) {
-        escapeKeyPressed = true;
-      }
-    };
-    win.addEventListener("keydown", keyListener, true);
-
     let variationType;
     try {
       
       variationType = UrlbarPrefs.get(DIALOG_VARIATION_PREF).toLowerCase();
     } catch (e) {}
 
-    let params = { choice: undefined, variationType };
+    let params = { choice: undefined, variationType, visitedMain: false };
     await win.gDialogBox.open(ONBOARDING_URI, params);
 
-    win.removeEventListener("keydown", keyListener, true);
-
     UrlbarPrefs.set(SEEN_DIALOG_PREF, true);
-    UrlbarPrefs.set(DIALOG_VERSION_PREF, 1);
+    UrlbarPrefs.set(
+      DIALOG_VERSION_PREF,
+      JSON.stringify({ version: 1, variation: variationType })
+    );
 
     
     
     
-    let optedIn = params.choice == ONBOARDING_CHOICE.ACCEPT;
+    let optedIn = params.choice == ONBOARDING_CHOICE.ACCEPT_2;
     UrlbarPrefs.set("quicksuggest.dataCollection.enabled", optedIn);
 
     switch (params.choice) {
-      case ONBOARDING_CHOICE.LEARN_MORE:
+      case ONBOARDING_CHOICE.LEARN_MORE_2:
         win.openTrustedLinkIn(UrlbarProviderQuickSuggest.helpUrl, "tab", {
           fromChrome: true,
         });
         break;
-      case ONBOARDING_CHOICE.ACCEPT:
-      case ONBOARDING_CHOICE.REJECT:
-      case ONBOARDING_CHOICE.NOT_NOW:
+      case ONBOARDING_CHOICE.ACCEPT_2:
+      case ONBOARDING_CHOICE.REJECT_2:
+      case ONBOARDING_CHOICE.NOT_NOW_2:
+      case ONBOARDING_CHOICE.CLOSE_1:
         
         break;
       default:
-        if (escapeKeyPressed) {
-          params.choice = ONBOARDING_CHOICE.DISMISSED_ESCAPE_KEY;
-          break;
-        }
-        
-        
-        
-        params.choice = ONBOARDING_CHOICE.DISMISSED_OTHER;
+        params.choice = params.visitedMain
+          ? ONBOARDING_CHOICE.DISMISS_2
+          : ONBOARDING_CHOICE.DISMISS_1;
         break;
     }
 
