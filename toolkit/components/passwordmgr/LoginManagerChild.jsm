@@ -1261,8 +1261,6 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
 
 
         numFormHasPossibleUsernameEvent: 0,
-
-        lastUserGestureTimeStamp: 0,
       };
       this._loginFormStateByDocument.set(document, loginFormState);
     }
@@ -2931,15 +2929,13 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
 
   _formHasModifiedFields(form) {
     let doc = form.rootElement.ownerDocument;
-    let state = this.stateForDocument(doc);
     let userHasInteracted;
     let testOnlyUserHasInteracted =
       LoginHelper.testOnlyUserHasInteractedWithDocument;
     if (Cu.isInAutomation && testOnlyUserHasInteracted !== null) {
       userHasInteracted = testOnlyUserHasInteracted;
     } else {
-      userHasInteracted =
-        state.lastUserGestureTimeStamp != doc.lastUserGestureTimeStamp;
+      userHasInteracted = doc.userHasInteracted;
     }
 
     log("_formHasModifiedFields, userHasInteracted:", userHasInteracted);
@@ -2948,9 +2944,7 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
     if (!userHasInteracted) {
       return false;
     }
-
-    state.lastUserGestureTimeStamp = doc.lastUserGestureTimeStamp;
-
+    let state = this.stateForDocument(doc);
     
     let fieldsModified = state.fieldModificationsByRootElement.get(
       form.rootElement
