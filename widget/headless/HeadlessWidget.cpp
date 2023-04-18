@@ -301,6 +301,11 @@ void HeadlessWidget::SetSizeMode(nsSizeMode aMode) {
     return;
   }
 
+  if (aMode == nsSizeMode_Normal && mSizeMode == nsSizeMode_Fullscreen) {
+    MakeFullScreen(false);
+    return;
+  }
+
   mSizeMode = aMode;
 
   
