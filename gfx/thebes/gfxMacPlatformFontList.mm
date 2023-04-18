@@ -390,13 +390,13 @@ CGFontRef MacOSFontEntry::CreateOrCopyFontRef() {
     ::CGFontRetain(mFontRef);
     return mFontRef;
   }
+
+  CrashReporter::AutoAnnotateCrashReport autoFontName(CrashReporter::Annotation::FontName, mName);
+
   
   NSString* psname = GetNSStringForString(NS_ConvertUTF8toUTF16(mName));
   CGFontRef ref = CGFontCreateWithFontName(CFStringRef(psname));
   if (!ref) {
-    CrashReporter::AutoAnnotateCrashReport autoFontName(CrashReporter::Annotation::FontName,
-                                                        psname);
-
     
     
     
