@@ -3022,7 +3022,15 @@ int NS_main(int argc, NS_tchar** argv) {
 #ifdef XP_WIN
   bool useService = false;
   bool testOnlyFallbackKeyExists = false;
+  
+  
+  
   bool noServiceFallback = false;
+  
+  
+  
+  
+  bool forceServiceFallback = false;
 #endif
 
   if (!isDMGInstall) {
@@ -3034,6 +3042,8 @@ int NS_main(int argc, NS_tchar** argv) {
 #    ifdef TEST_UPDATER
     noServiceFallback = EnvHasValue("MOZ_NO_SERVICE_FALLBACK");
     putenv(const_cast<char*>("MOZ_NO_SERVICE_FALLBACK="));
+    forceServiceFallback = EnvHasValue("MOZ_FORCE_SERVICE_FALLBACK");
+    putenv(const_cast<char*>("MOZ_FORCE_SERVICE_FALLBACK="));
     
     
     
@@ -3388,7 +3398,8 @@ int NS_main(int argc, NS_tchar** argv) {
       }
 
       if (updateLockFileHandle == INVALID_HANDLE_VALUE ||
-          (useService && testOnlyFallbackKeyExists && noServiceFallback)) {
+          (useService && testOnlyFallbackKeyExists &&
+           (noServiceFallback || forceServiceFallback))) {
         HANDLE elevatedFileHandle;
         if (NS_tremove(elevatedLockFilePath) && errno != ENOENT) {
           LOG(("Unable to create elevated lock file! Exiting"));
@@ -3486,9 +3497,19 @@ int NS_main(int argc, NS_tchar** argv) {
           
           WriteStatusFile(SERVICE_UPDATE_STATUS_UNCHANGED);
 
+          int serviceArgc = argc;
+          if (forceServiceFallback && serviceArgc > 2) {
+            
+            
+            
+            
+            serviceArgc = 2;
+          }
+
           
           
-          DWORD ret = LaunchServiceSoftwareUpdateCommand(argc, (LPCWSTR*)argv);
+          DWORD ret =
+              LaunchServiceSoftwareUpdateCommand(serviceArgc, (LPCWSTR*)argv);
           useService = (ret == ERROR_SUCCESS);
           
           if (useService) {
@@ -3598,7 +3619,8 @@ int NS_main(int argc, NS_tchar** argv) {
         
         
         if (!useService && !noServiceFallback &&
-            updateLockFileHandle == INVALID_HANDLE_VALUE) {
+            (updateLockFileHandle == INVALID_HANDLE_VALUE ||
+             forceServiceFallback)) {
           
           
           char uuidStringBefore[UUID_LEN] = {'\0'};
@@ -3615,7 +3637,31 @@ int NS_main(int argc, NS_tchar** argv) {
           sinfo.hwnd = nullptr;
           sinfo.lpFile = argv[0];
           sinfo.lpParameters = cmdLine.get();
-          sinfo.lpVerb = L"runas";
+          if (forceServiceFallback) {
+            
+            
+            
+            
+            sinfo.lpVerb = L"open";
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            CloseHandle(elevatedFileHandle);
+            
+            
+            if (updateLockFileHandle != INVALID_HANDLE_VALUE) {
+              CloseHandle(updateLockFileHandle);
+            }
+          } else {
+            sinfo.lpVerb = L"runas";
+          }
           sinfo.nShow = SW_SHOWNORMAL;
 
           bool result = ShellExecuteEx(&sinfo);
