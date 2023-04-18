@@ -211,6 +211,7 @@ class CycleCollectedJSContext : dom::PerThreadAtomCache, private JS::JobQueue {
   virtual void AfterProcessTask(uint32_t aRecursionDepth);
 
   
+  
   virtual void MaybePokeGC();
 
   uint32_t RecursionDepth() const;
