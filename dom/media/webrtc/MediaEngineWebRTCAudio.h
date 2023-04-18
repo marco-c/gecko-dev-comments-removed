@@ -273,7 +273,7 @@ class AudioProcessingTrack : public ProcessedMediaTrack {
                         size_t aFrames, TrackRate aRate, uint32_t aChannels);
 
   
-  AudioProcessingTrack* AsAudioInputTrack() override { return this; }
+  AudioProcessingTrack* AsAudioProcessingTrack() override { return this; }
 
  private:
   
