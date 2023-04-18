@@ -87,8 +87,8 @@ class XULBroadcastManager::nsDelayedBroadcastUpdate {
   nsDelayedBroadcastUpdate(const nsDelayedBroadcastUpdate& aOther) = delete;
   nsDelayedBroadcastUpdate(nsDelayedBroadcastUpdate&& aOther) = default;
 
-  nsCOMPtr<Element> mBroadcaster;
-  nsCOMPtr<Element> mListener;
+  RefPtr<Element> mBroadcaster;
+  RefPtr<Element> mListener;
   
   
   nsString mAttr;
@@ -300,7 +300,7 @@ nsresult XULBroadcastManager::ExecuteOnBroadcastHandlerFor(
   
   
 
-  for (nsIContent* child = aListener->GetFirstChild(); child;
+  for (nsCOMPtr<nsIContent> child = aListener->GetFirstChild(); child;
        child = child->GetNextSibling()) {
     
     
@@ -333,8 +333,7 @@ nsresult XULBroadcastManager::ExecuteOnBroadcastHandlerFor(
     
     WidgetEvent event(true, eXULBroadcast);
 
-    RefPtr<nsPresContext> presContext = mDocument->GetPresContext();
-    if (presContext) {
+    if (RefPtr<nsPresContext> presContext = mDocument->GetPresContext()) {
       
       nsEventStatus status = nsEventStatus_eIgnore;
       EventDispatcher::Dispatch(child, presContext, &event, nullptr, &status);
@@ -416,10 +415,9 @@ void XULBroadcastManager::MaybeBroadcast() {
     if (!mHandlingDelayedAttrChange) {
       mHandlingDelayedAttrChange = true;
       for (uint32_t i = 0; i < mDelayedAttrChangeBroadcasts.Length(); ++i) {
-        nsAtom* attrName = mDelayedAttrChangeBroadcasts[i].mAttrName;
+        RefPtr<nsAtom> attrName = mDelayedAttrChangeBroadcasts[i].mAttrName;
+        RefPtr<Element> listener = mDelayedAttrChangeBroadcasts[i].mListener;
         if (mDelayedAttrChangeBroadcasts[i].mNeedsAttrChange) {
-          nsCOMPtr<Element> listener =
-              mDelayedAttrChangeBroadcasts[i].mListener;
           const nsString& value = mDelayedAttrChangeBroadcasts[i].mAttr;
           if (mDelayedAttrChangeBroadcasts[i].mSetAttr) {
             listener->SetAttr(kNameSpaceID_None, attrName, value, true);
@@ -427,9 +425,9 @@ void XULBroadcastManager::MaybeBroadcast() {
             listener->UnsetAttr(kNameSpaceID_None, attrName, true);
           }
         }
-        ExecuteOnBroadcastHandlerFor(
-            mDelayedAttrChangeBroadcasts[i].mBroadcaster,
-            mDelayedAttrChangeBroadcasts[i].mListener, attrName);
+        RefPtr<Element> broadcaster =
+            mDelayedAttrChangeBroadcasts[i].mBroadcaster;
+        ExecuteOnBroadcastHandlerFor(broadcaster, listener, attrName);
       }
       mDelayedAttrChangeBroadcasts.Clear();
       mHandlingDelayedAttrChange = false;

@@ -40,7 +40,8 @@ class XULBroadcastManager final {
   nsresult RemoveListener(Element* aElement);
   void AttributeChanged(Element* aElement, int32_t aNameSpaceID,
                         nsAtom* aAttribute);
-  void MaybeBroadcast();
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void MaybeBroadcast();
   void DropDocumentReference();  
  protected:
   enum HookupAction { eHookupAdd = 0, eHookupRemove };
@@ -52,8 +53,8 @@ class XULBroadcastManager final {
   void AddListenerFor(Element& aBroadcaster, Element& aListener,
                       const nsAString& aAttr, ErrorResult& aRv);
 
-  nsresult ExecuteOnBroadcastHandlerFor(Element* aBroadcaster,
-                                        Element* aListener, nsAtom* aAttr);
+  MOZ_CAN_RUN_SCRIPT nsresult ExecuteOnBroadcastHandlerFor(
+      Element* aBroadcaster, Element* aListener, nsAtom* aAttr);
   
   
   
