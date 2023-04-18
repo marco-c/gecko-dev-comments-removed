@@ -31,14 +31,6 @@ function sendEventToContent(browser, data) {
 }
 
 add_task(async function setup() {
-  
-  
-  const { sinon } = ChromeUtils.import("resource://testing-common/Sinon.jsm");
-  sinon.stub(
-    await Services.search.wrappedJSObject,
-    "_showRemovalOfSearchEngineNotificationBox"
-  );
-
   const originalEngine = await Services.search.getDefault();
   const originalPrivateEngine = await Services.search.getDefaultPrivate();
 

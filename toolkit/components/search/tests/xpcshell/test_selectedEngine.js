@@ -4,13 +4,6 @@
 const kDefaultEngineName = "engine1";
 
 add_task(async function setup() {
-  
-  
-  sinon.stub(
-    await Services.search.wrappedJSObject,
-    "_showRemovalOfSearchEngineNotificationBox"
-  );
-
   useHttpServer();
   await AddonTestUtils.promiseStartupManager();
   await SearchTestUtils.useTestEngines("data1");
