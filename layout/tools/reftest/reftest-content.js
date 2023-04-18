@@ -21,7 +21,7 @@ Cu.import("resource://reftest/AsyncSpellCheckTestHelper.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 
 
-ChromeUtils.import("resource://gre/modules/CustomElementsListener.jsm", null);
+ChromeUtils.import("resource://gre/modules/CustomElementsListener.jsm");
 
 var gBrowserIsRemote;
 var gHaveCanvasSnapshot = false;
@@ -267,7 +267,7 @@ function setupViewport(contentRootElement) {
 
     
 }
- 
+
 
 function setupDisplayport(contentRootElement) {
     let promise = content.windowGlobalChild.getActor("ReftestFission").SetupDisplayportRoot();
@@ -950,7 +950,7 @@ async function OnDocumentLoad(uri)
         
         return;
     }
-    
+
     var currentDoc = content && content.document;
 
     

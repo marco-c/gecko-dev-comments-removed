@@ -16,8 +16,7 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 
 
-
-ChromeUtils.import("resource://gre/modules/CustomElementsListener.jsm", null);
+ChromeUtils.import("resource://gre/modules/CustomElementsListener.jsm");
 
 
 
