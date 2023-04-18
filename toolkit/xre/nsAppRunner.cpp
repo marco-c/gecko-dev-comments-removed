@@ -698,7 +698,7 @@ nsIXULRuntime::ContentWin32kLockdownState GetLiveWin32kLockdownState() {
   
   MOZ_ASSERT(NS_IsMainThread());
   mozilla::EnsureWin32kInitialized();
-  gfx::gfxVars::Initialize();
+  gfxPlatform::GetPlatform();
 
   if (gSafeMode) {
     return nsIXULRuntime::ContentWin32kLockdownState::DisabledBySafeMode;
