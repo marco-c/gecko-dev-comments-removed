@@ -25,6 +25,7 @@
 #include "jit/ScriptFromCalleeToken.h"
 #include "jit/Snapshots.h"
 #include "jit/VMFunctions.h"
+#include "js/Exception.h"
 #include "js/friend/DumpFunctions.h"  
 #include "vm/Interpreter.h"
 #include "vm/JSContext.h"
@@ -93,6 +94,10 @@ static void CloseLiveIteratorIon(JSContext* cx,
   MOZ_ASSERT_IF(!isDestructuring, tn->stackDepth > 0);
   MOZ_ASSERT_IF(isDestructuring, tn->stackDepth > 1);
 
+  
+  
+  JS::AutoSaveExceptionState savedExc(cx);
+
   SnapshotIterator si = frame.snapshotIterator();
 
   
@@ -121,6 +126,9 @@ static void CloseLiveIteratorIon(JSContext* cx,
       return;
     }
   }
+
+  
+  savedExc.restore();
 
   if (cx->isExceptionPending()) {
     if (tn->kind() == TryNoteKind::ForIn) {
