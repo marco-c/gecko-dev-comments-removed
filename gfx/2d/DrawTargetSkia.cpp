@@ -1627,9 +1627,10 @@ DrawTargetSkia::CreateSourceSurfaceFromNativeSurface(
   return nullptr;
 }
 
-void DrawTargetSkia::CopySurface(SourceSurface* aSurface,
-                                 const IntRect& aSourceRect,
-                                 const IntPoint& aDestination) {
+void DrawTargetSkia::BlendSurface(SourceSurface* aSurface,
+                                  const IntRect& aSourceRect,
+                                  const IntPoint& aDestination,
+                                  CompositionOp aOperator) {
   MarkChanged();
 
   Maybe<MutexAutoLock> lock;
@@ -1645,16 +1646,21 @@ void DrawTargetSkia::CopySurface(SourceSurface* aSurface,
                     SkClipOp::kReplace_deprecated);
 
   SkPaint paint;
-  if (!image->isOpaque()) {
+  if (aOperator == CompositionOp::OP_SOURCE) {
+    if (!image->isOpaque()) {
+      
+      
+      paint.setBlendMode(SkBlendMode::kSrc);
+    }
     
     
-    paint.setBlendMode(SkBlendMode::kSrc);
+    if (image->isAlphaOnly()) {
+      mCanvas->clear(SK_ColorTRANSPARENT);
+    }
+  } else {
+    paint.setBlendMode(GfxOpToSkiaOp(aOperator));
   }
-  
-  
-  if (image->isAlphaOnly()) {
-    mCanvas->clear(SK_ColorTRANSPARENT);
-  }
+
   mCanvas->drawImage(image, -SkIntToScalar(aSourceRect.X()),
                      -SkIntToScalar(aSourceRect.Y()), &paint);
   mCanvas->restore();
@@ -1791,10 +1797,18 @@ already_AddRefed<PathBuilder> DrawTargetSkia::CreatePathBuilder(
   return MakeAndAddRef<PathBuilderSkia>(aFillRule);
 }
 
-void DrawTargetSkia::ClearRect(const Rect& aRect) {
+void DrawTargetSkia::Clear(const Rect* aRect) {
   MarkChanged();
   mCanvas->save();
-  mCanvas->clipRect(RectToSkRect(aRect), SkClipOp::kIntersect, true);
+  if (aRect) {
+    
+    mCanvas->clipRect(RectToSkRect(*aRect), SkClipOp::kIntersect, true);
+  } else {
+    
+    mCanvas->resetMatrix();
+    mCanvas->clipRect(IntRectToSkRect(GetRect()),
+                      SkClipOp::kReplace_deprecated);
+  }
   SkColor clearColor = (mFormat == SurfaceFormat::B8G8R8X8)
                            ? SK_ColorBLACK
                            : SK_ColorTRANSPARENT;

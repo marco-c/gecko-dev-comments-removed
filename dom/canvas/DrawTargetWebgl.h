@@ -56,6 +56,8 @@ class DrawTargetWebgl : public DrawTarget {
   
   bool mSkiaValid = false;
   
+  bool mSkiaLayer = false;
+  
   bool mWebglValid = false;
 
   
@@ -226,14 +228,19 @@ class DrawTargetWebgl : public DrawTarget {
   void MarkChanged();
 
   void ReadIntoSkia();
+  void FlattenSkia();
   bool FlushFromSkia();
 
   void MarkSkiaChanged() {
     if (!mSkiaValid) {
       ReadIntoSkia();
+    } else if (mSkiaLayer) {
+      FlattenSkia();
     }
     mWebglValid = false;
   }
+
+  void MarkSkiaChanged(const DrawOptions& aOptions);
 
   bool ReadInto(uint8_t* aDstData, int32_t aDstStride);
 
