@@ -6,26 +6,11 @@
 
 var EXPORTED_SYMBOLS = ["SessionMigration"];
 
-const { XPCOMUtils } = ChromeUtils.import(
-  "resource://gre/modules/XPCOMUtils.jsm"
-);
-const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
-
 ChromeUtils.defineModuleGetter(
   this,
   "E10SUtils",
   "resource://gre/modules/E10SUtils.jsm"
 );
-
-
-XPCOMUtils.defineLazyGetter(this, "gEncoder", function() {
-  return new TextEncoder();
-});
-
-
-XPCOMUtils.defineLazyGetter(this, "gDecoder", function() {
-  return new TextDecoder();
-});
 
 var SessionMigrationInternal = {
   
@@ -80,21 +65,15 @@ var SessionMigrationInternal = {
 
 
   readState(aPath) {
-    return (async function() {
-      let bytes = await OS.File.read(aPath, { compression: "lz4" });
-      let text = gDecoder.decode(bytes);
-      let state = JSON.parse(text);
-      return state;
-    })();
+    return IOUtils.readJSON(aPath, { decompress: true });
   },
   
 
 
   writeState(aPath, aState) {
-    let bytes = gEncoder.encode(JSON.stringify(aState));
-    return OS.File.writeAtomic(aPath, bytes, {
-      tmpPath: aPath + ".tmp",
-      compression: "lz4",
+    return IOUtils.writeJSON(aPath, aState, {
+      compress: true,
+      tmpPath: `${aPath}.tmp`,
     });
   },
 };
