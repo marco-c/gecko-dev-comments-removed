@@ -3,8 +3,8 @@
 
 
 
-
 "use strict";
+
 
 importScripts("chrome://mochikit/content/tests/SimpleTest/WorkerSimpleTest.js");
 

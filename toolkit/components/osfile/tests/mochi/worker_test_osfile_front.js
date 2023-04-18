@@ -5,6 +5,7 @@
 
 
 importScripts("chrome://mochikit/content/tests/SimpleTest/WorkerSimpleTest.js");
+
 importScripts("resource://gre/modules/workers/require.js");
 
 var SharedAll = require("resource://gre/modules/osfile/osfile_shared_allthreads.jsm");
@@ -47,6 +48,7 @@ self.onmessage = function onmessage_start(msg) {
 
 function test_init() {
   info("Starting test_init");
+  
   importScripts("resource://gre/modules/osfile.jsm");
 }
 

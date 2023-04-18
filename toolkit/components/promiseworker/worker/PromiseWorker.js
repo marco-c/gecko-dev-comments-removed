@@ -28,6 +28,7 @@ if (typeof require == "undefined" || typeof module == "undefined") {
   );
 }
 
+
 importScripts("resource://gre/modules/workers/require.js");
 
 

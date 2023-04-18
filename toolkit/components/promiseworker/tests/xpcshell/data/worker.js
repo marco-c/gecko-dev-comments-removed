@@ -7,6 +7,7 @@
 
 
 
+
 importScripts("resource://gre/modules/workers/require.js");
 var PromiseWorker = require("resource://gre/modules/workers/PromiseWorker.js");
 

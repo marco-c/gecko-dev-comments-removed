@@ -22,6 +22,7 @@ self.onmessage = function(msg) {
 
 function test_init() {
   info("Starting test_init");
+  
   importScripts("resource://gre/modules/osfile.jsm");
 }
 
