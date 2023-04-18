@@ -25,6 +25,7 @@ class MediaPipelineReceive;
 class MediaSessionConduit;
 class MediaTransportHandler;
 class JsepTransceiver;
+class RTCStatsIdGenerator;
 class TransceiverImpl;
 
 namespace dom {
@@ -43,6 +44,7 @@ class RTCRtpReceiver : public nsISupports, public nsWrapperCache {
                  nsISerialEventTarget* aMainThread, AbstractThread* aCallThread,
                  nsISerialEventTarget* aStsThread,
                  MediaSessionConduit* aConduit,
+                 RTCStatsIdGenerator* aIdGenerator,
                  TransceiverImpl* aTransceiverImpl);
 
   
@@ -138,6 +140,7 @@ class RTCRtpReceiver : public nsISupports, public nsWrapperCache {
   RefPtr<dom::MediaStreamTrack> mTrack;
   RefPtr<MediaPipelineReceive> mPipeline;
   RefPtr<MediaTransportHandler> mTransportHandler;
+  RefPtr<RTCStatsIdGenerator> mIdGenerator;
   RefPtr<TransceiverImpl> mTransceiverImpl;
   
   
