@@ -27,6 +27,9 @@ DIRS += [
     "/third_party/sipcc",
 ]
 
+if CONFIG["MOZ_ICU4X"]:
+    DIRS += ["icu4x"]
+
 
 external_dirs += ["modules/brotli"]
 external_dirs += ["modules/woff2"]
