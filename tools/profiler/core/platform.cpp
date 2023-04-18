@@ -569,6 +569,18 @@ ProfileChunkedBuffer& profiler_get_core_buffer() {
   return CorePS::CoreBuffer();
 }
 
+void locked_profiler_add_sampled_counter(PSLockRef aLock,
+                                         BaseProfilerCount* aCounter) {
+  CorePS::AppendCounter(aLock, aCounter);
+}
+
+void locked_profiler_remove_sampled_counter(PSLockRef aLock,
+                                            BaseProfilerCount* aCounter) {
+  
+  
+  CorePS::RemoveCounter(aLock, aCounter);
+}
+
 class SamplerThread;
 
 static SamplerThread* NewSamplerThread(PSLockRef aLock, uint32_t aGeneration,
@@ -678,6 +690,9 @@ class ActivePS {
           CorePS::CoreBuffer().SetChunkManager(mProfileBufferChunkManager);
           return CorePS::CoreBuffer();
         }()),
+        mMaybeProcessCPUCounter(ProfilerFeature::HasProcessCPU(aFeatures)
+                                    ? new ProcessCPUCounter(aLock)
+                                    : nullptr),
         
         
         
@@ -727,6 +742,9 @@ class ActivePS {
   }
 
   ~ActivePS() {
+    MOZ_ASSERT(
+        !mMaybeProcessCPUCounter,
+        "mMaybeProcessCPUCounter should have been deleted before ~ActivePS()");
 #if !defined(RELEASE_OR_BETA)
     if (mInterposeObserver) {
       
@@ -789,6 +807,12 @@ class ActivePS {
 
   [[nodiscard]] static SamplerThread* Destroy(PSLockRef aLock) {
     MOZ_ASSERT(sInstance);
+    if (sInstance->mMaybeProcessCPUCounter) {
+      locked_profiler_remove_sampled_counter(
+          aLock, sInstance->mMaybeProcessCPUCounter);
+      delete sInstance->mMaybeProcessCPUCounter;
+      sInstance->mMaybeProcessCPUCounter = nullptr;
+    }
     auto samplerThread = sInstance->mSamplerThread;
     delete sInstance;
     sInstance = nullptr;
@@ -1070,6 +1094,26 @@ class ActivePS {
     }
   }
 
+  
+  
+  
+  class ProcessCPUCounter final : public BaseProfilerCount {
+   public:
+    explicit ProcessCPUCounter(PSLockRef aLock)
+        : BaseProfilerCount("processCPU", &mCounter, nullptr, "CPU",
+                            "Process CPU utilization") {
+      
+      locked_profiler_add_sampled_counter(aLock, this);
+      
+    }
+
+    void Add(int64_t aNumber) { mCounter += aNumber; }
+
+   private:
+    ProfilerAtomicSigned mCounter;
+  };
+  PS_GET(ProcessCPUCounter*, MaybeProcessCPUCounter);
+
   PS_GET_AND_SET(bool, IsPaused)
 
   
@@ -1296,6 +1340,9 @@ class ActivePS {
   
   
   Vector<RefPtr<PageInformation>> mDeadProfiledPages;
+
+  
+  ProcessCPUCounter* mMaybeProcessCPUCounter;
 
   
   
@@ -3324,6 +3371,10 @@ static void DiscardSuspendedThreadRunningTimes(
     ThreadRegistration::UnlockedRWForLockedProfiler& aThreadData);
 
 
+static RunningTimes GetProcessRunningTimesDiff(
+    PSLockRef aLock, RunningTimes& aPreviousRunningTimesToBeUpdated);
+
+
 
 
 
@@ -3619,6 +3670,10 @@ void SamplerThread::Run() {
 
   
   
+  RunningTimes processRunningTimes;
+
+  
+  
   UniquePtr<PostSamplingCallbackListItem> postSamplingCallbacks;
   
   SamplingState samplingState{};
@@ -3673,6 +3728,18 @@ void SamplerThread::Run() {
         double sampleStartDeltaMs =
             (sampleStart - CorePS::ProcessStartTime()).ToMilliseconds();
         ProfileBuffer& buffer = ActivePS::Buffer(lock);
+
+        
+        if (ActivePS::ProcessCPUCounter* processCPUCounter =
+                ActivePS::MaybeProcessCPUCounter(lock);
+            processCPUCounter) {
+          RunningTimes processRunningTimesDiff =
+              GetProcessRunningTimesDiff(lock, processRunningTimes);
+          Maybe<uint64_t> cpu = processRunningTimesDiff.GetJsonThreadCPUDelta();
+          if (cpu) {
+            processCPUCounter->Add(static_cast<int64_t>(*cpu));
+          }
+        }
 
         
         const Vector<BaseProfilerCount*>& counters = CorePS::Counters(lock);
@@ -5824,15 +5891,13 @@ void profiler_write_active_configuration(JSONWriter& aWriter) {
 void profiler_add_sampled_counter(BaseProfilerCount* aCounter) {
   DEBUG_LOG("profiler_add_sampled_counter(%s)", aCounter->mLabel);
   PSAutoLock lock;
-  CorePS::AppendCounter(lock, aCounter);
+  locked_profiler_add_sampled_counter(lock, aCounter);
 }
 
 void profiler_remove_sampled_counter(BaseProfilerCount* aCounter) {
   DEBUG_LOG("profiler_remove_sampled_counter(%s)", aCounter->mLabel);
   PSAutoLock lock;
-  
-  
-  CorePS::RemoveCounter(lock, aCounter);
+  locked_profiler_remove_sampled_counter(lock, aCounter);
 }
 
 ProfilingStack* profiler_register_thread(const char* aName,
