@@ -18,6 +18,7 @@ namespace mozilla {
 namespace dom {
 
 class ModuleScript;
+class ModuleLoader;
 class ScriptLoader;
 
 
@@ -42,7 +43,7 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
   ModuleLoadRequest(nsIURI* aURI, ScriptFetchOptions* aFetchOptions,
                     const SRIMetadata& aIntegrity, nsIURI* aReferrer,
                     bool aIsTopLevel, bool aIsDynamicImport,
-                    ScriptLoader* aLoader, VisitedURLSet* aVisitedSet);
+                    ModuleLoader* aLoader, VisitedURLSet* aVisitedSet);
 
  public:
   NS_DECL_ISUPPORTS_INHERITED
@@ -93,7 +94,7 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
 
   
   
-  RefPtr<ScriptLoader> mLoader;
+  RefPtr<ModuleLoader> mLoader;
 
   
   
