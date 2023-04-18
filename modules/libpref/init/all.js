@@ -4376,7 +4376,7 @@ pref("services.common.log.logger.tokenserverclient", "Debug");
   pref("services.sync.engine.passwords", true);
   pref("services.sync.engine.prefs", true);
   pref("services.sync.engine.tabs", true);
-  pref("services.sync.engine.tabs.filteredUrls", "^(about:.*|resource:.*|chrome:.*|file:.*|blob:.*|moz-extension:.*)$");
+  pref("services.sync.engine.tabs.filteredSchemes", "about|resource|chrome|file|blob|moz-extension");
 
   
   pref("services.sync.engine.addresses.available", false);
