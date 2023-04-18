@@ -424,62 +424,65 @@ GeckoDriver.prototype.newSession = async function(cmd) {
     }
 
     
-    
-    
-    
-    
-    logger.debug(`Waiting for initial application window`);
-    await Marionette.browserStartupFinished;
+    if (!this.currentSession.capabilities.get("moz:windowless")) {
+      
+      
+      
+      
+      
+      logger.debug(`Waiting for initial application window`);
+      await Marionette.browserStartupFinished;
 
-    const win = await windowManager.waitForInitialApplicationWindowLoaded();
+      const appWin = await windowManager.waitForInitialApplicationWindowLoaded();
 
-    if (MarionettePrefs.clickToStart) {
-      Services.prompt.alert(
-        win,
-        "",
-        "Click to start execution of marionette tests"
-      );
+      if (MarionettePrefs.clickToStart) {
+        Services.prompt.alert(
+          appWin,
+          "",
+          "Click to start execution of marionette tests"
+        );
+      }
+
+      this.addBrowser(appWin);
+      this.mainFrame = appWin;
+
+      
+      this.dialogObserver = new modal.DialogObserver(() => this.curBrowser);
+      this.dialogObserver.add(this.handleModalDialog.bind(this));
+
+      for (let win of windowManager.windows) {
+        const tabBrowser = TabManager.getTabBrowser(win);
+
+        if (tabBrowser) {
+          for (const tab of tabBrowser.tabs) {
+            const contentBrowser = TabManager.getBrowserForTab(tab);
+            this.registerBrowser(contentBrowser);
+          }
+        }
+
+        this.registerListenersForWindow(win);
+      }
+
+      if (this.mainFrame) {
+        this.currentSession.chromeBrowsingContext = this.mainFrame.browsingContext;
+        this.mainFrame.focus();
+      }
+
+      if (this.curBrowser.tab) {
+        const browsingContext = this.curBrowser.contentBrowser.browsingContext;
+        this.currentSession.contentBrowsingContext = browsingContext;
+
+        await waitForInitialNavigationCompleted(browsingContext.webProgress);
+
+        this.curBrowser.contentBrowser.focus();
+      }
+
+      
+      this.dialog = modal.findModalDialogs(this.curBrowser);
     }
-
-    this.addBrowser(win);
-    this.mainFrame = win;
 
     registerCommandsActor();
     enableEventsActor();
-
-    
-    this.dialogObserver = new modal.DialogObserver(() => this.curBrowser);
-    this.dialogObserver.add(this.handleModalDialog.bind(this));
-
-    for (let win of windowManager.windows) {
-      const tabBrowser = TabManager.getTabBrowser(win);
-
-      if (tabBrowser) {
-        for (const tab of tabBrowser.tabs) {
-          const contentBrowser = TabManager.getBrowserForTab(tab);
-          this.registerBrowser(contentBrowser);
-        }
-      }
-
-      this.registerListenersForWindow(win);
-    }
-
-    if (this.mainFrame) {
-      this.currentSession.chromeBrowsingContext = this.mainFrame.browsingContext;
-      this.mainFrame.focus();
-    }
-
-    if (this.curBrowser.tab) {
-      const browsingContext = this.curBrowser.contentBrowser.browsingContext;
-      this.currentSession.contentBrowsingContext = browsingContext;
-
-      await waitForInitialNavigationCompleted(browsingContext.webProgress);
-
-      this.curBrowser.contentBrowser.focus();
-    }
-
-    
-    this.dialog = modal.findModalDialogs(this.curBrowser);
 
     Services.obs.addObserver(this, "browser-delayed-startup-finished");
   } catch (e) {
