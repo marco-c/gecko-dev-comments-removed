@@ -213,6 +213,7 @@ class RemoteAccessibleBase : public Accessible, public HyperTextAccessibleBase {
   
 
   virtual void TakeFocus() const override;
+  virtual void ScrollTo(uint32_t aHow) const override;
 
   
 

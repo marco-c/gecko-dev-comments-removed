@@ -243,6 +243,12 @@ class Accessible {
   
 
 
+  MOZ_CAN_RUN_SCRIPT
+  virtual void ScrollTo(uint32_t aHow) const = 0;
+
+  
+
+
   virtual nsAtom* TagName() const = 0;
 
   
