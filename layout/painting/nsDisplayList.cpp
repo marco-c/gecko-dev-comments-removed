@@ -7054,6 +7054,8 @@ void nsDisplayTransform::HitTest(nsDisplayListBuilder* aBuilder,
     return;
   }
 
+  const bool oldHitOccludingItem = aState->mHitOccludingItem;
+
   
 
 
@@ -7062,8 +7064,9 @@ void nsDisplayTransform::HitTest(nsDisplayListBuilder* aBuilder,
   
   matrix.Invert();
   nsRect resultingRect;
-  if (aRect.width == 1 && aRect.height == 1) {
-    
+  
+  const bool testingPoint = aRect.width == 1 && aRect.height == 1;
+  if (testingPoint) {
     Point4D point =
         matrix.ProjectPoint(Point(NSAppUnitsToFloatPixels(aRect.x, factor),
                                   NSAppUnitsToFloatPixels(aRect.y, factor)));
@@ -7083,12 +7086,10 @@ void nsDisplayTransform::HitTest(nsDisplayListBuilder* aBuilder,
                       NSAppUnitsToFloatPixels(aRect.width, factor),
                       NSAppUnitsToFloatPixels(aRect.height, factor));
 
-    bool snap;
-    nsRect childBounds = GetUntransformedBounds(aBuilder, &snap);
-    Rect childGfxBounds(NSAppUnitsToFloatPixels(childBounds.x, factor),
-                        NSAppUnitsToFloatPixels(childBounds.y, factor),
-                        NSAppUnitsToFloatPixels(childBounds.width, factor),
-                        NSAppUnitsToFloatPixels(childBounds.height, factor));
+    Rect childGfxBounds(NSAppUnitsToFloatPixels(mChildBounds.x, factor),
+                        NSAppUnitsToFloatPixels(mChildBounds.y, factor),
+                        NSAppUnitsToFloatPixels(mChildBounds.width, factor),
+                        NSAppUnitsToFloatPixels(mChildBounds.height, factor));
 
     Rect rect = matrix.ProjectRectBounds(originalRect, childGfxBounds);
 
@@ -7111,6 +7112,22 @@ void nsDisplayTransform::HitTest(nsDisplayListBuilder* aBuilder,
 #endif
 
   GetChildren()->HitTest(aBuilder, resultingRect, aState, aOutFrames);
+
+  if (aState->mHitOccludingItem && !testingPoint &&
+      !mChildBounds.Contains(aRect)) {
+    MOZ_ASSERT(aBuilder->HitTestIsForVisibility());
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    aState->mHitOccludingItem = oldHitOccludingItem;
+  }
 
 #ifdef DEBUG_HIT
   if (originalFrameCount != aOutFrames.Length())
