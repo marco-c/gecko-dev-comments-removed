@@ -2126,6 +2126,13 @@ var BookmarkingUI = {
               }
             }
           }
+
+          if (ev.parentGuid === PlacesUtils.bookmarks.toolbarGuid) {
+            Services.telemetry.scalarAdd(
+              "browser.engagement.bookmarks_toolbar_bookmark_added",
+              1
+            );
+          }
           break;
         case "bookmark-removed":
           
@@ -2152,6 +2159,15 @@ var BookmarkingUI = {
             this.updateEmptyToolbarMessage();
           }
 
+          const hasMovedToToolbar =
+            ev.parentGuid === PlacesUtils.bookmarks.toolbarGuid &&
+            ev.oldParentGuid !== PlacesUtils.bookmarks.toolbarGuid;
+          if (hasMovedToToolbar) {
+            Services.telemetry.scalarAdd(
+              "browser.engagement.bookmarks_toolbar_bookmark_added",
+              1
+            );
+          }
           break;
         case "bookmark-url-changed":
           
