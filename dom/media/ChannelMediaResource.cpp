@@ -803,6 +803,7 @@ void ChannelMediaResource::UpdatePrincipal() {
   if (!secMan) {
     return;
   }
+  bool hadData = mSharedInfo->mPrincipal != nullptr;
   nsCOMPtr<nsIPrincipal> principal;
   secMan->GetChannelResultPrincipal(mChannel, getter_AddRefs(principal));
   if (nsContentUtils::CombineResourcePrincipals(&mSharedInfo->mPrincipal,
@@ -810,8 +811,44 @@ void ChannelMediaResource::UpdatePrincipal() {
     for (auto* r : mSharedInfo->mResources) {
       r->CacheClientNotifyPrincipalChanged();
     }
+    if (!mChannel) {  
+      return;
+    }
   }
-
+  nsCOMPtr<nsILoadInfo> loadInfo = mChannel->LoadInfo();
+  auto mode = loadInfo->GetSecurityMode();
+  if (mode != nsILoadInfo::SEC_REQUIRE_CORS_INHERITS_SEC_CONTEXT) {
+    MOZ_ASSERT(
+        mode == nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_INHERITS_SEC_CONTEXT ||
+            mode == nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
+        "no-cors request");
+    bool finalResponseIsOpaque =
+        
+        
+        
+        
+        
+        
+        loadInfo->GetTainting() == LoadTainting::Opaque &&
+        
+        
+        
+        
+        
+        !nsContentUtils::CheckMayLoad(loadInfo->GetLoadingPrincipal(), mChannel,
+                                       true);
+    if (!hadData) {  
+      mSharedInfo->mFinalResponsesAreOpaque = finalResponseIsOpaque;
+    } else if (mSharedInfo->mFinalResponsesAreOpaque != finalResponseIsOpaque) {
+      for (auto* r : mSharedInfo->mResources) {
+        r->mCallback->NotifyNetworkError(MediaResult(
+            NS_ERROR_CONTENT_BLOCKED, "opaque and non-opaque responses"));
+      }
+      
+      
+      return;
+    }
+  }
   
   
   
