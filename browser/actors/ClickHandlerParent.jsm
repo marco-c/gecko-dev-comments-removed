@@ -115,6 +115,8 @@ class ClickHandlerParent extends JSWindowActorParent {
       csp: data.csp ? lazy.E10SUtils.deserializeCSP(data.csp) : null,
       frameID: data.frameID,
       openerBrowser: browser,
+      
+      hasValidUserGestureActivation: true,
     };
 
     

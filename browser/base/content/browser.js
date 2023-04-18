@@ -1508,11 +1508,13 @@ function _loadURI(browser, uri, params = {}) {
     userContextId,
     csp,
     remoteTypeOverride,
+    hasValidUserGestureActivation,
   } = params || {};
   let loadFlags =
     params.loadFlags || params.flags || Ci.nsIWebNavigation.LOAD_FLAGS_NONE;
-  let hasValidUserGestureActivation =
+  hasValidUserGestureActivation ??=
     document.hasValidTransientUserGestureActivation;
+
   if (!triggeringPrincipal) {
     throw new Error("Must load with a triggering Principal");
   }
@@ -2261,6 +2263,26 @@ var gBrowserInit = {
             ? window.arguments[5]
             : Ci.nsIScriptSecurityManager.DEFAULT_USER_CONTEXT_ID;
 
+        let hasValidUserGestureActivation = undefined;
+        let fromExternal = undefined;
+        if (window.arguments[1]) {
+          if (!(window.arguments[1] instanceof Ci.nsIPropertyBag2)) {
+            throw new Error(
+              "window.arguments[1] must be null or Ci.nsIPropertyBag2!"
+            );
+          }
+
+          let extraOptions = window.arguments[1];
+          if (extraOptions.hasKey("hasValidUserGestureActivation")) {
+            hasValidUserGestureActivation = extraOptions.getPropertyAsBool(
+              "hasValidUserGestureActivation"
+            );
+          }
+          if (extraOptions.hasKey("fromExternal")) {
+            fromExternal = extraOptions.getPropertyAsBool("fromExternal");
+          }
+        }
+
         try {
           openLinkIn(uriToLoad, "current", {
             referrerInfo: window.arguments[2] || null,
@@ -2277,6 +2299,8 @@ var gBrowserInit = {
             allowInheritPrincipal: window.arguments[9] !== false,
             csp: window.arguments[10],
             forceAboutBlankViewerInCurrent: !!window.arguments[6],
+            hasValidUserGestureActivation,
+            fromExternal,
           });
         } catch (e) {
           Cu.reportError(e);
@@ -6277,13 +6301,18 @@ nsBrowserAccess.prototype = {
         
         
         try {
+          let extraOptions = Cc[
+            "@mozilla.org/hash-property-bag;1"
+          ].createInstance(Ci.nsIWritablePropertyBag2);
+          extraOptions.setPropertyAsBool("fromExternal", isExternal);
+
           openDialog(
             AppConstants.BROWSER_CHROME_URL,
             "_blank",
             features,
             
             url,
-            null,
+            extraOptions,
             null,
             null,
             null,

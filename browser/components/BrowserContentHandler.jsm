@@ -250,12 +250,17 @@ function openBrowserWindow(
     });
     args = [uriArray];
   } else {
+    let extraOptions = Cc["@mozilla.org/hash-property-bag;1"].createInstance(
+      Ci.nsIWritablePropertyBag2
+    );
+    extraOptions.setPropertyAsBool("fromExternal", true);
+
     
     
     
     args = [
       urlOrUrlList,
-      null, 
+      extraOptions,
       null, 
       postData,
       undefined, 
