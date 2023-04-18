@@ -187,24 +187,23 @@ add_task(async function test_extension_page_sameprocess_navigation() {
     );
   }
 
-  
-  
   if (typeof active === "boolean") {
-    const matchInfoMessage = /Ignored listener for inactive context .* path=webRequest.onBeforeRequest/;
-    ok(
-      messages.some(
-        msg => matchInfoMessage.test(msg.message) && msg.logLevel === msg.info
-      ),
-      "Expected info message for the ignored listener found"
-    );
-
-    
-    
     AddonTestUtils.checkMessages(
-      (messages = messages.filter(msg => !matchInfoMessage.test(msg.message))),
+      messages,
       {
         forbidden: [
-          /StructureCloneHolder.deserialize: Argument 1 is not an object./,
+          
+          
+          {
+            message: /StructureCloneHolder.deserialize: Argument 1 is not an object/,
+          },
+        ],
+        expected: [
+          
+          
+          {
+            message: /Ignored listener for inactive context .* path=webRequest.onBeforeRequest/,
+          },
         ],
       },
       "Expect no StructureCloneHolder error due to trying to send the event to inactive context"
