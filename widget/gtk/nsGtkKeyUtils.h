@@ -13,7 +13,9 @@
 #include "nsTArray.h"
 
 #include <gdk/gdk.h>
-#include <X11/XKBlib.h>
+#ifdef MOZ_X11
+#  include <X11/XKBlib.h>
+#endif
 #ifdef MOZ_WAYLAND
 #  include <gdk/gdkwayland.h>
 #  include <xkbcommon/xkbcommon.h>
@@ -248,8 +250,10 @@ class KeymapWrapper {
 
 
   void Init();
+#ifdef MOZ_X11
   void InitXKBExtension();
   void InitBySystemSettingsX11();
+#endif
 #ifdef MOZ_WAYLAND
   void InitBySystemSettingsWayland();
 #endif
@@ -325,6 +329,7 @@ class KeymapWrapper {
 
   int mXKBBaseEventCode;
 
+#ifdef MOZ_X11
   
 
 
@@ -332,6 +337,7 @@ class KeymapWrapper {
 
 
   XKeyboardState mKeyboardState;
+#endif
 
   
 
@@ -342,7 +348,9 @@ class KeymapWrapper {
 
 
   static guint sLastRepeatableHardwareKeyCode;
+#ifdef MOZ_X11
   static Time sLastRepeatableKeyTime;
+#endif
   enum RepeatState { NOT_PRESSED, FIRST_PRESS, REPEATING };
   static RepeatState sRepeatState;
 
@@ -448,6 +456,7 @@ class KeymapWrapper {
 
   static uint32_t GetDOMKeyCodeFromKeyPairs(guint aGdkKeyval);
 
+#ifdef MOZ_X11
   
 
 
@@ -455,6 +464,7 @@ class KeymapWrapper {
 
   static GdkFilterReturn FilterEvents(GdkXEvent* aXEvent, GdkEvent* aGdkEvent,
                                       gpointer aData);
+#endif
 
   
 

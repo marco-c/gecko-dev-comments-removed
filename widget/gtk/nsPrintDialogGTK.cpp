@@ -28,7 +28,10 @@
 #include "nsIObserverService.h"
 
 
-#include <gdk/gdkx.h>
+#include <gdk/gdk.h>
+#ifdef MOZ_X11
+#  include <gdk/gdkx.h>
+#endif
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
