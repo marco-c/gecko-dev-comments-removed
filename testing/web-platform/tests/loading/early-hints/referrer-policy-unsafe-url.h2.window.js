@@ -1,0 +1,4 @@
+
+
+
+test(() => testReferrerPolicy("unsafe-url"));
