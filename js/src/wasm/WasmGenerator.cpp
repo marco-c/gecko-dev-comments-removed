@@ -572,26 +572,56 @@ void ModuleGenerator::noteCodeRange(uint32_t codeRangeIndex,
   }
 }
 
-template <class Vec, class Op>
-static bool AppendForEach(Vec* dstVec, const Vec& srcVec, Op op) {
+
+
+template <class Vec, class FilterOp, class MutateOp>
+static bool AppendForEach(Vec* dstVec, const Vec& srcVec, FilterOp filterOp,
+                          MutateOp mutateOp) {
+  
+  
   if (!dstVec->growByUninitialized(srcVec.length())) {
     return false;
   }
 
   using T = typename Vec::ElementType;
 
-  const T* src = srcVec.begin();
-
   T* dstBegin = dstVec->begin();
   T* dstEnd = dstVec->end();
-  T* dstStart = dstEnd - srcVec.length();
 
-  for (T* dst = dstStart; dst != dstEnd; dst++, src++) {
+  
+  
+  T* dst = dstEnd - srcVec.length();
+
+  for (const T* src = srcVec.begin(); src != srcVec.end(); src++) {
+    if (!filterOp(src)) {
+      continue;
+    }
     new (dst) T(*src);
-    op(dst - dstBegin, dst);
+    mutateOp(dst - dstBegin, dst);
+    dst++;
+  }
+
+  
+  
+  size_t newSize = dst - dstBegin;
+  if (newSize != dstVec->length()) {
+    dstVec->shrinkTo(newSize);
+    dstVec->shrinkStorageToFit();
   }
 
   return true;
+}
+
+template <typename T>
+bool FilterNothing(const T* element) {
+  return true;
+}
+
+
+template <class Vec, class MutateOp>
+static bool AppendForEach(Vec* dstVec, const Vec& srcVec, MutateOp mutateOp) {
+  using T = typename Vec::ElementType;
+  return AppendForEach(dstVec, srcVec, &FilterNothing<T>, mutateOp);
 }
 
 bool ModuleGenerator::linkCompiledCode(CompiledCode& code) {
@@ -678,10 +708,16 @@ bool ModuleGenerator::linkCompiledCode(CompiledCode& code) {
     }
   }
 
+  auto tryNoteFilter = [](const WasmTryNote* tn) {
+    
+    
+    return tn->hasTryBody();
+  };
   auto tryNoteOp = [=](uint32_t, WasmTryNote* tn) {
     tn->offsetBy(offsetInModule);
   };
-  if (!AppendForEach(&metadataTier_->tryNotes, code.tryNotes, tryNoteOp)) {
+  if (!AppendForEach(&metadataTier_->tryNotes, code.tryNotes, tryNoteFilter,
+                     tryNoteOp)) {
     return false;
   }
 
@@ -985,9 +1021,9 @@ bool ModuleGenerator::finishMetadataTier() {
   
   last = 0;
   for (const WasmTryNote& tryNote : metadataTier_->tryNotes) {
-    MOZ_ASSERT(tryNote.end >= last);
-    MOZ_ASSERT(tryNote.end > tryNote.begin);
-    last = tryNote.end;
+    MOZ_ASSERT(tryNote.tryBodyEnd() >= last);
+    MOZ_ASSERT(tryNote.tryBodyEnd() > tryNote.tryBodyBegin());
+    last = tryNote.tryBodyBegin();
   }
 #endif
 

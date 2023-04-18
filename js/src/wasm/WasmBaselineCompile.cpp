@@ -3877,7 +3877,7 @@ void BaseCompiler::emitCatchSetup(LabelKind kind, Control& tryCatch,
   if (kind == LabelKind::Try) {
     WasmTryNoteVector& tryNotes = masm.tryNotes();
     WasmTryNote& tryNote = tryNotes[controlItem().tryNoteIndex];
-    tryNote.end = masm.currentOffset();
+    tryNote.setTryBodyEnd(masm.currentOffset());
   }
 }
 
@@ -4093,9 +4093,8 @@ bool BaseCompiler::emitDelegate() {
 
   WasmTryNoteVector& tryNotes = masm.tryNotes();
   WasmTryNote& tryNote = tryNotes[controlItem().tryNoteIndex];
-  tryNote.end = masm.currentOffset();
-  tryNote.entryPoint = tryNote.end;
-  tryNote.framePushed = masm.framePushed();
+  tryNote.setTryBodyEnd(masm.currentOffset());
+  tryNote.setLandingPad(masm.currentOffset(), masm.framePushed());
 
   
   
@@ -4176,13 +4175,12 @@ bool BaseCompiler::endTryCatch(ResultType type) {
 
   WasmTryNoteVector& tryNotes = masm.tryNotes();
   WasmTryNote& tryNote = tryNotes[controlItem().tryNoteIndex];
-  tryNote.entryPoint = masm.currentOffset();
-  tryNote.framePushed = masm.framePushed();
+  tryNote.setLandingPad(masm.currentOffset(), masm.framePushed());
 
   
   
   if (tryKind == LabelKind::Try) {
-    tryNote.end = tryNote.entryPoint;
+    tryNote.setTryBodyEnd(masm.currentOffset());
   }
 
   

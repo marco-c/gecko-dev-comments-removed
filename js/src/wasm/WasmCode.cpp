@@ -884,7 +884,7 @@ const wasm::WasmTryNote* CodeTier::lookupWasmTryNote(const void* pc) const {
   
   
   for (const auto& tryNote : tryNotes) {
-    if (target > tryNote.begin && target <= tryNote.end) {
+    if (tryNote.offsetWithinTryBody(target)) {
       return &tryNote;
     }
   }

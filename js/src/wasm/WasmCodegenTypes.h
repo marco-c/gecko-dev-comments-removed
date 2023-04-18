@@ -555,28 +555,77 @@ using CallSiteTargetVector = Vector<CallSiteTarget, 0, SystemAllocPolicy>;
 
 
 struct WasmTryNote {
-  explicit WasmTryNote(uint32_t begin = 0, uint32_t end = 0,
-                       uint32_t framePushed = 0)
-      : begin(begin), end(end), framePushed(framePushed) {}
+ private:
+  
+  static const uint32_t BEGIN_NONE = UINT32_MAX;
 
-  uint32_t begin;        
-  uint32_t end;          
-  uint32_t entryPoint;   
-  uint32_t framePushed;  
+  
+  uint32_t begin_;
+  
+  uint32_t end_;
+  
+  uint32_t entryPoint_;
+  
+  uint32_t framePushed_;
 
-  WASM_CHECK_CACHEABLE_POD(begin, end, entryPoint, framePushed);
+  WASM_CHECK_CACHEABLE_POD(begin_, end_, entryPoint_, framePushed_);
 
+ public:
+  explicit WasmTryNote()
+      : begin_(BEGIN_NONE), end_(0), entryPoint_(0), framePushed_(0) {}
+
+  
+  bool hasTryBody() const { return begin_ != BEGIN_NONE; }
+
+  
+  uint32_t tryBodyBegin() const { return begin_; }
+
+  
+  uint32_t tryBodyEnd() const { return end_; }
+
+  
+  bool offsetWithinTryBody(uint32_t offset) const {
+    return offset > begin_ && offset <= end_;
+  }
+
+  
+  uint32_t landingPadEntryPoint() const { return entryPoint_; }
+
+  
+  uint32_t landingPadFramePushed() const { return framePushed_; }
+
+  
+  void setTryBodyBegin(uint32_t begin) {
+    MOZ_ASSERT(begin_ == BEGIN_NONE);
+    begin_ = begin;
+  }
+
+  
+  void setTryBodyEnd(uint32_t end) {
+    MOZ_ASSERT(begin_ != BEGIN_NONE);
+    end_ = end;
+    
+    MOZ_ASSERT(end_ > begin_);
+  }
+
+  
+  void setLandingPad(uint32_t entryPoint, uint32_t framePushed) {
+    entryPoint_ = entryPoint;
+    framePushed_ = framePushed;
+  }
+
+  
   void offsetBy(uint32_t offset) {
-    begin += offset;
-    end += offset;
-    entryPoint += offset;
+    begin_ += offset;
+    end_ += offset;
+    entryPoint_ += offset;
   }
 
   bool operator<(const WasmTryNote& other) const {
-    if (end == other.end) {
-      return begin > other.begin;
+    if (end_ == other.end_) {
+      return begin_ > other.begin_;
     }
-    return end < other.end;
+    return end_ < other.end_;
   }
 };
 

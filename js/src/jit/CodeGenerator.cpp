@@ -8018,7 +8018,7 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
     size_t tryNoteIndex = callBase->tryNoteIndex();
     wasm::WasmTryNoteVector& tryNotes = masm.tryNotes();
     wasm::WasmTryNote& tryNote = tryNotes[tryNoteIndex];
-    tryNote.begin = masm.currentOffset();
+    tryNote.setTryBodyBegin(masm.currentOffset());
   }
 
   MOZ_ASSERT((sizeof(wasm::Frame) + masm.framePushed()) % WasmStackAlignment ==
@@ -8142,8 +8142,7 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
     size_t tryNoteIndex = callBase->tryNoteIndex();
     wasm::WasmTryNoteVector& tryNotes = masm.tryNotes();
     wasm::WasmTryNote& tryNote = tryNotes[tryNoteIndex];
-    tryNote.end = masm.currentOffset();
-    MOZ_ASSERT(tryNote.end > tryNote.begin);
+    tryNote.setTryBodyEnd(masm.currentOffset());
 
     
     
@@ -8179,8 +8178,7 @@ void CodeGenerator::visitWasmCallLandingPrePad(LWasmCallLandingPrePad* lir) {
   
   
   
-  tryNote.entryPoint = block->label()->offset();
-  tryNote.framePushed = masm.framePushed();
+  tryNote.setLandingPad(block->label()->offset(), masm.framePushed());
 }
 
 void CodeGenerator::visitWasmCallIndirectAdjunctSafepoint(

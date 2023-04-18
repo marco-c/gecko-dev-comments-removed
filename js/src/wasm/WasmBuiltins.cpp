@@ -557,8 +557,9 @@ bool wasm::HandleThrow(JSContext* cx, WasmFrameIter& iter,
         rfe->instance = iter.instance();
 
         rfe->stackPointer =
-            (uint8_t*)(rfe->framePointer - tryNote->framePushed);
-        rfe->target = iter.instance()->codeBase(tier) + tryNote->entryPoint;
+            (uint8_t*)(rfe->framePointer - tryNote->landingPadFramePushed());
+        rfe->target =
+            iter.instance()->codeBase(tier) + tryNote->landingPadEntryPoint();
 
         
         if (activation->isWasmTrapping()) {
