@@ -1144,8 +1144,10 @@ bool OptimizeMIR(MIRGenerator* mir) {
 
   
   
+  
   if (mir->optimizationInfo().licmEnabled() ||
-      mir->optimizationInfo().gvnEnabled()) {
+      mir->optimizationInfo().gvnEnabled() ||
+      mir->optimizationInfo().eliminateRedundantShapeGuardsEnabled()) {
     {
       AutoTraceLog log(logger, TraceLogger_AliasAnalysis);
 
