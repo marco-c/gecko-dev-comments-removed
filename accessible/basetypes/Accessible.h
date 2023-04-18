@@ -316,6 +316,11 @@ class Accessible {
 
   virtual HyperTextAccessibleBase* AsHyperTextBase() { return nullptr; }
 
+  
+
+
+  static void TranslateString(const nsString& aKey, nsAString& aStringOut);
+
  protected:
   
 
