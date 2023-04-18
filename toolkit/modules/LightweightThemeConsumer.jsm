@@ -270,6 +270,21 @@ LightweightThemeConsumer.prototype = {
       return true;
     })();
 
+    
+    
+    
+    
+    
+    if (
+      useDarkTheme &&
+      !updateGlobalThemeData &&
+      this._win.browsingContext == this._win.browsingContext.top
+    ) {
+      this._win.browsingContext.prefersColorSchemeOverride = "dark";
+    } else {
+      this._win.browsingContext.prefersColorSchemeOverride = "none";
+    }
+
     let theme = useDarkTheme ? themeData.darkTheme : themeData.theme;
     if (!theme) {
       theme = { id: DEFAULT_THEME_ID };

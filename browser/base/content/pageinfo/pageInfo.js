@@ -14,6 +14,19 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 });
 
 
+
+{
+  let openerColorSchemeOverride =
+    window.opener?.browsingContext?.top.prefersColorSchemeOverride;
+  if (
+    openerColorSchemeOverride &&
+    window.browsingContext == window.browsingContext.top
+  ) {
+    window.browsingContext.prefersColorSchemeOverride = openerColorSchemeOverride;
+  }
+}
+
+
 function pageInfoTreeView(treeid, copycol) {
   
   
