@@ -40,17 +40,6 @@ const lazy = {};
 
 ChromeUtils.defineModuleGetter(
   lazy,
-  "CommonUtils",
-  "resource://services-common/utils.js"
-);
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "EventDispatcher",
-  "resource://gre/modules/Messaging.jsm"
-);
-ChromeUtils.defineModuleGetter(lazy, "OS", "resource://gre/modules/osfile.jsm");
-ChromeUtils.defineModuleGetter(
-  lazy,
   "ReaderWorker",
   "resource://gre/modules/reader/ReaderWorker.jsm"
 );
@@ -71,9 +60,6 @@ const gIsFirefoxDesktop =
 Services.telemetry.setEventRecordingEnabled("readermode", true);
 
 var ReaderMode = {
-  
-  CACHE_VERSION: 1,
-
   DEBUG: 0,
 
   
@@ -357,66 +343,6 @@ var ReaderMode = {
     });
   },
 
-  
-
-
-
-
-
-
-
-  async getArticleFromCache(url) {
-    let path = this._toHashedPath(url);
-    try {
-      let array = await lazy.OS.File.read(path);
-      return JSON.parse(new TextDecoder().decode(array));
-    } catch (e) {
-      if (!(e instanceof lazy.OS.File.Error) || !e.becauseNoSuchFile) {
-        throw e;
-      }
-      return null;
-    }
-  },
-
-  
-
-
-
-
-
-
-
-  async storeArticleInCache(article) {
-    let array = new TextEncoder().encode(JSON.stringify(article));
-    let path = this._toHashedPath(article.url);
-    await this._ensureCacheDir();
-    return lazy.OS.File.writeAtomic(path, array, {
-      tmpPath: path + ".tmp",
-    }).then(success => {
-      lazy.OS.File.stat(path).then(info => {
-        return lazy.EventDispatcher.instance.sendRequest({
-          type: "Reader:AddedToCache",
-          url: article.url,
-          size: info.size,
-          path,
-        });
-      });
-    });
-  },
-
-  
-
-
-
-
-
-
-
-  async removeArticleFromCache(url) {
-    let path = this._toHashedPath(url);
-    await lazy.OS.File.remove(path);
-  },
-
   log(msg) {
     if (this.DEBUG) {
       dump("Reader: " + msg);
@@ -528,62 +454,6 @@ var ReaderMode = {
 
     histogram.add(PARSE_SUCCESS);
     return article;
-  },
-
-  get _cryptoHash() {
-    delete this._cryptoHash;
-    return (this._cryptoHash = Cc[
-      "@mozilla.org/security/hash;1"
-    ].createInstance(Ci.nsICryptoHash));
-  },
-
-  get _unicodeConverter() {
-    delete this._unicodeConverter;
-    this._unicodeConverter = Cc[
-      "@mozilla.org/intl/scriptableunicodeconverter"
-    ].createInstance(Ci.nsIScriptableUnicodeConverter);
-    this._unicodeConverter.charset = "utf8";
-    return this._unicodeConverter;
-  },
-
-  
-
-
-
-
-
-  _toHashedPath(url) {
-    let value = this._unicodeConverter.convertToByteArray(url);
-    this._cryptoHash.init(this._cryptoHash.MD5);
-    this._cryptoHash.update(value, value.length);
-
-    let hash = lazy.CommonUtils.encodeBase32(this._cryptoHash.finish(false));
-    let fileName = hash.substring(0, hash.indexOf("=")) + ".json";
-    return lazy.OS.Path.join(
-      lazy.OS.Constants.Path.profileDir,
-      "readercache",
-      fileName
-    );
-  },
-
-  
-
-
-
-
-
-
-  _ensureCacheDir() {
-    let dir = lazy.OS.Path.join(
-      lazy.OS.Constants.Path.profileDir,
-      "readercache"
-    );
-    return lazy.OS.File.exists(dir).then(exists => {
-      if (!exists) {
-        return lazy.OS.File.makeDir(dir);
-      }
-      return undefined;
-    });
   },
 
   
