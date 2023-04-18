@@ -219,17 +219,7 @@ nsProfiler::WaitOnePeriodicSampling(JSContext* aCx, Promise** aPromise) {
                 NS_NewRunnableFunction(
                     "nsProfiler::WaitOnePeriodicSampling result on main thread",
                     [promiseHandleInMT = std::move(promiseHandleInSampler),
-                     aSamplingState]() {
-                      AutoJSAPI jsapi;
-                      if (NS_WARN_IF(!jsapi.Init(
-                              promiseHandleInMT->GetGlobalObject()))) {
-                        
-                        
-                        promiseHandleInMT->MaybeReject(
-                            NS_ERROR_DOM_UNKNOWN_ERR);
-                        return;
-                      }
-
+                     aSamplingState]() mutable {
                       switch (aSamplingState) {
                         case SamplingState::JustStopped:
                         case SamplingState::SamplingPaused:
@@ -237,10 +227,17 @@ nsProfiler::WaitOnePeriodicSampling(JSContext* aCx, Promise** aPromise) {
                           break;
 
                         case SamplingState::NoStackSamplingCompleted:
-                        case SamplingState::SamplingCompleted: {
-                          JS::RootedValue val(jsapi.cx());
-                          promiseHandleInMT->MaybeResolve(val);
-                        } break;
+                        case SamplingState::SamplingCompleted:
+                          
+                          
+                          ProfilerParent::WaitOnePeriodicSampling()->Then(
+                              GetMainThreadSerialEventTarget(), __func__,
+                              [promiseHandleInMT =
+                                   std::move(promiseHandleInMT)](
+                                  GenericPromise::ResolveOrRejectValue&&) {
+                                promiseHandleInMT->MaybeResolveWithUndefined();
+                              });
+                          break;
 
                         default:
                           MOZ_ASSERT(false, "Unexpected SamplingState value");
