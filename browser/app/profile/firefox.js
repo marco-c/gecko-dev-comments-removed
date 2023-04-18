@@ -1193,6 +1193,10 @@ pref("browser.bookmarks.editDialog.firstEditField", "namePicker");
 
 pref("browser.bookmarks.editDialog.maxRecentFolders", 7);
 
+
+
+pref("browser.bookmarks.editDialog.delayedApply.enabled", false);
+
 pref("dom.ipc.plugins.flash.disable-protected-mode", false);
 
 
