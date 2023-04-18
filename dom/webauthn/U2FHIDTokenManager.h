@@ -15,8 +15,7 @@
 
 
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class U2FAppIds {
  public:
@@ -181,7 +180,6 @@ class U2FHIDTokenManager final : public U2FTokenTransport {
   MozPromiseHolder<U2FSignPromise> mSignPromise;
 };
 
-}  
 }  
 
 #endif  

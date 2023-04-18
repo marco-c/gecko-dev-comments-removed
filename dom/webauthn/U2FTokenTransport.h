@@ -16,8 +16,7 @@
 
 
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 typedef MozPromise<WebAuthnMakeCredentialResult, nsresult, true>
     U2FRegisterPromise;
@@ -42,7 +41,6 @@ class U2FTokenTransport {
   virtual ~U2FTokenTransport() = default;
 };
 
-}  
 }  
 
 #endif  

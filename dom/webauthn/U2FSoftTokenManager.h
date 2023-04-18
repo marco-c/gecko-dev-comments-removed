@@ -15,8 +15,7 @@
 
 
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class U2FSoftTokenManager final : public U2FTokenTransport {
  public:
@@ -51,7 +50,6 @@ class U2FSoftTokenManager final : public U2FTokenTransport {
   uint32_t mCounter;
 };
 
-}  
 }  
 
 #endif  

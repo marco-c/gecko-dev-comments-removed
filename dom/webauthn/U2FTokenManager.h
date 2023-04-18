@@ -22,8 +22,7 @@
 
 
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class U2FSoftTokenManager;
 class WebAuthnTransactionParent;
@@ -86,7 +85,6 @@ class U2FTokenManager final : public nsIU2FTokenManager {
   Maybe<WebAuthnMakeCredentialInfo> mPendingRegisterInfo;
 };
 
-}  
 }  
 
 #endif  

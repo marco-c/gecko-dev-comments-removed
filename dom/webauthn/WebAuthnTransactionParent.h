@@ -15,8 +15,7 @@
 
 
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class WebAuthnTransactionParent final : public PWebAuthnTransactionParent {
  public:
@@ -42,7 +41,6 @@ class WebAuthnTransactionParent final : public PWebAuthnTransactionParent {
   ~WebAuthnTransactionParent() = default;
 };
 
-}  
 }  
 
 #endif  

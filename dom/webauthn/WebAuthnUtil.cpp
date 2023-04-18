@@ -14,8 +14,7 @@
 #include "nsHTMLDocument.h"
 #include "hasht.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 constexpr auto kGoogleAccountsAppId1 =
@@ -458,5 +457,4 @@ nsresult BuildTransactionHashes(const nsCString& aRpId,
   return NS_OK;
 }
 
-}  
 }  
