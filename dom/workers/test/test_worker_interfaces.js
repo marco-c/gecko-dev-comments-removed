@@ -225,6 +225,8 @@ var interfaceNamesInGlobalScope = [
   
   { name: "MessagePort", insecureContext: true },
   
+  "NavigationPreloadManager",
+  
   { name: "NetworkInformation", insecureContext: true, android: true },
   
   { name: "Notification", insecureContext: true },
