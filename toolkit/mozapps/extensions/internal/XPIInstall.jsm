@@ -3941,14 +3941,6 @@ var XPIInstall = {
 
     let addon = await loadManifestFromFile(source, location);
 
-    
-    
-    if (!addon.isCompatible) {
-      throw new Error(
-        `Add-on ${addon.id} is not compatible with application version.`
-      );
-    }
-
     if (
       XPIDatabase.mustSign(addon.type) &&
       addon.signedState <= AddonManager.SIGNEDSTATE_MISSING
@@ -3958,7 +3950,16 @@ var XPIInstall = {
       );
     }
 
+    
     addon.importMetadata(metadata);
+
+    
+    
+    if (!addon.isCompatible) {
+      throw new Error(
+        `Add-on ${addon.id} is not compatible with application version.`
+      );
+    }
 
     logger.debug(`Processing install of ${id} in ${location.name}`);
     let existingAddon = XPIStates.findAddon(id);
