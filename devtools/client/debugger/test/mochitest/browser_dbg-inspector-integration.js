@@ -28,7 +28,7 @@ add_task(async function() {
   
   await onWhyPausedDisplayed;
   
-  waitUntil(() => !dbg.win.document.querySelector(".why-paused"));
+  await waitUntil(() => !dbg.win.document.querySelector(".why-paused"));
 
   info(
     "Check that hovering over DOM element highlights the node in content panel"
