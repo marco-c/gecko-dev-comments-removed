@@ -247,12 +247,13 @@ NS_IMPL_CYCLE_COLLECTION_CLASS(PeerConnectionImpl)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(PeerConnectionImpl)
   tmp->Close();
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mPCObserver, mWindow, mCertificate,
-                                  mSTSThread, mReceiveStreams, mKungFuDeathGrip)
+                                  mSTSThread, mReceiveStreams, mOperations,
+                                  mKungFuDeathGrip)
   NS_IMPL_CYCLE_COLLECTION_UNLINK_PRESERVED_WRAPPER
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(PeerConnectionImpl)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPCObserver, mWindow, mCertificate,
-                                    mSTSThread, mReceiveStreams,
+                                    mSTSThread, mReceiveStreams, mOperations,
                                     mKungFuDeathGrip)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 NS_IMPL_CYCLE_COLLECTION_TRACE_WRAPPERCACHE(PeerConnectionImpl)
@@ -986,9 +987,10 @@ already_AddRefed<TransceiverImpl> PeerConnectionImpl::CreateTransceiverImpl(
   return transceiverImpl.forget();
 }
 
-bool PeerConnectionImpl::CheckNegotiationNeeded(ErrorResult& rv) {
+bool PeerConnectionImpl::CheckNegotiationNeeded() {
   MOZ_ASSERT(mSignalingState == RTCSignalingState::Stable);
-  return mJsepSession->CheckNegotiationNeeded();
+  return !mLocalIceCredentialsToReplace.empty() ||
+         mJsepSession->CheckNegotiationNeeded();
 }
 
 nsresult PeerConnectionImpl::InitializeDataChannel() {
@@ -1095,6 +1097,205 @@ PeerConnectionImpl::CreateDataChannel(
   return NS_OK;
 }
 
+NS_IMPL_CYCLE_COLLECTION(PeerConnectionImpl::Operation, mPromise, mPc)
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(PeerConnectionImpl::Operation)
+  NS_INTERFACE_MAP_ENTRY(nsISupports)
+NS_INTERFACE_MAP_END
+NS_IMPL_CYCLE_COLLECTING_ADDREF(PeerConnectionImpl::Operation)
+NS_IMPL_CYCLE_COLLECTING_RELEASE(PeerConnectionImpl::Operation)
+
+PeerConnectionImpl::Operation::Operation(PeerConnectionImpl* aPc)
+    : mPromise(aPc->MakePromise()), mPc(aPc) {}
+
+PeerConnectionImpl::Operation::~Operation() = default;
+
+void PeerConnectionImpl::Operation::Call() {
+  RefPtr<dom::Promise> opPromise = CallImpl();
+  
+  
+  
+  
+  opPromise->AppendNativeHandler(this);
+}
+
+void PeerConnectionImpl::Operation::ResolvedCallback(
+    JSContext* aCx, JS::Handle<JS::Value> aValue, ErrorResult& aRv) {
+  
+  
+  if (!mPc->IsClosed()) {
+    
+    
+    mPromise->MaybeResolveWithClone(aCx, aValue);
+    
+    
+    
+    RefPtr<PeerConnectionImpl> pc = mPc;
+    pc->RunNextOperation();
+  }
+}
+
+void PeerConnectionImpl::Operation::RejectedCallback(
+    JSContext* aCx, JS::Handle<JS::Value> aValue, ErrorResult& aRv) {
+  
+  
+  if (!mPc->IsClosed()) {
+    
+    
+    mPromise->MaybeRejectWithClone(aCx, aValue);
+    
+    
+    
+    RefPtr<PeerConnectionImpl> pc = mPc;
+    pc->RunNextOperation();
+  }
+}
+
+NS_IMPL_CYCLE_COLLECTION_INHERITED(PeerConnectionImpl::JSOperation,
+                                   PeerConnectionImpl::Operation, mOperation)
+
+NS_IMPL_ADDREF_INHERITED(PeerConnectionImpl::JSOperation,
+                         PeerConnectionImpl::Operation)
+NS_IMPL_RELEASE_INHERITED(PeerConnectionImpl::JSOperation,
+                          PeerConnectionImpl::Operation)
+
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(PeerConnectionImpl::JSOperation)
+NS_INTERFACE_MAP_END_INHERITING(PeerConnectionImpl::Operation)
+
+PeerConnectionImpl::JSOperation::JSOperation(PeerConnectionImpl* aPc,
+                                             dom::ChainedOperation& aOp)
+    : Operation(aPc), mOperation(&aOp) {}
+
+RefPtr<dom::Promise> PeerConnectionImpl::JSOperation::CallImpl() {
+  
+  RefPtr<dom::ChainedOperation> op = mOperation;
+  return op->Call();
+}
+
+dom::Promise* PeerConnectionImpl::Chain(dom::ChainedOperation& aOperation) {
+  MOZ_RELEASE_ASSERT(!mChainingOperation);
+  mChainingOperation = true;
+  RefPtr<Operation> operation = new JSOperation(this, aOperation);
+  auto* promise = Chain(operation);
+  mChainingOperation = false;
+  return promise;
+}
+
+
+
+
+
+dom::Promise* PeerConnectionImpl::Chain(const RefPtr<Operation>& aOperation) {
+  
+  
+  if (IsClosed()) {
+    CSFLogDebug(LOGTAG, "%s:%d: Peer connection is closed", __FILE__, __LINE__);
+    RefPtr<dom::Promise> error = MakePromise();
+    error->MaybeRejectWithInvalidStateError("Peer connection is closed");
+    return error;
+  }
+
+  
+  mOperations.AppendElement(aOperation);
+
+  
+  if (mOperations.Length() == 1) {
+    aOperation->Call();
+  }
+
+  
+  return aOperation->GetPromise();
+}
+
+void PeerConnectionImpl::RunNextOperation() {
+  
+  if (IsClosed()) {
+    return;
+  }
+
+  
+  mOperations.RemoveElementAt(0);
+
+  
+  
+  if (mOperations.Length()) {
+    
+    RefPtr<Operation> op = mOperations[0];
+    op->Call();
+    return;
+  }
+
+  
+  
+  if (!mUpdateNegotiationNeededFlagOnEmptyChain) {
+    return;
+  }
+
+  
+  mUpdateNegotiationNeededFlagOnEmptyChain = false;
+  
+  UpdateNegotiationNeeded();
+}
+
+already_AddRefed<dom::Promise> PeerConnectionImpl::MakePromise() const {
+  nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(mWindow);
+  ErrorResult rv;
+  RefPtr<dom::Promise> result = dom::Promise::Create(global, rv);
+  if (NS_WARN_IF(rv.Failed())) {
+    rv.StealNSResult();
+  }
+  return result.forget();
+}
+
+void PeerConnectionImpl::UpdateNegotiationNeeded() {
+  
+  
+  
+  if (mOperations.Length() != 0) {
+    mUpdateNegotiationNeededFlagOnEmptyChain = true;
+    return;
+  }
+
+  
+  GetMainThreadEventTarget()->Dispatch(NS_NewRunnableFunction(
+      __func__, [this, self = RefPtr<PeerConnectionImpl>(this)] {
+        
+        if (IsClosed()) {
+          return;
+        }
+        
+        
+        
+        if (mOperations.Length()) {
+          mUpdateNegotiationNeededFlagOnEmptyChain = true;
+          return;
+        }
+        
+        if (mSignalingState != RTCSignalingState::Stable) {
+          return;
+        }
+        
+        
+        
+        if (!CheckNegotiationNeeded()) {
+          mNegotiationNeeded = false;
+          return;
+        }
+
+        
+        
+        if (mNegotiationNeeded) {
+          return;
+        }
+
+        
+        mNegotiationNeeded = true;
+
+        
+        ErrorResult rv;
+        mPCObserver->FireNegotiationNeededEvent(rv);
+      }));
+}
+
 void PeerConnectionImpl::NotifyDataChannel(
     already_AddRefed<DataChannel> aChannel) {
   PC_AUTO_ENTER_API_CALL_NO_CHECK();
@@ -1126,7 +1327,8 @@ PeerConnectionImpl::CreateOffer(const RTCOfferOptions& aOptions) {
         mozilla::Some(size_t(aOptions.mOfferToReceiveVideo.Value()));
   }
 
-  options.mIceRestart = mozilla::Some(aOptions.mIceRestart);
+  options.mIceRestart = mozilla::Some(aOptions.mIceRestart ||
+                                      !mLocalIceCredentialsToReplace.empty());
 
   return CreateOffer(options);
 }
@@ -1944,6 +2146,8 @@ PeerConnectionImpl::Close() {
 
   mQueuedIceCtxOperations.clear();
 
+  mOperations.Clear();
+
   
   if (mWindow && mActiveOnWindow) {
     mWindow->RemovePeerConnection();
@@ -2044,6 +2248,22 @@ nsresult PeerConnectionImpl::SetConfiguration(
   
   StoreConfigurationForAboutWebrtc(aConfiguration);
   return NS_OK;
+}
+
+void PeerConnectionImpl::RestartIce() {
+  RestartIceNoRenegotiationNeeded();
+  
+  UpdateNegotiationNeeded();
+}
+
+
+
+void PeerConnectionImpl::RestartIceNoRenegotiationNeeded() {
+  
+  
+  
+  
+  mLocalIceCredentialsToReplace = mJsepSession->GetLocalIceCredentials();
 }
 
 bool PeerConnectionImpl::PluginCrash(uint32_t aPluginID,
@@ -2200,6 +2420,27 @@ void PeerConnectionImpl::OnSetDescriptionSuccess(JsepSdpType sdpType,
             mJsepSession->GetLocalDescription(kJsepDescriptionCurrent);
         mPendingOfferer = mJsepSession->IsPendingOfferer();
         mCurrentOfferer = mJsepSession->IsCurrentOfferer();
+
+        if (sdpType == mozilla::kJsepSdpAnswer) {
+          std::set<std::pair<std::string, std::string>> iceCredentials =
+              mJsepSession->GetLocalIceCredentials();
+          std::vector<std::pair<std::string, std::string>>
+              iceCredentialsNotReplaced;
+          std::set_intersection(mLocalIceCredentialsToReplace.begin(),
+                                mLocalIceCredentialsToReplace.end(),
+                                iceCredentials.begin(), iceCredentials.end(),
+                                std::back_inserter(iceCredentialsNotReplaced));
+
+          if (iceCredentialsNotReplaced.empty()) {
+            mLocalIceCredentialsToReplace.clear();
+          }
+        }
+
+        if (newSignalingState == RTCSignalingState::Stable) {
+          mNegotiationNeeded = false;
+          UpdateNegotiationNeeded();
+        }
+
         if (newSignalingState != mSignalingState) {
           mSignalingState = newSignalingState;
           mPCObserver->OnStateChange(PCObserverStateType::SignalingState, jrv);
