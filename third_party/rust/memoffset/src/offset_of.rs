@@ -86,7 +86,6 @@ macro_rules! _memoffset_offset_from_unsafe {
 
 
 
-
 #[macro_export(local_inner_macros)]
 macro_rules! offset_of {
     ($parent:path, $field:tt) => {{
@@ -98,7 +97,6 @@ macro_rules! offset_of {
         _memoffset_offset_from_unsafe!(field_ptr, base_ptr)
     }};
 }
-
 
 
 

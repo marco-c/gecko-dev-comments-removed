@@ -1,29 +1,27 @@
-#![forbid(unsafe_code)]
-#![warn(nonstandard_style, rust_2018_idioms, rustdoc, unused)]
 
 
-#![forbid(future_incompatible, rust_2018_compatibility)]
+#![warn(nonstandard_style, rust_2018_idioms, unused)]
+
+
+#![forbid(future_incompatible)]
 #![allow(unknown_lints)] 
+#![forbid(unsafe_code)]
 #![warn(
     box_pointers,
     deprecated_in_future,
-    disjoint_capture_drop_reorder,
-    elided_lifetimes_in_paths,
-    explicit_outlives_requirements,
+    disjoint_capture_migration,
     macro_use_extern_crate,
     meta_variable_misuse,
     missing_abi,
     missing_copy_implementations,
-    missing_crate_level_docs,
     missing_debug_implementations,
     missing_docs,
     non_ascii_idents,
+    noop_method_call,
     single_use_lifetimes,
     trivial_casts,
     trivial_numeric_casts,
-    unaligned_references,
     unreachable_pub,
-    unused_extern_crates,
     unused_import_braces,
     unused_lifetimes,
     unused_qualifications,
@@ -40,8 +38,6 @@
 #![warn(clippy::restriction)]
 #![allow(clippy::blanket_clippy_restriction_lints)] 
 #![allow(clippy::exhaustive_structs, clippy::exhaustive_enums)] 
-
-
 
 pub mod basic {
     include!("include/basic.rs");

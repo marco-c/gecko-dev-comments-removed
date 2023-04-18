@@ -3,7 +3,7 @@
 
 use std::env;
 
-#[rustversion::attr(before(2020-12-03), ignore)] 
+#[rustversion::attr(before(2021-05-15), ignore)] 
 #[test]
 fn ui() {
     if env::var_os("CI").is_none() {

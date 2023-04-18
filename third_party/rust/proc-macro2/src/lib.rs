@@ -78,11 +78,33 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/proc-macro2/1.0.27")]
+
+
+
+
+
+
+
+
+#![doc(html_root_url = "https://docs.rs/proc-macro2/1.0.33")]
 #![cfg_attr(any(proc_macro_span, super_unstable), feature(proc_macro_span))]
-#![cfg_attr(super_unstable, feature(proc_macro_raw_ident, proc_macro_def_site))]
+#![cfg_attr(super_unstable, feature(proc_macro_def_site))]
 #![cfg_attr(doc_cfg, feature(doc_cfg))]
-#![allow(clippy::needless_doctest_main, clippy::vec_init_then_push)]
+#![allow(
+    clippy::cast_lossless,
+    clippy::cast_possible_truncation,
+    clippy::doc_markdown,
+    clippy::items_after_statements,
+    clippy::manual_assert,
+    clippy::must_use_candidate,
+    clippy::needless_doctest_main,
+    clippy::shadow_unrelated,
+    clippy::trivially_copy_pass_by_ref,
+    clippy::unnecessary_wraps,
+    clippy::unused_self,
+    clippy::used_underscore_binding,
+    clippy::vec_init_then_push
+)]
 
 #[cfg(use_proc_macro)]
 extern crate proc_macro;
@@ -210,14 +232,14 @@ impl From<TokenTree> for TokenStream {
 
 impl Extend<TokenTree> for TokenStream {
     fn extend<I: IntoIterator<Item = TokenTree>>(&mut self, streams: I) {
-        self.inner.extend(streams)
+        self.inner.extend(streams);
     }
 }
 
 impl Extend<TokenStream> for TokenStream {
     fn extend<I: IntoIterator<Item = TokenStream>>(&mut self, streams: I) {
         self.inner
-            .extend(streams.into_iter().map(|stream| stream.inner))
+            .extend(streams.into_iter().map(|stream| stream.inner));
     }
 }
 
@@ -388,7 +410,7 @@ impl Span {
     
     
     
-    #[cfg(hygiene)]
+    #[cfg(not(no_hygiene))]
     pub fn mixed_site() -> Span {
         Span::_new(imp::Span::mixed_site())
     }
@@ -706,7 +728,7 @@ impl Group {
     
     
     pub fn set_span(&mut self, span: Span) {
-        self.inner.set_span(span.inner)
+        self.inner.set_span(span.inner);
     }
 }
 
@@ -977,7 +999,7 @@ impl Ord for Ident {
 
 impl Hash for Ident {
     fn hash<H: Hasher>(&self, hasher: &mut H) {
-        self.to_string().hash(hasher)
+        self.to_string().hash(hasher);
     }
 }
 

@@ -1,5 +1,4 @@
-use std::panic::{self, PanicInfo};
-use std::sync::atomic::*;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Once;
 
 static WORKS: AtomicUsize = AtomicUsize::new(0);
@@ -24,31 +23,40 @@ pub(crate) fn unforce_fallback() {
     initialize();
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#[cfg(not(no_is_available))]
 fn initialize() {
+    let available = proc_macro::is_available();
+    WORKS.store(available as usize + 1, Ordering::SeqCst);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(no_is_available)]
+fn initialize() {
+    use std::panic::{self, PanicInfo};
+
     type PanicHook = dyn Fn(&PanicInfo) + Sync + Send + 'static;
 
     let null_hook: Box<PanicHook> = Box::new(|_panic_info| {  });
