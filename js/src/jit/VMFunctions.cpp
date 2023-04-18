@@ -29,6 +29,7 @@
 #include "js/TraceKind.h"
 #include "vm/ArrayObject.h"
 #include "vm/Interpreter.h"
+#include "vm/JSAtom.h"
 #include "vm/PlainObject.h"  
 #include "vm/SelfHosting.h"
 #include "vm/StaticStrings.h"
@@ -205,6 +206,11 @@ struct OutParamToDataType<uint64_t*> {
 };
 template <>
 struct OutParamToDataType<JSObject*> {
+  
+  static const DataType result = Type_Void;
+};
+template <>
+struct OutParamToDataType<JSString*> {
   
   static const DataType result = Type_Void;
 };
