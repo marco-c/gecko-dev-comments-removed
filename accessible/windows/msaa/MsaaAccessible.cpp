@@ -1439,12 +1439,9 @@ MsaaAccessible::get_accDefaultAction(
   if (accessible) {
     return accessible->get_accDefaultAction(kVarChildIdSelf, pszDefaultAction);
   }
-  if (mAcc->IsRemote()) {
-    return E_NOTIMPL;  
-  }
 
   nsAutoString defaultAction;
-  LocalAcc()->ActionNameAt(0, defaultAction);
+  mAcc->ActionNameAt(0, defaultAction);
 
   *pszDefaultAction =
       ::SysAllocStringLen(defaultAction.get(), defaultAction.Length());
