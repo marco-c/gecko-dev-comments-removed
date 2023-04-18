@@ -2199,6 +2199,22 @@ var AddonManagerInternal = {
         );
         return;
       } else if (
+        !this.isInstallAllowedByPolicy(
+          aInstallingPrincipal,
+          aInstall,
+          false 
+        )
+      ) {
+        aInstall.cancel();
+
+        this.installNotifyObservers(
+          "addon-install-policy-blocked",
+          topBrowser,
+          aInstallingPrincipal.URI,
+          aInstall
+        );
+        return;
+      } else if (
         
         
         aDetails?.hasCrossOriginAncestor ||
@@ -2217,12 +2233,7 @@ var AddonManagerInternal = {
             !(
               aBrowser.contentPrincipal.isNullPrincipal ||
               aInstallingPrincipal.subsumes(aBrowser.contentPrincipal)
-            ))) ||
-        !this.isInstallAllowedByPolicy(
-          aInstallingPrincipal,
-          aInstall,
-          false 
-        )
+            )))
       ) {
         aInstall.cancel();
 
@@ -2320,7 +2331,7 @@ var AddonManagerInternal = {
       install.cancel();
 
       this.installNotifyObservers(
-        "addon-install-origin-blocked",
+        "addon-install-policy-blocked",
         browser,
         install.sourceURI,
         install
@@ -3171,7 +3182,7 @@ var AddonManagerInternal = {
           
           return {
             success: false,
-            code: "addon-install-webapi-blocked-policy",
+            code: "addon-install-policy-blocked",
             message: `Install from ${uri.spec} not permitted by policy`,
           };
         }
