@@ -202,9 +202,6 @@ class PersistentBufferProviderShared : public PersistentBufferProvider,
   Maybe<uint32_t> mBack;
   
   Maybe<uint32_t> mFront;
-  
-  
-  Maybe<uint32_t> mTextureLockIsUnreliable;
 
   RefPtr<gfx::DrawTarget> mDrawTarget;
   RefPtr<gfx::SourceSurface> mSnapshot;

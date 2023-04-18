@@ -326,9 +326,7 @@ PersistentBufferProviderShared::BorrowDrawTarget(
 
   
   
-  if ((mTextureLockIsUnreliable.isSome() &&
-       mTextureLockIsUnreliable == mBack) ||
-      (tex && tex->IsReadLocked())) {
+  if (tex && tex->IsReadLocked()) {
     
     
     tex = nullptr;
@@ -337,9 +335,7 @@ PersistentBufferProviderShared::BorrowDrawTarget(
   if (!tex) {
     
     for (uint32_t i = 0; i < mTextures.length(); ++i) {
-      if (!mTextures[i]->IsReadLocked() &&
-          !(mTextureLockIsUnreliable.isSome() &&
-            mTextureLockIsUnreliable.ref() == i)) {
+      if (!mTextures[i]->IsReadLocked()) {
         mBack = Some(i);
         tex = mTextures[i];
         break;
@@ -428,9 +424,6 @@ PersistentBufferProviderShared::BorrowDrawTarget(
       MOZ_ASSERT(success);
     }
   }
-
-  
-  mTextureLockIsUnreliable = Nothing();
 
   mDrawTarget = tex->BorrowDrawTarget();
   if (mDrawTarget) {
@@ -590,9 +583,6 @@ void PersistentBufferProviderShared::ClearCachedResources() {
       mFront = Some<uint32_t>(mTextures.length() - 1);
     }
   }
-  
-  
-  mTextureLockIsUnreliable = mFront;
 }
 
 void PersistentBufferProviderShared::Destroy() {
