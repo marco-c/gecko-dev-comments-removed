@@ -106,6 +106,14 @@ interface imgIRequest : nsIRequest
 
 
 
+  readonly attribute ACString fileName;
+
+  
+
+
+
+
+
   imgIRequest clone(in imgINotificationObserver aObserver);
 
   
