@@ -20,6 +20,7 @@
 #include "js/Context.h"                 
 #include "js/RootingAPI.h"              
 #include "js/Value.h"                   
+#include "vm/EnvironmentObject.h"       
 #include "vm/JSContext.h"               
 #include "vm/JSObject.h"                
 #include "vm/Runtime.h"                 
@@ -215,6 +216,26 @@ JS_PUBLIC_API JSObject* JS::GetModuleNamespace(JSContext* cx,
 
   return ModuleObject::GetOrCreateModuleNamespace(
       cx, moduleRecord.as<ModuleObject>());
+}
+
+JS_PUBLIC_API JSObject* JS::GetModuleForNamespace(
+    JSContext* cx, HandleObject moduleNamespace) {
+  AssertHeapIsIdle();
+  CHECK_THREAD(cx);
+  cx->check(moduleNamespace);
+  MOZ_ASSERT(moduleNamespace->is<js::ModuleNamespaceObject>());
+
+  return &moduleNamespace->as<js::ModuleNamespaceObject>().module();
+}
+
+JS_PUBLIC_API JSObject* JS::GetModuleEnvironment(JSContext* cx,
+                                                 Handle<JSObject*> moduleObj) {
+  AssertHeapIsIdle();
+  CHECK_THREAD(cx);
+  cx->check(moduleObj);
+  MOZ_ASSERT(moduleObj->is<js::ModuleObject>());
+
+  return moduleObj->as<js::ModuleObject>().environment();
 }
 
 JS_PUBLIC_API JSObject* JS::CreateModuleRequest(
