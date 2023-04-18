@@ -163,11 +163,20 @@ function parseMicrodataProp(propElement) {
     case "audio":
     case "embed":
     case "iframe":
-    case "img":
     case "source":
     case "track":
     case "video":
       return parseUrl(propElement, "src");
+    case "img":
+      
+      
+      
+      
+      return (
+        parseUrl(propElement, "content") ||
+        parseUrl(propElement, "data-src") ||
+        parseUrl(propElement, "src")
+      );
     case "object":
       return parseUrl(propElement, "data");
     case "a":
