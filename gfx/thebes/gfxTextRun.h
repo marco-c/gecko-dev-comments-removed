@@ -830,7 +830,8 @@ class gfxTextRun : public gfxShapedText {
   
   
   
-  void ShrinkToLigatureBoundaries(Range* aRange) const;
+  
+  bool ShrinkToLigatureBoundaries(Range* aRange) const;
   
   gfxFloat GetPartialLigatureWidth(Range aRange,
                                    PropertyProvider* aProvider) const;
