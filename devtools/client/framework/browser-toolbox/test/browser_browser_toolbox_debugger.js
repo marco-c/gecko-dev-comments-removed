@@ -13,6 +13,8 @@ PromiseTestUtils.allowMatchingRejectionsGlobally(/File closed/);
 
 requestLongerTimeout(4);
 
+
+
 const { fetch } = require("devtools/shared/DevToolsUtils");
 
 const debuggerHeadURL =
@@ -23,6 +25,33 @@ const helpersContextURL =
   CHROME_URL_ROOT + "../../../debugger/test/mochitest/helpers/context.js";
 
 add_task(async function runTest() {
+  let { content: debuggerHead } = await fetch(debuggerHeadURL);
+
+  
+  
+  const { content: debuggerHelpers } = await fetch(helpersURL);
+  const { content: debuggerContextHelpers } = await fetch(helpersContextURL);
+  debuggerHead = debuggerHead + debuggerContextHelpers + debuggerHelpers;
+
+  
+  
+  debuggerHead = debuggerHead.replace(
+    /Services.scriptloader.loadSubScript[^\)]*\);/g,
+    ""
+  );
+
+  const ToolboxTask = await initBrowserToolboxTask({
+    enableBrowserToolboxFission: true,
+  });
+  await ToolboxTask.importFunctions({
+    
+    registerCleanupFunction: () => {},
+    waitForDispatch,
+    waitUntil,
+  });
+  await ToolboxTask.importScript(debuggerHead);
+
+  info("### First test breakpoint in the parent process script");
   const s = Cu.Sandbox("http://mozilla.org");
 
   
@@ -52,32 +81,6 @@ add_task(async function runTest() {
   
   const interval = setInterval(s.plop, 1000);
 
-  let { content: debuggerHead } = await fetch(debuggerHeadURL);
-
-  
-  
-  const { content: debuggerHelpers } = await fetch(helpersURL);
-  const { content: debuggerContextHelpers } = await fetch(helpersContextURL);
-  debuggerHead = debuggerHead + debuggerContextHelpers + debuggerHelpers;
-
-  
-  
-  debuggerHead = debuggerHead.replace(
-    /Services.scriptloader.loadSubScript[^\)]*\);/g,
-    ""
-  );
-
-  const ToolboxTask = await initBrowserToolboxTask({
-    enableBrowserToolboxFission: true,
-  });
-  await ToolboxTask.importFunctions({
-    
-    registerCleanupFunction: () => {},
-    waitForDispatch,
-    waitUntil,
-  });
-  await ToolboxTask.importScript(debuggerHead);
-
   await ToolboxTask.spawn(`"${testUrl}"`, async _testUrl => {
     
 
@@ -90,7 +93,6 @@ add_task(async function runTest() {
     Services.prefs.clearUserPref("devtools.debugger.pending-selected-location");
 
     info("Waiting for debugger load");
-    
     await gToolbox.selectTool("jsdebugger");
     const dbg = createDebuggerContext(gToolbox);
     const window = dbg.win;
@@ -131,19 +133,99 @@ add_task(async function runTest() {
 
     const source = findSource(dbg, fileName);
     assertPausedAtSourceAndLine(dbg, source.id, 2);
+    is(
+      dbg.selectors.getBreakpointCount(),
+      1,
+      "There is exactly one breakpoint"
+    );
 
     await stepIn(dbg);
 
     assertPausedAtSourceAndLine(dbg, source.id, 3);
+    is(
+      dbg.selectors.getBreakpointCount(),
+      1,
+      "We still have only one breakpoint after step-in"
+    );
 
     
     
     await removeBreakpoint(dbg, source.id, 2);
 
     await resume(dbg);
+
+    
+    await new Promise(r => setTimeout(r, 1000));
+
+    is(dbg.selectors.getBreakpointCount(), 0, "There is no more breakpoints");
+
+    assertNotPaused(dbg);
   });
 
   clearInterval(interval);
+
+  info("### Now test breakpoint in a privileged content process script");
+  const testUrl2 = `http://mozilla.org/content-process-test-${id}.js`;
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [testUrl2], testUrl => {
+    
+    const s = Cu.Sandbox("http://mozilla.org");
+    Cu.evalInSandbox(
+      "(" +
+        function() {
+          this.foo = function foo() {
+            return 1;
+          };
+        } +
+        ").call(this)",
+      s,
+      "1.8",
+      testUrl,
+      0
+    );
+    content.interval = content.setInterval(s.foo, 1000);
+  });
+  await ToolboxTask.spawn(`"${testUrl2}"`, async _testUrl => {
+    const dbg = createDebuggerContext(gToolbox);
+
+    const fileName = _testUrl.match(/content-process-test.*\.js/)[0];
+    await waitForSources(dbg, _testUrl);
+
+    await selectSource(dbg, fileName);
+
+    const onPaused = waitForPaused(dbg);
+    await addBreakpoint(dbg, fileName, 2);
+    await onPaused;
+
+    const source = findSource(dbg, fileName);
+    assertPausedAtSourceAndLine(dbg, source.id, 2);
+    await assertBreakpoint(dbg, 2);
+    is(dbg.selectors.getBreakpointCount(), 1, "We have exactly one breakpoint");
+
+    await stepIn(dbg);
+
+    assertPausedAtSourceAndLine(dbg, source.id, 3);
+    is(
+      dbg.selectors.getBreakpointCount(),
+      1,
+      "We still have only one breakpoint after step-in"
+    );
+
+    
+    
+    await removeBreakpoint(dbg, source.id, 2);
+
+    await resume(dbg);
+
+    
+    await new Promise(r => setTimeout(r, 1000));
+
+    is(dbg.selectors.getBreakpointCount(), 0, "There is no more breakpoints");
+
+    assertNotPaused(dbg);
+  });
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], () => {
+    content.clearInterval(content.interval);
+  });
 
   await ToolboxTask.destroy();
 });
