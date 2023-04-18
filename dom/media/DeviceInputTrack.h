@@ -40,6 +40,9 @@ class NativeInputTrack : public ProcessedMediaTrack {
                        TrackRate aRate, uint32_t aChannels,
                        uint32_t aAlreadyBuffered);
 
+  
+  uint32_t MaxRequestedInputChannels() const;
+  bool HasVoiceInput() const;
 
   
   NativeInputTrack* AsNativeInputTrack() override { return this; }
