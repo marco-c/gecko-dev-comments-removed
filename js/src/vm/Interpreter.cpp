@@ -2507,7 +2507,8 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
 
     CASE(CloseIter) {
       ReservedRooted<JSObject*> iter(&rootObject0, &REGS.sp[-1].toObject());
-      if (!CloseIterOperation(cx, iter)) {
+      CompletionKind kind = CompletionKind(GET_UINT8(REGS.pc));
+      if (!CloseIterOperation(cx, iter, kind)) {
         goto error;
       }
       REGS.sp--;
@@ -5441,27 +5442,52 @@ bool js::LoadAliasedDebugVar(JSContext* cx, JSObject* env, jsbytecode* pc,
 }
 
 
+bool js::CloseIterOperation(JSContext* cx, HandleObject iter,
+                            CompletionKind kind) {
+  
 
-bool js::CloseIterOperation(JSContext* cx, HandleObject iter) {
+  
   RootedValue returnMethod(cx);
-  if (!GetProperty(cx, iter, iter, cx->names().return_, &returnMethod)) {
-    return false;
+  bool innerResult =
+      GetProperty(cx, iter, iter, cx->names().return_, &returnMethod);
+
+  
+  RootedValue result(cx);
+  if (innerResult) {
+    
+    if (returnMethod.isNullOrUndefined()) {
+      return true;
+    }
+    
+    if (IsCallable(returnMethod)) {
+      RootedValue thisVal(cx, ObjectValue(*iter));
+      innerResult = Call(cx, returnMethod, thisVal, &result);
+    } else {
+      innerResult = ReportIsNotFunction(cx, returnMethod);
+    }
   }
 
-  if (returnMethod.isNullOrUndefined()) {
+  
+  if (kind == CompletionKind::Throw) {
+    
+    
+    
+    if (cx->isExceptionPending()) {
+      cx->clearPendingException();
+    }
     return true;
   }
-  if (!IsCallable(returnMethod)) {
-    return ReportIsNotFunction(cx, returnMethod);
-  }
 
-  RootedValue thisVal(cx, ObjectValue(*iter));
-  RootedValue res(cx);
-  if (!Call(cx, returnMethod, thisVal, &res)) {
+  
+  if (!innerResult) {
     return false;
   }
-  if (!res.isObject()) {
+
+  
+  if (!result.isObject()) {
     return ThrowCheckIsObject(cx, CheckIsObjectKind::IteratorReturn);
   }
+
+  
   return true;
 }

@@ -1395,8 +1395,9 @@
 
 
 
+
  \
-    MACRO(CloseIter, close_iter, NULL, 1, 1, 0, JOF_BYTE|JOF_IC) \
+    MACRO(CloseIter, close_iter, NULL, 2, 1, 0, JOF_UINT8|JOF_IC) \
     
 
 
