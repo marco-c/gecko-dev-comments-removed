@@ -515,8 +515,8 @@ class nsContentUtils {
 
 
   static bool PositionIsBefore(nsINode* aNode1, nsINode* aNode2,
-                               int32_t* aNode1Index = nullptr,
-                               int32_t* aNode2Index = nullptr);
+                               mozilla::Maybe<uint32_t>* aNode1Index = nullptr,
+                               mozilla::Maybe<uint32_t>* aNode2Index = nullptr);
 
   struct ComparePointsCache {
     mozilla::Maybe<uint32_t> ComputeIndexOf(const nsINode* aParent,

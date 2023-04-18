@@ -415,7 +415,7 @@ class Animation : public DOMEventTargetHelper,
 
   virtual void MaybeQueueCancelEvent(const StickyTimeDuration& aActiveTime){};
 
-  int32_t& CachedChildIndexRef() { return mCachedChildIndex; }
+  Maybe<uint32_t>& CachedChildIndexRef() { return mCachedChildIndex; }
 
   void SetPartialPrerendered(uint64_t aIdOnCompositor) {
     mIdOnCompositor = aIdOnCompositor;
@@ -595,7 +595,7 @@ class Animation : public DOMEventTargetHelper,
 
   
   
-  int32_t mCachedChildIndex = -1;
+  Maybe<uint32_t> mCachedChildIndex;
 
   
   
