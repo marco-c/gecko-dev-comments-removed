@@ -34,12 +34,6 @@ const { DevToolsClient } = require("devtools/client/devtools-client");
 
 
 
-
-
-
-
-
-
 async function initBrowserToolboxTask({
   enableBrowserToolboxFission,
   enableContentMessages,
@@ -158,12 +152,32 @@ async function initBrowserToolboxTask({
     return onEvaluationResult;
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   async function spawn(arg, fn) {
-    const rv = await evaluateExpression(`(${fn})(${arg})`, {
+    
+    
+    const argString = JSON.stringify(Array.isArray(arg) ? arg : [arg]);
+    const rv = await evaluateExpression(`(${fn}).apply(null,${argString})`, {
+      
+      
       mapped: { await: true },
     });
-    if (rv.exception) {
-      throw new Error(`ToolboxTask.spawn failure: ${rv.exception.message}`);
+    if (rv.exceptionMessage) {
+      throw new Error(`ToolboxTask.spawn failure: ${rv.exceptionMessage}`);
     } else if (rv.topLevelAwaitRejected) {
       throw new Error(`ToolboxTask.spawn await rejected`);
     }
