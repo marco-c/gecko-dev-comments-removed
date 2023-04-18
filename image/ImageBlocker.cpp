@@ -20,12 +20,18 @@ ImageBlocker::ShouldLoad(nsIURI* aContentLocation, nsILoadInfo* aLoadInfo,
 
   *aShouldLoad = nsIContentPolicy::ACCEPT;
 
+  if (!aContentLocation) {
+    
+    
+    
+    return NS_OK;
+  }
+
   
   
   nsAutoCString scheme;
   aContentLocation->GetScheme(scheme);
-  if (!scheme.LowerCaseEqualsLiteral("ftp") &&
-      !scheme.LowerCaseEqualsLiteral("http") &&
+  if (!scheme.LowerCaseEqualsLiteral("http") &&
       !scheme.LowerCaseEqualsLiteral("https")) {
     return NS_OK;
   }
