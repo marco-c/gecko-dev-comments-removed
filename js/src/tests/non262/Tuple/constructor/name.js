@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+var desc = Object.getOwnPropertyDescriptor(Tuple, "name");
+assertEq(desc.value, "Tuple");
+
+assertEq(desc.writable, false);
+assertEq(desc.enumerable, false);
+assertEq(desc.configurable, true);
+
+reportCompare(0, 0);
+
+

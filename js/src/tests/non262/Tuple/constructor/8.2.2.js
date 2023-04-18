@@ -1,0 +1,11 @@
+
+
+
+
+
+
+
+
+assertEq(Object.getPrototypeOf(Tuple), Function.prototype);
+
+reportCompare(0, 0);
