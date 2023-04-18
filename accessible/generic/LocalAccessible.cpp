@@ -3269,7 +3269,7 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
 
       UniquePtr<gfx::Matrix4x4> ptr = MakeUnique<gfx::Matrix4x4>(mtx);
       fields->SetAttribute(nsGkAtoms::transform, std::move(ptr));
-    } else {
+    } else if (aUpdateType == CacheUpdateType::Update) {
       
       
       
@@ -3281,11 +3281,14 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
   if (aCacheDomain & CacheDomain::ScrollPosition) {
     nsPoint scrollPosition;
     std::tie(scrollPosition, std::ignore) = mDoc->ComputeScrollData(this);
-
-    nsTArray<int32_t> positionArr(2);
-    positionArr.AppendElement(scrollPosition.x);
-    positionArr.AppendElement(scrollPosition.y);
-    fields->SetAttribute(nsGkAtoms::scrollPosition, std::move(positionArr));
+    if (scrollPosition.x || scrollPosition.y) {
+      nsTArray<int32_t> positionArr(2);
+      positionArr.AppendElement(scrollPosition.x);
+      positionArr.AppendElement(scrollPosition.y);
+      fields->SetAttribute(nsGkAtoms::scrollPosition, std::move(positionArr));
+    } else if (aUpdateType == CacheUpdateType::Update) {
+      fields->SetAttribute(nsGkAtoms::scrollPosition, DeleteEntry());
+    }
   }
 
   if (aCacheDomain & CacheDomain::DOMNodeID && mContent) {

@@ -15,9 +15,7 @@ function testCachedScrollPosition(acc, expectedX, expectedY) {
     cachedPosition = acc.cache.getStringProperty("scroll-position");
   } catch (e) {
     
-    
-    
-    console.info("Unable to fetch scroll position from cache!");
+    cachedPosition = "0, 0";
   }
 
   
