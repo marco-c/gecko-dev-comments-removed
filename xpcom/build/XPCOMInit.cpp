@@ -648,11 +648,6 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
     mozilla::KillClearOnShutdown(ShutdownPhase::XPCOMShutdownLoaders);
     
 
-    
-    
-    
-    nsThreadManager::get().ShutdownNonMainThreads();
-
     RefPtr<nsObserverService> observerService;
     CallGetService("@mozilla.org/observer-service;1",
                    (nsObserverService**)getter_AddRefs(observerService));
@@ -665,11 +660,15 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
     
     
     mozilla::KillClearOnShutdown(ShutdownPhase::XPCOMShutdownFinal);
-    NS_ProcessPendingEvents(thread);
 
     
     
-    nsThreadManager::get().ShutdownMainThread();
+    
+    nsThreadManager::get().Shutdown();
+
+    
+    
+    NS_ProcessPendingEvents(thread);
     gXPCOMMainThreadEventsAreDoomed = true;
 
     BackgroundHangMonitor().NotifyActivity();

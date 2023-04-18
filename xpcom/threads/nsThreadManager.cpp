@@ -339,7 +339,7 @@ nsresult nsThreadManager::Init() {
   return NS_OK;
 }
 
-void nsThreadManager::ShutdownNonMainThreads() {
+void nsThreadManager::Shutdown() {
   MOZ_ASSERT(NS_IsMainThread(), "shutdown not called from main thread");
 
   
@@ -409,22 +409,9 @@ void nsThreadManager::ShutdownNonMainThreads() {
   mMainThread->WaitForAllAsynchronousShutdowns();
 
   
-}
-
-void nsThreadManager::ShutdownMainThread() {
-  MOZ_ASSERT(!mInitialized, "Must have called BeginShutdown");
+  NS_ProcessPendingEvents(mMainThread);
 
   
-  
-  
-  
-  
-  while (true) {
-    if (mMainThread->mEvents->ShutdownIfNoPendingEvents()) {
-      break;
-    }
-    NS_ProcessPendingEvents(mMainThread);
-  }
 
   
   

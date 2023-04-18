@@ -34,11 +34,7 @@ class nsThreadManager : public nsIThreadManager {
 
   
   
-  void ShutdownNonMainThreads();
-
-  
-  
-  void ShutdownMainThread();
+  void Shutdown();
 
   
   
