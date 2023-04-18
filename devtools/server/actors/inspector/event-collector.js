@@ -385,9 +385,11 @@ class DOMEventCollector extends MainEventCollector {
       }
 
       const eventInfo = {
+        nsIEventListenerInfo: listener,
         capturing: listener.capturing,
         type: listener.type,
         handler: handler,
+        enabled: listener.enabled,
       };
 
       handlers.push(eventInfo);
@@ -832,6 +834,10 @@ class EventCollector {
 
 
 
+
+
+
+
   getEventListeners(node) {
     const listenerArray = [];
     let dbg;
@@ -898,6 +904,9 @@ class EventCollector {
 
 
 
+
+
+
   
   processHandlerForEvent(listener, dbg, normalizeListener) {
     let globalDO;
@@ -923,6 +932,7 @@ class EventCollector {
       const tags = listener.tags || "";
       const type = listener.type || "";
       let isScriptBoundToNonScriptElement = false;
+      const enabled = !!listener.enabled;
       let functionSource = handler.toString();
       let line = 0;
       let column = null;
@@ -1039,6 +1049,8 @@ class EventCollector {
         hide: typeof override.hide !== "undefined" ? override.hide : hide,
         native,
         sourceActor,
+        nsIEventListenerInfo: listener.nsIEventListenerInfo,
+        enabled,
       };
 
       
