@@ -712,26 +712,14 @@ async function getResponseForMessage(request, browser) {
       }
     }
     case "GET_SYMBOL_TABLE": {
-      const infoForBrowser = infoForBrowserMap.get(browser);
-      if (infoForBrowser === undefined) {
-        throw new Error("Could not find a symbolication service for this tab.");
-      }
       const { debugName, breakpadId } = request;
-      return infoForBrowser.symbolicationService.getSymbolTable(
-        debugName,
-        breakpadId
-      );
+      const symbolicationService = getSymbolicationServiceForBrowser(browser);
+      return symbolicationService.getSymbolTable(debugName, breakpadId);
     }
     case "QUERY_SYMBOLICATION_API": {
-      const infoForBrowser = infoForBrowserMap.get(browser);
-      if (infoForBrowser === undefined) {
-        throw new Error("Could not find a symbolication service for this tab.");
-      }
       const { path, requestJson } = request;
-      return infoForBrowser.symbolicationService.querySymbolicationApi(
-        path,
-        requestJson
-      );
+      const symbolicationService = getSymbolicationServiceForBrowser(browser);
+      return symbolicationService.querySymbolicationApi(path, requestJson);
     }
     default:
       console.error(
@@ -741,6 +729,36 @@ async function getResponseForMessage(request, browser) {
       const { UnhandledCaseError } = lazy.Utils();
       throw new UnhandledCaseError(request, "WebChannel request");
   }
+}
+
+
+
+
+
+
+
+
+function getSymbolicationServiceForBrowser(browser) {
+  
+  
+  
+  
+  const infoForBrowser = infoForBrowserMap.get(browser);
+  if (infoForBrowser !== undefined) {
+    
+    
+    return infoForBrowser.symbolicationService;
+  }
+
+  
+  
+  
+  
+  const { createLocalSymbolicationService } = lazy.PerfSymbolication();
+  return createLocalSymbolicationService(
+    Services.profiler.sharedLibraries,
+    getObjdirPrefValue()
+  );
 }
 
 
