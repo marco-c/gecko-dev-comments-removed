@@ -4,6 +4,7 @@
 
 
 
+use super::media_feature_expression::RangeOrOperator;
 use super::Device;
 use crate::parser::ParserContext;
 use crate::values::computed::Ratio;
@@ -16,7 +17,12 @@ use style_traits::ParseError;
 
 pub type KeywordDiscriminant = u8;
 
-type MediaFeatureGetter<T> = fn(device: &Device) -> T;
+type MediaFeatureEvaluator<T> = fn(
+    device: &Device,
+    
+    value: Option<T>,
+    range_or_operator: Option<RangeOrOperator>,
+) -> bool;
 
 
 
@@ -35,14 +41,14 @@ pub type KeywordParser = for<'a, 'i, 't> fn(
 
 #[allow(missing_docs)]
 pub enum Evaluator {
-    Length(MediaFeatureGetter<CSSPixelLength>),
-    Integer(MediaFeatureGetter<u32>),
-    Float(MediaFeatureGetter<f32>),
-    BoolInteger(MediaFeatureGetter<bool>),
+    Length(MediaFeatureEvaluator<CSSPixelLength>),
+    Integer(MediaFeatureEvaluator<u32>),
+    Float(MediaFeatureEvaluator<f32>),
+    BoolInteger(MediaFeatureEvaluator<bool>),
     
-    NumberRatio(MediaFeatureGetter<Ratio>),
+    NumberRatio(MediaFeatureEvaluator<Ratio>),
     
-    Resolution(MediaFeatureGetter<Resolution>),
+    Resolution(MediaFeatureEvaluator<Resolution>),
     
     Enumerated {
         
@@ -54,8 +60,9 @@ pub enum Evaluator {
         serializer: KeywordSerializer,
         
         
-        evaluator: fn(&Device, Option<KeywordDiscriminant>) -> bool,
+        evaluator: MediaFeatureEvaluator<KeywordDiscriminant>,
     },
+    Ident(MediaFeatureEvaluator<Atom>),
 }
 
 
@@ -86,7 +93,14 @@ macro_rules! keyword_evaluator {
         fn __evaluate(
             device: &$crate::media_queries::Device,
             value: Option<$crate::media_queries::media_feature::KeywordDiscriminant>,
+            range_or_operator: Option<
+                $crate::media_queries::media_feature_expression::RangeOrOperator,
+            >,
         ) -> bool {
+            debug_assert!(
+                range_or_operator.is_none(),
+                "Since when do keywords accept ranges?"
+            );
             // This unwrap is ok because the only discriminants that get
             // back to us is the ones that `parse` produces.
             let value: Option<$keyword_type> =
