@@ -1,5 +1,12 @@
 "use strict";
 
+const SAME_ORIGIN = "https://{{host}}:{{ports[h2][0]}}";
+const CROSS_ORIGIN = "https://{{hosts[alt][www]}}:{{ports[h2][0]}}";
+
+const RESOURCES_PATH = "/loading/early-hints/resources";
+const SAME_ORIGIN_RESOURCES_URL = SAME_ORIGIN + RESOURCES_PATH;
+const CROSS_ORIGIN_RESOURCES_URL = CROSS_ORIGIN + RESOURCES_PATH;
+
 
 
 
@@ -42,12 +49,38 @@ function getPreloadsFromSearchParams() {
 
 
 
+ async function fetchScript(url) {
+    return new Promise((resolve) => {
+        const el = document.createElement("script");
+        el.src = url;
+        el.onload = resolve;
+        document.body.appendChild(el);
+    });
+}
+
+
+
+
+
+
+
+function isPreloadedByEarlyHints(url) {
+    const entries = performance.getEntriesByName(url);
+    assert_equals(entries.length, 1);
+    return entries[0].initiatorType === "early-hints";
+}
+
+
+
+
+
+
 function testReferrerPolicy(referrer_policy) {
     const params = new URLSearchParams();
     params.set("referrer-policy", referrer_policy);
-    const same_origin_preload_url = "https://{{host}}:{{ports[h2][0]}}/loading/early-hints/resources/fetch-and-record-js.h2.py?id=" + token();
+    const same_origin_preload_url = SAME_ORIGIN_RESOURCES_URL + "/fetch-and-record-js.h2.py?id=" + token();
     params.set("same-origin-preload-url", same_origin_preload_url);
-    const cross_origin_preload_url = "https://{{hosts[alt][www]}}:{{ports[h2][0]}}/loading/early-hints/resources/fetch-and-record-js.h2.py?id=" + token();
+    const cross_origin_preload_url = CROSS_ORIGIN_RESOURCES_URL + "/fetch-and-record-js.h2.py?id=" + token();
     params.set("cross-origin-preload-url", cross_origin_preload_url);
 
     const path = "resources/referrer-policy-test-loader.h2.py?" + params.toString();
