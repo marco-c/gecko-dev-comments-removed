@@ -11,7 +11,6 @@
 #endif  
 
 #include <stdint.h>
-#include <inttypes.h>
 
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Maybe.h"
