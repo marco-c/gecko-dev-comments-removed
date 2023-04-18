@@ -14,12 +14,23 @@
 
 
 
+const skipLocalStorageTests = !Services.prefs.getBoolPref(
+  "dom.storage.next_gen"
+);
+
+
+
+
 
 
 
 
 
 function getOrigin(host, topLevelBaseDomain, originAttributes = {}) {
+  return getPrincipal(host, topLevelBaseDomain, originAttributes).origin;
+}
+
+function getPrincipal(host, topLevelBaseDomain, originAttributes = {}) {
   originAttributes = getOAWithPartitionKey(
     { topLevelBaseDomain },
     originAttributes
@@ -28,7 +39,7 @@ function getOrigin(host, topLevelBaseDomain, originAttributes = {}) {
     Services.io.newURI(`https://${host}`),
     originAttributes
   );
-  return principal.origin;
+  return principal;
 }
 
 function getTestEntryName(host, topLevelBaseDomain) {
@@ -276,6 +287,167 @@ async function runTestHost(storageType) {
 
 
 
+
+
+async function runTestPrincipal(storageType) {
+  await new Promise(aResolve => {
+    Services.clearData.deleteData(
+      Ci.nsIClearDataService.CLEAR_DOM_QUOTA,
+      aResolve
+    );
+  });
+
+  
+  setTestEntry({ storageType, host: "example.net" });
+  setTestEntry({
+    storageType,
+    host: "example.net",
+    originAttributes: { userContextId: 2 },
+  });
+  setTestEntry({
+    storageType,
+    host: "example.net",
+    originAttributes: { privateBrowsingId: 1 },
+  });
+  setTestEntry({ storageType, host: "test.example.net" });
+  setTestEntry({ storageType, host: "example.org" });
+
+  
+  setTestEntry({
+    storageType,
+    host: "example.net",
+    topLevelBaseDomain: "example.com",
+  });
+
+  
+  await testEntryExists({ storageType, host: "example.net" });
+  await testEntryExists({
+    storageType,
+    host: "example.net",
+    originAttributes: { userContextId: 2 },
+  });
+  await testEntryExists({
+    storageType,
+    host: "example.net",
+    originAttributes: { privateBrowsingId: 1 },
+  });
+  await testEntryExists({ storageType, host: "test.example.net" });
+  await testEntryExists({ storageType, host: "example.org" });
+  await testEntryExists({
+    storageType,
+    host: "example.net",
+    topLevelBaseDomain: "example.com",
+  });
+
+  
+  await new Promise(aResolve => {
+    Services.clearData.deleteDataFromPrincipal(
+      getPrincipal("example.net", null, { userContextId: 2 }),
+      false,
+      Ci.nsIClearDataService.CLEAR_DOM_QUOTA,
+      aResolve
+    );
+  });
+
+  
+  await testEntryExists({ storageType, host: "example.net" });
+  await testEntryExists({
+    expected: false,
+    storageType,
+    host: "example.net",
+    originAttributes: { userContextId: 2 },
+  });
+  await testEntryExists({
+    storageType,
+    host: "example.net",
+    originAttributes: { privateBrowsingId: 1 },
+  });
+  await testEntryExists({ storageType, host: "test.example.net" });
+  await testEntryExists({ storageType, host: "example.org" });
+  await testEntryExists({
+    storageType,
+    host: "example.net",
+    topLevelBaseDomain: "example.com",
+  });
+
+  
+  await new Promise(aResolve => {
+    Services.clearData.deleteDataFromPrincipal(
+      getPrincipal("example.net", "example.com"),
+      false,
+      Ci.nsIClearDataService.CLEAR_DOM_QUOTA,
+      aResolve
+    );
+  });
+
+  
+  await testEntryExists({ storageType, host: "example.net" });
+  await testEntryExists({
+    expected: false,
+    storageType,
+    host: "example.net",
+    originAttributes: { userContextId: 2 },
+  });
+  await testEntryExists({
+    storageType,
+    host: "example.net",
+    originAttributes: { privateBrowsingId: 1 },
+  });
+  await testEntryExists({ storageType, host: "test.example.net" });
+  await testEntryExists({ storageType, host: "example.org" });
+  await testEntryExists({
+    expected: false,
+    storageType,
+    host: "example.net",
+    topLevelBaseDomain: "example.com",
+  });
+
+  
+  await new Promise(aResolve => {
+    Services.clearData.deleteDataFromPrincipal(
+      getPrincipal("example.net", null),
+      false,
+      Ci.nsIClearDataService.CLEAR_DOM_QUOTA,
+      aResolve
+    );
+  });
+
+  
+  
+  
+  await testEntryExists({ expected: false, storageType, host: "example.net" });
+  await testEntryExists({
+    expected: false,
+    storageType,
+    host: "example.net",
+    originAttributes: { userContextId: 2 },
+  });
+  await testEntryExists({
+    storageType,
+    host: "example.net",
+    originAttributes: { privateBrowsingId: 1 },
+  });
+
+  await testEntryExists({ storageType, host: "test.example.net" });
+  await testEntryExists({ storageType, host: "example.org" });
+  await testEntryExists({
+    expected: false,
+    storageType,
+    host: "example.net",
+    topLevelBaseDomain: "example.com",
+  });
+
+  
+  await new Promise(aResolve => {
+    Services.clearData.deleteData(
+      Ci.nsIClearDataService.CLEAR_DOM_QUOTA,
+      aResolve
+    );
+  });
+}
+
+
+
 add_task(function setup() {
   
   Services.prefs.setBoolPref("dom.storage.client_validation", false);
@@ -307,4 +479,16 @@ add_task(async function test_baseDomain_localStorage() {
 
 add_task(async function test_baseDomain_indexedDB() {
   await runTestBaseDomain("indexedDB");
+});
+
+
+
+
+add_task(async function test_principal_localStorage() {
+  
+  if (skipLocalStorageTests) {
+    info("Skipping test");
+    return;
+  }
+  await runTestPrincipal("localStorage");
 });

@@ -27,7 +27,9 @@ const STORAGE_KEY = "testKey";
 
 
 
-let skipLocalStorageTests = !Services.prefs.getBoolPref("dom.storage.next_gen");
+const skipLocalStorageTests = !Services.prefs.getBoolPref(
+  "dom.storage.next_gen"
+);
 
 
 
