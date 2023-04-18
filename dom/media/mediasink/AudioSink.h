@@ -80,7 +80,8 @@ class AudioSink : private AudioStream::DataSource {
   
   
   
-  uint32_t PopFrames(AudioDataValue* aBuffer, uint32_t aFrames) override;
+  uint32_t PopFrames(AudioDataValue* aBuffer, uint32_t aFrames,
+                     bool aAudioThreadChanged) override;
   bool Ended() const override;
 
   void CheckIsAudible(const Span<AudioDataValue>& aInterleaved,

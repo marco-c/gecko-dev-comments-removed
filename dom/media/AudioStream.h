@@ -57,7 +57,7 @@ class AudioClock {
 
   
   
-  void UpdateFrameHistory(uint32_t aServiced, uint32_t aUnderrun);
+  void UpdateFrameHistory(uint32_t aServiced, uint32_t aUnderrun, bool aAudioThreadChanged);
 
   
 
@@ -219,7 +219,8 @@ class AudioStream final {
    public:
     
     
-    virtual uint32_t PopFrames(AudioDataValue* aAudio, uint32_t aFrames) = 0;
+    virtual uint32_t PopFrames(AudioDataValue* aAudio, uint32_t aFrames,
+                               bool aAudioThreadChanged) = 0;
     
     virtual bool Ended() const = 0;
 
@@ -364,6 +365,8 @@ class AudioStream final {
   
   std::atomic<float> mPlaybackRate;
   std::atomic<bool> mPreservesPitch;
+  
+  bool mAudioThreadChanged = false;
 };
 
 }  

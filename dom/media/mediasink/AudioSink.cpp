@@ -57,8 +57,9 @@ AudioSink::AudioSink(AbstractThread* aThread,
       mAudioQueue(aAudioQueue) {
   
   float capacitySeconds = LOW_AUDIO_USECS / 1000. / 1000. * 2;
-  mProcessedSPSCQueue = MakeUnique<SPSCQueue<AudioDataValue>>(
-      static_cast<uint32_t>(capacitySeconds * static_cast<float>(mOutputChannels * mOutputRate)));
+  mProcessedSPSCQueue =
+      MakeUnique<SPSCQueue<AudioDataValue>>(static_cast<uint32_t>(
+          capacitySeconds * static_cast<float>(mOutputChannels * mOutputRate)));
   SINK_LOG("Ringbuffer has space for %u elements (%lf seconds)",
            mProcessedSPSCQueue->Capacity(), capacitySeconds);
 }
@@ -206,7 +207,15 @@ TimeUnit AudioSink::GetEndTime() const {
   return std::min(mLastEndTime, played);
 }
 
-uint32_t AudioSink::PopFrames(AudioDataValue* aBuffer, uint32_t aFrames) {
+uint32_t AudioSink::PopFrames(AudioDataValue* aBuffer, uint32_t aFrames,
+                              bool aAudioThreadChanged) {
+  
+  
+  
+  
+  if (aAudioThreadChanged) {
+    mProcessedSPSCQueue->ResetThreadIds();
+  }
   const int samplesToPop = static_cast<int>(aFrames * mOutputChannels);
   const int samplesRead = mProcessedSPSCQueue->Dequeue(aBuffer, samplesToPop);
   MOZ_ASSERT(samplesRead % mOutputChannels == 0);
