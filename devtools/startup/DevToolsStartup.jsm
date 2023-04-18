@@ -918,7 +918,14 @@ DevToolsStartup.prototype = {
     const { BrowserToolboxLauncher } = ChromeUtils.import(
       "resource://devtools/client/framework/browser-toolbox/Launcher.jsm"
     );
-    BrowserToolboxLauncher.init({ binaryPath });
+    const env = Cc["@mozilla.org/process/environment;1"].getService(
+      Ci.nsIEnvironment
+    );
+    
+    
+    
+    env.set("MOZ_BROWSER_TOOLBOX_BINARY", binaryPath);
+    BrowserToolboxLauncher.init();
 
     if (pauseOnStartup) {
       

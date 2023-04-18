@@ -44,10 +44,13 @@ XPCOMUtils.defineLazyGetter(this, "EventEmitter", function() {
 });
 
 const Services = require("Services");
+const env = Cc["@mozilla.org/process/environment;1"].getService(
+  Ci.nsIEnvironment
+);
 
 const EXPORTED_SYMBOLS = ["BrowserToolboxLauncher"];
 
-var processes = new Set();
+const processes = new Set();
 
 
 
@@ -60,18 +63,7 @@ var processes = new Set();
 
 
 
-
-
-
-
-
-
-function BrowserToolboxLauncher(
-  onClose,
-  onRun,
-  overwritePreferences,
-  binaryPath
-) {
+function BrowserToolboxLauncher(onClose, onRun, overwritePreferences) {
   const emitter = new EventEmitter();
   this.on = emitter.on.bind(emitter);
   this.off = emitter.off.bind(emitter);
@@ -95,7 +87,7 @@ function BrowserToolboxLauncher(
   Services.obs.addObserver(this.close, "quit-application");
   this._initServer();
   this._initProfile(overwritePreferences);
-  this._create(binaryPath);
+  this._create();
 
   processes.add(this);
 }
@@ -111,7 +103,6 @@ BrowserToolboxLauncher.init = function({
   onClose,
   onRun,
   overwritePreferences,
-  binaryPath,
 } = {}) {
   if (
     !Services.prefs.getBoolPref("devtools.chrome.enabled") ||
@@ -120,12 +111,7 @@ BrowserToolboxLauncher.init = function({
     console.error("Could not start Browser Toolbox, you need to enable it.");
     return null;
   }
-  return new BrowserToolboxLauncher(
-    onClose,
-    onRun,
-    overwritePreferences,
-    binaryPath
-  );
+  return new BrowserToolboxLauncher(onClose, onRun, overwritePreferences);
 };
 
 
@@ -282,14 +268,20 @@ BrowserToolboxLauncher.prototype = {
   
 
 
-  _create: function(binaryPath) {
+  _create: function() {
     dumpn("Initializing chrome debugging process.");
 
     let command = Services.dirsvc.get("XREExeF", Ci.nsIFile).path;
     let profilePath = this._dbgProfilePath;
 
-    if (binaryPath) {
-      command = binaryPath;
+    
+    
+    
+    
+    
+    const customBinaryPath = env.get("MOZ_BROWSER_TOOLBOX_BINARY");
+    if (customBinaryPath) {
+      command = customBinaryPath;
       profilePath = FileUtils.getDir("TmpD", ["browserToolboxProfile"], true)
         .path;
     }
@@ -311,9 +303,6 @@ BrowserToolboxLauncher.prototype = {
     const isInputContextEnabled = Services.prefs.getBoolPref(
       "devtools.webconsole.input.context",
       false
-    );
-    const env = Cc["@mozilla.org/process/environment;1"].getService(
-      Ci.nsIEnvironment
     );
     const environment = {
       
