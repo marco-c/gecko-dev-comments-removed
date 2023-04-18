@@ -48,7 +48,7 @@ const SnapshotMonitor = new (class SnapshotMonitor {
 
 
 
-  #addedUrls = new Set();
+  #addedItems = new Set();
 
   
 
@@ -141,13 +141,13 @@ const SnapshotMonitor = new (class SnapshotMonitor {
     } else {
       for (let builder of this.#groupBuilders) {
         await builder.update({
-          addedUrls: this.#addedUrls,
+          addedItems: this.#addedItems,
           removedUrls: this.#removedUrls,
         });
       }
     }
 
-    this.#addedUrls.clear();
+    this.#addedItems.clear();
     this.#removedUrls.clear();
   }
 
@@ -201,9 +201,13 @@ const SnapshotMonitor = new (class SnapshotMonitor {
 
 
 
-  #onSnapshotAdded(urls) {
-    for (let url of urls) {
-      this.#addedUrls.add(url);
+
+
+
+
+  #onSnapshotAdded(items) {
+    for (let item of items) {
+      this.#addedItems.add(item);
     }
     this.#setTimer(this.#addedTimerDelay);
   }

@@ -81,12 +81,12 @@ const DomainGroupBuilder = new (class DomainGroupBuilder {
 
 
 
-  async update({ addedUrls, removedUrls }) {
+  async update({ addedItems, removedUrls }) {
     await this.#maybeLoadGroups();
     
     
     let changedDomains = new Set();
-    for (let url of addedUrls.values()) {
+    for (let { url } of addedItems.values()) {
       let domain = this.#getDomain(url);
       if (!domain) {
         continue;
