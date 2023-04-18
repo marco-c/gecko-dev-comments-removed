@@ -1531,16 +1531,6 @@ var PlacesControllerDragHelper = {
             parentId = PlacesUtils.bookmarks.getFolderIdForItem(parentId);
           }
         }
-
-        
-        
-        if (
-          !flavor.startsWith("text/x-moz-place") &&
-          (nodes.length > 1 || dropCount > 1) &&
-          nodes.some(n => n.uri?.startsWith("javascript:"))
-        ) {
-          return false;
-        }
       }
     }
     return true;
@@ -1569,7 +1559,6 @@ var PlacesControllerDragHelper = {
     
     
     let nodes = [];
-    let externalDrag = false;
     for (let i = 0; i < dropCount; ++i) {
       let flavor = this.getFirstValidFlavor(dt.mozTypesAt(i));
       if (!flavor) {
@@ -1583,11 +1572,6 @@ var PlacesControllerDragHelper = {
           continue;
         }
         handled.add(data);
-      }
-
-      
-      if (i == 0 && !flavor.startsWith("text/x-moz-place")) {
-        externalDrag = true;
       }
 
       if (flavor != TAB_DROP_TYPE) {
@@ -1606,51 +1590,6 @@ var PlacesControllerDragHelper = {
         });
       } else {
         throw new Error("bogus data was passed as a tab");
-      }
-    }
-
-    
-    
-    if (
-      externalDrag &&
-      (nodes.length > 1 || dropCount > 1) &&
-      nodes.some(n => n.uri?.startsWith("javascript:"))
-    ) {
-      throw new Error("Javascript bookmarklet passed with uris");
-    }
-
-    
-    
-    if (
-      nodes.length == 1 &&
-      externalDrag &&
-      nodes[0].uri?.startsWith("javascript")
-    ) {
-      let uri;
-      try {
-        uri = Services.io.newURI(nodes[0].uri);
-      } catch (ex) {
-        
-      }
-
-      if (uri) {
-        let bookmarkGuid = await PlacesUIUtils.showBookmarkDialog(
-          {
-            action: "add",
-            type: "bookmark",
-            defaultInsertionPoint: insertionPoint,
-            hiddenRows: ["folderPicker"],
-            title: nodes[0].title,
-            uri,
-          },
-          BrowserWindowTracker.getTopWindow() 
-        );
-
-        if (bookmarkGuid && view) {
-          view.selectItems([bookmarkGuid], false);
-        }
-
-        return;
       }
     }
 
