@@ -204,7 +204,7 @@ const proto = {
     }
 
     try {
-      return this.obj.getOwnPropertiesLength();
+      return this.obj.getOwnPropertyNamesLength();
     } catch (err) {
       
       

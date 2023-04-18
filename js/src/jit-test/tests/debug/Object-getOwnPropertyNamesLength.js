@@ -10,7 +10,7 @@ function testGetOwnPropertyLength(code) {
   g.eval(`obj =  ${code}`);
   const length = gobj
     .getOwnPropertyDescriptor("obj")
-    .value.getOwnPropertiesLength();
+    .value.getOwnPropertyNamesLength();
   assertEq(length, expected, `Expected result for: ${code}`);
 }
 
