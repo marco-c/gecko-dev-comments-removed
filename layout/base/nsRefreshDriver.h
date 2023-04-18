@@ -322,6 +322,12 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
 
   static int32_t DefaultInterval();
 
+  
+
+
+
+  static bool IsInHighRateMode();
+
   bool IsInRefresh() { return mInRefresh; }
 
   void SetIsResizeSuppressed() { mResizeSuppressed = true; }

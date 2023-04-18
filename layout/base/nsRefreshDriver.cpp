@@ -155,6 +155,8 @@ class AutoRecordPhase {
 
 namespace mozilla {
 
+static TimeStamp sMostRecentHighRateVsync;
+
 
 
 
@@ -780,6 +782,12 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
 
     TimeStamp tickStart = TimeStamp::Now();
 
+    TimeDuration rate = GetTimerRate();
+    if (TimeDuration::FromMilliseconds(nsRefreshDriver::DefaultInterval() / 2) >
+        rate) {
+      sMostRecentHighRateVsync = tickStart;
+    }
+
     
     
     
@@ -812,7 +820,6 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
     
     
     
-    TimeDuration rate = GetTimerRate();
     TimeDuration gracePeriod = rate / int64_t(100);
 
     if (shouldGiveNonVSyncTasksMoreTime) {
@@ -1185,6 +1192,23 @@ void nsRefreshDriver::Shutdown() {
 
 int32_t nsRefreshDriver::DefaultInterval() {
   return NSToIntRound(1000.0 / gfxPlatform::GetDefaultFrameRate());
+}
+
+
+bool nsRefreshDriver::IsInHighRateMode() {
+  
+  
+  bool inHighRateMode =
+      !gfxPlatform::IsInLayoutAsapMode() &&
+      StaticPrefs::layout_expose_high_rate_mode_from_refreshdriver() &&
+      !sMostRecentHighRateVsync.IsNull() &&
+      (sMostRecentHighRateVsync +
+       TimeDuration::FromMilliseconds(DefaultInterval())) > TimeStamp::Now();
+  if (!inHighRateMode) {
+    
+    sMostRecentHighRateVsync = TimeStamp();
+  }
+  return inHighRateMode;
 }
 
 
