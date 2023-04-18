@@ -57,7 +57,8 @@ class AudioClock {
 
   
   
-  void UpdateFrameHistory(uint32_t aServiced, uint32_t aUnderrun, bool aAudioThreadChanged);
+  void UpdateFrameHistory(uint32_t aServiced, uint32_t aUnderrun,
+                          bool aAudioThreadChanged);
 
   
 
