@@ -1,11 +1,9 @@
 
+use crate::{ordered_map, OrderedMap, PhfHash};
 use core::fmt;
 use core::iter::FusedIterator;
 use core::iter::IntoIterator;
-
-use phf_shared::{PhfBorrow, PhfHash};
-
-use crate::{map, Map};
+use phf_shared::PhfBorrow;
 
 
 
@@ -14,12 +12,15 @@ use crate::{map, Map};
 
 
 
-pub struct Set<T: 'static> {
+
+
+
+pub struct OrderedSet<T: 'static> {
     #[doc(hidden)]
-    pub map: Map<T, ()>,
+    pub map: OrderedMap<T, ()>,
 }
 
-impl<T> fmt::Debug for Set<T>
+impl<T> fmt::Debug for OrderedSet<T>
 where
     T: fmt::Debug,
 {
@@ -28,7 +29,7 @@ where
     }
 }
 
-impl<T> Set<T> {
+impl<T> OrderedSet<T> {
     
     #[inline]
     pub const fn len(&self) -> usize {
@@ -54,6 +55,22 @@ impl<T> Set<T> {
     }
 
     
+    
+    pub fn get_index<U: ?Sized>(&self, key: &U) -> Option<usize>
+    where
+        U: Eq + PhfHash,
+        T: PhfBorrow<U>,
+    {
+        self.map.get_index(key)
+    }
+
+    
+    
+    pub fn index(&self, index: usize) -> Option<&T> {
+        self.map.index(index).map(|(k, &())| k)
+    }
+
+    
     pub fn contains<U: ?Sized>(&self, value: &U) -> bool
     where
         U: Eq + PhfHash,
@@ -72,27 +89,30 @@ impl<T> Set<T> {
     }
 }
 
-impl<T> Set<T>
+impl<T> OrderedSet<T>
 where
     T: Eq + PhfHash + PhfBorrow<T>,
 {
     
-    pub fn is_disjoint(&self, other: &Set<T>) -> bool {
+    #[inline]
+    pub fn is_disjoint(&self, other: &OrderedSet<T>) -> bool {
         !self.iter().any(|value| other.contains(value))
     }
 
     
-    pub fn is_subset(&self, other: &Set<T>) -> bool {
+    #[inline]
+    pub fn is_subset(&self, other: &OrderedSet<T>) -> bool {
         self.iter().all(|value| other.contains(value))
     }
 
     
-    pub fn is_superset(&self, other: &Set<T>) -> bool {
+    #[inline]
+    pub fn is_superset(&self, other: &OrderedSet<T>) -> bool {
         other.is_subset(self)
     }
 }
 
-impl<'a, T> IntoIterator for &'a Set<T> {
+impl<'a, T> IntoIterator for &'a OrderedSet<T> {
     type Item = &'a T;
     type IntoIter = Iter<'a, T>;
 
@@ -102,8 +122,8 @@ impl<'a, T> IntoIterator for &'a Set<T> {
 }
 
 
-pub struct Iter<'a, T: 'static> {
-    iter: map::Keys<'a, T, ()>,
+pub struct Iter<'a, T> {
+    iter: ordered_map::Keys<'a, T, ()>,
 }
 
 impl<'a, T> Clone for Iter<'a, T> {
@@ -127,16 +147,19 @@ where
 impl<'a, T> Iterator for Iter<'a, T> {
     type Item = &'a T;
 
+    #[inline]
     fn next(&mut self) -> Option<&'a T> {
         self.iter.next()
     }
 
+    #[inline]
     fn size_hint(&self) -> (usize, Option<usize>) {
         self.iter.size_hint()
     }
 }
 
 impl<'a, T> DoubleEndedIterator for Iter<'a, T> {
+    #[inline]
     fn next_back(&mut self) -> Option<&'a T> {
         self.iter.next_back()
     }

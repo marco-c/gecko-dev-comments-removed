@@ -1,24 +1,19 @@
-#![doc(html_root_url = "https://docs.rs/phf_shared/0.7")]
+#![doc(html_root_url = "https://docs.rs/phf_shared/0.9")]
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(feature = "std")]
 extern crate std as core;
 
-extern crate siphasher;
-
-#[cfg(feature = "unicase")]
-extern crate unicase;
-
 use core::fmt;
-use core::hash::{Hasher, Hash};
+use core::hash::{Hash, Hasher};
 use core::num::Wrapping;
 use siphasher::sip128::{Hash128, Hasher128, SipHasher13};
 
+#[non_exhaustive]
 pub struct Hashes {
     pub g: u32,
     pub f1: u32,
     pub f2: u32,
-    _priv: (),
 }
 
 
@@ -37,13 +32,15 @@ pub fn hash<T: ?Sized + PhfHash>(x: &T, key: &HashKey) -> Hashes {
     let mut hasher = SipHasher13::new_with_keys(0, *key);
     x.phf_hash(&mut hasher);
 
-    let Hash128 { h1: lower, h2: upper} = hasher.finish128();
+    let Hash128 {
+        h1: lower,
+        h2: upper,
+    } = hasher.finish128();
 
     Hashes {
         g: (lower >> 32) as u32,
         f1: lower as u32,
         f2: upper as u32,
-        _priv: (),
     }
 }
 
@@ -69,7 +66,8 @@ pub trait PhfHash {
 
     
     fn phf_hash_slice<H: Hasher>(data: &[Self], state: &mut H)
-        where Self: Sized
+    where
+        Self: Sized,
     {
         for piece in data {
             piece.phf_hash(state);
@@ -80,7 +78,50 @@ pub trait PhfHash {
 
 pub trait FmtConst {
     
-    fn fmt_const(&self, f: &mut fmt::Formatter) -> fmt::Result;
+    fn fmt_const(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub trait PhfBorrow<B: ?Sized> {
+    
+    fn borrow(&self) -> &B;
 }
 
 
@@ -90,7 +131,7 @@ pub trait FmtConst {
 macro_rules! delegate_debug (
     ($ty:ty) => {
         impl FmtConst for $ty {
-            fn fmt_const(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            fn fmt_const(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 write!(f, "{:?}", self)
             }
         }
@@ -110,6 +151,51 @@ delegate_debug!(i64);
 delegate_debug!(u128);
 delegate_debug!(i128);
 delegate_debug!(bool);
+
+
+macro_rules! impl_reflexive(
+    ($($t:ty),*) => (
+        $(impl PhfBorrow<$t> for $t {
+            fn borrow(&self) -> &$t {
+                self
+            }
+        })*
+    )
+);
+
+impl_reflexive!(
+    str,
+    char,
+    u8,
+    i8,
+    u16,
+    i16,
+    u32,
+    i32,
+    u64,
+    i64,
+    u128,
+    i128,
+    bool,
+    [u8]
+);
+
+#[cfg(feature = "std")]
+impl PhfBorrow<str> for String {
+    fn borrow(&self) -> &str {
+        self
+    }
+}
+
+#[cfg(feature = "std")]
+impl PhfBorrow<[u8]> for Vec<u8> {
+    fn borrow(&self) -> &[u8] {
+        self
+    }
+}
+
+#[cfg(feature = "std")]
+delegate_debug!(String);
 
 #[cfg(feature = "std")]
 impl PhfHash for String {
@@ -134,8 +220,20 @@ impl<'a, T: 'a + PhfHash + ?Sized> PhfHash for &'a T {
 }
 
 impl<'a, T: 'a + FmtConst + ?Sized> FmtConst for &'a T {
-    fn fmt_const(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt_const(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         (*self).fmt_const(f)
+    }
+}
+
+impl<'a> PhfBorrow<str> for &'a str {
+    fn borrow(&self) -> &str {
+        self
+    }
+}
+
+impl<'a> PhfBorrow<[u8]> for &'a [u8] {
+    fn borrow(&self) -> &[u8] {
+        self
     }
 }
 
@@ -155,7 +253,7 @@ impl PhfHash for [u8] {
 
 impl FmtConst for [u8] {
     #[inline]
-    fn fmt_const(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt_const(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         
         write!(f, "&{:?}", self)
     }
@@ -163,7 +261,9 @@ impl FmtConst for [u8] {
 
 #[cfg(feature = "unicase")]
 impl<S> PhfHash for unicase::UniCase<S>
-    where unicase::UniCase<S>: Hash {
+where
+    unicase::UniCase<S>: Hash,
+{
     #[inline]
     fn phf_hash<H: Hasher>(&self, state: &mut H) {
         self.hash(state)
@@ -171,8 +271,11 @@ impl<S> PhfHash for unicase::UniCase<S>
 }
 
 #[cfg(feature = "unicase")]
-impl<S> FmtConst for unicase::UniCase<S> where S: AsRef<str> {
-    fn fmt_const(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl<S> FmtConst for unicase::UniCase<S>
+where
+    S: AsRef<str>,
+{
+    fn fmt_const(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.is_ascii() {
             f.write_str("UniCase::ascii(")?;
         } else {
@@ -181,6 +284,40 @@ impl<S> FmtConst for unicase::UniCase<S> where S: AsRef<str> {
 
         self.as_ref().fmt_const(f)?;
         f.write_str(")")
+    }
+}
+
+#[cfg(feature = "unicase")]
+impl<'b, 'a: 'b, S: ?Sized + 'a> PhfBorrow<unicase::UniCase<&'b S>> for unicase::UniCase<&'a S> {
+    fn borrow(&self) -> &unicase::UniCase<&'b S> {
+        self
+    }
+}
+
+#[cfg(feature = "uncased")]
+impl PhfHash for uncased::UncasedStr {
+    #[inline]
+    fn phf_hash<H: Hasher>(&self, state: &mut H) {
+        self.hash(state)
+    }
+}
+
+#[cfg(feature = "uncased")]
+impl FmtConst for uncased::UncasedStr {
+    fn fmt_const(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        
+        
+        
+        f.write_str("unsafe { ::std::mem::transmute::<&'static str, &'static UncasedStr>(")?;
+        self.as_str().fmt_const(f)?;
+        f.write_str(") }")
+    }
+}
+
+#[cfg(feature = "uncased")]
+impl PhfBorrow<uncased::UncasedStr> for &uncased::UncasedStr {
+    fn borrow(&self) -> &uncased::UncasedStr {
+        self
     }
 }
 
@@ -223,7 +360,7 @@ impl PhfHash for char {
 }
 
 
-fn fmt_array(array: &[u8], f: &mut fmt::Formatter) -> fmt::Result {
+fn fmt_array(array: &[u8], f: &mut fmt::Formatter<'_>) -> fmt::Result {
     write!(f, "{:?}", array)
 }
 
@@ -237,8 +374,14 @@ macro_rules! array_impl (
         }
 
         impl FmtConst for [$t; $n] {
-            fn fmt_const(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            fn fmt_const(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 fmt_array(self, f)
+            }
+        }
+
+        impl PhfBorrow<[$t]> for [$t; $n] {
+            fn borrow(&self) -> &[$t] {
+                self
             }
         }
     )

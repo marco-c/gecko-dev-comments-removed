@@ -5,8 +5,6 @@ use core::iter::IntoIterator;
 use core::ops::Index;
 use core::slice;
 use phf_shared::{self, HashKey, PhfBorrow, PhfHash};
-#[cfg(feature = "serde")]
-use serde::ser::{Serialize, SerializeMap, Serializer};
 
 
 
@@ -15,16 +13,21 @@ use serde::ser::{Serialize, SerializeMap, Serializer};
 
 
 
-pub struct Map<K: 'static, V: 'static> {
+
+
+
+pub struct OrderedMap<K: 'static, V: 'static> {
     #[doc(hidden)]
     pub key: HashKey,
     #[doc(hidden)]
     pub disps: &'static [(u32, u32)],
     #[doc(hidden)]
+    pub idxs: &'static [usize],
+    #[doc(hidden)]
     pub entries: &'static [(K, V)],
 }
 
-impl<K, V> fmt::Debug for Map<K, V>
+impl<K, V> fmt::Debug for OrderedMap<K, V>
 where
     K: fmt::Debug,
     V: fmt::Debug,
@@ -34,7 +37,7 @@ where
     }
 }
 
-impl<'a, K, V, T: ?Sized> Index<&'a T> for Map<K, V>
+impl<'a, K, V, T: ?Sized> Index<&'a T> for OrderedMap<K, V>
 where
     T: Eq + PhfHash,
     K: PhfBorrow<T>,
@@ -46,7 +49,7 @@ where
     }
 }
 
-impl<K, V> Map<K, V> {
+impl<K, V> OrderedMap<K, V> {
     
     #[inline]
     pub const fn len(&self) -> usize {
@@ -57,15 +60,6 @@ impl<K, V> Map<K, V> {
     #[inline]
     pub const fn is_empty(&self) -> bool {
         self.len() == 0
-    }
-
-    
-    pub fn contains_key<T: ?Sized>(&self, key: &T) -> bool
-    where
-        T: Eq + PhfHash,
-        K: PhfBorrow<T>,
-    {
-        self.get(key).is_some()
     }
 
     
@@ -90,7 +84,40 @@ impl<K, V> Map<K, V> {
     }
 
     
+    pub fn contains_key<T: ?Sized>(&self, key: &T) -> bool
+    where
+        T: Eq + PhfHash,
+        K: PhfBorrow<T>,
+    {
+        self.get(key).is_some()
+    }
+
+    
+    
+    pub fn get_index<T: ?Sized>(&self, key: &T) -> Option<usize>
+    where
+        T: Eq + PhfHash,
+        K: PhfBorrow<T>,
+    {
+        self.get_internal(key).map(|(i, _)| i)
+    }
+
+    
+    
+    pub fn index(&self, index: usize) -> Option<(&K, &V)> {
+        self.entries.get(index).map(|&(ref k, ref v)| (k, v))
+    }
+
+    
     pub fn get_entry<T: ?Sized>(&self, key: &T) -> Option<(&K, &V)>
+    where
+        T: Eq + PhfHash,
+        K: PhfBorrow<T>,
+    {
+        self.get_internal(key).map(|(_, e)| e)
+    }
+
+    fn get_internal<T: ?Sized>(&self, key: &T) -> Option<(usize, (&K, &V))>
     where
         T: Eq + PhfHash,
         K: PhfBorrow<T>,
@@ -99,11 +126,13 @@ impl<K, V> Map<K, V> {
             return None;
         } 
         let hashes = phf_shared::hash(key, &self.key);
-        let index = phf_shared::get_index(&hashes, &*self.disps, self.entries.len());
-        let entry = &self.entries[index as usize];
+        let idx_index = phf_shared::get_index(&hashes, &*self.disps, self.idxs.len());
+        let idx = self.idxs[idx_index as usize];
+        let entry = &self.entries[idx];
+
         let b: &T = entry.0.borrow();
         if b == key {
-            Some((&entry.0, &entry.1))
+            Some((idx, (&entry.0, &entry.1)))
         } else {
             None
         }
@@ -137,7 +166,7 @@ impl<K, V> Map<K, V> {
     }
 }
 
-impl<'a, K, V> IntoIterator for &'a Map<K, V> {
+impl<'a, K, V> IntoIterator for &'a OrderedMap<K, V> {
     type Item = (&'a K, &'a V);
     type IntoIter = Entries<'a, K, V>;
 
@@ -174,7 +203,7 @@ impl<'a, K, V> Iterator for Entries<'a, K, V> {
     type Item = (&'a K, &'a V);
 
     fn next(&mut self) -> Option<(&'a K, &'a V)> {
-        self.iter.next().map(|&(ref k, ref v)| (k, v))
+        self.iter.next().map(|e| (&e.0, &e.1))
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -281,21 +310,3 @@ impl<'a, K, V> DoubleEndedIterator for Values<'a, K, V> {
 impl<'a, K, V> ExactSizeIterator for Values<'a, K, V> {}
 
 impl<'a, K, V> FusedIterator for Values<'a, K, V> {}
-
-#[cfg(feature = "serde")]
-impl<K, V> Serialize for Map<K, V>
-where
-    K: Serialize,
-    V: Serialize,
-{
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let mut map = serializer.serialize_map(Some(self.len()))?;
-        for (k, v) in self.entries() {
-            map.serialize_entry(k, v)?;
-        }
-        map.end()
-    }
-}
