@@ -1,14 +1,14 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
+/* ===== tabbox.css =================================================
+  == Styles used by XUL tab-related elements.
+  ======================================================================= */
 
 @namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");
 
-
+/* ::::: tabpanels ::::: */
 
 tabpanels {
   appearance: auto;
@@ -17,7 +17,7 @@ tabpanels {
   color: -moz-DialogText;
 }
 
-
+/* ::::: tab ::::: */
 
 tab {
   appearance: auto;
@@ -37,8 +37,7 @@ tab[visuallyselected="true"] {
 }
 
 tab:-moz-focusring > .tab-middle {
-  
-  outline: 1px dotted;
+  outline: var(--default-focusring);
 }
 
 tab:first-of-type[visuallyselected="true"] {
