@@ -225,6 +225,9 @@ nsresult StartupCache::Init() {
   rv = mObserverService->AddObserver(mListener, "startupcache-invalidate",
                                      false);
   NS_ENSURE_SUCCESS(rv, rv);
+  rv = mObserverService->AddObserver(mListener, "intl:app-locales-changed",
+                                     false);
+  NS_ENSURE_SUCCESS(rv, rv);
 
   auto result = LoadArchive();
   rv = result.isErr() ? result.unwrapErr() : NS_OK;
@@ -630,8 +633,16 @@ void StartupCache::InvalidateCache(bool memoryOnly) {
   if (mCurTableReferenced) {
     
     
-    MOZ_DIAGNOSTIC_ASSERT(xpc::IsInAutomation() || mOldTables.Length() < 10,
-                          "Startup cache invalidated too many times.");
+    
+    
+    MOZ_DIAGNOSTIC_ASSERT(
+        xpc::IsInAutomation() ||
+            
+            
+            mAllowedInvalidationsCount > mOldTables.Length() ||
+            
+            mOldTables.Length() - mAllowedInvalidationsCount < 10,
+        "Startup cache invalidated too many times.");
     mOldTables.AppendElement(std::move(mTable));
     mCurTableReferenced = false;
   } else {
@@ -653,6 +664,8 @@ void StartupCache::InvalidateCache(bool memoryOnly) {
     gIgnoreDiskCache = true;
   }
 }
+
+void StartupCache::CountAllowedInvalidation() { mAllowedInvalidationsCount++; }
 
 void StartupCache::MaybeInitShutdownWrite() {
   if (mTimer) {
@@ -790,6 +803,12 @@ nsresult StartupCacheListener::Observe(nsISupports* subject, const char* topic,
     
   } else if (strcmp(topic, "startupcache-invalidate") == 0) {
     sc->InvalidateCache(data && nsCRT::strcmp(data, u"memoryOnly") == 0);
+  } else if (strcmp(topic, "intl:app-locales-changed") == 0) {
+    
+    
+    
+    
+    sc->CountAllowedInvalidation();
   }
   return NS_OK;
 }

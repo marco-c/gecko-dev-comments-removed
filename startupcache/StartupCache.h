@@ -156,6 +156,10 @@ class StartupCache : public nsIMemoryReporter {
 
   
   
+  void CountAllowedInvalidation();
+
+  
+  
   void MaybeInitShutdownWrite();
 
   
@@ -214,7 +218,10 @@ class StartupCache : public nsIMemoryReporter {
   
   
   
+  
+  
   nsTArray<decltype(mTable)> mOldTables;
+  size_t mAllowedInvalidationsCount;
   nsCOMPtr<nsIFile> mFile;
   loader::AutoMemMap mCacheData;
   Mutex mTableLock MOZ_UNANNOTATED;
