@@ -645,12 +645,12 @@ var gHistorySwipeAnimation = {
 
   init: function HSA_init() {
     this.isLTR = document.documentElement.matches(":-moz-locale-dir(ltr)");
+    this._isStoppingAnimation = false;
 
     if (!this._isSupported()) {
       return;
     }
 
-    this._isStoppingAnimation = false;
     if (
       !Services.prefs.getBoolPref(
         "browser.history_swipe_animation.disabled",
@@ -677,14 +677,24 @@ var gHistorySwipeAnimation = {
 
 
   startAnimation: function HSA_startAnimation() {
-    if (this.isAnimationRunning()) {
+    
+    
+    if (this.isAnimationRunning() && !this._isStoppingAnimation) {
       return;
+    }
+
+    let createBoxes = true;
+    if (this._isStoppingAnimation) {
+      
+      this._prevBox.style.transition = "";
+      this._nextBox.style.transition = "";
+      createBoxes = false;
     }
 
     this._isStoppingAnimation = false;
     this._canGoBack = this.canGoBack();
     this._canGoForward = this.canGoForward();
-    if (this.active) {
+    if (createBoxes && this.active) {
       this._addBoxes();
     }
     this.updateAnimation(0);
@@ -697,13 +707,15 @@ var gHistorySwipeAnimation = {
     if (!this.isAnimationRunning()) {
       return;
     }
-    this._isStoppingAnimation = true;
+
     let box = this._prevBox.style.opacity > 0 ? this._prevBox : this._nextBox;
     if (box.style.opacity > 0) {
+      this._isStoppingAnimation = true;
       box.style.transition = "opacity 0.2s cubic-bezier(.07,.95,0,1)";
       box.addEventListener("transitionend", this._completeFadeOut);
       box.style.opacity = 0;
     } else {
+      this._isStoppingAnimation = false;
       this._removeBoxes();
     }
   },
@@ -787,6 +799,12 @@ var gHistorySwipeAnimation = {
   },
 
   _completeFadeOut: function HSA__completeFadeOut(aEvent) {
+    if (!this._isStoppingAnimation) {
+      
+      
+      return;
+    }
+    this._isStoppingAnimation = false;
     gHistorySwipeAnimation._removeBoxes();
   },
 

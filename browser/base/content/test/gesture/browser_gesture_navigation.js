@@ -19,31 +19,32 @@ add_task(async () => {
   await BrowserTestUtils.closeWindow(newBrowser);
 });
 
-add_task(async () => {
-  function createSimpleGestureEvent(type, direction) {
-    let event = document.createEvent("SimpleGestureEvent");
-    event.initSimpleGestureEvent(
-      type,
-      false ,
-      false ,
-      window,
-      0 ,
-      0 ,
-      0 ,
-      0 ,
-      0 ,
-      false ,
-      false ,
-      false ,
-      false ,
-      0 ,
-      null ,
-      0 ,
-      direction
-    );
-    return event;
-  }
+function createSimpleGestureEvent(type, direction) {
+  let event = document.createEvent("SimpleGestureEvent");
+  event.initSimpleGestureEvent(
+    type,
+    false ,
+    false ,
+    window,
+    0 ,
+    0 ,
+    0 ,
+    0 ,
+    0 ,
+    false ,
+    false ,
+    false ,
+    false ,
+    0 ,
+    null ,
+    0 ,
+    direction,
+    1 
+  );
+  return event;
+}
 
+add_task(async () => {
   await SpecialPowers.pushPrefEnv({
     set: [["ui.swipeAnimationEnabled", false]],
   });
@@ -76,7 +77,7 @@ add_task(async () => {
   );
 
   let event = createSimpleGestureEvent(
-    "SwipeGestureMayStart",
+    "MozSwipeGestureMayStart",
     SimpleGestureEvent.DIRECTION_LEFT
   );
   newWindow.gGestureSupport._shouldDoSwipeGesture(event);
@@ -89,7 +90,7 @@ add_task(async () => {
   );
 
   event = createSimpleGestureEvent(
-    "SwipeGestureMayStart",
+    "MozSwipeGestureMayStart",
     SimpleGestureEvent.DIRECTION_RIGHT
   );
   newWindow.gGestureSupport._shouldDoSwipeGesture(event);
@@ -98,6 +99,114 @@ add_task(async () => {
     SimpleGestureEvent.DIRECTION_LEFT,
     "Allows only swiping to left, i.e. backward"
   );
+
+  await BrowserTestUtils.closeWindow(newWindow);
+});
+
+add_task(async () => {
+  await SpecialPowers.pushPrefEnv({
+    set: [["ui.swipeAnimationEnabled", true]],
+  });
+
+  
+  
+  const newWindow = await BrowserTestUtils.openNewBrowserWindow({});
+
+  if (!newWindow.gHistorySwipeAnimation._isSupported()) {
+    await BrowserTestUtils.closeWindow(newWindow);
+    return;
+  }
+
+  function sendSwipeSequence(sendEnd) {
+    let event = createSimpleGestureEvent(
+      "MozSwipeGestureMayStart",
+      SimpleGestureEvent.DIRECTION_LEFT
+    );
+    newWindow.gGestureSupport.handleEvent(event);
+
+    event = createSimpleGestureEvent(
+      "MozSwipeGestureStart",
+      SimpleGestureEvent.DIRECTION_LEFT
+    );
+    newWindow.gGestureSupport.handleEvent(event);
+
+    event = createSimpleGestureEvent(
+      "MozSwipeGestureUpdate",
+      SimpleGestureEvent.DIRECTION_LEFT
+    );
+    newWindow.gGestureSupport.handleEvent(event);
+
+    event = createSimpleGestureEvent(
+      "MozSwipeGestureUpdate",
+      SimpleGestureEvent.DIRECTION_LEFT
+    );
+    newWindow.gGestureSupport.handleEvent(event);
+
+    if (sendEnd) {
+      sendSwipeEnd();
+    }
+  }
+  function sendSwipeEnd() {
+    let event = createSimpleGestureEvent(
+      "MozSwipeGestureEnd",
+      SimpleGestureEvent.DIRECTION_LEFT
+    );
+    newWindow.gGestureSupport.handleEvent(event);
+  }
+
+  
+  
+  await TestUtils.waitForCondition(() => {
+    return (
+      
+      
+      newWindow.gHistorySwipeAnimation.isLTR != Services.locale.isAppLocaleRTL
+    );
+  });
+
+  BrowserTestUtils.loadURI(newWindow.gBrowser.selectedBrowser, "about:mozilla");
+  await BrowserTestUtils.browserLoaded(
+    newWindow.gBrowser.selectedBrowser,
+    false,
+    "about:mozilla"
+  );
+  BrowserTestUtils.loadURI(newWindow.gBrowser.selectedBrowser, "about:about");
+  await BrowserTestUtils.browserLoaded(
+    newWindow.gBrowser.selectedBrowser,
+    false,
+    "about:about"
+  );
+
+  
+  sendSwipeSequence( true);
+
+  
+  await new Promise(r =>
+    window.requestAnimationFrame(() => window.requestAnimationFrame(r))
+  );
+
+  
+  
+  ok(
+    newWindow.gHistorySwipeAnimation._isStoppingAnimation,
+    "should be stopping anim"
+  );
+
+  
+  sendSwipeSequence( false);
+
+  
+  await new Promise(r =>
+    window.requestAnimationFrame(() => window.requestAnimationFrame(r))
+  );
+
+  
+  ok(
+    !newWindow.gHistorySwipeAnimation._isStoppingAnimation,
+    "should not be stopping anim"
+  );
+
+  sendSwipeEnd();
 
   await BrowserTestUtils.closeWindow(newWindow);
 });
