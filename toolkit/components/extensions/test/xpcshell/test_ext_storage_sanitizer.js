@@ -94,7 +94,10 @@ add_task(
   {
     
     
-    skip_if: () => !Services.prefs.getBoolPref("dom.storage.next_gen"),
+    skip_if: () =>
+      Services.prefs.getBoolPref(
+        "dom.storage.enable_unsupported_legacy_implementation"
+      ),
   },
   async function test_sanitize_offlineApps_extension_localStorage() {
     await test_sanitize_offlineApps(function indexedDBStorageHelpers() {

@@ -100,7 +100,7 @@ class StorageControllerTest : BaseSessionTest() {
 
         
         
-        if (sessionRule.getPrefs("dom.storage.next_gen")[0] as Boolean == true) {
+        if (sessionRule.getPrefs("dom.storage.enable_unsupported_legacy_implementation")[0] as Boolean == false) {
           assertThat("Local storage value should match",
                      localStorage,
                      equalTo("test"))

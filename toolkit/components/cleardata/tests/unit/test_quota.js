@@ -14,8 +14,8 @@
 
 
 
-const skipLocalStorageTests = !Services.prefs.getBoolPref(
-  "dom.storage.next_gen"
+const skipLocalStorageTests = Services.prefs.getBoolPref(
+  "dom.storage.enable_unsupported_legacy_implementation"
 );
 
 

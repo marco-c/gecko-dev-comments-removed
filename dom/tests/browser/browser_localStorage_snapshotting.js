@@ -521,6 +521,11 @@ add_task(async function() {
 
 
 add_task(async function() {
+  if (!Services.domStorageManager.nextGenLocalStorageEnabled) {
+    ok(true, "Test ignored when the next gen local storage is not enabled.");
+    return;
+  }
+
   await SpecialPowers.pushPrefEnv({
     set: [
       
@@ -593,6 +598,11 @@ add_task(async function() {
 
 
 add_task(async function() {
+  if (!Services.domStorageManager.nextGenLocalStorageEnabled) {
+    ok(true, "Test ignored when the next gen local storage is not enabled.");
+    return;
+  }
+
   await SpecialPowers.pushPrefEnv({
     set: [
       
@@ -677,6 +687,11 @@ add_task(async function() {
 
 
 add_task(async function() {
+  if (!Services.domStorageManager.nextGenLocalStorageEnabled) {
+    ok(true, "Test ignored when the next gen local storage is not enabled.");
+    return;
+  }
+
   await SpecialPowers.pushPrefEnv({
     set: [
       
