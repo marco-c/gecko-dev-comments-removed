@@ -10,7 +10,14 @@ const TEST_URL2 = "https://example.com/2";
 const TEST_URL3 = "https://example.com/3";
 const TEST_URL4 = "https://example.com/4";
 
-add_task(async function test_enable_overlapping() {
+let selector;
+let currentSessionUrls = new Set();
+
+function getCurrentSessionUrls() {
+  return currentSessionUrls;
+}
+
+add_task(async function test_setup() {
   const ONE_MINUTE = 1000 * 60;
   const ONE_HOUR = ONE_MINUTE * 60;
 
@@ -30,11 +37,17 @@ add_task(async function test_enable_overlapping() {
     { url: TEST_URL4, created_at: now - ONE_HOUR, updated_at: now - ONE_HOUR },
   ]);
 
-  let selector = new SnapshotSelector(
-    5 ,
-    false ,
-    true 
-  );
+  selector = new SnapshotSelector({
+    count: 5,
+    filterAdult: false,
+    selectOverlappingVisits: true,
+    getCurrentSessionUrls,
+  });
+});
+
+add_task(async function test_enable_overlapping() {
+  
+  Services.prefs.setIntPref("browser.places.snapshots.threshold", -10);
 
   let snapshotPromise = selector.once("snapshots-updated");
   selector.rebuild();
@@ -52,5 +65,26 @@ add_task(async function test_enable_overlapping() {
   snapshots = await snapshotPromise;
 
   
+  await assertSnapshotList(snapshots, [{ url: TEST_URL2 }]);
+});
+
+add_task(async function test_overlapping_with_scoring() {
+  
+  Services.prefs.clearUserPref("browser.places.snapshots.threshold");
+
+  let snapshotPromise = selector.once("snapshots-updated");
+  selector.rebuild();
+  let snapshots = await snapshotPromise;
+
+  await assertSnapshotList(snapshots, []);
+
+  
+  
+  currentSessionUrls.add(TEST_URL2);
+
+  snapshotPromise = selector.once("snapshots-updated");
+  selector.rebuild();
+  snapshots = await snapshotPromise;
+
   await assertSnapshotList(snapshots, [{ url: TEST_URL2 }]);
 });
