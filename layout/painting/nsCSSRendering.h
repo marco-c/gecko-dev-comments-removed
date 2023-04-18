@@ -349,7 +349,7 @@ struct nsCSSRendering {
 
 
   static nscolor DetermineBackgroundColor(nsPresContext* aPresContext,
-                                          mozilla::ComputedStyle* aStyle,
+                                          const mozilla::ComputedStyle* aStyle,
                                           nsIFrame* aFrame,
                                           bool& aDrawBackgroundImage,
                                           bool& aDrawBackgroundColor);
