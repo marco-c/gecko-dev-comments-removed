@@ -124,12 +124,6 @@ class nsBaseDragService : public nsIDragService, public nsIDragSession {
   
 
 
-  mozilla::LayoutDeviceIntPoint ConvertToUnscaledDevPixels(
-      nsPresContext* aPresContext, mozilla::CSSIntPoint aScreenPosition);
-
-  
-
-
   void OpenDragPopup();
 
   
