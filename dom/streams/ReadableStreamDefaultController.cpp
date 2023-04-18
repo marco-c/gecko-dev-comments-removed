@@ -481,40 +481,12 @@ static void ReadableStreamDefaultControllerCallPullIfNeeded(
   RefPtr<UnderlyingSourcePullCallbackHelper> pullAlgorithm(
       aController->GetPullAlgorithm());
 
-  
-  
-  
-  RefPtr<Promise> maybeRejectPromise =
-      Promise::Create(aController->GetParentObject(), aRv);
-  if (aRv.Failed()) {
-    return;
-  }
-
   RefPtr<Promise> pullPromise =
       pullAlgorithm ? pullAlgorithm->PullCallback(aCx, *aController, aRv)
                     : Promise::CreateResolvedWithUndefined(
                           aController->GetParentObject(), aRv);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-  aRv.WouldReportJSException();
-
-  
   if (aRv.Failed()) {
-    MOZ_ASSERT(!pullPromise);
-
-    
-    pullPromise = maybeRejectPromise;
-    pullPromise->MaybeReject(std::move(aRv));
+    return;
   }
 
   
