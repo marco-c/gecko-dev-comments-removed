@@ -20,5 +20,6 @@ int FuzzXPCRuntimeStart(mozilla::dom::AutoJSAPI* jsapi, int* argc, char*** argv,
 
 int FuzzXPCRuntimeInit();
 int FuzzXPCRuntimeFuzz(const uint8_t* buf, size_t size);
+int FuzzXPCRuntimeShutdown();
 
 #endif 
