@@ -29,6 +29,7 @@
 #ifdef XP_WIN
 #  include "mozilla/TimeStamp_windows.h"
 #endif
+#include "mozilla/Tuple.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
 #include "mozilla/Vector.h"
@@ -265,10 +266,6 @@ struct ParamTraits<nsTHashSet<uint64_t>> {
 bool ByteLengthIsValid(uint32_t aNumElements, size_t aElementSize,
                        int* aByteLength);
 
-
-
-
-
 template <typename E>
 struct ParamTraits<nsTArray<E>> {
   typedef nsTArray<E> paramType;
@@ -278,10 +275,15 @@ struct ParamTraits<nsTArray<E>> {
   
   
   
-  static const bool sUseWriteBytes =
+  static constexpr bool sUseWriteBytes =
       (std::is_integral_v<E> || std::is_floating_point_v<E>);
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
+  
+  
+  
+  
+  
+  template <typename U>
+  static void Write(MessageWriter* aWriter, U&& aParam) {
     uint32_t length = aParam.Length();
     WriteParam(aWriter, length);
 
@@ -290,10 +292,7 @@ struct ParamTraits<nsTArray<E>> {
       MOZ_RELEASE_ASSERT(ByteLengthIsValid(length, sizeof(E), &pickledLength));
       aWriter->WriteBytes(aParam.Elements(), pickledLength);
     } else {
-      const E* elems = aParam.Elements();
-      for (uint32_t index = 0; index < length; index++) {
-        WriteParam(aWriter, elems[index]);
-      }
+      WriteValues(aWriter, std::forward<U>(aParam));
     }
   }
 
@@ -340,6 +339,26 @@ struct ParamTraits<nsTArray<E>> {
       }
       LogParam(aParam[index], aLog);
     }
+  }
+
+ private:
+  
+  static void WriteValues(MessageWriter* aWriter, const paramType& aParam) {
+    for (auto& elt : aParam) {
+      WriteParam(aWriter, elt);
+    }
+  }
+
+  
+  static void WriteValues(MessageWriter* aWriter, paramType&& aParam) {
+    for (auto& elt : aParam) {
+      WriteParam(aWriter, std::move(elt));
+    }
+
+    
+    
+    
+    aParam.Clear();
   }
 };
 
@@ -695,7 +714,16 @@ struct ParamTraits<mozilla::Maybe<T>> {
   static void Write(MessageWriter* writer, const paramType& param) {
     if (param.isSome()) {
       WriteParam(writer, true);
-      WriteParam(writer, param.value());
+      WriteParam(writer, param.ref());
+    } else {
+      WriteParam(writer, false);
+    }
+  }
+
+  static void Write(MessageWriter* writer, paramType&& param) {
+    if (param.isSome()) {
+      WriteParam(writer, true);
+      WriteParam(writer, std::move(param.ref()));
     } else {
       WriteParam(writer, false);
     }
@@ -952,6 +980,44 @@ struct ParamTraits<mozilla::UniquePtr<T>> {
       }
     }
     return true;
+  }
+};
+
+template <typename... Ts>
+struct ParamTraits<mozilla::Tuple<Ts...>> {
+  typedef mozilla::Tuple<Ts...> paramType;
+
+  template <typename U>
+  static void Write(IPC::MessageWriter* aWriter, U&& aParam) {
+    WriteInternal(aWriter, std::forward<U>(aParam),
+                  std::index_sequence_for<Ts...>{});
+  }
+
+  static bool Read(IPC::MessageReader* aReader,
+                   mozilla::Tuple<Ts...>* aResult) {
+    return ReadInternal(aReader, *aResult, std::index_sequence_for<Ts...>{});
+  }
+
+ private:
+  template <size_t... Is>
+  static void WriteInternal(IPC::MessageWriter* aWriter,
+                            const mozilla::Tuple<Ts...>& aParam,
+                            std::index_sequence<Is...>) {
+    WriteParams(aWriter, mozilla::Get<Is>(aParam)...);
+  }
+
+  template <size_t... Is>
+  static void WriteInternal(IPC::MessageWriter* aWriter,
+                            mozilla::Tuple<Ts...>&& aParam,
+                            std::index_sequence<Is...>) {
+    WriteParams(aWriter, std::move(mozilla::Get<Is>(aParam))...);
+  }
+
+  template <size_t... Is>
+  static bool ReadInternal(IPC::MessageReader* aReader,
+                           mozilla::Tuple<Ts...>& aResult,
+                           std::index_sequence<Is...>) {
+    return ReadParams(aReader, mozilla::Get<Is>(aResult)...);
   }
 };
 

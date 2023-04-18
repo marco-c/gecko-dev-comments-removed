@@ -32,7 +32,9 @@ class nsCOMPtr;
 
 namespace mozilla::ipc {
 class IProtocol;
-}
+template <typename P>
+struct IPDLParamTraits;
+}  
 
 namespace IPC {
 
@@ -292,8 +294,32 @@ static inline void LogParam(const P& p, std::wstring* l) {
 
 
 
+
+
 template <class P>
-struct ParamTraitsFundamental {};
+struct ParamTraitsIPDLFallback {
+  template <class R>
+  static auto Write(MessageWriter* writer, R&& p)
+      -> decltype(mozilla::ipc::IPDLParamTraits<P>::Write(writer,
+                                                          writer->GetActor(),
+                                                          std::forward<R>(p))) {
+    mozilla::ipc::IPDLParamTraits<P>::Write(writer, writer->GetActor(),
+                                            std::forward<R>(p));
+  }
+  template <class R>
+  static auto Read(MessageReader* reader, R* r)
+      -> decltype(mozilla::ipc::IPDLParamTraits<P>::Read(reader,
+                                                         reader->GetActor(),
+                                                         r)) {
+    return mozilla::ipc::IPDLParamTraits<P>::Read(reader, reader->GetActor(),
+                                                  r);
+  }
+};
+
+
+
+template <class P>
+struct ParamTraitsFundamental : ParamTraitsIPDLFallback<P> {};
 
 template <>
 struct ParamTraitsFundamental<bool> {
