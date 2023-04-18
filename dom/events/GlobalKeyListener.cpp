@@ -584,8 +584,13 @@ bool XULKeySetGlobalKeyListener::IsExecutableElement(
     return false;
   }
 
-  aElement->GetAttr(nsGkAtoms::oncommand, value);
-  return !value.IsEmpty();
+  
+  
+  
+  
+  
+  return !aElement->AttrValueIs(kNameSpaceID_None, nsGkAtoms::internal,
+                                nsGkAtoms::_true, eCaseMatters);
 }
 
 already_AddRefed<dom::EventTarget> XULKeySetGlobalKeyListener::GetHandlerTarget(
