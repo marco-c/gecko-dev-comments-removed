@@ -551,7 +551,8 @@ class PageAction {
     );
     const { primary, secondary } = content.buttons;
     let primaryActionCallback;
-    let options = { persistent: !!content.persistent_doorhanger };
+    let persistent = !!content.persistent_doorhanger;
+    let options = { persistent, persistWhileVisible: persistent };
     let panelTitle;
 
     headerLabel.value = await this.getStrings(content.heading_text);
@@ -851,16 +852,18 @@ const CFRPageActions = {
         
         
         pageAction.showAddressBarNotifier(recommendation);
-      } else if (recommendation.retain) {
-        
-        
-        pageAction.hideAddressBarNotifier();
-        recommendation.retain = false;
-      } else {
-        
-        
-        RecommendationMap.delete(browser);
-        pageAction.hideAddressBarNotifier();
+      } else if (!recommendation.content.persistent_doorhanger) {
+        if (recommendation.retain) {
+          
+          
+          pageAction.hideAddressBarNotifier();
+          recommendation.retain = false;
+        } else {
+          
+          
+          RecommendationMap.delete(browser);
+          pageAction.hideAddressBarNotifier();
+        }
       }
     } else {
       
