@@ -1159,13 +1159,21 @@ void LIRGenerator::visitWasmBinarySimd128WithConstant(
   MOZ_ASSERT(lhs->type() == MIRType::Simd128);
   MOZ_ASSERT(ins->type() == MIRType::Simd128);
 
-  
-  
-
-  LAllocation lhsDestAlloc = useRegisterAtStart(lhs);
-  auto* lir =
-      new (alloc()) LWasmBinarySimd128WithConstant(lhsDestAlloc, ins->rhs());
-  defineReuseInput(lir, ins, LWasmBinarySimd128WithConstant::LhsDest);
+  if (isThreeOpAllowed()) {
+    
+    
+    LAllocation lhsAlloc = useRegisterAtStart(lhs);
+    auto* lir =
+        new (alloc()) LWasmBinarySimd128WithConstant(lhsAlloc, ins->rhs());
+    define(lir, ins);
+  } else {
+    
+    
+    LAllocation lhsDestAlloc = useRegisterAtStart(lhs);
+    auto* lir =
+        new (alloc()) LWasmBinarySimd128WithConstant(lhsDestAlloc, ins->rhs());
+    defineReuseInput(lir, ins, LWasmBinarySimd128WithConstant::LhsDest);
+  }
 #else
   MOZ_CRASH("No SIMD");
 #endif
