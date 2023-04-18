@@ -102,11 +102,14 @@ def runtests(setup_test_harness, binary, parser, request):
     def inner(*tests, **opts):
         assert len(tests) > 0
 
-        manifest = TestManifest()
         
-        manifest.tests.extend(list(map(normalize, tests)))
-        options["manifestFile"] = manifest
-        options.update(opts)
+        
+        if not isinstance(options["manifestFile"], TestManifest):
+            manifest = TestManifest()
+            options["manifestFile"] = manifest
+            
+            manifest.tests.extend(list(map(normalize, tests)))
+            options.update(opts)
 
         result = runtests.run_test_harness(parser, Namespace(**options))
         out = json.loads("[" + ",".join(buf.getvalue().splitlines()) + "]")
