@@ -21,6 +21,7 @@
 
 
 static const double kSpringForce = 250.0;
+static const double kSwipeSuccessThreshold = 0.25;
 
 namespace mozilla {
 
@@ -97,8 +98,7 @@ bool SwipeTracker::ComputeSwipeSuccess() const {
   return (mGestureAmount * targetValue +
           mCurrentVelocity * targetValue *
               StaticPrefs::widget_swipe_success_velocity_contribution()) >=
-
-         StaticPrefs::widget_swipe_success_threshold();
+         kSwipeSuccessThreshold;
 }
 
 nsEventStatus SwipeTracker::ProcessEvent(const PanGestureInput& aEvent) {
