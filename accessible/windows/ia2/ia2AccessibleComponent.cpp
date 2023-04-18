@@ -54,7 +54,7 @@ ia2AccessibleComponent::get_locationInParent(long* aX, long* aY) {
   uint64_t state = acc->State();
   if (state & states::INVISIBLE) return S_OK;
 
-  LayoutDeviceIntRect rect = acc->Bounds();
+  nsIntRect rect = acc->Bounds();
 
   
   
@@ -67,7 +67,7 @@ ia2AccessibleComponent::get_locationInParent(long* aX, long* aY) {
 
   
   
-  LayoutDeviceIntRect parentRect = acc->LocalParent()->Bounds();
+  nsIntRect parentRect = acc->LocalParent()->Bounds();
   *aX = rect.X() - parentRect.X();
   *aY = rect.Y() - parentRect.Y();
   return S_OK;

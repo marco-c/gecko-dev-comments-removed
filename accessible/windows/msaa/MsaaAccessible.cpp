@@ -1523,7 +1523,7 @@ MsaaAccessible::accLocation(
                                    kVarChildIdSelf);
   }
 
-  LayoutDeviceIntRect rect = Acc()->Bounds();
+  nsIntRect rect = Acc()->Bounds();
   *pxLeft = rect.X();
   *pyTop = rect.Y();
   *pcxWidth = rect.Width();
@@ -1654,7 +1654,7 @@ MsaaAccessible::accHitTest(
       
       
       
-      LayoutDeviceIntRect docRect = mAcc->AsLocal()->Bounds();
+      nsIntRect docRect = mAcc->AsLocal()->Bounds();
       if (docRect.Contains(xLeft, yTop)) {
         pvarChild->vt = VT_DISPATCH;
         disp.forget(&pvarChild->pdispVal);

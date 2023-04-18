@@ -547,9 +547,8 @@ Accessible* Pivot::AtPoint(int32_t aX, int32_t aY, PivotRule& aRule) {
 
     
     if ((filtered & nsIAccessibleTraversalRule::FILTER_MATCH) && !match) {
-      LayoutDeviceIntRect childRect = child->IsLocal()
-                                          ? child->AsLocal()->Bounds()
-                                          : child->AsRemote()->Bounds();
+      nsIntRect childRect = child->IsLocal() ? child->AsLocal()->Bounds()
+                                             : child->AsRemote()->Bounds();
       
       
       if (childRect.Contains(aX, aY)) {
