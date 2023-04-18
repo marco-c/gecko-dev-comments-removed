@@ -4,7 +4,7 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["ContentCrashHandler"];
+var EXPORTED_SYMBOLS = ["ChildCrashHandler"];
 
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
@@ -21,7 +21,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 ChromeUtils.defineModuleGetter(this, "OS", "resource://gre/modules/osfile.jsm");
 
-const { debug, warn } = GeckoViewUtils.initLogging("ContentCrashHandler");
+const { debug, warn } = GeckoViewUtils.initLogging("ChildCrashHandler");
 
 function getDir(name) {
   const uAppDataPath = Services.dirsvc.get("UAppData", Ci.nsIFile).path;
@@ -36,7 +36,7 @@ function getPendingMinidump(id) {
   });
 }
 
-var ContentCrashHandler = {
+var ChildCrashHandler = {
   
   observe(aSubject, aTopic, aData) {
     aSubject.QueryInterface(Ci.nsIPropertyBag2);
@@ -54,20 +54,24 @@ var ContentCrashHandler = {
     }
 
     const dumpID = aSubject.get("dumpID");
-    if (!dumpID) {
+    if (aTopic === "ipc:content-shutdown" && !dumpID) {
       Services.telemetry
         .getHistogramById("FX_CONTENT_CRASH_DUMP_UNAVAILABLE")
         .add(1);
       return;
     }
 
-    debug`Notifying content process crash, dump ID ${dumpID}`;
+    debug`Notifying child process crash, dump ID ${dumpID}`;
     const [minidumpPath, extrasPath] = getPendingMinidump(dumpID);
 
-    const processType = "FOREGROUND_CHILD";
+    
+    const processType =
+      aTopic === "compositor:process-aborted"
+        ? "BACKGROUND_CHILD"
+        : "FOREGROUND_CHILD";
 
     EventDispatcher.instance.sendRequest({
-      type: "GeckoView:ContentCrashReport",
+      type: "GeckoView:ChildCrashReport",
       minidumpPath,
       extrasPath,
       success: true,
