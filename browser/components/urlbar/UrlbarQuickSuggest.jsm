@@ -14,16 +14,15 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 XPCOMUtils.defineLazyModuleGetters(this, {
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
-  RemoteSettings: "resource://services-settings/remote-settings.js",
-  UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.jsm",
+  QUICK_SUGGEST_SOURCE: "resource:///modules/UrlbarProviderQuickSuggest.jsm",
+  RemoteSettings: "resource://services-settings/remote-settings.js",
+  Services: "resource://gre/modules/Services.jsm",
+  UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
   UrlbarProviderQuickSuggest:
     "resource:///modules/UrlbarProviderQuickSuggest.jsm",
-  QUICK_SUGGEST_SOURCE: "resource:///modules/UrlbarProviderQuickSuggest.jsm",
 });
 
 XPCOMUtils.defineLazyGlobalGetters(this, ["TextDecoder"]);
@@ -67,33 +66,47 @@ const SUGGESTION_SCORE = 0.2;
 
 
 class Suggestions {
-  
-  _rs = null;
-  
-  _initPromise = null;
-  
-  _initResolve = null;
-  
-  _tree = new KeywordTree();
-  
-  _results = new Map();
-
-  async init() {
-    if (this._initPromise) {
-      return this._initPromise;
-    }
-    this._initPromise = Promise.resolve();
-    if (UrlbarPrefs.get(FEATURE_AVAILABLE)) {
-      this._initPromise = new Promise(resolve => (this._initResolve = resolve));
-      Services.tm.idleDispatchToMainThread(this.onEnabledUpdate.bind(this));
-    } else {
-      NimbusFeatures.urlbar.onUpdate(this.onEnabledUpdate.bind(this));
-    }
+  constructor() {
     UrlbarPrefs.addObserver(this);
-    return this._initPromise;
+    NimbusFeatures.urlbar.onUpdate(() => this._queueSettingsSetup());
+
+    this._queueSettingsTask(() => {
+      return new Promise(resolve => {
+        Services.tm.idleDispatchToMainThread(() => {
+          this._queueSettingsSetup();
+          resolve();
+        });
+      });
+    });
   }
 
   
+
+
+
+
+
+  get SUGGESTION_SCORE() {
+    return SUGGESTION_SCORE;
+  }
+
+  
+
+
+
+  get readyPromise() {
+    if (!this._settingsTaskQueue.length) {
+      return Promise.resolve();
+    }
+    return new Promise(resolve => {
+      this._emptySettingsTaskQueueCallbacks.push(resolve);
+    });
+  }
+
+  
+
+
+
 
 
   async query(phrase) {
@@ -112,7 +125,7 @@ class Suggestions {
     let date =
       `${d.getFullYear()}${pad(d.getMonth() + 1)}` +
       `${pad(d.getDate())}${pad(d.getHours())}`;
-    let icon = await this.fetchIcon(result.icon);
+    let icon = await this._fetchIcon(result.icon);
     return {
       full_keyword: this.getFullKeyword(phrase, result.keywords),
       title: result.title,
@@ -179,55 +192,6 @@ class Suggestions {
       }
     }
     return longerPhrase || trimmedQuery;
-  }
-
-  
-
-
-
-
-
-
-
-  onPrefChanged(pref) {
-    switch (pref) {
-      
-      
-      
-      case "suggest.quicksuggest":
-        this.onEnabledUpdate();
-        break;
-    }
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  onEnabledUpdate() {
-    if (
-      UrlbarPrefs.get(FEATURE_AVAILABLE) &&
-      UrlbarPrefs.get("suggest.quicksuggest")
-    ) {
-      this._setupRemoteSettings();
-    }
   }
 
   
@@ -339,99 +303,105 @@ class Suggestions {
   
 
 
-  async _setupRemoteSettings() {
-    this._rs = RemoteSettings(RS_COLLECTION);
-    this._rs.on("sync", this._onSettingsSync.bind(this));
-    await this._ensureAttachmentsDownloaded();
-    if (this._initResolve) {
-      this._initResolve();
-      this._initResolve = null;
+
+
+
+
+
+  onPrefChanged(pref) {
+    switch (pref) {
+      
+      
+      
+      case "suggest.quicksuggest":
+        this._queueSettingsSetup();
+        break;
     }
+  }
+
+  
+  _rs = null;
+
+  
+  
+  _settingsTaskQueue = [];
+
+  
+  _emptySettingsTaskQueueCallbacks = [];
+
+  
+  _results = new Map();
+
+  
+  _tree = new KeywordTree();
+
+  
+
+
+
+  _queueSettingsSetup() {
+    this._queueSettingsTask(() => {
+      let enabled =
+        UrlbarPrefs.get(FEATURE_AVAILABLE) &&
+        UrlbarPrefs.get("suggest.quicksuggest");
+      if (enabled && !this._rs) {
+        this._onSettingsSync = (...args) => this._queueSettingsSync(...args);
+        this._rs = RemoteSettings(RS_COLLECTION);
+        this._rs.on("sync", this._onSettingsSync);
+        this._queueSettingsSync();
+      } else if (!enabled && this._rs) {
+        this._rs.off("sync", this._onSettingsSync);
+        this._rs = null;
+        this._onSettingsSync = null;
+      }
+    });
   }
 
   
 
 
-  async _onSettingsSync({ data: { deleted } }) {
-    const toDelete = deleted?.filter(d => d.attachment);
-    
-    if (toDelete) {
-      await Promise.all(
-        toDelete.map(entry => this._rs.attachments.delete(entry))
-      );
-    }
-    await this._ensureAttachmentsDownloaded();
+
+
+
+
+
+  _queueSettingsSync(event = null) {
+    this._queueSettingsTask(async () => {
+      
+      if (event?.data?.deleted) {
+        await Promise.all(
+          event.data.deleted
+            .filter(d => d.attachment)
+            .map(entry => this._rs.attachments.delete(entry))
+        );
+      }
+
+      let data = await this._rs.get({ filters: { type: "data" } });
+      let icons = await this._rs.get({ filters: { type: "icon" } });
+      await Promise.all(icons.map(r => this._rs.attachments.download(r)));
+
+      this._results = new Map();
+      this._tree = new KeywordTree();
+
+      for (let record of data) {
+        let { buffer } = await this._rs.attachments.download(record, {
+          useCache: true,
+        });
+        let results = JSON.parse(new TextDecoder("utf-8").decode(buffer));
+        this._addResults(results);
+      }
+    });
   }
 
   
 
 
 
-  async _ensureAttachmentsDownloaded() {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (this._ensureAttachmentsDownloadedRunning) {
-      return;
-    }
-    this._ensureAttachmentsDownloadedRunning = true;
-    try {
-      await this._ensureAttachmentsDownloadedHelper();
-    } finally {
-      this._ensureAttachmentsDownloadedRunning = false;
-    }
-  }
-
-  async _ensureAttachmentsDownloadedHelper() {
-    log.info("_ensureAttachmentsDownloaded started");
-    let dataOpts = { useCache: true };
-    let data = await this._rs.get({ filters: { type: "data" } });
-    await Promise.all(
-      data.map(r => this._rs.attachments.download(r, dataOpts))
-    );
-
-    let icons = await this._rs.get({ filters: { type: "icon" } });
-    await Promise.all(icons.map(r => this._rs.attachments.download(r)));
-
-    await this._createTree();
-    log.info("_ensureAttachmentsDownloaded complete");
-  }
-
-  
 
 
-  async _createTree() {
-    log.info("Building new KeywordTree");
-    this._results = new Map();
-    this._tree = new KeywordTree();
-    let data = await this._rs.get({ filters: { type: "data" } });
 
-    for (let record of data) {
-      let { buffer } = await this._rs.attachments.download(record, {
-        useCache: true,
-      });
-      let json = JSON.parse(new TextDecoder("utf-8").decode(buffer));
-      this._processSuggestionsJSON(json);
-    }
-  }
-
-  
-
-
-  async _processSuggestionsJSON(json) {
-    for (let result of json) {
+  _addResults(results) {
+    for (let result of results) {
       this._results.set(result.id, result);
       for (let keyword of result.keywords) {
         this._tree.set(keyword, result.id);
@@ -442,7 +412,51 @@ class Suggestions {
   
 
 
-  async fetchIcon(path) {
+
+
+
+
+
+
+
+
+  _queueSettingsTask(callback) {
+    this._settingsTaskQueue.push(callback);
+    if (this._settingsTaskQueue.length == 1) {
+      this._doNextSettingsTask();
+    }
+  }
+
+  
+
+
+
+  async _doNextSettingsTask() {
+    if (!this._settingsTaskQueue.length) {
+      while (this._emptySettingsTaskQueueCallbacks.length) {
+        let callback = this._emptySettingsTaskQueueCallbacks.shift();
+        callback();
+      }
+      return;
+    }
+
+    let task = this._settingsTaskQueue[0];
+    try {
+      await task();
+    } catch (error) {
+      log.error(error);
+    }
+    this._settingsTaskQueue.shift();
+    this._doNextSettingsTask();
+  }
+
+  
+
+
+
+
+
+  async _fetchIcon(path) {
     if (!path) {
       return null;
     }
@@ -485,10 +499,6 @@ const RESULT_KEY = "^";
 class KeywordTree {
   constructor() {
     this.tree = new Map();
-  }
-
-  static get SUGGESTION_SCORE() {
-    return SUGGESTION_SCORE;
   }
 
   
@@ -625,4 +635,3 @@ class KeywordTree {
 }
 
 let UrlbarQuickSuggest = new Suggestions();
-UrlbarQuickSuggest.init();

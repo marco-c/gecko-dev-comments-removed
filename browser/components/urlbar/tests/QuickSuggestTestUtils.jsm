@@ -115,19 +115,26 @@ class TestUtils {
 
 
 
-  async ensureQuickSuggestInit(data = null) {
-    this.info?.("Awaiting UrlbarQuickSuggest.init");
-    await UrlbarQuickSuggest.init();
-    this.info?.("Done awaiting UrlbarQuickSuggest.init");
+  async ensureQuickSuggestInit(results = null) {
+    this.info?.(
+      "ensureQuickSuggestInit awaiting UrlbarQuickSuggest.readyPromise"
+    );
+    await UrlbarQuickSuggest.readyPromise;
+    this.info?.(
+      "ensureQuickSuggestInit done awaiting UrlbarQuickSuggest.readyPromise"
+    );
+
+    
+    
     let sandbox = sinon.createSandbox();
-    sandbox.stub(UrlbarQuickSuggest, "_ensureAttachmentsDownloadedHelper");
+    sandbox.stub(UrlbarQuickSuggest, "_queueSettingsSync");
     let cleanup = () => sandbox.restore();
     this.registerCleanupFunction?.(cleanup);
-    if (data) {
-      this.info?.("Awaiting UrlbarQuickSuggest._processSuggestionsJSON");
-      await UrlbarQuickSuggest._processSuggestionsJSON(data);
-      this.info?.("Done awaiting UrlbarQuickSuggest._processSuggestionsJSON");
+
+    if (results) {
+      UrlbarQuickSuggest._addResults(results);
     }
+
     return cleanup;
   }
 
