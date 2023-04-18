@@ -32,6 +32,7 @@ class ClientWebGLContext;
 namespace layers {
 class CanvasRenderer;
 class Image;
+class ImageContainer;
 class Layer;
 class LayerManager;
 class OOPCanvasRenderer;
@@ -52,6 +53,7 @@ class CanvasCaptureMediaStream;
 class File;
 class HTMLCanvasPrintState;
 class OffscreenCanvas;
+class OffscreenCanvasDisplayHelper;
 class PrintCallback;
 class PWebGLChild;
 class RequestedFrameRefreshObserver;
@@ -217,6 +219,11 @@ class HTMLCanvasElement final : public nsGenericHTMLElement,
   
 
 
+  void InvalidateCanvasPlaceholder(uint32_t aWidth, uint32_t aHeight);
+
+  
+
+
 
   void InvalidateCanvasContent(const mozilla::gfx::Rect* aDamageRect);
   
@@ -356,6 +363,10 @@ class HTMLCanvasElement final : public nsGenericHTMLElement,
   ClientWebGLContext* GetWebGLContext();
   webgpu::CanvasContext* GetWebGPUContext();
 
+  bool IsOffscreen() const { return !!mOffscreenCanvas; }
+
+  RefPtr<layers::ImageContainer> GetImageContainer();
+
  protected:
   bool mResetLayer;
   bool mMaybeModified;  
@@ -367,6 +378,7 @@ class HTMLCanvasElement final : public nsGenericHTMLElement,
   RefPtr<RequestedFrameRefreshObserver> mRequestedFrameRefreshObserver;
   RefPtr<CanvasRenderer> mCanvasRenderer;
   RefPtr<OffscreenCanvas> mOffscreenCanvas;
+  RefPtr<OffscreenCanvasDisplayHelper> mOffscreenDisplay;
   RefPtr<HTMLCanvasElementObserver> mContextObserver;
 
  public:
