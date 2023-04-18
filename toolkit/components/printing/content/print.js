@@ -300,6 +300,9 @@ var PrintEventHandler = {
           : this.settings.clone();
       
       
+      settings.isPrintSelectionRBEnabled = this.hasSelection;
+      
+      
       
       settings.title = this.activeTitle;
       const PRINTDIALOGSVC = Cc[
@@ -310,12 +313,7 @@ var PrintEventHandler = {
           "printing.dialog_opened_via_preview_tm",
           1
         );
-        await this._showPrintDialog(
-          PRINTDIALOGSVC,
-          window,
-          this.hasSelection,
-          settings
-        );
+        await this._showPrintDialog(PRINTDIALOGSVC, window, settings);
       } catch (e) {
         if (e.result == Cr.NS_ERROR_ABORT) {
           Services.telemetry.scalarAdd(
@@ -846,6 +844,9 @@ var PrintEventHandler = {
       this.updatePrintPreview();
     }
 
+    
+    settings.isPrintSelectionRBEnabled = this.hasSelection;
+
     document.dispatchEvent(
       new CustomEvent("page-count", {
         detail: { sheetCount, totalPages: totalPageCount },
@@ -1006,17 +1007,8 @@ var PrintEventHandler = {
 
 
 
-  async _showPrintDialog(
-    aPrintDialogService,
-    aWindow,
-    aHaveSelection,
-    aSettings
-  ) {
-    return aPrintDialogService.showPrintDialog(
-      aWindow,
-      aHaveSelection,
-      aSettings
-    );
+  async _showPrintDialog(aPrintDialogService, aWindow, aSettings) {
+    return aPrintDialogService.showPrintDialog(aWindow, aSettings);
   },
 };
 
