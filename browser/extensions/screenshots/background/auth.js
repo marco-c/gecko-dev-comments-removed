@@ -30,7 +30,7 @@ this.auth = (function() {
 
   function generateRegistrationInfo() {
     const info = {
-      secret: makeUuid(),
+      secret: crypto.randomUUID(),
       registered: false,
     };
     return info;

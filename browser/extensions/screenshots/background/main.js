@@ -153,7 +153,7 @@ this.main = (function() {
 
   communication.register("openShot", async (sender, { url, copied }) => {
     if (copied) {
-      const id = makeUuid();
+      const id = crypto.randomUUID();
       const [title, message] = await getStrings([
         { id: "screenshots-notification-link-copied-title" },
         { id: "screenshots-notification-link-copied-details" },

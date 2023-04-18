@@ -60,7 +60,7 @@ this.senderror = (function() {
       return;
     }
     lastErrorTime = Date.now();
-    const id = makeUuid();
+    const id = crypto.randomUUID();
     let popupMessage = error.popupMessage || "generic";
     if (!messages[popupMessage]) {
       popupMessage = "generic";
