@@ -189,7 +189,7 @@ class GeckoChildProcessHost : public ChildProcessHost,
   ~GeckoChildProcessHost();
   GeckoProcessType mProcessType;
   bool mIsFileContent;
-  Monitor mMonitor;
+  Monitor mMonitor MOZ_UNANNOTATED;
   FilePath mProcessPath;
   
   
@@ -215,7 +215,7 @@ class GeckoChildProcessHost : public ChildProcessHost,
     
     PROCESS_CONNECTED,
     PROCESS_ERROR
-  } mProcessState GUARDED_BY(mMonitor);
+  } mProcessState;
 
   void PrepareLaunch();
 
@@ -286,8 +286,8 @@ class GeckoChildProcessHost : public ChildProcessHost,
 
   static uint32_t sNextUniqueID;
   static StaticAutoPtr<LinkedList<GeckoChildProcessHost>>
-      sGeckoChildProcessHosts GUARDED_BY(sMutex);
-  static StaticMutex sMutex;
+      sGeckoChildProcessHosts;
+  static StaticMutex sMutex MOZ_UNANNOTATED;
 };
 
 nsCOMPtr<nsIEventTarget> GetIPCLauncher();
