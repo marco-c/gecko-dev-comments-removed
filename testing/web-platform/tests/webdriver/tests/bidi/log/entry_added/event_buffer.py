@@ -1,15 +1,15 @@
+import asyncio
+
 import pytest
-import time
 
 from . import assert_base_entry, create_log
 
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize("log_type", ["console_api_log", "javascript_error"])
-async def test_console_log_cached_messages(bidi_session,
-                                           current_session,
-                                           wait_for_event,
-                                           inline,
-                                           log_type):
+async def test_console_log_cached_messages(
+    bidi_session, current_session, wait_for_event, inline, log_type
+):
     
     await bidi_session.session.unsubscribe(events=["log.entryAdded"])
 
@@ -22,15 +22,17 @@ async def test_console_log_cached_messages(bidi_session,
 
     
     events = []
+
     async def on_event(method, data):
         events.append(data)
+
     remove_listener = bidi_session.add_event_listener("log.entryAdded", on_event)
 
     
     on_entry_added = wait_for_event("log.entryAdded")
     await bidi_session.session.subscribe(events=["log.entryAdded"])
     await on_entry_added
-    assert len(events) == 1;
+    assert len(events) == 1
 
     
     assert_base_entry(events[0], text=expected_text)
@@ -40,17 +42,17 @@ async def test_console_log_cached_messages(bidi_session,
     await bidi_session.session.subscribe(events=["log.entryAdded"])
 
     
-    time.sleep(0.5)
+    await asyncio.sleep(0.5)
 
     
-    assert len(events) == 1;
+    assert len(events) == 1
 
     on_entry_added = wait_for_event("log.entryAdded")
     expected_text = create_log(current_session, inline, log_type, "live_message")
     await on_entry_added
 
     
-    assert len(events) == 2;
+    assert len(events) == 2
     assert_base_entry(events[1], text=expected_text)
 
     
@@ -62,7 +64,7 @@ async def test_console_log_cached_messages(bidi_session,
     await on_entry_added
 
     
-    assert len(events) == 3;
+    assert len(events) == 3
     assert_base_entry(events[2], text=expected_text)
 
     remove_listener()
@@ -70,11 +72,9 @@ async def test_console_log_cached_messages(bidi_session,
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("log_type", ["console_api_log", "javascript_error"])
-async def test_console_log_cached_message_after_refresh(bidi_session,
-                                                        current_session,
-                                                        wait_for_event,
-                                                        inline,
-                                                        log_type):
+async def test_console_log_cached_message_after_refresh(
+    bidi_session, current_session, wait_for_event, inline, log_type
+):
     
     await bidi_session.session.unsubscribe(events=["log.entryAdded"])
 
@@ -84,13 +84,15 @@ async def test_console_log_cached_message_after_refresh(bidi_session,
 
     
     events = []
+
     async def on_event(method, data):
         events.append(data)
+
     remove_listener = bidi_session.add_event_listener("log.entryAdded", on_event)
 
     
     create_log(current_session, inline, log_type, "missed_message")
-    current_session.refresh();
+    current_session.refresh()
     expected_text = create_log(current_session, inline, log_type, "cached_message")
 
     on_entry_added = wait_for_event("log.entryAdded")
@@ -98,11 +100,10 @@ async def test_console_log_cached_message_after_refresh(bidi_session,
     await on_entry_added
 
     
-    time.sleep(0.5)
+    asyncio.sleep(0.5)
 
     
-    assert len(events) == 1;
+    assert len(events) == 1
     assert_base_entry(events[0], text=expected_text)
 
     remove_listener()
-
