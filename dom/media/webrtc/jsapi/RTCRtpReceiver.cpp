@@ -161,8 +161,13 @@ already_AddRefed<Promise> RTCRtpReceiver::GetStats() {
     return nullptr;
   }
 
-  if (!mTransceiverImpl) {
-    return nullptr;
+  if (NS_WARN_IF(!mTransceiverImpl)) {
+    
+    
+    
+    
+    promise->MaybeResolve(new RTCStatsReport(mWindow));
+    return promise.forget();
   }
 
   nsTArray<RTCCodecStats> codecStats;
