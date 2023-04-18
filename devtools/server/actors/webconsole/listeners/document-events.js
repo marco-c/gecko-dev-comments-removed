@@ -7,6 +7,8 @@
 "use strict";
 
 const EventEmitter = require("devtools/shared/event-emitter");
+const { Ci } = require("chrome");
+const ChromeUtils = require("ChromeUtils");
 
 
 
@@ -55,10 +57,31 @@ exports.DocumentEventsListener = DocumentEventsListener;
 DocumentEventsListener.prototype = {
   listen() {
     
-    this.targetActor.on("will-navigate", this.onWillNavigate);
-
     
-    this.targetActor.on("window-ready", this.onWindowReady);
+    
+    
+    
+    if (this.targetActor.ignoreSubFrames) {
+      
+      
+      
+      if (this.targetActor.window.document.readyState != "complete") {
+        this.webProgress = this.targetActor.docShell
+          .QueryInterface(Ci.nsIInterfaceRequestor)
+          .getInterface(Ci.nsIWebProgress);
+        this.webProgress.addProgressListener(
+          this,
+          Ci.nsIWebProgress.NOTIFY_STATE_WINDOW |
+            Ci.nsIWebProgress.NOTIFY_STATE_DOCUMENT
+        );
+      }
+    } else {
+      
+      this.targetActor.on("will-navigate", this.onWillNavigate);
+
+      
+      this.targetActor.on("window-ready", this.onWindowReady);
+    }
     
     
     this.onWindowReady({
@@ -101,20 +124,26 @@ DocumentEventsListener.prototype = {
 
     const { readyState } = window.document;
     if (readyState != "interactive" && readyState != "complete") {
-      window.addEventListener(
-        "DOMContentLoaded",
-        e => this.onContentLoaded(e, isFrameSwitching),
-        {
-          once: true,
-        }
-      );
+      
+      if (!this.targetActor.ignoreSubFrames) {
+        window.addEventListener(
+          "DOMContentLoaded",
+          e => this.onContentLoaded(e, isFrameSwitching),
+          {
+            once: true,
+          }
+        );
+      }
     } else {
       this.onContentLoaded({ target: window.document }, isFrameSwitching);
     }
     if (readyState != "complete") {
-      window.addEventListener("load", e => this.onLoad(e, isFrameSwitching), {
-        once: true,
-      });
+      
+      if (!this.targetActor.ignoreSubFrames) {
+        window.addEventListener("load", e => this.onLoad(e, isFrameSwitching), {
+          once: true,
+        });
+      }
     } else {
       this.onLoad({ target: window.document }, isFrameSwitching);
     }
@@ -148,6 +177,29 @@ DocumentEventsListener.prototype = {
     });
   },
 
+  onStateChange(progress, request, flag, status) {
+    progress.QueryInterface(Ci.nsIDocShell);
+    
+    if (progress.isBeingDestroyed() || progress != this.webProgress) {
+      return;
+    }
+
+    const isStop = flag & Ci.nsIWebProgressListener.STATE_STOP;
+    const isDocument = flag & Ci.nsIWebProgressListener.STATE_IS_DOCUMENT;
+    const isWindow = flag & Ci.nsIWebProgressListener.STATE_IS_WINDOW;
+    const window = progress.DOMWindow;
+    if (isDocument && isStop) {
+      const time = window.performance.timing.domInteractive;
+      this.emit("dom-interactive", { time });
+    } else if (isWindow && isStop) {
+      const time = window.performance.timing.domComplete;
+      this.emit("dom-complete", {
+        time,
+        hasNativeConsoleAPI: this.hasNativeConsoleAPI(window),
+      });
+    }
+  },
+
   
 
 
@@ -179,5 +231,17 @@ DocumentEventsListener.prototype = {
     this.destroyed = true;
     this.targetActor.off("will-navigate", this.onWillNavigate);
     this.targetActor.off("window-ready", this.onWindowReady);
+    if (this.webProgress) {
+      this.webProgress.removeProgressListener(
+        this,
+        Ci.nsIWebProgress.NOTIFY_STATE_WINDOW |
+          Ci.nsIWebProgress.NOTIFY_STATE_DOCUMENT
+      );
+    }
   },
+
+  QueryInterface: ChromeUtils.generateQI([
+    "nsIWebProgressListener",
+    "nsISupportsWeakReference",
+  ]),
 };

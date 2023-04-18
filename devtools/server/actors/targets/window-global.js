@@ -1406,11 +1406,10 @@ const windowGlobalTargetPrototype = {
 
 
   _windowReady(window, { isFrameSwitching, isBFCache } = {}) {
-    const isTopLevel = window == this.window;
-
-    if (this.ignoreSubFrames && !this.isTopLevel) {
+    if (this.ignoreSubFrames) {
       return;
     }
+    const isTopLevel = window == this.window;
 
     
     
@@ -1440,11 +1439,10 @@ const windowGlobalTargetPrototype = {
     window,
     { id = null, isFrozen = false, isFrameSwitching = false }
   ) {
-    const isTopLevel = window == this.window;
-
-    if (this.ignoreSubFrames && !this.isTopLevel) {
+    if (this.ignoreSubFrames) {
       return;
     }
+    const isTopLevel = window == this.window;
 
     
     
@@ -1474,11 +1472,10 @@ const windowGlobalTargetPrototype = {
     isFrameSwitching = false,
     navigationStart,
   }) {
-    let isTopLevel = window == this.window;
-
-    if (this.ignoreSubFrames && !this.isTopLevel) {
+    if (this.ignoreSubFrames) {
       return;
     }
+    let isTopLevel = window == this.window;
 
     let reset = false;
     if (window == this._originalWindow && !isFrameSwitching) {
@@ -1533,11 +1530,10 @@ const windowGlobalTargetPrototype = {
 
 
   _navigate(window, isFrameSwitching = false) {
-    const isTopLevel = window == this.window;
-
-    if (this.ignoreSubFrames && !this.isTopLevel) {
+    if (this.ignoreSubFrames) {
       return;
     }
+    const isTopLevel = window == this.window;
 
     
     
