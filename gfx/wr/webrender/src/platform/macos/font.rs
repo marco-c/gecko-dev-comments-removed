@@ -2,7 +2,7 @@
 
 
 
-use api::{ColorU, FontKey, FontRenderMode, FontSize, GlyphDimensions};
+use api::{ColorF, ColorU, FontKey, FontRenderMode, FontSize, GlyphDimensions};
 use api::{FontInstanceFlags, FontVariation, NativeFontHandle};
 use core_foundation::{array::{CFArray, CFArrayRef}, data::CFData};
 use core_foundation::base::TCFType;
@@ -19,8 +19,7 @@ use core_graphics::geometry::{CGAffineTransform, CGPoint, CGSize};
 use core_graphics::geometry::{CG_AFFINE_TRANSFORM_IDENTITY, CGRect};
 use core_text::{self, font_descriptor::CTFontDescriptorCreateCopyWithAttributes};
 use core_text::font::{CTFont, CTFontRef};
-use core_text::font_descriptor::{CTFontDescriptor, CTFontDescriptorRef, CTFontSymbolicTraits};
-use core_text::font_descriptor::{kCTFontDefaultOrientation, kCTFontColorGlyphsTrait};
+use core_text::font_descriptor::{CTFontDescriptor, CTFontDescriptorRef, kCTFontDefaultOrientation};
 use euclid::default::Size2D;
 use crate::gamma_lut::{ColorLut, GammaLut};
 use crate::glyph_rasterizer::{FontInstance, FontTransform, GlyphKey};
@@ -46,10 +45,7 @@ enum DescOrFont {
 pub struct FontContext {
     desc_or_fonts: FastHashMap<FontKey, DescOrFont>,
     
-    
-    
-    
-    ct_fonts: FastHashMap<(FontKey, FontSize, Vec<FontVariation>), (CTFont, CTFontSymbolicTraits)>,
+    ct_fonts: FastHashMap<(FontKey, FontSize, Vec<FontVariation>), CTFont>,
     #[allow(dead_code)]
     graphics_context: GraphicsContext,
     #[allow(dead_code)]
@@ -407,8 +403,10 @@ fn new_ct_font_with_variations(desc_or_font: &DescOrFont, size: f64, variations:
     }
 }
 
-fn is_bitmap_font(traits: CTFontSymbolicTraits) -> bool {
-    (traits & kCTFontColorGlyphsTrait) != 0
+
+
+fn is_bitmap_font(font: &FontInstance) -> bool {
+    font.flags.contains(FontInstanceFlags::EMBEDDED_BITMAPS)
 }
 
 impl FontContext {
@@ -484,7 +482,7 @@ impl FontContext {
         font_key: FontKey,
         size: f64,
         variations: &[FontVariation],
-    ) -> Option<(CTFont, CTFontSymbolicTraits)> {
+    ) -> Option<CTFont> {
         
         objc::rc::autoreleasepool(|| {
             match self.ct_fonts.entry((font_key, FontSize::from_f64_px(size), variations.to_vec())) {
@@ -492,9 +490,8 @@ impl FontContext {
                 Entry::Vacant(entry) => {
                     let desc_or_font = self.desc_or_fonts.get(&font_key)?;
                     let ct_font = new_ct_font_with_variations(desc_or_font, size, variations);
-                    let traits = ct_font.symbolic_traits();
-                    entry.insert((ct_font.clone(), traits));
-                    Some((ct_font, traits))
+                    entry.insert(ct_font.clone());
+                    Some(ct_font)
                 }
             }
         })
@@ -505,7 +502,7 @@ impl FontContext {
         let mut glyph = 0;
 
         self.get_ct_font(font_key, 16.0, &[])
-            .and_then(|(ct_font, _)| {
+            .and_then(|ct_font| {
                 unsafe {
                     let result = ct_font.get_glyphs_for_characters(&character, &mut glyph, 1);
 
@@ -526,9 +523,9 @@ impl FontContext {
         let (x_scale, y_scale) = font.transform.compute_scale().unwrap_or((1.0, 1.0));
         let size = font.size.to_f64_px() * y_scale;
         self.get_ct_font(font.font_key, size, &font.variations)
-            .and_then(|(ct_font, traits)| {
+            .and_then(|ct_font| {
                 let glyph = key.index() as CGGlyph;
-                let bitmap = is_bitmap_font(traits);
+                let bitmap = is_bitmap_font(font);
                 let (mut shape, (x_offset, y_offset)) = if bitmap {
                     (FontTransform::identity(), (0.0, 0.0))
                 } else {
@@ -628,6 +625,13 @@ impl FontContext {
     }
 
     pub fn prepare_font(font: &mut FontInstance) {
+        if is_bitmap_font(font) {
+            
+            
+            font.render_mode = FontRenderMode::Mono;
+            font.disable_subpixel_position();
+            return;
+        }
         
         
         
@@ -678,9 +682,9 @@ impl FontContext {
         objc::rc::autoreleasepool(|| {
         let (x_scale, y_scale) = font.transform.compute_scale().unwrap_or((1.0, 1.0));
         let size = font.size.to_f64_px() * y_scale;
-        let (ct_font, traits) =
+        let ct_font =
             self.get_ct_font(font.font_key, size, &font.variations).ok_or(GlyphRasterError::LoadFailed)?;
-        let glyph_type = if is_bitmap_font(traits) {
+        let glyph_type = if is_bitmap_font(font) {
             GlyphType::Bitmap
         } else {
             GlyphType::Vector
@@ -769,20 +773,25 @@ impl FontContext {
         
         
         
+        
+        
+        
+        
+        
         let use_white_on_black = should_use_white_on_black(font.color);
         let use_font_smoothing = font.flags.contains(FontInstanceFlags::FONT_SMOOTHING);
-        let (antialias, smooth, text_color, bg_color, bg_alpha, invert) = match glyph_type {
-            GlyphType::Bitmap => (true, false, 0.0, 0.0, 0.0, false),
+        let (antialias, smooth, text_color, bg_color, invert) = match glyph_type {
+            GlyphType::Bitmap => (true, false, ColorF::from(font.color), ColorF::TRANSPARENT, false),
             GlyphType::Vector => {
                 match (font.render_mode, use_font_smoothing) {
                     (FontRenderMode::Subpixel, _) |
                     (FontRenderMode::Alpha, true) => if use_white_on_black {
-                        (true, true, 1.0, 0.0, 1.0, false)
+                        (true, true, ColorF::WHITE, ColorF::BLACK, false)
                     } else {
-                        (true, true, 0.0, 1.0, 1.0, true)
+                        (true, true, ColorF::BLACK, ColorF::WHITE, true)
                     },
-                    (FontRenderMode::Alpha, false) => (true, false, 0.0, 1.0, 1.0, true),
-                    (FontRenderMode::Mono, _) => (false, false, 0.0, 1.0, 1.0, true),
+                    (FontRenderMode::Alpha, false) => (true, false, ColorF::BLACK, ColorF::WHITE, true),
+                    (FontRenderMode::Mono, _) => (false, false, ColorF::BLACK, ColorF::WHITE, true),
                 }
             }
         };
@@ -803,7 +812,12 @@ impl FontContext {
 
             
             
-            cg_context.set_rgb_fill_color(bg_color, bg_color, bg_color, bg_alpha);
+            cg_context.set_rgb_fill_color(
+                bg_color.r.into(),
+                bg_color.g.into(),
+                bg_color.b.into(),
+                bg_color.a.into(),
+            );
             let rect = CGRect {
                 origin: CGPoint { x: 0.0, y: 0.0 },
                 size: CGSize {
@@ -819,7 +833,12 @@ impl FontContext {
             cg_context.set_blend_mode(CGBlendMode::Normal);
 
             
-            cg_context.set_rgb_fill_color(text_color, text_color, text_color, 1.0);
+            cg_context.set_rgb_fill_color(
+                text_color.r.into(),
+                text_color.g.into(),
+                text_color.b.into(),
+                1.0,
+            );
             cg_context.set_text_drawing_mode(CGTextDrawingMode::CGTextFill);
 
             
