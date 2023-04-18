@@ -7,8 +7,8 @@
 #define mozilla_dom_HTMLSelectElement_h
 
 #include "mozilla/Attributes.h"
-#include "mozilla/dom/ConstraintValidation.h"
 #include "nsGenericHTMLElement.h"
+#include "nsIConstraintValidation.h"
 
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/UnionTypes.h"
@@ -74,7 +74,7 @@ class MOZ_STACK_CLASS SafeOptionListMutation {
 
 
 class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
-                                public ConstraintValidation {
+                                public nsIConstraintValidation {
  public:
   
 
@@ -98,7 +98,7 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
     NO_RESELECT = 1 << 4
   };
 
-  using ConstraintValidation::GetValidationMessage;
+  using nsIConstraintValidation::GetValidationMessage;
 
   explicit HTMLSelectElement(
       already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,

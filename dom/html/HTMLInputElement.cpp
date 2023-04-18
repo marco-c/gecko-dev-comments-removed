@@ -6429,7 +6429,7 @@ Decimal HTMLInputElement::GetStep() const {
 
 
 void HTMLInputElement::SetCustomValidity(const nsAString& aError) {
-  ConstraintValidation::SetCustomValidity(aError);
+  nsIConstraintValidation::SetCustomValidity(aError);
 
   UpdateState(true);
 }
