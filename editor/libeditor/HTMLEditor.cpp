@@ -1924,7 +1924,7 @@ EditorDOMPoint HTMLEditor::InsertNodeIntoProperAncestorWithTransaction(
       NS_WARNING("HTMLEditor::SplitNodeDeepWithTransaction() failed");
       return EditorDOMPoint();  
     }
-    pointToInsert = splitNodeResult.SplitPoint();
+    pointToInsert = splitNodeResult.AtSplitPoint<EditorDOMPoint>();
     MOZ_ASSERT(pointToInsert.IsSet());
   }
 
@@ -4392,7 +4392,8 @@ SplitNodeResult HTMLEditor::SplitNodeDeepWithTransaction(
       }
 
       lastSplitNodeResult =
-          SplitNodeResult(newLeftContentOrError.unwrap(), currentRightNode);
+          SplitNodeResult(newLeftContentOrError.unwrap(), currentRightNode,
+                          SplitNodeDirection::LeftNodeIsNewOne);
       if (currentRightNode == &aMostAncestorToSplit) {
         
         return lastSplitNodeResult;
@@ -4404,7 +4405,8 @@ SplitNodeResult HTMLEditor::SplitNodeDeepWithTransaction(
     
     
     else if (!atStartOfRightNode.IsStartOfContainer()) {
-      lastSplitNodeResult = SplitNodeResult(currentRightNode, nullptr);
+      lastSplitNodeResult = SplitNodeResult(
+          currentRightNode, nullptr, SplitNodeDirection::LeftNodeIsNewOne);
       if (currentRightNode == &aMostAncestorToSplit) {
         return lastSplitNodeResult;
       }
@@ -4418,7 +4420,8 @@ SplitNodeResult HTMLEditor::SplitNodeDeepWithTransaction(
     
     
     else {
-      lastSplitNodeResult = SplitNodeResult(nullptr, currentRightNode);
+      lastSplitNodeResult = SplitNodeResult(
+          nullptr, currentRightNode, SplitNodeDirection::LeftNodeIsNewOne);
       if (currentRightNode == &aMostAncestorToSplit) {
         return lastSplitNodeResult;
       }

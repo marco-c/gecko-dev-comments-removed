@@ -5,13 +5,15 @@
 
 #include "HTMLEditor.h"
 
+#include "EditAction.h"
+#include "EditorUtils.h"
+#include "HTMLEditHelpers.h"
 #include "HTMLEditUtils.h"
+#include "SelectionState.h"
+#include "TypeInState.h"
+
 #include "mozilla/Assertions.h"
 #include "mozilla/ContentIterator.h"
-#include "mozilla/EditAction.h"
-#include "mozilla/EditorUtils.h"
-#include "mozilla/SelectionState.h"
-#include "mozilla/TypeInState.h"
 #include "mozilla/mozalloc.h"
 #include "mozilla/dom/AncestorIterator.h"
 #include "mozilla/dom/Element.h"
@@ -807,7 +809,7 @@ SplitRangeOffResult HTMLEditor::SplitAncestorStyledInlineElementsAtRangeEdges(
       return SplitRangeOffResult(resultAtStart.Rv());
     }
     if (resultAtStart.Handled()) {
-      startOfRange = resultAtStart.SplitPoint();
+      startOfRange = resultAtStart.AtSplitPoint<EditorDOMPoint>();
       if (!startOfRange.IsSet()) {
         NS_WARNING(
             "HTMLEditor::SplitAncestorStyledInlineElementsAt() didn't return "
@@ -828,7 +830,7 @@ SplitRangeOffResult HTMLEditor::SplitAncestorStyledInlineElementsAtRangeEdges(
       return SplitRangeOffResult(resultAtEnd.Rv());
     }
     if (resultAtEnd.Handled()) {
-      endOfRange = resultAtEnd.SplitPoint();
+      endOfRange = resultAtEnd.AtSplitPoint<EditorDOMPoint>();
       if (!endOfRange.IsSet()) {
         NS_WARNING(
             "HTMLEditor::SplitAncestorStyledInlineElementsAt() didn't return "
@@ -917,7 +919,7 @@ SplitNodeResult HTMLEditor::SplitAncestorStyledInlineElementsAt(
     
     
     SplitNodeResult splitNodeResult = SplitNodeDeepWithTransaction(
-        MOZ_KnownLive(content), result.SplitPoint(),
+        MOZ_KnownLive(content), result.AtSplitPoint<EditorDOMPoint>(),
         SplitAtEdges::eAllowToCreateEmptyContainer);
     if (MOZ_UNLIKELY(splitNodeResult.Failed())) {
       NS_WARNING("HTMLEditor::SplitNodeDeepWithTransaction() failed");
@@ -930,8 +932,9 @@ SplitNodeResult HTMLEditor::SplitAncestorStyledInlineElementsAt(
       continue;
     }
     
-    result = SplitNodeResult(splitNodeResult.GetPreviousNode(),
-                             splitNodeResult.GetNextNode());
+    result = SplitNodeResult(splitNodeResult.GetPreviousContent(),
+                             splitNodeResult.GetNextContent(),
+                             SplitNodeDirection::LeftNodeIsNewOne);
     MOZ_ASSERT(result.Handled());
   }
 
@@ -967,15 +970,16 @@ EditResult HTMLEditor::ClearStyleAt(const EditorDOMPoint& aPoint,
   
   
   
-  if (splitResult.GetPreviousNode() &&
-      HTMLEditUtils::IsEmptyNode(
-          *splitResult.GetPreviousNode(),
+  if (HTMLEditUtils::IsEmptyNode(
+          *splitResult.GetPreviousContent(),
           {EmptyCheckOption::TreatSingleBRElementAsVisible,
            EmptyCheckOption::TreatListItemAsVisible,
            EmptyCheckOption::TreatTableCellAsVisible})) {
     
+    
+    
     nsresult rv = DeleteNodeWithTransaction(
-        MOZ_KnownLive(*splitResult.GetPreviousNode()));
+        MOZ_KnownLive(*splitResult.GetPreviousContent()));
     if (NS_WARN_IF(Destroyed())) {
       return EditResult(NS_ERROR_EDITOR_DESTROYED);
     }
@@ -990,7 +994,7 @@ EditResult HTMLEditor::ClearStyleAt(const EditorDOMPoint& aPoint,
   
   
   
-  if (!splitResult.GetNextNode()) {
+  if (!splitResult.GetNextContent()) {
     return EditResult(aPoint);
   }
 
@@ -1001,10 +1005,10 @@ EditResult HTMLEditor::ClearStyleAt(const EditorDOMPoint& aPoint,
   
   
   nsIContent* firstLeafChildOfNextNode = HTMLEditUtils::GetFirstLeafContent(
-      *splitResult.GetNextNode(), {LeafNodeType::OnlyLeafNode});
+      *splitResult.GetNextContent(), {LeafNodeType::OnlyLeafNode});
   EditorDOMPoint atStartOfNextNode(firstLeafChildOfNextNode
                                        ? firstLeafChildOfNextNode
-                                       : splitResult.GetNextNode(),
+                                       : splitResult.GetNextContent(),
                                    0);
   RefPtr<HTMLBRElement> brElement;
   
@@ -1031,15 +1035,17 @@ EditResult HTMLEditor::ClearStyleAt(const EditorDOMPoint& aPoint,
   
   
   if (splitResultAtStartOfNextNode.Handled() &&
-      splitResultAtStartOfNextNode.GetNextNode() &&
+      splitResultAtStartOfNextNode.GetNextContent() &&
       HTMLEditUtils::IsEmptyNode(
-          *splitResultAtStartOfNextNode.GetNextNode(),
+          *splitResultAtStartOfNextNode.GetNextContent(),
           {EmptyCheckOption::TreatSingleBRElementAsVisible,
            EmptyCheckOption::TreatListItemAsVisible,
            EmptyCheckOption::TreatTableCellAsVisible})) {
     
+    
+    
     nsresult rv = DeleteNodeWithTransaction(
-        MOZ_KnownLive(*splitResultAtStartOfNextNode.GetNextNode()));
+        MOZ_KnownLive(*splitResultAtStartOfNextNode.GetNextContent()));
     if (NS_WARN_IF(Destroyed())) {
       return EditResult(NS_ERROR_EDITOR_DESTROYED);
     }
@@ -1052,23 +1058,26 @@ EditResult HTMLEditor::ClearStyleAt(const EditorDOMPoint& aPoint,
   
   
   if (NS_WARN_IF(!splitResultAtStartOfNextNode.Handled()) ||
-      !splitResultAtStartOfNextNode.GetPreviousNode()) {
+      !splitResultAtStartOfNextNode.GetPreviousContent()) {
     
-    return EditResult(
-        EditorDOMPoint(splitResult.SplitPoint().GetContainer(),
-                       splitResultAtStartOfNextNode.SplitPoint().Offset()));
+    const EditorRawDOMPoint& splitPoint =
+        splitResult.AtSplitPoint<EditorRawDOMPoint>();
+    const EditorRawDOMPoint& splitPointAtStartOfNextNode =
+        splitResultAtStartOfNextNode.AtSplitPoint<EditorRawDOMPoint>();
+    return EditResult(EditorDOMPoint(splitPoint.GetContainer(),
+                                     splitPointAtStartOfNextNode.Offset()));
   }
 
   
   
   
   nsIContent* firstLeafChildOfPreviousNode = HTMLEditUtils::GetFirstLeafContent(
-      *splitResultAtStartOfNextNode.GetPreviousNode(),
+      *splitResultAtStartOfNextNode.GetPreviousContent(),
       {LeafNodeType::OnlyLeafNode});
   EditorDOMPoint pointToPutCaret(
       firstLeafChildOfPreviousNode
           ? firstLeafChildOfPreviousNode
-          : splitResultAtStartOfNextNode.GetPreviousNode(),
+          : splitResultAtStartOfNextNode.GetPreviousContent(),
       0);
   
   
@@ -1090,17 +1099,18 @@ EditResult HTMLEditor::ClearStyleAt(const EditorDOMPoint& aPoint,
   
   
   
-  if (splitResultAtStartOfNextNode.GetPreviousNode()->IsElement()) {
+  if (Element* previousElementOfSplitPoint = Element::FromNode(
+          splitResultAtStartOfNextNode.GetPreviousContent())) {
     
     
     
     
     
     AutoTrackDOMPoint tracker(RangeUpdaterRef(), &pointToPutCaret);
-    nsresult rv = RemoveStyleInside(
-        MOZ_KnownLive(
-            *splitResultAtStartOfNextNode.GetPreviousNode()->AsElement()),
-        aProperty, aAttribute, aSpecifiedStyle);
+    
+    
+    nsresult rv = RemoveStyleInside(MOZ_KnownLive(*previousElementOfSplitPoint),
+                                    aProperty, aAttribute, aSpecifiedStyle);
     if (NS_FAILED(rv)) {
       NS_WARNING("HTMLEditor::RemoveStyleInside() failed");
       return EditResult(rv);

@@ -9,15 +9,17 @@
 #include <algorithm>
 #include <utility>
 
+#include "CSSEditUtils.h"
+#include "EditAction.h"
+#include "EditorDOMPoint.h"
+#include "EditorUtils.h"
 #include "HTMLEditUtils.h"
+#include "TypeInState.h"  
 #include "WSRunObject.h"
+
 #include "mozilla/Assertions.h"
-#include "mozilla/CSSEditUtils.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/ContentIterator.h"
-#include "mozilla/EditAction.h"
-#include "mozilla/EditorDOMPoint.h"
-#include "mozilla/EditorUtils.h"
 #include "mozilla/InternalMutationEvent.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/OwningNonNull.h"
@@ -25,7 +27,6 @@
 #include "mozilla/RangeUtils.h"
 #include "mozilla/StaticPrefs_editor.h"  
 #include "mozilla/TextComposition.h"
-#include "mozilla/TypeInState.h"  
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
 #include "mozilla/dom/AncestorIterator.h"
@@ -1869,7 +1870,7 @@ nsresult HTMLEditor::HandleInsertBRElement(const EditorDOMPoint& aPointToBreak,
             "eDoNotCreateEmptyContainer) failed");
         return splitLinkNodeResult.Rv();
       }
-      pointToBreak = splitLinkNodeResult.SplitPoint();
+      pointToBreak = splitLinkNodeResult.AtSplitPoint<EditorDOMPoint>();
     }
     Result<RefPtr<Element>, nsresult> result =
         WhiteSpaceVisibilityKeeper::InsertBRElement(*this, pointToBreak);
@@ -2143,7 +2144,8 @@ EditActionResult HTMLEditor::SplitMailCiteElements(
   
   
   
-  nsIContent* previousNodeOfSplitPoint = splitCiteNodeResult.GetPreviousNode();
+  nsIContent* previousNodeOfSplitPoint =
+      splitCiteNodeResult.GetPreviousContent();
   if (previousNodeOfSplitPoint &&
       previousNodeOfSplitPoint->IsHTMLElement(nsGkAtoms::span) &&
       previousNodeOfSplitPoint->GetPrimaryFrame() &&
@@ -2167,16 +2169,14 @@ EditActionResult HTMLEditor::SplitMailCiteElements(
   
   
   
-  EditorDOMPoint pointToInsertBRNode(splitCiteNodeResult.SplitPoint());
   Result<RefPtr<Element>, nsresult> resultOfInsertingBRElement =
-      InsertBRElementWithTransaction(pointToInsertBRNode);
+      InsertBRElementWithTransaction(
+          splitCiteNodeResult.AtSplitPoint<EditorDOMPoint>());
   if (resultOfInsertingBRElement.isErr()) {
     NS_WARNING("HTMLEditor::InsertBRElementWithTransaction() failed");
     return EditActionIgnored(resultOfInsertingBRElement.unwrapErr());
   }
   MOZ_ASSERT(resultOfInsertingBRElement.inspect());
-  
-  pointToInsertBRNode.Clear();
 
   
   EditorDOMPoint atBRElement(resultOfInsertingBRElement.inspect());
@@ -3578,10 +3578,10 @@ nsresult HTMLEditor::FormatBlockContainerWithTransaction(nsAtom& blockType) {
         NS_WARNING("HTMLEditor::SplitNodeDeepWithTransaction() failed");
         return splitNodeResult.Rv();
       }
-      EditorDOMPoint pointToInsertBRNode(splitNodeResult.SplitPoint());
       
       Result<RefPtr<Element>, nsresult> resultOfInsertingBRElement =
-          InsertBRElementWithTransaction(pointToInsertBRNode);
+          InsertBRElementWithTransaction(
+              splitNodeResult.AtSplitPoint<EditorDOMPoint>());
       if (resultOfInsertingBRElement.isErr()) {
         NS_WARNING("HTMLEditor::InsertBRElementWithTransaction() failed");
         return resultOfInsertingBRElement.unwrapErr();
@@ -5083,7 +5083,7 @@ nsresult HTMLEditor::CreateStyleForInsertText(
             "eAllowToCreateEmptyContainer) failed");
         return splitTextNodeResult.Rv();
       }
-      pointToPutCaret = splitTextNodeResult.SplitPoint();
+      pointToPutCaret = splitTextNodeResult.AtSplitPoint<EditorDOMPoint>();
     }
     if (!pointToPutCaret.IsInContentNode() ||
         !HTMLEditUtils::IsContainerNode(
@@ -6667,7 +6667,8 @@ nsresult HTMLEditor::SplitParentInlineElementsAtRangeEdges(
             "eDoNotCreateEmptyContainer) caused changing editing host");
         return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
       }
-      EditorRawDOMPoint splitPointAtEnd(splitEndInlineResult.SplitPoint());
+      const EditorRawDOMPoint& splitPointAtEnd =
+          splitEndInlineResult.AtSplitPoint<EditorRawDOMPoint>();
       if (!splitPointAtEnd.IsSet()) {
         NS_WARNING(
             "HTMLEditor::SplitNodeDeepWithTransaction(SplitAtEdges::"
@@ -6700,7 +6701,8 @@ nsresult HTMLEditor::SplitParentInlineElementsAtRangeEdges(
     
     
     
-    EditorRawDOMPoint splitPointAtStart(splitStartInlineResult.SplitPoint());
+    const EditorRawDOMPoint& splitPointAtStart =
+        splitStartInlineResult.AtSplitPoint<EditorRawDOMPoint>();
     if (MOZ_UNLIKELY(!splitPointAtStart.IsSet())) {
       NS_WARNING(
           "HTMLEditor::SplitNodeDeepWithTransaction(SplitAtEdges::"
@@ -6745,7 +6747,7 @@ nsresult HTMLEditor::SplitElementsAtEveryBRElement(
     }
 
     
-    if (nsIContent* previousContent = splitNodeResult.GetPreviousNode()) {
+    if (nsIContent* previousContent = splitNodeResult.GetPreviousContent()) {
       
       
       
@@ -6753,9 +6755,10 @@ nsresult HTMLEditor::SplitElementsAtEveryBRElement(
     }
 
     
-    EditorDOMPoint atNextNode(splitNodeResult.GetNextNode());
     
-    nsresult rv = MoveNodeWithTransaction(MOZ_KnownLive(brElement), atNextNode);
+    nsresult rv = MoveNodeWithTransaction(
+        MOZ_KnownLive(brElement),
+        splitNodeResult.AtNextContent<EditorDOMPoint>());
     if (NS_WARN_IF(Destroyed())) {
       return NS_ERROR_EDITOR_DESTROYED;
     }
@@ -6765,7 +6768,7 @@ nsresult HTMLEditor::SplitElementsAtEveryBRElement(
     }
     aOutArrayOfContents.AppendElement(brElement);
 
-    nextContent = splitNodeResult.GetNextNode();
+    nextContent = splitNodeResult.GetNextContent();
   }
 
   
@@ -7188,17 +7191,23 @@ nsresult HTMLEditor::SplitParagraph(Element& aParentDivOrP,
   
   
   
-  if (splitDivOrPResult.GetPreviousNode()->IsElement()) {
+  if (Element* previousElementOfSplitPoint =
+          Element::FromNode(splitDivOrPResult.GetPreviousContent())) {
+    
+    
     nsresult rv = InsertBRElementIfEmptyBlockElement(
-        MOZ_KnownLive(*splitDivOrPResult.GetPreviousNode()->AsElement()));
+        MOZ_KnownLive(*previousElementOfSplitPoint));
     if (NS_FAILED(rv)) {
       NS_WARNING("HTMLEditor::InsertBRElementIfEmptyBlockElement() failed");
       return rv;
     }
   }
-  if (splitDivOrPResult.GetNextNode()->IsElement()) {
+  if (Element* nextElementOfSplitPoint =
+          Element::FromNode(splitDivOrPResult.GetNextContent())) {
+    
+    
     nsresult rv = InsertBRElementIfEmptyBlockElement(
-        MOZ_KnownLive(*splitDivOrPResult.GetNextNode()->AsElement()));
+        MOZ_KnownLive(*nextElementOfSplitPoint));
     if (NS_FAILED(rv)) {
       NS_WARNING("HTMLEditor::InsertBRElementIfEmptyBlockElement() failed");
       return rv;
@@ -7972,7 +7981,7 @@ HTMLEditor::InsertElementWithSplittingAncestorsWithTransaction(
     return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
   }
 
-  EditorDOMPoint splitPoint = splitNodeResult.SplitPoint();
+  EditorDOMPoint splitPoint = splitNodeResult.AtSplitPoint<EditorDOMPoint>();
 
   if (aBRElementNextToSplitPoint == BRElementNextToSplitPoint::Delete) {
     
