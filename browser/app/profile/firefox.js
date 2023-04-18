@@ -2447,8 +2447,13 @@ pref("devtools.netmonitor.har.forceExport", false);
 pref("devtools.netmonitor.har.pageLoadedTimeout", 1500);
 pref("devtools.netmonitor.har.enableAutoExportToFile", false);
 
+pref("devtools.netmonitor.features.webSockets", true);
+
 
 pref("devtools.netmonitor.audits.slow", 500);
+
+
+pref("devtools.netmonitor.features.serverSentEvents", true);
 
 
   pref("devtools.netmonitor.features.newEditAndResend", true);
@@ -2543,9 +2548,6 @@ pref("devtools.webconsole.groupWarningMessages", true);
 
 
 pref("devtools.browserconsole.contentMessages", false);
-
-
-pref("devtools.browserconsole.enableNetworkMonitoring", false);
 
 
 pref("devtools.source-map.client-service.enabled", true);
