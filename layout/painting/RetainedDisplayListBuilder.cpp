@@ -7,7 +7,6 @@
 
 #include "RetainedDisplayListBuilder.h"
 
-#include "mozilla/Attributes.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "nsIFrame.h"
 #include "nsIFrameInlines.h"
@@ -113,7 +112,6 @@ static void MarkFramesWithItemsAndImagesModified(nsDisplayList* aList) {
       }
 
       if (invalidate) {
-        DL_LOGV("Invalidating item %p (%s)", i, i->Name());
         i->FrameForInvalidation()->MarkNeedsDisplayItemRebuild();
         if (i->GetDependentFrame()) {
           i->GetDependentFrame()->MarkNeedsDisplayItemRebuild();
@@ -357,8 +355,8 @@ bool RetainedDisplayListBuilder::PreProcessDisplayList(
   return true;
 }
 
-void IncrementPresShellPaintCount(nsDisplayListBuilder* aBuilder,
-                                  nsDisplayItem* aItem) {
+void RetainedDisplayListBuilder::IncrementSubDocPresShellPaintCount(
+    nsDisplayItem* aItem) {
   MOZ_ASSERT(aItem->GetType() == DisplayItemType::TYPE_SUBDOCUMENT);
 
   nsSubDocumentFrame* subDocFrame =
@@ -368,12 +366,7 @@ void IncrementPresShellPaintCount(nsDisplayListBuilder* aBuilder,
   PresShell* presShell = subDocFrame->GetSubdocumentPresShellForPainting(0);
   MOZ_ASSERT(presShell);
 
-  aBuilder->IncrementPresShellPaintCount(presShell);
-}
-
-void RetainedDisplayListBuilder::IncrementSubDocPresShellPaintCount(
-    nsDisplayItem* aItem) {
-  IncrementPresShellPaintCount(&mBuilder, aItem);
+  mBuilder.IncrementPresShellPaintCount(presShell);
 }
 
 static Maybe<const ActiveScrolledRoot*> SelectContainerASR(
@@ -1408,7 +1401,6 @@ static void ClearFrameProps(nsTArray<nsIFrame*>& aFrames) {
     }
 
     f->SetFrameIsModified(false);
-    f->SetHasModifiedDescendants(false);
   }
 }
 
@@ -1432,232 +1424,6 @@ void RetainedDisplayListBuilder::ClearFramesWithProps() {
                                 &framesWithProps.Frames());
 }
 
-namespace RDLUtils {
-
-MOZ_NEVER_INLINE_DEBUG void AssertFrameSubtreeUnmodified(
-    const nsIFrame* aFrame) {
-  for (const auto& childList : aFrame->ChildLists()) {
-    for (nsIFrame* child : childList.mList) {
-      MOZ_ASSERT(!aFrame->IsFrameModified());
-      MOZ_ASSERT(!aFrame->HasModifiedDescendants());
-      AssertFrameSubtreeUnmodified(child);
-    }
-  }
-}
-
-MOZ_NEVER_INLINE_DEBUG void AssertDisplayListUnmodified(nsDisplayList* aList) {
-  for (nsDisplayItem* item : *aList) {
-    AssertDisplayItemUnmodified(item);
-  }
-}
-
-MOZ_NEVER_INLINE_DEBUG void AssertDisplayItemUnmodified(nsDisplayItem* aItem) {
-  MOZ_ASSERT(!aItem->HasDeletedFrame());
-  MOZ_ASSERT(!AnyContentAncestorModified(aItem->FrameForInvalidation()));
-
-  if (aItem->GetChildren()) {
-    AssertDisplayListUnmodified(aItem->GetChildren());
-  }
-}
-
-}  
-
-namespace RDL {
-
-void MarkAncestorFrames(nsIFrame* aFrame,
-                        nsTArray<nsIFrame*>& aOutFramesWithProps) {
-  nsIFrame* frame = nsLayoutUtils::GetDisplayListParent(aFrame);
-  while (frame && !frame->HasModifiedDescendants()) {
-    aOutFramesWithProps.AppendElement(frame);
-    frame->SetHasModifiedDescendants(true);
-    frame = nsLayoutUtils::GetDisplayListParent(frame);
-  }
-}
-
-
-
-
-
-
-
-void MarkAllAncestorFrames(const nsTArray<nsIFrame*>& aModifiedFrames,
-                           nsTArray<nsIFrame*>& aOutFramesWithProps) {
-  nsAutoString frameName;
-  DL_LOGI("RDL - Modified frames: %zu", aModifiedFrames.Length());
-  for (nsIFrame* frame : aModifiedFrames) {
-#ifdef DEBUG
-    frame->GetFrameName(frameName);
-#endif
-    DL_LOGV("RDL - Processing modified frame: %p (%s)", frame,
-            NS_ConvertUTF16toUTF8(frameName).get());
-
-    MarkAncestorFrames(frame, aOutFramesWithProps);
-  }
-}
-
-
-
-
-
-MOZ_NEVER_INLINE_DEBUG void ReuseStackingContextItem(
-    nsDisplayListBuilder* aBuilder, nsDisplayItem* aItem) {
-  aItem->SetPreProcessed();
-
-  if (aItem->HasChildren()) {
-    aItem->UpdateBounds(aBuilder);
-  }
-
-  DL_LOGD("Retaining display item %p", aItem);
-}
-
-bool IsSupportedFrameType(const nsIFrame* aFrame) {
-  
-  
-  if (aFrame->IsTableColFrame()) {
-    return false;
-  }
-
-  if (aFrame->IsTableColGroupFrame()) {
-    return false;
-  }
-
-  if (aFrame->IsTableRowFrame()) {
-    return false;
-  }
-
-  if (aFrame->IsTableRowGroupFrame()) {
-    return false;
-  }
-
-  if (aFrame->IsTableCellFrame()) {
-    return false;
-  }
-
-  
-  return true;
-}
-
-bool IsReuseableStackingContextItem(nsDisplayItem* aItem) {
-  if (!IsSupportedFrameType(aItem->Frame())) {
-    return false;
-  }
-
-  if (!aItem->IsReusable()) {
-    return false;
-  }
-
-  const nsIFrame* frame = aItem->FrameForInvalidation();
-  return !frame->HasModifiedDescendants() && !frame->GetPrevContinuation() &&
-         !frame->GetNextContinuation();
-}
-
-
-
-
-
-
-
-void CollectStackingContextItems(nsDisplayListBuilder* aBuilder,
-                                 nsDisplayList* aList,
-                                 nsTArray<nsDisplayItem*>& aOutItems,
-                                 nsIFrame* aOuterFrame, int aDepth = 0,
-                                 bool aParentReused = false) {
-  nsDisplayList out;
-
-  while (nsDisplayItem* item = aList->RemoveBottom()) {
-    if (DL_LOG_TEST(LogLevel::Debug)) {
-      DL_LOGD(
-          "%*s Preprocessing item %p (%s) (frame: %p) "
-          "(children: %d) (depth: %d) (parentReused: %d)",
-          aDepth, "", item, item->Name(),
-          item->HasDeletedFrame() ? nullptr : item->Frame(),
-          item->GetChildren() ? item->GetChildren()->Count() : 0, aDepth,
-          aParentReused);
-    }
-
-    if (!item->CanBeReused() || item->HasDeletedFrame() ||
-        AnyContentAncestorModified(item->FrameForInvalidation(), aOuterFrame)) {
-      DL_LOGD("%*s Deleted modified or temporary item %p", aDepth, "", item);
-      item->Destroy(aBuilder);
-      continue;
-    }
-
-    MOZ_ASSERT(!AnyContentAncestorModified(item->FrameForInvalidation()));
-    MOZ_ASSERT(!item->IsPreProcessed());
-    item->InvalidateCachedChildInfo(aBuilder);
-    item->SetMergedPreProcessed(false, true);
-    item->SetReused(true);
-
-    const bool isStackingContextItem = IsReuseableStackingContextItem(item);
-
-    if (item->GetChildren()) {
-      CollectStackingContextItems(aBuilder, item->GetChildren(), aOutItems,
-                                  item->Frame(), aDepth + 1,
-                                  aParentReused || isStackingContextItem);
-    }
-
-    if (aParentReused) {
-      
-      RDLUtils::AssertDisplayItemUnmodified(item);
-      out.AppendToTop(item);
-    } else if (isStackingContextItem) {
-      
-      aOutItems.AppendElement(item);
-      ReuseStackingContextItem(aBuilder, item);
-    } else {
-      
-      DL_LOGD("%*s Deleted unused item %p", aDepth, "", item);
-      item->Destroy(aBuilder);
-      continue;
-    }
-
-    if (item->GetType() == DisplayItemType::TYPE_SUBDOCUMENT) {
-      IncrementPresShellPaintCount(aBuilder, item);
-    }
-  }
-
-  aList->AppendToTop(&out);
-  aList->RestoreState();
-}
-
-
-
-
-
-void ClearPreviousItems(nsDisplayListBuilder* aBuilder,
-                        nsTArray<nsDisplayItem*>& aItems) {
-  const size_t total = aItems.Length();
-  size_t reused = 0;
-  for (auto* item : aItems) {
-    if (item->IsReusedItem()) {
-      reused++;
-      item->SetReusable();
-    } else {
-      item->Destroy(aBuilder);
-    }
-  }
-
-  DL_LOGI("RDL - Reused %zu of %zu SC display items", reused, total);
-  aItems.Clear();
-}
-
-}  
-
-bool RetainedDisplayListBuilder::TrySimpleUpdate(
-    const nsTArray<nsIFrame*>& aModifiedFrames,
-    nsTArray<nsIFrame*>& aOutFramesWithProps) {
-  if (!mBuilder.IsReusingStackingContextItems()) {
-    return false;
-  }
-
-  MOZ_ASSERT(mPreviousItems.IsEmpty());
-  RDL::MarkAllAncestorFrames(aModifiedFrames, aOutFramesWithProps);
-  RDL::CollectStackingContextItems(&mBuilder, &mList, mPreviousItems,
-                                   RootReferenceFrame());
-
-  return true;
-}
-
 PartialUpdateResult RetainedDisplayListBuilder::AttemptPartialUpdate(
     nscolor aBackstop) {
   DL_LOGI("RDL - AttemptPartialUpdate, root frame: %p", RootReferenceFrame());
@@ -1671,43 +1437,32 @@ PartialUpdateResult RetainedDisplayListBuilder::AttemptPartialUpdate(
 
   InvalidateCaretFramesIfNeeded();
 
+  mBuilder.EnterPresShell(mBuilder.RootReferenceFrame());
+
   
   
   
   AutoClearFramePropsArray modifiedFrames(64);
-  AutoClearFramePropsArray framesWithProps(64);
+  AutoClearFramePropsArray framesWithProps;
   GetModifiedAndFramesWithProps(&mBuilder, &modifiedFrames.Frames(),
                                 &framesWithProps.Frames());
 
-  if (!ShouldBuildPartial(modifiedFrames.Frames())) {
-    
-    
-    mBuilder.SetPartialBuildFailed(true);
-    return PartialUpdateResult::Failed;
-  }
+  
+  bool shouldBuildPartial = ShouldBuildPartial(modifiedFrames.Frames());
 
   nsRect modifiedDirty;
   nsDisplayList modifiedDL;
   nsIFrame* modifiedAGR = nullptr;
   PartialUpdateResult result = PartialUpdateResult::NoChange;
-  const bool simpleUpdate =
-      TrySimpleUpdate(modifiedFrames.Frames(), framesWithProps.Frames());
-
-  mBuilder.EnterPresShell(RootReferenceFrame());
-
-  if (!simpleUpdate) {
-    if (!ComputeRebuildRegion(modifiedFrames.Frames(), &modifiedDirty,
-                              &modifiedAGR, framesWithProps.Frames()) ||
-        !PreProcessDisplayList(&mList, modifiedAGR, result,
-                               RootReferenceFrame(), nullptr)) {
-      DL_LOGI("RDL - Partial update aborted");
-      mBuilder.SetPartialBuildFailed(true);
-      mBuilder.LeavePresShell(RootReferenceFrame(), nullptr);
-      mList.DeleteAll(&mBuilder);
-      return PartialUpdateResult::Failed;
-    }
-  } else {
-    modifiedDirty = mBuilder.GetVisibleRect();
+  if (!shouldBuildPartial ||
+      !ComputeRebuildRegion(modifiedFrames.Frames(), &modifiedDirty,
+                            &modifiedAGR, framesWithProps.Frames()) ||
+      !PreProcessDisplayList(&mList, modifiedAGR, result,
+                             mBuilder.RootReferenceFrame(), nullptr)) {
+    mBuilder.SetPartialBuildFailed(true);
+    mBuilder.LeavePresShell(mBuilder.RootReferenceFrame(), nullptr);
+    mList.DeleteAll(&mBuilder);
+    return PartialUpdateResult::Failed;
   }
 
   
@@ -1744,7 +1499,6 @@ PartialUpdateResult RetainedDisplayListBuilder::AttemptPartialUpdate(
   if (mBuilder.PartialBuildFailed()) {
     DL_LOGI("RDL - Partial update failed!");
     mBuilder.LeavePresShell(RootReferenceFrame(), nullptr);
-    RDL::ClearPreviousItems(&mBuilder, mPreviousItems);
     mList.DeleteAll(&mBuilder);
     modifiedDL.DeleteAll(&mBuilder);
     Metrics()->mPartialUpdateFailReason = PartialUpdateFailReason::Content;
@@ -1765,26 +1519,15 @@ PartialUpdateResult RetainedDisplayListBuilder::AttemptPartialUpdate(
   
   
   
-  if (!simpleUpdate) {
-    Maybe<const ActiveScrolledRoot*> dummy;
-    if (MergeDisplayLists(&modifiedDL, &mList, &mList, dummy)) {
-      result = PartialUpdateResult::Updated;
-    }
-  } else {
-    MOZ_ASSERT(mList.IsEmpty());
-    mList = std::move(modifiedDL);
-    RDL::ClearPreviousItems(&mBuilder, mPreviousItems);
+  Maybe<const ActiveScrolledRoot*> dummy;
+  if (MergeDisplayLists(&modifiedDL, &mList, &mList, dummy)) {
     result = PartialUpdateResult::Updated;
   }
 
-#if 0
-  if (DL_LOG_TEST(LogLevel::Verbose)) {
-    printf_stderr("Painting --- Display list:\n");
-    nsIFrame::PrintDisplayList(&mBuilder, mList);
-  }
-#endif
+  
+  
 
-  mBuilder.LeavePresShell(RootReferenceFrame(), List());
+  mBuilder.LeavePresShell(mBuilder.RootReferenceFrame(), List());
   return result;
 }
 

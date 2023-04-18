@@ -586,12 +586,6 @@ void DisplayPortUtils::InvalidateForDisplayPortChange(
       return;
     }
 
-    if (StaticPrefs::layout_display_list_retain_sc()) {
-      
-      
-      return;
-    }
-
     bool found;
     nsRect* rect = frame->GetProperty(
         nsDisplayListBuilder::DisplayListBuildingDisplayPortRect(), &found);
