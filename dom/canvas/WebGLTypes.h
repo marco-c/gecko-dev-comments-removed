@@ -754,13 +754,6 @@ struct VertAttribPointerCalculated final {
 }  
 
 
-struct ICRData {
-  gfx::IntSize size;
-  bool hasAlpha;
-  bool isPremultAlpha;
-};
-
-
 
 
 
