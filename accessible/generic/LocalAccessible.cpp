@@ -33,6 +33,7 @@
 #include "TableCellAccessible.h"
 #include "TreeWalker.h"
 #include "HTMLElementAccessibles.h"
+#include "ImageAccessible.h"
 
 #include "nsIDOMXULButtonElement.h"
 #include "nsIDOMXULSelectCntrlEl.h"
@@ -3282,7 +3283,11 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
   }
 
   if (aCacheDomain & CacheDomain::Actions) {
-    if (ActionCount()) {
+    uint8_t actionCount = ActionCount();
+    ImageAccessible* imgAcc = AsImage();
+    bool hasLongDesc = imgAcc && imgAcc->HasLongDesc();
+
+    if (actionCount && !(actionCount == 1 && hasLongDesc)) {
       
       nsAutoString actionName;
       ActionNameAt(0, actionName);
@@ -3290,6 +3295,14 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
       fields->SetAttribute(nsGkAtoms::action, actionAtom);
     } else if (aUpdateType == CacheUpdateType::Update) {
       fields->SetAttribute(nsGkAtoms::action, DeleteEntry());
+    }
+
+    if (imgAcc) {
+      if (hasLongDesc) {
+        fields->SetAttribute(nsGkAtoms::longdesc, true);
+      } else if (aUpdateType == CacheUpdateType::Update) {
+        fields->SetAttribute(nsGkAtoms::longdesc, DeleteEntry());
+      }
     }
   }
 
