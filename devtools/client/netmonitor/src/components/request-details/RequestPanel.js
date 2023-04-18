@@ -227,11 +227,15 @@ class RequestPanel extends Component {
     if (postData && limit <= postData.length) {
       error = REQUEST_TRUNCATED;
     }
-
     if (formDataSections && formDataSections.length === 0 && postData) {
       if (!error) {
-        const json = parseJSON(postData).json;
-        if (json) {
+        const jsonParsedPostData = parseJSON(postData);
+        const { json, strippedChars } = jsonParsedPostData;
+        
+        
+        if (strippedChars) {
+          hasFormattedDisplay = false;
+        } else if (json) {
           component = PropertiesView;
           componentProps = {
             object: sortObjectKeys(json),

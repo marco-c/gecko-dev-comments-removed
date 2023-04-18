@@ -100,6 +100,8 @@ class ResponsePanel extends Component {
     this.renderRawResponsePayloadBtn = this.renderRawResponsePayloadBtn.bind(
       this
     );
+    this.renderJsonHtmlAndSource = this.renderJsonHtmlAndSource.bind(this);
+    this.handleJSONResponse = this.handleJSONResponse.bind(this);
   }
 
   componentDidMount() {
@@ -114,6 +116,13 @@ class ResponsePanel extends Component {
     fetchNetworkUpdatePacket(connector.requestData, request, [
       "responseContent",
     ]);
+
+    
+    const text = nextProps.request?.responseContent?.content?.text;
+    const xssiStrippedChars = text && parseJSON(text)?.strippedChars;
+    if (xssiStrippedChars && !this.state.rawResponsePayloadDisplayed) {
+      this.toggleRawResponsePayload();
+    }
 
     if (nextProps.targetSearchResult !== null) {
       this.setState({
@@ -159,7 +168,7 @@ class ResponsePanel extends Component {
       return result;
     }
 
-    const { json, error, jsonpCallback } = parseJSON(response);
+    const { json, error, jsonpCallback, strippedChars } = parseJSON(response);
 
     if (/\bjson/.test(mimeType) || json) {
       const result = {};
@@ -177,6 +186,10 @@ class ResponsePanel extends Component {
       
       if (error) {
         result.error = "" + error;
+      }
+      
+      if (strippedChars) {
+        result.strippedChars = strippedChars;
       }
 
       return result;
@@ -236,6 +249,97 @@ class ResponsePanel extends Component {
     });
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  renderJsonHtmlAndSource() {
+    const { request, targetSearchResult } = this.props;
+    const { responseContent } = request;
+    let { encoding, mimeType, text } = responseContent.content;
+    const { filterText, rawResponsePayloadDisplayed } = this.state;
+
+    
+    if (mimeType?.includes(JSON_VIEW_MIME_TYPE) && encoding === "base64") {
+      text = decodeUnicodeBase64(text);
+    }
+    const { json, jsonpCallback, error, strippedChars } =
+      this.handleJSONResponse(mimeType, text) || {};
+
+    let component;
+    let componentProps;
+    let xssiStrippedCharsInfoBox;
+    let responsePayloadLabel = RESPONSE_PAYLOAD;
+    let hasFormattedDisplay = false;
+
+    if (json) {
+      if (jsonpCallback) {
+        responsePayloadLabel = L10N.getFormatStr(
+          "jsonpScopeName",
+          jsonpCallback
+        );
+      } else {
+        responsePayloadLabel = JSON_SCOPE_NAME;
+      }
+
+      
+      
+      if (!rawResponsePayloadDisplayed) {
+        xssiStrippedCharsInfoBox = this.renderXssiStrippedCharsInfoBox(
+          strippedChars
+        );
+      } else {
+        xssiStrippedCharsInfoBox = null;
+      }
+
+      component = PropertiesView;
+      componentProps = {
+        object: json,
+        useQuotes: true,
+        filterText,
+        targetSearchResult,
+        defaultSelectFirstNode: false,
+        mode: MODE.LONG,
+        useBaseTreeViewExpand: true,
+      };
+      hasFormattedDisplay = true;
+    } else if (Filters.html(this.props.request)) {
+      
+      responsePayloadLabel = HTML_RESPONSE;
+      component = HtmlPreview;
+      componentProps = { responseContent };
+      hasFormattedDisplay = true;
+    }
+    if (!hasFormattedDisplay || rawResponsePayloadDisplayed) {
+      component = SourcePreview;
+      componentProps = {
+        text,
+        mode: json ? "application/json" : mimeType.replace(/;.+/, ""),
+        targetSearchResult,
+      };
+    }
+    return {
+      component,
+      componentProps,
+      error,
+      hasFormattedDisplay,
+      json,
+      responsePayloadLabel,
+      xssiStrippedCharsInfoBox,
+    };
+  }
+
   renderRawResponsePayloadBtn(key, checked, onChange) {
     return [
       label(
@@ -267,13 +371,42 @@ class ResponsePanel extends Component {
     return component(componentProps);
   }
 
+  
+
+
+
+
+
+
+
+
+  renderXssiStrippedCharsInfoBox(strippedChars) {
+    if (!strippedChars || this.state.rawRequestPayloadDisplayed) {
+      return null;
+    }
+    const message = L10N.getFormatStr("jsonXssiStripped", strippedChars);
+
+    const notifications = new Map();
+    notifications.set("xssi-string-removed-info-box", {
+      label: message,
+      value: "xssi-string-removed-info-box",
+      image: "",
+      priority: PriorityLevels.PRIORITY_INFO_MEDIUM,
+      type: "info",
+      eventCallback: e => {},
+      buttons: [],
+    });
+
+    return NotificationBox({
+      notifications,
+      displayBorderTop: false,
+      displayBorderBottom: true,
+      displayCloseButton: false,
+    });
+  }
+
   render() {
-    const {
-      connector,
-      showMessagesView,
-      request,
-      targetSearchResult,
-    } = this.props;
+    const { connector, showMessagesView, request } = this.props;
     const { blockedReason, responseContent, url } = request;
     const { filterText, rawResponsePayloadDisplayed } = this.state;
 
@@ -298,7 +431,7 @@ class ResponsePanel extends Component {
       );
     }
 
-    let { encoding, mimeType, text } = responseContent.content;
+    const { encoding, mimeType, text } = responseContent.content;
 
     if (Filters.images({ mimeType })) {
       return ImagePreview({ encoding, mimeType, text, url });
@@ -309,56 +442,15 @@ class ResponsePanel extends Component {
     }
 
     
-    if (mimeType?.includes(JSON_VIEW_MIME_TYPE) && encoding === "base64") {
-      text = decodeUnicodeBase64(text);
-    }
-
-    
-    const { json, jsonpCallback, error } =
-      this.handleJSONResponse(mimeType, text) || {};
-
-    let component;
-    let componentProps;
-    let responsePayloadLabel = RESPONSE_PAYLOAD;
-    let hasFormattedDisplay = false;
-
-    if (json) {
-      if (jsonpCallback) {
-        responsePayloadLabel = L10N.getFormatStr(
-          "jsonpScopeName",
-          jsonpCallback
-        );
-      } else {
-        responsePayloadLabel = JSON_SCOPE_NAME;
-      }
-
-      component = PropertiesView;
-      componentProps = {
-        object: json,
-        useQuotes: true,
-        filterText,
-        targetSearchResult,
-        defaultSelectFirstNode: false,
-        mode: MODE.LONG,
-        useBaseTreeViewExpand: true,
-      };
-      hasFormattedDisplay = true;
-    } else if (Filters.html(this.props.request)) {
-      
-      responsePayloadLabel = HTML_RESPONSE;
-      component = HtmlPreview;
-      componentProps = { responseContent };
-      hasFormattedDisplay = true;
-    }
-
-    if (!hasFormattedDisplay || this.state.rawResponsePayloadDisplayed) {
-      component = SourcePreview;
-      componentProps = {
-        text,
-        mode: json ? "application/json" : mimeType?.replace(/;.+/, ""),
-        targetSearchResult,
-      };
-    }
+    const {
+      component,
+      componentProps,
+      error,
+      hasFormattedDisplay,
+      json,
+      responsePayloadLabel,
+      xssiStrippedCharsInfoBox,
+    } = this.renderJsonHtmlAndSource();
 
     const classList = ["panel-container"];
     if (Filters.html(this.props.request)) {
@@ -395,6 +487,7 @@ class ResponsePanel extends Component {
             this.toggleRawResponsePayload
           ),
       ]),
+      xssiStrippedCharsInfoBox,
       this.renderResponsePayload(component, componentProps)
     );
   }
