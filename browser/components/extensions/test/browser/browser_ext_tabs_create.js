@@ -11,11 +11,14 @@ add_task(async function test_create_options() {
 
   
 
-  
-  
-  SpecialPowers.setBoolPref("browser.newtab.preload", false);
-  registerCleanupFunction(() => {
-    SpecialPowers.clearUserPref("browser.newtab.preload");
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      
+      
+      ["browser.newtab.preload", false],
+      
+      ["dom.security.https_first", true],
+    ],
   });
 
   let extension = ExtensionTestUtils.loadExtension({
@@ -109,6 +112,25 @@ add_task(async function test_create_options() {
             {
               create: { index: 9999 },
               result: { index: 2 },
+            },
+            {
+              
+              create: { url: "http://example.com/" },
+              result: { url: "https://example.com/" },
+            },
+            {
+              
+              create: { url: "view-source:http://example.com/" },
+              result: { url: "view-source:https://example.com/" },
+            },
+            {
+              
+              create: { url: "http://example.com/", openInReaderMode: true },
+              result: {
+                url: `about:reader?url=${encodeURIComponent(
+                  "http://example.com/"
+                )}`,
+              },
             },
           ];
 
