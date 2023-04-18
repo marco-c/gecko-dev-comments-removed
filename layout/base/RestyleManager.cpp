@@ -741,7 +741,7 @@ static bool RecomputePosition(nsIFrame* aFrame) {
   aFrame->SchedulePaint();
 
   
-  if (display->IsRelativelyPositionedStyle()) {
+  if (display->IsRelativelyOrStickyPositionedStyle()) {
     if (aFrame->IsGridItem()) {
       
       

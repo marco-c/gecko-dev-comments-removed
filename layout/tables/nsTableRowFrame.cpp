@@ -357,7 +357,7 @@ void nsTableRowFrame::DidResize() {
 
           
           
-          if (cellFrame->IsRelativelyPositioned()) {
+          if (cellFrame->IsRelativelyOrStickyPositioned()) {
             
             
             LogicalPoint oldNormalPos =
@@ -899,7 +899,7 @@ void nsTableRowFrame::ReflowChildren(nsPresContext* aPresContext,
       if (kidReflowInput) {
         
         flags = ReflowChildFlags::ApplyRelativePositioning;
-      } else if (kidFrame->IsRelativelyPositioned()) {
+      } else if (kidFrame->IsRelativelyOrStickyPositioned()) {
         
         
         

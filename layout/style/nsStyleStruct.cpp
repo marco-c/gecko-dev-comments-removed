@@ -2420,8 +2420,8 @@ nsChangeHint nsStyleDisplay::CalcDifference(
     }
     
     
-    if (IsRelativelyPositionedStyle() !=
-        aNewData.IsRelativelyPositionedStyle()) {
+    if (IsRelativelyOrStickyPositionedStyle() !=
+        aNewData.IsRelativelyOrStickyPositionedStyle()) {
       hint |= nsChangeHint_UpdateContainingBlock | nsChangeHint_RepaintFrame;
     }
     if (IsPositionForcingStackingContext() !=
