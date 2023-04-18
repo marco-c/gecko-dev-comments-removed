@@ -128,14 +128,13 @@ nsEventStatus SwipeTracker::ProcessEvent(const PanGestureInput& aEvent) {
     mLastEventTimeStamp = aEvent.mTimeStamp;
   } else {
     mEventsAreControllingSwipe = false;
-    double targetValue = 0.0;
     if (ComputeSwipeSuccess()) {
       
       
       SendSwipeEvent(eSwipeGesture, mSwipeDirection, 0.0, aEvent.mTimeStamp);
-      targetValue = SwipeSuccessTargetValue();
+    } else {
+      StartAnimating(0.0);
     }
-    StartAnimating(targetValue);
   }
 
   return nsEventStatus_eConsumeNoDefault;
