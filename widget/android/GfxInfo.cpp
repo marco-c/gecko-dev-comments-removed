@@ -697,6 +697,20 @@ nsresult GfxInfo::GetFeatureStatusImpl(
     return NS_OK;
   }
 
+  if (aFeature == FEATURE_GPU_PROCESS) {
+    
+    
+    
+    
+    if (mSDKVersion >= 31) {
+      *aStatus = nsIGfxInfo::FEATURE_BLOCKED_OS_VERSION;
+      aFailureId = "FEATURE_FAILURE_ANDROID_12";
+    } else {
+      *aStatus = nsIGfxInfo::FEATURE_STATUS_OK;
+    }
+    return NS_OK;
+  }
+
   return GfxInfoBase::GetFeatureStatusImpl(
       aFeature, aStatus, aSuggestedDriverVersion, aDriverInfo, aFailureId, &os);
 }
