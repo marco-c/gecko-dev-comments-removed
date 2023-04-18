@@ -7,7 +7,9 @@ from . import assert_javascript_entry
 
 
 @pytest.mark.asyncio
-async def test_types_and_values(bidi_session, current_session, current_time, inline, wait_for_event):
+async def test_types_and_values(
+    bidi_session, current_session, current_time, inline, top_context, wait_for_event
+):
     await bidi_session.session.subscribe(events=["log.entryAdded"])
 
     on_entry_added = wait_for_event("log.entryAdded")
@@ -17,9 +19,12 @@ async def test_types_and_values(bidi_session, current_session, current_time, inl
 
     time_start = current_time()
 
-    
-    current_session.url = inline(
-        "<script>function bar() { throw new Error('foo'); }; bar();</script>")
+    url = inline("<script>function bar() { throw new Error('foo'); }; bar();</script>")
+    await bidi_session.browsing_context.navigate(
+        context=top_context["context"],
+        url=url,
+        wait="complete",
+    )
 
     event_data = await on_entry_added
 
@@ -35,4 +40,8 @@ async def test_types_and_values(bidi_session, current_session, current_time, inl
 
     
     
-    current_session.url = inline("<p>foo")
+    await bidi_session.browsing_context.navigate(
+        context=top_context["context"],
+        url=inline("<p>foo"),
+        wait="complete",
+    )
