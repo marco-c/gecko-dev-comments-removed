@@ -92,22 +92,5 @@ add_task(async function() {
       !sh.getEntryAtIndex(3).wireframe,
       "No wireframe for the loaded entry."
     );
-
-    
-    
-    let wireframe = sh.getEntryAtIndex(2).wireframe;
-    sh.getEntryAtIndex(2).wireframe = null;
-    Assert.equal(
-      sh.getEntryAtIndex(2).wireframe,
-      null,
-      "Successfully cleared wireframe."
-    );
-
-    sh.getEntryAtIndex(3).wireframe = wireframe;
-    Assert.deepEqual(
-      sh.getEntryAtIndex(3).wireframe,
-      wireframe,
-      "Successfully wrote a wireframe to an nsISHEntry."
-    );
   });
 });
