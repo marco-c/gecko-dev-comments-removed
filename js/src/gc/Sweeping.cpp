@@ -1800,14 +1800,10 @@ void GCRuntime::startSweepingAtomsTable() {
 
   
   
-  if (!atomsTable->startIncrementalSweep()) {
+  if (!atomsTable->startIncrementalSweep(maybeAtoms)) {
     SweepingTracer trc(rt);
     atomsTable->traceWeak(&trc);
-    return;
   }
-
-  
-  maybeAtoms.emplace(*atomsTable);
 }
 
 IncrementalProgress GCRuntime::sweepAtomsTable(JSFreeOp* fop,

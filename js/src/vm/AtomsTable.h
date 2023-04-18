@@ -20,8 +20,6 @@
 
 
 
-
-
 namespace js {
 
 
@@ -95,46 +93,21 @@ class FrozenAtomSet {
 };
 
 class AtomsTable {
-  static const size_t PartitionShift = 5;
-  static const size_t PartitionCount = 1 << PartitionShift;
-
   
   
   static const size_t InitialTableSize = 16;
 
   
-  struct Partition {
-    explicit Partition(uint32_t index);
-    ~Partition();
+  AtomSet atoms;
 
-    
-    AtomSet atoms;
-
-    
-    AtomSet* atomsAddedWhileSweeping;
-  };
-
-  Partition* partitions[PartitionCount];
+  
+  AtomSet* atomsAddedWhileSweeping;
 
  public:
   
-  class SweepIterator {
-    AtomsTable& atoms;
-    size_t partitionIndex;
-    mozilla::Maybe<AtomSet::Enum> atomsIter;
+  using SweepIterator = AtomSet::Enum;
 
-    void settle();
-    void startSweepingPartition();
-    void finishSweepingPartition();
-
-   public:
-    explicit SweepIterator(AtomsTable& atoms);
-    bool empty() const;
-    AtomStateEntry front() const;
-    void removeFront();
-    void popFront();
-  };
-
+  AtomsTable();
   ~AtomsTable();
   bool init();
 
@@ -153,7 +126,7 @@ class AtomsTable {
   
   void traceWeak(JSTracer* trc);
 
-  bool startIncrementalSweep();
+  bool startIncrementalSweep(mozilla::Maybe<SweepIterator>& atomsToSweepOut);
 
   
   bool sweepIncrementally(SweepIterator& atomsToSweep, SliceBudget& budget);
@@ -161,11 +134,8 @@ class AtomsTable {
   size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 
  private:
-  
-  MOZ_ALWAYS_INLINE size_t getPartitionIndex(const AtomHasher::Lookup& lookup);
-
   void tracePinnedAtomsInSet(JSTracer* trc, AtomSet& atoms);
-  void mergeAtomsAddedWhileSweeping(Partition& partition);
+  void mergeAtomsAddedWhileSweeping();
 };
 
 bool AtomIsPinned(JSContext* cx, JSAtom* atom);
