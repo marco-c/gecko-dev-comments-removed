@@ -114,8 +114,6 @@ var Harness = {
 
       Services.obs.addObserver(this, "addon-install-started");
       Services.obs.addObserver(this, "addon-install-disabled");
-      
-      
       Services.obs.addObserver(this, "addon-install-origin-blocked");
       Services.obs.addObserver(this, "addon-install-blocked");
       Services.obs.addObserver(this, "addon-install-failed");
@@ -142,7 +140,6 @@ var Harness = {
 
         Services.obs.removeObserver(self, "addon-install-started");
         Services.obs.removeObserver(self, "addon-install-disabled");
-        
         Services.obs.removeObserver(self, "addon-install-origin-blocked");
         Services.obs.removeObserver(self, "addon-install-blocked");
         Services.obs.removeObserver(self, "addon-install-failed");
@@ -458,8 +455,6 @@ var Harness = {
   },
 
   onInstallCancelled(install) {
-    
-    
     
     
     
