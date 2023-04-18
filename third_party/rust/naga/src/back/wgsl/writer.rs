@@ -17,7 +17,6 @@ enum Attribute {
     Interpolate(Option<crate::Interpolation>, Option<crate::Sampling>),
     Location(u32),
     Stage(ShaderStage),
-    Stride(u32),
     WorkGroupSize([u32; 3]),
 }
 
@@ -159,7 +158,7 @@ impl<W: Write> Writer<W> {
                 ],
             };
 
-            self.write_attributes(&attributes, false)?;
+            self.write_attributes(&attributes)?;
             
             writeln!(self.out)?;
 
@@ -244,11 +243,10 @@ impl<W: Write> Writer<W> {
         for (index, arg) in func.arguments.iter().enumerate() {
             
             if let Some(ref binding) = arg.binding {
-                self.write_attributes(
-                    &map_binding_to_attribute(binding, module.types[arg.ty].inner.scalar_kind()),
-                    false,
-                )?;
-                write!(self.out, " ")?;
+                self.write_attributes(&map_binding_to_attribute(
+                    binding,
+                    module.types[arg.ty].inner.scalar_kind(),
+                ))?;
             }
             
             let argument_name = match func_ctx.ty {
@@ -275,10 +273,10 @@ impl<W: Write> Writer<W> {
         if let Some(ref result) = func.result {
             write!(self.out, " -> ")?;
             if let Some(ref binding) = result.binding {
-                self.write_attributes(
-                    &map_binding_to_attribute(binding, module.types[result.ty].inner.scalar_kind()),
-                    true,
-                )?;
+                self.write_attributes(&map_binding_to_attribute(
+                    binding,
+                    module.types[result.ty].inner.scalar_kind(),
+                ))?;
             }
             self.write_type(module, result.ty)?;
         }
@@ -331,62 +329,39 @@ impl<W: Write> Writer<W> {
     }
 
     
-    
-    
-    
-    fn write_attributes(&mut self, attributes: &[Attribute], extra_space: bool) -> BackendResult {
-        write!(self.out, "[[")?;
-
-        let mut need_last_comma = true;
-        if let Some(last_attrib) = attributes.last() {
-            
-            match *last_attrib {
-                Attribute::BuiltIn(builtin_attrib) => {
-                    need_last_comma = builtin_str(builtin_attrib).is_some();
-                }
-                Attribute::Interpolate(interpolation, sampling) => {
-                    need_last_comma = (sampling.is_some()
-                        && sampling != Some(crate::Sampling::Center))
-                        || (interpolation.is_some()
-                            && interpolation != Some(crate::Interpolation::Perspective))
-                }
-                _ => {}
-            }
-        }
-
-        for (index, attribute) in attributes.iter().enumerate() {
+    fn write_attributes(&mut self, attributes: &[Attribute]) -> BackendResult {
+        for attribute in attributes {
             match *attribute {
-                Attribute::Location(id) => write!(self.out, "location({})", id)?,
+                Attribute::Location(id) => write!(self.out, "@location({}) ", id)?,
                 Attribute::BuiltIn(builtin_attrib) => {
                     if let Some(builtin) = builtin_str(builtin_attrib) {
-                        write!(self.out, "builtin({})", builtin)?;
+                        write!(self.out, "@builtin({}) ", builtin)?;
                     } else {
                         log::warn!("Unsupported builtin attribute: {:?}", builtin_attrib);
                     }
                 }
                 Attribute::Stage(shader_stage) => {
                     let stage_str = match shader_stage {
-                        ShaderStage::Vertex => "stage(vertex)",
-                        ShaderStage::Fragment => "stage(fragment)",
-                        ShaderStage::Compute => "stage(compute)",
+                        ShaderStage::Vertex => "vertex",
+                        ShaderStage::Fragment => "fragment",
+                        ShaderStage::Compute => "compute",
                     };
-                    write!(self.out, "{}", stage_str)?;
+                    write!(self.out, "@stage({}) ", stage_str)?;
                 }
-                Attribute::Stride(stride) => write!(self.out, "stride({})", stride)?,
                 Attribute::WorkGroupSize(size) => {
                     write!(
                         self.out,
-                        "workgroup_size({}, {}, {})",
+                        "@workgroup_size({}, {}, {}) ",
                         size[0], size[1], size[2]
                     )?;
                 }
-                Attribute::Binding(id) => write!(self.out, "binding({})", id)?,
-                Attribute::Group(id) => write!(self.out, "group({})", id)?,
+                Attribute::Binding(id) => write!(self.out, "@binding({}) ", id)?,
+                Attribute::Group(id) => write!(self.out, "@group({}) ", id)?,
                 Attribute::Interpolate(interpolation, sampling) => {
                     if sampling.is_some() && sampling != Some(crate::Sampling::Center) {
                         write!(
                             self.out,
-                            "interpolate({}, {})",
+                            "@interpolate({}, {}) ",
                             interpolation_str(
                                 interpolation.unwrap_or(crate::Interpolation::Perspective)
                             ),
@@ -397,7 +372,7 @@ impl<W: Write> Writer<W> {
                     {
                         write!(
                             self.out,
-                            "interpolate({})",
+                            "@interpolate({}) ",
                             interpolation_str(
                                 interpolation.unwrap_or(crate::Interpolation::Perspective)
                             )
@@ -405,19 +380,7 @@ impl<W: Write> Writer<W> {
                     }
                 }
             };
-
-            
-            if index + 1 != attributes.len() && need_last_comma {
-                
-                write!(self.out, ", ")?;
-            }
         }
-
-        write!(self.out, "]]")?;
-        if extra_space {
-            write!(self.out, " ")?;
-        }
-
         Ok(())
     }
 
@@ -447,25 +410,16 @@ impl<W: Write> Writer<W> {
             
             write!(self.out, "{}", back::INDENT)?;
             if let Some(ref binding) = member.binding {
-                self.write_attributes(
-                    &map_binding_to_attribute(binding, module.types[member.ty].inner.scalar_kind()),
-                    true,
-                )?;
+                self.write_attributes(&map_binding_to_attribute(
+                    binding,
+                    module.types[member.ty].inner.scalar_kind(),
+                ))?;
             }
             
             let member_name = &self.names[&NameKey::StructMember(handle, index as u32)];
             write!(self.out, "{}: ", member_name)?;
-            
-            if let TypeInner::Array {
-                base: _,
-                size: _,
-                stride,
-            } = module.types[member.ty].inner
-            {
-                self.write_attributes(&[Attribute::Stride(stride)], true)?;
-            }
             self.write_type(module, member.ty)?;
-            write!(self.out, ";")?;
+            write!(self.out, ",")?;
             writeln!(self.out)?;
         }
 
@@ -558,7 +512,11 @@ impl<W: Write> Writer<W> {
             TypeInner::Atomic { kind, .. } => {
                 write!(self.out, "atomic<{}>", scalar_kind_str(kind))?;
             }
-            TypeInner::Array { base, size, .. } => {
+            TypeInner::Array {
+                base,
+                size,
+                stride: _,
+            } => {
                 
                 
                 
@@ -588,16 +546,16 @@ impl<W: Write> Writer<W> {
                     back::vector_size_str(rows),
                 )?;
             }
-            TypeInner::Pointer { base, class } => {
-                let (storage, maybe_access) = storage_class_str(class);
+            TypeInner::Pointer { base, space } => {
+                let (address, maybe_access) = address_space_str(space);
                 
                 
                 
-                if let Some(class) = storage {
-                    write!(self.out, "ptr<{}, ", class)?;
+                if let Some(space) = address {
+                    write!(self.out, "ptr<{}, ", space)?;
                 }
                 self.write_type(module, base)?;
-                if storage.is_some() {
+                if address.is_some() {
                     if let Some(access) = maybe_access {
                         write!(self.out, ", {}", access)?;
                     }
@@ -608,18 +566,18 @@ impl<W: Write> Writer<W> {
                 size: None,
                 kind,
                 width: _,
-                class,
+                space,
             } => {
-                let (storage, maybe_access) = storage_class_str(class);
-                if let Some(class) = storage {
-                    write!(self.out, "ptr<{}, {}", class, scalar_kind_str(kind))?;
+                let (address, maybe_access) = address_space_str(space);
+                if let Some(space) = address {
+                    write!(self.out, "ptr<{}, {}", space, scalar_kind_str(kind))?;
                     if let Some(access) = maybe_access {
                         write!(self.out, ", {}", access)?;
                     }
                     write!(self.out, ">")?;
                 } else {
                     return Err(Error::Unimplemented(format!(
-                        "ValuePointer to StorageClass::Handle {:?}",
+                        "ValuePointer to AddressSpace::Handle {:?}",
                         inner
                     )));
                 }
@@ -628,14 +586,14 @@ impl<W: Write> Writer<W> {
                 size: Some(size),
                 kind,
                 width: _,
-                class,
+                space,
             } => {
-                let (storage, maybe_access) = storage_class_str(class);
-                if let Some(class) = storage {
+                let (address, maybe_access) = address_space_str(space);
+                if let Some(space) = address {
                     write!(
                         self.out,
                         "ptr<{}, vec{}<{}>",
-                        class,
+                        space,
                         back::vector_size_str(size),
                         scalar_kind_str(kind)
                     )?;
@@ -645,7 +603,7 @@ impl<W: Write> Writer<W> {
                     write!(self.out, ">")?;
                 } else {
                     return Err(Error::Unimplemented(format!(
-                        "ValuePointer to StorageClass::Handle {:?}",
+                        "ValuePointer to AddressSpace::Handle {:?}",
                         inner
                     )));
                 }
@@ -733,9 +691,9 @@ impl<W: Write> Writer<W> {
                 ref reject,
             } => {
                 write!(self.out, "{}", level)?;
-                write!(self.out, "if (")?;
+                write!(self.out, "if ")?;
                 self.write_expr(module, condition, func_ctx)?;
-                writeln!(self.out, ") {{")?;
+                writeln!(self.out, " {{")?;
 
                 let l2 = level.next();
                 for sta in accept {
@@ -887,9 +845,9 @@ impl<W: Write> Writer<W> {
             } => {
                 
                 write!(self.out, "{}", level)?;
-                write!(self.out, "switch(")?;
+                write!(self.out, "switch ")?;
                 self.write_expr(module, selector, func_ctx)?;
-                writeln!(self.out, ") {{")?;
+                writeln!(self.out, " {{")?;
 
                 let type_postfix = match *func_ctx.info[selector].ty.inner_with(&module.types) {
                     crate::TypeInner::Scalar {
@@ -1008,8 +966,8 @@ impl<W: Write> Writer<W> {
             Ex::LocalVariable(_) => Indirection::Reference,
             Ex::GlobalVariable(handle) => {
                 let global = &module.global_variables[handle];
-                match global.class {
-                    crate::StorageClass::Handle => Indirection::Ordinary,
+                match global.space {
+                    crate::AddressSpace::Handle => Indirection::Ordinary,
                     _ => Indirection::Reference,
                 }
             }
@@ -1207,7 +1165,7 @@ impl<W: Write> Writer<W> {
                 self.write_expr_with_indirection(module, base, func_ctx, indirection)?;
 
                 let base_ty_handle = match *resolved {
-                    TypeInner::Pointer { base, class: _ } => {
+                    TypeInner::Pointer { base, space: _ } => {
                         resolved = &module.types[base].inner;
                         Some(base)
                     }
@@ -1377,7 +1335,8 @@ impl<W: Write> Writer<W> {
                 image,
                 coordinate,
                 array_index,
-                index,
+                sample,
+                level,
             } => {
                 write!(self.out, "textureLoad(")?;
                 self.write_expr(module, image, func_ctx)?;
@@ -1387,7 +1346,7 @@ impl<W: Write> Writer<W> {
                     write!(self.out, ", ")?;
                     self.write_expr(module, array_index, func_ctx)?;
                 }
-                if let Some(index) = index {
+                if let Some(index) = sample.or(level) {
                     write!(self.out, ", ")?;
                     self.write_expr(module, index, func_ctx)?;
                 }
@@ -1568,8 +1527,8 @@ impl<W: Write> Writer<W> {
                     Mf::ReverseBits => Function::Regular("reverseBits"),
                     Mf::ExtractBits => Function::Regular("extractBits"),
                     Mf::InsertBits => Function::Regular("insertBits"),
-                    Mf::FindLsb => Function::Regular("findLsb"),
-                    Mf::FindMsb => Function::Regular("findMsb"),
+                    Mf::FindLsb => Function::Regular("firstTrailingBit"),
+                    Mf::FindMsb => Function::Regular("firstLeadingBit"),
                     
                     Mf::Pack4x8snorm => Function::Regular("pack4x8snorm"),
                     Mf::Pack4x8unorm => Function::Regular("pack4x8unorm"),
@@ -1716,21 +1675,18 @@ impl<W: Write> Writer<W> {
     ) -> BackendResult {
         
         if let Some(ref binding) = global.binding {
-            self.write_attributes(
-                &[
-                    Attribute::Group(binding.group),
-                    Attribute::Binding(binding.binding),
-                ],
-                false,
-            )?;
+            self.write_attributes(&[
+                Attribute::Group(binding.group),
+                Attribute::Binding(binding.binding),
+            ])?;
             writeln!(self.out)?;
         }
 
         
         write!(self.out, "var")?;
-        let (storage, maybe_access) = storage_class_str(global.class);
-        if let Some(class) = storage {
-            write!(self.out, "<{}", class)?;
+        let (address, maybe_access) = address_space_str(global.space);
+        if let Some(space) = address {
+            write!(self.out, "<{}", space)?;
             if let Some(access) = maybe_access {
                 write!(self.out, ", {}", access)?;
             }
@@ -1991,26 +1947,24 @@ fn sampling_str(sampling: crate::Sampling) -> &'static str {
     }
 }
 
-fn storage_class_str(
-    storage_class: crate::StorageClass,
-) -> (Option<&'static str>, Option<&'static str>) {
-    use crate::StorageClass as Sc;
+fn address_space_str(space: crate::AddressSpace) -> (Option<&'static str>, Option<&'static str>) {
+    use crate::AddressSpace as As;
 
     (
-        Some(match storage_class {
-            Sc::Private => "private",
-            Sc::Uniform => "uniform",
-            Sc::Storage { access } => {
+        Some(match space {
+            As::Private => "private",
+            As::Uniform => "uniform",
+            As::Storage { access } => {
                 if access.contains(crate::StorageAccess::STORE) {
                     return (Some("storage"), Some("read_write"));
                 } else {
                     "storage"
                 }
             }
-            Sc::PushConstant => "push_constant",
-            Sc::WorkGroup => "workgroup",
-            Sc::Handle => return (None, None),
-            Sc::Function => "function",
+            As::PushConstant => "push_constant",
+            As::WorkGroup => "workgroup",
+            As::Handle => return (None, None),
+            As::Function => "function",
         }),
         None,
     )

@@ -104,6 +104,11 @@ pub enum ErrorKind {
     
     #[error("{0:?}")]
     PreprocessorError(PreprocessorError),
+    
+    
+    
+    #[error("Internal error: {0}")]
+    InternalError(&'static str),
 }
 
 impl From<ConstantSolvingError> for ErrorKind {

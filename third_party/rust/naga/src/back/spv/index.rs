@@ -1,6 +1,11 @@
 
 
-use super::{selection::Selection, Block, BlockContext, Error, IdGenerator, Instruction, Word};
+
+
+use super::{
+    helpers::global_needs_wrapper, selection::Selection, Block, BlockContext, Error, IdGenerator,
+    Instruction, Word,
+};
 use crate::{arena::Handle, proc::BoundsCheckPolicy};
 
 
@@ -32,12 +37,14 @@ impl<'w> BlockContext<'w> {
     
     
     
-    
     pub(super) fn write_runtime_array_length(
         &mut self,
         array: Handle<crate::Expression>,
         block: &mut Block,
     ) -> Result<Word, Error> {
+        
+        
+        
         
         
         let (structure_id, last_member_index) = match self.ir_function.expressions[array] {
@@ -49,6 +56,14 @@ impl<'w> BlockContext<'w> {
                     ),
                     _ => return Err(Error::Validation("array length expression")),
                 }
+            }
+            crate::Expression::GlobalVariable(handle) => {
+                let global = &self.ir_module.global_variables[handle];
+                if !global_needs_wrapper(self.ir_module, global) {
+                    return Err(Error::Validation("array length expression"));
+                }
+
+                (self.writer.global_variables[handle.index()].var_id, 0)
             }
             _ => return Err(Error::Validation("array length expression")),
         };
@@ -79,13 +94,17 @@ impl<'w> BlockContext<'w> {
         block: &mut Block,
     ) -> Result<MaybeKnown<u32>, Error> {
         let sequence_ty = self.fun_info[sequence].ty.inner_with(&self.ir_module.types);
-        match sequence_ty.indexable_length(self.ir_module)? {
-            crate::proc::IndexableLength::Known(known_length) => {
+        match sequence_ty.indexable_length(self.ir_module) {
+            Ok(crate::proc::IndexableLength::Known(known_length)) => {
                 Ok(MaybeKnown::Known(known_length))
             }
-            crate::proc::IndexableLength::Dynamic => {
+            Ok(crate::proc::IndexableLength::Dynamic) => {
                 let length_id = self.write_runtime_array_length(sequence, block)?;
                 Ok(MaybeKnown::Computed(length_id))
+            }
+            Err(err) => {
+                log::error!("Sequence length for {:?} failed: {}", sequence, err);
+                Err(Error::Validation("indexable length"))
             }
         }
     }

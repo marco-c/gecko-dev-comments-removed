@@ -1,15 +1,15 @@
 use super::{
     ast::*,
-    builtins::{inject_builtin, inject_double_builtin, sampled_to_depth},
+    builtins::{inject_builtin, sampled_to_depth},
     context::{Context, ExprPos, StmtContext},
     error::{Error, ErrorKind},
     types::scalar_components,
     Parser, Result,
 };
 use crate::{
-    front::glsl::types::type_power, proc::ensure_block_returns, Arena, Block, Constant,
-    ConstantInner, EntryPoint, Expression, FastHashMap, Function, FunctionArgument, FunctionResult,
-    Handle, LocalVariable, ScalarKind, ScalarValue, Span, Statement, StorageClass, StructMember,
+    front::glsl::types::type_power, proc::ensure_block_returns, AddressSpace, Arena, Block,
+    Constant, ConstantInner, EntryPoint, Expression, FastHashMap, Function, FunctionArgument,
+    FunctionResult, Handle, LocalVariable, ScalarKind, ScalarValue, Span, Statement, StructMember,
     Type, TypeInner,
 };
 use std::iter;
@@ -604,22 +604,22 @@ impl Parser {
     ) -> Result<Option<Handle<Expression>>> {
         
         
-        if self.lookup_function.get(&name).is_none() {
-            let declaration = self.lookup_function.entry(name.clone()).or_default();
-            inject_builtin(declaration, &mut self.module, &name);
+        for &(expr, span) in args.iter() {
+            self.typifier_grow(ctx, expr, span)?;
         }
 
         
-        let has_double = args
-            .iter()
-            .any(|&(expr, meta)| self.resolve_type(ctx, expr, meta).map_or(false, is_double));
+        let mut variations = builtin_required_variations(
+            args.iter()
+                .map(|&(expr, _)| ctx.typifier.get(expr, &self.module.types)),
+        );
 
         
-        let declaration = self.lookup_function.get_mut(&name).unwrap();
-
-        if declaration.builtin && !declaration.double && has_double {
-            inject_double_builtin(declaration, &mut self.module, &name);
-        }
+        let declaration = self.lookup_function.entry(name.clone()).or_insert_with(|| {
+            variations |= BuiltinVariations::STANDARD;
+            Default::default()
+        });
+        inject_builtin(declaration, &mut self.module, &name, variations);
 
         
         let declaration = self.lookup_function.get(&name).unwrap();
@@ -675,7 +675,62 @@ impl Parser {
                 let call_arg_ty = self.resolve_type(ctx, call_argument.0, call_argument.1)?;
 
                 
-                if overload_param_ty == call_arg_ty {
+                
+                
+                if let (
+                    &TypeInner::Image {
+                        class:
+                            crate::ImageClass::Storage {
+                                format: overload_format,
+                                access: overload_access,
+                            },
+                        dim: overload_dim,
+                        arrayed: overload_arrayed,
+                    },
+                    &TypeInner::Image {
+                        class:
+                            crate::ImageClass::Storage {
+                                format: call_format,
+                                access: call_access,
+                            },
+                        dim: call_dim,
+                        arrayed: call_arrayed,
+                    },
+                ) = (overload_param_ty, call_arg_ty)
+                {
+                    
+                    let good_size = call_dim == overload_dim && call_arrayed == overload_arrayed;
+                    
+                    
+                    
+                    let good_format = overload_format == call_format
+                        || (overload.internal
+                            && ScalarKind::from(overload_format) == ScalarKind::from(call_format));
+                    if !(good_size && good_format) {
+                        continue 'outer;
+                    }
+
+                    
+                    
+                    
+                    if !call_access.contains(overload_access) {
+                        self.errors.push(Error {
+                            kind: ErrorKind::SemanticError(
+                                format!(
+                                    "'{}': image needs {:?} access but only {:?} was provided",
+                                    name, overload_access, call_access
+                                )
+                                .into(),
+                            ),
+                            meta,
+                        });
+                    }
+
+                    
+                    new_conversions[i] = Conversion::Exact;
+                    continue;
+                } else if overload_param_ty == call_arg_ty {
+                    
                     new_conversions[i] = Conversion::Exact;
                     continue;
                 }
@@ -814,7 +869,7 @@ impl Parser {
                     
                     
                     
-                    TypeInner::Pointer { base, class } if class != StorageClass::Function => (
+                    TypeInner::Pointer { base, space } if space != AddressSpace::Function => (
                         base,
                         ctx.add_expression(
                             Expression::Load { pointer: handle },
@@ -826,8 +881,8 @@ impl Parser {
                         size,
                         kind,
                         width,
-                        class,
-                    } if class != StorageClass::Function => {
+                        space,
+                    } if space != AddressSpace::Function => {
                         let inner = match size {
                             Some(size) => TypeInner::Vector { size, kind, width },
                             None => TypeInner::Scalar { kind, width },
@@ -957,9 +1012,9 @@ impl Parser {
 
                 Ok(result)
             }
-            FunctionKind::Macro(builtin) => builtin
-                .call(self, ctx, body, arguments.as_mut_slice(), meta)
-                .map(Some),
+            FunctionKind::Macro(builtin) => {
+                builtin.call(self, ctx, body, arguments.as_mut_slice(), meta)
+            }
         }
     }
 
@@ -971,11 +1026,6 @@ impl Parser {
         mut body: Block,
         meta: Span,
     ) {
-        if self.lookup_function.get(&name).is_none() {
-            let declaration = self.lookup_function.entry(name.clone()).or_default();
-            inject_builtin(declaration, &mut self.module, &name);
-        }
-
         ensure_block_returns(&mut body);
 
         let void = result.is_none();
@@ -986,7 +1036,16 @@ impl Parser {
             ..
         } = self;
 
-        let declaration = lookup_function.entry(name.clone()).or_default();
+        
+        let mut variations =
+            builtin_required_variations(ctx.parameters.iter().map(|&arg| &module.types[arg].inner));
+
+        
+        let declaration = lookup_function.entry(name.clone()).or_insert_with(|| {
+            variations |= BuiltinVariations::STANDARD;
+            Default::default()
+        });
+        inject_builtin(declaration, module, &name, variations);
 
         let Context {
             expressions,
@@ -996,15 +1055,6 @@ impl Parser {
             parameters_info,
             ..
         } = ctx;
-
-        if declaration.builtin
-            && !declaration.double
-            && parameters
-                .iter()
-                .any(|ty| is_double(&module.types[*ty].inner))
-        {
-            inject_double_builtin(declaration, module, &name);
-        }
 
         let function = Function {
             name: Some(name),
@@ -1055,6 +1105,7 @@ impl Parser {
             parameters_info,
             kind: FunctionKind::Call(handle),
             defined: true,
+            internal: false,
             void,
         });
     }
@@ -1066,11 +1117,6 @@ impl Parser {
         result: Option<FunctionResult>,
         meta: Span,
     ) {
-        if self.lookup_function.get(&name).is_none() {
-            let declaration = self.lookup_function.entry(name.clone()).or_default();
-            inject_builtin(declaration, &mut self.module, &name);
-        }
-
         let void = result.is_none();
 
         let &mut Parser {
@@ -1079,7 +1125,16 @@ impl Parser {
             ..
         } = self;
 
-        let declaration = lookup_function.entry(name.clone()).or_default();
+        
+        let mut variations =
+            builtin_required_variations(ctx.parameters.iter().map(|&arg| &module.types[arg].inner));
+
+        
+        let declaration = lookup_function.entry(name.clone()).or_insert_with(|| {
+            variations |= BuiltinVariations::STANDARD;
+            Default::default()
+        });
+        inject_builtin(declaration, module, &name, variations);
 
         let Context {
             arguments,
@@ -1087,15 +1142,6 @@ impl Parser {
             parameters_info,
             ..
         } = ctx;
-
-        if declaration.builtin
-            && !declaration.double
-            && parameters
-                .iter()
-                .any(|ty| is_double(&module.types[*ty].inner))
-        {
-            inject_double_builtin(declaration, module, &name);
-        }
 
         let function = Function {
             name: Some(name),
@@ -1130,6 +1176,7 @@ impl Parser {
             parameters_info,
             kind: FunctionKind::Call(handle),
             defined: false,
+            internal: false,
             void,
         });
     }
@@ -1161,6 +1208,59 @@ impl Parser {
         ),
     ) {
         match self.module.types[ty].inner {
+            TypeInner::Array {
+                base,
+                size: crate::ArraySize::Constant(constant),
+                ..
+            } => {
+                let mut location = match binding {
+                    crate::Binding::Location { location, .. } => location,
+                    _ => return,
+                };
+
+                
+                
+                
+                let size = match self.module.constants[constant].to_array_length() {
+                    Some(val) => val,
+                    None => return f(name, pointer, ty, binding, expressions),
+                };
+
+                let interpolation =
+                    self.module.types[base]
+                        .inner
+                        .scalar_kind()
+                        .map(|kind| match kind {
+                            ScalarKind::Float => crate::Interpolation::Perspective,
+                            _ => crate::Interpolation::Flat,
+                        });
+
+                for index in 0..size {
+                    let member_pointer = expressions.append(
+                        Expression::AccessIndex {
+                            base: pointer,
+                            index,
+                        },
+                        crate::Span::default(),
+                    );
+
+                    let binding = crate::Binding::Location {
+                        location,
+                        interpolation,
+                        sampling: None,
+                    };
+                    location += 1;
+
+                    self.arg_type_walker(
+                        name.clone(),
+                        binding,
+                        member_pointer,
+                        base,
+                        expressions,
+                        f,
+                    )
+                }
+            }
             TypeInner::Struct { ref members, .. } => {
                 let mut location = match binding {
                     crate::Binding::Location { location, .. } => location,
@@ -1293,7 +1393,7 @@ impl Parser {
                         offset: span,
                     });
 
-                    span += self.module.types[ty].inner.span(&self.module.constants);
+                    span += self.module.types[ty].inner.size(&self.module.constants);
 
                     let len = expressions.len();
                     let load = expressions.append(Expression::Load { pointer }, Default::default());
@@ -1344,16 +1444,6 @@ impl Parser {
                 ..Default::default()
             },
         });
-    }
-}
-
-fn is_double(ty: &TypeInner) -> bool {
-    match *ty {
-        TypeInner::ValuePointer { kind, width, .. }
-        | TypeInner::Scalar { kind, width }
-        | TypeInner::Vector { kind, width, .. } => kind == ScalarKind::Float && width == 8,
-        TypeInner::Matrix { width, .. } => width == 8,
-        _ => false,
     }
 }
 
@@ -1440,4 +1530,43 @@ fn conversion(target: &TypeInner, source: &TypeInner) -> Option<Conversion> {
             _ => Conversion::Other,
         },
     )
+}
+
+
+
+fn builtin_required_variations<'a>(args: impl Iterator<Item = &'a TypeInner>) -> BuiltinVariations {
+    let mut variations = BuiltinVariations::empty();
+
+    for ty in args {
+        match *ty {
+            TypeInner::ValuePointer { kind, width, .. }
+            | TypeInner::Scalar { kind, width }
+            | TypeInner::Vector { kind, width, .. } => {
+                if kind == ScalarKind::Float && width == 8 {
+                    variations |= BuiltinVariations::DOUBLE
+                }
+            }
+            TypeInner::Matrix { width, .. } => {
+                if width == 8 {
+                    variations |= BuiltinVariations::DOUBLE
+                }
+            }
+            TypeInner::Image {
+                dim,
+                arrayed,
+                class,
+            } => {
+                if dim == crate::ImageDimension::Cube && arrayed {
+                    variations |= BuiltinVariations::CUBE_TEXTURES_ARRAY
+                }
+
+                if dim == crate::ImageDimension::D2 && arrayed && class.is_multisampled() {
+                    variations |= BuiltinVariations::D2_MULTI_TEXTURES_ARRAY
+                }
+            }
+            _ => {}
+        }
+    }
+
+    variations
 }

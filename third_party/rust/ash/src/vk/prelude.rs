@@ -1,3 +1,5 @@
+use crate::vk;
+
 
 
 
@@ -24,5 +26,33 @@ impl Packed24_8 {
     
     pub fn high_8(&self) -> u8 {
         (self.0 >> 24) as u8
+    }
+}
+
+
+
+use vk::ColorComponentFlags;
+
+impl ColorComponentFlags {
+    
+    pub const RGBA: Self = Self(Self::R.0 | Self::G.0 | Self::B.0 | Self::A.0);
+}
+
+impl From<vk::Extent2D> for vk::Extent3D {
+    fn from(value: vk::Extent2D) -> Self {
+        Self {
+            width: value.width,
+            height: value.height,
+            depth: 1,
+        }
+    }
+}
+
+impl From<vk::Extent2D> for vk::Rect2D {
+    fn from(extent: vk::Extent2D) -> Self {
+        Self {
+            offset: Default::default(),
+            extent,
+        }
     }
 }
