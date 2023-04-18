@@ -343,8 +343,11 @@ static RefPtr<DataChannelConnection> GetConnectionFromSocket(
 }
 
 
+
+
 static int threshold_event(struct socket* sock, uint32_t sb_free) {
   RefPtr<DataChannelConnection> connection = GetConnectionFromSocket(sock);
+  connection->mLock.AssertCurrentThreadOwns();
   if (connection) {
     connection->SendDeferredMessages();
   } else {
@@ -1561,9 +1564,8 @@ void DataChannelConnection::HandleOpenRequestMessage(
     Dispatch(NS_NewRunnableFunction(
         "DataChannelConnection::HandleOpenRequestMessage",
         [channel, connection = RefPtr<DataChannelConnection>(this)]() {
-          MutexAutoLock mLock(connection->mLock);
           
-          connection->CloseInt(channel);
+          connection->Close(channel);
         }));
     return;
   }
@@ -1663,7 +1665,7 @@ void DataChannelConnection::HandleDataMessage(const void* data, size_t length,
     DC_ERROR(("DataChannel: Cannot handle message of size %zu (max=%" PRIu32
               ")",
               length, UINT32_MAX));
-    CloseInt(channel);
+    CloseLocked(channel);
     return;
   }
 #endif
@@ -1730,7 +1732,7 @@ void DataChannelConnection::HandleDataMessage(const void* data, size_t length,
          "closing channel"));
     channel->mRecvBuffer.Truncate(0);
     channel->mFlags |= DATA_CHANNEL_FLAGS_CLOSING_TOO_LARGE;
-    CloseInt(channel);
+    CloseLocked(channel);
     return;
   }
   if (!(bufferFlags & DATA_CHANNEL_BUFFER_MESSAGE_FLAGS_COMPLETE)) {
@@ -2410,12 +2412,12 @@ int DataChannelConnection::ReceiveCallback(struct socket* sock, void* data,
     if (locked) {
       mLock.Unlock();
     }
+    
+    
+    
+    
+    free(data);
   }
-  
-  
-  
-  
-  free(data);
   
   return 1;
 }
@@ -2425,6 +2427,7 @@ already_AddRefed<DataChannel> DataChannelConnection::Open(
     bool inOrder, uint32_t prValue, DataChannelListener* aListener,
     nsISupports* aContext, bool aExternalNegotiated, uint16_t aStream) {
   ASSERT_WEBRTC(NS_IsMainThread());
+  MutexAutoLock lock(mLock);  
   if (!aExternalNegotiated) {
     if (mAllocateEven.isSome()) {
       aStream = FindFreeStream();
@@ -2474,7 +2477,6 @@ already_AddRefed<DataChannel> DataChannelConnection::Open(
       prValue, inOrder, aExternalNegotiated, aListener, aContext));
   mChannels.Insert(channel);
 
-  MutexAutoLock lock(mLock);  
   return OpenFinish(channel.forget());
 }
 
@@ -2750,7 +2752,6 @@ int DataChannelConnection::SendDataMsgInternalOrBuffer(DataChannel& channel,
   info.sendv_sndinfo.snd_flags = SCTP_EOR;
   info.sendv_sndinfo.snd_ppid = htonl(ppid);
 
-  MutexAutoLock lock(mLock);  
   
   
   
@@ -2800,6 +2801,7 @@ int DataChannelConnection::SendDataMsg(DataChannel& channel,
                                        uint32_t ppidFinal) {
   
   
+  mLock.AssertCurrentThreadOwns();
 
   if (mMaxMessageSize != 0 && len > mMaxMessageSize) {
     DC_ERROR(("Message rejected, too large (%zu > %" PRIu64 ")", len,
@@ -2842,6 +2844,7 @@ class ReadBlobRunnable : public Runnable {
 
 
 int DataChannelConnection::SendBlob(uint16_t stream, nsIInputStream* aBlob) {
+  MutexAutoLock lock(mLock);
   RefPtr<DataChannel> channel = mChannels.Get(stream);
   if (NS_WARN_IF(!channel)) {
     return EINVAL;  
@@ -2983,6 +2986,7 @@ int DataChannelConnection::SendDataMsgCommon(uint16_t stream,
 
   auto& channel = *channelPtr;
   int err = 0;
+  MutexAutoLock lock(mLock);
   if (isBinary) {
     err = SendDataMsg(channel, data, len, DATA_CHANNEL_PPID_BINARY_PARTIAL,
                       DATA_CHANNEL_PPID_BINARY);
@@ -3008,12 +3012,12 @@ void DataChannelConnection::Stop() {
 
 void DataChannelConnection::Close(DataChannel* aChannel) {
   MutexAutoLock lock(mLock);
-  CloseInt(aChannel);
+  CloseLocked(aChannel);
 }
 
 
 
-void DataChannelConnection::CloseInt(DataChannel* aChannel) {
+void DataChannelConnection::CloseLocked(DataChannel* aChannel) {
   MOZ_ASSERT(aChannel);
   RefPtr<DataChannel> channel(aChannel);  
 
@@ -3056,18 +3060,16 @@ void DataChannelConnection::CloseInt(DataChannel* aChannel) {
 
 void DataChannelConnection::CloseAll() {
   DC_DEBUG(("Closing all channels (connection %p)", (void*)this));
-  
 
   
-  {
-    MutexAutoLock lock(mLock);
-    SetReadyState(CLOSED);
-  }
+  MutexAutoLock lock(mLock);
+  SetReadyState(CLOSED);
 
   
   
   
   for (auto& channel : mChannels.GetAll()) {
+    MutexAutoUnlock lock(mLock);
     channel->Close();
   }
 
@@ -3076,11 +3078,11 @@ void DataChannelConnection::CloseAll() {
   while (nullptr != (channel = mPending.PopFront())) {
     DC_DEBUG(("closing pending channel %p, stream %u", channel.get(),
               channel->mStream));
+    MutexAutoUnlock lock(mLock);
     channel->Close();  
   }
   
   
-  MutexAutoLock lock(mLock);
   SendOutgoingStreamReset();
 }
 

@@ -187,7 +187,7 @@ class DataChannelConnection final : public net::NeckoTargetHolder
   void Stop();
   void Close(DataChannel* aChannel);
   
-  void CloseInt(DataChannel* aChannel);
+  void CloseLocked(DataChannel* aChannel);
   void CloseAll();
 
   
