@@ -4250,31 +4250,17 @@ var AddonManager = {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 AMRemoteSettings = {
-  
   RS_COLLECTION: "addons-manager-settings",
+
   
+
+
+
+
+
+
+
   RS_ENTRIES_MAP: {
     installTriggerDeprecation: [
       "extensions.InstallTriggerImpl.enabled",
@@ -4335,6 +4321,14 @@ AMRemoteSettings = {
       logger.error("Failure on shutdown AddonManager RemoteSettings", err);
     }
   },
+
+  
+
+
+
+
+
+
 
   async processEntries() {
     const entries = await this.client.get({ syncIfEmpty: false }).catch(err => {
