@@ -1038,23 +1038,23 @@ void nsFocusManager::WindowHidden(mozIDOMWindowProxy* aWindow,
   
   
 
-  RefPtr<Element> oldFocusedElement = std::move(mFocusedElement);
+  const RefPtr<Element> oldFocusedElement = std::move(mFocusedElement);
 
   nsCOMPtr<nsIDocShell> focusedDocShell = mFocusedWindow->GetDocShell();
   if (!focusedDocShell) {
     return;
   }
 
-  RefPtr<PresShell> presShell = focusedDocShell->GetPresShell();
+  const RefPtr<PresShell> presShell = focusedDocShell->GetPresShell();
 
   if (oldFocusedElement && oldFocusedElement->IsInComposedDoc()) {
     NotifyFocusStateChange(oldFocusedElement, nullptr, 0, false, false);
     window->UpdateCommands(u"focus"_ns, nullptr, 0);
 
     if (presShell) {
-      SendFocusOrBlurEvent(eBlur, presShell,
-                           oldFocusedElement->GetComposedDoc(),
-                           oldFocusedElement, false);
+      RefPtr<Document> composedDoc = oldFocusedElement->GetComposedDoc();
+      SendFocusOrBlurEvent(eBlur, presShell, composedDoc, oldFocusedElement,
+                           false);
     }
   }
 
@@ -2434,13 +2434,15 @@ bool nsFocusManager::BlurImpl(BrowsingContext* aBrowsingContextToClear,
     SetFocusedWindowInternal(nullptr, aActionId);
     mFocusedElement = nullptr;
 
-    Document* doc = window->GetExtantDoc();
+    RefPtr<Document> doc = window->GetExtantDoc();
     if (doc) {
-      SendFocusOrBlurEvent(eBlur, presShell, doc, ToSupports(doc), false);
+      SendFocusOrBlurEvent(eBlur, presShell, doc,
+                           MOZ_KnownLive(ToSupports(doc)), false);
     }
     if (!GetFocusedBrowsingContext()) {
-      SendFocusOrBlurEvent(eBlur, presShell, doc,
-                           window->GetCurrentInnerWindow(), false);
+      nsCOMPtr<nsPIDOMWindowInner> innerWindow =
+          window->GetCurrentInnerWindow();
+      SendFocusOrBlurEvent(eBlur, presShell, doc, innerWindow, false);
     }
 
     
@@ -2496,7 +2498,7 @@ void nsFocusManager::Focus(
     return;
   }
 
-  RefPtr<PresShell> presShell = docShell->GetPresShell();
+  const RefPtr<PresShell> presShell = docShell->GetPresShell();
   if (!presShell) {
     return;
   }
@@ -2594,7 +2596,7 @@ void nsFocusManager::Focus(
   
   
   if (aIsNewDocument) {
-    Document* doc = aWindow->GetExtantDoc();
+    RefPtr<Document> doc = aWindow->GetExtantDoc();
     
     
     
@@ -2606,13 +2608,14 @@ void nsFocusManager::Focus(
                                      GetFocusMoveActionCause(aFlags));
     }
     if (doc && !focusInOtherContentProcess) {
-      SendFocusOrBlurEvent(eFocus, presShell, doc, ToSupports(doc),
-                           aWindowRaised);
+      SendFocusOrBlurEvent(eFocus, presShell, doc,
+                           MOZ_KnownLive(ToSupports(doc)), aWindowRaised);
     }
     if (GetFocusedBrowsingContext() == aWindow->GetBrowsingContext() &&
         !mFocusedElement && !focusInOtherContentProcess) {
-      SendFocusOrBlurEvent(eFocus, presShell, doc,
-                           aWindow->GetCurrentInnerWindow(), aWindowRaised);
+      nsCOMPtr<nsPIDOMWindowInner> innerWindow =
+          aWindow->GetCurrentInnerWindow();
+      SendFocusOrBlurEvent(eFocus, presShell, doc, innerWindow, aWindowRaised);
     }
   }
 
@@ -2659,11 +2662,11 @@ void nsFocusManager::Focus(
       }
 
       if (!focusInOtherContentProcess) {
-        SendFocusOrBlurEvent(eFocus, presShell, aElement->GetComposedDoc(),
-                             aElement, aWindowRaised, isRefocus,
-                             aBlurredElementInfo
-                                 ? aBlurredElementInfo->mElement.get()
-                                 : nullptr);
+        RefPtr<Document> composedDocument = aElement->GetComposedDoc();
+        RefPtr<Element> relatedTargetElement =
+            aBlurredElementInfo ? aBlurredElementInfo->mElement.get() : nullptr;
+        SendFocusOrBlurEvent(eFocus, presShell, composedDocument, aElement,
+                             aWindowRaised, isRefocus, relatedTargetElement);
       }
     } else {
       IMEStateManager::OnChangeFocus(presContext, nullptr,

@@ -2772,7 +2772,8 @@ class Document : public nsINode,
 
 
 
-  void UnsuppressEventHandlingAndFireEvents(bool aFireEvents);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void UnsuppressEventHandlingAndFireEvents(
+      bool aFireEvents);
 
   uint32_t EventHandlingSuppressed() const { return mEventsSuppressed; }
 
