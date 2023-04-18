@@ -8,6 +8,9 @@
 
 #include "mozilla/dom/Animation.h"
 #include "mozilla/dom/Document.h"
+#include "nsIFrame.h"
+#include "nsIScrollableFrame.h"
+#include "nsLayoutUtils.h"
 
 namespace mozilla::dom {
 
@@ -52,6 +55,39 @@ ScrollTimeline::ScrollTimeline(Document* aDocument, Element* aScroller)
   MOZ_ASSERT(aDocument);
 
   RegisterWithScrollSource();
+}
+
+Nullable<TimeDuration> ScrollTimeline::GetCurrentTimeAsDuration() const {
+  const nsIFrame* frame = nsLayoutUtils::GetScrollFrameFromContent(mSource);
+  const nsIScrollableFrame* scrollFrame =
+      frame ? frame->GetScrollTargetFrame() : nullptr;
+  if (!scrollFrame) {
+    return nullptr;
+  }
+
+  const auto orientation = GetPhysicalOrientation(frame->GetWritingMode());
+  
+  
+  if (!scrollFrame->GetAvailableScrollingDirections().contains(orientation)) {
+    return TimeDuration::FromMilliseconds(SCROLL_TIMELINE_DURATION_MILLISEC);
+  }
+
+  const nsPoint& scrollOffset = scrollFrame->GetScrollPosition();
+  const nsRect& scrollRange = scrollFrame->GetScrollRange();
+  const bool isHorizontal = orientation == layers::ScrollDirection::eHorizontal;
+
+  
+  
+  double position = std::abs(isHorizontal ? scrollOffset.x : scrollOffset.y);
+  double range = isHorizontal ? scrollRange.width : scrollRange.height;
+  MOZ_ASSERT(range > 0.0);
+  
+  
+  
+  
+  double progress = position / range;
+  return TimeDuration::FromMilliseconds(progress *
+                                        SCROLL_TIMELINE_DURATION_MILLISEC);
 }
 
 void ScrollTimeline::RegisterWithScrollSource() {

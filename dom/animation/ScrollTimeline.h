@@ -10,6 +10,10 @@
 #include "mozilla/dom/AnimationTimeline.h"
 #include "mozilla/HashTable.h"
 #include "mozilla/ServoStyleConsts.h"
+#include "mozilla/TimingParams.h"
+#include "mozilla/WritingModes.h"
+
+#define SCROLL_TIMELINE_DURATION_MILLISEC 100000
 
 namespace mozilla {
 namespace dom {
@@ -71,10 +75,7 @@ class ScrollTimeline final : public AnimationTimeline {
   }
 
   
-  Nullable<TimeDuration> GetCurrentTimeAsDuration() const override {
-    
-    return nullptr;
-  }
+  Nullable<TimeDuration> GetCurrentTimeAsDuration() const override;
   bool TracksWallclockTime() const override { return false; }
   Nullable<TimeDuration> ToTimelineTime(
       const TimeStamp& aTimeStamp) const override {
@@ -88,6 +89,7 @@ class ScrollTimeline final : public AnimationTimeline {
     return {};
   }
   Document* GetDocument() const override { return mDocument; }
+  bool IsScrollTimeline() const override { return true; }
 
   void ScheduleAnimations() {
     
@@ -95,6 +97,19 @@ class ScrollTimeline final : public AnimationTimeline {
     
 
     Tick();
+  }
+
+  static const TimingParams& GetTiming() {
+    
+    
+    
+    
+    
+    
+    static TimingParams sTiming =
+        TimingParams(SCROLL_TIMELINE_DURATION_MILLISEC, 0.0, 1.0,
+                     PlaybackDirection::Normal, FillMode::Both);
+    return sTiming;
   }
 
  protected:
@@ -110,7 +125,31 @@ class ScrollTimeline final : public AnimationTimeline {
   void RegisterWithScrollSource();
   void UnregisterFromScrollSource();
 
+  
+  
+  
+  
+  
+  
+  layers::ScrollDirection GetPhysicalOrientation(WritingMode aWM) const {
+    return mDirection == StyleScrollDirection::Horizontal ||
+                   (!aWM.IsVertical() &&
+                    mDirection == StyleScrollDirection::Inline) ||
+                   (aWM.IsVertical() &&
+                    (mDirection == StyleScrollDirection::Block ||
+                     mDirection == StyleScrollDirection::Auto))
+               ? layers::ScrollDirection::eHorizontal
+               : layers::ScrollDirection::eVertical;
+  }
+
   RefPtr<Document> mDocument;
+
+  
+  
+  
+  
+  
+  
   RefPtr<Element> mSource;
   StyleScrollDirection mDirection;
 };

@@ -8,7 +8,9 @@
 #define mozilla_dom_AnimationEffect_h
 
 #include "mozilla/ComputedTiming.h"
+#include "mozilla/dom/Animation.h"
 #include "mozilla/dom/Nullable.h"
+#include "mozilla/dom/ScrollTimeline.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/TimingParams.h"
 #include "nsCycleCollectionParticipant.h"
@@ -19,7 +21,6 @@ class ErrorResult;
 
 namespace dom {
 
-class Animation;
 class KeyframeEffect;
 struct ComputedEffectTiming;
 struct EffectTiming;
@@ -49,7 +50,15 @@ class AnimationEffect : public nsISupports, public nsWrapperCache {
   virtual void UpdateTiming(const OptionalEffectTiming& aTiming,
                             ErrorResult& aRv);
 
-  const TimingParams& SpecifiedTiming() const { return mTiming; }
+  const TimingParams& SpecifiedTiming() const {
+    return mAnimation && mAnimation->UsingScrollTimeline()
+               
+               
+               
+               
+               ? ScrollTimeline::GetTiming()
+               : mTiming;
+  }
   void SetSpecifiedTiming(TimingParams&& aTiming);
 
   
