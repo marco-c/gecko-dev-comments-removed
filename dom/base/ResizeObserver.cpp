@@ -11,6 +11,7 @@
 #include "mozilla/SVGUtils.h"
 #include "nsIContent.h"
 #include "nsIContentInlines.h"
+#include "nsIScrollableFrame.h"
 #include <limits>
 
 namespace mozilla::dom {
@@ -45,6 +46,14 @@ static uint32_t GetNodeDepth(nsINode* aNode) {
   return depth;
 }
 
+static nsSize GetContentRectSize(const nsIFrame& aFrame) {
+  if (const nsIScrollableFrame* f = do_QueryFrame(&aFrame)) {
+    
+    return f->GetScrollPortRect().Size();
+  }
+  return aFrame.GetContentRectRelativeToSelf().Size();
+}
+
 
 
 
@@ -75,47 +84,42 @@ static gfx::Size CalculateBoxSize(Element* aTarget,
       const LayoutDeviceIntSize snappedSize =
           RoundedToInt(CSSSize::FromUnknownSize(size) *
                        frame->PresContext()->CSSToDevPixelScale());
-      size = gfx::Size(snappedSize.ToUnknownSize());
+      return gfx::Size(snappedSize.ToUnknownSize());
     }
-  } else {
-    
-    
-    
-    
-    if (!frame->IsFrameOfType(nsIFrame::eReplaced) &&
-        frame->IsFrameOfType(nsIFrame::eLineParticipant)) {
-      return size;
-    }
-
-    switch (aBox) {
-      case ResizeObserverBoxOptions::Border_box:
-        
-        size = CSSPixel::FromAppUnits(frame->GetSize()).ToUnknownSize();
-        break;
-      case ResizeObserverBoxOptions::Device_pixel_content_box: {
-        
-        
-        
-        
-        
-        
-        
-        const LayoutDeviceIntSize snappedSize =
-            LayoutDevicePixel::FromAppUnitsRounded(
-                frame->GetContentRectRelativeToSelf().Size(),
-                frame->PresContext()->AppUnitsPerDevPixel());
-        size = gfx::Size(snappedSize.ToUnknownSize());
-        break;
-      }
-      case ResizeObserverBoxOptions::Content_box:
-      default:
-        size =
-            CSSPixel::FromAppUnits(frame->GetContentRectRelativeToSelf().Size())
-                .ToUnknownSize();
-    }
+    return size;
   }
 
-  return size;
+  
+  
+  
+  
+  if (!frame->IsFrameOfType(nsIFrame::eReplaced) &&
+      frame->IsFrameOfType(nsIFrame::eLineParticipant)) {
+    return size;
+  }
+
+  switch (aBox) {
+    case ResizeObserverBoxOptions::Border_box:
+      return CSSPixel::FromAppUnits(frame->GetSize()).ToUnknownSize();
+    case ResizeObserverBoxOptions::Device_pixel_content_box: {
+      
+      
+      
+      
+      
+      
+      
+      const LayoutDeviceIntSize snappedSize =
+          LayoutDevicePixel::FromAppUnitsRounded(
+              GetContentRectSize(*frame),
+              frame->PresContext()->AppUnitsPerDevPixel());
+      return gfx::Size(snappedSize.ToUnknownSize());
+    }
+    case ResizeObserverBoxOptions::Content_box:
+    default:
+      break;
+  }
+  return CSSPixel::FromAppUnits(GetContentRectSize(*frame)).ToUnknownSize();
 }
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(ResizeObservation)
