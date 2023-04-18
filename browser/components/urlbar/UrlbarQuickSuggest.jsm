@@ -4,11 +4,7 @@
 
 "use strict";
 
-const EXPORTED_SYMBOLS = [
-  "KeywordTree",
-  "ONBOARDING_CHOICE",
-  "UrlbarQuickSuggest",
-];
+const EXPORTED_SYMBOLS = ["ONBOARDING_CHOICE", "UrlbarQuickSuggest"];
 
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
@@ -127,11 +123,7 @@ class Suggestions {
   async query(phrase) {
     log.info("Handling query for", phrase);
     phrase = phrase.toLowerCase();
-    let resultID = this._tree.get(phrase);
-    if (resultID === null) {
-      return null;
-    }
-    let result = this._results.get(resultID);
+    let result = this._resultsByKeyword.get(phrase);
     if (!result) {
       return null;
     }
@@ -336,10 +328,8 @@ class Suggestions {
   _config = {};
 
   
-  _results = new Map();
-
   
-  _tree = new KeywordTree();
+  _resultsByKeyword = new Map();
 
   
 
@@ -396,8 +386,7 @@ class Suggestions {
       log.debug("Got configuration:", configArray);
       this._config = configArray?.[0]?.configuration || {};
 
-      this._results = new Map();
-      this._tree = new KeywordTree();
+      this._resultsByKeyword.clear();
 
       for (let record of data) {
         let { buffer } = await this._rs.attachments.download(record, {
@@ -418,9 +407,8 @@ class Suggestions {
 
   _addResults(results) {
     for (let result of results) {
-      this._results.set(result.id, result);
       for (let keyword of result.keywords) {
-        this._tree.set(keyword, result.id);
+        this._resultsByKeyword.set(keyword, result);
       }
     }
   }
@@ -444,168 +432,6 @@ class Suggestions {
       return null;
     }
     return this._rs.attachments.download(record);
-  }
-}
-
-
-
-const RESULT_KEY = "^";
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class KeywordTree {
-  constructor() {
-    this.tree = new Map();
-  }
-
-  
-
-
-  set(keyword, id) {
-    if (keyword.includes(RESULT_KEY)) {
-      throw new Error(`"${RESULT_KEY}" is reserved`);
-    }
-    let tree = this.tree;
-    for (let x = 0, c = ""; (c = keyword.charAt(x)); x++) {
-      let child = tree.get(c) || new Map();
-      tree.set(c, child);
-      tree = child;
-    }
-    tree.set(RESULT_KEY, id);
-  }
-
-  
-
-
-
-
-
-
-
-  get(query) {
-    query = query.trimStart() + RESULT_KEY;
-    let node = this.tree;
-    let phrase = "";
-    while (phrase.length < query.length) {
-      
-      
-      let key = query[phrase.length];
-      let child = node.get(key);
-      if (!child) {
-        
-        key = null;
-        for (let childKey of node.keys()) {
-          let childPhrase = phrase + childKey;
-          if (childPhrase == query.substring(0, childPhrase.length)) {
-            key = childKey;
-            break;
-          }
-        }
-        if (!key) {
-          return null;
-        }
-        child = node.get(key);
-      }
-      node = child;
-      phrase += key;
-    }
-    if (phrase.length != query.length) {
-      return null;
-    }
-    
-    return node;
-  }
-
-  
-
-
-
-
-
-
-  flatten() {
-    this._flatten("", this.tree, null);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  _flatten(key, node, parent) {
-    
-    
-    
-    for (let [childKey, child] of [...node.entries()]) {
-      if (childKey != RESULT_KEY) {
-        this._flatten(childKey, child, node);
-      }
-    }
-    
-    
-    if (node.size == 1 && parent) {
-      parent.delete(key);
-      let childKey = [...node.keys()][0];
-      parent.set(key + childKey, node.get(childKey));
-    }
-  }
-
-  
-
-
-  toJSONObject(map = this.tree) {
-    let tmp = {};
-    for (let [key, val] of map) {
-      if (val instanceof Map) {
-        tmp[key] = this.toJSONObject(val);
-      } else {
-        tmp[key] = val;
-      }
-    }
-    return tmp;
-  }
-
-  
-
-
-
-  fromJSON(json) {
-    this.tree = this.JSONObjectToMap(json);
-  }
-
-  JSONObjectToMap(obj) {
-    let map = new Map();
-    for (let key of Object.keys(obj)) {
-      if (typeof obj[key] == "object") {
-        map.set(key, this.JSONObjectToMap(obj[key]));
-      } else {
-        map.set(key, obj[key]);
-      }
-    }
-    return map;
   }
 }
 
