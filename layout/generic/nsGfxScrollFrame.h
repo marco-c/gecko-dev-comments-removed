@@ -399,8 +399,6 @@ class ScrollFrameHelper : public nsIReflowCallback {
   nsIFrame* GetFrameForStyle() const;
 
   
-  ScrollSnapInfo ComputeOldScrollSnapInfo() const;
-  
   ScrollSnapInfo ComputeScrollSnapInfo(
       const Maybe<nsPoint>& aDestination) const;
 
