@@ -135,6 +135,18 @@ RuleEditor.prototype = {
 
     this.updateSourceLink();
 
+    if (this.rule.mediaText) {
+      const text = `@media ${this.rule.mediaText}`;
+      createChild(this.element, "span", {
+        class: "ruleview-rule-parent-data theme-link",
+        
+        
+        
+        title: `\u202A${text}`,
+        textContent: text,
+      });
+    }
+
     const code = createChild(this.element, "div", {
       class: "ruleview-code",
     });
@@ -301,10 +313,6 @@ RuleEditor.prototype = {
     if (line > 0) {
       sourceTextContent += ":" + line;
       title += ":" + line;
-    }
-    if (this.rule.mediaText) {
-      sourceTextContent += " @" + this.rule.mediaText;
-      title += " @" + this.rule.mediaText;
     }
 
     const sourceLabel = this.element.querySelector(
