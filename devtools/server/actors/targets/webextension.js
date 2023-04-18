@@ -227,7 +227,12 @@ webExtensionTargetPrototype._searchFallbackWindow = function() {
   
   
   this.fallbackWindow = this.chromeGlobal.content;
-  this.fallbackWindow.document.location.href = FALLBACK_DOC_URL;
+
+  
+  
+  
+  
+  this.fallbackWindow.document.location.href = `${FALLBACK_DOC_URL}#${this.addonId}`;
 
   return this.fallbackWindow;
 };

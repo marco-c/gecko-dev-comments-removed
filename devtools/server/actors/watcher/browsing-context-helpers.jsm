@@ -7,6 +7,7 @@
 const EXPORTED_SYMBOLS = [
   "isBrowsingContextPartOfContext",
   "isWindowGlobalPartOfContext",
+  "getAddonIdForWindowGlobal",
   "getAllBrowsingContextsForContext",
 ];
 
@@ -23,6 +24,49 @@ const isEveryFrameTargetEnabled = Services.prefs.getBoolPref(
   false
 );
 
+const WEBEXTENSION_FALLBACK_DOC_URL =
+  "chrome://devtools/content/shared/webextension-fallback.html";
+
+
+
+
+
+
+
+
+
+
+
+
+
+function getAddonIdForWindowGlobal(windowGlobal) {
+  const browsingContext = windowGlobal.browsingContext;
+  const isParent = CanonicalBrowsingContext.isInstance(browsingContext);
+  
+  
+  const principal = isParent
+    ? windowGlobal.documentPrincipal
+    : browsingContext.window.document.nodePrincipal;
+
+  
+  
+  if (principal.addonId) {
+    return principal.addonId;
+  }
+
+  
+  
+  const href = isParent
+    ? windowGlobal.documentURI.displaySpec
+    : browsingContext.window.document.location.href;
+
+  if (href && href.startsWith(WEBEXTENSION_FALLBACK_DOC_URL)) {
+    const [, addonId] = href.split("#");
+    return addonId;
+  }
+
+  return null;
+}
 
 
 
@@ -157,6 +201,7 @@ function isBrowsingContextPartOfContext(
     }
     return true;
   }
+
   if (sessionContext.type == "webextension") {
     
     
@@ -164,12 +209,8 @@ function isBrowsingContextPartOfContext(
     if (!windowGlobal) {
       return false;
     }
-    
-    
-    const principal =
-      windowGlobal.documentPrincipal ||
-      browsingContext.window.document.nodePrincipal;
-    return principal.addonId == sessionContext.addonId;
+
+    return getAddonIdForWindowGlobal(windowGlobal) == sessionContext.addonId;
   }
   throw new Error("Unsupported session context type: " + sessionContext.type);
 }
@@ -381,6 +422,7 @@ if (typeof module == "object") {
   module.exports = {
     isBrowsingContextPartOfContext,
     isWindowGlobalPartOfContext,
+    getAddonIdForWindowGlobal,
     getAllBrowsingContextsForContext,
   };
 }
