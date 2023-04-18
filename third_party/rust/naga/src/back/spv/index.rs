@@ -1,7 +1,7 @@
 
 
 use super::{selection::Selection, Block, BlockContext, Error, IdGenerator, Instruction, Word};
-use crate::{arena::Handle, back::BoundsCheckPolicy};
+use crate::{arena::Handle, proc::BoundsCheckPolicy};
 
 
 
@@ -107,10 +107,6 @@ impl<'w> BlockContext<'w> {
             }
             crate::proc::IndexableLength::Dynamic => {
                 let length_id = self.write_runtime_array_length(sequence, block)?;
-                Ok(MaybeKnown::Computed(length_id))
-            }
-            crate::proc::IndexableLength::Specializable(constant) => {
-                let length_id = self.writer.constant_ids[constant.index()];
                 Ok(MaybeKnown::Computed(length_id))
             }
         }
@@ -346,22 +342,11 @@ impl<'w> BlockContext<'w> {
         index: Handle<crate::Expression>,
         block: &mut Block,
     ) -> Result<BoundsCheckResult, Error> {
-        
-        
-        let is_buffer = match *self.fun_info[base].ty.inner_with(&self.ir_module.types) {
-            crate::TypeInner::Pointer { class, .. }
-            | crate::TypeInner::ValuePointer { class, .. } => match class {
-                crate::StorageClass::Storage { access: _ } | crate::StorageClass::Uniform => true,
-                _ => false,
-            },
-            _ => false,
-        };
-
-        let policy = if is_buffer {
-            self.writer.bounds_check_policies.buffer
-        } else {
-            self.writer.bounds_check_policies.index
-        };
+        let policy = self.writer.bounds_check_policies.choose_policy(
+            base,
+            &self.ir_module.types,
+            self.fun_info,
+        );
 
         Ok(match policy {
             BoundsCheckPolicy::Restrict => self.write_restricted_index(base, index, block)?,

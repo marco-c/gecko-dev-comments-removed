@@ -4,12 +4,13 @@ use super::{
     context::{Context, ExprPos, StmtContext},
     error::{Error, ErrorKind},
     types::scalar_components,
-    Parser, Result, SourceMetadata,
+    Parser, Result,
 };
 use crate::{
     front::glsl::types::type_power, proc::ensure_block_returns, Arena, Block, Constant,
     ConstantInner, EntryPoint, Expression, FastHashMap, Function, FunctionArgument, FunctionResult,
-    Handle, LocalVariable, ScalarKind, ScalarValue, Span, Statement, StructMember, Type, TypeInner,
+    Handle, LocalVariable, ScalarKind, ScalarValue, Span, Statement, StorageClass, StructMember,
+    Type, TypeInner,
 };
 use std::iter;
 
@@ -18,7 +19,7 @@ impl Parser {
         &mut self,
         scalar_kind: ScalarKind,
         value: u64,
-        meta: SourceMetadata,
+        meta: Span,
     ) -> Handle<Constant> {
         let value = match scalar_kind {
             ScalarKind::Uint => ScalarValue::Uint(value),
@@ -33,7 +34,7 @@ impl Parser {
                 specialization: None,
                 inner: ConstantInner::Scalar { width: 4, value },
             },
-            meta.as_span(),
+            meta,
         )
     }
 
@@ -44,7 +45,7 @@ impl Parser {
         body: &mut Block,
         fc: FunctionCallKind,
         raw_args: &[Handle<HirExpr>],
-        meta: SourceMetadata,
+        meta: Span,
     ) -> Result<Option<Handle<Expression>>> {
         let args: Vec<_> = raw_args
             .iter()
@@ -53,294 +54,422 @@ impl Parser {
 
         match fc {
             FunctionCallKind::TypeConstructor(ty) => {
-                let h = if args.len() == 1 {
-                    let expr_type = self.resolve_type(ctx, args[0].0, args[0].1)?;
+                if args.len() == 1 {
+                    self.constructor_single(ctx, body, ty, args[0], meta)
+                        .map(Some)
+                } else {
+                    self.constructor_many(ctx, body, ty, args, meta).map(Some)
+                }
+            }
+            FunctionCallKind::Function(name) => {
+                self.function_call(ctx, stmt, body, name, args, raw_args, meta)
+            }
+        }
+    }
 
-                    let vector_size = match *expr_type {
-                        TypeInner::Vector { size, .. } => Some(size),
-                        _ => None,
-                    };
+    fn constructor_single(
+        &mut self,
+        ctx: &mut Context,
+        body: &mut Block,
+        ty: Handle<Type>,
+        (mut value, expr_meta): (Handle<Expression>, Span),
+        meta: Span,
+    ) -> Result<Handle<Expression>> {
+        let expr_type = self.resolve_type(ctx, value, expr_meta)?;
 
-                    
-                    match self.module.types[ty].inner.scalar_kind() {
-                        Some(result_scalar_kind)
-                            if expr_type.scalar_kind() == Some(ScalarKind::Bool)
-                                && result_scalar_kind != ScalarKind::Bool =>
-                        {
-                            let (condition, expr_meta) = args[0];
-                            let c0 = self.add_constant_value(result_scalar_kind, 0u64, meta);
-                            let c1 = self.add_constant_value(result_scalar_kind, 1u64, meta);
-                            let mut reject =
-                                ctx.add_expression(Expression::Constant(c0), expr_meta, body);
-                            let mut accept =
-                                ctx.add_expression(Expression::Constant(c1), expr_meta, body);
+        let vector_size = match *expr_type {
+            TypeInner::Vector { size, .. } => Some(size),
+            _ => None,
+        };
 
-                            ctx.implicit_splat(self, &mut reject, meta, vector_size)?;
-                            ctx.implicit_splat(self, &mut accept, meta, vector_size)?;
+        
+        match self.module.types[ty].inner.scalar_kind() {
+            Some(result_scalar_kind)
+                if expr_type.scalar_kind() == Some(ScalarKind::Bool)
+                    && result_scalar_kind != ScalarKind::Bool =>
+            {
+                let c0 = self.add_constant_value(result_scalar_kind, 0u64, meta);
+                let c1 = self.add_constant_value(result_scalar_kind, 1u64, meta);
+                let mut reject = ctx.add_expression(Expression::Constant(c0), expr_meta, body);
+                let mut accept = ctx.add_expression(Expression::Constant(c1), expr_meta, body);
 
-                            let h = ctx.add_expression(
-                                Expression::Select {
-                                    accept,
-                                    reject,
-                                    condition,
-                                },
-                                expr_meta,
-                                body,
-                            );
+                ctx.implicit_splat(self, &mut reject, meta, vector_size)?;
+                ctx.implicit_splat(self, &mut accept, meta, vector_size)?;
 
-                            return Ok(Some(h));
-                        }
-                        _ => {}
-                    }
+                let h = ctx.add_expression(
+                    Expression::Select {
+                        accept,
+                        reject,
+                        condition: value,
+                    },
+                    expr_meta,
+                    body,
+                );
 
-                    match self.module.types[ty].inner {
-                        TypeInner::Vector { size, kind, width } if vector_size.is_none() => {
-                            let (mut value, meta) = args[0];
-                            ctx.implicit_conversion(self, &mut value, meta, kind, width)?;
+                return Ok(h);
+            }
+            _ => {}
+        }
 
-                            ctx.add_expression(Expression::Splat { size, value }, meta, body)
-                        }
-                        TypeInner::Scalar { kind, width } => ctx.add_expression(
-                            Expression::As {
-                                kind,
-                                expr: args[0].0,
-                                convert: Some(width),
-                            },
-                            args[0].1,
-                            body,
-                        ),
-                        TypeInner::Vector { size, kind, width } => {
-                            let mut expr = args[0].0;
+        Ok(match self.module.types[ty].inner {
+            TypeInner::Vector { size, kind, width } if vector_size.is_none() => {
+                ctx.implicit_conversion(self, &mut value, meta, kind, width)?;
 
-                            if vector_size.map_or(true, |s| s != size) {
-                                expr = ctx.vector_resize(size, expr, args[0].1, body);
-                            }
+                ctx.add_expression(Expression::Splat { size, value }, meta, body)
+            }
+            TypeInner::Scalar { kind, width } => {
+                let mut expr = value;
+                if let TypeInner::Vector { .. } | TypeInner::Matrix { .. } =
+                    *self.resolve_type(ctx, value, expr_meta)?
+                {
+                    expr = ctx.add_expression(
+                        Expression::AccessIndex {
+                            base: expr,
+                            index: 0,
+                        },
+                        meta,
+                        body,
+                    );
+                }
 
-                            ctx.add_expression(
-                                Expression::As {
-                                    kind,
-                                    expr,
-                                    convert: Some(width),
-                                },
-                                args[0].1,
-                                body,
-                            )
-                        }
-                        TypeInner::Matrix {
-                            columns,
-                            rows,
+                if let TypeInner::Matrix { .. } = *self.resolve_type(ctx, value, expr_meta)? {
+                    expr = ctx.add_expression(
+                        Expression::AccessIndex {
+                            base: expr,
+                            index: 0,
+                        },
+                        meta,
+                        body,
+                    );
+                }
+
+                ctx.add_expression(
+                    Expression::As {
+                        kind,
+                        expr,
+                        convert: Some(width),
+                    },
+                    meta,
+                    body,
+                )
+            }
+            TypeInner::Vector { size, kind, width } => {
+                if vector_size.map_or(true, |s| s != size) {
+                    value = ctx.vector_resize(size, value, expr_meta, body);
+                }
+
+                ctx.add_expression(
+                    Expression::As {
+                        kind,
+                        expr: value,
+                        convert: Some(width),
+                    },
+                    meta,
+                    body,
+                )
+            }
+            TypeInner::Matrix {
+                columns,
+                rows,
+                width,
+            } => self.matrix_one_arg(
+                ctx,
+                body,
+                ty,
+                columns,
+                rows,
+                width,
+                (value, expr_meta),
+                meta,
+            )?,
+            TypeInner::Struct { .. } | TypeInner::Array { .. } => ctx.add_expression(
+                Expression::Compose {
+                    ty,
+                    components: vec![value],
+                },
+                meta,
+                body,
+            ),
+            _ => {
+                self.errors.push(Error {
+                    kind: ErrorKind::SemanticError("Bad type constructor".into()),
+                    meta,
+                });
+
+                value
+            }
+        })
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn matrix_one_arg(
+        &mut self,
+        ctx: &mut Context,
+        body: &mut Block,
+        ty: Handle<Type>,
+        columns: crate::VectorSize,
+        rows: crate::VectorSize,
+        width: crate::Bytes,
+        (mut value, expr_meta): (Handle<Expression>, Span),
+        meta: Span,
+    ) -> Result<Handle<Expression>> {
+        let mut components = Vec::with_capacity(columns as usize);
+        
+        
+        
+
+        ctx.implicit_conversion(self, &mut value, expr_meta, ScalarKind::Float, width)?;
+        match *self.resolve_type(ctx, value, expr_meta)? {
+            TypeInner::Scalar { .. } => {
+                
+                
+                
+                let vector_ty = self.module.types.insert(
+                    Type {
+                        name: None,
+                        inner: TypeInner::Vector {
+                            size: rows,
+                            kind: ScalarKind::Float,
                             width,
-                        } => {
-                            
-                            
-                            
+                        },
+                    },
+                    meta,
+                );
+                let zero_constant = self.module.constants.fetch_or_append(
+                    Constant {
+                        name: None,
+                        specialization: None,
+                        inner: ConstantInner::Scalar {
+                            width,
+                            value: ScalarValue::Float(0.0),
+                        },
+                    },
+                    meta,
+                );
+                let zero = ctx.add_expression(Expression::Constant(zero_constant), meta, body);
 
-                            let (mut value, meta) = args[0];
-                            ctx.implicit_conversion(
-                                self,
-                                &mut value,
-                                meta,
-                                ScalarKind::Float,
-                                width,
-                            )?;
-                            match *self.resolve_type(ctx, value, meta)? {
-                                TypeInner::Scalar { .. } => {
-                                    
-                                    
-                                    
-                                    let mut components = Vec::with_capacity(columns as usize);
-                                    let vector_ty = self.module.types.fetch_or_append(
-                                        Type {
-                                            name: None,
-                                            inner: TypeInner::Vector {
-                                                size: rows,
-                                                kind: ScalarKind::Float,
-                                                width,
-                                            },
-                                        },
-                                        meta.as_span(),
-                                    );
-                                    let zero_constant = self.module.constants.fetch_or_append(
-                                        Constant {
-                                            name: None,
-                                            specialization: None,
-                                            inner: ConstantInner::Scalar {
-                                                width,
-                                                value: ScalarValue::Float(0.0),
-                                            },
-                                        },
-                                        meta.as_span(),
-                                    );
-                                    let zero = ctx.add_expression(
-                                        Expression::Constant(zero_constant),
-                                        meta,
-                                        body,
-                                    );
-
-                                    for i in 0..columns as u32 {
-                                        components.push(
-                                            ctx.add_expression(
-                                                Expression::Compose {
-                                                    ty: vector_ty,
-                                                    components: (0..rows as u32)
-                                                        .into_iter()
-                                                        .map(|r| match r == i {
-                                                            true => value,
-                                                            false => zero,
-                                                        })
-                                                        .collect(),
-                                                },
-                                                meta,
-                                                body,
-                                            ),
-                                        )
-                                    }
-
-                                    ctx.add_expression(
-                                        Expression::Compose { ty, components },
-                                        meta,
-                                        body,
-                                    )
-                                }
-                                TypeInner::Matrix { rows: ori_rows, .. } => {
-                                    let mut components = Vec::new();
-
-                                    for n in 0..columns as u32 {
-                                        let mut vector = ctx.add_expression(
-                                            Expression::AccessIndex {
-                                                base: value,
-                                                index: n,
-                                            },
-                                            meta,
-                                            body,
-                                        );
-
-                                        if ori_rows != rows {
-                                            vector = ctx.vector_resize(rows, vector, meta, body);
-                                        }
-
-                                        components.push(vector)
-                                    }
-
-                                    ctx.add_expression(
-                                        Expression::Compose { ty, components },
-                                        meta,
-                                        body,
-                                    )
-                                }
-                                _ => {
-                                    let columns =
-                                        iter::repeat(value).take(columns as usize).collect();
-
-                                    ctx.add_expression(
-                                        Expression::Compose {
-                                            ty,
-                                            components: columns,
-                                        },
-                                        meta,
-                                        body,
-                                    )
-                                }
-                            }
-                        }
-                        TypeInner::Struct { .. } => ctx.add_expression(
+                for i in 0..columns as u32 {
+                    components.push(
+                        ctx.add_expression(
                             Expression::Compose {
-                                ty,
-                                components: args.into_iter().map(|arg| arg.0).collect(),
+                                ty: vector_ty,
+                                components: (0..rows as u32)
+                                    .into_iter()
+                                    .map(|r| match r == i {
+                                        true => value,
+                                        false => zero,
+                                    })
+                                    .collect(),
                             },
                             meta,
                             body,
                         ),
-                        _ => {
-                            self.errors.push(Error {
-                                kind: ErrorKind::SemanticError("Bad cast".into()),
-                                meta,
-                            });
+                    )
+                }
+            }
+            TypeInner::Matrix {
+                rows: ori_rows,
+                columns: ori_cols,
+                ..
+            } => {
+                
+                
+                
+                
 
-                            args[0].0
-                        }
-                    }
-                } else {
-                    let mut components = Vec::with_capacity(args.len());
-
-                    match self.module.types[ty].inner {
-                        TypeInner::Matrix {
-                            columns,
-                            rows,
+                let zero_constant = self.module.constants.fetch_or_append(
+                    Constant {
+                        name: None,
+                        specialization: None,
+                        inner: ConstantInner::Scalar {
                             width,
-                        } => {
-                            let mut flattened =
-                                Vec::with_capacity(columns as usize * rows as usize);
+                            value: ScalarValue::Float(0.0),
+                        },
+                    },
+                    meta,
+                );
+                let zero = ctx.add_expression(Expression::Constant(zero_constant), meta, body);
+                let one_constant = self.module.constants.fetch_or_append(
+                    Constant {
+                        name: None,
+                        specialization: None,
+                        inner: ConstantInner::Scalar {
+                            width,
+                            value: ScalarValue::Float(1.0),
+                        },
+                    },
+                    meta,
+                );
+                let one = ctx.add_expression(Expression::Constant(one_constant), meta, body);
+                let vector_ty = self.module.types.insert(
+                    Type {
+                        name: None,
+                        inner: TypeInner::Vector {
+                            size: rows,
+                            kind: ScalarKind::Float,
+                            width,
+                        },
+                    },
+                    meta,
+                );
 
-                            for (mut arg, meta) in args.iter().copied() {
-                                let scalar_components =
-                                    scalar_components(&self.module.types[ty].inner);
-                                if let Some((kind, width)) = scalar_components {
-                                    ctx.implicit_conversion(self, &mut arg, meta, kind, width)?;
-                                }
+                for i in 0..columns as u32 {
+                    if i < ori_cols as u32 {
+                        use std::cmp::Ordering;
 
-                                match *self.resolve_type(ctx, arg, meta)? {
-                                    TypeInner::Vector { size, .. } => {
-                                        for i in 0..(size as u32) {
-                                            flattened.push(ctx.add_expression(
+                        let vector = ctx.add_expression(
+                            Expression::AccessIndex {
+                                base: value,
+                                index: i,
+                            },
+                            meta,
+                            body,
+                        );
+
+                        components.push(match ori_rows.cmp(&rows) {
+                            Ordering::Less => {
+                                let components = (0..rows as u32)
+                                    .into_iter()
+                                    .map(|r| {
+                                        if r < ori_rows as u32 {
+                                            ctx.add_expression(
                                                 Expression::AccessIndex {
-                                                    base: arg,
-                                                    index: i,
+                                                    base: vector,
+                                                    index: r,
                                                 },
                                                 meta,
                                                 body,
-                                            ))
+                                            )
+                                        } else if r == i {
+                                            one
+                                        } else {
+                                            zero
                                         }
-                                    }
-                                    _ => flattened.push(arg),
-                                }
-                            }
+                                    })
+                                    .collect();
 
-                            let ty = self.module.types.fetch_or_append(
-                                Type {
-                                    name: None,
-                                    inner: TypeInner::Vector {
-                                        size: rows,
-                                        kind: ScalarKind::Float,
-                                        width,
-                                    },
-                                },
-                                meta.as_span(),
-                            );
-
-                            for chunk in flattened.chunks(rows as usize) {
-                                components.push(ctx.add_expression(
+                                ctx.add_expression(
                                     Expression::Compose {
-                                        ty,
-                                        components: Vec::from(chunk),
+                                        ty: vector_ty,
+                                        components,
+                                    },
+                                    meta,
+                                    body,
+                                )
+                            }
+                            Ordering::Equal => vector,
+                            Ordering::Greater => ctx.vector_resize(rows, vector, meta, body),
+                        })
+                    } else {
+                        let vec_constant = self.module.constants.fetch_or_append(
+                            Constant {
+                                name: None,
+                                specialization: None,
+                                inner: ConstantInner::Composite {
+                                    ty: vector_ty,
+                                    components: (0..rows as u32)
+                                        .into_iter()
+                                        .map(|r| match r == i {
+                                            true => one_constant,
+                                            false => zero_constant,
+                                        })
+                                        .collect(),
+                                },
+                            },
+                            meta,
+                        );
+                        let vec =
+                            ctx.add_expression(Expression::Constant(vec_constant), meta, body);
+
+                        components.push(vec)
+                    }
+                }
+            }
+            _ => {
+                components = iter::repeat(value).take(columns as usize).collect();
+            }
+        }
+
+        Ok(ctx.add_expression(Expression::Compose { ty, components }, meta, body))
+    }
+
+    fn constructor_many(
+        &mut self,
+        ctx: &mut Context,
+        body: &mut Block,
+        ty: Handle<Type>,
+        args: Vec<(Handle<Expression>, Span)>,
+        meta: Span,
+    ) -> Result<Handle<Expression>> {
+        let mut components = Vec::with_capacity(args.len());
+
+        match self.module.types[ty].inner {
+            TypeInner::Matrix {
+                columns,
+                rows,
+                width,
+            } => {
+                let mut flattened = Vec::with_capacity(columns as usize * rows as usize);
+
+                for (mut arg, meta) in args.iter().copied() {
+                    let scalar_components = scalar_components(&self.module.types[ty].inner);
+                    if let Some((kind, width)) = scalar_components {
+                        ctx.implicit_conversion(self, &mut arg, meta, kind, width)?;
+                    }
+
+                    match *self.resolve_type(ctx, arg, meta)? {
+                        TypeInner::Vector { size, .. } => {
+                            for i in 0..(size as u32) {
+                                flattened.push(ctx.add_expression(
+                                    Expression::AccessIndex {
+                                        base: arg,
+                                        index: i,
                                     },
                                     meta,
                                     body,
                                 ))
                             }
                         }
-                        _ => {
-                            for (mut arg, meta) in args.iter().copied() {
-                                let scalar_components =
-                                    scalar_components(&self.module.types[ty].inner);
-                                if let Some((kind, width)) = scalar_components {
-                                    ctx.implicit_conversion(self, &mut arg, meta, kind, width)?;
-                                }
+                        _ => flattened.push(arg),
+                    }
+                }
 
-                                components.push(arg)
-                            }
-                        }
+                let ty = self.module.types.insert(
+                    Type {
+                        name: None,
+                        inner: TypeInner::Vector {
+                            size: rows,
+                            kind: ScalarKind::Float,
+                            width,
+                        },
+                    },
+                    meta,
+                );
+
+                for chunk in flattened.chunks(rows as usize) {
+                    components.push(ctx.add_expression(
+                        Expression::Compose {
+                            ty,
+                            components: Vec::from(chunk),
+                        },
+                        meta,
+                        body,
+                    ))
+                }
+            }
+            _ => {
+                for (mut arg, meta) in args.iter().copied() {
+                    let scalar_components = scalar_components(&self.module.types[ty].inner);
+                    if let Some((kind, width)) = scalar_components {
+                        ctx.implicit_conversion(self, &mut arg, meta, kind, width)?;
                     }
 
-                    ctx.add_expression(Expression::Compose { ty, components }, meta, body)
-                };
-
-                Ok(Some(h))
-            }
-            FunctionCallKind::Function(name) => {
-                self.function_call(ctx, stmt, body, name, args, raw_args, meta)
+                    components.push(arg)
+                }
             }
         }
+
+        Ok(ctx.add_expression(Expression::Compose { ty, components }, meta, body))
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -350,9 +479,9 @@ impl Parser {
         stmt: &StmtContext,
         body: &mut Block,
         name: String,
-        args: Vec<(Handle<Expression>, SourceMetadata)>,
+        args: Vec<(Handle<Expression>, Span)>,
         raw_args: &[Handle<HirExpr>],
-        meta: SourceMetadata,
+        meta: Span,
     ) -> Result<Option<Handle<Expression>>> {
         
         
@@ -377,127 +506,102 @@ impl Parser {
         let declaration = self.lookup_function.get(&name).unwrap();
 
         
-        #[derive(PartialEq, Eq, Clone, Copy, Debug)]
-        enum Conversion {
-            
-            Exact,
-            
-            FloatToDouble,
-            
-            IntToFloat,
-            
-            IntToDouble,
-            
-            Other,
-            
-            None,
-        }
-
-        let mut maybe_decl = None;
+        let mut maybe_overload = None;
+        
+        
         let mut old_conversions = vec![Conversion::None; args.len()];
+        
         let mut ambiguous = false;
 
-        'outer: for decl in declaration.overloads.iter() {
-            if args.len() != decl.parameters.len() {
+        
+        
+        'outer: for overload in declaration.overloads.iter() {
+            
+            
+            if args.len() != overload.parameters.len() {
                 continue;
             }
 
+            
             let mut exact = true;
             
             
             
             
             let mut superior = None;
+            
+            
             let mut new_conversions = vec![Conversion::None; args.len()];
 
-            for ((i, decl_arg), call_arg) in decl.parameters.iter().enumerate().zip(args.iter()) {
-                use ScalarKind::*;
+            
+            
+            for (i, overload_parameter) in overload.parameters.iter().enumerate() {
+                let call_argument = &args[i];
+                let parameter_info = &overload.parameters_info[i];
 
-                if decl.parameters_info[i].depth {
+                
+                
+                if parameter_info.depth {
                     sampled_to_depth(
                         &mut self.module,
                         ctx,
-                        call_arg.0,
-                        call_arg.1,
+                        call_argument.0,
+                        call_argument.1,
                         &mut self.errors,
-                    )?;
-                    self.invalidate_expression(ctx, call_arg.0, call_arg.1)?
+                    );
+                    self.invalidate_expression(ctx, call_argument.0, call_argument.1)?
                 }
 
-                let decl_inner = &self.module.types[*decl_arg].inner;
-                let call_inner = self.resolve_type(ctx, call_arg.0, call_arg.1)?;
+                let overload_param_ty = &self.module.types[*overload_parameter].inner;
+                let call_arg_ty = self.resolve_type(ctx, call_argument.0, call_argument.1)?;
 
-                if decl_inner == call_inner {
+                
+                if overload_param_ty == call_arg_ty {
                     new_conversions[i] = Conversion::Exact;
                     continue;
                 }
 
-                exact = false;
-
-                let (decl_kind, decl_width, call_kind, call_width) = match (decl_inner, call_inner)
-                {
-                    (
-                        &TypeInner::Scalar {
-                            kind: decl_kind,
-                            width: decl_width,
-                        },
-                        &TypeInner::Scalar {
-                            kind: call_kind,
-                            width: call_width,
-                        },
-                    ) => (decl_kind, decl_width, call_kind, call_width),
-                    (
-                        &TypeInner::Vector {
-                            kind: decl_kind,
-                            size: decl_size,
-                            width: decl_width,
-                        },
-                        &TypeInner::Vector {
-                            kind: call_kind,
-                            size: call_size,
-                            width: call_width,
-                        },
-                    ) if decl_size == call_size => (decl_kind, decl_width, call_kind, call_width),
-                    (
-                        &TypeInner::Matrix {
-                            rows: decl_rows,
-                            columns: decl_columns,
-                            width: decl_width,
-                        },
-                        &TypeInner::Matrix {
-                            rows: call_rows,
-                            columns: call_columns,
-                            width: call_width,
-                        },
-                    ) if decl_columns == call_columns && decl_rows == call_rows => {
-                        (Float, decl_width, Float, call_width)
-                    }
-                    _ => continue 'outer,
-                };
-
-                if type_power(decl_kind, decl_width) < type_power(call_kind, call_width) {
+                
+                
+                if parameter_info.qualifier.is_lhs() {
                     continue 'outer;
                 }
 
-                let conversion = match ((decl_kind, decl_width), (call_kind, call_width)) {
-                    ((Float, 8), (Float, 4)) => Conversion::FloatToDouble,
-                    ((Float, 4), (Sint, _)) | ((Float, 4), (Uint, _)) => Conversion::IntToFloat,
-                    ((Float, 8), (Sint, _)) | ((Float, 8), (Uint, _)) => Conversion::IntToDouble,
-                    _ => Conversion::Other,
+                
+                
+                let conversion = match conversion(overload_param_ty, call_arg_ty) {
+                    Some(info) => info,
+                    None => continue 'outer,
                 };
 
+                
+                
+                exact = false;
+
+                
+                
                 
                 
                 let best_arg = match (conversion, old_conversions[i]) {
+                    
+                    
                     (_, Conversion::Exact) => false,
-                    (Conversion::FloatToDouble, _)
-                    | (_, Conversion::None)
-                    | (Conversion::IntToFloat, Conversion::IntToDouble) => true,
-                    (_, Conversion::FloatToDouble)
-                    | (Conversion::IntToDouble, Conversion::IntToFloat) => false,
+                    
+                    (_, Conversion::None) => true,
+                    
+                    (Conversion::FloatToDouble, _) => true,
+                    (_, Conversion::FloatToDouble) => false,
+                    
+                    
+                    (Conversion::IntToFloat, Conversion::IntToDouble) => true,
+                    (Conversion::IntToDouble, Conversion::IntToFloat) => false,
+                    
+                    
                     _ => continue,
                 };
 
+                
+                
                 match best_arg {
                     true => match superior {
                         Some(false) => ambiguous = true,
@@ -513,8 +617,11 @@ impl Parser {
                 }
             }
 
+            
+            
+            
             if exact {
-                maybe_decl = Some(decl);
+                maybe_overload = Some(overload);
                 ambiguous = false;
                 break;
             }
@@ -522,7 +629,7 @@ impl Parser {
             match superior {
                 
                 Some(true) => {
-                    maybe_decl = Some(decl);
+                    maybe_overload = Some(overload);
                     
                     old_conversions = new_conversions;
                 }
@@ -530,11 +637,13 @@ impl Parser {
                 Some(false) => {}
                 
                 
+                
                 None => {
                     ambiguous = true;
                     
                     
-                    maybe_decl = Some(decl);
+                    
+                    maybe_overload = Some(overload);
                 }
             }
         }
@@ -548,18 +657,19 @@ impl Parser {
             })
         }
 
-        let decl = maybe_decl.ok_or_else(|| Error {
+        let overload = maybe_overload.ok_or_else(|| Error {
             kind: ErrorKind::SemanticError(format!("Unknown function '{}'", name).into()),
             meta,
         })?;
 
-        let parameters_info = decl.parameters_info.clone();
-        let parameters = decl.parameters.clone();
-        let is_void = decl.void;
-        let kind = decl.kind;
+        let parameters_info = overload.parameters_info.clone();
+        let parameters = overload.parameters.clone();
+        let is_void = overload.void;
+        let kind = overload.kind;
 
         let mut arguments = Vec::with_capacity(args.len());
         let mut proxy_writes = Vec::new();
+        
         for (parameter_info, (expr, parameter)) in parameters_info
             .iter()
             .zip(raw_args.iter().zip(parameters.iter()))
@@ -567,47 +677,89 @@ impl Parser {
             let (mut handle, meta) =
                 ctx.lower_expect_inner(stmt, self, *expr, parameter_info.qualifier.as_pos(), body)?;
 
-            if let TypeInner::Vector { size, kind, width } =
-                *self.resolve_type(ctx, handle, meta)?
-            {
-                if parameter_info.qualifier.is_lhs()
-                    && matches!(ctx[handle], Expression::Swizzle { .. })
-                {
-                    let ty = self.module.types.fetch_or_append(
-                        Type {
-                            name: None,
-                            inner: TypeInner::Vector { size, kind, width },
-                        },
-                        Span::Unknown,
-                    );
-                    let temp_var = ctx.locals.append(
-                        LocalVariable {
-                            name: None,
-                            ty,
-                            init: None,
-                        },
-                        Span::Unknown,
-                    );
-                    let temp_expr = ctx.add_expression(
-                        Expression::LocalVariable(temp_var),
-                        SourceMetadata::none(),
-                        body,
-                    );
+            if parameter_info.qualifier.is_lhs() {
+                let (ty, value) = match *self.resolve_type(ctx, handle, meta)? {
+                    
+                    
+                    
+                    
+                    
+                    TypeInner::Vector { size, kind, width } => (
+                        self.module.types.insert(
+                            Type {
+                                name: None,
+                                inner: TypeInner::Vector { size, kind, width },
+                            },
+                            Span::default(),
+                        ),
+                        handle,
+                    ),
+                    
+                    
+                    
+                    TypeInner::Pointer { base, class } if class != StorageClass::Function => (
+                        base,
+                        ctx.add_expression(
+                            Expression::Load { pointer: handle },
+                            Span::default(),
+                            body,
+                        ),
+                    ),
+                    TypeInner::ValuePointer {
+                        size,
+                        kind,
+                        width,
+                        class,
+                    } if class != StorageClass::Function => {
+                        let inner = match size {
+                            Some(size) => TypeInner::Vector { size, kind, width },
+                            None => TypeInner::Scalar { kind, width },
+                        };
 
-                    body.push(
-                        Statement::Store {
-                            pointer: temp_expr,
-                            value: handle,
-                        },
-                        Span::Unknown,
-                    );
+                        (
+                            self.module
+                                .types
+                                .insert(Type { name: None, inner }, Span::default()),
+                            ctx.add_expression(
+                                Expression::Load { pointer: handle },
+                                Span::default(),
+                                body,
+                            ),
+                        )
+                    }
+                    _ => {
+                        arguments.push(handle);
+                        continue;
+                    }
+                };
 
-                    arguments.push(temp_expr);
-                    proxy_writes.push((*expr, temp_expr));
-                    continue;
-                }
+                let temp_var = ctx.locals.append(
+                    LocalVariable {
+                        name: None,
+                        ty,
+                        init: None,
+                    },
+                    Span::default(),
+                );
+                let temp_expr =
+                    ctx.add_expression(Expression::LocalVariable(temp_var), Span::default(), body);
+
+                body.push(
+                    Statement::Store {
+                        pointer: temp_expr,
+                        value,
+                    },
+                    Span::default(),
+                );
+
+                arguments.push(temp_expr);
+                
+                
+                proxy_writes.push((handle, temp_expr));
+                continue;
             }
 
+            
             let scalar_components = scalar_components(&self.module.types[*parameter].inner);
             if let Some((kind, width)) = scalar_components {
                 ctx.implicit_conversion(self, &mut handle, meta, kind, width)?;
@@ -632,25 +784,24 @@ impl Parser {
                         arguments,
                         result,
                     },
-                    meta.as_span(),
+                    meta,
                 );
 
                 ctx.emit_start();
-                for (tgt, pointer) in proxy_writes {
+
+                
+                for (original, pointer) in proxy_writes {
                     let value = ctx.add_expression(Expression::Load { pointer }, meta, body);
-                    let target = ctx
-                        .lower_expect_inner(stmt, self, tgt, ExprPos::Rhs, body)?
-                        .0;
 
                     ctx.emit_flush(body);
                     ctx.emit_start();
 
                     body.push(
                         Statement::Store {
-                            pointer: target,
+                            pointer: original,
                             value,
                         },
-                        meta.as_span(),
+                        meta,
                     );
                 }
 
@@ -668,7 +819,7 @@ impl Parser {
         name: String,
         result: Option<FunctionResult>,
         mut body: Block,
-        meta: SourceMetadata,
+        meta: Span,
     ) {
         if self.lookup_function.get(&name).is_none() {
             let declaration = self.lookup_function.entry(name.clone()).or_default();
@@ -741,14 +892,14 @@ impl Parser {
             match decl.kind {
                 FunctionKind::Call(handle) => *self.module.functions.get_mut(handle) = function,
                 FunctionKind::Macro(_) => {
-                    let handle = module.functions.append(function, meta.as_span());
+                    let handle = module.functions.append(function, meta);
                     decl.kind = FunctionKind::Call(handle)
                 }
             }
             return;
         }
 
-        let handle = module.functions.append(function, meta.as_span());
+        let handle = module.functions.append(function, meta);
         declaration.overloads.push(Overload {
             parameters,
             parameters_info,
@@ -763,7 +914,7 @@ impl Parser {
         ctx: Context,
         name: String,
         result: Option<FunctionResult>,
-        meta: SourceMetadata,
+        meta: Span,
     ) {
         if self.lookup_function.get(&name).is_none() {
             let declaration = self.lookup_function.entry(name.clone()).or_default();
@@ -823,7 +974,7 @@ impl Parser {
             });
         }
 
-        let handle = module.functions.append(function, meta.as_span());
+        let handle = module.functions.append(function, meta);
         declaration.overloads.push(Overload {
             parameters,
             parameters_info,
@@ -913,7 +1064,7 @@ impl Parser {
         }
 
         let (ty, value) = if !components.is_empty() {
-            let ty = self.module.types.append(
+            let ty = self.module.types.insert(
                 Type {
                     name: None,
                     inner: TypeInner::Struct {
@@ -965,4 +1116,89 @@ fn is_double(ty: &TypeInner) -> bool {
         TypeInner::Matrix { width, .. } => width == 8,
         _ => false,
     }
+}
+
+
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
+enum Conversion {
+    
+    Exact,
+    
+    FloatToDouble,
+    
+    IntToFloat,
+    
+    IntToDouble,
+    
+    Other,
+    
+    None,
+}
+
+
+
+fn conversion(target: &TypeInner, source: &TypeInner) -> Option<Conversion> {
+    use ScalarKind::*;
+
+    
+    let (target_kind, target_width, source_kind, source_width) = match (target, source) {
+        
+        (
+            &TypeInner::Scalar {
+                kind: tgt_kind,
+                width: tgt_width,
+            },
+            &TypeInner::Scalar {
+                kind: src_kind,
+                width: src_width,
+            },
+        ) => (tgt_kind, tgt_width, src_kind, src_width),
+        
+        (
+            &TypeInner::Vector {
+                kind: tgt_kind,
+                size: tgt_size,
+                width: tgt_width,
+            },
+            &TypeInner::Vector {
+                kind: src_kind,
+                size: src_size,
+                width: src_width,
+            },
+        ) if tgt_size == src_size => (tgt_kind, tgt_width, src_kind, src_width),
+        
+        (
+            &TypeInner::Matrix {
+                rows: tgt_rows,
+                columns: tgt_cols,
+                width: tgt_width,
+            },
+            &TypeInner::Matrix {
+                rows: src_rows,
+                columns: src_cols,
+                width: src_width,
+            },
+        ) if tgt_cols == src_cols && tgt_rows == src_rows => (Float, tgt_width, Float, src_width),
+        _ => return None,
+    };
+
+    
+    
+    let target_power = type_power(target_kind, target_width);
+    let source_power = type_power(source_kind, source_width);
+    if target_power < source_power {
+        return None;
+    }
+
+    Some(
+        match ((target_kind, target_width), (source_kind, source_width)) {
+            
+            ((Float, 8), (Float, 4)) => Conversion::FloatToDouble,
+            
+            ((Float, 4), (Sint, _)) | ((Float, 4), (Uint, _)) => Conversion::IntToFloat,
+            
+            ((Float, 8), (Sint, _)) | ((Float, 8), (Uint, _)) => Conversion::IntToDouble,
+            _ => Conversion::Other,
+        },
+    )
 }

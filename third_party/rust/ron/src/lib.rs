@@ -57,7 +57,7 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/ron/0.6.5")]
+#![doc(html_root_url = "https://docs.rs/ron/0.7.0")]
 
 pub mod de;
 pub mod ser;
