@@ -47,7 +47,7 @@ assertEq(loadRel['../basic/local.js'], true);
 assertEq(snarfRel['local.js'], true);
 assertEq(snarfRel['../basic/local.js'], true);
 var cwd = os.getenv('PWD');
-if (cwd !== undefined && !(/test.*[\/\\]basic[\/\\]/.test(cwd))) {
+if (cwd !== undefined && !(/test.*[\/\\][^\//]+[\/\\]/.test(cwd))) {
   assertEq(loaded['local.js'], false);
   assertEq(loaded['../basic/local.js'], false);
   assertEq(snarfed['local.js'], false);
