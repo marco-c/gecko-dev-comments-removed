@@ -77,26 +77,32 @@ impl Waker {
     
     #[inline]
     pub(crate) fn try_select(&mut self) -> Option<Entry> {
-        self.selectors
-            .iter()
-            .position(|selector| {
+        if self.selectors.is_empty() {
+            None
+        } else {
+            let thread_id = current_thread_id();
+
+            self.selectors
+                .iter()
+                .position(|selector| {
+                    
+                    selector.cx.thread_id() != thread_id
+                        && selector 
+                            .cx
+                            .try_select(Selected::Operation(selector.oper))
+                            .is_ok()
+                        && {
+                            
+                            selector.cx.store_packet(selector.packet);
+                            
+                            selector.cx.unpark();
+                            true
+                        }
+                })
                 
-                selector.cx.thread_id() != current_thread_id()
-                    && selector 
-                        .cx
-                        .try_select(Selected::Operation(selector.oper))
-                        .is_ok()
-                    && {
-                        
-                        selector.cx.store_packet(selector.packet);
-                        
-                        selector.cx.unpark();
-                        true
-                    }
-            })
-            
-            
-            .map(|pos| self.selectors.remove(pos))
+                
+                .map(|pos| self.selectors.remove(pos))
+        }
     }
 
     

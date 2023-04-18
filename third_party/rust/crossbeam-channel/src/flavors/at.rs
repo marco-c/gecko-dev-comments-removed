@@ -35,7 +35,7 @@ impl Channel {
     
     #[inline]
     pub(crate) fn new_timeout(dur: Duration) -> Self {
-        Self::new_deadline(Instant::now() + dur)
+        Self::new_deadline(utils::convert_timeout_to_deadline(dur))
     }
 
     
@@ -142,7 +142,6 @@ impl Channel {
     }
 
     
-    #[allow(clippy::unnecessary_wraps)] 
     #[inline]
     pub(crate) fn capacity(&self) -> Option<usize> {
         Some(1)

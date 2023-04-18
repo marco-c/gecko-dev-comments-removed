@@ -126,7 +126,7 @@ struct Position<T> {
 
 
 #[derive(Debug)]
-pub struct ListToken {
+pub(crate) struct ListToken {
     
     block: *const u8,
 

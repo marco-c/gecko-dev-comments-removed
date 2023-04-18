@@ -62,6 +62,14 @@ pub(crate) fn sleep_until(deadline: Option<Instant>) {
 }
 
 
+pub(crate) fn convert_timeout_to_deadline(timeout: Duration) -> Instant {
+    match Instant::now().checked_add(timeout) {
+        Some(deadline) => deadline,
+        None => Instant::now() + Duration::from_secs(86400 * 365 * 30),
+    }
+}
+
+
 pub(crate) struct Spinlock<T> {
     flag: AtomicBool,
     value: UnsafeCell<T>,

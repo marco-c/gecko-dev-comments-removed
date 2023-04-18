@@ -9,7 +9,6 @@
 
 
 use std::cell::UnsafeCell;
-use std::marker::PhantomData;
 use std::mem::MaybeUninit;
 use std::ptr;
 use std::sync::atomic::{self, AtomicUsize, Ordering};
@@ -33,7 +32,7 @@ struct Slot<T> {
 
 
 #[derive(Debug)]
-pub struct ArrayToken {
+pub(crate) struct ArrayToken {
     
     slot: *const u8,
 
@@ -72,7 +71,7 @@ pub(crate) struct Channel<T> {
     tail: CachePadded<AtomicUsize>,
 
     
-    buffer: *mut Slot<T>,
+    buffer: Box<[Slot<T>]>,
 
     
     cap: usize,
@@ -88,9 +87,6 @@ pub(crate) struct Channel<T> {
 
     
     receivers: SyncWaker,
-
-    
-    _marker: PhantomData<T>,
 }
 
 impl<T> Channel<T> {
@@ -109,18 +105,15 @@ impl<T> Channel<T> {
 
         
         
-        let buffer = {
-            let boxed: Box<[Slot<T>]> = (0..cap)
-                .map(|i| {
-                    
-                    Slot {
-                        stamp: AtomicUsize::new(i),
-                        msg: UnsafeCell::new(MaybeUninit::uninit()),
-                    }
-                })
-                .collect();
-            Box::into_raw(boxed) as *mut Slot<T>
-        };
+        let buffer: Box<[Slot<T>]> = (0..cap)
+            .map(|i| {
+                
+                Slot {
+                    stamp: AtomicUsize::new(i),
+                    msg: UnsafeCell::new(MaybeUninit::uninit()),
+                }
+            })
+            .collect();
 
         Channel {
             buffer,
@@ -131,7 +124,6 @@ impl<T> Channel<T> {
             tail: CachePadded::new(AtomicUsize::new(tail)),
             senders: SyncWaker::new(),
             receivers: SyncWaker::new(),
-            _marker: PhantomData,
         }
     }
 
@@ -163,7 +155,8 @@ impl<T> Channel<T> {
             let lap = tail & !(self.one_lap - 1);
 
             
-            let slot = unsafe { &*self.buffer.add(index) };
+            debug_assert!(index < self.buffer.len());
+            let slot = unsafe { self.buffer.get_unchecked(index) };
             let stamp = slot.stamp.load(Ordering::Acquire);
 
             
@@ -245,7 +238,8 @@ impl<T> Channel<T> {
             let lap = head & !(self.one_lap - 1);
 
             
-            let slot = unsafe { &*self.buffer.add(index) };
+            debug_assert!(index < self.buffer.len());
+            let slot = unsafe { self.buffer.get_unchecked(index) };
             let stamp = slot.stamp.load(Ordering::Acquire);
 
             
@@ -475,7 +469,6 @@ impl<T> Channel<T> {
     }
 
     
-    #[allow(clippy::unnecessary_wraps)] 
     pub(crate) fn capacity(&self) -> Option<usize> {
         Some(self.cap)
     }
@@ -540,22 +533,11 @@ impl<T> Drop for Channel<T> {
             };
 
             unsafe {
-                let p = {
-                    let slot = &mut *self.buffer.add(index);
-                    let msg = &mut *slot.msg.get();
-                    msg.as_mut_ptr()
-                };
-                p.drop_in_place();
+                debug_assert!(index < self.buffer.len());
+                let slot = self.buffer.get_unchecked_mut(index);
+                let msg = &mut *slot.msg.get();
+                msg.as_mut_ptr().drop_in_place();
             }
-        }
-
-        
-        unsafe {
-            
-            
-            
-            let ptr = std::slice::from_raw_parts_mut(self.buffer, self.cap) as *mut [Slot<T>];
-            Box::from_raw(ptr);
         }
     }
 }

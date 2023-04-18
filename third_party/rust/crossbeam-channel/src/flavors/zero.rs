@@ -17,7 +17,7 @@ use crate::utils::Spinlock;
 use crate::waker::Waker;
 
 
-pub struct ZeroToken(*mut ());
+pub(crate) struct ZeroToken(*mut ());
 
 impl Default for ZeroToken {
     fn default() -> Self {
@@ -363,7 +363,6 @@ impl<T> Channel<T> {
     }
 
     
-    #[allow(clippy::unnecessary_wraps)] 
     pub(crate) fn capacity(&self) -> Option<usize> {
         Some(0)
     }

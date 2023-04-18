@@ -121,18 +121,7 @@ macro_rules! crossbeam_channel_internal {
     };
     
     (@list
-        ($case:ident ($($args:tt)*) $(-> $res:pat)* => $body:expr)
-        ($($head:tt)*)
-    ) => {
-        $crate::crossbeam_channel_internal!(
-            @list
-            ()
-            ($($head)* $case ($($args)*) $(-> $res)* => { $body },)
-        )
-    };
-    
-    (@list
-        ($case:ident ($($args:tt)*) $(-> $res:pat)* => $body:expr,)
+        ($case:ident ($($args:tt)*) $(-> $res:pat)* => $body:expr $(,)?)
         ($($head:tt)*)
     ) => {
         $crate::crossbeam_channel_internal!(
@@ -373,20 +362,7 @@ macro_rules! crossbeam_channel_internal {
 
     
     (@case
-        (recv($r:expr) -> $res:pat => $body:tt, $($tail:tt)*)
-        ($($cases:tt)*)
-        $default:tt
-    ) => {
-        $crate::crossbeam_channel_internal!(
-            @case
-            ($($tail)*)
-            ($($cases)* recv($r) -> $res => $body,)
-            $default
-        )
-    };
-    
-    (@case
-        (recv($r:expr,) -> $res:pat => $body:tt, $($tail:tt)*)
+        (recv($r:expr $(,)?) -> $res:pat => $body:tt, $($tail:tt)*)
         ($($cases:tt)*)
         $default:tt
     ) => {
@@ -428,20 +404,7 @@ macro_rules! crossbeam_channel_internal {
 
     
     (@case
-        (send($s:expr, $m:expr) -> $res:pat => $body:tt, $($tail:tt)*)
-        ($($cases:tt)*)
-        $default:tt
-    ) => {
-        $crate::crossbeam_channel_internal!(
-            @case
-            ($($tail)*)
-            ($($cases)* send($s, $m) -> $res => $body,)
-            $default
-        )
-    };
-    
-    (@case
-        (send($s:expr, $m:expr,) -> $res:pat => $body:tt, $($tail:tt)*)
+        (send($s:expr, $m:expr $(,)?) -> $res:pat => $body:tt, $($tail:tt)*)
         ($($cases:tt)*)
         $default:tt
     ) => {
@@ -496,20 +459,7 @@ macro_rules! crossbeam_channel_internal {
     };
     
     (@case
-        (default($timeout:expr) => $body:tt, $($tail:tt)*)
-        $cases:tt
-        ()
-    ) => {
-        $crate::crossbeam_channel_internal!(
-            @case
-            ($($tail)*)
-            $cases
-            (default($timeout) => $body,)
-        )
-    };
-    
-    (@case
-        (default($timeout:expr,) => $body:tt, $($tail:tt)*)
+        (default($timeout:expr $(,)?) => $body:tt, $($tail:tt)*)
         $cases:tt
         ()
     ) => {
