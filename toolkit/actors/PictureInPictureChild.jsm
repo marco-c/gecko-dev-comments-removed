@@ -74,6 +74,8 @@ const TOGGLE_VISIBILITY_THRESHOLD_PREF =
 const MOUSEMOVE_PROCESSING_DELAY_MS = 50;
 const TOGGLE_HIDING_TIMEOUT_MS = 2000;
 
+const SEEK_TIME_SECS = 5;
+
 
 
 
@@ -2003,7 +2005,7 @@ class PictureInPictureChild extends JSWindowActorChild {
 
           oldval = this.videoWrapper.getCurrentTime(video);
           if (keystroke == "leftArrow") {
-            newval = oldval - 15;
+            newval = oldval - SEEK_TIME_SECS;
           } else {
             newval = oldval - this.videoWrapper.getDuration(video) / 10;
           }
@@ -2018,7 +2020,7 @@ class PictureInPictureChild extends JSWindowActorChild {
           oldval = this.videoWrapper.getCurrentTime(video);
           var maxtime = this.videoWrapper.getDuration(video);
           if (keystroke == "rightArrow") {
-            newval = oldval + 15;
+            newval = oldval + SEEK_TIME_SECS;
           } else {
             newval = oldval + maxtime / 10;
           }

@@ -109,6 +109,9 @@ this.VideoControlsWidget = class {
     this.impl.onPrefChange(prefName, prefValue);
   }
 
+  
+  static SEEK_TIME_SECS = 5;
+
   static isPictureInPictureVideo(someVideo) {
     return someVideo.isCloningElementVisually;
   }
@@ -1844,7 +1847,7 @@ this.VideoControlsImplWidget = class {
             oldval -
             (this.video.duration || this.maxCurrentTimeSeen / 1000) / 10;
         } else {
-          newval = oldval - 15;
+          newval = oldval - VideoControlsWidget.SEEK_TIME_SECS;
         }
         this.video.currentTime = Math.max(0, newval);
       },
@@ -1856,7 +1859,7 @@ this.VideoControlsImplWidget = class {
         if (tenPercent) {
           newval = oldval + maxtime / 10;
         } else {
-          newval = oldval + 15;
+          newval = oldval + VideoControlsWidget.SEEK_TIME_SECS;
         }
         this.video.currentTime = Math.min(newval, maxtime);
       },
