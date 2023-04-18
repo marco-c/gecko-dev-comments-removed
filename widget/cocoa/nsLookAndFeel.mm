@@ -326,6 +326,20 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aScheme, nscolor
     case ColorID::MozNativevisitedhyperlinktext:
       color = GetColorFromNSColor(NSColor.systemPurpleColor);
       break;
+    
+    
+    
+    
+    
+    
+    
+    
+    case ColorID::MozMacVibrantTitlebarLight:
+      color = NS_RGB(0xe6, 0xe6, 0xe6);
+      break;
+    case ColorID::MozMacVibrantTitlebarDark:
+      color = NS_RGB(0x28, 0x28, 0x28);
+      break;
     case ColorID::MozMacTooltip:
     case ColorID::MozMacMenupopup:
     case ColorID::MozMacMenuitem:

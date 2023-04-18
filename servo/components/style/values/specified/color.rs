@@ -371,6 +371,10 @@ pub enum SystemColor {
     
     MozMacSecondaryhighlight,
 
+    
+    
+    MozMacVibrantTitlebarLight,
+    MozMacVibrantTitlebarDark,
     MozMacMenupopup,
     MozMacMenuitem,
     MozMacActiveMenuitem,

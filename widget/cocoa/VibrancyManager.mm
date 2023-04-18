@@ -25,14 +25,29 @@ using namespace mozilla;
 
 static NSAppearance* AppearanceForVibrancyType(VibrancyType aType) {
   if (@available(macOS 10.14, *)) {
-    
-    
-    return nil;
+    switch (aType) {
+      case VibrancyType::TITLEBAR_LIGHT:
+        
+        return [NSAppearance appearanceNamed:NSAppearanceNameAqua];
+      case VibrancyType::TITLEBAR_DARK:
+        
+        return [NSAppearance appearanceNamed:NSAppearanceNameDarkAqua];
+      case VibrancyType::TOOLTIP:
+      case VibrancyType::MENU:
+      case VibrancyType::HIGHLIGHTED_MENUITEM:
+      case VibrancyType::SOURCE_LIST:
+      case VibrancyType::SOURCE_LIST_SELECTION:
+      case VibrancyType::ACTIVE_SOURCE_LIST_SELECTION:
+        
+        
+        return nil;
+    }
   }
 
   
   
   switch (aType) {
+    case VibrancyType::TITLEBAR_LIGHT:
     case VibrancyType::TOOLTIP:
     case VibrancyType::MENU:
     case VibrancyType::HIGHLIGHTED_MENUITEM:
@@ -40,6 +55,8 @@ static NSAppearance* AppearanceForVibrancyType(VibrancyType aType) {
     case VibrancyType::SOURCE_LIST_SELECTION:
     case VibrancyType::ACTIVE_SOURCE_LIST_SELECTION:
       return [NSAppearance appearanceNamed:NSAppearanceNameVibrantLight];
+    case VibrancyType::TITLEBAR_DARK:
+      return [NSAppearance appearanceNamed:NSAppearanceNameVibrantDark];
   }
 }
 
@@ -59,6 +76,9 @@ static NSVisualEffectState VisualEffectStateForVibrancyType(VibrancyType aType) 
 static NSVisualEffectMaterial VisualEffectMaterialForVibrancyType(VibrancyType aType,
                                                                   BOOL* aOutIsEmphasized) {
   switch (aType) {
+    case VibrancyType::TITLEBAR_LIGHT:
+    case VibrancyType::TITLEBAR_DARK:
+      return NSVisualEffectMaterialTitlebar;
     case VibrancyType::TOOLTIP:
       if (@available(macOS 10.14, *)) {
         return (NSVisualEffectMaterial)NSVisualEffectMaterialToolTip;
