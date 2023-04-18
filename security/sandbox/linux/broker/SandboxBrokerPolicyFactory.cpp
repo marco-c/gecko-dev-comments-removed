@@ -74,7 +74,7 @@ static void AddMesaSysfsPaths(SandboxBroker::Policy* aPolicy) {
           static const Array<nsCString, 2> kSuffixes = {""_ns, "/device"_ns};
           nsPrintfCString prefix("/sys/dev/char/%u:%u", major(sb.st_rdev),
                                  minor(sb.st_rdev));
-          for (const auto& suffix : kSuffixes) {
+          for (const auto suffix : kSuffixes) {
             nsCString sysPath(prefix + suffix);
 
             
@@ -87,7 +87,7 @@ static void AddMesaSysfsPaths(SandboxBroker::Policy* aPolicy) {
               
               
               
-              char *term = strrchr(realSysPath.get(), '/');
+              char* term = strrchr(realSysPath.get(), '/');
               if (term && strncmp(term, "/virtio", 7) == 0) {
                 *term = 0;
               }
