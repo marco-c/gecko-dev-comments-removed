@@ -2,7 +2,7 @@
 
 
 
-const testServer = createVersionizedHttpTestServer("sourcemaps-reload2");
+const testServer = createVersionizedHttpTestServer("sourcemaps-reload");
 const TEST_URL = testServer.urlFor("index.html");
 
 
