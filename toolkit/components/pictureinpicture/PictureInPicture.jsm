@@ -576,7 +576,7 @@ var PictureInPicture = {
         PiPScreenTop <= centerY &&
         centerY <= PiPScreenTop + PiPScreenHeight
       ) {
-        let oldWidth = width;
+        let oldWidthDesktopPix = width * PipScreenCssToDesktopScale;
 
         
         
@@ -587,6 +587,9 @@ var PictureInPicture = {
           width = 136 > width ? 136 : width;
         }
 
+        let widthDesktopPix = width * PipScreenCssToDesktopScale;
+        let heightDesktopPix = height * PipScreenCssToDesktopScale;
+
         
         
         const WIGGLE_ROOM = 5;
@@ -594,10 +597,10 @@ var PictureInPicture = {
         
         
         let rightScreen = PiPScreenLeft + PiPScreenWidth;
-        let distFromRight = rightScreen - (left + width);
+        let distFromRight = rightScreen - (left + widthDesktopPix);
         if (
           0 < distFromRight &&
-          distFromRight <= WIGGLE_ROOM + (oldWidth - width)
+          distFromRight <= WIGGLE_ROOM + (oldWidthDesktopPix - widthDesktopPix)
         ) {
           left += distFromRight;
         }
@@ -607,22 +610,22 @@ var PictureInPicture = {
         if (left < PiPScreenLeft) {
           
           
-          left += PiPScreenLeft - left;
+          left = PiPScreenLeft;
         }
         if (top < PiPScreenTop) {
           
           
-          top += PiPScreenTop - top;
+          top = PiPScreenTop;
         }
-        if (left + width > PiPScreenLeft + PiPScreenWidth) {
+        if (left + widthDesktopPix > PiPScreenLeft + PiPScreenWidth) {
           
           
-          left += PiPScreenLeft + PiPScreenWidth - left - width;
+          left = PiPScreenLeft + PiPScreenWidth - widthDesktopPix;
         }
-        if (top + height > PiPScreenTop + PiPScreenHeight) {
+        if (top + heightDesktopPix > PiPScreenTop + PiPScreenHeight) {
           
           
-          top += PiPScreenTop + PiPScreenHeight - top - height;
+          top = PiPScreenTop + PiPScreenHeight - heightDesktopPix;
         }
         
         top /= requestingCssToDesktopScale;
