@@ -6,7 +6,7 @@
 
 const EXPORTED_SYMBOLS = ["StyleSheetEditor"];
 
-const { require, loader } = ChromeUtils.import(
+const { require } = ChromeUtils.import(
   "resource://devtools/shared/loader/Loader.jsm"
 );
 const Editor = require("devtools/client/shared/sourceeditor/editor");
@@ -17,21 +17,9 @@ const {
 const { throttle } = require("devtools/shared/throttle");
 const Services = require("Services");
 const EventEmitter = require("devtools/shared/event-emitter");
-
-loader.lazyRequireGetter(
-  this,
-  "FileUtils",
-  "resource://gre/modules/FileUtils.jsm",
-  true
-);
-loader.lazyRequireGetter(
-  this,
-  "NetUtil",
-  "resource://gre/modules/NetUtil.jsm",
-  true
-);
-loader.lazyRequireGetter(this, "OS", "resource://gre/modules/osfile.jsm", true);
-
+const { FileUtils } = require("resource://gre/modules/FileUtils.jsm");
+const { NetUtil } = require("resource://gre/modules/NetUtil.jsm");
+const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 const {
   getString,
   showFilePicker,
@@ -555,21 +543,13 @@ StyleSheetEditor.prototype = {
   
 
 
-
-
-
-  onShow: function(options = {}) {
+  onShow: function() {
     if (this.sourceEditor) {
       
       
       this.sourceEditor.refresh();
     }
-
-    
-    
-    if (options.reason !== "filter-auto") {
-      this.focus();
-    }
+    this.focus();
   },
 
   

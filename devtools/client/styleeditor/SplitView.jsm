@@ -4,27 +4,16 @@
 
 "use strict";
 
-const { loader, require } = ChromeUtils.import(
+const { require } = ChromeUtils.import(
   "resource://devtools/shared/loader/Loader.jsm"
 );
-const EventEmitter = require("devtools/shared/event-emitter");
-loader.lazyRequireGetter(
-  this,
-  "KeyCodes",
-  "devtools/client/shared/keycodes",
-  true
-);
+const { KeyCodes } = require("devtools/client/shared/keycodes");
 
 const EXPORTED_SYMBOLS = ["SplitView"];
 
 var bindings = new WeakMap();
 
-class SplitView extends EventEmitter {
-  #filter;
-
-  static FILTERED_CLASSNAME = "splitview-filtered";
-  static ALL_FILTERED_CLASSNAME = "splitview-all-filtered";
-
+class SplitView {
   
 
 
@@ -37,7 +26,6 @@ class SplitView extends EventEmitter {
 
 
   constructor(root) {
-    super();
     this._root = root;
     this._controller = root.querySelector(".splitview-controller");
     this._nav = root.querySelector(".splitview-nav");
@@ -45,6 +33,7 @@ class SplitView extends EventEmitter {
     this._tplSummary = root.querySelector("#splitview-tpl-summary-stylesheet");
     this._tplDetails = root.querySelector("#splitview-tpl-details-stylesheet");
     this._activeSummary = null;
+    this._filter = null;
 
     
     this._nav.addEventListener("keydown", event => {
@@ -67,43 +56,34 @@ class SplitView extends EventEmitter {
       }
 
       
-      const visibleElements = Array.from(
-        this._nav.querySelectorAll(`li:not(.${SplitView.FILTERED_CLASSNAME})`)
-      );
-      
-      
-      visibleElements.sort(
-        (a, b) =>
-          a.getAttribute("data-ordinal") - b.getAttribute("data-ordinal")
-      );
-
-      let elementToFocus;
+      let newFocusOrdinal;
       if (
         event.keyCode == KeyCodes.DOM_VK_PAGE_UP ||
         event.keyCode == KeyCodes.DOM_VK_HOME
       ) {
-        elementToFocus = visibleElements[0];
+        newFocusOrdinal = 0;
       } else if (
         event.keyCode == KeyCodes.DOM_VK_PAGE_DOWN ||
         event.keyCode == KeyCodes.DOM_VK_END
       ) {
-        elementToFocus = visibleElements.at(-1);
+        newFocusOrdinal = this._nav.childNodes.length - 1;
       } else if (event.keyCode == KeyCodes.DOM_VK_UP) {
-        const focusedIndex = visibleElements.indexOf(
-          getFocusedItemWithin(this._nav)
+        newFocusOrdinal = getFocusedItemWithin(this._nav).getAttribute(
+          "data-ordinal"
         );
-        elementToFocus = visibleElements[focusedIndex - 1];
+        newFocusOrdinal--;
       } else if (event.keyCode == KeyCodes.DOM_VK_DOWN) {
-        const focusedIndex = visibleElements.indexOf(
-          getFocusedItemWithin(this._nav)
+        newFocusOrdinal = getFocusedItemWithin(this._nav).getAttribute(
+          "data-ordinal"
         );
-        elementToFocus = visibleElements[focusedIndex + 1];
+        newFocusOrdinal++;
       }
-
-      if (elementToFocus !== undefined) {
+      if (newFocusOrdinal !== undefined) {
         event.stopPropagation();
-        event.preventDefault();
-        elementToFocus.focus();
+        const el = this.#getSummaryElementByOrdinal(newFocusOrdinal);
+        if (el) {
+          el.focus();
+        }
         return false;
       }
 
@@ -125,11 +105,7 @@ class SplitView extends EventEmitter {
 
 
 
-
-
-
-
-  setActiveSummary(summary, options = {}) {
+  setActiveSummary(summary) {
     if (summary == this._activeSummary) {
       return;
     }
@@ -141,9 +117,7 @@ class SplitView extends EventEmitter {
       binding._details.classList.remove("splitview-active");
     }
 
-    this._activeSummary = summary;
     if (!summary) {
-      this.emit("active-summary-cleared");
       return;
     }
 
@@ -151,14 +125,26 @@ class SplitView extends EventEmitter {
     summary.classList.add("splitview-active");
     binding._details.classList.add("splitview-active");
 
+    this._activeSummary = summary;
+
     if (binding.onShow) {
-      binding.onShow(binding._details, options);
+      binding.onShow(binding._details);
     }
   }
 
   
 
 
+
+
+
+
+
+  #getSummaryElementByOrdinal(ordinal) {
+    return this._nav.querySelector("* > li[data-ordinal='" + ordinal + "']");
+  }
+
+  
 
 
 
@@ -210,10 +196,6 @@ class SplitView extends EventEmitter {
     }
 
     const binding = bindings.get(summary);
-    if (!binding) {
-      return;
-    }
-
     summary.remove();
     binding._details.remove();
   }
@@ -224,76 +206,6 @@ class SplitView extends EventEmitter {
   removeAll() {
     while (this._nav.hasChildNodes()) {
       this.removeItem(this._nav.firstChild);
-    }
-  }
-
-  
-
-
-
-
-  setFilter(str) {
-    this.#filter = str;
-    for (const summary of this._nav.childNodes) {
-      
-      this.handleSummaryVisibility(summary, {
-        triggerOnFilterStateChange: false,
-      });
-    }
-
-    this.#onFilterStateChange();
-
-    if (this._activeSummary == null) {
-      const firstVisibleSummary = Array.from(this._nav.childNodes).find(
-        node => !node.classList.contains(SplitView.FILTERED_CLASSNAME)
-      );
-
-      if (firstVisibleSummary) {
-        this.setActiveSummary(firstVisibleSummary, { reason: "filter-auto" });
-      }
-    }
-  }
-
-  
-
-
-  #onFilterStateChange() {
-    const summaries = Array.from(this._nav.childNodes);
-    const hasVisibleSummary = summaries.some(
-      node => !node.classList.contains(SplitView.FILTERED_CLASSNAME)
-    );
-    const allFiltered = summaries.length > 0 && !hasVisibleSummary;
-
-    this._nav.classList.toggle(SplitView.ALL_FILTERED_CLASSNAME, allFiltered);
-    this.emit("filter-state-change", { allFiltered });
-  }
-
-  
-
-
-
-
-
-
-
-
-  handleSummaryVisibility(summary, { triggerOnFilterStateChange = true } = {}) {
-    if (!this.#filter) {
-      summary.classList.remove(SplitView.FILTERED_CLASSNAME);
-      return;
-    }
-
-    const label = summary.querySelector(".stylesheet-name label");
-    const itemText = label.value.toLowerCase();
-    const matchesSearch = itemText.includes(this.#filter.toLowerCase());
-    summary.classList.toggle(SplitView.FILTERED_CLASSNAME, !matchesSearch);
-
-    if (this._activeSummary == summary && !matchesSearch) {
-      this.setActiveSummary(null);
-    }
-
-    if (triggerOnFilterStateChange) {
-      this.#onFilterStateChange();
     }
   }
 }
