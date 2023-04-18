@@ -548,6 +548,10 @@ class UrlbarController {
     
     
     
+    
+    
+    
+    
     let telemetryType =
       result.providerName == "UrlbarProviderTopSites"
         ? "topsite"
@@ -604,6 +608,7 @@ class UrlbarController {
       Cu.reportError("Cannot delete - the latest query is not present");
       return false;
     }
+    let { queryContext } = this._lastQueryContextWrapper;
 
     if (!result) {
       
@@ -625,7 +630,11 @@ class UrlbarController {
     if (!provider) {
       Cu.reportError(`Provider not found: ${result.providerName}`);
     }
-    let blockedByProvider = provider?.tryMethod("blockResult", result);
+    let blockedByProvider = provider?.tryMethod(
+      "blockResult",
+      queryContext,
+      result
+    );
 
     
     
@@ -636,7 +645,6 @@ class UrlbarController {
       return false;
     }
 
-    let { queryContext } = this._lastQueryContextWrapper;
     let index = queryContext.results.indexOf(result);
     if (index < 0) {
       Cu.reportError("Failed to find the selected result in the results");
@@ -951,6 +959,9 @@ class TelemetryEvent {
         return row.result.type == UrlbarUtils.RESULT_TYPE.TIP
           ? "tiphelp"
           : "help";
+      }
+      if (element.classList.contains("urlbarView-button-block")) {
+        return "block";
       }
     }
     

@@ -150,6 +150,7 @@ var UrlbarUtils = {
     formhistory: 14,
     dynamic: 15,
     tabtosearch: 16,
+    quicksuggest: 17,
     
   },
 
@@ -1162,6 +1163,9 @@ var UrlbarUtils = {
         ) {
           return "visiturl";
         }
+        if (result.providerName == "UrlbarProviderQuickSuggest") {
+          return "quicksuggest";
+        }
         return result.source == UrlbarUtils.RESULT_SOURCE.BOOKMARKS
           ? "bookmark"
           : "history";
@@ -1850,7 +1854,8 @@ class UrlbarProvider {
 
 
 
-  blockResult(result) {
+
+  blockResult(queryContext, result) {
     return false;
   }
 

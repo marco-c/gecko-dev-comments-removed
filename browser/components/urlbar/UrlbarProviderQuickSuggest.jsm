@@ -46,21 +46,27 @@ const TELEMETRY_REMOTE_SETTINGS_LATENCY =
   "FX_URLBAR_QUICK_SUGGEST_REMOTE_SETTINGS_LATENCY_MS";
 
 const TELEMETRY_SCALARS = {
-  IMPRESSION: "contextual.services.quicksuggest.impression",
-  IMPRESSION_SPONSORED_BEST_MATCH:
-    "contextual.services.quicksuggest.impression_sponsored_bestmatch",
-  IMPRESSION_NONSPONSORED_BEST_MATCH:
-    "contextual.services.quicksuggest.impression_nonsponsored_bestmatch",
+  BLOCK_SPONSORED: "contextual.services.quicksuggest.block_sponsored",
+  BLOCK_SPONSORED_BEST_MATCH:
+    "contextual.services.quicksuggest.block_sponsored_bestmatch",
+  BLOCK_NONSPONSORED: "contextual.services.quicksuggest.block_nonsponsored",
+  BLOCK_NONSPONSORED_BEST_MATCH:
+    "contextual.services.quicksuggest.block_nonsponsored_bestmatch",
   CLICK: "contextual.services.quicksuggest.click",
-  CLICK_SPONSORED_BEST_MATCH:
-    "contextual.services.quicksuggest.click_sponsored_bestmatch",
   CLICK_NONSPONSORED_BEST_MATCH:
     "contextual.services.quicksuggest.click_nonsponsored_bestmatch",
+  CLICK_SPONSORED_BEST_MATCH:
+    "contextual.services.quicksuggest.click_sponsored_bestmatch",
   HELP: "contextual.services.quicksuggest.help",
-  HELP_SPONSORED_BEST_MATCH:
-    "contextual.services.quicksuggest.help_sponsored_bestmatch",
   HELP_NONSPONSORED_BEST_MATCH:
     "contextual.services.quicksuggest.help_nonsponsored_bestmatch",
+  HELP_SPONSORED_BEST_MATCH:
+    "contextual.services.quicksuggest.help_sponsored_bestmatch",
+  IMPRESSION: "contextual.services.quicksuggest.impression",
+  IMPRESSION_NONSPONSORED_BEST_MATCH:
+    "contextual.services.quicksuggest.impression_nonsponsored_bestmatch",
+  IMPRESSION_SPONSORED_BEST_MATCH:
+    "contextual.services.quicksuggest.impression_sponsored_bestmatch",
 };
 
 const TELEMETRY_EVENT_CATEGORY = "contextservices.quicksuggest";
@@ -161,7 +167,7 @@ class ProviderQuickSuggest extends UrlbarProvider {
 
 
   isActive(queryContext) {
-    this._addedResultInLastQuery = false;
+    this._resultFromLastQuery = null;
 
     
     
@@ -325,7 +331,7 @@ class ProviderQuickSuggest extends UrlbarProvider {
 
     addCallback(this, result);
 
-    this._addedResultInLastQuery = true;
+    this._resultFromLastQuery = result;
 
     
     
@@ -366,18 +372,20 @@ class ProviderQuickSuggest extends UrlbarProvider {
 
 
 
-  blockResult(result) {
+
+  blockResult(queryContext, result) {
     if (
       (!result.isBestMatch &&
         !UrlbarPrefs.get("quickSuggestBlockingEnabled")) ||
       (result.isBestMatch && !UrlbarPrefs.get("bestMatchBlockingEnabled"))
     ) {
-      this.logger.info("Blocking disabled, ignoring key shortcut");
+      this.logger.info("Blocking disabled, ignoring block");
       return false;
     }
 
     this.logger.info("Blocking result: " + JSON.stringify(result));
     this.blockSuggestion(result.payload.originalUrl);
+    this._recordEngagementTelemetry(result, queryContext.isPrivate, "block");
     return true;
   }
 
@@ -455,40 +463,58 @@ class ProviderQuickSuggest extends UrlbarProvider {
 
 
   onEngagement(isPrivate, state, queryContext, details) {
-    if (!this._addedResultInLastQuery) {
+    if (!this._resultFromLastQuery) {
       return;
     }
-    this._addedResultInLastQuery = false;
+    let result = this._resultFromLastQuery;
+    this._resultFromLastQuery = null;
 
     
     
-    if (state != "engagement") {
-      return;
-    }
-
-    
-    
-    
-    
-    let resultIndex = queryContext.results.length - 1;
-    let result = queryContext.results[resultIndex];
-    if (result.providerName != this.name) {
-      resultIndex = queryContext.results.findIndex(
-        r => r.providerName == this.name
+    if (state == "engagement") {
+      this._recordEngagementTelemetry(
+        result,
+        isPrivate,
+        details.selIndex == result.rowIndex ? details.selType : ""
       );
-      if (resultIndex < 0) {
-        this.logger.error(`Could not find quick suggest result`);
-        return;
-      }
-      result = queryContext.results[resultIndex];
     }
+  }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _recordEngagementTelemetry(result, isPrivate, selType) {
     
     this._updateImpressionStats(result.payload.isSponsored);
 
     
     
-    let telemetryResultIndex = resultIndex + 1;
+    let telemetryResultIndex = result.rowIndex + 1;
 
     
     Services.telemetry.keyedScalarAdd(
@@ -506,40 +532,61 @@ class ProviderQuickSuggest extends UrlbarProvider {
       );
     }
 
-    if (details.selIndex == resultIndex) {
-      
-      Services.telemetry.keyedScalarAdd(
-        details.selType == "help"
-          ? TELEMETRY_SCALARS.HELP
-          : TELEMETRY_SCALARS.CLICK,
-        telemetryResultIndex,
-        1
-      );
-      if (result.isBestMatch) {
-        if (details.selType == "help") {
-          Services.telemetry.keyedScalarAdd(
-            result.payload.isSponsored
-              ? TELEMETRY_SCALARS.HELP_SPONSORED_BEST_MATCH
-              : TELEMETRY_SCALARS.HELP_NONSPONSORED_BEST_MATCH,
-            telemetryResultIndex,
-            1
-          );
-        } else {
-          Services.telemetry.keyedScalarAdd(
+    
+    let clickScalars = [];
+    switch (selType) {
+      case "quicksuggest":
+        clickScalars.push(TELEMETRY_SCALARS.CLICK);
+        if (result.isBestMatch) {
+          clickScalars.push(
             result.payload.isSponsored
               ? TELEMETRY_SCALARS.CLICK_SPONSORED_BEST_MATCH
-              : TELEMETRY_SCALARS.CLICK_NONSPONSORED_BEST_MATCH,
-            telemetryResultIndex,
-            1
+              : TELEMETRY_SCALARS.CLICK_NONSPONSORED_BEST_MATCH
           );
         }
-      }
+        break;
+      case "help":
+        clickScalars.push(TELEMETRY_SCALARS.HELP);
+        if (result.isBestMatch) {
+          clickScalars.push(
+            result.payload.isSponsored
+              ? TELEMETRY_SCALARS.HELP_SPONSORED_BEST_MATCH
+              : TELEMETRY_SCALARS.HELP_NONSPONSORED_BEST_MATCH
+          );
+        }
+        break;
+      case "block":
+        clickScalars.push(
+          result.payload.isSponsored
+            ? TELEMETRY_SCALARS.BLOCK_SPONSORED
+            : TELEMETRY_SCALARS.BLOCK_NONSPONSORED
+        );
+        if (result.isBestMatch) {
+          clickScalars.push(
+            result.payload.isSponsored
+              ? TELEMETRY_SCALARS.BLOCK_SPONSORED_BEST_MATCH
+              : TELEMETRY_SCALARS.BLOCK_NONSPONSORED_BEST_MATCH
+          );
+        }
+        break;
+      default:
+        if (selType) {
+          this.logger.error(
+            "Engagement telemetry error, unknown selType: " + selType
+          );
+        }
+        break;
+    }
+    for (let scalar of clickScalars) {
+      Services.telemetry.keyedScalarAdd(scalar, telemetryResultIndex, 1);
     }
 
     
     if (!isPrivate) {
-      let is_clicked =
-        details.selIndex == resultIndex && details.selType !== "help";
+      
+      
+      
+      let is_clicked = selType == "quicksuggest";
       let scenario = UrlbarPrefs.get("quicksuggest.scenario");
       let match_type = result.isBestMatch ? "best-match" : "firefox-suggest";
 
@@ -1373,7 +1420,7 @@ class ProviderQuickSuggest extends UrlbarProvider {
   _quickSuggestEnabled = false;
 
   
-  _addedResultInLastQuery = false;
+  _resultFromLastQuery = null;
 
   
   
