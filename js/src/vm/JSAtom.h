@@ -57,8 +57,10 @@ extern JSAtom* AtomizeChars(JSContext* cx, const CharT* chars, size_t length);
 
 
 template <typename CharT>
-extern JSAtom* AtomizeCharsNonStatic(JSContext* cx, mozilla::HashNumber hash,
-                                     const CharT* chars, size_t length);
+extern JSAtom* AtomizeCharsNonStaticValidLength(JSContext* cx,
+                                                mozilla::HashNumber hash,
+                                                const CharT* chars,
+                                                size_t length);
 
 
 
