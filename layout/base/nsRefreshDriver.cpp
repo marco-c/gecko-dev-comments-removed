@@ -765,7 +765,6 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
       
       double rate = mVsyncRefreshDriverTimer->GetTimerRate().ToMilliseconds();
       TimeDuration gracePeriod = TimeDuration::FromMilliseconds(rate / 100.0f);
-      TimeDuration timeForOutsideTick = gracePeriod;
 
       if (shouldGiveNonVSyncTasksMoreTime) {
         if (!mLastTickEnd.IsNull() && XRE_IsContentProcess() &&
@@ -776,7 +775,7 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
           
           
           
-          timeForOutsideTick = tickStart - mLastTickEnd;
+          TimeDuration timeForOutsideTick = tickStart - mLastTickEnd;
           TimeDuration maxOutsideTick =
               TimeDuration::FromMilliseconds(4 * rate);
           if (timeForOutsideTick > maxOutsideTick) {
@@ -789,11 +788,15 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
             
             timeForOutsideTick = timeForOutsideTick - gracePeriod;
           }
+          mSuspendVsyncPriorityTicksUntil = aVsyncTimestamp +
+                                            timeForOutsideTick +
+                                            (tickEnd - mostRecentTickStart);
+        } else {
+          mSuspendVsyncPriorityTicksUntil =
+              aVsyncTimestamp + gracePeriod + (tickEnd - mostRecentTickStart);
         }
-        mSuspendVsyncPriorityTicksUntil = aVsyncTimestamp + timeForOutsideTick +
-                                          (tickEnd - mostRecentTickStart);
       } else {
-        mSuspendVsyncPriorityTicksUntil = aVsyncTimestamp + timeForOutsideTick;
+        mSuspendVsyncPriorityTicksUntil = aVsyncTimestamp + gracePeriod;
       }
 
       mLastIdleTaskCount =
