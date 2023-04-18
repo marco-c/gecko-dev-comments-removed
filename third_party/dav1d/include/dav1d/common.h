@@ -78,4 +78,9 @@ typedef struct Dav1dDataProps {
     struct Dav1dUserData user_data; 
 } Dav1dDataProps;
 
+
+
+
+DAV1D_API void dav1d_data_props_unref(Dav1dDataProps *props);
+
 #endif 
