@@ -79,62 +79,11 @@ return  (function(modules) {
 
  ({
 
- 560:
+ 1059:
  (function(module, exports, __webpack_require__) {
 
+"use strict";
 
-
-
-const networkRequest = __webpack_require__(567);
-
-const workerUtils = __webpack_require__(568);
-
-module.exports = {
-  networkRequest,
-  workerUtils
-};
-
- }),
-
- 567:
- (function(module, exports) {
-
-
-
-
-function networkRequest(url, opts) {
-  const UNSUPPORTED_PROTOCOLS = ["chrome://", "resource://"];
-
-  if (UNSUPPORTED_PROTOCOLS.some(protocol => url.startsWith(protocol))) {
-    return Promise.reject(`unsupported protocol for sourcemap request ${url}`);
-  }
-
-  return fetch(url, {
-    cache: opts.loadFromCache ? "default" : "no-cache"
-  }).then(res => {
-    if (res.status >= 200 && res.status < 300) {
-      if (res.headers.get("Content-Type") === "application/wasm") {
-        return res.arrayBuffer().then(buffer => ({
-          content: buffer,
-          isDwarf: true
-        }));
-      }
-
-      return res.text().then(text => ({
-        content: text
-      }));
-    }
-
-    return Promise.reject(`request failed with status ${res.status}`);
-  });
-}
-
-module.exports = networkRequest;
-
- }),
-
- 568:
- (function(module, exports) {
 
 
 
@@ -296,12 +245,15 @@ function asErrorMessage(error) {
     message: error == null ? error : error.toString(),
     metadata: undefined
   };
-}
+} 
 
-module.exports = {
-  WorkerDispatcher,
-  workerHandler
-};
+
+if (true) {
+  module.exports = {
+    WorkerDispatcher,
+    workerHandler
+  };
+}
 
  }),
 
@@ -798,10 +750,8 @@ function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && 
 
 
 const {
-  workerUtils: {
-    WorkerDispatcher
-  }
-} = __webpack_require__(560);
+  WorkerDispatcher
+} = __webpack_require__(1059);
 
 const dispatcher = new WorkerDispatcher();
 exports.dispatcher = dispatcher;

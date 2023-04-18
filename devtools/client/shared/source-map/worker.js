@@ -79,72 +79,7 @@ return  (function(modules) {
 
  ({
 
- 533:
- (function(module, exports) {
-
-module.exports = 
-(() => {
-  let factory;
-  function define(...args) {
-    if (factory) {
-      throw new Error("expected a single define call");
-    }
-
-    if (
-      args.length !== 2 ||
-      !Array.isArray(args[0]) ||
-      args[0].length !== 0 ||
-      typeof args[1] !== "function"
-    ) {
-      throw new Error("whatwg-url had unexpected factory arguments.");
-    }
-
-    factory = args[1];
-  }
-  define.amd = true;
-
-  const existingDefine = Object.getOwnPropertyDescriptor(globalThis, "define");
-  globalThis.define = define;
-  let err;
-  try {
-    importScripts("resource://devtools/client/shared/vendor/whatwg-url.js");
-
-    if (!factory) {
-      throw new Error("Failed to load whatwg-url factory");
-    }
-  } finally {
-    if (existingDefine) {
-      Object.defineProperty(globalThis, "define", existingDefine);
-    } else {
-      delete globalThis.define;
-    }
-
-  }
-
-  return factory();
-})()
-;
-
- }),
-
- 560:
- (function(module, exports, __webpack_require__) {
-
-
-
-
-const networkRequest = __webpack_require__(567);
-
-const workerUtils = __webpack_require__(568);
-
-module.exports = {
-  networkRequest,
-  workerUtils
-};
-
- }),
-
- 567:
+ 1058:
  (function(module, exports) {
 
 
@@ -177,12 +112,17 @@ function networkRequest(url, opts) {
   });
 }
 
-module.exports = networkRequest;
+module.exports = {
+  networkRequest
+};
 
  }),
 
- 568:
- (function(module, exports) {
+ 1059:
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
 
 
 
@@ -344,12 +284,63 @@ function asErrorMessage(error) {
     message: error == null ? error : error.toString(),
     metadata: undefined
   };
+} 
+
+
+if (true) {
+  module.exports = {
+    WorkerDispatcher,
+    workerHandler
+  };
 }
 
-module.exports = {
-  WorkerDispatcher,
-  workerHandler
-};
+ }),
+
+ 533:
+ (function(module, exports) {
+
+module.exports = 
+(() => {
+  let factory;
+  function define(...args) {
+    if (factory) {
+      throw new Error("expected a single define call");
+    }
+
+    if (
+      args.length !== 2 ||
+      !Array.isArray(args[0]) ||
+      args[0].length !== 0 ||
+      typeof args[1] !== "function"
+    ) {
+      throw new Error("whatwg-url had unexpected factory arguments.");
+    }
+
+    factory = args[1];
+  }
+  define.amd = true;
+
+  const existingDefine = Object.getOwnPropertyDescriptor(globalThis, "define");
+  globalThis.define = define;
+  let err;
+  try {
+    importScripts("resource://devtools/client/shared/vendor/whatwg-url.js");
+
+    if (!factory) {
+      throw new Error("Failed to load whatwg-url factory");
+    }
+  } finally {
+    if (existingDefine) {
+      Object.defineProperty(globalThis, "define", existingDefine);
+    } else {
+      delete globalThis.define;
+    }
+
+  }
+
+  return factory();
+})()
+;
 
  }),
 
@@ -2125,10 +2116,8 @@ const {
 } = __webpack_require__(927);
 
 const {
-  workerUtils: {
-    workerHandler
-  }
-} = __webpack_require__(560); 
+  workerHandler
+} = __webpack_require__(1059); 
 
 
 
@@ -2165,7 +2154,7 @@ self.onmessage = workerHandler({
 
 const {
   networkRequest
-} = __webpack_require__(560);
+} = __webpack_require__(1058);
 
 const {
   SourceMapConsumer,
@@ -4543,7 +4532,7 @@ module.exports = assert;
 
 const {
   networkRequest
-} = __webpack_require__(560);
+} = __webpack_require__(1058);
 
 const {
   getSourceMap,
