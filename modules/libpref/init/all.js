@@ -593,10 +593,6 @@ pref("gfx.downloadable_fonts.fallback_delay_short", 100);
 pref("gfx.downloadable_fonts.disable_cache", false);
 
 
-
-pref("gfx.missing_fonts.notify", false);
-
-
 pref("gfx.font_rendering.fallback.always_use_cmaps", false);
 
 
