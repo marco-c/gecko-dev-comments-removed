@@ -992,7 +992,38 @@ static bool ContainingBlockChangeAffectsDescendants(
   return false;
 }
 
-static bool NeedToReframeToUpdateContainingBlock(nsIFrame* aFrame) {
+
+
+
+
+
+static nsIFrame* ContainingBlockForFrame(nsIFrame* aFrame) {
+  if (aFrame->IsFieldSetFrame()) {
+    
+    return nullptr;
+  }
+  nsIFrame* insertionFrame = aFrame->GetContentInsertionFrame();
+  if (insertionFrame == aFrame) {
+    return insertionFrame;
+  }
+  
+  
+  
+  if (aFrame->IsScrollFrame()) {
+    return insertionFrame;
+  }
+  
+  
+  
+  
+  if (aFrame->IsComboboxControlFrame() || aFrame->IsHTMLButtonControlFrame()) {
+    return aFrame;
+  }
+  return nullptr;
+}
+
+static bool NeedToReframeToUpdateContainingBlock(nsIFrame* aFrame,
+                                                 nsIFrame* aMaybeChangingCB) {
   
   const bool isFixedContainingBlock = aFrame->IsFixedPosContainingBlock();
   MOZ_ASSERT_IF(isFixedContainingBlock, aFrame->IsAbsPosContainingBlock());
@@ -1000,10 +1031,9 @@ static bool NeedToReframeToUpdateContainingBlock(nsIFrame* aFrame) {
   const bool isAbsPosContainingBlock =
       isFixedContainingBlock || aFrame->IsAbsPosContainingBlock();
 
-  nsIFrame* maybeChangingCB = aFrame->GetContentInsertionFrame();
   for (nsIFrame* f = aFrame; f;
        f = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(f)) {
-    if (ContainingBlockChangeAffectsDescendants(maybeChangingCB, f,
+    if (ContainingBlockChangeAffectsDescendants(aMaybeChangingCB, f,
                                                 isAbsPosContainingBlock,
                                                 isFixedContainingBlock)) {
       return true;
@@ -1336,21 +1366,6 @@ static inline void TryToDealWithScrollbarChange(nsChangeHint& aHint,
   aHint |= nsChangeHint_ReconstructFrame;
 }
 
-static bool IsUnsupportedFrameForContainingBlockChangeFastPath(
-    nsIFrame* aFrame) {
-  if (aFrame->IsFieldSetFrame()) {
-    return true;
-  }
-  
-  
-  
-  if (aFrame->GetContentInsertionFrame() != aFrame &&
-      !aFrame->IsScrollFrame()) {
-    return true;
-  }
-  return false;
-}
-
 static void TryToHandleContainingBlockChange(nsChangeHint& aHint,
                                              nsIFrame* aFrame) {
   if (!(aHint & nsChangeHint_UpdateContainingBlock)) {
@@ -1360,22 +1375,18 @@ static void TryToHandleContainingBlockChange(nsChangeHint& aHint,
     return;
   }
   MOZ_ASSERT(aFrame, "If we're not reframing, we ought to have a frame");
-  if (NeedToReframeToUpdateContainingBlock(aFrame) ||
-      IsUnsupportedFrameForContainingBlockChangeFastPath(aFrame)) {
+  nsIFrame* containingBlock = ContainingBlockForFrame(aFrame);
+  if (!containingBlock ||
+      NeedToReframeToUpdateContainingBlock(aFrame, containingBlock)) {
     
     
     aHint |= nsChangeHint_ReconstructFrame;
     return;
   }
   const bool isCb = aFrame->IsAbsPosContainingBlock();
-  nsIFrame* cont = aFrame->GetContentInsertionFrame();
 
   
-  
-  
-  MOZ_ASSERT(cont == aFrame || !aFrame->IsAbsoluteContainer(),
-             "Are we updating the wrong frame?");
-  for (; cont;
+  for (nsIFrame* cont = containingBlock; cont;
        cont = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(cont)) {
     
     
