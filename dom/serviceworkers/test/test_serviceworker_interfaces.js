@@ -62,8 +62,6 @@ var ecmaGlobals = [
   "BigInt",
   "BigInt64Array",
   "BigUint64Array",
-  { name: "ByteLengthQueuingStrategy", optional: true },
-  { name: "CountQueuingStrategy", optional: true },
   "DataView",
   "Date",
   "Error",
@@ -87,7 +85,6 @@ var ecmaGlobals = [
   "Promise",
   "Proxy",
   "RangeError",
-  { name: "ReadableStream", optional: true },
   "ReferenceError",
   "Reflect",
   "RegExp",
@@ -124,6 +121,8 @@ var interfaceNamesInGlobalScope = [
   
   "BroadcastChannel",
   
+  "ByteLengthQueuingStrategy",
+  
   "Cache",
   
   "CacheStorage",
@@ -133,6 +132,8 @@ var interfaceNamesInGlobalScope = [
   "Clients",
   
   "CloseEvent",
+  
+  "CountQueuingStrategy",
   
   "Crypto",
   
@@ -261,6 +262,12 @@ var interfaceNamesInGlobalScope = [
   { name: "PushSubscription" },
   
   { name: "PushSubscriptionOptions" },
+  
+  "ReadableStream",
+  
+  "ReadableStreamDefaultController",
+  
+  "ReadableStreamDefaultReader",
   
   { name: "Report", nightly: true },
   

@@ -90,8 +90,6 @@ var ecmaGlobals = [
   { name: "BigInt64Array", insecureContext: true },
   { name: "BigUint64Array", insecureContext: true },
   { name: "Boolean", insecureContext: true },
-  { name: "ByteLengthQueuingStrategy", insecureContext: true },
-  { name: "CountQueuingStrategy", insecureContext: true },
   { name: "DataView", insecureContext: true },
   { name: "Date", insecureContext: true },
   { name: "Error", insecureContext: true },
@@ -115,7 +113,6 @@ var ecmaGlobals = [
   { name: "Promise", insecureContext: true },
   { name: "Proxy", insecureContext: true },
   { name: "RangeError", insecureContext: true },
-  { name: "ReadableStream", insecureContext: true },
   { name: "ReferenceError", insecureContext: true },
   { name: "Reflect", insecureContext: true },
   { name: "RegExp", insecureContext: true },
@@ -228,6 +225,8 @@ var interfaceNamesInGlobalScope = [
   
   { name: "BroadcastChannel", insecureContext: true },
   
+  { name: "ByteLengthQueuingStrategy", insecureContext: true },
+  
   { name: "Cache", insecureContext: true },
   
   { name: "CacheStorage", insecureContext: true },
@@ -263,6 +262,8 @@ var interfaceNamesInGlobalScope = [
   { name: "ConstantSourceNode", insecureContext: true },
   
   { name: "ConvolverNode", insecureContext: true },
+  
+  { name: "CountQueuingStrategy", insecureContext: true },
   
   { name: "Credential" },
   
@@ -946,6 +947,12 @@ var interfaceNamesInGlobalScope = [
   { name: "RadioNodeList", insecureContext: true },
   
   { name: "Range", insecureContext: true },
+  
+  { name: "ReadableStream", insecureContext: true },
+  
+  { name: "ReadableStreamDefaultController", insecureContext: true },
+  
+  { name: "ReadableStreamDefaultReader", insecureContext: true },
   
   { name: "Report", insecureContext: true, nightly: true },
   
