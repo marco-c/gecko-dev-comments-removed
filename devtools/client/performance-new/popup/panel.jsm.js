@@ -70,7 +70,6 @@ function selectElementsInPanelview(panelview) {
     window: chromeWindow,
     inactive: getElementById("PanelUI-profiler-inactive"),
     active: getElementById("PanelUI-profiler-active"),
-    locked: getElementById("PanelUI-profiler-locked"),
     presetDescription: getElementById("PanelUI-profiler-content-description"),
     presetsEditSettings: getElementById(
       "PanelUI-profiler-content-edit-settings"
@@ -148,45 +147,17 @@ function createViewControllers(state, elements) {
 
     updateProfilerState() {
       const { Services } = lazy.Services();
-      
 
-
-
-
-      let profilerState = Services.profiler.IsActive() ? "active" : "inactive";
-      if (!Services.profiler.CanProfile()) {
-        
-        profilerState = "locked";
-      }
-
-      switch (profilerState) {
-        case "active":
-          elements.inactive.hidden = true;
-          elements.active.hidden = false;
-          elements.settingsSection.hidden = true;
-          elements.contentRecording.hidden = false;
-          elements.locked.hidden = true;
-          break;
-        case "inactive":
-          elements.inactive.hidden = false;
-          elements.active.hidden = true;
-          elements.settingsSection.hidden = false;
-          elements.contentRecording.hidden = true;
-          elements.locked.hidden = true;
-          break;
-        case "locked": {
-          elements.inactive.hidden = true;
-          elements.active.hidden = true;
-          elements.settingsSection.hidden = true;
-          elements.contentRecording.hidden = true;
-          elements.locked.hidden = false;
-          
-          const { height } = elements.locked.getBoundingClientRect();
-          elements.locked.style.height = `${height}px`;
-          break;
-        }
-        default:
-          throw new Error("Unhandled profiler state.");
+      if (Services.profiler.IsActive()) {
+        elements.inactive.hidden = true;
+        elements.active.hidden = false;
+        elements.settingsSection.hidden = true;
+        elements.contentRecording.hidden = false;
+      } else {
+        elements.inactive.hidden = false;
+        elements.active.hidden = true;
+        elements.settingsSection.hidden = false;
+        elements.contentRecording.hidden = true;
       }
     },
 
@@ -359,12 +330,7 @@ function addPopupEventHandlers(state, elements, view) {
   const { Services } = lazy.Services();
 
   
-  const events = [
-    "profiler-started",
-    "profiler-stopped",
-    "chrome-document-global-created", 
-    "last-pb-context-exited",
-  ];
+  const events = ["profiler-started", "profiler-stopped"];
   for (const event of events) {
     Services.obs.addObserver(view.updateProfilerState, event);
     state.cleanup.push(() => {

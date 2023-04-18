@@ -290,14 +290,13 @@ PerformanceRecorder.prototype = {
 
 
 
-  canCurrentlyRecord: function() {
-    let success = true;
-    const reasons = [];
 
-    if (!Profiler.canProfile()) {
-      success = false;
-      reasons.push("profiler-unavailable");
-    }
+
+
+
+  canCurrentlyRecord: function() {
+    const success = true;
+    const reasons = [];
 
     
     

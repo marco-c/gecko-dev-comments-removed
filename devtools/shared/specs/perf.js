@@ -31,6 +31,10 @@ const perfDescription = {
     "profiler-stopped": {
       type: "profiler-stopped",
     },
+    
+    
+    
+    
     "profile-locked-by-private-browsing": {
       type: "profile-locked-by-private-browsing",
     },

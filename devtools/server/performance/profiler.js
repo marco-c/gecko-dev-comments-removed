@@ -555,14 +555,6 @@ class Profiler {
     });
     return { registered: response };
   }
-
-  
-
-
-
-  static canProfile() {
-    return Services.profiler.CanProfile();
-  }
 }
 
 
