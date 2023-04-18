@@ -1284,7 +1284,7 @@ struct ExtensibleCompilationStencil {
   }
 
   
-  [[nodiscard]] bool steal(JSContext* cx, CompilationStencil&& other);
+  [[nodiscard]] bool steal(JSContext* cx, RefPtr<CompilationStencil>&& other);
 
   bool isModule() const;
 
