@@ -4,7 +4,7 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["allowNullOrigin", "WebSocketHandshake"];
+var EXPORTED_SYMBOLS = ["WebSocketHandshake"];
 
 
 
@@ -31,14 +31,6 @@ XPCOMUtils.defineLazyGetter(this, "CryptoHash", () => {
 XPCOMUtils.defineLazyGetter(this, "threadManager", () => {
   return Cc["@mozilla.org/thread-manager;1"].getService();
 });
-
-
-
-
-let nullOriginAllowed = false;
-function allowNullOrigin(allowed) {
-  nullOriginAllowed = allowed;
-}
 
 
 
@@ -154,7 +146,7 @@ function isOriginValid(originHeader) {
 
   
   if (originHeader === "null") {
-    return allowedOrigins.includes("null") || nullOriginAllowed;
+    return allowedOrigins.includes("null");
   }
 
   try {

@@ -15,16 +15,6 @@ const { TabManager } = ChromeUtils.import(
   "chrome://remote/content/shared/TabManager.jsm"
 );
 
-const { allowNullOrigin } = ChromeUtils.import(
-  "chrome://remote/content/server/WebSocketHandshake.jsm"
-);
-
-
-
-
-allowNullOrigin(true);
-registerCleanupFunction(() => allowNullOrigin(false));
-
 const TIMEOUT_MULTIPLIER = SpecialPowers.isDebugBuild ? 4 : 1;
 const TIMEOUT_EVENTS = 1000 * TIMEOUT_MULTIPLIER;
 
@@ -52,16 +42,6 @@ const TIMEOUT_EVENTS = 1000 * TIMEOUT_MULTIPLIER;
 
 const add_plain_task = add_task.bind(this);
 
-
-
-
-async function startRemoteAgent() {
-  if (!RemoteAgent.listening) {
-    await RemoteAgent.listen(Services.io.newURI("http://localhost:9222"));
-    info("Remote agent started");
-  }
-}
-
 this.add_task = function(taskFn, opts = {}) {
   const {
     createTab = true, 
@@ -69,8 +49,6 @@ this.add_task = function(taskFn, opts = {}) {
 
   const fn = async function() {
     let client, tab, target;
-
-    await startRemoteAgent();
 
     try {
       const CDP = await getCDP();
