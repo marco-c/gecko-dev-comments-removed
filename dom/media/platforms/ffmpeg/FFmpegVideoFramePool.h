@@ -7,8 +7,9 @@
 #ifndef __FFmpegVideoFramePool_h__
 #define __FFmpegVideoFramePool_h__
 
-#include "FFmpegVideoDecoder.h"
 #include "FFmpegLibWrapper.h"
+#include "FFmpegLibs.h"
+#include "FFmpegLog.h"
 
 #include "mozilla/layers/DMABUFSurfaceImage.h"
 #include "mozilla/widget/DMABufLibWrapper.h"
@@ -16,7 +17,6 @@
 
 namespace mozilla {
 
-class VideoFramePool;
 
 
 
@@ -46,9 +46,19 @@ class VideoFramePool;
 
 
 
+template <int V>
+class VideoFrameSurface {};
+template <>
+class VideoFrameSurface<LIBAV_VER>;
 
-class VideoFrameSurface {
-  friend class VideoFramePool;
+template <int V>
+class VideoFramePool {};
+template <>
+class VideoFramePool<LIBAV_VER>;
+
+template <>
+class VideoFrameSurface<LIBAV_VER> {
+  friend class VideoFramePool<LIBAV_VER>;
 
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(VideoFrameSurface)
@@ -97,23 +107,24 @@ class VideoFrameSurface {
 };
 
 
-class VideoFramePool final {
+template <>
+class VideoFramePool<LIBAV_VER> {
  public:
   VideoFramePool();
   ~VideoFramePool();
 
-  RefPtr<VideoFrameSurface> GetVideoFrameSurface(
+  RefPtr<VideoFrameSurface<LIBAV_VER>> GetVideoFrameSurface(
       VADRMPRIMESurfaceDescriptor& aVaDesc, AVCodecContext* aAVCodecContext,
       AVFrame* aAVFrame, FFmpegLibWrapper* aLib);
   void ReleaseUnusedVAAPIFrames();
 
  private:
-  RefPtr<VideoFrameSurface> GetFreeVideoFrameSurface();
+  RefPtr<VideoFrameSurface<LIBAV_VER>> GetFreeVideoFrameSurface();
 
  private:
   
   Mutex mSurfaceLock MOZ_UNANNOTATED;
-  nsTArray<RefPtr<VideoFrameSurface>> mDMABufSurfaces;
+  nsTArray<RefPtr<VideoFrameSurface<LIBAV_VER>>> mDMABufSurfaces;
   
   
   Maybe<bool> mTextureCreationWorks;
