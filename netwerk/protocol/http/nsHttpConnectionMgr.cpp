@@ -2456,7 +2456,6 @@ void nsHttpConnectionMgr::OnMsgCompleteUpgrade(int32_t, ARefBase* param) {
 }
 
 void nsHttpConnectionMgr::OnMsgUpdateParam(int32_t inParam, ARefBase*) {
-  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   uint32_t param = static_cast<uint32_t>(inParam);
   uint16_t name = ((param)&0xFFFF0000) >> 16;
   uint16_t value = param & 0x0000FFFF;
@@ -2534,19 +2533,9 @@ void nsHttpConnectionMgr::ActivateTimeoutTick() {
       NS_WARNING("failed to create timer for http timeout management");
       return;
     }
-    ReentrantMonitorAutoEnter mon(mReentrantMonitor);
-    if (!mSocketThreadTarget) {
-      NS_WARNING("cannot activate timout if not initialized or shutdown");
-      return;
-    }
     mTimeoutTick->SetTarget(mSocketThreadTarget);
   }
 
-  if (mIsShuttingDown) {  
-    
-    
-    return;
-  }
   MOZ_ASSERT(!mTimeoutTickArmed, "timer tick armed");
   mTimeoutTickArmed = true;
   mTimeoutTick->Init(this, 1000, nsITimer::TYPE_REPEATING_SLACK);
@@ -2572,7 +2561,6 @@ nsresult nsHttpConnectionMgr::UpdateCurrentTopBrowsingContextId(uint64_t aId) {
 
 void nsHttpConnectionMgr::SetThrottlingEnabled(bool aEnable) {
   LOG(("nsHttpConnectionMgr::SetThrottlingEnabled enable=%d", aEnable));
-  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
   mThrottleEnabled = aEnable;
 
@@ -2958,7 +2946,6 @@ void nsHttpConnectionMgr::EnsureThrottleTickerIfNeeded() {
 
   LogActiveTransactions('^');
 }
-
 
 void nsHttpConnectionMgr::DestroyThrottleTicker() {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
@@ -3389,7 +3376,6 @@ void nsHttpConnectionMgr::OnMsgSpeculativeConnect(int32_t, ARefBase* param) {
 }
 
 bool nsHttpConnectionMgr::BeConservativeIfProxied(nsIProxyInfo* proxy) {
-  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   if (mBeConservativeForProxy) {
     
     return true;
