@@ -642,7 +642,13 @@ PermissionManager::~PermissionManager() {
 }
 
 
+StaticMutex PermissionManager::sCreationMutex;
+
+
 already_AddRefed<nsIPermissionManager> PermissionManager::GetXPCOMSingleton() {
+  
+  StaticMutexAutoLock lock(sCreationMutex);
+
   if (gPermissionManager) {
     return do_AddRef(gPermissionManager);
   }
@@ -664,6 +670,9 @@ already_AddRefed<nsIPermissionManager> PermissionManager::GetXPCOMSingleton() {
 
 
 PermissionManager* PermissionManager::GetInstance() {
+  
+  
+  
   if (!gPermissionManager) {
     
     nsCOMPtr<nsIPermissionManager> permManager = GetXPCOMSingleton();
