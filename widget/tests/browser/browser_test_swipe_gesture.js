@@ -89,11 +89,12 @@ async function panRightToLeft(aElement, aX, aY, aMultiplier) {
 }
 
 async function panLeftToRight(aElement, aX, aY, aMultiplier) {
-  await panLeftToRightBeginAndUpdate(aElement, aX, aY, aMultiplier);
+  await panLeftToRightBegin(aElement, aX, aY, aMultiplier);
+  await panLeftToRightUpdate(aElement, aX, aY, aMultiplier);
   await panLeftToRightEnd(aElement, aX, aY, aMultiplier);
 }
 
-async function panLeftToRightBeginAndUpdate(aElement, aX, aY, aMultiplier) {
+async function panLeftToRightBegin(aElement, aX, aY, aMultiplier) {
   await NativePanHandler.promiseNativePanEvent(
     aElement,
     aX,
@@ -102,6 +103,9 @@ async function panLeftToRightBeginAndUpdate(aElement, aX, aY, aMultiplier) {
     0,
     NativePanHandler.beginPhase
   );
+}
+
+async function panLeftToRightUpdate(aElement, aX, aY, aMultiplier) {
   await NativePanHandler.promiseNativePanEvent(
     aElement,
     aX,
@@ -284,7 +288,8 @@ add_task(async () => {
   
   
   
-  await panLeftToRightBeginAndUpdate(tab.linkedBrowser, 100, 100, 0.9);
+  await panLeftToRightBegin(tab.linkedBrowser, 100, 100, 0.9);
+  await panLeftToRightUpdate(tab.linkedBrowser, 100, 100, 0.9);
 
   
   let computedOpacity = window
@@ -382,7 +387,8 @@ add_task(async () => {
   
   
   
-  await panLeftToRightBeginAndUpdate(tab.linkedBrowser, 100, 100, 1.8);
+  await panLeftToRightBegin(tab.linkedBrowser, 100, 100, 1.8);
+  await panLeftToRightUpdate(tab.linkedBrowser, 100, 100, 1.8);
 
   
   let computedOpacity = window
@@ -618,6 +624,77 @@ add_task(async () => {
   );
 
   gBrowser.tabbox.removeEventListener("MozSwipeGestureEnd", anObserver, true);
+
+  BrowserTestUtils.removeTab(tab);
+});
+
+add_task(async () => {
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.gesture.swipe.left", "Browser:BackOrBackDuplicate"],
+      ["browser.gesture.swipe.eight", "Browser:ForwardOrForwardDuplicate"],
+      ["widget.disable-swipe-tracker", false],
+      ["widget.swipe.velocity-twitch-tolerance", 0.0000001],
+      ["widget.swipe.success-velocity-contribution", 999999.0],
+      ["widget.swipe.whole-page-pixel-size", 1.0],
+    ],
+  });
+
+  const firstPage = "about:about";
+  const secondPage = "about:mozilla";
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    firstPage,
+    true 
+  );
+
+  BrowserTestUtils.loadURI(tab.linkedBrowser, secondPage);
+  await BrowserTestUtils.browserLoaded(tab.linkedBrowser, false, secondPage);
+
+  
+  ok(gBrowser.webNavigation.canGoBack);
+  
+  ok(!gBrowser.webNavigation.canGoForward);
+
+  
+  let startLoadingPromise = BrowserTestUtils.browserStarted(
+    tab.linkedBrowser,
+    firstPage
+  );
+  let stoppedLoadingPromise = BrowserTestUtils.browserStopped(
+    tab.linkedBrowser,
+    firstPage
+  );
+
+  await panLeftToRightBegin(tab.linkedBrowser, 100, 100, 100);
+
+  ok(gHistorySwipeAnimation._prevBox != null, "should have prevbox");
+  let transitionPromise = new Promise(resolve => {
+    gHistorySwipeAnimation._prevBox.addEventListener(
+      "transitionstart",
+      resolve,
+      { once: true }
+    );
+  });
+
+  await panLeftToRightUpdate(tab.linkedBrowser, 100, 100, 100);
+  await panLeftToRightEnd(tab.linkedBrowser, 100, 100, 100);
+
+  
+  await Promise.all([startLoadingPromise, stoppedLoadingPromise]);
+
+  ok(gBrowser.webNavigation.canGoForward);
+
+  await transitionPromise;
+
+  await TestUtils.waitForCondition(() => {
+    return (
+      gHistorySwipeAnimation._prevBox == null &&
+      gHistorySwipeAnimation._nextBox == null
+    );
+  });
 
   BrowserTestUtils.removeTab(tab);
 });
