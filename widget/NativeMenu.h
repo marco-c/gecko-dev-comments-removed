@@ -9,6 +9,8 @@
 #include "nsISupportsImpl.h"
 #include "Units.h"
 
+class nsPresContext;
+
 namespace mozilla {
 using Modifiers = uint16_t;
 class ErrorResult;
@@ -27,7 +29,8 @@ class NativeMenu {
   
   
   
-  virtual void ShowAsContextMenu(const mozilla::DesktopPoint& aPosition) = 0;
+  virtual void ShowAsContextMenu(nsPresContext* aPc,
+                                 const CSSIntPoint& aPosition) = 0;
 
   
   
