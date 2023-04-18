@@ -5328,7 +5328,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   
-  inline void assertCanonicalInt32(Register r);
+  void debugAssertCanonicalInt32(Register r);
 #endif
 };
 

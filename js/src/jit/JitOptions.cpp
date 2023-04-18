@@ -301,6 +301,9 @@ DefaultJitOptions::DefaultJitOptions() {
   
   SET_DEFAULT(traceRegExpPeephole, false);
 
+  
+  SET_DEFAULT(lessDebugCode, false);
+
   SET_DEFAULT(enableWasmJitExit, true);
   SET_DEFAULT(enableWasmJitEntry, true);
   SET_DEFAULT(enableWasmIonFastCalls, true);
