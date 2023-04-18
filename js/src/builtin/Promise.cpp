@@ -2053,6 +2053,7 @@ static bool ForEachReaction(JSContext* cx, HandleValue reactionsVal, F f) {
 
     
     
+    
     bool ok;
     if (reaction->targetState() == JS::PromiseState::Fulfilled) {
       ok = ResolvePromiseInternal(cx, promiseToResolve, argument);
@@ -2070,26 +2071,15 @@ static bool ForEachReaction(JSContext* cx, HandleValue reactionsVal, F f) {
   }
 
   
-  
   RootedObject promiseObj(cx, reaction->promise());
   RootedObject callee(cx);
   if (resolutionMode == ResolveMode) {
-    
-    
-    
-    
     callee =
         reaction->getFixedSlot(ReactionRecordSlot_Resolve).toObjectOrNull();
 
     return CallPromiseResolveFunction(cx, callee, handlerResult, promiseObj);
   }
 
-  
-  
-  
-  
-  
-  
   callee = reaction->getFixedSlot(ReactionRecordSlot_Reject).toObjectOrNull();
 
   return CallPromiseRejectFunction(cx, callee, handlerResult, promiseObj,
@@ -2196,6 +2186,9 @@ static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
+  
+
+  
   RootedValue handlerVal(cx, reaction->handler());
 
   RootedValue argument(cx, reaction->handlerArg());
@@ -2207,16 +2200,23 @@ static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp) {
 
   
   if (handlerVal.isInt32()) {
+    
+    
     auto handlerNum = static_cast<PromiseHandler>(handlerVal.toInt32());
 
+    
     
     if (handlerNum == PromiseHandler::Identity) {
       handlerResult = argument;
     } else if (handlerNum == PromiseHandler::Thrower) {
       
+      
+      
       resolutionMode = RejectMode;
       handlerResult = argument;
     } else {
+      
+
       MOZ_ASSERT(handlerNum ==
                      PromiseHandler::AsyncFromSyncIteratorValueUnwrapDone ||
                  handlerNum ==
@@ -2236,6 +2236,7 @@ static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp) {
     MOZ_ASSERT(handlerVal.isObject());
     MOZ_ASSERT(IsCallable(handlerVal));
 
+    
     
     
     if (!Call(cx, handlerVal, UndefinedHandleValue, argument, &handlerResult)) {
