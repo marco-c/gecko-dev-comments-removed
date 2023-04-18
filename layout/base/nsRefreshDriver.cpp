@@ -497,6 +497,24 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   class RefreshDriverVsyncObserver final : public VsyncObserver {
     NS_INLINE_DECL_THREADSAFE_REFCOUNTING(
         VsyncRefreshDriverTimer::RefreshDriverVsyncObserver, override)
@@ -506,13 +524,7 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
         VsyncRefreshDriverTimer* aVsyncRefreshDriverTimer)
         : mVsyncRefreshDriverTimer(aVsyncRefreshDriverTimer),
           mLastPendingVsyncNotification(
-              "RefreshDriverVsyncObserver::mLastPendingVsyncNotification"),
-          mRecentVsync(TimeStamp::Now()),
-          mLastTickStart(TimeStamp::Now()),
-          mLastIdleTaskCount(0),
-          mLastRunOutOfMTTasksCount(0),
-          mVsyncRate(TimeDuration::Forever()),
-          mProcessedVsync(true) {
+              "RefreshDriverVsyncObserver::mLastPendingVsyncNotification") {
       MOZ_ASSERT(NS_IsMainThread());
     }
 
@@ -533,7 +545,7 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
         
         
         
-        NotifyVsyncOnMainThread();
+        NotifyVsyncTimerOnMainThread();
         return;
       }
 
@@ -546,38 +558,16 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
       bool useVsyncPriority = mozilla::BrowserTabsRemoteAutostart();
       nsCOMPtr<nsIRunnable> vsyncEvent = new PrioritizableRunnable(
           NS_NewRunnableFunction(
-              "VsyncRefreshDriverTimer::NotifyVsyncOnMainThread",
-              [self = RefPtr{this}]() { self->NotifyVsyncOnMainThread(); }),
+              "RefreshDriverVsyncObserver::NotifyVsyncTimerOnMainThread",
+              [self = RefPtr{this}]() {
+                self->NotifyVsyncTimerOnMainThread();
+              }),
           useVsyncPriority ? nsIRunnablePriority::PRIORITY_VSYNC
                            : nsIRunnablePriority::PRIORITY_NORMAL);
       NS_DispatchToMainThread(vsyncEvent);
     }
 
-    bool ShouldGiveNonVsyncTasksMoreTime() {
-      TaskController* taskController = TaskController::Get();
-      IdleTaskManager* idleTaskManager = taskController->GetIdleTaskManager();
-
-      
-      uint64_t pendingTaskCount =
-          taskController->PendingMainthreadTaskCountIncludingSuspended();
-      uint64_t pendingIdleTaskCount = idleTaskManager->PendingTaskCount();
-      MOZ_ASSERT(pendingTaskCount >= pendingIdleTaskCount);
-
-      uint64_t idleTaskCount = idleTaskManager->ProcessedTaskCount();
-
-      
-      
-      
-      
-      
-      return mLastIdleTaskCount == idleTaskCount &&
-             pendingTaskCount > pendingIdleTaskCount &&
-             (taskController->RunOutOfMTTasksCount() ==
-                  mLastRunOutOfMTTasksCount ||
-              XRE_IsParentProcess());
-    }
-
-    void NotifyVsyncOnMainThread() {
+    void NotifyVsyncTimerOnMainThread() {
       
       
       MOZ_ASSERT(NS_IsMainThread());
@@ -586,9 +576,6 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
         
         return;
       }
-
-      
-      InputTaskManager::Get()->SetInputHandlingStartTime(TimeStamp());
 
       VsyncEvent vsyncEvent;
       {
@@ -600,58 +587,7 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
         vsyncEvent = pendingVsync->extract();
       }
 
-      mRecentVsync = vsyncEvent.mTime;
-      mRecentVsyncId = vsyncEvent.mId;
-      if (!mSuspendVsyncPriorityTicksUntil.IsNull() &&
-          mSuspendVsyncPriorityTicksUntil > vsyncEvent.mTime) {
-        if (ShouldGiveNonVsyncTasksMoreTime()) {
-          
-          return;
-        }
-
-        
-        
-        mSuspendVsyncPriorityTicksUntil = TimeStamp();
-      }
-
-      if (StaticPrefs::layout_lower_priority_refresh_driver_during_load() &&
-          ShouldGiveNonVsyncTasksMoreTime()) {
-        nsPresContext* pctx =
-            mVsyncRefreshDriverTimer->GetPresContextForOnlyRefreshDriver();
-        if (pctx && pctx->HadContentfulPaint() && pctx->Document() &&
-            pctx->Document()->GetReadyStateEnum() <
-                Document::READYSTATE_COMPLETE) {
-          nsPIDOMWindowInner* win = pctx->Document()->GetInnerWindow();
-          uint32_t frameRateMultiplier = pctx->GetNextFrameRateMultiplier();
-          if (!frameRateMultiplier) {
-            pctx->DidUseFrameRateMultiplier();
-          }
-          if (win && frameRateMultiplier) {
-            dom::Performance* perf = win->GetPerformance();
-            
-            
-            if (perf && perf->Now() <
-                            StaticPrefs::page_load_deprioritization_period()) {
-              if (mProcessedVsync) {
-                mProcessedVsync = false;
-                TimeDuration rate = mVsyncRefreshDriverTimer->GetTimerRate();
-                uint32_t slowRate = static_cast<uint32_t>(
-                    rate.ToMilliseconds() * frameRateMultiplier);
-                pctx->DidUseFrameRateMultiplier();
-                nsCOMPtr<nsIRunnable> vsyncEvent = NewRunnableMethod<>(
-                    "RefreshDriverVsyncObserver::NormalPriorityNotify[IDLE]",
-                    this, &RefreshDriverVsyncObserver::IdlePriorityNotify);
-                NS_DispatchToCurrentThreadQueue(vsyncEvent.forget(), slowRate,
-                                                EventQueuePriority::Idle);
-              }
-              return;
-            }
-          }
-        }
-      }
-
-      RefPtr<RefreshDriverVsyncObserver> kungFuDeathGrip(this);
-      TickRefreshDriver(vsyncEvent.mId, vsyncEvent.mTime);
+      mVsyncRefreshDriverTimer->NotifyVsyncOnMainThread(vsyncEvent);
     }
 
     void Shutdown() {
@@ -659,143 +595,10 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
       mVsyncRefreshDriverTimer = nullptr;
     }
 
-    void OnTimerStart() {
-      mLastTickStart = TimeStamp::Now();
-      mLastTickEnd = TimeStamp();
-      mLastIdleTaskCount = 0;
-      mLastRunOutOfMTTasksCount = 0;
-    }
-
-    void IdlePriorityNotify() {
-      if (!mVsyncRefreshDriverTimer) {
-        
-        return;
-      }
-
-      if (mLastProcessedTick.IsNull() || mRecentVsync > mLastProcessedTick) {
-        
-        
-        mSuspendVsyncPriorityTicksUntil = TimeStamp();
-        TickRefreshDriver(mRecentVsyncId, mRecentVsync);
-      }
-
-      mProcessedVsync = true;
-    }
-
    private:
     ~RefreshDriverVsyncObserver() = default;
 
-    void RecordTelemetryProbes(TimeStamp aVsyncTimestamp) {
-      MOZ_ASSERT(NS_IsMainThread());
-#ifndef ANDROID 
-      if (XRE_IsParentProcess()) {
-        TimeDuration vsyncLatency = TimeStamp::Now() - aVsyncTimestamp;
-        uint32_t sample = (uint32_t)vsyncLatency.ToMilliseconds();
-        Telemetry::Accumulate(
-            Telemetry::FX_REFRESH_DRIVER_CHROME_FRAME_DELAY_MS, sample);
-        Telemetry::Accumulate(
-            Telemetry::FX_REFRESH_DRIVER_SYNC_SCROLL_FRAME_DELAY_MS, sample);
-      } else if (mVsyncRate != TimeDuration::Forever()) {
-        TimeDuration contentDelay =
-            (TimeStamp::Now() - mLastTickStart) - mVsyncRate;
-        if (contentDelay.ToMilliseconds() < 0) {
-          
-          
-          
-          contentDelay = TimeDuration::FromMilliseconds(0);
-        }
-        uint32_t sample = (uint32_t)contentDelay.ToMilliseconds();
-        Telemetry::Accumulate(
-            Telemetry::FX_REFRESH_DRIVER_CONTENT_FRAME_DELAY_MS, sample);
-        Telemetry::Accumulate(
-            Telemetry::FX_REFRESH_DRIVER_SYNC_SCROLL_FRAME_DELAY_MS, sample);
-      } else {
-        
-        
-        if (mVsyncRefreshDriverTimer) {
-          mVsyncRate = mVsyncRefreshDriverTimer->mVsyncChild->GetVsyncRate();
-        }
-      }
-#endif
-    }
-
-    void TickRefreshDriver(VsyncId aId, TimeStamp aVsyncTimestamp) {
-      MOZ_ASSERT(NS_IsMainThread());
-      MOZ_RELEASE_ASSERT(mVsyncRefreshDriverTimer,
-                         "Do not call after a call to Shutdown()");
-
-      RecordTelemetryProbes(aVsyncTimestamp);
-
-      TimeStamp tickStart = TimeStamp::Now();
-
-      
-      
-      
-#if !defined(_WIN32)
-      MOZ_ASSERT(aVsyncTimestamp <= tickStart);
-#endif
-
-      bool shouldGiveNonVSyncTasksMoreTime = ShouldGiveNonVsyncTasksMoreTime();
-
-      
-      
-      mLastTickStart = tickStart;
-      mLastProcessedTick = aVsyncTimestamp;
-
-      RefPtr<VsyncRefreshDriverTimer> timer = mVsyncRefreshDriverTimer;
-      timer->RunRefreshDrivers(aId, aVsyncTimestamp);
-      
-
-      TimeStamp tickEnd = TimeStamp::Now();
-
-      
-      
-      TimeStamp mostRecentTickStart = mLastTickStart;
-
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      TimeDuration rate = mVsyncRefreshDriverTimer->GetTimerRate();
-      TimeDuration gracePeriod = rate / int64_t(100);
-
-      if (shouldGiveNonVSyncTasksMoreTime) {
-        if (!mLastTickEnd.IsNull() && XRE_IsContentProcess() &&
-            
-            
-            
-            !mVsyncRefreshDriverTimer->IsAnyToplevelContentPageLoading()) {
-          
-          
-          
-          
-          
-          
-          TimeDuration timeForOutsideTick = clamped(
-              tickStart - mLastTickEnd - gracePeriod, TimeDuration(), rate * 4);
-          mSuspendVsyncPriorityTicksUntil = aVsyncTimestamp +
-                                            timeForOutsideTick +
-                                            (tickEnd - mostRecentTickStart);
-        } else {
-          mSuspendVsyncPriorityTicksUntil =
-              aVsyncTimestamp + gracePeriod + (tickEnd - mostRecentTickStart);
-        }
-      } else {
-        mSuspendVsyncPriorityTicksUntil = aVsyncTimestamp + gracePeriod;
-      }
-
-      mLastIdleTaskCount =
-          TaskController::Get()->GetIdleTaskManager()->ProcessedTaskCount();
-      mLastRunOutOfMTTasksCount = TaskController::Get()->RunOutOfMTTasksCount();
-      mLastTickEnd = tickEnd;
-    }
-
+    
     
     
     
@@ -812,27 +615,6 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
     
     DataMutex<Maybe<VsyncEvent>> mLastPendingVsyncNotification;
 
-    TimeStamp mRecentVsync;
-    VsyncId mRecentVsyncId;
-    
-    TimeStamp mLastTickStart;
-    
-    TimeStamp mLastTickEnd;
-    
-    
-    uint64_t mLastIdleTaskCount;
-    
-    
-    uint64_t mLastRunOutOfMTTasksCount;
-    
-    
-    TimeStamp mLastProcessedTick;
-    
-    
-    
-    TimeStamp mSuspendVsyncPriorityTicksUntil;
-    TimeDuration mVsyncRate;
-    bool mProcessedVsync;
   };  
 
   VsyncRefreshDriverTimer(
@@ -842,7 +624,12 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
       : mVsyncSource(aVsyncSource),
         mVsyncDispatcher(aVsyncDispatcher),
         mVsyncChild(aVsyncChild),
-        mVsyncRate(TimeDuration::Forever()) {
+        mVsyncRate(TimeDuration::Forever()),
+        mRecentVsync(TimeStamp::Now()),
+        mLastTickStart(TimeStamp::Now()),
+        mLastIdleTaskCount(0),
+        mLastRunOutOfMTTasksCount(0),
+        mProcessedVsync(true) {
     mVsyncObserver = new RefreshDriverVsyncObserver(this);
   }
 
@@ -861,6 +648,210 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
     mVsyncObserver = nullptr;
   }
 
+  bool ShouldGiveNonVsyncTasksMoreTime() {
+    TaskController* taskController = TaskController::Get();
+    IdleTaskManager* idleTaskManager = taskController->GetIdleTaskManager();
+
+    
+    uint64_t pendingTaskCount =
+        taskController->PendingMainthreadTaskCountIncludingSuspended();
+    uint64_t pendingIdleTaskCount = idleTaskManager->PendingTaskCount();
+    MOZ_ASSERT(pendingTaskCount >= pendingIdleTaskCount);
+
+    uint64_t idleTaskCount = idleTaskManager->ProcessedTaskCount();
+
+    
+    
+    
+    
+    
+    return mLastIdleTaskCount == idleTaskCount &&
+           pendingTaskCount > pendingIdleTaskCount &&
+           (taskController->RunOutOfMTTasksCount() ==
+                mLastRunOutOfMTTasksCount ||
+            XRE_IsParentProcess());
+  }
+
+  void NotifyVsyncOnMainThread(const VsyncEvent& aVsyncEvent) {
+    MOZ_ASSERT(NS_IsMainThread());
+
+    
+    InputTaskManager::Get()->SetInputHandlingStartTime(TimeStamp());
+
+    mRecentVsync = aVsyncEvent.mTime;
+    mRecentVsyncId = aVsyncEvent.mId;
+    if (!mSuspendVsyncPriorityTicksUntil.IsNull() &&
+        mSuspendVsyncPriorityTicksUntil > aVsyncEvent.mTime) {
+      if (ShouldGiveNonVsyncTasksMoreTime()) {
+        
+        return;
+      }
+
+      
+      
+      mSuspendVsyncPriorityTicksUntil = TimeStamp();
+    }
+
+    if (StaticPrefs::layout_lower_priority_refresh_driver_during_load() &&
+        ShouldGiveNonVsyncTasksMoreTime()) {
+      nsPresContext* pctx = GetPresContextForOnlyRefreshDriver();
+      if (pctx && pctx->HadContentfulPaint() && pctx->Document() &&
+          pctx->Document()->GetReadyStateEnum() <
+              Document::READYSTATE_COMPLETE) {
+        nsPIDOMWindowInner* win = pctx->Document()->GetInnerWindow();
+        uint32_t frameRateMultiplier = pctx->GetNextFrameRateMultiplier();
+        if (!frameRateMultiplier) {
+          pctx->DidUseFrameRateMultiplier();
+        }
+        if (win && frameRateMultiplier) {
+          dom::Performance* perf = win->GetPerformance();
+          
+          
+          if (perf &&
+              perf->Now() < StaticPrefs::page_load_deprioritization_period()) {
+            if (mProcessedVsync) {
+              mProcessedVsync = false;
+              TimeDuration rate = GetTimerRate();
+              uint32_t slowRate = static_cast<uint32_t>(rate.ToMilliseconds() *
+                                                        frameRateMultiplier);
+              pctx->DidUseFrameRateMultiplier();
+              nsCOMPtr<nsIRunnable> vsyncEvent = NewRunnableMethod<>(
+                  "VsyncRefreshDriverTimer::IdlePriorityNotify", this,
+                  &VsyncRefreshDriverTimer::IdlePriorityNotify);
+              NS_DispatchToCurrentThreadQueue(vsyncEvent.forget(), slowRate,
+                                              EventQueuePriority::Idle);
+            }
+            return;
+          }
+        }
+      }
+    }
+
+    RefPtr<VsyncRefreshDriverTimer> kungFuDeathGrip(this);
+    TickRefreshDriver(aVsyncEvent.mId, aVsyncEvent.mTime);
+  }
+
+  void RecordTelemetryProbes(TimeStamp aVsyncTimestamp) {
+    MOZ_ASSERT(NS_IsMainThread());
+#ifndef ANDROID 
+    if (XRE_IsParentProcess()) {
+      TimeDuration vsyncLatency = TimeStamp::Now() - aVsyncTimestamp;
+      uint32_t sample = (uint32_t)vsyncLatency.ToMilliseconds();
+      Telemetry::Accumulate(Telemetry::FX_REFRESH_DRIVER_CHROME_FRAME_DELAY_MS,
+                            sample);
+      Telemetry::Accumulate(
+          Telemetry::FX_REFRESH_DRIVER_SYNC_SCROLL_FRAME_DELAY_MS, sample);
+    } else if (mVsyncRate != TimeDuration::Forever()) {
+      TimeDuration contentDelay =
+          (TimeStamp::Now() - mLastTickStart) - mVsyncRate;
+      if (contentDelay.ToMilliseconds() < 0) {
+        
+        
+        
+        contentDelay = TimeDuration::FromMilliseconds(0);
+      }
+      uint32_t sample = (uint32_t)contentDelay.ToMilliseconds();
+      Telemetry::Accumulate(Telemetry::FX_REFRESH_DRIVER_CONTENT_FRAME_DELAY_MS,
+                            sample);
+      Telemetry::Accumulate(
+          Telemetry::FX_REFRESH_DRIVER_SYNC_SCROLL_FRAME_DELAY_MS, sample);
+    } else {
+      
+      
+      mVsyncRate = mVsyncChild->GetVsyncRate();
+    }
+#endif
+  }
+
+  void OnTimerStart() {
+    mLastTickStart = TimeStamp::Now();
+    mLastTickEnd = TimeStamp();
+    mLastIdleTaskCount = 0;
+  }
+
+  void IdlePriorityNotify() {
+    if (mLastProcessedTick.IsNull() || mRecentVsync > mLastProcessedTick) {
+      
+      
+      mSuspendVsyncPriorityTicksUntil = TimeStamp();
+      TickRefreshDriver(mRecentVsyncId, mRecentVsync);
+    }
+
+    mProcessedVsync = true;
+  }
+
+  void TickRefreshDriver(VsyncId aId, TimeStamp aVsyncTimestamp) {
+    MOZ_ASSERT(NS_IsMainThread());
+
+    RecordTelemetryProbes(aVsyncTimestamp);
+
+    TimeStamp tickStart = TimeStamp::Now();
+
+    
+    
+    
+#if !defined(_WIN32)
+    MOZ_ASSERT(aVsyncTimestamp <= tickStart);
+#endif
+
+    bool shouldGiveNonVSyncTasksMoreTime = ShouldGiveNonVsyncTasksMoreTime();
+
+    
+    
+    mLastTickStart = tickStart;
+    mLastProcessedTick = aVsyncTimestamp;
+
+    RunRefreshDrivers(aId, aVsyncTimestamp);
+
+    TimeStamp tickEnd = TimeStamp::Now();
+
+    
+    
+    TimeStamp mostRecentTickStart = mLastTickStart;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    TimeDuration rate = GetTimerRate();
+    TimeDuration gracePeriod = rate / int64_t(100);
+
+    if (shouldGiveNonVSyncTasksMoreTime) {
+      if (!mLastTickEnd.IsNull() && XRE_IsContentProcess() &&
+          
+          
+          
+          !IsAnyToplevelContentPageLoading()) {
+        
+        
+        
+        
+        
+        
+        TimeDuration timeForOutsideTick = clamped(
+            tickStart - mLastTickEnd - gracePeriod, TimeDuration(), rate * 4);
+        mSuspendVsyncPriorityTicksUntil = aVsyncTimestamp + timeForOutsideTick +
+                                          (tickEnd - mostRecentTickStart);
+      } else {
+        mSuspendVsyncPriorityTicksUntil =
+            aVsyncTimestamp + gracePeriod + (tickEnd - mostRecentTickStart);
+      }
+    } else {
+      mSuspendVsyncPriorityTicksUntil = aVsyncTimestamp + gracePeriod;
+    }
+
+    mLastIdleTaskCount =
+        TaskController::Get()->GetIdleTaskManager()->ProcessedTaskCount();
+    mLastRunOutOfMTTasksCount = TaskController::Get()->RunOutOfMTTasksCount();
+    mLastTickEnd = tickEnd;
+  }
+
   void StartTimer() override {
     MOZ_ASSERT(NS_IsMainThread());
 
@@ -871,7 +862,7 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
       mVsyncDispatcher->AddVsyncObserver(mVsyncObserver);
     } else if (mVsyncChild) {
       mVsyncChild->AddChildRefreshTimer(mVsyncObserver);
-      mVsyncObserver->OnTimerStart();
+      OnTimerStart();
     }
     mIsTicking = true;
   }
@@ -924,6 +915,27 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
 
   TimeDuration mVsyncRate;
   bool mIsTicking = false;
+
+  TimeStamp mRecentVsync;
+  VsyncId mRecentVsyncId;
+  
+  TimeStamp mLastTickStart;
+  
+  TimeStamp mLastTickEnd;
+  
+  
+  uint64_t mLastIdleTaskCount;
+  
+  
+  uint64_t mLastRunOutOfMTTasksCount;
+  
+  
+  TimeStamp mLastProcessedTick;
+  
+  
+  
+  TimeStamp mSuspendVsyncPriorityTicksUntil;
+  bool mProcessedVsync;
 };  
 
 
