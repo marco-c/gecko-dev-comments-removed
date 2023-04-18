@@ -831,12 +831,6 @@ bool DoSetElemFallback(JSContext* cx, BaselineFrame* frame,
   }
 
   
-  
-  if (op == JSOp::InitHiddenElem) {
-    return true;
-  }
-
-  
   MOZ_ASSERT(stack[2] == objv);
   stack[2] = rhs;
 
