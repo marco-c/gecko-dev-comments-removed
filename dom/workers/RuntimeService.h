@@ -24,8 +24,7 @@
 
 class nsPIDOMWindowInner;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 struct WorkerLoadInfo;
 class WorkerThread;
 
@@ -193,7 +192,6 @@ class RuntimeService final : public nsIObserver {
   void BroadcastAllWorkers(const Func& aFunc);
 };
 
-}  
 }  
 }  
 

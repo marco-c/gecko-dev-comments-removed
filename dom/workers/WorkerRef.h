@@ -12,8 +12,7 @@
 #include "mozilla/RefPtr.h"
 #include "nsISupports.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -233,7 +232,6 @@ class IPCWorkerRefHelper final {
   ActorPtr* mActor;
 };
 
-}  
 }  
 
 #endif 

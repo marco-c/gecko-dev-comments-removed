@@ -16,9 +16,7 @@
 #include "nsString.h"
 #include "nsTArray.h"
 
-namespace mozilla {
-namespace dom {
-namespace workerinternals {
+namespace mozilla::dom::workerinternals {
 
 
 const uint32_t kJSPrincipalsDebugToken = 0x7e2df9d2;
@@ -59,8 +57,6 @@ struct JSSettings {
   }
 };
 
-}  
-}  
 }  
 
 #endif  

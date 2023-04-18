@@ -26,8 +26,7 @@
 #  include <unistd.h>  
 #endif                 
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 namespace {
 
@@ -569,5 +568,4 @@ RefPtr<PerformanceInfoPromise> WorkerDebugger::ReportPerformanceInfo() {
           });
 }
 
-}  
 }  
