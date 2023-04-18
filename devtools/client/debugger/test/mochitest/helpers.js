@@ -348,6 +348,28 @@ function assertDebugLine(dbg, line, column) {
 
 
 
+function assertLineIsBreakable(dbg, file, line, shouldBeBreakable) {
+  const lineInfo = getCM(dbg).lineInfo(line - 1);
+  
+  
+  if (shouldBeBreakable) {
+    ok(
+      !lineInfo.wrapClass?.includes("empty-line"),
+      `${file}:${line} should be breakable`
+    );
+  } else {
+    ok(
+      lineInfo?.wrapClass?.includes("empty-line"),
+      `${file}:${line} should NOT be breakable`
+    );
+  }
+}
+
+
+
+
+
+
 
 
 
@@ -904,6 +926,17 @@ async function addBreakpoint(dbg, source, line, column, options) {
     bpCount + 1,
     "a new breakpoint was created"
   );
+}
+
+
+
+
+
+
+async function addBreakpointViaGutter(dbg, line) {
+  info(`Add breakpoint via the editor on line ${line}`);
+  await clickGutter(dbg, line);
+  return waitForDispatch(dbg.store, "SET_BREAKPOINT");
 }
 
 function disableBreakpoint(dbg, source, line, column) {
