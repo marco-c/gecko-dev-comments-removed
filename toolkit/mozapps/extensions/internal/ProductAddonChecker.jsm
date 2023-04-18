@@ -33,6 +33,7 @@ logger.manageLevelFromPref("extensions.logging.productaddons.level");
 
 
 
+
 const TIMEOUT_DELAY_MS = 20000;
 
 const HASH_CHUNK_SIZE = 8192;
@@ -71,6 +72,7 @@ function getRequestStatus(request) {
 async function conservativeFetch(input) {
   return new Promise(function(resolve, reject) {
     const request = new ServiceRequest({ mozAnon: true });
+    request.timeout = TIMEOUT_DELAY_MS;
 
     request.onerror = () =>
       reject(new TypeError("NetworkError: Network request failed"));
