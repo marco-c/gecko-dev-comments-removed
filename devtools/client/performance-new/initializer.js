@@ -101,13 +101,6 @@ async function gInit(perfFront, traits, pageContext, openAboutProfiling) {
   const isSupportedPlatform = await perfFront.isSupportedPlatform();
   const supportedFeatures = await perfFront.getSupportedFeatures();
 
-  if (!openAboutProfiling) {
-    openAboutProfiling = () => {
-      const { openTrustedLink } = require("devtools/client/shared/link");
-      openTrustedLink("about:profiling", {});
-    };
-  }
-
   {
     
     const anyWindow =  (window);
