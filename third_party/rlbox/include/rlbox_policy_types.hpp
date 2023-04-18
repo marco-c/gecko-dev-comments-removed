@@ -156,6 +156,14 @@ public:
   
 
 
+  inline bool is_unregistered() const noexcept
+  {
+    return get_raw_value() == nullptr;
+  }
+
+  
+
+
 
   inline auto UNSAFE_unverified() const noexcept { return get_raw_value(); }
   
@@ -260,6 +268,11 @@ public:
   
 
 
+  inline bool is_unregistered() const noexcept { return idx == 0; }
+
+  
+
+
 
   inline auto UNSAFE_unverified() const noexcept { return get_raw_value(); }
   
@@ -315,7 +328,7 @@ public:
   inline auto INTERNAL_unverified_safe() const { return UNSAFE_unverified(); }
 
   
-  template<typename T=void>
+  template<typename T = void>
   inline bool copy_and_verify(...) const
   {
     rlbox_detail_static_fail_because(
@@ -373,7 +386,7 @@ public:
   inline auto INTERNAL_unverified_safe() const { return UNSAFE_unverified(); }
 
   
-  template<typename T=void>
+  template<typename T = void>
   inline int copy_and_verify(...) const
   {
     rlbox_detail_static_fail_because(

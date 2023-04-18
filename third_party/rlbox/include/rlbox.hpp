@@ -658,6 +658,7 @@ public:
 
 
 
+
   template<typename T_Func>
   inline auto copy_and_verify_string(T_Func verifier) const
   {
@@ -670,7 +671,11 @@ public:
     using T_VerifParam = detail::func_first_arg_t<T_Func>;
 
     auto start = impl().get_raw_value();
-    if_constexpr_named(cond1, std::is_same_v<T_VerifParam, std::unique_ptr<char[]>> || std::is_same_v<T_VerifParam, std::unique_ptr<const char[]>>) {
+    if_constexpr_named(
+      cond1,
+      std::is_same_v<T_VerifParam, std::unique_ptr<char[]>> ||
+        std::is_same_v<T_VerifParam, std::unique_ptr<const char[]>>)
+    {
       if (start == nullptr) {
         return verifier(nullptr);
       }
@@ -687,7 +692,9 @@ public:
       target[str_len - 1] = '\0';
 
       return verifier(std::move(target));
-    } else if_constexpr_named (cond2, std::is_same_v<T_VerifParam, std::string>) {
+    }
+    else if_constexpr_named(cond2, std::is_same_v<T_VerifParam, std::string>)
+    {
       if (start == nullptr) {
         std::string param = "";
         return verifier(param);
@@ -699,7 +706,7 @@ public:
       
       auto str_len = std::strlen(start) + 1;
 
-      const char* checked_start = (const char*) verify_range_helper(str_len);
+      const char* checked_start = (const char*)verify_range_helper(str_len);
       if (checked_start == nullptr) {
         std::string param = "";
         return verifier(param);
@@ -707,12 +714,14 @@ public:
 
       std::string copy(checked_start, str_len - 1);
       return verifier(std::move(copy));
-    } else {
+    }
+    else
+    {
       constexpr bool unknownCase = !(cond1 || cond2);
       rlbox_detail_static_fail_because(
         unknownCase,
-        "copy_and_verify_string verifier parameter should either be unique_ptr<char[]>, unique_ptr<const char[]> or std::string"
-      );
+        "copy_and_verify_string verifier parameter should either be "
+        "unique_ptr<char[]>, unique_ptr<const char[]> or std::string");
     }
   }
 
