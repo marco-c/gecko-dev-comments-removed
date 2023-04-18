@@ -9,6 +9,7 @@ import android.os.Build;
 import android.os.Looper;
 import android.os.SystemClock;
 import android.util.Log;
+import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.util.Queue;
@@ -233,15 +234,24 @@ public class GeckoJavaSampler {
     sMarkerStorage.addMarker(aMarkerName, aStartTime, aEndTime, aText);
   }
 
+  
+
+
+
   private static class SamplingRunnable implements Runnable {
     
     public final int mInterval;
     private final int mSampleCount;
 
+    @GuardedBy("GeckoJavaSampler.class")
     private boolean mBufferOverflowed = false;
 
-    private Thread mMainThread;
-    private Sample[] mSamples;
+    private final Thread mMainThread;
+
+    @GuardedBy("GeckoJavaSampler.class")
+    private final Sample[] mSamples;
+
+    @GuardedBy("GeckoJavaSampler.class")
     private int mSamplePos;
 
     public SamplingRunnable(final int aInterval, final int aSampleCount) {
@@ -277,24 +287,35 @@ public class GeckoJavaSampler {
     }
 
     private Sample getSample(final int aSampleId) {
-      if (aSampleId >= mSampleCount) {
-        
-        return null;
-      }
+      synchronized (GeckoJavaSampler.class) {
+        if (aSampleId >= mSampleCount) {
+          
+          return null;
+        }
 
-      int samplePos = aSampleId;
-      if (mBufferOverflowed) {
-        
-        
-        samplePos = (samplePos + mSamplePos) % mSampleCount;
-      }
+        int samplePos = aSampleId;
+        if (mBufferOverflowed) {
+          
+          
+          samplePos = (samplePos + mSamplePos) % mSampleCount;
+        }
 
-      
-      
-      
-      return mSamples[samplePos];
+        
+        
+        
+        return mSamples[samplePos];
+      }
     }
   }
+
+  
+
+
+
+
+
+
+
 
   private static synchronized Sample getSample(final int aSampleId) {
     return sSamplingRunnable.getSample(aSampleId);
