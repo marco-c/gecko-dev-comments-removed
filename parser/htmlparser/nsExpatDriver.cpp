@@ -36,7 +36,6 @@
 
 #include "nsThreadUtils.h"
 #include "mozilla/ClearOnShutdown.h"
-#include "mozilla/RLBoxUtils.h"
 #include "mozilla/UniquePtr.h"
 
 #include "mozilla/Logging.h"
@@ -110,9 +109,31 @@ static const XML_Char* unverified_xml_string(uintptr_t ptr) {
 
 
 
+
 template <typename T>
-using TransferBuffer =
-    mozilla::RLBoxTransferBufferToSandbox<T, rlbox_expat_sandbox_type>;
+class MOZ_STACK_CLASS TransferBuffer {
+ public:
+  TransferBuffer() = delete;
+  TransferBuffer(rlbox_sandbox_expat* aSandbox, const T* aBuf,
+                 const size_t aLen)
+      : mSandbox(aSandbox), mCopied(false), mBuf(nullptr) {
+    if (aBuf) {
+      mBuf = rlbox::copy_memory_or_grant_access(
+          *mSandbox, aBuf, aLen * sizeof(T), false, mCopied);
+    }
+  };
+  ~TransferBuffer() {
+    if (mCopied) {
+      mSandbox->free_in_sandbox(mBuf);
+    }
+  };
+  tainted_expat<const T*> operator*() const { return mBuf; };
+
+ private:
+  rlbox_sandbox_expat* mSandbox;
+  bool mCopied;
+  tainted_expat<const T*> mBuf;
+};
 
 
 
