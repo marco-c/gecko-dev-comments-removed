@@ -498,20 +498,24 @@ function waitForNodeMutation(node, observeConfig = {}) {
 
 async function testOpenInDebugger(
   hud,
-  toolbox,
-  text,
-  expectUrl = true,
-  expectLine = true,
-  expectColumn = true,
-  logPointExpr = undefined
+  {
+    text,
+    typeSelector,
+    expectUrl = true,
+    expectLine = true,
+    expectColumn = true,
+    logPointExpr = undefined,
+  }
 ) {
   info(`Finding message for open-in-debugger test; text is "${text}"`);
-  const messageNode = await waitFor(() => findMessage(hud, text));
+  const messageNode = await waitFor(() =>
+    findMessageByType(hud, text, typeSelector)
+  );
   const locationNode = messageNode.querySelector(".message-location");
   ok(locationNode, "The message does have a location link");
   await checkClickOnNode(
     hud,
-    toolbox,
+    hud.toolbox,
     locationNode,
     expectUrl,
     expectLine,

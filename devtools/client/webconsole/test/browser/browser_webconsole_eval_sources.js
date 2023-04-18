@@ -25,12 +25,24 @@ add_task(async function() {
     "expected source url"
   );
 
-  await testOpenInDebugger(hud, toolbox, "FOO", false);
-  await testOpenInDebugger(hud, toolbox, "BAR", false);
+  await testOpenInDebugger(hud, {
+    text: "FOO",
+    typeSelector: ".console-api",
+    expectUrl: false,
+  });
+  await testOpenInDebugger(hud, {
+    text: "BAR",
+    typeSelector: ".error",
+    expectUrl: false,
+  });
 
   
   
-  await testOpenInDebugger(hud, toolbox, "BAZ", false);
+  await testOpenInDebugger(hud, {
+    text: "BAZ",
+    typeSelector: ".console-api",
+    expectUrl: false,
+  });
 
   
   messageNode = await waitFor(() => findConsoleAPIMessage(hud, "TRACE"));
