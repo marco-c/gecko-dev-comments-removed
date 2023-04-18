@@ -174,7 +174,8 @@ var PrintUtils = {
       
       
       
-      return { promise: Promise.reject(), browser: null };
+      Cu.reportError("Tab-modal print UI already open");
+      return null;
     }
 
     
@@ -189,6 +190,10 @@ var PrintUtils = {
       { features: "resizable=no", sizeTo: "available" },
       args
     );
+    closedPromise.catch(e => {
+      Cu.reportError(e);
+    });
+
     let settingsBrowser = dialog._frame;
     let printPreview = new PrintPreview({
       sourceBrowsingContext: aBrowsingContext,
@@ -201,7 +206,7 @@ var PrintUtils = {
     
     
     settingsBrowser.parentElement.insertBefore(printPreview, settingsBrowser);
-    return { promise: closedPromise, browser: printPreview.sourceBrowser };
+    return printPreview.sourceBrowser;
   },
 
   
@@ -221,55 +226,63 @@ var PrintUtils = {
 
 
 
+
+
+
   startPrintWindow(aBrowsingContext, aOptions) {
     const printInitiationTime = Date.now();
 
-    let { openWindowInfo, printSelectionOnly, printFrameOnly } = aOptions || {};
-
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    let { printSelectionOnly, printFrameOnly, windowDotPrintOpenWindowInfo } =
+      aOptions || {};
 
     if (
-      !PRINT_ALWAYS_SILENT &&
-      (!openWindowInfo || openWindowInfo.isForWindowDotPrint)
+      windowDotPrintOpenWindowInfo &&
+      !windowDotPrintOpenWindowInfo.isForWindowDotPrint
     ) {
-      let browsingContext = aBrowsingContext;
+      throw new Error("Only expect openWindowInfo for window.print()");
+    }
+
+    let browsingContext = aBrowsingContext;
+    if (printSelectionOnly) {
+      
+      
+      
       let focusedBc = Services.focus.focusedContentBrowsingContext;
       if (
         focusedBc &&
-        focusedBc.top.embedderElement == browsingContext.top.embedderElement &&
-        (!openWindowInfo || !openWindowInfo.isForWindowDotPrint) &&
-        !printFrameOnly
+        focusedBc.top.embedderElement == browsingContext.top.embedderElement
       ) {
         browsingContext = focusedBc;
       }
-      let { promise, browser } = this._openTabModalPrint(
+    }
+
+    if (!PRINT_ALWAYS_SILENT) {
+      return this._openTabModalPrint(
         browsingContext,
-        openWindowInfo,
+        windowDotPrintOpenWindowInfo,
         printInitiationTime,
         printSelectionOnly,
         printFrameOnly
       );
-      promise.catch(e => {
-        Cu.reportError(e);
-      });
-      return browser;
     }
 
-    async function makePrintSettingsMaybeEnsuringToFileName() {
+    let browser = null;
+    if (windowDotPrintOpenWindowInfo) {
+      
+      
+      browser = this.createParentBrowserForStaticClone(
+        browsingContext,
+        windowDotPrintOpenWindowInfo
+      );
+      browsingContext = browser.browsingContext;
+    }
+
+    
+    
+    async function makePrintSettingsAndInvokePrint() {
       let settings = PrintUtils.getPrintSettings();
+      settings.printSelectionOnly = printSelectionOnly;
       if (
         settings.outputDestination ==
           Ci.nsIPrintSettings.kOutputDestinationFile &&
@@ -286,43 +299,23 @@ var PrintUtils = {
         }
         settings.toFileName = OS.Path.join(dest || "", "mozilla.pdf");
       }
-      return settings;
-    }
 
-    if (openWindowInfo) {
-      let printPreview = new PrintPreview({
-        sourceBrowsingContext: aBrowsingContext,
-        openWindowInfo,
-      });
-      let browser = printPreview.createPreviewBrowser("source");
-      document.documentElement.append(browser);
-
-      if (openWindowInfo.isForWindowDotPrint) {
-        makePrintSettingsMaybeEnsuringToFileName().then(settings => {
-          
-          
-          
-          
-          
-          
-          setTimeout(() => {
-            
-            
-            browser.browsingContext.print(settings);
-          }, 0);
-        });
-      }
-
-      return browser;
-    }
-
-    makePrintSettingsMaybeEnsuringToFileName().then(settings => {
-      settings.printSelectionOnly = printSelectionOnly;
       
       
-      aBrowsingContext.print(settings);
-    });
-    return null;
+      
+      
+      
+      
+      
+      setTimeout(() => {
+        
+        
+        browsingContext.print(settings);
+      }, 0);
+    }
+    makePrintSettingsAndInvokePrint();
+
+    return browser;
   },
 
   togglePrintPreview(aBrowsingContext) {
@@ -336,6 +329,52 @@ var PrintUtils = {
       return;
     }
     this.startPrintWindow(aBrowsingContext);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  handleStaticCloneCreatedForPrint(aOpenWindowInfo) {
+    let browsingContext = aOpenWindowInfo.parent;
+    if (aOpenWindowInfo.isForWindowDotPrint) {
+      return this.startPrintWindow(browsingContext, {
+        windowDotPrintOpenWindowInfo: aOpenWindowInfo,
+      });
+    }
+    return this.createParentBrowserForStaticClone(
+      browsingContext,
+      aOpenWindowInfo
+    );
+  },
+
+  createParentBrowserForStaticClone(aBrowsingContext, aOpenWindowInfo) {
+    
+    
+    let printPreview = new PrintPreview({
+      sourceBrowsingContext: aBrowsingContext,
+      openWindowInfo: aOpenWindowInfo,
+    });
+    let browser = printPreview.createPreviewBrowser("source");
+    document.documentElement.append(browser);
+    return browser;
   },
 
   
