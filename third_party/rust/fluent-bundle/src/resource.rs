@@ -1,15 +1,20 @@
 use fluent_syntax::ast;
 use fluent_syntax::parser::{parse_runtime, ParserError};
-use ouroboros::self_referencing;
 
-#[self_referencing]
-#[derive(Debug)]
-pub struct InnerFluentResource {
-    string: String,
-    #[borrows(string)]
-    #[covariant]
-    ast: ast::Resource<&'this str>,
-}
+use self_cell::self_cell;
+
+type Resource<'s> = ast::Resource<&'s str>;
+
+self_cell!(
+    pub struct InnerFluentResource {
+        owner: String,
+
+        #[covariant]
+        dependent: Resource,
+    }
+
+    impl {Debug}
+);
 
 
 
@@ -77,22 +82,17 @@ impl FluentResource {
     pub fn try_new(source: String) -> Result<Self, (Self, Vec<ParserError>)> {
         let mut errors = None;
 
-        let res = InnerFluentResourceBuilder {
-            string: source,
-            ast_builder: |string: &str| match parse_runtime(string) {
-                Ok(ast) => ast,
-                Err((ast, err)) => {
-                    errors = Some(err);
-                    ast
-                }
-            },
-        }
-        .build();
+        let res = InnerFluentResource::new(source, |source| match parse_runtime(source.as_str()) {
+            Ok(ast) => ast,
+            Err((ast, err)) => {
+                errors = Some(err);
+                ast
+            }
+        });
 
-        if let Some(errors) = errors {
-            Err((Self(res), errors))
-        } else {
-            Ok(Self(res))
+        match errors {
+            None => Ok(Self(res)),
+            Some(err) => Err((Self(res), err)),
         }
     }
 
@@ -115,7 +115,7 @@ impl FluentResource {
     
     
     pub fn source(&self) -> &str {
-        &self.0.borrow_string()
+        &self.0.borrow_owner()
     }
 
     
@@ -142,7 +142,7 @@ impl FluentResource {
     
     
     pub fn entries(&self) -> impl Iterator<Item = &ast::Entry<&str>> {
-        self.0.borrow_ast().body.iter()
+        self.0.borrow_dependent().body.iter()
     }
 
     
@@ -166,6 +166,6 @@ impl FluentResource {
     
     
     pub fn get_entry(&self, idx: usize) -> Option<&ast::Entry<&str>> {
-        self.0.borrow_ast().body.get(idx)
+        self.0.borrow_dependent().body.get(idx)
     }
 }
