@@ -1755,13 +1755,25 @@ class PresShell final : public nsStubDocumentObserver,
 
   void RecordAlloc(void* aPtr) {
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+    if (!mAllocatedPointers) {
+      return;  
+    }
     MOZ_DIAGNOSTIC_ASSERT(!mAllocatedPointers->Contains(aPtr));
-    mAllocatedPointers->Insert(aPtr);
+    if (!mAllocatedPointers->Insert(aPtr, fallible)) {
+      
+      
+      
+      
+      mAllocatedPointers = nullptr;
+    }
 #endif
   }
 
   void RecordFree(void* aPtr) {
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+    if (!mAllocatedPointers) {
+      return;  
+    }
     MOZ_DIAGNOSTIC_ASSERT(mAllocatedPointers->Contains(aPtr));
     mAllocatedPointers->Remove(aPtr);
 #endif
@@ -2858,6 +2870,11 @@ class PresShell final : public nsStubDocumentObserver,
   nsCOMPtr<nsITimer> mReflowContinueTimer;
 
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+  
+  
+  
+  
+  
   
   
   UniquePtr<nsTHashSet<void*>> mAllocatedPointers;
