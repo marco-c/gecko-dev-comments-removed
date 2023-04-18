@@ -2294,7 +2294,8 @@ static UINT GetCurrentShowCmd(HWND aWnd) {
   return pl.showCmd;
 }
 
-void nsWindow::SetSizeModeInternal(nsSizeMode aMode, nsIScreen* aFullscreenTarget) {
+void nsWindow::SetSizeModeInternal(nsSizeMode aMode,
+                                   nsIScreen* aFullscreenTarget) {
   
   
   
@@ -2361,7 +2362,8 @@ void nsWindow::SetSizeModeInternal(nsSizeMode aMode, nsIScreen* aFullscreenTarge
     
     
     
-    nsBaseWidget::InfallibleMakeFullScreen(requestedFullscreen, aFullscreenTarget);
+    nsBaseWidget::InfallibleMakeFullScreen(requestedFullscreen,
+                                           aFullscreenTarget);
 
     if (mIsVisible && aMode != nsSizeMode_Minimized) {
       DispatchFocusToTopLevelWindow(true);
@@ -2377,7 +2379,7 @@ void nsWindow::SetSizeModeInternal(nsSizeMode aMode, nsIScreen* aFullscreenTarge
     if (mWidgetListener) {
       mWidgetListener->FullscreenChanged(requestedFullscreen);
     }
-  } else if(mIsVisible && aMode != nsSizeMode_Minimized) {
+  } else if (mIsVisible && aMode != nsSizeMode_Minimized) {
     DispatchFocusToTopLevelWindow(true);
   }
 }
