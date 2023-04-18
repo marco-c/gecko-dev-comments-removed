@@ -49,7 +49,7 @@ NS_QUERYFRAME_HEAD(nsDeckFrame)
 NS_QUERYFRAME_TAIL_INHERITING(nsBoxFrame)
 
 nsDeckFrame::nsDeckFrame(ComputedStyle* aStyle, nsPresContext* aPresContext)
-    : nsBoxFrame(aStyle, aPresContext, kClassID), mIndex(0) {
+    : nsBoxFrame(aStyle, aPresContext, kClassID) {
   nsCOMPtr<nsBoxLayout> layout;
   NS_NewStackLayout(layout);
   SetXULLayoutManager(layout);
@@ -96,6 +96,8 @@ void nsDeckFrame::IndexChanged() {
   if (currentBox)  
     HideBox(currentBox);
 
+  mSelectedBoxCache = nullptr;
+
   mIndex = index;
 
   ShowBox(GetSelectedBox());
@@ -134,7 +136,10 @@ int32_t nsDeckFrame::GetSelectedIndex() {
 }
 
 nsIFrame* nsDeckFrame::GetSelectedBox() {
-  return (mIndex >= 0) ? mFrames.FrameAt(mIndex) : nullptr;
+  if (!mSelectedBoxCache && mIndex >= 0) {
+    mSelectedBoxCache = (mIndex >= 0) ? mFrames.FrameAt(mIndex) : nullptr;
+  }
+  return mSelectedBoxCache;
 }
 
 void nsDeckFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
@@ -148,6 +153,10 @@ void nsDeckFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
 void nsDeckFrame::RemoveFrame(ChildListID aListID, nsIFrame* aOldFrame) {
   nsIFrame* currentFrame = GetSelectedBox();
+  if (aOldFrame == currentFrame) {
+    mSelectedBoxCache = nullptr;
+  }
+
   if (currentFrame && aOldFrame && currentFrame != aOldFrame) {
     
     
@@ -159,6 +168,10 @@ void nsDeckFrame::RemoveFrame(ChildListID aListID, nsIFrame* aOldFrame) {
     MOZ_ASSERT(removedIndex >= 0,
                "A deck child was removed that was not in mFrames.");
     if (removedIndex < mIndex) {
+      
+      
+      mSelectedBoxCache = nullptr;
+
       mIndex--;
       
       
