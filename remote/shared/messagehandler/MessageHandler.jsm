@@ -43,9 +43,9 @@ XPCOMUtils.defineLazyGetter(this, "logger", () => Log.get());
 
 
 
-
 const CONTEXT_DESCRIPTOR_TYPES = {
   ALL: "all",
+  TOP_BROWSING_CONTEXT: "top-browsing-context",
 };
 
 

@@ -10,6 +10,13 @@ Services.scriptloader.loadSubScript(
   this
 );
 
+var { CONTEXT_DESCRIPTOR_TYPES } = ChromeUtils.import(
+  "chrome://remote/content/shared/messagehandler/MessageHandler.jsm"
+);
+
+var contextDescriptorAll = {
+  type: CONTEXT_DESCRIPTOR_TYPES.ALL,
+};
 
 
 
@@ -27,12 +34,18 @@ Services.scriptloader.loadSubScript(
 
 
 
-function sendTestBroadcastCommand(module, command, params, rootMessageHandler) {
+
+
+
+function sendTestBroadcastCommand(
+  module,
+  command,
+  params,
+  contextDescriptor,
+  rootMessageHandler
+) {
   const { WindowGlobalMessageHandler } = ChromeUtils.import(
     "chrome://remote/content/shared/messagehandler/WindowGlobalMessageHandler.jsm"
-  );
-  const { CONTEXT_DESCRIPTOR_TYPES } = ChromeUtils.import(
-    "chrome://remote/content/shared/messagehandler/MessageHandler.jsm"
   );
 
   info("Send a test broadcast command");
@@ -41,9 +54,7 @@ function sendTestBroadcastCommand(module, command, params, rootMessageHandler) {
     commandName: command,
     params,
     destination: {
-      contextDescriptor: {
-        type: CONTEXT_DESCRIPTOR_TYPES.ALL,
-      },
+      contextDescriptor,
       type: WindowGlobalMessageHandler.type,
     },
   });
