@@ -21,8 +21,6 @@
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/Text.h"
 
-struct CharacterDataChangeInfo;
-
 namespace mozilla {
 
 class EditorBase;
@@ -244,12 +242,21 @@ class TextComposition final {
 
 
 
-  void OnUpdateCompositionInEditor(const nsAString& aStringToInsert,
-                                   Text& aTextNode, uint32_t aOffset) {
-    mContainerTextNode = &aTextNode;
-    mCompositionStartOffsetInTextNode = aOffset;
-    NS_WARNING_ASSERTION(mCompositionStartOffsetInTextNode != UINT32_MAX,
-                         "The text node is really too long.");
+
+  void OnCreateCompositionTransaction(const nsAString& aStringToInsert,
+                                      Text* aTextNode, uint32_t aOffset) {
+    if (!mContainerTextNode) {
+      mContainerTextNode = aTextNode;
+      mCompositionStartOffsetInTextNode = aOffset;
+      NS_WARNING_ASSERTION(mCompositionStartOffsetInTextNode != UINT32_MAX,
+                           "The text node is really too long.");
+    }
+#ifdef DEBUG
+    else {
+      MOZ_ASSERT(aTextNode == mContainerTextNode);
+      MOZ_ASSERT(aOffset == mCompositionStartOffsetInTextNode);
+    }
+#endif  
     mCompositionLengthInTextNode = aStringToInsert.Length();
     NS_WARNING_ASSERTION(mCompositionLengthInTextNode != UINT32_MAX,
                          "The string to insert is really too long.");
@@ -266,13 +273,6 @@ class TextComposition final {
     
     
   }
-
-  
-
-
-
-  void OnCharacterDataChanged(Text& aText,
-                              const CharacterDataChangeInfo& aInfo);
 
  private:
   

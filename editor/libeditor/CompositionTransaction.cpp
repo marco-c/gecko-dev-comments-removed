@@ -49,6 +49,11 @@ already_AddRefed<CompositionTransaction> CompositionTransaction::Create(
   }
   RefPtr<CompositionTransaction> transaction =
       new CompositionTransaction(aEditorBase, aStringToInsert, pointToInsert);
+  
+  
+  
+  composition->OnCreateCompositionTransaction(
+      aStringToInsert, pointToInsert.ContainerAsText(), pointToInsert.Offset());
   return transaction.forget();
 }
 
@@ -170,12 +175,6 @@ NS_IMETHODIMP CompositionTransaction::DoTransaction() {
   NS_WARNING_ASSERTION(
       NS_SUCCEEDED(rv),
       "CompositionTransaction::SetSelectionForRanges() failed");
-
-  if (TextComposition* composition = editorBase->GetComposition()) {
-    composition->OnUpdateCompositionInEditor(mStringToInsert, textNode,
-                                             mOffset);
-  }
-
   return rv;
 }
 
