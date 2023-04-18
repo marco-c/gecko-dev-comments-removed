@@ -4,7 +4,10 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["SyncTelemetry"];
+var EXPORTED_SYMBOLS = [
+  "ErrorSanitizer", 
+  "SyncTelemetry",
+];
 
 
 
@@ -97,15 +100,6 @@ const ENGINES = new Set([
   "creditcards",
 ]);
 
-
-
-
-
-const reProfileDir = new RegExp(
-  OS.Constants.Path.profileDir.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
-  "gi"
-);
-
 function tryGetMonotonicTimestamp() {
   try {
     return Services.telemetry.msSinceProcessStart();
@@ -132,7 +126,7 @@ function normalizeExtraTelemetryFields(extra) {
     let value = extra[key];
     let type = typeof value;
     if (type == "string") {
-      result[key] = cleanErrorMessage(value);
+      result[key] = ErrorSanitizer.cleanErrorMessage(value);
     } else if (type == "number") {
       result[key] = Number.isInteger(value)
         ? value.toString(10)
@@ -144,6 +138,94 @@ function normalizeExtraTelemetryFields(extra) {
     }
   }
   return ObjectUtils.isEmpty(result) ? undefined : result;
+}
+
+
+
+
+
+
+
+
+class ErrorSanitizer {
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
+  
+  static E_NO_SPACE_ON_DEVICE = "OS error [No space left on device]";
+  static E_PERMISSION_DENIED = "OS error [Permission denied]";
+  static E_NO_FILE_OR_DIR = "OS error [File/Path not found]";
+  static E_NO_MEM = "OS error [No memory]";
+
+  static WindowsErrorSubstitutions = {
+    "2": this.E_NO_FILE_OR_DIR, 
+    "3": this.E_NO_FILE_OR_DIR, 
+    "5": this.E_PERMISSION_DENIED, 
+    "8": this.E_NO_MEM, 
+    "112": this.E_NO_SPACE_ON_DEVICE, 
+  };
+
+  static UnixErrorSubstitutions = {
+    "2": this.E_NO_FILE_OR_DIR, 
+    "12": this.E_NO_MEM, 
+    "13": this.E_PERMISSION_DENIED, 
+    "28": this.E_NO_SPACE_ON_DEVICE, 
+  };
+
+  static reWinError = /^(?<head>Win error (?<errno>\d+))(?<detail>.*) \(.*\r?\n?\)$/m;
+  static reUnixError = /^(?<head>Unix error (?<errno>\d+))(?<detail>.*) \(.*\)$/;
+
+  static #cleanOSErrorMessage(error) {
+    let match = this.reWinError.exec(error);
+    if (match) {
+      let head =
+        this.WindowsErrorSubstitutions[match.groups.errno] || match.groups.head;
+      return head + match.groups.detail.replaceAll("\\", "/");
+    }
+    match = this.reUnixError.exec(error);
+    if (match) {
+      let head =
+        this.UnixErrorSubstitutions[match.groups.errno] || match.groups.head;
+      return head + match.groups.detail;
+    }
+    return error;
+  }
+
+  
+  
+  
+  
+  static reProfileDir = new RegExp(
+    OS.Constants.Path.profileDir.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+    "gi"
+  );
+
+  
+  static cleanErrorMessage(error) {
+    
+    
+    error = error.replace(this.reProfileDir, "[profileDir]");
+    
+    
+    if (error.endsWith("is not a valid URL.")) {
+      error = "<URL> is not a valid URL.";
+    }
+    
+    
+    
+    
+    error = error.replace(/[^\s"]+:[^\s"]+/g, "<URL>");
+    return this.#cleanOSErrorMessage(error);
+  }
 }
 
 
@@ -521,23 +603,6 @@ class SyncRecord {
     }
     return false;
   }
-}
-
-function cleanErrorMessage(error) {
-  
-  
-  error = error.replace(reProfileDir, "[profileDir]");
-  
-  
-  if (error.endsWith("is not a valid URL.")) {
-    error = "<URL> is not a valid URL.";
-  }
-  
-  
-  
-  
-  error = error.replace(/[^\s"]+:[^\s"]+/g, "<URL>");
-  return error;
 }
 
 
@@ -1059,7 +1124,7 @@ class SyncTelemetryImpl {
         
         return { name: "othererror", error };
       }
-      error = cleanErrorMessage(error);
+      error = ErrorSanitizer.cleanErrorMessage(error);
       return { name: "unexpectederror", error };
     }
 
@@ -1096,7 +1161,7 @@ class SyncTelemetryImpl {
     }
     return {
       name: "unexpectederror",
-      error: cleanErrorMessage(msg),
+      error: ErrorSanitizer.cleanErrorMessage(msg),
     };
   }
 }
