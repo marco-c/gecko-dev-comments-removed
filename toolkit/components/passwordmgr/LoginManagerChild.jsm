@@ -683,6 +683,29 @@ class LoginFormState {
     }
     editor.mask();
   }
+
+  
+
+
+
+
+
+
+  _treatAsGeneratedPasswordField(passwordField) {
+    this.generatedPasswordFields.add(passwordField);
+
+    
+    for (let eventType of ["blur", "focus"]) {
+      passwordField.addEventListener(eventType, observer, {
+        capture: true,
+        mozSystemGroup: true,
+      });
+    }
+    if (passwordField.ownerDocument.activeElement == passwordField) {
+      
+      this._togglePasswordFieldMasking(passwordField, true);
+    }
+  }
 }
 
 
@@ -2327,30 +2350,6 @@ class LoginManagerChild extends JSWindowActorChild {
 
 
 
-  _treatAsGeneratedPasswordField(passwordField) {
-    let docState = this.stateForDocument(passwordField.ownerDocument);
-    docState.generatedPasswordFields.add(passwordField);
-
-    
-    for (let eventType of ["blur", "focus"]) {
-      passwordField.addEventListener(eventType, observer, {
-        capture: true,
-        mozSystemGroup: true,
-      });
-    }
-    if (passwordField.ownerDocument.activeElement == passwordField) {
-      
-      docState._togglePasswordFieldMasking(passwordField, true);
-    }
-  }
-
-  
-
-
-
-
-
-
 
 
   _doesEventClearPrevFieldValue({ target, data, inputType }) {
@@ -2428,7 +2427,8 @@ class LoginManagerChild extends JSWindowActorChild {
 
     if (triggeredByFillingGenerated) {
       this._highlightFilledField(passwordField);
-      this._treatAsGeneratedPasswordField(passwordField);
+      let docState = this.stateForDocument(passwordField.ownerDocument);
+      docState._treatAsGeneratedPasswordField(passwordField);
 
       
       
@@ -2512,7 +2512,7 @@ class LoginManagerChild extends JSWindowActorChild {
       }
     }
     if (confirmPasswordInput && !confirmPasswordInput.value) {
-      this._treatAsGeneratedPasswordField(confirmPasswordInput);
+      docState._treatAsGeneratedPasswordField(confirmPasswordInput);
       confirmPasswordInput.setUserInput(passwordField.value);
       this._highlightFilledField(confirmPasswordInput);
     }
