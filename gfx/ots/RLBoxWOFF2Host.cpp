@@ -159,7 +159,7 @@ bool RLBoxProcessWOFF2(ots::FontFile* aHeader, ots::OTSStream* aOutput,
   
   
 
-  const uint64_t expectedSandboxSize = static_cast<uint64_t>(1.33 * (aLength + expectedSize));
+  const uint64_t expectedSandboxSize = static_cast<uint64_t>(2 * (aLength + expectedSize));
   auto sandboxPoolData = RLBoxWOFF2SandboxPool::sSingleton->PopOrCreate(expectedSandboxSize);
   NS_ENSURE_TRUE(sandboxPoolData, false);
 
