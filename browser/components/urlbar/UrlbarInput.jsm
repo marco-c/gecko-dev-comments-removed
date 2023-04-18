@@ -1054,12 +1054,20 @@ class UrlbarInput {
       throw new Error(`Invalid url for result ${JSON.stringify(result)}`);
     }
 
-    if (!this.isPrivate && !result.heuristic) {
+    
+    if (!this.isPrivate) {
+      let input;
+      if (!result.heuristic) {
+        input = this._lastSearchString;
+      } else if (result.autofill?.type == "adaptive") {
+        input = result.autofill.adaptiveHistoryInput;
+      }
       
-      
-      UrlbarUtils.addToInputHistory(url, this._lastSearchString).catch(
-        Cu.reportError
-      );
+      if (input !== undefined) {
+        
+        
+        UrlbarUtils.addToInputHistory(url, input).catch(Cu.reportError);
+      }
     }
 
     this.controller.engagementEvent.record(event, {
