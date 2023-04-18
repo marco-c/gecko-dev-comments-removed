@@ -60,6 +60,17 @@ AST_POLYMORPHIC_MATCHER(isFirstParty,
          !ASTIsInSystemHeader(Finder->getASTContext(), Node);
 }
 
+AST_MATCHER(DeclaratorDecl, isNotSpiderMonkey) {
+  
+  
+  
+  std::string Path = Node.getBeginLoc().printToString(
+      Finder->getASTContext().getSourceManager());
+  return Path.find("js") == std::string::npos &&
+         Path.find("xpc") == std::string::npos &&
+         Path.find("XPC") == std::string::npos;
+}
+
 
 
 
