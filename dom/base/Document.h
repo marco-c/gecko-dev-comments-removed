@@ -4859,6 +4859,15 @@ class Document : public nsINode,
   uint32_t mLazyLoadImageReachViewportLoaded;
 
   uint32_t mContentEditableCount;
+  
+
+
+
+
+
+
+
+
   uint32_t mLockCount = 0;
   EditingState mEditingState;
 

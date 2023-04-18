@@ -54,7 +54,11 @@ LockRequestChild::LockRequestChild(
 }
 
 void LockRequestChild::ActorDestroy(ActorDestroyReason aReason) {
-  CastedManager()->NotifyRequestDestroy();
+  if (aReason != ActorDestroyReason::AncestorDeletion) {
+    
+    
+    CastedManager()->NotifyRequestDestroy();
+  }
 }
 
 IPCResult LockRequestChild::RecvResolve(const LockMode& aLockMode,
