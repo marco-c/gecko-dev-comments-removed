@@ -48,8 +48,6 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsIApplicationUpdateService"
 );
 
-Cu.importGlobalProperties(["Glean"]);
-
 
 
 

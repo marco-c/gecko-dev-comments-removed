@@ -37,8 +37,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "browser.engagement.recent_visited_origins.expiry"
 );
 
-Cu.importGlobalProperties(["Glean"]);
-
 
 const MAX_UNIQUE_VISITED_DOMAINS = 100;
 
