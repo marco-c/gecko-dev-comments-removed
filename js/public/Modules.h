@@ -13,9 +13,11 @@
 
 #include "jstypes.h"  
 
+#include "js/AllocPolicy.h"     
 #include "js/CompileOptions.h"  
 #include "js/RootingAPI.h"      
 #include "js/Value.h"           
+#include "js/Vector.h"          
 
 struct JS_PUBLIC_API JSContext;
 class JS_PUBLIC_API JSObject;
@@ -32,6 +34,28 @@ union Utf8Unit;
 }
 
 namespace JS {
+
+enum class ImportAssertion { Type };
+
+using ImportAssertionVector =
+    js::Vector<ImportAssertion, 1, js::SystemAllocPolicy>;
+
+using SupportedAssertionsHook = bool (*)(JSContext*,
+                                         ImportAssertionVector& values);
+
+
+
+
+extern JS_PUBLIC_API SupportedAssertionsHook
+GetSupportedAssertionsHook(JSRuntime* rt);
+
+
+
+
+
+
+extern JS_PUBLIC_API void SetSupportedAssertionsHook(
+    JSRuntime* rt, SupportedAssertionsHook func);
 
 using ModuleResolveHook = JSObject* (*)(JSContext*, Handle<Value>,
                                         Handle<JSObject*>);
