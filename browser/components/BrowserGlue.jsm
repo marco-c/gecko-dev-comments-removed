@@ -1736,9 +1736,14 @@ BrowserGlue.prototype = {
   _setDefaultCookieBehavior() {
     let defaultPrefs = Services.prefs.getDefaultBranch("");
 
+    let hasCookieBehaviorPolicy = () =>
+      Services.policies.status == Services.policies.ACTIVE &&
+      Services.policies.getActivePolicies()?.Cookies?.Behavior;
+
     
     
-    if (NimbusFeatures.tcpByDefault.isEnabled()) {
+    
+    if (NimbusFeatures.tcpByDefault.isEnabled() && !hasCookieBehaviorPolicy()) {
       Services.telemetry.scalarSet(
         "privacy.dfpi_rollout_tcpByDefault_feature",
         true
