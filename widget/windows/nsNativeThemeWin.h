@@ -45,7 +45,10 @@ class nsNativeThemeWin : public nsNativeBasicTheme {
   
   
   
-  bool IsWidgetNonNative(nsIFrame*, StyleAppearance);
+  
+  
+  enum class NonNative { No, Always, BecauseColorMismatch };
+  NonNative IsWidgetNonNative(nsIFrame*, StyleAppearance);
 
   
   NS_IMETHOD DrawWidgetBackground(gfxContext* aContext, nsIFrame* aFrame,
