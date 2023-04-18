@@ -84,7 +84,9 @@ void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
 
   auto KnownLiveMemberOfParam =
       memberExpr(hasKnownLiveAnnotation(),
-                 hasObjectExpression(ignoreTrivials(KnownLiveParam)));
+                 hasObjectExpression(anyOf(
+                     ignoreTrivials(KnownLiveParam),
+                     declRefExpr(to(varDecl(hasAutomaticStorageDuration()))))));
 
   
   
@@ -111,11 +113,17 @@ void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
       
       
       cxxMemberCallExpr(
-          on(allOf(hasType(isSmartPtrToRefCounted()), KnownLiveBase))),
+          on(anyOf(allOf(hasType(isSmartPtrToRefCounted()), KnownLiveBase),
+                   
+                   
+                   KnownLiveMemberOfParam))),
       
-      cxxOperatorCallExpr(anyOf(hasOverloadedOperatorName("*"),
-                                hasOverloadedOperatorName("->")),
-                          hasAnyArgument(KnownLiveBase), argumentCountIs(1)),
+      cxxOperatorCallExpr(
+          anyOf(hasOverloadedOperatorName("*"),
+                hasOverloadedOperatorName("->")),
+          hasAnyArgument(
+              anyOf(KnownLiveBase, ignoreTrivials(KnownLiveMemberOfParam))),
+          argumentCountIs(1)),
       
       
       

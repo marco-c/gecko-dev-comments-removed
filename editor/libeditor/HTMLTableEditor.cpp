@@ -49,8 +49,8 @@ using EmptyCheckOption = HTMLEditUtils::EmptyCheckOption;
 
 class MOZ_STACK_CLASS AutoSelectionSetterAfterTableEdit final {
  private:
-  RefPtr<HTMLEditor> mHTMLEditor;
-  RefPtr<Element> mTable;
+  MOZ_KNOWN_LIVE RefPtr<HTMLEditor> mHTMLEditor;
+  MOZ_KNOWN_LIVE RefPtr<Element> mTable;
   int32_t mCol, mRow, mDirection, mSelected;
 
  public:
@@ -66,9 +66,8 @@ class MOZ_STACK_CLASS AutoSelectionSetterAfterTableEdit final {
 
   MOZ_CAN_RUN_SCRIPT ~AutoSelectionSetterAfterTableEdit() {
     if (mHTMLEditor) {
-      MOZ_KnownLive(mHTMLEditor)
-          ->SetSelectionAfterTableEdit(MOZ_KnownLive(mTable), mRow, mCol,
-                                       mDirection, mSelected);
+      mHTMLEditor->SetSelectionAfterTableEdit(mTable, mRow, mCol, mDirection,
+                                              mSelected);
     }
   }
 
@@ -511,7 +510,7 @@ nsresult HTMLEditor::InsertTableColumnsWithTransaction(
       
       if (!cellDataAtSelection.mColSpan) {
         DebugOnly<nsresult> rvIgnored =
-            SetColSpan(MOZ_KnownLive(cellDataAtSelection.mElement),
+            SetColSpan(cellDataAtSelection.mElement,
                        cellDataAtSelection.mEffectiveColSpan);
         NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
                              "HTMLEditor::SetColSpan() failed, but ignored");
@@ -565,9 +564,8 @@ nsresult HTMLEditor::InsertTableColumnsWithTransaction(
         
         
         if (cellData.mColSpan > 0) {
-          DebugOnly<nsresult> rvIgnored =
-              SetColSpan(MOZ_KnownLive(cellData.mElement),
-                         cellData.mColSpan + aNumberOfColumnsToInsert);
+          DebugOnly<nsresult> rvIgnored = SetColSpan(
+              cellData.mElement, cellData.mColSpan + aNumberOfColumnsToInsert);
           NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
                                "HTMLEditor::SetColSpan() failed, but ignored");
         }
@@ -577,8 +575,7 @@ nsresult HTMLEditor::InsertTableColumnsWithTransaction(
       
       
       
-      CollapseSelectionToStartOf(MOZ_KnownLive(*cellData.mElement),
-                                 ignoredError);
+      CollapseSelectionToStartOf(*cellData.mElement, ignoredError);
       if (NS_WARN_IF(ignoredError.ErrorCodeIs(NS_ERROR_EDITOR_DESTROYED))) {
         return NS_ERROR_EDITOR_DESTROYED;
       }
@@ -745,7 +742,7 @@ nsresult HTMLEditor::InsertTableRowsWithTransaction(
       
       if (!cellDataAtSelection.mRowSpan) {
         DebugOnly<nsresult> rvIgnored =
-            SetRowSpan(MOZ_KnownLive(cellDataAtSelection.mElement),
+            SetRowSpan(cellDataAtSelection.mElement,
                        cellDataAtSelection.mEffectiveRowSpan);
         NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
                              "HTMLEditor::SetRowSpan() failed, but ignored");
@@ -786,9 +783,8 @@ nsresult HTMLEditor::InsertTableRowsWithTransaction(
         
         
         if (cellData.mRowSpan > 0) {
-          DebugOnly<nsresult> rvIgnored =
-              SetRowSpan(MOZ_KnownLive(cellData.mElement),
-                         cellData.mRowSpan + aNumberOfRowsToInsert);
+          DebugOnly<nsresult> rvIgnored = SetRowSpan(
+              cellData.mElement, cellData.mRowSpan + aNumberOfRowsToInsert);
           NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
                                "HTMLEditor::SetRowSpan() failed, but ignored");
         }
@@ -1549,7 +1545,7 @@ nsresult HTMLEditor::DeleteTableColumnWithTransaction(Element& aTableElement,
         NS_WARNING_ASSERTION(cellData.mColSpan > 1,
                              "colspan should be 2 or larger");
         DebugOnly<nsresult> rvIgnored =
-            SetColSpan(MOZ_KnownLive(cellData.mElement), cellData.mColSpan - 1);
+            SetColSpan(cellData.mElement, cellData.mColSpan - 1);
         NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
                              "HTMLEditor::SetColSpan() failed, but ignored");
       }
@@ -1558,7 +1554,7 @@ nsresult HTMLEditor::DeleteTableColumnWithTransaction(Element& aTableElement,
         
         
         DebugOnly<nsresult> rvIgnored =
-            DeleteAllChildrenWithTransaction(MOZ_KnownLive(*cellData.mElement));
+            DeleteAllChildrenWithTransaction(*cellData.mElement);
         NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
                              "HTMLEditor::DeleteAllChildrenWithTransaction() "
                              "failed, but ignored");
@@ -1577,8 +1573,7 @@ nsresult HTMLEditor::DeleteTableColumnWithTransaction(Element& aTableElement,
     if (numberOfCellsInRow != 1) {
       
       
-      nsresult rv =
-          DeleteNodeWithTransaction(MOZ_KnownLive(*cellData.mElement));
+      nsresult rv = DeleteNodeWithTransaction(*cellData.mElement);
       if (NS_FAILED(rv)) {
         NS_WARNING("HTMLEditor::DeleteNodeWithTransaction() failed");
         return rv;
@@ -2044,8 +2039,7 @@ NS_IMETHODIMP HTMLEditor::SelectAllTableCells() {
       
       
       if (cellData.mElement && !cellData.IsSpannedFromOtherRowOrColumn()) {
-        nsresult rv =
-            AppendContentToSelectionAsRange(MOZ_KnownLive(*cellData.mElement));
+        nsresult rv = AppendContentToSelectionAsRange(*cellData.mElement);
         if (rv == NS_ERROR_EDITOR_DESTROYED) {
           NS_WARNING(
               "HTMLEditor::AppendContentToSelectionAsRange() caused destroying "
@@ -2159,7 +2153,7 @@ NS_IMETHODIMP HTMLEditor::SelectTableRow() {
     
     
     if (cellData.mElement && !cellData.IsSpannedFromOtherRowOrColumn()) {
-      rv = AppendContentToSelectionAsRange(MOZ_KnownLive(*cellData.mElement));
+      rv = AppendContentToSelectionAsRange(*cellData.mElement);
       if (rv == NS_ERROR_EDITOR_DESTROYED) {
         NS_WARNING(
             "HTMLEditor::AppendContentToSelectionAsRange() caused destroying "
@@ -2268,7 +2262,7 @@ NS_IMETHODIMP HTMLEditor::SelectTableColumn() {
     
     
     if (cellData.mElement && !cellData.IsSpannedFromOtherRowOrColumn()) {
-      rv = AppendContentToSelectionAsRange(MOZ_KnownLive(*cellData.mElement));
+      rv = AppendContentToSelectionAsRange(*cellData.mElement);
       if (rv == NS_ERROR_EDITOR_DESTROYED) {
         NS_WARNING(
             "HTMLEditor::AppendContentToSelectionAsRange() caused destroying "
@@ -2447,7 +2441,7 @@ nsresult HTMLEditor::SplitCellIntoColumns(Element* aTable, int32_t aRowIndex,
   }
 
   
-  nsresult rv = SetColSpan(MOZ_KnownLive(cellData.mElement), aColSpanLeft);
+  nsresult rv = SetColSpan(cellData.mElement, aColSpanLeft);
   if (NS_FAILED(rv)) {
     NS_WARNING("HTMLEditor::SetColSpan() failed");
     return rv;
@@ -2456,8 +2450,8 @@ nsresult HTMLEditor::SplitCellIntoColumns(Element* aTable, int32_t aRowIndex,
   
   
   RefPtr<Element> newCellElement;
-  rv = InsertCell(MOZ_KnownLive(cellData.mElement), cellData.mEffectiveRowSpan,
-                  aColSpanRight, true, false, getter_AddRefs(newCellElement));
+  rv = InsertCell(cellData.mElement, cellData.mEffectiveRowSpan, aColSpanRight,
+                  true, false, getter_AddRefs(newCellElement));
   if (NS_FAILED(rv)) {
     NS_WARNING("HTMLEditor::InsertCell() failed");
     return rv;
@@ -2468,8 +2462,7 @@ nsresult HTMLEditor::SplitCellIntoColumns(Element* aTable, int32_t aRowIndex,
   if (aNewCell) {
     *aNewCell = do_AddRef(newCellElement).take();
   }
-  rv =
-      CopyCellBackgroundColor(newCellElement, MOZ_KnownLive(cellData.mElement));
+  rv = CopyCellBackgroundColor(newCellElement, cellData.mElement);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "HTMLEditor::CopyCellBackgroundColor() failed");
   return rv;
@@ -2573,7 +2566,7 @@ nsresult HTMLEditor::SplitCellIntoRows(Element* aTable, int32_t aRowIndex,
   }
 
   
-  nsresult rv = SetRowSpan(MOZ_KnownLive(cellData.mElement), aRowSpanAbove);
+  nsresult rv = SetRowSpan(cellData.mElement, aRowSpanAbove);
   if (NS_FAILED(rv)) {
     NS_WARNING("HTMLEditor::SetRowSpan() failed");
     return rv;
@@ -3047,8 +3040,7 @@ NS_IMETHODIMP HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents) {
     if (spanAboveMergedCell > 0) {
       
       
-      nsresult rv = SetRowSpan(MOZ_KnownLive(rightCellData.mElement),
-                               spanAboveMergedCell);
+      nsresult rv = SetRowSpan(rightCellData.mElement, spanAboveMergedCell);
       if (NS_FAILED(rv)) {
         NS_WARNING("HTMLEditor::SetRowSpan() failed");
         return EditorBase::ToGenericNSResult(rv);
@@ -3056,9 +3048,8 @@ NS_IMETHODIMP HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents) {
     }
 
     
-    rv = SetColSpan(
-        MOZ_KnownLive(leftCellData.mElement),
-        leftCellData.mEffectiveColSpan + rightCellData.mEffectiveColSpan);
+    rv = SetColSpan(leftCellData.mElement, leftCellData.mEffectiveColSpan +
+                                               rightCellData.mEffectiveColSpan);
     if (NS_FAILED(rv)) {
       NS_WARNING("HTMLEditor::SetColSpan() failed");
       return EditorBase::ToGenericNSResult(rv);
@@ -3205,8 +3196,8 @@ nsresult HTMLEditor::FixBadRowSpan(Element* aTable, int32_t aRowIndex,
       
       if (cellData.mElement && cellData.mRowSpan > 0 &&
           !cellData.IsSpannedFromOtherRowOrColumn()) {
-        nsresult rv = SetRowSpan(MOZ_KnownLive(cellData.mElement),
-                                 cellData.mRowSpan - rowsReduced);
+        nsresult rv =
+            SetRowSpan(cellData.mElement, cellData.mRowSpan - rowsReduced);
         if (NS_FAILED(rv)) {
           NS_WARNING("HTMLEditor::SetRawSpan() failed");
           return rv;
@@ -3285,8 +3276,8 @@ nsresult HTMLEditor::FixBadColSpan(Element* aTable, int32_t aColIndex,
       
       if (cellData.mElement && cellData.mColSpan > 0 &&
           !cellData.IsSpannedFromOtherRowOrColumn()) {
-        nsresult rv = SetColSpan(MOZ_KnownLive(cellData.mElement),
-                                 cellData.mColSpan - colsReduced);
+        nsresult rv =
+            SetColSpan(cellData.mElement, cellData.mColSpan - colsReduced);
         if (NS_FAILED(rv)) {
           NS_WARNING("HTMLEditor::SetColSpan() failed");
           return rv;
