@@ -36,6 +36,7 @@ class WorkerDescriptorFront extends DescriptorMixin(
     this.type = json.type;
     this.scope = json.scope;
     this.fetch = json.fetch;
+    this.traits = json.traits;
   }
 
   get name() {
@@ -63,7 +64,9 @@ class WorkerDescriptorFront extends DescriptorMixin(
     return this.type === Ci.nsIWorkerDebugger.TYPE_SERVICE;
   }
 
-  async attach() {
+  
+  
+  async morphWorkerDescriptorIntoWorkerTarget() {
     
     return this.getTarget();
   }
@@ -78,7 +81,11 @@ class WorkerDescriptorFront extends DescriptorMixin(
         return this;
       }
 
-      const response = await super.attach();
+      
+      
+      if (!this.traits.doNotAttach) {
+        await super.attach();
+      }
 
       if (this.isServiceWorker) {
         this.registration = await this._getRegistrationIfActive();
@@ -86,8 +93,6 @@ class WorkerDescriptorFront extends DescriptorMixin(
           await this.registration.preventShutdown();
         }
       }
-
-      this._url = response.url;
 
       if (this.isDestroyedOrBeingDestroyed()) {
         return this;

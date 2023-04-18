@@ -9,6 +9,8 @@ const workerDescriptorSpec = generateActorSpec({
   typeName: "workerDescriptor",
 
   methods: {
+    
+    
     attach: {
       request: {},
       response: RetVal("json"),

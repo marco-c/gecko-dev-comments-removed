@@ -93,7 +93,7 @@ var _attachConsole = async function(listeners, attachToTab, attachToWorker) {
         }
         
         
-        await target.attach();
+        await target.morphWorkerDescriptorIntoWorkerTarget();
       }
     }
 

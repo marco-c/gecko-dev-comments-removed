@@ -501,10 +501,8 @@ function TargetMixin(parentClass) {
       
       
       
-      
-      
-      if (this.attach) {
-        await this.attach();
+      if (this.morphWorkerDescriptorIntoWorkerTarget) {
+        await this.morphWorkerDescriptorIntoWorkerTarget();
       }
 
       const isBrowserToolbox =
