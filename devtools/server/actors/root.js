@@ -130,6 +130,11 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
       
       
       noPauseOnThreadActorAttach: true,
+      
+      
+      
+      
+      noDisablingOnPrivateBrowsing: true,
     };
   },
 

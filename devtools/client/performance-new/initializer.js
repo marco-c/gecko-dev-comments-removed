@@ -15,6 +15,7 @@
 
 
 
+
 "use strict";
 
 {
@@ -92,7 +93,10 @@ const {
 
 
 
-async function gInit(perfFront, pageContext, openAboutProfiling) {
+
+
+
+async function gInit(perfFront, traits, pageContext, openAboutProfiling) {
   const store = createStore(reducers);
   const isSupportedPlatform = await perfFront.isSupportedPlatform();
   const supportedFeatures = await perfFront.getSupportedFeatures();

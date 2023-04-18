@@ -14,7 +14,12 @@ import {
 export interface PanelWindow {
   gToolbox?: any;
   gStore?: Store;
-  gInit(perfFront: PerfFront, pageContext: PageContext): Promise<void>;
+  gInit(
+    perfFront: PerfFront,
+    traits: RootTraits,
+    pageContext: PageContext,
+    openAboutProfiling?: () => void
+  ): Promise<void>;
   gDestroy(): void;
   gIsPanelDestroyed?: boolean;
 }
@@ -39,6 +44,13 @@ export interface Toolbox {
 
 export interface Commands {
   client: any;
+  targetCommand: {
+    targetFront: {
+      getTrait: (
+        traitName: "noDisablingOnPrivateBrowsing"
+      ) => boolean | undefined;
+    };
+  };
 }
 
 
@@ -72,6 +84,16 @@ export interface PreferenceFront {
   setCharPref: (prefName: string, value: string) => Promise<void>;
   getIntPref: (prefName: string) => Promise<number>;
   setIntPref: (prefName: string, value: number) => Promise<void>;
+}
+
+export interface RootTraits {
+  
+  
+  
+  noDisablingOnPrivateBrowsing?: boolean;
+
+  
+  
 }
 
 export type RecordingState =
