@@ -1839,15 +1839,12 @@ static void NativeMoveResizeCallback(GdkWindow* window,
 void nsWindow::WaylandPopupPropagateChangesToLayout(bool aMove, bool aResize) {
   LOG("nsWindow::WaylandPopupPropagateChangesToLayout()");
 
-  
   if (aResize) {
     LOG("  needSizeUpdate\n");
     if (nsMenuPopupFrame* popupFrame = GetMenuPopupFrame(GetFrame())) {
       RefPtr<PresShell> presShell = popupFrame->PresShell();
       presShell->FrameNeedsReflow(popupFrame, IntrinsicDirty::Resize,
                                   NS_FRAME_IS_DIRTY);
-      
-      popupFrame->SetPopupPosition(nullptr, true, false);
     }
   }
   if (aMove) {
@@ -1904,10 +1901,6 @@ void nsWindow::NativeMoveResizeWaylandPopupCallback(
   LOG("  new mBounds [%d, %d] -> [%d x %d]", newBounds.x, newBounds.y,
       newBounds.width, newBounds.height);
 
-  
-  
-  mMoveToRectPopupRect = newBounds;
-
   bool needsPositionUpdate = newBounds.TopLeft() != mBounds.TopLeft();
   bool needsSizeUpdate = newBounds.Size() != mBounds.Size();
 
@@ -1931,6 +1924,18 @@ void nsWindow::NativeMoveResizeWaylandPopupCallback(
     }
   }
 
+  if (needsSizeUpdate) {
+    
+    
+    if (newBounds.width < mBounds.width) {
+      mMoveToRectPopupRect.width = newBounds.width;
+    }
+    if (newBounds.height < mBounds.height) {
+      mMoveToRectPopupRect.height = newBounds.height;
+    }
+    LOG("  mMoveToRectPopupRect set to [%d, %d]", mMoveToRectPopupRect.width,
+        mMoveToRectPopupRect.height);
+  }
   mBounds = newBounds;
   WaylandPopupPropagateChangesToLayout(needsPositionUpdate, needsSizeUpdate);
 }
@@ -2033,7 +2038,7 @@ bool nsWindow::WaylandPopupFitsToplevelWindow() {
 
   GtkWindow* parent = gtk_window_get_transient_for(GTK_WINDOW(mShell));
   GtkWindow* tmp = parent;
-  while (tmp = gtk_window_get_transient_for(GTK_WINDOW(parent))) {
+  while ((tmp = gtk_window_get_transient_for(GTK_WINDOW(parent)))) {
     parent = tmp;
   }
   GdkWindow* toplevelGdkWindow = gtk_widget_get_window(GTK_WIDGET(parent));
@@ -5949,10 +5954,6 @@ void nsWindow::NativeMoveResize(bool aMoved, bool aResized) {
   LOG("nsWindow::NativeMoveResize move %d resize %d to %d,%d -> %d x %d\n",
       aMoved, aResized, rect.x, rect.y, rect.width, rect.height);
 
-  
-  
-  MoveToRectPopupRectClear();
-
   if (aResized && !AreBoundsSane()) {
     LOG("  bounds are insane, hidding the window");
     
@@ -6213,9 +6214,6 @@ void nsWindow::NativeShow(bool aAction) {
       mHiddenPopupPositioned = false;
     }
   } else {
-    
-    
-    MoveToRectPopupRectClear();
     LOG("nsWindow::NativeShow hide\n");
     if (GdkIsWaylandDisplay()) {
       if (IsWaylandPopup()) {
