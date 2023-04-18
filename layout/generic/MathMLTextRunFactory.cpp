@@ -529,15 +529,15 @@ void MathMLTextRunFactory::RebuildTextRun(
       
       
       if (mFlags & MATH_FONT_WEIGHT_BOLD) {
-        font.weight = FontWeight::Bold();
+        font.weight = FontWeight::BOLD;
         if (mFlags & MATH_FONT_STYLING_NORMAL) {
-          font.style = FontSlantStyle::Normal();
+          font.style = FontSlantStyle::NORMAL;
         } else {
-          font.style = FontSlantStyle::Italic();
+          font.style = FontSlantStyle::ITALIC;
         }
       } else if (mFlags & MATH_FONT_STYLING_NORMAL) {
-        font.style = FontSlantStyle::Normal();
-        font.weight = FontWeight::Normal();
+        font.style = FontSlantStyle::NORMAL;
+        font.weight = FontWeight::NORMAL;
       } else {
         mathVar = StyleMathVariant::Italic;
       }
@@ -615,20 +615,20 @@ void MathMLTextRunFactory::RebuildTextRun(
   gfxTextRun* child;
 
   if (mathVar == StyleMathVariant::Bold && doMathvariantStyling) {
-    font.style = FontSlantStyle::Normal();
-    font.weight = FontWeight::Bold();
+    font.style = FontSlantStyle::NORMAL;
+    font.weight = FontWeight::BOLD;
   } else if (mathVar == StyleMathVariant::Italic && doMathvariantStyling) {
-    font.style = FontSlantStyle::Italic();
-    font.weight = FontWeight::Normal();
+    font.style = FontSlantStyle::ITALIC;
+    font.weight = FontWeight::NORMAL;
   } else if (mathVar == StyleMathVariant::BoldItalic && doMathvariantStyling) {
-    font.style = FontSlantStyle::Italic();
-    font.weight = FontWeight::Bold();
+    font.style = FontSlantStyle::ITALIC;
+    font.weight = FontWeight::BOLD;
   } else if (mathVar != StyleMathVariant::None) {
     
     
     
-    font.style = FontSlantStyle::Normal();
-    font.weight = FontWeight::Normal();
+    font.style = FontSlantStyle::NORMAL;
+    font.weight = FontWeight::NORMAL;
   }
   gfxFontGroup* newFontGroup = nullptr;
 

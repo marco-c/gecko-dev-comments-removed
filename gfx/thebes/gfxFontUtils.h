@@ -15,7 +15,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/Casting.h"
 #include "mozilla/EndianUtils.h"
-#include "mozilla/FontPropertyTypes.h"
+#include "mozilla/ServoStyleConstsInlines.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/UniquePtr.h"
 #include "nsStringFwd.h"
@@ -1251,8 +1251,7 @@ static inline double StyleDistance(const mozilla::SlantStyleRange& aRange,
     return kReverse;
   }
 
-  const double kDefaultAngle =
-      mozilla::FontSlantStyle::Oblique().ObliqueAngle();
+  const double kDefaultAngle = mozilla::FontSlantStyle::OBLIQUE.ObliqueAngle();
 
   if (aTargetStyle.IsItalic()) {
     if (minStyle.IsOblique()) {
@@ -1383,16 +1382,16 @@ static inline double StretchDistance(const mozilla::StretchRange& aRange,
   
   
   if (aTargetStretch < minStretch) {
-    if (aTargetStretch > mozilla::FontStretch::Normal()) {
-      return minStretch - aTargetStretch;
+    if (aTargetStretch > mozilla::FontStretch::NORMAL) {
+      return minStretch.ToFloat() - aTargetStretch.ToFloat();
     }
-    return (minStretch - aTargetStretch) + kReverseDistance;
+    return (minStretch.ToFloat() - aTargetStretch.ToFloat()) + kReverseDistance;
   }
   if (aTargetStretch > maxStretch) {
-    if (aTargetStretch <= mozilla::FontStretch::Normal()) {
-      return aTargetStretch - maxStretch;
+    if (aTargetStretch <= mozilla::FontStretch::NORMAL) {
+      return aTargetStretch.ToFloat() - maxStretch.ToFloat();
     }
-    return (aTargetStretch - maxStretch) + kReverseDistance;
+    return (aTargetStretch.ToFloat() - maxStretch.ToFloat()) + kReverseDistance;
   }
   return 0.0;
 }
@@ -1422,35 +1421,36 @@ static inline double WeightDistance(const mozilla::WeightRange& aRange,
     return 0.0;
   }
 
-  if (aTargetWeight < mozilla::FontWeight(400)) {
+  if (aTargetWeight < mozilla::FontWeight::NORMAL) {
     
     if (maxWeight < aTargetWeight) {
-      return aTargetWeight - maxWeight;
+      return aTargetWeight.ToFloat() - maxWeight.ToFloat();
     }
     
-    return (minWeight - aTargetWeight) + kReverseDistance;
+    return (minWeight.ToFloat() - aTargetWeight.ToFloat()) + kReverseDistance;
   }
 
-  if (aTargetWeight > mozilla::FontWeight(500)) {
+  if (aTargetWeight > mozilla::FontWeight::FromInt(500)) {
     
     if (minWeight > aTargetWeight) {
-      return minWeight - aTargetWeight;
+      return minWeight.ToFloat() - aTargetWeight.ToFloat();
     }
     
-    return (aTargetWeight - maxWeight) + kReverseDistance;
+    return (aTargetWeight.ToFloat() - maxWeight.ToFloat()) + kReverseDistance;
   }
 
   
   if (minWeight > aTargetWeight) {
-    if (minWeight <= mozilla::FontWeight(500)) {
+    if (minWeight <= mozilla::FontWeight::FromInt(500)) {
       
-      return minWeight - aTargetWeight;
+      return minWeight.ToFloat() - aTargetWeight.ToFloat();
     }
     
-    return (minWeight - aTargetWeight) + kReverseDistance;
+    return (minWeight.ToFloat() - aTargetWeight.ToFloat()) + kReverseDistance;
   }
   
-  return (aTargetWeight - maxWeight) + kNotWithinCentralRange;
+  return (aTargetWeight.ToFloat() - maxWeight.ToFloat()) +
+         kNotWithinCentralRange;
 }
 
 #endif 

@@ -5,17 +5,10 @@
 
 
 use super::{Animate, Procedure, ToAnimatedZero};
-use crate::values::computed::font::{FontVariationSettings, FontWeight};
+use crate::values::computed::font::FontVariationSettings;
 use crate::values::computed::Number;
 use crate::values::distance::{ComputeSquaredDistance, SquaredDistance};
 use crate::values::generics::font::{FontSettings as GenericFontSettings, FontTag, VariationValue};
-
-impl ToAnimatedZero for FontWeight {
-    #[inline]
-    fn to_animated_zero(&self) -> Result<Self, ()> {
-        Ok(FontWeight::normal())
-    }
-}
 
 
 impl Animate for FontVariationSettings {
