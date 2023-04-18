@@ -109,6 +109,9 @@ class ElfRelHackCode_Section : public ElfSection {
       case EM_ARM:
         file += "arm";
         break;
+      case EM_AARCH64:
+        file += "aarch64";
+        break;
       default:
         throw std::runtime_error("unsupported architecture");
     }
@@ -269,10 +272,13 @@ class ElfRelHackCode_Section : public ElfSection {
     }
   }
 
+  
+  
   class pc32_relocation {
    public:
     Elf32_Addr operator()(unsigned int base_addr, Elf64_Off offset,
-                          Elf64_Sxword addend, unsigned int addr) {
+                          Elf64_Sxword addend, unsigned int addr,
+                          Elf64_Word value) {
       return addr + addend - offset - base_addr;
     }
   };
@@ -280,7 +286,8 @@ class ElfRelHackCode_Section : public ElfSection {
   class arm_plt32_relocation {
    public:
     Elf32_Addr operator()(unsigned int base_addr, Elf64_Off offset,
-                          Elf64_Sxword addend, unsigned int addr) {
+                          Elf64_Sxword addend, unsigned int addr,
+                          Elf64_Word value) {
       
       
       Elf32_Addr tmp = (Elf32_Addr)(addr - offset - base_addr) >> 2;
@@ -292,7 +299,8 @@ class ElfRelHackCode_Section : public ElfSection {
   class arm_thm_jump24_relocation {
    public:
     Elf32_Addr operator()(unsigned int base_addr, Elf64_Off offset,
-                          Elf64_Sxword addend, unsigned int addr) {
+                          Elf64_Sxword addend, unsigned int addr,
+                          Elf64_Word value) {
       
 
 
@@ -345,8 +353,56 @@ class ElfRelHackCode_Section : public ElfSection {
   class gotoff_relocation {
    public:
     Elf32_Addr operator()(unsigned int base_addr, Elf64_Off offset,
-                          Elf64_Sxword addend, unsigned int addr) {
+                          Elf64_Sxword addend, unsigned int addr,
+                          Elf64_Word value) {
       return addr + addend;
+    }
+  };
+
+  template <int start, int end>
+  class abs_lo12_nc_relocation {
+   public:
+    Elf32_Addr operator()(unsigned int base_addr, Elf64_Off offset,
+                          Elf64_Sxword addend, unsigned int addr,
+                          Elf64_Word value) {
+      
+      
+      
+      
+      
+      Elf64_Word mask = (1 << (end + 1)) - 1;
+      return value | (((((addr + addend) & mask) >> start) & 0xfff) << 10);
+    }
+  };
+
+  class adr_prel_pg_hi21_relocation {
+   public:
+    Elf32_Addr operator()(unsigned int base_addr, Elf64_Off offset,
+                          Elf64_Sxword addend, unsigned int addr,
+                          Elf64_Word value) {
+      
+      
+      
+      
+      
+      Elf64_Word imm = ((addr + addend) >> 12) - ((base_addr + offset) >> 12);
+      Elf64_Word immLo = (imm & 0x3) << 29;
+      Elf64_Word immHi = (imm & 0x1ffffc) << 3;
+      return value & 0x9f00001f | immLo | immHi;
+    }
+  };
+
+  class call26_relocation {
+   public:
+    Elf32_Addr operator()(unsigned int base_addr, Elf64_Off offset,
+                          Elf64_Sxword addend, unsigned int addr,
+                          Elf64_Word value) {
+      
+      
+      
+      
+      
+      return value | (((addr + addend - offset - base_addr) & 0x0ffffffc) >> 2);
     }
   };
 
@@ -356,7 +412,7 @@ class ElfRelHackCode_Section : public ElfSection {
     relocation_type relocation;
     Elf32_Addr value;
     memcpy(&value, base + r->r_offset, 4);
-    value = relocation(the_code->getAddr(), r->r_offset, value, addr);
+    value = relocation(the_code->getAddr(), r->r_offset, value, addr, value);
     memcpy(base + r->r_offset, &value, 4);
   }
 
@@ -364,9 +420,11 @@ class ElfRelHackCode_Section : public ElfSection {
   void apply_relocation(ElfSection* the_code, char* base, Elf_Rela* r,
                         unsigned int addr) {
     relocation_type relocation;
-    Elf32_Addr value =
-        relocation(the_code->getAddr(), r->r_offset, r->r_addend, addr);
-    memcpy(base + r->r_offset, &value, 4);
+    Elf64_Word value;
+    memcpy(&value, base + r->r_offset, 4);
+    Elf32_Addr new_value =
+        relocation(the_code->getAddr(), r->r_offset, r->r_addend, addr, value);
+    memcpy(base + r->r_offset, &new_value, 4);
   }
 
   template <typename Rel_Type>
@@ -429,6 +487,7 @@ class ElfRelHackCode_Section : public ElfSection {
         case REL(386, GOTPC):
         case REL(ARM, GOTPC):
         case REL(ARM, REL32):
+        case REL(AARCH64, PREL32):
           apply_relocation<pc32_relocation>(the_code, buf, &*r, addr);
           break;
         case REL(ARM, CALL):
@@ -443,6 +502,25 @@ class ElfRelHackCode_Section : public ElfSection {
         case REL(386, GOTOFF):
         case REL(ARM, GOTOFF):
           apply_relocation<gotoff_relocation>(the_code, buf, &*r, addr);
+          break;
+        case REL(AARCH64, ADD_ABS_LO12_NC):
+          apply_relocation<abs_lo12_nc_relocation<0, 11>>(the_code, buf, &*r,
+                                                          addr);
+          break;
+        case REL(AARCH64, ADR_PREL_PG_HI21):
+          apply_relocation<adr_prel_pg_hi21_relocation>(the_code, buf, &*r,
+                                                        addr);
+          break;
+        case REL(AARCH64, LDST32_ABS_LO12_NC):
+          apply_relocation<abs_lo12_nc_relocation<2, 11>>(the_code, buf, &*r,
+                                                          addr);
+          break;
+        case REL(AARCH64, LDST64_ABS_LO12_NC):
+          apply_relocation<abs_lo12_nc_relocation<3, 11>>(the_code, buf, &*r,
+                                                          addr);
+          break;
+        case REL(AARCH64, CALL26):
+          apply_relocation<call26_relocation>(the_code, buf, &*r, addr);
           break;
         case REL(ARM, V4BX):
           
@@ -1233,6 +1311,12 @@ void do_file(const char* name, bool backup = false, bool force = false) {
       exit = do_relocation_section<Elf_Rel>(&elf, R_ARM_RELATIVE, R_ARM_ABS32,
                                             force);
       break;
+    case EM_AARCH64:
+      exit = do_relocation_section<Elf_Rela>(&elf, R_AARCH64_RELATIVE,
+                                             R_AARCH64_ABS64, force);
+      break;
+    default:
+      throw std::runtime_error("unsupported architecture");
   }
   if (exit == 0) {
     if (!force && (elf.getSize() >= size)) {
