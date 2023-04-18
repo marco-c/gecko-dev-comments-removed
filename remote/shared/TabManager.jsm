@@ -121,15 +121,35 @@ var TabManager = {
     return null;
   },
 
-  addTab({ userContextId }) {
-    const window = Services.wm.getMostRecentWindow(null);
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  addTab(options = {}) {
+    const {
+      focus = false,
+      userContextId,
+      window = Services.wm.getMostRecentWindow(null),
+    } = options;
     const tabBrowser = this.getTabBrowser(window);
 
     const tab = tabBrowser.addTab("about:blank", {
       triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
       userContextId,
     });
-    this.selectTab(tab);
+
+    if (focus) {
+      this.selectTab(tab);
+    }
 
     return tab;
   },
