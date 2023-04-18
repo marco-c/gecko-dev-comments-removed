@@ -151,19 +151,6 @@
 
 #define XPCOM_API(type) NS_EXTERN_C type
 
-#if (defined(DEBUG) || defined(FORCE_BUILD_REFCNT_LOGGING))
-
-
-
-#  define NS_BUILD_REFCNT_LOGGING
-#endif
-
-
-
-#if defined(NO_BUILD_REFCNT_LOGGING)
-#  undef NS_BUILD_REFCNT_LOGGING
-#endif
-
 
 
 
