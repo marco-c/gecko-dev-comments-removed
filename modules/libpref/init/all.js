@@ -3896,9 +3896,6 @@ pref("dom.push.http2.maxRetries", 2);
 pref("dom.push.http2.retryInterval", 5000);
 
 
-pref("media.ondevicechange.fakeDeviceChangeEvent.enabled", false);
-
-
 
 
 pref("memory.ghost_window_timeout_seconds", 60);

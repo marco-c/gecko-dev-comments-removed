@@ -44,10 +44,6 @@ class MediaEngineWebRTC : public MediaEngine {
 
   
   
-  void SetFakeDeviceChangeEventsEnabled(bool aEnable) override;
-
-  
-  
   void Shutdown() override;
 
   void EnumerateDevices(dom::MediaSourceEnum, MediaSinkEnum,
@@ -68,13 +64,10 @@ class MediaEngineWebRTC : public MediaEngine {
 
   void DeviceListChanged() { mDeviceListChangeEvent.Notify(); }
 
-  static void FakeDeviceChangeEventTimerTick(nsITimer* aTimer, void* aClosure);
-
   MediaEventListener mCameraListChangeListener;
   MediaEventListener mMicrophoneListChangeListener;
   MediaEventListener mSpeakerListChangeListener;
   MediaEventProducer<void> mDeviceListChangeEvent;
-  nsCOMPtr<nsITimer> mFakeDeviceChangeEventTimer;
 };
 
 }  
