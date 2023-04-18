@@ -645,6 +645,20 @@ impl CompositeState {
             ImageRendering::CrispEdges
         };
 
+        if let Some(backdrop_surface) = &tile_cache.backdrop_surface {
+            
+            self.descriptor.surfaces.push(
+                CompositeSurfaceDescriptor {
+                    surface_id: Some(backdrop_surface.id),
+                    clip_rect: device_clip_rect,
+                    transform: slice_transform,
+                    image_dependencies: [ImageDependency::INVALID; 3],
+                    image_rendering,
+                    tile_descriptors: Vec::new(),
+                }
+            );
+        }
+
         for sub_slice in &tile_cache.sub_slices {
             let mut surface_device_rect = DeviceRect::zero();
 
@@ -678,31 +692,34 @@ impl CompositeState {
                 .unwrap_or(DeviceRect::zero());
 
             
-            if !sub_slice.opaque_tile_descriptors.is_empty() {
-                self.descriptor.surfaces.push(
-                    CompositeSurfaceDescriptor {
-                        surface_id: sub_slice.native_surface.as_ref().map(|s| s.opaque),
-                        clip_rect: surface_clip_rect,
-                        transform: slice_transform,
-                        image_dependencies: [ImageDependency::INVALID; 3],
-                        image_rendering,
-                        tile_descriptors: sub_slice.opaque_tile_descriptors.clone(),
-                    }
-                );
-            }
-
-            
-            if !sub_slice.alpha_tile_descriptors.is_empty() {
-                self.descriptor.surfaces.push(
-                    CompositeSurfaceDescriptor {
-                        surface_id: sub_slice.native_surface.as_ref().map(|s| s.alpha),
-                        clip_rect: surface_clip_rect,
-                        transform: slice_transform,
-                        image_dependencies: [ImageDependency::INVALID; 3],
-                        image_rendering,
-                        tile_descriptors: sub_slice.alpha_tile_descriptors.clone(),
-                    }
-                );
+            if !surface_clip_rect.is_empty() {
+                
+                if !sub_slice.opaque_tile_descriptors.is_empty() {
+                    self.descriptor.surfaces.push(
+                        CompositeSurfaceDescriptor {
+                            surface_id: sub_slice.native_surface.as_ref().map(|s| s.opaque),
+                            clip_rect: surface_clip_rect,
+                            transform: slice_transform,
+                            image_dependencies: [ImageDependency::INVALID; 3],
+                            image_rendering,
+                            tile_descriptors: sub_slice.opaque_tile_descriptors.clone(),
+                        }
+                    );
+                }
+    
+                
+                if !sub_slice.alpha_tile_descriptors.is_empty() {
+                    self.descriptor.surfaces.push(
+                        CompositeSurfaceDescriptor {
+                            surface_id: sub_slice.native_surface.as_ref().map(|s| s.alpha),
+                            clip_rect: surface_clip_rect,
+                            transform: slice_transform,
+                            image_dependencies: [ImageDependency::INVALID; 3],
+                            image_rendering,
+                            tile_descriptors: sub_slice.alpha_tile_descriptors.clone(),
+                        }
+                    );
+                }
             }
 
             
@@ -714,6 +731,11 @@ impl CompositeState {
                     .clip_rect
                     .intersection(&device_clip_rect)
                     .unwrap_or_else(DeviceRect::zero);
+                    
+                
+                if clip_rect.is_empty() {
+                    continue;
+                }
 
                 let required_plane_count =
                     match external_surface.dependency {

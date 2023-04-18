@@ -1825,6 +1825,11 @@ impl SubSlice {
     }
 }
 
+pub struct BackdropSurface {
+    pub id: NativeSurfaceId,
+    color: ColorF,
+}
+
 
 pub struct TileCacheInstance {
     
@@ -1923,6 +1928,9 @@ pub struct TileCacheInstance {
     
     
     deferred_dirty_tests: Vec<DeferredDirtyTest>,
+    
+    found_prims_after_backdrop: bool,
+    pub backdrop_surface: Option<BackdropSurface>,
 }
 
 enum SurfacePromotionResult {
@@ -1982,6 +1990,8 @@ impl TileCacheInstance {
             current_raster_scale: 1.0,
             current_surface_traversal_depth: 0,
             deferred_dirty_tests: Vec::new(),
+            found_prims_after_backdrop: false,
+            backdrop_surface: None,
         }
     }
 
@@ -2044,6 +2054,13 @@ impl TileCacheInstance {
         
         
         self.frames_until_size_eval = 0;
+        
+        
+        self.found_prims_after_backdrop = false;
+        if let Some(backdrop_surface) = &self.backdrop_surface {
+            resource_cache.destroy_compositor_surface(backdrop_surface.id);
+            self.backdrop_surface = None;
+        }
     }
 
     
@@ -3354,7 +3371,7 @@ impl TileCacheInstance {
         
         
         let mut vis_flags = PrimitiveVisibilityFlags::empty();
-
+        self.found_prims_after_backdrop = true;
         let sub_slice = &mut self.sub_slices[sub_slice_index];
 
         if let Some(mut backdrop_candidate) = backdrop_candidate {
@@ -3444,6 +3461,7 @@ impl TileCacheInstance {
                             vis_flags |= PrimitiveVisibilityFlags::IS_BACKDROP;
                         }
 
+                        self.found_prims_after_backdrop = false;
                         self.backdrop.kind = Some(kind);
                     }
                 }
@@ -4624,6 +4642,7 @@ impl PicturePrimitive {
                 let device_pixel_scale = frame_state
                     .surfaces[surface_index.0]
                     .device_pixel_scale;
+                let mut at_least_one_tile_visible = false;
 
                 
                 
@@ -4700,6 +4719,8 @@ impl PicturePrimitive {
 
                             continue;
                         }
+
+                        at_least_one_tile_visible = true;
 
                         if frame_context.debug_flags.contains(DebugFlags::PICTURE_CACHING_DBG) {
                             tile.root.draw_debug_rects(
@@ -5111,6 +5132,65 @@ impl PicturePrimitive {
                     
                     sub_slice.opaque_tile_descriptors.sort_by_key(|desc| desc.tile_id);
                     sub_slice.alpha_tile_descriptors.sort_by_key(|desc| desc.tile_id);
+                }
+
+                
+                let backdrop_rect = tile_cache.backdrop.opaque_rect
+                    .intersection(&tile_cache.local_rect)
+                    .and_then(|r| {
+                        r.intersection(&tile_cache.local_clip_rect)
+                });
+
+                if backdrop_rect.is_some() {
+                    let supports_surface_for_backdrop = match frame_state.composite_state.compositor_kind {
+                        CompositorKind::Draw { .. } => {
+                            false
+                        }
+                        CompositorKind::Native { capabilities, .. } => {
+                            capabilities.supports_surface_for_backdrop
+                        }
+                    };
+                    let mut backdrop_in_use_and_visible = false;
+                    if supports_surface_for_backdrop && !tile_cache.found_prims_after_backdrop && at_least_one_tile_visible {
+                        if let Some(BackdropKind::Color { color }) = tile_cache.backdrop.kind {
+                            backdrop_in_use_and_visible = true;
+
+                            
+                            
+                            for sub_slice in &mut tile_cache.sub_slices {
+                                for tile in sub_slice.tiles.values_mut() {
+                                    tile.is_visible = false;
+                                }
+                            }
+
+                            
+                            
+                            if let Some(backdrop_surface) = &tile_cache.backdrop_surface {
+                                if backdrop_surface.color != color {
+                                    frame_state.resource_cache.destroy_compositor_surface(backdrop_surface.id);
+                                    tile_cache.backdrop_surface = None;
+                                }
+                            }
+
+                            
+                            if tile_cache.backdrop_surface.is_none() {
+                                
+                                tile_cache.backdrop_surface = Some(BackdropSurface {
+                                    id: frame_state.resource_cache.create_compositor_backdrop_surface(color),
+                                    color,
+                                });
+                            }
+                        }
+                    }
+
+                    if !backdrop_in_use_and_visible {
+                        if let Some(backdrop_surface) = &tile_cache.backdrop_surface {
+                            
+                            
+                            frame_state.resource_cache.destroy_compositor_surface(backdrop_surface.id);
+                            tile_cache.backdrop_surface = None;
+                        }
+                    }
                 }
 
                 
