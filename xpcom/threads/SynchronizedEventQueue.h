@@ -45,12 +45,12 @@ class ThreadTargetSink {
   
   virtual void Disconnect(const MutexAutoLock& aProofOfLock) = 0;
 
-  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
+  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) {
     return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
   }
 
-  virtual size_t SizeOfExcludingThis(
-      mozilla::MallocSizeOf aMallocSizeOf) const = 0;
+  
+  virtual size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) = 0;
 
  protected:
   virtual ~ThreadTargetSink() = default;
@@ -80,9 +80,12 @@ class SynchronizedEventQueue : public ThreadTargetSink {
   void RemoveObserver(nsIThreadObserver* aObserver);
   const nsTObserverArray<nsCOMPtr<nsIThreadObserver>>& EventObservers();
 
-  size_t SizeOfExcludingThis(
-      mozilla::MallocSizeOf aMallocSizeOf) const override {
-    return mEventObservers.ShallowSizeOfExcludingThis(aMallocSizeOf);
+  size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) override {
+    
+    
+    
+    
+    return 0;
   }
 
   
