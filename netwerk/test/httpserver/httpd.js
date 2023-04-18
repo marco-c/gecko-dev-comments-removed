@@ -2882,6 +2882,7 @@ ServerHandler.prototype = {
         s.importFunction(atob, "atob");
         s.importFunction(btoa, "btoa");
         s.importFunction(ChromeUtils, "ChromeUtils");
+        s.importFunction(Services, "Services");
 
         
         
