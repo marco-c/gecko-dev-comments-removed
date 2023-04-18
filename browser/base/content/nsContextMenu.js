@@ -71,15 +71,17 @@ function openContextMenu(aMessage, aBrowser, aActor) {
   
   
   
-  var newEvent = document.createEvent("MouseEvent");
+  let newEvent = document.createEvent("MouseEvent");
+  let screenX = context.screenXDevPx / window.devicePixelRatio;
+  let screenY = context.screenYDevPx / window.devicePixelRatio;
   newEvent.initNSMouseEvent(
     "contextmenu",
     true,
     true,
     null,
     0,
-    context.screenX,
-    context.screenY,
+    screenX,
+    screenY,
     0,
     0,
     false,
