@@ -4,6 +4,9 @@
 
 
 
+with Files("**"):
+    BUG_COMPONENT = ("Core", "Graphics: WebGPU")
+
 EXPORTS.mozilla.webgpu.ffi += [
     "wgpu.h",
 ]
