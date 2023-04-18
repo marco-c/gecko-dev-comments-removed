@@ -205,6 +205,7 @@ var whitelist = [
 
   
   { file: "resource://pdf.js/web/debugger.js" },
+  { file: "resource://pdf.js/web/debugger.css" },
 
   
   { file: "resource://app/modules/translation/BingTranslator.jsm" },
