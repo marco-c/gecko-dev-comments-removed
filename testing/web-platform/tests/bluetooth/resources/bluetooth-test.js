@@ -71,15 +71,21 @@ async function performChromiumSetup() {
 
 
 
-function bluetooth_test(test_function, name, properties) {
+
+
+function bluetooth_test(
+    test_function, name, properties, validate_response_consumed = true) {
   return promise_test(async (t) => {
     assert_implements(navigator.bluetooth, 'missing navigator.bluetooth');
     
     await performChromiumSetup();
-    assert_implements(navigator.bluetooth.test, 'missing navigator.bluetooth.test');
+    assert_implements(
+        navigator.bluetooth.test, 'missing navigator.bluetooth.test');
     await test_function(t);
-    let consumed = await navigator.bluetooth.test.allResponsesConsumed();
-    assert_true(consumed);
+    if (validate_response_consumed) {
+      let consumed = await navigator.bluetooth.test.allResponsesConsumed();
+      assert_true(consumed);
+    }
   }, name, properties);
 }
 
