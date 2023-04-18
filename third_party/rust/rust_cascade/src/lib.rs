@@ -8,25 +8,26 @@ use murmurhash3::murmurhash3_x86_32;
 use sha2::{Digest, Sha256};
 use std::convert::{TryFrom, TryInto};
 use std::fmt;
-use std::io::{Error, ErrorKind};
+use std::io::{Error, ErrorKind, Read};
+use std::mem::size_of;
 
 
-struct BitSlice<'a> {
+struct BitVector {
     
-    bytes: &'a [u8],
+    bytes: Vec<u8>,
     
     
     bit_len: usize,
 }
 
-impl<'a> BitSlice<'a> {
+impl BitVector {
     
     
     
     
     
     
-    fn new(bytes: &'a [u8], bit_len: usize) -> BitSlice<'a> {
+    fn new(bytes: Vec<u8>, bit_len: usize) -> BitVector {
         if bit_len > bytes.len() * 8 {
             panic!(
                 "bit_len too large for given data: {} > {} * 8",
@@ -34,7 +35,7 @@ impl<'a> BitSlice<'a> {
                 bytes.len()
             );
         }
-        BitSlice { bytes, bit_len }
+        BitVector { bytes, bit_len }
     }
 
     
@@ -45,7 +46,7 @@ impl<'a> BitSlice<'a> {
     fn get(&self, bit_index: usize) -> bool {
         if bit_index >= self.bit_len {
             panic!(
-                "bit index out of range for bit slice: {} >= {}",
+                "bit index out of range for bit vector: {} >= {}",
                 bit_index, self.bit_len
             );
         }
@@ -68,7 +69,7 @@ impl<'a> BitSlice<'a> {
 }
 
 
-struct Bloom<'a> {
+struct Bloom {
     
     level: u8,
     
@@ -76,7 +77,7 @@ struct Bloom<'a> {
     
     size: u32,
     
-    bit_slice: BitSlice<'a>,
+    bit_vector: BitVector,
     
     hash_algorithm: HashAlgorithm,
 }
@@ -108,7 +109,7 @@ impl TryFrom<u8> for HashAlgorithm {
     }
 }
 
-impl<'a> Bloom<'a> {
+impl Bloom {
     
     
     
@@ -121,12 +122,15 @@ impl<'a> Bloom<'a> {
     
     
     
-    
-    pub fn from_bytes(bytes: &'a [u8]) -> Result<(Bloom<'a>, &'a [u8]), Error> {
-        let mut cursor = bytes;
+    pub fn read<R: Read>(reader: &mut R) -> Result<Option<Bloom>, Error> {
         
         
-        let hash_algorithm_val = cursor.read_u8()?;
+        let hash_algorithm_val = match reader.read_u8() {
+            Ok(val) => val,
+            
+            Err(e) if e.kind() == ErrorKind::UnexpectedEof => return Ok(None),
+            Err(e) => return Err(e),
+        };
         let hash_algorithm = match HashAlgorithm::try_from(hash_algorithm_val) {
             Ok(algo) => algo,
             Err(()) => {
@@ -137,9 +141,9 @@ impl<'a> Bloom<'a> {
             }
         };
 
-        let size = cursor.read_u32::<byteorder::LittleEndian>()?;
-        let n_hash_funcs = cursor.read_u32::<byteorder::LittleEndian>()?;
-        let level = cursor.read_u8()?;
+        let size = reader.read_u32::<byteorder::LittleEndian>()?;
+        let n_hash_funcs = reader.read_u32::<byteorder::LittleEndian>()?;
+        let level = reader.read_u8()?;
 
         let shifted_size = size.wrapping_shr(3) as usize;
         let byte_count = if size % 8 != 0 {
@@ -147,24 +151,19 @@ impl<'a> Bloom<'a> {
         } else {
             shifted_size
         };
-        if byte_count > cursor.len() {
-            return Err(Error::new(
-                ErrorKind::InvalidData,
-                "Invalid Bloom filter: too short",
-            ));
-        }
-        let (bits_bytes, rest_of_bytes) = cursor.split_at(byte_count);
+        let mut bits_bytes = vec![0; byte_count];
+        reader.read_exact(&mut bits_bytes)?;
         let bloom = Bloom {
             level,
             n_hash_funcs,
             size,
-            bit_slice: BitSlice::new(bits_bytes, size as usize),
+            bit_vector: BitVector::new(bits_bytes, size as usize),
             hash_algorithm,
         };
-        Ok((bloom, rest_of_bytes))
+        Ok(Some(bloom))
     }
 
-    fn hash(&self, n_fn: u32, key: &[u8], salt: Option<&[u8]>) -> u32 {
+    fn hash(&self, n_fn: u32, key: &[u8], salt: Option<&Vec<u8>>) -> u32 {
         match self.hash_algorithm {
             HashAlgorithm::MurmurHash3 => {
                 if salt.is_some() {
@@ -195,9 +194,9 @@ impl<'a> Bloom<'a> {
     
     
     
-    pub fn has(&self, item: &[u8], salt: Option<&[u8]>) -> bool {
+    fn has(&self, item: &[u8], salt: Option<&Vec<u8>>) -> bool {
         for i in 0..self.n_hash_funcs {
-            if !self.bit_slice.get(self.hash(i, item, salt) as usize) {
+            if !self.bit_vector.get(self.hash(i, item, salt) as usize) {
                 return false;
             }
         }
@@ -205,7 +204,7 @@ impl<'a> Bloom<'a> {
     }
 }
 
-impl<'a> fmt::Display for Bloom<'a> {
+impl fmt::Display for Bloom {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
@@ -216,18 +215,18 @@ impl<'a> fmt::Display for Bloom<'a> {
 }
 
 
-pub struct Cascade<'a> {
+pub struct Cascade {
     
-    filter: Bloom<'a>,
+    filter: Bloom,
     
-    child_layer: Option<Box<Cascade<'a>>>,
+    child_layer: Option<Box<Cascade>>,
     
-    salt: Option<&'a [u8]>,
+    salt: Option<Vec<u8>>,
     
     inverted: bool,
 }
 
-impl<'a> Cascade<'a> {
+impl Cascade {
     
     
     
@@ -237,33 +236,23 @@ impl<'a> Cascade<'a> {
     
     
     
-    
-    
-    pub fn from_bytes(bytes: &'a [u8]) -> Result<Option<Box<Cascade<'a>>>, Error> {
+    pub fn from_bytes(bytes: Vec<u8>) -> Result<Option<Box<Cascade>>, Error> {
         if bytes.is_empty() {
             return Ok(None);
         }
-        let mut cursor = bytes;
-        let version = cursor.read_u16::<byteorder::LittleEndian>()?;
+        let mut reader = bytes.as_slice();
+        let version = reader.read_u16::<byteorder::LittleEndian>()?;
         let mut salt = None;
         let mut inverted = false;
 
         if version >= 2 {
-            inverted = cursor.read_u8()? != 0;
-            let salt_len = cursor.read_u8()? as usize;
-
-            if salt_len > cursor.len() {
-                return Err(Error::new(
-                    ErrorKind::InvalidData,
-                    "Invalid Bloom filter: too short",
-                ));
-            }
-
-            let (salt_bytes, remaining_bytes) = cursor.split_at(salt_len);
+            inverted = reader.read_u8()? != 0;
+            let salt_len = reader.read_u8()? as usize;
             if salt_len > 0 {
-                salt = Some(salt_bytes)
+                let mut salt_bytes = vec![0; salt_len];
+                reader.read_exact(&mut salt_bytes)?;
+                salt = Some(salt_bytes);
             }
-            cursor = remaining_bytes;
         }
 
         if version > 2 {
@@ -273,22 +262,23 @@ impl<'a> Cascade<'a> {
             ));
         }
 
-        Cascade::child_layer_from_bytes(cursor, salt, inverted)
+        Cascade::child_layer_from_bytes(reader, salt, inverted)
     }
 
-    fn child_layer_from_bytes(
-        bytes: &'a [u8],
-        salt: Option<&'a [u8]>,
+    fn child_layer_from_bytes<R: Read>(
+        mut reader: R,
+        salt: Option<Vec<u8>>,
         inverted: bool,
-    ) -> Result<Option<Box<Cascade<'a>>>, Error> {
-        if bytes.is_empty() {
-            return Ok(None);
-        }
-        let (filter, rest_of_bytes) = Bloom::from_bytes(bytes)?;
+    ) -> Result<Option<Box<Cascade>>, Error> {
+        let filter = match Bloom::read(&mut reader)? {
+            Some(filter) => filter,
+            None => return Ok(None),
+        };
+        let our_salt = salt.as_ref().cloned();
         Ok(Some(Box::new(Cascade {
             filter,
-            child_layer: Cascade::child_layer_from_bytes(rest_of_bytes, salt, inverted)?,
-            salt,
+            child_layer: Cascade::child_layer_from_bytes(reader, salt, inverted)?,
+            salt: our_salt,
             inverted,
         })))
     }
@@ -305,8 +295,8 @@ impl<'a> Cascade<'a> {
         result
     }
 
-    pub fn has_internal(&self, entry: &[u8]) -> bool {
-        if self.filter.has(&entry, self.salt) {
+    fn has_internal(&self, entry: &[u8]) -> bool {
+        if self.filter.has(entry, self.salt.as_ref()) {
             match self.child_layer {
                 Some(ref child) => {
                     let child_value = !child.has_internal(entry);
@@ -319,9 +309,25 @@ impl<'a> Cascade<'a> {
         }
         false
     }
+
+    
+    
+    
+    
+    
+    
+    pub fn approximate_size_of(&self) -> usize {
+        size_of::<Cascade>()
+            + self.filter.bit_vector.bytes.len()
+            + self
+                .child_layer
+                .as_ref()
+                .map_or(0, |child_layer| child_layer.approximate_size_of())
+            + self.salt.as_ref().map_or(0, |salt| salt.len())
+    }
 }
 
-impl<'a> fmt::Display for Cascade<'a> {
+impl fmt::Display for Cascade {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
@@ -345,34 +351,41 @@ mod tests {
         let src: Vec<u8> = vec![
             0x01, 0x09, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x41, 0x00,
         ];
+        let mut reader = src.as_slice();
 
-        match Bloom::from_bytes(&src) {
-            Ok((bloom, rest_of_bytes)) => {
-                assert!(rest_of_bytes.len() == 0);
+        match Bloom::read(&mut reader) {
+            Ok(Some(bloom)) => {
                 assert!(bloom.has(b"this", None) == true);
                 assert!(bloom.has(b"that", None) == true);
                 assert!(bloom.has(b"other", None) == false);
             }
-            Err(_) => {
-                panic!("Parsing failed");
-            }
+            Ok(None) => panic!("Parsing failed"),
+            Err(_) => panic!("Parsing failed"),
         };
+        assert!(reader.is_empty());
 
         let short: Vec<u8> = vec![
             0x01, 0x09, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x41,
         ];
-        assert!(Bloom::from_bytes(&short).is_err());
+        assert!(Bloom::read(&mut short.as_slice()).is_err());
+
+        let empty: Vec<u8> = Vec::new();
+        let mut reader = empty.as_slice();
+        match Bloom::read(&mut reader) {
+            Ok(should_be_none) => assert!(should_be_none.is_none()),
+            Err(_) => panic!("Parsing failed"),
+        };
     }
 
     #[test]
     fn bloom_v3_unsupported() {
         let src: Vec<u8> = vec![0x03, 0x01, 0x00];
-        assert!(Bloom::from_bytes(&src).is_err());
+        assert!(Bloom::read(&mut src.as_slice()).is_err());
     }
 
     #[test]
     fn cascade_v1_murmur_from_file_bytes_test() {
-        let v = include_bytes!("../test_data/test_v1_murmur_mlbf");
+        let v = include_bytes!("../test_data/test_v1_murmur_mlbf").to_vec();
         let cascade = Cascade::from_bytes(v)
             .expect("parsing Cascade should succeed")
             .expect("Cascade should be Some");
@@ -401,13 +414,15 @@ mod tests {
               0x77, 0x8e ];
         assert!(!cascade.has(&key_for_valid_cert));
 
-        let v = include_bytes!("../test_data/test_v1_murmur_short_mlbf");
+        assert_eq!(cascade.approximate_size_of(), 15632);
+
+        let v = include_bytes!("../test_data/test_v1_murmur_short_mlbf").to_vec();
         assert!(Cascade::from_bytes(v).is_err());
     }
 
     #[test]
     fn cascade_v2_sha256_from_file_bytes_test() {
-        let v = include_bytes!("../test_data/test_v2_sha256_mlbf");
+        let v = include_bytes!("../test_data/test_v2_sha256_mlbf").to_vec();
         let cascade = Cascade::from_bytes(v)
             .expect("parsing Cascade should succeed")
             .expect("Cascade should be Some");
@@ -417,25 +432,27 @@ mod tests {
         assert!(cascade.has(b"this") == true);
         assert!(cascade.has(b"that") == true);
         assert!(cascade.has(b"other") == false);
+        assert_eq!(cascade.approximate_size_of(), 10247);
     }
 
     #[test]
     fn cascade_v2_sha256_with_salt_from_file_bytes_test() {
-        let v = include_bytes!("../test_data/test_v2_sha256_salt_mlbf");
+        let v = include_bytes!("../test_data/test_v2_sha256_salt_mlbf").to_vec();
         let cascade = Cascade::from_bytes(v)
             .expect("parsing Cascade should succeed")
             .expect("Cascade should be Some");
 
-        assert!(cascade.salt == Some(b"nacl"));
+        assert!(cascade.salt == Some(b"nacl".to_vec()));
         assert!(cascade.inverted == false);
         assert!(cascade.has(b"this") == true);
         assert!(cascade.has(b"that") == true);
         assert!(cascade.has(b"other") == false);
+        assert_eq!(cascade.approximate_size_of(), 10251);
     }
 
     #[test]
     fn cascade_v2_murmur_from_file_bytes_test() {
-        let v = include_bytes!("../test_data/test_v2_murmur_mlbf");
+        let v = include_bytes!("../test_data/test_v2_murmur_mlbf").to_vec();
         let cascade = Cascade::from_bytes(v)
             .expect("parsing Cascade should succeed")
             .expect("Cascade should be Some");
@@ -445,11 +462,12 @@ mod tests {
         assert!(cascade.has(b"this") == true);
         assert!(cascade.has(b"that") == true);
         assert!(cascade.has(b"other") == false);
+        assert_eq!(cascade.approximate_size_of(), 10247);
     }
 
     #[test]
     fn cascade_v2_murmur_inverted_from_file_bytes_test() {
-        let v = include_bytes!("../test_data/test_v2_murmur_inverted_mlbf");
+        let v = include_bytes!("../test_data/test_v2_murmur_inverted_mlbf").to_vec();
         let cascade = Cascade::from_bytes(v)
             .expect("parsing Cascade should succeed")
             .expect("Cascade should be Some");
@@ -459,11 +477,12 @@ mod tests {
         assert!(cascade.has(b"this") == true);
         assert!(cascade.has(b"that") == true);
         assert!(cascade.has(b"other") == false);
+        assert_eq!(cascade.approximate_size_of(), 10247);
     }
 
     #[test]
     fn cascade_v2_sha256_inverted_from_file_bytes_test() {
-        let v = include_bytes!("../test_data/test_v2_sha256_inverted_mlbf");
+        let v = include_bytes!("../test_data/test_v2_sha256_inverted_mlbf").to_vec();
         let cascade = Cascade::from_bytes(v)
             .expect("parsing Cascade should succeed")
             .expect("Cascade should be Some");
@@ -473,5 +492,12 @@ mod tests {
         assert!(cascade.has(b"this") == true);
         assert!(cascade.has(b"that") == true);
         assert!(cascade.has(b"other") == false);
+        assert_eq!(cascade.approximate_size_of(), 10247);
+    }
+
+    #[test]
+    fn cascade_empty() {
+        let cascade = Cascade::from_bytes(Vec::new()).expect("parsing Cascade should succeed");
+        assert!(cascade.is_none());
     }
 }
