@@ -20,7 +20,6 @@ const { Logger } = ChromeUtils.import("resource://tps/logger.jsm");
 Services.mm.loadFrameScript(
   "data:application/javascript;charset=utf-8," +
     encodeURIComponent(`
-  Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
   addEventListener("load", function(event) {
     let subframe = event.target != content.document;
     sendAsyncMessage("tps:loadEvent", {subframe: subframe, url: event.target.documentURI});
