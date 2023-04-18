@@ -55,17 +55,15 @@ var PlacesTestUtils = Object.freeze({
         typeof obj == "string"
       ) {
         place = { uri: obj };
-      } else if (typeof obj == "object" && obj.uri) {
+      } else if (typeof obj == "object" && (obj.uri || obj.url)) {
         place = obj;
       } else {
         throw new Error("Unsupported type passed to addVisits");
       }
 
-      let info = { url: place.uri };
+      let info = { url: place.uri || place.url };
       let spec =
-        place.uri instanceof Ci.nsIURI
-          ? place.uri.spec
-          : new URL(place.uri).href;
+        info.url instanceof Ci.nsIURI ? info.url.spec : new URL(info.url).href;
       info.title = "title" in place ? place.title : "test visit for " + spec;
       if (typeof place.referrer == "string") {
         place.referrer = Services.io.newURI(place.referrer);

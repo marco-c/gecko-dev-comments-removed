@@ -2243,7 +2243,7 @@ function insertBookmarkTree(items, source, parent, urls, lastAddedForParent) {
         for (let chunk of PlacesUtils.chunkArray(items, db.variableLimit)) {
           await db.executeCached(
             `DELETE FROM moz_bookmarks_deleted
-             WHERE guid IN (${sqlBindPlaceholders(chunk)})`,
+             WHERE guid IN (${PlacesUtils.sqlBindPlaceholders(chunk)})`,
             chunk.map(item => item.guid)
           );
         }
@@ -2687,7 +2687,7 @@ function removeBookmarks(items, options) {
           
           await db.executeCached(
             `DELETE FROM moz_bookmarks
-             WHERE guid IN (${sqlBindPlaceholders(chunk)})`,
+             WHERE guid IN (${PlacesUtils.sqlBindPlaceholders(chunk)})`,
             chunk.map(item => item.guid)
           );
         }
@@ -3070,7 +3070,11 @@ var updateFrecency = async function(db, urls) {
       `UPDATE moz_places
        SET hidden = (url_hash BETWEEN hash("place", "prefix_lo") AND hash("place", "prefix_hi")),
            frecency = CALCULATE_FRECENCY(id)
-       WHERE url_hash IN (${sqlBindPlaceholders(chunk, "hash(", ")")})`,
+       WHERE url_hash IN (${PlacesUtils.sqlBindPlaceholders(
+         chunk,
+         "hash(",
+         ")"
+       )})`,
       chunk
     );
   }
@@ -3118,7 +3122,7 @@ var removeAnnotationsForItems = async function(db, items) {
   let itemIds = items.map(item => item._id);
   await db.executeCached(
     `DELETE FROM moz_items_annos
-     WHERE item_id IN (${sqlBindPlaceholders(itemIds)})`,
+     WHERE item_id IN (${PlacesUtils.sqlBindPlaceholders(itemIds)})`,
     itemIds
   );
   await db.executeCached(
@@ -3434,18 +3438,6 @@ function adjustSeparatorsSyncCounter(
       item_type: Bookmarks.TYPE_SEPARATOR,
     }
   );
-}
-
-
-
-
-
-
-
-
-
-function sqlBindPlaceholders(values, prefix = "", suffix = "") {
-  return new Array(values.length).fill(prefix + "?" + suffix).join(",");
 }
 
 

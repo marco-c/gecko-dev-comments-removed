@@ -232,6 +232,30 @@ var History = Object.freeze({
 
 
 
+  fetchMany(guidOrURIs) {
+    if (!Array.isArray(guidOrURIs)) {
+      throw new TypeError("Input is not an array");
+    }
+    
+    guidOrURIs = guidOrURIs.map(v => PlacesUtils.normalizeToURLOrGUID(v));
+    return PlacesUtils.promiseDBConnection().then(db =>
+      fetchMany(db, guidOrURIs)
+    );
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -850,18 +874,6 @@ function convertForUpdatePlaces(pageInfo) {
 
 
 
-function sqlBindPlaceholders(values, prefix = "", suffix = "") {
-  return new Array(values.length).fill(prefix + "?" + suffix).join(",");
-}
-
-
-
-
-
-
-
-
-
 var invalidateFrecencies = async function(db, idList) {
   if (!idList.length) {
     return;
@@ -870,13 +882,13 @@ var invalidateFrecencies = async function(db, idList) {
     await db.execute(
       `UPDATE moz_places
        SET frecency = CALCULATE_FRECENCY(id)
-       WHERE id in (${sqlBindPlaceholders(chunk)})`,
+       WHERE id in (${PlacesUtils.sqlBindPlaceholders(chunk)})`,
       chunk
     );
     await db.execute(
       `UPDATE moz_places
        SET hidden = 0
-       WHERE id in (${sqlBindPlaceholders(chunk)})
+       WHERE id in (${PlacesUtils.sqlBindPlaceholders(chunk)})
        AND frecency <> 0`,
       chunk
     );
@@ -974,7 +986,7 @@ var cleanupPages = async function(db, pages) {
     let idsToRemove = chunk.map(p => p.id);
     await db.execute(
       `DELETE FROM moz_places
-       WHERE id IN ( ${sqlBindPlaceholders(idsToRemove)} )
+       WHERE id IN ( ${PlacesUtils.sqlBindPlaceholders(idsToRemove)} )
          AND foreign_count = 0 AND last_visit_date ISNULL`,
       idsToRemove
     );
@@ -983,18 +995,20 @@ var cleanupPages = async function(db, pages) {
     let hashesToRemove = chunk.map(p => p.hash);
     await db.executeCached(
       `DELETE FROM moz_pages_w_icons
-       WHERE page_url_hash IN (${sqlBindPlaceholders(hashesToRemove)})`,
+       WHERE page_url_hash IN (${PlacesUtils.sqlBindPlaceholders(
+         hashesToRemove
+       )})`,
       hashesToRemove
     );
 
     await db.execute(
       `DELETE FROM moz_annos
-       WHERE place_id IN ( ${sqlBindPlaceholders(idsToRemove)} )`,
+       WHERE place_id IN ( ${PlacesUtils.sqlBindPlaceholders(idsToRemove)} )`,
       idsToRemove
     );
     await db.execute(
       `DELETE FROM moz_inputhistory
-       WHERE place_id IN ( ${sqlBindPlaceholders(idsToRemove)} )`,
+       WHERE place_id IN ( ${PlacesUtils.sqlBindPlaceholders(idsToRemove)} )`,
       idsToRemove
     );
   }
@@ -1254,6 +1268,64 @@ var fetchAnnotatedPages = async function(db, annotations) {
 };
 
 
+var fetchMany = async function(db, guidOrURLs) {
+  let resultsMap = new Map();
+  for (let chunk of PlacesUtils.chunkArray(guidOrURLs, db.variableLimit)) {
+    let urls = [];
+    let guids = [];
+    for (let v of chunk) {
+      if (v instanceof URL) {
+        urls.push(v);
+      } else {
+        guids.push(v);
+      }
+    }
+    let wheres = [];
+    let params = [];
+    if (urls.length) {
+      wheres.push(`
+        (
+          url_hash IN(${PlacesUtils.sqlBindPlaceholders(
+            urls,
+            "hash(",
+            ")"
+          )}) AND
+          url IN(${PlacesUtils.sqlBindPlaceholders(urls)})
+        )`);
+      let hrefs = urls.map(u => u.href);
+      params = [...params, ...hrefs, ...hrefs];
+    }
+    if (guids.length) {
+      wheres.push(`guid IN(${PlacesUtils.sqlBindPlaceholders(guids)})`);
+      params = [...params, ...guids];
+    }
+
+    let rows = await db.executeCached(
+      `
+      SELECT h.id, guid, url, title, frecency
+      FROM moz_places h
+      WHERE ${wheres.join(" OR ")}
+    `,
+      params
+    );
+    for (let row of rows) {
+      let pageInfo = {
+        guid: row.getResultByName("guid"),
+        url: new URL(row.getResultByName("url")),
+        frecency: row.getResultByName("frecency"),
+        title: row.getResultByName("title") || "",
+      };
+      if (guidOrURLs.includes(pageInfo.guid)) {
+        resultsMap.set(pageInfo.guid, pageInfo);
+      } else {
+        resultsMap.set(pageInfo.url.href, pageInfo);
+      }
+    }
+  }
+  return resultsMap;
+};
+
+
 var removeVisitsByFilter = async function(db, filter, onResult = null) {
   
   
@@ -1331,7 +1403,7 @@ var removeVisitsByFilter = async function(db, filter, onResult = null) {
     )) {
       await db.execute(
         `DELETE FROM moz_historyvisits
-         WHERE id IN (${sqlBindPlaceholders(chunk)})`,
+         WHERE id IN (${PlacesUtils.sqlBindPlaceholders(chunk)})`,
         chunk
       );
     }
@@ -1346,7 +1418,7 @@ var removeVisitsByFilter = async function(db, filter, onResult = null) {
           (foreign_count != 0) AS has_foreign,
           (last_visit_date NOTNULL) as has_visits
          FROM moz_places
-         WHERE id IN (${sqlBindPlaceholders(chunk)})`,
+         WHERE id IN (${PlacesUtils.sqlBindPlaceholders(chunk)})`,
         chunk,
         row => {
           let page = {
@@ -1464,7 +1536,7 @@ var removeByFilter = async function(db, filter, onResult = null) {
     for (let chunk of PlacesUtils.chunkArray(pageIds, db.variableLimit)) {
       await db.execute(
         `DELETE FROM moz_historyvisits
-         WHERE place_id IN(${sqlBindPlaceholders(chunk)})`,
+         WHERE place_id IN(${PlacesUtils.sqlBindPlaceholders(chunk)})`,
         chunk
       );
     }
@@ -1513,7 +1585,7 @@ var remove = async function(db, { guids, urls }, onResult = null) {
   for (let chunk of PlacesUtils.chunkArray(guids, db.variableLimit)) {
     let query = `SELECT id, url, url_hash, guid, foreign_count, title, frecency
        FROM moz_places
-       WHERE guid IN (${sqlBindPlaceholders(guids)})
+       WHERE guid IN (${PlacesUtils.sqlBindPlaceholders(guids)})
       `;
     await db.execute(query, chunk, onRow);
   }
@@ -1545,7 +1617,7 @@ var remove = async function(db, { guids, urls }, onResult = null) {
     for (let chunk of PlacesUtils.chunkArray(pageIds, db.variableLimit)) {
       await db.execute(
         `DELETE FROM moz_historyvisits
-         WHERE place_id IN (${sqlBindPlaceholders(chunk)})`,
+         WHERE place_id IN (${PlacesUtils.sqlBindPlaceholders(chunk)})`,
         chunk
       );
     }

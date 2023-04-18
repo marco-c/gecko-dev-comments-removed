@@ -1931,6 +1931,20 @@ var PlacesUtils = {
 
 
 
+
+  sqlBindPlaceholders(info, prefix = "", suffix = "") {
+    let length = Array.isArray(info) ? info.length : info;
+    return new Array(length).fill(prefix + "?" + suffix).join(",");
+  },
+
+  
+
+
+
+
+
+
+
   md5(data, { format = "ascii" } = {}) {
     gCryptoHash.init(gCryptoHash.MD5);
 
