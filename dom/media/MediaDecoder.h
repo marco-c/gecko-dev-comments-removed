@@ -47,7 +47,7 @@ class ProcessedMediaTrack;
 class FrameStatistics;
 class VideoFrameContainer;
 class MediaFormatReader;
-class MediaDecoderStateMachineBase;
+class MediaDecoderStateMachine;
 struct MediaPlaybackEvent;
 struct SharedDummyTrack;
 
@@ -258,8 +258,8 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   
   virtual void SetLoadInBackground(bool aLoadInBackground) {}
 
-  MediaDecoderStateMachineBase* GetStateMachine() const;
-  void SetStateMachine(MediaDecoderStateMachineBase* aStateMachine);
+  MediaDecoderStateMachine* GetStateMachine() const;
+  void SetStateMachine(MediaDecoderStateMachine* aStateMachine);
 
   
   
@@ -495,7 +495,7 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
 
   void FinishShutdown();
 
-  void ConnectMirrors(MediaDecoderStateMachineBase* aObject);
+  void ConnectMirrors(MediaDecoderStateMachine* aObject);
   void DisconnectMirrors();
 
   virtual bool CanPlayThroughImpl() = 0;
@@ -507,7 +507,7 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   
   
   
-  RefPtr<MediaDecoderStateMachineBase> mDecoderStateMachine;
+  RefPtr<MediaDecoderStateMachine> mDecoderStateMachine;
 
  protected:
   void NotifyReaderDataArrived();

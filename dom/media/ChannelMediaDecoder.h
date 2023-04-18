@@ -102,7 +102,7 @@ class ChannelMediaDecoder
   void DownloadProgressed();
 
   
-  MediaDecoderStateMachineBase* CreateStateMachine();
+  MediaDecoderStateMachine* CreateStateMachine();
 
   nsresult Load(BaseMediaResource* aOriginal);
 
