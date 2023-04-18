@@ -382,7 +382,8 @@ static void AddGLDependencies(SandboxBroker::Policy* policy) {
   
   
 
-  AddX11Dependencies(policy);
+  
+  
 }
 
 void SandboxBrokerPolicyFactory::InitContentPolicy() {
@@ -399,6 +400,7 @@ void SandboxBrokerPolicyFactory::InitContentPolicy() {
 
   if (!headless) {
     AddGLDependencies(policy);
+    AddX11Dependencies(policy);
   }
 
   
@@ -855,6 +857,7 @@ SandboxBrokerPolicyFactory::GetRDDPolicy(int aPid) {
     }
   }
 
+  
   
   AddGLDependencies(policy.get());
 
