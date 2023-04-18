@@ -79,16 +79,23 @@ class ScrollTimeline final : public AnimationTimeline {
       return {StyleScroller::Root, aOwnerDoc->GetDocumentElement()};
     }
 
+    static Scroller Nearest(Element* aElement) {
+      return {StyleScroller::Nearest, aElement};
+    }
+
     explicit operator bool() const { return mElement; }
     bool operator==(const Scroller& aOther) const {
       return mType == aOther.mType && mElement == aOther.mElement;
     }
   };
 
-  
   static already_AddRefed<ScrollTimeline> FromRule(
       const RawServoScrollTimelineRule& aRule, Document* aDocument,
       const NonOwningAnimationTarget& aTarget);
+
+  static already_AddRefed<ScrollTimeline> FromAnonymousScroll(
+      Document* aDocument, const NonOwningAnimationTarget& aTarget,
+      StyleScrollAxis aAxis, StyleScroller aScroller);
 
   bool operator==(const ScrollTimeline& aOther) const {
     return mDocument == aOther.mDocument && mSource == aOther.mSource &&
@@ -177,9 +184,6 @@ class ScrollTimeline final : public AnimationTimeline {
 
   RefPtr<Document> mDocument;
 
-  
-  
-  
   
   
   
