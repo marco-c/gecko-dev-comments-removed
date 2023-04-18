@@ -556,7 +556,6 @@ impl StylesheetInvalidationSet {
             FontFace(..) |
             Keyframes(..) |
             ScrollTimeline(..) |
-            Container(..) |
             Style(..) => {
                 if is_generic_change {
                     
@@ -611,7 +610,7 @@ impl StylesheetInvalidationSet {
                 }
             },
             Document(..) | Namespace(..) | Import(..) | Media(..) | Supports(..) |
-            Container(..) | LayerStatement(..) | LayerBlock(..) => {
+            LayerStatement(..) | LayerBlock(..) => {
                 
                 
             },

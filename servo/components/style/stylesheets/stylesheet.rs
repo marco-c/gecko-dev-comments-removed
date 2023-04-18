@@ -359,7 +359,6 @@ impl SanitizationKind {
             CssRule::Media(..) |
             CssRule::Supports(..) |
             CssRule::Import(..) |
-            CssRule::Container(..) |
             
             
             CssRule::LayerStatement(..) |
