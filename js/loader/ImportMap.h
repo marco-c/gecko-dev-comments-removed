@@ -17,6 +17,7 @@
 #include "mozilla/UniquePtr.h"
 #include "nsStringFwd.h"
 #include "nsTArray.h"
+#include "ResolveResult.h"
 
 struct JSContext;
 class nsIScriptElement;
@@ -74,6 +75,17 @@ class ImportMap {
   static mozilla::UniquePtr<ImportMap> ParseString(
       JSContext* aCx, JS::SourceText<char16_t>& aInput, nsIURI* aBaseURL,
       const ReportWarningHelper& aWarning);
+
+  
+
+
+
+
+
+  static ResolveResult ResolveModuleSpecifier(ImportMap* aImportMap,
+                                              ScriptLoaderInterface* aLoader,
+                                              LoadedScript* aScript,
+                                              const nsAString& aSpecifier);
 
   
   static mozilla::LazyLogModule gImportMapLog;

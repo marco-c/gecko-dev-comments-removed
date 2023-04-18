@@ -9,7 +9,8 @@
 #include "js/Array.h"                 
 #include "js/friend/ErrorMessages.h"  
 #include "js/JSON.h"                  
-#include "ModuleLoaderBase.h"         
+#include "LoadedScript.h"
+#include "ModuleLoaderBase.h"  
 #include "nsContentUtils.h"
 #include "nsIScriptElement.h"
 #include "nsIScriptError.h"
@@ -18,9 +19,11 @@
 #include "ScriptLoadRequest.h"
 
 using JS::SourceText;
+using mozilla::Err;
 using mozilla::LazyLogModule;
 using mozilla::MakeUnique;
 using mozilla::UniquePtr;
+using mozilla::WrapNotNull;
 
 namespace JS::loader {
 
@@ -434,6 +437,225 @@ UniquePtr<ImportMap> ImportMap::ParseString(
   
   return MakeUnique<ImportMap>(std::move(sortedAndNormalizedImports),
                                std::move(sortedAndNormalizedScopes));
+}
+
+
+static bool IsSpecialScheme(nsIURI* aURI) {
+  nsAutoCString scheme;
+  aURI->GetScheme(scheme);
+  return scheme.EqualsLiteral("ftp") || scheme.EqualsLiteral("file") ||
+         scheme.EqualsLiteral("http") || scheme.EqualsLiteral("https") ||
+         scheme.EqualsLiteral("ws") || scheme.EqualsLiteral("wss");
+}
+
+
+static mozilla::Result<nsCOMPtr<nsIURI>, ResolveError> ResolveImportsMatch(
+    nsString& aNormalizedSpecifier, nsIURI* aAsURL,
+    const SpecifierMap* aSpecifierMap) {
+  
+  for (auto&& [specifierKey, resolutionResult] : *aSpecifierMap) {
+    nsAutoString specifier{aNormalizedSpecifier};
+    nsCString asURL = aAsURL ? aAsURL->GetSpecOrDefault() : EmptyCString();
+
+    
+    if (specifierKey.Equals(aNormalizedSpecifier)) {
+      
+      
+      
+      
+      if (!resolutionResult) {
+        LOG(
+            ("ImportMap::ResolveImportsMatch normalizedSpecifier: %s, "
+             "specifierKey: %s, but resolution is null.",
+             NS_ConvertUTF16toUTF8(aNormalizedSpecifier).get(),
+             NS_ConvertUTF16toUTF8(specifierKey).get()));
+        return Err(ResolveError::BlockedByNullEntry);
+      }
+
+      
+      MOZ_ASSERT(resolutionResult);
+
+      
+      return resolutionResult;
+    }
+
+    
+    
+    
+    
+    if (StringEndsWith(specifierKey, u"/"_ns) &&
+        StringBeginsWith(aNormalizedSpecifier, specifierKey) &&
+        (!aAsURL || IsSpecialScheme(aAsURL))) {
+      
+      
+      
+      
+      if (!resolutionResult) {
+        LOG(
+            ("ImportMap::ResolveImportsMatch normalizedSpecifier: %s, "
+             "specifierKey: %s, but resolution is null.",
+             NS_ConvertUTF16toUTF8(aNormalizedSpecifier).get(),
+             NS_ConvertUTF16toUTF8(specifierKey).get()));
+        return Err(ResolveError::BlockedByNullEntry);
+      }
+
+      
+      MOZ_ASSERT(resolutionResult);
+
+      
+      
+      nsAutoString afterPrefix(
+          Substring(aNormalizedSpecifier, specifierKey.Length()));
+
+      
+      
+      MOZ_ASSERT(StringEndsWith(resolutionResult->GetSpecOrDefault(), "/"_ns));
+
+      
+      
+      nsCOMPtr<nsIURI> url;
+      nsresult rv = NS_NewURI(getter_AddRefs(url), afterPrefix, nullptr,
+                              resolutionResult);
+
+      
+      
+      
+      
+      
+      
+      
+      if (NS_FAILED(rv)) {
+        LOG(
+            ("ImportMap::ResolveImportsMatch normalizedSpecifier: %s, "
+             "specifierKey: %s, resolutionResult: %s, afterPrefix: %s, "
+             "but URL is not parsable.",
+             NS_ConvertUTF16toUTF8(aNormalizedSpecifier).get(),
+             NS_ConvertUTF16toUTF8(specifierKey).get(),
+             resolutionResult->GetSpecOrDefault().get(),
+             NS_ConvertUTF16toUTF8(afterPrefix).get()));
+        return Err(ResolveError::BlockedByAfterPrefix);
+      }
+
+      
+      MOZ_ASSERT(url);
+
+      
+      
+      
+      
+      
+      
+      
+      if (!StringBeginsWith(url->GetSpecOrDefault(),
+                            resolutionResult->GetSpecOrDefault())) {
+        LOG(
+            ("ImportMap::ResolveImportsMatch normalizedSpecifier: %s, "
+             "specifierKey: %s, "
+             "url %s does not start with resolutionResult %s.",
+             NS_ConvertUTF16toUTF8(aNormalizedSpecifier).get(),
+             NS_ConvertUTF16toUTF8(specifierKey).get(),
+             url->GetSpecOrDefault().get(),
+             resolutionResult->GetSpecOrDefault().get()));
+        return Err(ResolveError::BlockedByBacktrackingPrefix);
+      }
+
+      
+      return std::move(url);
+    }
+  }
+
+  
+  return nsCOMPtr<nsIURI>(nullptr);
+}
+
+
+
+ResolveResult ImportMap::ResolveModuleSpecifier(ImportMap* aImportMap,
+                                                ScriptLoaderInterface* aLoader,
+                                                LoadedScript* aScript,
+                                                const nsAString& aSpecifier) {
+  LOG(("ImportMap::ResolveModuleSpecifier specifier: %s",
+       NS_ConvertUTF16toUTF8(aSpecifier).get()));
+  nsCOMPtr<nsIURI> baseURL;
+  if (aScript) {
+    baseURL = aScript->BaseURL();
+  } else {
+    baseURL = aLoader->GetBaseURI();
+  }
+
+  
+  
+  
+  
+  nsCOMPtr<nsIURI> asURL = ParseURLLikeImportSpecifier(aSpecifier, baseURL);
+
+  if (aImportMap) {
+    
+    nsCString baseURLString = baseURL->GetSpecOrDefault();
+
+    
+    
+    nsAutoString normalizedSpecifier =
+        asURL ? NS_ConvertUTF8toUTF16(asURL->GetSpecOrDefault())
+              : nsAutoString{aSpecifier};
+
+    
+    for (auto&& [scopePrefix, scopeImports] : *aImportMap->mScopes) {
+      
+      
+      if (scopePrefix.Equals(baseURLString) ||
+          (StringEndsWith(scopePrefix, "/"_ns) &&
+           StringBeginsWith(baseURLString, scopePrefix))) {
+        
+        
+        auto result =
+            ResolveImportsMatch(normalizedSpecifier, asURL, scopeImports.get());
+        if (result.isErr()) {
+          return result.propagateErr();
+        }
+
+        nsCOMPtr<nsIURI> scopeImportsMatch = result.unwrap();
+        
+        
+        if (scopeImportsMatch) {
+          LOG((
+              "ImportMap::ResolveModuleSpecifier returns scopeImportsMatch: %s",
+              scopeImportsMatch->GetSpecOrDefault().get()));
+          return WrapNotNull(scopeImportsMatch);
+        }
+      }
+    }
+
+    
+    
+    auto result = ResolveImportsMatch(normalizedSpecifier, asURL,
+                                      aImportMap->mImports.get());
+    if (result.isErr()) {
+      return result.propagateErr();
+    }
+    nsCOMPtr<nsIURI> topLevelImportsMatch = result.unwrap();
+
+    
+    
+    if (topLevelImportsMatch) {
+      LOG(("ImportMap::ResolveModuleSpecifier returns topLevelImportsMatch: %s",
+           topLevelImportsMatch->GetSpecOrDefault().get()));
+      return WrapNotNull(topLevelImportsMatch);
+    }
+  }
+
+  
+  
+  
+  if (asURL) {
+    LOG(("ImportMap::ResolveModuleSpecifier returns asURL: %s",
+         asURL->GetSpecOrDefault().get()));
+    return WrapNotNull(asURL);
+  }
+
+  
+  
+  return Err(ResolveError::InvalidBareSpecifier);
 }
 
 #undef LOG

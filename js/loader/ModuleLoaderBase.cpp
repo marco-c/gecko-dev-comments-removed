@@ -579,7 +579,18 @@ nsresult ModuleLoaderBase::HandleResolveFailure(
 
 ResolveResult ModuleLoaderBase::ResolveModuleSpecifier(
     LoadedScript* aScript, const nsAString& aSpecifier) {
+  bool importMapsEnabled = Preferences::GetBool("dom.importMaps.enabled");
   
+  
+  
+  
+  
+  
+  if (importMapsEnabled) {
+    return ImportMap::ResolveModuleSpecifier(mImportMap.get(), mLoader, aScript,
+                                             aSpecifier);
+  }
+
   
   
   
