@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "SocketProcessChild.h"
 #include "SocketProcessLogging.h"
@@ -20,6 +20,8 @@
 #include "mozilla/ipc/CrashReporterClient.h"
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/BackgroundParent.h"
+#include "mozilla/ipc/FileDescriptorSetChild.h"
+#include "mozilla/ipc/IPCStreamAlloc.h"
 #include "mozilla/ipc/ProcessChild.h"
 #include "mozilla/net/AltSvcTransactionChild.h"
 #include "mozilla/net/BackgroundDataBridgeParent.h"
@@ -28,6 +30,8 @@
 #include "mozilla/net/NativeDNSResolverOverrideChild.h"
 #include "mozilla/net/ProxyAutoConfigChild.h"
 #include "mozilla/net/TRRServiceChild.h"
+#include "mozilla/ipc/PChildToParentStreamChild.h"
+#include "mozilla/ipc/PParentToChildStreamChild.h"
 #include "mozilla/ipc/ProcessUtils.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/RemoteLazyInputStreamChild.h"
@@ -94,7 +98,7 @@ SocketProcessChild::~SocketProcessChild() {
   sSocketProcessChild = nullptr;
 }
 
-/* static */
+
 SocketProcessChild* SocketProcessChild::GetSingleton() {
   return sSocketProcessChild;
 }
@@ -114,17 +118,17 @@ bool SocketProcessChild::Init(base::ProcessId aParentPid,
   if (NS_WARN_IF(!Open(std::move(aPort), aParentPid))) {
     return false;
   }
-  // This must be sent before any IPDL message, which may hit sentinel
-  // errors due to parent and content processes having different
-  // versions.
+  
+  
+  
   MessageChannel* channel = GetIPCChannel();
   if (channel && !channel->SendBuildIDsMatchMessage(aParentBuildID)) {
-    // We need to quit this process if the buildID doesn't match the parent's.
-    // This can occur when an update occurred in the background.
+    
+    
     ProcessChild::QuickExit();
   }
 
-  // Init crash reporter support.
+  
   CrashReporterClient::InitSingleton(this);
 
   if (NS_FAILED(NS_InitMinimalXPCOM())) {
@@ -136,11 +140,11 @@ bool SocketProcessChild::Init(base::ProcessId aParentPid,
 
   SetThisProcessName("Socket Process");
 #if defined(XP_MACOSX)
-  // Close all current connections to the WindowServer. This ensures that the
-  // Activity Monitor will not label the socket process as "Not responding"
-  // because it's not running a native event loop. See bug 1384336.
+  
+  
+  
   CGSShutdownServerConnections();
-#endif  // XP_MACOSX
+#endif  
 
   nsresult rv;
   nsCOMPtr<nsIIOService> ios = do_GetIOService(&rv);
@@ -154,7 +158,7 @@ bool SocketProcessChild::Init(base::ProcessId aParentPid,
     return false;
   }
 
-  // Initialize DNS Service here, since it needs to be done in main thread.
+  
   nsCOMPtr<nsIDNSService> dns =
       do_GetService("@mozilla.org/network/dns-service;1", &rv);
   if (NS_FAILED(rv)) {
@@ -178,7 +182,7 @@ void SocketProcessChild::ActorDestroy(ActorDestroyReason aWhy) {
     ProcessChild::QuickExit();
   }
 
-  // Send the last bits of Glean data over to the main process.
+  
   glean::FlushFOGData(
       [](ByteBuf&& aBuf) { glean::SendFOGData(std::move(aBuf)); });
 
@@ -223,7 +227,7 @@ mozilla::ipc::IPCResult SocketProcessChild::RecvInit(
   RefPtr<DllServices> dllSvc(DllServices::Get());
   dllSvc->StartUntrustedModulesProcessor(
       aAttributes.mIsReadyForBackgroundProcessing());
-#endif  // defined(XP_WIN)
+#endif  
 
   return IPC_OK();
 }
@@ -280,7 +284,7 @@ mozilla::ipc::IPCResult SocketProcessChild::RecvInitLinuxSandbox(
     fd = aBrokerFd.value().ClonePlatformHandle().release();
   }
   SetSocketProcessSandbox(fd);
-#endif  // XP_LINUX && MOZ_SANDBOX
+#endif  
   return IPC_OK();
 }
 
@@ -329,8 +333,8 @@ void SocketProcessChild::DestroySocketProcessBridgeParent(ProcessId aId) {
 
 PWebrtcTCPSocketChild* SocketProcessChild::AllocPWebrtcTCPSocketChild(
     const Maybe<TabId>& tabId) {
-  // We don't allocate here: instead we always use IPDL constructor that takes
-  // an existing object
+  
+  
   MOZ_ASSERT_UNREACHABLE(
       "AllocPWebrtcTCPSocketChild should not be called on"
       " socket child");
@@ -350,6 +354,52 @@ already_AddRefed<PHttpTransactionChild>
 SocketProcessChild::AllocPHttpTransactionChild() {
   RefPtr<HttpTransactionChild> actor = new HttpTransactionChild();
   return actor.forget();
+}
+
+PFileDescriptorSetChild* SocketProcessChild::AllocPFileDescriptorSetChild(
+    const FileDescriptor& aFD) {
+  return new FileDescriptorSetChild(aFD);
+}
+
+bool SocketProcessChild::DeallocPFileDescriptorSetChild(
+    PFileDescriptorSetChild* aActor) {
+  delete aActor;
+  return true;
+}
+
+PChildToParentStreamChild*
+SocketProcessChild::AllocPChildToParentStreamChild() {
+  MOZ_CRASH("PChildToParentStreamChild actors should be manually constructed!");
+}
+
+bool SocketProcessChild::DeallocPChildToParentStreamChild(
+    PChildToParentStreamChild* aActor) {
+  delete aActor;
+  return true;
+}
+
+PParentToChildStreamChild*
+SocketProcessChild::AllocPParentToChildStreamChild() {
+  return mozilla::ipc::AllocPParentToChildStreamChild();
+}
+
+bool SocketProcessChild::DeallocPParentToChildStreamChild(
+    PParentToChildStreamChild* aActor) {
+  delete aActor;
+  return true;
+}
+
+PChildToParentStreamChild*
+SocketProcessChild::SendPChildToParentStreamConstructor(
+    PChildToParentStreamChild* aActor) {
+  MOZ_ASSERT(NS_IsMainThread());
+  return PSocketProcessChild::SendPChildToParentStreamConstructor(aActor);
+}
+
+PFileDescriptorSetChild* SocketProcessChild::SendPFileDescriptorSetConstructor(
+    const FileDescriptor& aFD) {
+  MOZ_ASSERT(NS_IsMainThread());
+  return PSocketProcessChild::SendPFileDescriptorSetConstructor(aFD);
 }
 
 already_AddRefed<PHttpConnectionMgrChild>
@@ -503,12 +553,20 @@ mozilla::ipc::IPCResult SocketProcessChild::RecvNotifyObserver(
   return IPC_OK();
 }
 
+already_AddRefed<PRemoteLazyInputStreamChild>
+SocketProcessChild::AllocPRemoteLazyInputStreamChild(const nsID& aID,
+                                                     const uint64_t& aSize) {
+  RefPtr<RemoteLazyInputStreamChild> actor =
+      new RemoteLazyInputStreamChild(aID, aSize);
+  return actor.forget();
+}
+
 namespace {
 
 class DataResolverBase {
  public:
-  // This type is threadsafe-refcounted, as it's referenced on the socket
-  // thread, but must be destroyed on the main thread.
+  
+  
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_DELETE_ON_MAIN_THREAD(
       DataResolverBase)
 
@@ -541,7 +599,7 @@ class DataResolver final : public DataResolverBase {
   DataType mData;
 };
 
-}  // anonymous namespace
+}  
 
 mozilla::ipc::IPCResult SocketProcessChild::RecvGetSocketData(
     GetSocketDataResolver&& aResolve) {
@@ -624,7 +682,7 @@ mozilla::ipc::IPCResult SocketProcessChild::RecvGetHttpConnectionData(
 
 mozilla::ipc::IPCResult SocketProcessChild::RecvInitProxyAutoConfigChild(
     Endpoint<PProxyAutoConfigChild>&& aEndpoint) {
-  // For parsing PAC.
+  
   if (!sInitializedJS) {
     JS::DisableJitBackend();
 
@@ -694,7 +752,7 @@ SocketProcessChild::RecvUnblockUntrustedModulesThread() {
   }
   return IPC_OK();
 }
-#endif  // defined(XP_WIN)
+#endif  
 
-}  // namespace net
-}  // namespace mozilla
+}  
+}  

@@ -1,13 +1,35 @@
 "use strict";
+const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 
 const { PromptTestUtils } = ChromeUtils.import(
   "resource://testing-common/PromptTestUtils.jsm"
 );
 
+async function createTestFile(filename, content) {
+  let path = OS.Path.join(OS.Constants.Path.tmpDir, filename);
+  await OS.File.writeAtomic(path, content);
+  return path;
+}
+
+async function readFile(path) {
+  var array = await OS.File.read(path);
+  var decoder = new TextDecoder();
+  return decoder.decode(array);
+}
+
 const FOLDER = getRootDirectory(gTestPath).replace(
   "chrome://mochitests/content/",
   "http://mochi.test:8888/"
 );
+
+add_setup(async function() {
+  await SpecialPowers.pushPrefEnv({
+    
+    
+    
+    set: [["fission.bfcacheInParent", false]],
+  });
+});
 
 add_task(async function() {
   let tab = await BrowserTestUtils.openNewForegroundTab(
@@ -22,15 +44,11 @@ add_task(async function() {
   BrowserTestUtils.loadURI(tab.linkedBrowser, `${FOLDER}post.html`);
   await browserLoadedPromise;
 
-  let finalLoadPromise = BrowserTestUtils.browserLoaded(
-    tab.linkedBrowser,
-    true,
-    `${FOLDER}auth_post.sjs`
-  );
-
   await SpecialPowers.spawn(tab.linkedBrowser, [], async function() {
-    let file = new content.File(
-      [new content.Blob(["1234".repeat(1024 * 500)], { type: "text/plain" })],
+    
+    Cu.importGlobalProperties(["File"]);
+    let file = new File(
+      [new Blob(["1234".repeat(1024 * 500)], { type: "text/plain" })],
       "test-name"
     );
     content.document.getElementById("input_file").mozSetFileArray([file]);
@@ -48,6 +66,22 @@ add_task(async function() {
 
   await promptPromise;
 
+  
+  
+  
+  await BrowserTestUtils.browserStopped(tab.linkedBrowser);
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async function() {
+    Assert.ok(content.location.href.includes("post.html"));
+  });
+
+  let finalLoadPromise = BrowserTestUtils.browserLoaded(
+    tab.linkedBrowser,
+    true,
+    `${FOLDER}auth_post.sjs`
+  );
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async function() {
+    content.document.getElementById("form").submit();
+  });
   await finalLoadPromise;
 
   await SpecialPowers.spawn(tab.linkedBrowser, [], async function() {
@@ -56,7 +90,4 @@ add_task(async function() {
   });
 
   BrowserTestUtils.removeTab(tab);
-
-  
-  Services.obs.notifyObservers(null, "net:clear-active-logins");
 });

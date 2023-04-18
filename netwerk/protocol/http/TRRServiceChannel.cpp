@@ -180,9 +180,9 @@ TRRServiceChannel::AsyncOpen(nsIStreamListener* aListener) {
   
   
 #ifdef NIGHTLY_BUILD
-  MOZ_ASSERT(!LoadPendingUploadStreamNormalization());
+  MOZ_ASSERT(!LoadPendingInputStreamLengthOperation());
 #endif
-  if (LoadPendingUploadStreamNormalization()) {
+  if (LoadPendingInputStreamLengthOperation()) {
     return NS_ERROR_FAILURE;
   }
 

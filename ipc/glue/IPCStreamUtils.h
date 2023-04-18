@@ -11,23 +11,22 @@
 #include "nsCOMPtr.h"
 #include "nsIInputStream.h"
 
-namespace mozilla::ipc {
+namespace mozilla {
 
+namespace dom {
+class ContentChild;
+class ContentParent;
+}  
 
+namespace net {
+class SocketProcessParent;
+class SocketProcessChild;
+}  
 
+namespace ipc {
 
-
-
-
-
-[[nodiscard]] bool SerializeIPCStream(
-    already_AddRefed<nsIInputStream> aInputStream, IPCStream& aValue,
-    bool aAllowLazy);
-
-
-
-bool SerializeIPCStream(already_AddRefed<nsIInputStream> aInputStream,
-                        Maybe<IPCStream>& aValue, bool aAllowLazy);
+class PBackgroundChild;
+class PBackgroundParent;
 
 
 
@@ -36,16 +35,186 @@ already_AddRefed<nsIInputStream> DeserializeIPCStream(const IPCStream& aValue);
 already_AddRefed<nsIInputStream> DeserializeIPCStream(
     const Maybe<IPCStream>& aValue);
 
-}  
 
-namespace IPC {
 
-template <>
-struct ParamTraits<nsIInputStream*> {
-  static void Write(MessageWriter* aWriter, nsIInputStream* aParam);
-  static bool Read(MessageReader* aReader, RefPtr<nsIInputStream>* aResult);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class AutoIPCStream {
+ public:
+  
+  
+  explicit AutoIPCStream(bool aDelayedStart = false);
+
+  
+  
+  
+  explicit AutoIPCStream(IPCStream& aTarget, bool aDelayedStart = false);
+
+  
+  
+  explicit AutoIPCStream(Maybe<IPCStream>& aTarget, bool aDelayedStart = false);
+
+  AutoIPCStream(const AutoIPCStream&) = delete;
+  AutoIPCStream(AutoIPCStream&&) = delete;
+
+  AutoIPCStream& operator=(const AutoIPCStream&) = delete;
+  AutoIPCStream& operator=(AutoIPCStream&&) = delete;
+
+  ~AutoIPCStream();
+
+  
+  
+  
+  bool Serialize(nsIInputStream* aStream, dom::ContentChild* aManager);
+
+  
+  
+  
+  bool Serialize(nsIInputStream* aStream, PBackgroundChild* aManager);
+
+  
+  
+  
+  bool Serialize(nsIInputStream* aStream, net::SocketProcessChild* aManager);
+
+  
+  [[nodiscard]] bool Serialize(nsIInputStream* aStream,
+                               dom::ContentParent* aManager);
+
+  
+  [[nodiscard]] bool Serialize(nsIInputStream* aStream,
+                               PBackgroundParent* aManager);
+
+  
+  [[nodiscard]] bool Serialize(nsIInputStream* aStream,
+                               net::SocketProcessParent* aManager);
+
+  
+  
+  
+  
+  IPCStream& TakeValue();
+
+  
+  
+  
+  Maybe<IPCStream>& TakeOptionalValue();
+
+ private:
+  bool IsSet() const;
+
+  Maybe<IPCStream> mInlineValue;
+  IPCStream* const mValue = nullptr;
+  Maybe<IPCStream>* const mOptionalValue = nullptr;
+  bool mTaken = false;
+  const bool mDelayedStart;
 };
 
+class HoldIPCStream final : public AutoIPCStream {
+ public:
+  NS_INLINE_DECL_REFCOUNTING(HoldIPCStream)
+
+  using AutoIPCStream::AutoIPCStream;
+
+ private:
+  ~HoldIPCStream() = default;
+};
+
+template <>
+struct IPDLParamTraits<nsIInputStream*> {
+  static void Write(IPC::MessageWriter* aWriter, IProtocol* aActor,
+                    nsIInputStream* aParam);
+  static bool Read(IPC::MessageReader* aReader, IProtocol* aActor,
+                   RefPtr<nsIInputStream>* aResult);
+};
+
+}  
 }  
 
 #endif  

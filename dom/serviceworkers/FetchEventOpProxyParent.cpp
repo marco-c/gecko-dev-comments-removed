@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "FetchEventOpProxyParent.h"
 
@@ -25,6 +25,7 @@
 #include "mozilla/dom/FetchEventOpParent.h"
 #include "mozilla/ipc/BackgroundParent.h"
 #include "mozilla/ipc/IPCStreamUtils.h"
+#include "mozilla/RemoteLazyInputStreamUtils.h"
 #include "mozilla/RemoteLazyInputStreamStorage.h"
 
 namespace mozilla {
@@ -57,7 +58,7 @@ nsresult MaybeDeserializeAndWrapForMainThread(
   }
 
   auto storage = storageOrErr.unwrap();
-  storage->AddStream(deserialized, uuid);
+  storage->AddStream(deserialized, uuid, aBodyStreamSize, 0);
   return NS_OK;
 }
 
@@ -105,9 +106,9 @@ ParentToParentFetchEventRespondWithResult ToParentToParent(
   }
 }
 
-}  // anonymous namespace
+}  
 
-/* static */ void FetchEventOpProxyParent::Create(
+ void FetchEventOpProxyParent::Create(
     PRemoteWorkerParent* aManager,
     RefPtr<ServiceWorkerFetchEventOpPromise::Private>&& aPromise,
     const ParentToParentServiceWorkerFetchEventOpArgs& aArgs,
@@ -120,7 +121,7 @@ ParentToParentFetchEventRespondWithResult ToParentToParent(
   ParentToChildServiceWorkerFetchEventOpArgs copyArgs(aArgs.common(),
                                                       Nothing());
   if (aArgs.preloadResponse().isSome()) {
-    // Convert the preload response to ParentToChildResponseWithTiming.
+    
     ParentToChildResponseWithTiming response;
     response.response() =
         ToParentToChild(aArgs.preloadResponse().ref().response(),
@@ -134,12 +135,12 @@ ParentToParentFetchEventRespondWithResult ToParentToParent(
   FetchEventOpProxyParent* actor =
       new FetchEventOpProxyParent(std::move(aReal), std::move(aPromise));
 
-  // As long as the fetch event was pending, the FetchEventOpParent was
-  // responsible for keeping the preload response, if it already arrived. Once
-  // the fetch event starts it gives up the preload response (if any) and we
-  // need to add it to the arguments. Note that we have to make sure that the
-  // arguments don't contain the preload response already, otherwise we'll end
-  // up overwriting it with a Nothing.
+  
+  
+  
+  
+  
+  
   Maybe<ParentToParentResponseWithTiming> preloadResponse =
       actor->mReal->OnStart(WrapNotNull(actor));
   if (copyArgs.preloadResponse().isNothing() && preloadResponse.isSome()) {
@@ -155,13 +156,17 @@ ParentToParentFetchEventRespondWithResult ToParentToParent(
   IPCInternalRequest& copyRequest = copyArgs.common().internalRequest();
 
   if (aBodyStream) {
+    PBackgroundParent* bgParent = aManager->Manager();
+    MOZ_ASSERT(bgParent);
+
     copyRequest.body() = Some(ParentToChildStream());
 
-    RefPtr<RemoteLazyInputStream> stream =
-        RemoteLazyInputStream::WrapStream(aBodyStream);
-    MOZ_DIAGNOSTIC_ASSERT(stream);
+    RemoteLazyStream ipdlStream;
+    MOZ_ALWAYS_SUCCEEDS(RemoteLazyInputStreamUtils::SerializeInputStream(
+        aBodyStream, copyRequest.bodySize(), ipdlStream, bgParent));
 
-    copyRequest.body().ref().get_ParentToChildStream().stream() = stream;
+    copyRequest.body().ref().get_ParentToChildStream().actorParent() =
+        ipdlStream;
   }
 
   Unused << aManager->SendPFetchEventOpProxyConstructor(actor, copyArgs);
@@ -225,5 +230,5 @@ void FetchEventOpProxyParent::ActorDestroy(ActorDestroyReason) {
   }
 }
 
-}  // namespace dom
-}  // namespace mozilla
+}  
+}  

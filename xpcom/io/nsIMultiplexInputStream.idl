@@ -10,13 +10,13 @@
 
 
 
-[scriptable, builtinclass, uuid(a076fd12-1dd1-11b2-b19a-d53b5dffaade)]
+[scriptable, uuid(a076fd12-1dd1-11b2-b19a-d53b5dffaade)]
 interface nsIMultiplexInputStream : nsISupports
 {
     
 
 
-    [infallible] readonly attribute unsigned long count;
+    readonly attribute unsigned long count;
 
     
 

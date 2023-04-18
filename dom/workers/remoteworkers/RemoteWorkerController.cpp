@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "RemoteWorkerController.h"
 
@@ -13,6 +13,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/RemoteLazyInputStreamUtils.h"
 #include "mozilla/RemoteLazyInputStreamStorage.h"
 #include "mozilla/dom/FetchEventOpParent.h"
 #include "mozilla/dom/FetchEventOpProxyParent.h"
@@ -31,7 +32,7 @@ using namespace ipc;
 
 namespace dom {
 
-/* static */
+
 already_AddRefed<RemoteWorkerController> RemoteWorkerController::Create(
     const RemoteWorkerData& aData, RemoteWorkerObserver* aObserver,
     base::ProcessId aProcessId) {
@@ -77,8 +78,8 @@ void RemoteWorkerController::NoteDeadWorkerActor() {
   AssertIsOnBackgroundThread();
   MOZ_ASSERT(mActor);
 
-  // The actor has been destroyed without a proper close() notification. Let's
-  // inform the observer.
+  
+  
   if (mState == eReady) {
     mObserver->Terminated();
   }
@@ -96,7 +97,7 @@ void RemoteWorkerController::CreationFailed() {
   if (mState == eTerminated) {
     MOZ_ASSERT(!mActor);
     MOZ_ASSERT(mPendingOps.IsEmpty());
-    // Nothing to do.
+    
     return;
   }
 
@@ -112,7 +113,7 @@ void RemoteWorkerController::CreationSucceeded() {
   if (mState == eTerminated) {
     MOZ_ASSERT(!mActor);
     MOZ_ASSERT(mPendingOps.IsEmpty());
-    // Nothing to do.
+    
     return;
   }
 
@@ -178,10 +179,10 @@ void RemoteWorkerController::Shutdown() {
 
   mActor->SetController(nullptr);
 
-  /**
-   * The "non-remote-side" of the Service Worker will have ensured that the
-   * remote worker is terminated before calling `Shutdown().`
-   */
+  
+
+
+
   if (mIsServiceWorker) {
     mActor->MaybeSendDelete();
   } else {
@@ -196,11 +197,11 @@ void RemoteWorkerController::NoteDeadWorker() {
 
   CancelAllPendingOps();
 
-  /**
-   * The "non-remote-side" of the Service Worker will initiate `Shutdown()`
-   * once it's notified that all dispatched operations have either completed
-   * or canceled. That is, it'll explicitly call `Shutdown()` later.
-   */
+  
+
+
+
+
   if (!mIsServiceWorker) {
     Shutdown();
   }
@@ -401,7 +402,7 @@ void RemoteWorkerController::PendingSharedWorkerOp::Cancel() {
   AssertIsOnBackgroundThread();
   MOZ_ASSERT(!mCompleted);
 
-  // We don't want to leak the port if the operation has not been processed.
+  
   if (mType == ePortIdentifier) {
     MessagePortParent::ForceClose(mPortIdentifier.uuid(),
                                   mPortIdentifier.destinationUuid(),
@@ -436,10 +437,10 @@ bool RemoteWorkerController::PendingServiceWorkerOp::MaybeStart(
     return true;
   }
 
-  // The target content process must still be starting up.
+  
   if (!aOwner->mActor) {
-    // We can avoid starting the worker at all if we know it should be
-    // terminated.
+    
+    
     MOZ_ASSERT(aOwner->mState == RemoteWorkerController::ePending);
     if (mArgs.type() ==
         ServiceWorkerOpArgs::TServiceWorkerTerminateWorkerOpArgs) {
@@ -454,10 +455,10 @@ bool RemoteWorkerController::PendingServiceWorkerOp::MaybeStart(
     return false;
   }
 
-  /**
-   * Allow termination operations to pass through while pending because the
-   * remote Service Worker can be terminated while still starting up.
-   */
+  
+
+
+
   if (aOwner->mState == RemoteWorkerController::ePending &&
       mArgs.type() !=
           ServiceWorkerOpArgs::TServiceWorkerTerminateWorkerOpArgs) {
@@ -496,8 +497,8 @@ bool RemoteWorkerController::PendingServiceWorkerOp::MaybeStart(
       return true;
     }
 
-    // copyArgs depends on mArgs due to
-    // BuildClonedMessageDataForBackgroundParent.
+    
+    
     send(std::move(copyArgs));
   } else {
     send(mArgs);
@@ -522,8 +523,8 @@ RemoteWorkerController::PendingSWFetchEventOp::PendingSWFetchEventOp(
   AssertIsOnBackgroundThread();
   MOZ_ASSERT(mPromise);
 
-  // If there is a TParentToParentStream in the request body, we need to
-  // save it to our stream.
+  
+  
   IPCInternalRequest& req = mArgs.common().internalRequest();
   if (req.body().isSome() &&
       req.body().ref().type() == BodyStreamVariant::TParentToParentStream) {
@@ -556,19 +557,19 @@ bool RemoteWorkerController::PendingSWFetchEventOp::MaybeStart(
   if (NS_WARN_IF(aOwner->mState == RemoteWorkerController::eTerminated)) {
     mPromise->Reject(NS_ERROR_DOM_ABORT_ERR, __func__);
     mPromise = nullptr;
-    // Because the worker has transitioned to terminated, this operation is moot
-    // and so we should return true because there's no need to queue it.
+    
+    
     return true;
   }
 
-  // The target content process must still be starting up.
+  
   if (!aOwner->mActor) {
     MOZ_ASSERT(aOwner->mState == RemoteWorkerController::ePending);
     return false;
   }
 
-  // At this point we are handing off responsibility for the promise to the
-  // actor.
+  
+  
   FetchEventOpProxyParent::Create(aOwner->mActor.get(), std::move(mPromise),
                                   mArgs, std::move(mReal),
                                   std::move(mBodyStream));
@@ -586,5 +587,5 @@ void RemoteWorkerController::PendingSWFetchEventOp::Cancel() {
   }
 }
 
-}  // namespace dom
-}  // namespace mozilla
+}  
+}  

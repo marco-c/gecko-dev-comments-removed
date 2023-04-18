@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "ServiceWorkerPrivateImpl.h"
 
@@ -49,9 +49,9 @@
 #include "mozilla/dom/ReferrerInfo.h"
 #include "mozilla/dom/RemoteType.h"
 #include "mozilla/dom/RemoteWorkerControllerChild.h"
-#include "mozilla/dom/RemoteWorkerManager.h"  // RemoteWorkerManager::GetRemoteType
+#include "mozilla/dom/RemoteWorkerManager.h"  
 #include "mozilla/dom/ServiceWorkerBinding.h"
-#include "mozilla/extensions/WebExtensionPolicy.h"  // WebExtensionPolicy
+#include "mozilla/extensions/WebExtensionPolicy.h"  
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/IPCStreamUtils.h"
 #include "mozilla/ipc/URIUtils.h"
@@ -173,12 +173,12 @@ nsresult ServiceWorkerPrivateImpl::Initialize() {
       net::CookieJarSettings::Create(principal);
   MOZ_ASSERT(cookieJarSettings);
 
-  // We can populate the partitionKey from the originAttribute of the principal
-  // if it has partitionKey set. It's because ServiceWorker is using the foreign
-  // partitioned principal and it implies that it's a third-party service
-  // worker. So, the cookieJarSettings can directly use the partitionKey from
-  // it. For first-party case, we can populate the partitionKey from the
-  // principal URI.
+  
+  
+  
+  
+  
+  
   if (!principal->OriginAttributesRef().mPartitionKey.IsEmpty()) {
     net::CookieJarSettings::Cast(cookieJarSettings)
         ->SetPartitionKey(principal->OriginAttributesRef().mPartitionKey);
@@ -225,47 +225,47 @@ nsresult ServiceWorkerPrivateImpl::Initialize() {
     return remoteType.unwrapErr();
   }
 
-  // Determine if the service worker is registered under a third-party context
-  // by checking if it's running under a partitioned principal.
+  
+  
   bool isThirdPartyContextToTopWindow =
       !principal->OriginAttributesRef().mPartitionKey.IsEmpty();
 
   mRemoteWorkerData = RemoteWorkerData(
       NS_ConvertUTF8toUTF16(mOuter->mInfo->ScriptSpec()), baseScriptURL,
-      baseScriptURL, /* name */ VoidString(),
-      /* loading principal */ principalInfo, principalInfo,
+      baseScriptURL,  VoidString(),
+       principalInfo, principalInfo,
       partitionedPrincipalInfo,
-      /* useRegularPrincipal */ true,
+       true,
 
-      // ServiceWorkers run as first-party, no storage-access permission needed.
-      /* hasStorageAccessPermissionGranted */ false,
+      
+       false,
 
       cjsData, domain,
-      /* isSecureContext */ true,
-      /* clientInfo*/ Nothing(),
+       true,
+       Nothing(),
 
-      // The RemoteWorkerData CTOR doesn't allow to set the referrerInfo via
-      // already_AddRefed<>. Let's set it to null.
-      /* referrerInfo */ nullptr,
+      
+      
+       nullptr,
 
       storageAccess, isThirdPartyContextToTopWindow,
-      // Origin trials are associated to a window, so it doesn't make sense on
-      // service workers.
+      
+      
       OriginTrials(), std::move(serviceWorkerData), regInfo->AgentClusterId(),
       remoteType.unwrap());
 
   mRemoteWorkerData.referrerInfo() = MakeAndAddRef<ReferrerInfo>();
 
-  // This fills in the rest of mRemoteWorkerData.serviceWorkerData().
+  
   RefreshRemoteWorkerData(regInfo);
 
   return NS_OK;
 }
 
-/* static */
+
 void ServiceWorkerPrivateImpl::UpdateRunning(int32_t aDelta,
                                              int32_t aFetchDelta) {
-  // Record values for time we were running at the current values
+  
   RefPtr<ServiceWorkerManager> manager(ServiceWorkerManager::GetInstance());
   manager->RecordTelemetry(sRunningServiceWorkers, sRunningServiceWorkersFetch);
 
@@ -348,9 +348,9 @@ nsresult ServiceWorkerPrivateImpl::SpawnWorkerIfNeeded() {
     return NS_ERROR_DOM_INVALID_STATE_ERR;
   }
 
-  // If the worker principal is an extension principal, then we should not spawn
-  // a worker if there is no WebExtensionPolicy associated to that principal
-  // or if the WebExtensionPolicy is not active.
+  
+  
+  
   auto* principal = mOuter->mInfo->Principal();
   if (principal->SchemeIs("moz-extension")) {
     auto* addonPolicy = BasePrincipal::Cast(principal)->AddonPolicy();
@@ -384,19 +384,19 @@ nsresult ServiceWorkerPrivateImpl::SpawnWorkerIfNeeded() {
     return NS_ERROR_DOM_INVALID_STATE_ERR;
   }
 
-  /**
-   * Manually `AddRef()` because `DeallocPRemoteWorkerControllerChild()`
-   * calls `Release()` and the `AllocPRemoteWorkerControllerChild()` function
-   * is not called.
-   */
-  // NOLINTNEXTLINE(readability-redundant-smartptr-get)
+  
+
+
+
+
+  
   controllerChild.get()->AddRef();
 
   mControllerChild = new RAIIActorPtrHolder(controllerChild.forget());
 
-  // Update Running count here because we may Terminate before we get
-  // CreationSucceeded().  We'll update if it handles Fetch if that changes
-  // (
+  
+  
+  
   UpdateRunning(1, mHandlesFetch == Enabled ? 1 : 0);
 
   return NS_OK;
@@ -446,10 +446,10 @@ nsresult ServiceWorkerPrivateImpl::CheckScriptEvaluation(
 
   RefPtr<ServiceWorkerPrivateImpl> self = this;
 
-  /**
-   * We need to capture the actor associated with the current Service Worker so
-   * we can terminate it if script evaluation failed.
-   */
+  
+
+
+
   nsresult rv = SpawnWorkerIfNeeded();
 
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -478,8 +478,8 @@ nsresult ServiceWorkerPrivateImpl::CheckScriptEvaluation(
               if (self->mHandlesFetch == Unknown) {
                 self->mHandlesFetch =
                     result.fetchHandlerWasAdded() ? Enabled : Disabled;
-                // Update telemetry for # of running SW - the already-running SW
-                // handles fetch
+                
+                
                 if (self->mHandlesFetch == Enabled) {
                   self->UpdateRunning(0, 1);
                 }
@@ -495,14 +495,14 @@ nsresult ServiceWorkerPrivateImpl::CheckScriptEvaluation(
           }
         }
 
-        /**
-         * If script evaluation failed, first terminate the Service Worker
-         * before invoking the callback.
-         */
+        
+
+
+
         MOZ_ASSERT_IF(aResult.type() == ServiceWorkerOpResult::Tnsresult,
                       NS_FAILED(aResult.get_nsresult()));
 
-        // If a termination operation was already issued using `holder`...
+        
         if (self->mControllerChild != holder) {
           holder->OnDestructor()->Then(
               GetCurrentSerialEventTarget(), __func__,
@@ -782,7 +782,7 @@ Result<IPCInternalRequest, nsresult> GetIPCInternalRequest(
   nsAutoCString method;
   MOZ_TRY(httpChannel->GetRequestMethod(method));
 
-  // This is safe due to static_asserts in ServiceWorkerManager.cpp
+  
   uint32_t cacheModeInt;
   MOZ_ALWAYS_SUCCEEDS(internalChannel->GetFetchCacheMode(&cacheModeInt));
   RequestCache cacheMode = static_cast<RequestCache>(cacheModeInt);
@@ -790,7 +790,7 @@ Result<IPCInternalRequest, nsresult> GetIPCInternalRequest(
   RequestMode requestMode =
       InternalRequest::MapChannelToRequestMode(underlyingChannel);
 
-  // This is safe due to static_asserts in ServiceWorkerManager.cpp
+  
   uint32_t redirectMode;
   MOZ_ALWAYS_SUCCEEDS(internalChannel->GetRedirectMode(&redirectMode));
   RequestRedirect requestRedirect = static_cast<RequestRedirect>(redirectMode);
@@ -835,7 +835,7 @@ Result<IPCInternalRequest, nsresult> GetIPCInternalRequest(
   nsAutoCString alternativeDataType;
   if (cacheInfoChannel &&
       !cacheInfoChannel->PreferredAlternativeDataTypes().IsEmpty()) {
-    // TODO: the internal request probably needs all the preferred types.
+    
     alternativeDataType.Assign(
         cacheInfoChannel->PreferredAlternativeDataTypes()[0].type());
   }
@@ -848,8 +848,8 @@ Result<IPCInternalRequest, nsresult> GetIPCInternalRequest(
         loadInfo->TriggeringPrincipal(), principalInfo.ptr()));
   }
 
-  // Note: all the arguments are copied rather than moved, which would be more
-  // efficient, because there's no move-friendly constructor generated.
+  
+  
   return IPCInternalRequest(
       method, {spec}, ipcHeadersGuard, ipcHeaders, Nothing(), -1,
       alternativeDataType, contentPolicyType, referrer, referrerPolicy,
@@ -863,6 +863,7 @@ nsresult MaybeStoreStreamForBackgroundThread(nsIInterceptedChannel* aChannel,
   MOZ_ALWAYS_SUCCEEDS(aChannel->GetChannel(getter_AddRefs(channel)));
 
   Maybe<BodyStreamVariant> body;
+  int64_t bodySize = -1;
   nsCOMPtr<nsIUploadChannel2> uploadChannel = do_QueryInterface(channel);
 
   if (uploadChannel) {
@@ -883,14 +884,15 @@ nsresult MaybeStoreStreamForBackgroundThread(nsIInterceptedChannel* aChannel,
       }
 
       auto storage = storageOrErr.unwrap();
-      storage->AddStream(uploadStream, body->get_ParentToParentStream().uuid());
+      storage->AddStream(uploadStream, body->get_ParentToParentStream().uuid(),
+                         bodySize, 0);
     }
   }
 
   return NS_OK;
 }
 
-}  // anonymous namespace
+}  
 
 RefPtr<FetchServiceResponsePromise>
 ServiceWorkerPrivateImpl::SetupNavigationPreload(
@@ -899,37 +901,37 @@ ServiceWorkerPrivateImpl::SetupNavigationPreload(
   MOZ_ASSERT(XRE_IsParentProcess());
   AssertIsOnMainThread();
 
-  // create IPC request from the intercepted channel.
+  
   auto result = GetIPCInternalRequest(aChannel);
   if (result.isErr()) {
     return nullptr;
   }
   IPCInternalRequest ipcRequest = result.unwrap();
 
-  // Step 1. Clone the request for preload
-  // Create the InternalResponse from the created IPCRequest.
+  
+  
   SafeRefPtr<InternalRequest> preloadRequest =
       MakeSafeRefPtr<InternalRequest>(ipcRequest);
-  // Copy the request body from uploadChannel
+  
   nsCOMPtr<nsIUploadChannel2> uploadChannel = do_QueryInterface(aChannel);
   if (uploadChannel) {
     nsCOMPtr<nsIInputStream> uploadStream;
     nsresult rv = uploadChannel->CloneUploadStream(
         &ipcRequest.bodySize(), getter_AddRefs(uploadStream));
-    // Fail to get the request's body, stop navigation preload by returning
-    // nullptr.
+    
+    
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return FetchService::NetworkErrorResponse(rv);
     }
     preloadRequest->SetBody(uploadStream, ipcRequest.bodySize());
   }
 
-  // Set SkipServiceWorker for the navigation preload request
+  
   preloadRequest->SetSkipServiceWorker();
 
-  // Step 2. Append Service-Worker-Navigation-Preload header with
-  //         registration->GetNavigationPreloadState().headerValue() on
-  //         request's header list.
+  
+  
+  
   IgnoredErrorResult err;
   auto headersGuard = preloadRequest->Headers()->Guard();
   preloadRequest->Headers()->SetGuard(HeadersGuardEnum::None, err);
@@ -938,7 +940,7 @@ ServiceWorkerPrivateImpl::SetupNavigationPreload(
       aRegistration->GetNavigationPreloadState().headerValue(), err);
   preloadRequest->Headers()->SetGuard(headersGuard, err);
 
-  // Step 3. Perform fetch through FetchService with the cloned request
+  
   if (!err.Failed()) {
     nsCOMPtr<nsIChannel> underlyingChannel;
     MOZ_ALWAYS_SUCCEEDS(
@@ -1135,13 +1137,13 @@ RefPtr<GenericNonExclusivePromise> ServiceWorkerPrivateImpl::ShutdownInternal(
       },
       [promise]() { promise->Reject(NS_ERROR_DOM_ABORT_ERR, __func__); });
 
-  /**
-   * After dispatching a termination operation, no new operations should
-   * be routed through this actor anymore.
-   */
+  
+
+
+
   mControllerChild = nullptr;
 
-  // Update here, since Evaluation failures directly call ShutdownInternal
+  
   UpdateRunning(-1, mHandlesFetch == Enabled ? -1 : 0);
 
   return promise;
@@ -1226,7 +1228,7 @@ void ServiceWorkerPrivateImpl::CreationSucceeded() {
   RefPtr<ServiceWorkerRegistrationInfo> regInfo =
       swm->GetRegistration(principal, mOuter->mInfo->Scope());
   if (regInfo) {
-    // If it's already set, we're done and the running count is already set
+    
     if (mHandlesFetch == Unknown) {
       if (regInfo->GetActive()) {
         mHandlesFetch =
@@ -1235,10 +1237,10 @@ void ServiceWorkerPrivateImpl::CreationSucceeded() {
           UpdateRunning(0, 1);
         }
       }
-      // else we're likely still in Evaluating state, and don't know if it
-      // handles fetch.  If so, defer updating the counter for Fetch until we
-      // finish evaluation.  We already updated the Running count for All in
-      // SpawnWorkerIfNeeded().
+      
+      
+      
+      
     }
   }
 }
@@ -1302,10 +1304,10 @@ nsresult ServiceWorkerPrivateImpl::ExecServiceWorkerOp(
           ? nullptr
           : mOuter->CreateEventKeepAliveToken();
 
-  /**
-   * NOTE: moving `aArgs` won't do anything until IPDL `SendMethod()` methods
-   * can accept rvalue references rather than just const references.
-   */
+  
+
+
+
   mControllerChild->get()->SendExecServiceWorkerOp(aArgs)->Then(
       GetCurrentSerialEventTarget(), __func__,
       [self = std::move(self), holder = std::move(holder),
@@ -1324,5 +1326,5 @@ nsresult ServiceWorkerPrivateImpl::ExecServiceWorkerOp(
   return NS_OK;
 }
 
-}  // namespace dom
-}  // namespace mozilla
+}  
+}  
