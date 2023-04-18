@@ -100,6 +100,11 @@ class GenericFlingAnimation : public AsyncPanZoomAnimation,
 
   virtual bool DoSample(FrameMetrics& aFrameMetrics,
                         const TimeDuration& aDelta) override {
+    CSSToParentLayerScale zoom(aFrameMetrics.GetZoom());
+    if (zoom == CSSToParentLayerScale(0)) {
+      return false;
+    }
+
     ParentLayerPoint velocity;
     ParentLayerPoint offset;
     FlingPhysics::Sample(aDelta, &velocity, &offset);
@@ -107,7 +112,7 @@ class GenericFlingAnimation : public AsyncPanZoomAnimation,
     mApzc.SetVelocityVector(velocity);
 
     
-    if (IsZero(velocity)) {
+    if (IsZero(velocity / zoom)) {
       FLING_LOG("%p ending fling animation. overscrolled=%d\n", &mApzc,
                 mApzc.IsOverscrolled());
       
@@ -137,7 +142,7 @@ class GenericFlingAnimation : public AsyncPanZoomAnimation,
     }
 
     
-    if (!IsZero(overscroll)) {
+    if (!IsZero(overscroll / zoom)) {
       
 
       
@@ -176,7 +181,7 @@ class GenericFlingAnimation : public AsyncPanZoomAnimation,
       
       
       
-      return !IsZero(mApzc.GetVelocityVector());
+      return !IsZero(mApzc.GetVelocityVector() / zoom);
     }
 
     return true;

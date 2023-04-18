@@ -580,6 +580,8 @@ class AsyncPanZoomController {
   
   bool IsContentOfHonouredTargetRightToLeft(bool aHonoursRoot) const;
 
+  bool IsZero(const ParentLayerPoint& aPoint) const;
+
  protected:
   
   virtual ~AsyncPanZoomController();

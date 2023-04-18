@@ -79,7 +79,7 @@ bool SmoothMsdScrollAnimation::DoSample(FrameMetrics& aFrameMetrics,
   
   
   
-  if (!IsZero(overscroll)) {
+  if (!IsZero(overscroll / zoom)) {
     
     
 
