@@ -1084,7 +1084,33 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
 
     
     
-    positive.sort((a, b) => a.suggestedIndex - b.suggestedIndex);
+    positive.sort((a, b) => {
+      if (a.suggestedIndex !== b.suggestedIndex) {
+        return a.suggestedIndex - b.suggestedIndex;
+      }
+
+      if (a.providerName === b.providerName) {
+        return 0;
+      }
+
+      
+      
+      
+      if (a.providerName === UrlbarProviderTabToSearch.name) {
+        return 1;
+      }
+      if (b.providerName === UrlbarProviderTabToSearch.name) {
+        return -1;
+      }
+      if (a.providerName === UrlbarProviderQuickSuggest.name) {
+        return 1;
+      }
+      if (b.providerName === UrlbarProviderQuickSuggest.name) {
+        return -1;
+      }
+
+      return 0;
+    });
 
     
     
@@ -1096,12 +1122,24 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     
     
     for (let results of [positive, negative]) {
+      let prevResult;
+      let prevIndex;
       for (let result of results) {
         if (this._canAddResult(result, state)) {
-          let index =
-            result.suggestedIndex >= 0
-              ? Math.min(result.suggestedIndex, sortedResults.length)
-              : Math.max(result.suggestedIndex + sortedResults.length + 1, 0);
+          let index;
+          if (
+            prevResult &&
+            prevResult.suggestedIndex == result.suggestedIndex
+          ) {
+            index = prevIndex;
+          } else {
+            index =
+              result.suggestedIndex >= 0
+                ? Math.min(result.suggestedIndex, sortedResults.length)
+                : Math.max(result.suggestedIndex + sortedResults.length + 1, 0);
+          }
+          prevResult = result;
+          prevIndex = index;
           sortedResults.splice(index, 0, result);
           usedLimits.availableSpan += UrlbarUtils.getSpanForResult(result);
           usedLimits.maxResultCount++;

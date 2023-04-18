@@ -257,6 +257,10 @@ const PREF_URLBAR_DEFAULTS = new Map([
 
   
   
+  ["quicksuggest.allowPositionInSuggestions", true],
+
+  
+  
   ["switchTabs.adoptIntoActiveWindow", false],
 
   
