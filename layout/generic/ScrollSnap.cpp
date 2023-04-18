@@ -32,10 +32,12 @@ class CalcSnapPoints final {
                nscoord* aSecondBestEdge, bool* aEdgeFound);
   nsPoint GetBestEdge() const;
   nscoord XDistanceBetweenBestAndSecondEdge() const {
-    return std::abs(mBestEdge.x - mSecondBestEdge.x);
+    return std::abs(
+        NSCoordSaturatingSubtract(mSecondBestEdge.x, mBestEdge.x, nscoord_MAX));
   }
   nscoord YDistanceBetweenBestAndSecondEdge() const {
-    return std::abs(mBestEdge.y - mSecondBestEdge.y);
+    return std::abs(
+        NSCoordSaturatingSubtract(mSecondBestEdge.y, mBestEdge.y, nscoord_MAX));
   }
 
  protected:
@@ -45,8 +47,9 @@ class CalcSnapPoints final {
   nsPoint mStartPos;     
   nsIntPoint mScrollingDirection;  
   nsPoint mBestEdge;  
-  nsPoint mSecondBestEdge;    
-                              
+  nsPoint mSecondBestEdge;  
+                            
+                            
   bool mHorizontalEdgeFound;  
                               
   bool mVerticalEdgeFound;    
@@ -74,6 +77,10 @@ CalcSnapPoints::CalcSnapPoints(ScrollUnit aUnit, const nsPoint& aDestination,
     mScrollingDirection.y = 1;
   }
   mBestEdge = aDestination;
+  
+  
+  
+  
   mSecondBestEdge = nsPoint(nscoord_MAX, nscoord_MAX);
   mHorizontalEdgeFound = false;
   mVerticalEdgeFound = false;
@@ -131,6 +138,8 @@ void CalcSnapPoints::AddEdge(nscoord aEdge, nscoord aDestination,
     return;
   }
 
+  const bool isOnOppositeSide =
+      ((aEdge - aDestination) > 0) != ((*aBestEdge - aDestination) > 0);
   
   
   
@@ -139,17 +148,25 @@ void CalcSnapPoints::AddEdge(nscoord aEdge, nscoord aDestination,
   
   auto updateBestEdges = [&](bool aIsCloserThanBest, bool aIsCloserThanSecond) {
     if (aIsCloserThanBest) {
-      *aSecondBestEdge = *aBestEdge;
+      
+      
+      if (isOnOppositeSide) {
+        *aSecondBestEdge = *aBestEdge;
+      }
       *aBestEdge = aEdge;
     } else if (aIsCloserThanSecond) {
-      *aSecondBestEdge = aEdge;
+      if (isOnOppositeSide) {
+        *aSecondBestEdge = aEdge;
+      }
     }
   };
 
   if (mUnit == ScrollUnit::DEVICE_PIXELS || mUnit == ScrollUnit::LINES) {
     nscoord distance = std::abs(aEdge - aDestination);
-    updateBestEdges(distance < std::abs(*aBestEdge - aDestination),
-                    distance < std::abs(*aSecondBestEdge - aDestination));
+    updateBestEdges(
+        distance < std::abs(*aBestEdge - aDestination),
+        distance < std::abs(NSCoordSaturatingSubtract(
+                       *aSecondBestEdge, aDestination, nscoord_MAX)));
   } else if (mUnit == ScrollUnit::PAGES) {
     
     
@@ -159,7 +176,8 @@ void CalcSnapPoints::AddEdge(nscoord aEdge, nscoord aDestination,
     nscoord curOvershoot = (*aBestEdge - aDestination) * aScrollingDirection;
 
     nscoord secondOvershoot =
-        (*aSecondBestEdge - aDestination) * aScrollingDirection;
+        NSCoordSaturatingSubtract(*aSecondBestEdge, aDestination, nscoord_MAX) *
+        aScrollingDirection;
 
     
     
