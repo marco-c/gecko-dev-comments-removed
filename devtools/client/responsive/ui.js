@@ -320,10 +320,10 @@ class ResponsiveUI {
       
       
       
-      this.commands.targetCommand.unwatchTargets({
-        types: [this.commands.targetCommand.TYPES.FRAME],
-        onAvailable: this.onTargetAvailable,
-      });
+      this.commands.targetCommand.unwatchTargets(
+        [this.commands.targetCommand.TYPES.FRAME],
+        this.onTargetAvailable
+      );
 
       this.resourceCommand.unwatchResources(
         [this.resourceCommand.TYPES.NETWORK_EVENT],
@@ -367,10 +367,10 @@ class ResponsiveUI {
 
     await this.commands.targetCommand.startListening();
 
-    await this.commands.targetCommand.watchTargets({
-      types: [this.commands.targetCommand.TYPES.FRAME],
-      onAvailable: this.onTargetAvailable,
-    });
+    await this.commands.targetCommand.watchTargets(
+      [this.commands.targetCommand.TYPES.FRAME],
+      this.onTargetAvailable
+    );
 
     
     

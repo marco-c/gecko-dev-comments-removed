@@ -900,12 +900,12 @@ Toolbox.prototype = {
       
       
       
-      await this.commands.targetCommand.watchTargets({
-        types: this.commands.targetCommand.ALL_TYPES,
-        onAvailable: this._onTargetAvailable,
-        onSelected: this._onTargetSelected,
-        onDestroyed: this._onTargetDestroyed,
-      });
+      await this.commands.targetCommand.watchTargets(
+        this.commands.targetCommand.ALL_TYPES,
+        this._onTargetAvailable,
+        this._onTargetDestroyed,
+        this._onTargetSelected
+      );
 
       const onResourcesWatched = this.resourceCommand.watchResources(
         [
@@ -3964,12 +3964,12 @@ Toolbox.prototype = {
     
     outstanding.push(this.resetPreference());
 
-    this.commands.targetCommand.unwatchTargets({
-      types: this.commands.targetCommand.ALL_TYPES,
-      onAvailable: this._onTargetAvailable,
-      onSelected: this._onTargetSelected,
-      onDestroyed: this._onTargetDestroyed,
-    });
+    this.commands.targetCommand.unwatchTargets(
+      this.commands.targetCommand.ALL_TYPES,
+      this._onTargetAvailable,
+      this._onTargetDestroyed,
+      this._onTargetSelected
+    );
     this.resourceCommand.unwatchResources(
       [
         this.resourceCommand.TYPES.CONSOLE_MESSAGE,

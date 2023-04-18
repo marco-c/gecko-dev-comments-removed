@@ -325,11 +325,11 @@ class ResourceCommand {
       
       
       
-      this._watchTargetsPromise = this.targetCommand.watchTargets({
-        types: this.targetCommand.ALL_TYPES,
-        onAvailable: this._onTargetAvailable,
-        onDestroyed: this._onTargetDestroyed,
-      });
+      this._watchTargetsPromise = this.targetCommand.watchTargets(
+        this.targetCommand.ALL_TYPES,
+        this._onTargetAvailable,
+        this._onTargetDestroyed
+      );
     }
     return this._watchTargetsPromise;
   }
@@ -345,11 +345,11 @@ class ResourceCommand {
     this._offTargetFrontListeners.clear();
 
     this._watchTargetsPromise = null;
-    this.targetCommand.unwatchTargets({
-      types: this.targetCommand.ALL_TYPES,
-      onAvailable: this._onTargetAvailable,
-      onDestroyed: this._onTargetDestroyed,
-    });
+    this.targetCommand.unwatchTargets(
+      this.targetCommand.ALL_TYPES,
+      this._onTargetAvailable,
+      this._onTargetDestroyed
+    );
   }
 
   

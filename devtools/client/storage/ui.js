@@ -276,11 +276,11 @@ class StorageUI {
 
     this._onTargetAvailable = this._onTargetAvailable.bind(this);
     this._onTargetDestroyed = this._onTargetDestroyed.bind(this);
-    await this._commands.targetCommand.watchTargets({
-      types: [this._commands.targetCommand.TYPES.FRAME],
-      onAvailable: this._onTargetAvailable,
-      onDestroyed: this._onTargetDestroyed,
-    });
+    await this._commands.targetCommand.watchTargets(
+      [this._commands.targetCommand.TYPES.FRAME],
+      this._onTargetAvailable,
+      this._onTargetDestroyed
+    );
 
     this._onResourceListAvailable = this._onResourceListAvailable.bind(this);
 

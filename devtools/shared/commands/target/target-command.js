@@ -648,29 +648,10 @@ class TargetCommand extends EventEmitter {
 
 
 
-
-  async watchTargets(options = {}) {
-    const availableOptions = [
-      "types",
-      "onAvailable",
-      "onDestroyed",
-      "onSelected",
-    ];
-    const unsupportedKeys = Object.keys(options).filter(
-      key => !availableOptions.includes(key)
-    );
-    if (unsupportedKeys.length > 0) {
-      throw new Error(
-        `TargetCommand.watchTargets does not expect the following options: ${unsupportedKeys.join(
-          ", "
-        )}`
-      );
-    }
-
-    const { types, onAvailable, onDestroyed, onSelected } = options;
+  async watchTargets(types, onAvailable, onDestroy, onSelect) {
     if (typeof onAvailable != "function") {
       throw new Error(
-        "TargetCommand.watchTargets expects a function for the onAvailable option"
+        "TargetCommand.watchTargets expects a function as second argument"
       );
     }
 
@@ -734,11 +715,11 @@ class TargetCommand extends EventEmitter {
 
     for (const type of types) {
       this._createListeners.on(type, onAvailable);
-      if (onDestroyed) {
-        this._destroyListeners.on(type, onDestroyed);
+      if (onDestroy) {
+        this._destroyListeners.on(type, onDestroy);
       }
-      if (onSelected) {
-        this._selectListeners.on(type, onSelected);
+      if (onSelect) {
+        this._selectListeners.on(type, onSelect);
       }
     }
 
@@ -750,28 +731,10 @@ class TargetCommand extends EventEmitter {
 
 
 
-  unwatchTargets(options = {}) {
-    const availableOptions = [
-      "types",
-      "onAvailable",
-      "onDestroyed",
-      "onSelected",
-    ];
-    const unsupportedKeys = Object.keys(options).filter(
-      key => !availableOptions.includes(key)
-    );
-    if (unsupportedKeys.length > 0) {
-      throw new Error(
-        `TargetCommand.unwatchTargets does not expect the following options: ${unsupportedKeys.join(
-          ", "
-        )}`
-      );
-    }
-
-    const { types, onAvailable, onDestroyed, onSelected } = options;
+  unwatchTargets(types, onAvailable, onDestroy, onSelect) {
     if (typeof onAvailable != "function") {
       throw new Error(
-        "TargetCommand.unwatchTargets expects a function for the onAvailable option"
+        "TargetCommand.unwatchTargets expects a function as second argument"
       );
     }
 
@@ -783,11 +746,11 @@ class TargetCommand extends EventEmitter {
       }
 
       this._createListeners.off(type, onAvailable);
-      if (onDestroyed) {
-        this._destroyListeners.off(type, onDestroyed);
+      if (onDestroy) {
+        this._destroyListeners.off(type, onDestroy);
       }
-      if (onSelected) {
-        this._selectListeners.off(type, onSelected);
+      if (onSelect) {
+        this._selectListeners.off(type, onSelect);
       }
     }
     this._pendingWatchTargetInitialization.delete(onAvailable);
