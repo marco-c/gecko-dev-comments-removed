@@ -755,6 +755,80 @@ impl Parse for AnimationName {
 
 
 
+#[derive(
+    Clone,
+    Debug,
+    Eq,
+    Hash,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[repr(u8)]
+pub enum Scroller {
+    
+    Nearest,
+    
+    Root,
+    
+    
+    
+}
+
+impl Default for Scroller {
+    fn default() -> Self {
+        Self::Nearest
+    }
+}
+
+
+
+
+#[derive(
+    Clone,
+    Debug,
+    Eq,
+    Hash,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[repr(u8)]
+pub enum ScrollAxis {
+    
+    Block,
+    
+    Inline,
+    
+    Vertical,
+    
+    Horizontal,
+}
+
+impl Default for ScrollAxis {
+    fn default() -> Self {
+        Self::Block
+    }
+}
+
+#[inline]
+fn is_default<T: Default + PartialEq>(value: &T) -> bool {
+    *value == Default::default()
+}
+
+
+
+
 /// cbindgen:private-default-tagged-enum-constructor=false
 #[derive(
     Clone,
@@ -777,6 +851,13 @@ pub enum AnimationTimeline {
     None,
     
     Timeline(TimelineName),
+    
+    
+    #[css(function)]
+    Scroll(
+        #[css(skip_if = "is_default")] ScrollAxis,
+        #[css(skip_if = "is_default")] Scroller,
+    ),
 }
 
 impl AnimationTimeline {
@@ -807,6 +888,16 @@ impl Parse for AnimationTimeline {
 
         if input.try_parse(|i| i.expect_ident_matching("none")).is_ok() {
             return Ok(Self::None);
+        }
+
+        
+        if input.try_parse(|i| i.expect_function_matching("scroll")).is_ok() {
+            return input.parse_nested_block(|i| {
+                Ok(Self::Scroll(
+                    i.try_parse(ScrollAxis::parse).unwrap_or(ScrollAxis::Block),
+                    i.try_parse(Scroller::parse).unwrap_or(Scroller::Nearest),
+                ))
+            });
         }
 
         TimelineName::parse(context, input).map(AnimationTimeline::Timeline)
