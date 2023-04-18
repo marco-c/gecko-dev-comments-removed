@@ -477,14 +477,11 @@ class SnapshotIterator {
   
   uint32_t pcOffset() const;
   ResumeMode resumeMode() const;
-  [[nodiscard]] inline bool resumeAfter() const {
+
+  bool resumeAfter() const {
     
-    
-    
-    if (moreFrames()) {
-      return false;
-    }
-    return recover_.resumeAfter();
+    MOZ_ASSERT_IF(moreFrames(), resumeMode() != ResumeMode::ResumeAfter);
+    return resumeMode() == ResumeMode::ResumeAfter;
   }
   inline BailoutKind bailoutKind() const { return snapshot_.bailoutKind(); }
 

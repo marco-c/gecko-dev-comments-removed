@@ -402,7 +402,7 @@ class RecoverWriter {
   uint32_t instructionsWritten_;
 
  public:
-  SnapshotOffset startRecover(uint32_t instructionCount, bool resumeAfter);
+  SnapshotOffset startRecover(uint32_t instructionCount);
 
   void writeInstruction(const MNode* rp);
 
@@ -498,10 +498,6 @@ class RecoverReader {
 
   
   
-  bool resumeAfter_;
-
-  
-  
   RInstructionStorage rawData_;
 
  private:
@@ -525,8 +521,6 @@ class RecoverReader {
   const RInstruction* instruction() const {
     return reinterpret_cast<const RInstruction*>(rawData_.addr());
   }
-
-  bool resumeAfter() const { return resumeAfter_; }
 };
 
 }  
