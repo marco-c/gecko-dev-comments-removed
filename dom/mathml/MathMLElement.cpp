@@ -880,42 +880,6 @@ already_AddRefed<nsIURI> MathMLElement::GetHrefURI() const {
   
   
   const nsAttrValue* href = mAttrs.GetAttr(nsGkAtoms::href, kNameSpaceID_None);
-  if (!href && !StaticPrefs::mathml_xlink_disabled()) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    static Element::AttrValuesArray sTypeVals[] = {nsGkAtoms::_empty,
-                                                   nsGkAtoms::simple, nullptr};
-
-    static Element::AttrValuesArray sShowVals[] = {
-        nsGkAtoms::_empty, nsGkAtoms::_new, nsGkAtoms::replace, nullptr};
-
-    static Element::AttrValuesArray sActuateVals[] = {
-        nsGkAtoms::_empty, nsGkAtoms::onRequest, nullptr};
-
-    
-    href = mAttrs.GetAttr(nsGkAtoms::href, kNameSpaceID_XLink);
-    if (href &&
-        FindAttrValueIn(kNameSpaceID_XLink, nsGkAtoms::type, sTypeVals,
-                        eCaseMatters) != Element::ATTR_VALUE_NO_MATCH &&
-        FindAttrValueIn(kNameSpaceID_XLink, nsGkAtoms::show, sShowVals,
-                        eCaseMatters) != Element::ATTR_VALUE_NO_MATCH &&
-        FindAttrValueIn(kNameSpaceID_XLink, nsGkAtoms::actuate, sActuateVals,
-                        eCaseMatters) != Element::ATTR_VALUE_NO_MATCH) {
-      OwnerDoc()->WarnOnceAbout(
-          dom::DeprecatedOperations::eMathML_DeprecatedXLinkAttribute);
-    } else {
-      href = nullptr;
-    }
-  }
-
   if (!href) {
     return nullptr;
   }
@@ -926,44 +890,6 @@ already_AddRefed<nsIURI> MathMLElement::GetHrefURI() const {
   nsContentUtils::NewURIWithDocumentCharset(getter_AddRefs(hrefURI), hrefStr,
                                             OwnerDoc(), GetBaseURI());
   return hrefURI.forget();
-}
-
-void MathMLElement::GetLinkTarget(nsAString& aTarget) {
-  if (StaticPrefs::mathml_xlink_disabled()) {
-    MathMLElementBase::GetLinkTarget(aTarget);
-    return;
-  }
-
-  const nsAttrValue* target =
-      mAttrs.GetAttr(nsGkAtoms::target, kNameSpaceID_XLink);
-  if (target) {
-    OwnerDoc()->WarnOnceAbout(
-        dom::DeprecatedOperations::eMathML_DeprecatedXLinkAttribute);
-    target->ToString(aTarget);
-  }
-
-  if (aTarget.IsEmpty()) {
-    static Element::AttrValuesArray sShowVals[] = {nsGkAtoms::_new,
-                                                   nsGkAtoms::replace, nullptr};
-
-    bool hasDeprecatedShowAttribute = true;
-    switch (FindAttrValueIn(kNameSpaceID_XLink, nsGkAtoms::show, sShowVals,
-                            eCaseMatters)) {
-      case ATTR_MISSING:
-        hasDeprecatedShowAttribute = false;
-        break;
-      case 0:
-        aTarget.AssignLiteral("_blank");
-        return;
-      case 1:
-        return;
-    }
-    if (hasDeprecatedShowAttribute) {
-      OwnerDoc()->WarnOnceAbout(
-          dom::DeprecatedOperations::eMathML_DeprecatedXLinkAttribute);
-    }
-    OwnerDoc()->GetBaseTarget(aTarget);
-  }
 }
 
 bool MathMLElement::IsEventAttributeNameInternal(nsAtom* aName) {
@@ -995,15 +921,7 @@ nsresult MathMLElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
   
   
   
-  if (aName == nsGkAtoms::href && (aNameSpaceID == kNameSpaceID_None ||
-                                   (!StaticPrefs::mathml_xlink_disabled() &&
-                                    aNameSpaceID == kNameSpaceID_XLink))) {
-    if (aValue && aNameSpaceID == kNameSpaceID_XLink) {
-      OwnerDoc()->WarnOnceAbout(
-          dom::DeprecatedOperations::eMathML_DeprecatedXLinkAttribute);
-    }
-    
-    
+  if (aName == nsGkAtoms::href && aNameSpaceID == kNameSpaceID_None) {
     Link::ResetLinkState(aNotify, aValue || Link::ElementHasHref());
   }
 
