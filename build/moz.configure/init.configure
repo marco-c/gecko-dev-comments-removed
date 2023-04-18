@@ -218,12 +218,12 @@ shell = help_shell | shell
 @dependable
 @checking("for Python 3", callback=lambda x: "%s (%s)" % (x.path, x.str_version))
 @imports("sys")
-@imports(_from="mach.site", _import="VirtualenvHelper")
+@imports(_from="mach.site", _import="PythonVirtualenv")
 def virtualenv_python3():
     return namespace(
         
         
-        path=normsep(VirtualenvHelper(sys.prefix).python_path),
+        path=normsep(PythonVirtualenv(sys.prefix).python_path),
         str_version=".".join(str(i) for i in sys.version_info[0:3]),
     )
 
