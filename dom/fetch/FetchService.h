@@ -6,25 +6,97 @@
 #ifndef _mozilla_dom_FetchService_h
 #define _mozilla_dom_FetchService_h
 
+#include "nsIChannel.h"
+#include "mozilla/ErrorResult.h"
 #include "mozilla/MozPromise.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/dom/SafeRefPtr.h"
+#include "nsTHashMap.h"
 
+namespace mozilla::dom {
 
-
-
-
-namespace mozilla {
-
-class CopyableErrorResult;
-
-namespace dom {
-
+class InternalRequest;
 class InternalResponse;
 
 using FetchServiceResponsePromise =
     MozPromise<SafeRefPtr<InternalResponse>, CopyableErrorResult, true>;
 
-}  
+
+
+
+
+
+
+
+
+
+
+
+class FetchService final {
+ public:
+  NS_INLINE_DECL_REFCOUNTING(FetchService)
+
+  static already_AddRefed<FetchService> GetInstance();
+
+  static RefPtr<FetchServiceResponsePromise> NetworkErrorResponse(nsresult aRv);
+
+  FetchService();
+
+  
+  
+  RefPtr<FetchServiceResponsePromise> Fetch(
+      SafeRefPtr<InternalRequest> aRequest, nsIChannel* aChannel = nullptr);
+
+  void CancelFetch(RefPtr<FetchServiceResponsePromise>&& aResponsePromise);
+
+ private:
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  
+  class FetchInstance final {
+    NS_INLINE_DECL_REFCOUNTING(FetchInstance);
+
+   public:
+    explicit FetchInstance(SafeRefPtr<InternalRequest> aRequest);
+
+    
+    
+    
+    
+    
+    
+    
+    nsresult Initialize(nsIChannel* aChannel = nullptr);
+
+    RefPtr<FetchServiceResponsePromise> Fetch();
+
+   private:
+    ~FetchInstance();
+
+    SafeRefPtr<InternalRequest> mRequest;
+    MozPromiseHolder<FetchServiceResponsePromise> mResponsePromiseHolder;
+  };
+
+  ~FetchService();
+
+  
+  nsTHashMap<nsRefPtrHashKey<FetchServiceResponsePromise>,
+             RefPtr<FetchInstance> >
+      mFetchInstanceTable;
+};
+
 }  
 
 #endif  
