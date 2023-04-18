@@ -120,6 +120,13 @@ struct ScriptedCaller {
 
 
 
+enum class CompileArgsError {
+  OutOfMemory,
+  NoCompiler,
+};
+
+
+
 struct CompileArgs;
 using MutableCompileArgs = RefPtr<CompileArgs>;
 using SharedCompileArgs = RefPtr<const CompileArgs>;
@@ -146,7 +153,11 @@ struct CompileArgs : ShareableBase<CompileArgs> {
   
 
   static SharedCompileArgs build(JSContext* cx, ScriptedCaller&& scriptedCaller,
-                                 const FeatureOptions& options);
+                                 const FeatureOptions& options,
+                                 CompileArgsError* error);
+  static SharedCompileArgs buildAndReport(JSContext* cx,
+                                          ScriptedCaller&& scriptedCaller,
+                                          const FeatureOptions& options);
 
   explicit CompileArgs(ScriptedCaller&& scriptedCaller)
       : scriptedCaller(std::move(scriptedCaller)),

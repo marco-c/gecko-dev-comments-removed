@@ -2154,9 +2154,13 @@ class MOZ_STACK_CLASS ModuleValidator : public ModuleValidatorShared {
 
     
     FeatureOptions options;
+    CompileArgsError error;
     SharedCompileArgs args =
-        CompileArgs::build(cx_, std::move(scriptedCaller), options);
+        CompileArgs::build(cx_, std::move(scriptedCaller), options, &error);
     if (!args) {
+      
+      
+      MOZ_RELEASE_ASSERT(error == CompileArgsError::OutOfMemory);
       return nullptr;
     }
 
