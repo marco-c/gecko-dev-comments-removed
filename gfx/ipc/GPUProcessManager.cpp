@@ -169,7 +169,9 @@ void GPUProcessManager::OnPreferenceChange(const char16_t* aData) {
   }
   mozilla::dom::Pref pref(strData,  false,
                            false, Nothing(), Nothing());
-  Preferences::GetPreference(&pref);
+
+  Preferences::GetPreference(&pref, GeckoProcessType_GPU,
+                              ""_ns);
   if (!!mGPUChild) {
     MOZ_ASSERT(mQueuedPrefs.IsEmpty());
     mGPUChild->SendPreferenceUpdate(pref);
