@@ -448,6 +448,7 @@ class ShutdownRunnable : public Runnable {
 
   NS_IMETHOD Run() override {
     LOG(("Closing BackgroundChild"));
+    
     ipc::BackgroundChild::CloseForCurrentThread();
 
     NS_DispatchToMainThread(mReplyEvent.forget());
@@ -471,17 +472,6 @@ void CamerasChild::ShutdownParent() {
     MonitorAutoLock monitor(mReplyMonitor);
     mIPCIsAlive = false;
     monitor.NotifyAll();
-  }
-  if (CamerasSingleton::Thread()) {
-    LOG(("Dispatching actor deletion"));
-    
-    
-    
-    nsCOMPtr<nsIRunnable> deleteRunnable = mozilla::NewRunnableMethod(
-        "camera::PCamerasChild::SendAllDone", this, &CamerasChild::SendAllDone);
-    CamerasSingleton::Thread()->Dispatch(deleteRunnable, NS_DISPATCH_NORMAL);
-  } else {
-    LOG(("ShutdownParent called without PBackground thread"));
   }
 }
 
@@ -523,6 +513,7 @@ mozilla::ipc::IPCResult CamerasChild::RecvDeviceChange() {
 }
 
 void CamerasChild::ActorDestroy(ActorDestroyReason aWhy) {
+  LOG(("ActorDestroy"));
   MonitorAutoLock monitor(mReplyMonitor);
   mIPCIsAlive = false;
   

@@ -1044,17 +1044,6 @@ void CamerasParent::StopIPC() {
   mDestroyed = true;
 }
 
-mozilla::ipc::IPCResult CamerasParent::RecvAllDone() {
-  LOG("%s", __PRETTY_FUNCTION__);
-  
-  mChildIsAlive = false;
-  IProtocol* mgr = Manager();
-  if (!Send__delete__(this)) {
-    return IPC_FAIL_NO_REASON(mgr);
-  }
-  return IPC_OK();
-}
-
 void CamerasParent::ActorDestroy(ActorDestroyReason aWhy) {
   
   LOG("%s", __PRETTY_FUNCTION__);
