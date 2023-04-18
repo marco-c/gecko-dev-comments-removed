@@ -3397,8 +3397,17 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
 
   if (usePreciseDeltas && hasPhaseInformation) {
     PanGestureInput panEvent(PanGestureTypeForEvent(theEvent), eventIntervalTime, eventTimeStamp,
-                             position, preciseDelta, modifiers);
-    panEvent.SetLineOrPageDeltas(lineOrPageDelta.x, lineOrPageDelta.y);
+                             position, ScreenPoint(), modifiers);
+
+    
+    
+    bool shouldIgnoreDeltas = panEvent.mType == PanGestureInput::PANGESTURE_MAYSTART ||
+                              panEvent.mType == PanGestureInput::PANGESTURE_CANCELLED;
+
+    if (!shouldIgnoreDeltas) {
+      panEvent.mPanDisplacement = preciseDelta;
+      panEvent.SetLineOrPageDeltas(lineOrPageDelta.x, lineOrPageDelta.y);
+    }
 
     if (panEvent.mType == PanGestureInput::PANGESTURE_END) {
       
