@@ -159,8 +159,6 @@ class nsImageFrame : public nsAtomicContainerFrame, public nsIReflowCallback {
       mozilla::layers::RenderRootStateManager*, nsDisplayListBuilder*,
       nsPoint aPt, uint32_t aFlags);
 
-  nsRect GetInnerArea() const;
-
   
 
 
@@ -372,7 +370,11 @@ class nsImageFrame : public nsAtomicContainerFrame, public nsIReflowCallback {
 
   nsCOMPtr<imgIContainer> mImage;
   nsCOMPtr<imgIContainer> mPrevImage;
+
+  
+  
   nsSize mComputedSize;
+
   mozilla::IntrinsicSize mIntrinsicSize;
 
   
@@ -477,9 +479,7 @@ class nsDisplayImage final : public nsPaintedDisplayItem {
 
   nsRect GetBounds(bool* aSnap) const {
     *aSnap = true;
-
-    nsImageFrame* imageFrame = static_cast<nsImageFrame*>(mFrame);
-    return imageFrame->GetInnerArea() + ToReferenceFrame();
+    return Frame()->GetContentRectRelativeToSelf() + ToReferenceFrame();
   }
 
   nsRect GetBounds(nsDisplayListBuilder*, bool* aSnap) const final {

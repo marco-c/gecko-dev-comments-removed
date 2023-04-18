@@ -116,9 +116,7 @@ class nsDisplayGradient final : public nsPaintedDisplayItem {
 
   nsRect GetBounds(bool* aSnap) const {
     *aSnap = true;
-
-    auto* imageFrame = static_cast<nsImageFrame*>(mFrame);
-    return imageFrame->GetInnerArea() + ToReferenceFrame();
+    return Frame()->GetContentRectRelativeToSelf() + ToReferenceFrame();
   }
 
   nsRect GetBounds(nsDisplayListBuilder*, bool* aSnap) const final {
@@ -738,7 +736,8 @@ bool nsImageFrame::GetSourceToDestTransform(nsTransform2D& aTransform) {
   
   
   
-  nsRect constraintRect(GetInnerArea().TopLeft(), mComputedSize);
+  nsRect constraintRect(GetContentRectRelativeToSelf().TopLeft(),
+                        mComputedSize);
   constraintRect.y -= GetContinuationOffset();
 
   nsRect destRect = nsLayoutUtils::ComputeObjectDestRect(
@@ -798,7 +797,7 @@ nsRect nsImageFrame::SourceRectToDest(const nsIntRect& aRect) {
     
     
     
-    return GetInnerArea();
+    return GetContentRectRelativeToSelf();
   }
 
   sourceToDest.TransformCoord(&r.x, &r.y, &r.width, &r.height);
@@ -1089,7 +1088,7 @@ void nsImageFrame::MaybeDecodeForPredictedSize() {
   
   const nsPoint offset =
       GetOffsetToCrossDoc(nsLayoutUtils::GetReferenceFrame(this));
-  const nsRect frameContentBox = GetInnerArea() + offset;
+  const nsRect frameContentBox = GetContentRectRelativeToSelf() + offset;
 
   
   const int32_t factor = PresContext()->AppUnitsPerDevPixel();
@@ -1167,12 +1166,6 @@ nsIFrame::SizeComputationResult nsImageFrame::ComputeSize(
               aRenderingContext, aWM, mIntrinsicSize, GetAspectRatio(), aCBSize,
               aMargin, aBorderPadding, aSizeOverrides, aFlags),
           AspectRatioUsage::None};
-}
-
-
-
-nsRect nsImageFrame::GetInnerArea() const {
-  return GetContentRectRelativeToSelf();
 }
 
 Element* nsImageFrame::GetMapElement() const {
@@ -1588,7 +1581,7 @@ ImgDrawResult nsImageFrame::DisplayAltFeedback(gfxContext& aRenderingContext,
       mKind != Kind::ImageElement || ImageOk(mContent->AsElement()->State());
 
   
-  nsRect inner = GetInnerArea() + aPt;
+  nsRect inner = GetContentRectRelativeToSelf() + aPt;
 
   
   nscoord borderEdgeWidth =
@@ -1744,7 +1737,7 @@ ImgDrawResult nsImageFrame::DisplayAltFeedbackWithoutLayer(
       mKind != Kind::ImageElement || ImageOk(mContent->AsElement()->State());
 
   
-  nsRect inner = GetInnerArea() + aPt;
+  nsRect inner = GetContentRectRelativeToSelf() + aPt;
 
   
   nscoord borderEdgeWidth =
@@ -1947,7 +1940,7 @@ ImgDrawResult nsImageFrame::DisplayAltFeedbackWithoutLayer(
 static void PaintDebugImageMap(nsIFrame* aFrame, DrawTarget* aDrawTarget,
                                const nsRect& aDirtyRect, nsPoint aPt) {
   nsImageFrame* f = static_cast<nsImageFrame*>(aFrame);
-  nsRect inner = f->GetInnerArea() + aPt;
+  nsRect inner = f->GetContentRectRelativeToSelf() + aPt;
   gfxPoint devPixelOffset = nsLayoutUtils::PointToGfxPoint(
       inner.TopLeft(), aFrame->PresContext()->AppUnitsPerDevPixel());
   AutoRestoreTransform autoRestoreTransform(aDrawTarget);
@@ -2193,13 +2186,15 @@ ImgDrawResult nsImageFrame::PaintImage(gfxContext& aRenderingContext,
 
   
   
-  NS_ASSERTION(GetInnerArea().width == mComputedSize.width, "bad width");
+  NS_ASSERTION(GetContentRectRelativeToSelf().width == mComputedSize.width,
+               "bad width");
 
   
   
   
   
-  nsRect constraintRect(aPt + GetInnerArea().TopLeft(), mComputedSize);
+  nsRect constraintRect(aPt + GetContentRectRelativeToSelf().TopLeft(),
+                        mComputedSize);
   constraintRect.y -= GetContinuationOffset();
 
   nsPoint anchorPoint;
@@ -2382,7 +2377,7 @@ void nsImageFrame::TranslateEventCoords(const nsPoint& aPoint,
 
   
   
-  nsRect inner = GetInnerArea();
+  nsRect inner = GetContentRectRelativeToSelf();
   x -= inner.x;
   y -= inner.y;
 
