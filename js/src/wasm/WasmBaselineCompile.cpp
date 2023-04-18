@@ -3746,16 +3746,6 @@ bool BaseCompiler::emitBodyDelegateThrowPad() {
 
     
     
-    fr.loadTlsPtr(WasmTlsReg);
-    masm.loadWasmPinnedRegsFromTls();
-    RegRef scratch = needRef();
-    RegRef scratch2 = needRef();
-    masm.switchToWasmTlsRealm(scratch, scratch2);
-    freeRef(scratch);
-    freeRef(scratch2);
-
-    
-    
     RegRef exn = needRef();
     loadPendingException(exn);
     pushRef(exn);
@@ -3818,6 +3808,11 @@ bool BaseCompiler::emitDelegate() {
   tryNote.end = masm.currentOffset();
   tryNote.entryPoint = tryNote.end;
   tryNote.framePushed = masm.framePushed();
+
+  
+  
+  
+  fr.storeTlsPtr(WasmTlsReg);
 
   
   
@@ -3903,13 +3898,9 @@ bool BaseCompiler::endTryCatch(ResultType type) {
   }
 
   
-  fr.loadTlsPtr(WasmTlsReg);
-  masm.loadWasmPinnedRegsFromTls();
-  RegRef scratch = needRef();
-  RegRef scratch2 = needRef();
-  masm.switchToWasmTlsRealm(scratch, scratch2);
-  freeRef(scratch);
-  freeRef(scratch2);
+  
+  
+  fr.storeTlsPtr(WasmTlsReg);
 
   
   
