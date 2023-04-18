@@ -5602,11 +5602,14 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
     
     gtk_widget_realize(mShell);
 
+    
+    
+    
     if (GdkIsX11Display()) {
-      
-      
-      
       NativeMoveResize( true,  false);
+    } else if (AreBoundsSane()) {
+      GdkRectangle rect = DevicePixelsToGdkRectRoundOut(mBounds);
+      mPopupPosition = {rect.x, rect.y};
     }
   } else {  
     mGtkWindowRoleName = "Toplevel";
