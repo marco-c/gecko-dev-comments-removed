@@ -10,6 +10,7 @@
 #include "mozilla/PresShell.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/gfx/2D.h"
+#include "mozilla/intl/Segmenter.h"
 #include "gfxContext.h"
 #include "nsDeviceContext.h"
 #include "nsFontMetrics.h"
@@ -334,28 +335,43 @@ void nsPageFrame::DrawHeaderFooter(gfxContext& aRenderingContext,
     nsAutoString str;
     ProcessSpecialCodes(aStr, str);
 
-    int32_t indx;
-    int32_t textWidth = 0;
-    const char16_t* text = str.get();
-
     int32_t len = (int32_t)str.Length();
     if (len == 0) {
       return;  
     }
+
+    int32_t index;
+    int32_t textWidth = 0;
+    const char16_t* text = str.get();
     
     if (nsLayoutUtils::BinarySearchForPosition(drawTarget, aFontMetrics, text,
                                                0, 0, 0, len, int32_t(aWidth),
-                                               indx, textWidth)) {
-      if (indx < len - 1) {
+                                               index, textWidth)) {
+      if (index < len - 1) {
         
-        if (indx > 3) {
+        
+
+        
+        
+        
+        
+        
+        
+        mozilla::intl::GraphemeClusterBreakReverseIteratorUtf16 revIter(str);
+
+        
+        revIter.Seek(index);
+
+        
+        
+        revIter.Next();
+        revIter.Next();
+        if (const Maybe<uint32_t> maybeIndex = revIter.Next()) {
           
           
           
           
-          
-          
-          str.Truncate(indx - 3);
+          str.Truncate(*maybeIndex);
           str.AppendLiteral("...");
         } else {
           
