@@ -2985,7 +2985,6 @@ void nsRange::ExcludeNonSelectableNodes(nsTArray<RefPtr<nsRange>>* aOutRanges) {
     
     nsIContent* firstNonSelectableContent = nullptr;
     while (true) {
-      ErrorResult err;
       nsINode* node = preOrderIter.GetCurrentNode();
       preOrderIter.Next();
       bool selectable = true;
@@ -3013,63 +3012,71 @@ void nsRange::ExcludeNonSelectableNodes(nsTArray<RefPtr<nsRange>>* aOutRanges) {
         if (!firstNonSelectableContent) {
           firstNonSelectableContent = content;
         }
-        if (preOrderIter.IsDone() && seenSelectable) {
-          
-          
-          range->SetEndBefore(*firstNonSelectableContent, err);
+        if (preOrderIter.IsDone()) {
+          if (seenSelectable) {
+            
+            
+            range->SetEndBefore(*firstNonSelectableContent, IgnoreErrors());
+          }
+          return;
         }
-      } else if (firstNonSelectableContent) {
+        continue;
+      }
+
+      if (firstNonSelectableContent) {
         if (range == this && !seenSelectable) {
           
           
+          IgnoredErrorResult err;
           range->SetStartBefore(*node, err);
           if (err.Failed()) {
             return;
           }
           break;  
-        } else {
-          
-          nsINode* endContainer = range->mEnd.Container();
-          const uint32_t endOffset =
-              *range->mEnd.Offset(RangeBoundary::OffsetFilter::kValidOffsets);
-
-          
-          range->SetEndBefore(*firstNonSelectableContent, err);
-
-          
-          
-          
-          if (!added && !err.Failed()) {
-            aOutRanges->AppendElement(range);
-          }
-
-          
-          nsINode* startContainer = node;
-          Maybe<uint32_t> startOffset = Some(0);
-          
-          
-          if (content && content->HasIndependentSelection()) {
-            nsINode* parent = startContainer->GetParent();
-            if (parent) {
-              startOffset = parent->ComputeIndexOf(startContainer);
-              startContainer = parent;
-            }
-          }
-          newRange =
-              nsRange::Create(startContainer, startOffset.valueOr(UINT32_MAX),
-                              endContainer, endOffset, IgnoreErrors());
-          if (!newRange || newRange->Collapsed()) {
-            newRange = nullptr;
-          }
-          range = newRange;
-          break;  
         }
-      } else {
-        seenSelectable = true;
-        if (!added) {
-          added = true;
+
+        
+        nsINode* endContainer = range->mEnd.Container();
+        const uint32_t endOffset =
+            *range->mEnd.Offset(RangeBoundary::OffsetFilter::kValidOffsets);
+
+        
+        IgnoredErrorResult err;
+        range->SetEndBefore(*firstNonSelectableContent, err);
+
+        
+        
+        
+        if (!added && !err.Failed()) {
           aOutRanges->AppendElement(range);
         }
+
+        
+        nsINode* startContainer = node;
+        Maybe<uint32_t> startOffset = Some(0);
+        
+        
+        if (content && content->HasIndependentSelection()) {
+          nsINode* parent = startContainer->GetParent();
+          if (parent) {
+            startOffset = parent->ComputeIndexOf(startContainer);
+            startContainer = parent;
+          }
+        }
+        newRange =
+            nsRange::Create(startContainer, startOffset.valueOr(UINT32_MAX),
+                            endContainer, endOffset, IgnoreErrors());
+        if (!newRange || newRange->Collapsed()) {
+          newRange = nullptr;
+        }
+        range = newRange;
+        break;  
+      }
+
+      seenSelectable = true;
+      if (!added) {
+        added = true;
+        aOutRanges->AppendElement(range);
       }
       if (preOrderIter.IsDone()) {
         return;
