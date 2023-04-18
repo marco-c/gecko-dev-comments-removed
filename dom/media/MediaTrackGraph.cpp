@@ -57,12 +57,35 @@ LazyLogModule gMediaTrackGraphLog("MediaTrackGraph");
 #endif  
 #define LOG(type, msg) MOZ_LOG(gMediaTrackGraphLog, type, msg)
 
+namespace {
 
 
 
 
+class GraphKey final {
+ public:
+  GraphKey(uint64_t aWindowID, TrackRate aSampleRate,
+           CubebUtils::AudioDeviceID aOutputDeviceID)
+      : mWindowID(aWindowID),
+        mSampleRate(aSampleRate),
+        mOutputDeviceID(aOutputDeviceID) {}
+  GraphKey(const GraphKey&) = default;
+  ~GraphKey() = default;
+  bool operator==(const GraphKey& b) const {
+    return mWindowID == b.mWindowID && mSampleRate == b.mSampleRate &&
+           mOutputDeviceID == b.mOutputDeviceID;
+  }
+  PLDHashNumber Hash() const {
+    return HashGeneric(mWindowID, mSampleRate, mOutputDeviceID);
+  }
 
-static nsTHashMap<nsUint32HashKey, MediaTrackGraphImpl*> gGraphs;
+ private:
+  uint64_t mWindowID;
+  TrackRate mSampleRate;
+  CubebUtils::AudioDeviceID mOutputDeviceID;
+};
+nsTHashMap<nsGenericHashKey<GraphKey>, MediaTrackGraphImpl*> gGraphs;
+}  
 
 MediaTrackGraphImpl::~MediaTrackGraphImpl() {
   MOZ_ASSERT(mTracks.IsEmpty() && mSuspendedTracks.IsEmpty(),
@@ -3142,17 +3165,6 @@ void MediaTrackGraphImpl::Destroy() {
   mSelfRef = nullptr;
 }
 
-static uint32_t WindowToHash(uint64_t aWindowID, TrackRate aSampleRate,
-                             CubebUtils::AudioDeviceID aOutputDeviceID) {
-  uint32_t hashkey = 0;
-
-  hashkey = AddToHash(hashkey, aWindowID);
-  hashkey = AddToHash(hashkey, aSampleRate);
-  hashkey = AddToHash(hashkey, aOutputDeviceID);
-
-  return hashkey;
-}
-
 
 
 
@@ -3163,9 +3175,9 @@ MediaTrackGraphImpl* MediaTrackGraphImpl::GetInstanceIfExists(
 
   TrackRate sampleRate =
       aSampleRate ? aSampleRate : CubebUtils::PreferredSampleRate();
-  uint32_t hashkey = WindowToHash(aWindowID, sampleRate, aOutputDeviceID);
+  GraphKey key(aWindowID, sampleRate, aOutputDeviceID);
 
-  return gGraphs.Get(hashkey);
+  return gGraphs.Get(key);
 }
 
 
@@ -3206,9 +3218,8 @@ MediaTrackGraphImpl* MediaTrackGraphImpl::GetInstance(
         std::min<uint32_t>(8, CubebUtils::MaxNumberOfChannels());
     graph = new MediaTrackGraphImpl(aGraphDriverRequested, runType, sampleRate,
                                     channelCount, aOutputDeviceID, aMainThread);
-
-    uint32_t hashkey = WindowToHash(aWindowID, sampleRate, aOutputDeviceID);
-    gGraphs.InsertOrUpdate(hashkey, graph);
+    GraphKey key(aWindowID, sampleRate, aOutputDeviceID);
+    gGraphs.InsertOrUpdate(key, graph);
 
     LOG(LogLevel::Debug,
         ("Starting up MediaTrackGraph %p for window 0x%" PRIx64, graph,
