@@ -2662,7 +2662,7 @@ nsresult BackgroundRequestChild::PreprocessHelper::Init(
   
   
   
-  mTaskQueue = MakeRefPtr<TaskQueue>(target.forget(), "BackgroundRequestChild");
+  mTaskQueue = TaskQueue::Create(target.forget(), "BackgroundRequestChild");
 
   ErrorResult errorResult;
 

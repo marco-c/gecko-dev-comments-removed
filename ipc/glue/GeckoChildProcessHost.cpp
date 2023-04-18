@@ -174,7 +174,8 @@ class BaseProcessLauncher {
 
     
     nsCOMPtr<nsIEventTarget> threadOrPool = GetIPCLauncher();
-    mLaunchThread = new TaskQueue(threadOrPool.forget(), "BaseProcessLauncher");
+    mLaunchThread =
+        TaskQueue::Create(threadOrPool.forget(), "BaseProcessLauncher");
 
     if (ShouldHaveDirectoryService()) {
       
