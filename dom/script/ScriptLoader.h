@@ -626,7 +626,7 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   void GiveUpBytecodeEncoding();
 
   already_AddRefed<nsIGlobalObject> GetGlobalForRequest(
-      ScriptLoadRequest* aRequest) override;
+      ScriptLoadRequest* aRequest);
 
   
   
