@@ -155,6 +155,8 @@ class SharedMemory {
   
   
   static bool AppendPosixShmPrefix(std::string* str, pid_t pid);
+  
+  static bool UsingPosixShm();
 #endif
 
  private:

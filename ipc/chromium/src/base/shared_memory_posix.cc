@@ -81,7 +81,15 @@ bool SharedMemory::IsHandleValid(const SharedMemoryHandle& handle) {
 
 SharedMemoryHandle SharedMemory::NULLHandle() { return nullptr; }
 
+
+bool SharedMemory::UsingPosixShm() {
+  
+  
+  return AppendPosixShmPrefix(nullptr, 0);
+}
+
 #ifdef ANDROID
+
 
 
 
@@ -261,6 +269,10 @@ static bool HaveMemfd() {
 bool SharedMemory::AppendPosixShmPrefix(std::string* str, pid_t pid) {
   if (HaveMemfd()) {
     return false;
+  }
+  
+  if (!str) {
+    return true;
   }
   *str += '/';
 #  ifdef MOZ_WIDGET_GTK

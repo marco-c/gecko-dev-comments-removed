@@ -1715,8 +1715,12 @@ class GMPSandboxPolicy : public SandboxPolicyCommon {
   const SandboxOpenedFiles* mFiles;
 
  public:
-  explicit GMPSandboxPolicy(const SandboxOpenedFiles* aFiles)
-      : mFiles(aFiles) {}
+  explicit GMPSandboxPolicy(const SandboxOpenedFiles* aFiles) : mFiles(aFiles) {
+    
+    
+    
+    mMayCreateShmem = true;
+  }
 
   ~GMPSandboxPolicy() override = default;
 
