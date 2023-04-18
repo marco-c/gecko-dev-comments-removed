@@ -40,6 +40,8 @@ class NetworkConnectivityService : public nsINetworkConnectivityService,
 
   void SaveNAT64Prefixes(nsIDNSRecord* aRecord);
 
+  already_AddRefed<nsIChannel> SetupIPCheckChannel(bool ipv4);
+
   
   
   
