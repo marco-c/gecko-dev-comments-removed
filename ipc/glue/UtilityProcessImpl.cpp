@@ -23,6 +23,10 @@ UtilityProcessImpl::~UtilityProcessImpl() { mUtility = nullptr; }
 
 bool UtilityProcessImpl::Init(int aArgc, char* aArgv[]) {
 #if defined(MOZ_SANDBOX) && defined(OS_WIN)
+  
+  
+  
+  ::LoadLibraryW(L"winmm.dll");
   mozilla::SandboxTarget::Instance()->StartSandbox();
 #endif
 

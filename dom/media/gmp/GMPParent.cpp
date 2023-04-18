@@ -907,7 +907,7 @@ RefPtr<GenericPromise> GMPParent::ParseChromiumManifest(
 #if XP_WIN
     
     
-    mLibs = "dxva2.dll, ole32.dll, psapi.dll"_ns;
+    mLibs = "dxva2.dll, ole32.dll, psapi.dll, winmm.dll"_ns;
 #endif
   } else if (mDisplayName.EqualsASCII("fake")) {
     
