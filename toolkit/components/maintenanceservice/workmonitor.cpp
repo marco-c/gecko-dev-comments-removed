@@ -595,7 +595,7 @@ BOOL ExecuteServiceCommand(int argc, LPWSTR* argv) {
   if (!lstrcmpi(argv[2], L"software-update")) {
     
     
-    if (argc < 4 || !IsValidFullPath(argv[4])) {
+    if (argc <= 4 || !IsValidFullPath(argv[4])) {
       
       
       LOG_WARN(("The patch directory path is not valid for this application."));
@@ -633,7 +633,7 @@ BOOL ExecuteServiceCommand(int argc, LPWSTR* argv) {
 
     
     
-    if (argc < 5 || !IsValidFullPath(argv[5])
+    if (argc <= 5 || !IsValidFullPath(argv[5])
     
     
 #ifndef DISABLE_UPDATER_AUTHENTICODE_CHECK
@@ -652,7 +652,7 @@ BOOL ExecuteServiceCommand(int argc, LPWSTR* argv) {
     if (!IsOldCommandline(argc - 3, argv + 3)) {
       
       
-      if (argc < 6 || !IsValidFullPath(argv[6])) {
+      if (argc <= 6 || !IsValidFullPath(argv[6])) {
         LOG_WARN(
             ("The working directory path is not valid for this application."));
         if (!WriteStatusFailure(argv[4],
@@ -665,7 +665,7 @@ BOOL ExecuteServiceCommand(int argc, LPWSTR* argv) {
       
       
       if (_wcsnicmp(argv[6], argv[5], MAX_PATH) != 0) {
-        if (argc < 7 ||
+        if (argc <= 7 ||
             (wcscmp(argv[7], L"-1") != 0 && !wcsstr(argv[7], L"/replace"))) {
           LOG_WARN(
               ("Installation directory and working directory must be the "
