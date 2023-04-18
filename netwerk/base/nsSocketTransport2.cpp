@@ -1630,7 +1630,10 @@ bool nsSocketTransport::RecoverFromError() {
 
   
   
-  if (mState == STATE_CONNECTING && mDNSRecord) {
+  
+  
+  if (mState == STATE_CONNECTING && mDNSRecord &&
+      mCondition != NS_BASE_STREAM_CLOSED) {
     mDNSRecord->ReportUnusable(SocketPort());
   }
 
