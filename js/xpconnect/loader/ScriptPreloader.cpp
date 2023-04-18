@@ -176,6 +176,7 @@ void ScriptPreloader::DeleteCacheDataSingleton() {
 
 void ScriptPreloader::InitContentChild(ContentParent& parent) {
   auto& cache = GetChildSingleton();
+  cache.mSaveMonitor.AssertOnWritingThread();
 
   
   
@@ -219,7 +220,7 @@ ProcessType ScriptPreloader::GetChildProcessType(const nsACString& remoteType) {
 ScriptPreloader::ScriptPreloader(AutoMemMap* cacheData)
     : mCacheData(cacheData),
       mMonitor("[ScriptPreloader.mMonitor]"),
-      mSaveMonitor("[ScriptPreloader.mSaveMonitor]") {
+      mSaveMonitor("[ScriptPreloader.mSaveMonitor]", this) {
   
   
   if (XRE_IsParentProcess()) {
@@ -288,7 +289,7 @@ void ScriptPreloader::InvalidateCache() {
   }
 
   {
-    MonitorAutoLock saveMonitorAutoLock(mSaveMonitor);
+    MonitorSingleWriterAutoLock saveMonitorAutoLock(mSaveMonitor);
 
     mCacheInvalidated = true;
   }
@@ -428,6 +429,7 @@ Result<Ok, nsresult> ScriptPreloader::OpenCache() {
 
 
 Result<Ok, nsresult> ScriptPreloader::InitCache(const nsAString& basePath) {
+  mSaveMonitor.AssertOnWritingThread();
   mCacheInitialized = true;
   mBaseName = basePath;
 
@@ -453,6 +455,7 @@ Result<Ok, nsresult> ScriptPreloader::InitCache(const nsAString& basePath) {
 
 Result<Ok, nsresult> ScriptPreloader::InitCache(
     const Maybe<ipc::FileDescriptor>& cacheFile, ScriptCacheChild* cacheChild) {
+  mSaveMonitor.AssertOnWritingThread();
   MOZ_ASSERT(XRE_IsContentProcess());
 
   mCacheInitialized = true;
@@ -664,7 +667,7 @@ Result<Ok, nsresult> ScriptPreloader::WriteCache() {
   mSaveMonitor.AssertCurrentThreadOwns();
 
   if (!mDataPrepared && !mSaveComplete) {
-    MonitorAutoUnlock mau(mSaveMonitor);
+    MonitorSingleWriterAutoUnlock mau(mSaveMonitor);
 
     NS_DispatchToMainThread(
         NewRunnableMethod("ScriptPreloader::PrepareCacheWrite", this,
@@ -760,7 +763,7 @@ nsresult ScriptPreloader::GetName(nsACString& aName) {
 
 
 nsresult ScriptPreloader::Run() {
-  MonitorAutoLock mal(mSaveMonitor);
+  MonitorSingleWriterAutoLock mal(mSaveMonitor);
 
   
   
@@ -777,7 +780,7 @@ nsresult ScriptPreloader::Run() {
   Unused << NS_WARN_IF(result.isErr());
 
   {
-    MonitorAutoLock lock(mChildCache->mSaveMonitor);
+    MonitorSingleWriterAutoLock lock(mChildCache->mSaveMonitor);
     result = mChildCache->WriteCache();
   }
   Unused << NS_WARN_IF(result.isErr());
