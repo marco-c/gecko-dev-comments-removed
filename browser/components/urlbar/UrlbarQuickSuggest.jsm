@@ -124,7 +124,12 @@ class Suggestions {
       return null;
     }
     return {
-      is_best_match: result._test_is_best_match,
+      
+      
+      is_best_match:
+        typeof result._test_is_best_match == "boolean"
+          ? result._test_is_best_match
+          : phrase.length >= 5,
       full_keyword: this.getFullKeyword(phrase, result.keywords),
       title: result.title,
       url: result.url,
