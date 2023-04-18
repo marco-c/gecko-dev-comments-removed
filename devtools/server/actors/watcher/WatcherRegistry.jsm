@@ -114,9 +114,6 @@ const WatcherRegistry = {
         sessionContext: watcher.sessionContext,
         
         connectionPrefix: watcher.conn.prefix,
-        
-        
-        watcherTraits: watcher.form().traits,
       };
       
       for (const name of Object.values(SUPPORTED_DATA)) {

@@ -191,56 +191,13 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
   },
 
   form() {
-    
-    
-    
-    
-    
-    
-    const shouldEnableAllWatchers =
-      this.sessionContext.type == "browser-element" ||
-      this.sessionContext.type == "webextension";
-
     return {
       actor: this.actorID,
       
       
       traits: {
-        [Targets.TYPES.FRAME]: true,
-        [Targets.TYPES.PROCESS]: true,
-        [Targets.TYPES.WORKER]: shouldEnableAllWatchers,
-        resources: {
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          [Resources.TYPES.CONSOLE_MESSAGE]: true,
-          [Resources.TYPES.CSS_CHANGE]: shouldEnableAllWatchers,
-          [Resources.TYPES.CSS_MESSAGE]: true,
-          [Resources.TYPES.DOCUMENT_EVENT]: shouldEnableAllWatchers,
-          [Resources.TYPES.CACHE_STORAGE]: shouldEnableAllWatchers,
-          [Resources.TYPES.COOKIE]: shouldEnableAllWatchers,
-          [Resources.TYPES.ERROR_MESSAGE]: true,
-          [Resources.TYPES.INDEXED_DB]: shouldEnableAllWatchers,
-          [Resources.TYPES.LOCAL_STORAGE]: shouldEnableAllWatchers,
-          [Resources.TYPES.SESSION_STORAGE]: shouldEnableAllWatchers,
-          [Resources.TYPES.PLATFORM_MESSAGE]: true,
-          [Resources.TYPES.NETWORK_EVENT]: true,
-          [Resources.TYPES.NETWORK_EVENT_STACKTRACE]: true,
-          [Resources.TYPES.REFLOW]: true,
-          [Resources.TYPES.STYLESHEET]: shouldEnableAllWatchers,
-          [Resources.TYPES.SOURCE]: shouldEnableAllWatchers,
-          [Resources.TYPES.THREAD_STATE]: shouldEnableAllWatchers,
-          [Resources.TYPES.SERVER_SENT_EVENT]: shouldEnableAllWatchers,
-          [Resources.TYPES.WEBSOCKET]: shouldEnableAllWatchers,
-        },
+        ...this.sessionContext.supportedTargets,
+        resources: this.sessionContext.supportedResources,
       },
     };
   },

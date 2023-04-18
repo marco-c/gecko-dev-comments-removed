@@ -22,6 +22,16 @@
 
 
 
+
+
+
+
+
+
+const Services = require("Services");
+const Targets = require("devtools/server/actors/targets/index");
+const Resources = require("devtools/server/actors/resources/index");
+
 const SESSION_TYPES = {
   ALL: "all",
   BROWSER_ELEMENT: "browser-element",
@@ -40,11 +50,14 @@ const SESSION_TYPES = {
 
 
 function createBrowserSessionContext() {
+  const type = SESSION_TYPES.ALL;
   return {
-    type: SESSION_TYPES.ALL,
+    type,
     
     
     isServerTargetSwitchingEnabled: false,
+    supportedTargets: getWatcherSupportedTargets(type),
+    supportedResources: getWatcherSupportedResources(type),
   };
 }
 
@@ -58,8 +71,9 @@ function createBrowserSessionContext() {
 
 
 function createBrowserElementSessionContext(browserElement, config) {
+  const type = SESSION_TYPES.BROWSER_ELEMENT;
   return {
-    type: SESSION_TYPES.BROWSER_ELEMENT,
+    type,
     browserId: browserElement.browserId,
     
     
@@ -67,6 +81,8 @@ function createBrowserElementSessionContext(browserElement, config) {
     
     
     isPopupDebuggingEnabled: config.isPopupDebuggingEnabled,
+    supportedTargets: getWatcherSupportedTargets(type),
+    supportedResources: getWatcherSupportedResources(type),
   };
 }
 
@@ -93,14 +109,17 @@ function createWebExtensionSessionContext(
   { addonId, browsingContextID, innerWindowId },
   config
 ) {
+  const type = SESSION_TYPES.WEBEXTENSION;
   return {
-    type: SESSION_TYPES.WEBEXTENSION,
+    type,
     addonId: addonId,
     addonBrowsingContextID: browsingContextID,
     addonInnerWindowId: innerWindowId,
     
     
     isServerTargetSwitchingEnabled: config.isServerTargetSwitchingEnabled,
+    supportedTargets: getWatcherSupportedTargets(type),
+    supportedResources: getWatcherSupportedResources(type),
   };
 }
 
@@ -109,8 +128,11 @@ function createWebExtensionSessionContext(
 
 
 function createContentProcessSessionContext() {
+  const type = SESSION_TYPES.CONTENT_PROCESS;
   return {
-    type: SESSION_TYPES.CONTENT_PROCESS,
+    type,
+    supportedTargets: getWatcherSupportedTargets(type),
+    supportedResources: getWatcherSupportedResources(type),
   };
 }
 
@@ -119,8 +141,81 @@ function createContentProcessSessionContext() {
 
 
 function createWorkerSessionContext() {
+  const type = SESSION_TYPES.WORKER;
   return {
-    type: SESSION_TYPES.WORKER,
+    type,
+    supportedTargets: getWatcherSupportedTargets(type),
+    supportedResources: getWatcherSupportedResources(type),
+  };
+}
+
+
+
+
+
+
+
+function getWatcherSupportedTargets(type) {
+  
+  if (
+    type == SESSION_TYPES.ALL &&
+    !Services.prefs.getBoolPref("devtools.browsertoolbox.fission", false)
+  ) {
+    return {};
+  }
+
+  return {
+    [Targets.TYPES.FRAME]: true,
+    [Targets.TYPES.PROCESS]: true,
+    [Targets.TYPES.WORKER]:
+      type == SESSION_TYPES.BROWSER_ELEMENT ||
+      type == SESSION_TYPES.WEBEXTENSION,
+  };
+}
+
+
+
+
+
+
+
+function getWatcherSupportedResources(type) {
+  
+  if (
+    type == SESSION_TYPES.ALL &&
+    !Services.prefs.getBoolPref("devtools.browsertoolbox.fission", false)
+  ) {
+    return {};
+  }
+
+  
+  
+  
+  
+  
+  const isTabOrWebExtensionToolbox =
+    type == SESSION_TYPES.BROWSER_ELEMENT || type == SESSION_TYPES.WEBEXTENSION;
+
+  return {
+    [Resources.TYPES.CONSOLE_MESSAGE]: true,
+    [Resources.TYPES.CSS_CHANGE]: isTabOrWebExtensionToolbox,
+    [Resources.TYPES.CSS_MESSAGE]: true,
+    [Resources.TYPES.DOCUMENT_EVENT]: isTabOrWebExtensionToolbox,
+    [Resources.TYPES.CACHE_STORAGE]: isTabOrWebExtensionToolbox,
+    [Resources.TYPES.COOKIE]: isTabOrWebExtensionToolbox,
+    [Resources.TYPES.ERROR_MESSAGE]: true,
+    [Resources.TYPES.INDEXED_DB]: isTabOrWebExtensionToolbox,
+    [Resources.TYPES.LOCAL_STORAGE]: isTabOrWebExtensionToolbox,
+    [Resources.TYPES.SESSION_STORAGE]: isTabOrWebExtensionToolbox,
+    [Resources.TYPES.PLATFORM_MESSAGE]: true,
+    [Resources.TYPES.NETWORK_EVENT]: true,
+    [Resources.TYPES.NETWORK_EVENT_STACKTRACE]: true,
+    [Resources.TYPES.REFLOW]: true,
+    [Resources.TYPES.STYLESHEET]: isTabOrWebExtensionToolbox,
+    [Resources.TYPES.SOURCE]: isTabOrWebExtensionToolbox,
+    [Resources.TYPES.THREAD_STATE]: isTabOrWebExtensionToolbox,
+    [Resources.TYPES.SERVER_SENT_EVENT]: isTabOrWebExtensionToolbox,
+    [Resources.TYPES.WEBSOCKET]: isTabOrWebExtensionToolbox,
   };
 }
 
