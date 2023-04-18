@@ -226,6 +226,27 @@ nsresult nsHttpTransaction::Init(
 
   mTrafficCategory = trafficCategory;
 
+  mActivityDistributor = components::HttpActivityDistributor::Service();
+  if (!mActivityDistributor) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  bool activityDistributorActive;
+  rv = mActivityDistributor->GetIsActive(&activityDistributorActive);
+  if (NS_SUCCEEDED(rv) && activityDistributorActive) {
+    
+    
+    LOG(
+        ("nsHttpTransaction::Init() "
+         "mActivityDistributor is active "
+         "this=%p",
+         this));
+  } else {
+    
+    activityDistributorActive = false;
+    mActivityDistributor = nullptr;
+  }
+
   LOG1(("nsHttpTransaction %p SetRequestContext %p\n", this, requestContext));
   mRequestContext = requestContext;
 
@@ -263,17 +284,18 @@ nsresult nsHttpTransaction::Init(
   }
 
   
-  if (gHttpHandler->HttpActivityDistributorActivated()) {
+  if (mActivityDistributor) {
+    RefPtr<nsHttpTransaction> self = this;
     nsCString requestBuf(mReqHeaderBuf);
-    NS_DispatchToMainThread(NS_NewRunnableFunction(
-        "ObserveHttpActivityWithArgs", [channelId(mChannelId), requestBuf]() {
-          if (!gHttpHandler) {
-            return;
-          }
-          gHttpHandler->ObserveHttpActivityWithArgs(
-              HttpActivityArgs(channelId),
+    NS_DispatchToMainThread(
+        NS_NewRunnableFunction("ObserveActivityWithArgs", [self, requestBuf]() {
+          nsresult rv = self->mActivityDistributor->ObserveActivityWithArgs(
+              HttpActivityArgs(self->mChannelId),
               NS_HTTP_ACTIVITY_TYPE_HTTP_TRANSACTION,
               NS_HTTP_ACTIVITY_SUBTYPE_REQUEST_HEADER, PR_Now(), 0, requestBuf);
+          if (NS_FAILED(rv)) {
+            LOG3(("ObserveActivity failed (%08x)", static_cast<uint32_t>(rv)));
+          }
         }));
   }
 
@@ -621,18 +643,25 @@ void nsHttpTransaction::OnTransportStatus(nsITransport* transport,
 
   
   
+  if (mActivityDistributor) {
+    
+    if ((mHasRequestBody) && (status == NS_NET_STATUS_WAITING_FOR)) {
+      nsresult rv = mActivityDistributor->ObserveActivityWithArgs(
+          HttpActivityArgs(mChannelId), NS_HTTP_ACTIVITY_TYPE_HTTP_TRANSACTION,
+          NS_HTTP_ACTIVITY_SUBTYPE_REQUEST_BODY_SENT, PR_Now(), 0, ""_ns);
+      if (NS_FAILED(rv)) {
+        LOG3(("ObserveActivity failed (%08x)", static_cast<uint32_t>(rv)));
+      }
+    }
 
-  
-  if ((mHasRequestBody) && (status == NS_NET_STATUS_WAITING_FOR)) {
-    gHttpHandler->ObserveHttpActivityWithArgs(
-        HttpActivityArgs(mChannelId), NS_HTTP_ACTIVITY_TYPE_HTTP_TRANSACTION,
-        NS_HTTP_ACTIVITY_SUBTYPE_REQUEST_BODY_SENT, PR_Now(), 0, ""_ns);
+    
+    nsresult rv = mActivityDistributor->ObserveActivityWithArgs(
+        HttpActivityArgs(mChannelId), NS_HTTP_ACTIVITY_TYPE_SOCKET_TRANSPORT,
+        static_cast<uint32_t>(status), PR_Now(), progress, ""_ns);
+    if (NS_FAILED(rv)) {
+      LOG3(("ObserveActivity failed (%08x)", static_cast<uint32_t>(rv)));
+    }
   }
-
-  
-  gHttpHandler->ObserveHttpActivityWithArgs(
-      HttpActivityArgs(mChannelId), NS_HTTP_ACTIVITY_TYPE_SOCKET_TRANSPORT,
-      static_cast<uint32_t>(status), PR_Now(), progress, ""_ns);
 
   
   if (status == NS_NET_STATUS_RECEIVING_FROM) return;
@@ -1379,18 +1408,26 @@ void nsHttpTransaction::Close(nsresult reason) {
     mTokenBucketCancel = nullptr;
   }
 
-  
-  if (!mResponseIsComplete) {
-    gHttpHandler->ObserveHttpActivityWithArgs(
-        HttpActivityArgs(mChannelId), NS_HTTP_ACTIVITY_TYPE_HTTP_TRANSACTION,
-        NS_HTTP_ACTIVITY_SUBTYPE_RESPONSE_COMPLETE, PR_Now(),
-        static_cast<uint64_t>(mContentRead), ""_ns);
-  }
+  if (mActivityDistributor) {
+    
+    if (!mResponseIsComplete) {
+      nsresult rv = mActivityDistributor->ObserveActivityWithArgs(
+          HttpActivityArgs(mChannelId), NS_HTTP_ACTIVITY_TYPE_HTTP_TRANSACTION,
+          NS_HTTP_ACTIVITY_SUBTYPE_RESPONSE_COMPLETE, PR_Now(),
+          static_cast<uint64_t>(mContentRead), ""_ns);
+      if (NS_FAILED(rv)) {
+        LOG3(("ObserveActivity failed (%08x)", static_cast<uint32_t>(rv)));
+      }
+    }
 
-  
-  gHttpHandler->ObserveHttpActivityWithArgs(
-      HttpActivityArgs(mChannelId), NS_HTTP_ACTIVITY_TYPE_HTTP_TRANSACTION,
-      NS_HTTP_ACTIVITY_SUBTYPE_TRANSACTION_CLOSE, PR_Now(), 0, ""_ns);
+    
+    nsresult rv = mActivityDistributor->ObserveActivityWithArgs(
+        HttpActivityArgs(mChannelId), NS_HTTP_ACTIVITY_TYPE_HTTP_TRANSACTION,
+        NS_HTTP_ACTIVITY_SUBTYPE_TRANSACTION_CLOSE, PR_Now(), 0, ""_ns);
+    if (NS_FAILED(rv)) {
+      LOG3(("ObserveActivity failed (%08x)", static_cast<uint32_t>(rv)));
+    }
+  }
 
   
   
@@ -2003,11 +2040,14 @@ nsresult nsHttpTransaction::ParseHead(char* buf, uint32_t count,
     if (!mResponseHead) return NS_ERROR_OUT_OF_MEMORY;
 
     
-    if (!mReportedStart) {
+    if (mActivityDistributor && !mReportedStart) {
       mReportedStart = true;
-      gHttpHandler->ObserveHttpActivityWithArgs(
+      rv = mActivityDistributor->ObserveActivityWithArgs(
           HttpActivityArgs(mChannelId), NS_HTTP_ACTIVITY_TYPE_HTTP_TRANSACTION,
           NS_HTTP_ACTIVITY_SUBTYPE_RESPONSE_START, PR_Now(), 0, ""_ns);
+      if (NS_FAILED(rv)) {
+        LOG3(("ObserveActivity failed (%08x)", static_cast<uint32_t>(rv)));
+      }
     }
   }
 
@@ -2352,10 +2392,15 @@ nsresult nsHttpTransaction::HandleContent(char* buf, uint32_t count,
     }
 
     
-    gHttpHandler->ObserveHttpActivityWithArgs(
-        HttpActivityArgs(mChannelId), NS_HTTP_ACTIVITY_TYPE_HTTP_TRANSACTION,
-        NS_HTTP_ACTIVITY_SUBTYPE_RESPONSE_COMPLETE, PR_Now(),
-        static_cast<uint64_t>(mContentRead), ""_ns);
+    if (mActivityDistributor) {
+      rv = mActivityDistributor->ObserveActivityWithArgs(
+          HttpActivityArgs(mChannelId), NS_HTTP_ACTIVITY_TYPE_HTTP_TRANSACTION,
+          NS_HTTP_ACTIVITY_SUBTYPE_RESPONSE_COMPLETE, PR_Now(),
+          static_cast<uint64_t>(mContentRead), ""_ns);
+      if (NS_FAILED(rv)) {
+        LOG3(("ObserveActivity failed (%08x)", static_cast<uint32_t>(rv)));
+      }
+    }
   }
 
   return NS_OK;
@@ -2395,19 +2440,32 @@ nsresult nsHttpTransaction::ProcessData(char* buf, uint32_t count,
     
     if (count && bytesConsumed) memmove(buf, buf + bytesConsumed, count);
 
-    if (mResponseHead && mHaveAllHeaders) {
+    
+    if (mActivityDistributor && mResponseHead && mHaveAllHeaders) {
       auto reportResponseHeader = [&](uint32_t aSubType) {
         nsAutoCString completeResponseHeaders;
         mResponseHead->Flatten(completeResponseHeaders, false);
         completeResponseHeaders.AppendLiteral("\r\n");
-        gHttpHandler->ObserveHttpActivityWithArgs(
+        rv = mActivityDistributor->ObserveActivityWithArgs(
             HttpActivityArgs(mChannelId),
             NS_HTTP_ACTIVITY_TYPE_HTTP_TRANSACTION, aSubType, PR_Now(), 0,
             completeResponseHeaders);
+        if (NS_FAILED(rv)) {
+          LOG3(("ObserveActivity failed (%08x)", static_cast<uint32_t>(rv)));
+        }
       };
 
       if (mConnection->IsProxyConnectInProgress()) {
-        reportResponseHeader(NS_HTTP_ACTIVITY_SUBTYPE_PROXY_RESPONSE_HEADER);
+        nsCOMPtr<nsIHttpActivityDistributor> distributor =
+            do_QueryInterface(mActivityDistributor);
+        bool observeProxyResponse = false;
+        if (distributor) {
+          Unused << distributor->GetObserveProxyResponse(&observeProxyResponse);
+          if (observeProxyResponse) {
+            reportResponseHeader(
+                NS_HTTP_ACTIVITY_SUBTYPE_PROXY_RESPONSE_HEADER);
+          }
+        }
       } else if (!mReportedResponseHeader) {
         mReportedResponseHeader = true;
         reportResponseHeader(NS_HTTP_ACTIVITY_SUBTYPE_RESPONSE_HEADER);
