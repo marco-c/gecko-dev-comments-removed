@@ -562,19 +562,14 @@ static bool InternalCall(JSContext* cx, const AnyInvokeArgs& args,
   MOZ_ASSERT(args.array() + args.length() == args.end(),
              "must pass calling arguments to a calling attempt");
 
+#ifdef DEBUG
+  
   if (args.thisv().isObject()) {
-    
-    
     JSObject* thisObj = &args.thisv().toObject();
-    if (thisObj->is<GlobalObject>()) {
-      if (CalleeNeedsOuterizedThisObject(args.calleev())) {
-        args.mutableThisv().setObject(*GetThisObject(thisObj));
-      }
-    } else {
-      
-      MOZ_ASSERT(GetThisObject(thisObj) == thisObj);
-    }
+    MOZ_ASSERT_IF(CalleeNeedsOuterizedThisObject(args.calleev()),
+                  GetThisObject(thisObj) == thisObj);
   }
+#endif
 
   return InternalCallOrConstruct(cx, args, NO_CONSTRUCT, reason);
 }
@@ -592,6 +587,20 @@ bool js::Call(JSContext* cx, HandleValue fval, HandleValue thisv,
   
   args.CallArgs::setCallee(fval);
   args.CallArgs::setThis(thisv);
+
+  if (thisv.isObject()) {
+    
+    
+    JSObject* thisObj = &thisv.toObject();
+    if (thisObj->is<GlobalObject>()) {
+      if (CalleeNeedsOuterizedThisObject(fval)) {
+        args.mutableThisv().setObject(*GetThisObject(thisObj));
+      }
+    } else {
+      
+      MOZ_ASSERT(GetThisObject(thisObj) == thisObj);
+    }
+  }
 
   if (!InternalCall(cx, args, reason)) {
     return false;
