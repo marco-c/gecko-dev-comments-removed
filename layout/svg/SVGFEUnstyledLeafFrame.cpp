@@ -5,6 +5,7 @@
 
 
 
+#include "mozilla/dom/SVGFilters.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/SVGObserverUtils.h"
 #include "nsContainerFrame.h"

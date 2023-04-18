@@ -11,6 +11,7 @@
 #include "gfxContext.h"
 #include "nsDisplayList.h"
 #include "nsIInterfaceRequestorUtils.h"
+#include "nsLayoutUtils.h"
 #include "nsObjectLoadingContent.h"
 #include "nsSubDocumentFrame.h"
 #include "mozilla/PresShell.h"
@@ -81,16 +82,6 @@ SVGOuterSVGFrame::SVGOuterSVGFrame(ComputedStyle* aStyle,
   
   RemoveStateBits(NS_FRAME_SVG_LAYOUT);
   AddStateBits(NS_FRAME_MAY_BE_TRANSFORMED);
-}
-
-
-static inline bool DependsOnIntrinsicSize(const nsIFrame* aEmbeddingFrame) {
-  const nsStylePosition* pos = aEmbeddingFrame->StylePosition();
-
-  
-  
-  
-  return !pos->mWidth.ConvertsToLength() || !pos->mHeight.ConvertsToLength();
 }
 
 
