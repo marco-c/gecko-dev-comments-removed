@@ -376,12 +376,28 @@ static unsigned int WindowMaskForBorderStyle(nsBorderStyle aBorderStyle) {
 
 
 
-  if (!allOrDefault && !(aBorderStyle & eBorderStyle_title)) return NSWindowStyleMaskBorderless;
+  if (!allOrDefault && !(aBorderStyle & eBorderStyle_title)) {
+    if (aBorderStyle & eBorderStyle_minimize) {
+      
+
+
+
+
+      return NSWindowStyleMaskBorderless | NSWindowStyleMaskMiniaturizable;
+    }
+    return NSWindowStyleMaskBorderless;
+  }
 
   unsigned int mask = NSWindowStyleMaskTitled;
-  if (allOrDefault || aBorderStyle & eBorderStyle_close) mask |= NSWindowStyleMaskClosable;
-  if (allOrDefault || aBorderStyle & eBorderStyle_minimize) mask |= NSWindowStyleMaskMiniaturizable;
-  if (allOrDefault || aBorderStyle & eBorderStyle_resizeh) mask |= NSWindowStyleMaskResizable;
+  if (allOrDefault || aBorderStyle & eBorderStyle_close) {
+    mask |= NSWindowStyleMaskClosable;
+  }
+  if (allOrDefault || aBorderStyle & eBorderStyle_minimize) {
+    mask |= NSWindowStyleMaskMiniaturizable;
+  }
+  if (allOrDefault || aBorderStyle & eBorderStyle_resizeh) {
+    mask |= NSWindowStyleMaskResizable;
+  }
 
   return mask;
 }
@@ -408,9 +424,6 @@ nsresult nsCocoaWindow::CreateNativeWindow(const NSRect& aRect, nsBorderStyle aB
         if (aBorderStyle & eBorderStyle_close) {
           features |= NSWindowStyleMaskClosable;
         }
-      }
-      if (mPopupType != ePopupTypeTooltip && aBorderStyle & eBorderStyle_minimize) {
-        features |= NSWindowStyleMaskMiniaturizable;
       }
       break;
     case eWindowType_toplevel:
