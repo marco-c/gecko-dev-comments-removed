@@ -135,14 +135,17 @@ add_task(async () => {
     tab.linkedBrowser,
     firstPage
   );
+  let stoppedLoadingPromise = BrowserTestUtils.browserStopped(
+    tab.linkedBrowser,
+    firstPage
+  );
   await panLeftToRight(tab.linkedBrowser, 100, 100);
   
   
   is(wheelEventCount, 1, "Received a wheel event");
 
   
-  await startLoadingPromise;
-  await BrowserTestUtils.browserStopped(tab.linkedBrowser, firstPage);
+  await Promise.all([startLoadingPromise, stoppedLoadingPromise]);
 
   ok(gBrowser.webNavigation.canGoForward);
 
@@ -152,11 +155,14 @@ add_task(async () => {
     tab.linkedBrowser,
     secondPage
   );
+  stoppedLoadingPromise = BrowserTestUtils.browserStopped(
+    tab.linkedBrowser,
+    secondPage
+  );
   await panRightToLeft(tab.linkedBrowser, 100, 100);
   is(wheelEventCount, 1, "Received a wheel event");
 
-  await startLoadingPromise;
-  await BrowserTestUtils.browserStopped(tab.linkedBrowser, secondPage);
+  await Promise.all([startLoadingPromise, stoppedLoadingPromise]);
 
   ok(gBrowser.webNavigation.canGoBack);
 
