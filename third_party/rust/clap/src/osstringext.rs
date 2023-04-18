@@ -2,7 +2,7 @@ use std::ffi::OsStr;
 #[cfg(not(any(target_os = "windows", target_arch = "wasm32")))]
 use std::os::unix::ffi::OsStrExt;
 #[cfg(any(target_os = "windows", target_arch = "wasm32"))]
-use INVALID_UTF8;
+use crate::INVALID_UTF8;
 
 #[cfg(any(target_os = "windows", target_arch = "wasm32"))]
 pub trait OsStrExt3 {
@@ -77,7 +77,7 @@ fn test_windows_osstr_starts_with() {
     
     
     let surrogate_char: u16 = 0xDC00;
-    let mut invalid_unicode =
+    let invalid_unicode =
         OsString::from_wide(&['a' as u16, 'b' as u16, 'c' as u16, surrogate_char]);
     assert!(
         invalid_unicode.to_str().is_none(),
@@ -112,9 +112,12 @@ impl OsStrExt2 for OsStr {
             
             
             
-            return windows_osstr_starts_with(self, s);
+            windows_osstr_starts_with(self, s)
         }
-        self.as_bytes().starts_with(s)
+        #[cfg(not(target_os = "windows"))]
+        {
+            self.as_bytes().starts_with(s)
+        }
     }
 
     fn contains_byte(&self, byte: u8) -> bool {

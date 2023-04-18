@@ -1,17 +1,12 @@
-use app::App;
 
-#[cfg(feature = "suggestions")]
-use strsim;
-
-
-use fmt::Format;
+use crate::{app::App, fmt::Format};
 
 
 
 
 
 #[cfg(feature = "suggestions")]
-#[cfg_attr(feature = "lints", allow(needless_lifetimes))]
+#[cfg_attr(feature = "cargo-clippy", allow(clippy::needless_lifetimes))]
 pub fn did_you_mean<'a, T: ?Sized, I>(v: &str, possible_values: I) -> Option<&'a str>
 where
     T: AsRef<str> + 'a,
@@ -41,7 +36,6 @@ where
 }
 
 
-#[cfg_attr(feature = "lints", allow(needless_lifetimes))]
 pub fn did_you_mean_flag_suffix<'z, T, I>(
     arg: &str,
     args_rest: &'z [&str],
@@ -62,7 +56,7 @@ where
     }
 
     subcommands
-        .into_iter()
+        .iter()
         .filter_map(|subcommand| {
             let opts = subcommand
                 .p

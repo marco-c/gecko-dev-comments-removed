@@ -1,14 +1,17 @@
 
-use std::borrow::Cow;
-use std::collections::HashMap;
-use std::ffi::{OsStr, OsString};
-use std::iter::Map;
-use std::slice::Iter;
+use std::{
+    borrow::Cow,
+    collections::HashMap,
+    ffi::{OsStr, OsString},
+    iter::Map,
+    slice::Iter,
+};
 
 
-use args::MatchedArg;
-use args::SubCommand;
-use INVALID_UTF8;
+use crate::{
+    args::{MatchedArg, SubCommand},
+    INVALID_UTF8,
+};
 
 
 
@@ -827,7 +830,7 @@ impl<'a> Default for Values<'a> {
         
         fn to_str_slice(_: &OsString) -> &str {
             unreachable!()
-        };
+        }
         Values {
             iter: EMPTY[..].iter().map(to_str_slice),
         }
@@ -886,7 +889,7 @@ impl<'a> Default for OsValues<'a> {
         
         fn to_str_slice(_: &OsString) -> &OsStr {
             unreachable!()
-        };
+        }
         OsValues {
             iter: EMPTY[..].iter().map(to_str_slice),
         }
@@ -946,7 +949,7 @@ impl<'a> Default for Indices<'a> {
         
         fn to_usize(_: &usize) -> usize {
             unreachable!()
-        };
+        }
         Indices {
             iter: EMPTY[..].iter().map(to_usize),
         }

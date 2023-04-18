@@ -250,19 +250,36 @@
 
 
 
-#![no_std]
-#![doc(html_root_url = "https://docs.rs/bitflags/1.2.1")]
-
-#[cfg(test)]
-#[macro_use]
-extern crate std;
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#![cfg_attr(not(test), no_std)]
+#![doc(html_root_url = "https://docs.rs/bitflags/1.3.2")]
 
 #[doc(hidden)]
 pub extern crate core as _core;
-
-
 
 
 
@@ -333,78 +350,18 @@ pub extern crate core as _core;
 macro_rules! bitflags {
     (
         $(#[$outer:meta])*
-        pub struct $BitFlags:ident: $T:ty {
+        $vis:vis struct $BitFlags:ident: $T:ty {
             $(
                 $(#[$inner:ident $($args:tt)*])*
                 const $Flag:ident = $value:expr;
-            )+
+            )*
         }
-    ) => {
-        __bitflags! {
-            $(#[$outer])*
-            (pub) $BitFlags: $T {
-                $(
-                    $(#[$inner $($args)*])*
-                    $Flag = $value;
-                )+
-            }
-        }
-    };
-    (
-        $(#[$outer:meta])*
-        struct $BitFlags:ident: $T:ty {
-            $(
-                $(#[$inner:ident $($args:tt)*])*
-                const $Flag:ident = $value:expr;
-            )+
-        }
-    ) => {
-        __bitflags! {
-            $(#[$outer])*
-            () $BitFlags: $T {
-                $(
-                    $(#[$inner $($args)*])*
-                    $Flag = $value;
-                )+
-            }
-        }
-    };
-    (
-        $(#[$outer:meta])*
-        pub ($($vis:tt)+) struct $BitFlags:ident: $T:ty {
-            $(
-                $(#[$inner:ident $($args:tt)*])*
-                const $Flag:ident = $value:expr;
-            )+
-        }
-    ) => {
-        __bitflags! {
-            $(#[$outer])*
-            (pub ($($vis)+)) $BitFlags: $T {
-                $(
-                    $(#[$inner $($args)*])*
-                    $Flag = $value;
-                )+
-            }
-        }
-    };
-}
 
-#[macro_export(local_inner_macros)]
-#[doc(hidden)]
-macro_rules! __bitflags {
-    (
-        $(#[$outer:meta])*
-        ($($vis:tt)*) $BitFlags:ident: $T:ty {
-            $(
-                $(#[$inner:ident $($args:tt)*])*
-                $Flag:ident = $value:expr;
-            )+
-        }
+        $($t:tt)*
     ) => {
         $(#[$outer])*
         #[derive(Copy, PartialEq, Eq, Clone, PartialOrd, Ord, Hash)]
-        $($vis)* struct $BitFlags {
+        $vis struct $BitFlags {
             bits: $T,
         }
 
@@ -413,63 +370,52 @@ macro_rules! __bitflags {
                 $(
                     $(#[$inner $($args)*])*
                     $Flag = $value;
-                )+
+                )*
             }
         }
+
+        bitflags! {
+            $($t)*
+        }
     };
+    () => {};
 }
+
 
 #[macro_export(local_inner_macros)]
 #[doc(hidden)]
-#[cfg(bitflags_const_fn)]
-macro_rules! __fn_bitflags {
+macro_rules! __impl_all_bitflags {
     (
-        $(# $attr_args:tt)*
-        const fn $($item:tt)*
+        $BitFlags:ident: $T:ty {
+            $(
+                $(#[$attr:ident $($args:tt)*])*
+                $Flag:ident = $value:expr;
+            )+
+        }
     ) => {
-        $(# $attr_args)*
-        const fn $($item)*
+        // See `Debug::fmt` for why this approach is taken.
+        #[allow(non_snake_case)]
+        trait __BitFlags {
+            $(
+                const $Flag: $T = 0;
+            )+
+        }
+        #[allow(non_snake_case)]
+        impl __BitFlags for $BitFlags {
+            $(
+                __impl_bitflags! {
+                    #[allow(deprecated)]
+                    $(? #[$attr $($args)*])*
+                    const $Flag: $T = Self::$Flag.bits;
+                }
+            )+
+        }
+        Self { bits: $(<Self as __BitFlags>::$Flag)|+ }
     };
     (
-        $(# $attr_args:tt)*
-        pub const fn $($item:tt)*
+        $BitFlags:ident: $T:ty { }
     ) => {
-        $(# $attr_args)*
-        pub const fn $($item)*
-    };
-    (
-        $(# $attr_args:tt)*
-        pub const unsafe fn $($item:tt)*
-    ) => {
-        $(# $attr_args)*
-        pub const unsafe fn $($item)*
-    };
-}
-
-#[macro_export(local_inner_macros)]
-#[doc(hidden)]
-#[cfg(not(bitflags_const_fn))]
-macro_rules! __fn_bitflags {
-    (
-        $(# $attr_args:tt)*
-        const fn $($item:tt)*
-    ) => {
-        $(# $attr_args)*
-        fn $($item)*
-    };
-    (
-        $(# $attr_args:tt)*
-        pub const fn $($item:tt)*
-    ) => {
-        $(# $attr_args)*
-        pub fn $($item)*
-    };
-    (
-        $(# $attr_args:tt)*
-        pub const unsafe fn $($item:tt)*
-    ) => {
-        $(# $attr_args)*
-        pub unsafe fn $($item)*
+        Self { bits: 0 }
     };
 }
 
@@ -481,7 +427,7 @@ macro_rules! __impl_bitflags {
             $(
                 $(#[$attr:ident $($args:tt)*])*
                 $Flag:ident = $value:expr;
-            )+
+            )*
         }
     ) => {
         impl $crate::_core::fmt::Debug for $BitFlags {
@@ -499,11 +445,12 @@ macro_rules! __impl_bitflags {
                     $(
                         #[inline]
                         fn $Flag(&self) -> bool { false }
-                    )+
+                    )*
                 }
 
                 // Conditionally override the check for just those flags that
                 // are not #[cfg]ed away.
+                #[allow(non_snake_case)]
                 impl __BitFlags for $BitFlags {
                     $(
                         __impl_bitflags! {
@@ -518,20 +465,20 @@ macro_rules! __impl_bitflags {
                                 }
                             }
                         }
-                    )+
+                    )*
                 }
 
                 let mut first = true;
                 $(
-                    if <$BitFlags as __BitFlags>::$Flag(self) {
+                    if <Self as __BitFlags>::$Flag(self) {
                         if !first {
                             f.write_str(" | ")?;
                         }
                         first = false;
-                        f.write_str(__bitflags_stringify!($Flag))?;
+                        f.write_str($crate::_core::stringify!($Flag))?;
                     }
-                )+
-                let extra_bits = self.bits & !$BitFlags::all().bits();
+                )*
+                let extra_bits = self.bits & !Self::all().bits();
                 if extra_bits != 0 {
                     if !first {
                         f.write_str(" | ")?;
@@ -571,227 +518,295 @@ macro_rules! __impl_bitflags {
         impl $BitFlags {
             $(
                 $(#[$attr $($args)*])*
-                pub const $Flag: $BitFlags = $BitFlags { bits: $value };
-            )+
+                pub const $Flag: Self = Self { bits: $value };
+            )*
 
-            __fn_bitflags! {
-                /// Returns an empty set of flags
-                #[inline]
-                pub const fn empty() -> $BitFlags {
-                    $BitFlags { bits: 0 }
+            /// Returns an empty set of flags.
+            #[inline]
+            pub const fn empty() -> Self {
+                Self { bits: 0 }
+            }
+
+            /// Returns the set containing all flags.
+            #[inline]
+            pub const fn all() -> Self {
+                __impl_all_bitflags! {
+                    $BitFlags: $T {
+                        $(
+                            $(#[$attr $($args)*])*
+                            $Flag = $value;
+                        )*
+                    }
                 }
             }
 
-            __fn_bitflags! {
-                /// Returns the set containing all flags.
-                #[inline]
-                pub const fn all() -> $BitFlags {
-                    // See `Debug::fmt` for why this approach is taken.
-                    #[allow(non_snake_case)]
-                    trait __BitFlags {
-                        $(
-                            const $Flag: $T = 0;
-                        )+
-                    }
-                    impl __BitFlags for $BitFlags {
-                        $(
-                            __impl_bitflags! {
-                                #[allow(deprecated)]
-                                $(? #[$attr $($args)*])*
-                                const $Flag: $T = Self::$Flag.bits;
-                            }
-                        )+
-                    }
-                    $BitFlags { bits: $(<$BitFlags as __BitFlags>::$Flag)|+ }
-                }
-            }
-
-            __fn_bitflags! {
-                /// Returns the raw value of the flags currently stored.
-                #[inline]
-                pub const fn bits(&self) -> $T {
-                    self.bits
-                }
+            /// Returns the raw value of the flags currently stored.
+            #[inline]
+            pub const fn bits(&self) -> $T {
+                self.bits
             }
 
             /// Convert from underlying bit representation, unless that
             /// representation contains bits that do not correspond to a flag.
             #[inline]
-            pub fn from_bits(bits: $T) -> $crate::_core::option::Option<$BitFlags> {
-                if (bits & !$BitFlags::all().bits()) == 0 {
-                    $crate::_core::option::Option::Some($BitFlags { bits })
+            pub const fn from_bits(bits: $T) -> $crate::_core::option::Option<Self> {
+                if (bits & !Self::all().bits()) == 0 {
+                    $crate::_core::option::Option::Some(Self { bits })
                 } else {
                     $crate::_core::option::Option::None
                 }
             }
 
-            __fn_bitflags! {
-                /// Convert from underlying bit representation, dropping any bits
-                /// that do not correspond to flags.
-                #[inline]
-                pub const fn from_bits_truncate(bits: $T) -> $BitFlags {
-                    $BitFlags { bits: bits & $BitFlags::all().bits }
-                }
+            /// Convert from underlying bit representation, dropping any bits
+            /// that do not correspond to flags.
+            #[inline]
+            pub const fn from_bits_truncate(bits: $T) -> Self {
+                Self { bits: bits & Self::all().bits }
             }
 
-            __fn_bitflags! {
-                /// Convert from underlying bit representation, preserving all
-                /// bits (even those not corresponding to a defined flag).
-                #[inline]
-                pub const unsafe fn from_bits_unchecked(bits: $T) -> $BitFlags {
-                    $BitFlags { bits }
-                }
+            /// Convert from underlying bit representation, preserving all
+            /// bits (even those not corresponding to a defined flag).
+            ///
+            /// # Safety
+            ///
+            /// The caller of the `bitflags!` macro can chose to allow or
+            /// disallow extra bits for their bitflags type.
+            ///
+            /// The caller of `from_bits_unchecked()` has to ensure that
+            /// all bits correspond to a defined flag or that extra bits
+            /// are valid for this bitflags type.
+            #[inline]
+            pub const unsafe fn from_bits_unchecked(bits: $T) -> Self {
+                Self { bits }
             }
 
-            __fn_bitflags! {
-                /// Returns `true` if no flags are currently stored.
-                #[inline]
-                pub const fn is_empty(&self) -> bool {
-                    self.bits() == $BitFlags::empty().bits()
-                }
+            /// Returns `true` if no flags are currently stored.
+            #[inline]
+            pub const fn is_empty(&self) -> bool {
+                self.bits() == Self::empty().bits()
             }
 
-            __fn_bitflags! {
-                /// Returns `true` if all flags are currently set.
-                #[inline]
-                pub const fn is_all(&self) -> bool {
-                    self.bits == $BitFlags::all().bits
-                }
+            /// Returns `true` if all flags are currently set.
+            #[inline]
+            pub const fn is_all(&self) -> bool {
+                Self::all().bits | self.bits == self.bits
             }
 
-            __fn_bitflags! {
-                /// Returns `true` if there are flags common to both `self` and `other`.
-                #[inline]
-                pub const fn intersects(&self, other: $BitFlags) -> bool {
-                    !$BitFlags{ bits: self.bits & other.bits}.is_empty()
-                }
+            /// Returns `true` if there are flags common to both `self` and `other`.
+            #[inline]
+            pub const fn intersects(&self, other: Self) -> bool {
+                !(Self { bits: self.bits & other.bits}).is_empty()
             }
 
-            __fn_bitflags! {
-                /// Returns `true` all of the flags in `other` are contained within `self`.
-                #[inline]
-                pub const fn contains(&self, other: $BitFlags) -> bool {
-                    (self.bits & other.bits) == other.bits
-                }
+            /// Returns `true` if all of the flags in `other` are contained within `self`.
+            #[inline]
+            pub const fn contains(&self, other: Self) -> bool {
+                (self.bits & other.bits) == other.bits
             }
 
             /// Inserts the specified flags in-place.
             #[inline]
-            pub fn insert(&mut self, other: $BitFlags) {
+            pub fn insert(&mut self, other: Self) {
                 self.bits |= other.bits;
             }
 
             /// Removes the specified flags in-place.
             #[inline]
-            pub fn remove(&mut self, other: $BitFlags) {
+            pub fn remove(&mut self, other: Self) {
                 self.bits &= !other.bits;
             }
 
             /// Toggles the specified flags in-place.
             #[inline]
-            pub fn toggle(&mut self, other: $BitFlags) {
+            pub fn toggle(&mut self, other: Self) {
                 self.bits ^= other.bits;
             }
 
             /// Inserts or removes the specified flags depending on the passed value.
             #[inline]
-            pub fn set(&mut self, other: $BitFlags, value: bool) {
+            pub fn set(&mut self, other: Self, value: bool) {
                 if value {
                     self.insert(other);
                 } else {
                     self.remove(other);
                 }
             }
+
+            /// Returns the intersection between the flags in `self` and
+            /// `other`.
+            
+            
+            
+            
+            
+            
+            
+            
+            #[inline]
+            #[must_use]
+            pub const fn intersection(self, other: Self) -> Self {
+                Self { bits: self.bits & other.bits }
+            }
+
+            /// Returns the union of between the flags in `self` and `other`.
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            #[inline]
+            #[must_use]
+            pub const fn union(self, other: Self) -> Self {
+                Self { bits: self.bits | other.bits }
+            }
+
+            /// Returns the difference between the flags in `self` and `other`.
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            #[inline]
+            #[must_use]
+            pub const fn difference(self, other: Self) -> Self {
+                Self { bits: self.bits & !other.bits }
+            }
+
+            /// Returns the [symmetric difference][sym-diff] between the flags
+            /// in `self` and `other`.
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            #[inline]
+            #[must_use]
+            pub const fn symmetric_difference(self, other: Self) -> Self {
+                Self { bits: self.bits ^ other.bits }
+            }
+
+            /// Returns the complement of this set of flags.
+            ///
+            /// Specifically, the returned set contains all the flags which are
+            /// not set in `self`, but which are allowed for this type.
+            ///
+            /// Alternatively, it can be thought of as the set difference
+            /// between [`Self::all()`] and `self` (e.g. `Self::all() - self`)
+            ///
+            /// This is equivalent to using the `!` operator (e.g.
+            /// [`ops::Not`]), as in `!flags`.
+            
+            
+            
+            #[inline]
+            #[must_use]
+            pub const fn complement(self) -> Self {
+                Self::from_bits_truncate(!self.bits)
+            }
+
         }
 
         impl $crate::_core::ops::BitOr for $BitFlags {
-            type Output = $BitFlags;
+            type Output = Self;
 
             /// Returns the union of the two sets of flags.
             #[inline]
-            fn bitor(self, other: $BitFlags) -> $BitFlags {
-                $BitFlags { bits: self.bits | other.bits }
+            fn bitor(self, other: $BitFlags) -> Self {
+                Self { bits: self.bits | other.bits }
             }
         }
 
         impl $crate::_core::ops::BitOrAssign for $BitFlags {
-
             /// Adds the set of flags.
             #[inline]
-            fn bitor_assign(&mut self, other: $BitFlags) {
+            fn bitor_assign(&mut self, other: Self) {
                 self.bits |= other.bits;
             }
         }
 
         impl $crate::_core::ops::BitXor for $BitFlags {
-            type Output = $BitFlags;
+            type Output = Self;
 
             /// Returns the left flags, but with all the right flags toggled.
             #[inline]
-            fn bitxor(self, other: $BitFlags) -> $BitFlags {
-                $BitFlags { bits: self.bits ^ other.bits }
+            fn bitxor(self, other: Self) -> Self {
+                Self { bits: self.bits ^ other.bits }
             }
         }
 
         impl $crate::_core::ops::BitXorAssign for $BitFlags {
-
             /// Toggles the set of flags.
             #[inline]
-            fn bitxor_assign(&mut self, other: $BitFlags) {
+            fn bitxor_assign(&mut self, other: Self) {
                 self.bits ^= other.bits;
             }
         }
 
         impl $crate::_core::ops::BitAnd for $BitFlags {
-            type Output = $BitFlags;
+            type Output = Self;
 
             /// Returns the intersection between the two sets of flags.
             #[inline]
-            fn bitand(self, other: $BitFlags) -> $BitFlags {
-                $BitFlags { bits: self.bits & other.bits }
+            fn bitand(self, other: Self) -> Self {
+                Self { bits: self.bits & other.bits }
             }
         }
 
         impl $crate::_core::ops::BitAndAssign for $BitFlags {
-
             /// Disables all flags disabled in the set.
             #[inline]
-            fn bitand_assign(&mut self, other: $BitFlags) {
+            fn bitand_assign(&mut self, other: Self) {
                 self.bits &= other.bits;
             }
         }
 
         impl $crate::_core::ops::Sub for $BitFlags {
-            type Output = $BitFlags;
+            type Output = Self;
 
             /// Returns the set difference of the two sets of flags.
             #[inline]
-            fn sub(self, other: $BitFlags) -> $BitFlags {
-                $BitFlags { bits: self.bits & !other.bits }
+            fn sub(self, other: Self) -> Self {
+                Self { bits: self.bits & !other.bits }
             }
         }
 
         impl $crate::_core::ops::SubAssign for $BitFlags {
-
             /// Disables all flags enabled in the set.
             #[inline]
-            fn sub_assign(&mut self, other: $BitFlags) {
+            fn sub_assign(&mut self, other: Self) {
                 self.bits &= !other.bits;
             }
         }
 
         impl $crate::_core::ops::Not for $BitFlags {
-            type Output = $BitFlags;
+            type Output = Self;
 
             /// Returns the complement of this set of flags.
             #[inline]
-            fn not(self) -> $BitFlags {
-                $BitFlags { bits: !self.bits } & $BitFlags::all()
+            fn not(self) -> Self {
+                Self { bits: !self.bits } & Self::all()
             }
         }
 
         impl $crate::_core::iter::Extend<$BitFlags> for $BitFlags {
-            fn extend<T: $crate::_core::iter::IntoIterator<Item=$BitFlags>>(&mut self, iterator: T) {
+            fn extend<T: $crate::_core::iter::IntoIterator<Item=Self>>(&mut self, iterator: T) {
                 for item in iterator {
                     self.insert(item)
                 }
@@ -799,7 +814,7 @@ macro_rules! __impl_bitflags {
         }
 
         impl $crate::_core::iter::FromIterator<$BitFlags> for $BitFlags {
-            fn from_iter<T: $crate::_core::iter::IntoIterator<Item=$BitFlags>>(iterator: T) -> $BitFlags {
+            fn from_iter<T: $crate::_core::iter::IntoIterator<Item=Self>>(iterator: T) -> Self {
                 let mut result = Self::empty();
                 result.extend(iterator);
                 result
@@ -916,16 +931,6 @@ macro_rules! __impl_bitflags {
     };
 }
 
-
-
-#[macro_export]
-#[doc(hidden)]
-macro_rules! __bitflags_stringify {
-    ($s:ident) => {
-        stringify!($s)
-    };
-}
-
 #[cfg(feature = "example_generated")]
 pub mod example_generated;
 
@@ -939,6 +944,7 @@ mod tests {
         #[doc = "> you are the easiest person to fool."]
         #[doc = "> "]
         #[doc = "> - Richard Feynman"]
+        #[derive(Default)]
         struct Flags: u32 {
             const A = 0b00000001;
             #[doc = "<pcwalton> macros are way better at generating code than trans is"]
@@ -949,9 +955,7 @@ mod tests {
             #[doc = "<strcat> wait what?"]
             const ABC = Self::A.bits | Self::B.bits | Self::C.bits;
         }
-    }
 
-    bitflags! {
         struct _CfgFlags: u32 {
             #[cfg(unix)]
             const _CFG_A = 0b01;
@@ -960,17 +964,18 @@ mod tests {
             #[cfg(unix)]
             const _CFG_C = Self::_CFG_A.bits | 0b10;
         }
-    }
 
-    bitflags! {
         struct AnotherSetOfFlags: i8 {
             const ANOTHER_FLAG = -1_i8;
+        }
+
+        struct LongFlags: u32 {
+            const LONG_A = 0b1111111111111111;
         }
     }
 
     bitflags! {
-        struct LongFlags: u32 {
-            const LONG_A = 0b1111111111111111;
+        struct EmptyFlags: u32 {
         }
     }
 
@@ -982,6 +987,8 @@ mod tests {
 
         assert_eq!(AnotherSetOfFlags::empty().bits(), 0b00);
         assert_eq!(AnotherSetOfFlags::ANOTHER_FLAG.bits(), !0_i8);
+
+        assert_eq!(EmptyFlags::empty().bits(), 0b00000000);
     }
 
     #[test]
@@ -996,6 +1003,9 @@ mod tests {
             AnotherSetOfFlags::from_bits(!0_i8),
             Some(AnotherSetOfFlags::ANOTHER_FLAG)
         );
+
+        assert_eq!(EmptyFlags::from_bits(0), Some(EmptyFlags::empty()));
+        assert_eq!(EmptyFlags::from_bits(0b1), None);
     }
 
     #[test]
@@ -1011,6 +1021,9 @@ mod tests {
             AnotherSetOfFlags::from_bits_truncate(0_i8),
             AnotherSetOfFlags::empty()
         );
+
+        assert_eq!(EmptyFlags::from_bits_truncate(0), EmptyFlags::empty());
+        assert_eq!(EmptyFlags::from_bits_truncate(0b1), EmptyFlags::empty());
     }
 
     #[test]
@@ -1019,9 +1032,25 @@ mod tests {
         assert_eq!(unsafe { Flags::from_bits_unchecked(0) }, Flags::empty());
         assert_eq!(unsafe { Flags::from_bits_unchecked(0b1) }, Flags::A);
         assert_eq!(unsafe { Flags::from_bits_unchecked(0b10) }, Flags::B);
-        assert_eq!(unsafe { Flags::from_bits_unchecked(0b11) }, (Flags::A | Flags::B));
-        assert_eq!(unsafe { Flags::from_bits_unchecked(0b1000) }, (extra | Flags::empty()));
-        assert_eq!(unsafe { Flags::from_bits_unchecked(0b1001) }, (extra | Flags::A));
+
+        assert_eq!(
+            unsafe { Flags::from_bits_unchecked(0b11) },
+            (Flags::A | Flags::B)
+        );
+        assert_eq!(
+            unsafe { Flags::from_bits_unchecked(0b1000) },
+            (extra | Flags::empty())
+        );
+        assert_eq!(
+            unsafe { Flags::from_bits_unchecked(0b1001) },
+            (extra | Flags::A)
+        );
+
+        let extra = unsafe { EmptyFlags::from_bits_unchecked(0b1000) };
+        assert_eq!(
+            unsafe { EmptyFlags::from_bits_unchecked(0b1000) },
+            (extra | EmptyFlags::empty())
+        );
     }
 
     #[test]
@@ -1031,6 +1060,9 @@ mod tests {
         assert!(!Flags::ABC.is_empty());
 
         assert!(!AnotherSetOfFlags::ANOTHER_FLAG.is_empty());
+
+        assert!(EmptyFlags::empty().is_empty());
+        assert!(EmptyFlags::all().is_empty());
     }
 
     #[test]
@@ -1039,7 +1071,15 @@ mod tests {
         assert!(!Flags::A.is_all());
         assert!(Flags::ABC.is_all());
 
+        let extra = unsafe { Flags::from_bits_unchecked(0b1000) };
+        assert!(!extra.is_all());
+        assert!(!(Flags::A | extra).is_all());
+        assert!((Flags::ABC | extra).is_all());
+
         assert!(AnotherSetOfFlags::ANOTHER_FLAG.is_all());
+
+        assert!(EmptyFlags::all().is_all());
+        assert!(EmptyFlags::empty().is_all());
     }
 
     #[test]
@@ -1081,6 +1121,8 @@ mod tests {
         assert!(Flags::ABC.contains(e2));
 
         assert!(AnotherSetOfFlags::ANOTHER_FLAG.contains(AnotherSetOfFlags::ANOTHER_FLAG));
+
+        assert!(EmptyFlags::empty().contains(EmptyFlags::empty()));
     }
 
     #[test]
@@ -1142,6 +1184,188 @@ mod tests {
     }
 
     #[test]
+    fn test_set_ops_basic() {
+        let ab = Flags::A.union(Flags::B);
+        let ac = Flags::A.union(Flags::C);
+        let bc = Flags::B.union(Flags::C);
+        assert_eq!(ab.bits, 0b011);
+        assert_eq!(bc.bits, 0b110);
+        assert_eq!(ac.bits, 0b101);
+
+        assert_eq!(ab, Flags::B.union(Flags::A));
+        assert_eq!(ac, Flags::C.union(Flags::A));
+        assert_eq!(bc, Flags::C.union(Flags::B));
+
+        assert_eq!(ac, Flags::A | Flags::C);
+        assert_eq!(bc, Flags::B | Flags::C);
+        assert_eq!(ab.union(bc), Flags::ABC);
+
+        assert_eq!(ac, Flags::A | Flags::C);
+        assert_eq!(bc, Flags::B | Flags::C);
+
+        assert_eq!(ac.union(bc), ac | bc);
+        assert_eq!(ac.union(bc), Flags::ABC);
+        assert_eq!(bc.union(ac), Flags::ABC);
+
+        assert_eq!(ac.intersection(bc), ac & bc);
+        assert_eq!(ac.intersection(bc), Flags::C);
+        assert_eq!(bc.intersection(ac), Flags::C);
+
+        assert_eq!(ac.difference(bc), ac - bc);
+        assert_eq!(bc.difference(ac), bc - ac);
+        assert_eq!(ac.difference(bc), Flags::A);
+        assert_eq!(bc.difference(ac), Flags::B);
+
+        assert_eq!(bc.complement(), !bc);
+        assert_eq!(bc.complement(), Flags::A);
+        assert_eq!(ac.symmetric_difference(bc), Flags::A.union(Flags::B));
+        assert_eq!(bc.symmetric_difference(ac), Flags::A.union(Flags::B));
+    }
+
+    #[test]
+    fn test_set_ops_const() {
+        
+        
+        const INTERSECT: Flags = Flags::all().intersection(Flags::C);
+        const UNION: Flags = Flags::A.union(Flags::C);
+        const DIFFERENCE: Flags = Flags::all().difference(Flags::A);
+        const COMPLEMENT: Flags = Flags::C.complement();
+        const SYM_DIFFERENCE: Flags = UNION.symmetric_difference(DIFFERENCE);
+        assert_eq!(INTERSECT, Flags::C);
+        assert_eq!(UNION, Flags::A | Flags::C);
+        assert_eq!(DIFFERENCE, Flags::all() - Flags::A);
+        assert_eq!(COMPLEMENT, !Flags::C);
+        assert_eq!(SYM_DIFFERENCE, (Flags::A | Flags::C) ^ (Flags::all() - Flags::A));
+    }
+
+    #[test]
+    fn test_set_ops_unchecked() {
+        let extra = unsafe { Flags::from_bits_unchecked(0b1000) };
+        let e1 = Flags::A.union(Flags::C).union(extra);
+        let e2 = Flags::B.union(Flags::C);
+        assert_eq!(e1.bits, 0b1101);
+        assert_eq!(e1.union(e2), (Flags::ABC | extra));
+        assert_eq!(e1.intersection(e2), Flags::C);
+        assert_eq!(e1.difference(e2), Flags::A | extra);
+        assert_eq!(e2.difference(e1), Flags::B);
+        assert_eq!(e2.complement(), Flags::A);
+        assert_eq!(e1.complement(), Flags::B);
+        assert_eq!(e1.symmetric_difference(e2), Flags::A | Flags::B | extra); 
+    }
+
+    #[test]
+    fn test_set_ops_exhaustive() {
+        
+        
+        
+        
+        
+        
+        bitflags! {
+            struct Test: u16 {
+                // Intentionally no `A`
+                const B = 0b000000010;
+                // Intentionally no `C`
+                const D = 0b000001000;
+                const E = 0b000010000;
+                const F = 0b000100000;
+                const G = 0b001000000;
+                // Intentionally no `H`
+                const I = 0b100000000;
+            }
+        }
+        let iter_test_flags =
+            || (0..=0b111_1111_1111).map(|bits| unsafe { Test::from_bits_unchecked(bits) });
+
+        for a in iter_test_flags() {
+            assert_eq!(
+                a.complement(),
+                Test::from_bits_truncate(!a.bits),
+                "wrong result: !({:?})",
+                a,
+            );
+            assert_eq!(a.complement(), !a, "named != op: !({:?})", a);
+            for b in iter_test_flags() {
+                
+                
+                assert_eq!(
+                    a.union(b).bits,
+                    a.bits | b.bits,
+                    "wrong result: `{:?}` | `{:?}`",
+                    a,
+                    b,
+                );
+                assert_eq!(
+                    a.intersection(b).bits,
+                    a.bits & b.bits,
+                    "wrong result: `{:?}` & `{:?}`",
+                    a,
+                    b,
+                );
+                assert_eq!(
+                    a.symmetric_difference(b).bits,
+                    a.bits ^ b.bits,
+                    "wrong result: `{:?}` ^ `{:?}`",
+                    a,
+                    b,
+                );
+                assert_eq!(
+                    a.difference(b).bits,
+                    a.bits & !b.bits,
+                    "wrong result: `{:?}` - `{:?}`",
+                    a,
+                    b,
+                );
+                
+                assert_eq!(
+                    b.difference(a).bits,
+                    b.bits & !a.bits,
+                    "wrong result: `{:?}` - `{:?}`",
+                    b,
+                    a,
+                );
+                
+                
+                assert_eq!(a.union(b), a | b, "named != op: `{:?}` | `{:?}`", a, b,);
+                assert_eq!(
+                    a.intersection(b),
+                    a & b,
+                    "named != op: `{:?}` & `{:?}`",
+                    a,
+                    b,
+                );
+                assert_eq!(
+                    a.symmetric_difference(b),
+                    a ^ b,
+                    "named != op: `{:?}` ^ `{:?}`",
+                    a,
+                    b,
+                );
+                assert_eq!(a.difference(b), a - b, "named != op: `{:?}` - `{:?}`", a, b,);
+                
+                assert_eq!(b.difference(a), b - a, "named != op: `{:?}` - `{:?}`", b, a,);
+                
+                
+                assert_eq!(a.union(b), b.union(a), "asymmetry: `{:?}` | `{:?}`", a, b,);
+                assert_eq!(
+                    a.intersection(b),
+                    b.intersection(a),
+                    "asymmetry: `{:?}` & `{:?}`",
+                    a,
+                    b,
+                );
+                assert_eq!(
+                    a.symmetric_difference(b),
+                    b.symmetric_difference(a),
+                    "asymmetry: `{:?}` ^ `{:?}`",
+                    a,
+                    b,
+                );
+            }
+        }
+    }
+
+    #[test]
     fn test_set() {
         let mut e1 = Flags::A | Flags::C;
         e1.set(Flags::B, true);
@@ -1168,8 +1392,6 @@ mod tests {
         assert_eq!(m1, e1);
     }
 
-
-    #[cfg(bitflags_const_fn)]
     #[test]
     fn test_const_fn() {
         const _M1: Flags = Flags::empty();
@@ -1260,6 +1482,11 @@ mod tests {
     }
 
     #[test]
+    fn test_default() {
+        assert_eq!(Flags::empty(), Flags::default());
+    }
+
+    #[test]
     fn test_debug() {
         assert_eq!(format!("{:?}", Flags::A | Flags::B), "A | B");
         assert_eq!(format!("{:?}", Flags::empty()), "(empty)");
@@ -1267,7 +1494,13 @@ mod tests {
         let extra = unsafe { Flags::from_bits_unchecked(0xb8) };
         assert_eq!(format!("{:?}", extra), "0xb8");
         assert_eq!(format!("{:?}", Flags::A | extra), "A | 0xb8");
-        assert_eq!(format!("{:?}", Flags::ABC | extra), "A | B | C | ABC | 0xb8");
+
+        assert_eq!(
+            format!("{:?}", Flags::ABC | extra),
+            "A | B | C | ABC | 0xb8"
+        );
+
+        assert_eq!(format!("{:?}", EmptyFlags::empty()), "(empty)");
     }
 
     #[test]
@@ -1311,8 +1544,7 @@ mod tests {
             pub struct PublicFlags: i8 {
                 const X = 0;
             }
-        }
-        bitflags! {
+
             struct PrivateFlags: i8 {
                 const Y = 0;
             }
@@ -1426,5 +1658,72 @@ mod tests {
 
         assert_eq!(format!("{:?}", Flags::empty()), "NONE");
         assert_eq!(format!("{:?}", Flags::SOME), "SOME");
+    }
+
+    #[test]
+    fn test_empty_bitflags() {
+        bitflags! {}
+    }
+
+    #[test]
+    fn test_u128_bitflags() {
+        bitflags! {
+            struct Flags128: u128 {
+                const A = 0x0000_0000_0000_0000_0000_0000_0000_0001;
+                const B = 0x0000_0000_0000_1000_0000_0000_0000_0000;
+                const C = 0x8000_0000_0000_0000_0000_0000_0000_0000;
+                const ABC = Self::A.bits | Self::B.bits | Self::C.bits;
+            }
+        }
+
+        assert_eq!(Flags128::ABC, Flags128::A | Flags128::B | Flags128::C);
+        assert_eq!(Flags128::A.bits, 0x0000_0000_0000_0000_0000_0000_0000_0001);
+        assert_eq!(Flags128::B.bits, 0x0000_0000_0000_1000_0000_0000_0000_0000);
+        assert_eq!(Flags128::C.bits, 0x8000_0000_0000_0000_0000_0000_0000_0000);
+        assert_eq!(
+            Flags128::ABC.bits,
+            0x8000_0000_0000_1000_0000_0000_0000_0001
+        );
+        assert_eq!(format!("{:?}", Flags128::A), "A");
+        assert_eq!(format!("{:?}", Flags128::B), "B");
+        assert_eq!(format!("{:?}", Flags128::C), "C");
+        assert_eq!(format!("{:?}", Flags128::ABC), "A | B | C | ABC");
+    }
+
+    #[test]
+    fn test_serde_bitflags_serialize() {
+        let flags = SerdeFlags::A | SerdeFlags::B;
+
+        let serialized = serde_json::to_string(&flags).unwrap();
+
+        assert_eq!(serialized, r#"{"bits":3}"#);
+    }
+
+    #[test]
+    fn test_serde_bitflags_deserialize() {
+        let deserialized: SerdeFlags = serde_json::from_str(r#"{"bits":12}"#).unwrap();
+
+        let expected = SerdeFlags::C | SerdeFlags::D;
+
+        assert_eq!(deserialized.bits, expected.bits);
+    }
+
+    #[test]
+    fn test_serde_bitflags_roundtrip() {
+        let flags = SerdeFlags::A | SerdeFlags::B;
+
+        let deserialized: SerdeFlags = serde_json::from_str(&serde_json::to_string(&flags).unwrap()).unwrap();
+
+        assert_eq!(deserialized.bits, flags.bits);
+    }
+
+    bitflags! {
+        #[derive(serde::Serialize, serde::Deserialize)]
+        struct SerdeFlags: u32 {
+            const A = 1;
+            const B = 2;
+            const C = 4;
+            const D = 8;
+        }
     }
 }

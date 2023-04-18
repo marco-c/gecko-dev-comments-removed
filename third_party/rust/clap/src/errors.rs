@@ -1,16 +1,20 @@
 
-use std::convert::From;
-use std::error::Error as StdError;
-use std::fmt as std_fmt;
-use std::fmt::Display;
-use std::io::{self, Write};
-use std::process;
-use std::result::Result as StdResult;
+use std::{
+    convert::From,
+    error::Error as StdError,
+    fmt as std_fmt,
+    fmt::Display,
+    io::{self, Write},
+    process,
+    result::Result as StdResult,
+};
 
 
-use args::AnyArg;
-use fmt::{ColorWhen, Colorizer, ColorizerOption};
-use suggestions;
+use crate::{
+    args::AnyArg,
+    fmt::{ColorWhen, Colorizer, ColorizerOption},
+    suggestions,
+};
 
 
 
@@ -385,20 +389,35 @@ pub struct Error {
 impl Error {
     
     pub fn use_stderr(&self) -> bool {
-        match self.kind {
-            ErrorKind::HelpDisplayed | ErrorKind::VersionDisplayed => false,
-            _ => true,
-        }
+        !matches!(
+            self.kind,
+            ErrorKind::HelpDisplayed | ErrorKind::VersionDisplayed
+        )
     }
 
     
+    
+    
     pub fn exit(&self) -> ! {
         if self.use_stderr() {
-            wlnerr!("{}", self.message);
+            wlnerr!(@nopanic "{}", self.message);
             process::exit(1);
         }
-        let out = io::stdout();
-        writeln!(&mut out.lock(), "{}", self.message).expect("Error writing Error to stdout");
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let _ = writeln!(&mut io::stdout().lock(), "{}", self.message);
         process::exit(0);
     }
 
@@ -866,11 +885,7 @@ impl Error {
             when: ColorWhen::Auto,
         });
         Error {
-            message: format!(
-                "{} The argument '{}' wasn't found",
-                c.error("error:"),
-                a.clone()
-            ),
+            message: format!("{} The argument '{}' wasn't found", c.error("error:"), a),
             kind: ErrorKind::ArgumentNotFound,
             info: Some(vec![a]),
         }
@@ -887,7 +902,7 @@ impl Error {
         });
         Error {
             message: format!("{} {}", c.error("error:"), description),
-            kind: kind,
+            kind,
             info: None,
         }
     }

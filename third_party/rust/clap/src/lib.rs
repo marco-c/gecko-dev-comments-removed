@@ -517,7 +517,7 @@
 
 
 #![crate_type = "lib"]
-#![doc(html_root_url = "https://docs.rs/clap/2.33.3")]
+#![doc(html_root_url = "https://docs.rs/clap/2.34.0")]
 #![deny(
     missing_docs,
     missing_debug_implementations,
@@ -530,16 +530,15 @@
 
 
 #![cfg_attr(
-    not(any(feature = "lints", feature = "nightly")),
+    not(any(feature = "cargo-clippy", feature = "nightly")),
     forbid(unstable_features)
 )]
-#![cfg_attr(feature = "lints", feature(plugin))]
-#![cfg_attr(feature = "lints", plugin(clippy))]
 
 
-#![cfg_attr(feature = "lints", allow(cyclomatic_complexity))]
-#![cfg_attr(feature = "lints", allow(doc_markdown))]
-#![cfg_attr(feature = "lints", allow(explicit_iter_loop))]
+
+
+
+#![allow(bare_trait_objects, deprecated)]
 
 #[cfg(all(feature = "color", not(target_os = "windows")))]
 extern crate ansi_term;
@@ -579,9 +578,9 @@ mod strext;
 mod suggestions;
 mod usage_parser;
 
-const INTERNAL_ERROR_MSG: &'static str = "Fatal internal error. Please consider filing a bug \
+const INTERNAL_ERROR_MSG: &str = "Fatal internal error. Please consider filing a bug \
                                           report at https://github.com/clap-rs/clap/issues";
-const INVALID_UTF8: &'static str = "unexpected invalid UTF-8 code point";
+const INVALID_UTF8: &str = "unexpected invalid UTF-8 code point";
 
 #[cfg(unstable)]
 pub use derive::{ArgEnum, ClapApp, FromArgMatches, IntoApp};

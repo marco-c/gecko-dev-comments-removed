@@ -20,7 +20,7 @@ use std::env;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use glob::MatchOptions;
+use glob::{MatchOptions, Pattern};
 
 
 const DIRECTORIES_LINUX: &[&str] = &[
@@ -49,6 +49,19 @@ const DIRECTORIES_WINDOWS: &[&str] = &[
     
     
     "C:\\Program Files*\\Microsoft Visual Studio\\*\\BuildTools\\VC\\Tools\\Llvm\\**\\bin",
+    
+    
+    "C:\\Users\\*\\scoop\\apps\\llvm\\current\\bin",
+];
+
+
+const DIRECTORIES_HAIKU: &[&str] = &[
+    "/boot/system/lib",
+    "/boot/system/develop/lib",
+    "/boot/system/non-packaged/lib",
+    "/boot/system/non-packaged/develop/lib",
+    "/boot/home/config/non-packaged/lib",
+    "/boot/home/config/non-packaged/develop/lib",
 ];
 
 thread_local! {
@@ -153,9 +166,14 @@ impl Drop for CommandErrorPrinter {
 
 fn search_directory(directory: &Path, filenames: &[String]) -> Vec<(PathBuf, String)> {
     
+    
+    let directory = Pattern::escape(directory.to_str().unwrap());
+    let directory = Path::new(&directory);
+
+    
     let paths = filenames
         .iter()
-        .filter_map(|f| directory.join(f).to_str().map(ToOwned::to_owned));
+        .map(|f| directory.join(f).to_str().unwrap().to_owned());
 
     
     let mut options = MatchOptions::new();
@@ -170,7 +188,7 @@ fn search_directory(directory: &Path, filenames: &[String]) -> Vec<(PathBuf, Str
             }
         })
         .filter_map(|p| {
-            let filename = p.file_name().and_then(|f| f.to_str())?;
+            let filename = p.file_name()?.to_str().unwrap();
 
             
             
@@ -257,6 +275,8 @@ pub fn search_libclang_directories(files: &[String], variable: &str) -> Vec<(Pat
         DIRECTORIES_MACOS
     } else if cfg!(target_os = "windows") {
         DIRECTORIES_WINDOWS
+    } else if cfg!(target_os = "haiku") {
+        DIRECTORIES_HAIKU
     } else {
         &[]
     };

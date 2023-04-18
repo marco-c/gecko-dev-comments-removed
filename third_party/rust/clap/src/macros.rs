@@ -839,6 +839,10 @@ macro_rules! impl_settings {
 
 
 macro_rules! wlnerr(
+    (@nopanic $($arg:tt)*) => ({
+        use std::io::{Write, stderr};
+        let _ = writeln!(&mut stderr().lock(), $($arg)*);
+    });
     ($($arg:tt)*) => ({
         use std::io::{Write, stderr};
         writeln!(&mut stderr(), $($arg)*).ok();
