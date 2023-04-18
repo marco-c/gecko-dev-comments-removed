@@ -75,7 +75,6 @@ PACKAGES_WE_ALWAYS_WANT_AN_OVERRIDE_OF = [
 
 
 TOLERATED_DUPES = {
-    "base64": 2,
     "bytes": 2,
     "crossbeam-deque": 2,
     "crossbeam-epoch": 2,
