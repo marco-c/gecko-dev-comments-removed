@@ -133,7 +133,7 @@ TEST_F(APZCTreeManagerGenericTester, Bug1194876) {
   MultiTouchInput mti;
   mti = CreateMultiTouchInput(MultiTouchInput::MULTITOUCH_START, mcc->Time());
   mti.mTouches.AppendElement(
-      SingleTouchData(0, ParentLayerPoint(25, 50), ScreenSize(0, 0), 0, 0));
+      SingleTouchData(0, ScreenIntPoint(25, 50), ScreenSize(0, 0), 0, 0));
   blockId = manager->ReceiveInputEvent(mti).mInputBlockId;
   manager->ContentReceivedInputBlock(blockId, false);
   targets.AppendElement(ApzcOf(layers[0])->GetGuid());
@@ -145,7 +145,7 @@ TEST_F(APZCTreeManagerGenericTester, Bug1194876) {
   
   
   mti.mTouches.AppendElement(
-      SingleTouchData(1, ParentLayerPoint(75, 50), ScreenSize(0, 0), 0, 0));
+      SingleTouchData(1, ScreenIntPoint(75, 50), ScreenSize(0, 0), 0, 0));
   blockId = manager->ReceiveInputEvent(mti).mInputBlockId;
   manager->ContentReceivedInputBlock(blockId, false);
   targets.AppendElement(ApzcOf(layers[0])->GetGuid());
@@ -174,7 +174,7 @@ TEST_F(APZCTreeManagerGenericTester, TargetChangesMidGesture_Bug1570559) {
   MultiTouchInput mti =
       CreateMultiTouchInput(MultiTouchInput::MULTITOUCH_START, mcc->Time());
   mti.mTouches.AppendElement(
-      SingleTouchData(0, ParentLayerPoint(25, 50), ScreenSize(0, 0), 0, 0));
+      SingleTouchData(0, ScreenIntPoint(25, 50), ScreenSize(0, 0), 0, 0));
   blockId = manager->ReceiveInputEvent(mti).mInputBlockId;
   manager->ContentReceivedInputBlock(blockId,  false);
   targets.AppendElement(ApzcOf(layers[1])->GetGuid());
@@ -186,7 +186,7 @@ TEST_F(APZCTreeManagerGenericTester, TargetChangesMidGesture_Bug1570559) {
   
   
   mti.mTouches.AppendElement(
-      SingleTouchData(1, ParentLayerPoint(75, 50), ScreenSize(0, 0), 0, 0));
+      SingleTouchData(1, ScreenIntPoint(75, 50), ScreenSize(0, 0), 0, 0));
   blockId = manager->ReceiveInputEvent(mti).mInputBlockId;
   manager->ContentReceivedInputBlock(blockId,  true);
   targets.AppendElement(ApzcOf(layers[1])->GetGuid());
