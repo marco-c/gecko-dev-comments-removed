@@ -51,26 +51,24 @@ using namespace mozilla::gfx;
 namespace mozilla::CanvasUtils {
 
 bool IsImageExtractionAllowed(dom::Document* aDocument, JSContext* aCx,
-                              Maybe<nsIPrincipal*> aPrincipal) {
+                              nsIPrincipal& aPrincipal) {
   
   if (!nsContentUtils::ShouldResistFingerprinting(aDocument)) {
     return true;
   }
 
   
-  if (!aDocument || !aCx || !aPrincipal) {
+  if (!aDocument || !aCx) {
     return false;
   }
 
-  nsIPrincipal& subjectPrincipal = *aPrincipal.ref();
-
   
-  if (subjectPrincipal.IsSystemPrincipal()) {
+  if (aPrincipal.IsSystemPrincipal()) {
     return true;
   }
 
   
-  auto* principal = BasePrincipal::Cast(&subjectPrincipal);
+  auto principal = BasePrincipal::Cast(&aPrincipal);
   if (principal->AddonPolicy() || principal->ContentScriptAddonPolicy()) {
     return true;
   }

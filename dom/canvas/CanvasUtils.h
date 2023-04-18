@@ -56,7 +56,7 @@ bool IsOffscreenCanvasEnabled(JSContext* aCx, JSObject* aObj);
 
 
 bool IsImageExtractionAllowed(dom::Document* aDocument, JSContext* aCx,
-                              Maybe<nsIPrincipal*> aPrincipal);
+                              nsIPrincipal& aPrincipal);
 
 
 
