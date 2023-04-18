@@ -180,7 +180,7 @@ class HighlightersOverlay {
 
     this.onMouseMove = this.onMouseMove.bind(this);
     this.onMouseOut = this.onMouseOut.bind(this);
-    this.onWillNavigate = this.onWillNavigate.bind(this);
+    this.hideAllHighlighters = this.hideAllHighlighters.bind(this);
     this.hideFlexboxHighlighter = this.hideFlexboxHighlighter.bind(this);
     this.hideGridHighlighter = this.hideGridHighlighter.bind(this);
     this.hideShapesHighlighter = this.hideShapesHighlighter.bind(this);
@@ -557,7 +557,7 @@ class HighlightersOverlay {
 
     if (this._pendingHighlighters.get(type) !== id) {
       return;
-    } else if (skipShow) {
+    } else if (skipShow || nodeFront.isDestroyed()) {
       this._pendingHighlighters.delete(type);
       return;
     }
@@ -1839,7 +1839,9 @@ class HighlightersOverlay {
   
 
 
-  async onWillNavigate() {
+
+
+  async hideAllHighlighters() {
     this.destroyEditors();
 
     

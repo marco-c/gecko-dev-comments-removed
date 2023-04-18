@@ -321,6 +321,7 @@ function Toolbox(
   this.togglePaintFlashing = this.togglePaintFlashing.bind(this);
   this._onTargetAvailable = this._onTargetAvailable.bind(this);
   this._onTargetDestroyed = this._onTargetDestroyed.bind(this);
+  this._onTargetSelected = this._onTargetSelected.bind(this);
   this._onResourceAvailable = this._onResourceAvailable.bind(this);
   this._onResourceUpdated = this._onResourceUpdated.bind(this);
 
@@ -743,6 +744,10 @@ Toolbox.prototype = {
     }
   },
 
+  async _onTargetSelected({ targetFront }) {
+    this._updateFrames({ selected: targetFront.actorID });
+  },
+
   _onTargetDestroyed({ targetFront }) {
     if (targetFront.isTopLevel) {
       const consoleFront = targetFront.getCachedFront("console");
@@ -896,7 +901,8 @@ Toolbox.prototype = {
       await this.commands.targetCommand.watchTargets(
         this.commands.targetCommand.ALL_TYPES,
         this._onTargetAvailable,
-        this._onTargetDestroyed
+        this._onTargetDestroyed,
+        this._onTargetSelected
       );
 
       const onResourcesWatched = this.resourceCommand.watchResources(
@@ -3297,8 +3303,8 @@ Toolbox.prototype = {
 
     
     
+    
     this.commands.targetCommand.selectTarget(frameInfo.targetFront);
-    this._updateFrames({ selected: frameIdOrTargetActorId });
   },
 
   
@@ -3951,7 +3957,8 @@ Toolbox.prototype = {
     this.commands.targetCommand.unwatchTargets(
       this.commands.targetCommand.ALL_TYPES,
       this._onTargetAvailable,
-      this._onTargetDestroyed
+      this._onTargetDestroyed,
+      this._onTargetSelected
     );
     this.resourceCommand.unwatchResources(
       [

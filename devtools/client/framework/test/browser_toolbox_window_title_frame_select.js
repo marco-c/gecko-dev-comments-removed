@@ -100,7 +100,10 @@ add_task(async function() {
   info("Select the iframe");
   iframeBtn.click();
 
-  await willNavigate;
+  
+  if (!isEveryFrameTargetEnabled()) {
+    await willNavigate;
+  }
   await onInspectorReloaded;
   
   await wait(1000);
