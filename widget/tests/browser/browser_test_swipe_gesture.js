@@ -127,6 +127,7 @@ add_task(async () => {
     set: [
       ["browser.gesture.swipe.left", "Browser:BackOrBackDuplicate"],
       ["browser.gesture.swipe.eight", "Browser:ForwardOrForwardDuplicate"],
+      ["widget.disable-swipe-tracker", false],
     ],
   });
 
@@ -201,9 +202,25 @@ add_task(async () => {
   
   
   wheelEventCount = 0;
-  tab.linkedBrowser.addEventListener("wheel", event => {
+  let wheelEventListener = event => {
     event.preventDefault();
+  };
+  tab.linkedBrowser.addEventListener("wheel", wheelEventListener);
+  await panLeftToRight(tab.linkedBrowser, 100, 100);
+  is(wheelEventCount, 3, "Received all wheel events");
+
+  await waitForWhile();
+  
+  is(tab.linkedBrowser.currentURI.spec, secondPage);
+
+  
+  
+  wheelEventCount = 0;
+  tab.linkedBrowser.removeEventListener("wheel", wheelEventListener);
+  await SpecialPowers.pushPrefEnv({
+    set: [["widget.disable-swipe-tracker", true]],
   });
+
   await panLeftToRight(tab.linkedBrowser, 100, 100);
   is(wheelEventCount, 3, "Received all wheel events");
 
