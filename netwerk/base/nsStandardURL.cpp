@@ -3095,7 +3095,7 @@ nsresult nsStandardURL::SetRef(const nsACString& input) {
 
   InvalidateCache();
 
-  if (!ref || !*ref) {
+  if (input.IsEmpty()) {
     
     if (mRef.mLen >= 0) {
       
