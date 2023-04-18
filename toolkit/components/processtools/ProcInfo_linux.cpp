@@ -19,6 +19,21 @@
 
 #define NANOPERSEC 1000000000.
 
+#ifndef CPUCLOCK_SCHED
+#  define CPUCLOCK_SCHED 2
+#endif
+#ifndef CPUCLOCK_PERTHREAD_MASK
+#  define CPUCLOCK_PERTHREAD_MASK 4
+#endif
+#ifndef MAKE_PROCESS_CPUCLOCK
+#  define MAKE_PROCESS_CPUCLOCK(pid, clock) \
+    ((int)(~(unsigned)(pid) << 3) | (int)(clock))
+#endif
+#ifndef MAKE_THREAD_CPUCLOCK
+#  define MAKE_THREAD_CPUCLOCK(tid, clock) \
+    MAKE_PROCESS_CPUCLOCK(tid, (clock) | CPUCLOCK_PERTHREAD_MASK)
+#endif
+
 namespace mozilla {
 
 int GetCycleTimeFrequencyMHz() { return 0; }
@@ -130,7 +145,7 @@ class StatReader {
       if (mPid == 0) {
         mFilepath.AssignLiteral("/proc/self/stat");
       } else {
-        mFilepath.AppendPrintf("/proc/%u/stat", mPid);
+        mFilepath.AppendPrintf("/proc/%u/stat", unsigned(mPid));
       }
     }
     FILE* fstat = fopen(mFilepath.get(), "r");
@@ -165,8 +180,9 @@ class StatReader {
 class ThreadInfoReader final : public StatReader {
  public:
   ThreadInfoReader(const base::ProcessId aPid, const base::ProcessId aTid)
-      : StatReader(aPid), mTid(aTid) {
-    mFilepath.AppendPrintf("/proc/%u/task/%u/stat", aPid, mTid);
+      : StatReader(aPid) {
+    mFilepath.AppendPrintf("/proc/%u/task/%u/stat", unsigned(aPid),
+                           unsigned(aTid));
   }
 
   nsresult ParseThread(ThreadInfo& aInfo) {
@@ -174,18 +190,22 @@ class ThreadInfoReader final : public StatReader {
     nsresult rv = StatReader::ParseProc(info);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    aInfo.tid = mTid;
     
     aInfo.cpuTime = info.cpuTime;
     aInfo.name.Assign(mName);
     return NS_OK;
   }
-
- private:
-  base::ProcessId mTid;
 };
 
 nsresult GetCpuTimeSinceProcessStartInMs(uint64_t* aResult) {
+  timespec t;
+  if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &t) == 0) {
+    uint64_t cpuTime =
+        uint64_t(t.tv_sec) * 1'000'000'000u + uint64_t(t.tv_nsec);
+    *aResult = cpuTime / PR_NSEC_PER_MSEC;
+    return NS_OK;
+  }
+
   StatReader reader(0);
   ProcInfo info;
   nsresult rv = reader.ParseProc(info);
@@ -211,15 +231,22 @@ ProcInfoPromise::ResolveOrRejectValue GetProcInfoSync(
     return result;
   }
   for (const auto& request : aRequests) {
-    
-    StatReader reader(request.pid);
     ProcInfo info;
-    nsresult rv = reader.ParseProc(info);
-    if (NS_FAILED(rv)) {
+
+    timespec t;
+    clockid_t clockid = MAKE_PROCESS_CPUCLOCK(request.pid, CPUCLOCK_SCHED);
+    if (clock_gettime(clockid, &t) == 0) {
+      info.cpuTime = uint64_t(t.tv_sec) * 1'000'000'000u + uint64_t(t.tv_nsec);
+    } else {
       
-      
-      
-      continue;
+      StatReader reader(request.pid);
+      nsresult rv = reader.ParseProc(info);
+      if (NS_FAILED(rv)) {
+        
+        
+        
+        continue;
+      }
     }
 
     
@@ -246,7 +273,7 @@ ProcInfoPromise::ResolveOrRejectValue GetProcInfoSync(
 
     
     nsCString taskPath;
-    taskPath.AppendPrintf("/proc/%u/task", request.pid);
+    taskPath.AppendPrintf("/proc/%u/task", unsigned(request.pid));
     DIR* dirHandle = opendir(taskPath.get());
     if (!dirHandle) {
       
@@ -263,14 +290,52 @@ ProcInfoPromise::ResolveOrRejectValue GetProcInfoSync(
       if (entry->d_name[0] == '.') {
         continue;
       }
-      
       nsAutoCString entryName(entry->d_name);
+      nsresult rv;
       int32_t tid = entryName.ToInteger(&rv);
       if (NS_FAILED(rv)) {
         continue;
       }
-      ThreadInfoReader reader(request.pid, tid);
+
       ThreadInfo threadInfo;
+      threadInfo.tid = tid;
+
+      timespec ts;
+      if (clock_gettime(MAKE_THREAD_CPUCLOCK(tid, CPUCLOCK_SCHED), &ts) == 0) {
+        threadInfo.cpuTime =
+            uint64_t(ts.tv_sec) * 1'000'000'000u + uint64_t(ts.tv_nsec);
+
+        nsCString path;
+        path.AppendPrintf("/proc/%u/task/%u/comm", unsigned(request.pid),
+                          unsigned(tid));
+        FILE* fstat = fopen(path.get(), "r");
+        if (fstat) {
+          
+          
+          
+          
+          
+          
+          char buffer[32];
+          char* start = fgets(buffer, sizeof(buffer), fstat);
+          fclose(fstat);
+          if (start) {
+            
+            
+            char* end = strchr(buffer, '\n');
+            if (end) {
+              threadInfo.name.AssignASCII(buffer, size_t(end - start));
+              info.threads.AppendElement(threadInfo);
+              continue;
+            }
+          }
+        }
+      }
+
+      
+      
+      
+      ThreadInfoReader reader(request.pid, tid);
       rv = reader.ParseThread(threadInfo);
       if (NS_FAILED(rv)) {
         continue;
