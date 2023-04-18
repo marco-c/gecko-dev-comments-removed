@@ -26,13 +26,11 @@
 
 ToolbarKeyboardNavigator = {
   
-  kToolbars: Services.prefs.getBoolPref("browser.tabs.firefox-view")
-    ? [
-        CustomizableUI.AREA_TABSTRIP,
-        CustomizableUI.AREA_NAVBAR,
-        CustomizableUI.AREA_BOOKMARKS,
-      ]
-    : [CustomizableUI.AREA_NAVBAR, CustomizableUI.AREA_BOOKMARKS],
+  kToolbars: [
+    CustomizableUI.AREA_TABSTRIP,
+    CustomizableUI.AREA_NAVBAR,
+    CustomizableUI.AREA_BOOKMARKS,
+  ],
   
   
   kSearchClearTimeout: 1000,
