@@ -2842,7 +2842,7 @@ void BrowserChild::InitRenderingState(
   
   
   
-  MOZ_ASSERT(!mPuppetWidget->HasLayerManager() ||
+  MOZ_ASSERT(!mPuppetWidget->HasWindowRenderer() ||
              mPuppetWidget->GetWindowRenderer()->GetBackendType() ==
                  layers::LayersBackend::LAYERS_NONE);
   bool success = false;
@@ -2985,7 +2985,7 @@ void BrowserChild::MakeHidden() {
   
   
   if (mPuppetWidget) {
-    if (mPuppetWidget->HasLayerManager()) {
+    if (mPuppetWidget->HasWindowRenderer()) {
       ClearCachedResources();
     }
     mPuppetWidget->Show(false);
@@ -3436,7 +3436,7 @@ ScreenIntRect BrowserChild::GetOuterRect() {
 
 void BrowserChild::PaintWhileInterruptingJS(
     const layers::LayersObserverEpoch& aEpoch) {
-  if (!IPCOpen() || !mPuppetWidget || !mPuppetWidget->HasLayerManager()) {
+  if (!IPCOpen() || !mPuppetWidget || !mPuppetWidget->HasWindowRenderer()) {
     
     
     return;

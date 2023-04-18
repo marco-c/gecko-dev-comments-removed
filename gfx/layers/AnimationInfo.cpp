@@ -184,7 +184,7 @@ void AnimationInfo::EnumerateGenerationOnFrame(
       
       
       if (widget->GetOwningBrowserChild() &&
-          !static_cast<widget::PuppetWidget*>(widget)->HasLayerManager()) {
+          !static_cast<widget::PuppetWidget*>(widget)->HasWindowRenderer()) {
         for (auto displayItem : LayerAnimationInfo::sDisplayItemTypes) {
           aCallback(Nothing(), displayItem);
         }
