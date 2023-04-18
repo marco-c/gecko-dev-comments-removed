@@ -1261,6 +1261,8 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
 
 
         numFormHasPossibleUsernameEvent: 0,
+
+        captureLoginTimeStamp: 0,
       };
       this._loginFormStateByDocument.set(document, loginFormState);
     }
@@ -2202,6 +2204,9 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
         messageSent: true,
       };
 
+      if (messageName == "PasswordManager:ShowDoorhanger") {
+        docState.captureLoginTimeStamp = doc.lastUserGestureTimeStamp;
+      }
       this.sendAsyncMessage(messageName, detail);
     } catch (ex) {
       Cu.reportError(ex);
@@ -2929,13 +2934,16 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
 
   _formHasModifiedFields(form) {
     let doc = form.rootElement.ownerDocument;
+    let state = this.stateForDocument(doc);
     let userHasInteracted;
     let testOnlyUserHasInteracted =
       LoginHelper.testOnlyUserHasInteractedWithDocument;
     if (Cu.isInAutomation && testOnlyUserHasInteracted !== null) {
       userHasInteracted = testOnlyUserHasInteracted;
     } else {
-      userHasInteracted = doc.userHasInteracted;
+      userHasInteracted =
+        !LoginHelper.userInputRequiredToCapture ||
+        state.captureLoginTimeStamp != doc.lastUserGestureTimeStamp;
     }
 
     log("_formHasModifiedFields, userHasInteracted:", userHasInteracted);
@@ -2944,7 +2952,7 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
     if (!userHasInteracted) {
       return false;
     }
-    let state = this.stateForDocument(doc);
+
     
     let fieldsModified = state.fieldModificationsByRootElement.get(
       form.rootElement
