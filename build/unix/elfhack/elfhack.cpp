@@ -7,6 +7,8 @@
 #include <cstring>
 #include <cstdlib>
 #include <cstdio>
+#include <memory>
+
 #include "elfxx.h"
 #include "mozilla/CheckedInt.h"
 
@@ -931,7 +933,8 @@ int do_relocation_section(Elf* elf, unsigned int rel_type,
 
   Elf_Shdr relhack_section(relhack64_section);
   Elf_Shdr relhackcode_section(relhackcode64_section);
-  ElfRelHack_Section* relhack = new ElfRelHack_Section(relhack_section);
+  auto relhack_ptr = std::make_unique<ElfRelHack_Section>(relhack_section);
+  auto relhack = relhack_ptr.get();
 
   ElfSymtab_Section* symtab = (ElfSymtab_Section*)section->getLink();
   Elf_SymValue* sym = symtab->lookup("__cxa_pure_virtual");
@@ -1175,9 +1178,10 @@ int do_relocation_section(Elf* elf, unsigned int rel_type,
   section->rels.assign(new_rels.begin(), new_rels.end());
   section->shrink(new_rels.size() * section->getEntSize());
 
-  ElfRelHackCode_Section* relhackcode =
-      new ElfRelHackCode_Section(relhackcode_section, *elf, *relhack,
-                                 original_init, mprotect_cb, sysconf_cb);
+  auto relhackcode_ptr = std::make_unique<ElfRelHackCode_Section>(
+      relhackcode_section, *elf, *relhack, original_init, mprotect_cb,
+      sysconf_cb);
+  auto relhackcode = relhackcode_ptr.get();
   
   
   ElfSection* first_executable = nullptr;
@@ -1193,8 +1197,19 @@ int do_relocation_section(Elf* elf, unsigned int rel_type,
     return -1;
   }
 
+  
+  
+  
+  
+  
+  
+  
+
   relhack->insertBefore(section);
+  relhack_ptr.release();
+
   relhackcode->insertBefore(first_executable);
+  relhackcode_ptr.release();
 
   
   
@@ -1266,8 +1281,8 @@ int do_relocation_section(Elf* elf, unsigned int rel_type,
 
   
   elf->normalize();
-  ElfLocation* init =
-      new ElfLocation(relhackcode, relhackcode->getEntryPoint());
+  auto init =
+      std::make_unique<ElfLocation>(relhackcode, relhackcode->getEntryPoint());
   if (init_array) {
     
     
@@ -1275,10 +1290,15 @@ int do_relocation_section(Elf* elf, unsigned int rel_type,
     Rel_Type* rel = &section->rels[init_array_insert];
     rel->r_info = ELF64_R_INFO(0, rel_type);  
     set_relative_reloc(rel, elf, init->getValue());
-  } else if (!dyn->setValueForType(DT_INIT, init)) {
-    fprintf(stderr, "Can't grow .dynamic section to set DT_INIT. Skipping\n");
-    return -1;
+  } else {
+    if (dyn->setValueForType(DT_INIT, init.get())) {
+      init.release();
+    } else {
+      fprintf(stderr, "Can't grow .dynamic section to set DT_INIT. Skipping\n");
+      return -1;
+    }
   }
+
   
   
   if (dyn->getValueForType(Rel_Type::d_tag_count))
