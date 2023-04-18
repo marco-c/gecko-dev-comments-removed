@@ -345,37 +345,20 @@ void nsPrintSettingsWin::CopyFromNative(HDC aHdc, DEVMODEW* aDevMode) {
   double physicalWidthInch = double(physicalWidth) / pixelsPerInchX;
 
   
-  double sizeUnitToTenthsOfAmm =
-      10L * (mPaperSizeUnit == kPaperSizeInches ? MM_PER_INCH_FLOAT : 1L);
-  if (aDevMode->dmFields & DM_PAPERLENGTH) {
-    mPaperHeight = aDevMode->dmPaperLength / sizeUnitToTenthsOfAmm;
-  } else {
-    
-    
-    
-    
-    double paperHeightInch = mOrientation == kPortraitOrientation
-                                 ? physicalHeightInch
-                                 : physicalWidthInch;
-    mPaperHeight = mPaperSizeUnit == kPaperSizeInches
-                       ? paperHeightInch
-                       : paperHeightInch * MM_PER_INCH_FLOAT;
-  }
+  
+  double paperHeightInch = mOrientation == kPortraitOrientation
+                               ? physicalHeightInch
+                               : physicalWidthInch;
+  mPaperHeight = mPaperSizeUnit == kPaperSizeInches
+                     ? paperHeightInch
+                     : paperHeightInch * MM_PER_INCH_FLOAT;
 
-  if (aDevMode->dmFields & DM_PAPERWIDTH) {
-    mPaperWidth = aDevMode->dmPaperWidth / sizeUnitToTenthsOfAmm;
-  } else {
-    
-    
-    
-    
-    double paperWidthInch = mOrientation == kPortraitOrientation
-                                ? physicalWidthInch
-                                : physicalHeightInch;
-    mPaperWidth = mPaperSizeUnit == kPaperSizeInches
-                      ? paperWidthInch
-                      : paperWidthInch * MM_PER_INCH_FLOAT;
-  }
+  double paperWidthInch = mOrientation == kPortraitOrientation
+                              ? physicalWidthInch
+                              : physicalHeightInch;
+  mPaperWidth = mPaperSizeUnit == kPaperSizeInches
+                    ? paperWidthInch
+                    : paperWidthInch * MM_PER_INCH_FLOAT;
 
   
   mResolution = pixelsPerInchY;
@@ -396,13 +379,13 @@ void nsPrintSettingsWin::CopyToNative(DEVMODEW* aDevMode) {
   aDevMode->dmColor = mPrintInColor ? DMCOLOR_COLOR : DMCOLOR_MONOCHROME;
 
   
-  double sizeUnitToTenthsOfAmm =
-      10L * (mPaperSizeUnit == kPaperSizeInches ? MM_PER_INCH_FLOAT : 1L);
+  double tenthsOfAmmPerSizeUnit =
+      mPaperSizeUnit == kPaperSizeInches ? MM_PER_INCH_FLOAT * 10.0 : 10.0;
 
   
   
   if (mPaperHeight > 0) {
-    aDevMode->dmPaperLength = mPaperHeight * sizeUnitToTenthsOfAmm;
+    aDevMode->dmPaperLength = std::round(mPaperHeight * tenthsOfAmmPerSizeUnit);
     aDevMode->dmFields |= DM_PAPERLENGTH;
   } else {
     aDevMode->dmPaperLength = 0;
@@ -410,7 +393,7 @@ void nsPrintSettingsWin::CopyToNative(DEVMODEW* aDevMode) {
   }
 
   if (mPaperWidth > 0) {
-    aDevMode->dmPaperWidth = mPaperWidth * sizeUnitToTenthsOfAmm;
+    aDevMode->dmPaperWidth = std::round(mPaperWidth * tenthsOfAmmPerSizeUnit);
     aDevMode->dmFields |= DM_PAPERWIDTH;
   } else {
     aDevMode->dmPaperWidth = 0;
