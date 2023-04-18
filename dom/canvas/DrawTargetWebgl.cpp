@@ -606,14 +606,14 @@ bool DrawTargetWebgl::SharedContext::ReadInto(uint8_t* aDstData,
   desc.size = *uvec2::FromSize(aBounds);
   desc.packState.rowLength = aDstStride / 4;
   Range<uint8_t> range = {aDstData, size_t(aDstStride) * aBounds.height};
-  mWebgl->DoReadPixels(desc, range);
+  bool success = mWebgl->DoReadPixels(desc, range);
 
   
   if (aHandle && mCurrentTarget) {
     mWebgl->BindFramebuffer(LOCAL_GL_FRAMEBUFFER, mCurrentTarget->mFramebuffer);
   }
 
-  return true;
+  return success;
 }
 
 already_AddRefed<DataSourceSurface>
