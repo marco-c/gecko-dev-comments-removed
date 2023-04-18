@@ -29,7 +29,10 @@ add_task(async function() {
   await closeConsole();
   info("web console closed");
 
+  
   await pushPref("devtools.browserconsole.contentMessages", true);
+  
+  await pushPref("devtools.browsertoolbox.fission", true);
   hud = await BrowserConsoleManager.toggleBrowserConsole();
   ok(hud, "browser console opened");
   await testMessages(hud);
