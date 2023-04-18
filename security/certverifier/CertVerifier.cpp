@@ -165,39 +165,28 @@ Result IsDelegatedCredentialAcceptable(const DelegatedCredentialInfo& dcInfo) {
 
 
 
-
-
-
-
-
-
 Result IsCertBuiltInRoot(Input certInput, bool& result) {
+  result = false;
+
   if (NS_FAILED(BlockUntilLoadableCertsLoaded())) {
     return Result::FATAL_ERROR_LIBRARY_FAILURE;
   }
 
-  CERTCertDBHandle* certDB(CERT_GetDefaultCertDB());
-  SECItem certDER(UnsafeMapInputToSECItem(certInput));
-  UniqueCERTCertificate cert(
-      CERT_NewTempCertificate(certDB, &certDER, nullptr, false, true));
-  if (!cert) {
-    return Result::FATAL_ERROR_LIBRARY_FAILURE;
-  }
-
-  result = false;
 #ifdef DEBUG
   nsCOMPtr<nsINSSComponent> component(do_GetService(PSM_COMPONENT_CONTRACTID));
   if (!component) {
     return Result::FATAL_ERROR_LIBRARY_FAILURE;
   }
-  nsresult rv = component->IsCertTestBuiltInRoot(cert.get(), &result);
-  if (NS_FAILED(rv)) {
+  nsTArray<uint8_t> certBytes;
+  certBytes.AppendElements(certInput.UnsafeGetData(), certInput.GetLength());
+  if (NS_FAILED(component->IsCertTestBuiltInRoot(certBytes, &result))) {
     return Result::FATAL_ERROR_LIBRARY_FAILURE;
   }
   if (result) {
     return Success;
   }
 #endif  
+  SECItem certItem(UnsafeMapInputToSECItem(certInput));
   AutoSECMODListReadLock lock;
   for (SECMODModuleList* list = SECMOD_GetDefaultModuleList(); list;
        list = list->next) {
@@ -216,16 +205,19 @@ Result IsCertBuiltInRoot(Input certInput, bool& result) {
       
       
       
-      if (PK11_IsPresent(slot) && PK11_HasRootCerts(slot)) {
-        CK_OBJECT_HANDLE handle =
-            PK11_FindCertInSlot(slot, cert.get(), nullptr);
-        if (handle != CK_INVALID_HANDLE &&
-            PK11_HasAttributeSet(slot, handle, CKA_NSS_MOZILLA_CA_POLICY,
-                                 false)) {
-          
-          result = true;
-          break;
-        }
+      if (!PK11_IsPresent(slot) || !PK11_HasRootCerts(slot)) {
+        continue;
+      }
+      CK_OBJECT_HANDLE handle =
+          PK11_FindEncodedCertInSlot(slot, &certItem, nullptr);
+      if (handle == CK_INVALID_HANDLE) {
+        continue;
+      }
+      if (PK11_HasAttributeSet(slot, handle, CKA_NSS_MOZILLA_CA_POLICY,
+                               false)) {
+        
+        result = true;
+        break;
       }
     }
   }
