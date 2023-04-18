@@ -1216,6 +1216,13 @@ if (gIsWindows) {
       "hasWinPackageId must be a boolean."
     );
     
+    Assert.ok(
+      !("winPackageFamilyName" in data.system) ||
+        data.system.winPackageFamilyName === null ||
+        typeof data.system.winPackageFamilyName === "string",
+      "winPackageFamilyName must be a string if non null"
+    );
+    
     for (let f of [
       "count",
       "model",

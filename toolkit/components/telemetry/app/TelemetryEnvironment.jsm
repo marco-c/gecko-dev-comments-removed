@@ -2074,6 +2074,14 @@ EnvironmentCache.prototype = {
     };
 
     if (AppConstants.platform === "win") {
+      
+      let winPackageFamilyName = getSysinfoProperty("winPackageFamilyName", "");
+      if (
+        winPackageFamilyName.startsWith("Mozilla.") ||
+        winPackageFamilyName.startsWith("MozillaCorporation.")
+      ) {
+        data = { winPackageFamilyName };
+      }
       data = { ...this._getProcessData(), ...data };
     } else if (AppConstants.platform == "android") {
       data.device = this._getDeviceData();
