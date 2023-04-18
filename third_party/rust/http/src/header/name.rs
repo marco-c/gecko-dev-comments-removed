@@ -397,7 +397,7 @@ standard_headers! {
     /// media types and not only to textual documents.
     (ContentLanguage, CONTENT_LANGUAGE, "content-language");
 
-    /// Indicates the size fo the entity-body.
+    /// Indicates the size of the entity-body.
     ///
     /// The header value must be a decimal indicating the number of octets sent
     /// to the recipient.
@@ -1900,6 +1900,24 @@ impl<'a> TryFrom<&'a [u8]> for HeaderName {
     }
 }
 
+impl TryFrom<String> for HeaderName {
+    type Error = InvalidHeaderName;
+
+    #[inline]
+    fn try_from(s: String) -> Result<Self, Self::Error> {
+        Self::from_bytes(s.as_bytes())
+    }
+}
+
+impl TryFrom<Vec<u8>> for HeaderName {
+    type Error = InvalidHeaderName;
+
+    #[inline]
+    fn try_from(vec: Vec<u8>) -> Result<Self, Self::Error> {
+        Self::from_bytes(&vec)
+    }
+}
+
 #[doc(hidden)]
 impl From<StandardHeader> for HeaderName {
     fn from(src: StandardHeader) -> HeaderName {
@@ -2238,7 +2256,7 @@ mod tests {
     #[test]
     fn test_from_static_std() {
         let a = HeaderName { inner: Repr::Standard(Vary) };
-        
+
         let b = HeaderName::from_static("vary");
         assert_eq!(a, b);
 
@@ -2250,13 +2268,13 @@ mod tests {
     #[should_panic]
     fn test_from_static_std_uppercase() {
         HeaderName::from_static("Vary");
-    } 
+    }
 
     #[test]
     #[should_panic]
     fn test_from_static_std_symbol() {
         HeaderName::from_static("vary{}");
-    } 
+    }
 
     
     #[test]

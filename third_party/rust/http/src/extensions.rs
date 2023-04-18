@@ -152,6 +152,42 @@ impl Extensions {
             map.clear();
         }
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.map
+            .as_ref()
+            .map_or(true, |map| map.is_empty())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.map
+            .as_ref()
+            .map_or(0, |map| map.len())
+    }
 }
 
 impl fmt::Debug for Extensions {

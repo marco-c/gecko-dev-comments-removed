@@ -5,6 +5,7 @@
 
 
 
+#![allow(dead_code)]
 use crate::error::ERRNO_NOT_POSITIVE;
 use crate::util::LazyUsize;
 use crate::Error;

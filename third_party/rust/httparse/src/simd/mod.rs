@@ -89,9 +89,9 @@ mod runtime {
     
     
 
-    use core::sync::atomic::{AtomicUsize, ATOMIC_USIZE_INIT, Ordering};
+    use core::sync::atomic::{AtomicUsize, Ordering};
 
-    static FEATURE: AtomicUsize = ATOMIC_USIZE_INIT;
+    static FEATURE: AtomicUsize = AtomicUsize::new(0);
 
     const INIT: usize = 0;
 

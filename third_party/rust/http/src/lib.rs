@@ -1,4 +1,4 @@
-#![doc(html_root_url = "https://docs.rs/http/0.2.2")]
+#![doc(html_root_url = "https://docs.rs/http/0.2.5")]
 
 
 

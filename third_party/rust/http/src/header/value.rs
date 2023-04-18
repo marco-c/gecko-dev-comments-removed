@@ -56,13 +56,37 @@ impl HeaderValue {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
-    pub fn from_static(src: &'static str) -> HeaderValue {
+    #[allow(unconditional_panic)] 
+    pub const fn from_static(src: &'static str) -> HeaderValue {
         let bytes = src.as_bytes();
-        for &b in bytes {
-            if !is_visible_ascii(b) {
-                panic!("invalid header value");
+        let mut i = 0;
+        while i < bytes.len() {
+            if !is_visible_ascii(bytes[i]) {
+                ([] as [u8; 0])[0]; 
             }
+            i += 1;
         }
 
         HeaderValue {
@@ -555,7 +579,7 @@ mod try_from_header_name_tests {
     }
 }
 
-fn is_visible_ascii(b: u8) -> bool {
+const fn is_visible_ascii(b: u8) -> bool {
     b >= 32 && b < 127 || b == b'\t'
 }
 

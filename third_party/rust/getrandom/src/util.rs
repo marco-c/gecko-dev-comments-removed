@@ -5,7 +5,7 @@
 
 
 
-
+#![allow(dead_code)]
 use core::sync::atomic::{AtomicUsize, Ordering::Relaxed};
 
 
