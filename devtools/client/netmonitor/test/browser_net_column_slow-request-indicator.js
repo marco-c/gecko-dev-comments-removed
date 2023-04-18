@@ -10,11 +10,6 @@
 add_task(async function() {
   
   
-  
-  await pushPref("dom.security.https_first", false);
-
-  
-  
   const SLOW_THRESHOLD = 450;
 
   Services.prefs.setIntPref("devtools.netmonitor.audits.slow", SLOW_THRESHOLD);

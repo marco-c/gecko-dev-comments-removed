@@ -8,9 +8,6 @@
 
 
 add_task(async function() {
-  
-  await pushPref("dom.security.https_first", false);
-
   const { tab, monitor } = await initNetMonitor(SEND_BEACON_URL, {
     requestCount: 1,
   });

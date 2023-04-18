@@ -10,11 +10,6 @@
 const HTML_LONG_URL = CONTENT_TYPE_SJS + "?fmt=html-long";
 
 add_task(async function() {
-  
-  
-  
-  await pushPref("dom.security.https_first", false);
-
   const { tab, monitor } = await initNetMonitor(CUSTOM_GET_URL, {
     requestCount: 1,
   });

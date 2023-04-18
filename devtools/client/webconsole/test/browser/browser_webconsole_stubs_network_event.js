@@ -12,12 +12,8 @@ const {
   writeStubsToFile,
 } = require(`${CHROME_URL_ROOT}stub-generator-helpers`);
 
-
-
-
-
 const TEST_URI =
-  "http://mochi.test:8888/browser/devtools/client/webconsole/test/browser/stub-generators/test-network-event.html";
+  "https://example.com/browser/devtools/client/webconsole/test/browser/stub-generators/test-network-event.html";
 const STUB_FILE = "networkEvent.js";
 
 add_task(async function() {

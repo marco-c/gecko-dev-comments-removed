@@ -5,11 +5,7 @@
 
 
 
-
-
-
-
-const TEST_URI = `http://mochi.test:8888/document-builder.sjs?html=<meta charset=utf8></meta>
+const TEST_URI = `https://example.com/document-builder.sjs?html=<meta charset=utf8></meta>
 <script>
   console.error("Cache Error1");
   console.exception(false, "Cache Exception");

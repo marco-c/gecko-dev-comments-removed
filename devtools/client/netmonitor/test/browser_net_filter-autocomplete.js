@@ -38,10 +38,6 @@ function testAutocompleteContents(expected, document) {
 }
 
 add_task(async function() {
-  
-  
-  await pushPref("dom.security.https_first", false);
-
   const { monitor } = await initNetMonitor(FILTERING_URL, { requestCount: 1 });
   const { document, store, windowRequire } = monitor.panelWin;
   const Actions = windowRequire("devtools/client/netmonitor/src/actions/index");

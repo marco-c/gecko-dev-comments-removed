@@ -8,9 +8,6 @@
 
 
 add_task(async function() {
-  
-  await pushPref("dom.security.https_first", false);
-
   const { tab, monitor, toolbox } = await initNetMonitor(CURL_URL, {
     requestCount: 1,
   });

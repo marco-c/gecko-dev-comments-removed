@@ -144,11 +144,6 @@ const EXPECTED_REQUESTS = [
 ];
 
 add_task(async function() {
-  
-  
-  
-  await pushPref("dom.security.https_first", false);
-
   const { monitor } = await initNetMonitor(FILTERING_URL, { requestCount: 1 });
   info("Starting test... ");
 
