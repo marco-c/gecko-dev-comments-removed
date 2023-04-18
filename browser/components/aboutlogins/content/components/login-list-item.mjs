@@ -1,13 +1,13 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-
-
+/**
+ * LoginListItemFactory is used instead of the "login-list-item" custom element
+ * since there may be 100s of login-list-items on about:logins and each
+ * custom element carries with it significant overhead when used in large
+ * numbers.
+ */
 export default class LoginListItemFactory {
   static create(login) {
     let template = document.querySelector("#login-list-item-template");
@@ -36,7 +36,7 @@ export default class LoginListItemFactory {
       return;
     }
 
-    
+    // Prepend the ID with a string since IDs must not begin with a number.
     if (!listItem.id) {
       listItem.id = "lli-" + login.guid;
       listItem.dataset.guid = login.guid;
