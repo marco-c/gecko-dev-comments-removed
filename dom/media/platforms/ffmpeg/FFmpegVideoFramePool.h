@@ -17,68 +17,43 @@
 namespace mozilla {
 
 class VideoFramePool;
-class VideoFrameSurfaceVAAPI;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class VideoFrameSurface {
- public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(VideoFrameSurface)
-
-  VideoFrameSurface() = default;
-
-  virtual VideoFrameSurfaceVAAPI* AsVideoFrameSurfaceVAAPI() { return nullptr; }
-
-  virtual void SetYUVColorSpace(gfx::YUVColorSpace aColorSpace) = 0;
-  virtual void SetColorRange(gfx::ColorRange aColorRange) = 0;
-
-  virtual RefPtr<DMABufSurfaceYUV> GetDMABufSurface() { return nullptr; };
-  virtual RefPtr<layers::Image> GetAsImage() = 0;
-
-  
-  
-  
-  VideoFrameSurface(const VideoFrameSurface&) = delete;
-  const VideoFrameSurface& operator=(VideoFrameSurface const&) = delete;
-
- protected:
-  virtual ~VideoFrameSurface(){};
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class VideoFrameSurfaceVAAPI final : public VideoFrameSurface {
   friend class VideoFramePool;
 
  public:
-  explicit VideoFrameSurfaceVAAPI(DMABufSurface* aSurface);
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(VideoFrameSurface)
 
-  VideoFrameSurfaceVAAPI* AsVideoFrameSurfaceVAAPI() final { return this; }
+  explicit VideoFrameSurface(DMABufSurface* aSurface);
 
   void SetYUVColorSpace(mozilla::gfx::YUVColorSpace aColorSpace) {
     mSurface->GetAsDMABufSurfaceYUV()->SetYUVColorSpace(aColorSpace);
@@ -92,6 +67,12 @@ class VideoFrameSurfaceVAAPI final : public VideoFrameSurface {
   };
 
   RefPtr<layers::Image> GetAsImage();
+
+  
+  
+  
+  VideoFrameSurface(const VideoFrameSurface&) = delete;
+  const VideoFrameSurface& operator=(VideoFrameSurface const&) = delete;
 
  protected:
   
@@ -107,7 +88,7 @@ class VideoFrameSurfaceVAAPI final : public VideoFrameSurface {
   void MarkAsUsed() { mSurface->GlobalRefAdd(); }
 
  private:
-  virtual ~VideoFrameSurfaceVAAPI();
+  virtual ~VideoFrameSurface();
 
   const RefPtr<DMABufSurface> mSurface;
   const FFmpegLibWrapper* mLib;
@@ -132,7 +113,7 @@ class VideoFramePool final {
  private:
   
   Mutex mSurfaceLock MOZ_UNANNOTATED;
-  nsTArray<RefPtr<VideoFrameSurfaceVAAPI>> mDMABufSurfaces;
+  nsTArray<RefPtr<VideoFrameSurface>> mDMABufSurfaces;
   
   
   Maybe<bool> mTextureCreationWorks;
