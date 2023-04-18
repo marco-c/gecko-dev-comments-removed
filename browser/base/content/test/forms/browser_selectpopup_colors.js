@@ -797,7 +797,10 @@ add_task(async function test_scrollbar_props() {
 if (AppConstants.isPlatformAndVersionAtLeast("win", "10")) {
   add_task(async function test_darkmode() {
     
+    let darkModeQuery = matchMedia("(prefers-color-scheme: dark)");
+    let darkModeChange = BrowserTestUtils.waitForEvent(darkModeQuery, "change");
     await SpecialPowers.pushPrefEnv({ set: [["ui.systemUsesDarkTheme", 1]] });
+    await darkModeChange;
 
     
     let cs = getComputedStyle(document.documentElement);
