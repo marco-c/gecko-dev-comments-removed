@@ -4,10 +4,6 @@
 
 
 
-var { FeatureGate } = ChromeUtils.import(
-  "resource://featuregates/FeatureGate.jsm"
-);
-
 var gExperimentalPane = {
   inited: false,
   _template: null,
