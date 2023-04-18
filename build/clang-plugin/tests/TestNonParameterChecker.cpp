@@ -178,10 +178,12 @@ void testLambda()
     (void)[](HasNonParamStructUnion x) -> void {}; 
 }
 
-struct alignas(16) AlignasStruct { char a; ~AlignasStruct(); };  
+
+
+struct alignas(8) AlignasStruct { char a; }; 
 void takesAlignasStruct(AlignasStruct x) { } 
 void takesAlignasStructByRef(const AlignasStruct& x) { }
 
-struct AlignasMember { alignas(16) char a; ~AlignasMember(); }; 
+struct AlignasMember { alignas(8) char a; }; 
 void takesAlignasMember(AlignasMember x) { } 
 void takesAlignasMemberByRef(const AlignasMember& x) { }

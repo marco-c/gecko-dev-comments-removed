@@ -7,7 +7,6 @@
 
 #include "CustomAttributes.h"
 #include "plugin.h"
-#include "llvm/ADT/BitmaskEnum.h"
 
 class CustomTypeAnnotation {
   enum ReasonKind {
@@ -60,25 +59,9 @@ private:
 
 protected:
   
-  enum VisitFlags {
-    VISIT_NONE = 0,
-    VISIT_FIELDS = 1,
-    VISIT_TMPL_ARGS = 2,
-    VISIT_BASES = 4,
-    LLVM_MARK_AS_BITMASK_ENUM(VISIT_BASES)
-  };
-
   
   
-  
-  
-  
-  
-  
-  virtual std::string getImplicitReason(const TagDecl *D,
-                                        VisitFlags &Flags) const {
-    return "";
-  }
+  virtual std::string getImplicitReason(const TagDecl *D) const { return ""; }
 };
 
 extern CustomTypeAnnotation StackClass;
