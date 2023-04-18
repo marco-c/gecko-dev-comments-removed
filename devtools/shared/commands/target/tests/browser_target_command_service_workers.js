@@ -48,11 +48,11 @@ add_task(async function() {
   const onDestroyed = ({ targetFront }) =>
     targets.splice(targets.indexOf(targetFront), 1);
 
-  await targetCommand.watchTargets(
-    [TYPES.SERVICE_WORKER],
+  await targetCommand.watchTargets({
+    types: [TYPES.SERVICE_WORKER],
     onAvailable,
-    onDestroyed
-  );
+    onDestroyed,
+  });
 
   
   

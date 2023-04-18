@@ -31,7 +31,10 @@ add_task(async function() {
         resolve();
       }
     };
-    targetCommand.watchTargets([targetCommand.TYPES.WORKER], onAvailable);
+    targetCommand.watchTargets({
+      types: [targetCommand.TYPES.WORKER],
+      onAvailable,
+    });
   });
 
   
