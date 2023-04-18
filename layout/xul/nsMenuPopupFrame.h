@@ -562,6 +562,9 @@ class nsMenuPopupFrame final : public nsBoxFrame,
   
   
   nsRect mAnchorRect;
+  
+  
+  bool mSizedToPopup = false;
 
   
   
@@ -585,26 +588,19 @@ class nsMenuPopupFrame final : public nsBoxFrame,
 
   struct ReflowCallbackData {
     ReflowCallbackData()
-        : mPosted(false),
-          mAnchor(nullptr),
-          mSizedToPopup(false),
-          mIsOpenChanged(false) {}
-    void MarkPosted(nsIFrame* aAnchor, bool aSizedToPopup,
-                    bool aIsOpenChanged) {
+        : mPosted(false), mAnchor(nullptr), mIsOpenChanged(false) {}
+    void MarkPosted(nsIFrame* aAnchor, bool aIsOpenChanged) {
       mPosted = true;
       mAnchor = aAnchor;
-      mSizedToPopup = aSizedToPopup;
       mIsOpenChanged = aIsOpenChanged;
     }
     void Clear() {
       mPosted = false;
       mAnchor = nullptr;
-      mSizedToPopup = false;
       mIsOpenChanged = false;
     }
     bool mPosted;
     nsIFrame* mAnchor;
-    bool mSizedToPopup;
     bool mIsOpenChanged;
   };
   ReflowCallbackData mReflowCallbackData;
