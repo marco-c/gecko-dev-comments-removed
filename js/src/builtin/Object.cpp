@@ -2269,12 +2269,6 @@ static bool FinishObjectClassInit(JSContext* cx, JS::HandleObject ctor,
   }
 #endif
 
-  Rooted<NativeObject*> holder(cx,
-                               GlobalObject::getIntrinsicsHolder(cx, global));
-  if (!holder) {
-    return false;
-  }
-
   
 
 
