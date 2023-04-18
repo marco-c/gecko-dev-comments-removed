@@ -11,6 +11,7 @@
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/TimeStamp.h"
 #include "nscore.h"
+#include "xrecore.h"
 
 #if defined(MOZ_WIDGET_ANDROID)
 #  include <jni.h>
@@ -204,7 +205,8 @@ struct Module;
 
 
 
-int XRE_MAIN(int argc, char* argv[], const mozilla::BootstrapConfig& aConfig);
+XRE_API(int, XRE_main,
+        (int argc, char* argv[], const mozilla::BootstrapConfig& aConfig))
 
 
 
@@ -212,27 +214,17 @@ int XRE_MAIN(int argc, char* argv[], const mozilla::BootstrapConfig& aConfig);
 
 
 
-nsresult XRE_GetFileFromPath(const char* aPath, nsIFile** aResult);
+XRE_API(nsresult, XRE_GetFileFromPath, (const char* aPath, nsIFile** aResult))
 
 
 
 
-nsresult XRE_GetBinaryPath(nsIFile** aResult);
+XRE_API(nsresult, XRE_GetBinaryPath, (nsIFile * *aResult))
 
 
 
 
-const mozilla::Module* XRE_GetStaticModule();
-
-
-
-
-
-
-
-
-nsresult XRE_LockProfileDirectory(nsIFile* aDirectory,
-                                  nsISupports** aLockObject);
+XRE_API(const mozilla::Module*, XRE_GetStaticModule, ())
 
 
 
@@ -241,7 +233,8 @@ nsresult XRE_LockProfileDirectory(nsIFile* aDirectory,
 
 
 
-
+XRE_API(nsresult, XRE_LockProfileDirectory,
+        (nsIFile * aDirectory, nsISupports** aLockObject))
 
 
 
@@ -254,15 +247,25 @@ nsresult XRE_LockProfileDirectory(nsIFile* aDirectory,
 
 
 
-nsresult XRE_InitEmbedding2(nsIFile* aLibXULDirectory, nsIFile* aAppDirectory,
-                            nsIDirectoryServiceProvider* aAppDirProvider);
 
 
 
 
 
 
-nsresult XRE_AddStaticComponent(const mozilla::Module* aComponent);
+
+
+
+XRE_API(nsresult, XRE_InitEmbedding2,
+        (nsIFile * aLibXULDirectory, nsIFile* aAppDirectory,
+         nsIDirectoryServiceProvider* aAppDirProvider))
+
+
+
+
+
+
+XRE_API(nsresult, XRE_AddStaticComponent, (const mozilla::Module* aComponent))
 
 
 
@@ -289,7 +292,8 @@ enum NSLocationType {
   NS_BOOTSTRAPPED_LOCATION
 };
 
-nsresult XRE_AddManifestLocation(NSLocationType aType, nsIFile* aLocation);
+XRE_API(nsresult, XRE_AddManifestLocation,
+        (NSLocationType aType, nsIFile* aLocation))
 
 
 
@@ -308,7 +312,8 @@ nsresult XRE_AddManifestLocation(NSLocationType aType, nsIFile* aLocation);
 
 
 
-nsresult XRE_AddJarManifestLocation(NSLocationType aType, nsIFile* aLocation);
+XRE_API(nsresult, XRE_AddJarManifestLocation,
+        (NSLocationType aType, nsIFile* aLocation))
 
 
 
@@ -336,12 +341,12 @@ nsresult XRE_AddJarManifestLocation(NSLocationType aType, nsIFile* aLocation);
 
 
 
-void XRE_NotifyProfile();
+XRE_API(void, XRE_NotifyProfile, ())
 
 
 
 
-void XRE_TermEmbedding();
+XRE_API(void, XRE_TermEmbedding, ())
 
 
 
@@ -350,7 +355,8 @@ void XRE_TermEmbedding();
 
 
 
-nsresult XRE_ParseAppData(nsIFile* aINIFile, mozilla::XREAppData& aAppData);
+XRE_API(nsresult, XRE_ParseAppData,
+        (nsIFile * aINIFile, mozilla::XREAppData& aAppData))
 
 
 enum GeckoProcessType {
@@ -364,8 +370,10 @@ enum GeckoProcessType {
   GeckoProcessType_Invalid = GeckoProcessType_End
 };
 
-const char* XRE_GeckoProcessTypeToString(GeckoProcessType aProcessType);
-const char* XRE_ChildProcessTypeToAnnotation(GeckoProcessType aProcessType);
+XRE_API(const char*, XRE_GeckoProcessTypeToString,
+        (GeckoProcessType aProcessType))
+XRE_API(const char*, XRE_ChildProcessTypeToAnnotation,
+        (GeckoProcessType aProcessType))
 
 #if defined(MOZ_WIDGET_ANDROID)
 struct XRE_AndroidChildFds {
@@ -376,30 +384,31 @@ struct XRE_AndroidChildFds {
   int mCrashAnnotationFd;
 };
 
-void XRE_SetAndroidChildFds(JNIEnv* env, const XRE_AndroidChildFds& fds);
+XRE_API(void, XRE_SetAndroidChildFds,
+        (JNIEnv * env, const XRE_AndroidChildFds& fds))
 #endif  
 
-void XRE_SetProcessType(const char* aProcessTypeString);
+XRE_API(void, XRE_SetProcessType, (const char* aProcessTypeString))
 
-nsresult XRE_InitChildProcess(int aArgc, char* aArgv[],
-                              const XREChildData* aChildData);
-
-
-
-
-GeckoProcessType XRE_GetProcessType();
+XRE_API(nsresult, XRE_InitChildProcess,
+        (int aArgc, char* aArgv[], const XREChildData* aChildData))
 
 
 
 
-
-const char* XRE_GetProcessTypeString();
+XRE_API(GeckoProcessType, XRE_GetProcessType, ())
 
 
 
 
 
-bool XRE_IsE10sParentProcess();
+XRE_API(const char*, XRE_GetProcessTypeString, ())
+
+
+
+
+
+XRE_API(bool, XRE_IsE10sParentProcess, ())
 
 
 
@@ -411,69 +420,70 @@ bool XRE_IsE10sParentProcess();
 #define GECKO_PROCESS_TYPE(enum_value, enum_name, string_name, proc_typename, \
                            process_bin_type, procinfo_typename,               \
                            webidl_typename, allcaps_name)                     \
-  bool XRE_Is##proc_typename##Process();
+  XRE_API(bool, XRE_Is##proc_typename##Process, ())
 #include "mozilla/GeckoProcessTypes.h"
 #undef GECKO_PROCESS_TYPE
 
-bool XRE_IsSocketProcess();
+XRE_API(bool, XRE_IsSocketProcess, ())
 
 
 
 
 
-bool XRE_UseNativeEventProcessing();
+XRE_API(bool, XRE_UseNativeEventProcessing, ())
 
 typedef void (*MainFunction)(void* aData);
 
-nsresult XRE_InitParentProcess(int aArgc, char* aArgv[],
-                               MainFunction aMainFunction,
-                               void* aMainFunctionExtraData);
+XRE_API(nsresult, XRE_InitParentProcess,
+        (int aArgc, char* aArgv[], MainFunction aMainFunction,
+         void* aMainFunctionExtraData))
 
-int XRE_RunIPDLTest(int aArgc, char* aArgv[]);
+XRE_API(int, XRE_RunIPDLTest, (int aArgc, char* aArgv[]))
 
-nsresult XRE_RunAppShell();
+XRE_API(nsresult, XRE_RunAppShell, ())
 
-nsresult XRE_InitCommandLine(int aArgc, char* aArgv[]);
+XRE_API(nsresult, XRE_InitCommandLine, (int aArgc, char* aArgv[]))
 
-nsresult XRE_DeinitCommandLine();
+XRE_API(nsresult, XRE_DeinitCommandLine, ())
 
-void XRE_ShutdownChildProcess();
+XRE_API(void, XRE_ShutdownChildProcess, ())
 
-MessageLoop* XRE_GetIOMessageLoop();
+XRE_API(MessageLoop*, XRE_GetIOMessageLoop, ())
 
-bool XRE_SendTestShellCommand(JSContext* aCx, JSString* aCommand,
-                              JS::Value* aCallback);
-bool XRE_ShutdownTestShell();
+XRE_API(bool, XRE_SendTestShellCommand,
+        (JSContext * aCx, JSString* aCommand, JS::Value* aCallback))
+XRE_API(bool, XRE_ShutdownTestShell, ())
 
-void XRE_InstallX11ErrorHandler();
+XRE_API(void, XRE_InstallX11ErrorHandler, ())
 
-void XRE_TelemetryAccumulate(int aID, uint32_t aSample);
+XRE_API(void, XRE_TelemetryAccumulate, (int aID, uint32_t aSample))
 
-void XRE_StartupTimelineRecord(int aEvent, mozilla::TimeStamp aWhen);
+XRE_API(void, XRE_StartupTimelineRecord, (int aEvent, mozilla::TimeStamp aWhen))
 
-void XRE_InitOmnijar(nsIFile* aGreOmni, nsIFile* aAppOmni);
-void XRE_StopLateWriteChecks(void);
+XRE_API(void, XRE_InitOmnijar, (nsIFile * aGreOmni, nsIFile* aAppOmni))
+XRE_API(void, XRE_StopLateWriteChecks, (void))
 
-void XRE_EnableSameExecutableForContentProc();
+XRE_API(void, XRE_EnableSameExecutableForContentProc, ())
 
 namespace mozilla {
 enum class BinPathType { Self, PluginContainer };
 }
-mozilla::BinPathType XRE_GetChildProcBinPathType(GeckoProcessType aProcessType);
+XRE_API(mozilla::BinPathType, XRE_GetChildProcBinPathType,
+        (GeckoProcessType aProcessType));
 
-int XRE_XPCShellMain(int argc, char** argv, char** envp,
-                     const XREShellData* aShellData);
+XRE_API(int, XRE_XPCShellMain,
+        (int argc, char** argv, char** envp, const XREShellData* aShellData))
 
 #ifdef LIBFUZZER
 #  include "FuzzerRegistry.h"
 
-void XRE_LibFuzzerSetDriver(LibFuzzerDriver);
+XRE_API(void, XRE_LibFuzzerSetDriver, (LibFuzzerDriver))
 
 #endif  
 
 #ifdef MOZ_ENABLE_FORKSERVER
 
-int XRE_ForkServer(int* aArgc, char*** aArgv);
+XRE_API(int, XRE_ForkServer, (int* aArgc, char*** aArgv))
 
 #endif  
 

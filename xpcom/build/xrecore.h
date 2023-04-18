@@ -1,0 +1,17 @@
+
+
+
+
+
+
+#ifndef xrecore_h__
+#define xrecore_h__
+
+#include "nscore.h"
+
+
+
+
+#define XRE_API(type, name, params) type name params;
+
+#endif  
