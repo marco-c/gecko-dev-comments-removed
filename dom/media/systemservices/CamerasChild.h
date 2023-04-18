@@ -245,6 +245,8 @@ class CamerasChild final : public PCamerasChild {
   
   Mutex mRequestMutex;
   
+  
+  
   Monitor mReplyMonitor;
   
   bool mReceivedReply;

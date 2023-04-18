@@ -61,11 +61,15 @@ class InputObserver : public webrtc::VideoInputFeedBack {
   RefPtr<CamerasParent> mParent;
 };
 
+class DeliverFrameRunnable;
+
 class CamerasParent final : public PCamerasParent,
                             public nsIAsyncShutdownBlocker {
   NS_DECL_THREADSAFE_ISUPPORTS
 
  public:
+  friend DeliverFrameRunnable;
+
   static already_AddRefed<CamerasParent> Create();
 
   
@@ -98,6 +102,8 @@ class CamerasParent final : public PCamerasParent,
     return mPBackgroundEventTarget;
   };
   bool IsShuttingDown() {
+    
+    MOZ_ASSERT(GetCurrentSerialEventTarget() == mPBackgroundEventTarget);
     return !mChildIsAlive || mDestroyed || !mWebRTCAlive;
   };
   ShmemBuffer GetBuffer(size_t aSize);
@@ -130,6 +136,8 @@ class CamerasParent final : public PCamerasParent,
   NS_IMETHOD GetState(nsIPropertyBag**) override { return NS_OK; }
   static nsString GetNewName();
 
+  
+  
   
   
   

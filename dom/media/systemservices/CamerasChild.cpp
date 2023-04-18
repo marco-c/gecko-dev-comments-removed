@@ -141,6 +141,10 @@ mozilla::ipc::IPCResult CamerasChild::RecvReplyNumberOfCapabilities(
 
 
 
+
+
+
+
 template <class T = int>
 class LockAndDispatch {
  public:
@@ -192,6 +196,7 @@ class LockAndDispatch {
 bool CamerasChild::DispatchToParent(nsIRunnable* aRunnable,
                                     MonitorAutoLock& aMonitor) {
   CamerasSingleton::Mutex().AssertCurrentThreadOwns();
+  mReplyMonitor.AssertCurrentThreadOwns();
   CamerasSingleton::Thread()->Dispatch(aRunnable, NS_DISPATCH_NORMAL);
   
   
