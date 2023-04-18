@@ -64,6 +64,11 @@ interface nsITransfer : nsIWebProgressListener2 {
 
 
 
+
+
+
+
+
     void init(in nsIURI aSource,
               in nsIURI aSourceOriginalURI,
               in nsIURI aTarget,
@@ -74,7 +79,8 @@ interface nsITransfer : nsIWebProgressListener2 {
               in nsICancelable aCancelable,
               in boolean aIsPrivate,
               in long aDownloadClassification,
-              in nsIReferrerInfo aReferrerInfo);
+              in nsIReferrerInfo aReferrerInfo,
+              [optional] in boolean aOpenDownloadsListOnStart);
 
     
 
@@ -97,6 +103,7 @@ interface nsITransfer : nsIWebProgressListener2 {
                                     in boolean aIsPrivate,
                                     in long aDownloadClassification,
                                     in nsIReferrerInfo aReferrerInfo,
+                                    [optional] in boolean aOpenDownloadsListOnStart,
                                     in BrowsingContext aBrowsingContext,
                                     in boolean aHandleInternally,
                                     in nsIHttpChannel aHttpChannel);
