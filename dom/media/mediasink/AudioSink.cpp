@@ -60,11 +60,35 @@ AudioSink::AudioSink(AbstractThread* aThread,
           capacitySeconds * static_cast<float>(mOutputChannels * mOutputRate)));
   SINK_LOG("Ringbuffer has space for %u elements (%lf seconds)",
            mProcessedSPSCQueue->Capacity(), capacitySeconds);
+  
+  
+  RefPtr<AudioData> frontPacket = mAudioQueue.PeekFront();
+  if (frontPacket) {
+    mAudibilityMonitor.ProcessInterleaved(frontPacket->Data(), frontPacket->mChannels);
+    mIsAudioDataAudible = mAudibilityMonitor.RecentlyAudible();
+  } else {
+    
+    mIsAudioDataAudible = true;
+  }
 }
 
 AudioSink::~AudioSink() = default;
 
-nsresult AudioSink::InitializeAudioStream(const PlaybackParams& aParams) {
+nsresult AudioSink::InitializeAudioStream(
+    const PlaybackParams& aParams,
+    AudioSink::InitializationType aInitializationType) {
+  if (aInitializationType == AudioSink::InitializationType::UNMUTING) {
+    
+    
+    
+    mAudibleEvent.Notify(mIsAudioDataAudible);
+  } else {
+    
+    
+    
+    mIsAudioDataAudible = false;
+  }
+
   
   
   AudioConfig::ChannelLayout::ChannelMap channelMap =
@@ -73,6 +97,7 @@ nsresult AudioSink::InitializeAudioStream(const PlaybackParams& aParams) {
   
   
   
+  MOZ_ASSERT(!mAudioStream);
   mAudioStream =
       new AudioStream(*this, mOutputRate, mOutputChannels, channelMap);
   nsresult rv = mAudioStream->Init(mAudioDevice);
@@ -87,6 +112,7 @@ nsresult AudioSink::InitializeAudioStream(const PlaybackParams& aParams) {
   mAudioStream->SetVolume(aParams.mVolume);
   mAudioStream->SetPlaybackRate(aParams.mPlaybackRate);
   mAudioStream->SetPreservesPitch(aParams.mPreservesPitch);
+
   return NS_OK;
 }
 
