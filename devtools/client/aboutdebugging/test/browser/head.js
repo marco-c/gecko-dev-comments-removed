@@ -17,6 +17,12 @@ Services.scriptloader.loadSubScript(
 Services.scriptloader.loadSubScript(CHROME_URL_ROOT + "helper-mocks.js", this);
 
 
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/devtools/client/webconsole/test/browser/shared-head.js",
+  this
+);
+
+
 registerCleanupFunction(async function() {
   
   
@@ -445,27 +451,4 @@ function clickOnAddonWidget(addonId) {
 
   info("Show the web extension popup");
   browserActionEl.click();
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function findMessages(hud, text, selector = ".message") {
-  const messages = hud.ui.outputNode.querySelectorAll(selector);
-  const elements = Array.prototype.filter.call(messages, el =>
-    el.textContent.includes(text)
-  );
-  return elements;
 }
