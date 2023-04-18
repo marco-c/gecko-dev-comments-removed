@@ -5,9 +5,6 @@
 
 const { AddonManager } = require("resource://gre/modules/AddonManager.jsm");
 add_task(async function testReloadExitedAddon() {
-  
-  Services.prefs.setBoolPref("plugin.load_flash_only", false);
-
   await startupAddonsManager();
 
   DevToolsServer.init();
