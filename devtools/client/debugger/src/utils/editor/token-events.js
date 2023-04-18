@@ -3,7 +3,6 @@
 
 
 import { getTokenLocation } from ".";
-import { isEqual } from "lodash";
 
 function isInvalidTarget(target) {
   if (!target || !target.innerText) {
@@ -78,7 +77,10 @@ export function onMouseOver(codeMirror) {
 
     const tokenPos = getTokenLocation(codeMirror, target);
 
-    if (!isEqual(prevTokenPos, tokenPos)) {
+    if (
+      prevTokenPos?.line !== tokenPos?.line ||
+      prevTokenPos?.column !== tokenPos?.column
+    ) {
       addMouseLeave(target);
 
       dispatch(codeMirror, "tokenenter", {
