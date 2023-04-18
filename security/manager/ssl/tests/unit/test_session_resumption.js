@@ -132,10 +132,8 @@ function add_one_ev_test() {
 
 function add_resume_ev_test() {
   const SERVER_PORT = 8888;
-  let expectedRequestPaths = gEVExpected
-    ? ["ev-test-intermediate", "ev-test"]
-    : ["ev-test"];
-  let responseTypes = gEVExpected ? ["good", "good"] : ["good"];
+  let expectedRequestPaths = ["ev-test"];
+  let responseTypes = ["good"];
   
   let ocspResponder;
   

@@ -76,9 +76,7 @@ async function checkEVChains() {
   
   const intFullName = "ev_int_60_months-evroot";
   let eeFullName = `ev_ee_27_months-${intFullName}`;
-  let expectedNamesForOCSP = gEVExpected
-    ? [intFullName, eeFullName]
-    : [eeFullName];
+  let expectedNamesForOCSP = [eeFullName];
   await doEVTest(
     expectedNamesForOCSP,
     "../test_ev_certs/evroot",
@@ -90,7 +88,7 @@ async function checkEVChains() {
   
   
   eeFullName = `ev_ee_28_months-${intFullName}`;
-  expectedNamesForOCSP = gEVExpected ? [intFullName, eeFullName] : [eeFullName];
+  expectedNamesForOCSP = [eeFullName];
   await doEVTest(
     expectedNamesForOCSP,
     "../test_ev_certs/evroot",

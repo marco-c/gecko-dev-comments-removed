@@ -703,16 +703,18 @@ Result NSSCertDBTrustDomain::CheckRevocation(
   
   
 
-  
-  
-
   MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
           ("NSSCertDBTrustDomain: Top of CheckRevocation\n"));
 
+  
+  
+  if (endEntityOrCA == EndEntityOrCA::MustBeCA) {
+    return Success;
+  }
+
   bool crliteFilterCoversCertificate = false;
   Result crliteResult = Success;
-  if (endEntityOrCA == EndEntityOrCA::MustBeEndEntity &&
-      mCRLiteMode != CRLiteMode::Disabled && sctExtension) {
+  if (mCRLiteMode != CRLiteMode::Disabled && sctExtension) {
     MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
             ("NSSCertDBTrustDomain::CheckRevocation: checking CRLite"));
     nsTArray<uint8_t> issuerSubjectPublicKeyInfoBytes;
@@ -764,19 +766,8 @@ Result NSSCertDBTrustDomain::CheckRevocation(
     }
   }
 
-  
-  
-  
-  
-  uint16_t maxOCSPLifetimeInDays = 10;
-  if (endEntityOrCA == EndEntityOrCA::MustBeCA) {
-    maxOCSPLifetimeInDays = 365;
-  }
+  const uint16_t maxOCSPLifetimeInDays = 10;
 
-  
-  
-  
-  
   
   
   
@@ -785,7 +776,6 @@ Result NSSCertDBTrustDomain::CheckRevocation(
   
   Result stapledOCSPResponseResult = Success;
   if (stapledOCSPResponse) {
-    MOZ_ASSERT(endEntityOrCA == EndEntityOrCA::MustBeEndEntity);
     bool expired;
     stapledOCSPResponseResult = VerifyAndMaybeCacheEncodedOCSPResponse(
         certID, time, maxOCSPLifetimeInDays, *stapledOCSPResponse,
@@ -821,7 +811,7 @@ Result NSSCertDBTrustDomain::CheckRevocation(
               ("NSSCertDBTrustDomain: stapled OCSP response: failure"));
       return stapledOCSPResponseResult;
     }
-  } else if (endEntityOrCA == EndEntityOrCA::MustBeEndEntity) {
+  } else {
     
     mOCSPStaplingStatus = CertVerifier::OCSP_STAPLING_NONE;
     MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
@@ -876,23 +866,13 @@ Result NSSCertDBTrustDomain::CheckRevocation(
              (cachedResponsePresent && cachedResponseResult != Success));
 
   
-  bool blocklistIsFresh;
-  nsresult nsrv = mCertStorage->IsBlocklistFresh(&blocklistIsFresh);
-  if (NS_FAILED(nsrv)) {
-    return Result::FATAL_ERROR_LIBRARY_FAILURE;
-  }
-
-  
   
   
   
   
   
   Duration shortLifetime(mCertShortLifetimeInDays * Time::ONE_DAY_IN_SECONDS);
-  if ((mOCSPFetching == NeverFetchOCSP) || (validityDuration < shortLifetime) ||
-      (endEntityOrCA == EndEntityOrCA::MustBeCA &&
-       (mOCSPFetching == FetchOCSPForDVHardFail ||
-        mOCSPFetching == FetchOCSPForDVSoftFail || blocklistIsFresh))) {
+  if ((mOCSPFetching == NeverFetchOCSP) || (validityDuration < shortLifetime)) {
     
     
     if (cachedResponseResult == Result::ERROR_OCSP_UNKNOWN_CERT) {

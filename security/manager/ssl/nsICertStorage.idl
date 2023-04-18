@@ -149,15 +149,6 @@ interface nsICertStorage : nsISupports {
                            in Array<octet> subject,
                            in Array<octet> pubkey);
 
-   
-
-
-
-
-
-  [must_use]
-  boolean isBlocklistFresh();
-
   
 
 

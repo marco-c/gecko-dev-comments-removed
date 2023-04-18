@@ -118,9 +118,7 @@ function asyncTestEV(
 function ensureVerifiesAsEV(testcase) {
   let cert = constructCertFromFile(`test_ev_certs/${testcase}-ee.pem`);
   addCertFromFile(certdb, `test_ev_certs/${testcase}-int.pem`, ",,");
-  let expectedOCSPRequestPaths = gEVExpected
-    ? [`${testcase}-int`, `${testcase}-ee`]
-    : [`${testcase}-ee`];
+  let expectedOCSPRequestPaths = [`${testcase}-ee`];
   return asyncTestEV(
     cert,
     PRErrorCodeSuccess,
@@ -190,19 +188,11 @@ function ensureVerifiesAsEVWithFLAG_LOCAL_ONLY(testcase) {
   return verifyWithFlags_LOCAL_ONLY_and_MUST_BE_EV(testcase, true);
 }
 
-function ensureOneCRLSkipsOCSPForIntermediates(testcase) {
+function verifyWithOCSPResponseType(testcase, response, expectEV) {
   let cert = constructCertFromFile(`test_ev_certs/${testcase}-ee.pem`);
   addCertFromFile(certdb, `test_ev_certs/${testcase}-int.pem`, ",,");
-  return asyncTestEV(cert, PRErrorCodeSuccess, gEVExpected, [`${testcase}-ee`]);
-}
-
-function verifyWithDifferentOCSPResponseTypes(testcase, responses, expectEV) {
-  let cert = constructCertFromFile(`test_ev_certs/${testcase}-ee.pem`);
-  addCertFromFile(certdb, `test_ev_certs/${testcase}-int.pem`, ",,");
-  let expectedOCSPRequestPaths = gEVExpected
-    ? [`${testcase}-int`, `${testcase}-ee`]
-    : [`${testcase}-ee`];
-  let ocspResponseTypes = gEVExpected ? responses : responses.slice(1);
+  let expectedOCSPRequestPaths = [`${testcase}-ee`];
+  let ocspResponseTypes = [response];
   return asyncTestEV(
     cert,
     PRErrorCodeSuccess,
@@ -212,28 +202,12 @@ function verifyWithDifferentOCSPResponseTypes(testcase, responses, expectEV) {
   );
 }
 
-function ensureVerifiesAsEVWithOldIntermediateOCSPResponse(testcase) {
-  return verifyWithDifferentOCSPResponseTypes(
-    testcase,
-    ["longvalidityalmostold", "good"],
-    true
-  );
-}
-
 function ensureVerifiesAsDVWithOldEndEntityOCSPResponse(testcase) {
-  return verifyWithDifferentOCSPResponseTypes(
-    testcase,
-    ["good", "longvalidityalmostold"],
-    false
-  );
+  return verifyWithOCSPResponseType(testcase, "longvalidityalmostold", false);
 }
 
 function ensureVerifiesAsDVWithVeryOldEndEntityOCSPResponse(testcase) {
-  return verifyWithDifferentOCSPResponseTypes(
-    testcase,
-    ["good", "ancientstillvalid"],
-    false
-  );
+  return verifyWithOCSPResponseType(testcase, "ancientstillvalid", false);
 }
 
 
@@ -256,11 +230,8 @@ add_task(async function plainExpectSuccessEVTests() {
 add_task(async function expectDVFallbackTests() {
   await ensureVerifiesAsDV("anyPolicy-ee-path");
   await ensureVerifiesAsDV("non-ev-root-path");
-  await ensureVerifiesAsDV(
-    "no-ocsp-ee-path",
-    gEVExpected ? ["no-ocsp-ee-path-int"] : []
-  );
-  await ensureVerifiesAsDV("no-ocsp-int-path");
+  await ensureVerifiesAsDV("no-ocsp-ee-path", []);
+  await ensureVerifiesAsEV("no-ocsp-int-path");
   
   
   
@@ -307,100 +278,6 @@ add_task(async function localOnlyMustBeEVTests() {
 
 
 
-add_task(async function oneCRLTests() {
-  clearOCSPCache();
-
-  
-  Services.prefs.setIntPref(
-    "security.onecrl.maximum_staleness_in_seconds",
-    108000
-  );
-  
-  Services.prefs.setIntPref(
-    "services.settings.security.onecrl.checked",
-    Math.floor(Date.now() / 1000) - 1
-  );
-  Services.prefs.setIntPref(
-    "app.update.lastUpdateTime.blocklist-background-update-timer",
-    Math.floor(Date.now() / 1000) - 1
-  );
-
-  await ensureOneCRLSkipsOCSPForIntermediates("anyPolicy-int-path");
-  await ensureOneCRLSkipsOCSPForIntermediates("no-ocsp-int-path");
-  await ensureOneCRLSkipsOCSPForIntermediates("test-oid-path");
-
-  clearOCSPCache();
-  
-  Services.prefs.setIntPref("security.onecrl.maximum_staleness_in_seconds", 0);
-  await ensureVerifiesAsEV("anyPolicy-int-path");
-  
-  
-  await ensureVerifiesAsDV("no-ocsp-int-path");
-  await ensureVerifiesAsEV("test-oid-path");
-
-  clearOCSPCache();
-  
-  Services.prefs.setIntPref(
-    "security.onecrl.maximum_staleness_in_seconds",
-    108000
-  );
-  
-  Services.prefs.setIntPref(
-    "services.settings.security.onecrl.checked",
-    Math.floor(Date.now() / 1000) - 108080
-  );
-  Services.prefs.setIntPref(
-    "app.update.lastUpdateTime.blocklist-background-update-timer",
-    Math.floor(Date.now() / 1000) - 108080
-  );
-  await ensureVerifiesAsEV("anyPolicy-int-path");
-  await ensureVerifiesAsDV("no-ocsp-int-path");
-  await ensureVerifiesAsEV("test-oid-path");
-
-  clearOCSPCache();
-  
-  
-  
-  Services.prefs.setIntPref(
-    "security.onecrl.maximum_staleness_in_seconds",
-    108000
-  );
-  
-  
-  Services.prefs.setIntPref(
-    "app.update.lastUpdateTime.blocklist-background-update-timer",
-    Math.floor(Date.now() / 1000) - 1
-  );
-
-  await ensureVerifiesAsEV("anyPolicy-int-path");
-  await ensureVerifiesAsDV("no-ocsp-int-path");
-  await ensureVerifiesAsEV("test-oid-path");
-
-  clearOCSPCache();
-  
-  
-  Services.prefs.setIntPref(
-    "security.onecrl.maximum_staleness_in_seconds",
-    108000
-  );
-  
-  Services.prefs.setIntPref(
-    "services.settings.security.onecrl.checked",
-    Math.floor(Date.now() / 1000) - 1
-  );
-  await ensureOneCRLSkipsOCSPForIntermediates("anyPolicy-int-path");
-  await ensureOneCRLSkipsOCSPForIntermediates("no-ocsp-int-path");
-  await ensureOneCRLSkipsOCSPForIntermediates("test-oid-path");
-
-  Services.prefs.clearUserPref("security.onecrl.maximum_staleness_in_seconds");
-  Services.prefs.clearUserPref("services.settings.security.onecrl.checked");
-  Services.prefs.clearUserPref(
-    "app.update.lastUpdateTime.blocklist-background-update-timer"
-  );
-});
-
-
-
 
 
 add_task(async function ocspCachingTests() {
@@ -421,9 +298,6 @@ add_task(async function ocspCachingTests() {
 
 add_task(async function oldOCSPResponseTests() {
   clearOCSPCache();
-
-  await ensureVerifiesAsEVWithOldIntermediateOCSPResponse("anyPolicy-int-path");
-  await ensureVerifiesAsEVWithOldIntermediateOCSPResponse("test-oid-path");
 
   clearOCSPCache();
   await ensureVerifiesAsDVWithOldEndEntityOCSPResponse("anyPolicy-int-path");
