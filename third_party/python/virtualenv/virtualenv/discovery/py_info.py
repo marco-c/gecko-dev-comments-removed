@@ -124,6 +124,9 @@ class PythonInfo(object):
             prefixes = self.prefix, self.exec_prefix, self.base_prefix, self.base_exec_prefix
             config_var = {k: "" if v in prefixes else v for k, v in self.sysconfig_vars.items()}
             result = self.sysconfig_path(key, config_var=config_var).lstrip(os.sep)
+        
+        if result.startswith(u"local/"):
+            return result[6:]
         return result
 
     @staticmethod

@@ -416,13 +416,20 @@ class VirtualenvManager(VirtualenvHelper):
         
         from distutils import dist
 
+        normalized_venv_root = os.path.normpath(self.virtualenv_root)
+
         distribution = dist.Distribution({"script_args": "--no-user-cfg"})
         installer = distribution.get_command_obj("install")
-        installer.prefix = os.path.normpath(self.virtualenv_root)
+        installer.prefix = normalized_venv_root
         installer.finalize_options()
 
         
-        return installer.install_purelib
+        path = installer.install_purelib
+        local_folder = os.path.join(normalized_venv_root, "local")
+        
+        if path.startswith(local_folder):
+            path = os.path.join(normalized_venv_root, path[len(local_folder) + 1 :])
+        return path
 
 
 def get_archflags():
