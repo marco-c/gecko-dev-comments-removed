@@ -9,11 +9,14 @@
 
 #include "mozilla/a11y/TableAccessibleBase.h"
 #include "mozilla/a11y/TableCellAccessibleBase.h"
+#include "mozilla/UniquePtr.h"
 #include "nsTHashMap.h"
 
 namespace mozilla::a11y {
 
 const uint32_t kNoCellIdx = UINT32_MAX;
+
+class AccIterable;
 
 class CachedTableAccessible;
 
@@ -53,6 +56,8 @@ class CachedTableCellAccessible final : public TableCellAccessibleBase {
   
   
   Accessible* Acc(Accessible* aTableAcc) const;
+
+  UniquePtr<AccIterable> GetExplicitHeadersIterator();
 
   uint64_t mAccID;
   
