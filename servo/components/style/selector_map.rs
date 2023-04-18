@@ -10,9 +10,10 @@ use crate::context::QuirksMode;
 use crate::dom::TElement;
 use crate::rule_tree::CascadeLevel;
 use crate::selector_parser::SelectorImpl;
-use crate::stylist::{Stylist, CascadeData, Rule, ContainerConditionId};
+use crate::stylist::{CascadeData, ContainerConditionId, Rule, Stylist};
 use crate::AllocErr;
 use crate::{Atom, LocalName, Namespace, ShrinkIfNeeded, WeakAtom};
+use dom::ElementState;
 use precomputed_hash::PrecomputedHash;
 use selectors::matching::{matches_selector, MatchingContext};
 use selectors::parser::{Combinator, Component, SelectorIter};
@@ -32,6 +33,22 @@ impl Default for PrecomputedHasher {
         Self { hash: None }
     }
 }
+
+
+
+
+
+
+
+const RARE_PSEUDO_CLASS_STATES: ElementState = ElementState::from_bits_truncate(
+    ElementState::FULLSCREEN.bits() |
+    ElementState::VISITED_OR_UNVISITED.bits() |
+    ElementState::URLTARGET.bits() |
+    ElementState::INERT.bits() |
+    ElementState::FOCUS.bits() |
+    ElementState::FOCUSRING.bits() |
+    ElementState::TOPMOST_MODAL.bits()
+);
 
 
 pub type PrecomputedHashMap<K, V> = HashMap<K, V, BuildHasherDefault<PrecomputedHasher>>;
@@ -108,6 +125,8 @@ pub struct SelectorMap<T: 'static> {
     
     pub namespace_hash: PrecomputedHashMap<Namespace, SmallVec<[T; 1]>>,
     
+    pub rare_pseudo_classes: SmallVec<[T; 1]>,
+    
     pub other: SmallVec<[T; 1]>,
     
     bucket_attributes: bool,
@@ -132,6 +151,7 @@ impl<T> SelectorMap<T> {
             attribute_hash: HashMap::default(),
             local_name_hash: HashMap::default(),
             namespace_hash: HashMap::default(),
+            rare_pseudo_classes: SmallVec::new(),
             other: SmallVec::new(),
             bucket_attributes: static_prefs::pref!("layout.css.bucket-attribute-names.enabled"),
             count: 0,
@@ -163,6 +183,7 @@ impl<T> SelectorMap<T> {
         self.attribute_hash.clear();
         self.local_name_hash.clear();
         self.namespace_hash.clear();
+        self.rare_pseudo_classes.clear();
         self.other.clear();
         self.count = 0;
     }
@@ -267,6 +288,18 @@ impl SelectorMap<Rule> {
                 cascade_data,
                 stylist,
             )
+        }
+
+        if rule_hash_target.state().intersects(RARE_PSEUDO_CLASS_STATES) {
+            SelectorMap::get_matching_rules(
+                element,
+                &self.rare_pseudo_classes,
+                matching_rules_list,
+                matching_context,
+                cascade_level,
+                cascade_data,
+                stylist,
+            );
         }
 
         if let Some(rules) = self.namespace_hash.get(rule_hash_target.namespace()) {
@@ -382,6 +415,7 @@ impl<T: SelectorMapEntry> SelectorMap<T> {
                         self.namespace_hash.try_reserve(1)?;
                         self.namespace_hash.entry(url.clone()).or_default()
                     },
+                    Bucket::RarePseudoClasses => &mut self.rare_pseudo_classes,
                     Bucket::Universal => &mut self.other,
                 };
                 vec.try_reserve(1)?;
@@ -440,8 +474,22 @@ impl<T: SelectorMapEntry> SelectorMap<T> {
     
     
     
+    pub fn lookup<'a, E, F>(&'a self, element: E, quirks_mode: QuirksMode, f: F) -> bool
+    where
+        E: TElement,
+        F: FnMut(&'a T) -> bool,
+    {
+        self.lookup_with_state(element, element.state(), quirks_mode, f)
+    }
+
     #[inline]
-    pub fn lookup<'a, E, F>(&'a self, element: E, quirks_mode: QuirksMode, mut f: F) -> bool
+    fn lookup_with_state<'a, E, F>(
+        &'a self,
+        element: E,
+        element_state: ElementState,
+        quirks_mode: QuirksMode,
+        mut f: F,
+    ) -> bool
     where
         E: TElement,
         F: FnMut(&'a T) -> bool,
@@ -519,6 +567,14 @@ impl<T: SelectorMapEntry> SelectorMap<T> {
             }
         }
 
+        if element_state.intersects(RARE_PSEUDO_CLASS_STATES) {
+            for entry in self.rare_pseudo_classes.iter() {
+                if !f(&entry) {
+                    return false;
+                }
+            }
+        }
+
         for entry in self.other.iter() {
             if !f(&entry) {
                 return false;
@@ -542,6 +598,7 @@ impl<T: SelectorMapEntry> SelectorMap<T> {
         quirks_mode: QuirksMode,
         additional_id: Option<&WeakAtom>,
         additional_classes: &[Atom],
+        additional_states: ElementState,
         mut f: F,
     ) -> bool
     where
@@ -549,7 +606,12 @@ impl<T: SelectorMapEntry> SelectorMap<T> {
         F: FnMut(&'a T) -> bool,
     {
         
-        if !self.lookup(element, quirks_mode, |entry| f(entry)) {
+        if !self.lookup_with_state(
+            element,
+            element.state() | additional_states,
+            quirks_mode,
+            |entry| f(entry),
+        ) {
             return false;
         }
 
@@ -582,6 +644,7 @@ impl<T: SelectorMapEntry> SelectorMap<T> {
 enum Bucket<'a> {
     Universal,
     Namespace(&'a Namespace),
+    RarePseudoClasses,
     LocalName {
         name: &'a LocalName,
         lower_name: &'a LocalName,
@@ -602,11 +665,12 @@ impl<'a> Bucket<'a> {
         match *self {
             Bucket::Universal => 0,
             Bucket::Namespace(..) => 1,
-            Bucket::LocalName { .. } => 2,
-            Bucket::Attribute { .. } => 3,
-            Bucket::Class(..) => 4,
-            Bucket::ID(..) => 5,
-            Bucket::Root => 6,
+            Bucket::RarePseudoClasses => 2,
+            Bucket::LocalName { .. } => 3,
+            Bucket::Attribute { .. } => 4,
+            Bucket::Class(..) => 5,
+            Bucket::ID(..) => 6,
+            Bucket::Root => 7,
         }
     }
 
@@ -685,6 +749,13 @@ fn specific_bucket_for<'a>(
                 }
                 Bucket::Universal
             }
+        },
+        Component::NonTSPseudoClass(ref pseudo_class)
+            if pseudo_class
+                .state_flag()
+                .intersects(RARE_PSEUDO_CLASS_STATES) =>
+        {
+            Bucket::RarePseudoClasses
         },
         _ => Bucket::Universal,
     }
