@@ -277,6 +277,8 @@ class ModuleLoaderBase : public nsISupports {
   
   bool IsModuleFetched(nsIURI* aURL) const;
 
+  nsresult GetFetchedModuleURLs(nsTArray<nsCString>& aURLs);
+
   
 
  private:
