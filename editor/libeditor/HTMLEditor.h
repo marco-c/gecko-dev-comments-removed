@@ -1569,10 +1569,13 @@ class HTMLEditor final : public EditorBase,
 
 
 
+
+
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT SplitRangeOffFromNodeResult
-  SplitRangeOffFromBlockAndRemoveMiddleContainer(Element& aBlockElement,
-                                                 nsIContent& aStartOfRange,
-                                                 nsIContent& aEndOfRange);
+  RemoveBlockContainerElementWithTransactionBetween(
+      Element& aBlockContainerElement, nsIContent& aStartOfRange,
+      nsIContent& aEndOfRange);
 
   
 
