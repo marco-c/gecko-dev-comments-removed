@@ -15,7 +15,6 @@ define(function(require, exports, module) {
 
   
   const {
-    isGrip,
     wrapRender,
   } = require("devtools/client/shared/components/reps/reps/rep-utils");
   const {
@@ -320,12 +319,8 @@ define(function(require, exports, module) {
   }
 
   
-  function supportsObject(object, noGrip = false) {
-    if (noGrip === true || !isGrip(object)) {
-      return false;
-    }
-
-    return object.isError || object.class === "DOMException";
+  function supportsObject(object) {
+    return object?.isError || object?.class === "DOMException";
   }
 
   

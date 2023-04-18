@@ -13,7 +13,6 @@ define(function(require, exports, module) {
   
   const {
     getGripType,
-    isGrip,
     getURLDisplayString,
     wrapRender,
   } = require("devtools/client/shared/components/reps/reps/rep-utils");
@@ -67,10 +66,6 @@ define(function(require, exports, module) {
 
   
   function supportsObject(object, noGrip = false) {
-    if (noGrip === true || !isGrip(object)) {
-      return false;
-    }
-
     return getGripType(object, noGrip) == "CSSStyleSheet";
   }
 
