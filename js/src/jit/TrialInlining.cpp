@@ -162,7 +162,7 @@ ICCacheIRStub* TrialInliner::maybeSingleStub(const ICEntry& entry) {
 Maybe<InlinableOpData> FindInlinableOpData(ICCacheIRStub* stub,
                                            BytecodeLocation loc) {
   if (loc.isInvokeOp()) {
-    Maybe<InlinableCallData> call = FindInlinableCallData(stub);
+    Maybe<InlinableCallData> call = FindInlinableCallData(stub, loc);
     if (call.isSome()) {
       return call;
     }
@@ -182,7 +182,8 @@ Maybe<InlinableOpData> FindInlinableOpData(ICCacheIRStub* stub,
   return mozilla::Nothing();
 }
 
-Maybe<InlinableCallData> FindInlinableCallData(ICCacheIRStub* stub) {
+Maybe<InlinableCallData> FindInlinableCallData(ICCacheIRStub* stub,
+                                               BytecodeLocation loc) {
   Maybe<InlinableCallData> data;
 
   const CacheIRStubInfo* stubInfo = stub->stubInfo();
@@ -270,6 +271,15 @@ Maybe<InlinableCallData> FindInlinableCallData(ICCacheIRStub* stub) {
     
     if (flags.getArgFormat() != CallFlags::Standard &&
         flags.getArgFormat() != CallFlags::FunCall) {
+      return mozilla::Nothing();
+    }
+    
+    
+    
+    
+    bool isFunCallOp = loc.getOp() == JSOp::FunCall;
+    bool isFunCall = flags.getArgFormat() == CallFlags::FunCall;
+    if (isFunCallOp != isFunCall) {
       return mozilla::Nothing();
     }
     data->calleeOperand = calleeGuardOperand;
@@ -627,7 +637,7 @@ bool TrialInliner::maybeInlineCall(ICEntry& entry, ICFallbackStub* fallback,
   MOZ_ASSERT(!icScript_->hasInlinedChild(fallback->pcOffset()));
 
   
-  Maybe<InlinableCallData> data = FindInlinableCallData(stub);
+  Maybe<InlinableCallData> data = FindInlinableCallData(stub, loc);
   if (data.isNothing()) {
     return true;
   }
