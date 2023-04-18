@@ -15,8 +15,10 @@ const { ComponentUtils } = ChromeUtils.import(
   "resource://gre/modules/ComponentUtils.jsm"
 );
 
+const lazy = {};
+
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "setTimeout",
   "resource://gre/modules/Timer.jsm"
 );
@@ -56,7 +58,7 @@ nsTerminatorTelemetry.prototype = {
       
       
       
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      await new Promise(resolve => lazy.setTimeout(resolve, 3000));
 
       let PATH = PathUtils.join(
         Services.dirsvc.get("ProfLD", Ci.nsIFile).path,
