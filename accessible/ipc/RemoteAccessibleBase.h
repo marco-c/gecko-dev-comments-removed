@@ -180,6 +180,8 @@ class RemoteAccessibleBase : public Accessible, public HyperTextAccessibleBase {
 
   virtual uint64_t State() override;
 
+  virtual already_AddRefed<AccAttributes> Attributes() override;
+
   
 
   virtual void TakeFocus() const override;

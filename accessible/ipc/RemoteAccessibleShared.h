@@ -46,7 +46,7 @@ void Description(nsString& aDesc) const override;
 
 
 
-void Attributes(RefPtr<AccAttributes>* aAttributes) const;
+virtual already_AddRefed<AccAttributes> Attributes() override;
 
 
 

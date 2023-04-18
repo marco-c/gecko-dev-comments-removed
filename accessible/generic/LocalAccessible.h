@@ -242,10 +242,7 @@ class LocalAccessible : public nsISupports, public Accessible {
 
   virtual bool NativelyUnavailable() const;
 
-  
-
-
-  virtual already_AddRefed<AccAttributes> Attributes();
+  virtual already_AddRefed<AccAttributes> Attributes() override;
 
   
 
