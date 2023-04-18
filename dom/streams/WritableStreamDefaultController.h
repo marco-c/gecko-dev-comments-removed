@@ -84,25 +84,9 @@ class WritableStreamDefaultController final : public nsISupports,
     mStrategySizeAlgorithm = aStrategySizeAlgorithm;
   }
 
-  UnderlyingSinkWriteCallbackHelper* GetWriteAlgorithm() {
-    return mWriteAlgorithm;
-  }
-  void SetWriteAlgorithm(UnderlyingSinkWriteCallbackHelper* aWriteAlgorithm) {
-    mWriteAlgorithm = aWriteAlgorithm;
-  }
-
-  UnderlyingSinkCloseCallbackHelper* GetCloseAlgorithm() {
-    return mCloseAlgorithm;
-  }
-  void SetCloseAlgorithm(UnderlyingSinkCloseCallbackHelper* aCloseAlgorithm) {
-    mCloseAlgorithm = aCloseAlgorithm;
-  }
-
-  UnderlyingSinkAbortCallbackHelper* GetAbortAlgorithm() {
-    return mAbortAlgorithm;
-  }
-  void SetAbortAlgorithm(UnderlyingSinkAbortCallbackHelper* aAbortAlgorithm) {
-    mAbortAlgorithm = aAbortAlgorithm;
+  UnderlyingSinkAlgorithms* GetAlgorithms() { return mAlgorithms; }
+  void SetAlgorithms(UnderlyingSinkAlgorithms* aAlgorithms) {
+    mAlgorithms = aAlgorithms;
   }
 
   WritableStream* Stream() { return mStream; }
@@ -125,13 +109,9 @@ class WritableStreamDefaultController final : public nsISupports,
   
   void ClearAlgorithms() {
     
-    mWriteAlgorithm = nullptr;
-
     
-    mCloseAlgorithm = nullptr;
-
     
-    mAbortAlgorithm = nullptr;
+    mAlgorithms = nullptr;
 
     
     mStrategySizeAlgorithm = nullptr;
@@ -148,19 +128,14 @@ class WritableStreamDefaultController final : public nsISupports,
   double mStrategyHWM = 0.0;
 
   RefPtr<QueuingStrategySize> mStrategySizeAlgorithm;
-  RefPtr<UnderlyingSinkWriteCallbackHelper> mWriteAlgorithm;
-  RefPtr<UnderlyingSinkCloseCallbackHelper> mCloseAlgorithm;
-  RefPtr<UnderlyingSinkAbortCallbackHelper> mAbortAlgorithm;
+  RefPtr<UnderlyingSinkAlgorithms> mAlgorithms;
   RefPtr<WritableStream> mStream;
 };
 
 MOZ_CAN_RUN_SCRIPT void SetUpWritableStreamDefaultController(
     JSContext* aCx, WritableStream* aStream,
     WritableStreamDefaultController* aController,
-    UnderlyingSinkStartCallbackHelper* aStartAlgorithm,
-    UnderlyingSinkWriteCallbackHelper* aWriteAlgorithm,
-    UnderlyingSinkCloseCallbackHelper* aCloseAlgorithm,
-    UnderlyingSinkAbortCallbackHelper* aAbortAlgorithm, double aHighWaterMark,
+    UnderlyingSinkAlgorithms* aSinkCallbacks, double aHighWaterMark,
     QueuingStrategySize* aSizeAlgorithm, ErrorResult& aRv);
 
 MOZ_CAN_RUN_SCRIPT void SetUpWritableStreamDefaultControllerFromUnderlyingSink(

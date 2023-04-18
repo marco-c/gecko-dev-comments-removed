@@ -5,94 +5,98 @@
 
 
 #include "mozilla/dom/UnderlyingSinkCallbackHelpers.h"
+#include "xpcpublic.h"
 
 using namespace mozilla::dom;
 
-
-NS_IMPL_CYCLE_COLLECTION_WITH_JS_MEMBERS(UnderlyingSinkStartCallbackHelper,
-                                         (mCallback), (mUnderlyingSink))
-
-NS_IMPL_CYCLE_COLLECTING_ADDREF(UnderlyingSinkStartCallbackHelper)
-NS_IMPL_CYCLE_COLLECTING_RELEASE(UnderlyingSinkStartCallbackHelper)
-
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(UnderlyingSinkStartCallbackHelper)
+NS_IMPL_CYCLE_COLLECTION_WITH_JS_MEMBERS(UnderlyingSinkAlgorithms,
+                                         (mGlobal, mStartCallback,
+                                          mWriteCallback, mCloseCallback,
+                                          mAbortCallback),
+                                         (mUnderlyingSink))
+NS_IMPL_CYCLE_COLLECTING_ADDREF(UnderlyingSinkAlgorithms)
+NS_IMPL_CYCLE_COLLECTING_RELEASE(UnderlyingSinkAlgorithms)
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(UnderlyingSinkAlgorithms)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
-void UnderlyingSinkStartCallbackHelper::StartCallback(
+
+void UnderlyingSinkAlgorithms::StartCallback(
     JSContext* aCx, WritableStreamDefaultController& aController,
     JS::MutableHandle<JS::Value> aRetVal, ErrorResult& aRv) {
-  JS::Rooted<JSObject*> thisObj(aCx, mUnderlyingSink);
-  RefPtr<UnderlyingSinkStartCallback> callback(mCallback);
-  return callback->Call(thisObj, aController, aRetVal, aRv,
-                        "UnderlyingSink.start",
-                        CallbackFunction::eRethrowExceptions);
-}
-
-
-NS_IMPL_CYCLE_COLLECTION_WITH_JS_MEMBERS(UnderlyingSinkWriteCallbackHelper,
-                                         (mCallback), (mUnderlyingSink))
-
-NS_IMPL_CYCLE_COLLECTING_ADDREF(UnderlyingSinkWriteCallbackHelper)
-NS_IMPL_CYCLE_COLLECTING_RELEASE(UnderlyingSinkWriteCallbackHelper)
-
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(UnderlyingSinkWriteCallbackHelper)
-  NS_INTERFACE_MAP_ENTRY(nsISupports)
-NS_INTERFACE_MAP_END
-
-already_AddRefed<Promise> UnderlyingSinkWriteCallbackHelper::WriteCallback(
-    JSContext* aCx, JS::Handle<JS::Value> aChunk,
-    WritableStreamDefaultController& aController, ErrorResult& aRv) {
-  JS::Rooted<JSObject*> thisObj(aCx, mUnderlyingSink);
-  RefPtr<UnderlyingSinkWriteCallback> callback(mCallback);
-  RefPtr<Promise> promise =
-      callback->Call(thisObj, aChunk, aController, aRv, "UnderlyingSink.write",
-                     CallbackFunction::eRethrowExceptions);
-  return promise.forget();
-}
-
-
-NS_IMPL_CYCLE_COLLECTION_WITH_JS_MEMBERS(UnderlyingSinkCloseCallbackHelper,
-                                         (mCallback), (mUnderlyingSink))
-
-NS_IMPL_CYCLE_COLLECTING_ADDREF(UnderlyingSinkCloseCallbackHelper)
-NS_IMPL_CYCLE_COLLECTING_RELEASE(UnderlyingSinkCloseCallbackHelper)
-
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(UnderlyingSinkCloseCallbackHelper)
-  NS_INTERFACE_MAP_ENTRY(nsISupports)
-NS_INTERFACE_MAP_END
-
-already_AddRefed<Promise> UnderlyingSinkCloseCallbackHelper::CloseCallback(
-    JSContext* aCx, ErrorResult& aRv) {
-  JS::Rooted<JSObject*> thisObj(aCx, mUnderlyingSink);
-  RefPtr<UnderlyingSinkCloseCallback> callback(mCallback);
-  RefPtr<Promise> promise =
-      callback->Call(thisObj, aRv, "UnderlyingSink.close",
-                     CallbackFunction::eRethrowExceptions);
-  return promise.forget();
-}
-
-
-NS_IMPL_CYCLE_COLLECTION_WITH_JS_MEMBERS(UnderlyingSinkAbortCallbackHelper,
-                                         (mCallback), (mUnderlyingSink))
-
-NS_IMPL_CYCLE_COLLECTING_ADDREF(UnderlyingSinkAbortCallbackHelper)
-NS_IMPL_CYCLE_COLLECTING_RELEASE(UnderlyingSinkAbortCallbackHelper)
-
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(UnderlyingSinkAbortCallbackHelper)
-  NS_INTERFACE_MAP_ENTRY(nsISupports)
-NS_INTERFACE_MAP_END
-
-already_AddRefed<Promise> UnderlyingSinkAbortCallbackHelper::AbortCallback(
-    JSContext* aCx, const Optional<JS::Handle<JS::Value>>& aReason,
-    ErrorResult& aRv) {
-  JS::Rooted<JSObject*> thisObj(aCx, mUnderlyingSink);
+  if (!mStartCallback) {
+    
+    aRetVal.setUndefined();
+    return;
+  }
 
   
-  RefPtr<UnderlyingSinkAbortCallback> callback(mCallback);
+  
+  
+  
+  JS::Rooted<JSObject*> thisObj(aCx, mUnderlyingSink);
+  return mStartCallback->Call(thisObj, aController, aRetVal, aRv,
+                              "UnderlyingSink.start",
+                              CallbackFunction::eRethrowExceptions);
+}
+
+
+already_AddRefed<Promise> UnderlyingSinkAlgorithms::WriteCallback(
+    JSContext* aCx, JS::Handle<JS::Value> aChunk,
+    WritableStreamDefaultController& aController, ErrorResult& aRv) {
+  if (!mWriteCallback) {
+    
+    
+    return Promise::CreateResolvedWithUndefined(mGlobal, aRv);
+  }
+
+  
+  
+  
+  
+  JS::Rooted<JSObject*> thisObj(aCx, mUnderlyingSink);
+  RefPtr<Promise> promise = mWriteCallback->Call(
+      thisObj, aChunk, aController, aRv, "UnderlyingSink.write",
+      CallbackFunction::eRethrowExceptions);
+  return promise.forget();
+}
+
+
+already_AddRefed<Promise> UnderlyingSinkAlgorithms::CloseCallback(
+    JSContext* aCx, ErrorResult& aRv) {
+  if (!mCloseCallback) {
+    
+    
+    return Promise::CreateResolvedWithUndefined(mGlobal, aRv);
+  }
+
+  
+  
+  
+  
+  JS::Rooted<JSObject*> thisObj(aCx, mUnderlyingSink);
   RefPtr<Promise> promise =
-      callback->Call(thisObj, aReason, aRv, "UnderlyingSink.abort",
-                     CallbackFunction::eRethrowExceptions);
+      mCloseCallback->Call(thisObj, aRv, "UnderlyingSink.close",
+                           CallbackFunction::eRethrowExceptions);
+  return promise.forget();
+}
+
+
+already_AddRefed<Promise> UnderlyingSinkAlgorithms::AbortCallback(
+    JSContext* aCx, const Optional<JS::Handle<JS::Value>>& aReason,
+    ErrorResult& aRv) {
+  if (!mAbortCallback) {
+    
+    
+    return Promise::CreateResolvedWithUndefined(mGlobal, aRv);
+  }
+
+  
+  
+  JS::Rooted<JSObject*> thisObj(aCx, mUnderlyingSink);
+  RefPtr<Promise> promise =
+      mAbortCallback->Call(thisObj, aReason, aRv, "UnderlyingSink.abort",
+                           CallbackFunction::eRethrowExceptions);
 
   return promise.forget();
 }
