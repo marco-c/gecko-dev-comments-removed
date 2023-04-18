@@ -104,7 +104,7 @@ void ExternalEngineStateMachine::OnEngineInitSuccess() {
       mEngine->Id());
   mEngineInitRequest.Complete();
   ChangeStateTo(State::WaitingMetadata);
-  
+  mReader->UpdateMediaEngineId(mEngine->Id());
   mReader->ReadMetadata()
       ->Then(OwnerThread(), __func__, this,
              &ExternalEngineStateMachine::OnMetadataRead,
