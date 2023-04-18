@@ -1344,7 +1344,8 @@ StyleAlignFlags nsFlexContainerFrame::CSSAlignmentForAbsPosChild(
 FlexItem* nsFlexContainerFrame::GenerateFlexItemForChild(
     FlexLine& aLine, nsIFrame* aChildFrame,
     const ReflowInput& aParentReflowInput,
-    const FlexboxAxisTracker& aAxisTracker, bool aHasLineClampEllipsis) {
+    const FlexboxAxisTracker& aAxisTracker,
+    const nscoord aTentativeContentBoxCrossSize, bool aHasLineClampEllipsis) {
   const auto flexWM = aAxisTracker.GetWritingMode();
   const auto childWM = aChildFrame->GetWritingMode();
 
@@ -1524,19 +1525,14 @@ FlexItem* nsFlexContainerFrame::GenerateFlexItemForChild(
   if (isSingleLine) {
     
     
-    nscoord containerCrossSize = GET_CROSS_COMPONENT_LOGICAL(
-        aAxisTracker, flexWM, aParentReflowInput.ComputedISize(),
-        aParentReflowInput.ComputedBSize());
-    
-    
     
     
     
     if (aAxisTracker.IsColumnOriented() ||
-        containerCrossSize != NS_UNCONSTRAINEDSIZE) {
+        aTentativeContentBoxCrossSize != NS_UNCONSTRAINEDSIZE) {
       
       
-      item->ResolveStretchedCrossSize(containerCrossSize);
+      item->ResolveStretchedCrossSize(aTentativeContentBoxCrossSize);
     }
   }
 
@@ -4104,7 +4100,8 @@ bool nsFlexContainerFrame::ShouldUseMozBoxCollapseBehavior(
 }
 
 void nsFlexContainerFrame::GenerateFlexLines(
-    const ReflowInput& aReflowInput, nscoord aContentBoxMainSize,
+    const ReflowInput& aReflowInput, const nscoord aTentativeContentBoxMainSize,
+    const nscoord aTentativeContentBoxCrossSize,
     const nsTArray<StrutInfo>& aStruts, const FlexboxAxisTracker& aAxisTracker,
     nscoord aMainGapSize, bool aHasLineClampEllipsis,
     nsTArray<nsIFrame*>& aPlaceholders, 
@@ -4128,7 +4125,7 @@ void nsFlexContainerFrame::GenerateFlexLines(
     wrapThreshold = NS_UNCONSTRAINEDSIZE;
   } else {
     
-    wrapThreshold = aContentBoxMainSize;
+    wrapThreshold = aTentativeContentBoxMainSize;
 
     
     
@@ -4193,6 +4190,7 @@ void nsFlexContainerFrame::GenerateFlexLines(
       nextStrutIdx++;
     } else {
       GenerateFlexItemForChild(*curLine, childFrame, aReflowInput, aAxisTracker,
+                               aTentativeContentBoxCrossSize,
                                aHasLineClampEllipsis);
     }
 
@@ -4289,19 +4287,20 @@ static AuCoord64 GetLargestLineMainSize(nsTArray<FlexLine>& aLines) {
 
 nscoord nsFlexContainerFrame::ComputeMainSize(
     const ReflowInput& aReflowInput, const FlexboxAxisTracker& aAxisTracker,
-    nscoord aTentativeMainSize, nsTArray<FlexLine>& aLines) const {
+    const nscoord aTentativeContentBoxMainSize,
+    nsTArray<FlexLine>& aLines) const {
   if (aAxisTracker.IsRowOriented()) {
     
     
-    return aTentativeMainSize;
+    return aTentativeContentBoxMainSize;
   }
 
-  if (aTentativeMainSize != NS_UNCONSTRAINEDSIZE) {
+  if (aTentativeContentBoxMainSize != NS_UNCONSTRAINEDSIZE) {
     
     
     
     
-    return aTentativeMainSize;
+    return aTentativeContentBoxMainSize;
   }
 
   
@@ -4321,7 +4320,8 @@ nscoord nsFlexContainerFrame::ComputeMainSize(
 
 nscoord nsFlexContainerFrame::ComputeCrossSize(
     const ReflowInput& aReflowInput, const FlexboxAxisTracker& aAxisTracker,
-    nscoord aSumLineCrossSizes, bool* aIsDefinite) const {
+    const nscoord aTentativeContentBoxCrossSize, nscoord aSumLineCrossSizes,
+    bool* aIsDefinite) const {
   MOZ_ASSERT(aIsDefinite, "outparam pointer must be non-null");
 
   if (aAxisTracker.IsColumnOriented()) {
@@ -4335,7 +4335,8 @@ nscoord nsFlexContainerFrame::ComputeCrossSize(
     
     
     
-    return aReflowInput.ComputedISize();
+    
+    return aTentativeContentBoxCrossSize;
   }
 
   const nscoord computedBSize = aReflowInput.ComputedBSize();
@@ -4584,17 +4585,19 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
     
     
     AutoTArray<StrutInfo, 1> struts;
-    flr = DoFlexLayout(aReflowInput, tentativeContentBoxMainSize, axisTracker,
-                       mainGapSize, crossGapSize, hasLineClampEllipsis, struts,
-                       containerInfo);
+    flr =
+        DoFlexLayout(aReflowInput, tentativeContentBoxMainSize,
+                     tentativeContentBoxCrossSize, axisTracker, mainGapSize,
+                     crossGapSize, hasLineClampEllipsis, struts, containerInfo);
 
     if (!struts.IsEmpty()) {
       
       flr.mLines.Clear();
       flr.mPlaceholders.Clear();
-      flr = DoFlexLayout(aReflowInput, tentativeContentBoxMainSize, axisTracker,
-                         mainGapSize, crossGapSize, hasLineClampEllipsis,
-                         struts, containerInfo);
+      flr = DoFlexLayout(aReflowInput, tentativeContentBoxMainSize,
+                         tentativeContentBoxCrossSize, axisTracker, mainGapSize,
+                         crossGapSize, hasLineClampEllipsis, struts,
+                         containerInfo);
     }
   } else {
     auto* data = FirstInFlow()->GetProperty(SharedFlexData::Prop());
@@ -5073,15 +5076,17 @@ bool nsFlexContainerFrame::IsUsedFlexBasisContent(
 
 nsFlexContainerFrame::FlexLayoutResult nsFlexContainerFrame::DoFlexLayout(
     const ReflowInput& aReflowInput, const nscoord aTentativeContentBoxMainSize,
+    const nscoord aTentativeContentBoxCrossSize,
     const FlexboxAxisTracker& aAxisTracker, nscoord aMainGapSize,
     nscoord aCrossGapSize, bool aHasLineClampEllipsis,
     nsTArray<StrutInfo>& aStruts,
     ComputedFlexContainerInfo* const aContainerInfo) {
   FlexLayoutResult flr;
 
-  GenerateFlexLines(aReflowInput, aTentativeContentBoxMainSize, aStruts,
-                    aAxisTracker, aMainGapSize, aHasLineClampEllipsis,
-                    flr.mPlaceholders, flr.mLines);
+  GenerateFlexLines(aReflowInput, aTentativeContentBoxMainSize,
+                    aTentativeContentBoxCrossSize, aStruts, aAxisTracker,
+                    aMainGapSize, aHasLineClampEllipsis, flr.mPlaceholders,
+                    flr.mLines);
 
   if ((flr.mLines.Length() == 1 && flr.mLines[0].IsEmpty()) ||
       aReflowInput.mStyleDisplay->IsContainLayout()) {
@@ -5167,7 +5172,8 @@ nsFlexContainerFrame::FlexLayoutResult nsFlexContainerFrame::DoFlexLayout(
 
   bool isCrossSizeDefinite;
   flr.mContentBoxCrossSize = ComputeCrossSize(
-      aReflowInput, aAxisTracker, sumLineCrossSizes, &isCrossSizeDefinite);
+      aReflowInput, aAxisTracker, aTentativeContentBoxCrossSize,
+      sumLineCrossSizes, &isCrossSizeDefinite);
 
   
   

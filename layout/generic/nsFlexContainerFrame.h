@@ -307,6 +307,10 @@ class nsFlexContainerFrame final : public nsContainerFrame {
 
 
 
+
+
+
+
   struct FlexLayoutResult final {
     
     nsTArray<FlexLine> mLines;
@@ -329,6 +333,7 @@ class nsFlexContainerFrame final : public nsContainerFrame {
   FlexLayoutResult DoFlexLayout(
       const ReflowInput& aReflowInput,
       const nscoord aTentativeContentBoxMainSize,
+      const nscoord aTentativeContentBoxCrossSize,
       const FlexboxAxisTracker& aAxisTracker, nscoord aMainGapSize,
       nscoord aCrossGapSize, bool aHasLineClampEllipsis,
       nsTArray<StrutInfo>& aStruts,
@@ -380,10 +385,11 @@ class nsFlexContainerFrame final : public nsContainerFrame {
 
 
 
-  FlexItem* GenerateFlexItemForChild(FlexLine& aLine, nsIFrame* aChildFrame,
-                                     const ReflowInput& aParentReflowInput,
-                                     const FlexboxAxisTracker& aAxisTracker,
-                                     bool aHasLineClampEllipsis);
+  FlexItem* GenerateFlexItemForChild(
+      FlexLine& aLine, nsIFrame* aChildFrame,
+      const ReflowInput& aParentReflowInput,
+      const FlexboxAxisTracker& aAxisTracker,
+      const nscoord aTentativeContentBoxCrossSize, bool aHasLineClampEllipsis);
 
   
 
@@ -441,7 +447,8 @@ class nsFlexContainerFrame final : public nsContainerFrame {
 
 
   void GenerateFlexLines(const ReflowInput& aReflowInput,
-                         nscoord aContentBoxMainSize,
+                         const nscoord aTentativeContentBoxMainSize,
+                         const nscoord aTentativeContentBoxCrossSize,
                          const nsTArray<StrutInfo>& aStruts,
                          const FlexboxAxisTracker& aAxisTracker,
                          nscoord aMainGapSize, bool aHasLineClampEllipsis,
@@ -476,14 +483,14 @@ class nsFlexContainerFrame final : public nsContainerFrame {
 
 
 
-
   nscoord ComputeMainSize(const ReflowInput& aReflowInput,
                           const FlexboxAxisTracker& aAxisTracker,
-                          nscoord aTentativeMainSize,
+                          const nscoord aTentativeContentBoxMainSize,
                           nsTArray<FlexLine>& aLines) const;
 
   nscoord ComputeCrossSize(const ReflowInput& aReflowInput,
                            const FlexboxAxisTracker& aAxisTracker,
+                           const nscoord aTentativeContentBoxCrossSize,
                            nscoord aSumLineCrossSizes, bool* aIsDefinite) const;
 
   
