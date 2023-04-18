@@ -103,7 +103,17 @@ class AudioSinkWrapper : public MediaSink {
     MOZ_ASSERT(mOwnerThread->IsCurrentThreadIn());
   }
 
-  nsresult StartAudioSink(const media::TimeUnit& aStartTime);
+  
+  
+  
+  
+  
+  
+  
+  
+  enum class AudioSinkStartPolicy { SYNC, ASYNC };
+  nsresult StartAudioSink(const media::TimeUnit& aStartTime,
+                          AudioSinkStartPolicy aPolicy);
 
   
   
