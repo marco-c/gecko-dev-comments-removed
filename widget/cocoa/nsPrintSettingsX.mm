@@ -180,9 +180,7 @@ NSPrintInfo* nsPrintSettingsX::CreateOrCopyPrintInfo(bool aWithScaling) {
   }
 
   if (mDisposition.IsEmpty()) {
-    
-    
-    if (mOutputDestination == kOutputDestinationFile) {
+    if (mPrintToFile) {
       [printInfo setJobDisposition:NSPrintSaveJob];
     } else {
       [printInfo setJobDisposition:NSPrintSpoolJob];
@@ -294,12 +292,7 @@ void nsPrintSettingsX::SetFromPrintInfo(NSPrintInfo* aPrintInfo, bool aAdoptPrin
     mScaling = round(double([aPrintInfo scalingFactor]) * 100.0) / 100.0;
   }
 
-  mOutputDestination = [&] {
-    if ([aPrintInfo jobDisposition] == NSPrintSaveJob) {
-      return kOutputDestinationFile;
-    }
-    return kOutputDestinationPrinter;
-  }();
+  mPrintToFile = [aPrintInfo jobDisposition] == NSPrintSaveJob;
 
   NSDictionary* dict = [aPrintInfo dictionary];
   const char* filePath = [[dict objectForKey:NSPrintJobSavingURL] fileSystemRepresentation];

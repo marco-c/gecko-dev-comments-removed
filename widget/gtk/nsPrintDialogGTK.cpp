@@ -409,8 +409,7 @@ nsresult nsPrintDialogWidgetGTK::ExportSettings(nsIPrintSettings* aNSSettings) {
     
     
     
-    aNSSettings->SetOutputDestination(
-        nsIPrintSettings::kOutputDestinationPrinter);
+    aNSSettings->SetPrintToFile(false);
 
     aNSSettings->SetShrinkToFit(
         gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(shrink_to_fit_toggle)));

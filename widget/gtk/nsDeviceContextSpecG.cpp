@@ -74,45 +74,36 @@ already_AddRefed<PrintTarget> nsDeviceContextSpecGTK::MakePrintTarget() {
   width /= TWIPS_PER_POINT_FLOAT;
   height /= TWIPS_PER_POINT_FLOAT;
 
+  nsresult rv;
+
   
   
   MOZ_ASSERT(!mSpoolFile);
 
-  auto stream = [&]() -> nsCOMPtr<nsIOutputStream> {
-    if (mPrintSettings->GetOutputDestination() ==
-        nsIPrintSettings::kOutputDestinationStream) {
-      nsCOMPtr<nsIOutputStream> out;
-      mPrintSettings->GetOutputStream(getter_AddRefs(out));
-      return out;
-    }
-    
-    
-    gchar* buf;
-    gint fd = g_file_open_tmp("XXXXXX.tmp", &buf, nullptr);
-    if (-1 == fd) {
-      return nullptr;
-    }
-    close(fd);
-    if (NS_FAILED(NS_NewNativeLocalFile(nsDependentCString(buf), false,
-                                        getter_AddRefs(mSpoolFile)))) {
-      unlink(buf);
-      g_free(buf);
-      return nullptr;
-    }
-    mSpoolName = buf;
-    g_free(buf);
-    mSpoolFile->SetPermissions(0600);
-    nsCOMPtr<nsIFileOutputStream> stream =
-        do_CreateInstance("@mozilla.org/network/file-output-stream;1");
-    if (NS_FAILED(stream->Init(mSpoolFile, -1, -1, 0))) {
-      return nullptr;
-    }
-    return stream;
-  }();
+  
+  
+  gchar* buf;
+  gint fd = g_file_open_tmp("XXXXXX.tmp", &buf, nullptr);
+  if (-1 == fd) return nullptr;
+  close(fd);
 
-  if (!stream) {
+  rv = NS_NewNativeLocalFile(nsDependentCString(buf), false,
+                             getter_AddRefs(mSpoolFile));
+  if (NS_FAILED(rv)) {
+    unlink(buf);
+    g_free(buf);
     return nullptr;
   }
+
+  mSpoolName = buf;
+  g_free(buf);
+
+  mSpoolFile->SetPermissions(0600);
+
+  nsCOMPtr<nsIFileOutputStream> stream =
+      do_CreateInstance("@mozilla.org/network/file-output-stream;1");
+  rv = stream->Init(mSpoolFile, -1, -1, 0);
+  if (NS_FAILED(rv)) return nullptr;
 
   return PrintTargetPDF::CreateOrNull(stream, IntSize::Ceil(width, height));
 }
@@ -205,6 +196,12 @@ NS_IMETHODIMP nsDeviceContextSpecGTK::Init(nsIWidget* aWidget,
   if (!mPrintSettings) {
     return NS_ERROR_NO_INTERFACE;
   }
+
+  
+  bool toFile;
+  aPS->GetPrintToFile(&toFile);
+
+  mToPrinter = !toFile && !aIsPrintPreview;
 
   mGtkPrintSettings = mPrintSettings->GetGtkPrintSettings();
   mGtkPageSetup = mPrintSettings->GetGtkPageSetup();
@@ -312,65 +309,55 @@ nsDeviceContextSpecGTK::BeginDocument(const nsAString& aTitle,
 }
 
 NS_IMETHODIMP nsDeviceContextSpecGTK::EndDocument() {
-  switch (mPrintSettings->GetOutputDestination()) {
-    case nsIPrintSettings::kOutputDestinationPrinter: {
-      
-      
-      
-      
-      
-      
-      
-      
+  if (mToPrinter) {
+    
+    
+    
+    
+    
+    
+    
+    
 
-      if (mPrintSettings->GetGtkPrinter()) {
-        
-        StartPrintJob();
-      } else {
-        
-        
-        NS_DispatchToCurrentThread(
-            NewRunnableMethod("nsDeviceContextSpecGTK::EnumeratePrinters", this,
-                              &nsDeviceContextSpecGTK::EnumeratePrinters));
-      }
-      break;
+    if (mPrintSettings->GetGtkPrinter()) {
+      
+      StartPrintJob();
+    } else {
+      
+      
+      NS_DispatchToCurrentThread(
+          NewRunnableMethod("nsDeviceContextSpecGTK::EnumeratePrinters", this,
+                            &nsDeviceContextSpecGTK::EnumeratePrinters));
     }
-    case nsIPrintSettings::kOutputDestinationFile: {
-      
-      nsString targetPath;
-      nsCOMPtr<nsIFile> destFile;
-      mPrintSettings->GetToFileName(targetPath);
+  } else {
+    
+    nsString targetPath;
+    nsCOMPtr<nsIFile> destFile;
+    mPrintSettings->GetToFileName(targetPath);
 
-      nsresult rv =
-          NS_NewLocalFile(targetPath, false, getter_AddRefs(destFile));
-      NS_ENSURE_SUCCESS(rv, rv);
+    nsresult rv = NS_NewLocalFile(targetPath, false, getter_AddRefs(destFile));
+    NS_ENSURE_SUCCESS(rv, rv);
 
-      nsAutoString destLeafName;
-      rv = destFile->GetLeafName(destLeafName);
-      NS_ENSURE_SUCCESS(rv, rv);
+    nsAutoString destLeafName;
+    rv = destFile->GetLeafName(destLeafName);
+    NS_ENSURE_SUCCESS(rv, rv);
 
-      nsCOMPtr<nsIFile> destDir;
-      rv = destFile->GetParent(getter_AddRefs(destDir));
-      NS_ENSURE_SUCCESS(rv, rv);
+    nsCOMPtr<nsIFile> destDir;
+    rv = destFile->GetParent(getter_AddRefs(destDir));
+    NS_ENSURE_SUCCESS(rv, rv);
 
-      rv = mSpoolFile->MoveTo(destDir, destLeafName);
-      NS_ENSURE_SUCCESS(rv, rv);
+    rv = mSpoolFile->MoveTo(destDir, destLeafName);
+    NS_ENSURE_SUCCESS(rv, rv);
 
-      mSpoolFile = nullptr;
+    mSpoolFile = nullptr;
 
-      
-      mode_t mask = umask(0);
-      umask(mask);
-      
-      
-      
-      destFile->SetPermissions(0666 & ~(mask));
-      break;
-    }
-    case nsIPrintSettings::kOutputDestinationStream:
-      
-      MOZ_ASSERT(!mSpoolFile);
-      break;
+    
+    mode_t mask = umask(0);
+    umask(mask);
+    
+    
+    
+    destFile->SetPermissions(0666 & ~(mask));
   }
   return NS_OK;
 }
