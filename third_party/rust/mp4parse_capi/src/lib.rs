@@ -331,9 +331,13 @@ pub struct Mp4parseAvifImage {
     pub icc_colour_information: Mp4parseByteData,
     pub image_rotation: mp4parse::ImageRotation,
     pub image_mirror: *const mp4parse::ImageMirror,
+    pub pixel_aspect_ratio: *const mp4parse::PixelAspectRatio,
     
     pub alpha_image: Mp4parseAvifImageItem,
     pub premultiplied_alpha: bool,
+    pub major_brand: [u8; 4],
+    pub has_sequence: bool,
+    pub unsupported_features_bitfield: u32,
 }
 
 
@@ -1055,25 +1059,37 @@ pub fn mp4parse_avif_get_image_safe(
     let context = parser.context();
 
     let primary_image = Mp4parseAvifImageItem {
-        coded_data: Mp4parseByteData::with_data(context.primary_item_coded_data()),
-        bits_per_channel: Mp4parseByteData::with_data(context.primary_item_bits_per_channel()?),
+        coded_data: Mp4parseByteData::with_data(context.primary_item_coded_data().unwrap_or(&[])),
+        bits_per_channel: Mp4parseByteData::with_data(
+            context.primary_item_bits_per_channel().unwrap_or(Ok(&[]))?,
+        ),
     };
 
     
     let alpha_image = Mp4parseAvifImageItem {
-        coded_data: Mp4parseByteData::with_data(context.alpha_item_coded_data()),
-        bits_per_channel: Mp4parseByteData::with_data(context.alpha_item_bits_per_channel()?),
+        coded_data: Mp4parseByteData::with_data(context.alpha_item_coded_data().unwrap_or(&[])),
+        bits_per_channel: Mp4parseByteData::with_data(
+            context.alpha_item_bits_per_channel().unwrap_or(Ok(&[]))?,
+        ),
     };
 
     Ok(Mp4parseAvifImage {
         primary_image,
         spatial_extents: context.spatial_extents_ptr()?,
-        nclx_colour_information: context.nclx_colour_information_ptr()?,
-        icc_colour_information: Mp4parseByteData::with_data(context.icc_colour_information()?),
+        nclx_colour_information: context
+            .nclx_colour_information_ptr()
+            .unwrap_or(Ok(std::ptr::null()))?,
+        icc_colour_information: Mp4parseByteData::with_data(
+            context.icc_colour_information().unwrap_or(Ok(&[]))?,
+        ),
         image_rotation: context.image_rotation()?,
         image_mirror: context.image_mirror_ptr()?,
+        pixel_aspect_ratio: context.pixel_aspect_ratio_ptr()?,
         alpha_image,
         premultiplied_alpha: context.premultiplied_alpha,
+        major_brand: context.major_brand.value,
+        has_sequence: context.has_sequence,
+        unsupported_features_bitfield: context.unsupported_features.into_bitfield(),
     })
 }
 
