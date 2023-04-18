@@ -397,8 +397,8 @@ Readability.prototype = {
           } else {
             
             var container = this._doc.createElement("span");
-            while (link.childNodes.length > 0) {
-              container.appendChild(link.childNodes[0]);
+            while (link.firstChild) {
+              container.appendChild(link.firstChild);
             }
             link.parentNode.replaceChild(container, link);
           }
@@ -903,6 +903,11 @@ Readability.prototype = {
       let shouldRemoveTitleHeader = true;
 
       while (node) {
+
+        if (node.tagName === "HTML") {
+          this._articleLang = node.getAttribute("lang");
+        }
+
         var matchString = node.className + " " + node.id;
 
         if (!this._isProbablyVisible(node)) {
@@ -1092,10 +1097,9 @@ Readability.prototype = {
         neededToCreateTopCandidate = true;
         
         
-        var kids = page.childNodes;
-        while (kids.length) {
-          this.log("Moving child out:", kids[0]);
-          topCandidate.appendChild(kids[0]);
+        while (page.firstChild) {
+          this.log("Moving child out:", page.firstChild);
+          topCandidate.appendChild(page.firstChild);
         }
 
         page.appendChild(topCandidate);
@@ -1228,6 +1232,9 @@ Readability.prototype = {
           articleContent.appendChild(sibling);
           
           
+          siblings = parentOfTopCandidate.children;
+          
+          
           
           
           s -= 1;
@@ -1253,9 +1260,8 @@ Readability.prototype = {
         var div = doc.createElement("DIV");
         div.id = "readability-page-1";
         div.className = "page";
-        var children = articleContent.childNodes;
-        while (children.length) {
-          div.appendChild(children[0]);
+        while (articleContent.firstChild) {
+          div.appendChild(articleContent.firstChild);
         }
         articleContent.appendChild(div);
       }
@@ -1363,72 +1369,88 @@ Readability.prototype = {
   _getJSONLD: function (doc) {
     var scripts = this._getAllNodesWithTag(doc, ["script"]);
 
-    var jsonLdElement = this._findNode(scripts, function(el) {
-      return el.getAttribute("type") === "application/ld+json";
-    });
+    var metadata;
 
-    if (jsonLdElement) {
-      try {
-        
-        var content = jsonLdElement.textContent.replace(/^\s*<!\[CDATA\[|\]\]>\s*$/g, "");
-        var parsed = JSON.parse(content);
-        var metadata = {};
-        if (
-          !parsed["@context"] ||
-          !parsed["@context"].match(/^https?\:\/\/schema\.org$/)
-        ) {
-          return metadata;
-        }
-
-        if (!parsed["@type"] && Array.isArray(parsed["@graph"])) {
-          parsed = parsed["@graph"].find(function(it) {
-            return (it["@type"] || "").match(
-              this.REGEXPS.jsonLdArticleTypes
-            );
-          });
-        }
-
-        if (
-          !parsed ||
-          !parsed["@type"] ||
-          !parsed["@type"].match(this.REGEXPS.jsonLdArticleTypes)
-        ) {
-          return metadata;
-        }
-        if (typeof parsed.name === "string") {
-          metadata.title = parsed.name.trim();
-        } else if (typeof parsed.headline === "string") {
-          metadata.title = parsed.headline.trim();
-        }
-        if (parsed.author) {
-          if (typeof parsed.author.name === "string") {
-            metadata.byline = parsed.author.name.trim();
-          } else if (Array.isArray(parsed.author) && parsed.author[0] && typeof parsed.author[0].name === "string") {
-            metadata.byline = parsed.author
-              .filter(function(author) {
-                return author && typeof author.name === "string";
-              })
-              .map(function(author) {
-                return author.name.trim();
-              })
-              .join(", ");
+    this._forEachNode(scripts, function(jsonLdElement) {
+      if (!metadata && jsonLdElement.getAttribute("type") === "application/ld+json") {
+        try {
+          
+          var content = jsonLdElement.textContent.replace(/^\s*<!\[CDATA\[|\]\]>\s*$/g, "");
+          var parsed = JSON.parse(content);
+          if (
+            !parsed["@context"] ||
+            !parsed["@context"].match(/^https?\:\/\/schema\.org$/)
+          ) {
+            return;
           }
+
+          if (!parsed["@type"] && Array.isArray(parsed["@graph"])) {
+            parsed = parsed["@graph"].find(function(it) {
+              return (it["@type"] || "").match(
+                this.REGEXPS.jsonLdArticleTypes
+              );
+            });
+          }
+
+          if (
+            !parsed ||
+            !parsed["@type"] ||
+            !parsed["@type"].match(this.REGEXPS.jsonLdArticleTypes)
+          ) {
+            return;
+          }
+
+          metadata = {};
+
+          if (typeof parsed.name === "string" && typeof parsed.headline === "string" && parsed.name !== parsed.headline) {
+            
+            
+            
+
+            var title = this._getArticleTitle();
+            var nameMatches = this._textSimilarity(parsed.name, title) > 0.75;
+            var headlineMatches = this._textSimilarity(parsed.headline, title) > 0.75;
+
+            if (headlineMatches && !nameMatches) {
+              metadata.title = parsed.headline;
+            } else {
+              metadata.title = parsed.name;
+            }
+          } else if (typeof parsed.name === "string") {
+            metadata.title = parsed.name.trim();
+          } else if (typeof parsed.headline === "string") {
+            metadata.title = parsed.headline.trim();
+          }
+          if (parsed.author) {
+            if (typeof parsed.author.name === "string") {
+              metadata.byline = parsed.author.name.trim();
+            } else if (Array.isArray(parsed.author) && parsed.author[0] && typeof parsed.author[0].name === "string") {
+              metadata.byline = parsed.author
+                .filter(function(author) {
+                  return author && typeof author.name === "string";
+                })
+                .map(function(author) {
+                  return author.name.trim();
+                })
+                .join(", ");
+            }
+          }
+          if (typeof parsed.description === "string") {
+            metadata.excerpt = parsed.description.trim();
+          }
+          if (
+            parsed.publisher &&
+            typeof parsed.publisher.name === "string"
+          ) {
+            metadata.siteName = parsed.publisher.name.trim();
+          }
+          return;
+        } catch (err) {
+          this.log(err.message);
         }
-        if (typeof parsed.description === "string") {
-          metadata.excerpt = parsed.description.trim();
-        }
-        if (
-          parsed.publisher &&
-          typeof parsed.publisher.name === "string"
-        ) {
-          metadata.siteName = parsed.publisher.name.trim();
-        }
-        return metadata;
-      } catch (err) {
-        this.log(err.message);
       }
-    }
-    return {};
+    });
+    return metadata ? metadata : {};
   },
 
   
@@ -1993,7 +2015,7 @@ Readability.prototype = {
 
       for (var j = 0; j < elem.attributes.length; j++) {
         attr = elem.attributes[j];
-        if (attr.name === "src" || attr.name === "srcset") {
+        if (attr.name === "src" || attr.name === "srcset" || attr.name === "alt") {
           continue;
         }
         var copyTo = null;
@@ -2253,6 +2275,7 @@ Readability.prototype = {
       title: this._articleTitle,
       byline: metadata.byline || this._articleByline,
       dir: this._articleDir,
+      lang: this._articleLang,
       content: this._serializer(articleContent),
       textContent: textContent,
       length: textContent.length,
