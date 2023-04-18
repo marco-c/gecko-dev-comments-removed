@@ -8,87 +8,148 @@
 
 
 
-#include "platform_uithread.h"
+#if defined(WEBRTC_WIN)
+
+#  include "platform_uithread.h"
 
 namespace rtc {
-
-#if defined(WEBRTC_WIN)
 
 
 static const UINT_PTR kTimerId = 1;
 static const wchar_t kThisProperty[] = L"ThreadWindowsUIPtr";
 static const wchar_t kThreadWindow[] = L"WebrtcWindowsUIThread";
 
+PlatformUIThread::~PlatformUIThread() {
+  CritScope scoped_lock(&cs_);
+  switch (state_) {
+    case State::STARTED: {
+      MOZ_DIAGNOSTIC_ASSERT(
+          false, "PlatformUIThread must be stopped before destruction");
+      break;
+    }
+    case State::STOPPED:
+      break;
+    case State::UNSTARTED:
+      break;
+  }
+}
+
 bool PlatformUIThread::InternalInit() {
   
   
   CritScope scoped_lock(&cs_);
-  if (hwnd_ == NULL) {
-    WNDCLASSW wc;
-    HMODULE hModule = GetModuleHandle(NULL);
-    if (!GetClassInfoW(hModule, kThreadWindow, &wc)) {
-      ZeroMemory(&wc, sizeof(WNDCLASSW));
-      wc.hInstance = hModule;
-      wc.lpfnWndProc = EventWindowProc;
-      wc.lpszClassName = kThreadWindow;
-      RegisterClassW(&wc);
-    }
-    hwnd_ = CreateWindowW(kThreadWindow, L"", 0, 0, 0, 0, 0, NULL, NULL,
-                          hModule, NULL);
-    RTC_DCHECK(hwnd_);
-    SetPropW(hwnd_, kThisProperty, this);
-
-    if (timeout_) {
+  switch (state_) {
+    
+    case State::STARTED:
+      break;
+    
+    case State::STOPPED:
+      break;
+    
+    
+    case State::UNSTARTED: {
+      WNDCLASSW wc;
+      HMODULE hModule = GetModuleHandle(NULL);
+      if (!GetClassInfoW(hModule, kThreadWindow, &wc)) {
+        ZeroMemory(&wc, sizeof(WNDCLASSW));
+        wc.hInstance = hModule;
+        wc.lpfnWndProc = EventWindowProc;
+        wc.lpszClassName = kThreadWindow;
+        RegisterClassW(&wc);
+      }
+      hwnd_ = CreateWindowW(kThreadWindow, L"", 0, 0, 0, 0, 0, NULL, NULL,
+                            hModule, NULL);
       
-      RequestCallbackTimer(timeout_);
+      MOZ_RELEASE_ASSERT(hwnd_);
+      
+      
+      
+      
+      if (hwnd_) {
+        SetPropW(hwnd_, kThisProperty, this);
+        
+        state_ = State::STARTED;
+        if (timeout_) {
+          
+          RequestCallbackTimer(timeout_);
+        }
+      }
+      break;
     }
-  }
-  return !!hwnd_;
+  };
+  return state_ == State::STARTED;
 }
 
 bool PlatformUIThread::RequestCallbackTimer(unsigned int milliseconds) {
   CritScope scoped_lock(&cs_);
-  if (!hwnd_) {
-    
-    
-    
-    
 
+  switch (state_) {
     
-  } else {
-    if (timerid_) {
-      KillTimer(hwnd_, timerid_);
+    
+    
+    
+    case State::UNSTARTED: {
+      timeout_ = milliseconds;
+      return false;
     }
-    timerid_ = SetTimer(hwnd_, kTimerId, milliseconds, NULL);
+    
+    case State::STOPPED:
+      return false;
+    case State::STARTED: {
+      if (timerid_) {
+        KillTimer(hwnd_, timerid_);
+      }
+      timeout_ = milliseconds;
+      timerid_ = SetTimer(hwnd_, kTimerId, milliseconds, NULL);
+      return !!timerid_;
+    }
   }
-  timeout_ = milliseconds;
-  return !!timerid_;
+  
 }
 
 void PlatformUIThread::Stop() {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  
-  if (timerid_) {
-    KillTimer(hwnd_, timerid_);
-    timerid_ = 0;
+  {
+    CritScope scoped_lock(&cs_);
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
+    
+    if (timerid_) {
+      MOZ_ASSERT(hwnd_);
+      KillTimer(hwnd_, timerid_);
+      timerid_ = 0;
+    }
+    switch (state_) {
+      
+      
+      
+      case State::UNSTARTED:
+        break;
+      
+      
+      
+      case State::STARTED: {
+        MOZ_ASSERT(hwnd_);
+        PostMessage(hwnd_, WM_CLOSE, 0, 0);
+        break;
+      }
+      
+      case State::STOPPED:
+        break;
+    }
+    
+    state_ = State::STOPPED;
   }
-
-  PostMessage(hwnd_, WM_CLOSE, 0, 0);
-
   PlatformThread::Stop();
-
-  
-  hwnd_ = NULL;
 }
 
 void PlatformUIThread::Run() {
-  RTC_CHECK(InternalInit());  
   
   
+  const bool runUntilQuitMsg = InternalInit();
   
-  run_function_(obj_);
-
-  do {
+  
+  NativeEventCallback();
+  while (runUntilQuitMsg) {
+    
     
     if (MsgWaitForMultipleObjectsEx(0, nullptr, INFINITE, QS_ALLINPUT,
                                     MWMO_ALERTABLE | MWMO_INPUTAVAILABLE) ==
@@ -96,24 +157,17 @@ void PlatformUIThread::Run() {
       MSG msg;
       if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
         if (msg.message == WM_QUIT) {
-          stop_ = true;
+          
           break;
         }
         TranslateMessage(&msg);
         DispatchMessage(&msg);
       }
     }
-
-  } while (!stop_);
-}
-
-void PlatformUIThread::NativeEventCallback() {
-  if (!run_function_) {
-    stop_ = true;
-    return;
   }
-  run_function_(obj_);
 }
+
+void PlatformUIThread::NativeEventCallback() { run_function_(obj_); }
 
 
 LRESULT CALLBACK PlatformUIThread::EventWindowProc(HWND hwnd, UINT uMsg,
@@ -138,6 +192,7 @@ LRESULT CALLBACK PlatformUIThread::EventWindowProc(HWND hwnd, UINT uMsg,
 
   return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
-#endif
 
 }  
+
+#endif
