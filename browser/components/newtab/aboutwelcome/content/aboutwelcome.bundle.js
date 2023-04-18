@@ -1162,17 +1162,22 @@ function useLanguageSwitcher(appAndSystemLocaleInfo, screens, screenIndex, setSc
       if (langPack) {
         
         
-        const displayNames = new Intl.DisplayNames(appAndSystemLocaleInfo.appLocaleRaw, {
+        const appDN = new Intl.DisplayNames(appAndSystemLocaleInfo.appLocaleRaw, {
+          type: "language"
+        });
+        const langPackDN = new Intl.DisplayNames(langPack.target_locale, {
           type: "language"
         });
         setNegotiatedLanguage({
-          displayName: displayNames.of(langPack.target_locale),
+          langPackDisplayName: langPackDN.of(langPack.target_locale),
+          appDisplayName: appDN.of(appAndSystemLocaleInfo.appLocaleRaw),
           langPack,
           requestSystemLocales: [langPack.target_locale, appAndSystemLocaleInfo.appLocaleRaw]
         });
       } else {
         setNegotiatedLanguage({
-          displayName: null,
+          langPackDisplayName: null,
+          appDisplayName: null,
           langPack: null,
           requestSystemLocales: null
         });
@@ -1255,12 +1260,12 @@ function LanguageSwitcher(props) {
   }, [isAwaitingLangpack, langPackInstallPhase]); 
 
   const withMessageArgs = obj => {
-    const displayName = negotiatedLanguage === null || negotiatedLanguage === void 0 ? void 0 : negotiatedLanguage.displayName;
+    const langPackDisplayName = negotiatedLanguage === null || negotiatedLanguage === void 0 ? void 0 : negotiatedLanguage.langPackDisplayName;
 
-    if (displayName) {
+    if (langPackDisplayName) {
       return { ...obj,
         args: { ...obj.args,
-          negotiatedLanguage: displayName
+          negotiatedLanguage: langPackDisplayName
         }
       };
     }
@@ -1340,25 +1345,21 @@ function LanguageSwitcher(props) {
     style: {
       display: showReadyScreen ? "block" : "none"
     }
-  }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", null, react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
-    text: withMessageArgs(content.languageSwitcher.switch)
-  }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("button", {
+  }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", null, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("button", {
     className: "primary",
     value: "primary_button",
     onClick: () => {
       _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.sendActionTelemetry(messageId, "download_langpack");
       setIsAwaitingLangpack(true);
     }
-  }))), react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
-    className: "secondary-cta"
-  }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
-    text: content.languageSwitcher.not_now
-  }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("button", {
+  }, 
+  negotiatedLanguage === null || negotiatedLanguage === void 0 ? void 0 : negotiatedLanguage.langPackDisplayName)), react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", null, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("button", {
     type: "button",
-    className: "secondary text-link",
+    className: "secondary",
     value: "decline",
     onClick: handleAction
-  })))));
+  }, 
+  negotiatedLanguage === null || negotiatedLanguage === void 0 ? void 0 : negotiatedLanguage.appDisplayName))));
 }
 
  }),
