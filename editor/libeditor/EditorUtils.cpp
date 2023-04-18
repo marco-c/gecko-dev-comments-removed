@@ -481,8 +481,17 @@ void AutoRangeArray::
 }
 
 
-EditorDOMPoint
-AutoRangeArray::GetPointAtFirstContentOfLineOrParentBlockIfFirstContentOfBlock(
+
+
+
+
+
+
+
+
+
+static EditorDOMPoint
+GetPointAtFirstContentOfLineOrParentBlockIfFirstContentOfBlock(
     const EditorDOMPoint& aPointInLine, EditSubAction aEditSubAction,
     const Element& aEditingHost) {
   
@@ -581,8 +590,18 @@ AutoRangeArray::GetPointAtFirstContentOfLineOrParentBlockIfFirstContentOfBlock(
 }
 
 
-EditorDOMPoint
-AutoRangeArray::GetPointAfterFollowingLineBreakOrAtFollowingBlock(
+
+
+
+
+
+
+
+
+
+
+
+static EditorDOMPoint GetPointAfterFollowingLineBreakOrAtFollowingBlock(
     const EditorDOMPoint& aPointInLine, const Element& aEditingHost) {
   
   
@@ -726,6 +745,77 @@ AutoRangeArray::GetPointAfterFollowingLineBreakOrAtFollowingBlock(
     }
   }
   return point;
+}
+
+
+already_AddRefed<nsRange>
+AutoRangeArray::CreateRangeWrappingStartAndEndLinesContainingBoundaries(
+    const EditorDOMRange& aRange, EditSubAction aEditSubAction,
+    const Element& aEditingHost) {
+  if (!aRange.IsPositioned()) {
+    return nullptr;
+  }
+  return CreateRangeWrappingStartAndEndLinesContainingBoundaries(
+      aRange.StartRef(), aRange.EndRef(), aEditSubAction, aEditingHost);
+}
+
+
+already_AddRefed<nsRange>
+AutoRangeArray::CreateRangeWrappingStartAndEndLinesContainingBoundaries(
+    const EditorDOMPoint& aStartPoint, const EditorDOMPoint& aEndPoint,
+    EditSubAction aEditSubAction, const Element& aEditingHost) {
+  MOZ_DIAGNOSTIC_ASSERT(!aStartPoint.IsInNativeAnonymousSubtree());
+  MOZ_DIAGNOSTIC_ASSERT(!aEndPoint.IsInNativeAnonymousSubtree());
+
+  if (NS_WARN_IF(!aStartPoint.IsSet()) || NS_WARN_IF(!aEndPoint.IsSet())) {
+    return nullptr;
+  }
+
+  EditorDOMPoint startPoint(aStartPoint), endPoint(aEndPoint);
+  AutoRangeArray::UpdatePointsToSelectAllChildrenIfCollapsedInEmptyBlockElement(
+      startPoint, endPoint, aEditingHost);
+
+  
+  
+  
+
+  
+  
+  
+  
+
+  startPoint = GetPointAtFirstContentOfLineOrParentBlockIfFirstContentOfBlock(
+      startPoint, aEditSubAction, aEditingHost);
+  
+  
+  
+  
+  
+  if (!startPoint.GetChildOrContainerIfDataNode() ||
+      !startPoint.GetChildOrContainerIfDataNode()->IsInclusiveDescendantOf(
+          &aEditingHost)) {
+    return nullptr;
+  }
+  endPoint =
+      GetPointAfterFollowingLineBreakOrAtFollowingBlock(endPoint, aEditingHost);
+  const EditorDOMPoint lastRawPoint =
+      endPoint.IsStartOfContainer() ? endPoint : endPoint.PreviousPoint();
+  
+  
+  
+  
+  
+  if (!lastRawPoint.GetChildOrContainerIfDataNode() ||
+      !lastRawPoint.GetChildOrContainerIfDataNode()->IsInclusiveDescendantOf(
+          &aEditingHost)) {
+    return nullptr;
+  }
+
+  RefPtr<nsRange> range =
+      nsRange::Create(startPoint.ToRawRangeBoundary(),
+                      endPoint.ToRawRangeBoundary(), IgnoreErrors());
+  NS_WARNING_ASSERTION(range, "nsRange::Create() failed");
+  return range.forget();
 }
 
 

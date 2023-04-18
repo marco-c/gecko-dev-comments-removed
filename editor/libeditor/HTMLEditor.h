@@ -1248,19 +1248,6 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  template <typename EditorDOMRangeType>
-  already_AddRefed<nsRange> CreateRangeExtendedToHardLineStartAndEnd(
-      const EditorDOMRangeType& aRange, EditSubAction aEditSubAction) const;
-  template <typename EditorDOMPointType1, typename EditorDOMPointType2>
-  already_AddRefed<nsRange> CreateRangeExtendedToHardLineStartAndEnd(
-      const EditorDOMPointType1& aStartPoint,
-      const EditorDOMPointType2& aEndPoint, EditSubAction aEditSubAction) const;
-
-  
-
-
-
-
 
 
 
@@ -1992,11 +1979,12 @@ class HTMLEditor final : public EditorBase,
 
 
 
+
   enum class MoveToEndOfContainer { Yes, No };
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT MoveNodeResult
   MoveOneHardLineContentsWithTransaction(
       const EditorDOMPoint& aPointInHardLine,
-      const EditorDOMPoint& aPointToInsert,
+      const EditorDOMPoint& aPointToInsert, const Element& aEditingHost,
       MoveToEndOfContainer aMoveToEndOfContainer = MoveToEndOfContainer::No);
 
   
@@ -2007,9 +1995,9 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  template <typename PT, typename CT>
   Result<bool, nsresult> CanMoveOrDeleteSomethingInHardLine(
-      const EditorDOMPointBase<PT, CT>& aPointInHardLine) const;
+      const EditorDOMPoint& aPointInHardLine,
+      const Element& aEditingHost) const;
 
   
 

@@ -129,28 +129,6 @@ HTMLEditor::CreateRangeIncludingAdjuscentWhiteSpaces(
 template already_AddRefed<nsRange>
 HTMLEditor::CreateRangeIncludingAdjuscentWhiteSpaces(
     const EditorRawDOMPoint& aStartPoint, const EditorRawDOMPoint& aEndPoint);
-template already_AddRefed<nsRange>
-HTMLEditor::CreateRangeExtendedToHardLineStartAndEnd(
-    const EditorDOMRange& aRange, EditSubAction aEditSubAction) const;
-template already_AddRefed<nsRange>
-HTMLEditor::CreateRangeExtendedToHardLineStartAndEnd(
-    const EditorRawDOMRange& aRange, EditSubAction aEditSubAction) const;
-template already_AddRefed<nsRange>
-HTMLEditor::CreateRangeExtendedToHardLineStartAndEnd(
-    const EditorDOMPoint& aStartPoint, const EditorDOMPoint& aEndPoint,
-    EditSubAction aEditSubAction) const;
-template already_AddRefed<nsRange>
-HTMLEditor::CreateRangeExtendedToHardLineStartAndEnd(
-    const EditorRawDOMPoint& aStartPoint, const EditorDOMPoint& aEndPoint,
-    EditSubAction aEditSubAction) const;
-template already_AddRefed<nsRange>
-HTMLEditor::CreateRangeExtendedToHardLineStartAndEnd(
-    const EditorDOMPoint& aStartPoint, const EditorRawDOMPoint& aEndPoint,
-    EditSubAction aEditSubAction) const;
-template already_AddRefed<nsRange>
-HTMLEditor::CreateRangeExtendedToHardLineStartAndEnd(
-    const EditorRawDOMPoint& aStartPoint, const EditorRawDOMPoint& aEndPoint,
-    EditSubAction aEditSubAction) const;
 
 nsresult HTMLEditor::InitEditorContentAndSelection() {
   MOZ_ASSERT(IsEditActionDataAvailable());
@@ -368,7 +346,7 @@ nsresult HTMLEditor::OnEndHandlingTopLevelEditSubActionInternal() {
     AutoTransactionsConserveSelection dontChangeMySelection(*this);
 
     {
-      EditorRawDOMRange changedRange(
+      EditorDOMRange changedRange(
           *TopLevelEditSubActionDataRef().mChangedRange);
       if (changedRange.IsPositioned() &&
           changedRange.EnsureNotInNativeAnonymousSubtree()) {
@@ -392,16 +370,18 @@ nsresult HTMLEditor::OnEndHandlingTopLevelEditSubActionInternal() {
             break;
           }
           default: {
-            RefPtr<nsRange> extendedChangedRange =
-                CreateRangeExtendedToHardLineStartAndEnd(
-                    changedRange, GetTopLevelEditSubAction());
-            if (extendedChangedRange) {
-              MOZ_ASSERT(extendedChangedRange->IsPositioned());
-              
-              TopLevelEditSubActionDataRef().mChangedRange =
-                  std::move(extendedChangedRange);
+            if (Element* editingHost = ComputeEditingHost()) {
+              if (RefPtr<nsRange> extendedChangedRange = AutoRangeArray::
+                      CreateRangeWrappingStartAndEndLinesContainingBoundaries(
+                          changedRange, GetTopLevelEditSubAction(),
+                          *editingHost)) {
+                MOZ_ASSERT(extendedChangedRange->IsPositioned());
+                
+                TopLevelEditSubActionDataRef().mChangedRange =
+                    std::move(extendedChangedRange);
+              }
+              break;
             }
-            break;
           }
         }
       }
@@ -6422,6 +6402,8 @@ void HTMLEditor::GetSelectionRangesExtendedToHardLineStartAndEnd(
   MOZ_ASSERT(IsEditActionDataAvailable());
   MOZ_ASSERT(aOutArrayOfRanges.IsEmpty());
 
+  Element* editingHost = ComputeEditingHost();
+
   const uint32_t rangeCount = SelectionRef().RangeCount();
   aOutArrayOfRanges.SetCapacity(rangeCount);
   for (const uint32_t i : IntegerRange(rangeCount)) {
@@ -6431,14 +6413,18 @@ void HTMLEditor::GetSelectionRangesExtendedToHardLineStartAndEnd(
     
     nsRange* selectionRange = SelectionRef().GetRangeAt(i);
     MOZ_ASSERT(selectionRange);
-    EditorRawDOMRange rawRange(*selectionRange);
-    if (!rawRange.IsPositioned() ||
-        !rawRange.EnsureNotInNativeAnonymousSubtree()) {
+    EditorDOMRange editorRange(*selectionRange);
+    if (!editorRange.IsPositioned() ||
+        !editorRange.EnsureNotInNativeAnonymousSubtree()) {
       continue;  
                  
     }
-    RefPtr<nsRange> extendedRange =
-        CreateRangeExtendedToHardLineStartAndEnd(rawRange, aEditSubAction);
+    RefPtr<nsRange> extendedRange;
+    if (editingHost) {
+      extendedRange = AutoRangeArray::
+          CreateRangeWrappingStartAndEndLinesContainingBoundaries(
+              editorRange, aEditSubAction, *editingHost);
+    }
     if (!extendedRange) {
       extendedRange = selectionRange->CloneRange();
     }
@@ -6518,81 +6504,6 @@ already_AddRefed<nsRange> HTMLEditor::CreateRangeIncludingAdjuscentWhiteSpaces(
   if (!lastRawPoint.IsStartOfContainer()) {
     lastRawPoint.RewindOffset();
   }
-  if (!lastRawPoint.GetChildOrContainerIfDataNode() ||
-      !lastRawPoint.GetChildOrContainerIfDataNode()->IsInclusiveDescendantOf(
-          editingHost)) {
-    return nullptr;
-  }
-
-  RefPtr<nsRange> range =
-      nsRange::Create(startPoint.ToRawRangeBoundary(),
-                      endPoint.ToRawRangeBoundary(), IgnoreErrors());
-  NS_WARNING_ASSERTION(range, "nsRange::Create() failed");
-  return range.forget();
-}
-
-template <typename EditorDOMRangeType>
-already_AddRefed<nsRange> HTMLEditor::CreateRangeExtendedToHardLineStartAndEnd(
-    const EditorDOMRangeType& aRange, EditSubAction aEditSubAction) const {
-  if (!aRange.IsPositioned()) {
-    return nullptr;
-  }
-  return CreateRangeExtendedToHardLineStartAndEnd(
-      aRange.StartRef(), aRange.EndRef(), aEditSubAction);
-}
-
-template <typename EditorDOMPointType1, typename EditorDOMPointType2>
-already_AddRefed<nsRange> HTMLEditor::CreateRangeExtendedToHardLineStartAndEnd(
-    const EditorDOMPointType1& aStartPoint,
-    const EditorDOMPointType2& aEndPoint, EditSubAction aEditSubAction) const {
-  MOZ_DIAGNOSTIC_ASSERT(!aStartPoint.IsInNativeAnonymousSubtree());
-  MOZ_DIAGNOSTIC_ASSERT(!aEndPoint.IsInNativeAnonymousSubtree());
-
-  if (NS_WARN_IF(!aStartPoint.IsSet()) || NS_WARN_IF(!aEndPoint.IsSet())) {
-    return nullptr;
-  }
-
-  const Element* const editingHost = ComputeEditingHost();
-  if (NS_WARN_IF(!editingHost)) {
-    return nullptr;
-  }
-
-  auto startPoint = aStartPoint.template To<EditorDOMPoint>();
-  auto endPoint = aEndPoint.template To<EditorDOMPoint>();
-  AutoRangeArray::UpdatePointsToSelectAllChildrenIfCollapsedInEmptyBlockElement(
-      startPoint, endPoint, *editingHost);
-
-  
-  
-  
-
-  
-  
-  
-  
-
-  startPoint = AutoRangeArray::
-      GetPointAtFirstContentOfLineOrParentBlockIfFirstContentOfBlock(
-          startPoint, aEditSubAction, *editingHost);
-  
-  
-  
-  
-  
-  if (!startPoint.GetChildOrContainerIfDataNode() ||
-      !startPoint.GetChildOrContainerIfDataNode()->IsInclusiveDescendantOf(
-          editingHost)) {
-    return nullptr;
-  }
-  endPoint = AutoRangeArray::GetPointAfterFollowingLineBreakOrAtFollowingBlock(
-      endPoint, *editingHost);
-  const EditorDOMPoint lastRawPoint =
-      endPoint.IsStartOfContainer() ? endPoint : endPoint.PreviousPoint();
-  
-  
-  
-  
-  
   if (!lastRawPoint.GetChildOrContainerIfDataNode() ||
       !lastRawPoint.GetChildOrContainerIfDataNode()->IsInclusiveDescendantOf(
           editingHost)) {

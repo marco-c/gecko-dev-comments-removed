@@ -584,30 +584,14 @@ class MOZ_STACK_CLASS AutoRangeArray final {
 
 
 
-
-
-
-
-
-  static EditorDOMPoint
-  GetPointAtFirstContentOfLineOrParentBlockIfFirstContentOfBlock(
-      const EditorDOMPoint& aPointInLine, EditSubAction aEditSubAction,
+  static already_AddRefed<nsRange>
+  CreateRangeWrappingStartAndEndLinesContainingBoundaries(
+      const EditorDOMRange& aRange, EditSubAction aEditSubAction,
       const dom::Element& aEditingHost);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  static EditorDOMPoint GetPointAfterFollowingLineBreakOrAtFollowingBlock(
-      const EditorDOMPoint& aPoint, const dom::Element& aEditingHost);
+  static already_AddRefed<nsRange>
+  CreateRangeWrappingStartAndEndLinesContainingBoundaries(
+      const EditorDOMPoint& aStartPoint, const EditorDOMPoint& aEndPoint,
+      EditSubAction aEditSubAction, const dom::Element& aEditingHost);
 
  private:
   AutoTArray<mozilla::OwningNonNull<nsRange>, 8> mRanges;
