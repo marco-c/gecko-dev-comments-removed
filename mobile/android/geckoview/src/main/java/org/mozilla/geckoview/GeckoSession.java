@@ -5531,6 +5531,15 @@ public class GeckoSession {
 
 
 
+
+      @Deprecated
+      @DeprecationSchedule(id = "media-source-rawId", version = 100)
+      public final @NonNull String rawId;
+
+      
+
+
+
       public final @Nullable String name;
 
       
@@ -5576,6 +5585,7 @@ public class GeckoSession {
 
        MediaSource(final GeckoBundle media) {
         id = media.getString("id");
+        rawId = id;
         name = media.getString("name");
         source = getSourceFromString(media.getString("mediaSource"));
         type = getTypeFromString(media.getString("type"));
@@ -5584,6 +5594,7 @@ public class GeckoSession {
       
       protected MediaSource() {
         id = null;
+        rawId = null;
         name = null;
         source = SOURCE_CAMERA;
         type = TYPE_VIDEO;
