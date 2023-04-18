@@ -184,7 +184,7 @@ class Registers {
       (1 << Registers::t8) |                           
       (1 << Registers::t9) |                           
       (1 << Registers::k0) | (1 << Registers::k1) | (1 << Registers::gp) |
-      (1 << Registers::sp) | (1 << Registers::ra);
+      (1 << Registers::sp) | (1 << Registers::ra) | (1 << Registers::fp);
 
   
   static const SetType JSCallMask;

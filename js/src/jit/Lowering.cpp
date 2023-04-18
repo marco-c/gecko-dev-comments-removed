@@ -6543,9 +6543,7 @@ void LIRGenerator::visitIonToWasmCall(MIonToWasmCall* ins) {
 
   
   
-  LDefinition fp = gen->isProfilerInstrumentationEnabled()
-                       ? LDefinition::BogusTemp()
-                       : tempFixed(FramePointer);
+  LDefinition fp = LDefinition::BogusTemp();
 
   
   

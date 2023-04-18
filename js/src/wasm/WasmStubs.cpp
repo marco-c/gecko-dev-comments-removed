@@ -1444,26 +1444,14 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
 void wasm::GenerateDirectCallFromJit(MacroAssembler& masm, const FuncExport& fe,
                                      const Instance& inst,
                                      const JitCallStackArgVector& stackArgs,
-                                     bool profilingEnabled, Register scratch,
-                                     uint32_t* callOffset) {
+                                     Register scratch, uint32_t* callOffset) {
   MOZ_ASSERT(!IsCompilingWasm());
 
   size_t framePushedAtStart = masm.framePushed();
 
-  if (profilingEnabled) {
-    
-    
-    masm.Push(FramePointer);
-  } else {
-#ifdef DEBUG
-    
-    
-    AllocatableRegisterSet set(RegisterSet::All());
-    TakeJitRegisters( false, &set);
-    MOZ_ASSERT(set.has(FramePointer),
-               "replace the whole if branch by the then body when this fails");
-#endif
-  }
+  
+  
+  masm.Push(FramePointer);
 
   
   
@@ -1680,9 +1668,7 @@ void wasm::GenerateDirectCallFromJit(MacroAssembler& masm, const FuncExport& fe,
   masm.leaveExitFrame(bytesNeeded + ExitFrameLayout::Size());
 
   
-  if (profilingEnabled) {
-    masm.Pop(FramePointer);
-  }
+  masm.Pop(FramePointer);
 
   MOZ_ASSERT(framePushedAtStart == masm.framePushed());
 }

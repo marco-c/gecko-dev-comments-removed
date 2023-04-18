@@ -2084,7 +2084,7 @@ void MacroAssembler::generateBailoutTail(Register scratch,
 
     
     AllocatableGeneralRegisterSet enterRegs(GeneralRegisterSet::All());
-    enterRegs.take(BaselineFrameReg);
+    enterRegs.takeUnchecked(BaselineFrameReg);
     Register jitcodeReg = enterRegs.takeAny();
 
     pop(jitcodeReg);

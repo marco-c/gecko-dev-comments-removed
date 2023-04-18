@@ -357,10 +357,12 @@ using JitCallStackArgVector = Vector<JitCallStackArg, 4, SystemAllocPolicy>;
 
 
 
-extern void GenerateDirectCallFromJit(
-    jit::MacroAssembler& masm, const FuncExport& fe, const Instance& inst,
-    const JitCallStackArgVector& stackArgs, bool profilingEnabled,
-    jit::Register scratch, uint32_t* callOffset);
+extern void GenerateDirectCallFromJit(jit::MacroAssembler& masm,
+                                      const FuncExport& fe,
+                                      const Instance& inst,
+                                      const JitCallStackArgVector& stackArgs,
+                                      jit::Register scratch,
+                                      uint32_t* callOffset);
 
 }  
 }  
