@@ -21,6 +21,7 @@ use crate::image_source::{resolve_image, resolve_cached_render_task};
 use crate::util::VecHelper;
 use smallvec::SmallVec;
 use std::mem;
+use topological_sort::TopologicalSort;
 
 use crate::render_target::{RenderTargetList, ColorRenderTarget};
 use crate::render_target::{PictureCacheTarget, TextureCacheRenderTarget, AlphaRenderTarget};
@@ -303,31 +304,66 @@ impl RenderTaskGraphBuilder {
         
         
         
+        
+        
 
         let mut pass_count = 0;
+        let mut passes = Vec::new();
+        let mut task_sorter = TopologicalSort::<RenderTaskId>::new();
 
         
-        for root_id in &self.roots {
-            assign_render_pass(
-                *root_id,
-                PassId(0),
-                &mut graph,
-                &mut pass_count,
-            );
+        for (parent_id, task) in graph.tasks.iter().enumerate() {
+            let parent_id = RenderTaskId { index: parent_id as u32 };
+
+            for child_id in &task.children {
+                task_sorter.add_dependency(
+                    parent_id,
+                    *child_id,
+                );
+            }
         }
 
         
-        
-        for root_id in &self.roots {
-            assign_free_pass(
-                *root_id,
-                PassId(0),
-                &mut graph,
-            );
+        loop {
+            
+            let tasks = task_sorter.pop_all();
+
+            
+            if tasks.is_empty() {
+                
+                
+                assert!(task_sorter.is_empty());
+                break;
+            } else {
+                
+                for task_id in &tasks {
+                    graph.tasks[task_id.index as usize].render_on = PassId(pass_count);
+                }
+
+                
+                passes.push(tasks);
+                pass_count += 1;
+            }
         }
 
         
-        for _ in 0 .. pass_count+1 {
+        pass_count = pass_count.max(1);
+
+        
+        
+        
+        
+        for pass in passes {
+            for task_id in pass {
+                assign_free_pass(
+                    task_id,
+                    &mut graph,
+                );
+            }
+        }
+
+        
+        for _ in 0 .. pass_count {
             graph.passes.push(Pass {
                 task_ids: Vec::new(),
                 sub_passes: Vec::new(),
@@ -690,69 +726,12 @@ impl std::ops::Index<RenderTaskId> for RenderTaskGraph {
     }
 }
 
-
-fn assign_render_pass(
-    id: RenderTaskId,
-    pass: PassId,
-    graph: &mut RenderTaskGraph,
-    pass_count: &mut usize,
-) {
-    let task = &mut graph.tasks[id.index as usize];
-
-    
-    
-    if task.render_on > pass {
-        return;
-    }
-
-    let next_pass = if task.kind.should_advance_pass() {
-        
-        *pass_count = pass.0.max(*pass_count);
-        PassId(pass.0 + 1)
-    } else {
-        pass
-    };
-
-    
-    
-    
-    task.render_on = task.render_on.max(pass);
-
-    
-    
-    let mut child_task_ids: SmallVec<[RenderTaskId; 8]> = SmallVec::new();
-    child_task_ids.extend_from_slice(&task.children);
-
-    for child_id in child_task_ids {
-        assign_render_pass(
-            child_id,
-            next_pass,
-            graph,
-            pass_count,
-        );
-    }
-}
-
 fn assign_free_pass(
     id: RenderTaskId,
-    pass: PassId,
     graph: &mut RenderTaskGraph,
 ) {
     let task = &mut graph.tasks[id.index as usize];
-
-    
-    
-    if task.free_after.0 + 1 < pass.0 {
-        return;
-    }
-
     let render_on = task.render_on;
-
-    let next_pass = if task.kind.should_advance_pass() {
-        PassId(pass.0 + 1)
-    } else {
-        pass
-    };
 
     let mut child_task_ids: SmallVec<[RenderTaskId; 8]> = SmallVec::new();
     child_task_ids.extend_from_slice(&task.children);
@@ -791,12 +770,6 @@ fn assign_free_pass(
                 }
             }
         }
-
-        assign_free_pass(
-            child_id,
-            next_pass,
-            graph,
-        );
     }
 }
 
