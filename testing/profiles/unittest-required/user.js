@@ -198,7 +198,6 @@ user_pref("remote.prefs.recommended", false);
 user_pref("security.default_personal_cert", "Select Automatically"); 
 
 user_pref("security.notification_enable_delay", 0);
-user_pref("security.warn_viewing_mixed", false);
 
 user_pref("services.settings.server", "http://{server}/dummy-kinto/v1");
 user_pref("shell.checkDefaultClient", false);

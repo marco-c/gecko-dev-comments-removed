@@ -343,8 +343,6 @@ pref("app.channelURL", "https://www.mozilla.org/%LOCALE%/firefox/channel/");
 
 pref("security.alternate_certificate_error_page", "certerror");
 
-pref("security.warn_viewing_mixed", false); 
-
 
 pref("security.cert_pinning.enforcement_level", 1);
 
