@@ -11,8 +11,8 @@ font_access_test(async t => {
   
   
   
-  const fonts = await navigator.fonts.query();
+  const fonts = await self.queryLocalFonts();
   const fontNames = fonts.map(fontData => fontData.postscriptName);
   const expectedFontNames = [...fontNames].sort();
   assert_array_equals(fontNames, expectedFontNames);
-}, 'query(): fonts are sorted');
+}, 'queryLocalFonts(): fonts are sorted');

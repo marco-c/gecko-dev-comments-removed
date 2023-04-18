@@ -7,7 +7,7 @@
 'use strict';
 
 font_access_test(async t => {
-  const fonts = await navigator.fonts.query();
+  const fonts = await self.queryLocalFonts();
 
   
   const testData = getTestData();
