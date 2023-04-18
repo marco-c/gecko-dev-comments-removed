@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=338583
+-->
 <head>
   <meta http-equiv='Content-Type' content='text/html; charset=utf-8'>
   <title>Test for Bug 338583</title>
@@ -338,7 +338,7 @@
   }
 
   function doTest3_g(test_id) {
-    gEventSourceObj3_g = new EventSource("http://hdfskjghsbg.jtiyoejowe.dafsgbhjab.com");
+    gEventSourceObj3_g = new EventSource("http://hdfskjghsbg.jtiyoejowe.example.com");
 
     gEventSourceObj3_g.onmessage = fn_onmessage;
     gEventSourceObj3_g.hits = [];
