@@ -405,11 +405,11 @@ class ExtensionAPIPersistent extends ExtensionAPI {
 
 
 
-  registerEventListener(options) {
-    let register = this.getEventRegistrar(options.event);
-    if (register) {
-      return register(options).unregister;
-    }
+
+
+  registerEventListener(options, params) {
+    const apiRegistar = this.getEventRegistrar(options.event);
+    return apiRegistar?.(options, params).unregister;
   }
 
   
@@ -422,10 +422,8 @@ class ExtensionAPIPersistent extends ExtensionAPI {
 
 
   primeListener(event, fire, params, isInStartup) {
-    let register = this.getEventRegistrar(event);
-    if (register) {
-      return register({ fire, isInStartup }, ...params);
-    }
+    const apiRegistar = this.getEventRegistrar(event);
+    return apiRegistar?.({ fire, isInStartup }, params);
   }
 }
 
@@ -2244,8 +2242,11 @@ class EventManager {
     }
 
     if (!this.register && extensionApi instanceof ExtensionAPIPersistent) {
-      this.register = fire => {
-        return extensionApi.registerEventListener({ context, event, fire });
+      this.register = (fire, ...params) => {
+        return extensionApi.registerEventListener(
+          { context, event, fire },
+          params
+        );
       };
     }
     if (!this.register) {
