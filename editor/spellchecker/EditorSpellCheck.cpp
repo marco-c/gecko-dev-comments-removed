@@ -603,10 +603,9 @@ EditorSpellCheck::SetCurrentDictionaries(
     mEditor->GetFlags(&flags);
     if (!(flags & nsIEditor::eEditorMailMask)) {
       if (!aDictionaries.IsEmpty() &&
-          (mPreferredLang.IsEmpty() ||
-           (aDictionaries.Length() == 1 &&
-            !mPreferredLang.Equals(aDictionaries[0],
-                                   nsCaseInsensitiveCStringComparator)))) {
+          (mPreferredLang.IsEmpty() || aDictionaries.Length() > 1 ||
+           !mPreferredLang.Equals(aDictionaries[0],
+                                  nsCaseInsensitiveCStringComparator))) {
         
         
         
