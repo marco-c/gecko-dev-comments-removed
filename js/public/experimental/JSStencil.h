@@ -180,6 +180,12 @@ extern JS_PUBLIC_API already_AddRefed<Stencil> FinishCompileToStencilOffThread(
     JSContext* cx, OffThreadToken* token,
     InstantiationStorage* storage = nullptr);
 
+
+
+
+extern JS_PUBLIC_API bool StartIncrementalEncoding(JSContext* cx,
+                                                   RefPtr<Stencil>&& stencil);
+
 extern JS_PUBLIC_API OffThreadToken* DecodeMultiOffThreadStencils(
     JSContext* cx, const ReadOnlyCompileOptions& options,
     mozilla::Vector<TranscodeSource>& sources,

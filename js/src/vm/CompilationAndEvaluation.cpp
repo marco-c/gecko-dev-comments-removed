@@ -21,9 +21,10 @@
 #include "frontend/CompilationStencil.h"  
 #include "frontend/Parser.h"       
 #include "js/CharacterEncoding.h"  
-#include "js/friend/ErrorMessages.h"  
-#include "js/RootingAPI.h"            
-#include "js/SourceText.h"            
+#include "js/experimental/JSStencil.h"  
+#include "js/friend/ErrorMessages.h"    
+#include "js/RootingAPI.h"              
+#include "js/SourceText.h"              
 #include "js/TypeDecls.h"          
 #include "js/Utility.h"            
 #include "js/Value.h"              
@@ -132,6 +133,32 @@ JSScript* JS::CompileAndStartIncrementalEncoding(
     JSContext* cx, const ReadOnlyCompileOptions& options,
     SourceText<Utf8Unit>& srcBuf) {
   return CompileSourceBufferAndStartIncrementalEncoding(cx, options, srcBuf);
+}
+
+JS_PUBLIC_API bool JS::StartIncrementalEncoding(JSContext* cx,
+                                                RefPtr<JS::Stencil>&& stencil) {
+  MOZ_ASSERT(cx);
+  MOZ_ASSERT(!stencil->hasMultipleReference());
+
+  auto* source = stencil->source.get();
+
+  UniquePtr<frontend::ExtensibleCompilationStencil> initial;
+  if (stencil->hasOwnedBorrow()) {
+    initial.reset(stencil->takeOwnedBorrow());
+    stencil = nullptr;
+  } else {
+    initial = cx->make_unique<frontend::ExtensibleCompilationStencil>(
+        cx, stencil->source);
+    if (!initial) {
+      return false;
+    }
+
+    if (!initial->steal(cx, std::move(stencil))) {
+      return false;
+    }
+  }
+
+  return source->startIncrementalEncoding(cx, std::move(initial));
 }
 
 JSScript* JS::CompileUtf8File(JSContext* cx,
