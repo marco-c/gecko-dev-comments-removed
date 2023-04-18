@@ -629,10 +629,11 @@ enum class StyleImeMode : uint8_t {
 enum class StyleWindowShadow : uint8_t {
   None,
   Default,
+
+  
+  
   Menu,
   Tooltip,
-  Sheet,
-  Cliprounded,  
 };
 
 

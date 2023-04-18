@@ -4019,8 +4019,6 @@ static const NSUInteger kWindowShadowOptionsTooltipMojaveOrLater = 4;
 
     case StyleWindowShadow::Default:  
     case StyleWindowShadow::Menu:
-    case StyleWindowShadow::Sheet:
-    case StyleWindowShadow::Cliprounded:  
       return kWindowShadowOptionsMenu;
 
     case StyleWindowShadow::Tooltip:

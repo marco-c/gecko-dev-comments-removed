@@ -368,10 +368,8 @@ nsresult nsMenuPopupFrame::CreateWidgetForView(nsView* aView) {
   widgetData.mPopupLevel = PopupLevel(widgetData.mNoAutoHide);
 
   
-  
   widgetData.mDropShadow =
-      !(mode == eTransparencyTransparent || tag == nsGkAtoms::menulist) ||
-      StyleUIReset()->mWindowShadow == StyleWindowShadow::Cliprounded;
+      !(mode == eTransparencyTransparent || tag == nsGkAtoms::menulist);
 
   
   

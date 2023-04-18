@@ -616,7 +616,6 @@ class nsWindow final : public nsBaseWidget {
 
 
   void ClearThemeRegion();
-  void SetThemeRegion();
 
   
 

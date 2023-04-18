@@ -2069,13 +2069,6 @@ class nsLayoutUtils {
 
 
 
-  static mozilla::LayoutDeviceSize GetBorderRadiusForMenuDropShadow(
-      const nsIFrame*);
-
-  
-
-
-
 
 
 
