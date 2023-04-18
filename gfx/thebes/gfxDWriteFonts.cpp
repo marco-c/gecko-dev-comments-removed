@@ -89,7 +89,21 @@ gfxDWriteFont::gfxDWriteFont(const RefPtr<UnscaledFontDWrite>& aUnscaledFont,
   
   mFontFace->QueryInterface(__uuidof(IDWriteFontFace1),
                             (void**)getter_AddRefs(mFontFace1));
-
+  
+  
+  if (aFontStyle->NeedsSyntheticBold(aFontEntry)) {
+    switch (StaticPrefs::gfx_font_rendering_directwrite_bold_simulation()) {
+      case 0:  
+        mApplySyntheticBold = true;
+        break;
+      case 1:  
+        mApplySyntheticBold = aFontEntry->mIsDataUserFont;
+        break;
+      default:  
+        
+        break;
+    }
+  }
   ComputeMetrics(anAAOption);
 }
 
@@ -450,6 +464,19 @@ void gfxDWriteFont::ComputeMetrics(AntialiasOption anAAOption) {
 
   SanitizeMetrics(mMetrics, GetFontEntry()->mIsBadUnderlineFont);
 
+  if (ApplySyntheticBold()) {
+    auto delta = GetSyntheticBoldOffset();
+    mMetrics->spaceWidth += delta;
+    mMetrics->aveCharWidth += delta;
+    mMetrics->maxAdvance += delta;
+    if (mMetrics->zeroWidth > 0) {
+      mMetrics->zeroWidth += delta;
+    }
+    if (mMetrics->ideographicWidth > 0) {
+      mMetrics->ideographicWidth += delta;
+    }
+  }
+
 #if 0
     printf("Font: %p (%s) size: %f\n", this,
            NS_ConvertUTF16toUTF8(GetName()).get(), mStyle.size);
@@ -770,7 +797,7 @@ already_AddRefed<ScaledFont> gfxDWriteFont::GetScaledFont(
     const gfxFontStyle* fontStyle = GetStyle();
     azureScaledFont = Factory::CreateScaledFontForDWriteFont(
         mFontFace, fontStyle, GetUnscaledFont(), GetAdjustedSize(),
-        useEmbeddedBitmap, forceGDI);
+        useEmbeddedBitmap, ApplySyntheticBold(), forceGDI);
     if (!azureScaledFont) {
       return nullptr;
     }
