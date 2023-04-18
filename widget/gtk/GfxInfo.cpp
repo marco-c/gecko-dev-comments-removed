@@ -825,6 +825,31 @@ const nsTArray<GfxDriverInfo>& GfxInfo::GetGfxDriverInfo() {
     
     APPEND_TO_DRIVER_BLOCKLIST_EXT(
         OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
+        DesktopEnvironment::All, WindowProtocol::All, DriverVendor::MesaAll,
+        DeviceFamily::All, nsIGfxInfo::FEATURE_VAAPI,
+        nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION, DRIVER_LESS_THAN,
+        V(21, 0, 0, 0), "FEATURE_ROLLOUT_VAAPI_MESA", "Mesa 21.0.0.0");
+
+    
+    APPEND_TO_DRIVER_BLOCKLIST_EXT(
+        OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
+        DesktopEnvironment::All, WindowProtocol::All, DriverVendor::All,
+        DeviceFamily::NvidiaAll, nsIGfxInfo::FEATURE_VAAPI,
+        nsIGfxInfo::FEATURE_BLOCKED_DEVICE, DRIVER_COMPARISON_IGNORED,
+        V(0, 0, 0, 0), "FEATURE_FAILURE_VAAPI_NO_LINUX_NVIDIA", "");
+
+    
+    APPEND_TO_DRIVER_BLOCKLIST_EXT(
+        OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
+        DesktopEnvironment::All, WindowProtocol::All, DriverVendor::NonMesaAll,
+        DeviceFamily::AtiAll, nsIGfxInfo::FEATURE_VAAPI,
+        nsIGfxInfo::FEATURE_BLOCKED_DEVICE, DRIVER_COMPARISON_IGNORED,
+        V(0, 0, 0, 0), "FEATURE_FAILURE_VAAPI_NO_LINUX_AMD", "");
+
+    
+    
+    APPEND_TO_DRIVER_BLOCKLIST_EXT(
+        OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
         DesktopEnvironment::All, WindowProtocol::X11, DriverVendor::NonMesaAll,
         DeviceFamily::NvidiaAll, nsIGfxInfo::FEATURE_WEBRENDER_PARTIAL_PRESENT,
         nsIGfxInfo::FEATURE_BLOCKED_DEVICE, DRIVER_COMPARISON_IGNORED,
