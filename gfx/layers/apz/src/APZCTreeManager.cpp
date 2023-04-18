@@ -1322,8 +1322,10 @@ HitTestingTreeNode* APZCTreeManager::PrepareNodeForLayer(
     
     
     
-    if (!aAncestorTransform.CombinedTransform().FuzzyEqualsMultiplicative(
-            apzc->GetAncestorTransform())) {
+    auto ancestorTransform = aAncestorTransform.CombinedTransform();
+    auto existingAncestorTransform = apzc->GetAncestorTransform();
+    if (!ancestorTransform.FuzzyEqualsMultiplicative(
+            existingAncestorTransform)) {
       typedef TreeBuildingState::DeferredTransformMap::value_type PairType;
       if (!aAncestorTransform.ContainsPerspectiveTransform() &&
           !apzc->AncestorTransformContainsPerspective()) {
@@ -1333,9 +1335,16 @@ HitTestingTreeNode* APZCTreeManager::PrepareNodeForLayer(
         
         
         if (!aLayer.Metadata().IsPaginatedPresentation()) {
-          MOZ_ASSERT(false,
-                     "Two layers that scroll together have different ancestor "
-                     "transforms");
+          if (ancestorTransform.IsFinite() &&
+              existingAncestorTransform.IsFinite()) {
+            MOZ_ASSERT(
+                false,
+                "Two layers that scroll together have different ancestor "
+                "transforms");
+          } else {
+            MOZ_ASSERT(ancestorTransform.IsFinite() ==
+                       existingAncestorTransform.IsFinite());
+          }
         }
       } else if (!aAncestorTransform.ContainsPerspectiveTransform()) {
         aState.mPerspectiveTransformsDeferredToChildren.insert(

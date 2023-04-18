@@ -1510,6 +1510,18 @@ class Matrix4x4Typed {
     _44 = UnspecifiedNaN<T>();
   }
 
+  
+  bool IsFinite() const {
+    return mozilla::IsFinite(_11) && mozilla::IsFinite(_12) &&
+           mozilla::IsFinite(_13) && mozilla::IsFinite(_14) &&
+           mozilla::IsFinite(_21) && mozilla::IsFinite(_22) &&
+           mozilla::IsFinite(_23) && mozilla::IsFinite(_24) &&
+           mozilla::IsFinite(_31) && mozilla::IsFinite(_32) &&
+           mozilla::IsFinite(_33) && mozilla::IsFinite(_34) &&
+           mozilla::IsFinite(_41) && mozilla::IsFinite(_42) &&
+           mozilla::IsFinite(_43) && mozilla::IsFinite(_44);
+  }
+
   void SkewXY(double aXSkew, double aYSkew) {
     
     T tanX = SafeTangent(aXSkew);
