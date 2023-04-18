@@ -46,6 +46,7 @@
 #define DOC_ELEM_INSERTED_TOPIC "document-element-inserted"
 #define CONTENT_DOCUMENT_LOADED_TOPIC "content-document-loaded"
 #define CACHE_WRITE_TOPIC "browser-idle-startup-tasks-finished"
+#define XPCOM_SHUTDOWN_TOPIC "xpcom-shutdown"
 #define CACHE_INVALIDATE_TOPIC "startupcache-invalidate"
 
 
@@ -235,22 +236,14 @@ ScriptPreloader::ScriptPreloader(AutoMemMap* cacheData)
     obs->AddObserver(this, CACHE_WRITE_TOPIC, false);
   }
 
+  obs->AddObserver(this, XPCOM_SHUTDOWN_TOPIC, false);
   obs->AddObserver(this, CACHE_INVALIDATE_TOPIC, false);
 }
 
 ScriptPreloader::~ScriptPreloader() { Cleanup(); }
 
 void ScriptPreloader::Cleanup() {
-  
-  
-  
-  {
-    MonitorAutoLock mal(mMonitor);
-    FinishPendingParses(mal);
-
-    mScripts.Clear();
-  }
-
+  mScripts.Clear();
   UnregisterWeakMemoryReporter(this);
 }
 
@@ -340,6 +333,11 @@ nsresult ScriptPreloader::Observe(nsISupports* subject, const char* topic,
     FinishContentStartup();
   } else if (!strcmp(topic, "timer-callback")) {
     FinishContentStartup();
+  } else if (!strcmp(topic, XPCOM_SHUTDOWN_TOPIC)) {
+    
+    
+    MonitorAutoLock mal(mMonitor);
+    FinishPendingParses(mal);
   } else if (!strcmp(topic, CACHE_INVALIDATE_TOPIC)) {
     InvalidateCache();
   }
