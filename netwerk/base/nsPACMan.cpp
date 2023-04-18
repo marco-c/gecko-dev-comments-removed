@@ -729,7 +729,7 @@ void nsPACMan::OnLoadFailure() {
   mScheduledReload = TimeStamp::Now() + TimeDuration::FromSeconds(interval);
 
   LOG(("OnLoadFailure: retry in %d seconds (%d fails)\n", interval,
-       mLoadFailureCount));
+       (uint32_t)mLoadFailureCount));
 
   
   
