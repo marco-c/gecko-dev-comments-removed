@@ -1,0 +1,2 @@
+
+idl_test_shadowrealm(["hr-time"], ["html", "dom"]);
