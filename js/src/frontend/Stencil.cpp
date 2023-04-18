@@ -1315,9 +1315,6 @@ static bool CreateLazyScript(JSContext* cx,
 
 
 
-
-
-
 static JSFunction* CreateFunctionFast(JSContext* cx,
                                       CompilationAtomCache& atomCache,
                                       HandleShape shape,
