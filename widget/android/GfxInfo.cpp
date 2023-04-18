@@ -655,6 +655,23 @@ nsresult GfxInfo::GetFeatureStatusImpl(
       }
       return NS_OK;
     }
+
+    if (aFeature == FEATURE_WEBRENDER_PARTIAL_PRESENT) {
+      
+      
+      
+      const bool isMaliT =
+          mGLStrings->Renderer().Find("Mali-T",  true) >= 0;
+      const bool isAdreno3xx = mGLStrings->Renderer().Find(
+                                   "Adreno (TM) 3",  true) >= 0;
+      if (isMaliT || isAdreno3xx) {
+        *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
+        aFailureId = "FEATURE_FAILURE_BUG_1680087_1695771_1707815";
+      } else {
+        *aStatus = nsIGfxInfo::FEATURE_STATUS_OK;
+      }
+      return NS_OK;
+    }
   }
 
   if (aFeature == FEATURE_GL_SWIZZLE) {

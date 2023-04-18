@@ -35,6 +35,8 @@ void gfxConfigManager::Init() {
       StaticPrefs::gfx_webrender_compositor_force_enabled_AtStartup();
   mGPUProcessAllowSoftware =
       StaticPrefs::layers_gpu_process_allow_software_AtStartup();
+  mWrForcePartialPresent =
+      StaticPrefs::gfx_webrender_force_partial_present_AtStartup();
   mWrPartialPresent =
       StaticPrefs::gfx_webrender_max_partial_present_rects_AtStartup() > 0;
   EmplaceUserPref(StaticPrefs::GetPrefName_gfx_webrender_program_binary_disk(),
@@ -330,23 +332,14 @@ void gfxConfigManager::ConfigureWebRender() {
 
   
   
-  if (mWrPartialPresent) {
-    if (mFeatureWr->IsEnabled() || mFeatureWrSoftware->IsEnabled()) {
-      mFeatureWrPartial->EnableByDefault();
-
-      nsString adapter;
-      mGfxInfo->GetAdapterDeviceID(adapter);
-      
-      
-      
-      if (adapter.Find("Mali-T",  true) >= 0 ||
-          adapter.Find("Adreno (TM) 3",  true) >= 0) {
-        mFeatureWrPartial->Disable(
-            FeatureStatus::Blocked, "Partial present blocked",
-            "FEATURE_FAILURE_PARTIAL_PRESENT_BLOCKED"_ns);
-      }
-    }
+  mFeatureWrPartial->SetDefault(mWrPartialPresent, FeatureStatus::Disabled,
+                                "User disabled via pref");
+  if (mWrForcePartialPresent) {
+    mFeatureWrPartial->UserForceEnable("Force enabled by pref");
   }
+
+  ConfigureFromBlocklist(nsIGfxInfo::FEATURE_WEBRENDER_PARTIAL_PRESENT,
+                         mFeatureWrPartial);
 
   mFeatureWrShaderCache->SetDefaultFromPref(
       StaticPrefs::GetPrefName_gfx_webrender_program_binary_disk(), true,
