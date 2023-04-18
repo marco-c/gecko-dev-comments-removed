@@ -913,6 +913,14 @@ bool ScriptLoader::ProcessExternalScript(nsIScriptElement* aElement,
   LOG(("ScriptLoader (%p): Process external script for element %p", this,
        aElement));
 
+  
+  if (aScriptKind == ScriptKind::eImportMap) {
+    NS_DispatchToCurrentThread(
+        NewRunnableMethod("nsIScriptElement::FireErrorEvent", aElement,
+                          &nsIScriptElement::FireErrorEvent));
+    return false;
+  }
+
   nsCOMPtr<nsIURI> scriptURI = aElement->GetScriptURI();
   if (!scriptURI) {
     
