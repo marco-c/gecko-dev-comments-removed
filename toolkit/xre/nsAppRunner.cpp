@@ -4162,26 +4162,7 @@ bool IsWaylandEnabled() {
 #endif
 
 #if defined(MOZ_UPDATER) && !defined(MOZ_WIDGET_ANDROID)
-enum struct ShouldNotProcessUpdatesReason {
-  DevToolsLaunching,
-  NotAnUpdatingTask,
-  OtherInstanceRunning,
-};
-
-const char* ShouldNotProcessUpdatesReasonAsString(
-    ShouldNotProcessUpdatesReason aReason) {
-  switch (aReason) {
-    case ShouldNotProcessUpdatesReason::DevToolsLaunching:
-      return "DevToolsLaunching";
-    case ShouldNotProcessUpdatesReason::NotAnUpdatingTask:
-      return "NotAnUpdatingTask";
-    case ShouldNotProcessUpdatesReason::OtherInstanceRunning:
-      return "OtherInstanceRunning";
-  }
-}
-
-Maybe<ShouldNotProcessUpdatesReason> ShouldNotProcessUpdates(
-    nsXREDirProvider& aDirProvider) {
+bool ShouldProcessUpdates(nsXREDirProvider& aDirProvider) {
   
   
 
@@ -4196,8 +4177,8 @@ Maybe<ShouldNotProcessUpdatesReason> ShouldNotProcessUpdates(
   const char* chromeParam = nullptr;
   if (ARG_FOUND == CheckArg("chrome", &chromeParam, CheckArgFlag::None)) {
     if (!chromeParam || !strcmp(BROWSER_TOOLBOX_WINDOW_URL, chromeParam)) {
-      NS_WARNING("ShouldNotProcessUpdates(): DevToolsLaunching");
-      return Some(ShouldNotProcessUpdatesReason::DevToolsLaunching);
+      NS_WARNING("!ShouldProcessUpdates(): launching devtools");
+      return false;
     }
   }
 
@@ -4205,25 +4186,7 @@ Maybe<ShouldNotProcessUpdatesReason> ShouldNotProcessUpdates(
   
   
   
-  Maybe<nsCString> backgroundTasks = BackgroundTasks::GetBackgroundTasks();
-  if (backgroundTasks.isSome()) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (!BackgroundTasks::IsUpdatingTaskName(backgroundTasks.ref())) {
-      NS_WARNING("ShouldNotProcessUpdates(): NotAnUpdatingTask");
-      return Some(ShouldNotProcessUpdatesReason::NotAnUpdatingTask);
-    }
-
+  if (BackgroundTasks::IsBackgroundTaskMode()) {
     
     
     
@@ -4233,7 +4196,7 @@ Maybe<ShouldNotProcessUpdatesReason> ShouldNotProcessUpdates(
                                        getter_AddRefs(anAppFile));
     if (NS_FAILED(rv) || !anAppFile) {
       
-      return Nothing();
+      return true;
     }
 
     auto updateSyncManager = new nsUpdateSyncManager(anAppFile);
@@ -4241,13 +4204,13 @@ Maybe<ShouldNotProcessUpdatesReason> ShouldNotProcessUpdates(
     bool otherInstance = false;
     updateSyncManager->IsOtherInstanceRunning(&otherInstance);
     if (otherInstance) {
-      NS_WARNING("ShouldNotProcessUpdates(): OtherInstanceRunning");
-      return Some(ShouldNotProcessUpdatesReason::OtherInstanceRunning);
+      NS_WARNING("!ShouldProcessUpdates(): other instance is running");
+      return false;
     }
   }
 #  endif
 
-  return Nothing();
+  return true;
 }
 #endif
 
@@ -4611,9 +4574,7 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
 #endif
 
 #if defined(MOZ_UPDATER) && !defined(MOZ_WIDGET_ANDROID)
-  Maybe<ShouldNotProcessUpdatesReason> shouldNotProcessUpdatesReason =
-      ShouldNotProcessUpdates(mDirProvider);
-  if (shouldNotProcessUpdatesReason.isNothing()) {
+  if (ShouldProcessUpdates(mDirProvider)) {
     
     nsCOMPtr<nsIFile> updRoot;
     bool persistent;
@@ -4671,12 +4632,7 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
       
       
       
-
-      SaveToEnv(nsPrintfCString(
-                    "MOZ_TEST_PROCESS_UPDATES=ShouldNotProcessUpdates(): %s",
-                    ShouldNotProcessUpdatesReasonAsString(
-                        shouldNotProcessUpdatesReason.value()))
-                    .get());
+      SaveToEnv("MOZ_TEST_PROCESS_UPDATES=!ShouldProcessUpdates()");
     }
   }
 #endif
