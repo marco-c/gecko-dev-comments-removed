@@ -3,8 +3,6 @@
 
 
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 
 const PR_WRONLY = 0x2;
 const PR_CREATE_FILE = 0x8;
