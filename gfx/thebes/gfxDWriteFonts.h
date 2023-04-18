@@ -103,7 +103,11 @@ class gfxDWriteFont final : public gfxFont {
   
   
   bool mAzureScaledFontUsedClearType;
-  bool mAzureScaledFontForcedGDI;
+
+  
+  
+  
+  RefPtr<mozilla::gfx::ScaledFont> mAzureScaledFontGDI;
 
   bool UsingClearType() {
     return mozilla::gfx::gfxVars::SystemTextQuality() == CLEARTYPE_QUALITY;

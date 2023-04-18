@@ -1901,7 +1901,12 @@ class gfxFont {
   already_AddRefed<mozilla::gfx::ScaledFont> GetScaledFont(
       mozilla::gfx::DrawTarget* aDrawTarget);
 
-  void InitializeScaledFont();
+  
+  
+  
+  void InitializeScaledFont(
+      const RefPtr<mozilla::gfx::ScaledFont>& aScaledFont);
+  void InitializeScaledFont() { InitializeScaledFont(mAzureScaledFont); }
 
   bool KerningDisabled() { return mKerningSet && !mKerningEnabled; }
 
