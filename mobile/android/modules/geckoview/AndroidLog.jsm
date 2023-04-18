@@ -39,6 +39,7 @@
 
 
 
+
 if (typeof Components != "undefined") {
   
   this.EXPORTED_SYMBOLS = ["AndroidLog"];
