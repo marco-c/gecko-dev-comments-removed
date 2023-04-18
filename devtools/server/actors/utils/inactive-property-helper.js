@@ -1107,8 +1107,6 @@ class InactivePropertyHelper {
   }
 }
 
-exports.inactivePropertyHelper = new InactivePropertyHelper();
-
 
 
 
@@ -1141,3 +1139,10 @@ function allCssPropertiesExcept(propertiesToIgnore) {
 function computedStyle(node, window = node.ownerGlobal) {
   return window.getComputedStyle(node);
 }
+
+const inactivePropertyHelper = new InactivePropertyHelper();
+
+
+exports.isPropertyUsed = inactivePropertyHelper.isPropertyUsed.bind(
+  inactivePropertyHelper
+);
