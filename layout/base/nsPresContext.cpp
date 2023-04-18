@@ -1360,14 +1360,14 @@ Element* nsPresContext::UpdateViewportScrollStylesOverride() {
   }
 
   dom::Document* document = Document();
-  if (Element* fullscreenElement = document->GetFullscreenElement()) {
+  if (Element* fsElement = document->GetUnretargetedFullscreenElement()) {
     
     
     
     
     
-    if (fullscreenElement != document->GetRootElement() &&
-        fullscreenElement != mViewportScrollOverrideElement) {
+    if (fsElement != document->GetRootElement() &&
+        fsElement != mViewportScrollOverrideElement) {
       mViewportScrollStyles =
           ScrollStyles(StyleOverflow::Hidden, StyleOverflow::Hidden);
     }
