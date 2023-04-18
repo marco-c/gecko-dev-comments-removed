@@ -329,6 +329,28 @@ struct SizeSpec {
   bool HeightSpecified() const {
     return mOuterHeight.isSome() || mInnerHeight.isSome();
   }
+
+  void ScaleBy(float aOpenerZoom) {
+    if (aOpenerZoom == 1.0f) {
+      return;
+    }
+    auto Scale = [&aOpenerZoom](auto& aValue) {
+      if (aValue) {
+        *aValue = NSToIntRound(*aValue * aOpenerZoom);
+      }
+    };
+    
+    
+    Scale(mLeft);
+    Scale(mTop);
+
+    
+    
+    Scale(mOuterWidth);
+    Scale(mOuterHeight);
+    Scale(mInnerWidth);
+    Scale(mInnerHeight);
+  }
 };
 
 static void SizeOpenedWindow(nsIDocShellTreeOwner* aTreeOwner,
@@ -519,9 +541,8 @@ nsWindowWatcher::OpenWindowWithRemoteTab(nsIRemoteTab* aRemoteTab,
   if (nsCOMPtr<nsIBaseWindow> win = do_QueryInterface(parentTreeOwner)) {
     cssToDesktopScale = win->GetCSSToDesktopScale();
   }
-  cssToDesktopScale.scale *= aOpenerFullZoom;
-
   SizeSpec sizeSpec = CalcSizeSpec(features, false, cssToDesktopScale);
+  sizeSpec.ScaleBy(aOpenerFullZoom);
 
   
   
@@ -704,11 +725,9 @@ nsresult nsWindowWatcher::OpenWindowInternal(
   if (nsCOMPtr<nsIBaseWindow> win = do_QueryInterface(parentDocShell)) {
     cssToDesktopScale = win->GetCSSToDesktopScale();
   }
-  if (parentBC) {
-    cssToDesktopScale.scale *= parentBC->FullZoom();
-  }
   SizeSpec sizeSpec =
       CalcSizeSpec(features, hasChromeParent, cssToDesktopScale);
+  sizeSpec.ScaleBy(parentBC ? parentBC->FullZoom() : 1.0f);
 
   bool isPopupRequested = false;
 
