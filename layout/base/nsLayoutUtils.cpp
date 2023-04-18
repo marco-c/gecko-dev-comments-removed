@@ -9237,7 +9237,9 @@ static nsSize ComputeMaxSizeForPartialPrerender(nsIFrame* aFrame,
   
   
   result = transform2D.TransformBounds(result);
-  return nsSize(result.width, result.height);
+  return nsSize(
+      result.width < (float)nscoord_MAX ? result.width : nscoord_MAX,
+      result.height < (float)nscoord_MAX ? result.height : nscoord_MAX);
 }
 
 
