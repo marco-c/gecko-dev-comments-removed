@@ -297,7 +297,6 @@ class ScriptLoadRequest
   nsCOMPtr<nsIPrincipal> mOriginPrincipal;
   nsAutoCString
       mURL;  
-  int32_t mLineNo;
 
   
   nsCOMPtr<nsIURI> mBaseURL;
@@ -369,7 +368,7 @@ class DOMScriptLoadContext : public PreloaderBase {
     bool isInlineClassicScript = mIsInline && !mRequest->IsModuleRequest();
     GetScriptElement()->ScriptAvailable(aResult, GetScriptElement(),
                                         isInlineClassicScript, mRequest->mURI,
-                                        mRequest->mLineNo);
+                                        mLineNo);
   }
 
   
@@ -474,9 +473,12 @@ class DOMScriptLoadContext : public PreloaderBase {
                                 
                                 
 
+  int32_t mLineNo;
+
   
   bool mIsPreload;
   nsCOMPtr<Element> mElement;
+
   
   
   nsCOMPtr<nsIGlobalObject> mWebExtGlobal;
