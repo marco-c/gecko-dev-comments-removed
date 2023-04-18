@@ -191,6 +191,16 @@ extern JS_PUBLIC_API bool ModuleEvaluate(JSContext* cx,
                                          Handle<JSObject*> moduleRecord,
                                          MutableHandleValue rval);
 
+enum ModuleErrorBehaviour {
+  
+  
+  ReportModuleErrorsAsync,
+
+  
+  
+  ThrowModuleErrorsSync
+};
+
 
 
 
@@ -202,7 +212,8 @@ extern JS_PUBLIC_API bool ModuleEvaluate(JSContext* cx,
 
 
 extern JS_PUBLIC_API bool ThrowOnModuleEvaluationFailure(
-    JSContext* cx, Handle<JSObject*> evaluationPromise);
+    JSContext* cx, Handle<JSObject*> evaluationPromise,
+    ModuleErrorBehaviour errorBehaviour = ReportModuleErrorsAsync);
 
 
 
