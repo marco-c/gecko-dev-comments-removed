@@ -593,6 +593,15 @@ void nsFieldSetFrame::Reflow(nsPresContext* aPresContext,
     kidReflowInput.Init(
         aPresContext, Nothing(), Nothing(),
         Some(aReflowInput.ComputedLogicalPadding(inner->GetWritingMode())));
+
+    
+    
+    
+    
+    if (aReflowInput.mFlags.mIsBSizeSetByAspectRatio) {
+      kidReflowInput.mFlags.mIsBSizeSetByAspectRatio = true;
+    }
+
     if (kidReflowInput.mFlags.mIsTopOfPage) {
       
       kidReflowInput.mFlags.mIsTopOfPage = !legend;
