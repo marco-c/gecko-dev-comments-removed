@@ -197,7 +197,7 @@ function enumObjectProperties(objectActor, options) {
     }
   }
 
-  const safeGetterValues = objectActor._findSafeGetterValues(names, 0);
+  const safeGetterValues = objectActor._findSafeGetterValues(names);
   const safeGetterNames = Object.keys(safeGetterValues);
   
   for (const name of safeGetterNames) {

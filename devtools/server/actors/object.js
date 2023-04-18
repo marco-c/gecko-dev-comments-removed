@@ -365,12 +365,11 @@ const proto = {
 
 
 
-  
-  _findSafeGetterValues: function(ownProperties, limit = 0) {
+  _findSafeGetterValues: function(ownProperties, limit = Infinity) {
     const safeGetterValues = Object.create(null);
     let obj = this.obj;
     let level = 0,
-      i = 0;
+      currentGetterValuesCount = 0;
 
     
     if (!DevToolsUtils.isSafeDebuggerObject(obj)) {
@@ -387,8 +386,7 @@ const proto = {
     }
 
     while (obj && DevToolsUtils.isSafeDebuggerObject(obj)) {
-      const getters = this._findSafeGetters(obj);
-      for (const name of getters) {
+      for (const name of this._findSafeGetters(obj)) {
         
         
         
@@ -404,38 +402,21 @@ const proto = {
           continue;
         }
 
-        let desc = null,
-          getter = null;
-        try {
-          desc = obj.getOwnPropertyDescriptor(name);
-          getter = desc.get;
-        } catch (ex) {
+        const desc = safeGetOwnPropertyDescriptor(obj, name);
+        if (!desc?.get) {
           
-        }
-        if (!getter) {
           obj._safeGetters = null;
           continue;
         }
 
-        const result = getter.call(this.obj);
-        if (!result || "throw" in result) {
+        const getterValue = this._evaluateGetter(desc.get);
+        if (getterValue === undefined) {
           continue;
         }
 
-        let getterValue = undefined;
-        if ("return" in result) {
-          getterValue = result.return;
-        } else if ("yield" in result) {
-          getterValue = result.yield;
-        }
-
         
         
-        if (
-          getterValue &&
-          getterValue.class == "Promise" &&
-          getterValue.promiseState == "rejected"
-        ) {
+        if (isRejectedPromise(getterValue)) {
           
           
           const raw = getterValue.unsafeDereference();
@@ -447,20 +428,17 @@ const proto = {
 
         
         
-        if (getterValue !== undefined) {
-          safeGetterValues[name] = {
-            getterValue: this.hooks.createValueGrip(getterValue),
-            getterPrototypeLevel: level,
-            enumerable: desc.enumerable,
-            writable: level == 0 ? desc.writable : true,
-          };
-          if (limit && ++i == limit) {
-            break;
-          }
+        safeGetterValues[name] = {
+          getterValue: this.hooks.createValueGrip(getterValue),
+          getterPrototypeLevel: level,
+          enumerable: desc.enumerable,
+          writable: level == 0 ? desc.writable : true,
+        };
+
+        ++currentGetterValuesCount;
+        if (currentGetterValuesCount == limit) {
+          return safeGetterValues;
         }
-      }
-      if (limit && i == limit) {
-        break;
       }
 
       obj = obj.proto;
@@ -468,6 +446,26 @@ const proto = {
     }
 
     return safeGetterValues;
+  },
+
+  
+
+
+
+  _evaluateGetter(getter) {
+    const result = getter.call(this.obj);
+    if (!result || "throw" in result) {
+      return undefined;
+    }
+
+    let getterValue = undefined;
+    if ("return" in result) {
+      getterValue = result.return;
+    } else if ("yield" in result) {
+      getterValue = result.yield;
+    }
+
+    return getterValue;
   },
 
   
@@ -764,3 +762,27 @@ const proto = {
 
 exports.ObjectActor = protocol.ActorClassWithSpec(objectSpec, proto);
 exports.ObjectActorProto = proto;
+
+function safeGetOwnPropertyDescriptor(obj, name) {
+  let desc = null;
+  try {
+    desc = obj.getOwnPropertyDescriptor(name);
+  } catch (ex) {
+    
+  }
+  return desc;
+}
+
+
+
+
+
+
+
+function isRejectedPromise(getterValue) {
+  return (
+    getterValue &&
+    getterValue.class == "Promise" &&
+    getterValue.promiseState == "rejected"
+  );
+}
