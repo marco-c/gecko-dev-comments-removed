@@ -2179,10 +2179,8 @@ bool nsDisplayImage::CreateWebRenderCommands(
   
   
   
-  if (provider) {
-    aManager->CommandBuilder().PushImageProvider(
-        this, provider, drawResult, aBuilder, aResources, destRect, destRect);
-  }
+  aManager->CommandBuilder().PushImageProvider(
+      this, provider, drawResult, aBuilder, aResources, destRect, destRect);
 
   nsDisplayItemGenericImageGeometry::UpdateDrawResult(this, drawResult);
   return true;
