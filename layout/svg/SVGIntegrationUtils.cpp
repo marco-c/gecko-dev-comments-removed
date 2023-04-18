@@ -728,10 +728,6 @@ bool SVGIntegrationUtils::PaintMask(const PaintFramesParams& aParams,
     
     
     maskTarget = maskTarget->CreateClippedDrawTarget(Rect(), SurfaceFormat::A8);
-    
-    
-    
-    maskTarget->SetTransform(Matrix());
   }
 
   nsIFrame* firstFrame =
@@ -778,7 +774,9 @@ bool SVGIntegrationUtils::PaintMask(const PaintFramesParams& aParams,
     matSR.Restore();
     matSR.SetContext(&ctx);
 
-    EffectOffsets offsets = MoveContextOriginToUserSpace(frame, aParams);
+    EffectOffsets offsets = ComputeEffectOffset(frame, aParams);
+    maskTarget->SetTransform(maskTarget->GetTransform().PreTranslate(
+        ToPoint(offsets.offsetToUserSpaceInDevPx)));
     aOutIsMaskComplete = PaintMaskSurface(
         aParams, maskTarget, shouldPushOpacity ? 1.0 : maskUsage.opacity,
         firstFrame->Style(), maskFrames, offsets.offsetToUserSpace);
