@@ -12,13 +12,25 @@
 #![no_std]
 #![cfg_attr(
     feature = "nightly",
-    feature(test, core_intrinsics, dropck_eyepatch, min_specialization, extend_one)
+    feature(
+        test,
+        core_intrinsics,
+        dropck_eyepatch,
+        min_specialization,
+        extend_one,
+        allocator_api,
+        slice_ptr_get,
+        nonnull_slice_from_raw_parts,
+        maybe_uninit_array_assume_init
+    )
 )]
 #![allow(
     clippy::doc_markdown,
     clippy::module_name_repetitions,
     clippy::must_use_candidate,
-    clippy::option_if_let_else
+    clippy::option_if_let_else,
+    clippy::redundant_else,
+    clippy::manual_map
 )]
 #![warn(missing_docs)]
 #![warn(rust_2018_idioms)]
@@ -48,6 +60,11 @@ pub mod raw {
     pub use inner::*;
 
     #[cfg(feature = "rayon")]
+    
+    
+    
+    
+    
     pub mod rayon {
         pub use crate::external_trait_impls::rayon::raw::*;
     }
@@ -109,4 +126,36 @@ pub enum TryReserveError {
         
         layout: alloc::alloc::Layout,
     },
+}
+
+
+
+#[cfg(feature = "nightly")]
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub enum UnavailableMutError {
+    
+    Absent,
+    
+    
+    
+    
+    Duplicate(usize),
+}
+
+
+
+
+
+
+#[cfg(feature = "bumpalo")]
+#[derive(Clone, Copy, Debug)]
+pub struct BumpWrapper<'a>(pub &'a bumpalo::Bump);
+
+#[cfg(feature = "bumpalo")]
+#[test]
+fn test_bumpalo() {
+    use bumpalo::Bump;
+    let bump = Bump::new();
+    let mut map = HashMap::new_in(BumpWrapper(&bump));
+    map.insert(0, 1);
 }
