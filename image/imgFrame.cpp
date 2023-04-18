@@ -150,6 +150,7 @@ nsresult imgFrame::InitForDecoder(const nsIntSize& aImageSize,
   
   if (!SurfaceCache::IsLegalSize(aImageSize)) {
     NS_WARNING("Should have legal image size");
+    MonitorAutoLock lock(mMonitor);
     mAborted = true;
     return NS_ERROR_FAILURE;
   }
@@ -181,6 +182,8 @@ nsresult imgFrame::InitForDecoder(const nsIntSize& aImageSize,
   }
 
   mNonPremult = aNonPremult;
+
+  MonitorAutoLock lock(mMonitor);
   mShouldRecycle = aShouldRecycle;
 
   MOZ_ASSERT(!mRawSurface, "Called imgFrame::InitForDecoder() twice?");
@@ -297,6 +300,7 @@ nsresult imgFrame::InitWithDrawable(gfxDrawable* aDrawable,
   
   if (!SurfaceCache::IsLegalSize(aSize)) {
     NS_WARNING("Should have legal image size");
+    MonitorAutoLock lock(mMonitor);
     mAborted = true;
     return NS_ERROR_FAILURE;
   }
@@ -308,6 +312,7 @@ nsresult imgFrame::InitWithDrawable(gfxDrawable* aDrawable,
 
   bool canUseDataSurface = Factory::DoesBackendSupportDataDrawtarget(aBackend);
   if (canUseDataSurface) {
+    MonitorAutoLock lock(mMonitor);
     
     
     MOZ_ASSERT(!mRawSurface, "Called imgFrame::InitWithDrawable() twice?");
@@ -331,7 +336,12 @@ nsresult imgFrame::InitWithDrawable(gfxDrawable* aDrawable,
     
     
     
-    MOZ_ASSERT(!mOptSurface, "Called imgFrame::InitWithDrawable() twice?");
+#ifdef DEBUG
+    {
+      MonitorAutoLock lock(mMonitor);
+      MOZ_ASSERT(!mOptSurface, "Called imgFrame::InitWithDrawable() twice?");
+    }
+#endif
 
     if (gfxPlatform::GetPlatform()->SupportsAzureContentForType(aBackend)) {
       target = gfxPlatform::GetPlatform()->CreateDrawTargetForBackend(
@@ -343,6 +353,7 @@ nsresult imgFrame::InitWithDrawable(gfxDrawable* aDrawable,
   }
 
   if (!target || !target->IsValid()) {
+    MonitorAutoLock lock(mMonitor);
     mAborted = true;
     return NS_ERROR_OUT_OF_MEMORY;
   }
@@ -354,6 +365,7 @@ nsresult imgFrame::InitWithDrawable(gfxDrawable* aDrawable,
                              ImageRegion::Create(ThebesRect(GetRect())),
                              mFormat, aSamplingFilter, aImageFlags);
 
+  MonitorAutoLock lock(mMonitor);
   if (canUseDataSurface && !mRawSurface) {
     NS_WARNING("Failed to create SourceSurfaceSharedData");
     mAborted = true;
@@ -365,17 +377,14 @@ nsresult imgFrame::InitWithDrawable(gfxDrawable* aDrawable,
     
     mOptSurface = target->Snapshot();
   } else {
-    FinalizeSurface();
+    FinalizeSurfaceInternal();
   }
 
   
   mDecoded = GetRect();
   mFinished = true;
 
-#ifdef DEBUG
-  MonitorAutoLock lock(mMonitor);
   MOZ_ASSERT(AreAllPixelsWritten());
-#endif
 
   return NS_OK;
 }
