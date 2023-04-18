@@ -292,11 +292,9 @@ DManipEventHandler::OnContentUpdated(IDirectManipulationViewport* viewport,
     return S_OK;
   }
 
-  float windowScale = mWindow ? mWindow->GetDefaultScale().scale : 1.f;
-
   float scale = transform[0];
-  float xoffset = transform[4] * windowScale;
-  float yoffset = transform[5] * windowScale;
+  float xoffset = transform[4];
+  float yoffset = transform[5];
 
   
   if (FuzzyEqualsMultiplicative(scale, mLastScale) && xoffset == mLastXOffset &&
@@ -319,8 +317,7 @@ DManipEventHandler::OnContentUpdated(IDirectManipulationViewport* viewport,
     
     float dx = std::abs(mLastXOffset - xoffset);
     float dy = std::abs(mLastYOffset - yoffset);
-    float minDelta = std::max(1.f, windowScale);
-    if (dx < minDelta && dy < minDelta) {
+    if (dx < 1.f && dy < 1.f) {
       return S_OK;
     }
   }
