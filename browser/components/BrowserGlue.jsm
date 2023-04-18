@@ -1124,7 +1124,9 @@ BrowserGlue.prototype = {
         
         let engine = null;
         try {
-          engine = subject.QueryInterface(Ci.nsISearchEngine);
+          engine = Services.search.getEngineByName(
+            subject.QueryInterface(Ci.nsISupportsString).data
+          );
         } catch (ex) {
           Cu.reportError(ex);
         }
