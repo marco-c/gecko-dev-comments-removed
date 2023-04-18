@@ -76,15 +76,6 @@ uint32_t SHA_K1 = 0x6ED9EBA1;
 uint32_t SHA_K2 = 0x8F1BBCDC; 
 uint32_t SHA_K3 = 0xCA62C1D6; 
 
-void srtp_sha1(const uint8_t *msg, int octets_in_msg, uint32_t hash_value[5])
-{
-    srtp_sha1_ctx_t ctx;
-
-    srtp_sha1_init(&ctx);
-    srtp_sha1_update(&ctx, msg, octets_in_msg);
-    srtp_sha1_final(&ctx, hash_value);
-}
-
 
 
 
@@ -261,14 +252,13 @@ void srtp_sha1_update(srtp_sha1_ctx_t *ctx,
 
             
 
-            debug_print(srtp_mod_sha1, "(update) running srtp_sha1_core()",
-                        NULL);
+            debug_print0(srtp_mod_sha1, "(update) running srtp_sha1_core()");
 
             srtp_sha1_core(ctx->M, ctx->H);
 
         } else {
-            debug_print(srtp_mod_sha1, "(update) not running srtp_sha1_core()",
-                        NULL);
+            debug_print0(srtp_mod_sha1,
+                         "(update) not running srtp_sha1_core()");
 
             for (i = ctx->octets_in_buffer;
                  i < (ctx->octets_in_buffer + octets_in_msg); i++) {
@@ -391,11 +381,10 @@ void srtp_sha1_final(srtp_sha1_ctx_t *ctx, uint32_t output[5])
         ctx->H[4] += E;
     }
 
-    debug_print(srtp_mod_sha1, "(final) running srtp_sha1_core()", NULL);
+    debug_print0(srtp_mod_sha1, "(final) running srtp_sha1_core()");
 
     if (ctx->octets_in_buffer >= 56) {
-        debug_print(srtp_mod_sha1, "(final) running srtp_sha1_core() again",
-                    NULL);
+        debug_print0(srtp_mod_sha1, "(final) running srtp_sha1_core() again");
 
         
 

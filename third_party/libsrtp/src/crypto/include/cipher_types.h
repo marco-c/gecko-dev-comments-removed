@@ -66,19 +66,15 @@ extern const srtp_auth_type_t srtp_hmac;
 
 extern srtp_debug_module_t srtp_mod_auth;
 extern srtp_debug_module_t srtp_mod_cipher;
-extern srtp_debug_module_t srtp_mod_stat;
 extern srtp_debug_module_t srtp_mod_alloc;
 
 
 extern srtp_debug_module_t srtp_mod_aes_icm;
-#ifdef OPENSSL
-extern srtp_debug_module_t srtp_mod_aes_gcm;
-#endif
-#ifdef NSS
+
+#if defined(OPENSSL) || defined(MBEDTLS) || defined(NSS)
 extern srtp_debug_module_t srtp_mod_aes_gcm;
 #endif
 
 
 extern srtp_debug_module_t srtp_mod_hmac;
-
 #endif

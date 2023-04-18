@@ -273,16 +273,6 @@ typedef struct {
 
 
 
-typedef struct srtp_ekt_policy_ctx_t *srtp_ekt_policy_t;
-
-
-
-
-typedef struct srtp_ekt_stream_ctx_t *srtp_ekt_stream_t;
-
-
-
-
 
 
 
@@ -329,7 +319,7 @@ typedef struct srtp_policy_t {
                                    
     srtp_master_key_t **keys;      
     unsigned long num_master_keys; 
-    srtp_ekt_policy_t ekt;         
+    void *deprecated_ekt;          
                                    
     unsigned long window_size;     
                                    
@@ -1163,8 +1153,6 @@ void srtp_crypto_policy_set_aes_gcm_256_16_auth(srtp_crypto_policy_t *p);
 
 
 srtp_err_status_t srtp_dealloc(srtp_t s);
-
-
 
 
 
