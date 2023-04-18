@@ -13,7 +13,7 @@ pref("app.update.interval", 7200);
 pref("app.update.promptWaitTime", 43200);
 
 
-pref("app.update.url.manual", "https://www.mozilla.org/%LOCALE%/firefox/nightly/");
+pref("app.update.url.manual", "https://www.mozilla.org/%LOCALE%/firefox/nightly/?reason=manual-update");
 
 
 pref("app.update.url.details", "https://www.mozilla.org/%LOCALE%/firefox/nightly/notes/");
