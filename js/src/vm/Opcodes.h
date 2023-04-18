@@ -253,6 +253,7 @@
 
 
 
+
 #define FOR_EACH_OPCODE(MACRO)
 
 
@@ -1530,6 +1531,43 @@
 
  \
     MACRO(RegExp, reg_exp, NULL, 5, 0, 1, JOF_REGEXP) \
+    
+
+
+
+
+
+
+
+
+
+
+
+ \
+    IF_RECORD_TUPLE(MACRO(InitRecord, init_record, NULL, 5, 0, 1, JOF_UINT32)) \
+    
+
+
+
+
+
+
+
+
+
+
+ \
+    IF_RECORD_TUPLE(MACRO(AddRecordProperty, add_record_property, NULL, 1, 3, 1, JOF_BYTE)) \
+    
+
+
+
+
+
+
+
+ \
+    IF_RECORD_TUPLE(MACRO(FinishRecord, finish_record, NULL, 1, 1, 1, JOF_BYTE)) \
     
 
 
@@ -3553,9 +3591,9 @@
   IF_RECORD_TUPLE(, MACRO(228))     \
   IF_RECORD_TUPLE(, MACRO(229))     \
   IF_RECORD_TUPLE(, MACRO(230))     \
-  MACRO(231)                                   \
-  MACRO(232)                                   \
-  MACRO(233)                                   \
+  IF_RECORD_TUPLE(, MACRO(231))     \
+  IF_RECORD_TUPLE(, MACRO(232))     \
+  IF_RECORD_TUPLE(, MACRO(233))     \
   MACRO(234)                                   \
   MACRO(235)                                   \
   MACRO(236)                                   \
