@@ -27,11 +27,14 @@ class AutoTouchingGrayThings;
 namespace gc {
 
 class AutoSetThreadGCUse;
-class AutoSetThreadIsPerformingGC;
+class AutoSetThreadIsSweeping;
 
 enum class GCUse {
   
   None,
+
+  
+  Unspecified,
 
   
   
@@ -71,20 +74,17 @@ class GCContext {
 
   js::jit::JitPoisonRangeVector jitPoisonRanges;
 
-  bool isCollecting_ = false;
-  friend class js::gc::AutoSetThreadIsPerformingGC;
-
-#ifdef DEBUG
   
   js::gc::GCUse gcUse_ = js::gc::GCUse::None;
+  friend class js::gc::AutoSetThreadGCUse;
+  friend class js::gc::AutoSetThreadIsSweeping;
 
+#ifdef DEBUG
   
   Zone* gcSweepZone_ = nullptr;
 
   
   size_t isTouchingGrayThings_ = false;
-
-  friend class js::gc::AutoSetThreadGCUse;
   friend class js::AutoTouchingGrayThings;
 #endif
 
@@ -101,7 +101,8 @@ class GCContext {
     return runtime_;
   }
 
-  bool isCollecting() const { return isCollecting_; }
+  bool isCollecting() const { return gcUse_ != js::gc::GCUse::None; }
+  bool isFinalizing() const { return gcUse_ == js::gc::GCUse::Finalizing; }
 
 #ifdef DEBUG
   bool onMainThread() const {

@@ -254,7 +254,6 @@ bool TestHeapPostBarrierConstruction() {
 
     
     
-    gc::AutoSetThreadIsPerformingGC performingGC;
     gc::AutoSetThreadIsFinalizing threadIsFinalizing;
 
     js_delete(testStruct);
@@ -298,7 +297,6 @@ bool TestHeapPostBarrierUpdate() {
 
     
     
-    gc::AutoSetThreadIsPerformingGC performingGC;
     gc::AutoSetThreadIsFinalizing threadIsFinalizing;
 
     js_delete(testStruct);
@@ -782,7 +780,6 @@ bool TestGCPtrCopyConstruction(JSObject* obj) {
 
   {
     
-    gc::AutoSetThreadIsPerformingGC performingGC;
     gc::AutoSetThreadIsFinalizing threadIsFinalizing;
 
     GCPtrObject wrapper1(obj);
@@ -804,7 +801,6 @@ bool TestGCPtrAssignment(JSObject* obj1, JSObject* obj2) {
 
   {
     
-    gc::AutoSetThreadIsPerformingGC performingGC;
     gc::AutoSetThreadIsFinalizing threadIsFinalizing;
 
     GCPtrObject wrapper1(obj1);
