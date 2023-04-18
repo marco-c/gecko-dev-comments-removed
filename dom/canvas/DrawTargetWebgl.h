@@ -187,6 +187,9 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
     
     
     size_t mEmptyTextureMemory = 0;
+    
+    
+    Atomic<bool> mShouldClearCaches;
 
     const Matrix& GetTransform() const { return mCurrentTarget->mTransform; }
 
@@ -255,6 +258,11 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
     void UnlinkSurfaceTextures();
     void UnlinkSurfaceTexture(const RefPtr<TextureHandle>& aHandle);
     void UnlinkGlyphCaches();
+
+    void OnMemoryPressure();
+    void ClearAllTextures();
+    void ClearEmptyTextureMemory();
+    void ClearCachesIfNecessary();
   };
 
   RefPtr<SharedContext> mSharedContext;
@@ -384,6 +392,8 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
   Maybe<layers::SurfaceDescriptor> GetFrontBuffer();
 
   bool CopySnapshotTo(DrawTarget* aDT);
+
+  void OnMemoryPressure() { mSharedContext->OnMemoryPressure(); }
 
   operator std::string() const {
     std::stringstream stream;

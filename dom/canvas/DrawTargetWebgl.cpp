@@ -220,10 +220,7 @@ DrawTargetWebgl::SharedContext::~SharedContext() {
   if (sSharedContext.init() && sSharedContext.get() == this) {
     sSharedContext.set(nullptr);
   }
-  while (!mTextureHandles.isEmpty()) {
-    PruneTextureHandle(mTextureHandles.popLast());
-    --mNumTextureHandles;
-  }
+  ClearAllTextures();
   UnlinkSurfaceTextures();
   UnlinkGlyphCaches();
 }
@@ -259,6 +256,48 @@ void DrawTargetWebgl::SharedContext::UnlinkGlyphCaches() {
     cache = cache->getNext();
     font->RemoveUserData(&mGlyphCacheKey);
   }
+}
+
+void DrawTargetWebgl::SharedContext::OnMemoryPressure() {
+  mShouldClearCaches = true;
+}
+
+
+void DrawTargetWebgl::SharedContext::ClearAllTextures() {
+  while (!mTextureHandles.isEmpty()) {
+    PruneTextureHandle(mTextureHandles.popLast());
+    --mNumTextureHandles;
+  }
+}
+
+
+
+void DrawTargetWebgl::SharedContext::ClearEmptyTextureMemory() {
+  for (auto pos = mSharedTextures.begin(); pos != mSharedTextures.end();) {
+    if (!(*pos)->HasAllocatedHandles()) {
+      RefPtr<SharedTexture> shared = *pos;
+      size_t usedBytes = shared->UsedBytes();
+      mEmptyTextureMemory -= usedBytes;
+      mTotalTextureMemory -= usedBytes;
+      pos = mSharedTextures.erase(pos);
+    } else {
+      ++pos;
+    }
+  }
+}
+
+
+
+
+void DrawTargetWebgl::SharedContext::ClearCachesIfNecessary() {
+  if (!mShouldClearCaches.exchange(false)) {
+    return;
+  }
+  ClearAllTextures();
+  if (mEmptyTextureMemory) {
+    ClearEmptyTextureMemory();
+  }
+  ClearLastTexture();
 }
 
 MOZ_THREAD_LOCAL(DrawTargetWebgl::SharedContext*)
@@ -2651,6 +2690,8 @@ void DrawTargetWebgl::BeginFrame(const IntRect& aPersistedRect) {
       }
     }
   }
+  
+  mSharedContext->ClearCachesIfNecessary();
   mProfile.BeginFrame();
 }
 
@@ -2661,6 +2702,8 @@ void DrawTargetWebgl::EndFrame() {
   mSharedContext->PruneTextureMemory();
   
   mSharedContext->mWebgl->EndOfFrame();
+  
+  mSharedContext->ClearCachesIfNecessary();
   
   mNeedsPresent = true;
 }
