@@ -126,6 +126,16 @@ var whitelist = [
   { file: "resource://gre/defaults/autoconfig/prefcalls.js" },
 
   
+  
+  {
+    file:
+      "chrome://browser/content/preferences/more-from-mozilla-qr-code-advanced.svg",
+  },
+  {
+    file:
+      "chrome://browser/content/preferences/more-from-mozilla-qr-code-simple.svg",
+  },
+
   { file: "resource://gre/greprefs.js" },
 
   
