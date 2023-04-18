@@ -981,7 +981,7 @@ var UrlbarUtils = {
     }
     if (
       prefix.endsWith(":") &&
-      !UrlbarUtils.PROTOCOLS_WITHOUT_AUTHORITY.includes(prefix)
+      !UrlbarUtils.PROTOCOLS_WITHOUT_AUTHORITY.includes(prefix.toLowerCase())
     ) {
       
       
