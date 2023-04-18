@@ -84,6 +84,18 @@ pub unsafe trait RawRwLock {
         }
         !acquired_lock
     }
+
+    
+    fn is_locked_exclusive(&self) -> bool {
+        let acquired_lock = self.try_lock_shared();
+        if acquired_lock {
+            
+            unsafe {
+                self.unlock_shared();
+            }
+        }
+        !acquired_lock
+    }
 }
 
 
@@ -354,7 +366,7 @@ unsafe impl<R: RawRwLock + Sync, T: ?Sized + Send + Sync> Sync for RwLock<R, T> 
 
 impl<R: RawRwLock, T> RwLock<R, T> {
     
-    #[cfg(feature = "nightly")]
+    #[cfg(has_const_fn_trait_bound)]
     #[inline]
     pub const fn new(val: T) -> RwLock<R, T> {
         RwLock {
@@ -364,7 +376,7 @@ impl<R: RawRwLock, T> RwLock<R, T> {
     }
 
     
-    #[cfg(not(feature = "nightly"))]
+    #[cfg(not(has_const_fn_trait_bound))]
     #[inline]
     pub fn new(val: T) -> RwLock<R, T> {
         RwLock {
@@ -500,6 +512,12 @@ impl<R: RawRwLock, T: ?Sized> RwLock<R, T> {
     #[inline]
     pub fn is_locked(&self) -> bool {
         self.raw.is_locked()
+    }
+
+    
+    #[inline]
+    pub fn is_locked_exclusive(&self) -> bool {
+        self.raw.is_locked_exclusive()
     }
 
     
@@ -749,7 +767,10 @@ impl<R: RawRwLockTimed, T: ?Sized> RwLock<R, T> {
     
     #[cfg(feature = "arc_lock")]
     #[inline]
-    pub fn try_read_arc_for(self: &Arc<Self>, timeout: R::Duration) -> Option<ArcRwLockReadGuard<R, T>> {
+    pub fn try_read_arc_for(
+        self: &Arc<Self>,
+        timeout: R::Duration,
+    ) -> Option<ArcRwLockReadGuard<R, T>> {
         if self.raw.try_lock_shared_for(timeout) {
             
             Some(unsafe { self.read_guard_arc() })
@@ -764,7 +785,10 @@ impl<R: RawRwLockTimed, T: ?Sized> RwLock<R, T> {
     
     #[cfg(feature = "arc_lock")]
     #[inline]
-    pub fn try_read_arc_until(self: &Arc<Self>, timeout: R::Instant) -> Option<ArcRwLockReadGuard<R, T>> {
+    pub fn try_read_arc_until(
+        self: &Arc<Self>,
+        timeout: R::Instant,
+    ) -> Option<ArcRwLockReadGuard<R, T>> {
         if self.raw.try_lock_shared_until(timeout) {
             
             Some(unsafe { self.read_guard_arc() })
@@ -779,7 +803,10 @@ impl<R: RawRwLockTimed, T: ?Sized> RwLock<R, T> {
     
     #[cfg(feature = "arc_lock")]
     #[inline]
-    pub fn try_write_arc_for(self: &Arc<Self>, timeout: R::Duration) -> Option<ArcRwLockWriteGuard<R, T>> {
+    pub fn try_write_arc_for(
+        self: &Arc<Self>,
+        timeout: R::Duration,
+    ) -> Option<ArcRwLockWriteGuard<R, T>> {
         if self.raw.try_lock_exclusive_for(timeout) {
             
             Some(unsafe { self.write_guard_arc() })
@@ -794,7 +821,10 @@ impl<R: RawRwLockTimed, T: ?Sized> RwLock<R, T> {
     
     #[cfg(feature = "arc_lock")]
     #[inline]
-    pub fn try_write_arc_until(self: &Arc<Self>, timeout: R::Instant) -> Option<ArcRwLockWriteGuard<R, T>> {
+    pub fn try_write_arc_until(
+        self: &Arc<Self>,
+        timeout: R::Instant,
+    ) -> Option<ArcRwLockWriteGuard<R, T>> {
         if self.raw.try_lock_exclusive_until(timeout) {
             
             Some(unsafe { self.write_guard_arc() })
@@ -924,7 +954,10 @@ impl<R: RawRwLockRecursiveTimed, T: ?Sized> RwLock<R, T> {
     
     #[cfg(feature = "arc_lock")]
     #[inline]
-    pub fn try_read_arc_recursive_for(self: &Arc<Self>, timeout: R::Duration) -> Option<ArcRwLockReadGuard<R, T>> {
+    pub fn try_read_arc_recursive_for(
+        self: &Arc<Self>,
+        timeout: R::Duration,
+    ) -> Option<ArcRwLockReadGuard<R, T>> {
         if self.raw.try_lock_shared_recursive_for(timeout) {
             
             Some(unsafe { self.read_guard_arc() })
@@ -939,7 +972,10 @@ impl<R: RawRwLockRecursiveTimed, T: ?Sized> RwLock<R, T> {
     
     #[cfg(feature = "arc_lock")]
     #[inline]
-    pub fn try_read_arc_recursive_until(self: &Arc<Self>, timeout: R::Instant) -> Option<ArcRwLockReadGuard<R, T>> {
+    pub fn try_read_arc_recursive_until(
+        self: &Arc<Self>,
+        timeout: R::Instant,
+    ) -> Option<ArcRwLockReadGuard<R, T>> {
         if self.raw.try_lock_shared_recursive_until(timeout) {
             
             Some(unsafe { self.read_guard_arc() })
@@ -1002,7 +1038,7 @@ impl<R: RawRwLockUpgrade, T: ?Sized> RwLock<R, T> {
     unsafe fn upgradable_guard_arc(self: &Arc<Self>) -> ArcRwLockUpgradableReadGuard<R, T> {
         ArcRwLockUpgradableReadGuard {
             rwlock: self.clone(),
-            marker: PhantomData 
+            marker: PhantomData,
         }
     }
 
@@ -1426,9 +1462,7 @@ impl<R: RawRwLock, T: fmt::Debug + ?Sized> fmt::Debug for ArcRwLockReadGuard<R, 
 }
 
 #[cfg(feature = "arc_lock")]
-impl<R: RawRwLock, T: fmt::Display + ?Sized> fmt::Display
-    for ArcRwLockReadGuard<R, T>
-{
+impl<R: RawRwLock, T: fmt::Display + ?Sized> fmt::Display for ArcRwLockReadGuard<R, T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         (**self).fmt(f)
     }
@@ -1816,9 +1850,7 @@ impl<R: RawRwLock, T: fmt::Debug + ?Sized> fmt::Debug for ArcRwLockWriteGuard<R,
 }
 
 #[cfg(feature = "arc_lock")]
-impl<R: RawRwLock, T: fmt::Display + ?Sized> fmt::Display
-    for ArcRwLockWriteGuard<R, T>
-{
+impl<R: RawRwLock, T: fmt::Display + ?Sized> fmt::Display for ArcRwLockWriteGuard<R, T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         (**self).fmt(f)
     }
@@ -2069,7 +2101,7 @@ pub struct ArcRwLockUpgradableReadGuard<R: RawRwLockUpgrade, T: ?Sized> {
 }
 
 #[cfg(feature = "arc_lock")]
-impl<R: RawRwLockUpgrade , T: ?Sized> ArcRwLockUpgradableReadGuard<R, T> {
+impl<R: RawRwLockUpgrade, T: ?Sized> ArcRwLockUpgradableReadGuard<R, T> {
     
     pub fn rwlock(s: &Self) -> &Arc<RwLock<R, T>> {
         &s.rwlock
@@ -2144,7 +2176,7 @@ impl<R: RawRwLockUpgradeFair, T: ?Sized> ArcRwLockUpgradableReadGuard<R, T> {
 
         
         let mut s = ManuallyDrop::new(s);
-        unsafe { ptr::drop_in_place(&mut s.rwlock) }; 
+        unsafe { ptr::drop_in_place(&mut s.rwlock) };
     }
 
     
@@ -2290,7 +2322,6 @@ impl<R: RawRwLockUpgrade, T: fmt::Display + ?Sized> fmt::Display
         (**self).fmt(f)
     }
 }
-
 
 
 

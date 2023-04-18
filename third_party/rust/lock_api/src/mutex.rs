@@ -149,7 +149,7 @@ unsafe impl<R: RawMutex + Sync, T: ?Sized + Send> Sync for Mutex<R, T> {}
 
 impl<R: RawMutex, T> Mutex<R, T> {
     
-    #[cfg(feature = "nightly")]
+    #[cfg(has_const_fn_trait_bound)]
     #[inline]
     pub const fn new(val: T) -> Mutex<R, T> {
         Mutex {
@@ -159,7 +159,7 @@ impl<R: RawMutex, T> Mutex<R, T> {
     }
 
     
-    #[cfg(not(feature = "nightly"))]
+    #[cfg(not(has_const_fn_trait_bound))]
     #[inline]
     pub fn new(val: T) -> Mutex<R, T> {
         Mutex {
@@ -565,6 +565,17 @@ impl<'a, R: RawMutex + 'a, T: ?Sized + 'a> MutexGuard<'a, R, T> {
         defer!(s.mutex.raw.lock());
         f()
     }
+
+    
+    
+    
+    
+    #[inline]
+    pub fn leak(s: Self) -> &'a mut T {
+        let r = unsafe { &mut *s.mutex.data.get() };
+        mem::forget(s);
+        r
+    }
 }
 
 impl<'a, R: RawMutexFair + 'a, T: ?Sized + 'a> MutexGuard<'a, R, T> {
@@ -713,7 +724,7 @@ impl<R: RawMutexFair, T: ?Sized> ArcMutexGuard<R, T> {
 
         
         let mut s = ManuallyDrop::new(s);
-        unsafe { ptr::drop_in_place(&mut s.mutex) }; 
+        unsafe { ptr::drop_in_place(&mut s.mutex) };
     }
 
     

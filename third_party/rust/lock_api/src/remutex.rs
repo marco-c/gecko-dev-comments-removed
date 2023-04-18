@@ -230,7 +230,7 @@ unsafe impl<R: RawMutex + Sync, G: GetThreadId + Sync, T: ?Sized + Send> Sync
 
 impl<R: RawMutex, G: GetThreadId, T> ReentrantMutex<R, G, T> {
     
-    #[cfg(feature = "nightly")]
+    #[cfg(has_const_fn_trait_bound)]
     #[inline]
     pub const fn new(val: T) -> ReentrantMutex<R, G, T> {
         ReentrantMutex {
@@ -245,7 +245,7 @@ impl<R: RawMutex, G: GetThreadId, T> ReentrantMutex<R, G, T> {
     }
 
     
-    #[cfg(not(feature = "nightly"))]
+    #[cfg(not(has_const_fn_trait_bound))]
     #[inline]
     pub fn new(val: T) -> ReentrantMutex<R, G, T> {
         ReentrantMutex {
@@ -495,7 +495,10 @@ impl<R: RawMutexTimed, G: GetThreadId, T: ?Sized> ReentrantMutex<R, G, T> {
     
     #[cfg(feature = "arc_lock")]
     #[inline]
-    pub fn try_lock_arc_for(self: &Arc<Self>, timeout: R::Duration) -> Option<ArcReentrantMutexGuard<R, G, T>> {
+    pub fn try_lock_arc_for(
+        self: &Arc<Self>,
+        timeout: R::Duration,
+    ) -> Option<ArcReentrantMutexGuard<R, G, T>> {
         if self.raw.try_lock_for(timeout) {
             
             Some(unsafe { self.guard_arc() })
@@ -510,7 +513,10 @@ impl<R: RawMutexTimed, G: GetThreadId, T: ?Sized> ReentrantMutex<R, G, T> {
     
     #[cfg(feature = "arc_lock")]
     #[inline]
-    pub fn try_lock_arc_until(self: &Arc<Self>, timeout: R::Instant) -> Option<ArcReentrantMutexGuard<R, G, T>> {
+    pub fn try_lock_arc_until(
+        self: &Arc<Self>,
+        timeout: R::Instant,
+    ) -> Option<ArcReentrantMutexGuard<R, G, T>> {
         if self.raw.try_lock_until(timeout) {
             
             Some(unsafe { self.guard_arc() })
@@ -736,7 +742,6 @@ impl<'a, R: RawMutexFair + 'a, G: GetThreadId + 'a, T: ?Sized + 'a>
             s.remutex.raw.bump();
         }
     }
-
 }
 
 impl<'a, R: RawMutex + 'a, G: GetThreadId + 'a, T: ?Sized + 'a> Deref
@@ -821,9 +826,7 @@ impl<R: RawMutex, G: GetThreadId, T: ?Sized> ArcReentrantMutexGuard<R, G, T> {
 }
 
 #[cfg(feature = "arc_lock")]
-impl<R: RawMutexFair, G: GetThreadId, T: ?Sized>
-    ArcReentrantMutexGuard<R, G, T>
-{
+impl<R: RawMutexFair, G: GetThreadId, T: ?Sized> ArcReentrantMutexGuard<R, G, T> {
     
     
     
@@ -868,9 +871,7 @@ impl<R: RawMutexFair, G: GetThreadId, T: ?Sized>
 }
 
 #[cfg(feature = "arc_lock")]
-impl<R: RawMutex, G: GetThreadId, T: ?Sized> Deref
-    for ArcReentrantMutexGuard<R, G, T>
-{
+impl<R: RawMutex, G: GetThreadId, T: ?Sized> Deref for ArcReentrantMutexGuard<R, G, T> {
     type Target = T;
     #[inline]
     fn deref(&self) -> &T {
@@ -879,9 +880,7 @@ impl<R: RawMutex, G: GetThreadId, T: ?Sized> Deref
 }
 
 #[cfg(feature = "arc_lock")]
-impl<R: RawMutex, G: GetThreadId, T: ?Sized> Drop
-    for ArcReentrantMutexGuard<R, G, T>
-{
+impl<R: RawMutex, G: GetThreadId, T: ?Sized> Drop for ArcReentrantMutexGuard<R, G, T> {
     #[inline]
     fn drop(&mut self) {
         
