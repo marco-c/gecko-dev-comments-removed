@@ -155,17 +155,26 @@ RemoteLazyInputStreamChild::RemoteLazyInputStreamChild(const nsID& aID,
 RemoteLazyInputStreamChild::~RemoteLazyInputStreamChild() = default;
 
 void RemoteLazyInputStreamChild::Shutdown() {
-  MutexAutoLock lock(mMutex);
-
   RefPtr<RemoteLazyInputStreamChild> kungFuDeathGrip = this;
+  
+  
+  nsTArray<PendingOperation> pending;
+  {
+    MutexAutoLock lock(mMutex);
 
-  mWorkerRef = nullptr;
-  mPendingOperations.Clear();
+    mWorkerRef = nullptr;
+    pending.SwapElements(mPendingOperations);
 
-  if (mState == eActive) {
-    SendClose();
-    mState = eInactive;
+    if (mState == eActive) {
+      SendClose();
+      mState = eInactive;
+    }
   }
+  
+  
+  
+  
+  pending.Clear();
 }
 
 void RemoteLazyInputStreamChild::ActorDestroy(
