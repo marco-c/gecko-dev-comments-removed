@@ -9599,24 +9599,16 @@ nsresult HTMLEditor::MoveSelectedContentsToDivElementToMakeItAbsolutePosition(
     }
 
     
-    SplitNodeResult splitNodeResult =
-        MaybeSplitAncestorsForInsertWithTransaction(*nsGkAtoms::div, atCaret);
-    if (splitNodeResult.Failed()) {
+    Result<RefPtr<Element>, nsresult> newDivElementOrError =
+        InsertElementWithSplittingAncestorsWithTransaction(*nsGkAtoms::div,
+                                                           atCaret);
+    if (MOZ_UNLIKELY(newDivElementOrError.isErr())) {
       NS_WARNING(
-          "HTMLEditor::MaybeSplitAncestorsForInsertWithTransaction(nsGkAtoms::"
-          "div) failed");
-      return splitNodeResult.Rv();
+          "HTMLEditor::InsertElementWithSplittingAncestorsWithTransaction("
+          "nsGkAtoms::div) failed");
+      return newDivElementOrError.unwrapErr();
     }
-    Result<RefPtr<Element>, nsresult> maybeNewDivElement =
-        CreateAndInsertElementWithTransaction(*nsGkAtoms::div,
-                                              splitNodeResult.SplitPoint());
-    if (maybeNewDivElement.isErr()) {
-      NS_WARNING(
-          "HTMLEditor::CreateAndInsertElementWithTransaction(nsGkAtoms::div) "
-          "failed");
-      return maybeNewDivElement.unwrapErr();
-    }
-    MOZ_ASSERT(maybeNewDivElement.inspect());
+    MOZ_ASSERT(newDivElementOrError.inspect());
     
     
     while (!arrayOfContents.IsEmpty()) {
@@ -9635,10 +9627,10 @@ nsresult HTMLEditor::MoveSelectedContentsToDivElementToMakeItAbsolutePosition(
     
     restoreSelectionLater.Abort();
     nsresult rv = CollapseSelectionToStartOf(
-        MOZ_KnownLive(*maybeNewDivElement.inspect()));
+        MOZ_KnownLive(*newDivElementOrError.inspect()));
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                          "HTMLEditor::CollapseSelectionToStartOf() failed");
-    *aTargetElement = maybeNewDivElement.unwrap();
+    *aTargetElement = newDivElementOrError.unwrap();
     return rv;
   }
 
@@ -9686,24 +9678,30 @@ nsresult HTMLEditor::MoveSelectedContentsToDivElementToMakeItAbsolutePosition(
            previousEditableContent != createdListElement)) {
         nsAtom* ULOrOLOrDLTagName =
             atContent.GetContainer()->NodeInfo()->NameAtom();
-        SplitNodeResult splitNodeResult =
-            MaybeSplitAncestorsForInsertWithTransaction(
-                MOZ_KnownLive(*ULOrOLOrDLTagName), atContent);
-        if (NS_WARN_IF(splitNodeResult.Failed())) {
-          return splitNodeResult.Rv();
-        }
-        if (!targetDivElement) {
-          Result<RefPtr<Element>, nsresult> maybeNewDivElement =
-              CreateAndInsertElementWithTransaction(
-                  *nsGkAtoms::div, splitNodeResult.SplitPoint());
-          if (maybeNewDivElement.isErr()) {
-            NS_WARNING(
-                "HTMLEditor::CreateAndInsertElementWithTransaction(nsGkAtoms::"
-                "div) failed");
-            return maybeNewDivElement.unwrapErr();
+        if (targetDivElement) {
+          
+          
+          SplitNodeResult splitNodeResult =
+              MaybeSplitAncestorsForInsertWithTransaction(
+                  MOZ_KnownLive(*ULOrOLOrDLTagName), atContent);
+          if (NS_WARN_IF(splitNodeResult.Failed())) {
+            return splitNodeResult.Rv();
           }
-          MOZ_ASSERT(maybeNewDivElement.inspect());
-          targetDivElement = maybeNewDivElement.unwrap();
+        } else {
+          
+          
+          Result<RefPtr<Element>, nsresult> newDivElementOrError =
+              InsertElementWithSplittingAncestorsWithTransaction(
+                  *nsGkAtoms::div, atContent);
+          if (MOZ_UNLIKELY(newDivElementOrError.isErr())) {
+            NS_WARNING(
+                "HTMLEditor::"
+                "InsertElementWithSplittingAncestorsWithTransaction(nsGkAtoms::"
+                "div) failed");
+            return newDivElementOrError.unwrapErr();
+          }
+          MOZ_ASSERT(newDivElementOrError.inspect());
+          targetDivElement = newDivElementOrError.unwrap();
         }
         Result<RefPtr<Element>, nsresult> maybeNewListElement =
             CreateAndInsertElementWithTransaction(
@@ -9760,24 +9758,30 @@ nsresult HTMLEditor::MoveSelectedContentsToDivElementToMakeItAbsolutePosition(
         
         nsAtom* containerName =
             atListItem.GetContainer()->NodeInfo()->NameAtom();
-        SplitNodeResult splitNodeResult =
-            MaybeSplitAncestorsForInsertWithTransaction(
-                MOZ_KnownLive(*containerName), atListItem);
-        if (NS_WARN_IF(splitNodeResult.Failed())) {
-          return splitNodeResult.Rv();
-        }
-        if (!targetDivElement) {
-          Result<RefPtr<Element>, nsresult> maybeNewDivElement =
-              CreateAndInsertElementWithTransaction(
-                  *nsGkAtoms::div, EditorDOMPoint(atListItem.GetContainer()));
-          if (maybeNewDivElement.isErr()) {
-            NS_WARNING(
-                "HTMLEditor::CreateAndInsertElementWithTransaction(nsGkAtoms::"
-                "div) failed");
-            return maybeNewDivElement.unwrapErr();
+        if (targetDivElement) {
+          
+          
+          SplitNodeResult splitNodeResult =
+              MaybeSplitAncestorsForInsertWithTransaction(
+                  MOZ_KnownLive(*containerName), atListItem);
+          if (NS_WARN_IF(splitNodeResult.Failed())) {
+            return splitNodeResult.Rv();
           }
-          MOZ_ASSERT(maybeNewDivElement.inspect());
-          targetDivElement = maybeNewDivElement.unwrap();
+        } else {
+          
+          
+          Result<RefPtr<Element>, nsresult> newDivElementOrError =
+              InsertElementWithSplittingAncestorsWithTransaction(
+                  *nsGkAtoms::div, atContent);
+          if (MOZ_UNLIKELY(newDivElementOrError.isErr())) {
+            NS_WARNING(
+                "HTMLEditor::"
+                "InsertElementWithSplittingAncestorsWithTransaction("
+                "nsGkAtoms::div) failed");
+            return newDivElementOrError.unwrapErr();
+          }
+          MOZ_ASSERT(newDivElementOrError.inspect());
+          targetDivElement = newDivElementOrError.unwrap();
         }
         
         Result<RefPtr<Element>, nsresult> maybeNewListElement =
@@ -9822,26 +9826,17 @@ nsresult HTMLEditor::MoveSelectedContentsToDivElementToMakeItAbsolutePosition(
       }
       
       
-      SplitNodeResult splitNodeResult =
-          MaybeSplitAncestorsForInsertWithTransaction(*nsGkAtoms::div,
-                                                      atContent);
-      if (splitNodeResult.Failed()) {
+      Result<RefPtr<Element>, nsresult> newDivElementOrError =
+          InsertElementWithSplittingAncestorsWithTransaction(*nsGkAtoms::div,
+                                                             atContent);
+      if (newDivElementOrError.isErr()) {
         NS_WARNING(
-            "HTMLEditor::MaybeSplitAncestorsForInsertWithTransaction(nsGkAtoms:"
-            ":div) failed");
-        return splitNodeResult.Rv();
+            "HTMLEditor::InsertElementWithSplittingAncestorsWithTransaction("
+            "nsGkAtoms::div) failed");
+        return newDivElementOrError.unwrapErr();
       }
-      Result<RefPtr<Element>, nsresult> maybeNewDivElement =
-          CreateAndInsertElementWithTransaction(*nsGkAtoms::div,
-                                                splitNodeResult.SplitPoint());
-      if (maybeNewDivElement.isErr()) {
-        NS_WARNING(
-            "HTMLEditor::CreateAndInsertElementWithTransaction(nsGkAtoms::div) "
-            "failed");
-        return maybeNewDivElement.unwrapErr();
-      }
-      MOZ_ASSERT(maybeNewDivElement.inspect());
-      targetDivElement = maybeNewDivElement.unwrap();
+      MOZ_ASSERT(newDivElementOrError.inspect());
+      targetDivElement = newDivElementOrError.unwrap();
     }
 
     
