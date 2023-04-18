@@ -550,58 +550,13 @@ uint32_t nsRFPService::GetSpoofedPresentedFrames(double aTime, uint32_t aWidth,
                       ((100 - boundedDroppedRatio) / 100.0));
 }
 
-static uint32_t GetSpoofedVersion() {
+static const char* GetSpoofedVersion() {
+#ifdef ANDROID
   
-  const uint32_t kKnownEsrVersion = 78;
-
-  nsresult rv;
-  nsCOMPtr<nsIXULAppInfo> appInfo =
-      do_GetService("@mozilla.org/xre/app-info;1", &rv);
-  NS_ENSURE_SUCCESS(rv, kKnownEsrVersion);
-
-  nsAutoCString appVersion;
-  rv = appInfo->GetVersion(appVersion);
-  NS_ENSURE_SUCCESS(rv, kKnownEsrVersion);
-
-  
-  
-  
-  uint32_t firefoxVersion = appVersion.ToInteger(&rv);
-  NS_ENSURE_SUCCESS(rv, kKnownEsrVersion);
-
-  
-  
-  
-  
-  if (firefoxVersion < kKnownEsrVersion) {
-    return kKnownEsrVersion;
-  }
-
-#ifdef DEBUG
-  
-  
-  
-  if (!strcmp(MOZ_STRINGIFY(MOZ_UPDATE_CHANNEL), "esr")) {
-    MOZ_ASSERT(((firefoxVersion - kKnownEsrVersion) % 13) == 0,
-               "Please update ESR version formula in nsRFPService.cpp");
-  }
-#endif  
-
-  
-  
-  
-  
-  
-  
-  
-  uint32_t spoofedVersion =
-      firefoxVersion - ((firefoxVersion - kKnownEsrVersion) % 13);
-
-  MOZ_ASSERT(spoofedVersion >= kKnownEsrVersion &&
-             spoofedVersion <= firefoxVersion &&
-             (spoofedVersion - kKnownEsrVersion) % 13 == 0);
-
-  return spoofedVersion;
+  return "102.0";
+#else
+  return MOZILLA_UAVERSION;
+#endif
 }
 
 
@@ -624,7 +579,7 @@ void nsRFPService::GetSpoofedUserAgent(nsACString& userAgent,
       2;
   userAgent.SetCapacity(preallocatedLength);
 
-  uint32_t spoofedVersion = GetSpoofedVersion();
+  const char* spoofedVersion = GetSpoofedVersion();
 
   
   userAgent.AssignLiteral("Mozilla/5.0 (");
@@ -636,19 +591,17 @@ void nsRFPService::GetSpoofedUserAgent(nsACString& userAgent,
   }
 
   userAgent.AppendLiteral("; rv:");
-  userAgent.AppendInt(spoofedVersion);
-  userAgent.AppendLiteral(".0) Gecko/");
+  userAgent.Append(spoofedVersion);
+  userAgent.AppendLiteral(") Gecko/");
 
 #if defined(ANDROID)
-  userAgent.AppendInt(spoofedVersion);
-  userAgent.AppendLiteral(".0");
+  userAgent.Append(spoofedVersion);
 #else
   userAgent.AppendLiteral(LEGACY_UA_GECKO_TRAIL);
 #endif
 
   userAgent.AppendLiteral(" Firefox/");
-  userAgent.AppendInt(spoofedVersion);
-  userAgent.AppendLiteral(".0");
+  userAgent.Append(spoofedVersion);
 
   MOZ_ASSERT(userAgent.Length() <= preallocatedLength);
 }
