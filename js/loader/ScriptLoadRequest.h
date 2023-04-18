@@ -77,8 +77,7 @@ class ScriptFetchOptions {
 
   ScriptFetchOptions(mozilla::CORSMode aCORSMode,
                      enum mozilla::dom::ReferrerPolicy aReferrerPolicy,
-                     nsIPrincipal* aTriggeringPrincipal,
-                     nsIGlobalObject* aWebExtGlobal = nullptr);
+                     nsIPrincipal* aTriggeringPrincipal);
 
   
 
@@ -97,12 +96,6 @@ class ScriptFetchOptions {
 
 
   nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
-
-  
-
-
-
-  nsCOMPtr<nsIGlobalObject> mWebExtGlobal;
 };
 
 

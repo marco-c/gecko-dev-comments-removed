@@ -628,12 +628,7 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   already_AddRefed<nsIGlobalObject> GetGlobalForRequest(
       ScriptLoadRequest* aRequest);
 
-  
-  
-  enum class WebExtGlobal { Ignore, Handled };
-
-  already_AddRefed<nsIScriptGlobalObject> GetScriptGlobalObject(
-      WebExtGlobal aWebExtGlobal);
+  already_AddRefed<nsIScriptGlobalObject> GetScriptGlobalObject();
 
   
   

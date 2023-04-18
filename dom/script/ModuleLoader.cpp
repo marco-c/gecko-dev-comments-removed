@@ -281,22 +281,13 @@ already_AddRefed<ModuleLoadRequest> ModuleLoader::CreateDynamicImport(
     
     Document* document = GetScriptLoader()->GetDocument();
 
-    
-    
-    
-    nsCOMPtr<nsIPrincipal> principal = nsContentUtils::SubjectPrincipal(aCx);
-    nsCOMPtr<nsIGlobalObject> global = xpc::CurrentNativeGlobal(aCx);
-    if (!BasePrincipal::Cast(principal)->ContentScriptAddonPolicy()) {
-      principal = document->NodePrincipal();
-      MOZ_ASSERT(global);
-      global = nullptr;  
-    } else {
-      MOZ_ASSERT(
-          xpc::IsWebExtensionContentScriptSandbox(global->GetGlobalJSObject()));
-    }
+    nsCOMPtr<nsIPrincipal> principal = GetGlobalObject()->PrincipalOrNull();
+    MOZ_ASSERT_IF(GetKind() == WebExtension,
+                  BasePrincipal::Cast(principal)->ContentScriptAddonPolicy());
+    MOZ_ASSERT_IF(GetKind() == Normal, principal == document->NodePrincipal());
 
-    options = new ScriptFetchOptions(
-        mozilla::CORS_NONE, document->GetReferrerPolicy(), principal, global);
+    options = new ScriptFetchOptions(mozilla::CORS_NONE,
+                                     document->GetReferrerPolicy(), principal);
     baseURL = document->GetDocBaseURI();
     context = new ScriptLoadContext(nullptr);
   }
