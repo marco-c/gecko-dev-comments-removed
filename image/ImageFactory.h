@@ -43,7 +43,7 @@ class ImageFactory {
                                              ProgressTracker* aProgressTracker,
                                              const nsCString& aMimeType,
                                              nsIURI* aURI, bool aIsMultiPart,
-                                             uint32_t aInnerWindowId);
+                                             uint64_t aInnerWindowId);
   
 
 
@@ -71,12 +71,12 @@ class ImageFactory {
   static already_AddRefed<Image> CreateRasterImage(
       nsIRequest* aRequest, ProgressTracker* aProgressTracker,
       const nsCString& aMimeType, nsIURI* aURI, uint32_t aImageFlags,
-      uint32_t aInnerWindowId);
+      uint64_t aInnerWindowId);
 
   static already_AddRefed<Image> CreateVectorImage(
       nsIRequest* aRequest, ProgressTracker* aProgressTracker,
       const nsCString& aMimeType, nsIURI* aURI, uint32_t aImageFlags,
-      uint32_t aInnerWindowId);
+      uint64_t aInnerWindowId);
 
   
   virtual ~ImageFactory() = 0;
