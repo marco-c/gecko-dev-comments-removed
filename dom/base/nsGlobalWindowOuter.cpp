@@ -574,28 +574,6 @@ void nsOuterWindowProxy::finalize(JS::GCContext* gcx, JSObject* proxy) const {
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-#ifndef RELEASE_OR_BETA
-static bool IsNonConfigurableReadonlyPrimitiveGlobalProp(JSContext* cx,
-                                                         JS::Handle<jsid> id) {
-  return id == GetJSIDByIndex(cx, XPCJSContext::IDX_NAN) ||
-         id == GetJSIDByIndex(cx, XPCJSContext::IDX_UNDEFINED) ||
-         id == GetJSIDByIndex(cx, XPCJSContext::IDX_INFINITY);
-}
-#endif
-
 bool nsOuterWindowProxy::getOwnPropertyDescriptor(
     JSContext* cx, JS::Handle<JSObject*> proxy, JS::Handle<jsid> id,
     JS::MutableHandle<Maybe<JS::PropertyDescriptor>> desc) const {
@@ -651,7 +629,8 @@ bool nsOuterWindowProxy::getOwnPropertyDescriptor(
         return false;
       }
 
-#ifndef RELEASE_OR_BETA  
+#if 0
+      
       if (desc.isSome() &&
           !IsNonConfigurableReadonlyPrimitiveGlobalProp(cx, id)) {
         (*desc).setConfigurable(true);
@@ -768,7 +747,8 @@ bool nsOuterWindowProxy::definePropertySameOrigin(
     }
   }
 
-#ifndef RELEASE_OR_BETA  
+#if 0
+  
   if (desc.hasConfigurable() && !desc.configurable() &&
       !IsNonConfigurableReadonlyPrimitiveGlobalProp(cx, id)) {
     
