@@ -177,19 +177,6 @@ bool WebRenderTextureHost::SupportsExternalCompositing(
   return mWrappedTextureHost->SupportsExternalCompositing(aBackend);
 }
 
-bool WebRenderTextureHost::NeedsYFlip() const {
-  bool yFlip = TextureHost::NeedsYFlip();
-  if (mWrappedTextureHost->AsSurfaceTextureHost()) {
-    MOZ_ASSERT(yFlip);
-    
-    
-    
-    
-    yFlip = false;
-  }
-  return yFlip;
-}
-
 void WebRenderTextureHost::SetAcquireFence(
     mozilla::ipc::FileDescriptor&& aFenceFd) {
   mWrappedTextureHost->SetAcquireFence(std::move(aFenceFd));

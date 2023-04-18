@@ -93,6 +93,13 @@ class RenderTextureHost {
 
   bool IsFilterUpdateNecessary(wr::ImageRendering aRendering);
 
+  
+  
+  
+  
+  virtual std::pair<gfx::Point, gfx::Point> GetUvCoords(
+      gfx::IntSize aTextureSize) const;
+
   wr::ImageRendering mCachedRendering;
 };
 

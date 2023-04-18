@@ -23,7 +23,8 @@ class RenderAndroidSurfaceTextureHost final : public RenderTextureHostSWGL {
  public:
   explicit RenderAndroidSurfaceTextureHost(
       const java::GeckoSurfaceTexture::GlobalRef& aSurfTex, gfx::IntSize aSize,
-      gfx::SurfaceFormat aFormat, bool aContinuousUpdate);
+      gfx::SurfaceFormat aFormat, bool aContinuousUpdate,
+      bool aIgnoreTransform);
 
   wr::WrExternalImage Lock(uint8_t aChannelIndex, gl::GLContext* aGL,
                            wr::ImageRendering aRendering) override;
@@ -58,12 +59,18 @@ class RenderAndroidSurfaceTextureHost final : public RenderTextureHostSWGL {
   
   
   const bool mContinuousUpdate;
+  const bool mIgnoreTransform;
 
  private:
   virtual ~RenderAndroidSurfaceTextureHost();
   bool EnsureAttachedToGLContext();
 
   already_AddRefed<gfx::DataSourceSurface> ReadTexImage();
+
+  
+  
+  std::pair<gfx::Point, gfx::Point> GetUvCoords(
+      gfx::IntSize aTextureSize) const override;
 
   enum PrepareStatus {
     STATUS_NONE,
@@ -72,7 +79,6 @@ class RenderAndroidSurfaceTextureHost final : public RenderTextureHostSWGL {
     STATUS_PREPARED
   };
 
-  
   PrepareStatus mPrepareStatus;
   bool mAttachedToGLContext;
 
