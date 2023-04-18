@@ -18,6 +18,7 @@
 
 
 
+
 const EVENT_ANNOUNCEMENT = nsIAccessibleEvent.EVENT_ANNOUNCEMENT;
 const EVENT_DOCUMENT_LOAD_COMPLETE =
   nsIAccessibleEvent.EVENT_DOCUMENT_LOAD_COMPLETE;
@@ -245,6 +246,27 @@ async function waitForEvents(events, message, ordered = false) {
 
 function waitForOrderedEvents(events, message) {
   return waitForEvents(events, message, true);
+}
+
+function stateChangeEventArgs(id, state, isEnabled, isExtra = false) {
+  return [
+    EVENT_STATE_CHANGE,
+    e => {
+      e.QueryInterface(nsIAccessibleStateChangeEvent);
+      return (
+        e.state == state &&
+        e.isExtraState == isExtra &&
+        isEnabled == e.isEnabled &&
+        (typeof id == "string"
+          ? id == getAccessibleDOMNodeID(e.accessible)
+          : getAccessible(id) == e.accessible)
+      );
+    },
+  ];
+}
+
+function waitForStateChange(id, state, isEnabled, isExtra = false) {
+  return waitForEvent(...stateChangeEventArgs(id, state, isEnabled, isExtra));
 }
 
 
