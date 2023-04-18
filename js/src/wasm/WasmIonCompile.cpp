@@ -2485,6 +2485,7 @@ class FunctionCompiler {
     
     
     
+#ifdef ENABLE_WASM_EXCEPTIONS
     for (uint32_t depth = 0; depth < iter().controlStackDepth(); depth++) {
       if (iter().controlKind(depth) != LabelKind::Try) {
         continue;
@@ -2497,6 +2498,7 @@ class FunctionCompiler {
         }
       }
     }
+#endif
 
     
     for (MPhiIterator phi = loopEntry->phisBegin();
