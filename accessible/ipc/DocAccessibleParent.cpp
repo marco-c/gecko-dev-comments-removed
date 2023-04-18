@@ -189,6 +189,11 @@ void DocAccessibleParent::ShutdownOrPrepareForMove(RemoteAccessible* aAcc) {
   
   aAcc->SetParent(nullptr);
   mMovingIDs.EnsureRemoved(id);
+  if (aAcc->IsOuterDoc()) {
+    
+    
+    return;
+  }
   
   for (RemoteAccessible* child : aAcc->mChildren) {
     ShutdownOrPrepareForMove(child);
