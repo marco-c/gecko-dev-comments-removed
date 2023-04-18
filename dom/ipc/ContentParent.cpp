@@ -1698,10 +1698,6 @@ void ContentParent::Init() {
 
   Unused << SendInitProfiler(ProfilerParent::CreateForProcess(OtherPid()));
 
-  
-  
-  EnsurePermissionsByKey(""_ns, ""_ns);
-
   RefPtr<GeckoMediaPluginServiceParent> gmps(
       GeckoMediaPluginServiceParent::GetSingleton());
   gmps->UpdateContentProcessGMPCapabilities();
@@ -3122,6 +3118,13 @@ bool ContentParent::InitInternal(ProcessPriority aInitialPriority) {
     KillHard("SandboxInitFailed");
   }
 #endif
+
+  
+  
+  
+  
+  
+  EnsurePermissionsByKey(""_ns, ""_ns);
 
   {
     nsTArray<BlobURLRegistrationData> registrations;

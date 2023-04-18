@@ -3166,6 +3166,15 @@ PermissionManager::GetAllKeysForPrincipal(nsIPrincipal* aPrincipal) {
     
     GetKeyForPrincipal(prin, false, pair->first);
 
+    
+    
+    
+    
+    
+    if (pair->first.IsEmpty()) {
+      break;
+    }
+
     Unused << GetOriginFromPrincipal(prin, false, pair->second);
     prin = prin->GetNextSubDomainPrincipal();
     
