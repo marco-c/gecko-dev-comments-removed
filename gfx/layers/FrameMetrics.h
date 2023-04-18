@@ -831,6 +831,7 @@ struct ScrollMetadata {
         mPrefersReducedMotion(false),
         mForceMousewheelAutodir(false),
         mForceMousewheelAutodirHonourRoot(false),
+        mIsPaginatedPresentation(false),
         mOverscrollBehavior() {}
 
   bool operator==(const ScrollMetadata& aOther) const {
@@ -851,6 +852,7 @@ struct ScrollMetadata {
            mForceMousewheelAutodir == aOther.mForceMousewheelAutodir &&
            mForceMousewheelAutodirHonourRoot ==
                aOther.mForceMousewheelAutodirHonourRoot &&
+           mIsPaginatedPresentation == aOther.mIsPaginatedPresentation &&
            mDisregardedDirection == aOther.mDisregardedDirection &&
            mOverscrollBehavior == aOther.mOverscrollBehavior &&
            mScrollUpdates == aOther.mScrollUpdates;
@@ -936,6 +938,11 @@ struct ScrollMetadata {
   bool ForceMousewheelAutodirHonourRoot() const {
     return mForceMousewheelAutodirHonourRoot;
   }
+
+  void SetIsPaginatedPresentation(bool aValue) {
+    mIsPaginatedPresentation = aValue;
+  }
+  bool IsPaginatedPresentation() const { return mIsPaginatedPresentation; }
 
   bool DidContentGetPainted() const { return mDidContentGetPainted; }
 
@@ -1051,6 +1058,13 @@ struct ScrollMetadata {
   
   bool mForceMousewheelAutodir : 1;
   bool mForceMousewheelAutodirHonourRoot : 1;
+
+  
+  
+  
+  
+  
+  bool mIsPaginatedPresentation : 1;
 
   
   
