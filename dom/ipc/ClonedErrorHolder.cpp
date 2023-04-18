@@ -290,6 +290,12 @@ bool ClonedErrorHolder::ToErrorValue(JSContext* aCx,
       mFilename.Assign(""_ns);
     }
 
+    
+    
+    if (mMessage.IsVoid()) {
+      mMessage.Assign(""_ns);
+    }
+
     if (!ToJSString(aCx, mFilename, &filename) ||
         !ToJSString(aCx, mMessage, &message)) {
       return false;
