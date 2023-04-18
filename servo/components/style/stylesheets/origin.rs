@@ -10,7 +10,7 @@ use std::ops::BitOrAssign;
 
 
 
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, ToShmem)]
+#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, ToShmem, PartialOrd, Ord)]
 #[repr(u8)]
 pub enum Origin {
     

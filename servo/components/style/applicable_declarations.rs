@@ -26,34 +26,100 @@ pub type ApplicableDeclarationList = SmallVec<[ApplicableDeclarationBlock; 16]>;
 
 
 
-const SOURCE_ORDER_SHIFT: usize = 0;
+
+
+
+
+
 const SOURCE_ORDER_BITS: usize = 24;
 const SOURCE_ORDER_MAX: u32 = (1 << SOURCE_ORDER_BITS) - 1;
-const SOURCE_ORDER_MASK: u32 = SOURCE_ORDER_MAX << SOURCE_ORDER_SHIFT;
+const SOURCE_ORDER_MASK: u32 = SOURCE_ORDER_MAX;
 
 
+#[derive(Clone, Copy, Debug, Eq, Hash, MallocSizeOf, PartialEq)]
+pub struct CascadePriority {
+    cascade_level: CascadeLevel,
+    layer_order: LayerOrder,
+}
 
-const CASCADE_LEVEL_SHIFT: usize = SOURCE_ORDER_BITS;
+#[allow(dead_code)]
+fn size_assert() {
+    #[allow(unsafe_code)]
+    unsafe { std::mem::transmute::<u32, CascadePriority>(0u32) };
+}
 
+impl PartialOrd for CascadePriority {
+    #[inline]
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
 
+impl Ord for CascadePriority {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.cascade_level
+            .cmp(&other.cascade_level)
+            .then_with(|| {
+                let ordering = self.layer_order.cmp(&other.layer_order);
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                if self.cascade_level.is_important() {
+                    ordering.reverse()
+                } else {
+                    ordering
+                }
+            })
+    }
+}
 
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq)]
-struct ApplicableDeclarationBits(u32);
-
-impl ApplicableDeclarationBits {
-    fn new(source_order: u32, cascade_level: CascadeLevel) -> Self {
-        Self(
-            (source_order & SOURCE_ORDER_MASK) |
-                ((cascade_level.to_byte_lossy() as u32) << CASCADE_LEVEL_SHIFT),
-        )
+impl CascadePriority {
+    
+    pub fn new(cascade_level: CascadeLevel, layer_order: LayerOrder) -> Self {
+        Self { cascade_level, layer_order }
     }
 
-    fn source_order(&self) -> u32 {
-        self.0 & SOURCE_ORDER_MASK
+    
+    #[inline]
+    pub fn layer_order(&self) -> LayerOrder {
+        self.layer_order
     }
 
-    fn level(&self) -> CascadeLevel {
-        CascadeLevel::from_byte((self.0 >> CASCADE_LEVEL_SHIFT) as u8)
+    
+    #[inline]
+    pub fn cascade_level(&self) -> CascadeLevel {
+        self.cascade_level
+    }
+
+    
+    
+    
+    
+    
+    pub fn allows_when_reverted(&self, other: &Self, origin_revert: bool) -> bool {
+        if origin_revert {
+            other.cascade_level.origin() < self.cascade_level.origin()
+        } else {
+            other.unimportant() < self.unimportant()
+        }
+    }
+
+    
+    pub fn unimportant(&self) -> Self {
+        Self::new(self.cascade_level().unimportant(), self.layer_order())
+    }
+
+    
+    pub fn important(&self) -> Self {
+        Self::new(self.cascade_level().important(), self.layer_order())
     }
 }
 
@@ -69,11 +135,11 @@ pub struct ApplicableDeclarationBlock {
     pub source: StyleSource,
     
     
-    bits: ApplicableDeclarationBits,
+    source_order: u32,
     
     pub specificity: u32,
     
-    pub layer_order: LayerOrder,
+    pub cascade_priority: CascadePriority,
 }
 
 impl ApplicableDeclarationBlock {
@@ -86,9 +152,9 @@ impl ApplicableDeclarationBlock {
     ) -> Self {
         ApplicableDeclarationBlock {
             source: StyleSource::from_declarations(declarations),
-            bits: ApplicableDeclarationBits::new(0, level),
+            source_order: 0,
             specificity: 0,
-            layer_order: LayerOrder::root(),
+            cascade_priority: CascadePriority::new(level, LayerOrder::root()),
         }
     }
 
@@ -103,29 +169,34 @@ impl ApplicableDeclarationBlock {
     ) -> Self {
         ApplicableDeclarationBlock {
             source,
-            bits: ApplicableDeclarationBits::new(source_order, level),
+            source_order: source_order & SOURCE_ORDER_MASK,
             specificity,
-            layer_order,
+            cascade_priority: CascadePriority::new(level, layer_order),
         }
     }
 
     
     #[inline]
     pub fn source_order(&self) -> u32 {
-        self.bits.source_order()
+        self.source_order
     }
 
     
     #[inline]
     pub fn level(&self) -> CascadeLevel {
-        self.bits.level()
+        self.cascade_priority.cascade_level()
+    }
+
+    
+    #[inline]
+    pub fn layer_order(&self) -> LayerOrder {
+        self.cascade_priority.layer_order()
     }
 
     
     
     #[inline]
-    pub fn for_rule_tree(self) -> (StyleSource, CascadeLevel) {
-        let level = self.level();
-        (self.source, level)
+    pub fn for_rule_tree(self) -> (StyleSource, CascadePriority) {
+        (self.source, self.cascade_priority)
     }
 }

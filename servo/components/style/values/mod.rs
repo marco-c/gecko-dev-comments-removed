@@ -438,15 +438,22 @@ impl CustomIdent {
         ident: &CowRcStr<'i>,
         excluding: &[&str],
     ) -> Result<Self, ParseError<'i>> {
-        let valid = match_ignore_ascii_case! { ident,
-            "initial" | "inherit" | "unset" | "default" | "revert" => false,
-            _ => true
-        };
-        if !valid {
+        use crate::properties::CSSWideKeyword;
+        
+        
+        
+        
+        
+        if CSSWideKeyword::from_ident(ident).is_ok() || ident.eq_ignore_ascii_case("default") {
             return Err(
                 location.new_custom_error(SelectorParseErrorKind::UnexpectedIdent(ident.clone()))
             );
         }
+
+        
+        
+        
+        
         if excluding.iter().any(|s| ident.eq_ignore_ascii_case(s)) {
             Err(location.new_custom_error(StyleParseErrorKind::UnspecifiedError))
         } else {

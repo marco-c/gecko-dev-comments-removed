@@ -29,7 +29,7 @@ use crate::stylesheets::Origin;
 
 
 #[repr(u8)]
-#[derive(Clone, Copy, Debug, Eq, Hash, MallocSizeOf, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Debug, Eq, Hash, MallocSizeOf, Ord, PartialEq, PartialOrd)]
 pub enum CascadeLevel {
     
     UANormal,
@@ -70,81 +70,43 @@ pub enum CascadeLevel {
 
 impl CascadeLevel {
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn to_byte_lossy(&self) -> u8 {
-        let (discriminant, order) = match *self {
-            Self::UANormal => (0, 0),
-            Self::UserNormal => (1, 0),
-            Self::PresHints => (2, 0),
+    pub fn important(&self) -> Self {
+        match *self {
+            Self::UANormal => Self::UAImportant,
+            Self::UserNormal => Self::UserImportant,
             Self::AuthorNormal {
                 shadow_cascade_order,
-            } => (3, shadow_cascade_order.0),
-            Self::SMILOverride => (4, 0),
-            Self::Animations => (5, 0),
-            Self::AuthorImportant {
-                shadow_cascade_order,
-            } => (6, shadow_cascade_order.0),
-            Self::UserImportant => (7, 0),
-            Self::UAImportant => (8, 0),
-            Self::Transitions => (9, 0),
-        };
-
-        debug_assert_eq!(discriminant & 0xf, discriminant);
-        if order == 0 {
-            return discriminant;
+            } => Self::AuthorImportant {
+                shadow_cascade_order: -shadow_cascade_order,
+            },
+            Self::PresHints |
+            Self::SMILOverride |
+            Self::Animations |
+            Self::AuthorImportant { .. } |
+            Self::UserImportant |
+            Self::UAImportant |
+            Self::Transitions => *self,
         }
-
-        let negative = order < 0;
-        let value = std::cmp::min(order.abs() as u8, 0b111);
-        (negative as u8) << 7 | value << 4 | discriminant
     }
 
     
-    
-    #[inline]
-    pub fn from_byte(b: u8) -> Self {
-        let order = {
-            let abs = ((b & 0b01110000) >> 4) as i8;
-            let negative = b & 0b10000000 != 0;
-            if negative {
-                -abs
-            } else {
-                abs
-            }
-        };
-        let discriminant = b & 0xf;
-        let level = match discriminant {
-            0 => Self::UANormal,
-            1 => Self::UserNormal,
-            2 => Self::PresHints,
-            3 => {
-                return Self::AuthorNormal {
-                    shadow_cascade_order: ShadowCascadeOrder(order),
-                }
+    pub fn unimportant(&self) -> Self {
+        match *self {
+            Self::UAImportant => Self::UANormal,
+            Self::UserImportant => Self::UserNormal,
+            Self::AuthorImportant {
+                shadow_cascade_order,
+            } => Self::AuthorNormal {
+                shadow_cascade_order: -shadow_cascade_order,
             },
-            4 => Self::SMILOverride,
-            5 => Self::Animations,
-            6 => {
-                return Self::AuthorImportant {
-                    shadow_cascade_order: ShadowCascadeOrder(order),
-                }
-            },
-            7 => Self::UserImportant,
-            8 => Self::UAImportant,
-            9 => Self::Transitions,
-            _ => unreachable!("Didn't expect {} as a discriminant", discriminant),
-        };
-        debug_assert_eq!(order, 0, "Didn't expect an order value for {:?}", level);
-        level
+            Self::PresHints |
+            Self::SMILOverride |
+            Self::Animations |
+            Self::AuthorNormal { .. } |
+            Self::UserNormal |
+            Self::UANormal |
+            Self::Transitions => *self,
+        }
     }
 
     
@@ -233,6 +195,12 @@ pub struct ShadowCascadeOrder(i8);
 impl ShadowCascadeOrder {
     
     
+    
+    const MAX: i8 = 0b111;
+    const MIN: i8 = -Self::MAX;
+
+    
+    
     #[inline]
     pub fn for_outermost_shadow_tree() -> Self {
         Self(-1)
@@ -256,7 +224,9 @@ impl ShadowCascadeOrder {
     #[inline]
     pub fn dec(&mut self) {
         debug_assert!(self.0 < 0);
-        self.0 = self.0.saturating_sub(1);
+        if self.0 != Self::MIN {
+            self.0 -= 1;
+        }
     }
 
     
@@ -264,7 +234,9 @@ impl ShadowCascadeOrder {
     #[inline]
     pub fn inc(&mut self) {
         debug_assert_ne!(self.0, -1);
-        self.0 = self.0.saturating_add(1);
+        if self.0 != Self::MAX {
+            self.0 += 1;
+        }
     }
 }
 

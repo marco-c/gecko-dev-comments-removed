@@ -20,13 +20,15 @@ use std::fmt::{self, Write};
 use style_traits::{CssWriter, ParseError, ToCss};
 
 
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, PartialOrd, Ord)]
-pub struct LayerOrder(u32);
+
+
+#[derive(Clone, Copy, Debug, Eq, Hash, MallocSizeOf, PartialEq, PartialOrd, Ord)]
+pub struct LayerOrder(u16);
 
 impl LayerOrder {
     
     pub const fn root() -> Self {
-        Self(std::u32::MAX)
+        Self(std::u16::MAX)
     }
 
     
@@ -37,7 +39,9 @@ impl LayerOrder {
     
     #[inline]
     pub fn inc(&mut self) {
-        self.0 += 1;
+        if self.0 != std::u16::MAX {
+            self.0 += 1;
+        }
     }
 }
 
