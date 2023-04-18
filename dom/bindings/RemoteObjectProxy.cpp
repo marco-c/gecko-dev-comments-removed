@@ -75,6 +75,7 @@ bool RemoteObjectProxyBase::getPrototypeIfOrdinary(
   
   
   *aIsOrdinary = true;
+  aProtop.set(nullptr);
   return true;
 }
 
