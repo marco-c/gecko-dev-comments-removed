@@ -115,9 +115,7 @@ class Export {
 
   DefinitionKind kind() const { return pod.kind_; }
   uint32_t funcIndex() const;
-#ifdef ENABLE_WASM_EXCEPTIONS
   uint32_t tagIndex() const;
-#endif
   uint32_t globalIndex() const;
   uint32_t tableIndex() const;
 
@@ -295,8 +293,6 @@ using GlobalDescVector = Vector<GlobalDesc, 0, SystemAllocPolicy>;
 
 using TagOffsetVector = Vector<uint32_t, 0, SystemAllocPolicy>;
 
-
-
 struct TagType : AtomicRefCounted<TagType> {
   ValTypeVector argTypes_;
   TagOffsetVector argOffsets_;
@@ -324,7 +320,6 @@ struct TagType : AtomicRefCounted<TagType> {
 using MutableTagType = RefPtr<TagType>;
 using SharedTagType = RefPtr<const TagType>;
 
-#ifdef ENABLE_WASM_EXCEPTIONS
 struct TagDesc {
   TagKind kind;
   SharedTagType type;
@@ -342,7 +337,6 @@ struct TagDesc {
 };
 
 using TagDescVector = Vector<TagDesc, 0, SystemAllocPolicy>;
-#endif
 
 
 
