@@ -75,21 +75,22 @@ fn overflowing_the_task_queue_records_telemetry() {
     };
 
     
-    for _ in 0..110 {
+    for _ in 0..1010 {
         metrics::rapid_counting.add(1);
     }
 
     
     common::initialize(cfg);
 
-    assert_eq!(Some(100), metrics::rapid_counting.test_get_value(None));
+    assert_eq!(Some(1000), metrics::rapid_counting.test_get_value(None));
 
+    
     
     
     let val = metrics::preinit_tasks_overflow
         .test_get_value(None)
         .unwrap();
-    assert!(val >= 110);
+    assert!(val >= 1010);
 
     glean::shutdown();
 }
