@@ -564,5 +564,11 @@ union GIOChannelCreationArgs
   GIOChannelOpenArgs;      
   GIOChannelConnectArgs;   
 };
+
+struct RemoteStreamInfo {
+  nsIInputStream inputStream;
+  nsCString contentType;
+  int64_t contentLength;
+};
 } 
 } 

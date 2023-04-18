@@ -8,15 +8,13 @@
 
 #include "mozilla/Result.h"
 #include "mozilla/MozPromise.h"
+#include "mozilla/net/RemoteStreamGetter.h"
 #include "SubstitutingProtocolHandler.h"
 #include "nsIInputStream.h"
 #include "nsWeakReference.h"
 
 namespace mozilla {
 namespace net {
-
-using PageThumbStreamPromise =
-    mozilla::MozPromise<nsCOMPtr<nsIInputStream>, nsresult, false>;
 
 class RemoteStreamGetter;
 
@@ -47,8 +45,8 @@ class PageThumbProtocolHandler final
 
 
 
-  RefPtr<PageThumbStreamPromise> NewStream(nsIURI* aChildURI,
-                                           bool* aTerminateSender);
+  RefPtr<RemoteStreamPromise> NewStream(nsIURI* aChildURI,
+                                        bool* aTerminateSender);
 
  protected:
   ~PageThumbProtocolHandler() = default;
@@ -112,9 +110,6 @@ class PageThumbProtocolHandler final
   
   
   static StaticRefPtr<PageThumbProtocolHandler> sSingleton;
-
-  
-  static void SetContentType(nsIURI* aURI, nsIChannel* aChannel);
 
   
   static void NewSimpleChannel(nsIURI* aURI, nsILoadInfo* aLoadinfo,
