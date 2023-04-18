@@ -4305,7 +4305,10 @@ nscoord nsFlexContainerFrame::ComputeMainSize(
     return aTentativeContentBoxMainSize;
   }
 
-  if (aTentativeContentBoxMainSize != NS_UNCONSTRAINEDSIZE) {
+  const bool shouldApplyAutomaticMinimumOnBlockAxis =
+      aReflowInput.ShouldApplyAutomaticMinimumOnBlockAxis();
+  if (aTentativeContentBoxMainSize != NS_UNCONSTRAINEDSIZE &&
+      !shouldApplyAutomaticMinimumOnBlockAxis) {
     
     
     
@@ -4319,13 +4322,24 @@ nscoord nsFlexContainerFrame::ComputeMainSize(
     return aReflowInput.ComputedMinBSize();
   }
 
-  
-  
-  
   const AuCoord64 largestLineMainSize = GetLargestLineMainSize(aLines);
-  return NS_CSS_MINMAX(nscoord(largestLineMainSize.ToMinMaxClamped()),
-                       aReflowInput.ComputedMinBSize(),
-                       aReflowInput.ComputedMaxBSize());
+  const nscoord contentBSize = NS_CSS_MINMAX(
+      nscoord(largestLineMainSize.ToMinMaxClamped()),
+      aReflowInput.ComputedMinBSize(), aReflowInput.ComputedMaxBSize());
+  
+  
+  
+  
+  if (shouldApplyAutomaticMinimumOnBlockAxis) {
+    
+    
+    return std::max(contentBSize, aTentativeContentBoxMainSize);
+  }
+
+  
+  
+  
+  return contentBSize;
 }
 
 nscoord nsFlexContainerFrame::ComputeCrossSize(
@@ -4349,8 +4363,11 @@ nscoord nsFlexContainerFrame::ComputeCrossSize(
     return aTentativeContentBoxCrossSize;
   }
 
+  const bool shouldApplyAutomaticMinimumOnBlockAxis =
+      aReflowInput.ShouldApplyAutomaticMinimumOnBlockAxis();
   const nscoord computedBSize = aReflowInput.ComputedBSize();
-  if (computedBSize != NS_UNCONSTRAINEDSIZE) {
+  if (computedBSize != NS_UNCONSTRAINEDSIZE &&
+      !shouldApplyAutomaticMinimumOnBlockAxis) {
     
     *aIsDefinite = true;
 
@@ -4368,11 +4385,24 @@ nscoord nsFlexContainerFrame::ComputeCrossSize(
   }
 
   
-  
-  
   *aIsDefinite = false;
-  return NS_CSS_MINMAX(aSumLineCrossSizes, aReflowInput.ComputedMinBSize(),
-                       aReflowInput.ComputedMaxBSize());
+
+  const nscoord contentBSize =
+      NS_CSS_MINMAX(aSumLineCrossSizes, aReflowInput.ComputedMinBSize(),
+                    aReflowInput.ComputedMaxBSize());
+  
+  
+  
+  if (shouldApplyAutomaticMinimumOnBlockAxis) {
+    
+    
+    return std::max(contentBSize, computedBSize);
+  }
+
+  
+  
+  
+  return contentBSize;
 }
 
 LogicalSize nsFlexContainerFrame::ComputeAvailableSizeForItems(

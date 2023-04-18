@@ -845,6 +845,15 @@ struct ReflowInput : public SizeComputationInput {
   
   
   
+  
+  
+  
+  
+  bool ShouldApplyAutomaticMinimumOnBlockAxis() const;
+
+  
+  
+  
   static mozilla::LogicalMargin ComputeRelativeOffsets(
       mozilla::WritingMode aWM, nsIFrame* aFrame,
       const mozilla::LogicalSize& aCBSize);

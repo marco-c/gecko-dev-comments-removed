@@ -1836,19 +1836,6 @@ static nscoord ApplyLineClamp(const ReflowInput& aReflowInput,
   return edge;
 }
 
-static bool ShouldApplyAutomaticMinimumOnBlockAxis(
-    WritingMode aWM, const nsStyleDisplay* aDisplay,
-    const nsStylePosition* aPosition) {
-  
-  
-  
-  
-  
-  
-  
-  return !aDisplay->IsScrollableOverflow() && aPosition->MinBSize(aWM).IsAuto();
-}
-
 void nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
                                     BlockReflowState& aState,
                                     ReflowOutput& aMetrics,
@@ -1930,9 +1917,7 @@ void nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
     
     
     
-    if (aReflowInput.mFlags.mIsBSizeSetByAspectRatio &&
-        ShouldApplyAutomaticMinimumOnBlockAxis(wm, aReflowInput.mStyleDisplay,
-                                               aReflowInput.mStylePosition)) {
+    if (aReflowInput.ShouldApplyAutomaticMinimumOnBlockAxis()) {
       
       
       finalSize.BSize(wm) =
