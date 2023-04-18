@@ -196,6 +196,10 @@ class nsHostRecord : public mozilla::LinkedListElement<RefPtr<nsHostRecord>>,
 
   
   
+  mozilla::Atomic<int32_t> mTrrAttempts{0};
+
+  
+  
   
   bool negative = false;
 
