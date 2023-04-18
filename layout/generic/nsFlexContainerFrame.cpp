@@ -324,25 +324,33 @@ class MOZ_STACK_CLASS nsFlexContainerFrame::FlexboxAxisTracker {
         "This helper accepts only 'LEFT' or 'RIGHT' flags!");
 
     const auto wm = GetWritingMode();
-    if (IsColumnOriented() && !wm.IsVertical()) {
+    const bool isJustifyLeft = aFlags == StyleAlignFlags::LEFT;
+    if (IsColumnOriented()) {
+      if (!wm.IsVertical()) {
+        
+        
+        
+        return StyleAlignFlags::START;
+      }
+
+      MOZ_ASSERT(wm.PhysicalAxis(MainAxis()) == eAxisHorizontal,
+                 "Vertical column-oriented flex container's main axis should "
+                 "be parallel to physical left <-> right axis!");
       
       
-      
-      return StyleAlignFlags::START;
+      return isJustifyLeft == wm.IsVerticalLR() ? StyleAlignFlags::START
+                                                : StyleAlignFlags::END;
     }
 
-    MOZ_ASSERT(
-        MainAxis() == eLogicalAxisInline ||
-            wm.PhysicalAxis(MainAxis()) == eAxisHorizontal,
-        "The container's main axis should be parallel to either line-left "
-        "<-> line-right axis or physical left <-> physical right axis!");
+    MOZ_ASSERT(MainAxis() == eLogicalAxisInline,
+               "Row-oriented flex container's main axis should be parallel to "
+               "line-left <-> line-right axis!");
 
     
     
-    const bool isLTR = wm.IsPhysicalLTR();
-    const bool isJustifyLeft = aFlags == StyleAlignFlags::LEFT;
-    return isJustifyLeft == isLTR ? StyleAlignFlags::START
-                                  : StyleAlignFlags::END;
+    
+    return isJustifyLeft == wm.IsBidiLTR() ? StyleAlignFlags::START
+                                           : StyleAlignFlags::END;
   }
 
   
