@@ -36,6 +36,10 @@ function check_channel(subject) {
 let gPrivateWin;
 async function test() {
   waitForExplicitFinish(); 
+
+  
+  setInstallTriggerPrefs();
+
   await SpecialPowers.pushPrefEnv({
     set: [["dom.security.https_first_pbm", false]],
   });

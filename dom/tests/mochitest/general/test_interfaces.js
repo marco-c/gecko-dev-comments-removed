@@ -669,7 +669,13 @@ var interfaceNamesInGlobalScope = [
   
   { name: "InputEvent", insecureContext: true },
   
-  { name: "InstallTrigger", insecureContext: true },
+  {
+    name: "InstallTrigger",
+    insecureContext: true,
+    disabled: !SpecialPowers.Services.prefs.getBoolPref(
+      "extensions.InstallTrigger.enabled"
+    ),
+  },
   
   { name: "IntersectionObserver", insecureContext: true },
   

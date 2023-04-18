@@ -3,6 +3,18 @@
 
 
 function test() {
+  if (
+    !SpecialPowers.Services.prefs.getBoolPref(
+      "extensions.InstallTrigger.enabled"
+    ) ||
+    !SpecialPowers.Services.prefs.getBoolPref(
+      "extensions.InstallTriggerImpl.enabled"
+    )
+  ) {
+    ok(true, "InstallTrigger is not enabled");
+    return;
+  }
+
   
   SpecialPowers.pushPrefEnv({
     set: [["extensions.postDownloadThirdPartyPrompt", false]],

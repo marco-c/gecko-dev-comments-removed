@@ -3,6 +3,9 @@
 
 function test() {
   
+  setInstallTriggerPrefs();
+
+  
   Services.prefs.setBoolPref(
     "network.auth.non-web-content-triggered-resources-http-auth-allow",
     true

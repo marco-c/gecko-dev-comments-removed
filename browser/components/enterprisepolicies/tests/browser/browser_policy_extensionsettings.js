@@ -33,6 +33,17 @@ function promisePopupNotificationShown(name) {
   });
 }
 
+add_setup(async function ensureInstallTriggerEnabled() {
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["extensions.InstallTrigger.enabled", true],
+      ["extensions.InstallTriggerImpl.enabled", true],
+    ],
+  });
+});
+
 add_task(async function test_install_source_blocked_link() {
   await setupPolicyEngineWithJson({
     policies: {

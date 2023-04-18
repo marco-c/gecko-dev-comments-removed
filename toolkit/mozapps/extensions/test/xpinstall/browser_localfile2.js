@@ -1,3 +1,12 @@
+add_setup(async function() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["extensions.InstallTrigger.enabled", true],
+      ["extensions.InstallTriggerImpl.enabled", true],
+    ],
+  });
+});
+
 
 
 

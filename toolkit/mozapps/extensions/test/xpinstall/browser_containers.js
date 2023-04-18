@@ -35,6 +35,9 @@ function check_channel(subject) {
 
 
 function test() {
+  
+  setInstallTriggerPrefs();
+
   Harness.installConfirmCallback = confirm_install;
   Harness.installEndedCallback = install_ended;
   Harness.installsCompletedCallback = finish_test;

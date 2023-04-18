@@ -1,6 +1,9 @@
 
 
 function test() {
+  
+  setInstallTriggerPrefs();
+
   Harness.installEndedCallback = check_xpi_install;
   Harness.installsCompletedCallback = finish_test;
   Harness.setup();

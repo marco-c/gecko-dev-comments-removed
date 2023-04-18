@@ -16,6 +16,9 @@ function setup_redirect(aSettings) {
 var gInstall = null;
 
 function test() {
+  
+  setInstallTriggerPrefs();
+
   Harness.downloadFailedCallback = download_failed;
   Harness.installsCompletedCallback = finish_failed_download;
   Harness.setup();

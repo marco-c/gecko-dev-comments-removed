@@ -3,6 +3,9 @@
 
 
 function test() {
+  
+  setInstallTriggerPrefs();
+
   Harness.installConfirmCallback = confirm_install;
   Harness.installBlockedCallback = allow_blocked;
   Harness.installsCompletedCallback = finish_test;

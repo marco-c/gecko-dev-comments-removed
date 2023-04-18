@@ -3,6 +3,9 @@
 
 function test() {
   
+  setInstallTriggerPrefs();
+
+  
   SpecialPowers.pushPrefEnv({
     set: [["extensions.postDownloadThirdPartyPrompt", false]],
   });

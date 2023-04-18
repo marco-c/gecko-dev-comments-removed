@@ -1,6 +1,13 @@
 
 
 add_task(async function() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["extensions.InstallTrigger.enabled", true],
+      ["extensions.InstallTriggerImpl.enabled", true],
+    ],
+  });
+
   let testtab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
     TESTROOT + "bug638292.html"

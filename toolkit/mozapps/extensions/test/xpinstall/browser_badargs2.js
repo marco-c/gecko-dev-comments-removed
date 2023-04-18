@@ -2,6 +2,9 @@
 
 
 function test() {
+  
+  setInstallTriggerPrefs();
+
   waitForExplicitFinish();
 
   var triggers = encodeURIComponent(

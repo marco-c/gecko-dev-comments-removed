@@ -4,6 +4,9 @@
 var wasOriginBlocked = false;
 
 function test() {
+  
+  setInstallTriggerPrefs();
+
   Harness.installOriginBlockedCallback = install_blocked;
   Harness.installsCompletedCallback = finish_test;
   Harness.finalContentEvent = "InstallComplete";

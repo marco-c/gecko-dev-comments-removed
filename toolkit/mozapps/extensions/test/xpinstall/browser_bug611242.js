@@ -2,6 +2,13 @@
 
 
 add_task(async function test() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["extensions.InstallTrigger.enabled", true],
+      ["extensions.InstallTriggerImpl.enabled", true],
+    ],
+  });
+
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: TESTROOT + "enabled.html" },
     async function(browser) {

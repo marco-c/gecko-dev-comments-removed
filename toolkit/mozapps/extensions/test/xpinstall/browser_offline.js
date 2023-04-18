@@ -3,6 +3,9 @@ var proxyPrefValue;
 
 
 function test() {
+  
+  setInstallTriggerPrefs();
+
   Harness.downloadProgressCallback = download_progress;
   Harness.installsCompletedCallback = finish_test;
   Harness.setup();

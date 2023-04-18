@@ -1,6 +1,9 @@
 
 
 function test() {
+  
+  setInstallTriggerPrefs();
+
   Harness.installEndedCallback = install_ended;
   Harness.installsCompletedCallback = finish_test;
   Harness.setup();

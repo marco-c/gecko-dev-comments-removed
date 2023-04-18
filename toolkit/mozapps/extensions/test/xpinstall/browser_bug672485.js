@@ -5,6 +5,9 @@
 var gWindowWatcher = null;
 
 function test() {
+  
+  setInstallTriggerPrefs();
+
   Harness.installConfirmCallback = confirm_install;
   Harness.installCancelledCallback = cancelled_install;
   Harness.installEndedCallback = complete_install;
