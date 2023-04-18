@@ -1040,7 +1040,7 @@ bool nsStyleSVGReset::HasMask() const {
 
 nsChangeHint nsStylePage::CalcDifference(const nsStylePage& aNewData) const {
   
-  if (aNewData.mSize != mSize) {
+  if (aNewData.mSize != mSize || aNewData.mPage != mPage) {
     return nsChangeHint_NeutralChange;
   }
   return nsChangeHint_Empty;
