@@ -845,17 +845,17 @@ TEST_F(MP4MetadataTelemetryFixture, Telemetry) {
                       uint32_t>& aExpectedSampleDescriptionEntryCounts,
           const char* aFileName) {
         
-        JS::RootedValue snapshot(cx.GetJSContext());
+        JS::Rooted<JS::Value> snapshot(cx.GetJSContext());
         TelemetryTestHelpers::GetSnapshots(cx.GetJSContext(), mTelemetry,
                                            "" ,
                                            &snapshot, false );
 
         
-        JS::RootedValue values(cx.GetJSContext());
-        JS::RootedValue value(cx.GetJSContext());
+        JS::Rooted<JS::Value> values(cx.GetJSContext());
+        JS::Rooted<JS::Value> value(cx.GetJSContext());
 
         
-        JS::RootedValue multipleCodecsHistogram(cx.GetJSContext());
+        JS::Rooted<JS::Value> multipleCodecsHistogram(cx.GetJSContext());
         TelemetryTestHelpers::GetProperty(
             cx.GetJSContext(),
             "MEDIA_MP4_PARSE_SAMPLE_DESCRIPTION_ENTRIES_HAVE_MULTIPLE_CODECS",
@@ -880,7 +880,7 @@ TEST_F(MP4MetadataTelemetryFixture, Telemetry) {
             << aFileName;
 
         
-        JS::RootedValue multipleCryptoHistogram(cx.GetJSContext());
+        JS::Rooted<JS::Value> multipleCryptoHistogram(cx.GetJSContext());
         TelemetryTestHelpers::GetProperty(
             cx.GetJSContext(),
             "MEDIA_MP4_PARSE_SAMPLE_DESCRIPTION_ENTRIES_HAVE_MULTIPLE_CRYPTO",
@@ -904,7 +904,7 @@ TEST_F(MP4MetadataTelemetryFixture, Telemetry) {
             << aFileName;
 
         
-        JS::RootedValue numSamplesHistogram(cx.GetJSContext());
+        JS::Rooted<JS::Value> numSamplesHistogram(cx.GetJSContext());
         TelemetryTestHelpers::GetProperty(
             cx.GetJSContext(), "MEDIA_MP4_PARSE_NUM_SAMPLE_DESCRIPTION_ENTRIES",
             snapshot, &numSamplesHistogram);

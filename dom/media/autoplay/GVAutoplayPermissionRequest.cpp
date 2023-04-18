@@ -170,7 +170,7 @@ GVAutoplayPermissionRequest::Cancel() {
 }
 
 NS_IMETHODIMP
-GVAutoplayPermissionRequest::Allow(JS::HandleValue aChoices) {
+GVAutoplayPermissionRequest::Allow(JS::Handle<JS::Value> aChoices) {
   MOZ_ASSERT(mContext, "Do not call 'Allow()' twice!");
   
   
