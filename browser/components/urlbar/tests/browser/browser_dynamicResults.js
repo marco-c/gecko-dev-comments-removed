@@ -212,7 +212,7 @@ add_task(async function viewCreated() {
 });
 
 
-add_task(async function viewUpdated() {
+async function checkViewUpdated(provider) {
   await withDynamicTypeProvider(async () => {
     
     
@@ -268,7 +268,40 @@ add_task(async function viewUpdated() {
 
       await UrlbarTestUtils.promisePopupClose(window);
     }
-  });
+  }, provider);
+}
+
+add_task(async function checkViewUpdatedPlain() {
+  await checkViewUpdated(new TestProvider());
+});
+
+add_task(async function checkViewUpdatedWDynamicViewTemplate() {
+  
+
+
+  class TestShouldCallGetViewTemplateProvider extends TestProvider {
+    getViewTemplateWasCalled = false;
+
+    getViewTemplate() {
+      this.getViewTemplateWasCalled = true;
+      return DYNAMIC_TYPE_VIEW_TEMPLATE;
+    }
+  }
+
+  let provider = new TestShouldCallGetViewTemplateProvider();
+  Assert.ok(
+    !provider.getViewTemplateWasCalled,
+    "getViewTemplate has not yet been called for the provider"
+  );
+  Assert.ok(
+    !UrlbarView.dynamicViewTemplatesByName.get(DYNAMIC_TYPE_NAME),
+    "No template has been registered"
+  );
+  await checkViewUpdated(provider);
+  Assert.ok(
+    provider.getViewTemplateWasCalled,
+    "getViewTemplate was called for the provider"
+  );
 });
 
 
@@ -699,10 +732,12 @@ async function withDynamicTypeProvider(
 ) {
   
   UrlbarResult.addDynamicResultType(DYNAMIC_TYPE_NAME);
-  UrlbarView.addDynamicViewTemplate(
-    DYNAMIC_TYPE_NAME,
-    DYNAMIC_TYPE_VIEW_TEMPLATE
-  );
+  if (!provider.getViewTemplate) {
+    UrlbarView.addDynamicViewTemplate(
+      DYNAMIC_TYPE_NAME,
+      DYNAMIC_TYPE_VIEW_TEMPLATE
+    );
+  }
 
   
   UrlbarProvidersManager.registerProvider(provider);
@@ -711,7 +746,9 @@ async function withDynamicTypeProvider(
 
   
   UrlbarProvidersManager.unregisterProvider(provider);
-  UrlbarView.removeDynamicViewTemplate(DYNAMIC_TYPE_NAME);
+  if (!provider.getViewTemplate) {
+    UrlbarView.removeDynamicViewTemplate(DYNAMIC_TYPE_NAME);
+  }
   UrlbarResult.removeDynamicResultType(DYNAMIC_TYPE_NAME);
 }
 
