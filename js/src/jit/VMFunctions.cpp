@@ -78,7 +78,7 @@ struct ReturnTypeToDataType<T*> {
   
   static_assert(std::is_base_of_v<gc::Cell, T>);
 
-  static const DataType result = Type_Object;
+  static const DataType result = Type_Cell;
 };
 
 
