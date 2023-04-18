@@ -2172,7 +2172,8 @@ bool nsContentUtils::ShouldResistFingerprinting(nsIPrincipal* aPrincipal) {
 }
 
 
-bool nsContentUtils::ShouldResistFingerprinting(const char* aChar) {
+bool nsContentUtils::ShouldResistFingerprinting(const char* aJustification) {
+  
   return ShouldResistFingerprinting();
 }
 
@@ -2187,12 +2188,13 @@ inline void LogDomainAndPrefList(const char* exemptedDomainsPrefName,
 }
 
 
-bool nsContentUtils::ShouldResistFingerprinting(nsIChannel* aChannel) {
-  const unsigned int webExtensionExemptMask = 0x01;
-  const unsigned int nonPBMExemptMask = 0x02;
-  const unsigned int specificDomainsExemptMask = 0x04;
+const unsigned int sWebExtensionExemptMask = 0x01;
+const unsigned int sNonPBMExemptMask = 0x02;
+const unsigned int sSpecificDomainsExemptMask = 0x04;
 
-  if (!ShouldResistFingerprinting()) {
+
+bool nsContentUtils::ShouldResistFingerprinting(nsIChannel* aChannel) {
+  if (!ShouldResistFingerprinting("Legacy quick-check")) {
     return false;
   }
 
@@ -2206,7 +2208,7 @@ bool nsContentUtils::ShouldResistFingerprinting(nsIChannel* aChannel) {
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
 
   if (StaticPrefs::privacy_resistFingerprinting_testGranularityMask() &
-      nonPBMExemptMask) {
+      sNonPBMExemptMask) {
     
     if (loadInfo->GetOriginAttributes().mPrivateBrowsingId == 0) {
       return false;
@@ -2240,14 +2242,14 @@ bool nsContentUtils::ShouldResistFingerprinting(nsIChannel* aChannel) {
     }
 
     if (StaticPrefs::privacy_resistFingerprinting_testGranularityMask() &
-        webExtensionExemptMask) {
+        sWebExtensionExemptMask) {
       if (channelURI->SchemeIs("web-extension")) {
         return false;
       }
     }
 
     if (StaticPrefs::privacy_resistFingerprinting_testGranularityMask() &
-        specificDomainsExemptMask) {
+        sSpecificDomainsExemptMask) {
       nsAutoCString list;
       Preferences::GetCString(exemptedDomainsPrefName, list);
       ToLowerCase(list);
@@ -2263,38 +2265,53 @@ bool nsContentUtils::ShouldResistFingerprinting(nsIChannel* aChannel) {
 
     return !isExemptDomain;
   }
-  
 
-  nsIPrincipal* loadingPrincipal = loadInfo->GetLoadingPrincipal();
   
-  
-  MOZ_RELEASE_ASSERT(
-      loadingPrincipal,
-      "Got NULL loadingPrincipal in "
-      "nsContentUtils::ShouldResistFingerprinting(nsIChannel* aChannel)");
+  return ShouldResistFingerprinting(loadInfo->GetLoadingPrincipal(),
+                                    loadInfo->GetOriginAttributes());
+}
 
-  if (loadingPrincipal->IsSystemPrincipal()) {
-    MOZ_LOG(nsContentUtils::ResistFingerprintingLog(), LogLevel::Info,
-            ("Called nsContentUtils::ShouldResistFingerprinting(nsIChannel* "
-             "aChannel) with a system loadingPrincipal"));
+
+bool nsContentUtils::ShouldResistFingerprinting(
+    nsIPrincipal* aPrincipal,
+    const mozilla::OriginAttributes& aOriginAttributes) {
+  if (!ShouldResistFingerprinting("Legacy quick-check")) {
     return false;
   }
 
   if (StaticPrefs::privacy_resistFingerprinting_testGranularityMask() &
-      webExtensionExemptMask) {
-    if (BasePrincipal::Cast(loadingPrincipal)->AddonPolicy()) {
+      sNonPBMExemptMask) {
+    
+    if (aOriginAttributes.mPrivateBrowsingId == 0) {
       return false;
     }
   }
 
+  
+  if (aPrincipal->SchemeIs("about") || aPrincipal->SchemeIs("chrome") ||
+      aPrincipal->SchemeIs("resource") || aPrincipal->SchemeIs("view-source")) {
+    return false;
+  }
+
   if (StaticPrefs::privacy_resistFingerprinting_testGranularityMask() &
-      specificDomainsExemptMask) {
-    loadingPrincipal->IsURIInPrefList(exemptedDomainsPrefName, &isExemptDomain);
+      sWebExtensionExemptMask) {
+    if (BasePrincipal::Cast(aPrincipal)->AddonPolicy()) {
+      return false;
+    }
+  }
+
+  bool isExemptDomain = false;
+  const char* exemptedDomainsPrefName =
+      "privacy.resistFingerprinting.exemptedDomains";
+
+  if (StaticPrefs::privacy_resistFingerprinting_testGranularityMask() &
+      sSpecificDomainsExemptMask) {
+    aPrincipal->IsURIInPrefList(exemptedDomainsPrefName, &isExemptDomain);
 
     if (MOZ_LOG_TEST(nsContentUtils::ResistFingerprintingLog(),
                      mozilla::LogLevel::Debug)) {
       nsAutoCString origin;
-      loadingPrincipal->GetAsciiOrigin(origin);
+      aPrincipal->GetAsciiOrigin(origin);
       LogDomainAndPrefList(exemptedDomainsPrefName, origin, isExemptDomain);
     }
   }
