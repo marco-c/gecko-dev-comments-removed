@@ -1223,8 +1223,20 @@ nsresult ApplyAddonContentScriptCSP(nsISupports* prinOrSop) {
   }
 #endif
 
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<ExpandedPrincipal> clonedPrincipal = ExpandedPrincipal::Create(
+      expanded->AllowList(), expanded->OriginAttributesRef());
+  MOZ_ASSERT(clonedPrincipal);
+
   csp = new nsCSPContext();
-  MOZ_TRY(csp->SetRequestContextWithPrincipal(expanded, selfURI, u""_ns, 0));
+  MOZ_TRY(
+      csp->SetRequestContextWithPrincipal(clonedPrincipal, selfURI, u""_ns, 0));
 
   MOZ_TRY(csp->AppendPolicy(baseCSP, false, false));
 
