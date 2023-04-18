@@ -78,6 +78,13 @@ class CDP {
     
     
     
+    
+    logger.debug(`Delay start-up until all windows have been restored`);
+    await this.agent.browserStartupFinished;
+
+    
+    
+    
     this._running = true;
 
     RecommendedPreferences.applyPreferences(RECOMMENDED_PREFS);

@@ -14,6 +14,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Services: "resource://gre/modules/Services.jsm",
 
   CDP: "chrome://remote/content/cdp/CDP.jsm",
+  Deferred: "chrome://remote/content/shared/Sync.jsm",
   HttpServer: "chrome://remote/content/server/HTTPD.jsm",
   Log: "chrome://remote/content/shared/Log.jsm",
   WebDriverBiDi: "chrome://remote/content/webdriver-bidi/WebDriverBiDi.jsm",
@@ -44,6 +45,7 @@ class RemoteAgentClass {
   #enabled;
   #port;
   #server;
+  #browserStartupFinished;
 
   #cdp;
   #webDriverBiDi;
@@ -55,6 +57,7 @@ class RemoteAgentClass {
     this.#enabled = false;
     this.#port = DEFAULT_PORT;
     this.#server = null;
+    this.#browserStartupFinished = Deferred();
 
     
     this.#cdp = null;
@@ -92,6 +95,17 @@ class RemoteAgentClass {
 
   get allowOrigins() {
     return this.#allowOrigins;
+  }
+
+  
+
+
+
+
+
+
+  get browserStartupFinished() {
+    return this.#browserStartupFinished.promise;
   }
 
   get cdp() {
@@ -201,8 +215,7 @@ class RemoteAgentClass {
 
       Services.obs.notifyObservers(null, "remote-listening", true);
 
-      await this.cdp?.start();
-      await this.webDriverBiDi?.start();
+      await Promise.all([this.webDriverBiDi?.start(), this.cdp?.start()]);
     } catch (e) {
       await this.close();
       logger.error(`Unable to start remote agent: ${e.message}`, e);
@@ -298,7 +311,7 @@ class RemoteAgentClass {
         this.#enabled = this.handleRemoteDebuggingPortFlag(subject);
 
         if (this.enabled) {
-          Services.obs.addObserver(this, "remote-startup-requested");
+          Services.obs.addObserver(this, "final-ui-startup");
 
           this.#allowHosts = this.handleAllowHostsFlag(subject);
           this.#allowOrigins = this.handleAllowOriginsFlag(subject);
@@ -308,9 +321,9 @@ class RemoteAgentClass {
         
         
         
+        
 
-        
-        
+        Services.obs.addObserver(this, "sessionstore-windows-restored");
         Services.obs.addObserver(this, "quit-application");
 
         
@@ -335,7 +348,7 @@ class RemoteAgentClass {
 
         break;
 
-      case "remote-startup-requested":
+      case "final-ui-startup":
         Services.obs.removeObserver(this, topic);
 
         try {
@@ -347,6 +360,15 @@ class RemoteAgentClass {
 
         break;
 
+      // For now only used in CDP to wait until all the application windows
+      // have been opened and fully restored.
+      case "sessionstore-windows-restored":
+        Services.obs.removeObserver(this, topic);
+        this.#browserStartupFinished.resolve();
+        break;
+
+      // Listen for application shutdown to also shutdown the Remote Agent
+      // and a possible running instance of httpd.js.
       case "quit-application":
         Services.obs.removeObserver(this, "quit-application");
 

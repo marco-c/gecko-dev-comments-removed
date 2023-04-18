@@ -2758,9 +2758,6 @@ BrowserGlue.prototype = {
               "browser-startup-idle-tasks-finished"
             );
 
-            
-            
-            Services.obs.notifyObservers(null, "remote-startup-requested");
             Services.obs.notifyObservers(null, "marionette-startup-requested");
           });
         },
