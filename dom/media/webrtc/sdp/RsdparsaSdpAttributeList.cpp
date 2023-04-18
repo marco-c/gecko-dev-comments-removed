@@ -1188,7 +1188,12 @@ void RsdparsaSdpAttributeList::LoadRids(RustAttributeList* attributeList) {
     EncodingConstraints parameters;
     parameters.maxWidth = rid.params.max_width;
     parameters.maxHeight = rid.params.max_height;
-    parameters.maxFps = rid.params.max_fps;
+    
+    
+    
+    if (rid.params.max_fps) {
+      parameters.maxFps = Some(rid.params.max_fps);
+    }
     parameters.maxFs = rid.params.max_fs;
     parameters.maxBr = rid.params.max_br;
     parameters.maxPps = rid.params.max_pps;

@@ -139,8 +139,12 @@ unsigned int SelectSendFrameRate(const VideoCodecConfig& codecConfig,
     if (cur_fs > 0) {  
       new_framerate = codecConfig.mEncodingConstraints.maxMbps / cur_fs;
 
-      new_framerate =
-          MinIgnoreZero(new_framerate, codecConfig.mEncodingConstraints.maxFps);
+      if (codecConfig.mEncodingConstraints.maxFps.isSome()) {
+        
+        new_framerate = std::min(
+            new_framerate, static_cast<unsigned int>(std::round(
+                               *codecConfig.mEncodingConstraints.maxFps)));
+      }
     }
   }
   return new_framerate;
@@ -676,10 +680,19 @@ void WebrtcVideoConduit::OnControlConfigChange() {
                     this, streamCount);
 
         {
+          
+          Maybe<unsigned> negotiatedMaxFps;
+          if (codecConfig->mEncodingConstraints.maxFps.isSome()) {
+            unsigned integerMaxFps = static_cast<unsigned int>(
+                std::round(*codecConfig->mEncodingConstraints.maxFps));
+            
+            
+            if (integerMaxFps) {
+              negotiatedMaxFps = Some(integerMaxFps);
+            }
+          }
           const unsigned max_framerate =
-              codecConfig->mEncodingConstraints.maxFps > 0
-                  ? codecConfig->mEncodingConstraints.maxFps
-                  : DEFAULT_VIDEO_MAX_FRAMERATE;
+              negotiatedMaxFps.refOr(DEFAULT_VIDEO_MAX_FRAMERATE);
           
           mSendingFramerate = SelectSendFrameRate(*codecConfig, max_framerate,
                                                   mLastWidth, mLastHeight);
@@ -1821,8 +1834,10 @@ void WebrtcVideoConduit::DumpCodecDB() const {
     CSFLogDebug(LOGTAG, "Payload Type: %d", entry.mType);
     CSFLogDebug(LOGTAG, "Payload Max Frame Size: %d",
                 entry.mEncodingConstraints.maxFs);
-    CSFLogDebug(LOGTAG, "Payload Max Frame Rate: %d",
-                entry.mEncodingConstraints.maxFps);
+    if (entry.mEncodingConstraints.maxFps.isSome()) {
+      CSFLogDebug(LOGTAG, "Payload Max Frame Rate: %f",
+                  *entry.mEncodingConstraints.maxFps);
+    }
   }
 }
 
