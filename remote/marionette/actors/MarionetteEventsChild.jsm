@@ -13,13 +13,15 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
-XPCOMUtils.defineLazyModuleGetters(this, {
+const lazy = {};
+
+XPCOMUtils.defineLazyModuleGetters(lazy, {
   event: "chrome://remote/content/marionette/event.js",
   Log: "chrome://remote/content/shared/Log.jsm",
 });
 
-XPCOMUtils.defineLazyGetter(this, "logger", () =>
-  Log.get(Log.TYPES.MARIONETTE)
+XPCOMUtils.defineLazyGetter(lazy, "logger", () =>
+  lazy.Log.get(lazy.Log.TYPES.MARIONETTE)
 );
 
 class MarionetteEventsChild extends JSWindowActorChild {
@@ -31,8 +33,8 @@ class MarionetteEventsChild extends JSWindowActorChild {
     
     
     
-    if (Log.isTraceLevel) {
-      logger.trace(
+    if (lazy.Log.isTraceLevel) {
+      lazy.logger.trace(
         `[${this.browsingContext.id}] MarionetteEvents actor created ` +
           `for window id ${this.innerWindowId}`
       );
@@ -52,7 +54,7 @@ class MarionetteEventsChild extends JSWindowActorChild {
       (type === "DOMContentLoaded" && target.readyState != "interactive") ||
       (type === "pageshow" && target.readyState != "complete")
     ) {
-      logger.warn(
+      lazy.logger.warn(
         `Ignoring event '${type}' because document has an invalid ` +
           `readyState of '${target.readyState}'.`
       );
@@ -78,11 +80,11 @@ class MarionetteEventsChild extends JSWindowActorChild {
       
       
       case "click":
-        event.DoubleClickTracker.setClick();
+        lazy.event.DoubleClickTracker.setClick();
         break;
       case "dblclick":
       case "unload":
-        event.DoubleClickTracker.resetClick();
+        lazy.event.DoubleClickTracker.resetClick();
         break;
     }
   }

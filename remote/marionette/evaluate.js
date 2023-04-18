@@ -13,15 +13,17 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
-XPCOMUtils.defineLazyModuleGetters(this, {
+const lazy = {};
+
+XPCOMUtils.defineLazyModuleGetters(lazy, {
   element: "chrome://remote/content/marionette/element.js",
   error: "chrome://remote/content/shared/webdriver/Errors.jsm",
   Log: "chrome://remote/content/shared/Log.jsm",
   WebElement: "chrome://remote/content/marionette/element.js",
 });
 
-XPCOMUtils.defineLazyGetter(this, "logger", () =>
-  Log.get(Log.TYPES.MARIONETTE)
+XPCOMUtils.defineLazyGetter(lazy, "logger", () =>
+  lazy.Log.get(lazy.Log.TYPES.MARIONETTE)
 );
 
 const ARGUMENTS = "__webDriverArguments";
@@ -47,7 +49,11 @@ const evaluate = {};
 
 
 
-evaluate.assertAcyclic = function(obj, msg = "", err = error.JavaScriptError) {
+evaluate.assertAcyclic = function(
+  obj,
+  msg = "",
+  err = lazy.error.JavaScriptError
+) {
   if (evaluate.isCyclic(obj)) {
     throw new err(msg || "Cyclic object value");
   }
@@ -125,7 +131,9 @@ evaluate.sandbox = function(
   if (timeout !== null) {
     timeoutPromise = new Promise((resolve, reject) => {
       scriptTimeoutID = setTimeout(() => {
-        reject(new error.ScriptTimeoutError(`Timed out after ${timeout} ms`));
+        reject(
+          new lazy.error.ScriptTimeoutError(`Timed out after ${timeout} ms`)
+        );
       }, timeout);
     });
   }
@@ -148,7 +156,7 @@ evaluate.sandbox = function(
     }).apply(null, ${ARGUMENTS})`;
 
     unloadHandler = sandbox.cloneInto(
-      () => reject(new error.JavaScriptError("Document was unloaded")),
+      () => reject(new lazy.error.JavaScriptError("Document was unloaded")),
       marionetteSandbox
     );
     marionetteSandbox.window.addEventListener("unload", unloadHandler);
@@ -186,10 +194,10 @@ evaluate.sandbox = function(
   return Promise.race([promise, timeoutPromise])
     .catch(err => {
       
-      if (err instanceof error.ScriptTimeoutError) {
+      if (err instanceof lazy.error.ScriptTimeoutError) {
         throw err;
       }
-      throw new error.JavaScriptError(err);
+      throw new lazy.error.JavaScriptError(err);
     })
     .finally(() => {
       clearTimeout(scriptTimeoutID);
@@ -245,13 +253,13 @@ evaluate.fromJSON = function(options = {}) {
         return obj.map(e => evaluate.fromJSON({ obj: e, seenEls, win }));
 
         
-      } else if (WebElement.isReference(obj.webElRef)) {
-        if (seenEls instanceof element.ReferenceStore) {
+      } else if (lazy.WebElement.isReference(obj.webElRef)) {
+        if (seenEls instanceof lazy.element.ReferenceStore) {
           
           return seenEls.add(obj);
         } else if (!seenEls) {
           
-          return element.resolveElement(obj, win);
+          return lazy.element.resolveElement(obj, win);
         }
         throw new TypeError("seenEls is not an instance of ReferenceStore");
       }
@@ -319,24 +327,24 @@ evaluate.toJSON = function(obj, seenEls) {
     return obj;
 
     
-  } else if (element.isCollection(obj)) {
+  } else if (lazy.element.isCollection(obj)) {
     evaluate.assertAcyclic(obj);
     return [...obj].map(el => evaluate.toJSON(el, seenEls));
 
     
-  } else if (WebElement.isReference(obj)) {
+  } else if (lazy.WebElement.isReference(obj)) {
     
-    return seenEls.get(WebElement.fromJSON(obj));
+    return seenEls.get(lazy.WebElement.fromJSON(obj));
 
     
-  } else if (WebElement.isReference(obj.webElRef)) {
+  } else if (lazy.WebElement.isReference(obj.webElRef)) {
     
     return obj;
 
     
-  } else if (element.isElement(obj) || element.isShadowRoot(obj)) {
+  } else if (lazy.element.isElement(obj) || lazy.element.isShadowRoot(obj)) {
     
-    if (seenEls instanceof element.ReferenceStore) {
+    if (seenEls instanceof lazy.element.ReferenceStore) {
       throw new TypeError(`ReferenceStore can't be used with Element`);
     }
 
@@ -345,7 +353,7 @@ evaluate.toJSON = function(obj, seenEls) {
     
     
     
-    return element.getElementId(Cu.unwaiveXrays(obj));
+    return lazy.element.getElementId(Cu.unwaiveXrays(obj));
 
     
   } else if (typeof obj.toJSON == "function") {
@@ -362,7 +370,7 @@ evaluate.toJSON = function(obj, seenEls) {
       rv[prop] = evaluate.toJSON(obj[prop], seenEls);
     } catch (e) {
       if (e.result == Cr.NS_ERROR_NOT_IMPLEMENTED) {
-        logger.debug(`Skipping ${prop}: ${e.message}`);
+        lazy.logger.debug(`Skipping ${prop}: ${e.message}`);
       } else {
         throw e;
       }
@@ -400,11 +408,11 @@ evaluate.isCyclic = function(value, stack = []) {
     return false;
 
     
-  } else if (element.isElement(value)) {
+  } else if (lazy.element.isElement(value)) {
     return false;
 
     
-  } else if (element.isCollection(value)) {
+  } else if (lazy.element.isCollection(value)) {
     if (stack.includes(value)) {
       return true;
     }
