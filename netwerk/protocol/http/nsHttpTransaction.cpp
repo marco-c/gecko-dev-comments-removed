@@ -1806,6 +1806,12 @@ nsresult nsHttpTransaction::Restart() {
   mRestarted = true;
 
   
+  if (!mEchConfigUsed &&
+      StaticPrefs::security_tls_ech_disable_grease_on_fallback()) {
+    mCaps |= NS_HTTP_DISALLOW_ECH;
+  }
+
+  
   SetRestartReason(TRANSACTION_RESTART_OTHERS);
 
   return gHttpHandler->InitiateTransaction(this, mPriority);

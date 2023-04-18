@@ -134,6 +134,7 @@ nsNSSSocketInfo::nsNSSSocketInfo(SharedSSLState& aState, uint32_t providerFlags,
       mFalseStarted(false),
       mIsFullHandshake(false),
       mNotedTimeUntilReady(false),
+      mEchGreaseUsed(false),
       mIsShortWritePending(false),
       mShortWritePendingByte(0),
       mShortWriteOriginalAmount(-1),
@@ -972,6 +973,12 @@ bool retryDueToTLSIntolerance(PRErrorCode err, nsNSSSocketInfo* socketInfo) {
   
   
   
+
+  if (StaticPrefs::security_tls_ech_disable_grease_on_fallback() &&
+      socketInfo->WasEchGreaseUsed()) {
+    
+    return true;
+  }
 
   SSLVersionRange range = socketInfo->GetTLSVersionRange();
   nsSSLIOLayerHelpers& helpers = socketInfo->SharedState().IOLayerHelpers();
@@ -2710,6 +2717,7 @@ static nsresult nsSSLIOLayerSetOptions(PRFileDesc* fd, bool forSTARTTLS,
         return NS_ERROR_FAILURE;
       }
     }
+    infoObject->SetEchGreaseUsed();
   }
 
   
