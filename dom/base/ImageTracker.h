@@ -18,8 +18,7 @@ namespace mozilla {
 struct MediaFeatureChange;
 }
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -67,7 +66,6 @@ class ImageTracker {
   bool mAnimating = true;
 };
 
-}  
 }  
 
 #endif  

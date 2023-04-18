@@ -16,8 +16,7 @@
 #include "mozilla/dom/NodeInfo.h"
 #include "nsGenericHTMLElement.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class GeneratedImageContent final : public nsGenericHTMLElement {
  public:
@@ -70,7 +69,6 @@ class GeneratedImageContent final : public nsGenericHTMLElement {
   bool mBroken = false;
 };
 
-}  
 }  
 
 #endif  

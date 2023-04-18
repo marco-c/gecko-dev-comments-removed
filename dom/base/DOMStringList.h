@@ -12,8 +12,7 @@
 #include "nsWrapperCache.h"
 #include "nsString.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class DOMStringList : public nsISupports, public nsWrapperCache {
  protected:
@@ -80,7 +79,6 @@ class DOMStringList : public nsISupports, public nsWrapperCache {
   nsTArray<nsString> mNames;
 };
 
-}  
 }  
 
 #endif 

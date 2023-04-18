@@ -20,8 +20,7 @@ class nsIPrincipal;
 class nsIURI;
 class nsPIDOMWindowInner;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -131,7 +130,6 @@ class Location final : public nsISupports,
   uint64_t mBrowsingContextId = 0;
 };
 
-}  
 }  
 
 #endif  

@@ -316,10 +316,8 @@ enum BFCacheStatus {
 }  
 }  
 
-namespace mozilla {
-namespace net {
+namespace mozilla::net {
 class ChannelEventQueue;
-}  
 }  
 
 
@@ -330,8 +328,7 @@ class ChannelEventQueue;
     }                                                \
   }
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class Document;
 class DOMStyleSheetSetList;
@@ -5434,7 +5431,6 @@ class MOZ_RAII IgnoreOpensDuringUnload final {
 
 bool IsInActiveTab(Document* aDoc);
 
-}  
 }  
 
 

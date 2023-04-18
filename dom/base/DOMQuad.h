@@ -24,8 +24,7 @@ struct JSContext;
 struct JSStructuredCloneReader;
 struct JSStructuredCloneWriter;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class DOMRectReadOnly;
 class DOMPoint;
@@ -85,7 +84,6 @@ class DOMQuad final : public nsWrapperCache {
   RefPtr<DOMPoint> mPoints[4];
 };
 
-}  
 }  
 
 #endif 

@@ -19,8 +19,7 @@
 class nsIGlobalObject;
 class nsPIDOMWindowInner;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class IdleDeadline final : public nsISupports, public nsWrapperCache {
  public:
@@ -50,7 +49,6 @@ class IdleDeadline final : public nsISupports, public nsWrapperCache {
   const DOMHighResTimeStamp mDeadline;
 };
 
-}  
 }  
 
 #endif  

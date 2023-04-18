@@ -18,9 +18,7 @@ class nsICSSLoaderObserver;
 class nsIPrincipal;
 class nsIURI;
 
-namespace mozilla {
-
-namespace dom {
+namespace mozilla::dom {
 
 class Document;
 class ShadowRoot;
@@ -282,8 +280,6 @@ class LinkStyle {
   uint32_t mLineNumber;
   uint32_t mColumnNumber;
 };
-
-}  
 
 }  
 

@@ -64,8 +64,7 @@ class nsNodeSupportsWeakRefTearoff final : public nsISupportsWeakReference {
 
 
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class ShadowRoot;
 
@@ -306,7 +305,6 @@ class FragmentOrElement : public nsIContent {
   friend class ::ContentUnbinder;
 };
 
-}  
 }  
 
 #define NS_ELEMENT_INTERFACE_TABLE_TO_MAP_SEGUE               \

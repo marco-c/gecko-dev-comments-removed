@@ -10,8 +10,7 @@
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/MozPromise.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -108,7 +107,6 @@ class DOMMozPromiseRequestHolder final : public DOMEventTargetHelper {
                                        DOMEventTargetHelper)
 };
 
-}  
 }  
 
 #endif  

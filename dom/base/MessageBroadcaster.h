@@ -10,8 +10,7 @@
 #include "mozilla/dom/MessageListenerManager.h"
 #include "nsContentUtils.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -46,7 +45,6 @@ class MessageBroadcaster : public MessageListenerManager {
                      MessageManagerFlags aFlags);
 };
 
-}  
 }  
 
 #endif  

@@ -12,8 +12,7 @@
 #ifndef mozilla_dom_DOMTokenListSupportedTokens_h
 #define mozilla_dom_DOMTokenListSupportedTokens_h
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 typedef const char* const DOMTokenListSupportedToken;
@@ -25,7 +24,6 @@ typedef const char* const DOMTokenListSupportedToken;
 
 typedef DOMTokenListSupportedToken* DOMTokenListSupportedTokenArray;
 
-}  
 }  
 
 #endif  

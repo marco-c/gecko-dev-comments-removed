@@ -17,8 +17,7 @@
 #include "nsIContent.h"
 #include "nsString.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -65,7 +64,6 @@ class DocumentType final : public CharacterData {
   nsString mInternalSubset;
 };
 
-}  
 }  
 
 already_AddRefed<mozilla::dom::DocumentType> NS_NewDOMDocumentType(
