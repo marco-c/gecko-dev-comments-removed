@@ -2444,13 +2444,6 @@ void PeerConnectionImpl::IceConnectionStateChange(
   mIceConnectionState = domState;
 
   
-  if (mWindow && mActiveOnWindow &&
-      mIceConnectionState == RTCIceConnectionState::Closed) {
-    mWindow->RemovePeerConnection();
-    mActiveOnWindow = false;
-  }
-
-  
   
   switch (mIceConnectionState) {
     case RTCIceConnectionState::New:
