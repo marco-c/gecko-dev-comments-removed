@@ -667,19 +667,6 @@ class HTMLEditor final : public EditorBase,
       nsresult
       InsertAsQuotation(const nsAString& aQuotedText, nsINode** aNodeInserted);
 
-  
-
-
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT nsresult
-  InsertTextWithQuotations(const nsAString& aStringToInsert);
-
   MOZ_CAN_RUN_SCRIPT nsresult InsertHTMLAsAction(
       const nsAString& aInString, nsIPrincipal* aPrincipal = nullptr);
 
