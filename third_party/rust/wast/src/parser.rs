@@ -63,8 +63,10 @@
 
 
 
+
 use crate::lexer::{Float, Integer, Lexer, Token};
-use crate::{Error, Span};
+use crate::token::Span;
+use crate::Error;
 use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 use std::fmt;
@@ -112,6 +114,7 @@ pub fn parse<'a, T: Parse<'a>>(buf: &'a ParseBuffer<'a>) -> Result<T> {
         Err(parser.error("extra tokens remaining after parse"))
     }
 }
+
 
 
 
@@ -268,7 +271,7 @@ pub trait Peek {
 
 
 
-pub type Result<T> = std::result::Result<T, Error>;
+pub type Result<T, E = Error> = std::result::Result<T, E>;
 
 
 
@@ -570,6 +573,17 @@ impl<'a> Parser<'a> {
 
     
     
+    pub fn peek3<T: Peek>(self) -> bool {
+        let mut cursor = self.cursor();
+        if cursor.advance_token().is_some() && cursor.advance_token().is_some() {
+            T::peek(cursor)
+        } else {
+            false
+        }
+    }
+
+    
+    
     
     
     
@@ -624,6 +638,7 @@ impl<'a> Parser<'a> {
         }
     }
 
+    
     
     
     
@@ -744,6 +759,8 @@ impl<'a> Parser<'a> {
         self.cursor().prev_span().unwrap_or(Span::from_offset(0))
     }
 
+    
+    
     
     
     

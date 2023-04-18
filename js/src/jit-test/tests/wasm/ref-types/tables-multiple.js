@@ -413,16 +413,7 @@ assertErrorMessage(() => wasmEvalText(
       (func $f
        (table.copy 0 (i32.const 0) (i32.const 0) (i32.const 2))))`), 
                    SyntaxError,
-                   /expected keyword `table`/);
-
-assertErrorMessage(() => wasmEvalText(
-    `(module
-      (table $t0 2 funcref)
-      (table $t1 2 funcref)
-      (func $f
-       (table.copy (i32.const 0) 0 (i32.const 0) (i32.const 2))))`), 
-                   SyntaxError,
-                   /wasm text error/);
+                   /unexpected token, expected an identifier or u32/);
 
 
 wasmEvalText(

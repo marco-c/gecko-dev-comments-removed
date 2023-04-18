@@ -24,7 +24,8 @@
 
 
 
-use crate::{Error, Span};
+use crate::token::Span;
+use crate::Error;
 use std::borrow::Cow;
 use std::char;
 use std::fmt;
@@ -483,10 +484,10 @@ impl<'a> Lexer<'a> {
     }
 
     fn number(&self, src: &'a str) -> Option<Token<'a>> {
-        let (sign, num) = if src.starts_with('+') {
-            (Some(SignToken::Plus), &src[1..])
-        } else if src.starts_with('-') {
-            (Some(SignToken::Minus), &src[1..])
+        let (sign, num) = if let Some(stripped) = src.strip_prefix('+') {
+            (Some(SignToken::Plus), stripped)
+        } else if let Some(stripped) = src.strip_prefix('-') {
+            (Some(SignToken::Minus), stripped)
         } else {
             (None, src)
         };
@@ -507,8 +508,8 @@ impl<'a> Lexer<'a> {
                     negative,
                 },
             }))));
-        } else if num.starts_with("nan:0x") {
-            let mut it = num[6..].chars();
+        } else if let Some(stripped) = num.strip_prefix("nan:0x") {
+            let mut it = stripped.chars();
             let to_parse = skip_undescores(&mut it, false, char::is_ascii_hexdigit)?;
             if it.next().is_some() {
                 return None;
@@ -524,9 +525,9 @@ impl<'a> Lexer<'a> {
         }
 
         
-        let (mut it, hex, test_valid) = if num.starts_with("0x") {
+        let (mut it, hex, test_valid) = if let Some(stripped) = num.strip_prefix("0x") {
             (
-                num[2..].chars(),
+                stripped.chars(),
                 true,
                 char::is_ascii_hexdigit as fn(&char) -> bool,
             )
