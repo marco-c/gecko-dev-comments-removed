@@ -2263,8 +2263,7 @@ void gfxFont::Draw(const gfxTextRun* aTextRun, uint32_t aStart, uint32_t aEnd,
   
   
   
-  bool doMultistrikeBold = ApplySyntheticBold() && !textDrawer;
-  if (doMultistrikeBold) {
+  if (IsSyntheticBold() && !textDrawer) {
     gfx::Float xscale = CalcXScale(aRunParams.context->GetDrawTarget());
     fontParams.synBoldOnePixelOffset = aRunParams.direction * xscale;
     if (xscale != 0.0) {
@@ -2947,7 +2946,7 @@ bool gfxFont::ShapeText(DrawTarget* aDrawTarget, const char16_t* aText,
 void gfxFont::PostShapingFixup(DrawTarget* aDrawTarget, const char16_t* aText,
                                uint32_t aOffset, uint32_t aLength,
                                bool aVertical, gfxShapedText* aShapedText) {
-  if (ApplySyntheticBold()) {
+  if (IsSyntheticBold()) {
     const Metrics& metrics = GetMetrics(aVertical ? nsFontMetrics::eVertical
                                                   : nsFontMetrics::eHorizontal);
     if (metrics.maxAdvance > metrics.aveCharWidth) {
