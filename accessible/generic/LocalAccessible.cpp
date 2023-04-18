@@ -3366,6 +3366,15 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
         mStateFlags &= ~eOldFrameHasValidTransformStyle;
       }
     }
+
+    if (IsDoc()) {
+      if (PresShell* presShell = AsDoc()->PresShellPtr()) {
+        
+        
+        float resolution = presShell->GetResolution();
+        fields->SetAttribute(nsGkAtoms::resolution, resolution);
+      }
+    }
   }
 
   return fields.forget();
