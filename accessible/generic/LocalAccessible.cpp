@@ -1009,7 +1009,19 @@ nsresult LocalAccessible::HandleAccEvent(AccEvent* aEvent) {
                                         announcementEvent->Priority());
           break;
         }
+#endif  
         case nsIAccessibleEvent::EVENT_TEXT_SELECTION_CHANGED: {
+#if defined(XP_WIN)
+          if (!StaticPrefs::accessibility_cache_enabled_AtStartup()) {
+            
+            
+            
+            
+            
+            ipcDoc->SendEvent(id, aEvent->GetEventType());
+            break;
+          }
+#endif  
           AccTextSelChangeEvent* textSelChangeEvent = downcast_accEvent(aEvent);
           AutoTArray<TextRange, 1> ranges;
           textSelChangeEvent->SelectionRanges(&ranges);
@@ -1030,7 +1042,6 @@ nsresult LocalAccessible::HandleAccEvent(AccEvent* aEvent) {
           ipcDoc->SendTextSelectionChangeEvent(id, textRangeData);
           break;
         }
-#endif
         case nsIAccessibleEvent::EVENT_DESCRIPTION_CHANGE:
         case nsIAccessibleEvent::EVENT_NAME_CHANGE: {
           SendCache(CacheDomain::NameAndDescription, CacheUpdateType::Update);
