@@ -5,8 +5,8 @@
   <title>Test for console.group styling with %c</title>
   <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
   <script type="text/javascript" src="common.js"></script>
-  
-
+  <!-- Any copyright is dedicated to the Public Domain.
+     - http://creativecommons.org/publicdomain/zero/1.0/ -->
   <script>
 "use strict";
 
@@ -92,8 +92,8 @@ async function testFormatterWithNoStyleGroup(consoleFront) {
 
   checkConsoleAPICall(packet.message, {
     arguments: ["%cfoobar"],
-    styles: []
   });
+  is(packet.message.styles, undefined, "No 'styles' property");
 }
 
 async function testFormatterWithNoStyleGroupCollapsed(consoleFront) {
@@ -105,8 +105,8 @@ async function testFormatterWithNoStyleGroupCollapsed(consoleFront) {
 
   checkConsoleAPICall(packet.message, {
     arguments: ["%cfoobaz"],
-    styles: []
   });
+  is(packet.message.styles, undefined, "No 'styles' property");
 }
 
   </script>

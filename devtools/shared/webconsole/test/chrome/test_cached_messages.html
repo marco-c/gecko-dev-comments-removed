@@ -5,8 +5,8 @@
   <title>Test for cached messages</title>
   <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
   <script type="text/javascript" src="common.js"></script>
-  
-
+  <!-- Any copyright is dedicated to the Public Domain.
+     - http://creativecommons.org/publicdomain/zero/1.0/ -->
 </head>
 <body>
 <p>Test for cached messages</p>
@@ -74,21 +74,18 @@ function doConsoleCalls() {
     {
       level: "log",
       filename: /test_cached_messages/,
-      functionName: "doConsoleCalls",
       timeStamp: /^\d+$/,
       arguments: ["foobarBaz-log", { type: "undefined" }],
     },
     {
       level: "info",
       filename: /test_cached_messages/,
-      functionName: "doConsoleCalls",
       timeStamp: /^\d+$/,
       arguments: ["foobarBaz-info", { type: "null" }],
     },
     {
       level: "warn",
       filename: /test_cached_messages/,
-      functionName: "doConsoleCalls",
       timeStamp: /^\d+$/,
       arguments: ["foobarBaz-warn", { type: "object", actor: /[a-z]/ }],
     },
@@ -164,8 +161,7 @@ function onCachedConsoleAPI(state, response) {
 
   for (const {message} of msgs) {
     for (const expected of expectedConsoleCalls) {
-      if (expected.functionName == message.functionName &&
-          expected.filename.test(message.filename)) {
+      if (expected.filename.test(message.filename)) {
         expectedConsoleCalls.splice(expectedConsoleCalls.indexOf(expected));
         checkConsoleAPICall(message, expected);
         break;

@@ -30,52 +30,6 @@ var WebConsoleUtils = {
 
 
 
-
-
-
-
-
-
-
-
-
-  cloneObject: function(object, recursive, filter) {
-    if (typeof object != "object") {
-      return object;
-    }
-
-    let temp;
-
-    if (Array.isArray(object)) {
-      temp = [];
-      object.forEach(function(value, index) {
-        if (!filter || filter(index, value, object)) {
-          temp.push(recursive ? WebConsoleUtils.cloneObject(value) : value);
-        }
-      });
-    } else {
-      temp = {};
-      for (const key in object) {
-        const value = object[key];
-        if (
-          object.hasOwnProperty(key) &&
-          (!filter || filter(key, value, object))
-        ) {
-          temp[key] = recursive ? WebConsoleUtils.cloneObject(value) : value;
-        }
-      }
-    }
-
-    return temp;
-  },
-
-  
-
-
-
-
-
-
   getInnerWindowId: function(window) {
     
     

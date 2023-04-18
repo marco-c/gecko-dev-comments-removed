@@ -5,8 +5,8 @@
   <title>Test for the object actor</title>
   <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
   <script type="text/javascript" src="common.js"></script>
-  
-
+  <!-- Any copyright is dedicated to the Public Domain.
+     - http://creativecommons.org/publicdomain/zero/1.0/ -->
 </head>
 <body>
 <p>Test for the object actor</p>
@@ -35,7 +35,6 @@ async function startTest() {
   checkConsoleAPICall(message, {
     level: "log",
     filename: /test_object_actor/,
-    functionName: "startTest",
     arguments: ["hello", {
       type: "object",
       actor: /[a-z]/,
