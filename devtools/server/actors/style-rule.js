@@ -318,12 +318,6 @@ const StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
       },
     };
 
-    if (this.rawRule.parentRule) {
-      form.parentRule = this.pageStyle._styleRef(
-        this.rawRule.parentRule
-      ).actorID;
-    }
-
     
     
     for (const ancestorRule of this.ancestorRules) {
