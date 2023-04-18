@@ -646,8 +646,14 @@ class ScrollFrameHelper : public nsIReflowCallback {
 
   bool mAllowScrollOriginDowngrade : 1;
   bool mHadDisplayPortAtLastFrameUpdate : 1;
+
+  
+  
   bool mHasVerticalScrollbar : 1;
+  
+  
   bool mHasHorizontalScrollbar : 1;
+
   
   
   

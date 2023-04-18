@@ -319,8 +319,12 @@ struct MOZ_STACK_CLASS ScrollReflowInput {
 
   
   OverflowAreas mContentsOverflowAreas;
+  
+  
   MOZ_INIT_OUTSIDE_CTOR
   bool mReflowedContentsWithHScrollbar;
+  
+  
   MOZ_INIT_OUTSIDE_CTOR
   bool mReflowedContentsWithVScrollbar;
 
@@ -328,8 +332,10 @@ struct MOZ_STACK_CLASS ScrollReflowInput {
   
   nsSize mInsideBorderSize;
   
+  
   MOZ_INIT_OUTSIDE_CTOR
   bool mShowHScrollbar;
+  
   
   MOZ_INIT_OUTSIDE_CTOR
   bool mShowVScrollbar;
