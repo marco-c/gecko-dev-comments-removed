@@ -66,7 +66,7 @@ fn test_aggregate_get_sub_devices_for_a_unknown_device() {
 #[test]
 #[should_panic]
 fn test_aggregate_set_master_device_for_an_unknown_aggregate_device() {
-    assert!(AggregateDevice::set_master_device(kAudioObjectUnknown).is_err());
+    assert!(AggregateDevice::set_master_device(kAudioObjectUnknown, kAudioObjectUnknown).is_err());
 }
 
 
@@ -243,9 +243,8 @@ fn test_aggregate_set_master_device() {
     let plugin = AggregateDevice::get_system_plugin_id().unwrap();
     let device = AggregateDevice::create_blank_device_sync(plugin).unwrap();
     assert!(AggregateDevice::set_sub_devices_sync(device, input_device, output_device).is_ok());
-    assert!(AggregateDevice::set_master_device(device).is_ok());
+    assert!(AggregateDevice::set_master_device(device, output_device).is_ok());
 
-    
     
     let first_output_sub_device_uid =
         get_device_uid(AggregateDevice::get_sub_devices(device).unwrap()[0]);
@@ -266,7 +265,7 @@ fn test_aggregate_set_master_device_for_a_blank_aggregate_device() {
 
     let plugin = AggregateDevice::get_system_plugin_id().unwrap();
     let device = AggregateDevice::create_blank_device_sync(plugin).unwrap();
-    assert!(AggregateDevice::set_master_device(device).is_ok());
+    assert!(AggregateDevice::set_master_device(device, output_device.unwrap()).is_ok());
 
     
     
@@ -301,7 +300,7 @@ fn test_aggregate_activate_clock_drift_compensation() {
     let plugin = AggregateDevice::get_system_plugin_id().unwrap();
     let device = AggregateDevice::create_blank_device_sync(plugin).unwrap();
     assert!(AggregateDevice::set_sub_devices_sync(device, input_device, output_device).is_ok());
-    assert!(AggregateDevice::set_master_device(device).is_ok());
+    assert!(AggregateDevice::set_master_device(device, output_device).is_ok());
     assert!(AggregateDevice::activate_clock_drift_compensation(device).is_ok());
 
     
