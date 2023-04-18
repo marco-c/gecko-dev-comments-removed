@@ -118,9 +118,6 @@ let gOpenDBs = new Map();
 
 
 let gLibs = {};
-this.ESE = ESE; 
-this.KERNEL = KERNEL; 
-this.gLibs = gLibs; 
 
 function convertESEError(errorCode) {
   switch (errorCode) {
