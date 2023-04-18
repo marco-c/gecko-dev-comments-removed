@@ -168,6 +168,7 @@
 #include "mozInlineSpellChecker.h"
 #include "mozilla/GlobalStyleSheetCache.h"
 #include "nsAnonymousTemporaryFile.h"
+#include "nsCategoryManagerUtils.h"
 #include "nsClipboardProxy.h"
 #include "nsContentPermissionHelper.h"
 #include "nsDebugImpl.h"
@@ -1991,6 +1992,14 @@ mozilla::ipc::IPCResult ContentChild::RecvPScriptCacheConstructor(
   }
 
   static_cast<loader::ScriptCacheChild*>(actor)->Init(fd, wantCacheData);
+
+  
+  
+  
+  
+  NS_CreateServicesFromCategory("content-process-ready-for-script", nullptr,
+                                "content-process-ready-for-script", nullptr);
+
   return IPC_OK();
 }
 

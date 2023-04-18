@@ -92,7 +92,7 @@ var Impl = {
 
 
   observe(aSubject, aTopic, aData) {
-    if (aTopic == "app-startup") {
+    if (aTopic == "content-process-ready-for-script") {
       TelemetryControllerBase.configureLogging();
 
       this._log.trace(`observe - ${aTopic} notified.`);
