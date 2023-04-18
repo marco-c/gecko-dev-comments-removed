@@ -861,8 +861,11 @@ class LocalAccessible : public nsISupports, public Accessible {
     eRelocated = 1 << 7,         
     eNoKidsFromDOM = 1 << 8,     
     eHasTextKids = 1 << 9,       
+    eOldFrameHasValidTransformStyle =
+        1 << 10,  
+                  
 
-    eLastStateFlag = eHasTextKids
+    eLastStateFlag = eOldFrameHasValidTransformStyle
   };
 
   
@@ -1045,6 +1048,13 @@ class LocalAccessible : public nsISupports, public Accessible {
   LocalAccessible() = delete;
   LocalAccessible(const LocalAccessible&) = delete;
   LocalAccessible& operator=(const LocalAccessible&) = delete;
+
+  
+
+
+
+
+  nsIFrame* FindNearestAccessibleAncestorFrame();
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(LocalAccessible, NS_ACCESSIBLE_IMPL_IID)

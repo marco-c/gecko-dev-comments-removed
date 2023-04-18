@@ -44,6 +44,7 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/HTMLFormElement.h"
 #include "mozilla/dom/HTMLAnchorElement.h"
+#include "mozilla/gfx/Matrix.h"
 #include "nsIContent.h"
 #include "nsIFormControl.h"
 
@@ -606,8 +607,44 @@ LocalAccessible* LocalAccessible::LocalChildAtPoint(
   return accessible;
 }
 
-nsRect LocalAccessible::ParentRelativeBounds() {
+nsIFrame* LocalAccessible::FindNearestAccessibleAncestorFrame() {
+  nsIFrame* frame = GetFrame();
   nsIFrame* boundingFrame = nullptr;
+
+  if (IsDoc() &&
+      nsCoreUtils::IsTopLevelContentDocInProcess(AsDoc()->DocumentNode())) {
+    
+    
+    boundingFrame = nsLayoutUtils::GetContainingBlockForClientRect(frame);
+  }
+
+  
+  LocalAccessible* ancestor = mParent;
+  while (ancestor && !boundingFrame) {
+    if (ancestor->IsDoc()) {
+      
+      
+      boundingFrame = nsLayoutUtils::GetContainingBlockForClientRect(frame);
+      break;
+    }
+
+    if ((boundingFrame = ancestor->GetFrame())) {
+      
+      break;
+    }
+
+    ancestor = ancestor->LocalParent();
+  }
+
+  if (!boundingFrame) {
+    MOZ_ASSERT_UNREACHABLE("No ancestor with frame?");
+    boundingFrame = nsLayoutUtils::GetContainingBlockForClientRect(frame);
+  }
+
+  return boundingFrame;
+}
+
+nsRect LocalAccessible::ParentRelativeBounds() {
   nsIFrame* frame = GetFrame();
   if (frame && mContent) {
     if (mContent->GetProperty(nsGkAtoms::hitregion) && mContent->IsElement()) {
@@ -632,43 +669,7 @@ nsRect LocalAccessible::ParentRelativeBounds() {
       }
     }
 
-    
-    
-    
-    
-    
-    if (IsDoc() &&
-        nsCoreUtils::IsTopLevelContentDocInProcess(AsDoc()->DocumentNode())) {
-      
-      
-      
-      
-      boundingFrame = nsLayoutUtils::GetContainingBlockForClientRect(frame);
-    }
-
-    
-    LocalAccessible* parent = mParent;
-    while (parent && !boundingFrame) {
-      if (parent->IsDoc()) {
-        
-        
-        boundingFrame = nsLayoutUtils::GetContainingBlockForClientRect(frame);
-        break;
-      }
-
-      if ((boundingFrame = parent->GetFrame())) {
-        
-        break;
-      }
-
-      parent = parent->LocalParent();
-    }
-
-    if (!boundingFrame) {
-      MOZ_ASSERT_UNREACHABLE("No ancestor with frame?");
-      boundingFrame = nsLayoutUtils::GetContainingBlockForClientRect(frame);
-    }
-
+    nsIFrame* boundingFrame = FindNearestAccessibleAncestorFrame();
     nsRect unionRect = nsLayoutUtils::GetAllInFlowRectsUnion(
         frame, boundingFrame, nsLayoutUtils::RECTS_ACCOUNT_FOR_TRANSFORMS);
 
@@ -3246,6 +3247,34 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
     }
   }
 
+  if (aCacheDomain & CacheDomain::TransformMatrix) {
+    nsIFrame* frame = GetFrame();
+
+    if (frame && frame->IsTransformed()) {
+      
+      
+      
+      
+      nsIFrame* boundingFrame = FindNearestAccessibleAncestorFrame();
+      
+      
+      
+      gfx::Matrix4x4 mtx = nsLayoutUtils::GetTransformToAncestor(
+                               RelativeTo{frame}, RelativeTo{boundingFrame},
+                               nsIFrame::IN_CSS_UNITS)
+                               .GetMatrix();
+
+      UniquePtr<gfx::Matrix4x4> ptr = MakeUnique<gfx::Matrix4x4>(mtx);
+      fields->SetAttribute(nsGkAtoms::transform, std::move(ptr));
+    } else {
+      
+      
+      
+      
+      fields->SetAttribute(nsGkAtoms::transform, DeleteEntry());
+    }
+  }
+
   if (aCacheDomain & CacheDomain::DOMNodeID && mContent) {
     nsAtom* id = mContent->GetID();
     if (id) {
@@ -3327,6 +3356,11 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
       
       
       mOldComputedStyle = frame->Style();
+      if (frame->IsTransformed()) {
+        mStateFlags |= eOldFrameHasValidTransformStyle;
+      } else {
+        mStateFlags &= ~eOldFrameHasValidTransformStyle;
+      }
     }
   }
 
@@ -3352,7 +3386,39 @@ void LocalAccessible::MaybeQueueCacheUpdateForStyleChanges() {
       mDoc->QueueCacheUpdate(this, CacheDomain::Style);
     }
 
+    bool newHasValidTransformStyle = frame->IsTransformed();
+    bool oldHasValidTransformStyle =
+        (mStateFlags & eOldFrameHasValidTransformStyle) != 0;
+
+    
+    
+    bool sendTransformUpdate =
+        newHasValidTransformStyle || oldHasValidTransformStyle;
+
+    if (newHasValidTransformStyle && oldHasValidTransformStyle) {
+      
+      
+      nsChangeHint transformHint =
+          newStyle->StyleDisplay()->CalcTransformPropertyDifference(
+              *mOldComputedStyle->StyleDisplay());
+      
+      sendTransformUpdate = !!transformHint;
+    }
+
+    if (sendTransformUpdate) {
+      
+      
+      
+      
+      mDoc->QueueCacheUpdate(this, CacheDomain::TransformMatrix);
+    }
+
     mOldComputedStyle = newStyle;
+    if (newHasValidTransformStyle) {
+      mStateFlags |= eOldFrameHasValidTransformStyle;
+    } else {
+      mStateFlags &= ~eOldFrameHasValidTransformStyle;
+    }
   }
 }
 
