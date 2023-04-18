@@ -243,6 +243,11 @@ void SessionHistoryInfo::FillLoadInfo(nsDocShellLoadState& aLoadState) const {
   aLoadState.SetInternalLoadFlags(flags);
 
   aLoadState.SetFirstParty(true);
+
+  
+  
+  
+  aLoadState.SetIsExemptFromHTTPSOnlyMode(true);
 }
 
 SessionHistoryInfo::SharedState SessionHistoryInfo::SharedState::Create(

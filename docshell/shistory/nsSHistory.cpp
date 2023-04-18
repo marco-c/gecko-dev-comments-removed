@@ -2232,6 +2232,11 @@ void nsSHistory::InitiateLoad(nsISHEntry* aFrameEntry,
   loadState->SetHasValidUserGestureActivation(aUserActivation);
 
   
+  
+  
+  loadState->SetIsExemptFromHTTPSOnlyMode(true);
+
+  
 
 
 

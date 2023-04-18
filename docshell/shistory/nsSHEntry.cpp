@@ -939,6 +939,11 @@ nsSHEntry::CreateLoadInfo(nsDocShellLoadState** aLoadState) {
 
   loadState->SetSHEntry(this);
 
+  
+  
+  
+  loadState->SetIsExemptFromHTTPSOnlyMode(true);
+
   loadState.forget(aLoadState);
   return NS_OK;
 }
