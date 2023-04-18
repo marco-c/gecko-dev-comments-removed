@@ -101,8 +101,8 @@ impl SwTile {
         
         let valid = self.local_bounds(surface);
         
-        let dest_rect = transform.outer_transformed_box2d(&valid.to_f32())?.round_out().try_cast()?;
-        if !dest_rect.intersects(clip_rect) {
+        let dest_rect = transform.outer_transformed_box2d(&valid.to_f32())?.round_out();
+        if !dest_rect.intersects(&clip_rect.to_f32()) {
             return None;
         }
         
@@ -110,11 +110,17 @@ impl SwTile {
         
         let inv_transform = transform.inverse()?;
         let src_rect = inv_transform
-            .outer_transformed_box2d(&dest_rect.to_f32())?
+            .outer_transformed_box2d(&dest_rect)?
             .round()
-            .to_i32()
-            .translate(-valid.min.to_vector());
-        Some((src_rect, dest_rect, transform.m22 < 0.0))
+            .translate(-valid.min.to_vector().to_f32());
+        
+        
+        
+        if src_rect.size().try_cast::<i32>().is_none() ||
+           dest_rect.size().try_cast::<i32>().is_none() {
+            return None;
+        }
+        Some((src_rect.try_cast()?, dest_rect.try_cast()?, transform.m22 < 0.0))
     }
 }
 
