@@ -1138,6 +1138,15 @@ bool WarpBuilder::build_JumpTarget(BytecodeLocation loc) {
         }
         lastIns->toGoto()->initSuccessor(0, joinBlock);
         continue;
+
+      case PendingEdge::Kind::TableSwitch: {
+        if (!addEdge(source,  0)) {
+          return false;
+        }
+        uint32_t successor = edge.tableSwitchSuccessor();
+        lastIns->toTableSwitch()->initSuccessor(successor, joinBlock);
+        continue;
+      }
     }
     MOZ_CRASH("Invalid kind");
   }
@@ -2836,22 +2845,28 @@ bool WarpBuilder::build_TableSwitch(BytecodeLocation loc) {
   MTableSwitch* tableswitch = MTableSwitch::New(alloc(), input, low, high);
   current->end(tableswitch);
 
-  MBasicBlock* switchBlock = current;
+  
+  
+  
+  using TargetToSuccessorMap =
+      InlineMap<uint32_t, uint32_t, 8, DefaultHasher<uint32_t>,
+                SystemAllocPolicy>;
+  TargetToSuccessorMap targetToSuccessor;
 
   
   {
     BytecodeLocation defaultLoc = loc.getTableSwitchDefaultTarget();
-    if (!startNewBlock(switchBlock, defaultLoc)) {
-      return false;
-    }
+    uint32_t defaultOffset = defaultLoc.bytecodeToOffset(script_);
 
     size_t index;
-    if (!tableswitch->addDefault(current, &index)) {
+    if (!tableswitch->addDefault(nullptr, &index)) {
       return false;
     }
-    MOZ_ASSERT(index == 0);
-
-    if (!buildForwardGoto(defaultLoc)) {
+    if (!addPendingEdge(PendingEdge::NewTableSwitch(current, index),
+                        defaultLoc)) {
+      return false;
+    }
+    if (!targetToSuccessor.put(defaultOffset, index)) {
       return false;
     }
   }
@@ -2859,27 +2874,29 @@ bool WarpBuilder::build_TableSwitch(BytecodeLocation loc) {
   
   for (size_t i = 0; i < numCases; i++) {
     BytecodeLocation caseLoc = loc.getTableSwitchCaseTarget(script_, i);
-    if (!startNewBlock(switchBlock, caseLoc)) {
-      return false;
-    }
+    uint32_t caseOffset = caseLoc.bytecodeToOffset(script_);
 
     size_t index;
-    if (!tableswitch->addSuccessor(current, &index)) {
-      return false;
+    if (auto p = targetToSuccessor.lookupForAdd(caseOffset)) {
+      index = p->value();
+    } else {
+      if (!tableswitch->addSuccessor(nullptr, &index)) {
+        return false;
+      }
+      if (!addPendingEdge(PendingEdge::NewTableSwitch(current, index),
+                          caseLoc)) {
+        return false;
+      }
+      if (!targetToSuccessor.add(p, caseOffset, index)) {
+        return false;
+      }
     }
     if (!tableswitch->addCase(index)) {
       return false;
     }
-
-    
-    
-
-    if (!buildForwardGoto(caseLoc)) {
-      return false;
-    }
   }
 
-  MOZ_ASSERT(hasTerminatedBlock());
+  setTerminatedBlock();
   return true;
 }
 
