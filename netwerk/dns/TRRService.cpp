@@ -23,14 +23,9 @@
 #include "mozilla/Telemetry.h"
 #include "mozilla/TelemetryComms.h"
 #include "mozilla/Tokenizer.h"
-#include "mozilla/net/rust_helper.h"
 #include "mozilla/net/TRRServiceChild.h"
 
 #include "DNSLogging.h"
-
-#if defined(XP_WIN) && !defined(__MINGW32__)
-#  include <shlobj_core.h>  
-#endif                      
 
 static const char kOpenCaptivePortalLoginEvent[] = "captive-portal-login";
 static const char kClearPrivateData[] = "clear-private-data";
@@ -432,48 +427,17 @@ void TRRService::AddEtcHosts(const nsTArray<nsCString>& aArray) {
 }
 
 void TRRService::ReadEtcHostsFile() {
-  if (!StaticPrefs::network_trr_exclude_etc_hosts()) {
+  if (!XRE_IsParentProcess()) {
     return;
   }
 
-  auto readHostsTask = []() {
-    MOZ_ASSERT(!NS_IsMainThread(), "Must not run on the main thread");
-#if defined(XP_WIN) && !defined(__MINGW32__)
-    
-    
-    
-    
-    
-
-    nsCString path;
-    path.SetLength(MAX_PATH + 1);
-    if (!SHGetSpecialFolderPathA(NULL, path.BeginWriting(), CSIDL_SYSTEM,
-                                 false)) {
-      LOG(("Calling SHGetSpecialFolderPathA failed"));
-      return;
+  DoReadEtcHostsFile([](const nsTArray<nsCString>* aArray) -> bool {
+    RefPtr<TRRService> service(sTRRServicePtr);
+    if (service && aArray) {
+      service->AddEtcHosts(*aArray);
     }
-
-    path.SetLength(strlen(path.get()));
-    path.Append("\\drivers\\etc\\hosts");
-#elif defined(__MINGW32__)
-    nsAutoCString path("C:\\windows\\system32\\drivers\\etc\\hosts"_ns);
-#else
-    nsAutoCString path("/etc/hosts"_ns);
-#endif
-
-    LOG(("Reading hosts file at %s", path.get()));
-    rust_parse_etc_hosts(&path, [](const nsTArray<nsCString>* aArray) -> bool {
-      RefPtr<TRRService> service(sTRRServicePtr);
-      if (service && aArray) {
-        service->AddEtcHosts(*aArray);
-      }
-      return !!service;
-    });
-  };
-
-  Unused << NS_DispatchBackgroundTask(
-      NS_NewRunnableFunction("Read /etc/hosts file", readHostsTask),
-      NS_DISPATCH_EVENT_MAY_BLOCK);
+    return !!service;
+  });
 }
 
 void TRRService::GetURI(nsACString& result) {
