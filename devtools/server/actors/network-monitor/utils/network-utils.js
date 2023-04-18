@@ -370,12 +370,16 @@ function matchRequest(channel, filters) {
   
   
   if (filters.targetActor) {
-    const { window } = filters.targetActor;
-    if (!window) {
-      throw new Error("Target actor is missing a window attribute");
+    
+    
+    let windows;
+    try {
+      windows = filters.targetActor.windows;
+    } catch (e) {
+      return false;
     }
     const win = NetworkHelper.getWindowForRequest(channel);
-    return filters.targetActor.windows.includes(win);
+    return windows.includes(win);
   }
 
   
