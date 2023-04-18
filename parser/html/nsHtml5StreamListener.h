@@ -54,7 +54,9 @@ class nsHtml5StreamListener : public nsIStreamListener,
   mozilla::ReentrantMonitor mDelegateMonitor;
   
   
-  nsHtml5StreamParser* mDelegate;
+  
+  
+  mozilla::Atomic<nsHtml5StreamParser*, mozilla::ReleaseAcquire> mDelegate;
 };
 
 #endif  
