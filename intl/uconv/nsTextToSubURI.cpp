@@ -100,6 +100,7 @@ nsresult nsTextToSubURI::convertURItoUnicode(const nsCString& aCharset,
 }
 
 NS_IMETHODIMP nsTextToSubURI::UnEscapeURIForUI(const nsACString& aURIFragment,
+                                               bool aDontEscape,
                                                nsAString& _retval) {
   nsAutoCString unescapedSpec;
   
@@ -112,6 +113,10 @@ NS_IMETHODIMP nsTextToSubURI::UnEscapeURIForUI(const nsACString& aURIFragment,
   if (convertURItoUnicode("UTF-8"_ns, unescapedSpec, _retval) != NS_OK) {
     
     CopyUTF8toUTF16(aURIFragment, _retval);
+  }
+
+  if (aDontEscape) {
+    return NS_OK;
   }
 
   
