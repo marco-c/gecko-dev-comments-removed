@@ -527,6 +527,9 @@ class HttpBaseChannel : public nsHashPropertyBag,
   
   bool HasAppliedConversion() { return LoadHasAppliedConversion(); }
 
+  
+  bool HasRedirectTaintedOrigin() { return LoadTaintedOriginFlag(); }
+
  protected:
   nsresult GetTopWindowURI(nsIURI* aURIBeingLoaded, nsIURI** aTopWindowURI);
 

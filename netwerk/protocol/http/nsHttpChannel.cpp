@@ -8746,23 +8746,82 @@ nsresult nsHttpChannel::CallOrWaitForResume(
 }
 
 
+
+static bool HasNullRequestOrigin(nsHttpChannel* aChannel, nsIURI* aURI,
+                                 bool isAddonRequest) {
+  
+  if (aChannel->HasRedirectTaintedOrigin()) {
+    if (StaticPrefs::network_http_origin_redirectTainted()) {
+      return true;
+    }
+  }
+
+  
+  if (!ReferrerInfo::IsReferrerSchemeAllowed(aURI)) {
+    
+    if (!aURI->SchemeIs("moz-extension") || !isAddonRequest) {
+      return true;
+    }
+  }
+
+  
+  if (StaticPrefs::network_http_referer_hideOnionSource()) {
+    nsAutoCString host;
+    if (NS_SUCCEEDED(aURI->GetAsciiHost(host)) &&
+        StringEndsWith(host, ".onion"_ns)) {
+      return ReferrerInfo::IsCrossOriginRequest(aChannel);
+    }
+  }
+
+  
+  return false;
+}
+
+
+
+
 void nsHttpChannel::SetOriginHeader() {
-  if (mRequestHead.IsGet() || mRequestHead.IsHead()) {
+  auto* triggeringPrincipal =
+      BasePrincipal::Cast(mLoadInfo->TriggeringPrincipal());
+
+  if (triggeringPrincipal->IsSystemPrincipal()) {
+    
+    
     return;
   }
-  nsresult rv;
+  bool isAddonRequest = triggeringPrincipal->AddonPolicy() ||
+                        triggeringPrincipal->ContentScriptAddonPolicy();
 
+  
   nsAutoCString existingHeader;
   Unused << mRequestHead.GetHeader(nsHttp::Origin, existingHeader);
   if (!existingHeader.IsEmpty()) {
     LOG(("nsHttpChannel::SetOriginHeader Origin header already present"));
-    nsCOMPtr<nsIURI> uri;
-    rv = NS_NewURI(getter_AddRefs(uri), existingHeader);
-    if (NS_SUCCEEDED(rv) &&
-        ReferrerInfo::ShouldSetNullOriginHeader(this, uri)) {
+    auto const shouldNullifyOriginHeader =
+        [&existingHeader, isAddonRequest](nsHttpChannel* aChannel) {
+          nsCOMPtr<nsIURI> uri;
+          nsresult rv = NS_NewURI(getter_AddRefs(uri), existingHeader);
+          if (NS_FAILED(rv)) {
+            return false;
+          }
+
+          if (HasNullRequestOrigin(aChannel, uri, isAddonRequest)) {
+            return true;
+          }
+
+          nsCOMPtr<nsILoadInfo> info = aChannel->LoadInfo();
+          if (info->GetTainting() == mozilla::LoadTainting::CORS) {
+            return false;
+          }
+
+          return ReferrerInfo::ShouldSetNullOriginHeader(aChannel, uri);
+        };
+
+    if (!existingHeader.EqualsLiteral("null") &&
+        shouldNullifyOriginHeader(this)) {
       LOG(("nsHttpChannel::SetOriginHeader null Origin by Referrer-Policy"));
-      rv = mRequestHead.SetHeader(nsHttp::Origin, "null"_ns, false );
-      MOZ_ASSERT(NS_SUCCEEDED(rv));
+      MOZ_ALWAYS_SUCCEEDS(
+          mRequestHead.SetHeader(nsHttp::Origin, "null"_ns, false ));
     }
     return;
   }
@@ -8772,32 +8831,65 @@ void nsHttpChannel::SetOriginHeader() {
     return;
   }
 
-  nsCOMPtr<nsIURI> referrer;
-  auto* basePrin = BasePrincipal::Cast(mLoadInfo->TriggeringPrincipal());
-  basePrin->GetURI(getter_AddRefs(referrer));
-  if (!referrer || !dom::ReferrerInfo::IsReferrerSchemeAllowed(referrer)) {
-    return;
-  }
-
-  nsAutoCString origin("null");
-  nsContentUtils::GetASCIIOrigin(referrer, origin);
-
   
-  if (StaticPrefs::network_http_sendOriginHeader() == 1) {
-    nsAutoCString currentOrigin;
-    nsContentUtils::GetASCIIOrigin(mURI, currentOrigin);
-    if (!origin.EqualsIgnoreCase(currentOrigin.get())) {
-      
+  
+  nsAutoCString serializedOrigin;
+  nsCOMPtr<nsIURI> uri;
+  {
+    if (NS_FAILED(triggeringPrincipal->GetURI(getter_AddRefs(uri)))) {
       return;
+    }
+
+    if (!uri) {
+      if (isAddonRequest) {
+        
+        
+        return;
+      }
+
+      
+      serializedOrigin.AssignLiteral("null");
+    } else if (HasNullRequestOrigin(this, uri, isAddonRequest)) {
+      serializedOrigin.AssignLiteral("null");
+    } else {
+      nsContentUtils::GetASCIIOrigin(uri, serializedOrigin);
     }
   }
 
-  if (ReferrerInfo::ShouldSetNullOriginHeader(this, referrer)) {
-    origin.AssignLiteral("null");
+  
+  
+  
+  
+  
+  if (mLoadInfo->GetTainting() == mozilla::LoadTainting::CORS) {
+    MOZ_ALWAYS_SUCCEEDS(mRequestHead.SetHeader(nsHttp::Origin, serializedOrigin,
+                                               false ));
+    return;
   }
 
-  rv = mRequestHead.SetHeader(nsHttp::Origin, origin, false );
-  MOZ_ASSERT(NS_SUCCEEDED(rv));
+  
+  if (mRequestHead.IsGet() || mRequestHead.IsHead()) {
+    return;
+  }
+
+  if (!serializedOrigin.EqualsLiteral("null")) {
+    
+    if (ReferrerInfo::ShouldSetNullOriginHeader(this, uri)) {
+      serializedOrigin.AssignLiteral("null");
+    } else if (StaticPrefs::network_http_sendOriginHeader() == 1) {
+      
+      nsAutoCString currentOrigin;
+      nsContentUtils::GetASCIIOrigin(mURI, currentOrigin);
+      if (!serializedOrigin.EqualsIgnoreCase(currentOrigin.get())) {
+        
+        serializedOrigin.AssignLiteral("null");
+      }
+    }
+  }
+
+  
+  MOZ_ALWAYS_SUCCEEDS(mRequestHead.SetHeader(nsHttp::Origin, serializedOrigin,
+                                             false ));
 }
 
 void nsHttpChannel::SetDoNotTrack() {
@@ -9491,7 +9583,8 @@ void nsHttpChannel::ReEvaluateReferrerAfterTrackingStatusIsKnown() {
               ReferrerInfo::GetDefaultReferrerPolicy(nullptr, nullptr,
                                                      isPrivate)) {
         nsCOMPtr<nsIReferrerInfo> newReferrerInfo =
-            referrerInfo->CloneWithNewPolicy(ReferrerPolicy::_empty);
+            referrerInfo->CloneWithNewPolicy(
+                ReferrerInfo::GetDefaultReferrerPolicy(this, mURI, isPrivate));
         
         
         
