@@ -1804,7 +1804,10 @@ void gfxMacPlatformFontList::GetFacesInitDataForFamily(const fontlist::Family* a
       }
     }
 
-    aFaces.AppendElement(fontlist::Face::InitData{
+    
+    
+    
+    auto data = fontlist::Face::InitData{
         NS_ConvertUTF16toUTF8(postscriptFontName),
         0,
         fixedPitch,
@@ -1812,7 +1815,12 @@ void gfxMacPlatformFontList::GetFacesInitDataForFamily(const fontlist::Family* a
         stretch,
         slantStyle,
         charmap,
-    });
+    };
+    if ([facename caseInsensitiveCompare:@"Regular"] == NSOrderedSame) {
+      aFaces.InsertElementAt(0, std::move(data));
+    } else {
+      aFaces.AppendElement(std::move(data));
+    }
   }
 }
 
