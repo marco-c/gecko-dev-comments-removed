@@ -1317,6 +1317,11 @@ StyleAlignFlags nsFlexContainerFrame::CSSAlignmentForAbsPosChild(
     }
   }
 
+  if (alignment == StyleAlignFlags::STRETCH) {
+    
+    alignment = StyleAlignFlags::FLEX_START;
+  }
+
   
   if (alignment == StyleAlignFlags::FLEX_START) {
     alignment = isAxisReversed ? StyleAlignFlags::END : StyleAlignFlags::START;
@@ -1331,6 +1336,13 @@ StyleAlignFlags nsFlexContainerFrame::CSSAlignmentForAbsPosChild(
   } else if (alignment == StyleAlignFlags::LAST_BASELINE) {
     alignment = StyleAlignFlags::END;
   }
+
+  MOZ_ASSERT(alignment != StyleAlignFlags::STRETCH,
+             "We should've converted 'stretch' to the fallback alignment!");
+  MOZ_ASSERT(alignment != StyleAlignFlags::FLEX_START &&
+                 alignment != StyleAlignFlags::FLEX_END,
+             "nsAbsoluteContainingBlock doesn't know how to handle "
+             "flex-relative axis for flex containers!");
 
   return (alignment | alignmentFlags);
 }
