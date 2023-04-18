@@ -2453,8 +2453,12 @@ pref("devtools.netmonitor.audits.slow", 500);
 
 pref("devtools.netmonitor.features.serverSentEvents", true);
 
+#if defined(NIGHTLY_BUILD)
 
-pref("devtools.netmonitor.features.newEditAndResend", false);
+  pref("devtools.netmonitor.features.newEditAndResend", true);
+#else
+  pref("devtools.netmonitor.features.newEditAndResend", false);
+#endif
 
 
 pref("devtools.storage.enabled", true);

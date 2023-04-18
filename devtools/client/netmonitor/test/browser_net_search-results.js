@@ -34,7 +34,7 @@ add_task(async function() {
   await wait;
 
   
-  store.dispatch(Actions.openSearch());
+  await store.dispatch(Actions.openSearch());
 
   
   const type = string => {
