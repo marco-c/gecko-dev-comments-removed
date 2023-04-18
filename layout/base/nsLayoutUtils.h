@@ -955,7 +955,8 @@ class nsLayoutUtils {
 
 
 
-  static gfxSize GetTransformToAncestorScaleExcludingAnimated(nsIFrame* aFrame);
+  static MatrixScalesDouble GetTransformToAncestorScaleExcludingAnimated(
+      nsIFrame* aFrame);
 
   
 
