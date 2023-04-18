@@ -105,6 +105,17 @@ void CacheStreamControlParent::ActorDestroy(ActorDestroyReason aReason) {
   mStreamList = nullptr;
 }
 
+void CacheStreamControlParent::AssertWillDelete() {
+  if (Id() != kFreedActorId) {
+    
+    
+    if (!CanSend()) {
+      MOZ_ASSERT(false, "Attempt to delete CSCP that cannot send.");
+      mStreamList->GetManager().RecordMayNotDeleteCSCP(Id());
+    }
+  }
+}
+
 mozilla::ipc::IPCResult CacheStreamControlParent::RecvOpenStream(
     const nsID& aStreamId, OpenStreamResolver&& aResolver) {
   NS_ASSERT_OWNINGTHREAD(CacheStreamControlParent);
@@ -147,6 +158,7 @@ void CacheStreamControlParent::CloseAll() {
 void CacheStreamControlParent::Shutdown() {
   NS_ASSERT_OWNINGTHREAD(CacheStreamControlParent);
 
+  AssertWillDelete();
   
   QM_WARNONLY_TRY(OkIf(Send__delete__(this)));
 }
