@@ -415,6 +415,9 @@ class WebConsoleUI {
 
   async handleNavigated({ hasNativeConsoleAPI }) {
     
+    this.wrapper.dispatchUpdateInstantEvaluationResultForCurrentExpression();
+
+    
     
     await this.wrapper.waitAsyncDispatches();
 
