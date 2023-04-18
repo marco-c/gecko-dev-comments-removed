@@ -17,6 +17,11 @@ function testMainThread(script_str) {
 }
 
 function testMainThreadDelazifyAll(script_str) {
+  if (isLcovEnabled()) {
+    
+    
+    return;
+  }
   const eval_f = eval;
   const stencil = compileAndDelazifyAllToStencil(script_str, optionsLazy);
   const result = evalStencil(stencil, optionsLazy);
