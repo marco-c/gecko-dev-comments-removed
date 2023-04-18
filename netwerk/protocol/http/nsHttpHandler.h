@@ -312,7 +312,7 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
     TickleWifi(callbacks);
     RefPtr<nsHttpConnectionInfo> clone = ci->Clone();
     return mConnMgr->SpeculativeConnect(clone, callbacks, caps, nullptr,
-                                        aFetchHTTPSRR);
+                                        aFetchHTTPSRR | EchConfigEnabled());
   }
 
   [[nodiscard]] nsresult SpeculativeConnect(nsHttpConnectionInfo* ci,
@@ -494,8 +494,6 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   
   
   bool FallbackToOriginIfConfigsAreECHAndAllFailed() const;
-
-  bool UseHTTPSRRForSpeculativeConnection() const;
 
   
   
