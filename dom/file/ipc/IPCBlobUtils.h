@@ -236,7 +236,6 @@
 
 
 
-
 namespace mozilla {
 
 namespace ipc {
