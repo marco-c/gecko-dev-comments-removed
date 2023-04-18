@@ -103,7 +103,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleFont {
   
   int8_t mMathDepth;
   
-  uint8_t mMathVariant;
+  mozilla::StyleMathMLMathVariant mMathVariant;
   
   uint8_t mMathStyle;
 
