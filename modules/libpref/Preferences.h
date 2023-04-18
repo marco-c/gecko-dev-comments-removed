@@ -24,6 +24,7 @@
 #include "nsTArray.h"
 #include "nsWeakReference.h"
 #include <atomic>
+#include <functional>
 
 class nsIFile;
 
@@ -394,7 +395,9 @@ class Preferences final : public nsIPrefService,
 
   
   
-  static void SerializePreferences(nsCString& aStr);
+  static void SerializePreferences(
+      nsCString& aStr,
+      const std::function<bool(const char*)>& aShouldSerializeFn);
   static void DeserializePreferences(char* aStr, size_t aPrefsLen);
 
   static mozilla::ipc::FileDescriptor EnsureSnapshot(size_t* aSize);
