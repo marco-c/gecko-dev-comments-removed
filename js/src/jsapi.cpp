@@ -2286,12 +2286,12 @@ void JS::TransitiveCompileOptions::copyPODTransitiveOptions(
   
 
   mutedErrors_ = rhs.mutedErrors_;
-  forceFullParse_ = rhs.forceFullParse_;
   forceStrictMode_ = rhs.forceStrictMode_;
   sourcePragmas_ = rhs.sourcePragmas_;
   skipFilenameValidation_ = rhs.skipFilenameValidation_;
   hideScriptFromDebugger_ = rhs.hideScriptFromDebugger_;
   deferDebugMetadata_ = rhs.deferDebugMetadata_;
+  eagerDelazificationStrategy_ = rhs.eagerDelazificationStrategy_;
 
   selfHostingMode = rhs.selfHostingMode;
   asmJSOption = rhs.asmJSOption;
@@ -2411,7 +2411,9 @@ JS::CompileOptions::CompileOptions(JSContext* cx) : ReadOnlyCompileOptions() {
   forceStrictMode_ = cx->options().strictMode();
 
   
-  forceFullParse_ = coverage::IsLCovEnabled();
+  if (coverage::IsLCovEnabled()) {
+    eagerDelazificationStrategy_ = DelazificationOption::ParseEverythingEagerly;
+  }
 
   
   
