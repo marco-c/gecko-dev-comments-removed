@@ -45,14 +45,14 @@ NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(ScrollTimeline,
 TimingParams ScrollTimeline::sTiming;
 
 ScrollTimeline::ScrollTimeline(Document* aDocument, const Scroller& aScroller,
-                               StyleScrollDirection aDirection)
+                               StyleScrollAxis aAxis)
     : AnimationTimeline(aDocument->GetParentObject()),
       mDocument(aDocument),
       
       
       
       mSource(aScroller),
-      mDirection(aDirection) {
+      mAxis(aAxis) {
   MOZ_ASSERT(aDocument);
 
   
@@ -61,6 +61,28 @@ ScrollTimeline::ScrollTimeline(Document* aDocument, const Scroller& aScroller,
   sTiming = TimingParams(SCROLL_TIMELINE_DURATION_MILLISEC, 0.0,
                          std::numeric_limits<float>::infinity(),
                          PlaybackDirection::Alternate, FillMode::Both);
+}
+
+static StyleScrollAxis ToStyleScrollAxis(
+    const StyleScrollDirection aDirection) {
+  switch (aDirection) {
+    
+    
+    
+    
+    case StyleScrollDirection::Auto:
+    case StyleScrollDirection::Block:
+      return StyleScrollAxis::Block;
+    case StyleScrollDirection::Inline:
+      return StyleScrollAxis::Inline;
+    case StyleScrollDirection::Horizontal:
+      return StyleScrollAxis::Horizontal;
+    case StyleScrollDirection::Vertical:
+      return StyleScrollAxis::Vertical;
+  }
+
+  MOZ_ASSERT_UNREACHABLE("Unsupported StyleScrollDirection");
+  return StyleScrollAxis::Block;
 }
 
 already_AddRefed<ScrollTimeline> ScrollTimeline::FromRule(
@@ -73,8 +95,8 @@ already_AddRefed<ScrollTimeline> ScrollTimeline::FromRule(
   
   
 
-  StyleScrollDirection direction =
-      Servo_ScrollTimelineRule_GetOrientation(&aRule);
+  StyleScrollAxis axis =
+      ToStyleScrollAxis(Servo_ScrollTimelineRule_GetOrientation(&aRule));
 
   
   
@@ -82,10 +104,10 @@ already_AddRefed<ScrollTimeline> ScrollTimeline::FromRule(
   auto autoScroller = Scroller::Auto(aTarget.mElement->OwnerDoc());
   auto* set =
       ScrollTimelineSet::GetOrCreateScrollTimelineSet(autoScroller.mElement);
-  auto p = set->LookupForAdd(direction);
+  auto p = set->LookupForAdd(axis);
   if (!p) {
-    timeline = new ScrollTimeline(aDocument, autoScroller, direction);
-    set->Add(p, direction, timeline);
+    timeline = new ScrollTimeline(aDocument, autoScroller, axis);
+    set->Add(p, axis, timeline);
   } else {
     timeline = p->value();
   }
@@ -134,12 +156,9 @@ layers::ScrollDirection ScrollTimeline::Axis() const {
   MOZ_ASSERT(mSource && mSource.mElement->GetPrimaryFrame());
 
   const WritingMode wm = mSource.mElement->GetPrimaryFrame()->GetWritingMode();
-  return mDirection == StyleScrollDirection::Horizontal ||
-                 (!wm.IsVertical() &&
-                  mDirection == StyleScrollDirection::Inline) ||
-                 (wm.IsVertical() &&
-                  (mDirection == StyleScrollDirection::Block ||
-                   mDirection == StyleScrollDirection::Auto))
+  return mAxis == StyleScrollAxis::Horizontal ||
+                 (!wm.IsVertical() && mAxis == StyleScrollAxis::Inline) ||
+                 (wm.IsVertical() && mAxis == StyleScrollAxis::Block)
              ? layers::ScrollDirection::eHorizontal
              : layers::ScrollDirection::eVertical;
 }
@@ -177,7 +196,7 @@ void ScrollTimeline::UnregisterFromScrollSource() {
 
   if (ScrollTimelineSet* scrollTimelineSet =
           ScrollTimelineSet::GetScrollTimelineSet(mSource.mElement)) {
-    scrollTimelineSet->Remove(mDirection);
+    scrollTimelineSet->Remove(mAxis);
     if (scrollTimelineSet->IsEmpty()) {
       ScrollTimelineSet::DestroyScrollTimelineSet(mSource.mElement);
     }
