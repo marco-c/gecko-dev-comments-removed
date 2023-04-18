@@ -761,6 +761,12 @@ void RunTestsUtilityAudioDecoder(SandboxTestingChild* child) {
                       MPOL_F_NODE | MPOL_F_ADDR);
     return rv;
   });
+  
+  child->ErrnoValueTest("set_mempolicy"_ns, ENOSYS, [&] {
+    
+    long rv = syscall(SYS_set_mempolicy, 0, NULL, 0);
+    return rv;
+  });
 #  elif XP_MACOSX  
   RunMacTestLaunchProcess(child);
   RunMacTestWindowServer(child);
