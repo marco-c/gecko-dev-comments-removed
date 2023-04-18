@@ -2506,6 +2506,16 @@ static already_AddRefed<ComputedStyle> GetFontStyleForServo(
   
   
   
+  if (!sc->StyleFont()->mFont.family.is_system_font) {
+    nsAutoCString computedFontSize;
+    sc->GetComputedPropertyValue(eCSSProperty_font_size, computedFontSize);
+    Servo_DeclarationBlock_SetPropertyById(
+        declarations, eCSSProperty_font_size, &computedFontSize, false, nullptr,
+        ParsingMode::Default, eCompatibility_FullStandards, nullptr,
+        StyleCssRuleType::Style, {});
+  }
+
+  
   
   Servo_SerializeFontValueForCanvas(declarations, &aOutUsedFont);
   return sc.forget();
