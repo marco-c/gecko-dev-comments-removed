@@ -325,6 +325,8 @@ void CodeGenerator::visitAtomicLoad64(LAtomicLoad64* lir) {
 
   Scalar::Type storageType = mir->storageType();
 
+  
+  
   auto sync = Synchronization::Load();
 
   masm.memoryBarrierBefore(sync);
@@ -351,6 +353,8 @@ void CodeGenerator::visitAtomicStore64(LAtomicStore64* lir) {
 
   masm.loadBigInt64(value, temp1);
 
+  
+  
   auto sync = Synchronization::Store();
 
   masm.memoryBarrierBefore(sync);

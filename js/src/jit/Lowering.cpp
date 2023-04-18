@@ -3764,6 +3764,8 @@ void LIRGenerator::visitLoadUnboxedScalar(MLoadUnboxedScalar* ins) {
   const LAllocation index = useRegisterOrIndexConstant(
       ins->index(), ins->storageType(), ins->offsetAdjustment());
 
+  
+  
   Synchronization sync = Synchronization::Load();
   if (ins->requiresMemoryBarrier()) {
     LMemoryBarrier* fence = new (alloc()) LMemoryBarrier(sync.barrierBefore);
@@ -3947,6 +3949,9 @@ void LIRGenerator::visitStoreUnboxedScalar(MStoreUnboxedScalar* ins) {
     value = useRegisterOrNonDoubleConstant(ins->value());
   }
 
+  
+  
+  
   
   
   
