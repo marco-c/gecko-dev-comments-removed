@@ -446,3 +446,26 @@ function clickOnAddonWidget(addonId) {
   info("Show the web extension popup");
   browserActionEl.click();
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function findMessages(hud, text, selector = ".message") {
+  const messages = hud.ui.outputNode.querySelectorAll(selector);
+  const elements = Array.prototype.filter.call(messages, el =>
+    el.textContent.includes(text)
+  );
+  return elements;
+}
