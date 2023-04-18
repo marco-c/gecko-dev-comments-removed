@@ -32,7 +32,12 @@
 #include "SimpleChannel.h"
 #include "nsICancelable.h"
 
+#ifdef MOZ_PLACES
+#  include "nsIPlacesPreviewsHelperService.h"
+#endif
+
 #define PAGE_THUMB_HOST "thumbnails"
+#define PLACES_PREVIEWS_HOST "places-previews"
 #define PAGE_THUMB_SCHEME "moz-page-thumb"
 
 namespace mozilla {
@@ -251,7 +256,8 @@ RefPtr<PageThumbStreamPromise> PageThumbProtocolHandler::NewStream(
   
   nsAutoCString host;
   if (NS_FAILED(aChildURI->GetAsciiHost(host)) ||
-      !host.EqualsLiteral(PAGE_THUMB_HOST)) {
+      !(host.EqualsLiteral(PAGE_THUMB_HOST) ||
+        host.EqualsLiteral(PLACES_PREVIEWS_HOST))) {
     return PageThumbStreamPromise::CreateAndReject(NS_ERROR_UNEXPECTED,
                                                    __func__);
   }
@@ -348,7 +354,8 @@ bool PageThumbProtocolHandler::ResolveSpecialCases(const nsACString& aHost,
                                                    nsACString& aResult) {
   
   
-  if (!aHost.EqualsLiteral(PAGE_THUMB_HOST)) {
+  if (!aHost.EqualsLiteral(PAGE_THUMB_HOST) &&
+      !aHost.EqualsLiteral(PLACES_PREVIEWS_HOST)) {
     
     
     return false;
@@ -372,7 +379,7 @@ bool PageThumbProtocolHandler::ResolveSpecialCases(const nsACString& aHost,
     
     
     nsAutoString thumbnailUrl;
-    nsresult rv = GetThumbnailPath(aPath, thumbnailUrl);
+    nsresult rv = GetThumbnailPath(aPath, aHost, thumbnailUrl);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return false;
     }
@@ -430,6 +437,7 @@ Result<Ok, nsresult> PageThumbProtocolHandler::SubstituteRemoteChannel(
 }
 
 nsresult PageThumbProtocolHandler::GetThumbnailPath(const nsACString& aPath,
+                                                    const nsACString& aHost,
                                                     nsString& aThumbnailPath) {
   MOZ_ASSERT(!IsNeckoChild());
 
@@ -440,14 +448,6 @@ nsresult PageThumbProtocolHandler::GetThumbnailPath(const nsACString& aPath,
     return NS_ERROR_MALFORMED_URI;
   }
 
-  nsresult rv;
-
-  nsCOMPtr<nsIPageThumbsStorageService> pageThumbsStorage =
-      do_GetService("@mozilla.org/thumbnails/pagethumbs-service;1", &rv);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
   
   nsAutoString url;
   bool found =
@@ -456,14 +456,32 @@ nsresult PageThumbProtocolHandler::GetThumbnailPath(const nsACString& aPath,
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  
-  
-  rv = pageThumbsStorage->GetFilePathForURL(url, aThumbnailPath);
-
+  nsresult rv;
+  if (aHost.EqualsLiteral(PAGE_THUMB_HOST)) {
+    nsCOMPtr<nsIPageThumbsStorageService> pageThumbsStorage =
+        do_GetService("@mozilla.org/thumbnails/pagethumbs-service;1", &rv);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+    
+    
+    rv = pageThumbsStorage->GetFilePathForURL(url, aThumbnailPath);
+#ifdef MOZ_PLACES
+  } else if (aHost.EqualsLiteral(PLACES_PREVIEWS_HOST)) {
+    nsCOMPtr<nsIPlacesPreviewsHelperService> helper =
+        do_GetService("@mozilla.org/places/previews-helper;1", &rv);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+    rv = helper->GetFilePathForURL(url, aThumbnailPath);
+#endif
+  } else {
+    MOZ_ASSERT_UNREACHABLE("Unknown thumbnail host");
+    return NS_ERROR_UNEXPECTED;
+  }
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
-
   return NS_OK;
 }
 

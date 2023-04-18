@@ -105,7 +105,9 @@ class PageThumbProtocolHandler final
 
 
 
-  nsresult GetThumbnailPath(const nsACString& aPath, nsString& aThumbnailPath);
+
+  nsresult GetThumbnailPath(const nsACString& aPath, const nsACString& aHost,
+                            nsString& aThumbnailPath);
 
   
   
