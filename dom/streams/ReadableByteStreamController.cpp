@@ -1883,7 +1883,7 @@ void SetUpReadableByteStreamController(
   aController->PendingPullIntos().clear();
 
   
-  aStream->SetController(*aController);
+  aStream->SetController(aController);
 
   
   JS::RootedValue startResult(aCx, JS::UndefinedValue());

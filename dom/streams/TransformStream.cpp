@@ -6,13 +6,9 @@
 
 #include "mozilla/dom/TransformStream.h"
 
-#include "TransformerCallbackHelpers.h"
 #include "UnderlyingSourceCallbackHelpers.h"
 #include "js/TypeDecls.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/dom/Promise.h"
-#include "mozilla/dom/Promise-inl.h"
-#include "mozilla/dom/PromiseNativeHandler.h"
 #include "mozilla/dom/WritableStream.h"
 #include "mozilla/dom/ReadableStream.h"
 #include "mozilla/dom/RootedDictionary.h"
@@ -87,49 +83,6 @@ void TransformStreamError(JSContext* aCx, TransformStream* aStream,
 }
 
 
-MOZ_CAN_RUN_SCRIPT static already_AddRefed<Promise>
-TransformStreamDefaultControllerPerformTransform(
-    JSContext* aCx, TransformStreamDefaultController* aController,
-    JS::HandleValue aChunk, ErrorResult& aRv) {
-  
-  
-  RefPtr<TransformerAlgorithms> algorithms = aController->Algorithms();
-  RefPtr<Promise> transformPromise =
-      algorithms->TransformCallback(aCx, aChunk, *aController, aRv);
-  if (aRv.Failed()) {
-    return nullptr;
-  }
-
-  
-  
-  auto result = transformPromise->CatchWithCycleCollectedArgs(
-      [](JSContext* aCx, JS::HandleValue aError, ErrorResult& aRv,
-         const RefPtr<TransformStreamDefaultController>& aController)
-          MOZ_CAN_RUN_SCRIPT_BOUNDARY -> already_AddRefed<Promise> {
-            
-            
-            
-            TransformStreamError(aCx, MOZ_KnownLive(aController->Stream()),
-                                 aError, aRv);
-            if (aRv.Failed()) {
-              return nullptr;
-            }
-
-            
-            JS::RootedValue r(aCx, aError);
-            aRv.MightThrowJSException();
-            aRv.ThrowJSException(aCx, r);
-            return nullptr;
-          },
-      RefPtr(aController));
-  if (result.isErr()) {
-    aRv.Throw(result.unwrapErr());
-    return nullptr;
-  }
-  return result.unwrap().forget();
-}
-
-
 class TransformStreamUnderlyingSinkAlgorithms final
     : public UnderlyingSinkAlgorithmsBase {
  public:
@@ -150,183 +103,38 @@ class TransformStreamUnderlyingSinkAlgorithms final
     aRetVal.setObject(*mStartPromise->PromiseObj());
   }
 
-  MOZ_CAN_RUN_SCRIPT already_AddRefed<Promise> WriteCallback(
+  already_AddRefed<Promise> WriteCallback(
       JSContext* aCx, JS::Handle<JS::Value> aChunk,
       WritableStreamDefaultController& aController, ErrorResult& aRv) override {
     
     
     
     
-
     
-    
-
-    
-    MOZ_ASSERT(mStream->Writable()->State() ==
-               WritableStream::WriterState::Writable);
-
-    
-    RefPtr<TransformStreamDefaultController> controller = mStream->Controller();
-
-    
-    if (mStream->Backpressure()) {
-      
-      
-      RefPtr<Promise> backpressureChangePromise =
-          mStream->BackpressureChangePromise();
-
-      
-      MOZ_ASSERT(backpressureChangePromise);
-
-      
-      
-      auto result = backpressureChangePromise->ThenWithCycleCollectedArgsJS(
-          [](JSContext* aCx, JS::HandleValue, ErrorResult& aRv,
-             const RefPtr<TransformStream>& aStream,
-             const RefPtr<TransformStreamDefaultController>& aController,
-             JS::HandleValue aChunk)
-              MOZ_CAN_RUN_SCRIPT_BOUNDARY -> already_AddRefed<Promise> {
-                
-                RefPtr<WritableStream> writable = aStream->Writable();
-
-                
-                WritableStream::WriterState state = writable->State();
-
-                
-                
-                if (state == WritableStream::WriterState::Erroring) {
-                  JS::RootedValue storedError(aCx, writable->StoredError());
-                  aRv.MightThrowJSException();
-                  aRv.ThrowJSException(aCx, storedError);
-                  return nullptr;
-                }
-
-                
-                MOZ_ASSERT(state == WritableStream::WriterState::Writable);
-
-                
-                
-                
-                return TransformStreamDefaultControllerPerformTransform(
-                    aCx, aController, aChunk, aRv);
-              },
-          std::make_tuple(mStream, controller), std::make_tuple(aChunk));
-
-      if (result.isErr()) {
-        aRv.Throw(result.unwrapErr());
-        return nullptr;
-      }
-      return result.unwrap().forget();
-    }
-
-    
-    
-    return TransformStreamDefaultControllerPerformTransform(aCx, controller,
-                                                            aChunk, aRv);
+    return Promise::CreateResolvedWithUndefined(mStream->GetParentObject(),
+                                                aRv);
   }
 
-  MOZ_CAN_RUN_SCRIPT already_AddRefed<Promise> AbortCallback(
+  already_AddRefed<Promise> AbortCallback(
       JSContext* aCx, const Optional<JS::Handle<JS::Value>>& aReason,
       ErrorResult& aRv) override {
     
     
     
     
-
-    
-    
-
-    
-    TransformStreamError(
-        aCx, mStream,
-        aReason.WasPassed() ? aReason.Value() : JS::UndefinedHandleValue, aRv);
-    if (aRv.Failed()) {
-      return nullptr;
-    }
-
     
     return Promise::CreateResolvedWithUndefined(mStream->GetParentObject(),
                                                 aRv);
   }
 
-  MOZ_CAN_RUN_SCRIPT already_AddRefed<Promise> CloseCallback(
-      JSContext* aCx, ErrorResult& aRv) override {
-    
-    
-
-    
+  already_AddRefed<Promise> CloseCallback(JSContext* aCx,
+                                          ErrorResult& aRv) override {
     
 
     
-    RefPtr<ReadableStream> readable = mStream->Readable();
-
     
-    RefPtr<TransformStreamDefaultController> controller = mStream->Controller();
-
-    
-    
-    RefPtr<TransformerAlgorithms> algorithms = controller->Algorithms();
-    RefPtr<Promise> flushPromise =
-        algorithms->FlushCallback(aCx, *controller, aRv);
-    if (aRv.Failed()) {
-      return nullptr;
-    }
-
-    
-    
-    controller->SetAlgorithms(nullptr);
-
-    
-    Result<RefPtr<Promise>, nsresult> result =
-        flushPromise->ThenCatchWithCycleCollectedArgs(
-            [](JSContext* aCx, JS::HandleValue aValue, ErrorResult& aRv,
-               const RefPtr<ReadableStream>& aReadable,
-               const RefPtr<TransformStream>& aStream)
-                MOZ_CAN_RUN_SCRIPT_BOUNDARY -> already_AddRefed<Promise> {
-                  
-
-                  
-                  
-                  if (aReadable->State() ==
-                      ReadableStream::ReaderState::Errored) {
-                    JS::RootedValue storedError(aCx, aReadable->StoredError());
-                    aRv.MightThrowJSException();
-                    aRv.ThrowJSException(aCx, storedError);
-                    return nullptr;
-                  }
-
-                  
-                  
-                  ReadableStreamDefaultControllerClose(
-                      aCx, MOZ_KnownLive(aReadable->Controller()->AsDefault()),
-                      aRv);
-                  return nullptr;
-                },
-            [](JSContext* aCx, JS::HandleValue aValue, ErrorResult& aRv,
-               const RefPtr<ReadableStream>& aReadable,
-               const RefPtr<TransformStream>& aStream)
-                MOZ_CAN_RUN_SCRIPT_BOUNDARY -> already_AddRefed<Promise> {
-                  
-
-                  
-                  TransformStreamError(aCx, aStream, aValue, aRv);
-                  if (aRv.Failed()) {
-                    return nullptr;
-                  }
-
-                  
-                  JS::RootedValue storedError(aCx, aReadable->StoredError());
-                  aRv.MightThrowJSException();
-                  aRv.ThrowJSException(aCx, storedError);
-                  return nullptr;
-                },
-            readable, mStream);
-
-    if (result.isErr()) {
-      aRv.Throw(result.unwrapErr());
-      return nullptr;
-    }
-    return result.unwrap().forget();
+    return Promise::CreateResolvedWithUndefined(mStream->GetParentObject(),
+                                                aRv);
   }
 
  protected:
@@ -334,8 +142,7 @@ class TransformStreamUnderlyingSinkAlgorithms final
 
  private:
   RefPtr<Promise> mStartPromise;
-  
-  MOZ_KNOWN_LIVE RefPtr<TransformStream> mStream;
+  RefPtr<TransformStream> mStream;
 };
 
 NS_IMPL_CYCLE_COLLECTION_INHERITED(TransformStreamUnderlyingSinkAlgorithms,
@@ -373,37 +180,19 @@ class TransformStreamUnderlyingSourceAlgorithms final
                                          ErrorResult& aRv) override {
     
     
-
     
-    
-
-    
-    MOZ_ASSERT(mStream->Backpressure());
-
-    
-    MOZ_ASSERT(mStream->BackpressureChangePromise());
-
-    
-    TransformStreamSetBackpressure(mStream, false, aRv);
-
-    
-    return do_AddRef(mStream->BackpressureChangePromise());
+    return Promise::CreateResolvedWithUndefined(mStream->GetParentObject(),
+                                                aRv);
   }
 
-  MOZ_CAN_RUN_SCRIPT already_AddRefed<Promise> CancelCallback(
+  already_AddRefed<Promise> CancelCallback(
       JSContext* aCx, const Optional<JS::Handle<JS::Value>>& aReason,
       ErrorResult& aRv) override {
     
     
     
     
-    TransformStreamErrorWritableAndUnblockWrite(
-        aCx, mStream,
-        aReason.WasPassed() ? aReason.Value() : JS::UndefinedHandleValue, aRv);
-    if (aRv.Failed()) {
-      return nullptr;
-    }
-
+    
     
     return Promise::CreateResolvedWithUndefined(mStream->GetParentObject(),
                                                 aRv);
@@ -416,8 +205,7 @@ class TransformStreamUnderlyingSourceAlgorithms final
 
  private:
   RefPtr<Promise> mStartPromise;
-  
-  MOZ_KNOWN_LIVE RefPtr<TransformStream> mStream;
+  RefPtr<TransformStream> mStream;
 };
 
 NS_IMPL_CYCLE_COLLECTION_INHERITED(TransformStreamUnderlyingSourceAlgorithms,
@@ -629,12 +417,16 @@ already_AddRefed<TransformStream> TransformStream::Constructor(
   return transformStream.forget();
 }
 
-already_AddRefed<ReadableStream> TransformStream::GetReadable() {
-  return mReadable.forget();
+already_AddRefed<ReadableStream> TransformStream::GetReadable(
+    ErrorResult& aRv) {
+  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+  return nullptr;
 }
 
-already_AddRefed<WritableStream> TransformStream::GetWritable() {
-  return mWritable.forget();
+already_AddRefed<WritableStream> TransformStream::GetWritable(
+    ErrorResult& aRv) {
+  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+  return nullptr;
 }
 
 }  

@@ -491,7 +491,7 @@ void SetUpReadableStreamDefaultController(
   aController->SetAlgorithms(aAlgorithms);
 
   
-  aStream->SetController(*aController);
+  aStream->SetController(aController);
 
   
   
