@@ -216,6 +216,8 @@ class MOZ_STACK_CLASS BaselineStackBuilder {
     return catchingException() && excInfo_->isFinally();
   }
 
+  bool forcedReturn() const { return excInfo_ && excInfo_->forcedReturn(); }
+
   
   bool propagatingIonExceptionForDebugMode() const {
     return excInfo_ && excInfo_->propagatingIonExceptionForDebugMode();
@@ -881,8 +883,7 @@ bool BaselineStackBuilder::buildExpressionStack() {
       
       
       
-      MOZ_ASSERT(cx_->realm()->isDebuggee() ||
-                 cx_->isPropagatingForcedReturn());
+      MOZ_ASSERT(cx_->realm()->isDebuggee() || forcedReturn());
       if (iter_.moreFrames() || hasLiveStackValueAtDepth(i)) {
         v = iter_.read();
       } else {
