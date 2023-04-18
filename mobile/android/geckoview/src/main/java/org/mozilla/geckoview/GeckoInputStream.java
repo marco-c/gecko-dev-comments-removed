@@ -6,13 +6,13 @@ package org.mozilla.geckoview;
 
 import androidx.annotation.AnyThread;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
 import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.mozglue.JNIObject;
-import org.mozilla.gecko.util.ThreadUtils;
 
 
 
@@ -37,7 +37,7 @@ import org.mozilla.gecko.util.ThreadUtils;
 
 
 
-  private GeckoInputStream(final @NonNull Support support) {
+   GeckoInputStream(final @Nullable Support support) {
     mSupport = support;
   }
 
@@ -112,7 +112,9 @@ import org.mozilla.gecko.util.ThreadUtils;
       
       
       if (!mResumed) {
-        mSupport.resume();
+        if (mSupport != null) {
+          mSupport.resume();
+        }
         mResumed = true;
       }
 
@@ -173,8 +175,7 @@ import org.mozilla.gecko.util.ThreadUtils;
 
 
   @WrapForJNI(exceptionMode = "nsresult", calledFrom = "gecko")
-  private synchronized void appendBuffer(final byte[] buf) throws IOException {
-    ThreadUtils.assertOnGeckoThread();
+   synchronized void appendBuffer(final byte[] buf) throws IOException {
 
     if (mClosed) {
       throw new IllegalStateException("Stream is closed");
