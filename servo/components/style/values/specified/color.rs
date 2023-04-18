@@ -806,7 +806,7 @@ impl SpecifiedValueInfo for Color {
         
         
         
-        f(&["rgb", "rgba", "hsl", "hsla", "hwb", "hwba", "currentColor", "transparent"]);
+        f(&["rgb", "rgba", "hsl", "hsla", "hwb", "currentColor", "transparent"]);
     }
 }
 
