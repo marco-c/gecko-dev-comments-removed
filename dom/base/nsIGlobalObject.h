@@ -37,6 +37,7 @@ enum class StorageAccess;
 namespace dom {
 class VoidFunction;
 class DebuggerNotificationManager;
+class Function;
 class Report;
 class ReportBody;
 class ReportingObserver;
@@ -212,6 +213,14 @@ class nsIGlobalObject : public nsISupports,
 
   void RemoveReportRecords();
 
+#ifdef MOZ_DOM_STREAMS
+  
+  
+  already_AddRefed<mozilla::dom::Function>
+  GetCountQueuingStrategySizeFunction();
+  void SetCountQueuingStrategySizeFunction(mozilla::dom::Function* aFunction);
+#endif
+
   
 
 
@@ -240,6 +249,11 @@ class nsIGlobalObject : public nsISupports,
   
   nsTArray<RefPtr<mozilla::dom::ReportingObserver>> mReportingObservers;
   nsTArray<RefPtr<mozilla::dom::Report>> mReportRecords;
+
+#ifdef MOZ_DOM_STREAMS
+  
+  RefPtr<mozilla::dom::Function> mCountQueuingStrategySizeFunction;
+#endif
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIGlobalObject, NS_IGLOBALOBJECT_IID)
