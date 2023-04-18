@@ -242,9 +242,7 @@ export default class LoginItem extends HTMLElement {
       
       
       
-      this._passwordDisplayInput.value = " ".repeat(
-        this._login.password.length
-      );
+      this._passwordDisplayInput.value = "        ";
     }
 
     if (this.dataset.editing) {
@@ -845,11 +843,10 @@ export default class LoginItem extends HTMLElement {
 
     if (shouldEdit) {
       this._passwordInput.style.removeProperty("width");
-      this._passwordDisplayInput.style.removeProperty("width");
     } else {
       
       
-      this._passwordDisplayInput.style.width = this._passwordInput.style.width =
+      this._passwordInput.style.width =
         (this._login.password || "").length + "ch";
     }
 
