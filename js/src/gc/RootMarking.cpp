@@ -322,9 +322,6 @@ void js::gc::GCRuntime::traceRuntimeCommon(JSTracer* trc,
   
   TracePersistentRooted(rt, trc);
 
-  
-  rt->traceSelfHostingStencil(trc);
-
 #ifdef JS_HAS_INTL_API
   
   rt->traceSharedIntlData(trc);
@@ -340,6 +337,9 @@ void js::gc::GCRuntime::traceRuntimeCommon(JSTracer* trc,
   }
 
   if (!JS::RuntimeHeapIsMinorCollecting()) {
+    
+    rt->traceSelfHostingStencil(trc);
+
     for (ZonesIter zone(this, ZoneSelector::SkipAtoms); !zone.done();
          zone.next()) {
       zone->traceRootsInMajorGC(trc);

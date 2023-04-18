@@ -64,12 +64,14 @@
 #include "js/experimental/JSStencil.h"  
 #include "js/experimental/TypedData.h"  
 #include "js/friend/ErrorMessages.h"    
+#include "js/HashTable.h"
 #include "js/Modules.h"                 
 #include "js/PropertyAndElement.h"  
 #include "js/PropertySpec.h"
 #include "js/ScalarType.h"  
 #include "js/SourceText.h"  
 #include "js/StableStringChars.h"
+#include "js/TracingAPI.h"
 #include "js/Transcoding.h"
 #include "js/Warnings.h"  
 #include "js/Wrapper.h"
@@ -2541,6 +2543,7 @@ static const JSFunctionSpec intrinsic_functions[] = {
     JS_FS_END};
 
 #ifdef DEBUG
+
 static void CheckSelfHostedIntrinsics() {
   
   
@@ -2553,6 +2556,35 @@ static void CheckSelfHostedIntrinsics() {
     }
   }
 }
+
+class CheckTenuredTracer : public JS::CallbackTracer {
+  HashSet<gc::Cell*, DefaultHasher<gc::Cell*>, SystemAllocPolicy> visited;
+  Vector<JS::GCCellPtr, 0, SystemAllocPolicy> stack;
+
+ public:
+  explicit CheckTenuredTracer(JSRuntime* rt) : JS::CallbackTracer(rt) {}
+  void check() {
+    while (!stack.empty()) {
+      JS::TraceChildren(this, stack.popCopy());
+    }
+  }
+  void onChild(JS::GCCellPtr thing) override {
+    gc::Cell* cell = thing.asCell();
+    MOZ_RELEASE_ASSERT(cell->isTenured(), "Expected tenured cell");
+    if (!visited.has(cell)) {
+      MOZ_RELEASE_ASSERT(visited.put(cell) && stack.append(thing), "OOM");
+    }
+  }
+};
+
+static void CheckSelfHostingDataIsTenured(JSRuntime* rt) {
+  
+  
+  CheckTenuredTracer trc(rt);
+  rt->traceSelfHostingStencil(&trc);
+  trc.check();
+}
+
 #endif
 
 const JSFunctionSpec* js::FindIntrinsicSpec(js::PropertyName* name) {
@@ -2698,6 +2730,7 @@ class MOZ_STACK_CLASS AutoSelfHostingErrorReporter {
 #ifdef DEBUG
   
   CheckSelfHostedIntrinsics();
+  CheckSelfHostingDataIsTenured(cx->runtime());
 #endif
 
   return true;
@@ -2762,8 +2795,7 @@ bool JSRuntime::initSelfHostingStencil(JSContext* cx,
       MOZ_ASSERT(!hasSelfHostStencil());
 
       
-      cx->runtime()->selfHostStencilInput_ = input.release();
-      cx->runtime()->selfHostStencil_ = stencil.forget().take();
+      setSelfHostingStencil(&input, std::move(stencil));
 
       return true;
     }
@@ -2817,10 +2849,23 @@ bool JSRuntime::initSelfHostingStencil(JSContext* cx,
   MOZ_ASSERT(!hasSelfHostStencil());
 
   
-  cx->runtime()->selfHostStencilInput_ = input.release();
-  cx->runtime()->selfHostStencil_ = stencil.forget().take();
+  setSelfHostingStencil(&input, std::move(stencil));
 
   return true;
+}
+
+void JSRuntime::setSelfHostingStencil(
+    MutableHandle<UniquePtr<frontend::CompilationInput>> input,
+    RefPtr<frontend::CompilationStencil>&& stencil) {
+  MOZ_ASSERT(!selfHostStencilInput_);
+  MOZ_ASSERT(!selfHostStencil_);
+
+  selfHostStencilInput_ = input.release();
+  selfHostStencil_ = stencil.forget().take();
+
+#ifdef DEBUG
+  CheckSelfHostingDataIsTenured(this);
+#endif
 }
 
 bool JSRuntime::initSelfHostingFromStencil(JSContext* cx) {
