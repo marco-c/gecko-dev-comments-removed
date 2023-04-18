@@ -95,20 +95,7 @@ impl TimingDistribution for TimingDistributionMetric {
     
     fn start(&self) -> TimerId {
         match self {
-            TimingDistributionMetric::Parent { id, inner } => {
-                let timer_id = inner.start();
-                #[cfg(feature = "with_gecko")]
-                {
-                    extern "C" {
-                        fn GIFFT_TimingDistributionStart(metric_id: u32, timer_id: u64);
-                    }
-                    
-                    unsafe {
-                        GIFFT_TimingDistributionStart(id.0, timer_id);
-                    }
-                }
-                timer_id
-            }
+            TimingDistributionMetric::Parent { inner, .. } => inner.start(),
             TimingDistributionMetric::Child(c) => {
                 
                 
@@ -142,20 +129,7 @@ impl TimingDistribution for TimingDistributionMetric {
     
     fn stop_and_accumulate(&self, id: TimerId) {
         match self {
-            TimingDistributionMetric::Parent {
-                id: metric_id,
-                inner,
-            } => {
-                #[cfg(feature = "with_gecko")]
-                {
-                    extern "C" {
-                        fn GIFFT_TimingDistributionStopAndAccumulate(metric_id: u32, timer_id: u64);
-                    }
-                    
-                    unsafe {
-                        GIFFT_TimingDistributionStopAndAccumulate(metric_id.0, id);
-                    }
-                }
+            TimingDistributionMetric::Parent { inner, .. } => {
                 inner.stop_and_accumulate(id);
             }
             TimingDistributionMetric::Child(c) => {
@@ -205,20 +179,7 @@ impl TimingDistribution for TimingDistributionMetric {
     
     fn cancel(&self, id: TimerId) {
         match self {
-            TimingDistributionMetric::Parent {
-                id: metric_id,
-                inner,
-            } => {
-                #[cfg(feature = "with_gecko")]
-                {
-                    extern "C" {
-                        fn GIFFT_TimingDistributionCancel(metric_id: u32, timer_id: u64);
-                    }
-                    
-                    unsafe {
-                        GIFFT_TimingDistributionCancel(metric_id.0, id);
-                    }
-                }
+            TimingDistributionMetric::Parent { inner, .. } => {
                 inner.cancel(id);
             }
             TimingDistributionMetric::Child(c) => {
