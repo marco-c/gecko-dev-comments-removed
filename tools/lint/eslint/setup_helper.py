@@ -193,11 +193,13 @@ def expected_eslint_modules():
 
     
     
-    mozilla_json_path = os.path.join(
-        get_eslint_module_path(), "eslint-plugin-mozilla", "package.json"
-    )
-    with open(mozilla_json_path, "r", encoding="utf-8") as f:
-        expected_modules.update(json.load(f).get("dependencies", {}))
+    
+    
+    
+    
+    
+    
+    
 
     
     
