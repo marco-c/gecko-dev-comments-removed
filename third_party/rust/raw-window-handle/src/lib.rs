@@ -1,81 +1,41 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#![cfg_attr(feature = "nightly-docs", feature(doc_cfg))]
 #![no_std]
 
-#[cfg_attr(feature = "nightly-docs", doc(cfg(target_os = "android")))]
-#[cfg_attr(not(feature = "nightly-docs"), cfg(target_os = "android"))]
-pub mod android;
-#[cfg_attr(feature = "nightly-docs", doc(cfg(target_os = "ios")))]
-#[cfg_attr(not(feature = "nightly-docs"), cfg(target_os = "ios"))]
-pub mod ios;
-#[cfg_attr(feature = "nightly-docs", doc(cfg(target_os = "macos")))]
-#[cfg_attr(not(feature = "nightly-docs"), cfg(target_os = "macos"))]
-pub mod macos;
-#[cfg_attr(
-    feature = "nightly-docs",
-    doc(cfg(any(
-        target_os = "linux",
-        target_os = "dragonfly",
-        target_os = "freebsd",
-        target_os = "netbsd",
-        target_os = "openbsd"
-    )))
-)]
-#[cfg_attr(
-    not(feature = "nightly-docs"),
-    cfg(any(
-        target_os = "linux",
-        target_os = "dragonfly",
-        target_os = "freebsd",
-        target_os = "netbsd",
-        target_os = "openbsd"
-    ))
-)]
-pub mod unix;
-#[cfg_attr(feature = "nightly-docs", doc(cfg(target_arch = "wasm32")))]
-#[cfg_attr(not(feature = "nightly-docs"), cfg(target_arch = "wasm32"))]
-pub mod web;
-#[cfg_attr(feature = "nightly-docs", doc(cfg(target_os = "windows")))]
-#[cfg_attr(not(feature = "nightly-docs"), cfg(target_os = "windows"))]
-pub mod windows;
-
-mod platform {
-    #[cfg(target_os = "android")]
-    pub use crate::android::*;
-    #[cfg(target_os = "macos")]
-    pub use crate::macos::*;
-    #[cfg(any(
-        target_os = "linux",
-        target_os = "dragonfly",
-        target_os = "freebsd",
-        target_os = "netbsd",
-        target_os = "openbsd"
-    ))]
-    pub use crate::unix::*;
-    #[cfg(target_os = "windows")]
-    pub use crate::windows::*;
-    
-    #[cfg(target_os = "ios")]
-    pub use crate::ios::*;
-    #[cfg(target_arch = "wasm32")]
-    pub use crate::web::*;
-}
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(feature = "alloc")]
+extern crate alloc;
+
+mod android;
+mod appkit;
+mod redox;
+mod uikit;
+mod unix;
+mod web;
+mod windows;
+
+pub use android::AndroidNdkHandle;
+pub use appkit::AppKitHandle;
+pub use redox::OrbitalHandle;
+pub use uikit::UiKitHandle;
+pub use unix::{WaylandHandle, XcbHandle, XlibHandle};
+pub use web::WebHandle;
+pub use windows::{Win32Handle, WinRtHandle};
 
 
 
@@ -95,100 +55,99 @@ pub unsafe trait HasRawWindowHandle {
     fn raw_window_handle(&self) -> RawWindowHandle;
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum RawWindowHandle {
-    #[cfg_attr(feature = "nightly-docs", doc(cfg(target_os = "ios")))]
-    #[cfg_attr(not(feature = "nightly-docs"), cfg(target_os = "ios"))]
-    IOS(ios::IOSHandle),
-
-    #[cfg_attr(feature = "nightly-docs", doc(cfg(target_os = "macos")))]
-    #[cfg_attr(not(feature = "nightly-docs"), cfg(target_os = "macos"))]
-    MacOS(macos::MacOSHandle),
-
-    #[cfg_attr(
-        feature = "nightly-docs",
-        doc(cfg(any(
-            target_os = "linux",
-            target_os = "dragonfly",
-            target_os = "freebsd",
-            target_os = "netbsd",
-            target_os = "openbsd"
-        )))
-    )]
-    #[cfg_attr(
-        not(feature = "nightly-docs"),
-        cfg(any(
-            target_os = "linux",
-            target_os = "dragonfly",
-            target_os = "freebsd",
-            target_os = "netbsd",
-            target_os = "openbsd"
-        ))
-    )]
-    Xlib(unix::XlibHandle),
-
-    #[cfg_attr(
-        feature = "nightly-docs",
-        doc(cfg(any(
-            target_os = "linux",
-            target_os = "dragonfly",
-            target_os = "freebsd",
-            target_os = "netbsd",
-            target_os = "openbsd"
-        )))
-    )]
-    #[cfg_attr(
-        not(feature = "nightly-docs"),
-        cfg(any(
-            target_os = "linux",
-            target_os = "dragonfly",
-            target_os = "freebsd",
-            target_os = "netbsd",
-            target_os = "openbsd"
-        ))
-    )]
-    Xcb(unix::XcbHandle),
-
-    #[cfg_attr(
-        feature = "nightly-docs",
-        doc(cfg(any(
-            target_os = "linux",
-            target_os = "dragonfly",
-            target_os = "freebsd",
-            target_os = "netbsd",
-            target_os = "openbsd"
-        )))
-    )]
-    #[cfg_attr(
-        not(feature = "nightly-docs"),
-        cfg(any(
-            target_os = "linux",
-            target_os = "dragonfly",
-            target_os = "freebsd",
-            target_os = "netbsd",
-            target_os = "openbsd"
-        ))
-    )]
-    Wayland(unix::WaylandHandle),
-
-    #[cfg_attr(feature = "nightly-docs", doc(cfg(target_os = "windows")))]
-    #[cfg_attr(not(feature = "nightly-docs"), cfg(target_os = "windows"))]
-    Windows(windows::WindowsHandle),
-
-    #[cfg_attr(feature = "nightly-docs", doc(cfg(target_arch = "wasm32")))]
-    #[cfg_attr(not(feature = "nightly-docs"), cfg(target_arch = "wasm32"))]
-    Web(web::WebHandle),
-
-    #[cfg_attr(feature = "nightly-docs", doc(cfg(target_os = "android")))]
-    #[cfg_attr(not(feature = "nightly-docs"), cfg(target_os = "android"))]
-    Android(android::AndroidHandle),
-
-    #[doc(hidden)]
-    #[deprecated = "This field is used to ensure that this struct is non-exhaustive, so that it may be extended in the future. Do not refer to this field."]
-    __NonExhaustiveDoNotUse(seal::Seal),
+unsafe impl<'a, T: HasRawWindowHandle + ?Sized> HasRawWindowHandle for &'a T {
+    fn raw_window_handle(&self) -> RawWindowHandle {
+        (*self).raw_window_handle()
+    }
+}
+#[cfg(feature = "alloc")]
+unsafe impl<T: HasRawWindowHandle + ?Sized> HasRawWindowHandle for alloc::rc::Rc<T> {
+    fn raw_window_handle(&self) -> RawWindowHandle {
+        (**self).raw_window_handle()
+    }
+}
+#[cfg(feature = "alloc")]
+unsafe impl<T: HasRawWindowHandle + ?Sized> HasRawWindowHandle for alloc::sync::Arc<T> {
+    fn raw_window_handle(&self) -> RawWindowHandle {
+        (**self).raw_window_handle()
+    }
 }
 
-mod seal {
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-    pub struct Seal;
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[non_exhaustive]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum RawWindowHandle {
+    
+    
+    
+    
+    
+    
+    
+    UiKit(UiKitHandle),
+    
+    
+    
+    
+    
+    
+    AppKit(AppKitHandle),
+    
+    
+    
+    
+    
+    Orbital(OrbitalHandle),
+    
+    
+    
+    
+    
+    
+    Xlib(XlibHandle),
+    
+    
+    
+    
+    
+    
+    Xcb(XcbHandle),
+    
+    
+    
+    
+    
+    Wayland(WaylandHandle),
+    
+    
+    
+    
+    Win32(Win32Handle),
+    
+    
+    
+    
+    WinRt(WinRtHandle),
+    
+    
+    
+    
+    Web(WebHandle),
+    
+    
+    
+    
+    AndroidNdk(AndroidNdkHandle),
 }

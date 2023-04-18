@@ -1,6 +1,6 @@
 
 #[derive(Clone, Eq, Ord, PartialEq, PartialOrd)]
-pub(crate) struct Version {
+pub struct Version {
     pub major: u32,
     pub minor: u32,
     pub is_embedded: bool,
@@ -10,7 +10,7 @@ pub(crate) struct Version {
 
 impl Version {
     
-    pub fn new(major: u32, minor: u32, revision: Option<u32>, vendor_info: String) -> Self {
+    pub(crate) fn new(major: u32, minor: u32, revision: Option<u32>, vendor_info: String) -> Self {
         Version {
             major: major,
             minor: minor,
@@ -20,7 +20,7 @@ impl Version {
         }
     }
     
-    pub fn new_embedded(major: u32, minor: u32, vendor_info: String) -> Self {
+    pub(crate) fn new_embedded(major: u32, minor: u32, vendor_info: String) -> Self {
         Version {
             major,
             minor,
@@ -47,7 +47,7 @@ impl Version {
     
     
     
-    pub fn parse(mut src: &str) -> Result<Version, &str> {
+    pub(crate) fn parse(mut src: &str) -> Result<Version, &str> {
         let webgl_sig = "WebGL ";
         
         

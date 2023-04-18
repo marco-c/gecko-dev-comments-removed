@@ -3,6 +3,7 @@
 use super::ProcError;
 use crate::valid;
 use crate::{Handle, UniqueArena};
+use bit_set::BitSet;
 
 
 
@@ -33,7 +34,9 @@ use crate::{Handle, UniqueArena};
 
 
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
 pub enum BoundsCheckPolicy {
     
     
@@ -44,6 +47,11 @@ pub enum BoundsCheckPolicy {
     Restrict,
 
     
+    
+    
+    
+    
+    
     ReadZeroSkipWrite,
 
     
@@ -52,11 +60,14 @@ pub enum BoundsCheckPolicy {
     Unchecked,
 }
 
-#[derive(Clone, Copy, Debug, Default)]
 
+#[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
 pub struct BoundsCheckPolicies {
     
     
+    #[cfg_attr(feature = "deserialize", serde(default))]
     pub index: BoundsCheckPolicy,
 
     
@@ -92,6 +103,7 @@ pub struct BoundsCheckPolicies {
     
     
     
+    #[cfg_attr(feature = "deserialize", serde(default))]
     pub buffer: BoundsCheckPolicy,
 
     
@@ -103,6 +115,7 @@ pub struct BoundsCheckPolicies {
     
     
     
+    #[cfg_attr(feature = "deserialize", serde(default))]
     pub image: BoundsCheckPolicy,
 }
 
@@ -118,27 +131,178 @@ impl BoundsCheckPolicies {
     
     
     
+    
+    
+    
     pub fn choose_policy(
         &self,
-        pointer: Handle<crate::Expression>,
+        access: Handle<crate::Expression>,
         types: &UniqueArena<crate::Type>,
         info: &valid::FunctionInfo,
     ) -> BoundsCheckPolicy {
-        let is_buffer = match info[pointer].ty.inner_with(types).pointer_class() {
+        match info[access].ty.inner_with(types).pointer_class() {
             Some(crate::StorageClass::Storage { access: _ })
-            | Some(crate::StorageClass::Uniform) => true,
-            _ => false,
-        };
+            | Some(crate::StorageClass::Uniform) => self.buffer,
+            
+            
+            _ => self.index,
+        }
+    }
 
-        if is_buffer {
-            self.buffer
-        } else {
-            self.index
+    
+    pub fn contains(&self, policy: BoundsCheckPolicy) -> bool {
+        self.index == policy || self.buffer == policy || self.image == policy
+    }
+}
+
+
+
+
+
+
+
+
+#[derive(Clone, Copy, Debug)]
+pub enum GuardedIndex {
+    Known(u32),
+    Expression(Handle<crate::Expression>),
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub fn find_checked_indexes(
+    module: &crate::Module,
+    function: &crate::Function,
+    info: &crate::valid::FunctionInfo,
+    policies: BoundsCheckPolicies,
+) -> BitSet {
+    use crate::Expression as Ex;
+
+    let mut guarded_indices = BitSet::new();
+
+    
+    if policies.contains(BoundsCheckPolicy::ReadZeroSkipWrite) {
+        for (_handle, expr) in function.expressions.iter() {
+            
+            
+            if let Ex::Access { base, index } = *expr {
+                if policies.choose_policy(base, &module.types, info)
+                    == BoundsCheckPolicy::ReadZeroSkipWrite
+                    && access_needs_check(
+                        base,
+                        GuardedIndex::Expression(index),
+                        module,
+                        function,
+                        info,
+                    )
+                    .is_some()
+                {
+                    guarded_indices.insert(index.index());
+                }
+            }
+        }
+    }
+
+    guarded_indices
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub fn access_needs_check(
+    base: Handle<crate::Expression>,
+    mut index: GuardedIndex,
+    module: &crate::Module,
+    function: &crate::Function,
+    info: &crate::valid::FunctionInfo,
+) -> Option<IndexableLength> {
+    let base_inner = info[base].ty.inner_with(&module.types);
+    
+    
+    
+    let length = base_inner.indexable_length(module).unwrap();
+    index.try_resolve_to_constant(function, module);
+    if let (&GuardedIndex::Known(index), &IndexableLength::Known(length)) = (&index, &length) {
+        if index < length {
+            
+            return None;
+        }
+    };
+
+    Some(length)
+}
+
+impl GuardedIndex {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn try_resolve_to_constant(&mut self, function: &crate::Function, module: &crate::Module) {
+        if let GuardedIndex::Expression(expr) = *self {
+            if let crate::Expression::Constant(handle) = function.expressions[expr] {
+                if let Some(value) = module.constants[handle].to_array_length() {
+                    *self = GuardedIndex::Known(value);
+                }
+            }
         }
     }
 }
 
 impl crate::TypeInner {
+    
+    
     
     
     
@@ -181,6 +345,7 @@ impl crate::TypeInner {
 
 
 
+#[derive(Debug)]
 pub enum IndexableLength {
     
     Known(u32),

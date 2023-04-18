@@ -1,6 +1,6 @@
 
 
-mod index;
+pub mod index;
 mod layouter;
 mod namer;
 mod terminator;
@@ -309,6 +309,33 @@ impl crate::Expression {
             constant.specialization.is_some()
         } else {
             true
+        }
+    }
+}
+
+impl crate::Function {
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn originating_global(
+        &self,
+        mut pointer: crate::Handle<crate::Expression>,
+    ) -> Option<crate::Handle<crate::GlobalVariable>> {
+        loop {
+            pointer = match self.expressions[pointer] {
+                crate::Expression::Access { base, .. } => base,
+                crate::Expression::AccessIndex { base, .. } => base,
+                crate::Expression::GlobalVariable(handle) => return Some(handle),
+                crate::Expression::LocalVariable(_) => return None,
+                crate::Expression::FunctionArgument(_) => return None,
+                
+                _ => unreachable!(),
+            }
         }
     }
 }

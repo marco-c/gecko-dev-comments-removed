@@ -430,30 +430,49 @@ impl recyclable::Recyclable for CachedExpressions {
     }
 }
 
+#[derive(Clone)]
 struct GlobalVariable {
     
-    id: Word,
+    var_id: Word,
     
     
     
     handle_id: Word,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    access_id: Word,
 }
 
 impl GlobalVariable {
     fn dummy() -> Self {
         Self {
-            id: 0,
+            var_id: 0,
             handle_id: 0,
+            access_id: 0,
         }
     }
 
     fn new(id: Word) -> Self {
-        Self { id, handle_id: 0 }
+        Self {
+            var_id: id,
+            handle_id: 0,
+            access_id: 0,
+        }
     }
 
     
     fn reset_for_function(&mut self) {
         self.handle_id = 0;
+        self.access_id = 0;
     }
 }
 

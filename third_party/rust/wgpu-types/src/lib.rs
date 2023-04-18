@@ -542,6 +542,15 @@ bitflags::bitflags! {
         ///
         /// This is a native only feature.
         const MULTIVIEW = 1 << 40;
+        /// Enables normalized `16-bit` texture formats.
+        ///
+        /// Supported platforms:
+        /// - Vulkan
+        /// - DX12
+        /// - Metal
+        ///
+        /// This is a native only feature.
+        const TEXTURE_FORMAT_16BIT_NORM = 1 << 41;
     }
 }
 
@@ -657,7 +666,13 @@ pub struct Limits {
     
     
     pub min_storage_buffer_offset_alignment: u32,
-
+    
+    
+    pub max_inter_stage_shader_components: u32,
+    
+    pub max_compute_workgroup_storage_size: u32,
+    
+    pub max_compute_invocations_per_workgroup: u32,
     
     
     pub max_compute_workgroup_size_x: u32,
@@ -695,6 +710,9 @@ impl Default for Limits {
             max_push_constant_size: 0,
             min_uniform_buffer_offset_alignment: 256,
             min_storage_buffer_offset_alignment: 256,
+            max_inter_stage_shader_components: 60,
+            max_compute_workgroup_storage_size: 16352,
+            max_compute_invocations_per_workgroup: 256,
             max_compute_workgroup_size_x: 256,
             max_compute_workgroup_size_y: 256,
             max_compute_workgroup_size_z: 64,
@@ -727,6 +745,9 @@ impl Limits {
             max_push_constant_size: 0,
             min_uniform_buffer_offset_alignment: 256,
             min_storage_buffer_offset_alignment: 256,
+            max_inter_stage_shader_components: 60,
+            max_compute_workgroup_storage_size: 16352,
+            max_compute_invocations_per_workgroup: 256,
             max_compute_workgroup_size_x: 256,
             max_compute_workgroup_size_y: 256,
             max_compute_workgroup_size_z: 64,
@@ -737,11 +758,18 @@ impl Limits {
     
     pub fn downlevel_webgl2_defaults() -> Self {
         Self {
+            max_uniform_buffers_per_shader_stage: 11,
             max_storage_buffers_per_shader_stage: 0,
             max_storage_textures_per_shader_stage: 0,
             max_dynamic_storage_buffers_per_pipeline_layout: 0,
             max_storage_buffer_binding_size: 0,
             max_vertex_buffer_array_stride: 255,
+            max_compute_workgroup_storage_size: 0,
+            max_compute_invocations_per_workgroup: 0,
+            max_compute_workgroup_size_x: 0,
+            max_compute_workgroup_size_y: 0,
+            max_compute_workgroup_size_z: 0,
+            max_compute_workgroups_per_dimension: 0,
 
             
             ..Self::downlevel_defaults()
@@ -1455,6 +1483,16 @@ pub enum TextureFormat {
     #[cfg_attr(feature = "serde", serde(rename = "r16sint"))]
     R16Sint,
     
+    
+    
+    #[cfg_attr(feature = "serde", serde(rename = "r16unorm"))]
+    R16Unorm,
+    
+    
+    
+    #[cfg_attr(feature = "serde", serde(rename = "r16snorm"))]
+    R16Snorm,
+    
     #[cfg_attr(feature = "serde", serde(rename = "r16float"))]
     R16Float,
     
@@ -1486,6 +1524,16 @@ pub enum TextureFormat {
     
     #[cfg_attr(feature = "serde", serde(rename = "rg16sint"))]
     Rg16Sint,
+    
+    
+    
+    #[cfg_attr(feature = "serde", serde(rename = "rg16unorm"))]
+    Rg16Unorm,
+    
+    
+    
+    #[cfg_attr(feature = "serde", serde(rename = "rg16snorm"))]
+    Rg16Snorm,
     
     #[cfg_attr(feature = "serde", serde(rename = "rg16float"))]
     Rg16Float,
@@ -1535,6 +1583,16 @@ pub enum TextureFormat {
     
     #[cfg_attr(feature = "serde", serde(rename = "rgba16sint"))]
     Rgba16Sint,
+    
+    
+    
+    #[cfg_attr(feature = "serde", serde(rename = "rgba16unorm"))]
+    Rgba16Unorm,
+    
+    
+    
+    #[cfg_attr(feature = "serde", serde(rename = "rgba16snorm"))]
+    Rgba16Snorm,
     
     #[cfg_attr(feature = "serde", serde(rename = "rgba16float"))]
     Rgba16Float,
@@ -1915,6 +1973,7 @@ impl TextureFormat {
         let bc = Features::TEXTURE_COMPRESSION_BC;
         let etc2 = Features::TEXTURE_COMPRESSION_ETC2;
         let astc_ldr = Features::TEXTURE_COMPRESSION_ASTC_LDR;
+        let norm16bit = Features::TEXTURE_FORMAT_16BIT_NORM;
 
         
         let uint = TextureSampleType::Uint;
@@ -2056,6 +2115,14 @@ impl TextureFormat {
             Self::Astc12x10RgbaUnormSrgb => (astc_ldr, float, srgb, (12, 10), 16, basic, 4),
             Self::Astc12x12RgbaUnorm => (astc_ldr, float, linear, (12, 12), 16, basic, 4),
             Self::Astc12x12RgbaUnormSrgb => (astc_ldr, float, srgb, (12, 12), 16, basic, 4),
+
+            
+            Self::R16Unorm => (norm16bit, float, linear, (1, 1), 2, storage, 1),
+            Self::R16Snorm => (norm16bit, float, linear, (1, 1), 2, storage, 1),
+            Self::Rg16Unorm => (norm16bit, float, linear, (1, 1), 4, storage, 2),
+            Self::Rg16Snorm => (norm16bit, float, linear, (1, 1), 4, storage, 2),
+            Self::Rgba16Unorm => (norm16bit, float, linear, (1, 1), 8, storage, 4),
+            Self::Rgba16Snorm => (norm16bit, float, linear, (1, 1), 8, storage, 4),
         };
 
         TextureFormatInfo {
@@ -2754,7 +2821,13 @@ pub struct Extent3d {
     
     pub height: u32,
     
+    #[cfg_attr(feature = "serde", serde(default = "default_depth"))]
     pub depth_or_array_layers: u32,
+}
+
+#[cfg(feature = "serde")]
+fn default_depth() -> u32 {
+    1
 }
 
 impl Default for Extent3d {

@@ -1,5 +1,7 @@
+use core::ffi::c_void;
 use core::ptr;
-use libc::{c_ulong, c_void};
+
+use cty::c_ulong;
 
 
 
@@ -9,17 +11,13 @@ use libc::{c_ulong, c_void};
 
 
 
-
-
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct XlibHandle {
     
     pub window: c_ulong,
     
     pub display: *mut c_void,
-    #[doc(hidden)]
-    #[deprecated = "This field is used to ensure that this struct is non-exhaustive, so that it may be extended in the future. Do not refer to this field."]
-    pub _non_exhaustive_do_not_use: crate::seal::Seal,
 }
 
 
@@ -30,17 +28,13 @@ pub struct XlibHandle {
 
 
 
-
-
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct XcbHandle {
     
     pub window: u32, 
     
     pub connection: *mut c_void,
-    #[doc(hidden)]
-    #[deprecated = "This field is used to ensure that this struct is non-exhaustive, so that it may be extended in the future. Do not refer to this field."]
-    pub _non_exhaustive_do_not_use: crate::seal::Seal,
 }
 
 
@@ -51,48 +45,38 @@ pub struct XcbHandle {
 
 
 
-
-
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct WaylandHandle {
     
     pub surface: *mut c_void,
     
     pub display: *mut c_void,
-    #[doc(hidden)]
-    #[deprecated = "This field is used to ensure that this struct is non-exhaustive, so that it may be extended in the future. Do not refer to this field."]
-    pub _non_exhaustive_do_not_use: crate::seal::Seal,
 }
 
 impl XlibHandle {
-    pub fn empty() -> XlibHandle {
-        #[allow(deprecated)]
-        XlibHandle {
+    pub fn empty() -> Self {
+        Self {
             window: 0,
             display: ptr::null_mut(),
-            _non_exhaustive_do_not_use: crate::seal::Seal,
         }
     }
 }
 
 impl XcbHandle {
-    pub fn empty() -> XcbHandle {
-        #[allow(deprecated)]
-        XcbHandle {
+    pub fn empty() -> Self {
+        Self {
             window: 0,
             connection: ptr::null_mut(),
-            _non_exhaustive_do_not_use: crate::seal::Seal,
         }
     }
 }
 
 impl WaylandHandle {
-    pub fn empty() -> WaylandHandle {
-        #[allow(deprecated)]
-        WaylandHandle {
+    pub fn empty() -> Self {
+        Self {
             surface: ptr::null_mut(),
             display: ptr::null_mut(),
-            _non_exhaustive_do_not_use: crate::seal::Seal,
         }
     }
 }

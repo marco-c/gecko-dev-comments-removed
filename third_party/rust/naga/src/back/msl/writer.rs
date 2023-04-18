@@ -2,9 +2,11 @@ use super::{sampler as sm, Error, LocationMode, Options, PipelineOptions, Transl
 use crate::{
     arena::Handle,
     back,
+    proc::index,
     proc::{self, NameKey, TypeResolution},
     valid, FastHashMap, FastHashSet,
 };
+use bit_set::BitSet;
 use std::{
     fmt::{Display, Error as FmtError, Formatter, Write},
     iter,
@@ -450,11 +452,34 @@ struct ExpressionContext<'a> {
     info: &'a valid::FunctionInfo,
     module: &'a crate::Module,
     pipeline_options: &'a PipelineOptions,
+    policies: index::BoundsCheckPolicies,
+
+    
+    
+    
+    
+    guarded_indices: BitSet,
 }
 
 impl<'a> ExpressionContext<'a> {
     fn resolve_type(&self, handle: Handle<crate::Expression>) -> &'a crate::TypeInner {
         self.info[handle].ty.inner_with(&self.module.types)
+    }
+
+    fn choose_bounds_check_policy(
+        &self,
+        pointer: Handle<crate::Expression>,
+    ) -> index::BoundsCheckPolicy {
+        self.policies
+            .choose_policy(pointer, &self.module.types, self.info)
+    }
+
+    fn access_needs_check(
+        &self,
+        base: Handle<crate::Expression>,
+        index: index::GuardedIndex,
+    ) -> Option<index::IndexableLength> {
+        index::access_needs_check(base, index, self.module, self.function, self.info)
     }
 }
 
@@ -671,55 +696,63 @@ impl<W: Write> Writer<W> {
         Ok(())
     }
 
-    fn put_array_length(
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn put_dynamic_array_max_index(
         &mut self,
-        expr: Handle<crate::Expression>,
+        handle: Handle<crate::GlobalVariable>,
         context: &ExpressionContext,
     ) -> BackendResult {
-        let handle = match context.function.expressions[expr] {
-            crate::Expression::AccessIndex { base, .. } => {
-                match context.function.expressions[base] {
-                    crate::Expression::GlobalVariable(handle) => handle,
-                    _ => return Err(Error::Validation),
-                }
-            }
+        let global = &context.module.global_variables[handle];
+        let members = match context.module.types[global.ty].inner {
+            crate::TypeInner::Struct { ref members, .. } => members,
             _ => return Err(Error::Validation),
         };
 
-        let global = &context.module.global_variables[handle];
-        if let crate::TypeInner::Struct { ref members, .. } = context.module.types[global.ty].inner
-        {
-            if let Some(&crate::StructMember {
-                offset,
-                ty: array_ty,
-                ..
-            }) = members.last()
-            {
-                let (span, stride) = match context.module.types[array_ty].inner {
-                    crate::TypeInner::Array { base, stride, .. } => (
-                        context.module.types[base]
-                            .inner
-                            .span(&context.module.constants),
-                        stride,
-                    ),
-                    _ => return Err(Error::Validation),
-                };
+        let (offset, array_ty) = match members.last() {
+            Some(&crate::StructMember { offset, ty, .. }) => (offset, ty),
+            None => return Err(Error::Validation),
+        };
 
-                write!(
-                    self.out,
-                    "(1 + (_buffer_sizes.size{idx} - {offset} - {span}) / {stride})",
-                    idx = handle.index(),
-                    offset = offset,
-                    span = span,
-                    stride = stride,
-                )?;
-                Ok(())
-            } else {
-                Err(Error::Validation)
-            }
-        } else {
-            Err(Error::Validation)
-        }
+        let (span, stride) = match context.module.types[array_ty].inner {
+            crate::TypeInner::Array { base, stride, .. } => (
+                context.module.types[base]
+                    .inner
+                    .span(&context.module.constants),
+                stride,
+            ),
+            _ => return Err(Error::Validation),
+        };
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        write!(
+            self.out,
+            "(_buffer_sizes.size{idx} - {offset} - {span}) / {stride}",
+            idx = handle.index(),
+            offset = offset,
+            span = span,
+            stride = stride,
+        )?;
+        Ok(())
     }
 
     fn put_atomic_fetch(
@@ -741,6 +774,17 @@ impl<W: Write> Writer<W> {
         Ok(())
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn put_expression(
         &mut self,
         expr_handle: Handle<crate::Expression>,
@@ -761,62 +805,30 @@ impl<W: Write> Writer<W> {
         let expression = &context.function.expressions[expr_handle];
         log::trace!("expression {:?} = {:?}", expr_handle, expression);
         match *expression {
-            crate::Expression::Access { base, index } => {
-                let accessing_wrapped_array =
-                    match *context.info[base].ty.inner_with(&context.module.types) {
-                        crate::TypeInner::Array { .. } => true,
-                        crate::TypeInner::Pointer {
-                            base: pointer_base, ..
-                        } => match context.module.types[pointer_base].inner {
-                            crate::TypeInner::Array {
-                                size: crate::ArraySize::Constant(_),
-                                ..
-                            } => true,
-                            _ => false,
-                        },
-                        _ => false,
-                    };
+            crate::Expression::Access { .. } | crate::Expression::AccessIndex { .. } => {
+                
+                
+                
+                
+                
+                let policy = context.choose_bounds_check_policy(expr_handle);
+                if policy == index::BoundsCheckPolicy::ReadZeroSkipWrite
+                    && self.put_bounds_checks(
+                        expr_handle,
+                        context,
+                        back::Level(0),
+                        if is_scoped { "" } else { "(" },
+                    )?
+                {
+                    write!(self.out, " ? ")?;
+                    self.put_access_chain(expr_handle, policy, context)?;
+                    write!(self.out, " : DefaultConstructible()")?;
 
-                self.put_expression(base, context, false)?;
-                if accessing_wrapped_array {
-                    write!(self.out, ".{}", WRAPPED_ARRAY_FIELD)?;
-                }
-                write!(self.out, "[")?;
-                self.put_expression(index, context, true)?;
-                write!(self.out, "]")?;
-            }
-            crate::Expression::AccessIndex { base, index } => {
-                self.put_expression(base, context, false)?;
-                let base_res = &context.info[base].ty;
-                let mut resolved = base_res.inner_with(&context.module.types);
-                let base_ty_handle = match *resolved {
-                    crate::TypeInner::Pointer { base, class: _ } => {
-                        resolved = &context.module.types[base].inner;
-                        Some(base)
+                    if !is_scoped {
+                        write!(self.out, ")")?;
                     }
-                    _ => base_res.handle(),
-                };
-                match *resolved {
-                    crate::TypeInner::Struct { .. } => {
-                        let base_ty = base_ty_handle.unwrap();
-                        let name = &self.names[&NameKey::StructMember(base_ty, index)];
-                        write!(self.out, ".{}", name)?;
-                    }
-                    crate::TypeInner::ValuePointer { .. } | crate::TypeInner::Vector { .. } => {
-                        write!(self.out, ".{}", back::COMPONENTS[index as usize])?;
-                    }
-                    crate::TypeInner::Array {
-                        size: crate::ArraySize::Constant(_),
-                        ..
-                    } => {
-                        write!(self.out, ".{}[{}]", WRAPPED_ARRAY_FIELD, index)?;
-                    }
-                    crate::TypeInner::Array { .. } | crate::TypeInner::Matrix { .. } => {
-                        write!(self.out, "[{}]", index)?;
-                    }
-                    _ => {
-                        
-                    }
+                } else {
+                    self.put_access_chain(expr_handle, policy, context)?;
                 }
             }
             crate::Expression::Constant(handle) => {
@@ -880,65 +892,7 @@ impl<W: Write> Writer<W> {
                 let name = &self.names[&name_key];
                 write!(self.out, "{}", name)?;
             }
-            crate::Expression::Load { pointer } => {
-                
-                
-                let wrap_packed_vec_scalar_kind = match context.function.expressions[pointer] {
-                    crate::Expression::AccessIndex { base, index } => {
-                        let ty = match *context.resolve_type(base) {
-                            crate::TypeInner::Pointer { base, .. } => {
-                                &context.module.types[base].inner
-                            }
-                            ref ty => ty,
-                        };
-                        match *ty {
-                            crate::TypeInner::Struct {
-                                ref members, span, ..
-                            } => should_pack_struct_member(
-                                members,
-                                span,
-                                index as usize,
-                                context.module,
-                            ),
-                            _ => None,
-                        }
-                    }
-                    _ => None,
-                };
-                let is_atomic = match *context.resolve_type(pointer) {
-                    crate::TypeInner::Pointer { base, .. } => {
-                        match context.module.types[base].inner {
-                            crate::TypeInner::Atomic { .. } => true,
-                            _ => false,
-                        }
-                    }
-                    _ => false,
-                };
-
-                if let Some(scalar_kind) = wrap_packed_vec_scalar_kind {
-                    write!(
-                        self.out,
-                        "{}::{}3(",
-                        NAMESPACE,
-                        scalar_kind_string(scalar_kind)
-                    )?;
-                    self.put_expression(pointer, context, true)?;
-                    write!(self.out, ")")?;
-                } else if is_atomic {
-                    write!(
-                        self.out,
-                        "{}::atomic_load_explicit({}",
-                        NAMESPACE, ATOMIC_REFERENCE
-                    )?;
-                    self.put_expression(pointer, context, true)?;
-                    write!(self.out, ", {}::memory_order_relaxed)", NAMESPACE)?;
-                } else {
-                    
-                    
-                    
-                    self.put_expression(pointer, context, is_scoped)?;
-                }
-            }
+            crate::Expression::Load { pointer } => self.put_load(pointer, context, is_scoped)?,
             crate::Expression::ImageSample {
                 image,
                 sampler,
@@ -1265,9 +1219,383 @@ impl<W: Write> Writer<W> {
                 unreachable!()
             }
             crate::Expression::ArrayLength(expr) => {
-                self.put_array_length(expr, context)?;
+                
+                let global = match context.function.expressions[expr] {
+                    crate::Expression::AccessIndex { base, .. } => {
+                        match context.function.expressions[base] {
+                            crate::Expression::GlobalVariable(handle) => handle,
+                            _ => return Err(Error::Validation),
+                        }
+                    }
+                    _ => return Err(Error::Validation),
+                };
+
+                if !is_scoped {
+                    write!(self.out, "(")?;
+                }
+                write!(self.out, "1 + ")?;
+                self.put_dynamic_array_max_index(global, context)?;
+                if !is_scoped {
+                    write!(self.out, ")")?;
+                }
             }
         }
+        Ok(())
+    }
+
+    
+    fn put_index(
+        &mut self,
+        index: index::GuardedIndex,
+        context: &ExpressionContext,
+        is_scoped: bool,
+    ) -> BackendResult {
+        match index {
+            index::GuardedIndex::Expression(expr) => {
+                self.put_expression(expr, context, is_scoped)?
+            }
+            index::GuardedIndex::Known(value) => write!(self.out, "{}", value)?,
+        }
+        Ok(())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[allow(unused_variables)]
+    fn put_bounds_checks(
+        &mut self,
+        mut chain: Handle<crate::Expression>,
+        context: &ExpressionContext,
+        level: back::Level,
+        prefix: &'static str,
+    ) -> Result<bool, Error> {
+        let mut check_written = false;
+
+        
+        loop {
+            
+            
+            let (base, guarded_index) = match context.function.expressions[chain] {
+                crate::Expression::Access { base, index } => {
+                    (base, Some(index::GuardedIndex::Expression(index)))
+                }
+                crate::Expression::AccessIndex { base, index } => {
+                    
+                    
+                    let mut base_inner = context.info[base].ty.inner_with(&context.module.types);
+                    if let crate::TypeInner::Pointer { base, .. } = *base_inner {
+                        base_inner = &context.module.types[base].inner;
+                    }
+                    match *base_inner {
+                        crate::TypeInner::Struct { .. } => (base, None),
+                        _ => (base, Some(index::GuardedIndex::Known(index))),
+                    }
+                }
+                _ => break,
+            };
+
+            if let Some(index) = guarded_index {
+                if let Some(length) = context.access_needs_check(base, index) {
+                    if check_written {
+                        write!(self.out, " && ")?;
+                    } else {
+                        write!(self.out, "{}{}", level, prefix)?;
+                        check_written = true;
+                    }
+
+                    
+                    
+                    
+                    write!(self.out, "{}::uint(", NAMESPACE)?;
+                    self.put_index(index, context, true)?;
+                    self.out.write_str(") < ")?;
+                    match length {
+                        index::IndexableLength::Known(value) => write!(self.out, "{}", value)?,
+                        index::IndexableLength::Dynamic => {
+                            let global = context
+                                .function
+                                .originating_global(base)
+                                .ok_or(Error::Validation)?;
+                            write!(self.out, "1 + ")?;
+                            self.put_dynamic_array_max_index(global, context)?
+                        }
+                    }
+                }
+            }
+
+            chain = base
+        }
+
+        Ok(check_written)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn put_access_chain(
+        &mut self,
+        chain: Handle<crate::Expression>,
+        policy: index::BoundsCheckPolicy,
+        context: &ExpressionContext,
+    ) -> BackendResult {
+        match context.function.expressions[chain] {
+            crate::Expression::Access { base, index } => {
+                let mut base_ty = context.info[base].ty.inner_with(&context.module.types);
+
+                
+                if let crate::TypeInner::Pointer { base, class: _ } = *base_ty {
+                    base_ty = &context.module.types[base].inner;
+                }
+
+                self.put_subscripted_access_chain(
+                    base,
+                    base_ty,
+                    index::GuardedIndex::Expression(index),
+                    policy,
+                    context,
+                )?;
+            }
+            crate::Expression::AccessIndex { base, index } => {
+                let base_resolution = &context.info[base].ty;
+                let mut base_ty = base_resolution.inner_with(&context.module.types);
+                let mut base_ty_handle = base_resolution.handle();
+
+                
+                if let crate::TypeInner::Pointer { base, class: _ } = *base_ty {
+                    base_ty = &context.module.types[base].inner;
+                    base_ty_handle = Some(base);
+                }
+
+                
+                
+                
+                match *base_ty {
+                    crate::TypeInner::Struct { .. } => {
+                        let base_ty = base_ty_handle.unwrap();
+                        self.put_access_chain(base, policy, context)?;
+                        let name = &self.names[&NameKey::StructMember(base_ty, index)];
+                        write!(self.out, ".{}", name)?;
+                    }
+                    crate::TypeInner::ValuePointer { .. } | crate::TypeInner::Vector { .. } => {
+                        self.put_access_chain(base, policy, context)?;
+                        write!(self.out, ".{}", back::COMPONENTS[index as usize])?;
+                    }
+                    _ => {
+                        self.put_subscripted_access_chain(
+                            base,
+                            base_ty,
+                            index::GuardedIndex::Known(index),
+                            policy,
+                            context,
+                        )?;
+                    }
+                }
+            }
+            _ => self.put_expression(chain, context, false)?,
+        }
+
+        Ok(())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn put_subscripted_access_chain(
+        &mut self,
+        base: Handle<crate::Expression>,
+        base_ty: &crate::TypeInner,
+        index: index::GuardedIndex,
+        policy: index::BoundsCheckPolicy,
+        context: &ExpressionContext,
+    ) -> BackendResult {
+        let accessing_wrapped_array = match *base_ty {
+            crate::TypeInner::Array {
+                size: crate::ArraySize::Constant(_),
+                ..
+            } => true,
+            _ => false,
+        };
+
+        self.put_access_chain(base, policy, context)?;
+        if accessing_wrapped_array {
+            write!(self.out, ".{}", WRAPPED_ARRAY_FIELD)?;
+        }
+        write!(self.out, "[")?;
+
+        
+        let restriction_needed = if policy == index::BoundsCheckPolicy::Restrict {
+            context.access_needs_check(base, index)
+        } else {
+            None
+        };
+        if let Some(limit) = restriction_needed {
+            write!(self.out, "{}::min(unsigned(", NAMESPACE)?;
+            self.put_index(index, context, true)?;
+            write!(self.out, "), ")?;
+            match limit {
+                index::IndexableLength::Known(limit) => {
+                    write!(self.out, "{}u", limit - 1)?;
+                }
+                index::IndexableLength::Dynamic => {
+                    let global = context
+                        .function
+                        .originating_global(base)
+                        .ok_or(Error::Validation)?;
+                    self.put_dynamic_array_max_index(global, context)?;
+                }
+            }
+            write!(self.out, ")")?;
+        } else {
+            self.put_index(index, context, true)?;
+        }
+
+        write!(self.out, "]")?;
+
+        Ok(())
+    }
+
+    fn put_load(
+        &mut self,
+        pointer: Handle<crate::Expression>,
+        context: &ExpressionContext,
+        is_scoped: bool,
+    ) -> BackendResult {
+        
+        
+        let policy = context.choose_bounds_check_policy(pointer);
+        if policy == index::BoundsCheckPolicy::ReadZeroSkipWrite
+            && self.put_bounds_checks(
+                pointer,
+                context,
+                back::Level(0),
+                if is_scoped { "" } else { "(" },
+            )?
+        {
+            write!(self.out, " ? ")?;
+            self.put_unchecked_load(pointer, policy, context)?;
+            write!(self.out, " : DefaultConstructible()")?;
+
+            if !is_scoped {
+                write!(self.out, ")")?;
+            }
+        } else {
+            self.put_unchecked_load(pointer, policy, context)?;
+        }
+
+        Ok(())
+    }
+
+    fn put_unchecked_load(
+        &mut self,
+        pointer: Handle<crate::Expression>,
+        policy: index::BoundsCheckPolicy,
+        context: &ExpressionContext,
+    ) -> BackendResult {
+        
+        
+        let wrap_packed_vec_scalar_kind = match context.function.expressions[pointer] {
+            crate::Expression::AccessIndex { base, index } => {
+                let ty = match *context.resolve_type(base) {
+                    crate::TypeInner::Pointer { base, .. } => &context.module.types[base].inner,
+                    ref ty => ty,
+                };
+                match *ty {
+                    crate::TypeInner::Struct {
+                        ref members, span, ..
+                    } => should_pack_struct_member(members, span, index as usize, context.module),
+                    _ => None,
+                }
+            }
+            _ => None,
+        };
+        let is_atomic = match *context.resolve_type(pointer) {
+            crate::TypeInner::Pointer { base, .. } => match context.module.types[base].inner {
+                crate::TypeInner::Atomic { .. } => true,
+                _ => false,
+            },
+            _ => false,
+        };
+
+        if let Some(scalar_kind) = wrap_packed_vec_scalar_kind {
+            write!(
+                self.out,
+                "{}::{}3(",
+                NAMESPACE,
+                scalar_kind_string(scalar_kind)
+            )?;
+            self.put_access_chain(pointer, policy, context)?;
+            write!(self.out, ")")?;
+        } else if is_atomic {
+            write!(
+                self.out,
+                "{}::atomic_load_explicit({}",
+                NAMESPACE, ATOMIC_REFERENCE
+            )?;
+            self.put_access_chain(pointer, policy, context)?;
+            write!(self.out, ", {}::memory_order_relaxed)", NAMESPACE)?;
+        } else {
+            
+            
+            
+            self.put_access_chain(pointer, policy, context)?;
+        }
+
         Ok(())
     }
 
@@ -1431,11 +1759,29 @@ impl<W: Write> Writer<W> {
                             
                             
                             
+                            
+                            
+                            
+                            
+                            
                             Some(self.namer.call(name))
                         } else {
-                            let min_ref_count =
-                                context.expression.function.expressions[handle].bake_ref_count();
-                            if min_ref_count <= info.ref_count {
+                            
+                            
+                            
+                            let bake =
+                                if context.expression.guarded_indices.contains(handle.index()) {
+                                    true
+                                } else {
+                                    
+                                    
+                                    let min_ref_count = context.expression.function.expressions
+                                        [handle]
+                                        .bake_ref_count();
+                                    min_ref_count <= info.ref_count
+                                };
+
+                            if bake {
                                 Some(format!("{}{}", back::BAKE_PREFIX, handle.index()))
                             } else {
                                 None
@@ -1574,49 +1920,7 @@ impl<W: Write> Writer<W> {
                     }
                 }
                 crate::Statement::Store { pointer, value } => {
-                    let pointer_info = &context.expression.info[pointer];
-                    let (array_size, is_atomic) =
-                        match *pointer_info.ty.inner_with(&context.expression.module.types) {
-                            crate::TypeInner::Pointer { base, .. } => {
-                                match context.expression.module.types[base].inner {
-                                    crate::TypeInner::Array {
-                                        size: crate::ArraySize::Constant(ch),
-                                        ..
-                                    } => (Some(ch), false),
-                                    crate::TypeInner::Atomic { .. } => (None, true),
-                                    _ => (None, false),
-                                }
-                            }
-                            _ => (None, false),
-                        };
-
-                    
-                    if let Some(const_handle) = array_size {
-                        let size = context.expression.module.constants[const_handle]
-                            .to_array_length()
-                            .unwrap();
-                        write!(self.out, "{}for(int _i=0; _i<{}; ++_i) ", level, size)?;
-                        self.put_expression(pointer, &context.expression, true)?;
-                        write!(self.out, ".{}[_i] = ", WRAPPED_ARRAY_FIELD)?;
-                        self.put_expression(value, &context.expression, true)?;
-                        writeln!(self.out, ".{}[_i];", WRAPPED_ARRAY_FIELD)?;
-                    } else if is_atomic {
-                        write!(
-                            self.out,
-                            "{}{}::atomic_store_explicit({}",
-                            level, NAMESPACE, ATOMIC_REFERENCE
-                        )?;
-                        self.put_expression(pointer, &context.expression, true)?;
-                        write!(self.out, ", ")?;
-                        self.put_expression(value, &context.expression, true)?;
-                        writeln!(self.out, ", {}::memory_order_relaxed);", NAMESPACE)?;
-                    } else {
-                        write!(self.out, "{}", level)?;
-                        self.put_expression(pointer, &context.expression, true)?;
-                        write!(self.out, " = ")?;
-                        self.put_expression(value, &context.expression, true)?;
-                        writeln!(self.out, ";")?;
-                    }
+                    self.put_store(pointer, value, level, context)?
                 }
                 crate::Statement::ImageStore {
                     image,
@@ -1753,6 +2057,82 @@ impl<W: Write> Writer<W> {
         Ok(())
     }
 
+    fn put_store(
+        &mut self,
+        pointer: Handle<crate::Expression>,
+        value: Handle<crate::Expression>,
+        level: back::Level,
+        context: &StatementContext,
+    ) -> BackendResult {
+        let policy = context.expression.choose_bounds_check_policy(pointer);
+        if policy == index::BoundsCheckPolicy::ReadZeroSkipWrite
+            && self.put_bounds_checks(pointer, &context.expression, level, "if (")?
+        {
+            writeln!(self.out, ") {{")?;
+            self.put_unchecked_store(pointer, value, policy, level.next(), context)?;
+            writeln!(self.out, "{}}}", level)?;
+        } else {
+            self.put_unchecked_store(pointer, value, policy, level, context)?;
+        }
+
+        Ok(())
+    }
+
+    fn put_unchecked_store(
+        &mut self,
+        pointer: Handle<crate::Expression>,
+        value: Handle<crate::Expression>,
+        policy: index::BoundsCheckPolicy,
+        level: back::Level,
+        context: &StatementContext,
+    ) -> BackendResult {
+        let pointer_info = &context.expression.info[pointer];
+        let (array_size, is_atomic) =
+            match *pointer_info.ty.inner_with(&context.expression.module.types) {
+                crate::TypeInner::Pointer { base, .. } => {
+                    match context.expression.module.types[base].inner {
+                        crate::TypeInner::Array {
+                            size: crate::ArraySize::Constant(ch),
+                            ..
+                        } => (Some(ch), false),
+                        crate::TypeInner::Atomic { .. } => (None, true),
+                        _ => (None, false),
+                    }
+                }
+                _ => (None, false),
+            };
+
+        
+        if let Some(const_handle) = array_size {
+            let size = context.expression.module.constants[const_handle]
+                .to_array_length()
+                .unwrap();
+            write!(self.out, "{}for(int _i=0; _i<{}; ++_i) ", level, size)?;
+            self.put_access_chain(pointer, policy, &context.expression)?;
+            write!(self.out, ".{}[_i] = ", WRAPPED_ARRAY_FIELD)?;
+            self.put_expression(value, &context.expression, true)?;
+            writeln!(self.out, ".{}[_i];", WRAPPED_ARRAY_FIELD)?;
+        } else if is_atomic {
+            write!(
+                self.out,
+                "{}{}::atomic_store_explicit({}",
+                level, NAMESPACE, ATOMIC_REFERENCE
+            )?;
+            self.put_access_chain(pointer, policy, &context.expression)?;
+            write!(self.out, ", ")?;
+            self.put_expression(value, &context.expression, true)?;
+            writeln!(self.out, ", {}::memory_order_relaxed);", NAMESPACE)?;
+        } else {
+            write!(self.out, "{}", level)?;
+            self.put_access_chain(pointer, policy, &context.expression)?;
+            write!(self.out, " = ")?;
+            self.put_expression(value, &context.expression, true)?;
+            writeln!(self.out, ";")?;
+        }
+
+        Ok(())
+    }
+
     pub fn write(
         &mut self,
         module: &crate::Module,
@@ -1773,6 +2153,13 @@ impl<W: Write> Writer<W> {
         writeln!(self.out, "#include <metal_stdlib>")?;
         writeln!(self.out, "#include <simd/simd.h>")?;
         writeln!(self.out)?;
+
+        if options
+            .bounds_check_policies
+            .contains(index::BoundsCheckPolicy::ReadZeroSkipWrite)
+        {
+            self.put_default_constructible()?;
+        }
 
         {
             let mut indices = vec![];
@@ -1799,6 +2186,28 @@ impl<W: Write> Writer<W> {
         self.write_type_defs(module)?;
         self.write_composite_constants(module)?;
         self.write_functions(module, info, options, pipeline_options)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn put_default_constructible(&mut self) -> BackendResult {
+        writeln!(self.out, "struct DefaultConstructible {{")?;
+        writeln!(self.out, "    template<typename T>")?;
+        writeln!(self.out, "    operator T() && {{")?;
+        writeln!(self.out, "        return T {{}};")?;
+        writeln!(self.out, "    }}")?;
+        writeln!(self.out, "}};")?;
+        Ok(())
     }
 
     fn write_type_defs(&mut self, module: &crate::Module) -> BackendResult {
@@ -2090,6 +2499,12 @@ impl<W: Write> Writer<W> {
     ) -> Result<TranslationInfo, Error> {
         let mut pass_through_globals = Vec::new();
         for (fun_handle, fun) in module.functions.iter() {
+            log::trace!(
+                "function {:?}, handle {:?}",
+                fun.name.as_deref().unwrap_or("(anonymous)"),
+                fun_handle
+            );
+
             let fun_info = &mod_info[fun_handle];
             pass_through_globals.clear();
             let mut supports_array_length = false;
@@ -2191,11 +2606,16 @@ impl<W: Write> Writer<W> {
                 writeln!(self.out, ";")?;
             }
 
+            let guarded_indices =
+                index::find_checked_indexes(module, fun, fun_info, options.bounds_check_policies);
+
             let context = StatementContext {
                 expression: ExpressionContext {
                     function: fun,
                     origin: FunctionOrigin::Handle(fun_handle),
                     info: fun_info,
+                    policies: options.bounds_check_policies,
+                    guarded_indices,
                     module,
                     pipeline_options,
                 },
@@ -2216,6 +2636,12 @@ impl<W: Write> Writer<W> {
             let mut ep_error = None;
             let mut supports_array_length = false;
 
+            log::trace!(
+                "entry point {:?}, index {:?}",
+                fun.name.as_deref().unwrap_or("(anonymous)"),
+                ep_index
+            );
+
             
             
             if !options.fake_missing_bindings {
@@ -2226,9 +2652,7 @@ impl<W: Write> Writer<W> {
                     if let Some(ref br) = var.binding {
                         let good = match options.per_stage_map[ep.stage].resources.get(br) {
                             Some(target) => match module.types[var.ty].inner {
-                                crate::TypeInner::Struct {
-                                    top_level: true, ..
-                                } => target.buffer.is_some(),
+                                crate::TypeInner::Struct { .. } => target.buffer.is_some(),
                                 crate::TypeInner::Image { .. } => target.texture.is_some(),
                                 crate::TypeInner::Sampler { .. } => target.sampler.is_some(),
                                 _ => false,
@@ -2613,11 +3037,16 @@ impl<W: Write> Writer<W> {
                 writeln!(self.out, ";")?;
             }
 
+            let guarded_indices =
+                index::find_checked_indexes(module, fun, fun_info, options.bounds_check_policies);
+
             let context = StatementContext {
                 expression: ExpressionContext {
                     function: fun,
                     origin: FunctionOrigin::EntryPoint(ep_index as _),
                     info: fun_info,
+                    policies: options.bounds_check_policies,
+                    guarded_indices,
                     module,
                     pipeline_options,
                 },
@@ -2696,7 +3125,7 @@ fn test_stack_size() {
         let stack_size = addresses.end - addresses.start;
         
         
-        if !(15000..=25000).contains(&stack_size) {
+        if !(14000..=25000).contains(&stack_size) {
             panic!("`put_expression` stack size {} has changed!", stack_size);
         }
     }

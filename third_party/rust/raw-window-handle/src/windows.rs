@@ -1,5 +1,5 @@
+use core::ffi::c_void;
 use core::ptr;
-use libc::c_void;
 
 
 
@@ -9,26 +9,43 @@ use libc::c_void;
 
 
 
-
-
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct WindowsHandle {
+pub struct Win32Handle {
     
     pub hwnd: *mut c_void,
     
     pub hinstance: *mut c_void,
-    #[doc(hidden)]
-    #[deprecated = "This field is used to ensure that this struct is non-exhaustive, so that it may be extended in the future. Do not refer to this field."]
-    pub _non_exhaustive_do_not_use: crate::seal::Seal,
 }
 
-impl WindowsHandle {
-    pub fn empty() -> WindowsHandle {
-        #[allow(deprecated)]
-        WindowsHandle {
+impl Win32Handle {
+    pub fn empty() -> Self {
+        Self {
             hwnd: ptr::null_mut(),
             hinstance: ptr::null_mut(),
-            _non_exhaustive_do_not_use: crate::seal::Seal,
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+#[non_exhaustive]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct WinRtHandle {
+    
+    pub core_window: *mut c_void,
+}
+
+impl WinRtHandle {
+    pub fn empty() -> Self {
+        Self {
+            core_window: ptr::null_mut(),
         }
     }
 }

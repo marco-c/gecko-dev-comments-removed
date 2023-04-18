@@ -209,6 +209,7 @@ mod arena;
 pub mod back;
 mod block;
 pub mod front;
+pub mod keywords;
 pub mod proc;
 mod span;
 pub mod valid;
@@ -641,7 +642,6 @@ pub enum TypeInner {
     
     
     
-    
     Array {
         base: Handle<Type>,
         size: ArraySize,
@@ -660,14 +660,7 @@ pub enum TypeInner {
     
     
     
-    
-    
-    
-    
-    
     Struct {
-        
-        top_level: bool,
         members: Vec<StructMember>,
         
         span: u32,

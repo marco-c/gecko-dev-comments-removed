@@ -6,25 +6,6 @@ use crate::{arena::Handle, proc::BoundsCheckPolicy};
 
 
 
-pub(super) enum ExpressionPointer {
-    
-    
-    Ready { pointer_id: Word },
-
-    
-    
-    
-    
-    
-    Conditional {
-        condition: Word,
-        access: Instruction,
-    },
-}
-
-
-
-
 pub(super) enum BoundsCheckResult {
     
     KnownInBounds(u32),
@@ -62,13 +43,10 @@ impl<'w> BlockContext<'w> {
         let (structure_id, last_member_index) = match self.ir_function.expressions[array] {
             crate::Expression::AccessIndex { base, index } => {
                 match self.ir_function.expressions[base] {
-                    crate::Expression::GlobalVariable(handle) => {
-                        (self.writer.global_variables[handle.index()].id, index)
-                    }
-                    crate::Expression::FunctionArgument(index) => {
-                        let parameter_id = self.function.parameter_id(index);
-                        (parameter_id, index)
-                    }
+                    crate::Expression::GlobalVariable(handle) => (
+                        self.writer.global_variables[handle.index()].access_id,
+                        index,
+                    ),
                     _ => return Err(Error::Validation("array length expression")),
                 }
             }

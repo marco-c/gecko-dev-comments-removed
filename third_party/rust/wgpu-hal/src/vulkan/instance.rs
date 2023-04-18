@@ -1,5 +1,4 @@
 use std::{
-    cmp,
     ffi::{c_void, CStr, CString},
     slice,
     sync::Arc,
@@ -25,10 +24,10 @@ unsafe extern "system" fn debug_utils_messenger_callback(
     }
 
     let level = match message_severity {
-        vk::DebugUtilsMessageSeverityFlagsEXT::ERROR => log::Level::Error,
-        vk::DebugUtilsMessageSeverityFlagsEXT::WARNING => log::Level::Warn,
+        vk::DebugUtilsMessageSeverityFlagsEXT::VERBOSE => log::Level::Debug,
         vk::DebugUtilsMessageSeverityFlagsEXT::INFO => log::Level::Info,
-        vk::DebugUtilsMessageSeverityFlagsEXT::VERBOSE => log::Level::Trace,
+        vk::DebugUtilsMessageSeverityFlagsEXT::WARNING => log::Level::Warn,
+        vk::DebugUtilsMessageSeverityFlagsEXT::ERROR => log::Level::Error,
         _ => log::Level::Warn,
     };
 
@@ -184,16 +183,31 @@ impl super::Instance {
     pub unsafe fn from_raw(
         entry: ash::Entry,
         raw_instance: ash::Instance,
+        driver_api_version: u32,
         extensions: Vec<&'static CStr>,
         flags: crate::InstanceFlags,
         has_nv_optimus: bool,
         drop_guard: Option<super::DropGuard>,
     ) -> Result<Self, crate::InstanceError> {
+        log::info!("Instance version: 0x{:x}", driver_api_version);
+
         let debug_utils = if extensions.contains(&ext::DebugUtils::name()) {
+            log::info!("Enabling debug utils");
             let extension = ext::DebugUtils::new(&entry, &raw_instance);
+            
+            let mut severity = vk::DebugUtilsMessageSeverityFlagsEXT::ERROR;
+            if log::max_level() >= log::LevelFilter::Debug {
+                severity |= vk::DebugUtilsMessageSeverityFlagsEXT::VERBOSE;
+            }
+            if log::max_level() >= log::LevelFilter::Info {
+                severity |= vk::DebugUtilsMessageSeverityFlagsEXT::INFO;
+            }
+            if log::max_level() >= log::LevelFilter::Warn {
+                severity |= vk::DebugUtilsMessageSeverityFlagsEXT::WARNING;
+            }
             let vk_info = vk::DebugUtilsMessengerCreateInfoEXT::builder()
                 .flags(vk::DebugUtilsMessengerCreateFlagsEXT::empty())
-                .message_severity(vk::DebugUtilsMessageSeverityFlagsEXT::all())
+                .message_severity(severity)
                 .message_type(vk::DebugUtilsMessageTypeFlagsEXT::all())
                 .pfn_user_callback(Some(debug_utils_messenger_callback));
             let messenger = extension
@@ -207,15 +221,19 @@ impl super::Instance {
             None
         };
 
-        let get_physical_device_properties =
-            if extensions.contains(&khr::GetPhysicalDeviceProperties2::name()) {
-                Some(khr::GetPhysicalDeviceProperties2::new(
-                    &entry,
-                    &raw_instance,
-                ))
-            } else {
-                None
-            };
+        
+        
+        let get_physical_device_properties = if driver_api_version >= vk::API_VERSION_1_1
+            && extensions.contains(&khr::GetPhysicalDeviceProperties2::name())
+        {
+            log::info!("Enabling device properties2");
+            Some(khr::GetPhysicalDeviceProperties2::new(
+                &entry,
+                &raw_instance,
+            ))
+        } else {
+            None
+        };
 
         Ok(Self {
             shared: Arc::new(super::InstanceShared {
@@ -443,9 +461,11 @@ impl crate::Instance<super::Api> for super::Instance {
             .application_version(1)
             .engine_name(CStr::from_bytes_with_nul(b"wgpu-hal\0").unwrap())
             .engine_version(2)
-            .api_version({
+            .api_version(
                 
-                cmp::min(driver_api_version, {
+                if driver_api_version < vk::API_VERSION_1_1 {
+                    vk::API_VERSION_1_0
+                } else {
                     
                     
                     
@@ -455,8 +475,8 @@ impl crate::Instance<super::Api> for super::Instance {
                     
                     
                     vk::HEADER_VERSION_COMPLETE
-                })
-            });
+                },
+            );
 
         let extensions = Self::required_extensions(&entry, desc.flags)?;
 
@@ -517,6 +537,7 @@ impl crate::Instance<super::Api> for super::Instance {
         Self::from_raw(
             entry,
             vk_instance,
+            driver_api_version,
             extensions,
             desc.flags,
             has_nv_optimus,
@@ -531,55 +552,40 @@ impl crate::Instance<super::Api> for super::Instance {
         use raw_window_handle::RawWindowHandle;
 
         match has_handle.raw_window_handle() {
-            #[cfg(all(
-                unix,
-                not(target_os = "android"),
-                not(target_os = "macos"),
-                not(target_os = "ios"),
-                not(target_os = "solaris")
-            ))]
             RawWindowHandle::Wayland(handle)
                 if self.extensions.contains(&khr::WaylandSurface::name()) =>
             {
                 Ok(self.create_surface_from_wayland(handle.display, handle.surface))
             }
-            #[cfg(all(
-                unix,
-                not(target_os = "android"),
-                not(target_os = "macos"),
-                not(target_os = "ios"),
-                not(target_os = "solaris")
-            ))]
             RawWindowHandle::Xlib(handle)
                 if self.extensions.contains(&khr::XlibSurface::name()) =>
             {
                 Ok(self.create_surface_from_xlib(handle.display as *mut _, handle.window))
             }
-            #[cfg(all(
-                unix,
-                not(target_os = "android"),
-                not(target_os = "macos"),
-                not(target_os = "ios")
-            ))]
             RawWindowHandle::Xcb(handle) if self.extensions.contains(&khr::XcbSurface::name()) => {
                 Ok(self.create_surface_from_xcb(handle.connection, handle.window))
             }
-            #[cfg(target_os = "android")]
-            RawWindowHandle::Android(handle) => {
+            RawWindowHandle::AndroidNdk(handle) => {
                 Ok(self.create_surface_android(handle.a_native_window))
             }
             #[cfg(windows)]
-            RawWindowHandle::Windows(handle) => {
+            RawWindowHandle::Win32(handle) => {
                 use winapi::um::libloaderapi::GetModuleHandleW;
 
                 let hinstance = GetModuleHandleW(std::ptr::null());
                 Ok(self.create_surface_from_hwnd(hinstance as *mut _, handle.hwnd))
             }
             #[cfg(target_os = "macos")]
-            RawWindowHandle::MacOS(handle)
+            RawWindowHandle::AppKit(handle)
                 if self.extensions.contains(&ext::MetalSurface::name()) =>
             {
                 Ok(self.create_surface_from_ns_view(handle.ns_view))
+            }
+            #[cfg(target_os = "ios")]
+            RawWindowHandle::UiKit(handle)
+                if self.extensions.contains(&ext::MetalSurface::name()) =>
+            {
+                Ok(self.create_surface_from_ns_view(handle.ui_view))
             }
             _ => Err(crate::InstanceError),
         }
