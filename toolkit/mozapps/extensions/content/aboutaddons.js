@@ -3710,10 +3710,15 @@ class ColorwayClosetCard extends HTMLElement {
     let colorwayPreviewSubHeading = document.createElement("p");
     let colorwayPreviewTextContainer = document.createElement("div");
 
-    
-    colorwayPreviewHeading.textContent = "Life in Color";
-    colorwayPreviewSubHeading.textContent =
-      "Make Firefox feel a little more you.";
+    const collection = BuiltInThemes.findActiveColorwayCollection?.();
+    if (collection) {
+      const { l10nId } = collection;
+      document.l10n.setAttributes(colorwayPreviewHeading, l10nId);
+      document.l10n.setAttributes(
+        colorwayPreviewSubHeading,
+        `${l10nId}-subheading`
+      );
+    }
 
     colorwayPreviewTextContainer.appendChild(colorwayPreviewHeading);
     colorwayPreviewTextContainer.appendChild(colorwayPreviewSubHeading);
@@ -3737,8 +3742,19 @@ class ColorwayClosetCard extends HTMLElement {
     let colorwayExpiryDateSpan = card.querySelector(
       "#colorways-expiry-date > span"
     );
-    
-    colorwayExpiryDateSpan.textContent = "Expires June 2";
+
+    const collection = BuiltInThemes.findActiveColorwayCollection();
+    if (collection) {
+      const { expiry } = collection;
+      document.l10n.setAttributes(
+        colorwayExpiryDateSpan,
+        "colorway-collection-expiry-date-span",
+        {
+          expiryDate: expiry.getTime(),
+        }
+      );
+    }
+
     let colorwaysButton = card.querySelector("[action='open-colorways']");
     colorwaysButton.hidden = false;
     colorwaysButton.onclick = () => {
@@ -4850,6 +4866,15 @@ gViewController.defineView("list", async type => {
   if (type == "theme") {
     colorwaysThemeInstalled = await areColorwayThemesInstalled();
     if (colorwaysThemeInstalled && COLORWAY_CLOSET_ENABLED) {
+      
+      
+      const fluentResourceId = "preview/colorwaycloset.ftl";
+      if (!document.head.querySelector(`link[href='${fluentResourceId}']`)) {
+        const fluentLink = document.createElement("link");
+        fluentLink.setAttribute("rel", "localization");
+        fluentLink.setAttribute("href", fluentResourceId);
+        document.head.appendChild(fluentLink);
+      }
       
       
       sections[1].sectionPreambleCustomElement = "colorways-list";
