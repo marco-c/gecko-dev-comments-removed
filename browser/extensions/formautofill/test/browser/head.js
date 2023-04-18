@@ -276,13 +276,8 @@ async function waitForAutofill(target, selector, value) {
 
 
 
-async function focusUpdateSubmitForm(
-  focusSelector,
-  target,
-  args,
-  task,
-  submit = true
-) {
+
+async function focusUpdateSubmitForm(target, args, submit = true) {
   let fieldsIdentifiedPromiseResolver;
   let fieldsIdentifiedObserver = {
     fieldsIdentified() {
@@ -296,21 +291,29 @@ async function focusUpdateSubmitForm(
     FormAutofillParent.addMessageObserver(fieldsIdentifiedObserver);
   });
 
-  let alreadyFocused = await SpecialPowers.spawn(
-    target,
-    [focusSelector],
-    function(selector) {
-      let form = content.document.getElementById("form");
-      let element = form.querySelector(selector);
-      if (element == content.document.activeElement) {
-        return true;
-      }
-      element.focus();
-      return false;
-    }
-  );
+  let alreadyFocused = await SpecialPowers.spawn(target, [args], obj => {
+    let focused = false;
 
-  await SpecialPowers.spawn(target, args, task);
+    let formId = obj.formId ?? "form";
+    let form = content.document.getElementById(formId);
+    let element = form.querySelector(obj.focusSelector);
+    if (element != content.document.activeElement) {
+      element.focus();
+    } else {
+      focused = true;
+    }
+
+    for (const [selector, value] of Object.entries(obj.newValues)) {
+      element = form.querySelector(selector);
+      if (element instanceof content.HTMLInputElement) {
+        element.setUserInput(value);
+      } else {
+        element.value = value;
+      }
+    }
+
+    return focused;
+  });
 
   if (alreadyFocused) {
     
@@ -321,8 +324,9 @@ async function focusUpdateSubmitForm(
   await fieldsIdentifiedPromise;
 
   if (submit) {
-    await SpecialPowers.spawn(target, [], async function() {
-      let form = content.document.getElementById("form");
+    await SpecialPowers.spawn(target, [args], obj => {
+      let formId = obj.formId ?? "form";
+      let form = content.document.getElementById(formId);
       form.querySelector("input[type=submit]").click();
     });
   }
