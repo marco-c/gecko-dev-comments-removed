@@ -110,72 +110,6 @@ class WeakFieldSet extends WeakSet {
   }
 }
 
-class LoginFormState {
-  
-
-
-  fillsByRootElement = new WeakMap();
-  
-
-
-  generatedPasswordFields = new WeakFieldSet();
-  
-
-
-  lastSubmittedValuesByRootElement = new WeakMap();
-  fieldModificationsByRootElement = new WeakMap();
-  loginFormRootElements = new WeakSet();
-  
-
-
-  possibleUsernames = new Set();
-  
-
-
-  possiblePasswords = new Set();
-
-  
-
-
-
-  formLikeByObservedNode = new WeakMap();
-
-  
-
-
-
-  formlessModifiedPasswordFields = new WeakFieldSet();
-
-  
-
-
-  cachedIsInferredUsernameField = new WeakMap();
-  cachedIsInferredEmailField = new WeakMap();
-  cachedIsInferredLoginForm = new WeakMap();
-
-  
-
-
-  mockUsernameOnlyField = null;
-
-  
-
-
-  numFormHasPossibleUsernameEvent = 0;
-
-  captureLoginTimeStamp = 0;
-
-  storeUserInput(field) {
-    if (field.value && lazy.LoginHelper.captureInputChanges) {
-      if (lazy.LoginHelper.isPasswordFieldType(field)) {
-        this.possiblePasswords.add(field.value);
-      } else if (lazy.LoginHelper.isUsernameFieldType(field)) {
-        this.possibleUsernames.add(field.value);
-      }
-    }
-  }
-}
-
 const observer = {
   QueryInterface: ChromeUtils.generateQI([
     "nsIObserver",
@@ -527,6 +461,98 @@ const observer = {
 
 
 Services.obs.addObserver(observer, "autocomplete-did-enter-text");
+
+
+
+
+
+
+
+class LoginFormState {
+  
+
+
+  fillsByRootElement = new WeakMap();
+  
+
+
+  generatedPasswordFields = new WeakFieldSet();
+  
+
+
+  lastSubmittedValuesByRootElement = new WeakMap();
+  fieldModificationsByRootElement = new WeakMap();
+  loginFormRootElements = new WeakSet();
+  
+
+
+  possibleUsernames = new Set();
+  
+
+
+  possiblePasswords = new Set();
+
+  
+
+
+
+  formLikeByObservedNode = new WeakMap();
+
+  
+
+
+
+  formlessModifiedPasswordFields = new WeakFieldSet();
+
+  
+
+
+  cachedIsInferredUsernameField = new WeakMap();
+  cachedIsInferredEmailField = new WeakMap();
+  cachedIsInferredLoginForm = new WeakMap();
+
+  
+
+
+  mockUsernameOnlyField = null;
+
+  
+
+
+  numFormHasPossibleUsernameEvent = 0;
+
+  captureLoginTimeStamp = 0;
+
+  storeUserInput(field) {
+    if (field.value && lazy.LoginHelper.captureInputChanges) {
+      if (lazy.LoginHelper.isPasswordFieldType(field)) {
+        this.possiblePasswords.add(field.value);
+      } else if (lazy.LoginHelper.isUsernameFieldType(field)) {
+        this.possibleUsernames.add(field.value);
+      }
+    }
+  }
+
+  
+
+
+
+
+
+
+  isProbablyAnEmailField(inputElement) {
+    let result = this.cachedIsInferredEmailField.get(inputElement);
+    if (result === undefined) {
+      result = lazy.LoginHelper.isInferredEmailField(inputElement);
+      this.cachedIsInferredEmailField.set(inputElement, result);
+    }
+
+    return result;
+  }
+}
+
+
+
 
 class LoginManagerChild extends JSWindowActorChild {
   
@@ -1624,6 +1650,8 @@ class LoginManagerChild extends JSWindowActorChild {
       };
     }
 
+    const docState = this.stateForDocument(form.ownerDocument);
+
     if (!usernameField) {
       
       
@@ -1659,7 +1687,7 @@ class LoginManagerChild extends JSWindowActorChild {
           
           usernameField = element;
           break;
-        } else if (this.isProbablyAnEmailField(element)) {
+        } else if (docState.isProbablyAnEmailField(element)) {
           
           
           
@@ -1685,9 +1713,8 @@ class LoginManagerChild extends JSWindowActorChild {
       );
     }
 
-    let { generatedPasswordFields } = this.stateForDocument(form.ownerDocument);
     let pwGeneratedFields = pwFields.filter(pwField =>
-      generatedPasswordFields.has(pwField.element)
+      docState.generatedPasswordFields.has(pwField.element)
     );
     if (pwGeneratedFields.length) {
       
@@ -3142,24 +3169,6 @@ class LoginManagerChild extends JSWindowActorChild {
     if (result === undefined) {
       result = lazy.LoginHelper.isInferredUsernameField(inputElement);
       docState.cachedIsInferredUsernameField.set(inputElement, result);
-    }
-
-    return result;
-  }
-
-  
-
-
-
-
-
-
-  isProbablyAnEmailField(inputElement) {
-    let docState = this.stateForDocument(inputElement.ownerDocument);
-    let result = docState.cachedIsInferredEmailField.get(inputElement);
-    if (result === undefined) {
-      result = lazy.LoginHelper.isInferredEmailField(inputElement);
-      docState.cachedIsInferredEmailField.set(inputElement, result);
     }
 
     return result;
