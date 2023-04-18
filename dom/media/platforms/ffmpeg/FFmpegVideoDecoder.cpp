@@ -805,7 +805,7 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::DoDecode(
 #  ifdef MOZ_WAYLAND_USE_VAAPI
     
     if (!mVideoFramePool && mEnableHardwareDecoding) {
-      mVideoFramePool = MakeUnique<VideoFramePool>();
+      mVideoFramePool = MakeUnique<VideoFramePool<LIBAV_VER>>();
     }
 
     
