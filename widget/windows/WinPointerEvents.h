@@ -7,7 +7,7 @@
 #define WinPointerEvents_h__
 
 #include "mozilla/MouseEvents.h"
-#include "nsWindowBase.h"
+#include "nsWindow.h"
 
 
 

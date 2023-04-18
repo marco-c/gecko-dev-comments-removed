@@ -13,7 +13,10 @@
 #include "mozilla/RefPtr.h"
 #include "nsBaseWidget.h"
 #include "CompositorWidget.h"
-#include "nsWindowBase.h"
+#include "mozilla/EventForwards.h"
+#include "nsClassHashtable.h"
+#include <windows.h>
+#include "touchinjection_sdk80.h"
 #include "nsdefs.h"
 #include "nsUserIdleService.h"
 #include "nsToolkit.h"
@@ -25,7 +28,6 @@
 #include "cairo.h"
 #include "nsRegion.h"
 #include "mozilla/EnumeratedArray.h"
-#include "mozilla/EventForwards.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/TimeStamp.h"
@@ -96,30 +98,65 @@ IVirtualDesktopManager : public IUnknown {
 
 
 
-class nsWindow final : public nsWindowBase {
+class nsWindow final : public nsBaseWidget {
  public:
   using WindowHook = mozilla::widget::WindowHook;
   using IMEContext = mozilla::widget::IMEContext;
+  using WidgetEventTime = mozilla::WidgetEventTime;
 
-  NS_INLINE_DECL_REFCOUNTING_INHERITED(nsWindow, nsWindowBase)
+  NS_INLINE_DECL_REFCOUNTING_INHERITED(nsWindow, nsBaseWidget)
 
   explicit nsWindow(bool aIsChildWindow = false);
 
   void SendAnAPZEvent(mozilla::InputData& aEvent);
 
   
+
+
+
+
   void InitEvent(mozilla::WidgetGUIEvent& aEvent,
-                 LayoutDeviceIntPoint* aPoint = nullptr) override;
-  WidgetEventTime CurrentMessageWidgetEventTime() const override;
-  bool DispatchKeyboardEvent(mozilla::WidgetKeyboardEvent* aEvent) override;
-  bool DispatchWheelEvent(mozilla::WidgetWheelEvent* aEvent) override;
-  bool DispatchContentCommandEvent(
-      mozilla::WidgetContentCommandEvent* aEvent) override;
-  nsWindowBase* GetParentWindowBase(bool aIncludeOwner) override;
-  bool IsTopLevelWidget() override { return mIsTopWidgetWindow; }
+                 LayoutDeviceIntPoint* aPoint = nullptr);
 
   
-  using nsWindowBase::Create;  
+
+
+
+  WidgetEventTime CurrentMessageWidgetEventTime() const;
+
+  
+
+
+
+
+  bool DispatchKeyboardEvent(mozilla::WidgetKeyboardEvent* aEvent);
+
+  
+
+
+
+
+  bool DispatchWheelEvent(mozilla::WidgetWheelEvent* aEvent);
+
+  
+
+
+
+
+  bool DispatchContentCommandEvent(mozilla::WidgetContentCommandEvent* aEvent);
+
+  
+
+
+  nsWindow* GetParentWindowBase(bool aIncludeOwner);
+
+  
+
+
+  bool IsTopLevelWidget() { return mIsTopWidgetWindow; }
+
+  
+  using nsBaseWidget::Create;  
   [[nodiscard]] nsresult Create(nsIWidget* aParent,
                                 nsNativeWidget aNativeParent,
                                 const LayoutDeviceIntRect& aRect,
@@ -129,7 +166,7 @@ class nsWindow final : public nsWindowBase {
   nsIWidget* GetParent(void) override;
   float GetDPI() override;
   double GetDefaultScaleInternal() override;
-  int32_t LogToPhys(double aValue) override;
+  int32_t LogToPhys(double aValue);
   mozilla::DesktopToLayoutDeviceScale GetDesktopToDeviceScale() override {
     if (mozilla::widget::WinUtils::IsPerMonitorDPIAware()) {
       return mozilla::DesktopToLayoutDeviceScale(1.0);
@@ -349,6 +386,40 @@ class nsWindow final : public nsWindowBase {
   void NotifyOcclusionState(mozilla::widget::OcclusionState aState) override;
   void MaybeEnableWindowOcclusion(bool aEnable);
 
+  
+
+
+  HWND GetWindowHandle() {
+    return static_cast<HWND>(GetNativeData(NS_NATIVE_WINDOW));
+  }
+
+  
+
+
+  nsresult SynthesizeNativeTouchPoint(uint32_t aPointerId,
+                                      TouchPointerState aPointerState,
+                                      LayoutDeviceIntPoint aPoint,
+                                      double aPointerPressure,
+                                      uint32_t aPointerOrientation,
+                                      nsIObserver* aObserver) override;
+  nsresult ClearNativeTouchSequence(nsIObserver* aObserver) override;
+
+  nsresult SynthesizeNativePenInput(uint32_t aPointerId,
+                                    TouchPointerState aPointerState,
+                                    LayoutDeviceIntPoint aPoint,
+                                    double aPressure, uint32_t aRotation,
+                                    int32_t aTiltX, int32_t aTiltY,
+                                    int32_t aButton,
+                                    nsIObserver* aObserver) override;
+
+  
+
+
+
+  bool HandleAppCommandMsg(const MSG& aAppCommandMsg, LRESULT* aRetValue);
+
+  const InputContext& InputContextRef() const { return mInputContext; }
+
  private:
   using TimeStamp = mozilla::TimeStamp;
   using TimeDuration = mozilla::TimeDuration;
@@ -363,6 +434,22 @@ class nsWindow final : public nsWindowBase {
     
     nsString mID;
     bool mUpdateIsQueued = false;
+  };
+
+  class PointerInfo {
+   public:
+    enum class PointerType : uint8_t {
+      TOUCH,
+      PEN,
+    };
+
+    PointerInfo(int32_t aPointerId, LayoutDeviceIntPoint& aPoint,
+                PointerType aType)
+        : mPointerId(aPointerId), mPosition(aPoint), mType(aType) {}
+
+    int32_t mPointerId;
+    LayoutDeviceIntPoint mPosition;
+    PointerType mType;
   };
 
   
@@ -565,6 +652,16 @@ class nsWindow final : public nsWindowBase {
 
   static void InitMouseWheelScrollData();
 
+  void ChangedDPI();
+
+  static bool InitTouchInjection();
+
+  bool InjectTouchPoint(uint32_t aId, LayoutDeviceIntPoint& aPoint,
+                        POINTER_FLAGS aFlags, uint32_t aPressure = 1024,
+                        uint32_t aOrientation = 90);
+
+  static bool sTouchInjectInitialized;
+  static InjectTouchInputPtr sInjectTouchFuncPtr;
   static bool sDropShadowEnabled;
   static uint32_t sInstanceCount;
   static TriStateBool sCanQuit;
@@ -603,6 +700,15 @@ class nsWindow final : public nsWindowBase {
   static BYTE sLastMouseButton;
 
   static bool sNeedsToInitMouseWheelSettings;
+
+  nsClassHashtable<nsUint32HashKey, PointerInfo> mActivePointers;
+
+  
+  
+  
+  mozilla::UniquePtr<mozilla::MultiTouchInput> mSynthesizedTouchInput;
+
+  InputContext mInputContext;
 
   nsCOMPtr<nsIWidget> mParent;
   nsIntSize mLastSize = nsIntSize(0, 0);

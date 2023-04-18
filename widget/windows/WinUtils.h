@@ -79,7 +79,6 @@
  public:
 
 class nsWindow;
-class nsWindowBase;
 struct KeyPair;
 
 namespace mozilla {
@@ -321,8 +320,8 @@ class WinUtils {
 
 
 
-  static bool SetNSWindowBasePtr(HWND aWnd, nsWindowBase* aWidget);
-  static nsWindowBase* GetNSWindowBasePtr(HWND aWnd);
+  static bool SetNSWindowBasePtr(HWND aWnd, nsWindow* aWidget);
+  static nsWindow* GetNSWindowBasePtr(HWND aWnd);
   static nsWindow* GetNSWindowPtr(HWND aWnd);
 
   

@@ -7,7 +7,7 @@
 #define WinIMEHandler_h_
 
 #include "nscore.h"
-#include "nsWindowBase.h"
+#include "nsWindow.h"
 #include "npapi.h"
 #include <windows.h>
 #include <inputscope.h>
@@ -144,7 +144,7 @@ class IMEHandler final {
   
 
 
-  static void AssociateIMEContext(nsWindowBase* aWindowBase, bool aEnable);
+  static void AssociateIMEContext(nsWindow* aWindowBase, bool aEnable);
 
   
 

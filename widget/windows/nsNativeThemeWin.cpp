@@ -95,7 +95,7 @@ static int32_t GetTopLevelWindowActiveState(nsIFrame* aFrame) {
   
   
   nsIWidget* widget = aFrame->GetNearestWidget();
-  nsWindowBase* window = static_cast<nsWindowBase*>(widget);
+  nsWindow* window = static_cast<nsWindow*>(widget);
   if (!window) return mozilla::widget::themeconst::FS_INACTIVE;
   if (widget && !window->IsTopLevelWidget() &&
       !(window = window->GetParentWindowBase(false)))

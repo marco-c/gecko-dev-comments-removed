@@ -466,7 +466,7 @@ void IMEHandler::SetInputContext(nsWindow* aWindow, InputContext& aInputContext,
 }
 
 
-void IMEHandler::AssociateIMEContext(nsWindowBase* aWindowBase, bool aEnable) {
+void IMEHandler::AssociateIMEContext(nsWindow* aWindowBase, bool aEnable) {
   IMEContext context(aWindowBase);
   if (aEnable) {
     context.AssociateDefaultContext();
@@ -551,7 +551,7 @@ void IMEHandler::OnKeyboardLayoutChanged() {
 
   
   
-  nsWindowBase* windowBase = TSFTextStore::GetEnabledWindowBase();
+  nsWindow* windowBase = TSFTextStore::GetEnabledWindowBase();
   if (!windowBase) {
     return;
   }
