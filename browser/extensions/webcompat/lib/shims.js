@@ -57,6 +57,7 @@ class Shim {
     this.needsShimHelpers = opts.needsShimHelpers;
     this.platform = opts.platform || "all";
     this.unblocksOnOptIn = unblocksOnOptIn;
+    this.requestStorageAccessForRedirect = opts.requestStorageAccessForRedirect;
 
     this._hostOptIns = new Set();
 
@@ -476,6 +477,27 @@ class Shims {
       }
     }
 
+    
+    
+    let redirectTargetUrls = Array.from(shims.values())
+      .filter(shim => shim.requestStorageAccessForRedirect)
+      .flatMap(shim => shim.requestStorageAccessForRedirect)
+      .map(([, dstUrl]) => dstUrl);
+
+    
+    redirectTargetUrls = Array.from(new Set(redirectTargetUrls));
+
+    if (redirectTargetUrls.length) {
+      debug("Registering redirect listener for requestStorageAccess helper", {
+        redirectTargetUrls,
+      });
+      browser.webRequest.onBeforeRequest.addListener(
+        this._onRequestStorageAccessRedirect.bind(this),
+        { urls: redirectTargetUrls, types: ["main_frame"] },
+        ["blocking"]
+      );
+    }
+
     function addTypePatterns(type, patterns, set) {
       if (!set.has(type)) {
         set.set(type, { patterns: new Set() });
@@ -594,6 +616,87 @@ class Shims {
         shim.onAllShimsDisabled();
       }
     }
+  }
+
+  async _onRequestStorageAccessRedirect({
+    originUrl: srcUrl,
+    url: dstUrl,
+    tabId,
+  }) {
+    debug("Detected redirect", { srcUrl, dstUrl, tabId });
+
+    
+    
+    
+    const matchingShims = Array.from(this.shims.values()).filter(shim => {
+      const { enabled, requestStorageAccessForRedirect } = shim;
+
+      if (!enabled || !requestStorageAccessForRedirect) {
+        return false;
+      }
+
+      return requestStorageAccessForRedirect.some(
+        ([srcPattern, dstPattern]) =>
+          browser.matchPatterns.getMatcher([srcPattern]).matches(srcUrl) &&
+          browser.matchPatterns.getMatcher([dstPattern]).matches(dstUrl)
+      );
+    });
+
+    
+    const bugNumbers = new Set();
+    let isDFPIActive = null;
+    await Promise.all(
+      matchingShims.map(async shim => {
+        if (shim.onlyIfDFPIActive) {
+          
+          if (isDFPIActive === null) {
+            const tabIsPB = (await browser.tabs.get(tabId)).incognito;
+            isDFPIActive = await browser.trackingProtection.isDFPIActive(
+              tabIsPB
+            );
+          }
+          if (!isDFPIActive) {
+            return;
+          }
+        }
+        bugNumbers.add(shim.bug);
+      })
+    );
+
+    
+    
+    if (!bugNumbers.size) {
+      return;
+    }
+
+    
+    await browser.tabs.executeScript(tabId, {
+      file: "/lib/requestStorageAccess_helper.js",
+      runAt: "document_start",
+    });
+
+    const bugUrls = Array.from(bugNumbers)
+      .map(bugNo => `https://bugzilla.mozilla.org/show_bug.cgi?id=${bugNo}`)
+      .join(", ");
+    const warning = `Firefox calls the Storage Access API for ${dstUrl} on behalf of ${srcUrl}. See the following bugs for details: ${bugUrls}`;
+
+    
+    
+    const { origin: requestStorageAccessOrigin } = new URL(dstUrl);
+
+    
+    
+    const { success } = await browser.tabs.sendMessage(tabId, {
+      requestStorageAccessOrigin,
+      warning,
+    });
+    debug("requestStorageAccess callback", {
+      success,
+      requestStorageAccessOrigin,
+      srcUrl,
+      dstUrl,
+      bugNumbers,
+    });
   }
 
   async _onMessageFromShim(payload, sender, sendResponse) {
