@@ -4099,13 +4099,10 @@ pref("media.gmp-manager.url", "https://aus5.mozilla.org/update/3/GMP/%VERSION%/%
 
 
 
-#ifdef EARLY_BETA_OR_EARLIER
-  
-  
-  
-  
-  pref("media.gmp-manager.checkContentSignature", true);
-#endif
+
+
+
+pref("media.gmp-manager.checkContentSignature", true);
 
 
 
