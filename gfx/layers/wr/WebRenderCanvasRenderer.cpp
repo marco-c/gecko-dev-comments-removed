@@ -48,9 +48,8 @@ bool WebRenderCanvasRendererAsync::CreateCompositable() {
     
     mPipelineId = Some(
         mManager->WrBridge()->GetCompositorBridgeChild()->GetNextPipelineId());
-    mManager->AddPipelineIdForCompositable(
-        mPipelineId.ref(), mCanvasClient->GetIPCHandle(),
-        CompositableHandleOwner::WebRenderBridge);
+    mManager->AddPipelineIdForCompositable(mPipelineId.ref(),
+                                           mCanvasClient->GetIPCHandle());
   }
 
   return true;

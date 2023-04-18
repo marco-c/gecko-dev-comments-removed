@@ -83,14 +83,9 @@ enum class TextureFlags : uint32_t {
   
   
   IS_OPAQUE = 1 << 18,
-  
-  
-  
-  
-  BORROWED_EXTERNAL_ID = 1 << 19,
 
   
-  ALL_BITS = (1 << 20) - 1,
+  ALL_BITS = (1 << 19) - 1,
   
   DEFAULT = NO_FLAGS
 };

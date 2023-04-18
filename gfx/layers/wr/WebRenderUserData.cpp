@@ -210,9 +210,8 @@ void WebRenderImageData::CreateAsyncImageWebRenderCommands(
     
     mPipelineId =
         Some(WrBridge()->GetCompositorBridgeChild()->GetNextPipelineId());
-    WrBridge()->AddPipelineIdForCompositable(
-        mPipelineId.ref(), aContainer->GetAsyncContainerHandle(),
-        CompositableHandleOwner::ImageBridge);
+    WrBridge()->AddPipelineIdForAsyncCompositable(
+        mPipelineId.ref(), aContainer->GetAsyncContainerHandle());
     mContainer = aContainer;
   }
   MOZ_ASSERT(!mImageClient);
@@ -287,61 +286,6 @@ bool WebRenderImageProviderData::Invalidate(ImageProviderId aProviderId) const {
   nsresult rv =
       mProvider->UpdateKey(mManager, mManager->AsyncResourceUpdates(), key);
   return NS_SUCCEEDED(rv) && mKey.ref() == key;
-}
-
-WebRenderInProcessImageData::WebRenderInProcessImageData(
-    RenderRootStateManager* aManager, nsDisplayItem* aItem)
-    : WebRenderUserData(aManager, aItem) {}
-
-WebRenderInProcessImageData::WebRenderInProcessImageData(
-    RenderRootStateManager* aManager, uint32_t aDisplayItemKey,
-    nsIFrame* aFrame)
-    : WebRenderUserData(aManager, aDisplayItemKey, aFrame) {}
-
-WebRenderInProcessImageData::~WebRenderInProcessImageData() {
-  if (mPipelineId) {
-    mManager->RemovePipelineIdForCompositable(mPipelineId.ref());
-  }
-}
-
-void WebRenderInProcessImageData::CreateWebRenderCommands(
-    mozilla::wr::DisplayListBuilder& aBuilder,
-    const CompositableHandle& aHandle, const StackingContextHelper& aSc,
-    const LayoutDeviceRect& aBounds, const LayoutDeviceRect& aSCBounds,
-    VideoInfo::Rotation aRotation, const wr::ImageRendering& aFilter,
-    const wr::MixBlendMode& aMixBlendMode, bool aIsBackfaceVisible) {
-  MOZ_ASSERT(aHandle);
-
-  if (mPipelineId.isSome() && !(mHandle == aHandle)) {
-    
-    
-    WrBridge()->RemovePipelineIdForCompositable(mPipelineId.ref());
-    mPipelineId.reset();
-  }
-
-  if (!mPipelineId) {
-    
-    mPipelineId =
-        Some(WrBridge()->GetCompositorBridgeChild()->GetNextPipelineId());
-    WrBridge()->AddPipelineIdForCompositable(
-        mPipelineId.ref(), aHandle, CompositableHandleOwner::InProcessManager);
-    mHandle = aHandle;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  wr::LayoutRect r = wr::ToLayoutRect(aBounds);
-  aBuilder.PushIFrame(r, aIsBackfaceVisible, mPipelineId.ref(),
-                       false);
-
-  WrBridge()->AddWebRenderParentCommand(OpUpdateAsyncImagePipeline(
-      mPipelineId.value(), aSCBounds, aRotation, aFilter, aMixBlendMode));
 }
 
 WebRenderFallbackData::WebRenderFallbackData(RenderRootStateManager* aManager,
@@ -448,6 +392,51 @@ ImageContainer* WebRenderCanvasData::GetImageContainer() {
 }
 
 void WebRenderCanvasData::ClearImageContainer() { mContainer = nullptr; }
+
+WebRenderLocalCanvasData::WebRenderLocalCanvasData(
+    RenderRootStateManager* aManager, nsDisplayItem* aItem)
+    : WebRenderUserData(aManager, aItem) {}
+
+WebRenderLocalCanvasData::~WebRenderLocalCanvasData() = default;
+
+void WebRenderLocalCanvasData::RequestFrameReadback() {
+  if (mGpuBridge) {
+    mGpuBridge->SwapChainPresent(mExternalImageId, mGpuTextureId)
+        ->Then(
+            GetCurrentSerialEventTarget(), __func__,
+            [self = RefPtr{this},
+             externalImageId = mExternalImageId](bool aPresented) {
+              if (aPresented) {
+                self->RefreshExternalImage(externalImageId);
+              }
+              return webgpu::SwapChainPromise::CreateAndResolve(aPresented,
+                                                                __func__);
+            },
+            [](const ipc::ResponseRejectReason& aReason) {
+              return webgpu::SwapChainPromise::CreateAndReject(aReason,
+                                                               __func__);
+            });
+  }
+}
+
+void WebRenderLocalCanvasData::RefreshExternalImage(
+    const wr::ExternalImageId& aExternalImageId) {
+  
+  
+  
+  
+  
+  if (!(mExternalImageId == aExternalImageId) || !mTable->Contains(this)) {
+    return;
+  }
+
+  MOZ_ASSERT(!mManager->IsDestroyed());
+
+  const ImageIntRect dirtyRect(0, 0, mDescriptor.width, mDescriptor.height);
+  
+  mManager->AsyncResourceUpdates().UpdatePrivateExternalImage(
+      mExternalImageId, mImageKey, mDescriptor, dirtyRect);
+}
 
 WebRenderRemoteData::WebRenderRemoteData(RenderRootStateManager* aManager,
                                          nsDisplayItem* aItem)

@@ -57,9 +57,10 @@ class RenderRootStateManager {
 
   void AddWebRenderParentCommand(const WebRenderParentCommand& aCmd);
   void UpdateResources(wr::IpcResourceUpdateQueue& aResources);
+  void AddPipelineIdForAsyncCompositable(const wr::PipelineId& aPipelineId,
+                                         const CompositableHandle& aHandlee);
   void AddPipelineIdForCompositable(const wr::PipelineId& aPipelineId,
-                                    const CompositableHandle& aHandle,
-                                    CompositableHandleOwner aOwner);
+                                    const CompositableHandle& aHandlee);
   void RemovePipelineIdForCompositable(const wr::PipelineId& aPipelineId);
   
   
