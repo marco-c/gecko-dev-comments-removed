@@ -14,12 +14,10 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 });
 
 const COLLECTION_NAME = "query-stripping";
+const SHARED_DATA_KEY = "URLQueryStripping";
 
 const PREF_STRIP_LIST_NAME = "privacy.query_stripping.strip_list";
 const PREF_ALLOW_LIST_NAME = "privacy.query_stripping.allow_list";
-
-const CONTENT_PROCESS_SCRIPT =
-  "resource://gre/modules/URLQueryStrippingListProcessScript.js";
 
 class URLQueryStrippingListService {
   constructor() {
@@ -39,7 +37,6 @@ class URLQueryStrippingListService {
   async _init() {
     
     
-    
     if (this.isParentProcess) {
       let rs = RemoteSettings(COLLECTION_NAME);
 
@@ -56,25 +53,15 @@ class URLQueryStrippingListService {
         entries = await rs.get();
       } catch (e) {}
       this._onRemoteSettingsUpdate(entries || []);
-
-      Services.ppmm.addMessageListener("query-stripping:request-rs", this);
-
-      
-      
-      
-      
-      
-      
-      
-      
-      Services.ppmm.loadProcessScript(CONTENT_PROCESS_SCRIPT, true);
     } else {
       
       
+      Services.cpmm.sharedData.addEventListener("change", this);
+
       
-      Services.cpmm.addMessageListener("query-stripping:rs-updated", this);
-      Services.cpmm.addMessageListener("query-stripping:clear-lists", this);
-      Services.cpmm.sendAsyncMessage("query-stripping:request-rs");
+      let data = this._getListFromSharedData();
+
+      this._onRemoteSettingsUpdate(data);
     }
 
     
@@ -98,12 +85,8 @@ class URLQueryStrippingListService {
     Services.prefs.removeObserver(PREF_STRIP_LIST_NAME, this);
     Services.prefs.removeObserver(PREF_ALLOW_LIST_NAME, this);
 
-    if (this.isParentProcess) {
-      Services.ppmm.removeMessageListener("query-stripping:request-rs", this);
-      Services.ppmm.removeDelayedProcessScript(CONTENT_PROCESS_SCRIPT);
-    } else {
-      Services.cpmm.removeMessageListener("query-stripping:rs-updated", this);
-      Services.cpmm.removeMessageListener("query-stripping:clear-lists", this);
+    if (!this.isParentProcess) {
+      Services.cpmm.sharedData.removeEventListener("change", this);
     }
   }
 
@@ -125,10 +108,10 @@ class URLQueryStrippingListService {
     
     
     if (this.isParentProcess) {
-      Services.ppmm.broadcastAsyncMessage(
-        "query-stripping:rs-updated",
-        entries
-      );
+      Services.ppmm.sharedData.set(SHARED_DATA_KEY, {
+        stripList: this.remoteStripList,
+        allowList: this.remoteAllowList,
+      });
     }
 
     this._notifyObservers();
@@ -154,6 +137,12 @@ class URLQueryStrippingListService {
 
   async _ensureInit() {
     await this._initPromise;
+  }
+
+  _getListFromSharedData() {
+    let data = Services.cpmm.sharedData.get(SHARED_DATA_KEY);
+
+    return data ? [data] : [];
   }
 
   _notifyObservers(observer) {
@@ -200,14 +189,17 @@ class URLQueryStrippingListService {
   }
 
   clearLists() {
-    this.remoteStripList = [];
-    this.remoteAllowList = [];
-    this.prefStripList = [];
-    this.prefAllowList = [];
-
-    if (this.isParentProcess) {
-      Services.ppmm.broadcastAsyncMessage("query-stripping:clear-lists");
+    if (!this.isParentProcess) {
+      return;
     }
+
+    
+    this._onRemoteSettingsUpdate([]);
+
+    
+    
+    Services.prefs.clearUserPref(PREF_STRIP_LIST_NAME);
+    Services.prefs.clearUserPref(PREF_ALLOW_LIST_NAME);
   }
 
   observe(subject, topic, data) {
@@ -224,16 +216,18 @@ class URLQueryStrippingListService {
     }
   }
 
-  receiveMessage({ target, name, data }) {
-    if (name == "query-stripping:rs-updated") {
-      this._onRemoteSettingsUpdate(data);
-    } else if (name == "query-stripping:request-rs") {
-      target.sendAsyncMessage("query-stripping:rs-updated", [
-        { stripList: this.remoteStripList, allowList: this.remoteAllowList },
-      ]);
-    } else if (name == "query-stripping:clear-lists") {
-      this.clearLists();
+  handleEvent(event) {
+    if (event.type != "change") {
+      return;
     }
+
+    if (!event.changedKeys.includes(SHARED_DATA_KEY)) {
+      return;
+    }
+
+    let data = this._getListFromSharedData();
+    this._onRemoteSettingsUpdate(data);
+    this._notifyObservers();
   }
 }
 
