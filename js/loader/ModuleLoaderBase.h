@@ -131,11 +131,13 @@ class ModuleLoaderBase : public nsISupports {
   
   virtual nsresult StartFetch(ModuleLoadRequest* aRequest) = 0;
 
-  virtual void ProcessLoadedModuleTree(ModuleLoadRequest* aRequest) = 0;
   virtual nsresult CompileOrFinishModuleScript(
       JSContext* aCx, JS::Handle<JSObject*> aGlobal,
       JS::CompileOptions& aOptions, ModuleLoadRequest* aRequest,
       JS::MutableHandle<JSObject*> aModuleScript) = 0;
+
+  
+  virtual void OnModuleLoadComplete(ModuleLoadRequest* aRequest) = 0;
 
   
 
