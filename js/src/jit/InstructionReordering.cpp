@@ -45,6 +45,33 @@ static bool IsLastUse(MDefinition* ins, MDefinition* input,
   return true;
 }
 
+static void MoveConstantsToStart(MBasicBlock* block,
+                                 MInstruction* insertionPoint) {
+  
+  
+  
+  
+
+  MInstructionIterator iter(block->begin(insertionPoint));
+  while (iter != block->end()) {
+    MInstruction* ins = *iter;
+    iter++;
+
+    if (!ins->isConstant() || !ins->hasOneUse() ||
+        ins->usesBegin()->consumer()->block() != block ||
+        IsFloatingPointType(ins->type())) {
+      continue;
+    }
+
+    MOZ_ASSERT(ins->isMovable());
+    MOZ_ASSERT(insertionPoint != ins);
+
+    
+    
+    block->moveBefore(insertionPoint, ins);
+  }
+}
+
 bool jit::ReorderInstructions(MIRGraph& graph) {
   
   size_t nextId = 0;
@@ -54,6 +81,19 @@ bool jit::ReorderInstructions(MIRGraph& graph) {
 
   for (ReversePostorderIterator block(graph.rpoBegin());
        block != graph.rpoEnd(); block++) {
+    
+    
+    bool isEntryBlock =
+        *block == graph.entryBlock() || *block == graph.osrBlock();
+
+    MInstruction* insertionPoint = nullptr;
+    if (!isEntryBlock) {
+      
+      
+      insertionPoint = block->safeInsertTop();
+      MoveConstantsToStart(*block, insertionPoint);
+    }
+
     
     for (MPhiIterator iter(block->phisBegin()); iter != block->phisEnd();
          iter++) {
@@ -65,9 +105,7 @@ bool jit::ReorderInstructions(MIRGraph& graph) {
       iter->setId(nextId++);
     }
 
-    
-    
-    if (*block == graph.entryBlock() || *block == graph.osrBlock()) {
+    if (isEntryBlock) {
       continue;
     }
 
@@ -79,35 +117,15 @@ bool jit::ReorderInstructions(MIRGraph& graph) {
 
     MBasicBlock* innerLoop = loopHeaders.empty() ? nullptr : loopHeaders.back();
 
-    MInstruction* top = block->safeInsertTop();
-    MInstructionReverseIterator rtop = ++block->rbegin(top);
-    for (MInstructionIterator iter(block->begin(top)); iter != block->end();) {
+    MInstructionReverseIterator rtop = ++block->rbegin(insertionPoint);
+    for (MInstructionIterator iter(block->begin(insertionPoint));
+         iter != block->end();) {
       MInstruction* ins = *iter;
 
       
       if (ins->isEffectful() || !ins->isMovable() || ins->resumePoint() ||
           ins == block->lastIns()) {
         iter++;
-        continue;
-      }
-
-      
-      
-      
-      
-      
-      if (ins->isConstant() && ins->hasOneUse() &&
-          ins->usesBegin()->consumer()->block() == *block &&
-          !IsFloatingPointType(ins->type())) {
-        iter++;
-        MInstructionIterator targetIter = block->begin();
-        while (targetIter->isConstant() || targetIter->isInterruptCheck()) {
-          if (*targetIter == ins) {
-            break;
-          }
-          targetIter++;
-        }
-        MoveBefore(*block, *targetIter, ins);
         continue;
       }
 
