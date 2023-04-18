@@ -1,7 +1,9 @@
 SimpleTest.waitForExplicitFinish();
 
 
-var test = function(isContent) {
+var test = async function(isContent) {
+  await SpecialPowers.contentTransformsReceived(window);
+
   
   
   let eventDefs = [
