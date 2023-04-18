@@ -1180,8 +1180,6 @@ var interfaceNamesInGlobalScope = [
   
   { name: "SVGPathElement", insecureContext: true },
   
-  { name: "SVGPathSegList", insecureContext: true },
-  
   { name: "SVGPatternElement", insecureContext: true },
   
   { name: "SVGPoint", insecureContext: true },

@@ -33,18 +33,20 @@ nsresult SVGAnimatedPathSegList::SetBaseValueString(const nsAString& aValue) {
   
   
   
-
-  DOMSVGPathSegList* baseValWrapper =
-      DOMSVGPathSegList::GetDOMWrapperIfExists(GetBaseValKey());
-  if (baseValWrapper) {
-    baseValWrapper->InternalListWillChangeTo(newBaseValue);
-  }
-
+  DOMSVGPathSegList* baseValWrapper = nullptr;
   DOMSVGPathSegList* animValWrapper = nullptr;
-  if (!IsAnimating()) {  
-    animValWrapper = DOMSVGPathSegList::GetDOMWrapperIfExists(GetAnimValKey());
-    if (animValWrapper) {
-      animValWrapper->InternalListWillChangeTo(newBaseValue);
+  if (StaticPrefs::dom_svg_pathSeg_enabled()) {
+    baseValWrapper = DOMSVGPathSegList::GetDOMWrapperIfExists(GetBaseValKey());
+    if (baseValWrapper) {
+      baseValWrapper->InternalListWillChangeTo(newBaseValue);
+    }
+
+    if (!IsAnimating()) {  
+      animValWrapper =
+          DOMSVGPathSegList::GetDOMWrapperIfExists(GetAnimValKey());
+      if (animValWrapper) {
+        animValWrapper->InternalListWillChangeTo(newBaseValue);
+      }
     }
   }
 
@@ -56,13 +58,15 @@ nsresult SVGAnimatedPathSegList::SetBaseValueString(const nsAString& aValue) {
 
   nsresult rv2 = mBaseVal.CopyFrom(newBaseValue);
   if (NS_FAILED(rv2)) {
-    
-    
-    if (baseValWrapper) {
-      baseValWrapper->InternalListWillChangeTo(mBaseVal);
-    }
-    if (animValWrapper) {
-      animValWrapper->InternalListWillChangeTo(mBaseVal);
+    if (StaticPrefs::dom_svg_pathSeg_enabled()) {
+      
+      
+      if (baseValWrapper) {
+        baseValWrapper->InternalListWillChangeTo(mBaseVal);
+      }
+      if (animValWrapper) {
+        animValWrapper->InternalListWillChangeTo(mBaseVal);
+      }
     }
     return rv2;
   }
@@ -70,19 +74,21 @@ nsresult SVGAnimatedPathSegList::SetBaseValueString(const nsAString& aValue) {
 }
 
 void SVGAnimatedPathSegList::ClearBaseValue() {
-  
+  if (StaticPrefs::dom_svg_pathSeg_enabled()) {
+    
 
-  DOMSVGPathSegList* baseValWrapper =
-      DOMSVGPathSegList::GetDOMWrapperIfExists(GetBaseValKey());
-  if (baseValWrapper) {
-    baseValWrapper->InternalListWillChangeTo(SVGPathData());
-  }
+    DOMSVGPathSegList* baseValWrapper =
+        DOMSVGPathSegList::GetDOMWrapperIfExists(GetBaseValKey());
+    if (baseValWrapper) {
+      baseValWrapper->InternalListWillChangeTo(SVGPathData());
+    }
 
-  if (!IsAnimating()) {  
-    DOMSVGPathSegList* animValWrapper =
-        DOMSVGPathSegList::GetDOMWrapperIfExists(GetAnimValKey());
-    if (animValWrapper) {
-      animValWrapper->InternalListWillChangeTo(SVGPathData());
+    if (!IsAnimating()) {  
+      DOMSVGPathSegList* animValWrapper =
+          DOMSVGPathSegList::GetDOMWrapperIfExists(GetAnimValKey());
+      if (animValWrapper) {
+        animValWrapper->InternalListWillChangeTo(SVGPathData());
+      }
     }
   }
 
@@ -103,12 +109,14 @@ nsresult SVGAnimatedPathSegList::SetAnimValue(const SVGPathData& aNewAnimValue,
   
   
 
-  
+  if (StaticPrefs::dom_svg_pathSeg_enabled()) {
+    
 
-  DOMSVGPathSegList* domWrapper =
-      DOMSVGPathSegList::GetDOMWrapperIfExists(GetAnimValKey());
-  if (domWrapper) {
-    domWrapper->InternalListWillChangeTo(aNewAnimValue);
+    DOMSVGPathSegList* domWrapper =
+        DOMSVGPathSegList::GetDOMWrapperIfExists(GetAnimValKey());
+    if (domWrapper) {
+      domWrapper->InternalListWillChangeTo(aNewAnimValue);
+    }
   }
   if (!mAnimVal) {
     mAnimVal = MakeUnique<SVGPathData>();
@@ -124,15 +132,17 @@ nsresult SVGAnimatedPathSegList::SetAnimValue(const SVGPathData& aNewAnimValue,
 }
 
 void SVGAnimatedPathSegList::ClearAnimValue(SVGElement* aElement) {
-  
+  if (StaticPrefs::dom_svg_pathSeg_enabled()) {
+    
 
-  DOMSVGPathSegList* domWrapper =
-      DOMSVGPathSegList::GetDOMWrapperIfExists(GetAnimValKey());
-  if (domWrapper) {
-    
-    
-    
-    domWrapper->InternalListWillChangeTo(mBaseVal);
+    DOMSVGPathSegList* domWrapper =
+        DOMSVGPathSegList::GetDOMWrapperIfExists(GetAnimValKey());
+    if (domWrapper) {
+      
+      
+      
+      domWrapper->InternalListWillChangeTo(mBaseVal);
+    }
   }
   mAnimVal = nullptr;
   aElement->DidAnimatePathSegList();

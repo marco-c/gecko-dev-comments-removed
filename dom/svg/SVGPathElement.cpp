@@ -219,17 +219,17 @@ SVGPathElement::CreateSVGPathSegCurvetoQuadraticSmoothRel(float x, float y) {
   return pathSeg.forget();
 }
 
+
+
+
 already_AddRefed<DOMSVGPathSegList> SVGPathElement::PathSegList() {
-  
-  
-  
   return DOMSVGPathSegList::GetDOMWrapper(mD.GetBaseValKey(), this, false);
 }
 
+
+
+
 already_AddRefed<DOMSVGPathSegList> SVGPathElement::AnimatedPathSegList() {
-  
-  
-  
   return DOMSVGPathSegList::GetDOMWrapper(mD.GetAnimValKey(), this, true);
 }
 
