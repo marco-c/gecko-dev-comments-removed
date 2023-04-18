@@ -9,8 +9,11 @@
 #define __nsClipboard_h_
 
 #include "mozilla/UniquePtr.h"
+#include "mozilla/Span.h"
 #include "nsIClipboard.h"
 #include "nsIObserver.h"
+#include "nsCOMPtr.h"
+#include "GUniquePtr.h"
 #include <gtk/gtk.h>
 
 #ifdef MOZ_LOGGING
@@ -20,11 +23,36 @@
 extern mozilla::LazyLogModule gClipboardLog;
 #  define LOGCLIP(...) \
     MOZ_LOG(gClipboardLog, mozilla::LogLevel::Debug, (__VA_ARGS__))
+#  define LOGCLIP_ENABLED() \
+    MOZ_LOG_TEST(gClipboardLog, mozilla::LogLevel::Debug)
 #else
 #  define LOGCLIP(...)
+#  define LOGCLIP_ENABLED() false
 #endif 
 
-enum ClipboardDataType { CLIPBOARD_DATA, CLIPBOARD_TEXT, CLIPBOARD_TARGETS };
+struct ClipboardTargets {
+  mozilla::GUniquePtr<GdkAtom> mTargets;
+  uint32_t mCount = 0;
+
+  mozilla::Span<GdkAtom> AsSpan() const { return {mTargets.get(), mCount}; }
+  explicit operator bool() const { return bool(mTargets); }
+};
+
+struct ClipboardData {
+  mozilla::GUniquePtr<char> mData;
+  uint32_t mLength = 0;
+
+  void SetData(mozilla::Span<const uint8_t>);
+  void SetText(mozilla::Span<const char>);
+  void SetTargets(ClipboardTargets);
+
+  ClipboardTargets ExtractTargets();
+
+  mozilla::Span<char> AsSpan() const { return {mData.get(), mLength}; }
+  explicit operator bool() const { return bool(mData); }
+};
+
+enum class ClipboardDataType { Data, Text, Targets };
 
 class nsRetrievalContext {
  public:
@@ -33,16 +61,14 @@ class nsRetrievalContext {
   NS_INLINE_DECL_REFCOUNTING(nsRetrievalContext)
 
   
-  
-  virtual const char* GetClipboardData(const char* aMimeType,
-                                       int32_t aWhichClipboard,
-                                       uint32_t* aContentLength) = 0;
-  virtual const char* GetClipboardText(int32_t aWhichClipboard) = 0;
-  virtual void ReleaseClipboardData(const char** aClipboardData) = 0;
+  virtual ClipboardData GetClipboardData(const char* aMimeType,
+                                         int32_t aWhichClipboard) = 0;
+  virtual mozilla::GUniquePtr<char> GetClipboardText(
+      int32_t aWhichClipboard) = 0;
 
   
   
-  virtual GdkAtom* GetTargets(int32_t aWhichClipboard, int* aTargetNum) = 0;
+  virtual ClipboardTargets GetTargets(int32_t aWhichClipboard) = 0;
 
   virtual bool HasSelectionSupport(void) = 0;
 
