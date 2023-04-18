@@ -478,10 +478,10 @@ var FullScreen = {
         remoteFrameBC: inProcessBC,
       });
 
+      
+      
+      targetActor.waitingForChildFullscreen = true;
       if (inProcessBC) {
-        
-        
-        targetActor.waitingForChildEnterFullscreen = true;
         
         return;
       }
@@ -557,20 +557,13 @@ var FullScreen = {
 
 
   cleanupDomFullscreen(aActor) {
-    let needToWaitForChildExit = false;
     let [target, inProcessBC] = this._getNextMsgRecipientActor(aActor);
     if (target) {
-      needToWaitForChildExit = true;
-      if (!target.waitingForChildExitFullscreen) {
-        
-        
-        target.waitingForChildExitFullscreen = true;
-        target.sendAsyncMessage("DOMFullscreen:CleanUp", {
-          remoteFrameBC: inProcessBC,
-        });
-      }
+      target.sendAsyncMessage("DOMFullscreen:CleanUp", {
+        remoteFrameBC: inProcessBC,
+      });
       if (inProcessBC) {
-        return needToWaitForChildExit;
+        return;
       }
     }
 
@@ -587,17 +580,12 @@ var FullScreen = {
     );
 
     document.documentElement.removeAttribute("inDOMFullscreen");
-
-    return needToWaitForChildExit;
   },
 
   _abortEnterFullscreen() {
     
     
-    
-    
-    
-    setTimeout(() => document.exitFullscreen().catch(() => {}), 0);
+    setTimeout(() => document.exitFullscreen(), 0);
     if (TelemetryStopwatch.running("FULLSCREEN_CHANGE_MS")) {
       
       
@@ -621,18 +609,9 @@ var FullScreen = {
 
 
 
-
   _getNextMsgRecipientActor(aActor) {
     if (aActor.hasBeenDestroyed()) {
       return [null, null];
-    }
-
-    let target = aActor.nextMsgRecipientActor;
-    if (target) {
-      if (target.hasBeenDestroyed() || target.windowContext?.isInBFCache) {
-        return [null, null];
-      }
-      return [aActor.nextMsgRecipientActor, aActor.browsingContext];
     }
 
     let childBC = aActor.browsingContext;
@@ -655,21 +634,17 @@ var FullScreen = {
       }
     }
 
+    let target = null;
     let inProcessBC = null;
 
     if (parentBC && parentBC.currentWindowGlobal) {
       target = parentBC.currentWindowGlobal.getActor("DOMFullscreen");
       inProcessBC = childBC;
-      aActor.nextMsgRecipientActor = target;
     } else {
       target = aActor.requestOrigin;
     }
 
-    if (
-      !target ||
-      target.hasBeenDestroyed() ||
-      target.windowContext?.isInBFCache
-    ) {
+    if (!target || target.hasBeenDestroyed()) {
       return [null, null];
     }
     return [target, inProcessBC];
