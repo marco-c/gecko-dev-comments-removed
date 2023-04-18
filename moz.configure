@@ -355,6 +355,8 @@ imply_option("--build-backends", build_backend)
 
 
 @depends(
+    host,
+    target,
     "--enable-artifact-builds",
     "--disable-compile-environment",
     "--enable-build-backend",
@@ -364,7 +366,14 @@ imply_option("--build-backends", build_backend)
 )
 @imports("sys")
 def build_backend_defaults(
-    artifact_builds, compile_environment, requested_backends, project, application, _
+    host,
+    target,
+    artifact_builds,
+    compile_environment,
+    requested_backends,
+    project,
+    application,
+    _,
 ):
     if application:
         project = application[0]
@@ -379,11 +388,9 @@ def build_backend_defaults(
         all_backends = ["FasterMake+RecursiveMake"]
     else:
         all_backends = ["RecursiveMake", "FasterMake"]
-    
-    
-    
     if (
-        sys.platform == "win32"
+        host.os == "WINNT"
+        and target.os == "WINNT"
         and compile_environment
         and project not in ("mobile/android", "memory", "tools/update-programs")
     ):
