@@ -107,6 +107,9 @@ this.error = {
 
 
   isWebDriverError(obj) {
+    
+    
+    
     return error.isError(obj) && "name" in obj && ERRORS.has(obj.name);
   },
 
