@@ -1079,7 +1079,8 @@ void nsFocusManager::WindowHidden(mozIDOMWindowProxy* aWindow,
   
   
   
-  if (nsDocShell::Cast(docShellBeingHidden)->WillChangeProcess() &&
+  if (docShellBeingHidden &&
+      nsDocShell::Cast(docShellBeingHidden)->WillChangeProcess() &&
       docShellBeingHidden->GetBrowsingContext()->GetEmbedderElement()) {
     if (mFocusedWindow != window) {
       
