@@ -12,8 +12,7 @@
 #include "nsIScriptElement.h"
 #include "nsStubMutationObserver.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -48,7 +47,6 @@ class ScriptElement : public nsIScriptElement, public nsStubMutationObserver {
   virtual bool MaybeProcessScript() override;
 };
 
-}  
 }  
 
 #endif  

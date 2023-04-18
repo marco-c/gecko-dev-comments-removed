@@ -19,8 +19,7 @@
 #include <stdint.h>     
 #include <type_traits>  
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 template <typename Unit>
 struct ScriptDecoding {
@@ -84,7 +83,6 @@ struct ScriptDecoding<Utf8Unit> {
   }
 };
 
-}  
 }  
 
 #endif  

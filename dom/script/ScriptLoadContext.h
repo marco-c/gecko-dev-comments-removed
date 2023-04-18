@@ -35,8 +35,7 @@ namespace JS {
 class OffThreadToken;
 }  
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class Element;
 
@@ -192,7 +191,6 @@ class ScriptLoadContext : public JS::loader::LoadContextBase,
   nsresult mUnreportedPreloadError;
 };
 
-}  
 }  
 
 #endif  

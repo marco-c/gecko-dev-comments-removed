@@ -16,10 +16,8 @@ class nsIDocShellTreeItem;
 class nsIURI;
 class nsIContentSecurityPolicy;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 class BrowsingContext;
-}
 }  
 
 class FramingChecker {

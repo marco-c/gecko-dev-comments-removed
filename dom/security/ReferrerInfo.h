@@ -42,8 +42,7 @@ class nsHttpChannel;
 
 using mozilla::Maybe;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -471,7 +470,6 @@ class ReferrerInfo : public nsIReferrerInfo {
 #endif  
 };
 
-}  
 }  
 
 #endif  

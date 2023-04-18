@@ -12,8 +12,7 @@
 struct JSContext;
 class nsGlobalWindowInner;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class WorkerPrivate;
 
@@ -28,7 +27,6 @@ class CSPEvalChecker final {
                                  bool* aAllowEval);
 };
 
-}  
 }  
 
 #endif  

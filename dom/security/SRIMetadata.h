@@ -11,8 +11,7 @@
 #include "nsString.h"
 #include "SRICheck.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class SRIMetadata final {
   friend class SRICheck;
@@ -86,7 +85,6 @@ class SRIMetadata final {
   bool mEmpty;
 };
 
-}  
 }  
 
 #endif  

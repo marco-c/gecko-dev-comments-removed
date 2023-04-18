@@ -28,8 +28,7 @@
 #define SRIERROR(args) \
   MOZ_LOG(SRILogHelper::GetSriLog(), mozilla::LogLevel::Error, args)
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -491,5 +490,4 @@ nsresult SRICheckDataVerifier::ExportEmptyDataSummary(uint32_t aDataLen,
   return NS_OK;
 }
 
-}  
 }  
