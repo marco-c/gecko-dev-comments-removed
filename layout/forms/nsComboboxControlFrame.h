@@ -209,7 +209,6 @@ class nsComboboxControlFrame final : public nsBlockFrame,
   mozilla::dom::HTMLSelectElement& Select() const;
   void GetOptionText(uint32_t aIndex, nsAString& aText) const;
 
-  nsFrameList mPopupFrames;            
   RefPtr<nsTextNode> mDisplayContent;  
                                        
   RefPtr<Element> mButtonContent;      

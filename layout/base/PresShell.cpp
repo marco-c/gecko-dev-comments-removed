@@ -5997,11 +5997,9 @@ void PresShell::MarkFramesInSubtreeApproximatelyVisible(
 
   bool preserves3DChildren = aFrame->Extend3DContext();
 
-  
-  const nsIFrame::ChildListIDs skip = {nsIFrame::kPopupList,
-                                       nsIFrame::kSelectPopupList};
   for (const auto& [list, listID] : aFrame->ChildLists()) {
-    if (skip.contains(listID)) {
+    if (listID == nsIFrame::kPopupList) {
+      
       continue;
     }
 
@@ -7825,16 +7823,6 @@ PresShell::EventHandler::ComputeRootFrameToHandleEventWithCapturingContent(
   nsIFrame* captureFrame = aCapturingContent->GetPrimaryFrame();
   if (!captureFrame) {
     return aRootFrameToHandleEvent;
-  }
-
-  if (aCapturingContent->IsHTMLElement(nsGkAtoms::select)) {
-    
-    
-    nsIFrame* childFrame =
-        captureFrame->GetChildList(nsIFrame::kSelectPopupList).FirstChild();
-    if (childFrame) {
-      captureFrame = childFrame;
-    }
   }
 
   
