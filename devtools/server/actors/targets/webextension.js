@@ -246,24 +246,6 @@ webExtensionTargetPrototype._onNewExtensionWindow = function(window) {
   }
 };
 
-webExtensionTargetPrototype._attach = function() {
-  
-  
-  
-
-  if (
-    !this.window ||
-    this.window.document.nodePrincipal.addonId !== this.addonId
-  ) {
-    
-    this._setWindow(this._searchForExtensionWindow());
-  }
-
-  
-  
-  ParentProcessTargetActor.prototype._attach.apply(this);
-};
-
 webExtensionTargetPrototype._detach = function() {
   
   

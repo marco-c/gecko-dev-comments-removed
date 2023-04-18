@@ -325,6 +325,26 @@ const windowGlobalTargetPrototype = {
     );
 
     TargetActorRegistry.registerTargetActor(this);
+
+    
+    
+    
+    
+    this._createThreadActor();
+
+    
+    
+    this._progressListener = new DebuggerProgressListener(this);
+
+    
+    
+    
+    
+    
+    this._docShellsObserved = false;
+    DevToolsUtils.executeSoon(() => this._watchDocshells());
+
+    this._attached = true;
   },
 
   
@@ -697,28 +717,6 @@ const windowGlobalTargetPrototype = {
     }
 
     return false;
-  },
-
-  
-
-
-  _attach() {
-    if (this._attached) {
-      return;
-    }
-
-    
-    this._createThreadActor();
-
-    this._progressListener = new DebuggerProgressListener(this);
-
-    this._docShellsObserved = false;
-
-    
-    
-    DevToolsUtils.executeSoon(() => this._watchDocshells());
-
-    this._attached = true;
   },
 
   _watchDocshells() {
@@ -1160,8 +1158,6 @@ const windowGlobalTargetPrototype = {
         error: "destroyed",
       };
     }
-
-    this._attach();
 
     return {
       threadActor: this.threadActor.actorID,

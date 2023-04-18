@@ -90,6 +90,18 @@ parentProcessTargetPrototype.initialize = function(
 
   
   this.watchNewDocShells = true;
+
+  
+  Services.obs.addObserver(this, "chrome-webnavigation-create");
+  Services.obs.addObserver(this, "chrome-webnavigation-destroy");
+
+  
+  for (const { docShell } of Services.ww.getWindowEnumerator()) {
+    if (docShell == this.docShell) {
+      continue;
+    }
+    this._progressListener.watch(docShell);
+  }
 };
 
 parentProcessTargetPrototype.isRootActor = true;
@@ -123,27 +135,6 @@ parentProcessTargetPrototype.observe = function(subject, topic, data) {
   } else if (topic == "chrome-webnavigation-destroy") {
     this._onDocShellDestroy(subject);
   }
-};
-
-parentProcessTargetPrototype._attach = function() {
-  if (this.attached) {
-    return false;
-  }
-
-  WindowGlobalTargetActor.prototype._attach.call(this);
-
-  
-  Services.obs.addObserver(this, "chrome-webnavigation-create");
-  Services.obs.addObserver(this, "chrome-webnavigation-destroy");
-
-  
-  for (const { docShell } of Services.ww.getWindowEnumerator()) {
-    if (docShell == this.docShell) {
-      continue;
-    }
-    this._progressListener.watch(docShell);
-  }
-  return undefined;
 };
 
 parentProcessTargetPrototype._detach = function() {

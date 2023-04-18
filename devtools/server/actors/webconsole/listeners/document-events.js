@@ -61,21 +61,10 @@ DocumentEventsListener.prototype = {
     this.targetActor.on("window-ready", this.onWindowReady);
     
     
-    if (
-      !this.targetActor.attached &&
-      !this.targetActor.followWindowGlobalLifeCycle
-    ) {
-      
-      
-      this.targetActor.attach();
-    } else {
-      
-      
-      this.onWindowReady({
-        window: this.targetActor.window,
-        isTopLevel: true,
-      });
-    }
+    this.onWindowReady({
+      window: this.targetActor.window,
+      isTopLevel: true,
+    });
   },
 
   onWillNavigate({

@@ -48,9 +48,6 @@ class BreakpointWatcher {
 
 
   async watch(targetActor, { onAvailable }) {
-    
-    targetActor.attach();
-
     const { threadActor } = targetActor;
     this.threadActor = threadActor;
     this.onAvailable = onAvailable;

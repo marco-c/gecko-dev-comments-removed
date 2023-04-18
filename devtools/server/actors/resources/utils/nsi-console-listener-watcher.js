@@ -32,13 +32,6 @@ class nsIConsoleListenerWatcher {
     }
 
     
-    
-    
-    if (!targetActor.threadActor) {
-      targetActor.attach();
-    }
-
-    
     const listener = {
       QueryInterface: ChromeUtils.generateQI(["nsIConsoleListener"]),
       observe: message => {

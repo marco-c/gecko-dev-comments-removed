@@ -25,9 +25,6 @@ class SourceWatcher {
   }
 
   async watch(targetActor, { onAvailable }) {
-    
-    targetActor.attach();
-
     const { threadActor } = targetActor;
     this.sourcesManager = targetActor.sourcesManager;
     this.onAvailable = onAvailable;

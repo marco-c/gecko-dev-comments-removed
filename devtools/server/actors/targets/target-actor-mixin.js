@@ -51,14 +51,6 @@ module.exports = function(targetType, targetActorSpec, implementation) {
       if (type == RESOURCES) {
         await this._watchTargetResources(entries);
       } else if (type == BREAKPOINTS) {
-        
-        
-        
-        
-        if (typeof this.attach == "function") {
-          this.attach();
-        }
-
         const isTargetCreation =
           this.threadActor.state == THREAD_STATES.DETACHED;
         if (isTargetCreation && !this.targetType.endsWith("worker")) {
@@ -87,10 +79,6 @@ module.exports = function(targetType, targetActorSpec, implementation) {
           this.updateTargetConfiguration(options, isDocumentCreation);
         }
       } else if (type == THREAD_CONFIGURATION) {
-        if (typeof this.attach == "function") {
-          await this.attach();
-        }
-
         const threadOptions = {};
 
         for (const { key, value } of entries) {
@@ -108,14 +96,6 @@ module.exports = function(targetType, targetActorSpec, implementation) {
       } else if (type == XHR_BREAKPOINTS) {
         
         
-        
-        
-        if (typeof this.attach == "function") {
-          this.attach();
-        }
-
-        
-        
         if (
           this.threadActor.state == THREAD_STATES.DETACHED &&
           !this.targetType.endsWith("worker")
@@ -129,11 +109,6 @@ module.exports = function(targetType, targetActorSpec, implementation) {
           )
         );
       } else if (type == EVENT_BREAKPOINTS) {
-        
-        if (typeof this.attach == "function") {
-          this.attach();
-        }
-
         
         if (
           this.threadActor.state == THREAD_STATES.DETACHED &&

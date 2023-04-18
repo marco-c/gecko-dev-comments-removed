@@ -40,14 +40,6 @@ const {
 class ConsoleMessageWatcher {
   async watch(targetActor, { onAvailable }) {
     
-    
-    
-    
-    if (!targetActor.threadActor) {
-      targetActor.attach();
-    }
-
-    
     const onConsoleAPICall = message => {
       onAvailable([
         {
