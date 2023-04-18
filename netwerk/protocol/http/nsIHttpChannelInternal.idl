@@ -280,11 +280,6 @@ interface nsIHttpChannelInternal : nsISupports
     
 
 
-    [must_use] readonly attribute boolean isLoadedBySocketProcess;
-
-    
-
-
 
 
     [must_use] attribute boolean isOCSP;

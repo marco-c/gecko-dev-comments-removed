@@ -54,7 +54,6 @@ class ChildDNSRecord : public nsIDNSAddrRecord {
   double mTrrFetchDuration = 0;
   double mTrrFetchDurationNetworkOnly = 0;
   bool mIsTRR = false;
-  bool mResolvedInSocketProcess = false;
   uint32_t mEffectiveTRRMode = 0;
   uint32_t mTTL = 0;
 };
@@ -67,9 +66,6 @@ ChildDNSRecord::ChildDNSRecord(const DNSRecord& reply, uint16_t flags)
   mTrrFetchDuration = reply.trrFetchDuration();
   mTrrFetchDurationNetworkOnly = reply.trrFetchDurationNetworkOnly();
   mIsTRR = reply.isTRR();
-  
-  
-  mResolvedInSocketProcess = XRE_IsParentProcess();
   mEffectiveTRRMode = reply.effectiveTRRMode();
 
   
@@ -95,12 +91,6 @@ ChildDNSRecord::GetCanonicalName(nsACString& result) {
 NS_IMETHODIMP
 ChildDNSRecord::IsTRR(bool* retval) {
   *retval = mIsTRR;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-ChildDNSRecord::ResolvedInSocketProcess(bool* retval) {
-  *retval = mResolvedInSocketProcess;
   return NS_OK;
 }
 

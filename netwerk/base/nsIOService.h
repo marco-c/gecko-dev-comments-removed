@@ -146,9 +146,6 @@ class nsIOService final : public nsIIOService,
 
   nsresult LaunchSocketProcess();
 
-  static bool TooManySocketProcessCrash();
-  static void IncreaseSocketProcessCrashCount();
-
  private:
   
   
@@ -238,7 +235,6 @@ class nsIOService final : public nsIIOService,
   uint32_t mTotalRequests{0};
   uint32_t mCacheWon{0};
   uint32_t mNetWon{0};
-  static uint32_t sSocketProcessCrashedCount;
 
   
   
@@ -262,9 +258,7 @@ class nsIOService final : public nsIIOService,
   nsTHashSet<nsCString> mObserverTopicForSocketProcess;
   
   
-  nsTHashSet<nsCString> mSocketProcessTopicBlockedList;
-  
-  nsTHashSet<nsCString> mIOServiceTopicList;
+  nsTHashSet<nsCString> mSocketProcessTopicBlackList;
 
   nsCOMPtr<nsIObserverService> mObserverService;
 
