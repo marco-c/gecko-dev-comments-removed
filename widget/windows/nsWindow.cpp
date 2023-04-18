@@ -215,8 +215,15 @@
 #  define SM_CONVERTIBLESLATEMODE 0x2003
 #endif
 
+
 #if !defined(WM_DPICHANGED)
 #  define WM_DPICHANGED 0x02E0
+#endif
+
+
+#if !defined(EVENT_OBJECT_CLOAKED)
+#  define EVENT_OBJECT_CLOAKED 0x8017
+#  define EVENT_OBJECT_UNCLOAKED 0x8018
 #endif
 
 #include "mozilla/gfx/DeviceManagerDx.h"
@@ -302,6 +309,13 @@ static SystemTimeConverter<DWORD>& TimeConverter() {
   static SystemTimeConverter<DWORD> timeConverterSingleton;
   return timeConverterSingleton;
 }
+
+
+
+
+static mozilla::Maybe<HWINEVENTHOOK> sWinCloakEventHook =
+    IsWin8OrLater() ? Nothing() : Some(HWINEVENTHOOK(nullptr));
+static mozilla::LazyLogModule sCloakingLog("DWMCloaking");
 
 namespace mozilla {
 
@@ -695,6 +709,21 @@ static void MaybeHideCursor(bool aShouldHide) {
   }
 }
 
+
+static bool IsCloaked(HWND hwnd) {
+  DWORD cloakedState;
+  HRESULT hr = ::DwmGetWindowAttribute(hwnd, DWMWA_CLOAKED, &cloakedState,
+                                       sizeof(cloakedState));
+
+  if (FAILED(hr)) {
+    MOZ_LOG(sCloakingLog, LogLevel::Warning,
+            ("failed (%08lX) to query cloaking state for HWND %p", hr, hwnd));
+    return false;
+  }
+
+  return cloakedState != 0;
+}
+
 }  
 
 
@@ -1023,6 +1052,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
       
       
       mIsVisible = true;
+      mIsCloaked = mozilla::IsCloaked(mWnd);
       mFrameState->ConsumePreXULSkeletonState(WasPreXULSkeletonUIMaximized());
 
       
@@ -1052,6 +1082,35 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
   if (!mWnd) {
     NS_WARNING("nsWindow CreateWindowEx failed.");
     return NS_ERROR_FAILURE;
+  }
+
+  if (!sWinCloakEventHook) {
+    MOZ_LOG(sCloakingLog, LogLevel::Info, ("Registering cloaking event hook"));
+
+    
+    struct StdcallLambda {
+      static void CALLBACK OnCloakUncloakHook(HWINEVENTHOOK hWinEventHook,
+                                              DWORD event, HWND hwnd,
+                                              LONG idObject, LONG idChild,
+                                              DWORD idEventThread,
+                                              DWORD dwmsEventTime) {
+        const bool isCloaked = event == EVENT_OBJECT_CLOAKED ? true : false;
+        nsWindow::OnCloakEvent(hwnd, isCloaked);
+      }
+    };
+
+    const HWINEVENTHOOK hook = ::SetWinEventHook(
+        EVENT_OBJECT_CLOAKED, EVENT_OBJECT_UNCLOAKED, HMODULE(nullptr),
+        &StdcallLambda::OnCloakUncloakHook, ::GetCurrentProcessId(),
+        ::GetCurrentThreadId(), WINEVENT_OUTOFCONTEXT);
+    sWinCloakEventHook = Some(hook);
+
+    if (!hook) {
+      const DWORD err = ::GetLastError();
+      MOZ_LOG(sCloakingLog, LogLevel::Error,
+              ("Failed to register cloaking event hook! GLE = %lu (0x%lX)", err,
+               err));
+    }
   }
 
   if (aInitData->mIsPrivate) {
@@ -1790,6 +1849,8 @@ void nsWindow::Show(bool bState) {
     SuppressAnimation(false);
   }
 }
+
+
 
 
 
@@ -7514,6 +7575,67 @@ void nsWindow::OnDPIChanged(int32_t x, int32_t y, int32_t width,
   UpdateNonClientMargins();
   ChangedDPI();
   ResetLayout();
+}
+
+
+
+void nsWindow::OnCloakEvent(HWND aWnd, bool aCloaked) {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(IsWin8OrLater());
+
+  const char* const kEventName = aCloaked ? "CLOAKED" : "UNCLOAKED";
+  nsWindow* pWin = WinUtils::GetNSWindowPtr(aWnd);
+  if (!pWin) {
+    MOZ_LOG(
+        sCloakingLog, LogLevel::Debug,
+        ("Received %s event for HWND %p (not an nsWindow)", kEventName, aWnd));
+    return;
+  }
+
+  const char* const kWasCloakedStr = pWin->mIsCloaked ? "cloaked" : "uncloaked";
+  if (mozilla::IsCloaked(aWnd) == pWin->mIsCloaked) {
+    MOZ_LOG(sCloakingLog, LogLevel::Debug,
+            ("Received redundant %s event for %s HWND %p; discarding",
+             kEventName, kWasCloakedStr, aWnd));
+    return;
+  }
+
+  MOZ_LOG(
+      sCloakingLog, LogLevel::Info,
+      ("Received %s event for %s HWND %p", kEventName, kWasCloakedStr, aWnd));
+
+  
+  
+  
+  
+  struct Item {
+    nsWindow* win;
+    bool nowCloaked;
+  };
+  nsTArray<Item> changedWindows;
+
+  mozilla::EnumerateThreadWindows([&](HWND hwnd) {
+    nsWindow* pWin = WinUtils::GetNSWindowPtr(hwnd);
+    if (!pWin) {
+      return;
+    }
+
+    const bool isCloaked = mozilla::IsCloaked(hwnd);
+    if (isCloaked != pWin->mIsCloaked) {
+      changedWindows.AppendElement(Item{pWin, isCloaked});
+    }
+  });
+
+  for (const Item& item : changedWindows) {
+    item.win->OnCloakChanged(item.nowCloaked);
+  }
+}
+
+void nsWindow::OnCloakChanged(bool aCloaked) {
+  MOZ_LOG(sCloakingLog, LogLevel::Info,
+          ("Calling OnCloakChanged(): HWND %p, aCloaked %s", mWnd,
+           aCloaked ? "true" : "false"));
+  mIsCloaked = aCloaked;
 }
 
 
