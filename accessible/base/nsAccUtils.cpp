@@ -205,16 +205,16 @@ bool nsAccUtils::IsDOMAttrTrue(const LocalAccessible* aAccessible,
                                eCaseMatters);
 }
 
-LocalAccessible* nsAccUtils::TableFor(LocalAccessible* aRow) {
+Accessible* nsAccUtils::TableFor(Accessible* aRow) {
   if (aRow) {
-    LocalAccessible* table = aRow->LocalParent();
+    Accessible* table = aRow->Parent();
     if (table) {
       roles::Role tableRole = table->Role();
       const nsRoleMapEntry* roleMapEntry = table->ARIARoleMap();
       if (tableRole == roles::GROUPING ||  
           (table->IsGenericHyperText() && !roleMapEntry &&
            !table->IsTable())) {  
-        table = table->LocalParent();
+        table = table->Parent();
         if (table) tableRole = table->Role();
       }
 
@@ -226,6 +226,11 @@ LocalAccessible* nsAccUtils::TableFor(LocalAccessible* aRow) {
   }
 
   return nullptr;
+}
+
+LocalAccessible* nsAccUtils::TableFor(LocalAccessible* aRow) {
+  Accessible* table = TableFor(static_cast<Accessible*>(aRow));
+  return table ? table->AsLocal() : nullptr;
 }
 
 HyperTextAccessible* nsAccUtils::GetTextContainer(nsINode* aNode) {
