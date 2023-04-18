@@ -35,7 +35,6 @@
 #include "common/scoped_ptr.h"
 
 #include "windows/crash_generation/client_info.h"
-#include "windows/crash_generation/temporary_stack.h"
 
 namespace google_breakpad {
 
@@ -824,24 +823,17 @@ void CALLBACK CrashGenerationServer::OnPipeConnected(void* context, BOOLEAN) {
 
 
 void CALLBACK CrashGenerationServer::OnDumpRequest(void* context, BOOLEAN) {
-  
-  auto const impl = [](void* context) {
-    assert(context);
-    ClientInfo* client_info = reinterpret_cast<ClientInfo*>(context);
+  assert(context);
+  ClientInfo* client_info = reinterpret_cast<ClientInfo*>(context);
 
-    CrashGenerationServer* crash_server = client_info->crash_server();
-    assert(crash_server);
-    if (crash_server->pre_fetch_custom_info_) {
-      client_info->PopulateCustomInfo();
-    }
-    crash_server->HandleDumpRequest(*client_info);
+  CrashGenerationServer* crash_server = client_info->crash_server();
+  assert(crash_server);
+  if (crash_server->pre_fetch_custom_info_) {
+    client_info->PopulateCustomInfo();
+  }
+  crash_server->HandleDumpRequest(*client_info);
 
-    ResetEvent(client_info->dump_requested_handle());
-  };
-
-  
-  
-  RunOnTemporaryStack(impl, context, 16 * 1024 * 1024);
+  ResetEvent(client_info->dump_requested_handle());
 }
 
 
