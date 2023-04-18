@@ -198,6 +198,30 @@ var TabManager = {
     return this.getIdForBrowser(contentBrowser);
   },
 
+  
+
+
+
+
+
+
+
+
+
+
+  getIdForBrowsingContext(browsingContext) {
+    if (!browsingContext) {
+      return null;
+    }
+
+    if (!browsingContext.parent) {
+      
+      return this.getIdForBrowser(browsingContext.embedderElement);
+    }
+
+    return browsingContext.id.toString();
+  },
+
   getTabCount() {
     let count = 0;
     for (const win of this.windows) {
