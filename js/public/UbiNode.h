@@ -986,31 +986,32 @@ class PreComputedEdgeRange : public EdgeRange {
 
 
 
-class MOZ_STACK_CLASS JS_PUBLIC_API RootList {
-  Maybe<AutoCheckCannotGC>& noGC;
 
+class MOZ_STACK_CLASS JS_PUBLIC_API RootList {
  public:
   JSContext* cx;
   EdgeVector edges;
   bool wantNames;
+  bool inited;
 
-  RootList(JSContext* cx, Maybe<AutoCheckCannotGC>& noGC,
-           bool wantNames = false);
-
-  
-  [[nodiscard]] bool init();
-  
-  
-  
-  
-  [[nodiscard]] bool init(CompartmentSet& debuggees);
-  
-  
-  [[nodiscard]] bool init(HandleObject debuggees);
+  explicit RootList(JSContext* cx, bool wantNames = false);
 
   
+  [[nodiscard]] std::pair<bool, JS::AutoCheckCannotGC> init();
   
-  bool initialized() { return noGC.isSome(); }
+  
+  
+  
+  [[nodiscard]] std::pair<bool, JS::AutoCheckCannotGC> init(
+      CompartmentSet& debuggees);
+  
+  
+  [[nodiscard]] std::pair<bool, JS::AutoCheckCannotGC> init(
+      HandleObject debuggees);
+
+  
+  
+  bool initialized() { return inited; }
 
   
   
