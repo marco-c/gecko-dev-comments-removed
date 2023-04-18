@@ -1354,10 +1354,12 @@ class ArgumentsReplacer : public MDefinitionVisitorDefaultNoop {
   }
 
   void visitGuardToClass(MGuardToClass* ins);
+  void visitGuardProto(MGuardProto* ins);
   void visitGuardArgumentsObjectFlags(MGuardArgumentsObjectFlags* ins);
   void visitUnbox(MUnbox* ins);
   void visitGetArgumentsObjectArg(MGetArgumentsObjectArg* ins);
   void visitLoadArgumentsObjectArg(MLoadArgumentsObjectArg* ins);
+  void visitLoadArgumentsObjectArgHole(MLoadArgumentsObjectArgHole* ins);
   void visitArgumentsObjectLength(MArgumentsObjectLength* ins);
   void visitApplyArgsObj(MApplyArgsObj* ins);
   void visitLoadFixedSlot(MLoadFixedSlot* ins);
@@ -1419,6 +1421,14 @@ bool ArgumentsReplacer::escapes(MInstruction* ins, bool guardedForMapped) {
         break;
       }
 
+      case MDefinition::Opcode::GuardProto: {
+        if (escapes(def->toInstruction(), guardedForMapped)) {
+          JitSpewDef(JitSpew_Escape, "is indirectly escaped by\n", def);
+          return true;
+        }
+        break;
+      }
+
       case MDefinition::Opcode::GuardArgumentsObjectFlags: {
         if (escapes(def->toInstruction(), guardedForMapped)) {
           JitSpewDef(JitSpew_Escape, "is indirectly escaped by\n", def);
@@ -1464,6 +1474,7 @@ bool ArgumentsReplacer::escapes(MInstruction* ins, bool guardedForMapped) {
       case MDefinition::Opcode::ArgumentsObjectLength:
       case MDefinition::Opcode::GetArgumentsObjectArg:
       case MDefinition::Opcode::LoadArgumentsObjectArg:
+      case MDefinition::Opcode::LoadArgumentsObjectArgHole:
         break;
 
       
@@ -1526,6 +1537,35 @@ void ArgumentsReplacer::visitGuardToClass(MGuardToClass* ins) {
     return;
   }
   MOZ_ASSERT(ins->isArgumentsObjectClass());
+
+  
+  ins->replaceAllUsesWith(args_);
+
+  
+  ins->block()->discard(ins);
+}
+
+void ArgumentsReplacer::visitGuardProto(MGuardProto* ins) {
+  
+  if (ins->object() != args_) {
+    return;
+  }
+
+#ifdef DEBUG
+  
+  
+  
+  
+  
+  
+
+  if (args_->isCreateArgumentsObject()) {
+    auto* expected = &ins->expected()->toConstant()->toObject();
+    auto* templateObj = args_->toCreateArgumentsObject()->templateObject();
+
+    MOZ_ASSERT_IF(templateObj, templateObj->staticPrototype() == expected);
+  }
+#endif
 
   
   ins->replaceAllUsesWith(args_);
@@ -1670,6 +1710,34 @@ void ArgumentsReplacer::visitLoadArgumentsObjectArg(
 
     loadArg = MGetFrameArgument::New(alloc(), check);
   }
+  ins->block()->insertBefore(ins, loadArg);
+  ins->replaceAllUsesWith(loadArg);
+
+  
+  ins->block()->discard(ins);
+}
+
+void ArgumentsReplacer::visitLoadArgumentsObjectArgHole(
+    MLoadArgumentsObjectArgHole* ins) {
+  
+  if (ins->argsObject() != args_) {
+    return;
+  }
+
+  MDefinition* index = ins->index();
+
+  MInstruction* loadArg;
+  if (isInlinedArguments()) {
+    auto* actualArgs = args_->toCreateInlinedArgumentsObject();
+
+    loadArg = MGetInlinedArgumentHole::New(alloc(), index, actualArgs);
+  } else {
+    auto* length = MArgumentsLength::New(alloc());
+    ins->block()->insertBefore(ins, length);
+
+    loadArg = MGetFrameArgumentHole::New(alloc(), index, length);
+  }
+  loadArg->setBailoutKind(ins->bailoutKind());
   ins->block()->insertBefore(ins, loadArg);
   ins->replaceAllUsesWith(loadArg);
 
