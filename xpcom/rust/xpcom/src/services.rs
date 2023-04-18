@@ -6,4 +6,4 @@
 
 
 
-include!(mozbuild::objdir_path!("xpcom/build/services.rs"));
+include!(concat!(env!("MOZ_TOPOBJDIR"), "/xpcom/build/services.rs"));

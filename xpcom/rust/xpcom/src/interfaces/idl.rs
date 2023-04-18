@@ -9,4 +9,4 @@ use crate::*;
 
 
 
-include!(mozbuild::objdir_path!("dist/xpcrs/rt/all.rs"));
+include!(concat!(env!("MOZ_TOPOBJDIR"), "/dist/xpcrs/rt/all.rs"));
