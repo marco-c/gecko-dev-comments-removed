@@ -486,3 +486,11 @@ declare interface XULElementWithCommandHandler {
 }
 
 declare type nsIPrefBranch = MockedExports.nsIPrefBranch;
+
+
+
+
+
+interface Function {
+  isInstance(obj: any): boolean;
+}

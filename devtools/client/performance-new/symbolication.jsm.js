@@ -139,7 +139,7 @@ async function getResultFromWorker(workerURL, initialMessageToWorker) {
     worker.onerror = errorEvent => {
       gActiveWorkers.delete(worker);
       worker.terminate();
-      if (errorEvent instanceof ErrorEvent) {
+      if (ErrorEvent.isInstance(errorEvent)) {
         const { message, filename, lineno } = errorEvent;
         const error = new Error(`${message} at ${filename}:${lineno}`);
         error.name = "WorkerError";
@@ -152,17 +152,10 @@ async function getResultFromWorker(workerURL, initialMessageToWorker) {
     
     
     
-    worker.onmessageerror = errorEvent => {
+    worker.onmessageerror = () => {
       gActiveWorkers.delete(worker);
       worker.terminate();
-      if (errorEvent instanceof ErrorEvent) {
-        const { message, filename, lineno } = errorEvent;
-        const error = new Error(`${message} at ${filename}:${lineno}`);
-        error.name = "WorkerMessageError";
-        reject(error);
-      } else {
-        reject(new Error("Error in worker"));
-      }
+      reject(new Error("Error in worker"));
     };
 
     worker.postMessage(initialMessageToWorker);
