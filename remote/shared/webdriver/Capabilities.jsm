@@ -619,12 +619,6 @@ class Capabilities extends Map {
   }
 }
 
-this.Capabilities = Capabilities;
-this.PageLoadStrategy = PageLoadStrategy;
-this.Proxy = Proxy;
-this.Timeouts = Timeouts;
-this.UnhandledPromptBehavior = UnhandledPromptBehavior;
-
 function getWebDriverBrowserName() {
   
   
