@@ -383,22 +383,27 @@ add_task(function test_granted_for_temporary_mv3() {
   });
 });
 
-add_task(async function test_granted_for_privileged_mv3() {
-  const { AddonSettings } = ChromeUtils.import(
-    "resource://gre/modules/addons/AddonSettings.jsm"
-  );
-  
-  Services.prefs.setBoolPref("extensions.experiments.enabled", true);
+add_task(async function test_granted_only_for_privileged_mv3() {
   try {
+    
     await test_permissions({
       manifest_version: 3,
       granted_host_permissions: true,
-      useAddonManager: "temporary",
-      
-      expectAllGranted: AddonSettings.EXPERIMENTS_ENABLED,
+      useAddonManager: "permanent",
+      expectAllGranted: false,
+    });
+
+    
+    AddonTestUtils.usePrivilegedSignatures = true;
+
+    await test_permissions({
+      manifest_version: 3,
+      granted_host_permissions: true,
+      useAddonManager: "permanent",
+      expectAllGranted: true,
     });
   } finally {
-    Services.prefs.setBoolPref("extensions.experiments.enabled", false);
+    AddonTestUtils.usePrivilegedSignatures = false;
   }
 });
 
