@@ -826,7 +826,7 @@ static bool PropertyIsEnumerable(JSContext* cx, HandleObject obj, HandleId id,
 
 
 static bool CanAddNewPropertyExcludingProtoFast(PlainObject* obj) {
-  if (!obj->isExtensible()) {
+  if (!obj->isExtensible() || obj->isUsedAsPrototype()) {
     return false;
   }
 
