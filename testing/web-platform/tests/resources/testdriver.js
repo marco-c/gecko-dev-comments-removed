@@ -92,6 +92,14 @@
 
 
 
+
+
+
+
+
+
+
+
         bless: function(intent, action, context=null) {
             let contextDocument = context ? context.document : document;
             var button = contextDocument.createElement("button");
@@ -116,6 +124,18 @@
         },
 
         
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -176,6 +196,29 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         send_keys: function(element, keys) {
             if (!inView(element)) {
                 element.scrollIntoView({behavior: "instant",
@@ -193,7 +236,6 @@
         },
 
         
-
 
 
 
@@ -225,11 +267,13 @@
 
 
 
+
         minimize_window: function(context=null) {
             return window.test_driver_internal.minimize_window(context);
         },
 
         
+
 
 
 
@@ -270,6 +314,17 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
         action_sequence: function(actions, context=null) {
             return window.test_driver_internal.action_sequence(actions, context);
         },
@@ -288,11 +343,18 @@
 
 
 
+
+
+
         generate_test_report: function(message, context=null) {
             return window.test_driver_internal.generate_test_report(message, context);
         },
 
         
+
+
+
+
 
 
 
@@ -340,6 +402,9 @@
 
 
 
+
+
+
         add_virtual_authenticator: function(config, context=null) {
             return window.test_driver_internal.add_virtual_authenticator(config, context);
         },
@@ -361,11 +426,16 @@
 
 
 
+
+
+
         remove_virtual_authenticator: function(authenticator_id, context=null) {
             return window.test_driver_internal.remove_virtual_authenticator(authenticator_id, context);
         },
 
         
+
+
 
 
 
@@ -405,11 +475,16 @@
 
 
 
+
+
+
         get_credentials: function(authenticator_id, context=null) {
             return window.test_driver_internal.get_credentials(authenticator_id, context=null);
         },
 
         
+
+
 
 
 
@@ -442,11 +517,16 @@
 
 
 
+
+
         remove_all_credentials: function(authenticator_id, context=null) {
             return window.test_driver_internal.remove_all_credentials(authenticator_id, context);
         },
 
         
+
+
+
 
 
 
@@ -484,6 +564,8 @@
 
 
 
+
+
         set_storage_access: function(origin, embedding_origin, state, context=null) {
             if (state !== "allowed" && state !== "blocked") {
                 throw new Error("storage access status must be 'allowed' or 'blocked'");
@@ -493,6 +575,26 @@
         },
 
         
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

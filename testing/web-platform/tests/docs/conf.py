@@ -48,6 +48,7 @@ extensions = [
     'sphinx.ext.intersphinx',
     
     'sphinx.ext.napoleon',
+    'sphinx_js'
 ]
 
 
@@ -96,6 +97,9 @@ exclude_patterns = [
     '**/.DS_Store',
     '**/Thumbs.db',
     '_build',
+    'node_modules',
+    'package.json',
+    'package-lock.json',
 ]
 
 from docs.wpt_lint_rules import WPTLintRules
@@ -138,6 +142,10 @@ html_static_path = ['assets']
 
 
 
+
+
+
+js_source_path = '../resources'
 
 
 

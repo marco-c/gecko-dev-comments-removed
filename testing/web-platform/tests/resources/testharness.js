@@ -545,6 +545,21 @@
     
 
 
+
+
+
+
+    
+
+
+
+
+
+
+
+
+
+
     function test(func, name, properties)
     {
         if (tests.promise_setup_called) {
@@ -575,6 +590,17 @@
             test_obj.done();
         }
     }
+
+    
+
+
+
+
+
+
+
+
+
 
     function async_test(func, name, properties)
     {
@@ -618,6 +644,19 @@
         }
         return test_obj;
     }
+
+    
+
+
+
+
+
+
+
+
+
+
+
 
     function promise_test(func, name, properties) {
         if (typeof func !== "function") {
@@ -691,9 +730,20 @@
 
 
 
+
     function bring_promise_to_current_realm(promise) {
         return new Promise(promise.then.bind(promise));
     }
+
+    
+
+
+
+
+
+
+
+
 
     function promise_rejects_js(test, constructor, promise, description) {
         return bring_promise_to_current_realm(promise)
@@ -705,6 +755,17 @@
     }
 
     
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -745,6 +806,16 @@
             });
     }
 
+    
+
+
+
+
+
+
+
+
+
     function promise_rejects_exactly(test, exception, promise, description) {
         return bring_promise_to_current_realm(promise)
             .then(test.unreached_func("Should have rejected: " + description))
@@ -755,6 +826,20 @@
     }
 
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -822,9 +907,6 @@
 
 
 
-
-
-
         this.wait_for = function(types, options) {
             if (waitingFor) {
                 return Promise.reject('Already waiting for an event or events');
@@ -865,6 +947,9 @@
             });
         };
 
+        
+
+
         function stop_watching() {
             for (var i = 0; i < eventTypes.length; i++) {
                 watchedNode.removeEventListener(eventTypes[i], eventHandler, false);
@@ -876,6 +961,46 @@
         return this;
     }
     expose(EventWatcher, 'EventWatcher');
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+
+
+
+
+
 
     function setup(func_or_properties, maybe_properties)
     {
@@ -893,7 +1018,18 @@
         test_environment.on_new_harness_properties(properties);
     }
 
-    function promise_setup(func, maybe_properties)
+    
+
+
+
+
+
+
+
+
+
+
+    function promise_setup(func, properties={})
     {
         if (typeof func !== "function") {
             tests.set_status(tests.status.ERROR,
@@ -910,7 +1046,6 @@
         tests.promise_tests = tests.promise_tests
             .then(function()
                   {
-                      var properties = maybe_properties || {};
                       var result;
 
                       tests.setup(null, properties);
@@ -930,6 +1065,17 @@
                        tests.complete();
                    });
     }
+
+    
+
+
+
+
+
+
+
+
+
 
     function done() {
         if (tests.tests.length === 0) {
@@ -952,6 +1098,20 @@
         tests.end_wait();
     }
 
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
     function generate_tests(func, args, properties) {
         forEach(args, function(x, i)
                 {
@@ -971,17 +1131,29 @@
 
 
 
+
+
+
+
     function on_event(object, event, callback)
     {
         object.addEventListener(event, callback, false);
     }
 
-    function step_timeout(f, t) {
+    
+
+
+
+
+
+
+
+    function step_timeout(func, timeout) {
         var outer_this = this;
         var args = Array.prototype.slice.call(arguments, 2);
         return setTimeout(function() {
-            f.apply(outer_this, args);
-        }, t * tests.timeout_multiplier);
+            func.apply(outer_this, args);
+        }, timeout * tests.timeout_multiplier);
     }
 
     expose(test, 'test');
@@ -1080,6 +1252,28 @@
     };
 
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     function format_value(val, seen)
@@ -1187,12 +1381,8 @@
                 status = Test.statuses.PASS;
                 return rv;
             } catch(e) {
-                if (e instanceof AssertionError) {
-                    status = Test.statuses.FAIL;
-                    stack = e.stack;
-                 } else {
-                    status = Test.statuses.ERROR;
-                 }
+                status = Test.statuses.FAIL;
+                stack = e.stack ? e.stack : null;
                 throw e;
             } finally {
                 if (tests.output && !stack) {
@@ -1206,12 +1396,24 @@
         expose(assert_wrapper, name);
     }
 
+    
+
+
+
+
+
     function assert_true(actual, description)
     {
         assert(actual === true, "assert_true", description,
                                 "expected true got ${actual}", {actual:actual});
     }
     expose_assert(assert_true, "assert_true");
+
+    
+
+
+
+
 
     function assert_false(actual, description)
     {
@@ -1232,6 +1434,17 @@
         return x === y;
     }
 
+    
+
+
+
+
+
+
+
+
+
+
     function assert_equals(actual, expected, description)
     {
          
@@ -1250,17 +1463,31 @@
     }
     expose_assert(assert_equals, "assert_equals");
 
+    
+
+
+
+
+
+
+
+
     function assert_not_equals(actual, expected, description)
     {
-         
-
-
-
         assert(!same_value(actual, expected), "assert_not_equals", description,
                                               "got disallowed value ${actual}",
                                               {actual:actual});
     }
     expose_assert(assert_not_equals, "assert_not_equals");
+
+    
+
+
+
+
+
+
+
 
     function assert_in_array(actual, expected, description)
     {
@@ -1272,6 +1499,18 @@
 
     
     
+    
+
+
+
+
+
+
+
+
+
+
+
     function assert_object_equals(actual, expected, description)
     {
          assert(typeof actual === "object" && actual !== null, "assert_object_equals", description,
@@ -1307,6 +1546,14 @@
          check_equal(actual, expected, []);
     }
     expose_assert(assert_object_equals, "assert_object_equals");
+
+    
+
+
+
+
+
+
 
     function assert_array_equals(actual, expected, description)
     {
@@ -1365,6 +1612,16 @@
     }
     expose_assert(assert_array_equals, "assert_array_equals");
 
+    
+
+
+
+
+
+
+
+
+
     function assert_array_approx_equals(actual, expected, epsilon, description)
     {
         
@@ -1393,6 +1650,14 @@
     }
     expose_assert(assert_array_approx_equals, "assert_array_approx_equals");
 
+    
+
+
+
+
+
+
+
     function assert_approx_equals(actual, expected, epsilon, description)
     {
         
@@ -1416,6 +1681,13 @@
     }
     expose_assert(assert_approx_equals, "assert_approx_equals");
 
+    
+
+
+
+
+
+
     function assert_less_than(actual, expected, description)
     {
         
@@ -1433,6 +1705,13 @@
     }
     expose_assert(assert_less_than, "assert_less_than");
 
+    
+
+
+
+
+
+
     function assert_greater_than(actual, expected, description)
     {
         
@@ -1449,6 +1728,15 @@
                {expected:expected, actual:actual});
     }
     expose_assert(assert_greater_than, "assert_greater_than");
+
+    
+
+
+
+
+
+
+
 
     function assert_between_exclusive(actual, lower, upper, description)
     {
@@ -1468,6 +1756,14 @@
     }
     expose_assert(assert_between_exclusive, "assert_between_exclusive");
 
+    
+
+
+
+
+
+
+
     function assert_less_than_equal(actual, expected, description)
     {
         
@@ -1485,6 +1781,14 @@
     }
     expose_assert(assert_less_than_equal, "assert_less_than_equal");
 
+    
+
+
+
+
+
+
+
     function assert_greater_than_equal(actual, expected, description)
     {
         
@@ -1501,6 +1805,15 @@
                {expected:expected, actual:actual});
     }
     expose_assert(assert_greater_than_equal, "assert_greater_than_equal");
+
+    
+
+
+
+
+
+
+
 
     function assert_between_inclusive(actual, lower, upper, description)
     {
@@ -1520,6 +1833,13 @@
     }
     expose_assert(assert_between_inclusive, "assert_between_inclusive");
 
+    
+
+
+
+
+
+
     function assert_regexp_match(actual, expected, description) {
         
 
@@ -1531,6 +1851,14 @@
     }
     expose_assert(assert_regexp_match, "assert_regexp_match");
 
+    
+
+
+
+
+
+
+
     function assert_class_string(object, class_string, description) {
         var actual = {}.toString.call(object);
         var expected = "[object " + class_string + "]";
@@ -1540,12 +1868,26 @@
     }
     expose_assert(assert_class_string, "assert_class_string");
 
+    
+
+
+
+
+
+
     function assert_own_property(object, property_name, description) {
         assert(object.hasOwnProperty(property_name),
                "assert_own_property", description,
                "expected property ${p} missing", {p:property_name});
     }
     expose_assert(assert_own_property, "assert_own_property");
+
+    
+
+
+
+
+
 
     function assert_not_own_property(object, property_name, description) {
         assert(!object.hasOwnProperty(property_name),
@@ -1579,8 +1921,43 @@
                    {p:property_name});
         };
     }
-    expose_assert(_assert_inherits("assert_inherits"), "assert_inherits");
-    expose_assert(_assert_inherits("assert_idl_attribute"), "assert_idl_attribute");
+
+    
+
+
+
+
+
+
+
+    function assert_inherits(object, property_name, description) {
+        return _assert_inherits("assert_inherits")(object, property_name, description);
+    }
+    expose_assert(assert_inherits, "assert_inherits");
+
+    
+
+
+
+
+
+
+    function assert_idl_attribute(object, property_name, description) {
+        return _assert_inherits("assert_idl_attribute")(object, property_name, description);
+    }
+    expose_assert(assert_idl_attribute, "assert_idl_attribute");
+
+
+    
+
+
+
+
+
+
+
+
+
 
     function assert_readonly(object, property_name, description)
     {
@@ -1670,6 +2047,15 @@
     }
 
     
+    
+    
+    
+
+
+
+
+
+
 
 
 
@@ -1896,15 +2282,43 @@
         }
     }
 
+    
+
+
+
+
+
     function assert_unreached(description) {
          assert(false, "assert_unreached", description,
                 "Reached unreachable code");
     }
     expose_assert(assert_unreached, "assert_unreached");
 
-    function assert_any(assert_func, actual, expected_array)
+    
+
+
+
+
+
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    function assert_any(assert_func, actual, expected_array, ...args)
     {
-        var args = [].slice.call(arguments, 3);
         var errors = [];
         var passed = false;
         forEach(expected_array,
@@ -1961,18 +2375,30 @@
             throw new OptionalFeatureUnsupportedError(description);
         }
     }
-    expose_assert(assert_implements_optional, "assert_implements_optional")
+    expose_assert(assert_implements_optional, "assert_implements_optional");
+
+    
+
+
+
+
+
+
+
+
 
     function Test(name, properties)
     {
         if (tests.file_is_test && tests.tests.length) {
             throw new Error("Tried to create a test with file_is_test");
         }
+        
         this.name = name;
 
         this.phase = (tests.is_aborted || tests.phase === tests.phases.COMPLETE) ?
             this.phases.COMPLETE : this.phases.INITIAL;
 
+        
         this.status = this.NOTRUN;
         this.timeout_id = null;
         this.index = null;
@@ -1983,7 +2409,9 @@
             this.timeout_length *= tests.timeout_multiplier;
         }
 
+        
         this.message = null;
+        
         this.stack = null;
 
         this.steps = [];
@@ -2002,6 +2430,16 @@
 
         tests.push(this);
     }
+
+    
+
+
+
+
+
+
+
+
 
     Test.statuses = {
         PASS:0,
@@ -2052,6 +2490,15 @@
         return this._structured_clone;
     };
 
+    
+
+
+
+
+
+
+
+
     Test.prototype.step = function(func, this_obj)
     {
         if (this.phase > this.phases.STARTED) {
@@ -2101,6 +2548,26 @@
         }
     };
 
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     Test.prototype.step_func = function(func, this_obj)
     {
         var test_this = this;
@@ -2115,6 +2582,18 @@
                 Array.prototype.slice.call(arguments)));
         };
     };
+
+    
+
+
+
+
+
+
+
+
+
+
 
     Test.prototype.step_func_done = function(func, this_obj)
     {
@@ -2134,6 +2613,14 @@
         };
     };
 
+    
+
+
+
+
+
+
+
     Test.prototype.unreached_func = function(description)
     {
         return this.step_func(function() {
@@ -2141,37 +2628,68 @@
         });
     };
 
-    Test.prototype.step_timeout = function(f, timeout) {
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    Test.prototype.step_timeout = function(func, timeout) {
         var test_this = this;
         var args = Array.prototype.slice.call(arguments, 2);
         return setTimeout(this.step_func(function() {
-            return f.apply(test_this, args);
+            return func.apply(test_this, args);
         }), timeout * tests.timeout_multiplier);
     };
 
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     Test.prototype.step_wait_func = function(cond, func, description,
                                              timeout=3000, interval=100) {
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         var timeout_full = timeout * tests.timeout_multiplier;
         var remaining = Math.ceil(timeout_full / interval);
         var test_this = this;
@@ -2192,57 +2710,62 @@
         wait_for_inner();
     };
 
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     Test.prototype.step_wait_func_done = function(cond, func, description,
                                                   timeout=3000, interval=100) {
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
          this.step_wait_func(cond, () => {
             if (func) {
                 func();
             }
             this.done();
          }, description, timeout, interval);
-    }
+    };
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     Test.prototype.step_wait = function(cond, description, timeout=3000, interval=100) {
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         return new Promise(resolve => {
             this.step_wait_func(cond, resolve, description, timeout, interval);
         });
@@ -2259,6 +2782,11 @@
     };
 
     
+
+
+
+
+
 
 
 
@@ -2287,6 +2815,9 @@
         this.stack = stack ? stack : null;
     };
 
+    
+
+
     Test.prototype.timeout = function()
     {
         this.timeout_id = null;
@@ -2295,9 +2826,22 @@
         this.done();
     };
 
-    Test.prototype.force_timeout = Test.prototype.timeout;
+    
+
+
+
+
+    Test.prototype.force_timeout = function() {
+        return this.timeout();
+    };
 
     
+
+
+
+
+
+
 
 
 
@@ -2318,7 +2862,7 @@
         if (settings.debug) {
             console.log("TEST DONE",
                         this.status,
-                        this.name,)
+                        this.name);
         }
 
         this.cleanup();
@@ -2677,10 +3221,22 @@
 
     function TestsStatus()
     {
+        
         this.status = null;
+        
         this.message = null;
+        
         this.stack = null;
     }
+
+    
+
+
+
+
+
+
+
 
     TestsStatus.statuses = {
         OK:0,
@@ -2696,8 +3252,7 @@
         1: "Error",
         2: "Timeout",
         3: "Optional Feature Unsupported"
-    }
-
+    };
 
     TestsStatus.prototype.structured_clone = function()
     {
@@ -2715,13 +3270,25 @@
 
     TestsStatus.prototype.format_status = function() {
         return this.formats[this.status];
-    }
+    };
+
+    
+
+
+
+
+
+
 
     function AssertRecord(test, assert_name, args = []) {
+        
         this.assert_name = assert_name;
+        
         this.test = test;
         
+        
         this.args = args.map(x => format_value(x).replace(/\n/g, " "));
+        
         this.status = null;
     }
 
@@ -2731,8 +3298,8 @@
             test: this.test ? this.test.structured_clone() : null,
             args: this.args,
             status: this.status,
-        }
-    }
+        };
+    };
 
     function Tests()
     {
@@ -3179,6 +3746,14 @@
         return remoteContext.done;
     };
 
+    
+
+
+
+
+
+
+
     function fetch_tests_from_worker(port) {
         return tests.fetch_tests_from_worker(port);
     }
@@ -3192,10 +3767,28 @@
         this.pending_remotes.push(this.create_remote_window(remote));
     };
 
+    
+
+
+
+
+
+
+
+
+
+
     function fetch_tests_from_window(window) {
         tests.fetch_tests_from_window(window);
     }
     expose(fetch_tests_from_window, 'fetch_tests_from_window');
+
+    
+
+
+
+
+
 
     function timeout() {
         if (tests.timeout_length === null) {
@@ -3204,17 +3797,48 @@
     }
     expose(timeout, 'timeout');
 
+    
+
+
+
+
+
     function add_start_callback(callback) {
         tests.start_callbacks.push(callback);
     }
+
+    
+
+
+
+
 
     function add_test_state_callback(callback) {
         tests.test_state_callbacks.push(callback);
     }
 
+    
+
+
+
+
+
     function add_result_callback(callback) {
         tests.test_done_callbacks.push(callback);
     }
+
+    
+
+
+
+
+
+
+
+
+
+
+
 
     function add_completion_callback(callback) {
         tests.all_done_callbacks.push(callback);
@@ -3770,6 +4394,12 @@
         }
     }
 
+    
+
+
+
+
+
     function AssertionError(message)
     {
         if (typeof message == "string") {
@@ -3889,6 +4519,8 @@
     }
 
     
+
+
 
 
 
