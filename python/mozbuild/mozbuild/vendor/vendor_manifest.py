@@ -69,7 +69,16 @@ class VendorManifest(MozbuildObject):
             "Latest {ref_type} is {ref} from {timestamp}",
         )
 
+        
+        if "patches" in self.manifest["vendoring"] and patch_mode == "only":
+            self.import_local_patches(
+                self.manifest["vendoring"]["patches"],
+                self.manifest["vendoring"]["vendor-directory"],
+            )
+            return
+
         if self.manifest["origin"]["revision"] == ref:
+            
             self.log(
                 logging.INFO,
                 "vendor",
@@ -78,25 +87,9 @@ class VendorManifest(MozbuildObject):
             )
             return
         elif check_for_update:
+            
             print("%s %s" % (ref, timestamp))
             return
-
-        if "patches" in self.manifest["vendoring"]:
-            if patch_mode == "only":
-                self.import_local_patches(
-                    self.manifest["vendoring"]["patches"],
-                    self.manifest["vendoring"]["vendor-directory"],
-                )
-                return
-            else:
-                self.log(
-                    logging.INFO,
-                    "vendor",
-                    {},
-                    "Patches present in manifest please run "
-                    "'./mach vendor --patch-mode only' after commits from upstream "
-                    "have been vendored.",
-                )
 
         if self.should_perform_step("fetch"):
             self.fetch_and_unpack(ref)
@@ -147,6 +140,16 @@ class VendorManifest(MozbuildObject):
             {"revision": revision},
             "Update to version '{revision}' completed.",
         )
+
+        if "patches" in self.manifest["vendoring"]:
+            
+            self.log(
+                logging.CRITICAL,
+                "vendor",
+                {},
+                "Patches present in manifest!!! Please run "
+                "'./mach vendor --patch-mode only' after commiting changes.",
+            )
 
     def get_source_host(self):
         if self.manifest["vendoring"]["source-hosting"] == "gitlab":
