@@ -31,7 +31,8 @@
 #include "js/ContextOptions.h"
 #include "js/PropertyAndElement.h"  
 #include "js/RegExp.h"
-#include "js/RegExpFlags.h"  
+#include "js/RegExpFlags.h"           
+#include "js/friend/ErrorMessages.h"  
 #include "mozilla/ExtensionPolicyService.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Preferences.h"
@@ -1189,8 +1190,8 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
 #endif
 
 
-bool nsContentSecurityUtils::ValidateScriptFilename(const char* aFilename,
-                                                    bool aIsSystemRealm) {
+bool nsContentSecurityUtils::ValidateScriptFilename(JSContext* cx,
+                                                    const char* aFilename) {
   
   if (StaticPrefs::security_allow_parent_unrestricted_js_loads()) {
     return true;
@@ -1320,8 +1321,7 @@ bool nsContentSecurityUtils::ValidateScriptFilename(const char* aFilename,
 
   
   MOZ_LOG(sCSMLog, LogLevel::Error,
-          ("ValidateScriptFilename System:%i %s\n", (aIsSystemRealm ? 1 : 0),
-           aFilename));
+          ("ValidateScriptFilename Failed: %s\n", aFilename));
 
   
   FilenameTypeAndDetails fileNameTypeAndDetails =
@@ -1360,10 +1360,22 @@ bool nsContentSecurityUtils::ValidateScriptFilename(const char* aFilename,
 #elif defined(FUZZING)
   auto crashString = nsContentSecurityUtils::SmartFormatCrashString(
       aFilename,
-      NS_ConvertUTF16toUTF8(fileNameTypeAndDetails.second.value()).get(),
+      fileNameTypeAndDetails.second.isSome()
+          ? NS_ConvertUTF16toUTF8(fileNameTypeAndDetails.second.value()).get()
+          : "(None)",
       "Blocking a script load %s from file %s");
   MOZ_CRASH_UNSAFE_PRINTF("%s", crashString.get());
 #endif
+
+  
+  const char* utf8Filename;
+  if (mozilla::IsUtf8(mozilla::MakeStringSpan(aFilename))) {
+    utf8Filename = aFilename;
+  } else {
+    utf8Filename = "(invalid UTF-8 filename)";
+  }
+  JS_ReportErrorNumberUTF8(cx, js::GetErrorMessage, nullptr,
+                           JSMSG_UNSAFE_FILENAME, utf8Filename);
 
   
   
