@@ -89,6 +89,7 @@
 #include "plstr.h"
 #include "prlink.h"
 #include "xpcpublic.h"
+#include "js/RootingAPI.h"
 #ifdef MOZ_BACKGROUNDTASKS
 #  include "mozilla/BackgroundTasks.h"
 #endif
@@ -1306,6 +1307,7 @@ static void AddAccessCount(const nsACString& aPrefName) {
   
   
   if (NS_IsMainThread()) {
+    JS::AutoSuppressGCAnalysis nogc;  
     uint32_t& count = gAccessCounts->LookupOrInsert(aPrefName);
     count++;
   }
