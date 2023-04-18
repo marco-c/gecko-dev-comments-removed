@@ -4098,6 +4098,13 @@ TEST(GeckoProfiler, CPUUsage)
       
       
       PR_Sleep(PR_MillisecondsToInterval(PROFILER_DEFAULT_INTERVAL * 10));
+
+      
+      
+      const TimeStamp target =
+          TimeStamp::Now() + TimeDuration::FromMilliseconds(2);
+      while (TimeStamp::Now() < target) {
+      }
     }
   });
 
