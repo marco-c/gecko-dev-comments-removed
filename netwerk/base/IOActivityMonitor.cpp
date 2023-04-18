@@ -108,7 +108,8 @@ class ActivityMonitorSecret final {
 
       
       default: {
-        mLocation.AppendPrintf("fd://%d", PR_FileDesc2NativeHandle(mFd));
+        mLocation.AppendLiteral("fd://");
+        mLocation.AppendInt(PR_FileDesc2NativeHandle(mFd));
       }
     }  
   }

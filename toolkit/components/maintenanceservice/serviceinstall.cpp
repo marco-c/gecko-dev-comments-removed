@@ -562,7 +562,7 @@ BOOL StopService() {
   
   
   WaitForProcessExit(L"maintenanceservice.exe", 30);
-  LOG(("Done waiting for service stop, last service state: %d", lastState));
+  LOG(("Done waiting for service stop, last service state: %lu", lastState));
 
   return lastState == SERVICE_STOPPED;
 }
