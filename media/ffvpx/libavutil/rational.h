@@ -211,4 +211,10 @@ uint32_t av_q2intfloat(AVRational q);
 
 
 
+AVRational av_gcd_q(AVRational a, AVRational b, int max_den, AVRational def);
+
+
+
+
+
 #endif 

@@ -68,7 +68,32 @@ int av_timecode_adjust_ntsc_framenum2(int framenum, int fps);
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 uint32_t av_timecode_get_smpte_from_framenum(const AVTimecode *tc, int framenum);
+
+
+
+
+
+
+
+
+
+
+
+
+uint32_t av_timecode_get_smpte(AVRational rate, int drop, int hh, int mm, int ss, int ff);
 
 
 
@@ -83,6 +108,23 @@ uint32_t av_timecode_get_smpte_from_framenum(const AVTimecode *tc, int framenum)
 
 
 char *av_timecode_make_string(const AVTimecode *tc, char *buf, int framenum);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+char *av_timecode_make_smpte_tc_string2(char *buf, AVRational rate, uint32_t tcsmpte, int prevent_df, int skip_field);
 
 
 
@@ -117,6 +159,23 @@ char *av_timecode_make_mpeg_tc_string(char *buf, uint32_t tc25bit);
 
 
 int av_timecode_init(AVTimecode *tc, AVRational rate, int flags, int frame_start, void *log_ctx);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int av_timecode_init_from_components(AVTimecode *tc, AVRational rate, int flags, int hh, int mm, int ss, int ff, void *log_ctx);
 
 
 
