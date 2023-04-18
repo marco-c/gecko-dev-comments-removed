@@ -18,7 +18,6 @@ struct nsRoleMapEntry;
 namespace mozilla {
 namespace a11y {
 
-class AccAttributes;
 class HyperTextAccessibleBase;
 class LocalAccessible;
 class RemoteAccessible;
@@ -163,11 +162,6 @@ class Accessible {
 
 
   virtual uint32_t StartOffset();
-
-  
-
-
-  virtual already_AddRefed<AccAttributes> Attributes() = 0;
 
   
 
