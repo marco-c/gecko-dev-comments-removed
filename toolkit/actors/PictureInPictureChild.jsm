@@ -1222,6 +1222,22 @@ class PictureInPictureChild extends JSWindowActorChild {
 
 
 
+  createTextTracksStyleSheet() {
+    let headStyleElement = this.document.createElement("link");
+    headStyleElement.setAttribute("rel", "stylesheet");
+    headStyleElement.setAttribute(
+      "href",
+      "chrome://global/skin/pictureinpicture/texttracks.css"
+    );
+    headStyleElement.setAttribute("type", "text/css");
+    return headStyleElement;
+  }
+
+  
+
+
+
+
 
 
 
@@ -1306,9 +1322,6 @@ class PictureInPictureChild extends JSWindowActorChild {
       let cueTextNode = WebVTT.convertCueToDOMTree(playerVideoWindow, text);
       let cueDiv = this.document.createElement("div");
       cueDiv.appendChild(cueTextNode);
-      
-      
-      cueDiv.style = "white-space: pre;";
       pipWindowTracksContainer.appendChild(cueDiv);
     });
   }
@@ -1773,17 +1786,11 @@ class PictureInPictureChild extends JSWindowActorChild {
     
     
     textTracks.id = "texttracks";
-    
-    textTracks.style.position = "absolute";
-    textTracks.style.textAlign = "center";
-    textTracks.style.width = "100vw";
-    textTracks.style.bottom = "30px";
-    textTracks.style.backgroundColor = "black";
-    textTracks.style.color = "white";
-    textTracks.style.whiteSpace = "pre-wrap";
-
     doc.body.appendChild(playerVideo);
     doc.body.appendChild(textTracks);
+    
+    let textTracksStyleSheet = this.createTextTracksStyleSheet();
+    doc.head.appendChild(textTracksStyleSheet);
 
     originatingVideo.cloneElementVisually(playerVideo);
 
