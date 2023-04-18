@@ -14,6 +14,44 @@
 #include "nsXULAppAPI.h"
 #include "nsIFile.h"
 
+
+
+
+
+
+static_assert(nsICrashService::PROCESS_TYPE_MAIN ==
+                  (int)GeckoProcessType_Default,
+              "GeckoProcessType enum is out of sync with nsICrashService!");
+static_assert(nsICrashService::PROCESS_TYPE_CONTENT ==
+                  (int)GeckoProcessType_Content,
+              "GeckoProcessType enum is out of sync with nsICrashService!");
+static_assert(nsICrashService::PROCESS_TYPE_IPDLUNITTEST ==
+                  (int)GeckoProcessType_IPDLUnitTest,
+              "GeckoProcessType enum is out of sync with nsICrashService!");
+static_assert(nsICrashService::PROCESS_TYPE_GMPLUGIN ==
+                  (int)GeckoProcessType_GMPlugin,
+              "GeckoProcessType enum is out of sync with nsICrashService!");
+static_assert(nsICrashService::PROCESS_TYPE_GPU == (int)GeckoProcessType_GPU,
+              "GeckoProcessType enum is out of sync with nsICrashService!");
+static_assert(nsICrashService::PROCESS_TYPE_VR == (int)GeckoProcessType_VR,
+              "GeckoProcessType enum is out of sync with nsICrashService!");
+static_assert(nsICrashService::PROCESS_TYPE_RDD == (int)GeckoProcessType_RDD,
+              "GeckoProcessType enum is out of sync with nsICrashService!");
+static_assert(nsICrashService::PROCESS_TYPE_SOCKET ==
+                  (int)GeckoProcessType_Socket,
+              "GeckoProcessType enum is out of sync with nsICrashService!");
+static_assert(nsICrashService::PROCESS_TYPE_SANDBOX_BROKER ==
+                  (int)GeckoProcessType_RemoteSandboxBroker,
+              "GeckoProcessType enum is out of sync with nsICrashService!");
+static_assert(nsICrashService::PROCESS_TYPE_FORKSERVER ==
+                  (int)GeckoProcessType_ForkServer,
+              "GeckoProcessType enum is out of sync with nsICrashService!");
+
+
+static_assert(nsICrashService::PROCESS_TYPE_FORKSERVER + 1 ==
+                  (int)GeckoProcessType_End,
+              "GeckoProcessType enum is out of sync with nsICrashService!");
+
 namespace mozilla {
 namespace ipc {
 
@@ -102,11 +140,10 @@ void CrashReporterHost::RecordCrashWithTelemetry(GeckoProcessType aProcessType,
   nsCString key;
 
   switch (aProcessType) {
-#define GECKO_PROCESS_TYPE(enum_value, enum_name, string_name, proc_typename, \
-                           process_bin_type, procinfo_typename,               \
-                           webidl_typename, allcaps_name)                     \
-  case GeckoProcessType_##enum_name:                                          \
-    key.AssignLiteral(string_name);                                           \
+#define GECKO_PROCESS_TYPE(enum_value, enum_name, string_name, xre_name, \
+                           bin_type)                                     \
+  case GeckoProcessType_##enum_name:                                     \
+    key.AssignLiteral(string_name);                                      \
     break;
 #include "mozilla/GeckoProcessTypes.h"
 #undef GECKO_PROCESS_TYPE

@@ -160,7 +160,26 @@ var CrashManager = function(options) {
 };
 
 CrashManager.prototype = Object.freeze({
-#includesubst @OBJDIR@/GeckoProcessTypes_CrashManager_map.js
+  
+  PROCESS_TYPE_MAIN: "main",
+
+  
+  PROCESS_TYPE_CONTENT: "content",
+
+  
+  PROCESS_TYPE_GMPLUGIN: "gmplugin",
+
+  
+  PROCESS_TYPE_GPU: "gpu",
+
+  
+  PROCESS_TYPE_VR: "vr",
+
+  
+  PROCESS_TYPE_RDD: "rdd",
+
+  
+  PROCESS_TYPE_SOCKET: "socket",
 
   
   CRASH_TYPE_CRASH: "crash",
@@ -452,56 +471,19 @@ CrashManager.prototype = Object.freeze({
         deferred.resolve();
       }
 
+      
       if (
-        this.isValidProcessType(processType) && this.isPingAllowed(processType)
+        processType === this.PROCESS_TYPE_CONTENT ||
+        processType === this.PROCESS_TYPE_GPU ||
+        processType === this.PROCESS_TYPE_VR ||
+        processType === this.PROCESS_TYPE_RDD ||
+        processType === this.PROCESS_TYPE_SOCKET
       ) {
         this._sendCrashPing(id, processType, date, metadata);
       }
     })();
 
     return promise;
-  },
-
-  
-
-
-
-
-
-
-
-
-  isValidProcessType(processType) {
-    if (typeof(processType) !== "string") {
-      return false;
-    }
-
-    for (const pt of Object.values(this.processTypes)) {
-      if (pt === processType) {
-        return true;
-      }
-    }
-
-    return false;
-  },
-
-  
-
-
-
-
-
-
-  isPingAllowed(processType) {
-#includesubst @OBJDIR@/GeckoProcessTypes_CrashManager_pings.js
-
-    
-    
-    if (!(processType in processPings)) {
-      return false;
-    }
-
-    return processPings[processType];
   },
 
   
@@ -745,7 +727,7 @@ CrashManager.prototype = Object.freeze({
         let crashID = lines[0];
         let metadata = JSON.parse(lines[1]);
         store.addCrash(
-          this.processTypes[Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT],
+          this.PROCESS_TYPE_MAIN,
           this.CRASH_TYPE_CRASH,
           crashID,
           date,
@@ -756,7 +738,7 @@ CrashManager.prototype = Object.freeze({
           
           
           
-          this._sendCrashPing(crashID, this.processTypes[Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT], date, metadata);
+          this._sendCrashPing(crashID, this.PROCESS_TYPE_MAIN, date, metadata);
         }
 
         break;
@@ -765,7 +747,7 @@ CrashManager.prototype = Object.freeze({
         if (lines.length == 3) {
           let [crashID, result, remoteID] = lines;
           store.addCrash(
-            this.processTypes[Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT],
+            this.PROCESS_TYPE_MAIN,
             this.CRASH_TYPE_CRASH,
             crashID,
             date
@@ -1304,7 +1286,7 @@ CrashStore.prototype = Object.freeze({
 
       if (
         count > this.HIGH_WATER_DAILY_THRESHOLD &&
-        processType != CrashManager.prototype.processTypes[Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT]
+        processType != CrashManager.prototype.PROCESS_TYPE_MAIN
       ) {
         return null;
       }
@@ -1368,12 +1350,6 @@ CrashStore.prototype = Object.freeze({
     crash.remoteID = remoteID;
     return true;
   },
-
-  
-
-
-
-
 
   getCrashesOfType(processType, crashType) {
     let crashes = [];
