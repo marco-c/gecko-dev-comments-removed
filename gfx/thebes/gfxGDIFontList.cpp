@@ -111,10 +111,7 @@ GDIFontEntry::GDIFontEntry(const nsACString& aFaceName,
                            gfxWindowsFontType aFontType, SlantStyleRange aStyle,
                            WeightRange aWeight, StretchRange aStretch,
                            gfxUserFontData* aUserFontData)
-    : gfxFontEntry(aFaceName),
-      mFontType(aFontType),
-      mForceGDI(false),
-      mUnicodeRanges() {
+    : gfxFontEntry(aFaceName), mFontType(aFontType), mForceGDI(false) {
   mUserFontData.reset(aUserFontData);
   mStyleRange = aStyle;
   mWeightRange = aWeight;
@@ -403,10 +400,11 @@ static bool ShouldIgnoreItalicStyle(const nsACString& aName) {
 
 int CALLBACK GDIFontFamily::FamilyAddStylesProc(
     const ENUMLOGFONTEXW* lpelfe, const NEWTEXTMETRICEXW* nmetrics,
-    DWORD fontType, LPARAM data) {
+    DWORD fontType, LPARAM data) NO_THREAD_SAFETY_ANALYSIS {
   const NEWTEXTMETRICW& metrics = nmetrics->ntmTm;
   LOGFONTW logFont = lpelfe->elfLogFont;
   GDIFontFamily* ff = reinterpret_cast<GDIFontFamily*>(data);
+  MOZ_ASSERT(ff->mLock.LockedForWritingByCurrentThread());
 
   if (logFont.lfItalic && ShouldIgnoreItalicStyle(ff->mName)) {
     return 1;
@@ -458,22 +456,7 @@ int CALLBACK GDIFontFamily::FamilyAddStylesProc(
     return 1;
   }
 
-  MOZ_ASSERT(ff->mLock.LockedForWritingByCurrentThread());
   ff->AddFontEntryLocked(fe);
-
-  if (nmetrics->ntmFontSig.fsUsb[0] != 0x00000000 &&
-      nmetrics->ntmFontSig.fsUsb[1] != 0x00000000 &&
-      nmetrics->ntmFontSig.fsUsb[2] != 0x00000000 &&
-      nmetrics->ntmFontSig.fsUsb[3] != 0x00000000) {
-    
-    uint32_t x = 0;
-    for (uint32_t i = 0; i < 4; ++i) {
-      DWORD range = nmetrics->ntmFontSig.fsUsb[i];
-      for (uint32_t k = 0; k < 32; ++k) {
-        fe->mUnicodeRanges.set(x++, (range & (1 << k)) != 0);
-      }
-    }
-  }
 
   if (LOG_FONTLIST_ENABLED()) {
     LOG_FONTLIST(
@@ -649,6 +632,7 @@ int CALLBACK gfxGDIFontList::EnumFontFamExProc(ENUMLOGFONTEXW* lpelfe,
   NS_ConvertUTF16toUTF8 key(name);
 
   gfxGDIFontList* fontList = PlatformFontList();
+  fontList->mLock.AssertCurrentThreadIn();
 
   if (!fontList->mFontFamilies.Contains(key)) {
     NS_ConvertUTF16toUTF8 faceName(lf.lfFaceName);
@@ -683,9 +667,9 @@ gfxFontEntry* gfxGDIFontList::LookupLocalFont(nsPresContext* aPresContext,
                                               WeightRange aWeightForEntry,
                                               StretchRange aStretchForEntry,
                                               SlantStyleRange aStyleForEntry) {
-  gfxFontEntry* lookup;
+  AutoLock lock(mLock);
 
-  lookup = LookupInFaceNameLists(aFontName);
+  gfxFontEntry* lookup = LookupInFaceNameLists(aFontName);
   if (!lookup) {
     return nullptr;
   }

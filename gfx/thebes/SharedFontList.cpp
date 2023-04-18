@@ -1116,6 +1116,7 @@ Family* FontList::FindFamily(const nsCString& aName, bool aPrimaryNameOnly) {
   
   if (aName.Contains(' ')) {
     auto pfl = gfxPlatformFontList::PlatformFontList();
+    pfl->mLock.AssertCurrentThreadIn();
     if (header.mAliasCount) {
       
       
