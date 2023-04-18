@@ -172,7 +172,13 @@ async function initBrowserToolboxTask({
     }
   }
 
+  let destroyed = false;
   async function destroy() {
+    
+    if (destroyed) {
+      return null;
+    }
+
     const closePromise = process._dbgProcess.wait();
     evaluateExpression("gToolbox.destroy()").catch(e => {
       
@@ -194,7 +200,13 @@ async function initBrowserToolboxTask({
     );
 
     await client.close();
+    destroyed = true;
   }
+
+  
+  
+  
+  registerCleanupFunction(destroy);
 
   return {
     importFunctions,
