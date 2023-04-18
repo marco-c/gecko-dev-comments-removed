@@ -455,44 +455,44 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
         this.store.getState().Prefs.values[PREF_HARDCODED_BASIC_LAYOUT] ||
         this.store.getState().Prefs.values[PREF_REGION_BASIC_LAYOUT];
 
-      let spocPositions = this.store
-        .getState()
-        .Prefs.values?.pocketConfig?.spocPositions?.split(`,`);
-
-      const loadMoreEnabled = this.store.getState().Prefs.values?.pocketConfig
-        ?.loadMore;
-
-      const lastCardMessageEnabled = this.store.getState().Prefs.values
-        ?.pocketConfig?.lastCardMessageEnabled;
-
-      const saveToPocketCard = this.store.getState().Prefs.values?.pocketConfig
-        ?.saveToPocketCard;
-
       const sponsoredCollectionsEnabled = this.store.getState().Prefs.values[
         PREF_COLLECTIONS_ENABLED
       ];
 
-      const compactLayout = this.store.getState().Prefs.values?.pocketConfig
-        ?.compactLayout;
+      const pocketConfig =
+        this.store.getState().Prefs.values?.pocketConfig || {};
+
       let items = isBasicLayout ? 3 : 21;
-      if (compactLayout) {
+      if (pocketConfig.compactLayout) {
         items = isBasicLayout ? 4 : 24;
       }
-
-      const newFooterSection = this.store.getState().Prefs.values?.pocketConfig
-        ?.newFooterSection;
 
       
       
       layoutResp = getHardcodedLayout({
         items,
-        spocPositions: this.parseSpocPositions(spocPositions),
         sponsoredCollectionsEnabled,
-        compactLayout,
-        loadMoreEnabled,
-        lastCardMessageEnabled,
-        newFooterSection,
-        saveToPocketCard,
+        spocPositions: this.parseSpocPositions(
+          pocketConfig.spocPositions?.split(`,`)
+        ),
+        compactLayout: pocketConfig.compactLayout,
+        loadMore: pocketConfig.loadMore,
+        lastCardMessageEnabled: pocketConfig.lastCardMessageEnabled,
+        saveToPocketCard: pocketConfig.saveToPocketCard,
+        newFooterSection: pocketConfig.newFooterSection,
+        includeDescriptions: pocketConfig.includeDescriptions,
+        compactGrid: pocketConfig.compactGrid,
+        compactImages: pocketConfig.compactImages,
+        imageGradient: pocketConfig.imageGradient,
+        newSponsoredLabel: pocketConfig.newSponsoredLabel,
+        titleLines: pocketConfig.titleLines,
+        descLines: pocketConfig.descLines,
+        
+        essentialReadsHeader:
+          this.locale.startsWith("en-") && pocketConfig.essentialReadsHeader,
+        editorsPicksHeader:
+          this.locale.startsWith("en-") && pocketConfig.editorsPicksHeader,
+        readTime: pocketConfig.readTime,
       });
     }
 
@@ -1872,15 +1872,35 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
 
 
 
+
+
+
+
+
+
+
+
+
+
 getHardcodedLayout = ({
   items = 21,
   spocPositions = [2, 4, 11, 20],
   sponsoredCollectionsEnabled = false,
   compactLayout = false,
-  loadMoreEnabled = false,
+  loadMore = false,
   lastCardMessageEnabled = false,
   newFooterSection = false,
   saveToPocketCard = false,
+  includeDescriptions = true,
+  compactGrid = false,
+  compactImages = false,
+  imageGradient = false,
+  newSponsoredLabel = false,
+  titleLines = 3,
+  descLines = 3,
+  essentialReadsHeader = false,
+  editorsPicksHeader = false,
+  readTime = false,
 }) => ({
   lastUpdate: Date.now(),
   spocs: {
@@ -1933,6 +1953,8 @@ getHardcodedLayout = ({
           : []),
         {
           type: "Message",
+          essentialReadsHeader,
+          editorsPicksHeader,
           header: {
             title: {
               id: "newtab-section-header-pocket",
@@ -1955,8 +1977,18 @@ getHardcodedLayout = ({
           properties: {
             items,
             compact: compactLayout,
+            includeDescriptions: includeDescriptions && !compactLayout,
+            compactImages,
+            imageGradient,
+            newSponsoredLabel: newSponsoredLabel || compactLayout,
+            titleLines,
+            descLines,
+            compactGrid,
+            essentialReadsHeader,
+            editorsPicksHeader,
+            readTime: readTime || compactLayout,
           },
-          loadMoreEnabled,
+          loadMore,
           lastCardMessageEnabled,
           saveToPocketCard,
           cta_variant: "link",

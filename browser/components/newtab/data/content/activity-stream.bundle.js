@@ -3237,7 +3237,9 @@ class _DiscoveryStreamBase extends react__WEBPACK_IMPORTED_MODULE_12___default.a
           subtitle: component.header && component.header.subtitle,
           link_text: component.header && component.header.link_text,
           link_url: component.header && component.header.link_url,
-          icon: component.header && component.header.icon
+          icon: component.header && component.header.icon,
+          essentialReadsHeader: component.essentialReadsHeader,
+          editorsPicksHeader: component.editorsPicksHeader
         });
 
       case "SectionTitle":
@@ -3289,7 +3291,16 @@ class _DiscoveryStreamBase extends react__WEBPACK_IMPORTED_MODULE_12___default.a
           dispatch: this.props.dispatch,
           items: component.properties.items,
           compact: component.properties.compact,
-          include_descriptions: !component.properties.compact,
+          includeDescriptions: component.properties.includeDescriptions,
+          compactGrid: component.properties.compactGrid,
+          compactImages: component.properties.compactImages,
+          imageGradient: component.properties.imageGradient,
+          newSponsoredLabel: component.properties.newSponsoredLabel,
+          titleLines: component.properties.titleLines,
+          descLines: component.properties.descLines,
+          essentialReadsHeader: component.properties.essentialReadsHeader,
+          editorsPicksHeader: component.properties.editorsPicksHeader,
+          readTime: component.properties.readTime,
           loadMoreEnabled: component.loadMoreEnabled,
           lastCardMessageEnabled: component.lastCardMessageEnabled,
           saveToPocketCard: component.saveToPocketCard,
@@ -3322,13 +3333,16 @@ class _DiscoveryStreamBase extends react__WEBPACK_IMPORTED_MODULE_12___default.a
   }
 
   render() {
-    
+    const {
+      locale
+    } = this.props; 
+
     const {
       layoutRender
     } = Object(content_src_lib_selectLayoutRender__WEBPACK_IMPORTED_MODULE_14__["selectLayoutRender"])({
       state: this.props.DiscoveryStream,
       prefs: this.props.Prefs.values,
-      locale: this.props.locale
+      locale
     });
     const {
       config
@@ -3375,7 +3389,28 @@ class _DiscoveryStreamBase extends react__WEBPACK_IMPORTED_MODULE_12___default.a
         title: topStories.title
       }
     };
-    const privacyLinkComponent = extractComponent("PrivacyLink"); 
+    const privacyLinkComponent = extractComponent("PrivacyLink");
+    let learnMore = {
+      link: {
+        href: message.header.link_url,
+        message: message.header.link_text
+      }
+    };
+    let sectionTitle = message.header.title;
+    let subTitle = ""; 
+    
+
+    if (message.essentialReadsHeader || message.editorsPicksHeader) {
+      learnMore = null;
+      subTitle = "Recommended By Pocket";
+
+      if (message.essentialReadsHeader) {
+        sectionTitle = "Today’s Essential Reads";
+      } else if (message.editorsPicksHeader) {
+        sectionTitle = "Editor’s Picks";
+      }
+    } 
+
 
     return react__WEBPACK_IMPORTED_MODULE_12___default.a.createElement(react__WEBPACK_IMPORTED_MODULE_12___default.a.Fragment, null, this.props.DiscoveryStream.isPrivacyInfoModalVisible && react__WEBPACK_IMPORTED_MODULE_12___default.a.createElement(content_src_components_DiscoveryStreamComponents_DSPrivacyModal_DSPrivacyModal__WEBPACK_IMPORTED_MODULE_5__["DSPrivacyModal"], {
       dispatch: this.props.dispatch
@@ -3391,15 +3426,11 @@ class _DiscoveryStreamBase extends react__WEBPACK_IMPORTED_MODULE_12___default.a
       dispatch: this.props.dispatch,
       id: topStories.id,
       isFixed: true,
-      learnMore: {
-        link: {
-          href: message.header.link_url,
-          message: message.header.link_text
-        }
-      },
+      learnMore: learnMore,
       privacyNoticeURL: topStories.privacyNoticeURL,
       showPrefName: topStories.pref.feed,
-      title: message.header.title,
+      title: sectionTitle,
+      subTitle: subTitle,
       eventSource: "CARDGRID"
     }, this.renderLayout(layoutRender)), this.renderLayout([{
       width: 12,
@@ -4982,7 +5013,8 @@ class _CollapsibleSection extends react__WEBPACK_IMPORTED_MODULE_2___default.a.P
       id,
       collapsed,
       learnMore,
-      title
+      title,
+      subTitle
     } = this.props;
     const active = menuButtonHover || showContextMenu;
     let bodyStyle;
@@ -5005,6 +5037,7 @@ class _CollapsibleSection extends react__WEBPACK_IMPORTED_MODULE_2___default.a.P
       };
     }
 
+    const hasSubtitleClassName = subTitle ? `has-subtitle` : ``;
     return react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("section", {
       className: `collapsible-section ${this.props.className}${active ? " active" : ""}` 
       ,
@@ -5012,7 +5045,7 @@ class _CollapsibleSection extends react__WEBPACK_IMPORTED_MODULE_2___default.a.P
     }, react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("div", {
       className: "section-top-bar"
     }, react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("h3", {
-      className: "section-title-container",
+      className: `section-title-container ${hasSubtitleClassName}`,
       style: titleStyle
     }, react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("span", {
       className: "section-title"
@@ -5026,7 +5059,11 @@ class _CollapsibleSection extends react__WEBPACK_IMPORTED_MODULE_2___default.a.P
       message: learnMore.link.message
     }, react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("a", {
       href: learnMore.link.href
-    })))))), react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement(content_src_components_ErrorBoundary_ErrorBoundary__WEBPACK_IMPORTED_MODULE_0__["ErrorBoundary"], {
+    })))), subTitle && react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("span", {
+      className: "section-sub-title"
+    }, react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement(content_src_components_FluentOrText_FluentOrText__WEBPACK_IMPORTED_MODULE_1__["FluentOrText"], {
+      message: subTitle
+    })))), react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement(content_src_components_ErrorBoundary_ErrorBoundary__WEBPACK_IMPORTED_MODULE_0__["ErrorBoundary"], {
       className: "section-body-fallback"
     }, react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("div", {
       ref: this.onBodyMount,
@@ -12972,35 +13009,34 @@ var FluentOrText = __webpack_require__(26);
  
 
 const ANIMATION_DURATION = 3000;
-const DSMessageFooter = props => {
+const DSMessageLabel = props => {
   const {
     context,
     context_type,
     display_engagement_labels,
-    engagement,
-    saveToPocketCard
+    engagement
   } = props;
   const {
     icon,
     fluentID
-  } = types["cardContextTypes"][context_type] || {}; 
+  } = types["cardContextTypes"][context_type] || {};
 
-  if (saveToPocketCard && context_type === "pocket") {
-    return null;
+  if (!context && (context_type || display_engagement_labels && engagement)) {
+    return external_React_default.a.createElement(external_ReactTransitionGroup_["TransitionGroup"], {
+      component: null
+    }, external_React_default.a.createElement(external_ReactTransitionGroup_["CSSTransition"], {
+      key: fluentID,
+      timeout: ANIMATION_DURATION,
+      classNames: "story-animate"
+    }, engagement && !context_type ? external_React_default.a.createElement("div", {
+      className: "story-view-count"
+    }, engagement) : external_React_default.a.createElement(StatusMessage, {
+      icon: icon,
+      fluentID: fluentID
+    })));
   }
 
-  return external_React_default.a.createElement(external_ReactTransitionGroup_["TransitionGroup"], {
-    component: null
-  }, !context && (context_type || display_engagement_labels && engagement) && external_React_default.a.createElement(external_ReactTransitionGroup_["CSSTransition"], {
-    key: fluentID,
-    timeout: ANIMATION_DURATION,
-    classNames: "story-animate"
-  }, engagement && !context_type ? external_React_default.a.createElement("div", {
-    className: "story-view-count"
-  }, engagement) : external_React_default.a.createElement(StatusMessage, {
-    icon: icon,
-    fluentID: fluentID
-  })));
+  return null;
 };
 const StatusMessage = ({
   icon,
@@ -13017,9 +13053,10 @@ const StatusMessage = ({
 const SponsorLabel = ({
   sponsored_by_override,
   sponsor,
-  context
+  context,
+  newSponsoredLabel
 }) => {
-  const classList = "story-sponsored-label clamp"; 
+  const classList = `story-sponsored-label ${newSponsoredLabel || ""} clamp`; 
 
   if (sponsored_by_override) {
     return external_React_default.a.createElement("p", {
@@ -13060,21 +13097,51 @@ class DSContextFooter_DSContextFooter extends external_React_default.a.PureCompo
       sponsor,
       sponsored_by_override
     } = this.props;
-    return external_React_default.a.createElement("div", {
-      className: "story-footer"
-    }, SponsorLabel({
+    const sponsorLabel = SponsorLabel({
       sponsored_by_override,
       sponsor,
       context
-    }), DSMessageFooter({
+    });
+    const dsMessageLabel = DSMessageLabel({
       context,
       context_type,
       display_engagement_labels,
       engagement
-    }));
+    });
+
+    if (sponsorLabel || dsMessageLabel) {
+      return external_React_default.a.createElement("div", {
+        className: "story-footer"
+      }, sponsorLabel, dsMessageLabel);
+    }
+
+    return null;
   }
 
 }
+const DSMessageFooter = props => {
+  const {
+    context,
+    context_type,
+    engagement,
+    display_engagement_labels,
+    saveToPocketCard
+  } = props;
+  const dsMessageLabel = DSMessageLabel({
+    context,
+    context_type,
+    engagement,
+    display_engagement_labels
+  }); 
+
+  if (!dsMessageLabel || saveToPocketCard && context_type === "pocket") {
+    return null;
+  }
+
+  return external_React_default.a.createElement("div", {
+    className: "story-footer"
+  }, dsMessageLabel);
+};
 
 var external_ReactRedux_ = __webpack_require__(7);
 
@@ -13105,36 +13172,37 @@ function readTimeFromWordCount(wordCount) {
 const DSSource = ({
   source,
   timeToRead,
-  compact,
+  newSponsoredLabel,
   context,
   sponsor,
   sponsored_by_override
 }) => {
   
-  if (compact) {
+  if (newSponsoredLabel) {
     
     if (sponsored_by_override || sponsor || context) {
       return external_React_default.a.createElement(SponsorLabel, {
         context: context,
         sponsor: sponsor,
-        sponsored_by_override: sponsored_by_override
+        sponsored_by_override: sponsored_by_override,
+        newSponsoredLabel: "new-sponsored-label"
       });
-    } 
-
-
-    if (timeToRead) {
-      return external_React_default.a.createElement("p", {
-        className: "source clamp time-to-read"
-      }, external_React_default.a.createElement(FluentOrText["FluentOrText"], {
-        message: {
-          id: `newtab-label-source-read-time`,
-          values: {
-            source,
-            timeToRead
-          }
-        }
-      }));
     }
+  } 
+
+
+  if (timeToRead) {
+    return external_React_default.a.createElement("p", {
+      className: "source clamp time-to-read"
+    }, external_React_default.a.createElement(FluentOrText["FluentOrText"], {
+      message: {
+        id: `newtab-label-source-read-time`,
+        values: {
+          source,
+          timeToRead
+        }
+      }
+    }));
   } 
 
 
@@ -13149,7 +13217,7 @@ const DefaultMeta = ({
   title,
   excerpt,
   timeToRead,
-  compact,
+  newSponsoredLabel,
   context,
   context_type,
   cta,
@@ -13164,8 +13232,8 @@ const DefaultMeta = ({
   className: "info-wrap"
 }, external_React_default.a.createElement(DSSource, {
   source: source,
-  compact: compact,
   timeToRead: timeToRead,
+  newSponsoredLabel: newSponsoredLabel,
   context: context,
   sponsor: sponsor,
   sponsored_by_override: sponsored_by_override
@@ -13178,22 +13246,20 @@ const DefaultMeta = ({
   role: "link",
   className: "cta-link icon icon-arrow",
   tabIndex: "0"
-}, cta)), !compact && external_React_default.a.createElement(DSContextFooter_DSContextFooter, {
+}, cta)), !newSponsoredLabel && external_React_default.a.createElement(DSContextFooter_DSContextFooter, {
   context_type: context_type,
   context: context,
   sponsor: sponsor,
   sponsored_by_override: sponsored_by_override,
   display_engagement_labels: display_engagement_labels,
   engagement: engagement
-}), compact && external_React_default.a.createElement("div", {
-  className: "story-footer"
-}, external_React_default.a.createElement(DSMessageFooter, {
+}), newSponsoredLabel && external_React_default.a.createElement(DSMessageFooter, {
   context_type: context_type,
   context: null,
   display_engagement_labels: display_engagement_labels,
   engagement: engagement,
   saveToPocketCard: saveToPocketCard
-})));
+}));
 const CTAButtonMeta = ({
   display_engagement_labels,
   source,
@@ -13443,15 +13509,30 @@ class DSCard_DSCard extends external_React_default.a.PureComponent {
     }
 
     const isButtonCTA = this.props.cta_variant === "button";
-    const includeDescriptions = this.props.include_descriptions;
     const {
-      saveToPocketCard
+      is_video,
+      saveToPocketCard,
+      includeDescriptions,
+      compactImages,
+      imageGradient,
+      titleLines = 3,
+      descLines = 3,
+      displayReadTime
     } = this.props;
-    const baseClass = `ds-card ${this.props.is_video ? `video-card` : ``}`;
     const excerpt = includeDescriptions ? this.props.excerpt : "";
-    const timeToRead = this.props.time_to_read || readTimeFromWordCount(this.props.word_count);
+    let timeToRead;
+
+    if (displayReadTime) {
+      timeToRead = this.props.time_to_read || readTimeFromWordCount(this.props.word_count);
+    }
+
+    const videoCardClassName = is_video ? `video-card` : ``;
+    const compactImagesClassName = compactImages ? `ds-card-compact-image` : ``;
+    const imageGradientClassName = imageGradient ? `ds-card-image-gradient` : ``;
+    const titleLinesName = `ds-card-title-lines-${titleLines}`;
+    const descLinesClassName = `ds-card-desc-lines-${descLines}`;
     return external_React_default.a.createElement("div", {
-      className: baseClass,
+      className: `ds-card ${videoCardClassName} ${videoCardClassName} ${compactImagesClassName} ${imageGradientClassName} ${titleLinesName} ${descLinesClassName}`,
       ref: this.setContextMenuButtonHostRef
     }, external_React_default.a.createElement(SafeAnchor["SafeAnchor"], {
       className: "ds-card-link",
@@ -13475,7 +13556,6 @@ class DSCard_DSCard extends external_React_default.a.PureComponent {
       timeToRead: timeToRead,
       context: this.props.context,
       context_type: this.props.context_type,
-      compact: this.props.compact,
       engagement: this.props.engagement,
       cta: this.props.cta,
       sponsor: this.props.sponsor,
@@ -13485,11 +13565,11 @@ class DSCard_DSCard extends external_React_default.a.PureComponent {
       source: this.props.source,
       title: this.props.title,
       excerpt: excerpt,
+      newSponsoredLabel: this.props.newSponsoredLabel,
       timeToRead: timeToRead,
       context: this.props.context,
       engagement: this.props.engagement,
       context_type: this.props.context_type,
-      compact: this.props.compact,
       cta: this.props.cta,
       cta_variant: this.props.cta_variant,
       sponsor: this.props.sponsor,
@@ -13702,13 +13782,37 @@ class CardGrid_CardGrid extends external_React_default.a.PureComponent {
     return loadMoreEnabled && data.recommendations.length > loadMoreThreshold && !this.state.moreLoaded;
   }
 
+  renderDSSubHeader(title) {
+    return external_React_default.a.createElement("div", {
+      className: "section-top-bar ds-sub-header"
+    }, external_React_default.a.createElement("h3", {
+      className: "section-title-container"
+    }, external_React_default.a.createElement("span", {
+      className: "section-title"
+    }, external_React_default.a.createElement(FluentOrText["FluentOrText"], {
+      message: title
+    }))));
+  }
+
   renderCards() {
     let {
-      items
+      items,
+      compact
     } = this.props;
     const {
+      includeDescriptions,
       lastCardMessageEnabled,
-      loadMoreThreshold
+      saveToPocketCard,
+      loadMoreThreshold,
+      compactGrid,
+      compactImages,
+      imageGradient,
+      newSponsoredLabel,
+      titleLines,
+      descLines,
+      readTime,
+      essentialReadsHeader,
+      editorsPicksHeader
     } = this.props;
     let showLastCardMessage = lastCardMessageEnabled;
 
@@ -13733,6 +13837,7 @@ class CardGrid_CardGrid extends external_React_default.a.PureComponent {
         raw_image_src: rec.raw_image_src,
         word_count: rec.word_count,
         time_to_read: rec.time_to_read,
+        displayReadTime: readTime,
         title: rec.title,
         excerpt: rec.excerpt,
         url: rec.url,
@@ -13740,7 +13845,6 @@ class CardGrid_CardGrid extends external_React_default.a.PureComponent {
         shim: rec.shim,
         type: this.props.type,
         context: rec.context,
-        compact: this.props.compact,
         sponsor: rec.sponsor,
         sponsored_by_override: rec.sponsored_by_override,
         dispatch: this.props.dispatch,
@@ -13750,13 +13854,29 @@ class CardGrid_CardGrid extends external_React_default.a.PureComponent {
         bookmarkGuid: rec.bookmarkGuid,
         engagement: rec.engagement,
         display_engagement_labels: this.props.display_engagement_labels,
-        include_descriptions: this.props.include_descriptions,
-        saveToPocketCard: this.props.saveToPocketCard,
+        includeDescriptions: includeDescriptions,
+        saveToPocketCard: saveToPocketCard,
+        compactImages: compactImages,
+        imageGradient: imageGradient,
+        newSponsoredLabel: newSponsoredLabel,
+        titleLines: titleLines,
+        descLines: descLines,
         cta: rec.cta,
         cta_variant: this.props.cta_variant,
         is_video: this.props.enable_video_playheads && rec.is_video,
         is_collection: this.props.is_collection
       }));
+    } 
+    
+
+
+    if (essentialReadsHeader && editorsPicksHeader) {
+      
+      if (compact) {
+        cards.splice(8, 0, this.renderDSSubHeader("Editor’s Picks"));
+      } else {
+        cards.splice(6, 0, this.renderDSSubHeader("Editor’s Picks"));
+      }
     } 
 
 
@@ -13768,10 +13888,11 @@ class CardGrid_CardGrid extends external_React_default.a.PureComponent {
 
 
     const variantClass = this.props.display_variant ? `ds-card-grid-${this.props.display_variant}` : ``;
-    const compactClass = this.props.compact ? `ds-card-grid-compact-variant` : ``;
-    const includeDescriptions = this.props.include_descriptions ? `ds-card-grid-include-descriptions` : ``;
+    const compactClass = compact ? `ds-card-grid-compact-variant` : ``;
+    const includeDescriptionsClassName = includeDescriptions ? `ds-card-grid-include-descriptions` : ``;
+    const compactGridClassName = compactGrid ? `ds-card-grid-compact` : ``;
     return external_React_default.a.createElement("div", {
-      className: `ds-card-grid ds-card-grid-${this.props.border} ${variantClass} ${compactClass} ${includeDescriptions}`
+      className: `ds-card-grid ds-card-grid-${this.props.border} ${variantClass} ${compactClass} ${includeDescriptionsClassName} ${compactGridClassName}`
     }, cards);
   }
 
