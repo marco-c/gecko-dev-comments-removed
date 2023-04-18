@@ -6,7 +6,6 @@
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/IntegerRange.h"
 
-#include <functional>
 #include <regex>
 #include <string>
 
@@ -94,52 +93,43 @@ static std::string ChooseDeviceReplacement(const std::string& str) {
   static const std::string GEFORCE_980 = "GeForce GTX 980";
 
   if (Contains(str, "GeForce") || Contains(str, "Quadro")) {
-    auto ret = std::invoke([&]() {
-      static const std::regex kGeForce("GeForce.*?([0-9][0-9][0-9]+)");
-      if (std::regex_search(str, m, kGeForce)) {
-        const auto modelNum = stoul(m.str(1));
-        if (modelNum >= 8000) {
-          
-          return GEFORCE_8800;
-        }
-        if (modelNum >= 900) {
-          
-          return GEFORCE_980;
-        }
-        if (modelNum >= 400) {
-          
-          return GEFORCE_480;
-        }
+    static const std::regex kGeForce("GeForce.*?([0-9][0-9][0-9]+)");
+    if (std::regex_search(str, m, kGeForce)) {
+      const auto modelNum = stoul(m.str(1));
+      if (modelNum >= 8000) {
         
         return GEFORCE_8800;
       }
+      if (modelNum >= 900) {
+        
+        return GEFORCE_980;
+      }
+      if (modelNum >= 400) {
+        
+        return GEFORCE_480;
+      }
+      
+      return GEFORCE_8800;
+    }
 
-      static const std::regex kQuadro("Quadro.*?([KMPVT]?)[0-9][0-9][0-9]+");
-      if (std::regex_search(str, m, kQuadro)) {
-        if (Contains(str, "RTX")) return GEFORCE_980;
-        const auto archLetter = m.str(1);
-        if (!archLetter.empty()) {
-          switch (archLetter[0]) {
-            case 'M':  
-            case 'P':  
-            case 'V':  
-            case 'T':  
-              return GEFORCE_980;
-            case 'K':  
-            default:
-              return GEFORCE_480;
-          }
+    static const std::regex kQuadro("Quadro.*?([KMPVT]?)[0-9][0-9][0-9]+");
+    if (std::regex_search(str, m, kQuadro)) {
+      if (Contains(str, "RTX")) return GEFORCE_980;
+      const auto archLetter = m.str(1);
+      if (!archLetter.empty()) {
+        switch (archLetter[0]) {
+          case 'M':  
+          case 'P':  
+          case 'V':  
+          case 'T':  
+            return GEFORCE_980;
+          case 'K':  
+          default:
+            return GEFORCE_480;
         }
       }
-
       return GEFORCE_8800;  
-    });
-    
-    
-    if (str.find("NVIDIA") == 0) {
-      ret = "NVIDIA " + ret;
     }
-    return ret;
   }
   
 
@@ -172,10 +162,6 @@ static std::string ChooseDeviceReplacement(const std::string& str) {
         return GEFORCE_980;
     }
   }
-  
-  if (Contains(str, "Tesla")) return GEFORCE_8800;
-
-  
 
   static const std::regex kNouveau("NV(1?[0-9A-F][0-9A-F])");
   if (std::regex_match(str, m, kNouveau)) {
@@ -274,19 +260,22 @@ static std::string ChooseDeviceReplacement(const std::string& str) {
 std::string SanitizeRenderer(const std::string& str) {
   std::smatch m;
 
-  
-  static const std::regex kReAngle(
-      "ANGLE [(]([^,]*), ([^,]*)( Direct3D[^,]*), .*[)]");
+  static const std::regex kReAngle("(.*ANGLE [(])(.*)( Direct3D.*)");
   if (std::regex_match(str, m, kReAngle)) {
-    const auto& vendor = m.str(1);
-    const auto& renderer = m.str(2);
-    const auto& d3d_suffix = m.str(3);
+    auto prefix = m.str(1);
+    auto dev = m.str(2);
 
-    const auto renderer2 = ChooseDeviceReplacement(renderer);
-    return std::string("ANGLE (") + vendor + ", " + renderer2 + d3d_suffix +
-           ")";
-  } else if (Contains(str, "ANGLE")) {
-    gfxCriticalError() << "Failed to parse ANGLE renderer: " << str;
+    
+    
+    static const std::regex kStripAngleVendorPrefix("(NVIDIA) (.*)");
+    std::smatch m2;
+    if (std::regex_match(dev, m2, kStripAngleVendorPrefix)) {
+      prefix += m2.str(1) + " ";
+      dev = m2.str(2);
+    }
+
+    const auto dev2 = ChooseDeviceReplacement(dev);
+    return prefix + dev2 + m.str(3);
   }
 
   static const std::regex kReOpenglEngine("(.*) OpenGL Engine");
