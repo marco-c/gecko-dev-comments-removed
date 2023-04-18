@@ -64,7 +64,11 @@ class ExternalProfileMixin(object):
         tmp_dir = tempfile.mkdtemp(suffix="external")
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
-        self.external_profile = mozprofile.Profile(profile=tmp_dir)
+        
+        profile_args = self.marionette.instance.profile_args
+        profile_args["profile"] = tmp_dir
+        self.external_profile = mozprofile.Profile(**profile_args)
+
         
         self.external_profile.create_new = False
 
@@ -210,6 +214,9 @@ class TestSwitchProfileWithoutWorkspace(ExternalProfileMixin, BaseProfileManagem
 
         self.assertEqual(self.profile_path, self.external_profile.profile)
         self.assertFalse(os.path.exists(self.orig_profile_path))
+
+        
+        self.assertFalse(self.marionette.get_pref("remote.prefs.recommended"))
 
         
         self.marionette.quit()
