@@ -11,6 +11,7 @@
 use core::fmt;
 use core::num::NonZeroU32;
 
+#[cfg(feature = "std")] use std::boxed::Box;
 
 
 
@@ -18,9 +19,9 @@ use core::num::NonZeroU32;
 
 
 pub struct Error {
-    #[cfg(feature="std")]
+    #[cfg(feature = "std")]
     inner: Box<dyn std::error::Error + Send + Sync + 'static>,
-    #[cfg(not(feature="std"))]
+    #[cfg(not(feature = "std"))]
     code: NonZeroU32,
 }
 
@@ -30,33 +31,10 @@ impl Error {
     
     
     
-    #[cfg(feature="std")]
-    #[inline]
-    pub fn new<E>(err: E) -> Self
-    where E: Into<Box<dyn std::error::Error + Send + Sync + 'static>>
-    {
-        Error { inner: err.into() }
-    }
     
     
+    pub const CUSTOM_START: u32 = (1 << 31) + (1 << 30);
     
-    
-    
-    #[cfg(feature="std")]
-    #[inline]
-    pub fn inner(&self) -> &(dyn std::error::Error + Send + Sync + 'static) {
-        &*self.inner
-    }
-    
-    
-    
-    
-    
-    #[cfg(feature="std")]
-    #[inline]
-    pub fn take_inner(self) -> Box<dyn std::error::Error + Send + Sync + 'static> {
-        self.inner
-    }
     
     
     
@@ -65,7 +43,40 @@ impl Error {
 
     
     
-    pub const CUSTOM_START: u32 = (1 << 31) + (1 << 30);
+    
+    
+    
+    #[cfg(feature = "std")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "std")))]
+    #[inline]
+    pub fn new<E>(err: E) -> Self
+    where
+        E: Into<Box<dyn std::error::Error + Send + Sync + 'static>>,
+    {
+        Error { inner: err.into() }
+    }
+
+    
+    
+    
+    
+    #[cfg(feature = "std")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "std")))]
+    #[inline]
+    pub fn inner(&self) -> &(dyn std::error::Error + Send + Sync + 'static) {
+        &*self.inner
+    }
+
+    
+    
+    
+    
+    #[cfg(feature = "std")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "std")))]
+    #[inline]
+    pub fn take_inner(self) -> Box<dyn std::error::Error + Send + Sync + 'static> {
+        self.inner
+    }
 
     
     
@@ -74,14 +85,14 @@ impl Error {
     
     #[inline]
     pub fn raw_os_error(&self) -> Option<i32> {
-        #[cfg(feature="std")] {
+        #[cfg(feature = "std")]
+        {
             if let Some(e) = self.inner.downcast_ref::<std::io::Error>() {
                 return e.raw_os_error();
             }
         }
         match self.code() {
-            Some(code) if u32::from(code) < Self::INTERNAL_START =>
-                Some(u32::from(code) as i32),
+            Some(code) if u32::from(code) < Self::INTERNAL_START => Some(u32::from(code) as i32),
             _ => None,
         }
     }
@@ -93,10 +104,12 @@ impl Error {
     
     #[inline]
     pub fn code(&self) -> Option<NonZeroU32> {
-        #[cfg(feature="std")] {
+        #[cfg(feature = "std")]
+        {
             self.inner.downcast_ref::<ErrorCode>().map(|c| c.0)
         }
-        #[cfg(not(feature="std"))] {
+        #[cfg(not(feature = "std"))]
+        {
             Some(self.code)
         }
     }
@@ -104,13 +117,16 @@ impl Error {
 
 impl fmt::Debug for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        #[cfg(feature="std")] {
+        #[cfg(feature = "std")]
+        {
             write!(f, "Error {{ inner: {:?} }}", self.inner)
         }
-        #[cfg(all(feature="getrandom", not(feature="std")))] {
+        #[cfg(all(feature = "getrandom", not(feature = "std")))]
+        {
             getrandom::Error::from(self.code).fmt(f)
         }
-        #[cfg(not(feature="getrandom"))] {
+        #[cfg(not(feature = "getrandom"))]
+        {
             write!(f, "Error {{ code: {} }}", self.code)
         }
     }
@@ -118,13 +134,16 @@ impl fmt::Debug for Error {
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        #[cfg(feature="std")] {
+        #[cfg(feature = "std")]
+        {
             write!(f, "{}", self.inner)
         }
-        #[cfg(all(feature="getrandom", not(feature="std")))] {
+        #[cfg(all(feature = "getrandom", not(feature = "std")))]
+        {
             getrandom::Error::from(self.code).fmt(f)
         }
-        #[cfg(not(feature="getrandom"))] {
+        #[cfg(not(feature = "getrandom"))]
+        {
             write!(f, "error code {}", self.code)
         }
     }
@@ -133,29 +152,37 @@ impl fmt::Display for Error {
 impl From<NonZeroU32> for Error {
     #[inline]
     fn from(code: NonZeroU32) -> Self {
-        #[cfg(feature="std")] {
-            Error { inner: Box::new(ErrorCode(code)) }
+        #[cfg(feature = "std")]
+        {
+            Error {
+                inner: Box::new(ErrorCode(code)),
+            }
         }
-        #[cfg(not(feature="std"))] {
+        #[cfg(not(feature = "std"))]
+        {
             Error { code }
         }
     }
 }
 
-#[cfg(feature="getrandom")]
+#[cfg(feature = "getrandom")]
 impl From<getrandom::Error> for Error {
     #[inline]
     fn from(error: getrandom::Error) -> Self {
-        #[cfg(feature="std")] {
-            Error { inner: Box::new(error) }
+        #[cfg(feature = "std")]
+        {
+            Error {
+                inner: Box::new(error),
+            }
         }
-        #[cfg(not(feature="std"))] {
+        #[cfg(not(feature = "std"))]
+        {
             Error { code: error.code() }
         }
     }
 }
 
-#[cfg(feature="std")]
+#[cfg(feature = "std")]
 impl std::error::Error for Error {
     #[inline]
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
@@ -163,7 +190,7 @@ impl std::error::Error for Error {
     }
 }
 
-#[cfg(feature="std")]
+#[cfg(feature = "std")]
 impl From<Error> for std::io::Error {
     #[inline]
     fn from(error: Error) -> Self {
@@ -175,16 +202,27 @@ impl From<Error> for std::io::Error {
     }
 }
 
-#[cfg(feature="std")]
+#[cfg(feature = "std")]
 #[derive(Debug, Copy, Clone)]
 struct ErrorCode(NonZeroU32);
 
-#[cfg(feature="std")]
+#[cfg(feature = "std")]
 impl fmt::Display for ErrorCode {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "error code {}", self.0)
     }
 }
 
-#[cfg(feature="std")]
+#[cfg(feature = "std")]
 impl std::error::Error for ErrorCode {}
+
+#[cfg(test)]
+mod test {
+    #[cfg(feature = "getrandom")]
+    #[test]
+    fn test_error_codes() {
+        
+        assert_eq!(super::Error::CUSTOM_START, getrandom::Error::CUSTOM_START);
+        assert_eq!(super::Error::INTERNAL_START, getrandom::Error::INTERNAL_START);
+    }
+}

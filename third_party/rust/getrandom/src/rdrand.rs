@@ -7,24 +7,30 @@
 
 
 
-use crate::error::{FAILED_RDRAND, NO_RDRAND};
-#[cfg(not(target_feature = "rdrand"))]
-use crate::util::LazyBool;
 use crate::Error;
-use core::arch::x86_64::_rdrand64_step;
 use core::mem;
+
+cfg_if! {
+    if #[cfg(target_arch = "x86_64")] {
+        use core::arch::x86_64 as arch;
+        use arch::_rdrand64_step as rdrand_step;
+    } else if #[cfg(target_arch = "x86")] {
+        use core::arch::x86 as arch;
+        use arch::_rdrand32_step as rdrand_step;
+    }
+}
 
 
 
 
 const RETRY_LIMIT: usize = 10;
-const WORD_SIZE: usize = mem::size_of::<u64>();
+const WORD_SIZE: usize = mem::size_of::<usize>();
 
 #[target_feature(enable = "rdrand")]
 unsafe fn rdrand() -> Result<[u8; WORD_SIZE], Error> {
     for _ in 0..RETRY_LIMIT {
         let mut el = mem::zeroed();
-        if _rdrand64_step(&mut el) == 1 {
+        if rdrand_step(&mut el) == 1 {
             
             
             
@@ -33,11 +39,10 @@ unsafe fn rdrand() -> Result<[u8; WORD_SIZE], Error> {
             if el != 0 && el != !0 {
                 return Ok(el.to_ne_bytes());
             }
-            error!("RDRAND returned {:X}, CPU RNG may be broken", el);
             
         }
     }
-    Err(FAILED_RDRAND)
+    Err(Error::FAILED_RDRAND)
 }
 
 
@@ -55,16 +60,18 @@ fn is_rdrand_supported() -> bool {
 
 #[cfg(not(target_feature = "rdrand"))]
 fn is_rdrand_supported() -> bool {
-    use core::arch::x86_64::__cpuid;
+    use crate::util::LazyBool;
+
+    
     
     const FLAG: u32 = 1 << 30;
     static HAS_RDRAND: LazyBool = LazyBool::new();
-    HAS_RDRAND.unsync_init(|| unsafe { (__cpuid(1).ecx & FLAG) != 0 })
+    HAS_RDRAND.unsync_init(|| unsafe { (arch::__cpuid(1).ecx & FLAG) != 0 })
 }
 
 pub fn getrandom_inner(dest: &mut [u8]) -> Result<(), Error> {
     if !is_rdrand_supported() {
-        return Err(NO_RDRAND);
+        return Err(Error::NO_RDRAND);
     }
 
     
