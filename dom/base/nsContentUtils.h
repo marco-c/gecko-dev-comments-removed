@@ -2121,15 +2121,6 @@ class nsContentUtils {
 
 
 
-
-  static bool PrincipalAllowsL10n(nsIPrincipal& aPrincipal,
-                                  nsIURI* aDocumentURI);
-
-  
-
-
-
-
   static void AddScriptBlocker();
 
   
