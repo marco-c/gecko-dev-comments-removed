@@ -2078,12 +2078,7 @@ pref("extensions.pocket.showHome", true);
 pref("extensions.pocket.loggedOutVariant", "control");
 
 
-#ifdef NIGHTLY_BUILD
-  pref("extensions.pocket.refresh.layout.enabled", true);
-#else
-  pref("extensions.pocket.refresh.layout.enabled", false);
-#endif
-
+pref("extensions.pocket.refresh.layout.enabled", false);
 
 pref("extensions.pocket.refresh.emailButton.enabled", false);
 
