@@ -4314,7 +4314,21 @@ void nsWindow::OnButtonPressEvent(GdkEventButton* aEvent) {
   }
 
   
-  if (CheckForRollup(aEvent->x_root, aEvent->y_root, false, false)) return;
+  if (CheckForRollup(aEvent->x_root, aEvent->y_root, false, false)) {
+    if (aEvent->button == 3 &&
+        mDraggableRegion.Contains(GetRefPoint(this, aEvent))) {
+      GUniquePtr<GdkEvent> eventCopy;
+      if (aEvent->type != GDK_BUTTON_PRESS) {
+        
+        
+        
+        eventCopy.reset(gdk_event_copy((GdkEvent*)aEvent));
+        eventCopy->type = GDK_BUTTON_PRESS;
+      }
+      TryToShowNativeWindowMenu(eventCopy ? &eventCopy->button : aEvent);
+    }
+    return;
+  }
 
   
   GdkWindowEdge edge;
