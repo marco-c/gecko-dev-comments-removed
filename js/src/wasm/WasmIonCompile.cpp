@@ -6871,9 +6871,9 @@ bool wasm::IonCompileFunctions(const ModuleEnvironment& moduleEnv,
   }
 
   
-  MachineState trapExitLayout;
+  RegisterOffsets trapExitLayout;
   size_t trapExitLayoutNumWords;
-  GenerateTrapExitMachineState(&trapExitLayout, &trapExitLayoutNumWords);
+  GenerateTrapExitRegisterOffsets(&trapExitLayout, &trapExitLayoutNumWords);
 
   for (const FuncCompileInput& func : inputs) {
     JitSpewCont(JitSpew_Codegen, "\n");

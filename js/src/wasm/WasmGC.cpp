@@ -67,7 +67,7 @@ wasm::StackMap* wasm::ConvertStackMapBoolVectorToStackMap(
 
 
 bool wasm::CreateStackMapForFunctionEntryTrap(
-    const wasm::ArgTypeVector& argTypes, const MachineState& trapExitLayout,
+    const wasm::ArgTypeVector& argTypes, const RegisterOffsets& trapExitLayout,
     size_t trapExitLayoutWords, size_t nBytesReservedBeforeTrap,
     size_t nInboundStackArgBytes, wasm::StackMap** result) {
   
@@ -171,13 +171,9 @@ bool wasm::CreateStackMapForFunctionEntryTrap(
 }
 
 bool wasm::GenerateStackmapEntriesForTrapExit(
-    const ArgTypeVector& args, const MachineState& trapExitLayout,
+    const ArgTypeVector& args, const RegisterOffsets& trapExitLayout,
     const size_t trapExitLayoutNumWords, ExitStubMapVector* extras) {
   MOZ_ASSERT(extras->empty());
-
-  
-  
-  MOZ_ASSERT(trapExitLayoutNumWords < 0x100);
 
   if (!extras->appendN(false, trapExitLayoutNumWords)) {
     return false;
@@ -188,8 +184,7 @@ bool wasm::GenerateStackmapEntriesForTrapExit(
       continue;
     }
 
-    size_t offsetFromTop =
-        reinterpret_cast<size_t>(trapExitLayout.address(i->gpr()));
+    size_t offsetFromTop = trapExitLayout.getOffset(i->gpr());
 
     
     

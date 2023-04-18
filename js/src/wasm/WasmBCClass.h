@@ -313,7 +313,7 @@ struct BaseCompiler final {
   BaseCompiler(const ModuleEnvironment& moduleEnv,
                const CompilerEnvironment& compilerEnv,
                const FuncCompileInput& func, const ValTypeVector& locals,
-               const MachineState& trapExitLayout,
+               const RegisterOffsets& trapExitLayout,
                size_t trapExitLayoutNumWords, Decoder& decoder,
                StkVector& stkSource, TempAllocator* alloc, MacroAssembler* masm,
                StackMaps* stackMaps);
@@ -1293,9 +1293,10 @@ struct BaseCompiler final {
   
   
   [[nodiscard]] bool emitPostBarrierImprecise(const Maybe<RegRef>& object,
-                                     RegPtr valueAddr, RegRef value);
+                                              RegPtr valueAddr, RegRef value);
   [[nodiscard]] bool emitPostBarrierPrecise(const Maybe<RegRef>& object,
-                                            RegPtr valueAddr, RegRef prevValue, RegRef value);
+                                            RegPtr valueAddr, RegRef prevValue,
+                                            RegRef value);
 
   
   

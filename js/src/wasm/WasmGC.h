@@ -356,7 +356,7 @@ wasm::StackMap* ConvertStackMapBoolVectorToStackMap(
 
 
 [[nodiscard]] bool CreateStackMapForFunctionEntryTrap(
-    const ArgTypeVector& argTypes, const jit::MachineState& trapExitLayout,
+    const ArgTypeVector& argTypes, const jit::RegisterOffsets& trapExitLayout,
     size_t trapExitLayoutWords, size_t nBytesReservedBeforeTrap,
     size_t nInboundStackArgBytes, wasm::StackMap** result);
 
@@ -366,7 +366,7 @@ wasm::StackMap* ConvertStackMapBoolVectorToStackMap(
 
 
 [[nodiscard]] bool GenerateStackmapEntriesForTrapExit(
-    const ArgTypeVector& args, const jit::MachineState& trapExitLayout,
+    const ArgTypeVector& args, const jit::RegisterOffsets& trapExitLayout,
     const size_t trapExitLayoutNumWords, ExitStubMapVector* extras);
 
 

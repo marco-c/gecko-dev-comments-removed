@@ -1185,7 +1185,7 @@ struct StackMapGenerator {
 
   
   
-  const MachineState& trapExitLayout_;
+  const RegisterOffsets& trapExitLayout_;
   const size_t trapExitLayoutNumWords_;
 
   
@@ -1238,7 +1238,7 @@ struct StackMapGenerator {
   
   MachineStackTracker augmentedMst;
 
-  StackMapGenerator(StackMaps* stackMaps, const MachineState& trapExitLayout,
+  StackMapGenerator(StackMaps* stackMaps, const RegisterOffsets& trapExitLayout,
                     const size_t trapExitLayoutNumWords,
                     const MacroAssembler& masm)
       : trapExitLayout_(trapExitLayout),

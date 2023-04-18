@@ -2751,8 +2751,8 @@ static const LiveRegisterSet RegsToPreserve(
 
 
 
-void wasm::GenerateTrapExitMachineState(MachineState* machine,
-                                        size_t* numWords) {
+void wasm::GenerateTrapExitRegisterOffsets(RegisterOffsets* offsets,
+                                           size_t* numWords) {
   
   *numWords = WasmPushSize / sizeof(void*);
   MOZ_ASSERT(*numWords == TrapExitDummyValueOffsetFromTop + 1);
@@ -2760,8 +2760,7 @@ void wasm::GenerateTrapExitMachineState(MachineState* machine,
   
   for (GeneralRegisterBackwardIterator iter(RegsToPreserve.gprs()); iter.more();
        ++iter) {
-    machine->setRegisterLocation(*iter,
-                                 reinterpret_cast<uintptr_t*>(*numWords));
+    offsets->setOffset(*iter, *numWords);
     (*numWords)++;
   }
 }
