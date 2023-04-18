@@ -17,6 +17,7 @@
 #include "mozilla/DefineEnum.h"
 #include "mozilla/ScrollOrigin.h"
 #include "mozilla/gfx/Point.h"
+#include "mozilla/ScrollTypes.h"
 
 namespace mozilla {
 
@@ -66,6 +67,12 @@ gfx::IntSize GetDisplayportAlignmentMultiplier(const ScreenSize& aBaseSize);
 
 ScrollAnimationBezierPhysicsSettings ComputeBezierAnimationSettingsForOrigin(
     ScrollOrigin aOrigin);
+
+
+
+
+
+ScrollMode GetScrollModeForOrigin(ScrollOrigin origin);
 
 }  
 
