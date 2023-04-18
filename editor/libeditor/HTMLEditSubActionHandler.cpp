@@ -6897,17 +6897,6 @@ HTMLEditor::HandleInsertParagraphInHeadingElement(
     Element& aHeadingElement, const EditorDOMPoint& aPointToSplit) {
   MOZ_ASSERT(IsTopLevelEditSubActionDataAvailable());
 
-  
-  EditorDOMPoint atHeadingElement(&aHeadingElement);
-  if (MOZ_UNLIKELY(NS_WARN_IF(!atHeadingElement.IsInContentNode()))) {
-    return Err(NS_ERROR_FAILURE);
-  }
-
-  {
-    
-    AutoEditorDOMPointChildInvalidator rememberOnlyOffset(atHeadingElement);
-  }
-
   SplitNodeResult splitHeadingResult = [this, &aPointToSplit,
                                         &aHeadingElement]() MOZ_CAN_RUN_SCRIPT {
     
@@ -6936,33 +6925,51 @@ HTMLEditor::HandleInsertParagraphInHeadingElement(
     NS_WARNING("Failed to splitting aHeadingElement");
     return Err(splitHeadingResult.Rv());
   }
+  if (MOZ_UNLIKELY(!splitHeadingResult.DidSplit())) {
+    NS_WARNING(
+        "HTMLEditor::SplitNodeDeepWithTransaction(SplitAtEdges::"
+        "eAllowToCreateEmptyContainer) didn't split aHeadingElement");
+    return Err(NS_ERROR_FAILURE);
+  }
 
   
   
-  if (nsCOMPtr<nsIContent> prevItem = HTMLEditUtils::GetPreviousSibling(
-          aHeadingElement, {WalkTreeOption::IgnoreNonEditableNode})) {
-    MOZ_DIAGNOSTIC_ASSERT(HTMLEditUtils::IsHeader(*prevItem));
-    if (HTMLEditUtils::IsEmptyNode(
-            *prevItem, {EmptyCheckOption::TreatSingleBRElementAsVisible})) {
-      CreateElementResult createPaddingBRResult =
-          InsertPaddingBRElementForEmptyLastLineWithTransaction(
-              EditorDOMPoint(prevItem, 0u));
-      if (MOZ_UNLIKELY(createPaddingBRResult.Failed())) {
-        NS_WARNING(
-            "HTMLEditor::InsertPaddingBRElementForEmptyLastLineWithTransaction("
-            ") failed");
-        return Err(createPaddingBRResult.Rv());
-      }
+  
+  
+  Element* leftHeadingElement =
+      Element::FromNode(splitHeadingResult.GetPreviousContent());
+  MOZ_ASSERT(leftHeadingElement,
+             "SplitNodeResult::GetPreviousContent() should return something if "
+             "DidSplit() returns true");
+  MOZ_DIAGNOSTIC_ASSERT(HTMLEditUtils::IsHeader(*leftHeadingElement));
+  if (HTMLEditUtils::IsEmptyNode(
+          *leftHeadingElement,
+          {EmptyCheckOption::TreatSingleBRElementAsVisible})) {
+    CreateElementResult createPaddingBRResult =
+        InsertPaddingBRElementForEmptyLastLineWithTransaction(
+            EditorDOMPoint(leftHeadingElement, 0u));
+    if (MOZ_UNLIKELY(createPaddingBRResult.Failed())) {
+      NS_WARNING(
+          "HTMLEditor::InsertPaddingBRElementForEmptyLastLineWithTransaction("
+          ") failed");
+      return Err(createPaddingBRResult.Rv());
     }
   }
 
   
-  if (!HTMLEditUtils::IsEmptyBlockElement(aHeadingElement, {})) {
-    return EditorDOMPoint(&aHeadingElement, 0u);
+  Element* rightHeadingElement =
+      Element::FromNode(splitHeadingResult.GetNextContent());
+  MOZ_ASSERT(rightHeadingElement,
+             "SplitNodeResult::GetNextContent() should return something if "
+             "DidSplit() returns true");
+  if (!HTMLEditUtils::IsEmptyBlockElement(*rightHeadingElement, {})) {
+    return EditorDOMPoint(rightHeadingElement, 0u);
   }
 
   
-  nsresult rv = DeleteNodeWithTransaction(aHeadingElement);
+  
+  
+  nsresult rv = DeleteNodeWithTransaction(MOZ_KnownLive(*rightHeadingElement));
   if (MOZ_UNLIKELY(NS_WARN_IF(Destroyed()))) {
     return Err(NS_ERROR_EDITOR_DESTROYED);
   }
@@ -6970,13 +6977,21 @@ HTMLEditor::HandleInsertParagraphInHeadingElement(
     NS_WARNING("HTMLEditor::DeleteNodeWithTransaction() failed");
     return Err(rv);
   }
+
   
   
-  if (aHeadingElement.GetNextSibling()) {
+  
+  
+  
+  
+  
+  
+  
+  if (rightHeadingElement->GetNextSibling()) {
     
     
     nsIContent* nextEditableSibling =
-        HTMLEditUtils::GetNextSibling(*aHeadingElement.GetNextSibling(),
+        HTMLEditUtils::GetNextSibling(*rightHeadingElement->GetNextSibling(),
                                       {WalkTreeOption::IgnoreNonEditableNode});
     if (nextEditableSibling &&
         nextEditableSibling->IsHTMLElement(nsGkAtoms::br)) {
@@ -6987,6 +7002,11 @@ HTMLEditor::HandleInsertParagraphInHeadingElement(
       
       return afterEditableBRElement;
     }
+  }
+
+  if (MOZ_UNLIKELY(!leftHeadingElement->IsInComposedDoc())) {
+    NS_WARNING("The left heading element was unexpectedly removed");
+    return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
   }
 
   TopLevelEditSubActionDataRef().mCachedInlineStyles->Clear();
@@ -7003,7 +7023,7 @@ HTMLEditor::HandleInsertParagraphInHeadingElement(
   Result<RefPtr<Element>, nsresult> maybeNewParagraphElement =
       CreateAndInsertElement(
           WithTransaction::Yes, MOZ_KnownLive(newParagraphTagName),
-          atHeadingElement.NextPoint(),
+          EditorDOMPoint::After(*leftHeadingElement),
           
           [](HTMLEditor& aHTMLEditor, Element& aDivOrParagraphElement,
              const EditorDOMPoint&) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
