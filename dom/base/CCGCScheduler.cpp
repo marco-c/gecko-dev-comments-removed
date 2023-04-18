@@ -209,6 +209,7 @@ void CCGCScheduler::NoteGCBegin(JS::GCReason aReason) {
 void CCGCScheduler::NoteGCEnd() {
   mMajorGCReason = JS::GCReason::NO_REASON;
   mEagerMajorGCReason = JS::GCReason::NO_REASON;
+  mEagerMinorGCReason = JS::GCReason::NO_REASON;
 
   mInIncrementalGC = false;
   mCCBlockStart = TimeStamp();
@@ -277,6 +278,11 @@ bool CCGCScheduler::GCRunnerFired(TimeStamp aDeadline) {
     case GCRunnerAction::None:
       KillGCRunner();
       return false;
+
+    case GCRunnerAction::MinorGC:
+      JS::RunIdleTimeGCTask(CycleCollectedJSRuntime::Get()->Runtime());
+      NoteMinorGCEnd();
+      return HasMoreIdleGCRunnerWork();
 
     case GCRunnerAction::WaitToMajorGC: {
       MOZ_ASSERT(!mHaveAskedParent, "GCRunner alive after asking the parent");
@@ -859,6 +865,10 @@ CCRunnerStep CCGCScheduler::AdvanceCCRunner(TimeStamp aDeadline, TimeStamp aNow,
     return {CCRunnerAction::StopRunning, Yield};
   }
 
+  if (mEagerMinorGCReason != JS::GCReason::NO_REASON && !aDeadline.IsNull()) {
+    return {CCRunnerAction::MinorGC, Continue};
+  }
+
   switch (mCCRunnerState) {
       
       
@@ -972,6 +982,10 @@ GCRunnerStep CCGCScheduler::GetNextGCRunnerAction(TimeStamp aDeadline) const {
       return {mReadyForMajorGC ? GCRunnerAction::StartMajorGC
                                : GCRunnerAction::WaitToMajorGC,
               mEagerMajorGCReason};
+    }
+
+    if (mEagerMinorGCReason != JS::GCReason::NO_REASON) {
+      return {GCRunnerAction::MinorGC, mEagerMinorGCReason};
     }
   }
 
