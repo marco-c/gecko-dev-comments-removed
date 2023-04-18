@@ -12,8 +12,6 @@ include IPCStream;
 include NeckoChannelParams;
 
 include protocol PFileDescriptorSet; 
-include protocol PChildToParentStream; 
-include protocol PParentToChildStream; 
 
 include "mozilla/net/WebSocketChannelParent.h";
 include "mozilla/net/WebSocketChannelChild.h";
