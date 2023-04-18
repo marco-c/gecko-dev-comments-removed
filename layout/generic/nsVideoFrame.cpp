@@ -392,22 +392,9 @@ nscoord nsVideoFrame::GetMinISize(gfxContext* aRenderingContext) {
   
   
   DISPLAY_MIN_INLINE_SIZE(this, result);
-  nsSize size;
-  const auto wm = GetWritingMode();
-  if (HasVideoElement()) {
-    
-    size = GetVideoIntrinsicSize();
-  } else {
-    const auto containAxes = StyleDisplay()->GetContainSizeAxes();
-    
-    
-    if (containAxes.IsBoth() || !mFrames.LastChild()) {
-      size = nsSize();
-    } else {
-      size = containAxes.ContainSize(kFallbackIntrinsicSize, wm);
-    }
-  }
-  result = wm.IsVertical() ? size.height : size.width;
+  
+  nsSize size = GetVideoIntrinsicSize();
+  result = GetWritingMode().IsVertical() ? size.height : size.width;
   return result;
 }
 
@@ -471,29 +458,32 @@ bool nsVideoFrame::ShouldDisplayPoster() const {
 }
 
 nsSize nsVideoFrame::GetVideoIntrinsicSize() const {
-  if (!HasVideoElement()) {
-    return nsSize(0, 0);
+  const auto containAxes = StyleDisplay()->GetContainSizeAxes();
+  const auto isVideo = HasVideoElement();
+  
+  
+  
+  
+  if (containAxes.IsBoth() || (!isVideo && !mFrames.LastChild())) {
+    return {};
   }
 
-  const auto containAxes = StyleDisplay()->GetContainSizeAxes();
-  
-  if (containAxes.IsBoth()) {
-    return nsSize(0, 0);
+  auto wm = GetWritingMode();
+  if (!isVideo) {
+    return containAxes.ContainSize(kFallbackIntrinsicSize, wm);
   }
 
   HTMLVideoElement* element = static_cast<HTMLVideoElement*>(GetContent());
   if (Maybe<CSSIntSize> size = element->GetVideoSize()) {
-    return containAxes.ContainSize(CSSPixel::ToAppUnits(*size),
-                                   GetWritingMode());
+    return containAxes.ContainSize(CSSPixel::ToAppUnits(*size), wm);
   }
 
   if (ShouldDisplayPoster()) {
     if (Maybe<nsSize> imgSize = PosterImageSize()) {
-      return containAxes.ContainSize(*imgSize, GetWritingMode());
+      return containAxes.ContainSize(*imgSize, wm);
     }
   }
-
-  return containAxes.ContainSize(kFallbackIntrinsicSize, GetWritingMode());
+  return containAxes.ContainSize(kFallbackIntrinsicSize, wm);
 }
 
 IntrinsicSize nsVideoFrame::GetIntrinsicSize() {
