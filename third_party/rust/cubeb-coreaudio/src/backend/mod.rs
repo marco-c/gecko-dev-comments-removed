@@ -2670,6 +2670,16 @@ impl<'ctx> CoreStreamData<'ctx> {
                 self.stm_ptr,
                 output_hw_desc
             );
+
+            
+            if output_hw_desc.mChannelsPerFrame == 0 {
+                cubeb_log!(
+                    "({:p}) Output hardware description channel count is zero",
+                    self.stm_ptr
+                );
+                return Err(Error::error());
+            }
+
             
             
             
