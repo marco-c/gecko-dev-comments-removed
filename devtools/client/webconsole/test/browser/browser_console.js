@@ -177,7 +177,8 @@ async function testMessages() {
     0,
     0,
     Ci.nsIScriptError.warningFlag,
-    "Test",
+    
+    "chrome javascript",
     gBrowser.selectedBrowser.innerWindowID
   );
   Services.console.logMessage(scriptErrorMessage);

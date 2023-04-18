@@ -106,6 +106,11 @@ class ErrorMessageWatcher extends nsIConsoleListenerWatcher {
     }
 
     
+    if (targetActor.sessionContext.type == "all") {
+      return true;
+    }
+
+    
     return !PLATFORM_SPECIFIC_CATEGORIES.includes(category);
   }
 
