@@ -497,6 +497,12 @@ void Scriptability::SetWindowAllowsScript(bool aAllowed) {
 }
 
 
+bool Scriptability::AllowedIfExists(JSObject* aScope) {
+  RealmPrivate* realmPrivate = RealmPrivate::Get(aScope);
+  return realmPrivate ? realmPrivate->scriptability.Allowed() : true;
+}
+
+
 Scriptability& Scriptability::Get(JSObject* aScope) {
   return RealmPrivate::Get(aScope)->scriptability;
 }
