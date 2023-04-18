@@ -194,7 +194,9 @@ using media::NewRunnableFrom;
 using media::NewTaskFrom;
 using media::Refcountable;
 
-static Atomic<bool> sHasShutdown;
+
+
+static bool sHasMainThreadShutdown;
 
 struct DeviceState {
   DeviceState(RefPtr<LocalMediaDevice> aDevice,
@@ -744,7 +746,7 @@ class LocalTrackSource : public MediaStreamTrackSource {
       const MediaTrackConstraints& aConstraints,
       CallerType aCallerType) override {
     MOZ_ASSERT(NS_IsMainThread());
-    if (sHasShutdown || !mListener) {
+    if (sHasMainThreadShutdown || !mListener) {
       
       
       return MediaStreamTrackSource::ApplyConstraintsPromise::CreateAndResolve(
@@ -1571,13 +1573,15 @@ void GetUserMediaStreamTask::PrepareDOMStream() {
     }
   }
 
-  if (!domStream || (!audioTrackSource && !videoTrackSource) || sHasShutdown) {
+  if (!domStream || (!audioTrackSource && !videoTrackSource) ||
+      sHasMainThreadShutdown) {
     LOG("Returning error for getUserMedia() - no stream");
 
-    mHolder.Reject(MakeRefPtr<MediaMgrError>(
-                       MediaMgrError::Name::AbortError,
-                       sHasShutdown ? "In shutdown"_ns : "No stream."_ns),
-                   __func__);
+    mHolder.Reject(
+        MakeRefPtr<MediaMgrError>(
+            MediaMgrError::Name::AbortError,
+            sHasMainThreadShutdown ? "In shutdown"_ns : "No stream."_ns),
+        __func__);
     return;
   }
 
@@ -1779,7 +1783,7 @@ RefPtr<MediaManager::DeviceSetPromise> MediaManager::EnumerateRawDevices(
 
   MozPromiseHolder<DeviceSetPromise> holder;
   RefPtr<DeviceSetPromise> promise = holder.Ensure(__func__);
-  if (sHasShutdown) {
+  if (sHasMainThreadShutdown) {
     
     
     
@@ -2159,7 +2163,8 @@ void MediaManager::StartupInit() {
 
 
 void MediaManager::Dispatch(already_AddRefed<Runnable> task) {
-  if (sHasShutdown) {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (sHasMainThreadShutdown) {
     
     
     
@@ -2220,7 +2225,7 @@ nsresult MediaManager::NotifyRecordingStatusChange(
 
 void MediaManager::DeviceListChanged() {
   MOZ_ASSERT(NS_IsMainThread());
-  if (sHasShutdown) {
+  if (sHasMainThreadShutdown) {
     return;
   }
   
@@ -2437,7 +2442,7 @@ RefPtr<MediaManager::StreamPromise> MediaManager::GetUserMedia(
 
   MediaStreamConstraints c(aConstraintsPassedIn);  
 
-  if (sHasShutdown) {
+  if (sHasMainThreadShutdown) {
     return StreamPromise::CreateAndReject(
         MakeRefPtr<MediaMgrError>(MediaMgrError::Name::AbortError,
                                   "In shutdown"),
@@ -3102,8 +3107,6 @@ MediaEngine* MediaManager::GetBackend() {
   
   
   if (!mBackend) {
-    MOZ_RELEASE_ASSERT(
-        !sHasShutdown);  
 #if defined(MOZ_WEBRTC)
     mBackend = new MediaEngineWebRTC();
 #else
@@ -3300,7 +3303,7 @@ void MediaManager::GetPrefs(nsIPrefBranch* aBranch, const char* aData) {
 
 void MediaManager::Shutdown() {
   MOZ_ASSERT(NS_IsMainThread());
-  if (sHasShutdown) {
+  if (sHasMainThreadShutdown) {
     return;
   }
 
@@ -3356,7 +3359,7 @@ void MediaManager::Shutdown() {
 
   
   
-  sHasShutdown = true;
+  sHasMainThreadShutdown = true;
 
   
   class ShutdownTask : public Runnable {
@@ -3496,7 +3499,7 @@ nsresult MediaManager::Observe(nsISupports* aSubject, const char* aTopic,
       return NS_OK;
     }
 
-    if (sHasShutdown) {
+    if (sHasMainThreadShutdown) {
       task->Denied(MediaMgrError::Name::AbortError, "In shutdown"_ns);
       return NS_OK;
     }

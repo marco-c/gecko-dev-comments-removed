@@ -218,7 +218,6 @@ class MediaManager final : public nsIMediaManagerService,
   NS_DECL_NSIMEDIAMANAGERSERVICE
 
   media::Parent<media::NonE10s>* GetNonE10sParent();
-  MediaEngine* GetBackend();
 
   
   
@@ -365,6 +364,9 @@ class MediaManager final : public nsIMediaManagerService,
   
   void NotifyAllowed(const nsString& aCallID,
                      const LocalMediaDeviceSet& aDevices);
+
+  
+  MediaEngine* GetBackend();
 
   MOZ_DEFINE_MALLOC_SIZE_OF(MallocSizeOf);
 
