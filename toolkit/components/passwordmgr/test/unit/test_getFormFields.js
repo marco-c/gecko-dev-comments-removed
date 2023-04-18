@@ -510,7 +510,7 @@ for (let tc of TEST_ENVIRONMENT_CASES) {
         document
       );
 
-      let actual = lmc._getFormFields(
+      let actual = loginFormState._getFormFields(
         formLike,
         testcase.skipEmptyFields,
         new Set()

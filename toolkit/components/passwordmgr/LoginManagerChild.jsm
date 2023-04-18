@@ -382,8 +382,7 @@ const observer = {
           let form = lazy.LoginFormFactory.createFromField(field);
           if (
             docState.generatedPasswordFields.has(field) &&
-            loginManagerChild._getFormFields(form).confirmPasswordField ===
-              field
+            docState._getFormFields(form).confirmPasswordField === field
           ) {
             break;
           }
@@ -1100,6 +1099,286 @@ class LoginFormState {
       confirmPasswordInput.setUserInput(passwordField.value);
       LoginFormState._highlightFilledField(confirmPasswordInput);
     }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _getFormFields(form, isSubmission, recipes, { ignoreConnect = false } = {}) {
+    let usernameField = null;
+    let newPasswordField = null;
+    let oldPasswordField = null;
+    let confirmPasswordField = null;
+    let emptyResult = {
+      usernameField: null,
+      newPasswordField: null,
+      oldPasswordField: null,
+      confirmPasswordField: null,
+    };
+
+    let pwFields = null;
+    let fieldOverrideRecipe = lazy.LoginRecipesContent.getFieldOverrides(
+      recipes,
+      form
+    );
+    if (fieldOverrideRecipe) {
+      lazy.log("Has fieldOverrideRecipe", fieldOverrideRecipe);
+      let pwOverrideField = lazy.LoginRecipesContent.queryLoginField(
+        form,
+        fieldOverrideRecipe.passwordSelector
+      );
+      if (pwOverrideField) {
+        lazy.log("Has pwOverrideField", pwOverrideField);
+        
+        let formLike = lazy.LoginFormFactory.createFromField(pwOverrideField);
+        pwFields = [
+          {
+            index: [...formLike.elements].indexOf(pwOverrideField),
+            element: pwOverrideField,
+          },
+        ];
+      }
+
+      let usernameOverrideField = lazy.LoginRecipesContent.queryLoginField(
+        form,
+        fieldOverrideRecipe.usernameSelector
+      );
+      if (usernameOverrideField) {
+        usernameField = usernameOverrideField;
+      }
+    }
+
+    if (!pwFields) {
+      
+      
+      const minSubmitPasswordLength = 2;
+      pwFields = LoginFormState._getPasswordFields(form, {
+        fieldOverrideRecipe,
+        minPasswordLength: isSubmission ? minSubmitPasswordLength : 0,
+        ignoreConnect,
+      });
+    }
+
+    
+    
+    
+    if (!pwFields) {
+      if (!lazy.LoginHelper.usernameOnlyFormEnabled) {
+        return emptyResult;
+      }
+
+      usernameField = this.getUsernameFieldFromUsernameOnlyForm(
+        form.rootElement,
+        fieldOverrideRecipe
+      );
+
+      if (usernameField) {
+        let acFieldName = usernameField.getAutocompleteInfo().fieldName;
+        lazy.log(
+          "Username field ",
+          usernameField,
+          "has name/value/autocomplete:",
+          usernameField.name,
+          "/",
+          usernameField.value,
+          "/",
+          acFieldName
+        );
+      }
+
+      return {
+        ...emptyResult,
+        usernameField,
+      };
+    }
+
+    if (!usernameField) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+
+      for (let i = pwFields[0].index - 1; i >= 0; i--) {
+        let element = form.elements[i];
+        if (!lazy.LoginHelper.isUsernameFieldType(element, { ignoreConnect })) {
+          continue;
+        }
+
+        if (
+          fieldOverrideRecipe?.notUsernameSelector &&
+          element.matches(fieldOverrideRecipe.notUsernameSelector)
+        ) {
+          continue;
+        }
+
+        
+        
+        if (!usernameField) {
+          usernameField = element;
+        }
+
+        if (this.isProbablyAUsernameField(element)) {
+          
+          usernameField = element;
+          break;
+        } else if (this.isProbablyAnEmailField(element)) {
+          
+          
+          
+          
+          usernameField = element;
+        }
+      }
+    }
+
+    if (!usernameField) {
+      lazy.log("(form -- no username field found)");
+    } else {
+      let acFieldName = usernameField.getAutocompleteInfo().fieldName;
+      lazy.log(
+        "Username field ",
+        usernameField,
+        "has name/value/autocomplete:",
+        usernameField.name,
+        "/",
+        usernameField.value,
+        "/",
+        acFieldName
+      );
+    }
+
+    let pwGeneratedFields = pwFields.filter(pwField =>
+      this.generatedPasswordFields.has(pwField.element)
+    );
+    if (pwGeneratedFields.length) {
+      
+      [newPasswordField, confirmPasswordField] = pwGeneratedFields.map(
+        pwField => pwField.element
+      );
+      
+      
+      let idx = pwFields.findIndex(
+        pwField => pwField.element === newPasswordField
+      );
+      if (idx > 0) {
+        oldPasswordField = pwFields[idx - 1].element;
+      }
+      return {
+        ...emptyResult,
+        usernameField,
+        newPasswordField,
+        oldPasswordField: oldPasswordField || null,
+        confirmPasswordField: confirmPasswordField || null,
+      };
+    }
+
+    
+    
+    
+    if (!isSubmission || pwFields.length == 1) {
+      let passwordField = pwFields[0].element;
+      lazy.log(
+        "Password field",
+        passwordField,
+        "has name: ",
+        passwordField.name
+      );
+      return {
+        ...emptyResult,
+        usernameField,
+        newPasswordField: passwordField,
+        oldPasswordField: null,
+      };
+    }
+
+    
+    
+    let pw1 = pwFields[0].element.value;
+    let pw2 = pwFields[1] ? pwFields[1].element.value : null;
+    let pw3 = pwFields[2] ? pwFields[2].element.value : null;
+
+    if (pwFields.length == 3) {
+      
+
+      if (pw1 == pw2 && pw2 == pw3) {
+        
+        newPasswordField = pwFields[0].element;
+        oldPasswordField = null;
+      } else if (pw1 == pw2) {
+        newPasswordField = pwFields[0].element;
+        oldPasswordField = pwFields[2].element;
+      } else if (pw2 == pw3) {
+        oldPasswordField = pwFields[0].element;
+        newPasswordField = pwFields[2].element;
+      } else if (pw1 == pw3) {
+        
+        newPasswordField = pwFields[0].element;
+        oldPasswordField = pwFields[1].element;
+      } else {
+        
+        lazy.log("(form ignored -- all 3 pw fields differ)");
+        return emptyResult;
+      }
+    } else if (pw1 == pw2) {
+      
+      
+      newPasswordField = pwFields[0].element;
+      oldPasswordField = null;
+    } else {
+      
+      oldPasswordField = pwFields[0].element;
+      newPasswordField = pwFields[1].element;
+    }
+
+    lazy.log(
+      "Password field (new) id/name is: ",
+      newPasswordField.id,
+      " / ",
+      newPasswordField.name
+    );
+    if (oldPasswordField) {
+      lazy.log(
+        "Password field (old) id/name is: ",
+        oldPasswordField.id,
+        " / ",
+        oldPasswordField.name
+      );
+    } else {
+      lazy.log("Password field (old):", oldPasswordField);
+    }
+    return {
+      ...emptyResult,
+      usernameField,
+      newPasswordField,
+      oldPasswordField,
+    };
   }
 }
 
@@ -1863,10 +2142,11 @@ class LoginManagerChild extends JSWindowActorChild {
 
     
     
+    const docState = this.stateForDocument(acInputField.ownerDocument);
     let {
       usernameField,
       newPasswordField: passwordField,
-    } = this._getFormFields(acForm, false, recipes);
+    } = docState._getFormFields(acForm, false, recipes);
     if (usernameField == acInputField) {
       
       if (passwordField) {
@@ -1904,288 +2184,6 @@ class LoginManagerChild extends JSWindowActorChild {
     } else {
       
     }
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  _getFormFields(form, isSubmission, recipes, { ignoreConnect = false } = {}) {
-    let usernameField = null;
-    let newPasswordField = null;
-    let oldPasswordField = null;
-    let confirmPasswordField = null;
-    let emptyResult = {
-      usernameField: null,
-      newPasswordField: null,
-      oldPasswordField: null,
-      confirmPasswordField: null,
-    };
-
-    let pwFields = null;
-    let fieldOverrideRecipe = lazy.LoginRecipesContent.getFieldOverrides(
-      recipes,
-      form
-    );
-    if (fieldOverrideRecipe) {
-      lazy.log("Has fieldOverrideRecipe", fieldOverrideRecipe);
-      let pwOverrideField = lazy.LoginRecipesContent.queryLoginField(
-        form,
-        fieldOverrideRecipe.passwordSelector
-      );
-      if (pwOverrideField) {
-        lazy.log("Has pwOverrideField", pwOverrideField);
-        
-        let formLike = lazy.LoginFormFactory.createFromField(pwOverrideField);
-        pwFields = [
-          {
-            index: [...formLike.elements].indexOf(pwOverrideField),
-            element: pwOverrideField,
-          },
-        ];
-      }
-
-      let usernameOverrideField = lazy.LoginRecipesContent.queryLoginField(
-        form,
-        fieldOverrideRecipe.usernameSelector
-      );
-      if (usernameOverrideField) {
-        usernameField = usernameOverrideField;
-      }
-    }
-
-    if (!pwFields) {
-      
-      
-      const minSubmitPasswordLength = 2;
-      pwFields = LoginFormState._getPasswordFields(form, {
-        fieldOverrideRecipe,
-        minPasswordLength: isSubmission ? minSubmitPasswordLength : 0,
-        ignoreConnect,
-      });
-    }
-
-    const docState = this.stateForDocument(form.ownerDocument);
-
-    
-    
-    
-    if (!pwFields) {
-      if (!lazy.LoginHelper.usernameOnlyFormEnabled) {
-        return emptyResult;
-      }
-
-      usernameField = docState.getUsernameFieldFromUsernameOnlyForm(
-        form.rootElement,
-        fieldOverrideRecipe
-      );
-
-      if (usernameField) {
-        let acFieldName = usernameField.getAutocompleteInfo().fieldName;
-        lazy.log(
-          "Username field ",
-          usernameField,
-          "has name/value/autocomplete:",
-          usernameField.name,
-          "/",
-          usernameField.value,
-          "/",
-          acFieldName
-        );
-      }
-
-      return {
-        ...emptyResult,
-        usernameField,
-      };
-    }
-
-    if (!usernameField) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-
-      for (let i = pwFields[0].index - 1; i >= 0; i--) {
-        let element = form.elements[i];
-        if (!lazy.LoginHelper.isUsernameFieldType(element, { ignoreConnect })) {
-          continue;
-        }
-
-        if (
-          fieldOverrideRecipe?.notUsernameSelector &&
-          element.matches(fieldOverrideRecipe.notUsernameSelector)
-        ) {
-          continue;
-        }
-
-        
-        
-        if (!usernameField) {
-          usernameField = element;
-        }
-
-        if (docState.isProbablyAUsernameField(element)) {
-          
-          usernameField = element;
-          break;
-        } else if (docState.isProbablyAnEmailField(element)) {
-          
-          
-          
-          
-          usernameField = element;
-        }
-      }
-    }
-
-    if (!usernameField) {
-      lazy.log("(form -- no username field found)");
-    } else {
-      let acFieldName = usernameField.getAutocompleteInfo().fieldName;
-      lazy.log(
-        "Username field ",
-        usernameField,
-        "has name/value/autocomplete:",
-        usernameField.name,
-        "/",
-        usernameField.value,
-        "/",
-        acFieldName
-      );
-    }
-
-    let pwGeneratedFields = pwFields.filter(pwField =>
-      docState.generatedPasswordFields.has(pwField.element)
-    );
-    if (pwGeneratedFields.length) {
-      
-      [newPasswordField, confirmPasswordField] = pwGeneratedFields.map(
-        pwField => pwField.element
-      );
-      
-      
-      let idx = pwFields.findIndex(
-        pwField => pwField.element === newPasswordField
-      );
-      if (idx > 0) {
-        oldPasswordField = pwFields[idx - 1].element;
-      }
-      return {
-        ...emptyResult,
-        usernameField,
-        newPasswordField,
-        oldPasswordField: oldPasswordField || null,
-        confirmPasswordField: confirmPasswordField || null,
-      };
-    }
-
-    
-    
-    
-    if (!isSubmission || pwFields.length == 1) {
-      let passwordField = pwFields[0].element;
-      lazy.log(
-        "Password field",
-        passwordField,
-        "has name: ",
-        passwordField.name
-      );
-      return {
-        ...emptyResult,
-        usernameField,
-        newPasswordField: passwordField,
-        oldPasswordField: null,
-      };
-    }
-
-    
-    
-    let pw1 = pwFields[0].element.value;
-    let pw2 = pwFields[1] ? pwFields[1].element.value : null;
-    let pw3 = pwFields[2] ? pwFields[2].element.value : null;
-
-    if (pwFields.length == 3) {
-      
-
-      if (pw1 == pw2 && pw2 == pw3) {
-        
-        newPasswordField = pwFields[0].element;
-        oldPasswordField = null;
-      } else if (pw1 == pw2) {
-        newPasswordField = pwFields[0].element;
-        oldPasswordField = pwFields[2].element;
-      } else if (pw2 == pw3) {
-        oldPasswordField = pwFields[0].element;
-        newPasswordField = pwFields[2].element;
-      } else if (pw1 == pw3) {
-        
-        newPasswordField = pwFields[0].element;
-        oldPasswordField = pwFields[1].element;
-      } else {
-        
-        lazy.log("(form ignored -- all 3 pw fields differ)");
-        return emptyResult;
-      }
-    } else if (pw1 == pw2) {
-      
-      
-      newPasswordField = pwFields[0].element;
-      oldPasswordField = null;
-    } else {
-      
-      oldPasswordField = pwFields[0].element;
-      newPasswordField = pwFields[1].element;
-    }
-
-    lazy.log(
-      "Password field (new) id/name is: ",
-      newPasswordField.id,
-      " / ",
-      newPasswordField.name
-    );
-    if (oldPasswordField) {
-      lazy.log(
-        "Password field (old) id/name is: ",
-        oldPasswordField.id,
-        " / ",
-        oldPasswordField.name
-      );
-    } else {
-      lazy.log("Password field (old):", oldPasswordField);
-    }
-    return {
-      ...emptyResult,
-      usernameField,
-      newPasswordField,
-      oldPasswordField,
-    };
   }
 
   
@@ -2331,9 +2329,10 @@ class LoginManagerChild extends JSWindowActorChild {
 
     
     let recipes = lazy.LoginRecipesContent.getRecipes(origin, win);
+    const docState = this.stateForDocument(form.ownerDocument);
     let fields = {
       targetField,
-      ...this._getFormFields(form, true, recipes, { ignoreConnect }),
+      ...docState._getFormFields(form, true, recipes, { ignoreConnect }),
     };
 
     
@@ -2751,6 +2750,7 @@ class LoginManagerChild extends JSWindowActorChild {
       FORM_IN_CROSSORIGIN_SUBFRAME: 13,
       FILLED_USERNAME_ONLY_FORM: 14,
     };
+    const docState = this.stateForDocument(form.ownerDocument);
 
     
     
@@ -2759,7 +2759,7 @@ class LoginManagerChild extends JSWindowActorChild {
     let {
       usernameField,
       newPasswordField: passwordField,
-    } = this._getFormFields(form, false, recipes);
+    } = docState._getFormFields(form, false, recipes);
 
     try {
       
@@ -2994,7 +2994,6 @@ class LoginManagerChild extends JSWindowActorChild {
 
       
 
-      const docState = this.stateForDocument(form.ownerDocument);
       let willAutofill =
         usernameField || passwordField.value != selectedLogin.password;
       if (willAutofill) {
@@ -3145,11 +3144,12 @@ class LoginManagerChild extends JSWindowActorChild {
       formOrigin,
       doc.defaultView
     );
+    const docState = this.stateForDocument(form.ownerDocument);
     let {
       usernameField,
       newPasswordField,
       oldPasswordField,
-    } = this._getFormFields(form, false, recipes);
+    } = docState._getFormFields(form, false, recipes);
 
     return [usernameField, newPasswordField, oldPasswordField];
   }
