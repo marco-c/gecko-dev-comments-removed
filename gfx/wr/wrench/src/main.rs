@@ -484,7 +484,7 @@ fn rawtest(mut wrench: Wrench, window: &mut WindowWrapper, rx: Receiver<Notifier
 fn reftest<'a>(
     mut wrench: Wrench,
     window: &mut WindowWrapper,
-    subargs: &clap::ArgMatches<'a>,
+    subargs: &clap::ArgMatches,
     rx: Receiver<NotifierEvent>
 ) -> usize {
     let dim = window.get_inner_size();
@@ -571,9 +571,11 @@ pub fn main() {
         );
     }
 
+    #[allow(deprecated)] 
     let args_yaml = load_yaml!("args.yaml");
-    let clap = clap::App::from_yaml(args_yaml)
-        .setting(clap::AppSettings::ArgRequiredElseHelp);
+    #[allow(deprecated)] 
+    let clap = clap::Command::from_yaml(args_yaml)
+        .arg_required_else_help(true);
 
     
     
@@ -835,7 +837,7 @@ fn render<'a>(
     wrench: &mut Wrench,
     window: &mut WindowWrapper,
     events_loop: &mut winit::event_loop::EventLoop<()>,
-    subargs: &clap::ArgMatches<'a>,
+    subargs: &clap::ArgMatches,
     no_block: bool,
     no_batch: bool,
 ) {
