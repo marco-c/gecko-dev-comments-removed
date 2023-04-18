@@ -7,7 +7,6 @@ from __future__ import absolute_import, print_function, unicode_literals
 import platform as platform_mod
 import sys
 
-from pathlib import Path
 
 
 
@@ -151,14 +150,6 @@ def make_checksums(version, validate=False):
 
 if __name__ == "__main__":
     """Allow invoking the module as a utility to update checksums."""
-
-    
-    
-    
-    
-    
-    mod_path = Path(__file__).resolve().parent
-    sys.path.insert(0, str(mod_path / ".." / ".." / "requests"))
 
     update = False
     if len(sys.argv) > 1:
