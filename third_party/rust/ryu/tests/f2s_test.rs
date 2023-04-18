@@ -18,6 +18,14 @@
 
 
 
+#![allow(
+    clippy::approx_constant,
+    clippy::float_cmp,
+    clippy::non_ascii_literal,
+    clippy::unreadable_literal,
+    clippy::unseparated_literal_suffix
+)]
+
 #[macro_use]
 mod macros;
 

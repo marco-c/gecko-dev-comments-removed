@@ -31,6 +31,12 @@ fn main() {
     if minor < 45 {
         println!("cargo:rustc-cfg=no_btreemap_remove_entry");
     }
+
+    
+    
+    if minor < 53 {
+        println!("cargo:rustc-cfg=no_btreemap_retain");
+    }
 }
 
 fn rustc_minor_version() -> Option<u32> {

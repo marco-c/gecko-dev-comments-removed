@@ -21,9 +21,12 @@ pub const SIGN_SHIFT: u32 = 31;
 pub const MAX_STR_BUFFER_SIZE: usize = 32;
 
 
-pub const MAX_PRECISION: u32 = 28;
+pub const MAX_PRECISION: u8 = 28;
 #[cfg(not(feature = "legacy-ops"))]
-pub const MAX_PRECISION_I32: i32 = 28;
+
+pub const MAX_PRECISION_I32: i32 = MAX_PRECISION as _;
+
+pub const MAX_PRECISION_U32: u32 = MAX_PRECISION as _;
 
 pub const MAX_I128_REPR: i128 = 0x0000_0000_FFFF_FFFF_FFFF_FFFF_FFFF_FFFF;
 

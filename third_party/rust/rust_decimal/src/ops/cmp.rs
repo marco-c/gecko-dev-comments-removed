@@ -31,8 +31,8 @@ pub(crate) fn cmp_impl(d1: &Decimal, d2: &Decimal) -> Ordering {
     }
 
     
-    let d1 = Dec64::new(&d1);
-    let d2 = Dec64::new(&d2);
+    let d1 = Dec64::new(d1);
+    let d2 = Dec64::new(d2);
     
     
     if d1.negative {

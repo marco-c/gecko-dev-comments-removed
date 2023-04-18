@@ -52,7 +52,7 @@ impl Map<String, Value> {
     
     #[inline]
     pub fn clear(&mut self) {
-        self.map.clear()
+        self.map.clear();
     }
 
     
@@ -92,6 +92,20 @@ impl Map<String, Value> {
         Q: ?Sized + Ord + Eq + Hash,
     {
         self.map.get_mut(key)
+    }
+
+    
+    
+    
+    
+    #[inline]
+    #[cfg(any(feature = "preserve_order", not(no_btreemap_get_key_value)))]
+    pub fn get_key_value<Q>(&self, key: &Q) -> Option<(&String, &Value)>
+    where
+        String: Borrow<Q>,
+        Q: ?Sized + Ord + Eq + Hash,
+    {
+        self.map.get_key_value(key)
     }
 
     
@@ -249,8 +263,22 @@ impl Map<String, Value> {
             iter: self.map.values_mut(),
         }
     }
+
+    
+    
+    
+    
+    #[cfg(not(no_btreemap_retain))]
+    #[inline]
+    pub fn retain<F>(&mut self, f: F)
+    where
+        F: FnMut(&String, &mut Value) -> bool,
+    {
+        self.map.retain(f);
+    }
 }
 
+#[allow(clippy::derivable_impls)] 
 impl Default for Map<String, Value> {
     #[inline]
     fn default() -> Self {

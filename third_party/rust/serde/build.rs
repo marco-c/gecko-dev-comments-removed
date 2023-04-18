@@ -55,14 +55,18 @@ fn main() {
     
     
     
-    if minor >= 26 && !emscripten {
+    
+    if minor >= 26 && (!emscripten || minor >= 40) {
         println!("cargo:rustc-cfg=integer128");
     }
 
     
     
+    
+    
     if minor >= 27 {
         println!("cargo:rustc-cfg=range_inclusive");
+        println!("cargo:rustc-cfg=iterator_try_fold");
     }
 
     

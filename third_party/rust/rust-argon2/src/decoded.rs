@@ -6,8 +6,8 @@
 
 
 
-use version::Version;
-use variant::Variant;
+use crate::variant::Variant;
+use crate::version::Version;
 
 
 #[derive(Debug, Eq, PartialEq)]

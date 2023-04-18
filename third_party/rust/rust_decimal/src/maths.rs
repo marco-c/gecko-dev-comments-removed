@@ -1,9 +1,14 @@
 use crate::prelude::*;
 use num_traits::pow::Pow;
 
-const TWO: Decimal = Decimal::from_parts_raw(2, 0, 0, 0);
-const PI: Decimal = Decimal::from_parts_raw(1102470953, 185874565, 1703060790, 1835008);
+
 const EXP_TOLERANCE: Decimal = Decimal::from_parts(2, 0, 0, false, 7);
+
+const LN10_INVERSE: Decimal = Decimal::from_parts_raw(1763037029, 1670682625, 235431510, 1835008);
+
+const TRIG_SERIES_UPPER_BOUND: usize = 6;
+
+const EIGHTH_PI: Decimal = Decimal::from_parts_raw(2822163429, 3244459792, 212882598, 1835008);
 
 
 const FACTORIAL: [Decimal; 28] = [
@@ -94,8 +99,18 @@ pub trait MathematicalOps {
     fn sqrt(&self) -> Option<Decimal>;
 
     
-    
     fn ln(&self) -> Decimal;
+
+    
+    
+    fn checked_ln(&self) -> Option<Decimal>;
+
+    
+    fn log10(&self) -> Decimal;
+
+    
+    
+    fn checked_log10(&self) -> Option<Decimal>;
 
     
     fn erf(&self) -> Decimal;
@@ -108,6 +123,28 @@ pub trait MathematicalOps {
 
     
     fn checked_norm_pdf(&self) -> Option<Decimal>;
+
+    
+    
+    fn sin(&self) -> Decimal;
+
+    
+    fn checked_sin(&self) -> Option<Decimal>;
+
+    
+    
+    fn cos(&self) -> Decimal;
+
+    
+    fn checked_cos(&self) -> Option<Decimal>;
+
+    
+    
+    fn tan(&self) -> Decimal;
+
+    
+    
+    fn checked_tan(&self) -> Option<Decimal>;
 }
 
 impl MathematicalOps for Decimal {
@@ -144,7 +181,7 @@ impl MathematicalOps for Decimal {
         }
 
         let mut term = *self;
-        let mut result = self + Decimal::ONE;
+        let mut result = self.checked_add(Decimal::ONE)?;
 
         for factorial in FACTORIAL.iter().skip(2) {
             term = self.checked_mul(term)?;
@@ -269,11 +306,11 @@ impl MathematicalOps for Decimal {
                 return None;
             }
 
-            if exp.is_sign_negative() {
-                return self.checked_powi(-(exp.lo() as i64));
+            return if exp.is_sign_negative() {
+                self.checked_powi(-(exp.lo() as i64))
             } else {
-                return self.checked_powu(exp.lo() as u64);
-            }
+                self.checked_powu(exp.lo() as u64)
+            };
         }
 
         
@@ -298,7 +335,7 @@ impl MathematicalOps for Decimal {
         }
 
         
-        let mut result = self / TWO;
+        let mut result = self / Decimal::TWO;
         
         
         
@@ -314,28 +351,132 @@ impl MathematicalOps for Decimal {
             assert!(circuit_breaker < 1000, "geo mean circuit breaker");
 
             last = result;
-            result = (result + self / result) / TWO;
+            result = (result + self / result) / Decimal::TWO;
         }
 
         Some(result)
     }
 
+    #[cfg(feature = "maths-nopanic")]
     fn ln(&self) -> Decimal {
-        const C4: Decimal = Decimal::from_parts_raw(4, 0, 0, 0);
-        const C256: Decimal = Decimal::from_parts_raw(256, 0, 0, 0);
-        const EIGHT_LN2: Decimal = Decimal::from_parts(1406348788, 262764557, 3006046716, false, 28);
-
-        if self.is_sign_positive() {
-            if *self == Decimal::ONE {
-                Decimal::ZERO
-            } else {
-                let rhs = C4 / (self * C256);
-                let arith_geo_mean = arithmetic_geo_mean_of_2(&Decimal::ONE, &rhs);
-                (PI / (arith_geo_mean * TWO)) - EIGHT_LN2
-            }
-        } else {
-            Decimal::ZERO
+        match self.checked_ln() {
+            Some(result) => result,
+            None => Decimal::ZERO,
         }
+    }
+
+    #[cfg(not(feature = "maths-nopanic"))]
+    fn ln(&self) -> Decimal {
+        match self.checked_ln() {
+            Some(result) => result,
+            None => {
+                if self.is_sign_negative() {
+                    panic!("Unable to calculate ln for negative numbers")
+                } else if self.is_zero() {
+                    panic!("Unable to calculate ln for zero")
+                } else {
+                    panic!("Calculation of ln failed for unknown reasons")
+                }
+            }
+        }
+    }
+
+    fn checked_ln(&self) -> Option<Decimal> {
+        if self.is_sign_negative() || self.is_zero() {
+            return None;
+        }
+        if self.is_one() {
+            return Some(Decimal::ZERO);
+        }
+
+        
+        let mut x = *self;
+        let mut count = 0;
+        while x >= Decimal::ONE {
+            x *= Decimal::E_INVERSE;
+            count += 1;
+        }
+        while x <= Decimal::E_INVERSE {
+            x *= Decimal::E;
+            count -= 1;
+        }
+        x -= Decimal::ONE;
+        if x.is_zero() {
+            return Some(Decimal::new(count, 0));
+        }
+        let mut result = Decimal::ZERO;
+        let mut iteration = 0;
+        let mut y = Decimal::ONE;
+        let mut last = Decimal::ONE;
+        while last != result && iteration < 100 {
+            iteration += 1;
+            last = result;
+            y *= -x;
+            result += y / Decimal::new(iteration, 0);
+        }
+        Some(Decimal::new(count, 0) - result)
+    }
+
+    #[cfg(feature = "maths-nopanic")]
+    fn log10(&self) -> Decimal {
+        match self.checked_log10() {
+            Some(result) => result,
+            None => Decimal::ZERO,
+        }
+    }
+
+    #[cfg(not(feature = "maths-nopanic"))]
+    fn log10(&self) -> Decimal {
+        match self.checked_log10() {
+            Some(result) => result,
+            None => {
+                if self.is_sign_negative() {
+                    panic!("Unable to calculate log10 for negative numbers")
+                } else if self.is_zero() {
+                    panic!("Unable to calculate log10 for zero")
+                } else {
+                    panic!("Calculation of log10 failed for unknown reasons")
+                }
+            }
+        }
+    }
+
+    fn checked_log10(&self) -> Option<Decimal> {
+        use crate::ops::array::{div_by_u32, is_all_zero};
+        
+        if self.is_sign_negative() || self.is_zero() {
+            return None;
+        }
+        if self.is_one() {
+            return Some(Decimal::ZERO);
+        }
+        
+        
+        
+        
+        
+        
+        
+        
+        let mut working = self.mantissa_array3();
+        let mut result = 0;
+        let mut invalid_early_exit = false;
+        while !is_all_zero(&working) {
+            let remainder = div_by_u32(&mut working, 10u32);
+            if remainder != 0 {
+                invalid_early_exit = true;
+                break;
+            }
+            result += 1;
+            if working[2] == 0 && working[1] == 0 && working[0] == 1 {
+                break;
+            }
+        }
+        if !invalid_early_exit {
+            return Some((result - self.scale()).into());
+        }
+
+        self.checked_ln().map(|result| LN10_INVERSE * result)
     }
 
     fn erf(&self) -> Decimal {
@@ -357,7 +498,7 @@ impl MathematicalOps for Decimal {
     }
 
     fn norm_cdf(&self) -> Decimal {
-        (Decimal::ONE + (self / Decimal::from_parts(2318911239, 3292722, 0, false, 16)).erf()) / TWO
+        (Decimal::ONE + (self / Decimal::from_parts(2318911239, 3292722, 0, false, 16)).erf()) / Decimal::TWO
     }
 
     fn norm_pdf(&self) -> Decimal {
@@ -370,8 +511,194 @@ impl MathematicalOps for Decimal {
     fn checked_norm_pdf(&self) -> Option<Decimal> {
         let sqrt2pi = Decimal::from_parts_raw(2133383024, 2079885984, 1358845910, 1835008);
         let factor = -self.checked_powi(2)?;
-        let factor = factor.checked_div(TWO)?;
+        let factor = factor.checked_div(Decimal::TWO)?;
         factor.checked_exp()?.checked_div(sqrt2pi)
+    }
+
+    fn sin(&self) -> Decimal {
+        match self.checked_sin() {
+            Some(x) => x,
+            None => panic!("Sin overflowed"),
+        }
+    }
+
+    fn checked_sin(&self) -> Option<Decimal> {
+        if self.is_zero() {
+            return Some(Decimal::ZERO);
+        }
+        if self.is_sign_negative() {
+            
+            return (-self).checked_sin().map(|x| -x);
+        }
+        if self >= &Decimal::TWO_PI {
+            
+            let adjusted = self.checked_rem(Decimal::TWO_PI)?;
+            return adjusted.checked_sin();
+        }
+        if self >= &Decimal::PI {
+            
+            return (self - Decimal::PI).checked_sin().map(|x| -x);
+        }
+        if self >= &Decimal::QUARTER_PI {
+            
+            return (Decimal::HALF_PI - self).checked_cos();
+        }
+
+        
+        
+        
+        
+        let mut result = Decimal::ZERO;
+        for n in 0..TRIG_SERIES_UPPER_BOUND {
+            let x = 2 * n + 1;
+            let element = self.checked_powi(x as i64)?.checked_div(FACTORIAL[x])?;
+            if n & 0x1 == 0 {
+                result += element;
+            } else {
+                result -= element;
+            }
+        }
+        Some(result)
+    }
+
+    fn cos(&self) -> Decimal {
+        match self.checked_cos() {
+            Some(x) => x,
+            None => panic!("Cos overflowed"),
+        }
+    }
+
+    fn checked_cos(&self) -> Option<Decimal> {
+        if self.is_zero() {
+            return Some(Decimal::ONE);
+        }
+        if self.is_sign_negative() {
+            
+            return (-self).checked_cos();
+        }
+        if self >= &Decimal::TWO_PI {
+            
+            let adjusted = self.checked_rem(Decimal::TWO_PI)?;
+            return adjusted.checked_cos();
+        }
+        if self >= &Decimal::PI {
+            
+            return (self - Decimal::PI).checked_cos().map(|x| -x);
+        }
+        if self >= &Decimal::QUARTER_PI {
+            
+            return (Decimal::HALF_PI - self).checked_sin();
+        }
+
+        
+        
+        
+        
+        let mut result = Decimal::ZERO;
+        for n in 0..TRIG_SERIES_UPPER_BOUND {
+            let x = 2 * n;
+            let element = self.checked_powi(x as i64)?.checked_div(FACTORIAL[x])?;
+            if n & 0x1 == 0 {
+                result += element;
+            } else {
+                result -= element;
+            }
+        }
+        Some(result)
+    }
+
+    fn tan(&self) -> Decimal {
+        match self.checked_tan() {
+            Some(x) => x,
+            None => panic!("Tan overflowed"),
+        }
+    }
+
+    fn checked_tan(&self) -> Option<Decimal> {
+        if self.is_zero() {
+            return Some(Decimal::ZERO);
+        }
+        if self.is_sign_negative() {
+            
+            return (-self).checked_tan().map(|x| -x);
+        }
+        if self >= &Decimal::TWO_PI {
+            
+            let adjusted = self.checked_rem(Decimal::TWO_PI)?;
+            return adjusted.checked_tan();
+        }
+        
+        if self >= &Decimal::PI {
+            
+            return (self - Decimal::PI).checked_tan();
+        }
+        
+        if self > &Decimal::HALF_PI {
+            
+            
+            return ((Decimal::HALF_PI - self) + Decimal::HALF_PI).checked_tan().map(|x| -x);
+        }
+
+        
+        
+        if self > &Decimal::QUARTER_PI {
+            return match (Decimal::HALF_PI - self).checked_tan() {
+                Some(x) => Decimal::ONE.checked_div(x),
+                None => None,
+            };
+        }
+
+        
+        
+        
+        if self > &EIGHTH_PI {
+            
+            let tan_half = (self / Decimal::TWO).checked_tan()?;
+            
+            let dividend = Decimal::TWO.checked_mul(tan_half)?;
+
+            
+            let squared = tan_half.checked_mul(tan_half)?;
+            let divisor = Decimal::ONE - squared;
+            
+            if divisor.is_zero() {
+                return None;
+            }
+            return dividend.checked_div(divisor);
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        const SERIES: [(Decimal, u64); 6] = [
+            
+            (Decimal::from_parts_raw(89478485, 347537611, 180700362, 1835008), 3),
+            
+            (Decimal::from_parts_raw(894784853, 3574988881, 72280144, 1835008), 5),
+            
+            (Decimal::from_parts_raw(905437054, 3907911371, 2925624, 1769472), 7),
+            
+            (Decimal::from_parts_raw(3191872741, 2108928381, 11855473, 1835008), 9),
+            
+            (Decimal::from_parts_raw(3482645539, 2612995122, 4804769, 1835008), 11),
+            
+            (Decimal::from_parts_raw(4189029078, 2192791200, 1947296, 1835008), 13),
+        ];
+        let mut result = *self;
+        for (fraction, pow) in SERIES {
+            result += fraction * self.powu(pow);
+        }
+        Some(result)
     }
 }
 
@@ -407,39 +734,12 @@ impl Pow<f64> for Decimal {
     }
 }
 
-
-
-fn arithmetic_geo_mean_of_2(a: &Decimal, b: &Decimal) -> Decimal {
-    const TOLERANCE: Decimal = Decimal::from_parts(5, 0, 0, false, 7);
-    let diff = (a - b).abs();
-
-    if diff < TOLERANCE {
-        *a
-    } else {
-        arithmetic_geo_mean_of_2(&mean_of_2(a, b), &geo_mean_of_2(a, b))
-    }
-}
-
-
-fn mean_of_2(a: &Decimal, b: &Decimal) -> Decimal {
-    (a + b) / TWO
-}
-
-
-fn geo_mean_of_2(a: &Decimal, b: &Decimal) -> Decimal {
-    
-    
-    (a * b).sqrt().unwrap()
-}
-
 #[cfg(test)]
 mod test {
     use super::*;
 
-    use std::str::FromStr;
-
     #[test]
-    fn factorials() {
+    fn test_factorials() {
         assert_eq!("1", FACTORIAL[0].to_string(), "0!");
         assert_eq!("1", FACTORIAL[1].to_string(), "1!");
         assert_eq!("2", FACTORIAL[2].to_string(), "2!");
@@ -468,55 +768,5 @@ mod test {
         assert_eq!("15511210043330985984000000", FACTORIAL[25].to_string(), "25!");
         assert_eq!("403291461126605635584000000", FACTORIAL[26].to_string(), "26!");
         assert_eq!("10888869450418352160768000000", FACTORIAL[27].to_string(), "27!");
-    }
-
-    #[test]
-    fn test_geo_mean_of_2() {
-        let test_cases = &[
-            (
-                Decimal::from_str("2").unwrap(),
-                Decimal::from_str("2").unwrap(),
-                Decimal::from_str("2").unwrap(),
-            ),
-            (
-                Decimal::from_str("4").unwrap(),
-                Decimal::from_str("3").unwrap(),
-                Decimal::from_str("3.4641016151377545870548926830").unwrap(),
-            ),
-            (
-                Decimal::from_str("12").unwrap(),
-                Decimal::from_str("3").unwrap(),
-                Decimal::from_str("6.000000000000000000000000000").unwrap(),
-            ),
-        ];
-
-        for case in test_cases {
-            assert_eq!(case.2, geo_mean_of_2(&case.0, &case.1));
-        }
-    }
-
-    #[test]
-    fn test_mean_of_2() {
-        let test_cases = &[
-            (
-                Decimal::from_str("2").unwrap(),
-                Decimal::from_str("2").unwrap(),
-                Decimal::from_str("2").unwrap(),
-            ),
-            (
-                Decimal::from_str("4").unwrap(),
-                Decimal::from_str("3").unwrap(),
-                Decimal::from_str("3.5").unwrap(),
-            ),
-            (
-                Decimal::from_str("12").unwrap(),
-                Decimal::from_str("3").unwrap(),
-                Decimal::from_str("7.5").unwrap(),
-            ),
-        ];
-
-        for case in test_cases {
-            assert_eq!(case.2, mean_of_2(&case.0, &case.1));
-        }
     }
 }

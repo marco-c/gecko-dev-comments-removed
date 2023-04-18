@@ -1,10 +1,8 @@
-extern crate serde;
-
 use core::fmt;
 use core::marker::PhantomData;
 
-use self::serde::de::{Deserialize, Deserializer, MapAccess, Visitor};
-use self::serde::ser::{Serialize, SerializeMap, Serializer};
+use serde::de::{Deserialize, Deserializer, MapAccess, Visitor};
+use serde::ser::{Serialize, SerializeMap, Serializer};
 
 use super::{Entry, Slab};
 
@@ -33,7 +31,7 @@ where
 {
     type Value = Slab<T>;
 
-    fn expecting(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(fmt, "a map")
     }
 
@@ -45,6 +43,7 @@ where
 
         
         let mut vacant_list_broken = false;
+        let mut first_vacant_index = None;
         while let Some((key, value)) = map.next_entry()? {
             if key < slab.entries.len() {
                 
@@ -56,6 +55,9 @@ where
                 
                 slab.entries[key] = Entry::Occupied(value);
             } else {
+                if first_vacant_index.is_none() && slab.entries.len() < key {
+                    first_vacant_index = Some(slab.entries.len());
+                }
                 
                 while slab.entries.len() < key {
                     
@@ -72,6 +74,14 @@ where
             slab.next = slab.entries.len();
         } else if vacant_list_broken {
             slab.recreate_vacant_list();
+        } else if let Some(first_vacant_index) = first_vacant_index {
+            let next = slab.entries.len();
+            match &mut slab.entries[first_vacant_index] {
+                Entry::Vacant(n) => *n = next,
+                _ => unreachable!(),
+            }
+        } else {
+            unreachable!()
         }
 
         Ok(slab)

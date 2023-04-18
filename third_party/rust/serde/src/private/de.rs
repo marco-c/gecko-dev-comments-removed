@@ -2832,7 +2832,7 @@ where
     where
         T: DeserializeSeed<'de>,
     {
-        while let Some(item) = self.iter.next() {
+        for item in &mut self.iter {
             
             if let Some((ref key, ref content)) = *item {
                 self.pending_content = Some(content);
@@ -2934,7 +2934,7 @@ where
     where
         T: DeserializeSeed<'de>,
     {
-        while let Some(item) = self.iter.next() {
+        for item in &mut self.iter {
             if let Some((ref key, ref content)) = *item {
                 
                 

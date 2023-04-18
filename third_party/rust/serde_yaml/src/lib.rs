@@ -65,7 +65,7 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/serde_yaml/0.8.17")]
+#![doc(html_root_url = "https://docs.rs/serde_yaml/0.8.21")]
 #![deny(missing_docs)]
 
 #![allow(
@@ -73,13 +73,18 @@
     clippy::should_implement_trait,
     
     clippy::cast_lossless,
+    clippy::if_not_else,
+    clippy::match_same_arms,
     clippy::module_name_repetitions,
     clippy::needless_pass_by_value,
     clippy::option_if_let_else,
+    clippy::redundant_else,
     clippy::single_match_else,
     
     clippy::cast_possible_wrap,
     clippy::cast_precision_loss,
+    clippy::doc_markdown,
+    clippy::items_after_statements,
     
     clippy::missing_errors_doc,
     clippy::must_use_candidate,

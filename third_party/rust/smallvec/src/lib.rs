@@ -70,7 +70,14 @@
 
 
 
+
+
+
+
+
+
 #![no_std]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![cfg_attr(feature = "specialization", allow(incomplete_features))]
 #![cfg_attr(feature = "specialization", feature(specialization))]
 #![cfg_attr(feature = "may_dangle", feature(dropck_eyepatch))]
@@ -169,6 +176,52 @@ macro_rules! smallvec {
         } else {
             $crate::SmallVec::from_vec($crate::alloc::vec![$($x,)*])
         }
+    });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(feature = "const_new")]
+#[cfg_attr(docsrs, doc(cfg(feature = "const_new")))]
+#[macro_export]
+macro_rules! smallvec_inline {
+    
+    (@one $x:expr) => (1usize);
+    ($elem:expr; $n:expr) => ({
+        $crate::SmallVec::<[_; $n]>::from_const([$elem; $n])
+    });
+    ($($x:expr),+ $(,)?) => ({
+        const N: usize = 0usize $(+ $crate::smallvec_inline!(@one $x))*;
+        $crate::SmallVec::<[_; N]>::from_const([$($x,)*])
     });
 }
 
@@ -355,6 +408,17 @@ union SmallVecData<A: Array> {
     heap: (*mut A::Item, usize),
 }
 
+#[cfg(all(feature = "union", feature = "const_new"))]
+impl<T, const N: usize> SmallVecData<[T; N]> {
+    #[cfg_attr(docsrs, doc(cfg(feature = "const_new")))]
+    #[inline]
+    const fn from_const(inline: MaybeUninit<[T; N]>) -> Self {
+        SmallVecData {
+            inline: core::mem::ManuallyDrop::new(inline),
+        }
+    }
+}
+
 #[cfg(feature = "union")]
 impl<A: Array> SmallVecData<A> {
     #[inline]
@@ -393,6 +457,15 @@ impl<A: Array> SmallVecData<A> {
 enum SmallVecData<A: Array> {
     Inline(MaybeUninit<A>),
     Heap((*mut A::Item, usize)),
+}
+
+#[cfg(all(not(feature = "union"), feature = "const_new"))]
+impl<T, const N: usize> SmallVecData<[T; N]> {
+    #[cfg_attr(docsrs, doc(cfg(feature = "const_new")))]
+    #[inline]
+    const fn from_const(inline: MaybeUninit<[T; N]>) -> Self {
+        SmallVecData::Inline(inline)
+    }
 }
 
 #[cfg(not(feature = "union"))]
@@ -725,11 +798,11 @@ impl<A: Array> SmallVec<A> {
         let len = self.len();
         let start = match range.start_bound() {
             Included(&n) => n,
-            Excluded(&n) => n + 1,
+            Excluded(&n) => n.checked_add(1).expect("Range start out of bounds"),
             Unbounded => 0,
         };
         let end = match range.end_bound() {
-            Included(&n) => n + 1,
+            Included(&n) => n.checked_add(1).expect("Range end out of bounds"),
             Excluded(&n) => n,
             Unbounded => len,
         };
@@ -1489,6 +1562,7 @@ impl<A: Array> BorrowMut<[A::Item]> for SmallVec<A> {
 }
 
 #[cfg(feature = "write")]
+#[cfg_attr(docsrs, doc(cfg(feature = "write")))]
 impl<A: Array<Item = u8>> io::Write for SmallVec<A> {
     #[inline]
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
@@ -1509,6 +1583,7 @@ impl<A: Array<Item = u8>> io::Write for SmallVec<A> {
 }
 
 #[cfg(feature = "serde")]
+#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 impl<A: Array> Serialize for SmallVec<A>
 where
     A::Item: Serialize,
@@ -1523,6 +1598,7 @@ where
 }
 
 #[cfg(feature = "serde")]
+#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 impl<'de, A: Array> Deserialize<'de> for SmallVec<A>
 where
     A::Item: Deserialize<'de>,
@@ -1726,6 +1802,21 @@ where
     #[inline]
     fn clone(&self) -> SmallVec<A> {
         SmallVec::from(self.as_slice())
+    }
+
+    fn clone_from(&mut self, source: &Self) {
+        
+
+        
+        self.truncate(source.len());
+
+        
+        
+        let (init, tail) = source.split_at(self.len());
+
+        
+        self.clone_from_slice(init);
+        self.extend(tail.iter().cloned());
     }
 }
 
@@ -1937,7 +2028,35 @@ impl<'a> Drop for SetLenOnDrop<'a> {
     }
 }
 
-#[cfg(feature = "const_generics")]
+#[cfg(feature = "const_new")]
+impl<T, const N: usize> SmallVec<[T; N]> {
+    
+    
+    
+    #[cfg_attr(docsrs, doc(cfg(feature = "const_new")))]
+    #[inline]
+    pub const fn new_const() -> Self {
+        SmallVec {
+            capacity: 0,
+            data: SmallVecData::from_const(MaybeUninit::uninit()),
+        }
+    }
+
+    
+    
+    
+    #[cfg_attr(docsrs, doc(cfg(feature = "const_new")))]
+    #[inline]
+    pub const fn from_const(items: [T; N]) -> Self {
+        SmallVec {
+            capacity: N,
+            data: SmallVecData::from_const(MaybeUninit::new(items)),
+        }
+    }
+}
+
+#[cfg(all(feature = "const_generics", not(doc)))]
+#[cfg_attr(docsrs, doc(cfg(feature = "const_generics")))]
 unsafe impl<T, const N: usize> Array for [T; N] {
     type Item = T;
     fn size() -> usize {
@@ -1945,7 +2064,7 @@ unsafe impl<T, const N: usize> Array for [T; N] {
     }
 }
 
-#[cfg(not(feature = "const_generics"))]
+#[cfg(any(not(feature = "const_generics"), doc))]
 macro_rules! impl_array(
     ($($size:expr),+) => {
         $(
@@ -1957,7 +2076,7 @@ macro_rules! impl_array(
     }
 );
 
-#[cfg(not(feature = "const_generics"))]
+#[cfg(any(not(feature = "const_generics"), doc))]
 impl_array!(
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
     26, 27, 28, 29, 30, 31, 32, 36, 0x40, 0x60, 0x80, 0x100, 0x200, 0x400, 0x600, 0x800, 0x1000,

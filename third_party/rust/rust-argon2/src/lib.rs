@@ -53,6 +53,16 @@
 
 
 
+#![cfg_attr(feature = "crossbeam-utils", doc = "    lanes: 4,")]
+#![cfg_attr(
+    feature = "crossbeam-utils",
+    doc = "    thread_mode: ThreadMode::Parallel,"
+)]
+#![cfg_attr(not(feature = "crossbeam-utils"), doc = "    lanes: 1,")]
+#![cfg_attr(
+    not(feature = "crossbeam-utils"),
+    doc = "    thread_mode: ThreadMode::Sequential,"
+)]
 
 
 
@@ -72,12 +82,6 @@
 
 
 
-
-
-
-extern crate base64;
-extern crate blake2b_simd;
-extern crate crossbeam_utils;
 
 mod argon2;
 mod block;
@@ -94,10 +98,10 @@ mod thread_mode;
 mod variant;
 mod version;
 
-pub use argon2::*;
-pub use config::Config;
-pub use error::Error;
-pub use result::Result;
-pub use thread_mode::ThreadMode;
-pub use variant::Variant;
-pub use version::Version;
+pub use crate::argon2::*;
+pub use crate::config::Config;
+pub use crate::error::Error;
+pub use crate::result::Result;
+pub use crate::thread_mode::ThreadMode;
+pub use crate::variant::Variant;
+pub use crate::version::Version;

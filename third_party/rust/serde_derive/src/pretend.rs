@@ -1,9 +1,7 @@
-use proc_macro2::{Span, TokenStream};
-use syn::Ident;
+use proc_macro2::TokenStream;
+use quote::format_ident;
 
-use internals::ast::{Container, Data, Field, Style};
-
-
+use internals::ast::{Container, Data, Field, Style, Variant};
 
 
 
@@ -20,8 +18,10 @@ use internals::ast::{Container, Data, Field, Style};
 
 
 
-pub fn pretend_used(cont: &Container) -> TokenStream {
-    let pretend_fields = pretend_fields_used(cont);
+
+
+pub fn pretend_used(cont: &Container, is_packed: bool) -> TokenStream {
+    let pretend_fields = pretend_fields_used(cont, is_packed);
     let pretend_variants = pretend_variants_used(cont);
 
     quote! {
@@ -48,33 +48,99 @@ pub fn pretend_used(cont: &Container) -> TokenStream {
 
 
 
-fn pretend_fields_used(cont: &Container) -> TokenStream {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+fn pretend_fields_used(cont: &Container, is_packed: bool) -> TokenStream {
+    match &cont.data {
+        Data::Enum(variants) => pretend_fields_used_enum(cont, variants),
+        Data::Struct(Style::Struct, fields) => if is_packed {
+            pretend_fields_used_struct_packed(cont, fields)
+        } else {
+            pretend_fields_used_struct(cont, fields)
+        },
+        Data::Struct(_, _) => quote!(),
+    }
+}
+
+fn pretend_fields_used_struct(cont: &Container, fields: &[Field]) -> TokenStream {
     let type_ident = &cont.ident;
     let (_, ty_generics, _) = cont.generics.split_for_impl();
 
-    let patterns = match &cont.data {
-        Data::Enum(variants) => variants
-            .iter()
-            .filter_map(|variant| match variant.style {
-                Style::Struct => {
-                    let variant_ident = &variant.ident;
-                    let pat = struct_pattern(&variant.fields);
-                    Some(quote!(#type_ident::#variant_ident #pat))
-                }
-                _ => None,
-            })
-            .collect::<Vec<_>>(),
-        Data::Struct(Style::Struct, fields) => {
-            let pat = struct_pattern(fields);
-            vec![quote!(#type_ident #pat)]
-        }
-        Data::Struct(_, _) => {
-            return quote!();
-        }
-    };
+    let members = fields.iter().map(|field| &field.member);
+    let placeholders = (0usize..).map(|i| format_ident!("__v{}", i));
 
     quote! {
-        match _serde::__private::None::<#type_ident #ty_generics> {
+        match _serde::__private::None::<&#type_ident #ty_generics> {
+            _serde::__private::Some(#type_ident { #(#members: #placeholders),* }) => {}
+            _ => {}
+        }
+    }
+}
+
+fn pretend_fields_used_struct_packed(cont: &Container, fields: &[Field]) -> TokenStream {
+    let type_ident = &cont.ident;
+    let (_, ty_generics, _) = cont.generics.split_for_impl();
+
+    let members = fields.iter().map(|field| &field.member).collect::<Vec<_>>();
+
+    #[cfg(ptr_addr_of)]
+    {
+        quote! {
+            match _serde::__private::None::<&#type_ident #ty_generics> {
+                _serde::__private::Some(__v @ #type_ident { #(#members: _),* }) => {
+                    #(
+                        let _ = _serde::__private::ptr::addr_of!(__v.#members);
+                    )*
+                }
+                _ => {}
+            }
+        }
+    }
+
+    #[cfg(not(ptr_addr_of))]
+    {
+        let placeholders = (0usize..).map(|i| format_ident!("__v{}", i));
+
+        quote! {
+            match _serde::__private::None::<#type_ident #ty_generics> {
+                _serde::__private::Some(#type_ident { #(#members: #placeholders),* }) => {}
+                _ => {}
+            }
+        }
+    }
+}
+
+fn pretend_fields_used_enum(cont: &Container, variants: &[Variant]) -> TokenStream {
+    let type_ident = &cont.ident;
+    let (_, ty_generics, _) = cont.generics.split_for_impl();
+
+    let patterns = variants
+        .iter()
+        .filter_map(|variant| match variant.style {
+            Style::Struct => {
+                let variant_ident = &variant.ident;
+                let members = variant.fields.iter().map(|field| &field.member);
+                let placeholders = (0usize..).map(|i| format_ident!("__v{}", i));
+                Some(quote!(#type_ident::#variant_ident { #(#members: #placeholders),* }))
+            }
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+
+    quote! {
+        match _serde::__private::None::<&#type_ident #ty_generics> {
             #(
                 _serde::__private::Some(#patterns) => {}
             )*
@@ -107,7 +173,7 @@ fn pretend_variants_used(cont: &Container) -> TokenStream {
     let cases = variants.iter().map(|variant| {
         let variant_ident = &variant.ident;
         let placeholders = &(0..variant.fields.len())
-            .map(|i| Ident::new(&format!("__v{}", i), Span::call_site()))
+            .map(|i| format_ident!("__v{}", i))
             .collect::<Vec<_>>();
 
         let pat = match variant.style {
@@ -130,11 +196,4 @@ fn pretend_variants_used(cont: &Container) -> TokenStream {
     });
 
     quote!(#(#cases)*)
-}
-
-fn struct_pattern(fields: &[Field]) -> TokenStream {
-    let members = fields.iter().map(|field| &field.member);
-    let placeholders =
-        (0..fields.len()).map(|i| Ident::new(&format!("__v{}", i), Span::call_site()));
-    quote!({ #(#members: ref #placeholders),* })
 }

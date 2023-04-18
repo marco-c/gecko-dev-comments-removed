@@ -300,8 +300,7 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/serde_json/1.0.64")]
-#![deny(clippy::all, clippy::pedantic)]
+#![doc(html_root_url = "https://docs.rs/serde_json/1.0.72")]
 
 #![allow(
     clippy::comparison_chain,
@@ -357,6 +356,7 @@
 #![allow(non_upper_case_globals)]
 #![deny(missing_docs)]
 #![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 
 
@@ -379,7 +379,7 @@ mod lib {
     pub use self::core::convert::{self, From, Into};
     pub use self::core::default::{self, Default};
     pub use self::core::fmt::{self, Debug, Display};
-    pub use self::core::hash::{self, Hash};
+    pub use self::core::hash::{self, Hash, Hasher};
     pub use self::core::iter::FusedIterator;
     pub use self::core::marker::{self, PhantomData};
     pub use self::core::ops::{Bound, RangeBounds};
@@ -453,6 +453,7 @@ pub mod de;
 pub mod error;
 pub mod map;
 #[cfg(feature = "std")]
+#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 pub mod ser;
 #[cfg(not(feature = "std"))]
 mod ser;

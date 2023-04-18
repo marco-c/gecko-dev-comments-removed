@@ -250,15 +250,17 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/syn/1.0.73")]
+#![doc(html_root_url = "https://docs.rs/syn/1.0.82")]
 #![cfg_attr(doc_cfg, feature(doc_cfg))]
 #![allow(non_camel_case_types)]
 
 #![allow(
+    clippy::collapsible_match, 
     clippy::doc_markdown,
     clippy::eval_order_dependence,
     clippy::inherent_to_string,
     clippy::large_enum_variant,
+    clippy::manual_assert,
     clippy::manual_map, 
     clippy::match_on_vec_items,
     clippy::missing_panics_doc,
@@ -822,6 +824,7 @@ mod verbatim;
 #[cfg(all(any(feature = "full", feature = "derive"), feature = "printing"))]
 mod print;
 
+#[cfg(any(feature = "full", feature = "derive"))]
 use crate::__private::private;
 
 
@@ -887,6 +890,9 @@ pub use crate::error::{Error, Result};
 pub fn parse<T: parse::Parse>(tokens: proc_macro::TokenStream) -> Result<T> {
     parse::Parser::parse(T::parse, tokens)
 }
+
+
+
 
 
 

@@ -1,4 +1,4 @@
-use crate::constants::{BIG_POWERS_10, MAX_I64_SCALE, MAX_PRECISION, U32_MAX};
+use crate::constants::{BIG_POWERS_10, MAX_I64_SCALE, MAX_PRECISION_U32, U32_MAX};
 use crate::decimal::{CalculationResult, Decimal};
 use crate::ops::common::Buf24;
 
@@ -18,15 +18,15 @@ pub(crate) fn mul_impl(d1: &Decimal, d2: &Decimal) -> CalculationResult {
         if d2.hi() | d2.mid() == 0 {
             
             let mut low64 = d1.lo() as u64 * d2.lo() as u64;
-            if scale > MAX_PRECISION {
+            if scale > MAX_PRECISION_U32 {
                 
                 
                 
-                if scale > MAX_PRECISION + MAX_I64_SCALE {
+                if scale > MAX_PRECISION_U32 + MAX_I64_SCALE {
                     return CalculationResult::Ok(Decimal::ZERO);
                 }
 
-                scale -= MAX_PRECISION + 1;
+                scale -= MAX_PRECISION_U32 + 1;
                 let mut power = BIG_POWERS_10[scale as usize];
 
                 let tmp = low64 / power;
@@ -39,7 +39,7 @@ pub(crate) fn mul_impl(d1: &Decimal, d2: &Decimal) -> CalculationResult {
                     low64 += 1;
                 }
 
-                scale = MAX_PRECISION;
+                scale = MAX_PRECISION_U32;
             }
 
             
@@ -54,10 +54,10 @@ pub(crate) fn mul_impl(d1: &Decimal, d2: &Decimal) -> CalculationResult {
 
         
         
-        mul_by_32bit_lhs(d1.lo() as u64, &d2, &mut product);
+        mul_by_32bit_lhs(d1.lo() as u64, d2, &mut product);
     } else if d2.mid() | d2.hi() == 0 {
         
-        mul_by_32bit_lhs(d2.lo() as u64, &d1, &mut product);
+        mul_by_32bit_lhs(d2.lo() as u64, d1, &mut product);
     } else {
         
         
@@ -129,7 +129,7 @@ pub(crate) fn mul_impl(d1: &Decimal, d2: &Decimal) -> CalculationResult {
     
     
     let upper_word = product.upper_word();
-    if upper_word > 2 || scale > MAX_PRECISION {
+    if upper_word > 2 || scale > MAX_PRECISION_U32 {
         scale = if let Some(new_scale) = product.rescale(upper_word, scale) {
             new_scale
         } else {

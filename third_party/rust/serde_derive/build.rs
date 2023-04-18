@@ -16,6 +16,12 @@ fn main() {
     if minor >= 37 {
         println!("cargo:rustc-cfg=underscore_consts");
     }
+
+    
+    
+    if minor >= 51 {
+        println!("cargo:rustc-cfg=ptr_addr_of");
+    }
 }
 
 fn rustc_minor_version() -> Option<u32> {
