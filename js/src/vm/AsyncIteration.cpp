@@ -75,9 +75,6 @@ using namespace js;
 
 enum class ResumeNextKind { Enqueue, Reject, Resolve };
 
-[[nodiscard]] static bool AsyncGeneratorResumeNext(
-    JSContext* cx, Handle<AsyncGeneratorObject*> generator);
-
 [[nodiscard]] static bool AsyncGeneratorDrainQueue(
     JSContext* cx, Handle<AsyncGeneratorObject*> generator);
 
@@ -492,6 +489,10 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
   return AsyncGeneratorDrainQueue(cx, asyncGenObj);
 }
 
+[[nodiscard]] static bool AsyncGeneratorUnwrapYieldResumptionAndResume(
+    JSContext* cx, Handle<AsyncGeneratorObject*> generator,
+    CompletionKind completionKind, HandleValue resumptionValue);
+
 
 
 
@@ -507,7 +508,21 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
   if (!AsyncGeneratorCompleteStepNormal(cx, asyncGenObj, value, false)) {
     return false;
   }
-  return AsyncGeneratorResumeNext(cx, asyncGenObj);
+
+  if (asyncGenObj->isQueueEmpty()) {
+    return true;
+  }
+
+  Rooted<AsyncGeneratorRequest*> request(
+      cx, AsyncGeneratorObject::peekRequest(asyncGenObj));
+  if (!request) {
+    return false;
+  }
+
+  CompletionKind completionKind = request->completionKind();
+  RootedValue resumptionValue(cx, request->completionValue());
+  return AsyncGeneratorUnwrapYieldResumptionAndResume(
+      cx, asyncGenObj, completionKind, resumptionValue);
 }
 
 
