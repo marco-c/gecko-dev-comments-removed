@@ -10,6 +10,8 @@
 #include "TreeTraversal.h"  
 #include "mozilla/gfx/CompositorHitTestInfo.h"
 #include "mozilla/webrender/WebRenderAPI.h"
+#include "nsDebug.h"        
+#include "nsIXULRuntime.h"  
 
 #define APZCTM_LOG(...) \
   MOZ_LOG(APZCTreeManager::sLog, LogLevel::Debug, (__VA_ARGS__))
@@ -53,6 +55,8 @@ IAPZHitTester::HitTestResult WRHitTester::GetAPZCAtPoint(
         GetTargetNode(guid, &ScrollableLayerGuid::EqualsIgnoringPresShell);
     if (!node) {
       APZCTM_LOG("no corresponding node found, falling back to root.\n");
+
+#ifdef DEBUG
       
       
       
@@ -63,7 +67,18 @@ IAPZHitTester::HitTestResult WRHitTester::GetAPZCAtPoint(
       
       
       
-      MOZ_ASSERT(result.mScrollId == ScrollableLayerGuid::NULL_SCROLL_ID);
+      
+      
+      
+      
+      if (FissionAutostart()) {
+        MOZ_ASSERT(result.mScrollId == ScrollableLayerGuid::NULL_SCROLL_ID);
+      } else {
+        NS_ASSERTION(
+            result.mScrollId == ScrollableLayerGuid::NULL_SCROLL_ID,
+            "Inconsistency between WebRender display list and APZ scroll data");
+      }
+#endif
       node = FindRootNodeForLayersId(result.mLayersId);
       if (!node) {
         
