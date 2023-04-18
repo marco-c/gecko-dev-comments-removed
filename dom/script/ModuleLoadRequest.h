@@ -51,11 +51,9 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
                                                          ScriptLoadRequest)
 
   
-  static ModuleLoadRequest* CreateTopLevel(nsIURI* aURI,
-                                           ScriptFetchOptions* aFetchOptions,
-                                           const SRIMetadata& aIntegrity,
-                                           nsIURI* aReferrer,
-                                           ScriptLoader* aLoader);
+  static ModuleLoadRequest* CreateTopLevel(
+      nsIURI* aURI, ScriptFetchOptions* aFetchOptions, Element* aElement,
+      const SRIMetadata& aIntegrity, nsIURI* aReferrer, ScriptLoader* aLoader);
 
   
   static ModuleLoadRequest* CreateStaticImport(nsIURI* aURI,
@@ -64,7 +62,8 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
   
   static ModuleLoadRequest* CreateDynamicImport(
       nsIURI* aURI, ScriptFetchOptions* aFetchOptions, nsIURI* aBaseURL,
-      ScriptLoader* aLoader, JS::Handle<JS::Value> aReferencingPrivate,
+      Element* aElement, ScriptLoader* aLoader,
+      JS::Handle<JS::Value> aReferencingPrivate,
       JS::Handle<JSString*> aSpecifier, JS::Handle<JSObject*> aPromise);
 
   bool IsTopLevel() const override { return mIsTopLevel; }
