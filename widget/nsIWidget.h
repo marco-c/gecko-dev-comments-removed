@@ -1202,7 +1202,14 @@ class nsIWidget : public nsISupports {
 
 
 
+
+
   virtual WindowRenderer* GetWindowRenderer() = 0;
+
+  
+
+
+  virtual bool HasWindowRenderer() const = 0;
 
   
 

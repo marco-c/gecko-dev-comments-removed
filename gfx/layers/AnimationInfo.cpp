@@ -171,54 +171,46 @@ void AnimationInfo::EnumerateGenerationOnFrame(
     const nsIFrame* aFrame, const nsIContent* aContent,
     const CompositorAnimatableDisplayItemTypes& aDisplayItemTypes,
     AnimationGenerationCallback aCallback) {
-  if (XRE_IsContentProcess()) {
-    if (nsIWidget* widget = nsContentUtils::WidgetForContent(aContent)) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (widget->GetOwningBrowserChild() &&
-          !static_cast<widget::PuppetWidget*>(widget)->HasWindowRenderer()) {
-        for (auto displayItem : LayerAnimationInfo::sDisplayItemTypes) {
-          aCallback(Nothing(), displayItem);
-        }
-        return;
-      }
-    }
+  nsIWidget* widget = nsContentUtils::WidgetForContent(aContent);
+  if (!widget) {
+    return;
   }
-
-  WindowRenderer* renderer = nsContentUtils::WindowRendererForContent(aContent);
-
-  if (renderer && renderer->AsWebRender()) {
-    
-    
-    if (nsLayoutUtils::IsFirstContinuationOrIBSplitSibling(aFrame)) {
-      aFrame = nsLayoutUtils::LastContinuationOrIBSplitSibling(aFrame);
-    }
-
+  
+  
+  
+  if (!widget->HasWindowRenderer()) {
     for (auto displayItem : LayerAnimationInfo::sDisplayItemTypes) {
-      
-      
-      const nsIFrame* frameToQuery =
-          displayItem == DisplayItemType::TYPE_TRANSFORM
-              ? nsLayoutUtils::GetPrimaryFrameFromStyleFrame(aFrame)
-              : aFrame;
-      RefPtr<WebRenderAnimationData> animationData =
-          GetWebRenderUserData<WebRenderAnimationData>(frameToQuery,
-                                                       (uint32_t)displayItem);
-      Maybe<uint64_t> generation;
-      if (animationData) {
-        generation = animationData->GetAnimationInfo().GetAnimationGeneration();
-      }
-      aCallback(generation, displayItem);
+      aCallback(Nothing(), displayItem);
     }
     return;
+  }
+  WindowRenderer* renderer = widget->GetWindowRenderer();
+  MOZ_ASSERT(renderer);
+  if (!renderer->AsWebRender()) {
+    return;
+  }
+
+  
+  
+  if (nsLayoutUtils::IsFirstContinuationOrIBSplitSibling(aFrame)) {
+    aFrame = nsLayoutUtils::LastContinuationOrIBSplitSibling(aFrame);
+  }
+
+  for (auto displayItem : LayerAnimationInfo::sDisplayItemTypes) {
+    
+    
+    const nsIFrame* frameToQuery =
+        displayItem == DisplayItemType::TYPE_TRANSFORM
+            ? nsLayoutUtils::GetPrimaryFrameFromStyleFrame(aFrame)
+            : aFrame;
+    RefPtr<WebRenderAnimationData> animationData =
+        GetWebRenderUserData<WebRenderAnimationData>(frameToQuery,
+                                                     (uint32_t)displayItem);
+    Maybe<uint64_t> generation;
+    if (animationData) {
+      generation = animationData->GetAnimationInfo().GetAnimationGeneration();
+    }
+    aCallback(generation, displayItem);
   }
 }
 
