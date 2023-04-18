@@ -6290,27 +6290,6 @@ var SessionStoreInternal = {
     let tabData = TabState.collect(tab, TAB_CUSTOM_VALUES.get(tab));
 
     
-    
-    let activePageData = tabData.entries[tabData.index - 1] || null;
-    let uri = activePageData ? activePageData.url || null : null;
-    
-    
-    
-    
-    
-    
-    
-    
-    if (
-      !browser.userTypedValue &&
-      uri &&
-      !data.isRemotenessUpdate &&
-      !win.gInitialPages.includes(uri)
-    ) {
-      browser.userTypedValue = uri;
-    }
-
-    
     this.updateTabLabelAndIcon(tab, tabData);
 
     let event = win.document.createEvent("Events");
