@@ -3362,33 +3362,21 @@ void MediaManager::Shutdown() {
   sHasMainThreadShutdown = true;
 
   
-  class ShutdownTask : public Runnable {
-   public:
-    explicit ShutdownTask(RefPtr<MediaManager> aManager)
-        : mozilla::Runnable("ShutdownTask"), mManager(std::move(aManager)) {}
-
-   private:
-    NS_IMETHOD
-    Run() override {
-      LOG("MediaManager Thread Shutdown");
-      MOZ_ASSERT(MediaManager::IsInMediaThread());
-      
-      
-      {
-        if (mManager->mBackend) {
-          mManager->mBackend->Shutdown();  
-          mManager->mDeviceListChangeListener.DisconnectIfExists();
-        }
-      }
-      mManager->mBackend =
-          nullptr;  
-
-      return NS_OK;
-    }
-    RefPtr<MediaManager> mManager;
-  };
-
   
+  
+  MOZ_ALWAYS_SUCCEEDS(mMediaThread->Dispatch(
+      NS_NewRunnableFunction(__func__, [self = RefPtr(this), this]() {
+        LOG("MediaManager Thread Shutdown");
+        MOZ_ASSERT(IsInMediaThread());
+        
+        
+        if (mBackend) {
+          mBackend->Shutdown();  
+          mDeviceListChangeListener.DisconnectIfExists();
+        }
+        
+        mBackend = nullptr;
+      })));
 
   
 #ifdef DEBUG
@@ -3398,11 +3386,6 @@ void MediaManager::Shutdown() {
   }
 #endif
 
-  
-  
-  
-  auto shutdown = MakeRefPtr<ShutdownTask>(this);
-  MOZ_ALWAYS_SUCCEEDS(mMediaThread->Dispatch(shutdown.forget()));
   
   
   
