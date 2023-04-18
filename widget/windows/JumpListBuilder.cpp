@@ -107,6 +107,7 @@ JumpListBuilder::JumpListBuilder()
       return;
     }
 
+    ReentrantMonitorAutoEnter lock(mMonitor);
     
     
     mJumpListMgr = jumpListMgr;
@@ -140,6 +141,7 @@ JumpListBuilder::~JumpListBuilder() {
 
 NS_IMETHODIMP JumpListBuilder::SetAppUserModelID(
     const nsAString& aAppUserModelId) {
+  ReentrantMonitorAutoEnter lock(mMonitor);
   if (!mJumpListMgr) return NS_ERROR_NOT_AVAILABLE;
 
   RefPtr<ICustomDestinationList> jumpListMgr = mJumpListMgr;
