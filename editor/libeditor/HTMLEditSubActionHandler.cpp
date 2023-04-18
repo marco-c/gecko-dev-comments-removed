@@ -1788,14 +1788,28 @@ EditActionResult HTMLEditor::InsertParagraphSeparatorAsSubAction() {
                                                        editingHost);
   if (maybeNonEditableListItem &&
       HTMLEditUtils::IsSplittableNode(*maybeNonEditableListItem)) {
-    nsresult rv = HandleInsertParagraphInListItemElement(
-        *maybeNonEditableListItem, atStartOfSelection);
-    if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
-      return EditActionIgnored(NS_ERROR_EDITOR_DESTROYED);
+    Result<EditorDOMPoint, nsresult> pointToPutCaretOrError =
+        HandleInsertParagraphInListItemElement(
+            *maybeNonEditableListItem, atStartOfSelection, *editingHost);
+    if (MOZ_UNLIKELY(pointToPutCaretOrError.isErr())) {
+      if (NS_WARN_IF(pointToPutCaretOrError.unwrapErr() ==
+                     NS_ERROR_EDITOR_DESTROYED)) {
+        return EditActionHandled(NS_ERROR_EDITOR_DESTROYED);
+      }
+      NS_WARNING(
+          "HTMLEditor::HandleInsertParagraphInListItemElement() failed, but "
+          "ignored");
+      return EditActionHandled();
     }
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                         "HTMLEditor::HandleInsertParagraphInListItemElement() "
-                         "failed, but ignored");
+    nsresult rv = CollapseSelectionTo(pointToPutCaretOrError.unwrap());
+    if (MOZ_UNLIKELY(rv == NS_ERROR_EDITOR_DESTROYED)) {
+      NS_WARNING(
+          "HTMLEditor::CollapseSelectionTo() caused destroying the editor");
+      return EditActionHandled(NS_ERROR_EDITOR_DESTROYED);
+    }
+    NS_WARNING_ASSERTION(
+        NS_SUCCEEDED(rv),
+        "HTMLEditor::CollapseSelectionTo() failed, but ignored");
     return EditActionHandled();
   }
 
@@ -7329,74 +7343,77 @@ nsresult HTMLEditor::SplitParagraph(Element& aParentDivOrP,
   return NS_OK;
 }
 
-nsresult HTMLEditor::HandleInsertParagraphInListItemElement(
-    Element& aListItem, const EditorDOMPoint& aPointToSplit) {
+Result<EditorDOMPoint, nsresult>
+HTMLEditor::HandleInsertParagraphInListItemElement(
+    Element& aListItemElement, const EditorDOMPoint& aPointToSplit,
+    Element& aEditingHost) {
   MOZ_ASSERT(IsEditActionDataAvailable());
-  MOZ_ASSERT(HTMLEditUtils::IsListItem(&aListItem));
+  MOZ_ASSERT(HTMLEditUtils::IsListItem(&aListItemElement));
 
   
-  RefPtr<Element> editingHost = GetActiveEditingHost();
-
-  
-  
-  
-  if (editingHost != aListItem.GetParentElement() &&
-      HTMLEditUtils::IsEmptyBlockElement(aListItem, {})) {
-    nsCOMPtr<nsIContent> leftListNode = aListItem.GetParent();
+  if (&aEditingHost != aListItemElement.GetParentElement() &&
+      HTMLEditUtils::IsEmptyBlockElement(aListItemElement, {})) {
+    RefPtr<Element> leftListElement = aListItemElement.GetParentElement();
     
-    if (!HTMLEditUtils::IsLastChild(aListItem,
+    
+    
+    if (!HTMLEditUtils::IsLastChild(aListItemElement,
                                     {WalkTreeOption::IgnoreNonEditableNode})) {
-      
       SplitNodeResult splitListItemParentResult =
-          SplitNodeWithTransaction(EditorDOMPoint(&aListItem));
+          SplitNodeWithTransaction(EditorDOMPoint(&aListItemElement));
       if (MOZ_UNLIKELY(splitListItemParentResult.Failed())) {
         NS_WARNING("HTMLEditor::SplitNodeWithTransaction() failed");
-        return splitListItemParentResult.Rv();
+        return Err(splitListItemParentResult.Rv());
       }
-      leftListNode = splitListItemParentResult.GetPreviousContent();
+      if (MOZ_UNLIKELY(!splitListItemParentResult.DidSplit())) {
+        NS_WARNING(
+            "HTMLEditor::SplitNodeWithTransaction() didn't split the parent of "
+            "aListItemElement");
+        return Err(NS_ERROR_FAILURE);
+      }
+      leftListElement =
+          Element::FromNode(splitListItemParentResult.GetPreviousContent());
+      MOZ_DIAGNOSTIC_ASSERT(leftListElement);
+    }
+
+    auto afterLeftListElement = EditorDOMPoint::After(leftListElement);
+    if (MOZ_UNLIKELY(!afterLeftListElement.IsSet())) {
+      return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
     }
 
     
-    EditorDOMPoint atNextSiblingOfLeftList(leftListNode);
-    DebugOnly<bool> advanced = atNextSiblingOfLeftList.AdvanceOffset();
-    NS_WARNING_ASSERTION(advanced,
-                         "Failed to advance offset after the right list node");
-    if (HTMLEditUtils::IsAnyListElement(
-            atNextSiblingOfLeftList.GetContainer())) {
-      
-      nsresult rv = MoveNodeWithTransaction(aListItem, atNextSiblingOfLeftList);
-      if (NS_WARN_IF(Destroyed())) {
-        return NS_ERROR_EDITOR_DESTROYED;
+    
+    if (HTMLEditUtils::IsAnyListElement(afterLeftListElement.GetContainer())) {
+      nsresult rv =
+          MoveNodeWithTransaction(aListItemElement, afterLeftListElement);
+      if (MOZ_UNLIKELY(NS_WARN_IF(Destroyed()))) {
+        return Err(NS_ERROR_EDITOR_DESTROYED);
       }
-      if (NS_FAILED(rv)) {
+      if (MOZ_UNLIKELY(NS_FAILED(rv))) {
         NS_WARNING("HTMLEditor::MoveNodeWithTransaction() failed");
-        return rv;
+        return Err(rv);
       }
-      rv = CollapseSelectionToStartOf(aListItem);
-      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                           "HTMLEditor::CollapseSelectionToStartOf() failed");
-      return rv;
+      return EditorDOMPoint(&aListItemElement, 0u);
     }
 
     
-    nsresult rv = DeleteNodeWithTransaction(aListItem);
-    if (NS_WARN_IF(Destroyed())) {
-      return NS_ERROR_EDITOR_DESTROYED;
+    nsresult rv = DeleteNodeWithTransaction(aListItemElement);
+    if (MOZ_UNLIKELY(NS_WARN_IF(Destroyed()))) {
+      return Err(NS_ERROR_EDITOR_DESTROYED);
     }
-    if (NS_FAILED(rv)) {
+    if (MOZ_UNLIKELY(NS_FAILED(rv))) {
       NS_WARNING("HTMLEditor::DeleteNodeWithTransaction() failed");
-      return rv;
+      return Err(rv);
     }
-
-    
-    nsStaticAtom& paraAtom = DefaultParagraphSeparatorTagName();
+    nsStaticAtom& newParagraphTagName =
+        &DefaultParagraphSeparatorTagName() == nsGkAtoms::br
+            ? *nsGkAtoms::p
+            : DefaultParagraphSeparatorTagName();
     
     Result<RefPtr<Element>, nsresult> maybeNewParagraphElement =
         CreateAndInsertElement(
-            WithTransaction::Yes,
-            &paraAtom == nsGkAtoms::br ? *nsGkAtoms::p
-                                       : MOZ_KnownLive(paraAtom),
-            atNextSiblingOfLeftList,
+            WithTransaction::Yes, MOZ_KnownLive(newParagraphTagName),
+            afterLeftListElement,
             
             [](HTMLEditor& aHTMLEditor, Element& aDivOrParagraphElement,
                const EditorDOMPoint&) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
@@ -7421,166 +7438,147 @@ nsresult HTMLEditor::HandleInsertParagraphInListItemElement(
               }
               return NS_OK;
             });
-    if (maybeNewParagraphElement.isErr()) {
+    if (MOZ_UNLIKELY(maybeNewParagraphElement.isErr())) {
       NS_WARNING(
           "HTMLEditor::CreateAndInsertElement(WithTransaction::Yes) failed");
-      return maybeNewParagraphElement.unwrapErr();
+      return Err(maybeNewParagraphElement.unwrapErr());
     }
     MOZ_ASSERT(maybeNewParagraphElement.inspect());
-
-    
-    rv = CollapseSelectionToStartOf(
-        MOZ_KnownLive(*maybeNewParagraphElement.inspect()));
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                         "HTMLEditor::CollapseSelectionToStartOf() failed");
-    return rv;
+    return EditorDOMPoint(maybeNewParagraphElement.inspect(), 0u);
   }
 
   
   
+  
   Result<EditorDOMPoint, nsresult> preparationResult =
       WhiteSpaceVisibilityKeeper::PrepareToSplitBlockElement(
-          *this, aPointToSplit, aListItem);
+          *this, aPointToSplit, aListItemElement);
   if (preparationResult.isErr()) {
     NS_WARNING(
         "WhiteSpaceVisibilityKeeper::PrepareToSplitBlockElement() failed");
-    return preparationResult.unwrapErr();
+    return Err(preparationResult.unwrapErr());
   }
   EditorDOMPoint pointToSplit = preparationResult.unwrap();
   MOZ_ASSERT(pointToSplit.IsInContentNode());
 
   
-  SplitNodeResult splitListItemResult = SplitNodeDeepWithTransaction(
-      aListItem, pointToSplit, SplitAtEdges::eAllowToCreateEmptyContainer);
+  SplitNodeResult splitListItemResult =
+      SplitNodeDeepWithTransaction(aListItemElement, pointToSplit,
+                                   SplitAtEdges::eAllowToCreateEmptyContainer);
   if (MOZ_UNLIKELY(NS_WARN_IF(splitListItemResult.EditorDestroyed()))) {
-    return NS_ERROR_EDITOR_DESTROYED;
+    return Err(NS_ERROR_EDITOR_DESTROYED);
   }
   NS_WARNING_ASSERTION(
       splitListItemResult.Succeeded(),
       "HTMLEditor::SplitNodeDeepWithTransaction() failed, but ignored");
 
-  if (MOZ_UNLIKELY(!aListItem.GetParent())) {
+  if (MOZ_UNLIKELY(!aListItemElement.GetParent())) {
     NS_WARNING("Somebody disconnected the target listitem from the parent");
-    return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
+    return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
   }
 
   
   
   
   nsCOMPtr<nsIContent> prevItem = HTMLEditUtils::GetPreviousSibling(
-      aListItem, {WalkTreeOption::IgnoreNonEditableNode});
+      aListItemElement, {WalkTreeOption::IgnoreNonEditableNode});
   if (prevItem && HTMLEditUtils::IsListItem(prevItem)) {
     if (HTMLEditUtils::IsEmptyNode(
             *prevItem, {EmptyCheckOption::TreatSingleBRElementAsVisible})) {
       CreateElementResult createPaddingBRResult =
           InsertPaddingBRElementForEmptyLastLineWithTransaction(
               EditorDOMPoint(prevItem, 0));
-      if (createPaddingBRResult.Failed()) {
+      if (MOZ_UNLIKELY(createPaddingBRResult.Failed())) {
         NS_WARNING(
             "HTMLEditor::InsertPaddingBRElementForEmptyLastLineWithTransaction("
             ") failed");
-        return createPaddingBRResult.Rv();
+        return Err(createPaddingBRResult.Rv());
       }
-    } else {
-      if (HTMLEditUtils::IsEmptyNode(aListItem)) {
-        if (aListItem.IsAnyOfHTMLElements(nsGkAtoms::dd, nsGkAtoms::dt)) {
-          nsCOMPtr<nsINode> list = aListItem.GetParentNode();
-          const uint32_t itemOffset = *list->ComputeIndexOf(&aListItem);
-          nsStaticAtom* nextDefinitionListItemTagName =
-              aListItem.IsHTMLElement(nsGkAtoms::dt) ? nsGkAtoms::dd
-                                                     : nsGkAtoms::dt;
-          MOZ_ASSERT(itemOffset != UINT32_MAX);
-          EditorDOMPoint atNextListItem(list, aListItem.GetNextSibling(),
-                                        itemOffset + 1u);
-          Result<RefPtr<Element>, nsresult> maybeNewListItemElement =
-              CreateAndInsertElement(
-                  WithTransaction::Yes,
-                  MOZ_KnownLive(*nextDefinitionListItemTagName),
-                  atNextListItem);
-          if (maybeNewListItemElement.isErr()) {
-            NS_WARNING(
-                "HTMLEditor::CreateAndInsertElement(WithTransaction::Yes) "
-                "failed");
-            return maybeNewListItemElement.unwrapErr();
-          }
-          MOZ_ASSERT(maybeNewListItemElement.inspect());
-          nsresult rv = DeleteNodeWithTransaction(aListItem);
-          if (NS_WARN_IF(Destroyed())) {
-            return NS_ERROR_EDITOR_DESTROYED;
-          }
-          if (NS_FAILED(rv)) {
-            NS_WARNING("HTMLEditor::DeleteNodeWithTransaction() failed");
-            return rv;
-          }
-          rv = CollapseSelectionToStartOf(
-              MOZ_KnownLive(*maybeNewListItemElement.inspect()));
-          NS_WARNING_ASSERTION(
-              NS_SUCCEEDED(rv),
-              "HTMLEditor::CollapseSelectionToStartOf() failed");
-          return rv;
-        }
-
-        RefPtr<Element> brElement;
-        nsresult rv = CopyLastEditableChildStylesWithTransaction(
-            MOZ_KnownLive(*prevItem->AsElement()), aListItem,
-            address_of(brElement));
-        if (NS_WARN_IF(Destroyed())) {
-          return NS_ERROR_EDITOR_DESTROYED;
-        }
-        if (NS_FAILED(rv)) {
-          NS_WARNING(
-              "HTMLEditor::CopyLastEditableChildStylesWithTransaction() "
-              "failed");
-          return NS_ERROR_FAILURE;
-        }
-        if (brElement) {
-          EditorRawDOMPoint atBRNode(brElement);
-          if (NS_WARN_IF(!atBRNode.IsSetAndValid())) {
-            return NS_ERROR_FAILURE;
-          }
-          nsresult rv = CollapseSelectionTo(atBRNode);
-          NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                               "HTMLEditor::CollapseSelectionTo() failed");
-          return rv;
-        }
-      } else {
-        WSScanResult forwardScanFromStartOfListItemResult =
-            WSRunScanner::ScanNextVisibleNodeOrBlockBoundary(
-                editingHost, EditorRawDOMPoint(&aListItem, 0));
-        if (forwardScanFromStartOfListItemResult.Failed()) {
-          NS_WARNING(
-              "WSRunScanner::ScanNextVisibleNodeOrBlockBoundary() failed");
-          return NS_ERROR_FAILURE;
-        }
-        if (forwardScanFromStartOfListItemResult.ReachedSpecialContent() ||
-            forwardScanFromStartOfListItemResult.ReachedBRElement() ||
-            forwardScanFromStartOfListItemResult.ReachedHRElement()) {
-          EditorRawDOMPoint atFoundElement(
-              forwardScanFromStartOfListItemResult.RawPointAtContent());
-          if (NS_WARN_IF(!atFoundElement.IsSetAndValid())) {
-            return NS_ERROR_FAILURE;
-          }
-          nsresult rv = CollapseSelectionTo(atFoundElement);
-          NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                               "HTMLEditor::CollapseSelectionTo() failed");
-          return rv;
-        }
-
-        
-        
-        nsresult rv = CollapseSelectionTo(
-            forwardScanFromStartOfListItemResult.RawPoint());
-        NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                             "HTMLEditor::CollapseSelectionTo() failed");
-        return rv;
-      }
+      return EditorDOMPoint(&aListItemElement, 0u);
     }
+
+    if (HTMLEditUtils::IsEmptyNode(aListItemElement)) {
+      
+      
+      
+      if (aListItemElement.IsAnyOfHTMLElements(nsGkAtoms::dd, nsGkAtoms::dt)) {
+        nsStaticAtom& nextDefinitionListItemTagName =
+            aListItemElement.IsHTMLElement(nsGkAtoms::dt) ? *nsGkAtoms::dd
+                                                          : *nsGkAtoms::dt;
+        
+        
+        Result<RefPtr<Element>, nsresult> maybeNewListItemElement =
+            CreateAndInsertElement(WithTransaction::Yes,
+                                   MOZ_KnownLive(nextDefinitionListItemTagName),
+                                   EditorDOMPoint::After(aListItemElement));
+        if (MOZ_UNLIKELY(maybeNewListItemElement.isErr())) {
+          NS_WARNING(
+              "HTMLEditor::CreateAndInsertElement(WithTransaction::Yes) "
+              "failed");
+          return Err(maybeNewListItemElement.unwrapErr());
+        }
+        MOZ_ASSERT(maybeNewListItemElement.inspect());
+        nsresult rv = DeleteNodeWithTransaction(aListItemElement);
+        if (MOZ_UNLIKELY(NS_WARN_IF(Destroyed()))) {
+          return Err(NS_ERROR_EDITOR_DESTROYED);
+        }
+        if (MOZ_UNLIKELY(NS_FAILED(rv))) {
+          NS_WARNING("HTMLEditor::DeleteNodeWithTransaction() failed");
+          return Err(rv);
+        }
+        return EditorDOMPoint(maybeNewListItemElement.unwrap(), 0u);
+      }
+
+      
+      
+      
+      RefPtr<Element> brElement;
+      nsresult rv = CopyLastEditableChildStylesWithTransaction(
+          MOZ_KnownLive(*prevItem->AsElement()), aListItemElement,
+          address_of(brElement));
+      if (MOZ_UNLIKELY(NS_WARN_IF(Destroyed()))) {
+        return Err(NS_ERROR_EDITOR_DESTROYED);
+      }
+      if (MOZ_UNLIKELY(NS_FAILED(rv))) {
+        NS_WARNING(
+            "HTMLEditor::CopyLastEditableChildStylesWithTransaction() "
+            "failed");
+        return Err(NS_ERROR_FAILURE);
+      }
+      return brElement ? EditorDOMPoint(brElement)
+                       : EditorDOMPoint(&aListItemElement, 0u);
+    }
+
+    
+    
+    
+    WSScanResult forwardScanFromStartOfListItemResult =
+        WSRunScanner::ScanNextVisibleNodeOrBlockBoundary(
+            &aEditingHost, EditorRawDOMPoint(&aListItemElement, 0u));
+    if (MOZ_UNLIKELY(forwardScanFromStartOfListItemResult.Failed())) {
+      NS_WARNING("WSRunScanner::ScanNextVisibleNodeOrBlockBoundary() failed");
+      return Err(NS_ERROR_FAILURE);
+    }
+    if (forwardScanFromStartOfListItemResult.ReachedSpecialContent() ||
+        forwardScanFromStartOfListItemResult.ReachedBRElement() ||
+        forwardScanFromStartOfListItemResult.ReachedHRElement()) {
+      EditorDOMPoint atFoundElement =
+          forwardScanFromStartOfListItemResult.PointAtContent();
+      if (MOZ_UNLIKELY(NS_WARN_IF(!atFoundElement.IsSetAndValid()))) {
+        return Err(NS_ERROR_FAILURE);
+      }
+      return atFoundElement;
+    }
+
+    
+    
+    
+    return forwardScanFromStartOfListItemResult.Point();
   }
 
-  nsresult rv = CollapseSelectionToStartOf(aListItem);
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                       "HTMLEditor::CollapseSelectionToStartOf() failed");
-  return rv;
+  
+  
+  return EditorDOMPoint(&aListItemElement);
 }
 
 nsresult HTMLEditor::MoveNodesIntoNewBlockquoteElement(

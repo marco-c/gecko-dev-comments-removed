@@ -1755,9 +1755,12 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  HandleInsertParagraphInListItemElement(Element& aListItem,
-                                         const EditorDOMPoint& aPointToSplit);
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
+  HandleInsertParagraphInListItemElement(Element& aListItemElement,
+                                         const EditorDOMPoint& aPointToSplit,
+                                         Element& aEditingHost);
 
   
 
