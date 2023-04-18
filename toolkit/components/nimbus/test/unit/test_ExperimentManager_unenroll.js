@@ -53,8 +53,19 @@ add_task(async function test_unenroll_opt_out() {
   const manager = ExperimentFakes.manager();
   const experiment = ExperimentFakes.experiment("foo");
 
+  
+  Services.fog.testResetFOG();
+
   await manager.onStartup();
   await manager.store.addEnrollment(experiment);
+
+  
+  var unenrollmentEvents = Glean.nimbusEvents.unenrollment.testGetValue();
+  Assert.equal(
+    undefined,
+    unenrollmentEvents,
+    "no Glean unenrollment events before unenrollment"
+  );
 
   Services.prefs.setBoolPref(STUDIES_OPT_OUT_PREF, false);
 
@@ -78,6 +89,33 @@ add_task(async function test_unenroll_opt_out() {
     ],
     "should send an unenrollment ping with the slug, reason, branch slug, and enrollmentId"
   );
+
+  
+  unenrollmentEvents = Glean.nimbusEvents.unenrollment.testGetValue();
+  
+  Assert.equal(1, unenrollmentEvents.length);
+  
+  Assert.equal(
+    experiment.slug,
+    unenrollmentEvents[0].extra.experiment,
+    "Glean.nimbusEvents.unenrollment recorded with correct experiment slug"
+  );
+  Assert.equal(
+    experiment.branch.slug,
+    unenrollmentEvents[0].extra.branch,
+    "Glean.nimbusEvents.unenrollment recorded with correct branch slug"
+  );
+  Assert.equal(
+    "studies-opt-out",
+    unenrollmentEvents[0].extra.reason,
+    "Glean.nimbusEvents.unenrollment recorded with correct reason"
+  );
+  Assert.equal(
+    experiment.enrollmentId,
+    unenrollmentEvents[0].extra.enrollment_id,
+    "Glean.nimbusEvents.unenrollment recorded with correct enrollment id"
+  );
+
   
   Services.prefs.clearUserPref(STUDIES_OPT_OUT_PREF);
 });
@@ -88,8 +126,19 @@ add_task(async function test_unenroll_rollout_opt_out() {
   const manager = ExperimentFakes.manager();
   const rollout = ExperimentFakes.rollout("foo");
 
+  
+  Services.fog.testResetFOG();
+
   await manager.onStartup();
   await manager.store.addEnrollment(rollout);
+
+  
+  var unenrollmentEvents = Glean.nimbusEvents.unenrollment.testGetValue();
+  Assert.equal(
+    undefined,
+    unenrollmentEvents,
+    "no Glean unenrollment events before unenrollment"
+  );
 
   Services.prefs.setBoolPref(STUDIES_OPT_OUT_PREF, false);
 
@@ -113,6 +162,33 @@ add_task(async function test_unenroll_rollout_opt_out() {
     ],
     "should send an unenrollment ping with the slug, reason, branch slug, and enrollmentId"
   );
+
+  
+  unenrollmentEvents = Glean.nimbusEvents.unenrollment.testGetValue();
+  
+  Assert.equal(1, unenrollmentEvents.length);
+  
+  Assert.equal(
+    rollout.slug,
+    unenrollmentEvents[0].extra.experiment,
+    "Glean.nimbusEvents.unenrollment recorded with correct rollout slug"
+  );
+  Assert.equal(
+    rollout.branch.slug,
+    unenrollmentEvents[0].extra.branch,
+    "Glean.nimbusEvents.unenrollment recorded with correct branch slug"
+  );
+  Assert.equal(
+    "studies-opt-out",
+    unenrollmentEvents[0].extra.reason,
+    "Glean.nimbusEvents.unenrollment recorded with correct reason"
+  );
+  Assert.equal(
+    rollout.enrollmentId,
+    unenrollmentEvents[0].extra.enrollment_id,
+    "Glean.nimbusEvents.unenrollment recorded with correct enrollment id"
+  );
+
   
   Services.prefs.clearUserPref(STUDIES_OPT_OUT_PREF);
 });
@@ -121,6 +197,9 @@ add_task(async function test_setExperimentInactive_called() {
   globalSandbox.reset();
   const manager = ExperimentFakes.manager();
   const experiment = ExperimentFakes.experiment("foo");
+
+  
+  Services.fog.testResetFOG();
 
   await manager.onStartup();
   await manager.store.addEnrollment(experiment);
@@ -161,8 +240,19 @@ add_task(async function test_send_unenroll_event() {
   const manager = ExperimentFakes.manager();
   const experiment = ExperimentFakes.experiment("foo");
 
+  
+  Services.fog.testResetFOG();
+
   await manager.onStartup();
   await manager.store.addEnrollment(experiment);
+
+  
+  var unenrollmentEvents = Glean.nimbusEvents.unenrollment.testGetValue();
+  Assert.equal(
+    undefined,
+    unenrollmentEvents,
+    "no Glean unenrollment events before unenrollment"
+  );
 
   manager.unenroll("foo", "some-reason");
 
@@ -181,12 +271,41 @@ add_task(async function test_send_unenroll_event() {
     ],
     "should send an unenrollment ping with the slug, reason, branch slug, and enrollmentId"
   );
+
+  
+  unenrollmentEvents = Glean.nimbusEvents.unenrollment.testGetValue();
+  
+  Assert.equal(1, unenrollmentEvents.length);
+  
+  Assert.equal(
+    experiment.slug,
+    unenrollmentEvents[0].extra.experiment,
+    "Glean.nimbusEvents.unenrollment recorded with correct experiment slug"
+  );
+  Assert.equal(
+    experiment.branch.slug,
+    unenrollmentEvents[0].extra.branch,
+    "Glean.nimbusEvents.unenrollment recorded with correct branch slug"
+  );
+  Assert.equal(
+    "some-reason",
+    unenrollmentEvents[0].extra.reason,
+    "Glean.nimbusEvents.unenrollment recorded with correct reason"
+  );
+  Assert.equal(
+    experiment.enrollmentId,
+    unenrollmentEvents[0].extra.enrollment_id,
+    "Glean.nimbusEvents.unenrollment recorded with correct enrollment id"
+  );
 });
 
 add_task(async function test_undefined_reason() {
   globalSandbox.reset();
   const manager = ExperimentFakes.manager();
   const experiment = ExperimentFakes.experiment("foo");
+
+  
+  Services.fog.testResetFOG();
 
   await manager.onStartup();
   await manager.store.addEnrollment(experiment);
@@ -202,6 +321,17 @@ add_task(async function test_undefined_reason() {
     options.reason,
     "unknown",
     "should include unknown as the reason if none was supplied"
+  );
+
+  
+  let unenrollmentEvents = Glean.nimbusEvents.unenrollment.testGetValue();
+  
+  Assert.equal(1, unenrollmentEvents.length);
+  
+  Assert.equal(
+    "unknown",
+    unenrollmentEvents[0].extra.reason,
+    "Glean.nimbusEvents.unenrollment recorded with correct (unknown) reason"
   );
 });
 
@@ -244,9 +374,20 @@ add_task(async function test_remove_rollout_onFinalize() {
   sinon.spy(manager, "unenroll");
   sinon.spy(manager, "sendFailureTelemetry");
 
+  
+  Services.fog.testResetFOG();
+
   await manager.onStartup();
 
   manager.onFinalize("NimbusTestUtils");
+
+  
+  var unenrollFailedEvents = Glean.nimbusEvents.unenrollFailed.testGetValue();
+  Assert.equal(
+    undefined,
+    unenrollFailedEvents,
+    "no Glean unenroll_failed events when removing rollout"
+  );
 
   Assert.ok(manager.sendFailureTelemetry.notCalled, "Nothing should fail");
   Assert.ok(manager.unenroll.calledOnce, "Should unenroll recipe not seen");
@@ -265,9 +406,28 @@ add_task(async function test_rollout_telemetry_events() {
   sinon.stub(store, "get").returns(rollout);
   sinon.spy(manager, "sendFailureTelemetry");
 
+  
+  Services.fog.testResetFOG();
+
   await manager.onStartup();
 
+  
+  var unenrollmentEvents = Glean.nimbusEvents.unenrollment.testGetValue();
+  Assert.equal(
+    undefined,
+    unenrollmentEvents,
+    "no Glean unenrollment events before unenrollment"
+  );
+
   manager.onFinalize("NimbusTestUtils");
+
+  
+  var unenrollFailedEvents = Glean.nimbusEvents.unenrollFailed.testGetValue();
+  Assert.equal(
+    undefined,
+    unenrollFailedEvents,
+    "no Glean unenroll_failed events when removing rollout"
+  );
 
   Assert.ok(manager.sendFailureTelemetry.notCalled, "Nothing should fail");
   Assert.ok(
@@ -284,6 +444,7 @@ add_task(async function test_rollout_telemetry_events() {
     Services.fog.testGetExperimentData(rollout.slug),
     "Should set rollout to inactive"
   );
+
   Assert.ok(
     TelemetryEvents.sendEvent.calledWith(
       "unenroll",
@@ -292,6 +453,32 @@ add_task(async function test_rollout_telemetry_events() {
       sinon.match.object
     ),
     "Should send unenroll event for rollout."
+  );
+
+  
+  unenrollmentEvents = Glean.nimbusEvents.unenrollment.testGetValue();
+  
+  Assert.equal(1, unenrollmentEvents.length);
+  
+  Assert.equal(
+    rollout.slug,
+    unenrollmentEvents[0].extra.experiment,
+    "Glean.nimbusEvents.unenrollment recorded with correct rollout slug"
+  );
+  Assert.equal(
+    rollout.branch.slug,
+    unenrollmentEvents[0].extra.branch,
+    "Glean.nimbusEvents.unenrollment recorded with correct branch slug"
+  );
+  Assert.equal(
+    "recipe-not-seen",
+    unenrollmentEvents[0].extra.reason,
+    "Glean.nimbusEvents.unenrollment recorded with correct reason"
+  );
+  Assert.equal(
+    rollout.enrollmentId,
+    unenrollmentEvents[0].extra.enrollment_id,
+    "Glean.nimbusEvents.unenrollment recorded with correct enrollment id"
   );
 
   globalSandbox.restore();
