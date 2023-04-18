@@ -1,74 +1,124 @@
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 use crate::stdlib::{
+    any::TypeId,
     fmt,
     hash::{Hash, Hasher},
-    sync::Mutex,
+    ptr,
+    sync::{
+        atomic::{AtomicBool, AtomicPtr, AtomicU8, Ordering},
+        Mutex,
+    },
     vec::Vec,
 };
 use crate::{
-    dispatcher::{self, Dispatch},
+    dispatcher::Dispatch,
     metadata::{LevelFilter, Metadata},
     subscriber::Interest,
 };
 
-crate::lazy_static! {
-    static ref REGISTRY: Mutex<Registry> = Mutex::new(Registry {
-        callsites: Vec::new(),
-        dispatchers: Vec::new(),
-    });
-}
+use self::dispatchers::Dispatchers;
 
-struct Registry {
-    callsites: Vec<&'static dyn Callsite>,
-    dispatchers: Vec<dispatcher::Registrar>,
-}
 
-impl Registry {
-    fn rebuild_callsite_interest(&self, callsite: &'static dyn Callsite) {
-        let meta = callsite.metadata();
 
-        
-        
-        let mut interests = self
-            .dispatchers
-            .iter()
-            .filter_map(|registrar| registrar.try_register(meta));
-
-        
-        let interest = if let Some(interest) = interests.next() {
-            
-            interests.fold(interest, Interest::and)
-        } else {
-            
-            Interest::never()
-        };
-
-        callsite.set_interest(interest)
-    }
-
-    fn rebuild_interest(&mut self) {
-        let mut max_level = LevelFilter::OFF;
-        self.dispatchers.retain(|registrar| {
-            if let Some(dispatch) = registrar.upgrade() {
-                
-                
-                let level_hint = dispatch.max_level_hint().unwrap_or(LevelFilter::TRACE);
-                if level_hint > max_level {
-                    max_level = level_hint;
-                }
-                true
-            } else {
-                false
-            }
-        });
-
-        self.callsites.iter().for_each(|&callsite| {
-            self.rebuild_callsite_interest(callsite);
-        });
-        LevelFilter::set_max(max_level);
-    }
-}
 
 
 
@@ -78,12 +128,38 @@ pub trait Callsite: Sync {
     
     
     
+    
+    
+    
+    
     fn set_interest(&self, interest: Interest);
 
     
     
     
     fn metadata(&self) -> &Metadata<'_>;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[doc(hidden)]
+    #[inline]
+    fn private_type_id(&self, _: private::Private<()>) -> private::Private<TypeId>
+    where
+        Self: 'static,
+    {
+        private::Private(TypeId::of::<Self>())
+    }
 }
 
 
@@ -105,6 +181,19 @@ pub struct Identifier(
 );
 
 
+#[derive(Debug)]
+pub struct DefaultCallsite {
+    interest: AtomicU8,
+    registration: AtomicU8,
+    meta: &'static Metadata<'static>,
+    next: AtomicPtr<Self>,
+}
+
+
+
+
+
+
 
 
 
@@ -124,24 +213,162 @@ pub struct Identifier(
 
 
 pub fn rebuild_interest_cache() {
-    let mut registry = REGISTRY.lock().unwrap();
-    registry.rebuild_interest();
+    CALLSITES.rebuild_interest(DISPATCHERS.rebuilder());
 }
+
+
+
+
+
+
 
 
 
 
 
 pub fn register(callsite: &'static dyn Callsite) {
-    let mut registry = REGISTRY.lock().unwrap();
-    registry.rebuild_callsite_interest(callsite);
-    registry.callsites.push(callsite);
+    rebuild_callsite_interest(callsite, &DISPATCHERS.rebuilder());
+
+    
+    if callsite.private_type_id(private::Private(())).0 == TypeId::of::<DefaultCallsite>() {
+        let callsite = unsafe {
+            
+            
+            
+            
+            
+            &*(callsite as *const dyn Callsite as *const DefaultCallsite)
+        };
+        CALLSITES.push_default(callsite);
+        return;
+    }
+
+    CALLSITES.push_dyn(callsite);
 }
 
-pub(crate) fn register_dispatch(dispatch: &Dispatch) {
-    let mut registry = REGISTRY.lock().unwrap();
-    registry.dispatchers.push(dispatch.registrar());
-    registry.rebuild_interest();
+static CALLSITES: Callsites = Callsites {
+    list_head: AtomicPtr::new(ptr::null_mut()),
+    has_locked_callsites: AtomicBool::new(false),
+};
+
+static DISPATCHERS: Dispatchers = Dispatchers::new();
+
+#[cfg(feature = "std")]
+static LOCKED_CALLSITES: once_cell::sync::Lazy<Mutex<Vec<&'static dyn Callsite>>> =
+    once_cell::sync::Lazy::new(Default::default);
+
+#[cfg(not(feature = "std"))]
+crate::lazy_static! {
+    static ref LOCKED_CALLSITES: Mutex<Vec<&'static dyn Callsite>> = Mutex::new(Vec::new());
+}
+
+struct Callsites {
+    list_head: AtomicPtr<DefaultCallsite>,
+    has_locked_callsites: AtomicBool,
+}
+
+
+
+impl DefaultCallsite {
+    const UNREGISTERED: u8 = 0;
+    const REGISTERING: u8 = 1;
+    const REGISTERED: u8 = 2;
+
+    const INTEREST_NEVER: u8 = 0;
+    const INTEREST_SOMETIMES: u8 = 1;
+    const INTEREST_ALWAYS: u8 = 2;
+
+    
+    pub const fn new(meta: &'static Metadata<'static>) -> Self {
+        Self {
+            interest: AtomicU8::new(0xFF),
+            meta,
+            next: AtomicPtr::new(ptr::null_mut()),
+            registration: AtomicU8::new(Self::UNREGISTERED),
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline(never)]
+    
+    #[cold]
+    pub fn register(&'static self) -> Interest {
+        
+        match self.registration.compare_exchange(
+            Self::UNREGISTERED,
+            Self::REGISTERING,
+            Ordering::AcqRel,
+            Ordering::Acquire,
+        ) {
+            Ok(_) => {
+                
+                rebuild_callsite_interest(self, &DISPATCHERS.rebuilder());
+                CALLSITES.push_default(self);
+                self.registration.store(Self::REGISTERED, Ordering::Release);
+            }
+            
+            
+            Err(Self::REGISTERED) => {}
+            
+            Err(_state) => {
+                debug_assert_eq!(
+                    _state,
+                    Self::REGISTERING,
+                    "weird callsite registration state"
+                );
+                
+                return Interest::sometimes();
+            }
+        }
+
+        match self.interest.load(Ordering::Relaxed) {
+            Self::INTEREST_NEVER => Interest::never(),
+            Self::INTEREST_ALWAYS => Interest::always(),
+            _ => Interest::sometimes(),
+        }
+    }
+
+    
+    
+    #[inline]
+    pub fn interest(&'static self) -> Interest {
+        match self.interest.load(Ordering::Relaxed) {
+            Self::INTEREST_NEVER => Interest::never(),
+            Self::INTEREST_SOMETIMES => Interest::sometimes(),
+            Self::INTEREST_ALWAYS => Interest::always(),
+            _ => self.register(),
+        }
+    }
+}
+
+impl Callsite for DefaultCallsite {
+    fn set_interest(&self, interest: Interest) {
+        let interest = match () {
+            _ if interest.is_never() => Self::INTEREST_NEVER,
+            _ if interest.is_always() => Self::INTEREST_ALWAYS,
+            _ => Self::INTEREST_SOMETIMES,
+        };
+        self.interest.store(interest, Ordering::SeqCst);
+    }
+
+    #[inline(always)]
+    fn metadata(&self) -> &Metadata<'static> {
+        self.meta
+    }
 }
 
 
@@ -169,5 +396,223 @@ impl Hash for Identifier {
         H: Hasher,
     {
         (self.0 as *const dyn Callsite).hash(state)
+    }
+}
+
+
+
+impl Callsites {
+    
+    
+    
+    fn rebuild_interest(&self, dispatchers: dispatchers::Rebuilder<'_>) {
+        let mut max_level = LevelFilter::OFF;
+        dispatchers.for_each(|dispatch| {
+            
+            
+            let level_hint = dispatch.max_level_hint().unwrap_or(LevelFilter::TRACE);
+            if level_hint > max_level {
+                max_level = level_hint;
+            }
+        });
+
+        self.for_each(|callsite| {
+            rebuild_callsite_interest(callsite, &dispatchers);
+        });
+        LevelFilter::set_max(max_level);
+    }
+
+    
+    
+    
+    fn push_dyn(&self, callsite: &'static dyn Callsite) {
+        let mut lock = LOCKED_CALLSITES.lock().unwrap();
+        self.has_locked_callsites.store(true, Ordering::Release);
+        lock.push(callsite);
+    }
+
+    
+    
+    
+    
+    fn push_default(&self, callsite: &'static DefaultCallsite) {
+        let mut head = self.list_head.load(Ordering::Acquire);
+
+        loop {
+            callsite.next.store(head, Ordering::Release);
+
+            assert_ne!(
+                callsite as *const _, head,
+                "Attempted to register a `DefaultCallsite` that already exists! \
+                This will cause an infinite loop when attempting to read from the \
+                callsite cache. This is likely a bug! You should only need to call \
+                `DefaultCallsite::register` once per `DefaultCallsite`."
+            );
+
+            match self.list_head.compare_exchange(
+                head,
+                callsite as *const _ as *mut _,
+                Ordering::AcqRel,
+                Ordering::Acquire,
+            ) {
+                Ok(_) => {
+                    break;
+                }
+                Err(current) => head = current,
+            }
+        }
+    }
+
+    
+    fn for_each(&self, mut f: impl FnMut(&'static dyn Callsite)) {
+        let mut head = self.list_head.load(Ordering::Acquire);
+
+        while let Some(cs) = unsafe { head.as_ref() } {
+            f(cs);
+
+            head = cs.next.load(Ordering::Acquire);
+        }
+
+        if self.has_locked_callsites.load(Ordering::Acquire) {
+            let locked = LOCKED_CALLSITES.lock().unwrap();
+            for &cs in locked.iter() {
+                f(cs);
+            }
+        }
+    }
+}
+
+pub(crate) fn register_dispatch(dispatch: &Dispatch) {
+    let dispatchers = DISPATCHERS.register_dispatch(dispatch);
+    CALLSITES.rebuild_interest(dispatchers);
+}
+
+fn rebuild_callsite_interest(
+    callsite: &'static dyn Callsite,
+    dispatchers: &dispatchers::Rebuilder<'_>,
+) {
+    let meta = callsite.metadata();
+
+    let mut interest = None;
+    dispatchers.for_each(|dispatch| {
+        let this_interest = dispatch.register_callsite(meta);
+        interest = match interest.take() {
+            None => Some(this_interest),
+            Some(that_interest) => Some(that_interest.and(this_interest)),
+        }
+    });
+
+    let interest = interest.unwrap_or_else(Interest::never);
+    callsite.set_interest(interest)
+}
+
+mod private {
+    
+    #[allow(missing_debug_implementations)]
+    pub struct Private<T>(pub(crate) T);
+}
+
+#[cfg(feature = "std")]
+mod dispatchers {
+    use crate::dispatcher;
+    use once_cell::sync::Lazy;
+    use std::sync::{
+        atomic::{AtomicBool, Ordering},
+        RwLock, RwLockReadGuard, RwLockWriteGuard,
+    };
+
+    pub(super) struct Dispatchers {
+        has_just_one: AtomicBool,
+    }
+
+    static LOCKED_DISPATCHERS: Lazy<RwLock<Vec<dispatcher::Registrar>>> =
+        Lazy::new(Default::default);
+
+    pub(super) enum Rebuilder<'a> {
+        JustOne,
+        Read(RwLockReadGuard<'a, Vec<dispatcher::Registrar>>),
+        Write(RwLockWriteGuard<'a, Vec<dispatcher::Registrar>>),
+    }
+
+    impl Dispatchers {
+        pub(super) const fn new() -> Self {
+            Self {
+                has_just_one: AtomicBool::new(true),
+            }
+        }
+
+        pub(super) fn rebuilder(&self) -> Rebuilder<'_> {
+            if self.has_just_one.load(Ordering::SeqCst) {
+                return Rebuilder::JustOne;
+            }
+            Rebuilder::Read(LOCKED_DISPATCHERS.read().unwrap())
+        }
+
+        pub(super) fn register_dispatch(&self, dispatch: &dispatcher::Dispatch) -> Rebuilder<'_> {
+            let mut dispatchers = LOCKED_DISPATCHERS.write().unwrap();
+            dispatchers.retain(|d| d.upgrade().is_some());
+            dispatchers.push(dispatch.registrar());
+            self.has_just_one
+                .store(dispatchers.len() <= 1, Ordering::SeqCst);
+            Rebuilder::Write(dispatchers)
+        }
+    }
+
+    impl Rebuilder<'_> {
+        pub(super) fn for_each(&self, mut f: impl FnMut(&dispatcher::Dispatch)) {
+            let iter = match self {
+                Rebuilder::JustOne => {
+                    dispatcher::get_default(f);
+                    return;
+                }
+                Rebuilder::Read(vec) => vec.iter(),
+                Rebuilder::Write(vec) => vec.iter(),
+            };
+            iter.filter_map(dispatcher::Registrar::upgrade)
+                .for_each(|dispatch| f(&dispatch))
+        }
+    }
+}
+
+#[cfg(not(feature = "std"))]
+mod dispatchers {
+    use crate::dispatcher;
+
+    pub(super) struct Dispatchers(());
+    pub(super) struct Rebuilder<'a>(Option<&'a dispatcher::Dispatch>);
+
+    impl Dispatchers {
+        pub(super) const fn new() -> Self {
+            Self(())
+        }
+
+        pub(super) fn rebuilder(&self) -> Rebuilder<'_> {
+            Rebuilder(None)
+        }
+
+        pub(super) fn register_dispatch<'dispatch>(
+            &self,
+            dispatch: &'dispatch dispatcher::Dispatch,
+        ) -> Rebuilder<'dispatch> {
+            
+            Rebuilder(Some(dispatch))
+        }
+    }
+
+    impl Rebuilder<'_> {
+        #[inline]
+        pub(super) fn for_each(&self, mut f: impl FnMut(&dispatcher::Dispatch)) {
+            if let Some(dispatch) = self.0 {
+                
+                
+                
+                f(dispatch)
+            } else {
+                
+                
+                
+                dispatcher::get_default(f)
+            }
+        }
     }
 }

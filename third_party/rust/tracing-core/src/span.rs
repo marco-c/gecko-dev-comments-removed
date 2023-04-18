@@ -40,7 +40,6 @@ pub struct Record<'a> {
 
 
 
-
 #[derive(Debug)]
 pub struct Current {
     inner: CurrentInner,
@@ -224,6 +223,14 @@ impl<'a> Record<'a> {
     
     pub fn record(&self, visitor: &mut dyn field::Visit) {
         self.values.record(visitor)
+    }
+
+    
+    
+    
+    
+    pub fn len(&self) -> usize {
+        self.values.len()
     }
 
     

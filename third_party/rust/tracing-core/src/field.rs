@@ -109,8 +109,6 @@
 
 
 
-
-
 use crate::callsite;
 use crate::stdlib::{
     borrow::Borrow,
@@ -165,8 +163,6 @@ pub struct Iter {
     idxs: Range<usize>,
     fields: FieldSet,
 }
-
-
 
 
 
@@ -940,6 +936,19 @@ impl<'a> ValueSet<'a> {
     }
 
     
+    
+    
+    
+    
+    pub fn len(&self) -> usize {
+        let my_callsite = self.callsite();
+        self.values
+            .iter()
+            .filter(|(field, _)| field.callsite() == my_callsite)
+            .count()
+    }
+
+    
     pub(crate) fn contains(&self, field: &Field) -> bool {
         field.callsite() == self.callsite()
             && self
@@ -949,7 +958,7 @@ impl<'a> ValueSet<'a> {
     }
 
     
-    pub(crate) fn is_empty(&self) -> bool {
+    pub fn is_empty(&self) -> bool {
         let my_callsite = self.callsite();
         self.values
             .iter()

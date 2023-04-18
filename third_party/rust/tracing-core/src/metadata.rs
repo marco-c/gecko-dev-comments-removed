@@ -605,7 +605,6 @@ impl LevelFilter {
     
     
     
-    
     pub const fn into_level(self) -> Option<Level> {
         self.0
     }

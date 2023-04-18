@@ -255,10 +255,6 @@ macro_rules! metadata {
 }
 
 
-#[cfg(feature = "std")]
-pub(crate) use lazy_static::lazy_static;
-
-
 #[cfg(not(feature = "std"))]
 #[macro_use]
 mod lazy_static;

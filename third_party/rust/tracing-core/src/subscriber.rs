@@ -71,9 +71,17 @@ use crate::stdlib::{
 
 
 
+
+
+
+
 pub trait Subscriber: 'static {
     
 
+    
+    
+    
+    
     
     
     
@@ -171,7 +179,6 @@ pub trait Subscriber: 'static {
     
     fn enabled(&self, metadata: &Metadata<'_>) -> bool;
 
-    
     
     
     
