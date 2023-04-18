@@ -2300,6 +2300,9 @@ void HTMLMediaElement::AbortExistingLoads() {
   if (mNetworkState != NETWORK_EMPTY) {
     NS_ASSERTION(!mDecoder && !mSrcStream,
                  "How did someone setup a new stream/decoder already?");
+
+    DispatchAsyncEvent(u"emptied"_ns);
+
     
     
     if (!mPaused) {
@@ -2324,7 +2327,6 @@ void HTMLMediaElement::AbortExistingLoads() {
       
       FireTimeUpdate(TimeupdateType::eMandatory);
     }
-    DispatchAsyncEvent(u"emptied"_ns);
     UpdateAudioChannelPlayingState();
   }
 
