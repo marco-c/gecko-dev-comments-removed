@@ -189,13 +189,9 @@ class HTMLCanvasElement final : public nsGenericHTMLElement,
   
 
 
-  void SetWriteOnly();
-
-  
 
 
-
-  void SetWriteOnly(nsIPrincipal* aExpandedReader);
+  void SetWriteOnly(nsIPrincipal* aExpandedReader = nullptr);
 
   
 
