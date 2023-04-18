@@ -707,6 +707,8 @@ Relation XULTreeItemAccessibleBase::RelationByType(RelationType aType) const {
   }
 }
 
+bool XULTreeItemAccessibleBase::HasPrimaryAction() const { return true; }
+
 uint8_t XULTreeItemAccessibleBase::ActionCount() const {
   
   

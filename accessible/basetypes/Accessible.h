@@ -390,6 +390,15 @@ class Accessible {
 
   virtual void GetPositionAndSetSize(int32_t* aPosInSet, int32_t* aSetSize);
 
+  
+
+
+
+
+
+
+  virtual bool HasPrimaryAction() const = 0;
+
  private:
   static const uint8_t kTypeBits = 6;
   static const uint8_t kGenericTypesBits = 18;
