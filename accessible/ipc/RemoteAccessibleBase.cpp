@@ -18,6 +18,7 @@
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/Unused.h"
 #include "nsAccUtils.h"
+#include "nsTextEquivUtils.h"
 #include "Pivot.h"
 #include "RelationType.h"
 #include "xpcAccessibleDocument.h"
@@ -227,7 +228,7 @@ void RemoteAccessibleBase<Derived>::Value(nsString& aValue) const {
     const nsRoleMapEntry* roleMapEntry = ARIARoleMap();
     
     if (roleMapEntry && roleMapEntry->Is(nsGkAtoms::textbox)) {
-      
+      nsTextEquivUtils::GetTextEquivFromSubtree(this, aValue);
       return;
     }
 
