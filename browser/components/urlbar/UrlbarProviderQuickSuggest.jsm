@@ -11,11 +11,14 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  AsyncShutdown: "resource://gre/modules/AsyncShutdown.jsm",
+  clearInterval: "resource://gre/modules/Timer.jsm",
   CONTEXTUAL_SERVICES_PING_TYPES:
     "resource:///modules/PartnerLinkAttribution.jsm",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.jsm",
   PartnerLinkAttribution: "resource:///modules/PartnerLinkAttribution.jsm",
   Services: "resource://gre/modules/Services.jsm",
+  setInterval: "resource://gre/modules/Timer.jsm",
   SkippableTimer: "resource:///modules/UrlbarUtils.jsm",
   TaskQueue: "resource:///modules/UrlbarUtils.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
@@ -38,6 +41,8 @@ const TIMESTAMP_REGEXP = /^\d{10}$/;
 const MERINO_ENDPOINT_PARAM_QUERY = "q";
 const MERINO_ENDPOINT_PARAM_CLIENT_VARIANTS = "client_variants";
 const MERINO_ENDPOINT_PARAM_PROVIDERS = "providers";
+
+const IMPRESSION_COUNTERS_RESET_INTERVAL_MS = 60 * 60 * 1000; 
 
 const TELEMETRY_MERINO_LATENCY = "FX_URLBAR_MERINO_LATENCY_MS";
 const TELEMETRY_MERINO_RESPONSE = "FX_URLBAR_MERINO_RESPONSE";
@@ -107,6 +112,15 @@ class ProviderQuickSuggest extends UrlbarProvider {
     NimbusFeatures.urlbar.onUpdate(() => this._updateFeatureState());
 
     UrlbarPrefs.addObserver(this);
+
+    
+    this._setImpressionCountersResetInterval();
+
+    
+    AsyncShutdown.profileChangeTeardown.addBlocker(
+      "UrlbarProviderQuickSuggest: Record impression counters reset telemetry",
+      () => this._resetElapsedImpressionCounters()
+    );
   }
 
   
@@ -219,16 +233,6 @@ class ProviderQuickSuggest extends UrlbarProvider {
     ) {
       promises.push(this._fetchMerinoSuggestions(queryContext, searchString));
     }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    this._resetElapsedImpressionCounters();
 
     
     let allSuggestions = await Promise.all(promises);
@@ -987,8 +991,9 @@ class ProviderQuickSuggest extends UrlbarProvider {
       (!suggestion.is_sponsored &&
         UrlbarPrefs.get("quickSuggestImpressionCapsNonSponsoredEnabled"))
     ) {
+      this._resetElapsedImpressionCounters();
       let type = suggestion.is_sponsored ? "sponsored" : "nonsponsored";
-      let stats = this._impressionStats?.[type];
+      let stats = this._impressionStats[type];
       if (stats) {
         let hitStats = stats.filter(s => s.maxCount <= s.count);
         if (hitStats.length) {
@@ -1084,7 +1089,7 @@ class ProviderQuickSuggest extends UrlbarProvider {
     
     
     let type = isSponsored ? "sponsored" : "nonsponsored";
-    let stats = this._impressionStats?.[type];
+    let stats = this._impressionStats[type];
     if (!stats) {
       this.logger.info("Impression caps undefined, skipping update");
       return;
@@ -1128,7 +1133,7 @@ class ProviderQuickSuggest extends UrlbarProvider {
   _loadImpressionStats() {
     let json = UrlbarPrefs.get("quicksuggest.impressionCaps.stats");
     if (!json) {
-      this._impressionStats = null;
+      this._impressionStats = {};
     } else {
       try {
         this._impressionStats = JSON.parse(
@@ -1392,6 +1397,27 @@ class ProviderQuickSuggest extends UrlbarProvider {
 
 
 
+
+  _setImpressionCountersResetInterval(
+    ms = IMPRESSION_COUNTERS_RESET_INTERVAL_MS
+  ) {
+    if (this._impressionCountersResetInterval) {
+      clearInterval(this._impressionCountersResetInterval);
+    }
+    this._impressionCountersResetInterval = setInterval(
+      () => this._resetElapsedImpressionCounters(),
+      ms
+    );
+  }
+
+  
+
+
+
+
+
+
+
   _getStartupDateMs() {
     return Services.startup.getStartupInfo().process.getTime();
   }
@@ -1514,7 +1540,7 @@ class ProviderQuickSuggest extends UrlbarProvider {
   
   
   
-  _impressionStats = null;
+  _impressionStats = {};
 
   
   _updatingImpressionStats = false;
