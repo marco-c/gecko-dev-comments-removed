@@ -48,11 +48,30 @@ async function testMessages() {
   const opened = waitForBrowserConsole();
   let hud = BrowserConsoleManager.getBrowserConsole();
   ok(!hud, "browser console is not open");
+
+  
+  
+  
+  
+  const overriddenConsole = globalThis.console;
+  globalThis.console = globalThis.nativeConsole;
+
   info("wait for the browser console to open with ctrl-shift-j");
   EventUtils.synthesizeKey("j", { accelKey: true, shiftKey: true }, window);
 
   hud = await opened;
   ok(hud, "browser console opened");
+
+  info("Check that we don't display the non-native console API warning");
+  
+  await wait(1000);
+  is(
+    findMessage(hud, "The Web Console logging API", ".warn"),
+    undefined,
+    "The message about disabled console API is not displayed"
+  );
+  
+  globalThis.console = overriddenConsole;
 
   await clearOutput(hud);
 

@@ -1819,7 +1819,10 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
 
 
 
-  onDocumentEvent: function(name, { time }) {
+
+
+
+  onDocumentEvent: function(name, { time, hasNativeConsoleAPI }) {
     
     
     
@@ -1829,6 +1832,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
     this.emit("documentEvent", {
       name,
       time,
+      hasNativeConsoleAPI,
     });
   },
 
