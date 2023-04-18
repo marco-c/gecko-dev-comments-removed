@@ -51,15 +51,8 @@ nsScanner::nsScanner(const nsAString& anHTMLString, bool aIncremental)
     : mIncremental(aIncremental) {
   MOZ_COUNT_CTOR(nsScanner);
 
-  mSlidingBuffer = nullptr;
-  if (AppendToBuffer(anHTMLString)) {
-    mSlidingBuffer->BeginReading(mCurrentPosition);
-  } else {
-    
-    memset(&mCurrentPosition, 0, sizeof(mCurrentPosition));
-    mEndPosition = mCurrentPosition;
-  }
-  mMarkPosition = mCurrentPosition;
+  AppendToBuffer(anHTMLString);
+  MOZ_ASSERT(mMarkPosition == mCurrentPosition);
 }
 
 
@@ -69,7 +62,6 @@ nsScanner::nsScanner(const nsAString& anHTMLString, bool aIncremental)
 
 nsScanner::nsScanner(nsIURI* aURI) : mURI(aURI), mIncremental(true) {
   MOZ_COUNT_CTOR(nsScanner);
-  mSlidingBuffer = nullptr;
 
   
   
@@ -112,11 +104,7 @@ nsresult nsScanner::SetDocumentCharset(NotNull<const Encoding*> aEncoding,
 
 
 
-nsScanner::~nsScanner() {
-  delete mSlidingBuffer;
-
-  MOZ_COUNT_DTOR(nsScanner);
-}
+nsScanner::~nsScanner() { MOZ_COUNT_DTOR(nsScanner); }
 
 
 
@@ -238,7 +226,7 @@ nsresult nsScanner::Append(const char* aBuffer, uint32_t aLen) {
     
     
     res = NS_OK;
-    if (!AppendToBuffer(buffer)) res = NS_ERROR_OUT_OF_MEMORY;
+    AppendToBuffer(buffer);
   } else {
     NS_WARNING("No decoder found.");
     res = NS_ERROR_FAILURE;
@@ -289,22 +277,18 @@ void nsScanner::SetPosition(nsScannerIterator& aPosition, bool aTerminate) {
   }
 }
 
-bool nsScanner::AppendToBuffer(nsScannerString::Buffer* aBuf) {
+void nsScanner::AppendToBuffer(nsScannerString::Buffer* aBuf) {
   if (!mSlidingBuffer) {
-    mSlidingBuffer = new nsScannerString(aBuf);
-    if (!mSlidingBuffer) return false;
+    mSlidingBuffer = MakeUnique<nsScannerString>(aBuf);
     mSlidingBuffer->BeginReading(mCurrentPosition);
     mMarkPosition = mCurrentPosition;
-    mSlidingBuffer->EndReading(mEndPosition);
   } else {
     mSlidingBuffer->AppendBuffer(aBuf);
     if (mCurrentPosition == mEndPosition) {
       mSlidingBuffer->BeginReading(mCurrentPosition);
     }
-    mSlidingBuffer->EndReading(mEndPosition);
   }
-
-  return true;
+  mSlidingBuffer->EndReading(mEndPosition);
 }
 
 
