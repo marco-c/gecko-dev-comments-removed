@@ -301,7 +301,7 @@ bool CCGCScheduler::GCRunnerFiredDoGC(TimeStamp aDeadline,
 
   MOZ_ASSERT(mActiveIntersliceGCBudget);
   TimeStamp startTimeStamp = TimeStamp::Now();
-  TimeDuration budget = ComputeInterSliceGCBudget(aDeadline, startTimeStamp);
+  js::SliceBudget budget = ComputeInterSliceGCBudget(aDeadline, startTimeStamp);
   TimeDuration duration = mGCUnnotifiedTotalTime;
   nsJSContext::RunIncrementalGCSlice(aStep.mReason, is_shrinking, budget);
 
@@ -630,8 +630,8 @@ js::SliceBudget CCGCScheduler::ComputeCCSliceBudget(
       std::max({delaySliceBudget, laterSliceBudget, baseBudget})));
 }
 
-TimeDuration CCGCScheduler::ComputeInterSliceGCBudget(TimeStamp aDeadline,
-                                                      TimeStamp aNow) const {
+js::SliceBudget CCGCScheduler::ComputeInterSliceGCBudget(TimeStamp aDeadline,
+                                                         TimeStamp aNow) {
   
   
   
@@ -639,14 +639,21 @@ TimeDuration CCGCScheduler::ComputeInterSliceGCBudget(TimeStamp aDeadline,
   TimeDuration budget =
       aDeadline.IsNull() ? mActiveIntersliceGCBudget * 2 : aDeadline - aNow;
   if (!mCCBlockStart) {
-    return budget;
+    return CreateGCSliceBudget(budget);
   }
 
   TimeDuration blockedTime = aNow - mCCBlockStart;
   TimeDuration maxSliceGCBudget = mActiveIntersliceGCBudget * 10;
   double percentOfBlockedTime =
       std::min(blockedTime / kMaxCCLockedoutTime, 1.0);
-  return std::max(budget, maxSliceGCBudget.MultDouble(percentOfBlockedTime));
+  TimeDuration extendedBudget =
+      maxSliceGCBudget.MultDouble(percentOfBlockedTime);
+  if (budget >= extendedBudget) {
+    return CreateGCSliceBudget(budget);
+  }
+
+  
+  return js::SliceBudget(js::TimeBudget(extendedBudget));
 }
 
 CCReason CCGCScheduler::ShouldScheduleCC(TimeStamp aNow,
