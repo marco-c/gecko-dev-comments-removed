@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=
+-->
 <head>
   <title>Test for Bug 1300461</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -20,8 +20,6 @@
     let chromeScript = null;
     if (SpecialPowers.Services.appinfo.sessionHistoryInParent) {
       chromeScript = SpecialPowers.loadChromeScript(() => {
-        const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
         function doSend(message, fn) {
           try {
             // eslint-disable-next-line no-undef
@@ -33,19 +31,18 @@
         }
 
         // eslint-disable-next-line no-undef
-        addMessageListener("requestedIndex", () => {
+        addMessageListener("requestedIndex", (id) => {
           doSend("requestedIndex", () => {
-            let win = Services.wm.getMostRecentWindow("navigator:browser");
-            let shistory = win.gBrowser.selectedBrowser.browsingContext.sessionHistory;
+            let shistory = BrowsingContext.get(id).top.sessionHistory;
             return shistory.requestedIndex;
           })
         });
       });
     }
 
-    async function getSHRequestedIndex() {
+    async function getSHRequestedIndex(browsingContextId) {
       let p = chromeScript.promiseOneMessage("requestedIndex");
-      chromeScript.sendAsyncMessage("requestedIndex");
+      chromeScript.sendAsyncMessage("requestedIndex", browsingContextId);
       let result = await p;
       ok(result.success, "Got requested index from parent");
       return result.value;
