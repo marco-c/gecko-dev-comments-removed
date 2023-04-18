@@ -1,0 +1,18 @@
+
+
+
+
+
+'use strict';
+
+font_access_test(async t => {
+  
+  
+  
+  
+  
+  const fonts = await navigator.fonts.query();
+  const fontNames = fonts.map(fontMetadata => fontMetadata.postscriptName);
+  const expectedFontNames = [...fontNames].sort();
+  assert_array_equals(fontNames, expectedFontNames);
+}, 'query(): fonts are sorted');
