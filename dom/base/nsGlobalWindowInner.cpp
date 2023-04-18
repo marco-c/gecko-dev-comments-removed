@@ -83,6 +83,7 @@
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_docshell.h"
 #include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/StaticPrefs_extensions.h"
 #include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/StorageAccess.h"
 #include "mozilla/StoragePrincipalHelper.h"
@@ -2480,6 +2481,20 @@ bool nsGlobalWindowInner::ShouldReportForServiceWorkerScope(
 }
 
 InstallTriggerImpl* nsGlobalWindowInner::GetInstallTrigger() {
+  if (!mInstallTrigger &&
+      !StaticPrefs::extensions_InstallTriggerImpl_enabled()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    return nullptr;
+  }
   if (!mInstallTrigger) {
     ErrorResult rv;
     mInstallTrigger = ConstructJSImplementation<InstallTriggerImpl>(
