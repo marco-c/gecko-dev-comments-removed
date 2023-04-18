@@ -2,7 +2,8 @@
 
 
 
-const { networkRequest } = require("devtools-utils");
+const { networkRequest } = require("./network-request");
+
 const { getSourceMap, setSourceMap } = require("./sourceMapRequests");
 const { WasmRemap } = require("./wasmRemap");
 const { convertToJSON } = require("devtools-wasm-dwarf");

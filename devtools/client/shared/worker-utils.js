@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 function WorkerDispatcher() {
   this.msgId = 1;
   this.worker = null;

@@ -2,9 +2,7 @@
 
 
 
-const {
-  workerUtils: { WorkerDispatcher },
-} = require("devtools-utils");
+const { WorkerDispatcher } = require("devtools/client/shared/worker-utils");
 
 export const dispatcher = new WorkerDispatcher();
 

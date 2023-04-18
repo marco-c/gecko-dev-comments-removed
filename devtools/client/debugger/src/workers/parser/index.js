@@ -2,8 +2,7 @@
 
 
 
-import { workerUtils } from "devtools-utils";
-const { WorkerDispatcher } = workerUtils;
+import { WorkerDispatcher } from "devtools/client/shared/worker-utils";
 
 export class ParserDispatcher extends WorkerDispatcher {
   async findOutOfScopeLocations(sourceId, position) {

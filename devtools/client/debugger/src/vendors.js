@@ -14,7 +14,6 @@
 
 
 
-import * as devtoolsUtils from "devtools-utils";
 import * as fuzzaldrinPlus from "fuzzaldrin-plus";
 import * as transition from "react-transition-group/Transition";
 import * as reactAriaComponentsTabs from "react-aria-components/src/tabs";
@@ -28,7 +27,6 @@ import classnames from "classnames";
 
 export const vendored = {
   classnames,
-  "devtools-utils": devtoolsUtils,
   "fuzzaldrin-plus": fuzzaldrinPlus,
   "react-aria-components/src/tabs": reactAriaComponentsTabs,
   "react-transition-group/Transition": transition,

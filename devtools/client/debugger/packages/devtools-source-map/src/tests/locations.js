@@ -2,7 +2,7 @@
 
 
 
-jest.mock("devtools-utils/src/network-request");
+jest.mock("../utils/network-request");
 const {
   getOriginalLocation,
   getGeneratedLocation,

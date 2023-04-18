@@ -2,8 +2,8 @@
 
 
 
-jest.mock("devtools-utils/src/network-request");
-const networkRequest = require("devtools-utils/src/network-request");
+jest.mock("../utils/network-request");
+const { networkRequest } = require("../utils/network-request");
 
 const {
   getOriginalURLs,
