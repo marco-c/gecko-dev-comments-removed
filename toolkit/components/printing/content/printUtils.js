@@ -462,46 +462,6 @@ var PrintUtils = {
     }
     return printSettings;
   },
-
-  get shouldSimplify() {
-    return this._shouldSimplify;
-  },
-
-  setSimplifiedMode(shouldSimplify) {
-    this._shouldSimplify = shouldSimplify;
-  },
-
-  getLastUsedPrinterName() {
-    let PSSVC = Cc["@mozilla.org/gfx/printsettings-service;1"].getService(
-      Ci.nsIPrintSettingsService
-    );
-    let lastUsedPrinterName = PSSVC.lastUsedPrinterName;
-    if (!lastUsedPrinterName) {
-      
-      
-      
-      
-      
-      
-      
-      let settings = this.getPrintSettings();
-      if (settings.printerName) {
-        PSSVC.savePrintSettingsToPrefs(
-          settings,
-          false,
-          Ci.nsIPrintSettings.kInitSavePrinterName
-        );
-        PSSVC.savePrintSettingsToPrefs(
-          settings,
-          true,
-          Ci.nsIPrintSettings.kInitSaveAll
-        );
-        lastUsedPrinterName = settings.printerName;
-      }
-    }
-
-    return lastUsedPrinterName;
-  },
 };
 
 class PrintPreview extends MozElements.BaseControl {
