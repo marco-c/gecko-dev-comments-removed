@@ -1391,7 +1391,7 @@ bool GCRuntime::shouldCompact() {
   
   
 
-  if (gcOptions() != JS::GCOptions::Shrink || !isCompactingGCEnabled()) {
+  if (!isShrinkingGC() || !isCompactingGCEnabled()) {
     return false;
   }
 
@@ -2530,7 +2530,7 @@ void GCRuntime::endPreparePhase(JS::GCReason reason) {
 
 
 
-    if (gcOptions() == JS::GCOptions::Shrink) {
+    if (isShrinkingGC()) {
       relazifyFunctionsForShrinkingGC();
       purgePropMapTablesForShrinkingGC();
       purgeSourceURLsForShrinkingGC();
