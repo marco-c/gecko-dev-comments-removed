@@ -848,7 +848,8 @@ already_AddRefed<CanvasCaptureMediaStream> HTMLCanvasElement::CaptureStream(
   
   
   bool usePlaceholder = !CanvasUtils::IsImageExtractionAllowed(
-      OwnerDoc(), nsContentUtils::GetCurrentJSContext(), aSubjectPrincipal);
+      OwnerDoc(), nsContentUtils::GetCurrentJSContext(),
+      Some(&aSubjectPrincipal));
 
   rv = RegisterFrameCaptureListener(stream->FrameCaptureListener(),
                                     usePlaceholder);
@@ -868,7 +869,7 @@ nsresult HTMLCanvasElement::ExtractData(JSContext* aCx,
   
   
   bool usePlaceholder = !CanvasUtils::IsImageExtractionAllowed(
-      OwnerDoc(), aCx, aSubjectPrincipal);
+      OwnerDoc(), aCx, Some(&aSubjectPrincipal));
   return ImageEncoder::ExtractData(aType, aOptions, GetSize(), usePlaceholder,
                                    mCurrentContext, mCanvasRenderer, aStream);
 }
@@ -952,7 +953,7 @@ void HTMLCanvasElement::ToBlob(JSContext* aCx, BlobCallback& aCallback,
   
   
   bool usePlaceholder = !CanvasUtils::IsImageExtractionAllowed(
-      OwnerDoc(), aCx, aSubjectPrincipal);
+      OwnerDoc(), aCx, Some(&aSubjectPrincipal));
   CanvasRenderingContextHelper::ToBlob(aCx, global, aCallback, aType, aParams,
                                        usePlaceholder, aRv);
 }
