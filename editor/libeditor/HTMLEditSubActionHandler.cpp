@@ -8356,19 +8356,9 @@ SplitNodeResult HTMLEditor::MaybeSplitAncestorsForInsertWithTransaction(
   SplitNodeResult splitNodeResult = SplitNodeDeepWithTransaction(
       MOZ_KnownLive(*pointToInsert.GetChild()), aStartOfDeepestRightNode,
       SplitAtEdges::eAllowToCreateEmptyContainer);
-  if (splitNodeResult.isErr()) {
-    NS_WARNING(
-        "HTMLEditor::SplitNodeDeepWithTransaction(SplitAtEdges::"
-        "eAllowToCreateEmptyContainer) failed");
-    return splitNodeResult;
-  }
-  nsresult rv = splitNodeResult.SuggestCaretPointTo(
-      *this, {SuggestCaret::OnlyIfHasSuggestion,
-              SuggestCaret::OnlyIfTransactionsAllowedToDoIt});
-  if (NS_FAILED(rv)) {
-    NS_WARNING("SplitNodeResult::SuggestCaretPointTo() failed");
-    return SplitNodeResult(rv);
-  }
+  NS_WARNING_ASSERTION(splitNodeResult.isOk(),
+                       "HTMLEditor::SplitNodeDeepWithTransaction(SplitAtEdges::"
+                       "eAllowToCreateEmptyContainer) failed");
   return splitNodeResult;
 }
 
@@ -10137,7 +10127,7 @@ nsresult HTMLEditor::MoveSelectedContentsToDivElementToMakeItAbsolutePosition(
           const SplitNodeResult splitNodeResult =
               MaybeSplitAncestorsForInsertWithTransaction(
                   MOZ_KnownLive(*ULOrOLOrDLTagName), atContent);
-          if (splitNodeResult.isErr()) {
+          if (splitNodeResult.isOk()) {
             NS_WARNING(
                 "HTMLEditor::MaybeSplitAncestorsForInsertWithTransaction() "
                 "failed");
