@@ -48,11 +48,6 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.defineModuleGetter(
-  this,
-  "IndexedDB",
-  "resource://gre/modules/IndexedDB.jsm"
-);
 
 XPCOMUtils.defineLazyGlobalGetters(this, ["XMLHttpRequest"]);
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -61,31 +56,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "privacy.firstparty.isolate",
   false
 );
-
-const DB_NAME = "SaveToPocket";
-const STORE_NAME = "pktAPI";
-const DB_VERSION = 1;
-const RECENT_SAVES_UPDATE_TIME = 5 * 60 * 1000; 
-
-
-
-
-function openDatabase() {
-  return IndexedDB.open(DB_NAME, DB_VERSION, db => {
-    db.createObjectStore(STORE_NAME);
-  });
-}
-
-
-
-
-let databasePromise;
-function getDatabase() {
-  if (!databasePromise) {
-    databasePromise = openDatabase();
-  }
-  return databasePromise;
-}
 
 var pktApi = (function() {
   
@@ -418,7 +388,6 @@ var pktApi = (function() {
         }
         data.ho2 = getSetting("test.ho2");
 
-        _expireRecentSavesCache();
         if (options.success) {
           options.success.apply(options, Array.apply(null, arguments));
         }
@@ -750,64 +719,6 @@ var pktApi = (function() {
     });
   }
 
-  async function _getRecentSavesCache() {
-    const db = await getDatabase();
-    return db.objectStore(STORE_NAME, "readonly").get("recentSaves");
-  }
-  async function _setRecentSavesCache(data) {
-    const db = await getDatabase();
-    db.objectStore(STORE_NAME, "readwrite").put(data, "recentSaves");
-  }
-  
-  async function _expireRecentSavesCache() {
-    const cache = await _getRecentSavesCache();
-    _setRecentSavesCache({
-      ...cache,
-      lastUpdated: 0,
-    });
-  }
-
-  async function getRecentSavesCache() {
-    
-    const cache = await _getRecentSavesCache();
-    
-    if (
-      cache?.lastUpdated &&
-      Date.now() - cache.lastUpdated < RECENT_SAVES_UPDATE_TIME
-    ) {
-      
-      return cache.list;
-    }
-    return null;
-  }
-
-  async function getRecentSaves(options = {}) {
-    pktApi.retrieve(
-      { count: 4 },
-      {
-        success(data) {
-          
-          const results = {
-            lastUpdated: Date.now(),
-            
-            
-            list: Object.values(data.list)
-              .map(item => ({
-                ...item,
-                time_added: parseInt(item.time_added),
-              }))
-              .sort((a, b) => b.time_added - a.time_added),
-          };
-          _setRecentSavesCache(results);
-          options.success?.(results.list);
-        },
-        error(error) {
-          options.error?.(error);
-        },
-      }
-    );
-  }
-
   
 
 
@@ -825,8 +736,6 @@ var pktApi = (function() {
     getSuggestedTagsForItem,
     getSuggestedTagsForURL,
     retrieve,
-    getRecentSavesCache,
-    getRecentSaves,
     getArticleInfo,
     getMobileDownload,
   };

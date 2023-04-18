@@ -63,12 +63,10 @@ function ArticleList(props) {
   }, react.createElement("a", {
     className: "stp_article_list_link",
     href: article.url
-  }, article.thumbnail ? react.createElement("img", {
+  }, react.createElement("img", {
     className: "stp_article_list_thumb",
     src: article.thumbnail,
     alt: article.alt
-  }) : react.createElement("div", {
-    className: "stp_article_list_thumb_placeholder"
   }), react.createElement("div", {
     className: "stp_article_list_meta"
   }, react.createElement("header", {
@@ -104,14 +102,39 @@ function PopularTopics(props) {
 
 
 
-function Button(props) {
-  return react.createElement("a", {
-    href: props.url,
-    className: `stp_button${props?.style && ` stp_button_${props.style}`}`
-  }, props.children);
+
+
+
+function Home(props) {
+  const {
+    articles,
+    locale,
+    topics,
+    pockethost
+  } = props;
+  return react.createElement("div", {
+    className: "stp_panel_container"
+  }, react.createElement("div", {
+    className: "stp_panel stp_panel_home"
+  }, react.createElement(Header_Header, null, react.createElement("a", null, react.createElement("span", {
+    "data-l10n-id": "pocket-panel-header-my-list"
+  }))), react.createElement("hr", null), articles?.length ? react.createElement(react.Fragment, null, react.createElement("p", {
+    "data-l10n-id": "pocket-panel-home-most-recent-saves"
+  }), react.createElement(ArticleList_ArticleList, {
+    articles: articles
+  }), react.createElement("span", {
+    "data-l10n-id": "pocket-panel-button-show-all"
+  })) : react.createElement(react.Fragment, null, react.createElement("p", {
+    "data-l10n-id": "pocket-panel-home-new-user-cta"
+  }), react.createElement("p", {
+    "data-l10n-id": "pocket-panel-home-new-user-message"
+  })), react.createElement("hr", null), pockethost && locale?.startsWith("en") && topics?.length && react.createElement(react.Fragment, null, react.createElement("div", null, "Explore popular topics:"), react.createElement(PopularTopics_PopularTopics, {
+    topics: topics,
+    pockethost: pockethost
+  }))));
 }
 
- const Button_Button = (Button);
+ const Home_Home = (Home);
 ;
 
 var pktPanelMessaging = {
@@ -177,131 +200,6 @@ var pktPanelMessaging = {
 
 
 
-function encodeThumbnail(rawSource) {
-  return rawSource ? `https://img-getpocket.cdn.mozilla.net/80x80/filters:format(jpeg):quality(60):no_upscale():strip_exif()/${encodeURIComponent(rawSource)}` : null;
-}
-
-function Home(props) {
-  const {
-    locale,
-    topics,
-    pockethost,
-    hideRecentSaves
-  } = props;
-  const [{
-    articles,
-    status
-  }, setArticlesState] = (0,react.useState)({
-    articles: [],
-    
-    status: ""
-  });
-  (0,react.useEffect)(() => {
-    if (!hideRecentSaves) {
-      
-      
-      messages.addMessageListener("PKT_loadingRecentSaves", function (resp) {
-        setArticlesState({
-          articles,
-          status: "loading"
-        });
-      });
-      messages.addMessageListener("PKT_renderRecentSaves", function (resp) {
-        const {
-          data
-        } = resp;
-
-        if (data.status === "error") {
-          setArticlesState({
-            articles: [],
-            status: "error"
-          });
-          return;
-        }
-
-        setArticlesState({
-          articles: data.map(item => ({
-            url: item.resolved_url,
-            
-            thumbnail: encodeThumbnail(item?.top_image_url || item?.images?.["1"]?.src),
-            alt: "thumbnail image",
-            title: item.resolved_title,
-            publisher: item.domain_metadata?.name
-          })),
-          status: "success"
-        });
-      });
-    } 
-
-
-    messages.sendMessage("PKT_show_home");
-  }, []);
-  let recentSavesSection = null;
-
-  if (status === "error" || hideRecentSaves) {
-    recentSavesSection = react.createElement("h3", {
-      className: "header_medium",
-      "data-l10n-id": "pocket-panel-home-new-user-cta"
-    });
-  } else if (status === "loading") {
-    recentSavesSection = react.createElement("span", {
-      "data-l10n-id": "pocket-panel-home-most-recent-saves-loading"
-    });
-  } else if (status === "success") {
-    if (articles?.length) {
-      recentSavesSection = react.createElement(react.Fragment, null, react.createElement("h3", {
-        className: "header_medium",
-        "data-l10n-id": "pocket-panel-home-most-recent-saves"
-      }), articles.length > 3 ? react.createElement(react.Fragment, null, react.createElement(ArticleList_ArticleList, {
-        articles: articles.slice(0, 3)
-      }), react.createElement("span", {
-        className: "stp_button_wide"
-      }, react.createElement(Button_Button, {
-        style: "secondary"
-      }, react.createElement("span", {
-        "data-l10n-id": "pocket-panel-button-show-all"
-      })))) : react.createElement(ArticleList_ArticleList, {
-        articles: articles
-      }));
-    } else {
-      recentSavesSection = react.createElement(react.Fragment, null, react.createElement("h3", {
-        className: "header_medium",
-        "data-l10n-id": "pocket-panel-home-new-user-cta"
-      }), react.createElement("h3", {
-        className: "header_medium",
-        "data-l10n-id": "pocket-panel-home-new-user-message"
-      }));
-    }
-  }
-
-  return react.createElement("div", {
-    className: "stp_panel_container"
-  }, react.createElement("div", {
-    className: "stp_panel stp_panel_home"
-  }, react.createElement(Header_Header, null, react.createElement(Button_Button, {
-    style: "primary"
-  }, react.createElement("span", {
-    "data-l10n-id": "pocket-panel-header-my-list"
-  }))), react.createElement("hr", null), recentSavesSection, react.createElement("hr", null), pockethost && locale?.startsWith("en") && topics?.length && react.createElement(react.Fragment, null, react.createElement("h3", {
-    className: "header_medium"
-  }, "Explore popular topics:"), react.createElement(PopularTopics_PopularTopics, {
-    topics: topics,
-    pockethost: pockethost
-  }))));
-}
-
- const Home_Home = (Home);
-;
-
-
-
-
-
-
-
-
-
-
 
 
 var HomeOverlay = function (options) {
@@ -337,7 +235,6 @@ HomeOverlay.prototype = {
     const pockethost = searchParams.get(`pockethost`) || `getpocket.com`;
     const locale = searchParams.get(`locale`) || ``;
     const layoutRefresh = searchParams.get(`layoutRefresh`) === `true`;
-    const hideRecentSaves = searchParams.get(`hiderecentsaves`) === `true`;
 
     if (this.active) {
       return;
@@ -349,38 +246,20 @@ HomeOverlay.prototype = {
       
       react_dom.render( react.createElement(Home_Home, {
         locale: locale,
-        hideRecentSaves: hideRecentSaves,
+        articles: [],
         pockethost: pockethost,
         topics: [{
-          title: "Technology",
-          topic: "technology"
-        }, {
           title: "Self Improvement",
           topic: "self-improvement"
         }, {
           title: "Food",
           topic: "food"
         }, {
-          title: "Parenting",
-          topic: "parenting"
-        }, {
-          title: "Science",
-          topic: "science"
-        }, {
           title: "Entertainment",
           topic: "entertainment"
         }, {
-          title: "Career",
-          topic: "career"
-        }, {
-          title: "Health",
-          topic: "health"
-        }, {
-          title: "Travel",
-          topic: "travel"
-        }, {
-          title: "Must-Reads",
-          topic: "must-reads"
+          title: "Science",
+          topic: "science"
         }]
       }), document.querySelector(`body`));
     } else {
@@ -420,10 +299,11 @@ HomeOverlay.prototype = {
       } 
 
 
-      this.setupClickEvents(); 
+      this.setupClickEvents();
+    } 
 
-      messages.sendMessage("PKT_show_home");
-    }
+
+    messages.sendMessage("PKT_show_home");
   }
 
 };
@@ -1164,6 +1044,20 @@ SavedOverlay.prototype = {
 
 };
  const saved_overlay = (SavedOverlay);
+;
+
+
+
+
+
+function Button(props) {
+  return react.createElement("a", {
+    href: props.url,
+    className: `stp_button${props?.style && ` stp_button_${props.style}`}`
+  }, props.children);
+}
+
+ const Button_Button = (Button);
 ;
 
 
