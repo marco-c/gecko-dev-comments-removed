@@ -1131,8 +1131,8 @@ void TRRService::ConfirmationContext::RecordTRRStatus(nsresult aChannelStatus) {
   }
 }
 
-void TRRService::ConfirmationContext::RecordEvent(const char* aReason,
-                                                  const MutexSingleWriterAutoLock&) {
+void TRRService::ConfirmationContext::RecordEvent(
+    const char* aReason, const MutexSingleWriterAutoLock&) {
   
   
   auto reset = [&]() {
