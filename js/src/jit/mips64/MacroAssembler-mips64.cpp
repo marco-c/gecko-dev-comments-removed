@@ -1874,8 +1874,6 @@ void MacroAssemblerMIPS64Compat::handleFailureWithHandlerTail(
           StackPointer);
   loadValue(Address(FramePointer, BaselineFrame::reverseOffsetOfReturnValue()),
             JSReturnOperand);
-  ma_move(StackPointer, FramePointer);
-  pop(FramePointer);
   jump(&profilingInstrumentation);
 
   
@@ -1902,6 +1900,8 @@ void MacroAssemblerMIPS64Compat::handleFailureWithHandlerTail(
     bind(&skipProfilingInstrumentation);
   }
 
+  ma_move(StackPointer, FramePointer);
+  pop(FramePointer);
   ret();
 
   

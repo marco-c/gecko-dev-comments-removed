@@ -585,8 +585,6 @@ void MacroAssemblerX64::handleFailureWithHandlerTail(Label* profilerExitTail) {
   loadPtr(Address(rsp, ResumeFromException::offsetOfStackPointer()), rsp);
   loadValue(Address(rbp, BaselineFrame::reverseOffsetOfReturnValue()),
             JSReturnOperand);
-  movq(rbp, rsp);
-  pop(rbp);
   jmp(&profilingInstrumentation);
 
   
@@ -610,6 +608,8 @@ void MacroAssemblerX64::handleFailureWithHandlerTail(Label* profilerExitTail) {
     bind(&skipProfilingInstrumentation);
   }
 
+  movq(rbp, rsp);
+  pop(rbp);
   ret();
 
   

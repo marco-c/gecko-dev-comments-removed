@@ -5314,8 +5314,6 @@ void MacroAssemblerLOONG64Compat::handleFailureWithHandlerTail(
           StackPointer);
   loadValue(Address(FramePointer, BaselineFrame::reverseOffsetOfReturnValue()),
             JSReturnOperand);
-  as_or(StackPointer, FramePointer, zero);
-  pop(FramePointer);
   jump(&profilingInstrumentation);
 
   
@@ -5342,6 +5340,8 @@ void MacroAssemblerLOONG64Compat::handleFailureWithHandlerTail(
     bind(&skipProfilingInstrumentation);
   }
 
+  as_or(StackPointer, FramePointer, zero);
+  pop(FramePointer);
   ret();
 
   

@@ -131,16 +131,16 @@ bool CodeGeneratorShared::generatePrologue() {
 #endif
 
   
-  if (isProfilerInstrumentationEnabled()) {
-    masm.profilerEnterFrame(masm.getStackPointer(), CallTempReg0);
-  }
-
-  
   masm.assertStackAlignment(JitStackAlignment, 0);
 
   
   masm.Push(FramePointer);
   masm.moveStackPtrTo(FramePointer);
+
+  
+  if (isProfilerInstrumentationEnabled()) {
+    masm.profilerEnterFrame(FramePointer, CallTempReg0);
+  }
 
   
   masm.reserveStack(frameSize() - sizeof(uintptr_t));
@@ -162,16 +162,16 @@ bool CodeGeneratorShared::generateEpilogue() {
     emitTracelogIonStop();
   }
 
-  MOZ_ASSERT(masm.framePushed() == frameSize());
-  masm.moveToStackPtr(FramePointer);
-  masm.pop(FramePointer);
-  masm.setFramePushed(0);
-
   
   
   if (isProfilerInstrumentationEnabled()) {
     masm.profilerExitFrame();
   }
+
+  MOZ_ASSERT(masm.framePushed() == frameSize());
+  masm.moveToStackPtr(FramePointer);
+  masm.pop(FramePointer);
+  masm.setFramePushed(0);
 
   masm.ret();
 

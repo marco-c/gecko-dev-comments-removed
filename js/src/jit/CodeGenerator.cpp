@@ -3727,11 +3727,6 @@ void CodeGenerator::visitOsrEntry(LOsrEntry* lir) {
 #endif
 
   
-  if (isProfilerInstrumentationEnabled()) {
-    masm.profilerEnterFrame(masm.getStackPointer(), temp);
-  }
-
-  
   
   
   MOZ_ASSERT(masm.framePushed() == frameSize());
@@ -3740,6 +3735,11 @@ void CodeGenerator::visitOsrEntry(LOsrEntry* lir) {
   
   masm.Push(FramePointer);
   masm.moveStackPtrTo(FramePointer);
+
+  
+  if (isProfilerInstrumentationEnabled()) {
+    masm.profilerEnterFrame(FramePointer, temp);
+  }
 
   masm.reserveStack(frameSize() - sizeof(uintptr_t));
   MOZ_ASSERT(masm.framePushed() == frameSize());

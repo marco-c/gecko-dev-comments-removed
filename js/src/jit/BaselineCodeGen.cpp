@@ -1444,11 +1444,6 @@ bool BaselineCompilerCodeGen::emitWarmUpCounterIncrement() {
     
     
 
-    
-    
-    masm.moveToStackPtr(FramePointer);
-    masm.pop(FramePointer);
-
 #ifdef DEBUG
     
     AllocatableGeneralRegisterSet regs(GeneralRegisterSet::All());
@@ -1477,11 +1472,16 @@ bool BaselineCompilerCodeGen::emitWarmUpCounterIncrement() {
       
       masm.branchPtr(Assembler::Equal, scratchReg, ImmWord(0), &checkOk);
 
-      masm.branchStackPtr(Assembler::Equal, scratchReg, &checkOk);
+      masm.branchPtr(Assembler::Equal, FramePointer, scratchReg, &checkOk);
       masm.assumeUnreachable("Baseline OSR lastProfilingFrame mismatch.");
       masm.bind(&checkOk);
     }
 #endif
+
+    
+    
+    masm.moveToStackPtr(FramePointer);
+    masm.pop(FramePointer);
 
     
     masm.loadPtr(Address(osrDataReg, IonOsrTempData::offsetOfBaselineFrame()),
@@ -1683,7 +1683,7 @@ void BaselineCodeGen<Handler>::emitProfilerEnterFrame() {
   
   Label noInstrument;
   CodeOffset toggleOffset = masm.toggledJump(&noInstrument);
-  masm.profilerEnterFrame(masm.getStackPointer(), R0.scratchReg());
+  masm.profilerEnterFrame(FramePointer, R0.scratchReg());
   masm.bind(&noInstrument);
 
   
@@ -5910,6 +5910,10 @@ bool BaselineCodeGen<Handler>::emit_Resume() {
 #endif
 
   
+  masm.push(FramePointer);
+  masm.moveStackPtrTo(FramePointer);
+
+  
   
   {
     Register scratchReg = scratch2;
@@ -5920,14 +5924,12 @@ bool BaselineCodeGen<Handler>::emit_Resume() {
     masm.loadJSContext(scratchReg);
     masm.loadPtr(Address(scratchReg, JSContext::offsetOfProfilingActivation()),
                  scratchReg);
-    masm.storeStackPtr(
+    masm.storePtr(
+        FramePointer,
         Address(scratchReg, JitActivation::offsetOfLastProfilingFrame()));
     masm.bind(&skip);
   }
 
-  
-  masm.push(FramePointer);
-  masm.moveStackPtrTo(FramePointer);
   masm.subFromStackPtr(Imm32(BaselineFrame::Size()));
   masm.assertStackAlignment(sizeof(Value), 0);
 
@@ -6340,10 +6342,12 @@ bool BaselineCodeGen<Handler>::emitPrologue() {
   masm.pushReturnAddress();
   masm.checkStackAlignment();
 #endif
-  emitProfilerEnterFrame();
 
   masm.push(FramePointer);
   masm.moveStackPtrTo(FramePointer);
+
+  emitProfilerEnterFrame();
+
   masm.subFromStackPtr(Imm32(BaselineFrame::Size()));
 
   
@@ -6420,10 +6424,10 @@ bool BaselineCodeGen<Handler>::emitEpilogue() {
   }
 #endif
 
+  emitProfilerExitFrame();
+
   masm.moveToStackPtr(FramePointer);
   masm.pop(FramePointer);
-
-  emitProfilerExitFrame();
 
   masm.ret();
   return true;

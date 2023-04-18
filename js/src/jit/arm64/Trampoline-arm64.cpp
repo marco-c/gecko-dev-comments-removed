@@ -254,6 +254,18 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
     Label error;
     masm.branchIfFalseBool(ReturnReg, &error);
 
+    
+    
+    {
+      Label skipProfilingInstrumentation;
+      AbsoluteAddress addressOfEnabled(
+          cx->runtime()->geckoProfiler().addressOfEnabled());
+      masm.branch32(Assembler::Equal, addressOfEnabled, Imm32(0),
+                    &skipProfilingInstrumentation);
+      masm.profilerEnterFrame(FramePointer, regs.getAny());
+      masm.bind(&skipProfilingInstrumentation);
+    }
+
     masm.jump(scratch);
 
     

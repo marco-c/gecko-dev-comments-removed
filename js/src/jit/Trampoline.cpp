@@ -97,9 +97,6 @@ void JitRuntime::generateProfilerExitFrameTailStub(MacroAssembler& masm,
   
   
   
-  
-  
-  
 
   Register actReg = regs.takeAny();
   masm.loadJSContext(actReg);
@@ -117,9 +114,9 @@ void JitRuntime::generateProfilerExitFrameTailStub(MacroAssembler& masm,
     masm.loadPtr(lastProfilingFrame, scratch);
     Label checkOk;
     masm.branchPtr(Assembler::Equal, scratch, ImmWord(0), &checkOk);
-    masm.branchStackPtr(Assembler::Equal, scratch, &checkOk);
+    masm.branchPtr(Assembler::Equal, FramePointer, scratch, &checkOk);
     masm.assumeUnreachable(
-        "Mismatch between stored lastProfilingFrame and current stack "
+        "Mismatch between stored lastProfilingFrame and current frame "
         "pointer.");
     masm.bind(&checkOk);
   }
@@ -127,9 +124,7 @@ void JitRuntime::generateProfilerExitFrameTailStub(MacroAssembler& masm,
 
   
   
-  Register spScratch = regs.takeAny();
   Register fpScratch = regs.takeAny();
-  masm.moveStackPtrTo(spScratch);
   masm.mov(FramePointer, fpScratch);
 
   Label again;
@@ -137,8 +132,9 @@ void JitRuntime::generateProfilerExitFrameTailStub(MacroAssembler& masm,
 
   
   
-  masm.loadPtr(Address(spScratch, JitFrameLayout::offsetOfDescriptor()),
-               scratch);
+  masm.loadPtr(
+      Address(fpScratch, FPOffset + JitFrameLayout::offsetOfDescriptor()),
+      scratch);
   masm.and32(Imm32(FRAMETYPE_MASK), scratch);
 
   
@@ -173,18 +169,26 @@ void JitRuntime::generateProfilerExitFrameTailStub(MacroAssembler& masm,
     
 
     
-    masm.loadPtr(Address(spScratch, JitFrameLayout::offsetOfReturnAddress()),
-                 scratch);
+    masm.loadPtr(
+        Address(fpScratch, FPOffset + JitFrameLayout::offsetOfReturnAddress()),
+        scratch);
     masm.storePtr(scratch, lastProfilingCallSite);
 
     
-    masm.computeEffectiveAddress(Address(fpScratch, FPOffset), scratch);
+    masm.loadPtr(Address(fpScratch, 0), scratch);
     masm.storePtr(scratch, lastProfilingFrame);
+
+    masm.moveToStackPtr(FramePointer);
+    masm.pop(FramePointer);
     masm.ret();
   }
 
   
-  auto emitHandleStubFrame = [&]() {
+  auto emitHandleStubFrame = [&](FrameType expectedPrevType) {
+    
+    masm.loadPtr(Address(fpScratch, 0), fpScratch);
+    emitAssertPrevFrameType(fpScratch, scratch, {expectedPrevType});
+
     
     masm.loadPtr(Address(fpScratch,
                          FPOffset + CommonFrameLayout::offsetOfReturnAddress()),
@@ -193,34 +197,33 @@ void JitRuntime::generateProfilerExitFrameTailStub(MacroAssembler& masm,
 
     
     masm.loadPtr(Address(fpScratch, 0), scratch);
-    masm.addPtr(Imm32(FPOffset), scratch);
     masm.storePtr(scratch, lastProfilingFrame);
+
+    masm.moveToStackPtr(FramePointer);
+    masm.pop(FramePointer);
     masm.ret();
   };
 
   masm.bind(&handle_BaselineStub);
   {
     
-    emitAssertPrevFrameType(fpScratch, scratch, {FrameType::BaselineJS});
-    emitHandleStubFrame();
+    emitHandleStubFrame(FrameType::BaselineJS);
   }
 
   masm.bind(&handle_IonICCall);
   {
     
-    emitAssertPrevFrameType(fpScratch, scratch, {FrameType::IonJS});
-    emitHandleStubFrame();
+    emitHandleStubFrame(FrameType::IonJS);
   }
 
   masm.bind(&handle_Rectifier);
   {
     
     
+    masm.loadPtr(Address(fpScratch, 0), fpScratch);
     emitAssertPrevFrameType(fpScratch, scratch,
                             {FrameType::IonJS, FrameType::BaselineStub,
                              FrameType::CppToJSJit, FrameType::WasmToJSJit});
-    masm.computeEffectiveAddress(Address(fpScratch, FPOffset), spScratch);
-    masm.loadPtr(Address(fpScratch, 0), fpScratch);
     masm.jump(&again);
   }
 
@@ -234,6 +237,9 @@ void JitRuntime::generateProfilerExitFrameTailStub(MacroAssembler& masm,
     masm.movePtr(ImmPtr(nullptr), scratch);
     masm.storePtr(scratch, lastProfilingCallSite);
     masm.storePtr(scratch, lastProfilingFrame);
+
+    masm.moveToStackPtr(FramePointer);
+    masm.pop(FramePointer);
     masm.ret();
   }
 }
