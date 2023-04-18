@@ -11,27 +11,39 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include "jstypes.h"
 
-#include "frontend/AbstractScopePtr.h"    
 #include "frontend/FunctionSyntaxKind.h"  
-#include "frontend/ParseNode.h"
-#include "frontend/ParserAtom.h"       
-#include "frontend/ScriptIndex.h"      
-#include "js/WasmModule.h"             
-#include "vm/FunctionFlags.h"          
+#include "frontend/ParserAtom.h"          
+#include "frontend/ScopeIndex.h"          
+#include "frontend/ScriptIndex.h"         
+#include "vm/FunctionFlags.h"             
 #include "vm/GeneratorAndAsyncKind.h"  
-#include "vm/JSFunction.h"
-#include "vm/JSScript.h"
 #include "vm/Scope.h"
+#include "vm/ScopeKind.h"
 #include "vm/SharedStencil.h"
+#include "vm/StencilEnums.h"
+
+struct JS_PUBLIC_API JSContext;
+class JSFunction;
+
+namespace JS {
+class ReadOnlyCompileOptions;
+struct WasmModule;
+}  
 
 namespace js {
 namespace frontend {
 
 struct CompilationState;
+class FunctionBox;
+class FunctionNode;
 class ParseContext;
 class ScriptStencil;
+class ScriptStencilExtra;
 struct ScopeContext;
 
 enum class StatementKind : uint8_t {
