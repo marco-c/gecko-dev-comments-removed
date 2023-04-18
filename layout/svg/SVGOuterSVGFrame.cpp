@@ -997,7 +997,7 @@ void SVGOuterSVGAnonChildFrame::BuildDisplayList(
   
   
   
-  nsDisplayList newList(aBuilder);
+  nsDisplayList newList;
   nsDisplayListSet set(&newList, &newList, &newList, &newList, &newList,
                        &newList);
   BuildDisplayListForNonBlockChildren(aBuilder, set);

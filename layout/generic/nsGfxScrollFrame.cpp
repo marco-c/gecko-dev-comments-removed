@@ -4132,7 +4132,7 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     
     
 
-    nsDisplayList resultList(aBuilder);
+    nsDisplayList resultList;
     set.SerializeWithCorrectZOrder(&resultList, mOuter->GetContent());
 
     if (blendCapture.CaptureContainsBlendMode()) {

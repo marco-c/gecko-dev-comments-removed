@@ -961,7 +961,7 @@ void nsBoxFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     
     
     
-    nsDisplayList masterList(aBuilder);
+    nsDisplayList masterList;
     masterList.AppendToTop(tempLists.BorderBackground());
     masterList.AppendToTop(tempLists.BlockBorderBackgrounds());
     masterList.AppendToTop(tempLists.Floats());
