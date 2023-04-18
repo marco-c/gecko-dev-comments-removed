@@ -2248,6 +2248,21 @@ class SpecialPowersChild extends JSWindowActorChild {
       wrapCallback
     );
   }
+
+  
+
+
+
+
+
+  contentTransformsReceived(win) {
+    try {
+      
+      return win.docShell.browserChild.contentTransformsReceived();
+    } catch (e) {
+      return Promise.resolve();
+    }
+  }
 }
 
 SpecialPowersChild.prototype._proxiedObservers = {
