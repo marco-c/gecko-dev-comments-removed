@@ -106,9 +106,36 @@ export function makeSourceId(sourceResource) {
   
   
   
-  if (sourceResource.targetFront.isTopLevel && sourceResource.url) {
-    return `source-${sourceResource.url}`;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (sourceResource.url) {
+    
+    
+    if (sourceResource.targetFront.isTopLevel) {
+      return `source-${sourceResource.url}`;
+    }
+    const threadActorID = sourceResource.targetFront.getCachedFront("thread")
+      .actorID;
+    return `source-${threadActorID}-${sourceResource.url}`;
   }
+
+  
+  
+  
+  
+  
+  
   return `source-${sourceResource.actor}`;
 }
 
