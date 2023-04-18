@@ -1,0 +1,29 @@
+
+
+
+
+
+#include "pkcs11.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern "C" {
+
+CK_RV IPCCC_GetFunctionList(CK_FUNCTION_LIST_PTR_PTR ppFunctionList);
+
+CK_RV C_GetFunctionList(CK_FUNCTION_LIST_PTR_PTR ppFunctionList) {
+  return IPCCC_GetFunctionList(ppFunctionList);
+}
+}
