@@ -112,6 +112,7 @@ var gHomePane = {
       if (newValue !== menulist.value) {
         menulist.value = newValue;
       }
+      menulist.disabled = Preferences.get(this.NEWTAB_ENABLED_PREF).locked;
       
       
     } else {
