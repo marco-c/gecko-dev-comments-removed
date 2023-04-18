@@ -150,6 +150,10 @@ class GitRepository(Repository):
         if ignored:
             args.append("--ignored")
 
+        
+        
+        return not len(self.run(*args).strip())
+
     def update(self, ref):
         self.run("checkout", ref)
 
