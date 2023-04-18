@@ -277,14 +277,13 @@ bool NativeObject::addProperty(JSContext* cx, HandleNativeObject obj,
   
   MOZ_ASSERT(!JSID_IS_VOID(id));
   MOZ_ASSERT(!obj->containsPure(id));
-  MOZ_ASSERT_IF(
-      !id.isPrivateName(),
-      obj->isExtensible() ||
-          (JSID_IS_INT(id) && obj->containsDenseElement(JSID_TO_INT(id))) ||
-          
-          
-          
-          IF_RECORD_TUPLE(IsExtendedPrimitiveWrapper(*obj), false));
+  MOZ_ASSERT_IF(!id.isPrivateName(),
+                obj->isExtensible() ||
+                    (id.isInt() && obj->containsDenseElement(id.toInt())) ||
+                    
+                    
+                    
+                    IF_RECORD_TUPLE(IsExtendedPrimitiveWrapper(*obj), false));
 
   if (!Watchtower::watchPropertyAdd(cx, obj, id)) {
     return false;
