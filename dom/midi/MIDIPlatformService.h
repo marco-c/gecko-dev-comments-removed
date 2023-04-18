@@ -55,6 +55,9 @@ class MIDIPlatformService {
   virtual void Init() = 0;
 
   
+  virtual void Refresh() = 0;
+
+  
   virtual void Open(MIDIPortParent* aPort) = 0;
 
   

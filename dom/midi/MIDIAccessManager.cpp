@@ -98,6 +98,8 @@ bool MIDIAccessManager::AddObserver(Observer<MIDIPortList>* aObserver) {
     
     
     mChild->SetActorAlive();
+  } else {
+    mChild->SendRefresh();
   }
   return true;
 }
@@ -112,6 +114,12 @@ void MIDIAccessManager::RemoveObserver(Observer<MIDIPortList>* aObserver) {
       mChild = nullptr;
     }
     gMIDIAccessManager = nullptr;
+  }
+}
+
+void MIDIAccessManager::SendRefresh() {
+  if (mChild) {
+    mChild->SendRefresh();
   }
 }
 

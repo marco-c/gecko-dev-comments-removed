@@ -50,6 +50,8 @@ class MIDIAccessManager final {
   bool AddObserver(Observer<MIDIPortList>* aObserver);
   
   void RemoveObserver(Observer<MIDIPortList>* aObserver);
+  
+  void SendRefresh();
 
  private:
   MIDIAccessManager();
