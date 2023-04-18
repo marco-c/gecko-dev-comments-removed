@@ -71,6 +71,7 @@ const SPECIALVALUES = new Set([
 
 
 
+
 function CssColor(colorValue, supportsCssColor4ColorFunction = false) {
   this.newColor(colorValue);
   this.cssColor4 = supportsCssColor4ColorFunction;
@@ -79,6 +80,7 @@ function CssColor(colorValue, supportsCssColor4ColorFunction = false) {
 module.exports.colorUtils = {
   CssColor: CssColor,
   rgbToHsl: rgbToHsl,
+  rgbToHwb: rgbToHwb,
   rgbToLab: rgbToLab,
   setAlpha: setAlpha,
   classifyColor: classifyColor,
@@ -100,6 +102,7 @@ CssColor.COLORUNIT = {
   name: "name",
   rgb: "rgb",
   hsl: "hsl",
+  hwb: "hwb",
 };
 
 CssColor.prototype = {
@@ -363,6 +366,22 @@ CssColor.prototype = {
     return this._hsl(1);
   },
 
+  get hwb() {
+    const invalidOrSpecialValue = this._getInvalidOrSpecialValue();
+    if (invalidOrSpecialValue !== false) {
+      return invalidOrSpecialValue;
+    }
+    if (this.lowerCased.startsWith("hwb(")) {
+      
+      return this.authored;
+    }
+    if (this.hasAlpha) {
+      const a = this.getRGBATuple().a;
+      return this._hwb(a);
+    }
+    return this._hwb();
+  },
+
   
 
 
@@ -403,7 +422,9 @@ CssColor.prototype = {
   nextColorUnit: function() {
     
     
-    let formats = ["hex", "hsl", "rgb", "name"];
+    
+    
+    let formats = ["hex", "hsl", "rgb", "hwb", "name"];
     const currentFormat = classifyColor(this.toString());
     const putOnEnd = formats.splice(0, formats.indexOf(currentFormat));
     formats = [...formats, ...putOnEnd];
@@ -441,6 +462,9 @@ CssColor.prototype = {
         break;
       case CssColor.COLORUNIT.rgb:
         color = this.rgb;
+        break;
+      case CssColor.COLORUNIT.hwb:
+        color = this.hwb;
         break;
       default:
         color = this.rgb;
@@ -497,6 +521,19 @@ CssColor.prototype = {
       return "hsla(" + h + ", " + s + "%, " + l + "%, " + maybeAlpha + ")";
     }
     return "hsl(" + h + ", " + s + "%, " + l + "%)";
+  },
+
+  _hwb: function(maybeAlpha) {
+    if (this.lowerCased.startsWith("hwb(") && maybeAlpha === undefined) {
+      
+      return this.authored;
+    }
+
+    const { r, g, b } = this.getRGBATuple();
+    const [hue, white, black] = rgbToHwb([r, g, b]);
+    return `hwb(${hue} ${white}% ${black}%${
+      maybeAlpha !== undefined ? " / " + maybeAlpha : ""
+    })`;
   },
 
   
@@ -559,6 +596,26 @@ function rgbToHsl([r, g, b]) {
   }
 
   return [roundTo(h, 1), roundTo(s * 100, 1), roundTo(l * 100, 1)];
+}
+
+
+
+
+
+
+
+
+
+function rgbToHwb([r, g, b]) {
+  const hsl = rgbToHsl([r, g, b]);
+
+  r = r / 255;
+  g = g / 255;
+  b = b / 255;
+
+  const white = Math.min(r, g, b);
+  const black = 1 - Math.max(r, g, b);
+  return [roundTo(hsl[0], 1), roundTo(white * 100, 1), roundTo(black * 100, 1)];
 }
 
 
@@ -672,6 +729,8 @@ function classifyColor(value) {
     return CssColor.COLORUNIT.rgb;
   } else if (value.startsWith("hsl(") || value.startsWith("hsla(")) {
     return CssColor.COLORUNIT.hsl;
+  } else if (value.startsWith("hwb(")) {
+    return CssColor.COLORUNIT.hwb;
   } else if (/^#[0-9a-f]+$/.exec(value)) {
     return CssColor.COLORUNIT.hex;
   }
@@ -736,6 +795,31 @@ function hslToRGB([h, s, l]) {
   const g = Math.round(255 * _hslValue(m1, m2, h));
   const b = Math.round(255 * _hslValue(m1, m2, h - 1.0 / 3.0));
   return [r, g, b];
+}
+
+
+
+
+
+
+
+
+
+
+
+function hwbToRGB([hue, white, black]) {
+  if (white + black >= 1) {
+    const gray = Math.round((white / (white + black)) * 255);
+    return [gray, gray, gray];
+  }
+  const rgb = hslToRGB([hue, 1, 0.5]);
+  for (let i = 0; i < 3; i++) {
+    rgb[i] /= 255;
+    rgb[i] *= 1 - white - black;
+    rgb[i] += white;
+    rgb[i] = Math.round(rgb[i] * 255);
+  }
+  return rgb;
 }
 
 
@@ -877,6 +961,41 @@ const COLOR_COMPONENT_TYPE = {
   number: "number",
   percentage: "percentage",
 };
+
+
+
+
+
+
+
+
+
+
+
+function parseColorFunction(lexer, funcName, useCssColor4ColorFunction) {
+  switch (funcName) {
+    case "hsl":
+      return useCssColor4ColorFunction
+        ? parseHsl(lexer)
+        : parseOldStyleHsl(lexer, false);
+    case "hsla":
+      return useCssColor4ColorFunction
+        ? parseHsl(lexer)
+        : parseOldStyleHsl(lexer, true);
+    case "hwb":
+      return parseHwb(lexer);
+    case "rgb":
+      return useCssColor4ColorFunction
+        ? parseRgb(lexer)
+        : parseOldStyleRgb(lexer, false);
+    case "rgba":
+      return useCssColor4ColorFunction
+        ? parseRgb(lexer)
+        : parseOldStyleRgb(lexer, true);
+    default:
+      throw new Error("Invalid color function.");
+  }
+}
 
 
 
@@ -1248,6 +1367,44 @@ function parseOldStyleRgb(lexer, hasAlpha) {
 
 
 
+function parseHwb(lexer) {
+  
+  
+  
+  
+  
+  
+  
+
+  const hwb = [];
+  const a = [];
+
+  
+  if (!parseHue(lexer, hwb)) {
+    return null;
+  }
+
+  
+  
+  
+  if (
+    parseColorComponent(lexer, COLOR_COMPONENT_TYPE.percentage, "", hwb) &&
+    parseColorComponent(lexer, COLOR_COMPONENT_TYPE.percentage, "", hwb) &&
+    parseColorOpacityAndCloseParen(lexer, "/", a)
+  ) {
+    return [...hwbToRGB(hwb), ...a];
+  }
+
+  return null;
+}
+
+
+
+
+
+
+
+
 
 
 
@@ -1282,7 +1439,7 @@ function colorToRGBA(name, useCssColor4ColorFunction = false, toArray = false) {
     return hexToRGBA(func.text);
   }
 
-  const expectedFunctions = ["rgba", "rgb", "hsla", "hsl"];
+  const expectedFunctions = ["rgba", "rgb", "hsla", "hsl", "hwb"];
   if (
     !func ||
     func.tokenType !== "function" ||
@@ -1291,17 +1448,7 @@ function colorToRGBA(name, useCssColor4ColorFunction = false, toArray = false) {
     return null;
   }
 
-  const hsl = func.text === "hsl" || func.text === "hsla";
-
-  let vals;
-  if (!useCssColor4ColorFunction) {
-    const hasAlpha = func.text === "rgba" || func.text === "hsla";
-    vals = hsl
-      ? parseOldStyleHsl(lexer, hasAlpha)
-      : parseOldStyleRgb(lexer, hasAlpha);
-  } else {
-    vals = hsl ? parseHsl(lexer) : parseRgb(lexer);
-  }
+  const vals = parseColorFunction(lexer, func.text, useCssColor4ColorFunction);
 
   if (!vals) {
     return null;

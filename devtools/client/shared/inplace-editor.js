@@ -384,6 +384,8 @@ InplaceEditor.prototype = {
       
       this.input.style.resize = "none";
       this.input.style.overflow = "hidden";
+      
+      this.input.style.padding = "0";
     }
 
     this.input.classList.add("styleinspector-propertyeditor");
@@ -616,7 +618,7 @@ InplaceEditor.prototype = {
         selection = newValue.selection;
       }
     } else {
-      if (type === "rgb" || type === "hsl") {
+      if (type === "rgb" || type === "hsl" || type === "hwb") {
         info = {};
         const part =
           value.substring(range.start, selStart).split(",").length - 1;
@@ -705,14 +707,14 @@ InplaceEditor.prototype = {
 
   _parseCSSValue: function(value, offset) {
     
-    const reSplitCSS = /(url\("?[^"\)]+"?\)?)|(rgba?\([^)]*\)?)|(hsla?\([^)]*\)?)|(#[\dA-Fa-f]+)|(-?\d*\.?\d+(%|[a-z]{1,4})?)|"([^"]*)"?|'([^']*)'?|([^,\s\/!\(\)]+)|(!(.*)?)/;
+    const reSplitCSS = /(?<url>url\("?[^"\)]+"?\)?)|(?<rgb>rgba?\([^)]*\)?)|(?<hsl>hsla?\([^)]*\)?)|(?<hwb>hwb\([^)]*\)?)|(?<hex>#[\dA-Fa-f]+)|(?<number>-?\d*\.?\d+(%|[a-z]{1,4})?)|"([^"]*)"?|'([^']*)'?|([^,\s\/!\(\)]+)|(!(.*)?)/;
     
     let start = 0;
     let m;
 
     
     while ((m = reSplitCSS.exec(value)) && m.index + m[0].length < offset) {
-      value = value.substr(m.index + m[0].length);
+      value = value.substring(m.index + m[0].length);
       start += m.index + m[0].length;
       offset -= m.index + m[0].length;
     }
@@ -722,15 +724,17 @@ InplaceEditor.prototype = {
     }
 
     let type;
-    if (m[1]) {
+    if (m.groups.url) {
       type = "url";
-    } else if (m[2]) {
+    } else if (m.groups.rgb) {
       type = "rgb";
-    } else if (m[3]) {
+    } else if (m.groups.hsl) {
       type = "hsl";
-    } else if (m[4]) {
+    } else if (m.groups.hwb) {
+      type = "hwb";
+    } else if (m.groups.hex) {
       type = "hex";
-    } else if (m[5]) {
+    } else if (m.groups.number) {
       type = "num";
     }
 

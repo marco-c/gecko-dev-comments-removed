@@ -13,19 +13,22 @@ const { colorUtils } = require("devtools/shared/css/color");
 const getFixtureColorData = require("resource://test/helper_color_data.js");
 
 function run_test() {
-  getFixtureColorData().forEach(({ authored, name, hex, hsl, rgb, cycle }) => {
-    if (cycle) {
-      const nameCycled = runCycle(name, cycle);
-      const hexCycled = runCycle(hex, cycle);
-      const hslCycled = runCycle(hsl, cycle);
-      const rgbCycled = runCycle(rgb, cycle);
-      
-      ok(
-        nameCycled && hexCycled && hslCycled && rgbCycled,
-        `${authored} was able to cycle back to the original value`
-      );
+  getFixtureColorData().forEach(
+    ({ authored, name, hex, hsl, rgb, hwb, cycle }) => {
+      if (cycle) {
+        const nameCycled = runCycle(name, cycle);
+        const hexCycled = runCycle(hex, cycle);
+        const hslCycled = runCycle(hsl, cycle);
+        const rgbCycled = runCycle(rgb, cycle);
+        const hwbCycled = runCycle(hwb, cycle);
+        
+        ok(
+          nameCycled && hexCycled && hslCycled && rgbCycled && hwbCycled,
+          `${authored} was able to cycle back to the original value`
+        );
+      }
     }
-  });
+  );
 }
 
 
@@ -38,9 +41,12 @@ function run_test() {
 
 function runCycle(value, times) {
   let color = new colorUtils.CssColor(value);
+  
   for (let i = 0; i < times; i++) {
     color.nextColorUnit();
+    
     color = new colorUtils.CssColor(color.toString());
+    
   }
   return color.toString() === value;
 }
