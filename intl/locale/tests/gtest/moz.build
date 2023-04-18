@@ -5,7 +5,7 @@
 
 
 UNIFIED_SOURCES += [
-    "TestAppDateTimeFormat.cpp",
+    "TestDateTimeFormat.cpp",
     "TestLocaleService.cpp",
     "TestLocaleServiceNegotiate.cpp",
     "TestOSPreferences.cpp",

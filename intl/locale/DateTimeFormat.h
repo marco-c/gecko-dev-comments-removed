@@ -1,0 +1,98 @@
+
+
+
+
+
+
+#ifndef mozilla_DateTimeFormat_h
+#define mozilla_DateTimeFormat_h
+
+#include <time.h>
+#include "gtest/MozGtestFriend.h"
+#include "nsTHashMap.h"
+#include "nsString.h"
+#include "prtime.h"
+#include "unicode/udat.h"
+
+namespace mozilla {
+
+enum nsDateFormatSelector : long {
+  
+  kDateFormatNone = 0,  
+  kDateFormatLong,      
+  kDateFormatShort,     
+};
+
+enum nsTimeFormatSelector : long {
+  kTimeFormatNone = 0,  
+  kTimeFormatLong,      
+                        
+  kTimeFormatShort      
+                        
+};
+
+class DateTimeFormat {
+ public:
+  enum class Field { Month, Weekday };
+
+  enum class Style { Wide, Abbreviated };
+
+  
+  enum class Skeleton { yyyyMM, yyyyMMMM, E, EEEE };
+
+  
+  
+  static nsresult FormatPRTime(const nsDateFormatSelector aDateFormatSelector,
+                               const nsTimeFormatSelector aTimeFormatSelector,
+                               const PRTime aPrTime, nsAString& aStringOut);
+
+  
+  
+  static nsresult FormatPRExplodedTime(
+      const nsDateFormatSelector aDateFormatSelector,
+      const nsTimeFormatSelector aTimeFormatSelector,
+      const PRExplodedTime* aExplodedTime, nsAString& aStringOut);
+
+  
+  
+  static nsresult FormatDateTime(const PRExplodedTime* aExplodedTime,
+                                 const Skeleton aSkeleton,
+                                 nsAString& aStringOut);
+
+  
+  
+  static nsresult GetCalendarSymbol(const Field aField, const Style aStyle,
+                                    const PRExplodedTime* aExplodedTime,
+                                    nsAString& aStringOut);
+
+  static void Shutdown();
+
+ private:
+  DateTimeFormat() = delete;
+
+  static nsresult Initialize();
+  static void DeleteCache();
+  static const size_t kMaxCachedFormats = 15;
+
+  FRIEND_TEST(DateTimeFormat, FormatPRExplodedTime);
+  FRIEND_TEST(DateTimeFormat, DateFormatSelectors);
+  FRIEND_TEST(DateTimeFormat, FormatPRExplodedTimeForeign);
+  FRIEND_TEST(DateTimeFormat, DateFormatSelectorsForeign);
+
+  
+  
+  static nsresult FormatUDateTime(
+      const nsDateFormatSelector aDateFormatSelector,
+      const nsTimeFormatSelector aTimeFormatSelector, const UDate aUDateTime,
+      const PRTimeParameters* aTimeParameters, nsAString& aStringOut);
+
+  static void BuildTimeZoneString(const PRTimeParameters& aTimeParameters,
+                                  nsAString& aStringOut);
+
+  static nsCString* mLocale;
+  static nsTHashMap<nsCStringHashKey, UDateFormat*>* mFormatCache;
+};
+
+}  
+
+#endif 

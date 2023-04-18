@@ -32,6 +32,15 @@
 struct UFormattedValue;
 namespace mozilla::intl {
 
+static inline const char* IcuLocale(const char* aLocale) {
+  
+  const char* locale = aLocale;
+  if (!std::strcmp(locale, "und")) {
+    locale = "";  
+  }
+  return locale;
+}
+
 static inline const char* AssertNullTerminatedString(Span<const char> aSpan) {
   
   
@@ -52,26 +61,6 @@ static inline const char* AssertNullTerminatedString(std::string_view aView) {
   MOZ_ASSERT(std::strlen(aView.data()) == aView.size());
 
   return aView.data();
-}
-
-
-
-
-static inline const char* IcuLocale(const char* aLocale) {
-  
-  const char* locale = aLocale;
-  if (!std::strcmp(locale, "und")) {
-    locale = "";  
-  }
-  return locale;
-}
-
-
-
-
-
-static inline const char* IcuLocale(Span<const char> aLocale) {
-  return IcuLocale(AssertNullTerminatedString(aLocale));
 }
 
 using ICUResult = Result<Ok, ICUError>;
@@ -293,7 +282,6 @@ static ICUResult FillBufferWithICUCall(AutoTArray<CharType, N>& array,
 
 
 
-
 template <typename Buffer>
 [[nodiscard]] bool FillBuffer(Span<const char16_t> utf16Span,
                               Buffer& targetBuffer) {
@@ -337,69 +325,20 @@ template <typename Buffer>
 
 
 
-template <typename Buffer>
-[[nodiscard]] bool FillBuffer(Span<const char> utf8Span, Buffer& targetBuffer) {
-  static_assert(std::is_same_v<typename Buffer::CharType, char> ||
-                std::is_same_v<typename Buffer::CharType, unsigned char> ||
-                std::is_same_v<typename Buffer::CharType, char16_t>);
-
-  if constexpr (std::is_same_v<typename Buffer::CharType, char> ||
-                std::is_same_v<typename Buffer::CharType, unsigned char>) {
-    size_t amount = utf8Span.Length();
-    if (!targetBuffer.reserve(amount)) {
-      return false;
-    }
-    for (size_t i = 0; i < amount; i++) {
-      targetBuffer.data()[i] =
-          
-          
-          static_cast<typename Buffer::CharType>(utf8Span[i]);
-    }
-    targetBuffer.written(amount);
-  }
-  if constexpr (std::is_same_v<typename Buffer::CharType, char16_t>) {
-    if (!targetBuffer.reserve(utf8Span.Length() + 1)) {
-      return false;
-    }
-
-    size_t amount = ConvertUtf8toUtf16(
-        utf8Span, Span(targetBuffer.data(), targetBuffer.capacity()));
-
-    targetBuffer.written(amount);
-  }
-
-  return true;
-}
-
-
-
-
-
-
-
 template <size_t StackSize>
 [[nodiscard]] static bool FillUTF16Vector(
     Span<const char> utf8Span,
     mozilla::Vector<char16_t, StackSize>& utf16TargetVec) {
   
   
-  
   if (!utf16TargetVec.reserve(utf8Span.Length() + 1)) {
     return false;
   }
-
   
   
-  size_t length = ConvertUtf8toUtf16(
-      utf8Span, Span(utf16TargetVec.begin(), utf16TargetVec.capacity()));
-
   
-  MOZ_ASSERT(length < utf16TargetVec.capacity());
-  utf16TargetVec.begin()[length] = '\0';
-
-  
-  
-  return utf16TargetVec.resizeUninitialized(length);
+  return utf16TargetVec.resizeUninitialized(ConvertUtf8toUtf16(
+      utf8Span, Span(utf16TargetVec.begin(), utf16TargetVec.capacity())));
 }
 
 
