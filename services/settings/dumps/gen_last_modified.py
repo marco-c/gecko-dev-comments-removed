@@ -13,23 +13,21 @@ def get_last_modified(full_path_to_remote_settings_dump_file):
     """
     Get the last_modified for the given file name.
     - File must exist
-    - Must be a JSON dictionary with a data list, e.g. `{"data": []}`
+    - Must be a JSON dictionary with a data list and a timestamp,
+      e.g. `{"data": [], "timestamp": 42}`
     - Every element in `data` should contain a "last_modified" key.
     - The first element must have the highest "last_modified" value.
     """
     with open(full_path_to_remote_settings_dump_file, "r") as f:
-        records = json.load(f)["data"]
-        assert isinstance(records, list)
+        changeset = json.load(f)
 
-    
-    
-    last_modified = 0
-    if records:
-        
-        
-        last_modified = records[0]["last_modified"]
+    records = changeset["data"]
+    assert isinstance(records, list)
+    last_modified = changeset.get("timestamp")
+    assert isinstance(
+        last_modified, int
+    ), f"{full_path_to_remote_settings_dump_file} is missing the timestamp. See Bug 1725660"
 
-    assert isinstance(last_modified, int)
     return last_modified
 
 

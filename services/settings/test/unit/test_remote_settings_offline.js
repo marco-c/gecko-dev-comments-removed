@@ -26,12 +26,10 @@ add_task(async function setup() {
     bucketName: TEST_BUCKET,
   });
 
-  DUMP_RECORDS = (await SharedUtils.loadJSONDump(TEST_BUCKET, TEST_COLLECTION))
-    .data;
-  DUMP_LAST_MODIFIED = DUMP_RECORDS.reduce(
-    (max, { last_modified }) => Math.max(last_modified, max),
-    -Infinity
-  );
+  const dump = await SharedUtils.loadJSONDump(TEST_BUCKET, TEST_COLLECTION);
+  DUMP_RECORDS = dump.data;
+  DUMP_LAST_MODIFIED = dump.timestamp;
+
   
   
   equal(
@@ -46,6 +44,7 @@ async function importData(records) {
     TEST_BUCKET,
     TEST_COLLECTION,
     records,
+    records[0]?.last_modified || 0,
   ]);
 }
 

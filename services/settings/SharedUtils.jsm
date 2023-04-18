@@ -50,7 +50,7 @@ var SharedUtils = {
       response = await fetch(fileURI);
     } catch (e) {
       
-      return { data: null };
+      return { data: null, timestamp: null };
     }
     
     return response.json();
