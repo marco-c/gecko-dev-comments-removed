@@ -445,6 +445,10 @@ const windowGlobalTargetPrototype = {
     return this.browsingContext?.browserId;
   },
 
+  get openerBrowserId() {
+    return this.browsingContext?.opener?.browserId;
+  },
+
   
 
 
@@ -581,25 +585,16 @@ const windowGlobalTargetPrototype = {
     
     
     
-    const browsingContextID = this.devtoolsSpawnedBrowsingContextForWebExtension
-      ? this.devtoolsSpawnedBrowsingContextForWebExtension.id
-      : this.originalDocShell.browsingContext.id;
-    const originalInnerWindowId = this._originalWindow
-      ? getInnerId(this._originalWindow)
-      : null;
-    const innerWindowId = this.devtoolsSpawnedBrowsingContextForWebExtension
-      ? this.devtoolsSpawnedBrowsingContextForWebExtension.currentWindowGlobal
-          .innerWindowId
-      : originalInnerWindowId;
-    const originalParentInnerWindowId = this._originalWindow
-      ? this._originalWindow.docShell.browsingContext.parent
-          ?.currentWindowContext.innerWindowId
-      : null;
-    const parentInnerWindowId = this
+    const originalBrowsingContext = this
       .devtoolsSpawnedBrowsingContextForWebExtension
-      ? this.devtoolsSpawnedBrowsingContextForWebExtension.parent
-          .currentWindowGlobal.innerWindowId
-      : originalParentInnerWindowId;
+      ? this.devtoolsSpawnedBrowsingContextForWebExtension
+      : this.originalDocShell.browsingContext;
+    const browsingContextID = originalBrowsingContext.id;
+    const innerWindowId =
+      originalBrowsingContext.currentWindowContext.innerWindowId;
+    const parentInnerWindowId =
+      originalBrowsingContext.parent?.currentWindowContext.innerWindowId;
+    const isPopup = !!originalBrowsingContext.opener;
 
     const response = {
       actor: this.actorID,
@@ -611,6 +606,7 @@ const windowGlobalTargetPrototype = {
       topInnerWindowId: this.browsingContext.topWindowContext.innerWindowId,
       isTopLevelTarget: this.isTopLevelTarget,
       ignoreSubFrames: this.ignoreSubFrames,
+      isPopup,
       traits: {
         
         

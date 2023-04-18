@@ -60,6 +60,9 @@ const isEveryFrameTargetEnabled = Services.prefs.getBoolPref(
 
 
 
+
+
+
 function isBrowsingContextPartOfContext(
   browsingContext,
   sessionContext,
@@ -122,9 +125,18 @@ function isBrowsingContextPartOfContext(
     return true;
   }
   if (sessionContext.type == "browser-element") {
-    if (browsingContext.browserId != sessionContext.browserId) {
+    
+    
+    
+    const isMatchingTheBrowserElement =
+      browsingContext.browserId == sessionContext.browserId;
+    if (
+      !isMatchingTheBrowserElement &&
+      !isPopupToDebug(browsingContext, sessionContext)
+    ) {
       return false;
     }
+
     
     
     
@@ -160,6 +172,33 @@ function isBrowsingContextPartOfContext(
     return principal.addonId == sessionContext.addonId;
   }
   throw new Error("Unsupported session context type: " + sessionContext.type);
+}
+
+
+
+
+
+
+
+
+
+
+function isPopupToDebug(browsingContext, sessionContext) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  return (
+    sessionContext.isPopupDebuggingEnabled &&
+    browsingContext.opener &&
+    browsingContext.opener.browserId == sessionContext.browserId
+  );
 }
 
 

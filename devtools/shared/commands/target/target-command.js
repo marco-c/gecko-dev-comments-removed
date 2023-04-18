@@ -238,10 +238,16 @@ class TargetCommand extends EventEmitter {
       
       const isDestroyedTargetSwitching = target == this.targetFront;
       const isServiceWorker = target.targetType === this.TYPES.SERVICE_WORKER;
+      const isPopup = target.targetForm.isPopup;
 
       
       
-      if (!isServiceWorker || this.destroyServiceWorkersOnNavigation) {
+      
+      
+      if (
+        !isPopup &&
+        (!isServiceWorker || this.destroyServiceWorkersOnNavigation)
+      ) {
         this._onTargetDestroyed(target, {
           isTargetSwitching: isDestroyedTargetSwitching,
           

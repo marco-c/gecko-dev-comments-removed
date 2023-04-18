@@ -56,6 +56,9 @@ function createBrowserElementSessionContext(browserElement, config) {
     
     
     isServerTargetSwitchingEnabled: config.isServerTargetSwitchingEnabled,
+    
+    
+    isPopupDebuggingEnabled: config.isPopupDebuggingEnabled,
   };
 }
 
