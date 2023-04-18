@@ -211,48 +211,69 @@ class WebSocketChannel : public BaseWebSocketChannel,
   }
 
   nsCOMPtr<nsIEventTarget> mIOThread;
+  
+  
   nsCOMPtr<nsIHttpChannelInternal> mChannel;
   nsCOMPtr<nsIHttpChannel> mHttpChannel;
+
   nsCOMPtr<nsICancelable> mCancelable;
+  
   nsCOMPtr<nsIAsyncVerifyRedirectCallback> mRedirectCallback;
+  
   nsCOMPtr<nsIRandomGenerator> mRandomGenerator;
 
-  nsCString mHashedSecret;
+  nsCString mHashedSecret;  
 
+  
   
   
   nsCString mAddress;
   int32_t mPort;  
   
-  nsCString mOriginSuffix;
+  nsCString mOriginSuffix;  
 
+  
   
   nsCString mHost;
   nsString mEffectiveURL;
 
+  
   nsCOMPtr<nsISocketTransport> mTransport;
   nsCOMPtr<nsIAsyncInputStream> mSocketIn;
   nsCOMPtr<nsIAsyncOutputStream> mSocketOut;
   RefPtr<WebSocketConnectionBase> mConnection;
 
+  
+  
   nsCOMPtr<nsITimer> mCloseTimer;
+  
+  
   uint32_t mCloseTimeout; 
 
-  nsCOMPtr<nsITimer> mOpenTimer;
+  nsCOMPtr<nsITimer> mOpenTimer; 
   uint32_t mOpenTimeout;         
   wsConnectingState mConnecting; 
+  
+  
   nsCOMPtr<nsITimer> mReconnectDelayTimer;
 
+  
+  
+  
   nsCOMPtr<nsITimer> mPingTimer;
 
+  
+  
   nsCOMPtr<nsITimer> mLingeringCloseTimer;
   const static int32_t kLingeringCloseTimeout = 1000;
   const static int32_t kLingeringCloseThreshold = 50;
 
-  RefPtr<WebSocketEventService> mService;
+  RefPtr<WebSocketEventService> mService;  
 
-  int32_t mMaxConcurrentConnections;
+  int32_t
+      mMaxConcurrentConnections;  
 
+  
   uint64_t mInnerWindowID;
 
   
@@ -260,7 +281,7 @@ class WebSocketChannel : public BaseWebSocketChannel,
   uint32_t mRecvdHttpUpgradeTransport : 1;
   uint32_t mAutoFollowRedirects : 1;
   uint32_t mAllowPMCE : 1;
-  uint32_t : 0;
+  uint32_t : 0;  
 
   
   uint32_t mPingOutstanding : 1;
@@ -268,9 +289,14 @@ class WebSocketChannel : public BaseWebSocketChannel,
   uint32_t : 0;
 
   Atomic<bool> mDataStarted;
+  
+  
   Atomic<bool> mRequestedClose;
+  
   Atomic<bool> mClientClosed;
   Atomic<bool> mServerClosed;
+  
+  
   Atomic<bool> mStopped;
   Atomic<bool> mCalledOnStop;
   Atomic<bool> mTCPClosed;
@@ -278,10 +304,11 @@ class WebSocketChannel : public BaseWebSocketChannel,
   Atomic<bool> mIncrementedSessionCount;
   Atomic<bool> mDecrementedSessionCount;
 
-  int32_t mMaxMessageSize;
+  int32_t mMaxMessageSize;  
+  
   nsresult mStopOnClose;
-  uint16_t mServerCloseCode;
-  nsCString mServerCloseReason;
+  uint16_t mServerCloseCode;     
+  nsCString mServerCloseReason;  
   uint16_t mScriptCloseCode;
   nsCString mScriptCloseReason;
 
@@ -292,6 +319,7 @@ class WebSocketChannel : public BaseWebSocketChannel,
   
   const static uint32_t kIncomingBufferStableSize = 128 * 1024;
 
+  
   uint8_t* mFramePtr;
   uint8_t* mBuffer;
   uint8_t mFragmentOpcode;
@@ -302,6 +330,7 @@ class WebSocketChannel : public BaseWebSocketChannel,
   
   const static int32_t kCopyBreak = 1000;
 
+  
   OutboundMessage* mCurrentOut;
   uint32_t mCurrentOutSent;
   nsDeque<OutboundMessage> mOutgoingMessages;
@@ -310,12 +339,20 @@ class WebSocketChannel : public BaseWebSocketChannel,
   uint32_t mHdrOutToSend;
   uint8_t* mHdrOut;
   uint8_t mOutHeader[kCopyBreak + 16]{0};
+  
+  
+  
+  
   UniquePtr<PMCECompression> mPMCECompressor;
+
+  
   uint32_t mDynamicOutputSize;
   uint8_t* mDynamicOutput;
-  bool mPrivateBrowsing;
+  
+  Atomic<bool> mPrivateBrowsing;
 
-  nsCOMPtr<nsIDashboardEventNotifier> mConnectionLogService;
+  nsCOMPtr<nsIDashboardEventNotifier>
+      mConnectionLogService;  
 
   mozilla::Mutex mMutex;
 };

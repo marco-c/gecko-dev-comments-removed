@@ -240,6 +240,7 @@ class FailDelayManager {
         if (remainingDelay) {
           
           nsresult rv;
+          MutexAutoLock lock(ws->mMutex);
           rv = NS_NewTimerWithCallback(getter_AddRefs(ws->mReconnectDelayTimer),
                                        ws, remainingDelay,
                                        nsITimer::TYPE_ONE_SHOT);
@@ -427,9 +428,14 @@ class nsWSAdmissionManager {
     
     
     
-    MOZ_ASSERT(
+#ifdef DEBUG
+    {
+      MutexAutoLock lock(aChannel->mMutex);
+      MOZ_ASSERT(
         NS_FAILED(aReason) || aChannel->mScriptCloseCode == CLOSE_GOING_AWAY,
         "websocket closed while connecting w/o failing?");
+    }
+#endif
     Unused << aReason;
 
     sManager->RemoveFromQueue(aChannel);
@@ -1331,8 +1337,10 @@ void WebSocketChannel::BeginOpen(bool aCalledFromAdmissionManager) {
   }
 }
 
+
 void WebSocketChannel::BeginOpenInternal() {
   LOG(("WebSocketChannel::BeginOpenInternal() %p\n", this));
+  MOZ_ASSERT(NS_IsMainThread(), "not main thread");
 
   nsresult rv;
 
@@ -2017,6 +2025,7 @@ void WebSocketChannel::PrimeNewOutgoingMessage() {
     
     
     if (NS_SUCCEEDED(mStopOnClose)) {
+      MutexAutoLock lock(mMutex);
       if (mScriptCloseCode) {
         NetworkEndian::writeUint16(payload, mScriptCloseCode);
         mOutHeader[1] += 2;
@@ -2236,7 +2245,17 @@ class RemoveObserverRunnable : public Runnable {
 }  
 
 void WebSocketChannel::CleanupConnection() {
+  
+  
+  
   LOG(("WebSocketChannel::CleanupConnection() %p", this));
+  
+  if (!mIOThread->IsOnCurrentThread()) {
+    mIOThread->Dispatch(
+        NewRunnableMethod("net::WebSocketChannel::CleanupConnection", this,
+                          &WebSocketChannel::CleanupConnection),
+        NS_DISPATCH_NORMAL);
+  }
 
   if (mLingeringCloseTimer) {
     mLingeringCloseTimer->Cancel();
@@ -2272,7 +2291,6 @@ void WebSocketChannel::CleanupConnection() {
   }
 
   
-  
   NS_DispatchToMainThread(new RemoveObserverRunnable(this));
 
   DecrementSessionCount();
@@ -2299,6 +2317,8 @@ void WebSocketChannel::DoStopSession(nsresult reason) {
 
   
   
+  
+  
 
   MOZ_ASSERT(mStopped);
   MOZ_ASSERT(mIOThread->IsOnCurrentThread() || mTCPClosed || !mDataStarted);
@@ -2317,14 +2337,19 @@ void WebSocketChannel::DoStopSession(nsresult reason) {
     mCloseTimer = nullptr;
   }
 
+  
   if (mOpenTimer) {
+    MOZ_ASSERT(NS_IsMainThread(), "not main thread");
     mOpenTimer->Cancel();
     mOpenTimer = nullptr;
   }
 
-  if (mReconnectDelayTimer) {
-    mReconnectDelayTimer->Cancel();
-    mReconnectDelayTimer = nullptr;
+  {
+    MutexAutoLock lock(mMutex);
+    if (mReconnectDelayTimer) {
+      mReconnectDelayTimer->Cancel();
+      NS_ReleaseOnMainThread("WebSocketChannel::mMutex", mReconnectDelayTimer.forget());
+    }
   }
 
   if (mPingTimer) {
@@ -2406,6 +2431,8 @@ void WebSocketChannel::DoStopSession(nsresult reason) {
   }
 }
 
+
+
 void WebSocketChannel::AbortSession(nsresult reason) {
   LOG(("WebSocketChannel::AbortSession() %p [reason %" PRIx32
        "] stopped = %d\n",
@@ -2415,6 +2442,7 @@ void WebSocketChannel::AbortSession(nsresult reason) {
 
   
   
+  MOZ_ASSERT(mIOThread->IsOnCurrentThread() || !mDataStarted);
 
   
   
@@ -3234,12 +3262,16 @@ WebSocketChannel::Notify(nsITimer* timer) {
     }
 
     AbortSession(NS_ERROR_NET_TIMEOUT);
+  
   } else if (timer == mReconnectDelayTimer) {
-    MOZ_ASSERT(mConnecting == CONNECTING_DELAYED,
-               "woke up from delay w/o being delayed?");
+    MOZ_RELEASE_ASSERT(mConnecting == CONNECTING_DELAYED,
+                       "woke up from delay w/o being delayed?");
     MOZ_ASSERT(NS_IsMainThread(), "not main thread");
 
-    mReconnectDelayTimer = nullptr;
+    {
+      MutexAutoLock lock(mMutex);
+      mReconnectDelayTimer = nullptr;
+    }
     LOG(("WebSocketChannel: connecting [this=%p] after reconnect delay", this));
     BeginOpen(false);
   } else if (timer == mPingTimer) {
@@ -4034,7 +4066,7 @@ WebSocketChannel::OnInputStreamReady(nsIAsyncInputStream* aStream) {
   nsresult rv;
 
   do {
-    rv = mSocketIn->Read((char*)buffer, 2048, &count);
+    rv = mSocketIn->Read((char*)buffer, sizeof(buffer), &count);
     LOG(("WebSocketChannel::OnInputStreamReady: read %u rv %" PRIx32 "\n",
          count, static_cast<uint32_t>(rv)));
 

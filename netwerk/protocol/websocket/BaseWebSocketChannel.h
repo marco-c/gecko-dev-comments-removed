@@ -104,6 +104,7 @@ class BaseWebSocketChannel : public nsIWebSocketChannel,
   nsCOMPtr<nsITransportProvider> mServerTransportProvider;
 
   
+  
   DataMutex<nsCOMPtr<nsIEventTarget>> mTargetThread{
       "BaseWebSocketChannel::EventTargetMutex"};
 
