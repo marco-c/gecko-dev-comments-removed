@@ -22,23 +22,25 @@ const { FormAutofill } = ChromeUtils.import(
   "resource://autofill/FormAutofill.jsm"
 );
 
+const lazy = {};
+
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "FormAutofillUtils",
   "resource://autofill/FormAutofillUtils.jsm"
 );
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "CreditCardTelemetry",
   "resource://autofill/FormAutofillTelemetryUtils.jsm"
 );
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "FormAutofillHeuristics",
   "resource://autofill/FormAutofillHeuristics.jsm"
 );
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "FormLikeFactory",
   "resource://gre/modules/FormLikeFactory.jsm"
 );
@@ -47,26 +49,26 @@ const formFillController = Cc[
   "@mozilla.org/satchel/form-fill-controller;1"
 ].getService(Ci.nsIFormFillController);
 
-XPCOMUtils.defineLazyGetter(this, "reauthPasswordPromptMessage", () => {
-  const brandShortName = FormAutofillUtils.brandBundle.GetStringFromName(
+XPCOMUtils.defineLazyGetter(lazy, "reauthPasswordPromptMessage", () => {
+  const brandShortName = lazy.FormAutofillUtils.brandBundle.GetStringFromName(
     "brandShortName"
   );
   
   const platform = AppConstants.platform.replace("macosx", "macos");
-  return FormAutofillUtils.stringBundle.formatStringFromName(
+  return lazy.FormAutofillUtils.stringBundle.formatStringFromName(
     `useCreditCardPasswordPrompt.${platform}`,
     [brandShortName]
   );
 });
 
-XPCOMUtils.defineLazyModuleGetters(this, {
+XPCOMUtils.defineLazyModuleGetters(lazy, {
   CreditCard: "resource://gre/modules/CreditCard.jsm",
 });
 
 this.log = null;
 FormAutofill.defineLazyLogGetter(this, EXPORTED_SYMBOLS[0]);
 
-const { FIELD_STATES } = FormAutofillUtils;
+const { FIELD_STATES } = lazy.FormAutofillUtils;
 
 class FormAutofillSection {
   constructor(fieldDetails, winUtils) {
@@ -233,7 +235,7 @@ class FormAutofillSection {
         continue;
       }
 
-      let option = FormAutofillUtils.findSelectOption(
+      let option = lazy.FormAutofillUtils.findSelectOption(
         element,
         profile,
         fieldName
@@ -358,7 +360,7 @@ class FormAutofillSection {
 
       let element = fieldDetail.elementWeakRef.get();
       
-      if (!FormAutofillUtils.isFieldAutofillable(element)) {
+      if (!lazy.FormAutofillUtils.isFieldAutofillable(element)) {
         continue;
       }
 
@@ -437,7 +439,7 @@ class FormAutofillSection {
         "";
 
       
-      if (!FormAutofillUtils.isFieldAutofillable(element)) {
+      if (!lazy.FormAutofillUtils.isFieldAutofillable(element)) {
         continue;
       }
 
@@ -640,7 +642,10 @@ class FormAutofillSection {
       let value = detail.fieldValue ?? (element && element.value.trim());
       value = this.computeFillingValue(value, detail, element);
 
-      if (!value || value.length > FormAutofillUtils.MAX_FIELD_VALUE_LENGTH) {
+      if (
+        !value ||
+        value.length > lazy.FormAutofillUtils.MAX_FIELD_VALUE_LENGTH
+      ) {
         
         data.record[detail.fieldName] = "";
         return;
@@ -670,7 +675,7 @@ class FormAutofillSection {
         }
         const target = event.target;
         const targetFieldDetail = this.getFieldDetailByElement(target);
-        const isCreditCardField = FormAutofillUtils.isCreditCardField(
+        const isCreditCardField = lazy.FormAutofillUtils.isCreditCardField(
           targetFieldDetail.fieldName
         );
 
@@ -691,7 +696,7 @@ class FormAutofillSection {
         this._changeFieldState(targetFieldDetail, FIELD_STATES.NORMAL);
 
         if (isCreditCardField) {
-          CreditCardTelemetry.recordFilledModified(
+          lazy.CreditCardTelemetry.recordFilledModified(
             this.flowId,
             targetFieldDetail.fieldName
           );
@@ -757,7 +762,8 @@ class FormAutofillAddressSection extends FormAutofillSection {
 
   isValidSection() {
     return (
-      this.fieldDetails.length >= FormAutofillUtils.AUTOFILL_FIELDS_THRESHOLD
+      this.fieldDetails.length >=
+      lazy.FormAutofillUtils.AUTOFILL_FIELDS_THRESHOLD
     );
   }
 
@@ -782,13 +788,13 @@ class FormAutofillAddressSection extends FormAutofillSection {
       if (!record[key]) {
         continue;
       }
-      if (FormAutofillUtils.getCategoryFromFieldName(key) == "name") {
+      if (lazy.FormAutofillUtils.getCategoryFromFieldName(key) == "name") {
         hasName = 1;
         continue;
       }
       length++;
     }
-    return length + hasName >= FormAutofillUtils.AUTOFILL_FIELDS_THRESHOLD;
+    return length + hasName >= lazy.FormAutofillUtils.AUTOFILL_FIELDS_THRESHOLD;
   }
 
   _getOneLineStreetAddress(address) {
@@ -798,7 +804,7 @@ class FormAutofillAddressSection extends FormAutofillSection {
     if (!this._cacheValue.oneLineStreetAddress[address]) {
       this._cacheValue.oneLineStreetAddress[
         address
-      ] = FormAutofillUtils.toOneLineAddress(address);
+      ] = lazy.FormAutofillUtils.toOneLineAddress(address);
     }
     return this._cacheValue.oneLineStreetAddress[address];
   }
@@ -823,7 +829,7 @@ class FormAutofillAddressSection extends FormAutofillSection {
         waitForConcat.unshift(profile[f]);
         if (this.getFieldDetailByName(f)) {
           if (waitForConcat.length > 1) {
-            profile[f] = FormAutofillUtils.toOneLineAddress(waitForConcat);
+            profile[f] = lazy.FormAutofillUtils.toOneLineAddress(waitForConcat);
           }
           waitForConcat = [];
         }
@@ -917,7 +923,8 @@ class FormAutofillAddressSection extends FormAutofillSection {
       } else {
         let text = element.selectedOptions[0].text.trim();
         value =
-          FormAutofillUtils.getAbbreviatedSubregionName([value, text]) || text;
+          lazy.FormAutofillUtils.getAbbreviatedSubregionName([value, text]) ||
+          text;
       }
     }
     return value;
@@ -934,7 +941,7 @@ class FormAutofillAddressSection extends FormAutofillSection {
       
       
       if (detail._reason != "autocomplete") {
-        let countryCode = FormAutofillUtils.identifyCountryCode(
+        let countryCode = lazy.FormAutofillUtils.identifyCountryCode(
           address.record.country
         );
         if (countryCode) {
@@ -944,11 +951,12 @@ class FormAutofillAddressSection extends FormAutofillSection {
     }
 
     
-    FormAutofillUtils.compressTel(address.record);
+    lazy.FormAutofillUtils.compressTel(address.record);
     if (address.record.tel) {
       let allTelComponentsAreUntouched = Object.keys(address.record)
         .filter(
-          field => FormAutofillUtils.getCategoryFromFieldName(field) == "tel"
+          field =>
+            lazy.FormAutofillUtils.getCategoryFromFieldName(field) == "tel"
         )
         .every(field => address.untouchedFields.includes(field));
       if (allTelComponentsAreUntouched) {
@@ -995,7 +1003,7 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
       return;
     }
 
-    CreditCardTelemetry.recordFormDetected(this.flowId, fieldDetails);
+    lazy.CreditCardTelemetry.recordFormDetected(this.flowId, fieldDetails);
 
     
     
@@ -1058,7 +1066,8 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
 
   isRecordCreatable(record) {
     return (
-      record["cc-number"] && FormAutofillUtils.isCCNumber(record["cc-number"])
+      record["cc-number"] &&
+      lazy.FormAutofillUtils.isCCNumber(record["cc-number"])
     );
   }
 
@@ -1260,7 +1269,7 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
       return value;
     }
 
-    if (CreditCard.isValidNetwork(value)) {
+    if (lazy.CreditCard.isValidNetwork(value)) {
       return value;
     }
 
@@ -1270,8 +1279,8 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
     if (value && element.selectedOptions.length == 1) {
       let selectedOption = element.selectedOptions[0];
       let networkType =
-        CreditCard.getNetworkFromName(selectedOption.text) ??
-        CreditCard.getNetworkFromName(selectedOption.value);
+        lazy.CreditCard.getNetworkFromName(selectedOption.text) ??
+        lazy.CreditCard.getNetworkFromName(selectedOption.value);
       if (networkType) {
         return networkType;
       }
@@ -1314,7 +1323,7 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
     if (profile["cc-number-encrypted"]) {
       let decrypted = await this._decrypt(
         profile["cc-number-encrypted"],
-        reauthPasswordPromptMessage
+        lazy.reauthPasswordPromptMessage
       );
 
       if (!decrypted) {
@@ -1332,7 +1341,7 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
       return false;
     }
 
-    CreditCardTelemetry.recordFormFilled(
+    lazy.CreditCardTelemetry.recordFormFilled(
       this.flowId,
       this.fieldDetails,
       profile
@@ -1345,12 +1354,12 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
       return;
     }
     
-    creditCard.record["cc-number"] = CreditCard.normalizeCardNumber(
+    creditCard.record["cc-number"] = lazy.CreditCard.normalizeCardNumber(
       creditCard.record["cc-number"]
     );
 
     
-    let { month, year } = CreditCard.normalizeExpiration({
+    let { month, year } = lazy.CreditCard.normalizeExpiration({
       expirationString: creditCard.record["cc-exp"],
       expirationMonth: creditCard.record["cc-exp-month"],
       expirationYear: creditCard.record["cc-exp-year"],
@@ -1441,7 +1450,7 @@ class FormAutofillHandler {
     let _formLike;
     let getFormLike = () => {
       if (!_formLike) {
-        _formLike = FormLikeFactory.createFromField(element);
+        _formLike = lazy.FormLikeFactory.createFromField(element);
       }
       return _formLike;
     };
@@ -1505,16 +1514,16 @@ class FormAutofillHandler {
 
 
   collectFormFields(allowDuplicates = false) {
-    let sections = FormAutofillHeuristics.getFormInfo(
+    let sections = lazy.FormAutofillHeuristics.getFormInfo(
       this.form,
       allowDuplicates
     );
     let allValidDetails = [];
     for (let { fieldDetails, type } of sections) {
       let section;
-      if (type == FormAutofillUtils.SECTION_TYPES.ADDRESS) {
+      if (type == lazy.FormAutofillUtils.SECTION_TYPES.ADDRESS) {
         section = new FormAutofillAddressSection(fieldDetails, this.winUtils);
-      } else if (type == FormAutofillUtils.SECTION_TYPES.CREDIT_CARD) {
+      } else if (type == lazy.FormAutofillUtils.SECTION_TYPES.CREDIT_CARD) {
         section = new FormAutofillCreditCardSection(
           fieldDetails,
           this.winUtils,

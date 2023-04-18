@@ -9,13 +9,15 @@
 
 var EXPORTED_SYMBOLS = ["PhoneNumber"];
 
+const lazy = {};
+
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "PHONE_NUMBER_META_DATA",
   "resource://autofill/phonenumberutils/PhoneNumberMetaData.jsm"
 );
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "PhoneNumberNormalizer",
   "resource://autofill/phonenumberutils/PhoneNumberNormalizer.jsm"
 );
@@ -394,7 +396,7 @@ var PhoneNumber = (function(dataBase) {
     let ret;
 
     
-    number = PhoneNumberNormalizer.Normalize(number);
+    number = lazy.PhoneNumberNormalizer.Normalize(number);
 
     
     
@@ -475,4 +477,4 @@ var PhoneNumber = (function(dataBase) {
     IsPlain: IsPlainPhoneNumber,
     Parse: ParseNumber,
   };
-})(PHONE_NUMBER_META_DATA);
+})(lazy.PHONE_NUMBER_META_DATA);
