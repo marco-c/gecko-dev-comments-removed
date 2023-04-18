@@ -5462,7 +5462,7 @@ PresShell::CanvasBackground PresShell::ComputeCanvasBackground() const {
     return {GetDefaultBackgroundColorToDraw(), false};
   }
 
-  ComputedStyle* bgStyle =
+  const ComputedStyle* bgStyle =
       nsCSSRendering::FindRootFrameBackground(rootStyleFrame);
   
   

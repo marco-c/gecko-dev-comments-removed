@@ -237,7 +237,7 @@ static nscolor GetBackplateColor(nsIFrame* aFrame) {
     
     
     
-    auto* style = frame->Style();
+    const auto* style = frame->Style();
     if (style->StyleBackground()->IsTransparent(style)) {
       continue;
     }
