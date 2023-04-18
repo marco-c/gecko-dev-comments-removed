@@ -137,7 +137,7 @@ class gfxFT2FontBase : public gfxFont {
       uint16_t aGID, mozilla::gfx::IntRect* aBounds = nullptr) const;
 
   mutable mozilla::UniquePtr<nsTHashMap<nsUint32HashKey, GlyphMetrics>>
-      mGlyphMetrics;
+      mGlyphMetrics GUARDED_BY(mLock);
 };
 
 
