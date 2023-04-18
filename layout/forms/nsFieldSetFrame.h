@@ -65,9 +65,7 @@ class nsFieldSetFrame final : public nsContainerFrame {
     return nsContainerFrame::IsFrameOfType(
         aFlags & ~nsIFrame::eCanContainOverflowContainers);
   }
-  virtual nsIScrollableFrame* GetScrollTargetFrame() const override {
-    return do_QueryFrame(GetInner());
-  }
+  nsIScrollableFrame* GetScrollTargetFrame() const override;
 
   
   void AppendDirectlyOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult) override;
