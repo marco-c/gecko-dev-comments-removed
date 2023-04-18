@@ -639,7 +639,7 @@ void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
   
   if (mObservingState == eRefreshProcessing ||
       mObservingState == eRefreshProcessingForUpdate ||
-      mPresShell->IsReflowInterrupted()) {
+      mPresShell->IsReflowInterrupted() || !mPresShell->DidInitialize()) {
     return;
   }
 
