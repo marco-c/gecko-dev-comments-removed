@@ -325,15 +325,6 @@
 
 #include "Benchmark.h"
 
-
-#ifdef DISABLE_ASSERTS_FOR_FUZZING
-#  define ASSERT_UNLESS_FUZZING(...) \
-    do {                             \
-    } while (0)
-#else
-#  define ASSERT_UNLESS_FUZZING(...) MOZ_ASSERT(false, __VA_ARGS__)
-#endif
-
 static NS_DEFINE_CID(kCClipboardCID, NS_CLIPBOARD_CID);
 
 using base::KillProcess;
@@ -3761,7 +3752,7 @@ bool ContentParent::CanOpenBrowser(const IPCTabContext& aContext) {
   
   
   if (aContext.type() != IPCTabContext::TPopupIPCTabContext) {
-    ASSERT_UNLESS_FUZZING(
+    MOZ_CRASH_UNLESS_FUZZING(
         "Unexpected IPCTabContext type.  Aborting AllocPBrowserParent.");
     return false;
   }
@@ -3771,7 +3762,7 @@ bool ContentParent::CanOpenBrowser(const IPCTabContext& aContext) {
 
     auto opener = BrowserParent::GetFrom(popupContext.openerParent());
     if (!opener) {
-      ASSERT_UNLESS_FUZZING(
+      MOZ_CRASH_UNLESS_FUZZING(
           "Got null opener from child; aborting AllocPBrowserParent.");
       return false;
     }
