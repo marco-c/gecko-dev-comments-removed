@@ -5,7 +5,7 @@
 
 
 use crate::parser::{Parse, ParserContext};
-use crate::values::generics;
+use crate::values::{generics, CustomIdent};
 use crate::values::generics::size::Size2D;
 use crate::values::specified::length::NonNegativeLength;
 use cssparser::Parser;
@@ -44,5 +44,45 @@ impl Parse for PageSize {
         
         input.expect_ident_matching("auto")?;
         Ok(PageSize::Auto)
+    }
+}
+
+
+
+
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToComputedValue, ToResolvedValue, ToShmem)]
+#[repr(C, u8)]
+pub enum PageName {
+    
+    Auto,
+    
+    PageName(CustomIdent),
+}
+
+impl Parse for PageName {
+    fn parse<'i, 't>(
+        _context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        let location = input.current_source_location();
+        let ident = input.expect_ident()?;
+        Ok(match_ignore_ascii_case! { ident,
+            "auto" => PageName::auto(),
+            _ => PageName::PageName(CustomIdent::from_ident(location, ident, &[])?),
+        })
+    }
+}
+
+impl PageName {
+    
+    #[inline]
+    pub fn auto() -> Self {
+        PageName::Auto
+    }
+
+    
+    #[inline]
+    pub fn is_auto(&self) -> bool {
+        matches!(*self, PageName::Auto)
     }
 }
