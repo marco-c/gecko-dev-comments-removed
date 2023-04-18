@@ -29,7 +29,7 @@ add_task(async function test() {
   
   
   await openPopupAndAssertUrlForPreset({
-    preset: "Firefox Platform",
+    preset: "Media",
     expectedUrl: FRONTEND_BASE_URL,
   });
 

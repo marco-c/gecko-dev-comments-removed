@@ -626,13 +626,23 @@ function _adaptCustomPresetExpectationToCustomBuild(fixture) {
 
 
 
+function getDevtoolsCustomPresetContent(devtoolsDocument) {
+  return devtoolsDocument.querySelector(".perf-presets-custom").innerText;
+}
+
+
+
+
+
+
+
 
 function checkDevtoolsCustomPresetContent(devtoolsDocument, fixture) {
   
   fixture = fixture.replace(/^\s+/gm, "").trim();
   
   fixture = _adaptCustomPresetExpectationToCustomBuild(fixture);
-  is(devtoolsDocument.querySelector(".perf-presets-custom").innerText, fixture);
+  is(getDevtoolsCustomPresetContent(devtoolsDocument), fixture);
 }
 
 

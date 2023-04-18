@@ -118,6 +118,8 @@ async function gInit(perfFront, pageContext, openAboutProfiling) {
   await l10n.init([
     "devtools/client/perftools.ftl",
     
+    "branding/brand.ftl",
+    
     "devtools/client/toolbox-options.ftl",
     "browser/branding/brandings.ftl",
   ]);

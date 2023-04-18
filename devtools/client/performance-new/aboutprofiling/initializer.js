@@ -92,6 +92,8 @@ async function gInit(
     [
       "devtools/client/perftools.ftl",
       
+      "branding/brand.ftl",
+      
       "browser/branding/brandings.ftl",
     ],
     {
