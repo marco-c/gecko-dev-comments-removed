@@ -2047,16 +2047,6 @@ function getWatchExpressionValue(dbg, index) {
   return findElement(dbg, "expressionValue", index).innerText;
 }
 
-async function waitUntilPredicate(predicate) {
-  let result;
-  await waitUntil(() => {
-    result = predicate();
-    return result;
-  });
-
-  return result;
-}
-
 
 
 
