@@ -43,13 +43,8 @@ class ThreadFront extends FrontClassWithSpec(threadSpec) {
     this._threadGrips = {};
     
     
-    
-    
-    if (this.targetFront.getTrait("noPauseOnThreadActorAttach")) {
-      this._state = "attached";
-    } else {
-      this._state = "paused";
-    }
+    this._state = "attached";
+
     this._beforePaused = this._beforePaused.bind(this);
     this._beforeResumed = this._beforeResumed.bind(this);
     this.before("paused", this._beforePaused);
@@ -193,23 +188,6 @@ class ThreadFront extends FrontClassWithSpec(threadSpec) {
       console.log(`getSources failed. Connection may have closed: ${e}`);
     }
     return { sources };
-  }
-
-  
-
-
-  async attach(options) {
-    const noPauseOnThreadActorAttach = this.targetFront.getTrait(
-      "noPauseOnThreadActorAttach"
-    );
-    const onPaused = noPauseOnThreadActorAttach ? null : this.once("paused");
-    await super.attach(options);
-    
-    
-    
-    if (!noPauseOnThreadActorAttach) {
-      await onPaused;
-    }
   }
 
   

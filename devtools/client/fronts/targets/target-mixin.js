@@ -532,26 +532,7 @@ function TargetMixin(parentClass) {
       if (this.isDestroyedOrBeingDestroyed()) {
         return;
       }
-      const threadFront = await this.attachThread(options);
-
-      
-      
-      
-      if (this.getTrait("noPauseOnThreadActorAttach")) {
-        return;
-      }
-      try {
-        if (this.isDestroyedOrBeingDestroyed() || threadFront.isDestroyed()) {
-          return;
-        }
-        await threadFront.resume();
-      } catch (ex) {
-        if (ex.error === "wrongOrder") {
-          targetCommand.emit("target-thread-wrong-order-on-resume");
-        } else {
-          throw ex;
-        }
-      }
+      await this.attachThread(options);
     }
 
     async attachThread(options = {}) {
