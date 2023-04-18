@@ -29,33 +29,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 "use strict";
 
 var { XPCOMUtils } = ChromeUtils.import(
@@ -249,6 +222,9 @@ var DownloadsPanel = {
     Services.telemetry.scalarAdd("downloads.panel_shown", 1);
     DownloadsCommon.log("Opening the downloads panel.");
 
+    this._openedManually = openedManually;
+    this._preventFocusRing = !openedManually || !isKeyPress;
+
     if (this.isPanelShowing) {
       DownloadsCommon.log("Panel is already showing - focusing instead.");
       this._focusPanel();
@@ -263,7 +239,7 @@ var DownloadsPanel = {
     
     
     
-    setTimeout(() => this._openPopupIfDataReady(openedManually, isKeyPress), 0);
+    setTimeout(() => this._openPopupIfDataReady(), 0);
 
     DownloadsCommon.log("Waiting for the downloads panel to appear.");
     this._state = this.kStateWaitingData;
@@ -299,36 +275,17 @@ var DownloadsPanel = {
     );
   },
 
-  
-
-
-  get keyFocusing() {
-    return this.panel.hasAttribute("keyfocus");
-  },
-
-  
-
-
-
-
-  set keyFocusing(aValue) {
-    if (aValue) {
-      this.panel.setAttribute("keyfocus", "true");
-      this.panel.addEventListener("mousemove", this);
-    } else {
-      this.panel.removeAttribute("keyfocus");
-      this.panel.removeEventListener("mousemove", this);
-    }
-  },
-
-  
-
-
-
   handleEvent(aEvent) {
     switch (aEvent.type) {
       case "mousemove":
-        this.keyFocusing = false;
+        if (this.panel.contains(document.activeElement)) {
+          
+          
+          document.activeElement.blur();
+          DownloadsView.richListBox.removeAttribute("force-focus-visible");
+          this._preventFocusRing = true;
+          this._focusPanel();
+        }
         break;
       case "keydown":
         this._onKeyDown(aEvent);
@@ -395,9 +352,7 @@ var DownloadsPanel = {
       this._delayTimeout = null;
     }
 
-    
-    
-    this.keyFocusing = false;
+    DownloadsView.richListBox.removeAttribute("force-focus-visible");
 
     
     DownloadsCommon.getIndicatorData(
@@ -438,6 +393,7 @@ var DownloadsPanel = {
     
     
     this.panel.addEventListener("keypress", this);
+    this.panel.addEventListener("mousemove", this);
     DownloadsView.richListBox.addEventListener("focus", this);
     DownloadsView.richListBox.addEventListener("select", this);
   },
@@ -449,6 +405,7 @@ var DownloadsPanel = {
   _unattachEventListeners() {
     this.panel.removeEventListener("keydown", this);
     this.panel.removeEventListener("keypress", this);
+    this.panel.removeEventListener("mousemove", this);
     DownloadsView.richListBox.removeEventListener("focus", this);
     DownloadsView.richListBox.removeEventListener("select", this);
   },
@@ -475,20 +432,21 @@ var DownloadsPanel = {
       this._handlePotentiallySpammyDownloadActivation(aEvent);
       return;
     }
+
+    let richListBox = DownloadsView.richListBox;
+
+    
     
     
     
     
     if (
-      (aEvent.keyCode == aEvent.DOM_VK_TAB ||
-        aEvent.keyCode == aEvent.DOM_VK_UP ||
-        aEvent.keyCode == aEvent.DOM_VK_DOWN) &&
-      !this.keyFocusing
+      aEvent.keyCode == aEvent.DOM_VK_UP ||
+      aEvent.keyCode == aEvent.DOM_VK_DOWN
     ) {
-      this.keyFocusing = true;
+      richListBox.setAttribute("force-focus-visible", "true");
     }
 
-    let richListBox = DownloadsView.richListBox;
     
     
     if (aEvent.keyCode == aEvent.DOM_VK_UP && richListBox.firstElementChild) {
@@ -575,17 +533,15 @@ var DownloadsPanel = {
       return;
     }
 
-    let element = document.commandDispatcher.focusedElement;
-    while (element && element != this.panel) {
-      element = element.parentNode;
+    if (document.activeElement && this.panel.contains(document.activeElement)) {
+      return;
     }
-    if (!element) {
-      if (DownloadsView.richListBox.itemCount > 0) {
-        DownloadsView.richListBox.selectedIndex = 0;
-        DownloadsView.richListBox.focus();
-      } else {
-        DownloadsFooter.focus();
-      }
+    let focusOptions = { preventFocusRing: !!this._preventFocusRing };
+    if (DownloadsView.richListBox.itemCount > 0) {
+      DownloadsView.richListBox.selectedIndex = 0;
+      DownloadsView.richListBox.focus(focusOptions);
+    } else {
+      DownloadsFooter.focus(focusOptions);
     }
   },
 
@@ -636,7 +592,7 @@ var DownloadsPanel = {
   
 
 
-  _openPopupIfDataReady(openedManually, isKeyPress) {
+  _openPopupIfDataReady() {
     
     
     if (this._state != this.kStateWaitingData || DownloadsView.loading) {
@@ -675,11 +631,6 @@ var DownloadsPanel = {
 
     DownloadsCommon.log("Opening downloads panel popup.");
 
-    if (isKeyPress) {
-      
-      this.keyFocusing = true;
-    }
-
     
     
     
@@ -698,7 +649,7 @@ var DownloadsPanel = {
         this._state = this.kStateHidden;
       });
 
-      if (!openedManually) {
+      if (!this._openedManually) {
         this._delayPopupItems();
       }
     }, 0);
@@ -1528,9 +1479,9 @@ var DownloadsSummary = {
   
 
 
-  focus() {
+  focus(focusOptions) {
     if (this._summaryNode) {
-      this._summaryNode.focus();
+      this._summaryNode.focus(focusOptions);
     }
   },
 
@@ -1624,11 +1575,11 @@ var DownloadsFooter = {
 
 
 
-  focus() {
+  focus(focusOptions) {
     if (this._showingSummary) {
-      DownloadsSummary.focus();
+      DownloadsSummary.focus(focusOptions);
     } else {
-      DownloadsView.downloadsHistory.focus({ preventFocusRing: true });
+      DownloadsView.downloadsHistory.focus(focusOptions);
     }
   },
 
