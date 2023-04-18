@@ -210,8 +210,9 @@ void WebRenderImageData::CreateAsyncImageWebRenderCommands(
     
     mPipelineId =
         Some(WrBridge()->GetCompositorBridgeChild()->GetNextPipelineId());
-    WrBridge()->AddPipelineIdForAsyncCompositable(
-        mPipelineId.ref(), aContainer->GetAsyncContainerHandle());
+    WrBridge()->AddPipelineIdForCompositable(
+        mPipelineId.ref(), aContainer->GetAsyncContainerHandle(),
+        CompositableHandleOwner::ImageBridge);
     mContainer = aContainer;
   }
   MOZ_ASSERT(!mImageClient);
@@ -286,6 +287,61 @@ bool WebRenderImageProviderData::Invalidate(ImageProviderId aProviderId) const {
   nsresult rv =
       mProvider->UpdateKey(mManager, mManager->AsyncResourceUpdates(), key);
   return NS_SUCCEEDED(rv) && mKey.ref() == key;
+}
+
+WebRenderInProcessImageData::WebRenderInProcessImageData(
+    RenderRootStateManager* aManager, nsDisplayItem* aItem)
+    : WebRenderUserData(aManager, aItem) {}
+
+WebRenderInProcessImageData::WebRenderInProcessImageData(
+    RenderRootStateManager* aManager, uint32_t aDisplayItemKey,
+    nsIFrame* aFrame)
+    : WebRenderUserData(aManager, aDisplayItemKey, aFrame) {}
+
+WebRenderInProcessImageData::~WebRenderInProcessImageData() {
+  if (mPipelineId) {
+    mManager->RemovePipelineIdForCompositable(mPipelineId.ref());
+  }
+}
+
+void WebRenderInProcessImageData::CreateWebRenderCommands(
+    mozilla::wr::DisplayListBuilder& aBuilder,
+    const CompositableHandle& aHandle, const StackingContextHelper& aSc,
+    const LayoutDeviceRect& aBounds, const LayoutDeviceRect& aSCBounds,
+    VideoInfo::Rotation aRotation, const wr::ImageRendering& aFilter,
+    const wr::MixBlendMode& aMixBlendMode, bool aIsBackfaceVisible) {
+  MOZ_ASSERT(aHandle);
+
+  if (mPipelineId.isSome() && !(mHandle == aHandle)) {
+    
+    
+    WrBridge()->RemovePipelineIdForCompositable(mPipelineId.ref());
+    mPipelineId.reset();
+  }
+
+  if (!mPipelineId) {
+    
+    mPipelineId =
+        Some(WrBridge()->GetCompositorBridgeChild()->GetNextPipelineId());
+    WrBridge()->AddPipelineIdForCompositable(
+        mPipelineId.ref(), aHandle, CompositableHandleOwner::InProcessManager);
+    mHandle = aHandle;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  wr::LayoutRect r = wr::ToLayoutRect(aBounds);
+  aBuilder.PushIFrame(r, aIsBackfaceVisible, mPipelineId.ref(),
+                       false);
+
+  WrBridge()->AddWebRenderParentCommand(OpUpdateAsyncImagePipeline(
+      mPipelineId.value(), aSCBounds, aRotation, aFilter, aMixBlendMode));
 }
 
 WebRenderFallbackData::WebRenderFallbackData(RenderRootStateManager* aManager,
