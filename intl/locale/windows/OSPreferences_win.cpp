@@ -35,55 +35,42 @@ bool OSPreferences::ReadSystemLocales(nsTArray<nsCString>& aLocaleList) {
     
     
     
-
-    
-    
-    
-    
-    HRESULT inited = RoInitialize(RO_INIT_MULTITHREADED);
-    if (SUCCEEDED(inited) || inited == RPC_E_CHANGED_MODE) {
-      ComPtr<IGlobalizationPreferencesStatics> globalizationPrefs;
-      ComPtr<IVectorView<HSTRING>> languages;
-      uint32_t count;
-      if (SUCCEEDED(RoGetActivationFactory(
-              HStringReference(
-                  RuntimeClass_Windows_System_UserProfile_GlobalizationPreferences)
-                  .Get(),
-              IID_PPV_ARGS(&globalizationPrefs))) &&
-          SUCCEEDED(globalizationPrefs->get_Languages(&languages)) &&
-          SUCCEEDED(languages->get_Size(&count))) {
-        for (uint32_t i = 0; i < count; ++i) {
-          HString lang;
-          if (SUCCEEDED(languages->GetAt(i, lang.GetAddressOf()))) {
-            unsigned int length;
-            const wchar_t* text = lang.GetRawBuffer(&length);
-            NS_LossyConvertUTF16toASCII loc(text, length);
-            if (CanonicalizeLanguageTag(loc)) {
-              if (!loc.Contains('-')) {
-                
-                
-                
-                
-                
-                
-                Locale locale;
-                auto result = LocaleParser::TryParse(loc, locale);
-                if (result.isOk() && locale.AddLikelySubtags().isOk() &&
-                    locale.Region().Present()) {
-                  loc.Append('-');
-                  loc.Append(locale.Region().Span());
-                }
+    ComPtr<IGlobalizationPreferencesStatics> globalizationPrefs;
+    ComPtr<IVectorView<HSTRING>> languages;
+    uint32_t count;
+    if (SUCCEEDED(RoGetActivationFactory(
+            HStringReference(
+                RuntimeClass_Windows_System_UserProfile_GlobalizationPreferences)
+                .Get(),
+            IID_PPV_ARGS(&globalizationPrefs))) &&
+        SUCCEEDED(globalizationPrefs->get_Languages(&languages)) &&
+        SUCCEEDED(languages->get_Size(&count))) {
+      for (uint32_t i = 0; i < count; ++i) {
+        HString lang;
+        if (SUCCEEDED(languages->GetAt(i, lang.GetAddressOf()))) {
+          unsigned int length;
+          const wchar_t* text = lang.GetRawBuffer(&length);
+          NS_LossyConvertUTF16toASCII loc(text, length);
+          if (CanonicalizeLanguageTag(loc)) {
+            if (!loc.Contains('-')) {
+              
+              
+              
+              
+              
+              
+              Locale locale;
+              auto result = LocaleParser::TryParse(loc, locale);
+              if (result.isOk() && locale.AddLikelySubtags().isOk() &&
+                  locale.Region().Present()) {
+                loc.Append('-');
+                loc.Append(locale.Region().Span());
               }
-              aLocaleList.AppendElement(loc);
             }
+            aLocaleList.AppendElement(loc);
           }
         }
       }
-    }
-    
-    
-    if (SUCCEEDED(inited)) {
-      RoUninitialize();
     }
   }
 #endif
