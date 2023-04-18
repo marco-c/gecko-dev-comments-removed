@@ -8,7 +8,7 @@
 
 #include "mozilla/RefPtr.h"
 #include "mozilla/gfx/PGPUParent.h"
-#include "mozilla/media/MediaUtils.h"
+#include "mozilla/ipc/AsyncBlockers.h"
 
 namespace mozilla {
 
@@ -26,7 +26,7 @@ class GPUParent final : public PGPUParent {
 
   static GPUParent* GetSingleton();
 
-  AsyncBlockers& AsyncShutdownService() { return mShutdownBlockers; }
+  ipc::AsyncBlockers& AsyncShutdownService() { return mShutdownBlockers; }
 
   
   
@@ -111,7 +111,7 @@ class GPUParent final : public PGPUParent {
   const TimeStamp mLaunchTime;
   RefPtr<VsyncBridgeParent> mVsyncBridge;
   RefPtr<ChildProfilerController> mProfilerController;
-  AsyncBlockers mShutdownBlockers;
+  ipc::AsyncBlockers mShutdownBlockers;
 };
 
 }  
