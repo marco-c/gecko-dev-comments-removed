@@ -173,6 +173,8 @@ parent:
   sync NotifyChildRecreated(LayersId id)
     returns (CompositorOptions compositorOptions);
 
+  async NotifyMemoryPressure();
+
   
   
   sync FlushRendering(RenderReasons aReasons);

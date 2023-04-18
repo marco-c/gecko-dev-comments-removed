@@ -90,6 +90,19 @@ public class GeckoSession {
 
   private static final int DATA_URI_MAX_LENGTH = 2 * 1024 * 1024;
 
+  
+  private static final int NOTIFY_MEMORY_PRESSURE_DELAY_MS = 10 * 1000;
+
+  private final Runnable mNotifyMemoryPressure =
+      new Runnable() {
+        @Override
+        public void run() {
+          if (mCompositorReady) {
+            mCompositor.notifyMemoryPressure();
+          }
+        }
+      };
+
   private enum State implements NativeQueue.State {
     INITIAL(0),
     READY(1);
@@ -194,6 +207,9 @@ public class GeckoSession {
 
     @WrapForJNI(calledFrom = "ui", dispatchTo = "gecko")
     public native void setDynamicToolbarMaxHeight(int height);
+
+    @WrapForJNI(calledFrom = "ui", dispatchTo = "gecko")
+    public native void notifyMemoryPressure();
 
     
     @WrapForJNI(calledFrom = "ui", dispatchTo = "current")
@@ -2090,6 +2106,10 @@ public class GeckoSession {
 
     if (!active) {
       mEventDispatcher.dispatch("GeckoView:FlushSessionState", null);
+      ThreadUtils.postToUiThreadDelayed(mNotifyMemoryPressure, NOTIFY_MEMORY_PRESSURE_DELAY_MS);
+    } else {
+      
+      ThreadUtils.removeUiThreadCallbacks(mNotifyMemoryPressure);
     }
 
     ThreadUtils.runOnUiThread(() -> getAutofillSupport().onActiveChanged(active));
