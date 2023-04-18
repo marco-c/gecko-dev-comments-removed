@@ -212,7 +212,7 @@ function onLoad(ready) {
       1;
     const enableVariant = () =>
       enableTheme(
-        THEME_IDS[variations.getAttribute("next")][getVariantIndex()]
+        THEME_IDS[variations.getAttribute("next") ?? 0][getVariantIndex()]
       );
 
     
