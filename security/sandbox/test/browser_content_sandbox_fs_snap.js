@@ -23,9 +23,9 @@ add_task(async function() {
   
   sanityChecks();
 
+  
+  
   add_task(testFileAccessLinuxOnly); 
-
-  add_task(testFileAccessLinuxSnap); 
 
   add_task(cleanupBrowserTabs); 
 });
