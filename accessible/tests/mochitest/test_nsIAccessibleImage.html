@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=429659
+-->
 <head>
   <title>nsIAccessibleImage chrome tests</title>
   <link rel="stylesheet" type="text/css" href="chrome://mochikit/content/tests/SimpleTest/test.css" />
@@ -109,7 +109,7 @@
       testThis("nonLinkedImage", "moz.png", 89, 38);
 
       // Test linked image
-      var actionNamesArray = ["jump"];
+      var actionNamesArray = ["click ancestor"];
       testThis("linkedImage", "moz.png", 89, 38, 1,
                actionNamesArray);
 

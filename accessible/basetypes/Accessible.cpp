@@ -312,7 +312,9 @@ void Accessible::TranslateString(const nsString& aKey, nsAString& aStringOut) {
 }
 
 const Accessible* Accessible::ActionAncestor() const {
-  for (Accessible* parent = Parent(); parent && !parent->IsDoc();
+  
+  
+  for (Accessible* parent = Parent(); parent && !parent->IsOuterDoc();
        parent = parent->Parent()) {
     if (parent->HasPrimaryAction()) {
       return parent;

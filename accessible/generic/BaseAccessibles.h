@@ -50,8 +50,6 @@ class LeafAccessible : public AccessibleWrap {
 
 class LinkableAccessible : public AccessibleWrap {
  public:
-  enum { eAction_Jump = 0 };
-
   LinkableAccessible(nsIContent* aContent, DocAccessible* aDoc)
       : AccessibleWrap(aContent, aDoc) {}
 
@@ -63,9 +61,6 @@ class LinkableAccessible : public AccessibleWrap {
   virtual void TakeFocus() const override;
 
   
-  virtual uint8_t ActionCount() const override;
-  virtual void ActionNameAt(uint8_t aIndex, nsAString& aName) override;
-  virtual bool DoAction(uint8_t index) const override;
   virtual KeyBinding AccessKey() const override;
 
   
