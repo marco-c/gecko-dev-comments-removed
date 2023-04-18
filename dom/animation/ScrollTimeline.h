@@ -65,22 +65,25 @@ class Element;
 class ScrollTimeline final : public AnimationTimeline {
  public:
   struct Scroller {
-    StyleScroller mType = StyleScroller::Root;
+    
+    enum class Type : uint8_t {
+      
+      Auto,
+      
+      Other,
+    };
+    Type mType = Type::Auto;
     RefPtr<Element> mElement;
 
     
     
-    static Scroller Root(const Document* aOwnerDoc) {
+    static Scroller Auto(const Document* aOwnerDoc) {
       
       
       
       
       
-      return {StyleScroller::Root, aOwnerDoc->GetDocumentElement()};
-    }
-
-    static Scroller Nearest(Element* aElement) {
-      return {StyleScroller::Nearest, aElement};
+      return {Type::Auto, aOwnerDoc->GetDocumentElement()};
     }
 
     explicit operator bool() const { return mElement; }
@@ -89,17 +92,14 @@ class ScrollTimeline final : public AnimationTimeline {
     }
   };
 
+  
   static already_AddRefed<ScrollTimeline> FromRule(
       const RawServoScrollTimelineRule& aRule, Document* aDocument,
       const NonOwningAnimationTarget& aTarget);
 
-  static already_AddRefed<ScrollTimeline> FromAnonymousScroll(
-      Document* aDocument, const NonOwningAnimationTarget& aTarget,
-      StyleScrollAxis aAxis, StyleScroller aScroller);
-
   bool operator==(const ScrollTimeline& aOther) const {
     return mDocument == aOther.mDocument && mSource == aOther.mSource &&
-           mAxis == aOther.mAxis;
+           mDirection == aOther.mDirection;
   }
 
   NS_DECL_ISUPPORTS_INHERITED
@@ -154,6 +154,11 @@ class ScrollTimeline final : public AnimationTimeline {
   }
 
   
+  
+  
+  
+  
+  
   layers::ScrollDirection Axis() const;
 
   StyleOverflow SourceScrollStyle() const;
@@ -170,7 +175,7 @@ class ScrollTimeline final : public AnimationTimeline {
  private:
   ScrollTimeline() = delete;
   ScrollTimeline(Document* aDocument, const Scroller& aScroller,
-                 StyleScrollAxis aAxis);
+                 StyleScrollDirection aDirection);
 
   
   
@@ -187,8 +192,11 @@ class ScrollTimeline final : public AnimationTimeline {
   
   
   
+  
+  
+  
   Scroller mSource;
-  StyleScrollAxis mAxis;
+  StyleScrollDirection mDirection;
 
   
   
@@ -220,7 +228,8 @@ class ScrollTimelineSet {
   
   
   
-  using NonOwningScrollTimelineMap = HashMap<StyleScrollAxis, ScrollTimeline*>;
+  using NonOwningScrollTimelineMap =
+      HashMap<StyleScrollDirection, ScrollTimeline*>;
 
   ~ScrollTimelineSet() = default;
 
@@ -228,14 +237,14 @@ class ScrollTimelineSet {
   static ScrollTimelineSet* GetOrCreateScrollTimelineSet(Element* aElement);
   static void DestroyScrollTimelineSet(Element* aElement);
 
-  NonOwningScrollTimelineMap::AddPtr LookupForAdd(StyleScrollAxis aKey) {
+  NonOwningScrollTimelineMap::AddPtr LookupForAdd(StyleScrollDirection aKey) {
     return mScrollTimelines.lookupForAdd(aKey);
   }
-  void Add(NonOwningScrollTimelineMap::AddPtr& aPtr, StyleScrollAxis aKey,
+  void Add(NonOwningScrollTimelineMap::AddPtr& aPtr, StyleScrollDirection aKey,
            ScrollTimeline* aScrollTimeline) {
     Unused << mScrollTimelines.add(aPtr, aKey, aScrollTimeline);
   }
-  void Remove(StyleScrollAxis aKey) { mScrollTimelines.remove(aKey); }
+  void Remove(StyleScrollDirection aKey) { mScrollTimelines.remove(aKey); }
 
   bool IsEmpty() const { return mScrollTimelines.empty(); }
 
