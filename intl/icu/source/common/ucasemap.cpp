@@ -112,7 +112,8 @@ ucasemap_setLocale(UCaseMap *csm, const char *locale, UErrorCode *pErrorCode) {
     if(length==sizeof(csm->locale)) {
         *pErrorCode=U_BUFFER_OVERFLOW_ERROR;
     }
-    if(U_SUCCESS(*pErrorCode)) {     
+    if(U_SUCCESS(*pErrorCode)) {
+        csm->caseLocale=UCASE_LOC_UNKNOWN;
         csm->caseLocale = ucase_getCaseLocale(csm->locale);
     } else {
         csm->locale[0]=0;
@@ -419,97 +420,6 @@ void toUpper(int32_t caseLocale, uint32_t options,
 
 #if !UCONFIG_NO_BREAK_ITERATION
 
-namespace {
-
-constexpr uint8_t ACUTE_BYTE0 = u8"\u0301"[0];
-
-constexpr uint8_t ACUTE_BYTE1 = u8"\u0301"[1];
-
-
-
-
-
-
-
-
-
-
-int32_t maybeTitleDutchIJ(const uint8_t *src, UChar32 c, int32_t start, int32_t segmentLimit,
-                          ByteSink &sink, uint32_t options, icu::Edits *edits, UErrorCode &errorCode) {
-    U_ASSERT(start < segmentLimit);
-
-    int32_t index = start;
-    bool withAcute = false;
-
-    
-    int32_t unchanged1 = 0;  
-    bool doTitleJ = false;  
-    int32_t unchanged2 = 0;  
-
-    
-    UChar32 c2;
-    c2 = src[index++];
-
-    
-    if (c == u'I') {
-        if (c2 == ACUTE_BYTE0 && index < segmentLimit && src[index++] == ACUTE_BYTE1) {
-            withAcute = true;
-            unchanged1 = 2;  
-            if (index == segmentLimit) { return start; }
-            c2 = src[index++];
-        }
-    } else {  
-        withAcute = true;
-    }
-
-    
-    if (c2 == u'j') {
-        doTitleJ = true;
-    } else if (c2 == u'J') {
-        ++unchanged1;
-    } else {
-        return start;
-    }
-
-    
-    
-    if (withAcute) {
-        if ((index + 1) >= segmentLimit || src[index++] != ACUTE_BYTE0 || src[index++] != ACUTE_BYTE1) {
-            return start;
-        }
-        if (doTitleJ) {
-            unchanged2 = 2;  
-        } else {
-            unchanged1 = unchanged1 + 2;    
-        }
-    }
-
-    
-    if (index < segmentLimit) {
-        int32_t cp;
-        int32_t i = index;
-        U8_NEXT(src, i, segmentLimit, cp);
-        uint32_t typeMask = U_GET_GC_MASK(cp);
-        if ((typeMask & U_GC_M_MASK) != 0) {
-            return start;
-        }
-    }
-
-    
-    ByteSinkUtil::appendUnchanged(src + start, unchanged1, sink, options, edits, errorCode);
-    start += unchanged1;
-    if (doTitleJ) {
-        ByteSinkUtil::appendCodePoint(1, u'J', sink, edits);
-        ++start;
-    }
-    ByteSinkUtil::appendUnchanged(src + start, unchanged2, sink, options, edits, errorCode);
-
-    U_ASSERT(start + unchanged2 == index);
-    return index;
-}
-
-}  
-
 U_CFUNC void U_CALLCONV
 ucasemap_internalUTF8ToTitle(
         int32_t caseLocale, uint32_t options, BreakIterator *iter,
@@ -594,14 +504,19 @@ ucasemap_internalUTF8ToTitle(
                 }
 
                 
-                if (titleLimit < index &&
-                    caseLocale == UCASE_LOC_DUTCH) {
-                    if (c < 0) {
-                        c = ~c;
-                    }
-
-                    if (c == u'I' || c == u'Í') {
-                        titleLimit = maybeTitleDutchIJ(src, c, titleLimit, index, sink, options, edits, errorCode);
+                if (titleStart+1 < index &&
+                        caseLocale == UCASE_LOC_DUTCH &&
+                        (src[titleStart] == 0x0049 || src[titleStart] == 0x0069)) {
+                    if (src[titleStart+1] == 0x006A) {
+                        ByteSinkUtil::appendCodePoint(1, 0x004A, sink, edits);
+                        titleLimit++;
+                    } else if (src[titleStart+1] == 0x004A) {
+                        
+                        if (!ByteSinkUtil::appendUnchanged(src+titleStart+1, 1,
+                                                           sink, options, edits, errorCode)) {
+                            return;
+                        }
+                        titleLimit++;
                     }
                 }
 

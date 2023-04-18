@@ -29,9 +29,6 @@ available.map(x => {
 }).filter(loc => {
   
   return loc.script && loc.region;
-}).filter(loc => {
-  
-  return !(loc.language === "sd" && loc.script === "Deva" && loc.region === "IN");
 }).forEach(loc => {
   
   let noScript = new Intl.Locale(`${loc.language}-${loc.region}`);
@@ -41,10 +38,10 @@ available.map(x => {
 
   for (let opt of options) {
     
-    let df1 = new Intl.DateTimeFormat(noScript, opt);
+    let df1 = new Intl.DateTimeFormat(noScript, options);
 
     
-    let df2 = new Intl.DateTimeFormat(maximized, opt);
+    let df2 = new Intl.DateTimeFormat(maximized, options);
 
     
     

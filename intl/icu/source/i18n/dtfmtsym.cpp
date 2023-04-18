@@ -1574,20 +1574,26 @@ struct CalendarDataSink : public ResourceSink {
                                                        errorCode);
                     if (U_FAILURE(errorCode)) { return; }
                 }
-                LocalPointer<UnicodeString> aliasRelativePathCopy(aliasRelativePath.clone(), errorCode);
-                resourcesToVisitNext->adoptElement(aliasRelativePathCopy.orphan(), errorCode);
+                LocalPointer<UnicodeString> aliasRelativePathCopy(new UnicodeString(aliasRelativePath), errorCode);
+                resourcesToVisitNext->addElementX(aliasRelativePathCopy.getAlias(), errorCode);
                 if (U_FAILURE(errorCode)) { return; }
+                
+                aliasRelativePathCopy.orphan();
                 continue;
 
             } else if (aliasType == SAME_CALENDAR) {
                 
                 if (arrays.get(aliasRelativePath) == NULL && maps.get(aliasRelativePath) == NULL) {
-                    LocalPointer<UnicodeString> aliasRelativePathCopy(aliasRelativePath.clone(), errorCode);
-                    aliasPathPairs.adoptElement(aliasRelativePathCopy.orphan(), errorCode);
+                    LocalPointer<UnicodeString> aliasRelativePathCopy(new UnicodeString(aliasRelativePath), errorCode);
+                    aliasPathPairs.addElementX(aliasRelativePathCopy.getAlias(), errorCode);
                     if (U_FAILURE(errorCode)) { return; }
-                    LocalPointer<UnicodeString> keyUStringCopy(keyUString.clone(), errorCode);
-                    aliasPathPairs.adoptElement(keyUStringCopy.orphan(), errorCode);
+                    
+                    aliasRelativePathCopy.orphan();
+                    LocalPointer<UnicodeString> keyUStringCopy(new UnicodeString(keyUString), errorCode);
+                    aliasPathPairs.addElementX(keyUStringCopy.getAlias(), errorCode);
                     if (U_FAILURE(errorCode)) { return; }
+                    
+                    keyUStringCopy.orphan();
                 }
                 continue;
             }
@@ -1754,12 +1760,16 @@ struct CalendarDataSink : public ResourceSink {
             if (U_FAILURE(errorCode)) { return; }
             if (aliasType == SAME_CALENDAR) {
                 
-                LocalPointer<UnicodeString> aliasRelativePathCopy(aliasRelativePath.clone(), errorCode);
-                aliasPathPairs.adoptElement(aliasRelativePathCopy.orphan(), errorCode);
+                LocalPointer<UnicodeString> aliasRelativePathCopy(new UnicodeString(aliasRelativePath), errorCode);
+                aliasPathPairs.addElementX(aliasRelativePathCopy.getAlias(), errorCode);
                 if (U_FAILURE(errorCode)) { return; }
-                LocalPointer<UnicodeString> pathCopy(path.clone(), errorCode);
-                aliasPathPairs.adoptElement(pathCopy.orphan(), errorCode);
+                
+                aliasRelativePathCopy.orphan();
+                LocalPointer<UnicodeString> pathCopy(new UnicodeString(path), errorCode);
+                aliasPathPairs.addElementX(pathCopy.getAlias(), errorCode);
                 if (U_FAILURE(errorCode)) { return; }
+                
+                pathCopy.orphan();
 
                 
                 path.retainBetween(0, pathLength);

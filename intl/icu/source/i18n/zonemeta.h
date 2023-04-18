@@ -18,11 +18,11 @@
 
 U_NAMESPACE_BEGIN
 
-struct OlsonToMetaMappingEntry : public UMemory {
+typedef struct OlsonToMetaMappingEntry {
     const UChar *mzid; 
     UDate from;
     UDate to;
-};
+} OlsonToMetaMappingEntry;
 
 class UVector;
 class TimeZone;
