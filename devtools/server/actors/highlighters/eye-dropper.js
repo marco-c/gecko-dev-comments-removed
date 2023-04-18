@@ -221,30 +221,40 @@ class EyeDropper {
   
 
 
+  #dataURItoBlob(dataURI) {
+    const byteString = atob(dataURI.split(",")[1]);
+
+    
+    const buffer = new ArrayBuffer(byteString.length);
+    
+    const typedArray = new Uint8Array(buffer);
+    for (let i = 0; i < byteString.length; i++) {
+      typedArray[i] = byteString.charCodeAt(i);
+    }
+
+    return new Blob([buffer], { type: "image/png" });
+  }
+
+  
+
+
 
 
 
 
 
   async prepareImageCapture(screenshot) {
-    let imgData;
+    let imageSource;
     if (screenshot) {
-      
-      
-      imgData = this.win.document.createElement("img");
-      const onImgLoaded = new Promise(resolve =>
-        imgData.addEventListener("load", resolve, { once: true })
-      );
-      imgData.src = screenshot;
-      await onImgLoaded;
+      imageSource = this.#dataURItoBlob(screenshot);
     } else {
-      imgData = getWindowAsImageData(this.win);
+      imageSource = getWindowAsImageData(this.win);
     }
 
     
     
     
-    const image = await this.win.createImageBitmap(imgData);
+    const image = await this.win.createImageBitmap(imageSource);
 
     this.pageImage = image;
     
