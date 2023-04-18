@@ -53,7 +53,8 @@ class Http3Stream final : public nsAHttpSegmentReader,
 
   void StopSending();
 
-  void SetResponseHeaders(nsTArray<uint8_t>& aResponseHeaders, bool fin);
+  void SetResponseHeaders(nsTArray<uint8_t>& aResponseHeaders, bool fin,
+                          bool interim);
 
   
   bool Do0RTT();
@@ -121,9 +122,15 @@ class Http3Stream final : public nsAHttpSegmentReader,
 
 
 
+
+
+
+
+
   enum RecvStreamState {
     BEFORE_HEADERS,
     READING_HEADERS,
+    READING_INTERIM_HEADERS,
     READING_DATA,
     RECEIVED_FIN,
     RECV_DONE
