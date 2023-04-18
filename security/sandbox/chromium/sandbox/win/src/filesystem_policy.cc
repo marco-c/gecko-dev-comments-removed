@@ -44,12 +44,6 @@ NTSTATUS NtCreateFileInTarget(HANDLE* target_file_handle,
     return status;
   }
 
-  if (!sandbox::SameObject(local_handle, obj_attributes->ObjectName->Buffer)) {
-    
-    ::CloseHandle(local_handle);
-    return STATUS_ACCESS_DENIED;
-  }
-
   if (!::DuplicateHandle(::GetCurrentProcess(), local_handle, target_process,
                          target_file_handle, 0, false,
                          DUPLICATE_CLOSE_SOURCE | DUPLICATE_SAME_ACCESS)) {
@@ -405,13 +399,25 @@ bool FileSystemPolicy::SetInformationFileAction(EvalResult eval_result,
 }
 
 bool PreProcessName(std::wstring* path) {
-  ConvertToLongPath(path);
-
-  if (ERROR_NOT_A_REPARSE_POINT == IsReparsePoint(*path))
-    return true;
-
   
-  return false;
+  
+  
+  
+  
+  
+  
+  
+  
+  if (path->find(L'/') != std::wstring::npos) {
+    return false;
+  }
+
+  if (path->find(L"\\..\\") != std::wstring::npos) {
+    return false;
+  }
+
+  ConvertToLongPath(path);
+  return true;
 }
 
 std::wstring FixNTPrefixForMatch(const std::wstring& name) {
