@@ -141,6 +141,10 @@ function CssRuleView(inspector, document, store) {
   
   this.debounce = debounce;
 
+  
+  
+  this.childHasDragged = false;
+
   this._outputParser = new OutputParser(document, this.cssProperties);
 
   this._onAddRule = this._onAddRule.bind(this);
@@ -389,6 +393,11 @@ CssRuleView.prototype = {
 
 
   handleEvent(event) {
+    if (this.childHasDragged) {
+      this.childHasDragged = false;
+      event.stopPropagation();
+      return;
+    }
     switch (event.type) {
       case "click":
         this.handleClickEvent(event);

@@ -16,6 +16,10 @@ const {
   advanceValidate,
   blurOnMultipleProperties,
 } = require("devtools/client/inspector/shared/utils");
+const { throttle } = require("devtools/shared/throttle");
+const {
+  style: { ELEMENT_STYLE },
+} = require("devtools/shared/constants");
 
 loader.lazyRequireGetter(
   this,
@@ -33,6 +37,12 @@ loader.lazyRequireGetter(
   this,
   "findCssSelector",
   "devtools/shared/inspector/css-logic",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "AppConstants",
+  "resource://gre/modules/AppConstants.jsm",
   true
 );
 
@@ -59,6 +69,17 @@ const ACTIONABLE_ELEMENTS_SELECTORS = [
   `.${ANGLE_SWATCH_CLASS}`,
   "a",
 ];
+
+
+
+
+
+const SLOW_DRAGGING_SPEED = 0.1;
+const DEFAULT_DRAGGING_SPEED = 1;
+const FAST_DRAGGING_SPEED = 10;
+
+const DRAGGABLE_VALUE_CLASSNAME = "ruleview-propertyvalue-draggable";
+const IS_DRAGGING_CLASSNAME = "ruleview-propertyvalue-dragging";
 
 
 
@@ -104,6 +125,11 @@ function TextPropertyEditor(ruleEditor, property) {
   this.toolbox = this.ruleView.inspector.toolbox;
   this.telemetry = this.toolbox.telemetry;
 
+  this._isDragging = false;
+  this._hasDragged = false;
+  this._draggingController = null;
+  this._draggingValueCache = null;
+
   this.getGridlineNames = this.getGridlineNames.bind(this);
   this.update = this.update.bind(this);
   this.updatePropertyState = this.updatePropertyState.bind(this);
@@ -117,6 +143,11 @@ function TextPropertyEditor(ruleEditor, property) {
   this._onSwatchRevert = this._onSwatchRevert.bind(this);
   this._onValidate = this.ruleView.debounce(this._previewValue, 10, this);
   this._onValueDone = this._onValueDone.bind(this);
+
+  this._draggingOnMouseDown = this._draggingOnMouseDown.bind(this);
+  this._draggingOnMouseMove = throttle(this._draggingOnMouseMove, 30, this);
+  this._draggingOnMouseUp = this._draggingOnMouseUp.bind(this);
+  this._draggingOnKeydown = this._draggingOnKeydown.bind(this);
 
   this._create();
   this.update();
@@ -325,6 +356,10 @@ TextPropertyEditor.prototype = {
       });
 
       this.valueSpan.addEventListener("mouseup", event => {
+        
+        if (this._hasDragged) {
+          return;
+        }
         this._clickedElementOptions = null;
         this._hasPendingClick = false;
       });
@@ -338,6 +373,10 @@ TextPropertyEditor.prototype = {
           openContentLink(target.href);
         }
       });
+
+      if (this._isDraggableProperty(this.prop)) {
+        this._addDraggingCapability();
+      }
 
       editableField({
         start: this._onStartEditing,
@@ -689,7 +728,8 @@ TextPropertyEditor.prototype = {
     
     
     
-    if (this._hasPendingClick) {
+    
+    if (this._hasPendingClick && !this._isDragging) {
       this._hasPendingClick = false;
       let elToClick;
 
@@ -1130,6 +1170,13 @@ TextPropertyEditor.prototype = {
       return;
     }
 
+    
+    if (this._isDraggableProperty(val)) {
+      this._addDraggingCapability();
+    } else {
+      this._removeDraggingCapacity();
+    }
+
     this.telemetry.recordEvent("edit_rule", "ruleview", null, {
       session_id: this.toolbox.sessionId,
     });
@@ -1253,6 +1300,169 @@ TextPropertyEditor.prototype = {
       val.value,
       val.priority
     );
+  },
+
+  
+
+
+
+
+
+
+  _hasSmallIncrementModifier: function(event) {
+    const modifier = AppConstants.platform === "macosx" ? "altKey" : "ctrlKey";
+    return event[modifier] === true;
+  },
+
+  
+
+
+
+
+
+
+
+  _parseDimension: function(value) {
+    
+    const cssDimensionRegex = /^(?<value>[+-]?(\d*\.)?\d+(e[+-]?\d+)?)(?<unit>(%|[a-zA-Z]+))$/;
+    return value.match(cssDimensionRegex);
+  },
+
+  
+
+
+
+
+
+  _isDraggableProperty: function(textProperty) {
+    
+    
+    
+    if (this.rule.domRule.type == ELEMENT_STYLE) {
+      return false;
+    }
+
+    const nbValues = textProperty.value.split(" ").length;
+    if (nbValues > 1) {
+      
+      
+      return false;
+    }
+
+    const dimensionMatchObj = this._parseDimension(textProperty.value);
+    return !!dimensionMatchObj;
+  },
+
+  _draggingOnMouseDown: function(event) {
+    this._isDragging = true;
+    this.valueSpan.setPointerCapture(event.pointerId);
+    this._draggingController = new AbortController();
+    const { signal } = this._draggingController;
+
+    
+    this.valueSpan.classList.add(IS_DRAGGING_CLASSNAME);
+
+    const dimensionObj = this._parseDimension(this.prop.value);
+    const { value, unit } = dimensionObj.groups;
+    this._draggingValueCache = {
+      previousScreenX: event.screenX,
+      value: parseFloat(value),
+      unit,
+    };
+
+    this.valueSpan.addEventListener("mousemove", this._draggingOnMouseMove, {
+      signal,
+    });
+    this.valueSpan.addEventListener("mouseup", this._draggingOnMouseUp, {
+      signal,
+    });
+    this.valueSpan.addEventListener("keydown", this._draggingOnKeydown, {
+      signal,
+    });
+  },
+
+  _draggingOnMouseMove: function(event) {
+    if (!this._isDragging) {
+      return;
+    }
+
+    let draggingSpeed = DEFAULT_DRAGGING_SPEED;
+    if (event.shiftKey) {
+      draggingSpeed = FAST_DRAGGING_SPEED;
+    } else if (this._hasSmallIncrementModifier(event)) {
+      draggingSpeed = SLOW_DRAGGING_SPEED;
+    }
+
+    const { previousScreenX } = this._draggingValueCache;
+    const delta = (event.screenX - previousScreenX) * draggingSpeed;
+    this._draggingValueCache.previousScreenX = event.screenX;
+    this._draggingValueCache.value += delta;
+
+    if (delta == 0) {
+      return;
+    }
+
+    const { value, unit } = this._draggingValueCache;
+    
+    const roundedValue = Number.isInteger(value) ? value : value.toFixed(1);
+    this.prop.setValue(roundedValue + unit, this.prop.priority);
+    this.ruleView.emitForTests("property-updated-by-dragging");
+    this._hasDragged = true;
+  },
+
+  _draggingOnMouseUp: function(event) {
+    if (!this._isDragging) {
+      return;
+    }
+    if (this._hasDragged) {
+      this.committed.value = this.prop.value;
+      this.prop.setEnabled(true);
+    }
+    this._onStopDragging(event);
+  },
+
+  _draggingOnKeydown: function(event) {
+    if (event.key == "Escape") {
+      this.prop.setValue(this.committed.value, this.committed.priority);
+      this._onStopDragging(event);
+      event.preventDefault();
+    }
+  },
+
+  _onStopDragging: function(event) {
+    
+    
+    
+    if (this._hasDragged && !this._hasPendingClick) {
+      this.ruleView.childHasDragged = true;
+    }
+    this._isDragging = false;
+    this._hasDragged = false;
+    this._draggingValueCache = null;
+    this.valueSpan.releasePointerCapture(event.pointerId);
+    this.valueSpan.classList.remove(IS_DRAGGING_CLASSNAME);
+    this._draggingController.abort();
+  },
+
+  
+
+
+
+  _addDraggingCapability: function() {
+    if (this.valueSpan.classList.contains(DRAGGABLE_VALUE_CLASSNAME)) {
+      return;
+    }
+    this.valueSpan.classList.add(DRAGGABLE_VALUE_CLASSNAME);
+    this.valueSpan.addEventListener("mousedown", this._draggingOnMouseDown);
+  },
+
+  _removeDraggingCapacity: function() {
+    if (!this.valueSpan.classList.contains(DRAGGABLE_VALUE_CLASSNAME)) {
+      return;
+    }
+    this._draggingController = null;
+    this.valueSpan.classList.remove(DRAGGABLE_VALUE_CLASSNAME);
+    this.valueSpan.removeEventListener("mousedown", this._draggingOnMouseDown);
   },
 
   
