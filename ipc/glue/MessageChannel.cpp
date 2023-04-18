@@ -2113,6 +2113,8 @@ void MessageChannel::AddProfilerMarker(const IPC::Message& aMessage,
         !profiler_is_locked_on_current_thread()) {
       
       [[maybe_unused]] const TimeStamp now = TimeStamp::Now();
+      bool isThreadBeingProfiled =
+          profiler_thread_is_being_profiled_for_markers();
       PROFILER_MARKER(
           "IPC", IPC,
           mozilla::MarkerOptions(
@@ -2123,11 +2125,15 @@ void MessageChannel::AddProfilerMarker(const IPC::Message& aMessage,
               
               
               
-              profiler_thread_is_being_profiled_for_markers()
-                  ? mozilla::MarkerThreadId::CurrentThread()
-                  : mozilla::MarkerThreadId::MainThread()),
+              isThreadBeingProfiled ? mozilla::MarkerThreadId::CurrentThread()
+                                    : mozilla::MarkerThreadId::MainThread()),
           IPCMarker, now, now, pid, aMessage.seqno(), aMessage.type(), mSide,
-          aDirection, MessagePhase::Endpoint, aMessage.is_sync());
+          aDirection, MessagePhase::Endpoint, aMessage.is_sync(),
+          
+          
+          
+          isThreadBeingProfiled ? mozilla::MarkerThreadId{}
+                                : mozilla::MarkerThreadId::CurrentThread());
     }
   }
 }

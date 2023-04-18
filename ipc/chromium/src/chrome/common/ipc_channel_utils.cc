@@ -30,21 +30,27 @@ void AddIPCProfilerMarker(const Message& aMessage, int32_t aOtherPid,
 
     
     [[maybe_unused]] const mozilla::TimeStamp now = mozilla::TimeStamp::Now();
-    PROFILER_MARKER("IPC", IPC,
-                    mozilla::MarkerOptions(
-                        mozilla::MarkerTiming::InstantAt(now),
-                        
-                        
-                        
-                        
-                        
-                        
-                        profiler_thread_is_being_profiled_for_markers()
-                            ? mozilla::MarkerThreadId::CurrentThread()
-                            : mozilla::MarkerThreadId::MainThread()),
-                    IPCMarker, now, now, aOtherPid, aMessage.seqno(),
-                    aMessage.type(), mozilla::ipc::UnknownSide, aDirection,
-                    aPhase, aMessage.is_sync());
+    bool isThreadBeingProfiled =
+        profiler_thread_is_being_profiled_for_markers();
+    PROFILER_MARKER(
+        "IPC", IPC,
+        mozilla::MarkerOptions(
+            mozilla::MarkerTiming::InstantAt(now),
+            
+            
+            
+            
+            
+            
+            isThreadBeingProfiled ? mozilla::MarkerThreadId::CurrentThread()
+                                  : mozilla::MarkerThreadId::MainThread()),
+        IPCMarker, now, now, aOtherPid, aMessage.seqno(), aMessage.type(),
+        mozilla::ipc::UnknownSide, aDirection, aPhase, aMessage.is_sync(),
+        
+        
+        
+        isThreadBeingProfiled ? mozilla::MarkerThreadId{}
+                              : mozilla::MarkerThreadId::CurrentThread());
   }
 }
 

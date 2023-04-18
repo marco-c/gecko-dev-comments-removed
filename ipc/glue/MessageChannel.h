@@ -718,7 +718,8 @@ struct IPCMarker {
       mozilla::TimeStamp aStart, mozilla::TimeStamp aEnd, int32_t aOtherPid,
       int32_t aMessageSeqno, IPC::Message::msgid_t aMessageType,
       mozilla::ipc::Side aSide, mozilla::ipc::MessageDirection aDirection,
-      mozilla::ipc::MessagePhase aPhase, bool aSync) {
+      mozilla::ipc::MessagePhase aPhase, bool aSync,
+      mozilla::MarkerThreadId aOriginThreadId) {
     using namespace mozilla::ipc;
     
     
@@ -737,6 +738,15 @@ struct IPCMarker {
                                : mozilla::MakeStringSpan("receiving"));
     aWriter.StringProperty("phase", IPCPhaseToString(aPhase));
     aWriter.BoolProperty("sync", aSync);
+    if (!aOriginThreadId.IsUnspecified()) {
+      
+      
+      
+      
+      aWriter.IntProperty(
+          "threadId",
+          static_cast<int64_t>(aOriginThreadId.ThreadId().ToNumber()));
+    }
   }
   static mozilla::MarkerSchema MarkerTypeDisplay() {
     return mozilla::MarkerSchema::SpecialFrontendLocation{};
