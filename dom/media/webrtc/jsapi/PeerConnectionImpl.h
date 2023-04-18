@@ -768,6 +768,10 @@ class PeerConnectionImpl final
 
   mozilla::UniquePtr<SignalHandler> mSignalHandler;
 
+  
+  
+  
+  RefPtr<PeerConnectionImpl> mKungFuDeathGrip;
   RefPtr<PacketDumper> mPacketDumper;
 
  public:
