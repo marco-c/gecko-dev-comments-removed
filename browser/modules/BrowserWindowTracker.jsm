@@ -212,4 +212,11 @@ this.BrowserWindowTracker = {
   track(window) {
     return WindowHelper.addWindow(window);
   },
+
+  
+  
+  
+  untrackForTestsOnly(window) {
+    return WindowHelper.removeWindow(window);
+  },
 };
