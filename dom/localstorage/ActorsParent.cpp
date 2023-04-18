@@ -7771,8 +7771,17 @@ PrepareDatastoreOp::CompressFunction::OnFunctionCall(
 
   const nsCString& buffer = compressed.IsVoid() ? value : compressed;
 
-  nsCOMPtr<nsIVariant> result = new storage::BlobVariant(std::make_pair(
-      static_cast<const void*>(buffer.get()), int(buffer.Length())));
+  
+  
+  
+  
+  nsCOMPtr<nsIVariant> result;
+  if (0u == buffer.Length()) {  
+    result = new storage::UTF8TextVariant(buffer);
+  } else {
+    result = new storage::BlobVariant(std::make_pair(
+        static_cast<const void*>(buffer.get()), int(buffer.Length())));
+  }
 
   result.forget(aResult);
   return NS_OK;
