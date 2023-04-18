@@ -5,7 +5,7 @@
 
 
 #include "AntiTrackingLog.h"
-#include "ContentBlocking.h"
+#include "StorageAccessAPIHelper.h"
 #include "AntiTrackingUtils.h"
 #include "TemporaryAccessGrantObserver.h"
 
@@ -64,80 +64,13 @@ bool GetTopLevelWindowId(BrowsingContext* aParentContext, uint32_t aBehavior,
   return aTopLevelInnerWindowId != 0;
 }
 
-
-
-uint32_t CheckCookiePermissionForPrincipal(
-    nsICookieJarSettings* aCookieJarSettings, nsIPrincipal* aPrincipal) {
-  MOZ_ASSERT(aCookieJarSettings);
-  MOZ_ASSERT(aPrincipal);
-
-  uint32_t cookiePermission = nsICookiePermission::ACCESS_DEFAULT;
-  if (!aPrincipal->GetIsContentPrincipal()) {
-    return cookiePermission;
-  }
-
-  nsresult rv =
-      aCookieJarSettings->CookiePermission(aPrincipal, &cookiePermission);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return nsICookiePermission::ACCESS_DEFAULT;
-  }
-
-  
-  return cookiePermission;
-}
-
-int32_t CookiesBehavior(Document* a3rdPartyDocument) {
-  MOZ_ASSERT(a3rdPartyDocument);
-
-  
-  
-  if (BasePrincipal::Cast(a3rdPartyDocument->NodePrincipal())->AddonPolicy()) {
-    return nsICookieService::BEHAVIOR_ACCEPT;
-  }
-
-  return a3rdPartyDocument->CookieJarSettings()->GetCookieBehavior();
-}
-
-int32_t CookiesBehavior(nsILoadInfo* aLoadInfo, nsIURI* a3rdPartyURI) {
-  MOZ_ASSERT(aLoadInfo);
-  MOZ_ASSERT(a3rdPartyURI);
-
-  
-  
-  if (a3rdPartyURI->SchemeIs("moz-extension")) {
-    return nsICookieService::BEHAVIOR_ACCEPT;
-  }
-
-  nsCOMPtr<nsICookieJarSettings> cookieJarSettings;
-  nsresult rv =
-      aLoadInfo->GetCookieJarSettings(getter_AddRefs(cookieJarSettings));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return nsICookieService::BEHAVIOR_REJECT;
-  }
-
-  return cookieJarSettings->GetCookieBehavior();
-}
-
-int32_t CookiesBehavior(nsIPrincipal* aPrincipal,
-                        nsICookieJarSettings* aCookieJarSettings) {
-  MOZ_ASSERT(aPrincipal);
-  MOZ_ASSERT(aCookieJarSettings);
-
-  
-  
-  if (BasePrincipal::Cast(aPrincipal)->AddonPolicy()) {
-    return nsICookieService::BEHAVIOR_ACCEPT;
-  }
-
-  return aCookieJarSettings->GetCookieBehavior();
-}
 }  
 
- RefPtr<ContentBlocking::StorageAccessPermissionGrantPromise>
-ContentBlocking::AllowAccessFor(
+ RefPtr<StorageAccessAPIHelper::StorageAccessPermissionGrantPromise>
+StorageAccessAPIHelper::AllowAccessFor(
     nsIPrincipal* aPrincipal, dom::BrowsingContext* aParentContext,
     ContentBlockingNotifier::StorageAccessPermissionGrantedReason aReason,
-    const ContentBlocking::PerformFinalChecks& aPerformFinalChecks) {
+    const StorageAccessAPIHelper::PerformFinalChecks& aPerformFinalChecks) {
   MOZ_ASSERT(aParentContext);
 
   switch (aReason) {
@@ -350,7 +283,7 @@ ContentBlocking::AllowAccessFor(
   }
 
   if (runInSameProcess) {
-    return ContentBlocking::CompleteAllowAccessFor(
+    return StorageAccessAPIHelper::CompleteAllowAccessFor(
         aParentContext, topLevelWindowId, trackingPrincipal, trackingOrigin,
         behavior, aReason, aPerformFinalChecks);
   }
@@ -380,8 +313,8 @@ ContentBlocking::AllowAccessFor(
                  if (aReason == ContentBlockingNotifier::eOpener &&
                      !bc->IsDiscarded()) {
                    MOZ_ASSERT(bc->IsInProcess());
-                   ContentBlocking::OnAllowAccessFor(bc, trackingOrigin,
-                                                     behavior, aReason);
+                   StorageAccessAPIHelper::OnAllowAccessFor(bc, trackingOrigin,
+                                                            behavior, aReason);
                  }
                  return StorageAccessPermissionGrantPromise::CreateAndResolve(
                      aValue.ResolveValue().value(), __func__);
@@ -422,8 +355,8 @@ ContentBlocking::AllowAccessFor(
 
 
 
- RefPtr<ContentBlocking::StorageAccessPermissionGrantPromise>
-ContentBlocking::CompleteAllowAccessFor(
+ RefPtr<StorageAccessAPIHelper::StorageAccessPermissionGrantPromise>
+StorageAccessAPIHelper::CompleteAllowAccessFor(
     dom::BrowsingContext* aParentContext, uint64_t aTopLevelWindowId,
     nsIPrincipal* aTrackingPrincipal, const nsCString& aTrackingOrigin,
     uint32_t aCookieBehavior,
@@ -507,8 +440,8 @@ ContentBlocking::CompleteAllowAccessFor(
     
     
     if (aParentContext->IsInProcess()) {
-      ContentBlocking::OnAllowAccessFor(aParentContext, trackingOrigin,
-                                        aCookieBehavior, aReason);
+      StorageAccessAPIHelper::OnAllowAccessFor(aParentContext, trackingOrigin,
+                                               aCookieBehavior, aReason);
     } else {
       MOZ_ASSERT(XRE_IsParentProcess());
 
@@ -560,7 +493,7 @@ ContentBlocking::CompleteAllowAccessFor(
                   ContentBlockingUserInteraction::Observe(trackingPrincipal);
                 }
                 return StorageAccessPermissionGrantPromise::CreateAndResolve(
-                    ContentBlocking::eAllow, __func__);
+                    StorageAccessAPIHelper::eAllow, __func__);
               });
     }
 
@@ -614,7 +547,7 @@ ContentBlocking::CompleteAllowAccessFor(
   return storePermission(false);
 }
 
- void ContentBlocking::OnAllowAccessFor(
+ void StorageAccessAPIHelper::OnAllowAccessFor(
     dom::BrowsingContext* aParentContext, const nsCString& aTrackingOrigin,
     uint32_t aCookieBehavior,
     ContentBlockingNotifier::StorageAccessPermissionGrantedReason aReason) {
@@ -622,8 +555,8 @@ ContentBlocking::CompleteAllowAccessFor(
 
   
   
-  ContentBlocking::UpdateAllowAccessOnCurrentProcess(aParentContext,
-                                                     aTrackingOrigin);
+  StorageAccessAPIHelper::UpdateAllowAccessOnCurrentProcess(aParentContext,
+                                                            aTrackingOrigin);
 
   
   nsCOMPtr<nsPIDOMWindowInner> parentInner =
@@ -676,8 +609,8 @@ ContentBlocking::CompleteAllowAccessFor(
 }
 
 
-RefPtr<mozilla::ContentBlocking::ParentAccessGrantPromise>
-ContentBlocking::SaveAccessForOriginOnParentProcess(
+RefPtr<mozilla::StorageAccessAPIHelper::ParentAccessGrantPromise>
+StorageAccessAPIHelper::SaveAccessForOriginOnParentProcess(
     uint64_t aTopLevelWindowId, BrowsingContext* aParentContext,
     nsIPrincipal* aTrackingPrincipal, int aAllowMode,
     uint64_t aExpirationTime) {
@@ -707,17 +640,17 @@ ContentBlocking::SaveAccessForOriginOnParentProcess(
   
   
   
-  ContentBlocking::UpdateAllowAccessOnParentProcess(aParentContext,
-                                                    trackingOrigin);
+  StorageAccessAPIHelper::UpdateAllowAccessOnParentProcess(aParentContext,
+                                                           trackingOrigin);
 
-  return ContentBlocking::SaveAccessForOriginOnParentProcess(
+  return StorageAccessAPIHelper::SaveAccessForOriginOnParentProcess(
       wgp->DocumentPrincipal(), aTrackingPrincipal, aAllowMode,
       aExpirationTime);
 }
 
 
-RefPtr<mozilla::ContentBlocking::ParentAccessGrantPromise>
-ContentBlocking::SaveAccessForOriginOnParentProcess(
+RefPtr<mozilla::StorageAccessAPIHelper::ParentAccessGrantPromise>
+StorageAccessAPIHelper::SaveAccessForOriginOnParentProcess(
     nsIPrincipal* aParentPrincipal, nsIPrincipal* aTrackingPrincipal,
     int aAllowMode, uint64_t aExpirationTime) {
   MOZ_ASSERT(XRE_IsParentProcess());
@@ -803,7 +736,8 @@ ContentBlocking::SaveAccessForOriginOnParentProcess(
 }
 
 
-Maybe<bool> ContentBlocking::CheckCookiesPermittedDecidesStorageAccessAPI(
+Maybe<bool>
+StorageAccessAPIHelper::CheckCookiesPermittedDecidesStorageAccessAPI(
     nsICookieJarSettings* aCookieJarSettings,
     nsIPrincipal* aRequestingPrincipal) {
   MOZ_ASSERT(aCookieJarSettings);
@@ -825,7 +759,7 @@ Maybe<bool> ContentBlocking::CheckCookiesPermittedDecidesStorageAccessAPI(
 
 
 RefPtr<MozPromise<Maybe<bool>, nsresult, true>>
-ContentBlocking::AsyncCheckCookiesPermittedDecidesStorageAccessAPI(
+StorageAccessAPIHelper::AsyncCheckCookiesPermittedDecidesStorageAccessAPI(
     dom::BrowsingContext* aBrowsingContext,
     nsIPrincipal* aRequestingPrincipal) {
   MOZ_ASSERT(XRE_IsContentProcess());
@@ -850,7 +784,7 @@ ContentBlocking::AsyncCheckCookiesPermittedDecidesStorageAccessAPI(
 }
 
 
-Maybe<bool> ContentBlocking::CheckBrowserSettingsDecidesStorageAccessAPI(
+Maybe<bool> StorageAccessAPIHelper::CheckBrowserSettingsDecidesStorageAccessAPI(
     nsICookieJarSettings* aCookieJarSettings, bool aThirdParty,
     bool aOnRejectForeignAllowlist, bool aIsOnThirdPartySkipList,
     bool aIsThirdPartyTracker) {
@@ -898,7 +832,7 @@ Maybe<bool> ContentBlocking::CheckBrowserSettingsDecidesStorageAccessAPI(
 }
 
 
-Maybe<bool> ContentBlocking::CheckCallingContextDecidesStorageAccessAPI(
+Maybe<bool> StorageAccessAPIHelper::CheckCallingContextDecidesStorageAccessAPI(
     Document* aDocument, bool aRequestingStorageAccess) {
   MOZ_ASSERT(aDocument);
   
@@ -970,7 +904,8 @@ Maybe<bool> ContentBlocking::CheckCallingContextDecidesStorageAccessAPI(
 }
 
 
-Maybe<bool> ContentBlocking::CheckSameSiteCallingContextDecidesStorageAccessAPI(
+Maybe<bool>
+StorageAccessAPIHelper::CheckSameSiteCallingContextDecidesStorageAccessAPI(
     dom::Document* aDocument, bool aRequireUserActivation) {
   MOZ_ASSERT(aDocument);
   if (aRequireUserActivation) {
@@ -1006,7 +941,8 @@ Maybe<bool> ContentBlocking::CheckSameSiteCallingContextDecidesStorageAccessAPI(
 }
 
 
-Maybe<bool> ContentBlocking::CheckExistingPermissionDecidesStorageAccessAPI(
+Maybe<bool>
+StorageAccessAPIHelper::CheckExistingPermissionDecidesStorageAccessAPI(
     dom::Document* aDocument) {
   MOZ_ASSERT(aDocument);
   if (aDocument->StorageAccessSandboxed()) {
@@ -1041,7 +977,7 @@ Maybe<bool> ContentBlocking::CheckExistingPermissionDecidesStorageAccessAPI(
 
 
 
-void ContentBlocking::UpdateAllowAccessOnCurrentProcess(
+void StorageAccessAPIHelper::UpdateAllowAccessOnCurrentProcess(
     BrowsingContext* aParentContext, const nsACString& aTrackingOrigin) {
   MOZ_ASSERT(aParentContext && aParentContext->IsInProcess());
 
@@ -1076,7 +1012,7 @@ void ContentBlocking::UpdateAllowAccessOnCurrentProcess(
 }
 
 
-void ContentBlocking::UpdateAllowAccessOnParentProcess(
+void StorageAccessAPIHelper::UpdateAllowAccessOnParentProcess(
     BrowsingContext* aParentContext, const nsACString& aTrackingOrigin) {
   MOZ_ASSERT(XRE_IsParentProcess());
 
