@@ -8,7 +8,7 @@ function run_test() {
     "resource://gre/modules/jsdebugger.jsm"
   );
   addDebuggerToGlobal(this);
-  const g = testGlobal("test1");
+  const g = createTestGlobal("test1");
 
   const dbg = makeDebugger();
   dbg.addDebuggee(g);
@@ -24,7 +24,7 @@ function run_test() {
 
   g.eval("function stopMe(arg) {debugger;}");
 
-  const g2 = testGlobal("test2");
+  const g2 = createTestGlobal("test2");
   g2.g = g;
   
   
