@@ -1416,7 +1416,6 @@ function waitForTitleChange(toolbox) {
 
 
 
-
 function createTestHTTPServer() {
   const { HttpServer } = ChromeUtils.import(
     "resource://testing-common/httpd.js"

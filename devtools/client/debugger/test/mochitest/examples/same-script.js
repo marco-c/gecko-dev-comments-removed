@@ -1,0 +1,9 @@
+
+
+
+function sameSourceDistinctThread() {
+  console.log("same source distinct thread");
+}
+
+addEventListener("click", sameSourceDistinctThread);
+addEventListener("message", sameSourceDistinctThread);

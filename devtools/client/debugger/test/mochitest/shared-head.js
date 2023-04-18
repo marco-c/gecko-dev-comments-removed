@@ -46,7 +46,11 @@ const {
   resetSchemaVersion,
 } = require("devtools/client/debugger/src/utils/prefs");
 
-const { isGeneratedId } = require("devtools/client/shared/source-map/index");
+const {
+  isGeneratedId,
+  isOriginalId,
+  originalToGeneratedId,
+} = require("devtools/client/shared/source-map/index");
 
 
 
@@ -645,6 +649,28 @@ function findSource(
   return source;
 }
 
+
+
+
+
+
+
+
+
+function findSourceInThread(dbg, filenameOrUrl, threadName) {
+  const sources = dbg.selectors.getSourceList();
+  return sources.find(s => {
+    const sourceFileName = s.url
+      ? s.url.substring(s.url.lastIndexOf("/") + 1)
+      : "";
+    if (sourceFileName == filenameOrUrl || s.url == filenameOrUrl) {
+      const thread = dbg.selectors.getThread(s.thread);
+      return thread.name == threadName;
+    }
+    return false;
+  });
+}
+
 function findSourceContent(dbg, url, opts) {
   const source = findSource(dbg, url, opts);
 
@@ -698,8 +724,10 @@ function getThreadContext(dbg) {
 
 
 
+
 async function selectSource(dbg, url, line, column) {
   const source = findSource(dbg, url);
+
   await dbg.actions.selectLocation(
     getContext(dbg),
     { sourceId: source.id, line, column },
