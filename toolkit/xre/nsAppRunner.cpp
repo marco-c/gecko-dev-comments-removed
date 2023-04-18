@@ -708,7 +708,10 @@ nsIXULRuntime::ContentWin32kLockdownState GetLiveWin32kLockdownState() {
     return nsIXULRuntime::ContentWin32kLockdownState::DisabledByE10S;
   }
 
-  if (!IsWin8OrLater()) {
+  
+  
+  
+  if (!IsWin10FallCreatorsUpdateOrLater()) {
     return nsIXULRuntime::ContentWin32kLockdownState::
         OperatingSystemNotSupported;
   }
@@ -5903,6 +5906,10 @@ int XREMain::XRE_main(int argc, char* argv[], const BootstrapConfig& aConfig) {
   
   rv = XRE_mainRun();
 
+#if defined(XP_WIN)
+  mozilla::widget::StopAudioSession();
+#endif
+
 #ifdef MOZ_INSTRUMENT_EVENT_LOOP
   mozilla::ShutdownEventTracing();
 #endif
@@ -5919,10 +5926,6 @@ int XREMain::XRE_main(int argc, char* argv[], const BootstrapConfig& aConfig) {
 #endif 
 
   mScopedXPCOM = nullptr;
-
-#if defined(XP_WIN)
-  mozilla::widget::StopAudioSession();
-#endif
 
   
   
