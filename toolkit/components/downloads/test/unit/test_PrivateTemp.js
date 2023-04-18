@@ -10,6 +10,11 @@
 
 
 add_task(async function test_private_temp() {
+  Services.prefs.setBoolPref(
+    "browser.download.improvements_to_download_panel",
+    false
+  );
+
   let download = await promiseStartExternalHelperAppServiceDownload(
     httpUrl("empty.txt")
   );
@@ -21,4 +26,9 @@ add_task(async function test_private_temp() {
 
   
   equal(targetFile.parent.permissions, 448);
+
+  Services.prefs.setBoolPref(
+    "browser.download.improvements_to_download_panel",
+    true
+  );
 });
