@@ -465,7 +465,7 @@ nsresult TimeoutManager::SetTimeout(TimeoutHandler* aHandler, int32_t interval,
   
   
   nsCOMPtr<Document> doc = mWindow.GetExtantDoc();
-  if (!doc || mWindow.IsDying()) {
+  if (!doc) {
     return NS_OK;
   }
 
