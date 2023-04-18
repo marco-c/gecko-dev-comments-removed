@@ -41,13 +41,6 @@ if CONFIG['MOZ_SANDBOX']:
 if CONFIG["MOZ_USING_WASM_SANDBOXING"] and CONFIG["COMPILE_ENVIRONMENT"]:
     DIRS += ["/security/rlbox"]
 
-DIRS += [
-    
-    '/security/certverifier',
-    
-    '/security/apps',
-]
-
 
 if CONFIG['MOZ_UPDATER']:
     DIRS += ['/modules/libmar']
@@ -134,6 +127,7 @@ DIRS += [
     '/tools/power',
     '/tools/profiler',
     '/extensions/spellcheck',
+    '/security/certverifier',
     '/security/manager',
     '/toolkit',
 ]
