@@ -20,6 +20,7 @@
 
 
 #define IDI_PBMODE 5
+#define IDI_DOCUMENT_PDF 6
 #ifndef IDI_APPLICATION
 #  define IDI_APPLICATION 32512
 #endif
