@@ -241,11 +241,6 @@ check_and_add_gcc_warning(
 )
 
 
-check_and_add_gcc_warning(
-    "-Wthread-safety",
-    when=depends(c_compiler)(lambda c: c.type == "clang"),
-)
-
 
 add_old_configure_assignment("_WARNINGS_CFLAGS", warnings_flags.cflags)
 add_old_configure_assignment("_WARNINGS_CXXFLAGS", warnings_flags.cxxflags)
