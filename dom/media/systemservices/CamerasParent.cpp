@@ -209,7 +209,7 @@ nsresult CamerasParent::DispatchToVideoCaptureThread(RefPtr<Runnable> event) {
 void CamerasParent::StopVideoCapture() {
   LOG("%s", __PRETTY_FUNCTION__);
   
-  
+  ipc::AssertIsOnBackgroundThread();
   
   RefPtr<CamerasParent> self(this);
   DebugOnly<nsresult> rv =
@@ -1072,7 +1072,13 @@ nsString CamerasParent::GetNewName() {
 }
 
 NS_IMETHODIMP CamerasParent::BlockShutdown(nsIAsyncShutdownClient*) {
-  StopVideoCapture();
+  mPBackgroundEventTarget->Dispatch(
+      NS_NewRunnableFunction(__func__, [self = RefPtr(this)]() {
+        
+        
+        
+        (void)Send__delete__(self);
+      }));
   return NS_OK;
 }
 
