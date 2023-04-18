@@ -1188,12 +1188,12 @@ nsIFrame* nsCSSRendering::FindBackgroundStyleFrame(nsIFrame* aForFrame) {
   
   
   
-  if (!bodyContent || aForFrame->StyleDisplay()->IsContainAny()) {
+  if (!bodyContent) {
     return aForFrame;
   }
 
   nsIFrame* bodyFrame = bodyContent->GetPrimaryFrame();
-  if (!bodyFrame || bodyFrame->StyleDisplay()->IsContainAny()) {
+  if (!bodyFrame) {
     return aForFrame;
   }
 
@@ -1242,14 +1242,12 @@ inline bool FindElementBackground(const nsIFrame* aForFrame,
   
 
   nsIContent* content = aForFrame->GetContent();
-  if (!content || content->NodeInfo()->NameAtom() != nsGkAtoms::body) {
+  if (!content || content->NodeInfo()->NameAtom() != nsGkAtoms::body)
     return true;  
-  }
   
   
 
-  if (aForFrame->Style()->GetPseudoType() != PseudoStyleType::NotPseudo ||
-      aForFrame->StyleDisplay()->IsContainAny()) {
+  if (aForFrame->Style()->GetPseudoType() != PseudoStyleType::NotPseudo) {
     return true;  
   }
 
@@ -1257,14 +1255,13 @@ inline bool FindElementBackground(const nsIFrame* aForFrame,
   Document* document = content->OwnerDoc();
 
   dom::Element* bodyContent = document->GetBodyElement();
-  if (bodyContent != content) {
+  if (bodyContent != content)
     return true;  
-  }
 
   
   
   
-  if (!aRootElementFrame || aRootElementFrame->StyleDisplay()->IsContainAny()) {
+  if (!aRootElementFrame) {
     return true;
   }
 

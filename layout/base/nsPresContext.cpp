@@ -1321,10 +1321,6 @@ static Element* GetPropagatedScrollStylesForViewport(
     return docElement;
   }
 
-  if (rootStyle && rootStyle->StyleDisplay()->IsContainAny()) {
-    return nullptr;
-  }
-
   
   
   
@@ -1343,10 +1339,6 @@ static Element* GetPropagatedScrollStylesForViewport(
              "GetBodyElement returned something bogus");
 
   const auto* bodyStyle = Servo_Element_GetMaybeOutOfDateStyle(bodyElement);
-  if (bodyStyle && bodyStyle->StyleDisplay()->IsContainAny()) {
-    return nullptr;
-  }
-
   if (CheckOverflow(bodyStyle, aStyles)) {
     
     return bodyElement;
