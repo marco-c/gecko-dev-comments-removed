@@ -1536,6 +1536,38 @@ var PlacesUIUtils = {
     Services.obs.addObserver(obs, "Migration:ItemAfterMigrate");
     Services.obs.addObserver(obs, "Migration:ItemError");
   },
+
+  
+
+
+
+
+
+
+
+  setupSpeculativeConnection(url, window) {
+    if (
+      !Services.prefs.getBoolPref(
+        "browser.places.speculativeConnect.enabled",
+        true
+      )
+    ) {
+      return;
+    }
+    if (!url.startsWith("http")) {
+      return;
+    }
+    try {
+      let uri = url instanceof Ci.nsIURI ? url : Services.io.newURI(url);
+      Services.io.speculativeConnect(
+        uri,
+        window.gBrowser.contentPrincipal,
+        null
+      );
+    } catch (ex) {
+      
+    }
+  },
 };
 
 

@@ -1102,6 +1102,9 @@ pref("places.frecency.unvisitedTypedBonus", 200);
 pref("places.forgetThisSite.clearByBaseDomain", true);
 
 
+pref("browser.places.speculativeConnect.enabled", true);
+
+
 
 
 
