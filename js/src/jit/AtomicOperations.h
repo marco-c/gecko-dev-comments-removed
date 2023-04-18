@@ -11,6 +11,7 @@
 
 #include <string.h>
 
+#include "jit/AtomicOperationsGenerated.h"
 #include "vm/SharedMem.h"
 
 namespace js {
@@ -149,13 +150,6 @@ class AtomicOperations {
                                          size_t nbytes);
 
  public:
-  
-  
-  static bool Initialize();
-
-  
-  static void ShutDown();
-
   
   
   
@@ -347,45 +341,12 @@ constexpr inline bool AtomicOperations::isLockfreeJS(int32_t size) {
 
 
 
-#if defined(JS_SIMULATOR_MIPS32)
-#  if defined(__clang__) || defined(__GNUC__)
-#    include "jit/mips-shared/AtomicOperations-mips-shared.h"
-#  else
-#    error "AtomicOperations on MIPS-32 for unknown compiler"
-#  endif
-#elif defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || \
-    defined(_M_IX86)
-#  if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64)
-#    include "jit/shared/AtomicOperations-shared-jit.h"
-#  else
-#    include "jit/shared/AtomicOperations-feeling-lucky.h"
-#  endif
-#elif defined(__arm__)
-#  if defined(JS_CODEGEN_ARM)
-#    include "jit/shared/AtomicOperations-shared-jit.h"
-#  else
-#    include "jit/shared/AtomicOperations-feeling-lucky.h"
-#  endif
-#elif defined(__aarch64__) || defined(_M_ARM64)
-#  if defined(JS_CODEGEN_ARM64)
-#    include "jit/shared/AtomicOperations-shared-jit.h"
-#  else
-#    include "jit/shared/AtomicOperations-feeling-lucky.h"
-#  endif
-#elif defined(__mips__)
-#  if defined(__clang__) || defined(__GNUC__)
-#    include "jit/mips-shared/AtomicOperations-mips-shared.h"
-#  else
-#    error "AtomicOperations on MIPS for an unknown compiler"
-#  endif
-#elif defined(__ppc__) || defined(__PPC__) || defined(__sparc__) ||     \
-    defined(__ppc64__) || defined(__PPC64__) || defined(__ppc64le__) || \
-    defined(__PPC64LE__) || defined(__alpha__) || defined(__hppa__) ||  \
-    defined(__sh__) || defined(__s390__) || defined(__s390x__) ||       \
-    defined(__m68k__) || defined(__riscv) || defined(__wasi__)
-#  include "jit/shared/AtomicOperations-feeling-lucky.h"
+#ifdef JS_HAVE_GENERATED_ATOMIC_OPS
+#  include "jit/shared/AtomicOperations-shared-jit.h"
+#elif defined(JS_SIMULATOR_MIPS32) || defined(__mips__)
+#  include "jit/mips-shared/AtomicOperations-mips-shared.h"
 #else
-#  error "No AtomicOperations support provided for this platform"
+#  include "jit/shared/AtomicOperations-feeling-lucky.h"
 #endif
 
 #endif  
