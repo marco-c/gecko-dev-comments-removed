@@ -84,21 +84,23 @@ var openInspectorSidebarTab = async function(id) {
 
 
 
-function openRuleView() {
-  return openInspector().then(data => {
-    const view = data.inspector.getPanel("ruleview").view;
+async function openRuleView() {
+  const { inspector, toolbox, highlighterTestFront } = await openInspector();
 
-    
-    
-    view.debounce = manualDebounce();
+  const ruleViewPanel = inspector.getPanel("ruleview");
+  await ruleViewPanel.readyPromise;
+  const view = ruleViewPanel.view;
 
-    return {
-      toolbox: data.toolbox,
-      inspector: data.inspector,
-      highlighterTestFront: data.highlighterTestFront,
-      view,
-    };
-  });
+  
+  
+  view.debounce = manualDebounce();
+
+  return {
+    toolbox,
+    inspector,
+    highlighterTestFront,
+    view,
+  };
 }
 
 
