@@ -301,12 +301,11 @@ var interfaceNamesInGlobalScope = [
   
   { name: "TextEncoder", insecureContext: true },
   
-  { name: "TransformStream", insecureContext: true, nightly: true },
+  { name: "TransformStream", insecureContext: true },
   
   {
     name: "TransformStreamDefaultController",
     insecureContext: true,
-    nightly: true,
   },
   
   { name: "XMLHttpRequest", insecureContext: true },
