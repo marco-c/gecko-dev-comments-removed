@@ -29,6 +29,7 @@ assertEq(!!source.text, true);
 
 
 source.url;
+source.element;
 source.displayURL;
 source.introductionOffset;
 source.elementAttributeName;
