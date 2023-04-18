@@ -145,6 +145,13 @@ TableWidget.prototype = {
   
 
 
+  get hasScrollbar() {
+    return this.tbody.scrollHeight > this.tbody.clientHeight;
+  },
+
+  
+
+
   get headersContextMenu() {
     if (this.menupopup) {
       return this.menupopup.id;
