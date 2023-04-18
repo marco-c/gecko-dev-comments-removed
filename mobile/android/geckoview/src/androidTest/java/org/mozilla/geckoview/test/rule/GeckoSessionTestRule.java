@@ -2423,6 +2423,11 @@ public class GeckoSessionTestRule implements TestRule {
   }
 
   
+  public void killGpuProcess() {
+    webExtensionApiCall("KillGpuProcess", null);
+  }
+
+  
   public void crashGpuProcess() {
     webExtensionApiCall("CrashGpuProcess", null);
   }
