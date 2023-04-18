@@ -1,6 +1,8 @@
 
 
+
 importScripts("resource://gre/modules/workers/require.js");
+
 importScripts("resource://gre/modules/osfile.jsm");
 
 function info(x) {
