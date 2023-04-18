@@ -434,3 +434,21 @@ async function synthesizeUrlKeyInput(toolbox, inputEl, url) {
   info("Submit URL to navigate to");
   EventUtils.synthesizeKey("KEY_Enter");
 }
+
+
+
+
+
+
+
+
+function clickOnAddonWidget(addonId) {
+  
+  const widgetId = addonId.toLowerCase().replace(/[^a-z0-9_-]/g, "_");
+  const browserActionId = widgetId + "-browser-action";
+  const browserActionEl = window.document.getElementById(browserActionId);
+  ok(browserActionEl, "Got the browserAction button from the browser UI");
+
+  info("Show the web extension popup");
+  browserActionEl.click();
+}

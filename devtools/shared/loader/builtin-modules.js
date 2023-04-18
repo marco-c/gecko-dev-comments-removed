@@ -22,6 +22,8 @@ const systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
 
 const {
   BrowsingContext,
+  WindowGlobalParent,
+  WindowGlobalChild,
   console,
   DebuggerNotificationObserver,
   DOMPoint,
@@ -253,6 +255,8 @@ exports.globals = {
   Blob,
   btoa,
   BrowsingContext,
+  WindowGlobalParent,
+  WindowGlobalChild,
   console,
   crypto,
   CSS,

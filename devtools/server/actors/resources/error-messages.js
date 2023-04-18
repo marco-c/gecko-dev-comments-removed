@@ -46,6 +46,7 @@ class ErrorMessageWatcher extends nsIConsoleListenerWatcher {
       return false;
     }
 
+    
     if (this.isProcessTarget(targetActor)) {
       
       const isCachedFromPrivateWindow =
@@ -78,14 +79,9 @@ class ErrorMessageWatcher extends nsIConsoleListenerWatcher {
       return false;
     }
 
-    if (targetActor.ignoreSubFrames) {
-      return (
-        WebConsoleUtils.getInnerWindowId(targetActor.window) ===
-        message.innerWindowID
-      );
-    }
-
-    const ids = WebConsoleUtils.getInnerWindowIDsForFrames(targetActor.window);
+    const ids = targetActor.windows.map(window =>
+      WebConsoleUtils.getInnerWindowId(window)
+    );
     return ids.includes(message.innerWindowID);
   }
 

@@ -325,8 +325,9 @@ function Toolbox(
   this._onResourceUpdated = this._onResourceUpdated.bind(this);
   this._onToolSelectedStopPicker = this._onToolSelectedStopPicker.bind(this);
 
+  
   this._throttledSetToolboxButtons = throttle(
-    () => this.component.setToolboxButtons(this.toolbarButtons),
+    () => this.component?.setToolboxButtons(this.toolbarButtons),
     500,
     this
   );
