@@ -170,7 +170,7 @@ class ReftestRunner(MozbuildObject):
 
         
         
-        args.disableFission = True
+        args.fission = False
 
         
         

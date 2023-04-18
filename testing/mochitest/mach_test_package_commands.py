@@ -157,9 +157,6 @@ def run_geckoview_junit(context, args):
 
     from runjunit import run_test_harness
 
-    
-    args["disable_fission"] = True
-
     logger.info("mach calling runjunit with args: " + str(args))
     return run_test_harness(parser, args)
 
