@@ -257,6 +257,8 @@ function TypedArrayEvery(callbackfn) {
     return true;
 }
 
+SetIsInlinableLargeFunction(TypedArrayEvery);
+
 
 
 function TypedArrayFill(value, start = 0, end = undefined) {
@@ -497,6 +499,8 @@ function TypedArrayForEach(callbackfn) {
     return undefined;
 }
 
+SetIsInlinableLargeFunction(TypedArrayForEach);
+
 
 
 
@@ -736,6 +740,8 @@ function TypedArrayMap(callbackfn) {
     
     return A;
 }
+
+SetIsInlinableLargeFunction(TypedArrayMap);
 
 
 
@@ -979,6 +985,8 @@ function TypedArraySome(callbackfn) {
     return false;
 }
 
+SetIsInlinableLargeFunction(TypedArraySome);
+
 
 
 function TypedArraySort(comparefn) {
@@ -1190,6 +1198,8 @@ function TypedArrayAt(index) {
     
     return obj[k];
 }
+
+SetIsInlinableLargeFunction(TypedArrayAt);
 
 
 
