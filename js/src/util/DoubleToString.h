@@ -27,19 +27,6 @@ extern void DestroyDtoaState(DtoaState* state);
 
 
 
-
-
-
-
-
-
-
-
-double js_strtod_harder(DtoaState* state, const char* s00, char** se);
-
-
-
-
 #define DTOSTR_STANDARD_BUFFER_SIZE 26
 
 

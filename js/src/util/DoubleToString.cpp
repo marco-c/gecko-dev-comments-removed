@@ -62,10 +62,6 @@ static inline void dtoa_free(void* p) { return js_free(p); }
 #define FREE dtoa_free
 #include "dtoa.c"
 
-double js_strtod_harder(DtoaState* state, const char* s00, char** se) {
-  return _strtod(state, s00, se);
-}
-
 
 
 
