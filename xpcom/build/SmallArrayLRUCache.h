@@ -166,7 +166,7 @@ class SmallArrayLRUCache {
 #endif  
 
  private:
-  void Clear(const mozilla::OffTheBooksMutexAutoLock&) {
+  void Clear(const mozilla::OffTheBooksMutexAutoLock&) REQUIRES(mMutex) {
     for (KeyAndValue* item = &mLRUArray[0]; item != &mLRUArray[mSize]; ++item) {
       item->mValue = Value{};
     }
@@ -186,11 +186,11 @@ class SmallArrayLRUCache {
   constexpr static unsigned ShutdownSize = unsigned(-1);
 
   mozilla::OffTheBooksMutex mMutex{"LRU cache"};
-  unsigned mSize = 0;
-  KeyAndValue mLRUArray[LRUCapacity];
+  unsigned mSize GUARDED_BY(mMutex) = 0;
+  KeyAndValue mLRUArray[LRUCapacity] GUARDED_BY(mMutex);
 #ifdef SMALLARRAYLRUCACHE_STATS
   
-  unsigned mCacheFoundAt[LRUCapacity + 1] = {0u};
+  unsigned mCacheFoundAt[LRUCapacity + 1] GUARDED_BY(mMutex) = {0u};
 #endif  
 };
 

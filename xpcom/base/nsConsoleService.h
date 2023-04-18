@@ -87,26 +87,27 @@ class nsConsoleService final : public nsIConsoleService, public nsIObserver {
   nsresult MaybeForwardScriptError(nsIConsoleMessage* aMessage, bool* sent);
 
   void ClearMessagesForWindowID(const uint64_t innerID);
-  void ClearMessages();
+  void ClearMessages() REQUIRES(mLock);
 
-  mozilla::LinkedList<MessageElement> mMessages;
-
-  
-  uint32_t mCurrentSize;
+  mozilla::LinkedList<MessageElement> mMessages GUARDED_BY(mLock);
 
   
-  uint32_t mMaximumSize;
+  uint32_t mCurrentSize GUARDED_BY(mLock);
 
+  
+  const uint32_t mMaximumSize;
+
+  
   
   
   
   bool mDeliveringMessage;
 
   
-  ListenerHash mListeners;
+  ListenerHash mListeners GUARDED_BY(mLock);
 
   
-  mozilla::Mutex mLock MOZ_UNANNOTATED;
+  mozilla::Mutex mLock;
 };
 
 #endif 

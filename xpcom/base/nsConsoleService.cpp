@@ -59,12 +59,12 @@ nsConsoleService::MessageElement::~MessageElement() = default;
 
 nsConsoleService::nsConsoleService()
     : mCurrentSize(0),
+      
+      
+      
+      mMaximumSize(250),
       mDeliveringMessage(false),
       mLock("nsConsoleService.mLock") {
-  
-  
-  
-  mMaximumSize = 250;
 
 #ifdef XP_WIN
   
