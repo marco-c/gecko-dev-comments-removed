@@ -2,11 +2,8 @@
 
 
 
-import { parse } from "../../utils/url";
-
-import { isPretty } from "../source";
 import { getURL } from "./getURL";
-const IGNORED_URLS = ["debugger eval code", "XStringBundle"];
+import { parse } from "../../utils/url";
 
 export function getPathParts(url, thread, mainThreadHost) {
   const parts = url.path.split("/");
@@ -104,20 +101,6 @@ export function getFileExtension(source) {
 
   const lastIndex = path.lastIndexOf(".");
   return lastIndex !== -1 ? path.slice(lastIndex + 1) : "";
-}
-
-export function isNotJavaScript(source) {
-  return ["css", "svg", "png"].includes(getFileExtension(source));
-}
-
-export function isInvalidUrl(url, source) {
-  return (
-    !source.url ||
-    !url.group ||
-    isNotJavaScript(source) ||
-    IGNORED_URLS.includes(url) ||
-    isPretty(source)
-  );
 }
 
 export function partIsFile(index, parts, url) {
