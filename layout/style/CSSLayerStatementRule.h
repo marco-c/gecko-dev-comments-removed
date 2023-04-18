@@ -1,0 +1,49 @@
+
+
+
+
+
+
+#ifndef mozilla_dom_CSSLayerStatementRule_h
+#define mozilla_dom_CSSLayerStatementRule_h
+
+#include "mozilla/css/Rule.h"
+#include "mozilla/ServoBindingTypes.h"
+
+namespace mozilla::dom {
+
+class CSSLayerStatementRule final : public css::Rule {
+ public:
+  CSSLayerStatementRule(RefPtr<RawServoLayerStatementRule> aRawRule,
+                        StyleSheet* aSheet, css::Rule* aParentRule,
+                        uint32_t aLine, uint32_t aColumn);
+
+  NS_DECL_ISUPPORTS_INHERITED
+
+  bool IsCCLeaf() const final { return css::Rule::IsCCLeaf(); }
+
+#ifdef DEBUG
+  void List(FILE* out = stdout, int32_t aIndent = 0) const final;
+#endif
+
+  RawServoLayerStatementRule* Raw() const { return mRawRule; }
+  void SetRawAfterClone(RefPtr<RawServoLayerStatementRule>);
+
+  
+  StyleCssRuleType Type() const final;
+  void GetCssText(nsACString& aCssText) const final;
+
+  void GetNameList(nsTArray<nsCString>&) const;
+
+  size_t SizeOfIncludingThis(MallocSizeOf) const override;
+  JSObject* WrapObject(JSContext*, JS::Handle<JSObject*>) override;
+
+ private:
+  ~CSSLayerStatementRule() = default;
+
+  RefPtr<RawServoLayerStatementRule> mRawRule;
+};
+
+}  
+
+#endif  

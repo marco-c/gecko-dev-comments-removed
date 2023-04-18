@@ -4,17 +4,17 @@
 
 
 
-#ifndef mozilla_dom_CSSLayerRule_h
-#define mozilla_dom_CSSLayerRule_h
+#ifndef mozilla_dom_CSSLayerBlockRule_h
+#define mozilla_dom_CSSLayerBlockRule_h
 
 #include "mozilla/css/GroupRule.h"
 #include "mozilla/ServoBindingTypes.h"
 
 namespace mozilla::dom {
 
-class CSSLayerRule : public css::GroupRule {
+class CSSLayerBlockRule final : public css::GroupRule {
  public:
-  CSSLayerRule(RefPtr<RawServoLayerRule> aRawRule, StyleSheet* aSheet,
+  CSSLayerBlockRule(RefPtr<RawServoLayerBlockRule> aRawRule, StyleSheet* aSheet,
                css::Rule* aParentRule, uint32_t aLine, uint32_t aColumn);
 
   NS_DECL_ISUPPORTS_INHERITED
@@ -23,20 +23,23 @@ class CSSLayerRule : public css::GroupRule {
   void List(FILE* out = stdout, int32_t aIndent = 0) const final;
 #endif
 
-  RawServoLayerRule* Raw() const { return mRawRule; }
-  void SetRawAfterClone(RefPtr<RawServoLayerRule>);
+  RawServoLayerBlockRule* Raw() const { return mRawRule; }
+  void SetRawAfterClone(RefPtr<RawServoLayerBlockRule>);
 
   
   StyleCssRuleType Type() const final;
   void GetCssText(nsACString& aCssText) const final;
 
+  void GetName(nsACString&) const;
+
+
   size_t SizeOfIncludingThis(MallocSizeOf) const override;
   JSObject* WrapObject(JSContext*, JS::Handle<JSObject*>) override;
 
  private:
-  ~CSSLayerRule() = default;
+  ~CSSLayerBlockRule() = default;
 
-  RefPtr<RawServoLayerRule> mRawRule;
+  RefPtr<RawServoLayerBlockRule> mRawRule;
 };
 
 }  
