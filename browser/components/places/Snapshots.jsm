@@ -466,16 +466,27 @@ const Snapshots = new (class Snapshots {
 
 
 
+
+
+
+
+
+
+
   async query({
     limit = 100,
     includeTombstones = false,
     type = undefined,
+    group = undefined,
+    sortDescending = true,
+    sortBy = "last_interaction_at",
   } = {}) {
     await this.#ensureVersionUpdates();
     let db = await PlacesUtils.promiseDBConnection();
 
     let clauses = [];
     let bindings = {};
+    let joins = [];
     let limitStatement = "";
 
     if (!includeTombstones) {
@@ -487,6 +498,14 @@ const Snapshots = new (class Snapshots {
       bindings.type = type;
     }
 
+    if (group) {
+      clauses.push("group_id = :group");
+      bindings.group = group;
+      joins.push(
+        "LEFT JOIN moz_places_metadata_groups_to_snapshots USING(place_id)"
+      );
+    }
+
     if (limit != -1) {
       limitStatement = "LIMIT :limit";
       bindings.limit = limit;
@@ -496,7 +515,7 @@ const Snapshots = new (class Snapshots {
 
     let rows = await db.executeCached(
       `
-      SELECT h.url AS url, IFNULL(s.title, h.title) AS title, created_at,
+      SELECT h.url, IFNULL(s.title, h.title) AS title, created_at,
              removed_at, document_type, first_interaction_at, last_interaction_at,
              user_persisted, description, site_name, preview_image_url,
              group_concat('[' || e.type || ', ' || e.data || ']') AS page_data,
@@ -504,9 +523,10 @@ const Snapshots = new (class Snapshots {
       FROM moz_places_metadata_snapshots s
       JOIN moz_places h ON h.id = s.place_id
       LEFT JOIN moz_places_metadata_snapshots_extra e ON e.place_id = s.place_id
+      ${joins.join(" ")}
       ${whereStatement}
       GROUP BY s.place_id
-      ORDER BY last_interaction_at DESC
+      ORDER BY ${sortBy} ${sortDescending ? "DESC" : "ASC"}
       ${limitStatement}
     `,
       bindings
