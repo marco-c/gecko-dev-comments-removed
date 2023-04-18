@@ -667,7 +667,7 @@ function GetStringOrBooleanOption(options, property, values, trueValue, falsyVal
 
     
     if (callFunction(std_Array_indexOf, values, value) === -1)
-        ThrowRangeError(JSMSG_INVALID_OPTION_VALUE, property, `"${value}"`);
+        return fallback;
 
     
     return value;
