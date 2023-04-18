@@ -107,11 +107,8 @@ class FFmpegVideoDecoder<LIBAV_VER>
   }
 
 #if LIBAVCODEC_VERSION_MAJOR >= 57 && LIBAVUTIL_VERSION_MAJOR >= 56
-  layers::TextureClient* AllocateTextueClientForImage(
+  layers::TextureClient* AllocateTextureClientForImage(
       struct AVCodecContext* aCodecContext, layers::PlanarYCbCrImage* aImage);
-
-  layers::PlanarYCbCrData CreateEmptyPlanarYCbCrData(
-      struct AVCodecContext* aCodecContext, const VideoInfo& aInfo);
 
   gfx::IntSize GetAlignmentVideoFrameSize(struct AVCodecContext* aCodecContext,
                                           int32_t aWidth,

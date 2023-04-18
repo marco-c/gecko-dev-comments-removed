@@ -638,26 +638,39 @@ struct PlanarYCbCrData {
   
   uint8_t* mYChannel = nullptr;
   int32_t mYStride = 0;
-  gfx::IntSize mYSize = gfx::IntSize(0, 0);
   int32_t mYSkip = 0;
   
   uint8_t* mCbChannel = nullptr;
   uint8_t* mCrChannel = nullptr;
   int32_t mCbCrStride = 0;
-  gfx::IntSize mCbCrSize = gfx::IntSize(0, 0);
   int32_t mCbSkip = 0;
   int32_t mCrSkip = 0;
   
-  uint32_t mPicX = 0;
-  uint32_t mPicY = 0;
-  gfx::IntSize mPicSize = gfx::IntSize(0, 0);
+  gfx::IntRect mPictureRect = gfx::IntRect(0, 0, 0, 0);
   StereoMode mStereoMode = StereoMode::MONO;
   gfx::ColorDepth mColorDepth = gfx::ColorDepth::COLOR_8;
   gfx::YUVColorSpace mYUVColorSpace = gfx::YUVColorSpace::Default;
   gfx::ColorRange mColorRange = gfx::ColorRange::LIMITED;
+  gfx::ChromaSubsampling mChromaSubsampling = gfx::ChromaSubsampling::FULL;
 
-  gfx::IntRect GetPictureRect() const {
-    return gfx::IntRect(mPicX, mPicY, mPicSize.width, mPicSize.height);
+  
+  gfx::IntSize YPictureSize() const { return mPictureRect.Size(); }
+
+  
+  gfx::IntSize CbCrPictureSize() const {
+    return mCbCrStride > 0 ? gfx::ChromaSize(YPictureSize(), mChromaSubsampling)
+                           : gfx::IntSize(0, 0);
+  }
+
+  
+  gfx::IntSize YDataSize() const {
+    return gfx::IntSize(mPictureRect.XMost(), mPictureRect.YMost());
+  }
+
+  
+  gfx::IntSize CbCrDataSize() const {
+    return mCbCrStride > 0 ? gfx::ChromaSize(YDataSize(), mChromaSubsampling)
+                           : gfx::IntSize(0, 0);
   }
 
   static Maybe<PlanarYCbCrData> From(const SurfaceDescriptorBuffer&);
@@ -671,9 +684,6 @@ struct PlanarAlphaData {
   gfx::ColorDepth mDepth = gfx::ColorDepth::COLOR_8;
   bool mPremultiplied = false;
 };
-
-
-
 
 
 
@@ -730,7 +740,13 @@ class PlanarYCbCrImage : public Image {
   
 
 
-  virtual bool CreateEmptyBuffer(const Data& aData) { return false; }
+  virtual bool CreateEmptyBuffer(const Data& aData, const gfx::IntSize& aYSize,
+                                 const gfx::IntSize& aCbCrSize) {
+    return false;
+  }
+  bool CreateEmptyBuffer(const Data& aData) {
+    return CreateEmptyBuffer(aData, aData.YDataSize(), aData.CbCrDataSize());
+  }
 
   
 
