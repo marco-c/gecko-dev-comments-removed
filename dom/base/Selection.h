@@ -748,9 +748,8 @@ class Selection final : public nsSupportsWeakReference,
 
 
 
-
-
-  void SetAnchorFocusRange(int32_t aIndex);
+  void SetAnchorFocusRange(size_t aIndex);
+  void RemoveAnchorFocusRange() { mAnchorFocusRange = nullptr; }
   void SelectFramesOf(nsIContent* aContent, bool aSelected) const;
 
   
