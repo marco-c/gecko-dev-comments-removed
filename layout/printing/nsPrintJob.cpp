@@ -632,36 +632,7 @@ nsresult nsPrintJob::Print(Document* aSourceDoc,
                              ? mPrtPreview->mPrintObject->mDocument.get()
                              : aSourceDoc;
 
-  nsresult rv = CommonPrint(false, aPrintSettings, aWebProgressListener, doc);
-
-  if (!aPrintSettings) {
-    
-    return rv;
-  }
-
-  
-  
-  
-  
-  bool printSilently;
-  aPrintSettings->GetPrintSilent(&printSilently);
-  if (!printSilently) {  
-    bool saveOnCancel;
-    aPrintSettings->GetSaveOnCancel(&saveOnCancel);
-    if ((rv != NS_ERROR_ABORT || saveOnCancel) &&
-        Preferences::GetBool("print.save_print_settings", false)) {
-      nsCOMPtr<nsIPrintSettingsService> printSettingsService =
-          do_GetService("@mozilla.org/gfx/printsettings-service;1");
-      printSettingsService->SavePrintSettingsToPrefs(
-          aPrintSettings, true,
-          nsIPrintSettings::kInitSaveAll &
-              ~nsIPrintSettings::kInitSaveToFileName);
-      printSettingsService->SavePrintSettingsToPrefs(
-          aPrintSettings, false, nsIPrintSettings::kInitSavePrinterName);
-    }
-  }
-
-  return rv;
+  return CommonPrint(false, aPrintSettings, aWebProgressListener, doc);
 }
 
 nsresult nsPrintJob::PrintPreview(Document* aSourceDoc,
