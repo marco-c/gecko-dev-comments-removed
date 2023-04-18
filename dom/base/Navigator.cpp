@@ -874,9 +874,33 @@ uint32_t Navigator::MaxTouchPoints(CallerType aCallerType) {
 
 
 static const char* const kSafeSchemes[] = {
-    "bitcoin", "geo", "im",   "irc",  "ircs",        "magnet", "mailto",
-    "matrix",  "mms", "news", "nntp", "openpgp4fpr", "sip",    "sms",
-    "smsto",   "ssh", "tel",  "urn",  "webcal",      "wtai",   "xmpp"};
+    
+    "bitcoin",
+    "ftp",
+    "ftps",
+    "geo",
+    "im",
+    "irc",
+    "ircs",
+    "magnet",
+    "mailto",
+    "matrix",
+    "mms",
+    "news",
+    "nntp",
+    "openpgp4fpr",
+    "sftp",
+    "sip",
+    "sms",
+    "smsto",
+    "ssh",
+    "tel",
+    "urn",
+    "webcal",
+    "wtai",
+    "xmpp",
+    
+};
 
 void Navigator::CheckProtocolHandlerAllowed(const nsAString& aScheme,
                                             nsIURI* aHandlerURI,
