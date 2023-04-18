@@ -135,14 +135,39 @@ RuleEditor.prototype = {
 
     this.updateSourceLink();
 
-    if (this.rule.mediaText) {
-      const text = `@media ${this.rule.mediaText}`;
+    const hasMediaText = this.rule.mediaText;
+    const hasLayer = typeof this.rule.domRule.layerName !== "undefined";
+    if (hasMediaText || hasLayer) {
+      const parts = [];
+
+      if (hasLayer) {
+        
+        parts.push(
+          `@layer${
+            this.rule.domRule.layerName ? " " + this.rule.domRule.layerName : ""
+          }`
+        );
+      }
+      if (hasMediaText) {
+        parts.push(`@media ${this.rule.mediaText}`);
+      }
+
+      
+      
+      
+      
+      const text = parts.join(" ");
+
+      
+      
+      
+      
+      
+      const title = `${text.replaceAll("@", "\u202A@")}`;
+
       createChild(this.element, "span", {
         class: "ruleview-rule-parent-data theme-link",
-        
-        
-        
-        title: `\u202A${text}`,
+        title,
         textContent: text,
       });
     }
