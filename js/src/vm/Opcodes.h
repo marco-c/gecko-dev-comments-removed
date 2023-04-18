@@ -798,8 +798,6 @@
 
 
 
-
-
  \
     MACRO(NewTarget, new_target, NULL, 1, 0, 1, JOF_BYTE) \
     
