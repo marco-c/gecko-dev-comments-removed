@@ -439,6 +439,10 @@ class PanGestureInput : public InputData {
 
   
   
+  bool mFollowedByMomentum : 1;
+
+  
+  
   
   
   
@@ -464,6 +468,9 @@ class PanGestureInput : public InputData {
   bool mIsNoLineOrPageDelta : 1;
 
   void SetHandledByAPZ(bool aHandled) { mHandledByAPZ = aHandled; }
+  void SetFollowedByMomentum(bool aFollowed) {
+    mFollowedByMomentum = aFollowed;
+  }
   void SetRequiresContentResponseIfCannotScrollHorizontallyInStartDirection(
       bool aRequires) {
     mRequiresContentResponseIfCannotScrollHorizontallyInStartDirection =
