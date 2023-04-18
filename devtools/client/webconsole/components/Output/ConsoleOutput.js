@@ -64,6 +64,7 @@ class ConsoleOutput extends Component {
       onFirstMeaningfulPaint: PropTypes.func.isRequired,
       editorMode: PropTypes.bool.isRequired,
       cacheGeneration: PropTypes.number.isRequired,
+      disableVirtualization: PropTypes.bool,
     };
   }
 
@@ -91,6 +92,10 @@ class ConsoleOutput extends Component {
   }
 
   componentDidMount() {
+    if (this.props.disableVirtualization) {
+      return;
+    }
+
     if (this.props.visibleMessages.length > 0) {
       this.scrollToBottom();
     }
@@ -304,7 +309,10 @@ class ConsoleOutput extends Component {
     
     
     
-    const scrollOverdrawCount = 20;
+    const scrollOverdrawCount = this.props.disableVirtualization
+      ? visibleMessages.length
+      : 20;
+
     const attrs = {
       className: "webconsole-output",
       role: "main",
