@@ -5419,6 +5419,12 @@ public class GeckoSession {
       public final @NonNull String id;
 
       
+
+
+
+
+      @Deprecated
+      @DeprecationSchedule(id = "media-source-rawId", version = 100)
       public final @NonNull String rawId;
 
       
@@ -5470,7 +5476,7 @@ public class GeckoSession {
 
        MediaSource(final GeckoBundle media) {
         id = media.getString("id");
-        rawId = media.getString("rawId");
+        rawId = id;
         name = media.getString("name");
         source = getSourceFromString(media.getString("mediaSource"));
         type = getTypeFromString(media.getString("type"));
