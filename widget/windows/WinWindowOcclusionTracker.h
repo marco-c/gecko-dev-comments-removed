@@ -61,6 +61,12 @@ class WinWindowOcclusionTracker final : public DisplayStatusListener,
   static bool IsInWinWindowOcclusionThread();
 
   
+  void EnsureDisplayStatusObserver();
+
+  
+  void EnsureSessionChangeObserver();
+
+  
   
   void Enable(nsBaseWidget* aWindow, HWND aHwnd);
 
