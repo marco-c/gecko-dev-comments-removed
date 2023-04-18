@@ -252,8 +252,6 @@
 
 
 
-
-
 #define FOR_EACH_OPCODE(MACRO)
 
 
@@ -2638,6 +2636,9 @@
 
 
 
+
+
+
  \
     MACRO(ResumeIndex, resume_index, NULL, 4, 0, 1, JOF_RESUMEINDEX) \
     
@@ -2647,64 +2648,8 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
  \
-    MACRO(Gosub, gosub, NULL, 5, 2, 0, JOF_JUMP) \
-    
-
-
-
-
-
-
-
-
-
-
- \
-    MACRO(Finally, finally, NULL, 1, 0, 2, JOF_BYTE) \
+    MACRO(Finally, finally, NULL, 1, 0, 0, JOF_BYTE) \
     
 
 
@@ -2717,10 +2662,8 @@
 
 
 
-
-
  \
-    MACRO(Retsub, retsub, NULL, 1, 2, 0, JOF_BYTE) \
+    MACRO(Retsub, retsub, NULL, 1, 1, 0, JOF_BYTE) \
     
 
 
@@ -3602,13 +3545,14 @@
 
 
 #define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
+  IF_RECORD_TUPLE(, MACRO(227))     \
   IF_RECORD_TUPLE(, MACRO(228))     \
   IF_RECORD_TUPLE(, MACRO(229))     \
   IF_RECORD_TUPLE(, MACRO(230))     \
   IF_RECORD_TUPLE(, MACRO(231))     \
   IF_RECORD_TUPLE(, MACRO(232))     \
   IF_RECORD_TUPLE(, MACRO(233))     \
-  IF_RECORD_TUPLE(, MACRO(234))     \
+  MACRO(234)                                   \
   MACRO(235)                                   \
   MACRO(236)                                   \
   MACRO(237)                                   \
