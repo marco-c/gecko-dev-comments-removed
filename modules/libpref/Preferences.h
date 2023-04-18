@@ -532,6 +532,8 @@ class Preferences final : public nsIPrefService,
   static bool InitStaticMembers();
 };
 
+bool ShouldSyncPreference(const char* aPref);
+
 }  
 
 #endif  
