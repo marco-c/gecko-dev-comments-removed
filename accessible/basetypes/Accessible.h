@@ -52,6 +52,19 @@ enum ENameValueFlag {
   eNameFromTooltip
 };
 
+
+
+
+struct GroupPos {
+  GroupPos() : level(0), posInSet(0), setSize(0) {}
+  GroupPos(int32_t aLevel, int32_t aPosInSet, int32_t aSetSize)
+      : level(aLevel), posInSet(aPosInSet), setSize(aSetSize) {}
+
+  int32_t level;
+  int32_t posInSet;
+  int32_t setSize;
+};
+
 class Accessible {
  protected:
   Accessible();
@@ -111,6 +124,11 @@ class Accessible {
 
 
   bool HasGenericType(AccGenericType aType) const;
+
+  
+
+
+  virtual GroupPos GroupPosition();
 
   
 
