@@ -427,10 +427,12 @@ static constexpr struct {
     {"browser.proton.places-tooltip.enabled"_ns},
     {"layout.css.prefers-color-scheme.content-override"_ns},
     
+    {"widget.gtk.overlay-scrollbars.enabled"_ns,
+     widget::ThemeChangeKind::StyleAndLayout},
+    
     
     {"browser.theme.toolbar-theme"_ns, widget::ThemeChangeKind::AllBits},
     {"browser.theme.content-theme"_ns},
-    {"layout.css.color-scheme.content-override"_ns},
 };
 
 
