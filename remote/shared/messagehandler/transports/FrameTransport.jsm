@@ -110,9 +110,13 @@ class FrameTransport {
   }
 
   _getBrowsingContextsForDescriptor(contextDescriptor) {
-    const { type } = contextDescriptor;
+    const { id, type } = contextDescriptor;
     if (type === CONTEXT_DESCRIPTOR_TYPES.ALL) {
-      return this._getAllBrowsingContexts();
+      return this._getBrowsingContexts();
+    }
+
+    if (type === CONTEXT_DESCRIPTOR_TYPES.TOP_BROWSING_CONTEXT) {
+      return this._getBrowsingContexts({ browserId: id });
     }
 
     
@@ -121,7 +125,19 @@ class FrameTransport {
     );
   }
 
-  _getAllBrowsingContexts() {
+  
+
+
+
+
+
+
+
+
+
+  _getBrowsingContexts(options = {}) {
+    
+    const { browserId } = options;
     let browsingContexts = [];
     
     
@@ -147,6 +163,15 @@ class FrameTransport {
         const isInitialDocument =
           browsingContext.currentWindowGlobal.isInitialDocument;
         if (isChrome || isInitialDocument) {
+          continue;
+        }
+
+        
+        
+        if (
+          typeof browserId !== "undefined" &&
+          browsingContext.browserId !== browserId
+        ) {
           continue;
         }
 
