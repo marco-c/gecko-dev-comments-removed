@@ -66,11 +66,11 @@ export async function onConnect(_commands, _resourceCommand, _actions, store) {
     targetFront.isWebExtension
   );
 
-  await targetCommand.watchTargets(
-    targetCommand.ALL_TYPES,
-    onTargetAvailable,
-    onTargetDestroyed
-  );
+  await targetCommand.watchTargets({
+    types: targetCommand.ALL_TYPES,
+    onAvailable: onTargetAvailable,
+    onDestroyed: onTargetDestroyed,
+  });
 
   
   
@@ -92,11 +92,11 @@ export async function onConnect(_commands, _resourceCommand, _actions, store) {
 }
 
 export function onDisconnect() {
-  targetCommand.unwatchTargets(
-    targetCommand.ALL_TYPES,
-    onTargetAvailable,
-    onTargetDestroyed
-  );
+  targetCommand.unwatchTargets({
+    types: targetCommand.ALL_TYPES,
+    onAvailable: onTargetAvailable,
+    onDestroyed: onTargetDestroyed,
+  });
   resourceCommand.unwatchResources([resourceCommand.TYPES.SOURCE], {
     onAvailable: onSourceAvailable,
   });

@@ -74,10 +74,10 @@ add_task(async function() {
   await otherTargetCommand.startListening();
   
   
-  await otherTargetCommand.watchTargets(
-    [otherTargetCommand.TYPES.FRAME],
-    () => {}
-  );
+  await otherTargetCommand.watchTargets({
+    types: [otherTargetCommand.TYPES.FRAME],
+    onAvailable: () => {},
+  });
 
   
   await otherTargetConfigurationCommand.updateConfiguration({
