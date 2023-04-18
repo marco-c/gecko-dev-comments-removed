@@ -197,12 +197,13 @@ auto NodeController::SerializeEventMessage(UniquePtr<Event> aEvent,
   }
 
   message->WriteFooter(buffer.begin(), buffer.length());
+  message->set_event_footer_size(buffer.length());
 
 #ifdef DEBUG
   
-  MOZ_ASSERT(message->FooterSize() == length);
+  MOZ_ASSERT(message->event_footer_size() == length);
   Vector<char, 256, InfallibleAllocPolicy> buffer2;
-  (void)buffer2.initLengthUninitialized(message->FooterSize());
+  (void)buffer2.initLengthUninitialized(message->event_footer_size());
   MOZ_ASSERT(message->ReadFooter(buffer2.begin(), buffer2.length(),
                                   false));
   MOZ_ASSERT(!memcmp(buffer2.begin(), buffer.begin(), buffer.length()));
@@ -220,7 +221,7 @@ auto NodeController::DeserializeEventMessage(UniquePtr<IPC::Message> aMessage,
   }
 
   Vector<char, 256, InfallibleAllocPolicy> buffer;
-  (void)buffer.initLengthUninitialized(aMessage->FooterSize());
+  (void)buffer.initLengthUninitialized(aMessage->event_footer_size());
   
   
   
@@ -230,6 +231,7 @@ auto NodeController::DeserializeEventMessage(UniquePtr<IPC::Message> aMessage,
                            aMessage->name());
     return nullptr;
   }
+  aMessage->set_event_footer_size(0);
 
   UniquePtr<Event> event;
   if (aRelayTarget) {

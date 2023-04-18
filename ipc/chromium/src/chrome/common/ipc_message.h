@@ -292,10 +292,20 @@ class Message : public mojo::core::ports::UserMessage, public Pickle {
   size_t GetSizeIfSerialized() const override { return size(); }
   bool WillBeRoutedExternally(mojo::core::ports::UserMessageEvent&) override;
 
+  
+  
   void WriteFooter(const void* data, uint32_t data_len);
+  
+  
+  
   [[nodiscard]] bool ReadFooter(void* buffer, uint32_t buffer_len,
                                 bool truncate);
-  uint32_t FooterSize() const;
+
+  uint32_t event_footer_size() const { return header()->event_footer_size; }
+
+  void set_event_footer_size(uint32_t size) {
+    header()->event_footer_size = size;
+  }
 
   
   static void Log(const Message* msg, std::wstring* l) {}
@@ -373,7 +383,7 @@ class Message : public mojo::core::ports::UserMessage, public Pickle {
     
     int32_t seqno;
     
-    int32_t footer_offset;
+    uint32_t event_footer_size;
   };
 
   Header* header() { return headerT<Header>(); }
