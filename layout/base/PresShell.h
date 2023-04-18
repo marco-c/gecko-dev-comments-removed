@@ -877,12 +877,17 @@ class PresShell final : public nsStubDocumentObserver,
 
 
   void SetCanvasBackground(nscolor aColor) { mCanvasBackgroundColor = aColor; }
-  nscolor GetCanvasBackground() { return mCanvasBackgroundColor; }
+  nscolor GetCanvasBackground() const { return mCanvasBackgroundColor; }
 
   
 
 
 
+  struct CanvasBackground {
+    nscolor mColor = 0;
+    bool mCSSSpecified = false;
+  };
+  CanvasBackground ComputeCanvasBackground() const;
   void UpdateCanvasBackground();
 
   
@@ -2760,7 +2765,7 @@ class PresShell final : public nsStubDocumentObserver,
 
   PresShell* GetRootPresShell() const;
 
-  nscolor GetDefaultBackgroundColorToDraw();
+  nscolor GetDefaultBackgroundColorToDraw() const;
 
   
   
