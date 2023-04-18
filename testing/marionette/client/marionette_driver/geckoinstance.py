@@ -573,6 +573,8 @@ class DesktopInstance(GeckoInstance):
         
         "browser.EULA.override": True,
         
+        "browser.newtabpage.activity-stream.telemetry": False,
+        
         "browser.newtabpage.enabled": False,
         
         
