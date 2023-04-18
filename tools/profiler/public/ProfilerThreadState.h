@@ -24,12 +24,17 @@
 
 
 
-[[nodiscard]] inline bool profiler_thread_is_being_profiled() {
+
+[[nodiscard]] inline bool profiler_thread_is_being_profiled(
+    ThreadProfilingFeatures aThreadProfilingFeatures =
+        ThreadProfilingFeatures::Any) {
   return profiler_is_active_and_unpaused() &&
          mozilla::profiler::ThreadRegistration::WithOnThreadRefOr(
-             [](mozilla::profiler::ThreadRegistration::OnThreadRef aTR) {
-               return aTR.UnlockedConstReaderAndAtomicRWCRef()
-                   .IsBeingProfiled();
+             [aThreadProfilingFeatures](
+                 mozilla::profiler::ThreadRegistration::OnThreadRef aTR) {
+               return DoFeaturesIntersect(
+                   aTR.UnlockedConstReaderAndAtomicRWCRef().ProfilingFeatures(),
+                   aThreadProfilingFeatures);
              },
              false);
 }
@@ -39,7 +44,9 @@
 
 
 [[nodiscard]] inline bool profiler_thread_is_being_profiled(
-    const ProfilerThreadId& aThreadId) {
+    const ProfilerThreadId& aThreadId,
+    ThreadProfilingFeatures aThreadProfilingFeatures =
+        ThreadProfilingFeatures::Any) {
   if (!profiler_is_active_and_unpaused()) {
     return false;
   }
@@ -48,8 +55,11 @@
     
     
     return mozilla::profiler::ThreadRegistration::WithOnThreadRefOr(
-        [](mozilla::profiler::ThreadRegistration::OnThreadRef aTR) {
-          return aTR.UnlockedConstReaderAndAtomicRWCRef().IsBeingProfiled();
+        [aThreadProfilingFeatures](
+            mozilla::profiler::ThreadRegistration::OnThreadRef aTR) {
+          return DoFeaturesIntersect(
+              aTR.UnlockedConstReaderAndAtomicRWCRef().ProfilingFeatures(),
+              aThreadProfilingFeatures);
         },
         false);
   }
@@ -57,8 +67,11 @@
   
   return mozilla::profiler::ThreadRegistry::WithOffThreadRefOr(
       aThreadId,
-      [](mozilla::profiler::ThreadRegistry::OffThreadRef aTR) {
-        return aTR.UnlockedConstReaderAndAtomicRWCRef().IsBeingProfiled();
+      [aThreadProfilingFeatures](
+          mozilla::profiler::ThreadRegistry::OffThreadRef aTR) {
+        return DoFeaturesIntersect(
+            aTR.UnlockedConstReaderAndAtomicRWCRef().ProfilingFeatures(),
+            aThreadProfilingFeatures);
       },
       false);
 }
