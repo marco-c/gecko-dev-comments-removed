@@ -162,6 +162,12 @@ const WebExtensionDescriptorActor = protocol.ActorClassWithSpec(
         {
           addonId: this.addonId,
           addonBrowsingContextGroupId: policy.browsingContextGroupId,
+          
+          
+          
+          
+          
+          isServerTargetSwitchingEnabled: false,
         }
       );
 
