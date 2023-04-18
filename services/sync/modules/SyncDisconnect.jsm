@@ -8,11 +8,11 @@
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const lazy = {};
 
 XPCOMUtils.defineLazyModuleGetters(lazy, {
+  Services: "resource://gre/modules/Services.jsm",
   Log: "resource://gre/modules/Log.jsm",
   Sanitizer: "resource:///modules/Sanitizer.jsm",
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.jsm",
@@ -109,7 +109,9 @@ const SyncDisconnectInternal = {
       
       
       
-      Services.prefs.clearUserPref(lazy.FxAccountsCommon.PREF_LAST_FXA_USER);
+      lazy.Services.prefs.clearUserPref(
+        lazy.FxAccountsCommon.PREF_LAST_FXA_USER
+      );
 
       log.info("Finished wiping sync data");
     } catch (ex) {

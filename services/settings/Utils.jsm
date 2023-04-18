@@ -11,14 +11,12 @@ const { XPCOMUtils } = ChromeUtils.import(
 const { ServiceRequest } = ChromeUtils.import(
   "resource://gre/modules/ServiceRequest.jsm"
 );
-const { AppConstants } = ChromeUtils.import(
-  "resource://gre/modules/AppConstants.jsm"
-);
 
 const lazy = {};
 
 XPCOMUtils.defineLazyModuleGetters(lazy, {
   SharedUtils: "resource://services-settings/SharedUtils.jsm",
+  AppConstants: "resource://gre/modules/AppConstants.jsm",
 });
 
 XPCOMUtils.defineLazyServiceGetter(
@@ -64,7 +62,7 @@ XPCOMUtils.defineLazyGetter(lazy, "isRunningTests", () => {
 
 
 XPCOMUtils.defineLazyGetter(lazy, "allowServerURLOverride", () => {
-  if (!AppConstants.RELEASE_OR_BETA) {
+  if (!lazy.AppConstants.RELEASE_OR_BETA) {
     
     return true;
   }
@@ -89,7 +87,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "gServerURL",
   "services.settings.server",
-  AppConstants.REMOTE_SETTINGS_SERVER_URL
+  lazy.AppConstants.REMOTE_SETTINGS_SERVER_URL
 );
 
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -107,7 +105,7 @@ var Utils = {
   get SERVER_URL() {
     return lazy.allowServerURLOverride
       ? lazy.gServerURL
-      : AppConstants.REMOTE_SETTINGS_SERVER_URL;
+      : lazy.AppConstants.REMOTE_SETTINGS_SERVER_URL;
   },
 
   CHANGES_PATH: "/buckets/monitor/collections/changes/changeset",
@@ -118,7 +116,7 @@ var Utils = {
   log: lazy.log,
 
   get CERT_CHAIN_ROOT_IDENTIFIER() {
-    if (this.SERVER_URL == AppConstants.REMOTE_SETTINGS_SERVER_URL) {
+    if (this.SERVER_URL == lazy.AppConstants.REMOTE_SETTINGS_SERVER_URL) {
       return Ci.nsIContentSignatureVerifier.ContentSignatureProdRoot;
     }
     if (this.SERVER_URL.includes("stage.")) {
@@ -139,7 +137,7 @@ var Utils = {
   get LOAD_DUMPS() {
     
     return (
-      this.SERVER_URL == AppConstants.REMOTE_SETTINGS_SERVER_URL ||
+      this.SERVER_URL == lazy.AppConstants.REMOTE_SETTINGS_SERVER_URL ||
       lazy.isRunningTests
     );
   },

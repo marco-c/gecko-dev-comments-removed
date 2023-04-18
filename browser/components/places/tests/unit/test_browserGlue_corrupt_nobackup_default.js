@@ -9,6 +9,10 @@
 
 
 
+const { AppConstants } = ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm"
+);
+
 function run_test() {
   
   remove_bookmarks_html();

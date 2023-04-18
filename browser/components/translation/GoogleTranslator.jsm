@@ -11,6 +11,10 @@ const { PromiseUtils } = ChromeUtils.import(
   "resource://gre/modules/PromiseUtils.jsm"
 );
 const { httpRequest } = ChromeUtils.import("resource://gre/modules/Http.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+XPCOMUtils.defineLazyGlobalGetters(this, ["DOMParser"]);
 
 
 const MAX_REQUEST_DATA = 5000; 

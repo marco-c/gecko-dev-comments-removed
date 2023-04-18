@@ -6,16 +6,19 @@
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const lazy = {};
 
 XPCOMUtils.defineLazyModuleGetters(lazy, {
   AddonRepository: "resource://gre/modules/addons/AddonRepository.jsm",
   AddonManager: "resource://gre/modules/AddonManager.jsm",
+  Services: "resource://gre/modules/Services.jsm",
 });
 
-if (Services.appinfo.processType !== Services.appinfo.PROCESS_TYPE_DEFAULT) {
+if (
+  lazy.Services.appinfo.processType !==
+  lazy.Services.appinfo.PROCESS_TYPE_DEFAULT
+) {
   
   
   throw new Error("This code is assumed to run in the parent process.");
@@ -82,7 +85,7 @@ async function negotiateLangPackForLanguageMismatch() {
 
   return {
     langPack,
-    langPackDisplayName: Services.intl.getLocaleDisplayNames(
+    langPackDisplayName: lazy.Services.intl.getLocaleDisplayNames(
       undefined,
       [langPack.target_locale],
       { preferNative: true }
@@ -193,28 +196,28 @@ const mockable = {
 
 
   getAvailableLocalesIncludingFallback() {
-    return Services.locale.availableLocales;
+    return lazy.Services.locale.availableLocales;
   },
 
   
 
 
   getDefaultLocale() {
-    return Services.locale.defaultLocale;
+    return lazy.Services.locale.defaultLocale;
   },
 
   
 
 
   getLastFallbackLocale() {
-    return Services.locale.lastFallbackLocale;
+    return lazy.Services.locale.lastFallbackLocale;
   },
 
   
 
 
   getAppLocaleAsBCP47() {
-    return Services.locale.appLocaleAsBCP47;
+    return lazy.Services.locale.appLocaleAsBCP47;
   },
 
   
@@ -222,14 +225,14 @@ const mockable = {
 
   getSystemLocale() {
     
-    const systemLocaleOverride = Services.prefs.getCharPref(
+    const systemLocaleOverride = lazy.Services.prefs.getCharPref(
       "intl.multilingual.aboutWelcome.systemLocaleOverride",
       null
     );
     if (systemLocaleOverride) {
       try {
         
-        new Services.intl.Locale(systemLocaleOverride);
+        new lazy.Services.intl.Locale(systemLocaleOverride);
         return systemLocaleOverride;
       } catch (_error) {}
     }
@@ -244,7 +247,7 @@ const mockable = {
 
 
   setRequestedAppLocales(locales) {
-    Services.locale.requestedLocales = locales;
+    lazy.Services.locale.requestedLocales = locales;
   },
 };
 
@@ -278,7 +281,7 @@ function setRequestedAppLocales(locales) {
 
 function getStructuredLocaleOrNull(localeString) {
   try {
-    const locale = new Services.intl.Locale(localeString);
+    const locale = new lazy.Services.intl.Locale(localeString);
     return {
       baseName: locale.baseName,
       language: locale.language,
@@ -320,11 +323,13 @@ function getAppAndSystemLocaleInfo() {
   
   let canLiveReload = null;
   if (systemLocale && appLocale) {
-    const systemDirection = Services.intl.getScriptDirection(
+    const systemDirection = lazy.Services.intl.getScriptDirection(
       systemLocale.language
     );
-    const appDirection = Services.intl.getScriptDirection(appLocale.language);
-    const supportsBidiSwitching = Services.prefs.getBoolPref(
+    const appDirection = lazy.Services.intl.getScriptDirection(
+      appLocale.language
+    );
+    const supportsBidiSwitching = lazy.Services.prefs.getBoolPref(
       "intl.multilingual.liveReloadBidirectional",
       false
     );
@@ -342,16 +347,20 @@ function getAppAndSystemLocaleInfo() {
     
     displayNames: {
       systemLanguage: systemLocale
-        ? Services.intl.getLocaleDisplayNames(
+        ? lazy.Services.intl.getLocaleDisplayNames(
             undefined,
             [systemLocale.baseName],
             { preferNative: true }
           )[0]
         : null,
       appLanguage: appLocale
-        ? Services.intl.getLocaleDisplayNames(undefined, [appLocale.baseName], {
-            preferNative: true,
-          })[0]
+        ? lazy.Services.intl.getLocaleDisplayNames(
+            undefined,
+            [appLocale.baseName],
+            {
+              preferNative: true,
+            }
+          )[0]
         : null,
     },
   };

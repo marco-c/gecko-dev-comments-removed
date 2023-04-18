@@ -21,7 +21,7 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsIServiceWorkerManager"
 );
 
-XPCOMUtils.defineLazyGlobalGetters(this, ["indexedDB"]);
+XPCOMUtils.defineLazyGlobalGetters(this, ["indexedDB", "Blob"]);
 
 
 
