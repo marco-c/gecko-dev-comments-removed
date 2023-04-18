@@ -8,10 +8,7 @@
 
 #include <functional>
 #include <string>
-#include <vector>
-
-
-#include "stddef.h"
+#include <cstdint>
 #include "content_decryption_module.h"
 
 #define IO_SUCCEEDED(x) ((x) == cdm::FileIOClient::Status::kSuccess)

@@ -7,16 +7,12 @@
 
 #include <iostream>
 
-#include "prio.h"
-
 #include "nsCOMPtr.h"
 #include "nsNetCID.h"
-#include "nsXPCOM.h"
 
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
 
-#include "nsASocketHandler.h"
 #include "nsServiceManagerUtils.h"
 #include "nsThreadUtils.h"
 

@@ -42,13 +42,6 @@
 #include <stdlib.h>
 #include <iostream>
 
-#include "sigslot.h"
-
-#include "logging.h"
-
-#include "nsThreadUtils.h"
-#include "nsXPCOM.h"
-
 #include "runnable_utils.h"
 
 #define GTEST_HAS_RTTI 0
@@ -60,10 +53,6 @@
 
 extern "C" {
 #include "nr_api.h"
-#include "registry.h"
-#include "async_timer.h"
-#include "r_crc32.h"
-#include "ice_util.h"
 #include "transport_addr.h"
 #include "nr_crypto.h"
 #include "nr_socket.h"
@@ -73,7 +62,6 @@ extern "C" {
 #include "turn_client_ctx.h"
 }
 
-#include "nricemediastream.h"
 #include "nricectx.h"
 
 using namespace mozilla;

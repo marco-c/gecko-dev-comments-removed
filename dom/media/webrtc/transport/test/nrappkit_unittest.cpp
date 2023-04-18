@@ -8,9 +8,6 @@
 
 #include <iostream>
 
-#include "nsThreadUtils.h"
-#include "nsXPCOM.h"
-
 
 extern "C" {
 #include "nr_api.h"
