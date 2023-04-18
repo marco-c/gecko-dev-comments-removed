@@ -79,11 +79,11 @@ class ModuleLoader final : public JS::loader::ModuleLoaderBase {
       nsIURI* aURI, ModuleLoadRequest* aParent) override;
 
   
-  static already_AddRefed<ModuleLoadRequest> CreateDynamicImport(
-      nsIURI* aURI, ScriptFetchOptions* aFetchOptions, nsIURI* aBaseURL,
-      ScriptLoadContext* aContext, ModuleLoaderBase* aLoader,
+  already_AddRefed<ModuleLoadRequest> CreateDynamicImport(
+      JSContext* aCx, nsIURI* aURI, LoadedScript* aMaybeActiveScript,
       JS::Handle<JS::Value> aReferencingPrivate,
-      JS::Handle<JSString*> aSpecifier, JS::Handle<JSObject*> aPromise);
+      JS::Handle<JSString*> aSpecifier,
+      JS::Handle<JSObject*> aPromise) override;
 };
 
 }  
