@@ -17,6 +17,12 @@ const { SearchSuggestionController } = ChromeUtils.import(
 const { PromiseUtils } = ChromeUtils.import(
   "resource://gre/modules/PromiseUtils.jsm"
 );
+const { TelemetryTestUtils } = ChromeUtils.import(
+  "resource://testing-common/TelemetryTestUtils.jsm"
+);
+
+const ENGINE_NAME = "other";
+const SEARCH_TELEMETRY_LATENCY = "SEARCH_SUGGESTIONS_LATENCY_MS";
 
 
 
@@ -88,6 +94,10 @@ add_task(async function add_test_engines() {
 
 
 add_task(async function simple_no_result_callback() {
+  let histogram = TelemetryTestUtils.getAndClearKeyedHistogram(
+    SEARCH_TELEMETRY_LATENCY
+  );
+
   await new Promise(resolve => {
     let controller = new SearchSuggestionController(result => {
       Assert.equal(result.term, "no remote");
@@ -98,9 +108,15 @@ add_task(async function simple_no_result_callback() {
 
     controller.fetch("no remote", false, getEngine);
   });
+
+  assertLatencyHistogram(histogram, true);
 });
 
 add_task(async function simple_no_result_callback_and_promise() {
+  let histogram = TelemetryTestUtils.getAndClearKeyedHistogram(
+    SEARCH_TELEMETRY_LATENCY
+  );
+
   
   let deferred = PromiseUtils.defer();
   let controller = new SearchSuggestionController(result => {
@@ -116,17 +132,29 @@ add_task(async function simple_no_result_callback_and_promise() {
   Assert.equal(result.remote.length, 0);
 
   await deferred.promise;
+
+  assertLatencyHistogram(histogram, true);
 });
 
 add_task(async function simple_no_result_promise() {
+  let histogram = TelemetryTestUtils.getAndClearKeyedHistogram(
+    SEARCH_TELEMETRY_LATENCY
+  );
+
   let controller = new SearchSuggestionController();
   let result = await controller.fetch("no remote", false, getEngine);
   Assert.equal(result.term, "no remote");
   Assert.equal(result.local.length, 0);
   Assert.equal(result.remote.length, 0);
+
+  assertLatencyHistogram(histogram, true);
 });
 
 add_task(async function simple_remote_no_local_result() {
+  let histogram = TelemetryTestUtils.getAndClearKeyedHistogram(
+    SEARCH_TELEMETRY_LATENCY
+  );
+
   let controller = new SearchSuggestionController();
   let result = await controller.fetch("mo", false, getEngine);
   Assert.equal(result.term, "mo");
@@ -135,10 +163,16 @@ add_task(async function simple_remote_no_local_result() {
   Assert.equal(result.remote[0].value, "Mozilla");
   Assert.equal(result.remote[1].value, "modern");
   Assert.equal(result.remote[2].value, "mom");
+
+  assertLatencyHistogram(histogram, true);
 });
 
 add_task(async function simple_remote_no_local_result_telemetry() {
   Services.telemetry.clearScalars();
+
+  let histogram = TelemetryTestUtils.getAndClearKeyedHistogram(
+    SEARCH_TELEMETRY_LATENCY
+  );
 
   let controller = new SearchSuggestionController();
   await controller.fetch("mo", false, getEngine);
@@ -153,8 +187,10 @@ add_task(async function simple_remote_no_local_result_telemetry() {
   }, "should have the expected keyed scalars");
 
   const scalar = scalars[key];
-  Assert.ok("sggt-other" in scalar, "correct telemetry category");
-  Assert.notEqual(scalar["sggt-other"], 0, "bandwidth logged");
+  Assert.ok(`sggt-${ENGINE_NAME}` in scalar, "correct telemetry category");
+  Assert.notEqual(scalar[`sggt-${ENGINE_NAME}`], 0, "bandwidth logged");
+
+  assertLatencyHistogram(histogram, true);
 });
 
 add_task(async function simple_remote_no_local_result_alternative_type() {
@@ -350,6 +386,10 @@ add_task(async function tail_offset_index() {
 });
 
 add_task(async function fetch_twice_in_a_row() {
+  let histogram = TelemetryTestUtils.getAndClearKeyedHistogram(
+    SEARCH_TELEMETRY_LATENCY
+  );
+
   
   await updateSearchHistory("bump", "delay local");
   await updateSearchHistory("bump", "delayed local");
@@ -367,6 +407,10 @@ add_task(async function fetch_twice_in_a_row() {
   Assert.equal(result.local[0].value, "delayed local");
   Assert.equal(result.remote.length, 1);
   Assert.equal(result.remote[0].value, "delayed ");
+
+  
+  
+  assertLatencyHistogram(histogram, true);
 });
 
 add_task(async function fetch_twice_subset_reuse_formHistoryResult() {
@@ -431,6 +475,10 @@ add_task(async function both_identical_with_more_than_max_results() {
 });
 
 add_task(async function noremote_maxLocal() {
+  let histogram = TelemetryTestUtils.getAndClearKeyedHistogram(
+    SEARCH_TELEMETRY_LATENCY
+  );
+
   let controller = new SearchSuggestionController();
   controller.maxLocalResults = 2; 
   controller.maxRemoteResults = 0;
@@ -444,9 +492,15 @@ add_task(async function noremote_maxLocal() {
     );
   }
   Assert.equal(result.remote.length, 0);
+
+  assertLatencyHistogram(histogram, false);
 });
 
 add_task(async function someremote_maxLocal() {
+  let histogram = TelemetryTestUtils.getAndClearKeyedHistogram(
+    SEARCH_TELEMETRY_LATENCY
+  );
+
   let controller = new SearchSuggestionController();
   controller.maxLocalResults = 2;
   controller.maxRemoteResults = 4;
@@ -467,6 +521,8 @@ add_task(async function someremote_maxLocal() {
       "letter " + String.fromCharCode("C".charCodeAt() + i)
     );
   }
+
+  assertLatencyHistogram(histogram, true);
 });
 
 add_task(async function one_of_each() {
@@ -482,6 +538,10 @@ add_task(async function one_of_each() {
 });
 
 add_task(async function local_result_returned_remote_result_disabled() {
+  let histogram = TelemetryTestUtils.getAndClearKeyedHistogram(
+    SEARCH_TELEMETRY_LATENCY
+  );
+
   Services.prefs.setBoolPref("browser.search.suggest.enabled", false);
   let controller = new SearchSuggestionController();
   controller.maxLocalResults = 1;
@@ -496,11 +556,15 @@ add_task(async function local_result_returned_remote_result_disabled() {
     );
   }
   Assert.equal(result.remote.length, 0);
+  assertLatencyHistogram(histogram, false);
   Services.prefs.setBoolPref("browser.search.suggest.enabled", true);
 });
 
 add_task(
   async function local_result_returned_remote_result_disabled_after_creation_of_controller() {
+    let histogram = TelemetryTestUtils.getAndClearKeyedHistogram(
+      SEARCH_TELEMETRY_LATENCY
+    );
     let controller = new SearchSuggestionController();
     controller.maxLocalResults = 1;
     controller.maxRemoteResults = 1;
@@ -515,12 +579,17 @@ add_task(
       );
     }
     Assert.equal(result.remote.length, 0);
+    assertLatencyHistogram(histogram, false);
     Services.prefs.setBoolPref("browser.search.suggest.enabled", true);
   }
 );
 
 add_task(
   async function one_of_each_disabled_before_creation_enabled_after_creation_of_controller() {
+    let histogram = TelemetryTestUtils.getAndClearKeyedHistogram(
+      SEARCH_TELEMETRY_LATENCY
+    );
+
     Services.prefs.setBoolPref("browser.search.suggest.enabled", false);
     let controller = new SearchSuggestionController();
     controller.maxLocalResults = 1;
@@ -533,11 +602,16 @@ add_task(
     Assert.equal(result.remote.length, 1);
     Assert.equal(result.remote[0].value, "letter B");
 
+    assertLatencyHistogram(histogram, true);
+
     Services.prefs.setBoolPref("browser.search.suggest.enabled", true);
   }
 );
 
 add_task(async function one_local_zero_remote() {
+  let histogram = TelemetryTestUtils.getAndClearKeyedHistogram(
+    SEARCH_TELEMETRY_LATENCY
+  );
   let controller = new SearchSuggestionController();
   controller.maxLocalResults = 1;
   controller.maxRemoteResults = 0;
@@ -551,9 +625,13 @@ add_task(async function one_local_zero_remote() {
     );
   }
   Assert.equal(result.remote.length, 0);
+  assertLatencyHistogram(histogram, false);
 });
 
 add_task(async function zero_local_one_remote() {
+  let histogram = TelemetryTestUtils.getAndClearKeyedHistogram(
+    SEARCH_TELEMETRY_LATENCY
+  );
   let controller = new SearchSuggestionController();
   controller.maxLocalResults = 0;
   controller.maxRemoteResults = 1;
@@ -562,9 +640,13 @@ add_task(async function zero_local_one_remote() {
   Assert.equal(result.local.length, 0);
   Assert.equal(result.remote.length, 1);
   Assert.equal(result.remote[0].value, "letter A");
+  assertLatencyHistogram(histogram, true);
 });
 
 add_task(async function stop_search() {
+  let histogram = TelemetryTestUtils.getAndClearKeyedHistogram(
+    SEARCH_TELEMETRY_LATENCY
+  );
   let controller = new SearchSuggestionController(result => {
     do_throw("The callback shouldn't be called after stop()");
   });
@@ -573,52 +655,122 @@ add_task(async function stop_search() {
   await resultPromise.then(result => {
     Assert.equal(null, result);
   });
+  assertLatencyHistogram(histogram, false);
 });
 
 add_task(async function empty_searchTerm() {
   
+  let histogram = TelemetryTestUtils.getAndClearKeyedHistogram(
+    SEARCH_TELEMETRY_LATENCY
+  );
   let controller = new SearchSuggestionController();
   let result = await controller.fetch("", false, getEngine);
   Assert.equal(result.term, "");
   Assert.ok(!!result.local.length);
   Assert.equal(result.remote.length, 0);
+  assertLatencyHistogram(histogram, false);
 });
 
 add_task(async function slow_timeout() {
-  let d = PromiseUtils.defer();
-  function check_result(result) {
-    Assert.equal(result.term, "slow ");
+  let histogram = TelemetryTestUtils.getAndClearKeyedHistogram(
+    SEARCH_TELEMETRY_LATENCY
+  );
+
+  
+  
+  let delayMs = 3 * SearchSuggestionController.REMOTE_TIMEOUT_DEFAULT;
+  let searchString = `delay${delayMs} `;
+
+  
+  let localValue = searchString + " local result";
+  await updateSearchHistory("bump", localValue);
+
+  
+  
+  let controller = new SearchSuggestionController();
+  let result = await controller.fetch(searchString, false, getEngine);
+  Assert.equal(result.term, searchString);
+  Assert.equal(result.local.length, 1);
+  Assert.equal(result.local[0].value, localValue);
+  Assert.equal(result.remote.length, 0);
+
+  
+  
+  assertLatencyHistogram(histogram, false);
+
+  
+  await new Promise(r => setTimeout(r, delayMs));
+
+  
+  assertLatencyHistogram(histogram, true);
+});
+
+add_task(async function slow_timeout_2() {
+  let histogram = TelemetryTestUtils.getAndClearKeyedHistogram(
+    SEARCH_TELEMETRY_LATENCY
+  );
+
+  
+  
+  let delayMs = 3 * SearchSuggestionController.REMOTE_TIMEOUT_DEFAULT;
+  let searchString = `delay${delayMs} `;
+
+  
+  let localValue = searchString + " local result";
+  await updateSearchHistory("bump", localValue);
+
+  
+  
+  
+  
+  
+  let controller = new SearchSuggestionController();
+  for (let i = 0; i < 2; i++) {
+    let result = await controller.fetch(searchString, false, getEngine);
+    Assert.equal(result.term, searchString);
     Assert.equal(result.local.length, 1);
-    Assert.equal(result.local[0].value, "slow local result");
+    Assert.equal(result.local[0].value, localValue);
     Assert.equal(result.remote.length, 0);
   }
-  await updateSearchHistory("bump", "slow local result");
 
-  let controller = new SearchSuggestionController();
-  setTimeout(function check_timeout() {
-    
-    check_result(result);
-    d.resolve();
-  }, 2000);
-  let result = await controller.fetch("slow ", false, getEngine);
-  check_result(result);
-  await d.promise;
+  
+  
+  assertLatencyHistogram(histogram, false);
+
+  
+  await new Promise(r => setTimeout(r, delayMs));
+
+  
+  
+  assertLatencyHistogram(histogram, true);
 });
 
 add_task(async function slow_stop() {
-  let d = PromiseUtils.defer();
-  let controller = new SearchSuggestionController();
-  let resultPromise = controller.fetch("slow ", false, getEngine);
-  setTimeout(function check_timeout() {
-    
-    controller.stop();
-    d.resolve();
-  }, 0);
-  await resultPromise.then(result => {
-    Assert.equal(null, result);
-  });
+  let histogram = TelemetryTestUtils.getAndClearKeyedHistogram(
+    SEARCH_TELEMETRY_LATENCY
+  );
 
-  await d.promise;
+  
+  
+  let delayMs = 3 * SearchSuggestionController.REMOTE_TIMEOUT_DEFAULT;
+  let searchString = `delay${delayMs} `;
+
+  
+  
+  let controller = new SearchSuggestionController();
+  let resultPromise = controller.fetch(searchString, false, getEngine);
+  await TestUtils.waitForTick();
+  controller.stop();
+  let result = await resultPromise;
+  Assert.equal(result, null, "No result should be returned");
+
+  
+  
+  await new Promise(r => setTimeout(r, delayMs));
+
+  
+  
+  assertLatencyHistogram(histogram, false);
 });
 
 
@@ -626,16 +778,26 @@ add_task(async function slow_stop() {
 add_task(async function remote_term_mismatch() {
   await updateSearchHistory("bump", "Query Mismatch Entry");
 
+  let histogram = TelemetryTestUtils.getAndClearKeyedHistogram(
+    SEARCH_TELEMETRY_LATENCY
+  );
+
   let controller = new SearchSuggestionController();
   let result = await controller.fetch("Query Mismatch", false, getEngine);
   Assert.equal(result.term, "Query Mismatch");
   Assert.equal(result.local.length, 1);
   Assert.equal(result.local[0].value, "Query Mismatch Entry");
   Assert.equal(result.remote.length, 0);
+
+  assertLatencyHistogram(histogram, true);
 });
 
 add_task(async function http_404() {
   await updateSearchHistory("bump", "HTTP 404 Entry");
+
+  let histogram = TelemetryTestUtils.getAndClearKeyedHistogram(
+    SEARCH_TELEMETRY_LATENCY
+  );
 
   let controller = new SearchSuggestionController();
   let result = await controller.fetch("HTTP 404", false, getEngine);
@@ -643,10 +805,16 @@ add_task(async function http_404() {
   Assert.equal(result.local.length, 1);
   Assert.equal(result.local[0].value, "HTTP 404 Entry");
   Assert.equal(result.remote.length, 0);
+
+  assertLatencyHistogram(histogram, true);
 });
 
 add_task(async function http_500() {
   await updateSearchHistory("bump", "HTTP 500 Entry");
+
+  let histogram = TelemetryTestUtils.getAndClearKeyedHistogram(
+    SEARCH_TELEMETRY_LATENCY
+  );
 
   let controller = new SearchSuggestionController();
   let result = await controller.fetch("HTTP 500", false, getEngine);
@@ -654,10 +822,16 @@ add_task(async function http_500() {
   Assert.equal(result.local.length, 1);
   Assert.equal(result.local[0].value, "HTTP 500 Entry");
   Assert.equal(result.remote.length, 0);
+
+  assertLatencyHistogram(histogram, true);
 });
 
 add_task(async function unresolvable_server() {
   await updateSearchHistory("bump", "Unresolvable Server Entry");
+
+  let histogram = TelemetryTestUtils.getAndClearKeyedHistogram(
+    SEARCH_TELEMETRY_LATENCY
+  );
 
   let controller = new SearchSuggestionController();
   let result = await controller.fetch(
@@ -669,6 +843,8 @@ add_task(async function unresolvable_server() {
   Assert.equal(result.local.length, 1);
   Assert.equal(result.local[0].value, "Unresolvable Server Entry");
   Assert.equal(result.remote.length, 0);
+
+  assertLatencyHistogram(histogram, true);
 });
 
 
@@ -761,4 +937,25 @@ function updateSearchHistory(operation, value) {
       }
     );
   });
+}
+
+function assertLatencyHistogram(histogram, shouldRecord) {
+  let snapshot = histogram.snapshot();
+  info("Checking latency snapshot: " + JSON.stringify(snapshot));
+
+  
+  let valueCountByEngineId = Object.entries(snapshot).reduce(
+    (memo, [key, data]) => {
+      memo[key] = Object.values(data.values).filter(v => v != 0);
+      return memo;
+    },
+    {}
+  );
+
+  let expected = shouldRecord ? { [ENGINE_NAME]: [1] } : {};
+  Assert.deepEqual(
+    valueCountByEngineId,
+    expected,
+    shouldRecord ? "Latency histogram updated" : "Latency histogram not updated"
+  );
 }
