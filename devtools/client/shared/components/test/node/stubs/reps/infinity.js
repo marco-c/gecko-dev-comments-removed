@@ -4,11 +4,15 @@
 
 "use strict";
 
+
+
+
 const stubs = new Map();
-stubs.set("Infinity", {
+stubs.set(`Infinity`, {
   type: "Infinity",
 });
-stubs.set("NegativeInfinity", {
+
+stubs.set(`NegativeInfinity`, {
   type: "-Infinity",
 });
 
