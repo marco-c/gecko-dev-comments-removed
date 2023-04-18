@@ -439,7 +439,7 @@ bool nsHTMLScrollFrame::TryLayout(ScrollReflowInput* aState,
 
   if (aAssumeVScroll != aState->mReflowedContentsWithVScrollbar ||
       (aAssumeHScroll != aState->mReflowedContentsWithHScrollbar &&
-       ScrolledContentDependsOnHeight(aState))) {
+       ScrolledContentDependsOnBSize(aState))) {
     if (aAssumeHScroll != aState->mReflowedContentsWithHScrollbar) {
       nsLayoutUtils::MarkIntrinsicISizesDirtyIfDependentOnBSize(
           mHelper.mScrolledFrame);
@@ -647,10 +647,8 @@ bool nsHTMLScrollFrame::TryLayout(ScrollReflowInput* aState,
 
 
 
-bool nsHTMLScrollFrame::ScrolledContentDependsOnHeight(
-    ScrollReflowInput* aState) {
-  
-  
+bool nsHTMLScrollFrame::ScrolledContentDependsOnBSize(
+    ScrollReflowInput* aState) const {
   return mHelper.mScrolledFrame->HasAnyStateBits(
              NS_FRAME_CONTAINS_RELATIVE_BSIZE |
              NS_FRAME_DESCENDANT_INTRINSIC_ISIZE_DEPENDS_ON_BSIZE) ||

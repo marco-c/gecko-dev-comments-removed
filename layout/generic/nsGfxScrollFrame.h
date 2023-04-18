@@ -833,7 +833,12 @@ class nsHTMLScrollFrame : public nsContainerFrame,
 
   bool TryLayout(ScrollReflowInput* aState, ReflowOutput* aKidMetrics,
                  bool aAssumeVScroll, bool aAssumeHScroll, bool aForce);
-  bool ScrolledContentDependsOnHeight(ScrollReflowInput* aState);
+
+  
+  
+  
+  bool ScrolledContentDependsOnBSize(ScrollReflowInput* aState) const;
+
   void ReflowScrolledFrame(ScrollReflowInput* aState, bool aAssumeHScroll,
                            bool aAssumeVScroll, ReflowOutput* aMetrics);
   void ReflowContents(ScrollReflowInput* aState,
