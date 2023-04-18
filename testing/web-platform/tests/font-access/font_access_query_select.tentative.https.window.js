@@ -11,74 +11,83 @@ font_access_test(async t => {
   const testFont = testData.values().next().value;
 
   const queryInput = {
-    select: [testFont.postscriptName]
+    postscriptNames: [testFont.postscriptName]
   };
   const fonts = await navigator.fonts.query(queryInput);
 
   assert_equals(
       fonts.length, 1, 'The result length should match the test length.');
   assert_font_equals(fonts[0], testFont);
-}, 'query(): existing postscript name in select');
+}, 'query(): valid postscript name in QueryOptions.postscriptNames');
 
 font_access_test(async t => {
   const queryInput = {
-    select: ['invalid_postscript_name']
+    postscriptNames: ['invalid_postscript_name']
   };
   const fonts = await navigator.fonts.query(queryInput);
 
   assert_equals(
       fonts.length, 0,
-      'Fonts should not be selected for an invalid postscript name in select.');
-}, 'query(): invalid postscript name in select');
+      'Fonts should not be selected for an invalid postscript name.');
+}, 'query(): invalid postscript name in QueryOptions.postscriptNames');
 
 font_access_test(async t => {
   const fonts = await navigator.fonts.query({});
 
   assert_greater_than_equal(
       fonts.length, 1,
-      'All available fonts should be returned when an empty object is passed ' +
-      'for input.');
-}, 'query(): empty object');
+      'All available fonts should be returned when an empty object is passed.');
+}, 'query(): empty object for QueryOptions.postscriptNames');
 
 font_access_test(async t => {
   const queryInput = {
-    select: []
+    invalidFieldName: []
   };
   const fonts = await navigator.fonts.query(queryInput);
 
   assert_greater_than_equal(
       fonts.length, 1,
-      'All available fonts should be returned when an empty array of select ' +
-      'is passed for input.');
-}, 'query(): empty select array');
+      'All available fonts should be returned when an invalid field name for ' +
+      'QueryOptions is passed.');
+}, 'query(): invalid QueryOptions field');
 
 font_access_test(async t => {
-  
-  
+  const queryInput = {
+    postscriptNames: []
+  };
+  const fonts = await navigator.fonts.query(queryInput);
+
+  assert_equals(
+      fonts.length, 0,
+      'Fonts should not be selected when an empty list for ' +
+      'QueryOptions.postscriptNames is passed.');
+}, 'query(): empty QueryOptions.postscriptNames list');
+
+font_access_test(async t => {
   const fonts = await navigator.fonts.query(undefined);
 
   assert_greater_than_equal(
       fonts.length, 1,
       'All available fonts should be returned when undefined is passed for ' +
       'input.');
-}, 'query(): undefined input');
+}, 'query(): undefined QueryOptions');
 
 const non_ascii_input = [
-  {select: ['¥']},
-  {select: ['ß']},
-  {select: ['🎵']},
+  {postscriptNames: ['¥']},
+  {postscriptNames: ['ß']},
+  {postscriptNames: ['🎵']},
   
-  {select: ['\u6841\u6d65']},
+  {postscriptNames: ['\u6841\u6d65']},
   
-  {select: ['\u6C34']},
+  {postscriptNames: ['\u6C34']},
   
-  {select: ['\uD834\uDD1E']},
+  {postscriptNames: ['\uD834\uDD1E']},
   
-  {select: ['\uFFFD']},
+  {postscriptNames: ['\uFFFD']},
   
-  {select: ['\uD800']},
+  {postscriptNames: ['\uD800']},
   
-  {select: ['\uDC00']},
+  {postscriptNames: ['\uDC00']},
 ];
 
 for (const test of non_ascii_input) {
