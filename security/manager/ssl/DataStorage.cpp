@@ -138,7 +138,7 @@ nsresult DataStorage::Init() {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  if (AppShutdown::IsShuttingDown()) {
+  if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
     
     
     
