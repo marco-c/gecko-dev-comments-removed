@@ -5867,10 +5867,26 @@ impl PicturePrimitive {
                             shadow.blur_radius,
                         );
 
-                        let shadow_rect = prim_rect.inflate(
+                        let mut shadow_rect = prim_rect.inflate(
                             blur_inflation_x * BLUR_SAMPLE_SCALE,
                             blur_inflation_y * BLUR_SAMPLE_SCALE,
                         ).translate(shadow.offset);
+
+                        
+                        
+                        
+                        if surface.surface_spatial_node_index != surface.raster_spatial_node_index {
+                            let map_local_to_raster = SpaceMapper::new_with_target(
+                                surface.raster_spatial_node_index,
+                                surface.surface_spatial_node_index,
+                                LayoutRect::max_rect(),
+                                frame_context.spatial_tree,
+                            );
+
+                            shadow_rect = map_local_to_raster
+                                .map(&shadow_rect)
+                                .unwrap();
+                        }
 
                         
                         request.push(shadow.color.premultiplied());
