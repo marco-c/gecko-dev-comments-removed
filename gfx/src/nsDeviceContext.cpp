@@ -76,17 +76,15 @@ void nsDeviceContext::SetDPI(double* aScale) {
     mAppUnitsPerDevPixelAtUnitFullZoom =
         NS_lround((AppUnitsPerCSSPixel() * 96) / dpi);
   } else {
-    nsCOMPtr<nsIScreen> primaryScreen;
-    ScreenManager& screenManager = ScreenManager::GetSingleton();
-    screenManager.GetPrimaryScreen(getter_AddRefs(primaryScreen));
+    RefPtr<widget::Screen> primaryScreen =
+        ScreenManager::GetSingleton().GetPrimaryScreen();
     MOZ_ASSERT(primaryScreen);
 
     
     
     
     
-    int32_t prefDPI = Preferences::GetInt("layout.css.dpi", -1);
-
+    int32_t prefDPI = StaticPrefs::layout_css_dpi();
     if (prefDPI > 0) {
       dpi = prefDPI;
     } else if (mWidget) {
@@ -95,7 +93,7 @@ void nsDeviceContext::SetDPI(double* aScale) {
       
       
       if (dpi < 0) {
-        primaryScreen->GetDpi(&dpi);
+        dpi = primaryScreen->GetDPI();
       }
       if (prefDPI < 0) {
         dpi = std::max(96.0f, dpi);
