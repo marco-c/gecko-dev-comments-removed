@@ -78,7 +78,7 @@ add_task(async function switchToTab() {
   
   await getResultText(
     element,
-    "Firefox Suggest about: robots— Switch to Tab",
+    "Firefox Suggest about:robots — Switch to Tab",
     "Result a11y text is correct"
   );
 
@@ -116,9 +116,8 @@ add_task(async function searchSuggestions() {
   );
   
   
-  
-  let searchTerm = "foo ";
-  let expectedSearches = [searchTerm, "foo foo", "foo bar"];
+  let searchTerm = "foo";
+  let expectedSearches = [searchTerm, "foofoo", "foobar"];
   for (let i = 0; i < length; i++) {
     let result = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
     if (result.type === UrlbarUtils.RESULT_TYPE.SEARCH) {
@@ -140,7 +139,7 @@ add_task(async function searchSuggestions() {
       if (result.searchParams.inPrivateWindow) {
         await getResultText(
           element,
-          searchTerm + "— Search in a Private Window",
+          searchTerm + " — Search in a Private Window",
           "Check result label"
         );
       } else {
@@ -148,7 +147,7 @@ add_task(async function searchSuggestions() {
         await getResultText(
           element,
           suggestion +
-            "— Search with browser_searchSuggestionEngine searchSuggestionEngine.xml",
+            " — Search with browser_searchSuggestionEngine searchSuggestionEngine.xml",
           "Check result label"
         );
       }
