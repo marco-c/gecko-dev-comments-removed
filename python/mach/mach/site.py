@@ -375,7 +375,7 @@ class MachSiteManager:
             
             *self._requirements.pths_as_absolute(self._topsrcdir),
             
-            *_deprioritize_venv_packages(environment.site_packages_dir()),
+            *_deprioritize_venv_packages(environment),
         ]
 
     def _virtualenv(self):
@@ -638,14 +638,20 @@ class CommandSiteManager:
         elif self._site_packages_source == SitePackagesSource.VENV:
             
             
-            site_packages_dir = self._virtualenv.site_packages_dir()
-            while site_packages_dir in lines:
-                
-                
-                
-                
-                lines.remove(site_packages_dir)
-            lines.extend(_deprioritize_venv_packages(site_packages_dir))
+            
+            
+            
+            prefix_normalized = os.path.normcase(
+                os.path.normpath(self._virtualenv.prefix)
+            )
+            lines = [
+                line
+                for line in lines
+                if not os.path.normcase(os.path.normpath(line)).startswith(
+                    prefix_normalized
+                )
+            ]
+            lines.extend(_deprioritize_venv_packages(self._virtualenv))
 
         
         lines = list(OrderedDict.fromkeys(lines))
@@ -1015,21 +1021,36 @@ def _assert_pip_check(topsrcdir, pthfile_lines, virtualenv_name):
         ] = "1"
 
 
-def _deprioritize_venv_packages(site_packages_dir):
+def _deprioritize_venv_packages(virtualenv):
     
     
     
     
     
+
     
     
-    
-    
-    return (
-        "import sys; sys.path = [p for p in sys.path if "
-        f"p.lower() != {repr(site_packages_dir)}.lower()]",
-        f"import sys; sys.path.append({repr(site_packages_dir)})",
-    )
+    implicitly_added_dirs = [
+        virtualenv.prefix,
+        virtualenv.site_packages_dir(),
+    ]
+
+    return [
+        line
+        for site_packages_dir in implicitly_added_dirs
+        
+        
+        
+        
+        
+        
+        
+        for line in (
+            "import sys; sys.path = [p for p in sys.path if "
+            f"p.lower() != {repr(site_packages_dir)}.lower()]",
+            f"import sys; sys.path.append({repr(site_packages_dir)})",
+        )
+    ]
 
 
 def _create_venv_with_pthfile(
