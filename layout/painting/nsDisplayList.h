@@ -3050,7 +3050,8 @@ class nsDisplayList {
       MOZ_RELEASE_ASSERT(IsEmpty(), "Nonempty list left over?");
     }
 #endif
-    Clear();
+
+    DeallocateNodes();
   }
 
   nsDisplayList(nsDisplayList&& aOther)
@@ -3143,18 +3144,27 @@ class nsDisplayList {
 
 
   void Clear() {
-    Node* current = mBottom;
-    Node* next = nullptr;
-
-    while (current) {
-      next = current->mNext;
-      Deallocate(current);
-      current = next;
-    }
-
+    DeallocateNodes();
     SetEmpty();
   }
 
+  
+
+
+  void CopyTo(nsDisplayList* aDestination) const {
+    for (auto* item : *this) {
+      aDestination->AppendToTop(item);
+    }
+  }
+
+  
+
+
+  void ForEach(const std::function<void(nsDisplayItem*)>& aFn) {
+    for (auto* item : *this) {
+      aFn(item);
+    }
+  }
   
 
 
@@ -3362,7 +3372,18 @@ class nsDisplayList {
     mBuilder->Destroy(DisplayListArenaObjectId::LISTNODE, aNode);
   }
 
-  void SetEmpty() {
+  void DeallocateNodes() {
+    Node* current = mBottom;
+    Node* next = nullptr;
+
+    while (current) {
+      next = current->mNext;
+      Deallocate(current);
+      current = next;
+    }
+  }
+
+  inline void SetEmpty() {
     mBottom = nullptr;
     mTop = nullptr;
     mLength = 0;
@@ -3392,42 +3413,52 @@ class nsDisplayListSet {
 
 
 
-  nsDisplayList* BorderBackground() const { return mBorderBackground; }
+  nsDisplayList* BorderBackground() const { return mLists[0]; }
   
 
 
 
-  nsDisplayList* BlockBorderBackgrounds() const {
-    return mBlockBorderBackgrounds;
+  nsDisplayList* BlockBorderBackgrounds() const { return mLists[1]; }
+  
+
+
+
+  nsDisplayList* Floats() const { return mLists[2]; }
+  
+
+
+
+
+  nsDisplayList* PositionedDescendants() const { return mLists[3]; }
+  
+
+
+
+  nsDisplayList* Outlines() const { return mLists[4]; }
+  
+
+
+  nsDisplayList* Content() const { return mLists[5]; }
+
+  const std::array<nsDisplayList*, 6>& Lists() const { return mLists; }
+
+  
+
+
+  void Clear() {
+    for (auto* list : mLists) {
+      MOZ_ASSERT(list);
+      list->Clear();
+    }
   }
+
   
 
-
-
-  nsDisplayList* Floats() const { return mFloats; }
-  
-
-
-
-
-  nsDisplayList* PositionedDescendants() const { return mPositioned; }
-  
-
-
-
-  nsDisplayList* Outlines() const { return mOutlines; }
-  
-
-
-  nsDisplayList* Content() const { return mContent; }
 
   void DeleteAll(nsDisplayListBuilder* aBuilder) {
-    BorderBackground()->DeleteAll(aBuilder);
-    BlockBorderBackgrounds()->DeleteAll(aBuilder);
-    Floats()->DeleteAll(aBuilder);
-    PositionedDescendants()->DeleteAll(aBuilder);
-    Outlines()->DeleteAll(aBuilder);
-    Content()->DeleteAll(aBuilder);
+    for (auto* list : mLists) {
+      list->DeleteAll(aBuilder);
+    }
   }
 
   nsDisplayListSet(nsDisplayList* aBorderBackground,
@@ -3435,12 +3466,8 @@ class nsDisplayListSet {
                    nsDisplayList* aFloats, nsDisplayList* aContent,
                    nsDisplayList* aPositionedDescendants,
                    nsDisplayList* aOutlines)
-      : mBorderBackground(aBorderBackground),
-        mBlockBorderBackgrounds(aBlockBorderBackgrounds),
-        mFloats(aFloats),
-        mContent(aContent),
-        mPositioned(aPositionedDescendants),
-        mOutlines(aOutlines) {}
+      : mLists{aBorderBackground, aBlockBorderBackgrounds, aFloats,
+               aContent,          aPositionedDescendants,  aOutlines} {}
 
   
 
@@ -3448,12 +3475,36 @@ class nsDisplayListSet {
 
   nsDisplayListSet(const nsDisplayListSet& aLists,
                    nsDisplayList* aBorderBackground)
-      : mBorderBackground(aBorderBackground),
-        mBlockBorderBackgrounds(aLists.BlockBorderBackgrounds()),
-        mFloats(aLists.Floats()),
-        mContent(aLists.Content()),
-        mPositioned(aLists.PositionedDescendants()),
-        mOutlines(aLists.Outlines()) {}
+      : mLists(aLists.mLists) {
+    mLists[0] = aBorderBackground;
+  }
+
+  
+
+
+  bool IsEmpty() const {
+    for (auto* list : mLists) {
+      if (!list->IsEmpty()) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  
+
+
+  void ForEach(const std::function<void(nsDisplayItem*)>& aFn) const {
+    for (auto* list : mLists) {
+      list->ForEach(aFn);
+    }
+  }
+
+  
+
+
+  void CopyTo(const nsDisplayListSet& aDestination) const;
 
   
 
@@ -3466,13 +3517,7 @@ class nsDisplayListSet {
   
   void* operator new(size_t sz) noexcept(true);
 
- protected:
-  nsDisplayList* mBorderBackground;
-  nsDisplayList* mBlockBorderBackgrounds;
-  nsDisplayList* mFloats;
-  nsDisplayList* mContent;
-  nsDisplayList* mPositioned;
-  nsDisplayList* mOutlines;
+  std::array<nsDisplayList*, 6> mLists;
 };
 
 
@@ -3486,12 +3531,6 @@ struct nsDisplayListCollection : public nsDisplayListSet {
         mLists{nsDisplayList{aBuilder}, nsDisplayList{aBuilder},
                nsDisplayList{aBuilder}, nsDisplayList{aBuilder},
                nsDisplayList{aBuilder}, nsDisplayList{aBuilder}} {}
-
-  
-
-
-
-
 
   
 
