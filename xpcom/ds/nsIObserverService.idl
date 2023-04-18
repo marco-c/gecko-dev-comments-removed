@@ -81,6 +81,20 @@ interface nsIObserverService : nsISupports
     nsresult NotifyWhenScriptSafe(nsISupports* aSubject,
                                   const char* aTopic,
                                   const char16_t* aData = nullptr);
+
+    
+
+
+
+
+
+
+
+
+
+
+    virtual nsresult HasObservers(const char* aTopic,
+                                  bool& aFound);
     %}
 
     
