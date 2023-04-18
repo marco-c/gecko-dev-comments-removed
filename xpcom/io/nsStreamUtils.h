@@ -208,7 +208,19 @@ extern nsresult NS_CopySegmentToBuffer(nsIInputStream* aInputStream,
 
 
 
-extern nsresult NS_CopySegmentToBuffer(nsIOutputStream* aOutputStream,
+extern nsresult NS_CopyBufferToSegment(nsIOutputStream* aOutputStream,
+                                       void* aClosure, char* aToSegment,
+                                       uint32_t aFromOffset, uint32_t aCount,
+                                       uint32_t* aReadCount);
+
+
+
+
+
+
+
+
+extern nsresult NS_CopyStreamToSegment(nsIOutputStream* aOutputStream,
                                        void* aClosure, char* aToSegment,
                                        uint32_t aFromOffset, uint32_t aCount,
                                        uint32_t* aReadCount);
