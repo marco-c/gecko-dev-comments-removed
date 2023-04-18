@@ -253,17 +253,6 @@ bool mozJSSubScriptLoader::ReadStencil(
     len = buf.Length();
   }
 
-#ifdef DEBUG
-  int64_t currentLength = -1;
-  
-  MOZ_ASSERT(chan->GetContentLength(&currentLength) == NS_OK);
-  
-  
-  
-  
-  MOZ_ASSERT(currentLength == len);
-#endif
-
   Maybe<JSAutoRealm> ar;
 
   
