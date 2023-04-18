@@ -117,6 +117,22 @@ void ReadableStream::SetReader(ReadableStreamGenericReader* aReader) {
   mReader = aReader;
 }
 
+
+bool ReadableStreamHasBYOBReader(ReadableStream* aStream) {
+  
+  ReadableStreamGenericReader* reader = aStream->GetReader();
+
+  
+  if (!reader) {
+    return false;
+  }
+
+  
+  
+  return reader->IsBYOB();
+}
+
+
 bool ReadableStreamHasDefaultReader(ReadableStream* aStream) {
   
   ReadableStreamGenericReader* reader = aStream->GetReader();
@@ -126,6 +142,7 @@ bool ReadableStreamHasDefaultReader(ReadableStream* aStream) {
     return false;
   }
 
+  
   
   return reader->IsDefault();
 }

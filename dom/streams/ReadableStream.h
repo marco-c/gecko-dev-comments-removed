@@ -122,6 +122,7 @@ class ReadableStream final : public nsISupports, public nsWrapperCache {
 };
 
 extern bool IsReadableStreamLocked(ReadableStream* aStream);
+
 extern double ReadableStreamGetNumReadRequests(ReadableStream* aStream);
 
 extern void ReadableStreamError(JSContext* aCx, ReadableStream* aStream,
@@ -148,12 +149,7 @@ extern already_AddRefed<ReadableStreamDefaultReader>
 AcquireReadableStreamDefaultReader(JSContext* aCx, ReadableStream* aStream,
                                    ErrorResult& aRv);
 
-
-inline bool ReadableStreamHasBYOBReader(ReadableStream* aStream) {
-  return false;
-}
-
-
+extern bool ReadableStreamHasBYOBReader(ReadableStream* aStream);
 extern bool ReadableStreamHasDefaultReader(ReadableStream* aStream);
 
 extern already_AddRefed<ReadableStream> CreateReadableByteStream(

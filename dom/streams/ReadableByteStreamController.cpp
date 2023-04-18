@@ -339,6 +339,15 @@ void ReadableByteStreamControllerEnqueueChunkToQueue(
 }
 
 
+static size_t ReadableStreamGetNumReadIntoRequests(ReadableStream* aStream) {
+  
+  MOZ_ASSERT(ReadableStreamHasBYOBReader(aStream));
+
+  
+  return aStream->GetReader()->AsBYOB()->ReadIntoRequests().length();
+}
+
+
 bool ReadableByteStreamControllerShouldCallPull(
     ReadableByteStreamController* aController) {
   
@@ -365,10 +374,11 @@ bool ReadableByteStreamControllerShouldCallPull(
     return true;
   }
 
-#if 0
   
-  if (ReadableStreamHasBYOBReader(stream) && ReadableStreamGetNumR)
-#endif
+  if (ReadableStreamHasBYOBReader(stream) &&
+      ReadableStreamGetNumReadIntoRequests(stream) > 0) {
+    return true;
+  }
 
   
   Nullable<double> desiredSize =
@@ -935,15 +945,6 @@ void ReadableByteStreamController::PullSteps(JSContext* aCx,
 
   
   ReadableByteStreamControllerCallPullIfNeeded(aCx, this, aRv);
-}
-
-
-static size_t ReadableStreamGetNumReadIntoRequests(ReadableStream* aStream) {
-  
-  MOZ_ASSERT(ReadableStreamHasBYOBReader(aStream));
-
-  
-  return aStream->GetReader()->AsBYOB()->ReadIntoRequests().length();
 }
 
 
