@@ -592,25 +592,22 @@ void nsPageFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     DisplayListClipState::AutoSaveRestore clipState(aBuilder);
     clipState.Clear();
 
+    
+    
+    
+    
+    
+    
+    
     nsPresContext* const pc = PresContext();
-    {
-      
-      
-      
-      
-      
-      
-      
-      
-      const float scale = pc->GetPageScale();
-      const nsSize pageSize = ComputePageSize();
-      const nsRect scaledPageRect{0, 0, NSToCoordCeil(pageSize.width / scale),
-                                  NSToCoordCeil(pageSize.height / scale)};
-      nsDisplayListBuilder::AutoBuildingDisplayList buildingForPageContentFrame(
-          aBuilder, this, scaledPageRect, scaledPageRect);
+    const float scale = pc->GetPageScale();
+    const nsSize pageSize = ComputePageSize();
+    const nsRect scaledPageRect{0, 0, NSToCoordCeil(pageSize.width / scale),
+                                NSToCoordCeil(pageSize.height / scale)};
+    nsDisplayListBuilder::AutoBuildingDisplayList buildingForPageContentFrame(
+        aBuilder, this, scaledPageRect, scaledPageRect);
 
-      nsContainerFrame::BuildDisplayList(aBuilder, set);
-    }
+    nsContainerFrame::BuildDisplayList(aBuilder, set);
 
     if (pc->IsRootPaginatedDocument()) {
       content.AppendNewToTop<nsDisplayHeaderFooter>(aBuilder, this);
