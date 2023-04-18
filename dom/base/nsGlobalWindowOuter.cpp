@@ -5328,6 +5328,10 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::Print(
       auto printKind = aForWindowDotPrint == IsForWindowDotPrint::Yes
                            ? PrintKind::WindowDotPrint
                            : PrintKind::InternalPrint;
+      
+      
+      
+      
       aError = OpenInternal(u""_ns, u""_ns, u""_ns,
                             false,             
                             false,             
@@ -5398,20 +5402,21 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::Print(
     return nullptr;
   }
 
-  if (aIsPreview == IsPreview::Yes) {
-    
-    
-    
-    if (aForWindowDotPrint == IsForWindowDotPrint::No) {
+  
+  
+  
+  
+  if (aForWindowDotPrint == IsForWindowDotPrint::No) {
+    if (aIsPreview == IsPreview::Yes) {
       aError = webBrowserPrint->PrintPreview(ps, aListener,
                                              std::move(aPrintPreviewCallback));
       if (aError.Failed()) {
         return nullptr;
       }
+    } else {
+      
+      webBrowserPrint->Print(ps, aListener);
     }
-  } else {
-    
-    webBrowserPrint->Print(ps, aListener);
   }
 
   

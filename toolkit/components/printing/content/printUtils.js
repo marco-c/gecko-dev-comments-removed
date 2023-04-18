@@ -253,10 +253,24 @@ var PrintUtils = {
 
   startPrintWindow(aBrowsingContext, aOptions) {
     const printInitiationTime = Date.now();
-    let openWindowInfo, printSelectionOnly, printFrameOnly;
-    if (aOptions) {
-      ({ openWindowInfo, printSelectionOnly, printFrameOnly } = aOptions);
-    }
+
+    let { openWindowInfo, printSelectionOnly, printFrameOnly } = aOptions || {};
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
     if (
       PRINT_TAB_MODAL &&
       !PRINT_ALWAYS_SILENT &&
@@ -285,6 +299,23 @@ var PrintUtils = {
       return browser;
     }
 
+    async function makePrintSettingsMaybeEnsuringToFileName() {
+      let settings = PrintUtils.getPrintSettings();
+      if (settings.printToFile && !settings.toFileName) {
+        
+        
+        
+        
+        
+        let dest = await OS.File.getCurrentDirectory();
+        if (!dest) {
+          dest = OS.Constants.Path.homeDir;
+        }
+        settings.toFileName = OS.Path.join(dest || "", "mozilla.pdf");
+      }
+      return settings;
+    }
+
     if (openWindowInfo) {
       let printPreview = new PrintPreview({
         sourceBrowsingContext: aBrowsingContext,
@@ -292,14 +323,30 @@ var PrintUtils = {
       });
       let browser = printPreview.createPreviewBrowser("source");
       document.documentElement.append(browser);
-      
-      
+
+      if (openWindowInfo.isForWindowDotPrint) {
+        makePrintSettingsMaybeEnsuringToFileName().then(settings => {
+          
+          
+          
+          
+          
+          
+          setTimeout(() => {
+            
+            
+            browser.browsingContext.print(settings);
+          }, 0);
+        });
+      }
+
       return browser;
     }
 
-    let settings = this.getPrintSettings();
-    settings.printSelectionOnly = printSelectionOnly;
-    this.printWindow(aBrowsingContext, settings);
+    makePrintSettingsMaybeEnsuringToFileName().then(settings => {
+      settings.printSelectionOnly = printSelectionOnly;
+      PrintUtils.printWindow(aBrowsingContext, settings);
+    });
     return null;
   },
 
