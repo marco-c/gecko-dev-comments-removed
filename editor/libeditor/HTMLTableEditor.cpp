@@ -576,12 +576,15 @@ nsresult HTMLEditor::InsertTableColumnsWithTransaction(
       
       
       CollapseSelectionToStartOf(*cellData.mElement, ignoredError);
-      if (NS_WARN_IF(ignoredError.ErrorCodeIs(NS_ERROR_EDITOR_DESTROYED))) {
+      if (MOZ_UNLIKELY(ignoredError.ErrorCodeIs(NS_ERROR_EDITOR_DESTROYED))) {
+        NS_WARNING(
+            "EditorBase::CollapseSelectionToStartOf() caused destroying the "
+            "editor");
         return NS_ERROR_EDITOR_DESTROYED;
       }
       NS_WARNING_ASSERTION(
           !ignoredError.Failed(),
-          "HTMLEditor::CollapseSelectionToStartOf() failed, but ignored");
+          "EditorBase::CollapseSelectionToStartOf() failed, but ignored");
       ignoredError.SuppressException();
       rv = InsertTableCellsWithTransaction(aNumberOfColumnsToInsert,
                                            InsertPosition::eBeforeSelectedCell);
@@ -637,12 +640,15 @@ nsresult HTMLEditor::InsertTableColumnsWithTransaction(
     
     
     CollapseSelectionToStartOf(*lastCellNode, ignoredError);
-    if (NS_WARN_IF(ignoredError.ErrorCodeIs(NS_ERROR_EDITOR_DESTROYED))) {
+    if (MOZ_UNLIKELY(ignoredError.ErrorCodeIs(NS_ERROR_EDITOR_DESTROYED))) {
+      NS_WARNING(
+          "EditorBase::CollapseSelectionToStartOf() caused destroying the "
+          "editor");
       return NS_ERROR_EDITOR_DESTROYED;
     }
     NS_WARNING_ASSERTION(
         !ignoredError.Failed(),
-        "HTMLEditor::CollapseSelectionToStartOf() failed, but ignored");
+        "EditorBase::CollapseSelectionToStartOf() failed, but ignored");
     ignoredError.SuppressException();
     rv = InsertTableCellsWithTransaction(aNumberOfColumnsToInsert,
                                          InsertPosition::eAfterSelectedCell);
@@ -4046,7 +4052,7 @@ void HTMLEditor::SetSelectionAfterTableEdit(Element* aTable, int32_t aRow,
     DebugOnly<nsresult> rvIgnored = CollapseSelectionTo(atTable);
     NS_WARNING_ASSERTION(
         NS_SUCCEEDED(rvIgnored),
-        "HTMLEditor::CollapseSelectionTo() failed, but ignored");
+        "EditorBase::CollapseSelectionTo() failed, but ignored");
     return;
   }
   
