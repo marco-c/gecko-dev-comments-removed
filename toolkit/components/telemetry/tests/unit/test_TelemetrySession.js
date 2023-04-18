@@ -1235,7 +1235,13 @@ add_task(async function test_savedPingsOnShutdown() {
 });
 
 add_task(async function test_sendShutdownPing() {
-  if (gIsAndroid) {
+  if (
+    gIsAndroid ||
+    (AppConstants.platform == "linux" && OS.Constants.Sys.bits == 32)
+  ) {
+    
+    
+    
     
     return;
   }

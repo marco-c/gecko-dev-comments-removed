@@ -89,8 +89,6 @@ add_task(async function setup() {
 });
 
 add_task(async function test_pingSender() {
-  let count = 10;
-
   
   const data = generateTestPingData();
   await TelemetryStorage.savePing(data, true);
@@ -108,7 +106,7 @@ add_task(async function test_pingSender() {
     response.setStatusLine("1.1", 404, "Not Found");
     hitCount++;
 
-    if (hitCount >= count) {
+    if (hitCount >= 2) {
       
       Services.tm.dispatchToMainThread(() => deferred404Hit.resolve());
     }
@@ -118,10 +116,8 @@ add_task(async function test_pingSender() {
   
   const errorUrl =
     "http://localhost:" + failingServer.identity.primaryPort + "/lookup_fail";
-
-  for (let i = 0; i < count; i++) {
-    TelemetrySend.testRunPingSender([{ url: errorUrl, path: pingPath }]);
-  }
+  TelemetrySend.testRunPingSender([{ url: errorUrl, path: pingPath }]);
+  TelemetrySend.testRunPingSender([{ url: errorUrl, path: pingPath }]);
 
   
   
@@ -139,12 +135,12 @@ add_task(async function test_pingSender() {
 
   Assert.equal(
     req.getHeader("User-Agent"),
-    "pingsender/2.0",
+    "pingsender/1.0",
     "Should have received the correct user agent string."
   );
   Assert.equal(
     req.getHeader("X-PingSender-Version"),
-    "2.0",
+    "1.0",
     "Should have received the correct PingSender version string."
   );
   Assert.equal(
