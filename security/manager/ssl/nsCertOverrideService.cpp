@@ -324,12 +324,10 @@ nsresult nsCertOverrideService::Read(const MutexAutoLock& aProofOfLock) {
     Tokenizer parser(buffer);
     nsDependentCSubstring host;
     if (parser.CheckChar('[')) {  
-      parser.Record(Tokenizer::INCLUDE_LAST);
       if (!parser.ReadUntil(Tokenizer::Token::Char(']'), host) ||
           host.Length() == 0 || !parser.CheckChar(':')) {
         continue;
       }
-      parser.Claim(host);
     } else if (!parser.ReadUntil(Tokenizer::Token::Char(':'), host) ||
                host.Length() == 0) {
       continue;
@@ -818,7 +816,16 @@ nsCertOverrideService::GetOverrides(
 void nsCertOverrideService::GetHostWithPort(const nsACString& aHostName,
                                             int32_t aPort,
                                             nsACString& aRetval) {
-  nsAutoCString hostPort(aHostName);
+  nsAutoCString hostPort;
+  if (aHostName.Contains(':')) {
+    
+    
+    hostPort.Append('[');
+    hostPort.Append(aHostName);
+    hostPort.Append(']');
+  } else {
+    hostPort.Append(aHostName);
+  }
   if (aPort == -1) {
     aPort = 443;
   }
