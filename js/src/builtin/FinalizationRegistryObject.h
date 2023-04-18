@@ -140,7 +140,7 @@ class FinalizationRecordObject : public NativeObject {
 
 
 using WeakFinalizationRecordVector =
-    GCVector<WeakHeapPtr<FinalizationRecordObject*>, 1, js::ZoneAllocPolicy>;
+    GCVector<WeakHeapPtr<FinalizationRecordObject*>, 1, js::CellAllocPolicy>;
 
 
 
@@ -175,7 +175,7 @@ class FinalizationRegistrationsObject : public NativeObject {
 };
 
 using FinalizationRecordVector =
-    GCVector<HeapPtr<FinalizationRecordObject*>, 1, js::ZoneAllocPolicy>;
+    GCVector<HeapPtr<FinalizationRecordObject*>, 1, js::CellAllocPolicy>;
 
 
 class FinalizationRegistryObject : public NativeObject {

@@ -113,7 +113,7 @@ class GlobalObjectData {
   
   
   using VarNamesSet =
-      GCHashSet<HeapPtr<JSAtom*>, DefaultHasher<JSAtom*>, ZoneAllocPolicy>;
+      GCHashSet<HeapPtr<JSAtom*>, DefaultHasher<JSAtom*>, CellAllocPolicy>;
   VarNamesSet varNames;
 
   

@@ -185,7 +185,7 @@ class IndirectBindingMap {
 
   using Map =
       mozilla::HashMap<PreBarrieredId, Binding,
-                       mozilla::DefaultHasher<PreBarrieredId>, ZoneAllocPolicy>;
+                       mozilla::DefaultHasher<PreBarrieredId>, CellAllocPolicy>;
 
   mozilla::Maybe<Map> map_;
 };

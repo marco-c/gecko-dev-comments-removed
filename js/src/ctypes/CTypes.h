@@ -333,7 +333,7 @@ struct FieldHashPolicy {
 };
 
 using FieldInfoHash = GCHashMap<js::HeapPtr<JSLinearString*>, FieldInfo,
-                                FieldHashPolicy, ZoneAllocPolicy>;
+                                FieldHashPolicy, CellAllocPolicy>;
 
 
 
@@ -354,12 +354,12 @@ struct FunctionInfo {
 
   
   
-  GCVector<HeapPtr<JSObject*>, 0, ZoneAllocPolicy> mArgTypes;
+  GCVector<HeapPtr<JSObject*>, 0, CellAllocPolicy> mArgTypes;
 
   
   
   
-  Vector<ffi_type*, 0, ZoneAllocPolicy> mFFITypes;
+  Vector<ffi_type*, 0, CellAllocPolicy> mFFITypes;
 
   
   

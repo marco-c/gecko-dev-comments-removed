@@ -1449,6 +1449,11 @@ bool js::Nursery::registerMallocedBuffer(void* buffer, size_t nbytes) {
 }
 
 void js::Nursery::sweep() {
+  
+  
+  
+  AutoSetThreadIsSweeping setThreadSweeping(runtime()->gcContext());
+
   MinorSweepingTracer trc(runtime());
 
   

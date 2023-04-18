@@ -136,14 +136,24 @@ void ZoneAllocator::removeSharedMemory(void* mem, size_t nbytes,
   }
 }
 
-void ZoneAllocPolicy::decMemory(size_t nbytes) {
-  
-  
-  
-  JS::GCContext* gcx = TlsGCContext.get();
-  zone_->decNonGCMemory(this, nbytes, MemoryUse::ZoneAllocPolicy,
-                        gcx->isCollecting());
+template <TrackingKind kind>
+void js::TrackedAllocPolicy<kind>::decMemory(size_t nbytes) {
+  bool updateRetainedSize = false;
+  if constexpr (kind == TrackingKind::Cell) {
+    
+    
+    JS::GCContext* gcx = TlsGCContext.get();
+    updateRetainedSize = gcx->isFinalizing();
+  }
+
+  zone_->decNonGCMemory(this, nbytes, MemoryUse::TrackedAllocPolicy,
+                        updateRetainedSize);
 }
+
+namespace js {
+template class TrackedAllocPolicy<TrackingKind::Zone>;
+template class TrackedAllocPolicy<TrackingKind::Cell>;
+}  
 
 JS::Zone::Zone(JSRuntime* rt, Kind kind)
     : ZoneAllocator(rt, kind),
