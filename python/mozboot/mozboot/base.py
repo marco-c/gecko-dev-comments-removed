@@ -10,7 +10,6 @@ import re
 import subprocess
 import sys
 
-from pathlib import PurePosixPath
 from pathlib import Path
 
 from distutils.version import LooseVersion
@@ -20,7 +19,7 @@ from mozboot.util import (
     MINIMUM_RUST_VERSION,
 )
 from mozfile import which
-from mach.util import to_optional_path
+from mach.util import to_optional_path, win_to_msys_path
 
 
 
@@ -752,16 +751,6 @@ class BaseBootstrapper(object):
         cargo_bin = cargo_home / "bin"
         return cargo_home, cargo_bin
 
-    def win_to_msys_path(self, path: Path):
-        """Convert a windows-style path to msys style."""
-        drive, path = os.path.splitdrive(path)
-        path = "/".join(path.split("\\"))
-        if drive:
-            if path[0] == "/":
-                path = path[1:]
-            path = f"/{drive[:-1]}/{path}"
-        return PurePosixPath(path)
-
     def print_rust_path_advice(self, template, cargo_home: Path, cargo_bin: Path):
         
         if (cargo_home / "env").exists():
@@ -771,7 +760,7 @@ class BaseBootstrapper(object):
             
             
             
-            cargo_bin = self.win_to_msys_path(cargo_bin)
+            cargo_bin = win_to_msys_path(cargo_bin)
             cmd = f"export PATH={cargo_bin}:$PATH"
         print(template % {"cargo_bin": cargo_bin, "cmd": cmd})
 
