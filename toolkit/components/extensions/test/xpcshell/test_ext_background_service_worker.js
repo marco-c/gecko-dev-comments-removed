@@ -32,13 +32,6 @@ add_task(async function setup() {
   );
 
   await AddonTestUtils.promiseStartupManager();
-  
-  
-  Services.obs.notifyObservers(
-    null,
-    "profile-after-change",
-    "force-serviceworkerrestart-init"
-  );
 
   
   
