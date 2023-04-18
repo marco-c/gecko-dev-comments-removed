@@ -516,9 +516,9 @@ static nscoord OffsetToAlignedStaticPos(const ReflowInput& aKidReflowInput,
       
       
       alignAreaSize = aPlaceholderContainer->GetLogicalSize(pcWM);
-      LogicalMargin pcBorder =
-          aPlaceholderContainer->GetLogicalUsedBorder(pcWM);
-      alignAreaSize -= pcBorder.Size(pcWM);
+      LogicalMargin pcBorderPadding =
+          aPlaceholderContainer->GetLogicalUsedBorderAndPadding(pcWM);
+      alignAreaSize -= pcBorderPadding.Size(pcWM);
     }
   } else {
     NS_ERROR("Unsupported container for abpsos CSS Box Alignment");
