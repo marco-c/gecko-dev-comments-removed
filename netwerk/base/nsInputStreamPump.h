@@ -74,6 +74,17 @@ class nsInputStreamPump final : public nsIInputStreamPump,
   uint32_t OnStateStop();
   nsresult CreateBufferedStreamIfNeeded();
 
+  
+  MOZ_ALWAYS_INLINE void AssertOnThread() const {
+    PUSH_IGNORE_THREAD_SAFETY
+    if (mOffMainThread) {
+      MOZ_ASSERT(mTargetThread->IsOnCurrentThread());
+    } else {
+      MOZ_ASSERT(NS_IsMainThread());
+    }
+    POP_THREAD_SAFETY
+  }
+
   uint32_t mState{STATE_IDLE};
   nsCOMPtr<nsILoadGroup> mLoadGroup;
   nsCOMPtr<nsIStreamListener> mListener;
@@ -91,6 +102,11 @@ class nsInputStreamPump final : public nsIInputStreamPump,
   bool mIsPending{false};
   
   
+  
+  
+  
+  
+  
   bool mProcessingCallbacks{false};
   
   bool mWaitingForInputStreamReady{false};
@@ -98,8 +114,8 @@ class nsInputStreamPump final : public nsIInputStreamPump,
   bool mRetargeting{false};
   bool mAsyncStreamIsBuffered{false};
   
-  
   bool mOffMainThread;
+  
   
   mozilla::RecursiveMutex mMutex{"nsInputStreamPump"};
 };
