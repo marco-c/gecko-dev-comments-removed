@@ -25,14 +25,15 @@ class ProcessDescriptorFront extends DescriptorMixin(
 ) {
   constructor(client, targetFront, parentFront) {
     super(client, targetFront, parentFront);
-    this.isParent = false;
+    this._isParent = false;
     this._processTargetFront = null;
     this._targetFrontPromise = null;
   }
 
   form(json) {
     this.id = json.id;
-    this.isParent = json.isParent;
+    this._isParent = json.isParent;
+    this._isWindowlessParent = json.isWindowlessParent;
     this.traits = json.traits || {};
   }
 
@@ -64,8 +65,23 @@ class ProcessDescriptorFront extends DescriptorMixin(
     return front;
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+  get isBrowserProcessDescriptor() {
+    return this._isParent && !this._isWindowlessParent;
+  }
+
   get isParentProcessDescriptor() {
-    return this.isParent;
+    return this._isParent;
   }
 
   get isProcessDescriptor() {

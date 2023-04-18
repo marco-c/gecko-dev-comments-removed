@@ -293,7 +293,7 @@ class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
   
   
   _isRegistrationValidForTarget(registration) {
-    if (this.targetCommand.descriptorFront.isParentProcessDescriptor) {
+    if (this.targetCommand.descriptorFront.isBrowserProcessDescriptor) {
       
       return true;
     }

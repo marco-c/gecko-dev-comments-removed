@@ -38,7 +38,11 @@ add_task(async () => {
   const descriptor = await client.mainRoot.getProcess(osPid);
   ok(descriptor, "Got the process descriptor");
   is(descriptor.id, osPid, "descriptor id is the PID");
-  is(descriptor.isParent, false, "isParent is false for content processes");
+  is(
+    descriptor.isParentProcessDescriptor,
+    false,
+    "isParentProcessDescriptor is false for content processes"
+  );
 
   
   

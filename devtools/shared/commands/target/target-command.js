@@ -343,7 +343,7 @@ class TargetCommand extends EventEmitter {
     
     
     if (
-      this.descriptorFront.isParentProcessDescriptor &&
+      this.descriptorFront.isBrowserProcessDescriptor &&
       !Services.prefs.getBoolPref(BROWSERTOOLBOX_FISSION_ENABLED, false)
     ) {
       return false;
@@ -460,7 +460,7 @@ class TargetCommand extends EventEmitter {
 
     if (this.descriptorFront.isLocalTab) {
       types = [TargetCommand.TYPES.FRAME];
-    } else if (this.descriptorFront.isParentProcessDescriptor) {
+    } else if (this.descriptorFront.isBrowserProcessDescriptor) {
       const fissionBrowserToolboxEnabled = Services.prefs.getBoolPref(
         BROWSERTOOLBOX_FISSION_ENABLED
       );
