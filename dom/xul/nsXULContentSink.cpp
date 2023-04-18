@@ -170,19 +170,6 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE(XULContentSinkImpl)
 
 
 NS_IMETHODIMP
-XULContentSinkImpl::WillBuildModel(nsDTDMode aDTDMode) {
-#if FIXME
-  if (!mParentContentSink) {
-    
-    
-    mDocument->BeginLoad();
-  }
-#endif
-
-  return NS_OK;
-}
-
-NS_IMETHODIMP
 XULContentSinkImpl::DidBuildModel(bool aTerminated) {
   nsCOMPtr<Document> doc = do_QueryReferent(mDocument);
   if (doc) {
