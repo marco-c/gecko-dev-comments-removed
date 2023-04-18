@@ -12,7 +12,10 @@ for feature in gkrust_features:
     
     
     
-    if feature not in ("gecko_refcount_logging", "glean_with_gecko"):
+    if feature not in (
+        "gkrust-shared/gecko_refcount_logging",
+        "gkrust-shared/glean_with_gecko",
+    ):
         RUST_TEST_FEATURES.append(feature)
 
 
