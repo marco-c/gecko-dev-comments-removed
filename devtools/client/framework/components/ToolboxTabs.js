@@ -88,7 +88,8 @@ class ToolboxTabs extends Component {
     this.updateOverflowedTabs();
   }
 
-  componentWillUpdate(nextProps, nextState) {
+  
+  UNSAFE_componentWillUpdate(nextProps, nextState) {
     if (this.shouldUpdateToolboxTabs(this.props, nextProps)) {
       
       
