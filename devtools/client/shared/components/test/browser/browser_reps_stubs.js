@@ -39,7 +39,7 @@ const EXPRESSIONS_BY_FILE = {
     ["NegZeroGrip", `1 / -Infinity`],
   ]),
   "undefined.js": new Map([["Undefined", `undefined`]]),
-  
+  "window.js": new Map([["Window", `window`]]),
   
   
   
