@@ -291,7 +291,6 @@ declare namespace MockedExports {
 
 
     import: <S extends keyof KnownModules>(module: S) => KnownModules[S];
-    createObjectIn: (content: ContentWindow) => object;
     exportFunction: (fn: Function, scope: object, options?: object) => void;
     cloneInto: (value: any, scope: object, options?: object) => void;
     isInAutomation: boolean;
