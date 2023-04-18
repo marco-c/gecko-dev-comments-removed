@@ -9,7 +9,23 @@ var EXPORTED_SYMBOLS = ["SelectParent", "SelectParentHelper"];
 const { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
 );
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "DOM_FORMS_SELECTSEARCH",
+  "dom.forms.selectSearch",
+  false
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "CUSTOM_STYLING_ENABLED",
+  "dom.forms.select.customstyling",
+  false
+);
 
 
 const MAX_ROWS = 20;
@@ -42,10 +58,6 @@ const SUPPORTED_SELECT_PROPERTIES = [
   "scrollbar-width",
   "scrollbar-color",
 ];
-
-const customStylingEnabled = Services.prefs.getBoolPref(
-  "dom.forms.select.customstyling"
-);
 
 var SelectParentHelper = {
   
@@ -98,7 +110,7 @@ var SelectParentHelper = {
 
     let sheet = stylesheet.sheet;
 
-    if (!customStylingEnabled) {
+    if (!CUSTOM_STYLING_ENABLED) {
       selectStyle = uaStyle;
     }
 
@@ -116,7 +128,7 @@ var SelectParentHelper = {
       selectStyle["background-color"] != uaStyle["background-color"] ||
       selectStyle.color != uaStyle.color;
 
-    if (customStylingEnabled) {
+    if (CUSTOM_STYLING_ENABLED) {
       if (selectStyle["text-shadow"] != "none") {
         sheet.insertRule(
           `#ContentSelectDropdown > menupopup > :is(menuitem, menucaption)[_moz-menuactive="true"] {
@@ -200,7 +212,7 @@ var SelectParentHelper = {
       rule.direction = style.direction;
       rule.fontSize = zoom * parseFloat(style["font-size"], 10) + "px";
 
-      if (customStylingEnabled) {
+      if (CUSTOM_STYLING_ENABLED) {
         let optionBackgroundIsTransparent =
           style["background-color"] == "rgba(0, 0, 0, 0)";
         let optionBackgroundSet =
@@ -253,7 +265,7 @@ var SelectParentHelper = {
     
     
     
-    if (customStylingEnabled && selectBackgroundSet) {
+    if (CUSTOM_STYLING_ENABLED && selectBackgroundSet) {
       menulist.menupopup.setAttribute("customoptionstyling", "true");
     } else {
       menulist.menupopup.removeAttribute("customoptionstyling");
@@ -569,7 +581,7 @@ var SelectParentHelper = {
     
     
     if (
-      Services.prefs.getBoolPref("dom.forms.selectSearch") &&
+      DOM_FORMS_SELECTSEARCH &&
       addSearch &&
       element.childElementCount > SEARCH_MINIMUM_ELEMENTS
     ) {
