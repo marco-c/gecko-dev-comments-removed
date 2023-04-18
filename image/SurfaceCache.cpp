@@ -474,17 +474,6 @@ class ImageSurfaceCache {
     }
 
     
-    
-    
-    
-    IntSize nativeSize;
-    if (NS_FAILED(image->GetWidth(&nativeSize.width)) ||
-        NS_FAILED(image->GetHeight(&nativeSize.height)) ||
-        nativeSize.IsEmpty()) {
-      return;
-    }
-
-    
     mFactor2Mode = true;
   }
 
@@ -596,8 +585,16 @@ class ImageSurfaceCache {
       
       
       
-      MOZ_ASSERT_UNREACHABLE("Expected valid native size!");
-      return aSize;
+      MOZ_ASSERT(mIsVectorImage);
+      factorSize = IntSize(100, 100);
+      Maybe<AspectRatio> aspectRatio = image->GetIntrinsicRatio();
+      if (aspectRatio && *aspectRatio) {
+        factorSize.width =
+            NSToIntRound(aspectRatio->ApplyToFloat(float(factorSize.height)));
+        if (factorSize.IsEmpty()) {
+          return aSize;
+        }
+      }
     }
 
     if (mIsVectorImage) {
