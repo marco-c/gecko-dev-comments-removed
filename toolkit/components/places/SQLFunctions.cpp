@@ -497,21 +497,33 @@ MatchAutoCompleteFunction::OnFunctionCall(mozIStorageValueArray* aArguments,
 
   
   
+  
+  nsDependentCString fallbackTitle =
+      getSharedUTF8String(aArguments, kArgIndexFallbackTitle);
+  
+  const nsDependentCSubstring& trimmedFallbackTitle =
+      Substring(fallbackTitle, 0, MAX_CHARS_TO_SEARCH_THROUGH);
+
+  
+  
   nsCWhitespaceTokenizer tokenizer(searchString);
   while (matches && tokenizer.hasMoreTokens()) {
     const nsDependentCSubstring& token = tokenizer.nextToken();
 
     if (HAS_BEHAVIOR(TITLE) && HAS_BEHAVIOR(URL)) {
       matches = (searchFunction(token, trimmedTitle) ||
+                 searchFunction(token, trimmedFallbackTitle) ||
                  searchFunction(token, tags)) &&
                 searchFunction(token, trimmedUrl);
     } else if (HAS_BEHAVIOR(TITLE)) {
-      matches =
-          searchFunction(token, trimmedTitle) || searchFunction(token, tags);
+      matches = searchFunction(token, trimmedTitle) ||
+                searchFunction(token, trimmedFallbackTitle) ||
+                searchFunction(token, tags);
     } else if (HAS_BEHAVIOR(URL)) {
       matches = searchFunction(token, trimmedUrl);
     } else {
       matches = searchFunction(token, trimmedTitle) ||
+                searchFunction(token, trimmedFallbackTitle) ||
                 searchFunction(token, tags) ||
                 searchFunction(token, trimmedUrl);
     }

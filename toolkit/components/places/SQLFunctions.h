@@ -56,6 +56,9 @@ namespace places {
 
 
 
+
+
+
 class MatchAutoCompleteFunction final : public mozIStorageFunction {
  public:
   MatchAutoCompleteFunction();
@@ -94,7 +97,8 @@ class MatchAutoCompleteFunction final : public mozIStorageFunction {
   static const uint32_t kArgIndexOpenPageCount = 7;
   static const uint32_t kArgIndexMatchBehavior = 8;
   static const uint32_t kArgIndexSearchBehavior = 9;
-  static const uint32_t kArgIndexLength = 10;
+  static const uint32_t kArgIndexFallbackTitle = 10;
+  static const uint32_t kArgIndexLength = 11;
 
   
 
