@@ -224,17 +224,6 @@ bool FunctionEmitter::emitNonHoisted(GCThingIndex index) {
 
   
 
-  
-  
-  MOZ_ASSERT(funbox_->isArrow() == (syntaxKind_ == FunctionSyntaxKind::Arrow));
-
-  if (funbox_->isArrow()) {
-    if (!emitNewTargetForArrow()) {
-      
-      return false;
-    }
-  }
-
   if (syntaxKind_ == FunctionSyntaxKind::DerivedClassConstructor) {
     
     if (!bce_->emitGCIndexOp(JSOp::FunWithProto, index)) {
@@ -306,24 +295,6 @@ bool FunctionEmitter::emitTopLevelFunction(GCThingIndex index) {
   
   
   (void)index;
-
-  return true;
-}
-
-bool FunctionEmitter::emitNewTargetForArrow() {
-  
-
-  if (bce_->sc->allowNewTarget()) {
-    if (!bce_->emit1(JSOp::NewTarget)) {
-      
-      return false;
-    }
-  } else {
-    if (!bce_->emit1(JSOp::Null)) {
-      
-      return false;
-    }
-  }
 
   return true;
 }

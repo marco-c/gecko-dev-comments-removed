@@ -1658,13 +1658,8 @@
 
 
 
-
-
-
-
-
  \
-    MACRO(LambdaArrow, lambda_arrow, NULL, 5, 1, 1, JOF_OBJECT) \
+    MACRO(LambdaArrow, lambda_arrow, NULL, 5, 0, 1, JOF_OBJECT) \
     
 
 
