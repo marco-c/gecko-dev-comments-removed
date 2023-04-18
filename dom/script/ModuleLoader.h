@@ -44,20 +44,10 @@ class ModuleLoader final : public JS::loader::ModuleLoaderBase {
 
   ScriptLoader* GetScriptLoader();
 
-  
+  bool CanStartLoad(ModuleLoadRequest* aRequest, nsresult* aRvOut) override;
 
+  nsresult StartFetch(ModuleLoadRequest* aRequest) override;
 
-
-
-  nsresult StartModuleLoad(ScriptLoadRequest* aRequest) override;
-  nsresult RestartModuleLoad(ScriptLoadRequest* aRequest) override;
-
- private:
-  enum class RestartRequest { No, Yes };
-  nsresult StartModuleLoadImpl(ScriptLoadRequest* aRequest,
-                               RestartRequest aRestart);
-
- public:
   void ProcessLoadedModuleTree(ModuleLoadRequest* aRequest) override;
 
   nsresult CompileOrFinishModuleScript(

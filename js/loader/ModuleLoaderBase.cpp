@@ -25,8 +25,10 @@
 #include "nsContentUtils.h"
 #include "nsICacheInfoChannel.h"  
 #include "nsNetUtil.h"            
+#include "nsThreadUtils.h"        
 #include "xpcpublic.h"
 
+using mozilla::GetMainThreadSerialEventTarget;
 using mozilla::Preferences;
 using mozilla::dom::AutoJSAPI;
 
@@ -341,6 +343,60 @@ LoadedScript* ModuleLoaderBase::GetLoadedScriptOrNull(
           aReferencingPrivate);
 
   return script;
+}
+
+nsresult ModuleLoaderBase::StartModuleLoad(ModuleLoadRequest* aRequest) {
+  return StartOrRestartModuleLoad(aRequest, RestartRequest::No);
+}
+
+nsresult ModuleLoaderBase::RestartModuleLoad(ModuleLoadRequest* aRequest) {
+  return StartOrRestartModuleLoad(aRequest, RestartRequest::Yes);
+}
+
+nsresult ModuleLoaderBase::StartOrRestartModuleLoad(ModuleLoadRequest* aRequest,
+                                                    RestartRequest aRestart) {
+  MOZ_ASSERT(aRequest->IsFetching());
+  aRequest->SetUnknownDataType();
+
+  
+  
+  MOZ_ASSERT_IF(
+      aRestart == RestartRequest::Yes,
+      IsModuleFetching(aRequest->mURI,
+                       aRequest->GetLoadContext()->GetWebExtGlobal()));
+
+  
+  nsresult rv = NS_OK;
+  if (!CanStartLoad(aRequest, &rv)) {
+    return rv;
+  }
+
+  
+  
+  ModuleLoadRequest* request = aRequest->AsModuleRequest();
+
+  if (aRestart == RestartRequest::No &&
+      ModuleMapContainsURL(request->mURI,
+                           aRequest->GetLoadContext()->GetWebExtGlobal())) {
+    LOG(("ScriptLoadRequest (%p): Waiting for module fetch", aRequest));
+    WaitForModuleFetch(request->mURI,
+                       aRequest->GetLoadContext()->GetWebExtGlobal())
+        ->Then(GetMainThreadSerialEventTarget(), __func__, request,
+               &ModuleLoadRequest::ModuleLoaded,
+               &ModuleLoadRequest::LoadFailed);
+    return NS_OK;
+  }
+
+  rv = StartFetch(aRequest);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  
+  if (aRestart == RestartRequest::No) {
+    SetModuleFetchStarted(aRequest->AsModuleRequest());
+  }
+
+  return NS_OK;
 }
 
 bool ModuleLoaderBase::ModuleMapContainsURL(nsIURI* aURL,

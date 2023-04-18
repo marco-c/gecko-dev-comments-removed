@@ -115,14 +115,6 @@ class ModuleLoaderBase : public nsISupports {
   
 
  private:
-  virtual nsresult StartModuleLoad(ScriptLoadRequest* aRequest) = 0;
-  virtual nsresult RestartModuleLoad(ScriptLoadRequest* aRequest) = 0;
-  virtual void ProcessLoadedModuleTree(ModuleLoadRequest* aRequest) = 0;
-  virtual nsresult CompileOrFinishModuleScript(
-      JSContext* aCx, JS::Handle<JSObject*> aGlobal,
-      JS::CompileOptions& aOptions, ModuleLoadRequest* aRequest,
-      JS::MutableHandle<JSObject*> aModuleScript) = 0;
-
   
   virtual already_AddRefed<ModuleLoadRequest> CreateStaticImport(
       nsIURI* aURI, ModuleLoadRequest* aParent) = 0;
@@ -134,6 +126,20 @@ class ModuleLoaderBase : public nsISupports {
       JS::Handle<JSString*> aSpecifier, JS::Handle<JSObject*> aPromise) = 0;
 
   
+  
+  virtual bool CanStartLoad(ModuleLoadRequest* aRequest, nsresult* aRvOut) = 0;
+
+  
+  
+  virtual nsresult StartFetch(ModuleLoadRequest* aRequest) = 0;
+
+  virtual void ProcessLoadedModuleTree(ModuleLoadRequest* aRequest) = 0;
+  virtual nsresult CompileOrFinishModuleScript(
+      JSContext* aCx, JS::Handle<JSObject*> aGlobal,
+      JS::CompileOptions& aOptions, ModuleLoadRequest* aRequest,
+      JS::MutableHandle<JSObject*> aModuleScript) = 0;
+
+  
 
  public:
   bool HasPendingDynamicImports() const;
@@ -141,6 +147,11 @@ class ModuleLoaderBase : public nsISupports {
 #ifdef DEBUG
   bool HasDynamicImport(ModuleLoadRequest* aRequest) const;
 #endif
+
+  
+  
+  nsresult StartModuleLoad(ModuleLoadRequest* aRequest);
+  nsresult RestartModuleLoad(ModuleLoadRequest* aRequest);
 
   void SetModuleFetchFinishedAndResumeWaitingRequests(
       ModuleLoadRequest* aRequest, nsresult aResult);
@@ -155,15 +166,6 @@ class ModuleLoaderBase : public nsISupports {
   void StartDynamicImport(ModuleLoadRequest* aRequest);
   void ProcessDynamicImport(ModuleLoadRequest* aRequest);
   void CancelAndClearDynamicImports();
-
-  
-
- protected:
-  bool ModuleMapContainsURL(nsIURI* aURL, nsIGlobalObject* aGlobal) const;
-  bool IsModuleFetching(nsIURI* aURL, nsIGlobalObject* aGlobal) const;
-  RefPtr<GenericNonExclusivePromise> WaitForModuleFetch(
-      nsIURI* aURL, nsIGlobalObject* aGlobal);
-  void SetModuleFetchStarted(ModuleLoadRequest* aRequest);
 
   
 
@@ -199,6 +201,16 @@ class ModuleLoaderBase : public nsISupports {
                                        uint32_t aLineNumber,
                                        uint32_t aColumnNumber,
                                        JS::MutableHandle<JS::Value> errorOut);
+
+  enum class RestartRequest { No, Yes };
+  nsresult StartOrRestartModuleLoad(ModuleLoadRequest* aRequest,
+                                    RestartRequest aRestart);
+
+  bool ModuleMapContainsURL(nsIURI* aURL, nsIGlobalObject* aGlobal) const;
+  bool IsModuleFetching(nsIURI* aURL, nsIGlobalObject* aGlobal) const;
+  RefPtr<GenericNonExclusivePromise> WaitForModuleFetch(
+      nsIURI* aURL, nsIGlobalObject* aGlobal);
+  void SetModuleFetchStarted(ModuleLoadRequest* aRequest);
 
   ModuleScript* GetFetchedModule(nsIURI* aURL, nsIGlobalObject* aGlobal) const;
 
