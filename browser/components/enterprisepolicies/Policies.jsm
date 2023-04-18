@@ -2313,8 +2313,11 @@ function addAllowDenyPermissions(permissionName, allowList, blockList) {
         Ci.nsIPermissionManager.EXPIRE_POLICY
       );
     } catch (ex) {
-      log.error(`Added by default for ${permissionName} permission in the permission
-      manager - ${origin.href}`);
+      
+      log.error(
+        `Unable to add ${permissionName} permission for ${origin.href ||
+          origin}`
+      );
     }
   }
 

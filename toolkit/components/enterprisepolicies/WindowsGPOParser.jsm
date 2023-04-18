@@ -99,6 +99,7 @@ function readRegistryValue(wrk, value) {
     case 7: 
       
       
+      
       try {
         return JSON.parse(wrk.readStringValue(value).replace(/\0/g, "\n"));
       } catch (e) {
