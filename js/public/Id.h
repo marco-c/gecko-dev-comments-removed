@@ -22,6 +22,10 @@
 
 
 
+
+
+
+
 #include "mozilla/Maybe.h"
 
 #include "jstypes.h"
@@ -118,6 +122,10 @@ struct PropertyKey {
 
   bool isWellKnownSymbol(JS::SymbolCode code) const;
 
+  
+  
+  static constexpr PropertyKey Void() { return PropertyKey(); }
+
   static constexpr bool fitsInInt(int32_t i) { return i >= 0; }
 
   static constexpr PropertyKey Int(int32_t i) {
@@ -204,11 +212,10 @@ using jsid = JS::PropertyKey;
 #define JSID_INT_MIN 0
 #define JSID_INT_MAX INT32_MAX
 
-constexpr const jsid JSID_VOID;
-
-extern JS_PUBLIC_DATA const JS::HandleId JSID_VOIDHANDLE;
-
 namespace JS {
+
+
+extern JS_PUBLIC_DATA const JS::HandleId VoidHandlePropertyKey;
 
 template <>
 struct GCPolicy<jsid> {
