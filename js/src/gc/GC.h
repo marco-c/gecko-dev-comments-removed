@@ -41,7 +41,7 @@ extern void TraceRuntime(JSTracer* trc);
 
 extern void TraceRuntimeWithoutEviction(JSTracer* trc);
 
-extern void ReleaseAllJITCode(JSFreeOp* op);
+extern void ReleaseAllJITCode(JS::GCContext* gcx);
 
 extern void PrepareForDebugGC(JSRuntime* rt);
 

@@ -84,10 +84,10 @@ class Symbol
 
   static const JS::TraceKind TraceKind = JS::TraceKind::Symbol;
 
-  inline void traceChildren(JSTracer* trc) {
+  void traceChildren(JSTracer* trc) {
     js::TraceNullableCellHeaderEdge(trc, this, "symbol description");
   }
-  inline void finalize(JSFreeOp*) {}
+  void finalize(JS::GCContext* gcx) {}
 
   
   bool isPermanentAndMayBeShared() const { return isWellKnownSymbol(); }

@@ -586,7 +586,7 @@ class JSString : public js::gc::CellWithLengthAndFlags {
 
   
 
-  inline void finalize(JSFreeOp* fop);
+  inline void finalize(JS::GCContext* gcx);
 
   
 
@@ -944,7 +944,7 @@ class JSLinearString : public JSString {
 
   inline js::PropertyName* toPropertyName(JSContext* cx);
 
-  inline void finalize(JSFreeOp* fop);
+  inline void finalize(JS::GCContext* gcx);
   inline size_t allocSize() const;
 
 #if defined(DEBUG) || defined(JS_JITSPEW) || defined(JS_CACHEIR_SPEW)
@@ -1140,7 +1140,7 @@ class JSFatInlineString : public JSInlineString {
 
   
   
-  MOZ_ALWAYS_INLINE void finalize(JSFreeOp* fop);
+  MOZ_ALWAYS_INLINE void finalize(JS::GCContext* gcx);
 };
 
 static_assert(sizeof(JSFatInlineString) % js::gc::CellAlignBytes == 0,
@@ -1171,7 +1171,7 @@ class JSExternalString : public JSLinearString {
 
   
   
-  inline void finalize(JSFreeOp* fop);
+  inline void finalize(JS::GCContext* gcx);
 
 #if defined(DEBUG) || defined(JS_JITSPEW) || defined(JS_CACHEIR_SPEW)
   void dumpRepresentation(js::GenericPrinter& out, int indent) const;
@@ -1261,7 +1261,7 @@ class FatInlineAtom : public JSAtom {
   HashNumber hash() const { return hash_; }
   void initHash(HashNumber hash) { hash_ = hash; }
 
-  inline void finalize(JSFreeOp* fop);
+  inline void finalize(JS::GCContext* gcx);
 
   static constexpr size_t offsetOfHash() {
     return offsetof(FatInlineAtom, hash_);

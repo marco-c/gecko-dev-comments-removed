@@ -112,13 +112,13 @@ class DebugAPI {
   
   
   
-  static void sweepAll(JSFreeOp* fop);
+  static void sweepAll(JS::GCContext* gcx);
 
   
   [[nodiscard]] static bool findSweepGroupEdges(JSRuntime* rt);
 
   
-  static void removeDebugScript(JSFreeOp* fop, JSScript* script);
+  static void removeDebugScript(JS::GCContext* gcx, JSScript* script);
 
   
   static void deleteDebugScriptMap(DebugScriptMap* map);

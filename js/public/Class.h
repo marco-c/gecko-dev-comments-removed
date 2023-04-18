@@ -291,7 +291,7 @@ typedef bool (*JSMayResolveOp)(const JSAtomState& names, jsid id,
 
 
 
-typedef void (*JSFinalizeOp)(JSFreeOp* fop, JSObject* obj);
+typedef void (*JSFinalizeOp)(JS::GCContext* gcx, JSObject* obj);
 
 
 
@@ -652,9 +652,9 @@ struct alignas(js::gc::JSClassAlignBytes) JSClass {
   
   
   
-  void doFinalize(JSFreeOp* fop, JSObject* obj) const {
+  void doFinalize(JS::GCContext* gcx, JSObject* obj) const {
     MOZ_ASSERT(cOps && cOps->finalize);
-    cOps->finalize(fop, obj);
+    cOps->finalize(gcx, obj);
   }
   void doTrace(JSTracer* trc, JSObject* obj) const {
     MOZ_ASSERT(cOps && cOps->trace);

@@ -40,8 +40,8 @@ class RecompileInfo {
 using RecompileInfoVector = JS::GCVector<RecompileInfo, 1, SystemAllocPolicy>;
 
 
-void InvalidateAll(JSFreeOp* fop, JS::Zone* zone);
-void FinishInvalidation(JSFreeOp* fop, JSScript* script);
+void InvalidateAll(JS::GCContext* gcx, JS::Zone* zone);
+void FinishInvalidation(JS::GCContext* gcx, JSScript* script);
 
 
 void AddPendingInvalidation(jit::RecompileInfoVector& invalid,

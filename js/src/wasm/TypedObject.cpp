@@ -146,7 +146,7 @@ void RttValue::trace(JSTracer* trc, JSObject* obj) {
 }
 
 
-void RttValue::finalize(JSFreeOp* fop, JSObject* obj) {
+void RttValue::finalize(JS::GCContext* gcx, JSObject* obj) {
   auto* rttValue = &obj->as<RttValue>();
 
   
@@ -161,7 +161,7 @@ void RttValue::finalize(JSFreeOp* fop, JSObject* obj) {
 
   
   if (ObjectWeakMap* children = rttValue->maybeChildren()) {
-    fop->delete_(obj, children, MemoryUse::WasmRttValueChildren);
+    gcx->delete_(obj, children, MemoryUse::WasmRttValueChildren);
   }
 }
 
@@ -383,7 +383,7 @@ void OutlineTypedObject::obj_trace(JSTracer* trc, JSObject* object) {
 }
 
 
-void OutlineTypedObject::obj_finalize(JSFreeOp* fop, JSObject* object) {
+void OutlineTypedObject::obj_finalize(JS::GCContext* gcx, JSObject* object) {
   OutlineTypedObject& typedObj = object->as<OutlineTypedObject>();
 
   if (typedObj.data_) {

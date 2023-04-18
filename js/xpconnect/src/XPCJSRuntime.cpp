@@ -656,7 +656,7 @@ void NukeAllWrappersForRealm(
 
 }  
 
-static void CompartmentDestroyedCallback(JSFreeOp* fop,
+static void CompartmentDestroyedCallback(JS::GCContext* gcx,
                                          JS::Compartment* compartment) {
   
   
@@ -831,7 +831,7 @@ void XPCJSRuntime::CustomGCCallback(JSGCStatus status) {
 }
 
 
-void XPCJSRuntime::FinalizeCallback(JSFreeOp* fop, JSFinalizeStatus status,
+void XPCJSRuntime::FinalizeCallback(JS::GCContext* gcx, JSFinalizeStatus status,
                                     void* data) {
   XPCJSRuntime* self = nsXPConnect::GetRuntimeInstance();
   if (!self) {
@@ -2728,7 +2728,7 @@ static void GetRealmNameCallback(JSContext* cx, Realm* realm, char* buf,
   memcpy(buf, name.get(), name.Length() + 1);
 }
 
-static void DestroyRealm(JSFreeOp* fop, JS::Realm* realm) {
+static void DestroyRealm(JS::GCContext* gcx, JS::Realm* realm) {
   
   
   mozilla::UniquePtr<RealmPrivate> priv(RealmPrivate::Get(realm));

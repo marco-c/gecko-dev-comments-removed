@@ -14,7 +14,6 @@
 #include "gc/GCEnum.h"                
 #include "jit/ExecutableAllocator.h"  
 #include "js/AllocPolicy.h"           
-#include "js/MemoryFunctions.h"       
 #include "js/Utility.h"               
 #include "js/Vector.h"                
 
@@ -51,6 +50,7 @@ enum class GCUse {
 }  
 }  
 
+namespace JS {
 
 
 
@@ -58,7 +58,11 @@ enum class GCUse {
 
 
 
-class JSFreeOp {
+
+
+
+
+class GCContext {
   using Cell = js::gc::Cell;
   using MemoryUse = js::MemoryUse;
 
@@ -75,7 +79,7 @@ class JSFreeOp {
   js::gc::GCUse gcUse_ = js::gc::GCUse::None;
 
   
-  JS::Zone* gcSweepZone_ = nullptr;
+  Zone* gcSweepZone_ = nullptr;
 
   
   size_t isTouchingGrayThings_ = false;
@@ -85,8 +89,8 @@ class JSFreeOp {
 #endif
 
  public:
-  explicit JSFreeOp(JSRuntime* maybeRuntime, bool isMainThread);
-  ~JSFreeOp();
+  explicit GCContext(JSRuntime* maybeRuntime, bool isMainThread);
+  ~GCContext();
 
   JSRuntime* runtime() const {
     MOZ_ASSERT(isMainThread_);
@@ -102,7 +106,7 @@ class JSFreeOp {
 
 #ifdef DEBUG
   js::gc::GCUse gcUse() const { return gcUse_; }
-  JS::Zone* gcSweepZone() const { return gcSweepZone_; }
+  Zone* gcSweepZone() const { return gcSweepZone_; }
   bool isTouchingGrayThings() const { return isTouchingGrayThings_; }
 #endif
 
@@ -189,26 +193,28 @@ class JSFreeOp {
   void removeCellMemory(Cell* cell, size_t nbytes, MemoryUse use);
 };
 
+}  
+
 namespace js {
 
 
-extern MOZ_THREAD_LOCAL(JSFreeOp*) TlsFreeOp;
+extern MOZ_THREAD_LOCAL(JS::GCContext*) TlsGCContext;
 
-inline JSFreeOp* MaybeGetJSFreeOp() {
-  if (!TlsFreeOp.init()) {
+inline JS::GCContext* MaybeGetGCContext() {
+  if (!TlsGCContext.init()) {
     return nullptr;
   }
-  return TlsFreeOp.get();
+  return TlsGCContext.get();
 }
 
 class MOZ_RAII AutoTouchingGrayThings {
  public:
 #ifdef DEBUG
-  AutoTouchingGrayThings() { TlsFreeOp.get()->isTouchingGrayThings_++; }
+  AutoTouchingGrayThings() { TlsGCContext.get()->isTouchingGrayThings_++; }
   ~AutoTouchingGrayThings() {
-    JSFreeOp* fop = TlsFreeOp.get();
-    MOZ_ASSERT(fop->isTouchingGrayThings_);
-    fop->isTouchingGrayThings_--;
+    JS::GCContext* gcx = TlsGCContext.get();
+    MOZ_ASSERT(gcx->isTouchingGrayThings_);
+    gcx->isTouchingGrayThings_--;
   }
 #else
   AutoTouchingGrayThings() {}
@@ -218,28 +224,28 @@ class MOZ_RAII AutoTouchingGrayThings {
 #ifdef DEBUG
 
 inline bool CurrentThreadIsGCMarking() {
-  JSFreeOp* fop = MaybeGetJSFreeOp();
-  return fop && fop->gcUse() == gc::GCUse::Marking;
+  JS::GCContext* gcx = MaybeGetGCContext();
+  return gcx && gcx->gcUse() == gc::GCUse::Marking;
 }
 
 inline bool CurrentThreadIsGCSweeping() {
-  JSFreeOp* fop = MaybeGetJSFreeOp();
-  return fop && fop->gcUse() == gc::GCUse::Sweeping;
+  JS::GCContext* gcx = MaybeGetGCContext();
+  return gcx && gcx->gcUse() == gc::GCUse::Sweeping;
 }
 
 inline bool CurrentThreadIsGCFinalizing() {
-  JSFreeOp* fop = MaybeGetJSFreeOp();
-  return fop && fop->gcUse() == gc::GCUse::Finalizing;
+  JS::GCContext* gcx = MaybeGetGCContext();
+  return gcx && gcx->gcUse() == gc::GCUse::Finalizing;
 }
 
 inline bool CurrentThreadIsTouchingGrayThings() {
-  JSFreeOp* fop = MaybeGetJSFreeOp();
-  return fop && fop->isTouchingGrayThings();
+  JS::GCContext* gcx = MaybeGetGCContext();
+  return gcx && gcx->isTouchingGrayThings();
 }
 
 inline bool CurrentThreadIsPerformingGC() {
-  JSFreeOp* fop = MaybeGetJSFreeOp();
-  return fop && fop->isCollecting();
+  JS::GCContext* gcx = MaybeGetGCContext();
+  return gcx && gcx->isCollecting();
 }
 
 #endif

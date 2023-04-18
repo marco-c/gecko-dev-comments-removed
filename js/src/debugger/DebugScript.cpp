@@ -88,11 +88,11 @@ void DebugScriptObject::trace(JSTracer* trc, JSObject* obj) {
 }
 
 
-void DebugScriptObject::finalize(JSFreeOp* fop, JSObject* obj) {
+void DebugScriptObject::finalize(JS::GCContext* gcx, JSObject* obj) {
   DebugScriptObject* object = &obj->as<DebugScriptObject>();
   DebugScript* debugScript = object->debugScript();
   if (debugScript) {
-    debugScript->delete_(fop, object);
+    debugScript->delete_(gcx, object);
   }
 }
 
@@ -202,19 +202,19 @@ JSBreakpointSite* DebugScript::getOrCreateBreakpointSite(JSContext* cx,
 }
 
 
-void DebugScript::destroyBreakpointSite(JSFreeOp* fop, JSScript* script,
+void DebugScript::destroyBreakpointSite(JS::GCContext* gcx, JSScript* script,
                                         jsbytecode* pc) {
   DebugScript* debug = get(script);
   JSBreakpointSite*& site = debug->breakpoints[script->pcToOffset(pc)];
   MOZ_ASSERT(site);
   MOZ_ASSERT(site->isEmpty());
 
-  site->delete_(fop);
+  site->delete_(gcx);
   site = nullptr;
 
   debug->numSites--;
   if (!debug->needed()) {
-    DebugAPI::removeDebugScript(fop, script);
+    DebugAPI::removeDebugScript(gcx, script);
   }
 
   if (script->hasBaselineScript()) {
@@ -223,7 +223,7 @@ void DebugScript::destroyBreakpointSite(JSFreeOp* fop, JSScript* script,
 }
 
 
-void DebugScript::clearBreakpointsIn(JSFreeOp* fop, JSScript* script,
+void DebugScript::clearBreakpointsIn(JS::GCContext* gcx, JSScript* script,
                                      Debugger* dbg, JSObject* handler) {
   MOZ_ASSERT(script);
   
@@ -243,7 +243,7 @@ void DebugScript::clearBreakpointsIn(JSFreeOp* fop, JSScript* script,
         nextbp = bp->nextInSite();
         if ((!dbg || bp->debugger == dbg) &&
             (!handler || bp->getHandler() == handler)) {
-          bp->remove(fop);
+          bp->remove(gcx);
         }
       }
     }
@@ -281,7 +281,7 @@ bool DebugScript::incrementStepperCount(JSContext* cx, HandleScript script) {
 }
 
 
-void DebugScript::decrementStepperCount(JSFreeOp* fop, JSScript* script) {
+void DebugScript::decrementStepperCount(JS::GCContext* gcx, JSScript* script) {
   DebugScript* debug = get(script);
   MOZ_ASSERT(debug);
   MOZ_ASSERT(debug->stepperCount > 0);
@@ -294,7 +294,7 @@ void DebugScript::decrementStepperCount(JSFreeOp* fop, JSScript* script) {
     }
 
     if (!debug->needed()) {
-      DebugAPI::removeDebugScript(fop, script);
+      DebugAPI::removeDebugScript(gcx, script);
     }
   }
 }
@@ -325,7 +325,7 @@ bool DebugScript::incrementGeneratorObserverCount(JSContext* cx,
 }
 
 
-void DebugScript::decrementGeneratorObserverCount(JSFreeOp* fop,
+void DebugScript::decrementGeneratorObserverCount(JS::GCContext* gcx,
                                                   JSScript* script) {
   DebugScript* debug = get(script);
   MOZ_ASSERT(debug);
@@ -334,7 +334,7 @@ void DebugScript::decrementGeneratorObserverCount(JSFreeOp* fop,
   debug->generatorObserverCount--;
 
   if (!debug->needed()) {
-    DebugAPI::removeDebugScript(fop, script);
+    DebugAPI::removeDebugScript(gcx, script);
   }
 }
 
@@ -348,7 +348,7 @@ void DebugScript::trace(JSTracer* trc) {
 }
 
 
-void DebugAPI::removeDebugScript(JSFreeOp* fop, JSScript* script) {
+void DebugAPI::removeDebugScript(JS::GCContext* gcx, JSScript* script) {
   if (script->hasDebugScript()) {
     if (IsAboutToBeFinalizedUnbarriered(script)) {
       
@@ -367,15 +367,15 @@ void DebugAPI::removeDebugScript(JSFreeOp* fop, JSScript* script) {
   }
 }
 
-void DebugScript::delete_(JSFreeOp* fop, DebugScriptObject* owner) {
+void DebugScript::delete_(JS::GCContext* gcx, DebugScriptObject* owner) {
   for (size_t i = 0; i < codeLength; i++) {
     JSBreakpointSite* site = breakpoints[i];
     if (site) {
-      site->delete_(fop);
+      site->delete_(gcx);
     }
   }
 
-  fop->free_(owner, this, allocSize(codeLength), MemoryUse::ScriptDebugScript);
+  gcx->free_(owner, this, allocSize(codeLength), MemoryUse::ScriptDebugScript);
 }
 
 #ifdef JSGC_HASH_TABLE_CHECKS

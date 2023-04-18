@@ -2745,12 +2745,12 @@ static inline void CheckIsMarkedThing(T* thing) {
 
   
   
-  JSFreeOp* fop = TlsFreeOp.get();
-  MOZ_ASSERT(fop->gcUse() != GCUse::Finalizing);
-  if (fop->gcUse() == GCUse::Sweeping || fop->gcUse() == GCUse::Marking) {
+  JS::GCContext* gcx = TlsGCContext.get();
+  MOZ_ASSERT(gcx->gcUse() != GCUse::Finalizing);
+  if (gcx->gcUse() == GCUse::Sweeping || gcx->gcUse() == GCUse::Marking) {
     Zone* zone = thing->zoneFromAnyThread();
-    MOZ_ASSERT_IF(fop->gcSweepZone(),
-                  fop->gcSweepZone() == zone || zone->isAtomsZone());
+    MOZ_ASSERT_IF(gcx->gcSweepZone(),
+                  gcx->gcSweepZone() == zone || zone->isAtomsZone());
     return;
   }
 
@@ -2797,7 +2797,7 @@ bool js::gc::IsAboutToBeFinalizedInternal(T* thing) {
   
   
 #ifdef DEBUG
-  JSRuntime* rt = TlsFreeOp.get()->runtimeFromAnyThread();
+  JSRuntime* rt = TlsGCContext.get()->runtimeFromAnyThread();
   MOZ_ASSERT_IF(IsOwnedByOtherRuntime(rt, thing), thing->isMarkedBlack());
 #endif
 

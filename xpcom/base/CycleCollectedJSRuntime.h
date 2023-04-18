@@ -416,7 +416,7 @@ class CycleCollectedJSRuntime {
     mZonesWaitingForGC.Insert(aZone);
   }
 
-  static void OnZoneDestroyed(JSFreeOp* aFop, JS::Zone* aZone);
+  static void OnZoneDestroyed(JS::GCContext* aGcx, JS::Zone* aZone);
 
   
   

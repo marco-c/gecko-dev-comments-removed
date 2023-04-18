@@ -1901,7 +1901,8 @@ void CycleCollectedJSRuntime::PrepareWaitingZonesForGC() {
 }
 
 
-void CycleCollectedJSRuntime::OnZoneDestroyed(JSFreeOp* aFop, JS::Zone* aZone) {
+void CycleCollectedJSRuntime::OnZoneDestroyed(JS::GCContext* aGcx,
+                                              JS::Zone* aZone) {
   
   
   

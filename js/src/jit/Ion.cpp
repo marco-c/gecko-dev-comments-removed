@@ -634,10 +634,10 @@ void JitCode::traceChildren(JSTracer* trc) {
   }
 }
 
-void JitCode::finalize(JSFreeOp* fop) {
+void JitCode::finalize(JS::GCContext* gcx) {
   
 #ifdef DEBUG
-  JSRuntime* rt = fop->runtime();
+  JSRuntime* rt = gcx->runtime();
   if (hasBytecodeMap_) {
     MOZ_ASSERT(rt->jitRuntime()->hasJitcodeGlobalTable());
     MOZ_ASSERT(!rt->jitRuntime()->getJitcodeGlobalTable()->lookup(raw()));
@@ -653,7 +653,7 @@ void JitCode::finalize(JSFreeOp* fop) {
   
   
   
-  if (fop->appendJitPoisonRange(JitPoisonRange(pool_, raw() - headerSize_,
+  if (gcx->appendJitPoisonRange(JitPoisonRange(pool_, raw() - headerSize_,
                                                headerSize_ + bufferSize_))) {
     pool_->addRef();
   }
@@ -940,7 +940,7 @@ const OsiIndex* IonScript::getOsiIndex(uint8_t* retAddr) const {
   return getOsiIndex(disp);
 }
 
-void IonScript::Destroy(JSFreeOp* fop, IonScript* script) {
+void IonScript::Destroy(JS::GCContext* gcx, IonScript* script) {
   
   
   
@@ -952,13 +952,13 @@ void IonScript::Destroy(JSFreeOp* fop, IonScript* script) {
       continue;
     }
     if (lock.isNothing()) {
-      lock.emplace(&fop->runtime()->gc.storeBuffer());
+      lock.emplace(&gcx->runtime()->gc.storeBuffer());
     }
     script->nurseryObjects()[i] = HeapPtrObject();
   }
 
   
-  fop->deleteUntracked(script);
+  gcx->deleteUntracked(script);
 }
 
 void JS::DeletePolicy<js::jit::IonScript>::operator()(
@@ -2299,7 +2299,7 @@ bool jit::IonCompileScriptForBaselineOSR(JSContext* cx, BaselineFrame* frame,
   return true;
 }
 
-static void InvalidateActivation(JSFreeOp* fop,
+static void InvalidateActivation(JS::GCContext* gcx,
                                  const JitActivationIterator& activations,
                                  bool invalidateAll) {
   JitSpew(JitSpew_IonInvalidate, "BEGIN invalidating activation");
@@ -2463,7 +2463,7 @@ static void InvalidateActivation(JSFreeOp* fop,
   JitSpew(JitSpew_IonInvalidate, "END invalidating activation");
 }
 
-void jit::InvalidateAll(JSFreeOp* fop, Zone* zone) {
+void jit::InvalidateAll(JS::GCContext* gcx, Zone* zone) {
   
 #ifdef DEBUG
   for (RealmsInZoneIter realm(zone); !realm.done(); realm.next()) {
@@ -2477,7 +2477,7 @@ void jit::InvalidateAll(JSFreeOp* fop, Zone* zone) {
   for (JitActivationIterator iter(cx); !iter.done(); ++iter) {
     if (iter->compartment()->zone() == zone) {
       JitSpew(JitSpew_IonInvalidate, "Invalidating all frames for GC");
-      InvalidateActivation(fop, iter, true);
+      InvalidateActivation(gcx, iter, true);
     }
   }
 }
@@ -2532,9 +2532,9 @@ void jit::Invalidate(JSContext* cx, const RecompileInfoVector& invalid,
     return;
   }
 
-  JSFreeOp* fop = cx->defaultFreeOp();
+  JS::GCContext* gcx = cx->defaultFreeOp();
   for (JitActivationIterator iter(cx); !iter.done(); ++iter) {
-    InvalidateActivation(fop, iter, false);
+    InvalidateActivation(gcx, iter, false);
   }
 
   
@@ -2554,7 +2554,7 @@ void jit::Invalidate(JSContext* cx, const RecompileInfoVector& invalid,
       ClearIonScriptAfterInvalidation(cx, info.script(), ionScript, resetUses);
     }
 
-    ionScript->decrementInvalidationCount(fop);
+    ionScript->decrementInvalidationCount(gcx);
     numInvalidations--;
   }
 
@@ -2622,18 +2622,18 @@ void jit::Invalidate(JSContext* cx, JSScript* script, bool resetUses,
   Invalidate(cx, scripts, resetUses, cancelOffThread);
 }
 
-void jit::FinishInvalidation(JSFreeOp* fop, JSScript* script) {
+void jit::FinishInvalidation(JS::GCContext* gcx, JSScript* script) {
   if (!script->hasIonScript()) {
     return;
   }
 
   
-  IonScript* ion = script->jitScript()->clearIonScript(fop, script);
+  IonScript* ion = script->jitScript()->clearIonScript(gcx, script);
 
   
   
   if (!ion->invalidated()) {
-    jit::IonScript::Destroy(fop, ion);
+    jit::IonScript::Destroy(gcx, ion);
   }
 }
 

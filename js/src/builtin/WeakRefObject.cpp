@@ -123,7 +123,7 @@ void WeakRefObject::trace(JSTracer* trc, JSObject* obj) {
 }
 
 
-void WeakRefObject::finalize(JSFreeOp* fop, JSObject* obj) {
+void WeakRefObject::finalize(JS::GCContext* gcx, JSObject* obj) {
   
   
   

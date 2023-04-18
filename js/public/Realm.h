@@ -61,7 +61,7 @@ extern JS_PUBLIC_API void* GetRealmPrivate(Realm* realm);
 
 extern JS_PUBLIC_API void SetRealmPrivate(Realm* realm, void* data);
 
-typedef void (*DestroyRealmCallback)(JSFreeOp* fop, Realm* realm);
+typedef void (*DestroyRealmCallback)(JS::GCContext* gcx, Realm* realm);
 
 
 

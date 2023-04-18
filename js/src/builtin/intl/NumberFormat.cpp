@@ -176,8 +176,8 @@ bool js::intl_NumberFormat(JSContext* cx, unsigned argc, Value* vp) {
   return NumberFormat(cx, args, true);
 }
 
-void js::NumberFormatObject::finalize(JSFreeOp* fop, JSObject* obj) {
-  MOZ_ASSERT(fop->onMainThread());
+void js::NumberFormatObject::finalize(JS::GCContext* gcx, JSObject* obj) {
+  MOZ_ASSERT(gcx->onMainThread());
 
   auto* numberFormat = &obj->as<NumberFormatObject>();
   mozilla::intl::NumberFormat* nf = numberFormat->getNumberFormatter();
@@ -185,14 +185,14 @@ void js::NumberFormatObject::finalize(JSFreeOp* fop, JSObject* obj) {
       numberFormat->getNumberRangeFormatter();
 
   if (nf) {
-    intl::RemoveICUCellMemory(fop, obj, NumberFormatObject::EstimatedMemoryUse);
+    intl::RemoveICUCellMemory(gcx, obj, NumberFormatObject::EstimatedMemoryUse);
     
     
     delete nf;
   }
 
   if (nrf) {
-    intl::RemoveICUCellMemory(fop, obj, EstimatedRangeFormatterMemoryUse);
+    intl::RemoveICUCellMemory(gcx, obj, EstimatedRangeFormatterMemoryUse);
     
     
     delete nrf;

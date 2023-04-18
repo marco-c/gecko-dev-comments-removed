@@ -885,17 +885,17 @@ void ProxyObject::trace(JSTracer* trc, JSObject* obj) {
   Proxy::trace(trc, obj);
 }
 
-static void proxy_Finalize(JSFreeOp* fop, JSObject* obj) {
+static void proxy_Finalize(JS::GCContext* gcx, JSObject* obj) {
   
   JS::AutoSuppressGCAnalysis nogc;
 
   MOZ_ASSERT(obj->is<ProxyObject>());
-  obj->as<ProxyObject>().handler()->finalize(fop, obj);
+  obj->as<ProxyObject>().handler()->finalize(gcx, obj);
 
   if (!obj->as<ProxyObject>().usingInlineValueArray()) {
     
     
-    fop->freeUntracked(js::detail::GetProxyDataLayout(obj)->values());
+    gcx->freeUntracked(js::detail::GetProxyDataLayout(obj)->values());
   }
 }
 

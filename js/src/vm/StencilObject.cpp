@@ -67,7 +67,7 @@ JS::Stencil* StencilObject::stencil() const {
   return &obj->as<StencilObject>();
 }
 
- void StencilObject::finalize(JSFreeOp* fop, JSObject* obj) {
+ void StencilObject::finalize(JS::GCContext* gcx, JSObject* obj) {
   if (obj->as<StencilObject>().hasStencil()) {
     JS::StencilRelease(obj->as<StencilObject>().stencil());
   }
@@ -141,7 +141,7 @@ size_t StencilXDRBufferObject::bufferLength() const {
   return &obj->as<StencilXDRBufferObject>();
 }
 
- void StencilXDRBufferObject::finalize(JSFreeOp* fop,
+ void StencilXDRBufferObject::finalize(JS::GCContext* gcx,
                                                    JSObject* obj) {
   if (obj->as<StencilXDRBufferObject>().hasBuffer()) {
     js_free(obj->as<StencilXDRBufferObject>().writableBuffer());

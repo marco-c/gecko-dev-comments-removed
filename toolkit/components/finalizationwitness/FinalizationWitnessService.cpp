@@ -93,7 +93,7 @@ already_AddRefed<FinalizationEvent> ExtractFinalizationEvent(
 
 
 
-void Finalize(JSFreeOp* fop, JSObject* objSelf) {
+void Finalize(JS::GCContext* gcx, JSObject* objSelf) {
   RefPtr<FinalizationEvent> event = ExtractFinalizationEvent(objSelf);
   if (event == nullptr || gShuttingDown) {
     
