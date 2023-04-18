@@ -35,6 +35,17 @@ registerCleanupFunction(() => {
 
 
 
+add_setup(function test_setup() {
+  
+  do_get_profile();
+
+  
+  Services.fog.initializeFOG();
+});
+
+
+
+
 add_task(async function test_add_to_store() {
   const manager = ExperimentFakes.manager();
   const recipe = ExperimentFakes.recipe("foo");
@@ -111,6 +122,13 @@ add_task(
 
     await manager.onStartup();
 
+    
+    Assert.equal(
+      undefined,
+      Services.fog.testGetExperimentData("foo"),
+      "no active experiment exists before enrollment"
+    );
+
     await manager.enroll(
       ExperimentFakes.recipe("foo"),
       "test_setExperimentActive_sendEnrollmentTelemetry_called"
@@ -128,6 +146,13 @@ add_task(
       manager.sendEnrollmentTelemetry.calledWith(experiment),
       true,
       "should call sendEnrollmentTelemetry after an enrollment"
+    );
+
+    
+    Assert.notEqual(
+      undefined,
+      Services.fog.testGetExperimentData(experiment.slug),
+      "Glean.setExperimentActive called with `foo` feature"
     );
 
     manager.unenroll("foo", "test-cleanup");
@@ -152,6 +177,13 @@ add_task(async function test_setRolloutActive_sendEnrollmentTelemetry_called() {
   sandbox.spy(manager, "sendEnrollmentTelemetry");
 
   await manager.onStartup();
+
+  
+  Assert.equal(
+    undefined,
+    Services.fog.testGetExperimentData("rollout"),
+    "no rollout active before enrollment"
+  );
 
   let result = await manager.enroll(
     rolloutRecipe,
@@ -199,6 +231,13 @@ add_task(async function test_setRolloutActive_sendEnrollmentTelemetry_called() {
       }
     ),
     "Should send telemetry with expected values"
+  );
+
+  
+  Assert.equal(
+    enrollment.branch.slug,
+    Services.fog.testGetExperimentData(enrollment.slug).branch,
+    "Glean.setExperimentActive called with expected values"
   );
 
   manager.unenroll("rollout", "test-cleanup");

@@ -18,6 +18,17 @@ registerCleanupFunction(() => {
 
 
 
+add_setup(function test_setup() {
+  
+  do_get_profile();
+
+  
+  Services.fog.initializeFOG();
+});
+
+
+
+
 
 
 
@@ -114,11 +125,34 @@ add_task(async function test_setExperimentInactive_called() {
   await manager.onStartup();
   await manager.store.addEnrollment(experiment);
 
+  
+  
+  
+  Services.fog.setExperimentActive(
+    experiment.slug,
+    experiment.branch.slug,
+    null
+  );
+
+  
+  Assert.notEqual(
+    undefined,
+    Services.fog.testGetExperimentData(experiment.slug),
+    "experiment should be active before unenroll"
+  );
+
   manager.unenroll("foo", "some-reason");
 
   Assert.ok(
     TelemetryEnvironment.setExperimentInactive.calledWith("foo"),
     "should call TelemetryEnvironment.setExperimentInactive with slug"
+  );
+
+  
+  Assert.equal(
+    undefined,
+    Services.fog.testGetExperimentData(experiment.slug),
+    "experiment should be inactive after unenroll"
   );
 });
 
@@ -243,6 +277,12 @@ add_task(async function test_rollout_telemetry_events() {
   Assert.ok(
     TelemetryEnvironment.setExperimentInactive.calledWith(rollout.slug),
     "Should set rollout to inactive."
+  );
+  
+  Assert.equal(
+    undefined,
+    Services.fog.testGetExperimentData(rollout.slug),
+    "Should set rollout to inactive"
   );
   Assert.ok(
     TelemetryEvents.sendEvent.calledWith(
