@@ -13236,6 +13236,13 @@ void Document::SetNavigationTiming(nsDOMNavigationTiming* aTiming) {
   if (!mLoadingTimeStamp.IsNull() && mTiming) {
     mTiming->SetDOMLoadingTimeStamp(GetDocumentURI(), mLoadingTimeStamp);
   }
+
+  
+  
+  
+  if (mDocumentTimeline) {
+    mDocumentTimeline->UpdateLastRefreshDriverTime();
+  }
 }
 
 nsContentList* Document::ImageMapList() {

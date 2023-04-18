@@ -68,6 +68,8 @@ class DocumentTimeline final : public AnimationTimeline,
 
   Document* GetDocument() const override { return mDocument; }
 
+  void UpdateLastRefreshDriverTime();
+
   bool IsMonotonicallyIncreasing() const override { return true; }
 
  protected:
@@ -83,7 +85,7 @@ class DocumentTimeline final : public AnimationTimeline,
   
   
   
-  mutable TimeStamp mLastRefreshDriverTime;
+  TimeStamp mLastRefreshDriverTime;
   bool mIsObservingRefreshDriver;
 
   TimeDuration mOriginTime;
