@@ -4,21 +4,19 @@
 
 
 
-#ifndef nsNativeBasicThemeCocoa_h
-#define nsNativeBasicThemeCocoa_h
+#ifndef mozilla_widget_ThemeCocoa_h
+#define mozilla_widget_ThemeCocoa_h
 
-#include "nsNativeBasicTheme.h"
+#include "Theme.h"
 
 #include "ScrollbarDrawingCocoa.h"
 
-class nsNativeBasicThemeCocoa : public nsNativeBasicTheme {
- protected:
-  using ScrollbarDrawingCocoa = mozilla::widget::ScrollbarDrawingCocoa;
+namespace mozilla::widget {
 
+class ThemeCocoa : public Theme {
  public:
-  explicit nsNativeBasicThemeCocoa(
-      mozilla::UniquePtr<ScrollbarDrawing>&& aScrollbarDrawing)
-      : nsNativeBasicTheme(std::move(aScrollbarDrawing)) {}
+  explicit ThemeCocoa(UniquePtr<ScrollbarDrawing>&& aScrollbarDrawing)
+      : Theme(std::move(aScrollbarDrawing)) {}
 
   NS_IMETHOD GetMinimumWidgetSize(nsPresContext* aPresContext, nsIFrame* aFrame,
                                   StyleAppearance aAppearance,
@@ -30,7 +28,9 @@ class nsNativeBasicThemeCocoa : public nsNativeBasicTheme {
   bool ThemeSupportsWidget(nsPresContext*, nsIFrame*, StyleAppearance) override;
 
  protected:
-  virtual ~nsNativeBasicThemeCocoa() = default;
+  virtual ~ThemeCocoa() = default;
 };
+
+}  
 
 #endif
