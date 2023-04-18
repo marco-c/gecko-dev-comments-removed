@@ -64,6 +64,9 @@ user_pref("browser.ui.layout.tablet", 0);
 
 user_pref("browser.uitour.pinnedTabUrl", "http://{server}/uitour-dummy/pinnedTab");
 user_pref("browser.uitour.url", "http://{server}/uitour-dummy/tour");
+
+
+user_pref("browser.urlbar.merino.endpointURL", "");
 user_pref("browser.urlbar.speculativeConnect.enabled", false);
 
 

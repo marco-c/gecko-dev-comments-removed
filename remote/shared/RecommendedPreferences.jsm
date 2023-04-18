@@ -144,6 +144,10 @@ const COMMON_PREFERENCES = new Map([
 
   
   
+  ["browser.urlbar.merino.endpointURL", ""],
+
+  
+  
   ["browser.urlbar.suggest.searches", false],
 
   

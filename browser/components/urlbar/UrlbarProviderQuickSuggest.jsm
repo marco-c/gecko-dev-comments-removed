@@ -498,9 +498,14 @@ class ProviderQuickSuggest extends UrlbarProvider {
     let instance = this.queryInstance;
 
     
+    
+    let endpointString = UrlbarPrefs.get("merino.endpointURL");
+    if (!endpointString) {
+      return null;
+    }
     let url;
     try {
-      url = new URL(UrlbarPrefs.get("merino.endpointURL"));
+      url = new URL(endpointString);
     } catch (error) {
       this.logger.error("Could not make Merino endpoint URL: " + error);
       return null;

@@ -587,6 +587,9 @@ class DesktopInstance(GeckoInstance):
         "browser.uitour.enabled": False,
         
         
+        "browser.urlbar.merino.endpointURL": "",
+        
+        
         "browser.urlbar.suggest.searches": False,
         
         "browser.warnOnQuit": False,
