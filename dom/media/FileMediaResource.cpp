@@ -59,6 +59,7 @@ nsresult FileMediaResource::Open(nsIStreamListener** aStreamListener) {
   *aStreamListener = nullptr;
   nsresult rv = NS_OK;
 
+  MutexAutoLock lock(mLock);
   
   
   
