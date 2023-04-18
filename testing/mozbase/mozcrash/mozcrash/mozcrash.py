@@ -337,12 +337,61 @@ class CrashInfo(object):
             and os.path.exists(self.stackwalk_binary)
             and os.access(self.stackwalk_binary, os.X_OK)
         ):
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            stackwalk_version_check = subprocess.Popen(
+                [self.stackwalk_binary, "-V"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            stackwalk_version_check.wait()
 
-            command = [self.stackwalk_binary, "--human", path, self.symbols_path]
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            rust_minidump = stackwalk_version_check.returncode == 0
+
+            
+            command = [self.stackwalk_binary]
+
             
             
             if "MOZ_AUTOMATION" in os.environ:
                 command.append("--symbols-url=https://symbols.mozilla.org/")
+
+            
+            if rust_minidump:
+                command.append("--human")
+
+            
+            
+            
+            command.append(path)
+            command.append(self.symbols_path)
+
             self.logger.info(u"Copy/paste: {}".format(" ".join(command)))
             
             p = subprocess.Popen(
