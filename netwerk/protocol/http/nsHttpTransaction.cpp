@@ -295,8 +295,8 @@ nsresult nsHttpTransaction::Init(
   if (mHasRequestBody) {
     
     nsCOMPtr<nsIMultiplexInputStream> multi;
-    rv = nsMultiplexInputStreamConstructor(
-        nullptr, NS_GET_IID(nsIMultiplexInputStream), getter_AddRefs(multi));
+    rv = nsMultiplexInputStreamConstructor(NS_GET_IID(nsIMultiplexInputStream),
+                                           getter_AddRefs(multi));
     if (NS_FAILED(rv)) return rv;
 
     rv = multi->AppendStream(headers);

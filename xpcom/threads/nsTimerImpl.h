@@ -216,8 +216,7 @@ class nsTimer final : public nsITimer {
   
   static RefPtr<nsTimer> WithEventTarget(nsIEventTarget* aTarget);
 
-  static nsresult XPCOMConstructor(nsISupports* aOuter, REFNSIID aIID,
-                                   void** aResult);
+  static nsresult XPCOMConstructor(REFNSIID aIID, void** aResult);
 
  private:
   

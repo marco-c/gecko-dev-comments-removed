@@ -34,8 +34,7 @@ class nsObserverService final : public nsIObserverService,
 
   void Shutdown();
 
-  [[nodiscard]] static nsresult Create(nsISupports* aOuter, const nsIID& aIID,
-                                       void** aInstancePtr);
+  [[nodiscard]] static nsresult Create(const nsIID& aIID, void** aInstancePtr);
 
   
   

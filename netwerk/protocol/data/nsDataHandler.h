@@ -26,8 +26,7 @@ class nsDataHandler : public nsIProtocolHandler,
                                nsIURI* aBaseURI, nsIURI** result);
 
   
-  [[nodiscard]] static nsresult Create(nsISupports* aOuter, const nsIID& aIID,
-                                       void** aResult);
+  [[nodiscard]] static nsresult Create(const nsIID& aIID, void** aResult);
 
   
   

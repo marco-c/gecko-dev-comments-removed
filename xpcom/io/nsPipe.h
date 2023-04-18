@@ -16,6 +16,6 @@
   }
 
 
-nsresult nsPipeConstructor(nsISupports* outer, REFNSIID iid, void** result);
+nsresult nsPipeConstructor(REFNSIID iid, void** result);
 
 #endif  

@@ -15,7 +15,7 @@ class nsMessageLoop : public nsIMessageLoop {
   NS_DECL_NSIMESSAGELOOP
 
  private:
-  virtual ~nsMessageLoop() {}
+  virtual ~nsMessageLoop() = default;
 };
 
 #define NS_MESSAGE_LOOP_CID                          \
@@ -25,5 +25,5 @@ class nsMessageLoop : public nsIMessageLoop {
     }                                                \
   }
 
-extern nsresult nsMessageLoopConstructor(nsISupports* aOuter, const nsIID& aIID,
+extern nsresult nsMessageLoopConstructor(const nsIID& aIID,
                                          void** aInstancePtr);

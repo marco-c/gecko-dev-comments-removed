@@ -70,14 +70,6 @@ class nsIDocumentLoaderFactory;
 
 #define PRODUCT_NAME "Gecko"
 
-
-#define NS_PLUGINDOCLOADERFACTORY_CID                \
-  {                                                  \
-    0x0ddf4df8, 0x4dbb, 0x4133, {                    \
-      0x8b, 0x79, 0x9a, 0xfb, 0x96, 0x65, 0x14, 0xf5 \
-    }                                                \
-  }
-
 #include "inDeepTreeWalker.h"
 
 static void Shutdown();
@@ -138,17 +130,16 @@ nsresult NS_NewGlobalMessageManager(nsISupports** aResult);
 nsresult NS_NewParentProcessMessageManager(nsISupports** aResult);
 nsresult NS_NewChildProcessMessageManager(nsISupports** aResult);
 
-#define MAKE_CTOR(ctor_, iface_, func_)                                \
-  nsresult ctor_(nsISupports* aOuter, REFNSIID aIID, void** aResult) { \
-    *aResult = nullptr;                                                \
-    if (aOuter) return NS_ERROR_NO_AGGREGATION;                        \
-    iface_* inst;                                                      \
-    nsresult rv = func_(&inst);                                        \
-    if (NS_SUCCEEDED(rv)) {                                            \
-      rv = inst->QueryInterface(aIID, aResult);                        \
-      NS_RELEASE(inst);                                                \
-    }                                                                  \
-    return rv;                                                         \
+#define MAKE_CTOR(ctor_, iface_, func_)           \
+  nsresult ctor_(REFNSIID aIID, void** aResult) { \
+    *aResult = nullptr;                           \
+    iface_* inst;                                 \
+    nsresult rv = func_(&inst);                   \
+    if (NS_SUCCEEDED(rv)) {                       \
+      rv = inst->QueryInterface(aIID, aResult);   \
+      NS_RELEASE(inst);                           \
+    }                                             \
+    return rv;                                    \
   }
 
 #define MAKE_GENERIC_CTOR(iface_, func_)             \
@@ -190,15 +181,10 @@ MAKE_GENERIC_CTOR(nsIFocusManager, NS_NewFocusManager)
 
 
 #define NS_GENERIC_FACTORY_CONSTRUCTOR_NOREFS(_InstanceClass)                  \
-  static nsresult _InstanceClass##Constructor(nsISupports* aOuter,             \
-                                              REFNSIID aIID, void** aResult) { \
+  static nsresult _InstanceClass##Constructor(REFNSIID aIID, void** aResult) { \
     nsresult rv;                                                               \
                                                                                \
     *aResult = nullptr;                                                        \
-    if (nullptr != aOuter) {                                                   \
-      rv = NS_ERROR_NO_AGGREGATION;                                            \
-      return rv;                                                               \
-    }                                                                          \
                                                                                \
     _InstanceClass* inst = new _InstanceClass();                               \
     if (nullptr == inst) {                                                     \
@@ -216,11 +202,9 @@ MAKE_GENERIC_CTOR(nsIFocusManager, NS_NewFocusManager)
 MAKE_GENERIC_CTOR(nsIAccessibilityService, NS_GetAccessibilityService)
 #endif
 
-nsresult Construct_nsIScriptSecurityManager(nsISupports* aOuter, REFNSIID aIID,
-                                            void** aResult) {
+nsresult Construct_nsIScriptSecurityManager(REFNSIID aIID, void** aResult) {
   if (!aResult) return NS_ERROR_NULL_POINTER;
   *aResult = nullptr;
-  if (aOuter) return NS_ERROR_NO_AGGREGATION;
   nsScriptSecurityManager* obj =
       nsScriptSecurityManager::GetScriptSecurityManager();
   if (!obj) return NS_ERROR_OUT_OF_MEMORY;
@@ -228,8 +212,7 @@ nsresult Construct_nsIScriptSecurityManager(nsISupports* aOuter, REFNSIID aIID,
   return NS_OK;
 }
 
-nsresult LocalStorageManagerConstructor(nsISupports* aOuter, REFNSIID aIID,
-                                        void** aResult) {
+nsresult LocalStorageManagerConstructor(REFNSIID aIID, void** aResult) {
   if (NextGenLocalStorageEnabled()) {
     RefPtr<LocalStorageManager2> manager = new LocalStorageManager2();
     return manager->QueryInterface(aIID, aResult);
@@ -239,8 +222,7 @@ nsresult LocalStorageManagerConstructor(nsISupports* aOuter, REFNSIID aIID,
   return manager->QueryInterface(aIID, aResult);
 }
 
-nsresult SessionStorageManagerConstructor(nsISupports* aOuter, REFNSIID aIID,
-                                          void** aResult) {
+nsresult SessionStorageManagerConstructor(REFNSIID aIID, void** aResult) {
   RefPtr<SessionStorageManager> manager = new SessionStorageManager(nullptr);
   return manager->QueryInterface(aIID, aResult);
 }
