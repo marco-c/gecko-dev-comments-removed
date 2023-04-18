@@ -347,9 +347,20 @@ void nsAppShell::ScheduleNativeEventCallback() {
 }
 
 bool nsAppShell::ProcessNextNativeEvent(bool mayWait) {
-  bool ret = g_main_context_iteration(nullptr, mayWait);
+  bool didProcessEvent = false;
+  if (mayWait) {
+    
+    
+    
+    
+    while (!didProcessEvent) {
+      didProcessEvent = g_main_context_iteration(nullptr, true);
+    }
+  } else {
+    didProcessEvent = g_main_context_iteration(nullptr, false);
+  }
 #ifdef MOZ_WAYLAND
   mozilla::widget::WaylandDispatchDisplays();
 #endif
-  return ret;
+  return didProcessEvent;
 }
