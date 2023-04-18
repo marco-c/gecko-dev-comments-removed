@@ -15,9 +15,21 @@ namespace mozilla {
 
 class ScrollAnimationPhysics {
  public:
+  
+  
+  
+  
+  
+  
   virtual void Update(const TimeStamp& aTime, const nsPoint& aDestination,
                       const nsSize& aCurrentVelocity) = 0;
 
+  
+  
+  
+  
+  
+  
   virtual void ApplyContentShift(const CSSPoint& aShiftDelta) = 0;
 
   
