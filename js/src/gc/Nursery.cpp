@@ -1682,19 +1682,29 @@ size_t js::Nursery::targetSize(JS::GCOptions options, JS::GCReason reason) {
       double(previousGC.tenuredBytes) / double(previousGC.nurseryCapacity);
 
   
-  double timeFraction = 0.0;
+  
+  double dutyFactor = 0.0;
+  TimeDuration collectorTime = now - collectionStartTime();
   if (hasRecentGrowthData && !js::SupportDifferentialTesting()) {
-    TimeDuration collectorTime = now - collectionStartTime();
     TimeDuration totalTime = now - lastCollectionEndTime();
-    timeFraction = collectorTime.ToSeconds() / totalTime.ToSeconds();
+    dutyFactor = collectorTime.ToSeconds() / totalTime.ToSeconds();
   }
 
   
   
   static const double PromotionGoal = 0.02;
-  static const double TimeGoal = 0.01;
-  double growthFactor =
-      std::max(fractionPromoted / PromotionGoal, timeFraction / TimeGoal);
+  static const double DutyFactorGoal = 0.01;
+  double promotionGrowth = fractionPromoted / PromotionGoal;
+  double dutyGrowth = dutyFactor / DutyFactorGoal;
+  double growthFactor = std::max(promotionGrowth, dutyGrowth);
+
+  
+  
+  static const double MaxTimeGoalMs = 4.0;
+  if (!gc->isInPageLoad() && !js::SupportDifferentialTesting()) {
+    double timeGrowth = MaxTimeGoalMs / collectorTime.ToMilliseconds();
+    growthFactor = std::min(growthFactor, timeGrowth);
+  }
 
   
   
