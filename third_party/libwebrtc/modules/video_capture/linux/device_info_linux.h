@@ -39,13 +39,14 @@ class DeviceInfoLinux : public DeviceInfoImpl {
 
 
 
-  int32_t CreateCapabilityMap(const char* deviceUniqueIdUTF8) override;
+  int32_t CreateCapabilityMap(const char* deviceUniqueIdUTF8) override
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(_apiLock);
   int32_t DisplayCaptureSettingsDialogBox(const char* ,
                                           const char* ,
                                           void* ,
                                           uint32_t ,
                                           uint32_t ) override;
-  int32_t FillCapabilities(int fd);
+  int32_t FillCapabilities(int fd) RTC_EXCLUSIVE_LOCKS_REQUIRED(_apiLock);
   int32_t Init() override;
 
  private:
