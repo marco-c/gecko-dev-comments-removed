@@ -87,8 +87,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
 
 
-
-  initialize: function(conn, sessionContext, config = {}) {
+  initialize: function(conn, sessionContext) {
     protocol.Actor.prototype.initialize.call(this, conn);
     this._sessionContext = sessionContext;
     if (sessionContext.type == "browser-element") {
@@ -104,7 +103,6 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
       }
       this._browserElement = browsingContext.embedderElement;
     }
-    this._config = config;
 
     
     
@@ -159,10 +157,6 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
     throw new Error(
       "Unsupported session context type: " + this.sessionContext.type
     );
-  },
-
-  get isServerTargetSwitchingEnabled() {
-    return !!this._config.isServerTargetSwitchingEnabled;
   },
 
   destroy: function() {
@@ -382,7 +376,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
     
     if (
       documentEventWatcher &&
-      this.isServerTargetSwitchingEnabled &&
+      this.sessionContext.isServerTargetSwitchingEnabled &&
       actor.isTopLevelTarget
     ) {
       await documentEventWatcher.onceWillNavigateIsEmitted(actor.innerWindowId);

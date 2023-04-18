@@ -228,7 +228,7 @@ class ParentProcessStorage {
     
     
     const isNewTargetBeingCreated =
-      this.watcherActor.isServerTargetSwitchingEnabled ||
+      this.watcherActor.sessionContext.isServerTargetSwitchingEnabled ||
       (isBfCacheNavigation && this.isBfcacheInParentEnabled);
 
     if (!isNewTargetBeingCreated) {
@@ -287,7 +287,7 @@ class StorageActorMock extends EventEmitter {
     
     
     
-    if (!this.watcherActor.isServerTargetSwitchingEnabled) {
+    if (!this.watcherActor.sessionContext.isServerTargetSwitchingEnabled) {
       this._offPageShow = watcherActor.on(
         "bf-cache-navigation-pageshow",
         ({ windowGlobal }) => {
@@ -429,7 +429,10 @@ class StorageActorMock extends EventEmitter {
     
     
     const isTopContext = subject.browsingContext.top == subject.browsingContext;
-    if (isTopContext && this.watcherActor.isServerTargetSwitchingEnabled) {
+    if (
+      isTopContext &&
+      this.watcherActor.sessionContext.isServerTargetSwitchingEnabled
+    ) {
       return;
     }
 

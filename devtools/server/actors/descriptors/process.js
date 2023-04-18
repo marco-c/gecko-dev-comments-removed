@@ -159,6 +159,9 @@ const ProcessDescriptorActor = ActorClassWithSpec(processDescriptorSpec, {
     if (!this.watcher) {
       this.watcher = new WatcherActor(this.conn, {
         type: "all",
+        
+        
+        isServerTargetSwitchingEnabled: false,
       });
       this.manage(this.watcher);
     }

@@ -76,7 +76,10 @@ async function createTargets(watcher) {
     );
   }
 
-  if (watcher.isServerTargetSwitchingEnabled && watcher.browserElement) {
+  if (
+    watcher.sessionContext.isServerTargetSwitchingEnabled &&
+    watcher.sessionContext.type == "browser-element"
+  ) {
     
     
     
@@ -169,7 +172,7 @@ function destroyTargets(watcher) {
     watcher.browserElement
   );
   if (
-    watcher.isServerTargetSwitchingEnabled &&
+    watcher.sessionContext.isServerTargetSwitchingEnabled &&
     watcher.sessionContext.type == "browser-element"
   ) {
     

@@ -109,16 +109,15 @@ const WebExtensionDescriptorActor = protocol.ActorClassWithSpec(
       if (!this.watcher) {
         
         await this._extensionFrameConnect();
-        this.watcher = new WatcherActor(
-          this.conn,
-          {
-            type: "webextension",
-            addonId: this.addonId,
-            addonBrowsingContextID: this._form.browsingContextID,
-            addonInnerWindowId: this._form.innerWindowId,
-          },
-          config
-        );
+        this.watcher = new WatcherActor(this.conn, {
+          type: "webextension",
+          addonId: this.addonId,
+          addonBrowsingContextID: this._form.browsingContextID,
+          addonInnerWindowId: this._form.innerWindowId,
+          
+          
+          isServerTargetSwitchingEnabled: config.isServerTargetSwitchingEnabled,
+        });
         this.manage(this.watcher);
       }
       return this.watcher;

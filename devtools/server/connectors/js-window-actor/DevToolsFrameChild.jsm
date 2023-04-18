@@ -177,18 +177,14 @@ class DevToolsFrameChild extends JSWindowActorChild {
 
     
     for (const [watcherActorID, sessionData] of sessionDataByWatcherActor) {
-      const {
-        connectionPrefix,
-        sessionContext,
-        isServerTargetSwitchingEnabled,
-      } = sessionData;
+      const { connectionPrefix, sessionContext } = sessionData;
       
       
       
       
       
       const acceptTopLevelTarget =
-        isServerTargetSwitchingEnabled ||
+        sessionContext.isServerTargetSwitchingEnabled ||
         (isBFCache && this.isBfcacheInParentEnabled);
       if (
         sessionData.targets.includes("frame") &&
@@ -712,7 +708,7 @@ class DevToolsFrameChild extends JSWindowActorChild {
       
       let allActorsAreDestroyed = true;
       for (const [watcherActorID, sessionData] of sessionDataByWatcherActor) {
-        const { sessionContext, isServerTargetSwitchingEnabled } = sessionData;
+        const { sessionContext } = sessionData;
 
         
         
@@ -735,7 +731,10 @@ class DevToolsFrameChild extends JSWindowActorChild {
         
         
         
-        if (!this.isBfcacheInParentEnabled && !isServerTargetSwitchingEnabled) {
+        if (
+          !this.isBfcacheInParentEnabled &&
+          !sessionContext.isServerTargetSwitchingEnabled
+        ) {
           allActorsAreDestroyed = false;
           continue;
         }

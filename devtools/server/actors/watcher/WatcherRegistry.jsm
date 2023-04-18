@@ -117,8 +117,6 @@ const WatcherRegistry = {
         
         
         watcherTraits: watcher.form().traits,
-        
-        isServerTargetSwitchingEnabled: watcher.isServerTargetSwitchingEnabled,
       };
       
       for (const name of Object.values(SUPPORTED_DATA)) {
