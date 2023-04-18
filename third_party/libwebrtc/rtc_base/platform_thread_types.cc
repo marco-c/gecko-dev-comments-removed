@@ -43,7 +43,9 @@ PlatformThreadId CurrentThreadId() {
   return static_cast<PlatformThreadId>(pthread_self());
 #else
   
-  return reinterpret_cast<PlatformThreadId>(pthread_self());
+  
+  
+  return reinterpret_cast<long>(pthread_self());
 #endif
 #endif  
 }
