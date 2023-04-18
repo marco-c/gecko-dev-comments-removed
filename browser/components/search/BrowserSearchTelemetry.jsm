@@ -176,8 +176,6 @@ class BrowserSearchTelemetryHandler {
 
 
 
-
-
   recordSearch(browser, engine, source, details = {}) {
     try {
       if (!this.shouldRecordSearchCount(browser)) {
@@ -219,17 +217,6 @@ class BrowserSearchTelemetryHandler {
         default:
           this._recordSearch(browser, engine, details.url, source);
           break;
-      }
-      if (["urlbar-handoff", "abouthome", "newtab"].includes(source)) {
-        Glean.newtabSearch.issued.record({
-          newtab_visit_id: details.newtabSessionId,
-          search_access_point: KNOWN_SEARCH_SOURCES.get(source),
-          telemetry_id: engine.telemetryId,
-        });
-        lazy.SearchSERPTelemetry.recordBrowserNewtabSession(
-          browser,
-          details.newtabSessionId
-        );
       }
     } catch (ex) {
       

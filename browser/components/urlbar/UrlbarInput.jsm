@@ -725,10 +725,8 @@ class UrlbarInput {
 
 
 
-
-
-  handoff(searchString, searchEngine, newtabSessionId) {
-    this._handoffSession = newtabSessionId;
+  handoff(searchString, searchEngine) {
+    this._isHandoffSession = true;
     if (UrlbarPrefs.get("shouldHandOffToSearchMode") && searchEngine) {
       this.search(searchString, {
         searchEngine,
@@ -2352,7 +2350,7 @@ class UrlbarInput {
     const isOneOff = this.view.oneOffSearchButtons.eventTargetIsAOneOff(event);
 
     let source = "urlbar";
-    if (this._handoffSession) {
+    if (this._isHandoffSession) {
       source = "urlbar-handoff";
     } else if (this.searchMode && !isOneOff) {
       
@@ -2367,11 +2365,7 @@ class UrlbarInput {
       this.window.gBrowser.selectedBrowser,
       engine,
       source,
-      {
-        ...searchActionDetails,
-        isOneOff,
-        newtabSessionId: this._handoffSession,
-      }
+      { ...searchActionDetails, isOneOff }
     );
   }
 
@@ -2883,7 +2877,7 @@ class UrlbarInput {
 
   _on_blur(event) {
     this.focusedViaMousedown = false;
-    this._handoffSession = undefined;
+    this._isHandoffSession = false;
 
     
     
