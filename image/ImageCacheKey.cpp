@@ -8,6 +8,7 @@
 #include <utility>
 
 #include "mozilla/AntiTrackingUtils.h"
+#include "mozilla/ContentBlocking.h"
 #include "mozilla/HashFunctions.h"
 #include "mozilla/StorageAccess.h"
 #include "mozilla/StoragePrincipalHelper.h"
@@ -16,7 +17,6 @@
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/ServiceWorkerManager.h"
 #include "mozilla/StaticPrefs_privacy.h"
-#include "mozilla/StorageAccess.h"
 #include "nsContentUtils.h"
 #include "nsHashKeys.h"
 #include "nsLayoutUtils.h"
@@ -153,8 +153,8 @@ nsCString ImageCacheKey::GetIsolationKey(Document* aDocument, nsIURI* aURI) {
   
   
   
-  if (!ApproximateAllowAccessForWithoutChannel(aDocument->GetInnerWindow(),
-                                               aURI)) {
+  if (!ContentBlocking::ApproximateAllowAccessForWithoutChannel(
+          aDocument->GetInnerWindow(), aURI)) {
     
     
     

@@ -78,11 +78,6 @@ RejectForeignAllowList* RejectForeignAllowList::GetOrCreate() {
   return gRejectForeignAllowList;
 }
 
-
-bool RejectForeignAllowList::Check(nsIURI* aURI) {
-  return GetOrCreate()->CheckInternal(aURI);
-}
-
 bool RejectForeignAllowList::CheckInternal(nsIURI* aURI) {
   MOZ_ASSERT(aURI);
   return nsContentUtils::IsURIInList(aURI, mList);

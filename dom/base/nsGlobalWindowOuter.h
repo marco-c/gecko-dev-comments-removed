@@ -677,6 +677,11 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
 
   virtual bool IsInSyncOperation() override;
 
+  void ParentWindowChanged() {
+    
+    mStorageAccessPermissionGranted = false;
+  }
+
  public:
   double GetInnerWidthOuter(mozilla::ErrorResult& aError);
 
@@ -870,6 +875,13 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   nsIWidget* GetNearestWidget() const;
 
   bool IsInModalState();
+
+  bool IsStorageAccessPermissionGranted() const {
+    return mStorageAccessPermissionGranted;
+  }
+  void SetStorageAccessPermissionGranted(bool aStorageAccessPermissionGranted) {
+    mStorageAccessPermissionGranted = aStorageAccessPermissionGranted;
+  }
 
   
   
@@ -1086,6 +1098,9 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   bool mAllowScriptsToClose : 1;
 
   bool mTopLevelOuterContentWindow : 1;
+
+  
+  bool mStorageAccessPermissionGranted : 1;
 
   
   bool mDelayedPrintUntilAfterLoad : 1;
