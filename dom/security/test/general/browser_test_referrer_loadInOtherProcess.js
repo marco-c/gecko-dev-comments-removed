@@ -142,6 +142,8 @@ add_task(async function test_navigation() {
 
   
   gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, TEST_PAGE);
+  
+  await BrowserTestUtils.browserStopped(gBrowser, TEST_PAGE);
   testURI = "about:mozilla";
   permanentKey = gBrowser.selectedBrowser.permanentKey;
   await waitForLoad(testURI);
