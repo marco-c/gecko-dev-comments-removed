@@ -229,6 +229,26 @@ function TargetMixin(parentClass) {
 
 
 
+
+
+    async isTargetAnAncestor(target) {
+      const parentTargetFront = await this.getParentTarget();
+      if (!parentTargetFront) {
+        return false;
+      }
+
+      if (parentTargetFront == target) {
+        return true;
+      }
+
+      return parentTargetFront.isTargetAnAncestor(target);
+    }
+
+    
+
+
+
+
     async getWindowGlobalTarget(browsingContextID) {
       
       

@@ -772,12 +772,49 @@ class TargetCommand extends EventEmitter {
 
 
 
-  async getAllFronts(targetTypes, frontType) {
+  async getAllTargetsInSelectedTargetTree(types) {
+    const allTargets = this.getAllTargets(types);
+    if (this.isTopLevelTargetSelected()) {
+      return allTargets;
+    }
+
+    const targets = [this.selectedTargetFront];
+    for (const target of allTargets) {
+      const isInSelectedTree = await target.isTargetAnAncestor(
+        this.selectedTargetFront
+      );
+
+      if (isInSelectedTree) {
+        targets.push(target);
+      }
+    }
+    return targets;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  async getAllFronts(
+    targetTypes,
+    frontType,
+    { onlyInSelectedTargetTree = false } = {}
+  ) {
     if (!Array.isArray(targetTypes) || !targetTypes?.length) {
       throw new Error("getAllFronts expects a non-empty array of target types");
     }
     const promises = [];
-    const targets = this.getAllTargets(targetTypes);
+    const targets = !onlyInSelectedTargetTree
+      ? this.getAllTargets(targetTypes)
+      : await this.getAllTargetsInSelectedTargetTree(targetTypes);
     for (const target of targets) {
       
       
@@ -881,6 +918,24 @@ class TargetCommand extends EventEmitter {
 
   selectTarget(targetFront) {
     return this._onTargetSelected(targetFront);
+  }
+
+  
+
+
+
+
+  isTopLevelTargetSelected() {
+    return this.selectedTargetFront === this.targetFront;
+  }
+
+  
+
+
+
+
+  isNonTopLevelTargetSelected() {
+    return this.selectedTargetFront !== this.targetFront;
   }
 
   isTargetRegistered(targetFront) {

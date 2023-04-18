@@ -372,7 +372,11 @@ class AccessibleWalkerFront extends FrontClassWithSpec(accessibleWalkerSpec) {
 
 
 
-  async audit({ types, onProgress }) {
+
+
+
+
+  async audit({ types, onProgress, retrieveAncestries = true }) {
     const onAudit = new Promise(resolve => {
       const auditEventHandler = ({ type, ancestries, progress }) => {
         switch (type) {
@@ -401,7 +405,8 @@ class AccessibleWalkerFront extends FrontClassWithSpec(accessibleWalkerSpec) {
     
     
     
-    if (audit.error || audit.ancestries.length === 0) {
+    
+    if (audit.error || audit.ancestries.length === 0 || !retrieveAncestries) {
       return audit;
     }
 
