@@ -291,3 +291,52 @@ export function createThread(actor, target) {
     serviceWorkerStatus: target.debuggerServiceWorkerStatus,
   };
 }
+
+
+
+
+export function createBreakpoint({
+  id,
+  thread,
+  disabled = false,
+  options = {},
+  location,
+  astLocation,
+  generatedLocation,
+  text,
+  originalText,
+}) {
+  return {
+    
+    id,
+
+    
+    thread,
+
+    
+    disabled,
+
+    
+    
+    
+    
+    
+    
+    options,
+
+    
+    location,
+
+    
+    astLocation,
+
+    
+    generatedLocation,
+
+    
+    text,
+
+    
+    originalText,
+  };
+}
