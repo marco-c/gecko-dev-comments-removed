@@ -991,10 +991,22 @@ class EditorBase : public nsIEditor,
     }
     [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
     CanHandleAndMaybeDispatchBeforeInputEvent() {
-      if (NS_WARN_IF(!CanHandle())) {
+      if (MOZ_UNLIKELY(NS_WARN_IF(!CanHandle()))) {
         return NS_ERROR_NOT_INITIALIZED;
       }
+      nsresult rv = MaybeFlushPendingNotifications();
+      if (MOZ_UNLIKELY(NS_FAILED(rv))) {
+        return rv;
+      }
       return MaybeDispatchBeforeInputEvent();
+    }
+    [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+    CanHandleAndFlushPendingNotifications() {
+      if (MOZ_UNLIKELY(NS_WARN_IF(!CanHandle()))) {
+        return NS_ERROR_NOT_INITIALIZED;
+      }
+      MOZ_ASSERT(MayEditActionRequireLayout(mRawEditAction));
+      return MaybeFlushPendingNotifications();
     }
 
     [[nodiscard]] bool IsDataAvailable() const {
@@ -1277,6 +1289,9 @@ class EditorBase : public nsIEditor,
    private:
     bool IsBeforeInputEventEnabled() const;
 
+    [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+    MaybeFlushPendingNotifications() const;
+
     static bool NeedsBeforeInputEventHandling(EditAction aEditAction) {
       MOZ_ASSERT(aEditAction != EditAction::eNone);
       switch (aEditAction) {
@@ -1287,6 +1302,9 @@ class EditorBase : public nsIEditor,
         
         
         case EditAction::eInitializing:
+        
+        
+        case NS_EDIT_ACTION_CASES_ACCESSING_TABLE_DATA_WITHOUT_EDITING:
         
         
         case EditAction::eUnknown:
@@ -1371,7 +1389,12 @@ class EditorBase : public nsIEditor,
     
     EditSubActionData mEditSubActionData;
 
+    
+    
+    
+    
     EditAction mEditAction;
+    EditAction mRawEditAction;
 
     
     
