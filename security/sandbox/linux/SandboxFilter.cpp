@@ -1769,6 +1769,16 @@ class GMPSandboxPolicy : public SandboxPolicyCommon {
             .Else(Error(ENOSYS));
       }
 
+      
+      
+      
+      
+#ifdef __NR_readlink
+      case __NR_readlink:
+#endif
+      case __NR_readlinkat:
+        return Error(EINVAL);
+
       default:
         return SandboxPolicyCommon::EvaluateSyscall(sysno);
     }
