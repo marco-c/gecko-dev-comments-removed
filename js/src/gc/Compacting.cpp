@@ -802,7 +802,7 @@ void GCRuntime::updateZonePointersToRelocatedCells(Zone* zone) {
   
   
   for (CompartmentsInZoneIter comp(zone); !comp.done(); comp.next()) {
-    callWeakPointerCompartmentCallbacks(comp);
+    callWeakPointerCompartmentCallbacks(&trc, comp);
   }
 }
 
@@ -848,7 +848,7 @@ void GCRuntime::updateRuntimePointersToRelocatedCells(AutoGCSession& session) {
 
   
   
-  callWeakPointerZonesCallbacks();
+  callWeakPointerZonesCallbacks(&trc);
 }
 
 void GCRuntime::clearRelocatedArenas(Arena* arenaList, JS::GCReason reason) {
