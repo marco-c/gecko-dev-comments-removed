@@ -1,4 +1,7 @@
 
+
+
+
 "use strict";
 
 add_task(async function mainTest() {
@@ -18,11 +21,11 @@ add_task(async function mainTest() {
 
     
     
-    let item = DownloadsView.richListBox.firstElementChild;
+    let item = DownloadsView.richListBox.lastElementChild;
 
-    
+    info("Open the panel and click the item to show the subview.");
     let viewPromise = promiseViewShown(DownloadsBlockedSubview.subview);
-    EventUtils.sendMouseEvent({ type: "click" }, item);
+    EventUtils.synthesizeMouseAtCenter(item, {});
     await viewPromise;
 
     
@@ -32,53 +35,57 @@ add_task(async function mainTest() {
       verdicts[verdicts.count - i - 1]
     );
 
-    
+    info("Go back to the main view.");
     viewPromise = promiseViewShown(DownloadsBlockedSubview.mainView);
     DownloadsBlockedSubview.panelMultiView.goBack();
     await viewPromise;
 
-    
+    info("Show the subview again.");
     viewPromise = promiseViewShown(DownloadsBlockedSubview.subview);
-    EventUtils.sendMouseEvent({ type: "click" }, item);
+    EventUtils.synthesizeMouseAtCenter(item, {});
     await viewPromise;
 
+    info("Click the Open button.");
     
     
     
-    let unblockOpenPromise = promiseUnblockAndOpenDownloadCalled(item);
+    let unblockPromise = promiseUnblockAndSaveCalled(item);
     let hidePromise = promisePanelHidden();
-    EventUtils.synthesizeMouse(
+    
+    
+    EventUtils.synthesizeMouseAtCenter(
       DownloadsBlockedSubview.elements.unblockButton,
-      10,
-      10,
-      {},
-      window
+      { type: "mousemove" }
     );
-    await unblockOpenPromise;
+    EventUtils.synthesizeMouseAtCenter(
+      DownloadsBlockedSubview.elements.unblockButton,
+      {}
+    );
+    info("waiting for unblockOpen");
+    await unblockPromise;
+    info("waiting for hide panel");
     await hidePromise;
 
     window.focus();
     await SimpleTest.promiseFocus(window);
 
-    
+    info("Reopen the panel and show the subview again.");
     await openPanel();
-
     viewPromise = promiseViewShown(DownloadsBlockedSubview.subview);
-    EventUtils.sendMouseEvent({ type: "click" }, item);
+    EventUtils.synthesizeMouseAtCenter(item, {});
     await viewPromise;
 
-    
+    info("Click the Remove button.");
     
     hidePromise = promisePanelHidden();
-    EventUtils.synthesizeMouse(
+    EventUtils.synthesizeMouseAtCenter(
       DownloadsBlockedSubview.elements.deleteButton,
-      10,
-      10,
-      {},
-      window
+      {}
     );
+    info("Waiting for hide panel");
     await hidePromise;
 
+    info("Open the panel again and check the item is gone.");
     await openPanel();
     Assert.ok(!item.parentNode);
 
@@ -167,15 +174,12 @@ function promiseViewShown(view) {
   return BrowserTestUtils.waitForEvent(view, "ViewShown");
 }
 
-function promiseUnblockAndOpenDownloadCalled(item) {
+function promiseUnblockAndSaveCalled(item) {
   return new Promise(resolve => {
-    let realFn = item._shell.unblockAndOpenDownload;
-    item._shell.unblockAndOpenDownload = () => {
-      item._shell.unblockAndOpenDownload = realFn;
+    let realFn = item._shell.unblockAndSave;
+    item._shell.unblockAndSave = async () => {
+      item._shell.unblockAndSave = realFn;
       resolve();
-      
-      
-      return Promise.resolve();
     };
   });
 }
