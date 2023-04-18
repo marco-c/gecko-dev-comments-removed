@@ -1547,7 +1547,6 @@ void gfxFontFamily::SortAvailableFonts() {
 bool gfxFontFamily::HasOtherFamilyNames() {
   
   if (!mOtherFamilyNamesInitialized) {
-    AutoWriteLock lock(mLock);
     ReadOtherFamilyNames(
         gfxPlatformFontList::PlatformFontList());  
   }
@@ -1936,10 +1935,6 @@ bool gfxFontFamily::ReadOtherFamilyNamesForFace(
 
 void gfxFontFamily::ReadOtherFamilyNames(
     gfxPlatformFontList* aPlatformFontList) {
-  if (mOtherFamilyNamesInitialized) {
-    return;
-  }
-
   AutoWriteLock lock(mLock);
   if (mOtherFamilyNamesInitialized) {
     return;
