@@ -14,19 +14,17 @@
 #include "nsCOMArray.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsTArray.h"
-#include "nsILoadInfo.h"  
 #include "nsINode.h"
 #include "nsIObserver.h"
 #include "nsIScriptLoaderObserver.h"
 #include "nsURIHashKey.h"
 #include "mozilla/CORSMode.h"
 #include "mozilla/dom/LoadedScript.h"
-#include "mozilla/dom/JSExecutionContext.h"  
 #include "mozilla/dom/ScriptLoadRequest.h"
 #include "mozilla/MaybeOneOf.h"
 #include "mozilla/MozPromise.h"
 #include "ScriptKind.h"
-#include "ModuleLoader.h"
+#include "ModuleMapKey.h"
 
 class nsCycleCollectionTraversalCallback;
 class nsIChannel;
@@ -57,8 +55,6 @@ class AutoJSAPI;
 class DocGroup;
 class Document;
 class LoadedScript;
-class ModuleLoader;
-class ScriptLoaderInterface;
 class ModuleLoadRequest;
 class ModuleScript;
 class SRICheckDataVerifier;
@@ -92,7 +88,7 @@ class AsyncCompileShutdownObserver final : public nsIObserver {
 
 
 
-class ScriptLoader final : public ScriptLoaderInterface {
+class ScriptLoader final : public nsISupports {
   class MOZ_STACK_CLASS AutoCurrentScriptUpdater {
    public:
     AutoCurrentScriptUpdater(ScriptLoader* aScriptLoader,
@@ -115,7 +111,6 @@ class ScriptLoader final : public ScriptLoaderInterface {
 
   friend class ModuleLoadRequest;
   friend class ScriptRequestProcessor;
-  friend class ModuleLoader;
   friend class ScriptLoadHandler;
   friend class AutoCurrentScriptUpdater;
 
@@ -131,8 +126,6 @@ class ScriptLoader final : public ScriptLoaderInterface {
 
 
   void DropDocumentReference() { mDocument = nullptr; }
-
-  void EnsureModuleHooksInitialized() override;
 
   
 
@@ -194,8 +187,6 @@ class ScriptLoader final : public ScriptLoaderInterface {
     }
     mEnabled = aEnabled;
   }
-
-  ModuleLoader* GetModuleLoader() { return mModuleLoader; }
 
   
 
@@ -407,14 +398,70 @@ class ScriptLoader final : public ScriptLoaderInterface {
 
 
 
+
+
+
+
+
+
+
+
+  static void ResolveImportedModule(JSContext* aCx,
+                                    JS::Handle<JS::Value> aReferencingPrivate,
+                                    JS::Handle<JSObject*> aModuleRequest,
+                                    JS::MutableHandle<JSObject*> aModuleOut);
+
+  void StartDynamicImport(ModuleLoadRequest* aRequest);
+
+  
+
+
+
+
+
+
+
+
+
+
+  void FinishDynamicImportAndReject(ModuleLoadRequest* aRequest,
+                                    nsresult aResult);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void FinishDynamicImport(JSContext* aCx, ModuleLoadRequest* aRequest,
+                           nsresult aResult,
+                           JS::Handle<JSObject*> aEvaluationPromise);
+
+  
+
+
+
   static LoadedScript* GetActiveScript(JSContext* aCx);
 
   Document* GetDocument() const { return mDocument; }
 
-  nsIURI* GetBaseURI() const override;
-
  private:
   virtual ~ScriptLoader();
+
+  void EnsureModuleHooksInitialized();
 
   ScriptLoadRequest* CreateLoadRequest(ScriptKind aKind, nsIURI* aURI,
                                        nsIScriptElement* aElement,
@@ -434,7 +481,7 @@ class ScriptLoader final : public ScriptLoaderInterface {
   void ContinueParserAsync(ScriptLoadRequest* aParserBlockingRequest);
 
   bool ProcessExternalScript(nsIScriptElement* aElement, ScriptKind aScriptKind,
-                             const nsAutoString& aTypeAttr,
+                             nsAutoString aTypeAttr,
                              nsIContent* aScriptContent);
 
   bool ProcessInlineScript(nsIScriptElement* aElement, ScriptKind aScriptKind);
@@ -472,29 +519,7 @@ class ScriptLoader final : public ScriptLoaderInterface {
   
 
 
-  nsresult StartLoad(ScriptLoadRequest* aRequest) {
-    return aRequest->IsModuleRequest() ? StartModuleLoad(aRequest)
-                                       : StartClassicLoad(aRequest);
-  }
-
-  
-
-
-
-  nsresult StartClassicLoad(ScriptLoadRequest* aRequest);
-
-  
-
-
-
-
-  nsresult StartModuleLoad(ScriptLoadRequest* aRequest) override;
-
-  
-
-
-  nsresult StartLoadInternal(ScriptLoadRequest* aRequest,
-                             nsSecurityFlags securityFlags);
+  nsresult StartLoad(ScriptLoadRequest* aRequest);
 
   
 
@@ -544,32 +569,17 @@ class ScriptLoader final : public ScriptLoaderInterface {
                        uint32_t* sriLength) const;
 
   void ReportErrorToConsole(ScriptLoadRequest* aRequest,
-                            nsresult aResult) const override;
+                            nsresult aResult) const;
   void ReportPreloadErrorsToConsole(ScriptLoadRequest* aRequest);
 
   nsresult AttemptAsyncScriptCompile(ScriptLoadRequest* aRequest,
                                      bool* aCouldCompileOut);
-  nsresult ProcessRequest(ScriptLoadRequest* aRequest) override;
+  nsresult ProcessRequest(ScriptLoadRequest* aRequest);
+  void ProcessDynamicImport(ModuleLoadRequest* aRequest);
   nsresult CompileOffThreadOrProcessRequest(ScriptLoadRequest* aRequest);
   void FireScriptAvailable(nsresult aResult, ScriptLoadRequest* aRequest);
   void FireScriptEvaluated(nsresult aResult, ScriptLoadRequest* aRequest);
-
-  
-  nsresult EvaluateScriptElement(ScriptLoadRequest* aRequest);
-
-  
-  
-  nsresult CompileOrDecodeClassicScript(JSContext* aCx,
-                                        JSExecutionContext& aExec,
-                                        ScriptLoadRequest* aRequest);
-
-  nsresult MaybePrepareForBytecodeEncoding(JS::Handle<JSScript*> aScript,
-                                           ScriptLoadRequest* aRequest,
-                                           nsresult aRv);
-
-  
-  nsresult EvaluateScript(nsIGlobalObject* aGlobalObject,
-                          ScriptLoadRequest* aRequest);
+  nsresult EvaluateScript(ScriptLoadRequest* aRequest);
 
   
 
@@ -596,7 +606,7 @@ class ScriptLoader final : public ScriptLoaderInterface {
   void GiveUpBytecodeEncoding();
 
   already_AddRefed<nsIGlobalObject> GetGlobalForRequest(
-      ScriptLoadRequest* aRequest) override;
+      ScriptLoadRequest* aRequest);
 
   
   
@@ -608,9 +618,9 @@ class ScriptLoader final : public ScriptLoaderInterface {
   
   
   nsresult FillCompileOptionsForRequest(
-      JSContext* aCx, ScriptLoadRequest* aRequest,
+      const mozilla::dom::AutoJSAPI& jsapi, ScriptLoadRequest* aRequest,
       JS::Handle<JSObject*> aScopeChain, JS::CompileOptions* aOptions,
-      JS::MutableHandle<JSScript*> aIntroductionScript) override;
+      JS::MutableHandle<JSScript*> aIntroductionScript);
 
   uint32_t NumberOfProcessors();
   int32_t PhysicalSizeOfMemoryInGB();
@@ -618,7 +628,6 @@ class ScriptLoader final : public ScriptLoaderInterface {
   nsresult PrepareLoadedRequest(ScriptLoadRequest* aRequest,
                                 nsIIncrementalStreamLoader* aLoader,
                                 nsresult aStatus);
-  void ProcessLoadedModuleTree(ModuleLoadRequest* aRequest) override;
 
   void AddDeferRequest(ScriptLoadRequest* aRequest);
   void AddAsyncRequest(ScriptLoadRequest* aRequest);
@@ -634,9 +643,42 @@ class ScriptLoader final : public ScriptLoaderInterface {
 
   
   
+  [[nodiscard]] nsresult GetScriptSource(JSContext* aCx,
+                                         ScriptLoadRequest* aRequest,
+                                         MaybeSourceText* aMaybeSource);
+
+  void SetModuleFetchStarted(ModuleLoadRequest* aRequest);
+  void SetModuleFetchFinishedAndResumeWaitingRequests(
+      ModuleLoadRequest* aRequest, nsresult aResult);
+
+  bool ModuleMapContainsURL(nsIURI* aURL, nsIGlobalObject* aGlobal) const;
+  RefPtr<mozilla::GenericNonExclusivePromise> WaitForModuleFetch(
+      nsIURI* aURL, nsIGlobalObject* aGlobal);
+  ModuleScript* GetFetchedModule(nsIURI* aURL, nsIGlobalObject* aGlobal) const;
+
+  friend JSObject* HostResolveImportedModule(
+      JSContext* aCx, JS::Handle<JS::Value> aReferencingPrivate,
+      JS::Handle<JSString*> aSpecifier);
+
+  
+  
   static bool ShouldCacheBytecode(ScriptLoadRequest* aRequest);
 
-  void RunScriptWhenSafe(ScriptLoadRequest* aRequest) override;
+  nsresult CreateModuleScript(ModuleLoadRequest* aRequest);
+  nsresult ProcessFetchedModuleSource(ModuleLoadRequest* aRequest);
+  void CheckModuleDependenciesLoaded(ModuleLoadRequest* aRequest);
+  void ProcessLoadedModuleTree(ModuleLoadRequest* aRequest);
+  bool InstantiateModuleTree(ModuleLoadRequest* aRequest);
+  JS::Value FindFirstParseError(ModuleLoadRequest* aRequest);
+  void StartFetchingModuleDependencies(ModuleLoadRequest* aRequest);
+
+  RefPtr<mozilla::GenericPromise> StartFetchingModuleAndDependencies(
+      ModuleLoadRequest* aParent, nsIURI* aURI);
+
+  nsresult InitDebuggerDataForModuleTree(JSContext* aCx,
+                                         ModuleLoadRequest* aRequest);
+
+  void RunScriptWhenSafe(ScriptLoadRequest* aRequest);
 
   
 
@@ -653,6 +695,7 @@ class ScriptLoader final : public ScriptLoaderInterface {
   ScriptLoadRequestList mLoadedAsyncRequests;
   ScriptLoadRequestList mDeferRequests;
   ScriptLoadRequestList mXSLTRequests;
+  ScriptLoadRequestList mDynamicImportRequests;
   RefPtr<ScriptLoadRequest> mParserBlockingRequest;
   ScriptLoadRequestList mOffThreadCompilingRequests;
 
@@ -702,12 +745,15 @@ class ScriptLoader final : public ScriptLoaderInterface {
 
   TimeDuration mMainThreadParseTime;
 
+  
+  nsRefPtrHashtable<ModuleMapKey, mozilla::GenericNonExclusivePromise::Private>
+      mFetchingModules;
+  nsRefPtrHashtable<ModuleMapKey, ModuleScript> mFetchedModules;
+
   nsCOMPtr<nsIConsoleReportCollector> mReporter;
 
   
   RefPtr<AsyncCompileShutdownObserver> mShutdownObserver;
-
-  RefPtr<ModuleLoader> mModuleLoader;
 
   
  public:
