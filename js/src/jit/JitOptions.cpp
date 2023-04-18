@@ -115,6 +115,9 @@ DefaultJitOptions::DefaultJitOptions() {
   SET_DEFAULT(disableSink, true);
 
   
+  SET_DEFAULT(disableRedundantShapeGuards, false);
+
+  
   SET_DEFAULT(disableBailoutLoopCheck, false);
 
   
