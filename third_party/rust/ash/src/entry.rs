@@ -22,7 +22,6 @@ pub struct Entry {
     entry_fn_1_0: vk::EntryFnV1_0,
     entry_fn_1_1: vk::EntryFnV1_1,
     entry_fn_1_2: vk::EntryFnV1_2,
-    entry_fn_1_3: vk::EntryFnV1_3,
     #[cfg(feature = "loaded")]
     _lib_guard: Option<Arc<Library>>,
 }
@@ -143,23 +142,18 @@ impl Entry {
     
     
     pub unsafe fn from_static_fn(static_fn: vk::StaticFn) -> Self {
-        let load_fn = |name: &std::ffi::CStr| {
-            mem::transmute((static_fn.get_instance_proc_addr)(
-                vk::Instance::null(),
-                name.as_ptr(),
-            ))
+        let load_fn = |name: &std::ffi::CStr| unsafe {
+            mem::transmute(static_fn.get_instance_proc_addr(vk::Instance::null(), name.as_ptr()))
         };
         let entry_fn_1_0 = vk::EntryFnV1_0::load(load_fn);
         let entry_fn_1_1 = vk::EntryFnV1_1::load(load_fn);
         let entry_fn_1_2 = vk::EntryFnV1_2::load(load_fn);
-        let entry_fn_1_3 = vk::EntryFnV1_3::load(load_fn);
 
         Self {
             static_fn,
             entry_fn_1_0,
             entry_fn_1_1,
             entry_fn_1_2,
-            entry_fn_1_3,
             #[cfg(feature = "loaded")]
             _lib_guard: None,
         }
@@ -173,7 +167,7 @@ impl Entry {
         &self.static_fn
     }
 
-    
+    #[doc = "<https://www.khronos.org/registry/vulkan/specs/1.2-extensions/man/html/vkEnumerateInstanceVersion.html>"]
     
     
     
@@ -195,10 +189,10 @@ impl Entry {
             let mut api_version = 0;
             let enumerate_instance_version: Option<vk::PFN_vkEnumerateInstanceVersion> = {
                 let name = b"vkEnumerateInstanceVersion\0".as_ptr() as *const _;
-                mem::transmute((self.static_fn.get_instance_proc_addr)(
-                    vk::Instance::null(),
-                    name,
-                ))
+                mem::transmute(
+                    self.static_fn
+                        .get_instance_proc_addr(vk::Instance::null(), name),
+                )
             };
             if let Some(enumerate_instance_version) = enumerate_instance_version {
                 (enumerate_instance_version)(&mut api_version)
@@ -209,7 +203,7 @@ impl Entry {
         }
     }
 
-    
+    #[doc = "<https://www.khronos.org/registry/vulkan/specs/1.2-extensions/man/html/vkCreateInstance.html>"]
     
     
     
@@ -221,47 +215,45 @@ impl Entry {
         allocation_callbacks: Option<&vk::AllocationCallbacks>,
     ) -> VkResult<Instance> {
         let mut instance = mem::zeroed();
-        (self.entry_fn_1_0.create_instance)(
-            create_info,
-            allocation_callbacks.as_raw_ptr(),
-            &mut instance,
-        )
-        .result()?;
+        self.entry_fn_1_0
+            .create_instance(
+                create_info,
+                allocation_callbacks.as_raw_ptr(),
+                &mut instance,
+            )
+            .result()?;
         Ok(Instance::load(&self.static_fn, instance))
     }
 
-    
+    #[doc = "<https://www.khronos.org/registry/vulkan/specs/1.2-extensions/man/html/vkEnumerateInstanceLayerProperties.html>"]
     pub fn enumerate_instance_layer_properties(&self) -> VkResult<Vec<vk::LayerProperties>> {
         unsafe {
             read_into_uninitialized_vector(|count, data| {
-                (self.entry_fn_1_0.enumerate_instance_layer_properties)(count, data)
+                self.entry_fn_1_0
+                    .enumerate_instance_layer_properties(count, data)
             })
         }
     }
 
-    
+    #[doc = "<https://www.khronos.org/registry/vulkan/specs/1.2-extensions/man/html/vkEnumerateInstanceExtensionProperties.html>"]
     pub fn enumerate_instance_extension_properties(
         &self,
-        layer_name: Option<&CStr>,
     ) -> VkResult<Vec<vk::ExtensionProperties>> {
         unsafe {
             read_into_uninitialized_vector(|count, data| {
-                (self.entry_fn_1_0.enumerate_instance_extension_properties)(
-                    layer_name.map_or(ptr::null(), |str| str.as_ptr()),
-                    count,
-                    data,
-                )
+                self.entry_fn_1_0
+                    .enumerate_instance_extension_properties(ptr::null(), count, data)
             })
         }
     }
 
-    
+    #[doc = "<https://www.khronos.org/registry/vulkan/specs/1.2-extensions/man/html/vkGetInstanceProcAddr.html>"]
     pub unsafe fn get_instance_proc_addr(
         &self,
         instance: vk::Instance,
         p_name: *const c_char,
     ) -> vk::PFN_vkVoidFunction {
-        (self.static_fn.get_instance_proc_addr)(instance, p_name)
+        self.static_fn.get_instance_proc_addr(instance, p_name)
     }
 }
 
@@ -272,14 +264,15 @@ impl Entry {
         &self.entry_fn_1_1
     }
 
-    #[deprecated = "This function is unavailable and therefore panics on Vulkan 1.0, please use `try_enumerate_instance_version()` instead"]
-    
+    #[deprecated = "This function is unavailable and therefore panics on Vulkan 1.0, please use `try_enumerate_instance_version` instead"]
+    #[doc = "<https://www.khronos.org/registry/vulkan/specs/1.2-extensions/man/html/vkEnumerateInstanceVersion.html>"]
     
     
     pub fn enumerate_instance_version(&self) -> VkResult<u32> {
         unsafe {
             let mut api_version = 0;
-            (self.entry_fn_1_1.enumerate_instance_version)(&mut api_version)
+            self.entry_fn_1_1
+                .enumerate_instance_version(&mut api_version)
                 .result_with_success(api_version)
         }
     }
@@ -290,14 +283,6 @@ impl Entry {
 impl Entry {
     pub fn fp_v1_2(&self) -> &vk::EntryFnV1_2 {
         &self.entry_fn_1_2
-    }
-}
-
-
-#[allow(non_camel_case_types)]
-impl Entry {
-    pub fn fp_v1_3(&self) -> &vk::EntryFnV1_3 {
-        &self.entry_fn_1_3
     }
 }
 

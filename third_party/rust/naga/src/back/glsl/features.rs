@@ -1,40 +1,39 @@
 use super::{BackendResult, Error, Version, Writer};
 use crate::{
-    AddressSpace, Binding, Bytes, Expression, Handle, ImageClass, ImageDimension, Interpolation,
-    MathFunction, Sampling, ScalarKind, ShaderStage, StorageFormat, Type, TypeInner,
+    Binding, Bytes, Expression, Handle, ImageClass, ImageDimension, Interpolation, MathFunction,
+    Sampling, ScalarKind, ShaderStage, StorageClass, StorageFormat, Type, TypeInner,
 };
 use std::fmt::Write;
 
 bitflags::bitflags! {
-    /// Structure used to encode additions to GLSL that aren't supported by all versions.
+    /// Structure used to encode a set of additions to glsl that aren't supported by all versions
     pub struct Features: u32 {
-        /// Buffer address space support.
+        /// Buffer storage class support
         const BUFFER_STORAGE = 1;
         const ARRAY_OF_ARRAYS = 1 << 1;
-        /// 8 byte floats.
+        /// 8 byte floats
         const DOUBLE_TYPE = 1 << 2;
-        /// More image formats.
+        /// Includes support for more image formats
         const FULL_IMAGE_FORMATS = 1 << 3;
         const MULTISAMPLED_TEXTURES = 1 << 4;
         const MULTISAMPLED_TEXTURE_ARRAYS = 1 << 5;
         const CUBE_TEXTURES_ARRAY = 1 << 6;
         const COMPUTE_SHADER = 1 << 7;
-        /// Image load and early depth tests.
+        /// Adds support for image load and early depth tests
         const IMAGE_LOAD_STORE = 1 << 8;
         const CONSERVATIVE_DEPTH = 1 << 9;
-        /// Interpolation and auxiliary qualifiers.
-        ///
-        /// Perspective, Flat, and Centroid are available in all GLSL versions we support.
+        /// Interpolation and auxiliary qualifiers. Perspective, Flat, and
+        /// Centroid are available in all GLSL versions we support.
         const NOPERSPECTIVE_QUALIFIER = 1 << 11;
         const SAMPLE_QUALIFIER = 1 << 12;
         const CLIP_DISTANCE = 1 << 13;
         const CULL_DISTANCE = 1 << 14;
-        /// Sample ID.
+        // Sample ID
         const SAMPLE_VARIABLES = 1 << 15;
-        /// Arrays with a dynamic length.
+        /// Arrays with a dynamic length
         const DYNAMIC_ARRAY_SIZE = 1 << 16;
         const MULTI_VIEW = 1 << 17;
-        /// Fused multiply-add.
+        /// Adds support for fused multiply-add
         const FMA = 1 << 18;
     }
 }
@@ -344,21 +343,14 @@ impl<'a, W> Writer<'a, W> {
             }
         }
 
-        let mut push_constant_used = false;
-
         for (handle, global) in self.module.global_variables.iter() {
             if ep_info[handle].is_empty() {
                 continue;
             }
-            match global.space {
-                AddressSpace::WorkGroup => self.features.request(Features::COMPUTE_SHADER),
-                AddressSpace::Storage { .. } => self.features.request(Features::BUFFER_STORAGE),
-                AddressSpace::PushConstant => {
-                    if push_constant_used {
-                        return Err(Error::MultiplePushConstants);
-                    }
-                    push_constant_used = true;
-                }
+            match global.class {
+                StorageClass::WorkGroup => self.features.request(Features::COMPUTE_SHADER),
+                StorageClass::Storage { .. } => self.features.request(Features::BUFFER_STORAGE),
+                StorageClass::PushConstant => return Err(Error::PushConstantNotSupported),
                 _ => {}
             }
         }

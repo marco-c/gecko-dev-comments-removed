@@ -43,25 +43,14 @@ impl<'source> ParsingContext<'source> {
         terminator: &mut Option<usize>,
     ) -> Result<Option<Span>> {
         
-        if self.peek_type_qualifier(parser) {
+        
+        
+        
+        
+        
+        
+        if self.peek_type_name(parser) || self.peek_type_qualifier(parser) {
             return self.parse_declaration(parser, ctx, body, false);
-        }
-
-        
-        
-        if self.peek_type_name(parser) {
-            
-            let token = self.bump(parser)?;
-            
-            
-            
-            let declaration = TokenValue::LeftParen != self.expect_peek(parser)?.value;
-
-            self.backtrack(token)?;
-
-            if declaration {
-                return self.parse_declaration(parser, ctx, body, false);
-            }
         }
 
         let new_break = || {
@@ -407,7 +396,7 @@ impl<'source> ParsingContext<'source> {
                 if self.bump_if(parser, TokenValue::Semicolon).is_none() {
                     let (expr, expr_meta) =
                         if self.peek_type_name(parser) || self.peek_type_qualifier(parser) {
-                            let mut qualifiers = self.parse_type_qualifiers(parser)?;
+                            let qualifiers = self.parse_type_qualifiers(parser)?;
                             let (ty, mut meta) = self.parse_type_non_void(parser)?;
                             let name = self.expect_ident(parser)?.0;
 
@@ -418,7 +407,7 @@ impl<'source> ParsingContext<'source> {
                             meta.subsume(end_meta);
 
                             let decl = VarDeclaration {
-                                qualifiers: &mut qualifiers,
+                                qualifiers: &qualifiers,
                                 ty,
                                 name: Some(name),
                                 init: None,
@@ -497,21 +486,12 @@ impl<'source> ParsingContext<'source> {
                 let mut block = Block::new();
                 ctx.push_scope();
 
-                let mut block_terminator = None;
-                let meta = self.parse_compound_statement(
-                    meta,
-                    parser,
-                    ctx,
-                    &mut block,
-                    &mut block_terminator,
-                )?;
+                let meta =
+                    self.parse_compound_statement(meta, parser, ctx, &mut block, terminator)?;
 
                 ctx.remove_current_scope();
 
                 body.push(Statement::Block(block), meta);
-                if block_terminator.is_some() {
-                    terminator.get_or_insert(body.len());
-                }
 
                 meta
             }

@@ -2,8 +2,6 @@
 
 
 
-
-
 use super::{super::FunctionCtx, BackendResult, Error};
 use crate::{
     proc::{NameKey, TypeResolution},
@@ -150,7 +148,7 @@ impl<W: fmt::Write> super::Writer<'_, W> {
             } => {
                 write!(self.out, "{{")?;
                 let count = module.constants[const_handle].to_array_length().unwrap();
-                let stride = module.types[base].inner.size(&module.constants);
+                let stride = module.types[base].inner.span(&module.constants);
                 let iter = (0..count).map(|i| (TypeResolution::Handle(base), stride * i));
                 self.write_storage_load_sequence(module, var_handle, iter, func_ctx)?;
                 write!(self.out, "}}")?;
@@ -313,7 +311,7 @@ impl<W: fmt::Write> super::Writer<'_, W> {
                 writeln!(self.out, ";")?;
                 
                 let count = module.constants[const_handle].to_array_length().unwrap();
-                let stride = module.types[base].inner.size(&module.constants);
+                let stride = module.types[base].inner.span(&module.constants);
                 for i in 0..count {
                     self.temp_access_chain.push(SubAccess::Offset(i * stride));
                     let sv = StoreValue::TempIndex {

@@ -52,8 +52,6 @@ compile_error!("Metal API enabled on non-Apple OS. If your project is not using 
 #[cfg(all(feature = "dx12", not(windows)))]
 compile_error!("DX12 API enabled on non-Windows OS. If your project is not using resolver=\"2\" in Cargo.toml, it should.");
 
-#[cfg(all(feature = "dx11", windows))]
-mod dx11;
 #[cfg(all(feature = "dx12", windows))]
 mod dx12;
 mod empty;
@@ -66,8 +64,6 @@ mod vulkan;
 
 pub mod auxil;
 pub mod api {
-    #[cfg(feature = "dx11")]
-    pub use super::dx11::Api as Dx11;
     #[cfg(feature = "dx12")]
     pub use super::dx12::Api as Dx12;
     pub use super::empty::Api as Empty;
@@ -88,7 +84,6 @@ use std::{
     num::{NonZeroU32, NonZeroU8},
     ops::{Range, RangeInclusive},
     ptr::NonNull,
-    sync::atomic::AtomicBool,
 };
 
 use bitflags::bitflags;
@@ -1151,39 +1146,6 @@ pub struct RenderPassDescriptor<'a, A: Api> {
 #[derive(Clone, Debug)]
 pub struct ComputePassDescriptor<'a> {
     pub label: Label<'a>,
-}
-
-
-
-
-
-
-
-
-
-
-
-
-pub static VALIDATION_CANARY: ValidationCanary = ValidationCanary {
-    inner: AtomicBool::new(false),
-};
-
-
-pub struct ValidationCanary {
-    inner: AtomicBool,
-}
-
-impl ValidationCanary {
-    #[allow(dead_code)] 
-    fn set(&self) {
-        self.inner.store(true, std::sync::atomic::Ordering::SeqCst);
-    }
-
-    
-    
-    pub fn get_and_reset(&self) -> bool {
-        self.inner.swap(false, std::sync::atomic::Ordering::SeqCst)
-    }
 }
 
 #[test]

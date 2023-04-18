@@ -1,9 +1,3 @@
-
-
-
-
-
-
 mod writer;
 
 use thiserror::Error;

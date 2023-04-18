@@ -55,8 +55,6 @@
 
 
 
-
-
 use super::{Block, BlockContext, Instruction};
 use spirv::Word;
 

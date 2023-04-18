@@ -189,29 +189,10 @@ impl<A: hal::Api> NonReferencedResources<A> {
     }
 }
 
-
 struct ActiveSubmission<A: hal::Api> {
-    
-    
-    
-    
     index: SubmissionIndex,
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     last_resources: NonReferencedResources<A>,
-
-    
     mapped: Vec<id::Valid<id::BufferId>>,
-
     encoders: Vec<EncoderInFlight<A>>,
     work_done_closures: SmallVec<[SubmittedWorkDoneClosure; 1]>,
 }
@@ -232,67 +213,23 @@ pub enum WaitIdleError {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 pub(super) struct LifetimeTracker<A: hal::Api> {
     
-    
     mapped: Vec<Stored<id::BufferId>>,
-
     
     
     pub future_suspected_buffers: Vec<Stored<id::BufferId>>,
-
     
     pub future_suspected_textures: Vec<Stored<id::TextureId>>,
-
     
     pub suspected_resources: SuspectedResources,
-
-    
-    
-    
     
     
     
     active: Vec<ActiveSubmission<A>>,
-
-    
-    
-    
     
     
     free_resources: NonReferencedResources<A>,
-
-    
-    
     ready_to_map: Vec<id::Valid<id::BufferId>>,
 }
 
@@ -309,12 +246,6 @@ impl<A: hal::Api> LifetimeTracker<A> {
         }
     }
 
-    
-    pub fn queue_empty(&self) -> bool {
-        self.active.is_empty()
-    }
-
-    
     pub fn track_submission(
         &mut self,
         index: SubmissionIndex,
@@ -359,26 +290,6 @@ impl<A: hal::Api> LifetimeTracker<A> {
     }
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     #[must_use]
     pub fn triage_submissions(
         &mut self,
@@ -393,7 +304,7 @@ impl<A: hal::Api> LifetimeTracker<A> {
             .active
             .iter()
             .position(|a| a.index > last_done)
-            .unwrap_or(self.active.len());
+            .unwrap_or_else(|| self.active.len());
 
         let mut work_done_closures = SmallVec::new();
         for a in self.active.drain(..done_count) {
@@ -449,45 +360,6 @@ impl<A: hal::Api> LifetimeTracker<A> {
 }
 
 impl<A: HalApi> LifetimeTracker<A> {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     pub(super) fn triage_suspected<G: GlobalIdentityHandlerFactory>(
         &mut self,
         hub: &Hub<A, G>,
@@ -503,7 +375,6 @@ impl<A: HalApi> LifetimeTracker<A> {
 
             while let Some(id) = self.suspected_resources.render_bundles.pop() {
                 if trackers.bundles.remove_abandoned(id) {
-                    log::debug!("Bundle {:?} will be destroyed", id);
                     #[cfg(feature = "trace")]
                     if let Some(t) = trace {
                         t.lock().add(trace::Action::DestroyRenderBundle(id.0));
@@ -522,7 +393,6 @@ impl<A: HalApi> LifetimeTracker<A> {
 
             while let Some(id) = self.suspected_resources.bind_groups.pop() {
                 if trackers.bind_groups.remove_abandoned(id) {
-                    log::debug!("Bind group {:?} will be destroyed", id);
                     #[cfg(feature = "trace")]
                     if let Some(t) = trace {
                         t.lock().add(trace::Action::DestroyBindGroup(id.0));
@@ -554,7 +424,6 @@ impl<A: HalApi> LifetimeTracker<A> {
             let mut list = mem::take(&mut self.suspected_resources.texture_views);
             for id in list.drain(..) {
                 if trackers.views.remove_abandoned(id) {
-                    log::debug!("Texture view {:?} will be destroyed", id);
                     #[cfg(feature = "trace")]
                     if let Some(t) = trace {
                         t.lock().add(trace::Action::DestroyTextureView(id.0));
@@ -581,7 +450,6 @@ impl<A: HalApi> LifetimeTracker<A> {
 
             for id in self.suspected_resources.textures.drain(..) {
                 if trackers.textures.remove_abandoned(id) {
-                    log::debug!("Texture {:?} will be destroyed", id);
                     #[cfg(feature = "trace")]
                     if let Some(t) = trace {
                         t.lock().add(trace::Action::DestroyTexture(id.0));
@@ -618,7 +486,6 @@ impl<A: HalApi> LifetimeTracker<A> {
 
             for id in self.suspected_resources.samplers.drain(..) {
                 if trackers.samplers.remove_abandoned(id) {
-                    log::debug!("Sampler {:?} will be destroyed", id);
                     #[cfg(feature = "trace")]
                     if let Some(t) = trace {
                         t.lock().add(trace::Action::DestroySampler(id.0));
@@ -643,11 +510,11 @@ impl<A: HalApi> LifetimeTracker<A> {
 
             for id in self.suspected_resources.buffers.drain(..) {
                 if trackers.buffers.remove_abandoned(id) {
-                    log::debug!("Buffer {:?} will be destroyed", id);
                     #[cfg(feature = "trace")]
                     if let Some(t) = trace {
                         t.lock().add(trace::Action::DestroyBuffer(id.0));
                     }
+                    log::debug!("Buffer {:?} is detached", id);
 
                     if let Some(res) = hub.buffers.unregister_locked(id.0, &mut *guard) {
                         let submit_index = res.life_guard.life_count();
@@ -671,7 +538,6 @@ impl<A: HalApi> LifetimeTracker<A> {
 
             for id in self.suspected_resources.compute_pipelines.drain(..) {
                 if trackers.compute_pipes.remove_abandoned(id) {
-                    log::debug!("Compute pipeline {:?} will be destroyed", id);
                     #[cfg(feature = "trace")]
                     if let Some(t) = trace {
                         t.lock().add(trace::Action::DestroyComputePipeline(id.0));
@@ -696,7 +562,6 @@ impl<A: HalApi> LifetimeTracker<A> {
 
             for id in self.suspected_resources.render_pipelines.drain(..) {
                 if trackers.render_pipes.remove_abandoned(id) {
-                    log::debug!("Render pipeline {:?} will be destroyed", id);
                     #[cfg(feature = "trace")]
                     if let Some(t) = trace {
                         t.lock().add(trace::Action::DestroyRenderPipeline(id.0));
@@ -725,7 +590,6 @@ impl<A: HalApi> LifetimeTracker<A> {
             {
                 
                 if ref_count.load() == 1 {
-                    log::debug!("Pipeline layout {:?} will be destroyed", id);
                     #[cfg(feature = "trace")]
                     if let Some(t) = trace {
                         t.lock().add(trace::Action::DestroyPipelineLayout(id.0));
@@ -750,7 +614,6 @@ impl<A: HalApi> LifetimeTracker<A> {
                 
                 
                 if guard[id].multi_ref_count.dec_and_check_empty() {
-                    log::debug!("Bind group layout {:?} will be destroyed", id);
                     #[cfg(feature = "trace")]
                     if let Some(t) = trace {
                         t.lock().add(trace::Action::DestroyBindGroupLayout(id.0));
@@ -768,7 +631,6 @@ impl<A: HalApi> LifetimeTracker<A> {
 
             for id in self.suspected_resources.query_sets.drain(..) {
                 if trackers.query_sets.remove_abandoned(id) {
-                    log::debug!("Query set {:?} will be destroyed", id);
                     
                     
                     if let Some(res) = hub.query_sets.unregister_locked(id.0, &mut *guard) {
@@ -785,10 +647,6 @@ impl<A: HalApi> LifetimeTracker<A> {
         }
     }
 
-    
-    
-    
-    
     pub(super) fn triage_mapped<G: GlobalIdentityHandlerFactory>(
         &mut self,
         hub: &Hub<A, G>,
@@ -819,11 +677,6 @@ impl<A: HalApi> LifetimeTracker<A> {
         }
     }
 
-    
-    
-    
-    
-    
     #[must_use]
     pub(super) fn handle_mapping<G: GlobalIdentityHandlerFactory>(
         &mut self,

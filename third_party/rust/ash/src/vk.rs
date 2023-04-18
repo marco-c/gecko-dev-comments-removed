@@ -29,19 +29,18 @@ pub use prelude::*;
 
 #[allow(nonstandard_style)]
 #[allow(deref_nullptr)]
-#[allow(trivial_casts, trivial_numeric_casts)]
 pub mod native;
 mod platform_types;
 pub use platform_types::*;
 
 
 pub(crate) unsafe fn ptr_chain_iter<T>(ptr: &mut T) -> impl Iterator<Item = *mut BaseOutStructure> {
-    let ptr = <*mut T>::cast::<BaseOutStructure>(ptr);
+    let ptr: *mut BaseOutStructure = ptr as *mut T as _;
     (0..).scan(ptr, |p_ptr, _| {
         if p_ptr.is_null() {
             return None;
         }
-        let n_ptr = (**p_ptr).p_next;
+        let n_ptr = (**p_ptr).p_next as *mut BaseOutStructure;
         let old = *p_ptr;
         *p_ptr = n_ptr;
         Some(old)

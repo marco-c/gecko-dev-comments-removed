@@ -1,9 +1,6 @@
 
 
 
-
-
-
 mod block;
 mod helpers;
 mod image;
@@ -69,6 +66,8 @@ pub enum Error {
     FeatureNotImplemented(&'static str),
     #[error("module is not validated properly: {0}")]
     Validation(&'static str),
+    #[error(transparent)]
+    Proc(#[from] crate::proc::ProcError),
 }
 
 #[derive(Default)]
@@ -270,7 +269,7 @@ enum LocalType {
         vector_size: Option<crate::VectorSize>,
         kind: crate::ScalarKind,
         width: crate::Bytes,
-        pointer_space: Option<spirv::StorageClass>,
+        pointer_class: Option<spirv::StorageClass>,
     },
     
     Matrix {
@@ -336,14 +335,14 @@ fn make_local(inner: &crate::TypeInner) -> Option<LocalType> {
                 vector_size: None,
                 kind,
                 width,
-                pointer_space: None,
+                pointer_class: None,
             }
         }
         crate::TypeInner::Vector { size, kind, width } => LocalType::Value {
             vector_size: Some(size),
             kind,
             width,
-            pointer_space: None,
+            pointer_class: None,
         },
         crate::TypeInner::Matrix {
             columns,
@@ -354,20 +353,20 @@ fn make_local(inner: &crate::TypeInner) -> Option<LocalType> {
             rows,
             width,
         },
-        crate::TypeInner::Pointer { base, space } => LocalType::Pointer {
+        crate::TypeInner::Pointer { base, class } => LocalType::Pointer {
             base,
-            class: helpers::map_storage_class(space),
+            class: helpers::map_storage_class(class),
         },
         crate::TypeInner::ValuePointer {
             size,
             kind,
             width,
-            space,
+            class,
         } => LocalType::Value {
             vector_size: size,
             kind,
             width,
-            pointer_space: Some(helpers::map_storage_class(space)),
+            pointer_class: Some(helpers::map_storage_class(class)),
         },
         crate::TypeInner::Image {
             dim,
@@ -434,24 +433,11 @@ impl recyclable::Recyclable for CachedExpressions {
 #[derive(Clone)]
 struct GlobalVariable {
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     var_id: Word,
-
     
     
     
     handle_id: Word,
-
     
     
     
@@ -650,6 +636,7 @@ impl Default for Options {
 pub struct PipelineOptions {
     
     pub shader_stage: crate::ShaderStage,
+    
     
     
     

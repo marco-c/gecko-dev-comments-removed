@@ -13,7 +13,6 @@ use objc::runtime::{Object, NO, YES};
 
 use std::{ffi::CStr, os::raw::c_char, path::Path, ptr};
 
-
 #[allow(non_camel_case_types)]
 #[repr(u64)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
@@ -46,12 +45,10 @@ pub enum MTLFeatureSet {
     macOS_GPUFamily1_v1 = 10000,
     macOS_GPUFamily1_v2 = 10001,
     
-    macOS_ReadWriteTextureTier2 = 10002,
     macOS_GPUFamily1_v3 = 10003,
     macOS_GPUFamily1_v4 = 10004,
     macOS_GPUFamily2_v1 = 10005,
 }
-
 
 #[repr(i64)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
@@ -136,7 +133,7 @@ impl MTLFeatureSet {
             tvOS_GPUFamily1_v3 | tvOS_GPUFamily2_v1 => 11,
             tvOS_GPUFamily1_v4 | tvOS_GPUFamily2_v2 => 12,
             macOS_GPUFamily1_v1 => 11,
-            macOS_GPUFamily1_v2 | macOS_ReadWriteTextureTier2 => 12,
+            macOS_GPUFamily1_v2 => 12,
             macOS_GPUFamily1_v3 => 13,
             macOS_GPUFamily1_v4 | macOS_GPUFamily2_v1 => 14,
         }
@@ -145,20 +142,10 @@ impl MTLFeatureSet {
     fn gpu_family(&self) -> u32 {
         use MTLFeatureSet::*;
         match self {
-            iOS_GPUFamily1_v1
-            | iOS_GPUFamily1_v2
-            | iOS_GPUFamily1_v3
-            | iOS_GPUFamily1_v4
-            | iOS_GPUFamily1_v5
-            | tvOS_GPUFamily1_v1
-            | tvOS_GPUFamily1_v2
-            | tvOS_GPUFamily1_v3
-            | tvOS_GPUFamily1_v4
-            | macOS_GPUFamily1_v1
-            | macOS_GPUFamily1_v2
-            | macOS_ReadWriteTextureTier2
-            | macOS_GPUFamily1_v3
-            | macOS_GPUFamily1_v4 => 1,
+            iOS_GPUFamily1_v1 | iOS_GPUFamily1_v2 | iOS_GPUFamily1_v3 | iOS_GPUFamily1_v4
+            | iOS_GPUFamily1_v5 | tvOS_GPUFamily1_v1 | tvOS_GPUFamily1_v2 | tvOS_GPUFamily1_v3
+            | tvOS_GPUFamily1_v4 | macOS_GPUFamily1_v1 | macOS_GPUFamily1_v2
+            | macOS_GPUFamily1_v3 | macOS_GPUFamily1_v4 => 1,
             iOS_GPUFamily2_v1 | iOS_GPUFamily2_v2 | iOS_GPUFamily2_v3 | iOS_GPUFamily2_v4
             | iOS_GPUFamily2_v5 | tvOS_GPUFamily2_v1 | tvOS_GPUFamily2_v2 | macOS_GPUFamily2_v1 => {
                 2
@@ -172,16 +159,9 @@ impl MTLFeatureSet {
     fn version(&self) -> u32 {
         use MTLFeatureSet::*;
         match self {
-            iOS_GPUFamily1_v1
-            | iOS_GPUFamily2_v1
-            | iOS_GPUFamily3_v1
-            | iOS_GPUFamily4_v1
-            | iOS_GPUFamily5_v1
-            | macOS_GPUFamily1_v1
-            | macOS_GPUFamily2_v1
-            | macOS_ReadWriteTextureTier2
-            | tvOS_GPUFamily1_v1
-            | tvOS_GPUFamily2_v1 => 1,
+            iOS_GPUFamily1_v1 | iOS_GPUFamily2_v1 | iOS_GPUFamily3_v1 | iOS_GPUFamily4_v1
+            | iOS_GPUFamily5_v1 | macOS_GPUFamily1_v1 | macOS_GPUFamily2_v1
+            | tvOS_GPUFamily1_v1 | tvOS_GPUFamily2_v1 => 1,
             iOS_GPUFamily1_v2 | iOS_GPUFamily2_v2 | iOS_GPUFamily3_v2 | iOS_GPUFamily4_v2
             | macOS_GPUFamily1_v2 | tvOS_GPUFamily1_v2 | tvOS_GPUFamily2_v2 => 2,
             iOS_GPUFamily1_v3 | iOS_GPUFamily2_v3 | iOS_GPUFamily3_v3 | macOS_GPUFamily1_v3

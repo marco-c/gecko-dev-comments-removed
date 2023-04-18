@@ -674,122 +674,15 @@ impl RenderCommandEncoderRef {
     
     
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[deprecated(note = "Use use_resource_at instead")]
     pub fn use_resource(&self, resource: &ResourceRef, usage: MTLResourceUsage) {
         unsafe {
-            msg_send![self,
-                useResource:resource
-                usage:usage
-            ]
+            msg_send![self, useResource:resource
+                                  usage:usage]
         }
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn use_resource_at(
-        &self,
-        resource: &ResourceRef,
-        usage: MTLResourceUsage,
-        stages: MTLRenderStages,
-    ) {
-        unsafe {
-            msg_send![self,
-                useResource: resource
-                usage: usage
-                stages: stages
-            ]
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn use_resources(
-        &self,
-        resources: &[&ResourceRef],
-        usage: MTLResourceUsage,
-        stages: MTLRenderStages,
-    ) {
-        unsafe {
-            msg_send![self,
-                useResources: resources.as_ptr()
-                count: resources.len() as NSUInteger
-                usage: usage
-                stages: stages
-            ]
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    #[deprecated(note = "Use use_heap_at instead")]
     pub fn use_heap(&self, heap: &HeapRef) {
         unsafe { msg_send![self, useHeap: heap] }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn use_heap_at(&self, heap: &HeapRef, stages: MTLRenderStages) {
-        unsafe {
-            msg_send![self,
-                useHeap: heap
-                stages: stages
-            ]
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn use_heaps(&self, heaps: &[&HeapRef], stages: MTLRenderStages) {
-        unsafe {
-            msg_send![self,
-                useHeaps: heaps.as_ptr()
-                count: heaps.len() as NSUInteger
-                stages: stages
-            ]
-        }
     }
 
     pub fn update_fence(&self, fence: &FenceRef, after_stages: MTLRenderStages) {
@@ -1142,67 +1035,17 @@ impl ComputeCommandEncoderRef {
         }
     }
 
-    
-    
-    
-    
-    
-    
-    
     pub fn use_resource(&self, resource: &ResourceRef, usage: MTLResourceUsage) {
         unsafe {
             msg_send![self,
-                useResource: resource
-                usage: usage
+                useResource:resource
+                usage:usage
             ]
         }
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn use_resources(&self, resources: &[&ResourceRef], usage: MTLResourceUsage) {
-        unsafe {
-            msg_send![self,
-                useResources: resources.as_ptr()
-                count: resources.len() as NSUInteger
-                usage: usage
-            ]
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
     pub fn use_heap(&self, heap: &HeapRef) {
         unsafe { msg_send![self, useHeap: heap] }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    pub fn use_heaps(&self, heaps: &[&HeapRef]) {
-        unsafe {
-            msg_send![self,
-                useHeaps: heaps.as_ptr()
-                count: heaps.len() as NSUInteger
-            ]
-        }
     }
 
     pub fn update_fence(&self, fence: &FenceRef) {

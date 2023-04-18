@@ -50,11 +50,7 @@ use atomic::{AtomicUsize, Ordering};
 
 use std::{borrow::Cow, os::raw::c_char, ptr, sync::atomic};
 
-
-
-
 type SubmissionIndex = hal::FenceValue;
-
 type Index = u32;
 type Epoch = u32;
 
@@ -75,15 +71,6 @@ impl<'a> LabelHelpers<'a> for Label<'a> {
 }
 
 
-
-
-
-
-
-
-
-
-
 #[derive(Debug)]
 struct RefCount(ptr::NonNull<AtomicUsize>);
 
@@ -93,14 +80,20 @@ unsafe impl Sync for RefCount {}
 impl RefCount {
     const MAX: usize = 1 << 24;
 
-    
-    fn new() -> RefCount {
-        let bx = Box::new(AtomicUsize::new(1));
-        Self(unsafe { ptr::NonNull::new_unchecked(Box::into_raw(bx)) })
-    }
-
     fn load(&self) -> usize {
         unsafe { self.0.as_ref() }.load(Ordering::Acquire)
+    }
+
+    
+    
+    
+    unsafe fn rich_drop_inner(&mut self) -> bool {
+        if self.0.as_ref().fetch_sub(1, Ordering::AcqRel) == 1 {
+            let _ = Box::from_raw(self.0.as_ptr());
+            true
+        } else {
+            false
+        }
     }
 }
 
@@ -115,9 +108,7 @@ impl Clone for RefCount {
 impl Drop for RefCount {
     fn drop(&mut self) {
         unsafe {
-            if self.0.as_ref().fetch_sub(1, Ordering::AcqRel) == 1 {
-                drop(Box::from_raw(self.0.as_ptr()));
-            }
+            self.rich_drop_inner();
         }
     }
 }
@@ -125,64 +116,37 @@ impl Drop for RefCount {
 
 
 #[derive(Debug)]
-struct MultiRefCount(AtomicUsize);
+struct MultiRefCount(ptr::NonNull<AtomicUsize>);
+
+unsafe impl Send for MultiRefCount {}
+unsafe impl Sync for MultiRefCount {}
 
 impl MultiRefCount {
     fn new() -> Self {
-        Self(AtomicUsize::new(1))
+        let bx = Box::new(AtomicUsize::new(1));
+        let ptr = Box::into_raw(bx);
+        Self(unsafe { ptr::NonNull::new_unchecked(ptr) })
     }
 
     fn inc(&self) {
-        self.0.fetch_add(1, Ordering::AcqRel);
+        unsafe { self.0.as_ref() }.fetch_add(1, Ordering::AcqRel);
     }
 
     fn dec_and_check_empty(&self) -> bool {
-        self.0.fetch_sub(1, Ordering::AcqRel) == 1
+        unsafe { self.0.as_ref() }.fetch_sub(1, Ordering::AcqRel) == 1
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+impl Drop for MultiRefCount {
+    fn drop(&mut self) {
+        let _ = unsafe { Box::from_raw(self.0.as_ptr()) };
+    }
+}
 
 #[derive(Debug)]
 pub struct LifeGuard {
-    
-    
-    
-    
-    
-    
-    
-    
-    
     ref_count: Option<RefCount>,
-
-    
-    
-    
-    
-    
-    
-    
     submission_index: AtomicUsize,
-
-    
     #[cfg(debug_assertions)]
     pub(crate) label: String,
 }
@@ -190,8 +154,9 @@ pub struct LifeGuard {
 impl LifeGuard {
     #[allow(unused_variables)]
     fn new(label: &str) -> Self {
+        let bx = Box::new(AtomicUsize::new(1));
         Self {
-            ref_count: Some(RefCount::new()),
+            ref_count: ptr::NonNull::new(Box::into_raw(bx)).map(RefCount),
             submission_index: AtomicUsize::new(0),
             #[cfg(debug_assertions)]
             label: label.to_string(),
@@ -202,9 +167,6 @@ impl LifeGuard {
         self.ref_count.clone().unwrap()
     }
 
-    
-    
-    
     
     fn use_at(&self, submit_index: SubmissionIndex) -> bool {
         self.submission_index
@@ -234,54 +196,20 @@ If you are running this program on native and not in a browser and wish to work 
 Adapter::downlevel_properties or Device::downlevel_properties to get a listing of the features the current \
 platform supports.";
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #[macro_export]
 macro_rules! gfx_select {
     ($id:expr => $global:ident.$method:ident( $($param:expr),* )) => {
         // Note: For some reason the cfg aliases defined in build.rs don't succesfully apply in this
         // macro so we must specify their equivalents manually
         match $id.backend() {
-            #[cfg(any(
-                all(not(target_arch = "wasm32"), not(target_os = "ios"), not(target_os = "macos")),
-                feature = "vulkan-portability"
-            ))]
+            #[cfg(all(not(target_arch = "wasm32"), not(target_os = "ios"), not(target_os = "macos")))]
             wgt::Backend::Vulkan => $global.$method::<$crate::api::Vulkan>( $($param),* ),
             #[cfg(all(not(target_arch = "wasm32"), any(target_os = "ios", target_os = "macos")))]
             wgt::Backend::Metal => $global.$method::<$crate::api::Metal>( $($param),* ),
             #[cfg(all(not(target_arch = "wasm32"), windows))]
             wgt::Backend::Dx12 => $global.$method::<$crate::api::Dx12>( $($param),* ),
-            #[cfg(all(not(target_arch = "wasm32"), windows))]
-            wgt::Backend::Dx11 => $global.$method::<$crate::api::Dx11>( $($param),* ),
+            //#[cfg(all(not(target_arch = "wasm32"), windows))]
+            //wgt::Backend::Dx11 => $global.$method::<$crate::api::Dx11>( $($param),* ),
             #[cfg(any(
                 all(unix, not(target_os = "macos"), not(target_os = "ios")),
                 feature = "angle",
@@ -321,6 +249,14 @@ pub(crate) fn get_greatest_common_divisor(mut a: u32, mut b: u32) -> u32 {
             a = b;
             b = c;
         }
+    }
+}
+
+#[inline]
+pub(crate) fn align_to(value: u32, alignment: u32) -> u32 {
+    match value % alignment {
+        0 => value,
+        other => value - other + alignment,
     }
 }
 

@@ -17,50 +17,20 @@ use std::cell::Cell;
 use std::{fmt::Debug, marker::PhantomData, mem, ops};
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #[derive(Debug, Default)]
 pub struct IdentityManager {
-    
-    
     free: Vec<Index>,
-
-    
-    
-    
-    
-    
-    
-    
     epochs: Vec<Epoch>,
 }
 
 impl IdentityManager {
-    
-    
-    
-    
+    pub fn from_index(min_index: u32) -> Self {
+        Self {
+            free: (0..min_index).collect(),
+            epochs: vec![1; min_index as usize],
+        }
+    }
+
     pub fn alloc<I: id::TypedId>(&mut self, backend: Backend) -> I {
         match self.free.pop() {
             Some(index) => I::zip(index, self.epochs[index as usize], backend),
@@ -73,34 +43,19 @@ impl IdentityManager {
         }
     }
 
-    
     pub fn free<I: id::TypedId + Debug>(&mut self, id: I) {
         let (index, epoch, _backend) = id.unzip();
         let pe = &mut self.epochs[index as usize];
         assert_eq!(*pe, epoch);
-        
-        
-        if epoch < id::EPOCH_MASK {
-            *pe = epoch + 1;
-            self.free.push(index);
-        }
+        *pe += 1;
+        self.free.push(index);
     }
 }
 
-
 #[derive(Debug)]
 enum Element<T> {
-    
     Vacant,
-
-    
-    
     Occupied(T, Epoch),
-
-    
-    
-    
-    
     Error(Epoch, String),
 }
 
@@ -120,11 +75,6 @@ impl StorageReport {
 
 #[derive(Clone, Debug)]
 pub(crate) struct InvalidId;
-
-
-
-
-
 
 #[derive(Debug)]
 pub struct Storage<T, I: id::TypedId> {
@@ -411,7 +361,7 @@ impl<I: id::TypedId + Debug> IdentityHandler<I> for Mutex<IdentityManager> {
 
 pub trait IdentityHandlerFactory<I> {
     type Filter: IdentityHandler<I>;
-    fn spawn(&self) -> Self::Filter;
+    fn spawn(&self, min_index: Index) -> Self::Filter;
 }
 
 #[derive(Debug)]
@@ -419,8 +369,8 @@ pub struct IdentityManagerFactory;
 
 impl<I: id::TypedId + Debug> IdentityHandlerFactory<I> for IdentityManagerFactory {
     type Filter = Mutex<IdentityManager>;
-    fn spawn(&self) -> Self::Filter {
-        Mutex::new(IdentityManager::default())
+    fn spawn(&self, min_index: Index) -> Self::Filter {
+        Mutex::new(IdentityManager::from_index(min_index))
     }
 }
 
@@ -469,7 +419,7 @@ pub struct Registry<T: Resource, I: id::TypedId, F: IdentityHandlerFactory<I>> {
 impl<T: Resource, I: id::TypedId, F: IdentityHandlerFactory<I>> Registry<T, I, F> {
     fn new(backend: Backend, factory: &F) -> Self {
         Self {
-            identity: factory.spawn(),
+            identity: factory.spawn(0),
             data: RwLock::new(Storage {
                 map: Vec::new(),
                 kind: T::TYPE,
@@ -481,7 +431,7 @@ impl<T: Resource, I: id::TypedId, F: IdentityHandlerFactory<I>> Registry<T, I, F
 
     fn without_backend(factory: &F, kind: &'static str) -> Self {
         Self {
-            identity: factory.spawn(),
+            identity: factory.spawn(1),
             data: RwLock::new(Storage {
                 map: Vec::new(),
                 kind,
@@ -1056,26 +1006,21 @@ impl HalApi for hal::api::Dx12 {
     }
 }
 
-#[cfg(dx11)]
-impl HalApi for hal::api::Dx11 {
-    const VARIANT: Backend = Backend::Dx11;
-    fn create_instance_from_hal(name: &str, hal_instance: Self::Instance) -> Instance {
-        Instance {
-            name: name.to_owned(),
-            dx11: Some(hal_instance),
-            ..Default::default()
-        }
-    }
-    fn hub<G: GlobalIdentityHandlerFactory>(global: &Global<G>) -> &Hub<Self, G> {
-        &global.hubs.dx11
-    }
-    fn get_surface(surface: &Surface) -> &HalSurface<Self> {
-        surface.dx11.as_ref().unwrap()
-    }
-    fn get_surface_mut(surface: &mut Surface) -> &mut HalSurface<Self> {
-        surface.dx11.as_mut().unwrap()
-    }
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #[cfg(gl)]
 impl HalApi for hal::api::Gles {
@@ -1103,18 +1048,4 @@ impl HalApi for hal::api::Gles {
 fn _test_send_sync(global: &Global<IdentityManagerFactory>) {
     fn test_internal<T: Send + Sync>(_: T) {}
     test_internal(global)
-}
-
-#[test]
-fn test_epoch_end_of_life() {
-    use id::TypedId as _;
-    let mut man = IdentityManager::default();
-    man.epochs.push(id::EPOCH_MASK);
-    man.free.push(0);
-    let id1 = man.alloc::<id::BufferId>(Backend::Empty);
-    assert_eq!(id1.unzip().0, 0);
-    man.free(id1);
-    let id2 = man.alloc::<id::BufferId>(Backend::Empty);
-    
-    assert_eq!(id2.unzip().0, 1);
 }

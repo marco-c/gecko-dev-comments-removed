@@ -6,17 +6,11 @@
 
 
 
-
-
-
-
-
-
 pub use ast::{Precision, Profile};
 pub use error::{Error, ErrorKind, ExpectedToken};
 pub use token::TokenValue;
 
-use crate::{proc::Layouter, FastHashMap, FastHashSet, Handle, Module, ShaderStage, Span, Type};
+use crate::{FastHashMap, FastHashSet, Handle, Module, ShaderStage, Span, Type};
 use ast::{EntryArg, FunctionDeclaration, GlobalLookup};
 use parser::ParsingContext;
 
@@ -172,8 +166,6 @@ pub struct Parser {
 
     entry_args: Vec<EntryArg>,
 
-    layouter: Layouter,
-
     errors: Vec<Error>,
 
     module: Module,
@@ -187,7 +179,6 @@ impl Parser {
         self.lookup_type.clear();
         self.global_variables.clear();
         self.entry_args.clear();
-        self.layouter.clear();
 
         
         

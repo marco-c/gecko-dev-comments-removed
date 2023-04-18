@@ -1,8 +1,8 @@
 
 
-
-
-use crate::{valid, Handle, UniqueArena};
+use super::ProcError;
+use crate::valid;
+use crate::{Handle, UniqueArena};
 use bit_set::BitSet;
 
 
@@ -140,9 +140,9 @@ impl BoundsCheckPolicies {
         types: &UniqueArena<crate::Type>,
         info: &valid::FunctionInfo,
     ) -> BoundsCheckPolicy {
-        match info[access].ty.inner_with(types).pointer_space() {
-            Some(crate::AddressSpace::Storage { access: _ })
-            | Some(crate::AddressSpace::Uniform) => self.buffer,
+        match info[access].ty.inner_with(types).pointer_class() {
+            Some(crate::StorageClass::Storage { access: _ })
+            | Some(crate::StorageClass::Uniform) => self.buffer,
             
             
             _ => self.index,
@@ -198,19 +198,6 @@ pub enum GuardedIndex {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 pub fn find_checked_indexes(
     module: &crate::Module,
     function: &crate::Function,
@@ -226,43 +213,20 @@ pub fn find_checked_indexes(
         for (_handle, expr) in function.expressions.iter() {
             
             
-            match *expr {
-                Ex::Access { base, index } => {
-                    if policies.choose_policy(base, &module.types, info)
-                        == BoundsCheckPolicy::ReadZeroSkipWrite
-                        && access_needs_check(
-                            base,
-                            GuardedIndex::Expression(index),
-                            module,
-                            function,
-                            info,
-                        )
-                        .is_some()
-                    {
-                        guarded_indices.insert(index.index());
-                    }
+            if let Ex::Access { base, index } = *expr {
+                if policies.choose_policy(base, &module.types, info)
+                    == BoundsCheckPolicy::ReadZeroSkipWrite
+                    && access_needs_check(
+                        base,
+                        GuardedIndex::Expression(index),
+                        module,
+                        function,
+                        info,
+                    )
+                    .is_some()
+                {
+                    guarded_indices.insert(index.index());
                 }
-                Ex::ImageLoad {
-                    coordinate,
-                    array_index,
-                    sample,
-                    level,
-                    ..
-                } => {
-                    if policies.image == BoundsCheckPolicy::ReadZeroSkipWrite {
-                        guarded_indices.insert(coordinate.index());
-                        if let Some(array_index) = array_index {
-                            guarded_indices.insert(array_index.index());
-                        }
-                        if let Some(sample) = sample {
-                            guarded_indices.insert(sample.index());
-                        }
-                        if let Some(level) = level {
-                            guarded_indices.insert(level.index());
-                        }
-                    }
-                }
-                _ => {}
             }
         }
     }
@@ -336,14 +300,6 @@ impl GuardedIndex {
     }
 }
 
-#[derive(Clone, Copy, Debug, thiserror::Error, PartialEq)]
-pub enum IndexableLengthError {
-    #[error("Type is not indexable, and has no length (validation error)")]
-    TypeNotIndexable,
-    #[error("Array length constant {0:?} is invalid")]
-    InvalidArrayLength(Handle<crate::Constant>),
-}
-
 impl crate::TypeInner {
     
     
@@ -356,10 +312,7 @@ impl crate::TypeInner {
     
     
     
-    pub fn indexable_length(
-        &self,
-        module: &crate::Module,
-    ) -> Result<IndexableLength, IndexableLengthError> {
+    pub fn indexable_length(&self, module: &crate::Module) -> Result<IndexableLength, ProcError> {
         use crate::TypeInner as Ti;
         let known_length = match *self {
             Ti::Vector { size, .. } => size as _,
@@ -379,10 +332,10 @@ impl crate::TypeInner {
                     Ti::Vector { size, .. } => size as _,
                     Ti::Matrix { columns, .. } => columns as _,
                     Ti::Array { size, .. } => return size.to_indexable_length(module),
-                    _ => return Err(IndexableLengthError::TypeNotIndexable),
+                    _ => return Err(ProcError::TypeNotIndexable),
                 }
             }
-            _ => return Err(IndexableLengthError::TypeNotIndexable),
+            _ => return Err(ProcError::TypeNotIndexable),
         };
         Ok(IndexableLength::Known(known_length))
     }
@@ -402,23 +355,25 @@ pub enum IndexableLength {
 }
 
 impl crate::ArraySize {
-    pub fn to_indexable_length(
-        self,
-        module: &crate::Module,
-    ) -> Result<IndexableLength, IndexableLengthError> {
+    pub fn to_indexable_length(self, module: &crate::Module) -> Result<IndexableLength, ProcError> {
+        use crate::Constant as K;
         Ok(match self {
-            Self::Constant(k) => {
-                let constant = &module.constants[k];
-                if constant.specialization.is_some() {
+            Self::Constant(k) => match module.constants[k] {
+                K {
+                    specialization: Some(_),
+                    ..
+                } => {
                     
                     
-                    return Err(IndexableLengthError::InvalidArrayLength(k));
+                    return Err(ProcError::InvalidArraySizeConstant(k));
                 }
-                let length = constant
-                    .to_array_length()
-                    .ok_or(IndexableLengthError::InvalidArrayLength(k))?;
-                IndexableLength::Known(length)
-            }
+                ref unspecialized => {
+                    let length = unspecialized
+                        .to_array_length()
+                        .ok_or(ProcError::InvalidArraySizeConstant(k))?;
+                    IndexableLength::Known(length)
+                }
+            },
             Self::Dynamic => IndexableLength::Dynamic,
         })
     }
