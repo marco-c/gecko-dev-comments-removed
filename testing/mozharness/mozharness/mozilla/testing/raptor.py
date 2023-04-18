@@ -1059,7 +1059,6 @@ class Raptor(
                     ["numpy==1.22.0", "Pillow==9.0.0", "scipy==1.7.3", "pyssim==0.4"]
                 )
             
-            
 
             self.setup_local_ffmpeg()
 

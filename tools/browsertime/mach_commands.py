@@ -36,6 +36,7 @@ import contextlib
 import json
 import logging
 import os
+import platform
 import re
 import stat
 import subprocess
@@ -54,6 +55,10 @@ BROWSERTIME_ROOT = os.path.dirname(__file__)
 
 PILLOW_VERSION = "8.4.0"  
 PYSSIM_VERSION = "0.4"
+
+IS_APPLE_SILICON = sys.platform.startswith(
+    "darwin"
+) and platform.processor().startswith("arm")
 
 
 @contextlib.contextmanager
@@ -358,6 +363,16 @@ def setup_browsertime(
         {"package_json": mozpath.join(BROWSERTIME_ROOT, "package.json")},
         "Installing browsertime node module from {package_json}",
     )
+
+    
+    
+    
+    
+    
+    node_dir = os.path.dirname(node_path())
+    if IS_APPLE_SILICON and node_dir not in os.environ["PATH"]:
+        os.environ["PATH"] += os.pathsep + node_dir
+
     status = setup_helper.package_setup(
         BROWSERTIME_ROOT,
         "browsertime",
