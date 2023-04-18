@@ -21,6 +21,7 @@ struct nsRect;
 namespace mozilla {
 
 namespace dom {
+class Element;
 class Text;
 }  
 
@@ -89,7 +90,7 @@ class MOZ_STACK_CLASS ContentEventHandler {
     nsresult SetStartAndEnd(const RawRangeBoundary& aStart,
                             const RawRangeBoundary& aEnd);
 
-    nsresult SelectNodeContents(nsINode* aNodeToSelectContents);
+    nsresult SelectNodeContents(const nsINode* aNodeToSelectContents);
 
    private:
     inline void AssertStartIsBeforeOrEqualToEnd();
@@ -101,6 +102,7 @@ class MOZ_STACK_CLASS ContentEventHandler {
   };
 
  public:
+  using Element = dom::Element;
   using Selection = dom::Selection;
 
   explicit ContentEventHandler(nsPresContext* aPresContext);
@@ -150,7 +152,7 @@ class MOZ_STACK_CLASS ContentEventHandler {
   
   
   RawRange mFirstSelectedRawRange;
-  nsCOMPtr<nsIContent> mRootContent;
+  RefPtr<Element> mRootElement;
 
   MOZ_CAN_RUN_SCRIPT nsresult Init(WidgetQueryContentEvent* aEvent);
   MOZ_CAN_RUN_SCRIPT nsresult Init(WidgetSelectionEvent* aEvent);
@@ -244,7 +246,7 @@ class MOZ_STACK_CLASS ContentEventHandler {
   
   static nsresult GetFlatTextLengthInRange(const NodePosition& aStartPosition,
                                            const NodePosition& aEndPosition,
-                                           nsIContent* aRootContent,
+                                           const Element* aRootElement,
                                            uint32_t* aLength,
                                            LineBreakType aLineBreakType,
                                            bool aIsRemovingNode = false);
@@ -273,7 +275,7 @@ class MOZ_STACK_CLASS ContentEventHandler {
   
   
   
-  nsresult GenerateFlatTextContent(nsIContent* aContent, nsString& aString,
+  nsresult GenerateFlatTextContent(const Element* aElement, nsString& aString,
                                    LineBreakType aLineBreakType);
   
   nsresult GenerateFlatTextContent(const RawRange& aRawRange, nsString& aString,
@@ -287,7 +289,7 @@ class MOZ_STACK_CLASS ContentEventHandler {
   
   
   static bool ShouldBreakLineBefore(const nsIContent& aContent,
-                                    const nsINode* aRootNode = nullptr);
+                                    const Element* aRootElement);
   
   static inline uint32_t GetBRLength(LineBreakType aLineBreakType);
   static LineBreakType GetLineBreakType(WidgetQueryContentEvent* aEvent);
