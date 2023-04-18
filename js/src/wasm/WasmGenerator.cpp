@@ -952,7 +952,7 @@ bool ModuleGenerator::finishCodegen() {
 bool ModuleGenerator::finishMetadataTier() {
   
   
-  metadataTier_->stackMaps.sort();
+  metadataTier_->stackMaps.finishAndSort();
 
   
 #ifdef ENABLE_WASM_EXCEPTIONS
@@ -962,7 +962,7 @@ bool ModuleGenerator::finishMetadataTier() {
 #ifdef DEBUG
   
   
-  uint8_t* previousNextInsnAddr = nullptr;
+  const uint8_t* previousNextInsnAddr = nullptr;
   for (size_t i = 0; i < metadataTier_->stackMaps.length(); i++) {
     const StackMaps::Maplet& maplet = metadataTier_->stackMaps.get(i);
     MOZ_ASSERT_IF(i > 0, uintptr_t(maplet.nextInsnAddr) >
