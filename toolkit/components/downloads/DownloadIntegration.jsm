@@ -113,12 +113,6 @@ XPCOMUtils.defineLazyGetter(this, "gParentalControlsService", function() {
   return null;
 });
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "DownloadSpamProtection",
-  "resource:///modules/DownloadSpamProtection.jsm"
-);
-
 XPCOMUtils.defineLazyServiceGetter(
   this,
   "gApplicationReputationService",
@@ -963,16 +957,6 @@ var DownloadIntegration = {
   _getDirectory(name) {
     return Services.dirsvc.get(name, Ci.nsIFile).path;
   },
-  
-
-
-
-  getDownloadSpamProtection() {
-    if (!this._downloadSpamProtection) {
-      this._downloadSpamProtection = new DownloadSpamProtection();
-    }
-    return this._downloadSpamProtection;
-  },
 
   
 
@@ -991,12 +975,6 @@ var DownloadIntegration = {
       DownloadObserver.observersAdded = true;
       for (let topic of kObserverTopics) {
         Services.obs.addObserver(DownloadObserver, topic);
-      }
-      if (AppConstants.MOZ_BUILD_APP == "browser") {
-        Services.obs.addObserver(
-          this.getDownloadSpamProtection(),
-          DownloadSpamProtection.TOPIC
-        );
       }
     }
     return Promise.resolve();
