@@ -6,6 +6,7 @@
 use crate::task::AtomicWaker;
 use alloc::sync::{Arc, Weak};
 use core::cell::UnsafeCell;
+use core::cmp;
 use core::fmt::{self, Debug};
 use core::iter::FromIterator;
 use core::marker::PhantomData;
@@ -29,6 +30,33 @@ use self::task::Task;
 
 mod ready_to_run_queue;
 use self::ready_to_run_queue::{Dequeue, ReadyToRunQueue};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const YIELD_EVERY: usize = 32;
 
 
 
@@ -384,20 +412,7 @@ impl<Fut: Future> Stream for FuturesUnordered<Fut> {
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        let yield_every = self.len();
+        let yield_every = cmp::min(self.len(), YIELD_EVERY);
 
         
         
@@ -575,9 +590,24 @@ impl<Fut> FuturesUnordered<Fut> {
 
 impl<Fut> Drop for FuturesUnordered<Fut> {
     fn drop(&mut self) {
-        self.clear_head_all();
         
-        unsafe { self.ready_to_run_queue.clear() };
+        
+        
+        
+        self.clear_head_all();
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
     }
 }
 

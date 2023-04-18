@@ -40,6 +40,10 @@ mod concat;
 #[allow(unreachable_pub)] 
 pub use self::concat::Concat;
 
+mod count;
+#[allow(unreachable_pub)] 
+pub use self::count::Count;
+
 mod cycle;
 #[allow(unreachable_pub)] 
 pub use self::cycle::Cycle;
@@ -574,6 +578,38 @@ pub trait StreamExt: Stream {
         Self::Item: Extend<<<Self as Stream>::Item as IntoIterator>::Item> + IntoIterator + Default,
     {
         assert_future::<Self::Item, _>(Concat::new(self))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn count(self) -> Count<Self>
+    where
+        Self: Sized,
+    {
+        assert_future::<usize, _>(Count::new(self))
     }
 
     

@@ -26,10 +26,6 @@ use std::{pin::Pin, ptr};
 
 
 #[doc(no_inline)]
-#[cfg(feature = "read-initializer")]
-#[cfg_attr(docsrs, doc(cfg(feature = "read-initializer")))]
-pub use std::io::Initializer;
-#[doc(no_inline)]
 pub use std::io::{Error, ErrorKind, IoSlice, IoSliceMut, Result, SeekFrom};
 
 pub use futures_io::{AsyncBufRead, AsyncRead, AsyncSeek, AsyncWrite};
@@ -43,12 +39,6 @@ const DEFAULT_BUF_SIZE: usize = 8 * 1024;
 
 #[inline]
 unsafe fn initialize<R: AsyncRead>(_reader: &R, buf: &mut [u8]) {
-    #[cfg(feature = "read-initializer")]
-    {
-        if !_reader.initializer().should_initialize() {
-            return;
-        }
-    }
     ptr::write_bytes(buf.as_mut_ptr(), 0, buf.len())
 }
 

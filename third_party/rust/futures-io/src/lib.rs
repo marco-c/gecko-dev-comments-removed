@@ -8,7 +8,6 @@
 
 
 
-#![cfg_attr(all(feature = "read-initializer", feature = "std"), feature(read_initializer))]
 #![cfg_attr(not(feature = "std"), no_std)]
 #![warn(missing_debug_implementations, missing_docs, rust_2018_idioms, unreachable_pub)]
 
@@ -22,9 +21,6 @@
 ))]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
-#[cfg(all(feature = "read-initializer", not(feature = "unstable")))]
-compile_error!("The `read-initializer` feature requires the `unstable` feature as an explicit opt-in to unstable features");
-
 #[cfg(feature = "std")]
 mod if_std {
     use std::io;
@@ -34,11 +30,6 @@ mod if_std {
 
     
     
-    #[cfg(feature = "read-initializer")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "read-initializer")))]
-    #[doc(no_inline)]
-    #[allow(unreachable_pub)] 
-    pub use io::Initializer;
     #[allow(unreachable_pub)] 
     #[doc(no_inline)]
     pub use io::{Error, ErrorKind, IoSlice, IoSliceMut, Result, SeekFrom};
@@ -51,27 +42,6 @@ mod if_std {
     
     
     pub trait AsyncRead {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        #[cfg(feature = "read-initializer")]
-        #[cfg_attr(docsrs, doc(cfg(feature = "read-initializer")))]
-        #[inline]
-        unsafe fn initializer(&self) -> Initializer {
-            Initializer::zeroing()
-        }
-
         
         
         
@@ -329,11 +299,6 @@ mod if_std {
 
     macro_rules! deref_async_read {
         () => {
-            #[cfg(feature = "read-initializer")]
-            unsafe fn initializer(&self) -> Initializer {
-                (**self).initializer()
-            }
-
             fn poll_read(
                 mut self: Pin<&mut Self>,
                 cx: &mut Context<'_>,
@@ -365,11 +330,6 @@ mod if_std {
         P: DerefMut + Unpin,
         P::Target: AsyncRead,
     {
-        #[cfg(feature = "read-initializer")]
-        unsafe fn initializer(&self) -> Initializer {
-            (**self).initializer()
-        }
-
         fn poll_read(
             self: Pin<&mut Self>,
             cx: &mut Context<'_>,
@@ -389,11 +349,6 @@ mod if_std {
 
     macro_rules! delegate_async_read_to_stdio {
         () => {
-            #[cfg(feature = "read-initializer")]
-            unsafe fn initializer(&self) -> Initializer {
-                io::Read::initializer(self)
-            }
-
             fn poll_read(
                 mut self: Pin<&mut Self>,
                 _: &mut Context<'_>,

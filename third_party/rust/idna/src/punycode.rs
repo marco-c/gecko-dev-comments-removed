@@ -52,81 +52,157 @@ pub fn decode_to_string(input: &str) -> Option<String> {
 
 
 pub fn decode(input: &str) -> Option<Vec<char>> {
+    Some(Decoder::default().decode(input).ok()?.collect())
+}
+
+#[derive(Default)]
+pub(crate) struct Decoder {
+    insertions: Vec<(usize, char)>,
+}
+
+impl Decoder {
     
-    
-    let (mut output, input) = match input.rfind(DELIMITER) {
-        None => (Vec::new(), input),
-        Some(position) => (
-            input[..position].chars().collect(),
-            if position > 0 {
-                &input[position + 1..]
-            } else {
-                input
-            },
-        ),
-    };
-    let mut code_point = INITIAL_N;
-    let mut bias = INITIAL_BIAS;
-    let mut i = 0;
-    let mut iter = input.bytes();
-    loop {
-        let previous_i = i;
-        let mut weight = 1;
-        let mut k = BASE;
-        let mut byte = match iter.next() {
-            None => break,
-            Some(byte) => byte,
+    pub(crate) fn decode<'a>(&'a mut self, input: &'a str) -> Result<Decode<'a>, ()> {
+        self.insertions.clear();
+        
+        
+        let (base, input) = match input.rfind(DELIMITER) {
+            None => ("", input),
+            Some(position) => (
+                &input[..position],
+                if position > 0 {
+                    &input[position + 1..]
+                } else {
+                    input
+                },
+            ),
         };
-        
-        
+
+        let base_len = base.len();
+        let mut length = base_len as u32;
+        let mut code_point = INITIAL_N;
+        let mut bias = INITIAL_BIAS;
+        let mut i = 0;
+        let mut iter = input.bytes();
         loop {
-            let digit = match byte {
-                byte @ b'0'..=b'9' => byte - b'0' + 26,
-                byte @ b'A'..=b'Z' => byte - b'A',
-                byte @ b'a'..=b'z' => byte - b'a',
-                _ => return None,
-            } as u32;
-            if digit > (u32::MAX - i) / weight {
-                return None; 
-            }
-            i += digit * weight;
-            let t = if k <= bias {
-                T_MIN
-            } else if k >= bias + T_MAX {
-                T_MAX
-            } else {
-                k - bias
-            };
-            if digit < t {
-                break;
-            }
-            if weight > u32::MAX / (BASE - t) {
-                return None; 
-            }
-            weight *= BASE - t;
-            k += BASE;
-            byte = match iter.next() {
-                None => return None, 
+            let previous_i = i;
+            let mut weight = 1;
+            let mut k = BASE;
+            let mut byte = match iter.next() {
+                None => break,
                 Some(byte) => byte,
             };
+
+            
+            
+            loop {
+                let digit = match byte {
+                    byte @ b'0'..=b'9' => byte - b'0' + 26,
+                    byte @ b'A'..=b'Z' => byte - b'A',
+                    byte @ b'a'..=b'z' => byte - b'a',
+                    _ => return Err(()),
+                } as u32;
+                if digit > (u32::MAX - i) / weight {
+                    return Err(()); 
+                }
+                i += digit * weight;
+                let t = if k <= bias {
+                    T_MIN
+                } else if k >= bias + T_MAX {
+                    T_MAX
+                } else {
+                    k - bias
+                };
+                if digit < t {
+                    break;
+                }
+                if weight > u32::MAX / (BASE - t) {
+                    return Err(()); 
+                }
+                weight *= BASE - t;
+                k += BASE;
+                byte = match iter.next() {
+                    None => return Err(()), 
+                    Some(byte) => byte,
+                };
+            }
+
+            bias = adapt(i - previous_i, length + 1, previous_i == 0);
+            if i / (length + 1) > u32::MAX - code_point {
+                return Err(()); 
+            }
+
+            
+            
+            code_point += i / (length + 1);
+            i %= length + 1;
+            let c = match char::from_u32(code_point) {
+                Some(c) => c,
+                None => return Err(()),
+            };
+
+            
+            for (idx, _) in &mut self.insertions {
+                if *idx >= i as usize {
+                    *idx += 1;
+                }
+            }
+            self.insertions.push((i as usize, c));
+            length += 1;
+            i += 1;
         }
-        let length = output.len() as u32;
-        bias = adapt(i - previous_i, length + 1, previous_i == 0);
-        if i / (length + 1) > u32::MAX - code_point {
-            return None; 
-        }
-        
-        
-        code_point += i / (length + 1);
-        i %= length + 1;
-        let c = match char::from_u32(code_point) {
-            Some(c) => c,
-            None => return None,
-        };
-        output.insert(i as usize, c);
-        i += 1;
+
+        self.insertions.sort_by_key(|(i, _)| *i);
+        Ok(Decode {
+            base: base.chars(),
+            insertions: &self.insertions,
+            inserted: 0,
+            position: 0,
+            len: base_len + self.insertions.len(),
+        })
     }
-    Some(output)
+}
+
+pub(crate) struct Decode<'a> {
+    base: std::str::Chars<'a>,
+    pub(crate) insertions: &'a [(usize, char)],
+    inserted: usize,
+    position: usize,
+    len: usize,
+}
+
+impl<'a> Iterator for Decode<'a> {
+    type Item = char;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            match self.insertions.get(self.inserted) {
+                Some((pos, c)) if *pos == self.position => {
+                    self.inserted += 1;
+                    self.position += 1;
+                    return Some(*c);
+                }
+                _ => {}
+            }
+            if let Some(c) = self.base.next() {
+                self.position += 1;
+                return Some(c);
+            } else if self.inserted >= self.insertions.len() {
+                return None;
+            }
+        }
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let len = self.len - self.position;
+        (len, Some(len))
+    }
+}
+
+impl<'a> ExactSizeIterator for Decode<'a> {
+    fn len(&self) -> usize {
+        self.len - self.position
+    }
 }
 
 
@@ -134,7 +210,8 @@ pub fn decode(input: &str) -> Option<Vec<char>> {
 
 #[inline]
 pub fn encode_str(input: &str) -> Option<String> {
-    encode(&input.chars().collect::<Vec<char>>())
+    let mut buf = String::with_capacity(input.len());
+    encode_into(input.chars(), &mut buf).ok().map(|()| buf)
 }
 
 
@@ -142,42 +219,54 @@ pub fn encode_str(input: &str) -> Option<String> {
 
 
 pub fn encode(input: &[char]) -> Option<String> {
+    let mut buf = String::with_capacity(input.len());
+    encode_into(input.iter().copied(), &mut buf)
+        .ok()
+        .map(|()| buf)
+}
+
+pub(crate) fn encode_into<I>(input: I, output: &mut String) -> Result<(), ()>
+where
+    I: Iterator<Item = char> + Clone,
+{
     
-    let output_bytes = input
-        .iter()
-        .filter_map(|&c| if c.is_ascii() { Some(c as u8) } else { None })
-        .collect();
-    let mut output = unsafe { String::from_utf8_unchecked(output_bytes) };
-    let basic_length = output.len() as u32;
+    let (mut input_length, mut basic_length) = (0, 0);
+    for c in input.clone() {
+        input_length += 1;
+        if c.is_ascii() {
+            output.push(c);
+            basic_length += 1;
+        }
+    }
+
     if basic_length > 0 {
-        output.push_str("-")
+        output.push('-')
     }
     let mut code_point = INITIAL_N;
     let mut delta = 0;
     let mut bias = INITIAL_BIAS;
     let mut processed = basic_length;
-    let input_length = input.len() as u32;
     while processed < input_length {
         
         
         let min_code_point = input
-            .iter()
-            .map(|&c| c as u32)
+            .clone()
+            .map(|c| c as u32)
             .filter(|&c| c >= code_point)
             .min()
             .unwrap();
         if min_code_point - code_point > (u32::MAX - delta) / (processed + 1) {
-            return None; 
+            return Err(()); 
         }
         
         delta += (min_code_point - code_point) * (processed + 1);
         code_point = min_code_point;
-        for &c in input {
+        for c in input.clone() {
             let c = c as u32;
             if c < code_point {
                 delta += 1;
                 if delta == 0 {
-                    return None; 
+                    return Err(()); 
                 }
             }
             if c == code_point {
@@ -209,14 +298,14 @@ pub fn encode(input: &[char]) -> Option<String> {
         delta += 1;
         code_point += 1;
     }
-    Some(output)
+    Ok(())
 }
 
 #[inline]
 fn value_to_digit(value: u32) -> char {
     match value {
-        0..=25 => (value as u8 + 'a' as u8) as char, 
-        26..=35 => (value as u8 - 26 + '0' as u8) as char, 
+        0..=25 => (value as u8 + b'a') as char,       
+        26..=35 => (value as u8 - 26 + b'0') as char, 
         _ => panic!(),
     }
 }
