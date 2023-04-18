@@ -2640,8 +2640,9 @@ bool GCMarker::processDelayedMarkingList(MarkColor color, SliceBudget& budget) {
 
 bool GCMarker::markAllDelayedChildren(SliceBudget& budget,
                                       ShouldReportMarkTime reportTime) {
-  MOZ_ASSERT(!hasBlackEntries());
+  MOZ_ASSERT(isMarkStackEmpty());
   MOZ_ASSERT(markColor() == MarkColor::Black);
+  MOZ_ASSERT(delayedMarkingList);
 
   GCRuntime& gc = runtime()->gc;
   mozilla::Maybe<gcstats::AutoPhase> ap;
@@ -2652,26 +2653,19 @@ bool GCMarker::markAllDelayedChildren(SliceBudget& budget,
   
   
   
-  
-  
-  
 
-  MOZ_ASSERT(delayedMarkingList);
-
-  bool finished;
-  finished = processDelayedMarkingList(MarkColor::Gray, budget);
-  rebuildDelayedMarkingList();
-  if (!finished) {
-    return false;
+  const MarkColor colors[] = {MarkColor::Black, MarkColor::Gray};
+  for (MarkColor color : colors) {
+    bool finished = processDelayedMarkingList(color, budget);
+    rebuildDelayedMarkingList();
+    if (!finished) {
+      return false;
+    }
   }
 
-  finished = processDelayedMarkingList(MarkColor::Black, budget);
-  rebuildDelayedMarkingList();
-
-  MOZ_ASSERT_IF(finished, !delayedMarkingList);
-  MOZ_ASSERT_IF(finished, !markLaterArenas);
-
-  return finished;
+  MOZ_ASSERT(!delayedMarkingList);
+  MOZ_ASSERT(!markLaterArenas);
+  return true;
 }
 
 void GCMarker::rebuildDelayedMarkingList() {
