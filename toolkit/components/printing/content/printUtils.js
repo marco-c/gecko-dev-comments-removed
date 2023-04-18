@@ -49,6 +49,13 @@ XPCOMUtils.defineLazyPreferenceGetter(
   false
 );
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "PREFER_SYSTEM_DIALOG",
+  "print.prefer_system_dialog",
+  false
+);
+
 ChromeUtils.defineModuleGetter(
   this,
   "PromptUtils",
@@ -257,7 +264,7 @@ var PrintUtils = {
       }
     }
 
-    if (!PRINT_ALWAYS_SILENT) {
+    if (!PRINT_ALWAYS_SILENT && !PREFER_SYSTEM_DIALOG) {
       return this._openTabModalPrint(
         browsingContext,
         windowDotPrintOpenWindowInfo,
@@ -266,6 +273,8 @@ var PrintUtils = {
         printFrameOnly
       );
     }
+
+    const useSystemDialog = PREFER_SYSTEM_DIALOG && !PRINT_ALWAYS_SILENT;
 
     let browser = null;
     if (windowDotPrintOpenWindowInfo) {
@@ -281,7 +290,11 @@ var PrintUtils = {
     
     
     async function makePrintSettingsAndInvokePrint() {
-      let settings = PrintUtils.getPrintSettings();
+      let settings = PrintUtils.getPrintSettings(
+         "",
+         false,
+         !useSystemDialog
+      );
       settings.printSelectionOnly = printSelectionOnly;
       if (
         settings.outputDestination ==
@@ -300,20 +313,53 @@ var PrintUtils = {
         settings.toFileName = OS.Path.join(dest || "", "mozilla.pdf");
       }
 
-      
-      
-      
-      
-      
-      
-      
-      setTimeout(() => {
+      if (useSystemDialog) {
         
         
-        browsingContext.print(settings);
-      }, 0);
+        try {
+          await Cc["@mozilla.org/embedcomp/printingprompt-service;1"]
+            .getService(Ci.nsIPrintingPromptService)
+            .showPrintDialog(browsingContext.topChromeWindow, settings);
+        } catch (e) {
+          if (browser) {
+            browser.remove(); 
+          }
+          if (e.result == Cr.NS_ERROR_ABORT) {
+            return; 
+          }
+          throw e;
+        }
+
+        
+        Services.prefs.setStringPref("print_printer", settings.printerName);
+        var PSSVC = Cc["@mozilla.org/gfx/printsettings-service;1"].getService(
+          Ci.nsIPrintSettingsService
+        );
+        PSSVC.savePrintSettingsToPrefs(
+          settings,
+          true,
+          Ci.nsIPrintSettings.kInitSaveAll
+        );
+      }
+
+      
+      
+      browsingContext.print(settings);
     }
-    makePrintSettingsAndInvokePrint();
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    setTimeout(makePrintSettingsAndInvokePrint, 0);
 
     return browser;
   },
@@ -449,20 +495,34 @@ var PrintUtils = {
     );
   },
 
-  getPrintSettings(aPrinterName, defaultsOnly) {
+  getPrintSettings(aPrinterName, aDefaultsOnly, aAllowPseudoPrinter = true) {
     var printSettings;
     try {
       var PSSVC = Cc["@mozilla.org/gfx/printsettings-service;1"].getService(
         Ci.nsIPrintSettingsService
       );
 
+      function isValidPrinterName(aPrinterName) {
+        return (
+          aPrinterName &&
+          (aAllowPseudoPrinter ||
+            aPrinterName != PrintUtils.SAVE_TO_PDF_PRINTER)
+        );
+      }
+
       
       
-      let printerName =
-        aPrinterName ||
-        PSSVC.lastUsedPrinterName ||
-        Cc["@mozilla.org/gfx/printerlist;1"].getService(Ci.nsIPrinterList)
-          .systemDefaultPrinterName;
+      const printerName = (function() {
+        if (isValidPrinterName(aPrinterName)) {
+          return aPrinterName;
+        }
+        if (isValidPrinterName(PSSVC.lastUsedPrinterName)) {
+          return PSSVC.lastUsedPrinterName;
+        }
+        return Cc["@mozilla.org/gfx/printerlist;1"].getService(
+          Ci.nsIPrinterList
+        ).systemDefaultPrinterName;
+      })();
 
       printSettings = PSSVC.newPrintSettings;
       printSettings.printerName = printerName;
@@ -476,7 +536,7 @@ var PrintUtils = {
         );
       }
 
-      if (!defaultsOnly) {
+      if (!aDefaultsOnly) {
         
         PSSVC.initPrintSettingsFromPrefs(
           printSettings,

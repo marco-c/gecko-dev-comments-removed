@@ -935,6 +935,11 @@ pref("browser.fixup.fallback-to-https", true);
 
 
 
+
+
+pref("print.prefer_system_dialog", false);
+
+
 pref("print.shrink-to-fit.scale-limit-percent", 20);
 
 
