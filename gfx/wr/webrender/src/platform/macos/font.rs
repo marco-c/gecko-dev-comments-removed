@@ -276,28 +276,16 @@ impl FontContext {
         
         
         
-        let cf_name = CFString::new(&native_font_handle.name);
 
+        let name = native_font_handle.0.postscript_name();
         
         
         
         
-        let desc = if native_font_handle.name.starts_with('.') {
-            let cg_font = match CGFont::from_name(&cf_name) {
-                Ok(cg_font) => cg_font,
-                Err(_) => {
-                    
-                    
-                    
-                    
-                    
-                    CGFont::from_name(&CFString::from_static_string("Lucida Grande"))
-                        .expect("couldn't find font with postscript name and couldn't load fallback font")
-                }
-            };
-            core_text::font::new_from_CGFont(&cg_font, 0.).copy_descriptor()
+        let desc = if name.to_string().starts_with('.') {
+            core_text::font::new_from_CGFont(&native_font_handle.0, 0.).copy_descriptor()
         } else {
-            core_text::font_descriptor::new_from_postscript_name(&cf_name)
+            core_text::font_descriptor::new_from_postscript_name(&name)
         };
 
         self.ct_font_descs
