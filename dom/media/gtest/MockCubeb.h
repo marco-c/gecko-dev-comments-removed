@@ -166,6 +166,7 @@ class MockCubebStream {
   
   nsTArray<AudioDataValue>&& TakeRecordedOutput();
 
+  MediaEventSource<cubeb_state>& StateEvent();
   MediaEventSource<uint32_t>& FramesProcessedEvent();
   MediaEventSource<uint32_t>& FramesVerifiedEvent();
   MediaEventSource<Tuple<uint64_t, float, uint32_t>>& OutputVerificationEvent();
@@ -181,6 +182,8 @@ class MockCubebStream {
   SmartMockCubebStream* const mSelf;
 
  private:
+  void NotifyStateChanged(cubeb_state aState);
+
   
   Monitor mFrozenStartMonitor MOZ_UNANNOTATED;
   
@@ -214,6 +217,7 @@ class MockCubebStream {
   AudioGenerator<AudioDataValue> mAudioGenerator;
   AudioVerifier<AudioDataValue> mAudioVerifier;
 
+  MediaEventProducer<cubeb_state> mStateEvent;
   MediaEventProducer<uint32_t> mFramesProcessedEvent;
   MediaEventProducer<uint32_t> mFramesVerifiedEvent;
   MediaEventProducer<Tuple<uint64_t, float, uint32_t>> mOutputVerificationEvent;
