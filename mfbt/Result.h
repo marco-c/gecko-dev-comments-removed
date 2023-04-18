@@ -449,6 +449,11 @@ class [[nodiscard]] Result final {
   using Impl = typename detail::SelectResultImpl<V, E>::Type;
 
   Impl mImpl;
+  
+  
+  
+  
+  
 
  public:
   using ok_type = V;

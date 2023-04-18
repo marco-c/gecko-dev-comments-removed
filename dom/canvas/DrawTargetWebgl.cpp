@@ -1406,9 +1406,9 @@ bool DrawTargetWebgl::SharedContext::DrawRectAccel(
         
         
         
-        texDesc.unpacking.mUnpackAlignment = stride % 4 ? 1 : 4;
-        texDesc.unpacking.mUnpackRowLength = stride / bpp;
-        texDesc.unpacking.mUnpackImageHeight = texSize.height;
+        texDesc.unpacking.alignmentInTypeElems = stride % 4 ? 1 : 4;
+        texDesc.unpacking.rowLength = stride / bpp;
+        texDesc.unpacking.imageHeight = texSize.height;
         
         
         
