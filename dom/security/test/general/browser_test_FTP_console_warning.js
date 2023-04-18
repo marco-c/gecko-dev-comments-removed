@@ -2,6 +2,12 @@
 
 "use strict";
 
+function scopedCuImport(path) {
+  const scope = {};
+  ChromeUtils.import(path, scope);
+  return scope;
+}
+
 
 
 var seen_files = ["a.html", "b.html", "c.html", "d.png"];

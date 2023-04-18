@@ -5,7 +5,8 @@
 
 
 
-var imported = ChromeUtils.import("resource://gre/modules/Timer.jsm");
+var imported = {};
+ChromeUtils.import("resource://gre/modules/Timer.jsm", imported);
 
 add_task(async function test_setTimeout() {
   let timeout1 = imported.setTimeout(

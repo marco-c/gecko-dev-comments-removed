@@ -29,9 +29,16 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 ChromeUtils.defineModuleGetter(this, "OS", "resource://gre/modules/osfile.jsm");
-const FxAccountsCommon = ChromeUtils.import(
-  "resource://gre/modules/FxAccountsCommon.js"
-);
+
+
+XPCOMUtils.defineLazyGetter(this, "FxAccountsCommon", function() {
+  let FxAccountsCommon = {};
+  ChromeUtils.import(
+    "resource://gre/modules/FxAccountsCommon.js",
+    FxAccountsCommon
+  );
+  return FxAccountsCommon;
+});
 
 XPCOMUtils.defineLazyServiceGetter(
   this,

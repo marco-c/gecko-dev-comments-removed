@@ -225,10 +225,9 @@ var TabModalPrompt = class {
     
     
 
-    let { CommonDialog } = ChromeUtils.import(
-      "resource://gre/modules/CommonDialog.jsm"
-    );
-    this.Dialog = new CommonDialog(args, this.ui);
+    let tmp = {};
+    ChromeUtils.import("resource://gre/modules/CommonDialog.jsm", tmp);
+    this.Dialog = new tmp.CommonDialog(args, this.ui);
     this.Dialog.onLoad(null);
 
     
