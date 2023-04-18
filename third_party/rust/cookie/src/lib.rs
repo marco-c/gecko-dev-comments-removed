@@ -58,20 +58,32 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/cookie/0.12")]
+
+
+
+
+
+
+
+
+
+
+#![cfg_attr(all(nightly, doc), feature(doc_cfg))]
+
+#![doc(html_root_url = "https://docs.rs/cookie/0.16")]
 #![deny(missing_docs)]
 
-#[cfg(feature = "percent-encode")] extern crate url;
-extern crate time;
+pub use time;
 
 mod builder;
 mod parse;
 mod jar;
 mod delta;
 mod draft;
+mod expiration;
 
-#[cfg(feature = "secure")] #[macro_use] mod secure;
-#[cfg(feature = "secure")] pub use secure::*;
+#[cfg(any(feature = "private", feature = "signed"))] #[macro_use] mod secure;
+#[cfg(any(feature = "private", feature = "signed"))] pub use secure::*;
 
 use std::borrow::Cow;
 use std::fmt;
@@ -81,24 +93,25 @@ use std::str::FromStr;
 use std::ascii::AsciiExt;
 
 #[cfg(feature = "percent-encode")]
-use url::percent_encoding::{USERINFO_ENCODE_SET, percent_encode};
-use time::{Tm, Duration};
+use percent_encoding::{AsciiSet, percent_encode as encode};
+use time::{Duration, OffsetDateTime, UtcOffset, macros::datetime};
 
-use parse::parse_cookie;
-pub use parse::ParseError;
-pub use builder::CookieBuilder;
-pub use jar::{CookieJar, Delta, Iter};
-pub use draft::*;
+use crate::parse::parse_cookie;
+pub use crate::parse::ParseError;
+pub use crate::builder::CookieBuilder;
+pub use crate::jar::{CookieJar, Delta, Iter};
+pub use crate::draft::*;
+pub use crate::expiration::*;
 
 #[derive(Debug, Clone)]
-enum CookieStr {
+enum CookieStr<'c> {
     
     Indexed(usize, usize),
     
-    Concrete(Cow<'static, str>),
+    Concrete(Cow<'c, str>),
 }
 
-impl CookieStr {
+impl<'c> CookieStr<'c> {
     
     
     
@@ -117,7 +130,8 @@ impl CookieStr {
         }
     }
 
-    fn to_raw_str<'s, 'c: 's>(&'s self, string: &'s Cow<'c, str>) -> Option<&'c str> {
+    #[allow(clippy::ptr_arg)]
+    fn to_raw_str<'s, 'b: 's>(&'s self, string: &'s Cow<'b, str>) -> Option<&'b str> {
         match *self {
             CookieStr::Indexed(i, j) => {
                 match *string {
@@ -128,8 +142,17 @@ impl CookieStr {
             CookieStr::Concrete(_) => None,
         }
     }
-}
 
+    fn into_owned(self) -> CookieStr<'static> {
+        use crate::CookieStr::*;
+
+        match self {
+            Indexed(a, b) => Indexed(a, b),
+            Concrete(Cow::Owned(c)) => Concrete(Cow::Owned(c)),
+            Concrete(Cow::Borrowed(c)) => Concrete(Cow::Owned(c.into())),
+        }
+    }
+}
 
 
 
@@ -163,17 +186,17 @@ pub struct Cookie<'c> {
     
     cookie_string: Option<Cow<'c, str>>,
     
-    name: CookieStr,
+    name: CookieStr<'c>,
     
-    value: CookieStr,
+    value: CookieStr<'c>,
     
-    expires: Option<Tm>,
+    expires: Option<Expiration>,
     
     max_age: Option<Duration>,
     
-    domain: Option<CookieStr>,
+    domain: Option<CookieStr<'c>>,
     
-    path: Option<CookieStr>,
+    path: Option<CookieStr<'c>>,
     
     secure: Option<bool>,
     
@@ -182,7 +205,7 @@ pub struct Cookie<'c> {
     same_site: Option<SameSite>,
 }
 
-impl Cookie<'static> {
+impl<'c> Cookie<'c> {
     
     
     
@@ -193,9 +216,9 @@ impl Cookie<'static> {
     
     
     
-    pub fn new<N, V>(name: N, value: V) -> Cookie<'static>
-        where N: Into<Cow<'static, str>>,
-              V: Into<Cow<'static, str>>
+    pub fn new<N, V>(name: N, value: V) -> Self
+        where N: Into<Cow<'c, str>>,
+              V: Into<Cow<'c, str>>
     {
         Cookie {
             cookie_string: None,
@@ -222,8 +245,8 @@ impl Cookie<'static> {
     
     
     
-    pub fn named<N>(name: N) -> Cookie<'static>
-        where N: Into<Cow<'static, str>>
+    pub fn named<N>(name: N) -> Cookie<'c>
+        where N: Into<Cow<'c, str>>
     {
         Cookie::new(name, "")
     }
@@ -239,15 +262,13 @@ impl Cookie<'static> {
     
     
     
-    pub fn build<N, V>(name: N, value: V) -> CookieBuilder
-        where N: Into<Cow<'static, str>>,
-              V: Into<Cow<'static, str>>
+    pub fn build<N, V>(name: N, value: V) -> CookieBuilder<'c>
+        where N: Into<Cow<'c, str>>,
+              V: Into<Cow<'c, str>>
     {
         CookieBuilder::new(name, value)
     }
-}
 
-impl<'c> Cookie<'c> {
     
     
     
@@ -279,10 +300,8 @@ impl<'c> Cookie<'c> {
     
     
     
-    
-    
-    
     #[cfg(feature = "percent-encode")]
+    #[cfg_attr(all(nightly, doc), doc(cfg(feature = "percent-encode")))]
     pub fn parse_encoded<S>(s: S) -> Result<Cookie<'c>, ParseError>
         where S: Into<Cow<'c, str>>
     {
@@ -301,35 +320,15 @@ impl<'c> Cookie<'c> {
     
     
     
-    
-    
-    
-    #[cfg(feature = "percent-encode")]
-    pub fn encoded<'a>(&'a self) -> EncodedCookie<'a, 'c> {
-        EncodedCookie(self)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     pub fn into_owned(self) -> Cookie<'static> {
         Cookie {
             cookie_string: self.cookie_string.map(|s| s.into_owned().into()),
-            name: self.name,
-            value: self.value,
+            name: self.name.into_owned(),
+            value: self.value.into_owned(),
             expires: self.expires,
             max_age: self.max_age,
-            domain: self.domain,
-            path: self.path,
+            domain: self.domain.map(|s| s.into_owned()),
+            path: self.path.map(|s| s.into_owned()),
             secure: self.secure,
             http_only: self.http_only,
             same_site: self.same_site,
@@ -538,8 +537,12 @@ impl<'c> Cookie<'c> {
     
     
     
+    
+    
+    
+    
     #[inline]
-    pub fn expires(&self) -> Option<Tm> {
+    pub fn expires(&self) -> Option<Expiration> {
         self.expires
     }
 
@@ -556,7 +559,31 @@ impl<'c> Cookie<'c> {
     
     
     
-    pub fn set_name<N: Into<Cow<'static, str>>>(&mut self, name: N) {
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn expires_datetime(&self) -> Option<OffsetDateTime> {
+        self.expires.and_then(|e| e.datetime())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn set_name<N: Into<Cow<'c, str>>>(&mut self, name: N) {
         self.name = CookieStr::Concrete(name.into())
     }
 
@@ -573,7 +600,7 @@ impl<'c> Cookie<'c> {
     
     
     
-    pub fn set_value<V: Into<Cow<'static, str>>>(&mut self, value: V) {
+    pub fn set_value<V: Into<Cow<'c, str>>>(&mut self, value: V) {
         self.value = CookieStr::Concrete(value.into())
     }
 
@@ -590,17 +617,6 @@ impl<'c> Cookie<'c> {
     
     
     
-    #[inline]
-    pub fn set_http_only(&mut self, value: bool) {
-        self.http_only = Some(value);
-    }
-
-    
-    
-    
-    
-    
-    
     
     
     
@@ -609,26 +625,8 @@ impl<'c> Cookie<'c> {
     
     
     #[inline]
-    pub fn set_secure(&mut self, value: bool) {
-        self.secure = Some(value);
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn set_same_site(&mut self, value: SameSite) {
-        self.same_site = Some(value);
+    pub fn set_http_only<T: Into<Option<bool>>>(&mut self, value: T) {
+        self.http_only = value.into();
     }
 
     
@@ -650,9 +648,10 @@ impl<'c> Cookie<'c> {
     
     
     
+    
     #[inline]
-    pub fn set_max_age(&mut self, value: Duration) {
-        self.max_age = Some(value);
+    pub fn set_secure<T: Into<Option<bool>>>(&mut self, value: T) {
+        self.secure = value.into();
     }
 
     
@@ -668,7 +667,72 @@ impl<'c> Cookie<'c> {
     
     
     
-    pub fn set_path<P: Into<Cow<'static, str>>>(&mut self, path: P) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn set_same_site<T: Into<Option<SameSite>>>(&mut self, value: T) {
+        self.same_site = value.into();
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn set_max_age<D: Into<Option<Duration>>>(&mut self, value: D) {
+        self.max_age = value.into();
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn set_path<P: Into<Cow<'c, str>>>(&mut self, path: P) {
         self.path = Some(CookieStr::Concrete(path.into()));
     }
 
@@ -685,7 +749,27 @@ impl<'c> Cookie<'c> {
     
     
     
-    pub fn set_domain<D: Into<Cow<'static, str>>>(&mut self, domain: D) {
+    
+    
+    
+    pub fn unset_path(&mut self) {
+        self.path = None;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn set_domain<D: Into<Cow<'c, str>>>(&mut self, domain: D) {
         self.domain = Some(CookieStr::Concrete(domain.into()));
     }
 
@@ -705,18 +789,60 @@ impl<'c> Cookie<'c> {
     
     
     
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn set_expires(&mut self, time: Tm) {
-        self.expires = Some(time);
+    pub fn unset_domain(&mut self) {
+        self.domain = None;
     }
 
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn set_expires<T: Into<Expiration>>(&mut self, time: T) {
+        static MAX_DATETIME: OffsetDateTime = datetime!(9999-12-31 23:59:59.999_999 UTC);
+
+        
+        self.expires = Some(time.into()
+            .map(|time| std::cmp::min(time, MAX_DATETIME)));
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn unset_expires(&mut self) {
+        self.expires = None;
+    }
+
     
     
     
@@ -740,7 +866,34 @@ impl<'c> Cookie<'c> {
     pub fn make_permanent(&mut self) {
         let twenty_years = Duration::days(365 * 20);
         self.set_max_age(twenty_years);
-        self.set_expires(time::now() + twenty_years);
+        self.set_expires(OffsetDateTime::now_utc() + twenty_years);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn make_removal(&mut self) {
+        self.set_value("");
+        self.set_max_age(Duration::seconds(0));
+        self.set_expires(OffsetDateTime::now_utc() - Duration::days(365));
     }
 
     fn fmt_parameters(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -748,14 +901,16 @@ impl<'c> Cookie<'c> {
             write!(f, "; HttpOnly")?;
         }
 
-        if let Some(true) = self.secure() {
-            write!(f, "; Secure")?;
+        if let Some(same_site) = self.same_site() {
+            write!(f, "; SameSite={}", same_site)?;
+
+            if same_site.is_none() && self.secure().is_none() {
+                write!(f, "; Secure")?;
+            }
         }
 
-        if let Some(same_site) = self.same_site() {
-            if !same_site.is_none() {
-                write!(f, "; SameSite={}", same_site)?;
-            }
+        if let Some(true) = self.secure() {
+            write!(f, "; Secure")?;
         }
 
         if let Some(path) = self.path() {
@@ -767,11 +922,12 @@ impl<'c> Cookie<'c> {
         }
 
         if let Some(max_age) = self.max_age() {
-            write!(f, "; Max-Age={}", max_age.num_seconds())?;
+            write!(f, "; Max-Age={}", max_age.whole_seconds())?;
         }
 
-        if let Some(time) = self.expires() {
-            write!(f, "; Expires={}", time.rfc822())?;
+        if let Some(time) = self.expires_datetime() {
+            let time = time.to_offset(UtcOffset::UTC);
+            write!(f, "; Expires={}", time.format(&crate::parse::FMT1).map_err(|_| fmt::Error)?)?;
         }
 
         Ok(())
@@ -903,43 +1059,161 @@ impl<'c> Cookie<'c> {
             _ => None,
         }
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "percent-encode")]
+    #[cfg_attr(all(nightly, doc), doc(cfg(feature = "percent-encode")))]
+    #[inline(always)]
+    pub fn encoded<'a>(&'a self) -> Display<'a, 'c> {
+        Display::new_encoded(self)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg_attr(feature = "percent-encode", doc = r##"
+// Note: `encoded()` is only available when `percent-encode` is enabled.
+assert_eq!(&c.stripped().encoded().to_string(), "key%3F=value");
+    #"##)]
+    
+    #[inline(always)]
+    pub fn stripped<'a>(&'a self) -> Display<'a, 'c> {
+        Display::new_stripped(self)
+    }
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#[cfg(feature = "percent-encode")]
+const FRAGMENT_ENCODE_SET: &AsciiSet = &percent_encoding::CONTROLS.add(b' ').add(b'"').add(b'<').add(b'>').add(b'`');
 
 
 #[cfg(feature = "percent-encode")]
-pub struct EncodedCookie<'a, 'c: 'a>(&'a Cookie<'c>);
+const PATH_ENCODE_SET: &AsciiSet = &FRAGMENT_ENCODE_SET.add(b'#').add(b'?').add(b'{').add(b'}');
+
 
 #[cfg(feature = "percent-encode")]
-impl<'a, 'c: 'a> fmt::Display for EncodedCookie<'a, 'c> {
+const USERINFO_ENCODE_SET: &AsciiSet = &PATH_ENCODE_SET
+    .add(b'/')
+    .add(b':')
+    .add(b';')
+    .add(b'=')
+    .add(b'@')
+    .add(b'[')
+    .add(b'\\')
+    .add(b']')
+    .add(b'^')
+    .add(b'|')
+    .add(b'%');
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg_attr(feature = "percent-encode", doc = r##"
+// Note: `encoded()` is only available when `percent-encode` is enabled.
+assert_eq!(&c.encoded().to_string(), "my%20name=this%3B%20value%25%3F; Secure");
+assert_eq!(&c.stripped().encoded().to_string(), "my%20name=this%3B%20value%25%3F");
+assert_eq!(&c.encoded().stripped().to_string(), "my%20name=this%3B%20value%25%3F");
+"##)]
+
+pub struct Display<'a, 'c: 'a> {
+    cookie: &'a Cookie<'c>,
+    #[cfg(feature = "percent-encode")]
+    encode: bool,
+    strip: bool,
+}
+
+impl<'a, 'c: 'a> fmt::Display for Display<'a, 'c> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        
-        let name = percent_encode(self.0.name().as_bytes(), USERINFO_ENCODE_SET);
-        let value = percent_encode(self.0.value().as_bytes(), USERINFO_ENCODE_SET);
+        #[cfg(feature = "percent-encode")] {
+            if self.encode {
+                let name = encode(self.cookie.name().as_bytes(), USERINFO_ENCODE_SET);
+                let value = encode(self.cookie.value().as_bytes(), USERINFO_ENCODE_SET);
+                write!(f, "{}={}", name, value)?;
+            } else {
+                write!(f, "{}={}", self.cookie.name(), self.cookie.value())?;
+            }
+        }
 
-        
-        write!(f, "{}={}", name, value)?;
-        self.0.fmt_parameters(f)
+        #[cfg(not(feature = "percent-encode"))] {
+            write!(f, "{}={}", self.cookie.name(), self.cookie.value())?;
+        }
+
+        match self.strip {
+            true => Ok(()),
+            false => self.cookie.fmt_parameters(f)
+        }
+    }
+}
+
+impl<'a, 'c> Display<'a, 'c> {
+    #[cfg(feature = "percent-encode")]
+    fn new_encoded(cookie: &'a Cookie<'c>) -> Self {
+        Display { cookie, strip: false, encode: true }
+    }
+
+    fn new_stripped(cookie: &'a Cookie<'c>) -> Self {
+        Display { cookie, strip: true, #[cfg(feature = "percent-encode")] encode: false }
+    }
+
+    
+    #[inline]
+    #[cfg(feature = "percent-encode")]
+    #[cfg_attr(all(nightly, doc), doc(cfg(feature = "percent-encode")))]
+    pub fn encoded(mut self) -> Self {
+        self.encode = true;
+        self
+    }
+
+    
+    #[inline]
+    pub fn stripped(mut self) -> Self {
+        self.strip = true;
+        self
     }
 }
 
 impl<'c> fmt::Display for Cookie<'c> {
+    
+    
+    
     
     
     
@@ -998,8 +1272,8 @@ impl<'a, 'b> PartialEq<Cookie<'b>> for Cookie<'a> {
 
 #[cfg(test)]
 mod tests {
-    use ::{Cookie, SameSite};
-    use ::time::{strptime, Duration};
+    use crate::{Cookie, SameSite, parse::parse_date};
+    use time::{Duration, OffsetDateTime};
 
     #[test]
     fn format() {
@@ -1027,7 +1301,7 @@ mod tests {
         assert_eq!(&cookie.to_string(), "foo=bar; Domain=www.rust-lang.org");
 
         let time_str = "Wed, 21 Oct 2015 07:28:00 GMT";
-        let expires = strptime(time_str, "%a, %d %b %Y %H:%M:%S %Z").unwrap();
+        let expires = parse_date(time_str, &crate::parse::FMT1).unwrap();
         let cookie = Cookie::build("foo", "bar")
             .expires(expires).finish();
         assert_eq!(&cookie.to_string(),
@@ -1041,9 +1315,32 @@ mod tests {
             .same_site(SameSite::Lax).finish();
         assert_eq!(&cookie.to_string(), "foo=bar; SameSite=Lax");
 
-        let cookie = Cookie::build("foo", "bar")
+        let mut cookie = Cookie::build("foo", "bar")
             .same_site(SameSite::None).finish();
+        assert_eq!(&cookie.to_string(), "foo=bar; SameSite=None; Secure");
+
+        cookie.set_same_site(None);
         assert_eq!(&cookie.to_string(), "foo=bar");
+
+        let mut cookie = Cookie::build("foo", "bar")
+            .same_site(SameSite::None)
+            .secure(false)
+            .finish();
+        assert_eq!(&cookie.to_string(), "foo=bar; SameSite=None");
+        cookie.set_secure(true);
+        assert_eq!(&cookie.to_string(), "foo=bar; SameSite=None; Secure");
+    }
+
+    #[test]
+    #[ignore]
+    fn format_date_wraps() {
+        let expires = OffsetDateTime::UNIX_EPOCH + Duration::MAX;
+        let cookie = Cookie::build("foo", "bar").expires(expires).finish();
+        assert_eq!(&cookie.to_string(), "foo=bar; Expires=Fri, 31 Dec 9999 23:59:59 GMT");
+
+        let expires = time::macros::datetime!(9999-01-01 0:00 UTC) + Duration::days(1000);
+        let cookie = Cookie::build("foo", "bar").expires(expires).finish();
+        assert_eq!(&cookie.to_string(), "foo=bar; Expires=Fri, 31 Dec 9999 23:59:59 GMT");
     }
 
     #[test]
