@@ -42,7 +42,7 @@ add_setup(async function() {
       
       
       
-      ["browser.download.improvements_to_download_panel", true],
+      ["browser.download.always_ask_before_handling_new_types", false],
       ["browser.download.enable_spam_prevention", true],
     ],
   });

@@ -157,9 +157,8 @@ var HandlerServiceTestUtils = {
       
       
       
-      
-      alwaysAskBeforeHandling = !Services.prefs.getBoolPref(
-        "browser.download.improvements_to_download_panel",
+      alwaysAskBeforeHandling = Services.prefs.getBoolPref(
+        "browser.download.always_ask_before_handling_new_types",
         false
       );
 

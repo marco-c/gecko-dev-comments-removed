@@ -8,8 +8,8 @@ function test() {
   
   
   Services.prefs.setBoolPref(
-    "browser.download.improvements_to_download_panel",
-    false
+    "browser.download.always_ask_before_handling_new_types",
+    true
   );
   var oldAction = changeMimeHandler(Ci.nsIHandlerInfo.useSystemDefault, true);
   var tab = BrowserTestUtils.addTab(gBrowser, TESTROOT + "file_pdfjs_test.pdf");
@@ -24,7 +24,7 @@ function test() {
   waitForExplicitFinish();
   registerCleanupFunction(function() {
     Services.prefs.clearUserPref(
-      "browser.download.improvements_to_download_panel"
+      "browser.download.always_ask_before_handling_new_types"
     );
     changeMimeHandler(oldAction[0], oldAction[1]);
     gBrowser.removeTab(tab);

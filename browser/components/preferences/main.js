@@ -51,6 +51,7 @@ Preferences.addAll([
 
   
   { id: "browser.download.useDownloadDir", type: "bool" },
+  { id: "browser.download.always_ask_before_handling_new_types", type: "bool" },
   { id: "browser.download.folderList", type: "int" },
   { id: "browser.download.dir", type: "file" },
 
@@ -2899,6 +2900,12 @@ var gMainPane = {
   
 
   
+
+
+
+
+
+
 
 
 

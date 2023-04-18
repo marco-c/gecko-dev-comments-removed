@@ -70,10 +70,15 @@ async function performCanceledDownload(tab, path) {
 
   if (
     Services.prefs.getBoolPref(
-      "browser.download.improvements_to_download_panel",
+      "browser.download.always_ask_before_handling_new_types",
       false
     )
   ) {
+    
+    cancelledDownload = promiseClickDownloadDialogButton("cancel");
+    
+    info("waiting for download popup");
+  } else {
     let downloadView;
     cancelledDownload = new Promise(resolve => {
       downloadView = {
@@ -85,11 +90,6 @@ async function performCanceledDownload(tab, path) {
     });
     const downloadList = await Downloads.getList(Downloads.ALL);
     await downloadList.addView(downloadView);
-  } else {
-    
-    cancelledDownload = promiseClickDownloadDialogButton("cancel");
-    
-    info("waiting for download popup");
   }
 
   

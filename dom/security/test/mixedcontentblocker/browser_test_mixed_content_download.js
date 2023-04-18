@@ -74,36 +74,36 @@ const downloadMonitoringView = {
 function shouldTriggerDownload(action = "save") {
   if (
     Services.prefs.getBoolPref(
-      "browser.download.improvements_to_download_panel"
+      "browser.download.always_ask_before_handling_new_types"
     )
   ) {
-    return new Promise(res => {
-      downloadMonitoringView.waitForDownload(res);
+    return new Promise((resolve, reject) => {
+      Services.wm.addListener({
+        onOpenWindow(xulWin) {
+          Services.wm.removeListener(this);
+          let win = xulWin.docShell.domWindow;
+          waitForFocus(() => {
+            if (
+              win.location ==
+              "chrome://mozapps/content/downloads/unknownContentType.xhtml"
+            ) {
+              let dialog = win.document.getElementById("unknownContentType");
+              let button = dialog.getButton("accept");
+              let actionRadio = win.document.getElementById(action);
+              actionRadio.click();
+              button.disabled = false;
+              dialog.acceptDialog();
+              resolve();
+            } else {
+              reject();
+            }
+          }, win);
+        },
+      });
     });
   }
-  return new Promise((resolve, reject) => {
-    Services.wm.addListener({
-      onOpenWindow(xulWin) {
-        Services.wm.removeListener(this);
-        let win = xulWin.docShell.domWindow;
-        waitForFocus(() => {
-          if (
-            win.location ==
-            "chrome://mozapps/content/downloads/unknownContentType.xhtml"
-          ) {
-            let dialog = win.document.getElementById("unknownContentType");
-            let button = dialog.getButton("accept");
-            let actionRadio = win.document.getElementById(action);
-            actionRadio.click();
-            button.disabled = false;
-            dialog.acceptDialog();
-            resolve();
-          } else {
-            reject();
-          }
-        }, win);
-      },
-    });
+  return new Promise(res => {
+    downloadMonitoringView.waitForDownload(res);
   });
 }
 
@@ -212,7 +212,10 @@ add_task(async function setup() {
 add_task(async function test_blocking() {
   for (let prefVal of [true, false]) {
     await SpecialPowers.pushPrefEnv({
-      set: [["browser.download.improvements_to_download_panel", prefVal]],
+      set: [
+        ["browser.download.always_ask_before_handling_new_types", prefVal],
+        ["browser.download.improvements_to_download_panel", !prefVal],
+      ],
     });
     await runTest(
       INSECURE_BASE_URL,
@@ -251,7 +254,10 @@ add_task(async function test_blocking() {
 add_task(async function test_manual_unblocking() {
   for (let prefVal of [true, false]) {
     await SpecialPowers.pushPrefEnv({
-      set: [["browser.download.improvements_to_download_panel", prefVal]],
+      set: [
+        ["browser.download.always_ask_before_handling_new_types", prefVal],
+        ["browser.download.improvements_to_download_panel", !prefVal],
+      ],
     });
     await runTest(
       SECURE_BASE_URL,
@@ -274,7 +280,10 @@ add_task(async function test_manual_unblocking() {
 add_task(async function test_unblock_download_visible() {
   for (let prefVal of [true, false]) {
     await SpecialPowers.pushPrefEnv({
-      set: [["browser.download.improvements_to_download_panel", prefVal]],
+      set: [
+        ["browser.download.always_ask_before_handling_new_types", prefVal],
+        ["browser.download.improvements_to_download_panel", !prefVal],
+      ],
     });
     
     
@@ -284,7 +293,7 @@ add_task(async function test_unblock_download_visible() {
       "insecure",
       async () => {
         let panelHasOpened = promisePanelOpened();
-        info("awaiting that the a download is triggered and added to the list");
+        info("awaiting that the download is triggered and added to the list");
         await Promise.all([shouldTriggerDownload(), shouldNotifyDownloadUI()]);
         info("awaiting that the Download list shows itself");
         await panelHasOpened;
@@ -304,37 +313,39 @@ add_task(async function download_open_insecure_SVG() {
   mimeInfo.preferredAction = mimeInfo.handleInternally;
   HandlerService.store(mimeInfo);
 
-  for (let prefVal of [true, false]) {
-    await SpecialPowers.pushPrefEnv({
-      set: [["browser.download.improvements_to_download_panel", prefVal]],
-    });
-    await promiseFocus();
-    await runTest(
-      SECURE_BASE_URL,
-      "insecureSVG",
-      async () => {
-        info("awaiting that the a download is triggered and added to the list");
-        let [_, download] = await Promise.all([
-          shouldTriggerDownload("handleInternally"),
-          shouldNotifyDownloadUI(),
-        ]);
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.download.always_ask_before_handling_new_types", false],
+      ["browser.download.improvements_to_download_panel", true],
+    ],
+  });
+  await promiseFocus();
+  await runTest(
+    SECURE_BASE_URL,
+    "insecureSVG",
+    async () => {
+      info("awaiting that the download is triggered and added to the list");
+      let [_, download] = await Promise.all([
+        shouldTriggerDownload("handleInternally"),
+        shouldNotifyDownloadUI(),
+      ]);
 
-        let newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser);
-        await download.unblock();
-        ok(download.error == null, "There should be no error after unblocking");
+      let newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser);
+      await download.unblock();
+      ok(download.error == null, "There should be no error after unblocking");
 
-        let tab = await newTabPromise;
+      let tab = await newTabPromise;
 
-        ok(
-          tab.linkedBrowser._documentURI.filePath.includes(".svg"),
-          "The download target was opened"
-        );
-        BrowserTestUtils.removeTab(tab);
-        ok(true, "The Content was opened in a new tab");
-        await SpecialPowers.popPrefEnv();
-      },
-      "A Blocked SVG can be opened internally"
-    );
-  }
+      ok(
+        tab.linkedBrowser._documentURI.filePath.includes(".svg"),
+        "The download target was opened"
+      );
+      BrowserTestUtils.removeTab(tab);
+      ok(true, "The Content was opened in a new tab");
+      await SpecialPowers.popPrefEnv();
+    },
+    "A Blocked SVG can be opened internally"
+  );
+
   HandlerService.remove(mimeInfo);
 });

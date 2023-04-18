@@ -47,6 +47,8 @@ add_task(async function test_check_download_dir() {
       
       ["browser.download.improvements_to_download_panel", true],
       
+      ["browser.download.always_ask_before_handling_new_types", false],
+      
       ["browser.download.folderList", 1],
     ],
   });

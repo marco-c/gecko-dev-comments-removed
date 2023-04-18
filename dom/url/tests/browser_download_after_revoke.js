@@ -7,21 +7,10 @@ function test() {
 
     if (
       Services.prefs.getBoolPref(
-        "browser.download.improvements_to_download_panel",
+        "browser.download.always_ask_before_handling_new_types",
         false
       )
     ) {
-      
-      
-      let downloadView = {
-        onDownloadAdded() {
-          ok(true, "Download was started");
-          gBrowser.removeTab(gBrowser.selectedTab);
-          finish();
-        },
-      };
-      Downloads.getList(Downloads.ALL).then(list => list.addView(downloadView));
-    } else {
       
       
       let listener = {
@@ -50,6 +39,17 @@ function test() {
       };
 
       Services.wm.addListener(listener);
+    } else {
+      
+      
+      let downloadView = {
+        onDownloadAdded() {
+          ok(true, "Download was started");
+          gBrowser.removeTab(gBrowser.selectedTab);
+          finish();
+        },
+      };
+      Downloads.getList(Downloads.ALL).then(list => list.addView(downloadView));
     }
 
     info("Creating BlobURL and clicking on a HTMLAnchorElement...");
