@@ -204,9 +204,6 @@ static mozilla::Atomic<bool> gEncounteredChildException(false);
 static xpstring pendingDirectory;
 static xpstring crashReporterPath;
 static xpstring memoryReportPath;
-#ifdef XP_MACOSX
-static xpstring libraryPath;  
-#endif
 
 
 static xpstring eventsDirectory;
@@ -1222,9 +1219,6 @@ static bool LaunchProgram(const XP_CHAR* aProgramPath,
     CloseHandle(pi.hThread);
   }
 #  elif defined(XP_MACOSX)
-  
-  setenv("DYLD_LIBRARY_PATH", libraryPath.c_str(),  1);
-
   pid_t pid = 0;
   char* const my_argv[] = {const_cast<char*>(aProgramPath),
                            const_cast<char*>(aMinidumpPath), nullptr};
@@ -2039,9 +2033,6 @@ nsresult SetExceptionHandler(nsIFile* aXREDirectory, bool force ) {
 #  else
   crashReporterPath =
       xpstring(NS_ConvertUTF16toUTF8(crashReporterPath_temp).get());
-#    ifdef XP_MACOSX
-  libraryPath = xpstring(NS_ConvertUTF16toUTF8(libraryPath_temp).get());
-#    endif
 #  endif  
 #else
   
