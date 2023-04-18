@@ -1752,7 +1752,7 @@ GCMarker::MarkQueueProgress GCMarker::processMarkQueue() {
             markUntilBudgetExhausted(unlimited, DontReportMarkTime));
       } else if (js::StringEqualsLiteral(str, "set-color-gray")) {
         queueMarkColor = mozilla::Some(MarkColor::Gray);
-        if (gcrt.state() != State::Sweep) {
+        if (gcrt.state() != State::Sweep || hasBlackEntries()) {
           
           queuePos--;
           return QueueSuspended;
