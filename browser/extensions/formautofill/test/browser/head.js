@@ -1,21 +1,3 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 "use strict";
 
 const { OSKeyStore } = ChromeUtils.import(
