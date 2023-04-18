@@ -64,4 +64,21 @@ add_task(async function() {
     `Promise {`
   );
   ok(message, "Promise are displayed as expected");
+
+  info("Check that then getters aren't called twice");
+  message = await executeAndWaitForResultMessage(
+    hud,
+    
+    
+    
+    `
+    var obj = {
+      called: 0,
+      get then(){
+        this.called++
+      }
+    };
+    await obj`,
+    `Object { called: 1, then: Getter }`
+  );
 });

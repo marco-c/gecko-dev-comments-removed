@@ -39,10 +39,16 @@ function translateDeclarationIntoAssignment(node) {
 
 function addReturnNode(ast) {
   const statements = ast.program.body;
-  const lastStatement = statements[statements.length - 1];
-  return statements
-    .slice(0, -1)
-    .concat(t.returnStatement(lastStatement.expression));
+  const lastStatement = statements.pop();
+
+  
+  
+  
+  if (t.isAwaitExpression(lastStatement.expression)) {
+    lastStatement.expression = lastStatement.expression.argument;
+  }
+  statements.push(t.returnStatement(lastStatement.expression));
+  return statements;
 }
 
 function getDeclarations(node) {
