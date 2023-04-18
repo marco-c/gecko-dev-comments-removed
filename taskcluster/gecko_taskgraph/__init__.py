@@ -4,6 +4,7 @@
 
 
 import os
+from taskgraph.util import taskcluster as tc_util
 
 GECKO = os.path.normpath(os.path.realpath(os.path.join(__file__, "..", "..", "..")))
 
@@ -12,6 +13,10 @@ GECKO = os.path.normpath(os.path.realpath(os.path.join(__file__, "..", "..", "..
 
 
 MAX_DEPENDENCIES = 99
+
+
+
+tc_util.PRODUCTION_TASKCLUSTER_ROOT_URL = "https://firefox-ci-tc.services.mozilla.com"
 
 
 
