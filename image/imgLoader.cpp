@@ -666,34 +666,29 @@ static void NewRequestAndEntry(bool aForcePrincipalCheckForCacheEntry,
 
 static bool ShouldRevalidateEntry(imgCacheEntry* aEntry, nsLoadFlags aFlags,
                                   bool aHasExpired) {
-  bool bValidateEntry = false;
-
   if (aFlags & nsIRequest::LOAD_BYPASS_CACHE) {
     return false;
   }
-
   if (aFlags & nsIRequest::VALIDATE_ALWAYS) {
-    bValidateEntry = true;
-  } else if (aEntry->GetMustValidate()) {
-    bValidateEntry = true;
-  } else if (aHasExpired) {
-    
-    
-    if (aFlags &
-        (nsIRequest::VALIDATE_NEVER | nsIRequest::VALIDATE_ONCE_PER_SESSION)) {
-      
-      
-      
-      bValidateEntry = false;
-
-    } else if (!(aFlags & nsIRequest::LOAD_FROM_CACHE)) {
-      
-      
-      bValidateEntry = true;
-    }
+    return true;
   }
-
-  return bValidateEntry;
+  if (aEntry->GetMustValidate()) {
+    return true;
+  }
+  if (aHasExpired) {
+    
+    
+    if (aFlags & (nsIRequest::LOAD_FROM_CACHE | nsIRequest::VALIDATE_NEVER |
+                  nsIRequest::VALIDATE_ONCE_PER_SESSION)) {
+      
+      
+      
+      return false;
+    }
+    
+    return true;
+  }
+  return false;
 }
 
 
@@ -2209,15 +2204,6 @@ void imgLoader::RemoveFromUncachedImages(imgRequest* aRequest) {
   mUncachedImages.Remove(aRequest);
 }
 
-bool imgLoader::PreferLoadFromCache(nsIURI* aURI) const {
-  
-  
-  
-  
-  
-  return aURI->SchemeIs("moz-page-thumb") || aURI->SchemeIs("moz-extension");
-}
-
 #define LOAD_FLAGS_CACHE_MASK \
   (nsIRequest::LOAD_BYPASS_CACHE | nsIRequest::LOAD_FROM_CACHE)
 
@@ -2339,9 +2325,6 @@ nsresult imgLoader::LoadImage(
   
   if (aLoadGroup) {
     aLoadGroup->GetLoadFlags(&requestFlags);
-    if (PreferLoadFromCache(aURI)) {
-      requestFlags |= nsIRequest::LOAD_FROM_CACHE;
-    }
   }
   
   
@@ -2681,10 +2664,6 @@ nsresult imgLoader::LoadImageWithChannel(nsIChannel* channel,
 
   nsLoadFlags requestFlags = nsIRequest::LOAD_NORMAL;
   channel->GetLoadFlags(&requestFlags);
-
-  if (PreferLoadFromCache(uri)) {
-    requestFlags |= nsIRequest::LOAD_FROM_CACHE;
-  }
 
   RefPtr<imgCacheEntry> entry;
 
