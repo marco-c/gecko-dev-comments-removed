@@ -681,11 +681,6 @@ class LocalAccessible : public nsISupports, public Accessible {
   
 
 
-  static void TranslateString(const nsString& aKey, nsAString& aStringOut);
-
-  
-
-
   bool IsDefunct() const;
 
   
