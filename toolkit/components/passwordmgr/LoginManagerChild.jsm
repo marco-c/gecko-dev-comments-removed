@@ -1020,6 +1020,15 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
       .getHistogramById("PWMGR_NUM_FORM_HAS_POSSIBLE_USERNAME_EVENT_PER_DOC")
       .add(++docState.numFormHasPossibleUsernameEvent);
 
+    
+    
+    if (
+      docState.numFormHasPossibleUsernameEvent >
+      LoginHelper.usernameOnlyFormLookupThreshold
+    ) {
+      return;
+    }
+
     if (document.visibilityState == "visible" || isMasterPasswordSet) {
       this._processDOMFormHasPossibleUsernameEvent(event);
     } else {
@@ -3131,11 +3140,6 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
 
     let candidate = null;
     for (let element of formElement.elements) {
-      
-      if (ChromeUtils.getClassName(element) !== "HTMLInputElement") {
-        continue;
-      }
-
       
       
       if (element.hasBeenTypePassword) {
