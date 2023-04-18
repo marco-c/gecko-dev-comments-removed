@@ -257,7 +257,6 @@ var State = {
     let result = {
       pid: cur.pid,
       childID: cur.childID,
-      filename: cur.filename,
       totalRamSize: cur.memory,
       deltaRamSize: null,
       totalCpu: cur.cpuTime,

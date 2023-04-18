@@ -114,8 +114,6 @@ struct ProcInfo {
   
   nsCString origin;
   
-  nsString filename;
-  
   uint64_t memory = 0;
   
   uint64_t cpuTime = 0;
@@ -218,7 +216,6 @@ template <typename T>
 nsresult CopySysProcInfoToDOM(const ProcInfo& source, T* dest) {
   
   dest->mPid = source.pid;
-  dest->mFilename.Assign(source.filename);
   dest->mMemory = source.memory;
   dest->mCpuTime = source.cpuTime;
   dest->mCpuCycleCount = source.cpuCycleCount;

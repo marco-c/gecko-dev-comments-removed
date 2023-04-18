@@ -53,7 +53,7 @@ class StatReader {
       return NS_ERROR_FAILURE;
     }
     int32_t len = endPos - (startPos + 1);
-    aInfo.filename.Assign(Substring(fileContent, startPos + 1, len));
+    mName.Assign(Substring(fileContent, startPos + 1, len));
 
     
     nsWhitespaceTokenizer tokenizer(Substring(fileContent, endPos + 2));
@@ -120,7 +120,7 @@ class StatReader {
   base::ProcessId mPid;
   int32_t mMaxIndex;
   nsCString mFilepath;
-  ProcInfo mProcInfo;
+  nsString mName;
 
  private:
   
@@ -176,7 +176,7 @@ class ThreadInfoReader final : public StatReader {
     aInfo.tid = mTid;
     
     aInfo.cpuTime = info.cpuTime;
-    aInfo.name.Assign(info.filename);
+    aInfo.name.Assign(mName);
     return NS_OK;
   }
 

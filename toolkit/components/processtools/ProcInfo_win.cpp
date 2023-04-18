@@ -120,12 +120,6 @@ RefPtr<ProcInfoPromise> GetProcInfo(nsTArray<ProcInfoRequest>&& aRequests) {
             continue;
           }
 
-          wchar_t filename[MAX_PATH];
-          if (GetProcessImageFileNameW(handle.get(), filename, MAX_PATH) == 0) {
-            
-            continue;
-          }
-
           uint64_t cpuCycleTime;
           if (!QueryProcessCycleTime(handle.get(), &cpuCycleTime)) {
             
@@ -165,7 +159,6 @@ RefPtr<ProcInfoPromise> GetProcInfo(nsTArray<ProcInfoRequest>&& aRequests) {
           info.type = request.processType;
           info.origin = request.origin;
           info.windows = std::move(request.windowInfo);
-          info.filename.Assign(filename);
           info.cpuTime = cpuTime;
           info.cpuCycleCount = cpuCycleTime;
           info.memory = memoryCounters.PrivateUsage;
