@@ -826,9 +826,25 @@ async function reload(dbg, ...sources) {
 
 
 async function navigate(dbg, url, ...sources) {
-  await navigateTo(EXAMPLE_URL + url);
+  return navigateToAbsoluteURL(dbg, EXAMPLE_URL + url, ...sources);
+}
+
+
+
+
+
+
+
+
+
+
+
+async function navigateToAbsoluteURL(dbg, url, ...sources) {
+  await navigateTo(url);
   return waitForSources(dbg, ...sources);
 }
+
+
 
 function getFirstBreakpointColumn(dbg, { line, sourceId }) {
   const { getSource, getFirstBreakpointPosition } = dbg.selectors;
