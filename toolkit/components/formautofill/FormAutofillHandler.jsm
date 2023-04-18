@@ -497,12 +497,13 @@ class FormAutofillSection {
         continue;
       }
 
-      
-      if (
-        fieldDetail.state == FIELD_STATES.AUTO_FILLED &&
-        ChromeUtils.getClassName(element) === "HTMLInputElement"
-      ) {
-        element.setUserInput("");
+      if (fieldDetail.state == FIELD_STATES.AUTO_FILLED) {
+        if (ChromeUtils.getClassName(element) === "HTMLInputElement") {
+          element.setUserInput("");
+        } else if (ChromeUtils.getClassName(element) === "HTMLSelectElement") {
+          
+          this._resetSelectElementValue(element);
+        }
       }
     }
   }
@@ -714,6 +715,9 @@ class FormAutofillSection {
           
           
           for (const fieldDetail of dimFieldDetails) {
+            
+            let element = fieldDetail.elementWeakRef.get();
+            this._resetSelectElementValue(element);
             this._changeFieldState(fieldDetail, FIELD_STATES.NORMAL);
           }
           this.filledRecordGUID = null;
@@ -721,6 +725,21 @@ class FormAutofillSection {
         break;
       }
     }
+  }
+  
+
+
+
+
+
+  _resetSelectElementValue(element) {
+    if (!element.options.length) {
+      return;
+    }
+    let selected = [...element.options].find(option =>
+      option.hasAttribute("selected")
+    );
+    element.value = selected ? selected.value : element.options[0].value;
   }
 }
 
