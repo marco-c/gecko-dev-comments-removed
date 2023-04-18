@@ -106,14 +106,16 @@ class SearchUtils {
     }
 
     
-    let engines = [];
+    let perfectMatchEngines = [];
+    let perfectMatchEngineSet = new Set();
     for (let engine of await Services.search.getVisibleEngines()) {
       if (disabledEngines.includes(engine.name)) {
         continue;
       }
       let domain = engine.getResultDomain();
       if (domain.startsWith(prefix) || domain.startsWith("www." + prefix)) {
-        engines.push(engine);
+        perfectMatchEngines.push(engine);
+        perfectMatchEngineSet.add(engine);
       }
 
       if (matchAllDomainLevels) {
@@ -131,7 +133,17 @@ class SearchUtils {
     }
 
     
-    return [...engines, ...partialMatchEngines];
+    
+    
+    let engines = perfectMatchEngines;
+    let engineSet = perfectMatchEngineSet;
+    for (let engine of partialMatchEngines) {
+      if (!engineSet.has(engine)) {
+        engineSet.add(engine);
+        engines.push(engine);
+      }
+    }
+    return engines;
   }
 
   
