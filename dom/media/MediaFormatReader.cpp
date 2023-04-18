@@ -2373,7 +2373,27 @@ void MediaFormatReader::Update(TrackType aTrack) {
         !decoder.mHardwareDecodingDisabled;
     bool needsNewDecoder =
         decoder.mError.ref() == NS_ERROR_DOM_MEDIA_NEED_NEW_DECODER ||
+        decoder.mError.ref() == NS_ERROR_DOM_MEDIA_REMOTE_DECODER_CRASHED_ERR ||
         firstFrameDecodingFailedWithHardware;
+#ifdef XP_LINUX
+    
+    
+    if (decoder.mError.ref() == NS_ERROR_DOM_MEDIA_DECODE_ERR &&
+        decoder.mDecoder->IsHardwareAccelerated(error)) {
+      needsNewDecoder = true;
+      decoder.mHardwareDecodingDisabled = true;
+    }
+    
+    if (decoder.mError.ref() == NS_ERROR_DOM_MEDIA_REMOTE_DECODER_CRASHED_ERR) {
+      decoder.mHardwareDecodingDisabled = true;
+    }
+#endif
+    
+    
+    if (decoder.mError.ref() == NS_ERROR_DOM_MEDIA_REMOTE_DECODER_CRASHED_ERR) {
+      decoder.mError = Some(MediaResult(NS_ERROR_DOM_MEDIA_DECODE_ERR,
+                                        RESULT_DETAIL("Unable to decode")));
+    }
     if (!needsNewDecoder &&
         ++decoder.mNumOfConsecutiveError > decoder.mMaxConsecutiveError) {
       DDLOG(DDLogCategory::Log, "too_many_decode_errors", decoder.mError.ref());
