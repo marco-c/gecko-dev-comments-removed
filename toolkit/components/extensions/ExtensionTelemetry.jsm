@@ -5,7 +5,11 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["ExtensionTelemetry", "getTrimmedString"];
+var EXPORTED_SYMBOLS = [
+  "ExtensionTelemetry",
+  "getTrimmedString",
+  "getErrorNameForTelemetry",
+];
 
 ChromeUtils.defineModuleGetter(
   this,
@@ -50,6 +54,36 @@ function getTrimmedString(str) {
   
   
   return `${str.slice(0, 40)}...${str.slice(length - 37, length)}`;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function getErrorNameForTelemetry(error) {
+  let text = "UnknownError";
+  if (!error) {
+    text = "NoError";
+  } else if (
+    DOMException.isInstance(error) ||
+    error instanceof Components.Exception
+  ) {
+    text = error.name;
+    if (text.length > 80) {
+      text = getTrimmedString(text);
+    }
+  }
+  return text;
 }
 
 
