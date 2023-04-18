@@ -10,6 +10,15 @@
 
 
 
+const isMochitest = "gTestPath" in this;
+const isXpcshell = !isMochitest;
+if (isXpcshell) {
+  
+  
+  
+  this.gTestPath = _TEST_FILE[0];
+}
+
 const { Constructor: CC } = Components;
 
 
@@ -46,6 +55,12 @@ if (DEBUG_ALLOCATIONS) {
 const { loader, require } = ChromeUtils.import(
   "resource://devtools/shared/loader/Loader.jsm"
 );
+
+
+
+
+
+var Services = this.Services || require("Services");
 
 const { gDevTools } = require("devtools/client/framework/devtools");
 const {
@@ -123,10 +138,12 @@ const URL_ROOT_MOCHI_8888 = CHROME_URL_ROOT.replace(
 const TARGET_SWITCHING_PREF = "devtools.target-switching.server.enabled";
 
 try {
-  Services.scriptloader.loadSubScript(
-    "chrome://mochitests/content/browser/devtools/client/shared/test/telemetry-test-helpers.js",
-    this
-  );
+  if (isMochitest) {
+    Services.scriptloader.loadSubScript(
+      "chrome://mochitests/content/browser/devtools/client/shared/test/telemetry-test-helpers.js",
+      this
+    );
+  }
 } catch (e) {
   ok(
     false,
@@ -168,6 +185,7 @@ function highlighterTestActorBootstrap() {
   );
   _require(HIGHLIGHTER_TEST_ACTOR_URL);
 
+  
   const Services = _require("Services");
 
   const actorRegistryObserver = subject => {
@@ -199,18 +217,22 @@ function highlighterTestActorBootstrap() {
   );
 }
 
-const highlighterTestActorBootstrapScript =
-  "data:,(" + highlighterTestActorBootstrap + ")()";
-Services.ppmm.loadProcessScript(
-  highlighterTestActorBootstrapScript,
-  
-  true
-);
+if (isMochitest) {
+  const highlighterTestActorBootstrapScript =
+    "data:,(" + highlighterTestActorBootstrap + ")()";
+  Services.ppmm.loadProcessScript(
+    highlighterTestActorBootstrapScript,
+    
+    true
+  );
 
-registerCleanupFunction(() => {
-  Services.ppmm.broadcastAsyncMessage("remove-devtools-testactor-observer");
-  Services.ppmm.removeDelayedProcessScript(highlighterTestActorBootstrapScript);
-});
+  registerCleanupFunction(() => {
+    Services.ppmm.broadcastAsyncMessage("remove-devtools-testactor-observer");
+    Services.ppmm.removeDelayedProcessScript(
+      highlighterTestActorBootstrapScript
+    );
+  });
+}
 
 
 
@@ -259,7 +281,9 @@ async function getHighlighterTestFrontWithoutToolbox(tab) {
 }
 
 
-waitForExplicitFinish();
+if (isMochitest) {
+  waitForExplicitFinish();
+}
 
 var EXPECTED_DTU_ASSERT_FAILURE_COUNT = 0;
 
@@ -342,7 +366,7 @@ registerCleanupFunction(async function cleanup() {
 
   
   
-  while (gBrowser.tabs.length > 1) {
+  while (isMochitest && gBrowser.tabs.length > 1) {
     await closeTabAndToolbox(gBrowser.selectedTab);
   }
 

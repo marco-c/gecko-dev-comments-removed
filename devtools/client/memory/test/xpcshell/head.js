@@ -6,13 +6,6 @@
 
 
 
-var { require } = ChromeUtils.import(
-  "resource://devtools/shared/loader/Loader.jsm"
-);
-
-var Services = require("Services");
-var DevToolsUtils = require("devtools/shared/DevToolsUtils");
-
 Services.prefs.setBoolPref("devtools.testing", true);
 Services.prefs.setBoolPref("devtools.debugger.log", true);
 registerCleanupFunction(() => {
