@@ -25,4 +25,9 @@ interface nsIAccessibleCaretMoveEvent: nsIAccessibleEvent
 
 
   readonly attribute bool isAtEndOfLine;
+
+  
+
+
+  readonly attribute long granularity;
 };
