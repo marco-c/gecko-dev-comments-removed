@@ -5453,7 +5453,9 @@ class nsIFrame : public nsQueryFrame {
   nsresult MakeFrameName(const nsAString& aType, nsAString& aResult) const;
   
   
-  static int32_t ContentIndexInContainer(const nsIFrame* aFrame);
+  
+  static mozilla::Maybe<uint32_t> ContentIndexInContainer(
+      const nsIFrame* aFrame);
 #endif
 
 #ifdef DEBUG
