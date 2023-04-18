@@ -83,6 +83,39 @@ class ResourceCommand {
 
 
 
+
+
+
+  async clearResources(resourceTypes) {
+    if (!Array.isArray(resourceTypes)) {
+      throw new Error("clearResources expects a list of resources types");
+    }
+    
+    for (const [key, resource] of this._cache) {
+      if (resourceTypes.includes(resource.resourceType)) {
+        
+        this._cache.delete(key);
+      }
+    }
+
+    const resourcesToClear = resourceTypes.filter(resourceType =>
+      this.hasResourceCommandSupport(resourceType)
+    );
+    if (
+      resourcesToClear.length &&
+      
+      
+      this.targetCommand.hasTargetWatcherSupport("supportsClearResources")
+    ) {
+      this.watcherFront.clearResources(resourcesToClear);
+    }
+  }
+  
+
+
+
+
+
   getAllResources(resourceType) {
     const result = [];
     for (const resource of this._cache.values()) {

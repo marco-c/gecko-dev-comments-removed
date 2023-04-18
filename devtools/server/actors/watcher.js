@@ -198,6 +198,8 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
       traits: {
         ...this.sessionContext.supportedTargets,
         resources: this.sessionContext.supportedResources,
+        
+        supportsClearResources: true,
       },
     };
   },
@@ -600,6 +602,16 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
     
     WatcherRegistry.maybeUnregisteringJSWindowActor();
+  },
+
+  clearResources(resourceTypes) {
+    
+    
+    
+    Resources.clearResources(
+      this,
+      Resources.getParentProcessResourceTypes(resourceTypes)
+    );
   },
 
   

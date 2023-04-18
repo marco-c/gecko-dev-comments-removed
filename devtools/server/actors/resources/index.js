@@ -350,6 +350,30 @@ exports.unwatchResources = unwatchResources;
 
 
 
+
+
+function clearResources(rootOrWatcherOrTargetActor, resourceTypes) {
+  for (const resourceType of resourceTypes) {
+    const { watchers } = getResourceTypeEntry(
+      rootOrWatcherOrTargetActor,
+      resourceType
+    );
+
+    const watcher = watchers.get(rootOrWatcherOrTargetActor);
+    if (watcher && typeof watcher.clear == "function") {
+      watcher.clear();
+    }
+  }
+}
+
+exports.clearResources = clearResources;
+
+
+
+
+
+
+
 function unwatchAllResources(rootOrWatcherOrTargetActor) {
   for (const { watchers } of Object.values(
     getResourceTypeDictionary(rootOrWatcherOrTargetActor)
