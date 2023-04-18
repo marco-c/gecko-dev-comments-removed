@@ -15,7 +15,7 @@ include "GMPMessageUtils.h";
 namespace mozilla {
 namespace gmp {
 
-[RefCounted] intr protocol PGMPVideoEncoder
+[RefCounted] sync protocol PGMPVideoEncoder
 {
   manager PGMPContent;
 child:
@@ -39,9 +39,7 @@ parent:
   async Error(GMPErr aErr);
   async Shutdown();
   async ParentShmemForPool(Shmem aFrameBuffer);
-  
-  
-  intr NeedShmem(uint32_t aEncodedBufferSize) returns (Shmem aMem);
+  sync NeedShmem(uint32_t aEncodedBufferSize) returns (Shmem aMem);
 };
 
 } 
