@@ -106,7 +106,7 @@ promise_test(t => sharedWorkerFetchTest(t, {
 
 
 promise_test(t => sharedWorkerFetchTest(t, {
-  source: { server: Server.HTTPS_PRIVATE },
+  source: { server: Server.HTTPS_LOCAL },
   target: {
     server: Server.HTTP_LOCAL,
     behavior: {
@@ -115,7 +115,7 @@ promise_test(t => sharedWorkerFetchTest(t, {
     },
   },
   expected: WorkerFetchTestResult.FAILURE,
-}), "private https to local: failure.");
+}), "local https to local: failure.");
 
 promise_test(t => sharedWorkerFetchTest(t, {
   source: { server: Server.HTTPS_PUBLIC },
@@ -127,7 +127,7 @@ promise_test(t => sharedWorkerFetchTest(t, {
     },
   },
   expected: WorkerFetchTestResult.FAILURE,
-}), "pubiic https to local: failure.");
+}), "private https to local: failure.");
 
 promise_test(t => sharedWorkerFetchTest(t, {
   source: { server: Server.HTTPS_PUBLIC },
