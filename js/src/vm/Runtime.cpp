@@ -258,7 +258,6 @@ void JSRuntime::destroyRuntime() {
     
 
 
-
     JSContext* cx = mainContextFromOwnThread();
     if (JS::IsIncrementalGCInProgress(cx)) {
       gc::FinishGC(cx);

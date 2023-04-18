@@ -239,22 +239,9 @@ JS::OffThreadToken* StartOffThreadDecodeMultiStencils(
 
 
 
-void EnqueuePendingParseTasksAfterGC(JSRuntime* rt);
-
-
-
-
-
 
 void WaitForAllHelperThreads();
 void WaitForAllHelperThreads(AutoLockHelperThreadState& lock);
-
-struct AutoEnqueuePendingParseTasksAfterGC {
-  const gc::GCRuntime& gc_;
-  explicit AutoEnqueuePendingParseTasksAfterGC(const gc::GCRuntime& gc)
-      : gc_(gc) {}
-  ~AutoEnqueuePendingParseTasksAfterGC();
-};
 
 
 
@@ -282,10 +269,6 @@ void RunPendingSourceCompressions(JSRuntime* runtime);
 
 
 bool IsOffThreadSourceCompressionEnabled();
-
-
-
-extern bool OffThreadParsingMustWaitForGC(JSRuntime* rt);
 
 }  
 

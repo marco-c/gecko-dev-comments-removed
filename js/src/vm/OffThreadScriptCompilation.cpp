@@ -18,10 +18,10 @@
 
 #include "js/CompileOptions.h"  
 #include "js/experimental/JSStencil.h"  
-#include "js/SourceText.h"  
+#include "js/SourceText.h"         
 #include "vm/HelperThreadState.h"  
-#include "vm/JSContext.h"  
-#include "vm/Runtime.h"    
+#include "vm/JSContext.h"          
+#include "vm/Runtime.h"            
 
 using namespace js;
 

@@ -151,9 +151,6 @@ class GlobalHelperThreadState {
   ParseTaskList parseFinishedList_;
 
   
-  ParseTaskVector parseWaitingOnGC_;
-
-  
   SourceCompressionTaskVector compressionPendingList_;
 
   
@@ -304,9 +301,6 @@ class GlobalHelperThreadState {
   }
   ParseTaskList& parseFinishedList(const AutoLockHelperThreadState&) {
     return parseFinishedList_;
-  }
-  ParseTaskVector& parseWaitingOnGC(const AutoLockHelperThreadState&) {
-    return parseWaitingOnGC_;
   }
 
   SourceCompressionTaskVector& compressionPendingList(
