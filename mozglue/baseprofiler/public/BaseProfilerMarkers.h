@@ -89,17 +89,17 @@ ProfileBufferBlockIndex AddMarker(
 #ifndef MOZ_GECKO_PROFILER
   return {};
 #else
-  if ((aOptions.ThreadId().IsUnspecified() ||
-       aOptions.ThreadId().ThreadId() == profiler_current_thread_id())
-          ? !baseprofiler::profiler_thread_is_being_profiled()
-          
-          
-          : !baseprofiler::detail::RacyFeatures::IsActiveAndUnpaused()) {
+  
+  
+  
+  ProfileChunkedBuffer& coreBuffer =
+      ::mozilla::baseprofiler::profiler_get_core_buffer();
+  if (!coreBuffer.IsInSession()) {
     return {};
   }
   return ::mozilla::baseprofiler::AddMarkerToBuffer(
-      ::mozilla::baseprofiler::profiler_get_core_buffer(), aName, aCategory,
-      std::move(aOptions), aMarkerType, aPayloadArguments...);
+      coreBuffer, aName, aCategory, std::move(aOptions), aMarkerType,
+      aPayloadArguments...);
 #endif
 }
 
