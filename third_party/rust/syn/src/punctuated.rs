@@ -947,6 +947,31 @@ impl<T, P> Pair<T, P> {
 
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn punct_mut(&mut self) -> Option<&mut P> {
+        match self {
+            Pair::Punctuated(_, p) => Some(p),
+            Pair::End(_) => None,
+        }
+    }
+
+    
+    
     pub fn new(t: T, p: Option<P>) -> Self {
         match p {
             Some(p) => Pair::Punctuated(t, p),

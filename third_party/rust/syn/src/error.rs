@@ -80,6 +80,8 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 
 
+
+
 pub struct Error {
     messages: Vec<ErrorMessage>,
 }
@@ -185,6 +187,7 @@ impl Error {
         start.join(end).unwrap_or(start)
     }
 
+    
     
     
     

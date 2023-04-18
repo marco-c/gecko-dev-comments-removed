@@ -250,56 +250,38 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/syn/1.0.94")]
+#![doc(html_root_url = "https://docs.rs/syn/1.0.96")]
 #![cfg_attr(doc_cfg, feature(doc_cfg))]
 #![allow(non_camel_case_types)]
-
 #![allow(
     clippy::cast_lossless,
-    clippy::collapsible_match, 
+    clippy::cast_possible_truncation,
+    clippy::default_trait_access,
     clippy::doc_markdown,
-    clippy::eval_order_dependence,
+    clippy::expl_impl_clone_on_copy,
+    clippy::if_not_else,
     clippy::inherent_to_string,
     clippy::large_enum_variant,
     clippy::let_underscore_drop,
     clippy::manual_assert,
-    clippy::manual_map, 
     clippy::match_on_vec_items,
+    clippy::match_same_arms,
+    clippy::match_wildcard_for_single_variants, 
+    clippy::missing_errors_doc,
     clippy::missing_panics_doc,
+    clippy::module_name_repetitions,
+    clippy::must_use_candidate,
     clippy::needless_doctest_main,
     clippy::needless_pass_by_value,
     clippy::never_loop,
-    clippy::return_self_not_must_use,
-    clippy::too_many_arguments,
-    clippy::trivially_copy_pass_by_ref,
-    clippy::unnecessary_unwrap,
-    
-    clippy::wrong_self_convention
-)]
-
-#![allow(
-    clippy::cast_possible_truncation,
-    
-    clippy::cloned_instead_of_copied,
-    clippy::default_trait_access,
-    clippy::empty_enum,
-    clippy::expl_impl_clone_on_copy,
-    clippy::if_not_else,
-    
-    clippy::iter_not_returning_iterator,
-    clippy::match_same_arms,
-    
-    clippy::match_wildcard_for_single_variants,
-    clippy::missing_errors_doc,
-    clippy::module_name_repetitions,
-    clippy::must_use_candidate,
-    clippy::option_if_let_else,
     clippy::redundant_else,
-    clippy::shadow_unrelated,
+    clippy::return_self_not_must_use,
     clippy::similar_names,
     clippy::single_match_else,
+    clippy::too_many_arguments,
     clippy::too_many_lines,
-    clippy::unseparated_literal_suffix,
+    clippy::trivially_copy_pass_by_ref,
+    clippy::unnecessary_unwrap,
     clippy::used_underscore_binding,
     clippy::wildcard_imports
 )]
@@ -310,7 +292,6 @@
 ))]
 extern crate proc_macro;
 extern crate proc_macro2;
-extern crate unicode_xid;
 
 #[cfg(feature = "printing")]
 extern crate quote;

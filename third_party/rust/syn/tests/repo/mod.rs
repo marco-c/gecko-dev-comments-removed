@@ -10,7 +10,7 @@ use std::path::Path;
 use tar::Archive;
 use walkdir::DirEntry;
 
-const REVISION: &str = "e95b10ba4ac4564ed25f7eef143e3182c33b3902";
+const REVISION: &str = "ee160f2f5e73b6f5954bc33f059c316d9e8582c4";
 
 #[rustfmt::skip]
 static EXCLUDE: &[&str] = &[
@@ -23,12 +23,20 @@ static EXCLUDE: &[&str] = &[
     "src/test/ui/const-generics/early/const-expression-parameter.rs",
 
     
+    "src/test/ui/type-alias-impl-trait/generic_type_does_not_live_long_enough.rs",
+
+    
     "src/test/ui/issues/issue-13105.rs",
     "src/test/ui/issues/issue-13775.rs",
     "src/test/ui/issues/issue-34074.rs",
     "src/test/ui/proc-macro/trait-fn-args-2015.rs",
     "src/tools/rustfmt/tests/source/trait.rs",
     "src/tools/rustfmt/tests/target/trait.rs",
+
+    
+    "src/test/pretty/yeet-expr.rs",
+    "src/test/ui/try-trait/yeet-for-option.rs",
+    "src/test/ui/try-trait/yeet-for-result.rs",
 
     
     "src/test/ui/issues/issue-74564-if-expr-stack-overflow.rs",
@@ -45,6 +53,9 @@ static EXCLUDE: &[&str] = &[
     "src/tools/rustfmt/tests/target/configs/spaces_around_ranges/false.rs",
     "src/tools/rustfmt/tests/target/configs/spaces_around_ranges/true.rs",
     "src/tools/rustfmt/tests/target/type.rs",
+
+    
+    "src/test/run-make/translation/basic-translation.rs",
 
     
     "src/tools/clippy/clippy_lints/src/lib.deprecated.rs",
