@@ -1942,6 +1942,7 @@ NS_IMETHODIMP nsExternalAppHandler::OnStartRequest(nsIRequest* request) {
   if (mForceSave) {
     alwaysAsk = false;
     action = nsIMIMEInfo::saveToDisk;
+    shouldAutomaticallyHandleInternally = false;
   }
   
   
