@@ -422,9 +422,6 @@ class ScriptSource {
   
   class PinnedUnitsBase {
    protected:
-    PinnedUnitsBase** stack_ = nullptr;
-    PinnedUnitsBase* prev_ = nullptr;
-
     ScriptSource* source_;
 
     explicit PinnedUnitsBase(ScriptSource* source) : source_(source) {}
@@ -553,10 +550,13 @@ class ScriptSource {
   
   
   
-  PinnedUnitsBase* pinnedUnitsStack_ = nullptr;
-  mozilla::MaybeOneOf<CompressedData<mozilla::Utf8Unit>,
-                      CompressedData<char16_t>>
-      pendingCompressed_;
+  struct ReaderInstances {
+    size_t count = 0;
+    mozilla::MaybeOneOf<CompressedData<mozilla::Utf8Unit>,
+                        CompressedData<char16_t>>
+        pendingCompressed;
+  };
+  ExclusiveData<ReaderInstances> readers_;
 
   
   bool hadCompressionTask_ = false;
@@ -631,7 +631,8 @@ class ScriptSource {
   
   static const size_t SourceDeflateLimit = 100;
 
-  explicit ScriptSource() : id_(++idCount_) {}
+  explicit ScriptSource()
+      : id_(++idCount_), readers_(js::mutexid::SourceCompression) {}
   ~ScriptSource() { MOZ_ASSERT(refs == 0); }
 
   void AddRef() { refs++; }
@@ -980,7 +981,8 @@ class ScriptSource {
                                  size_t uncompressedLength);
 
   template <typename Unit>
-  void performDelayedConvertToCompressedSource();
+  void performDelayedConvertToCompressedSource(
+      ExclusiveData<ReaderInstances>::Guard& g);
 
   void triggerConvertToCompressedSourceFromTask(
       SharedImmutableString compressed);
