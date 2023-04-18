@@ -884,6 +884,15 @@ void GCRuntime::finish() {
   stats().printTotalProfileTimes();
 }
 
+#ifdef DEBUG
+void GCRuntime::assertNoPermanentSharedThings() {
+  MOZ_ASSERT(atomsZone->cellIterUnsafe<JSAtom>(AllocKind::ATOM).done());
+  MOZ_ASSERT(
+      atomsZone->cellIterUnsafe<JSAtom>(AllocKind::FAT_INLINE_ATOM).done());
+  MOZ_ASSERT(atomsZone->cellIterUnsafe<JS::Symbol>(AllocKind::SYMBOL).done());
+}
+#endif
+
 void GCRuntime::freezePermanentSharedThings() {
   
   
