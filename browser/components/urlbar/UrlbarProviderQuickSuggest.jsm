@@ -66,6 +66,21 @@ const TELEMETRY_SCALARS = {
 const TELEMETRY_EVENT_CATEGORY = "contextservices.quicksuggest";
 
 
+
+
+
+
+
+let TELEMETRY_IMPRESSION_CAP_EXTRA_KEYS = {
+  
+  intervalSeconds: "intervalSeconds",
+  startDateMs: "startDate",
+  count: "count",
+  maxCount: "maxCount",
+  impressionDateMs: "impressionDate",
+};
+
+
 const QUICK_SUGGEST_SOURCE = {
   REMOTE_SETTINGS: "remote-settings",
   MERINO: "merino",
@@ -198,6 +213,16 @@ class ProviderQuickSuggest extends UrlbarProvider {
     ) {
       promises.push(this._fetchMerinoSuggestions(queryContext, searchString));
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    this._resetElapsedImpressionCounters();
 
     
     let allSuggestions = await Promise.all(promises);
@@ -880,15 +905,13 @@ class ProviderQuickSuggest extends UrlbarProvider {
       (!suggestion.is_sponsored &&
         UrlbarPrefs.get("quickSuggestImpressionCapsNonSponsoredEnabled"))
     ) {
-      this._resetElapsedImpressionCounters();
-
       let type = suggestion.is_sponsored ? "sponsored" : "nonsponsored";
       let stats = this._impressionStats?.[type];
       if (stats) {
         let hitStats = stats.filter(s => s.maxCount <= s.count);
         if (hitStats.length) {
           this.logger.info("Impression cap(s) hit, not adding suggestion");
-          this.logger.debug(JSON.stringify({ hitStats }));
+          this.logger.debug(JSON.stringify({ type, hitStats }));
           return false;
         }
       }
@@ -988,8 +1011,18 @@ class ProviderQuickSuggest extends UrlbarProvider {
     
     for (let stat of stats) {
       stat.count++;
+      stat.impressionDateMs = Date.now();
 
       
+      if (stat.count == stat.maxCount) {
+        this.logger.info(`'${type}' impression cap hit`);
+        this.logger.debug(JSON.stringify({ type, hitStat: stat }));
+        this._recordImpressionCapEvent({
+          stat,
+          eventType: "hit",
+          suggestionType: type,
+        });
+      }
     }
 
     
@@ -1088,7 +1121,8 @@ class ProviderQuickSuggest extends UrlbarProvider {
           typeof stat.intervalSeconds != "number" ||
           typeof stat.startDateMs != "number" ||
           typeof stat.count != "number" ||
-          typeof stat.maxCount != "number"
+          typeof stat.maxCount != "number" ||
+          typeof stat.impressionDateMs != "number"
         ) {
           stats.splice(i, 1);
         } else {
@@ -1112,6 +1146,7 @@ class ProviderQuickSuggest extends UrlbarProvider {
             intervalSeconds,
             startDateMs: Date.now(),
             count: 0,
+            impressionDateMs: 0,
           });
         }
       }
@@ -1125,6 +1160,10 @@ class ProviderQuickSuggest extends UrlbarProvider {
           if (orphan.intervalSeconds <= stat.intervalSeconds) {
             stat.count = Math.max(stat.count, orphan.count);
             stat.startDateMs = Math.min(stat.startDateMs, orphan.startDateMs);
+            stat.impressionDateMs = Math.max(
+              stat.impressionDateMs,
+              orphan.impressionDateMs
+            );
           }
         }
       }
@@ -1149,7 +1188,7 @@ class ProviderQuickSuggest extends UrlbarProvider {
 
 
   _resetElapsedImpressionCounters() {
-    this.logger.info("Resetting elapsed impression counters");
+    this.logger.info("Checking for elapsed impression cap intervals");
     this.logger.debug(
       JSON.stringify({
         currentStats: this._impressionStats,
@@ -1158,22 +1197,92 @@ class ProviderQuickSuggest extends UrlbarProvider {
     );
 
     let now = Date.now();
-    for (let stats of Object.values(this._impressionStats)) {
+    for (let [type, stats] of Object.entries(this._impressionStats)) {
       for (let stat of stats) {
         let elapsedMs = now - stat.startDateMs;
         let intervalMs = 1000 * stat.intervalSeconds;
         let elapsedIntervalCount = Math.floor(elapsedMs / intervalMs);
         if (elapsedIntervalCount) {
+          this.logger.info(
+            `Resetting impression counter for interval ${stat.intervalSeconds}s`
+          );
+          this.logger.debug(
+            JSON.stringify({ type, stat, elapsedMs, elapsedIntervalCount })
+          );
+
+          
+          let startDateMs = stat.startDateMs;
+          for (let i = 0; i < elapsedIntervalCount; i++) {
+            let endDateMs = startDateMs + intervalMs;
+            this._recordImpressionCapEvent({
+              eventType: "reset",
+              suggestionType: type,
+              eventDateMs: endDateMs,
+              stat: {
+                ...stat,
+                startDateMs,
+                
+                
+                
+                
+                count: i == 0 ? stat.count : 0,
+              },
+            });
+            startDateMs += intervalMs;
+          }
+
+          
           let remainderMs = elapsedMs - elapsedIntervalCount * intervalMs;
           stat.startDateMs = now - remainderMs;
           stat.count = 0;
-
-          
         }
       }
     }
 
     this.logger.debug(JSON.stringify({ newStats: this._impressionStats }));
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _recordImpressionCapEvent({
+    eventType,
+    suggestionType,
+    stat,
+    eventDateMs = Date.now(),
+  }) {
+    
+    let extra = {
+      type: suggestionType,
+      eventDate: String(eventDateMs),
+      endDate: String(stat.startDateMs + 1000 * stat.intervalSeconds),
+    };
+    for (let [statKey, value] of Object.entries(stat)) {
+      let extraKey = TELEMETRY_IMPRESSION_CAP_EXTRA_KEYS[statKey];
+      if (!extraKey) {
+        throw new Error("Unrecognized stats object key: " + statKey);
+      }
+      extra[extraKey] = String(value);
+    }
+    Services.telemetry.recordEvent(
+      TELEMETRY_EVENT_CATEGORY,
+      "impression_cap",
+      eventType,
+      "",
+      extra
+    );
   }
 
   
@@ -1253,6 +1362,9 @@ class ProviderQuickSuggest extends UrlbarProvider {
   
   _addedResultInLastQuery = false;
 
+  
+  
+  
   
   
   
