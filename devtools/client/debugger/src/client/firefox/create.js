@@ -4,7 +4,6 @@
 
 
 
-import { clientCommands } from "./commands";
 import { hasSourceActor, getSourceActor } from "../../selectors";
 
 let store;
@@ -28,12 +27,12 @@ export async function createFrame(thread, frame, index = 0) {
   }
 
   
-  const source = await waitForSourceActorToBeRegisteredInStore(
+  const sourceActor = await waitForSourceActorToBeRegisteredInStore(
     frame.where.actor
   );
 
   const location = {
-    sourceId: makeSourceId(source, thread),
+    sourceId: sourceActor.source,
     line: frame.where.line,
     column: frame.where.column,
   };
@@ -81,16 +80,33 @@ async function waitForSourceActorToBeRegisteredInStore(sourceActorId) {
   return getSourceActor(store.getState(), sourceActorId);
 }
 
-export function makeSourceId(source, threadActorId) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export function makeSourceId(sourceResource) {
   
-  
-  
-  
-  const target = clientCommands.lookupTarget(threadActorId);
-  if (target.isTopLevel && source.url) {
-    return `source-${source.url}`;
+  if ("mockedJestID" in sourceResource) {
+    return sourceResource.mockedJestID;
   }
-  return `source-${source.actor}`;
+  
+  
+  
+  
+  if (sourceResource.targetFront.isTopLevel && sourceResource.url) {
+    return `source-${sourceResource.url}`;
+  }
+  return `source-${sourceResource.actor}`;
 }
 
 export async function createPause(thread, packet) {

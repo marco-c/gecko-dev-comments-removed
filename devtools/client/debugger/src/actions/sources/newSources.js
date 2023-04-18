@@ -249,9 +249,9 @@ export function newGeneratedSource(sourceInfo) {
   };
 }
 
-export function newGeneratedSources(sourceInfo) {
+export function newGeneratedSources(sourceResources) {
   return async ({ dispatch, getState, client }) => {
-    if (sourceInfo.length == 0) {
+    if (sourceResources.length == 0) {
       return [];
     }
 
@@ -259,29 +259,36 @@ export function newGeneratedSources(sourceInfo) {
     const newSourcesObj = {};
     const newSourceActors = [];
 
-    
-    
-    for (const { thread, sourceFront, id } of sourceInfo) {
+    for (const sourceResource of sourceResources) {
       
       
-      const newId = id || makeSourceId(sourceFront, thread);
+      
+      
+      if (sourceResource.targetFront.isDestroyed()) {
+        continue;
+      }
+      const id = makeSourceId(sourceResource);
 
-      if (!getSource(getState(), newId) && !newSourcesObj[newId]) {
-        newSourcesObj[newId] = {
-          id: newId,
-          url: sourceFront.url,
-          relativeUrl: sourceFront.url,
+      if (!getSource(getState(), id) && !newSourcesObj[id]) {
+        newSourcesObj[id] = {
+          id,
+          url: sourceResource.url,
+          relativeUrl: sourceResource.url,
           isPrettyPrinted: false,
-          extensionName: sourceFront.extensionName,
+          extensionName: sourceResource.extensionName,
           isBlackBoxed: false,
-          isWasm: !!features.wasm && sourceFront.introductionType === "wasm",
+          isWasm: !!features.wasm && sourceResource.introductionType === "wasm",
           isExtension:
-            (sourceFront.url && isUrlExtension(sourceFront.url)) || false,
+            (sourceResource.url && isUrlExtension(sourceResource.url)) || false,
           isOriginal: false,
         };
       }
 
-      const actorId = sourceFront.actor;
+      const actorId = sourceResource.actor;
+      
+      
+      const threadActorID = sourceResource.targetFront.getCachedFront("thread")
+        .actorID;
 
       
       
@@ -289,16 +296,16 @@ export function newGeneratedSources(sourceInfo) {
         newSourceActors.push({
           id: actorId,
           actor: actorId,
-          thread,
-          source: newId,
-          sourceMapBaseURL: sourceFront.sourceMapBaseURL,
-          sourceMapURL: sourceFront.sourceMapURL,
-          url: sourceFront.url,
-          introductionType: sourceFront.introductionType,
+          thread: threadActorID,
+          source: id,
+          sourceMapBaseURL: sourceResource.sourceMapBaseURL,
+          sourceMapURL: sourceResource.sourceMapURL,
+          url: sourceResource.url,
+          introductionType: sourceResource.introductionType,
         });
       }
 
-      resultIds.push(newId);
+      resultIds.push(id);
     }
 
     const newSources = Object.values(newSourcesObj);
