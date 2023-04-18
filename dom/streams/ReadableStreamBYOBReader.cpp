@@ -333,7 +333,7 @@ void ReadableStreamBYOBReader::ReleaseLock(ErrorResult& aRv) {
 
 
 already_AddRefed<ReadableStreamBYOBReader> AcquireReadableStreamBYOBReader(
-    JSContext* aCx, ReadableStream* aStream, ErrorResult& aRv) {
+    ReadableStream* aStream, ErrorResult& aRv) {
   
   RefPtr<ReadableStreamBYOBReader> reader =
       new ReadableStreamBYOBReader(aStream->GetParentObject());
