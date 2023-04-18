@@ -2718,7 +2718,7 @@ ParentLayerPoint APZCTreeManager::DispatchFling(
     residualVelocity += current->AttemptFling(transformedHandoffState);
 
     
-    if (IsZero(residualVelocity)) {
+    if (current->IsZero(residualVelocity)) {
       return ParentLayerPoint();
     }
 
