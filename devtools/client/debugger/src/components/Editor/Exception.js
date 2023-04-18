@@ -3,6 +3,7 @@
 
 
 import { PureComponent } from "react";
+import PropTypes from "prop-types";
 
 import { toEditorPosition, getTokenEnd } from "../../utils/editor";
 
@@ -11,6 +12,14 @@ import { getIndentation } from "../../utils/indentation";
 export default class Exception extends PureComponent {
   exceptionLine;
   markText;
+
+  static get propTypes() {
+    return {
+      exception: PropTypes.object.isRequired,
+      doc: PropTypes.object.isRequired,
+      selectedSourceId: PropTypes.string.isRequired,
+    };
+  }
 
   componentDidMount() {
     this.addEditorExceptionLine();

@@ -483,7 +483,7 @@ class Tree extends Component {
       style: PropTypes.object,
       
       preventBlur: PropTypes.bool,
-      initiallyExpanded: PropTypes.bool,
+      initiallyExpanded: PropTypes.func,
     };
   }
 

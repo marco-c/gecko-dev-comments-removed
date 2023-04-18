@@ -25,7 +25,7 @@ class SplitBox extends Component {
       
       className: PropTypes.string,
       
-      initialSize: PropTypes.string,
+      initialSize: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
       
       initialWidth: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
       

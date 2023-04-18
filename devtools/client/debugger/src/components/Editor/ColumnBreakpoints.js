@@ -3,6 +3,7 @@
 
 
 import React, { Component } from "react";
+import PropTypes from "prop-types";
 
 import ColumnBreakpoint from "./ColumnBreakpoint";
 
@@ -18,6 +19,16 @@ import { breakpointItemActions } from "./menus/breakpoints";
 
 
 class ColumnBreakpoints extends Component {
+  static get propTypes() {
+    return {
+      breakpointActions: PropTypes.object.isRequired,
+      columnBreakpoints: PropTypes.array.isRequired,
+      cx: PropTypes.object.isRequired,
+      editor: PropTypes.object.isRequired,
+      selectedSource: PropTypes.object,
+    };
+  }
+
   render() {
     const {
       cx,

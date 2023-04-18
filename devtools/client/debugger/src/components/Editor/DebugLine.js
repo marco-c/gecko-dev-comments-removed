@@ -3,6 +3,7 @@
 
 
 import { PureComponent } from "react";
+import PropTypes from "prop-types";
 import {
   toEditorPosition,
   getDocument,
@@ -28,6 +29,14 @@ function isDocumentReady(location, sourceTextContent) {
 
 export class DebugLine extends PureComponent {
   debugExpression;
+
+  static get propTypes() {
+    return {
+      location: PropTypes.object,
+      sourceTextContent: PropTypes.object,
+      why: PropTypes.object,
+    };
+  }
 
   componentDidMount() {
     const { why, location, sourceTextContent } = this.props;
