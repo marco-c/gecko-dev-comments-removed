@@ -665,7 +665,7 @@ class ScriptLoader final : public nsISupports {
   
   
   nsresult FillCompileOptionsForRequest(
-      const mozilla::dom::AutoJSAPI& jsapi, ScriptLoadRequest* aRequest,
+      JSContext* aCx, ScriptLoadRequest* aRequest,
       JS::Handle<JSObject*> aScopeChain, JS::CompileOptions* aOptions,
       JS::MutableHandle<JSScript*> aIntroductionScript);
 
