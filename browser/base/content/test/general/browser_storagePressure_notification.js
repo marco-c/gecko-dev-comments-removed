@@ -27,7 +27,7 @@ function openAboutPrefPromise(win) {
   ];
   return Promise.all(promises);
 }
-add_task(async function setup() {
+add_setup(async function() {
   let win = await BrowserTestUtils.openNewBrowserWindow();
   
   await BrowserTestUtils.openNewForegroundTab(

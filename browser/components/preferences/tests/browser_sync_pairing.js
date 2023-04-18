@@ -13,7 +13,7 @@ const { sinon } = ChromeUtils.import("resource://testing-common/Sinon.jsm");
 
 let flowCounter = 0;
 
-add_task(async function setup() {
+add_setup(async function() {
   Services.prefs.setBoolPref("identity.fxaccounts.pairing.enabled", true);
   
   const origNotifyStateUpdated = UIState._internal.notifyStateUpdated;

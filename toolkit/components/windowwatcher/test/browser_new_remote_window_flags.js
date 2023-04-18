@@ -9,7 +9,7 @@ const SCRIPT_PAGE = `data:text/html,<script>window.open("about:blank", "_blank")
 
 
 
-add_task(async function setup() {
+add_setup(async function() {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.link.open_newwindow", 2]],
   });

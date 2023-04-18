@@ -2,7 +2,7 @@
 
 const SCALAR_ABOUT_HOME = "browser.engagement.navigation.about_home";
 
-add_task(async function setup() {
+add_setup(async function() {
   
   
   

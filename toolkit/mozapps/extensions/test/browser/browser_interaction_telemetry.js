@@ -132,7 +132,7 @@ async function init(startPage) {
 
 
 
-add_task(async function setup() {
+add_setup(async function() {
   
   Services.telemetry.clearEvents();
 });

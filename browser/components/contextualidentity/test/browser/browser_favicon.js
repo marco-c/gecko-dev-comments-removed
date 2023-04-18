@@ -78,7 +78,7 @@ function loadFaviconHandler(metadata, response) {
   response.bodyOutputStream.write(gFaviconData, gFaviconData.length);
 }
 
-add_task(async function setup() {
+add_setup(async function() {
   
   await SpecialPowers.pushPrefEnv({
     set: [["privacy.userContext.enabled", true]],

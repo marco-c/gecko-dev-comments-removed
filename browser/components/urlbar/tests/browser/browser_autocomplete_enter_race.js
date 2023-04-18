@@ -9,7 +9,7 @@
 
 
 
-add_task(async function setup() {
+add_setup(async function() {
   let bm = await PlacesUtils.bookmarks.insert({
     parentGuid: PlacesUtils.bookmarks.unfiledGuid,
     url: "http://example.com/?q=%s",

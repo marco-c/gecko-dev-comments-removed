@@ -1,7 +1,7 @@
 
 
 
-add_task(async function setup() {
+add_setup(async function() {
   await gCUITestUtils.addSearchBar();
   await clearSearchbarHistory();
   let defaultEngine = await Services.search.getDefault();

@@ -78,7 +78,7 @@ async function testClearingDownloads(clearCallback) {
   );
 }
 
-add_task(async function setup() {
+add_setup(async function() {
   
   await task_resetState();
 

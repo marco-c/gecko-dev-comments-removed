@@ -35,7 +35,7 @@ function verifyCSP(aTestName, aBrowser, aDataURI) {
   );
 }
 
-add_task(async function setup() {
+add_setup(async function() {
   
   await SpecialPowers.pushPrefEnv({
     set: [["security.data_uri.block_toplevel_data_uri_navigations", false]],

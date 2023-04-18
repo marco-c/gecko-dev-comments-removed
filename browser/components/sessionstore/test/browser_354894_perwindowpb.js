@@ -75,7 +75,7 @@ function getBrowserWindowsCount() {
   return { open, winstates };
 }
 
-add_task(async function setup() {
+add_setup(async function() {
   
   let { open, winstates } = getBrowserWindowsCount();
   is(open, 1, "Should only be one open window");

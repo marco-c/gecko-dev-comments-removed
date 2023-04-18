@@ -41,7 +41,7 @@ function openEditCertTrustDialog() {
   });
 }
 
-add_task(async function setup() {
+add_setup(async function() {
   
   gCert = await readCertificate("ca.pem", "CT,,");
   Assert.ok(

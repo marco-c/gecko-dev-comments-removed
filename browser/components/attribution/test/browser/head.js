@@ -13,7 +13,7 @@ const INDEX_DECODE_ERROR = 1;
 const INDEX_WRITE_ERROR = 2;
 const INDEX_QUARANTINE_ERROR = 3;
 
-add_task(function setup() {
+add_setup(function() {
   
   let env = Cc["@mozilla.org/process/environment;1"].getService(
     Ci.nsIEnvironment

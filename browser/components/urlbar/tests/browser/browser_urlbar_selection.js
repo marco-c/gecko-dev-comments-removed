@@ -82,7 +82,7 @@ function checkPrimarySelection(expectedVal = "") {
   }
 }
 
-add_task(async function setup() {
+add_setup(async function() {
   
   gURLBar.value = "";
   await click(gURLBar.inputField);

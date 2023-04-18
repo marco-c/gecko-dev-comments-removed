@@ -1,7 +1,7 @@
 
 
 
-add_task(async function setup() {
+add_setup(async function() {
   TEST_LOGIN1 = await addLogin(TEST_LOGIN1);
   TEST_LOGIN2 = await addLogin(TEST_LOGIN2);
   await BrowserTestUtils.openNewForegroundTab({

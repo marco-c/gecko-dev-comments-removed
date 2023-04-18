@@ -207,7 +207,7 @@ class TabPriorityWatcher {
 
 let gTabPriorityWatcher;
 
-add_task(async function setup() {
+add_setup(async function() {
   
   
   await SpecialPowers.pushPrefEnv({

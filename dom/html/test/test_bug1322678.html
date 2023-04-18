@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1322678
+-->
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Test for Bug 1322678</title>
@@ -72,6 +72,7 @@ async function testCustomTitle(aWin, aTitle) {
   });
 }
 
+// eslint-disable-next-line mozilla/no-addtask-setup
 add_task(async function setup() {
   await SpecialPowers.pushPrefEnv({"set": [
     ["browser.enable_automatic_image_resizing", true],

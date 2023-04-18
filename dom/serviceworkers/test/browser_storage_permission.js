@@ -9,7 +9,7 @@ const PAGE_URI = BASE_URI + "empty.html";
 const SCOPE = PAGE_URI + "?storage_permission";
 const SW_SCRIPT = BASE_URI + "empty.js";
 
-add_task(async function setup() {
+add_setup(async function() {
   await SpecialPowers.pushPrefEnv({
     set: [
       

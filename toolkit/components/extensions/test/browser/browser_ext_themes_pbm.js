@@ -98,7 +98,7 @@ function getPrefersColorSchemeInfo({ win, chrome = false }) {
   return SpecialPowers.spawn(win.gBrowser.selectedBrowser, [], fn);
 }
 
-add_task(async function setup() {
+add_setup(async function() {
   
   await SpecialPowers.pushPrefEnv({
     set: [

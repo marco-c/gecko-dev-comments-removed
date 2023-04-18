@@ -36,7 +36,7 @@ function submitHandler(request, response) {
   response.setStatusLine(request.httpVersion, 200, "Ok");
 }
 
-add_task(async function setup() {
+add_setup(async function() {
   
   await Services.search.init();
 

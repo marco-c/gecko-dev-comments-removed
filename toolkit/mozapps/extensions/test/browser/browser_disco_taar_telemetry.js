@@ -22,7 +22,7 @@ const DISCO_URL = `http://${AMO_TEST_HOST}/discoapi`;
 
 let getAddonIdFromDiscoResult;
 
-add_task(async function setup() {
+add_setup(async function() {
   await SpecialPowers.pushPrefEnv({
     set: [
       

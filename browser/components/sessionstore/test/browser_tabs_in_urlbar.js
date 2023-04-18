@@ -27,7 +27,7 @@ const { UrlbarTestUtils } = ChromeUtils.import(
 
 var stateBackup = ss.getBrowserState();
 
-add_task(async function setup() {
+add_setup(async function() {
   await SpecialPowers.pushPrefEnv({
     set: [
       

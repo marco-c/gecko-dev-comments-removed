@@ -178,7 +178,7 @@ function trigger_cfr_panel(
   );
 }
 
-add_task(async function setup() {
+add_setup(async function() {
   
   const { _fetchLatestAddonVersion } = CFRPageActions;
   
