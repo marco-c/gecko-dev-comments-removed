@@ -12,7 +12,7 @@
 #include "mozilla/Attributes.h"
 
 class nsINIParserImpl final : public nsIINIParser, public nsIINIParserWriter {
-  ~nsINIParserImpl() {}
+  ~nsINIParserImpl() = default;
 
  public:
   NS_DECL_ISUPPORTS
@@ -55,9 +55,6 @@ nsINIParserFactory::CreateInstance(nsISupports* aOuter, REFNSIID aIID,
   
   return QueryInterface(aIID, aResult);
 }
-
-NS_IMETHODIMP
-nsINIParserFactory::LockFactory(bool aLock) { return NS_OK; }
 
 NS_IMPL_ISUPPORTS(nsINIParserImpl, nsIINIParser, nsIINIParserWriter)
 

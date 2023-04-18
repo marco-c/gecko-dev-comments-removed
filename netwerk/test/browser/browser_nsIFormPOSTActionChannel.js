@@ -48,7 +48,6 @@ CustomProtocolHandler.prototype = {
     }
     return this.QueryInterface(aIID);
   },
-  lockFactory() {},
 
   
   QueryInterface: ChromeUtils.generateQI(["nsIProtocolHandler", "nsIFactory"]),
