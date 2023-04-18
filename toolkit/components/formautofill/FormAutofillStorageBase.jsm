@@ -1997,21 +1997,10 @@ class FormAutofillStorageBase {
     if (!this._initializePromise) {
       this._store = this._initializeStore();
       this._initializePromise = this._store.load().then(() => {
-        let initializeAutofillRecords = [this.addresses.initialize()];
-        if (FormAutofill.isAutofillCreditCardsAvailable) {
-          initializeAutofillRecords.push(this.creditCards.initialize());
-        } else {
-          
-          
-          Object.defineProperty(this, "creditCards", {
-            get() {
-              throw new Error(
-                "CreditCards is not initialized. " +
-                  "Please restart if you flip the pref manually."
-              );
-            },
-          });
-        }
+        let initializeAutofillRecords = [
+          this.addresses.initialize(),
+          this.creditCards.initialize(),
+        ];
         return Promise.all(initializeAutofillRecords);
       });
     }
