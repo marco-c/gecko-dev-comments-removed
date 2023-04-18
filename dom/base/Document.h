@@ -1913,7 +1913,8 @@ class Document : public nsINode,
 
   
   
-  bool PopFullscreenElement();
+  enum class UpdateViewport : bool { No, Yes };
+  bool PopFullscreenElement(UpdateViewport = UpdateViewport::Yes);
 
   
   

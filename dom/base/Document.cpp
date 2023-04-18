@@ -14552,10 +14552,11 @@ static void NotifyFullScreenChangedForMediaElement(Element& aElement) {
 }
 
 void Document::CleanupFullscreenState() {
-  while (PopFullscreenElement()) {
+  while (PopFullscreenElement(UpdateViewport::No)) {
     
   }
 
+  UpdateViewportScrollbarOverrideForFullscreen(this);
   mFullscreenRoot = nullptr;
 
   
@@ -14567,7 +14568,7 @@ void Document::CleanupFullscreenState() {
   }
 }
 
-bool Document::PopFullscreenElement() {
+bool Document::PopFullscreenElement(UpdateViewport aUpdateViewport) {
   Element* removedElement = TopLayerPop([](Element* element) -> bool {
     return element->State().HasState(ElementState::FULLSCREEN);
   });
@@ -14583,7 +14584,9 @@ bool Document::PopFullscreenElement() {
   if (auto* iframe = HTMLIFrameElement::FromNode(removedElement)) {
     iframe->SetFullscreenFlag(false);
   }
-  UpdateViewportScrollbarOverrideForFullscreen(this);
+  if (aUpdateViewport == UpdateViewport::Yes) {
+    UpdateViewportScrollbarOverrideForFullscreen(this);
+  }
   return true;
 }
 
