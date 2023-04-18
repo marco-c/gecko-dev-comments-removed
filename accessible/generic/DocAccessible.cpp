@@ -399,6 +399,10 @@ void DocAccessible::Init() {
     
     
     mLoadEventType = nsIAccessibleEvent::EVENT_DOCUMENT_LOAD_COMPLETE;
+  } else if (mDocumentNode->IsInitialDocument()) {
+    
+    
+    mLoadState |= eDOMLoaded;
   }
 
   AddEventListeners();
