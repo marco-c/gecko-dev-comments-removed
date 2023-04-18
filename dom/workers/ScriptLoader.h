@@ -45,6 +45,76 @@ class CacheLoadHandler;
 class CacheCreator;
 class NetworkLoadHandler;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class WorkerScriptLoader final : public nsINamed {
   friend class ScriptLoaderRunnable;
   friend class ScriptExecutorRunnable;

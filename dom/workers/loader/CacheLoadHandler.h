@@ -34,6 +34,44 @@ namespace dom {
 
 namespace workerinternals::loader {
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class CacheLoadHandler final : public PromiseNativeHandler,
                                public nsIStreamLoaderObserver {
  public:
@@ -79,6 +117,16 @@ class CacheLoadHandler final : public PromiseNativeHandler,
   nsCString mReferrerPolicyHeaderValue;
   nsCOMPtr<nsIEventTarget> mMainThreadEventTarget;
 };
+
+
+
+
+
+
+
+
+
+
 
 class CacheCreator final : public PromiseNativeHandler {
  public:
@@ -130,6 +178,16 @@ class CacheCreator final : public PromiseNativeHandler {
   nsString mCacheName;
   OriginAttributes mOriginAttributes;
 };
+
+
+
+
+
+
+
+
+
+
 
 class CachePromiseHandler final : public PromiseNativeHandler {
  public:

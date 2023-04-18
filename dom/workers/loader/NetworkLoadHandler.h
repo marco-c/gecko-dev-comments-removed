@@ -17,6 +17,28 @@ namespace workerinternals::loader {
 
 class WorkerScriptLoader;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class NetworkLoadHandler final : public nsIStreamLoaderObserver,
                                  public nsIRequestObserver {
  public:

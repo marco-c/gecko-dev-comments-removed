@@ -23,6 +23,14 @@ class WorkerPrivate;
 namespace workerinternals {
 namespace loader {
 
+
+
+
+
+
+
+
+
 class ScriptResponseHeaderProcessor final : public nsIRequestObserver {
  public:
   NS_DECL_ISUPPORTS
