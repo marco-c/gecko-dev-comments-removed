@@ -5927,7 +5927,9 @@ nsresult ContentParent::AboutToLoadHttpFtpDocumentForChild(
   }
 
   nsCOMPtr<nsIPrincipal> principal;
-  rv = ssm->GetChannelResultPrincipal(aChannel, getter_AddRefs(principal));
+  nsCOMPtr<nsIPrincipal> partitionedPrincipal;
+  rv = ssm->GetChannelResultPrincipals(aChannel, getter_AddRefs(principal),
+                                       getter_AddRefs(partitionedPrincipal));
   NS_ENSURE_SUCCESS(rv, rv);
 
   
@@ -5938,7 +5940,13 @@ nsresult ContentParent::AboutToLoadHttpFtpDocumentForChild(
 
   TransmitBlobURLsForPrincipal(principal);
 
+  
+  
+  
   rv = TransmitPermissionsForPrincipal(principal);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = TransmitPermissionsForPrincipal(partitionedPrincipal);
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsLoadFlags newLoadFlags;
