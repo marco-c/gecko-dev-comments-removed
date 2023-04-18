@@ -8,9 +8,8 @@
 
 
 
-include!(concat!(
-    env!("MOZ_TOPOBJDIR"),
-    "/tools/profiler/rust-api/src/gecko_bindings/profiling_categories.rs"
+include!(mozbuild::objdir_path!(
+    "tools/profiler/rust-api/src/gecko_bindings/profiling_categories.rs"
 ));
 
 
