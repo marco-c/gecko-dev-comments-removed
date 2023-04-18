@@ -96,39 +96,3 @@ async function runAllIntegrationTests(testFolder, env) {
     await task(testServer, testUrl, env);
   }
 }
-
-
-
-
-
-
-
-async function installAndStartContentScriptExtension() {
-  function contentScript() {
-    console.log("content script loads");
-
-    
-    
-    
-    window.onload = () => {};
-  }
-
-  const extension = ExtensionTestUtils.loadExtension({
-    manifest: {
-      content_scripts: [
-        {
-          js: ["content_script.js"],
-          matches: ["https://example.com/*"],
-          run_at: "document_start",
-        },
-      ],
-    },
-    files: {
-      "content_script.js": contentScript,
-    },
-  });
-
-  await extension.startup();
-
-  return extension;
-}

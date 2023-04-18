@@ -2002,6 +2002,7 @@ async function expandSourceTree(dbg) {
   );
   for (const rootNode of rootNodes) {
     await expandAllSourceNodes(dbg, rootNode);
+    await wait(250);
   }
 }
 
@@ -2018,51 +2019,21 @@ async function waitForSourcesInSourceTree(
   { noExpand = false } = {}
 ) {
   info(`waiting for ${sources.length} files in the source tree`);
-  function getDisplayedSources() {
+  await waitFor(async () => {
+    if (!noExpand) {
+      await expandSourceTree(dbg);
+    }
     
-    return [...findAllElements(dbg, "sourceTreeFiles")].map(e => {
-      return e.textContent.trim().replace(/^[\s\u200b]*/g, "");
-    });
-  }
-  try {
-    
-    
-    await waitFor(
-      async () => {
-        if (!noExpand) {
-          await expandSourceTree(dbg);
-        }
-        const displayedSources = getDisplayedSources();
-        return (
-          displayedSources.length == sources.length &&
-          sources.every(source => displayedSources.includes(source))
-        );
-      },
-      null,
-      100,
-      50
-    );
-  } catch (e) {
-    
-    const displayedSources = getDisplayedSources();
-    let msg = "Invalid Source Tree Content.\n";
-    const missingElements = [];
-    for (const source of sources) {
-      const idx = displayedSources.indexOf(source);
-      if (idx != -1) {
-        displayedSources.splice(idx, 1);
-      } else {
-        missingElements.push(source);
+    const displayedSources = [...findAllElements(dbg, "sourceTreeFiles")].map(
+      e => {
+        return e.textContent.trim().replace(/^[\s\u200b]*/g, "");
       }
-    }
-    if (missingElements.length > 0) {
-      msg += "Missing elements: " + missingElements.join(", ") + "\n";
-    }
-    if (displayedSources.length > 0) {
-      msg += "Unexpected elements: " + displayedSources.join(", ");
-    }
-    throw new Error(msg);
-  }
+    );
+    return (
+      displayedSources.length == sources.length &&
+      sources.every(source => displayedSources.includes(source))
+    );
+  });
 }
 
 async function waitForNodeToGainFocus(dbg, index) {
@@ -2329,22 +2300,6 @@ function createVersionizedHttpTestServer(testFolderName) {
     }
     if (request.path == "/" || request.path == "/index.html") {
       response.setHeader("Content-Type", "text/html");
-    }
-    
-    
-    if (request.queryString) {
-      const url = `${URL_ROOT}${testFolderName}/v${currentVersion}${request.path}.${request.queryString}`;
-      try {
-        const content = await fetch(url);
-        
-        info(`[test-http-server] serving: ${url}`);
-        const text = await content.text();
-        response.write(text);
-        response.finish();
-        return;
-      } catch (e) {
-        
-      }
     }
     const url = `${URL_ROOT}${testFolderName}/v${currentVersion}${request.path}`;
     info(`[test-http-server] serving: ${url}`);

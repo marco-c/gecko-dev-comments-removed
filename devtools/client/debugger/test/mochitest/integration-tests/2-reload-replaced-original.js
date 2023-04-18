@@ -12,10 +12,6 @@
 
 
 
-
-
-
-
 "use strict";
 
 addIntegrationTask(async function testReloadingRemovedOriginalSources(
