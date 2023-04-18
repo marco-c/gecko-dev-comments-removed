@@ -425,19 +425,6 @@ int CamerasChild::StopCapture(CaptureEngine aCapEngine, const int capture_id) {
   return dispatcher.ReturnValue();
 }
 
-void Shutdown(void) {
-  OffTheBooksMutexAutoLock lock(CamerasSingleton::Mutex());
-
-  CamerasChild* child = CamerasSingleton::Child();
-  if (!child) {
-    
-    
-    LOG(("Shutdown when already shut down"));
-    return;
-  }
-  child->ShutdownAll();
-}
-
 class ShutdownRunnable : public Runnable {
  public:
   explicit ShutdownRunnable(already_AddRefed<Runnable>&& aReplyEvent)
@@ -457,23 +444,18 @@ class ShutdownRunnable : public Runnable {
   RefPtr<Runnable> mReplyEvent;
 };
 
-void CamerasChild::ShutdownAll() {
+void Shutdown(void) {
   
-  ShutdownParent();
-  ShutdownChild();
-}
+  
+  OffTheBooksMutexAutoLock lock(CamerasSingleton::Mutex());
 
-void CamerasChild::ShutdownParent() {
-  
-  {
-    MonitorAutoLock monitor(mReplyMonitor);
-    mIPCIsAlive = false;
-    monitor.NotifyAll();
+  CamerasChild* child = CamerasSingleton::Child();
+  if (!child) {
+    
+    
+    LOG(("Shutdown when already shut down"));
+    return;
   }
-}
-
-void CamerasChild::ShutdownChild() {
-  
   if (CamerasSingleton::Thread()) {
     LOG(("PBackground thread exists, dispatching close"));
     
