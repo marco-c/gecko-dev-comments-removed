@@ -279,23 +279,27 @@ function messageIsCSSError(msg) {
 let imageURIsToReferencesMap = new Map();
 let customPropsToReferencesMap = new Map();
 
-function processCSSRules(sheet) {
-  for (let rule of sheet.cssRules) {
-    if (rule instanceof CSSConditionRule || rule instanceof CSSKeyframesRule) {
-      processCSSRules(rule);
+function processCSSRules(container) {
+  for (let rule of container.cssRules) {
+    if (rule.styleSheet) {
+      processCSSRules(rule.styleSheet); 
       continue;
     }
-    if (!(rule instanceof CSSStyleRule) && !(rule instanceof CSSKeyframeRule)) {
+    if (rule.cssRules) {
+      processCSSRules(rule); 
       continue;
     }
-
+    if (!rule.style) {
+      continue; 
+    }
     
     
     
-    let urls = rule.cssText.match(/url\("[^"]*"\)/g);
+    let cssText = rule.style.cssText;
+    let urls = cssText.match(/url\("[^"]*"\)/g);
     
     
-    let props = rule.cssText.match(/(var\(|\W)(--[\w\-]+)/g);
+    let props = cssText.match(/(var\(|\W|^)(--[\w\-]+)/g);
     if (!urls && !props) {
       continue;
     }
@@ -328,7 +332,9 @@ function processCSSRules(sheet) {
       } else {
         
         
-        prop = prop.substring(1);
+        if (prop[0] != "-") {
+          prop = prop.substring(1);
+        }
         if (!customPropsToReferencesMap.has(prop)) {
           customPropsToReferencesMap.set(prop, undefined);
         }
