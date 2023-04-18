@@ -177,8 +177,6 @@ nsresult WMFDecoderModule::Startup() {
 
 already_AddRefed<MediaDataDecoder> WMFDecoderModule::CreateVideoDecoder(
     const CreateDecoderParams& aParams) {
-  ReportUsageForTelemetry();
-
   
   
   if (XRE_IsGPUProcess() &&
@@ -215,8 +213,6 @@ already_AddRefed<MediaDataDecoder> WMFDecoderModule::CreateVideoDecoder(
 
 already_AddRefed<MediaDataDecoder> WMFDecoderModule::CreateAudioDecoder(
     const CreateDecoderParams& aParams) {
-  ReportUsageForTelemetry();
-
   if (XRE_IsGPUProcess()) {
     
     return nullptr;
@@ -291,8 +287,6 @@ bool WMFDecoderModule::SupportsMimeType(
 
 bool WMFDecoderModule::Supports(const SupportDecoderParams& aParams,
                                 DecoderDoctorDiagnostics* aDiagnostics) const {
-  ReportUsageForTelemetry();
-
   
   
   
@@ -334,12 +328,6 @@ bool WMFDecoderModule::Supports(const SupportDecoderParams& aParams,
 
   
   return false;
-}
-
-void WMFDecoderModule::ReportUsageForTelemetry() const {
-  if (XRE_IsParentProcess() || XRE_IsContentProcess()) {
-    Telemetry::ScalarSet(Telemetry::ScalarID::MEDIA_WMF_PROCESS_USAGE, true);
-  }
 }
 
 }  
