@@ -31,7 +31,7 @@ use crate::space::SpaceMapper;
 use crate::visibility::{PrimitiveVisibilityFlags, VisibilityState};
 use smallvec::SmallVec;
 use std::{f32, i32, usize, mem};
-use crate::util::{project_rect, MaxRect, MatrixHelpers, TransformedRectKind};
+use crate::util::{project_rect, MaxRect, MatrixHelpers, TransformedRectKind, ScaleOffset};
 use crate::segment::EdgeAaSegmentMask;
 
 
@@ -1356,40 +1356,36 @@ impl BatchBuilder {
                         
                         
                         
-                        let prim_header = if surface.surface_spatial_node_index == surface.raster_spatial_node_index {
-                            PrimitiveHeader {
-                                local_rect: prim_rect,
-                                local_clip_rect: prim_info.combined_local_clip_rect,
-                                specific_prim_address: prim_cache_address,
-                                transform_id,
-                            }
+                        
+                        let transform_id = if surface.surface_spatial_node_index == surface.raster_spatial_node_index {
+                            transform_id
                         } else {
                             let map_local_to_raster = SpaceMapper::new_with_target(
-                                surface.raster_spatial_node_index,
+                                root_spatial_node_index,
                                 surface.surface_spatial_node_index,
                                 LayoutRect::max_rect(),
                                 ctx.spatial_tree,
                             );
 
-                            let prim_rect = map_local_to_raster
+                            let raster_rect = map_local_to_raster
                                 .map(&prim_rect)
                                 .unwrap();
-                            let local_clip_rect = map_local_to_raster
-                                .map(&prim_info.combined_local_clip_rect)
-                                .unwrap();
-                            let transform_id = transforms
-                                .get_id(
-                                    surface.raster_spatial_node_index,
-                                    root_spatial_node_index,
-                                    ctx.spatial_tree,
-                                );
 
-                            PrimitiveHeader {
-                                local_rect: prim_rect,
-                                local_clip_rect,
-                                specific_prim_address: prim_cache_address,
-                                transform_id,
-                            }
+                            let sx = (raster_rect.max.x - raster_rect.min.x) / (prim_rect.max.x - prim_rect.min.x);
+                            let sy = (raster_rect.max.y - raster_rect.min.y) / (prim_rect.max.y - prim_rect.min.y);
+
+                            let tx = raster_rect.min.x - sx * prim_rect.min.x;
+                            let ty = raster_rect.min.y - sy * prim_rect.min.y;
+
+                            let transform = ScaleOffset::new(sx, sy, tx, ty);
+                            transforms.get_custom(transform.to_transform())
+                        };
+
+                        let prim_header = PrimitiveHeader {
+                            local_rect: prim_rect,
+                            local_clip_rect: prim_info.combined_local_clip_rect,
+                            specific_prim_address: prim_cache_address,
+                            transform_id,
                         };
 
                         let mut is_opaque = prim_info.clip_task_index == ClipTaskIndex::INVALID
