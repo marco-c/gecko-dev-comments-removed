@@ -236,17 +236,6 @@ class CPUInfo {
   static bool IsLZCNTPresent() { return lzcntPresent; }
   static bool IsAVX2Present() { return avx2Present; }
 
-  
-  
-  
-
-  static void ResetSSEFlagsForTesting() {
-    maxSSEVersion = UnknownSSE;
-    maxEnabledSSEVersion = UnknownSSE;
-    avxPresent = false;
-    avxEnabled = false;
-  }
-
   static bool FlagsHaveBeenComputed() { return maxSSEVersion != UnknownSSE; }
 
   static void ComputeFlags();
@@ -255,22 +244,29 @@ class CPUInfo {
   
 
   static void SetSSE3Disabled() {
+    MOZ_ASSERT(!FlagsHaveBeenComputed());
     SetMaxEnabledSSEVersion(SSE2);
     avxEnabled = false;
   }
   static void SetSSSE3Disabled() {
+    MOZ_ASSERT(!FlagsHaveBeenComputed());
     SetMaxEnabledSSEVersion(SSE3);
     avxEnabled = false;
   }
   static void SetSSE41Disabled() {
+    MOZ_ASSERT(!FlagsHaveBeenComputed());
     SetMaxEnabledSSEVersion(SSSE3);
     avxEnabled = false;
   }
   static void SetSSE42Disabled() {
+    MOZ_ASSERT(!FlagsHaveBeenComputed());
     SetMaxEnabledSSEVersion(SSE4_1);
     avxEnabled = false;
   }
-  static void SetAVXEnabled() { avxEnabled = true; }
+  static void SetAVXEnabled() {
+    MOZ_ASSERT(!FlagsHaveBeenComputed());
+    avxEnabled = true;
+  }
 };
 
 class AssemblerX86Shared : public AssemblerShared {
