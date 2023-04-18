@@ -1632,6 +1632,9 @@ class MacroAssembler : public MacroAssemblerSpecific {
   inline void loadJitScript(Register script, Register dest);
 
   
+  inline void loadFunctionArgCount(Register func, Register output);
+
+  
   
   
   void loadFunctionLength(Register func, Register funFlagsAndArgCount,
