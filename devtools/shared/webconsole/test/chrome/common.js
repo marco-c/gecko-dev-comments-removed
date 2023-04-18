@@ -75,8 +75,6 @@ var _attachConsole = async function(listeners, attachToTab, attachToWorker) {
         worker = new Worker(workerName);
         await waitForMessage(worker);
 
-        
-        await target.attach();
         const { workers } = await target.listWorkers();
         target = workers.filter(w => w.url == workerName)[0];
         if (!target) {
@@ -85,11 +83,13 @@ var _attachConsole = async function(listeners, attachToTab, attachToWorker) {
           );
           return null;
         }
+        
+        
+        await target.attach();
       }
     }
 
     
-    await target.attach();
     await target.attachThread();
 
     const webConsoleFront = await target.getFront("console");

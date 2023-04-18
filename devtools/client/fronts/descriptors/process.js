@@ -107,7 +107,6 @@ class ProcessDescriptorFront extends DescriptorMixin(
       try {
         const targetForm = await super.getTarget();
         targetFront = await this._createProcessTargetFront(targetForm);
-        await targetFront.attach();
       } catch (e) {
         
         

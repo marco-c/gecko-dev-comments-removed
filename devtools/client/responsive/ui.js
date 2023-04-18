@@ -756,9 +756,6 @@ class ResponsiveUI {
     this.tab.linkedBrowser.enterResponsiveMode();
 
     
-    await this.currentTarget.attach();
-
-    
     
     
     

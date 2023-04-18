@@ -86,7 +86,6 @@ async function checkGetTabFailures(client) {
 
 async function checkSelectedTargetActor(targetFront2) {
   
-  await targetFront2.attach();
   const consoleFront = await targetFront2.getFront("console");
   const response = await consoleFront.startListeners([]);
   ok(
@@ -97,7 +96,6 @@ async function checkSelectedTargetActor(targetFront2) {
 
 async function checkFirstTargetActor(targetFront1) {
   
-  await targetFront1.attach();
   const consoleFront = await targetFront1.getFront("console");
   const response = await consoleFront.startListeners([]);
   ok(

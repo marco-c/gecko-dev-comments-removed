@@ -158,8 +158,8 @@ exports.CommandsFactory = {
     
     descriptor.createdForBrowserConsole = true;
 
-    const target = await descriptor.getTarget();
-    await target.attach();
+    
+    await descriptor.getTarget();
 
     const commands = await createCommandsDictionary(descriptor);
     return commands;

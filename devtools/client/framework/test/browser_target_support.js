@@ -4,8 +4,6 @@
 
 
 async function testTarget(client, target) {
-  await target.attach();
-
   is(
     target.hasActor("inspector"),
     true,

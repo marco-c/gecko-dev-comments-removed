@@ -45,10 +45,6 @@ async function checkBreakpointBeforeWatchResources() {
 
   
   
-  info("Attach the top level target");
-  await targetCommand.targetFront.attach();
-  
-  
   info("Attach the top level thread actor");
   await targetCommand.targetFront.attachAndInitThread(targetCommand);
 
@@ -348,9 +344,6 @@ async function checkSetBeforeWatch() {
     tab
   );
 
-  
-  info("Attach the top level target");
-  await targetCommand.targetFront.attach();
   
   info("Attach the top level thread actor");
   await targetCommand.targetFront.attachAndInitThread(targetCommand);
