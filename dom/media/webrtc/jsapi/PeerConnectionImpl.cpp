@@ -36,7 +36,6 @@
 #include "IPeerConnection.h"
 #include "PeerConnectionCtx.h"
 #include "PeerConnectionImpl.h"
-#include "PeerConnectionMedia.h"
 #include "RemoteTrackSource.h"
 #include "nsDOMDataChannelDeclarations.h"
 #include "transport/dtlsidentity.h"
@@ -97,6 +96,19 @@
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/net/DataChannelProtocol.h"
 #include "MediaManager.h"
+
+#include "transport/nr_socket_proxy_config.h"
+#include "RTCDtlsTransport.h"
+#include "jsep/JsepTransport.h"
+
+#include "nsILoadInfo.h"
+#include "nsIProxyInfo.h"
+#include "nsIPrincipal.h"
+#include "mozilla/LoadInfo.h"
+#include "nsIProxiedChannel.h"
+
+#include "mozilla/dom/BrowserChild.h"
+#include "mozilla/net/WebrtcProxyConfig.h"
 
 #ifdef XP_WIN
 
@@ -298,7 +310,6 @@ PeerConnectionImpl::PeerConnectionImpl(const GlobalObject* aGlobal)
       mCertificate(nullptr),
       mSTSThread(nullptr),
       mForceIceTcp(false),
-      mMedia(nullptr),
       mTransportHandler(nullptr),
       mUuidGen(MakeUnique<PCUuidGenerator>()),
       mIceRestartCount(0),
@@ -465,15 +476,18 @@ nsresult PeerConnectionImpl::Initialize(PeerConnectionObserver& aObserver,
     return res;
   }
 
-  mMedia = new PeerConnectionMedia(this);
+  if (XRE_IsContentProcess()) {
+    mStunAddrsRequest =
+        new net::StunAddrsRequestChild(new StunAddrsHandler(this));
+  }
 
   
-  res = mMedia->Init();
-  if (NS_FAILED(res)) {
-    CSFLogError(LOGTAG, "%s: Couldn't initialize media object", __FUNCTION__);
-    ShutdownMedia();
-    return res;
-  }
+  mForceProxy = ShouldForceProxy();
+
+  
+  InitLocalAddrs();
+
+  mSignalHandler = MakeUnique<SignalHandler>(this, mTransportHandler.get());
 
   PeerConnectionCtx::GetInstance()->AddPeerConnection(mHandle, this);
 
@@ -929,16 +943,15 @@ nsresult PeerConnectionImpl::AddRtpTransceiverToJsepSession(
 already_AddRefed<TransceiverImpl> PeerConnectionImpl::CreateTransceiverImpl(
     JsepTransceiver* aJsepTransceiver, dom::MediaStreamTrack* aSendTrack,
     ErrorResult& aRv) {
-  
   if (aSendTrack) {
     aSendTrack->AddPrincipalChangeObserver(this);
   }
 
   PeerConnectionCtx* ctx = PeerConnectionCtx::GetInstance();
   RefPtr<TransceiverImpl> transceiverImpl;
-  aRv = mMedia->AddTransceiver(aJsepTransceiver, aSendTrack,
-                               ctx->GetSharedWebrtcState(), mIdGenerator,
-                               &transceiverImpl);
+  aRv =
+      AddTransceiver(aJsepTransceiver, aSendTrack, ctx->GetSharedWebrtcState(),
+                     mIdGenerator, &transceiverImpl);
 
   return transceiverImpl.forget();
 }
@@ -1244,7 +1257,7 @@ PeerConnectionImpl::SetLocalDescription(int32_t aAction, const char* aSDP) {
   JSErrorResult rv;
   STAMP_TIMECARD(mTimeCard, "Set Local Description");
 
-  if (mMedia->AnyLocalTrackHasPeerIdentity()) {
+  if (AnyLocalTrackHasPeerIdentity()) {
     mPrivacyRequested = Some(true);
   }
 
@@ -1507,7 +1520,7 @@ PeerConnectionImpl::AddIceCandidate(
     
     
     if (mSignalingState == RTCSignalingState::Stable && !transportId.empty()) {
-      mMedia->AddIceCandidate(aCandidate, transportId, aUfrag);
+      AddIceCandidate(aCandidate, transportId, aUfrag);
       mRawTrickledCandidates.push_back(aCandidate);
     }
     
@@ -1547,13 +1560,6 @@ PeerConnectionImpl::AddIceCandidate(
   return NS_OK;
 }
 
-void PeerConnectionImpl::UpdateNetworkState(bool online) {
-  if (!mMedia) {
-    return;
-  }
-  mMedia->UpdateNetworkState(online);
-}
-
 NS_IMETHODIMP
 PeerConnectionImpl::CloseStreams() {
   PC_AUTO_ENTER_API_CALL(false);
@@ -1573,14 +1579,13 @@ PeerConnectionImpl::SetPeerIdentity(const nsAString& aPeerIdentity) {
     }
   } else {
     mPeerIdentity = new PeerIdentity(aPeerIdentity);
-    Document* doc = GetWindow()->GetExtantDoc();
+    Document* doc = mWindow->GetExtantDoc();
     if (!doc) {
       CSFLogInfo(LOGTAG, "Can't update principal on streams; document gone");
       return NS_ERROR_FAILURE;
     }
     MediaStreamTrack* allTracks = nullptr;
-    mMedia->UpdateSinkIdentity_m(allTracks, doc->NodePrincipal(),
-                                 mPeerIdentity);
+    UpdateSinkIdentity_m(allTracks, doc->NodePrincipal(), mPeerIdentity);
   }
   return NS_OK;
 }
@@ -1597,9 +1602,9 @@ nsresult PeerConnectionImpl::OnAlpnNegotiated(bool aPrivacyRequested) {
 }
 
 void PeerConnectionImpl::PrincipalChanged(MediaStreamTrack* aTrack) {
-  Document* doc = GetWindow()->GetExtantDoc();
+  Document* doc = mWindow->GetExtantDoc();
   if (doc) {
-    mMedia->UpdateSinkIdentity_m(aTrack, doc->NodePrincipal(), mPeerIdentity);
+    UpdateSinkIdentity_m(aTrack, doc->NodePrincipal(), mPeerIdentity);
   } else {
     CSFLogInfo(LOGTAG, "Can't update sink principal; document gone");
   }
@@ -1650,7 +1655,7 @@ void PeerConnectionImpl::DumpPacket_m(size_t level, dom::mozPacketDumpType type,
   
   
   AutoJSAPI jsapi;
-  if (!jsapi.Init(GetWindow())) {
+  if (!jsapi.Init(mWindow)) {
     return;
   }
 
@@ -1935,8 +1940,8 @@ nsresult PeerConnectionImpl::CheckApiState(bool assert_ice_ready) const {
     CSFLogError(LOGTAG, "%s: called API while closed", __FUNCTION__);
     return NS_ERROR_FAILURE;
   }
-  if (!mMedia) {
-    CSFLogError(LOGTAG, "%s: called API with disposed mMedia", __FUNCTION__);
+  if (mDestroyed) {
+    CSFLogError(LOGTAG, "%s: called API after shutdown", __FUNCTION__);
     return NS_ERROR_FAILURE;
   }
   return NS_OK;
@@ -2005,7 +2010,7 @@ nsresult PeerConnectionImpl::SetConfiguration(
 bool PeerConnectionImpl::PluginCrash(uint32_t aPluginID,
                                      const nsAString& aPluginName) {
   
-  bool result = mMedia ? mMedia->AnyCodecHasPluginID(aPluginID) : false;
+  bool result = !mDestroyed ? AnyCodecHasPluginID(aPluginID) : false;
   if (!result) {
     return false;
   }
@@ -2133,18 +2138,78 @@ nsresult PeerConnectionImpl::CloseInt() {
 void PeerConnectionImpl::ShutdownMedia() {
   MOZ_ASSERT(NS_IsMainThread());
 
-  if (!mMedia) return;
+  if (mDestroyed) return;
+  mDestroyed = true;
 
   
-  for (RefPtr<TransceiverImpl>& transceiver : mMedia->GetTransceivers()) {
+  for (RefPtr<TransceiverImpl>& transceiver : mTransceivers) {
     RefPtr<dom::MediaStreamTrack> track = transceiver->GetSendTrack();
     if (track) {
       track->RemovePrincipalChangeObserver(this);
     }
   }
 
-  mMedia->Shutdown();
-  mMedia = nullptr;
+  if (mStunAddrsRequest) {
+    for (const auto& hostname : mRegisteredMDNSHostnames) {
+      mStunAddrsRequest->SendUnregisterMDNSHostname(
+          nsCString(hostname.c_str()));
+    }
+    mRegisteredMDNSHostnames.clear();
+    mStunAddrsRequest->Cancel();
+    mStunAddrsRequest = nullptr;
+  }
+
+  for (auto& transceiver : mTransceivers) {
+    
+    
+    transceiver->Shutdown_m();
+  }
+
+  mTransceivers.clear();
+
+  mQueuedIceCtxOperations.clear();
+
+  if (!mTransportHandler) {
+    
+    return;
+  }
+
+  
+  RefPtr<GenericPromise> promise;
+  if (mCall) {
+    
+    
+    auto callThread = mCall->mCallThread;
+    promise = InvokeAsync(callThread, __func__, [call = std::move(mCall)]() {
+      call->Destroy();
+      return GenericPromise::CreateAndResolve(
+          true, "PCImpl->WebRtcCallWrapper::Destroy");
+    });
+  } else {
+    promise = GenericPromise::CreateAndResolve(true, __func__);
+  }
+
+  
+  
+  
+  
+  MOZ_RELEASE_ASSERT(mSTSThread);
+  promise
+      ->Then(
+          mSTSThread, __func__,
+          [signalHandler = std::move(mSignalHandler)]() mutable {
+            CSFLogDebug(
+                LOGTAG,
+                "Destroying PeerConnectionImpl::SignalHandler on STS thread");
+            return GenericPromise::CreateAndResolve(
+                true, "PeerConnectionImpl::~SignalHandler");
+          })
+      ->Then(
+          GetMainThreadSerialEventTarget(), __func__,
+          [transportHandler = std::move(mTransportHandler)]() mutable {
+            CSFLogDebug(LOGTAG, "PCImpl->mTransportHandler::RemoveTransports");
+            transportHandler->RemoveTransportsExcept(std::set<std::string>());
+          });
 }
 
 DOMMediaStream* PeerConnectionImpl::GetReceiveStream(
@@ -2179,20 +2244,18 @@ void PeerConnectionImpl::OnSetDescriptionSuccess(JsepSdpType sdpType,
           return;
         }
 
-        if (HasMedia()) {
+        
+        if (sdpType == mozilla::kJsepSdpRollback) {
           
-          if (sdpType == mozilla::kJsepSdpRollback) {
-            
-            mMedia->RollbackRTCDtlsTransports();
-          } else if (!(remote && sdpType == mozilla::kJsepSdpOffer)) {
-            
-            
-            
-            
-            bool markAsStable = sdpType == kJsepSdpOffer &&
-                                mSignalingState == RTCSignalingState::Stable;
-            mMedia->UpdateRTCDtlsTransports(markAsStable);
-          }
+          RollbackRTCDtlsTransports();
+        } else if (!(remote && sdpType == mozilla::kJsepSdpOffer)) {
+          
+          
+          
+          
+          bool markAsStable = sdpType == kJsepSdpOffer &&
+                              mSignalingState == RTCSignalingState::Stable;
+          UpdateRTCDtlsTransports(markAsStable);
         }
 
         JSErrorResult jrv;
@@ -2218,9 +2281,9 @@ void PeerConnectionImpl::OnSetDescriptionSuccess(JsepSdpType sdpType,
         
         
         
-        if (remote && HasMedia()) {
+        if (remote) {
           dom::RTCRtpReceiver::StreamAssociationChanges changes;
-          for (const auto& transceiver : mMedia->GetTransceivers()) {
+          for (const auto& transceiver : mTransceivers) {
             transceiver->Receiver()->UpdateStreams(&changes);
           }
 
@@ -2292,9 +2355,9 @@ void PeerConnectionImpl::OnSetDescriptionSuccess(JsepSdpType sdpType,
     
     
     if (mJsepSession->IsIceRestarting()) {
-      mMedia->ResetStunAddrsForIceRestart();
+      ResetStunAddrsForIceRestart();
     }
-    mMedia->EnsureTransports(*mJsepSession);
+    EnsureTransports(*mJsepSession);
   }
 
   if (mJsepSession->GetState() != kJsepStateStable) {
@@ -2304,8 +2367,8 @@ void PeerConnectionImpl::OnSetDescriptionSuccess(JsepSdpType sdpType,
   
   
   
-  mMedia->UpdateTransports(*mJsepSession, mForceIceTcp);
-  if (NS_FAILED(mMedia->UpdateMediaPipelines())) {
+  UpdateTransports(*mJsepSession, mForceIceTcp);
+  if (NS_FAILED(UpdateMediaPipelines())) {
     CSFLogError(LOGTAG, "Error Updating MediaPipelines");
     NS_ASSERTION(false,
                  "Error Updating MediaPipelines in OnSetDescriptionSuccess()");
@@ -2315,7 +2378,7 @@ void PeerConnectionImpl::OnSetDescriptionSuccess(JsepSdpType sdpType,
 
   if (sdpType != kJsepSdpRollback) {
     InitializeDataChannel();
-    mMedia->StartIceChecks(*mJsepSession);
+    StartIceChecks(*mJsepSession);
   }
 
   
@@ -2363,7 +2426,7 @@ bool PeerConnectionImpl::IsClosed() const {
   return mSignalingState == RTCSignalingState::Closed;
 }
 
-bool PeerConnectionImpl::HasMedia() const { return mMedia; }
+bool PeerConnectionImpl::IsActive() const { return !mDestroyed; }
 
 PeerConnectionWrapper::PeerConnectionWrapper(const std::string& handle)
     : impl_(nullptr) {
@@ -2374,7 +2437,7 @@ PeerConnectionWrapper::PeerConnectionWrapper(const std::string& handle)
     return;
   }
 
-  if (!impl->media()) return;
+  if (!impl->IsActive()) return;
 
   impl_ = impl;
 }
@@ -2514,6 +2577,26 @@ void PeerConnectionImpl::IceConnectionStateChange(
 
 void PeerConnectionImpl::OnCandidateFound(const std::string& aTransportId,
                                           const CandidateInfo& aCandidateInfo) {
+  if (mStunAddrsRequest && !aCandidateInfo.mMDNSAddress.empty()) {
+    MOZ_ASSERT(!aCandidateInfo.mActualAddress.empty());
+
+    if (mCanRegisterMDNSHostnamesDirectly) {
+      auto itor = mRegisteredMDNSHostnames.find(aCandidateInfo.mMDNSAddress);
+
+      
+      
+      if (itor == mRegisteredMDNSHostnames.end()) {
+        mRegisteredMDNSHostnames.insert(aCandidateInfo.mMDNSAddress);
+        mStunAddrsRequest->SendRegisterMDNSHostname(
+            nsCString(aCandidateInfo.mMDNSAddress.c_str()),
+            nsCString(aCandidateInfo.mActualAddress.c_str()));
+      }
+    } else {
+      mMDNSHostnamesToRegister.emplace(aCandidateInfo.mMDNSAddress,
+                                       aCandidateInfo.mActualAddress);
+    }
+  }
+
   if (!aCandidateInfo.mDefaultHostRtp.empty()) {
     UpdateDefaultCandidate(aCandidateInfo.mDefaultHostRtp,
                            aCandidateInfo.mDefaultPortRtp,
@@ -2868,20 +2951,16 @@ RefPtr<dom::RTCStatsPromise> PeerConnectionImpl::GetDataChannelStats(
 void PeerConnectionImpl::CollectConduitTelemetryData() {
   MOZ_ASSERT(NS_IsMainThread());
 
-  if (!mMedia) {
-    return;
-  }
-
   nsTArray<RefPtr<VideoSessionConduit>> conduits;
-  for (const auto& transceiver : mMedia->GetTransceivers()) {
+  for (const auto& transceiver : mTransceivers) {
     if (RefPtr<MediaSessionConduit> conduit = transceiver->GetConduit()) {
       conduit->AsVideoSessionConduit().apply(
           [&](const auto& aVideo) { conduits.AppendElement(aVideo); });
     }
   }
 
-  if (!conduits.IsEmpty()) {
-    mMedia->mCall->mCallThread->Dispatch(
+  if (!conduits.IsEmpty() && mCall) {
+    mCall->mCallThread->Dispatch(
         NS_NewRunnableFunction(__func__, [conduits = std::move(conduits)] {
           for (const auto& conduit : conduits) {
             conduit->CollectTelemetryData();
@@ -2894,10 +2973,6 @@ nsTArray<dom::RTCCodecStats> PeerConnectionImpl::GetCodecStats(
     DOMHighResTimeStamp aNow) {
   MOZ_ASSERT(NS_IsMainThread());
   nsTArray<dom::RTCCodecStats> result;
-
-  if (!mMedia) {
-    return result;
-  }
 
   struct CodecComparator {
     bool operator()(const JsepCodecDescription* aA,
@@ -2916,7 +2991,7 @@ nsTArray<dom::RTCCodecStats> PeerConnectionImpl::GetCodecStats(
       recvCodecMap;
 
   
-  for (const auto& transceiver : mMedia->GetTransceivers()) {
+  for (const auto& transceiver : mTransceivers) {
     auto sendCodecs = transceiver->GetNegotiatedSendCodecs();
     auto recvCodecs = transceiver->GetNegotiatedRecvCodecs();
 
@@ -3012,56 +3087,52 @@ RefPtr<dom::RTCStatsReportPromise> PeerConnectionImpl::GetStats(
 
   nsTArray<dom::RTCCodecStats> codecStats = GetCodecStats(now);
 
-  if (mMedia) {
-    nsTArray<
-        std::tuple<TransceiverImpl*, RefPtr<RTCStatsPromise::AllPromiseType>>>
-        transceiverStatsPromises;
-    for (const auto& transceiver : mMedia->GetTransceivers()) {
-      const bool sendSelected = transceiver->HasSendTrack(aSelector);
-      const bool recvSelected = transceiver->Receiver()->HasTrack(aSelector);
-      if (!sendSelected && !recvSelected) {
-        continue;
-      }
-      nsTArray<RefPtr<RTCStatsPromise>> rtpStreamPromises;
-      
-      
-      
-      if (sendSelected) {
-        
-        rtpStreamPromises.AppendElements(GetSenderStats(transceiver));
-      }
-      if (recvSelected) {
-        
-        
-        rtpStreamPromises.AppendElements(
-            transceiver->Receiver()->GetStatsInternal());
-      }
-      transceiverStatsPromises.AppendElement(
-          std::make_tuple(transceiver.get(),
-                          RTCStatsPromise::All(GetMainThreadSerialEventTarget(),
-                                               rtpStreamPromises)));
+  nsTArray<
+      std::tuple<TransceiverImpl*, RefPtr<RTCStatsPromise::AllPromiseType>>>
+      transceiverStatsPromises;
+  for (const auto& transceiver : mTransceivers) {
+    const bool sendSelected = transceiver->HasSendTrack(aSelector);
+    const bool recvSelected = transceiver->Receiver()->HasTrack(aSelector);
+    if (!sendSelected && !recvSelected) {
+      continue;
     }
-
-    promises.AppendElement(TransceiverImpl::ApplyCodecStats(
-        std::move(codecStats), std::move(transceiverStatsPromises)));
-
+    nsTArray<RefPtr<RTCStatsPromise>> rtpStreamPromises;
     
     
     
-    
-    if (aSelector) {
-      std::string transportId =
-          mMedia->GetTransportIdMatchingSendTrack(*aSelector);
-      if (!transportId.empty()) {
-        promises.AppendElement(
-            mTransportHandler->GetIceStats(transportId, now));
-      }
-    } else {
-      promises.AppendElement(mTransportHandler->GetIceStats("", now));
+    if (sendSelected) {
+      
+      rtpStreamPromises.AppendElements(GetSenderStats(transceiver));
     }
-
-    promises.AppendElement(GetDataChannelStats(mDataConnection, now));
+    if (recvSelected) {
+      
+      
+      rtpStreamPromises.AppendElements(
+          transceiver->Receiver()->GetStatsInternal());
+    }
+    transceiverStatsPromises.AppendElement(
+        std::make_tuple(transceiver.get(),
+                        RTCStatsPromise::All(GetMainThreadSerialEventTarget(),
+                                             rtpStreamPromises)));
   }
+
+  promises.AppendElement(TransceiverImpl::ApplyCodecStats(
+      std::move(codecStats), std::move(transceiverStatsPromises)));
+
+  
+  
+  
+  
+  if (aSelector) {
+    std::string transportId = GetTransportIdMatchingSendTrack(*aSelector);
+    if (!transportId.empty()) {
+      promises.AppendElement(mTransportHandler->GetIceStats(transportId, now));
+    }
+  } else {
+    promises.AppendElement(mTransportHandler->GetIceStats("", now));
+  }
+
+  promises.AppendElement(GetDataChannelStats(mDataConnection, now));
 
   
   
@@ -3233,6 +3304,712 @@ void PeerConnectionImpl::StartCallTelem() {
   
   
   Telemetry::Accumulate(Telemetry::WEBRTC_CALL_COUNT_3, 1);
+}
+
+void PeerConnectionImpl::StunAddrsHandler::OnMDNSQueryComplete(
+    const nsCString& hostname, const Maybe<nsCString>& address) {
+  MOZ_ASSERT(NS_IsMainThread());
+  auto itor = pc_->mQueriedMDNSHostnames.find(hostname.BeginReading());
+  if (itor != pc_->mQueriedMDNSHostnames.end()) {
+    if (address) {
+      for (auto& cand : itor->second) {
+        
+        std::string obfuscatedAddr = cand.mTokenizedCandidate[4];
+        cand.mTokenizedCandidate[4] = address->BeginReading();
+        std::ostringstream o;
+        for (size_t i = 0; i < cand.mTokenizedCandidate.size(); ++i) {
+          o << cand.mTokenizedCandidate[i];
+          if (i + 1 != cand.mTokenizedCandidate.size()) {
+            o << " ";
+          }
+        }
+        std::string mungedCandidate = o.str();
+        pc_->StampTimecard("Done looking up mDNS name");
+        pc_->mTransportHandler->AddIceCandidate(
+            cand.mTransportId, mungedCandidate, cand.mUfrag, obfuscatedAddr);
+      }
+    } else {
+      pc_->StampTimecard("Failed looking up mDNS name");
+    }
+    pc_->mQueriedMDNSHostnames.erase(itor);
+  }
+}
+
+void PeerConnectionImpl::StunAddrsHandler::OnStunAddrsAvailable(
+    const mozilla::net::NrIceStunAddrArray& addrs) {
+  CSFLogInfo(LOGTAG, "%s: receiving (%d) stun addrs", __FUNCTION__,
+             (int)addrs.Length());
+  if (pc_) {
+    pc_->mStunAddrs = addrs.Clone();
+    pc_->mLocalAddrsRequestState = STUN_ADDR_REQUEST_COMPLETE;
+    pc_->FlushIceCtxOperationQueueIfReady();
+    
+    
+    if (!pc_->mStunAddrs.Length()) {
+      pc_->IceConnectionStateChange(dom::RTCIceConnectionState::Failed);
+    }
+  }
+}
+
+void PeerConnectionImpl::InitLocalAddrs() {
+  if (mLocalAddrsRequestState == STUN_ADDR_REQUEST_PENDING) {
+    return;
+  }
+  if (mStunAddrsRequest) {
+    mLocalAddrsRequestState = STUN_ADDR_REQUEST_PENDING;
+    mStunAddrsRequest->SendGetStunAddrs();
+  } else {
+    mLocalAddrsRequestState = STUN_ADDR_REQUEST_COMPLETE;
+  }
+}
+
+bool PeerConnectionImpl::ShouldForceProxy() const {
+  if (Preferences::GetBool("media.peerconnection.ice.proxy_only", false)) {
+    return true;
+  }
+
+  if (!Preferences::GetBool(
+          "media.peerconnection.ice.proxy_only_if_behind_proxy", false)) {
+    return false;
+  }
+
+  
+  
+
+  nsCOMPtr<nsIHttpChannelInternal> httpChannelInternal = GetChannel();
+  if (!httpChannelInternal) {
+    return false;
+  }
+
+  nsCOMPtr<nsIProxiedChannel> proxiedChannel =
+      do_QueryInterface(httpChannelInternal);
+  if (!proxiedChannel) {
+    return false;
+  }
+
+  nsCOMPtr<nsIProxyInfo> proxyInfo;
+  proxiedChannel->GetProxyInfo(getter_AddRefs(proxyInfo));
+  if (!proxyInfo) {
+    return false;
+  }
+
+  nsCString proxyType;
+  proxyInfo->GetType(proxyType);
+
+  return !proxyType.IsEmpty() && !proxyType.EqualsLiteral("direct");
+}
+
+void PeerConnectionImpl::EnsureTransports(const JsepSession& aSession) {
+  for (const auto& [id, transceiver] : aSession.GetTransceivers()) {
+    (void)id;  
+    if (transceiver->HasOwnTransport()) {
+      mTransportHandler->EnsureProvisionalTransport(
+          transceiver->mTransport.mTransportId,
+          transceiver->mTransport.mLocalUfrag,
+          transceiver->mTransport.mLocalPwd,
+          transceiver->mTransport.mComponents);
+    }
+  }
+
+  GatherIfReady();
+}
+
+void PeerConnectionImpl::UpdateRTCDtlsTransports(bool aMarkAsStable) {
+  for (auto& transceiver : mTransceivers) {
+    std::string transportId = transceiver->GetTransportId();
+    if (transportId.empty()) {
+      continue;
+    }
+    if (!mTransportIdToRTCDtlsTransport.count(transportId)) {
+      mTransportIdToRTCDtlsTransport.emplace(
+          transportId, new RTCDtlsTransport(transceiver->GetParentObject()));
+    }
+
+    transceiver->SetDtlsTransport(mTransportIdToRTCDtlsTransport[transportId],
+                                  aMarkAsStable);
+  }
+}
+
+void PeerConnectionImpl::RollbackRTCDtlsTransports() {
+  for (auto& transceiver : mTransceivers) {
+    transceiver->RollbackToStableDtlsTransport();
+  }
+}
+
+void PeerConnectionImpl::RemoveRTCDtlsTransportsExcept(
+    const std::set<std::string>& aTransportIds) {
+  for (auto iter = mTransportIdToRTCDtlsTransport.begin();
+       iter != mTransportIdToRTCDtlsTransport.end();) {
+    if (!aTransportIds.count(iter->first)) {
+      iter = mTransportIdToRTCDtlsTransport.erase(iter);
+    } else {
+      ++iter;
+    }
+  }
+}
+
+nsresult PeerConnectionImpl::UpdateTransports(const JsepSession& aSession,
+                                              const bool forceIceTcp) {
+  std::set<std::string> finalTransports;
+  for (const auto& [id, transceiver] : aSession.GetTransceivers()) {
+    (void)id;  
+    if (transceiver->HasOwnTransport()) {
+      finalTransports.insert(transceiver->mTransport.mTransportId);
+      UpdateTransport(*transceiver, forceIceTcp);
+    }
+  }
+
+  
+  RemoveRTCDtlsTransportsExcept(finalTransports);
+
+  mTransportHandler->RemoveTransportsExcept(finalTransports);
+
+  for (const auto& transceiverImpl : mTransceivers) {
+    transceiverImpl->UpdateTransport();
+  }
+
+  return NS_OK;
+}
+
+void PeerConnectionImpl::UpdateTransport(const JsepTransceiver& aTransceiver,
+                                         bool aForceIceTcp) {
+  std::string ufrag;
+  std::string pwd;
+  std::vector<std::string> candidates;
+  size_t components = 0;
+
+  const JsepTransport& transport = aTransceiver.mTransport;
+  unsigned level = aTransceiver.GetLevel();
+
+  CSFLogDebug(LOGTAG, "ACTIVATING TRANSPORT! - PC %s: level=%u components=%u",
+              mHandle.c_str(), (unsigned)level,
+              (unsigned)transport.mComponents);
+
+  ufrag = transport.mIce->GetUfrag();
+  pwd = transport.mIce->GetPassword();
+  candidates = transport.mIce->GetCandidates();
+  components = transport.mComponents;
+  if (aForceIceTcp) {
+    candidates.erase(
+        std::remove_if(candidates.begin(), candidates.end(),
+                       [](const std::string& s) {
+                         return s.find(" UDP ") != std::string::npos ||
+                                s.find(" udp ") != std::string::npos;
+                       }),
+        candidates.end());
+  }
+
+  nsTArray<uint8_t> keyDer;
+  nsTArray<uint8_t> certDer;
+  nsresult rv = Identity()->Serialize(&keyDer, &certDer);
+  if (NS_FAILED(rv)) {
+    CSFLogError(LOGTAG, "%s: Failed to serialize DTLS identity: %d",
+                __FUNCTION__, (int)rv);
+    return;
+  }
+
+  DtlsDigestList digests;
+  for (const auto& fingerprint :
+       transport.mDtls->GetFingerprints().mFingerprints) {
+    std::ostringstream ss;
+    ss << fingerprint.hashFunc;
+    digests.emplace_back(ss.str(), fingerprint.fingerprint);
+  }
+
+  mTransportHandler->ActivateTransport(
+      transport.mTransportId, transport.mLocalUfrag, transport.mLocalPwd,
+      components, ufrag, pwd, keyDer, certDer, Identity()->auth_type(),
+      transport.mDtls->GetRole() == JsepDtlsTransport::kJsepDtlsClient, digests,
+      PrivacyRequested());
+
+  for (auto& candidate : candidates) {
+    AddIceCandidate("candidate:" + candidate, transport.mTransportId, ufrag);
+  }
+}
+
+nsresult PeerConnectionImpl::UpdateMediaPipelines() {
+  for (RefPtr<TransceiverImpl>& transceiver : mTransceivers) {
+    transceiver->ResetSync();
+  }
+
+  for (RefPtr<TransceiverImpl>& transceiver : mTransceivers) {
+    if (!transceiver->IsVideo()) {
+      nsresult rv = transceiver->SyncWithMatchingVideoConduits(mTransceivers);
+      if (NS_FAILED(rv)) {
+        return rv;
+      }
+    }
+
+    nsresult rv = transceiver->UpdateConduit();
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+  }
+
+  return NS_OK;
+}
+
+void PeerConnectionImpl::StartIceChecks(const JsepSession& aSession) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (!mCanRegisterMDNSHostnamesDirectly) {
+    for (auto& pair : mMDNSHostnamesToRegister) {
+      mRegisteredMDNSHostnames.insert(pair.first);
+      mStunAddrsRequest->SendRegisterMDNSHostname(
+          nsCString(pair.first.c_str()), nsCString(pair.second.c_str()));
+    }
+    mMDNSHostnamesToRegister.clear();
+    mCanRegisterMDNSHostnamesDirectly = true;
+  }
+
+  std::vector<std::string> attributes;
+  if (aSession.RemoteIsIceLite()) {
+    attributes.push_back("ice-lite");
+  }
+
+  if (!aSession.GetIceOptions().empty()) {
+    attributes.push_back("ice-options:");
+    for (const auto& option : aSession.GetIceOptions()) {
+      attributes.back() += option + ' ';
+    }
+  }
+
+  nsCOMPtr<nsIRunnable> runnable(
+      WrapRunnable(mTransportHandler, &MediaTransportHandler::StartIceChecks,
+                   aSession.IsIceControlling(), attributes));
+
+  PerformOrEnqueueIceCtxOperation(runnable);
+}
+
+bool PeerConnectionImpl::GetPrefDefaultAddressOnly() const {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  uint64_t winId = mWindow->WindowID();
+
+  bool default_address_only = Preferences::GetBool(
+      "media.peerconnection.ice.default_address_only", false);
+  default_address_only |=
+      !MediaManager::Get()->IsActivelyCapturingOrHasAPermission(winId);
+  return default_address_only;
+}
+
+bool PeerConnectionImpl::GetPrefObfuscateHostAddresses() const {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  uint64_t winId = mWindow->WindowID();
+
+  bool obfuscate_host_addresses = Preferences::GetBool(
+      "media.peerconnection.ice.obfuscate_host_addresses", false);
+  obfuscate_host_addresses &=
+      !MediaManager::Get()->IsActivelyCapturingOrHasAPermission(winId);
+  obfuscate_host_addresses &= !PeerConnectionImpl::HostnameInPref(
+      "media.peerconnection.ice.obfuscate_host_addresses.blocklist",
+      mWindow->GetDocumentURI());
+  obfuscate_host_addresses &= XRE_IsContentProcess();
+
+  return obfuscate_host_addresses;
+}
+
+PeerConnectionImpl::SignalHandler::SignalHandler(PeerConnectionImpl* aPc,
+                                                 MediaTransportHandler* aSource)
+    : mHandle(aPc->GetHandle()),
+      mSource(aSource),
+      mSTSThread(aPc->GetSTSThread()) {
+  ConnectSignals();
+}
+
+PeerConnectionImpl::SignalHandler::~SignalHandler() {
+  ASSERT_ON_THREAD(mSTSThread);
+}
+
+void PeerConnectionImpl::SignalHandler::ConnectSignals() {
+  mSource->SignalGatheringStateChange.connect(
+      this, &PeerConnectionImpl::SignalHandler::IceGatheringStateChange_s);
+  mSource->SignalConnectionStateChange.connect(
+      this, &PeerConnectionImpl::SignalHandler::IceConnectionStateChange_s);
+  mSource->SignalCandidate.connect(
+      this, &PeerConnectionImpl::SignalHandler::OnCandidateFound_s);
+  mSource->SignalAlpnNegotiated.connect(
+      this, &PeerConnectionImpl::SignalHandler::AlpnNegotiated_s);
+}
+
+void PeerConnectionImpl::AddIceCandidate(const std::string& aCandidate,
+                                         const std::string& aTransportId,
+                                         const std::string& aUfrag) {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(!aTransportId.empty());
+
+  bool obfuscate_host_addresses = Preferences::GetBool(
+      "media.peerconnection.ice.obfuscate_host_addresses", false);
+
+  if (obfuscate_host_addresses && !RelayOnly()) {
+    std::vector<std::string> tokens;
+    TokenizeCandidate(aCandidate, tokens);
+
+    if (tokens.size() > 4) {
+      std::string addr = tokens[4];
+
+      
+      size_t nPeriods = std::count(addr.begin(), addr.end(), '.');
+      size_t dotLocalLength = 6;  
+
+      if (nPeriods == 1 &&
+          addr.rfind(".local") + dotLocalLength == addr.length()) {
+        if (mStunAddrsRequest) {
+          PendingIceCandidate cand;
+          cand.mTokenizedCandidate = std::move(tokens);
+          cand.mTransportId = aTransportId;
+          cand.mUfrag = aUfrag;
+          mQueriedMDNSHostnames[addr].push_back(cand);
+
+          GetMainThreadEventTarget()->Dispatch(NS_NewRunnableFunction(
+              "PeerConnectionImpl::SendQueryMDNSHostname",
+              [self = RefPtr<PeerConnectionImpl>(this), addr]() mutable {
+                if (self->mStunAddrsRequest) {
+                  self->StampTimecard("Look up mDNS name");
+                  self->mStunAddrsRequest->SendQueryMDNSHostname(
+                      nsCString(nsAutoCString(addr.c_str())));
+                }
+                NS_ReleaseOnMainThread(
+                    "PeerConnectionImpl::SendQueryMDNSHostname", self.forget());
+              }));
+        }
+        
+        
+        return;
+      }
+    }
+  }
+
+  mTransportHandler->AddIceCandidate(aTransportId, aCandidate, aUfrag, "");
+}
+
+void PeerConnectionImpl::UpdateNetworkState(bool online) {
+  if (mTransportHandler) {
+    mTransportHandler->UpdateNetworkState(online);
+  }
+}
+
+void PeerConnectionImpl::FlushIceCtxOperationQueueIfReady() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (IsIceCtxReady()) {
+    for (auto& queuedIceCtxOperation : mQueuedIceCtxOperations) {
+      queuedIceCtxOperation->Run();
+    }
+    mQueuedIceCtxOperations.clear();
+  }
+}
+
+void PeerConnectionImpl::PerformOrEnqueueIceCtxOperation(
+    nsIRunnable* runnable) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (IsIceCtxReady()) {
+    runnable->Run();
+  } else {
+    mQueuedIceCtxOperations.push_back(runnable);
+  }
+}
+
+void PeerConnectionImpl::GatherIfReady() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  
+  
+  
+  
+  if (!mStunAddrs.Length()) {
+    InitLocalAddrs();
+  }
+
+  
+  mQueuedIceCtxOperations.clear();
+  nsCOMPtr<nsIRunnable> runnable(WrapRunnable(
+      RefPtr<PeerConnectionImpl>(this), &PeerConnectionImpl::EnsureIceGathering,
+      GetPrefDefaultAddressOnly(), GetPrefObfuscateHostAddresses()));
+
+  PerformOrEnqueueIceCtxOperation(runnable);
+}
+
+already_AddRefed<nsIHttpChannelInternal> PeerConnectionImpl::GetChannel()
+    const {
+  Document* doc = mWindow->GetExtantDoc();
+  if (NS_WARN_IF(!doc)) {
+    NS_WARNING("Unable to get document from window");
+    return nullptr;
+  }
+
+  if (!doc->GetDocumentURI()->SchemeIs("file")) {
+    nsIChannel* channel = doc->GetChannel();
+    if (!channel) {
+      NS_WARNING("Unable to get channel from document");
+      return nullptr;
+    }
+
+    nsCOMPtr<nsIHttpChannelInternal> httpChannelInternal =
+        do_QueryInterface(channel);
+    if (NS_WARN_IF(!httpChannelInternal)) {
+      CSFLogInfo(LOGTAG, "%s: Document does not have an HTTP channel",
+                 __FUNCTION__);
+      return nullptr;
+    }
+    return httpChannelInternal.forget();
+  }
+  return nullptr;
+}
+
+nsresult PeerConnectionImpl::SetTargetForDefaultLocalAddressLookup() {
+  nsCOMPtr<nsIHttpChannelInternal> httpChannelInternal = GetChannel();
+  if (!httpChannelInternal) {
+    return NS_OK;
+  }
+
+  nsCString remoteIp;
+  nsresult rv = httpChannelInternal->GetRemoteAddress(remoteIp);
+  if (NS_FAILED(rv) || remoteIp.IsEmpty()) {
+    CSFLogError(LOGTAG, "%s: Failed to get remote IP address: %d", __FUNCTION__,
+                (int)rv);
+    return rv;
+  }
+
+  int32_t remotePort;
+  rv = httpChannelInternal->GetRemotePort(&remotePort);
+  if (NS_FAILED(rv)) {
+    CSFLogError(LOGTAG, "%s: Failed to get remote port number: %d",
+                __FUNCTION__, (int)rv);
+    return rv;
+  }
+
+  mTransportHandler->SetTargetForDefaultLocalAddressLookup(remoteIp.get(),
+                                                           remotePort);
+
+  return NS_OK;
+}
+
+void PeerConnectionImpl::EnsureIceGathering(bool aDefaultRouteOnly,
+                                            bool aObfuscateHostAddresses) {
+  auto proxyConfig = GetProxyConfig();
+  if (proxyConfig) {
+    
+    
+    
+    
+    
+    mTransportHandler->SetProxyConfig(std::move(*proxyConfig));
+  }
+
+  if (!mTargetForDefaultLocalAddressLookupIsSet) {
+    nsresult rv = SetTargetForDefaultLocalAddressLookup();
+    if (NS_FAILED(rv)) {
+      NS_WARNING("Unable to set target for default local address lookup");
+    }
+    mTargetForDefaultLocalAddressLookupIsSet = true;
+  }
+
+  
+  
+  
+  
+  
+  if (!mStunAddrs.Length() && XRE_IsContentProcess()) {
+    CSFLogInfo(LOGTAG, "%s: No STUN addresses returned from parent process",
+               __FUNCTION__);
+    return;
+  }
+
+  mTransportHandler->StartIceGathering(aDefaultRouteOnly,
+                                       aObfuscateHostAddresses, mStunAddrs);
+}
+
+nsresult PeerConnectionImpl::AddTransceiver(
+    JsepTransceiver* aJsepTransceiver, dom::MediaStreamTrack* aSendTrack,
+    SharedWebrtcState* aSharedWebrtcState, RTCStatsIdGenerator* aIdGenerator,
+    RefPtr<TransceiverImpl>* aTransceiverImpl) {
+  if (!mCall) {
+    mCall = WebrtcCallWrapper::Create(
+        GetTimestampMaker(),
+        media::ShutdownBlockingTicket::Create(
+            u"WebrtcCallWrapper shutdown blocker"_ns,
+            NS_LITERAL_STRING_FROM_CSTRING(__FILE__), __LINE__),
+        aSharedWebrtcState);
+  }
+
+  RefPtr<TransceiverImpl> transceiver = new TransceiverImpl(
+      mWindow, PrivacyNeeded(), GetHandle(), mTransportHandler,
+      aJsepTransceiver, GetMainThreadSerialEventTarget(), mSTSThread.get(),
+      aSendTrack, mCall.get(), aIdGenerator);
+
+  if (!transceiver->IsValid()) {
+    return NS_ERROR_FAILURE;
+  }
+
+  if (aSendTrack) {
+    
+    Document* doc = mWindow->GetExtantDoc();
+    if (doc) {
+      transceiver->UpdateSinkIdentity(nullptr, doc->NodePrincipal(),
+                                      GetPeerIdentity());
+    } else {
+      MOZ_CRASH();
+      return NS_ERROR_FAILURE;  
+    }
+  }
+
+  mTransceivers.push_back(transceiver);
+  *aTransceiverImpl = transceiver;
+
+  return NS_OK;
+}
+
+std::string PeerConnectionImpl::GetTransportIdMatchingSendTrack(
+    const dom::MediaStreamTrack& aTrack) const {
+  for (const RefPtr<TransceiverImpl>& transceiver : mTransceivers) {
+    if (transceiver->HasSendTrack(&aTrack)) {
+      return transceiver->GetTransportId();
+    }
+  }
+  return std::string();
+}
+
+void PeerConnectionImpl::SignalHandler::IceGatheringStateChange_s(
+    dom::RTCIceGatheringState aState) {
+  ASSERT_ON_THREAD(mSTSThread);
+
+  GetMainThreadEventTarget()->Dispatch(
+      NS_NewRunnableFunction(__func__,
+                             [handle = mHandle, aState] {
+                               PeerConnectionWrapper wrapper(handle);
+                               if (wrapper.impl()) {
+                                 wrapper.impl()->IceGatheringStateChange(
+                                     aState);
+                               }
+                             }),
+      NS_DISPATCH_NORMAL);
+}
+
+void PeerConnectionImpl::SignalHandler::IceConnectionStateChange_s(
+    dom::RTCIceConnectionState aState) {
+  ASSERT_ON_THREAD(mSTSThread);
+
+  GetMainThreadEventTarget()->Dispatch(
+      NS_NewRunnableFunction(__func__,
+                             [handle = mHandle, aState] {
+                               PeerConnectionWrapper wrapper(handle);
+                               if (wrapper.impl()) {
+                                 wrapper.impl()->IceConnectionStateChange(
+                                     aState);
+                               }
+                             }),
+      NS_DISPATCH_NORMAL);
+}
+
+void PeerConnectionImpl::SignalHandler::OnCandidateFound_s(
+    const std::string& aTransportId, const CandidateInfo& aCandidateInfo) {
+  ASSERT_ON_THREAD(mSTSThread);
+  CSFLogDebug(LOGTAG, "%s: %s", __FUNCTION__, aTransportId.c_str());
+
+  MOZ_ASSERT(!aCandidateInfo.mUfrag.empty());
+
+  GetMainThreadEventTarget()->Dispatch(
+      NS_NewRunnableFunction(__func__,
+                             [handle = mHandle, aTransportId, aCandidateInfo] {
+                               PeerConnectionWrapper wrapper(handle);
+                               if (wrapper.impl()) {
+                                 wrapper.impl()->OnCandidateFound(
+                                     aTransportId, aCandidateInfo);
+                               }
+                             }),
+      NS_DISPATCH_NORMAL);
+}
+
+void PeerConnectionImpl::SignalHandler::AlpnNegotiated_s(
+    const std::string& aAlpn, bool aPrivacyRequested) {
+  MOZ_DIAGNOSTIC_ASSERT((aAlpn == "c-webrtc") == aPrivacyRequested);
+  GetMainThreadEventTarget()->Dispatch(
+      NS_NewRunnableFunction(__func__,
+                             [handle = mHandle, aPrivacyRequested] {
+                               PeerConnectionWrapper wrapper(handle);
+                               if (wrapper.impl()) {
+                                 wrapper.impl()->OnAlpnNegotiated(
+                                     aPrivacyRequested);
+                               }
+                             }),
+      NS_DISPATCH_NORMAL);
+}
+
+
+
+
+
+
+
+
+
+
+bool PeerConnectionImpl::AnyLocalTrackHasPeerIdentity() const {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  for (const RefPtr<TransceiverImpl>& transceiver : mTransceivers) {
+    if (transceiver->GetSendTrack() &&
+        transceiver->GetSendTrack()->GetPeerIdentity()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void PeerConnectionImpl::UpdateSinkIdentity_m(
+    const MediaStreamTrack* aTrack, nsIPrincipal* aPrincipal,
+    const PeerIdentity* aSinkIdentity) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  for (RefPtr<TransceiverImpl>& transceiver : mTransceivers) {
+    transceiver->UpdateSinkIdentity(aTrack, aPrincipal, aSinkIdentity);
+  }
+}
+
+bool PeerConnectionImpl::AnyCodecHasPluginID(uint64_t aPluginID) {
+  for (RefPtr<TransceiverImpl>& transceiver : mTransceivers) {
+    if (transceiver->ConduitHasPluginID(aPluginID)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+std::unique_ptr<NrSocketProxyConfig> PeerConnectionImpl::GetProxyConfig()
+    const {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (!mForceProxy &&
+      Preferences::GetBool("media.peerconnection.disable_http_proxy", false)) {
+    return nullptr;
+  }
+
+  nsCString alpn = "webrtc,c-webrtc"_ns;
+  auto* browserChild = BrowserChild::GetFrom(mWindow);
+  if (!browserChild) {
+    
+    return nullptr;
+  }
+
+  Document* doc = mWindow->GetExtantDoc();
+  if (NS_WARN_IF(!doc)) {
+    NS_WARNING("Unable to get document from window");
+    return nullptr;
+  }
+
+  TabId id = browserChild->GetTabId();
+  nsCOMPtr<nsILoadInfo> loadInfo =
+      new net::LoadInfo(doc->NodePrincipal(), doc->NodePrincipal(), doc, 0,
+                        nsIContentPolicy::TYPE_INVALID);
+
+  Maybe<net::LoadInfoArgs> loadInfoArgs;
+  MOZ_ALWAYS_SUCCEEDS(
+      mozilla::ipc::LoadInfoToLoadInfoArgs(loadInfo, &loadInfoArgs));
+  return std::unique_ptr<NrSocketProxyConfig>(new NrSocketProxyConfig(
+      net::WebrtcProxyConfig(id, alpn, *loadInfoArgs, mForceProxy)));
 }
 
 std::map<uint64_t, PeerConnectionAutoTimer>

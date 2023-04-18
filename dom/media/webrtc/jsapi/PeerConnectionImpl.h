@@ -42,6 +42,12 @@
 #include "RTCStatsIdGenerator.h"
 #include "RTCStatsReport.h"
 
+#include "mozilla/net/StunAddrsRequestChild.h"
+#include "MediaTransportHandler.h"
+#include "nsIHttpChannelInternal.h"
+#include "RTCDtlsTransport.h"
+#include "TransceiverImpl.h"
+
 namespace test {
 #ifdef USE_FAKE_PCOBSERVER
 class AFakePCObserver;
@@ -49,6 +55,7 @@ class AFakePCObserver;
 }  
 
 class nsDOMDataChannel;
+class nsIPrincipal;
 
 namespace mozilla {
 struct CandidateInfo;
@@ -57,7 +64,7 @@ class DtlsIdentity;
 class MediaPipeline;
 class MediaPipelineReceive;
 class MediaPipelineTransmit;
-class TransceiverImpl;
+class SharedWebrtcState;
 
 namespace dom {
 class RTCCertificate;
@@ -108,7 +115,6 @@ using mozilla::dom::RTCIceServer;
 using mozilla::dom::RTCOfferOptions;
 
 class PeerConnectionWrapper;
-class PeerConnectionMedia;
 class RemoteSourceStreamInfo;
 
 
@@ -177,12 +183,6 @@ class PeerConnectionImpl final
       override;
 
   const RefPtr<MediaTransportHandler> GetTransportHandler() const;
-
-  
-  const RefPtr<PeerConnectionMedia>& media() const {
-    PC_AUTO_ENTER_API_CALL_NO_CHECK();
-    return mMedia;
-  }
 
   
   virtual const std::string& GetHandle();
@@ -408,7 +408,7 @@ class PeerConnectionImpl final
   
   nsresult OnAlpnNegotiated(bool aPrivacyRequested);
 
-  bool HasMedia() const;
+  bool IsActive() const;
 
   
   void StartCallTelem();
@@ -421,7 +421,6 @@ class PeerConnectionImpl final
 
   void CollectConduitTelemetryData();
 
-  
   
   virtual void PrincipalChanged(dom::MediaStreamTrack* aTrack) override;
 
@@ -577,7 +576,6 @@ class PeerConnectionImpl final
   RefPtr<mozilla::DataChannelConnection> mDataConnection;
 
   bool mForceIceTcp;
-  RefPtr<PeerConnectionMedia> mMedia;
   RefPtr<MediaTransportHandler> mTransportHandler;
 
   
@@ -627,8 +625,175 @@ class PeerConnectionImpl final
   DOMMediaStream* GetReceiveStream(const std::string& aId) const;
   DOMMediaStream* CreateReceiveStream(const std::string& aId);
 
+  void InitLocalAddrs();  
+  bool ShouldForceProxy() const;
+  std::unique_ptr<NrSocketProxyConfig> GetProxyConfig() const;
+
+  class StunAddrsHandler : public net::StunAddrsListener {
+   public:
+    explicit StunAddrsHandler(PeerConnectionImpl* aPc) : pc_(aPc) {}
+
+    void OnMDNSQueryComplete(const nsCString& hostname,
+                             const Maybe<nsCString>& address) override;
+
+    void OnStunAddrsAvailable(
+        const mozilla::net::NrIceStunAddrArray& addrs) override;
+
+   private:
+    RefPtr<PeerConnectionImpl> pc_;
+    virtual ~StunAddrsHandler() {}
+  };
+
+  
+  void UpdateTransport(const JsepTransceiver& aTransceiver, bool aForceIceTcp);
+
+  void GatherIfReady();
+  void FlushIceCtxOperationQueueIfReady();
+  void PerformOrEnqueueIceCtxOperation(nsIRunnable* runnable);
+  nsresult SetTargetForDefaultLocalAddressLookup();
+  void EnsureIceGathering(bool aDefaultRouteOnly, bool aObfuscateHostAddresses);
+
+  bool GetPrefDefaultAddressOnly() const;
+  bool GetPrefObfuscateHostAddresses() const;
+
+  bool IsIceCtxReady() const {
+    return mLocalAddrsRequestState == STUN_ADDR_REQUEST_COMPLETE;
+  }
+
+  
+  void EnsureTransports(const JsepSession& aSession);
+
+  void UpdateRTCDtlsTransports(bool aMarkAsStable);
+  void RollbackRTCDtlsTransports();
+  void RemoveRTCDtlsTransportsExcept(
+      const std::set<std::string>& aTransportIds);
+
+  
+  
+  nsresult UpdateTransports(const JsepSession& aSession,
+                            const bool forceIceTcp);
+
+  void ResetStunAddrsForIceRestart() { mStunAddrs.Clear(); }
+
+  
+  void StartIceChecks(const JsepSession& session);
+
+  
+  void AddIceCandidate(const std::string& candidate,
+                       const std::string& aTransportId,
+                       const std::string& aUFrag);
+
+  
+  
+  
+  
+  nsresult UpdateMediaPipelines();
+
+  nsresult AddTransceiver(JsepTransceiver* aJsepTransceiver,
+                          dom::MediaStreamTrack* aSendTrack,
+                          SharedWebrtcState* aSharedWebrtcState,
+                          RTCStatsIdGenerator* aIdGenerator,
+                          RefPtr<TransceiverImpl>* aTransceiverImpl);
+
+  std::string GetTransportIdMatchingSendTrack(
+      const dom::MediaStreamTrack& aTrack) const;
+
+  
+  
+  
+  
+  void UpdateSinkIdentity_m(const dom::MediaStreamTrack* aTrack,
+                            nsIPrincipal* aPrincipal,
+                            const PeerIdentity* aSinkIdentity);
+  
+  bool AnyLocalTrackHasPeerIdentity() const;
+
+  bool AnyCodecHasPluginID(uint64_t aPluginID);
+
+  already_AddRefed<nsIHttpChannelInternal> GetChannel() const;
+
+  RefPtr<WebrtcCallWrapper> mCall;
+
   
   bool mRtxIsAllowed = true;
+
+  std::vector<RefPtr<TransceiverImpl>> mTransceivers;
+  std::map<std::string, RefPtr<dom::RTCDtlsTransport>>
+      mTransportIdToRTCDtlsTransport;
+
+  
+  
+  
+  
+  std::vector<nsCOMPtr<nsIRunnable>> mQueuedIceCtxOperations;
+
+  
+  bool mForceProxy = false;
+
+  
+  RefPtr<net::StunAddrsRequestChild> mStunAddrsRequest;
+
+  enum StunAddrRequestState {
+    STUN_ADDR_REQUEST_NONE,
+    STUN_ADDR_REQUEST_PENDING,
+    STUN_ADDR_REQUEST_COMPLETE
+  };
+  
+  StunAddrRequestState mLocalAddrsRequestState = STUN_ADDR_REQUEST_NONE;
+
+  
+  nsTArray<NrIceStunAddr> mStunAddrs;
+
+  
+  
+  bool mTargetForDefaultLocalAddressLookupIsSet = false;
+
+  
+  
+  bool mDestroyed = false;
+
+  
+  
+  std::map<std::string, std::string> mMDNSHostnamesToRegister;
+  bool mCanRegisterMDNSHostnamesDirectly = false;
+
+  
+  std::set<std::string> mRegisteredMDNSHostnames;
+
+  
+  struct PendingIceCandidate {
+    std::vector<std::string> mTokenizedCandidate;
+    std::string mTransportId;
+    std::string mUfrag;
+  };
+  std::map<std::string, std::list<PendingIceCandidate>> mQueriedMDNSHostnames;
+
+  
+  
+  
+  
+  
+  class SignalHandler : public sigslot::has_slots<> {
+   public:
+    SignalHandler(PeerConnectionImpl* aPc, MediaTransportHandler* aSource);
+    virtual ~SignalHandler();
+
+    void ConnectSignals();
+
+    
+    void IceGatheringStateChange_s(dom::RTCIceGatheringState aState);
+    void IceConnectionStateChange_s(dom::RTCIceConnectionState aState);
+    void OnCandidateFound_s(const std::string& aTransportId,
+                            const CandidateInfo& aCandidateInfo);
+    void AlpnNegotiated_s(const std::string& aAlpn, bool aPrivacyRequested);
+
+   private:
+    const std::string mHandle;
+    RefPtr<MediaTransportHandler> mSource;
+    RefPtr<nsISerialEventTarget> mSTSThread;
+  };
+
+  mozilla::UniquePtr<SignalHandler> mSignalHandler;
 
  public:
   
