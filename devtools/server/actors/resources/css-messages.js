@@ -59,6 +59,7 @@ class CSSMessageWatcher extends nsIConsoleListenerWatcher {
     }
 
     
+    
     if (this.isProcessTarget(targetActor)) {
       return !message.isFromPrivateWindow;
     }
@@ -67,14 +68,9 @@ class CSSMessageWatcher extends nsIConsoleListenerWatcher {
       return false;
     }
 
-    if (targetActor.ignoreSubFrames) {
-      return (
-        WebConsoleUtils.getInnerWindowId(targetActor.window) ===
-        message.innerWindowID
-      );
-    }
-
-    const ids = WebConsoleUtils.getInnerWindowIDsForFrames(targetActor.window);
+    const ids = targetActor.windows.map(window =>
+      WebConsoleUtils.getInnerWindowId(window)
+    );
     return ids.includes(message.innerWindowID);
   }
 

@@ -1231,7 +1231,7 @@ const windowGlobalTargetPrototype = {
   
 
 
-  async ensureCSSErrorReportingEnabled(request) {
+  async ensureCSSErrorReportingEnabled() {
     const promises = [];
     for (const docShell of this.docShells) {
       if (docShell.cssErrorReportingEnabled) {
@@ -1726,6 +1726,14 @@ DebuggerProgressListener.prototype = {
     
     if (this._targetActor.typeName === "parentProcessTarget") {
       docShell.browsingContext.watchedByDevTools = true;
+    }
+    
+    
+    if (
+      this._targetActor.isRootActor &&
+      this._targetActor.docShell.cssErrorReportingEnabled
+    ) {
+      docShell.cssErrorReportingEnabled = true;
     }
   },
 
