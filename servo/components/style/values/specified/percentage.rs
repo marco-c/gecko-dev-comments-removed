@@ -93,11 +93,6 @@ impl Percentage {
     }
 
     
-    pub fn is_calc(&self) -> bool {
-        self.calc_clamping_mode.is_some()
-    }
-
-    
     pub fn calc_clamping_mode(&self) -> Option<AllowedNumericType> {
         self.calc_clamping_mode
     }
@@ -187,6 +182,24 @@ impl ToComputedValue for Percentage {
 }
 
 impl SpecifiedValueInfo for Percentage {}
+
+
+pub trait ToPercentage {
+    
+    fn is_calc(&self) -> bool { false }
+    
+    fn to_percentage(&self) -> CSSFloat;
+}
+
+impl ToPercentage for Percentage {
+    fn is_calc(&self) -> bool {
+        self.calc_clamping_mode.is_some()
+    }
+
+    fn to_percentage(&self) -> CSSFloat {
+        self.get()
+    }
+}
 
 
 pub type NonNegativePercentage = NonNegative<Percentage>;

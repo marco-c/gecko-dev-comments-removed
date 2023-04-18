@@ -3212,7 +3212,7 @@ impl ComputedValues {
     
     #[inline]
     pub fn resolve_color(&self, color: computed::Color) -> RGBA {
-        color.to_rgba(self.get_inherited_text().clone_color())
+        color.into_rgba(self.get_inherited_text().clone_color())
     }
 
     

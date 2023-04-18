@@ -7,7 +7,7 @@
 use super::AllowQuirks;
 use crate::parser::{Parse, ParserContext};
 use crate::values::computed::{Color as ComputedColor, Context, ToComputedValue};
-use crate::values::generics::color::{GenericCaretColor, GenericColorOrAuto};
+use crate::values::generics::color::{ColorInterpolationMethod, GenericColorMix, GenericCaretColor, GenericColorOrAuto};
 use crate::values::specified::calc::CalcNode;
 use crate::values::specified::Percentage;
 use crate::values::CustomIdent;
@@ -20,118 +20,7 @@ use style_traits::{CssType, CssWriter, KeywordsCollectFn, ParseError, StyleParse
 use style_traits::{SpecifiedValueInfo, ToCss, ValueParseErrorKind};
 
 
-
-
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, Parse, PartialEq, ToCss, ToShmem)]
-pub enum ColorSpace {
-    
-    Srgb,
-    
-    LinearSrgb,
-    
-    #[parse(aliases = "xyz-d65")]
-    Xyz,
-    
-    XyzD50,
-    
-    Lab,
-    
-    Hsl,
-    
-    Hwb,
-    
-    Lch,
-    
-}
-
-impl ColorSpace {
-    
-    pub fn is_polar(self) -> bool {
-        match self {
-            Self::Srgb | Self::LinearSrgb | Self::Xyz | Self::XyzD50 | Self::Lab => false,
-            Self::Hsl | Self::Hwb | Self::Lch => true,
-        }
-    }
-}
-
-
-
-
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, Parse, PartialEq, ToCss, ToShmem)]
-pub enum HueInterpolationMethod {
-    
-    Shorter,
-    
-    Longer,
-    
-    Increasing,
-    
-    Decreasing,
-    
-    Specified,
-}
-
-
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, ToShmem)]
-pub struct ColorInterpolationMethod {
-    
-    pub space: ColorSpace,
-    
-    pub hue: HueInterpolationMethod,
-}
-
-impl Parse for ColorInterpolationMethod {
-    fn parse<'i, 't>(
-        _: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
-        input.expect_ident_matching("in")?;
-        let space = ColorSpace::parse(input)?;
-        
-        
-        
-        let hue = if space.is_polar() {
-            input.try_parse(|input| -> Result<_, ParseError<'i>> {
-                let hue = HueInterpolationMethod::parse(input)?;
-                input.expect_ident_matching("hue")?;
-                Ok(hue)
-            }).unwrap_or(HueInterpolationMethod::Shorter)
-        } else {
-            HueInterpolationMethod::Shorter
-        };
-        Ok(Self { space, hue })
-    }
-}
-
-impl ToCss for ColorInterpolationMethod {
-    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
-    where
-        W: Write,
-    {
-        dest.write_str("in ")?;
-        self.space.to_css(dest)?;
-        if self.hue != HueInterpolationMethod::Shorter {
-            dest.write_char(' ')?;
-            self.hue.to_css(dest)?;
-            dest.write_str(" hue")?;
-        }
-        Ok(())
-    }
-}
-
-
-
-
-
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToShmem)]
-#[allow(missing_docs)]
-pub struct ColorMix {
-    pub interpolation: ColorInterpolationMethod,
-    pub left: Color,
-    pub left_percentage: Percentage,
-    pub right: Color,
-    pub right_percentage: Percentage,
-}
+pub type ColorMix = GenericColorMix<Color, Percentage>;
 
 impl Parse for ColorMix {
     fn parse<'i, 't>(
@@ -152,7 +41,9 @@ impl Parse for ColorMix {
             input.expect_comma()?;
 
             let try_parse_percentage = |input: &mut Parser| -> Option<Percentage> {
-                input.try_parse(|input| Percentage::parse_zero_to_a_hundred(context, input)).ok()
+                input
+                    .try_parse(|input| Percentage::parse_zero_to_a_hundred(context, input))
+                    .ok()
             };
 
             let mut left_percentage = try_parse_percentage(input);
@@ -172,9 +63,8 @@ impl Parse for ColorMix {
                 right_percentage = try_parse_percentage(input);
             }
 
-            let right_percentage = right_percentage.unwrap_or_else(|| {
-                Percentage::new(1.0 - left_percentage.map_or(0.5, |p| p.get()))
-            });
+            let right_percentage = right_percentage
+                .unwrap_or_else(|| Percentage::new(1.0 - left_percentage.map_or(0.5, |p| p.get())));
 
             let left_percentage =
                 left_percentage.unwrap_or_else(|| Percentage::new(1.0 - right_percentage.get()));
@@ -190,44 +80,9 @@ impl Parse for ColorMix {
                 left_percentage,
                 right,
                 right_percentage,
+                normalize_weights: true,
             })
         })
-    }
-}
-
-impl ToCss for ColorMix {
-    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
-    where
-        W: Write,
-    {
-        fn can_omit(percent: &Percentage, other: &Percentage, is_left: bool) -> bool {
-            if percent.is_calc() {
-                return false;
-            }
-            if percent.get() == 0.5 {
-                return other.get() == 0.5;
-            }
-            if is_left {
-                return false;
-            }
-            (1.0 - percent.get() - other.get()).abs() <= f32::EPSILON
-        }
-
-        dest.write_str("color-mix(")?;
-        self.interpolation.to_css(dest)?;
-        dest.write_str(", ")?;
-        self.left.to_css(dest)?;
-        if !can_omit(&self.left_percentage, &self.right_percentage, true) {
-            dest.write_str(" ")?;
-            self.left_percentage.to_css(dest)?;
-        }
-        dest.write_str(", ")?;
-        self.right.to_css(dest)?;
-        if !can_omit(&self.right_percentage, &self.left_percentage, false) {
-            dest.write_str(" ")?;
-            self.right_percentage.to_css(dest)?;
-        }
-        dest.write_str(")")
     }
 }
 
@@ -243,8 +98,6 @@ pub enum Color {
         
         authored: Option<Box<str>>,
     },
-    
-    Complex(ComputedColor),
     
     #[cfg(feature = "gecko")]
     System(SystemColor),
@@ -632,8 +485,6 @@ impl ToCss for Color {
             Color::Numeric {
                 parsed: ref rgba, ..
             } => rgba.to_css(dest),
-            
-            Color::Complex(_) => Ok(()),
             Color::ColorMix(ref mix) => mix.to_css(dest),
             #[cfg(feature = "gecko")]
             Color::System(system) => system.to_css(dest),
@@ -772,22 +623,23 @@ impl Color {
     
     pub fn to_computed_color(&self, context: Option<&Context>) -> Option<ComputedColor> {
         Some(match *self {
-            Color::CurrentColor => ComputedColor::currentcolor(),
-            Color::Numeric { ref parsed, .. } => ComputedColor::rgba(*parsed),
-            Color::Complex(ref complex) => *complex,
+            Color::CurrentColor => ComputedColor::CurrentColor,
+            Color::Numeric { ref parsed, .. } => ComputedColor::Numeric(*parsed),
             Color::ColorMix(ref mix) => {
-                use crate::values::animated::color::Color as AnimatedColor;
-                use crate::values::animated::ToAnimatedValue;
+                use crate::values::computed::percentage::Percentage;
 
-                let left = mix.left.to_computed_color(context)?.to_animated_value();
-                let right = mix.right.to_computed_color(context)?.to_animated_value();
-                ToAnimatedValue::from_animated_value(AnimatedColor::mix(
-                    &mix.interpolation,
-                    &left,
-                    mix.left_percentage.get(),
-                    &right,
-                    mix.right_percentage.get(),
-                ))
+                let left = mix.left.to_computed_color(context)?;
+                let right = mix.right.to_computed_color(context)?;
+                let mut color = ComputedColor::ColorMix(Box::new(GenericColorMix {
+                    interpolation: mix.interpolation,
+                    left,
+                    left_percentage: Percentage(mix.left_percentage.get()),
+                    right,
+                    right_percentage: Percentage(mix.right_percentage.get()),
+                    normalize_weights: mix.normalize_weights,
+                }));
+                color.simplify(None);
+                color
             },
             #[cfg(feature = "gecko")]
             Color::System(system) => system.compute(context?),
@@ -805,13 +657,13 @@ impl ToComputedValue for Color {
     }
 
     fn from_computed_value(computed: &ComputedColor) -> Self {
-        if computed.is_numeric() {
-            return Color::rgba(computed.color);
+        match *computed {
+            ComputedColor::Numeric(ref color) => Color::rgba(*color),
+            ComputedColor::CurrentColor => Color::CurrentColor,
+            ComputedColor::ColorMix(ref mix) => {
+                Color::ColorMix(Box::new(ToComputedValue::from_computed_value(&**mix)))
+            },
         }
-        if computed.is_currentcolor() {
-            return Color::currentcolor();
-        }
-        Color::Complex(*computed)
     }
 }
 
@@ -839,7 +691,7 @@ impl ToComputedValue for MozFontSmoothingBackgroundColor {
     fn to_computed_value(&self, context: &Context) -> RGBA {
         self.0
             .to_computed_value(context)
-            .to_rgba(RGBA::transparent())
+            .into_rgba(RGBA::transparent())
     }
 
     fn from_computed_value(computed: &RGBA) -> Self {
@@ -856,7 +708,15 @@ impl SpecifiedValueInfo for Color {
         
         
         
-        f(&["rgb", "rgba", "hsl", "hsla", "hwb", "currentColor", "transparent"]);
+        f(&[
+            "rgb",
+            "rgba",
+            "hsl",
+            "hsla",
+            "hwb",
+            "currentColor",
+            "transparent",
+        ]);
     }
 }
 
@@ -873,7 +733,7 @@ impl ToComputedValue for ColorPropertyValue {
     fn to_computed_value(&self, context: &Context) -> RGBA {
         self.0
             .to_computed_value(context)
-            .to_rgba(context.builder.get_parent_inherited_text().clone_color())
+            .into_rgba(context.builder.get_parent_inherited_text().clone_color())
     }
 
     #[inline]
@@ -1035,7 +895,19 @@ impl ToCss for ColorScheme {
 }
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToComputedValue, ToResolvedValue, ToShmem)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToCss,
+    ToComputedValue,
+    ToResolvedValue,
+    ToShmem,
+)]
 #[repr(u8)]
 pub enum PrintColorAdjust {
     
