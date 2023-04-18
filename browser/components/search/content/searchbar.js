@@ -813,10 +813,11 @@
       };
 
       this.textbox.onkeyup = event => {
-        if (
-          event.keyCode === KeyEvent.DOM_VK_RETURN &&
-          this._needBrowserFocusAtEnterKeyUp
-        ) {
+        
+        
+        
+        
+        if (this._needBrowserFocusAtEnterKeyUp) {
           this._needBrowserFocusAtEnterKeyUp = false;
           gBrowser.selectedBrowser.focus();
         }
