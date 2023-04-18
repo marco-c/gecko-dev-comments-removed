@@ -149,6 +149,19 @@ class IDLUnderlyingSourceCancelCallbackHelper final
   RefPtr<UnderlyingSourceCancelCallback> mCallback;
 };
 
+
+class UnderlyingSourceErrorCallbackHelper : public nsISupports {
+ public:
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(
+      UnderlyingSourceErrorCallbackHelper)
+
+  virtual void Call() = 0;
+
+ protected:
+  virtual ~UnderlyingSourceErrorCallbackHelper() = default;
+};
+
 }  
 
 #endif
