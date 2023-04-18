@@ -5326,23 +5326,23 @@ CallIRGenerator::CallIRGenerator(JSContext* cx, HandleScript script,
       newTarget_(newTarget),
       args_(args) {}
 
-void InlinableNativeIRGenerator::emitNativeCalleeGuard(JSFunction* callee) {
+void InlinableNativeIRGenerator::emitNativeCalleeGuard() {
   
   
-  MOZ_ASSERT(callee->isNativeWithoutJitEntry());
+  MOZ_ASSERT(callee_->isNativeWithoutJitEntry());
 
   ValOperandId calleeValId =
       writer.loadArgumentFixedSlot(ArgumentKind::Callee, argc_, flags_);
   ObjOperandId calleeObjId = writer.guardToObject(calleeValId);
-  writer.guardSpecificFunction(calleeObjId, callee);
+  writer.guardSpecificFunction(calleeObjId, callee_);
 
   
   if (flags_.isConstructing()) {
-    MOZ_ASSERT(&newTarget_.toObject() == callee);
+    MOZ_ASSERT(&newTarget_.toObject() == callee_);
     ValOperandId newTargetValId =
         writer.loadArgumentFixedSlot(ArgumentKind::NewTarget, argc_, flags_);
     ObjOperandId newTargetObjId = writer.guardToObject(newTargetValId);
-    writer.guardSpecificFunction(newTargetObjId, callee);
+    writer.guardSpecificFunction(newTargetObjId, callee_);
   }
 }
 
@@ -5406,7 +5406,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArrayPush(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   
   ValOperandId thisValId =
@@ -5460,7 +5460,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArrayPopShift(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   ValOperandId thisValId =
       writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
@@ -5503,7 +5503,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArrayJoin(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   
   ValOperandId thisValId =
@@ -5562,7 +5562,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArraySlice(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   ValOperandId thisValId =
       writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
@@ -5605,7 +5605,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArrayIsArray(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   
   ValOperandId argId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
@@ -5656,7 +5656,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachDataViewGet(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   
   ValOperandId thisValId =
@@ -5721,7 +5721,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachDataViewSet(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   
   ValOperandId thisValId =
@@ -5893,7 +5893,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachToObject(
   
   
   if (native == InlinableNative::Object) {
-    emitNativeCalleeGuard(callee);
+    emitNativeCalleeGuard();
   }
 
   
@@ -6338,7 +6338,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachString(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   
   ValOperandId argId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
@@ -6371,7 +6371,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringConstructor(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   
   ValOperandId argId =
@@ -6401,7 +6401,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringToStringValueOf(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   
   ValOperandId thisValId =
@@ -6485,7 +6485,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringChar(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   
   ValOperandId thisValId =
@@ -6536,7 +6536,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringFromCharCode(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   
   ValOperandId argId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
@@ -6567,7 +6567,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringFromCodePoint(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   
   ValOperandId argId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
@@ -6597,7 +6597,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringToLowerCase(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   
   ValOperandId thisValId =
@@ -6628,7 +6628,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringToUpperCase(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   
   ValOperandId thisValId =
@@ -6657,7 +6657,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathRandom(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   mozilla::non_crypto::XorShift128PlusRNG* rng =
       &cx_->realm()->getOrCreateRandomNumberGenerator();
@@ -6684,7 +6684,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathAbs(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   ValOperandId argumentId =
       writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
@@ -6715,7 +6715,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathClz32(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   ValOperandId argId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
 
@@ -6745,7 +6745,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathSign(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   ValOperandId argId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
 
@@ -6784,7 +6784,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathImul(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   ValOperandId arg0Id = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
   ValOperandId arg1Id = writer.loadArgumentFixedSlot(ArgumentKind::Arg1, argc_);
@@ -6823,7 +6823,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathFloor(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   ValOperandId argumentId =
       writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
@@ -6868,7 +6868,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathCeil(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   ValOperandId argumentId =
       writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
@@ -6913,7 +6913,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathTrunc(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   ValOperandId argumentId =
       writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
@@ -6957,7 +6957,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathRound(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   ValOperandId argumentId =
       writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
@@ -6997,7 +6997,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathSqrt(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   ValOperandId argumentId =
       writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
@@ -7020,7 +7020,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathFRound(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   ValOperandId argumentId =
       writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
@@ -7071,7 +7071,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathPow(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   ValOperandId baseId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
   ValOperandId exponentId =
@@ -7111,7 +7111,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathHypot(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   ValOperandId firstId =
       writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
@@ -7164,7 +7164,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathATan2(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   ValOperandId yId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
   ValOperandId xId = writer.loadArgumentFixedSlot(ArgumentKind::Arg1, argc_);
@@ -7201,7 +7201,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathMinMax(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   if (allInt32) {
     ValOperandId valId =
@@ -7253,7 +7253,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachSpreadMathMinMax(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   
   ObjOperandId argsId = writer.loadSpreadArgs();
@@ -7285,7 +7285,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathFunction(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   ValOperandId argumentId =
       writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
@@ -7329,7 +7329,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachNumberToString(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   
   ValOperandId thisValId =
@@ -7361,7 +7361,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachReflectGetPrototypeOf(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   ValOperandId argumentId =
       writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
@@ -7447,7 +7447,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAtomicsCompareExchange(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   ValOperandId arg0Id = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
   ObjOperandId objId = writer.guardToObject(arg0Id);
@@ -7516,7 +7516,7 @@ InlinableNativeIRGenerator::emitAtomicsReadWriteModifyOperands(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   ValOperandId arg0Id = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
   ObjOperandId objId = writer.guardToObject(arg0Id);
@@ -7683,7 +7683,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAtomicsLoad(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   ValOperandId arg0Id = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
   ObjOperandId objId = writer.guardToObject(arg0Id);
@@ -7750,7 +7750,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAtomicsStore(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   ValOperandId arg0Id = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
   ObjOperandId objId = writer.guardToObject(arg0Id);
@@ -7795,7 +7795,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAtomicsIsLockFree(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   
   ValOperandId valueId =
@@ -7820,7 +7820,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachBoolean(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   if (argc_ == 0) {
     writer.loadBooleanResult(false);
@@ -7848,7 +7848,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachBailout(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   writer.bailout();
   writer.loadUndefinedResult();
@@ -7869,7 +7869,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAssertFloat32(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   
 
@@ -7896,7 +7896,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAssertRecoveredOnBailout(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   ValOperandId valId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
 
@@ -7918,7 +7918,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachObjectIs(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   ValOperandId lhsId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
   ValOperandId rhsId = writer.loadArgumentFixedSlot(ArgumentKind::Arg1, argc_);
@@ -8025,7 +8025,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachObjectIsPrototypeOf(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   
   ValOperandId thisValId =
@@ -8062,7 +8062,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachObjectToString(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   
   ValOperandId thisValId =
@@ -8092,7 +8092,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachBigIntAsIntN(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   
   ValOperandId bitsId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
@@ -8127,7 +8127,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachBigIntAsUintN(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   
   ValOperandId bitsId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
@@ -8162,7 +8162,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachSetHas(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   
   ValOperandId thisValId =
@@ -8250,7 +8250,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMapHas(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   
   ValOperandId thisValId =
@@ -8338,7 +8338,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMapGet(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   
   ValOperandId thisValId =
@@ -8862,7 +8862,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachObjectCreate(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   
   ValOperandId argId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
@@ -8913,7 +8913,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArrayConstructor(
 
   
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   Int32OperandId lengthId;
   if (argc_ == 1) {
@@ -8979,7 +8979,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayConstructor(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  emitNativeCalleeGuard();
 
   ValOperandId arg0Id =
       writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_, flags_);
