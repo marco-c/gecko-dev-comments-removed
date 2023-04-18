@@ -348,11 +348,9 @@ var Utils = {
     ).slice(0, SYNC_KEY_DECODED_LENGTH);
   },
 
-  jsonFilePath(...args) {
-    return PathUtils.join(
-      Services.dirsvc.get("ProfD", Ci.nsIFile).path,
-      "weave",
-      ...args
+  jsonFilePath(filePath) {
+    return OS.Path.normalize(
+      OS.Path.join(OS.Constants.Path.profileDir, "weave", filePath + ".json")
     );
   },
 
@@ -370,7 +368,7 @@ var Utils = {
 
 
   async jsonLoad(filePath, that) {
-    let path = Utils.jsonFilePath(`${filePath}.json`);
+    let path = Utils.jsonFilePath(filePath);
 
     if (that._log && that._log.trace) {
       that._log.trace("Loading json from disk: " + filePath);
