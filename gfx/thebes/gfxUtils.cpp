@@ -290,7 +290,10 @@ static already_AddRefed<gfxDrawable> CreateSamplingRestrictedDrawable(
   AUTO_PROFILER_LABEL("CreateSamplingRestrictedDrawable", GRAPHICS);
 
   DrawTarget* destDrawTarget = aContext->GetDrawTarget();
-  if (destDrawTarget->GetBackendType() == BackendType::DIRECT2D1_1) {
+  
+  
+  
+  if (destDrawTarget->GetBackendType() == BackendType::DIRECT2D1_1 || true) {
     return nullptr;
   }
 
