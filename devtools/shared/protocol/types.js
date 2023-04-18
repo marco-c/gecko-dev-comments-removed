@@ -330,7 +330,9 @@ types.addActorType = function(name) {
         }
 
         const parentFront = ctx.marshallPool();
-        const targetFront = parentFront.targetFront;
+        const targetFront = parentFront.isTargetFront
+          ? parentFront
+          : parentFront.targetFront;
 
         
         
