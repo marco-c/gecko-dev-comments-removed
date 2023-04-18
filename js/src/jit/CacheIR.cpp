@@ -5331,6 +5331,11 @@ void InlinableNativeIRGenerator::emitNativeCalleeGuard() {
   
   MOZ_ASSERT(callee_->isNativeWithoutJitEntry());
 
+  
+  if (flags_.getArgFormat() == CallFlags::FunCall) {
+    return;
+  }
+
   ValOperandId calleeValId =
       writer.loadArgumentFixedSlot(ArgumentKind::Callee, argc_, flags_);
   ObjOperandId calleeObjId = writer.guardToObject(calleeValId);
@@ -8353,7 +8358,7 @@ AttachDecision CallIRGenerator::tryAttachFunCall(HandleFunction callee) {
   if (!thisval_.isObject() || !thisval_.toObject().is<JSFunction>()) {
     return AttachDecision::NoAction;
   }
-  auto* target = &thisval_.toObject().as<JSFunction>();
+  RootedFunction target(cx_, &thisval_.toObject().as<JSFunction>());
 
   bool isScripted = target->hasJitEntry();
   MOZ_ASSERT_IF(!isScripted, target->isNativeWithoutJitEntry());
@@ -8386,6 +8391,48 @@ AttachDecision CallIRGenerator::tryAttachFunCall(HandleFunction callee) {
     if (isScripted) {
       writer.callScriptedFunction(thisObjId, argcId, targetFlags);
     } else {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (argc_ > 0) {
+        HandleValue newTarget = NullHandleValue;
+        HandleValue thisValue = args_[0];
+        HandleValueArray args =
+            HandleValueArray::subarray(args_, 1, args_.length() - 1);
+
+        
+        InlinableNativeIRGenerator nativeGen(*this, target, newTarget,
+                                             thisValue, args, targetFlags);
+        TRY_ATTACH(nativeGen.tryAttachStub());
+      }
+
       writer.callNativeFunction(thisObjId, argcId, op_, target, targetFlags);
     }
   } else {
@@ -9211,7 +9258,8 @@ AttachDecision CallIRGenerator::tryAttachInlinableNative(HandleFunction callee,
     return AttachDecision::NoAction;
   }
 
-  InlinableNativeIRGenerator nativeGen(*this, callee, flags);
+  InlinableNativeIRGenerator nativeGen(*this, callee, newTarget_, thisval_,
+                                       args_, flags);
   return nativeGen.tryAttachStub();
 }
 
