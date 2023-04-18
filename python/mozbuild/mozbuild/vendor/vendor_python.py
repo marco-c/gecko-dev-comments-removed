@@ -11,7 +11,6 @@ import sys
 from pathlib import Path
 
 import mozfile
-import mozpack.path as mozpath
 from mozbuild.base import MozbuildObject
 from mozfile import TemporaryDirectory
 from mozpack.files import FileFinder
@@ -19,46 +18,38 @@ from mozpack.files import FileFinder
 
 class VendorPython(MozbuildObject):
     def vendor(self, keep_extra_files=False):
+        from mach.python_lockfile import PoetryHandle
+
         self.populate_logger()
         self.log_manager.enable_unstructured()
 
-        vendor_dir = mozpath.join(self.topsrcdir, os.path.join("third_party", "python"))
-        spec = os.path.join(vendor_dir, "requirements.in")
-        requirements = os.path.join(vendor_dir, "requirements.txt")
+        vendor_dir = Path(self.topsrcdir) / "third_party" / "python"
+        requirements_in = vendor_dir / "requirements.in"
+        poetry_lockfile = vendor_dir / "poetry.lock"
+        _sort_requirements_in(requirements_in)
 
-        with TemporaryDirectory() as spec_dir:
-            tmpspec = "requirements-mach-vendor-python.in"
-            tmpspec_absolute = os.path.join(spec_dir, tmpspec)
-            shutil.copyfile(spec, tmpspec_absolute)
-            self._update_packages(tmpspec_absolute)
-
-            tmp_requirements_absolute = os.path.join(spec_dir, "requirements.txt")
-            
-            
-            shutil.copy(requirements, tmp_requirements_absolute)
+        with TemporaryDirectory() as work_dir:
+            work_dir = Path(work_dir)
+            poetry = PoetryHandle(work_dir)
+            poetry.add_requirements_in_file(requirements_in)
+            poetry.reuse_existing_lockfile(poetry_lockfile)
+            lockfiles = poetry.generate_lockfiles(do_update=False)
 
             
             
-            subprocess.check_output(
-                [
-                    sys.executable,
-                    "-m",
-                    "piptools",
-                    "compile",
-                    tmpspec,
-                    "--no-header",
-                    "--no-emit-index-url",
-                    "--output-file",
-                    tmp_requirements_absolute,
-                    "--generate-hashes",
-                    "--allow-unsafe",
-                ],
-                
-                
-                cwd=spec_dir,
+            
+            
+            
+            
+            
+            pip_lockfile_without_markers = work_dir / "requirements.no-markers.txt"
+            shutil.copy(str(lockfiles.pip_lockfile), str(pip_lockfile_without_markers))
+            remove_environment_markers_from_requirements_txt(
+                pip_lockfile_without_markers
             )
 
             with TemporaryDirectory() as tmp:
+                
                 
                 subprocess.check_call(
                     [
@@ -67,7 +58,7 @@ class VendorPython(MozbuildObject):
                         "pip",
                         "download",
                         "-r",
-                        tmp_requirements_absolute,
+                        str(pip_lockfile_without_markers),
                         "--no-deps",
                         "--dest",
                         tmp,
@@ -80,28 +71,9 @@ class VendorPython(MozbuildObject):
                 _purge_vendor_dir(vendor_dir)
                 self._extract(tmp, vendor_dir, keep_extra_files)
 
-            shutil.copyfile(tmpspec_absolute, spec)
-            shutil.copy(tmp_requirements_absolute, requirements)
+            shutil.copy(lockfiles.pip_lockfile, str(vendor_dir / "requirements.txt"))
+            shutil.copy(lockfiles.poetry_lockfile, str(poetry_lockfile))
             self.repository.add_remove_files(vendor_dir)
-
-    def _update_packages(self, spec):
-        requirements = {}
-        with open(spec, "r") as f:
-            comments = []
-            for line in f.readlines():
-                line = line.strip()
-                if not line or line.startswith("#"):
-                    comments.append(line)
-                    continue
-                name, version = line.split("==")
-                requirements[name] = version, comments
-                comments = []
-
-        with open(spec, "w") as f:
-            for name, (version, comments) in sorted(requirements.items()):
-                if comments:
-                    f.write("{}\n".format("\n".join(comments)))
-                f.write("{}=={}\n".format(name, version))
 
     def _extract(self, src, dest, keep_extra_files=False):
         """extract source distribution into vendor directory"""
@@ -147,6 +119,43 @@ class VendorPython(MozbuildObject):
                 _denormalize_symlinks(package_dir)
 
 
+def _sort_requirements_in(requirements_in: Path):
+    requirements = {}
+    with open(requirements_in) as f:
+        comments = []
+        for line in f.readlines():
+            line = line.strip()
+            if not line or line.startswith("#"):
+                comments.append(line)
+                continue
+            name, version = line.split("==")
+            requirements[name] = version, comments
+            comments = []
+
+    with open(requirements_in, "w") as f:
+        for name, (version, comments) in sorted(requirements.items()):
+            if comments:
+                f.write("{}\n".format("\n".join(comments)))
+            f.write("{}=={}\n".format(name, version))
+
+
+def remove_environment_markers_from_requirements_txt(requirements_txt: Path):
+    with open(requirements_txt) as f:
+        lines = f.readlines()
+    markerless_lines = []
+    for line in lines:
+        if not line.startswith(" ") and not line.startswith("#"):
+            
+            
+            
+            
+            markerless_lines.append(line.split(";")[0])
+        else:
+            markerless_lines.append(line)
+    with open(requirements_txt, "w") as f:
+        f.writelines(markerless_lines)
+
+
 def _purge_vendor_dir(vendor_dir):
     excluded_packages = [
         
@@ -159,6 +168,7 @@ def _purge_vendor_dir(vendor_dir):
         "virtualenv",
         
         "moz.build",
+        "requirements.in",
     ]
 
     for child in Path(vendor_dir).iterdir():
