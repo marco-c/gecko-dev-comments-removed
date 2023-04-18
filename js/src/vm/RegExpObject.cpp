@@ -153,6 +153,18 @@ bool RegExpObject::isOriginalFlagGetter(JSNative native, RegExpFlags* mask) {
   return false;
 }
 
+static inline bool IsMarkingTrace(JSTracer* trc) {
+  
+  
+  
+  
+  
+  
+  
+
+  return JS::RuntimeHeapIsCollecting() && trc->isMarkingTracer();
+}
+
 static const ClassSpec RegExpObjectClassSpec = {
     GenericCreateConstructor<js::regexp_construct, 2, gc::AllocKind::FUNCTION>,
     GenericCreatePrototype<RegExpObject>,
@@ -544,7 +556,7 @@ RegExpShared::RegExpShared(JSAtom* source, RegExpFlags flags)
 
 void RegExpShared::traceChildren(JSTracer* trc) {
   
-  if (trc->isMarkingTracer() && trc->runtime()->gc.isShrinkingGC()) {
+  if (IsMarkingTrace(trc) && trc->runtime()->gc.isShrinkingGC()) {
     discardJitCode();
   }
 

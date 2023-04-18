@@ -9,7 +9,6 @@
 #include "mozilla/UniquePtr.h"
 
 #include "gc/Cell.h"
-#include "gc/GCInternals.h"
 #include "gc/GCRuntime.h"
 #include "js/ArrayBuffer.h"  
 #include "js/experimental/TypedData.h"
@@ -254,8 +253,10 @@ bool TestHeapPostBarrierConstruction() {
 
     
     
-    gc::AutoSetThreadIsPerformingGC performingGC;
-    gc::AutoSetThreadIsFinalizing threadIsFinalizing;
+    mozilla::Maybe<gc::AutoSetThreadIsFinalizing> threadIsFinalizing;
+    if constexpr (std::is_same_v<std::remove_const_t<W>, GCPtr<T>>) {
+      threadIsFinalizing.emplace();
+    }
 
     js_delete(testStruct);
   }
@@ -298,7 +299,6 @@ bool TestHeapPostBarrierUpdate() {
 
     
     
-    gc::AutoSetThreadIsPerformingGC performingGC;
     gc::AutoSetThreadIsFinalizing threadIsFinalizing;
 
     js_delete(testStruct);
@@ -782,7 +782,6 @@ bool TestGCPtrCopyConstruction(JSObject* obj) {
 
   {
     
-    gc::AutoSetThreadIsPerformingGC performingGC;
     gc::AutoSetThreadIsFinalizing threadIsFinalizing;
 
     GCPtrObject wrapper1(obj);
@@ -804,7 +803,6 @@ bool TestGCPtrAssignment(JSObject* obj1, JSObject* obj2) {
 
   {
     
-    gc::AutoSetThreadIsPerformingGC performingGC;
     gc::AutoSetThreadIsFinalizing threadIsFinalizing;
 
     GCPtrObject wrapper1(obj1);

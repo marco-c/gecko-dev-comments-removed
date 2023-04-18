@@ -14,7 +14,6 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/TimeStamp.h"
 
-#include "gc/FreeOp.h"
 #include "gc/GC.h"
 #include "vm/GeckoProfiler.h"
 #include "vm/HelperThreads.h"
@@ -232,74 +231,23 @@ struct MOZ_RAII AutoStopVerifyingBarriers {
 };
 #endif 
 
-class MOZ_RAII AutoPoisonFreedJitCode {
-  JSFreeOp* const fop;
+class MOZ_RAII AutoDisableCompartmentCheckTracer {
+#ifdef DEBUG
+  JSContext* cx_;
+  bool prev_;
 
  public:
-  explicit AutoPoisonFreedJitCode(JSFreeOp* fop) : fop(fop) {}
-  ~AutoPoisonFreedJitCode() { fop->poisonJitCode(); }
-};
-
-
-class MOZ_RAII AutoSetThreadIsPerformingGC {
-  JSFreeOp* fop;
-  bool prev;
-
- public:
-  AutoSetThreadIsPerformingGC()
-      : fop(TlsFreeOp.get()), prev(fop->isCollecting_) {
-    fop->isCollecting_ = true;
+  AutoDisableCompartmentCheckTracer()
+      : cx_(TlsContext.get()), prev_(cx_->disableCompartmentCheckTracer) {
+    cx_->disableCompartmentCheckTracer = true;
   }
-
-  ~AutoSetThreadIsPerformingGC() { fop->isCollecting_ = prev; }
-};
-
-class MOZ_RAII AutoSetThreadGCUse {
- protected:
-#ifndef DEBUG
-  explicit AutoSetThreadGCUse(GCUse use, JS::Zone* sweepZone = nullptr) {}
+  ~AutoDisableCompartmentCheckTracer() {
+    cx_->disableCompartmentCheckTracer = prev_;
+  }
 #else
-  explicit AutoSetThreadGCUse(GCUse use, JS::Zone* sweepZone = nullptr)
-      : fop(TlsFreeOp.get()),
-        prevUse(fop->gcUse_),
-        prevZone(fop->gcSweepZone_) {
-    MOZ_ASSERT(fop->isCollecting());
-    MOZ_ASSERT_IF(sweepZone, use == GCUse::Sweeping);
-    fop->gcUse_ = use;
-    fop->gcSweepZone_ = sweepZone;
-  }
-
-  ~AutoSetThreadGCUse() {
-    fop->gcUse_ = prevUse;
-    fop->gcSweepZone_ = prevZone;
-    MOZ_ASSERT_IF(fop->gcUse() == GCUse::None, !fop->gcSweepZone());
-  }
-
- private:
-  JSFreeOp* fop;
-  GCUse prevUse;
-  JS::Zone* prevZone;
+ public:
+  AutoDisableCompartmentCheckTracer(){};
 #endif
-};
-
-
-
-struct MOZ_RAII AutoSetThreadIsMarking : public AutoSetThreadGCUse {
-  explicit AutoSetThreadIsMarking() : AutoSetThreadGCUse(GCUse::Marking) {}
-};
-
-
-
-struct MOZ_RAII AutoSetThreadIsSweeping : public AutoSetThreadGCUse {
-  explicit AutoSetThreadIsSweeping(JS::Zone* zone = nullptr)
-      : AutoSetThreadGCUse(GCUse::Sweeping, zone) {}
-};
-
-
-
-struct MOZ_RAII AutoSetThreadIsFinalizing : public AutoSetThreadGCUse {
-  explicit AutoSetThreadIsFinalizing()
-      : AutoSetThreadGCUse(GCUse::Finalizing) {}
 };
 
 #ifdef JSGC_HASH_TABLE_CHECKS

@@ -139,9 +139,9 @@ void ZoneAllocPolicy::decMemory(size_t nbytes) {
   
   
   
-  JSFreeOp* fop = TlsFreeOp.get();
+  JSContext* cx = TlsContext.get();
   zone_->decNonGCMemory(this, nbytes, MemoryUse::ZoneAllocPolicy,
-                        fop->isCollecting());
+                        cx->defaultFreeOp()->isCollecting());
 }
 
 JS::Zone::Zone(JSRuntime* rt, Kind kind)
