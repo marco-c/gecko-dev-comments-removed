@@ -2999,16 +2999,11 @@ nsLocalFile::Equals(nsIFile* aInFile, bool* aResult) {
     return NS_ERROR_INVALID_ARG;
   }
 
-  EnsureShortPath();
-
   nsCOMPtr<nsILocalFileWin> lf(do_QueryInterface(aInFile));
   if (!lf) {
     *aResult = false;
     return NS_OK;
   }
-
-  nsAutoString inFilePath;
-  lf->GetCanonicalPath(inFilePath);
 
   bool inUseDOSDevicePathSyntax;
   lf->GetUseDOSDevicePathSyntax(&inUseDOSDevicePathSyntax);
@@ -3016,26 +3011,47 @@ nsLocalFile::Equals(nsIFile* aInFile, bool* aResult) {
   
   
   
-  
-  nsAutoString shortWorkingPath;
-  if (inUseDOSDevicePathSyntax == mUseDOSDevicePathSyntax) {
-    shortWorkingPath = mShortWorkingPath;
-  } else if (inUseDOSDevicePathSyntax &&
-             StringBeginsWith(inFilePath, kDevicePathSpecifier)) {
-    MOZ_ASSERT(!StringBeginsWith(mShortWorkingPath, kDevicePathSpecifier));
-
-    shortWorkingPath = mShortWorkingPath;
-    inFilePath = Substring(inFilePath, kDevicePathSpecifier.Length());
-  } else if (mUseDOSDevicePathSyntax &&
-             StringBeginsWith(mShortWorkingPath, kDevicePathSpecifier)) {
-    MOZ_ASSERT(!StringBeginsWith(inFilePath, kDevicePathSpecifier));
-
-    shortWorkingPath =
-        Substring(mShortWorkingPath, kDevicePathSpecifier.Length());
+  bool removePathPrefix, removeInPathPrefix;
+  if (inUseDOSDevicePathSyntax != mUseDOSDevicePathSyntax) {
+    removeInPathPrefix = inUseDOSDevicePathSyntax;
+    removePathPrefix = mUseDOSDevicePathSyntax;
+  } else {
+    removePathPrefix = removeInPathPrefix = false;
   }
 
-  
-  *aResult = _wcsicmp(shortWorkingPath.get(), inFilePath.get()) == 0;
+  nsAutoString inFilePath, workingPath;
+  aInFile->GetPath(inFilePath);
+  workingPath = mWorkingPath;
+
+  constexpr static auto equalPath =
+      [](nsAutoString& workingPath, nsAutoString& inFilePath,
+         bool removePathPrefix, bool removeInPathPrefix) {
+        if (removeInPathPrefix &&
+            StringBeginsWith(inFilePath, kDevicePathSpecifier)) {
+          MOZ_ASSERT(!StringBeginsWith(workingPath, kDevicePathSpecifier));
+
+          inFilePath = Substring(inFilePath, kDevicePathSpecifier.Length());
+        } else if (removePathPrefix &&
+                   StringBeginsWith(workingPath, kDevicePathSpecifier)) {
+          MOZ_ASSERT(!StringBeginsWith(inFilePath, kDevicePathSpecifier));
+
+          workingPath = Substring(workingPath, kDevicePathSpecifier.Length());
+        }
+
+        return _wcsicmp(workingPath.get(), inFilePath.get()) == 0;
+      };
+
+  if (equalPath(workingPath, inFilePath, removePathPrefix,
+                removeInPathPrefix)) {
+    *aResult = true;
+    return NS_OK;
+  }
+
+  EnsureShortPath();
+  lf->GetCanonicalPath(inFilePath);
+  workingPath = mShortWorkingPath;
+  *aResult =
+      equalPath(workingPath, inFilePath, removePathPrefix, removeInPathPrefix);
 
   return NS_OK;
 }
