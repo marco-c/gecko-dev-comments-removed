@@ -190,6 +190,10 @@ function isDeadOrRemote(obj) {
   return Cu.isDeadWrapper(obj) || Cu.isRemoteProxy(obj);
 }
 
+function isInBFCache(window) {
+  return !!window?.windowGlobalChild?.windowContext?.isInBFCache;
+}
+
 
 
 
@@ -463,6 +467,7 @@ class InnerWindowReference {
     if (
       !this.needWindowIDCheck ||
       (!isDeadOrRemote(this.contentWindow) &&
+        !isInBFCache(this.contentWindow) &&
         getInnerWindowID(this.contentWindow) === this.innerWindowID)
     ) {
       return this.contentWindow;
