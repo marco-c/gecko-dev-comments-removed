@@ -318,41 +318,52 @@ class nsAStreamCopier : public nsIInputStreamCallback,
           
           mAsyncSource->AsyncWait(this, 0, 0, nullptr);
 
-          if (mAsyncSink)
+          if (mAsyncSink) {
             mAsyncSink->AsyncWait(this, nsIAsyncOutputStream::WAIT_CLOSURE_ONLY,
                                   0, nullptr);
+          }
           break;
-        } else if (sinkCondition == NS_BASE_STREAM_WOULD_BLOCK && mAsyncSink) {
+        }
+        if (sinkCondition == NS_BASE_STREAM_WOULD_BLOCK && mAsyncSink) {
           
           
           
           mAsyncSink->AsyncWait(this, 0, 0, nullptr);
 
-          if (mAsyncSource)
+          if (mAsyncSource) {
             mAsyncSource->AsyncWait(
                 this, nsIAsyncInputStream::WAIT_CLOSURE_ONLY, 0, nullptr);
+          }
           break;
         }
       }
       if (copyFailed || canceled) {
+        if (mAsyncSource) {
+          
+          mAsyncSource->AsyncWait(nullptr, 0, 0, nullptr);
+        }
         if (mCloseSource) {
           
-          if (mAsyncSource)
+          if (mAsyncSource) {
             mAsyncSource->CloseWithStatus(canceled ? cancelStatus
                                                    : sinkCondition);
-          else {
+          } else {
             mSource->Close();
           }
         }
         mAsyncSource = nullptr;
         mSource = nullptr;
 
+        if (mAsyncSink) {
+          
+          mAsyncSink->AsyncWait(nullptr, 0, 0, nullptr);
+        }
         if (mCloseSink) {
           
-          if (mAsyncSink)
+          if (mAsyncSink) {
             mAsyncSink->CloseWithStatus(canceled ? cancelStatus
                                                  : sourceCondition);
-          else {
+          } else {
             
             
             
