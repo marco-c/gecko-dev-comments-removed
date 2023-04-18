@@ -1230,3 +1230,16 @@ async function promiseApzFlushedRepaintsInPopup(popup) {
     await promiseAllPaintsDone();
   });
 }
+
+
+
+async function cancelScrollAnimation(aElement, aWindow = window) {
+  
+  
+  
+  const originalStyle = aElement.style.display;
+  aElement.style.display = "none";
+  await aWindow.promiseApzFlushedRepaints();
+  aElement.style.display = originalStyle;
+  await aWindow.promiseApzFlushedRepaints();
+}
