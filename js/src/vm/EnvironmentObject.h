@@ -815,7 +815,7 @@ class MOZ_RAII EnvironmentIter {
 
   
   
-  EnvironmentIter(JSContext* cx, AbstractFramePtr frame, jsbytecode* pc);
+  EnvironmentIter(JSContext* cx, AbstractFramePtr frame, const jsbytecode* pc);
 
   
   
@@ -1141,7 +1141,7 @@ class DebugEnvironments {
   static void onPopVar(JSContext* cx, const EnvironmentIter& ei);
   static void onPopLexical(JSContext* cx, const EnvironmentIter& ei);
   static void onPopLexical(JSContext* cx, AbstractFramePtr frame,
-                           jsbytecode* pc);
+                           const jsbytecode* pc);
   static void onPopWith(AbstractFramePtr frame);
   static void onPopModule(JSContext* cx, const EnvironmentIter& ei);
   static void onRealmUnsetIsDebuggee(Realm* realm);
@@ -1302,7 +1302,7 @@ ModuleObject* GetModuleObjectForScript(JSScript* script);
 ModuleEnvironmentObject* GetModuleEnvironmentForScript(JSScript* script);
 
 [[nodiscard]] bool GetThisValueForDebuggerFrameMaybeOptimizedOut(
-    JSContext* cx, AbstractFramePtr frame, jsbytecode* pc,
+    JSContext* cx, AbstractFramePtr frame, const jsbytecode* pc,
     MutableHandleValue res);
 [[nodiscard]] bool GetThisValueForDebuggerSuspendedGeneratorMaybeOptimizedOut(
     JSContext* cx, AbstractGeneratorObject& genObj, JSScript* script,
@@ -1335,7 +1335,7 @@ ModuleEnvironmentObject* GetModuleEnvironmentForScript(JSScript* script);
 
 [[nodiscard]] bool GetFrameEnvironmentAndScope(JSContext* cx,
                                                AbstractFramePtr frame,
-                                               jsbytecode* pc,
+                                               const jsbytecode* pc,
                                                MutableHandleObject env,
                                                MutableHandleScope scope);
 
