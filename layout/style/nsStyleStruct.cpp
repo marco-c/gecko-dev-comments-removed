@@ -2390,8 +2390,6 @@ nsChangeHint nsStyleDisplay::CalcDifference(
     const nsStyleDisplay& aNewData, const nsStylePosition& aOldPosition) const {
   if (mDisplay != aNewData.mDisplay || mContain != aNewData.mContain ||
       (mFloat == StyleFloat::None) != (aNewData.mFloat == StyleFloat::None) ||
-      mScrollBehavior != aNewData.mScrollBehavior ||
-      mScrollSnapType != aNewData.mScrollSnapType ||
       mTopLayer != aNewData.mTopLayer || mResize != aNewData.mResize) {
     return nsChangeHint_ReconstructFrame;
   }
@@ -2447,6 +2445,13 @@ nsChangeHint nsStyleDisplay::CalcDifference(
     
     hint |= nsChangeHint_NeutralChange;
   }
+  if (mScrollSnapType != aNewData.mScrollSnapType) {
+    
+    hint |= nsChangeHint_RepaintFrame;
+  }
+  if (mScrollBehavior != aNewData.mScrollBehavior) {
+    hint |= nsChangeHint_NeutralChange;
+  }
 
   if (mOverflowX != aNewData.mOverflowX || mOverflowY != aNewData.mOverflowY) {
     const bool isScrollable = IsScrollableOverflow();
@@ -2491,22 +2496,6 @@ nsChangeHint nsStyleDisplay::CalcDifference(
       hint |= nsChangeHint_NeutralChange;
     }
   }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
   if (mFloat != aNewData.mFloat) {
     
