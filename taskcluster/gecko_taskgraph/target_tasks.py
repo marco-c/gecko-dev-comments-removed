@@ -690,25 +690,6 @@ def target_tasks_pine(full_task_graph, parameters, graph_config):
     return [l for l, t in full_task_graph.tasks.items() if filter(t)]
 
 
-@_target_task("cedar_tasks")
-def target_tasks_cedar(full_task_graph, parameters, graph_config):
-    def filter(task):
-        platform = task.attributes.get("build_platform")
-        
-        if str(platform).startswith("android"):
-            return False
-        
-        if platform == "linux64-asan":
-            return False
-        
-        if standard_filter(task, parameters) or filter_out_shipping_phase(
-            task, parameters
-        ):
-            return True
-
-    return [l for l, t in full_task_graph.tasks.items() if filter(t)]
-
-
 @_target_task("kaios_tasks")
 def target_tasks_kaios(full_task_graph, parameters, graph_config):
     """The set of tasks to run for kaios integration"""
