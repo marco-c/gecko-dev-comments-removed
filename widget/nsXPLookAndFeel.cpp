@@ -1185,19 +1185,6 @@ ColorScheme LookAndFeel::ColorSchemeForStyle(
     return aDoc.PreferredColorScheme();
   }
   
-  
-  
-  
-  
-  
-  
-  
-#ifdef MOZ_WIDGET_GTK
-  if (StaticPrefs::widget_content_allow_gtk_dark_theme()) {
-    return SystemColorScheme();
-  }
-#endif
-  
   return ColorScheme::Light;
 }
 
