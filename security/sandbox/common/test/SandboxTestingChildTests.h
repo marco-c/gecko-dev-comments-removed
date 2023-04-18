@@ -22,6 +22,7 @@
 #    include <sched.h>
 #    include <sys/syscall.h>
 #    include <sys/un.h>
+#    include "mozilla/ProcInfo_linux.h"
 #  endif  
 #  include <sys/socket.h>
 #  include <sys/stat.h>
@@ -82,6 +83,26 @@ void RunTestsContent(SandboxTestingChild* child) {
   struct timespec res = {0, 0};
   child->ErrnoTest("clock_getres"_ns, true,
                    [&] { return clock_getres(CLOCK_REALTIME, &res); });
+
+  
+  struct timespec tproc = {0, 0};
+  clockid_t same_process = MAKE_PROCESS_CPUCLOCK(getpid(), CPUCLOCK_SCHED);
+  child->ErrnoTest("clock_gettime_same_process"_ns, true,
+                   [&] { return clock_gettime(same_process, &tproc); });
+
+  
+  
+  struct timespec tprocd = {0, 0};
+  clockid_t diff_process = MAKE_PROCESS_CPUCLOCK(1, CPUCLOCK_SCHED);
+  child->ErrnoValueTest("clock_gettime_diff_process"_ns, ENOSYS,
+                        [&] { return clock_gettime(diff_process, &tprocd); });
+
+  
+  struct timespec tthread = {0, 0};
+  clockid_t thread =
+      MAKE_THREAD_CPUCLOCK((pid_t)syscall(__NR_gettid), CPUCLOCK_SCHED);
+  child->ErrnoTest("clock_gettime_thread"_ns, true,
+                   [&] { return clock_gettime(thread, &tthread); });
 
   
   
@@ -245,7 +266,7 @@ void RunTestsRDD(SandboxTestingChild* child) {
     return rv;
   });
 
-  struct rusage res;
+  struct rusage res = {};
   child->ErrnoTest("getrusage"_ns, true, [&] {
     int rv = getrusage(RUSAGE_SELF, &res);
     return rv;

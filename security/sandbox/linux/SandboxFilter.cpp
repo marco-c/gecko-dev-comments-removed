@@ -35,6 +35,7 @@
 #include "SandboxLogging.h"
 #include "SandboxOpenedFiles.h"
 #include "mozilla/PodOperations.h"
+#include "mozilla/ProcInfo_linux.h"
 #include "mozilla/TemplateLib.h"
 #include "mozilla/UniquePtr.h"
 #include "prenv.h"
@@ -746,6 +747,8 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
         
         
         Arg<clockid_t> clk_id(0);
+        clockid_t this_process =
+            MAKE_PROCESS_CPUCLOCK(getpid(), CPUCLOCK_SCHED);
         return If(clk_id == CLOCK_MONOTONIC, Allow())
 #ifdef CLOCK_MONOTONIC_COARSE
             
@@ -759,8 +762,10 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
             .ElseIf(clk_id == CLOCK_THREAD_CPUTIME_ID, Allow())
 #ifdef MOZ_GECKO_PROFILER
             
+            .ElseIf(clk_id == this_process, Allow())
             
-            .ElseIf((clk_id & 7u) == (4u | 2u), Allow())
+            .ElseIf((clk_id & 7u) == (CPUCLOCK_PERTHREAD_MASK | CPUCLOCK_SCHED),
+                    Allow())
 #endif
 #ifdef CLOCK_BOOTTIME
             .ElseIf(clk_id == CLOCK_BOOTTIME, Allow())
