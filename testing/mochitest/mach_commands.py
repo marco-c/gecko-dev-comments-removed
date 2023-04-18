@@ -189,7 +189,7 @@ class MochitestRunner(MozbuildObject):
         options = Namespace(**kwargs)
 
         
-        options["disable_fission"] = True
+        setattr(options, 'disable_fission', True)
 
         return runjunit.run_test_harness(parser, options)
 
