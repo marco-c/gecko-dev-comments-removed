@@ -48,6 +48,12 @@ class ServiceWorkerRegistrationDescriptor;
 }  
 }  
 
+namespace JS {
+namespace loader {
+class ModuleLoaderBase;
+}  
+}  
+
 
 
 
@@ -241,6 +247,14 @@ class nsIGlobalObject : public nsISupports,
 
 
   virtual uint32_t GetPrincipalHashValue() const { return 0; }
+
+  
+
+
+
+  virtual JS::loader::ModuleLoaderBase* GetModuleLoader(JSContext* aCx) {
+    return nullptr;
+  }
 
  protected:
   virtual ~nsIGlobalObject();
