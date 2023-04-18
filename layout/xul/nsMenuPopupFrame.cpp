@@ -435,7 +435,8 @@ void nsMenuPopupFrame::SetPopupState(nsPopupState aState) {
   }
 }
 
-NS_IMETHODIMP nsXULPopupShownEvent::Run() {
+
+MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP nsXULPopupShownEvent::Run() {
   nsMenuPopupFrame* popup = do_QueryFrame(mPopup->GetPrimaryFrame());
   
   if (popup && popup->IsOpen()) {
