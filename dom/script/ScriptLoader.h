@@ -625,8 +625,7 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   
   
   nsresult FillCompileOptionsForRequest(
-      JSContext* aCx, ScriptLoadRequest* aRequest,
-      JS::Handle<JSObject*> aScopeChain, JS::CompileOptions* aOptions,
+      JSContext* aCx, ScriptLoadRequest* aRequest, JS::CompileOptions* aOptions,
       JS::MutableHandle<JSScript*> aIntroductionScript) override;
 
   uint32_t NumberOfProcessors();

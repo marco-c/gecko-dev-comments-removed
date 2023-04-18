@@ -67,8 +67,7 @@ class ScriptLoaderInterface : public nsISupports {
   
   
   virtual nsresult FillCompileOptionsForRequest(
-      JSContext* cx, ScriptLoadRequest* aRequest,
-      JS::Handle<JSObject*> aScopeChain, JS::CompileOptions* aOptions,
+      JSContext* cx, ScriptLoadRequest* aRequest, JS::CompileOptions* aOptions,
       JS::MutableHandle<JSScript*> aIntroductionScript) = 0;
 
   virtual void MaybePrepareModuleForBytecodeEncodingBeforeExecute(
