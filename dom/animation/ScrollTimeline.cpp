@@ -56,8 +56,9 @@ ScrollTimeline::ScrollTimeline(Document* aDocument, const Scroller& aScroller)
   
   
   
-  sTiming = TimingParams(SCROLL_TIMELINE_DURATION_MILLISEC, 0.0, 1.0,
-                         PlaybackDirection::Normal, FillMode::Both);
+  sTiming = TimingParams(SCROLL_TIMELINE_DURATION_MILLISEC, 0.0,
+                         std::numeric_limits<float>::infinity(),
+                         PlaybackDirection::Alternate, FillMode::Both);
 
   RegisterWithScrollSource();
 }
