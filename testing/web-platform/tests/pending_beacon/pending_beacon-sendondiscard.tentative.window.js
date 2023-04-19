@@ -5,46 +5,93 @@
 
 'use strict';
 
-promise_test(async t => {
+parallelPromiseTest(async t => {
   const uuid = token();
+  const url = `/pending_beacon/resources/set_beacon.py?uuid=${uuid}`;
+  const numPerMethod = 20;
+  const total = numPerMethod * 2;
 
   
-  const iframe = document.createElement('iframe');
-  iframe.src =
-      `/pending_beacon/resources/iframe_create_beacon_no_send.html?uuid=${
-          uuid}`;
-
-  const iframe_load_promise =
-      new Promise(resolve => iframe.onload = () => resolve());
-  document.body.appendChild(iframe);
-  await iframe_load_promise;
+  const iframe = await loadScriptAsIframe(`
+    const url = "${url}";
+    for (let i = 0; i < ${numPerMethod}; i++) {
+      let get = new PendingGetBeacon(url);
+      let post = new PendingPostBeacon(url);
+    }
+  `);
 
   
   document.body.removeChild(iframe);
 
   
-  await expectBeacon(uuid, {count: 2});
-}, 'Verify that a discarded document sends its beacons.');
+  await expectBeacon(uuid, {count: total});
+}, 'A discarded document sends all its beacons with default config.');
 
-promise_test(async t => {
+parallelPromiseTest(async t => {
   const uuid = token();
+  const url = `/pending_beacon/resources/set_beacon.py?uuid=${uuid}`;
 
   
   
-  const iframe = document.createElement('iframe');
-  iframe.src =
-      `/pending_beacon/resources/iframe_create_beacon_then_send.html?uuid=${
-          uuid}`;
-
-  const iframe_load_promise =
-      new Promise(resolve => iframe.onload = () => resolve());
-  document.body.appendChild(iframe);
-  await iframe_load_promise;
-
-  
-  await expectBeacon(uuid, {count: 1});
+  const iframe = await loadScriptAsIframe(`
+    const url = "${url}";
+    let beacon = new PendingGetBeacon(url);
+    beacon.sendNow();
+  `);
 
   
   document.body.removeChild(iframe);
+
+  
   await expectBeacon(uuid, {count: 1});
-}, 'Verify that a discarded document does not send an already sent beacon.');
+}, 'A discarded document does not send an already sent beacon.');
+
+parallelPromiseTest(async t => {
+  const uuid = token();
+  const url = `/pending_beacon/resources/set_beacon.py?uuid=${uuid}`;
+  const numPerMethod = 20;
+  const total = numPerMethod * 2;
+
+  
+  
+  const iframe = await loadScriptAsIframe(`
+    const url = "${url}";
+    for (let i = 0; i < ${numPerMethod}; i++) {
+      let get = new PendingGetBeacon(url, {timeout: 100*i});
+      let post = new PendingPostBeacon(url, {timeout: 100*i});
+    }
+  `);
+
+  
+  document.body.removeChild(iframe);
+
+  
+  
+  await expectBeacon(uuid, {count: total});
+}, `A discarded document sends all its beacons of which timeouts are not
+    default.`);
+
+parallelPromiseTest(async t => {
+  const uuid = token();
+  const url = `/pending_beacon/resources/set_beacon.py?uuid=${uuid}`;
+  const numPerMethod = 20;
+  const total = numPerMethod * 2;
+
+  
+  
+  const iframe = await loadScriptAsIframe(`
+    const url = "${url}";
+    for (let i = 0; i < ${numPerMethod}; i++) {
+      let get = new PendingGetBeacon(url, {backgroundTimeout: 100*i});
+      let post = new PendingPostBeacon(url, {backgroundTimeout: 100*i});
+    }
+  `);
+
+  
+  document.body.removeChild(iframe);
+
+  
+  
+  await expectBeacon(uuid, {count: total});
+}, `A discarded document sends all its beacons of which backgroundTimeouts are
+    not default.`);
