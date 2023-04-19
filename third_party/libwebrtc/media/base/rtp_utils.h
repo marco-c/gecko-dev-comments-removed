@@ -62,9 +62,6 @@ bool SetRtpSsrc(void* data, size_t len, uint32_t value);
 
 bool SetRtpHeader(void* data, size_t len, const RtpHeader& header);
 
-bool IsRtpPacket(rtc::ArrayView<const char> packet);
-
-bool IsRtcpPacket(rtc::ArrayView<const char> packet);
 
 RtpPacketType InferRtpPacketType(rtc::ArrayView<const char> packet);
 
