@@ -366,8 +366,22 @@ class gfxFontEntry {
   
   
   
-  hb_face_t* GetHBFace();
-  void ForgetHBFace();
+  
+  
+  class MOZ_STACK_CLASS AutoHBFace {
+   public:
+    explicit AutoHBFace(hb_face_t* aFace) : mFace(aFace) {}
+    ~AutoHBFace() { hb_face_destroy(mFace); }
+
+    operator hb_face_t*() const { return mFace; }
+
+   private:
+    hb_face_t* mFace;
+  };
+
+  AutoHBFace GetHBFace() {
+    return AutoHBFace(hb_face_create_for_tables(HBGetTable, this, nullptr));
+  }
 
   
   rlbox_sandbox_gr* GetGrSandbox();
