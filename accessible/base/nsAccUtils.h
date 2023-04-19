@@ -91,6 +91,8 @@ class nsAccUtils {
 
 
 
+  static Accessible* GetSelectableContainer(const Accessible* aAccessible,
+                                            uint64_t aState);
   static LocalAccessible* GetSelectableContainer(LocalAccessible* aAccessible,
                                                  uint64_t aState);
 
