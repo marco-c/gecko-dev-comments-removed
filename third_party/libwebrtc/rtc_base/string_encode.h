@@ -80,7 +80,7 @@ size_t tokenize(absl::string_view source,
 
 
 bool tokenize_first(absl::string_view source,
-                    const char delimiter,
+                    char delimiter,
                     std::string* token,
                     std::string* rest);
 

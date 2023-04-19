@@ -67,7 +67,7 @@ class FullBandErleEstimator {
     
     
     
-    bool Update(const float Y2_sum, const float E2_sum);
+    bool Update(float Y2_sum, float E2_sum);
     
     void Reset();
     

@@ -32,7 +32,7 @@ class RtpRtcp;
 
 class RtpPayloadParams final {
  public:
-  RtpPayloadParams(const uint32_t ssrc,
+  RtpPayloadParams(uint32_t ssrc,
                    const RtpPayloadState* state,
                    const WebRtcKeyValueConfig& trials);
   RtpPayloadParams(const RtpPayloadParams& other);

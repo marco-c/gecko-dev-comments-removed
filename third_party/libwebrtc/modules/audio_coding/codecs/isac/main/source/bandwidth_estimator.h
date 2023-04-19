@@ -92,11 +92,11 @@ int32_t WebRtcIsac_InitBandwidthEstimator(
 
 
 int16_t WebRtcIsac_UpdateBandwidthEstimator(BwEstimatorstr* bwest_str,
-                                            const uint16_t rtp_number,
-                                            const int32_t frame_length,
-                                            const uint32_t send_ts,
-                                            const uint32_t arr_ts,
-                                            const size_t pksize);
+                                            uint16_t rtp_number,
+                                            int32_t frame_length,
+                                            uint32_t send_ts,
+                                            uint32_t arr_ts,
+                                            size_t pksize);
 
 
 
@@ -131,10 +131,10 @@ int32_t WebRtcIsac_GetUplinkMaxDelay(const BwEstimatorstr* bwest_str);
 
 int WebRtcIsac_GetMinBytes(
     RateModel* State,
-    int StreamSize,            
-    const int FrameLen,        
-    const double BottleNeck,   
-    const double DelayBuildUp, 
+    int StreamSize,      
+    int FrameLen,        
+    double BottleNeck,   
+    double DelayBuildUp, 
     enum ISACBandwidth bandwidth
     );
 
@@ -143,9 +143,9 @@ int WebRtcIsac_GetMinBytes(
 
 void WebRtcIsac_UpdateRateModel(
     RateModel* State,
-    int StreamSize,           
-    const int FrameSamples,   
-    const double BottleNeck); 
+    int StreamSize,     
+    int FrameSamples,   
+    double BottleNeck); 
 
 void WebRtcIsac_InitRateModel(RateModel* State);
 

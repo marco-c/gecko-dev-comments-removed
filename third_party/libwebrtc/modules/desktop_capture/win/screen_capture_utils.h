@@ -39,24 +39,23 @@ bool GetScreenList(DesktopCapturer::SourceList* screens,
 
 
 
-bool GetHmonitorFromDeviceIndex(const DesktopCapturer::SourceId device_index,
+bool GetHmonitorFromDeviceIndex(DesktopCapturer::SourceId device_index,
                                 HMONITOR* hmonitor);
 
 
 
 
-bool IsMonitorValid(const HMONITOR monitor);
+bool IsMonitorValid(HMONITOR monitor);
 
 
 
-DesktopRect GetMonitorRect(const HMONITOR monitor);
+DesktopRect GetMonitorRect(HMONITOR monitor);
 
 
 
 
 
-bool IsScreenValid(const DesktopCapturer::SourceId screen,
-                   std::wstring* device_key);
+bool IsScreenValid(DesktopCapturer::SourceId screen, std::wstring* device_key);
 
 
 
@@ -65,7 +64,7 @@ DesktopRect GetFullscreenRect();
 
 
 
-RTC_EXPORT DesktopRect GetScreenRect(const DesktopCapturer::SourceId screen,
+RTC_EXPORT DesktopRect GetScreenRect(DesktopCapturer::SourceId screen,
                                      const std::wstring& device_key);
 
 }  

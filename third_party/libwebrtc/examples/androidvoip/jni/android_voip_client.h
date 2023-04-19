@@ -147,8 +147,8 @@ class AndroidVoipClient : public webrtc::Transport,
   
   void SetEncoder(const std::string& encoder);
   void SetDecoders(const std::vector<std::string>& decoders);
-  void SetLocalAddress(const std::string& ip_address, const int port_number);
-  void SetRemoteAddress(const std::string& ip_address, const int port_number);
+  void SetLocalAddress(const std::string& ip_address, int port_number);
+  void SetRemoteAddress(const std::string& ip_address, int port_number);
 
   
   

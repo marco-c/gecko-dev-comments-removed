@@ -36,7 +36,7 @@ class AudioLoop {
   
   
   
-  bool Init(const std::string file_name,
+  bool Init(std::string file_name,
             size_t max_loop_length_samples,
             size_t block_length_samples);
 

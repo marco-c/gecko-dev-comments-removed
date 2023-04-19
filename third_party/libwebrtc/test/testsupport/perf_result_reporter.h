@@ -81,8 +81,8 @@ class PerfResultReporter {
   
   
   void AddResultMeanAndError(absl::string_view metric_suffix,
-                             const double mean,
-                             const double error);
+                             double mean,
+                             double error);
 
   
   absl::optional<MetricInfo> GetMetricInfo(

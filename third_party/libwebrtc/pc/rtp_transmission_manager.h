@@ -184,7 +184,7 @@ class RtpTransmissionManager : public RtpSenderBase::SetStreamsObserver {
       cricket::MediaType media_type);
   const RtpSenderInfo* FindSenderInfo(const std::vector<RtpSenderInfo>& infos,
                                       const std::string& stream_id,
-                                      const std::string sender_id) const;
+                                      std::string sender_id) const;
 
   
   rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>>

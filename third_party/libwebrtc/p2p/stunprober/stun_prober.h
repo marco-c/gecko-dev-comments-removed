@@ -121,7 +121,7 @@ class RTC_EXPORT StunProber : public sigslot::has_slots<> {
              int stun_ta_interval_ms,
              int requests_per_ip,
              int timeout_ms,
-             const AsyncCallback finish_callback);
+             AsyncCallback finish_callback);
 
   
   

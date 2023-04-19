@@ -79,7 +79,7 @@ class VideoCaptureModule : public rtc::RefCountInterface {
 
     
     virtual int32_t GetCapability(const char* deviceUniqueIdUTF8,
-                                  const uint32_t deviceCapabilityNumber,
+                                  uint32_t deviceCapabilityNumber,
                                   VideoCaptureCapability& capability) = 0;
 
     

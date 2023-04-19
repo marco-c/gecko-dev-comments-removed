@@ -38,14 +38,14 @@ class DataGenerator {
   
   Data Ordered(std::vector<uint8_t> payload,
                absl::string_view flags = "",
-               const DataGeneratorOptions opts = {});
+               DataGeneratorOptions opts = {});
 
   
   
   
   Data Unordered(std::vector<uint8_t> payload,
                  absl::string_view flags = "",
-                 const DataGeneratorOptions opts = {});
+                 DataGeneratorOptions opts = {});
 
   
   void ResetStream() { message_id_ = MID(0); }

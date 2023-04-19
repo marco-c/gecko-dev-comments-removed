@@ -537,7 +537,7 @@ bool FillRenderEndpointBufferWithSilence(IAudioClient* client,
 
 
 
-std::string WaveFormatToString(const WaveFormatWrapper format);
+std::string WaveFormatToString(WaveFormatWrapper format);
 
 
 
