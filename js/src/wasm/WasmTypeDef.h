@@ -101,15 +101,6 @@ class FuncType {
     return args_.appendAll(src.args_) && results_.appendAll(src.results_);
   }
 
-  void renumber(const RenumberVector& renumbering) {
-    for (auto& arg : args_) {
-      arg.renumber(renumbering);
-    }
-    for (auto& result : results_) {
-      result.renumber(renumbering);
-    }
-  }
-
   ValType arg(unsigned i) const { return args_[i]; }
   const ValTypeVector& args() const { return args_; }
   ValType result(unsigned i) const { return results_[i]; }
@@ -223,12 +214,6 @@ class StructType {
     return true;
   }
 
-  void renumber(const RenumberVector& renumbering) {
-    for (auto& field : fields_) {
-      field.type.renumber(renumbering);
-    }
-  }
-
   bool isDefaultable() const {
     for (auto& field : fields_) {
       if (!field.type.isDefaultable()) {
@@ -284,10 +269,6 @@ class ArrayType {
     elementType_ = src.elementType_;
     isMutable_ = src.isMutable_;
     return true;
-  }
-
-  void renumber(const RenumberVector& renumbering) {
-    elementType_.renumber(renumbering);
   }
 
   bool isDefaultable() const { return elementType_.isDefaultable(); }
@@ -441,30 +422,11 @@ class TypeDef {
     return arrayType_;
   }
 
-  void renumber(const RenumberVector& renumbering) {
-    switch (kind_) {
-      case TypeDefKind::Func:
-        funcType_.renumber(renumbering);
-        break;
-      case TypeDefKind::Struct:
-        structType_.renumber(renumbering);
-        break;
-      case TypeDefKind::Array:
-        arrayType_.renumber(renumbering);
-        break;
-      case TypeDefKind::None:
-        break;
-    }
-  }
-
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
   WASM_DECLARE_FRIEND_SERIALIZE(TypeDef);
 };
 
 using TypeDefVector = Vector<TypeDef, 0, SystemAllocPolicy>;
-
-template <typename T>
-using DerivedTypeDefVector = Vector<T, 0, SystemAllocPolicy>;
 
 
 
@@ -545,8 +507,7 @@ class TypeContext : public AtomicRefCounted<TypeContext> {
   TypeContext(const FeatureArgs& features, TypeDefVector&& types)
       : features_(features), types_(std::move(types)) {}
 
-  template <typename T>
-  [[nodiscard]] bool cloneDerived(const DerivedTypeDefVector<T>& source) {
+  [[nodiscard]] bool clone(const TypeDefVector& source) {
     MOZ_ASSERT(types_.length() == 0);
     if (!types_.resize(source.length())) {
       return false;
@@ -739,20 +700,6 @@ class TypeHandle {
   uint32_t index() const { return index_; }
   const TypeDef& def() const { return context_->type(index_); }
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
