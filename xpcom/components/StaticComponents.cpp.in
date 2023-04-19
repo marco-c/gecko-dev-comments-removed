@@ -192,8 +192,7 @@ static void CallUnloadFuncs() {
 
 }
 
-static nsresult CreateInstanceImpl(ModuleID aID, const nsIID& aIID,
-                                   void** aResult) {
+nsresult CreateInstanceImpl(ModuleID aID, const nsIID& aIID, void** aResult) {
   
   
   
