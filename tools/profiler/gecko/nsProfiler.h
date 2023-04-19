@@ -83,6 +83,17 @@ class nsProfiler final : public nsIProfiler {
   bool SendProgressRequest(PendingProfile& aPendingProfile);
 
   
+  
+  template <typename JsonLogObjectUpdater>
+  void Log(JsonLogObjectUpdater&& aJsonLogObjectUpdater);
+  
+  
+  
+  template <typename JsonArrayAppender>
+  void LogEvent(JsonArrayAppender&& aJsonArrayAppender);
+  void LogEventLiteralString(const char* aEventString);
+
+  
   mozilla::Vector<ExitProfile> mExitProfiles;
   mozilla::Maybe<mozilla::MozPromiseHolder<GatheringPromise>> mPromiseHolder;
   nsCOMPtr<nsIThread> mSymbolTableThread;
