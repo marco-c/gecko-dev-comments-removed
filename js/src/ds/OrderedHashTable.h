@@ -38,7 +38,9 @@
 
 
 #include "mozilla/HashFunctions.h"
+#include "mozilla/Likely.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/TemplateLib.h"
 
 #include <utility>
 
@@ -660,7 +662,7 @@ class OrderedHashTable {
 
 
 
-  static double fillFactor() { return 8.0 / 3.0; }
+  static constexpr double fillFactor() { return 8.0 / 3.0; }
 
   
 
@@ -750,6 +752,19 @@ class OrderedHashTable {
     if (newHashShift == hashShift) {
       rehashInPlace();
       return true;
+    }
+
+    
+    constexpr size_t maxCapacityLog2 =
+        mozilla::tl::FloorLog2<size_t(INT32_MAX / fillFactor())>::value;
+    static_assert(maxCapacityLog2 < kHashNumberBits);
+
+    
+    
+    
+    if (MOZ_UNLIKELY(newHashShift < (js::kHashNumberBits - maxCapacityLog2))) {
+      alloc.reportAllocOverflow();
+      return false;
     }
 
     size_t newHashBuckets = size_t(1) << (js::kHashNumberBits - newHashShift);
