@@ -228,8 +228,7 @@ void nsMathMLmrootFrame::Reflow(nsPresContext* aPresContext,
       nsLayoutUtils::GetFontMetricsForFrame(this, fontSizeInflation);
 
   nscoord ruleThickness, leading, psi;
-  GetRadicalParameters(fm,
-                       StyleFont()->mMathStyle == NS_STYLE_MATH_STYLE_NORMAL,
+  GetRadicalParameters(fm, StyleFont()->mMathStyle == StyleMathStyle::Normal,
                        ruleThickness, leading, psi);
 
   
