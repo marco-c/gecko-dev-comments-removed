@@ -463,9 +463,17 @@ TEST_F(RtpPayloadParamsVp8ToGenericTest, FrameIdGaps) {
   ConvertAndCheck(1, 20, VideoFrameType::kVideoFrameDelta, kNoSync, {10, 15});
 }
 
-TEST(RtpPayloadParamsVp9ToGenericTest, NoScalability) {
-  RtpPayloadState state;
-  RtpPayloadParams params(123, &state, FieldTrialBasedConfig());
+class RtpPayloadParamsVp9ToGenericTest : public ::testing::Test {
+ protected:
+  RtpPayloadParamsVp9ToGenericTest()
+      : field_trials_("WebRTC-Vp9DependencyDescriptor/Enabled/") {}
+
+  test::ExplicitKeyValueConfig field_trials_;
+  RtpPayloadState state_;
+};
+
+TEST_F(RtpPayloadParamsVp9ToGenericTest, NoScalability) {
+  RtpPayloadParams params(123, &state_, field_trials_);
 
   EncodedImage encoded_image;
   CodecSpecificInfo codec_info;
@@ -512,13 +520,12 @@ TEST(RtpPayloadParamsVp9ToGenericTest, NoScalability) {
   EXPECT_THAT(header.generic->chain_diffs, ElementsAre(3 - 1));
 }
 
-TEST(RtpPayloadParamsVp9ToGenericTest, TemporalScalabilityWith2Layers) {
+TEST_F(RtpPayloadParamsVp9ToGenericTest, TemporalScalabilityWith2Layers) {
   
   
   
   
-  RtpPayloadState state;
-  RtpPayloadParams params(123, &state, FieldTrialBasedConfig());
+  RtpPayloadParams params(123, &state_, field_trials_);
 
   EncodedImage image;
   CodecSpecificInfo info;
@@ -617,11 +624,10 @@ TEST(RtpPayloadParamsVp9ToGenericTest, TemporalScalabilityWith2Layers) {
   EXPECT_THAT(headers[5].generic->chain_diffs, ElementsAre(2));
 }
 
-TEST(RtpPayloadParamsVp9ToGenericTest, TemporalScalabilityWith3Layers) {
+TEST_F(RtpPayloadParamsVp9ToGenericTest, TemporalScalabilityWith3Layers) {
   
   
-  RtpPayloadState state;
-  RtpPayloadParams params(123, &state, FieldTrialBasedConfig());
+  RtpPayloadParams params(123, &state_, field_trials_);
 
   EncodedImage image;
   CodecSpecificInfo info;
@@ -762,12 +768,11 @@ TEST(RtpPayloadParamsVp9ToGenericTest, TemporalScalabilityWith3Layers) {
   EXPECT_THAT(headers[8].generic->chain_diffs, ElementsAre(8));
 }
 
-TEST(RtpPayloadParamsVp9ToGenericTest, SpatialScalabilityKSvc) {
+TEST_F(RtpPayloadParamsVp9ToGenericTest, SpatialScalabilityKSvc) {
   
   
   
-  RtpPayloadState state;
-  RtpPayloadParams params(123, &state, FieldTrialBasedConfig());
+  RtpPayloadParams params(123, &state_, field_trials_);
 
   EncodedImage image;
   CodecSpecificInfo info;
