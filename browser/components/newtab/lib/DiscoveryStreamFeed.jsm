@@ -486,11 +486,7 @@ class DiscoveryStreamFeed {
         this.store.getState().Prefs.values?.pocketConfig || {};
 
       let items = isBasicLayout ? 3 : 21;
-      if (
-        pocketConfig.compactLayout ||
-        pocketConfig.fourCardLayout ||
-        pocketConfig.hybridLayout
-      ) {
+      if (pocketConfig.fourCardLayout || pocketConfig.hybridLayout) {
         items = isBasicLayout ? 4 : 24;
       }
 
@@ -508,7 +504,6 @@ class DiscoveryStreamFeed {
         widgetData: [
           ...(this.locale.startsWith("en-") ? [{ type: "TopicsWidget" }] : []),
         ],
-        compactLayout: pocketConfig.compactLayout,
         hybridLayout: pocketConfig.hybridLayout,
         hideCardBackground: pocketConfig.hideCardBackground,
         fourCardLayout: pocketConfig.fourCardLayout,
@@ -1927,14 +1922,12 @@ class DiscoveryStreamFeed {
 
 
 
-
 getHardcodedLayout = ({
   items = 21,
   spocPositions = [1, 5, 7, 11, 18, 20],
   widgetPositions = [],
   widgetData = [],
   sponsoredCollectionsEnabled = false,
-  compactLayout = false,
   hybridLayout = false,
   hideCardBackground = false,
   fourCardLayout = false,
@@ -2030,18 +2023,18 @@ getHardcodedLayout = ({
           properties: {
             items,
             hybridLayout,
-            hideCardBackground: hideCardBackground || compactLayout,
-            fourCardLayout: fourCardLayout || compactLayout,
-            hideDescriptions: hideDescriptions || compactLayout,
+            hideCardBackground,
+            fourCardLayout,
+            hideDescriptions,
             compactImages,
             imageGradient,
-            newSponsoredLabel: newSponsoredLabel || compactLayout,
-            titleLines: (compactLayout && 3) || titleLines,
+            newSponsoredLabel,
+            titleLines,
             descLines,
             compactGrid,
             essentialReadsHeader,
             editorsPicksHeader,
-            readTime: readTime || compactLayout,
+            readTime,
           },
           widgets: {
             positions: widgetPositions.map(position => {
