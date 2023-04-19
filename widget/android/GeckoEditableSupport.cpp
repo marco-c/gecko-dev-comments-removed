@@ -569,7 +569,9 @@ void GeckoEditableSupport::SendIMEDummyKeyEvent(nsIWidget* aWidget,
   
   
   
-  event.PreventNativeKeyBindings();
+  if (nsIWidget::UsePuppetWidgets()) {
+    event.PreventNativeKeyBindings();
+  }
   NS_ENSURE_SUCCESS_VOID(BeginInputTransaction(mDispatcher));
   mDispatcher->DispatchKeyboardEvent(msg, event, status);
 }
