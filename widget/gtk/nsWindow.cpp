@@ -4056,6 +4056,10 @@ void nsWindow::OnMap() {
 void nsWindow::OnUnmap() {
   LOG("nsWindow::OnUnmap");
 
+  
+  
+  mIsMapped = false;
+
 #ifdef MOZ_WAYLAND
   
   
@@ -4089,7 +4093,6 @@ void nsWindow::OnUnrealize() {
   
   
   LOG("nsWindow::OnUnrealize GdkWindow %p", mGdkWindow);
-  mIsMapped = false;
   ReleaseGdkWindow();
 }
 
