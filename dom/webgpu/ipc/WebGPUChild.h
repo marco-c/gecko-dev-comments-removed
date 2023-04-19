@@ -12,9 +12,6 @@
 #include "mozilla/webgpu/ffi/wgpu.h"
 
 namespace mozilla {
-namespace ipc {
-class UnsafeSharedMemoryHandle;
-}  
 namespace dom {
 struct GPURequestAdapterOptions;
 }  
@@ -67,7 +64,7 @@ class WebGPUChild final : public PWebGPUChild, public SupportsWeakPtr {
       RawId aSelfId, const dom::GPUDeviceDescriptor& aDesc,
       ffi::WGPULimits* aLimits);
   RawId DeviceCreateBuffer(RawId aSelfId, const dom::GPUBufferDescriptor& aDesc,
-                           ipc::UnsafeSharedMemoryHandle&& aShmem);
+                           MaybeShmem&& aShmem);
   RawId DeviceCreateTexture(RawId aSelfId,
                             const dom::GPUTextureDescriptor& aDesc);
   RawId TextureCreateView(RawId aSelfId, RawId aDeviceId,
