@@ -9,7 +9,7 @@
 #include "mozilla/dom/Document.h"
 #include "nsGlobalWindowInner.h"
 #include "nsPIDOMWindow.h"
-#include "RemoteServiceWorkerImpl.h"
+#include "ServiceWorkerChild.h"
 #include "ServiceWorkerCloneData.h"
 #include "ServiceWorkerManager.h"
 #include "ServiceWorkerPrivate.h"
@@ -23,6 +23,8 @@
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/ServiceWorkerGlobalScopeBinding.h"
 #include "mozilla/dom/WorkerPrivate.h"
+#include "mozilla/ipc/BackgroundChild.h"
+#include "mozilla/ipc/PBackgroundChild.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StorageAccess.h"
@@ -30,6 +32,9 @@
 #ifdef XP_WIN
 #  undef PostMessage
 #endif
+
+using mozilla::ipc::BackgroundChild;
+using mozilla::ipc::PBackgroundChild;
 
 namespace mozilla::dom {
 
@@ -95,32 +100,47 @@ bool ServiceWorkerVisible(JSContext* aCx, JSObject* aGlobal) {
 
 already_AddRefed<ServiceWorker> ServiceWorker::Create(
     nsIGlobalObject* aOwner, const ServiceWorkerDescriptor& aDescriptor) {
-  const RefPtr<ServiceWorker::Inner> inner =
-      new RemoteServiceWorkerImpl(aDescriptor);
-  NS_ENSURE_TRUE(inner, nullptr);
-
-  RefPtr<ServiceWorker> ref = new ServiceWorker(aOwner, aDescriptor, inner);
+  RefPtr<ServiceWorker> ref = new ServiceWorker(aOwner, aDescriptor);
   return ref.forget();
 }
 
 ServiceWorker::ServiceWorker(nsIGlobalObject* aGlobal,
-                             const ServiceWorkerDescriptor& aDescriptor,
-                             ServiceWorker::Inner* aInner)
+                             const ServiceWorkerDescriptor& aDescriptor)
     : DOMEventTargetHelper(aGlobal),
       mDescriptor(aDescriptor),
-      mInner(aInner),
+      mShutdown(false),
       mLastNotifiedState(ServiceWorkerState::Installing) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_DIAGNOSTIC_ASSERT(aGlobal);
-  MOZ_DIAGNOSTIC_ASSERT(mInner);
+
+  PBackgroundChild* parentActor =
+      BackgroundChild::GetOrCreateForCurrentThread();
+  if (NS_WARN_IF(!parentActor)) {
+    Shutdown();
+    return;
+  }
+
+  RefPtr<ServiceWorkerChild> actor = ServiceWorkerChild::Create();
+  if (NS_WARN_IF(!actor)) {
+    Shutdown();
+    return;
+  }
+
+  PServiceWorkerChild* sentActor =
+      parentActor->SendPServiceWorkerConstructor(actor, aDescriptor.ToIPC());
+  if (NS_WARN_IF(!sentActor)) {
+    Shutdown();
+    return;
+  }
+  MOZ_DIAGNOSTIC_ASSERT(sentActor == actor);
+
+  mActor = std::move(actor);
+  mActor->SetOwner(this);
 
   KeepAliveIfHasListenersFor(nsGkAtoms::onstatechange);
 
   
   
-
-  
-  mInner->AddServiceWorker(this);
 
   
   
@@ -129,30 +149,37 @@ ServiceWorker::ServiceWorker(nsIGlobalObject* aGlobal,
           mDescriptor.RegistrationId(), mDescriptor.RegistrationVersion(),
           mDescriptor.PrincipalInfo(), mDescriptor.Scope(),
           ServiceWorkerUpdateViaCache::Imports));
+
   if (reg) {
     MaybeAttachToRegistration(reg);
-  } else {
-    RefPtr<ServiceWorker> self = this;
+    
+    
+    
+    
+    
 
-    mInner->GetRegistration(
-        [self = std::move(self)](
-            const ServiceWorkerRegistrationDescriptor& aDescriptor) {
-          nsIGlobalObject* global = self->GetParentObject();
-          NS_ENSURE_TRUE_VOID(global);
-          RefPtr<ServiceWorkerRegistration> reg =
-              global->GetOrCreateServiceWorkerRegistration(aDescriptor);
-          self->MaybeAttachToRegistration(reg);
-        },
-        [](ErrorResult&& aRv) {
-          
-          aRv.SuppressException();
-        });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   }
 }
 
 ServiceWorker::~ServiceWorker() {
   MOZ_ASSERT(NS_IsMainThread());
-  mInner->RemoveServiceWorker(this);
+  Shutdown();
 }
 
 NS_IMPL_CYCLE_COLLECTION_INHERITED(ServiceWorker, DOMEventTargetHelper,
@@ -270,7 +297,18 @@ void ServiceWorker::PostMessage(JSContext* aCx, JS::Handle<JS::Value> aMessage,
     data->SetAsErrorMessageData();
   }
 
-  mInner->PostMessage(std::move(data), clientInfo.ref(), clientState.ref());
+  if (!mActor) {
+    return;
+  }
+
+  ClonedOrErrorMessageData clonedData;
+  if (!data->BuildClonedMessageData(clonedData)) {
+    return;
+  }
+
+  mActor->SendPostMessage(
+      clonedData,
+      ClientInfoAndState(clientInfo.ref().ToIPC(), clientState.ref().ToIPC()));
 }
 
 void ServiceWorker::PostMessage(JSContext* aCx, JS::Handle<JS::Value> aMessage,
@@ -287,6 +325,15 @@ void ServiceWorker::DisconnectFromOwner() {
   DOMEventTargetHelper::DisconnectFromOwner();
 }
 
+void ServiceWorker::RevokeActor(ServiceWorkerChild* aActor) {
+  MOZ_DIAGNOSTIC_ASSERT(mActor);
+  MOZ_DIAGNOSTIC_ASSERT(mActor == aActor);
+  mActor->RevokeOwner(this);
+  mActor = nullptr;
+
+  mShutdown = true;
+}
+
 void ServiceWorker::MaybeAttachToRegistration(
     ServiceWorkerRegistration* aRegistration) {
   MOZ_DIAGNOSTIC_ASSERT(aRegistration);
@@ -301,6 +348,19 @@ void ServiceWorker::MaybeAttachToRegistration(
   }
 
   mRegistration = aRegistration;
+}
+
+void ServiceWorker::Shutdown() {
+  if (mShutdown) {
+    return;
+  }
+  mShutdown = true;
+
+  if (mActor) {
+    mActor->RevokeOwner(this);
+    mActor->MaybeStartTeardown();
+    mActor = nullptr;
+  }
 }
 
 }  
