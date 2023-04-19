@@ -13,6 +13,7 @@
 
 #include <stdint.h>
 
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -540,10 +541,8 @@ class RTC_EXPORT RTCOutboundRTPStreamStats final : public RTCRTPStreamStats {
   
   RTCStatsMember<double> total_packet_send_delay;
   
-  
-  
-  
   RTCStatsMember<std::string> quality_limitation_reason;
+  RTCStatsMember<std::map<std::string, double>> quality_limitation_durations;
   
   RTCStatsMember<uint32_t> quality_limitation_resolution_changes;
   
