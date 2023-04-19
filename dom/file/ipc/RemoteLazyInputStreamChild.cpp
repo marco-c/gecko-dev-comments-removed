@@ -29,12 +29,16 @@ void RemoteLazyInputStreamChild::StreamConsumed() {
 
   
   if (count == 0) {
-    RemoteLazyInputStreamThread::Get()->Dispatch(NS_NewRunnableFunction(
-        "RemoteLazyInputStreamChild::StreamConsumed", [self = RefPtr{this}]() {
-          if (self->CanSend()) {
-            self->SendGoodbye();
-          }
-        }));
+    auto* t = RemoteLazyInputStreamThread::Get();
+    if (t) {
+      t->Dispatch(
+          NS_NewRunnableFunction("RemoteLazyInputStreamChild::StreamConsumed",
+                                 [self = RefPtr{this}]() {
+                                   if (self->CanSend()) {
+                                     self->SendGoodbye();
+                                   }
+                                 }));
+    }  
   }
 }
 
