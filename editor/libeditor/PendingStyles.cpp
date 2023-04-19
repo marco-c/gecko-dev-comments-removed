@@ -396,23 +396,20 @@ int32_t PendingStyles::TakeRelativeFontSize() {
   return relSize;
 }
 
-void PendingStyles::GetTypingState(bool& isSet, bool& theSetting,
-                                   nsStaticAtom& aProp,
-                                   nsAtom* aAttr ,
-                                   nsString* aOutValue ) {
-  if (IndexOfPreservingStyle(aProp, aAttr, aOutValue).isSome()) {
-    isSet = true;
-    theSetting = true;
-    return;
+PendingStyleState PendingStyles::GetStyleState(
+    nsStaticAtom& aHTMLProperty, nsAtom* aAttribute ,
+    nsString* aOutNewAttributeValueOrCSSValue ) const {
+  if (IndexOfPreservingStyle(aHTMLProperty, aAttribute,
+                             aOutNewAttributeValueOrCSSValue)
+          .isSome()) {
+    return PendingStyleState::BeingPreserved;
   }
 
-  if (IsStyleCleared(&aProp, aAttr)) {
-    isSet = true;
-    theSetting = false;
-    return;
+  if (IsStyleCleared(&aHTMLProperty, aAttribute)) {
+    return PendingStyleState::BeingCleared;
   }
 
-  isSet = false;
+  return PendingStyleState::NotUpdated;
 }
 
 void PendingStyles::CancelPreservingStyle(nsStaticAtom* aHTMLProperty,

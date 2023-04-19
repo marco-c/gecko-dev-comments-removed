@@ -102,6 +102,15 @@ class MOZ_STACK_CLASS AutoPendingStyleCacheArray final
   }
 };
 
+enum class PendingStyleState {
+  
+  NotUpdated,
+  
+  BeingPreserved,
+  
+  BeingCleared,
+};
+
 
 
 
@@ -238,8 +247,22 @@ class PendingStyles final {
 
   int32_t TakeRelativeFontSize();
 
-  void GetTypingState(bool& isSet, bool& theSetting, nsStaticAtom& aProp,
-                      nsAtom* aAttr = nullptr, nsString* aOutValue = nullptr);
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  PendingStyleState GetStyleState(
+      nsStaticAtom& aHTMLProperty, nsAtom* aAttribute = nullptr,
+      nsString* aOutNewAttributeValueOrCSSValue = nullptr) const;
 
  protected:
   virtual ~PendingStyles() { Reset(); };
