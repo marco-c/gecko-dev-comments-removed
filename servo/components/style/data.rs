@@ -162,6 +162,19 @@ pub struct ElementStyles {
 
 size_of_test!(ElementStyles, 16);
 
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum ViewportUnitUsage {
+    
+    None = 0,
+    
+    
+    FromDeclaration,
+    
+    
+    FromQuery,
+}
+
 impl ElementStyles {
     
     pub fn get_primary(&self) -> Option<&Arc<ComputedValues>> {
@@ -179,29 +192,27 @@ impl ElementStyles {
     }
 
     
-    pub fn uses_viewport_units(&self) -> bool {
+    pub fn viewport_unit_usage(&self) -> ViewportUnitUsage {
         use crate::computed_value_flags::ComputedValueFlags;
 
-        if self
-            .primary()
-            .flags
-            .intersects(ComputedValueFlags::USES_VIEWPORT_UNITS)
-        {
-            return true;
+        fn usage_from_flags(flags: ComputedValueFlags) -> ViewportUnitUsage {
+            if flags.intersects(ComputedValueFlags::USES_VIEWPORT_UNITS_ON_CONTAINER_QUERIES) {
+                return ViewportUnitUsage::FromQuery;
+            }
+            if flags.intersects(ComputedValueFlags::USES_VIEWPORT_UNITS) {
+                return ViewportUnitUsage::FromDeclaration;
+            }
+            ViewportUnitUsage::None
         }
 
+        let mut usage = usage_from_flags(self.primary().flags);
         for pseudo_style in self.pseudos.as_array() {
             if let Some(ref pseudo_style) = pseudo_style {
-                if pseudo_style
-                    .flags
-                    .intersects(ComputedValueFlags::USES_VIEWPORT_UNITS)
-                {
-                    return true;
-                }
+                usage = std::cmp::max(usage, usage_from_flags(pseudo_style.flags));
             }
         }
 
-        false
+        usage
     }
 
     #[cfg(feature = "gecko")]
