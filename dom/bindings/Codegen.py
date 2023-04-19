@@ -1649,6 +1649,8 @@ def UnionTypes(unionTypes, config):
                     implheaders.add("js/ForOfIterator.h")
                     
                     implheaders.add("mozilla/dom/BindingCallContext.h")
+                    if typeNeedsRooting(f):
+                        headers.add("mozilla/dom/RootedSequence.h")
                 f = f.unroll()
                 if idlTypeNeedsCallContext(f):
                     implheaders.add("mozilla/dom/BindingCallContext.h")
@@ -1710,6 +1712,9 @@ def UnionTypes(unionTypes, config):
                     headers.add("mozilla/dom/Record.h")
                     
                     addHeadersForType(f.inner)
+                    
+                    if typeNeedsRooting(f):
+                        headers.add("mozilla/dom/RootedRecord.h")
 
             implheaders.add(CGHeaders.getUnionDeclarationFilename(config, t))
             for f in t.flatMemberTypes:
@@ -1762,6 +1767,8 @@ def UnionConversions(unionTypes, config):
                     headers.add("js/ForOfIterator.h")
                     
                     headers.add("mozilla/dom/BindingCallContext.h")
+                    if typeNeedsRooting(f):
+                        headers.add("mozilla/dom/RootedSequence.h")
                 f = f.unroll()
                 if idlTypeNeedsCallContext(f):
                     headers.add("mozilla/dom/BindingCallContext.h")
@@ -1793,6 +1800,8 @@ def UnionConversions(unionTypes, config):
                     headers.add("mozilla/dom/Record.h")
                     
                     addHeadersForType(f.inner)
+                    if typeNeedsRooting(f):
+                        headers.add("mozilla/dom/RootedRecord.h")
 
             
             
@@ -5408,7 +5417,11 @@ def getCallbackConversionInfo(
 
     
     
-    useFastCallback = not isMember and not isCallbackReturnValue and not isOptional
+    useFastCallback = (
+        (not isMember or isMember == "Union")
+        and not isCallbackReturnValue
+        and not isOptional
+    )
     if useFastCallback:
         name = "binding_detail::Fast%s" % name
         rootArgs = ""
@@ -5640,9 +5653,11 @@ def getJSToNativeConversionInfo(
     if isMember is not False, we're being converted from a property of some JS
     object, not from an actual method argument, so we can't rely on our jsval
     being rooted or outliving us in any way.  Callers can pass "Dictionary",
-    "Variadic", "Sequence", or "OwningUnion" to indicate that the conversion is
-    for something that is a dictionary member, a variadic argument, a sequence,
-    or an owning union respectively.
+    "Variadic", "Sequence", "Union", or "OwningUnion" to indicate that the conversion
+    is for something that is a dictionary member, a variadic argument, a sequence,
+    an union, or an owning union respectively.
+    XXX Once we swtich *Rooter to Rooted* for Record and Sequence type entirely,
+        we could remove "Union" from isMember.
 
     If isOptional is true, then we are doing conversion of an optional
     argument with no default value.
@@ -5834,7 +5849,7 @@ def getJSToNativeConversionInfo(
     def handleJSObjectType(
         type, isMember, failureCode, exceptionCode, sourceDescription
     ):
-        if not isMember:
+        if not isMember or isMember == "Union":
             if isOptional:
                 
                 
@@ -5938,7 +5953,12 @@ def getJSToNativeConversionInfo(
         
         
         
-        if isMember or isOptional or nullable or isCallbackReturnValue:
+        if (
+            (isMember and isMember != "Union")
+            or isOptional
+            or nullable
+            or isCallbackReturnValue
+        ):
             sequenceClass = "Sequence"
         else:
             sequenceClass = "binding_detail::AutoSequence"
@@ -5962,8 +5982,16 @@ def getJSToNativeConversionInfo(
 
         typeName = CGTemplatedType(sequenceClass, elementInfo.declType)
         sequenceType = typeName.define()
-        if nullable:
+
+        if isMember == "Union" and typeNeedsRooting(type):
+            assert not nullable
+            typeName = CGTemplatedType(
+                "binding_detail::RootedAutoSequence", elementInfo.declType
+            )
+        elif nullable:
             typeName = CGTemplatedType("Nullable", typeName)
+
+        if nullable:
             arrayRef = "${declName}.SetValue()"
         else:
             arrayRef = "${declName}"
@@ -6038,21 +6066,25 @@ def getJSToNativeConversionInfo(
                 )
             templateBody = handleDefault(templateBody, codeToSetEmpty)
 
+        declArgs = None
+        holderType = None
+        holderArgs = None
         
         
-        if not isMember and typeNeedsRooting(elementType):
-            holderType = CGTemplatedType("SequenceRooter", elementInfo.declType)
-            
-            
-            
-            holderArgs = "cx, &%s" % arrayRef
-        else:
-            holderType = None
-            holderArgs = None
+        if typeNeedsRooting(elementType):
+            if not isMember:
+                holderType = CGTemplatedType("SequenceRooter", elementInfo.declType)
+                
+                
+                
+                holderArgs = "cx, &%s" % arrayRef
+            elif isMember == "Union":
+                declArgs = "cx"
 
         return JSToNativeConversionInfo(
             templateBody,
             declType=typeName,
+            declArgs=declArgs,
             holderType=holderType,
             dealWithOptional=isOptional,
             holderArgs=holderArgs,
@@ -6095,8 +6127,16 @@ def getJSToNativeConversionInfo(
             "Record", [recordKeyDeclType(recordType), valueInfo.declType]
         )
         typeName = declType.define()
-        if nullable:
+
+        if isMember == "Union" and typeNeedsRooting(type):
+            assert not nullable
+            declType = CGTemplatedType(
+                "RootedRecord", [recordKeyDeclType(recordType), valueInfo.declType]
+            )
+        elif nullable:
             declType = CGTemplatedType("Nullable", declType)
+
+        if nullable:
             recordRef = "${declName}.SetValue()"
         else:
             recordRef = "${declName}"
@@ -6230,14 +6270,17 @@ def getJSToNativeConversionInfo(
             
             declType = CGWrapper(declType, post="&")
             declArgs = "aRetVal"
-        elif not isMember and typeNeedsRooting(valueType):
-            holderType = CGTemplatedType(
-                "RecordRooter", [recordKeyDeclType(recordType), valueInfo.declType]
-            )
-            
-            
-            
-            holderArgs = "cx, &%s" % recordRef
+        elif typeNeedsRooting(valueType):
+            if not isMember:
+                holderType = CGTemplatedType(
+                    "RecordRooter", [recordKeyDeclType(recordType), valueInfo.declType]
+                )
+                
+                
+                
+                holderArgs = "cx, &%s" % recordRef
+            elif isMember == "Union":
+                declArgs = "cx"
 
         return JSToNativeConversionInfo(
             templateBody,
@@ -6253,7 +6296,7 @@ def getJSToNativeConversionInfo(
         if nullable:
             type = type.inner
 
-        isOwningUnion = isMember or isCallbackReturnValue
+        isOwningUnion = (isMember and isMember != "Union") or isCallbackReturnValue
         unionArgumentObj = "${declName}" if isOwningUnion else "${holderName}"
         if nullable:
             
@@ -6339,9 +6382,13 @@ def getJSToNativeConversionInfo(
                 name = getUnionMemberName(defaultValue.type)
                 
                 value = declLoc + (".SetValue()" if nullable else "")
+                if not isOwningUnion and typeNeedsRooting(defaultValue.type):
+                    ctorArgs = "cx"
+                else:
+                    ctorArgs = ""
                 
                 
-                default = CGGeneric("%s.RawSetAs%s();\n" % (value, name))
+                default = CGGeneric("%s.RawSetAs%s(%s);\n" % (value, name, ctorArgs))
             elif defaultValue.type.isEnum():
                 name = getUnionMemberName(defaultValue.type)
                 
@@ -6635,7 +6682,7 @@ def getJSToNativeConversionInfo(
         
         
         assert not descriptor.interface.isCallback()
-        forceOwningType = isMember or isCallbackReturnValue
+        forceOwningType = (isMember and isMember != "Union") or isCallbackReturnValue
 
         typeName = descriptor.nativeType
         typePtr = typeName + "*"
@@ -6791,7 +6838,7 @@ def getJSToNativeConversionInfo(
         template = wrapObjectTemplate(
             template, type, "${declName}.SetNull();\n", failureCode
         )
-        if not isMember:
+        if not isMember or isMember == "Union":
             
             
             
@@ -6932,7 +6979,7 @@ def getJSToNativeConversionInfo(
                 )
             return handleDefault(conversionCode, defaultCode)
 
-        if isMember:
+        if isMember and isMember != "Union":
             
             if type.isUTF8String():
                 declType = "nsCString"
@@ -7204,7 +7251,7 @@ def getJSToNativeConversionInfo(
         assert not isCallbackReturnValue or defaultValue is None
 
         typeName = CGDictionary.makeDictionaryName(type.unroll().inner)
-        if not isMember and not isCallbackReturnValue:
+        if (not isMember or isMember == "Union") and not isCallbackReturnValue:
             
             
             
@@ -7286,11 +7333,11 @@ def getJSToNativeConversionInfo(
 
         
         
-        if not isMember and isCallbackReturnValue:
+        if (not isMember or isMember == "Union") and isCallbackReturnValue:
             
             declType = CGWrapper(declType, post="&")
             declArgs = "aRetVal"
-        elif not isMember and typeNeedsRooting(type):
+        elif (not isMember or isMember == "Union") and typeNeedsRooting(type):
             declType = CGTemplatedType("RootedDictionary", declType)
             declArgs = "cx"
         else:
@@ -12287,9 +12334,11 @@ def getUnionAccessorSignatureType(type, descriptorProvider):
     return CGGeneric(builtinNames[type.tag()])
 
 
-def getUnionTypeTemplateVars(unionType, type, descriptorProvider, ownsMembers=False):
+def getUnionTypeTemplateVars(unionType, type, descriptorProvider, isMember=False):
     assert not type.isUndefined()
+    assert not isMember or isMember in ("Union", "OwningUnion")
 
+    ownsMembers = isMember == "OwningUnion"
     name = getUnionMemberName(type)
     holderName = "m" + name + "Holder"
 
@@ -12311,7 +12360,7 @@ def getUnionTypeTemplateVars(unionType, type, descriptorProvider, ownsMembers=Fa
         descriptorProvider,
         failureCode=tryNextCode,
         isDefinitelyObject=not type.isDictionary(),
-        isMember=("OwningUnion" if ownsMembers else None),
+        isMember=isMember,
         sourceDescription=sourceDescription,
     )
 
@@ -12843,7 +12892,10 @@ class CGUnionStruct(CGThing):
                 continue
 
             vars = getUnionTypeTemplateVars(
-                self.type, t, self.descriptorProvider, ownsMembers=self.ownsMembers
+                self.type,
+                t,
+                self.descriptorProvider,
+                isMember="OwningUnion" if self.ownsMembers else "Union",
             )
             uninit = "Uninit();"
             if hasObjectType and not self.ownsMembers:
@@ -13283,7 +13335,9 @@ class CGUnionConversionStruct(CGThing):
                 addSpecialType("Undefined")
                 continue
 
-            vars = getUnionTypeTemplateVars(self.type, t, self.descriptorProvider)
+            vars = getUnionTypeTemplateVars(
+                self.type, t, self.descriptorProvider, isMember="Union"
+            )
             if vars["setters"]:
                 methods.extend(vars["setters"])
             if vars["name"] != "Object":
