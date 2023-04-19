@@ -208,22 +208,22 @@ void BaseChannel::DisconnectFromRtpTransport() {
 void BaseChannel::Init_w(webrtc::RtpTransportInternal* rtp_transport) {
   RTC_DCHECK_RUN_ON(worker_thread());
 
-  network_thread_->Invoke<void>(
-      RTC_FROM_HERE, [this, rtp_transport] { SetRtpTransport(rtp_transport); });
-
-  
-  
-  media_channel_->SetInterface(this);
+  network_thread_->Invoke<void>(RTC_FROM_HERE, [this, rtp_transport] {
+    SetRtpTransport(rtp_transport);
+    
+    
+    media_channel_->SetInterface(this);
+  });
 }
 
 void BaseChannel::Deinit() {
   RTC_DCHECK_RUN_ON(worker_thread());
-  media_channel_->SetInterface(nullptr);
   
   
   
   network_thread_->Invoke<void>(RTC_FROM_HERE, [&] {
     RTC_DCHECK_RUN_ON(network_thread());
+    media_channel_->SetInterface(nullptr);
     FlushRtcpMessages_n();
 
     if (rtp_transport_) {
