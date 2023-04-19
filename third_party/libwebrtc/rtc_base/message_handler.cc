@@ -14,14 +14,7 @@
 
 namespace rtc {
 
-MessageHandler::MessageHandler(bool auto_cleanup) {
-  RTC_DCHECK(!auto_cleanup) << "Use MessageHandlerAutoCleanup";
-}
-
-MessageHandler::~MessageHandler() {}
-
-MessageHandlerAutoCleanup::MessageHandlerAutoCleanup()
-    : MessageHandler(false) {}
+MessageHandlerAutoCleanup::MessageHandlerAutoCleanup() {}
 
 MessageHandlerAutoCleanup::~MessageHandlerAutoCleanup() {
   

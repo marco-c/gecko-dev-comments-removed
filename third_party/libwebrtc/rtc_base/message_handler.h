@@ -22,27 +22,16 @@ namespace rtc {
 struct Message;
 
 
-
-
-
-
-
-
-
-
-
 class RTC_EXPORT MessageHandler {
  public:
-  virtual ~MessageHandler();
+  virtual ~MessageHandler() {}
   virtual void OnMessage(Message* msg) = 0;
-
- protected:
-  
-  explicit MessageHandler(bool auto_cleanup);
-
- private:
-  RTC_DISALLOW_COPY_AND_ASSIGN(MessageHandler);
 };
+
+
+
+
+
 
 class RTC_EXPORT MessageHandlerAutoCleanup : public MessageHandler {
  public:
