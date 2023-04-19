@@ -21,8 +21,6 @@ const {
   ExtensionUtils: { promiseEvent, promiseObserved },
 } = ChromeUtils.import("resource://gre/modules/ExtensionUtils.jsm");
 
-const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
-
 AddonTestUtils.initMochitest(this);
 
 
