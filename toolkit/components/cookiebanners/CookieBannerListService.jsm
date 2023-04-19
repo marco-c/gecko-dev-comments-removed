@@ -86,7 +86,7 @@ class CookieBannerListService {
     this.removeRules(deleted);
 
     
-    this.importRules(created.concat(updated));
+    this.importRules(created.concat(updated.map(u => u.new)));
   }
 
   removeRules(rules = []) {
