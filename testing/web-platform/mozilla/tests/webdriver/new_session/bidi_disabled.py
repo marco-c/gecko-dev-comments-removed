@@ -9,11 +9,25 @@ def test_marionette_fallback_webdriver_session(configuration, geckodriver):
     prefs.update({"remote.active-protocols": 2})
     config["capabilities"]["moz:firefoxOptions"]["prefs"] = prefs
 
-    driver = geckodriver(config=config)
-    driver.new_session()
+    try:
+        driver = geckodriver(config=config)
+        driver.new_session()
 
-    assert driver.session.capabilities.get("webSocketUrl") is None
+        assert driver.session.capabilities.get("webSocketUrl") is None
 
-    
-    
-    assert len(driver.session.handles) >= 1
+        
+        
+        assert len(driver.session.handles) >= 1
+
+    finally:
+        driver.stop()
+
+        
+        
+        
+        prefs.update({"remote.active-protocols": 3})
+
+        driver = geckodriver(config=config)
+        driver.new_session()
+
+        assert driver.session.capabilities.get("webSocketUrl") is not None
