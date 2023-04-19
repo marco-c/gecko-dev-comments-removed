@@ -1009,11 +1009,6 @@ class Window extends WindowBase {
   }
 
   static getState(window) {
-    
-    
-    
-    
-    
     const STATES = {
       [window.STATE_MAXIMIZED]: "maximized",
       [window.STATE_MINIMIZED]: "minimized",
@@ -1178,7 +1173,8 @@ class Window extends WindowBase {
       incognito: false,
       type: "normal", 
       
-      state: this.getState(windowData),
+      
+      state: "normal",
       alwaysOnTop: false,
     };
 
