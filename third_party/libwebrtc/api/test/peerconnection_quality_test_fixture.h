@@ -351,6 +351,14 @@ class PeerConnectionE2EQualityTestFixture {
         CapturingDeviceIndex capturing_device_index) = 0;
     
     
+    
+    
+    
+    
+    virtual PeerConfigurer* SetVideoCodecs(
+        std::vector<VideoCodecConfig> video_codecs) = 0;
+    
+    
     virtual PeerConfigurer* SetAudioConfig(AudioConfig config) = 0;
     
     
@@ -364,14 +372,6 @@ class PeerConnectionE2EQualityTestFixture {
     
     virtual PeerConfigurer* SetBitrateSettings(
         BitrateSettings bitrate_settings) = 0;
-    
-    
-    
-    
-    
-    
-    virtual PeerConfigurer* SetVideoCodecs(
-        std::vector<VideoCodecConfig> video_codecs) = 0;
   };
 
   
