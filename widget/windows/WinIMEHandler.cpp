@@ -7,7 +7,7 @@
 
 #include "IMMHandler.h"
 #include "mozilla/Preferences.h"
-#include "mozilla/StaticPrefList_intl.h"
+#include "mozilla/StaticPrefs_intl.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/WindowsVersion.h"
 #include "nsWindowDefs.h"
@@ -59,7 +59,6 @@ bool IMEHandler::sHasNativeCaretBeenRequested = false;
 
 bool IMEHandler::sIsInTSFMode = false;
 bool IMEHandler::sIsIMMEnabled = true;
-bool IMEHandler::sAssociateIMCOnlyWhenIMM_IMEActive = false;
 decltype(SetInputScopes)* IMEHandler::sSetInputScopes = nullptr;
 
 static POWER_PLATFORM_ROLE sPowerPlatformRole = PlatformRoleUnspecified;
@@ -71,10 +70,6 @@ void IMEHandler::Initialize() {
   sIsInTSFMode = TSFTextStore::IsInTSFMode();
   sIsIMMEnabled =
       !sIsInTSFMode || Preferences::GetBool("intl.tsf.support_imm", true);
-  sAssociateIMCOnlyWhenIMM_IMEActive =
-      sIsIMMEnabled &&
-      Preferences::GetBool("intl.tsf.associate_imc_only_when_imm_ime_is_active",
-                           false);
   if (!sIsInTSFMode) {
     
     
@@ -414,10 +409,7 @@ void IMEHandler::OnDestroyWindow(nsWindow* aWindow) {
 }
 
 
-bool IMEHandler::NeedsToAssociateIMC() {
-  return !sForceDisableCurrentIMM_IME &&
-         (!sAssociateIMCOnlyWhenIMM_IMEActive || !IsIMMActive());
-}
+bool IMEHandler::NeedsToAssociateIMC() { return !sForceDisableCurrentIMM_IME; }
 
 
 void IMEHandler::SetInputContext(nsWindow* aWindow, InputContext& aInputContext,
@@ -542,31 +534,6 @@ void IMEHandler::OnKeyboardLayoutChanged() {
   if (!sIsIMMEnabled || !IsTSFAvailable()) {
     return;
   }
-
-  
-  
-  
-  if (!sAssociateIMCOnlyWhenIMM_IMEActive) {
-    return;
-  }
-
-  
-  
-  nsWindow* windowBase = TSFTextStore::GetEnabledWindowBase();
-  if (!windowBase) {
-    return;
-  }
-
-  
-  InputContext inputContext = windowBase->GetInputContext();
-  if (!WinUtils::IsIMEEnabled(inputContext)) {
-    return;
-  }
-
-  
-  
-  
-  AssociateIMEContext(windowBase, NeedsToAssociateIMC());
 }
 
 

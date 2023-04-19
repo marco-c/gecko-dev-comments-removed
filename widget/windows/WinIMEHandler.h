@@ -202,7 +202,6 @@ class IMEHandler final {
   
   
   static bool sIsIMMEnabled;
-  static bool sAssociateIMCOnlyWhenIMM_IMEActive;
 
   static bool IsTSFAvailable() { return sIsInTSFMode; }
   static bool IsIMMActive();
