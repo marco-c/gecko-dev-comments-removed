@@ -14,7 +14,6 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/EnumeratedArray.h"
-#include "mozilla/Maybe.h"
 
 #include "CrashAnnotations.h"
 
@@ -43,9 +42,6 @@
 class nsIFile;
 
 namespace CrashReporter {
-
-using mozilla::Maybe;
-using mozilla::Nothing;
 
 
 
@@ -145,11 +141,8 @@ void GetAnnotation(uint32_t childPid, Annotation annotation,
 
 typedef mozilla::EnumeratedArray<Annotation, Annotation::Count, nsCString>
     AnnotationTable;
-void DeleteMinidumpFilesForID(
-    const nsAString& aId,
-    const Maybe<nsString>& aAdditionalMinidump = Nothing());
-bool GetMinidumpForID(const nsAString& id, nsIFile** minidump,
-                      const Maybe<nsString>& aAdditionalMinidump = Nothing());
+void DeleteMinidumpFilesForID(const nsAString& id);
+bool GetMinidumpForID(const nsAString& id, nsIFile** minidump);
 bool GetIDFromMinidump(nsIFile* minidump, nsAString& id);
 bool GetExtraFileForID(const nsAString& id, nsIFile** extraFile);
 bool GetExtraFileForMinidump(nsIFile* minidump, nsIFile** extraFile);
