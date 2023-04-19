@@ -94,8 +94,9 @@ function getDisplayNamesInternals(obj) {
 
     
     var internalProps = maybeInternalProperties(internals);
-    if (internalProps)
+    if (internalProps) {
         return internalProps;
+    }
 
     
     internalProps = resolveDisplayNamesInternals(internals.lazyData);
@@ -156,8 +157,9 @@ function InitializeDisplayNames(displayNames, locales, options, mozExtensions) {
     lazyDisplayNamesData.requestedLocales = requestedLocales;
 
     
-    if (!IsObject(options))
+    if (!IsObject(options)) {
         ThrowTypeError(JSMSG_OBJECT_REQUIRED, options === null ? "null" : typeof options);
+    }
 
     
     var opt = new_Record();
