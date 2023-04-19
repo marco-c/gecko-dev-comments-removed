@@ -17,6 +17,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "api/array_view.h"
+#include "net/dcsctp/public/dcsctp_handover_state.h"
 #include "net/dcsctp/public/dcsctp_message.h"
 #include "net/dcsctp/public/dcsctp_options.h"
 #include "net/dcsctp/public/packet_observer.h"
@@ -358,6 +359,14 @@ class DcSctpSocketInterface {
   
   
   
+  
+  
+  
+  virtual void RestoreFromState(const DcSctpSocketHandoverState& state) = 0;
+
+  
+  
+  
   virtual void Shutdown() = 0;
 
   
@@ -417,6 +426,20 @@ class DcSctpSocketInterface {
 
   
   virtual Metrics GetMetrics() const = 0;
+
+  
+  
+  
+  virtual HandoverReadinessStatus GetHandoverReadiness() const = 0;
+
+  
+  
+  
+  
+  
+  
+  virtual absl::optional<DcSctpSocketHandoverState>
+  GetHandoverStateAndClose() = 0;
 };
 }  
 
