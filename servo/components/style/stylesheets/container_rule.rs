@@ -48,6 +48,11 @@ impl ContainerRule {
     }
 
     
+    pub fn container_name(&self) -> &ContainerName {
+        &self.condition.name
+    }
+
+    
     #[cfg(feature = "gecko")]
     pub fn size_of(&self, guard: &SharedRwLockReadGuard, ops: &mut MallocSizeOfOps) -> usize {
         
@@ -88,10 +93,12 @@ impl ToCssWithGuard for ContainerRule {
 }
 
 
-#[derive(Debug, ToShmem)]
+#[derive(Debug, ToShmem, ToCss)]
 pub struct ContainerCondition {
+    #[css(skip_if = "ContainerName::is_none")]
     name: ContainerName,
     condition: QueryCondition,
+    #[css(skip)]
     flags: FeatureFlags,
 }
 
