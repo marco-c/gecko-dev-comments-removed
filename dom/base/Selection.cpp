@@ -694,15 +694,8 @@ static int32_t CompareToRangeStart(const nsINode& aCompareNode,
   nsINode* start = aRange.GetStartContainer();
   
   
-  
-  
-  
-  
-  
-  
   if (aCompareNode.GetComposedDoc() != start->GetComposedDoc() ||
-      !start->GetComposedDoc() ||
-      aCompareNode.SubtreeRoot() != start->SubtreeRoot()) {
+      !start->GetComposedDoc()) {
     NS_WARNING(
         "`CompareToRangeStart` couldn't compare nodes, pretending some order.");
     return 1;
@@ -721,8 +714,7 @@ static int32_t CompareToRangeEnd(const nsINode& aCompareNode,
   
   
   if (aCompareNode.GetComposedDoc() != end->GetComposedDoc() ||
-      !end->GetComposedDoc() ||
-      aCompareNode.SubtreeRoot() != end->SubtreeRoot()) {
+      !end->GetComposedDoc()) {
     NS_WARNING(
         "`CompareToRangeEnd` couldn't compare nodes, pretending some order.");
     return 1;
@@ -774,9 +766,16 @@ size_t Selection::StyledRanges::FindInsertionPoint(
 nsresult Selection::StyledRanges::SubtractRange(
     StyledRange& aRange, nsRange& aSubtract, nsTArray<StyledRange>* aOutput) {
   nsRange* range = aRange.mRange;
-
   if (NS_WARN_IF(!range->IsPositioned())) {
     return NS_ERROR_UNEXPECTED;
+  }
+
+  if (range->GetStartContainer()->SubtreeRoot() !=
+      aSubtract.GetStartContainer()->SubtreeRoot()) {
+    
+    
+    aOutput->InsertElementAt(0, aRange);
+    return NS_OK;
   }
 
   
@@ -1041,13 +1040,11 @@ nsresult Selection::StyledRanges::MaybeAddRangeAndTruncateOverlaps(
   if (maybeEndIndex.isNothing()) {
     
     
-    startIndex = 0;
-    endIndex = 0;
+    startIndex = endIndex = 0;
   } else if (maybeStartIndex.isNothing()) {
     
     
-    startIndex = mRanges.Length();
-    endIndex = startIndex;
+    startIndex = endIndex = mRanges.Length();
   } else {
     startIndex = *maybeStartIndex;
     endIndex = *maybeEndIndex;
@@ -1077,15 +1074,10 @@ nsresult Selection::StyledRanges::MaybeAddRangeAndTruncateOverlaps(
   
   
   
-  nsTArray<StyledRange> overlaps;
-  
-  
-  overlaps.InsertElementAt(0, mRanges[startIndex]);
-
+  AutoTArray<StyledRange, 2> overlaps;
+  overlaps.AppendElement(mRanges[startIndex]);
   if (endIndex - 1 != startIndex) {
-    
-    
-    overlaps.InsertElementAt(1, mRanges[endIndex - 1]);
+    overlaps.AppendElement(mRanges[endIndex - 1]);
   }
 
   
@@ -1094,7 +1086,7 @@ nsresult Selection::StyledRanges::MaybeAddRangeAndTruncateOverlaps(
   }
   mRanges.RemoveElementsAt(startIndex, endIndex - startIndex);
 
-  nsTArray<StyledRange> temp;
+  AutoTArray<StyledRange, 3> temp;
   for (const size_t i : Reversed(IntegerRange(overlaps.Length()))) {
     nsresult rv = SubtractRange(overlaps[i], *aRange, &temp);
     NS_ENSURE_SUCCESS(rv, rv);
@@ -1106,12 +1098,8 @@ nsresult Selection::StyledRanges::MaybeAddRangeAndTruncateOverlaps(
                                            aRange->StartOffset(),
                                            CompareToRangeStart)};
 
-  
-  
   temp.InsertElementAt(insertionPoint, StyledRange(aRange));
 
-  
-  
   
   mRanges.InsertElementsAt(startIndex, temp);
 
