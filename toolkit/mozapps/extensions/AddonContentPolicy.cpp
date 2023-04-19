@@ -179,8 +179,6 @@ static const char* allowedHostSchemes[] = {"http", "https", "moz-extension",
 
 
 
-
-
 class CSPValidator final : public nsCSPSrcVisitor {
  public:
   CSPValidator(nsAString& aURL, CSPDirective aDirective,
