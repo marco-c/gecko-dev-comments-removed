@@ -3310,17 +3310,17 @@ js::gc::AllocKind JSObject::allocKindForTenure(
 
   
   
-  if (is<InlineTypedObject>()) {
+  if (is<WasmStructObject>()) {
     
     
     
-    RttValue& descr = as<InlineTypedObject>().rttValue();
+    RttValue& descr = as<WasmStructObject>().rttValue();
     MOZ_ASSERT(!IsInsideNursery(&descr));
-    return InlineTypedObject::allocKindForRttValue(&descr);
+    return WasmStructObject::allocKindForRttValue(&descr);
   }
 
-  if (is<OutlineTypedObject>()) {
-    return OutlineTypedObject::allocKind();
+  if (is<WasmArrayObject>()) {
+    return WasmArrayObject::allocKind();
   }
 
   

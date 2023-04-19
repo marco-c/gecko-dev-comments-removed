@@ -1299,10 +1299,6 @@ void* wasm::AddressOf(SymbolicAddress imm, ABIFunctionType* abiType) {
       *abiType = Args_Int32_GeneralGeneralGeneral;
       MOZ_ASSERT(*abiType == ToABIType(SASigRefTest));
       return FuncCast(Instance::refTest, *abiType);
-    case SymbolicAddress::InlineTypedObjectClass:
-      
-      *abiType = Args_General1;
-      return (void*)&js::InlineTypedObject::class_;
 
     case SymbolicAddress::ExceptionNew:
       *abiType = Args_General2;
@@ -1369,10 +1365,6 @@ bool wasm::IsRoundingFunction(SymbolicAddress callee, jit::RoundingMode* mode) {
 bool wasm::NeedsBuiltinThunk(SymbolicAddress sym) {
   
   switch (sym) {
-    
-    case SymbolicAddress::InlineTypedObjectClass:
-      return false;
-
     
     case SymbolicAddress::HandleThrow:  
     case SymbolicAddress::HandleTrap:   

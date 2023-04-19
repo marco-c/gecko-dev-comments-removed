@@ -12,12 +12,22 @@
 #include "gc/ObjectKind-inl.h"
 
 
-js::gc::AllocKind js::InlineTypedObject::allocKindForRttValue(RttValue* rtt) {
+js::gc::AllocKind js::WasmStructObject::allocKindForRttValue(RttValue* rtt) {
   MOZ_ASSERT(rtt->kind() == wasm::TypeDefKind::Struct);
   size_t nbytes = rtt->typeDef().structType().size_;
-  MOZ_ASSERT(nbytes <= MaxInlineBytes);
 
-  return gc::GetGCObjectKindForBytes(nbytes + sizeof(TypedObject));
+  
+  
+  
+  
+  if (nbytes > WasmStructObject_MaxInlineBytes) {
+    nbytes = WasmStructObject_MaxInlineBytes;
+  }
+
+  
+  nbytes = sizeOfIncludingInlineData(nbytes);
+
+  return gc::GetGCObjectKindForBytes(nbytes);
 }
 
 #endif  

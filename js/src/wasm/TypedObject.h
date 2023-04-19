@@ -17,9 +17,14 @@
 #include "wasm/WasmTypeDef.h"
 #include "wasm/WasmValType.h"
 
+using js::wasm::FieldType;
+
 namespace js {
 
 class TypedObject;
+
+
+
 
 class RttValue : public NativeObject {
  private:
@@ -68,12 +73,36 @@ class RttValue : public NativeObject {
   ObjectWeakMap& children() const { return *maybeChildren(); }
   bool ensureChildren(JSContext* cx);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  class PropOffset {
+    uint32_t u32_;
+
+   public:
+    PropOffset() : u32_(0) {}
+    uint32_t get() const { return u32_; }
+    void set(uint32_t u32) { u32_ = u32; }
+  };
+
   [[nodiscard]] bool lookupProperty(JSContext* cx,
                                     js::Handle<TypedObject*> object, jsid id,
-                                    uint32_t* offset, wasm::FieldType* type);
+                                    PropOffset* offset, wasm::FieldType* type);
   [[nodiscard]] bool hasProperty(JSContext* cx, js::Handle<TypedObject*> object,
                                  jsid id) {
-    uint32_t offset;
+    RttValue::PropOffset offset;
     wasm::FieldType type;
     return lookupProperty(cx, object, id, &offset, &type);
   }
@@ -81,6 +110,9 @@ class RttValue : public NativeObject {
   static void trace(JSTracer* trc, JSObject* obj);
   static void finalize(JS::GCContext* gcx, JSObject* obj);
 };
+
+
+
 
 
 class TypedObject : public JSObject {
@@ -125,10 +157,8 @@ class TypedObject : public JSObject {
 
   void initDefault();
 
-  bool loadValue(JSContext* cx, size_t offset, wasm::FieldType type,
-                 MutableHandleValue vp);
-
-  uint8_t* typedMem() const;
+  bool loadValue(JSContext* cx, const RttValue::PropOffset& offset,
+                 wasm::FieldType type, MutableHandleValue vp);
 
   template <typename V>
   void visitReferences(V& visitor);
@@ -163,7 +193,12 @@ class TypedObject : public JSObject {
 };
 
 
-class OutlineTypedObject : public TypedObject {
+
+
+
+
+
+class WasmArrayObject : public TypedObject {
  public:
   
   
@@ -173,18 +208,15 @@ class OutlineTypedObject : public TypedObject {
   
   
   
-  
-  
-  
   uint8_t* data_;
 
  protected:
   friend class TypedObject;
 
   
-  static OutlineTypedObject* create(JSContext* cx, Handle<RttValue*> rtt,
-                                    size_t numBytes,
-                                    gc::InitialHeap heap = gc::DefaultHeap);
+  static WasmArrayObject* create(JSContext* cx, Handle<RttValue*> rtt,
+                                 size_t numBytes,
+                                 gc::InitialHeap heap = gc::DefaultHeap);
 
   
   
@@ -214,7 +246,7 @@ class OutlineTypedObject : public TypedObject {
 
   
   static constexpr size_t offsetOfData() {
-    return offsetof(OutlineTypedObject, data_);
+    return offsetof(WasmArrayObject, data_);
   }
   
   static constexpr size_t offsetOfNumElements() { return 0; }
@@ -226,56 +258,168 @@ class OutlineTypedObject : public TypedObject {
 
 
 
-#define STATIC_ASSERT_NUMELEMENTS_IS_U32                       \
-  static_assert(sizeof(js::OutlineTypedObject::NumElements) == \
-                sizeof(uint32_t));
+#define STATIC_ASSERT_NUMELEMENTS_IS_U32 \
+  static_assert(sizeof(js::WasmArrayObject::NumElements) == sizeof(uint32_t));
 
 
-class InlineTypedObject : public TypedObject {
+
+
+
+
+
+
+
+class WasmStructObject : public TypedObject {
   
-  uint8_t data_[1];
+  
+  uint8_t* outlineData_;
+
+ public:
+  
+  
+  
+  
+  
+  
+  
+  uint32_t padding_[
+#if !defined(JS_64BIT) && defined(XP_WIN)
+      1
+#else
+      0
+#endif
+  ];
+
+  
+  
+  
+  
+  
+  
+  
+  uint8_t inlineData_[0];
 
  protected:
   friend class TypedObject;
-
-  static const size_t MaxInlineBytes =
-      JSObject::MAX_BYTE_SIZE - sizeof(TypedObject);
-
-  static InlineTypedObject* create(JSContext* cx, Handle<RttValue*> rtt,
-                                   gc::InitialHeap heap = gc::DefaultHeap);
-
-  uint8_t* inlineTypedMem() const { return (uint8_t*)&data_; }
 
  public:
   static const JSClass class_;
 
   
+  
+  static inline size_t sizeOfIncludingInlineData(size_t sizeOfInlineData) {
+    size_t n = sizeof(WasmStructObject) + sizeOfInlineData;
+    MOZ_ASSERT(n <= JSObject::MAX_BYTE_SIZE);
+    return n;
+  }
+
+  
   static inline gc::AllocKind allocKindForRttValue(RttValue* rtt);
 
   
-  static bool canAccommodateSize(size_t size) { return size <= MaxInlineBytes; }
+  
+  static inline void getDataByteSizes(uint32_t totalBytes,
+                                      uint32_t* inlineBytes,
+                                      uint32_t* outlineBytes);
 
   
-  static size_t offsetOfDataStart() {
-    return offsetof(InlineTypedObject, data_);
+  
+  
+  static inline void fieldOffsetToAreaAndOffset(FieldType fieldType,
+                                                uint32_t fieldOffset,
+                                                bool* areaIsOutline,
+                                                uint32_t* areaOffset);
+
+  
+  
+  inline uint8_t* fieldOffsetToAddress(FieldType fieldType,
+                                       uint32_t fieldOffset);
+
+  
+  static size_t offsetOfOutlineData() {
+    return offsetof(WasmStructObject, outlineData_);
+  }
+  static size_t offsetOfInlineData() {
+    return offsetof(WasmStructObject, inlineData_);
   }
 
   
   static void obj_trace(JSTracer* trc, JSObject* object);
   static size_t obj_moved(JSObject* dst, JSObject* src);
+  static void obj_finalize(JS::GCContext* gcx, JSObject* object);
 };
 
+
+static_assert((offsetof(WasmStructObject, inlineData_) % 8) == 0);
+
+
+
+
+
+const size_t WasmStructObject_MaxInlineBytes =
+    ((JSObject::MAX_BYTE_SIZE - sizeof(WasmStructObject)) / 16) * 16;
+
+static_assert((WasmStructObject_MaxInlineBytes % 16) == 0);
+
+
+inline void WasmStructObject::getDataByteSizes(uint32_t totalBytes,
+                                               uint32_t* inlineBytes,
+                                               uint32_t* outlineBytes) {
+  *inlineBytes = totalBytes;
+  *outlineBytes = 0;
+  if (totalBytes > WasmStructObject_MaxInlineBytes) {
+    *inlineBytes = WasmStructObject_MaxInlineBytes;
+    *outlineBytes = totalBytes - *inlineBytes;
+  }
+}
+
+
+inline void WasmStructObject::fieldOffsetToAreaAndOffset(FieldType fieldType,
+                                                         uint32_t fieldOffset,
+                                                         bool* areaIsOutline,
+                                                         uint32_t* areaOffset) {
+  if (fieldOffset < WasmStructObject_MaxInlineBytes) {
+    *areaIsOutline = false;
+    *areaOffset = fieldOffset;
+  } else {
+    *areaIsOutline = true;
+    *areaOffset = fieldOffset - WasmStructObject_MaxInlineBytes;
+  }
+  
+  
+  MOZ_RELEASE_ASSERT(
+      (fieldOffset < WasmStructObject_MaxInlineBytes) ==
+      ((fieldOffset + fieldType.size() - 1) < WasmStructObject_MaxInlineBytes));
+}
+
+inline uint8_t* WasmStructObject::fieldOffsetToAddress(FieldType fieldType,
+                                                       uint32_t fieldOffset) {
+  bool areaIsOutline;
+  uint32_t areaOffset;
+  fieldOffsetToAreaAndOffset(fieldType, fieldOffset, &areaIsOutline,
+                             &areaOffset);
+  return ((uint8_t*)(areaIsOutline ? outlineData_ : &inlineData_[0])) +
+         areaOffset;
+}
+
+}  
+
+
+
+
+namespace js {
+
 inline bool IsTypedObjectClass(const JSClass* class_) {
-  return class_ == &OutlineTypedObject::class_ ||
-         class_ == &InlineTypedObject::class_;
+  return class_ == &WasmArrayObject::class_ ||
+         class_ == &WasmStructObject::class_;
 }
 
-inline bool IsOutlineTypedObjectClass(const JSClass* class_) {
-  return class_ == &OutlineTypedObject::class_;
+inline bool IsWasmArrayObjectClass(const JSClass* class_) {
+  return class_ == &WasmArrayObject::class_;
 }
 
-inline bool IsInlineTypedObjectClass(const JSClass* class_) {
-  return class_ == &InlineTypedObject::class_;
+inline bool IsWasmStructObjectClass(const JSClass* class_) {
+  return class_ == &WasmStructObject::class_;
 }
 
 }  
@@ -286,13 +430,13 @@ inline bool JSObject::is<js::TypedObject>() const {
 }
 
 template <>
-inline bool JSObject::is<js::OutlineTypedObject>() const {
-  return js::IsOutlineTypedObjectClass(getClass());
+inline bool JSObject::is<js::WasmArrayObject>() const {
+  return js::IsWasmArrayObjectClass(getClass());
 }
 
 template <>
-inline bool JSObject::is<js::InlineTypedObject>() const {
-  return js::IsInlineTypedObjectClass(getClass());
+inline bool JSObject::is<js::WasmStructObject>() const {
+  return js::IsWasmStructObjectClass(getClass());
 }
 
 #endif 

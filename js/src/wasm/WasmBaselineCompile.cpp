@@ -6355,7 +6355,7 @@ RegPtr BaseCompiler::emitGcArrayGetData(RegRef rp) {
   
   RegPtr rdata = needPtr();
   
-  masm.loadPtr(Address(rp, OutlineTypedObject::offsetOfData()), rdata);
+  masm.loadPtr(Address(rp, WasmArrayObject::offsetOfData()), rdata);
   return rdata;
 }
 
@@ -6365,8 +6365,8 @@ void BaseCompiler::emitGcArrayAdjustDataPointer(RegPtr rdata) {
   
   
   STATIC_ASSERT_NUMELEMENTS_IS_U32;
-  masm.addPtr(ImmWord(OutlineTypedObject::offsetOfNumElements() +
-                      sizeof(OutlineTypedObject::NumElements)),
+  masm.addPtr(ImmWord(WasmArrayObject::offsetOfNumElements() +
+                      sizeof(WasmArrayObject::NumElements)),
               rdata);
 }
 
@@ -6374,8 +6374,7 @@ RegI32 BaseCompiler::emitGcArrayGetNumElements(RegPtr rdata,
                                                bool adjustDataPointer) {
   STATIC_ASSERT_NUMELEMENTS_IS_U32;
   RegI32 length = needI32();
-  masm.load32(Address(rdata, OutlineTypedObject::offsetOfNumElements()),
-              length);
+  masm.load32(Address(rdata, WasmArrayObject::offsetOfNumElements()), length);
   if (adjustDataPointer) {
     emitGcArrayAdjustDataPointer(rdata);
   }
@@ -6504,11 +6503,12 @@ void BaseCompiler::emitGcSetScalar(const T& dst, FieldType type, AnyReg value) {
   }
 }
 
-bool BaseCompiler::emitGcStructSet(RegRef object, RegPtr data,
-                                   const StructField& field, AnyReg value) {
+bool BaseCompiler::emitGcStructSet(RegRef object, RegPtr areaBase,
+                                   uint32_t areaOffset, FieldType fieldType,
+                                   AnyReg value) {
   
-  if (!field.type.isRefRepr()) {
-    emitGcSetScalar(Address(data, field.offset), field.type, value);
+  if (!fieldType.isRefRepr()) {
+    emitGcSetScalar(Address(areaBase, areaOffset), fieldType, value);
     freeAny(value);
     return true;
   }
@@ -6517,10 +6517,7 @@ bool BaseCompiler::emitGcStructSet(RegRef object, RegPtr data,
   
   RegPtr valueAddr = RegPtr(PreBarrierReg);
   needPtr(valueAddr);
-  masm.computeEffectiveAddress(Address(data, field.offset), valueAddr);
-
-  
-  pushPtr(data);
+  masm.computeEffectiveAddress(Address(areaBase, areaOffset), valueAddr);
 
   
   if (!emitBarrieredStore(Some(object), valueAddr, value.ref(),
@@ -6528,9 +6525,6 @@ bool BaseCompiler::emitGcStructSet(RegRef object, RegPtr data,
     return false;
   }
   freeRef(value.ref());
-
-  
-  popPtr(data);
 
   return true;
 }
@@ -6620,46 +6614,60 @@ bool BaseCompiler::emitStructNew() {
   needPtr(RegPtr(PreBarrierReg));
 
   RegRef rp = popRef();
-  RegPtr rdata = needPtr();
+  RegPtr rbase = needPtr();
 
   
   freePtr(RegPtr(PreBarrierReg));
 
   
   
-  if (InlineTypedObject::canAccommodateSize(structType.size_)) {
-    masm.computeEffectiveAddress(
-        Address(rp, InlineTypedObject::offsetOfDataStart()), rdata);
-  } else {
-    masm.loadPtr(Address(rp, OutlineTypedObject::offsetOfData()), rdata);
-  }
+  
 
+  
+  
+  
   
   
   
 
   uint32_t fieldIndex = structType.fields_.length();
   while (fieldIndex-- > 0) {
-    const StructField& structField = structType.fields_[fieldIndex];
+    const StructField& field = structType.fields_[fieldIndex];
+    FieldType fieldType = field.type;
+    uint32_t fieldOffset = field.offset;
+
+    bool areaIsOutline;
+    uint32_t areaOffset;
+    WasmStructObject::fieldOffsetToAreaAndOffset(fieldType, fieldOffset,
+                                                 &areaIsOutline, &areaOffset);
+
     
-    if (structField.type.isRefRepr()) {
+    if (areaIsOutline) {
+      masm.loadPtr(Address(rp, WasmStructObject::offsetOfOutlineData()), rbase);
+    } else {
+      masm.computeEffectiveAddress(
+          Address(rp, WasmStructObject::offsetOfInlineData()), rbase);
+    }
+
+    
+    if (fieldType.isRefRepr()) {
       needPtr(RegPtr(PreBarrierReg));
     }
 
     AnyReg value = popAny();
 
     
-    if (structField.type.isRefRepr()) {
+    if (fieldType.isRefRepr()) {
       freePtr(RegPtr(PreBarrierReg));
     }
 
     
-    if (!emitGcStructSet(rp, rdata, structField, value)) {
+    if (!emitGcStructSet(rp, rbase, areaOffset, fieldType, value)) {
       return false;
     }
   }
 
-  freePtr(rdata);
+  freePtr(rbase);
   pushRef(rp);
 
   return true;
@@ -6702,33 +6710,27 @@ bool BaseCompiler::emitStructGet(FieldExtension extension) {
   emitGcNullCheck(rp);
 
   
-  RegPtr rdata = needPtr();
-  {
-    RegPtr scratch = needPtr();
-    RegPtr clasp = needPtr();
-    masm.movePtr(SymbolicAddress::InlineTypedObjectClass, clasp);
-    Label join;
-    Label isInline;
-    masm.branchTestObjClass(Assembler::Equal, rp, clasp, scratch, rp,
-                            &isInline);
-    freePtr(clasp);
-    freePtr(scratch);
+  FieldType fieldType = structType.fields_[fieldIndex].type;
+  uint32_t fieldOffset = structType.fields_[fieldIndex].offset;
 
-    masm.loadPtr(Address(rp, OutlineTypedObject::offsetOfData()), rdata);
-    masm.jump(&join);
+  bool areaIsOutline;
+  uint32_t areaOffset;
+  WasmStructObject::fieldOffsetToAreaAndOffset(fieldType, fieldOffset,
+                                               &areaIsOutline, &areaOffset);
 
-    masm.bind(&isInline);
+  
+  RegPtr rbase = needPtr();
+  if (areaIsOutline) {
+    masm.loadPtr(Address(rp, WasmStructObject::offsetOfOutlineData()), rbase);
+  } else {
     masm.computeEffectiveAddress(
-        Address(rp, InlineTypedObject::offsetOfDataStart()), rdata);
-    masm.bind(&join);
+        Address(rp, WasmStructObject::offsetOfInlineData()), rbase);
   }
 
   
-  FieldType type = structType.fields_[fieldIndex].type;
-  uint32_t offset = structType.fields_[fieldIndex].offset;
-  emitGcGet(type, extension, Address(rdata, offset));
+  emitGcGet(fieldType, extension, Address(rbase, areaOffset));
 
-  freePtr(rdata);
+  freePtr(rbase);
   freeRef(rp);
 
   return true;
@@ -6755,9 +6757,9 @@ bool BaseCompiler::emitStructSet() {
     needPtr(RegPtr(PreBarrierReg));
   }
 
+  RegPtr rbase = needPtr();
   AnyReg value = popAny();
   RegRef rp = popRef();
-  RegPtr rdata = needPtr();
 
   
   if (structField.type.isRefRepr()) {
@@ -6768,33 +6770,28 @@ bool BaseCompiler::emitStructSet() {
   emitGcNullCheck(rp);
 
   
-  {
-    
-    
-    
-    RegPtr scratch = rdata;
-    RegPtr clasp = needPtr();
-    masm.movePtr(SymbolicAddress::InlineTypedObjectClass, clasp);
-    Label join;
-    Label isInline;
-    masm.branchTestObjClass(Assembler::Equal, rp, clasp, scratch, rp,
-                            &isInline);
-    freePtr(clasp);
-    masm.loadPtr(Address(rp, OutlineTypedObject::offsetOfData()), rdata);
-    masm.jump(&join);
+  FieldType fieldType = structType.fields_[fieldIndex].type;
+  uint32_t fieldOffset = structType.fields_[fieldIndex].offset;
 
-    masm.bind(&isInline);
+  bool areaIsOutline;
+  uint32_t areaOffset;
+  WasmStructObject::fieldOffsetToAreaAndOffset(fieldType, fieldOffset,
+                                               &areaIsOutline, &areaOffset);
+
+  
+  if (areaIsOutline) {
+    masm.loadPtr(Address(rp, WasmStructObject::offsetOfOutlineData()), rbase);
+  } else {
     masm.computeEffectiveAddress(
-        Address(rp, InlineTypedObject::offsetOfDataStart()), rdata);
-    masm.bind(&join);
+        Address(rp, WasmStructObject::offsetOfInlineData()), rbase);
   }
 
   
-  if (!emitGcStructSet(rp, rdata, structField, value)) {
+  if (!emitGcStructSet(rp, rbase, areaOffset, fieldType, value)) {
     return false;
   }
 
-  freePtr(rdata);
+  freePtr(rbase);
   freeRef(rp);
 
   return true;

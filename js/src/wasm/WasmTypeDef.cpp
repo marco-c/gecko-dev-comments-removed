@@ -70,6 +70,13 @@ CheckedInt32 StructLayout::addField(FieldType type) {
   uint32_t fieldAlignment = type.alignmentInStruct();
 
   
+  
+  
+  MOZ_ASSERT(fieldSize >= 1 && fieldSize <= 16);
+  MOZ_ASSERT((fieldSize & (fieldSize - 1)) == 0);  
+  MOZ_ASSERT(fieldAlignment == fieldSize);         
+
+  
   structAlignment = std::max(structAlignment, fieldAlignment);
 
   
@@ -84,6 +91,8 @@ CheckedInt32 StructLayout::addField(FieldType type) {
     return sizeSoFar;
   }
 
+  
+  MOZ_ASSERT(offset / 16 == (offset + fieldSize - 1) / 16);
   return offset;
 }
 

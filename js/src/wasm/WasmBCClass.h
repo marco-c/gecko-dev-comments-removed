@@ -1648,8 +1648,16 @@ struct BaseCompiler final {
   void emitGcGet(FieldType type, FieldExtension extension, const T& src);
   template <typename T>
   void emitGcSetScalar(const T& dst, FieldType type, AnyReg value);
-  [[nodiscard]] bool emitGcStructSet(RegRef object, RegPtr data,
-                                     const StructField& field, AnyReg value);
+
+  
+  
+  
+  
+  
+  [[nodiscard]] bool emitGcStructSet(RegRef object, RegPtr areaBase,
+                                     uint32_t areaOffset, FieldType fieldType,
+                                     AnyReg value);
+
   [[nodiscard]] bool emitGcArraySet(RegRef object, RegPtr data, RegI32 index,
                                     const ArrayType& array, AnyReg value);
 #endif  

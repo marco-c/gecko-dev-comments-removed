@@ -233,6 +233,20 @@ using StructTypePtrVector = Vector<const StructType*, 0, SystemAllocPolicy>;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class StructLayout {
   CheckedInt32 sizeSoFar = 0;
   uint32_t structAlignment = 1;
