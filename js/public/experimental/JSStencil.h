@@ -277,15 +277,7 @@ extern JS_PUBLIC_API OffThreadToken* DecodeMultiStencilsOffThread(
 
 
 
-extern JS_PUBLIC_API already_AddRefed<Stencil> FinishCompileToStencilOffThread(
-    JSContext* cx, OffThreadToken* token,
-    InstantiationStorage* storage = nullptr);
-
-extern JS_PUBLIC_API already_AddRefed<Stencil>
-FinishCompileModuleToStencilOffThread(JSContext* cx, OffThreadToken* token,
-                                      InstantiationStorage* storage = nullptr);
-
-extern JS_PUBLIC_API already_AddRefed<Stencil> FinishDecodeStencilOffThread(
+extern JS_PUBLIC_API already_AddRefed<Stencil> FinishOffThreadStencil(
     JSContext* cx, OffThreadToken* token,
     InstantiationStorage* storage = nullptr);
 
@@ -294,17 +286,8 @@ extern JS_PUBLIC_API bool FinishDecodeMultiStencilsOffThread(
     mozilla::Vector<RefPtr<Stencil>>* stencils);
 
 
-extern JS_PUBLIC_API void CancelCompileToStencilOffThread(
-    JSContext* cx, OffThreadToken* token);
-
-extern JS_PUBLIC_API void CancelCompileModuleToStencilOffThread(
-    JSContext* cx, OffThreadToken* token);
-
-extern JS_PUBLIC_API void CancelDecodeStencilOffThread(JSContext* cx,
-                                                       OffThreadToken* token);
-
-extern JS_PUBLIC_API void CancelDecodeMultiStencilsOffThread(
-    JSContext* cx, OffThreadToken* token);
+extern JS_PUBLIC_API void CancelOffThreadToken(JSContext* cx,
+                                               OffThreadToken* token);
 
 }  
 
