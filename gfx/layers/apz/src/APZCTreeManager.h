@@ -566,6 +566,9 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
   ScreenMargin GetCompositorFixedLayerMargins() const;
 
+  void AdjustEventPointForDynamicToolbar(ScreenIntPoint& aEventPoint,
+                                         const HitTestResult& aHit);
+
   APZScrollGeneration NewAPZScrollGeneration() {
     
     
