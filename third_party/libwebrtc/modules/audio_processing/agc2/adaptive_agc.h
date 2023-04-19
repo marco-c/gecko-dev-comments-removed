@@ -29,8 +29,9 @@ class AdaptiveAgc {
  public:
   explicit AdaptiveAgc(ApmDataDumper* apm_data_dumper);
   
-  AdaptiveAgc(ApmDataDumper* apm_data_dumper,
-              const AudioProcessing::Config::GainController2& config);
+  AdaptiveAgc(
+      ApmDataDumper* apm_data_dumper,
+      const AudioProcessing::Config::GainController2::AdaptiveDigital& config);
   ~AdaptiveAgc();
 
   

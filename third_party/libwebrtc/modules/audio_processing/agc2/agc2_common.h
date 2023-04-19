@@ -35,7 +35,7 @@ constexpr float kLimiterThresholdForAgcGainDbfs = -kHeadroomDbfs;
 
 
 
-constexpr float kVadConfidenceThreshold = 0.9f;
+constexpr float kVadConfidenceThreshold = 0.95f;
 
 
 constexpr int kFullBufferSizeMs = 1200;

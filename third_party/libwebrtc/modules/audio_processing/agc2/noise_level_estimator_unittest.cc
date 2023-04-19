@@ -11,6 +11,7 @@
 #include "modules/audio_processing/agc2/noise_level_estimator.h"
 
 #include <array>
+#include <cmath>
 #include <functional>
 #include <limits>
 
@@ -29,21 +30,19 @@ constexpr int kFramesPerSecond = 100;
 
 
 float RunEstimator(rtc::FunctionView<float()> sample_generator,
+                   NoiseLevelEstimator& estimator,
                    int sample_rate_hz) {
-  ApmDataDumper data_dumper(0);
-  auto estimator = CreateNoiseLevelEstimator(&data_dumper);
   const int samples_per_channel =
       rtc::CheckedDivExact(sample_rate_hz, kFramesPerSecond);
   VectorFloatFrame signal(1, samples_per_channel, 0.0f);
-
   for (int i = 0; i < kNumIterations; ++i) {
     AudioFrameView<float> frame_view = signal.float_frame_view();
     for (int j = 0; j < samples_per_channel; ++j) {
       frame_view.channel(0)[j] = sample_generator();
     }
-    estimator->Analyze(frame_view);
+    estimator.Analyze(frame_view);
   }
-  return estimator->Analyze(signal.float_frame_view());
+  return estimator.Analyze(signal.float_frame_view());
 }
 
 class NoiseEstimatorParametrization : public ::testing::TestWithParam<int> {
@@ -53,30 +52,80 @@ class NoiseEstimatorParametrization : public ::testing::TestWithParam<int> {
 
 
 
-TEST_P(NoiseEstimatorParametrization, RandomNoise) {
+TEST_P(NoiseEstimatorParametrization, StationaryNoiseEstimatorWithRandomNoise) {
+  ApmDataDumper data_dumper(0);
+  auto estimator = CreateStationaryNoiseEstimator(&data_dumper);
+
   test::WhiteNoiseGenerator gen(test::kMinS16,
                                 test::kMaxS16);
-  const float noise_level_dbfs = RunEstimator(gen, sample_rate_hz());
+  const float noise_level_dbfs =
+      RunEstimator(gen, *estimator, sample_rate_hz());
   EXPECT_NEAR(noise_level_dbfs, -5.5f, 1.0f);
 }
 
 
 
-TEST_P(NoiseEstimatorParametrization, SineTone) {
+TEST_P(NoiseEstimatorParametrization, StationaryNoiseEstimatorWithSineTone) {
+  ApmDataDumper data_dumper(0);
+  auto estimator = CreateStationaryNoiseEstimator(&data_dumper);
+
   test::SineGenerator gen(test::kMaxS16, 600.0f,
                           sample_rate_hz());
-  const float noise_level_dbfs = RunEstimator(gen, sample_rate_hz());
+  const float noise_level_dbfs =
+      RunEstimator(gen, *estimator, sample_rate_hz());
   EXPECT_NEAR(noise_level_dbfs, -3.0f, 1.0f);
 }
 
 
 
-TEST_P(NoiseEstimatorParametrization, PulseTone) {
+TEST_P(NoiseEstimatorParametrization, StationaryNoiseEstimatorWithPulseTone) {
+  ApmDataDumper data_dumper(0);
+  auto estimator = CreateStationaryNoiseEstimator(&data_dumper);
+
   test::PulseGenerator gen(test::kMaxS16,
                            10.0f, 20.0f,
                            sample_rate_hz());
-  const int noise_level_dbfs = RunEstimator(gen, sample_rate_hz());
+  const int noise_level_dbfs = RunEstimator(gen, *estimator, sample_rate_hz());
   EXPECT_NEAR(noise_level_dbfs, -79.0f, 1.0f);
+}
+
+
+TEST_P(NoiseEstimatorParametrization, NoiseFloorEstimatorWithRandomNoise) {
+  ApmDataDumper data_dumper(0);
+  auto estimator = CreateNoiseFloorEstimator(&data_dumper);
+
+  test::WhiteNoiseGenerator gen(test::kMinS16,
+                                test::kMaxS16);
+  const float noise_level_dbfs =
+      RunEstimator(gen, *estimator, sample_rate_hz());
+  EXPECT_NEAR(noise_level_dbfs, -5.5f, 0.5f);
+}
+
+
+TEST_P(NoiseEstimatorParametrization, NoiseFloorEstimatorWithSineTone) {
+  ApmDataDumper data_dumper(0);
+  auto estimator = CreateNoiseFloorEstimator(&data_dumper);
+
+  test::SineGenerator gen(test::kMaxS16, 600.0f,
+                          sample_rate_hz());
+  const float noise_level_dbfs =
+      RunEstimator(gen, *estimator, sample_rate_hz());
+  EXPECT_NEAR(noise_level_dbfs, -3.0f, 0.1f);
+}
+
+
+
+TEST_P(NoiseEstimatorParametrization, NoiseFloorEstimatorWithPulseTone) {
+  ApmDataDumper data_dumper(0);
+  auto estimator = CreateNoiseFloorEstimator(&data_dumper);
+
+  constexpr float kNoPulseAmplitude = 10.0f;
+  test::PulseGenerator gen(test::kMaxS16, kNoPulseAmplitude,
+                           20.0f, sample_rate_hz());
+  const int noise_level_dbfs = RunEstimator(gen, *estimator, sample_rate_hz());
+  const float expected_noise_floor_dbfs =
+      20.0f * std::log10f(kNoPulseAmplitude / test::kMaxS16);
+  EXPECT_NEAR(noise_level_dbfs, expected_noise_floor_dbfs, 0.5f);
 }
 
 INSTANTIATE_TEST_SUITE_P(GainController2NoiseEstimator,

@@ -46,13 +46,15 @@ class NoiseLevelEstimatorImpl : public NoiseLevelEstimator {
  public:
   NoiseLevelEstimatorImpl(ApmDataDumper* data_dumper)
       : data_dumper_(data_dumper), signal_classifier_(data_dumper) {
+    
+    
     Initialize(48000);
   }
   NoiseLevelEstimatorImpl(const NoiseLevelEstimatorImpl&) = delete;
   NoiseLevelEstimatorImpl& operator=(const NoiseLevelEstimatorImpl&) = delete;
   ~NoiseLevelEstimatorImpl() = default;
 
-  float Analyze(const AudioFrameView<const float>& frame) {
+  float Analyze(const AudioFrameView<const float>& frame) override {
     data_dumper_->DumpRaw("agc2_noise_level_estimator_hold_counter",
                           noise_energy_hold_counter_);
     const int sample_rate_hz =
@@ -122,6 +124,7 @@ class NoiseLevelEstimatorImpl : public NoiseLevelEstimator {
     sample_rate_hz_ = sample_rate_hz;
     noise_energy_ = 1.0f;
     first_update_ = true;
+    
     min_noise_energy_ = sample_rate_hz * 2.0f * 2.0f / kFramesPerSecond;
     noise_energy_hold_counter_ = 0;
     signal_classifier_.Initialize(sample_rate_hz);
@@ -136,11 +139,122 @@ class NoiseLevelEstimatorImpl : public NoiseLevelEstimator {
   SignalClassifier signal_classifier_;
 };
 
+
+
+
+
+
+float SmoothNoiseFloorEstimate(float current_estimate, float new_estimate) {
+  constexpr float kAttack = 0.5f;
+  if (current_estimate < new_estimate) {
+    
+    return kAttack * new_estimate + (1.0f - kAttack) * current_estimate;
+  }
+  
+  return new_estimate;
+}
+
+class NoiseFloorEstimator : public NoiseLevelEstimator {
+ public:
+  
+  static constexpr int kUpdatePeriodNumFrames = 500;
+  static_assert(kUpdatePeriodNumFrames >= 200,
+                "A too small value may cause noise level overestimation.");
+  static_assert(kUpdatePeriodNumFrames <= 1500,
+                "A too large value may make AGC2 slow at reacting to increased "
+                "noise levels.");
+
+  NoiseFloorEstimator(ApmDataDumper* data_dumper) : data_dumper_(data_dumper) {
+    
+    
+    Initialize(48000);
+  }
+  NoiseFloorEstimator(const NoiseFloorEstimator&) = delete;
+  NoiseFloorEstimator& operator=(const NoiseFloorEstimator&) = delete;
+  ~NoiseFloorEstimator() = default;
+
+  float Analyze(const AudioFrameView<const float>& frame) override {
+    
+    const int sample_rate_hz =
+        static_cast<int>(frame.samples_per_channel() * kFramesPerSecond);
+    if (sample_rate_hz != sample_rate_hz_) {
+      Initialize(sample_rate_hz);
+    }
+
+    const float frame_energy = FrameEnergy(frame);
+    if (frame_energy <= min_noise_energy_) {
+      
+      data_dumper_->DumpRaw("agc2_noise_floor_preliminary_level",
+                            noise_energy_);
+      return EnergyToDbfs(noise_energy_, frame.samples_per_channel());
+    }
+
+    if (preliminary_noise_energy_set_) {
+      preliminary_noise_energy_ =
+          std::min(preliminary_noise_energy_, frame_energy);
+    } else {
+      preliminary_noise_energy_ = frame_energy;
+      preliminary_noise_energy_set_ = true;
+    }
+    data_dumper_->DumpRaw("agc2_noise_floor_preliminary_level",
+                          preliminary_noise_energy_);
+
+    if (counter_ == 0) {
+      
+      first_period_ = false;
+      
+      
+      noise_energy_ = SmoothNoiseFloorEstimate(
+          noise_energy_,
+          preliminary_noise_energy_);
+      
+      counter_ = kUpdatePeriodNumFrames;
+      preliminary_noise_energy_set_ = false;
+    } else if (first_period_) {
+      
+      
+      noise_energy_ = preliminary_noise_energy_;
+      counter_--;
+    } else {
+      
+      noise_energy_ = std::min(noise_energy_, preliminary_noise_energy_);
+      counter_--;
+    }
+    return EnergyToDbfs(noise_energy_, frame.samples_per_channel());
+  }
+
+ private:
+  void Initialize(int sample_rate_hz) {
+    sample_rate_hz_ = sample_rate_hz;
+    first_period_ = true;
+    preliminary_noise_energy_set_ = false;
+    
+    min_noise_energy_ = sample_rate_hz * 2.0f * 2.0f / kFramesPerSecond;
+    preliminary_noise_energy_ = min_noise_energy_;
+    noise_energy_ = min_noise_energy_;
+    counter_ = kUpdatePeriodNumFrames;
+  }
+
+  ApmDataDumper* const data_dumper_;
+  int sample_rate_hz_;
+  float min_noise_energy_;
+  bool first_period_;
+  bool preliminary_noise_energy_set_;
+  float preliminary_noise_energy_;
+  float noise_energy_;
+  int counter_;
+};
+
 }  
 
-std::unique_ptr<NoiseLevelEstimator> CreateNoiseLevelEstimator(
+std::unique_ptr<NoiseLevelEstimator> CreateStationaryNoiseEstimator(
     ApmDataDumper* data_dumper) {
   return std::make_unique<NoiseLevelEstimatorImpl>(data_dumper);
+}
+
+std::unique_ptr<NoiseLevelEstimator> CreateNoiseFloorEstimator(
+    ApmDataDumper* data_dumper) {
+  return std::make_unique<NoiseFloorEstimator>(data_dumper);
 }
 
 }  
