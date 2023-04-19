@@ -17,11 +17,9 @@ ChromeUtils.defineModuleGetter(
   "PanelMultiView",
   "resource:///modules/PanelMultiView.jsm"
 );
-ChromeUtils.defineModuleGetter(
-  this,
-  "ToolbarPanelHub",
-  "resource://activity-stream/lib/ToolbarPanelHub.jsm"
-);
+ChromeUtils.defineESModuleGetters(this, {
+  ToolbarPanelHub: "resource://activity-stream/lib/ToolbarPanelHub.sys.mjs",
+});
 
 
 
