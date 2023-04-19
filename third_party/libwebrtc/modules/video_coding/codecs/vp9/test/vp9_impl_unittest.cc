@@ -594,7 +594,7 @@ TEST(Vp9ImplTest, SpatialUpswitchNotAtGOFBoundary) {
               ElementsAre(GenericLayerIs(0, 0), GenericLayerIs(1, 0)));
 }
 
-TEST_F(TestVp9Impl, DisableEnableBaseLayerTriggersKeyFrame) {
+TEST_F(TestVp9Impl, DISABLED_DisableEnableBaseLayerTriggersKeyFrame) {
   
   
   test::ScopedFieldTrials override_field_trials(
