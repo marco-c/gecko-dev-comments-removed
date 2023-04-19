@@ -348,30 +348,70 @@ addAccessibleTask(
 
 
 
+
+function misspelledRangesMatch(acc, ranges) {
+  let offset = 0;
+  let expectedRanges = [...ranges];
+  let charCount = acc.characterCount;
+  while (offset < charCount) {
+    let start = {};
+    let end = {};
+    let attributes = acc.getTextAttributes(false, offset, start, end);
+    offset = end.value;
+    try {
+      if (attributes.getStringProperty("invalid") == "spelling") {
+        let expected = expectedRanges.shift();
+        if (
+          !expected ||
+          expected[0] != start.value ||
+          expected[1] != end.value
+        ) {
+          return false;
+        }
+      }
+    } catch (err) {}
+  }
+
+  return !expectedRanges.length;
+}
+
+
+
+
+
+function waitForMisspelledRanges(acc, ranges) {
+  return waitForEvent(EVENT_TEXT_ATTRIBUTE_CHANGED, () =>
+    misspelledRangesMatch(acc, ranges)
+  ).then(() => {
+    ok(true, `Misspelled ranges match: ${JSON.stringify(ranges)}`);
+  });
+}
+
+
+
+
 addAccessibleTask(
   `
 <textarea id="textarea" spellcheck="true">test tset tset test</textarea>
 <div contenteditable id="editable" spellcheck="true">plain<span> ts</span>et <b>bold</b></div>
   `,
   async function(browser, docAcc) {
-    const misspelledAttrs = { invalid: "spelling" };
-
-    const textarea = findAccessibleChildByID(docAcc, "textarea");
+    const textarea = findAccessibleChildByID(docAcc, "textarea", [
+      nsIAccessibleText,
+    ]);
     info("Focusing textarea");
-    let spellingChanged = waitForEvent(EVENT_TEXT_ATTRIBUTE_CHANGED, textarea);
+    let spellingChanged = waitForMisspelledRanges(textarea, [
+      [5, 9],
+      [10, 14],
+    ]);
     textarea.takeFocus();
     await spellingChanged;
-    testTextAttrs(textarea, 0, {}, {}, 0, 5, true); 
-    testTextAttrs(textarea, 5, misspelledAttrs, {}, 5, 9, true); 
-    testTextAttrs(textarea, 9, {}, {}, 9, 10, true); 
-    testTextAttrs(textarea, 10, misspelledAttrs, {}, 10, 14, true); 
-    testTextAttrs(textarea, 14, {}, {}, 14, 19, true); 
 
     
     info('textarea: Changing first "tset" to "test"');
     
     
-    spellingChanged = waitForEvent(EVENT_TEXT_ATTRIBUTE_CHANGED, textarea);
+    spellingChanged = waitForMisspelledRanges(textarea, [[10, 14]]);
     await invokeContentTask(browser, [], () => {
       content.document.getElementById("textarea").setSelectionRange(5, 9);
     });
@@ -379,24 +419,19 @@ addAccessibleTask(
     
     EventUtils.synthesizeKey("KEY_ArrowRight");
     await spellingChanged;
-    testTextAttrs(textarea, 0, {}, {}, 0, 10, true); 
-    testTextAttrs(textarea, 10, misspelledAttrs, {}, 10, 14, true); 
-    testTextAttrs(textarea, 14, {}, {}, 14, 19, true); 
 
     
     info('textarea: Changing it back to "tset"');
-    spellingChanged = waitForEvent(EVENT_TEXT_ATTRIBUTE_CHANGED, textarea);
+    spellingChanged = waitForMisspelledRanges(textarea, [
+      [5, 9],
+      [10, 14],
+    ]);
     await invokeContentTask(browser, [], () => {
       content.document.getElementById("textarea").setSelectionRange(5, 9);
     });
     EventUtils.sendString("tset");
     EventUtils.synthesizeKey("KEY_ArrowRight");
     await spellingChanged;
-    testTextAttrs(textarea, 0, {}, {}, 0, 5, true); 
-    testTextAttrs(textarea, 5, misspelledAttrs, {}, 5, 9, true); 
-    testTextAttrs(textarea, 9, {}, {}, 9, 10, true); 
-    testTextAttrs(textarea, 10, misspelledAttrs, {}, 10, 14, true); 
-    testTextAttrs(textarea, 14, {}, {}, 14, 19, true); 
 
     
     
@@ -413,14 +448,21 @@ addAccessibleTask(
     let selected = waitForEvent(EVENT_TEXT_SELECTION_CHANGED, textarea);
     EventUtils.synthesizeKey("KEY_ArrowRight", { shiftKey: true });
     await selected;
-    testTextAttrs(textarea, 0, {}, {}, 0, 4, true); 
-    testTextAttrs(textarea, 4, misspelledAttrs, {}, 4, 8, true); 
-    testTextAttrs(textarea, 8, {}, {}, 8, 9, true); 
-    testTextAttrs(textarea, 9, misspelledAttrs, {}, 9, 13, true); 
-    testTextAttrs(textarea, 13, {}, {}, 13, 18, true); 
+    const expectedRanges = [
+      [4, 8],
+      [9, 13],
+    ];
+    if (!misspelledRangesMatch(textarea, expectedRanges)) {
+      
+      await waitForMisspelledRanges(textarea, expectedRanges);
+    }
 
-    const editable = findAccessibleChildByID(docAcc, "editable");
+    const editable = findAccessibleChildByID(docAcc, "editable", [
+      nsIAccessibleText,
+    ]);
     info("Focusing editable");
+    spellingChanged = waitForMisspelledRanges(editable, [[6, 10]]);
+
     spellingChanged = waitForEvent(EVENT_TEXT_ATTRIBUTE_CHANGED, editable);
     editable.takeFocus();
     await spellingChanged;
@@ -428,7 +470,7 @@ addAccessibleTask(
     testTextAttrs(editable, 0, {}, {}, 0, 6, true); 
     
     
-    testTextAttrs(editable, 6, misspelledAttrs, {}, 6, 10, true); 
+    testTextAttrs(editable, 6, { invalid: "spelling" }, {}, 6, 10, true); 
     testTextAttrs(editable, 10, {}, {}, 10, 11, true); 
     
     
