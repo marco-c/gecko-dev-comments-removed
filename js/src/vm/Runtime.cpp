@@ -124,7 +124,6 @@ JSRuntime::JSRuntime(JSRuntime* parentRuntime)
       lcovOutput_(),
       jitRuntime_(nullptr),
       gc(thisFromCtor()),
-      gcInitialized(false),
       emptyString(nullptr),
 #if !JS_HAS_INTL_API
       thousandsSeparator(nullptr),
@@ -194,18 +193,6 @@ bool JSRuntime::init(JSContext* cx, uint32_t maxbytes) {
     return false;
   }
 
-  UniquePtr<Zone> atomsZone = MakeUnique<Zone>(this, Zone::AtomsZone);
-  if (!atomsZone || !atomsZone->init()) {
-    return false;
-  }
-
-  MOZ_ASSERT(atomsZone->isAtomsZone());
-  gc.atomsZone = atomsZone.release();
-
-  
-  
-  gcInitialized = true;
-
   if (!InitRuntimeNumberState(this)) {
     return false;
   }
@@ -237,7 +224,7 @@ void JSRuntime::destroyRuntime() {
   
   caches().purgeStencils();
 
-  if (gcInitialized) {
+  if (gc.wasInitialized()) {
     
 
 

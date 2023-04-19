@@ -759,7 +759,6 @@ struct JSRuntime {
   js::gc::GCRuntime gc;
 
   
-  js::WriteOnceData<bool> gcInitialized;
 
   bool hasZealMode(js::gc::ZealMode mode) { return gc.hasZealMode(mode); }
 
