@@ -324,6 +324,10 @@ struct RTC_EXPORT RtpExtension {
       "#dependency-descriptor-rtp-header-extension";
 
   
+  static constexpr char kVideoLayersAllocationUri[] =
+      "http://www.webrtc.org/experiments/rtp-hdrext/video-layers-allocation00";
+
+  
   
   static constexpr char kTransportSequenceNumberUri[] =
       "http://www.ietf.org/id/"
