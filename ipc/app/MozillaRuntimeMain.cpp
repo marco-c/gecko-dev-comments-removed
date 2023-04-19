@@ -8,6 +8,7 @@
 
 #include "mozilla/Bootstrap.h"
 #include "mozilla/RuntimeExceptionModule.h"
+#include "mozilla/ScopeExit.h"
 #if defined(XP_WIN)
 #  include "mozilla/WindowsDllBlocklist.h"
 #  include "mozilla/GeckoArgs.h"
@@ -75,6 +76,10 @@ int main(int argc, char* argv[]) {
     
     
     CrashReporter::RegisterRuntimeExceptionModule();
+
+    
+    auto unregisterRuntimeExceptionModule = MakeScopeExit(
+        [] { CrashReporter::UnregisterRuntimeExceptionModule(); });
 
 #ifdef HAS_DLL_BLOCKLIST
     uint32_t initFlags = eDllBlocklistInitFlagIsChildProcess;

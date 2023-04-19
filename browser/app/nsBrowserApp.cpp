@@ -10,6 +10,7 @@
 #include "mozilla/Bootstrap.h"
 #include "mozilla/ProcessType.h"
 #include "mozilla/RuntimeExceptionModule.h"
+#include "mozilla/ScopeExit.h"
 #include "BrowserDefines.h"
 #if defined(XP_WIN)
 #  include <windows.h>
@@ -291,6 +292,11 @@ int main(int argc, char* argv[], char* envp[]) {
 
   AUTO_BASE_PROFILER_INIT;
   AUTO_BASE_PROFILER_LABEL("nsBrowserApp main", OTHER);
+
+  
+  
+  auto unregisterRuntimeExceptionModule =
+      MakeScopeExit([] { CrashReporter::UnregisterRuntimeExceptionModule(); });
 
 #ifdef MOZ_BROWSER_CAN_BE_CONTENTPROC
   
