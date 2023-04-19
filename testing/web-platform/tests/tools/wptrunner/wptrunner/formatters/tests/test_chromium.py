@@ -191,11 +191,13 @@ def test_subtest_messages(logger, capfd):
 
     
     
+    
     logger.suite_start(["t1", "t2"], run_info={}, time=123)
     logger.test_start("t1")
     logger.test_status("t1", status="FAIL", subtest="t1_a",
                        message="t1_a_message")
-    logger.test_status("t1", status="PASS", subtest="t1_b",
+    
+    logger.test_status("t1", status="PASS", subtest=r"t1_\[]]b",
                        message="t1_b_message")
     logger.test_end("t1", status="PASS", expected="PASS")
     logger.test_start("t2")
@@ -221,11 +223,13 @@ def test_subtest_messages(logger, capfd):
     assert t1_artifacts["wpt_actual_metadata"] == [
         "[t1]\n  expected: PASS\n",
         "  [t1_a]\n    expected: FAIL\n",
-        "  [t1_b]\n    expected: PASS\n",
+        "  [t1_\\\\[\\]\\]b]\n    expected: PASS\n",
     ]
     assert t1_artifacts["wpt_log"] == [
         "t1_a: t1_a_message\n",
-        "t1_b: t1_b_message\n",
+        
+        
+        "t1_\\[]]b: t1_b_message\n",
     ]
     assert t1_artifacts["wpt_subtest_failure"] == ["true"]
     t2_artifacts = output_json["tests"]["t2"]["artifacts"]
