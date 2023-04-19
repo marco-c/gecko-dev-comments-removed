@@ -16,6 +16,7 @@
 #include "api/frame_transformer_interface.h"
 #include "api/scoped_refptr.h"
 #include "api/task_queue/task_queue_base.h"
+#include "api/video/video_layers_allocation.h"
 #include "rtc_base/synchronization/mutex.h"
 
 namespace webrtc {
@@ -52,8 +53,14 @@ class RTPSenderVideoFrameTransformerDelegate : public TransformedFrameCallback {
   void SendVideo(std::unique_ptr<TransformableFrameInterface> frame) const;
 
   
+  
   void SetVideoStructureUnderLock(
       const FrameDependencyStructure* video_structure);
+
+  
+  
+  
+  void SetVideoLayersAllocationUnderLock(VideoLayersAllocation allocation);
 
   
   
