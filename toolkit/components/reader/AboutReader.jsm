@@ -1035,17 +1035,18 @@ AboutReader.prototype = {
 
     this._titleElement.textContent = article.title;
 
+    
+    
     const slow = article.readingTimeMinsSlow;
     const fast = article.readingTimeMinsFast;
+    const fastStr = lazy.numberFormat.format(fast);
+    const slowStr = lazy.numberFormat.format(slow);
     this._doc.l10n.setAttributes(
       this._readTimeElement,
       "about-reader-estimated-read-time",
       {
-        range: lazy.numberFormat.formatRange(fast, slow),
-        rangePlural:
-          slow === fast
-            ? lazy.pluralRules.select(fast) 
-            : lazy.pluralRules.selectRange(fast, slow),
+        range: fastStr === slowStr ? `~${fastStr}` : `${fastStr}–${slowStr}`,
+        rangePlural: lazy.pluralRules.select(slow),
       }
     );
 
