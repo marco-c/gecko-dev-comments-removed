@@ -2489,6 +2489,10 @@ void ScrollFrameHelper::CompleteAsyncScroll(
     ScrollOrigin aOrigin) {
   SetLastSnapTargetIds(std::move(aSnapTargetIds));
 
+  bool isNotHandledByApz =
+      nsLayoutUtils::CanScrollOriginClobberApz(aOrigin) ||
+      ScrollAnimationState().contains(AnimationState::MainThread);
+
   
   RemoveObservers();
   AutoWeakFrame weakFrame(mOuter);
@@ -2499,7 +2503,17 @@ void ScrollFrameHelper::CompleteAsyncScroll(
   
   
   mDestination = GetScrollPosition();
-  PostScrollEndEvent();
+  
+  
+  
+  
+  
+  
+  
+  
+  if (isNotHandledByApz) {
+    PostScrollEndEvent();
+  }
 }
 
 bool ScrollFrameHelper::HasBgAttachmentLocal() const {
