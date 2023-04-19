@@ -320,6 +320,10 @@ var NetUtil = {
     return channel;
   },
 
+  newWebTransport: function NetUtil_newWebTransport() {
+    return Services.io.newWebTransport();
+  },
+
   
 
 

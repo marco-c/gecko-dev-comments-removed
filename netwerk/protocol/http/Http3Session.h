@@ -19,6 +19,85 @@
 #include "mozilla/WeakPtr.h"
 #include "nsDeque.h"
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 namespace mozilla::net {
 
 class HttpConnectionUDP;
@@ -59,10 +138,12 @@ class Http3Session final : public nsAHttpTransaction, public nsAHttpConnection {
   bool CanReuse();
 
   
+  
   nsresult TryActivating(const nsACString& aMethod, const nsACString& aScheme,
                          const nsACString& aAuthorityHeader,
                          const nsACString& aPath, const nsACString& aHeaders,
                          uint64_t* aStreamId, Http3StreamBase* aStream);
+  
   void CloseSendingSide(uint64_t aStreamId);
   nsresult SendRequestBody(uint64_t aStreamId, const char* buf, uint32_t count,
                            uint32_t* countRead);
@@ -71,6 +152,12 @@ class Http3Session final : public nsAHttpTransaction, public nsAHttpConnection {
   nsresult ReadResponseData(uint64_t aStreamId, char* aBuf, uint32_t aCount,
                             uint32_t* aCountWritten, bool* aFin);
 
+  
+  nsresult CloseWebTransport(uint64_t aSessionId, uint32_t aError,
+                             const nsACString& aMessage);
+  nsresult CreateWebTransportStream(uint64_t aSessionId,
+                                    WebTransportStreamType aStreamType,
+                                    uint64_t* aStreamId);
   void CloseStream(Http3StreamBase* aStream, nsresult aResult);
 
   void SetCleanShutdown(bool aCleanShutdown) {
@@ -104,6 +191,8 @@ class Http3Session final : public nsAHttpTransaction, public nsAHttpConnection {
   nsresult SendPriorityUpdateFrame(uint64_t aStreamId, uint8_t aPriorityUrgency,
                                    bool aPriorityIncremental);
 
+  void ConnectSlowConsumer(Http3StreamBase* stream);
+
  private:
   ~Http3Session();
 
@@ -120,7 +209,6 @@ class Http3Session final : public nsAHttpTransaction, public nsAHttpConnection {
   nsresult ProcessTransactionRead(uint64_t stream_id);
   nsresult ProcessTransactionRead(Http3StreamBase* stream);
   nsresult ProcessSlowConsumers();
-  void ConnectSlowConsumer(Http3StreamBase* stream);
 
   void SetupTimer(uint64_t aTimeout);
 
@@ -229,6 +317,14 @@ class Http3Session final : public nsAHttpTransaction, public nsAHttpConnection {
   enum WebTransportNegotiation { DISABLED, NEGOTIATING, FAILED, SUCCEEDED };
   WebTransportNegotiation mWebTransportNegotiationStatus{
       WebTransportNegotiation::DISABLED};
+
+  nsTArray<WeakPtr<Http3StreamBase>> mWaitingForWebTransportNegotiation;
+  
+  
+  
+  void WebTransportNegotiationDone();
+
+  nsTArray<RefPtr<Http3StreamBase>> mWebTransportSessions;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(Http3Session, NS_HTTP3SESSION_IID);
