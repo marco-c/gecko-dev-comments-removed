@@ -14,13 +14,13 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <functional>
 #include <map>
 #include <memory>
 #include <string>
 
 #include "api/transport/stun.h"
 #include "rtc_base/message_handler.h"
-#include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread.h"
 
 namespace cricket {
@@ -38,7 +38,9 @@ const int STUN_TOTAL_TIMEOUT = 39750;
 
 class StunRequestManager {
  public:
-  explicit StunRequestManager(rtc::Thread* thread);
+  StunRequestManager(
+      rtc::Thread* thread,
+      std::function<void(const void*, size_t, StunRequest*)> send_packet);
   ~StunRequestManager();
 
   
@@ -70,14 +72,14 @@ class StunRequestManager {
   
   rtc::Thread* network_thread() const { return thread_; }
 
-  
-  sigslot::signal3<const void*, size_t, StunRequest*> SignalSendPacket;
+  void SendPacket(const void* data, size_t size, StunRequest* request);
 
  private:
   typedef std::map<std::string, std::unique_ptr<StunRequest>> RequestMap;
 
   rtc::Thread* const thread_;
   RequestMap requests_ RTC_GUARDED_BY(thread_);
+  const std::function<void(const void*, size_t, StunRequest*)> send_packet_;
 };
 
 
