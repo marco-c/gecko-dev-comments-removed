@@ -33,7 +33,6 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
   FxAccounts: "resource://gre/modules/FxAccounts.jsm",
   ObjectUtils: "resource://gre/modules/ObjectUtils.jsm",
   Observers: "resource://services-common/observers.js",
-  OS: "resource://gre/modules/osfile.jsm",
   Resource: "resource://services-sync/resource.js",
   Status: "resource://services-sync/status.js",
   Svc: "resource://services-sync/util.js",
@@ -198,23 +197,36 @@ class ErrorSanitizer {
     "28": this.E_NO_SPACE_ON_DEVICE, 
   };
 
+  static DOMErrorSubstitutions = {
+    NotFoundError: this.E_NO_FILE_OR_DIR,
+    NotAllowedError: this.E_PERMISSION_DENIED,
+  };
+
   static reWinError = /^(?<head>Win error (?<errno>\d+))(?<detail>.*) \(.*\r?\n?\)$/m;
   static reUnixError = /^(?<head>Unix error (?<errno>\d+))(?<detail>.*) \(.*\)$/;
 
-  static #cleanOSErrorMessage(error) {
-    let match = this.reWinError.exec(error);
+  static #cleanOSErrorMessage(message, error = undefined) {
+    if (DOMException.isInstance(error)) {
+      const sub = this.DOMErrorSubstitutions[error.name];
+      message = message.replaceAll("\\", "/");
+      if (sub) {
+        return `${sub} ${message}`;
+      }
+    }
+
+    let match = this.reWinError.exec(message);
     if (match) {
       let head =
         this.WindowsErrorSubstitutions[match.groups.errno] || match.groups.head;
       return head + match.groups.detail.replaceAll("\\", "/");
     }
-    match = this.reUnixError.exec(error);
+    match = this.reUnixError.exec(message);
     if (match) {
       let head =
         this.UnixErrorSubstitutions[match.groups.errno] || match.groups.head;
       return head + match.groups.detail;
     }
-    return error;
+    return message;
   }
 
   
@@ -222,30 +234,36 @@ class ErrorSanitizer {
   
   
   static reProfileDir = new RegExp(
-    lazy.OS.Constants.Path.profileDir.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+    PathUtils.profileDir.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
     "gi"
   );
 
   
-  static cleanErrorMessage(error) {
+
+
+
+
+
+  static cleanErrorMessage(message, error = undefined) {
     
     
-    error = error.replace(this.reProfileDir, "[profileDir]");
+    message = message.replace(this.reProfileDir, "[profileDir]");
     
     
-    if (error.endsWith("is not a valid URL.")) {
-      error = "<URL> is not a valid URL.";
+    if (message.endsWith("is not a valid URL.")) {
+      message = "<URL> is not a valid URL.";
     }
     
     
     
     
-    error = error.replace(/[^\s"]+:[^\s"]+/g, "<URL>");
+    message = message.replace(/[^\s"]+:[^\s"]+/g, "<URL>");
 
     
     
-    error = error.replace(/<guid: ([^>]+)>/g, "<GUID>");
-    return this.#cleanOSErrorMessage(error);
+    message = message.replace(/<guid: ([^>]+)>/g, "<GUID>");
+
+    return this.#cleanOSErrorMessage(message, error);
   }
 }
 
@@ -1159,6 +1177,13 @@ class SyncTelemetryImpl {
 
     if (error instanceof lazy.AuthenticationError) {
       return { name: "autherror", from: error.source };
+    }
+
+    if (DOMException.isInstance(error)) {
+      return {
+        name: "unexpectederror",
+        error: ErrorSanitizer.cleanErrorMessage(error.message, error),
+      };
     }
 
     let httpCode =
