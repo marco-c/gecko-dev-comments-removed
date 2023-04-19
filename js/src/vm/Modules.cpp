@@ -1579,7 +1579,10 @@ static bool GatherAvailableModuleAncestors(
 
     
     
-    if (!m->getCycleRoot()->hadEvaluationError() &&
+    
+    
+    
+    if (!m->hadEvaluationError() && !m->getCycleRoot()->hadEvaluationError() &&
         !ContainsElement(execList, m)) {
       
       MOZ_ASSERT(m->status() == ModuleStatus::EvaluatingAsync);
