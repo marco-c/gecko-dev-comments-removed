@@ -2532,9 +2532,13 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult AlignNodesAndDescendants(
+
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT CreateElementResult AlignNodesAndDescendants(
       nsTArray<OwningNonNull<nsIContent>>& aArrayOfContents,
-      const nsAString& aAlignType);
+      const nsAString& aAlignType, const Element& aEditingHost);
 
   
 
@@ -2544,12 +2548,9 @@ class HTMLEditor final : public EditorBase,
 
 
 
-
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult AlignContentsAtSelection(
-      const nsAString& aAlignType, const Element& aEditingHost);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  AlignContentsAtRanges(AutoRangeArray& aRanges, const nsAString& aAlignType,
+                        const Element& aEditingHost);
 
   
 
