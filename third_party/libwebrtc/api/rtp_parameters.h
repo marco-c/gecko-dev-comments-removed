@@ -305,13 +305,6 @@ struct RTC_EXPORT RtpExtension {
   static constexpr char kAudioLevelUri[] =
       "urn:ietf:params:rtp-hdrext:ssrc-audio-level";
 
-#if defined(WEBRTC_MOZILLA_BUILD)
-  
-  
-  static constexpr char kCsrcAudioLevelUri[] =
-      "urn:ietf:params:rtp-hdrext:csrc-audio-level";
-#endif
-
   
   
   static constexpr char kTimestampOffsetUri[] =
@@ -387,12 +380,10 @@ struct RTC_EXPORT RtpExtension {
   static constexpr char kVideoFrameTrackingIdUri[] =
       "http://www.webrtc.org/experiments/rtp-hdrext/video-frame-tracking-id";
 
-#if !defined(WEBRTC_MOZILLA_BUILD)
   
   
   static constexpr char kCsrcAudioLevelsUri[] =
       "urn:ietf:params:rtp-hdrext:csrc-audio-level";
-#endif
 
   
   
