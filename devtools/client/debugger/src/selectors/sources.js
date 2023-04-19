@@ -5,7 +5,6 @@
 import { createSelector } from "reselect";
 import { shallowEqual } from "../utils/shallow-equal";
 import { getPathParts, getFileExtension } from "../utils/sources-tree/utils";
-import { getDisplayURL } from "../utils/sources-tree/getURL";
 
 import {
   getPrettySourceURL,
@@ -240,14 +239,6 @@ export const getDisplayedSources = createSelector(
   (list, mainThreadHost) => {
     const result = {};
     for (const source of list) {
-      const displayURL = getDisplayURL(source.url, mainThreadHost);
-
-      
-      
-      if (!displayURL.group) {
-        continue;
-      }
-
       
       
       const displayedSource = {
@@ -259,8 +250,8 @@ export const getDisplayedSources = createSelector(
         
         relativeUrl: source.relativeUrl,
         id: source.id,
-        displayURL,
-        parts: getPathParts(displayURL, source.thread, mainThreadHost),
+        displayURL: source.displayURL,
+        parts: getPathParts(source.displayURL, source.thread, mainThreadHost),
       };
       const thread = displayedSource.thread;
 

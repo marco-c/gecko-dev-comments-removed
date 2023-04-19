@@ -12,6 +12,7 @@ import {
 } from "../../selectors";
 import { features } from "../../utils/prefs";
 import { isUrlExtension } from "../../utils/source";
+import { getDisplayURL } from "../../utils/sources-tree/getURL";
 
 let store;
 
@@ -221,6 +222,11 @@ function createSourceObject({
 
     
     url,
+
+    
+    
+    
+    displayURL: getDisplayURL(url),
 
     
     thread,
