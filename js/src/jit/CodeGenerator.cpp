@@ -16922,7 +16922,7 @@ void CodeGenerator::emitIonToWasmCallBase(LIonToWasmCallBase<NumDefs>* lir) {
         } else {
           
           
-          Address addr = ToAddress(larg, BaseRegForAddress::SP);
+          Address addr = ToAddress<BaseRegForAddress::SP>(larg);
           stackArgs.infallibleEmplaceBack(addr);
         }
         break;
