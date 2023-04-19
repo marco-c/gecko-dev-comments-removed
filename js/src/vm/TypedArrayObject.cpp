@@ -586,10 +586,6 @@ class TypedArrayObjectTemplate : public TypedArrayObject {
 
   
   
-  
-  
-  
-  
   static bool class_constructor(JSContext* cx, unsigned argc, Value* vp) {
     AutoJSConstructorProfilerEntry pseudoFrame(cx, "[TypedArray]");
     CallArgs args = CallArgsFromVp(argc, vp);
@@ -599,6 +595,7 @@ class TypedArrayObjectTemplate : public TypedArrayObject {
       return false;
     }
 
+    
     JSObject* obj = create(cx, args);
     if (!obj) {
       return false;
@@ -612,7 +609,6 @@ class TypedArrayObjectTemplate : public TypedArrayObject {
     MOZ_ASSERT(args.isConstructing());
 
     
-    
     if (args.length() == 0 || !args[0].isObject()) {
       
       uint64_t len;
@@ -620,7 +616,6 @@ class TypedArrayObjectTemplate : public TypedArrayObject {
         return nullptr;
       }
 
-      
       
       RootedObject proto(cx);
       if (!GetPrototypeFromBuiltinConstructor(cx, args, protoKey(), &proto)) {
@@ -640,13 +635,12 @@ class TypedArrayObjectTemplate : public TypedArrayObject {
     }
 
     
-    
     if (!UncheckedUnwrap(dataObj)->is<ArrayBufferObjectMaybeShared>()) {
       return fromArray(cx, dataObj, proto);
     }
 
     
-
+    
     uint64_t byteOffset, length;
     if (!byteOffsetAndLength(cx, args.get(1), args.get(2), &byteOffset,
                              &length)) {
@@ -668,9 +662,9 @@ class TypedArrayObjectTemplate : public TypedArrayObject {
   static bool byteOffsetAndLength(JSContext* cx, HandleValue byteOffsetValue,
                                   HandleValue lengthValue, uint64_t* byteOffset,
                                   uint64_t* length) {
+    
     *byteOffset = 0;
     if (!byteOffsetValue.isUndefined()) {
-      
       if (!ToIndex(cx, byteOffsetValue, byteOffset)) {
         return false;
       }
@@ -685,9 +679,9 @@ class TypedArrayObjectTemplate : public TypedArrayObject {
       }
     }
 
+    
     *length = UINT64_MAX;
     if (!lengthValue.isUndefined()) {
-      
       if (!ToIndex(cx, lengthValue, length)) {
         return false;
       }
@@ -910,12 +904,9 @@ class TypedArrayObjectTemplate : public TypedArrayObject {
 
   
   
+  
   static JSObject* fromLength(JSContext* cx, uint64_t nelements,
                               HandleObject proto = nullptr) {
-    
-    
-    
-
     Rooted<ArrayBufferObject*> buffer(cx);
     if (!maybeCreateArrayBuffer(cx, nelements, nullptr, &buffer)) {
       return nullptr;
@@ -1158,19 +1149,14 @@ template <typename T>
 
 
 
+
 template <typename T>
  TypedArrayObject* TypedArrayObjectTemplate<T>::fromTypedArray(
     JSContext* cx, HandleObject other, bool isWrapped, HandleObject proto) {
-  
   MOZ_ASSERT_IF(!isWrapped, other->is<TypedArrayObject>());
   MOZ_ASSERT_IF(isWrapped, other->is<WrapperObject>() &&
                                UncheckedUnwrap(other)->is<TypedArrayObject>());
 
-  
-
-  
-
-  
   Rooted<TypedArrayObject*> srcArray(cx);
   if (!isWrapped) {
     srcArray = &other->as<TypedArrayObject>();
@@ -1207,22 +1193,20 @@ template <typename T>
 
   
 
-  
   RootedObject bufferCtor(
       cx, GlobalObject::getOrCreateArrayBufferConstructor(cx, cx->global()));
   if (!bufferCtor) {
     return nullptr;
   }
 
-  
   Rooted<ArrayBufferObject*> buffer(cx);
 
+  
   
   if (!AllocateArrayBuffer(cx, bufferCtor, elementLength, &buffer)) {
     return nullptr;
   }
 
-  
   if (srcArray->hasDetachedBuffer()) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_TYPED_ARRAY_DETACHED);
@@ -1240,12 +1224,14 @@ template <typename T>
   }
 
   
+  
   Rooted<TypedArrayObject*> obj(
       cx, makeInstance(cx, buffer, 0, elementLength, proto));
   if (!obj) {
     return nullptr;
   }
 
+  
   
   MOZ_ASSERT(!obj->isSharedMemory());
   if (srcArray->isSharedMemory()) {
@@ -1281,9 +1267,15 @@ static MOZ_ALWAYS_INLINE bool IsOptimizableInit(JSContext* cx,
 
 
 
+
+
 template <typename T>
  TypedArrayObject* TypedArrayObjectTemplate<T>::fromObject(
     JSContext* cx, HandleObject other, HandleObject proto) {
+  
+
+  
+
   
 
   
@@ -1296,6 +1288,7 @@ template <typename T>
   
   if (optimized) {
     
+    
     Handle<ArrayObject*> array = other.as<ArrayObject>();
 
     
@@ -1307,6 +1300,7 @@ template <typename T>
       return nullptr;
     }
 
+    
     Rooted<TypedArrayObject*> obj(cx, makeInstance(cx, buffer, 0, len, proto));
     if (!obj) {
       return nullptr;
@@ -1320,10 +1314,13 @@ template <typename T>
     }
 
     
+    
 
     
     return obj;
   }
+
+  
 
   
   RootedValue callee(cx);
@@ -1370,6 +1367,9 @@ template <typename T>
   }
 
   
+  
+
+  
   uint64_t len;
   if (!GetLengthProperty(cx, arrayLike, &len)) {
     return nullptr;
@@ -1383,6 +1383,7 @@ template <typename T>
 
   MOZ_ASSERT(len <= maxByteLength() / BYTES_PER_ELEMENT);
 
+  
   Rooted<TypedArrayObject*> obj(cx, makeInstance(cx, buffer, 0, len, proto));
   if (!obj) {
     return nullptr;
