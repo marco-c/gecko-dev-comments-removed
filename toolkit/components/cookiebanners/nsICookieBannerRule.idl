@@ -64,7 +64,11 @@ interface nsICookieBannerRule : nsISupports {
 
 
 
+
+
+
     void addClickRule(in ACString aPresence,
+                      [optional] in bool aSkipPresenceVisibilityCheck,
                       [optional] in ACString aHide,
                       [optional] in ACString aOptOut,
                       [optional] in ACString aOptIn);
