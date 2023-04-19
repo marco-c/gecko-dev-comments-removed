@@ -231,6 +231,13 @@ XRRenderState* XRSession::RenderState() { return mActiveRenderState; }
 
 XRInputSourceArray* XRSession::InputSources() { return mInputSources; }
 
+Nullable<float> XRSession::GetFrameRate() { return {}; }
+
+void XRSession::GetSupportedFrameRates(JSContext*,
+                                       JS::MutableHandle<JSObject*> aRetVal) {
+  aRetVal.set(nullptr);
+}
+
 
 void XRSession::ApplyPendingRenderState() {
   if (mPendingRenderState == nullptr) {
@@ -390,6 +397,31 @@ already_AddRefed<Promise> XRSession::RequestReferenceSpace(
   }
 
   promise->MaybeResolve(space);
+  return promise.forget();
+}
+
+already_AddRefed<Promise> XRSession::UpdateTargetFrameRate(float aRate,
+                                                           ErrorResult& aRv) {
+  nsCOMPtr<nsIGlobalObject> global = GetParentObject();
+  NS_ENSURE_TRUE(global, nullptr);
+
+  RefPtr<Promise> promise = Promise::Create(global, aRv);
+  NS_ENSURE_TRUE(!aRv.Failed(), nullptr);
+
+  if (mEnded) {
+    promise->MaybeRejectWithInvalidStateError(
+        "UpdateTargetFrameRate can not be called on an XRSession that has "
+        "ended.");
+    return promise.forget();
+  }
+
+  
+  
+  
+  
+  
+
+  promise->MaybeResolve(JS::UndefinedHandleValue);
   return promise.forget();
 }
 
