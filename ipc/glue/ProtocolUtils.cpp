@@ -579,7 +579,7 @@ void IProtocol::DestroySubtree(ActorDestroyReason aWhy) {
   
   
   
-  GetIPCChannel()->RejectPendingResponsesForActor(this);
+  GetIPCChannel()->RejectPendingResponsesForActor(Id());
   ActorDestroy(aWhy);
   mLinkStatus = LinkStatus::Destroyed;
 }
