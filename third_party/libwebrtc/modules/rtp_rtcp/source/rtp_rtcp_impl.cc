@@ -610,6 +610,12 @@ ModuleRtpRtcpImpl::GetSenderReportStats() const {
   return absl::nullopt;
 }
 
+absl::optional<RtpRtcpInterface::NonSenderRttStats>
+ModuleRtpRtcpImpl::GetNonSenderRttStats() const {
+  
+  return absl::nullopt;
+}
+
 
 void ModuleRtpRtcpImpl::SetRemb(int64_t bitrate_bps,
                                 std::vector<uint32_t> ssrcs) {

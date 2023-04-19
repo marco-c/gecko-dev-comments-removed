@@ -16,8 +16,10 @@
 #include <string>
 #include <vector>
 
+#include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "api/sequence_checker.h"
+#include "api/units/time_delta.h"
 #include "modules/rtp_rtcp/include/report_block_data.h"
 #include "modules/rtp_rtcp/include/rtcp_statistics.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -57,6 +59,35 @@ class RTCPReceiver final {
 
    protected:
     virtual ~ModuleRtpRtcp() = default;
+  };
+  
+  class NonSenderRttStats {
+   public:
+    NonSenderRttStats() = default;
+    NonSenderRttStats(const NonSenderRttStats&) = default;
+    NonSenderRttStats& operator=(const NonSenderRttStats&) = default;
+    ~NonSenderRttStats() = default;
+    void Update(TimeDelta non_sender_rtt_seconds) {
+      round_trip_time_ = non_sender_rtt_seconds;
+      total_round_trip_time_ += non_sender_rtt_seconds;
+      round_trip_time_measurements_++;
+    }
+    void Invalidate() { round_trip_time_.reset(); }
+    
+    absl::optional<TimeDelta> round_trip_time() const {
+      return round_trip_time_;
+    }
+    
+    TimeDelta total_round_trip_time() const { return total_round_trip_time_; }
+    
+    int round_trip_time_measurements() const {
+      return round_trip_time_measurements_;
+    }
+
+   private:
+    absl::optional<TimeDelta> round_trip_time_;
+    TimeDelta total_round_trip_time_ = TimeDelta::Zero();
+    int round_trip_time_measurements_ = 0;
   };
 
   RTCPReceiver(const RtpRtcpInterface::Configuration& config,
@@ -113,6 +144,9 @@ class RTCPReceiver final {
               int64_t* avg_rtt_ms,
               int64_t* min_rtt_ms,
               int64_t* max_rtt_ms) const;
+
+  
+  NonSenderRttStats GetNonSenderRTT() const;
 
   void SetNonSenderRttMeasurement(bool enabled);
   bool GetAndResetXrRrRtt(int64_t* rtt_ms);
@@ -283,14 +317,16 @@ class RTCPReceiver final {
       RTC_EXCLUSIVE_LOCKS_REQUIRED(rtcp_receiver_lock_);
 
   void HandleXr(const rtcp::CommonHeader& rtcp_block,
-                PacketInformation* packet_information)
+                PacketInformation* packet_information,
+                bool& contains_dlrr,
+                uint32_t& ssrc)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(rtcp_receiver_lock_);
 
   void HandleXrReceiveReferenceTime(uint32_t sender_ssrc,
                                     const rtcp::Rrtr& rrtr)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(rtcp_receiver_lock_);
 
-  void HandleXrDlrrReportBlock(const rtcp::ReceiveTimeInfo& rti)
+  void HandleXrDlrrReportBlock(uint32_t ssrc, const rtcp::ReceiveTimeInfo& rti)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(rtcp_receiver_lock_);
 
   void HandleXrTargetBitrate(uint32_t ssrc,
@@ -389,6 +425,9 @@ class RTCPReceiver final {
 
   
   flat_map<uint32_t, RttStats> rtts_ RTC_GUARDED_BY(rtcp_receiver_lock_);
+  
+  flat_map<uint32_t, NonSenderRttStats> non_sender_rtts_
+      RTC_GUARDED_BY(rtcp_receiver_lock_);
 
   
   flat_map<uint32_t, ReportBlockData> received_report_blocks_
