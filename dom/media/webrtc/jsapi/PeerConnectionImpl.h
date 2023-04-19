@@ -559,6 +559,10 @@ class PeerConnectionImpl final
   void SyncToJsep();
   void SyncFromJsep();
 
+  void DoSetDescriptionSuccessPostProcessing(dom::RTCSdpType aSdpType,
+                                             bool aRemote,
+                                             const RefPtr<dom::Promise>& aP);
+
   
   
   
@@ -625,6 +629,12 @@ class PeerConnectionImpl final
   
   mozilla::UniquePtr<PCUuidGenerator> mUuidGen;
   mozilla::UniquePtr<mozilla::JsepSession> mJsepSession;
+  
+  
+  
+  
+  
+  mozilla::UniquePtr<mozilla::JsepSession> mUncommittedJsepSession;
   unsigned long mIceRestartCount;
   unsigned long mIceRollbackCount;
 
