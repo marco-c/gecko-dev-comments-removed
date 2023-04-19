@@ -468,6 +468,11 @@ PeerConnection::PeerConnection(
       tls_cert_verifier_(std::move(dependencies.tls_cert_verifier)),
       call_(std::move(call)),
       call_ptr_(call_.get()),
+      
+      
+      
+      
+      session_id_(rtc::ToString(rtc::CreateRandomId64() & LLONG_MAX)),
       dtls_enabled_(dtls_enabled),
       data_channel_controller_(this),
       message_handler_(signaling_thread()),
@@ -559,12 +564,6 @@ RTCError PeerConnection::Initialize(
   if (!turn_servers.empty()) {
     NoteUsageEvent(UsageEvent::TURN_SERVER_ADDED);
   }
-
-  
-  
-  
-  
-  session_id_ = rtc::ToString(rtc::CreateRandomId64() & LLONG_MAX);
 
   if (configuration.enable_rtp_data_channel) {
     
