@@ -475,14 +475,6 @@ STDMETHODIMP nsDataObj::CMemStream::Stat(STATSTG* statstg, DWORD dwFlags) {
 
 
 
-#define NS_MAX_FILEDESCRIPTOR 128 + 1
-
-
-
-
-
-
-
 
 nsDataObj::nsDataObj(nsIURI* uri)
     : m_cRef(0),
@@ -1197,12 +1189,11 @@ nsDataObj ::GetFileDescriptorInternetShortcutA(FORMATETC& aFE,
   
   
   if (!CreateFilenameFromTextA(title, ".URL", fileGroupDescA->fgd[0].cFileName,
-                               NS_MAX_FILEDESCRIPTOR)) {
+                               MAX_PATH)) {
     nsAutoString untitled;
     if (!GetLocalizedString("noPageTitle", untitled) ||
         !CreateFilenameFromTextA(untitled, ".URL",
-                                 fileGroupDescA->fgd[0].cFileName,
-                                 NS_MAX_FILEDESCRIPTOR)) {
+                                 fileGroupDescA->fgd[0].cFileName, MAX_PATH)) {
       strcpy(fileGroupDescA->fgd[0].cFileName, "Untitled.URL");
     }
   }
@@ -1240,12 +1231,11 @@ nsDataObj ::GetFileDescriptorInternetShortcutW(FORMATETC& aFE,
   
   
   if (!CreateFilenameFromTextW(title, L".URL", fileGroupDescW->fgd[0].cFileName,
-                               NS_MAX_FILEDESCRIPTOR)) {
+                               MAX_PATH)) {
     nsAutoString untitled;
     if (!GetLocalizedString("noPageTitle", untitled) ||
         !CreateFilenameFromTextW(untitled, L".URL",
-                                 fileGroupDescW->fgd[0].cFileName,
-                                 NS_MAX_FILEDESCRIPTOR)) {
+                                 fileGroupDescW->fgd[0].cFileName, MAX_PATH)) {
       wcscpy(fileGroupDescW->fgd[0].cFileName, L"Untitled.URL");
     }
   }
@@ -2201,9 +2191,8 @@ HRESULT nsDataObj::GetFileDescriptor_IStreamA(FORMATETC& aFE, STGMEDIUM& aSTG) {
   nsAutoCString nativeFileName;
   NS_CopyUnicodeToNative(wideFileName, nativeFileName);
 
-  strncpy(fileGroupDescA->fgd[0].cFileName, nativeFileName.get(),
-          NS_MAX_FILEDESCRIPTOR - 1);
-  fileGroupDescA->fgd[0].cFileName[NS_MAX_FILEDESCRIPTOR - 1] = '\0';
+  strncpy(fileGroupDescA->fgd[0].cFileName, nativeFileName.get(), MAX_PATH - 1);
+  fileGroupDescA->fgd[0].cFileName[MAX_PATH - 1] = '\0';
 
   
   fileGroupDescA->cItems = 1;
@@ -2237,9 +2226,8 @@ HRESULT nsDataObj::GetFileDescriptor_IStreamW(FORMATETC& aFE, STGMEDIUM& aSTG) {
     return res;
   }
 
-  wcsncpy(fileGroupDescW->fgd[0].cFileName, wideFileName.get(),
-          NS_MAX_FILEDESCRIPTOR - 1);
-  fileGroupDescW->fgd[0].cFileName[NS_MAX_FILEDESCRIPTOR - 1] = '\0';
+  wcsncpy(fileGroupDescW->fgd[0].cFileName, wideFileName.get(), MAX_PATH - 1);
+  fileGroupDescW->fgd[0].cFileName[MAX_PATH - 1] = '\0';
   
   fileGroupDescW->cItems = 1;
   fileGroupDescW->fgd[0].dwFlags = FD_PROGRESSUI;
