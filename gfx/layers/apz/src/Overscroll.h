@@ -155,6 +155,10 @@ class OverscrollEffectBase {
                                  SideBits aOverscrollSideBits) = 0;
 
   virtual bool IsOverscrolled() const = 0;
+
+  
+  
+  virtual void ClearOverscroll() = 0;
 };
 
 
@@ -197,6 +201,8 @@ class GenericOverscrollEffect : public OverscrollEffectBase {
     return mApzc.IsPhysicallyOverscrolled();
   }
 
+  void ClearOverscroll() override { mApzc.ClearPhysicalOverscroll(); }
+
  private:
   AsyncPanZoomController& mApzc;
 };
@@ -236,6 +242,10 @@ class WidgetOverscrollEffect : public OverscrollEffectBase {
   }
 
   bool IsOverscrolled() const override { return mIsOverscrolled; }
+
+  void ClearOverscroll() override {
+    RelieveOverscroll(ParentLayerPoint(), SideBits() );
+  }
 
  private:
   AsyncPanZoomController& mApzc;

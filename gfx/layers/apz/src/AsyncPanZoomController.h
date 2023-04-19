@@ -415,6 +415,7 @@ class AsyncPanZoomController {
 
 
   void ClearOverscroll();
+  void ClearPhysicalOverscroll();
 
   
 
