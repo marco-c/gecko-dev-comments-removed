@@ -47,15 +47,6 @@ static mozilla::LazyLogModule gFlexContainerLog("FlexContainer");
 
 
 
-static inline bool IsDisplayValueLegacyBox(const nsStyleDisplay* aStyleDisp) {
-  return aStyleDisp->mDisplay == mozilla::StyleDisplay::WebkitBox ||
-         aStyleDisp->mDisplay == mozilla::StyleDisplay::WebkitInlineBox ||
-         aStyleDisp->mDisplay == mozilla::StyleDisplay::MozBox ||
-         aStyleDisp->mDisplay == mozilla::StyleDisplay::MozInlineBox;
-}
-
-
-
 
 
 static bool IsLegacyBox(const nsIFrame* aFlexContainer) {
@@ -2868,30 +2859,31 @@ void nsFlexContainerFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
     AddStateBits(NS_FRAME_FONT_INFLATION_FLOW_ROOT);
   }
 
-  const nsStyleDisplay* styleDisp = Style()->StyleDisplay();
-
-  
-  
-  
-  bool isLegacyBox = IsDisplayValueLegacyBox(styleDisp);
-
+  auto displayInside = StyleDisplay()->DisplayInside();
   
   
   
   
-  if (!isLegacyBox && styleDisp->mDisplay == mozilla::StyleDisplay::Block) {
-    ComputedStyle* parentComputedStyle = GetParent()->Style();
-    NS_ASSERTION(
-        Style()->GetPseudoType() == PseudoStyleType::buttonContent ||
-            Style()->GetPseudoType() == PseudoStyleType::scrolledContent,
-        "The only way a nsFlexContainerFrame can have 'display:block' "
-        "should be if it's the inner part of a scrollable or button "
-        "element");
-    isLegacyBox = IsDisplayValueLegacyBox(parentComputedStyle->StyleDisplay());
+  
+  
+  
+  if (displayInside == StyleDisplayInside::Flow) {
+    MOZ_ASSERT(StyleDisplay()->mDisplay == StyleDisplay::Block);
+    MOZ_ASSERT(Style()->GetPseudoType() == PseudoStyleType::buttonContent ||
+                   Style()->GetPseudoType() == PseudoStyleType::scrolledContent,
+               "The only way a nsFlexContainerFrame can have 'display:block' "
+               "should be if it's the inner part of a scrollable or button "
+               "element");
+    displayInside = GetParent()->StyleDisplay()->DisplayInside();
   }
 
-  if (isLegacyBox) {
+  
+  
+  if (displayInside == StyleDisplayInside::MozBox) {
     AddStateBits(NS_STATE_FLEX_IS_EMULATING_LEGACY_BOX);
+  } else if (displayInside == StyleDisplayInside::WebkitBox) {
+    AddStateBits(NS_STATE_FLEX_IS_EMULATING_LEGACY_BOX |
+                 NS_STATE_FLEX_IS_EMULATING_LEGACY_WEBKIT_BOX);
   }
 }
 

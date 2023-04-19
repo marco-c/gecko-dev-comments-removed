@@ -92,7 +92,6 @@ CSS_ANON_BOX(firstLetterContinuation, ":-moz-first-letter-continuation")
 
 CSS_ANON_BOX(mozBlockInsideInlineWrapper, ":-moz-block-inside-inline-wrapper")
 CSS_WRAPPER_ANON_BOX(mozMathMLAnonymousBlock, ":-moz-mathml-anonymous-block")
-CSS_ANON_BOX(mozXULAnonymousBlock, ":-moz-xul-anonymous-block")
 
 CSS_ANON_BOX(mozLineFrame, ":-moz-line-frame")
 

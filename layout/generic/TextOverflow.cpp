@@ -291,18 +291,6 @@ TextOverflow::TextOverflow(nsDisplayListBuilder* aBuilder,
       mCanHaveInlineAxisScrollbar(false),
       mInLineClampContext(aBlockFrame->IsInLineClampContext()),
       mAdjustForPixelSnapping(false) {
-  if (!mScrollableFrame) {
-    auto pseudoType = aBlockFrame->Style()->GetPseudoType();
-    if (pseudoType == PseudoStyleType::mozXULAnonymousBlock) {
-      mScrollableFrame =
-          nsLayoutUtils::GetScrollableFrameFor(aBlockFrame->GetParent());
-      
-      
-      
-      
-      mAdjustForPixelSnapping = mBlockWM.IsBidiRTL();
-    }
-  }
   if (mScrollableFrame) {
     auto scrollbarStyle = mBlockWM.IsVertical()
                               ? mScrollableFrame->GetScrollStyles().mVertical
