@@ -13,31 +13,32 @@
 #include <functional>
 #include <utility>
 
-#include "net/dcsctp/public/strong_alias.h"
 #include "net/dcsctp/public/types.h"
+#include "rtc_base/strong_alias.h"
 
 namespace dcsctp {
 
 
-using SSN = StrongAlias<class SSNTag, uint16_t>;
+using SSN = webrtc::StrongAlias<class SSNTag, uint16_t>;
 
 
-using MID = StrongAlias<class MIDTag, uint32_t>;
+using MID = webrtc::StrongAlias<class MIDTag, uint32_t>;
 
 
-using FSN = StrongAlias<class FSNTag, uint32_t>;
+using FSN = webrtc::StrongAlias<class FSNTag, uint32_t>;
 
 
-using TSN = StrongAlias<class TSNTag, uint32_t>;
+using TSN = webrtc::StrongAlias<class TSNTag, uint32_t>;
 
 
-using ReconfigRequestSN = StrongAlias<class ReconfigRequestSNTag, uint32_t>;
+using ReconfigRequestSN =
+    webrtc::StrongAlias<class ReconfigRequestSNTag, uint32_t>;
 
 
-using VerificationTag = StrongAlias<class VerificationTagTag, uint32_t>;
+using VerificationTag = webrtc::StrongAlias<class VerificationTagTag, uint32_t>;
 
 
-using TieTag = StrongAlias<class TieTagTag, uint64_t>;
+using TieTag = webrtc::StrongAlias<class TieTagTag, uint64_t>;
 
 }  
 #endif  

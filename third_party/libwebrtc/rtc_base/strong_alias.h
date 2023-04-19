@@ -8,13 +8,13 @@
 
 
 
-#ifndef NET_DCSCTP_PUBLIC_STRONG_ALIAS_H_
-#define NET_DCSCTP_PUBLIC_STRONG_ALIAS_H_
+#ifndef RTC_BASE_STRONG_ALIAS_H_
+#define RTC_BASE_STRONG_ALIAS_H_
 
 #include <type_traits>
 #include <utility>
 
-namespace dcsctp {
+namespace webrtc {
 
 
 

@@ -34,11 +34,11 @@ namespace dcsctp {
 struct Data {
   
   
-  using IsBeginning = StrongAlias<class IsBeginningTag, bool>;
+  using IsBeginning = webrtc::StrongAlias<class IsBeginningTag, bool>;
 
   
   
-  using IsEnd = StrongAlias<class IsEndTag, bool>;
+  using IsEnd = webrtc::StrongAlias<class IsEndTag, bool>;
 
   Data(StreamID stream_id,
        SSN ssn,

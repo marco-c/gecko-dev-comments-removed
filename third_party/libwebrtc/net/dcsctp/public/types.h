@@ -14,28 +14,28 @@
 #include <cstdint>
 #include <limits>
 
-#include "net/dcsctp/public/strong_alias.h"
+#include "rtc_base/strong_alias.h"
 
 namespace dcsctp {
 
 
-using StreamID = StrongAlias<class StreamIDTag, uint16_t>;
+using StreamID = webrtc::StrongAlias<class StreamIDTag, uint16_t>;
 
 
-using PPID = StrongAlias<class PPIDTag, uint32_t>;
+using PPID = webrtc::StrongAlias<class PPIDTag, uint32_t>;
 
 
-using TimeoutID = StrongAlias<class TimeoutTag, uint64_t>;
+using TimeoutID = webrtc::StrongAlias<class TimeoutTag, uint64_t>;
 
 
 
-using IsUnordered = StrongAlias<class IsUnorderedTag, bool>;
+using IsUnordered = webrtc::StrongAlias<class IsUnorderedTag, bool>;
 
 
-class DurationMs : public StrongAlias<class DurationMsTag, int32_t> {
+class DurationMs : public webrtc::StrongAlias<class DurationMsTag, int32_t> {
  public:
   constexpr explicit DurationMs(const UnderlyingType& v)
-      : StrongAlias<class DurationMsTag, int32_t>(v) {}
+      : webrtc::StrongAlias<class DurationMsTag, int32_t>(v) {}
 
   
   constexpr DurationMs& operator+=(DurationMs d) {
@@ -72,10 +72,10 @@ constexpr inline int32_t operator/(DurationMs lhs, DurationMs rhs) {
 }
 
 
-class TimeMs : public StrongAlias<class TimeMsTag, int64_t> {
+class TimeMs : public webrtc::StrongAlias<class TimeMsTag, int64_t> {
  public:
   constexpr explicit TimeMs(const UnderlyingType& v)
-      : StrongAlias<class TimeMsTag, int64_t>(v) {}
+      : webrtc::StrongAlias<class TimeMsTag, int64_t>(v) {}
 
   
   constexpr TimeMs& operator+=(DurationMs d) {

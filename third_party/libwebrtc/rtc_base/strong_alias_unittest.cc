@@ -8,7 +8,7 @@
 
 
 
-#include "net/dcsctp/public/strong_alias.h"
+#include "rtc_base/strong_alias.h"
 
 #include <cstdint>
 #include <map>
@@ -26,7 +26,7 @@
 
 
 
-namespace dcsctp {
+namespace webrtc {
 namespace {
 
 

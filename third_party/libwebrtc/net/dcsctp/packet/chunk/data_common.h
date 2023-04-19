@@ -24,7 +24,7 @@ namespace dcsctp {
 class AnyDataChunk : public Chunk {
  public:
   
-  using ImmediateAckFlag = StrongAlias<class ImmediateAckFlagTag, bool>;
+  using ImmediateAckFlag = webrtc::StrongAlias<class ImmediateAckFlagTag, bool>;
 
   
   

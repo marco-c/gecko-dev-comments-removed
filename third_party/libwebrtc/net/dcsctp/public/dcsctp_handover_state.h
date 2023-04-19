@@ -14,7 +14,7 @@
 #include <string>
 #include <vector>
 
-#include "net/dcsctp/public/strong_alias.h"
+#include "rtc_base/strong_alias.h"
 
 namespace dcsctp {
 
@@ -101,15 +101,15 @@ enum class HandoverUnreadinessReason : uint32_t {
 
 
 class HandoverReadinessStatus
-    : public StrongAlias<class HandoverReadinessStatusTag, uint32_t> {
+    : public webrtc::StrongAlias<class HandoverReadinessStatusTag, uint32_t> {
  public:
   
   constexpr HandoverReadinessStatus()
-      : StrongAlias<class HandoverReadinessStatusTag, uint32_t>(0) {}
+      : webrtc::StrongAlias<class HandoverReadinessStatusTag, uint32_t>(0) {}
   
   
   constexpr explicit HandoverReadinessStatus(HandoverUnreadinessReason reason)
-      : StrongAlias<class HandoverReadinessStatusTag, uint32_t>(
+      : webrtc::StrongAlias<class HandoverReadinessStatusTag, uint32_t>(
             static_cast<uint32_t>(reason)) {}
 
   
