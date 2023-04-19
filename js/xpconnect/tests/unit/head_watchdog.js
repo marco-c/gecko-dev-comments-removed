@@ -6,7 +6,7 @@
 
 
 
-var {PromiseTestUtils} = ChromeUtils.import("resource://testing-common/PromiseTestUtils.jsm");
+var {PromiseTestUtils} = ChromeUtils.importESModule("resource://testing-common/PromiseTestUtils.sys.mjs");
 
 
 

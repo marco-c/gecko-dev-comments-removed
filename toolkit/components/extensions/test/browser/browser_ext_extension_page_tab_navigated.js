@@ -11,8 +11,8 @@ const { AddonTestUtils } = ChromeUtils.import(
 
 
 
-const { PromiseTestUtils } = ChromeUtils.import(
-  "resource://testing-common/PromiseTestUtils.jsm"
+const { PromiseTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/PromiseTestUtils.sys.mjs"
 );
 PromiseTestUtils.allowMatchingRejectionsGlobally(
   /Actor 'Conduits' destroyed before query 'RunListener' was resolved/

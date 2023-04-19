@@ -11,8 +11,8 @@
 
 
 
-const { PromiseTestUtils } = ChromeUtils.import(
-  "resource://testing-common/PromiseTestUtils.jsm"
+const { PromiseTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/PromiseTestUtils.sys.mjs"
 );
 PromiseTestUtils.allowMatchingRejectionsGlobally(/this\.worker is null/);
 PromiseTestUtils.allowMatchingRejectionsGlobally(/Component not initialized/);

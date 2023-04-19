@@ -2,8 +2,8 @@
 
 "use strict";
 
-const { PromiseTestUtils } = ChromeUtils.import(
-  "resource://testing-common/PromiseTestUtils.jsm"
+const { PromiseTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/PromiseTestUtils.sys.mjs"
 );
 const { BuiltInThemes } = ChromeUtils.importESModule(
   "resource:///modules/BuiltInThemes.sys.mjs"

@@ -8,8 +8,8 @@
 
 
 SimpleTest.ignoreAllUncaughtExceptions(true);
-const { PromiseTestUtils } = ChromeUtils.import(
-  "resource://testing-common/PromiseTestUtils.jsm"
+const { PromiseTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/PromiseTestUtils.sys.mjs"
 );
 PromiseTestUtils.allowMatchingRejectionsGlobally(/Not in fullscreen mode/);
 

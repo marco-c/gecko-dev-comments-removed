@@ -1,8 +1,8 @@
 
 
 if (!gMultiProcessBrowser) {
-  const { PromiseTestUtils } = ChromeUtils.import(
-    "resource://testing-common/PromiseTestUtils.jsm"
+  const { PromiseTestUtils } = ChromeUtils.importESModule(
+    "resource://testing-common/PromiseTestUtils.sys.mjs"
   );
   PromiseTestUtils.expectUncaughtRejection(/is no longer, usable/);
 }

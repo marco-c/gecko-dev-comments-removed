@@ -58,8 +58,8 @@ async function initBrowserToolboxTask({
   }
 
   
-  ChromeUtils.import(
-    "resource://testing-common/PromiseTestUtils.jsm"
+  ChromeUtils.importESModule(
+    "resource://testing-common/PromiseTestUtils.sys.mjs"
   ).PromiseTestUtils.allowMatchingRejectionsGlobally(/File closed/);
 
   let process;
