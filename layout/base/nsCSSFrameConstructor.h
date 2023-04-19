@@ -103,6 +103,8 @@ class nsCSSFrameConstructor final : public nsFrameManager {
 
   nsIFrame* ConstructRootFrame();
 
+  void ReconstructDocElementHierarchy(InsertionKind);
+
  private:
   enum Operation { CONTENTAPPEND, CONTENTINSERT };
 
@@ -1115,6 +1117,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
           mSuppressWhiteSpaceOptimizations(aSuppressWhiteSpaceOptimizations),
           mIsText(false),
           mIsGeneratedContent(false),
+          mIsRootPopupgroup(false),
           mIsAllInline(false),
           mIsBlock(false),
           mIsPopup(false),
@@ -1175,6 +1178,8 @@ class nsCSSFrameConstructor final : public nsFrameManager {
     
     
     bool mIsGeneratedContent : 1;
+    
+    bool mIsRootPopupgroup : 1;
     
     
     
