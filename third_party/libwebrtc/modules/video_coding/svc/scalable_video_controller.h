@@ -84,9 +84,7 @@ class ScalableVideoController {
   
   
   
-  
-  
-  virtual void OnRatesUpdated(const VideoBitrateAllocation& bitrates) {}
+  virtual void OnRatesUpdated(const VideoBitrateAllocation& bitrates) = 0;
 
   
   
