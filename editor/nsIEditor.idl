@@ -207,6 +207,23 @@ interface nsIEditor  : nsISupports
   
 
 
+  [infallible] readonly attribute boolean undoRedoEnabled;
+
+  
+
+
+
+  [infallible] readonly attribute boolean canUndo;
+
+  
+
+
+
+  [infallible] readonly attribute boolean canRedo;
+
+  
+
+
 
 
 
@@ -231,13 +248,6 @@ interface nsIEditor  : nsISupports
 
 
 
-  void canUndo(out boolean isEnabled, out boolean canUndo);
-
-  
-
-
-
-
 
 
 
@@ -245,13 +255,6 @@ interface nsIEditor  : nsISupports
 
   [can_run_script]
   void redo(in unsigned long count);
-
-  
-
-
-
-
-  void canRedo(out boolean isEnabled, out boolean canRedo);
 
   
 

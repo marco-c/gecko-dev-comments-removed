@@ -294,8 +294,7 @@
 
       
       if (this._findField.editor) {
-        let tm = this._findField.editor.transactionManager;
-        return !!(tm.numberOfUndoItems || tm.numberOfRedoItems);
+        return this._findField.editor.canUndo || this._findField.editor.canRedo;
       }
       return false;
     }
