@@ -286,6 +286,12 @@ RTC_OBJC_EXPORT
                     init:(RTC_OBJC_TYPE(RTCRtpTransceiverInit) *)init;
 
 
+
+
+
+- (void)restartIce;
+
+
 - (void)offerForConstraints:(RTC_OBJC_TYPE(RTCMediaConstraints) *)constraints
           completionHandler:(nullable void (^)(RTC_OBJC_TYPE(RTCSessionDescription) * _Nullable sdp,
                                                NSError *_Nullable error))completionHandler;
