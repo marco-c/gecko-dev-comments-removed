@@ -236,6 +236,28 @@ public interface VideoEncoder {
     }
   }
 
+  
+  public class RateControlParameters {
+    
+
+
+
+    public final BitrateAllocation bitrate;
+
+    
+
+
+
+
+    public final double framerateFps;
+
+    @CalledByNative("RateControlParameters")
+    public RateControlParameters(BitrateAllocation bitrate, double framerateFps) {
+      this.bitrate = bitrate;
+      this.framerateFps = framerateFps;
+    }
+  }
+
   public interface Callback {
     
 
@@ -296,7 +318,14 @@ public interface VideoEncoder {
   @CalledByNative VideoCodecStatus encode(VideoFrame frame, EncodeInfo info);
 
   
-  @CalledByNative VideoCodecStatus setRateAllocation(BitrateAllocation allocation, int framerate);
+  VideoCodecStatus setRateAllocation(BitrateAllocation allocation, int framerate);
+
+  
+  default @CalledByNative VideoCodecStatus setRates(RateControlParameters rcParameters) {
+    
+    int framerateFps = (int) Math.ceil(rcParameters.framerateFps);
+    return setRateAllocation(rcParameters.bitrate, framerateFps);
+  }
 
   
   @CalledByNative ScalingSettings getScalingSettings();

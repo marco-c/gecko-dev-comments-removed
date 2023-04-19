@@ -15,7 +15,7 @@ interface BitrateAdjuster {
   
 
 
-  void setTargets(int targetBitrateBps, int targetFramerateFps);
+  void setTargets(int targetBitrateBps, double targetFramerateFps);
 
   
 
@@ -27,5 +27,5 @@ interface BitrateAdjuster {
   int getAdjustedBitrateBps();
 
   
-  int getAdjustedFramerateFps();
+  double getAdjustedFramerateFps();
 }
