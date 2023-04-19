@@ -18,6 +18,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 
@@ -48,7 +49,7 @@ class FieldTrialParameterInterface {
   explicit FieldTrialParameterInterface(std::string key);
   friend void ParseFieldTrial(
       std::initializer_list<FieldTrialParameterInterface*> fields,
-      std::string raw_string);
+      absl::string_view trial_string);
   void MarkAsUsed() { used_ = true; }
   virtual bool Parse(absl::optional<std::string> str_value) = 0;
 
@@ -65,7 +66,7 @@ class FieldTrialParameterInterface {
 
 void ParseFieldTrial(
     std::initializer_list<FieldTrialParameterInterface*> fields,
-    std::string raw_string);
+    absl::string_view trial_string);
 
 
 
