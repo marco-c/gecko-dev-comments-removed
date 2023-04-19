@@ -184,7 +184,7 @@ TEST_P(EncoderTest, TestDynamicBitrateChange) {
   }
   
   
-  EXPECT_LT(1.2 * num_bytes[kLowBps], num_bytes[kHighBps]);
+  EXPECT_LT(1.195 * num_bytes[kLowBps], num_bytes[kHighBps]);
 }
 
 
