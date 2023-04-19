@@ -32,8 +32,10 @@ BOOL CALLBACK GetMonitorListHandler(HMONITOR monitor,
   
   MONITORINFOEXA monitor_info;
   monitor_info.cbSize = sizeof(MONITORINFOEXA);
-  if (!GetMonitorInfoA(monitor, &monitor_info))
-    return FALSE;
+  if (!GetMonitorInfoA(monitor, &monitor_info)) {
+    
+    return TRUE;
+  }
 
   DesktopCapturer::Source monitor_source;
   monitor_source.id = reinterpret_cast<intptr_t>(monitor);
