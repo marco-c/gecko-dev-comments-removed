@@ -292,7 +292,11 @@ function nodeHasEntries(item) {
     
     
     
-    (className === "Headers" && Array.isArray(value.preview?.entries))
+    (className === "Headers" && Array.isArray(value.preview?.entries)) ||
+    
+    
+    
+    (className === "FormData" && Array.isArray(value.preview?.entries))
   );
 }
 
