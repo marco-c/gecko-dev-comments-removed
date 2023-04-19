@@ -179,6 +179,10 @@ rtc::scoped_refptr<I420BufferInterface> AndroidVideoBuffer::ToI420() {
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedJavaLocalRef<jobject> j_i420_buffer =
       Java_Buffer_toI420(jni, j_video_frame_buffer_);
+  
+  if (j_i420_buffer.is_null()) {
+    return nullptr;
+  }
 
   
   
