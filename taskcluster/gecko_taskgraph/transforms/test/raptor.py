@@ -91,7 +91,9 @@ def split_apps(config, tests):
 
         for app in apps:
             
-            if app != "firefox" and test["attributes"].get("unittest_variant"):
+            if app not in ["firefox", "geckoview", "fenix", "chrome-m"] and test[
+                "attributes"
+            ].get("unittest_variant"):
                 continue
 
             atest = deepcopy(test)
