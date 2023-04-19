@@ -388,6 +388,9 @@ static const double HighFrequencyLargeHeapGrowth = 1.5;
 static const double LowFrequencyHeapGrowth = 1.5;
 
 
+static const double HeapGrowthFactor = 40.0;
+
+
 static const uint32_t MinEmptyChunkCount = 1;
 
 
@@ -539,6 +542,11 @@ class GCSchedulingTunables {
   
 
 
+  MainThreadOrGCTaskData<double> heapGrowthFactor_;
+
+  
+
+
 
 
 
@@ -634,6 +642,7 @@ class GCSchedulingTunables {
   }
   double lowFrequencyHeapGrowth() const { return lowFrequencyHeapGrowth_; }
   bool balancedHeapLimitsEnabled() const { return balancedHeapLimitsEnabled_; }
+  double heapGrowthFactor() const { return heapGrowthFactor_; }
   uint32_t nurseryFreeThresholdForIdleCollection() const {
     return nurseryFreeThresholdForIdleCollection_;
   }
@@ -669,6 +678,9 @@ class GCSchedulingTunables {
   void setHighFrequencySmallHeapGrowth(double value);
   void setHighFrequencyLargeHeapGrowth(double value);
   void setLowFrequencyHeapGrowth(double value);
+  void setHeapGrowthFactor(double value);
+  void setMinEmptyChunkCount(uint32_t value);
+  void setMaxEmptyChunkCount(uint32_t value);
 
   static bool megabytesToBytes(uint32_t value, size_t* bytesOut);
   static bool kilobytesToBytes(uint32_t value, size_t* bytesOut);

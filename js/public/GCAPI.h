@@ -241,6 +241,16 @@ typedef enum JSGCParamKey {
 
 
 
+  JSGC_HEAP_GROWTH_FACTOR = 18,
+
+  
+
+
+
+
+
+
+
   JSGC_ALLOCATION_THRESHOLD = 19,
 
   
