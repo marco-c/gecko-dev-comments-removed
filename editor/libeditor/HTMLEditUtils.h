@@ -20,6 +20,7 @@
 #include "mozilla/EnumSet.h"
 #include "mozilla/IntegerRange.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/Result.h"
 #include "mozilla/dom/AbstractRange.h"
 #include "mozilla/dom/AncestorIterator.h"
 #include "mozilla/dom/Element.h"
@@ -1948,6 +1949,19 @@ class HTMLEditUtils final {
       const nsIContent& aContentToInsert,
       const EditorDOMPointTypeInput& aPointToInsert,
       const Element& aEditingHost);
+
+  
+
+
+
+
+
+
+
+  template <typename EditorDOMPointType, typename EditorDOMPointTypeInput>
+  static Result<EditorDOMPointType, nsresult>
+  ComputePointToPutCaretInElementIfOutside(
+      const Element& aElement, const EditorDOMPointTypeInput& aCurrentPoint);
 
   
 

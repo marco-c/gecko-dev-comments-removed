@@ -2618,14 +2618,6 @@ class HTMLEditor final : public EditorBase,
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  EnsureCaretInBlockElement(dom::Element& aElement);
-
-  
-
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   OnEndHandlingTopLevelEditSubActionInternal();
 
   
