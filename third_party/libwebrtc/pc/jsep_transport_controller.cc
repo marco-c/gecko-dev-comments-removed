@@ -855,7 +855,6 @@ void JsepTransportController::HandleRejectedContent(
       bundles_.DeleteMid(bundle_group, content_info.name);
     }
   }
-  MaybeDestroyJsepTransport(content_info.name);
 }
 
 bool JsepTransportController::HandleBundledContent(
@@ -869,15 +868,11 @@ bool JsepTransportController::HandleBundledContent(
   
   
   
-  if (transports_.SetTransportForMid(content_info.name, jsep_transport)) {
-    
-    
-    
-    
-    MaybeDestroyJsepTransport(content_info.name);
-    return true;
-  }
-  return false;
+  
+  
+  
+  
+  return transports_.SetTransportForMid(content_info.name, jsep_transport);
 }
 
 cricket::JsepTransportDescription
@@ -1078,28 +1073,9 @@ RTCError JsepTransportController::MaybeCreateJsepTransport(
 
   jsep_transport->SignalRtcpMuxActive.connect(
       this, &JsepTransportController::UpdateAggregateStates_n);
-  transports_.SetTransportForMid(content_info.name, jsep_transport.get());
-
   transports_.RegisterTransport(content_info.name, std::move(jsep_transport));
   UpdateAggregateStates_n();
   return RTCError::OK();
-}
-
-void JsepTransportController::MaybeDestroyJsepTransport(
-    const std::string& mid) {
-  TRACE_EVENT0("webrtc", "JsepTransportController::MaybeDestroyJsepTransport");
-  auto jsep_transport = GetJsepTransportByName(mid);
-  if (!jsep_transport) {
-    return;
-  }
-
-  
-  
-  if (transports_.TransportInUse(jsep_transport)) {
-    return;
-  }
-  transports_.MaybeDestroyJsepTransport(mid);
-  UpdateAggregateStates_n();
 }
 
 void JsepTransportController::DestroyAllJsepTransports_n() {

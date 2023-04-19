@@ -88,8 +88,12 @@ class JsepTransportCollection {
   cricket::JsepTransport* GetTransportForMid(const std::string& mid);
   const cricket::JsepTransport* GetTransportForMid(
       const std::string& mid) const;
+  
+  
   bool SetTransportForMid(const std::string& mid,
                           cricket::JsepTransport* jsep_transport);
+  
+  
   void RemoveTransportForMid(const std::string& mid);
   
   void RollbackTransports();
@@ -97,10 +101,13 @@ class JsepTransportCollection {
   void CommitTransports();
   
   bool TransportInUse(cricket::JsepTransport* jsep_transport) const;
-  
-  void MaybeDestroyJsepTransport(const std::string& mid);
 
  private:
+  
+  void MaybeDestroyJsepTransport(cricket::JsepTransport* transport);
+
+  bool IsConsistent();  
+
   RTC_NO_UNIQUE_ADDRESS SequenceChecker sequence_checker_;
   
   std::map<std::string, std::unique_ptr<cricket::JsepTransport>>
