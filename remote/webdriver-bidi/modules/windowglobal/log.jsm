@@ -52,6 +52,13 @@ class LogModule extends Module {
     this.#consoleMessageListener.destroy();
   }
 
+  #buildSource() {
+    return {
+      realm: this.messageHandler.window.windowGlobalChild?.innerWindowId.toString(),
+      context: this.messageHandler.context,
+    };
+  }
+
   
 
 
@@ -139,6 +146,7 @@ class LogModule extends Module {
     }
 
     
+    const source = this.#buildSource();
 
     
     let stackTrace;
@@ -150,7 +158,7 @@ class LogModule extends Module {
     const entry = {
       type: "console",
       method,
-      realm: null,
+      source,
       args: serializedArgs,
       level: logEntrylevel,
       text,
@@ -176,6 +184,7 @@ class LogModule extends Module {
     const entry = {
       type: "javascript",
       level,
+      source: this.#buildSource(),
       text: message,
       timestamp: timeStamp || Date.now(),
       stackTrace: this.#buildStackTrace(stacktrace),
