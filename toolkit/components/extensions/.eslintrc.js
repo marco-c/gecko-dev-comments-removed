@@ -28,6 +28,10 @@ module.exports = {
     "mozilla/balanced-listeners": "error",
     "mozilla/no-aArgs": "error",
     "mozilla/var-only-at-top-level": "error",
+    
+    
+    
+    "mozilla/reject-importGlobalProperties": "off",
 
     "valid-jsdoc": [
       "error",
