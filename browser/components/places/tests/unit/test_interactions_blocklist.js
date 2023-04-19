@@ -5,8 +5,8 @@
 
 
 
-ChromeUtils.defineESModuleGetters(this, {
-  InteractionsBlocklist: "resource:///modules/InteractionsBlocklist.sys.mjs",
+XPCOMUtils.defineLazyModuleGetters(this, {
+  InteractionsBlocklist: "resource:///modules/InteractionsBlocklist.jsm",
 });
 
 let BLOCKED_URLS = [

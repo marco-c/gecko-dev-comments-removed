@@ -1,8 +1,8 @@
 
 
 
-const { PlacesUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/PlacesUtils.sys.mjs"
+const { PlacesUtils } = ChromeUtils.import(
+  "resource://gre/modules/PlacesUtils.jsm"
 );
 let { HttpServer } = ChromeUtils.import("resource://testing-common/httpd.js");
 

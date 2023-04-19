@@ -4,8 +4,8 @@
 
 
 
-const { BookmarkHTMLUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/BookmarkHTMLUtils.sys.mjs"
+const { BookmarkHTMLUtils } = ChromeUtils.import(
+  "resource://gre/modules/BookmarkHTMLUtils.jsm"
 );
 
 
