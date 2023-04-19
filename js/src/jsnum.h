@@ -11,6 +11,8 @@
 #include "mozilla/Range.h"
 #include "mozilla/Utf8.h"
 
+#include <limits>
+
 #include "NamespaceImports.h"
 
 #include "js/Conversions.h"
@@ -93,14 +95,35 @@ struct ToCStringBuf {
   ~ToCStringBuf();
 };
 
+struct Int32ToCStringBuf {
+  
+  
+  
+  
+  
+  
+  static constexpr size_t MaximumInt32ToStringLength =
+      std::numeric_limits<int32_t>::digits10 +
+      1 +  
+      1 +  
+      1    
+      ;
+
+  char sbuf[MaximumInt32ToStringLength] = {};
+};
+
 
 
 
 extern char* NumberToCString(ToCStringBuf* cbuf, double d);
 
+extern char* Int32ToCString(Int32ToCStringBuf* cbuf, int32_t value);
+
+extern char* Uint32ToCString(Int32ToCStringBuf* cbuf, uint32_t value);
 
 
-extern char* NumberToHexCString(ToCStringBuf* cbuf, uint32_t value);
+
+extern char* Uint32ToHexCString(Int32ToCStringBuf* cbuf, uint32_t value);
 
 
 
