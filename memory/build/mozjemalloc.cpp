@@ -1366,6 +1366,13 @@ static inline void ApplyZeroOrJunk(void* aPtr, size_t aSize) {
 
 
 #ifdef XP_WIN
+
+
+static bool sShouldAlwaysStall = true;
+MOZ_JEMALLOC_API void mozjemalloc_experiment_set_always_stall(bool aVal) {
+  sShouldAlwaysStall = aVal;
+}
+
 #  ifdef MOZ_STALL_ON_OOM
 
 
@@ -1376,6 +1383,15 @@ constexpr size_t kMaxAttempts = 10;
 
 
 constexpr size_t kDelayMs = 50;
+
+Atomic<bool> sHasStalled{false};
+static bool ShouldStallAndRetry() {
+  if (sShouldAlwaysStall) {
+    return true;
+  }
+  
+  return sHasStalled.compareExchange(false, true);
+}
 
 
 
@@ -1410,6 +1426,9 @@ constexpr size_t kDelayMs = 50;
   }
 
   
+  
+  if (!ShouldStallAndRetry()) return nullptr;
+
   
   for (size_t i = 0; i < kMaxAttempts; ++i) {
     ::Sleep(kDelayMs);
