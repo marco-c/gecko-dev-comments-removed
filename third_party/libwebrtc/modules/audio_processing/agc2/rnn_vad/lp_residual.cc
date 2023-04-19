@@ -40,9 +40,13 @@ void DenoiseAutoCorrelation(
     rtc::ArrayView<float, kNumLpcCoefficients> auto_corr) {
   
   auto_corr[0] *= 1.0001f;
-  for (size_t i = 1; i < kNumLpcCoefficients; ++i) {
-    auto_corr[i] -= auto_corr[i] * (0.008f * i) * (0.008f * i);
-  }
+  
+  
+  auto_corr[1] -= auto_corr[1] * 0.000064f;
+  auto_corr[2] -= auto_corr[2] * 0.000256f;
+  auto_corr[3] -= auto_corr[3] * 0.000576f;
+  auto_corr[4] -= auto_corr[4] * 0.001024f;
+  static_assert(kNumLpcCoefficients == 5, "Update `auto_corr`.");
 }
 
 
