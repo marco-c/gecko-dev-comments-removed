@@ -824,6 +824,11 @@ license file's hash.
                     {},
                     "Unknown vet error. Run `./mach cargo vet` for more information.",
                 )
+            failed = True
+
+        
+        
+        if failed:
             return False
 
         res = subprocess.run(
