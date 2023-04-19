@@ -8,12 +8,12 @@
 #include "mozilla/StaticPrefs_javascript.h"
 #include "mozilla/Unused.h"
 #include "mozilla/ipc/IdleSchedulerParent.h"
+#include "mozilla/AppShutdown.h"
 #include "mozilla/Telemetry.h"
 #include "nsSystemInfo.h"
 #include "nsThreadUtils.h"
 #include "nsITimer.h"
 #include "nsIThread.h"
-#include "nsXPCOMPrivate.h"  
 
 namespace mozilla::ipc {
 
@@ -35,6 +35,8 @@ uint32_t IdleSchedulerParent::sPrefConcurrentGCsMax = 0;
 uint32_t IdleSchedulerParent::sPrefConcurrentGCsCPUDivisor = 0;
 
 IdleSchedulerParent::IdleSchedulerParent() {
+  MOZ_ASSERT(!AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMShutdownThreads));
+
   sChildProcessesAlive++;
 
   uint32_t max_gcs_pref =
@@ -61,19 +63,20 @@ IdleSchedulerParent::IdleSchedulerParent() {
           if (NS_SUCCEEDED(CollectProcessInfo(processInfo))) {
             uint32_t num_cpus = processInfo.cpuCount;
             
-            nsCOMPtr<nsIRunnable> runnable = NS_NewRunnableFunction(
-                "IdleSchedulerParent::CalculateNumIdleTasks", [num_cpus]() {
-                  
-                  
-                  sNumCPUs = num_cpus;
+            if (MOZ_LIKELY(!AppShutdown::IsInOrBeyond(
+                    ShutdownPhase::XPCOMShutdownThreads))) {
+              nsCOMPtr<nsIRunnable> runnable = NS_NewRunnableFunction(
+                  "IdleSchedulerParent::CalculateNumIdleTasks", [num_cpus]() {
+                    
+                    
+                    sNumCPUs = num_cpus;
 
-                  
-                  
-                  
-                  CalculateNumIdleTasks();
-                });
+                    
+                    
+                    
+                    CalculateNumIdleTasks();
+                  });
 
-            if (MOZ_LIKELY(!gXPCOMThreadsShutDown)) {
               thread->Dispatch(runnable, NS_DISPATCH_NORMAL);
             }
           }
