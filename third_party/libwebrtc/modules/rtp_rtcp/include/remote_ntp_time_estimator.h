@@ -13,7 +13,10 @@
 
 #include <stdint.h>
 
+#include "absl/base/attributes.h"
 #include "absl/types/optional.h"
+#include "api/units/time_delta.h"
+#include "api/units/timestamp.h"
 #include "rtc_base/numerics/moving_median_filter.h"
 #include "system_wrappers/include/rtp_to_ntp_estimator.h"
 
@@ -28,32 +31,63 @@ class Clock;
 class RemoteNtpTimeEstimator {
  public:
   explicit RemoteNtpTimeEstimator(Clock* clock);
-
-  ~RemoteNtpTimeEstimator();
-
   RemoteNtpTimeEstimator(const RemoteNtpTimeEstimator&) = delete;
   RemoteNtpTimeEstimator& operator=(const RemoteNtpTimeEstimator&) = delete;
+  ~RemoteNtpTimeEstimator() = default;
 
   
   
+  ABSL_DEPRECATED(
+      "Use UpdateRtcpTimestamp with strict time types: TimeDelta and NtpTime.")
   bool UpdateRtcpTimestamp(int64_t rtt,
                            uint32_t ntp_secs,
                            uint32_t ntp_frac,
+                           uint32_t rtp_timestamp) {
+    return UpdateRtcpTimestamp(TimeDelta::Millis(rtt),
+                               NtpTime(ntp_secs, ntp_frac), rtp_timestamp);
+  }
+
+  bool UpdateRtcpTimestamp(TimeDelta rtt,
+                           NtpTime sender_send_time,
                            uint32_t rtp_timestamp);
 
   
   
-  int64_t Estimate(uint32_t rtp_timestamp);
+  int64_t Estimate(uint32_t rtp_timestamp) {
+    NtpTime ntp_time = EstimateNtp(rtp_timestamp);
+    if (!ntp_time.Valid()) {
+      return -1;
+    }
+    return ntp_time.ToMs();
+  }
 
   
   
-  absl::optional<int64_t> EstimateRemoteToLocalClockOffsetMs();
+  NtpTime EstimateNtp(uint32_t rtp_timestamp);
+
+  
+  
+  ABSL_DEPRECATED("Use EstimateRemoteToLocalClockOffset.")
+  absl::optional<int64_t> EstimateRemoteToLocalClockOffsetMs() {
+    if (absl::optional<int64_t> offset = EstimateRemoteToLocalClockOffset()) {
+      return (*offset * 1'000) / (int64_t{1} << 32);
+    }
+    return absl::nullopt;
+  }
+
+  
+  
+  
+  
+  absl::optional<int64_t> EstimateRemoteToLocalClockOffset();
 
  private:
   Clock* clock_;
+  
+  
   MovingMedianFilter<int64_t> ntp_clocks_offset_estimator_;
   RtpToNtpEstimator rtp_to_ntp_;
-  int64_t last_timing_log_ms_;
+  Timestamp last_timing_log_ = Timestamp::MinusInfinity();
 };
 
 }  
