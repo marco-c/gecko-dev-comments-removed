@@ -72,6 +72,13 @@ const HTML_NS = "http://www.w3.org/1999/xhtml";
 
 
 
+const TRUNCATE_LENGTH_THRESHOLD = 5000;
+const TRUNCATE_NODE_CLASSNAME = "propertyvalue-long-text";
+
+
+
+
+
 
 
 
@@ -1824,6 +1831,10 @@ OutputParser.prototype = {
 
   _appendNode(tagName, attributes, value = "") {
     const node = this._createNode(tagName, attributes, value);
+    if (value.length > TRUNCATE_LENGTH_THRESHOLD) {
+      node.classList.add(TRUNCATE_NODE_CLASSNAME);
+    }
+
     this.parsed.push(node);
   },
 
@@ -1836,7 +1847,11 @@ OutputParser.prototype = {
 
   _appendTextNode(text) {
     const lastItem = this.parsed[this.parsed.length - 1];
-    if (typeof lastItem === "string") {
+    if (text.length > TRUNCATE_LENGTH_THRESHOLD) {
+      
+      
+      this._appendNode("span", {}, text);
+    } else if (typeof lastItem === "string") {
       this.parsed[this.parsed.length - 1] = lastItem + text;
     } else {
       this.parsed.push(text);

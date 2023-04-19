@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 :root {
   --min-container-width: 300px;
@@ -10,32 +10,32 @@
   box-sizing: border-box;
 }
 
-
+/* Make sure to hide scroll bars for the parent window */
 window {
   overflow: hidden;
 }
 
-
+/* The main Inspector panel container. */
 .inspector-responsive-container {
   height: 100vh;
   overflow: hidden;
 }
 
-
-
+/* The main panel layout. This area consists of a toolbar, markup view
+  and breadcrumbs bar. */
 #inspector-main-content {
-  
-
-
+  /* Subtract 1 pixel from the panel height. It's puzzling why this
+    is needed, but if not presented the entire Inspector panel
+    content jumps 1 pixel up when the Toolbox is opened. */
   height: calc(100% - 1px);
-  
-
+  /* This min-width avoids a visual glitch when moving the splitter quickly to the left.
+     See bug 1307408 comment #12. */
   min-width: 125px;
   display: flex;
   flex-direction: column;
 }
 
-
+/* Inspector Panel Splitter */
 
 #inspector-splitter-box {
   height: 100vh;
@@ -43,7 +43,7 @@ window {
   position: fixed;
 }
 
-
+/* Minimum dimensions for the Inspector splitter areas. */
 #inspector-splitter-box .uncontrolled,
 #inspector-splitter-box .controlled {
   min-height: 50px;
@@ -51,9 +51,9 @@ window {
   overflow-x: hidden;
 }
 
-
-
-
+/* Set a minimum width of 200px for tab content to avoid breaking the layout when resizing
+   the sidebar tab to small width. If a specific panel supports smaller width, this should
+   be overridden on a panel-by-panel basis */
 .inspector-tabpanel {
   min-width: 200px;
 }
@@ -71,7 +71,7 @@ window {
   background-image: url("chrome://devtools/skin/images/open-3-pane.svg");
 }
 
-
+/* Flip the icon horizontally when in RTL mode */
 #inspector-splitter-box .sidebar-toggle:dir(rtl) {
   transform: scaleX(-1);
 }
@@ -88,7 +88,7 @@ window {
   padding: 0 3px;
 }
 
-
+/* Add element toolbar button */
 #inspector-element-add-button::before {
   background-image: url("chrome://devtools/skin/images/add.svg");
   background-position: center;
@@ -96,10 +96,10 @@ window {
   -moz-user-focus: normal;
 }
 
-
+/* Eyedropper toolbar button */
 
 #inspector-eyedropper-toggle {
-  
+  /* Required to display tooltip when eyedropper is disabled in non-HTML documents */
   pointer-events: auto;
 }
 
@@ -114,8 +114,8 @@ window {
   border-bottom-width: 0px;
   border-top-width: 1px;
   border-top-color: var(--theme-splitter-color);
-  
-
+  /* Bug 1262668 - Use the same background as the body so the breadcrumbs toolbar doesn't
+     get mistaken as a splitter */
   background-color: var(--theme-body-background);
   display: block;
   position: relative;
@@ -130,9 +130,9 @@ window {
 #inspector-breadcrumbs {
   display: flex;
 
-  
-
-
+  /* Break out of the XUL flexbox, so the splitter can still shrink the
+     markup view even if the contents of the breadcrumbs are wider than
+     the new width. */
   position: absolute;
   top: 0;
   left: 0;
@@ -174,12 +174,12 @@ window {
   right: 0;
 }
 
-
+/* Override `-moz-user-focus:ignore;` from toolkit/content/minimal-xul.css */
 .inspector-tabpanel > * {
   -moz-user-focus: normal;
 }
 
-
+/* Markup Box */
 
 iframe {
   border: 0;
@@ -196,8 +196,26 @@ iframe {
   width: 100%;
 }
 
-
+/* Extension Sidebar */
 .inspector-tabpanel.extension-sidebar {
   height: 100%;
   overflow-y: auto;
+}
+
+/* Used for both the computed view and the rule view, to truncate extremely
+long base64 URLs and other unexpectedly long text properties. */
+.propertyvalue-long-text {
+  /* Force inline-block to be able to set a max-width. */
+  display: inline-block;
+  /* Arbitrary max-width, this should allow the value to be inlined with the
+     property name in very wide containers */
+  max-width: 80%;
+  /* Add ellipsis. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* Introducing display: inline-block; shifts the vertical alignment, force to
+     align it to the parent's text */
+  vertical-align: text-top;
+  /* Force the long text to be rendered on a single line. */
+  white-space: nowrap;
 }
