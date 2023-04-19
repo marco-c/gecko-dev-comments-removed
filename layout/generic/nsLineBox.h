@@ -1546,7 +1546,7 @@ class nsLineIterator final : public nsILineIterator {
     return mNumLines;
   }
 
-  bool GetDirection() final { return mRightToLeft; }
+  bool IsLineIteratorFlowRTL() final { return mRightToLeft; }
 
   
   mozilla::Result<LineInfo, nsresult> GetLine(int32_t aLineNumber) final;

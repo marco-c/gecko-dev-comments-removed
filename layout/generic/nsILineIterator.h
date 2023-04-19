@@ -40,12 +40,7 @@ class nsILineIterator {
   
 
 
-
-
-
-
-
-  virtual bool GetDirection() = 0;
+  virtual bool IsLineIteratorFlowRTL() = 0;
 
   struct LineInfo {
     

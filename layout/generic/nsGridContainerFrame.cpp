@@ -9852,7 +9852,7 @@ nsGridContainerFrame* nsGridContainerFrame::GetGridFrameWithComputedInfo(
 
 
 
-bool nsGridContainerFrame::GetDirection() { return false; }
+bool nsGridContainerFrame::IsLineIteratorFlowRTL() { return false; }
 
 int32_t nsGridContainerFrame::GetNumLines() const {
   return mFrames.GetLength();
