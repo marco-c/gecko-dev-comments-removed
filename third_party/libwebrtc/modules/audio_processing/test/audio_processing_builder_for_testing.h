@@ -24,41 +24,55 @@ namespace webrtc {
 class AudioProcessingBuilderForTesting {
  public:
   AudioProcessingBuilderForTesting();
+  AudioProcessingBuilderForTesting(const AudioProcessingBuilderForTesting&) =
+      delete;
+  AudioProcessingBuilderForTesting& operator=(
+      const AudioProcessingBuilderForTesting&) = delete;
   ~AudioProcessingBuilderForTesting();
+
   
+  AudioProcessingBuilderForTesting& SetConfig(
+      const AudioProcessing::Config& config) {
+    config_ = config;
+    return *this;
+  }
+
   
   AudioProcessingBuilderForTesting& SetEchoControlFactory(
       std::unique_ptr<EchoControlFactory> echo_control_factory) {
     echo_control_factory_ = std::move(echo_control_factory);
     return *this;
   }
-  
+
   
   AudioProcessingBuilderForTesting& SetCapturePostProcessing(
       std::unique_ptr<CustomProcessing> capture_post_processing) {
     capture_post_processing_ = std::move(capture_post_processing);
     return *this;
   }
-  
+
   
   AudioProcessingBuilderForTesting& SetRenderPreProcessing(
       std::unique_ptr<CustomProcessing> render_pre_processing) {
     render_pre_processing_ = std::move(render_pre_processing);
     return *this;
   }
+
   
   AudioProcessingBuilderForTesting& SetEchoDetector(
       rtc::scoped_refptr<EchoDetector> echo_detector) {
     echo_detector_ = std::move(echo_detector);
     return *this;
   }
-  
+
   
   AudioProcessingBuilderForTesting& SetCaptureAnalyzer(
       std::unique_ptr<CustomAudioAnalyzer> capture_analyzer) {
     capture_analyzer_ = std::move(capture_analyzer);
     return *this;
   }
+
+  
   
   
   
@@ -68,6 +82,7 @@ class AudioProcessingBuilderForTesting {
   
   void TransferOwnershipsToBuilder(AudioProcessingBuilder* builder);
 
+  AudioProcessing::Config config_;
   std::unique_ptr<EchoControlFactory> echo_control_factory_;
   std::unique_ptr<CustomProcessing> capture_post_processing_;
   std::unique_ptr<CustomProcessing> render_pre_processing_;
