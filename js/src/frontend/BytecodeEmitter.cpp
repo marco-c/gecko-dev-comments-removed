@@ -11693,7 +11693,7 @@ bool BytecodeEmitter::intoScriptStencil(ScriptIndex scriptIndex) {
 
   
   auto* sharedData =
-      SharedImmutableScriptData::createWith(cx, std::move(immutableScriptData));
+      SharedImmutableScriptData::createWith(ec, std::move(immutableScriptData));
   if (!sharedData) {
     return false;
   }

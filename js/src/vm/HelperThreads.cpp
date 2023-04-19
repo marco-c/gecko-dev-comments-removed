@@ -846,30 +846,32 @@ void MultiStencilsDecodeTask::parse(JSContext* cx, ErrorContext* ec) {
   }
 }
 
-bool js::StartOffThreadDelazification(
+void js::StartOffThreadDelazification(
     JSContext* cx, const ReadOnlyCompileOptions& options,
     const frontend::CompilationStencil& stencil) {
   
   auto strategy = options.eagerDelazificationStrategy();
   if (strategy == JS::DelazificationOption::OnDemandOnly ||
       strategy == JS::DelazificationOption::ParseEverythingEagerly) {
-    return true;
+    return;
   }
 
   
   if (cx->realm()->collectCoverageForDebug()) {
-    return true;
+    return;
   }
 
   if (!CanUseExtraThreads()) {
-    return true;
+    return;
   }
+
+  AutoAssertNoPendingException aanpe(cx);
 
   JSRuntime* runtime = cx->runtime();
   UniquePtr<DelazifyTask> task;
   task = DelazifyTask::Create(cx, runtime, cx->options(), options, stencil);
   if (!task) {
-    return false;
+    return;
   }
 
   
@@ -877,11 +879,9 @@ bool js::StartOffThreadDelazification(
     AutoLockHelperThreadState lock;
     HelperThreadState().submitTask(task.release(), lock);
   }
-
-  return true;
 }
 
-bool DelazifyStrategy::add(JSContext* cx,
+bool DelazifyStrategy::add(ErrorContext* ec,
                            const frontend::CompilationStencil& stencil,
                            ScriptIndex index) {
   using namespace js::frontend;
@@ -911,7 +911,7 @@ bool DelazifyStrategy::add(JSContext* cx,
     if (innerScriptRef.scriptData().hasSharedData()) {
       
       
-      if (!add(cx, stencil, innerScriptIndex)) {
+      if (!add(ec, stencil, innerScriptIndex)) {
         return false;
       }
       continue;
@@ -919,7 +919,7 @@ bool DelazifyStrategy::add(JSContext* cx,
 
     
     if (!insert(innerScriptIndex, innerScriptRef)) {
-      ReportOutOfMemory(cx);
+      ReportOutOfMemory(ec);
       return false;
     }
   }
@@ -1000,18 +1000,9 @@ UniquePtr<DelazifyTask> DelazifyTask::Create(
     JSContext* cx, JSRuntime* runtime, const JS::ContextOptions& contextOptions,
     const JS::ReadOnlyCompileOptions& options,
     const frontend::CompilationStencil& stencil) {
-  
-  
-  
-  
-  
-  
-  
-
   UniquePtr<DelazifyTask> task;
   task.reset(js_new<DelazifyTask>(runtime, contextOptions));
   if (!task) {
-    ReportOutOfMemory(cx);
     return nullptr;
   }
 
@@ -1019,19 +1010,19 @@ UniquePtr<DelazifyTask> DelazifyTask::Create(
   RefPtr<ScriptSource> source(stencil.source);
   StencilCache& cache = runtime->caches().delazificationCache;
   if (!cache.startCaching(std::move(source))) {
-    ReportOutOfMemory(cx);
     return nullptr;
   }
 
   
-  auto initial = cx->make_unique<frontend::ExtensibleCompilationStencil>(
-      cx, options, stencil.source);
+  auto initial = task->ec_.getAllocator()
+                     ->make_unique<frontend::ExtensibleCompilationStencil>(
+                         cx, options, stencil.source);
   if (!initial || !initial->cloneFrom(&task->ec_, stencil)) {
     
     return nullptr;
   }
 
-  if (!task->init(cx, options, std::move(initial))) {
+  if (!task->init(options, std::move(initial))) {
     
     return nullptr;
   }
@@ -1046,7 +1037,7 @@ DelazifyTask::DelazifyTask(JSRuntime* runtime,
 }
 
 bool DelazifyTask::init(
-    JSContext* cx, const JS::ReadOnlyCompileOptions& options,
+    const JS::ReadOnlyCompileOptions& options,
     UniquePtr<frontend::ExtensibleCompilationStencil>&& initial) {
   using namespace js::frontend;
   if (!merger.setInitial(&ec_, std::move(initial))) {
@@ -1063,12 +1054,12 @@ bool DelazifyTask::init(
     case JS::DelazificationOption::ConcurrentDepthFirst:
       
       
-      strategy = cx->make_unique<DepthFirstDelazification>();
+      strategy = ec_.getAllocator()->make_unique<DepthFirstDelazification>();
       break;
     case JS::DelazificationOption::ConcurrentLargeFirst:
       
       
-      strategy = cx->make_unique<LargeFirstDelazification>();
+      strategy = ec_.getAllocator()->make_unique<LargeFirstDelazification>();
       break;
     case JS::DelazificationOption::ParseEverythingEagerly:
       
@@ -1084,7 +1075,7 @@ bool DelazifyTask::init(
   
   BorrowingCompilationStencil borrow(merger.getResult());
   ScriptIndex topLevel{0};
-  return strategy->add(cx, borrow, topLevel);
+  return strategy->add(&ec_, borrow, topLevel);
 }
 
 size_t DelazifyTask::sizeOfExcludingThis(
@@ -1164,7 +1155,7 @@ bool DelazifyTask::runTask(JSContext* cx) {
       StencilContext key(borrow.source, scriptRef.scriptExtra().extent);
       if (auto guard = cache.isSourceCached(borrow.source)) {
         if (!cache.putNew(guard, key, innerStencil.get())) {
-          ReportOutOfMemory(cx);
+          ReportOutOfMemory(&ec_);
           return false;
         }
       } else {
@@ -1184,7 +1175,7 @@ bool DelazifyTask::runTask(JSContext* cx) {
 
     {
       BorrowingCompilationStencil borrow(merger.getResult());
-      if (!strategy->add(cx, borrow, scriptIndex)) {
+      if (!strategy->add(&ec_, borrow, scriptIndex)) {
         return false;
       }
     }

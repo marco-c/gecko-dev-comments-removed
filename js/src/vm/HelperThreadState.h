@@ -598,7 +598,7 @@ struct DelazifyStrategy {
   
   
   
-  [[nodiscard]] bool add(JSContext* cx,
+  [[nodiscard]] bool add(ErrorContext* ec,
                          const frontend::CompilationStencil& stencil,
                          ScriptIndex index);
 };
@@ -671,6 +671,10 @@ struct DelazifyTask : public mozilla::LinkedListElement<DelazifyTask>,
   OffThreadErrorContext ec_;
 
   
+  
+  
+  
+  
   static UniquePtr<DelazifyTask> Create(
       JSContext* cx, JSRuntime* runtime,
       const JS::ContextOptions& contextOptions,
@@ -680,7 +684,7 @@ struct DelazifyTask : public mozilla::LinkedListElement<DelazifyTask>,
   DelazifyTask(JSRuntime* runtime, const JS::ContextOptions& options);
 
   [[nodiscard]] bool init(
-      JSContext* cx, const JS::ReadOnlyCompileOptions& options,
+      const JS::ReadOnlyCompileOptions& options,
       UniquePtr<frontend::ExtensibleCompilationStencil>&& initial);
 
   

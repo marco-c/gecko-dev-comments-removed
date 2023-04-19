@@ -248,9 +248,9 @@ JS::OffThreadToken* StartOffThreadDecodeMultiStencils(
 
 
 
-[[nodiscard]] bool StartOffThreadDelazification(
-    JSContext* cx, const JS::ReadOnlyCompileOptions& options,
-    const frontend::CompilationStencil& stencil);
+void StartOffThreadDelazification(JSContext* cx,
+                                  const JS::ReadOnlyCompileOptions& options,
+                                  const frontend::CompilationStencil& stencil);
 
 
 
