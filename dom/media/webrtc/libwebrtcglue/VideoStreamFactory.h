@@ -9,13 +9,9 @@
 
 #include "CodecConfig.h"
 #include "mozilla/Atomics.h"
-#include "mozilla/DataMutex.h"
-#include "mozilla/gfx/Point.h"
 #include "mozilla/UniquePtr.h"
-#include "api/video/video_source_interface.h"
 #include "api/video_codecs/video_encoder_config.h"
-#include "common_video/framerate_controller.h"
-#include "rtc_base/time_utils.h"
+#include "media/base/video_adapter.h"
 
 namespace mozilla {
 
@@ -38,68 +34,25 @@ class VideoStreamFactory
   VideoStreamFactory(VideoCodecConfig aConfig,
                      webrtc::VideoCodecMode aCodecMode, int aMinBitrate,
                      int aStartBitrate, int aPrefMaxBitrate,
-                     int aNegotiatedMaxBitrate,
-                     const rtc::VideoSinkWants& aWants, bool aLockScaling)
+                     int aNegotiatedMaxBitrate, unsigned int aMaxFramerate)
       : mCodecMode(aCodecMode),
-        mMaxFramerateForAllStreams(std::numeric_limits<unsigned int>::max()),
+        mMaxFramerateForAllStreams(aMaxFramerate),
         mCodecConfig(std::forward<VideoCodecConfig>(aConfig)),
         mMinBitrate(aMinBitrate),
         mStartBitrate(aStartBitrate),
         mPrefMaxBitrate(aPrefMaxBitrate),
         mNegotiatedMaxBitrate(aNegotiatedMaxBitrate),
-        mFramerateController("VideoStreamFactory::mFramerateController"),
-        mWants(aWants),
-        mLockScaling(aLockScaling) {}
+        mSimulcastAdapter(MakeUnique<cricket::VideoAdapter>()) {}
+
+  void SetCodecMode(webrtc::VideoCodecMode aCodecMode);
+  void SetMaxFramerateForAllStreams(unsigned int aMaxFramerate);
 
   
   
   std::vector<webrtc::VideoStream> CreateEncoderStreams(
-      int aWidth, int aHeight,
-      const webrtc::VideoEncoderConfig& aConfig) override;
-  
-
-
-
-
-  void SelectMaxFramerateForAllStreams(unsigned short aWidth,
-                                       unsigned short aHeight);
-
-  
-
-
-
-
-
-
-  bool ShouldDropFrame(int64_t aTimestamp);
+      int width, int height, const webrtc::VideoEncoderConfig& config) override;
 
  private:
-  
-
-
-
-
-
-
-
-
-
-  gfx::IntSize CalculateScaledResolution(int aWidth, int aHeight,
-                                         double aScaleDownByResolution,
-                                         unsigned int aMaxPixelCount);
-
-  
-
-
-
-
-
-
-
-  unsigned int SelectFrameRate(unsigned int aOldFramerate,
-                               unsigned short aSendingWidth,
-                               unsigned short aSendingHeight);
-
   
   Atomic<webrtc::VideoCodecMode> mCodecMode;
 
@@ -117,10 +70,8 @@ class VideoStreamFactory
 
   
   
-  DataMutex<webrtc::FramerateController> mFramerateController;
-
-  const rtc::VideoSinkWants mWants;
-  const bool mLockScaling;
+  
+  UniquePtr<cricket::VideoAdapter> mSimulcastAdapter;
 };
 
 }  

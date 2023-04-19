@@ -27,6 +27,7 @@
 #include "api/video_codecs/sdp_video_format.h"
 #include "call/call_basic_stats.h"
 #include "common_video/include/video_frame_buffer_pool.h"
+#include "media/base/video_adapter.h"
 #include "media/base/video_broadcaster.h"
 #include <functional>
 #include <memory>
@@ -97,6 +98,13 @@ class WebrtcVideoConduit
 
 
 
+  void SelectSendResolution(unsigned short width, unsigned short height);
+
+  
+
+
+
+
 
 
 
@@ -159,8 +167,6 @@ class WebrtcVideoConduit
   void NotifyUnsetCurrentRemoteSSRC();
   void SetRemoteSSRCConfig(uint32_t aSsrc, uint32_t aRtxSsrc);
   void SetRemoteSSRCAndRestartAsNeeded(uint32_t aSsrc, uint32_t aRtxSsrc);
-  rtc::RefCountedObject<mozilla::VideoStreamFactory>*
-  CreateVideoStreamFactory();
 
  public:
   
@@ -338,11 +344,20 @@ class WebrtcVideoConduit
 
   
   
+  
+  UniquePtr<cricket::VideoAdapter> mVideoAdapter;
+
+  
+  
   AutoTArray<rtc::VideoSinkInterface<webrtc::VideoFrame>*, 1> mRegisteredSinks;
 
   
   
   rtc::VideoBroadcaster mVideoBroadcaster;
+
+  
+  
+  Atomic<bool> mUpdateSendResolution{false};
 
   
   
@@ -391,6 +406,9 @@ class WebrtcVideoConduit
   
   
   Maybe<uint32_t> mLastRTPTimestampReceive;
+
+  
+  unsigned int mMaxFramerateForAllStreams;
 
   
   uint64_t mVideoLatencyAvg = 0;
