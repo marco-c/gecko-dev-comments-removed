@@ -135,6 +135,10 @@ const MESSAGES = () => {
       trigger: {
         id: "featureCalloutCheck",
       },
+      frequency: {
+        
+        lifetime: 100,
+      },
       targeting: `!inMr2022Holdback && source == "firefoxview" &&
        !'browser.newtabpage.activity-stream.asrouter.providers.cfr'|preferenceIsUserSet &&
        ${matchCurrentScreenTargeting(
