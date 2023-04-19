@@ -2281,6 +2281,12 @@ bool DebuggerScript::CallData::getOffsetsCoverage() {
     return false;
   }
 
+  Debugger* dbg = obj->owner();
+  if (dbg->observesCoverage() != Debugger::Observing) {
+    args.rval().setNull();
+    return true;
+  }
+
   
   
   if (!script->hasScriptCounts()) {
