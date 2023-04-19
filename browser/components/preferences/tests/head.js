@@ -273,3 +273,19 @@ function createObserveAllPromise(observances) {
     Services.obs.addObserver(permObserver, "perm-changed");
   });
 }
+
+
+
+
+
+
+
+async function waitForAndAssertPrefState(pref, expectedValue, message) {
+  await TestUtils.waitForPrefChange(pref, value => {
+    if (value != expectedValue) {
+      return false;
+    }
+    is(value, expectedValue, message);
+    return true;
+  });
+}

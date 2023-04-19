@@ -53,22 +53,6 @@ function testTelemetryState(optIn) {
   );
 }
 
-
-
-
-
-
-
-async function waitForAndAssertPrefState(pref, expectedValue, message) {
-  await TestUtils.waitForPrefChange(pref, value => {
-    if (value != expectedValue) {
-      return false;
-    }
-    is(value, expectedValue, message);
-    return true;
-  });
-}
-
 add_setup(async function() {
   const defaultPrefs = Services.prefs.getDefaultBranch("");
   const previousDefaultCB = defaultPrefs.getIntPref(COOKIE_BEHAVIOR_PREF);
@@ -144,6 +128,20 @@ async function testRolloutUI({
     BrowserTestUtils.is_visible(etpStandardTCPRolloutBox),
     uiEnabled,
     `Rollout UI in standard is ${uiEnabled ? " " : "not "}visible.`
+  );
+
+  
+  let etpStandardTCPBox = doc.getElementById("etpStandardTCPBox");
+  let tcpSectionEnabled =
+    !uiEnabled &&
+    Services.prefs.getIntPref(COOKIE_BEHAVIOR_PREF) ==
+      BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN;
+  is(
+    BrowserTestUtils.is_visible(etpStandardTCPBox),
+    tcpSectionEnabled,
+    `Non-rollout TCP section in standard is ${
+      tcpSectionEnabled ? " " : "not "
+    }visible.`
   );
 
   if (uiEnabled) {

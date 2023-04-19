@@ -1802,6 +1802,9 @@ pref("privacy.restrict3rdpartystorage.rollout.preferences.TCPToggleInStandard", 
 pref("privacy.restrict3rdpartystorage.rollout.preferences.learnMoreURLSuffix", "total-cookie-protection");
 
 
+pref("privacy.restrict3rdpartystorage.preferences.learnMoreURLSuffix", "total-cookie-protection");
+
+
 pref("network.cookie.cookieBehavior.pbmode", 5 );
 
 
