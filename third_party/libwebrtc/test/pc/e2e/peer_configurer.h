@@ -280,24 +280,6 @@ class PeerParamsPreprocessor {
   int media_streams_count = 0;
 };
 
-
-
-
-
-
-
-
-void SetDefaultValuesForMissingParams(
-    PeerConnectionE2EQualityTestFixture::RunParams* run_params,
-    std::vector<std::unique_ptr<PeerConfigurerImpl>>* peers);
-
-
-
-
-void ValidateParams(
-    const PeerConnectionE2EQualityTestFixture::RunParams& run_params,
-    const std::vector<std::unique_ptr<PeerConfigurerImpl>>& peers);
-
 }  
 }  
 
