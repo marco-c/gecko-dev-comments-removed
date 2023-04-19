@@ -920,7 +920,6 @@ class PeerConnection : public PeerConnectionInternal,
   
   void OnCertificateReady(
       const rtc::scoped_refptr<rtc::RTCCertificate>& certificate);
-  void OnDtlsSrtpSetupFailure(cricket::BaseChannel*, bool rtcp);
 
   
   
