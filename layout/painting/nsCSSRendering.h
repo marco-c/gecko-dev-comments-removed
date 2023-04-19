@@ -337,13 +337,23 @@ struct nsCSSRendering {
 
 
 
-  struct NonTransparentBackgroundFrame {
-    nsIFrame* mFrame = nullptr;
+
+
+
+
+
+
+
+
+
+
+  struct EffectiveBackgroundColor {
+    nscolor mColor = 0;
     bool mIsThemed = false;
-    bool mIsForCanvas = false;
   };
-  static NonTransparentBackgroundFrame FindNonTransparentBackgroundFrame(
-      nsIFrame* aFrame, bool aStopAtThemed = true);
+  static EffectiveBackgroundColor FindEffectiveBackgroundColor(
+      nsIFrame* aFrame, bool aStopAtThemed = true,
+      bool aPreferBodyToCanvas = false);
 
   
 

@@ -547,14 +547,6 @@ bool nsNativeTheme::IsRangeHorizontal(nsIFrame* aFrame) {
   return aFrame->GetSize().width >= aFrame->GetSize().height;
 }
 
-static nsIFrame* GetBodyFrame(nsIFrame* aCanvasFrame) {
-  nsIContent* body = aCanvasFrame->PresContext()->Document()->GetBodyElement();
-  if (!body) {
-    return nullptr;
-  }
-  return body->GetPrimaryFrame();
-}
-
 
 bool nsNativeTheme::IsDarkBackground(nsIFrame* aFrame) {
   
@@ -573,29 +565,10 @@ bool nsNativeTheme::IsDarkBackground(nsIFrame* aFrame) {
     }
   }
 
-  auto backgroundFrame = nsCSSRendering::FindNonTransparentBackgroundFrame(
-      aFrame,  false);
-  if (!backgroundFrame.mFrame) {
-    return false;
-  }
-
-  nscolor color = backgroundFrame.mFrame->StyleBackground()->BackgroundColor(
-      backgroundFrame.mFrame);
-
-  if (backgroundFrame.mIsForCanvas) {
-    
-    
-    
-    
-    if (nsIFrame* bodyFrame = GetBodyFrame(aFrame)) {
-      nscolor bodyColor =
-          bodyFrame->StyleBackground()->BackgroundColor(bodyFrame);
-      if (NS_GET_A(bodyColor)) {
-        color = bodyColor;
-      }
-    }
-  }
-
+  auto color =
+      nsCSSRendering::FindEffectiveBackgroundColor(
+          aFrame,  false,  true)
+          .mColor;
   return LookAndFeel::IsDarkColor(color);
 }
 
