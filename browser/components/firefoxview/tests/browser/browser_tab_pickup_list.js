@@ -15,7 +15,7 @@ const twoTabs = [
     title: "Phabricator Home",
     url: "https://phabricator.services.mozilla.com/",
     icon: "https://phabricator.services.mozilla.com/favicon.d25d81d39065.ico",
-    lastUsed: 1655745700000, 
+    lastUsed: 1655745700, 
   },
   {
     type: "tab",
@@ -23,7 +23,7 @@ const twoTabs = [
     url: "https://www.mozilla.org/en-US/privacy/firefox/",
     icon:
       "https://www.mozilla.org/media/img/favicons/mozilla/favicon.d25d81d39065.ico",
-    lastUsed: 1655745700000, 
+    lastUsed: 1655745700, 
   },
 ];
 const syncedTabsData2 = structuredClone(syncedTabsData1);
@@ -42,7 +42,7 @@ const syncedTabsData3 = [
         title: "Sandboxes - Sinon.JS",
         url: "https://sinonjs.org/releases/latest/sandbox/",
         icon: "https://sinonjs.org/assets/images/favicon.png",
-        lastUsed: 1655391592000, 
+        lastUsed: 1655391592, 
       },
     ],
   },
@@ -64,7 +64,7 @@ const syncedTabsData5 = [
         title: "Example2",
         url: "https://example.com",
         icon: "https://example/favicon.png",
-        lastUsed: Math.floor(Date.now() - 1000 * 60), 
+        lastUsed: Math.floor((Date.now() - 1000 * 60) / 1000), 
       },
     ],
   },
