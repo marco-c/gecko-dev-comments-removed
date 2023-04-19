@@ -93,6 +93,9 @@ enum class TypeCode {
   
   BlockVoid = 0x40,  
 
+  
+  RecGroup = 0x45,
+
   Limit = 0x80
 };
 
@@ -1017,6 +1020,7 @@ static const unsigned MaxTypeIndex = 1000000;
 static const unsigned MaxTypeIndex = 15000;
 #endif
 
+static const unsigned MaxRecGroups = 1000000;
 static const unsigned MaxTags = 1000000;
 
 

@@ -37,6 +37,8 @@ namespace wasm {
 using mozilla::CheckedInt32;
 using mozilla::MallocSizeOf;
 
+class RecGroup;
+
 
 
 
@@ -138,21 +140,47 @@ class FuncType {
   
   static const uint32_t ImmediateBit = 0x1;
 
-  HashNumber hash() const {
+  HashNumber hash(const RecGroup* recGroup) const {
     HashNumber hn = 0;
     for (const ValType& vt : args_) {
-      hn = mozilla::AddToHash(hn, HashNumber(vt.packed().bits()));
+      hn = mozilla::AddToHash(hn, vt.forMatch(recGroup).hash());
     }
     for (const ValType& vt : results_) {
-      hn = mozilla::AddToHash(hn, HashNumber(vt.packed().bits()));
+      hn = mozilla::AddToHash(hn, vt.forMatch(recGroup).hash());
     }
     return hn;
   }
-  bool operator==(const FuncType& rhs) const {
-    return EqualContainers(args(), rhs.args()) &&
-           EqualContainers(results(), rhs.results());
+
+  
+  
+  static bool matches(const RecGroup* lhsRecGroup, const FuncType& lhs,
+                      const RecGroup* rhsRecGroup, const FuncType& rhs) {
+    if (lhs.args_.length() != rhs.args_.length() ||
+        lhs.results_.length() != rhs.results_.length()) {
+      return false;
+    }
+    for (uint32_t i = 0; i < lhs.args_.length(); i++) {
+      if (lhs.args_[i].forMatch(lhsRecGroup) !=
+          rhs.args_[i].forMatch(rhsRecGroup)) {
+        return false;
+      }
+    }
+    for (uint32_t i = 0; i < lhs.results_.length(); i++) {
+      if (lhs.results_[i].forMatch(lhsRecGroup) !=
+          rhs.results_[i].forMatch(rhsRecGroup)) {
+        return false;
+      }
+    }
+    return true;
   }
-  bool operator!=(const FuncType& rhs) const { return !(*this == rhs); }
+
+  
+  
+  
+  static bool strictlyEquals(const FuncType& lhs, const FuncType& rhs) {
+    return EqualContainers(lhs.args(), rhs.args()) &&
+           EqualContainers(lhs.results(), rhs.results());
+  }
 
   bool canHaveJitEntry() const;
   bool canHaveJitExit() const;
@@ -200,12 +228,6 @@ class FuncType {
   WASM_DECLARE_FRIEND_SERIALIZE(FuncType);
 };
 
-struct FuncTypeHashPolicy {
-  using Lookup = const FuncType&;
-  static HashNumber hash(Lookup ft) { return ft.hash(); }
-  static bool match(const FuncType* lhs, Lookup rhs) { return *lhs == rhs; }
-};
-
 
 
 
@@ -216,6 +238,13 @@ struct StructField {
   FieldType type;
   uint32_t offset;
   bool isMutable;
+
+  HashNumber hash(const RecGroup* recGroup) const {
+    HashNumber hn = 0;
+    hn = mozilla::AddToHash(hn, type.forMatch(recGroup).hash());
+    hn = mozilla::AddToHash(hn, HashNumber(isMutable));
+    return hn;
+  }
 };
 
 using StructFieldVector = Vector<StructField, 0, SystemAllocPolicy>;
@@ -247,6 +276,33 @@ class StructType {
   bool isDefaultable() const {
     for (auto& field : fields_) {
       if (!field.type.isDefaultable()) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  HashNumber hash(const RecGroup* recGroup) const {
+    HashNumber hn = 0;
+    for (const StructField& field : fields_) {
+      hn = mozilla::AddToHash(hn, field.hash(recGroup));
+    }
+    return hn;
+  }
+
+  
+  
+  static bool matches(const RecGroup* lhsRecGroup, const StructType& lhs,
+                      const RecGroup* rhsRecGroup, const StructType& rhs) {
+    if (lhs.fields_.length() != rhs.fields_.length()) {
+      return false;
+    }
+    for (uint32_t i = 0; i < lhs.fields_.length(); i++) {
+      const StructField& lhsField = lhs.fields_[i];
+      const StructField& rhsField = rhs.fields_[i];
+      if (lhsField.isMutable != rhsField.isMutable ||
+          lhsField.type.forMatch(lhsRecGroup) !=
+              rhsField.type.forMatch(rhsRecGroup)) {
         return false;
       }
     }
@@ -314,6 +370,25 @@ class ArrayType {
 
   bool isDefaultable() const { return elementType_.isDefaultable(); }
 
+  HashNumber hash(const RecGroup* recGroup) const {
+    HashNumber hn = 0;
+    hn = mozilla::AddToHash(hn, elementType_.forMatch(recGroup).hash());
+    hn = mozilla::AddToHash(hn, HashNumber(isMutable_));
+    return hn;
+  }
+
+  
+  
+  static bool matches(const RecGroup* lhsRecGroup, const ArrayType& lhs,
+                      const RecGroup* rhsRecGroup, const ArrayType& rhs) {
+    if (lhs.isMutable_ != rhs.isMutable_ ||
+        lhs.elementType_.forMatch(lhsRecGroup) !=
+            rhs.elementType_.forMatch(rhsRecGroup)) {
+      return false;
+    }
+    return true;
+  }
+
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 };
 
@@ -331,7 +406,8 @@ enum class TypeDefKind : uint8_t {
   Array,
 };
 
-class TypeDef : public AtomicRefCounted<TypeDef> {
+class TypeDef {
+  uint32_t offsetToRecGroup_;
   TypeDefKind kind_;
   union {
     FuncType funcType_;
@@ -339,32 +415,17 @@ class TypeDef : public AtomicRefCounted<TypeDef> {
     ArrayType arrayType_;
   };
 
+  void setRecGroup(RecGroup* recGroup) {
+    uintptr_t recGroupAddr = (uintptr_t)recGroup;
+    uintptr_t typeDefAddr = (uintptr_t)this;
+    MOZ_ASSERT(typeDefAddr > recGroupAddr);
+    MOZ_ASSERT(typeDefAddr - recGroupAddr <= UINT32_MAX);
+    offsetToRecGroup_ = typeDefAddr - recGroupAddr;
+  }
+
  public:
-  TypeDef() : kind_(TypeDefKind::None) {}
-
-  explicit TypeDef(FuncType&& funcType)
-      : kind_(TypeDefKind::Func), funcType_(std::move(funcType)) {}
-
-  explicit TypeDef(StructType&& structType)
-      : kind_(TypeDefKind::Struct), structType_(std::move(structType)) {}
-
-  explicit TypeDef(ArrayType&& arrayType)
-      : kind_(TypeDefKind::Array), arrayType_(std::move(arrayType)) {}
-
-  TypeDef(TypeDef&& td) noexcept : kind_(td.kind_) {
-    switch (kind_) {
-      case TypeDefKind::Func:
-        new (&funcType_) FuncType(std::move(td.funcType_));
-        break;
-      case TypeDefKind::Struct:
-        new (&structType_) StructType(std::move(td.structType_));
-        break;
-      case TypeDefKind::Array:
-        new (&arrayType_) ArrayType(std::move(td.arrayType_));
-        break;
-      case TypeDefKind::None:
-        break;
-    }
+  explicit TypeDef(RecGroup* recGroup) : offsetToRecGroup_(0), kind_(TypeDefKind::None) {
+    setRecGroup(recGroup);
   }
 
   ~TypeDef() {
@@ -402,6 +463,12 @@ class TypeDef : public AtomicRefCounted<TypeDef> {
     kind_ = TypeDefKind::Array;
     new (&arrayType_) ArrayType(std::move(that));
     return *this;
+  }
+
+  const RecGroup& recGroup() const {
+    uintptr_t typeDefAddr = (uintptr_t)this;
+    uintptr_t recGroupAddr = typeDefAddr - offsetToRecGroup_;
+    return *(const RecGroup*)recGroupAddr;
   }
 
   TypeDefKind kind() const { return kind_; }
@@ -444,6 +511,45 @@ class TypeDef : public AtomicRefCounted<TypeDef> {
     return arrayType_;
   }
 
+  HashNumber hash() const {
+    HashNumber hn = HashNumber(kind_);
+    switch (kind_) {
+      case TypeDefKind::Func:
+        hn = mozilla::AddToHash(hn, funcType_.hash(&recGroup()));
+        break;
+      case TypeDefKind::Struct:
+        hn = mozilla::AddToHash(hn, structType_.hash(&recGroup()));
+        break;
+      case TypeDefKind::Array:
+        hn = mozilla::AddToHash(hn, arrayType_.hash(&recGroup()));
+        break;
+      case TypeDefKind::None:
+        break;
+    }
+    return hn;
+  }
+
+  
+  
+  static bool matches(const TypeDef& lhs, const TypeDef& rhs) {
+    if (lhs.kind_ != rhs.kind_) {
+      return false;
+    }
+    switch (lhs.kind_) {
+      case TypeDefKind::Func:
+        return FuncType::matches(&lhs.recGroup(), lhs.funcType_,
+                                 &rhs.recGroup(), rhs.funcType_);
+      case TypeDefKind::Struct:
+        return StructType::matches(&lhs.recGroup(), lhs.structType_,
+                                   &rhs.recGroup(), rhs.structType_);
+      case TypeDefKind::Array:
+        return ArrayType::matches(&lhs.recGroup(), lhs.arrayType_,
+                                  &rhs.recGroup(), rhs.arrayType_);
+      case TypeDefKind::None:
+        return true;
+    }
+  }
+
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
   WASM_DECLARE_FRIEND_SERIALIZE(TypeDef);
 };
@@ -452,11 +558,188 @@ using SharedTypeDef = RefPtr<const TypeDef>;
 using MutableTypeDef = RefPtr<TypeDef>;
 
 using TypeDefVector = Vector<TypeDef, 0, SystemAllocPolicy>;
-using MutableTypeDefVector = Vector<MutableTypeDef, 0, SystemAllocPolicy>;
+using TypeDefPtrVector = Vector<const TypeDef*, 0, SystemAllocPolicy>;
 
-using TypeDefToModuleIndexMap =
+using TypeDefPtrToIndexMap =
     HashMap<const TypeDef*, uint32_t, PointerHasher<const TypeDef*>,
             SystemAllocPolicy>;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class RecGroup : public AtomicRefCounted<RecGroup> {
+  
+  
+  bool finalizedTypes_;
+  
+  uint32_t numTypes_;
+  
+  TypeDef types_[0];
+
+  friend class TypeContext;
+
+  explicit RecGroup(uint32_t numTypes)
+      : finalizedTypes_(false), numTypes_(numTypes) {}
+
+  
+  
+  static constexpr size_t sizeOfRecGroup(uint32_t numTypes) {
+    static_assert(MaxTypes <= SIZE_MAX / sizeof(TypeDef));
+    return sizeof(RecGroup) + sizeof(TypeDef) * numTypes;
+  }
+
+  
+  
+  
+  
+  static RefPtr<RecGroup> allocate(uint32_t numTypes) {
+    
+    RecGroup* recGroup = (RecGroup*)js_malloc(sizeOfRecGroup(numTypes));
+    if (!recGroup) {
+      return nullptr;
+    }
+
+    
+    new (recGroup) RecGroup(numTypes);
+    for (uint32_t i = 0; i < numTypes; i++) {
+      new (recGroup->types_ + i) TypeDef(recGroup);
+    }
+    return recGroup;
+  }
+
+  
+  
+  void finalizeDefinitions() {
+    MOZ_ASSERT(!finalizedTypes_);
+    finalizedTypes_ = true;
+    visitReferencedGroups([](const RecGroup* recGroup) { recGroup->AddRef(); });
+  }
+
+  
+  
+  template <typename Visitor>
+  void visitReferencedGroups(Visitor visitor) const {
+    auto visitValType = [this, visitor](ValType type) {
+      if (type.isTypeRef() && &type.typeDef()->recGroup() != this) {
+        visitor(&type.typeDef()->recGroup());
+      }
+    };
+    auto visitFieldType = [this, visitor](FieldType type) {
+      if (type.isTypeRef() && &type.typeDef()->recGroup() != this) {
+        visitor(&type.typeDef()->recGroup());
+      }
+    };
+
+    for (uint32_t i = 0; i < numTypes_; i++) {
+      const TypeDef& typeDef = types_[i];
+      switch (typeDef.kind()) {
+        case TypeDefKind::Func: {
+          const FuncType& funcType = typeDef.funcType();
+          for (auto type : funcType.args()) {
+            visitValType(type);
+          }
+          for (auto type : funcType.results()) {
+            visitValType(type);
+          }
+          break;
+        }
+        case TypeDefKind::Struct: {
+          const StructType& structType = typeDef.structType();
+          for (const auto& field : structType.fields_) {
+            visitFieldType(field.type);
+          }
+          break;
+        }
+        case TypeDefKind::Array: {
+          const ArrayType& arrayType = typeDef.arrayType();
+          visitFieldType(arrayType.elementType_);
+          break;
+        }
+        case TypeDefKind::None: {
+          MOZ_CRASH();
+        }
+      }
+    }
+  }
+
+ public:
+  ~RecGroup() {
+    
+    
+    if (finalizedTypes_) {
+      finalizedTypes_ = false;
+      visitReferencedGroups(
+          [](const RecGroup* recGroup) { recGroup->Release(); });
+    }
+
+    
+    for (uint32_t i = 0; i < numTypes_; i++) {
+      type(i).~TypeDef();
+    }
+  }
+
+  
+  RecGroup& operator=(const RecGroup&) = delete;
+  RecGroup& operator=(RecGroup&&) = delete;
+
+  
+  TypeDef& type(uint32_t groupTypeIndex) {
+    
+    MOZ_ASSERT(!finalizedTypes_);
+    return types_[groupTypeIndex];
+  }
+  const TypeDef& type(uint32_t groupTypeIndex) const {
+    return types_[groupTypeIndex];
+  }
+
+  
+  uint32_t numTypes() const { return numTypes_; }
+
+  
+  uint32_t indexOf(const TypeDef* typeDef) const {
+    MOZ_ASSERT(typeDef >= types_);
+    size_t groupTypeIndex = (size_t)(typeDef - types_);
+    MOZ_ASSERT(groupTypeIndex < numTypes());
+    return (uint32_t)groupTypeIndex;
+  }
+
+  HashNumber hash() const {
+    HashNumber hn = 0;
+    for (uint32_t i = 0; i < numTypes(); i++) {
+      hn = mozilla::AddToHash(hn, types_[i].hash());
+    }
+    return hn;
+  }
+
+  
+  
+  static bool matches(const RecGroup& lhs, const RecGroup& rhs) {
+    if (lhs.numTypes() != rhs.numTypes()) {
+      return false;
+    }
+    for (uint32_t i = 0; i < lhs.numTypes(); i++) {
+      if (!TypeDef::matches(lhs.type(i), rhs.type(i))) {
+        return false;
+      }
+    }
+    return true;
+  }
+};
+
+using SharedRecGroup = RefPtr<const RecGroup>;
+using MutableRecGroup = RefPtr<RecGroup>;
+using SharedRecGroupVector = Vector<SharedRecGroup, 0, SystemAllocPolicy>;
 
 
 
@@ -546,16 +829,24 @@ enum class TypeResult {
 
 
 
-
-
 class TypeContext : public AtomicRefCounted<TypeContext> {
   FeatureArgs features_;
-  MutableTypeDefVector types_;
-  TypeDefToModuleIndexMap moduleIndices_;
+  
+  MutableRecGroup pendingRecGroup_;
+  
+  SharedRecGroupVector recGroups_;
+  
+  
+  TypeDefPtrVector types_;
+  
+  TypeDefPtrToIndexMap moduleIndices_;
+
+  static SharedRecGroup canonicalizeGroup(SharedRecGroup recGroup);
 
  public:
   TypeContext() = default;
   explicit TypeContext(const FeatureArgs& features) : features_(features) {}
+  ~TypeContext();
 
   size_t sizeOfExcludingThis(MallocSizeOf mallocSizeOf) const {
     return types_.sizeOfExcludingThis(mallocSizeOf) +
@@ -568,32 +859,94 @@ class TypeContext : public AtomicRefCounted<TypeContext> {
   TypeContext(TypeContext&&) = delete;
   TypeContext& operator=(TypeContext&&) = delete;
 
-  [[nodiscard]] MutableTypeDef addType() {
-    MutableTypeDef typeDef = js_new<TypeDef>();
-    if (!typeDef || !types_.append(typeDef) ||
-        !moduleIndices_.put(typeDef.get(), types_.length())) {
+  
+  
+  
+  [[nodiscard]] MutableRecGroup startRecGroup(uint32_t numTypes) {
+    
+    MOZ_ASSERT(!pendingRecGroup_);
+
+    
+    pendingRecGroup_ = RecGroup::allocate(numTypes);
+    if (!pendingRecGroup_ || !recGroups_.append(pendingRecGroup_)) {
       return nullptr;
     }
-    return typeDef;
+
+    
+    
+    
+    
+    for (uint32_t groupTypeIndex = 0; groupTypeIndex < numTypes;
+         groupTypeIndex++) {
+      const TypeDef* typeDef = &pendingRecGroup_->type(groupTypeIndex);
+      uint32_t typeIndex = types_.length();
+      if (!types_.append(typeDef) || !moduleIndices_.put(typeDef, typeIndex)) {
+        return nullptr;
+      }
+    }
+    return pendingRecGroup_;
   }
 
-  [[nodiscard]] bool addTypes(uint32_t length) {
-    for (uint32_t typeIndex = 0; typeIndex < length; typeIndex++) {
-      if (!addType()) {
+  
+  
+  [[nodiscard]] bool endRecGroup() {
+    
+    MOZ_ASSERT(pendingRecGroup_);
+    MutableRecGroup recGroup = pendingRecGroup_;
+    pendingRecGroup_ = nullptr;
+
+    
+    recGroup->finalizeDefinitions();
+
+    
+    SharedRecGroup canonicalRecGroup = canonicalizeGroup(recGroup);
+    if (!canonicalRecGroup) {
+      return false;
+    }
+
+    
+    if (canonicalRecGroup == recGroup) {
+      return true;
+    }
+
+    
+    recGroups_.back() = canonicalRecGroup;
+
+    
+    
+    MOZ_ASSERT(recGroup->numTypes() == canonicalRecGroup->numTypes());
+    for (uint32_t groupTypeIndex = 0; groupTypeIndex < recGroup->numTypes();
+         groupTypeIndex++) {
+      uint32_t typeIndex = length() - recGroup->numTypes() + groupTypeIndex;
+      const TypeDef* oldTypeDef = types_[typeIndex];
+      const TypeDef* newTypeDef = &canonicalRecGroup->type(groupTypeIndex);
+      types_[typeIndex] = newTypeDef;
+      moduleIndices_.remove(oldTypeDef);
+      if (!moduleIndices_.put(newTypeDef, typeIndex)) {
         return false;
       }
     }
+
     return true;
   }
 
-  TypeDef& type(uint32_t index) { return *types_[index]; }
-  const TypeDef& type(uint32_t index) const { return *types_[index]; }
+  template <typename T>
+  [[nodiscard]] bool addType(T&& type) {
+    MutableRecGroup recGroup = startRecGroup(1);
+    if (!recGroup) {
+      return false;
+    }
+    recGroup->type(0) = std::move(type);
+    return endRecGroup();
+  }
 
-  TypeDef& operator[](uint32_t index) { return *types_[index]; }
+  const TypeDef& type(uint32_t index) const { return *types_[index]; }
   const TypeDef& operator[](uint32_t index) const { return *types_[index]; }
 
   bool empty() const { return types_.empty(); }
   uint32_t length() const { return types_.length(); }
+
+  const SharedRecGroupVector& groups() const { return recGroups_; }
 
   
 
@@ -703,6 +1056,22 @@ class TypeHandle {
   uint32_t index() const { return index_; }
   const TypeDef& def() const { return context_->type(index_); }
 };
+
+
+inline MatchTypeCode MatchTypeCode::forMatch(PackedTypeCode ptc,
+                                             const RecGroup* recGroup) {
+  MatchTypeCode mtc = {};
+  mtc.typeCode = PackedRepr(ptc.typeCode());
+  if (ptc.typeDef() && &ptc.typeDef()->recGroup() == recGroup) {
+    mtc.isLocal = true;
+    mtc.typeRef = recGroup->indexOf(ptc.typeDef());
+  } else {
+    mtc.isLocal = false;
+    mtc.typeRef = PackedRepr(ptc.typeDef());
+  }
+  mtc.nullable = ptc.isNullable();
+  return mtc;
+}
 
 
 

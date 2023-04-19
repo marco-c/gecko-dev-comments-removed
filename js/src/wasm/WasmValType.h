@@ -19,6 +19,7 @@
 #ifndef wasm_valtype_h
 #define wasm_valtype_h
 
+#include "mozilla/HashTable.h"
 #include "mozilla/Maybe.h"
 
 #include <type_traits>
@@ -33,6 +34,7 @@ namespace wasm {
 
 using mozilla::Maybe;
 
+class RecGroup;
 class TypeDef;
 class TypeContext;
 
@@ -197,6 +199,93 @@ union SerializableTypeCode {
 
 WASM_DECLARE_CACHEABLE_POD(SerializableTypeCode);
 static_assert(sizeof(SerializableTypeCode) == sizeof(uintptr_t), "packed");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+union MatchTypeCode {
+  using PackedRepr = uint64_t;
+
+  static constexpr size_t IsLocalBits = 1;
+  static constexpr size_t NullableBits = 1;
+  static constexpr size_t TypeCodeBits = 8;
+  static constexpr size_t TypeRefBits = 48;
+
+  PackedRepr bits;
+  struct {
+    PackedRepr isLocal : IsLocalBits;
+    PackedRepr nullable : NullableBits;
+    PackedRepr typeCode : TypeCodeBits;
+    PackedRepr typeRef : TypeRefBits;
+  };
+
+  WASM_CHECK_CACHEABLE_POD(bits);
+
+  static_assert(IsLocalBits + NullableBits + TypeCodeBits + TypeRefBits <=
+                    (sizeof(PackedRepr) * 8),
+                "enough bits");
+
+  
+  static inline MatchTypeCode forMatch(PackedTypeCode ptc,
+                                       const RecGroup* recGroup);
+
+  bool operator==(MatchTypeCode other) const { return bits == other.bits; }
+  bool operator!=(MatchTypeCode other) const { return bits != other.bits; }
+  HashNumber hash() const { return HashNumber(bits); }
+};
 
 
 
@@ -525,6 +614,10 @@ class PackedType : public T {
       return false;
     }
     return T::isValidTypeCode(tc_.typeCode());
+  }
+
+  MatchTypeCode forMatch(const RecGroup* recGroup) const {
+    return MatchTypeCode::forMatch(tc_, recGroup);
   }
 
   PackedTypeCode packed() const {

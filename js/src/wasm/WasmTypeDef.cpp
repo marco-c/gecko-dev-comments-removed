@@ -22,8 +22,11 @@
 
 #include "jit/JitOptions.h"
 #include "js/friend/ErrorMessages.h"  
+#include "js/HashTable.h"
 #include "js/Printf.h"
 #include "js/Value.h"
+#include "threading/ExclusiveData.h"
+#include "vm/Runtime.h"
 #include "vm/StringType.h"
 #include "wasm/WasmJS.h"
 
@@ -273,6 +276,87 @@ size_t TypeDef::sizeOfExcludingThis(MallocSizeOf mallocSizeOf) const {
   }
   MOZ_ASSERT_UNREACHABLE();
   return 0;
+}
+
+struct RecGroupHashPolicy {
+  using Lookup = const SharedRecGroup&;
+
+  static HashNumber hash(Lookup lookup) { return lookup->hash(); }
+
+  static bool match(const SharedRecGroup& lhs, Lookup rhs) {
+    return RecGroup::matches(*rhs, *lhs);
+  }
+};
+
+
+class TypeIdSet {
+  using Set = HashSet<SharedRecGroup, RecGroupHashPolicy, SystemAllocPolicy>;
+  Set set_;
+
+ public:
+  ~TypeIdSet() {
+    
+    MOZ_ASSERT_IF(!JSRuntime::hasLiveRuntimes(), set_.empty());
+  }
+
+  
+  
+  SharedRecGroup insert(SharedRecGroup recGroup) {
+    Set::AddPtr p = set_.lookupForAdd(recGroup);
+    if (p) {
+      
+      return *p;
+    }
+
+    
+    
+    if (!set_.add(p, recGroup)) {
+      return nullptr;
+    }
+    return recGroup;
+  }
+
+  
+  
+  
+  
+  
+  void clearRecGroup(SharedRecGroup* recGroupCell) {
+    if (Set::Ptr p = set_.lookup(*recGroupCell)) {
+      *recGroupCell = nullptr;
+      if ((*p)->hasOneRef()) {
+        set_.remove(p);
+      }
+    } else {
+      *recGroupCell = nullptr;
+    }
+  }
+};
+
+ExclusiveData<TypeIdSet> typeIdSet(mutexid::WasmTypeIdSet);
+
+SharedRecGroup TypeContext::canonicalizeGroup(SharedRecGroup recGroup) {
+  ExclusiveData<TypeIdSet>::Guard locked = typeIdSet.lock();
+  return locked->insert(recGroup);
+}
+
+TypeContext::~TypeContext() {
+  ExclusiveData<TypeIdSet>::Guard locked = typeIdSet.lock();
+
+  
+  
+  
+  
+  
+  
+  for (int32_t groupIndex = recGroups_.length() - 1; groupIndex >= 0;
+       groupIndex--) {
+    
+    
+    
+    
+    locked->clearRecGroup(&recGroups_[groupIndex]);
+  }
 }
 
 TypeResult TypeContext::isRefEquivalent(RefType first, RefType second,
