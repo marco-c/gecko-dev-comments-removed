@@ -17,63 +17,6 @@ mozilla.prettyprinters.clear_module_printers(__name__)
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class Box(object):
     def __init__(self, asBits, jtc):
         self.asBits = asBits
