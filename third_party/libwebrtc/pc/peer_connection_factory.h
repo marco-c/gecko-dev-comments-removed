@@ -87,6 +87,8 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
 
   const Options& options() const { return options_; }
 
+  const WebRtcKeyValueConfig& trials() const { return *trials_.get(); }
+
  protected:
   
   
