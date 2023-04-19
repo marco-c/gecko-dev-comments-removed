@@ -200,29 +200,31 @@ class JsepTransportController : public sigslot::has_slots<> {
   
   RoboCaller<cricket::IceConnectionState> SignalIceConnectionState;
 
-  RoboCaller<PeerConnectionInterface::PeerConnectionState>
+  sigslot::signal1<PeerConnectionInterface::PeerConnectionState>
       SignalConnectionState;
 
-  RoboCaller<PeerConnectionInterface::IceConnectionState>
+  sigslot::signal1<PeerConnectionInterface::IceConnectionState>
       SignalStandardizedIceConnectionState;
 
   
   
   
-  RoboCaller<cricket::IceGatheringState> SignalIceGatheringState;
+  sigslot::signal1<cricket::IceGatheringState> SignalIceGatheringState;
 
   
-  RoboCaller<const std::string&, const std::vector<cricket::Candidate>&>
+  sigslot::signal2<const std::string&, const std::vector<cricket::Candidate>&>
       SignalIceCandidatesGathered;
 
-  RoboCaller<const cricket::IceCandidateErrorEvent&> SignalIceCandidateError;
+  sigslot::signal1<const cricket::IceCandidateErrorEvent&>
+      SignalIceCandidateError;
 
-  RoboCaller<const std::vector<cricket::Candidate>&> SignalIceCandidatesRemoved;
+  sigslot::signal1<const std::vector<cricket::Candidate>&>
+      SignalIceCandidatesRemoved;
 
-  RoboCaller<const cricket::CandidatePairChangeEvent&>
+  sigslot::signal1<const cricket::CandidatePairChangeEvent&>
       SignalIceCandidatePairChanged;
 
-  RoboCaller<rtc::SSLHandshakeError> SignalDtlsHandshakeError;
+  sigslot::signal1<rtc::SSLHandshakeError> SignalDtlsHandshakeError;
 
  private:
   RTCError ApplyDescription_n(bool local,
