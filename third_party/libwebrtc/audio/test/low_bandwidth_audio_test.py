@@ -123,7 +123,7 @@ def ExtractTestRuns(lines, echo=False):
   """
   for line in lines:
     if echo:
-      sys.stdout.write(line)
+      sys.stdout.write(line.decode('utf-8'))
 
     
     android_prefix_re = r'(?:I\b.+\brun_tests_on_device\((.+?)\)\s*)?'
