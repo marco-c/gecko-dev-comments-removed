@@ -229,8 +229,9 @@ class nsMenuChainItem {
   
   nsRect mCurrentRect;
 
-  nsMenuChainItem* mParent;
-  nsMenuChainItem* mChild;
+  mozilla::UniquePtr<nsMenuChainItem> mParent;
+  
+  nsMenuChainItem* mChild = nullptr;
 
  public:
   nsMenuChainItem(nsMenuPopupFrame* aFrame, bool aNoAutoHide, bool aIsContext,
@@ -241,9 +242,7 @@ class nsMenuChainItem {
         mIsContext(aIsContext),
         mOnMenuBar(false),
         mIgnoreKeys(eIgnoreKeys_False),
-        mFollowAnchor(false),
-        mParent(nullptr),
-        mChild(nullptr) {
+        mFollowAnchor(false) {
     NS_ASSERTION(aFrame, "null frame passed to nsMenuChainItem constructor");
     MOZ_COUNT_CTOR(nsMenuChainItem);
   }
@@ -261,7 +260,7 @@ class nsMenuChainItem {
   void SetIgnoreKeys(nsIgnoreKeys aIgnoreKeys) { mIgnoreKeys = aIgnoreKeys; }
   bool IsOnMenuBar() { return mOnMenuBar; }
   void SetOnMenuBar(bool aOnMenuBar) { mOnMenuBar = aOnMenuBar; }
-  nsMenuChainItem* GetParent() { return mParent; }
+  nsMenuChainItem* GetParent() { return mParent.get(); }
   nsMenuChainItem* GetChild() { return mChild; }
   bool FollowsAnchor() { return mFollowAnchor; }
   void UpdateFollowAnchor();
@@ -269,13 +268,13 @@ class nsMenuChainItem {
 
   
   
-  void SetParent(nsMenuChainItem* aParent);
+  void SetParent(mozilla::UniquePtr<nsMenuChainItem> aParent);
 
   
   
   
   
-  void Detach(nsMenuChainItem** aRoot);
+  void Detach(mozilla::UniquePtr<nsMenuChainItem>& aRoot);
 };
 
 
@@ -874,6 +873,9 @@ class nsXULPopupManager final : public nsIDOMEventListener,
                          nsIDocShellTreeItem* aExpected);
 
   
+  nsMenuChainItem* FindPopup(nsIContent* aPopup) const;
+
+  
   nsCOMPtr<mozilla::dom::EventTarget> mKeyListener;
 
   
@@ -883,7 +885,8 @@ class nsXULPopupManager final : public nsIDOMEventListener,
   nsMenuBarFrame* mActiveMenuBar;
 
   
-  nsMenuChainItem* mPopups;
+  
+  mozilla::UniquePtr<nsMenuChainItem> mPopups;
 
   
   nsCOMPtr<nsITimer> mCloseTimer;
