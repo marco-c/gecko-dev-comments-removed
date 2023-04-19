@@ -324,9 +324,6 @@ class nsMenuPopupFrame final : public nsBoxFrame,
   void MoveToAnchor(nsIContent* aAnchorContent, const nsAString& aPosition,
                     int32_t aXPos, int32_t aYPos, bool aAttributesOverride);
 
-  bool GetAutoPosition();
-  void SetAutoPosition(bool aShouldAutoPosition);
-
   nsIScrollableFrame* GetScrollFrame(nsIFrame* aStart);
 
   void SetOverrideConstraintRect(mozilla::LayoutDeviceIntRect aRect) {
@@ -396,7 +393,6 @@ class nsMenuPopupFrame final : public nsBoxFrame,
 
   void ShowWithPositionedEvent() {
     mPopupState = ePopupPositioning;
-    mShouldAutoPosition = true;
   }
 
   
@@ -618,8 +614,6 @@ class nsMenuPopupFrame final : public nsBoxFrame,
   bool mIsTopLevelContextMenu = false;  
 
   bool mMenuCanOverlapOSBar;  
-  bool mShouldAutoPosition;   
-                              
   bool mInContentShell;       
   bool mIsMenuLocked;         
 

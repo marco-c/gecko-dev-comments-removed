@@ -519,7 +519,7 @@ void nsXULPopupManager::AdjustPopupsOnWindowChange(
     
     
     nsMenuPopupFrame* frame = item->Frame();
-    if (item->IsNoAutoHide() && frame->GetAutoPosition()) {
+    if (item->IsNoAutoHide()) {
       nsIContent* popup = frame->GetContent();
       if (popup) {
         Document* document = popup->GetUncomposedDoc();

@@ -118,7 +118,6 @@ nsMenuPopupFrame::nsMenuPopupFrame(ComputedStyle* aStyle,
       mFlip(FlipType_Default),
       mIsOpenChanged(false),
       mMenuCanOverlapOSBar(false),
-      mShouldAutoPosition(true),
       mInContentShell(true),
       mIsMenuLocked(false),
       mIsOffset(false),
@@ -1023,8 +1022,6 @@ void nsMenuPopupFrame::ShowPopup(bool aIsContextMenu) {
       if (sound) sound->PlayEventSound(nsISound::EVENT_MENU_POPUP);
     }
   }
-
-  mShouldAutoPosition = true;
 }
 
 void nsMenuPopupFrame::ClearTriggerContentIncludingDocument() {
@@ -1440,10 +1437,6 @@ static nsIFrame* MaybeDelegatedAnchorFrame(nsIFrame* aFrame) {
 
 nsresult nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame,
                                             bool aIsMove, bool aSizedToPopup) {
-  if (!mShouldAutoPosition) {
-    return NS_OK;
-  }
-
   
   
   if (aIsMove && (mPrefSize.width == -1 || mPrefSize.height == -1)) {
@@ -2487,16 +2480,6 @@ void nsMenuPopupFrame::MoveToAnchor(nsIContent* aAnchorContent,
   SetPopupPosition(nullptr, false, false);
 }
 
-bool nsMenuPopupFrame::GetAutoPosition() { return mShouldAutoPosition; }
-
-void nsMenuPopupFrame::SetAutoPosition(bool aShouldAutoPosition) {
-  mShouldAutoPosition = aShouldAutoPosition;
-  nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
-  if (pm) {
-    pm->UpdateFollowAnchor(this);
-  }
-}
-
 int8_t nsMenuPopupFrame::GetAlignmentPosition() const {
   
   
@@ -2585,8 +2568,7 @@ void nsMenuPopupFrame::CreatePopupView() {
 }
 
 bool nsMenuPopupFrame::ShouldFollowAnchor() {
-  if (!mShouldAutoPosition || mAnchorType != MenuPopupAnchorType_Node ||
-      !mAnchorContent) {
+  if (mAnchorType != MenuPopupAnchorType_Node || !mAnchorContent) {
     return false;
   }
 
