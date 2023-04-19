@@ -293,7 +293,6 @@ void LocalesChangedObserver::Unregister() {
 
 void nsBaseWidget::Shutdown() {
   NotifyLiveResizeStopped();
-  RevokeTransactionIdAllocator();
   DestroyCompositor();
   FreeLocalesChangedObserver();
   FreeShutdownObserver();
@@ -305,6 +304,8 @@ void nsBaseWidget::QuitIME() {
 }
 
 void nsBaseWidget::DestroyCompositor() {
+  RevokeTransactionIdAllocator();
+
   
   
   
@@ -396,7 +397,6 @@ nsBaseWidget::~nsBaseWidget() {
 
   FreeLocalesChangedObserver();
   FreeShutdownObserver();
-  RevokeTransactionIdAllocator();
   DestroyLayerManager();
 
 #ifdef NOISY_WIDGET_LEAKS
