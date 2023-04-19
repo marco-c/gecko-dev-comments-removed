@@ -26,6 +26,7 @@
 #include "mozilla/dom/ImageUtils.h"
 #include "mozilla/dom/OffscreenCanvas.h"
 #include "mozilla/dom/Promise.h"
+#include "mozilla/dom/SVGImageElement.h"
 #include "mozilla/dom/UnionTypes.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Swizzle.h"
@@ -1248,10 +1249,51 @@ already_AddRefed<VideoFrame> VideoFrame::Constructor(
 
 
 already_AddRefed<VideoFrame> VideoFrame::Constructor(
-    const GlobalObject& global, SVGImageElement& svgImageElement,
-    const VideoFrameInit& init, ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
-  return nullptr;
+    const GlobalObject& aGlobal, SVGImageElement& aSVGImageElement,
+    const VideoFrameInit& aInit, ErrorResult& aRv) {
+  nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aGlobal.GetAsSupports());
+  if (!global) {
+    aRv.Throw(NS_ERROR_FAILURE);
+    return nullptr;
+  }
+
+  
+  if (aSVGImageElement.IntrinsicState().HasState(ElementState::BROKEN)) {
+    aRv.ThrowInvalidStateError("The SVG's state is broken");
+    return nullptr;
+  }
+
+  
+  
+  SurfaceFromElementResult res = nsLayoutUtils::SurfaceFromElement(
+      &aSVGImageElement, nsLayoutUtils::SFE_WANT_FIRST_FRAME_IF_IMAGE);
+  if (res.mIsWriteOnly) {
+    
+    aRv.ThrowSecurityError("The SVG is not same-origin");
+    return nullptr;
+  }
+
+  RefPtr<gfx::SourceSurface> surface = res.GetSourceSurface();
+  if (NS_WARN_IF(!surface)) {
+    aRv.ThrowInvalidStateError("The SVG's surface acquisition failed");
+    return nullptr;
+  }
+  
+  
+
+  if (!aInit.mTimestamp.WasPassed()) {
+    aRv.ThrowTypeError("Missing timestamp");
+    return nullptr;
+  }
+
+  RefPtr<layers::SourceSurfaceImage> image =
+      new layers::SourceSurfaceImage(surface.get());
+  auto r = InitializeFrameWithResourceAndSize(global, aInit, image.forget());
+  if (r.isErr()) {
+    aRv.ThrowTypeError(r.unwrapErr());
+    return nullptr;
+  }
+  return r.unwrap();
 }
 
 
