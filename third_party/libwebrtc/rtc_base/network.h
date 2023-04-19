@@ -149,6 +149,15 @@ class RTC_EXPORT NetworkManager : public DefaultLocalAddressProvider,
   
   
   
+  virtual std::vector<const Network*> GetNetworks() const {
+    std::vector<Network*> networks;
+    std::vector<const Network*> const_networks;
+    GetNetworks(&networks);
+    const_networks.insert(const_networks.begin(), networks.begin(),
+                          networks.end());
+    return const_networks;
+  }
+  
   virtual void GetNetworks(NetworkList* networks) const = 0;
 
   
@@ -162,6 +171,15 @@ class RTC_EXPORT NetworkManager : public DefaultLocalAddressProvider,
   
   
   
+  
+  virtual std::vector<const Network*> GetAnyAddressNetworks() {
+    std::vector<Network*> networks;
+    std::vector<const Network*> const_networks;
+    GetAnyAddressNetworks(&networks);
+    const_networks.insert(const_networks.begin(), networks.begin(),
+                          networks.end());
+    return const_networks;
+  }
   
   virtual void GetAnyAddressNetworks(NetworkList* networks) {}
 
@@ -365,12 +383,14 @@ class RTC_EXPORT Network {
   ~Network();
 
   
-  sigslot::signal1<const Network*> SignalTypeChanged;
+  
+  
+  mutable sigslot::signal1<const Network*> SignalTypeChanged;
 
   
   sigslot::signal1<const Network*> SignalNetworkPreferenceChanged;
 
-  const DefaultLocalAddressProvider* default_local_address_provider() {
+  const DefaultLocalAddressProvider* default_local_address_provider() const {
     return default_local_address_provider_;
   }
   void set_default_local_address_provider(

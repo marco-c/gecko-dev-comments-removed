@@ -277,7 +277,7 @@ class TurnPortTest : public ::testing::Test,
                                        password, server_address);
   }
 
-  bool CreateTurnPortWithNetwork(rtc::Network* network,
+  bool CreateTurnPortWithNetwork(const rtc::Network* network,
                                  const std::string& username,
                                  const std::string& password,
                                  const ProtocolAddress& server_address) {
@@ -288,7 +288,7 @@ class TurnPortTest : public ::testing::Test,
   
   
   
-  bool CreateTurnPortWithAllParams(rtc::Network* network,
+  bool CreateTurnPortWithAllParams(const rtc::Network* network,
                                    const std::string& username,
                                    const std::string& password,
                                    const ProtocolAddress& server_address) {

@@ -236,7 +236,7 @@ class RTC_EXPORT BasicPortAllocatorSession : public PortAllocatorSession {
   void DoAllocate(bool disable_equivalent_phases);
   void OnNetworksChanged();
   void OnAllocationSequenceObjectsCreated();
-  void DisableEquivalentPhases(rtc::Network* network,
+  void DisableEquivalentPhases(const rtc::Network* network,
                                PortConfiguration* config,
                                uint32_t* flags);
   void AddAllocatedPort(Port* port, AllocationSequence* seq);
@@ -249,9 +249,9 @@ class RTC_EXPORT BasicPortAllocatorSession : public PortAllocatorSession {
   void MaybeSignalCandidatesAllocationDone();
   void OnPortAllocationComplete();
   PortData* FindPort(Port* port);
-  std::vector<rtc::Network*> GetNetworks();
-  std::vector<rtc::Network*> GetFailedNetworks();
-  void Regather(const std::vector<rtc::Network*>& networks,
+  std::vector<const rtc::Network*> GetNetworks();
+  std::vector<const rtc::Network*> GetFailedNetworks();
+  void Regather(const std::vector<const rtc::Network*>& networks,
                 bool disable_equivalent_phases,
                 IceRegatheringReason reason);
 
@@ -259,7 +259,7 @@ class RTC_EXPORT BasicPortAllocatorSession : public PortAllocatorSession {
   bool CandidatePairable(const Candidate& c, const Port* port) const;
 
   std::vector<PortData*> GetUnprunedPorts(
-      const std::vector<rtc::Network*>& networks);
+      const std::vector<const rtc::Network*>& networks);
   
   
   void PrunePortsAndRemoveCandidates(
@@ -352,7 +352,7 @@ class AllocationSequence : public sigslot::has_slots<> {
   
   
   AllocationSequence(BasicPortAllocatorSession* session,
-                     rtc::Network* network,
+                     const rtc::Network* network,
                      PortConfiguration* config,
                      uint32_t flags,
                      std::function<void()> port_allocation_complete_callback);
@@ -361,14 +361,14 @@ class AllocationSequence : public sigslot::has_slots<> {
   void OnNetworkFailed();
 
   State state() const { return state_; }
-  rtc::Network* network() const { return network_; }
+  const rtc::Network* network() const { return network_; }
 
   bool network_failed() const { return network_failed_; }
   void set_network_failed() { network_failed_ = true; }
 
   
   
-  void DisableEquivalentPhases(rtc::Network* network,
+  void DisableEquivalentPhases(const rtc::Network* network,
                                PortConfiguration* config,
                                uint32_t* flags);
 
@@ -401,7 +401,7 @@ class AllocationSequence : public sigslot::has_slots<> {
 
   BasicPortAllocatorSession* session_;
   bool network_failed_ = false;
-  rtc::Network* network_;
+  const rtc::Network* network_;
   
   rtc::IPAddress previous_best_ip_;
   PortConfiguration* config_;
