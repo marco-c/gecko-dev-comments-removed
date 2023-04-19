@@ -104,6 +104,7 @@ add_setup(async function() {
       "colorway-collection-test-mock-subheading = Mock collection subheading",
     ].join("\n")
   );
+
   let resProto = Services.io
     .getProtocolHandler("resource")
     .QueryInterface(Ci.nsIResProtocolHandler);
@@ -142,6 +143,23 @@ add_setup(async function() {
     bundle0.hasMessage("colorway-collection-test-mock"),
     "Got the expected l10n id in the mock L10nFileSource"
   );
+
+  info(
+    "Verify data returned by BuiltInThemeConfig.findActiveColorwayCollection is in the expected format"
+  );
+  let collection = BuiltInThemeConfig.findActiveColorwayCollection();
+
+  
+  
+  
+  if (collection) {
+    info("Found a collection");
+    ok(collection.l10nId, "Collection in BuiltInThemeConfig has l10n data");
+    ok(
+      collection.l10nId.title,
+      "Collection in BuiltInThemeConfig has valid l10n title"
+    );
+  }
 });
 
 
@@ -162,19 +180,6 @@ add_task(async function testColorwayClosetPrefEnabled() {
 
   
   const mockExpiry = getMockExpiry();
-
-  info(
-    "Verify first if any data from BuiltInThemeConfig.findActiveColorwayCollection is valid"
-  );
-  let collection = BuiltInThemeConfig.findActiveColorwayCollection();
-  if (collection) {
-    info("Found a collection");
-    ok(collection.l10nId, "Collection in BuiltInThemeConfig has l10n data");
-    ok(
-      collection.l10nId.title,
-      "Collection in BuiltInThemeConfig has valid l10n title"
-    );
-  }
 
   setBuiltInThemeConfigMock({ mockExpiry, mockL10nId });
 
@@ -513,6 +518,70 @@ add_task(async function testColorwayNoActiveCollection() {
   await closeView(win);
   await expiredAddon.uninstall(true);
   await SpecialPowers.popPrefEnv();
+  await SpecialPowers.popPrefEnv();
+  clearBuiltInThemeConfigMock(originalFindActiveCollection);
+});
+
+
+
+
+
+add_task(async function testColorwayButtonTextWithColorwayEnabled() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.theme.colorway-closet", true]],
+  });
+
+  
+  const originalFindActiveCollection =
+    BuiltInThemeConfig.findActiveColorwayCollection;
+  registerCleanupFunction(() => {
+    clearBuiltInThemeConfigMock(originalFindActiveCollection);
+  });
+
+  
+  const mockExpiry = getMockExpiry();
+
+  setBuiltInThemeConfigMock({ mockExpiry, mockL10nId });
+
+  const themeXpi = getMockThemeXpi(kTestThemeId);
+  const { addon } = await AddonTestUtils.promiseInstallFile(themeXpi);
+
+  let win = await loadInitialView("theme");
+  let doc = win.document;
+
+  
+  doc.l10n.addResourceIds(["mock-colorwaycloset.ftl"]);
+
+  await addon.disable();
+
+  let colorwaySection = getSection(doc, "colorways-section");
+  ok(colorwaySection, "colorway section was found");
+
+  let card = colorwaySection.querySelector("colorways-card");
+  ok(card, "colorway closet card was found");
+
+  let colorwaysButton = card.querySelector("#colorways-button");
+  ok(colorwaysButton, "colorway collection button found");
+
+  is(
+    colorwaysButton.getAttribute("data-l10n-id"),
+    "theme-colorways-button",
+    "button has the expected fluent id when no colorways theme is not enabled"
+  );
+
+  await addon.enable();
+
+  is(
+    colorwaysButton.getAttribute("data-l10n-id"),
+    "theme-colorways-button-colorway-enabled",
+    "button has the expected fluent id when colorways theme is enabled"
+  );
+
+  
+  await doc.l10n.translateFragment(colorwaySection);
+
+  await closeView(win);
+  await addon.uninstall(true);
   await SpecialPowers.popPrefEnv();
   clearBuiltInThemeConfigMock(originalFindActiveCollection);
 });
