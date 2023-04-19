@@ -53,12 +53,36 @@ class CacheCreator;
 
 class WorkerLoadContext : public JS::loader::LoadContextBase {
  public:
-  enum Kind { MainScript, ImportScript, DebuggerScript };
+  
+
+
+
+
+
+
+
+
+
+
+
+  enum Kind {
+    
+    
+    MainScript,
+    
+    
+    ImportScript,
+    
+    
+    
+    DebuggerScript
+  };
 
   explicit WorkerLoadContext(WorkerLoadContext::Kind aKind);
 
   ~WorkerLoadContext() = default;
 
+  
   bool IsTopLevel() {
     return mRequest->IsTopLevel() && (mKind == Kind::MainScript);
   };
