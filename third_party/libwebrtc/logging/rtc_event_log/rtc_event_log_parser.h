@@ -1,12 +1,12 @@
-/*
- *  Copyright 2019 The WebRTC project authors. All Rights Reserved.
- *
- *  Use of this source code is governed by a BSD-style license
- *  that can be found in the LICENSE file in the root of the source
- *  tree. An additional intellectual property rights grant can be found
- *  in the file PATENTS.  All contributing project authors may
- *  be found in the AUTHORS file in the root of the source tree.
- */
+
+
+
+
+
+
+
+
+
 #ifndef LOGGING_RTC_EVENT_LOG_RTC_EVENT_LOG_PARSER_H_
 #define LOGGING_RTC_EVENT_LOG_RTC_EVENT_LOG_PARSER_H_
 
@@ -15,7 +15,7 @@
 #include <map>
 #include <set>
 #include <string>
-#include <utility>  // pair
+#include <utility>  
 #include <vector>
 
 #include "absl/base/attributes.h"
@@ -49,7 +49,7 @@
 #include "modules/rtp_rtcp/source/rtcp_packet/common_header.h"
 #include "rtc_base/ignore_wundef.h"
 
-// Files generated at build-time by the protobuf compiler.
+
 RTC_PUSH_IGNORING_WUNDEF()
 #ifdef WEBRTC_ANDROID_PLATFORM_BUILD
 #include "external/webrtc/webrtc/logging/rtc_event_log/rtc_event_log.pb.h"
@@ -64,17 +64,17 @@ namespace webrtc {
 
 enum PacketDirection { kIncomingPacket = 0, kOutgoingPacket };
 
-// This class is used to process lists of LoggedRtpPacketIncoming
-// and LoggedRtpPacketOutgoing without duplicating the code.
-// TODO(terelius): Remove this class. Instead use e.g. a vector of pointers
-// to LoggedRtpPacket or templatize the surrounding code.
+
+
+
+
 template <typename T>
 class DereferencingVector {
  public:
   template <bool IsConst>
   class DereferencingIterator {
    public:
-    // Standard iterator traits.
+    
     using difference_type = std::ptrdiff_t;
     using value_type = T;
     using pointer = typename std::conditional_t<IsConst, const T*, T*>;
@@ -201,7 +201,7 @@ class DereferencingVector {
   std::vector<T*> elems_;
 };
 
-// Conversion functions for version 2 of the wire format.
+
 BandwidthUsage GetRuntimeDetectorState(
     rtclog2::DelayBasedBweUpdates::DetectorState detector_state);
 
@@ -231,7 +231,7 @@ IceCandidatePairEventType GetRuntimeIceCandidatePairEventType(
 
 std::vector<RtpExtension> GetRuntimeRtpHeaderExtensionConfig(
     const rtclog2::RtpHeaderExtensionConfig& proto_header_extensions);
-// End of conversion functions.
+
 
 class ParsedRtcEventLog {
  public:
@@ -266,9 +266,9 @@ class ParsedRtcEventLog {
   template <typename T>
   class ParseStatusOr {
    public:
-    ParseStatusOr(const ParseStatus& error)  // NOLINT
+    ParseStatusOr(const ParseStatus& error)  
         : status_(error), value_() {}
-    ParseStatusOr(const T& value)  // NOLINT
+    ParseStatusOr(const T& value)  
         : status_(ParseStatus::Success()), value_(value) {}
     bool ok() const { return status_.ok(); }
     const T& value() const& {
@@ -332,22 +332,22 @@ class ParsedRtcEventLog {
 
   ~ParsedRtcEventLog();
 
-  // Clears previously parsed events and resets the ParsedRtcEventLogNew to an
-  // empty state.
+  
+  
   void Clear();
 
-  // Reads an RtcEventLog file and returns success if parsing was successful.
+  
   ParseStatus ParseFile(const std::string& file_name);
 
-  // Reads an RtcEventLog from a string and returns success if successful.
+  
   ParseStatus ParseString(const std::string& s);
 
-  // Reads an RtcEventLog from an string and returns success if successful.
+  
   ParseStatus ParseStream(const std::string& s);
 
   MediaType GetMediaType(uint32_t ssrc, PacketDirection direction) const;
 
-  // Configured SSRCs.
+  
   const std::set<uint32_t>& incoming_rtx_ssrcs() const {
     return incoming_rtx_ssrcs_;
   }
@@ -372,7 +372,7 @@ class ParsedRtcEventLog {
     return outgoing_audio_ssrcs_;
   }
 
-  // Stream configurations.
+  
   const std::vector<LoggedAudioRecvConfig>& audio_recv_configs() const {
     return audio_recv_configs_;
   }
@@ -389,7 +389,7 @@ class ParsedRtcEventLog {
     return video_send_configs_;
   }
 
-  // Beginning and end of log segments.
+  
   const std::vector<LoggedStartEvent>& start_log_events() const {
     return start_log_events_;
   }
@@ -402,7 +402,7 @@ class ParsedRtcEventLog {
     return alr_state_events_;
   }
 
-  // Audio
+  
   const std::map<uint32_t, std::vector<LoggedAudioPlayoutEvent>>&
   audio_playout_events() const {
     return audio_playout_events_;
@@ -413,7 +413,7 @@ class ParsedRtcEventLog {
     return audio_network_adaptation_events_;
   }
 
-  // Bandwidth estimation
+  
   const std::vector<LoggedBweProbeClusterCreatedEvent>&
   bwe_probe_cluster_created_events() const {
     return bwe_probe_cluster_created_events_;
@@ -437,7 +437,7 @@ class ParsedRtcEventLog {
     return bwe_loss_updates_;
   }
 
-  // DTLS
+  
   const std::vector<LoggedDtlsTransportState>& dtls_transport_states() const {
     return dtls_transport_states_;
   }
@@ -446,7 +446,7 @@ class ParsedRtcEventLog {
     return dtls_writable_states_;
   }
 
-  // ICE events
+  
   const std::vector<LoggedIceCandidatePairConfig>& ice_candidate_pair_configs()
       const {
     return ice_candidate_pair_configs_;
@@ -465,7 +465,7 @@ class ParsedRtcEventLog {
     return remote_estimate_events_;
   }
 
-  // RTP
+  
   const std::vector<LoggedRtpStreamIncoming>& incoming_rtp_packets_by_ssrc()
       const {
     return incoming_rtp_packets_by_ssrc_;
@@ -484,7 +484,7 @@ class ParsedRtcEventLog {
       return outgoing_rtp_packet_views_by_ssrc_;
   }
 
-  // RTCP
+  
   const std::vector<LoggedRtcpPacketIncoming>& incoming_rtcp_packets() const {
     return incoming_rtcp_packets_;
   }
@@ -595,7 +595,7 @@ class ParsedRtcEventLog {
     return generic_acks_received_;
   }
 
-  // Media
+  
   const std::map<uint32_t, std::vector<LoggedFrameDecoded>>& decoded_frames()
       const {
     return decoded_frames_;
@@ -627,17 +627,17 @@ class ParsedRtcEventLog {
   template <typename T>
   void StoreFirstAndLastTimestamp(const std::vector<T>& v);
 
-  // Returns: a pointer to a header extensions map acquired from parsing
-  // corresponding Audio/Video Sender/Receiver config events.
-  // Warning: if the same SSRC is reused by both video and audio streams during
-  // call, extensions maps may be incorrect (the last one would be returned).
+  
+  
+  
+  
   const RtpHeaderExtensionMap* GetRtpHeaderExtensionMap(bool incoming,
                                                         uint32_t ssrc);
 
-  // Reads packet, direction and packet length from the RTCP event at |index|,
-  // and stores the values in the corresponding output parameters.
-  // Each output parameter can be set to nullptr if that value isn't needed.
-  // NB: The packet must have space for at least IP_PACKET_SIZE bytes.
+  
+  
+  
+  
   ParseStatus GetRtcpPacket(const rtclog::Event& event,
                             PacketDirection* incoming,
                             std::vector<uint8_t>* packet) const;
@@ -681,7 +681,7 @@ class ParsedRtcEventLog {
   ParsedRtcEventLog::ParseStatusOr<LoggedIceCandidatePairEvent>
   GetIceCandidatePairEvent(const rtclog::Event& event) const;
 
-  // Parsing functions for new format.
+  
   ParseStatus StoreAlrStateEvent(const rtclog2::AlrState& proto);
   ParseStatus StoreAudioNetworkAdaptationEvent(
       const rtclog2::AudioNetworkAdaptations& proto);
@@ -726,7 +726,7 @@ class ParsedRtcEventLog {
   ParseStatus StoreStopEvent(const rtclog2::EndLogEvent& proto);
   ParseStatus StoreVideoRecvConfig(const rtclog2::VideoRecvStreamConfig& proto);
   ParseStatus StoreVideoSendConfig(const rtclog2::VideoSendStreamConfig& proto);
-  // End of new parsing functions.
+  
 
   struct Stream {
     Stream(uint32_t ssrc,
@@ -746,16 +746,16 @@ class ParsedRtcEventLog {
   const UnconfiguredHeaderExtensions parse_unconfigured_header_extensions_;
   const bool allow_incomplete_logs_;
 
-  // Make a default extension map for streams without configuration information.
-  // TODO(ivoc): Once configuration of audio streams is stored in the event log,
-  //             this can be removed. Tracking bug: webrtc:6399
+  
+  
+  
   RtpHeaderExtensionMap default_extension_map_;
 
-  // Tracks what each stream is configured for. Note that a single SSRC can be
-  // in several sets. For example, the SSRC used for sending video over RTX
-  // will appear in both video_ssrcs_ and rtx_ssrcs_. In the unlikely case that
-  // an SSRC is reconfigured to a different media type mid-call, it will also
-  // appear in multiple sets.
+  
+  
+  
+  
+  
   std::set<uint32_t> incoming_rtx_ssrcs_;
   std::set<uint32_t> incoming_video_ssrcs_;
   std::set<uint32_t> incoming_audio_ssrcs_;
@@ -763,26 +763,26 @@ class ParsedRtcEventLog {
   std::set<uint32_t> outgoing_video_ssrcs_;
   std::set<uint32_t> outgoing_audio_ssrcs_;
 
-  // Maps an SSRC to the parsed  RTP headers in that stream. Header extensions
-  // are parsed if the stream has been configured. This is only used for
-  // grouping the events by SSRC during parsing; the events are moved to
-  // incoming_rtp_packets_by_ssrc_ once the parsing is done.
+  
+  
+  
+  
   std::map<uint32_t, std::vector<LoggedRtpPacketIncoming>>
       incoming_rtp_packets_map_;
   std::map<uint32_t, std::vector<LoggedRtpPacketOutgoing>>
       outgoing_rtp_packets_map_;
 
-  // RTP headers.
+  
   std::vector<LoggedRtpStreamIncoming> incoming_rtp_packets_by_ssrc_;
   std::vector<LoggedRtpStreamOutgoing> outgoing_rtp_packets_by_ssrc_;
   std::vector<LoggedRtpStreamView> incoming_rtp_packet_views_by_ssrc_;
   std::vector<LoggedRtpStreamView> outgoing_rtp_packet_views_by_ssrc_;
 
-  // Raw RTCP packets.
+  
   std::vector<LoggedRtcpPacketIncoming> incoming_rtcp_packets_;
   std::vector<LoggedRtcpPacketOutgoing> outgoing_rtcp_packets_;
 
-  // Parsed RTCP messages. Currently not separated based on SSRC.
+  
   std::vector<LoggedRtcpPacketReceiverReport> incoming_rr_;
   std::vector<LoggedRtcpPacketReceiverReport> outgoing_rr_;
   std::vector<LoggedRtcpPacketSenderReport> incoming_sr_;
@@ -852,10 +852,10 @@ class ParsedRtcEventLog {
   LogSegment first_log_segment_ =
       LogSegment(0, std::numeric_limits<int64_t>::max());
 
-  // The extension maps are mutable to allow us to insert the default
-  // configuration when parsing an RTP header for an unconfigured stream.
-  // TODO(terelius): This is only used for the legacy format. Remove once we've
-  // fully transitioned to the new format.
+  
+  
+  
+  
   mutable std::map<uint32_t, webrtc::RtpHeaderExtensionMap>
       incoming_rtp_extensions_maps_;
   mutable std::map<uint32_t, webrtc::RtpHeaderExtensionMap>
@@ -873,12 +873,12 @@ struct MatchedSendArrivalTimes {
 
   int64_t feedback_arrival_time_ms;
   int64_t send_time_ms;
-  int64_t arrival_time_ms;  // kNotReceived for lost packets.
+  int64_t arrival_time_ms;  
   int64_t payload_size;
 };
 const std::vector<MatchedSendArrivalTimes> GetNetworkTrace(
     const ParsedRtcEventLog& parsed_log);
 
-}  // namespace webrtc
+}  
 
-#endif  // LOGGING_RTC_EVENT_LOG_RTC_EVENT_LOG_PARSER_H_
+#endif  
