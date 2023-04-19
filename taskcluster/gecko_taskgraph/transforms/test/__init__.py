@@ -104,7 +104,9 @@ test_description_schema = Schema(
         
         
         
-        Required("chunks"): optionally_keyed_by("test-platform", Any(int, "dynamic")),
+        Required("chunks"): optionally_keyed_by(
+            "test-platform", "variant", Any(int, "dynamic")
+        ),
         
         
         
