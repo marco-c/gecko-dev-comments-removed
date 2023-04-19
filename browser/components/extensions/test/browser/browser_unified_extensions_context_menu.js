@@ -25,6 +25,10 @@ const TELEMETRY_EVENTS_FILTERS = {
 
 loadTestSubscript("head_unified_extensions.js");
 
+
+
+PromiseTestUtils.allowMatchingRejectionsGlobally(/report dialog closed/);
+
 const promiseExtensionUninstalled = extensionId => {
   return new Promise(resolve => {
     let listener = {};
@@ -37,6 +41,21 @@ const promiseExtensionUninstalled = extensionId => {
     AddonManager.addAddonListener(listener);
   });
 };
+
+function waitClosedWindow(win) {
+  return new Promise(resolve => {
+    function onWindowClosed() {
+      if (win && !win.closed) {
+        
+        
+        return;
+      }
+      Services.obs.removeObserver(onWindowClosed, "xul-window-destroyed");
+      resolve();
+    }
+    Services.obs.addObserver(onWindowClosed, "xul-window-destroyed");
+  });
+}
 
 let win;
 
@@ -217,48 +236,54 @@ add_task(async function test_report_extension() {
     set: [["extensions.abuseReport.enabled", true]],
   });
 
-  
-  
-  BrowserTestUtils.loadURI(win.gBrowser.selectedBrowser, "about:robots");
-  await BrowserTestUtils.browserLoaded(win.gBrowser.selectedBrowser);
-
   const [extension] = createExtensions([{ name: "an extension" }]);
   await extension.startup();
 
-  
-  await openExtensionsPanel(win);
-  const contextMenu = await openUnifiedExtensionsContextMenu(win, extension.id);
+  await BrowserTestUtils.withNewTab({ gBrowser: win.gBrowser }, async () => {
+    
+    await openExtensionsPanel(win);
+    const contextMenu = await openUnifiedExtensionsContextMenu(
+      win,
+      extension.id
+    );
 
-  const reportButton = contextMenu.querySelector(
-    ".unified-extensions-context-menu-report-extension"
-  );
-  ok(reportButton, "expected report button");
+    const reportButton = contextMenu.querySelector(
+      ".unified-extensions-context-menu-report-extension"
+    );
+    ok(reportButton, "expected report button");
 
-  
-  
-  const hidden = BrowserTestUtils.waitForEvent(contextMenu, "popuphidden");
-  const abuseReportOpen = BrowserTestUtils.waitForCondition(
-    () => AbuseReporter.getOpenDialog(),
-    "wait for the abuse report dialog to have been opened"
-  );
-  contextMenu.activateItem(reportButton);
-  const [reportDialogWindow] = await Promise.all([abuseReportOpen, hidden]);
+    
+    
+    const hidden = BrowserTestUtils.waitForEvent(contextMenu, "popuphidden");
+    const abuseReportOpen = BrowserTestUtils.waitForCondition(
+      () => AbuseReporter.getOpenDialog(),
+      "wait for the abuse report dialog to have been opened"
+    );
+    contextMenu.activateItem(reportButton);
+    const [reportDialogWindow] = await Promise.all([abuseReportOpen, hidden]);
 
-  const reportDialogParams = reportDialogWindow.arguments[0].wrappedJSObject;
-  is(
-    reportDialogParams.report.addon.id,
-    extension.id,
-    "abuse report dialog has the expected addon id"
-  );
-  is(
-    reportDialogParams.report.reportEntryPoint,
-    "toolbar_context_menu",
-    "abuse report dialog has the expected reportEntryPoint"
-  );
-  
-  await reportDialogParams.promiseReportPanel;
-  reportDialogWindow.close();
-  win.gBrowser.removeTab(win.gBrowser.selectedTab);
+    const reportDialogParams = reportDialogWindow.arguments[0].wrappedJSObject;
+    is(
+      reportDialogParams.report.addon.id,
+      extension.id,
+      "abuse report dialog has the expected addon id"
+    );
+    is(
+      reportDialogParams.report.reportEntryPoint,
+      "toolbar_context_menu",
+      "abuse report dialog has the expected reportEntryPoint"
+    );
+
+    let promiseClosedWindow = waitClosedWindow();
+    reportDialogWindow.close();
+    
+    
+    
+    
+    
+    
+    await promiseClosedWindow;
+  });
 
   await extension.unload();
 });
