@@ -119,11 +119,12 @@ class VideoReceiveStream2
 
   
   
-  
-  
-  
-  const Config::Rtp& rtp() const;
   const std::string& sync_group() const;
+
+  
+  
+  uint32_t remote_ssrc() const { return config_.rtp.remote_ssrc; }
+  uint32_t rtx_ssrc() const { return config_.rtp.rtx_ssrc; }
 
   void SignalNetworkState(NetworkState state);
   bool DeliverRtcp(const uint8_t* packet, size_t length);
@@ -136,7 +137,7 @@ class VideoReceiveStream2
 
   void SetRtpExtensions(std::vector<RtpExtension> extensions) override;
   const std::vector<RtpExtension>& GetRtpExtensions() const override;
-  bool transport_cc() const override { return rtp().transport_cc; }
+  bool transport_cc() const override { return config_.rtp.transport_cc; }
 
   webrtc::VideoReceiveStream::Stats GetStats() const override;
 

@@ -1149,15 +1149,14 @@ webrtc::VideoReceiveStream* Call::CreateVideoReceiveStream(
   
   receive_stream->RegisterWithTransport(&video_receiver_controller_);
 
-  const webrtc::VideoReceiveStream::Config::Rtp& rtp = receive_stream->rtp();
-  if (rtp.rtx_ssrc) {
+  if (receive_stream->rtx_ssrc()) {
     
     
     
     
-    RegisterReceiveStream(rtp.rtx_ssrc, receive_stream);
+    RegisterReceiveStream(receive_stream->rtx_ssrc(), receive_stream);
   }
-  RegisterReceiveStream(rtp.remote_ssrc, receive_stream);
+  RegisterReceiveStream(receive_stream->remote_ssrc(), receive_stream);
   video_receive_streams_.insert(receive_stream);
 
   ConfigureSync(receive_stream->sync_group());
@@ -1178,21 +1177,18 @@ void Call::DestroyVideoReceiveStream(
   receive_stream_impl->UnregisterFromTransport();
 
   
-  const webrtc::VideoReceiveStream::Config::Rtp& rtp =
-      receive_stream_impl->rtp();
+  
+  UnregisterReceiveStream(receive_stream_impl->remote_ssrc());
 
-  
-  
-  UnregisterReceiveStream(rtp.remote_ssrc);
-  if (rtp.rtx_ssrc) {
-    UnregisterReceiveStream(rtp.rtx_ssrc);
+  if (receive_stream_impl->rtx_ssrc()) {
+    UnregisterReceiveStream(receive_stream_impl->rtx_ssrc());
   }
   video_receive_streams_.erase(receive_stream_impl);
   ConfigureSync(receive_stream_impl->sync_group());
 
   receive_side_cc_
       .GetRemoteBitrateEstimator(UseSendSideBwe(receive_stream_impl))
-      ->RemoveStream(rtp.remote_ssrc);
+      ->RemoveStream(receive_stream_impl->remote_ssrc());
 
   UpdateAggregateNetworkState();
   delete receive_stream_impl;
