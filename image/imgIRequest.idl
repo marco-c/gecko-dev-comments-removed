@@ -89,7 +89,7 @@ interface imgIRequest : nsIRequest
 
 
 
-  readonly attribute nsIURI URI;
+  [infallible] readonly attribute nsIURI URI;
 
   
 
