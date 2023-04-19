@@ -202,7 +202,7 @@ TEST_P(DataChannelIntegrationTest, EndToEndCallWithSctpDataChannel) {
 
 TEST_P(DataChannelIntegrationTest,
        EndToEndCallWithSctpDataChannelVariousSizes) {
-  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  ASSERT_TRUE(CreatePeerConnectionWrappersWithoutMediaEngine());
   ConnectFakeSignaling();
   
   
@@ -241,7 +241,7 @@ TEST_P(DataChannelIntegrationTest,
 
 TEST_P(DataChannelIntegrationTest,
        EndToEndCallWithSctpDataChannelEmptyMessages) {
-  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  ASSERT_TRUE(CreatePeerConnectionWrappersWithoutMediaEngine());
   ConnectFakeSignaling();
   
   
@@ -291,7 +291,7 @@ TEST_P(DataChannelIntegrationTest,
   
   const size_t kLowestSafePayloadSizeLimit = 1225;
 
-  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  ASSERT_TRUE(CreatePeerConnectionWrappersWithoutMediaEngine());
   ConnectFakeSignaling();
   
   
@@ -328,7 +328,7 @@ TEST_P(DataChannelIntegrationTest, EndToEndCallWithSctpDataChannelHarmfulMtu) {
   
   const size_t kMessageSizeThatIsNotDelivered = 1157;
 
-  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  ASSERT_TRUE(CreatePeerConnectionWrappersWithoutMediaEngine());
   ConnectFakeSignaling();
   caller()->CreateDataChannel();
   caller()->CreateAndSetAndSignalOffer();
@@ -429,7 +429,7 @@ TEST_P(DataChannelIntegrationTest, StressTestUnorderedSctpDataChannel) {
   virtual_socket_server()->set_delay_stddev(5);
   virtual_socket_server()->UpdateDelayDistribution();
   
-  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  ASSERT_TRUE(CreatePeerConnectionWrappersWithoutMediaEngine());
   ConnectFakeSignaling();
   webrtc::DataChannelInit init;
   init.ordered = false;
