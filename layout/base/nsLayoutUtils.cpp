@@ -3197,6 +3197,14 @@ void nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext, nsIFrame* aFrame,
   nsRect rootInkOverflow = aFrame->InkOverflowRectRelativeToSelf();
 
   
+  
+  if (presContext->IsRootContentDocumentCrossProcess() &&
+      presContext->HasDynamicToolbar()) {
+    rootInkOverflow.SizeTo(nsLayoutUtils::ExpandHeightForDynamicToolbar(
+        presContext, rootInkOverflow.Size()));
+  }
+
+  
   if (BrowserChild* browserChild = BrowserChild::GetFrom(presShell)) {
     if (!browserChild->IsTopLevel()) {
       Maybe<nsRect> unscaledVisibleRect = browserChild->GetVisibleRect();
