@@ -601,6 +601,7 @@ const AVAILABLE_SHIMS = [
           "*://orangerie.eu/*", 
           "*://web.whatsapp.com/*", 
           "*://www.tripadvisor.com/*", 
+          "*://www.office.com/*", 
         ],
       },
     ],
