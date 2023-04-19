@@ -1972,6 +1972,35 @@ void Element::UnbindFromTree(bool aNullParent) {
     ClearServoData(document);
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (MayHaveAnimations()) {
+    RemoveProperty(nsGkAtoms::transitionsOfBeforeProperty);
+    RemoveProperty(nsGkAtoms::transitionsOfAfterProperty);
+    RemoveProperty(nsGkAtoms::transitionsOfMarkerProperty);
+    RemoveProperty(nsGkAtoms::transitionsProperty);
+    RemoveProperty(nsGkAtoms::animationsOfBeforeProperty);
+    RemoveProperty(nsGkAtoms::animationsOfAfterProperty);
+    RemoveProperty(nsGkAtoms::animationsOfMarkerProperty);
+    RemoveProperty(nsGkAtoms::animationsProperty);
+    if (document) {
+      if (nsPresContext* presContext = document->GetPresContext()) {
+        
+        
+        
+        presContext->EffectCompositor()->ClearRestyleRequestsFor(this);
+      }
+    }
+  }
+
   if (aNullParent) {
     if (IsRootOfNativeAnonymousSubtree()) {
       MutationObservers::NotifyNativeAnonymousChildListChange(this, true);
@@ -2004,35 +2033,6 @@ void Element::UnbindFromTree(bool aNullParent) {
              "An accessible for this element still exists!");
 #  endif
 #endif
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (MayHaveAnimations()) {
-    RemoveProperty(nsGkAtoms::transitionsOfBeforeProperty);
-    RemoveProperty(nsGkAtoms::transitionsOfAfterProperty);
-    RemoveProperty(nsGkAtoms::transitionsOfMarkerProperty);
-    RemoveProperty(nsGkAtoms::transitionsProperty);
-    RemoveProperty(nsGkAtoms::animationsOfBeforeProperty);
-    RemoveProperty(nsGkAtoms::animationsOfAfterProperty);
-    RemoveProperty(nsGkAtoms::animationsOfMarkerProperty);
-    RemoveProperty(nsGkAtoms::animationsProperty);
-    if (document) {
-      if (nsPresContext* presContext = document->GetPresContext()) {
-        
-        
-        
-        presContext->EffectCompositor()->ClearRestyleRequestsFor(this);
-      }
-    }
-  }
 
   ClearInDocument();
   SetIsConnected(false);
