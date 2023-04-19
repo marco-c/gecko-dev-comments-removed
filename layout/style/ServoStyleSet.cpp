@@ -515,7 +515,7 @@ ServoStyleSet::ResolveInheritingAnonymousBoxStyle(PseudoStyleType aType,
 
   if (!style) {
     style = Servo_ComputedValues_GetForAnonymousBox(aParentStyle, aType,
-                                                    mRawSet.get(), nullptr)
+                                                    mRawSet.get())
                 .Consume();
     MOZ_ASSERT(style);
     if (aParentStyle) {
@@ -527,29 +527,14 @@ ServoStyleSet::ResolveInheritingAnonymousBoxStyle(PseudoStyleType aType,
 }
 
 already_AddRefed<ComputedStyle>
-ServoStyleSet::ResolveNonInheritingAnonymousBoxStyle(PseudoStyleType aType,
-                                                     const nsAtom* aPageName) {
+ServoStyleSet::ResolveNonInheritingAnonymousBoxStyle(PseudoStyleType aType) {
   MOZ_ASSERT(PseudoStyle::IsNonInheritingAnonBox(aType));
-  MOZ_ASSERT(!aPageName || aType == PseudoStyleType::pageContent,
-             "page name should only be specified for pageContent");
   nsCSSAnonBoxes::NonInheriting type =
       nsCSSAnonBoxes::NonInheritingTypeForPseudoType(aType);
-
-  
-  
-  
-  
-  if (aPageName == nsGkAtoms::_empty) {
-    aPageName = nullptr;
-  }
-  
-  RefPtr<ComputedStyle>* cache = nullptr;
-  if (!aPageName) {
-    cache = &mNonInheritingComputedStyles[type];
-    if (*cache) {
-      RefPtr<ComputedStyle> retval = *cache;
-      return retval.forget();
-    }
+  RefPtr<ComputedStyle>& cache = mNonInheritingComputedStyles[type];
+  if (cache) {
+    RefPtr<ComputedStyle> retval = cache;
+    return retval.forget();
   }
 
   UpdateStylistIfNeeded();
@@ -562,14 +547,11 @@ ServoStyleSet::ResolveNonInheritingAnonymousBoxStyle(PseudoStyleType aType,
              "viewport needs fixup to handle blockifying it");
 
   RefPtr<ComputedStyle> computedValues =
-      Servo_ComputedValues_GetForAnonymousBox(nullptr, aType, mRawSet.get(),
-                                              aPageName)
+      Servo_ComputedValues_GetForAnonymousBox(nullptr, aType, mRawSet.get())
           .Consume();
   MOZ_ASSERT(computedValues);
 
-  if (cache) {
-    *cache = computedValues;
-  }
+  cache = computedValues;
   return computedValues.forget();
 }
 
