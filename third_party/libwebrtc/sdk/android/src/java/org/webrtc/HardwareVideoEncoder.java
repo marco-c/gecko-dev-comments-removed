@@ -150,6 +150,8 @@ class HardwareVideoEncoder implements VideoEncoder {
 
   
   
+  private long nextPresentationTimestampUs;
+  
   private long lastKeyFrameNs;
 
   
@@ -223,6 +225,7 @@ class HardwareVideoEncoder implements VideoEncoder {
   private VideoCodecStatus initEncodeInternal() {
     encodeThreadChecker.checkIsOnValidThread();
 
+    nextPresentationTimestampUs = 0;
     lastKeyFrameNs = -1;
 
     try {
@@ -238,7 +241,7 @@ class HardwareVideoEncoder implements VideoEncoder {
       format.setInteger(MediaFormat.KEY_BIT_RATE, adjustedBitrate);
       format.setInteger(KEY_BITRATE_MODE, VIDEO_ControlRateConstant);
       format.setInteger(MediaFormat.KEY_COLOR_FORMAT, colorFormat);
-      format.setInteger(MediaFormat.KEY_FRAME_RATE, bitrateAdjuster.getCodecConfigFramerate());
+      format.setInteger(MediaFormat.KEY_FRAME_RATE, bitrateAdjuster.getAdjustedFramerateFps());
       format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, keyFrameIntervalSec);
       if (codecType == VideoCodecMimeType.H264) {
         String profileLevelId = params.get(VideoCodecInfo.H264_FMTP_PROFILE_LEVEL_ID);
@@ -375,11 +378,18 @@ class HardwareVideoEncoder implements VideoEncoder {
                                        .setRotation(videoFrame.getRotation());
     outputBuilders.offer(builder);
 
+    long presentationTimestampUs = nextPresentationTimestampUs;
+    
+    long frameDurationUs =
+        (long) (TimeUnit.SECONDS.toMicros(1) / bitrateAdjuster.getAdjustedFramerateFps());
+    nextPresentationTimestampUs += frameDurationUs;
+
     final VideoCodecStatus returnValue;
     if (useSurfaceMode) {
-      returnValue = encodeTextureBuffer(videoFrame);
+      returnValue = encodeTextureBuffer(videoFrame, presentationTimestampUs);
     } else {
-      returnValue = encodeByteBuffer(videoFrame, videoFrameBuffer, bufferSize);
+      returnValue =
+          encodeByteBuffer(videoFrame, presentationTimestampUs, videoFrameBuffer, bufferSize);
     }
 
     
@@ -391,7 +401,8 @@ class HardwareVideoEncoder implements VideoEncoder {
     return returnValue;
   }
 
-  private VideoCodecStatus encodeTextureBuffer(VideoFrame videoFrame) {
+  private VideoCodecStatus encodeTextureBuffer(
+      VideoFrame videoFrame, long presentationTimestampUs) {
     encodeThreadChecker.checkIsOnValidThread();
     try {
       
@@ -401,7 +412,7 @@ class HardwareVideoEncoder implements VideoEncoder {
       VideoFrame derotatedFrame =
           new VideoFrame(videoFrame.getBuffer(), 0 , videoFrame.getTimestampNs());
       videoFrameDrawer.drawFrame(derotatedFrame, textureDrawer, null );
-      textureEglBase.swapBuffers(videoFrame.getTimestampNs());
+      textureEglBase.swapBuffers(TimeUnit.MICROSECONDS.toNanos(presentationTimestampUs));
     } catch (RuntimeException e) {
       Logging.e(TAG, "encodeTexture failed", e);
       return VideoCodecStatus.ERROR;
@@ -409,12 +420,9 @@ class HardwareVideoEncoder implements VideoEncoder {
     return VideoCodecStatus.OK;
   }
 
-  private VideoCodecStatus encodeByteBuffer(
-      VideoFrame videoFrame, VideoFrame.Buffer videoFrameBuffer, int bufferSize) {
+  private VideoCodecStatus encodeByteBuffer(VideoFrame videoFrame, long presentationTimestampUs,
+      VideoFrame.Buffer videoFrameBuffer, int bufferSize) {
     encodeThreadChecker.checkIsOnValidThread();
-    
-    long presentationTimestampUs = (videoFrame.getTimestampNs() + 500) / 1000;
-
     
     int index;
     try {
