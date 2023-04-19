@@ -59,4 +59,20 @@ DisableStlWrapping()
 if CONFIG["CC_TYPE"] == "clang-cl":
     AllowCompilerWarnings()  
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+if CONFIG["NIGHTLY_BUILD"] and CONFIG["OS_TARGET"] == "WINNT":
+    DEFINES["MOZ_STALL_ON_OOM"] = True
+
 REQUIRES_UNIFIED_BUILD = True
