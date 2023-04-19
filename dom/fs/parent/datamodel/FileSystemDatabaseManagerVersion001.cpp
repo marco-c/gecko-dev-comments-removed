@@ -177,7 +177,8 @@ nsresult GetFileAttributes(const FileSystemConnection& aConnection,
 
 nsresult GetEntries(const FileSystemConnection& aConnection,
                     const nsACString& aUnboundStmt, const EntryId& aParent,
-                    PageNumber aPage, FileSystemEntries& aEntries) {
+                    PageNumber aPage, bool aDirectory,
+                    FileSystemEntries& aEntries) {
   
   
   
@@ -199,7 +200,7 @@ nsresult GetEntries(const FileSystemConnection& aConnection,
     QM_TRY_UNWRAP(EntryId entryId, stmt.GetEntryIdByColumn( 0u));
     QM_TRY_UNWRAP(Name entryName, stmt.GetNameByColumn( 1u));
 
-    FileSystemEntryMetadata metadata(entryId, entryName);
+    FileSystemEntryMetadata metadata(entryId, entryName, aDirectory);
     aEntries.AppendElement(metadata);
 
     QM_TRY_UNWRAP(moreResults, stmt.ExecuteStep());
@@ -416,11 +417,12 @@ FileSystemDatabaseManagerVersion001::GetDirectoryEntries(
       ";"_ns;
 
   FileSystemDirectoryListing entries;
-  QM_TRY(QM_TO_RESULT(GetEntries(mConnection, directoriesQuery, aParent, aPage,
-                                 entries.directories())));
+  QM_TRY(
+      QM_TO_RESULT(GetEntries(mConnection, directoriesQuery, aParent, aPage,
+                               true, entries.directories())));
 
-  QM_TRY(QM_TO_RESULT(
-      GetEntries(mConnection, filesQuery, aParent, aPage, entries.files())));
+  QM_TRY(QM_TO_RESULT(GetEntries(mConnection, filesQuery, aParent, aPage,
+                                  false, entries.files())));
 
   return entries;
 }
