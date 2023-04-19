@@ -258,6 +258,16 @@ class VideoReceiveStream2 : public webrtc::VideoReceiveStream,
       false;
 
   
+  
+  
+  FieldTrialParameter<bool> low_latency_renderer_enabled_;
+  
+  
+  
+  
+  FieldTrialParameter<bool> low_latency_renderer_include_predecode_buffer_;
+
+  
   rtc::TaskQueue decode_queue_;
 
   

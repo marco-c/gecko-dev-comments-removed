@@ -188,6 +188,16 @@ class RTC_EXPORT VideoFrame {
 
   
   
+  absl::optional<int32_t> max_composition_delay_in_frames() const {
+    return max_composition_delay_in_frames_;
+  }
+  void set_max_composition_delay_in_frames(
+      absl::optional<int32_t> max_composition_delay_in_frames) {
+    max_composition_delay_in_frames_ = max_composition_delay_in_frames;
+  }
+
+  
+  
   int64_t render_time_ms() const;
 
   
@@ -255,6 +265,7 @@ class RTC_EXPORT VideoFrame {
   int64_t timestamp_us_;
   VideoRotation rotation_;
   absl::optional<ColorSpace> color_space_;
+  absl::optional<int32_t> max_composition_delay_in_frames_;
   
   
   

@@ -88,6 +88,8 @@ class FrameBuffer {
   
   void Clear();
 
+  int Size();
+
  private:
   struct FrameInfo {
     FrameInfo();
