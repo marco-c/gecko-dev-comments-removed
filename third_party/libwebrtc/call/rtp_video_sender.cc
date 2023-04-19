@@ -932,38 +932,36 @@ void RtpVideoSender::OnPacketFeedbackVector(
   
   std::map<uint32_t, std::vector<uint16_t>> acked_packets_per_ssrc;
   for (const StreamPacketInfo& packet : packet_feedback_vector) {
-    if (packet.received && packet.ssrc) {
-      acked_packets_per_ssrc[*packet.ssrc].push_back(
-          packet.rtp_sequence_number);
+    if (packet.received) {
+      acked_packets_per_ssrc[packet.ssrc].push_back(packet.rtp_sequence_number);
     }
   }
 
-  
-  
-  std::map<uint32_t, std::vector<uint16_t>> early_loss_detected_per_ssrc;
-
-  for (const StreamPacketInfo& packet : packet_feedback_vector) {
     
-    if (!packet.received && packet.ssrc && !packet.is_retransmission) {
-      
-      
-      early_loss_detected_per_ssrc[*packet.ssrc].push_back(
-          packet.rtp_sequence_number);
-    } else {
-      
-      early_loss_detected_per_ssrc.erase(*packet.ssrc);
-    }
-  }
+    
+    std::map<uint32_t, std::vector<uint16_t>> early_loss_detected_per_ssrc;
 
-  for (const auto& kv : early_loss_detected_per_ssrc) {
-    const uint32_t ssrc = kv.first;
-    auto it = ssrc_to_rtp_module_.find(ssrc);
-    RTC_CHECK(it != ssrc_to_rtp_module_.end());
-    RTPSender* rtp_sender = it->second->RtpSender();
-    for (uint16_t sequence_number : kv.second) {
-      rtp_sender->ReSendPacket(sequence_number);
+    for (const StreamPacketInfo& packet : packet_feedback_vector) {
+      if (!packet.received) {
+        
+        
+        early_loss_detected_per_ssrc[packet.ssrc].push_back(
+            packet.rtp_sequence_number);
+      } else {
+        
+        early_loss_detected_per_ssrc.erase(packet.ssrc);
+      }
     }
-  }
+
+    for (const auto& kv : early_loss_detected_per_ssrc) {
+      const uint32_t ssrc = kv.first;
+      auto it = ssrc_to_rtp_module_.find(ssrc);
+      RTC_DCHECK(it != ssrc_to_rtp_module_.end());
+      RTPSender* rtp_sender = it->second->RtpSender();
+      for (uint16_t sequence_number : kv.second) {
+        rtp_sender->ReSendPacket(sequence_number);
+      }
+    }
 
   for (const auto& kv : acked_packets_per_ssrc) {
     const uint32_t ssrc = kv.first;
