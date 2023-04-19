@@ -193,27 +193,39 @@ class BaseChannel : public ChannelInterface,
   }
 
  protected:
-  void set_local_content_direction(webrtc::RtpTransceiverDirection direction) {
-    RTC_DCHECK_RUN_ON(worker_thread());
+  void set_local_content_direction(webrtc::RtpTransceiverDirection direction)
+      RTC_RUN_ON(worker_thread()) {
     local_content_direction_ = direction;
   }
-  void set_remote_content_direction(webrtc::RtpTransceiverDirection direction) {
-    RTC_DCHECK_RUN_ON(worker_thread());
+
+  webrtc::RtpTransceiverDirection local_content_direction() const
+      RTC_RUN_ON(worker_thread()) {
+    return local_content_direction_;
+  }
+
+  void set_remote_content_direction(webrtc::RtpTransceiverDirection direction)
+      RTC_RUN_ON(worker_thread()) {
     remote_content_direction_ = direction;
   }
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  bool IsReadyToReceiveMedia_w() const RTC_RUN_ON(worker_thread());
-  bool IsReadyToSendMedia_w() const RTC_RUN_ON(worker_thread());
+
+  webrtc::RtpTransceiverDirection remote_content_direction() const
+      RTC_RUN_ON(worker_thread()) {
+    return remote_content_direction_;
+  }
+
+  bool enabled() const RTC_RUN_ON(worker_thread()) { return enabled_; }
   rtc::Thread* signaling_thread() const { return signaling_thread_; }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool IsReadyToSendMedia_w() const RTC_RUN_ON(worker_thread());
 
   
   bool SendPacket(rtc::CopyOnWriteBuffer* packet,
@@ -291,8 +303,8 @@ class BaseChannel : public ChannelInterface,
   std::string ToString() const;
 
  private:
-  bool ConnectToRtpTransport() RTC_RUN_ON(network_thread());
-  void DisconnectFromRtpTransport() RTC_RUN_ON(network_thread());
+  bool ConnectToRtpTransport_n() RTC_RUN_ON(network_thread());
+  void DisconnectFromRtpTransport_n() RTC_RUN_ON(network_thread());
   void SignalSentPacket_n(const rtc::SentPacket& sent_packet);
 
   rtc::Thread* const worker_thread_;
@@ -387,20 +399,22 @@ class VoiceChannel : public BaseChannel {
 
  private:
   
-  void UpdateMediaSendRecvState_w() override;
+  void UpdateMediaSendRecvState_w() RTC_RUN_ON(worker_thread()) override;
   bool SetLocalContent_w(const MediaContentDescription* content,
                          webrtc::SdpType type,
-                         std::string* error_desc) override;
+                         std::string* error_desc)
+      RTC_RUN_ON(worker_thread()) override;
   bool SetRemoteContent_w(const MediaContentDescription* content,
                           webrtc::SdpType type,
-                          std::string* error_desc) override;
+                          std::string* error_desc)
+      RTC_RUN_ON(worker_thread()) override;
 
   
   
-  AudioSendParameters last_send_params_;
+  AudioSendParameters last_send_params_ RTC_GUARDED_BY(worker_thread());
   
   
-  AudioRecvParameters last_recv_params_;
+  AudioRecvParameters last_recv_params_ RTC_GUARDED_BY(worker_thread());
 };
 
 
@@ -421,28 +435,30 @@ class VideoChannel : public BaseChannel {
     return static_cast<VideoMediaChannel*>(BaseChannel::media_channel());
   }
 
-  void FillBitrateInfo(BandwidthEstimationInfo* bwe_info);
-
   cricket::MediaType media_type() const override {
     return cricket::MEDIA_TYPE_VIDEO;
   }
 
+  void FillBitrateInfo(BandwidthEstimationInfo* bwe_info);
+
  private:
   
-  void UpdateMediaSendRecvState_w() override;
+  void UpdateMediaSendRecvState_w() RTC_RUN_ON(worker_thread()) override;
   bool SetLocalContent_w(const MediaContentDescription* content,
                          webrtc::SdpType type,
-                         std::string* error_desc) override;
+                         std::string* error_desc)
+      RTC_RUN_ON(worker_thread()) override;
   bool SetRemoteContent_w(const MediaContentDescription* content,
                           webrtc::SdpType type,
-                          std::string* error_desc) override;
+                          std::string* error_desc)
+      RTC_RUN_ON(worker_thread()) override;
 
   
   
-  VideoSendParameters last_send_params_;
+  VideoSendParameters last_send_params_ RTC_GUARDED_BY(worker_thread());
   
   
-  VideoRecvParameters last_recv_params_;
+  VideoRecvParameters last_recv_params_ RTC_GUARDED_BY(worker_thread());
 };
 
 }  
