@@ -335,7 +335,7 @@ mod test {
         
         ping_type.submit_sync(&glean, None);
 
-        let directory_manager = PingDirectoryManager::new(&dir.path());
+        let directory_manager = PingDirectoryManager::new(dir.path());
 
         let not_uuid_path = dir
             .path()
@@ -370,7 +370,7 @@ mod test {
         
         ping_type.submit_sync(&glean, None);
 
-        let directory_manager = PingDirectoryManager::new(&dir.path());
+        let directory_manager = PingDirectoryManager::new(dir.path());
 
         let wrong_contents_file_path = dir
             .path()

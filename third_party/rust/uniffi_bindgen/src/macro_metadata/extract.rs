@@ -157,6 +157,7 @@ impl ExtractedItems {
             
             return Ok(());
         }
+
         
         
         
@@ -165,6 +166,7 @@ impl ExtractedItems {
         
         let data = &file_data[offset..];
         self.items.push(bincode::deserialize::<Metadata>(data)?);
+        self.names.insert(name.to_string());
         Ok(())
     }
 
