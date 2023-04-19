@@ -1285,27 +1285,32 @@ var gUnifiedExtensions = {
   },
 
   async togglePanel(aEvent) {
-    
-    
-    if ((await this.getActiveExtensions()).length === 0) {
-      await BrowserOpenAddonsMgr("addons://discover/");
-      return;
+    if (!CustomizationHandler.isCustomizing()) {
+      
+      
+      if ((await this.getActiveExtensions()).length === 0) {
+        await BrowserOpenAddonsMgr("addons://discover/");
+        return;
+      }
+
+      if (!this._listView) {
+        this._listView = PanelMultiView.getViewNode(
+          document,
+          "unified-extensions-view"
+        );
+        this._listView.addEventListener("ViewShowing", this);
+        this._listView.addEventListener("ViewHiding", this);
+      }
+
+      if (this._button.open) {
+        PanelMultiView.hidePopup(this._listView.closest("panel"));
+        this._button.open = false;
+      } else {
+        PanelUI.showSubView("unified-extensions-view", this._button, aEvent);
+      }
     }
 
-    if (!this._listView) {
-      this._listView = PanelMultiView.getViewNode(
-        document,
-        "unified-extensions-view"
-      );
-      this._listView.addEventListener("ViewShowing", this);
-      this._listView.addEventListener("ViewHiding", this);
-    }
-
-    if (this._button.open) {
-      PanelMultiView.hidePopup(this._listView.closest("panel"));
-      this._button.open = false;
-    } else {
-      PanelUI.showSubView("unified-extensions-view", this._button, aEvent);
-    }
+    
+    window.dispatchEvent(new CustomEvent("UnifiedExtensionsTogglePanel"));
   },
 };
