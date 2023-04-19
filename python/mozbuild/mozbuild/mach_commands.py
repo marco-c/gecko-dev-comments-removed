@@ -2406,30 +2406,10 @@ def repackage_msix(
             )
             return 1
 
-    template = os.path.join(
-        command_context.topsrcdir, "browser", "installer", "windows", "msix"
-    )
-
-    
-    locale_allowlist = set(
-        locale.partition("#")[0].strip().lower()
-        for locale in open(os.path.join(template, "msix-all-locales")).readlines()
-        if locale.partition("#")[0].strip()
-    )
-
-    
-    branding = os.path.join(
-        command_context.topsrcdir,
-        "browser",
-        "branding",
-        channel if channel != "beta" else "official",
-    )
-
     output = repackage_msix(
         input,
+        command_context.topsrcdir,
         channel=channel,
-        template=template,
-        branding=branding,
         arch=arch,
         displayname=identity_name,
         vendor=vendor,
@@ -2437,7 +2417,6 @@ def repackage_msix(
         publisher_display_name=publisher_display_name,
         version=version,
         distribution_dirs=distribution_dirs,
-        locale_allowlist=locale_allowlist,
         
         force=True,
         verbose=verbose,
