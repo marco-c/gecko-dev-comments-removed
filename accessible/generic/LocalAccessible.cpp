@@ -22,6 +22,7 @@
 #include "nsTextEquivUtils.h"
 #include "DocAccessibleChild.h"
 #include "EventTree.h"
+#include "OuterDocAccessible.h"
 #include "Pivot.h"
 #include "Relation.h"
 #include "Role.h"
@@ -3284,6 +3285,26 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
     
     MOZ_ASSERT(aUpdateType == CacheUpdateType::Initial || mBounds.isSome(),
                "Incremental cache push but mBounds is not set!");
+
+    if (OuterDocAccessible* doc = AsOuterDoc()) {
+      if (nsIFrame* docFrame = doc->GetFrame()) {
+        const nsMargin& newOffset = docFrame->GetUsedBorderAndPadding();
+        Maybe<nsMargin> currOffset = doc->GetCrossProcOffset();
+        if (!currOffset || *currOffset != newOffset) {
+          
+          
+          
+          
+          
+          doc->SetCrossProcOffset(newOffset);
+          nsTArray<int32_t> offsetArray(2);
+          offsetArray.AppendElement(newOffset.Side(eSideLeft));  
+          offsetArray.AppendElement(newOffset.Side(eSideTop));   
+          fields->SetAttribute(nsGkAtoms::crossorigin, std::move(offsetArray));
+        }
+      }
+    }
+
     boundsChanged = aUpdateType == CacheUpdateType::Initial ||
                     !newBoundsRect.IsEqualEdges(mBounds.value());
     if (boundsChanged) {

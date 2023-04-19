@@ -180,8 +180,8 @@ addAccessibleTask(
   runTests,
   {
     iframe: true,
-    remoteIframe: false, 
+    remoteIframe: true,
     
-    iframeAttrs: { style: "width: 600px; height: 600px;" },
+    iframeAttrs: { style: "width: 600px; height: 600px; padding: 10px;" },
   }
 );

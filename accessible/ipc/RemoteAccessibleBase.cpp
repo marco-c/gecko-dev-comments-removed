@@ -410,6 +410,22 @@ Maybe<nsRect> RemoteAccessibleBase<Derived>::RetrieveCachedBounds() const {
 }
 
 template <class Derived>
+void RemoteAccessibleBase<Derived>::ApplyCrossProcOffset(
+    nsRect& aBounds) const {
+  Maybe<const nsTArray<int32_t>&> maybeOffset =
+      mCachedFields->GetAttribute<nsTArray<int32_t>>(nsGkAtoms::crossorigin);
+  if (!maybeOffset) {
+    return;
+  }
+
+  MOZ_ASSERT(maybeOffset->Length() == 2);
+  const nsTArray<int32_t>& offset = *maybeOffset;
+  
+  
+  aBounds.MoveBy(offset[0], offset[1]);
+}
+
+template <class Derived>
 bool RemoteAccessibleBase<Derived>::ApplyTransform(nsRect& aBounds) const {
   
   Maybe<const UniquePtr<gfx::Matrix4x4>&> maybeTransform =
@@ -488,7 +504,7 @@ LayoutDeviceIntRect RemoteAccessibleBase<Derived>::BoundsWithOffset(
 
     LayoutDeviceIntRect devPxBounds;
     const Accessible* acc = Parent();
-
+    const RemoteAccessibleBase<Derived>* recentAcc = this;
     while (acc && acc->IsRemote()) {
       RemoteAccessible* remoteAcc = const_cast<Accessible*>(acc)->AsRemote();
 
@@ -498,21 +514,30 @@ LayoutDeviceIntRect RemoteAccessibleBase<Derived>::BoundsWithOffset(
         
         
         
-        Maybe<float> res;
         if (remoteAcc->IsDoc()) {
           
           
           
           
           
-          
-          
-          res = remoteAcc->AsDoc()->mCachedFields->GetAttribute<float>(
-              nsGkAtoms::resolution);
+          Maybe<float> res =
+              remoteAcc->AsDoc()->mCachedFields->GetAttribute<float>(
+                  nsGkAtoms::resolution);
           MOZ_ASSERT(res, "No cached document resolution found.");
           bounds.ScaleRoundOut(res.valueOr(1.0f));
 
           topDoc = remoteAcc->AsDoc();
+        }
+
+        if (remoteAcc->IsOuterDoc()) {
+          if (recentAcc && recentAcc->IsDoc() &&
+              !recentAcc->AsDoc()->IsTopLevel() &&
+              recentAcc->AsDoc()->IsTopLevelInContentProcess()) {
+            
+            
+            
+            remoteAcc->ApplyCrossProcOffset(remoteBounds);
+          }
         }
 
         
@@ -527,7 +552,7 @@ LayoutDeviceIntRect RemoteAccessibleBase<Derived>::BoundsWithOffset(
         bounds.MoveBy(remoteBounds.X(), remoteBounds.Y());
         Unused << remoteAcc->ApplyTransform(bounds);
       }
-
+      recentAcc = remoteAcc;
       acc = acc->Parent();
     }
 
