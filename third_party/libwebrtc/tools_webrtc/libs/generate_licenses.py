@@ -78,6 +78,8 @@ LIB_TO_LICENSES_DICT = {
     
     
     'android_deps': [],
+    
+    'androidx': [],
 
     
     'yasm': [],
