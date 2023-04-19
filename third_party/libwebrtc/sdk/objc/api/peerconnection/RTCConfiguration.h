@@ -220,6 +220,13 @@ RTC_OBJC_EXPORT
 
 @property(nonatomic, assign) int rtcpVideoReportIntervalMs;
 
+
+
+
+
+
+@property(nonatomic, assign) BOOL enableImplicitRollback;
+
 - (instancetype)init;
 
 @end
