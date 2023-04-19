@@ -368,6 +368,18 @@ class ResourceCommand {
 
 
 
+
+
+  isResourceWatched(resourceType) {
+    return this._listenedResources.has(resourceType);
+  }
+
+  
+
+
+
+
+
   async _watchAllTargets() {
     if (!this._watchTargetsPromise) {
       

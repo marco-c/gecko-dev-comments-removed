@@ -881,21 +881,26 @@ Toolbox.prototype = {
         onDestroyed: this._onTargetDestroyed,
       });
 
+      const watchedResources = [
+        
+        
+        this.resourceCommand.TYPES.CONSOLE_MESSAGE,
+        this.resourceCommand.TYPES.ERROR_MESSAGE,
+        this.resourceCommand.TYPES.DOCUMENT_EVENT,
+        this.resourceCommand.TYPES.THREAD_STATE,
+      ];
+
+      if (!this.isBrowserToolbox) {
+        
+        
+        
+        
+        
+        watchedResources.push(this.resourceCommand.TYPES.NETWORK_EVENT);
+      }
+
       const onResourcesWatched = this.resourceCommand.watchResources(
-        [
-          
-          
-          this.resourceCommand.TYPES.CONSOLE_MESSAGE,
-          this.resourceCommand.TYPES.ERROR_MESSAGE,
-          
-          
-          
-          
-          
-          this.resourceCommand.TYPES.NETWORK_EVENT,
-          this.resourceCommand.TYPES.DOCUMENT_EVENT,
-          this.resourceCommand.TYPES.THREAD_STATE,
-        ],
+        watchedResources,
         {
           onAvailable: this._onResourceAvailable,
           onUpdated: this._onResourceUpdated,
@@ -4082,18 +4087,21 @@ Toolbox.prototype = {
       onSelected: this._onTargetSelected,
       onDestroyed: this._onTargetDestroyed,
     });
-    this.resourceCommand.unwatchResources(
-      [
-        this.resourceCommand.TYPES.CONSOLE_MESSAGE,
-        this.resourceCommand.TYPES.ERROR_MESSAGE,
-        this.resourceCommand.TYPES.NETWORK_EVENT,
-        this.resourceCommand.TYPES.DOCUMENT_EVENT,
-        this.resourceCommand.TYPES.THREAD_STATE,
-      ],
-      {
-        onAvailable: this._onResourceAvailable,
-      }
-    );
+
+    const watchedResources = [
+      this.resourceCommand.TYPES.CONSOLE_MESSAGE,
+      this.resourceCommand.TYPES.ERROR_MESSAGE,
+      this.resourceCommand.TYPES.DOCUMENT_EVENT,
+      this.resourceCommand.TYPES.THREAD_STATE,
+    ];
+
+    if (!this.isBrowserToolbox) {
+      watchedResources.push(this.resourceCommand.TYPES.NETWORK_EVENT);
+    }
+
+    this.resourceCommand.unwatchResources(watchedResources, {
+      onAvailable: this._onResourceAvailable,
+    });
 
     
     this.toolbarButtons.forEach(button => {
