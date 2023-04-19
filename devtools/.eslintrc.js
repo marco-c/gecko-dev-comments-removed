@@ -220,47 +220,13 @@ module.exports = {
     
     complexity: ["error", 20],
     
-    
-    "consistent-this": "off",
-    
-    
-    "default-case": "off",
-    
-    
-    eqeqeq: "off",
-    
-    
-    
-    
-    
-    "func-names": "off",
-    
-    "func-style": "off",
-    
-    "handle-callback-err": "off",
-    
     "id-denylist": ["error", "componentDidUnmount"],
     
     "max-nested-callbacks": ["error", 3],
     
-    "max-params": "off",
-    
-    
-    "max-statements": "off",
-    
     
     
     "new-cap": ["error", { capIsNew: false }],
-    
-    "no-bitwise": "off",
-    
-    "no-console": "off",
-    
-    "no-constant-condition": "off",
-    
-    "no-continue": "off",
-    
-    "no-div-regex": "off",
     
     
     
@@ -272,29 +238,11 @@ module.exports = {
     
     "no-fallthrough": "error",
     
-    "no-inline-comments": "off",
-    
-    "no-mixed-requires": "off",
-    
     "no-multi-str": "error",
-    
-    "no-new-require": "off",
-    
-    "no-param-reassign": "off",
-    
-    "no-path-concat": "off",
-    
-    "no-plusplus": "off",
-    
-    "no-process-env": "off",
-    
-    "no-process-exit": "off",
     
     "no-proto": "error",
     
     "no-regex-spaces": "off",
-    
-    "no-restricted-modules": "off",
     
     "no-restricted-properties": [
       "error",
@@ -307,53 +255,24 @@ module.exports = {
     
     "no-return-assign": "error",
     
-    "no-script-url": "off",
-    
     
     
     
     
     "no-shadow": "error",
     
-    "no-sync": "off",
-    
-    "no-ternary": "off",
-    
-    "no-underscore-dangle": "off",
-    
-    "no-undefined": "off",
-    
     
     "no-unused-vars": ["error", { args: "none", vars: "all" }],
-    
-    "no-use-before-define": "off",
-    
-    
-    "no-var": "off",
-    
-    "no-warning-comments": "off",
     
     
     
     "object-shorthand": "off",
     
-    "one-var": "off",
-    
     "prefer-const": ["error", { destructuring: "all" }],
     
     radix: "error",
     
-    
-    "sort-vars": "off",
-    
     strict: ["error", "global"],
-    
-    
-    
-    
-    "valid-jsdoc": "off",
-    
-    "vars-on-top": "off",
     
     yoda: "error",
 
@@ -361,30 +280,11 @@ module.exports = {
     
 
     
-    "guard-for-in": "off",
-    
-    "no-alert": "off",
-    
-    "no-eq-null": "off",
-    
     "no-func-assign": "off",
-    
-    "no-inner-declarations": "off",
-    
-    "no-invalid-regexp": "off",
     
     "no-irregular-whitespace": "off",
     
-    "no-label-var": "off",
-    
     "no-lone-blocks": "off",
-    
-    "no-loop-func": "off",
-    
-    
-    "no-new": "off",
-    
-    "no-new-func": "off",
     
     "no-new-object": "off",
     
@@ -393,19 +293,7 @@ module.exports = {
     
     "no-obj-calls": "off",
     
-    
-    "no-octal-escape": "off",
-    
-    "no-undef-init": "off",
-    
-    "no-unused-expressions": "off",
-    
     "no-useless-concat": "off",
-    
-    "no-void": "off",
-    
-    
-    "operator-assignment": "off",
     
     
     
