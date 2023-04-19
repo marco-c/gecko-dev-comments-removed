@@ -20,9 +20,17 @@
 
 
 
+
+
+
+
 #include "TLSClientAuthCertSelection.h"
 #include "cert_storage/src/cert_storage.h"
-#include "mozilla/net/SocketProcessChild.h"
+#include "mozilla/ipc/BackgroundChild.h"
+#include "mozilla/ipc/BackgroundParent.h"
+#include "mozilla/ipc/PBackgroundChild.h"
+#include "mozilla/psm/SelectTLSClientAuthCertChild.h"
+#include "mozilla/psm/SelectTLSClientAuthCertParent.h"
 #include "nsArray.h"
 #include "nsArrayUtils.h"
 #include "nsIClientAuthDialogs.h"
@@ -73,6 +81,34 @@ static bool hasExplicitKeyUsageNonRepudiation(CERTCertificate* cert) {
   return !!(keyUsage & KU_NON_REPUDIATION);
 }
 
+
+
+class ClientAuthInfo final {
+ public:
+  explicit ClientAuthInfo(const nsACString& hostName,
+                          const mozilla::OriginAttributes& originAttributes,
+                          int32_t port, uint32_t providerFlags,
+                          uint32_t providerTlsFlags);
+  ~ClientAuthInfo() = default;
+  ClientAuthInfo(ClientAuthInfo&& aOther) noexcept;
+
+  const nsACString& HostName() const;
+  const mozilla::OriginAttributes& OriginAttributesRef() const;
+  int32_t Port() const;
+  uint32_t ProviderFlags() const;
+  uint32_t ProviderTlsFlags() const;
+
+  ClientAuthInfo(const ClientAuthInfo&) = delete;
+  void operator=(const ClientAuthInfo&) = delete;
+
+ private:
+  nsCString mHostName;
+  mozilla::OriginAttributes mOriginAttributes;
+  int32_t mPort;
+  uint32_t mProviderFlags;
+  uint32_t mProviderTlsFlags;
+};
+
 ClientAuthInfo::ClientAuthInfo(const nsACString& hostName,
                                const OriginAttributes& originAttributes,
                                int32_t port, uint32_t providerFlags,
@@ -102,52 +138,6 @@ uint32_t ClientAuthInfo::ProviderFlags() const { return mProviderFlags; }
 
 uint32_t ClientAuthInfo::ProviderTlsFlags() const { return mProviderTlsFlags; }
 
-class ClientAuthDataRunnable : public SyncRunnableBase {
- public:
-  ClientAuthDataRunnable(ClientAuthInfo&& info,
-                         const UniqueCERTCertificate& serverCert,
-                         nsTArray<nsTArray<uint8_t>>&& collectedCANames)
-      : mInfo(std::move(info)),
-        mServerCert(serverCert.get()),
-        mCollectedCANames(std::move(collectedCANames)),
-        mSelectedCertificate(nullptr) {}
-
-  virtual mozilla::pkix::Result BuildChainForCertificate(
-      CERTCertificate* cert, UniqueCERTCertList& builtChain);
-
-  
-  
-  UniqueCERTCertificate TakeSelectedCertificate() {
-    return std::move(mSelectedCertificate);
-  }
-
- protected:
-  virtual void RunOnTargetThread() override;
-
-  ClientAuthInfo mInfo;
-  CERTCertificate* const mServerCert;
-  nsTArray<nsTArray<uint8_t>> mCollectedCANames;
-  nsTArray<nsTArray<uint8_t>> mEnterpriseCertificates;
-  UniqueCERTCertificate mSelectedCertificate;
-};
-
-class RemoteClientAuthDataRunnable : public ClientAuthDataRunnable {
- public:
-  RemoteClientAuthDataRunnable(ClientAuthInfo&& info,
-                               const UniqueCERTCertificate& serverCert,
-                               nsTArray<nsTArray<uint8_t>>&& collectedCANames)
-      : ClientAuthDataRunnable(std::move(info), serverCert,
-                               std::move(collectedCANames)) {}
-
-  virtual mozilla::pkix::Result BuildChainForCertificate(
-      CERTCertificate* cert, UniqueCERTCertList& builtChain) override;
-
- protected:
-  virtual void RunOnTargetThread() override;
-
-  CopyableTArray<ByteArray> mBuiltChain;
-};
-
 nsTArray<nsTArray<uint8_t>> CollectCANames(CERTDistNames* caNames) {
   MOZ_ASSERT(caNames);
 
@@ -169,143 +159,12 @@ nsTArray<nsTArray<uint8_t>> CollectCANames(CERTDistNames* caNames) {
 
 
 
-
-
-
-
-
-
-SECStatus nsNSS_SSLGetClientAuthData(void* arg, PRFileDesc* socket,
-                                     CERTDistNames* caNames,
-                                     CERTCertificate** pRetCert,
-                                     SECKEYPrivateKey** pRetKey) {
-  if (!socket || !caNames || !pRetCert || !pRetKey) {
-    PR_SetError(PR_INVALID_ARGUMENT_ERROR, 0);
-    return SECFailure;
-  }
-
-  *pRetCert = nullptr;
-  *pRetKey = nullptr;
-
-  RefPtr<nsNSSSocketInfo> info(
-      BitwiseCast<nsNSSSocketInfo*, PRFilePrivate*>(socket->higher->secret));
-
-  UniqueCERTCertificate serverCert(SSL_PeerCertificate(socket));
-  if (!serverCert) {
-    MOZ_ASSERT_UNREACHABLE(
-        "Missing server cert should have been detected during server cert "
-        "auth.");
-    PR_SetError(SSL_ERROR_NO_CERTIFICATE, 0);
-    return SECFailure;
-  }
-
-  if (info->GetDenyClientCert()) {
-    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-            ("[%p] Not returning client cert due to denyClientCert attribute\n",
-             socket));
-    return SECSuccess;
-  }
-
-  if (info->GetJoined()) {
-    
-    
-    
-
-    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-            ("[%p] Not returning client cert due to previous join\n", socket));
-    return SECSuccess;
-  }
-
-  ClientAuthInfo authInfo(info->GetHostName(), info->GetOriginAttributes(),
-                          info->GetPort(), info->GetProviderFlags(),
-                          info->GetProviderTlsFlags());
-  nsTArray<nsTArray<uint8_t>> collectedCANames(CollectCANames(caNames));
-
-  UniqueCERTCertificate selectedCertificate;
-  UniqueCERTCertList builtChain;
-  SECStatus status = DoGetClientAuthData(std::move(authInfo), serverCert,
-                                         std::move(collectedCANames),
-                                         selectedCertificate, builtChain);
-  if (status != SECSuccess) {
-    return status;
-  }
-
-  
-  
-  
-  
-  if (XRE_IsSocketProcess()) {
-    UniqueCERTCertList certList(FindClientCertificatesWithPrivateKeys());
-    Unused << certList;
-  }
-
-  if (selectedCertificate) {
-    UniqueSECKEYPrivateKey selectedKey(
-        PK11_FindKeyByAnyCert(selectedCertificate.get(), nullptr));
-    if (selectedKey) {
-      if (builtChain) {
-        info->SetClientCertChain(std::move(builtChain));
-      } else {
-        MOZ_LOG(
-            gPIPNSSLog, LogLevel::Debug,
-            ("[%p] couldn't determine chain for selected client cert", socket));
-      }
-      *pRetCert = selectedCertificate.release();
-      *pRetKey = selectedKey.release();
-      
-      info->SetSentClientCert();
-      if (info->GetSSLVersionUsed() == nsISSLSocketControl::TLS_VERSION_1_3) {
-        Telemetry::Accumulate(Telemetry::TLS_1_3_CLIENT_AUTH_USES_PHA,
-                              info->IsHandshakeCompleted());
-      }
-    }
-  }
-
-  return SECSuccess;
-}
-
-SECStatus DoGetClientAuthData(ClientAuthInfo&& info,
-                              const UniqueCERTCertificate& serverCert,
-                              nsTArray<nsTArray<uint8_t>>&& collectedCANames,
-                              UniqueCERTCertificate& outCert,
-                              UniqueCERTCertList& outBuiltChain) {
-  
-  RefPtr<ClientAuthDataRunnable> runnable =
-      XRE_IsSocketProcess()
-          ? new RemoteClientAuthDataRunnable(std::move(info), serverCert,
-                                             std::move(collectedCANames))
-          : new ClientAuthDataRunnable(std::move(info), serverCert,
-                                       std::move(collectedCANames));
-
-  nsresult rv = runnable->DispatchToMainThreadAndWait();
-  if (NS_FAILED(rv)) {
-    PR_SetError(SEC_ERROR_NO_MEMORY, 0);
-    return SECFailure;
-  }
-
-  outCert = runnable->TakeSelectedCertificate();
-  if (outCert) {
-    mozilla::pkix::Result result =
-        runnable->BuildChainForCertificate(outCert.get(), outBuiltChain);
-    if (result != Success) {
-      outBuiltChain.reset(nullptr);
-    }
-  }
-
-  return SECSuccess;
-}
-
-
-
-
-
-
 class ClientAuthCertNonverifyingTrustDomain final : public TrustDomain {
  public:
   ClientAuthCertNonverifyingTrustDomain(
-      nsTArray<nsTArray<uint8_t>>& collectedCANames,
+      nsTArray<nsTArray<uint8_t>>& caNames,
       nsTArray<nsTArray<uint8_t>>& thirdPartyCertificates)
-      : mCollectedCANames(collectedCANames),
+      : mCANames(caNames),
         mCertStorage(do_GetService(NS_CERT_STORAGE_CID)),
         mThirdPartyCertificates(thirdPartyCertificates) {}
 
@@ -377,13 +236,15 @@ class ClientAuthCertNonverifyingTrustDomain final : public TrustDomain {
     return DigestBufNSS(item, digestAlg, digestBuf, digestBufLen);
   }
 
-  UniqueCERTCertList TakeBuiltChain() { return std::move(mBuiltChain); }
+  nsTArray<nsTArray<uint8_t>> TakeBuiltChain() {
+    return std::move(mBuiltChain);
+  }
 
  private:
-  nsTArray<nsTArray<uint8_t>>& mCollectedCANames;  
+  nsTArray<nsTArray<uint8_t>>& mCANames;  
   nsCOMPtr<nsICertStorage> mCertStorage;
   nsTArray<nsTArray<uint8_t>>& mThirdPartyCertificates;  
-  UniqueCERTCertList mBuiltChain;
+  nsTArray<nsTArray<uint8_t>> mBuiltChain;
 };
 
 mozilla::pkix::Result ClientAuthCertNonverifyingTrustDomain::GetCertTrust(
@@ -392,7 +253,7 @@ mozilla::pkix::Result ClientAuthCertNonverifyingTrustDomain::GetCertTrust(
      TrustLevel& trustLevel) {
   
   
-  if (mCollectedCANames.Length() == 0) {
+  if (mCANames.Length() == 0) {
     trustLevel = TrustLevel::TrustAnchor;
     return Success;
   }
@@ -410,7 +271,7 @@ mozilla::pkix::Result ClientAuthCertNonverifyingTrustDomain::GetCertTrust(
   
   Input issuer(cert.GetIssuer());
   Input subject(cert.GetSubject());
-  for (const auto& caName : mCollectedCANames) {
+  for (const auto& caName : mCANames) {
     Input caNameInput;
     rv = caNameInput.Init(caName.Elements(), caName.Length());
     if (rv != Success) {
@@ -521,39 +382,104 @@ mozilla::pkix::Result ClientAuthCertNonverifyingTrustDomain::FindIssuer(
 
 mozilla::pkix::Result ClientAuthCertNonverifyingTrustDomain::IsChainValid(
     const DERArray& certArray, Time, const CertPolicyId&) {
-  mBuiltChain = UniqueCERTCertList(CERT_NewCertList());
-  if (!mBuiltChain) {
-    return MapPRErrorCodeToResult(PR_GetError());
-  }
-
-  CERTCertDBHandle* certDB(CERT_GetDefaultCertDB());  
+  mBuiltChain.Clear();
 
   size_t numCerts = certArray.GetLength();
   for (size_t i = 0; i < numCerts; ++i) {
-    SECItem certDER(UnsafeMapInputToSECItem(*certArray.GetDER(i)));
-    UniqueCERTCertificate cert(
-        CERT_NewTempCertificate(certDB, &certDER, nullptr, false, true));
-    if (!cert) {
-      return MapPRErrorCodeToResult(PR_GetError());
+    nsTArray<uint8_t> certBytes;
+    const Input* certInput = certArray.GetDER(i);
+    MOZ_ASSERT(certInput != nullptr);
+    if (!certInput) {
+      return mozilla::pkix::Result::FATAL_ERROR_LIBRARY_FAILURE;
     }
-    
-    
-    if (CERT_AddCertToListHead(mBuiltChain.get(), cert.get()) != SECSuccess) {
-      return MapPRErrorCodeToResult(PR_GetError());
-    }
-    Unused << cert.release();  
+    certBytes.AppendElements(certInput->UnsafeGetData(),
+                             certInput->GetLength());
+    mBuiltChain.AppendElement(std::move(certBytes));
   }
 
   return Success;
 }
 
-mozilla::pkix::Result ClientAuthDataRunnable::BuildChainForCertificate(
-    CERTCertificate* cert, UniqueCERTCertList& builtChain) {
-  ClientAuthCertNonverifyingTrustDomain trustDomain(mCollectedCANames,
+void ClientAuthCertificateSelectedBase::SetSelectedClientAuthData(
+    nsTArray<uint8_t>&& selectedCertBytes,
+    nsTArray<nsTArray<uint8_t>>&& selectedCertChainBytes) {
+  mSelectedCertBytes = std::move(selectedCertBytes);
+  mSelectedCertChainBytes = std::move(selectedCertChainBytes);
+}
+
+NS_IMETHODIMP
+ClientAuthCertificateSelected::Run() {
+  mSocketInfo->ClientAuthCertificateSelected(mSelectedCertBytes,
+                                             mSelectedCertChainBytes);
+  return NS_OK;
+}
+
+
+
+
+class SelectClientAuthCertificate : public Runnable {
+ public:
+  SelectClientAuthCertificate(ClientAuthInfo&& info,
+                              UniqueCERTCertificate&& serverCert,
+                              nsTArray<nsTArray<uint8_t>>&& caNames,
+                              ClientAuthCertificateSelectedBase* continuation)
+      : Runnable("SelectClientAuthCertificate"),
+        mInfo(std::move(info)),
+        mServerCert(std::move(serverCert)),
+        mCANames(std::move(caNames)),
+        mContinuation(continuation) {}
+
+  NS_IMETHOD Run() override;
+
+ private:
+  mozilla::pkix::Result BuildChainForCertificate(
+      nsTArray<uint8_t>& certBytes,
+      nsTArray<nsTArray<uint8_t>>& certChainBytes);
+  void DoSelectClientAuthCertificate();
+
+  ClientAuthInfo mInfo;
+  UniqueCERTCertificate mServerCert;
+  nsTArray<nsTArray<uint8_t>> mCANames;
+  RefPtr<ClientAuthCertificateSelectedBase> mContinuation;
+
+  nsTArray<nsTArray<uint8_t>> mEnterpriseCertificates;
+  nsTArray<uint8_t> mSelectedCertBytes;
+};
+
+NS_IMETHODIMP
+SelectClientAuthCertificate::Run() {
+  DoSelectClientAuthCertificate();
+  if (mSelectedCertBytes.Length() > 0) {
+    nsTArray<nsTArray<uint8_t>> selectedCertChainBytes;
+    if (BuildChainForCertificate(mSelectedCertBytes, selectedCertChainBytes) !=
+        Success) {
+      selectedCertChainBytes.Clear();
+    }
+    mContinuation->SetSelectedClientAuthData(std::move(mSelectedCertBytes),
+                                             std::move(selectedCertChainBytes));
+  }
+  nsCOMPtr<nsIEventTarget> socketThread =
+      do_GetService(NS_SOCKETTRANSPORTSERVICE_CONTRACTID);
+  if (NS_WARN_IF(!socketThread)) {
+    return NS_ERROR_FAILURE;
+  }
+  nsresult rv = socketThread->Dispatch(mContinuation, NS_DISPATCH_NORMAL);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  return NS_OK;
+}
+
+
+
+
+mozilla::pkix::Result SelectClientAuthCertificate::BuildChainForCertificate(
+    nsTArray<uint8_t>& certBytes, nsTArray<nsTArray<uint8_t>>& certChainBytes) {
+  ClientAuthCertNonverifyingTrustDomain trustDomain(mCANames,
                                                     mEnterpriseCertificates);
   Input certDER;
   mozilla::pkix::Result result =
-      certDER.Init(cert->derCert.data, cert->derCert.len);
+      certDER.Init(certBytes.Elements(), certBytes.Length());
   if (result != Success) {
     return result;
   }
@@ -578,18 +504,15 @@ mozilla::pkix::Result ClientAuthDataRunnable::BuildChainForCertificate(
                          KeyUsage::noParticularKeyUsageRequired,
                          keyPurposeIdParam, CertPolicyId::anyPolicy, nullptr);
       if (result == Success) {
-        builtChain = trustDomain.TakeBuiltChain();
+        certChainBytes = trustDomain.TakeBuiltChain();
         return Success;
       }
-      MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-              ("client cert non-validation returned %d for '%s'",
-               static_cast<int>(result), cert->subjectName));
     }
   }
   return mozilla::pkix::Result::ERROR_UNKNOWN_ISSUER;
 }
 
-void ClientAuthDataRunnable::RunOnTargetThread() {
+void SelectClientAuthCertificate::DoSelectClientAuthCertificate() {
   
   
   MOZ_ASSERT(NS_IsMainThread());
@@ -620,9 +543,11 @@ void ClientAuthDataRunnable::RunOnTargetThread() {
 
   CERTCertListNode* n = CERT_LIST_HEAD(certList);
   while (!CERT_LIST_END(n, certList)) {
-    UniqueCERTCertList unusedBuiltChain;
+    nsTArray<nsTArray<uint8_t>> unusedBuiltChain;
+    nsTArray<uint8_t> certBytes;
+    certBytes.AppendElements(n->cert->derCert.data, n->cert->derCert.len);
     mozilla::pkix::Result result =
-        BuildChainForCertificate(n->cert, unusedBuiltChain);
+        BuildChainForCertificate(certBytes, unusedBuiltChain);
     if (result != Success) {
       MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
               ("removing cert '%s'", n->cert->subjectName));
@@ -658,7 +583,8 @@ void ClientAuthDataRunnable::RunOnTargetThread() {
           }
         } else {
           
-          mSelectedCertificate.reset(CERT_DupCertificate(node->cert));
+          mSelectedCertBytes.AppendElements(node->cert->derCert.data,
+                                            node->cert->derCert.len);
           return;
         }
       }
@@ -669,7 +595,8 @@ void ClientAuthDataRunnable::RunOnTargetThread() {
     }
 
     if (lowPrioNonrepCert) {
-      mSelectedCertificate = std::move(lowPrioNonrepCert);
+      mSelectedCertBytes.AppendElements(lowPrioNonrepCert->derCert.data,
+                                        lowPrioNonrepCert->derCert.len);
     }
     return;
   }
@@ -686,7 +613,7 @@ void ClientAuthDataRunnable::RunOnTargetThread() {
   if (cars) {
     nsCString rememberedDBKey;
     bool found;
-    nsCOMPtr<nsIX509Cert> cert(new nsNSSCertificate(mServerCert));
+    nsCOMPtr<nsIX509Cert> cert(new nsNSSCertificate(mServerCert.get()));
     nsresult rv = cars->HasRememberedDecision(
         hostname, mInfo.OriginAttributesRef(), cert, rememberedDBKey, &found);
     if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -709,15 +636,8 @@ void ClientAuthDataRunnable::RunOnTargetThread() {
         return;
       }
       if (foundCert) {
-        nsNSSCertificate* objCert =
-            BitwiseCast<nsNSSCertificate*, nsIX509Cert*>(foundCert.get());
-        if (NS_WARN_IF(!objCert)) {
-          return;
-        }
-        mSelectedCertificate.reset(objCert->GetCert());
-        if (NS_WARN_IF(!mSelectedCertificate)) {
-          return;
-        }
+        Unused << NS_WARN_IF(
+            NS_FAILED(foundCert->GetRawDER(mSelectedCertBytes)));
         return;
       }
     }
@@ -766,79 +686,249 @@ void ClientAuthDataRunnable::RunOnTargetThread() {
     return;
   }
 
+  nsCOMPtr<nsIX509Cert> selectedCert;
   if (certChosen) {
-    nsCOMPtr<nsIX509Cert> selectedCert =
-        do_QueryElementAt(certArray, selectedIndex);
+    selectedCert = do_QueryElementAt(certArray, selectedIndex);
     if (NS_WARN_IF(!selectedCert)) {
       return;
     }
-    mSelectedCertificate.reset(selectedCert->GetCert());
-    if (NS_WARN_IF(!mSelectedCertificate)) {
+    if (NS_WARN_IF(NS_FAILED(selectedCert->GetRawDER(mSelectedCertBytes)))) {
       return;
     }
   }
 
   if (cars && wantRemember) {
-    nsCOMPtr<nsIX509Cert> serverCert(new nsNSSCertificate(mServerCert));
-    nsCOMPtr<nsIX509Cert> clientCert;
-    if (certChosen) {
-      clientCert = new nsNSSCertificate(mSelectedCertificate.get());
-    }
+    nsCOMPtr<nsIX509Cert> serverCert(new nsNSSCertificate(mServerCert.get()));
     rv = cars->RememberDecision(hostname, mInfo.OriginAttributesRef(),
-                                serverCert, clientCert);
+                                serverCert, selectedCert);
     Unused << NS_WARN_IF(NS_FAILED(rv));
   }
 }
 
-mozilla::pkix::Result RemoteClientAuthDataRunnable::BuildChainForCertificate(
-    CERTCertificate*, UniqueCERTCertList& builtChain) {
-  builtChain.reset(CERT_NewCertList());
-  if (!builtChain) {
-    return mozilla::pkix::Result::FATAL_ERROR_NO_MEMORY;
+SECStatus SSLGetClientAuthDataHook(void* arg, PRFileDesc* socket,
+                                   CERTDistNames* caNamesDecoded,
+                                   CERTCertificate** pRetCert,
+                                   SECKEYPrivateKey** pRetKey) {
+  MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+          ("[%p] SSLGetClientAuthDataHook", socket));
+
+  if (!arg || !socket || !caNamesDecoded || !pRetCert || !pRetKey) {
+    PR_SetError(PR_INVALID_ARGUMENT_ERROR, 0);
+    return SECFailure;
   }
 
-  for (auto& certBytes : mBuiltChain) {
-    SECItem certDER = {siBuffer, certBytes.data().Elements(),
-                       static_cast<unsigned int>(certBytes.data().Length())};
-    UniqueCERTCertificate cert(CERT_NewTempCertificate(
-        CERT_GetDefaultCertDB(), &certDER, nullptr, false, true));
-    if (!cert) {
-      return mozilla::pkix::Result::ERROR_BAD_DER;
-    }
+  *pRetCert = nullptr;
+  *pRetKey = nullptr;
 
-    if (CERT_AddCertToListTail(builtChain.get(), cert.get()) != SECSuccess) {
-      return mozilla::pkix::Result::FATAL_ERROR_NO_MEMORY;
-    }
-    Unused << cert.release();
+  RefPtr<nsNSSSocketInfo> info(static_cast<nsNSSSocketInfo*>(arg));
+
+  if (info->GetDenyClientCert()) {
+    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+            ("[%p] Not returning client cert due to denyClientCert attribute",
+             socket));
+    return SECSuccess;
   }
 
-  return Success;
+  if (info->GetJoined()) {
+    
+    
+    
+    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+            ("[%p] Not returning client cert due to previous join", socket));
+    return SECSuccess;
+  }
+
+  UniqueCERTCertificate serverCert(SSL_PeerCertificate(socket));
+  if (!serverCert) {
+    PR_SetError(SSL_ERROR_NO_CERTIFICATE, 0);
+    return SECFailure;
+  }
+
+  nsTArray<nsTArray<uint8_t>> caNames(CollectCANames(caNamesDecoded));
+
+  RefPtr<ClientAuthCertificateSelected> continuation(
+      new ClientAuthCertificateSelected(info));
+  
+  
+  
+  
+  
+  
+  if (XRE_IsSocketProcess()) {
+    
+    
+    
+    
+    UniqueCERTCertList certList(FindClientCertificatesWithPrivateKeys());
+    Unused << certList;
+
+    mozilla::ipc::PBackgroundChild* actorChild = mozilla::ipc::BackgroundChild::
+        GetOrCreateForSocketParentBridgeForCurrentThread();
+    if (!actorChild) {
+      PR_SetError(SEC_ERROR_LIBRARY_FAILURE, 0);
+      return SECFailure;
+    }
+    RefPtr<SelectTLSClientAuthCertChild> selectClientAuthCertificate(
+        new SelectTLSClientAuthCertChild(continuation));
+    nsAutoCString hostname(info->GetHostName());
+    nsTArray<uint8_t> serverCertBytes;
+    nsTArray<ByteArray> caNamesBytes;
+    for (const auto& caName : caNames) {
+      caNamesBytes.AppendElement(ByteArray(std::move(caName)));
+    }
+    serverCertBytes.AppendElements(serverCert->derCert.data,
+                                   serverCert->derCert.len);
+    if (!actorChild->SendPSelectTLSClientAuthCertConstructor(
+            selectClientAuthCertificate, hostname, info->GetOriginAttributes(),
+            info->GetPort(), info->GetProviderFlags(),
+            info->GetProviderTlsFlags(), ByteArray(serverCertBytes),
+            caNamesBytes)) {
+      PR_SetError(SEC_ERROR_LIBRARY_FAILURE, 0);
+      return SECFailure;
+    }
+  } else {
+    ClientAuthInfo authInfo(info->GetHostName(), info->GetOriginAttributes(),
+                            info->GetPort(), info->GetProviderFlags(),
+                            info->GetProviderTlsFlags());
+    RefPtr<SelectClientAuthCertificate> selectClientAuthCertificate(
+        new SelectClientAuthCertificate(std::move(authInfo),
+                                        std::move(serverCert),
+                                        std::move(caNames), continuation));
+    if (NS_FAILED(NS_DispatchToMainThread(selectClientAuthCertificate))) {
+      PR_SetError(SEC_ERROR_LIBRARY_FAILURE, 0);
+      return SECFailure;
+    }
+  }
+
+  
+  PR_SetError(PR_WOULD_BLOCK_ERROR, 0);
+  return SECWouldBlock;
 }
 
-void RemoteClientAuthDataRunnable::RunOnTargetThread() {
-  MOZ_ASSERT(NS_IsMainThread());
+using mozilla::ipc::AssertIsOnBackgroundThread;
+using mozilla::ipc::IsOnBackgroundThread;
 
-  const ByteArray serverCertSerialized = CopyableTArray<uint8_t>{
-      mServerCert->derCert.data, mServerCert->derCert.len};
 
-  nsTArray<ByteArray> collectedCANames;
-  for (auto& name : mCollectedCANames) {
-    collectedCANames.AppendElement(std::move(name));
+
+
+class RemoteClientAuthCertificateSelected
+    : public ClientAuthCertificateSelectedBase {
+ public:
+  explicit RemoteClientAuthCertificateSelected(
+      SelectTLSClientAuthCertParent* selectTLSClientAuthCertParent)
+      : mSelectTLSClientAuthCertParent(selectTLSClientAuthCertParent),
+        mEventTarget(NS_GetCurrentThread()) {}
+
+  NS_IMETHOD Run() override;
+
+ private:
+  RefPtr<SelectTLSClientAuthCertParent> mSelectTLSClientAuthCertParent;
+  nsCOMPtr<nsIEventTarget> mEventTarget;
+};
+
+NS_IMETHODIMP
+RemoteClientAuthCertificateSelected::Run() {
+  
+  
+  
+  return mEventTarget->Dispatch(
+      NS_NewRunnableFunction(
+          "psm::RemoteClientAuthCertificateSelected::Run",
+          [parent(mSelectTLSClientAuthCertParent),
+           certBytes(std::move(mSelectedCertBytes)),
+           builtCertChain(std::move(mSelectedCertChainBytes))]() mutable {
+            parent->TLSClientAuthCertSelected(certBytes,
+                                              std::move(builtCertChain));
+          }),
+      NS_DISPATCH_NORMAL);
+}
+
+namespace mozilla::psm {
+
+
+
+
+
+
+bool SelectTLSClientAuthCertParent::Dispatch(
+    const nsCString& aHostName, const OriginAttributes& aOriginAttributes,
+    const int32_t& aPort, const uint32_t& aProviderFlags,
+    const uint32_t& aProviderTlsFlags, const ByteArray& aServerCertBytes,
+    nsTArray<ByteArray>&& aCANames) {
+  RefPtr<ClientAuthCertificateSelectedBase> continuation(
+      new RemoteClientAuthCertificateSelected(this));
+  ClientAuthInfo authInfo(aHostName, aOriginAttributes, aPort, aProviderFlags,
+                          aProviderTlsFlags);
+  SECItem serverCertItem{
+      siBuffer,
+      const_cast<uint8_t*>(aServerCertBytes.data().Elements()),
+      static_cast<unsigned int>(aServerCertBytes.data().Length()),
+  };
+  UniqueCERTCertificate serverCert(CERT_NewTempCertificate(
+      CERT_GetDefaultCertDB(), &serverCertItem, nullptr, false, true));
+  if (!serverCert) {
+    return false;
   }
+  nsTArray<nsTArray<uint8_t>> caNames;
+  for (auto& caName : aCANames) {
+    caNames.AppendElement(std::move(caName.data()));
+  }
+  RefPtr<SelectClientAuthCertificate> selectClientAuthCertificate(
+      new SelectClientAuthCertificate(std::move(authInfo),
+                                      std::move(serverCert), std::move(caNames),
+                                      continuation));
+  return NS_SUCCEEDED(NS_DispatchToMainThread(selectClientAuthCertificate));
+}
 
-  bool succeeded = false;
-  ByteArray cert;
-  mozilla::net::SocketProcessChild::GetSingleton()->SendGetTLSClientCert(
-      nsCString(mInfo.HostName()), mInfo.OriginAttributesRef(), mInfo.Port(),
-      mInfo.ProviderFlags(), mInfo.ProviderTlsFlags(), serverCertSerialized,
-      collectedCANames, &succeeded, &cert, &mBuiltChain);
+void SelectTLSClientAuthCertParent::TLSClientAuthCertSelected(
+    const nsTArray<uint8_t>& aSelectedCertBytes,
+    nsTArray<nsTArray<uint8_t>>&& aSelectedCertChainBytes) {
+  AssertIsOnBackgroundThread();
 
-  if (!succeeded) {
+  if (!CanSend()) {
     return;
   }
 
-  SECItem certItem = {siBuffer, const_cast<uint8_t*>(cert.data().Elements()),
-                      static_cast<unsigned int>(cert.data().Length())};
-  mSelectedCertificate.reset(CERT_NewTempCertificate(
-      CERT_GetDefaultCertDB(), &certItem, nullptr, false, true));
+  nsTArray<ByteArray> selectedCertChainBytes;
+  for (auto& certBytes : aSelectedCertChainBytes) {
+    selectedCertChainBytes.AppendElement(ByteArray(certBytes));
+  }
+
+  Unused << SendTLSClientAuthCertSelected(aSelectedCertBytes,
+                                          selectedCertChainBytes);
+  Unused << Send__delete__(this);
 }
+
+void SelectTLSClientAuthCertParent::ActorDestroy(
+    mozilla::ipc::IProtocol::ActorDestroyReason aWhy) {}
+
+SelectTLSClientAuthCertChild::SelectTLSClientAuthCertChild(
+    ClientAuthCertificateSelected* continuation)
+    : mContinuation(continuation) {}
+
+
+
+
+ipc::IPCResult SelectTLSClientAuthCertChild::RecvTLSClientAuthCertSelected(
+    ByteArray&& aSelectedCertBytes,
+    nsTArray<ByteArray>&& aSelectedCertChainBytes) {
+  nsTArray<uint8_t> selectedCertBytes(std::move(aSelectedCertBytes.data()));
+  nsTArray<nsTArray<uint8_t>> selectedCertChainBytes;
+  for (auto& certBytes : aSelectedCertChainBytes) {
+    selectedCertChainBytes.AppendElement(std::move(certBytes.data()));
+  }
+  mContinuation->SetSelectedClientAuthData(std::move(selectedCertBytes),
+                                           std::move(selectedCertChainBytes));
+
+  nsCOMPtr<nsIEventTarget> socketThread =
+      do_GetService(NS_SOCKETTRANSPORTSERVICE_CONTRACTID);
+  if (NS_WARN_IF(!socketThread)) {
+    return IPC_OK();
+  }
+  nsresult rv = socketThread->Dispatch(mContinuation, NS_DISPATCH_NORMAL);
+  Unused << NS_WARN_IF(NS_FAILED(rv));
+
+  return IPC_OK();
+}
+
+}  
