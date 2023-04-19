@@ -86,6 +86,30 @@ INSTANTIATE_TEST_SUITE_P(
                             std::vector<double>{1.5, 2.5},
                             15))));
 
+class AlignmentAdjusterTestTwoLayers : public AlignmentAdjusterTest {
+ protected:
+  const int kMaxLayers = 2;
+};
+
+INSTANTIATE_TEST_SUITE_P(
+    ScaleFactorsAndAlignmentWithMaxLayers,
+    AlignmentAdjusterTestTwoLayers,
+    ::testing::Combine(
+        ::testing::Values(2),  
+        ::testing::Values(
+            std::make_tuple(std::vector<double>{-1.0},  
+                            std::vector<double>{-1.0},  
+                            2),  
+            std::make_tuple(std::vector<double>{-1.0, -1.0},
+                            std::vector<double>{-1.0, -1.0},
+                            4),  
+            std::make_tuple(std::vector<double>{-1.0, -1.0, -1.0},
+                            std::vector<double>{-1.0, -1.0, -1.0},
+                            4),  
+            std::make_tuple(std::vector<double>{1.0, 2.0, 4.0},
+                            std::vector<double>{1.0, 2.0, 4.0},
+                            8))));
+
 TEST_P(AlignmentAdjusterTest, AlignmentAppliedToAllLayers) {
   const bool kApplyAlignmentToAllLayers = true;
 
@@ -100,8 +124,8 @@ TEST_P(AlignmentAdjusterTest, AlignmentAppliedToAllLayers) {
   
   VideoEncoder::EncoderInfo info =
       GetEncoderInfo(kRequestedAlignment, kApplyAlignmentToAllLayers);
-  int alignment =
-      AlignmentAdjuster::GetAlignmentAndMaybeAdjustScaleFactors(info, &config);
+  int alignment = AlignmentAdjuster::GetAlignmentAndMaybeAdjustScaleFactors(
+      info, &config, absl::nullopt);
   EXPECT_EQ(alignment, kAdjustedAlignment);
 
   
@@ -125,14 +149,39 @@ TEST_P(AlignmentAdjusterTest, AlignmentNotAppliedToAllLayers) {
   
   VideoEncoder::EncoderInfo info =
       GetEncoderInfo(kRequestedAlignment, kApplyAlignmentToAllLayers);
-  int alignment =
-      AlignmentAdjuster::GetAlignmentAndMaybeAdjustScaleFactors(info, &config);
+  int alignment = AlignmentAdjuster::GetAlignmentAndMaybeAdjustScaleFactors(
+      info, &config, absl::nullopt);
   EXPECT_EQ(alignment, kRequestedAlignment);
 
   
   for (int i = 0; i < num_streams; ++i) {
     EXPECT_EQ(config.simulcast_layers[i].scale_resolution_down_by,
               kScaleFactors[i]);
+  }
+}
+
+TEST_P(AlignmentAdjusterTestTwoLayers, AlignmentAppliedToAllLayers) {
+  const bool kApplyAlignmentToAllLayers = true;
+
+  
+  const int num_streams = kScaleFactors.size();
+  VideoEncoderConfig config;
+  test::FillEncoderConfiguration(kVideoCodecVP8, num_streams, &config);
+  for (int i = 0; i < num_streams; ++i) {
+    config.simulcast_layers[i].scale_resolution_down_by = kScaleFactors[i];
+  }
+
+  
+  VideoEncoder::EncoderInfo info =
+      GetEncoderInfo(kRequestedAlignment, kApplyAlignmentToAllLayers);
+  int alignment = AlignmentAdjuster::GetAlignmentAndMaybeAdjustScaleFactors(
+      info, &config, absl::optional<size_t>(kMaxLayers));
+  EXPECT_EQ(alignment, kAdjustedAlignment);
+
+  
+  for (int i = 0; i < num_streams; ++i) {
+    EXPECT_EQ(config.simulcast_layers[i].scale_resolution_down_by,
+              kAdjustedScaleFactors[i]);
   }
 }
 

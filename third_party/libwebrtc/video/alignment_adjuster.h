@@ -28,9 +28,13 @@ class AlignmentAdjuster {
   
   
   
+
+  
+  
   static int GetAlignmentAndMaybeAdjustScaleFactors(
       const VideoEncoder::EncoderInfo& info,
-      VideoEncoderConfig* config);
+      VideoEncoderConfig* config,
+      absl::optional<size_t> max_layers);
 };
 
 }  
