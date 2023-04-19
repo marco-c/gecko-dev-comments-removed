@@ -149,6 +149,21 @@ struct TimingParams {
     return mEndTime;
   }
 
+  StickyTimeDuration CalcBeforeActiveBoundary() const {
+    static constexpr StickyTimeDuration zeroDuration;
+    
+    return std::max(std::min(StickyTimeDuration(mDelay), mEndTime),
+                    zeroDuration);
+  }
+
+  StickyTimeDuration CalcActiveAfterBoundary() const {
+    static constexpr StickyTimeDuration zeroDuration;
+    
+    return std::max(
+        std::min(StickyTimeDuration(mDelay + mActiveDuration), mEndTime),
+        zeroDuration);
+  }
+
   bool operator==(const TimingParams& aOther) const;
   bool operator!=(const TimingParams& aOther) const {
     return !(*this == aOther);
