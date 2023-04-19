@@ -1,55 +1,53 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-var EXPORTED_SYMBOLS = ["SyncedBookmarksMirror"];
+/**
+ * This file implements a mirror and two-way merger for synced bookmarks. The
+ * mirror matches the complete tree stored on the Sync server, and stages new
+ * bookmarks changed on the server since the last sync. The merger walks the
+ * local tree in Places and the mirrored remote tree, produces a new merged
+ * tree, then updates the local tree to reflect the merged tree.
+ *
+ * Let's start with an overview of the different classes, and how they fit
+ * together.
+ *
+ * - `SyncedBookmarksMirror` sets up the database, validates and upserts new
+ *   incoming records, attaches to Places, and applies the changed records.
+ *   During application, we fetch the local and remote bookmark trees, merge
+ *   them, and update Places to match. Merging and application happen in a
+ *   single transaction, so applying the merged tree won't collide with local
+ *   changes. A failure at this point aborts the merge and leaves Places
+ *   unchanged.
+ *
+ * - A `BookmarkTree` is a fully rooted tree that also notes deletions. A
+ *   `BookmarkNode` represents a local item in Places, or a remote item in the
+ *   mirror.
+ *
+ * - A `MergedBookmarkNode` holds a local node, a remote node, and a
+ *   `MergeState` that indicates which node to prefer when updating Places and
+ *   the server to match the merged tree.
+ *
+ * - `BookmarkObserverRecorder` records all changes made to Places during the
+ *   merge, then dispatches `nsINavBookmarkObserver` notifications. Places uses
+ *   these notifications to update the UI and internal caches. We can't dispatch
+ *   during the merge because observers won't see the changes until the merge
+ *   transaction commits and the database is consistent again.
+ *
+ * - After application, we flag all applied incoming items as merged, create
+ *   Sync records for the locally new and updated items in Places, and upload
+ *   the records to the server. At this point, all outgoing items are flagged as
+ *   changed in Places, so the next sync can resume cleanly if the upload is
+ *   interrupted or fails.
+ *
+ * - Once upload succeeds, we update the mirror with the uploaded records, so
+ *   that the mirror matches the server again. An interruption or error here
+ *   will leave the uploaded items flagged as changed in Places, so we'll merge
+ *   them again on the next sync. This is redundant work, but shouldn't cause
+ *   issues.
+ */
 
 const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
@@ -73,21 +71,21 @@ const SyncedBookmarksMerger = Components.Constructor(
   "mozISyncedBookmarksMerger"
 );
 
-
-
+// These can be removed once they're exposed in a central location (bug
+// 1375896).
 const DB_URL_LENGTH_MAX = 65536;
 const DB_TITLE_LENGTH_MAX = 4096;
 
-
-
+// The current mirror database schema version. Bump for migrations, then add
+// migration code to `migrateMirrorSchema`.
 const MIRROR_SCHEMA_VERSION = 8;
 
 const DEFAULT_MAX_FRECENCIES_TO_RECALCULATE = 400;
 
-
+// Use a shared jankYielder in these functions
 XPCOMUtils.defineLazyGetter(lazy, "yieldState", () => lazy.Async.yieldState());
 
-
+/** Adapts a `Log.jsm` logger to a `mozIServicesLogSink`. */
 class LogAdapter {
   constructor(log) {
     this.log = log;
@@ -127,26 +125,26 @@ class LogAdapter {
   }
 }
 
-
-
-
-
+/**
+ * A helper to track the progress of a merge for telemetry and shutdown hang
+ * reporting.
+ */
 class ProgressTracker {
   constructor(recordStepTelemetry) {
     this.recordStepTelemetry = recordStepTelemetry;
     this.steps = [];
   }
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Records a merge step, updating the shutdown blocker state.
+   *
+   * @param {String} name A step name from `ProgressTracker.STEPS`. This is
+   *        included in shutdown hang crash reports, along with the timestamp
+   *        the step was recorded.
+   * @param {Number} [took] The time taken, in milliseconds.
+   * @param {Array} [counts] An array of additional counts to report in the
+   *        shutdown blocker state.
+   */
   step(name, took = -1, counts = null) {
     let info = { step: name, at: Date.now() };
     if (took > -1) {
@@ -158,50 +156,50 @@ class ProgressTracker {
     this.steps.push(info);
   }
 
-  
-
-
-
-
-
-
-
+  /**
+   * Records a merge step with timings and counts for telemetry.
+   *
+   * @param {String} name The step name.
+   * @param {Number} took The time taken, in milliseconds.
+   * @param {Array} [counts] An array of additional `{ name, count }` tuples to
+   *        record in telemetry for this step.
+   */
   stepWithTelemetry(name, took, counts = null) {
     this.step(name, took, counts);
     this.recordStepTelemetry(name, took, counts);
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Records a merge step with the time taken and item count.
+   *
+   * @param {String} name The step name.
+   * @param {Number} took The time taken, in milliseconds.
+   * @param {Number} count The number of items handled in this step.
+   */
   stepWithItemCount(name, took, count) {
     this.stepWithTelemetry(name, took, [{ name: "items", count }]);
   }
 
-  
-
-
+  /**
+   * Clears all recorded merge steps.
+   */
   reset() {
     this.steps = [];
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Returns the shutdown blocker state. This is included in shutdown hang
+   * crash reports, in the `AsyncShutdownTimeout` annotation.
+   *
+   * @see    `fetchState` in `AsyncShutdown` for more details.
+   * @return {Object} A stringifiable object with the recorded steps.
+   */
   fetchState() {
     return { steps: this.steps };
   }
 }
 
-
+/** Merge steps for which we record progress. */
 ProgressTracker.STEPS = {
   FETCH_LOCAL_TREE: "fetchLocalTree",
   FETCH_REMOTE_TREE: "fetchRemoteTree",
@@ -212,42 +210,42 @@ ProgressTracker.STEPS = {
   FINALIZE: "finalize",
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class SyncedBookmarksMirror {
+/**
+ * A mirror maintains a copy of the complete tree as stored on the Sync server.
+ * It is persistent.
+ *
+ * The mirror schema is a hybrid of how Sync and Places represent bookmarks.
+ * The `items` table contains item attributes (title, kind, URL, etc.), while
+ * the `structure` table stores parent-child relationships and position.
+ * This is similar to how iOS encodes "value" and "structure" state,
+ * though we handle these differently when merging. See `BookmarkMerger` for
+ * details.
+ *
+ * There's no guarantee that the remote state is consistent. We might be missing
+ * parents or children, or a bookmark and its parent might disagree about where
+ * it belongs. This means we need a strategy to handle missing parents and
+ * children.
+ *
+ * We treat the `children` of the last parent we see as canonical, and ignore
+ * the child's `parentid` entirely. We also ignore missing children, and
+ * temporarily reparent bookmarks with missing parents to "unfiled". When we
+ * eventually see the missing items, either during a later sync or as part of
+ * repair, we'll fill in the mirror's gaps and fix up the local tree.
+ *
+ * During merging, we won't intentionally try to fix inconsistencies on the
+ * server, and opt to build as complete a tree as we can from the remote state,
+ * even if we diverge from what's in the mirror. See bug 1433512 for context.
+ *
+ * If a sync is interrupted, we resume downloading from the server collection
+ * last modified time, or the server last modified time of the most recent
+ * record if newer. New incoming records always replace existing records in the
+ * mirror.
+ *
+ * We delete the mirror database on client reset, including when the sync ID
+ * changes on the server, and when the user is node reassigned, disables the
+ * bookmarks engine, or signs out.
+ */
+export class SyncedBookmarksMirror {
   constructor(
     db,
     wasCorrupt = false,
@@ -267,8 +265,8 @@ class SyncedBookmarksMirror {
     );
     this.merger.logger = new LogAdapter(lazy.MirrorLog);
 
-    
-    
+    // Automatically close the database connection on shutdown. `progress`
+    // tracks state for shutdown hang reporting.
     this.progress = new ProgressTracker(recordStepTelemetry);
     this.finalizeController = new AbortController();
     this.finalizeAt = finalizeAt;
@@ -280,32 +278,32 @@ class SyncedBookmarksMirror {
     );
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Sets up the mirror database connection and upgrades the mirror to the
+   * newest schema version. Automatically recreates the mirror if it's corrupt;
+   * throws on failure.
+   *
+   * @param  {String} options.path
+   *         The path to the mirror database file, either absolute or relative
+   *         to the profile path.
+   * @param  {Function} options.recordStepTelemetry
+   *         A function with the signature `(name: String, took: Number,
+   *         counts: Array?)`, where `name` is the name of the merge step,
+   *         `took` is the time taken in milliseconds, and `counts` is an
+   *         array of named counts (`{ name, count }` tuples) with additional
+   *         counts for the step to record in the telemetry ping.
+   * @param  {Function} options.recordValidationTelemetry
+   *         A function with the signature `(took: Number, checked: Number,
+   *         problems: Array)`, where `took` is the time taken to run
+   *         validation in milliseconds, `checked` is the number of items
+   *         checked, and `problems` is an array of named problem counts.
+   * @param  {AsyncShutdown.Barrier} [options.finalizeAt]
+   *         A shutdown phase, barrier, or barrier client that should
+   *         automatically finalize the mirror when triggered. Exposed for
+   *         testing.
+   * @return {SyncedBookmarksMirror}
+   *         A mirror ready for use.
+   */
   static async open(options) {
     let db = await lazy.PlacesUtils.promiseUnsafeWritableDBConnection();
     if (!db) {
@@ -341,21 +339,21 @@ class SyncedBookmarksMirror {
     return new SyncedBookmarksMirror(db, wasCorrupt, options);
   }
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Returns the newer of the bookmarks collection last modified time, or the
+   * server modified time of the newest record. The bookmarks engine uses this
+   * timestamp as the "high water mark" for all downloaded records. Each sync
+   * downloads and stores records that are strictly newer than this time.
+   *
+   * @return {Number}
+   *         The high water mark time, in seconds.
+   */
   async getCollectionHighWaterMark() {
-    
-    
-    
-    
-    
+    // The first case, where we have records with server modified times newer
+    // than the collection last modified time, occurs when a sync is interrupted
+    // before we call `setCollectionLastModified`. We subtract one second, the
+    // maximum time precision guaranteed by the server, so that we don't miss
+    // other records with the same time as the newest one we downloaded.
     let rows = await this.db.executeCached(
       `
       SELECT MAX(
@@ -369,13 +367,13 @@ class SyncedBookmarksMirror {
     return highWaterMark / 1000;
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Updates the bookmarks collection last modified time. Note that this may
+   * be newer than the modified time of the most recent record.
+   *
+   * @param {Number|String} lastModifiedSeconds
+   *        The collection last modified time, in seconds.
+   */
   async setCollectionLastModified(lastModifiedSeconds) {
     let lastModified = Math.floor(lastModifiedSeconds * 1000);
     if (!Number.isInteger(lastModified)) {
@@ -396,13 +394,13 @@ class SyncedBookmarksMirror {
     );
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Returns the bookmarks collection sync ID. This corresponds to
+   * `PlacesSyncUtils.bookmarks.getSyncId`.
+   *
+   * @return {String}
+   *         The sync ID, or `""` if one isn't set.
+   */
   async getSyncId() {
     let rows = await this.db.executeCached(
       `
@@ -412,20 +410,20 @@ class SyncedBookmarksMirror {
     return rows.length ? rows[0].getResultByName("value") : "";
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Ensures that the sync ID in the mirror is up-to-date with the server and
+   * Places, and discards the mirror on mismatch.
+   *
+   * The bookmarks engine store the same sync ID in Places and the mirror to
+   * "tie" the two together. This allows Sync to do the right thing if the
+   * database files are copied between profiles connected to different accounts.
+   *
+   * See `PlacesSyncUtils.bookmarks.ensureCurrentSyncId` for an explanation of
+   * how Places handles sync ID mismatches.
+   *
+   * @param {String} newSyncId
+   *        The server's sync ID.
+   */
   async ensureCurrentSyncId(newSyncId) {
     if (!newSyncId || typeof newSyncId != "string") {
       throw new TypeError("Invalid new bookmarks sync ID");
@@ -455,22 +453,22 @@ class SyncedBookmarksMirror {
     );
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Stores incoming or uploaded Sync records in the mirror. Rejects if any
+   * records are invalid.
+   *
+   * @param {PlacesItem[]} records
+   *        Sync records to store in the mirror.
+   * @param {Boolean} [options.needsMerge]
+   *        Indicates if the records were changed remotely since the last sync,
+   *        and should be merged into the local tree. This option is set to
+   *        `true` for incoming records, and `false` for successfully uploaded
+   *        records. Tests can also pass `false` to set up an existing mirror.
+   * @param {AbortSignal} [options.signal]
+   *        An abort signal that can be used to interrupt the operation. If
+   *        omitted, storing incoming items can still be interrupted when the
+   *        mirror is finalized.
+   */
   async store(records, { needsMerge = true, signal = null } = {}) {
     let options = {
       needsMerge,
@@ -486,7 +484,7 @@ class SyncedBookmarksMirror {
           }
           let guid = lazy.PlacesSyncUtils.bookmarks.recordIdToGuid(record.id);
           if (guid == lazy.PlacesUtils.bookmarks.rootGuid) {
-            
+            // The engine should hard DELETE Places roots from the server.
             throw new TypeError("Can't store Places root");
           }
           if (lazy.MirrorLog.level <= lazy.Log.Level.Trace) {
@@ -527,42 +525,42 @@ class SyncedBookmarksMirror {
     );
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Builds a complete merged tree from the local and remote trees, resolves
+   * value and structure conflicts, dedupes local items, applies the merged
+   * tree back to Places, and notifies observers about the changes.
+   *
+   * Merging and application happen in a transaction, meaning code that uses the
+   * main Places connection, including the UI, will fail to write to the
+   * database until the transaction commits. Asynchronous consumers will retry
+   * on `SQLITE_BUSY`; synchronous consumers will fail after waiting for 100ms.
+   * See bug 1305563, comment 122 for details.
+   *
+   * @param  {Number} [options.localTimeSeconds]
+   *         The current local time, in seconds.
+   * @param  {Number} [options.remoteTimeSeconds]
+   *         The current server time, in seconds.
+   * @param  {Number} [options.maxFrecenciesToRecalculate]
+   *         The maximum number of bookmark URL frecencies to recalculate after
+   *         this merge. Frecency calculation blocks other Places writes, so we
+   *         limit the number of URLs we process at once. We'll process either
+   *         the next set of URLs after the next merge, or all remaining URLs
+   *         when Places automatically fixes invalid frecencies on idle;
+   *         whichever comes first.
+   * @param  {Boolean} [options.notifyInStableOrder]
+   *         If `true`, fire observer notifications for items in the same folder
+   *         in a stable order. This is disabled by default, to avoid the cost
+   *         of sorting the notifications, but enabled in some tests to simplify
+   *         their checks.
+   * @param  {AbortSignal} [options.signal]
+   *         An abort signal that can be used to interrupt a merge when its
+   *         associated `AbortController` is aborted. If omitted, the merge can
+   *         still be interrupted when the mirror is finalized.
+   * @return {Object.<String, BookmarkChangeRecord>}
+   *         A changeset containing locally changed and reconciled records to
+   *         upload to the server, and to store in the mirror once upload
+   *         succeeds.
+   */
   async apply({
     localTimeSeconds,
     remoteTimeSeconds,
@@ -570,10 +568,10 @@ class SyncedBookmarksMirror {
     notifyInStableOrder,
     signal = null,
   } = {}) {
-    
-    
-    
-    
+    // We intentionally don't use `executeBeforeShutdown` in this function,
+    // since merging can take a while for large trees, and we don't want to
+    // block shutdown. Since all new items are in the mirror, we'll just try
+    // to merge again on the next sync.
 
     let finalizeOrInterruptSignal = anyAborted(
       this.finalizeController.signal,
@@ -613,8 +611,8 @@ class SyncedBookmarksMirror {
       return {};
     }
 
-    
-    
+    // At this point, the database is consistent, so we can notify observers and
+    // inflate records for outgoing items.
 
     let observersToNotify = new BookmarkObserverRecorder(this.db, {
       maxFrecenciesToRecalculate,
@@ -626,15 +624,15 @@ class SyncedBookmarksMirror {
       "Notifying Places observers",
       async () => {
         try {
-          
-          
-          
-          
+          // Note that we don't use a transaction when fetching info for
+          // observers, so it's possible we might notify with stale info if the
+          // main connection changes Places between the time we finish merging,
+          // and the time we notify observers.
           await observersToNotify.notifyAll();
         } catch (ex) {
-          
-          
-          
+          // Places relies on observer notifications to update internal caches.
+          // If notifying observers failed, these caches may be inconsistent,
+          // so we invalidate them just in case.
           lazy.PlacesUtils.invalidateCachedGuids();
           await lazy.PlacesUtils.keywords.invalidateCachedKeywords();
           lazy.MirrorLog.warn("Error notifying Places observers", ex);
@@ -688,7 +686,7 @@ class SyncedBookmarksMirror {
           "mozISyncedBookmarksMirrorProgressListener",
           "mozISyncedBookmarksMirrorCallback",
         ]),
-        
+        // `mozISyncedBookmarksMirrorProgressListener` methods.
         onFetchLocalTree: (took, itemCount, deleteCount, problemsBag) => {
           let counts = [
             {
@@ -705,7 +703,7 @@ class SyncedBookmarksMirror {
             took,
             counts
           );
-          
+          // We don't record local tree problems in validation telemetry.
         },
         onFetchRemoteTree: (took, itemCount, deleteCount, problemsBag) => {
           let counts = [
@@ -723,7 +721,7 @@ class SyncedBookmarksMirror {
             took,
             counts
           );
-          
+          // Record validation telemetry for problems in the remote tree.
           let problems = bagToNamedCounts(problemsBag, [
             "orphans",
             "misparentedRoots",
@@ -753,7 +751,7 @@ class SyncedBookmarksMirror {
         onApply: took => {
           this.progress.stepWithTelemetry(ProgressTracker.STEPS.APPLY, took);
         },
-        
+        // `mozISyncedBookmarksMirrorCallback` methods.
         handleSuccess(result) {
           signal.removeEventListener("abort", onAbort);
           resolve(result);
@@ -783,23 +781,23 @@ class SyncedBookmarksMirror {
     });
   }
 
-  
-
-
-
+  /**
+   * Discards the mirror contents. This is called when the user is node
+   * reassigned, disables the bookmarks engine, or signs out.
+   */
   async reset() {
     await this.db.executeBeforeShutdown("SyncedBookmarksMirror: reset", db =>
       db.executeTransaction(() => resetMirror(db))
     );
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Fetches the GUIDs of all items in the remote tree that need to be merged
+   * into the local tree.
+   *
+   * @return {String[]}
+   *         Remotely changed GUIDs that need to be merged into Places.
+   */
   async fetchUnmergedGuids() {
     let rows = await this.db.execute(`
       SELECT guid FROM items
@@ -881,40 +879,40 @@ class SyncedBookmarksMirror {
 
     let url = validateURL(record.bmkUri);
     if (url) {
-      
-      
+      // The query has a valid URL. Determine if we need to rewrite and reupload
+      // it.
       let params = new URLSearchParams(url.href.slice(url.protocol.length));
       let type = +params.get("type");
       if (type == Ci.nsINavHistoryQueryOptions.RESULTS_AS_TAG_CONTENTS) {
-        
-        
-        
-        
+        // Legacy tag queries with this type use a `place:` URL with a `folder`
+        // param that points to the tag folder ID. Rewrite the query to directly
+        // reference the tag stored in its `folderName`, then flag the rewritten
+        // query for reupload.
         let tagFolderName = validateTag(record.folderName);
         if (tagFolderName) {
           try {
             url.href = `place:tag=${tagFolderName}`;
             validity = Ci.mozISyncedBookmarksMerger.VALIDITY_REUPLOAD;
           } catch (ex) {
-            
-            
-            
-            
+            // The tag folder name isn't URL-encoded (bug 1449939), so we might
+            // produce an invalid URL. However, invalid URLs are already likely
+            // to cause other issues, and it's better to replace or delete the
+            // query than break syncing or the Firefox UI.
             url = null;
           }
         } else {
-          
-          
+          // The tag folder name is invalid, so replace or delete the remote
+          // copy.
           url = null;
         }
       } else {
         let folder = params.get("folder");
         if (folder && !params.has("excludeItems")) {
-          
-          
-          
-          
-          
+          // We don't sync enough information to rewrite other queries with a
+          // `folder` param (bug 1377175). Referencing a nonexistent folder ID
+          // causes the query to return all items in the database, so we add
+          // `excludeItems=1` to stop it from doing so. We also flag the
+          // rewritten query for reupload.
           try {
             url.href = `${url.href}&excludeItems=1`;
             validity = Ci.mozISyncedBookmarksMerger.VALIDITY_REUPLOAD;
@@ -924,16 +922,16 @@ class SyncedBookmarksMirror {
         }
       }
 
-      
-      
+      // Other queries are implicitly valid, and don't need to be reuploaded
+      // or replaced.
     }
 
     if (url) {
       await this.maybeStoreRemoteURL(url);
     } else {
-      
-      
-      
+      // If the query doesn't have a valid URL, we must replace the remote copy
+      // with either a valid local copy, or a tombstone if the query doesn't
+      // exist locally.
       validity = Ci.mozISyncedBookmarksMerger.VALIDITY_REPLACE;
     }
 
@@ -1008,11 +1006,11 @@ class SyncedBookmarksMirror {
             "Interrupted while storing children for incoming folder"
           );
         }
-        
-        
-        
-        
-        
+        // Builds a fragment like `(?2, ?1, 0), (?3, ?1, 1), ...`, where ?1 is
+        // the folder's GUID, [?2, ?3] are the first and second child GUIDs
+        // (SQLite binding parameters index from 1), and [0, 1] are the
+        // positions. This lets us store the folder's children using as few
+        // statements as possible.
         let valuesFragment = Array.from(
           { length: chunk.length },
           (_, index) => `(?${index + 2}, ?1, ${offset + index})`
@@ -1113,18 +1111,18 @@ class SyncedBookmarksMirror {
     );
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Inflates Sync records for all staged outgoing items.
+   *
+   * @param  {AbortSignal} signal
+   *         Stops fetching records when the associated `AbortController`
+   *         is aborted.
+   * @return {Object}
+   *         A `{ changeRecords, count }` tuple, where `changeRecords` is a
+   *         changeset containing Sync record cleartexts for outgoing items and
+   *         tombstones, keyed by their Sync record IDs, and `count` is the
+   *         number of records.
+   */
   async fetchLocalChangeRecords(signal) {
     let changeRecords = {};
     let childRecordIdsByLocalParentId = new Map();
@@ -1139,8 +1137,8 @@ class SyncedBookmarksMirror {
         if (signal.aborted) {
           cancel();
         } else {
-          
-          
+          // `Sqlite.jsm` callbacks swallow exceptions (bug 1387775), so we
+          // accumulate all rows in an array, and process them after.
           childGuidRows.push(row);
         }
       }
@@ -1231,7 +1229,7 @@ class SyncedBookmarksMirror {
         let guid = row.getResultByName("guid");
         let recordId = lazy.PlacesSyncUtils.bookmarks.guidToRecordId(guid);
 
-        
+        // Tombstones don't carry additional properties.
         let isDeleted = row.getResultByName("isDeleted");
         if (isDeleted) {
           changeRecords[recordId] = new BookmarkChangeRecord(
@@ -1257,23 +1255,23 @@ class SyncedBookmarksMirror {
               let queryCleartext = {
                 id: recordId,
                 type: "query",
-                
-                
-                
-                
+                // We ignore `parentid` and use the parent's `children`, but older
+                // Desktops and Android use `parentid` as the canonical parent.
+                // iOS is stricter and requires both `children` and `parentid` to
+                // match.
                 parentid: parentRecordId,
-                
-                
-                
-                
-                
+                // Older Desktops use `hasDupe` (along with `parentName` for
+                // deduping), if hasDupe is true, then they won't attempt deduping
+                // (since they believe that a duplicate for this record should
+                // exist). We set it to true to prevent them from applying their
+                // deduping logic.
                 hasDupe: true,
                 parentName: row.getResultByName("parentTitle"),
-                
+                // Omit `dateAdded` from the record if it's not set locally.
                 dateAdded: row.getResultByName("dateAdded") || undefined,
                 bmkUri: row.getResultByName("url"),
                 title: row.getResultByName("title"),
-                
+                // folderName should never be an empty string or null
                 folderName: row.getResultByName("tagFolderName") || undefined,
               };
               changeRecords[recordId] = new BookmarkChangeRecord(
@@ -1337,7 +1335,7 @@ class SyncedBookmarksMirror {
               hasDupe: true,
               parentName: row.getResultByName("parentTitle"),
               dateAdded: row.getResultByName("dateAdded") || undefined,
-              
+              // Older Desktops use `pos` for deduping.
               pos: row.getResultByName("position"),
             };
             changeRecords[recordId] = new BookmarkChangeRecord(
@@ -1357,16 +1355,16 @@ class SyncedBookmarksMirror {
     return { changeRecords, count: itemRows.length };
   }
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Closes the mirror database connection. This is called automatically on
+   * shutdown, but may also be called explicitly when the mirror is no longer
+   * needed.
+   *
+   * @param {Boolean} [options.alsoCleanup]
+   *                  If specified, drop all temp tables, views, and triggers,
+   *                  and detach from the mirror database before closing the
+   *                  connection. Defaults to `true`.
+   */
   finalize({ alsoCleanup = true } = {}) {
     if (!this.finalizePromise) {
       this.finalizePromise = (async () => {
@@ -1374,10 +1372,10 @@ class SyncedBookmarksMirror {
         this.finalizeController.abort();
         this.merger.reset();
         if (alsoCleanup) {
-          
-          
-          
-          
+          // If the mirror is finalized explicitly, clean up temp entities and
+          // detach from the mirror database. We can skip this for automatic
+          // finalization, since the Places connection is already shutting
+          // down.
           await cleanupMirrorDatabase(this.db);
         }
         await this.db.execute(`PRAGMA mirror.optimize(0x02)`);
@@ -1389,15 +1387,15 @@ class SyncedBookmarksMirror {
   }
 }
 
-
+/** Key names for the key-value `meta` table. */
 SyncedBookmarksMirror.META_KEY = {
   LAST_MODIFIED: "collection/lastModified",
   SYNC_ID: "collection/syncId",
 };
 
-
-
-
+/**
+ * An error thrown when the merge was interrupted.
+ */
 class InterruptedError extends Error {
   constructor(message) {
     super(message);
@@ -1406,9 +1404,9 @@ class InterruptedError extends Error {
 }
 SyncedBookmarksMirror.InterruptedError = InterruptedError;
 
-
-
-
+/**
+ * An error thrown when the merge failed for an unexpected reason.
+ */
 class MergeError extends Error {
   constructor(message) {
     super(message);
@@ -1417,10 +1415,10 @@ class MergeError extends Error {
 }
 SyncedBookmarksMirror.MergeError = MergeError;
 
-
-
-
-
+/**
+ * An error thrown when the merge can't proceed because the local tree
+ * changed during the merge.
+ */
 class MergeConflictError extends Error {
   constructor(message) {
     super(message);
@@ -1429,10 +1427,10 @@ class MergeConflictError extends Error {
 }
 SyncedBookmarksMirror.MergeConflictError = MergeConflictError;
 
-
-
-
-
+/**
+ * An error thrown when the mirror database is corrupt, or can't be migrated to
+ * the latest schema version, and must be replaced.
+ */
 class DatabaseCorruptError extends Error {
   constructor(message) {
     super(message);
@@ -1440,8 +1438,8 @@ class DatabaseCorruptError extends Error {
   }
 }
 
-
-
+// Indicates if the mirror should be replaced because the database file is
+// corrupt.
 function isDatabaseCorrupt(error) {
   if (error instanceof DatabaseCorruptError) {
     return true;
@@ -1457,16 +1455,16 @@ function isDatabaseCorrupt(error) {
   return false;
 }
 
-
-
-
-
-
-
-
-
-
-
+/**
+ * Attaches a cloned Places database connection to the mirror database,
+ * migrates the mirror schema to the latest version, and creates temporary
+ * tables, views, and triggers.
+ *
+ * @param {Sqlite.OpenedConnection} db
+ *        The Places database connection.
+ * @param {String} path
+ *        The full path to the mirror database file.
+ */
 async function attachAndInitMirrorDatabase(db, path) {
   await db.execute(`ATTACH :path AS mirror`, { path });
   try {
@@ -1479,9 +1477,9 @@ async function attachAndInitMirrorDatabase(db, path) {
       } else {
         await initializeMirrorDatabase(db);
       }
-      
-      
-      
+      // Downgrading from a newer profile to an older profile rolls back the
+      // schema version, but leaves all new columns in place. We'll run the
+      // migration logic again on the next upgrade.
       await db.setSchemaVersion(MIRROR_SCHEMA_VERSION, "mirror");
       await initializeTempMirrorEntities(db);
     });
@@ -1491,17 +1489,17 @@ async function attachAndInitMirrorDatabase(db, path) {
   }
 }
 
-
-
-
-
-
-
-
-
+/**
+ * Migrates the mirror database schema to the latest version.
+ *
+ * @param {Sqlite.OpenedConnection} db
+ *        The mirror database connection.
+ * @param {Number} currentSchemaVersion
+ *        The current mirror database schema version.
+ */
 async function migrateMirrorSchema(db, currentSchemaVersion) {
   if (currentSchemaVersion < 5) {
-    
+    // The mirror was pref'd off by default for schema versions 1-4.
     throw new DatabaseCorruptError(
       `Can't migrate from schema version ${currentSchemaVersion}; too old`
     );
@@ -1517,9 +1515,9 @@ async function migrateMirrorSchema(db, currentSchemaVersion) {
                       structure(parentGuid, position)`);
   }
   if (currentSchemaVersion < 8) {
-    
-    
-    
+    // Not really a "schema" update, but addresses the defect from bug 1635859.
+    // In short, every bookmark with a corresponding entry in the mirror should
+    // have syncStatus = NORMAL.
     await db.execute(`UPDATE moz_bookmarks AS b
                       SET syncStatus = ${lazy.PlacesUtils.bookmarks.SYNC_STATUS.NORMAL}
                       WHERE EXISTS (SELECT 1 FROM mirror.items
@@ -1527,23 +1525,23 @@ async function migrateMirrorSchema(db, currentSchemaVersion) {
   }
 }
 
-
-
-
-
-
-
-
+/**
+ * Initializes a new mirror database, creating persistent tables, indexes, and
+ * roots.
+ *
+ * @param {Sqlite.OpenedConnection} db
+ *        The mirror database connection.
+ */
 async function initializeMirrorDatabase(db) {
-  
-  
+  // Key-value metadata table. Stores the server collection last modified time
+  // and sync ID.
   await db.execute(`CREATE TABLE mirror.meta(
     key TEXT PRIMARY KEY,
     value NOT NULL
   ) WITHOUT ROWID`);
 
-  
-  
+  // Note: description and loadInSidebar are not used as of Firefox 63, but
+  // remain to avoid rebuilding the database if the user happens to downgrade.
   await db.execute(`CREATE TABLE mirror.items(
     id INTEGER PRIMARY KEY,
     guid TEXT UNIQUE NOT NULL,
@@ -1604,13 +1602,13 @@ async function initializeMirrorDatabase(db) {
   await createMirrorRoots(db);
 }
 
-
-
-
-
-
-
-
+/**
+ * Drops all temp tables, views, and triggers used for merging, and detaches
+ * from the mirror database.
+ *
+ * @param {Sqlite.OpenedConnection} db
+ *        The mirror database connection.
+ */
 async function cleanupMirrorDatabase(db) {
   await db.executeTransaction(async function() {
     await db.execute(`DROP TABLE changeGuidOps`);
@@ -1628,21 +1626,21 @@ async function cleanupMirrorDatabase(db) {
   });
 }
 
-
-
-
-
-
-
-
-
-
+/**
+ * Sets up the syncable roots. All items in the mirror we apply will descend
+ * from these roots - however, malformed records from the server which create
+ * a different root *will* be created in the mirror - just not applied.
+ *
+ *
+ * @param {Sqlite.OpenedConnection} db
+ *        The mirror database connection.
+ */
 async function createMirrorRoots(db) {
   const syncableRoots = [
     {
       guid: lazy.PlacesUtils.bookmarks.rootGuid,
-      
-      
+      // The Places root is its own parent, to satisfy the foreign key and
+      // `NOT NULL` constraints on `structure`.
       parentGuid: lazy.PlacesUtils.bookmarks.rootGuid,
       position: -1,
       needsMerge: false,
@@ -1679,12 +1677,12 @@ async function createMirrorRoots(db) {
   }
 }
 
-
-
-
-
-
-
+/**
+ * Creates temporary tables, views, and triggers to apply the mirror to Places.
+ *
+ * @param {Sqlite.OpenedConnection} db
+ *        The mirror database connection.
+ */
 async function initializeTempMirrorEntities(db) {
   await db.execute(`CREATE TEMP TABLE changeGuidOps(
     localGuid TEXT PRIMARY KEY,
@@ -1767,13 +1765,13 @@ async function initializeTempMirrorEntities(db) {
       WHERE guid = OLD.mergedGuid;
     END`);
 
-  
-  
-  
-  
-  
-  
-  
+  // A view of local bookmark tags. Tags, like keywords, are associated with
+  // URLs, so two bookmarks with the same URL should have the same tags. Unlike
+  // keywords, one tag may be associated with many different URLs. Tags are also
+  // different because they're implemented as bookmarks under the hood. Each tag
+  // is stored as a folder under the tags root, and tagged URLs are stored as
+  // untitled bookmarks under these folders. This complexity can be removed once
+  // bug 424160 lands.
   await db.execute(`
     CREATE TEMP VIEW localTags(tagEntryId, tagEntryGuid, tagFolderId,
                                tagFolderGuid, tagEntryPosition, tagEntryType,
@@ -1786,7 +1784,7 @@ async function initializeTempMirrorEntities(db) {
           p.parent = (SELECT id FROM moz_bookmarks
                       WHERE guid = '${lazy.PlacesUtils.bookmarks.tagsGuid}')`);
 
-  
+  // Untags a URL by removing its tag entry.
   await db.execute(`
     CREATE TEMP TRIGGER untagLocalPlace
     INSTEAD OF DELETE ON localTags
@@ -1807,9 +1805,9 @@ async function initializeTempMirrorEntities(db) {
             position > OLD.tagEntryPosition;
     END`);
 
-  
-  
-  
+  // Tags a URL by creating a tag folder if it doesn't exist, then inserting a
+  // tag entry for the URL into the tag folder. `NEW.placeId` can be NULL, in
+  // which case we'll just create the tag folder.
   await db.execute(`
     CREATE TEMP TRIGGER tagLocalPlace
     INSTEAD OF INSERT ON localTags
@@ -1879,8 +1877,8 @@ async function initializeTempMirrorEntities(db) {
                         WHERE guid = '${lazy.PlacesUtils.bookmarks.tagsGuid}');
     END`);
 
-  
-  
+  // Stores properties to pass to `onItem{Added, Changed, Moved, Removed}`
+  // bookmark observers for new, updated, moved, and deleted items.
   await db.execute(`CREATE TEMP TABLE itemsAdded(
     guid TEXT PRIMARY KEY,
     isTagging BOOLEAN NOT NULL DEFAULT 0,
@@ -1937,7 +1935,7 @@ async function initializeTempMirrorEntities(db) {
     `CREATE INDEX removedItemLevels ON itemsRemoved(level DESC)`
   );
 
-  
+  // Stores locally changed items staged for upload.
   await db.execute(`CREATE TEMP TABLE itemsToUpload(
     id INTEGER PRIMARY KEY,
     guid TEXT UNIQUE NOT NULL,
@@ -1981,17 +1979,17 @@ async function resetMirror(db) {
   await db.execute(`DELETE FROM items`);
   await db.execute(`DELETE FROM urls`);
 
-  
-  
+  // Since we need to reset the modified times and merge flags for the syncable
+  // roots, we simply delete and recreate them.
   await createMirrorRoots(db);
 }
 
-
+// Converts a Sync record's last modified time to milliseconds.
 function determineServerModified(record) {
   return Math.max(record.modified * 1000, 0) || 0;
 }
 
-
+// Determines a Sync record's creation date.
 function determineDateAdded(record) {
   let serverModified = determineServerModified(record);
   return lazy.PlacesSyncUtils.bookmarks.ratchetTimestampBackwards(
@@ -2023,7 +2021,7 @@ function validateKeyword(rawKeyword) {
     return null;
   }
   let keyword = rawKeyword.trim();
-  
+  // Drop empty keywords.
   return keyword ? keyword.toLowerCase() : null;
 }
 
@@ -2033,25 +2031,25 @@ function validateTag(rawTag) {
   }
   let tag = rawTag.trim();
   if (!tag || tag.length > lazy.PlacesUtils.bookmarks.MAX_TAG_LENGTH) {
-    
+    // Drop empty and oversized tags.
     return null;
   }
   return tag;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Measures and logs the time taken to execute a function, using a monotonic
+ * clock.
+ *
+ * @param  {String} name
+ *         The name of the operation, used for logging.
+ * @param  {Function} func
+ *         The function to time.
+ * @param  {Function} [recordTiming]
+ *         An optional function with the signature `(time: Number)`, where
+ *         `time` is the measured time.
+ * @return The return value of the timed function.
+ */
 async function withTiming(name, func, recordTiming) {
   lazy.MirrorLog.debug(name);
 
@@ -2067,10 +2065,10 @@ async function withTiming(name, func, recordTiming) {
   return result;
 }
 
-
-
-
-
+/**
+ * Fires bookmark and keyword observer notifications for all changes made during
+ * the merge.
+ */
 class BookmarkObserverRecorder {
   constructor(db, { maxFrecenciesToRecalculate, notifyInStableOrder, signal }) {
     this.db = db;
@@ -2081,11 +2079,11 @@ class BookmarkObserverRecorder {
     this.shouldInvalidateKeywords = false;
   }
 
-  
-
-
-
-
+  /**
+   * Fires observer notifications for all changed items, invalidates the
+   * livemark cache if necessary, and recalculates frecencies for changed
+   * URLs. This is called outside the merge transaction.
+   */
   async notifyAll() {
     await this.noteAllChanges();
     if (this.shouldInvalidateKeywords) {
@@ -2106,14 +2104,14 @@ class BookmarkObserverRecorder {
     }`;
   }
 
-  
-
-
-
+  /**
+   * Records Places observer notifications for removed, added, moved, and
+   * changed items.
+   */
   async noteAllChanges() {
     lazy.MirrorLog.trace("Recording observer notifications for removed items");
-    
-    
+    // `ORDER BY v.level DESC` sorts deleted children before parents, to ensure
+    // that we update caches in the correct order (bug 1297941).
     await this.db.execute(
       `SELECT v.itemId AS id, v.parentId, v.parentGuid, v.position, v.type,
               (SELECT h.url FROM moz_places h WHERE h.id = v.placeId) AS url,
@@ -2313,9 +2311,9 @@ class BookmarkObserverRecorder {
         index: info.position,
         url: info.urlHref || "",
         title: info.title,
-        
-        
-        
+        // Note that both the database and the legacy `onItem{Moved, Removed,
+        // Changed}` notifications use microsecond timestamps, but
+        // `PlacesBookmarkAddition` uses milliseconds.
         dateAdded: info.dateAdded / 1000,
         guid: info.guid,
         parentGuid: info.parentGuid,
@@ -2428,15 +2426,15 @@ class BookmarkObserverRecorder {
   }
 }
 
-
-
-
-
-
-
-
-
-
+/**
+ * Holds Sync metadata and the cleartext for a locally changed record. The
+ * bookmarks engine inflates a Sync record from the cleartext, and updates the
+ * `synced` property for successfully uploaded items.
+ *
+ * At the end of the sync, the engine writes the uploaded cleartext back to the
+ * mirror, and passes the updated change record as part of the changeset to
+ * `PlacesSyncUtils.bookmarks.pushChanges`.
+ */
 class BookmarkChangeRecord {
   constructor(syncChangeCounter, cleartext) {
     this.tombstone = cleartext.deleted === true;
@@ -2473,27 +2471,27 @@ function bagToNamedCounts(bag, names) {
   return counts;
 }
 
-
-
-
-
-
-
-
-
-
+/**
+ * Returns an `AbortSignal` that aborts if either `finalizeSignal` or
+ * `interruptSignal` aborts. This is like `Promise.race`, but for
+ * cancellations.
+ *
+ * @param  {AbortSignal} finalizeSignal
+ * @param  {AbortSignal?} signal
+ * @return {AbortSignal}
+ */
 function anyAborted(finalizeSignal, interruptSignal = null) {
   if (finalizeSignal.aborted || !interruptSignal) {
-    
-    
+    // If the mirror was already finalized, or we don't have an interrupt
+    // signal for this merge, just use the finalize signal.
     return finalizeSignal;
   }
   if (interruptSignal.aborted) {
-    
+    // If the merge was interrupted, return its already-aborted signal.
     return interruptSignal;
   }
-  
-  
+  // Otherwise, we return a new signal that aborts if either the mirror is
+  // finalized, or the merge is interrupted, whichever happens first.
   let controller = new AbortController();
   function onAbort() {
     finalizeSignal.removeEventListener("abort", onAbort);
@@ -2505,4 +2503,4 @@ function anyAborted(finalizeSignal, interruptSignal = null) {
   return controller.signal;
 }
 
-
+// In conclusion, this is why bookmark syncing is hard.

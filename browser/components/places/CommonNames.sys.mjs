@@ -1,10 +1,8 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
-
-var EXPORTED_SYMBOLS = ["CommonNames"];
 
 const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
@@ -16,11 +14,11 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
   shortURL: "resource://activity-stream/lib/ShortURL.jsm",
 });
 
-
-
-
-
-
+/**
+ * A subset of the most visited sites according to Alexa. Used as a fallback if
+ * a site doesn't expose site_name metadata. Maps a site's hostname (not
+ * including `www.`) to its common name.
+ */
 const CUSTOM_NAMES = new Map([
   ["adobe.com", "Adobe"],
   ["adp.com", "ADP"],
@@ -281,36 +279,36 @@ const CUSTOM_NAMES = new Map([
   ["zoom.us", "Zoom"],
 ]);
 
-
-
+// The number of "." to search backwards for when matching hostname to
+// CUSTOM_NAMES.
 const MAX_HOSTNAME_PARTS = 2;
 
-
-
-
-
-
-
-
-class CommonNames {
-  
-
-
-
-
-
-
-
+/**
+ * A class that exposes a static method to return a site's "common name". This
+ * is ideally the site's brand name with appropriate spacing and capitalization.
+ * For example, the common name for stackoverflow.com is "Stack Overflow". If
+ * a common name cannot be fetched, the origin is returned with its TLD
+ * stripped, e.g. "stackoverflow".
+ */
+export class CommonNames {
+  /**
+   * Returns a snapshot's common name.
+   *
+   * @param {Snapshot} snapshot
+   *   The snapshot for which to fetch a common name. See Snapshots.jsm for a
+   *   definition.
+   * @returns {string} The snapshot's common name.
+   */
   static getName(snapshot) {
     return snapshot.siteName ?? CommonNames.getURLName(new URL(snapshot.url));
   }
 
   static getURLName(url) {
-    
-    
+    // To ignore subdomains work from the end of the hostname backwards and
+    // progressively try longer hostnames at the "." separators.
     const hostname = url.hostname;
-    
-    
+    // We can skip the first check since it will be the last part of the TLD
+    // which won't match anything in the custom names list e.g. ".com".
     let dot = hostname.lastIndexOf(".");
     if (dot === -1) {
       return lazy.shortURL({ url });

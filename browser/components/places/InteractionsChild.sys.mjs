@@ -1,10 +1,8 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
-
-var EXPORTED_SYMBOLS = ["InteractionsChild"];
 
 const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
@@ -22,11 +20,11 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
   InteractionsBlocklist: "resource:///modules/InteractionsBlocklist.jsm",
 });
 
-
-
-
-
-class InteractionsChild extends JSWindowActorChild {
+/**
+ * Listens for interactions in the child process and passes information to the
+ * parent.
+ */
+export class InteractionsChild extends JSWindowActorChild {
   #progressListener;
   #currentURL;
 
@@ -62,7 +60,7 @@ class InteractionsChild extends JSWindowActorChild {
   }
 
   didDestroy() {
-    
+    // If the tab is closed then the docshell is no longer available.
     if (!this.#progressListener || !this.docShell) {
       return;
     }
@@ -74,13 +72,13 @@ class InteractionsChild extends JSWindowActorChild {
   }
 
   onLocationChange(webProgress, request, location, flags) {
-    
+    // We don't care about inner-frame navigations.
     if (!webProgress.isTopLevel) {
       return;
     }
 
-    
-    
+    // If this is a new document then the DOMContentLoaded event will trigger
+    // the new interaction instead.
     if (!(flags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT)) {
       return;
     }
@@ -91,15 +89,15 @@ class InteractionsChild extends JSWindowActorChild {
   #recordNewPage() {
     let docInfo = this.#getDocumentInfo();
     if (!docInfo || !this.docShell.currentDocumentChannel) {
-      
-      
-      
+      // If there is no document channel, then it is something we're not
+      // interested in, but we do need to know that the previous interaction
+      // has ended.
       this.sendAsyncMessage("Interactions:PageHide");
       return;
     }
 
-    
-    
+    // This may happen when the page calls replaceState or pushState with the
+    // same URL. We'll just consider this to not be a new page.
     if (docInfo.url == this.#currentURL) {
       return;
     }
@@ -118,7 +116,7 @@ class InteractionsChild extends JSWindowActorChild {
 
   async handleEvent(event) {
     if (this.isContentWindowPrivate) {
-      
+      // No recording in private browsing mode.
       return;
     }
     switch (event.type) {
@@ -144,13 +142,13 @@ class InteractionsChild extends JSWindowActorChild {
     }
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Returns the current document information for sending to the parent process.
+   *
+   * @returns {object|null} [docInfo]
+   * @returns {string} docInfo.url
+   *   The url of the document.
+   */
   #getDocumentInfo() {
     let doc = this.document;
 

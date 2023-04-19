@@ -1,10 +1,8 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
-
-var EXPORTED_SYMBOLS = ["SnapshotGroups"];
 
 const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
@@ -29,61 +27,61 @@ XPCOMUtils.defineLazyPreferenceGetter(
   5
 );
 
+/**
+ * @typedef {object} SnapshotGroup
+ *   This object represents a group of snapshots.
+ *
+ * @property {string} id
+ *   The group id. The id property is ignored when adding a group.
+ * @property {string} title
+ *   The title of the group assigned by the user. This should be used
+ *   in preference to the translation supplied title in the builderMetadata.
+ * @property {boolean} hidden
+ *   Whether the group is hidden or not.
+ * @property {string} builder
+ *   The builder that was used to create the group (e.g. "domain", "pinned").
+ * @property {object} builderMetadata
+ *   The metadata from the builder for the SnapshotGroup.
+ *   This is mostly for use by the builder only and should otherwise be
+ *   considered opaque, the exception to this is for the localisation data.
+ * @property {object} builderMetadata.fluentTitle
+ *   An object to be passed to fluent for generating the title of the group.
+ *   This title should only be used if `title` is not present.
+ * @property {string} imageUrl
+ *   The image url to use for the group.
+ * @property {string} faviconDataUrl
+ *   The data url to use for the favicon, null if not available.
+ * @property {string} imagePageUrl
+ *   The url of the snapshot used to get the image and favicon urls.
+ * @property {number} lastAccessed
+ *   The last access time of the most recently accessed snapshot.
+ *   Stored as the number of milliseconds since the epoch.
+ * @property {number} snapshotCount
+ *   The number of snapshots contained within the group.
+ */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-const SnapshotGroups = new (class SnapshotGroups {
+/**
+ * Handles storing and retrieving of snapshot groups in the Places database.
+ *
+ * Notifications of updates are sent via the observer service:
+ *   places-snapshot-group-added, data: id of the snapshot group.
+ *   places-snapshot-group-updated, data: id of the snapshot group.
+ *   places-snapshot-group-deleted, data: id of the snapshot group.
+ */
+export const SnapshotGroups = new (class SnapshotGroups {
   constructor() {}
 
-  
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Adds a new snapshot group.
+   * Note: Not currently for use from UI code.
+   *
+   * @param {SnapshotGroup} group
+   *   The details of the group to add.
+   * @param {string[]} urls
+   *   An array of snapshot urls to add to the group. If the urls do not have associated snapshots, then they are ignored.
+   * @returns {number} id
+   *   The id of the newly added group, or -1 on failure
+   */
   async add(group, urls) {
     let id = -1;
     if (group.title && !group.builderMetadata?.title) {
@@ -95,7 +93,7 @@ const SnapshotGroups = new (class SnapshotGroups {
     await lazy.PlacesUtils.withConnectionWrapper(
       "SnapshotsGroups.jsm:add",
       async db => {
-        
+        // Create the new group
         let row = await db.executeCached(
           `
           INSERT INTO moz_places_metadata_snapshots_groups (builder, builder_data)
@@ -118,20 +116,20 @@ const SnapshotGroups = new (class SnapshotGroups {
     return id;
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Modifies the metadata for a snapshot group.
+   *
+   * @param {SnapshotGroup} group
+   *   The partial details of the group to modify. Must include the group's id.
+   *   Any other properties update those properties of the group.
+   *   If builder, imageUrl, lastAccessed or snapshotCount are specified then
+   *   they are ignored.
+   *   If a title is specified, it will override the original creation title.
+   *   Passing in a null or empty title will restore the original one.
+   *   If builderMetadata is passed-in, its properties are merged with the
+   *   existing ones: new values for existing properties replace old values,
+   *   new properties are added and null properties are removed.
+   */
   async updateMetadata(group) {
     let params = { id: group.id };
     let setters = [];
@@ -140,7 +138,7 @@ const SnapshotGroups = new (class SnapshotGroups {
       setters.push("builder_data = json_patch(builder_data, :builder_data)");
     }
     if ("title" in group) {
-      
+      // Store NULL rather than an empty string.
       params.title = group.title || null;
       setters.push("title = :title");
     }
@@ -169,17 +167,17 @@ const SnapshotGroups = new (class SnapshotGroups {
     Services.obs.notifyObservers(null, "places-snapshot-group-updated");
   }
 
-  
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Modifies the urls for a snapshot group.
+   * Note: This API does not manage deleting of groups if the number of urls is
+   * 0. If there are no urls in the group, consider calling `delete()` instead.
+   *
+   * @param {number} id
+   *   The id of the group to modify.
+   * @param {string[]|Set<string>} [urls]
+   *   The snapshot urls for the group. If the urls do not have associated
+   *   snapshots then they are ignored.
+   */
   async updateUrls(id, urls) {
     await lazy.PlacesUtils.withConnectionWrapper(
       "SnapshotsGroups.jsm:updateUrls",
@@ -193,10 +191,10 @@ const SnapshotGroups = new (class SnapshotGroups {
           .join(",");
 
         await db.executeTransaction(async () => {
-          
-          
+          // Note: queries here may need to be kept up to date with the
+          // moz_places_metadata_groups_to_snapshots definition in nsPlacesTables.h
 
-          
+          // Create a temporary table to store the data.
           await db.execute(
             `
             CREATE TEMP TABLE __groups_to_snapshots__ AS
@@ -208,7 +206,7 @@ const SnapshotGroups = new (class SnapshotGroups {
             params
           );
 
-          
+          // Clear and copy back only what we require.
           await db.executeCached(
             `DELETE FROM moz_places_metadata_groups_to_snapshots WHERE group_id = :id`,
             { id }
@@ -221,7 +219,7 @@ const SnapshotGroups = new (class SnapshotGroups {
             `
           );
 
-          
+          // Finally insert any new urls and clean up.
           await this.#insertUrls(db, id, urls);
 
           await db.executeCached(`DROP TABLE __groups_to_snapshots__`);
@@ -233,16 +231,16 @@ const SnapshotGroups = new (class SnapshotGroups {
     Services.obs.notifyObservers(null, "places-snapshot-group-updated");
   }
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Hides a url within a group.
+   *
+   * @param {number} id
+   *   The id of the group to modify.
+   * @param {string} url
+   *   The url to hide.
+   * @param {boolean} hidden
+   *   If the snapshot should be hidden or not
+   */
   async setUrlHidden(id, url, hidden) {
     await lazy.PlacesUtils.withConnectionWrapper(
       "SnapshotsGroups.jsm:hideUrl",
@@ -263,13 +261,13 @@ const SnapshotGroups = new (class SnapshotGroups {
     Services.obs.notifyObservers(null, "places-snapshot-group-updated");
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Deletes a snapshot group.
+   * Note: Not currently for use from UI code.
+   *
+   * @param {number} id
+   *   The id of the group to delete.
+   */
   async delete(id) {
     await lazy.PlacesUtils.withConnectionWrapper(
       "SnapshotsGroups.jsm:delete",
@@ -286,26 +284,26 @@ const SnapshotGroups = new (class SnapshotGroups {
     Services.obs.notifyObservers(null, "places-snapshot-group-deleted");
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Queries the list of SnapshotGroups.
+   *
+   * @param {object} [options]
+   * @param {number} [options.limit]
+   *   A numerical limit to the number of snapshots to retrieve, defaults to 50.
+   *   Use -1 to specify no limit.
+   * @param {boolean} [options.hidden]
+   *   Pass true to also return hidden groups.
+   * @param {boolean} [options.countHidden]
+   *   Pass true to include hidden snapshots in the count.
+   * @param {string} [options.builder]
+   *   Limit searching snapshot groups to results from a particular builder.
+   * @param {boolean} [options.skipMinimum]
+   *   Skips the minimim limit for number of urls in a snapshot group. This is
+   *   intended for builders to be able to store and retrieve possible groups
+   *   that are below the current limit.
+   * @returns {SnapshotGroup[]}
+   *   An array of snapshot groups, in descending order of last access time.
+   */
   async query({
     limit = 50,
     builder = undefined,
@@ -384,18 +382,18 @@ const SnapshotGroups = new (class SnapshotGroups {
     return Promise.all(rows.map(row => this.#translateSnapshotGroupRow(row)));
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Obtains the snapshot urls for a particular group. This is designed for
+   * builders to easily grab the list of urls in a group.
+   *
+   * @param {object} options
+   * @param {number} options.id
+   *   The id of the snapshot group to get the snapshots for.
+   * @param {boolean} [options.hidden]
+   *   Pass true to return hidden snapshots
+   * @returns {string[]}
+   *   An array of urls.
+   */
   async getUrls({ id, hidden }) {
     let db = await lazy.PlacesUtils.promiseDBConnection();
 
@@ -419,28 +417,28 @@ const SnapshotGroups = new (class SnapshotGroups {
     return urlRows.map(row => row.getResultByName("url"));
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Obtains the snapshots for a particular group. This is designed
+   * for batch use to avoid potentially pulling a large number of
+   * snapshots across to the content process at one time.
+   *
+   * @param {object} options
+   * @param {number} options.id
+   *   The id of the snapshot group to get the snapshots for.
+   * @param {number} [options.startIndex]
+   *   The start index of the snapshots to return.
+   * @param {number} [options.count]
+   *   The number of snapshots to return.
+   * @param {boolean} [options.hidden]
+   *   Pass true to return hidden snapshots as well.
+   * @param {boolean} [options.sortDescending]
+   *   Whether or not to sortDescending. Defaults to true.
+   * @param {string} [options.sortBy]
+   *   A string to choose what to sort the snapshots by, e.g. "last_interaction_at"
+   *   By default results are sorted by last_interaction_at.
+   * @returns {Snapshots[]}
+   *   An array of snapshots, in descending order of last interaction time
+   */
   async getSnapshots({
     id,
     startIndex = 0,
@@ -468,18 +466,18 @@ const SnapshotGroups = new (class SnapshotGroups {
     return snapshots;
   }
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Inserts a set of urls into the database for a given snapshot group.
+   *
+   * @param {object} db
+   *   The database connection to use.
+   * @param {number} id
+   *   The id of the group to add the urls to.
+   * @param {string[]} urls
+   *   An array of urls to insert for the group.
+   */
   async #insertUrls(db, id, urls) {
-    
+    // Construct the sql parameters for the urls
     let params = {};
     let SQLInFragment = [];
     let i = 0;
@@ -503,31 +501,31 @@ const SnapshotGroups = new (class SnapshotGroups {
     );
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Translates a snapshot group database row to a SnapshotGroup.
+   *
+   * @param {object} row
+   *   The database row to translate.
+   * @returns {SnapshotGroup}
+   */
   async #translateSnapshotGroupRow(row) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // Group image selection should be done in this order:
+    //   1. Oldest view in group featured image
+    //   2. Second Oldest View in group featured image
+    //   3. Oldest View in group screenshot
+    // To check for featured image existence we can refer to the
+    // moz_places.preview_image_url field, that includes the url of the featured
+    // image.
+    // TODO (MR2-1610): The features image is not cached yet, it should be
+    // cached by PlacesPreview as a replacement for the screenshot, when
+    // available.
+    // The query returns featured1|featured2|url1|url2
     let imageUrls = row.getResultByName("image_urls")?.split("|");
     let imageUrl, faviconDataUrl, imagePageUrl;
     if (imageUrls) {
       imageUrl = imageUrls[0] || imageUrls[1];
       if (!imageUrl && imageUrls[2]) {
-        
+        // We don't have a featured image, thus use a moz-page-thumb screenshot.
         imageUrl = imageUrls[2];
         if (lazy.PlacesPreviews.enabled) {
           imageUrl = lazy.PlacesPreviews.getPageThumbURL(imageUrl);
@@ -536,7 +534,7 @@ const SnapshotGroups = new (class SnapshotGroups {
         }
       }
 
-      
+      // The favicon is for the same page we return a preview image for.
       imagePageUrl =
         imageUrls[2] && !imageUrls[0] && imageUrls[1]
           ? imageUrls[3]
@@ -547,11 +545,11 @@ const SnapshotGroups = new (class SnapshotGroups {
             Services.io.newURI(imagePageUrl),
             (uri, dataLength, data, mimeType) => {
               if (dataLength) {
-                
-                
-                
-                
-                
+                // NOTE: honestly this is awkward and inefficient. We build a string
+                // with String.fromCharCode and then btoa that. It's a Uint8Array
+                // under the hood, and we should probably just expose something in
+                // ChromeUtils to Base64 encode a Uint8Array directly, but this is
+                // fine for now.
                 let b64 = btoa(
                   data.reduce((d, byte) => d + String.fromCharCode(byte), "")
                 );
@@ -581,11 +579,11 @@ const SnapshotGroups = new (class SnapshotGroups {
     return snapshotGroup;
   }
 
-  
-
-
-
-
+  /**
+   * Prefetch a screenshot for the oldest snapshot in the group.
+   * @param {number} id
+   *   The id of the group to add the urls to.
+   */
   async #prefetchScreenshotForGroup(id) {
     let snapshots = await this.getSnapshots({
       id,

@@ -1,24 +1,22 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["ExtensionSearchHandler"];
-
-
-
+// Used to keep track of all of the registered keywords, where each keyword is
+// mapped to a KeywordInfo instance.
 let gKeywordMap = new Map();
 
-
+// Used to keep track of the active input session.
 let gActiveInputSession = null;
 
-
-
-
+// Used to keep track of who has control over the active suggestion callback
+// so older callbacks can be ignored. The callback ID should increment whenever
+// the input changes or the input session ends.
 let gCurrentCallbackID = 0;
 
-
+// Handles keeping track of information associated to the registered keyword.
 class KeywordInfo {
   constructor(extension, description) {
     this._extension = extension;
@@ -38,7 +36,7 @@ class KeywordInfo {
   }
 }
 
-
+// Responsible for handling communication between the extension and the urlbar.
 class InputSession {
   constructor(keyword, extension) {
     this._keyword = keyword;
@@ -62,7 +60,7 @@ class InputSession {
   }
 
   update(eventName, text, suggestionsCallback, searchFinishedCallback) {
-    
+    // Check to see if an existing input session needs to be ended first.
     if (this._searchFinishedCallback) {
       this._searchFinishedCallback();
     }
@@ -90,18 +88,18 @@ class InputSession {
   }
 }
 
-var ExtensionSearchHandler = Object.freeze({
+export var ExtensionSearchHandler = Object.freeze({
   MSG_INPUT_STARTED: "webext-omnibox-input-started",
   MSG_INPUT_CHANGED: "webext-omnibox-input-changed",
   MSG_INPUT_ENTERED: "webext-omnibox-input-entered",
   MSG_INPUT_CANCELLED: "webext-omnibox-input-cancelled",
 
-  
-
-
-
-
-
+  /**
+   * Registers a keyword.
+   *
+   * @param {string} keyword The keyword to register.
+   * @param {Extension} extension The extension registering the keyword.
+   */
   registerKeyword(keyword, extension) {
     if (gKeywordMap.has(keyword)) {
       throw new Error(
@@ -111,11 +109,11 @@ var ExtensionSearchHandler = Object.freeze({
     gKeywordMap.set(keyword, new KeywordInfo(extension, extension.name));
   },
 
-  
-
-
-
-
+  /**
+   * Unregisters a keyword.
+   *
+   * @param {string} keyword The keyword to unregister.
+   */
   unregisterKeyword(keyword) {
     if (!gKeywordMap.has(keyword)) {
       throw new Error(`The keyword provided is not registered: "${keyword}"`);
@@ -124,27 +122,27 @@ var ExtensionSearchHandler = Object.freeze({
     gKeywordMap.delete(keyword);
   },
 
-  
-
-
-
-
-
+  /**
+   * Checks if a keyword is registered.
+   *
+   * @param {string} keyword The word to check.
+   * @return {boolean} true if the word is a registered keyword.
+   */
   isKeywordRegistered(keyword) {
     return gKeywordMap.has(keyword);
   },
 
-  
-
-
+  /**
+   * @return {boolean} true if there is an active input session.
+   */
   hasActiveInputSession() {
     return gActiveInputSession != null;
   },
 
-  
-
-
-
+  /**
+   * @param {string} keyword The keyword to look up.
+   * @return {string} the description to use for the heuristic result.
+   */
   getDescription(keyword) {
     if (!gKeywordMap.has(keyword)) {
       throw new Error(`The keyword provided is not registered: "${keyword}"`);
@@ -152,13 +150,13 @@ var ExtensionSearchHandler = Object.freeze({
     return gKeywordMap.get(keyword).description;
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Sets the default suggestion for the registered keyword. The suggestion's
+   * description will be used for the comment in the heuristic result.
+   *
+   * @param {string} keyword The keyword.
+   * @param {string} description The description to use for the heuristic result.
+   */
   setDefaultSuggestion(keyword, { description }) {
     if (!gKeywordMap.has(keyword)) {
       throw new Error(`The keyword provided is not registered: "${keyword}"`);
@@ -166,15 +164,15 @@ var ExtensionSearchHandler = Object.freeze({
     gKeywordMap.get(keyword).description = description;
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Adds suggestions for the registered keyword. This function will throw if
+   * the keyword provided is not registered or active, or if the callback ID
+   * provided is no longer equal to the active callback ID.
+   *
+   * @param {string} keyword The keyword.
+   * @param {integer} id The ID of the suggestion callback.
+   * @param {Array<Object>} suggestions An array of suggestions to provide to the urlbar.
+   */
   addSuggestions(keyword, id, suggestions) {
     if (!gKeywordMap.has(keyword)) {
       throw new Error(`The keyword provided is not registered: "${keyword}"`);
@@ -195,23 +193,23 @@ var ExtensionSearchHandler = Object.freeze({
     gActiveInputSession.addSuggestions(suggestions);
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Called when the input in the urlbar begins with `<keyword><space>`.
+   *
+   * If the keyword is inactive, MSG_INPUT_STARTED is emitted and the
+   * keyword is marked as active. If the keyword is followed by any text,
+   * MSG_INPUT_CHANGED is fired with the current callback ID that can be
+   * used to provide suggestions to the urlbar while the callback ID is active.
+   * The callback is invalidated when either the input changes or the urlbar blurs.
+   *
+   * @param {object} data An object that contains
+   *                 {string} keyword The keyword to handle.
+   *                 {string} text The search text in the urlbar.
+   *                 {boolean} inPrivateWindow privateness of window search
+   *                           is occuring in.
+   * @param {Function} callback The callback used to provide search suggestions.
+   * @return {Promise} promise that resolves when the current search is complete.
+   */
   handleSearch(data, callback) {
     let { keyword, text } = data;
     let keywordInfo = gKeywordMap.get(keyword);
@@ -236,20 +234,20 @@ var ExtensionSearchHandler = Object.freeze({
       throw new Error("A callback must be provided");
     }
 
-    
-    
+    // The search text in the urlbar currently starts with <keyword><space>, and
+    // we only want the text that follows.
     text = text.substring(keyword.length + 1);
 
-    
-    
-    
-    
+    // We fire MSG_INPUT_STARTED once we have <keyword><space>, and only fire
+    // MSG_INPUT_CHANGED when we have text to process. This is different from Chrome's
+    // behavior, which always fires MSG_INPUT_STARTED right before MSG_INPUT_CHANGED
+    // first fires, but this is a bug in Chrome according to https://crbug.com/258911.
     if (!gActiveInputSession) {
       gActiveInputSession = new InputSession(keyword, extension);
       gActiveInputSession.start(this.MSG_INPUT_STARTED);
 
-      
-      
+      // Resolve early if there is no text to process. There can be text to process when
+      // the input starts if the user copy/pastes the text into the urlbar.
       if (!text.length) {
         return Promise.resolve();
       }
@@ -265,19 +263,19 @@ var ExtensionSearchHandler = Object.freeze({
     });
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Called when the user clicks on a suggestion that was added by
+   * an extension. MSG_INPUT_ENTERED is emitted to the extension with
+   * the keyword, the current search string, and info about how the
+   * the search should be handled. This ends the active input session.
+   *
+   * @param {string} keyword The keyword associated to the suggestion.
+   * @param {string} text The search text in the urlbar.
+   * @param {string} where How the page should be opened. Accepted values are:
+   *    "current": open the page in the same tab.
+   *    "tab": open the page in a new foreground tab.
+   *    "tabshifted": open the page in a new background tab.
+   */
   handleInputEntered(keyword, text, where) {
     if (!gKeywordMap.has(keyword)) {
       throw new Error(`The keyword provided is not registered: "${keyword}"`);
@@ -306,18 +304,18 @@ var ExtensionSearchHandler = Object.freeze({
       throw new Error(`Invalid "where" argument: ${where}`);
     }
 
-    
-    
+    // The search text in the urlbar currently starts with <keyword><space>, and
+    // we only want to send the text that follows.
     text = text.substring(keyword.length + 1);
 
     gActiveInputSession.end(this.MSG_INPUT_ENTERED, text, disposition);
     gActiveInputSession = null;
   },
 
-  
-
-
-
+  /**
+   * If the user has ended the keyword input session without accepting the input,
+   * MSG_INPUT_CANCELLED is emitted and the input session is ended.
+   */
   handleInputCancelled() {
     if (!gActiveInputSession) {
       throw new Error("There is no active input session");

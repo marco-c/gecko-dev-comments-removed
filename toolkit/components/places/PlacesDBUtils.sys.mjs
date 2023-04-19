@@ -1,16 +1,16 @@
-
-
-
-
-
+/* -*- indent-tabs-mode: nil; js-indent-level: 2 -*-
+ * vim: sw=2 ts=2 sts=2 expandtab filetype=javascript
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const BYTES_PER_MEBIBYTE = 1048576;
 const MS_PER_DAY = 86400000;
-
-
+// Threshold value for removeOldCorruptDBs.
+// Corrupt DBs older than this value are removed.
 const CORRUPT_DB_RETAIN_DAYS = 14;
 
-
+// Seconds between maintenance runs.
 const MAINTENANCE_INTERVAL_SECONDS = 7 * 86400;
 
 const { XPCOMUtils } = ChromeUtils.importESModule(
@@ -25,9 +25,7 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
   Sqlite: "resource://gre/modules/Sqlite.jsm",
 });
 
-var EXPORTED_SYMBOLS = ["PlacesDBUtils", "PlacesDBUtilsIdleMaintenance"];
-
-var PlacesDBUtils = {
+export var PlacesDBUtils = {
   _isShuttingDown: false,
 
   _clearTaskQueue: false,
@@ -35,13 +33,13 @@ var PlacesDBUtils = {
     PlacesDBUtils._clearTaskQueue = true;
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Executes integrity check and common maintenance tasks.
+   *
+   * @return a Map[taskName(String) -> Object]. The Object has the following properties:
+   *         - succeeded: boolean
+   *         - logs: an array of strings containing the messages logged by the task.
+   */
   async maintenanceOnIdle() {
     let tasks = [
       this.checkIntegrity,
@@ -66,19 +64,19 @@ var PlacesDBUtils = {
     return taskStatusMap;
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Executes integrity check, common and advanced maintenance tasks (like
+   * expiration and vacuum).  Will also collect statistics on the database.
+   *
+   * Note: although this function isn't actually async, we keep it async to
+   * allow us to maintain a simple, consistent API for the tasks within this object.
+   *
+   * @return {Promise}
+   *        A promise that resolves with a Map[taskName(String) -> Object].
+   *        The Object has the following properties:
+   *         - succeeded: boolean
+   *         - logs: an array of strings containing the messages logged by the task.
+   */
   async checkAndFixDatabase() {
     let tasks = [
       this.checkIntegrity,
@@ -93,26 +91,26 @@ var PlacesDBUtils = {
     return PlacesDBUtils.runTasks(tasks);
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Forces a full refresh of Places views.
+   *
+   * Note: although this function isn't actually async, we keep it async to
+   * allow us to maintain a simple, consistent API for the tasks within this object.
+   *
+   * @returns {Array} An empty array.
+   */
   async _refreshUI() {
     PlacesObservers.notifyListeners([new PlacesPurgeCaches()]);
     return [];
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Checks integrity and tries to fix the database through a reindex.
+   *
+   * @return {Promise} resolves if database is sane or is made sane.
+   * @resolves to an array of logs for this task.
+   * @rejects if we're unable to fix corruption or unable to check status.
+   */
   async checkIntegrity() {
     let logs = [];
 
@@ -169,13 +167,13 @@ var PlacesDBUtils = {
     });
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Checks data coherence and tries to fix most common errors.
+   *
+   * @return {Promise} resolves when coherence is checked.
+   * @resolves to an array of logs for this task.
+   * @rejects if database is not coherent.
+   */
   async checkCoherence() {
     let logs = [];
     let stmts = await PlacesDBUtils._getCoherenceStatements();
@@ -204,13 +202,13 @@ var PlacesDBUtils = {
     return logs;
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Runs incremental vacuum on databases supporting it.
+   *
+   * @return {Promise} resolves when done.
+   * @resolves to an array of logs for this task.
+   * @rejects if we were unable to vacuum.
+   */
   async incrementalVacuum() {
     let logs = [];
     return lazy.PlacesUtils.withConnectionWrapper(
@@ -245,12 +243,12 @@ var PlacesDBUtils = {
     });
   },
 
-  
-
-
-
-
-
+  /**
+   * Expire orphan previews that don't have a Places entry anymore.
+   *
+   * @return {Promise} resolves when done.
+   * @resolves to an array of logs for this task.
+   */
   async deleteOrphanPreviews() {
     let logs = [];
     try {
@@ -266,19 +264,19 @@ var PlacesDBUtils = {
 
   async _getCoherenceStatements() {
     let cleanupStatements = [
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
+      // MOZ_PLACES
+      // L.1 remove duplicate URLs.
+      // This task uses a temp table of potential dupes, and a trigger to remove
+      // them. It runs first because it relies on subsequent tasks to clean up
+      // orphaned foreign key references. The task works like this: first, we
+      // insert all rows with the same hash into the temp table. This lets
+      // SQLite use the `url_hash` index for scanning `moz_places`. Hashes
+      // aren't unique, so two different URLs might have the same hash. To find
+      // the actual dupes, we use a unique constraint on the URL in the temp
+      // table. If that fails, we bump the dupe count. Then, we delete all dupes
+      // from the table. This fires the cleanup trigger, which updates all
+      // foreign key references to point to one of the duplicate Places, then
+      // deletes the others.
       {
         query: `CREATE TEMP TABLE IF NOT EXISTS moz_places_dupes_temp(
           id INTEGER PRIMARY KEY
@@ -374,10 +372,10 @@ var PlacesDBUtils = {
       { query: `DELETE FROM moz_places_dupes_temp WHERE count > 1` },
       { query: `DROP TABLE moz_places_dupes_temp` },
 
-      
-      
-      
-      
+      // MOZ_ANNO_ATTRIBUTES
+      // A.1 remove obsolete annotations from moz_annos.
+      // The 'weave0' idiom exploits character ordering (0 follows /) to
+      // efficiently select all annos with a 'weave/' prefix.
       {
         query: `DELETE FROM moz_annos
         WHERE type = 4 OR anno_attribute_id IN (
@@ -387,7 +385,7 @@ var PlacesDBUtils = {
         )`,
       },
 
-      
+      // A.2 remove obsolete annotations from moz_items_annos.
       {
         query: `DELETE FROM moz_items_annos
         WHERE type = 4 OR anno_attribute_id IN (
@@ -398,7 +396,7 @@ var PlacesDBUtils = {
         )`,
       },
 
-      
+      // A.3 remove unused attributes.
       {
         query: `DELETE FROM moz_anno_attributes WHERE id IN (
           SELECT id FROM moz_anno_attributes n
@@ -409,8 +407,8 @@ var PlacesDBUtils = {
         )`,
       },
 
-      
-      
+      // MOZ_ANNOS
+      // B.1 remove annos with an invalid attribute
       {
         query: `DELETE FROM moz_annos WHERE id IN (
           SELECT id FROM moz_annos a
@@ -420,7 +418,7 @@ var PlacesDBUtils = {
         )`,
       },
 
-      
+      // B.2 remove orphan annos
       {
         query: `DELETE FROM moz_annos WHERE id IN (
           SELECT id FROM moz_annos a
@@ -429,7 +427,7 @@ var PlacesDBUtils = {
         )`,
       },
 
-      
+      // D.1 remove items that are not uri bookmarks from tag containers
       {
         query: `DELETE FROM moz_bookmarks WHERE guid NOT IN (
           :rootGuid, :menuGuid, :toolbarGuid, :unfiledGuid, :tagsGuid  /* skip roots */
@@ -450,7 +448,7 @@ var PlacesDBUtils = {
         },
       },
 
-      
+      // D.2 remove empty tags
       {
         query: `DELETE FROM moz_bookmarks WHERE guid NOT IN (
           :rootGuid, :menuGuid, :toolbarGuid, :unfiledGuid, :tagsGuid  /* skip roots */
@@ -471,7 +469,7 @@ var PlacesDBUtils = {
         },
       },
 
-      
+      // D.3 move orphan items to unsorted folder
       {
         query: `UPDATE moz_bookmarks SET
           parent = (SELECT id FROM moz_bookmarks WHERE guid = :unfiledGuid)
@@ -491,11 +489,11 @@ var PlacesDBUtils = {
         },
       },
 
-      
-      
-      
-      
-      
+      // D.4 Insert tombstones for any synced items with the wrong type.
+      // Sync doesn't support changing the type of an existing item while
+      // keeping its GUID. To avoid confusing other clients, we insert
+      // tombstones for all synced items with the wrong type, so that we
+      // can reupload them with the correct type and a new GUID.
       {
         query: `INSERT OR IGNORE INTO moz_bookmarks_deleted(guid, dateRemoved)
                 SELECT guid, :dateRemoved
@@ -515,12 +513,12 @@ var PlacesDBUtils = {
         },
       },
 
-      
-      
-      
-      
-      
-      
+      // D.5 fix wrong item types
+      // Folders and separators should not have an fk.
+      // If they have a valid fk, convert them to bookmarks, and give them new
+      // GUIDs. If the item has children, we'll move them to the unfiled root
+      // in D.8. If the `fk` doesn't exist in `moz_places`, we'll remove the
+      // item in D.9.
       {
         query: `UPDATE moz_bookmarks
         SET guid = GENERATE_GUID(),
@@ -544,9 +542,9 @@ var PlacesDBUtils = {
         },
       },
 
-      
-      
-      
+      // D.6 fix wrong item types
+      // Bookmarks should have an fk, if they don't have any, convert them to
+      // folders.
       {
         query: `UPDATE moz_bookmarks
         SET guid = GENERATE_GUID(),
@@ -569,9 +567,9 @@ var PlacesDBUtils = {
         },
       },
 
-      
-      
-      
+      // D.7 fix wrong item types
+      // `moz_bookmarks.type` doesn't have a NOT NULL constraint, so it's
+      // possible for an item to not have a type (bug 1586427).
       {
         query: `UPDATE moz_bookmarks
         SET guid = GENERATE_GUID(),
@@ -590,9 +588,9 @@ var PlacesDBUtils = {
         },
       },
 
-      
-      
-      
+      // D.8 fix wrong parents
+      // Items cannot have separators or other bookmarks
+      // as parent, if they have bad parent move them to unsorted bookmarks.
       {
         query: `UPDATE moz_bookmarks SET
           parent = (SELECT id FROM moz_bookmarks WHERE guid = :unfiledGuid)
@@ -616,11 +614,11 @@ var PlacesDBUtils = {
         },
       },
 
-      
-      
-      
-      
-      
+      // D.9 remove items without a valid place
+      // We've already converted folders with an `fk` to bookmarks in D.5,
+      // and bookmarks without an `fk` to folders in D.6. However, the `fk`
+      // might not reference an existing `moz_places.id`, even if it's
+      // NOT NULL. This statement takes care of those.
       {
         query: `DELETE FROM moz_bookmarks AS b
         WHERE b.guid NOT IN (
@@ -638,14 +636,14 @@ var PlacesDBUtils = {
         },
       },
 
-      
-      
-      
-      
-      
-      
-      
-      
+      // D.10 recalculate positions
+      // This requires multiple related statements.
+      // We can detect a folder with bad position values comparing the sum of
+      // all distinct position values (+1 since position is 0-based) with the
+      // triangular numbers obtained by the number of children (n).
+      // SUM(DISTINCT position + 1) == (n * (n + 1) / 2).
+      // id is not a PRIMARY KEY on purpose, since we need a rowid that
+      // increments monotonically.
       {
         query: `CREATE TEMP TABLE IF NOT EXISTS moz_bm_reindex_temp (
           id INTEGER
@@ -688,10 +686,10 @@ var PlacesDBUtils = {
       { query: `DROP TRIGGER moz_bm_reindex_temp_trigger` },
       { query: `DROP TABLE moz_bm_reindex_temp` },
 
-      
-      
-      
-      
+      // D.12 Fix empty-named tags.
+      // Tags were allowed to have empty names due to a UI bug.  Fix them by
+      // replacing their title with "(notitle)", and bumping the change counter
+      // for all bookmarks with the fixed tags.
       {
         query: `UPDATE moz_bookmarks SET syncChangeCounter = syncChangeCounter + 1
          WHERE fk IN (SELECT b.fk FROM moz_bookmarks b
@@ -714,15 +712,15 @@ var PlacesDBUtils = {
         },
       },
 
-      
-      
+      // MOZ_ICONS
+      // E.1 remove orphan icon entries.
       {
         query: `DELETE FROM moz_pages_w_icons WHERE page_url_hash NOT IN (
           SELECT url_hash FROM moz_places
         )`,
       },
 
-      
+      // Remove icons whose origin is not in moz_origins, unless referenced.
       {
         query: `DELETE FROM moz_icons WHERE id IN (
           SELECT id FROM moz_icons WHERE root = 0
@@ -736,8 +734,8 @@ var PlacesDBUtils = {
         )`,
       },
 
-      
-      
+      // MOZ_HISTORYVISITS
+      // F.1 remove orphan visits
       {
         query: `DELETE FROM moz_historyvisits WHERE id IN (
           SELECT id FROM moz_historyvisits v
@@ -746,8 +744,8 @@ var PlacesDBUtils = {
         )`,
       },
 
-      
-      
+      // MOZ_INPUTHISTORY
+      // G.1 remove orphan input history
       {
         query: `DELETE FROM moz_inputhistory WHERE place_id IN (
           SELECT place_id FROM moz_inputhistory i
@@ -756,8 +754,8 @@ var PlacesDBUtils = {
         )`,
       },
 
-      
-      
+      // MOZ_ITEMS_ANNOS
+      // H.1 remove item annos with an invalid attribute
       {
         query: `DELETE FROM moz_items_annos WHERE id IN (
           SELECT id FROM moz_items_annos t
@@ -767,7 +765,7 @@ var PlacesDBUtils = {
         )`,
       },
 
-      
+      // H.2 remove orphan item annos
       {
         query: `DELETE FROM moz_items_annos WHERE id IN (
           SELECT id FROM moz_items_annos t
@@ -776,8 +774,8 @@ var PlacesDBUtils = {
         )`,
       },
 
-      
-      
+      // MOZ_KEYWORDS
+      // I.1 remove unused keywords
       {
         query: `DELETE FROM moz_keywords WHERE id IN (
           SELECT id FROM moz_keywords k
@@ -786,8 +784,8 @@ var PlacesDBUtils = {
         )`,
       },
 
-      
-      
+      // MOZ_PLACES
+      // L.2 recalculate visit_count and last_visit_date
       {
         query: `UPDATE moz_places
         SET visit_count = (SELECT count(*) FROM moz_historyvisits
@@ -803,7 +801,7 @@ var PlacesDBUtils = {
         )`,
       },
 
-      
+      // L.3 recalculate hidden for redirects.
       {
         query: `UPDATE moz_places
         SET hidden = 1
@@ -816,7 +814,7 @@ var PlacesDBUtils = {
         )`,
       },
 
-      
+      // L.4 recalculate foreign_count.
       {
         query: `UPDATE moz_places SET foreign_count =
           (SELECT count(*) FROM moz_bookmarks WHERE fk = moz_places.id ) +
@@ -825,12 +823,12 @@ var PlacesDBUtils = {
           (SELECT count(*) FROM moz_session_to_places WHERE place_id = moz_places.id )`,
       },
 
-      
+      // L.5 recalculate missing hashes.
       {
         query: `UPDATE moz_places SET url_hash = hash(url) WHERE url_hash = 0`,
       },
 
-      
+      // L.6 fix invalid Place GUIDs.
       {
         query: `UPDATE moz_places
         SET guid = GENERATE_GUID()
@@ -838,16 +836,16 @@ var PlacesDBUtils = {
               NOT IS_VALID_GUID(guid)`,
       },
 
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
+      // MOZ_BOOKMARKS
+      // S.1 fix invalid GUIDs for synced bookmarks.
+      // This requires multiple related statements.
+      // First, we insert tombstones for all synced bookmarks with invalid
+      // GUIDs, so that we can delete them on the server. Second, we add a
+      // temporary trigger to bump the change counter for the parents of any
+      // items we update, since Sync stores the list of child GUIDs on the
+      // parent. Finally, we assign new GUIDs for all items with missing and
+      // invalid GUIDs, bump their change counters, and reset their sync
+      // statuses to NEW so that they're considered for deduping.
       {
         query: `INSERT OR IGNORE INTO moz_bookmarks_deleted(guid, dateRemoved)
         SELECT guid, :dateRemoved
@@ -871,13 +869,13 @@ var PlacesDBUtils = {
         },
       },
 
-      
+      // S.2 drop tombstones for bookmarks that aren't deleted.
       {
         query: `DELETE FROM moz_bookmarks_deleted
         WHERE guid IN (SELECT guid FROM moz_bookmarks)`,
       },
 
-      
+      // S.3 set missing added and last modified dates.
       {
         query: `UPDATE moz_bookmarks
         SET dateAdded = COALESCE(NULLIF(dateAdded, 0), NULLIF(lastModified, 0), NULLIF((
@@ -892,7 +890,7 @@ var PlacesDBUtils = {
               NULLIF(lastModified, 0) IS NULL`,
       },
 
-      
+      // S.4 reset added dates that are ahead of last modified dates.
       {
         query: `UPDATE moz_bookmarks
          SET dateAdded = lastModified
@@ -900,11 +898,11 @@ var PlacesDBUtils = {
       },
     ];
 
-    
-    
-    
-    
-    
+    // Create triggers for updating Sync metadata. The "sync change" trigger
+    // bumps the parent's change counter when we update a GUID or move an item
+    // to a different folder, since Sync stores the list of child GUIDs on the
+    // parent. The "sync tombstone" trigger inserts tombstones for deleted
+    // synced bookmarks.
     cleanupStatements.unshift({
       query: `CREATE TEMP TRIGGER IF NOT EXISTS moz_bm_sync_change_temp_trigger
       AFTER UPDATE OF guid, parent, position ON moz_bookmarks
@@ -939,16 +937,16 @@ var PlacesDBUtils = {
     return cleanupStatements;
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Tries to vacuum the database.
+   *
+   * Note: although this function isn't actually async, we keep it async to
+   * allow us to maintain a simple, consistent API for the tasks within this object.
+   *
+   * @return {Promise} resolves when database is vacuumed.
+   * @resolves to an array of logs for this task.
+   * @rejects if we are unable to vacuum database.
+   */
   async vacuum() {
     let logs = [];
     let placesDbPath = PathUtils.join(PathUtils.profileDir, "places.sqlite");
@@ -969,15 +967,15 @@ var PlacesDBUtils = {
     });
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Forces a full expiration on the database.
+   *
+   * Note: although this function isn't actually async, we keep it async to
+   * allow us to maintain a simple, consistent API for the tasks within this object.
+   *
+   * @return {Promise} resolves when the database in cleaned up.
+   * @resolves to an array of logs for this task.
+   */
   async expire() {
     let logs = [];
 
@@ -997,18 +995,18 @@ var PlacesDBUtils = {
       );
     });
 
-    
+    // Force an orphans expiration step.
     expiration.observe(null, "places-debug-start-expiration", 0);
     return returnPromise;
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Collects statistical data on the database.
+   *
+   * @return {Promise} resolves when statistics are collected.
+   * @resolves to an array of logs for this task.
+   * @rejects if we are unable to collect stats for some reason.
+   */
   async stats() {
     let logs = [];
     let placesDbPath = PathUtils.join(PathUtils.profileDir, "places.sqlite");
@@ -1021,7 +1019,7 @@ var PlacesDBUtils = {
     info = await IOUtils.stat(faviconsDbPath);
     logs.push(`Favicons.sqlite size is ${parseInt(info.size / 1024)}KiB`);
 
-    
+    // Execute each step async.
     let pragmas = [
       "user_version",
       "page_size",
@@ -1042,7 +1040,7 @@ var PlacesDBUtils = {
       logs.push("Could not set pragma for stat collection");
     });
 
-    
+    // Get maximum number of unique URIs.
     try {
       let limitURIs = await Cc["@mozilla.org/places/expiration;1"]
         .getService(Ci.nsISupports)
@@ -1091,11 +1089,11 @@ var PlacesDBUtils = {
     return logs;
   },
 
-  
-
-
-
-
+  /**
+   * Recalculates statistical data on the origin frecencies in the database.
+   *
+   * @return {Promise} resolves when statistics are collected.
+   */
   originFrecencyStats() {
     return new Promise(resolve => {
       lazy.PlacesUtils.history.recalculateOriginFrecencyStats(() =>
@@ -1104,34 +1102,34 @@ var PlacesDBUtils = {
     });
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Collects telemetry data and reports it to Telemetry.
+   *
+   * Note: although this function isn't actually async, we keep it async to
+   * allow us to maintain a simple, consistent API for the tasks within this object.
+   *
+   */
   async telemetry() {
-    
-    
+    // This will be populated with one integer property for each probe result,
+    // using the histogram name as key.
     let probeValues = {};
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // The following array contains an ordered list of entries that are
+    // processed to collect telemetry data.  Each entry has these properties:
+    //
+    //  histogram: Name of the telemetry histogram to update.
+    //  query:     This is optional.  If present, contains a database command
+    //             that will be executed asynchronously, and whose result will
+    //             be added to the telemetry histogram.
+    //  callback:  This is optional.  If present, contains a function that must
+    //             return the value that will be added to the telemetry
+    //             histogram. If a query is also present, its result is passed
+    //             as the first argument of the function.  If the function
+    //             raises an exception, no data is added to the histogram.
+    //
+    // Since all queries are executed in order by the database backend, the
+    // callbacks can also use the result of previous queries stored in the
+    // probeValues object.
     let probes = [
       {
         histogram: "PLACES_PAGES_COUNT",
@@ -1223,8 +1221,8 @@ var PlacesDBUtils = {
         histogram: "PLACES_DATABASE_SIZE_PER_PAGE_B",
         query: "PRAGMA page_count",
         callback(aDbPageCount) {
-          
-          
+          // Note that the database file size would not be meaningful for this
+          // calculation, because the file grows in fixed-size chunks.
           let dbPageSize = probeValues.PLACES_DATABASE_PAGESIZE_B;
           let placesPageCount = probeValues.PLACES_PAGES_COUNT;
           return Math.round((dbPageSize * aDbPageCount) / placesPageCount);
@@ -1277,8 +1275,8 @@ var PlacesDBUtils = {
           await db.execute(probe.query, probe.params || {})
         )[0].getResultByIndex(0);
       }
-      
-      
+      // Report the result of the probe through Telemetry.
+      // The resulting promise cannot reject.
       if ("callback" in probe) {
         val = await probe.callback(val);
       }
@@ -1287,12 +1285,12 @@ var PlacesDBUtils = {
     }
   },
 
-  
-
-
-
-
-
+  /**
+   * Remove old and useless places.sqlite.corrupt files.
+   *
+   * @resolves to an array of logs for this task.
+   *
+   */
   async removeOldCorruptDBs() {
     let logs = [];
     logs.push(
@@ -1310,7 +1308,7 @@ var PlacesDBUtils = {
         if (fileInfo.type == "regular" && re.test(entry)) {
           lastModificationDate = fileInfo.lastModified;
           try {
-            
+            // Convert milliseconds to days.
             let days = Math.ceil(
               (currentTime - lastModificationDate) / MS_PER_DAY
             );
@@ -1328,22 +1326,22 @@ var PlacesDBUtils = {
     return logs;
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Gets detailed statistics about database entities like tables and indices.
+   * @returns {Map} a Map by table name, containing an object with the following
+   *          properties:
+   *            - efficiencyPerc: percentage filling of pages, an high
+   *              efficiency means most pages are filled up almost completely.
+   *              This value is not particularly useful with a low number of
+   *              pages.
+   *            - sizeBytes: size of the entity in bytes
+   *            - pages: number of pages of the entity
+   *            - sizePerc: percentage of the total database size
+   *            - sequentialityPerc: percentage of sequential pages, this is
+   *              a global value of the database, thus it's the same for every
+   *              entity, and it can be used to evaluate fragmentation and the
+   *              need for vacuum.
+   */
   async getEntitiesStats() {
     let db = await lazy.PlacesUtils.promiseDBConnection();
     let rows = await db.execute(`
@@ -1377,18 +1375,18 @@ var PlacesDBUtils = {
     return entitiesByName;
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Runs a list of tasks, returning a Map when done.
+   *
+   * @param tasks
+   *        Array of tasks to be executed, in form of pointers to methods in
+   *        this module.
+   * @return {Promise}
+   *        A promise that resolves with a Map[taskName(String) -> Object].
+   *        The Object has the following properties:
+   *         - succeeded: boolean
+   *         - logs: an array of strings containing the messages logged by the task
+   */
   async runTasks(tasks) {
     if (!this._registeredShutdownObserver) {
       this._registeredShutdownObserver = true;
@@ -1434,11 +1432,11 @@ async function integrity(dbName) {
     return row.getResultByIndex(0) === "ok";
   }
 
-  
-  
-  
-  
-  
+  // Create a new connection for this check, so we can operate independently
+  // from a broken Places service.
+  // openConnection returns an exception with .result == Cr.NS_ERROR_FILE_CORRUPTED,
+  // we should do the same everywhere we want maintenance to try replacing the
+  // database on next startup.
   let path = PathUtils.join(PathUtils.profileDir, dbName);
   let db = await lazy.Sqlite.openConnection({ path });
   try {
@@ -1446,8 +1444,8 @@ async function integrity(dbName) {
       return;
     }
 
-    
-    
+    // We stopped due to an integrity corruption, try to fix it if possible.
+    // First, try to reindex, this often fixes simple indices problems.
     try {
       await db.execute("REINDEX");
     } catch (ex) {
@@ -1457,7 +1455,7 @@ async function integrity(dbName) {
       );
     }
 
-    
+    // Check again.
     if (!(await check(db))) {
       throw new Components.Exception(
         "The database is still corrupt",
@@ -1469,13 +1467,13 @@ async function integrity(dbName) {
   }
 }
 
-function PlacesDBUtilsIdleMaintenance() {}
+export function PlacesDBUtilsIdleMaintenance() {}
 
 PlacesDBUtilsIdleMaintenance.prototype = {
   observe(subject, topic, data) {
     switch (topic) {
       case "idle-daily":
-        
+        // Once a week run places.sqlite maintenance tasks.
         let lastMaintenance = Services.prefs.getIntPref(
           "places.database.lastMaintenance",
           0
