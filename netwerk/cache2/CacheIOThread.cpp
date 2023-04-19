@@ -81,68 +81,43 @@ namespace detail {
 
 
 
-class BlockingIOWatcher {
+class NativeThreadHandle {
 #ifdef XP_WIN
   
   HANDLE mThread;
-  
-  HANDLE mEvent;
 #endif
 
  public:
   
-  BlockingIOWatcher();
-  ~BlockingIOWatcher();
+  NativeThreadHandle();
+  ~NativeThreadHandle();
 
   
   
   void InitThread();
   
   
-  void WatchAndCancel(Monitor& aMonitor);
-  
-  
-  
-  
-  void NotifyOperationDone();
+  void CancelBlockingIO(Monitor& aMonitor);
 };
 
 #ifdef XP_WIN
 
-BlockingIOWatcher::BlockingIOWatcher() : mThread(NULL), mEvent(NULL) {
-  HMODULE kernel32_dll = GetModuleHandleW(L"kernel32.dll");
-  if (!kernel32_dll) {
-    return;
-  }
+NativeThreadHandle::NativeThreadHandle() : mThread(NULL) {}
 
-  mEvent = ::CreateEventW(NULL, TRUE, FALSE, NULL);
-}
-
-BlockingIOWatcher::~BlockingIOWatcher() {
-  if (mEvent) {
-    CloseHandle(mEvent);
-  }
+NativeThreadHandle::~NativeThreadHandle() {
   if (mThread) {
     CloseHandle(mThread);
   }
 }
 
-void BlockingIOWatcher::InitThread() {
+void NativeThreadHandle::InitThread() {
   
   ::DuplicateHandle(GetCurrentProcess(), GetCurrentThread(),
                     GetCurrentProcess(), &mThread, 0, FALSE,
                     DUPLICATE_SAME_ACCESS);
 }
 
-void BlockingIOWatcher::WatchAndCancel(Monitor& aMonitor) {
-  if (!mEvent) {
-    return;
-  }
-
-  
-  
-  ::ResetEvent(mEvent);
-
+void NativeThreadHandle::CancelBlockingIO(Monitor& aMonitor) {
   HANDLE thread;
   {
     MonitorAutoLock lock(aMonitor);
@@ -163,21 +138,14 @@ void BlockingIOWatcher::WatchAndCancel(Monitor& aMonitor) {
   }
 }
 
-void BlockingIOWatcher::NotifyOperationDone() {
-  if (mEvent) {
-    ::SetEvent(mEvent);
-  }
-}
-
 #else  
 
 
 
-BlockingIOWatcher::BlockingIOWatcher() = default;
-BlockingIOWatcher::~BlockingIOWatcher() = default;
-void BlockingIOWatcher::InitThread() {}
-void BlockingIOWatcher::WatchAndCancel(Monitor&) {}
-void BlockingIOWatcher::NotifyOperationDone() {}
+NativeThreadHandle::NativeThreadHandle() = default;
+NativeThreadHandle::~NativeThreadHandle() = default;
+void NativeThreadHandle::InitThread() {}
+void NativeThreadHandle::CancelBlockingIO(Monitor&) {}
 
 #endif
 
@@ -214,7 +182,7 @@ nsresult CacheIOThread::Init() {
     MonitorAutoLock lock(mMonitor);
     
     
-    mBlockingIOWatcher = MakeUnique<detail::BlockingIOWatcher>();
+    mNativeThreadHandle = MakeUnique<detail::NativeThreadHandle>();
   }
 
   
@@ -349,7 +317,7 @@ void CacheIOThread::Shutdown() {
 void CacheIOThread::CancelBlockingIO() {
   
   
-  if (!mBlockingIOWatcher) {
+  if (!mNativeThreadHandle) {
     return;
   }
 
@@ -360,7 +328,7 @@ void CacheIOThread::CancelBlockingIO() {
 
   
   
-  mBlockingIOWatcher->WatchAndCancel(mMonitor);
+  mNativeThreadHandle->CancelBlockingIO(mMonitor);
 }
 
 already_AddRefed<nsIEventTarget> CacheIOThread::Target() {
@@ -399,8 +367,8 @@ void CacheIOThread::ThreadFunc() {
   {
     MonitorAutoLock lock(mMonitor);
 
-    MOZ_ASSERT(mBlockingIOWatcher);
-    mBlockingIOWatcher->InitThread();
+    MOZ_ASSERT(mNativeThreadHandle);
+    mNativeThreadHandle->InitThread();
 
     auto queue =
         MakeRefPtr<ThreadEventQueue>(MakeUnique<mozilla::EventQueue>());
@@ -436,8 +404,7 @@ void CacheIOThread::ThreadFunc() {
           rv = thread->ProcessNextEvent(false, &processedEvent);
 
           ++mEventCounter;
-          MOZ_ASSERT(mBlockingIOWatcher);
-          mBlockingIOWatcher->NotifyOperationDone();
+          MOZ_ASSERT(mNativeThreadHandle);
         } while (NS_SUCCEEDED(rv) && processedEvent);
       }
 
@@ -513,8 +480,7 @@ void CacheIOThread::LoopOneLevel(uint32_t aLevel) {
 
       events[index]->Run();
 
-      MOZ_ASSERT(mBlockingIOWatcher);
-      mBlockingIOWatcher->NotifyOperationDone();
+      MOZ_ASSERT(mNativeThreadHandle);
 
       if (mRerunCurrentEvent) {
         

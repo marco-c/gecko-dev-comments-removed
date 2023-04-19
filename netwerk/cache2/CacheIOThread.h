@@ -24,7 +24,7 @@ namespace detail {
 
 
 
-class BlockingIOWatcher;
+class NativeThreadHandle;
 }  
 
 class CacheIOThread final : public nsIThreadObserver {
@@ -115,7 +115,7 @@ class CacheIOThread final : public nsIThreadObserver {
   PRThread* mThread{nullptr};
   
   
-  UniquePtr<detail::BlockingIOWatcher> mBlockingIOWatcher;
+  UniquePtr<detail::NativeThreadHandle> mNativeThreadHandle;
   Atomic<nsIThread*> mXPCOMThread{nullptr};
   Atomic<uint32_t, Relaxed> mLowestLevelWaiting{LAST_LEVEL};
   uint32_t mCurrentlyExecutingLevel{0};
