@@ -3860,16 +3860,10 @@ UpdateService.prototype = {
 
 
   get disabled() {
-    let hasWinPackageId = false;
-    try {
-      hasWinPackageId = Services.sysinfo.getProperty("hasWinPackageId");
-    } catch (_ex) {
-      
-    }
     return (
       (Services.policies && !Services.policies.isAllowed("appUpdate")) ||
       this.disabledForTesting ||
-      hasWinPackageId
+      Services.sysinfo.getProperty("isPackagedApp")
     );
   },
 
