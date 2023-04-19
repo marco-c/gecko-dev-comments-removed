@@ -1178,6 +1178,23 @@ SetIsInlinableLargeFunction(TypedArraySome);
 
 
 
+function TypedArraySortCompare(comparefn) {
+  return function(x, y) {
+    
+    var v = +callContentFunction(comparefn, undefined, x, y);
+
+    
+    if (v !== v) {
+      return 0;
+    }
+
+    
+    return v;
+  };
+}
+
+
+
 function TypedArraySort(comparefn) {
   
 
@@ -1216,21 +1233,17 @@ function TypedArraySort(comparefn) {
   }
 
   
+  var wrappedCompareFn = TypedArraySortCompare(comparefn);
+
   
-  var wrappedCompareFn = function(x, y) {
-    
-    var v = +callContentFunction(comparefn, undefined, x, y);
+  var sorted = MergeSortTypedArray(obj, len, wrappedCompareFn);
 
-    
-    if (v !== v) {
-      return 0;
-    }
+  
+  for (var i = 0; i < len; i++) {
+    obj[i] = sorted[i];
+  }
 
-    
-    return v;
-  };
-
-  return MergeSortTypedArray(obj, len, wrappedCompareFn);
+  return obj;
 }
 
 
@@ -2211,18 +2224,43 @@ function TypedArrayToSorted(comparefn) {
   }
 
   
-  var A = TypedArrayCreateSameType(O, len);
+  if (len <= 1) {
+    
+    var A = TypedArrayCreateSameType(O, len);
 
-  
-  
-  
-  
-  for (var k = 0; k < len; k++) {
-    A[k] = O[k];
+    
+    if (len > 0) {
+      A[0] = O[0];
+    }
+
+    
+    return A;
+  }
+
+  if (comparefn === undefined) {
+    
+    var A = TypedArrayCreateSameType(O, len);
+
+    
+    
+    
+
+    
+    for (var k = 0; k < len; k++) {
+      A[k] = O[k];
+    }
+
+    
+    return TypedArrayNativeSort(A);
   }
 
   
-  return callFunction(TypedArraySort, A, comparefn);
+  var wrappedCompareFn = TypedArraySortCompare(comparefn);
+
+  
+  
+  
+  return MergeSortTypedArray(O, len, wrappedCompareFn);
 }
 
 #endif
