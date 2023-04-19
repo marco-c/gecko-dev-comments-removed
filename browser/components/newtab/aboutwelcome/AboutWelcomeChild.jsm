@@ -251,22 +251,29 @@ class AboutWelcomeChild extends JSWindowActorChild {
         "AWPage:GET_APP_AND_SYSTEM_LOCALE_INFO"
       );
     }
-    let defaults = lazy.AboutWelcomeDefaults.getDefaults(
-      featureConfig.templateMR
+
+    
+    
+    const useMROnboarding = lazy.NimbusFeatures.majorRelease2022.getVariable(
+      "onboarding"
     );
+    const useTemplateMR = useMROnboarding ?? featureConfig.templateMR;
+
     
     
     
-    return Cu.cloneInto(
-      await lazy.AboutWelcomeDefaults.prepareContentForReact({
-        ...attributionData,
-        ...experimentMetadata,
-        ...defaults,
-        ...featureConfig,
-        screens: featureConfig.screens ?? defaults.screens,
-      }),
-      this.contentWindow
-    );
+    let defaults = lazy.AboutWelcomeDefaults.getDefaults(useTemplateMR);
+
+    const content = await lazy.AboutWelcomeDefaults.prepareContentForReact({
+      ...attributionData,
+      ...experimentMetadata,
+      ...defaults,
+      ...featureConfig,
+      templateMR: useTemplateMR,
+      screens: featureConfig.screens ?? defaults.screens,
+    });
+
+    return Cu.cloneInto(content, this.contentWindow);
   }
 
   AWGetFeatureConfig() {
