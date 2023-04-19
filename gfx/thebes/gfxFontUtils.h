@@ -11,6 +11,7 @@
 #include <new>
 #include <utility>
 #include "gfxPlatform.h"
+#include "harfbuzz/hb.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Casting.h"
@@ -906,6 +907,19 @@ class gfxFontUtils {
     mozilla::AutoSwap_PRUint16 length;      
     mozilla::AutoSwap_PRUint16 offset;  
                                         
+  };
+
+  
+  class AutoHBBlob {
+   public:
+    explicit AutoHBBlob(hb_blob_t* aBlob) : mBlob(aBlob) {}
+
+    ~AutoHBBlob() { hb_blob_destroy(mBlob); }
+
+    operator hb_blob_t*() { return mBlob; }
+
+   private:
+    hb_blob_t* const mBlob;
   };
 
   
