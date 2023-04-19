@@ -34,13 +34,10 @@ using namespace gfx;
 
 
 
-StaticMutex sLaunchRDDMutex;
-static StaticRefPtr<GenericNonExclusivePromise> sLaunchRDDPromise
-    MOZ_GUARDED_BY(sLaunchRDDMutex);
-
-StaticMutex sLaunchUtilityMutex;
-static StaticRefPtr<GenericNonExclusivePromise> sLaunchUtilityPromise
-    MOZ_GUARDED_BY(sLaunchUtilityMutex);
+StaticMutex sLaunchMutex;
+static EnumeratedArray<RemoteDecodeIn, RemoteDecodeIn::SENTINEL,
+                       StaticRefPtr<GenericNonExclusivePromise>>
+    sLaunchPromises MOZ_GUARDED_BY(sLaunchMutex);
 
 
 
@@ -49,21 +46,18 @@ static StaticDataMutex<StaticRefPtr<nsIThread>>
     sRemoteDecoderManagerChildThread("sRemoteDecoderManagerChildThread");
 
 
-static StaticRefPtr<RemoteDecoderManagerChild>
-    sRemoteDecoderManagerChildForRDDProcess;
-static StaticRefPtr<RemoteDecoderManagerChild>
-    sRemoteDecoderManagerChildForUtilityProcess;
+static EnumeratedArray<RemoteDecodeIn, RemoteDecodeIn::SENTINEL,
+                       StaticRefPtr<RemoteDecoderManagerChild>>
+    sRemoteDecoderManagerChildForProcesses;
 
-static StaticRefPtr<RemoteDecoderManagerChild>
-    sRemoteDecoderManagerChildForGPUProcess;
 static UniquePtr<nsTArray<RefPtr<Runnable>>> sRecreateTasks;
 
-static StaticDataMutex<Maybe<media::MediaCodecsSupported>> sGPUSupported(
-    "RDMC::sGPUSupported");
-static StaticDataMutex<Maybe<media::MediaCodecsSupported>> sRDDSupported(
-    "RDMC::sRDDSupported");
-static StaticDataMutex<Maybe<media::MediaCodecsSupported>> sUtilitySupported(
-    "RDMC::sUtilitySupported");
+
+
+StaticMutex sProcessSupportedMutex;
+static EnumeratedArray<RemoteDecodeIn, RemoteDecodeIn::SENTINEL,
+                       Maybe<media::MediaCodecsSupported>>
+    sProcessSupported MOZ_GUARDED_BY(sProcessSupportedMutex);
 
 class ShutdownObserver final : public nsIObserver {
  public:
@@ -123,10 +117,12 @@ void RemoteDecoderManagerChild::InitForGPUProcess(
   Init();
 
   auto remoteDecoderManagerThread = sRemoteDecoderManagerChildThread.Lock();
-  MOZ_ALWAYS_SUCCEEDS((*remoteDecoderManagerThread)
-                          ->Dispatch(NewRunnableFunction(
-                              "InitForContentRunnable", &OpenForGPUProcess,
-                              std::move(aVideoManager))));
+  MOZ_ALWAYS_SUCCEEDS(
+      (*remoteDecoderManagerThread)
+          ->Dispatch(NewRunnableFunction(
+              "InitForContentRunnable",
+              &OpenRemoteDecoderManagerChildForProcess,
+              std::move(aVideoManager), RemoteDecodeIn::GpuProcess)));
 }
 
 
@@ -146,29 +142,18 @@ void RemoteDecoderManagerChild::Shutdown() {
   if (childThread) {
     MOZ_ALWAYS_SUCCEEDS(childThread->Dispatch(NS_NewRunnableFunction(
         "dom::RemoteDecoderManagerChild::Shutdown", []() {
-          if (sRemoteDecoderManagerChildForRDDProcess &&
-              sRemoteDecoderManagerChildForRDDProcess->CanSend()) {
-            sRemoteDecoderManagerChildForRDDProcess->Close();
+          for (auto& p : sRemoteDecoderManagerChildForProcesses) {
+            if (p && p->CanSend()) {
+              p->Close();
+            }
+            p = nullptr;
           }
-          sRemoteDecoderManagerChildForRDDProcess = nullptr;
           {
-            StaticMutexAutoLock lock(sLaunchRDDMutex);
-            sLaunchRDDPromise = nullptr;
+            StaticMutexAutoLock lock(sLaunchMutex);
+            for (auto& p : sLaunchPromises) {
+              p = nullptr;
+            }
           }
-          if (sRemoteDecoderManagerChildForUtilityProcess &&
-              sRemoteDecoderManagerChildForUtilityProcess->CanSend()) {
-            sRemoteDecoderManagerChildForUtilityProcess->Close();
-          }
-          sRemoteDecoderManagerChildForUtilityProcess = nullptr;
-          {
-            StaticMutexAutoLock lock(sLaunchUtilityMutex);
-            sLaunchUtilityPromise = nullptr;
-          }
-          if (sRemoteDecoderManagerChildForGPUProcess &&
-              sRemoteDecoderManagerChildForGPUProcess->CanSend()) {
-            sRemoteDecoderManagerChildForGPUProcess->Close();
-          }
-          sRemoteDecoderManagerChildForGPUProcess = nullptr;
           ipc::BackgroundChild::CloseForCurrentThread();
         })));
     childThread->Shutdown();
@@ -206,13 +191,12 @@ RemoteDecoderManagerChild* RemoteDecoderManagerChild::GetSingleton(
   MOZ_ASSERT(managerThread->IsOnCurrentThread());
   switch (aLocation) {
     case RemoteDecodeIn::GpuProcess:
-      return sRemoteDecoderManagerChildForGPUProcess;
     case RemoteDecodeIn::RddProcess:
-      return sRemoteDecoderManagerChildForRDDProcess;
     case RemoteDecodeIn::UtilityProcess:
-      return sRemoteDecoderManagerChildForUtilityProcess;
+      return sRemoteDecoderManagerChildForProcesses[aLocation];
     default:
       MOZ_CRASH("Unexpected RemoteDecode variant");
+      return nullptr;
   }
 }
 
@@ -228,19 +212,11 @@ bool RemoteDecoderManagerChild::Supports(
     DecoderDoctorDiagnostics* aDiagnostics) {
   Maybe<media::MediaCodecsSupported> supported;
   switch (aLocation) {
-    case RemoteDecodeIn::RddProcess: {
-      auto supportedRDD = sRDDSupported.Lock();
-      supported = *supportedRDD;
-      break;
-    }
+    case RemoteDecodeIn::GpuProcess:
+    case RemoteDecodeIn::RddProcess:
     case RemoteDecodeIn::UtilityProcess: {
-      auto supportedUtility = sUtilitySupported.Lock();
-      supported = *supportedUtility;
-      break;
-    }
-    case RemoteDecodeIn::GpuProcess: {
-      auto supportedGPU = sGPUSupported.Lock();
-      supported = *supportedGPU;
+      StaticMutexAutoLock lock(sProcessSupportedMutex);
+      supported = sProcessSupported[aLocation];
       break;
     }
     default:
@@ -415,10 +391,10 @@ RemoteDecoderManagerChild::LaunchRDDProcessIfNeeded() {
                                                        __func__);
   }
 
-  StaticMutexAutoLock lock(sLaunchRDDMutex);
-
-  if (sLaunchRDDPromise) {
-    return sLaunchRDDPromise;
+  StaticMutexAutoLock lock(sLaunchMutex);
+  auto& rddLaunchPromise = sLaunchPromises[RemoteDecodeIn::RddProcess];
+  if (rddLaunchPromise) {
+    return rddLaunchPromise;
   }
 
   
@@ -464,7 +440,9 @@ RemoteDecoderManagerChild::LaunchRDDProcessIfNeeded() {
                 return GenericNonExclusivePromise::CreateAndReject(rv,
                                                                    __func__);
               }
-              OpenForRDDProcess(Get<1>(std::move(aResult.ResolveValue())));
+              OpenRemoteDecoderManagerChildForProcess(
+                  Get<1>(std::move(aResult.ResolveValue())),
+                  RemoteDecodeIn::RddProcess);
               return GenericNonExclusivePromise::CreateAndResolve(true,
                                                                   __func__);
             });
@@ -473,13 +451,14 @@ RemoteDecoderManagerChild::LaunchRDDProcessIfNeeded() {
   p = p->Then(
       GetCurrentSerialEventTarget(), __func__,
       [](const GenericNonExclusivePromise::ResolveOrRejectValue& aResult) {
-        StaticMutexAutoLock lock(sLaunchRDDMutex);
-        sLaunchRDDPromise = nullptr;
+        StaticMutexAutoLock lock(sLaunchMutex);
+        sLaunchPromises[RemoteDecodeIn::RddProcess] = nullptr;
         return GenericNonExclusivePromise::CreateAndResolveOrReject(aResult,
                                                                     __func__);
       });
-  sLaunchRDDPromise = p;
-  return sLaunchRDDPromise;
+
+  rddLaunchPromise = p;
+  return rddLaunchPromise;
 }
 
 
@@ -495,10 +474,11 @@ RemoteDecoderManagerChild::LaunchUtilityProcessIfNeeded() {
                                                        __func__);
   }
 
-  StaticMutexAutoLock lock(sLaunchUtilityMutex);
+  StaticMutexAutoLock lock(sLaunchMutex);
+  auto& utilityLaunchPromise = sLaunchPromises[RemoteDecodeIn::UtilityProcess];
 
-  if (sLaunchUtilityPromise) {
-    return sLaunchUtilityPromise;
+  if (utilityLaunchPromise) {
+    return utilityLaunchPromise;
   }
 
   
@@ -546,7 +526,9 @@ RemoteDecoderManagerChild::LaunchUtilityProcessIfNeeded() {
                 return GenericNonExclusivePromise::CreateAndReject(rv,
                                                                    __func__);
               }
-              OpenForUtilityProcess(Get<1>(std::move(aResult.ResolveValue())));
+              OpenRemoteDecoderManagerChildForProcess(
+                  Get<1>(std::move(aResult.ResolveValue())),
+                  RemoteDecodeIn::UtilityProcess);
               return GenericNonExclusivePromise::CreateAndResolve(true,
                                                                   __func__);
             });
@@ -555,13 +537,13 @@ RemoteDecoderManagerChild::LaunchUtilityProcessIfNeeded() {
   p = p->Then(
       GetCurrentSerialEventTarget(), __func__,
       [](const GenericNonExclusivePromise::ResolveOrRejectValue& aResult) {
-        StaticMutexAutoLock lock(sLaunchUtilityMutex);
-        sLaunchUtilityPromise = nullptr;
+        StaticMutexAutoLock lock(sLaunchMutex);
+        sLaunchPromises[RemoteDecodeIn::UtilityProcess] = nullptr;
         return GenericNonExclusivePromise::CreateAndResolveOrReject(aResult,
                                                                     __func__);
       });
-  sLaunchUtilityPromise = p;
-  return sLaunchUtilityPromise;
+  utilityLaunchPromise = p;
+  return utilityLaunchPromise;
 }
 
 PRemoteDecoderChild* RemoteDecoderManagerChild::AllocPRemoteDecoderChild(
@@ -606,8 +588,10 @@ RemoteDecoderManagerChild::RemoteDecoderManagerChild(RemoteDecodeIn aLocation)
              mLocation == RemoteDecodeIn::UtilityProcess);
 }
 
-void RemoteDecoderManagerChild::OpenForRDDProcess(
-    Endpoint<PRemoteDecoderManagerChild>&& aEndpoint) {
+
+void RemoteDecoderManagerChild::OpenRemoteDecoderManagerChildForProcess(
+    Endpoint<PRemoteDecoderManagerChild>&& aEndpoint,
+    RemoteDecodeIn aLocation) {
   nsCOMPtr<nsISerialEventTarget> managerThread = GetManagerThread();
   if (!managerThread) {
     
@@ -618,32 +602,14 @@ void RemoteDecoderManagerChild::OpenForRDDProcess(
   
   
   
-  
-  
-  
-  if (sRemoteDecoderManagerChildForRDDProcess &&
-      sRemoteDecoderManagerChildForRDDProcess->CanSend()) {
-    return;
-  }
-  sRemoteDecoderManagerChildForRDDProcess = nullptr;
-  if (aEndpoint.IsValid()) {
-    RefPtr<RemoteDecoderManagerChild> manager =
-        new RemoteDecoderManagerChild(RemoteDecodeIn::RddProcess);
-    if (aEndpoint.Bind(manager)) {
-      sRemoteDecoderManagerChildForRDDProcess = manager;
-      manager->InitIPDL();
+  auto runRecreateTasksIfNeeded = MakeScopeExit([aLocation]() {
+    if (aLocation == RemoteDecodeIn::GpuProcess) {
+      for (Runnable* task : *sRecreateTasks) {
+        task->Run();
+      }
+      sRecreateTasks->Clear();
     }
-  }
-}
-
-void RemoteDecoderManagerChild::OpenForUtilityProcess(
-    Endpoint<PRemoteDecoderManagerChild>&& aEndpoint) {
-  nsCOMPtr<nsISerialEventTarget> managerThread = GetManagerThread();
-  if (!managerThread) {
-    
-    return;
-  }
-  MOZ_ASSERT(managerThread->IsOnCurrentThread());
+  });
 
   
   
@@ -651,44 +617,23 @@ void RemoteDecoderManagerChild::OpenForUtilityProcess(
   
   
   
-  if (sRemoteDecoderManagerChildForUtilityProcess &&
-      sRemoteDecoderManagerChildForUtilityProcess->CanSend()) {
+  
+  MOZ_ASSERT(aLocation != RemoteDecodeIn::SENTINEL);
+  auto& remoteDecoderManagerChild =
+      sRemoteDecoderManagerChildForProcesses[aLocation];
+  if (aLocation != RemoteDecodeIn::GpuProcess && remoteDecoderManagerChild &&
+      remoteDecoderManagerChild->CanSend()) {
     return;
   }
-  sRemoteDecoderManagerChildForUtilityProcess = nullptr;
+  remoteDecoderManagerChild = nullptr;
   if (aEndpoint.IsValid()) {
     RefPtr<RemoteDecoderManagerChild> manager =
-        new RemoteDecoderManagerChild(RemoteDecodeIn::UtilityProcess);
+        new RemoteDecoderManagerChild(aLocation);
     if (aEndpoint.Bind(manager)) {
-      sRemoteDecoderManagerChildForUtilityProcess = manager;
+      remoteDecoderManagerChild = manager;
       manager->InitIPDL();
     }
   }
-}
-
-void RemoteDecoderManagerChild::OpenForGPUProcess(
-    Endpoint<PRemoteDecoderManagerChild>&& aEndpoint) {
-  nsCOMPtr<nsISerialEventTarget> managerThread = GetManagerThread();
-  if (!managerThread) {
-    
-    return;
-  }
-  MOZ_ASSERT(managerThread->IsOnCurrentThread());
-  
-  
-  sRemoteDecoderManagerChildForGPUProcess = nullptr;
-  if (aEndpoint.IsValid()) {
-    RefPtr<RemoteDecoderManagerChild> manager =
-        new RemoteDecoderManagerChild(RemoteDecodeIn::GpuProcess);
-    if (aEndpoint.Bind(manager)) {
-      sRemoteDecoderManagerChildForGPUProcess = manager;
-      manager->InitIPDL();
-    }
-  }
-  for (Runnable* task : *sRecreateTasks) {
-    task->Run();
-  }
-  sRecreateTasks->Clear();
 }
 
 void RemoteDecoderManagerChild::InitIPDL() { mIPDLSelfRef = this; }
@@ -800,19 +745,11 @@ void RemoteDecoderManagerChild::HandleFatalError(const char* aMsg) const {
 void RemoteDecoderManagerChild::SetSupported(
     RemoteDecodeIn aLocation, const media::MediaCodecsSupported& aSupported) {
   switch (aLocation) {
-    case RemoteDecodeIn::GpuProcess: {
-      auto supported = sGPUSupported.Lock();
-      *supported = Some(aSupported);
-      break;
-    }
-    case RemoteDecodeIn::RddProcess: {
-      auto supported = sRDDSupported.Lock();
-      *supported = Some(aSupported);
-      break;
-    }
+    case RemoteDecodeIn::GpuProcess:
+    case RemoteDecodeIn::RddProcess:
     case RemoteDecodeIn::UtilityProcess: {
-      auto supported = sUtilitySupported.Lock();
-      *supported = Some(aSupported);
+      StaticMutexAutoLock lock(sProcessSupportedMutex);
+      sProcessSupported[aLocation] = Some(aSupported);
       break;
     }
     default:
