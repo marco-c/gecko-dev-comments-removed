@@ -117,6 +117,8 @@ class MFMediaEngineParent final : public PMFMediaEngineParent {
   
   
   bool mIsEnableDcompMode = false;
+
+  float mPlaybackRate = 1.0;
 };
 
 }  
