@@ -3172,7 +3172,11 @@ ParentLayerToScreenMatrix4x4 APZCTreeManager::GetApzcToGeckoTransform(
        parent = parent->GetParent()) {
     
     
-    result = result * parent->GetTransformToLastDispatchedPaint(aComponents) *
+    
+    
+    
+    result = result *
+             parent->GetTransformToLastDispatchedPaint(LayoutAndVisual) *
              parent->GetAncestorTransform();
 
     
