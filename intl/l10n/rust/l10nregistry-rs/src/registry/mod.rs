@@ -24,12 +24,11 @@ struct Shared<P, B> {
     bundle_adapter: Option<B>,
 }
 
-pub struct L10nRegistryLocked<'a, B> {
+pub struct L10nRegistryLocked<'a> {
     lock: MutexGuard<'a, Vec<Vec<FileSource>>>,
-    bundle_adapter: Option<&'a B>,
 }
 
-impl<'a, B> L10nRegistryLocked<'a, B> {
+impl<'a> L10nRegistryLocked<'a> {
     pub fn iter(&self, metasource: usize) -> impl Iterator<Item = &FileSource> {
         self.lock
             .get(metasource)
@@ -105,14 +104,13 @@ impl<P, B> L10nRegistry<P, B> {
         Ok(())
     }
 
-    pub fn lock(&self) -> L10nRegistryLocked<'_, B> {
+    pub fn lock(&self) -> L10nRegistryLocked<'_> {
         L10nRegistryLocked {
             
             
             
             
             lock: self.shared.sources.lock().unwrap(),
-            bundle_adapter: self.shared.bundle_adapter.as_ref(),
         }
     }
 
