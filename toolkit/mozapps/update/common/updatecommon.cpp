@@ -134,31 +134,11 @@ void UpdateLog::Printf(const char* fmt, ...) {
     return;
   }
 
-  time_t rawtime = time(nullptr);
-  struct tm* timeinfo = localtime(&rawtime);
-
-  if (nullptr != timeinfo) {
-    
-    
-    const size_t buffer_size = 25;
-    char buffer[buffer_size] = {0};
-
-    if (0 == strftime(buffer, buffer_size, "%Y-%m-%d %H:%M:%S%z", timeinfo)) {
-      buffer[0] = '\0';  
-      if (0 > snprintf(buffer, buffer_size, "%d", (int)mktime(timeinfo))) {
-        buffer[0] = '\0';  
-      }
-    }
-
-    fprintf(logFP, "%s: ", buffer);
-  }
-
   va_list ap;
   va_start(ap, fmt);
   vfprintf(logFP, fmt, ap);
-  va_end(ap);
-
   fprintf(logFP, "\n");
+  va_end(ap);
 #if defined(XP_WIN) && defined(MOZ_DEBUG)
   
   
