@@ -30,7 +30,6 @@
 #include "vm/JSScript.h"       
 #include "vm/ModuleBuilder.h"  
 #include "vm/Time.h"           
-#include "vm/TraceLogging.h"
 #include "wasm/AsmJS.h"
 
 #include "vm/GeckoProfiler-inl.h"

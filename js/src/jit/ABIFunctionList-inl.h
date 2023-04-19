@@ -45,11 +45,7 @@
 #include "vm/Interpreter.h"      
 #include "vm/NativeObject.h"     
 #include "vm/RegExpShared.h"     
-#include "vm/TraceLogging.h"     
-                                 
-                                 
-
-#include "wasm/WasmBuiltins.h"  
+#include "wasm/WasmBuiltins.h"   
 
 #include "builtin/Boolean-inl.h"  
 
@@ -168,8 +164,6 @@ namespace jit {
   _(js::RegExpPrototypeOptimizableRaw)                                \
   _(js::SetIteratorObject::next)                                      \
   _(js::StringToNumberPure)                                           \
-  _(js::TraceLogStartEventPrivate)                                    \
-  _(js::TraceLogStopEventPrivate)                                     \
   _(js::TypeOfObject)
 
 
@@ -178,10 +172,7 @@ namespace jit {
 
 
 
-#define ABIFUNCTION_AND_TYPE_LIST(_)                       \
-  _(js::TraceLogStartEvent,                                \
-    void (*)(TraceLoggerThread*, const TraceLoggerEvent&)) \
-  _(JS::ToInt32, int32_t (*)(double))
+#define ABIFUNCTION_AND_TYPE_LIST(_) _(JS::ToInt32, int32_t (*)(double))
 
 
 

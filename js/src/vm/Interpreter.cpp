@@ -59,7 +59,6 @@
 #include "vm/SharedStencil.h"  
 #include "vm/StringType.h"
 #include "vm/ThrowMsgKind.h"  
-#include "vm/TraceLogging.h"
 #ifdef ENABLE_RECORD_TUPLE
 #  include "vm/RecordType.h"
 #  include "vm/TupleType.h"

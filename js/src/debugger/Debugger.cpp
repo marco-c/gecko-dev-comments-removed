@@ -100,7 +100,6 @@
 #include "vm/SavedStacks.h"           
 #include "vm/Scope.h"                 
 #include "vm/StringType.h"            
-#include "vm/TraceLogging.h"          
 #include "vm/WrapperObject.h"         
 #include "wasm/WasmDebug.h"           
 #include "wasm/WasmInstance.h"        

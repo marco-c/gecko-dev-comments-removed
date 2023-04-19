@@ -20,12 +20,9 @@
 #include "jit/JitOptions.h"      
 #include "js/TypeDecls.h"        
 #include "util/TrailingArray.h"  
-#include "vm/TraceLogging.h"     
 
 namespace js {
 namespace jit {
-
-using TraceLoggerEventVector = Vector<TraceLoggerEvent, 0, SystemAllocPolicy>;
 
 class SnapshotWriter;
 class RecoverWriter;
@@ -129,9 +126,6 @@ class alignas(8) IonScript final : public TrailingArray {
   
   
   uint32_t osrPcMismatchCounter_ = 0;
-
-  
-  TraceLoggerEventVector traceLoggerEvents_;
 
 #ifdef DEBUG
   
@@ -356,10 +350,7 @@ class alignas(8) IonScript final : public TrailingArray {
   bool hasProfilingInstrumentation() const {
     return hasProfilingInstrumentation_;
   }
-  [[nodiscard]] bool addTraceLoggerEvent(TraceLoggerEvent& event) {
-    MOZ_ASSERT(event.hasTextId());
-    return traceLoggerEvents_.append(std::move(event));
-  }
+
   size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
     return mallocSizeOf(this);
   }

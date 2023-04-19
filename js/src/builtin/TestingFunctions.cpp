@@ -122,7 +122,6 @@
 #include "vm/Stack.h"
 #include "vm/StencilObject.h"  
 #include "vm/StringType.h"
-#include "vm/TraceLogging.h"
 #include "wasm/AsmJS.h"
 #include "wasm/WasmBaselineCompile.h"
 #include "wasm/WasmCraneliftCompile.h"
