@@ -68,6 +68,9 @@ class StunRequestManager {
   bool empty() { return requests_.empty(); }
 
   
+  void set_origin(const std::string& origin) { origin_ = origin; }
+
+  
   sigslot::signal3<const void*, size_t, StunRequest*> SignalSendPacket;
 
  private:
@@ -75,6 +78,7 @@ class StunRequestManager {
 
   rtc::Thread* const thread_;
   RequestMap requests_;
+  std::string origin_;
 
   friend class StunRequest;
 };
@@ -102,6 +106,10 @@ class StunRequest : public rtc::MessageHandler {
   }
 
   
+  const std::string& origin() const { return origin_; }
+  void set_origin(const std::string& origin) { origin_ = origin; }
+
+  
   int type();
 
   
@@ -116,6 +124,7 @@ class StunRequest : public rtc::MessageHandler {
  protected:
   int count_;
   bool timeout_;
+  std::string origin_;
 
   
   
