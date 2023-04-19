@@ -16,6 +16,7 @@
 
 
 
+using mozilla::dom::ArrayBuffer;
 using mozilla::dom::GlobalObject;
 using mozilla::dom::Promise;
 using mozilla::dom::RootedDictionary;
