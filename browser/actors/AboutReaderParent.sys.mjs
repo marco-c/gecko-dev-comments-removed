@@ -1,11 +1,9 @@
-
-
-
-
+// -*- indent-tabs-mode: nil; js-indent-level: 2 -*-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
-
-var EXPORTED_SYMBOLS = ["AboutReaderParent"];
 
 const lazy = {};
 
@@ -27,20 +25,20 @@ const gStringBundle = Services.strings.createBundle(
   "chrome://global/locale/aboutReader.properties"
 );
 
-
-
+// A set of all of the AboutReaderParent actors that exist.
+// See bug 1631146 for a request for a less manual way of doing this.
 let gAllActors = new Set();
 
-
-
+// A map of message names to listeners that listen to messages
+// received by the AboutReaderParent actors.
 let gListeners = new Map();
 
-
-
-
+// As a reader mode document could be loaded in a different process than
+// the source article, temporarily cache the article data here in the
+// parent while switching to it.
 let gCachedArticles = new Map();
 
-class AboutReaderParent extends JSWindowActorParent {
+export class AboutReaderParent extends JSWindowActorParent {
   didDestroy() {
     gAllActors.delete(this);
 
@@ -73,7 +71,7 @@ class AboutReaderParent extends JSWindowActorParent {
 
   static broadcastAsyncMessage(name, data) {
     for (let actor of gAllActors) {
-      
+      // Ignore errors for actors that might not be valid yet or anymore.
       try {
         actor.sendAsyncMessage(name, data);
       } catch (ex) {}
@@ -203,8 +201,8 @@ class AboutReaderParent extends JSWindowActorParent {
 
       case "RedirectTo": {
         gCachedArticles.set(message.data.newURL, message.data.article);
-        
-        
+        // This is setup as a query so we can navigate the page after we've
+        // cached the relevant info in the parent.
         return true;
       }
 
@@ -339,18 +337,18 @@ class AboutReaderParent extends JSWindowActorParent {
     this.sendAsyncMessage("Reader:LeaveReaderMode", {});
   }
 
-  
-
-
-
-
-
-
-
+  /**
+   * Gets an article for a given URL. This method will download and parse a document.
+   *
+   * @param url The article URL.
+   * @param browser The browser where the article is currently loaded.
+   * @return {Promise}
+   * @resolves JS object representing the article, or null if no article is found.
+   */
   async _getArticle(url, browser) {
     return lazy.ReaderMode.downloadAndParseDocument(url).catch(e => {
       if (e && e.newURL) {
-        
+        // Pass up the error so we can navigate the browser in question to the new URL:
         throw e;
       }
       Cu.reportError("Error downloading and parsing document: " + e);

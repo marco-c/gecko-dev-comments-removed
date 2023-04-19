@@ -1,10 +1,8 @@
-
-
-
-
+/* vim: set ts=2 sw=2 sts=2 et tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
-
-var EXPORTED_SYMBOLS = ["AboutReaderChild"];
 
 const lazy = {};
 
@@ -27,7 +25,7 @@ ChromeUtils.defineModuleGetter(
 var gUrlsToDocContentType = new Map();
 var gUrlsToDocTitle = new Map();
 
-class AboutReaderChild extends JSWindowActorChild {
+export class AboutReaderChild extends JSWindowActorChild {
   constructor() {
     super();
 
@@ -61,8 +59,8 @@ class AboutReaderChild extends JSWindowActorChild {
             this.document
           ).catch(Cu.reportError);
 
-          
-          
+          // Get the article data and cache it in the parent process. The reader mode
+          // page will retrieve it when it has loaded.
           let article = await this._articlePromise;
           this.sendAsyncMessage("Reader:EnterReaderMode", article);
         } else {
@@ -83,7 +81,7 @@ class AboutReaderChild extends JSWindowActorChild {
       }
     }
 
-    
+    // Forward the message to the reader if it has been created.
     if (this._reader) {
       this._reader.receiveMessage(message);
     }
@@ -120,7 +118,7 @@ class AboutReaderChild extends JSWindowActorChild {
               url,
             });
           }
-          
+          // Update the toolbar icon to show the "reader active" icon.
           this.sendAsyncMessage("Reader:UpdateReaderButton");
           let docContentType =
             gUrlsToDocContentType.get(url) === "text/plain"
@@ -140,9 +138,9 @@ class AboutReaderChild extends JSWindowActorChild {
 
       case "pagehide":
         this.cancelPotentialPendingReadabilityCheck();
-        
-        
-        
+        // this._isLeavingReaderableReaderMode is used here to keep the Reader Mode icon
+        // visible in the location bar when transitioning from reader-mode page
+        // back to the readable source page.
         this.sendAsyncMessage("Reader:UpdateReaderButton", {
           isArticle: this._isLeavingReaderableReaderMode,
         });
@@ -150,8 +148,8 @@ class AboutReaderChild extends JSWindowActorChild {
         break;
 
       case "pageshow":
-        
-        
+        // If a page is loaded from the bfcache, we won't get a "DOMContentLoaded"
+        // event, so we need to rely on "pageshow" in this case.
         if (aEvent.persisted && this.canDoReadabilityCheck()) {
           this.performReadabilityCheckNow();
         }
@@ -159,12 +157,12 @@ class AboutReaderChild extends JSWindowActorChild {
     }
   }
 
-  
-
-
-
-
-
+  /**
+   * NB: this function will update the state of the reader button asynchronously
+   * after the next mozAfterPaint call (assuming reader mode is enabled and
+   * this is a suitable document). Calling it on things which won't be
+   * painted is not going to work.
+   */
   updateReaderButton(forceNonArticle) {
     if (!this.canDoReadabilityCheck()) {
       return;
@@ -199,8 +197,8 @@ class AboutReaderChild extends JSWindowActorChild {
 
   scheduleReadabilityCheckPostPaint(forceNonArticle) {
     if (this._pendingReadabilityCheck) {
-      
-      
+      // We need to stop this check before we re-add one because we don't know
+      // if forceNonArticle was true or false last time.
       this.cancelPotentialPendingReadabilityCheck();
     }
     this._pendingReadabilityCheck = this.onPaintWhenWaitedFor.bind(
@@ -216,11 +214,11 @@ class AboutReaderChild extends JSWindowActorChild {
   }
 
   onPaintWhenWaitedFor(forceNonArticle, event) {
-    
-    
-    
-    
-    
+    // In non-e10s, we'll get called for paints other than ours, and so it's
+    // possible that this page hasn't been laid out yet, in which case we
+    // should wait until we get an event that does relate to our layout. We
+    // determine whether any of our this.contentWindow got painted by checking
+    // if there are any painted rects.
     if (!event.clientRects.length) {
       return;
     }
@@ -231,8 +229,8 @@ class AboutReaderChild extends JSWindowActorChild {
   performReadabilityCheckNow(forceNonArticle) {
     this.cancelPotentialPendingReadabilityCheck();
 
-    
-    
+    // Ignore errors from actors that have been unloaded before the
+    // paint event timer fires.
     let document;
     try {
       document = this.document;
@@ -240,8 +238,8 @@ class AboutReaderChild extends JSWindowActorChild {
       return;
     }
 
-    
-    
+    // Only send updates when there are articles; there's no point updating with
+    // |false| all the time.
     if (
       lazy.Readerable.shouldCheckUri(document.baseURIObject, true) &&
       lazy.Readerable.isProbablyReaderable(document)
