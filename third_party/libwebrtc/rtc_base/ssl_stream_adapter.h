@@ -13,11 +13,13 @@
 
 #include <stddef.h>
 #include <stdint.h>
+
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "absl/strings/string_view.h"
 #include "rtc_base/ssl_certificate.h"
 #include "rtc_base/ssl_identity.h"
 #include "rtc_base/stream.h"
@@ -53,7 +55,7 @@ extern const char kCsAeadAes256Gcm[];
 std::string SrtpCryptoSuiteToName(int crypto_suite);
 
 
-int SrtpCryptoSuiteFromName(const std::string& crypto_suite);
+int SrtpCryptoSuiteFromName(absl::string_view crypto_suite);
 
 
 
@@ -65,7 +67,7 @@ bool GetSrtpKeyAndSaltLengths(int crypto_suite,
 bool IsGcmCryptoSuite(int crypto_suite);
 
 
-bool IsGcmCryptoSuiteName(const std::string& crypto_suite);
+bool IsGcmCryptoSuiteName(absl::string_view crypto_suite);
 
 
 
@@ -176,7 +178,7 @@ class SSLStreamAdapter : public StreamInterface, public sigslot::has_slots<> {
   
   
   virtual bool SetPeerCertificateDigest(
-      const std::string& digest_alg,
+      absl::string_view digest_alg,
       const unsigned char* digest_val,
       size_t digest_len,
       SSLPeerCertificateDigestError* error = nullptr) = 0;
@@ -208,7 +210,7 @@ class SSLStreamAdapter : public StreamInterface, public sigslot::has_slots<> {
   
   
   
-  virtual bool ExportKeyingMaterial(const std::string& label,
+  virtual bool ExportKeyingMaterial(absl::string_view label,
                                     const uint8_t* context,
                                     size_t context_len,
                                     bool use_context,
@@ -233,7 +235,7 @@ class SSLStreamAdapter : public StreamInterface, public sigslot::has_slots<> {
   
   
   static bool IsAcceptableCipher(int cipher, KeyType key_type);
-  static bool IsAcceptableCipher(const std::string& cipher, KeyType key_type);
+  static bool IsAcceptableCipher(absl::string_view cipher, KeyType key_type);
 
   
   

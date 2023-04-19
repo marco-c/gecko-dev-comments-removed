@@ -22,6 +22,8 @@
 #include <type_traits>
 #include <vector>
 
+#include "absl/strings/string_view.h"
+
 #if defined(WEBRTC_POSIX)
 #include <pthread.h>
 #endif
@@ -348,7 +350,7 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public webrtc::TaskQueueBase {
   
   
   const std::string& name() const { return name_; }
-  bool SetName(const std::string& name, const void* obj);
+  bool SetName(absl::string_view name, const void* obj);
 
   
   

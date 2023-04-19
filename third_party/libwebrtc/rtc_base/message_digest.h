@@ -15,6 +15,8 @@
 
 #include <string>
 
+#include "absl/strings/string_view.h"
+
 namespace rtc {
 
 
@@ -42,12 +44,12 @@ class MessageDigest {
 
 class MessageDigestFactory {
  public:
-  static MessageDigest* Create(const std::string& alg);
+  static MessageDigest* Create(absl::string_view alg);
 };
 
 
 
-bool IsFips180DigestAlgorithm(const std::string& alg);
+bool IsFips180DigestAlgorithm(absl::string_view alg);
 
 
 
@@ -63,25 +65,25 @@ size_t ComputeDigest(MessageDigest* digest,
 
 
 
-size_t ComputeDigest(const std::string& alg,
+size_t ComputeDigest(absl::string_view alg,
                      const void* input,
                      size_t in_len,
                      void* output,
                      size_t out_len);
 
 
-std::string ComputeDigest(MessageDigest* digest, const std::string& input);
+std::string ComputeDigest(MessageDigest* digest, absl::string_view input);
 
 
 
-std::string ComputeDigest(const std::string& alg, const std::string& input);
+std::string ComputeDigest(absl::string_view alg, absl::string_view input);
 
-bool ComputeDigest(const std::string& alg,
-                   const std::string& input,
+bool ComputeDigest(absl::string_view alg,
+                   absl::string_view input,
                    std::string* output);
 
 
-inline std::string MD5(const std::string& input) {
+inline std::string MD5(absl::string_view input) {
   return ComputeDigest(DIGEST_MD5, input);
 }
 
@@ -102,7 +104,7 @@ size_t ComputeHmac(MessageDigest* digest,
 
 
 
-size_t ComputeHmac(const std::string& alg,
+size_t ComputeHmac(absl::string_view alg,
                    const void* key,
                    size_t key_len,
                    const void* input,
@@ -112,18 +114,18 @@ size_t ComputeHmac(const std::string& alg,
 
 
 std::string ComputeHmac(MessageDigest* digest,
-                        const std::string& key,
-                        const std::string& input);
+                        absl::string_view key,
+                        absl::string_view input);
 
 
 
-std::string ComputeHmac(const std::string& alg,
-                        const std::string& key,
-                        const std::string& input);
+std::string ComputeHmac(absl::string_view alg,
+                        absl::string_view key,
+                        absl::string_view input);
 
-bool ComputeHmac(const std::string& alg,
-                 const std::string& key,
-                 const std::string& input,
+bool ComputeHmac(absl::string_view alg,
+                 absl::string_view key,
+                 absl::string_view input,
                  std::string* output);
 
 }  

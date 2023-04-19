@@ -16,7 +16,9 @@
 #include <map>
 #include <string>
 
+#include "absl/strings/string_view.h"
 #include "rtc_base/ssl_stream_adapter.h"
+#include "rtc_base/string_utils.h"
 
 #ifndef OPENSSL_IS_BORINGSSL
 typedef struct ssl_session_st SSL_SESSION;
@@ -40,10 +42,10 @@ class OpenSSLSessionCache final {
   OpenSSLSessionCache& operator=(const OpenSSLSessionCache&) = delete;
 
   
-  SSL_SESSION* LookupSession(const std::string& hostname) const;
+  SSL_SESSION* LookupSession(absl::string_view hostname) const;
   
   
-  void AddSession(const std::string& hostname, SSL_SESSION* session);
+  void AddSession(absl::string_view hostname, SSL_SESSION* session);
   
   SSL_CTX* GetSSLContext() const;
   
@@ -61,7 +63,7 @@ class OpenSSLSessionCache final {
   
   
   
-  std::map<std::string, SSL_SESSION*> sessions_;
+  std::map<std::string, SSL_SESSION*, rtc::AbslStringViewCmp> sessions_;
   
 };
 

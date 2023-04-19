@@ -15,6 +15,7 @@
 #include <set>
 #include <string>
 
+#include "absl/strings/string_view.h"
 #include "api/array_view.h"
 #include "api/sequence_checker.h"
 #include "rtc_base/synchronization/mutex.h"
@@ -103,7 +104,7 @@ class UniqueStringGenerator {
 
   
   
-  bool AddKnownId(const std::string& value);
+  bool AddKnownId(absl::string_view value);
 
  private:
   

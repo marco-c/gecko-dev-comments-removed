@@ -16,6 +16,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "absl/strings/string_view.h"
+
 #if defined(WEBRTC_WIN)
 #include <malloc.h>
 #include <wchar.h>
@@ -30,9 +32,23 @@
 
 #include <string>
 
+#include "absl/strings/string_view.h"
+
 namespace rtc {
 
 const size_t SIZE_UNKNOWN = static_cast<size_t>(-1);
+
+
+
+
+
+
+struct AbslStringViewCmp {
+  using is_transparent = void;
+  bool operator()(absl::string_view a, absl::string_view b) const {
+    return a < b;
+  }
+};
 
 
 size_t strcpyn(char* buffer,
@@ -57,7 +73,7 @@ inline std::wstring ToUtf16(const char* utf8, size_t len) {
   return ws;
 }
 
-inline std::wstring ToUtf16(const std::string& str) {
+inline std::wstring ToUtf16(absl::string_view str) {
   return ToUtf16(str.data(), str.length());
 }
 

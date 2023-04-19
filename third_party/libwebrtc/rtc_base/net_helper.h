@@ -12,6 +12,8 @@
 
 #include <string>
 
+#include "absl/strings/string_view.h"
+
 
 
 namespace cricket {
@@ -25,7 +27,7 @@ constexpr int kTcpHeaderSize = 20;
 constexpr int kUdpHeaderSize = 8;
 
 
-int GetProtocolOverhead(const std::string& protocol);
+int GetProtocolOverhead(absl::string_view protocol);
 
 }  
 

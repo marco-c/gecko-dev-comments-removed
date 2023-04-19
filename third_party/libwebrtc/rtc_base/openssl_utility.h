@@ -15,6 +15,8 @@
 
 #include <string>
 
+#include "absl/strings/string_view.h"
+
 namespace rtc {
 
 
@@ -35,11 +37,11 @@ bool ParseCertificate(CRYPTO_BUFFER* cert_buffer,
 
 
 
-bool VerifyPeerCertMatchesHost(SSL* ssl, const std::string& host);
+bool VerifyPeerCertMatchesHost(SSL* ssl, absl::string_view host);
 
 
 
-void LogSSLErrors(const std::string& prefix);
+void LogSSLErrors(absl::string_view prefix);
 
 #ifndef WEBRTC_EXCLUDE_BUILT_IN_SSL_ROOT_CERTS
 

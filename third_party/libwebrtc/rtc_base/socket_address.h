@@ -12,6 +12,8 @@
 #define RTC_BASE_SOCKET_ADDRESS_H_
 
 #include <string>
+
+#include "absl/strings/string_view.h"
 #ifdef WEBRTC_UNIT_TEST
 #include <ostream>  
 #endif              
@@ -34,7 +36,7 @@ class RTC_EXPORT SocketAddress {
   
   
   
-  SocketAddress(const std::string& hostname, int port);
+  SocketAddress(absl::string_view hostname, int port);
 
   
   
@@ -69,7 +71,7 @@ class RTC_EXPORT SocketAddress {
 
   
   
-  void SetIP(const std::string& hostname);
+  void SetIP(absl::string_view hostname);
 
   
   
@@ -129,7 +131,7 @@ class RTC_EXPORT SocketAddress {
   std::string ToResolvedSensitiveString() const;
 
   
-  bool FromString(const std::string& str);
+  bool FromString(absl::string_view str);
 
 #ifdef WEBRTC_UNIT_TEST
   inline std::ostream& operator<<(  

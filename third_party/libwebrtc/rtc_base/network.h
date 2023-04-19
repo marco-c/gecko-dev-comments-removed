@@ -19,6 +19,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/strings/string_view.h"
 #include "api/array_view.h"
 #include "api/sequence_checker.h"
 #include "rtc_base/ip_address.h"
@@ -51,7 +52,7 @@ const int kDefaultNetworkIgnoreMask = ADAPTER_TYPE_LOOPBACK;
 
 
 
-std::string MakeNetworkKey(const std::string& name,
+std::string MakeNetworkKey(absl::string_view name,
                            const IPAddress& prefix,
                            int prefix_length);
 
@@ -350,13 +351,13 @@ class RTC_EXPORT BasicNetworkManager : public NetworkManagerBase,
 
 class RTC_EXPORT Network {
  public:
-  Network(const std::string& name,
-          const std::string& description,
+  Network(absl::string_view name,
+          absl::string_view description,
           const IPAddress& prefix,
           int prefix_length);
 
-  Network(const std::string& name,
-          const std::string& description,
+  Network(absl::string_view name,
+          absl::string_view description,
           const IPAddress& prefix,
           int prefix_length,
           AdapterType type);
