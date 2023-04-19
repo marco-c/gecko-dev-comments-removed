@@ -537,19 +537,6 @@ class TextControlState final : public SupportsWeakPtr {
                                       
   bool mSelectionCached : 1;          
 
-  
-
-
-
-
-
-
-
-  static const size_t kMaxCountOfCacheToReuse = 25;
-  static AutoTArray<TextControlState*, kMaxCountOfCacheToReuse>*
-      sReleasedInstances;
-  static bool sHasShutDown;
-
   friend class AutoTextControlHandlingState;
   friend class PrepareEditorEvent;
   friend class RestoreSelectionState;

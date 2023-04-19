@@ -1122,7 +1122,6 @@ nsresult TextInputListener::UpdateTextInputCommands(
 
 
 enum class TextControlAction {
-  CacheForReuse,
   CommitComposition,
   Destructor,
   PrepareEditor,
@@ -1211,8 +1210,7 @@ class MOZ_STACK_CLASS AutoTextControlHandlingState {
   }
 
   void OnDestroyTextControlState() {
-    if (IsHandling(TextControlAction::Destructor) ||
-        IsHandling(TextControlAction::CacheForReuse)) {
+    if (IsHandling(TextControlAction::Destructor)) {
       
       
       return;
@@ -1415,9 +1413,17 @@ class MOZ_STACK_CLASS AutoTextControlHandlingState {
 
 
 
-AutoTArray<TextControlState*, TextControlState::kMaxCountOfCacheToReuse>*
-    TextControlState::sReleasedInstances = nullptr;
-bool TextControlState::sHasShutDown = false;
+
+
+
+
+
+
+
+
+static constexpr size_t kMaxCountOfCacheToReuse = 25;
+static AutoTArray<void*, kMaxCountOfCacheToReuse>* sReleasedInstances = nullptr;
+static bool sHasShutDown = false;
 
 TextControlState::TextControlState(TextControlElement* aOwningElement)
     : mTextCtrlElement(aOwningElement),
@@ -1435,21 +1441,14 @@ TextControlState::TextControlState(TextControlElement* aOwningElement)
 
 TextControlState* TextControlState::Construct(
     TextControlElement* aOwningElement) {
+  void* mem;
   if (sReleasedInstances && !sReleasedInstances->IsEmpty()) {
-    TextControlState* state = sReleasedInstances->PopLastElement();
-    state->mTextCtrlElement = aOwningElement;
-    state->mBoundFrame = nullptr;
-    state->mSelectionProperties = SelectionProperties();
-    state->mEverInited = false;
-    state->mEditorInitialized = false;
-    state->mValueTransferInProgress = false;
-    state->mSelectionCached = true;
-    
-    
-    return state;
+    mem = sReleasedInstances->PopLastElement();
+  } else {
+    mem = moz_xmalloc(sizeof(TextControlState));
   }
 
-  return new TextControlState(aOwningElement);
+  return new (mem) TextControlState(aOwningElement);
 }
 
 TextControlState::~TextControlState() {
@@ -1463,8 +1462,8 @@ TextControlState::~TextControlState() {
 void TextControlState::Shutdown() {
   sHasShutDown = true;
   if (sReleasedInstances) {
-    for (TextControlState* textControlState : *sReleasedInstances) {
-      textControlState->DeleteOrCacheForReuse();
+    for (void* mem : *sReleasedInstances) {
+      free(mem);
     }
     delete sReleasedInstances;
   }
@@ -1484,30 +1483,22 @@ void TextControlState::Destroy() {
 void TextControlState::DeleteOrCacheForReuse() {
   MOZ_ASSERT(!IsBusy());
 
+  void* mem = this;
+  this->~TextControlState();
+
   
   if (!sHasShutDown && (!sReleasedInstances || sReleasedInstances->Length() <
                                                    kMaxCountOfCacheToReuse)) {
-    AutoTextControlHandlingState handlingCacheForReuse(
-        *this, TextControlAction::CacheForReuse);
-
-    
-    UnlinkInternal();
-    mValue.SetIsVoid(true);
-    mLastInteractiveValue.SetIsVoid(true);
-    mTextCtrlElement = nullptr;
-
     
     
     
     if (!sReleasedInstances) {
-      sReleasedInstances =
-          new AutoTArray<TextControlState*, kMaxCountOfCacheToReuse>;
+      sReleasedInstances = new AutoTArray<void*, kMaxCountOfCacheToReuse>;
     }
-    sReleasedInstances->AppendElement(this);
-
-    return;
+    sReleasedInstances->AppendElement(mem);
+  } else {
+    free(mem);
   }
-  delete this;
 }
 
 nsresult TextControlState::OnEditActionHandled() {
@@ -1525,7 +1516,6 @@ Element* TextControlState::GetPreviewNode() {
 void TextControlState::Clear() {
   MOZ_ASSERT(mHandlingState);
   MOZ_ASSERT(mHandlingState->Is(TextControlAction::Destructor) ||
-             mHandlingState->Is(TextControlAction::CacheForReuse) ||
              mHandlingState->Is(TextControlAction::Unlink));
   if (mTextEditor) {
     mTextEditor->SetTextInputListener(nullptr);
@@ -1554,8 +1544,7 @@ void TextControlState::Unlink() {
 
 void TextControlState::UnlinkInternal() {
   MOZ_ASSERT(mHandlingState);
-  MOZ_ASSERT(mHandlingState->Is(TextControlAction::Unlink) ||
-             mHandlingState->Is(TextControlAction::CacheForReuse));
+  MOZ_ASSERT(mHandlingState->Is(TextControlAction::Unlink));
   TextControlState* tmp = this;
   tmp->Clear();
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mSelCon)
