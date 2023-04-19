@@ -34,53 +34,6 @@
 
 using webrtc::SdpType;
 
-namespace {
-
-webrtc::RTCError VerifyCandidate(const cricket::Candidate& cand) {
-  
-  if (cand.address().IsNil() || cand.address().IsAnyIP()) {
-    return webrtc::RTCError(webrtc::RTCErrorType::INVALID_PARAMETER,
-                            "candidate has address of zero");
-  }
-
-  
-  int port = cand.address().port();
-  if (cand.protocol() == cricket::TCP_PROTOCOL_NAME &&
-      (cand.tcptype() == cricket::TCPTYPE_ACTIVE_STR || port == 0)) {
-    
-    
-    
-    return webrtc::RTCError::OK();
-  }
-  if (port < 1024) {
-    if ((port != 80) && (port != 443)) {
-      return webrtc::RTCError(
-          webrtc::RTCErrorType::INVALID_PARAMETER,
-          "candidate has port below 1024, but not 80 or 443");
-    }
-
-    if (cand.address().IsPrivateIP()) {
-      return webrtc::RTCError(
-          webrtc::RTCErrorType::INVALID_PARAMETER,
-          "candidate has port of 80 or 443 with private IP address");
-    }
-  }
-
-  return webrtc::RTCError::OK();
-}
-
-webrtc::RTCError VerifyCandidates(const cricket::Candidates& candidates) {
-  for (const cricket::Candidate& candidate : candidates) {
-    webrtc::RTCError error = VerifyCandidate(candidate);
-    if (!error.ok()) {
-      return error;
-    }
-  }
-  return webrtc::RTCError::OK();
-}
-
-}  
-
 namespace webrtc {
 
 JsepTransportController::JsepTransportController(
@@ -333,19 +286,8 @@ void JsepTransportController::MaybeStartGathering() {
 RTCError JsepTransportController::AddRemoteCandidates(
     const std::string& transport_name,
     const cricket::Candidates& candidates) {
-  if (!network_thread_->IsCurrent()) {
-    return network_thread_->Invoke<RTCError>(RTC_FROM_HERE, [&] {
-      return AddRemoteCandidates(transport_name, candidates);
-    });
-  }
-
   RTC_DCHECK_RUN_ON(network_thread_);
-
-  
-  RTCError error = VerifyCandidates(candidates);
-  if (!error.ok()) {
-    return error;
-  }
+  RTC_DCHECK(VerifyCandidates(candidates).ok());
   auto jsep_transport = GetJsepTransportByName(transport_name);
   if (!jsep_transport) {
     RTC_LOG(LS_WARNING) << "Not adding candidate because the JsepTransport "

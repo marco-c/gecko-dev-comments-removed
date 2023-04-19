@@ -18,6 +18,7 @@
 
 #include "absl/types/optional.h"
 #include "api/candidate.h"
+#include "api/rtc_error.h"
 #include "api/transport/enums.h"
 #include "p2p/base/connection.h"
 #include "p2p/base/packet_transport_internal.h"
@@ -73,6 +74,17 @@ enum class NominationMode {
   SEMI_AGGRESSIVE  
                    
 };
+
+
+
+
+
+webrtc::RTCError VerifyCandidate(const Candidate& cand);
+
+
+
+
+webrtc::RTCError VerifyCandidates(const Candidates& candidates);
 
 
 

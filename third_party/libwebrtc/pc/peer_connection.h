@@ -381,6 +381,10 @@ class PeerConnection : public PeerConnectionInternal,
   void NoteUsageEvent(UsageEvent event);
 
   
+  void AddRemoteCandidate(const std::string& mid,
+                          const cricket::Candidate& candidate);
+
+  
   void ReportSdpFormatReceived(
       const SessionDescriptionInterface& remote_description);
 
@@ -502,9 +506,7 @@ class PeerConnection : public PeerConnectionInternal,
       const cricket::CandidatePairChangeEvent& event)
       RTC_RUN_ON(signaling_thread());
 
-
   void OnNegotiationNeeded();
-
 
   
   
@@ -589,6 +591,8 @@ class PeerConnection : public PeerConnectionInternal,
       RTC_RUN_ON(signaling_thread());
 
   void ReportUsagePattern() const RTC_RUN_ON(signaling_thread());
+
+  void ReportRemoteIceCandidateAdded(const cricket::Candidate& candidate);
 
   
   
