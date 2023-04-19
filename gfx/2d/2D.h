@@ -1074,11 +1074,45 @@ class SharedFTFaceRefCountedData : public SharedFTFaceData {
 
 
 
+
+class FTUserFontData final
+    : public mozilla::gfx::SharedFTFaceRefCountedData<FTUserFontData> {
+ public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(FTUserFontData)
+
+  FTUserFontData(const uint8_t* aData, uint32_t aLength)
+      : mFontData(aData), mLength(aLength) {}
+  explicit FTUserFontData(const char* aFilename) : mFilename(aFilename) {}
+
+  const uint8_t* FontData() const { return mFontData; }
+
+  already_AddRefed<mozilla::gfx::SharedFTFace> CloneFace(
+      int aFaceIndex = 0) override;
+
+ private:
+  ~FTUserFontData() {
+    if (mFontData) {
+      free((void*)mFontData);
+    }
+  }
+
+  std::string mFilename;
+  const uint8_t* mFontData = nullptr;
+  uint32_t mLength = 0;
+};
+
+
+
+
+
+
+
+
 class SharedFTFace : public external::AtomicRefCounted<SharedFTFace> {
  public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(SharedFTFace)
 
-  explicit SharedFTFace(FT_Face aFace, SharedFTFaceData* aData = nullptr);
+  explicit SharedFTFace(FT_Face aFace, SharedFTFaceData* aData);
   virtual ~SharedFTFace();
 
   FT_Face GetFace() const { return mFace; }
