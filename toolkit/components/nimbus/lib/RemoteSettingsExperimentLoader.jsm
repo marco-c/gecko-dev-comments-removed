@@ -288,6 +288,18 @@ class _RemoteSettingsExperimentLoader {
 
     if (recipes && !loadingError) {
       for (const r of recipes) {
+        if (r.appId !== "firefox-desktop") {
+          
+          
+          
+          
+          
+          
+          
+          
+          continue;
+        }
+
         if (validationEnabled) {
           let validation = recipeValidator.validate(r);
           if (!validation.valid) {
