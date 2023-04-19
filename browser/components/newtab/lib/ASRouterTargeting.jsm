@@ -271,6 +271,12 @@ const QueryCache = {
       FRECENT_SITES_UPDATE_INTERVAL,
       ShellService
     ),
+    doesAppNeedPrivatePin: new CachedTargetingGetter(
+      "doesAppNeedPin",
+      true,
+      FRECENT_SITES_UPDATE_INTERVAL,
+      ShellService
+    ),
   },
 };
 
@@ -676,6 +682,10 @@ const TargetingGetters = {
 
   get doesAppNeedPin() {
     return QueryCache.getters.doesAppNeedPin.get();
+  },
+
+  get doesAppNeedPrivatePin() {
+    return QueryCache.getters.doesAppNeedPrivatePin.get();
   },
 };
 
