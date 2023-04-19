@@ -47,11 +47,28 @@ this.declarativeNetRequest = class extends ExtensionAPI {
           return ExtensionDNR.getRuleManager(extension).getSessionRules();
         },
 
-        async testMatchOutcome(request) {
-          
-          
-          
-          return [];
+        async testMatchOutcome(request, options) {
+          let { url, initiator, ...req } = request;
+          req.requestURI = Services.io.newURI(url);
+          if (initiator) {
+            req.initiatorURI = Services.io.newURI(initiator);
+          }
+          const matchedRules = ExtensionDNR.getMatchedRulesForRequest(
+            req,
+            options?.includeOtherExtensions ? null : extension
+          ).map(matchedRule => {
+            
+            
+            const result = {
+              ruleId: matchedRule.rule.id,
+              rulesetId: matchedRule.ruleset.id,
+            };
+            if (matchedRule.ruleManager.extension !== extension) {
+              result.extensionId = matchedRule.ruleManager.extension.id;
+            }
+            return result;
+          });
+          return { matchedRules };
         },
       },
     };
