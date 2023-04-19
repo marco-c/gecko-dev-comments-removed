@@ -31,6 +31,9 @@ static const uint32_t MAX_BYTES_SNIFFED = 512;
 
 static const uint32_t MAX_BYTES_SNIFFED_MP3 = 320 * 144 / 32 + 1 + 4;
 
+
+static const uint32_t MAX_BYTES_SNIFFED_ADTS = 8096;
+
 NS_IMPL_ISUPPORTS(nsMediaSniffer, nsIContentSniffer)
 
 nsMediaSnifferEntry nsMediaSniffer::sSnifferEntries[] = {
@@ -232,7 +235,7 @@ nsMediaSniffer::GetMIMETypeFromContent(nsIRequest* aRequest,
     return NS_OK;
   }
 
-  if (MatchesADTS(aData, clampedLength)) {
+  if (MatchesADTS(aData, std::min(aLength, MAX_BYTES_SNIFFED_ADTS))) {
     aSniffedType.AssignLiteral(AUDIO_AAC);
     return NS_OK;
   }
