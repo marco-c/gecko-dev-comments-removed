@@ -114,6 +114,8 @@ add_task(async function test_keyboard_navigation_opens_menu() {
   const extension1 = ExtensionTestUtils.loadExtension({
     manifest: {
       name: "1",
+      
+      permissions: ["activeTab"],
     },
     useAddonManager: "temporary",
   });

@@ -85,12 +85,24 @@ const openUnifiedExtensionsContextMenu = async (win, extensionId) => {
   return menu;
 };
 
-const clickUnifiedExtensionsItem = async (win, extensionId) => {
+const clickUnifiedExtensionsItem = async (
+  win,
+  extensionId,
+  forceEnableButton = false
+) => {
   
   await openExtensionsPanel(win);
 
   const item = getUnifiedExtensionsItem(win, extensionId);
   ok(item, `expected item for ${extensionId}`);
+
+  
+  
+  if (forceEnableButton) {
+    let actionButton = item.querySelector(".unified-extensions-item-action");
+    actionButton.disabled = false;
+    ok(!actionButton.disabled, "action button was force-enabled");
+  }
 
   
   
