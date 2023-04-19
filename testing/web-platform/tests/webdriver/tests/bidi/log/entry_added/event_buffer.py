@@ -8,7 +8,7 @@ from . import assert_base_entry, create_log
 @pytest.mark.asyncio
 @pytest.mark.parametrize("log_type", ["console_api_log", "javascript_error"])
 async def test_console_log_cached_messages(
-    bidi_session, current_session, wait_for_event, inline, log_type
+    bidi_session, current_session, wait_for_event, inline, log_type, top_context
 ):
     
     await bidi_session.session.unsubscribe(events=["log.entryAdded"])
@@ -35,7 +35,7 @@ async def test_console_log_cached_messages(
     assert len(events) == 1
 
     
-    assert_base_entry(events[0], text=expected_text)
+    assert_base_entry(events[0], text=expected_text, context=top_context["context"])
 
     
     await bidi_session.session.unsubscribe(events=["log.entryAdded"])
@@ -53,7 +53,7 @@ async def test_console_log_cached_messages(
 
     
     assert len(events) == 2
-    assert_base_entry(events[1], text=expected_text)
+    assert_base_entry(events[1], text=expected_text, context=top_context["context"])
 
     
     await bidi_session.session.unsubscribe(events=["log.entryAdded"])
@@ -65,7 +65,7 @@ async def test_console_log_cached_messages(
 
     
     assert len(events) == 3
-    assert_base_entry(events[2], text=expected_text)
+    assert_base_entry(events[2], text=expected_text, context=top_context["context"])
 
     remove_listener()
 

@@ -37,6 +37,7 @@ async def test_types_and_values(
         text=expected_text,
         time_start=time_start,
         time_end=time_end,
+        context=top_context["context"],
     )
 
     
