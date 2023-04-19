@@ -30,6 +30,7 @@ const TEST_ADDON_INFO_THEME = [
 ];
 
 async function openRTAMOWelcomePage() {
+  await pushPrefs(["browser.aboutwelcome.templateMR", false]);
   
   
   

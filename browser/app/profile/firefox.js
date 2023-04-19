@@ -1636,7 +1636,7 @@ pref("browser.aboutwelcome.enabled", true);
 pref("browser.aboutwelcome.screens", "");
 pref("browser.aboutwelcome.skipFocus", true);
 
-pref("browser.aboutwelcome.templateMR", false);
+pref("browser.aboutwelcome.templateMR", true);
 
 
 pref("browser.messaging-system.whatsNewPanel.enabled", true);
