@@ -86,3 +86,21 @@ function garbageCollect() {
   if (self.gc)
     self.gc();
 };
+
+async function cleanup(test, value, cleanup_func) {
+  test.add_cleanup(async () => {
+    try {
+      await cleanup_func();
+    } catch (e) {
+      
+      
+    }
+  });
+  return value;
+}
+
+async function cleanup_writable(test, value) {
+  return cleanup(test, value, async () => {
+    value.close();
+  });
+}
