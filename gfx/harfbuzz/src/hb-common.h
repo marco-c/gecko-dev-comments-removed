@@ -505,6 +505,8 @@ hb_language_matches (hb_language_t language,
 
 
 
+
+
 typedef enum
 {
   HB_SCRIPT_COMMON			= HB_TAG ('Z','y','y','y'), 
@@ -715,6 +717,12 @@ typedef enum
 
 
   HB_SCRIPT_MATH			= HB_TAG ('Z','m','t','h'),
+
+  
+
+
+  HB_SCRIPT_KAWI			= HB_TAG ('K','a','w','i'), 
+  HB_SCRIPT_NAG_MUNDARI			= HB_TAG ('N','a','g','m'), 
 
   
   HB_SCRIPT_INVALID			= HB_TAG_NONE,

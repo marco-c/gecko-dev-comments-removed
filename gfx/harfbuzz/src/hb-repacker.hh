@@ -276,33 +276,17 @@ bool _process_overflows (const hb_vector_t<graph::overflow_record_t>& overflows,
   return resolution_attempted;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-template<typename T>
-inline hb_blob_t*
-hb_resolve_overflows (const T& packed,
-                      hb_tag_t table_tag,
-                      unsigned max_rounds = 20,
-                      bool recalculate_extensions = false) {
-  graph_t sorted_graph (packed);
+inline bool
+hb_resolve_graph_overflows (hb_tag_t table_tag,
+                            unsigned max_rounds ,
+                            bool recalculate_extensions,
+                            graph_t& sorted_graph )
+{
   sorted_graph.sort_shortest_distance ();
 
   bool will_overflow = graph::will_overflow (sorted_graph);
   if (!will_overflow)
-  {
-    return graph::serialize (sorted_graph);
-  }
+    return true;
 
   graph::gsubgpos_graph_context_t ext_context (table_tag, sorted_graph);
   if ((table_tag == HB_OT_TAG_GPOS
@@ -314,13 +298,13 @@ hb_resolve_overflows (const T& packed,
       DEBUG_MSG (SUBSET_REPACK, nullptr, "Splitting subtables if needed.");
       if (!_presplit_subtables_if_needed (ext_context)) {
         DEBUG_MSG (SUBSET_REPACK, nullptr, "Subtable splitting failed.");
-        return nullptr;
+        return false;
       }
 
       DEBUG_MSG (SUBSET_REPACK, nullptr, "Promoting lookups to extensions if needed.");
       if (!_promote_extensions_if_needed (ext_context)) {
         DEBUG_MSG (SUBSET_REPACK, nullptr, "Extensions promotion failed.");
-        return nullptr;
+        return false;
       }
     }
 
@@ -360,14 +344,40 @@ hb_resolve_overflows (const T& packed,
   if (sorted_graph.in_error ())
   {
     DEBUG_MSG (SUBSET_REPACK, nullptr, "Sorted graph in error state.");
-    return nullptr;
+    return false;
   }
 
   if (graph::will_overflow (sorted_graph))
   {
     DEBUG_MSG (SUBSET_REPACK, nullptr, "Offset overflow resolution failed.");
-    return nullptr;
+    return false;
   }
+
+  return true;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template<typename T>
+inline hb_blob_t*
+hb_resolve_overflows (const T& packed,
+                      hb_tag_t table_tag,
+                      unsigned max_rounds = 20,
+                      bool recalculate_extensions = false) {
+  graph_t sorted_graph (packed);
+  if (!hb_resolve_graph_overflows (table_tag, max_rounds, recalculate_extensions, sorted_graph))
+    return nullptr;
 
   return graph::serialize (sorted_graph);
 }

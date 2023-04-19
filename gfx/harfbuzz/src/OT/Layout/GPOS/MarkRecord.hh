@@ -9,7 +9,7 @@ struct MarkRecord
 {
   friend struct MarkArray;
 
-  protected:
+  public:
   HBUINT16      klass;                  
   Offset16To<Anchor>
                 markAnchor;             

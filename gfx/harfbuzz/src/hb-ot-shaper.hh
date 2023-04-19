@@ -380,6 +380,10 @@ hb_ot_shaper_categorize (const hb_ot_shape_planner_t *planner)
     case HB_SCRIPT_TOTO:
     case HB_SCRIPT_VITHKUQI:
 
+    
+    case HB_SCRIPT_KAWI:
+    case HB_SCRIPT_NAG_MUNDARI:
+
       
 
 

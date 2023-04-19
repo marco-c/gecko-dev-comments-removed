@@ -605,6 +605,10 @@ hb_ot_layout_table_select_script (hb_face_t      *face,
 
 
 
+
+
+
+
 unsigned int
 hb_ot_layout_table_get_feature_tags (hb_face_t    *face,
 				     hb_tag_t      table_tag,
@@ -616,6 +620,9 @@ hb_ot_layout_table_get_feature_tags (hb_face_t    *face,
 
   return g.get_feature_tags (start_offset, feature_count, feature_tags);
 }
+
+
+
 
 
 
@@ -651,6 +658,8 @@ hb_ot_layout_table_find_feature (hb_face_t    *face,
   if (feature_index) *feature_index = HB_OT_LAYOUT_NO_FEATURE_INDEX;
   return false;
 }
+
+
 
 
 
@@ -779,6 +788,8 @@ hb_ot_layout_script_select_language (hb_face_t      *face,
 
 
 
+
+
 hb_bool_t
 hb_ot_layout_language_get_required_feature_index (hb_face_t    *face,
 						  hb_tag_t      table_tag,
@@ -847,6 +858,9 @@ hb_ot_layout_language_get_required_feature (hb_face_t    *face,
 
 
 
+
+
+
 unsigned int
 hb_ot_layout_language_get_feature_indexes (hb_face_t    *face,
 					   hb_tag_t      table_tag,
@@ -861,6 +875,9 @@ hb_ot_layout_language_get_feature_indexes (hb_face_t    *face,
 
   return l.get_feature_indexes (start_offset, feature_count, feature_indexes);
 }
+
+
+
 
 
 
@@ -903,6 +920,8 @@ hb_ot_layout_language_get_feature_tags (hb_face_t    *face,
 
   return ret;
 }
+
+
 
 
 
@@ -1180,6 +1199,9 @@ script_collect_features (hb_collect_features_context_t *c,
 
 
 
+
+
+
 void
 hb_ot_layout_collect_features (hb_face_t      *face,
 			       hb_tag_t        table_tag,
@@ -1210,6 +1232,9 @@ hb_ot_layout_collect_features (hb_face_t      *face,
     }
   }
 }
+
+
+
 
 
 
@@ -1317,6 +1342,8 @@ hb_ot_layout_lookup_collect_glyphs (hb_face_t    *face,
 
 
 
+
+
 hb_bool_t
 hb_ot_layout_table_find_feature_variations (hb_face_t    *face,
 					    hb_tag_t      table_tag,
@@ -1328,6 +1355,8 @@ hb_ot_layout_table_find_feature_variations (hb_face_t    *face,
 
   return g.find_variations_index (coords, num_coords, variations_index);
 }
+
+
 
 
 
@@ -1364,6 +1393,8 @@ hb_ot_layout_feature_with_variations_get_lookups (hb_face_t    *face,
 
   return f.get_lookup_indexes (start_offset, lookup_count, lookup_indexes);
 }
+
+
 
 
 
@@ -2297,11 +2328,6 @@ struct hb_get_glyph_alternates_dispatch_t :
   static return_t default_return_value () { return 0; }
   bool stop_sublookup_iteration (return_t r) const { return r; }
 
-  hb_face_t *face;
-
-  hb_get_glyph_alternates_dispatch_t (hb_face_t *face) :
-					face (face) {}
-
   private:
   template <typename T, typename ...Ts> auto
   _dispatch (const T &obj, hb_priority<1>, Ts&&... ds) HB_AUTO_RETURN
@@ -2340,7 +2366,7 @@ hb_ot_layout_lookup_get_glyph_alternates (hb_face_t      *face,
 					  unsigned       *alternate_count  ,
 					  hb_codepoint_t *alternate_glyphs )
 {
-  hb_get_glyph_alternates_dispatch_t c (face);
+  hb_get_glyph_alternates_dispatch_t c;
   const OT::SubstLookup &lookup = face->table.GSUB->table->get_lookup (lookup_index);
   auto ret = lookup.dispatch (&c, glyph, start_offset, alternate_count, alternate_glyphs);
   if (!ret && alternate_count) *alternate_count = 0;

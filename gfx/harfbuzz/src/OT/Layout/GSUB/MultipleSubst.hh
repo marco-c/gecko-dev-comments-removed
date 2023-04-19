@@ -35,19 +35,17 @@ struct MultipleSubst
     }
   }
 
-  
-
+  template<typename Iterator,
+           hb_requires (hb_is_sorted_iterator (Iterator))>
   bool serialize (hb_serialize_context_t *c,
-                  hb_sorted_array_t<const HBGlyphID16> glyphs,
-                  hb_array_t<const unsigned int> substitute_len_list,
-                  hb_array_t<const HBGlyphID16> substitute_glyphs_list)
+		  Iterator it)
   {
     TRACE_SERIALIZE (this);
     if (unlikely (!c->extend_min (u.format))) return_trace (false);
     unsigned int format = 1;
     u.format = format;
     switch (u.format) {
-    case 1: return_trace (u.format1.serialize (c, glyphs, substitute_len_list, substitute_glyphs_list));
+    case 1: return_trace (u.format1.serialize (c, it));
     default:return_trace (false);
     }
   }

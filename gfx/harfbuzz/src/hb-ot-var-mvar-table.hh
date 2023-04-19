@@ -43,7 +43,7 @@ struct VariationValueRecord
 
   public:
   Tag		valueTag;	
-  HBUINT32		varIdx;		
+  VarIdx	varIdx;		
 
   public:
   DEFINE_SIZE_STATIC (8);

@@ -99,7 +99,7 @@ _hb_options_init ()
   }
 
   
-  _hb_options.set_relaxed (u.i);
+  _hb_options = u.i;
 }
 
 
