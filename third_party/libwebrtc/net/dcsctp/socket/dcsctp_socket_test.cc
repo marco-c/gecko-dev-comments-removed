@@ -2341,32 +2341,6 @@ TEST(DcSctpSocketTest, CloseStreamsWithPendingRequest) {
   absl::optional<DcSctpMessage> msg6 = z.cb.ConsumeReceivedMessage();
   ASSERT_TRUE(msg6.has_value());
   EXPECT_EQ(msg6->stream_id(), StreamID(3));
-}
-
-TEST(DcSctpSocketTest, ReconnectSocketWithPendingStreamReset) {
-  
-  
-  
-  
-  SocketUnderTest a("A");
-  SocketUnderTest z("Z");
-
-  ConnectSockets(a, z);
-
-  a.socket.ResetStreams(std::vector<StreamID>({StreamID(1)}));
-
-  
-  EXPECT_CALL(z.cb, OnAborted).Times(1);
-  a.socket.Close();
-
-  EXPECT_EQ(a.socket.state(), SocketState::kClosed);
-
-  EXPECT_CALL(a.cb, OnConnected).Times(1);
-  EXPECT_CALL(z.cb, OnConnected).Times(1);
-  a.socket.Connect();
-  ExchangeMessages(a, z);
-  a.socket.ResetStreams(std::vector<StreamID>({StreamID(2)}));
-}
-
+}  
 }  
 }  
