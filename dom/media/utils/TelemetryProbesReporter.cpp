@@ -386,6 +386,8 @@ void TelemetryProbesReporter::ReportResultForVideo() {
   const double invisiblePlayTimeS = mInvisibleVideoPlayTime.GetAndClearTotal();
   const double videoDecodeSuspendTimeS =
       mVideoDecodeSuspendedTime.GetAndClearTotal();
+  const double totalVideoHDRPlayTimeS =
+      mTotalVideoHDRPlayTime.GetAndClearTotal();
 
   
   if (totalVideoPlayTimeS == 0.0) {
@@ -400,6 +402,15 @@ void TelemetryProbesReporter::ReportResultForVideo() {
   LOG("VIDEO_HIDDEN_PLAY_TIME_S = %f", invisiblePlayTimeS);
   Telemetry::Accumulate(Telemetry::VIDEO_HIDDEN_PLAY_TIME_MS,
                         SECONDS_TO_MS(invisiblePlayTimeS));
+
+  
+  
+  
+  if (totalVideoHDRPlayTimeS > 0.0) {
+    LOG("VIDEO_HDR_PLAY_TIME_S = %f", totalVideoHDRPlayTimeS);
+    Telemetry::Accumulate(Telemetry::VIDEO_HDR_PLAY_TIME_MS,
+                          SECONDS_TO_MS(totalVideoHDRPlayTimeS));
+  }
 
   if (mOwner->IsEncrypted()) {
     LOG("VIDEO_ENCRYPTED_PLAY_TIME_S = %f", totalVideoPlayTimeS);
