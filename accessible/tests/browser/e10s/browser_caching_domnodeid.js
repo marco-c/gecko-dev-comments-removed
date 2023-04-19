@@ -16,7 +16,7 @@ addAccessibleTask(
     
     
     
-    invokeContentTask(browser, [], () => {
+    let contentPromise = invokeContentTask(browser, [], () => {
       content.document.getElementById("div").id = "foo";
     });
 
@@ -25,6 +25,9 @@ addAccessibleTask(
       "foo",
       "ID is correct and updated in cache"
     );
+
+    
+    await contentPromise;
   },
   { iframe: true, remoteIframe: true }
 );
