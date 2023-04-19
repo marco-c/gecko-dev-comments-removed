@@ -99,8 +99,10 @@ enum LoggingSeverity {
   LS_NONE,
   
   
-  INFO = LS_INFO,
+  INFO [[deprecated("Use LS_INFO")]] = LS_INFO,
+  
   WARNING = LS_WARNING,
+  
   LERROR = LS_ERROR
 };
 
