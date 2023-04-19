@@ -1019,7 +1019,8 @@ var vectors = [
     
     data: "<svg><use href='#x'></svg>",
     flags: 1, 
-    sanitized: '<html><head></head><body><svg><use href="#x"></use></svg></body></html>',
+    sanitized:
+      '<html><head></head><body><svg><use href="#x"></use></svg></body></html>',
   },
   {
     data: '<svg><use xlink:href="http://example/#baz"/></svg>',
