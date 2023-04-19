@@ -255,15 +255,15 @@ RemoteDecoderManagerChild::CreateAudioDecoder(
         NS_ERROR_DOM_MEDIA_CANCELED, __func__);
   }
 
+  if (!GetTrackSupport(aLocation).contains(TrackSupport::Audio)) {
+    return PlatformDecoderModule::CreateDecoderPromise::CreateAndReject(
+        MediaResult(NS_ERROR_DOM_MEDIA_CANCELED,
+                    "Remote location doesn't support audio decoding"),
+        __func__);
+  }
+
   bool useUtilityAudioDecoding = StaticPrefs::media_utility_process_enabled() &&
                                  aLocation == RemoteDecodeIn::UtilityProcess;
-#ifdef MOZ_WMF_MEDIA_ENGINE
-  
-  
-  useUtilityAudioDecoding = useUtilityAudioDecoding &&
-                            !(aParams.mMediaEngineId &&
-                              StaticPrefs::media_wmf_media_engine_enabled());
-#endif
   RefPtr<GenericNonExclusivePromise> launchPromise =
       useUtilityAudioDecoding ? LaunchUtilityProcessIfNeeded()
                               : LaunchRDDProcessIfNeeded();
@@ -271,7 +271,7 @@ RemoteDecoderManagerChild::CreateAudioDecoder(
   return launchPromise->Then(
       managerThread, __func__,
       [params = CreateDecoderParamsForAsync(aParams), aLocation](bool) {
-        auto child = MakeRefPtr<RemoteAudioDecoderChild>();
+        auto child = MakeRefPtr<RemoteAudioDecoderChild>(aLocation);
         MediaResult result = child->InitIPDL(
             params.AudioConfig(), params.mOptions, params.mMediaEngineId);
         if (NS_FAILED(result)) {
@@ -308,6 +308,13 @@ RemoteDecoderManagerChild::CreateVideoDecoder(
     
     return PlatformDecoderModule::CreateDecoderPromise::CreateAndReject(
         NS_ERROR_DOM_MEDIA_NOT_SUPPORTED_ERR, __func__);
+  }
+
+  if (!GetTrackSupport(aLocation).contains(TrackSupport::Video)) {
+    return PlatformDecoderModule::CreateDecoderPromise::CreateAndReject(
+        MediaResult(NS_ERROR_DOM_MEDIA_CANCELED,
+                    "Remote location doesn't support video decoding"),
+        __func__);
   }
 
   MOZ_ASSERT(aLocation != RemoteDecodeIn::Unspecified);
@@ -544,6 +551,49 @@ RemoteDecoderManagerChild::LaunchUtilityProcessIfNeeded() {
       });
   utilityLaunchPromise = p;
   return utilityLaunchPromise;
+}
+
+
+TrackSupportSet RemoteDecoderManagerChild::GetTrackSupport(
+    RemoteDecodeIn aLocation) {
+  switch (aLocation) {
+    case RemoteDecodeIn::GpuProcess: {
+      TrackSupportSet s{TrackSupport::Video};
+#ifdef MOZ_WMF_MEDIA_ENGINE
+      
+      
+      
+      if (StaticPrefs::media_wmf_media_engine_enabled()) {
+        s -= TrackSupport::Video;
+      }
+#endif
+      return s;
+    }
+    case RemoteDecodeIn::RddProcess: {
+      TrackSupportSet s{TrackSupport::Video};
+      
+      if (!StaticPrefs::media_utility_process_enabled()) {
+        s += TrackSupport::Audio;
+      }
+#ifdef MOZ_WMF_MEDIA_ENGINE
+      
+      
+      
+      
+      if (StaticPrefs::media_wmf_media_engine_enabled()) {
+        s += TrackSupport::Audio;
+      }
+#endif
+      return s;
+    }
+    case RemoteDecodeIn::UtilityProcess:
+      return StaticPrefs::media_utility_process_enabled()
+                 ? TrackSupportSet{TrackSupport::Audio}
+                 : TrackSupportSet{TrackSupport::None};
+    default:
+      MOZ_ASSERT_UNREACHABLE("Undefined location!");
+  }
+  return TrackSupportSet{TrackSupport::None};
 }
 
 PRemoteDecoderChild* RemoteDecoderManagerChild::AllocPRemoteDecoderChild(

@@ -27,6 +27,13 @@ enum class RemoteDecodeIn {
   SENTINEL,
 };
 
+enum class TrackSupport {
+  None,
+  Audio,
+  Video,
+};
+using TrackSupportSet = EnumSet<TrackSupport, uint8_t>;
+
 class RemoteDecoderManagerChild final
     : public PRemoteDecoderManagerChild,
       public mozilla::ipc::IShmemAllocator,
@@ -54,6 +61,10 @@ class RemoteDecoderManagerChild final
 
   
   static nsISerialEventTarget* GetManagerThread();
+
+  
+  
+  static TrackSupportSet GetTrackSupport(RemoteDecodeIn aLocation);
 
   
   
