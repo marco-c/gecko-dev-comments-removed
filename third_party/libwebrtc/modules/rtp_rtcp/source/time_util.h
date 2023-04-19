@@ -35,14 +35,6 @@ inline uint32_t CompactNtp(NtpTime ntp) {
 uint32_t SaturatedToCompactNtp(TimeDelta delta);
 
 
-inline constexpr int64_t ToNtpUnits(TimeDelta delta) {
-  
-  
-  
-  return (delta.us() * (int64_t{1} << 32)) / 1'000'000;
-}
-
-
 
 
 
