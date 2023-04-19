@@ -427,6 +427,7 @@ GeckoChildProcessHost::GeckoChildProcessHost(GeckoProcessType aProcessType,
     
     
     mLaunchOptions->env_map["MESA_GLSL_CACHE_DISABLE"] = "true";
+    mLaunchOptions->env_map["MESA_SHADER_CACHE_DISABLE"] = "true";
   }
 #endif
 #if defined(MOZ_ENABLE_FORKSERVER)
