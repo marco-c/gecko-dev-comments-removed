@@ -40,7 +40,7 @@ XPCOMUtils.defineLazyGetter(lazy, "logConsole", () => {
 });
 
 class CookieBannerChild extends JSWindowActorChild {
-  #clickRule;
+  #clickRules;
   #originalBannerDisplay = null;
   #observerCleanUp;
 
@@ -65,22 +65,23 @@ class CookieBannerChild extends JSWindowActorChild {
     lazy.logConsole.debug(
       `Send message to get rule for ${principal.baseDomain}`
     );
-    let rule;
+    let rules;
 
     try {
-      rule = await this.sendQuery("CookieBanner::GetClickRule", {});
+      rules = await this.sendQuery("CookieBanner::GetClickRules", {});
     } catch (e) {
       lazy.logConsole.warn("Failed to get click rule from parent.");
+      return;
     }
 
-    lazy.logConsole.debug("Got rule:", rule);
+    lazy.logConsole.debug("Got rules:", rules);
     
-    if (!rule?.target) {
+    if (!rules.length) {
       this.#maybeSendTestMessage();
       return;
     }
 
-    this.#clickRule = rule;
+    this.#clickRules = rules;
 
     await this.handleCookieBanner();
 
@@ -100,30 +101,39 @@ class CookieBannerChild extends JSWindowActorChild {
 
 
   async handleCookieBanner() {
-    
-    let bannerFound = await this.#detectBanner();
+    lazy.logConsole.debug("handleCookieBanner", this.document?.location.href);
 
-    if (!bannerFound) {
+    
+    let rules = await this.#detectBanner();
+
+    if (!rules.length) {
       
       return;
     }
 
     
-    this.#hideBanner();
+    let matchedRule = this.#hideBanner(rules);
 
     let successClick = false;
     try {
-      successClick = await this.#clickTarget();
+      successClick = await this.#clickTarget(rules);
     } finally {
       if (!successClick) {
         
         
-        this.#showBanner();
+        this.#showBanner(matchedRule);
       }
+    }
+    if (successClick) {
+      lazy.logConsole.info("Handled cookie banner.", {
+        url: this.document?.location.href,
+        rule: matchedRule,
+      });
     }
   }
 
   
+
 
 
 
@@ -144,14 +154,21 @@ class CookieBannerChild extends JSWindowActorChild {
       let win = this.contentWindow;
       let timer;
 
-      let observer = new win.MutationObserver(() => {
-        if (checkFn?.()) {
-          cleanup(true, observer, timer);
+      let observer = new win.MutationObserver(mutationList => {
+        lazy.logConsole.debug(
+          "#promiseObserve: Mutation observed",
+          mutationList
+        );
+
+        let result = checkFn?.();
+        if (result) {
+          cleanup(result, observer, timer);
         }
       });
 
       timer = lazy.setTimeout(() => {
-        cleanup(false, observer);
+        lazy.logConsole.debug("#promiseObserve: timeout");
+        cleanup(null, observer);
       }, timeout);
 
       observer.observe(win.document.body, {
@@ -161,6 +178,12 @@ class CookieBannerChild extends JSWindowActorChild {
       });
 
       let cleanup = (result, observer, timer) => {
+        lazy.logConsole.debug(
+          "#promiseObserve cleanup",
+          result,
+          observer,
+          timer
+        );
         if (observer) {
           observer.disconnect();
           observer = null;
@@ -177,68 +200,117 @@ class CookieBannerChild extends JSWindowActorChild {
       
       
       this.#observerCleanUp = () => {
-        cleanup(false, observer, timer);
+        cleanup(null, observer, timer);
       };
     });
   }
 
   
   async #detectBanner() {
-    if (!this.#clickRule) {
-      return false;
+    if (!this.#clickRules?.length) {
+      return [];
     }
     lazy.logConsole.debug("Starting to detect the banner");
 
-    let detector = () => {
-      let banner = this.document.querySelector(this.#clickRule.presence);
+    
+    
+    let presenceDetector = () => {
+      lazy.logConsole.debug("presenceDetector start");
+      let matchingRules = this.#clickRules.filter(rule => {
+        let { presence } = rule;
 
-      return banner && this.#isVisible(banner);
+        let banner = this.document.querySelector(presence);
+        lazy.logConsole.debug("Testing banner el presence", {
+          result: banner,
+          rule,
+          presence,
+        });
+
+        if (!banner) {
+          return false;
+        }
+
+        return this.#isVisible(banner);
+      });
+
+      
+      
+      if (!matchingRules.length) {
+        return null;
+      }
+      return matchingRules;
     };
 
-    let found = detector();
+    lazy.logConsole.debug("Initial call to presenceDetector");
+    let rules = presenceDetector();
 
     
     
     
-    if (
-      !found &&
-      !(await this.#promiseObserve(detector, lazy.observeTimeout))
-    ) {
-      lazy.logConsole.debug("Couldn't detect the banner");
-      return false;
+    if (!rules?.length) {
+      lazy.logConsole.debug(
+        "Initial presenceDetector failed, registering MutationObserver",
+        rules
+      );
+      rules = await this.#promiseObserve(presenceDetector, lazy.observeTimeout);
     }
 
-    lazy.logConsole.debug("Detected the banner");
+    if (!rules?.length) {
+      lazy.logConsole.debug("Couldn't detect the banner", rules);
+      return [];
+    }
 
-    return true;
+    lazy.logConsole.debug("Detected the banner for rules", rules);
+
+    return rules;
   }
 
   
-  async #clickTarget() {
-    if (!this.#clickRule) {
-      return false;
-    }
+  async #clickTarget(rules) {
     lazy.logConsole.debug("Starting to detect the target button");
 
-    let target = this.document.querySelector(this.#clickRule.target);
+    let targetEl;
+    for (let rule of rules) {
+      targetEl = this.document.querySelector(rule.target);
+      if (targetEl) {
+        break;
+      }
+    }
 
     
     
-    if (!target) {
-      await this.#promiseObserve(() => {
-        target = this.document.querySelector(this.#clickRule.target);
+    if (!targetEl) {
+      targetEl = await this.#promiseObserve(() => {
+        for (let rule of rules) {
+          let el = this.document.querySelector(rule.target);
 
-        return !!target;
+          lazy.logConsole.debug("Testing button el presence", {
+            result: el,
+            rule,
+            target: rule.target,
+          });
+
+          if (el) {
+            lazy.logConsole.debug(
+              "Found button from rule",
+              rule,
+              rule.target,
+              el
+            );
+            return el;
+          }
+        }
+        return null;
       }, lazy.observeTimeout);
 
-      if (!target) {
+      if (!targetEl) {
         lazy.logConsole.debug("Cannot find the target button.");
         return false;
       }
     }
 
-    lazy.logConsole.debug("Found the target button, click it.");
-    target.click();
+    lazy.logConsole.debug("Found the target button, click it.", targetEl);
+    targetEl.click();
     return true;
   }
 
@@ -252,13 +324,32 @@ class CookieBannerChild extends JSWindowActorChild {
 
   
   
-  #hideBanner() {
-    let banner = this.document.querySelector(this.#clickRule.hide);
-
+  #hideBanner(rules) {
     if (this.#originalBannerDisplay) {
       
-      return;
+      return null;
     }
+
+    let banner;
+    let rule;
+    for (let r of rules) {
+      banner = this.document.querySelector(r.hide);
+      if (banner) {
+        rule = r;
+        break;
+      }
+    }
+    
+    if (!banner) {
+      lazy.logConsole.debug(
+        "Failed to find banner element to hide from rules.",
+        rules
+      );
+      return null;
+    }
+
+    lazy.logConsole.debug("Found banner element to hide from rules.", rules);
+
     this.#originalBannerDisplay = banner.style.display;
 
     
@@ -266,16 +357,18 @@ class CookieBannerChild extends JSWindowActorChild {
     banner.ownerGlobal.requestAnimationFrame(() => {
       banner.style.display = "none";
     });
+
+    return rule;
   }
 
   
   
-  #showBanner() {
+  #showBanner({ hide }) {
     if (this.#originalBannerDisplay === null) {
       
       return;
     }
-    let banner = this.document.querySelector(this.#clickRule.hide);
+    let banner = this.document.querySelector(hide);
 
     let originalDisplay = this.#originalBannerDisplay;
     this.#originalBannerDisplay = null;

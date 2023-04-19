@@ -32,7 +32,12 @@ class nsCookieBannerService final : public nsIObserver,
   bool mIsInitialized = false;
 
   nsCOMPtr<nsICookieBannerListService> mListService;
+
+  
   nsTHashMap<nsCStringHashKey, nsCOMPtr<nsICookieBannerRule>> mRules;
+
+  
+  nsTHashMap<nsCStringHashKey, nsCOMPtr<nsICookieBannerRule>> mGlobalRules;
 
   
   
