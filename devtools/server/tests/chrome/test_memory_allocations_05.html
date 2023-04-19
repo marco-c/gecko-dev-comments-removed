@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+Bug 1068144 - Test getting the timestamps for allocations.
+-->
 <head>
   <meta charset="utf-8">
   <title>Memory monitoring actor test</title>
@@ -24,7 +24,7 @@ window.onload = function() {
 
     const allocs = [];
     function allocator() {
-      allocs.push(new Object());
+      allocs.push({});
     }
 
     // Using setTimeout results in wildly varying delays that make it hard to

@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+Bug 1132764 - Test controlling the maximum allocations log length over the RDP.
+-->
 <head>
   <meta charset="utf-8">
   <title>Memory monitoring actor test</title>
@@ -31,7 +31,7 @@ window.onload = function() {
     function startAllocating() {
       intervalId = setInterval(() => {
         for (let i = 100000; --i;) {
-          allocs.push(new Object());
+          allocs.push({});
         }
       }, 1);
     }

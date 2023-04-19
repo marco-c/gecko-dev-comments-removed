@@ -242,8 +242,6 @@ module.exports = {
     
     "no-proto": "error",
     
-    "no-regex-spaces": "off",
-    
     "no-restricted-properties": [
       "error",
       {
@@ -282,16 +280,7 @@ module.exports = {
     
     "no-func-assign": "off",
     
-    "no-irregular-whitespace": "off",
-    
     "no-lone-blocks": "off",
-    
-    "no-new-object": "off",
-    
-    "no-new-wrappers": "off",
-    
-    
-    "no-obj-calls": "off",
     
     "no-useless-concat": "off",
     

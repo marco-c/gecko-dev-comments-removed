@@ -25,7 +25,7 @@ const FORMATTED_HTML = `<body>
 
 const FORMATTED_INNER_HTML = FORMATTED_HTML.replace(/<\/*body>/g, "")
   .trim()
-  .replace(/^  /gm, "");
+  .replace(/^ {2}/gm, "");
 
 
 const TABS_FORMATTED_HTML = FORMATTED_HTML.replace(/[ ]{2}/g, "\t");
