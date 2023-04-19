@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 "use strict";
 
@@ -100,9 +100,9 @@ class TabsListBase {
     }
   }
 
-  /*
-   * Populate the popup with menuitems and setup the listeners.
-   */
+  
+
+
   _populate(event) {
     let fragment = this.doc.createDocumentFragment();
 
@@ -120,9 +120,9 @@ class TabsListBase {
     this.containerNode.insertBefore(elementOrFragment, this.insertBefore);
   }
 
-  /*
-   * Remove the menuitems from the DOM, cleanup internal state and listeners.
-   */
+  
+
+
   _cleanup() {
     for (let item of this.rows) {
       item.remove();
@@ -169,13 +169,13 @@ class TabsListBase {
     let item = this.tabToElement.get(tab);
     if (item) {
       if (!this.filterFn(tab)) {
-        // The tab no longer matches our criteria, remove it.
+        
         this._removeItem(item, tab);
       } else {
         this._setRowAttributes(item, tab);
       }
     } else if (this.filterFn(tab)) {
-      // The tab now matches our criteria, add a row for it.
+      
       this._addTab(tab);
     }
   }
@@ -198,12 +198,12 @@ class TabsListBase {
       nextTab = nextTab.nextElementSibling;
     }
 
-    // If we found a tab after this one in the list, insert the new row before it.
+    
     let nextRow = this.tabToElement.get(nextTab);
     if (nextRow) {
       nextRow.parentNode.insertBefore(newRow, nextRow);
     } else {
-      // If there's no next tab then insert it as usual.
+      
       this._addElement(newRow);
     }
   }
@@ -256,7 +256,7 @@ class TabsPanel extends TabsListBase {
           event.target.tab.toggleMuteAudio();
           break;
         }
-      // fall through
+      
       default:
         super.handleEvent(event);
         break;
@@ -266,8 +266,8 @@ class TabsPanel extends TabsListBase {
   _populate(event) {
     super._populate(event);
 
-    // The loading throbber can't be set until the toolbarbutton is rendered,
-    // so set the image attributes again now that the elements are in the DOM.
+    
+    
     for (let row of this.rows) {
       this._setImageAttributes(row, row.tab);
     }
@@ -427,8 +427,8 @@ class TabsPanel extends TabsListBase {
 
     const targetTab = this.dropTargetRow.firstElementChild.tab;
 
-    // NOTE: Given the list is opened only when the window is focused,
-    //       we don't have to check `draggedTab.container`.
+    
+    
 
     let pos;
     if (draggedTab._tPos < targetTab._tPos) {
@@ -446,7 +446,11 @@ class TabsPanel extends TabsListBase {
       return;
     }
 
-    if (event.target !== this.containerNode) {
+    let target = event.relatedTarget;
+    while (target && target != this.containerNode) {
+      target = target.parentNode;
+    }
+    if (target) {
       return;
     }
 
