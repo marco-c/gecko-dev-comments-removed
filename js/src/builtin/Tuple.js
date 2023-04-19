@@ -250,7 +250,7 @@ function TupleJoin(separator) {
 
   
   var sep = ",";
-  if (separator != undefined && separator !== null) {
+  if (separator !== undefined && separator !== null) {
     let toString = IsCallable(separator.toString)
       ? separator.toString
       : std_Object_toString;
@@ -273,7 +273,7 @@ function TupleJoin(separator) {
     let element = T[k];
     
     var next = "";
-    if (element != undefined && element != null) {
+    if (element !== undefined && element !== null) {
       let toString = IsCallable(element.toString)
         ? element.toString
         : std_Object_toString;

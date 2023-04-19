@@ -2182,7 +2182,7 @@ function TypedArrayWith(index, value) {
 
     
     
-    var fromValue = k == actualIndex ? value : O[k];
+    var fromValue = k === actualIndex ? value : O[k];
 
     
     A[k] = fromValue;

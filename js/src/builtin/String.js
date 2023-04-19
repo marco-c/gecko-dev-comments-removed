@@ -504,7 +504,7 @@ function String_split(separator, limit) {
 
   
   if (
-    !(typeof separator == "string" && StringProtoHasNoSplit()) &&
+    !(typeof separator === "string" && StringProtoHasNoSplit()) &&
     separator !== undefined &&
     separator !== null
   ) {
@@ -787,7 +787,7 @@ function String_repeat(count) {
   
   
   assert(
-    TO_INT32(MAX_STRING_LENGTH + 1) == MAX_STRING_LENGTH + 1,
+    TO_INT32(MAX_STRING_LENGTH + 1) === MAX_STRING_LENGTH + 1,
     "MAX_STRING_LENGTH + 1 must fit in int32"
   );
   assert(
