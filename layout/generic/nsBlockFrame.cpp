@@ -6693,7 +6693,10 @@ void nsBlockFrame::ReflowFloat(BlockReflowState& aState,
       }
     }
 
-    brc.ReflowBlock(aAdjustedAvailableSpace, true, margin, 0, nullptr, floatRS,
+    
+    
+    
+    brc.ReflowBlock(LogicalRect(wm), true, margin, 0, nullptr, floatRS,
                     aReflowStatus, aState);
   } while (clearanceFrame);
 
