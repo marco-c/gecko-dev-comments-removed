@@ -53,20 +53,12 @@ namespace mozilla::CanvasUtils {
 bool IsImageExtractionAllowed(dom::Document* aDocument, JSContext* aCx,
                               Maybe<nsIPrincipal*> aPrincipal) {
   
-  if (!nsContentUtils::ShouldResistFingerprinting()) {
-    return true;
-  }
-
-  if (!aDocument) {
-    return false;
-  }
-
-  if (!aDocument->ShouldResistFingerprinting()) {
+  if (!nsContentUtils::ShouldResistFingerprinting(aDocument)) {
     return true;
   }
 
   
-  if (!aCx || !aPrincipal) {
+  if (!aDocument || !aCx || !aPrincipal) {
     return false;
   }
 

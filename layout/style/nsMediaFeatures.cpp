@@ -37,8 +37,8 @@ using mozilla::dom::DisplayMode;
 using mozilla::dom::Document;
 
 
-static nsSize GetSize(const Document& aDocument) {
-  nsPresContext* pc = aDocument.GetPresContext();
+static nsSize GetSize(const Document* aDocument) {
+  nsPresContext* pc = aDocument->GetPresContext();
 
   
   
@@ -60,20 +60,20 @@ static nsSize GetSize(const Document& aDocument) {
 }
 
 
-static nsSize GetDeviceSize(const Document& aDocument) {
-  if (aDocument.ShouldResistFingerprinting()) {
+static nsSize GetDeviceSize(const Document* aDocument) {
+  if (nsContentUtils::ShouldResistFingerprinting(aDocument)) {
     return GetSize(aDocument);
   }
 
   
   
   Maybe<CSSIntSize> deviceSize =
-      nsGlobalWindowOuter::GetRDMDeviceSize(aDocument);
+      nsGlobalWindowOuter::GetRDMDeviceSize(*aDocument);
   if (deviceSize.isSome()) {
     return CSSPixel::ToAppUnits(deviceSize.value());
   }
 
-  nsPresContext* pc = aDocument.GetPresContext();
+  nsPresContext* pc = aDocument->GetPresContext();
   
   
   
@@ -124,7 +124,7 @@ static nsDeviceContext* GetDeviceContextFor(const Document* aDocument) {
 
 void Gecko_MediaFeatures_GetDeviceSize(const Document* aDocument,
                                        nscoord* aWidth, nscoord* aHeight) {
-  nsSize size = GetDeviceSize(*aDocument);
+  nsSize size = GetDeviceSize(aDocument);
   *aWidth = size.width;
   *aHeight = size.height;
 }
@@ -159,7 +159,7 @@ uint32_t Gecko_MediaFeatures_GetColorDepth(const Document* aDocument) {
   
   uint32_t depth = 24;
 
-  if (!aDocument->ShouldResistFingerprinting()) {
+  if (!nsContentUtils::ShouldResistFingerprinting(aDocument)) {
     if (nsDeviceContext* dx = GetDeviceContextFor(aDocument)) {
       depth = dx->GetDepth();
     }
@@ -185,7 +185,7 @@ float Gecko_MediaFeatures_GetResolution(const Document* aDocument) {
     return pc->GetOverrideDPPX();
   }
 
-  if (aDocument->ShouldResistFingerprinting()) {
+  if (nsContentUtils::ShouldResistFingerprinting(aDocument)) {
     return pc->DeviceContext()->GetFullZoom();
   }
   
@@ -264,7 +264,7 @@ bool Gecko_MediaFeatures_MatchesPlatform(StylePlatform aPlatform) {
 }
 
 bool Gecko_MediaFeatures_PrefersReducedMotion(const Document* aDocument) {
-  if (aDocument->ShouldResistFingerprinting()) {
+  if (nsContentUtils::ShouldResistFingerprinting(aDocument)) {
     return false;
   }
   return LookAndFeel::GetInt(LookAndFeel::IntID::PrefersReducedMotion, 0) == 1;
@@ -283,7 +283,7 @@ StylePrefersColorScheme Gecko_MediaFeatures_PrefersColorScheme(
 
 StylePrefersContrast Gecko_MediaFeatures_PrefersContrast(
     const Document* aDocument) {
-  if (aDocument->ShouldResistFingerprinting()) {
+  if (nsContentUtils::ShouldResistFingerprinting(aDocument)) {
     return StylePrefersContrast::NoPreference;
   }
   const auto& prefs = PreferenceSheet::PrefsFor(*aDocument);
@@ -313,7 +313,7 @@ StyleDynamicRange Gecko_MediaFeatures_DynamicRange(const Document* aDocument) {
 
 StyleDynamicRange Gecko_MediaFeatures_VideoDynamicRange(
     const Document* aDocument) {
-  if (aDocument->ShouldResistFingerprinting()) {
+  if (nsContentUtils::ShouldResistFingerprinting(aDocument)) {
     return StyleDynamicRange::Standard;
   }
   
@@ -354,7 +354,8 @@ static PointerCapabilities GetPointerCapabilities(const Document* aDocument,
 #else
       PointerCapabilities::Fine | PointerCapabilities::Hover;
 #endif
-  if (aDocument->ShouldResistFingerprinting()) {
+
+  if (nsContentUtils::ShouldResistFingerprinting(aDocument)) {
     return kDefaultCapabilities;
   }
 
