@@ -2021,6 +2021,10 @@ TEST_P(PeerConnectionIntegrationTest, EndToEndCallWithSendOnlyVideo) {
 
 
 TEST_P(PeerConnectionIntegrationTest, EndToEndCallWithReceiveOnlyVideo) {
+  
+  
+  webrtc::test::ScopedFieldTrials field_trials(
+      "WebRTC-FlexFEC-03-Advertised/Disabled/");
   ASSERT_TRUE(
       CreateOneDirectionalPeerConnectionWrappers(false));
   ConnectFakeSignaling();
