@@ -2,7 +2,7 @@
 
 
 
-const md5 = require("md5");
+const md5 = require("resource://devtools/client/shared/vendor/md5.js");
 
 function originalToGeneratedId(sourceId) {
   if (isGeneratedId(sourceId)) {
