@@ -6,16 +6,29 @@
 
 #include "FileSystemWritableFileStream.h"
 
+#include <string.h>
+
+#include "fs/FileSystemRequestHandler.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/dom/FileSystemWritableFileStreamBinding.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/WritableStreamDefaultController.h"
+#include "nsIInputStream.h"
+#include "nsNetUtil.h"
+
+namespace mozilla {
+extern LazyLogModule gOPFSLog;
+}
+
+#define LOG(args) MOZ_LOG(mozilla::gOPFSLog, mozilla::LogLevel::Verbose, args)
+
+#define LOG_VERBOSE(args) \
+  MOZ_LOG(mozilla::gOPFSLog, mozilla::LogLevel::Verbose, args)
+
+#define LOG_DEBUG(args) \
+  MOZ_LOG(mozilla::gOPFSLog, mozilla::LogLevel::Debug, args)
 
 namespace mozilla::dom {
-
-NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(FileSystemWritableFileStream,
-                                               WritableStream)
-NS_IMPL_CYCLE_COLLECTION_INHERITED(FileSystemWritableFileStream, WritableStream)
 
 NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(
     FileSystemWritableFileStream::StreamAlgorithms,
@@ -23,6 +36,12 @@ NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(
 NS_IMPL_CYCLE_COLLECTION_INHERITED(
     FileSystemWritableFileStream::StreamAlgorithms,
     UnderlyingSinkAlgorithmsBase, mStream)
+
+void FileSystemWritableFileStream::ClearActor() {
+  MOZ_ASSERT(mActor);
+
+  mActor = nullptr;
+}
 
 already_AddRefed<Promise>
 FileSystemWritableFileStream::StreamAlgorithms::WriteCallback(
@@ -51,7 +70,10 @@ FileSystemWritableFileStream::StreamAlgorithms::WriteCallback(
 
 
 MOZ_CAN_RUN_SCRIPT_BOUNDARY already_AddRefed<FileSystemWritableFileStream>
-FileSystemWritableFileStream::MaybeCreate(nsIGlobalObject* aGlobal) {
+FileSystemWritableFileStream::MaybeCreate(
+    nsIGlobalObject* aGlobal, RefPtr<FileSystemManager>& aManager,
+    const fs::FileSystemEntryMetadata& aMetadata,
+    RefPtr<FileSystemWritableFileStreamChild>& aActor) {
   AutoJSAPI jsapi;
   if (!jsapi.Init(aGlobal)) {
     return nullptr;
@@ -61,7 +83,7 @@ FileSystemWritableFileStream::MaybeCreate(nsIGlobalObject* aGlobal) {
   
   
   RefPtr<FileSystemWritableFileStream> stream =
-      new FileSystemWritableFileStream(aGlobal);
+      new FileSystemWritableFileStream(aGlobal, aManager, aMetadata, aActor);
 
   
   auto algorithms = MakeRefPtr<StreamAlgorithms>(*stream);
@@ -87,6 +109,28 @@ FileSystemWritableFileStream::MaybeCreate(nsIGlobalObject* aGlobal) {
   return stream.forget();
 }
 
+FileSystemWritableFileStream::FileSystemWritableFileStream(
+    nsIGlobalObject* aGlobal, RefPtr<FileSystemManager>& aManager,
+    const fs::FileSystemEntryMetadata& aMetadata,
+    RefPtr<FileSystemWritableFileStreamChild>& aActor)
+    : FileSystemWritableFileStream(aGlobal, aManager, aMetadata, aActor,
+                                   new fs::FileSystemRequestHandler()) {}
+
+FileSystemWritableFileStream::FileSystemWritableFileStream(
+    nsIGlobalObject* aGlobal, RefPtr<FileSystemManager>& aManager,
+    const fs::FileSystemEntryMetadata& aMetadata,
+    RefPtr<FileSystemWritableFileStreamChild>& aActor,
+    fs::FileSystemRequestHandler* aRequestHandler)
+    : WritableStream(aGlobal),
+      mManager(aManager),
+      mMetadata(aMetadata),
+      mRequestHandler(aRequestHandler),
+      mActor(std::move(aActor)) {
+  LOG(("Created WritableFileStream %p for fd %p", this,
+       mActor->MutableFileDescPtr()));
+  mActor->SetStream(this);
+}
+
 
 
 JSObject* FileSystemWritableFileStream::WrapObject(
@@ -96,17 +140,31 @@ JSObject* FileSystemWritableFileStream::WrapObject(
 
 
 
-already_AddRefed<Promise> FileSystemWritableFileStream::Write(
-    const ArrayBufferViewOrArrayBufferOrBlobOrUSVStringOrWriteParams& aData,
-    ErrorResult& aError) {
-  RefPtr<Promise> promise = Promise::Create(GetParentObject(), aError);
-  if (aError.Failed()) {
-    return nullptr;
+bool FileSystemWritableFileStream::DoSeek(RefPtr<Promise>& aPromise,
+                                          uint64_t aPosition) {
+  
+  
+  
+  
+  
+  
+  LOG_VERBOSE(
+      ("%p: Seeking to %" PRIu64, mActor->MutableFileDescPtr(), aPosition));
+  int64_t where = PR_Seek(mActor->MutableFileDescPtr(), aPosition, PR_SEEK_SET);
+  if (where == -1) {
+    LOG(("Failed to seek to %" PRIu64 " (errno %d)", aPosition, errno));
+    aPromise->MaybeReject(NS_ERROR_FAILURE);  
+    return false;
   }
 
-  promise->MaybeReject(NS_ERROR_NOT_IMPLEMENTED);
-
-  return promise.forget();
+  if (where != (int64_t)aPosition) {
+    LOG(("Failed to seek to %" PRIu64 " (errno %d), ended up at %" PRId64,
+         aPosition, errno, where));
+    aPromise->MaybeReject(NS_ERROR_FAILURE);  
+    return false;
+  }
+  
+  return true;
 }
 
 already_AddRefed<Promise> FileSystemWritableFileStream::Seek(
@@ -115,8 +173,13 @@ already_AddRefed<Promise> FileSystemWritableFileStream::Seek(
   if (aError.Failed()) {
     return nullptr;
   }
-
-  promise->MaybeReject(NS_ERROR_NOT_IMPLEMENTED);
+  if (IsClosed()) {
+    promise->MaybeRejectWithTypeError("WritableFileStream closed");
+    return promise.forget();
+  }
+  if (DoSeek(promise, aPosition)) {
+    promise->MaybeResolveWithUndefined();
+  }  
 
   return promise.forget();
 }
@@ -127,10 +190,240 @@ already_AddRefed<Promise> FileSystemWritableFileStream::Truncate(
   if (aError.Failed()) {
     return nullptr;
   }
+  if (IsClosed()) {
+    promise->MaybeRejectWithTypeError("WritableFileStream closed");
+    return promise.forget();
+  }
 
-  promise->MaybeReject(NS_ERROR_NOT_IMPLEMENTED);
+  
+  
+  
+  
+  
+  
+
+  
+  if (mActor->MutableFileDescPtr()) {
+    LOG(("%p: Truncate to %" PRIu64, mActor->MutableFileDescPtr(), aSize));
+    if (NS_WARN_IF(NS_FAILED(TruncFile(mActor->MutableFileDescPtr(), aSize)))) {
+      promise->MaybeReject(NS_ErrorAccordingToNSPR());
+    } else {
+      
+      
+      int64_t where = PR_Seek(mActor->MutableFileDescPtr(), 0, PR_SEEK_CUR);
+      if (where == -1) {
+        promise->MaybeReject(NS_ErrorAccordingToNSPR());
+        return promise.forget();
+      }
+      if (where > (int64_t)aSize) {
+        where = PR_Seek(mActor->MutableFileDescPtr(), 0, PR_SEEK_END);
+        if (where == -1) {
+          promise->MaybeReject(NS_ErrorAccordingToNSPR());
+        }
+      }
+      promise->MaybeResolveWithUndefined();
+    }
+  } else {
+    promise->MaybeReject(NS_ERROR_DOM_INVALID_STATE_ERR);
+  }
 
   return promise.forget();
+}
+
+already_AddRefed<Promise> FileSystemWritableFileStream::Write(
+    const ArrayBufferViewOrArrayBufferOrBlobOrUSVStringOrWriteParams& aData,
+    ErrorResult& aError) {
+  RefPtr<Promise> promise = Promise::Create(GetParentObject(), aError);
+  if (aError.Failed()) {
+    return nullptr;
+  }
+
+  nsCString utf8Str;
+  const uint8_t* data;
+  size_t length = 0;
+  uint64_t written = 0;
+  nsresult result;
+  UniquePtr<uint8_t> temp;
+
+  if (IsClosed()) {
+    promise->MaybeRejectWithTypeError("WritableFileStream closed");
+    return promise.forget();
+  }
+
+  if (aData.IsWriteParams()) {
+    const WriteParams& params = aData.GetAsWriteParams();
+    if (params.mType == WriteCommandType::Write) {
+      if (!params.mData.WasPassed()) {
+        aError.ThrowSyntaxError("write() requires data");
+        return nullptr;
+      }
+      if (params.mData.Value().IsNull()) {
+        promise->MaybeRejectWithTypeError("write() of null data");
+        return promise.forget();
+      }
+      if (params.mPosition.WasPassed()) {
+        if (params.mPosition.Value().IsNull()) {
+          promise->MaybeRejectWithTypeError("write() with null position");
+          return promise.forget();
+        }
+        if (!DoSeek(promise, params.mPosition.Value().Value())) {
+          return promise.forget();
+        }
+      }
+      if (params.mData.Value().Value().IsUSVString()) {
+        if (NS_WARN_IF(!AppendUTF16toUTF8(
+                params.mData.Value().Value().GetAsUSVString(), utf8Str,
+                mozilla::fallible))) {
+          return nullptr;
+        }
+        temp.reset(new uint8_t[utf8Str.Length() + 1]);
+        memcpy(temp.get(), PromiseFlatCString(utf8Str).get(),
+               utf8Str.Length() + 1);
+        data = (uint8_t*)temp.get();
+        length = strlen((char*)data);
+      } else if (params.mData.Value().Value().IsArrayBuffer()) {
+        const ArrayBuffer& buffer =
+            params.mData.Value().Value().GetAsArrayBuffer();
+        buffer.ComputeState();
+        data = buffer.Data();
+        length = buffer.Length();
+      } else if (params.mData.Value().Value().IsArrayBufferView()) {
+        const ArrayBufferView& buffer =
+            params.mData.Value().Value().GetAsArrayBufferView();
+        buffer.ComputeState();
+        data = buffer.Data();
+        length = buffer.Length();
+      } else if (params.mData.Value().Value().IsBlob()) {
+        RefPtr<Blob> blob = params.mData.Value().Value().GetAsBlob().get();
+        if (NS_FAILED(result = WriteBlob(blob, written))) {
+          promise->MaybeReject(result);
+        } else {
+          promise->MaybeResolve(written);
+        }
+        return promise.forget();
+      }
+    } else if (params.mType == WriteCommandType::Seek) {
+      if (!params.mPosition.WasPassed()) {
+        aError.ThrowSyntaxError("seek() requires a position");
+        return nullptr;
+      }
+      if (params.mPosition.Value().IsNull()) {
+        promise->MaybeRejectWithTypeError("seek() with null position");
+        return promise.forget();
+      }
+      return Seek(params.mPosition.Value().Value(), aError);
+    } else if (params.mType == WriteCommandType::Truncate) {
+      if (!params.mSize.WasPassed()) {
+        aError.ThrowSyntaxError("truncate() requires a size");
+        return nullptr;
+      }
+      if (params.mSize.Value().IsNull()) {
+        promise->MaybeRejectWithTypeError("truncate() with null size");
+        return promise.forget();
+      }
+      return Truncate(params.mSize.Value().Value(), aError);
+    }
+  } else if (aData.IsUSVString()) {
+    if (NS_WARN_IF(!AppendUTF16toUTF8(aData.GetAsUSVString(), utf8Str,
+                                      mozilla::fallible))) {
+      promise->MaybeReject(NS_ERROR_OUT_OF_MEMORY);
+      return promise.forget();
+    }
+    temp.reset(new uint8_t[utf8Str.Length() + 1]);
+    memcpy(temp.get(), PromiseFlatCString(utf8Str).get(), utf8Str.Length() + 1);
+    data = (uint8_t*)temp.get();
+    length = strlen((char*)data);
+  } else if (aData.IsArrayBuffer()) {
+    const ArrayBuffer& buffer = aData.GetAsArrayBuffer();
+    buffer.ComputeState();
+    data = buffer.Data();
+    length = buffer.Length();
+  } else if (aData.IsArrayBufferView()) {
+    const ArrayBufferView& buffer = aData.GetAsArrayBufferView();
+    buffer.ComputeState();
+    data = buffer.Data();
+    length = buffer.Length();
+  } else if (aData.IsBlob()) {
+    if (NS_FAILED(result = WriteBlob(&aData.GetAsBlob(), written))) {
+      
+      
+      
+      if (result == NS_ERROR_FILE_NOT_FOUND) {
+        promise->MaybeRejectWithNotFoundError("File not found");
+      } else {
+        promise->MaybeReject(result);
+      }
+    } else {
+      promise->MaybeResolve(written);
+    }
+    return promise.forget();
+  } else {
+    promise->MaybeReject(NS_ERROR_FAILURE);  
+    return promise.forget();
+  }
+
+  UniquePtr<uint8_t> buffer(new uint8_t[length]);
+  memcpy(buffer.get(), data, length);
+#if 0
+  
+  MOZ_ALWAYS_SUCCEEDS(mTaskQueue->Dispatch(NS_NewRunnableFunction("WritableFileStream::write",
+                                                                  [fd = mActor->MutableFileDescPtr(), buffer = std::move(buffer), length, promise]() {
+                                                                    uint64_t written = 0;
+                                                                    written = PR_Write(fd, buffer.get(), length); 
+                                                                    promise->MaybeResolve(written);
+                                                                  })));
+#else
+  written = PR_Write(mActor->MutableFileDescPtr(), buffer.get(),
+                     length);  
+  promise->MaybeResolve(written);
+#endif
+  return promise.forget();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+nsresult FileSystemWritableFileStream::WriteBlob(Blob* aBlob,
+                                                 uint64_t& aWritten) {
+  NS_ENSURE_ARG_POINTER(aBlob);
+  if (IsClosed()) {
+    return NS_ERROR_DOM_NOT_FOUND_ERR;  
+  }
+
+  nsresult rv;
+  nsCOMPtr<nsIInputStream> msgStream;
+  ErrorResult error;
+  aBlob->CreateInputStream(getter_AddRefs(msgStream), error);
+  if (NS_WARN_IF(error.Failed())) {
+    return error.StealNSResult();
+  }
+  void* data = nullptr;
+  uint64_t length;
+  if (NS_WARN_IF(NS_FAILED(
+          rv = NS_ReadInputStreamToBuffer(msgStream, &data, -1, &length)))) {
+    return rv;
+  }
+  
+  
+  aWritten +=
+      PR_Write(mActor->MutableFileDescPtr(), data, length);  
+  free(data);
+  return NS_OK;
 }
 
 already_AddRefed<Promise> FileSystemWritableFileStream::Close(
@@ -139,10 +432,26 @@ already_AddRefed<Promise> FileSystemWritableFileStream::Close(
   if (aRv.Failed()) {
     return nullptr;
   }
+  if (IsClosed()) {
+    promise->MaybeRejectWithTypeError("WritableFileStream closed");
+    return promise.forget();
+  }
 
-  promise->MaybeReject(NS_ERROR_NOT_IMPLEMENTED);
+  if (mActor) {
+    
+    LOG(("WritableFileStream %p: Closing", mActor->MutableFileDescPtr()));
+    mActor->Close();
+    MOZ_ASSERT(!mActor);
+  }
 
+  promise->MaybeResolveWithUndefined();
   return promise.forget();
+}
+
+FileSystemWritableFileStream::~FileSystemWritableFileStream() {
+  if (mActor) {
+    mActor->Close();
+  }
 }
 
 }  
