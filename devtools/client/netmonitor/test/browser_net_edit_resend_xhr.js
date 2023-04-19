@@ -45,7 +45,7 @@ add_task(async function() {
 
   
   EventUtils.sendMouseEvent({ type: "contextmenu" }, xhrRequest);
-  getContextMenuItem(monitor, "request-list-context-resend").click();
+  await selectContextMenuItem(monitor, "request-list-context-edit-resend");
 
   
   
@@ -105,7 +105,7 @@ add_task(async function() {
 
     
     EventUtils.sendMouseEvent({ type: "contextmenu" }, xhrRequest);
-    getContextMenuItem(monitor, "request-list-context-resend").click();
+    await selectContextMenuItem(monitor, "request-list-context-edit-resend");
 
     
     

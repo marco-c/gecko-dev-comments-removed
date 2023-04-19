@@ -44,7 +44,7 @@ add_task(async function() {
 
   
   EventUtils.sendMouseEvent({ type: "contextmenu" }, firstRequest);
-  await selectContextMenuItem(monitor, "request-list-context-resend");
+  await selectContextMenuItem(monitor, "request-list-context-edit-resend");
 
   await waitForPanels;
 

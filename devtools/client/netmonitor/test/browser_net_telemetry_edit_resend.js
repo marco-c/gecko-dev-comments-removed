@@ -53,7 +53,7 @@ add_task(async function() {
   EventUtils.sendMouseEvent({ type: "contextmenu" }, firstRequest);
 
   
-  getContextMenuItem(monitor, "request-list-context-resend").click();
+  await selectContextMenuItem(monitor, "request-list-context-edit-resend");
   await waitUntil(() => document.querySelector("#custom-request-send-button"));
   document.querySelector("#custom-request-send-button").click();
 

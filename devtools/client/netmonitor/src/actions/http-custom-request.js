@@ -21,8 +21,14 @@ const {
 } = require("devtools/client/netmonitor/src/actions/ui");
 
 const {
+  getRequestById,
   getRequestByChannelId,
 } = require("devtools/client/netmonitor/src/selectors/index");
+
+const {
+  fetchNetworkUpdatePacket,
+} = require("devtools/client/netmonitor/src/utils/request-utils");
+
 
 
 
@@ -70,6 +76,19 @@ function sendHTTPCustomRequest(connector, request) {
     }
 
     
+    
+
+    if (request.requestHeadersAvailable || request.requestPostDataAvailable) {
+      await fetchNetworkUpdatePacket(connector.requestData, request, [
+        "requestHeaders",
+        "requestPostData",
+      ]);
+
+      
+      request = getRequestById(getState(), request.id);
+    }
+
+    
     const data = {
       cause: request.cause || {},
       url: request.url,
@@ -77,8 +96,8 @@ function sendHTTPCustomRequest(connector, request) {
       httpVersion: request.httpVersion,
     };
 
-    if (request.headers) {
-      data.headers = request.headers;
+    if (request.requestHeaders) {
+      data.headers = request.requestHeaders.headers;
     }
 
     if (request.requestPostData) {
