@@ -8,8 +8,8 @@
 
 
 
-#ifndef MEDIA_SCTP_SCTP_TRANSPORT_H_
-#define MEDIA_SCTP_SCTP_TRANSPORT_H_
+#ifndef MEDIA_SCTP_USRSCTP_TRANSPORT_H_
+#define MEDIA_SCTP_USRSCTP_TRANSPORT_H_
 
 #include <errno.h>
 
@@ -66,16 +66,16 @@ struct SctpInboundPacket;
 
 
 
-class SctpTransport : public SctpTransportInternal,
-                      public sigslot::has_slots<> {
+class UsrsctpTransport : public SctpTransportInternal,
+                         public sigslot::has_slots<> {
  public:
   
   
   
   
-  SctpTransport(rtc::Thread* network_thread,
-                rtc::PacketTransportInternal* transport);
-  ~SctpTransport() override;
+  UsrsctpTransport(rtc::Thread* network_thread,
+                   rtc::PacketTransportInternal* transport);
+  ~UsrsctpTransport() override;
 
   
   void SetDtlsTransport(rtc::PacketTransportInternal* transport) override;
@@ -270,7 +270,7 @@ class SctpTransport : public SctpTransportInternal,
   std::map<uint32_t, StreamStatus> stream_status_by_sid_;
 
   
-  const char* debug_name_ = "SctpTransport";
+  const char* debug_name_ = "UsrsctpTransport";
   
   class UsrSctpWrapper;
   
@@ -281,12 +281,12 @@ class SctpTransport : public SctpTransportInternal,
   
   uintptr_t id_ = 0;
 
-  friend class SctpTransportMap;
+  friend class UsrsctpTransportMap;
 
-  RTC_DISALLOW_COPY_AND_ASSIGN(SctpTransport);
+  RTC_DISALLOW_COPY_AND_ASSIGN(UsrsctpTransport);
 };
 
-class SctpTransportMap;
+class UsrsctpTransportMap;
 
 }  
 
