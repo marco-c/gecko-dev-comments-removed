@@ -551,11 +551,6 @@ const nsTArray<mozilla::dom::Element*>* Gecko_ShadowRoot_GetElementsWithId(
 bool Gecko_GetBoolPrefValue(const char* pref_name);
 
 
-bool Gecko_IsFontFormatSupported(
-    mozilla::StyleFontFaceSourceFormatKeyword aFormat);
-bool Gecko_IsFontTechSupported(mozilla::StyleFontFaceSourceTechFlags aFlag);
-
-
 bool Gecko_IsInServoTraversal();
 
 
