@@ -107,8 +107,15 @@ WeakMap<K, V>::WeakMap(JS::Zone* zone, JSObject* memOf)
 
 
 
+
+
+
+
 template <class K, class V>
-bool WeakMap<K, V>::markEntry(GCMarker* marker, K& key, V& value) {
+bool WeakMap<K, V>::markEntry(GCMarker* marker, K& key, V& value,
+                              bool populateWeakKeysTable) {
+  MOZ_ASSERT(mapColor);
+
   bool marked = false;
   CellColor markColor = marker->markColor();
   CellColor keyColor = gc::detail::GetEffectiveColor(marker, key);
@@ -116,7 +123,6 @@ bool WeakMap<K, V>::markEntry(GCMarker* marker, K& key, V& value) {
 
   if (delegate) {
     CellColor delegateColor = gc::detail::GetEffectiveColor(marker, delegate);
-    MOZ_ASSERT(mapColor);
     
     CellColor proxyPreserveColor = std::min(delegateColor, mapColor);
     if (keyColor < proxyPreserveColor) {
@@ -131,8 +137,8 @@ bool WeakMap<K, V>::markEntry(GCMarker* marker, K& key, V& value) {
     }
   }
 
+  gc::Cell* cellValue = gc::ToMarkable(value);
   if (keyColor) {
-    gc::Cell* cellValue = gc::ToMarkable(value);
     if (cellValue) {
       CellColor targetColor = std::min(mapColor, keyColor);
       CellColor valueColor = gc::detail::GetEffectiveColor(marker, cellValue);
@@ -143,6 +149,28 @@ bool WeakMap<K, V>::markEntry(GCMarker* marker, K& key, V& value) {
           MOZ_ASSERT(cellValue->color() >= targetColor);
           marked = true;
         }
+      }
+    }
+  }
+
+  if (populateWeakKeysTable) {
+    
+    
+    
+
+    if (keyColor < mapColor) {
+      MOZ_ASSERT(marker->weakMapAction() == JS::WeakMapTraceAction::Expand);
+      
+      
+      
+      
+      gc::TenuredCell* tenuredValue = nullptr;
+      if (cellValue && cellValue->isTenured()) {
+        tenuredValue = &cellValue->asTenured();
+      }
+
+      if (!this->addImplicitEdges(key, delegate, tenuredValue)) {
+        marker->abortLinearWeakMarking();
       }
     }
   }
@@ -245,44 +273,15 @@ bool WeakMap<K, V>::markEntries(GCMarker* marker) {
   MOZ_ASSERT(mapColor);
   bool markedAny = false;
 
+  
+  
+  bool populateWeakKeysTable =
+      marker->incrementalWeakMapMarkingEnabled || marker->isWeakMarking();
+
   for (Enum e(*this); !e.empty(); e.popFront()) {
-    if (markEntry(marker, e.front().mutableKey(), e.front().value())) {
+    if (markEntry(marker, e.front().mutableKey(), e.front().value(),
+                  populateWeakKeysTable)) {
       markedAny = true;
-    }
-    if (!marker->incrementalWeakMapMarkingEnabled && !marker->isWeakMarking()) {
-      
-      continue;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-
-    CellColor keyColor =
-        gc::detail::GetEffectiveColor(marker, e.front().key().get());
-
-    if (keyColor < mapColor) {
-      MOZ_ASSERT(marker->weakMapAction() == JS::WeakMapTraceAction::Expand);
-      
-      
-      
-      
-      gc::Cell* weakKey = e.front().key();
-      gc::Cell* value = gc::ToMarkable(e.front().value());
-      gc::Cell* delegate = gc::detail::GetDelegate(e.front().key());
-
-      gc::TenuredCell* tenuredValue = nullptr;
-      if (value && value->isTenured()) {
-        tenuredValue = &value->asTenured();
-      }
-
-      if (!addImplicitEdges(weakKey, delegate, tenuredValue)) {
-        marker->abortLinearWeakMarking();
-      }
     }
   }
 
