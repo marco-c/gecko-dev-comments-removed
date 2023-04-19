@@ -829,9 +829,18 @@ const GfxDeviceFamily* GfxDriverInfo::GetDeviceFamily(DeviceFamily id) {
       
       APPEND_DEVICE(0x1638);
       
+      APPEND_DEVICE(0x163F);
+      
       APPEND_DEVICE(0x164c);
       
+      APPEND_DEVICE(0x164d);
       APPEND_DEVICE(0x1681);
+      
+      APPEND_DEVICE(0x15e7);
+      
+      APPEND_DEVICE(0x164e);
+      
+      APPEND_DEVICE(0x1506);
 
       
       APPEND_RANGE(0x6840, 0x684b);
@@ -849,6 +858,10 @@ const GfxDeviceFamily* GfxDriverInfo::GetDeviceFamily(DeviceFamily id) {
 
       
       APPEND_RANGE(0x1304, 0x131d);
+      
+      APPEND_RANGE(0x13f9, 0x143f);
+      
+      APPEND_RANGE(0x7420, 0x743f);
 
       
       APPEND_RANGE(0x9440, 0x949f);
