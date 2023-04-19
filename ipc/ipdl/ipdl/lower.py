@@ -4321,30 +4321,18 @@ class _GenerateProtocolActorCode(ipdl.ast.Visitor):
         methods = []
 
         if p.decl.type.isToplevel():
-
             
             
-            if p.subtreeUsesShmem():
-                self.asyncSwitch.addcase(
-                    CaseLabel("SHMEM_CREATED_MESSAGE_TYPE"),
-                    self.genShmemCreatedHandler(),
-                )
-                self.asyncSwitch.addcase(
-                    CaseLabel("SHMEM_DESTROYED_MESSAGE_TYPE"),
-                    self.genShmemDestroyedHandler(),
-                )
-            else:
-                abort = StmtBlock()
-                abort.addstmts(
-                    [
-                        _fatalError("this protocol tree does not use shmem"),
-                        StmtReturn(_Result.NotKnown),
-                    ]
-                )
-                self.asyncSwitch.addcase(CaseLabel("SHMEM_CREATED_MESSAGE_TYPE"), abort)
-                self.asyncSwitch.addcase(
-                    CaseLabel("SHMEM_DESTROYED_MESSAGE_TYPE"), abort
-                )
+            
+            
+            self.asyncSwitch.addcase(
+                CaseLabel("SHMEM_CREATED_MESSAGE_TYPE"),
+                self.genShmemCreatedHandler(),
+            )
+            self.asyncSwitch.addcase(
+                CaseLabel("SHMEM_DESTROYED_MESSAGE_TYPE"),
+                self.genShmemDestroyedHandler(),
+            )
 
         
         
