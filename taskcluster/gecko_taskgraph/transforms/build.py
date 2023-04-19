@@ -178,6 +178,11 @@ def use_profile_data(config, jobs):
             
             job["worker"]["env"].update({"MOZ_LIMIT_NOFILE": "8192"})
 
+        if job.get("use-sccache"):
+            raise Exception(
+                "use-sccache is incompatible with use-pgo in {}".format(job["name"])
+            )
+
         yield job
 
 
