@@ -34,7 +34,8 @@ class BlankDetectorDesktopCapturerWrapper final
   
   
   BlankDetectorDesktopCapturerWrapper(std::unique_ptr<DesktopCapturer> capturer,
-                                      RgbaColor blank_pixel);
+                                      RgbaColor blank_pixel,
+                                      bool check_per_capture = false);
   ~BlankDetectorDesktopCapturerWrapper() override;
 
   
@@ -69,6 +70,10 @@ class BlankDetectorDesktopCapturerWrapper final
 
   
   bool is_first_frame_ = true;
+
+  
+  
+  bool check_per_capture_ = false;
 
   DesktopCapturer::Callback* callback_ = nullptr;
 };

@@ -80,7 +80,8 @@ class ScreenEnumerator final : public SourceEnumerator {
 class WgcCapturerWin : public DesktopCapturer {
  public:
   WgcCapturerWin(std::unique_ptr<WgcCaptureSourceFactory> source_factory,
-                 std::unique_ptr<SourceEnumerator> source_enumerator);
+                 std::unique_ptr<SourceEnumerator> source_enumerator,
+                 bool allow_delayed_capturable_check);
 
   WgcCapturerWin(const WgcCapturerWin&) = delete;
   WgcCapturerWin& operator=(const WgcCapturerWin&) = delete;
@@ -88,7 +89,8 @@ class WgcCapturerWin : public DesktopCapturer {
   ~WgcCapturerWin() override;
 
   static std::unique_ptr<DesktopCapturer> CreateRawWindowCapturer(
-      const DesktopCaptureOptions& options);
+      const DesktopCaptureOptions& options,
+      bool allow_delayed_capturable_check = false);
 
   static std::unique_ptr<DesktopCapturer> CreateRawScreenCapturer(
       const DesktopCaptureOptions& options);
@@ -127,6 +129,11 @@ class WgcCapturerWin : public DesktopCapturer {
   
   
   Callback* callback_ = nullptr;
+
+  
+  
+  
+  bool allow_delayed_capturable_check_ = false;
 
   
   
