@@ -203,6 +203,10 @@ class Navigator final : public nsISupports, public nsWrapperCache {
                        CallerType aCallerType, ErrorResult& aRv);
 
   already_AddRefed<ServiceWorkerContainer> ServiceWorker();
+  
+  
+  
+  already_AddRefed<ServiceWorkerContainer> ServiceWorkerJS();
 
   mozilla::dom::CredentialsContainer* Credentials();
   dom::Clipboard* Clipboard();
