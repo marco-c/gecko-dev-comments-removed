@@ -40,19 +40,19 @@ ${helpers.two_properties_shorthand(
     gecko_pref="layout.css.container-queries.enabled",
     spec="https:
 >
+    use crate::values::specified::box_::{ContainerName, ContainerType};
     pub fn parse_value<'i>(
         context: &ParserContext,
         input: &mut Parser<'i, '_>,
     ) -> Result<Longhands, ParseError<'i>> {
         use crate::parser::Parse;
-        use crate::values::specified::box_::{ContainerName, ContainerType};
         
         
         let container_name = ContainerName::parse(context, input)?;
         let container_type = if input.try_parse(|input| input.expect_delim('/')).is_ok() {
-            ContainerType::parse(context, input)?
+            ContainerType::parse(input)?
         } else {
-            ContainerType::NORMAL
+            ContainerType::Normal
         };
         Ok(expanded! {
             container_name: container_name,
@@ -63,7 +63,7 @@ ${helpers.two_properties_shorthand(
     impl<'a> ToCss for LonghandsToSerialize<'a> {
         fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result where W: fmt::Write {
             self.container_name.to_css(dest)?;
-            if !self.container_type.is_empty() {
+            if !self.container_type.is_normal() {
                 dest.write_str(" / ")?;
                 self.container_type.to_css(dest)?;
             }
