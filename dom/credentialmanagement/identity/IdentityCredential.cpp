@@ -4,19 +4,24 @@
 
 
 
-#include "mozilla/dom/Promise.h"
+#include "mozilla/dom/ContentChild.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/Fetch.h"
 #include "mozilla/dom/IdentityCredential.h"
-#include "nsCycleCollectionParticipant.h"
+#include "mozilla/dom/IdentityNetworkHelpers.h"
+#include "mozilla/dom/Request.h"
+#include "mozilla/ExpandedPrincipal.h"
+#include "mozilla/NullPrincipal.h"
+#include "nsEffectiveTLDService.h"
+#include "nsITimer.h"
+#include "nsIXPConnect.h"
+#include "nsNetUtil.h"
+#include "nsStringStream.h"
+#include "nsURLHelper.h"
 
 namespace mozilla::dom {
 
-NS_IMPL_ADDREF_INHERITED(IdentityCredential, Credential)
-NS_IMPL_RELEASE_INHERITED(IdentityCredential, Credential)
-
-NS_IMPL_CYCLE_COLLECTION_INHERITED(IdentityCredential, Credential)
-
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(IdentityCredential)
-NS_INTERFACE_MAP_END_INHERITING(Credential)
+IdentityCredential::~IdentityCredential() = default;
 
 JSObject* IdentityCredential::WrapObject(JSContext* aCx,
                                          JS::Handle<JSObject*> aGivenProto) {
