@@ -38,9 +38,12 @@ add_setup(async function global_setup() {
 
 
 
-async function assertDatabaseValues(expected) {
+
+async function assertDatabaseValues(expected, { dontFlush = false } = {}) {
   await Interactions.interactionUpdatePromise;
-  await Interactions.store.flush();
+  if (!dontFlush) {
+    await Interactions.store.flush();
+  }
 
   let interactions = await PlacesUtils.withConnectionWrapper(
     "head.js::assertDatabaseValues",
