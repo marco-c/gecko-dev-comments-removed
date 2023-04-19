@@ -21,7 +21,6 @@ import { prefs } from "../utils/prefs";
 import {
   hasSourceActor,
   getSourceActor,
-  getSourceActors,
   getBreakableLinesForSourceActors,
 } from "./source-actors";
 import { getSourceTextContent } from "./sources-content";
@@ -161,13 +160,23 @@ export function getSelectedSourceId(state) {
   return source?.id;
 }
 
+
+
+
+
+
+
+
+
 export function getSourceActorsForSource(state, id) {
-  const actors = state.sources.actors[id];
-  if (!actors) {
+  const actorsInfo = state.sources.actors[id];
+  if (!actorsInfo) {
     return [];
   }
 
-  return getSourceActors(state, actors);
+  return actorsInfo
+    .map(actorInfo => getSourceActor(state, actorInfo.id))
+    .filter(actor => !!actor);
 }
 
 export function isSourceWithMap(state, id) {
@@ -236,14 +245,18 @@ export function getBreakableLines(state, sourceId) {
     return state.sources.breakableLines[sourceId];
   }
 
-  const sourceActorIDs = state.sources.actors[sourceId];
-  if (!sourceActorIDs?.length) {
+  const sourceActorsInfo = state.sources.actors[sourceId];
+  if (!sourceActorsInfo?.length) {
     return null;
   }
 
   
   
-  return getBreakableLinesForSourceActors(state, sourceActorIDs, source.isHTML);
+  return getBreakableLinesForSourceActors(
+    state,
+    sourceActorsInfo.map(actorInfo => actorInfo.id),
+    source.isHTML
+  );
 }
 
 export const getSelectedBreakableLines = createSelector(

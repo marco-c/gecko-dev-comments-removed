@@ -38,20 +38,6 @@ export function getSourceActor(state, id) {
 
 
 
-
-export function getSourceActors(state, ids) {
-  return ids.map(id => getSourceActor(state, id)).filter(source => !!source);
-}
-
-
-
-
-
-
-
-
-
-
 export function getSourceActorsForThread(state, ids) {
   if (!Array.isArray(ids)) {
     ids = [ids];
