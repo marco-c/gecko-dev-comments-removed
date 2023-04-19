@@ -172,8 +172,13 @@ pub trait Arbitrary<'a>: Sized {
     
     
     
+    
+    
+    
     fn arbitrary(u: &mut Unstructured<'a>) -> Result<Self>;
 
+    
+    
     
     
     
@@ -183,6 +188,7 @@ pub trait Arbitrary<'a>: Sized {
         Self::arbitrary(&mut u)
     }
 
+    
     
     
     
