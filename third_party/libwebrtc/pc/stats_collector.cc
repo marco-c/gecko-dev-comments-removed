@@ -649,15 +649,17 @@ void StatsCollector::GetStats(MediaStreamTrackInterface* track,
 void StatsCollector::UpdateStats(
     PeerConnectionInterface::StatsOutputLevel level) {
   RTC_DCHECK(pc_->signaling_thread()->IsCurrent());
-  double time_now = GetTimeNow();
   
   
-  const double kMinGatherStatsPeriod = 50;
-  if (stats_gathering_started_ != 0 &&
-      stats_gathering_started_ + kMinGatherStatsPeriod > time_now) {
+  
+  const int64_t kMinGatherStatsPeriodMs = 50;
+  int64_t cache_now_ms = rtc::TimeMillis();
+  if (cache_timestamp_ms_ != 0 &&
+      cache_timestamp_ms_ + kMinGatherStatsPeriodMs > cache_now_ms) {
     return;
   }
-  stats_gathering_started_ = time_now;
+  cache_timestamp_ms_ = cache_now_ms;
+  stats_gathering_started_ = GetTimeNow();
 
   
   
@@ -1267,7 +1269,7 @@ void StatsCollector::UpdateTrackReports() {
 }
 
 void StatsCollector::ClearUpdateStatsCacheForTest() {
-  stats_gathering_started_ = 0;
+  cache_timestamp_ms_ = 0;
 }
 
 }  
