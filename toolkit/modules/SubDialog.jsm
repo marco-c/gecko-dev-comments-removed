@@ -364,13 +364,12 @@ SubDialog.prototype = {
         "--inner-height"
       );
       if (frameHeight) {
-        frameHeight = parseFloat(frameHeight, 10);
+        frameHeight = parseFloat(frameHeight);
       } else {
         frameHeight = this._frame.clientHeight;
       }
       let boxMinHeight = parseFloat(
-        this._window.getComputedStyle(this._box).minHeight,
-        10
+        this._window.getComputedStyle(this._box).minHeight
       );
 
       this._box.style.minHeight = boxMinHeight + resizeByHeight + "px";
@@ -463,7 +462,9 @@ SubDialog.prototype = {
 
     
     let { scrollWidth } = docEl.ownerDocument.body || docEl;
-    let frameMinWidth = docEl.style.width || scrollWidth + "px";
+    
+    
+    let frameMinWidth = this._emToPx(docEl.style.width) || scrollWidth + "px";
     let frameWidth = docEl.getAttribute("width")
       ? docEl.getAttribute("width") + "px"
       : frameMinWidth;
@@ -509,10 +510,12 @@ SubDialog.prototype = {
 
   resizeVertically() {
     let docEl = this._frame.contentDocument.documentElement;
-    function getDocHeight() {
+    let getDocHeight = () => {
       let { scrollHeight } = docEl.ownerDocument.body || docEl;
-      return docEl.style.height || scrollHeight + "px";
-    }
+      
+      
+      return this._emToPx(docEl.style.height) || scrollHeight + "px";
+    };
 
     
     
@@ -567,13 +570,8 @@ SubDialog.prototype = {
     let maxHeight = this._window.innerHeight - frameOverhead;
     
     let comparisonFrameHeight;
-    if (frameHeight.endsWith("em")) {
-      let fontSize = parseFloat(
-        this._window.getComputedStyle(this._frame).fontSize
-      );
-      comparisonFrameHeight = parseFloat(frameHeight, 10) * fontSize;
-    } else if (frameHeight.endsWith("px")) {
-      comparisonFrameHeight = parseFloat(frameHeight, 10);
+    if (frameHeight.endsWith("px")) {
+      comparisonFrameHeight = parseFloat(frameHeight);
     } else {
       Cu.reportError(
         "This dialog (" +
@@ -613,6 +611,25 @@ SubDialog.prototype = {
       ${boxVerticalBorder + titleBarHeight + frameVerticalMargin}px +
       ${frameMinHeight}
     )`;
+  },
+
+  
+
+
+
+
+
+
+
+
+  _emToPx(val) {
+    if (val && val.endsWith("em")) {
+      let { fontSize } = this.frameContentWindow.getComputedStyle(
+        this._frame.contentDocument.documentElement
+      );
+      return parseFloat(val) * parseFloat(fontSize) + "px";
+    }
+    return val;
   },
 
   _onResize(mutations) {
