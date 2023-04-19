@@ -116,6 +116,14 @@ class nsExternalHelperAppService : public nsIExternalHelperAppService,
 
 
 
+  virtual bool GetMIMETypeFromDefaultForExtension(const nsACString& aExtension,
+                                                  nsACString& aMIMEType);
+
+  
+
+
+
+
 
   virtual bool GetMIMETypeFromOSForExtension(const nsACString& aExtension,
                                              nsACString& aMIMEType);
