@@ -275,7 +275,11 @@ class ModuleRtpRtcpImpl2 final : public RtpRtcpInterface,
     
     const bool deferred_sequencing_;
     
-    PacketSequencer sequencer_;
+    
+    
+    mutable Mutex mutex_sequencer_;
+    
+    PacketSequencer sequencer_ RTC_GUARDED_BY(mutex_sequencer_);
     
     RtpSenderEgress packet_sender;
     
