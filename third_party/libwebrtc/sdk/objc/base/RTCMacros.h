@@ -11,6 +11,18 @@
 #ifndef SDK_OBJC_BASE_RTCMACROS_H_
 #define SDK_OBJC_BASE_RTCMACROS_H_
 
+#ifdef WEBRTC_ENABLE_SYMBOL_EXPORT
+
+#if defined(WEBRTC_LIBRARY_IMPL)
+#define RTC_OBJC_EXPORT __attribute__((visibility("default")))
+#endif
+
+#endif  
+
+#ifndef RTC_OBJC_EXPORT
+#define RTC_OBJC_EXPORT
+#endif
+
 
 #define RTC_SYMBOL_CONCAT_HELPER(a, b) a##b
 #define RTC_SYMBOL_CONCAT(a, b) RTC_SYMBOL_CONCAT_HELPER(a, b)
@@ -34,8 +46,6 @@
 
 
 #define RTC_OBJC_TYPE(type_name) RTC_SYMBOL_CONCAT(RTC_OBJC_TYPE_PREFIX, type_name)
-
-#define RTC_OBJC_EXPORT __attribute__((visibility("default")))
 
 #if defined(__cplusplus)
 #define RTC_EXTERN extern "C" RTC_OBJC_EXPORT
