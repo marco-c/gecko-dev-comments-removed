@@ -93,14 +93,14 @@ Image* YUVBufferGenerator::CreateNV12Image() {
   data.mYSkip = 0;
 
   
-  uint8_t* cr = y + yPlaneSize;
-  data.mCrChannel = cr;
-  data.mCrSkip = 1;
-
-  
-  uint8_t* cb = y + yPlaneSize + 1;
+  uint8_t* cb = y + yPlaneSize;
   data.mCbChannel = cb;
   data.mCbSkip = 1;
+
+  
+  uint8_t* cr = y + yPlaneSize + 1;
+  data.mCrChannel = cr;
+  data.mCrSkip = 1;
 
   
   data.mCbCrStride = mImageSize.width;
@@ -124,14 +124,14 @@ Image* YUVBufferGenerator::CreateNV21Image() {
   data.mYSkip = 0;
 
   
-  uint8_t* cr = y + yPlaneSize + 1;
-  data.mCrChannel = cr;
-  data.mCrSkip = 1;
-
-  
-  uint8_t* cb = y + yPlaneSize;
+  uint8_t* cb = y + yPlaneSize + 1;
   data.mCbChannel = cb;
   data.mCbSkip = 1;
+
+  
+  uint8_t* cr = y + yPlaneSize;
+  data.mCrChannel = cr;
+  data.mCrSkip = 1;
 
   
   data.mCbCrStride = mImageSize.width;
