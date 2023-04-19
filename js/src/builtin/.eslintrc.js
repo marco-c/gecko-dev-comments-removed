@@ -10,8 +10,20 @@ module.exports = {
   overrides: [
     {
       files: ["*.js"],
+      excludedFiles: ".eslintrc.js",
       processor: "spidermonkey-js/processor",
       env: {
+        
+        node: false,
+        browser: false,
+        builtin: false,
+
+        
+        
+        es2021: false,
+        "mozilla/privileged": false,
+
+        
         "spidermonkey-js/environment": true,
       },
 
@@ -33,6 +45,36 @@ module.exports = {
         SetIsInlinableLargeFunction: "readonly",
         ToNumeric: "readonly",
         ToString: "readonly",
+
+        
+        
+        
+        undefined: "readonly",
+
+        
+        
+        
+        AsyncIterator: "off",
+        Iterator: "off",
+        Record: "off",
+        Temporal: "off",
+        Tuple: "off",
+
+        
+        
+        Cc: "off",
+        ChromeUtils: "off",
+        Ci: "off",
+        Components: "off",
+        Cr: "off",
+        Cu: "off",
+        Debugger: "off",
+        InstallTrigger: "off",
+        InternalError: "off",
+        Services: "off",
+        dump: "off",
+        openDialog: "off",
+        uneval: "off",
       },
     },
   ],
