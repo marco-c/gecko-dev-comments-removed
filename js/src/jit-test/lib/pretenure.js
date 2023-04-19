@@ -32,6 +32,9 @@ function setupPretenureTest() {
   gcparam("incrementalGCEnabled", false);
 
   
+  gcparam("balancedHeapLimitsEnabled", false);
+
+  
   let o = {};
 
   gc();

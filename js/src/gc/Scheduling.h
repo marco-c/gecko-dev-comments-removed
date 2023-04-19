@@ -313,6 +313,7 @@
 
 #include "mozilla/Atomics.h"
 #include "mozilla/DebugOnly.h"
+#include "mozilla/Maybe.h"
 
 #include "gc/GCEnum.h"
 #include "js/AllocPolicy.h"
@@ -870,12 +871,21 @@ class HeapThreshold {
 class GCHeapThreshold : public HeapThreshold {
  public:
   void updateStartThreshold(size_t lastBytes,
+                            mozilla::Maybe<double> allocationRate,
+                            mozilla::Maybe<double> collectionRate,
                             const GCSchedulingTunables& tunables,
                             const GCSchedulingState& state, bool isAtomsZone);
 
  private:
+  
   static size_t computeZoneTriggerBytes(double growthFactor, size_t lastBytes,
                                         const GCSchedulingTunables& tunables);
+
+  
+  static double computeBalancedHeapLimit(size_t lastBytes,
+                                         double allocationRate,
+                                         double collectionRate,
+                                         const GCSchedulingTunables& tunables);
 };
 
 
