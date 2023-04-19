@@ -18,35 +18,37 @@
 
 namespace webrtc {
 
-uint32_t SaturatedUsToCompactNtp(int64_t us) {
+uint32_t SaturatedToCompactNtp(TimeDelta delta) {
   constexpr uint32_t kMaxCompactNtp = 0xFFFFFFFF;
   constexpr int kCompactNtpInSecond = 0x10000;
-  if (us <= 0)
+  if (delta <= TimeDelta::Zero())
     return 0;
-  if (us >= kMaxCompactNtp * rtc::kNumMicrosecsPerSec / kCompactNtpInSecond)
+  if (delta.us() >=
+      kMaxCompactNtp * rtc::kNumMicrosecsPerSec / kCompactNtpInSecond)
     return kMaxCompactNtp;
   
   
   
-  return DivideRoundToNearest(us * kCompactNtpInSecond,
+  return DivideRoundToNearest(delta.us() * kCompactNtpInSecond,
                               rtc::kNumMicrosecsPerSec);
 }
 
-int64_t CompactNtpRttToMs(uint32_t compact_ntp_interval) {
+TimeDelta CompactNtpRttToTimeDelta(uint32_t compact_ntp_interval) {
+  static constexpr TimeDelta kMinRtt = TimeDelta::Millis(1);
   
   
   
   
   
   if (compact_ntp_interval > 0x80000000)
-    return 1;
+    return kMinRtt;
   
   int64_t value = static_cast<int64_t>(compact_ntp_interval);
   
   
   
-  int64_t ms = DivideRoundToNearest(value * 1000, 1 << 16);
+  int64_t us = DivideRoundToNearest(value * rtc::kNumMicrosecsPerSec, 1 << 16);
   
-  return std::max<int64_t>(ms, 1);
+  return std::max(TimeDelta::Micros(us), kMinRtt);
 }
 }  

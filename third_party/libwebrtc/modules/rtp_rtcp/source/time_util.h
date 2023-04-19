@@ -13,6 +13,7 @@
 
 #include <stdint.h>
 
+#include "api/units/time_delta.h"
 #include "system_wrappers/include/ntp_time.h"
 
 namespace webrtc {
@@ -31,12 +32,13 @@ inline uint32_t CompactNtp(NtpTime ntp) {
 
 
 
-uint32_t SaturatedUsToCompactNtp(int64_t us);
+uint32_t SaturatedToCompactNtp(TimeDelta delta);
 
 
 
 
-int64_t CompactNtpRttToMs(uint32_t compact_ntp_interval);
+
+TimeDelta CompactNtpRttToTimeDelta(uint32_t compact_ntp_interval);
 
 }  
 #endif  

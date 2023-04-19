@@ -682,7 +682,6 @@ void RTCPReceiver::HandleReportBlock(const ReportBlock& report_block,
       (clock_->CurrentNtpInMilliseconds() - rtc::kNtpJan1970Millisecs) *
           rtc::kNumMicrosecsPerMillisec);
 
-  int64_t rtt_ms = 0;
   uint32_t send_time_ntp = report_block.last_sr();
   
   
@@ -704,13 +703,13 @@ void RTCPReceiver::HandleReportBlock(const ReportBlock& report_block,
     
     uint32_t rtt_ntp = receive_time_ntp - delay_ntp - send_time_ntp;
     
-    rtt_ms = CompactNtpRttToMs(rtt_ntp);
-    report_block_data->AddRoundTripTimeSample(rtt_ms);
+    TimeDelta rtt = CompactNtpRttToTimeDelta(rtt_ntp);
+    report_block_data->AddRoundTripTimeSample(rtt.ms());
     if (report_block.source_ssrc() == main_ssrc_) {
-      rtts_[remote_ssrc].AddRtt(TimeDelta::Millis(rtt_ms));
+      rtts_[remote_ssrc].AddRtt(rtt);
     }
 
-    packet_information->rtt_ms = rtt_ms;
+    packet_information->rtt_ms = rtt.ms();
   }
 
   packet_information->report_blocks.push_back(
@@ -958,9 +957,10 @@ void RTCPReceiver::HandleXrDlrrReportBlock(uint32_t sender_ssrc,
   uint32_t now_ntp = CompactNtp(clock_->CurrentNtpTime());
 
   uint32_t rtt_ntp = now_ntp - delay_ntp - send_time_ntp;
-  xr_rr_rtt_ms_ = CompactNtpRttToMs(rtt_ntp);
+  TimeDelta rtt = CompactNtpRttToTimeDelta(rtt_ntp);
+  xr_rr_rtt_ms_ = rtt.ms();
 
-  non_sender_rtts_[sender_ssrc].Update(TimeDelta::Millis(xr_rr_rtt_ms_));
+  non_sender_rtts_[sender_ssrc].Update(rtt);
 }
 
 void RTCPReceiver::HandleXrTargetBitrate(
