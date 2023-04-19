@@ -107,10 +107,11 @@ constexpr inline DurationMs operator-(TimeMs lhs, TimeMs rhs) {
 
 
 
-class MaxRetransmits : public webrtc::StrongAlias<class TimeMsTag, uint16_t> {
+class MaxRetransmits
+    : public webrtc::StrongAlias<class MaxRetransmitsTag, uint16_t> {
  public:
   constexpr explicit MaxRetransmits(const UnderlyingType& v)
-      : webrtc::StrongAlias<class TimeMsTag, uint16_t>(v) {}
+      : webrtc::StrongAlias<class MaxRetransmitsTag, uint16_t>(v) {}
 
   
   static constexpr MaxRetransmits NoLimit() {
