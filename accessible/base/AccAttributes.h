@@ -156,7 +156,7 @@ class AccAttributes {
   }
 
   
-  bool GetAttribute(nsAtom* aAttrName, nsAString& aAttrValue);
+  bool GetAttribute(nsAtom* aAttrName, nsAString& aAttrValue) const;
 
   bool HasAttribute(nsAtom* aAttrName) { return mData.Contains(aAttrName); }
 
