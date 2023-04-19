@@ -1017,18 +1017,14 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
   }
 
   isValidSection() {
-    let ccNumberReason = "";
-    let ccNumberConfidence = 0;
-    let hasCCNumber = false;
+    let ccNumberDetail = null;
     let hasExpiryDate = false;
     let hasCCName = false;
 
     for (let detail of this.fieldDetails) {
       switch (detail.fieldName) {
         case "cc-number":
-          hasCCNumber = true;
-          ccNumberReason = detail._reason;
-          ccNumberConfidence = detail.confidence;
+          ccNumberDetail = detail;
           break;
         case "cc-name":
         case "cc-given-name":
@@ -1044,17 +1040,33 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
       }
     }
 
-    if (hasCCNumber) {
-      if (ccNumberReason == "autocomplete" || hasExpiryDate || hasCCName) {
+    if (ccNumberDetail) {
+      if (
+        ccNumberDetail._reason == "autocomplete" ||
+        hasExpiryDate ||
+        hasCCName
+      ) {
         return true;
       }
 
       
       
+      
+      
+      
+      
+      
+      
       if (
-        ccNumberConfidence >= FormAutofillUtils.ccHeuristicsNumberOnlyThreshold
+        ccNumberDetail.confidence >=
+        FormAutofillUtils.ccHeuristicsNumberOnlyThreshold
       ) {
-        return true;
+        const element = ccNumberDetail.elementWeakRef.get();
+        const root = element.form || element.ownerDocument;
+        const inputs = root.querySelectorAll("input:not([type=hidden])");
+        if (inputs.length == 1 && inputs[0] == element) {
+          return true;
+        }
       }
     }
     return false;
