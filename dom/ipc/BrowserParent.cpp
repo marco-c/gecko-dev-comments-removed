@@ -3426,6 +3426,11 @@ void BrowserParent::TryCacheDPIAndScale() {
   if (widget) {
     mDPI = widget->GetDPI();
     mRounding = widget->RoundsWidgetCoordinatesTo();
+    if (mDefaultScale != widget->GetDefaultScale()) {
+      
+      
+      mUpdatedDimensions = false;
+    }
     mDefaultScale = widget->GetDefaultScale();
   }
 }
