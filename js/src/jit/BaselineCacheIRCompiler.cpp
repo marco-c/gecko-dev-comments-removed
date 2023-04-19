@@ -2720,24 +2720,23 @@ bool BaselineCacheIRCompiler::emitCallClassHook(ObjOperandId calleeId,
 
 
 
-
-
-
-
 void BaselineCacheIRCompiler::loadStackObject(ArgumentKind kind,
-                                              CallFlags flags,
-                                              size_t stackPushed,
-                                              Register argcReg, Register dest) {
+                                              CallFlags flags, Register argcReg,
+                                              Register dest) {
+  MOZ_ASSERT(enteredStubFrame_);
+
   bool addArgc = false;
   int32_t slotIndex = GetIndexOfArgument(kind, flags, &addArgc);
 
   if (addArgc) {
-    int32_t slotOffset = slotIndex * sizeof(JS::Value) + stackPushed;
-    BaseValueIndex slotAddr(masm.getStackPointer(), argcReg, slotOffset);
+    int32_t slotOffset =
+        slotIndex * sizeof(JS::Value) + BaselineStubFrameLayout::Size();
+    BaseValueIndex slotAddr(FramePointer, argcReg, slotOffset);
     masm.unboxObject(slotAddr, dest);
   } else {
-    int32_t slotOffset = slotIndex * sizeof(JS::Value) + stackPushed;
-    Address slotAddr(masm.getStackPointer(), slotOffset);
+    int32_t slotOffset =
+        slotIndex * sizeof(JS::Value) + BaselineStubFrameLayout::Size();
+    Address slotAddr(FramePointer, slotOffset);
     masm.unboxObject(slotAddr, dest);
   }
 }
@@ -2785,24 +2784,20 @@ void BaselineCacheIRCompiler::createThis(Register argcReg, Register calleeReg,
     return;
   }
 
-  size_t depth = StubFrameSize;
-
   
   LiveGeneralRegisterSet liveNonGCRegs;
   liveNonGCRegs.add(argcReg);
   liveNonGCRegs.add(ICStubReg);
   masm.PushRegsInMask(liveNonGCRegs);
-  depth += sizeof(uintptr_t) * liveNonGCRegs.set().size();
 
   
 
   
-  loadStackObject(ArgumentKind::NewTarget, flags, depth, argcReg, scratch);
+  loadStackObject(ArgumentKind::NewTarget, flags, argcReg, scratch);
   masm.push(scratch);
-  depth += sizeof(JSObject*);
 
   
-  loadStackObject(ArgumentKind::Callee, flags, depth, argcReg, scratch);
+  loadStackObject(ArgumentKind::Callee, flags, argcReg, scratch);
   masm.push(scratch);
 
   
@@ -2829,8 +2824,7 @@ void BaselineCacheIRCompiler::createThis(Register argcReg, Register calleeReg,
   
   
   
-  depth = StubFrameSize;
-  loadStackObject(ArgumentKind::Callee, flags, depth, argcReg, calleeReg);
+  loadStackObject(ArgumentKind::Callee, flags, argcReg, calleeReg);
 }
 
 void BaselineCacheIRCompiler::updateReturnValue() {
