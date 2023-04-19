@@ -2,7 +2,7 @@
 
 
 
-const { getWasmXScopes } = require("devtools-wasm-dwarf");
+const { getWasmXScopes } = require("../wasm-dwarf/wasmXScopes");
 const { getSourceMap } = require("./sourceMapRequests");
 const { generatedToOriginalId } = require("./index");
 
