@@ -152,6 +152,19 @@ nsEventStatus SwipeTracker::ProcessEvent(
       eventAmount = -eventAmount;
     }
   }
+
+  
+  
+  
+  
+  if (!computedSwipeSuccess && (eventAmount >= kSwipeSuccessThreshold ||
+                                eventAmount <= -kSwipeSuccessThreshold)) {
+    eventAmount = 0.999 * kSwipeSuccessThreshold;
+    if (mGestureAmount < 0.f) {
+      eventAmount = -eventAmount;
+    }
+  }
+
   SendSwipeEvent(eSwipeGestureUpdate, 0, eventAmount, aEvent.mTimeStamp);
 
   if (aEvent.mType == PanGestureInput::PANGESTURE_END) {
@@ -168,15 +181,15 @@ nsEventStatus SwipeTracker::ProcessEvent(
                                    swipeTracker->SwipeFinished(timeStamp);
                                  }));
     } else {
-      StartAnimating(0.0);
+      StartAnimating(eventAmount, 0.0);
     }
   }
 
   return nsEventStatus_eConsumeNoDefault;
 }
 
-void SwipeTracker::StartAnimating(double aTargetValue) {
-  mAxis.SetPosition(mGestureAmount);
+void SwipeTracker::StartAnimating(double aStartValue, double aTargetValue) {
+  mAxis.SetPosition(aStartValue);
   mAxis.SetDestination(aTargetValue);
   mAxis.SetVelocity(mCurrentVelocity);
 
