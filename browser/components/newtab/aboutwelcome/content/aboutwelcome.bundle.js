@@ -1231,7 +1231,8 @@ function LanguageSwitcher(props) {
     if (langPackDisplayName) {
       return { ...obj,
         args: { ...obj.args,
-          negotiatedLanguage: langPackDisplayName
+          negotiatedLanguage: langPackDisplayName,
+          browserLanguage: negotiatedLanguage === null || negotiatedLanguage === void 0 ? void 0 : negotiatedLanguage.appDisplayName
         }
       };
     }
@@ -1253,7 +1254,9 @@ function LanguageSwitcher(props) {
   
 
 
-  return react__WEBPACK_IMPORTED_MODULE_0___default().createElement((react__WEBPACK_IMPORTED_MODULE_0___default().Fragment), null, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+  return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+    className: "language-switcher-container"
+  }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
     style: {
       display: showPreloadingScreen ? "block" : "none"
     }
@@ -1318,7 +1321,9 @@ function LanguageSwitcher(props) {
       _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.sendActionTelemetry(messageId, "download_langpack");
       setIsAwaitingLangpack(true);
     }
-  }, 
+  }, content.languageSwitcher.switch ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
+    text: withMessageArgs(content.languageSwitcher.switch)
+  }) : 
   negotiatedLanguage === null || negotiatedLanguage === void 0 ? void 0 : negotiatedLanguage.langPackDisplayName)), react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", null, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("button", {
     type: "button",
     className: "secondary",
@@ -1327,7 +1332,9 @@ function LanguageSwitcher(props) {
       window.AWSetRequestedLocales(negotiatedLanguage.originalAppLocales);
       handleAction(event);
     }
-  }, 
+  }, content.languageSwitcher.continue ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
+    text: content.languageSwitcher.continue
+  }) : 
   negotiatedLanguage === null || negotiatedLanguage === void 0 ? void 0 : negotiatedLanguage.appDisplayName))));
 }
 
