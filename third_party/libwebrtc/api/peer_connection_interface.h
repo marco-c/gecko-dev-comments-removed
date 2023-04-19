@@ -622,11 +622,7 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
 
     
     
-    
-    
-    
-    
-    bool offer_extmap_allow_mixed = false;
+    bool offer_extmap_allow_mixed = true;
 
     
     

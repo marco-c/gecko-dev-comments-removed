@@ -272,10 +272,7 @@ class MediaContentDescription {
   webrtc::RtpTransceiverDirection direction_ =
       webrtc::RtpTransceiverDirection::kSendRecv;
   rtc::SocketAddress connection_address_;
-  
-  
-  
-  ExtmapAllowMixed extmap_allow_mixed_enum_ = kNo;
+  ExtmapAllowMixed extmap_allow_mixed_enum_ = kMedia;
 
   SimulcastDescription simulcast_;
   std::vector<RidDescription> receive_rids_;
@@ -633,12 +630,7 @@ class SessionDescription {
   
   
   int msid_signaling_ = kMsidSignalingSsrcAttribute;
-  
-  
-  
-  
-  
-  bool extmap_allow_mixed_ = false;
+  bool extmap_allow_mixed_ = true;
 };
 
 

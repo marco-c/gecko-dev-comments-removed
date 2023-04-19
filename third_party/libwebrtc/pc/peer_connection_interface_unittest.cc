@@ -3904,13 +3904,13 @@ TEST_P(PeerConnectionInterfaceTest, ExtmapAllowMixedIsConfigurable) {
   CreatePeerConnection(config);
   std::unique_ptr<SessionDescriptionInterface> offer;
   ASSERT_TRUE(DoCreateOffer(&offer, nullptr));
-  EXPECT_FALSE(offer->description()->extmap_allow_mixed());
+  EXPECT_TRUE(offer->description()->extmap_allow_mixed());
   
-  config.offer_extmap_allow_mixed = true;
+  config.offer_extmap_allow_mixed = false;
   CreatePeerConnection(config);
   offer.release();
   ASSERT_TRUE(DoCreateOffer(&offer, nullptr));
-  EXPECT_TRUE(offer->description()->extmap_allow_mixed());
+  EXPECT_FALSE(offer->description()->extmap_allow_mixed());
 }
 
 INSTANTIATE_TEST_SUITE_P(PeerConnectionInterfaceTest,
