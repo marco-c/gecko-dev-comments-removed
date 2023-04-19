@@ -1,5 +1,6 @@
 
 
+
 var obj = {
   ["func"]: function() {return function() {} },
   ["arrowFunc"]: ()=>{return function() {} },
