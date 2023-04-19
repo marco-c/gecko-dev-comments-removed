@@ -428,6 +428,12 @@ struct MediaReceiverInfo {
   int packets_lost = 0;
   
   
+  double jitter_buffer_delay_seconds = 0.0;
+  
+  
+  uint64_t jitter_buffer_emitted_count = 0;
+  
+  
   
   absl::optional<int64_t> last_packet_received_timestamp_ms;
   
@@ -469,8 +475,6 @@ struct VoiceReceiverInfo : public MediaReceiverInfo {
   uint64_t concealed_samples = 0;
   uint64_t silent_concealed_samples = 0;
   uint64_t concealment_events = 0;
-  double jitter_buffer_delay_seconds = 0.0;
-  uint64_t jitter_buffer_emitted_count = 0;
   double jitter_buffer_target_delay_seconds = 0.0;
   uint64_t inserted_samples_for_deceleration = 0;
   uint64_t removed_samples_for_acceleration = 0;
@@ -619,12 +623,6 @@ struct VideoReceiverInfo : public MediaReceiverInfo {
   int max_decode_ms = 0;
   
   int jitter_buffer_ms = 0;
-  
-  
-  double jitter_buffer_delay_seconds = 0;
-  
-  
-  uint64_t jitter_buffer_emitted_count = 0;
   
   int min_playout_delay_ms = 0;
   
