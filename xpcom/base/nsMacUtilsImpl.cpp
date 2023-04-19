@@ -30,8 +30,6 @@
 #endif
 #include <sys/sysctl.h>
 
-NS_IMPL_ISUPPORTS(nsMacUtilsImpl, nsIMacUtils)
-
 using mozilla::StaticMutexAutoLock;
 using mozilla::Unused;
 
@@ -56,88 +54,6 @@ std::atomic<bool> nsMacUtilsImpl::sIsXULTranslated = false;
 
 
 Atomic<nsMacUtilsImpl::TCSMStatus> nsMacUtilsImpl::sTCSMStatus(TCSM_Unknown);
-
-nsresult nsMacUtilsImpl::GetArchString(nsAString& aArchString) {
-  if (!mBinaryArchs.IsEmpty()) {
-    aArchString.Assign(mBinaryArchs);
-    return NS_OK;
-  }
-
-  uint32_t archMask = base::PROCESS_ARCH_INVALID;
-  nsresult rv = GetArchitecturesForBundle(&archMask);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  
-  if (archMask & base::PROCESS_ARCH_PPC) {
-    mBinaryArchs.AppendLiteral("ppc");
-  }
-
-  if (archMask & base::PROCESS_ARCH_I386) {
-    if (!mBinaryArchs.IsEmpty()) {
-      mBinaryArchs.Append('-');
-    }
-    mBinaryArchs.AppendLiteral("i386");
-  }
-
-  if (archMask & base::PROCESS_ARCH_PPC_64) {
-    if (!mBinaryArchs.IsEmpty()) {
-      mBinaryArchs.Append('-');
-    }
-    mBinaryArchs.AppendLiteral("ppc64");
-  }
-
-  if (archMask & base::PROCESS_ARCH_X86_64) {
-    if (!mBinaryArchs.IsEmpty()) {
-      mBinaryArchs.Append('-');
-    }
-    mBinaryArchs.AppendLiteral("x86_64");
-  }
-
-  if (archMask & base::PROCESS_ARCH_ARM_64) {
-    if (!mBinaryArchs.IsEmpty()) {
-      mBinaryArchs.Append('-');
-    }
-    mBinaryArchs.AppendLiteral("arm64");
-  }
-
-  aArchString.Truncate();
-  aArchString.Assign(mBinaryArchs);
-
-  return (aArchString.IsEmpty() ? NS_ERROR_FAILURE : NS_OK);
-}
-
-NS_IMETHODIMP
-nsMacUtilsImpl::GetArchitecturesInBinary(nsAString& aArchString) {
-  return GetArchString(aArchString);
-}
-
-
-NS_IMETHODIMP
-nsMacUtilsImpl::GetIsTranslated(bool* aIsTranslated) {
-#ifdef __ppc__
-  static bool sInitialized = false;
-
-  
-  
-  
-  static int32_t sIsNative = 1;
-
-  if (!sInitialized) {
-    size_t sz = sizeof(sIsNative);
-    sysctlbyname("sysctl.proc_native", &sIsNative, &sz, nullptr, 0);
-    sInitialized = true;
-  }
-
-  *aIsTranslated = !sIsNative;
-#else
-  
-  
-  *aIsTranslated = false;
-#endif
-
-  return NS_OK;
-}
 
 #if defined(MOZ_SANDBOX) || defined(__aarch64__)
 
